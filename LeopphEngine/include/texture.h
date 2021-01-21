@@ -19,10 +19,10 @@ namespace leopph
 		~Texture();
 
 		Texture(const Texture& other);
-		Texture(Texture&& other) = delete;
+		Texture(Texture&& other) noexcept;
 
 		Texture& operator=(const Texture& other);
-		Texture& operator=(Texture&& other) = delete;
+		Texture& operator=(Texture&& other) noexcept;
 
 		bool operator==(const Texture& other) const;
 		bool operator==(const std::filesystem::path& path) const;

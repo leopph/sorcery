@@ -56,7 +56,7 @@ namespace leopph
 
 		stbi_image_free(data);
 
-		s_Instances.emplace(m_ID, 0);
+		s_Instances.try_emplace(m_ID, 0);
 		s_Instances[m_ID]++;
 	}
 
@@ -77,6 +77,17 @@ namespace leopph
 	}
 
 
+	Texture::Texture(Texture&& other) noexcept
+		: m_ID{ other.m_ID }, m_Path{ std::move(other.m_Path) }, m_Type{ other.m_Type }
+	{
+		other.m_ID = 0;
+		other.m_Path.clear();
+
+		s_Instances.try_emplace(0, 0);
+		s_Instances[0]++;
+	}
+
+
 	Texture& Texture::operator=(const Texture& other)
 	{
 		if (*this == other)
@@ -92,6 +103,32 @@ namespace leopph
 		this->m_Type = other.m_Type;
 
 		s_Instances[m_ID]++;
+
+		return *this;
+	}
+
+
+	Texture& Texture::operator=(Texture&& other) noexcept
+	{
+		if (*this == other)
+			return *this;
+
+		s_Instances[m_ID]--;
+
+		if (s_Instances[m_ID] == 0)
+			glDeleteTextures(1, &m_ID);
+
+		this->m_ID = other.m_ID;
+		this->m_Path = std::move(other.m_Path);
+		this->m_Type = other.m_Type;
+
+		other.m_ID = 0;
+		other.m_Path.clear();
+
+		s_Instances.try_emplace(0, 0);
+		s_Instances[0]++;
+
+		return *this;
 	}
 
 

@@ -5,7 +5,7 @@
 namespace leopph
 {
 	Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned> indices, std::vector<Texture> textures)
-		: vertices{ std::move(vertices) }, indices{ std::move(indices) }, textures{ std::move(textures) }
+		: m_Vertices{ std::move(vertices) }, m_Indices{ std::move(indices) }, m_Textures{ std::move(textures) }
 	{
 		glGenVertexArrays(1, &m_VAO);
 		glGenBuffers(1, &m_VBO);
@@ -14,24 +14,40 @@ namespace leopph
 		glBindVertexArray(m_VAO);
 
 		glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
-		glBufferData(GL_ARRAY_BUFFER, this->vertices.size() * sizeof(decltype(this->vertices)::value_type), this->vertices.data(), GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, this->m_Vertices.size() * sizeof(decltype(this->m_Vertices)::value_type), this->m_Vertices.data(), GL_STATIC_DRAW);
 
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_EBO);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, this->indices.size() * sizeof(unsigned), this->indices.data(), GL_STATIC_DRAW);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, this->m_Indices.size() * sizeof(unsigned), this->m_Indices.data(), GL_STATIC_DRAW);
 
 		// positions
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(decltype(this->vertices)::value_type), reinterpret_cast<void*>(offsetof(decltype(this->vertices)::value_type, position)));
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(decltype(this->m_Vertices)::value_type), reinterpret_cast<void*>(offsetof(decltype(this->m_Vertices)::value_type, position)));
 		glEnableVertexAttribArray(0);
 
 		// normals
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(decltype(this->vertices)::value_type), reinterpret_cast<void*>(offsetof(decltype(this->vertices)::value_type, normal)));
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(decltype(this->m_Vertices)::value_type), reinterpret_cast<void*>(offsetof(decltype(this->m_Vertices)::value_type, normal)));
 		glEnableVertexAttribArray(1);
 
 		// textures
-		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(decltype(this->vertices)::value_type), reinterpret_cast<void*>(offsetof(decltype(this->vertices)::value_type, textureCoordinates)));
+		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(decltype(this->m_Vertices)::value_type), reinterpret_cast<void*>(offsetof(decltype(this->m_Vertices)::value_type, textureCoordinates)));
 		glEnableVertexAttribArray(2);
 
 		glBindVertexArray(0);
+	}
+
+
+
+	Mesh::~Mesh()
+	{
+		glDeleteBuffers(1, &m_VBO);
+		glDeleteBuffers(1, &m_EBO);
+		glDeleteVertexArrays(1, &m_VAO);
+	}
+
+
+
+	Mesh::Mesh(const Mesh& other)
+	{
+		// todo
 	}
 
 
@@ -46,28 +62,30 @@ namespace leopph
 		other.m_VBO = 0;
 		other.m_EBO = 0;
 
-		this->vertices = std::move(other.vertices);
-		this->indices = std::move(other.indices);
-		this->textures = std::move(other.textures);
+		this->m_Vertices = std::move(other.m_Vertices);
+		this->m_Indices = std::move(other.m_Indices);
+		this->m_Textures = std::move(other.m_Textures);
+	}
+
+
+
+	Mesh& Mesh::operator=(const Mesh& other)
+	{
+		return *this; // todo
 	}
 
 
 
 	Mesh& Mesh::operator=(Mesh&& other) noexcept
 	{
-		// REWORK TEXTURES WITH A COMPETENT COPY
+		return *this; // todo
 	}
 
 
 
-	Mesh::~Mesh()
+	bool Mesh::operator==(const Mesh& other) const
 	{
-		glDeleteBuffers(1, &m_VBO);
-		glDeleteBuffers(1, &m_EBO);
-		glDeleteVertexArrays(1, &m_VAO);
-
-		for (auto& texture : textures)
-			glDeleteTextures(1, &texture.id);
+		return this->m_VAO == other.m_VAO;
 	}
 
 
@@ -78,26 +96,33 @@ namespace leopph
 		unsigned specularNumber{ 0u };
 
 		// bind diffuse and specular maps
-		for (unsigned i = 0; i < textures.size(); i++)
+		for (unsigned i = 0; i < m_Textures.size(); i++)
 		{
 			glActiveTexture(GL_TEXTURE0 + i);
 
 			std::string number;
-			std::string name{ textures[i].type };
+			std::string name{ "texture_" };
 
-			if (name == "texture_diffuse")
+			switch (m_Textures[i].Type())
+			{
+			case Texture::TextureType::DIFFUSE:
 				number = std::to_string(diffuseNumber++);
+				name += "diffuse";
+				break;
 
-			else if (name == "texture_specular")
+			case Texture::TextureType::SPECULAR:
 				number = std::to_string(specularNumber++);
+				name += "specular";
+				break;
+			}
 
 			shader.SetUniform(name + number, static_cast<int>(i));
-			glBindTexture(GL_TEXTURE_2D, textures[i].id);
+			glBindTexture(GL_TEXTURE_2D, m_Textures[i].ID());
 		}
 
 		// draw
 		glBindVertexArray(m_VAO);
-		glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, 0);
+		glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(m_Indices.size()), GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);
 
 		glActiveTexture(GL_TEXTURE0);

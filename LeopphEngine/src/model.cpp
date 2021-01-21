@@ -20,7 +20,7 @@ namespace leopph
 			return;
 		}
 
-		directory = path.parent_path();
+		m_Directory = path.parent_path();
 
 		// recursively process all nodes
 		ProcessNode(scene->mRootNode, scene);
@@ -28,30 +28,51 @@ namespace leopph
 
 
 
+	Model::Model(const Model& other)
+	{
+		// todo
+	}
+
+
+
 	Model::Model(Model&& other) noexcept
 	{
-		this->meshes = std::move(other.meshes);
+		this->m_Meshes = std::move(other.m_Meshes);
+	}
+
+
+
+	Model& Model::operator=(const Model& other)
+	{
+		return *this; // todo
 	}
 
 
 
 	Model& Model::operator=(Model&& other) noexcept
 	{
-		this->meshes = std::move(other.meshes);
-		this->directory = std::move(other.directory);
-		this->m_LoadedTextures = std::move(other.m_LoadedTextures);
+		this->m_Meshes = std::move(other.m_Meshes);
+		this->m_Directory = std::move(other.m_Directory);
+		this->m_CachedTextures = std::move(other.m_CachedTextures);
 
-		other.directory.clear();
+		other.m_Directory.clear();
 
 		return *this;
 	}
 
 
 
+	bool Model::operator==(const Model& other) const
+	{
+		return this->m_Directory == other.m_Directory;
+	}
+
+
+
 	void Model::Draw(const Shader& shader) const
 	{
-		for (size_t i = 0; i < meshes.size(); i++)
-			meshes[i].Draw(shader);
+		for (size_t i = 0; i < m_Meshes.size(); i++)
+			m_Meshes[i].Draw(shader);
 	}
 
 
@@ -60,7 +81,7 @@ namespace leopph
 	{
 		// process all the meshes from current node
 		for (unsigned i = 0; i < node->mNumMeshes; i++)
-			meshes.push_back(ProcessMesh(scene->mMeshes[node->mMeshes[i]], scene));
+			m_Meshes.push_back(ProcessMesh(scene->mMeshes[node->mMeshes[i]], scene));
 
 		// recursively process child nodes
 		for (unsigned i = 0; i < node->mNumChildren; i++)
@@ -101,10 +122,10 @@ namespace leopph
 		{
 			aiMaterial* material{ scene->mMaterials[mesh->mMaterialIndex] };
 
-			std::vector<Texture> diffuseMaps{ LoadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse") };
+			std::vector<Texture> diffuseMaps{ LoadMaterialTextures(material, aiTextureType_DIFFUSE, Texture::TextureType::DIFFUSE) };
 			textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
 
-			std::vector<Texture> specularMaps{ LoadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular") };
+			std::vector<Texture> specularMaps{ LoadMaterialTextures(material, aiTextureType_SPECULAR, Texture::TextureType::SPECULAR) };
 			textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
 		}
 
@@ -127,11 +148,11 @@ namespace leopph
 			bool isAlreadyLoaded{ false };
 
 			// if already loaded, reference that one
-			for (unsigned j = 0; j < m_LoadedTextures.size(); j++)
+			for (unsigned j = 0; j < m_CachedTextures.size(); j++)
 			{
-				if (m_LoadedTextures[j] == location.C_Str())
+				if (m_CachedTextures[j] == location.C_Str())
 				{
-					textures.push_back(m_LoadedTextures[j]);
+					textures.push_back(m_CachedTextures[j]);
 					isAlreadyLoaded = true;
 					break;
 				}
@@ -140,9 +161,9 @@ namespace leopph
 			// if not loaded, load it
 			if (!isAlreadyLoaded)
 			{
-				Texture texture{ directory / location.C_Str(), abstractType };
+				Texture texture{ m_Directory / location.C_Str(), abstractType };
 				textures.push_back(texture);
-				m_LoadedTextures.push_back(texture);
+				m_CachedTextures.push_back(texture);
 			}
 		}
 

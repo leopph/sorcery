@@ -4,7 +4,7 @@
 
 namespace leopph
 {
-	// STRUCT TO REPRESENT A VERTEX WITH ALL ITS DATA
+	// STRUCT TO REPRESENT A VERTEX
 	struct Vertex
 	{
 		glm::vec3 position;
