@@ -1,6 +1,6 @@
 #pragma once
 
-#include "leopph.h"
+#include "leopphapi.h"
 #include "object.h"
 
 namespace leopph

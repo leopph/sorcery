@@ -28,40 +28,6 @@ namespace leopph
 
 
 
-	Model::Model(const Model& other)
-	{
-		// todo
-	}
-
-
-
-	Model::Model(Model&& other) noexcept
-	{
-		this->m_Meshes = std::move(other.m_Meshes);
-	}
-
-
-
-	Model& Model::operator=(const Model& other)
-	{
-		return *this; // todo
-	}
-
-
-
-	Model& Model::operator=(Model&& other) noexcept
-	{
-		this->m_Meshes = std::move(other.m_Meshes);
-		this->m_Directory = std::move(other.m_Directory);
-		this->m_CachedTextures = std::move(other.m_CachedTextures);
-
-		other.m_Directory.clear();
-
-		return *this;
-	}
-
-
-
 	bool Model::operator==(const Model& other) const
 	{
 		return this->m_Directory == other.m_Directory;
@@ -122,10 +88,10 @@ namespace leopph
 		{
 			aiMaterial* material{ scene->mMaterials[mesh->mMaterialIndex] };
 
-			std::vector<Texture> diffuseMaps{ LoadMaterialTextures(material, aiTextureType_DIFFUSE, Texture::TextureType::DIFFUSE) };
+			std::vector<Texture> diffuseMaps{ LoadTexturesByType(material, aiTextureType_DIFFUSE, Texture::TextureType::DIFFUSE) };
 			textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
 
-			std::vector<Texture> specularMaps{ LoadMaterialTextures(material, aiTextureType_SPECULAR, Texture::TextureType::SPECULAR) };
+			std::vector<Texture> specularMaps{ LoadTexturesByType(material, aiTextureType_SPECULAR, Texture::TextureType::SPECULAR) };
 			textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
 		}
 
@@ -134,7 +100,7 @@ namespace leopph
 
 
 
-	std::vector<Texture> Model::LoadMaterialTextures(aiMaterial* material, aiTextureType assimpType, Texture::TextureType abstractType)
+	std::vector<Texture> Model::LoadTexturesByType(aiMaterial* material, aiTextureType assimpType, Texture::TextureType abstractType)
 	{
 		std::vector<Texture> textures;
 

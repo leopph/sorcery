@@ -71,9 +71,6 @@
     <ClInclude Include="include\timekeeping.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\leopph.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="include\app.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -84,6 +81,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\pointlight.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\leopphapi.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

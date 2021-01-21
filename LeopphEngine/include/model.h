@@ -1,6 +1,6 @@
 #pragma once
 
-#include "leopph.h"
+#include "leopphapi.h"
 #include "mesh.h"
 
 #include <assimp/scene.h>
@@ -20,16 +20,16 @@ namespace leopph
 
 		void ProcessNode(aiNode* node, const aiScene* scene);
 		Mesh ProcessMesh(aiMesh* mesh, const aiScene* scene);
-		std::vector<Texture> LoadMaterialTextures(aiMaterial* material, aiTextureType assimpType, Texture::TextureType abstractType);
+		std::vector<Texture> LoadTexturesByType(aiMaterial* material, aiTextureType assimpType, Texture::TextureType abstractType);
 
 	public:
 		Model(const std::filesystem::path& path);
 
-		Model(const Model& other);
-		Model(Model&& other) noexcept;
+		Model(const Model& other) = default;
+		Model(Model&& other) noexcept = default;
 
-		Model& operator=(const Model& other);
-		Model& operator=(Model&& other) noexcept;
+		Model& operator=(const Model& other) = default;
+		Model& operator=(Model&& other) noexcept = default;
 
 		bool operator==(const Model& other) const;
 
