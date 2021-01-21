@@ -5,6 +5,7 @@
 #include "shader.h"
 
 #include <vector>
+#include <unordered_map>
 
 namespace leopph
 {
@@ -12,6 +13,8 @@ namespace leopph
 	class Mesh
 	{
 	private:
+		static std::unordered_map<unsigned, size_t> s_Instances;
+
 		unsigned m_VAO;
 		unsigned m_VBO;
 		unsigned m_EBO;

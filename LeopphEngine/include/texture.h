@@ -31,7 +31,7 @@ namespace leopph
 		TextureType Type() const;
 
 	private:
-		static std::unordered_map<unsigned, unsigned long long> s_Instances;
+		static std::unordered_map<unsigned, size_t> s_Instances;
 
 		unsigned m_ID;;
 		TextureType m_Type;

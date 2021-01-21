@@ -7,7 +7,7 @@
 namespace leopph
 {
 	// INIT REF COUNTER
-	std::unordered_map<unsigned, unsigned long long> Texture::s_Instances{};
+	std::unordered_map<unsigned, size_t> Texture::s_Instances{};
 
 
 	// LOAD IMAGE FROM PATH

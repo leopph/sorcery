@@ -4,6 +4,11 @@
 
 namespace leopph
 {
+	// INIT REF COUNTER
+	std::unordered_map<unsigned, size_t> Mesh::s_Instances{};
+
+
+	// LOAD MESH FROM MESH DATA
 	Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned> indices, std::vector<Texture> textures)
 		: m_Vertices{ std::move(vertices) }, m_Indices{ std::move(indices) }, m_Textures{ std::move(textures) }
 	{
@@ -32,53 +37,110 @@ namespace leopph
 		glEnableVertexAttribArray(2);
 
 		glBindVertexArray(0);
+
+		s_Instances.try_emplace(m_VAO, 0);
+		s_Instances[m_VAO]++;
 	}
 
 
 
 	Mesh::~Mesh()
 	{
-		glDeleteBuffers(1, &m_VBO);
-		glDeleteBuffers(1, &m_EBO);
-		glDeleteVertexArrays(1, &m_VAO);
+		s_Instances[m_VAO]--;
+
+		if (s_Instances[m_VAO] == 0)
+		{
+			glDeleteBuffers(1, &m_VBO);
+			glDeleteBuffers(1, &m_EBO);
+			glDeleteVertexArrays(1, &m_VAO);
+		}
 	}
 
 
 
 	Mesh::Mesh(const Mesh& other)
+		: m_VAO{ other.m_VAO }, m_VBO{ other.m_VBO }, m_EBO{ other.m_EBO },
+		m_Vertices{ other.m_Vertices }, m_Indices{ other.m_Indices }, m_Textures{ other.m_Textures }
 	{
-		// todo
+		s_Instances[m_VAO]++;
 	}
 
 
 
 	Mesh::Mesh(Mesh&& other) noexcept
+		: m_VAO{ other.m_VAO }, m_VBO{ other.m_VBO }, m_EBO{ other.m_EBO },
+		m_Vertices{ std::move(other.m_Vertices) }, m_Indices{ std::move(other.m_Indices) },
+		m_Textures{ std::move(other.m_Textures) }
 	{
-		this->m_VAO = other.m_VAO;
-		this->m_VBO = other.m_VBO;
-		this->m_EBO = other.m_EBO;
-
 		other.m_VAO = 0;
 		other.m_VBO = 0;
 		other.m_EBO = 0;
 
-		this->m_Vertices = std::move(other.m_Vertices);
-		this->m_Indices = std::move(other.m_Indices);
-		this->m_Textures = std::move(other.m_Textures);
+		s_Instances.try_emplace(0, 0);
+		s_Instances[0]++;
 	}
 
 
 
 	Mesh& Mesh::operator=(const Mesh& other)
 	{
-		return *this; // todo
+		if (*this == other)
+			return *this;
+
+		s_Instances[m_VAO]--;
+
+		if (s_Instances[m_VAO] == 0)
+		{
+			glDeleteBuffers(1, &m_VBO);
+			glDeleteBuffers(1, &m_EBO);
+			glDeleteVertexArrays(1, &m_VAO);
+		}
+
+		this->m_VAO = other.m_VAO;
+		this->m_VBO = other.m_VBO;
+		this->m_EBO = other.m_EBO;
+
+		this->m_Vertices = other.m_Vertices;
+		this->m_Indices = other.m_Indices;
+		this->m_Textures = other.m_Textures;
+
+		s_Instances[m_VAO]++;
+
+		return *this;
 	}
 
 
 
 	Mesh& Mesh::operator=(Mesh&& other) noexcept
 	{
-		return *this; // todo
+		if (*this == other)
+			return *this;
+
+		s_Instances[m_VAO]--;
+
+		if (s_Instances[m_VAO] == 0)
+		{
+			glDeleteBuffers(1, &m_VBO);
+			glDeleteBuffers(1, &m_EBO);
+			glDeleteVertexArrays(1, &m_VAO);
+		}
+
+		this->m_VAO = other.m_VAO;
+		this->m_VBO = other.m_VBO;
+		this->m_EBO = other.m_EBO;
+
+		this->m_Vertices = std::move(other.m_Vertices);
+		this->m_Indices = std::move(other.m_Indices);
+		this->m_Textures = std::move(other.m_Textures);
+
+		other.m_VAO = 0;
+		other.m_VBO = 0;
+		other.m_EBO = 0;
+
+		s_Instances.try_emplace(0, 0);
+		s_Instances[0]++;
+
+		return *this;
 	}
 
 
