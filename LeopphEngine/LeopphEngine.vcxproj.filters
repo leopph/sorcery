@@ -36,9 +36,6 @@
     <ClCompile Include="src\timekeeping.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\app.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\object.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -71,9 +68,6 @@
     <ClInclude Include="include\timekeeping.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\app.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="include\object.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -84,6 +78,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\leopphapi.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\entry.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\behavior.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

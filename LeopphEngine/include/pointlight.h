@@ -5,8 +5,8 @@
 
 namespace leopph
 {
-	// TODO IMPLEMENT THIS
-	class LEOPPHAPI PointLight final : public Object
+	// TODO
+	class LEOPPHAPI PointLight
 	{
 	public:
 		float Range() const;
