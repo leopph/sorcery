@@ -5,70 +5,98 @@
 
 namespace leopph
 {
+	// Init static container
+	std::set<std::unique_ptr<Object, Object::Deleter>, Object::Comparator> Object::s_Instances{};
+
+
+
+
+
+	// Deleter
+	void Object::Deleter::operator()(Object* object) const
+	{
+		delete object;
+	}
+
+
+
 
 	// Comparisons for name-based lookups
-	bool Object::Compare::operator()(const Object* left, const Object* right) const
+	bool Object::Comparator::operator()(const std::unique_ptr<Object, Deleter>& left, const std::unique_ptr<Object, Deleter>& right) const
 	{
 		return left->m_Name < right->m_Name;
 	}
 
-	bool Object::Compare::operator()(const Object* left, const std::string& right) const
+	bool Object::Comparator::operator()(const std::unique_ptr<Object, Deleter>& left, const std::string& right) const
 	{
 		return left->m_Name < right;
 	}
 
-	bool Object::Compare::operator()(const std::string& left, const Object* right) const
+	bool Object::Comparator::operator()(const std::string& left, const std::unique_ptr<Object, Deleter>& right) const
 	{
 		return left < right->m_Name;
 	}
 
+	bool Object::Comparator::operator()(const std::unique_ptr<Object, Deleter>& left, const Object* right) const
+	{
+		return left->m_Name < right->m_Name;
+	}
 
+	bool Object::Comparator::operator()(const Object* left, const std::unique_ptr<Object, Deleter>& right) const
+	{
+		return left->m_Name < right->m_Name;
+	}
 
-	std::set<Object*, Object::Compare> Object::s_Instances{};
 
 	
 
-	Object::Object()
-		: m_Name{ "Object" + std::to_string(s_Instances.size()) }
+
+	// Constructor
+	Object::Object():
+		m_Name{ "Object" + std::to_string(s_Instances.size()) },
+		m_Position{ glm::vec3{0.0f, 0.0f, 0.0f} },
+		m_Rotation{ glm::vec3{0.0f, 0.0f, 0.0f} },
+		m_Scale{ glm::vec3{1.0f, 1.0f, 1.0f} } {}
+
+
+
+
+
+
+	// Static functions
+	Object* Object::Create()
 	{
-		s_Instances.insert(this);
+		return s_Instances.emplace(new Object).first->get();
 	}
 
-	Object::~Object()
+	void Object::Destroy(Object*& object)
 	{
-		for (Behavior* behavior : m_Behaviors)
-			delete behavior;
-
-		s_Instances.erase(this);
+		s_Instances.erase(s_Instances.find(object));
+		object = nullptr;
 	}
 
-
-
-	Object* Object::Get(const std::string& name)
+	Object* Object::Find(const std::string& name)
 	{
-		auto iterator{ s_Instances.find(name) };
+		auto it = s_Instances.find(name);
 
-		return iterator == s_Instances.end() ? nullptr : *iterator;
+		return it != s_Instances.end() ? it->get() : nullptr;
 	}
 
-
-
-	const std::set<Object*, Object::Compare>& Object::Instances()
+	const std::set<std::unique_ptr<Object, Object::Deleter>, Object::Comparator>& Object::Instances()
 	{
 		return s_Instances;
 	}
 
-	const std::set<Behavior*>& Object::Behaviors() const
-	{
-		return m_Behaviors;
-	}
 
+
+
+
+
+	// Models
 	const std::vector<Model>& Object::Models() const
 	{
 		return m_Models;
 	}
-
-
 
 	void Object::AddModel(Model&& model)
 	{
@@ -82,6 +110,14 @@ namespace leopph
 	}
 
 
+
+
+
+	// Behaviors
+	const std::set<Behavior*>& Object::Behaviors() const
+	{
+		return m_Behaviors;
+	}
 
 	template<class T>
 	Behavior* Object::AddBehavior()
@@ -102,6 +138,10 @@ namespace leopph
 
 
 
+
+
+
+	// Nonstatic members
 	const std::string& Object::Name() const
 	{
 		return m_Name;
@@ -109,10 +149,22 @@ namespace leopph
 
 	void Object::Name(std::string newName)
 	{
+		/* Removing the node is necessary, because m_Name is the ordering key.
+		If the target node is not removed before renaming, order-changing names may lead to crashes.
+		In case the new name is already in use, revert to the previous name and reinsert the node without changes. */
+
+		std::string oldName = m_Name;
+		auto node = s_Instances.extract(s_Instances.find(this));
 		m_Name = std::move(newName);
+		auto result = s_Instances.insert(std::move(node));
+
+		if (!result.inserted)
+		{
+			m_Name = std::move(oldName);
+			s_Instances.insert(std::move(result.node));
+		}
 	}
 
-	
 	const glm::vec3& Object::Position() const
 	{
 		return m_Position;
@@ -123,8 +175,6 @@ namespace leopph
 		m_Position = std::move(newPos);
 	}
 
-
-
 	const glm::vec3& Object::Rotation() const
 	{
 		return m_Rotation;
@@ -134,8 +184,6 @@ namespace leopph
 	{
 		m_Rotation = std::move(newRot);
 	}
-
-
 
 	const glm::vec3& Object::Scale() const
 	{
