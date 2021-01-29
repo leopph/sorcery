@@ -48,14 +48,14 @@
     <OutDir>$(SolutionDir)out\$(ProjectName)\$(Configuration)_$(Platform)\</OutDir>
     <IntDir>$(SolutionDir)int\$(ProjectName)\$(Configuration)_$(Platform)\</IntDir>
     <TargetName>leopph</TargetName>
-    <LibraryPath>D:\Dev\lib\assimp\lib\$(Configuration)\;D:\Dev\lib\glfw\src\$(Configuration)\;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)..\lib\assimp\lib\$(Configuration)\;$(SolutionDir)..\lib\glfw\src\$(Configuration)\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)out\$(ProjectName)\$(Configuration)_$(Platform)\</OutDir>
     <IntDir>$(SolutionDir)int\$(ProjectName)\$(Configuration)_$(Platform)\</IntDir>
     <TargetName>leopph</TargetName>
-    <LibraryPath>D:\Dev\lib\assimp\lib\$(Configuration)\;D:\Dev\lib\glfw\src\$(Configuration)\;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)..\lib\assimp\lib\$(Configuration)\;$(SolutionDir)..\lib\glfw\src\$(Configuration)\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -64,7 +64,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);ENGINE_BUILD</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>D:\Dev\lib\stb_image;D:\Dev\lib\glm;D:\Dev\lib\glfw\include;D:\Dev\lib\glad\include;D:\Dev\lib\assimp\include;D:\Dev\LeopphEngine\LeopphEngine\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\lib\stb_image;$(SolutionDir)..\lib\glm;$(SolutionDir)..\lib\glfw\include;$(SolutionDir)..\lib\glad\include;$(SolutionDir)..\lib\assimp\include;$(ProjectDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -81,7 +81,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);ENGINE_BUILD</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>D:\Dev\lib\stb_image;D:\Dev\lib\glm;D:\Dev\lib\glfw\include;D:\Dev\lib\glad\include;D:\Dev\lib\assimp\include;D:\Dev\LeopphEngine\LeopphEngine\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\lib\stb_image;$(SolutionDir)..\lib\glm;$(SolutionDir)..\lib\glfw\include;$(SolutionDir)..\lib\glad\include;$(SolutionDir)..\lib\assimp\include;$(ProjectDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
