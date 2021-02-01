@@ -36,6 +36,16 @@ namespace leopph
 
 
 
+	// destructor
+	template<class T, size_t N>
+	Vector<T, N>::~Vector()
+	{
+		delete m_Data;
+	}
+
+
+
+
 
 	// quick access factories
 	template<class T, size_t N>

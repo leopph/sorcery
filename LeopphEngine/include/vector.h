@@ -30,6 +30,10 @@ namespace leopph
 		//Vector(Vector<T, N>&& other) = delete;
 
 
+		 // destructor
+		~Vector();
+
+
 
 
 		// quick access factories
