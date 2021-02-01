@@ -42,10 +42,10 @@
     <ClCompile Include="src\texture.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\vector3.cpp">
+    <ClCompile Include="..\..\lib\stb_image\stb_image.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\lib\stb_image\stb_image.cpp">
+    <ClCompile Include="src\vector.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -89,7 +89,7 @@
     <ClInclude Include="include\behavior.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\vector3.h">
+    <ClInclude Include="include\vector.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
