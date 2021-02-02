@@ -85,8 +85,10 @@ namespace leopph
 					if (this == &other)
 						return *this;
 
-					delete[] m_Data;
-					m_Data = other.m_Data;
+					for (size_t i = 0; i < N; i++)
+						for (size_t j = 0; j < M; j++)
+							m_Data[i][j] = other.m_Data[i][j];
+
 					return *this;
 				}
 

@@ -8,12 +8,8 @@ void leopph::Init()
 {
 	leopph::Matrix4 m1{ 1, 2, 3, 4 };
 	leopph::Matrix4 m2{ 1, 2, 3, 4 };
-
-	auto m3 = m1;
-
-	//auto res = m1 * m2;
-
-	/*std::cout << res << std::endl;*/
+	auto res = m1 * m2;
+	std::cout << res << std::endl;
 
 	leopph::Vector3 v1{ 1, 3, -5 };
 	leopph::Vector3 v2{ 4, -2, -1 };
