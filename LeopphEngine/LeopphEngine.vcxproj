@@ -48,14 +48,14 @@
     <OutDir>$(SolutionDir)out\$(ProjectName)\$(Configuration)_$(Platform)\</OutDir>
     <IntDir>$(SolutionDir)int\$(ProjectName)\$(Configuration)_$(Platform)\</IntDir>
     <TargetName>leopph</TargetName>
-    <LibraryPath>$(SolutionDir)..\lib\assimp\lib\$(Configuration)\;$(SolutionDir)..\lib\glfw\src\$(Configuration)\;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(ProjectDir)vendor\assimp\lib\$(Configuration)\;$(ProjectDir)vendor\glfw\src\$(Configuration)\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)out\$(ProjectName)\$(Configuration)_$(Platform)\</OutDir>
     <IntDir>$(SolutionDir)int\$(ProjectName)\$(Configuration)_$(Platform)\</IntDir>
     <TargetName>leopph</TargetName>
-    <LibraryPath>$(SolutionDir)..\lib\assimp\lib\$(Configuration)\;$(SolutionDir)..\lib\glfw\src\$(Configuration)\;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(ProjectDir)vendor\assimp\lib\$(Configuration)\;$(ProjectDir)vendor\glfw\src\$(Configuration)\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -64,7 +64,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);ENGINE_BUILD</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\lib\stb_image;$(SolutionDir)..\lib\glm;$(SolutionDir)..\lib\glfw\include;$(SolutionDir)..\lib\glad\include;$(SolutionDir)..\lib\assimp\include;$(ProjectDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)vendor\stb_image;$(ProjectDir)vendor\glm;$(ProjectDir)vendor\glfw\include;$(ProjectDir)vendor\glad\include;$(ProjectDir)vendor\assimp\include;$(ProjectDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -72,7 +72,7 @@
       <AdditionalDependencies>glfw3.lib;assimp-vc142-mtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(SolutionDir)..\lib\assimp\bin\$(Configuration)\*.dll" "$(OutDir)" /y /d</Command>
+      <Command>xcopy "$(ProjectDir)vendor\assimp\bin\$(Configuration)\*.dll" "$(OutDir)" /y /d</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -84,7 +84,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);ENGINE_BUILD</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\lib\stb_image;$(SolutionDir)..\lib\glm;$(SolutionDir)..\lib\glfw\include;$(SolutionDir)..\lib\glad\include;$(SolutionDir)..\lib\assimp\include;$(ProjectDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)vendor\stb_image;$(ProjectDir)vendor\glm;$(ProjectDir)vendor\glfw\include;$(ProjectDir)vendor\glad\include;$(ProjectDir)vendor\assimp\include;$(ProjectDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -94,7 +94,7 @@
       <AdditionalDependencies>glfw3.lib;assimp-vc142-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(SolutionDir)..\lib\assimp\bin\$(Configuration)\*.dll" "$(OutDir)" /y /d</Command>
+      <Command>xcopy "$(ProjectDir)vendor\assimp\bin\$(Configuration)\*.dll" "$(OutDir)" /y /d</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -115,8 +115,6 @@
     <ClInclude Include="include\window.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\lib\glad\src\glad.c" />
-    <ClCompile Include="..\..\lib\stb_image\stb_image.cpp" />
     <ClCompile Include="src\camera.cpp" />
     <ClCompile Include="src\mesh.cpp" />
     <ClCompile Include="src\model.cpp" />
@@ -125,6 +123,8 @@
     <ClCompile Include="src\texture.cpp" />
     <ClCompile Include="src\timekeeping.cpp" />
     <ClCompile Include="src\window.cpp" />
+    <ClCompile Include="vendor\glad\src\glad.c" />
+    <ClCompile Include="vendor\stb_image\stb_image.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
