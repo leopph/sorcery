@@ -8,187 +8,191 @@
 
 namespace leopph
 {
-	template<class T, size_t N, size_t M>
-	class Matrix
+	namespace implementation
 	{
-		static_assert(N >= 2 && M >= 2, "Matrix must be at least 2x2!");
-
-
-	private:
-		Vector<T, M>* m_Data;
-
-
-	public:
-		// constructors
-		Matrix() :
-			m_Data{ new Vector<T, M>[N] }
-		{}
-
-		Matrix(const T& value) :
-			m_Data{ new Vector<T, M>[N] }
+		template<class T, size_t N, size_t M>
+		class Matrix
 		{
-			for (size_t i = 0; i < N && i < M; i++)
-				m_Data[i][i] = value;
-		}
-
-		template<class... T1, std::enable_if_t<std::conjunction_v<std::is_convertible<T1, T>...> && sizeof...(T1) == (N > M ? M : N), bool> = false>
-				Matrix(const T1&... args) :
-					m_Data{ new Vector<T, M>[N] }
-				{
-					// TODO think this over man
-
-					T argArr[M > N ? N : M]{ static_cast<T>(args)... };
-
-					for (size_t i = 0; i < M && i < N; i++)
-						m_Data[i][i] = argArr[i];
-				}
-
-				template<class... T1, std::enable_if_t<std::conjunction_v<std::is_convertible<T1, T>...> && sizeof...(T1) == (N * M), bool> = false>
-				Matrix(const T1&... args) :
-					m_Data{ new Vector<T, M>[N] }
-				{
-					// TODO rework candidate
-
-					T argArr[M * N]{ static_cast<T>(args)... };
-
-					for (size_t i = 0; i < N; i++)
-						for (size_t j = 0; j < M; j++)
-							m_Data[i][j] = argArr[i * M + j];
-				}
-
-				Matrix(const Matrix<T, N, M>& other) :
-					m_Data{ new Vector<T, M>[N] }
-				{
-					for (size_t i = 0; i < N; i++)
-						m_Data[i] = other.m_Data[i];
-				}
+			static_assert(N >= 2 && M >= 2, "Matrix must be at least 2x2!");
 
 
-				// factories
-				template<size_t N1 = N, size_t M1 = M, std::enable_if_t<N1 == M1 && N1 == N && M1 == M, bool> = false>
-				static Matrix<T, N, M> Identity()
-				{
-					return Matrix<T, N, M>{1};
-				}
+		private:
+			Vector<T, M>* m_Data;
 
 
-				// destructor
-				~Matrix()
-				{
-					delete[] m_Data;
-				}
+		public:
+			// constructors
+			Matrix() :
+				m_Data{ new Vector<T, M>[N] }
+			{}
 
-
-				// member operators
-				Matrix<T, N, M>& operator=(const Matrix<T, N, M>& other)
-				{
-					if (this == &other)
-						return *this;
-
-					for (size_t i = 0; i < N; i++)
-						for (size_t j = 0; j < M; j++)
-							m_Data[i][j] = other.m_Data[i][j];
-
-					return *this;
-				}
-
-				const Vector<T, M>& operator[](size_t index) const
-				{
-					return m_Data[index];
-				}
-
-				Vector<T, M>& operator[](size_t index)
-				{
-					return const_cast<Vector<T, M>&>(const_cast<const Matrix<T, N, M>*>(this)->operator[](index));
-				}
-
-
-				// determinant
-				template<size_t N1 = N, size_t M1 = M, std::enable_if_t<N1 == M1 && N1 == N && M1 == M, bool> = false>
-				float Det() const
-				{
-					Matrix<T, N, M> tmp{ *this };
-
-					for (size_t i = 1; i < N; i++)
-						for (size_t j = 0; j < N; j++)
-							tmp[j][0] += tmp[j][i];
-
-					for (size_t i = 1; i < N; i++)
-						tmp[i] -= tmp[0];
-
-					float ret{ 1.0f };
-
-					for (size_t i = 0; i < N; i++)
-						ret *= tmp[i][i];
-
-					return ret;
-				}
-
-
-				// transposed copy
-				Matrix<T, M, N> Transposed() const
-				{
-					Matrix<T, M, N> ret;
-
-					for (size_t i = 0; i < N; i++)
-						for (size_t j = 0; j < M; j++)
-							ret[j][i] = m_Data[i][j];
-
-					return ret;
-				}
-	};
-
-
-
-
-
-	// non member operators
-	template<class T, size_t N, size_t M>
-	std::ostream& operator<<(std::ostream& stream, const Matrix<T, N, M>& matrix)
-	{
-		for (size_t i = 0; i < N; i++)
-		{
-			for (size_t j = 0; j < M; j++)
+			Matrix(const T& value) :
+				m_Data{ new Vector<T, M>[N] }
 			{
-				stream << matrix[i][j];
-
-				if (j != M - 1)
-					stream << " ";
+				for (size_t i = 0; i < N && i < M; i++)
+					m_Data[i][i] = value;
 			}
 
-			stream << std::endl;
+			template<class... T1, std::enable_if_t<std::conjunction_v<std::is_convertible<T1, T>...> && sizeof...(T1) == (N > M ? M : N), bool> = false>
+					Matrix(const T1&... args) :
+						m_Data{ new Vector<T, M>[N] }
+					{
+						// TODO think this over man
+
+						T argArr[M > N ? N : M]{ static_cast<T>(args)... };
+
+						for (size_t i = 0; i < M && i < N; i++)
+							m_Data[i][i] = argArr[i];
+					}
+
+					template<class... T1, std::enable_if_t<std::conjunction_v<std::is_convertible<T1, T>...> && sizeof...(T1) == (N * M), bool> = false>
+					Matrix(const T1&... args) :
+						m_Data{ new Vector<T, M>[N] }
+					{
+						// TODO rework candidate
+
+						T argArr[M * N]{ static_cast<T>(args)... };
+
+						for (size_t i = 0; i < N; i++)
+							for (size_t j = 0; j < M; j++)
+								m_Data[i][j] = argArr[i * M + j];
+					}
+
+					Matrix(const Matrix<T, N, M>& other) :
+						m_Data{ new Vector<T, M>[N] }
+					{
+						for (size_t i = 0; i < N; i++)
+							m_Data[i] = other.m_Data[i];
+					}
+
+
+					// factories
+					template<size_t N1 = N, size_t M1 = M, std::enable_if_t<N1 == M1 && N1 == N && M1 == M, bool> = false>
+					static Matrix<T, N, M> Identity()
+					{
+						return Matrix<T, N, M>{1};
+					}
+
+
+					// destructor
+					~Matrix()
+					{
+						delete[] m_Data;
+					}
+
+
+					// member operators
+					Matrix<T, N, M>& operator=(const Matrix<T, N, M>& other)
+					{
+						if (this == &other)
+							return *this;
+
+						for (size_t i = 0; i < N; i++)
+							for (size_t j = 0; j < M; j++)
+								m_Data[i][j] = other.m_Data[i][j];
+
+						return *this;
+					}
+
+					const Vector<T, M>& operator[](size_t index) const
+					{
+						return m_Data[index];
+					}
+
+					Vector<T, M>& operator[](size_t index)
+					{
+						return const_cast<Vector<T, M>&>(const_cast<const Matrix<T, N, M>*>(this)->operator[](index));
+					}
+
+
+					// determinant
+					template<size_t N1 = N, size_t M1 = M, std::enable_if_t<N1 == M1 && N1 == N && M1 == M, bool> = false>
+					float Det() const
+					{
+						Matrix<T, N, M> tmp{ *this };
+
+						for (size_t i = 1; i < N; i++)
+							for (size_t j = 0; j < N; j++)
+								tmp[j][0] += tmp[j][i];
+
+						for (size_t i = 1; i < N; i++)
+							tmp[i] -= tmp[0];
+
+						float ret{ 1.0f };
+
+						for (size_t i = 0; i < N; i++)
+							ret *= tmp[i][i];
+
+						return ret;
+					}
+
+
+					// transposed copy
+					Matrix<T, M, N> Transposed() const
+					{
+						Matrix<T, M, N> ret;
+
+						for (size_t i = 0; i < N; i++)
+							for (size_t j = 0; j < M; j++)
+								ret[j][i] = m_Data[i][j];
+
+						return ret;
+					}
+		};
+
+
+
+
+
+		// non member operators
+		template<class T, size_t N, size_t M>
+		std::ostream& operator<<(std::ostream& stream, const Matrix<T, N, M>& matrix)
+		{
+			for (size_t i = 0; i < N; i++)
+			{
+				for (size_t j = 0; j < M; j++)
+				{
+					stream << matrix[i][j];
+
+					if (j != M - 1)
+						stream << " ";
+				}
+
+				if (i != N - 1)
+					stream << std::endl;
+			}
+
+			return stream;
 		}
 
-		return stream;
+
+
+		template<class T, size_t N1, size_t M1, size_t N2, size_t M2, std::enable_if_t<M1 == N2, bool> = false>
+		Matrix<T, N1, M2> operator*(const Matrix<T, N1, M1>& left, const Matrix<T, N2, M2>& right)
+		{
+			Matrix<T, N1, M2> ret;
+
+			for (size_t i = 0; i < N1; i++)
+				for (size_t j = 0; j < M2; j++)
+					for (size_t k = 0; k < M1; k++)
+						ret[i][j] += left[i][k] * right[k][j];
+
+			return ret;
+		}
+
+
+
+
+
+		// instantiations
+		template class Matrix<float, 2, 2>;
+		template class Matrix<float, 3, 3>;
+		template class Matrix<float, 4, 4>;
 	}
-
-
-
-	template<class T, size_t N1, size_t M1, size_t N2, size_t M2, std::enable_if_t<M1 == N2, bool> = false>
-	Matrix<T, N1, M2> operator*(const Matrix<T, N1, M1>& left, const Matrix<T, N2, M2>& right)
-	{
-		Matrix<T, N1, M2> ret;
-
-		for (size_t i = 0; i < N1; i++)
-			for (size_t j = 0; j < M2; j++)
-				for (size_t k = 0; k < M1; k++)
-					ret[i][j] += left[i][k] * right[k][j];
-
-		return ret;
-	}
-
-
-
-
-
-	// instantiations
-	template class Matrix<float, 2, 2>;
-	template class Matrix<float, 3, 3>;
-	template class Matrix<float, 4, 4>;
 
 
 	// aliases
-	using Matrix2 = Matrix<float, 2, 2>;
-	using Matrix3 = Matrix<float, 3, 3>;
-	using Matrix4 = Matrix<float, 4, 4>;
+	using Matrix2 = implementation::Matrix<float, 2, 2>;
+	using Matrix3 = implementation::Matrix<float, 3, 3>;
+	using Matrix4 = implementation::Matrix<float, 4, 4>;
 }
