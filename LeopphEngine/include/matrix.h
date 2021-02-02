@@ -182,6 +182,33 @@ namespace leopph
 
 
 
+		template<class T, size_t P, size_t N, size_t M, std::enable_if_t<P == N, bool> = false>
+		Vector<T, M> operator*(const Vector<T, P>& left, const Matrix<T, N, M>& right)
+		{
+			Vector<T, M> ret;
+
+			for (size_t j = 0; j < M; j++)
+				for (size_t k = 0; k < P; k++)
+					ret[j] += left[k] * right[k][j];
+
+			return ret;
+		}
+
+
+		template<class T, size_t N, size_t M, size_t P, std::enable_if_t<M == P, bool> = false>
+		Vector<T, N> operator*(const Matrix<T, N, M>& left, const Vector<T, P>& right)
+		{
+			Vector<T, N> ret;
+
+			for (size_t i = 0; i < N; i++)
+				for (size_t k = 0; k < M; k++)
+					ret[i] += left[i][k] * right[k];
+
+			return ret;
+		}
+
+
+
 
 
 		// instantiations
