@@ -34,110 +34,127 @@ namespace leopph
 			}
 
 			template<class... T1, std::enable_if_t<std::conjunction_v<std::is_convertible<T1, T>...> && sizeof...(T1) == (N > M ? M : N), bool> = false>
-					Matrix(const T1&... args) :
-						m_Data{ new Vector<T, M>[N] }
-					{
-						// TODO think this over man
+			Matrix(const T1&... args) :
+				m_Data{ new Vector<T, M>[N] }
+			{
+				// TODO think this over man
 
-						T argArr[M > N ? N : M]{ static_cast<T>(args)... };
+				T argArr[M > N ? N : M]{ static_cast<T>(args)... };
 
-						for (size_t i = 0; i < M && i < N; i++)
-							m_Data[i][i] = argArr[i];
-					}
+				for (size_t i = 0; i < M && i < N; i++)
+					m_Data[i][i] = argArr[i];
+			}
 
-					template<class... T1, std::enable_if_t<std::conjunction_v<std::is_convertible<T1, T>...> && sizeof...(T1) == (N * M), bool> = false>
-					Matrix(const T1&... args) :
-						m_Data{ new Vector<T, M>[N] }
-					{
-						// TODO rework candidate
+			template<class... T1, std::enable_if_t<std::conjunction_v<std::is_convertible<T1, T>...> && sizeof...(T1) == (N * M), bool> = false>
+			Matrix(const T1&... args) :
+				m_Data{ new Vector<T, M>[N] }
+			{
+				// TODO rework candidate
 
-						T argArr[M * N]{ static_cast<T>(args)... };
+				T argArr[M * N]{ static_cast<T>(args)... };
 
-						for (size_t i = 0; i < N; i++)
-							for (size_t j = 0; j < M; j++)
-								m_Data[i][j] = argArr[i * M + j];
-					}
+				for (size_t i = 0; i < N; i++)
+					for (size_t j = 0; j < M; j++)
+						m_Data[i][j] = argArr[i * M + j];
+			}
 
-					Matrix(const Matrix<T, N, M>& other) :
-						m_Data{ new Vector<T, M>[N] }
-					{
-						for (size_t i = 0; i < N; i++)
-							m_Data[i] = other.m_Data[i];
-					}
-
-
-					// factories
-					template<size_t N1 = N, size_t M1 = M, std::enable_if_t<N1 == M1 && N1 == N && M1 == M, bool> = false>
-					static Matrix<T, N, M> Identity()
-					{
-						return Matrix<T, N, M>{1};
-					}
+			Matrix(const Matrix<T, N, M>& other) :
+				m_Data{ new Vector<T, M>[N] }
+			{
+				for (size_t i = 0; i < N; i++)
+					m_Data[i] = other.m_Data[i];
+			}
 
 
-					// destructor
-					~Matrix()
-					{
-						delete[] m_Data;
-					}
+			// factories
+			template<size_t N1 = N, size_t M1 = M, std::enable_if_t<N1 == M1 && N1 == N && M1 == M, bool> = false>
+			static Matrix<T, N, M> Identity()
+			{
+				return Matrix<T, N, M>{1};
+			}
 
 
-					// member operators
-					Matrix<T, N, M>& operator=(const Matrix<T, N, M>& other)
-					{
-						if (this == &other)
-							return *this;
+			template<size_t N1 = N, size_t M1 = M, std::enable_if_t<N1 == M1 && N1 == N && M1 == M && N1 == 4, bool> = false>
+			static Matrix<T, 4, 4> LookAt(const Vector<T, 3>& position, const Vector<T, 3>& forward, const Vector<T, 3>& worldUp)
+			{
+				Vector<T, 3> z{ forward.Normalized() };
+				Vector<T, 3> x{ Vector<T, 3>::Cross(worldUp, z) };
+				Vector<T, 3> y{ Vector<T, 3>::Cross(z, x) };
 
-						for (size_t i = 0; i < N; i++)
-							for (size_t j = 0; j < M; j++)
-								m_Data[i][j] = other.m_Data[i][j];
-
-						return *this;
-					}
-
-					const Vector<T, M>& operator[](size_t index) const
-					{
-						return m_Data[index];
-					}
-
-					Vector<T, M>& operator[](size_t index)
-					{
-						return const_cast<Vector<T, M>&>(const_cast<const Matrix<T, N, M>*>(this)->operator[](index));
-					}
+				return Matrix<T, 4, 4>
+				{
+					x[0], y[0], z[0], 0,
+					x[1], y[1], z[1], 0,
+					x[2], y[2], z[2], 0,
+					-Vector<T, 3>::Dot(x, position), -Vector<T, 3>::Dot(y, position), -Vector<T, 3>::Dot(z, position), 1
+				};
+			}
 
 
-					// determinant
-					template<size_t N1 = N, size_t M1 = M, std::enable_if_t<N1 == M1 && N1 == N && M1 == M, bool> = false>
-					float Det() const
-					{
-						Matrix<T, N, M> tmp{ *this };
-
-						for (size_t i = 1; i < N; i++)
-							for (size_t j = 0; j < N; j++)
-								tmp[j][0] += tmp[j][i];
-
-						for (size_t i = 1; i < N; i++)
-							tmp[i] -= tmp[0];
-
-						float ret{ 1.0f };
-
-						for (size_t i = 0; i < N; i++)
-							ret *= tmp[i][i];
-
-						return ret;
-					}
+			// destructor
+			~Matrix()
+			{
+				delete[] m_Data;
+			}
 
 
-					// transposed copy
-					Matrix<T, M, N> Transposed() const
-					{
-						Matrix<T, M, N> ret;
+			// member operators
+			Matrix<T, N, M>& operator=(const Matrix<T, N, M>& other)
+			{
+				if (this == &other)
+					return *this;
 
-						for (size_t i = 0; i < N; i++)
-							for (size_t j = 0; j < M; j++)
-								ret[j][i] = m_Data[i][j];
+				for (size_t i = 0; i < N; i++)
+					for (size_t j = 0; j < M; j++)
+						m_Data[i][j] = other.m_Data[i][j];
 
-						return ret;
-					}
+				return *this;
+			}
+
+			const Vector<T, M>& operator[](size_t index) const
+			{
+				return m_Data[index];
+			}
+
+			Vector<T, M>& operator[](size_t index)
+			{
+				return const_cast<Vector<T, M>&>(const_cast<const Matrix<T, N, M>*>(this)->operator[](index));
+			}
+
+
+			// determinant
+			template<size_t N1 = N, size_t M1 = M, std::enable_if_t<N1 == M1 && N1 == N && M1 == M, bool> = false>
+			float Det() const
+			{
+				Matrix<T, N, M> tmp{ *this };
+
+				for (size_t i = 1; i < N; i++)
+					for (size_t j = 0; j < N; j++)
+						tmp[j][0] += tmp[j][i];
+
+				for (size_t i = 1; i < N; i++)
+					tmp[i] -= tmp[0];
+
+				float ret{ 1.0f };
+
+				for (size_t i = 0; i < N; i++)
+					ret *= tmp[i][i];
+
+				return ret;
+			}
+
+
+			// transposed copy
+			Matrix<T, M, N> Transposed() const
+			{
+				Matrix<T, M, N> ret;
+
+				for (size_t i = 0; i < N; i++)
+					for (size_t j = 0; j < M; j++)
+						ret[j][i] = m_Data[i][j];
+
+				return ret;
+			}
 		};
 
 
