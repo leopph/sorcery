@@ -1,6 +1,7 @@
 #include "window.h"
 
 #include <stdexcept>
+#include <glad/glad.h>
 
 namespace leopph
 {
@@ -9,7 +10,10 @@ namespace leopph
 	Window& Window::CreateWindow(unsigned width = 1280u, unsigned height = 720u, const std::string& title = "Window", bool fullscreen = false)
 	{
 		if (s_Instance == nullptr)
+		{
 			s_Instance = new Window(width, height, title, fullscreen);
+			glfwMakeContextCurrent(s_Instance->m_Window);
+		}
 
 		return *s_Instance;
 	}
@@ -36,5 +40,20 @@ namespace leopph
 	void Window::PollEvents()
 	{
 		glfwPollEvents();
+	}
+
+	void Window::SwapBuffers()
+	{
+		glfwSwapBuffers(m_Window);
+	}
+
+	bool Window::ShouldClose()
+	{
+		return glfwWindowShouldClose(m_Window);
+	}
+
+	void Window::Clear()
+	{
+		glClear(GL_COLOR_BUFFER_BIT);
 	}
 }

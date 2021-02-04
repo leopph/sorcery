@@ -62,7 +62,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)\LeopphEngine\vendor\assimp\include;$(SolutionDir)LeopphEngine\vendor\glm;$(SolutionDir)LeopphEngine\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)LeopphEngine\vendor\assimp\include;$(SolutionDir)LeopphEngine\include;$(SolutionDir)LeopphEngine\vendor\glad\include;$(SolutionDir)LeopphEngine\vendor\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -82,7 +82,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)\LeopphEngine\vendor\assimp\include;$(SolutionDir)LeopphEngine\vendor\glm;$(SolutionDir)LeopphEngine\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)LeopphEngine\vendor\assimp\include;$(SolutionDir)LeopphEngine\include;$(SolutionDir)LeopphEngine\vendor\glad\include;$(SolutionDir)LeopphEngine\vendor\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

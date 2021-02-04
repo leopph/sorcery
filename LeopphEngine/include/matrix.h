@@ -233,6 +233,14 @@ namespace leopph
 
 
 
+		template<class T, size_t N1, size_t M1, size_t N2, size_t M2, std::enable_if_t<M1 == N2 && N1 == M1 && N2 == M2, bool> = false>
+		Matrix<T, N1, M1>& operator*=(Matrix<T, N1, M1>& left, const Matrix<T, N2, M2>& right)
+		{
+			return left = left * right;
+		}
+
+
+
 		template<class T, size_t P, size_t N, size_t M, std::enable_if_t<P == N, bool> = false>
 		Vector<T, M> operator*(const Vector<T, P>& left, const Matrix<T, N, M>& right)
 		{

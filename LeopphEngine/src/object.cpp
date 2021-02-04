@@ -119,21 +119,9 @@ namespace leopph
 		return m_Behaviors;
 	}
 
-	template<class T>
-	Behavior* Object::AddBehavior()
-	{
-		m_Behaviors.emplace(new T);
-	}
-
 	void Object::RemoveBehavior(Behavior* behavior)
 	{
 		m_Behaviors.erase(behavior);
-	}
-
-	template<class T>
-	Behavior* Object::GetBehavior() const
-	{
-		// TODO
 	}
 
 

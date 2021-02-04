@@ -28,9 +28,19 @@ namespace leopph
 		void RemoveModel(size_t index);
 
 		const std::set<Behavior*>& Behaviors() const;
-		template<class T> Behavior* AddBehavior();
+
+		template<class T>
+		Behavior* AddBehavior()
+		{
+			return *m_Behaviors.emplace(new T).first;
+		}
+
 		void RemoveBehavior(Behavior* behavior);
-		template<class T> Behavior* GetBehavior() const;
+		template<class T>
+		Behavior* GetBehavior() const
+		{
+			// TODO
+		}
 
 		const std::string& Name() const;
 		void Name(std::string newName);
