@@ -54,9 +54,9 @@ namespace leopph
 	// Constructor
 	Object::Object():
 		m_Name{ "Object" + std::to_string(s_Instances.size()) },
-		m_Position{ glm::vec3{0.0f, 0.0f, 0.0f} },
-		m_Rotation{ glm::vec3{0.0f, 0.0f, 0.0f} },
-		m_Scale{ glm::vec3{1.0f, 1.0f, 1.0f} } {}
+		m_Position{ Vector3{0.0f, 0.0f, 0.0f} },
+		m_Rotation{ Vector3{0.0f, 0.0f, 0.0f} },
+		m_Scale{ Vector3{1.0f, 1.0f, 1.0f} } {}
 
 
 
@@ -165,32 +165,32 @@ namespace leopph
 		}
 	}
 
-	const glm::vec3& Object::Position() const
+	const Vector3& Object::Position() const
 	{
 		return m_Position;
 	}
 
-	void Object::Position(glm::vec3 newPos)
+	void Object::Position(Vector3 newPos)
 	{
 		m_Position = std::move(newPos);
 	}
 
-	const glm::vec3& Object::Rotation() const
+	const Vector3& Object::Rotation() const
 	{
 		return m_Rotation;
 	}
 
-	void Object::Rotation(glm::vec3 newRot)
+	void Object::Rotation(Vector3 newRot)
 	{
 		m_Rotation = std::move(newRot);
 	}
 
-	const glm::vec3& Object::Scale() const
+	const Vector3& Object::Scale() const
 	{
 		return m_Scale;
 	}
 
-	void Object::Scale(glm::vec3 newScale)
+	void Object::Scale(Vector3 newScale)
 	{
 		m_Scale = std::move(newScale);
 	}

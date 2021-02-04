@@ -3,10 +3,10 @@
 #include "leopphapi.h"
 #include "model.h"
 #include "behavior.h"
+#include "vector.h"
 
 #include <set>
 #include <vector>
-#include <glm/glm.hpp>
 #include <string>
 #include <memory>
 
@@ -35,14 +35,14 @@ namespace leopph
 		const std::string& Name() const;
 		void Name(std::string newName);
 
-		const glm::vec3& Position() const;
-		void Position(glm::vec3 newPos);
+		const Vector3& Position() const;
+		void Position(Vector3 newPos);
 
-		const glm::vec3& Rotation() const;
-		void Rotation(glm::vec3 newRot);
+		const Vector3& Rotation() const;
+		void Rotation(Vector3 newRot);
 
-		const glm::vec3& Scale() const;
-		void Scale(glm::vec3 newScale);
+		const Vector3& Scale() const;
+		void Scale(Vector3 newScale);
 
 	private:
 		struct Deleter
@@ -70,9 +70,9 @@ namespace leopph
 		std::set<Behavior*> m_Behaviors;
 
 		std::string m_Name;
-		glm::vec3 m_Position;
-		glm::vec3 m_Rotation;
-		glm::vec3 m_Scale;
+		Vector3 m_Position;
+		Vector3 m_Rotation;
+		Vector3 m_Scale;
 
 	public:
 		static const std::set<std::unique_ptr<Object, Deleter>, Comparator>& Instances();

@@ -2,6 +2,7 @@
 
 #include <type_traits>
 #include <ostream>
+#include <memory>
 
 
 namespace leopph
@@ -93,6 +94,19 @@ namespace leopph
 
 
 
+			// get stored values as pointer
+			std::unique_ptr<T[]> Data() const
+			{
+				std::unique_ptr<T[]> ret{ new T[N] };
+
+				for (size_t i = 0; i < N; i++)
+					ret[i] = m_Data[i];
+
+				return ret;
+			}
+
+
+
 			// member operators
 			Vector<T, N>& operator=(const Vector<T, N>& other)
 			{
@@ -177,7 +191,7 @@ namespace leopph
 		template<class T, size_t N>
 		Vector<T, N> operator-(const Vector<T, N>& operand)
 		{
-			Vector<T, N> ret{ *this };
+			Vector<T, N> ret{ operand };
 
 			for (size_t i = 0; i < N; i++)
 				ret[i] = -ret[i];

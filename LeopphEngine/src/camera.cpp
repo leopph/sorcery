@@ -1,12 +1,12 @@
 #include "camera.h"
+#include "leopphmath.h"
 
 #include <stdexcept>
-#include <glm/gtc/matrix_transform.hpp>
 
 namespace leopph
 {
 	// POS GETTER
-	const glm::vec3& Camera::Position() const
+	const Vector3& Camera::Position() const
 	{
 		return m_Position;
 	}
@@ -19,10 +19,10 @@ namespace leopph
 		switch (conversion)
 		{
 		case VERTICAL_TO_HORIZONTAL:
-			return glm::degrees(2.0f * std::atan(std::tan(glm::radians(fov) / 2.0f) * m_AspectRatio));
+			return Math::ToDegrees(2.0f * Math::Atan(Math::Tan(Math::ToRadians(fov) / 2.0f) * m_AspectRatio));
 
 		case HORIZONTAL_TO_VERTICAL:
-			return glm::degrees(2.0f * std::atan(std::tan(glm::radians(fov) / 2.0f) / m_AspectRatio));
+			return Math::ToDegrees(2.0f * Math::Atan(Math::Tan(Math::ToRadians(fov) / 2.0f) / m_AspectRatio));
 
 		default:
 			throw std::exception{ "INVALID FOV CONVERSION DIRECTION!" };
@@ -34,25 +34,25 @@ namespace leopph
 	// CALCULATING NEW COORDINATE SYSTEM AXES
 	void Camera::UpdateVectors()
 	{
-		glm::vec3 newFront;
-		newFront.x = static_cast<float>(std::cos(glm::radians(m_Yaw)) * std::cos(glm::radians(m_Pitch)));
-		newFront.y = static_cast<float>(std::sin(glm::radians(m_Pitch)));
-		newFront.z = static_cast<float>(std::sin(glm::radians(m_Yaw)) * std::cos(glm::radians(m_Pitch)));
+		Vector3 newFront;
+		newFront[0] = static_cast<float>(Math::Cos(Math::ToRadians(m_Yaw)) * Math::Cos(Math::ToRadians(m_Pitch)));
+		newFront[1] = static_cast<float>(Math::Sin(Math::ToRadians(m_Pitch)));
+		newFront[2] = static_cast<float>(Math::Sin(Math::ToRadians(m_Yaw)) * Math::Cos(Math::ToRadians(m_Pitch)));
 
-		m_Front = glm::normalize(newFront);
-		m_Right = glm::normalize(glm::cross(m_Front, m_WorldUpwards));
-		m_Upwards = glm::normalize(glm::cross(m_Right, m_Front));
+		m_Front = newFront.Normalized();
+		m_Right = Vector3::Cross(m_Front, m_WorldUpwards).Normalized();
+		m_Upwards = Vector3::Cross(m_Right, m_Front).Normalized();
 	}
 
 
 
 	// YAW AND PITCH SETTERS TO HANDLE CONSTRAINTS
-	void Camera::SetYaw(double newYaw)
+	void Camera::SetYaw(float newYaw)
 	{
 		m_Yaw = newYaw;
 	}
 
-	void Camera::SetPitch(double newPitch)
+	void Camera::SetPitch(float newPitch)
 	{
 		if (newPitch > PITCH_CONSTRAINT)
 			m_Pitch = PITCH_CONSTRAINT;
@@ -164,15 +164,16 @@ namespace leopph
 
 
 	// CAMERA MATRIX CALCULATIONS
-	glm::mat4 Camera::ViewMatrix() const
+	Matrix4 Camera::ViewMatrix() const
 	{
-		return glm::lookAt(m_Position, m_Position + m_Front, m_Upwards);
+		return Matrix4::LookAt(m_Position, m_Front, m_Upwards);
 	}
 
-	glm::mat4 Camera::ProjMatrix() const
+	Matrix4 Camera::ProjMatrix() const
 	{
-		float fov{ glm::radians(ConvertFOV(m_HorizontalFOVDegrees, HORIZONTAL_TO_VERTICAL)) };
-		return glm::perspective(fov, m_AspectRatio, m_NearClip, m_FarClip);
+		float fov{ Math::ToRadians(ConvertFOV(m_HorizontalFOVDegrees, HORIZONTAL_TO_VERTICAL)) };
+		//return glm::perspective(fov, m_AspectRatio, m_NearClip, m_FarClip);
+		return Matrix4{};
 	}
 
 
@@ -183,10 +184,10 @@ namespace leopph
 		switch (direction)
 		{
 		case Movement::FORWARD:
-			m_Position += (m_Front - glm::dot(m_Front, m_WorldUpwards) * m_WorldUpwards) * m_Speed * deltaTime;
+			m_Position += (m_Front - Vector3::Dot(m_Front, m_WorldUpwards) * m_WorldUpwards) * m_Speed * deltaTime;
 			return;
 		case Movement::BACKWARD:
-			m_Position -= (m_Front - glm::dot(m_Front, m_WorldUpwards) * m_WorldUpwards) * m_Speed * deltaTime;
+			m_Position -= (m_Front - Vector3::Dot(m_Front, m_WorldUpwards) * m_WorldUpwards) * m_Speed * deltaTime;
 			return;
 		case Movement::RIGHT:
 			m_Position += m_Right * m_Speed * deltaTime;
@@ -202,7 +203,7 @@ namespace leopph
 		}
 	}
 
-	void Camera::ProcessMouseInput(double offsetX, double offsetY)
+	void Camera::ProcessMouseInput(float offsetX, float offsetY)
 	{
 		offsetX *= m_MouseSens;
 		offsetY *= m_MouseSens;

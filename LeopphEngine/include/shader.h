@@ -1,8 +1,10 @@
 #pragma once
 
+#include "vector.h"
+#include "matrix.h"
+
 #include <filesystem>
 #include <string>
-#include <glm/glm.hpp>
 
 namespace leopph
 {
@@ -24,7 +26,7 @@ namespace leopph
 		void SetUniform(const std::string& name, bool value) const;
 		void SetUniform(const std::string& name, int value) const;
 		void SetUniform(const std::string& name, float value) const;
-		void SetUniform(const std::string& name, const glm::vec3& value) const;
-		void SetUniform(const std::string& name, const glm::mat4& value) const;
+		void SetUniform(const std::string& name, const Vector3& value) const;
+		void SetUniform(const std::string& name, const Matrix4& value) const;
 	};
 }

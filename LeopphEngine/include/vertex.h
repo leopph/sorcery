@@ -1,14 +1,14 @@
 #pragma once
 
-#include <glm/glm.hpp>
+#include "vector.h"
 
 namespace leopph
 {
 	// STRUCT TO REPRESENT A VERTEX
 	struct Vertex
 	{
-		glm::vec3 position;
-		glm::vec3 normal;
-		glm::vec2 textureCoordinates;
+		Vector3 position;
+		Vector3 normal;
+		Vector2 textureCoordinates;
 	};
 }
