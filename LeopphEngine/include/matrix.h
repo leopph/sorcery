@@ -17,17 +17,17 @@ namespace leopph
 
 
 		private:
-			Vector<T, M>* m_Data;
+			Vector<T, M> m_Data[N];
 
 
 		public:
 			// constructors
 			Matrix() :
-				m_Data{ new Vector<T, M>[N] }
+				m_Data{}
 			{}
 
 			Matrix(const T& value) :
-				m_Data{ new Vector<T, M>[N] }
+				m_Data{}
 			{
 				for (size_t i = 0; i < N && i < M; i++)
 					m_Data[i][i] = value;
@@ -35,7 +35,7 @@ namespace leopph
 
 			template<class... T1, std::enable_if_t<std::conjunction_v<std::is_convertible<T1, T>...> && sizeof...(T1) == (N > M ? M : N), bool> = false>
 			Matrix(const T1&... args) :
-				m_Data{ new Vector<T, M>[N] }
+				m_Data{}
 			{
 				// TODO think this over man
 
@@ -47,7 +47,7 @@ namespace leopph
 
 			template<class... T1, std::enable_if_t<std::conjunction_v<std::is_convertible<T1, T>...> && sizeof...(T1) == (N * M), bool> = false>
 			Matrix(const T1&... args) :
-				m_Data{ new Vector<T, M>[N] }
+				m_Data{}
 			{
 				// TODO rework candidate
 
@@ -59,7 +59,7 @@ namespace leopph
 			}
 
 			Matrix(const Matrix<T, N, M>& other) :
-				m_Data{ new Vector<T, M>[N] }
+				m_Data{}
 			{
 				for (size_t i = 0; i < N; i++)
 					m_Data[i] = other.m_Data[i];
@@ -88,13 +88,6 @@ namespace leopph
 					x[2], y[2], z[2], 0,
 					-Vector<T, 3>::Dot(x, position), -Vector<T, 3>::Dot(y, position), -Vector<T, 3>::Dot(z, position), 1
 				};
-			}
-
-
-			// destructor
-			~Matrix()
-			{
-				delete[] m_Data;
 			}
 
 

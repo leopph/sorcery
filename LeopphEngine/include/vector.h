@@ -15,17 +15,17 @@ namespace leopph
 
 
 		private:
-			T* m_Data;
+			T m_Data[N];
 
 
 		public:
 			// constructors
 			Vector() :
-				m_Data{ new T[N]{} }
+				m_Data{}
 			{}
 
 			Vector(const T& value) :
-				m_Data{ new T[N]{} }
+				m_Data{}
 			{
 				for (size_t i = 0; i < N; i++)
 					m_Data[i] = value;
@@ -33,21 +33,14 @@ namespace leopph
 
 			template<class... T1, std::enable_if_t<std::conjunction_v<std::is_convertible<T1, T>...> && sizeof...(T1) == N, bool> = false>
 			Vector(const T1&... args) :
-				m_Data{ new T[N]{ static_cast<T>(args)... } }
+				m_Data{ static_cast<T>(args)... }
 			{}
 
 			Vector(const Vector<T, N>& other) :
-				m_Data{ new T[N] }
+				m_Data{}
 			{
 				for (size_t i = 0; i < N; i++)
 					m_Data[i] = other.m_Data[i];
-			}
-
-
-			// destructor
-			~Vector()
-			{
-				delete[] m_Data;
 			}
 
 
