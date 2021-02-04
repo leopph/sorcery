@@ -11,6 +11,5 @@ using leopph::Matrix4;
 
 void leopph::Init()
 {
-	std::cout << leopph::Math::ToDegrees(2 * leopph::Math::Pi()) << std::endl;
-	std::cout << leopph::Math::ToRadians(180) << std::endl;
+	std::cout << Matrix4::Perspective(57, 1.67f, 1, 100) << std::endl;
 }

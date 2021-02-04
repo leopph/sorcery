@@ -4,6 +4,7 @@
 #include <memory>
 
 #include "vector.h"
+#include "leopphmath.h"
 
 
 
@@ -75,6 +76,7 @@ namespace leopph
 			}
 
 
+			// lookat matrix
 			template<size_t N1 = N, size_t M1 = M, std::enable_if_t<N1 == M1 && N1 == N && M1 == M && N1 == 4, bool> = false>
 			static Matrix<T, 4, 4> LookAt(const Vector<T, 3>& position, const Vector<T, 3>& forward, const Vector<T, 3>& worldUp)
 			{
@@ -90,6 +92,26 @@ namespace leopph
 					  0,    0,    0,			  1
 				};
 			}
+
+
+
+			// perspetive projection matrix
+			template<size_t N1 = N, size_t M1 = M, std::enable_if_t<N1 == M1 && N1 == N && M1 == M && N1 == 4, bool> = false>
+			static Matrix<T, 4, 4> Perspective(const T& fov, const T& aspectRatio, const T& nearClipPlane, const T& farClipPlane)
+			{
+				Matrix<T, 4, 4> ret{};
+
+				T tanHalfFov{ static_cast<T>(Math::Tan(fov / static_cast<T>(2))) };
+
+				ret[0][0] = static_cast<T>(1) / (aspectRatio * tanHalfFov);
+				ret[1][1] = static_cast<T>(1) / tanHalfFov;
+				ret[2][2] = (nearClipPlane + farClipPlane) / (farClipPlane - nearClipPlane);
+				ret[3][2] = static_cast<T>(1);
+				ret[2][3] = (static_cast<T>(2) * farClipPlane * nearClipPlane) / (farClipPlane - nearClipPlane);
+
+				return ret;
+			}
+
 
 
 
