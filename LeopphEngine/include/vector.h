@@ -132,13 +132,7 @@ namespace leopph
 			// normalized copy
 			Vector<T, N> Normalized() const
 			{
-				float length = Length();
-				Vector<T, N> ret{ *this };
-
-				for (size_t i = 0; i < N; i++)
-					ret[i] /= length;
-
-				return ret;
+				return Vector<T, N>{ *this }.Normalize();
 			}
 
 			// in place normalize
@@ -168,9 +162,9 @@ namespace leopph
 			template<size_t N1 = N, std::enable_if_t<N1 == 3 && N1 == N, bool> = false>
 			static Vector<T, N> Cross(const Vector<T, N>& left, const Vector<T, N>& right)
 			{
-				return Vector<T, N> { left[1] * right[2] - left[2] * right[1],
-					left[2] * right[0] - left[0] * right[2],
-					left[0] * right[1] - left[1] * right[0] };
+				return Vector<T, N> {	left[1] * right[2] - left[2] * right[1],
+										left[2] * right[0] - left[0] * right[2],
+										left[0] * right[1] - left[1] * right[0] };
 			}
 		};
 
