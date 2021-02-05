@@ -2,7 +2,7 @@
 
 #include "leopphapi.h"
 
-namespace leopph
+namespace leopph::implementation
 {
 	bool LEOPPHAPI InitGL();
 

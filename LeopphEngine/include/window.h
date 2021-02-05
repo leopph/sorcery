@@ -7,7 +7,7 @@
 
 #include "leopphapi.h"
 
-namespace leopph
+namespace leopph::implementation
 {
 	class LEOPPHAPI Window
 	{

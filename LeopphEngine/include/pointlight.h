@@ -5,22 +5,33 @@
 
 namespace leopph
 {
-	// TODO
-	class LEOPPHAPI PointLight final : private implementation::Light, public Behavior
+#pragma warning(push)
+#pragma warning (disable: 4275)
+
+	// POINT LIGHT SOURCE
+	class LEOPPHAPI PointLight final : public implementation::Light
 	{
 	public:
-		PointLight();
-		virtual ~PointLight() override;
+		using implementation::Light::Light;
 
 		void operator()() {}
 
 
 		float Range() const;
-		void Range(float newRange);
+		
+		float Constant() const;
+		float Linear() const;
+		float Quadratic() const;
+
+		void Constant(float value);
+		void Linear(float value);
+		void Quadratic(float value);
 
 	private:
-		const float m_Constant{ 1.0f };
-		float m_Linear;
-		const float m_Quadratic{ 0.2f };
+		float m_Constant{ 1.0f };
+		float m_Linear{ 0.22f };
+		float m_Quadratic{ 0.2f };
 	};
+
+#pragma warning(pop)
 }

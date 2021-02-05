@@ -3,6 +3,7 @@
 #include "window.h"
 #include "gl.h"
 #include "object.h"
+#include "renderer.h"
 
 namespace leopph
 {
@@ -13,11 +14,11 @@ namespace leopph
 
 int main(int argc, char** argv)
 {
-	leopph::Window& window{ leopph::Window::CreateWindow(1280, 720, "LeopphEngine Application", false) };
+	leopph::implementation::Window& window{ leopph::implementation::Window::CreateWindow(1280, 720, "LeopphEngine Application", false) };
 
-	if (!leopph::InitGL())
+	if (!leopph::implementation::InitGL())
 	{
-		leopph::TerminateGL();
+		leopph::implementation::TerminateGL();
 		return -1;
 	}
 
@@ -29,12 +30,14 @@ int main(int argc, char** argv)
 			for (auto& behavior : object->Behaviors())
 				behavior->operator()();
 
+		leopph::implementation::Renderer::Instance().Render();
+
 		window.Clear();
 		window.PollEvents();
 		window.SwapBuffers();
 	}
 
-	leopph::TerminateGL();
+	leopph::implementation::TerminateGL();
 
 	return 0;
 }

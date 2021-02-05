@@ -14,13 +14,13 @@ namespace leopph
 	class LEOPPHAPI Model
 	{
 	private:
-		std::vector<Mesh> m_Meshes;
+		std::vector<implementation::Mesh> m_Meshes;
 		std::filesystem::path m_Directory;
-		std::vector<Texture> m_CachedTextures;
+		std::vector<implementation::Texture> m_CachedTextures;
 
 		void ProcessNode(aiNode* node, const aiScene* scene);
-		Mesh ProcessMesh(aiMesh* mesh, const aiScene* scene);
-		std::vector<Texture> LoadTexturesByType(aiMaterial* material, aiTextureType assimpType, Texture::TextureType abstractType);
+		implementation::Mesh ProcessMesh(aiMesh* mesh, const aiScene* scene);
+		std::vector<implementation::Texture> LoadTexturesByType(aiMaterial* material, aiTextureType assimpType, implementation::Texture::TextureType abstractType);
 
 	public:
 		Model(const std::filesystem::path& path);
@@ -33,7 +33,7 @@ namespace leopph
 
 		bool operator==(const Model& other) const;
 
-		void Draw(const Shader& shader) const;
+		void Draw(const implementation::Shader& shader) const;
 	};
 
 #pragma warning(pop)

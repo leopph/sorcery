@@ -4,7 +4,7 @@
 
 #include "gl.h"
 
-namespace leopph
+namespace leopph::implementation
 {
 	bool InitGL()
 	{

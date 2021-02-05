@@ -3,7 +3,7 @@
 #include <stdexcept>
 #include <glad/glad.h>
 
-namespace leopph
+namespace leopph::implementation
 {
 	Window* Window::s_Instance{ nullptr };
 

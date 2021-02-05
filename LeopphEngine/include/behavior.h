@@ -19,5 +19,7 @@ namespace leopph
 
 		// THIS IS CALLED EVERY FRAME FOR ALL BEHAVIORS
 		virtual void operator()() = 0;
+
+		Object& OwningObject();
 	};
 }

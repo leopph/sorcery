@@ -4,7 +4,7 @@
 #include <stb_image.h>
 #include <stdexcept>
 
-namespace leopph
+namespace leopph::implementation
 {
 	// INIT REF COUNTER
 	std::unordered_map<unsigned, size_t> Texture::s_Instances{};

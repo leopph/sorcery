@@ -1,118 +1,47 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Source Files">
-      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
-      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
-    </Filter>
-    <Filter Include="Header Files">
-      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
-      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
-    </Filter>
-    <Filter Include="Resource Files">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
-    </Filter>
+    <ClCompile Include="src\behavior.cpp" />
+    <ClCompile Include="src\camera.cpp" />
+    <ClCompile Include="src\gl.cpp" />
+    <ClCompile Include="src\leopphmath.cpp" />
+    <ClCompile Include="src\light.cpp" />
+    <ClCompile Include="src\mesh.cpp" />
+    <ClCompile Include="src\model.cpp" />
+    <ClCompile Include="src\object.cpp" />
+    <ClCompile Include="src\shader.cpp" />
+    <ClCompile Include="src\texture.cpp" />
+    <ClCompile Include="src\timekeeping.cpp" />
+    <ClCompile Include="src\window.cpp" />
+    <ClCompile Include="vendor\glad\src\glad.c" />
+    <ClCompile Include="vendor\stb_image\stb_image.cpp" />
+    <ClCompile Include="src\pointlight.cpp" />
+    <ClCompile Include="src\renderer.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\camera.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\mesh.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\model.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\shader.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\timekeeping.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\object.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\window.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\texture.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="vendor\glad\src\glad.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="vendor\stb_image\stb_image.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\leopphmath.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\gl.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-<<<<<<< HEAD
-    <ClCompile Include="src\behavior.cpp">
-=======
-    <ClCompile Include="src\light.cpp">
->>>>>>> 058db2b7d8a05bd132d518380f10bbc6b89d32ae
-      <Filter>Source Files</Filter>
-    </ClCompile>
+    <ClInclude Include="include\behavior.h" />
+    <ClInclude Include="include\camera.h" />
+    <ClInclude Include="include\entry.h" />
+    <ClInclude Include="include\gl.h" />
+    <ClInclude Include="include\leopphapi.h" />
+    <ClInclude Include="include\leopphmath.h" />
+    <ClInclude Include="include\light.h" />
+    <ClInclude Include="include\matrix.h" />
+    <ClInclude Include="include\mesh.h" />
+    <ClInclude Include="include\model.h" />
+    <ClInclude Include="include\object.h" />
+    <ClInclude Include="include\pointlight.h" />
+    <ClInclude Include="include\shader.h" />
+    <ClInclude Include="include\texture.h" />
+    <ClInclude Include="include\timekeeping.h" />
+    <ClInclude Include="include\vector.h" />
+    <ClInclude Include="include\vertex.h" />
+    <ClInclude Include="include\window.h" />
+    <ClInclude Include="include\dirlight.h" />
+    <ClInclude Include="include\renderer.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\camera.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\vertex.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\texture.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\mesh.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\shader.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\model.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\timekeeping.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\object.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\window.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\pointlight.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\leopphapi.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\entry.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\behavior.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\vector.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\matrix.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\leopphmath.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\gl.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\light.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
+    <None Include="shaders\fragment.frag" />
+    <None Include="shaders\vertex.vert" />
   </ItemGroup>
 </Project>

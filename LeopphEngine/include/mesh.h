@@ -7,7 +7,7 @@
 #include <vector>
 #include <unordered_map>
 
-namespace leopph
+namespace leopph::implementation
 {
 	// CLASS TO REPRESENT A MINIMAL DRAWABLE OBJECT
 	class Mesh

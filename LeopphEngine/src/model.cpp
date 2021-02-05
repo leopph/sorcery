@@ -6,6 +6,11 @@
 #include <glad/glad.h>
 #include <stb_image.h>
 
+using leopph::implementation::Shader;
+using leopph::implementation::Texture;
+using leopph::implementation::Vertex;
+using leopph::implementation::Mesh;
+
 namespace leopph
 {
 	Model::Model(const std::filesystem::path& path)

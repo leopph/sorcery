@@ -100,6 +100,7 @@
   <ItemGroup>
     <ClInclude Include="include\behavior.h" />
     <ClInclude Include="include\camera.h" />
+    <ClInclude Include="include\dirlight.h" />
     <ClInclude Include="include\entry.h" />
     <ClInclude Include="include\gl.h" />
     <ClInclude Include="include\leopphapi.h" />
@@ -110,6 +111,7 @@
     <ClInclude Include="include\model.h" />
     <ClInclude Include="include\object.h" />
     <ClInclude Include="include\pointlight.h" />
+    <ClInclude Include="include\renderer.h" />
     <ClInclude Include="include\shader.h" />
     <ClInclude Include="include\texture.h" />
     <ClInclude Include="include\timekeeping.h" />
@@ -126,12 +128,18 @@
     <ClCompile Include="src\mesh.cpp" />
     <ClCompile Include="src\model.cpp" />
     <ClCompile Include="src\object.cpp" />
+    <ClCompile Include="src\pointlight.cpp" />
+    <ClCompile Include="src\renderer.cpp" />
     <ClCompile Include="src\shader.cpp" />
     <ClCompile Include="src\texture.cpp" />
     <ClCompile Include="src\timekeeping.cpp" />
     <ClCompile Include="src\window.cpp" />
     <ClCompile Include="vendor\glad\src\glad.c" />
     <ClCompile Include="vendor\stb_image\stb_image.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="shaders\fragment.frag" />
+    <None Include="shaders\vertex.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

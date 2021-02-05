@@ -2,7 +2,7 @@
 
 #include <glad/glad.h>
 
-namespace leopph
+namespace leopph::implementation
 {
 	// INIT REF COUNTER
 	std::unordered_map<unsigned, size_t> Mesh::s_Instances{};

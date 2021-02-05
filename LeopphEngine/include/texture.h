@@ -3,7 +3,7 @@
 #include <filesystem>
 #include <unordered_map>
 
-namespace leopph
+namespace leopph::implementation
 {
 	// CLASS TO REPRESENT A LOADED TEXTURE
 	class Texture

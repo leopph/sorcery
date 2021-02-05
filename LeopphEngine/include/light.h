@@ -2,28 +2,30 @@
 
 #include <set>
 
-namespace leopph
+#include "behavior.h"
+
+namespace leopph::implementation
 {
-	namespace implementation
+	class Light : public Behavior
 	{
-		class Light
-		{
-		public:
-			virtual ~Light() = 0;
+	public:
+		using Behavior::Behavior;
+		virtual ~Light() = 0;
 
-			static const std::set<Light*>& PointLights();
-			static Light* DirectionalLight();
+		virtual void operator()() = 0;
 
-		protected:
-			static void RegisterPointLight(Light* light);
-			static void RegisterDirectionalLight(Light* light);
+		static const std::set<Light*>& PointLights();
+		static Light* DirectionalLight();
 
-			static void UnregisterPointLight(Light* light);
-			static void UnregisterDirectionalLight(Light* light);
+	protected:
+		static void RegisterPointLight(Light* light);
+		static void RegisterDirectionalLight(Light* light);
 
-		private:
-			static std::set<Light*> s_PointLights;
-			static Light* s_DirectionalLight;
-		};
-	}
+		static void UnregisterPointLight(Light* light);
+		static void UnregisterDirectionalLight(Light* light);
+
+	private:
+		static std::set<Light*> s_PointLights;
+		static Light* s_DirectionalLight;
+	};
 }

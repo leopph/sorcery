@@ -5,6 +5,7 @@
 #include <leopphmath.h>
 #include <object.h>
 #include <behavior.h>
+#include <pointlight.h>
 
 using leopph::Vector3;
 using leopph::Matrix3;
@@ -33,4 +34,7 @@ void leopph::Init()
 {
 	Object* object = leopph::Object::Create();
 	object->AddBehavior<Print>();
+
+	Object* light1 = leopph::Object::Create();
+	light1->AddBehavior<leopph::PointLight>();
 }
