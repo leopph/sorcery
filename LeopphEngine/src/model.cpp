@@ -121,7 +121,7 @@ namespace leopph
 			// if already loaded, reference that one
 			for (unsigned j = 0; j < m_CachedTextures.size(); j++)
 			{
-				if (m_CachedTextures[j] == location.C_Str())
+				if (m_CachedTextures[j] == m_Directory / location.C_Str())
 				{
 					textures.push_back(m_CachedTextures[j]);
 					isAlreadyLoaded = true;

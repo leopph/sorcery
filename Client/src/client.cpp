@@ -31,11 +31,21 @@ public:
 
 void leopph::Init()
 {
-	Object* tetej = Object::Create();
-	tetej->AddModel(Model{ "models/samy/tetej/tetej_spec.obj" });
-	tetej->Position({ 0, -5, 0 });
+	Object* backpack = Object::Create();
+	std::cout << "backpack obj created" << std::endl;
+
+	backpack->AddModel(Model{ "models/backpack/backpack.obj" });
+	std::cout << "backpack model added" << std::endl;
+
+	backpack->Position({ 0, 0, -5 });
+	std::cout << "backpack pos set" << std::endl;
 
 	Object* light = Object::Create();
+	std::cout << "light obj created" << std::endl;
+
 	light->AddBehavior<PointLight>();
-	light->Position({ 0, -5, 0 });
+	std::cout << "light comp added" << std::endl;
+
+	light->Position({ 0, 0, -3 });
+	std::cout << "light pos set" << std::endl;
 }
