@@ -7,7 +7,7 @@
 #include "camera.h"
 #include "matrix.h"
 #include <string>
-#include "glad/glad.h"
+#include <glad/glad.h>
 
 using std::size_t;
 
@@ -62,25 +62,26 @@ namespace leopph::implementation
 		for (size_t i = 0; i < MAX_POINT_LIGHTS; i++)
 			if (pointLights[i] != nullptr)
 			{
-				lightNumber++;
+				shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].position", pointLights[i]->OwningObject().Position());
+				shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].ambient", pointLights[i]->Ambient());
+				shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].diffuse", pointLights[i]->Diffuse());
+				shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].specular", pointLights[i]->Specular());
+				shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].constant", pointLights[i]->Constant());
+				shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].linear", pointLights[i]->Linear());
+				shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].quadratic", pointLights[i]->Quadratic());
 
-				shader.SetUniform("pointLights[" + std::to_string(i) + "].position", pointLights[i]->OwningObject().Position());
-				shader.SetUniform("pointLights[" + std::to_string(i) + "].ambient", pointLights[i]->Ambient());
-				shader.SetUniform("pointLights[" + std::to_string(i) + "].diffuse", pointLights[i]->Diffuse());
-				shader.SetUniform("pointLights[" + std::to_string(i) + "].specular", pointLights[i]->Specular());
-				shader.SetUniform("pointLights[" + std::to_string(i) + "].constant", pointLights[i]->Constant());
-				shader.SetUniform("pointLights[" + std::to_string(i) + "].linear", pointLights[i]->Linear());
-				shader.SetUniform("pointLights[" + std::to_string(i) + "].quadratic", pointLights[i]->Quadratic());
+				lightNumber++;
 			}
 
 		shader.SetUniform("lightNumber", static_cast<int>(lightNumber));
+		shader.SetUniform("viewPosition", Camera::Instance().Position());
 		shader.SetUniform("view", Camera::Instance().ViewMatrix());
 		shader.SetUniform("proj", Camera::Instance().ProjMatrix());
 
 		for (const auto& object : Object::Instances())
 			for (const auto& model : object->Models())
 			{
-				Matrix4 modelMatrix = Matrix4::Identity();
+				Matrix4 modelMatrix{ 1.0f };
 
 				// TODO
 				modelMatrix *= Matrix4::Translate(object->Position());

@@ -64,5 +64,5 @@ void main()
 	for (int i = 0; i < lightNumber; i++)
 		colorSum += CalculatePointLight(pointLights[i], norm, fragmentPosition, viewDirection, diffuseColor, specularColor);
 
-    fragmentColor = vec4(colorSum, 1.0f);
+   fragmentColor = vec4(colorSum, 1.0f);
 }

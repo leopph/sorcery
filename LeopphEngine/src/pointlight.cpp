@@ -2,6 +2,13 @@
 
 namespace leopph
 {
+	PointLight::PointLight(Object& object) :
+		Light{ object }
+	{
+		RegisterPointLight(this);
+	}
+
+
 	float PointLight::Range() const
 	{
 		// TODO

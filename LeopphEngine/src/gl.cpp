@@ -15,4 +15,11 @@ namespace leopph::implementation
 	{
 		glfwTerminate();
 	}
+
+	void GetErrorGL()
+	{
+		GLenum error;
+		while ((error = glGetError()) != GL_NO_ERROR)
+			std::cout << error << std::endl;
+	}
 }

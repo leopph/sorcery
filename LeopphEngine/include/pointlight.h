@@ -14,7 +14,7 @@ namespace leopph
 	class LEOPPHAPI PointLight final : public implementation::Light
 	{
 	public:
-		using implementation::Light::Light;
+		PointLight(Object& object);
 
 		void operator()() {}
 

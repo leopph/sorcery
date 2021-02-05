@@ -2,7 +2,6 @@
 
 #include <type_traits>
 #include <ostream>
-#include <memory>
 
 
 namespace leopph::implementation
@@ -93,14 +92,14 @@ namespace leopph::implementation
 
 
 		// get stored values as pointer
-		std::unique_ptr<T[]> Data() const
+		const T* Data() const
 		{
-			std::unique_ptr<T[]> ret{ new T[N] };
+			return &m_Data[0];
+		}
 
-			for (size_t i = 0; i < N; i++)
-				ret[i] = m_Data[i];
-
-			return ret;
+		T* Data()
+		{
+			return const_cast<T*>(const_cast<const Vector<T, N>*>(this)->Data());
 		}
 
 

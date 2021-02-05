@@ -1,4 +1,5 @@
 #include "window.h"
+#include "camera.h"
 
 #include <stdexcept>
 #include <glad/glad.h>
@@ -13,6 +14,8 @@ namespace leopph::implementation
 		{
 			s_Instance = new Window(width, height, title, fullscreen);
 			glfwMakeContextCurrent(s_Instance->m_Window);
+
+			Camera::Instance().AspectRatio(s_Instance->m_Width, s_Instance->m_Height);
 		}
 
 		return *s_Instance;
@@ -23,6 +26,11 @@ namespace leopph::implementation
 	{
 		if (!glfwInit())
 			throw std::exception{};
+
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+		glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 		GLFWmonitor* monitor{ nullptr };
 

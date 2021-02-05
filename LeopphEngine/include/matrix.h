@@ -1,7 +1,6 @@
 #pragma once
 
 #include <type_traits>
-#include <memory>
 
 #include "vector.h"
 #include "leopphmath.h"
@@ -129,15 +128,14 @@ namespace leopph::implementation
 
 
 		// get stored data as pointer
-		std::unique_ptr<T[]> Data() const
+		const T* Data() const
 		{
-			std::unique_ptr<T[]> ret{ new T[N * M] };
+			return m_Data[0].Data();
+		}
 
-			for (size_t i = 0; i < N; i++)
-				for (size_t j = 0; j < M; j++)
-					ret[i * j + j] = m_Data[i][j];
-
-			return ret;
+		T* Data()
+		{
+			return const_cast<T*>(const_cast<const Matrix<T, N, M>*>(this)->Data());
 		}
 
 
@@ -200,6 +198,20 @@ namespace leopph::implementation
 					ret[j][i] = m_Data[i][j];
 
 			return ret;
+		}
+
+
+		// in place transpose, only for square
+		template<size_t N1 = N, size_t M1 = M, std::enable_if_t<N1 == N && M1 == M && N1 == M1, bool> = false>
+		Matrix<T, N, M> Transpose()
+		{
+			Matrix<T, N, M> transposed = Transposed();
+
+			for (size_t i = 0; i < N; i++)
+				for (size_t j = 0; j < M; j++)
+					m_Data[i][j] = transposed[i][j];
+
+			return *this;
 		}
 	};
 

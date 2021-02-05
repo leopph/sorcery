@@ -23,29 +23,26 @@ public:
 
 	void operator()()
 	{
-		std::cout << Matrix4::Translate(Vector3{ 1, 2, 3 }) << std::endl;
+		Matrix3 m{ 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+		m.Transpose();
+
+		for (size_t i = 0; i < 9; i++)
+			std::cout << m.Data()[i] << " ";
+		std::cout << std::endl;
 	}
 };
-
 
 
 void leopph::Init()
 {
 	Object* backpack = Object::Create();
-	std::cout << "backpack obj created" << std::endl;
-
 	backpack->AddModel(Model{ "models/backpack/backpack.obj" });
-	std::cout << "backpack model added" << std::endl;
-
 	backpack->Position({ 0, 0, -5 });
-	std::cout << "backpack pos set" << std::endl;
 
 	Object* light = Object::Create();
-	std::cout << "light obj created" << std::endl;
-
 	light->AddBehavior<PointLight>();
-	std::cout << "light comp added" << std::endl;
+	light->Position({ 0, 0, -1 });
 
-	light->Position({ 0, 0, -3 });
-	std::cout << "light pos set" << std::endl;
+	//Object* tmp = Object::Create();
+	//tmp->AddBehavior<Print>();
 }
