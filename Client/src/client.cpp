@@ -6,35 +6,22 @@
 #include <object.h>
 #include <behavior.h>
 #include <pointlight.h>
+#include <model.h>
 
 using leopph::Vector3;
 using leopph::Matrix3;
 using leopph::Matrix4;
 using leopph::Object;
 using leopph::Behavior;
+using leopph::Model;
 
-
-class Print : public Behavior
-{
-private:
-	Matrix3 m_Mat{ 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-
-public:
-	using Behavior::Behavior;
-
-	void operator()()
-	{
-		m_Mat *= m_Mat.Transposed();
-		std::cout << m_Mat << std::endl;
-	}
-};
 
 
 void leopph::Init()
 {
-	Object* object = leopph::Object::Create();
-	object->AddBehavior<Print>();
+	Object* tetej = Object::Create();
+	tetej->AddModel(Model{ "models/samy/tetej/tetej_spec.obj" });
 
-	Object* light1 = leopph::Object::Create();
-	light1->AddBehavior<leopph::PointLight>();
+	Object* light = Object::Create();
+	light->AddBehavior<PointLight>();
 }

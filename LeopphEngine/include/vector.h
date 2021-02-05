@@ -178,6 +178,18 @@ namespace leopph::implementation
 				left[2] * right[0] - left[0] * right[2],
 				left[0] * right[1] - left[1] * right[0] };
 		}
+
+
+		// distance
+		static float Distance(const Vector<T, N>& left, const Vector<T, N>& right)
+		{
+			T sum{};
+
+			for (size_t i = 0; i < N; i++)
+				sum += static_cast<T>(std::powf(static_cast<float>(left[i] - right[i]), 2));
+
+			return static_cast<T>(std::sqrt(sum));
+		}
 	};
 
 

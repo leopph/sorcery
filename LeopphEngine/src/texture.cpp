@@ -63,10 +63,11 @@ namespace leopph::implementation
 
 	Texture::~Texture()
 	{
-		s_Instances[m_ID]--;
+		// TODO THIS CRASHES AT EXIT
+		/*s_Instances[m_ID]--;
 
 		if (s_Instances[m_ID] == 0)
-			glDeleteTextures(1, &m_ID);
+			glDeleteTextures(1, &m_ID);*/
 	}
 
 

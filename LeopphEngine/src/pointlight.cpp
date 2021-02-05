@@ -26,6 +26,22 @@ namespace leopph
 	}
 
 
+	const Vector3& PointLight::Ambient() const
+	{
+		return m_Ambient;
+	}
+
+	const Vector3& PointLight::Diffuse() const
+	{
+		return m_Diffuse;
+	}
+
+	const Vector3& PointLight::Specular() const
+	{
+		return m_Specular;
+	}
+
+
 
 	void PointLight::Constant(float value)
 	{
@@ -40,5 +56,21 @@ namespace leopph
 	void PointLight::Quadratic(float value)
 	{
 		m_Quadratic = value;
+	}
+
+
+	void PointLight::Ambient(const Vector3& value)
+	{
+		m_Ambient = value;
+	}
+
+	void PointLight::Diffuse(const Vector3& value)
+	{
+		m_Diffuse = value;
+	}
+
+	void PointLight::Specular(const Vector3& value)
+	{
+		m_Specular = value;
 	}
 }

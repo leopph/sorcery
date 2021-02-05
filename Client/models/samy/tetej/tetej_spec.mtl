@@ -1,0 +1,14 @@
+# Blender MTL File: 'bl2_löff.blend'
+# Material Count: 1
+
+newmtl kő
+Ns 225.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.100481 0.100481 0.100481
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd rough_block_wall_diff_2k.png
+map_Ks spec.png

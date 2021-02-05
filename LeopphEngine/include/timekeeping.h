@@ -2,9 +2,14 @@
 
 #include <chrono>
 
+#include "leopphapi.h"
+
 namespace leopph
 {
-	class Time
+#pragma warning (push)
+#pragma warning (disable: 4251)
+
+	class LEOPPHAPI Time
 	{
 	public:
 		static void OnFrameComplete();
@@ -18,4 +23,6 @@ namespace leopph
 		static TimePoint s_LastFrameCompletionTime;
 		static Seconds s_LastFrameDeltaTime;
 	};
+
+#pragma warning (pop)
 }

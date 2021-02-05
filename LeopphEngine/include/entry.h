@@ -4,6 +4,7 @@
 #include "gl.h"
 #include "object.h"
 #include "renderer.h"
+#include "timekeeping.h"
 
 namespace leopph
 {
@@ -30,11 +31,14 @@ int main(int argc, char** argv)
 			for (auto& behavior : object->Behaviors())
 				behavior->operator()();
 
+		window.Clear();
+
 		leopph::implementation::Renderer::Instance().Render();
 
-		window.Clear();
-		window.PollEvents();
+		leopph::Time::OnFrameComplete();
+
 		window.SwapBuffers();
+		window.PollEvents();
 	}
 
 	leopph::implementation::TerminateGL();

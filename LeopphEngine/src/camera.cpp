@@ -172,8 +172,7 @@ namespace leopph
 	Matrix4 Camera::ProjMatrix() const
 	{
 		float fov{ Math::ToRadians(ConvertFOV(m_HorizontalFOVDegrees, HORIZONTAL_TO_VERTICAL)) };
-		//return glm::perspective(fov, m_AspectRatio, m_NearClip, m_FarClip);
-		return Matrix4{};
+		return Matrix4::Perspective(fov, m_AspectRatio, m_NearClip, m_FarClip);
 	}
 
 

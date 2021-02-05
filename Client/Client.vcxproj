@@ -70,7 +70,9 @@
       <AdditionalDependencies>leopph.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(SolutionDir)out\LeopphEngine\$(Configuration)_$(Platform)\*.dll" "$(OutDir)" /d /y</Command>
+      <Command>xcopy "$(SolutionDir)out\LeopphEngine\$(Configuration)_$(Platform)\*.dll" "$(OutDir)" /d /y
+xcopy "$(SolutionDir)LeopphEngine\shaders\*" "$(OutDir)shaders\" /d /y /s
+xcopy "$(ProjectDir)models" "$(OutDir)models\" /d /y /s</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -92,7 +94,9 @@
       <AdditionalDependencies>leopph.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(SolutionDir)out\LeopphEngine\$(Configuration)_$(Platform)\*.dll" "$(OutDir)" /d /y</Command>
+      <Command>xcopy "$(SolutionDir)out\LeopphEngine\$(Configuration)_$(Platform)\*.dll" "$(OutDir)" /d /y
+xcopy "$(SolutionDir)LeopphEngine\shaders\*" "$(OutDir)shaders\" /d /y /s
+xcopy "$(ProjectDir)models" "$(OutDir)models\" /d /y /s</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
