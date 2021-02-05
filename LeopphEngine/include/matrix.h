@@ -112,6 +112,20 @@ namespace leopph::implementation
 
 
 
+		// translation matrix
+		template<size_t N1 = N, size_t M1 = M, std::enable_if_t<N1 == M1 && N1 == N && M1 == M && N1 == 4, bool> = false>
+		static Matrix<T, 4, 4> Translate(const Vector<T, 3>& vector)
+		{
+			Matrix<T, 4, 4> ret = Identity();
+
+			for (size_t i = 0; i < 3; i++)
+				ret[i][3] = vector[i];
+
+			return ret;
+		}
+
+
+
 
 
 		// get stored data as pointer

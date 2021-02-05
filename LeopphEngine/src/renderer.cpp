@@ -7,11 +7,18 @@
 #include "camera.h"
 #include "matrix.h"
 #include <string>
+#include "glad/glad.h"
 
 using std::size_t;
 
 namespace leopph::implementation
 {
+	Renderer::Renderer()
+	{
+		glEnable(GL_DEPTH_TEST);
+	}
+
+
 	Renderer& Renderer::Instance()
 	{
 		static Renderer instance;
@@ -76,7 +83,7 @@ namespace leopph::implementation
 				Matrix4 modelMatrix = Matrix4::Identity();
 
 				// TODO
-				// translate by object pos
+				modelMatrix *= Matrix4::Translate(object->Position());
 				// rotate by object rotation
 				// scale by object scale
 

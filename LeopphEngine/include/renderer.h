@@ -9,7 +9,7 @@ namespace leopph::implementation
 	class LEOPPHAPI Renderer
 	{
 	private:
-		Renderer() = default;
+		Renderer();
 
 		const static std::size_t MAX_POINT_LIGHTS = 4;
 
