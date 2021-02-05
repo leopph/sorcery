@@ -104,6 +104,7 @@
     <ClInclude Include="include\gl.h" />
     <ClInclude Include="include\leopphapi.h" />
     <ClInclude Include="include\leopphmath.h" />
+    <ClInclude Include="include\light.h" />
     <ClInclude Include="include\matrix.h" />
     <ClInclude Include="include\mesh.h" />
     <ClInclude Include="include\model.h" />
@@ -120,6 +121,7 @@
     <ClCompile Include="src\camera.cpp" />
     <ClCompile Include="src\gl.cpp" />
     <ClCompile Include="src\leopphmath.cpp" />
+    <ClCompile Include="src\light.cpp" />
     <ClCompile Include="src\mesh.cpp" />
     <ClCompile Include="src\model.cpp" />
     <ClCompile Include="src\object.cpp" />
