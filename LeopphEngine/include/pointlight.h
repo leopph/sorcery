@@ -1,14 +1,20 @@
 #pragma once
 
-#include "leopphapi.h"
-#include "object.h"
+#include "light.h"
+#include "behavior.h"
 
 namespace leopph
 {
 	// TODO
-	class LEOPPHAPI PointLight
+	class LEOPPHAPI PointLight final : private implementation::Light, public Behavior
 	{
 	public:
+		PointLight();
+		virtual ~PointLight() override;
+
+		void operator()() {}
+
+
 		float Range() const;
 		void Range(float newRange);
 

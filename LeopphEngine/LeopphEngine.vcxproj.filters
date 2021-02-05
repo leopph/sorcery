@@ -51,7 +51,11 @@
     <ClCompile Include="src\gl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+<<<<<<< HEAD
     <ClCompile Include="src\behavior.cpp">
+=======
+    <ClCompile Include="src\light.cpp">
+>>>>>>> 058db2b7d8a05bd132d518380f10bbc6b89d32ae
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -105,6 +109,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\gl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\light.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
