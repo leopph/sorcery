@@ -32,7 +32,7 @@ namespace leopph
 		template<class T>
 		Behavior* AddBehavior()
 		{
-			return *m_Behaviors.emplace(new T).first;
+			return *m_Behaviors.emplace(new T{ *this }).first;
 		}
 
 		void RemoveBehavior(Behavior* behavior);

@@ -19,6 +19,8 @@ private:
 	Matrix3 m_Mat{ 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 
 public:
+	using Behavior::Behavior;
+
 	void operator()()
 	{
 		m_Mat *= m_Mat.Transposed();

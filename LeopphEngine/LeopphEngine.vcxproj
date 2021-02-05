@@ -117,6 +117,7 @@
     <ClInclude Include="include\window.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\behavior.cpp" />
     <ClCompile Include="src\camera.cpp" />
     <ClCompile Include="src\gl.cpp" />
     <ClCompile Include="src\leopphmath.cpp" />
