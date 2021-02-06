@@ -2,9 +2,6 @@
 	path = LeopphEngine/vendor/assimp
 	url = https://github.com/assimp/assimp.git
 	ignore = dirty
-[submodule "LeopphEngine/vendor/glm"]
-	path = LeopphEngine/vendor/glm
-	url = https://github.com/g-truc/glm.git
 [submodule "LeopphEngine/vendor/glfw"]
 	path = LeopphEngine/vendor/glfw
 	url = https://github.com/glfw/glfw.git
