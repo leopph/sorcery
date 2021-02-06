@@ -19,8 +19,8 @@ out vec2 textureCoords;
 
 void main()
 {
-    gl_Position = proj * view * model * vec4(inPosition, 1.0);
-    fragmentPosition = vec3(model * vec4(inPosition, 1.0f));
-    normal = mat3(normalMatrix) * inNormal;
+    gl_Position = vec4(inPosition, 1.0) * model * view * proj;
+    fragmentPosition = vec3(vec4(inPosition, 1.0f) * model);
+    normal = inNormal * mat3(normalMatrix);
     textureCoords = inTextureCoords;
 }

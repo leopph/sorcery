@@ -7,7 +7,11 @@
 #include <behavior.h>
 #include <pointlight.h>
 #include <model.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
+using leopph::Vector4;
 using leopph::Vector3;
 using leopph::Matrix3;
 using leopph::Matrix4;
@@ -16,33 +20,25 @@ using leopph::Behavior;
 using leopph::Model;
 
 
-class Print : public Behavior
-{
-public:
-	using Behavior::Behavior;
-
-	void operator()()
-	{
-		Matrix3 m{ 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-		m.Transpose();
-
-		for (size_t i = 0; i < 9; i++)
-			std::cout << m.Data()[i] << " ";
-		std::cout << std::endl;
-	}
-};
-
-
 void leopph::Init()
 {
-	Object* backpack = Object::Create();
+	/*Object* backpack = Object::Create();
 	backpack->AddModel(Model{ "models/backpack/backpack.obj" });
 	backpack->Position({ 0, 0, -5 });
 
 	Object* light = Object::Create();
 	light->AddBehavior<PointLight>();
-	light->Position({ 0, 0, -1 });
+	light->Position({ 0, 0, -1 });*/
 
-	//Object* tmp = Object::Create();
-	//tmp->AddBehavior<Print>();
+	auto glm = glm::perspective(90.0f, 1.6f, 1.0f, 100.0f);
+	auto glmp = glm::value_ptr(glm);
+	for (size_t i = 0; i < 16; i++)
+		std::cout << glmp[i] << ", ";
+	std::cout << std::endl;
+
+	auto leopph = Matrix4::Perspective(90.0f, 1.6f, 1.0f, 100.0f);
+	auto leopphp = leopph.Data();
+	for (size_t i = 0; i < 16; i++)
+		std::cout << leopphp[i] << ", ";
+	std::cout << std::endl;
 }
