@@ -1,8 +1,6 @@
 #pragma once
 
 #include <type_traits>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 
 #include "vector.h"
 #include "leopphmath.h"
@@ -77,19 +75,29 @@ namespace leopph::implementation
 
 		// lookat matrix
 		template<size_t N1 = N, size_t M1 = M, std::enable_if_t<N1 == M1 && N1 == N && M1 == M && N1 == 4, bool> = false>
-		static Matrix<T, 4, 4> LookAt(const Vector<T, 3>& position, const Vector<T, 3>& forward, const Vector<T, 3>& worldUp)
+		static Matrix<T, 4, 4> LookAt(const Vector<T, 3>& position, const Vector<T, 3>& target, const Vector<T, 3>& worldUp)
 		{
-			Vector<T, 3> z{ forward.Normalized() };
+			Vector<T, 3> z{ (position - target).Normalized() };
 			Vector<T, 3> x{ Vector<T, 3>::Cross(worldUp, z) };
 			Vector<T, 3> y{ Vector<T, 3>::Cross(z, x) };
 
-			return Matrix<T, 4, 4>
+			Matrix<T, 4, 4> ori
 			{
-				x[0], x[1], x[2], -Vector<T, 3>::Dot(x, position),
-					y[0], y[1], y[2], -Vector<T, 3>::Dot(y, position),
-					z[0], z[1], z[2], -Vector<T, 3>::Dot(z, position),
-					0, 0, 0, 1
+				x[0], x[1], x[2], 0,
+				y[0], y[1], y[2], 0,
+				z[0], z[1], z[2], 0,
+				0,     0,     0,  1
 			};
+
+			Matrix<T, 4, 4> trans
+			{
+				1, 0, 0, 0,
+				0, 1, 0, 0,
+				0, 0, 1, 0,
+				-position[0], -position[1], -position[2], 1
+			};
+
+			return trans * ori;
 		}
 
 
@@ -104,9 +112,9 @@ namespace leopph::implementation
 
 			ret[0][0] = static_cast<T>(1) / (aspectRatio * tanHalfFov);
 			ret[1][1] = static_cast<T>(1) / tanHalfFov;
-			ret[2][2] = (nearClipPlane + farClipPlane) / (farClipPlane - nearClipPlane);
-			ret[3][2] = static_cast<T>(1);
-			ret[2][3] = (static_cast<T>(2) * farClipPlane * nearClipPlane) / (farClipPlane - nearClipPlane);
+			ret[2][2] = - (nearClipPlane + farClipPlane) / (farClipPlane - nearClipPlane);
+			ret[2][3] = - static_cast<T>(1);
+			ret[3][2] = - (static_cast<T>(2) * farClipPlane * nearClipPlane) / (farClipPlane - nearClipPlane);
 
 			return ret;
 		}
@@ -120,21 +128,7 @@ namespace leopph::implementation
 			Matrix<T, 4, 4> ret = Identity();
 
 			for (size_t i = 0; i < 3; i++)
-				ret[i][3] = vector[i];
-
-			return ret;
-		}
-
-		template<size_t N1 = N, size_t M1 = M, std::enable_if_t<N1 == M1 && N1 == N && M1 == M && N1 == 4, bool> = false>
-		static Matrix<T, 4, 4> TranslateGLM(const Vector<T, 3>& vector)
-		{
-			auto trans = glm::translate(glm::mat4{ 1.0f }, glm::vec3{ vector[0], vector[1], vector[2] });
-
-			Matrix<T, 4, 4> ret;
-
-			for (size_t i = 0; i < 4; i++)
-				for (size_t j = 0; j < 4; j++)
-					ret[i][j] = trans[i][j];
+				ret[3][i] = vector[i];
 
 			return ret;
 		}

@@ -55,6 +55,7 @@ namespace leopph
 
 		static Camera& Instance();
 
+		void Position(const Vector3& newPos);
 		const Vector3& Position() const;
 
 		void Speed(float newSpeed);

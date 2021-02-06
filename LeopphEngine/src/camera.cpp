@@ -2,19 +2,9 @@
 #include "leopphmath.h"
 
 #include <stdexcept>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 
 namespace leopph
 {
-	// POS GETTER
-	const Vector3& Camera::Position() const
-	{
-		return m_Position;
-	}
-
-
-
 	// FOV HORIZ-VERT CONVERSION
 	float Camera::ConvertFOV(float fov, unsigned char conversion) const
 	{
@@ -71,6 +61,18 @@ namespace leopph
 	{
 		static Camera instance;
 		return instance;
+	}
+
+
+	// CAMERA POS SETTER AND GETTER
+	void Camera::Position(const Vector3& newPos)
+	{
+		m_Position = newPos;
+	}
+
+	const Vector3& Camera::Position() const
+	{
+		return m_Position;
 	}
 
 
@@ -168,37 +170,13 @@ namespace leopph
 	// CAMERA MATRIX CALCULATIONS
 	Matrix4 Camera::ViewMatrix() const
 	{
-		glm::vec3 pos{ m_Position[0], m_Position[1], m_Position[2] };
-		glm::vec3 front{ m_Front[0], m_Front[1], m_Front[2] };
-		glm::vec3 up{ m_Upwards[0], m_Upwards[1], m_Upwards[2] };
-
-		auto lookat = glm::lookAt(pos, pos + front, up);
-
-		Matrix4 ret;
-
-		for (size_t i = 0; i < 4; i++)
-			for (size_t j = 0; j < 4; j++)
-				ret[i][j] = lookat[j][i];
-
-		return ret;
-
-		//return Matrix4::LookAt(m_Position, m_Front, m_Upwards);
+		return Matrix4::LookAt(m_Position, m_Position + m_Front, m_Upwards);
 	}
 
 	Matrix4 Camera::ProjMatrix() const
 	{
 		float fov{ Math::ToRadians(ConvertFOV(m_HorizontalFOVDegrees, HORIZONTAL_TO_VERTICAL)) };
-		//return Matrix4::Perspective(fov, m_AspectRatio, m_NearClip, m_FarClip);
-
-		auto pers = glm::perspective(fov, m_AspectRatio, m_NearClip, m_FarClip);
-
-		Matrix4 ret;
-
-		for (size_t i = 0; i < 4; i++)
-			for (size_t j = 0; j < 4; j++)
-				ret[i][j] = pers[i][j];
-
-		return ret;
+		return Matrix4::Perspective(fov, m_AspectRatio, m_NearClip, m_FarClip);
 	}
 
 
