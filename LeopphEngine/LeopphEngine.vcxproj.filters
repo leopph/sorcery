@@ -13,7 +13,6 @@
     <ClCompile Include="src\texture.cpp" />
     <ClCompile Include="src\timekeeping.cpp" />
     <ClCompile Include="src\window.cpp" />
-    <ClCompile Include="vendor\glad\src\glad.c" />
     <ClCompile Include="vendor\stb_image\stb_image.cpp" />
     <ClCompile Include="src\pointlight.cpp" />
     <ClCompile Include="src\renderer.cpp" />

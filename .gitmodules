@@ -5,3 +5,7 @@
 [submodule "LeopphEngine/vendor/glfw"]
 	path = LeopphEngine/vendor/glfw
 	url = https://github.com/glfw/glfw.git
+[submodule "LeopphEngine/vendor/glad"]
+	path = LeopphEngine/vendor/glad
+	url = https://github.com/Dav1dde/glad.git
+	ignore = dirty
