@@ -25,6 +25,9 @@ using leopph::Input;
 
 class CameraMove : public Behavior
 {
+private:
+	const float m_Speed = 2.0f;
+
 public:
 	using Behavior::Behavior;
 
@@ -33,16 +36,16 @@ public:
 		Camera& cam = Camera::Instance();
 		
 		if (Input::GetKey(leopph::KeyCode::W))
-			cam.Position(cam.Position() + Vector3{ 0, 0, -1 } *Time::DeltaTime());
+			cam.Position(cam.Position() + Vector3{ 0, 0, -1 } * m_Speed * Time::DeltaTime());
 
 		if (Input::GetKey(leopph::KeyCode::S))
-			cam.Position(cam.Position() + Vector3{ 0, 0, 1 } *Time::DeltaTime());
+			cam.Position(cam.Position() + Vector3{ 0, 0, 1 } * m_Speed * Time::DeltaTime());
 
 		if (Input::GetKey(leopph::KeyCode::A))
-			cam.Position(cam.Position() + Vector3{ -1, 0, 0 } *Time::DeltaTime());
+			cam.Position(cam.Position() + Vector3{ -1, 0, 0 } * m_Speed * Time::DeltaTime());
 
 		if (Input::GetKey(leopph::KeyCode::D))
-			cam.Position(cam.Position() + Vector3{ 1, 0, 0 } *Time::DeltaTime());
+			cam.Position(cam.Position() + Vector3{ 1, 0, 0 } * m_Speed * Time::DeltaTime());
 	}
 };
 

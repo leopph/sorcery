@@ -26,6 +26,8 @@ namespace leopph::implementation
 
 		Window(unsigned width, unsigned height, const std::string& title, bool fullscreen);
 
+		static void FramebufferSizeCallback(GLFWwindow* window, int width, int height);
+
 		GLFWwindow* m_Window;
 
 		unsigned m_Width;

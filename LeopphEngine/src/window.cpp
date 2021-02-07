@@ -5,24 +5,35 @@
 #include <stdexcept>
 #include <glad/glad.h>
 
+
 namespace leopph::implementation
 {
+	// init window member
 	Window* Window::s_Instance{ nullptr };
 
+
+	// set up a window and rendering context with callbacks
 	Window& Window::CreateWindow(unsigned width = 1280u, unsigned height = 720u, const std::string& title = "Window", bool fullscreen = false)
 	{
 		if (s_Instance == nullptr)
 		{
 			s_Instance = new Window(width, height, title, fullscreen);
+
 			glfwMakeContextCurrent(s_Instance->m_Window);
 
 			Camera::Instance().AspectRatio(s_Instance->m_Width, s_Instance->m_Height);
+
 			Input::RegisterWindow(s_Instance->m_Window);
+
+			glfwSetFramebufferSizeCallback(s_Instance->m_Window, FramebufferSizeCallback);
 		}
 
 		return *s_Instance;
 	}
 
+
+
+	// window constructor
 	Window::Window(unsigned width, unsigned height, const std::string& title, bool fullscreen)
 		: m_Width{ width }, m_Height{ height }, m_Fullscreen{ fullscreen }
 	{
@@ -41,6 +52,20 @@ namespace leopph::implementation
 
 		m_Window = glfwCreateWindow(m_Width, m_Height, title.data(), monitor, nullptr);
 	}
+
+
+	// framebuffer resize callback
+	void Window::FramebufferSizeCallback(GLFWwindow* window, int width, int height)
+	{
+		glViewport(0, 0, width, height);
+
+		s_Instance->m_Width = width;
+		s_Instance->m_Height = height;
+
+		Camera::Instance().AspectRatio(s_Instance->m_Width, s_Instance->m_Height);
+	}
+
+
 
 	Window::~Window()
 	{
