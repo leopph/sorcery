@@ -30,9 +30,9 @@ namespace leopph
 		const std::set<Behavior*>& Behaviors() const;
 
 		template<class T>
-		Behavior* AddBehavior()
+		T* AddBehavior()
 		{
-			return *m_Behaviors.emplace(new T{ *this }).first;
+			return reinterpret_cast<T*>(*m_Behaviors.emplace(new T{ *this }).first);
 		}
 
 		void RemoveBehavior(Behavior* behavior);

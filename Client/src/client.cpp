@@ -53,19 +53,41 @@ public:
 
 
 
+class FPSCounter : public Behavior
+{
+private:
+	const float m_PollInterval = 0.5f;
+	float m_DeltaTime = 0.0f;
+
+public:
+	using Behavior::Behavior;
+
+	void operator()()
+	{
+		m_DeltaTime += Time::DeltaTime();
+
+		if (m_DeltaTime >= m_PollInterval)
+		{
+			m_DeltaTime = 0.0f;
+			std::cout << "FPS: " << 1 / Time::DeltaTime() << std::endl << "Frametime: " << Time::DeltaTime() * 1000 << " ms" << std::endl << std::endl;
+		}
+	}
+};
+
+
+
 void leopph::Init()
 {
 	Object* backpack = Object::Create();
 	backpack->AddModel(Model{ "models/backpack/backpack.obj" });
 	backpack->Position({ 0, 0, -5 });
 
-	/*Object* pointLight1 = Object::Create();
-	pointLight1->AddBehavior<PointLight>();
-	pointLight1->Position({ 0, 0, -1 });*/
-
 	Object* dirLight = Object::Create();
-	reinterpret_cast<DirectionalLight*>(dirLight->AddBehavior<DirectionalLight>())->Direction({ -3, -1, -1 });
+	dirLight->AddBehavior<DirectionalLight>()->Direction({ -3, -1, -1 });
 
 	Object* cameraMover = Object::Create();
 	cameraMover->AddBehavior<CameraMove>();
+
+	Object* fpsCounter = Object::Create();
+	fpsCounter->AddBehavior<FPSCounter>();
 }

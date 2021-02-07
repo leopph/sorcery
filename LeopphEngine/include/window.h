@@ -9,6 +9,7 @@
 
 namespace leopph::implementation
 {
+	/* TODO s_Instance is never destoryed, memory leak */
 	class LEOPPHAPI Window
 	{
 	public:
