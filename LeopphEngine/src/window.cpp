@@ -1,5 +1,6 @@
 #include "window.h"
 #include "camera.h"
+#include "input.h"
 
 #include <stdexcept>
 #include <glad/glad.h>
@@ -16,6 +17,7 @@ namespace leopph::implementation
 			glfwMakeContextCurrent(s_Instance->m_Window);
 
 			Camera::Instance().AspectRatio(s_Instance->m_Width, s_Instance->m_Height);
+			Input::RegisterWindow(s_Instance->m_Window);
 		}
 
 		return *s_Instance;

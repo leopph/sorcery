@@ -20,6 +20,7 @@ using leopph::Behavior;
 using leopph::Model;
 using leopph::Camera;
 using leopph::Time;
+using leopph::Input;
 
 
 class CameraMove : public Behavior
@@ -29,7 +30,19 @@ public:
 
 	void operator()()
 	{
-		Camera::Instance().Position(Camera::Instance().Position() + Vector3{ 0, 0, 1 } *Time::DeltaTime());
+		Camera& cam = Camera::Instance();
+		
+		if (Input::GetKey(leopph::KeyCode::W))
+			cam.Position(cam.Position() + Vector3{ 0, 0, -1 } *Time::DeltaTime());
+
+		if (Input::GetKey(leopph::KeyCode::S))
+			cam.Position(cam.Position() + Vector3{ 0, 0, 1 } *Time::DeltaTime());
+
+		if (Input::GetKey(leopph::KeyCode::A))
+			cam.Position(cam.Position() + Vector3{ -1, 0, 0 } *Time::DeltaTime());
+
+		if (Input::GetKey(leopph::KeyCode::D))
+			cam.Position(cam.Position() + Vector3{ 1, 0, 0 } *Time::DeltaTime());
 	}
 };
 

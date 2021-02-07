@@ -5,6 +5,7 @@
 #include "object.h"
 #include "renderer.h"
 #include "timekeeping.h"
+#include "input.h"
 
 namespace leopph
 {
@@ -27,6 +28,9 @@ int main(int argc, char** argv)
 
 	while (!window.ShouldClose())
 	{
+		leopph::Input::UpdateReleasedKeys();
+		window.PollEvents();
+
 		for (auto& object : leopph::Object::Instances())
 			for (auto& behavior : object->Behaviors())
 				behavior->operator()();
@@ -38,7 +42,6 @@ int main(int argc, char** argv)
 		leopph::Time::OnFrameComplete();
 
 		window.SwapBuffers();
-		window.PollEvents();
 	}
 
 	leopph::implementation::TerminateGL();
