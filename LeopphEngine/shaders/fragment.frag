@@ -16,6 +16,16 @@ struct PointLight
 };
 
 
+struct DirLight
+{
+	vec3 direction;
+	
+	vec3 ambient;
+	vec3 diffuse;
+	vec3 specular;
+};
+
+
 
 in vec3 normal;
 in vec3 fragmentPosition;
@@ -27,6 +37,9 @@ uniform sampler2D texture_specular0;
 uniform vec3 viewPosition;
 uniform PointLight pointLights[4];
 uniform int lightNumber;
+
+uniform DirLight dirLight;
+uniform bool existsDirLight;
 
 out vec4 fragmentColor;
 
@@ -52,6 +65,23 @@ vec3 CalculatePointLight(PointLight light, vec3 surfaceNormal, vec3 fragmentPosi
 
 
 
+vec3 CalculateDirLight(DirLight light, vec3 surfaceNormal, vec3 viewDirection, vec3 diffuseColor, vec3 specularColor)
+{
+	vec3 lightDirection = normalize(-light.direction);
+	vec3 reflectionDirection = reflect(-lightDirection, surfaceNormal);
+
+	float diffuseComponent = max(dot(surfaceNormal, lightDirection), 0.0f);
+	float specularComponent = pow(max(dot(viewDirection, reflectionDirection), 0.0f), 32);
+
+	vec3 ambient = light.ambient * diffuseColor;
+	vec3 diffuse = light.diffuse * diffuseComponent * diffuseColor;
+	vec3 specular = light.specular * specularComponent * specularColor;
+
+	return ambient + diffuse + specular;
+}
+
+
+
 void main()
 {
 	vec3 norm = normalize(normal);
@@ -60,6 +90,9 @@ void main()
 	vec3 specularColor = texture(texture_specular0, textureCoords).rgb;
 
 	vec3 colorSum = vec3(0.0f);
+
+	if (existsDirLight)
+		colorSum += CalculateDirLight(dirLight, norm, viewDirection, diffuseColor, specularColor);
 	
 	for (int i = 0; i < lightNumber; i++)
 		colorSum += CalculatePointLight(pointLights[i], norm, fragmentPosition, viewDirection, diffuseColor, specularColor);

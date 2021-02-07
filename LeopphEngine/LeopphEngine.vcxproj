@@ -125,6 +125,7 @@
   <ItemGroup>
     <ClCompile Include="src\behavior.cpp" />
     <ClCompile Include="src\camera.cpp" />
+    <ClCompile Include="src\dirlight.cpp" />
     <ClCompile Include="src\gl.cpp" />
     <ClCompile Include="src\input.cpp" />
     <ClCompile Include="src\leopphmath.cpp" />

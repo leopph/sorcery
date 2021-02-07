@@ -3,6 +3,7 @@
 #include "object.h"
 #include "light.h"
 #include "pointlight.h"
+#include "dirlight.h"
 #include "leopphmath.h"
 #include "camera.h"
 #include "matrix.h"
@@ -30,6 +31,7 @@ namespace leopph::implementation
 	{
 		static Shader shader{ "./shaders/vertex.vert", "./shaders/fragment.frag" };
 
+
 		PointLight* pointLights[MAX_POINT_LIGHTS]{};
 
 		for (Light* light : Light::PointLights())
@@ -55,7 +57,11 @@ namespace leopph::implementation
 			}
 		}
 
+
+
 		shader.Use();
+
+
 
 		size_t lightNumber = 0;
 
@@ -72,11 +78,32 @@ namespace leopph::implementation
 
 				lightNumber++;
 			}
-
 		shader.SetUniform("lightNumber", static_cast<int>(lightNumber));
+
+
+
+
+		if (Light::DirectionalLight() != nullptr)
+		{
+			shader.SetUniform("existsDirLight", true);
+
+			DirectionalLight* dirLight = reinterpret_cast<DirectionalLight*>(Light::DirectionalLight());
+			shader.SetUniform("dirLight.direction", dirLight->Direction());
+			shader.SetUniform("dirLight.ambient", dirLight->Ambient());
+			shader.SetUniform("dirLight.diffuse", dirLight->Diffuse());
+			shader.SetUniform("dirLight.specular", dirLight->Specular());
+		}
+		else
+			shader.SetUniform("existsDirLight", false);
+
+
+
+
 		shader.SetUniform("viewPosition", Camera::Instance().Position());
 		shader.SetUniform("view", Camera::Instance().ViewMatrix());
 		shader.SetUniform("proj", Camera::Instance().ProjMatrix());
+
+
 
 		for (const auto& object : Object::Instances())
 			for (const auto& model : object->Models())

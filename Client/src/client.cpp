@@ -10,6 +10,7 @@
 #include <model.h>
 #include <camera.h>
 #include <timekeeping.h>
+#include <dirlight.h>
 
 using leopph::Vector4;
 using leopph::Vector3;
@@ -21,6 +22,7 @@ using leopph::Model;
 using leopph::Camera;
 using leopph::Time;
 using leopph::Input;
+using leopph::DirectionalLight;
 
 
 class CameraMove : public Behavior
@@ -57,9 +59,12 @@ void leopph::Init()
 	backpack->AddModel(Model{ "models/backpack/backpack.obj" });
 	backpack->Position({ 0, 0, -5 });
 
-	Object* light = Object::Create();
-	light->AddBehavior<PointLight>();
-	light->Position({ 0, 0, -1 });
+	/*Object* pointLight1 = Object::Create();
+	pointLight1->AddBehavior<PointLight>();
+	pointLight1->Position({ 0, 0, -1 });*/
+
+	Object* dirLight = Object::Create();
+	reinterpret_cast<DirectionalLight*>(dirLight->AddBehavior<DirectionalLight>())->Direction({ -3, -1, -1 });
 
 	Object* cameraMover = Object::Create();
 	cameraMover->AddBehavior<CameraMove>();
