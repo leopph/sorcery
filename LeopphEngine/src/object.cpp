@@ -1,59 +1,14 @@
 #include "object.h"
+#include "instancedata.h"
 
 #include <stdexcept>
 #include <string>
 
 namespace leopph
 {
-	// Init static container
-	std::set<std::unique_ptr<Object, Object::Deleter>, Object::Comparator> Object::s_Instances{};
-
-
-
-
-
-	// Deleter
-	void Object::Deleter::operator()(Object* object) const
-	{
-		delete object;
-	}
-
-
-
-
-	// Comparisons for name-based lookups
-	bool Object::Comparator::operator()(const std::unique_ptr<Object, Deleter>& left, const std::unique_ptr<Object, Deleter>& right) const
-	{
-		return left->m_Name < right->m_Name;
-	}
-
-	bool Object::Comparator::operator()(const std::unique_ptr<Object, Deleter>& left, const std::string& right) const
-	{
-		return left->m_Name < right;
-	}
-
-	bool Object::Comparator::operator()(const std::string& left, const std::unique_ptr<Object, Deleter>& right) const
-	{
-		return left < right->m_Name;
-	}
-
-	bool Object::Comparator::operator()(const std::unique_ptr<Object, Deleter>& left, const Object* right) const
-	{
-		return left->m_Name < right->m_Name;
-	}
-
-	bool Object::Comparator::operator()(const Object* left, const std::unique_ptr<Object, Deleter>& right) const
-	{
-		return left->m_Name < right->m_Name;
-	}
-
-
-	
-
-
 	// Constructor
 	Object::Object():
-		m_Name{ "Object" + std::to_string(s_Instances.size()) },
+		m_Name{ "Object" + std::to_string(implementation::InstanceData::Objects().size()) },
 		m_Position{ Vector3{0.0f, 0.0f, 0.0f} },
 		m_Rotation{ Vector3{0.0f, 0.0f, 0.0f} },
 		m_Scale{ Vector3{1.0f, 1.0f, 1.0f} } {}
@@ -66,25 +21,27 @@ namespace leopph
 	// Static functions
 	Object* Object::Create()
 	{
-		return s_Instances.emplace(new Object).first->get();
+		Object* ret = new Object;
+		implementation::InstanceData::AddObject(ret, [](Object* object) { delete object; });
+		return ret;
 	}
 
 	void Object::Destroy(Object*& object)
 	{
-		s_Instances.erase(s_Instances.find(object));
+		implementation::InstanceData::RemoveObject(object);
 		object = nullptr;
 	}
 
 	Object* Object::Find(const std::string& name)
 	{
-		auto it = s_Instances.find(name);
-
-		return it != s_Instances.end() ? it->get() : nullptr;
+		return implementation::InstanceData::FindObject(name);
 	}
 
-	const std::set<std::unique_ptr<Object, Object::Deleter>, Object::Comparator>& Object::Instances()
+	void Object::UpdateAll()
 	{
-		return s_Instances;
+		for (auto& object : leopph::implementation::InstanceData::Objects())
+			for (auto& behavior : object->Behaviors())
+				behavior->operator()();
 	}
 
 
@@ -141,16 +98,7 @@ namespace leopph
 		If the target node is not removed before renaming, order-changing names may lead to crashes.
 		In case the new name is already in use, revert to the previous name and reinsert the node without changes. */
 
-		std::string oldName = m_Name;
-		auto node = s_Instances.extract(s_Instances.find(this));
-		m_Name = std::move(newName);
-		auto result = s_Instances.insert(std::move(node));
-
-		if (!result.inserted)
-		{
-			m_Name = std::move(oldName);
-			s_Instances.insert(std::move(result.node));
-		}
+		implementation::InstanceData::UpdateObjectKey(std::move(m_Name), std::move(newName), [](Object* object, std::string&& newName) { object->m_Name = std::move(newName); });
 	}
 
 	const Vector3& Object::Position() const

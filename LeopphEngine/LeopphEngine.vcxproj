@@ -106,6 +106,7 @@
     <ClInclude Include="include\entry.h" />
     <ClInclude Include="include\gl.h" />
     <ClInclude Include="include\input.h" />
+    <ClInclude Include="include\instancedata.h" />
     <ClInclude Include="include\leopphapi.h" />
     <ClInclude Include="include\leopphmath.h" />
     <ClInclude Include="include\light.h" />
@@ -128,6 +129,7 @@
     <ClCompile Include="src\dirlight.cpp" />
     <ClCompile Include="src\gl.cpp" />
     <ClCompile Include="src\input.cpp" />
+    <ClCompile Include="src\instancedata.cpp" />
     <ClCompile Include="src\leopphmath.cpp" />
     <ClCompile Include="src\light.cpp" />
     <ClCompile Include="src\mesh.cpp" />

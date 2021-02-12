@@ -46,14 +46,15 @@ namespace leopph::implementation
 
 	Mesh::~Mesh()
 	{
-		s_Instances[m_VAO]--;
+		// TODO THIS CRASHES AT EXIT
+		/*s_Instances[m_VAO]--;
 
 		if (s_Instances[m_VAO] == 0)
 		{
 			glDeleteBuffers(1, &m_VBO);
 			glDeleteBuffers(1, &m_EBO);
 			glDeleteVertexArrays(1, &m_VAO);
-		}
+		}*/
 	}
 
 

@@ -1,12 +1,12 @@
 #include "renderer.h"
 #include "shader.h"
-#include "object.h"
 #include "light.h"
 #include "pointlight.h"
 #include "dirlight.h"
 #include "leopphmath.h"
 #include "camera.h"
 #include "matrix.h"
+#include "instancedata.h"
 #include <string>
 #include <glad/glad.h>
 
@@ -105,7 +105,7 @@ namespace leopph::implementation
 
 
 
-		for (const auto& object : Object::Instances())
+		for (const auto& object : InstanceData::Objects())
 			for (const auto& model : object->Models())
 			{
 				Matrix4 modelMatrix{ 1.0f };

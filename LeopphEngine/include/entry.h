@@ -6,6 +6,7 @@
 #include "renderer.h"
 #include "timekeeping.h"
 #include "input.h"
+#include "instancedata.h"
 
 namespace leopph
 {
@@ -31,9 +32,7 @@ int main(int argc, char** argv)
 		leopph::Input::UpdateReleasedKeys();
 		window.PollEvents();
 
-		for (auto& object : leopph::Object::Instances())
-			for (auto& behavior : object->Behaviors())
-				behavior->operator()();
+		leopph::Object::UpdateAll();
 
 		window.Clear();
 

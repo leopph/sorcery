@@ -18,6 +18,7 @@
     <ClCompile Include="src\renderer.cpp" />
     <ClCompile Include="src\input.cpp" />
     <ClCompile Include="src\dirlight.cpp" />
+    <ClCompile Include="src\instancedata.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\behavior.h" />
@@ -41,6 +42,7 @@
     <ClInclude Include="include\dirlight.h" />
     <ClInclude Include="include\renderer.h" />
     <ClInclude Include="include\input.h" />
+    <ClInclude Include="include\instancedata.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\fragment.frag" />
