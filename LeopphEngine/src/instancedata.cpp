@@ -41,6 +41,18 @@ namespace leopph::implementation
 
 
 
+
+	void InstanceData::DestroyAll()
+	{
+		s_Objects.clear();
+		s_Meshes.clear();
+		s_Textures.clear();
+	}
+
+
+
+
+
 	void InstanceData::AddObject(Object* object, std::function<void(Object*)>&& deleter)
 	{
 		s_Objects.emplace(object, std::move(deleter));

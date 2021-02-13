@@ -30,7 +30,7 @@ namespace leopph::implementation
 		TextureType Type() const;
 
 	private:
-		unsigned m_ID;;
+		unsigned m_ID;
 		TextureType m_Type;
 		std::filesystem::path m_Path;
 	};

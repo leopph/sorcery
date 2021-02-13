@@ -27,6 +27,8 @@ namespace leopph::implementation
 
 
 	public:
+		static void DestroyAll();
+
 		static void AddObject(Object* object, std::function<void(Object*)>&& deleter);
 		static void RemoveObject(Object* object);
 		static Object* FindObject(const std::string& name);

@@ -3,6 +3,7 @@
 #include <iostream>
 
 #include "gl.h"
+#include "instancedata.h"
 
 namespace leopph::implementation
 {
@@ -13,6 +14,7 @@ namespace leopph::implementation
 
 	void TerminateGL()
 	{
+		InstanceData::DestroyAll();
 		glfwTerminate();
 	}
 
