@@ -5,7 +5,6 @@
 #include "shader.h"
 
 #include <vector>
-#include <unordered_map>
 
 namespace leopph::implementation
 {

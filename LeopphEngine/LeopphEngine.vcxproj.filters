@@ -19,6 +19,7 @@
     <ClCompile Include="src\input.cpp" />
     <ClCompile Include="src\dirlight.cpp" />
     <ClCompile Include="src\instancedata.cpp" />
+    <ClCompile Include="src\vector.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\behavior.h" />

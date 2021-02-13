@@ -1,13 +1,16 @@
 #pragma once
 
+#include "leopphapi.h"
+
 #include <type_traits>
 #include <ostream>
+#include <cstddef>
 
 
-namespace leopph::implementation
+namespace leopph
 {
 	template<class T, size_t N>
-	class Vector
+	class LEOPPHAPI Vector
 	{
 		static_assert(N >= 2, "Vector dimension must be at least 2!");
 
@@ -18,60 +21,24 @@ namespace leopph::implementation
 
 	public:
 		// constructors
-		Vector() :
-			m_Data{}
-		{}
-
-		Vector(const T& value) :
-			m_Data{}
-		{
-			for (size_t i = 0; i < N; i++)
-				m_Data[i] = value;
-		}
+		Vector();
+		Vector(const T& value);
+		Vector(const Vector<T, N>& other);
 
 		template<class... T1, std::enable_if_t<std::conjunction_v<std::is_convertible<T1, T>...> && sizeof...(T1) == N, bool> = false>
 		Vector(const T1&... args) :
 			m_Data{ static_cast<T>(args)... }
 		{}
 
-		Vector(const Vector<T, N>& other) :
-			m_Data{}
-		{
-			for (size_t i = 0; i < N; i++)
-				m_Data[i] = other.m_Data[i];
-		}
 
 
 
 
 		// quick access factories
-		static Vector<T, N> Up()
-		{
-			Vector<T, N> ret;
-			ret[1] = 1;
-			return ret;
-		}
-
-		static Vector<T, N> Down()
-		{
-			Vector<T, N> ret;
-			ret[1] = -1;
-			return ret;
-		}
-
-		static Vector<T, N> Left()
-		{
-			Vector<T, N> ret;
-			ret[0] = -1;
-			return ret;
-		}
-
-		static Vector<T, N> Right()
-		{
-			Vector<T, N> ret;
-			ret[0] = 1;
-			return ret;
-		}
+		static Vector<T, N> Up();
+		static Vector<T, N> Down();
+		static Vector<T, N> Left();
+		static Vector<T, N> Right();
 
 		template<size_t N1 = N, std::enable_if_t<N1 >= 3 && N1 == N, bool> = false>
 		static Vector<T, N> Forward()
@@ -91,83 +58,43 @@ namespace leopph::implementation
 
 
 
-		// get stored values as pointer
-		const T* Data() const
-		{
-			return &m_Data[0];
-		}
 
-		T* Data()
-		{
-			return const_cast<T*>(const_cast<const Vector<T, N>*>(this)->Data());
-		}
+
+		// get stored values as pointer
+		const T* Data() const;
+		T* Data();
+
+
 
 
 
 		// member operators
-		Vector<T, N>& operator=(const Vector<T, N>& other)
-		{
-			if (this == &other)
-				return *this;
-
-			for (size_t i = 0; i < N; i++)
-				m_Data[i] = other.m_Data[i];
-
-			return *this;
-		}
-
-		const T& operator[](size_t index) const
-		{
-			return m_Data[index];
-		}
-
-		T& operator[](size_t index)
-		{
-			return const_cast<T&>(const_cast<const Vector<T, N>*>(this)->operator[](index));
-		}
+		Vector<T, N>& operator=(const Vector<T, N>& other);
+		const T& operator[](size_t index) const;
+		T& operator[](size_t index);
 
 
 
 
 		// magnitude
-		float Length() const
-		{
-			float sqrSum{};
+		float Length() const;
 
-			for (size_t i = 0; i < N; i++)
-				sqrSum += std::powf(m_Data[i], 2);
 
-			return std::sqrtf(sqrSum);
-		}
 
-		// normalized copy
-		Vector<T, N> Normalized() const
-		{
-			return Vector<T, N>{ *this }.Normalize();
-		}
 
-		// in place normalize
-		Vector<T, N>& Normalize()
-		{
-			float length = Length();
+		// normalization
+		Vector<T, N> Normalized() const;
+		Vector<T, N>& Normalize();
 
-			for (size_t i = 0; i < N; i++)
-				m_Data[i] /= length;
 
-			return *this;
-		}
+
 
 
 		// dot product
-		static T Dot(const Vector<T, N>& left, const Vector<T, N>& right)
-		{
-			T ret{};
+		static T Dot(const Vector<T, N>& left, const Vector<T, N>& right);
 
-			for (size_t i = 0; i < N; i++)
-				ret += left[i] * right[i];
 
-			return ret;
-		}
+
 
 		// cross product, only for 3d vector
 		template<size_t N1 = N, std::enable_if_t<N1 == 3 && N1 == N, bool> = false>
@@ -180,15 +107,7 @@ namespace leopph::implementation
 
 
 		// distance
-		static float Distance(const Vector<T, N>& left, const Vector<T, N>& right)
-		{
-			T sum{};
-
-			for (size_t i = 0; i < N; i++)
-				sum += static_cast<T>(std::powf(static_cast<float>(left[i] - right[i]), 2));
-
-			return static_cast<T>(std::sqrt(sum));
-		}
+		static float Distance(const Vector<T, N>& left, const Vector<T, N>& right);
 	};
 
 
@@ -332,16 +251,9 @@ namespace leopph::implementation
 
 
 
-	// instantiation imports/exports
-	template class Vector<float, 4>;
-	template class Vector<float, 3>;
-	template class Vector<float, 2>;
-}
-
-namespace leopph
-{
+	
 	// aliasing
-	using Vector4 = implementation::Vector<float, 4>;
-	using Vector3 = implementation::Vector<float, 3>;
-	using Vector2 = implementation::Vector<float, 2>;
+	using Vector4 = Vector<float, 4>;
+	using Vector3 = Vector<float, 3>;
+	using Vector2 = Vector<float, 2>;
 }
