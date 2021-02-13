@@ -7,7 +7,7 @@
 
 
 
-namespace leopph::implementation
+namespace leopph
 {
 	template<class T, size_t N, size_t M>
 	class Matrix
@@ -21,16 +21,9 @@ namespace leopph::implementation
 
 	public:
 		// constructors
-		Matrix() :
-			m_Data{}
-		{}
-
-		Matrix(const T& value) :
-			m_Data{}
-		{
-			for (size_t i = 0; i < N && i < M; i++)
-				m_Data[i][i] = value;
-		}
+		Matrix();
+		Matrix(const T& value);
+		Matrix(const Matrix<T, N, M>& other);
 
 		template<class... T1, std::enable_if_t<std::conjunction_v<std::is_convertible<T1, T>...> && sizeof...(T1) == (N > M ? M : N), bool> = false>
 		Matrix(const T1&... args) :
@@ -57,12 +50,9 @@ namespace leopph::implementation
 					m_Data[i][j] = argArr[i * M + j];
 		}
 
-		Matrix(const Matrix<T, N, M>& other) :
-			m_Data{}
-		{
-			for (size_t i = 0; i < N; i++)
-				m_Data[i] = other.m_Data[i];
-		}
+
+
+
 
 
 		// factories
@@ -71,6 +61,10 @@ namespace leopph::implementation
 		{
 			return Matrix<T, N, M>{1};
 		}
+
+
+
+
 
 
 		// lookat matrix
@@ -102,6 +96,9 @@ namespace leopph::implementation
 
 
 
+
+
+
 		// perspetive projection matrix
 		template<size_t N1 = N, size_t M1 = M, std::enable_if_t<N1 == M1 && N1 == N && M1 == M && N1 == 4, bool> = false>
 		static Matrix<T, 4, 4> Perspective(const T& fov, const T& aspectRatio, const T& nearClipPlane, const T& farClipPlane)
@@ -118,6 +115,9 @@ namespace leopph::implementation
 
 			return ret;
 		}
+
+
+
 
 
 
@@ -138,42 +138,20 @@ namespace leopph::implementation
 
 
 		// get stored data as pointer
-		const T* Data() const
-		{
-			return m_Data[0].Data();
-		}
-
-		T* Data()
-		{
-			return const_cast<T*>(const_cast<const Matrix<T, N, M>*>(this)->Data());
-		}
+		const T* Data() const;
+		T* Data();
 
 
 
 
 
 		// member operators
-		Matrix<T, N, M>& operator=(const Matrix<T, N, M>& other)
-		{
-			if (this == &other)
-				return *this;
+		Matrix<T, N, M>& operator=(const Matrix<T, N, M>& other);
+		const Vector<T, M>& operator[](size_t index) const;
+		Vector<T, M>& operator[](size_t index);
 
-			for (size_t i = 0; i < N; i++)
-				for (size_t j = 0; j < M; j++)
-					m_Data[i][j] = other.m_Data[i][j];
 
-			return *this;
-		}
 
-		const Vector<T, M>& operator[](size_t index) const
-		{
-			return m_Data[index];
-		}
-
-		Vector<T, M>& operator[](size_t index)
-		{
-			return const_cast<Vector<T, M>&>(const_cast<const Matrix<T, N, M>*>(this)->operator[](index));
-		}
 
 
 		// determinant
@@ -198,20 +176,12 @@ namespace leopph::implementation
 		}
 
 
-		// transposed copy
-		Matrix<T, M, N> Transposed() const
-		{
-			Matrix<T, M, N> ret;
-
-			for (size_t i = 0; i < N; i++)
-				for (size_t j = 0; j < M; j++)
-					ret[j][i] = m_Data[i][j];
-
-			return ret;
-		}
 
 
-		// in place transpose, only for square
+
+		// TRANSPOSE
+		Matrix<T, M, N> Transposed() const;
+
 		template<size_t N1 = N, size_t M1 = M, std::enable_if_t<N1 == N && M1 == M && N1 == M1, bool> = false>
 		Matrix<T, N, M> Transpose()
 		{
@@ -304,16 +274,8 @@ namespace leopph::implementation
 
 
 
-	// instantiations
-	template class Matrix<float, 2, 2>;
-	template class Matrix<float, 3, 3>;
-	template class Matrix<float, 4, 4>;
-}
-
-namespace leopph
-{
 	// aliases
-	using Matrix2 = implementation::Matrix<float, 2, 2>;
-	using Matrix3 = implementation::Matrix<float, 3, 3>;
-	using Matrix4 = implementation::Matrix<float, 4, 4>;
+	using Matrix2 = Matrix<float, 2, 2>;
+	using Matrix3 = Matrix<float, 3, 3>;
+	using Matrix4 = Matrix<float, 4, 4>;
 }
