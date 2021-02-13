@@ -1,7 +1,6 @@
 #pragma once
 
 #include <filesystem>
-#include <unordered_map>
 
 namespace leopph::implementation
 {
@@ -31,8 +30,6 @@ namespace leopph::implementation
 		TextureType Type() const;
 
 	private:
-		static std::unordered_map<unsigned, size_t> s_Instances;
-
 		unsigned m_ID;;
 		TextureType m_Type;
 		std::filesystem::path m_Path;

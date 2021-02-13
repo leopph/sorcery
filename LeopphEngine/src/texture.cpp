@@ -1,4 +1,5 @@
 #include "texture.h"
+#include "instancedata.h"
 
 #include <glad/glad.h>
 #include <stb_image.h>
@@ -6,10 +7,6 @@
 
 namespace leopph::implementation
 {
-	// INIT REF COUNTER
-	std::unordered_map<unsigned, size_t> Texture::s_Instances{};
-
-
 	// LOAD IMAGE FROM PATH
 	Texture::Texture(const std::filesystem::path& path, TextureType type)
 		: m_Path{ path }, m_Type{ type }
@@ -58,25 +55,22 @@ namespace leopph::implementation
 
 		stbi_image_free(data);
 
-		s_Instances.try_emplace(m_ID, 0);
-		s_Instances[m_ID]++;
+		InstanceData::AddTexture(m_ID);
 	}
 
 
 	Texture::~Texture()
 	{
-		// TODO THIS CRASHES AT EXIT
-		/*s_Instances[m_ID]--;
-
-		if (s_Instances[m_ID] == 0)
-			glDeleteTextures(1, &m_ID);*/
+		InstanceData::RemoveTexture(m_ID);
+		if (InstanceData::TextureCount(m_ID) == 0)
+			glDeleteTextures(1, &m_ID);
 	}
 
 
 	Texture::Texture(const Texture& other)
 		: m_ID{ other.m_ID }, m_Path{ other.m_Path }, m_Type{ other.m_Type }
 	{
-		s_Instances[m_ID]++;
+		InstanceData::AddTexture(m_ID);
 	}
 
 
@@ -86,8 +80,7 @@ namespace leopph::implementation
 		other.m_ID = 0;
 		other.m_Path.clear();
 
-		s_Instances.try_emplace(0, 0);
-		s_Instances[0]++;
+		InstanceData::AddTexture(0);
 	}
 
 
@@ -96,16 +89,15 @@ namespace leopph::implementation
 		if (*this == other)
 			return *this;
 
-		s_Instances[m_ID]--;
-
-		if (s_Instances[m_ID] == 0)
+		InstanceData::RemoveTexture(m_ID);
+		if (InstanceData::TextureCount(m_ID) == 0)
 			glDeleteTextures(1, &m_ID);
 
 		this->m_ID = other.m_ID;
 		this->m_Path = other.m_Path;
 		this->m_Type = other.m_Type;
 
-		s_Instances[m_ID]++;
+		InstanceData::AddTexture(m_ID);
 
 		return *this;
 	}
@@ -116,9 +108,8 @@ namespace leopph::implementation
 		if (*this == other)
 			return *this;
 
-		s_Instances[m_ID]--;
-
-		if (s_Instances[m_ID] == 0)
+		InstanceData::RemoveTexture(m_ID);
+		if (InstanceData::TextureCount(m_ID) == 0)
 			glDeleteTextures(1, &m_ID);
 
 		this->m_ID = other.m_ID;
@@ -128,8 +119,7 @@ namespace leopph::implementation
 		other.m_ID = 0;
 		other.m_Path.clear();
 
-		s_Instances.try_emplace(0, 0);
-		s_Instances[0]++;
+		InstanceData::AddTexture(0);
 
 		return *this;
 	}
