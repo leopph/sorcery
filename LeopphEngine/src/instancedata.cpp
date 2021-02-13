@@ -34,6 +34,7 @@ namespace leopph::implementation
 
 	// static init
 	std::unordered_map<unsigned, size_t> InstanceData::s_Textures{};
+	std::unordered_map<unsigned, size_t> InstanceData::s_Meshes{};
 	std::set<std::unique_ptr<Object, std::function<void(Object*)>>, InstanceData::ObjectComparator> InstanceData::s_Objects{};
 
 
@@ -94,5 +95,24 @@ namespace leopph::implementation
 	std::size_t InstanceData::TextureCount(unsigned id)
 	{
 		return s_Textures[id];
+	}
+
+
+
+	
+	void InstanceData::AddMesh(unsigned id)
+	{
+		s_Meshes.try_emplace(id, 0);
+		s_Meshes[id]++;
+	}
+
+	void InstanceData::RemoveMesh(unsigned id)
+	{
+		s_Meshes[id]--;
+	}
+
+	std::size_t InstanceData::MeshCount(unsigned id)
+	{
+		return s_Meshes[id];
 	}
 }

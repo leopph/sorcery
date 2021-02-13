@@ -1,13 +1,10 @@
 #include "mesh.h"
 
 #include <glad/glad.h>
+#include <instancedata.h>
 
 namespace leopph::implementation
 {
-	// INIT REF COUNTER
-	std::unordered_map<unsigned, size_t> Mesh::s_Instances{};
-
-
 	// LOAD MESH FROM MESH DATA
 	Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned> indices, std::vector<Texture> textures)
 		: m_Vertices{ std::move(vertices) }, m_Indices{ std::move(indices) }, m_Textures{ std::move(textures) }
@@ -38,23 +35,20 @@ namespace leopph::implementation
 
 		glBindVertexArray(0);
 
-		s_Instances.try_emplace(m_VAO, 0);
-		s_Instances[m_VAO]++;
+		InstanceData::AddMesh(m_ID);
 	}
 
 
 
 	Mesh::~Mesh()
 	{
-		// TODO THIS CRASHES AT EXIT
-		/*s_Instances[m_VAO]--;
-
-		if (s_Instances[m_VAO] == 0)
+		InstanceData::RemoveMesh(m_ID);
+		if (InstanceData::MeshCount(m_ID) == 0)
 		{
 			glDeleteBuffers(1, &m_VBO);
 			glDeleteBuffers(1, &m_EBO);
 			glDeleteVertexArrays(1, &m_VAO);
-		}*/
+		}
 	}
 
 
@@ -63,7 +57,7 @@ namespace leopph::implementation
 		: m_VAO{ other.m_VAO }, m_VBO{ other.m_VBO }, m_EBO{ other.m_EBO },
 		m_Vertices{ other.m_Vertices }, m_Indices{ other.m_Indices }, m_Textures{ other.m_Textures }
 	{
-		s_Instances[m_VAO]++;
+		InstanceData::AddMesh(m_ID);
 	}
 
 
@@ -77,8 +71,7 @@ namespace leopph::implementation
 		other.m_VBO = 0;
 		other.m_EBO = 0;
 
-		s_Instances.try_emplace(0, 0);
-		s_Instances[0]++;
+		InstanceData::AddMesh(0);
 	}
 
 
@@ -88,9 +81,8 @@ namespace leopph::implementation
 		if (*this == other)
 			return *this;
 
-		s_Instances[m_VAO]--;
-
-		if (s_Instances[m_VAO] == 0)
+		InstanceData::RemoveMesh(m_ID);
+		if (InstanceData::MeshCount(m_ID) == 0)
 		{
 			glDeleteBuffers(1, &m_VBO);
 			glDeleteBuffers(1, &m_EBO);
@@ -105,7 +97,7 @@ namespace leopph::implementation
 		this->m_Indices = other.m_Indices;
 		this->m_Textures = other.m_Textures;
 
-		s_Instances[m_VAO]++;
+		InstanceData::AddMesh(m_ID);
 
 		return *this;
 	}
@@ -117,9 +109,8 @@ namespace leopph::implementation
 		if (*this == other)
 			return *this;
 
-		s_Instances[m_VAO]--;
-
-		if (s_Instances[m_VAO] == 0)
+		InstanceData::RemoveMesh(m_ID);
+		if (InstanceData::MeshCount(m_ID) == 0)
 		{
 			glDeleteBuffers(1, &m_VBO);
 			glDeleteBuffers(1, &m_EBO);
@@ -138,8 +129,7 @@ namespace leopph::implementation
 		other.m_VBO = 0;
 		other.m_EBO = 0;
 
-		s_Instances.try_emplace(0, 0);
-		s_Instances[0]++;
+		InstanceData::AddMesh(0);
 
 		return *this;
 	}

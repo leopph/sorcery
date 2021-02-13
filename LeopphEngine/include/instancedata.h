@@ -37,9 +37,14 @@ namespace leopph::implementation
 		static void RemoveTexture(unsigned id);
 		static std::size_t TextureCount(unsigned id);
 
+		static void AddMesh(unsigned id);
+		static void RemoveMesh(unsigned id);
+		static std::size_t MeshCount(unsigned id);
+
 
 	private:
 		static std::unordered_map<unsigned, std::size_t> s_Textures;
+		static std::unordered_map<unsigned, size_t> s_Meshes;
 		static std::set<std::unique_ptr<Object, std::function<void(Object*)>>, ObjectComparator> s_Objects;
 	};
 }

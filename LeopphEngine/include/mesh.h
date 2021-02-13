@@ -13,11 +13,11 @@ namespace leopph::implementation
 	class Mesh
 	{
 	private:
-		static std::unordered_map<unsigned, size_t> s_Instances;
-
 		unsigned m_VAO;
 		unsigned m_VBO;
 		unsigned m_EBO;
+
+		const unsigned& m_ID{ m_VAO };
 
 		std::vector<Vertex> m_Vertices;
 		std::vector<unsigned> m_Indices;
