@@ -43,6 +43,7 @@ int main(int argc, char** argv)
 		window.SwapBuffers();
 	}
 
+	leopph::implementation::Window::Destroy();
 	leopph::implementation::TerminateGL();
 
 	return 0;

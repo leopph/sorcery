@@ -33,6 +33,14 @@ namespace leopph::implementation
 
 
 
+	// destroy instance
+	void Window::Destroy()
+	{
+		delete s_Instance;
+	}
+
+
+
 	// window constructor
 	Window::Window(unsigned width, unsigned height, const std::string& title, bool fullscreen)
 		: m_Width{ width }, m_Height{ height }, m_Fullscreen{ fullscreen }

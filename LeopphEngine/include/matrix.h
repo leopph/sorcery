@@ -29,8 +29,6 @@ namespace leopph
 		Matrix(const T1&... args) :
 			m_Data{}
 		{
-			// TODO think this over man
-
 			T argArr[M > N ? N : M]{ static_cast<T>(args)... };
 
 			for (size_t i = 0; i < M && i < N; i++)
@@ -41,8 +39,6 @@ namespace leopph
 		Matrix(const T1&... args) :
 			m_Data{}
 		{
-			// TODO rework candidate
-
 			T argArr[M * N]{ static_cast<T>(args)... };
 
 			for (size_t i = 0; i < N; i++)

@@ -41,7 +41,7 @@ namespace leopph
 
 		void RemoveBehavior(Behavior* behavior);
 		template<class T>
-		Behavior* GetBehavior() const
+		T* GetBehavior() const
 		{
 			// TODO
 		}

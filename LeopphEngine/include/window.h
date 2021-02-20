@@ -9,11 +9,11 @@
 
 namespace leopph::implementation
 {
-	/* TODO s_Instance is never destoryed, memory leak */
 	class LEOPPHAPI Window
 	{
 	public:
 		static Window& CreateWindow(unsigned width, unsigned height, const std::string& title, bool fullscreen);
+		static void Destroy();
 
 		~Window();
 
