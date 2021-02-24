@@ -10,7 +10,7 @@ namespace leopph
 	Object::Object():
 		m_Name{ "Object" + std::to_string(implementation::InstanceData::Objects().size()) },
 		m_Position{ Vector3{0.0f, 0.0f, 0.0f} },
-		m_Rotation{ Vector3{0.0f, 0.0f, 0.0f} },
+		m_Rotation{ Quaternion{1.0f, 0.0f, 0.0f, 0.0f} },
 		m_Scale{ Vector3{1.0f, 1.0f, 1.0f} } {}
 
 
@@ -111,12 +111,12 @@ namespace leopph
 		m_Position = std::move(newPos);
 	}
 
-	const Vector3& Object::Rotation() const
+	const Quaternion& Object::Rotation() const
 	{
 		return m_Rotation;
 	}
 
-	void Object::Rotation(Vector3 newRot)
+	void Object::Rotation(Quaternion newRot)
 	{
 		m_Rotation = std::move(newRot);
 	}

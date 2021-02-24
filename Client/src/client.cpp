@@ -81,6 +81,7 @@ void leopph::Init()
 	Object* backpack = Object::Create();
 	backpack->AddModel(Model{ "models/backpack/backpack.obj" });
 	backpack->Position({ 0, 0, -5 });
+	backpack->Rotation({ { 1, 1, 0 }, 90.0f });
 
 	Object* dirLight = Object::Create();
 	dirLight->AddBehavior<DirectionalLight>()->Direction({ -3, -1, -1 });

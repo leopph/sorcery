@@ -115,6 +115,7 @@
     <ClInclude Include="include\model.h" />
     <ClInclude Include="include\object.h" />
     <ClInclude Include="include\pointlight.h" />
+    <ClInclude Include="include\quaternion.h" />
     <ClInclude Include="include\renderer.h" />
     <ClInclude Include="include\shader.h" />
     <ClInclude Include="include\texture.h" />
@@ -137,6 +138,7 @@
     <ClCompile Include="src\model.cpp" />
     <ClCompile Include="src\object.cpp" />
     <ClCompile Include="src\pointlight.cpp" />
+    <ClCompile Include="src\quaternion.cpp" />
     <ClCompile Include="src\renderer.cpp" />
     <ClCompile Include="src\shader.cpp" />
     <ClCompile Include="src\texture.cpp" />

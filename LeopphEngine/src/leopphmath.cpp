@@ -52,4 +52,18 @@ namespace leopph
 	{
 		return std::atanf(radians);
 	}
+
+
+
+	float Math::Pow(float base, float exp)
+	{
+		return std::powf(base, exp);
+	}
+
+
+
+	float Math::Sqrt(float value)
+	{
+		return std::sqrtf(value);
+	}
 }

@@ -4,6 +4,7 @@
 #include "model.h"
 #include "behavior.h"
 #include "vector.h"
+#include "quaternion.h"
 
 
 #include <vector>
@@ -52,8 +53,8 @@ namespace leopph
 		const Vector3& Position() const;
 		void Position(Vector3 newPos);
 
-		const Vector3& Rotation() const;
-		void Rotation(Vector3 newRot);
+		const Quaternion& Rotation() const;
+		void Rotation(Quaternion newRot);
 
 		const Vector3& Scale() const;
 		void Scale(Vector3 newScale);
@@ -67,7 +68,7 @@ namespace leopph
 
 		std::string m_Name;
 		Vector3 m_Position;
-		Vector3 m_Rotation;
+		Quaternion m_Rotation;
 		Vector3 m_Scale;
 	};
 

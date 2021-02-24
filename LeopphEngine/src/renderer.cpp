@@ -111,8 +111,8 @@ namespace leopph::implementation
 				Matrix4 modelMatrix{ 1.0f };
 
 				// TODO
+				modelMatrix *= static_cast<Matrix4>(object->Rotation());
 				modelMatrix *= Matrix4::Translate(object->Position());
-				// rotate by object rotation
 				// scale by object scale
 
 				shader.SetUniform("model", modelMatrix);

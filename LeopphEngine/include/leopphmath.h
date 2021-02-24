@@ -22,5 +22,9 @@ namespace leopph
 
 		static float Tan(float radians);
 		static float Atan(float radians);
+
+		static float Pow(float base, float exp);
+
+		static float Sqrt(float value);
 	};
 }

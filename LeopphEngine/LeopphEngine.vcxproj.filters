@@ -21,6 +21,7 @@
     <ClCompile Include="src\instancedata.cpp" />
     <ClCompile Include="src\vector.cpp" />
     <ClCompile Include="src\matrix.cpp" />
+    <ClCompile Include="src\quaternion.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\behavior.h" />
@@ -45,6 +46,7 @@
     <ClInclude Include="include\renderer.h" />
     <ClInclude Include="include\input.h" />
     <ClInclude Include="include\instancedata.h" />
+    <ClInclude Include="include\quaternion.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\fragment.frag" />
