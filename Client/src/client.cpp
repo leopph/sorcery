@@ -88,7 +88,7 @@ public:
 	void operator()()
 	{
 		rotation += std::fmod(m_Speed * Time::DeltaTime(), 360.0f);
-		this->m_Object.Rotation({ { 0, 1, 0 }, rotation });
+		this->m_Object.Rotation({ { 1, 1, 1 }, rotation });
 	}
 };
 
