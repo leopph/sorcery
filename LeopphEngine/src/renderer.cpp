@@ -116,7 +116,7 @@ namespace leopph::implementation
 				// scale by object scale
 
 				shader.SetUniform("model", modelMatrix);
-				shader.SetUniform("normalMatrix", modelMatrix); // TODO IMPLEMENT INVERSE AND INVERT MODEL
+				shader.SetUniform("normalMatrix", modelMatrix.Inverted());
 
 				model.Draw(shader);
 			}

@@ -76,12 +76,30 @@ public:
 
 
 
+class Rotate : public Behavior
+{
+private:
+	const float m_Speed = 45.0f / 2.0f;
+	float rotation = 45.0f;
+
+public:
+	using Behavior::Behavior;
+
+	void operator()()
+	{
+		rotation += std::fmod(m_Speed * Time::DeltaTime(), 360.0f);
+		this->m_Object.Rotation({ { 0, 1, 0 }, rotation });
+	}
+};
+
+
+
 void leopph::Init()
 {
 	Object* backpack = Object::Create();
 	backpack->AddModel(Model{ "models/backpack/backpack.obj" });
 	backpack->Position({ 0, 0, -5 });
-	backpack->Rotation({ { 1, 1, 0 }, 90.0f });
+	backpack->AddBehavior<Rotate>();
 
 	Object* dirLight = Object::Create();
 	dirLight->AddBehavior<DirectionalLight>()->Direction({ -3, -1, -1 });

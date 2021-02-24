@@ -1,6 +1,7 @@
 #pragma once
 
 #include <type_traits>
+#include <cstddef>
 
 #include "vector.h"
 #include "leopphmath.h"
@@ -188,6 +189,37 @@ namespace leopph
 					m_Data[i][j] = transposed[i][j];
 
 			return *this;
+		}
+
+
+
+
+		// INVERSE
+		template<size_t N1 = N, size_t M1 = M, std::enable_if_t<N1 == M1 && N1 == N && M1 == M, bool> = false>
+		Matrix<T, N, M> Inverted() const
+		{
+			Matrix<T, N, M> copyOfThis{ *this };
+			Matrix<T, N, M> inverse{ Matrix<T, N, M>::Identity() };
+
+			for (std::size_t i = 0; i < N; i++)
+				for (std::size_t j = 0; j < N; j++)
+				{
+					if (j != i)
+					{
+						T mult = copyOfThis[j][i] / copyOfThis[i][i];
+						copyOfThis[j] -= mult * copyOfThis[i];
+						inverse[j] -= mult * inverse[i];
+					}
+
+					if (copyOfThis[i][i] != static_cast<T>(1) && copyOfThis[i][i] != static_cast<T>(0))
+						for (std::size_t k = 0; k < N; k++)
+						{
+							inverse[i][k] /= copyOfThis[i][i];
+							copyOfThis[i][k] /= copyOfThis[i][i];
+						}
+				}
+
+			return inverse;
 		}
 	};
 

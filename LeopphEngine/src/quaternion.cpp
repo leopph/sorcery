@@ -50,11 +50,19 @@ namespace leopph
 
 	Quaternion::operator Matrix4() const
 	{
-		return Matrix4
+		/*return Matrix4
 		{
 			1 - 2*Math::Pow(y, 2) - 2*Math::Pow(z, 2),		2*x*y + 2*w*z,		2*x*z - 2*w*y,		0,
 			2*x*y - 2*w*z,		1 - 2*Math::Pow(x, 2) - 2*Math::Pow(z, 2),		2*y*z - 2*w*x,		0,
 			2*x*z + 2*w*y,		2*y*z + 2*w*x,		1 - 2*Math::Pow(x, 2) - 2*Math::Pow(y, 2),		0,
+			0,		0,		0,		1
+		};*/
+
+		return Matrix4
+		{
+			Math::Pow(w, 2) + Math::Pow(x, 2) - Math::Pow(y, 2) - Math::Pow(z, 2),		2 * x * y + 2 * w * z,		2 * x * z - 2 * w * y,		0,
+			2 * x * y - 2 * w * z,		Math::Pow(w, 2) - Math::Pow(x, 2) + Math::Pow(y, 2) - Math::Pow(z, 2),		2 * y * z + 2 * w * x,		0,
+			2 * x * z + 2 * w * y,		2 * y * z - 2 * w * x,		Math::Pow(w, 2) - Math::Pow(x, 2) - Math::Pow(y, 2) + Math::Pow(z, 2),		0,
 			0,		0,		0,		1
 		};
 	}
