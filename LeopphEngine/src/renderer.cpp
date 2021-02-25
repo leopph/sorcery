@@ -109,11 +109,9 @@ namespace leopph::implementation
 			for (const auto& model : object->Models())
 			{
 				Matrix4 modelMatrix{ 1.0f };
-
-				// TODO
+				modelMatrix *= Matrix4::Scale(object->Scale());
 				modelMatrix *= static_cast<Matrix4>(object->Rotation());
 				modelMatrix *= Matrix4::Translate(object->Position());
-				// scale by object scale
 
 				shader.SetUniform("model", modelMatrix);
 				shader.SetUniform("normalMatrix", modelMatrix.Inverse().Transposed());

@@ -96,10 +96,14 @@ public:
 
 void leopph::Init()
 {
-	Object* backpack = Object::Create();
+	/*Object* backpack = Object::Create();
 	backpack->AddModel(Model{ "models/backpack/backpack.obj" });
 	backpack->Position({ 0, 0, 5 });
-	//backpack->AddBehavior<Rotate>();
+	//backpack->AddBehavior<Rotate>();*/
+
+	Object* tetej = Object::Create();
+	tetej->AddModel({ "models/samy/tetej3/teszt3.obj" });
+	//tetej->Scale({ 0.1, 0.1, 0.1 });
 
 	Object* dirLight = Object::Create();
 	dirLight->AddBehavior<DirectionalLight>()->Direction({ -3, -1, 1 });

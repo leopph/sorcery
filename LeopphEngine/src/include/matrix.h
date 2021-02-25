@@ -47,6 +47,14 @@ namespace leopph
 					m_Data[i][j] = argArr[i * M + j];
 		}
 
+		template<std::size_t N1 = (M > N ? N : M), std::enable_if_t<N1 == (M > N ? N : M), bool> = false>
+		Matrix(const Vector<T, N1>& vec) :
+			m_Data{}
+		{
+			for (size_t i = 0; i < N1; i++)
+				m_Data[i][i] = vec[i];
+		}
+
 
 
 
@@ -126,6 +134,21 @@ namespace leopph
 
 			for (size_t i = 0; i < 3; i++)
 				ret[3][i] = vector[i];
+
+			return ret;
+		}
+
+
+		// scale matrix
+		template<size_t N1 = N, size_t M1 = M, std::enable_if_t<N1 == M1 && N1 == N && M1 == M && N1 == 4, bool> = false>
+		static Matrix<T, 4, 4> Scale(const Vector<T, 3>& vector)
+		{
+			Matrix<T, 4, 4> ret = Identity();
+
+			for (size_t i = 0; i < 3; i++)
+				ret[i][i] = vector[i];
+
+			ret[3][3] = 1;
 
 			return ret;
 		}
