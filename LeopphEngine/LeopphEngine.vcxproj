@@ -45,15 +45,15 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>$(SolutionDir)out\$(ProjectName)\$(Configuration)_$(Platform)\</OutDir>
-    <IntDir>$(SolutionDir)int\$(ProjectName)\$(Configuration)_$(Platform)\</IntDir>
+    <OutDir>$(ProjectDir)out\$(Configuration)_$(Platform)\</OutDir>
+    <IntDir>$(ProjectDir)int\$(Configuration)_$(Platform)\</IntDir>
     <TargetName>leopph</TargetName>
     <LibraryPath>$(ProjectDir)vendor\glad\$(Configuration)\;$(ProjectDir)vendor\assimp\lib\$(Configuration)\;$(ProjectDir)vendor\glfw\src\$(Configuration)\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>$(SolutionDir)out\$(ProjectName)\$(Configuration)_$(Platform)\</OutDir>
-    <IntDir>$(SolutionDir)int\$(ProjectName)\$(Configuration)_$(Platform)\</IntDir>
+    <OutDir>$(ProjectDir)out\$(Configuration)_$(Platform)\</OutDir>
+    <IntDir>$(ProjectDir)int\$(Configuration)_$(Platform)\</IntDir>
     <TargetName>leopph</TargetName>
     <LibraryPath>$(ProjectDir)vendor\glad\$(Configuration)\;$(ProjectDir)vendor\assimp\lib\$(Configuration)\;$(ProjectDir)vendor\glfw\src\$(Configuration)\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
@@ -66,6 +66,7 @@
       <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalIncludeDirectories>$(ProjectDir)vendor\stb_image;$(ProjectDir)vendor\glfw\include;$(ProjectDir)vendor\glad\include;$(ProjectDir)vendor\assimp\include;$(ProjectDir)src\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
     <Link>
       <SubSystem>NotSet</SubSystem>
@@ -87,6 +88,7 @@
       <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalIncludeDirectories>$(ProjectDir)vendor\stb_image;$(ProjectDir)vendor\glfw\include;$(ProjectDir)vendor\glad\include;$(ProjectDir)vendor\assimp\include;$(ProjectDir)src\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
     <Link>
       <SubSystem>NotSet</SubSystem>
