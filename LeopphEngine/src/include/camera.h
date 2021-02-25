@@ -17,9 +17,9 @@ namespace leopph
 		// COORDINATE-SYSTEM RELATED MEMBERS
 		Vector3 m_Position{};
 		Quaternion m_Rotation{};
-		Vector3 m_Front{ 0.0f, 0.0f, -1.0f };
-		Vector3 m_Upwards{ 0.0f, 1.0f, 0.0f };
-		Vector3 m_Right{ 1.0f, 0.0f, 0.0f };
+		Vector3 m_Front{ Vector3::Forward() };
+		Vector3 m_Upwards{ Vector3::Up() };
+		Vector3 m_Right{ Vector3::Right() };
 
 		// PROJECTION RELATED MEMBERS
 		float m_AspectRatio{ 1.0f };

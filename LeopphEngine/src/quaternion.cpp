@@ -67,4 +67,19 @@ namespace leopph
 	{
 		return Math::Sqrt(Math::Pow(w, 2) + Math::Pow(x, 2) + Math::Pow(y, 2) + Math::Pow(z, 2));
 	}
+
+
+
+
+
+	Quaternion operator*(const Quaternion& left, const Quaternion& right)
+	{
+		return Quaternion
+		{
+			left[0] * right[0] - left[1] * right[1] - left[2] * right[2] - left[3] * right[3],
+			left[0] * right[1] + left[1] * right[0] + left[2] * right[3] - left[3] * right[2],
+			left[0] * right[2] - left[1] * right[3] + left[2] * right[0] + left[3] * right[1],
+			left[0] * right[3] + left[1] * right[2] - left[2] * right[1] + left[3] * right[0]
+		};
+	}
 }

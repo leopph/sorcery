@@ -36,4 +36,7 @@ namespace leopph
 		float y{ 0.0f };
 		float z{ 0.0f };
 	};
+
+
+	LEOPPHAPI Quaternion operator*(const Quaternion& left, const Quaternion& right);
 }

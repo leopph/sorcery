@@ -64,7 +64,7 @@ namespace leopph
 	{
 		m_Rotation = std::move(newRot);
 
-		Matrix3 rotationMatrix{ static_cast<Matrix3>(static_cast<Matrix4>(newRot)) };
+		Matrix3 rotationMatrix{ static_cast<Matrix3>(static_cast<Matrix4>(m_Rotation)) };
 		m_Front = Vector3::Forward() * rotationMatrix;
 		m_Upwards = Vector3::Up() * rotationMatrix;
 		m_Right = Vector3::Right() * rotationMatrix;
