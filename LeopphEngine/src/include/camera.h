@@ -26,8 +26,6 @@ namespace leopph
 		float m_HorizontalFOVDegrees{ 90.0f };
 		float m_NearClip{ 0.01f };
 		float m_FarClip{ 100.0f };
-		float m_Yaw{ -90.0f };
-		float m_Pitch{};
 
 
 
@@ -37,8 +35,6 @@ namespace leopph
 
 		enum : unsigned char { VERTICAL_TO_HORIZONTAL, HORIZONTAL_TO_VERTICAL };
 		float ConvertFOV(float fov, unsigned char conversion) const;
-
-		void UpdateVectors();
 
 
 	public:

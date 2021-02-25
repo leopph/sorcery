@@ -7,34 +7,6 @@ using namespace leopph;
 
 
 
-class CameraMove : public Behavior
-{
-private:
-	const float m_Speed = 2.0f;
-
-public:
-	using Behavior::Behavior;
-
-	void operator()()
-	{
-		Camera& cam = Camera::Instance();
-		
-		if (Input::GetKey(leopph::KeyCode::W))
-			cam.Position(cam.Position() + Vector3::Forward() * m_Speed * Time::DeltaTime());
-
-		if (Input::GetKey(leopph::KeyCode::S))
-			cam.Position(cam.Position() + -Vector3::Forward() * m_Speed * Time::DeltaTime());
-
-		if (Input::GetKey(leopph::KeyCode::A))
-			cam.Position(cam.Position() + -Vector3::Right() * m_Speed * Time::DeltaTime());
-
-		if (Input::GetKey(leopph::KeyCode::D))
-			cam.Position(cam.Position() + Vector3::Right() * m_Speed * Time::DeltaTime());
-	}
-};
-
-
-
 class FPSCounter : public Behavior
 {
 private:
@@ -70,7 +42,7 @@ public:
 	void operator()()
 	{
 		rotation += std::fmod(m_Speed * Time::DeltaTime(), 360.0f);
-		this->m_Object.Rotation({ { 1, 1, 1 }, rotation });
+		this->m_Object.Rotation({ { 0, 1, 0 }, rotation });
 	}
 };
 
@@ -79,6 +51,7 @@ public:
 class CameraController : public Behavior
 {
 private:
+	const float m_Speed = 2.0f;
 	float lastX{};
 	float lastY{};
 
@@ -87,14 +60,32 @@ public:
 
 	void operator()()
 	{
+		Camera& cam = Camera::Instance();
+
+		if (Input::GetKey(leopph::KeyCode::W))
+			cam.Position(cam.Position() + Vector3::Forward() * m_Speed * Time::DeltaTime());
+
+		if (Input::GetKey(leopph::KeyCode::S))
+			cam.Position(cam.Position() + -Vector3::Forward() * m_Speed * Time::DeltaTime());
+
+		if (Input::GetKey(leopph::KeyCode::A))
+			cam.Position(cam.Position() + -Vector3::Right() * m_Speed * Time::DeltaTime());
+
+		if (Input::GetKey(leopph::KeyCode::D))
+			cam.Position(cam.Position() + Vector3::Right() * m_Speed * Time::DeltaTime());
+
+		if (Input::GetKey(leopph::KeyCode::Q))
+			cam.Position(cam.Position() + Vector3::Up() * m_Speed * Time::DeltaTime());
+
+		if (Input::GetKey(leopph::KeyCode::E))
+			cam.Position(cam.Position() + -Vector3::Up() * m_Speed * Time::DeltaTime());
+
+
 		std::pair<float, float> mousePos = Input::GetMousePosition();
 		float diffX = mousePos.first - lastX;
 		float diffY = mousePos.second - lastY;
 
-		//Camera::Instance().Rotation(Camera::Instance().Rotation() * Quaternion { Vector3::Up(), diffX });
-
-		Camera::Instance().Rotation(Camera::Instance().Rotation() * Quaternion { });
-		std::cout << Camera::Instance().Rotation()[0] << " " << Camera::Instance().Rotation()[1] << " " << Camera::Instance().Rotation()[2] << " " << Camera::Instance().Rotation()[3] << std::endl;
+		cam.Rotation(cam.Rotation() * Quaternion { Vector3::Up(), diffX });
 
 		lastX = mousePos.first;
 		lastY = mousePos.second;
@@ -108,18 +99,14 @@ void leopph::Init()
 	Object* backpack = Object::Create();
 	backpack->AddModel(Model{ "models/backpack/backpack.obj" });
 	backpack->Position({ 0, 0, 5 });
-	//backpack->Rotation({ Vector3::Up(), 180 });
 	//backpack->AddBehavior<Rotate>();
 
 	Object* dirLight = Object::Create();
 	dirLight->AddBehavior<DirectionalLight>()->Direction({ -3, -1, 1 });
 
-	Object* cameraMover = Object::Create();
-	cameraMover->AddBehavior<CameraMove>();
-
 	Object* fpsCounter = Object::Create();
 	fpsCounter->AddBehavior<FPSCounter>();
 
-	/*Object* cameraController = Object::Create();
-	cameraController->AddBehavior<CameraController>();*/
+	Object* cameraController = Object::Create();
+	cameraController->AddBehavior<CameraController>();
 }

@@ -104,11 +104,11 @@ namespace leopph
 
 			T tanHalfFov{ static_cast<T>(Math::Tan(fov / static_cast<T>(2))) };
 
-			ret[0][0] = static_cast<T>(1) / (aspectRatio * tanHalfFov);
+			ret[0][0] = -static_cast<T>(1) / tanHalfFov / aspectRatio;
 			ret[1][1] = static_cast<T>(1) / tanHalfFov;
-			ret[2][2] = - (nearClipPlane + farClipPlane) / (farClipPlane - nearClipPlane);
-			ret[2][3] = - static_cast<T>(1);
-			ret[3][2] = - (static_cast<T>(2) * farClipPlane * nearClipPlane) / (farClipPlane - nearClipPlane);
+			ret[2][2] = (nearClipPlane + farClipPlane) / (nearClipPlane - farClipPlane);
+			ret[2][3] = static_cast<T>(-1);
+			ret[3][2] = (static_cast<T>(2) * nearClipPlane * farClipPlane) / (nearClipPlane - farClipPlane);
 
 			return ret;
 		}

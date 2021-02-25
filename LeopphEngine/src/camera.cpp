@@ -25,21 +25,6 @@ namespace leopph
 
 
 
-	// CALCULATING NEW COORDINATE SYSTEM AXES
-	void Camera::UpdateVectors()
-	{
-		Vector3 newFront;
-		newFront[0] = static_cast<float>(Math::Cos(Math::ToRadians(m_Yaw)) * Math::Cos(Math::ToRadians(m_Pitch)));
-		newFront[1] = static_cast<float>(Math::Sin(Math::ToRadians(m_Pitch)));
-		newFront[2] = static_cast<float>(Math::Sin(Math::ToRadians(m_Yaw)) * Math::Cos(Math::ToRadians(m_Pitch)));
-
-		m_Front = newFront.Normalized();
-		m_Right = Vector3::Cross(m_Front, Vector3::Up()).Normalized();
-		m_Upwards = Vector3::Cross(m_Right, m_Front).Normalized();
-	}
-
-
-
 	// SINGLETON INSTANCE
 	Camera& Camera::Instance()
 	{
