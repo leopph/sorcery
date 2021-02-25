@@ -49,6 +49,11 @@ namespace leopph
 
 	// init key states
 	std::map<int, PressState> Input::s_KeyStates{};
+
+
+
+	// init mouse pos
+	std::pair<float, float> Input::s_MousePos{};
 	
 
 
@@ -66,10 +71,18 @@ namespace leopph
 	}
 
 
+	void Input::MouseCallback(float x, float y)
+	{
+		s_MousePos.first = x;
+		s_MousePos.second = y;
+	}
+
+
 	// register for callback
-	void Input::RegisterCallback()
+	void Input::RegisterCallbacks()
 	{
 		implementation::Window::SetKeyCallback(KeyCallback);
+		implementation::Window::SetMouseCallback(MouseCallback);
 
 		for (const auto& pair : s_KeyCodes)
 			s_KeyStates[pair.second] = PressState::Released;
@@ -102,5 +115,12 @@ namespace leopph
 	bool Input::GetKeyUp(KeyCode key)
 	{
 		return s_KeyStates[s_KeyCodes.at(key)] == PressState::Up;
+	}
+
+
+
+	const std::pair<float, float>& Input::GetMousePosition()
+	{
+		return s_MousePos;
 	}
 }

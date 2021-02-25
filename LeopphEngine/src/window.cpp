@@ -4,6 +4,7 @@
 
 #include <stdexcept>
 #include <glad/glad.h>
+#include <utility>
 
 
 namespace leopph::implementation
@@ -11,6 +12,7 @@ namespace leopph::implementation
 	// init static members
 	Window* Window::s_Instance{ nullptr };
 	std::function<void(int, int)> Window::s_KeyCallback{};
+	std::function<void(float, float)> Window::s_MouseCallback{};
 
 
 	// set up a window and rendering context with callbacks
@@ -24,7 +26,7 @@ namespace leopph::implementation
 
 			Camera::Instance().AspectRatio(s_Instance->m_Width, s_Instance->m_Height);
 
-			Input::RegisterCallback();
+			Input::RegisterCallbacks();
 
 			glfwSetFramebufferSizeCallback(s_Instance->m_Window, FramebufferSizeCallback);
 			glfwSetKeyCallback(s_Instance->m_Window, KeyCallbackManager);
@@ -86,6 +88,19 @@ namespace leopph::implementation
 	void Window::SetKeyCallback(std::function<void(int, int)> callback)
 	{
 		s_KeyCallback = std::move(callback);
+	}
+
+
+
+	void Window::MouseCallbackManager(GLFWwindow* window, double x, double y)
+	{
+		if (s_MouseCallback)
+			s_MouseCallback(static_cast<float>(x), static_cast<float>(y));
+	}
+
+	void Window::SetMouseCallback(std::function<void(float, float)> callback)
+	{
+		s_MouseCallback = std::move(callback);
 	}
 
 

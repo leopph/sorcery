@@ -1,7 +1,9 @@
 #include "camera.h"
 #include "leopphmath.h"
-
 #include <stdexcept>
+#include <utility>
+
+
 
 namespace leopph
 {
@@ -32,26 +34,8 @@ namespace leopph
 		newFront[2] = static_cast<float>(Math::Sin(Math::ToRadians(m_Yaw)) * Math::Cos(Math::ToRadians(m_Pitch)));
 
 		m_Front = newFront.Normalized();
-		m_Right = Vector3::Cross(m_Front, m_WorldUpwards).Normalized();
+		m_Right = Vector3::Cross(m_Front, Vector3::Up()).Normalized();
 		m_Upwards = Vector3::Cross(m_Right, m_Front).Normalized();
-	}
-
-
-
-	// YAW AND PITCH SETTERS TO HANDLE CONSTRAINTS
-	void Camera::SetYaw(float newYaw)
-	{
-		m_Yaw = newYaw;
-	}
-
-	void Camera::SetPitch(float newPitch)
-	{
-		if (newPitch > PITCH_CONSTRAINT)
-			m_Pitch = PITCH_CONSTRAINT;
-		else if (newPitch < -PITCH_CONSTRAINT)
-			m_Pitch = -PITCH_CONSTRAINT;
-		else
-			m_Pitch = newPitch;
 	}
 
 
@@ -64,10 +48,11 @@ namespace leopph
 	}
 
 
-	// CAMERA POS SETTER AND GETTER
-	void Camera::Position(const Vector3& newPos)
+
+	// SETTERS AND GETTERS
+	void Camera::Position(Vector3 newPos)
 	{
-		m_Position = newPos;
+		m_Position = std::move(newPos);
 	}
 
 	const Vector3& Camera::Position() const
@@ -75,17 +60,19 @@ namespace leopph
 		return m_Position;
 	}
 
-
-
-	// CAMERA SPEED SETTERS AND GETTERS
-	void Camera::Speed(float newSpeed)
+	void Camera::Rotation(Quaternion newRot)
 	{
-		m_Speed = newSpeed;
+		m_Rotation = std::move(newRot);
+
+		Matrix3 rotationMatrix{ static_cast<Matrix3>(static_cast<Matrix4>(newRot)) };
+		m_Front = Vector3::Forward() * rotationMatrix;
+		m_Upwards = Vector3::Up() * rotationMatrix;
+		m_Right = Vector3::Right() * rotationMatrix;
 	}
 
-	float Camera::Speed() const
+	const Quaternion& Camera::Rotation() const
 	{
-		return m_Speed;
+		return m_Rotation;
 	}
 
 
@@ -177,43 +164,5 @@ namespace leopph
 	{
 		float fov{ Math::ToRadians(ConvertFOV(m_HorizontalFOVDegrees, HORIZONTAL_TO_VERTICAL)) };
 		return Matrix4::Perspective(fov, m_AspectRatio, m_NearClip, m_FarClip);
-	}
-
-
-
-	// INPUT HANDLING
-	void Camera::ProcessKeyboardInput(Movement direction, float deltaTime)
-	{
-		switch (direction)
-		{
-		case Movement::FORWARD:
-			m_Position += (m_Front - Vector3::Dot(m_Front, m_WorldUpwards) * m_WorldUpwards) * m_Speed * deltaTime;
-			return;
-		case Movement::BACKWARD:
-			m_Position -= (m_Front - Vector3::Dot(m_Front, m_WorldUpwards) * m_WorldUpwards) * m_Speed * deltaTime;
-			return;
-		case Movement::RIGHT:
-			m_Position += m_Right * m_Speed * deltaTime;
-			return;
-		case Movement::LEFT:
-			m_Position -= m_Right * m_Speed * deltaTime;
-			return;
-		case Movement::UP:
-			m_Position += m_WorldUpwards * m_Speed * deltaTime;
-			return;
-		case Movement::DOWN:
-			m_Position -= m_WorldUpwards * m_Speed * deltaTime;
-		}
-	}
-
-	void Camera::ProcessMouseInput(float offsetX, float offsetY)
-	{
-		offsetX *= m_MouseSens;
-		offsetY *= m_MouseSens;
-
-		SetYaw(m_Yaw + offsetX);
-		SetPitch(m_Pitch + offsetY);
-
-		UpdateVectors();
 	}
 }

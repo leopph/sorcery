@@ -76,6 +76,23 @@ public:
 
 
 
+class CameraController : public Behavior
+{
+private:
+	float lastX{};
+	float lastY{};
+
+public:
+	using Behavior::Behavior;
+
+	void operator()()
+	{
+		
+	}
+};
+
+
+
 void leopph::Init()
 {
 	Object* backpack = Object::Create();
@@ -91,4 +108,7 @@ void leopph::Init()
 
 	Object* fpsCounter = Object::Create();
 	fpsCounter->AddBehavior<FPSCounter>();
+
+	Object* cameraController = Object::Create();
+	cameraController->AddBehavior<CameraController>();
 }

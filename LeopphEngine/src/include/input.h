@@ -1,6 +1,7 @@
 #pragma once
 
 #include <map>
+#include <utility>
 
 #include "leopphapi.h"
 
@@ -30,17 +31,21 @@ namespace leopph
 	private:
 		const static std::map<KeyCode, int> s_KeyCodes;
 		static std::map<int, PressState> s_KeyStates;
+		static std::pair<float, float> s_MousePos;
 
 		static void KeyCallback(int key, int action);
+		static void MouseCallback(float x, float y);
 
 	public:
-		static void RegisterCallback(); // TODO abstract glfw away
+		static void RegisterCallbacks();
 
 		static void UpdateReleasedKeys();
 
 		static bool GetKey(KeyCode key);
 		static bool GetKeyDown(KeyCode key);
 		static bool GetKeyUp(KeyCode key);
+
+		static const std::pair<float, float>& GetMousePosition();
 	};
 
 #pragma warning (pop)

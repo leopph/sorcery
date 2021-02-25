@@ -224,6 +224,21 @@ namespace leopph
 
 			return inverse;
 		}
+
+
+		
+
+		template<std::size_t N1 = N, std::size_t M1 = M, std::enable_if_t<N1 == M1 && N1 == N && M1 == M, bool> = false>
+		operator Matrix<T, N - 1, N - 1>()
+		{
+			Matrix<T, N - 1, N - 1> ret{};
+
+			for (std::size_t i = 0; i < N - 1; i++)
+				for (std::size_t j = 0; j < N - 1; j++)
+					ret[i][j] = m_Data[i][j];
+
+			return ret;
+		}
 	};
 
 
