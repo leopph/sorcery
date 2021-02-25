@@ -1,7 +1,6 @@
 #pragma once
 
 #include <map>
-#include <GLFW/glfw3.h>
 
 #include "leopphapi.h"
 
@@ -32,10 +31,10 @@ namespace leopph
 		const static std::map<KeyCode, int> s_KeyCodes;
 		static std::map<int, PressState> s_KeyStates;
 
-		static void KeyCallBack(GLFWwindow* window, int key, int scancode, int action, int mods);
+		static void KeyCallback(int key, int action);
 
 	public:
-		static void RegisterWindow(GLFWwindow* window);
+		static void RegisterCallback(); // TODO abstract glfw away
 
 		static void UpdateReleasedKeys();
 

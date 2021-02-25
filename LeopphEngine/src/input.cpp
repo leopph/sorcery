@@ -1,4 +1,6 @@
 #include "input.h"
+#include <GLFW/glfw3.h>
+#include "window.h"
 
 namespace leopph
 {
@@ -51,7 +53,7 @@ namespace leopph
 
 
 	// save keystate changes
-	void Input::KeyCallBack(GLFWwindow* window, int key, int scancode, int action, int mods)
+	void Input::KeyCallback(int key, int action)
 	{
 		if (action == GLFW_PRESS)
 			s_KeyStates[key] = PressState::Down;
@@ -65,9 +67,9 @@ namespace leopph
 
 
 	// register for callback
-	void Input::RegisterWindow(GLFWwindow* window)
+	void Input::RegisterCallback()
 	{
-		glfwSetKeyCallback(window, KeyCallBack);
+		implementation::Window::SetKeyCallback(KeyCallback);
 
 		for (const auto& pair : s_KeyCodes)
 			s_KeyStates[pair.second] = PressState::Released;

@@ -24,32 +24,34 @@
     <ClCompile Include="src\quaternion.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\behavior.h" />
-    <ClInclude Include="include\camera.h" />
-    <ClInclude Include="include\entry.h" />
-    <ClInclude Include="include\gl.h" />
-    <ClInclude Include="include\leopphapi.h" />
-    <ClInclude Include="include\leopphmath.h" />
-    <ClInclude Include="include\light.h" />
-    <ClInclude Include="include\matrix.h" />
-    <ClInclude Include="include\mesh.h" />
-    <ClInclude Include="include\model.h" />
-    <ClInclude Include="include\object.h" />
-    <ClInclude Include="include\pointlight.h" />
-    <ClInclude Include="include\shader.h" />
-    <ClInclude Include="include\texture.h" />
-    <ClInclude Include="include\timekeeping.h" />
-    <ClInclude Include="include\vector.h" />
-    <ClInclude Include="include\vertex.h" />
-    <ClInclude Include="include\window.h" />
-    <ClInclude Include="include\dirlight.h" />
-    <ClInclude Include="include\renderer.h" />
-    <ClInclude Include="include\input.h" />
-    <ClInclude Include="include\instancedata.h" />
-    <ClInclude Include="include\quaternion.h" />
+    <ClInclude Include="src\include\behavior.h" />
+    <ClInclude Include="src\include\camera.h" />
+    <ClInclude Include="src\include\dirlight.h" />
+    <ClInclude Include="src\include\entry.h" />
+    <ClInclude Include="src\include\gl.h" />
+    <ClInclude Include="src\include\input.h" />
+    <ClInclude Include="src\include\instancedata.h" />
+    <ClInclude Include="src\include\leopphapi.h" />
+    <ClInclude Include="src\include\leopphmath.h" />
+    <ClInclude Include="src\include\light.h" />
+    <ClInclude Include="src\include\matrix.h" />
+    <ClInclude Include="src\include\mesh.h" />
+    <ClInclude Include="src\include\model.h" />
+    <ClInclude Include="src\include\object.h" />
+    <ClInclude Include="src\include\pointlight.h" />
+    <ClInclude Include="src\include\quaternion.h" />
+    <ClInclude Include="src\include\renderer.h" />
+    <ClInclude Include="src\include\shader.h" />
+    <ClInclude Include="src\include\texture.h" />
+    <ClInclude Include="src\include\timekeeping.h" />
+    <ClInclude Include="src\include\vector.h" />
+    <ClInclude Include="src\include\vertex.h" />
+    <ClInclude Include="src\include\window.h" />
+    <ClInclude Include="include\leopph.h" />
+    <ClInclude Include="include\leopphentry.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="shaders\fragment.frag" />
-    <None Include="shaders\vertex.vert" />
+    <None Include="src\shaders\fragment.frag" />
+    <None Include="src\shaders\vertex.vert" />
   </ItemGroup>
 </Project>

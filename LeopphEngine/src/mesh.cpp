@@ -1,7 +1,7 @@
 #include "mesh.h"
+#include "instancedata.h"
 
 #include <glad/glad.h>
-#include <instancedata.h>
 
 namespace leopph::implementation
 {

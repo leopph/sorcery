@@ -59,12 +59,12 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level4</WarningLevel>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions);ENGINE_BUILD</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)vendor\stb_image;$(ProjectDir)vendor\glfw\include;$(ProjectDir)vendor\glad\include;$(ProjectDir)vendor\assimp\include;$(ProjectDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)vendor\stb_image;$(ProjectDir)vendor\glfw\include;$(ProjectDir)vendor\glad\include;$(ProjectDir)vendor\assimp\include;$(ProjectDir)src\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -78,14 +78,14 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level4</WarningLevel>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions);ENGINE_BUILD</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)vendor\stb_image;$(ProjectDir)vendor\glfw\include;$(ProjectDir)vendor\glad\include;$(ProjectDir)vendor\assimp\include;$(ProjectDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)vendor\stb_image;$(ProjectDir)vendor\glfw\include;$(ProjectDir)vendor\glad\include;$(ProjectDir)vendor\assimp\include;$(ProjectDir)src\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -100,29 +100,31 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="include\behavior.h" />
-    <ClInclude Include="include\camera.h" />
-    <ClInclude Include="include\dirlight.h" />
-    <ClInclude Include="include\entry.h" />
-    <ClInclude Include="include\gl.h" />
-    <ClInclude Include="include\input.h" />
-    <ClInclude Include="include\instancedata.h" />
-    <ClInclude Include="include\leopphapi.h" />
-    <ClInclude Include="include\leopphmath.h" />
-    <ClInclude Include="include\light.h" />
-    <ClInclude Include="include\matrix.h" />
-    <ClInclude Include="include\mesh.h" />
-    <ClInclude Include="include\model.h" />
-    <ClInclude Include="include\object.h" />
-    <ClInclude Include="include\pointlight.h" />
-    <ClInclude Include="include\quaternion.h" />
-    <ClInclude Include="include\renderer.h" />
-    <ClInclude Include="include\shader.h" />
-    <ClInclude Include="include\texture.h" />
-    <ClInclude Include="include\timekeeping.h" />
-    <ClInclude Include="include\vector.h" />
-    <ClInclude Include="include\vertex.h" />
-    <ClInclude Include="include\window.h" />
+    <ClInclude Include="include\leopphentry.h" />
+    <ClInclude Include="include\leopph.h" />
+    <ClInclude Include="src\include\behavior.h" />
+    <ClInclude Include="src\include\camera.h" />
+    <ClInclude Include="src\include\dirlight.h" />
+    <ClInclude Include="src\include\entry.h" />
+    <ClInclude Include="src\include\gl.h" />
+    <ClInclude Include="src\include\input.h" />
+    <ClInclude Include="src\include\instancedata.h" />
+    <ClInclude Include="src\include\leopphapi.h" />
+    <ClInclude Include="src\include\leopphmath.h" />
+    <ClInclude Include="src\include\light.h" />
+    <ClInclude Include="src\include\matrix.h" />
+    <ClInclude Include="src\include\mesh.h" />
+    <ClInclude Include="src\include\model.h" />
+    <ClInclude Include="src\include\object.h" />
+    <ClInclude Include="src\include\pointlight.h" />
+    <ClInclude Include="src\include\quaternion.h" />
+    <ClInclude Include="src\include\renderer.h" />
+    <ClInclude Include="src\include\shader.h" />
+    <ClInclude Include="src\include\texture.h" />
+    <ClInclude Include="src\include\timekeeping.h" />
+    <ClInclude Include="src\include\vector.h" />
+    <ClInclude Include="src\include\vertex.h" />
+    <ClInclude Include="src\include\window.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\behavior.cpp" />
@@ -148,8 +150,8 @@
     <ClCompile Include="vendor\stb_image\stb_image.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="shaders\fragment.frag" />
-    <None Include="shaders\vertex.vert" />
+    <None Include="src\shaders\fragment.frag" />
+    <None Include="src\shaders\vertex.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -4,6 +4,7 @@
 
 #include <GLFW/glfw3.h>
 #include <string>
+#include <functional>
 
 #include "leopphapi.h"
 
@@ -15,7 +16,7 @@ namespace leopph::implementation
 		static Window& CreateWindow(unsigned width, unsigned height, const std::string& title, bool fullscreen);
 		static void Destroy();
 
-		~Window();
+		static void SetKeyCallback(std::function<void(int, int)> callback);
 
 		void PollEvents();
 		void SwapBuffers();
@@ -24,11 +25,13 @@ namespace leopph::implementation
 
 	private:
 		static Window* s_Instance;
+		static std::function<void(int, int)> s_KeyCallback;
 
 		Window(unsigned width, unsigned height, const std::string& title, bool fullscreen);
+		~Window();
 
 		static void FramebufferSizeCallback(GLFWwindow* window, int width, int height);
-
+		static void KeyCallbackManager(GLFWwindow* window, int key, int scancode, int action, int mods);
 		GLFWwindow* m_Window;
 
 		unsigned m_Width;

@@ -8,8 +8,9 @@
 
 namespace leopph::implementation
 {
-	// init window member
+	// init static members
 	Window* Window::s_Instance{ nullptr };
+	std::function<void(int, int)> Window::s_KeyCallback{};
 
 
 	// set up a window and rendering context with callbacks
@@ -23,9 +24,10 @@ namespace leopph::implementation
 
 			Camera::Instance().AspectRatio(s_Instance->m_Width, s_Instance->m_Height);
 
-			Input::RegisterWindow(s_Instance->m_Window);
+			Input::RegisterCallback();
 
 			glfwSetFramebufferSizeCallback(s_Instance->m_Window, FramebufferSizeCallback);
+			glfwSetKeyCallback(s_Instance->m_Window, KeyCallbackManager);
 		}
 
 		return *s_Instance;
@@ -71,6 +73,19 @@ namespace leopph::implementation
 		s_Instance->m_Height = height;
 
 		Camera::Instance().AspectRatio(s_Instance->m_Width, s_Instance->m_Height);
+	}
+
+
+	void Window::KeyCallbackManager(GLFWwindow* window, int key, int scancode, int action, int mods)
+	{
+		if (s_KeyCallback)
+			s_KeyCallback(key, action);
+	}
+
+
+	void Window::SetKeyCallback(std::function<void(int, int)> callback)
+	{
+		s_KeyCallback = std::move(callback);
 	}
 
 

@@ -1,28 +1,10 @@
+#include "leopph.h"
+#include "leopphentry.h"
+
 #include <iostream>
 
-#include <entry.h>
-#include <vector.h>
-#include <matrix.h>
-#include <leopphmath.h>
-#include <object.h>
-#include <behavior.h>
-#include <pointlight.h>
-#include <model.h>
-#include <camera.h>
-#include <timekeeping.h>
-#include <dirlight.h>
+using namespace leopph;
 
-using leopph::Vector4;
-using leopph::Vector3;
-using leopph::Matrix3;
-using leopph::Matrix4;
-using leopph::Object;
-using leopph::Behavior;
-using leopph::Model;
-using leopph::Camera;
-using leopph::Time;
-using leopph::Input;
-using leopph::DirectionalLight;
 
 
 class CameraMove : public Behavior
