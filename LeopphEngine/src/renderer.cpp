@@ -17,6 +17,8 @@ namespace leopph::implementation
 	Renderer::Renderer()
 	{
 		glEnable(GL_DEPTH_TEST);
+		glClearDepth(0);
+		glDepthFunc(GL_GEQUAL);
 	}
 
 

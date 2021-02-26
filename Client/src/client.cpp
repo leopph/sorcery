@@ -42,7 +42,7 @@ public:
 	void operator()()
 	{
 		rotation += std::fmod(m_Speed * Time::DeltaTime(), 360.0f);
-		this->m_Object.Rotation({ { 0, 1, 0 }, rotation });
+		this->m_Object.Rotation({ Vector3::Up(), rotation });
 	}
 };
 
@@ -81,14 +81,14 @@ public:
 			cam.Position(cam.Position() + -Vector3::Up() * m_Speed * Time::DeltaTime());
 
 
-		std::pair<float, float> mousePos = Input::GetMousePosition();
+		/*std::pair<float, float> mousePos = Input::GetMousePosition();
 		float diffX = mousePos.first - lastX;
 		float diffY = mousePos.second - lastY;
 
 		cam.Rotation(cam.Rotation() * Quaternion { Vector3::Up(), diffX });
 
 		lastX = mousePos.first;
-		lastY = mousePos.second;
+		lastY = mousePos.second;*/
 	}
 };
 
@@ -96,17 +96,13 @@ public:
 
 void leopph::Init()
 {
-	/*Object* backpack = Object::Create();
+	Object* backpack = Object::Create();
 	backpack->AddModel(Model{ "models/backpack/backpack.obj" });
 	backpack->Position({ 0, 0, 5 });
-	//backpack->AddBehavior<Rotate>();*/
-
-	Object* tetej = Object::Create();
-	tetej->AddModel({ "models/samy/tetej3/teszt3.obj" });
-	//tetej->Scale({ 0.1, 0.1, 0.1 });
+	backpack->AddBehavior<Rotate>();
 
 	Object* dirLight = Object::Create();
-	dirLight->AddBehavior<DirectionalLight>()->Direction({ -3, -1, 1 });
+	dirLight->AddBehavior<DirectionalLight>()->Direction({ -1, 0, 1 });
 
 	Object* fpsCounter = Object::Create();
 	fpsCounter->AddBehavior<FPSCounter>();
