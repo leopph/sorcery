@@ -94,22 +94,39 @@ namespace leopph
 
 
 
-		// perspetive projection matrix
-		template<size_t N1 = N, size_t M1 = M, std::enable_if_t<N1 == M1 && N1 == N && M1 == M && N1 == 4, bool> = false>
-		static Matrix<T, 4, 4> Perspective(const T& fov, const T& aspectRatio, const T& nearClipPlane, const T& farClipPlane)
+		// PERSPECTIVE PROJECTION
+		template<size_t N1 = N, size_t M1 = M, class = std::enable_if_t<N1 == M1 && N1 == N && M1 == M && N1 == 4>>
+		static Matrix<T, 4, 4> Perspective(const T& left, const T& right, const T& top, const T& bottom, const T& nearClipPlane, const T& farClipPlane)
 		{
-			Matrix<T, 4, 4> ret{};
+			Matrix<T, 4, 4> ret;
 
-			T tanHalfFov{ static_cast<T>(Math::Tan(fov / static_cast<T>(2))) };
-
-			ret[0][0] = static_cast<T>(1) / aspectRatio / tanHalfFov;
-			ret[1][1] = static_cast<T>(1) / tanHalfFov;
-			ret[2][2] = -(farClipPlane + nearClipPlane) / (farClipPlane - nearClipPlane);
+			ret[0][0] = (static_cast<T>(2) * nearClipPlane) / (right - left);
+			ret[2][0] = (right + left) / (right - left);
+			ret[1][1] = (static_cast<T>(2) * nearClipPlane) / (top - bottom);
+			ret[2][1] = (top + bottom) / (top - bottom);
+			ret[2][2] = (farClipPlane + nearClipPlane) / (farClipPlane - nearClipPlane);
 			ret[2][3] = static_cast<T>(1);
-			ret[3][2] = (2 * farClipPlane * nearClipPlane) / (farClipPlane - nearClipPlane);
+			ret[3][2] = (static_cast<T>(-2) * farClipPlane * nearClipPlane) / (farClipPlane - nearClipPlane);
 
 			return ret;
+
 		}
+
+
+		template<size_t N1 = N, size_t M1 = M, class = std::enable_if_t<N1 == M1 && N1 == N && M1 == M && N1 == 4>>
+		static Matrix<T, 4, 4> Perspective(const T& fov, const T& aspectRatio, const T& nearClipPlane, const T& farClipPlane)
+		{
+			T tanHalfFov{ static_cast<T>(Math::Tan(fov / static_cast<T>(2))) };
+			T top{ nearClipPlane * tanHalfFov };
+			T bottom{ -top };
+			T right{ top * aspectRatio };
+			T left{ -right };
+
+			return Perspective(left, right, top, bottom, nearClipPlane, farClipPlane);
+		}
+
+
+
 
 
 
