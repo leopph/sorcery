@@ -16,7 +16,7 @@ namespace leopph::implementation
 
 
 	// set up a window and rendering context with callbacks
-	Window& Window::CreateWindow(unsigned width = 1280u, unsigned height = 720u, const std::string& title = "Window", bool fullscreen = false)
+	Window& Window::Get(unsigned width = 1280u, unsigned height = 720u, const std::string& title = "Window", bool fullscreen = false)
 	{
 		if (s_Instance == nullptr)
 		{
@@ -30,6 +30,7 @@ namespace leopph::implementation
 
 			glfwSetFramebufferSizeCallback(s_Instance->m_Window, FramebufferSizeCallback);
 			glfwSetKeyCallback(s_Instance->m_Window, KeyCallbackManager);
+			glfwSetCursorPosCallback(s_Instance->m_Window, MouseCallbackManager);
 		}
 
 		return *s_Instance;

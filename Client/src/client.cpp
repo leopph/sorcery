@@ -81,14 +81,14 @@ public:
 			cam.Position(cam.Position() + -Vector3::Up() * m_Speed * Time::DeltaTime());
 
 
-		/*std::pair<float, float> mousePos = Input::GetMousePosition();
+		std::pair<float, float> mousePos = Input::GetMousePosition();
 		float diffX = mousePos.first - lastX;
 		float diffY = mousePos.second - lastY;
 
 		cam.Rotation(cam.Rotation() * Quaternion { Vector3::Up(), diffX });
 
 		lastX = mousePos.first;
-		lastY = mousePos.second;*/
+		lastY = mousePos.second;
 	}
 };
 
