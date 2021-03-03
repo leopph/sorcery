@@ -61,8 +61,8 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <AdditionalIncludeDirectories>$(SolutionDir)LeopphEngine\include;$(SolutionDir)LeopphEngine\vendor\glfw\include;$(SolutionDir)LeopphEngine\vendor\assimp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
+      <AdditionalIncludeDirectories>$(SolutionDir)LeopphEngine\vendor\assimp\include; $(SolutionDir)LeopphEngine\vendor\glfw\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>NotSet</SubSystem>
@@ -84,8 +84,8 @@ xcopy "$(ProjectDir)models" "$(OutDir)models\" /d /y /s</Command>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <AdditionalIncludeDirectories>$(SolutionDir)LeopphEngine\include;$(SolutionDir)LeopphEngine\vendor\glfw\include;$(SolutionDir)LeopphEngine\vendor\assimp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
+      <AdditionalIncludeDirectories>$(SolutionDir)LeopphEngine\vendor\assimp\include; $(SolutionDir)LeopphEngine\vendor\glfw\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>NotSet</SubSystem>

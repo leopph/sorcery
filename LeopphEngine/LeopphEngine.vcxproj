@@ -49,6 +49,7 @@
     <IntDir>$(ProjectDir)int\$(Configuration)_$(Platform)\</IntDir>
     <TargetName>leopph</TargetName>
     <LibraryPath>$(ProjectDir)vendor\glad\$(Configuration)\;$(ProjectDir)vendor\assimp\lib\$(Configuration)\;$(ProjectDir)vendor\glfw\src\$(Configuration)\;$(LibraryPath)</LibraryPath>
+    <PublicIncludeDirectories>include</PublicIncludeDirectories>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -56,6 +57,7 @@
     <IntDir>$(ProjectDir)int\$(Configuration)_$(Platform)\</IntDir>
     <TargetName>leopph</TargetName>
     <LibraryPath>$(ProjectDir)vendor\glad\$(Configuration)\;$(ProjectDir)vendor\assimp\lib\$(Configuration)\;$(ProjectDir)vendor\glfw\src\$(Configuration)\;$(LibraryPath)</LibraryPath>
+    <PublicIncludeDirectories>include</PublicIncludeDirectories>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
