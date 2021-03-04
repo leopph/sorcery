@@ -19,8 +19,6 @@
     <ClCompile Include="src\input.cpp" />
     <ClCompile Include="src\dirlight.cpp" />
     <ClCompile Include="src\instancedata.cpp" />
-    <ClCompile Include="src\vector.cpp" />
-    <ClCompile Include="src\matrix.cpp" />
     <ClCompile Include="src\quaternion.cpp" />
   </ItemGroup>
   <ItemGroup>
