@@ -41,7 +41,7 @@ public:
 	void operator()()
 	{
 		rotation += std::fmod(m_Speed * Time::DeltaTime(), 360.0f);
-		this->m_Object.Rotation({ Vector3::Up(), rotation });
+		this->OwningObject().Rotation({ Vector3::Up(), rotation });
 	}
 };
 
@@ -85,6 +85,7 @@ public:
 		float diffY = mousePos.second - lastY;
 
 		cam.Rotation(cam.Rotation() * Quaternion { Vector3::Up(), diffX });
+		cam.Rotation(cam.Rotation()* Quaternion { Vector3::Right(), diffY });
 
 		lastX = mousePos.first;
 		lastY = mousePos.second;

@@ -31,7 +31,7 @@ namespace leopph::implementation
 		static void RegisterDirectionalLight(Light* light);
 
 		static void UnregisterPointLight(Light* light);
-		static void UnregisterDirectionalLight(Light* light);
+		static void UnregisterDirectionalLight();
 
 	private:
 		static std::set<Light*> s_PointLights;

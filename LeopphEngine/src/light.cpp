@@ -36,7 +36,7 @@ namespace leopph::implementation
 	}
 
 
-	void Light::UnregisterDirectionalLight(Light* light)
+	void Light::UnregisterDirectionalLight()
 	{
 		s_DirectionalLight = nullptr;
 	}

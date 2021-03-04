@@ -67,6 +67,8 @@ namespace leopph::implementation
 	}
 
 
+#pragma warning(push)
+#pragma warning(disable: 4100)
 	// framebuffer resize callback
 	void Window::FramebufferSizeCallback(GLFWwindow* window, int width, int height)
 	{
@@ -84,6 +86,7 @@ namespace leopph::implementation
 		if (s_KeyCallback)
 			s_KeyCallback(key, action);
 	}
+#pragma warning(pop)
 
 
 	void Window::SetKeyCallback(std::function<void(int, int)> callback)
@@ -92,12 +95,14 @@ namespace leopph::implementation
 	}
 
 
-
+#pragma warning(push)
+#pragma warning(disable: 4100)
 	void Window::MouseCallbackManager(GLFWwindow* window, double x, double y)
 	{
 		if (s_MouseCallback)
 			s_MouseCallback(static_cast<float>(x), static_cast<float>(y));
 	}
+#pragma warning(pop)
 
 	void Window::SetMouseCallback(std::function<void(float, float)> callback)
 	{

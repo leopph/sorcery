@@ -19,7 +19,7 @@ namespace leopph
 
 
 
-int main(int argc, char** argv)
+int main()
 {
 	leopph::implementation::Window& window{ leopph::implementation::Window::Get(1280, 720, "LeopphEngine Application", false) };
 

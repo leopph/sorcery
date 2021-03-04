@@ -10,7 +10,7 @@ namespace leopph
 	// Users subclass this and add them to Objects to create game logic
 	class LEOPPHAPI Behavior
 	{
-	protected:
+	private:
 		Object& m_Object;
 
 	public:

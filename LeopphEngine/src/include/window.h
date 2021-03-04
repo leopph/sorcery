@@ -11,6 +11,9 @@
 
 namespace leopph::implementation
 {
+#pragma warning(push)
+#pragma warning(disable: 4251)
+
 	class LEOPPHAPI Window
 	{
 	public:
@@ -43,4 +46,6 @@ namespace leopph::implementation
 		unsigned m_Height;
 		bool m_Fullscreen;
 	};
+
+#pragma warning(pop)
 }
