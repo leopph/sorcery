@@ -32,6 +32,8 @@ namespace leopph::implementation
 			glfwSetFramebufferSizeCallback(s_Instance->m_Window, FramebufferSizeCallback);
 			glfwSetKeyCallback(s_Instance->m_Window, KeyCallbackManager);
 			glfwSetCursorPosCallback(s_Instance->m_Window, MouseCallbackManager);
+
+			glfwSetCursorPos(s_Instance->m_Window, 0, 0);
 		}
 
 		return *s_Instance;

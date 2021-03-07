@@ -29,24 +29,6 @@ public:
 
 
 
-class Rotate : public Behavior
-{
-private:
-	const float m_Speed = 45.0f / 2.0f;
-	float rotation = 45.0f;
-
-public:
-	using Behavior::Behavior;
-
-	void operator()()
-	{
-		rotation += std::fmod(m_Speed * Time::DeltaTime(), 360.0f);
-		this->OwningObject().Rotation({ Vector3::Up(), rotation });
-	}
-};
-
-
-
 class CameraController : public Behavior
 {
 private:
@@ -84,8 +66,8 @@ public:
 		float diffX = mousePos.first - lastX;
 		float diffY = mousePos.second - lastY;
 
-		cam.Rotation(cam.Rotation() * Quaternion{ Vector3::Up(), 10 * Time::DeltaTime() });
-		cam.Rotation(cam.Rotation() * Quaternion{ cam.Right(), 10 * Time::DeltaTime() });
+		cam.Rotation(cam.Rotation() * Quaternion{ Vector3::Up(), diffX });
+		cam.Rotation(cam.Rotation() * Quaternion{ cam.Right(), diffY });
 
 		lastX = mousePos.first;
 		lastY = mousePos.second;
@@ -101,13 +83,12 @@ void leopph::Init()
 	Object* backpack = Object::Create();
 	backpack->AddModel(Model{ "models/backpack/backpack.obj" });
 	backpack->Position({ 0, 0, 5 });
-	//backpack->AddBehavior<Rotate>();
 
 	Object* dirLight = Object::Create();
 	dirLight->AddBehavior<DirectionalLight>()->Direction({ -1, 0, 1 });
 
 	Object* fpsCounter = Object::Create();
-	//fpsCounter->AddBehavior<FPSCounter>();
+	fpsCounter->AddBehavior<FPSCounter>();
 
 	Object* cameraController = Object::Create();
 	cameraController->AddBehavior<CameraController>();
