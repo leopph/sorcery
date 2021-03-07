@@ -64,6 +64,10 @@ namespace leopph
 
 		Matrix4 ViewMatrix() const;
 		Matrix4 ProjMatrix() const;
+
+		const Vector3& Forward() const;
+		const Vector3& Right() const;
+		const Vector3& Up() const;
 	};
 
 #pragma warning(pop)

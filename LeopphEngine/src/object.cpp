@@ -119,6 +119,11 @@ namespace leopph
 	void Object::Rotation(Quaternion newRot)
 	{
 		m_Rotation = std::move(newRot);
+
+		auto rotMatrix = static_cast<Matrix3>(static_cast<Matrix4>(m_Rotation));
+		m_Forward = Vector3::Forward() * rotMatrix;
+		m_Right = Vector3::Right() * rotMatrix;
+		m_Up = Vector3::Up() * rotMatrix;
 	}
 
 	const Vector3& Object::Scale() const
@@ -129,5 +134,22 @@ namespace leopph
 	void Object::Scale(Vector3 newScale)
 	{
 		m_Scale = std::move(newScale);
+	}
+
+
+
+	const Vector3& Object::Forward() const
+	{
+		return m_Forward;
+	}
+
+	const Vector3& Object::Right() const
+	{
+		return m_Right;
+	}
+
+	const Vector3& Object::Up() const
+	{
+		return m_Up;
 	}
 }

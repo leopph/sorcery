@@ -59,6 +59,11 @@ namespace leopph
 		const Vector3& Scale() const;
 		void Scale(Vector3 newScale);
 
+		const Vector3& Forward() const;
+		const Vector3& Right() const;
+		const Vector3& Up() const;
+
+
 	private:
 		Object();
 		~Object() = default;
@@ -70,6 +75,10 @@ namespace leopph
 		Vector3 m_Position;
 		Quaternion m_Rotation;
 		Vector3 m_Scale;
+
+		Vector3 m_Forward = Vector3::Forward();
+		Vector3 m_Right = Vector3::Right();
+		Vector3 m_Up = Vector3::Up();
 	};
 
 #pragma warning(pop)

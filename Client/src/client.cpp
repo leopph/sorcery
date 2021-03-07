@@ -51,8 +51,8 @@ class CameraController : public Behavior
 {
 private:
 	const float m_Speed = 2.0f;
-	float lastX{};
-	float lastY{};
+	float lastX = Input::GetMousePosition().first;
+	float lastY = Input::GetMousePosition().second;
 
 public:
 	using Behavior::Behavior;
@@ -62,30 +62,30 @@ public:
 		Camera& cam = Camera::Instance();
 
 		if (Input::GetKey(leopph::KeyCode::W))
-			cam.Position(cam.Position() + Vector3::Forward() * m_Speed * Time::DeltaTime());
+			cam.Position(cam.Position() + cam.Forward() * m_Speed * Time::DeltaTime());
 
 		if (Input::GetKey(leopph::KeyCode::S))
-			cam.Position(cam.Position() + -Vector3::Forward() * m_Speed * Time::DeltaTime());
-
-		if (Input::GetKey(leopph::KeyCode::A))
-			cam.Position(cam.Position() + -Vector3::Right() * m_Speed * Time::DeltaTime());
+			cam.Position(cam.Position() - cam.Forward() * m_Speed * Time::DeltaTime());
 
 		if (Input::GetKey(leopph::KeyCode::D))
-			cam.Position(cam.Position() + Vector3::Right() * m_Speed * Time::DeltaTime());
+			cam.Position(cam.Position() + cam.Right() * m_Speed * Time::DeltaTime());
+
+		if (Input::GetKey(leopph::KeyCode::A))
+			cam.Position(cam.Position() - cam.Right() * m_Speed * Time::DeltaTime());
 
 		if (Input::GetKey(leopph::KeyCode::Q))
 			cam.Position(cam.Position() + Vector3::Up() * m_Speed * Time::DeltaTime());
 
 		if (Input::GetKey(leopph::KeyCode::E))
-			cam.Position(cam.Position() + -Vector3::Up() * m_Speed * Time::DeltaTime());
+			cam.Position(cam.Position() + Vector3::Down() * m_Speed * Time::DeltaTime());
 
 
 		std::pair<float, float> mousePos = Input::GetMousePosition();
 		float diffX = mousePos.first - lastX;
 		float diffY = mousePos.second - lastY;
 
-		cam.Rotation(cam.Rotation() * Quaternion { Vector3::Up(), diffX });
-		cam.Rotation(cam.Rotation()* Quaternion { Vector3::Right(), diffY });
+		cam.Rotation(cam.Rotation() * Quaternion{ Vector3::Up(), 10 * Time::DeltaTime() });
+		cam.Rotation(cam.Rotation() * Quaternion{ cam.Right(), 10 * Time::DeltaTime() });
 
 		lastX = mousePos.first;
 		lastY = mousePos.second;
@@ -101,13 +101,13 @@ void leopph::Init()
 	Object* backpack = Object::Create();
 	backpack->AddModel(Model{ "models/backpack/backpack.obj" });
 	backpack->Position({ 0, 0, 5 });
-	backpack->AddBehavior<Rotate>();
+	//backpack->AddBehavior<Rotate>();
 
 	Object* dirLight = Object::Create();
 	dirLight->AddBehavior<DirectionalLight>()->Direction({ -1, 0, 1 });
 
 	Object* fpsCounter = Object::Create();
-	fpsCounter->AddBehavior<FPSCounter>();
+	//fpsCounter->AddBehavior<FPSCounter>();
 
 	Object* cameraController = Object::Create();
 	cameraController->AddBehavior<CameraController>();

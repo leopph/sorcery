@@ -150,4 +150,23 @@ namespace leopph
 		float fov{ Math::ToRadians(ConvertFOV(m_HorizontalFOVDegrees, HORIZONTAL_TO_VERTICAL)) };
 		return Matrix4::Perspective(fov, m_AspectRatio, m_NearClip, m_FarClip);
 	}
+
+
+
+
+
+	const Vector3& Camera::Forward() const
+	{
+		return m_Front;
+	}
+
+	const Vector3& Camera::Right() const
+	{
+		return m_Right;
+	}
+
+	const Vector3& Camera::Up() const
+	{
+		return m_Upwards;
+	}
 }
