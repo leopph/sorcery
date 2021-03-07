@@ -5,6 +5,7 @@
 #include <stdexcept>
 #include <glad/glad.h>
 #include <utility>
+#include <map>
 
 
 namespace leopph::implementation
@@ -16,7 +17,7 @@ namespace leopph::implementation
 
 
 	// set up a window and rendering context with callbacks
-	Window& Window::Get(unsigned width = 1280u, unsigned height = 720u, const std::string& title = "Window", bool fullscreen = false)
+	Window& Window::Get(unsigned width, unsigned height, const std::string& title, bool fullscreen)
 	{
 		if (s_Instance == nullptr)
 		{
@@ -135,5 +136,29 @@ namespace leopph::implementation
 	{
 		glClearColor(0, 0, 0, 0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	}
+
+	Window::CursorState Window::CursorMode()
+	{
+		static const std::map<decltype(GLFW_CURSOR_NORMAL), CursorState> cursorStates
+		{
+			{ GLFW_CURSOR_NORMAL, CursorState::Shown },
+			{ GLFW_CURSOR_HIDDEN, CursorState::Hidden },
+			{ GLFW_CURSOR_DISABLED, CursorState::Disabled }
+		};
+
+		return cursorStates.at(glfwGetInputMode(this->m_Window, GLFW_CURSOR));
+	}
+
+	void Window::CursorMode(CursorState newState)
+	{
+		static const std::map<CursorState, decltype(GLFW_CURSOR_NORMAL)> cursorStates
+		{
+			{ CursorState::Shown, GLFW_CURSOR_NORMAL },
+			{ CursorState::Hidden, GLFW_CURSOR_HIDDEN },
+			{ CursorState::Disabled, GLFW_CURSOR_DISABLED }
+		};
+
+		glfwSetInputMode(this->m_Window, GLFW_CURSOR, cursorStates.at(newState));
 	}
 }

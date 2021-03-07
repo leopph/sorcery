@@ -17,7 +17,7 @@ namespace leopph::implementation
 	class LEOPPHAPI Window
 	{
 	public:
-		static Window& Get(unsigned width, unsigned height, const std::string& title, bool fullscreen);
+		static Window& Get(unsigned width = 1280u, unsigned height = 720u, const std::string& title = "Window", bool fullscreen = false);
 		static void Destroy();
 
 		static void SetKeyCallback(std::function<void(int, int)> callback);
@@ -27,6 +27,10 @@ namespace leopph::implementation
 		void SwapBuffers();
 		bool ShouldClose();
 		void Clear();
+
+		enum class CursorState { Shown, Hidden, Disabled };
+		CursorState CursorMode();
+		void CursorMode(CursorState newState);
 
 
 	private:

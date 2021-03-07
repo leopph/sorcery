@@ -4,6 +4,7 @@
 #include <utility>
 
 #include "leopphapi.h"
+#include "window.h"
 
 
 namespace leopph
@@ -21,6 +22,8 @@ namespace leopph
 	{
 		Down, Held, Up, Released,
 	};
+
+	using CursorState = implementation::Window::CursorState;
 
 
 #pragma warning (push)
@@ -46,6 +49,9 @@ namespace leopph
 		static bool GetKeyUp(KeyCode key);
 
 		static const std::pair<float, float>& GetMousePosition();
+
+		static CursorState CursorMode();
+		static void CursorMode(CursorState newState);
 	};
 
 #pragma warning (pop)

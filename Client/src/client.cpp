@@ -96,6 +96,8 @@ public:
 
 void leopph::Init()
 {
+	Input::CursorMode(CursorState::Disabled);
+
 	Object* backpack = Object::Create();
 	backpack->AddModel(Model{ "models/backpack/backpack.obj" });
 	backpack->Position({ 0, 0, 5 });

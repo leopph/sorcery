@@ -123,4 +123,15 @@ namespace leopph
 	{
 		return s_MousePos;
 	}
+
+
+	CursorState Input::CursorMode()
+	{
+		return implementation::Window::Get().CursorMode();
+	}
+
+	void Input::CursorMode(CursorState newState)
+	{
+		implementation::Window::Get().CursorMode(newState);
+	}
 }
