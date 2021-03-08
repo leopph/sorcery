@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <stdexcept>
 #include <string>
+#include <ostream>
 
 
 namespace leopph
@@ -39,4 +40,5 @@ namespace leopph
 
 
 	LEOPPHAPI Quaternion operator*(const Quaternion& left, const Quaternion& right);
+	LEOPPHAPI std::ostream& operator<<(std::ostream& os, const Quaternion& q);
 }

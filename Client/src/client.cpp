@@ -67,10 +67,23 @@ public:
 		float diffY = mousePos.second - lastY;
 
 		cam.Rotation(cam.Rotation() * Quaternion{ Vector3::Up(), diffX });
-		cam.Rotation(cam.Rotation() * Quaternion{ cam.Right(), diffY });
+		//cam.Rotation(cam.Rotation() * Quaternion{ cam.Right(), diffY });
 
 		lastX = mousePos.first;
 		lastY = mousePos.second;
+	}
+};
+
+
+
+class Rotate : public Behavior
+{
+public:
+	using Behavior::Behavior;
+
+	void operator()()
+	{
+		OwningObject().Rotation(OwningObject().Rotation()* Quaternion { {0, 1, 0}, 10 * Time::DeltaTime() });
 	}
 };
 
@@ -83,6 +96,7 @@ void leopph::Init()
 	Object* backpack = Object::Create();
 	backpack->AddModel(Model{ "models/backpack/backpack.obj" });
 	backpack->Position({ 0, 0, 5 });
+	backpack->AddBehavior<Rotate>();
 
 	Object* dirLight = Object::Create();
 	dirLight->AddBehavior<DirectionalLight>()->Direction({ -1, 0, 1 });

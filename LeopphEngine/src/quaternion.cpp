@@ -5,7 +5,16 @@ namespace leopph
 {
 	Quaternion::Quaternion(float w, float x, float y, float z) :
 		w{ w }, x{ x }, y{ y }, z{ z }
-	{}
+	{
+		float length = Magnitude();
+		if (length != 1)
+		{
+			w /= length;
+			x /= length;
+			y /= length;
+			z /= length;
+		}
+	}
 
 
 	Quaternion::Quaternion(const Vector3& axis, float angleDegrees)
@@ -81,5 +90,14 @@ namespace leopph
 			left[0] * right[2] - left[1] * right[3] + left[2] * right[0] + left[3] * right[1],
 			left[0] * right[3] + left[1] * right[2] - left[2] * right[1] + left[3] * right[0]
 		};
+	}
+
+
+
+
+	std::ostream& operator<<(std::ostream& os, const Quaternion& q)
+	{
+		os << "(" << q[0] << ", " << q[1] << ", " << q[2] << ", " << q[3] << ")";
+		return os;
 	}
 }
