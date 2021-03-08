@@ -66,8 +66,8 @@ public:
 		float diffX = mousePos.first - lastX;
 		float diffY = mousePos.second - lastY;
 
-		cam.Rotation(cam.Rotation() * Quaternion{ Vector3::Up(), diffX });
-		//cam.Rotation(cam.Rotation() * Quaternion{ cam.Right(), diffY });
+		cam.Rotation(Quaternion{ Vector3::Up(), diffX } * cam.Rotation());
+		cam.Rotation(cam.Rotation() * Quaternion{ Vector3::Right(), diffY });
 
 		lastX = mousePos.first;
 		lastY = mousePos.second;
