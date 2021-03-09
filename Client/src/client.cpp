@@ -33,6 +33,7 @@ class CameraController : public Behavior
 {
 private:
 	const float m_Speed = 2.0f;
+	const float m_Sens = 0.1f;
 	float lastX = Input::GetMousePosition().first;
 	float lastY = Input::GetMousePosition().second;
 
@@ -55,10 +56,10 @@ public:
 		if (Input::GetKey(leopph::KeyCode::A))
 			cam.Position(cam.Position() - cam.Right() * m_Speed * Time::DeltaTime());
 
-		if (Input::GetKey(leopph::KeyCode::Q))
+		if (Input::GetKey(leopph::KeyCode::E))
 			cam.Position(cam.Position() + Vector3::Up() * m_Speed * Time::DeltaTime());
 
-		if (Input::GetKey(leopph::KeyCode::E))
+		if (Input::GetKey(leopph::KeyCode::Q))
 			cam.Position(cam.Position() + Vector3::Down() * m_Speed * Time::DeltaTime());
 
 
@@ -66,8 +67,8 @@ public:
 		float diffX = mousePos.first - lastX;
 		float diffY = mousePos.second - lastY;
 
-		cam.Rotation(Quaternion{ Vector3::Up(), diffX } * cam.Rotation());
-		cam.Rotation(cam.Rotation() * Quaternion{ Vector3::Right(), diffY });
+		cam.Rotation(Quaternion{ Vector3::Up(), diffX * m_Sens } * cam.Rotation());
+		cam.Rotation(cam.Rotation() * Quaternion{ Vector3::Right(), diffY * m_Sens });
 
 		lastX = mousePos.first;
 		lastY = mousePos.second;
