@@ -45,13 +45,15 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>$(ProjectDir)out\$(Configuration)_$(Platform)\</OutDir>
-    <IntDir>$(ProjectDir)int\$(Configuration)_$(Platform)\</IntDir>
+    <OutDir>$(SolutionDir)out\$(ProjectName)\$(Configuration)_$(Platform)\</OutDir>
+    <IntDir>$(SolutionDir)int\$(ProjectName)\$(Configuration)_$(Platform)\</IntDir>
+    <TargetName>demo</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>$(ProjectDir)out\$(Configuration)_$(Platform)\</OutDir>
-    <IntDir>$(ProjectDir)int\$(Configuration)_$(Platform)\</IntDir>
+    <OutDir>$(SolutionDir)out\$(ProjectName)\$(Configuration)_$(Platform)\</OutDir>
+    <IntDir>$(SolutionDir)int\$(ProjectName)\$(Configuration)_$(Platform)\</IntDir>
+    <TargetName>demo</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -69,9 +71,9 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(SolutionDir)LeopphEngine\out\$(Configuration)_$(Platform)\*.dll" "$(OutDir)" /d /y
-xcopy "$(SolutionDir)LeopphEngine\src\shaders\*" "$(OutDir)shaders\" /d /y /s
-xcopy "$(ProjectDir)models" "$(OutDir)models\" /d /y /s</Command>
+      <Command>xcopy "$(SolutionDir)out\LeopphEngine\$(Configuration)_$(Platform)\leopph.dll" "$(OutDir)" /d /y
+xcopy "$(SolutionDir)LeopphEngine\src\shaders" "$(OutDir)shaders" /d /y /s /i
+xcopy "$(ProjectDir)models" "$(OutDir)models" /d /y /s /i</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -94,9 +96,9 @@ xcopy "$(ProjectDir)models" "$(OutDir)models\" /d /y /s</Command>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(SolutionDir)LeopphEngine\out\$(Configuration)_$(Platform)\*.dll" "$(OutDir)" /d /y
-xcopy "$(SolutionDir)LeopphEngine\src\shaders\*" "$(OutDir)shaders\" /d /y /s
-xcopy "$(ProjectDir)models" "$(OutDir)models\" /d /y /s</Command>
+      <Command>xcopy "$(SolutionDir)out\LeopphEngine\$(Configuration)_$(Platform)\leopph.dll" "$(OutDir)" /d /y
+xcopy "$(SolutionDir)LeopphEngine\src\shaders" "$(OutDir)shaders" /d /y /s /i
+xcopy "$(ProjectDir)models" "$(OutDir)models" /d /y /s /i</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
