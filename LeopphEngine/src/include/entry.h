@@ -13,7 +13,7 @@
 
 namespace leopph
 {
-	void Init();
+	void AppStart();
 }
 
 
@@ -23,16 +23,15 @@ int main()
 {
 	leopph::implementation::Window& window{ leopph::implementation::Window::Get(1280, 720, "LeopphEngine Application", false) };
 
-
 	if (!leopph::implementation::InitGL())
 	{
 		leopph::implementation::TerminateGL();
 		return -1;
 	}
 
+	leopph::AppStart();
 
-	leopph::Init();
-
+	leopph::Time::Init();
 
 	while (!window.ShouldClose())
 	{
@@ -44,7 +43,6 @@ int main()
 		leopph::Time::OnFrameComplete();
 		window.SwapBuffers();
 	}
-
 
 	leopph::implementation::Window::Destroy();
 	leopph::implementation::TerminateGL();

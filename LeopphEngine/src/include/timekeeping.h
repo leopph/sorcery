@@ -12,8 +12,10 @@ namespace leopph
 	class LEOPPHAPI Time
 	{
 	public:
+		static void Init();
 		static void OnFrameComplete();
 		static float DeltaTime();
+		static float FullTime();
 
 	private:
 		using Clock = std::chrono::high_resolution_clock;
@@ -22,6 +24,7 @@ namespace leopph
 
 		static TimePoint s_LastFrameCompletionTime;
 		static Seconds s_LastFrameDeltaTime;
+		static Seconds s_FullTime;
 	};
 
 #pragma warning (pop)

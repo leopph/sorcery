@@ -94,7 +94,7 @@ public:
 
 
 
-void leopph::Init()
+void leopph::AppStart()
 {
 	Input::CursorMode(CursorState::Disabled);
 
