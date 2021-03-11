@@ -110,6 +110,7 @@
     <ClInclude Include="include\leopph.h" />
     <ClInclude Include="src\include\behavior.h" />
     <ClInclude Include="src\include\camera.h" />
+    <ClInclude Include="src\include\component.h" />
     <ClInclude Include="src\include\dirlight.h" />
     <ClInclude Include="src\include\entry.h" />
     <ClInclude Include="src\include\gl.h" />
@@ -131,10 +132,12 @@
     <ClInclude Include="src\include\vector.h" />
     <ClInclude Include="src\include\vertex.h" />
     <ClInclude Include="src\include\window.h" />
+    <ClInclude Include="src\include\transform.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\behavior.cpp" />
     <ClCompile Include="src\camera.cpp" />
+    <ClCompile Include="src\component.cpp" />
     <ClCompile Include="src\dirlight.cpp" />
     <ClCompile Include="src\gl.cpp" />
     <ClCompile Include="src\input.cpp" />
@@ -150,6 +153,7 @@
     <ClCompile Include="src\shader.cpp" />
     <ClCompile Include="src\texture.cpp" />
     <ClCompile Include="src\timekeeping.cpp" />
+    <ClCompile Include="src\transform.cpp" />
     <ClCompile Include="src\window.cpp" />
   </ItemGroup>
   <ItemGroup>

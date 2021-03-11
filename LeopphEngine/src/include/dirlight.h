@@ -13,9 +13,7 @@ namespace leopph
 	class LEOPPHAPI DirectionalLight : public implementation::Light
 	{
 	public:
-		DirectionalLight(Object& object);
-
-		void operator()() {}
+		DirectionalLight(leopph::Object& object);
 
 		void Direction(const Vector3& newDir);
 		const Vector3& Direction() const;

@@ -44,10 +44,10 @@ namespace leopph::implementation
 
 				light = reinterpret_cast<PointLight*>(light);
 
-				Vector3 lightPos = light->OwningObject().Position();
+				Vector3 lightPos = light->Object().Transform().Position();
 				Vector3 camPos = Camera::Instance().Position();
 
-				if (Vector3::Distance(lightPos, camPos) < Vector3::Distance(camPos, pointLights[0]->OwningObject().Position()))
+				if (Vector3::Distance(lightPos, camPos) < Vector3::Distance(camPos, pointLights[0]->Object().Transform().Position()))
 				{
 					for (size_t i = MAX_POINT_LIGHTS - 1; i > 0; i--)
 						pointLights[i] = pointLights[i - 1];
@@ -68,7 +68,7 @@ namespace leopph::implementation
 		for (size_t i = 0; i < MAX_POINT_LIGHTS; i++)
 			if (pointLights[i] != nullptr)
 			{
-				shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].position", pointLights[i]->OwningObject().Position());
+				shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].position", pointLights[i]->Object().Transform().Position());
 				shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].ambient", pointLights[i]->Ambient());
 				shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].diffuse", pointLights[i]->Diffuse());
 				shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].specular", pointLights[i]->Specular());
@@ -109,9 +109,9 @@ namespace leopph::implementation
 			for (const auto& model : object->Models())
 			{
 				Matrix4 modelMatrix{ 1.0f };
-				modelMatrix *= Matrix4::Scale(object->Scale());
-				modelMatrix *= static_cast<Matrix4>(object->Rotation());
-				modelMatrix *= Matrix4::Translate(object->Position());
+				modelMatrix *= Matrix4::Scale(object->Transform().Scale());
+				modelMatrix *= static_cast<Matrix4>(object->Transform().Rotation());
+				modelMatrix *= Matrix4::Translate(object->Transform().Position());
 
 				shader.SetUniform("model", modelMatrix);
 				shader.SetUniform("normalMatrix", modelMatrix.Inverse().Transposed());

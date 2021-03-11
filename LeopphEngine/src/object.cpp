@@ -8,11 +8,22 @@ namespace leopph
 {
 	// Constructor
 	Object::Object():
-		m_Name{ "Object" + std::to_string(implementation::InstanceData::Objects().size()) },
-		m_Position{ Vector3{0.0f, 0.0f, 0.0f} },
-		m_Rotation{ Quaternion{} },
-		m_Scale{ Vector3{1.0f, 1.0f, 1.0f} } {}
+		m_Name{ "Object" + std::to_string(implementation::InstanceData::Objects().size()) }
+	{}
 
+
+
+
+
+	leopph::Transform& Object::Transform()
+	{
+		return const_cast<leopph::Transform&>(const_cast<const Object*>(this)->Transform());
+	}
+
+	const leopph::Transform& Object::Transform() const
+	{
+		return m_Transform;
+	}
 
 
 
@@ -36,14 +47,6 @@ namespace leopph
 	{
 		return implementation::InstanceData::FindObject(name);
 	}
-
-	void Object::UpdateAll()
-	{
-		for (auto& object : leopph::implementation::InstanceData::Objects())
-			for (auto& behavior : object->Behaviors())
-				behavior->operator()();
-	}
-
 
 
 
@@ -71,14 +74,14 @@ namespace leopph
 
 
 	// Behaviors
-	const std::set<Behavior*>& Object::Behaviors() const
+	const std::set<Component*>& Object::Components() const
 	{
-		return m_Behaviors;
+		return m_Components;
 	}
 
-	void Object::RemoveBehavior(Behavior* behavior)
+	void Object::RemoveComponent(Behavior* behavior)
 	{
-		m_Behaviors.erase(behavior);
+		m_Components.erase(behavior);
 	}
 
 
@@ -99,57 +102,5 @@ namespace leopph
 		In case the new name is already in use, revert to the previous name and reinsert the node without changes. */
 
 		implementation::InstanceData::UpdateObjectKey(std::move(m_Name), std::move(newName), [](Object* object, std::string&& newName) { object->m_Name = std::move(newName); });
-	}
-
-	const Vector3& Object::Position() const
-	{
-		return m_Position;
-	}
-
-	void Object::Position(Vector3 newPos)
-	{
-		m_Position = std::move(newPos);
-	}
-
-	const Quaternion& Object::Rotation() const
-	{
-		return m_Rotation;
-	}
-
-	void Object::Rotation(Quaternion newRot)
-	{
-		m_Rotation = std::move(newRot);
-
-		auto rotMatrix = static_cast<Matrix3>(static_cast<Matrix4>(m_Rotation));
-		m_Forward = Vector3::Forward() * rotMatrix;
-		m_Right = Vector3::Right() * rotMatrix;
-		m_Up = Vector3::Up() * rotMatrix;
-	}
-
-	const Vector3& Object::Scale() const
-	{
-		return m_Scale;
-	}
-
-	void Object::Scale(Vector3 newScale)
-	{
-		m_Scale = std::move(newScale);
-	}
-
-
-
-	const Vector3& Object::Forward() const
-	{
-		return m_Forward;
-	}
-
-	const Vector3& Object::Right() const
-	{
-		return m_Right;
-	}
-
-	const Vector3& Object::Up() const
-	{
-		return m_Up;
 	}
 }

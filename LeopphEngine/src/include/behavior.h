@@ -1,25 +1,27 @@
 #pragma once
 
+
 #include "leopphapi.h"
+#include "component.h"
+#include <set>
+
 
 namespace leopph
 {
-	class Object;
-
-
-	// Users subclass this and add them to Objects to create game logic
-	class LEOPPHAPI Behavior
+	// Special component with updates called per frame. Users subclass this create game logic
+	class Behavior : public Component
 	{
-	private:
-		Object& m_Object;
-
 	public:
-		Behavior(Object& object);
-		virtual ~Behavior() = default;
+		LEOPPHAPI static void UpdateAll();
+
+		LEOPPHAPI Behavior(leopph::Object& object);
+		LEOPPHAPI virtual ~Behavior() = 0;
+
 
 		// THIS IS CALLED EVERY FRAME FOR ALL BEHAVIORS
-		virtual void operator()() = 0;
+		LEOPPHAPI virtual void OnFrameUpdate() {}
 
-		Object& OwningObject();
+	private:
+		static std::set<Behavior*> s_Behaviors;
 	};
 }

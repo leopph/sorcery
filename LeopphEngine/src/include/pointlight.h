@@ -14,10 +14,7 @@ namespace leopph
 	class LEOPPHAPI PointLight final : public implementation::Light
 	{
 	public:
-		PointLight(Object& object);
-
-		void operator()() {}
-
+		PointLight(leopph::Object& object);
 
 		float Range() const;
 		

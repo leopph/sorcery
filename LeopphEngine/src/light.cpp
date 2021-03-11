@@ -3,7 +3,7 @@
 namespace leopph::implementation
 {
 	// destructor
-	Light::~Light() {}
+	Light::~Light() = default;
 
 
 	// init static members

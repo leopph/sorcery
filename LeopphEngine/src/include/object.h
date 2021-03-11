@@ -5,11 +5,13 @@
 #include "behavior.h"
 #include "vector.h"
 #include "quaternion.h"
+#include "transform.h"
 
 
 #include <vector>
 #include <string>
 #include <set>
+#include <concepts>
 
 
 
@@ -18,68 +20,68 @@ namespace leopph
 #pragma warning(push)
 #pragma warning(disable: 4251)
 
+
+
 	// CLASS REPRESENTING A GAME OBJECT
 	class LEOPPHAPI Object final
 	{
 	public:
+		// instance management
 		static Object* Create();
 		static void Destroy(Object*& object);
 		static Object* Find(const std::string& name);
 
-		static void UpdateAll();
+
+
+
+		leopph::Transform& Transform();
+		const leopph::Transform& Transform() const;
+
+
+
+		const std::string& Name() const;
+		void Name(std::string newName);
+
+
+
 
 		const std::vector<Model>& Models() const;
 		void AddModel(Model&& model);
 		void RemoveModel(size_t index);
 
-		const std::set<Behavior*>& Behaviors() const;
 
-		template<class T>
-		T* AddBehavior()
+
+
+		const std::set<Component*>& Components() const;
+
+		template<std::derived_from<Component> T>
+		T* AddComponent()
 		{
-			return reinterpret_cast<T*>(*m_Behaviors.emplace(new T{ *this }).first);
+			return reinterpret_cast<T*>(*m_Components.emplace(new T{ *this }).first);
 		}
 
-		void RemoveBehavior(Behavior* behavior);
-		template<class T>
-		T* GetBehavior() const
+		void RemoveComponent(Behavior* behavior);
+
+		template<std::derived_from<Component> T>
+		T* GetComponent() const
 		{
 			// TODO
 		}
-
-		const std::string& Name() const;
-		void Name(std::string newName);
-
-		const Vector3& Position() const;
-		void Position(Vector3 newPos);
-
-		const Quaternion& Rotation() const;
-		void Rotation(Quaternion newRot);
-
-		const Vector3& Scale() const;
-		void Scale(Vector3 newScale);
-
-		const Vector3& Forward() const;
-		const Vector3& Right() const;
-		const Vector3& Up() const;
 
 
 	private:
 		Object();
 		~Object() = default;
 
-		std::vector<Model> m_Models;
-		std::set<Behavior*> m_Behaviors;
-
+		leopph::Transform m_Transform;
 		std::string m_Name;
-		Vector3 m_Position;
-		Quaternion m_Rotation;
-		Vector3 m_Scale;
 
-		Vector3 m_Forward = Vector3::Forward();
-		Vector3 m_Right = Vector3::Right();
-		Vector3 m_Up = Vector3::Up();
+		std::vector<Model> m_Models;
+		std::set<Component*> m_Components;
 	};
+
+
+
 
 #pragma warning(pop)
 }

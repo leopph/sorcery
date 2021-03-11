@@ -15,7 +15,7 @@ private:
 public:
 	using Behavior::Behavior;
 
-	void operator()()
+	void OnFrameUpdate() override
 	{
 		m_DeltaTime += Time::DeltaTime();
 
@@ -40,7 +40,7 @@ private:
 public:
 	using Behavior::Behavior;
 
-	void operator()()
+	void OnFrameUpdate() override
 	{
 		Camera& cam = Camera::Instance();
 
@@ -82,9 +82,9 @@ class Rotate : public Behavior
 public:
 	using Behavior::Behavior;
 
-	void operator()()
+	void OnFrameUpdate() override
 	{
-		OwningObject().Rotation(OwningObject().Rotation()* Quaternion { {0, 1, 0}, 10 * Time::DeltaTime() });
+		Object().Transform().RotateGlobal(Quaternion { {0, 1, 0}, 10 * Time::DeltaTime() });
 	}
 };
 
@@ -96,15 +96,15 @@ void leopph::Init()
 
 	Object* backpack = Object::Create();
 	backpack->AddModel(Model{ "models/backpack/backpack.obj" });
-	backpack->Position({ 0, 0, 5 });
-	backpack->AddBehavior<Rotate>();
+	backpack->Transform().Position({ 0, 0, 5 });
+	backpack->AddComponent<Rotate>();
 
 	Object* dirLight = Object::Create();
-	dirLight->AddBehavior<DirectionalLight>()->Direction({ -1, 0, 1 });
+	dirLight->AddComponent<DirectionalLight>()->Direction({ -1, 0, 1 });
 
 	Object* fpsCounter = Object::Create();
-	fpsCounter->AddBehavior<FPSCounter>();
+	fpsCounter->AddComponent<FPSCounter>();
 
 	Object* cameraController = Object::Create();
-	cameraController->AddBehavior<CameraController>();
+	cameraController->AddComponent<CameraController>();
 }

@@ -38,7 +38,7 @@ int main()
 	{
 		leopph::Input::UpdateReleasedKeys();
 		window.PollEvents();
-		leopph::Object::UpdateAll();
+		leopph::Behavior::UpdateAll();
 		window.Clear();
 		leopph::implementation::Renderer::Instance().Render();
 		leopph::Time::OnFrameComplete();

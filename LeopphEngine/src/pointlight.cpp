@@ -2,7 +2,7 @@
 
 namespace leopph
 {
-	PointLight::PointLight(Object& object) :
+	PointLight::PointLight(leopph::Object& object) :
 		Light{ object }
 	{
 		RegisterPointLight(this);

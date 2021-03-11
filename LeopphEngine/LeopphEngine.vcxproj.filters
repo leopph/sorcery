@@ -19,6 +19,8 @@
     <ClCompile Include="src\dirlight.cpp" />
     <ClCompile Include="src\instancedata.cpp" />
     <ClCompile Include="src\quaternion.cpp" />
+    <ClCompile Include="src\component.cpp" />
+    <ClCompile Include="src\transform.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\include\behavior.h" />
@@ -46,6 +48,8 @@
     <ClInclude Include="src\include\window.h" />
     <ClInclude Include="include\leopph.h" />
     <ClInclude Include="include\leopphentry.h" />
+    <ClInclude Include="src\include\component.h" />
+    <ClInclude Include="src\include\transform.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\shaders\fragment.frag" />

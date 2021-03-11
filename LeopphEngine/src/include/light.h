@@ -7,13 +7,11 @@
 
 namespace leopph::implementation
 {
-	class Light : public Behavior
+	class Light : public Component
 	{
 	public:
-		using Behavior::Behavior;
+		using Component::Component;
 		virtual ~Light() = 0;
-
-		virtual void operator()() = 0;
 
 		static const std::set<Light*>& PointLights();
 		static Light* DirectionalLight();

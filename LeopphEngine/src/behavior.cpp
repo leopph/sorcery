@@ -2,12 +2,26 @@
 
 namespace leopph
 {
-	Behavior::Behavior(Object& object) :
-		m_Object{ object }
-	{}
-
-	Object& Behavior::OwningObject()
+	// constructor
+	Behavior::Behavior(leopph::Object& object) :
+		Component{ object }
 	{
-		return m_Object;
+		s_Behaviors.emplace(this);
+	}
+
+	// destructor
+	Behavior::~Behavior()
+	{
+		s_Behaviors.erase(this);
+	}
+
+
+	std::set<Behavior*> Behavior::s_Behaviors{};
+
+
+	void Behavior::UpdateAll()
+	{
+		for (Behavior* behavior : s_Behaviors)
+			behavior->OnFrameUpdate();
 	}
 }
