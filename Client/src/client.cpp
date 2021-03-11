@@ -42,33 +42,37 @@ public:
 
 	void OnFrameUpdate() override
 	{
-		Camera& cam = Camera::Instance();
+		if (Camera::Active() == nullptr)
+			return;
+
+		Transform& camTransform = Camera::Active()->Object().Transform();
+
 
 		if (Input::GetKey(leopph::KeyCode::W))
-			cam.Position(cam.Position() + cam.Forward() * m_Speed * Time::DeltaTime());
+			camTransform.Translate(camTransform.Forward() * m_Speed * Time::DeltaTime());
 
 		if (Input::GetKey(leopph::KeyCode::S))
-			cam.Position(cam.Position() - cam.Forward() * m_Speed * Time::DeltaTime());
+			camTransform.Translate(-camTransform.Forward() * m_Speed * Time::DeltaTime());
 
 		if (Input::GetKey(leopph::KeyCode::D))
-			cam.Position(cam.Position() + cam.Right() * m_Speed * Time::DeltaTime());
+			camTransform.Translate(camTransform.Right() * m_Speed * Time::DeltaTime());
 
 		if (Input::GetKey(leopph::KeyCode::A))
-			cam.Position(cam.Position() - cam.Right() * m_Speed * Time::DeltaTime());
+			camTransform.Translate(-camTransform.Right() * m_Speed * Time::DeltaTime());
 
 		if (Input::GetKey(leopph::KeyCode::E))
-			cam.Position(cam.Position() + Vector3::Up() * m_Speed * Time::DeltaTime());
+			camTransform.Translate(Vector3::Up() * m_Speed * Time::DeltaTime());
 
 		if (Input::GetKey(leopph::KeyCode::Q))
-			cam.Position(cam.Position() + Vector3::Down() * m_Speed * Time::DeltaTime());
+			camTransform.Translate(Vector3::Down() * m_Speed * Time::DeltaTime());
 
 
 		std::pair<float, float> mousePos = Input::GetMousePosition();
 		float diffX = mousePos.first - lastX;
 		float diffY = mousePos.second - lastY;
 
-		cam.Rotation(Quaternion{ Vector3::Up(), diffX * m_Sens } * cam.Rotation());
-		cam.Rotation(cam.Rotation() * Quaternion{ Vector3::Right(), diffY * m_Sens });
+		camTransform.RotateGlobal(Quaternion{ Vector3::Up(), diffX * m_Sens });
+		camTransform.RotateLocal(Quaternion{ Vector3::Right(), diffY * m_Sens });
 
 		lastX = mousePos.first;
 		lastY = mousePos.second;
@@ -94,6 +98,10 @@ void leopph::Init()
 {
 	Input::CursorMode(CursorState::Disabled);
 
+	Object* camera = Object::Create();
+	camera->AddComponent<Camera>();
+	camera->AddComponent<CameraController>();
+
 	Object* backpack = Object::Create();
 	backpack->AddModel(Model{ "models/backpack/backpack.obj" });
 	backpack->Transform().Position({ 0, 0, 5 });
@@ -104,7 +112,4 @@ void leopph::Init()
 
 	Object* fpsCounter = Object::Create();
 	fpsCounter->AddComponent<FPSCounter>();
-
-	Object* cameraController = Object::Create();
-	cameraController->AddComponent<CameraController>();
 }

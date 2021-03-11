@@ -1,4 +1,6 @@
 #include "camera.h"
+#include "object.h"
+#include "window.h"
 #include "leopphmath.h"
 #include <stdexcept>
 #include <utility>
@@ -7,6 +9,38 @@
 
 namespace leopph
 {
+	Camera* Camera::s_Active = nullptr;
+
+
+	Camera* Camera::Active()
+	{
+		return s_Active;
+	}
+
+
+	void Camera::Activate()
+	{
+		s_Active = this;
+	}
+
+
+
+	Camera::Camera(leopph::Object& object) :
+		Component{ object }, m_AspectRatio{ leopph::implementation::Window::Get().AspectRatio() }, m_HorizontalFOVDegrees{ 100.0f }, m_NearClip{ 1.0f }, m_FarClip{ 100.0f }
+	{
+		if (s_Active == nullptr)
+			Activate();
+	}
+
+	Camera::~Camera()
+	{
+		if (s_Active == this)
+			s_Active = nullptr;
+	}
+
+
+
+
 	// FOV HORIZ-VERT CONVERSION
 	float Camera::ConvertFOV(float fov, unsigned char conversion) const
 	{
@@ -21,43 +55,6 @@ namespace leopph
 		default:
 			throw std::exception{ "INVALID FOV CONVERSION DIRECTION!" };
 		}
-	}
-
-
-
-	// SINGLETON INSTANCE
-	Camera& Camera::Instance()
-	{
-		static Camera instance;
-		return instance;
-	}
-
-
-
-	// SETTERS AND GETTERS
-	void Camera::Position(Vector3 newPos)
-	{
-		m_Position = std::move(newPos);
-	}
-
-	const Vector3& Camera::Position() const
-	{
-		return m_Position;
-	}
-
-	void Camera::Rotation(Quaternion newRot)
-	{
-		m_Rotation = std::move(newRot);
-
-		Matrix3 rotationMatrix{ static_cast<Matrix3>(static_cast<Matrix4>(m_Rotation)) };
-		m_Front = Vector3::Forward() * rotationMatrix;
-		m_Upwards = Vector3::Up() * rotationMatrix;
-		m_Right = Vector3::Right() * rotationMatrix;
-	}
-
-	const Quaternion& Camera::Rotation() const
-	{
-		return m_Rotation;
 	}
 
 
@@ -142,31 +139,12 @@ namespace leopph
 	// CAMERA MATRIX CALCULATIONS
 	Matrix4 Camera::ViewMatrix() const
 	{
-		return Matrix4::LookAt(m_Position, m_Position + m_Front, m_Upwards);
+		return Matrix4::LookAt(Object().Transform().Position(), Object().Transform().Position() + Object().Transform().Forward(), Vector3::Up());
 	}
 
-	Matrix4 Camera::ProjMatrix() const
+	Matrix4 Camera::ProjectionMatrix() const
 	{
 		float fov{ Math::ToRadians(ConvertFOV(m_HorizontalFOVDegrees, HORIZONTAL_TO_VERTICAL)) };
 		return Matrix4::Perspective(fov, m_AspectRatio, m_NearClip, m_FarClip);
-	}
-
-
-
-
-
-	const Vector3& Camera::Forward() const
-	{
-		return m_Front;
-	}
-
-	const Vector3& Camera::Right() const
-	{
-		return m_Right;
-	}
-
-	const Vector3& Camera::Up() const
-	{
-		return m_Upwards;
 	}
 }

@@ -16,6 +16,8 @@ namespace leopph::implementation
 	std::function<void(float, float)> Window::s_MouseCallback{};
 
 
+
+
 	// set up a window and rendering context with callbacks
 	Window& Window::Get(unsigned width, unsigned height, const std::string& title, bool fullscreen)
 	{
@@ -25,7 +27,8 @@ namespace leopph::implementation
 
 			glfwMakeContextCurrent(s_Instance->m_Window);
 
-			Camera::Instance().AspectRatio(s_Instance->m_Width, s_Instance->m_Height);
+			if (Camera::Active())
+				Camera::Active()->AspectRatio(s_Instance->m_Width, s_Instance->m_Height);
 
 			Input::RegisterCallbacks();
 
@@ -41,6 +44,8 @@ namespace leopph::implementation
 
 
 
+
+
 	// destroy instance
 	void Window::Destroy()
 	{
@@ -49,7 +54,9 @@ namespace leopph::implementation
 
 
 
-	// window constructor
+
+
+	// constructor
 	Window::Window(unsigned width, unsigned height, const std::string& title, bool fullscreen)
 		: m_Width{ width }, m_Height{ height }, m_Fullscreen{ fullscreen }
 	{
@@ -70,6 +77,18 @@ namespace leopph::implementation
 	}
 
 
+
+
+	// destructor
+	Window::~Window()
+	{
+		glfwDestroyWindow(m_Window);
+	}
+
+
+
+
+
 #pragma warning(push)
 #pragma warning(disable: 4100)
 	// framebuffer resize callback
@@ -80,8 +99,12 @@ namespace leopph::implementation
 		s_Instance->m_Width = width;
 		s_Instance->m_Height = height;
 
-		Camera::Instance().AspectRatio(s_Instance->m_Width, s_Instance->m_Height);
+		if (Camera::Active() != nullptr)
+			Camera::Active()->AspectRatio(s_Instance->m_Width, s_Instance->m_Height);
 	}
+
+
+
 
 
 	void Window::KeyCallbackManager(GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -96,6 +119,10 @@ namespace leopph::implementation
 	{
 		s_KeyCallback = std::move(callback);
 	}
+
+
+
+
 
 
 #pragma warning(push)
@@ -114,10 +141,39 @@ namespace leopph::implementation
 
 
 
-	Window::~Window()
+
+
+	unsigned Window::Width() const
 	{
-		glfwDestroyWindow(m_Window);
+		return m_Width;
 	}
+
+	void Window::Width(unsigned newWidth)
+	{
+		m_Width = newWidth;
+		glfwSetWindowSize(m_Window, m_Width, m_Height);
+	}
+
+	unsigned Window::Height() const
+	{
+		return m_Height;
+	}
+
+	void Window::Height(unsigned newHeight)
+	{
+		m_Height = newHeight;
+		glfwSetWindowSize(m_Window, m_Width, m_Height);
+	}
+
+	float Window::AspectRatio() const
+	{
+		return static_cast<float>(m_Width) / m_Height;
+	}
+
+
+
+
+
 
 	void Window::PollEvents()
 	{
@@ -139,6 +195,15 @@ namespace leopph::implementation
 		glClearColor(0, 0, 0, 0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	}
+
+
+
+
+
+
+
+
+
 
 	Window::CursorState Window::CursorMode()
 	{

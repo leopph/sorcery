@@ -31,6 +31,9 @@ namespace leopph::implementation
 	{
 		static Shader shader{ "./shaders/vertex.vert", "./shaders/fragment.frag" };
 
+		if (Camera::Active() == nullptr)
+			return;
+
 
 		PointLight* pointLights[MAX_POINT_LIGHTS]{};
 
@@ -45,7 +48,7 @@ namespace leopph::implementation
 				light = reinterpret_cast<PointLight*>(light);
 
 				Vector3 lightPos = light->Object().Transform().Position();
-				Vector3 camPos = Camera::Instance().Position();
+				Vector3 camPos = Camera::Active()->Object().Transform().Position();
 
 				if (Vector3::Distance(lightPos, camPos) < Vector3::Distance(camPos, pointLights[0]->Object().Transform().Position()))
 				{
@@ -99,9 +102,9 @@ namespace leopph::implementation
 
 
 
-		shader.SetUniform("viewPosition", Camera::Instance().Position());
-		shader.SetUniform("view", Camera::Instance().ViewMatrix());
-		shader.SetUniform("proj", Camera::Instance().ProjMatrix());
+		shader.SetUniform("viewPosition", Camera::Active()->Object().Transform().Position());
+		shader.SetUniform("view", Camera::Active()->ViewMatrix());
+		shader.SetUniform("proj", Camera::Active()->ProjectionMatrix());
 
 
 

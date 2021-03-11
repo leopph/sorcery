@@ -23,6 +23,14 @@ namespace leopph::implementation
 		static void SetKeyCallback(std::function<void(int, int)> callback);
 		static void SetMouseCallback(std::function<void(float, float)> callback);
 
+		unsigned Width() const;
+		void Width(unsigned newWidth);
+
+		unsigned Height() const;
+		void Height(unsigned newHeight);
+
+		float AspectRatio() const;
+
 		void PollEvents();
 		void SwapBuffers();
 		bool ShouldClose();
