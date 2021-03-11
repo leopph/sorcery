@@ -3,29 +3,19 @@
 namespace leopph::implementation
 {
 	// comparator class ordering
-	bool InstanceData::ObjectComparator::operator()(const std::unique_ptr<Object, std::function<void(Object*)>>& left, const std::unique_ptr<Object, std::function<void(Object*)>>& right) const
+	bool InstanceData::ObjectComparator::operator()(const Object* left, const Object* right) const
 	{
 		return left->Name() < right->Name();
 	}
 
-	bool InstanceData::ObjectComparator::operator()(const std::unique_ptr<Object, std::function<void(Object*)>>& left, const std::string& right) const
+	bool InstanceData::ObjectComparator::operator()(const Object* left, const std::string& right) const
 	{
 		return left->Name() < right;
 	}
 
-	bool InstanceData::ObjectComparator::operator()(const std::string& left, const std::unique_ptr<Object, std::function<void(Object*)>>& right) const
+	bool InstanceData::ObjectComparator::operator()(const std::string& left, const Object* right) const
 	{
 		return left < right->Name();
-	}
-
-	bool InstanceData::ObjectComparator::operator()(const std::unique_ptr<Object, std::function<void(Object*)>>& left, const Object* right) const
-	{
-		return left->Name() < right->Name();
-	}
-
-	bool InstanceData::ObjectComparator::operator()(const Object* left, const std::unique_ptr<Object, std::function<void(Object*)>>& right) const
-	{
-		return left->Name() < right->Name();
 	}
 
 
@@ -35,7 +25,7 @@ namespace leopph::implementation
 	// static init
 	std::unordered_map<unsigned, size_t> InstanceData::s_Textures{};
 	std::unordered_map<unsigned, size_t> InstanceData::s_Meshes{};
-	std::set<std::unique_ptr<Object, std::function<void(Object*)>>, InstanceData::ObjectComparator> InstanceData::s_Objects{};
+	std::set<Object*, InstanceData::ObjectComparator> InstanceData::s_Objects{};
 
 
 
@@ -44,7 +34,9 @@ namespace leopph::implementation
 
 	void InstanceData::DestroyAll()
 	{
-		s_Objects.clear();
+		for (Object* object : s_Objects)
+			delete object;
+
 		s_Meshes.clear();
 		s_Textures.clear();
 	}
@@ -53,9 +45,9 @@ namespace leopph::implementation
 
 
 
-	void InstanceData::AddObject(Object* object, std::function<void(Object*)>&& deleter)
+	void InstanceData::AddObject(Object* object)
 	{
-		s_Objects.emplace(object, std::move(deleter));
+		s_Objects.emplace(object);
 	}
 
 	void InstanceData::RemoveObject(Object* object)
@@ -66,24 +58,24 @@ namespace leopph::implementation
 	Object* InstanceData::FindObject(const std::string& name)
 	{
 		auto it = s_Objects.find(name);
-		return it != s_Objects.end() ? it->get() : nullptr;
+		return it != s_Objects.end() ? *it : nullptr;
 	}
 
-	const std::set<std::unique_ptr<Object, std::function<void(Object*)>>, InstanceData::ObjectComparator>& InstanceData::Objects()
+	const std::set<Object*, InstanceData::ObjectComparator>& InstanceData::Objects()
 	{
 		return s_Objects;
 	}
 
-	void InstanceData::UpdateObjectKey(std::string&& oldKey, std::string&& newKey, std::function<void(Object*, std::string&&)> updater)
+	void InstanceData::UpdateObjectKey(std::string oldKey, std::string&& newKey, std::function<void(Object*, std::string&&)> updater)
 	{
 		auto node = s_Objects.extract(s_Objects.find(oldKey));
-		updater(node.value().get(), std::move(newKey));
+		updater(node.value(), std::move(newKey));
 
 		auto result = s_Objects.insert(std::move(node));
 
 		if (!result.inserted)
 		{
-			updater(result.node.value().get(), std::move(oldKey));
+			updater(result.node.value(), std::move(oldKey));
 			s_Objects.insert(std::move(result.node));
 		}
 	}

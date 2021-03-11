@@ -22,10 +22,20 @@ namespace leopph
 
 
 
+	namespace implementation
+	{
+		class InstanceData;
+	}
+
+
+
 	// CLASS REPRESENTING A GAME OBJECT
 	class LEOPPHAPI Object final
 	{
 	public:
+		friend class implementation::InstanceData;
+
+
 		// instance management
 		static Object* Create();
 		static void Destroy(Object*& object);
@@ -71,7 +81,7 @@ namespace leopph
 
 	private:
 		Object();
-		~Object() = default;
+		~Object();
 
 		leopph::Transform m_Transform;
 		std::string m_Name;

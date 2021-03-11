@@ -13,6 +13,15 @@ namespace leopph
 
 
 
+	// destructor
+	Object::~Object()
+	{
+		for (Component* component : m_Components)
+			delete component;
+	}
+
+
+
 
 
 	leopph::Transform& Object::Transform()
@@ -33,7 +42,7 @@ namespace leopph
 	Object* Object::Create()
 	{
 		Object* ret = new Object;
-		implementation::InstanceData::AddObject(ret, [](Object* object) { delete object; });
+		implementation::InstanceData::AddObject(ret);
 		return ret;
 	}
 
@@ -101,6 +110,6 @@ namespace leopph
 		If the target node is not removed before renaming, order-changing names may lead to crashes.
 		In case the new name is already in use, revert to the previous name and reinsert the node without changes. */
 
-		implementation::InstanceData::UpdateObjectKey(std::move(m_Name), std::move(newName), [](Object* object, std::string&& newName) { object->m_Name = std::move(newName); });
+		implementation::InstanceData::UpdateObjectKey(m_Name, std::move(newName), [](Object* object, std::string&& newName) { object->m_Name = std::move(newName); });
 	}
 }
