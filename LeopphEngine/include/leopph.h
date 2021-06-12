@@ -1,8 +1,5 @@
 #pragma once
 
-/* DEPENDENCIES */
-#include "../vendor/glfw/include/GLFW/glfw3.h"
-
 /* LEOPPHENGINE API */
 #include "../src/include/leopphapi.h"
 #include "../src/include/behavior.h"
@@ -17,3 +14,8 @@
 #include "../src/include/quaternion.h"
 #include "../src/include/timekeeping.h"
 #include "../src/include/vector.h"
+
+/* INCLUDE ENTRY POINT IF CLIENT REQUIRES */
+#ifdef LEOPPH_ENTRY
+#include "../src/include/entry.h"
+#endif

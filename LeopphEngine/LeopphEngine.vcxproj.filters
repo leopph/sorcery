@@ -50,7 +50,6 @@
     <ClInclude Include="src\include\vertex.h" />
     <ClInclude Include="src\include\glwindow.h" />
     <ClInclude Include="include\leopph.h" />
-    <ClInclude Include="include\leopphentry.h" />
     <ClInclude Include="src\include\component.h" />
     <ClInclude Include="src\include\transform.h" />
     <ClInclude Include="src\include\model.h" />

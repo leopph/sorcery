@@ -105,7 +105,6 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="include\leopphentry.h" />
     <ClInclude Include="include\leopph.h" />
     <ClInclude Include="src\include\behavior.h" />
     <ClInclude Include="src\include\camera.h" />

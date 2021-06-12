@@ -1,5 +1,5 @@
+#define LEOPPH_ENTRY
 #include <leopph.h>
-#include <leopphentry.h>
 #include <iostream>
 
 using namespace leopph;
