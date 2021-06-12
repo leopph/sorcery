@@ -293,7 +293,7 @@ namespace leopph
 
 
 
-			operator Matrix<T, N - 1, N - 1>() requires(N == M)
+			explicit operator auto() requires(N == M && N > 2)
 			{
 				Matrix<T, N - 1, N - 1> ret{};
 
