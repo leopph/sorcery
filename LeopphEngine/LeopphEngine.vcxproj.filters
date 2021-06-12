@@ -7,7 +7,7 @@
     <ClCompile Include="src\leopphmath.cpp" />
     <ClCompile Include="src\light.cpp" />
     <ClCompile Include="src\mesh.cpp" />
-    <ClCompile Include="src\model.cpp" />
+    <ClCompile Include="src\assimpmodel.cpp" />
     <ClCompile Include="src\object.cpp" />
     <ClCompile Include="src\shader.cpp" />
     <ClCompile Include="src\texture.cpp" />
@@ -22,6 +22,7 @@
     <ClCompile Include="src\component.cpp" />
     <ClCompile Include="src\transform.cpp" />
     <ClCompile Include="vendor\stb_image\stb_image.cpp" />
+    <ClCompile Include="src\model.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\include\behavior.h" />
@@ -36,7 +37,7 @@
     <ClInclude Include="src\include\light.h" />
     <ClInclude Include="src\include\matrix.h" />
     <ClInclude Include="src\include\mesh.h" />
-    <ClInclude Include="src\include\model.h" />
+    <ClInclude Include="src\include\assimpmodel.h" />
     <ClInclude Include="src\include\object.h" />
     <ClInclude Include="src\include\pointlight.h" />
     <ClInclude Include="src\include\quaternion.h" />
@@ -51,6 +52,7 @@
     <ClInclude Include="include\leopphentry.h" />
     <ClInclude Include="src\include\component.h" />
     <ClInclude Include="src\include\transform.h" />
+    <ClInclude Include="src\include\model.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\shaders\fragment.frag" />

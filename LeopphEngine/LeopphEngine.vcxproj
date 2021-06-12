@@ -120,6 +120,7 @@
     <ClInclude Include="src\include\light.h" />
     <ClInclude Include="src\include\matrix.h" />
     <ClInclude Include="src\include\mesh.h" />
+    <ClInclude Include="src\include\assimpmodel.h" />
     <ClInclude Include="src\include\model.h" />
     <ClInclude Include="src\include\object.h" />
     <ClInclude Include="src\include\pointlight.h" />
@@ -144,6 +145,7 @@
     <ClCompile Include="src\leopphmath.cpp" />
     <ClCompile Include="src\light.cpp" />
     <ClCompile Include="src\mesh.cpp" />
+    <ClCompile Include="src\assimpmodel.cpp" />
     <ClCompile Include="src\model.cpp" />
     <ClCompile Include="src\object.cpp" />
     <ClCompile Include="src\pointlight.cpp" />

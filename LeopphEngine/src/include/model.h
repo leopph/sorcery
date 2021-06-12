@@ -1,40 +1,34 @@
 #pragma once
 
+#include <filesystem>
 #include "leopphapi.h"
-#include "mesh.h"
-
-#include <assimp/scene.h>
+#include "shader.h"
 
 namespace leopph
 {
-#pragma warning(push)
-#pragma warning(disable: 4251)
-
-	// CLASS TO REPRESENT A MODEL AS A COLLECTION OF MESHES
-	class LEOPPHAPI Model
+	namespace impl
 	{
-	private:
-		std::vector<implementation::Mesh> m_Meshes;
-		std::filesystem::path m_Directory;
-		std::vector<implementation::Texture> m_CachedTextures;
+		class AssimpModelImpl;
+	}
 
-		void ProcessNode(aiNode* node, const aiScene* scene);
-		implementation::Mesh ProcessMesh(aiMesh* mesh, const aiScene* scene);
-		std::vector<implementation::Texture> LoadTexturesByType(aiMaterial* material, aiTextureType assimpType, implementation::Texture::TextureType abstractType);
 
+	class Model
+	{
 	public:
-		Model(const std::filesystem::path& path);
+		LEOPPHAPI Model(const std::filesystem::path& path);
+		LEOPPHAPI Model(const Model& other);
+		LEOPPHAPI Model(Model&& other) noexcept;
 
-		Model(const Model& other) = default;
-		Model(Model&& other) noexcept = default;
+		LEOPPHAPI ~Model();
+		
+		LEOPPHAPI Model& operator=(const Model& other);
+		LEOPPHAPI Model& operator=(Model&& other) noexcept;
 
-		Model& operator=(const Model& other) = default;
-		Model& operator=(Model&& other) noexcept = default;
+		LEOPPHAPI bool operator==(const Model& other) const;
 
-		bool operator==(const Model& other) const;
+		LEOPPHAPI void Draw(const implementation::Shader& shader) const;
 
-		void Draw(const implementation::Shader& shader) const;
+	private:
+		impl::AssimpModelImpl* m_Pointer;
 	};
-
-#pragma warning(pop)
 }
