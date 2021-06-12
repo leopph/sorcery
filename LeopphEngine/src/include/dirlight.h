@@ -10,7 +10,7 @@ namespace leopph
 #pragma warning (disable: 4275)
 #pragma warning (disable: 4251)
 
-	class LEOPPHAPI DirectionalLight : public implementation::Light
+	class LEOPPHAPI DirectionalLight : public impl::Light
 	{
 	public:
 		DirectionalLight(leopph::Object& object);

@@ -126,13 +126,15 @@
     <ClInclude Include="src\include\pointlight.h" />
     <ClInclude Include="src\include\quaternion.h" />
     <ClInclude Include="src\include\renderer.h" />
+    <ClInclude Include="src\include\settings.h" />
     <ClInclude Include="src\include\shader.h" />
     <ClInclude Include="src\include\texture.h" />
     <ClInclude Include="src\include\timekeeping.h" />
     <ClInclude Include="src\include\vector.h" />
     <ClInclude Include="src\include\vertex.h" />
-    <ClInclude Include="src\include\window.h" />
+    <ClInclude Include="src\include\glwindow.h" />
     <ClInclude Include="src\include\transform.h" />
+    <ClInclude Include="src\include\window.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\behavior.cpp" />
@@ -140,6 +142,7 @@
     <ClCompile Include="src\component.cpp" />
     <ClCompile Include="src\dirlight.cpp" />
     <ClCompile Include="src\gl.cpp" />
+    <ClCompile Include="src\window.cpp" />
     <ClCompile Include="src\input.cpp" />
     <ClCompile Include="src\instancedata.cpp" />
     <ClCompile Include="src\leopphmath.cpp" />
@@ -155,7 +158,7 @@
     <ClCompile Include="src\texture.cpp" />
     <ClCompile Include="src\timekeeping.cpp" />
     <ClCompile Include="src\transform.cpp" />
-    <ClCompile Include="src\window.cpp" />
+    <ClCompile Include="src\glwindow.cpp" />
     <ClCompile Include="vendor\stb_image\stb_image.cpp" />
   </ItemGroup>
   <ItemGroup>

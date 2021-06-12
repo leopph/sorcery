@@ -26,7 +26,7 @@ namespace leopph
 
 		LEOPPHAPI bool operator==(const Model& other) const;
 
-		LEOPPHAPI void Draw(const implementation::Shader& shader) const;
+		LEOPPHAPI void Draw(const impl::Shader& shader) const;
 
 	private:
 		impl::AssimpModelImpl* m_Pointer;

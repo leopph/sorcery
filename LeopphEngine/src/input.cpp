@@ -1,6 +1,7 @@
 #include "input.h"
 #include <GLFW/glfw3.h>
 #include "window.h"
+#include "glwindow.h"
 
 namespace leopph
 {
@@ -81,8 +82,9 @@ namespace leopph
 	// register for callback
 	void Input::RegisterCallbacks()
 	{
-		implementation::Window::SetKeyCallback(KeyCallback);
-		implementation::Window::SetMouseCallback(MouseCallback);
+		// TODO make this implementation agnostic
+		impl::GLWindowImpl::SetKeyCallback(KeyCallback);
+		impl::GLWindowImpl::SetMouseCallback(MouseCallback);
 
 		for (const auto& pair : s_KeyCodes)
 			s_KeyStates[pair.second] = PressState::Released;
@@ -127,11 +129,11 @@ namespace leopph
 
 	CursorState Input::CursorMode()
 	{
-		return implementation::Window::Get().CursorMode();
+		return impl::Window::Get().CursorMode();
 	}
 
 	void Input::CursorMode(CursorState newState)
 	{
-		implementation::Window::Get().CursorMode(newState);
+		impl::Window::Get().CursorMode(newState);
 	}
 }

@@ -10,7 +10,7 @@
 
 namespace leopph
 {
-	namespace implementation
+	namespace impl
 	{
 		template<class T, std::size_t N, std::size_t M> requires(N > 1 && M > 1)
 		class Matrix
@@ -386,7 +386,7 @@ namespace leopph
 
 
 	// aliases
-	using Matrix2 = implementation::Matrix<float, 2, 2>;
-	using Matrix3 = implementation::Matrix<float, 3, 3>;
-	using Matrix4 = implementation::Matrix<float, 4, 4>;
+	using Matrix2 = impl::Matrix<float, 2, 2>;
+	using Matrix3 = impl::Matrix<float, 3, 3>;
+	using Matrix4 = impl::Matrix<float, 4, 4>;
 }

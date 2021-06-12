@@ -1,6 +1,6 @@
 #include "light.h"
 
-namespace leopph::implementation
+namespace leopph::impl
 {
 	// destructor
 	Light::~Light() = default;

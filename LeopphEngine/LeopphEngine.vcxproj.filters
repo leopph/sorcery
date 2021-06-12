@@ -12,7 +12,7 @@
     <ClCompile Include="src\shader.cpp" />
     <ClCompile Include="src\texture.cpp" />
     <ClCompile Include="src\timekeeping.cpp" />
-    <ClCompile Include="src\window.cpp" />
+    <ClCompile Include="src\glwindow.cpp" />
     <ClCompile Include="src\pointlight.cpp" />
     <ClCompile Include="src\renderer.cpp" />
     <ClCompile Include="src\input.cpp" />
@@ -23,6 +23,7 @@
     <ClCompile Include="src\transform.cpp" />
     <ClCompile Include="vendor\stb_image\stb_image.cpp" />
     <ClCompile Include="src\model.cpp" />
+    <ClCompile Include="src\window.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\include\behavior.h" />
@@ -47,12 +48,14 @@
     <ClInclude Include="src\include\timekeeping.h" />
     <ClInclude Include="src\include\vector.h" />
     <ClInclude Include="src\include\vertex.h" />
-    <ClInclude Include="src\include\window.h" />
+    <ClInclude Include="src\include\glwindow.h" />
     <ClInclude Include="include\leopph.h" />
     <ClInclude Include="include\leopphentry.h" />
     <ClInclude Include="src\include\component.h" />
     <ClInclude Include="src\include\transform.h" />
     <ClInclude Include="src\include\model.h" />
+    <ClInclude Include="src\include\window.h" />
+    <ClInclude Include="src\include\settings.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\shaders\fragment.frag" />

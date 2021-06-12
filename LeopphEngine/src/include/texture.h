@@ -2,7 +2,7 @@
 
 #include <filesystem>
 
-namespace leopph::implementation
+namespace leopph::impl
 {
 	// CLASS TO REPRESENT A LOADED TEXTURE
 	class Texture

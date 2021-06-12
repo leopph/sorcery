@@ -6,7 +6,7 @@
 
 #include <vector>
 
-namespace leopph::implementation
+namespace leopph::impl
 {
 	// CLASS TO REPRESENT A MINIMAL DRAWABLE OBJECT
 	class Mesh

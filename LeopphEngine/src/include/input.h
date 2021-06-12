@@ -23,7 +23,7 @@ namespace leopph
 		Down, Held, Up, Released,
 	};
 
-	using CursorState = implementation::Window::CursorState;
+	using CursorState = impl::Window::CursorState;
 
 
 #pragma warning (push)

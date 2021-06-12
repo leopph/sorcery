@@ -5,7 +5,7 @@
 #include "vector.h"
 #include "behavior.h"
 
-namespace leopph::implementation
+namespace leopph::impl
 {
 	class Light : public Component
 	{

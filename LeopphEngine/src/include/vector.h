@@ -8,7 +8,7 @@
 
 namespace leopph
 {
-	namespace implementation
+	namespace impl
 	{
 		template<class T, std::size_t N> requires(N > 1)
 		class Vector
@@ -338,7 +338,7 @@ namespace leopph
 
 
 	// aliasing
-	using Vector4 = implementation::Vector<float, 4>;
-	using Vector3 = implementation::Vector<float, 3>;
-	using Vector2 = implementation::Vector<float, 2>;
+	using Vector4 = impl::Vector<float, 4>;
+	using Vector3 = impl::Vector<float, 3>;
+	using Vector2 = impl::Vector<float, 2>;
 }

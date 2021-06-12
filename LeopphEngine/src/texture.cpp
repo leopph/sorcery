@@ -5,7 +5,7 @@
 #include <stb_image.h>
 #include <stdexcept>
 
-namespace leopph::implementation
+namespace leopph::impl
 {
 	// LOAD IMAGE FROM PATH
 	Texture::Texture(const std::filesystem::path& path, TextureType type)

@@ -9,13 +9,13 @@ namespace leopph::impl
 	class AssimpModelImpl
 	{
 	private:
-		std::vector<implementation::Mesh> m_Meshes;
+		std::vector<impl::Mesh> m_Meshes;
 		std::filesystem::path m_Directory;
-		std::vector<implementation::Texture> m_CachedTextures;
+		std::vector<impl::Texture> m_CachedTextures;
 
 		void ProcessNode(aiNode* node, const aiScene* scene);
-		implementation::Mesh ProcessMesh(aiMesh* mesh, const aiScene* scene);
-		std::vector<implementation::Texture> LoadTexturesByType(aiMaterial* material, aiTextureType assimpType, implementation::Texture::TextureType abstractType);
+		impl::Mesh ProcessMesh(aiMesh* mesh, const aiScene* scene);
+		std::vector<impl::Texture> LoadTexturesByType(aiMaterial* material, aiTextureType assimpType, impl::Texture::TextureType abstractType);
 
 	public:
 		AssimpModelImpl(const std::filesystem::path& path);
@@ -28,6 +28,6 @@ namespace leopph::impl
 
 		bool operator==(const AssimpModelImpl& other) const;
 
-		void Draw(const implementation::Shader& shader) const;
+		void Draw(const impl::Shader& shader) const;
 	};
 }

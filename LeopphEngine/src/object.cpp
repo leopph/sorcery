@@ -8,7 +8,7 @@ namespace leopph
 {
 	// Constructor
 	Object::Object():
-		m_Name{ "Object" + std::to_string(implementation::InstanceData::Objects().size()) }
+		m_Name{ "Object" + std::to_string(impl::InstanceData::Objects().size()) }
 	{}
 
 
@@ -42,19 +42,19 @@ namespace leopph
 	Object* Object::Create()
 	{
 		Object* ret = new Object;
-		implementation::InstanceData::AddObject(ret);
+		impl::InstanceData::AddObject(ret);
 		return ret;
 	}
 
 	void Object::Destroy(Object*& object)
 	{
-		implementation::InstanceData::RemoveObject(object);
+		impl::InstanceData::RemoveObject(object);
 		object = nullptr;
 	}
 
 	Object* Object::Find(const std::string& name)
 	{
-		return implementation::InstanceData::FindObject(name);
+		return impl::InstanceData::FindObject(name);
 	}
 
 
@@ -110,6 +110,6 @@ namespace leopph
 		If the target node is not removed before renaming, order-changing names may lead to crashes.
 		In case the new name is already in use, revert to the previous name and reinsert the node without changes. */
 
-		implementation::InstanceData::UpdateObjectKey(m_Name, std::move(newName), [](Object* object, std::string&& newName) { object->m_Name = std::move(newName); });
+		impl::InstanceData::UpdateObjectKey(m_Name, std::move(newName), [](Object* object, std::string&& newName) { object->m_Name = std::move(newName); });
 	}
 }

@@ -1,63 +1,53 @@
 #pragma once
 
-#define GLFW_INCLUDE_NONE
-
-#include <GLFW/glfw3.h>
 #include <string>
-#include <functional>
-
 #include "leopphapi.h"
 
-
-namespace leopph::implementation
+namespace leopph::impl
 {
-#pragma warning(push)
-#pragma warning(disable: 4251)
-
-	class LEOPPHAPI Window
+	class Window
 	{
 	public:
-		static Window& Get(unsigned width = 1280u, unsigned height = 720u, const std::string& title = "Window", bool fullscreen = false);
-		static void Destroy();
+		enum class LEOPPHAPI CursorState
+		{
+			Shown,
+			Hidden,
+			Disabled
+		};
 
-		static void SetKeyCallback(std::function<void(int, int)> callback);
-		static void SetMouseCallback(std::function<void(float, float)> callback);
+		LEOPPHAPI static Window& Get(unsigned width = 1280u, unsigned height = 720u,
+			const std::string& title = "Window", bool fullscreen = false);
+		LEOPPHAPI static void Destroy();
 
-		unsigned Width() const;
-		void Width(unsigned newWidth);
+		LEOPPHAPI virtual unsigned Width() const;
+		LEOPPHAPI virtual void Width(unsigned newWidth);
 
-		unsigned Height() const;
-		void Height(unsigned newHeight);
+		LEOPPHAPI virtual unsigned Height() const;
+		LEOPPHAPI virtual void Height(unsigned newHeight);
 
-		float AspectRatio() const;
+		LEOPPHAPI float AspectRatio() const;
 
-		void PollEvents();
-		void SwapBuffers();
-		bool ShouldClose();
-		void Clear();
+		LEOPPHAPI bool Fullscreen() const;
 
-		enum class CursorState { Shown, Hidden, Disabled };
-		CursorState CursorMode();
-		void CursorMode(CursorState newState);
+		LEOPPHAPI virtual void PollEvents() = 0;
+		LEOPPHAPI virtual void SwapBuffers() = 0;
+		LEOPPHAPI virtual bool ShouldClose() = 0;
+		LEOPPHAPI virtual void Clear() = 0;
 
+		LEOPPHAPI virtual CursorState CursorMode() const = 0;
+		LEOPPHAPI virtual void CursorMode(CursorState newState) = 0;
 
+	protected:
+		Window(unsigned width, unsigned height,
+			const std::string& title, bool fullscreen);
+		virtual ~Window() = default;
+		
 	private:
 		static Window* s_Instance;
-		static std::function<void(int, int)> s_KeyCallback;
-		static std::function<void(float, float)> s_MouseCallback;
 
-		Window(unsigned width, unsigned height, const std::string& title, bool fullscreen);
-		~Window();
-
-		static void FramebufferSizeCallback(GLFWwindow* window, int width, int height);
-		static void KeyCallbackManager(GLFWwindow* window, int key, int scancode, int action, int mods);
-		static void MouseCallbackManager(GLFWwindow* window, double x, double y);
-
-		GLFWwindow* m_Window;
 		unsigned m_Width;
 		unsigned m_Height;
-		bool m_Fullscreen;
+		std::string m_Title;
+		bool m_Fullscreen; 
 	};
-
-#pragma warning(pop)
 }

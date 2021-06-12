@@ -6,10 +6,10 @@
 #include <glad/glad.h>
 #include <stb_image.h>
 
-using leopph::implementation::Shader;
-using leopph::implementation::Texture;
-using leopph::implementation::Vertex;
-using leopph::implementation::Mesh;
+using leopph::impl::Shader;
+using leopph::impl::Texture;
+using leopph::impl::Vertex;
+using leopph::impl::Mesh;
 
 namespace leopph::impl
 {

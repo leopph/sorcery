@@ -3,7 +3,7 @@
 
 #include <glad/glad.h>
 
-namespace leopph::implementation
+namespace leopph::impl
 {
 	// LOAD MESH FROM MESH DATA
 	Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned> indices, std::vector<Texture> textures)

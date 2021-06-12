@@ -1,6 +1,6 @@
 #include "instancedata.h"
 
-namespace leopph::implementation
+namespace leopph::impl
 {
 	// comparator class ordering
 	bool InstanceData::ObjectComparator::operator()(const Object* left, const Object* right) const

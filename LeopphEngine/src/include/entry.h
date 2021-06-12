@@ -21,11 +21,11 @@ namespace leopph
 
 int main()
 {
-	leopph::implementation::Window& window{ leopph::implementation::Window::Get(1280, 720, "LeopphEngine Application", false) };
+	auto& window{ leopph::impl::Window::Get(1280, 720, "LeopphEngine Application", false) };
 
-	if (!leopph::implementation::InitGL())
+	if (!leopph::impl::InitGL())
 	{
-		leopph::implementation::TerminateGL();
+		leopph::impl::TerminateGL();
 		return -1;
 	}
 
@@ -39,13 +39,13 @@ int main()
 		window.PollEvents();
 		leopph::Behavior::UpdateAll();
 		window.Clear();
-		leopph::implementation::Renderer::Instance().Render();
+		leopph::impl::Renderer::Instance().Render();
 		leopph::Time::OnFrameComplete();
 		window.SwapBuffers();
 	}
 
-	leopph::implementation::Window::Destroy();
-	leopph::implementation::TerminateGL();
+	leopph::impl::Window::Destroy();
+	leopph::impl::TerminateGL();
 
 	return 0;
 }

@@ -8,7 +8,7 @@
 
 #include "object.h"
 
-namespace leopph::implementation
+namespace leopph::impl
 {
 	class InstanceData
 	{

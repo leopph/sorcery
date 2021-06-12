@@ -4,7 +4,7 @@
 #include "object.h"
 #include <cstddef>
 
-namespace leopph::implementation
+namespace leopph::impl
 {
 	class LEOPPHAPI Renderer
 	{

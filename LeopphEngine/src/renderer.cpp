@@ -12,7 +12,7 @@
 
 using std::size_t;
 
-namespace leopph::implementation
+namespace leopph::impl
 {
 	Renderer::Renderer()
 	{

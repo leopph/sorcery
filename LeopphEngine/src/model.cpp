@@ -46,7 +46,7 @@ namespace leopph
 	}
 
 
-	void Model::Draw(const implementation::Shader& shader) const
+	void Model::Draw(const impl::Shader& shader) const
 	{
 		m_Pointer->Draw(shader);
 	}

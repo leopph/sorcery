@@ -2,7 +2,7 @@
 
 #include "vector.h"
 
-namespace leopph::implementation
+namespace leopph::impl
 {
 	// STRUCT TO REPRESENT A VERTEX
 	struct Vertex

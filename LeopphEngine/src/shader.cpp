@@ -5,7 +5,7 @@
 #include <glad/glad.h>
 #include <iostream>
 
-namespace leopph::implementation
+namespace leopph::impl
 {
 	/* CONSTRUCTOR
 	LOAD, READ, COMPILE SHADER FILES AND LINK THE SHADER */

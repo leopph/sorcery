@@ -26,7 +26,7 @@ namespace leopph
 
 
 	Camera::Camera(leopph::Object& object) :
-		Component{ object }, m_AspectRatio{ leopph::implementation::Window::Get().AspectRatio() }, m_HorizontalFOVDegrees{ 100.0f }, m_NearClip{ 1.0f }, m_FarClip{ 100.0f }
+		Component{ object }, m_AspectRatio{ leopph::impl::Window::Get().AspectRatio() }, m_HorizontalFOVDegrees{ 100.0f }, m_NearClip{ 1.0f }, m_FarClip{ 100.0f }
 	{
 		if (s_Active == nullptr)
 			Activate();

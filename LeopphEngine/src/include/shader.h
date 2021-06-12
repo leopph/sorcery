@@ -6,7 +6,7 @@
 #include <filesystem>
 #include <string>
 
-namespace leopph::implementation
+namespace leopph::impl
 {
 	/* A CLASS THAT REPRESENTS AN OPENGL SHADER PROGRAM
 	CURRENTLY INCORPORATES A VERTEX AND A FRAGMENT SHADER */

@@ -22,7 +22,7 @@ namespace leopph
 
 
 
-	namespace implementation
+	namespace impl
 	{
 		class InstanceData;
 	}
@@ -33,7 +33,7 @@ namespace leopph
 	class LEOPPHAPI Object final
 	{
 	public:
-		friend class implementation::InstanceData;
+		friend class impl::InstanceData;
 
 
 		// instance management

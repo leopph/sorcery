@@ -11,7 +11,7 @@ namespace leopph
 #pragma warning (disable: 4251)
 
 	// POINT LIGHT SOURCE
-	class LEOPPHAPI PointLight final : public implementation::Light
+	class LEOPPHAPI PointLight final : public impl::Light
 	{
 	public:
 		PointLight(leopph::Object& object);
