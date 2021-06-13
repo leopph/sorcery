@@ -5,6 +5,7 @@
 
 namespace leopph
 {
+	// TODO document
 	class Time
 	{
 	public:

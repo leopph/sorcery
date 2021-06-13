@@ -1,7 +1,6 @@
 #pragma once
 
 /* LEOPPHENGINE API */
-#include "../src/api/leopphapi.h"
 #include "../src/components/component.h"
 #include "../src/components/behavior.h"
 #include "../src/components/camera.h"

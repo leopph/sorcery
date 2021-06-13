@@ -12,6 +12,7 @@
 
 namespace leopph
 {
+	// TODO document
 	class LEOPPHAPI Quaternion
 	{
 	public:

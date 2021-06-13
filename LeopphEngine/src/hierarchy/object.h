@@ -23,6 +23,7 @@ namespace leopph
 
 
 	// CLASS REPRESENTING A GAME OBJECT
+	// TODO document
 	class Object final
 	{
 	public:

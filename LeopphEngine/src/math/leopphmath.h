@@ -1,11 +1,14 @@
 #pragma once
 
-
 #include "../api/leopphapi.h"
-
 
 namespace leopph
 {
+	/*----------------------------------------------------------------------------------------------------
+	The Math class provides functions to help with mathematical computations.
+	You can also use other implementations, but prefer these to ensure best performance and compatibility.
+	----------------------------------------------------------------------------------------------------*/
+
 	class LEOPPHAPI Math
 	{
 	public:

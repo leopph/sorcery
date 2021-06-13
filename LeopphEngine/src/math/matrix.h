@@ -12,6 +12,14 @@ namespace leopph
 {
 	namespace impl
 	{
+		/*-------------------------------------------------------------------------------------------------
+		The Matrix class template provides several ways to aid in solving linear algebraic problems.
+		It is built to work seamlessly with the Vector class template. See "vector.h" for more information.
+		Matrices are represented as row-major and stored row-continously. They have N rows and M columns.
+		DO NOT INSTANTIATE THIS TEMPLATE EXPLICITLY UNLESS NECESSARY!
+		There are several predefined implementations at the bottom of this file.
+		-------------------------------------------------------------------------------------------------*/
+
 		template<class T, std::size_t N, std::size_t M> requires(N > 1 && M > 1)
 		class Matrix
 		{
@@ -20,11 +28,12 @@ namespace leopph
 
 
 		public:
-			// constructors
+			/* Zero Constructor */
 			Matrix() :
 				m_Data{}
 			{}
 
+			/* Main Diagional Fill Constructor */
 			Matrix(const T& value) :
 				m_Data{}
 			{
@@ -32,6 +41,7 @@ namespace leopph
 					m_Data[i][i] = value;
 			}
 
+			/* Copy Constructor */
 			Matrix(const Matrix<T, N, M>& other) :
 				m_Data{}
 			{
@@ -39,6 +49,7 @@ namespace leopph
 					m_Data[i] = other.m_Data[i];
 			}
 
+			/* Main Diagonal Elements Constructor */
 			template<std::convertible_to<T>... T1> requires(sizeof...(T1) == (N > M ? M : N))
 				Matrix(const T1&... args) :
 				m_Data{}
@@ -49,6 +60,7 @@ namespace leopph
 					m_Data[i][i] = argArr[i];
 			}
 
+			/* All Elements Constructor */
 			template<std::convertible_to<T> ... T1> requires(sizeof...(T1) == (N * M))
 				Matrix(const T1&... args) :
 				m_Data{}
@@ -60,6 +72,7 @@ namespace leopph
 						m_Data[i][j] = argArr[i * M + j];
 			}
 
+			/* Main Diagional Vector Constructor */
 			template<std::size_t N1> requires(N1 == (M > N ? N : M))
 				Matrix(const Vector<T, N1>& vec) :
 				m_Data{}
@@ -69,11 +82,7 @@ namespace leopph
 			}
 
 
-
-
-
-
-			// factories
+			/* Mathematical Identity Matrix */
 			static Matrix<T, N, M> Identity() requires(N == M)
 			{
 				return Matrix<T, N, M>{1};
@@ -81,10 +90,7 @@ namespace leopph
 
 
 
-
-
-
-			// lookat matrix
+			/* View Matrix for the rendering pipeline that is calculated based on current position, target position, and the world's vertical axis */
 			static Matrix<T, 4, 4> LookAt(const Vector<T, 3>& position, const Vector<T, 3>& target, const Vector<T, 3>& worldUp) requires(N == 4 && M == 4)
 			{
 				Vector<T, 3> z{ (target - position).Normalized() };
@@ -102,10 +108,8 @@ namespace leopph
 
 
 
-
-
-
-			// PERSPECTIVE PROJECTION
+			/* Perspective Projection Matrix for the rendering pipeline that is calculated based on the left, right, top, and bottom coordinates of the view frustum
+			as well as near and far clip planes */
 			static Matrix<T, 4, 4> Perspective(const T& left, const T& right, const T& top, const T& bottom, const T& nearClipPlane, const T& farClipPlane) requires (N == 4 && M == 4)
 			{
 				Matrix<T, 4, 4> ret;
@@ -122,7 +126,7 @@ namespace leopph
 
 			}
 
-
+			/* Perspective Projection Matrix for the rendering pipeline that is calculated based on FOV, aspect ratio, and the near and far clip planes */
 			static Matrix<T, 4, 4> Perspective(const T& fov, const T& aspectRatio, const T& nearClipPlane, const T& farClipPlane)  requires (N == 4 && M == 4)
 			{
 				T tanHalfFov{ static_cast<T>(Math::Tan(fov / static_cast<T>(2))) };
@@ -136,13 +140,7 @@ namespace leopph
 
 
 
-
-
-
-
-
-
-			// translation matrix
+			/* Mathematical Translation Matrix */
 			static Matrix<T, 4, 4> Translate(const Vector<T, 3>& vector) requires (N == 4 && M == 4)
 			{
 				Matrix<T, 4, 4> ret = Identity();
@@ -154,7 +152,7 @@ namespace leopph
 			}
 
 
-			// scale matrix
+			/* Mathematical Scaling Matrix */
 			static Matrix<T, 4, 4> Scale(const Vector<T, 3>& vector) requires (N == 4 && M == 4)
 			{
 				Matrix<T, 4, 4> ret = Identity();
@@ -168,10 +166,8 @@ namespace leopph
 			}
 
 
-
-
-
-			// get stored data as pointer
+			/* Returns a pointer to the internal data structure.
+			DO NOT USE THIS UNLESS NECASSARY */
 			const T* Data() const
 			{
 				return m_Data[0].Data();
@@ -185,7 +181,7 @@ namespace leopph
 
 
 
-			// member operators
+			/* Copy Assignment */
 			Matrix<T, N, M>& operator=(const Matrix<T, N, M>& other)
 			{
 				if (this == &other)
@@ -198,6 +194,8 @@ namespace leopph
 				return *this;
 			}
 
+
+			/* Returns the Nth row of the Matrix as an M dimensional Vector */
 			const Vector<T, M>& operator[](size_t index) const
 			{
 				return m_Data[index];
@@ -211,7 +209,7 @@ namespace leopph
 
 
 
-			// determinant
+			/* Mathematical Matrix Determinant for square Matrices */
 			float Det() const requires(N == M)
 			{
 				Matrix<T, N, M> tmp{ *this };
@@ -235,7 +233,7 @@ namespace leopph
 
 
 
-			// TRANSPOSE
+			/* Returns a new Matrix that is the Mathematical Transposed of this Matrix */
 			Matrix<T, M, N> Transposed() const
 			{
 				Matrix<T, M, N> ret;
@@ -247,6 +245,7 @@ namespace leopph
 				return ret;
 			}
 
+			/* Mathematical Transposition of the Matrix in-place. */
 			Matrix<T, N, M> Transpose() requires(N == M)
 			{
 				Matrix<T, N, M> transposed = Transposed();
@@ -261,7 +260,7 @@ namespace leopph
 
 
 
-			// INVERSE
+			/* Returns a new Matrix that is the Mathematical Inverse of this Matrix */
 			Matrix<T, N, M> Inverse() const requires(N == M)
 			{
 				Matrix<T, N, M> copyOfThis{ *this };
@@ -292,7 +291,9 @@ namespace leopph
 			}
 
 
-
+			/* Applicable to N*N Matrices (N > 2).
+			Returns a new (N-1)*(N-1) Matrix that is created by dropping the
+			Nth row and column of the original square Matrix */
 			explicit operator auto() requires(N == M && N > 2)
 			{
 				Matrix<T, N - 1, N - 1> ret{};
@@ -308,8 +309,10 @@ namespace leopph
 
 
 
-
-		// non member operators
+		/*-----------------------------------
+		Other standard mathematical operators
+		-----------------------------------*/
+		
 		template<class T, std::size_t N, std::size_t M>
 		std::ostream& operator<<(std::ostream& stream, const Matrix<T, N, M>& matrix)
 		{
@@ -384,8 +387,11 @@ namespace leopph
 
 
 
-
-	// aliases
+	/*------------------------------------------------------
+	Use these instances where you can in your business logic
+	to get the best compatibility and performance.
+	------------------------------------------------------*/
+	
 	using Matrix2 = impl::Matrix<float, 2, 2>;
 	using Matrix3 = impl::Matrix<float, 3, 3>;
 	using Matrix4 = impl::Matrix<float, 4, 4>;

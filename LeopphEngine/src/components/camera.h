@@ -6,40 +6,49 @@
 
 namespace leopph
 {
-#pragma warning(push)
-#pragma warning(disable: 4251)
+	/*-------------------------------------------------------------------------------------------------------------
+	The Camera component is used to determine the image to be rendered.
+	Attach this to your Objects and switch between them to provide different viewing angles dynamically at runtime.
+	See "object.h" and "component.h" for more information.
+	-------------------------------------------------------------------------------------------------------------*/
 
-
-
-	// CLASS REPRESENTING A CONTROLLABLE CAMERA
-	class LEOPPHAPI Camera : public Component
+	class Camera final : public Component
 	{
 	public:
-		static Camera* Active();
+		/* Get the current active camera that is used to render the scene */
+		LEOPPHAPI static Camera* Active();
 
-		Camera(leopph::Object& object);
-		~Camera();
+		/* Internally used constructor and destructor */
+		LEOPPHAPI Camera(leopph::Object& object);
+		LEOPPHAPI ~Camera();
 
+		/* Enum to help determining FOV conversion details */
 		enum : unsigned char { FOV_HORIZONTAL, FOV_VERTICAL };
-		enum class Movement { FORWARD, BACKWARD, LEFT, RIGHT, DOWN, UP };
 
-		void AspectRatio(float newRatio);
-		void AspectRatio(int width, int height);
-		float AspectRatio() const;
+		/* Aspect ratio (width / height) of the Camera */
+		LEOPPHAPI void AspectRatio(float newRatio);
+		LEOPPHAPI void AspectRatio(int width, int height);
+		LEOPPHAPI float AspectRatio() const;
 
-		void NearClipPlane(float newPlane);
-		float NearClipPlane() const;
+		/* The plane closest to the Camera where rendering begins */
+		LEOPPHAPI void NearClipPlane(float newPlane);
+		LEOPPHAPI float NearClipPlane() const;
 
-		void FarClipPlane(float newPlane);
-		float FarClipPlane() const;
+		/* The plane farthest from the Camera where rendering ends */
+		LEOPPHAPI void FarClipPlane(float newPlane);
+		LEOPPHAPI float FarClipPlane() const;
 
-		void FOV(float fov, unsigned char direction);
-		float FOV(unsigned char direction);
+		/* Current Field of View of the Camera.
+		Use FOV_HORIZONTAL or FOV_VERTICAL to help interpret the provided input */
+		LEOPPHAPI void FOV(float fov, unsigned char direction);
+		LEOPPHAPI float FOV(unsigned char direction);
 
-		Matrix4 ViewMatrix() const;
-		Matrix4 ProjectionMatrix() const;
+		/* Internally used matrices for the rendering engine */
+		LEOPPHAPI Matrix4 ViewMatrix() const;
+		LEOPPHAPI Matrix4 ProjectionMatrix() const;
 
-		void Activate();
+		/* Set this Camera to be the used for rendering */
+		LEOPPHAPI void Activate();
 
 
 
@@ -54,8 +63,4 @@ namespace leopph
 		enum : unsigned char { VERTICAL_TO_HORIZONTAL, HORIZONTAL_TO_VERTICAL };
 		float ConvertFOV(float fov, unsigned char conversion) const;
 	};
-
-
-
-#pragma warning(pop)
 }

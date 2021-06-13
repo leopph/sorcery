@@ -8,19 +8,25 @@ namespace leopph
 	class Object;
 
 
-	// Attach this to Objects
-	class LEOPPHAPI Component
+	/* --------------------------------------------------------------------------------------
+	Components are entities that are attached to Objects to provide additional functionality.
+	Subclass this to provide your implementation.
+	See "object.h" for more information.
+	---------------------------------------------------------------------------------------*/
+
+	class Component
 	{
-	private:
-		Object& m_Object;
-
 	public:
-		Component(Object& object);
-		virtual ~Component() = 0;
+		/* Constructors and destructors used internally */
+		LEOPPHAPI Component(Object& object);
+		LEOPPHAPI virtual ~Component() = 0;
 
 
-		// Access object the component is attached to
-		leopph::Object& Object();
-		const leopph::Object& Object() const;
+		/* These provide access to the owning Object */
+		LEOPPHAPI leopph::Object& Object();
+		LEOPPHAPI const leopph::Object& Object() const;
+
+	private:
+		leopph::Object& m_Object;
 	};
 }

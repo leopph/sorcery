@@ -10,6 +10,14 @@ namespace leopph
 {
 	namespace impl
 	{
+		/*------------------------------------------------------------------------------------------
+		The Vector class template provides several ways to aid in solving linear algebraic problems.
+		Vector are row/column agnostic, they are always interpreted in the form they have to be
+		in order for formulas to make sense.
+		DO NOT INSTANTIATE THIS TEMPLATE EXPLICITLY UNLESS NECESSARY!
+		There are several predefined implementations at the bottom of this file.
+		------------------------------------------------------------------------------------------*/
+
 		template<class T, std::size_t N> requires(N > 1)
 		class Vector
 		{
@@ -18,11 +26,12 @@ namespace leopph
 
 
 		public:
-			// constructors
+			/* Zero Constructor */
 			Vector() :
 				m_Data{}
 			{}
 
+			/* Fill Constructor */
 			Vector(const T& value) :
 				m_Data{}
 			{
@@ -30,6 +39,7 @@ namespace leopph
 					m_Data[i] = value;
 			}
 
+			/* Copy Constructor */
 			Vector(const Vector<T, N>& other) :
 				m_Data{}
 			{
@@ -37,6 +47,7 @@ namespace leopph
 					m_Data[i] = other.m_Data[i];
 			}
 
+			/* All Elements Constructor */
 			template<std::convertible_to<T>... T1>
 			Vector(const T1&... args) requires(sizeof...(T1) == N) :
 				m_Data{ static_cast<T>(args)... }
@@ -46,7 +57,7 @@ namespace leopph
 
 
 
-			// quick access factories
+			/* Quick Access Factories */
 			static Vector<T, N> Up()
 			{
 				Vector<T, N> ret;
@@ -88,7 +99,8 @@ namespace leopph
 
 
 
-			// get stored values as pointer
+			/* Returns a pointer to the internal data structure.
+			DO NOT USE THIS UNLESS NECESSARY! */
 			const T* Data() const
 			{
 				return &m_Data[0];
@@ -102,7 +114,7 @@ namespace leopph
 
 
 
-			// member operators
+			/* Copy Assignment */
 			Vector<T, N>& operator=(const Vector<T, N>& other)
 			{
 				if (this == &other)
@@ -114,6 +126,8 @@ namespace leopph
 				return *this;
 			}
 
+
+			/* Returns the Nth component of the vector */
 			const T& operator[](size_t index) const
 			{
 				return m_Data[index];
@@ -126,7 +140,7 @@ namespace leopph
 
 
 
-			// magnitude
+			/* Mathematical vector magnitude */
 			float Length() const
 			{
 				float sqrSum{};
@@ -140,7 +154,8 @@ namespace leopph
 
 
 
-			// normalization
+			/* Normalization changes the vector in-place to have a magnitude of 1,
+			but point in the same direction */
 			Vector<T, N>& Normalize()
 			{
 				float length = Length();
@@ -150,6 +165,8 @@ namespace leopph
 
 				return *this;
 			}
+
+			/* Returns a new vector that has a magnitude of 1 and points in the same direction */
 			Vector<T, N> Normalized() const
 			{
 				return Vector<T, N>{ *this }.Normalize();
@@ -159,7 +176,7 @@ namespace leopph
 
 
 
-			// dot product
+			/* Mathematical dot product of two equal dimension vectors */
 			static T Dot(const Vector<T, N>& left, const Vector<T, N>& right)
 			{
 				T ret{};
@@ -173,7 +190,7 @@ namespace leopph
 
 
 
-			// cross product, only for 3d vector
+			/* Mathematical cross product, only between 3D vectors */
 			static Vector<T, N> Cross(const Vector<T, N>& left, const Vector<T, N>& right) requires(N == 3)
 			{
 				return Vector<T, N> {	left[1] * right[2] - left[2] * right[1],
@@ -182,7 +199,7 @@ namespace leopph
 			}
 
 
-			// distance
+			/* Mathematical vector distance */
 			static float Distance(const Vector<T, N>& left, const Vector<T, N>& right)
 			{
 				T sum{};
@@ -198,8 +215,10 @@ namespace leopph
 
 
 
-
-		// non member operators
+		/*-----------------------------------
+		Other standard mathematical operators
+		-----------------------------------*/
+		
 		template<class T, std::size_t N>
 		Vector<T, N> operator-(const Vector<T, N>& operand)
 		{
@@ -337,7 +356,11 @@ namespace leopph
 
 
 
-	// aliasing
+	/*------------------------------------------------------
+	Use these instances where you can in your business logic
+	to get the best compatibility and performance.
+	------------------------------------------------------*/
+
 	using Vector4 = impl::Vector<float, 4>;
 	using Vector3 = impl::Vector<float, 3>;
 	using Vector2 = impl::Vector<float, 2>;

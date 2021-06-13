@@ -8,6 +8,7 @@ namespace leopph::impl
 	class Window
 	{
 	public:
+		// TODO separate header
 		enum class LEOPPHAPI CursorState
 		{
 			Shown,

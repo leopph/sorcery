@@ -8,17 +8,24 @@
 
 namespace leopph
 {
-	// Special component with updates called per frame. Users subclass this create game logic
+	/*------------------------------------------------------------------------------------------------------
+	Behaviors are special components that provide can hook into and effect the status of objects at runtime.
+	Subclass this to provide the logic for your application.
+	See "object.h" and "component.h" for more information.
+	------------------------------------------------------------------------------------------------------*/
+
 	class Behavior : public Component
 	{
 	public:
+		/* Internal tool to update all current Behaviors */
+		// TODO this should not be accessible outside
 		LEOPPHAPI static void UpdateAll();
 
+		/* Contructor and destructor used internally */
 		LEOPPHAPI Behavior(leopph::Object& object);
 		LEOPPHAPI virtual ~Behavior() = 0;
 
-
-		// THIS IS CALLED EVERY FRAME FOR ALL BEHAVIORS
+		/* This function gets called every frame. Override this to provide business logic */
 		LEOPPHAPI virtual void OnFrameUpdate() {}
 
 	private:

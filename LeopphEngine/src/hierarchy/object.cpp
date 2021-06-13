@@ -110,6 +110,8 @@ namespace leopph
 		If the target node is not removed before renaming, order-changing names may lead to crashes.
 		In case the new name is already in use, revert to the previous name and reinsert the node without changes. */
 
+		// TODO reimplement this based on the modules branch
+
 		impl::InstanceData::UpdateObjectKey(m_Name, std::move(newName), [](Object* object, std::string&& newName) { object->m_Name = std::move(newName); });
 	}
 }
