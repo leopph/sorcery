@@ -7,6 +7,8 @@ namespace leopph::impl
 {
 	Window* Window::s_Instance{ nullptr };
 
+
+	
 	Window& Window::Get(unsigned width, unsigned height,
 		const std::string& title, bool fullscreen)
 	{
@@ -20,6 +22,8 @@ namespace leopph::impl
 
 			if (Camera::Active())
 				Camera::Active()->AspectRatio(s_Instance->m_Width, s_Instance->m_Height);
+
+			s_Instance->InitKeys();
 		}
 
 		return *s_Instance;
@@ -31,12 +35,14 @@ namespace leopph::impl
 	}
 
 
+	
 	Window::Window(unsigned width, unsigned height,
 		const std::string& title, bool fullscreen) :
 		m_Width{ width }, m_Height{ height },
 		m_Title{ title }, m_Fullscreen{ fullscreen }
 	{}
 
+	
 
 	unsigned Window::Width() const
 	{
@@ -48,7 +54,6 @@ namespace leopph::impl
 		m_Width = newWidth;
 	}
 
-
 	unsigned Window::Height() const
 	{
 		return m_Height;
@@ -59,13 +64,11 @@ namespace leopph::impl
 		m_Height = newHeight;
 	}
 
-
 	float Window::AspectRatio() const
 	{
 		return static_cast<float>(Width()) / Height();
 	}
 
-	
 	bool Window::Fullscreen() const
 	{
 		return m_Fullscreen;

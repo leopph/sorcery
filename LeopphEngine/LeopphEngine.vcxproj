@@ -112,6 +112,7 @@
     <ClInclude Include="src\components\lighting\dirlight.h" />
     <ClInclude Include="src\entry\entry.h" />
     <ClInclude Include="src\input\cursorstate.h" />
+    <ClInclude Include="src\input\inputhandler.h" />
     <ClInclude Include="src\input\keycodes.h" />
     <ClInclude Include="src\input\keystate.h" />
     <ClInclude Include="src\rendering\opengl\gl.h" />
@@ -143,6 +144,7 @@
     <ClCompile Include="src\components\camera.cpp" />
     <ClCompile Include="src\components\component.cpp" />
     <ClCompile Include="src\components\lighting\dirlight.cpp" />
+    <ClCompile Include="src\input\inputhandler.cpp" />
     <ClCompile Include="src\rendering\opengl\gl.cpp" />
     <ClCompile Include="src\windowing\window.cpp" />
     <ClCompile Include="src\input\input.cpp" />

@@ -4,10 +4,12 @@
 
 #include <GLFW/glfw3.h>
 #include <string>
-#include <functional>
+#include <unordered_map>
 
 #include "../api/leopphapi.h"
 #include "window.h"
+#include "../input/keycodes.h"
+#include "../input/keystate.h"
 
 
 namespace leopph::impl
@@ -16,32 +18,28 @@ namespace leopph::impl
 	{
 	public:
 		LEOPPHAPI GLWindowImpl(unsigned width, unsigned height, const std::string& title, bool fullscreen);
-		LEOPPHAPI ~GLWindowImpl();
+		LEOPPHAPI ~GLWindowImpl() override;
 
-		LEOPPHAPI virtual void Width(unsigned newWidth) override;
-		LEOPPHAPI virtual void Height(unsigned newHeight) override;
+		LEOPPHAPI void Width(unsigned newWidth) override;
+		LEOPPHAPI void Height(unsigned newHeight) override;
 
-		LEOPPHAPI virtual void PollEvents() override;
-		LEOPPHAPI virtual void SwapBuffers() override;
-		LEOPPHAPI virtual bool ShouldClose() override;
-		LEOPPHAPI virtual void Clear() override;
+		LEOPPHAPI void PollEvents() override;
+		LEOPPHAPI void SwapBuffers() override;
+		LEOPPHAPI bool ShouldClose() override;
+		LEOPPHAPI void Clear() override;
 
-		LEOPPHAPI virtual CursorState CursorMode() const override;
-		LEOPPHAPI virtual void CursorMode(CursorState newState) override;
-
-		// TODO make these implementation agnostic
-		LEOPPHAPI static void SetKeyCallback(std::function<void(int, int)> callback);
-		LEOPPHAPI static void SetMouseCallback(std::function<void(float, float)> callback);
-
+		LEOPPHAPI CursorState CursorMode() const override;
+		LEOPPHAPI void CursorMode(CursorState newState) override;
 
 	private:
-		static std::function<void(int, int)> s_KeyCallback;
-		static std::function<void(float, float)> s_MouseCallback;
-
-		// TODO make these implementation agnostic
+		void InitKeys() override;
+		
 		static void FramebufferSizeCallback(GLFWwindow* window, int width, int height);
-		static void KeyCallbackManager(GLFWwindow* window, int key, int scancode, int action, int mods);
-		static void MouseCallbackManager(GLFWwindow* window, double x, double y);
+		static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
+		static void MouseCallback(GLFWwindow* window, double x, double y);
+
+		const static std::unordered_map<int, KeyCode> s_KeyCodes;
+		const static std::unordered_map<int, KeyState> s_KeyStates;
 
 		GLFWwindow* m_Window;
 	};

@@ -37,6 +37,8 @@ namespace leopph::impl
 		virtual ~Window() = default;
 		
 	private:
+		virtual void InitKeys() = 0;
+		
 		static Window* s_Instance;
 
 		unsigned m_Width;

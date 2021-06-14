@@ -24,6 +24,7 @@
     <ClCompile Include="vendor\stb_image\stb_image.cpp" />
     <ClCompile Include="src\rendering\model.cpp" />
     <ClCompile Include="src\windowing\window.cpp" />
+    <ClCompile Include="src\input\inputhandler.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\behavior.h" />
@@ -58,6 +59,7 @@
     <ClInclude Include="src\input\keycodes.h" />
     <ClInclude Include="src\input\keystate.h" />
     <ClInclude Include="src\input\cursorstate.h" />
+    <ClInclude Include="src\input\inputhandler.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\shaders\fragment.frag" />

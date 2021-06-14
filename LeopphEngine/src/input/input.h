@@ -4,7 +4,6 @@
 #include <utility>
 
 #include "../api/leopphapi.h"
-#include "../windowing/window.h"
 #include "keycodes.h"
 #include "keystate.h"
 #include "cursorstate.h"
@@ -12,6 +11,11 @@
 
 namespace leopph
 {
+	namespace impl
+	{
+		class InputHandler;
+	}
+	
 	/*--------------------------------------------------------------------
 	The Input class provides ways to gather information about user inputs.
 	--------------------------------------------------------------------*/
@@ -21,7 +25,6 @@ namespace leopph
 	public:
 		/* Internally used functions */
 		// TODO these should not be accessible to clients
-		LEOPPHAPI static void RegisterCallbacks();
 		LEOPPHAPI static void UpdateReleasedKeys();
 
 		/* Returns true if the given key is being pressed down in the current frame.
@@ -44,11 +47,12 @@ namespace leopph
 		LEOPPHAPI static void CursorMode(CursorState newState);
 
 	private:
-		const static std::map<KeyCode, int> s_KeyCodes;
-		static std::map<int, KeyState> s_KeyStates;
+		static std::map<KeyCode, KeyState> s_KeyStates;
 		static std::pair<float, float> s_MousePos;
 
-		static void KeyCallback(int key, int action);
-		static void MouseCallback(float x, float y);
+		static void OnInputChange(KeyCode, KeyState);
+		static void OnInputChange(double x, double y);
+
+		friend class impl::InputHandler;
 	};
 }

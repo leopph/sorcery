@@ -1,97 +1,24 @@
 #include "input.h"
-#include <GLFW/glfw3.h>
 #include "../windowing/window.h"
 #include "../windowing/glwindow.h"
 
 namespace leopph
 {
-	// list of keys
-	const std::map<KeyCode, int> Input::s_KeyCodes
-	{
-		{KeyCode::ZERO, GLFW_KEY_0},
-		{KeyCode::ONE, GLFW_KEY_1},
-		{KeyCode::TWO, GLFW_KEY_2},
-		{KeyCode::THREE, GLFW_KEY_3},
-		{KeyCode::FOUR, GLFW_KEY_4},
-		{KeyCode::FIVE, GLFW_KEY_5},
-		{KeyCode::SIX, GLFW_KEY_6},
-		{KeyCode::SEVEN, GLFW_KEY_7},
-		{KeyCode::EIGHT, GLFW_KEY_8},
-		{KeyCode::NINE, GLFW_KEY_9},
-
-		{KeyCode::Q, GLFW_KEY_Q},
-		{KeyCode::W, GLFW_KEY_W},
-		{KeyCode::E, GLFW_KEY_E},
-		{KeyCode::R, GLFW_KEY_R},
-		{KeyCode::T, GLFW_KEY_T},
-		{KeyCode::Y, GLFW_KEY_Y},
-		{KeyCode::U, GLFW_KEY_U},
-		{KeyCode::I, GLFW_KEY_I},
-		{KeyCode::O, GLFW_KEY_O},
-		{KeyCode::P, GLFW_KEY_P},
-		{KeyCode::A, GLFW_KEY_A},
-		{KeyCode::S, GLFW_KEY_S},
-		{KeyCode::D, GLFW_KEY_D},
-		{KeyCode::F, GLFW_KEY_F},
-		{KeyCode::G, GLFW_KEY_G},
-		{KeyCode::H, GLFW_KEY_H},
-		{KeyCode::J, GLFW_KEY_J},
-		{KeyCode::K, GLFW_KEY_K},
-		{KeyCode::L, GLFW_KEY_L},
-		{KeyCode::Z, GLFW_KEY_Z},
-		{KeyCode::X, GLFW_KEY_X},
-		{KeyCode::C, GLFW_KEY_C},
-		{KeyCode::V, GLFW_KEY_V},
-		{KeyCode::B, GLFW_KEY_B},
-		{KeyCode::N, GLFW_KEY_N},
-		{KeyCode::M, GLFW_KEY_M}
-	};
-
-
-	// init key states
-	std::map<int, KeyState> Input::s_KeyStates{};
-
-
-
-	// init mouse pos
+	std::map<KeyCode, KeyState> Input::s_KeyStates{};
 	std::pair<float, float> Input::s_MousePos{};
+
+
 	
-
-
-	// save keystate changes
-	void Input::KeyCallback(int key, int action)
+	void Input::OnInputChange(KeyCode keyCode, KeyState keyState)
 	{
-		if (action == GLFW_PRESS)
-			s_KeyStates[key] = KeyState::Down;
-
-		if (action == GLFW_REPEAT)
-			s_KeyStates[key] = KeyState::Held;
-
-		if (action == GLFW_RELEASE)
-			s_KeyStates[key] = KeyState::Up;
+		s_KeyStates[keyCode] = keyState;
 	}
 
-
-	void Input::MouseCallback(float x, float y)
+	void Input::OnInputChange(double x, double y)
 	{
-		s_MousePos.first = x;
-		s_MousePos.second = y;
+		s_MousePos = { static_cast<float>(x), static_cast<float>(y) };
 	}
 
-
-	// register for callback
-	void Input::RegisterCallbacks()
-	{
-		// TODO make this implementation agnostic
-		impl::GLWindowImpl::SetKeyCallback(KeyCallback);
-		impl::GLWindowImpl::SetMouseCallback(MouseCallback);
-
-		for (const auto& pair : s_KeyCodes)
-			s_KeyStates[pair.second] = KeyState::Released;
-	}
-
-
-	// change up states to released
 	void Input::UpdateReleasedKeys()
 	{
 		for (auto& keyPair : s_KeyStates)
@@ -100,10 +27,10 @@ namespace leopph
 	}
 
 
-	// keystate getters
+	
 	bool Input::GetKey(KeyCode key)
 	{
-		KeyState state = s_KeyStates[s_KeyCodes.at(key)];
+		const KeyState state = s_KeyStates.at(key);
 		return
 			state == KeyState::Down ||
 			state == KeyState::Held;
@@ -111,21 +38,18 @@ namespace leopph
 
 	bool Input::GetKeyDown(KeyCode key)
 	{
-		return s_KeyStates[s_KeyCodes.at(key)] == KeyState::Down;
+		return s_KeyStates.at(key) == KeyState::Down;
 	}
 
 	bool Input::GetKeyUp(KeyCode key)
 	{
-		return s_KeyStates[s_KeyCodes.at(key)] == KeyState::Up;
+		return s_KeyStates.at(key) == KeyState::Up;
 	}
-
-
 
 	const std::pair<float, float>& Input::GetMousePosition()
 	{
 		return s_MousePos;
 	}
-
 
 	CursorState Input::CursorMode()
 	{

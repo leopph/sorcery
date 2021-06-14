@@ -1,21 +1,66 @@
 #include "glwindow.h"
 #include "../components/camera.h"
 #include "../input/input.h"
+#include "../input/inputhandler.h"
 
 #include <stdexcept>
 #include <glad/glad.h>
 #include <utility>
 #include <map>
+#include <iostream>
 
 
 namespace leopph::impl
 {
-	// init static members
-	std::function<void(int, int)> GLWindowImpl::s_KeyCallback{};
-	std::function<void(float, float)> GLWindowImpl::s_MouseCallback{};
+	const std::unordered_map<int, KeyCode> GLWindowImpl::s_KeyCodes
+	{
+		{ GLFW_KEY_0, KeyCode::ZERO },
+		{ GLFW_KEY_1, KeyCode::ONE },
+		{ GLFW_KEY_2, KeyCode::TWO },
+		{ GLFW_KEY_3, KeyCode::THREE },
+		{ GLFW_KEY_4, KeyCode::FOUR },
+		{ GLFW_KEY_5, KeyCode::FIVE },
+		{ GLFW_KEY_6, KeyCode::SIX },
+		{ GLFW_KEY_7, KeyCode::SEVEN },
+		{ GLFW_KEY_8, KeyCode::EIGHT },
+		{ GLFW_KEY_9, KeyCode::NINE },
+		{ GLFW_KEY_Q, KeyCode::Q },
+		{ GLFW_KEY_W, KeyCode::W },
+		{ GLFW_KEY_E, KeyCode::E },
+		{ GLFW_KEY_R, KeyCode::R },
+		{ GLFW_KEY_T, KeyCode::T },
+		{ GLFW_KEY_Y, KeyCode::Y },
+		{ GLFW_KEY_U, KeyCode::U },
+		{ GLFW_KEY_I, KeyCode::I },
+		{ GLFW_KEY_O, KeyCode::O },
+		{ GLFW_KEY_P, KeyCode::P },
+		{ GLFW_KEY_A, KeyCode::A },
+		{ GLFW_KEY_S, KeyCode::S },
+		{ GLFW_KEY_D, KeyCode::D },
+		{ GLFW_KEY_F, KeyCode::F },
+		{ GLFW_KEY_G, KeyCode::G },
+		{ GLFW_KEY_H, KeyCode::H },
+		{ GLFW_KEY_J, KeyCode::J },
+		{ GLFW_KEY_K, KeyCode::K },
+		{ GLFW_KEY_L, KeyCode::L },
+		{ GLFW_KEY_Z, KeyCode::Z },
+		{ GLFW_KEY_X, KeyCode::X },
+		{ GLFW_KEY_C, KeyCode::C },
+		{ GLFW_KEY_V, KeyCode::V },
+		{ GLFW_KEY_B, KeyCode::B },
+		{ GLFW_KEY_N, KeyCode::N },
+		{ GLFW_KEY_M, KeyCode::M }
+	};
 
+	const std::unordered_map<int, KeyState> GLWindowImpl::s_KeyStates
+	{
+		{ GLFW_PRESS, KeyState::Down },
+		{ GLFW_REPEAT, KeyState::Held },
+		{ GLFW_RELEASE, KeyState::Up }
+	};
 
-	// constructor
+	
+
 	GLWindowImpl::GLWindowImpl(unsigned width, unsigned height, const std::string& title, bool fullscreen)
 		: Window{ width, height, title, fullscreen }
 	{
@@ -35,29 +80,28 @@ namespace leopph::impl
 		m_Window = glfwCreateWindow(static_cast<int>(width), static_cast<int>(height), title.data(), monitor, nullptr);
 
 		glfwMakeContextCurrent(m_Window);
-		Input::RegisterCallbacks();
 		glfwSetFramebufferSizeCallback(m_Window, FramebufferSizeCallback);
-		glfwSetKeyCallback(m_Window, KeyCallbackManager);
-		glfwSetCursorPosCallback(m_Window, MouseCallbackManager);
+		glfwSetKeyCallback(m_Window, KeyCallback);
+		glfwSetCursorPosCallback(m_Window, MouseCallback);
 		glfwSetCursorPos(m_Window, 0, 0);
 	}
-
-
-
-
-	// destructor
+	
 	GLWindowImpl::~GLWindowImpl()
 	{
 		glfwDestroyWindow(m_Window);
 	}
 
 
-
+	
+	void GLWindowImpl::InitKeys()
+	{
+		for (const auto& pair : s_KeyCodes)
+			InputHandler::OnInputChange(pair.second, KeyState::Released);
+	}
 
 
 #pragma warning(push)
 #pragma warning(disable: 4100)
-	// framebuffer resize callback
 	void GLWindowImpl::FramebufferSizeCallback(GLFWwindow* window, int width, int height)
 	{
 		glViewport(0, 0, width, height);
@@ -70,72 +114,26 @@ namespace leopph::impl
 			Camera::Active()->AspectRatio(width, height);
 	}
 
-
-
-
-
-	void GLWindowImpl::KeyCallbackManager(GLFWwindow* window, int key, int scancode, int action, int mods)
+	void GLWindowImpl::KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 	{
-		if (s_KeyCallback)
-			s_KeyCallback(key, action);
+		try
+		{
+			const KeyCode keyCode = s_KeyCodes.at(key);
+			const KeyState keyState = s_KeyStates.at(action);	
+			InputHandler::OnInputChange(keyCode, keyState);
+		}
+		catch (const std::out_of_range&)
+		{
+			std::cerr << "INVALID KEY INPUT DETECTED" << std::endl;
+		}
+	}
+	
+	void GLWindowImpl::MouseCallback(GLFWwindow* window, double x, double y)
+	{
+		InputHandler::OnInputChange(x, y);
 	}
 #pragma warning(pop)
 
-
-	void GLWindowImpl::SetKeyCallback(std::function<void(int, int)> callback)
-	{
-		s_KeyCallback = std::move(callback);
-	}
-
-
-#pragma warning(push)
-#pragma warning(disable: 4100)
-	void GLWindowImpl::MouseCallbackManager(GLFWwindow* window, double x, double y)
-	{
-		if (s_MouseCallback)
-			s_MouseCallback(static_cast<float>(x), static_cast<float>(y));
-	}
-#pragma warning(pop)
-
-	void GLWindowImpl::SetMouseCallback(std::function<void(float, float)> callback)
-	{
-		s_MouseCallback = std::move(callback);
-	}
-
-
-	void GLWindowImpl::Width(unsigned newWidth)
-	{
-		Window::Width(newWidth);
-		glfwSetWindowSize(m_Window, static_cast<int>(newWidth), static_cast<int>(Window::Height()));
-	}
-
-	void GLWindowImpl::Height(unsigned newHeight)
-	{
-		Window::Height(newHeight);
-		glfwSetWindowSize(m_Window, static_cast<int>(Window::Width()), static_cast<int>(newHeight));
-	}
-
-
-	void GLWindowImpl::PollEvents()
-	{
-		glfwPollEvents();
-	}
-
-	void GLWindowImpl::SwapBuffers()
-	{
-		glfwSwapBuffers(m_Window);
-	}
-
-	bool GLWindowImpl::ShouldClose()
-	{
-		return glfwWindowShouldClose(m_Window);
-	}
-
-	void GLWindowImpl::Clear()
-	{
-		glClearColor(0, 0, 0, 0);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	}
 
 
 	CursorState GLWindowImpl::CursorMode() const
@@ -160,5 +158,40 @@ namespace leopph::impl
 		};
 
 		glfwSetInputMode(this->m_Window, GLFW_CURSOR, cursorStates.at(newState));
+	}
+
+	void GLWindowImpl::Width(unsigned newWidth)
+	{
+		Window::Width(newWidth);
+		glfwSetWindowSize(m_Window, static_cast<int>(newWidth), static_cast<int>(Window::Height()));
+	}
+
+	void GLWindowImpl::Height(unsigned newHeight)
+	{
+		Window::Height(newHeight);
+		glfwSetWindowSize(m_Window, static_cast<int>(Window::Width()), static_cast<int>(newHeight));
+	}
+
+
+	
+	void GLWindowImpl::PollEvents()
+	{
+		glfwPollEvents();
+	}
+
+	void GLWindowImpl::SwapBuffers()
+	{
+		glfwSwapBuffers(m_Window);
+	}
+
+	bool GLWindowImpl::ShouldClose()
+	{
+		return glfwWindowShouldClose(m_Window);
+	}
+
+	void GLWindowImpl::Clear()
+	{
+		glClearColor(0, 0, 0, 0);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	}
 }
