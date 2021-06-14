@@ -64,7 +64,7 @@ namespace leopph
 			return reinterpret_cast<T*>(*m_Components.emplace(new T{ *this }).first);
 		}
 
-		LEOPPHAPI void RemoveComponent(Behavior* behavior);
+		LEOPPHAPI void RemoveComponent(Component* behavior);
 
 		template<std::derived_from<Component> T>
 		T* GetComponent() const

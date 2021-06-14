@@ -87,10 +87,11 @@ namespace leopph
 	{
 		return m_Components;
 	}
-
-	void Object::RemoveComponent(Behavior* behavior)
+	
+	void Object::RemoveComponent(Component* behavior)
 	{
 		m_Components.erase(behavior);
+		delete behavior;
 	}
 
 
