@@ -1,8 +1,8 @@
 #pragma once
 
+#include "../api/leopphapi.h"
 #include "keycodes.h"
 #include "keystate.h"
-#include "cursorstate.h"
 
 namespace leopph::impl
 {	
@@ -11,10 +11,11 @@ namespace leopph::impl
 	to decouple implementation details.
 	---------------------------------------------------------*/
 	
-	class InputHandler
+	class LEOPPHAPI InputHandler
 	{
 	public:
 		static void OnInputChange(KeyCode keyCode, KeyState keyState);
 		static void OnInputChange(double x, double y);
+		static void UpdateReleasedKeys();
 	};
 }

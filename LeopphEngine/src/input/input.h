@@ -23,10 +23,6 @@ namespace leopph
 	class Input
 	{
 	public:
-		/* Internally used functions */
-		// TODO these should not be accessible to clients
-		LEOPPHAPI static void UpdateReleasedKeys();
-
 		/* Returns true if the given key is being pressed down in the current frame.
 		Returns true for held keys. */
 		LEOPPHAPI static bool GetKey(KeyCode key);
@@ -52,6 +48,7 @@ namespace leopph
 
 		static void OnInputChange(KeyCode, KeyState);
 		static void OnInputChange(double x, double y);
+		static void UpdateReleasedKeys();
 
 		friend class impl::InputHandler;
 	};

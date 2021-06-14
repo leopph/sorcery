@@ -13,4 +13,10 @@ namespace leopph::impl
 		Input::OnInputChange(x, y);
 	}
 
+
+	void InputHandler::UpdateReleasedKeys()
+	{
+		Input::UpdateReleasedKeys();
+	}
+
 }

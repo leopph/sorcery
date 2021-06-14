@@ -6,8 +6,7 @@
 #include "../hierarchy/object.h"
 #include "../rendering/renderer.h"
 #include "../timing/timekeeping.h"
-#include "../input/input.h"
-#include "../instances/instancedata.h"
+#include "../input/inputhandler.h"
 
 
 
@@ -35,7 +34,7 @@ int main()
 
 	while (!window.ShouldClose())
 	{
-		leopph::Input::UpdateReleasedKeys();
+		leopph::impl::InputHandler::UpdateReleasedKeys();
 		window.PollEvents();
 		leopph::Behavior::UpdateAll();
 		window.Clear();
