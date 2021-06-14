@@ -32,7 +32,7 @@ namespace leopph::impl
 		if (Fullscreen())
 			monitor = glfwGetPrimaryMonitor();
 
-		m_Window = glfwCreateWindow(width, height, title.data(), monitor, nullptr);
+		m_Window = glfwCreateWindow(static_cast<int>(width), static_cast<int>(height), title.data(), monitor, nullptr);
 
 		glfwMakeContextCurrent(m_Window);
 		Input::RegisterCallbacks();
@@ -106,13 +106,13 @@ namespace leopph::impl
 	void GLWindowImpl::Width(unsigned newWidth)
 	{
 		Window::Width(newWidth);
-		glfwSetWindowSize(m_Window, newWidth, Window::Height());
+		glfwSetWindowSize(m_Window, static_cast<int>(newWidth), static_cast<int>(Window::Height()));
 	}
 
 	void GLWindowImpl::Height(unsigned newHeight)
 	{
 		Window::Height(newHeight);
-		glfwSetWindowSize(m_Window, Window::Width(), newHeight);
+		glfwSetWindowSize(m_Window, static_cast<int>(Window::Width()), static_cast<int>(newHeight));
 	}
 
 
@@ -138,7 +138,7 @@ namespace leopph::impl
 	}
 
 
-	GLWindowImpl::CursorState GLWindowImpl::CursorMode() const
+	CursorState GLWindowImpl::CursorMode() const
 	{
 		static const std::map<decltype(GLFW_CURSOR_NORMAL), CursorState> cursorStates
 		{

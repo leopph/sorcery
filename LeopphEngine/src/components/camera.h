@@ -20,7 +20,7 @@ namespace leopph
 
 		/* Internally used constructor and destructor */
 		LEOPPHAPI Camera();
-		LEOPPHAPI ~Camera();
+		LEOPPHAPI ~Camera() override;
 
 		/* Enum to help determining FOV conversion details */
 		enum : unsigned char { FOV_HORIZONTAL, FOV_VERTICAL };

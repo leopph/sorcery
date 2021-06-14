@@ -49,7 +49,7 @@ namespace leopph
 
 
 	// init key states
-	std::map<int, PressState> Input::s_KeyStates{};
+	std::map<int, KeyState> Input::s_KeyStates{};
 
 
 
@@ -62,13 +62,13 @@ namespace leopph
 	void Input::KeyCallback(int key, int action)
 	{
 		if (action == GLFW_PRESS)
-			s_KeyStates[key] = PressState::Down;
+			s_KeyStates[key] = KeyState::Down;
 
 		if (action == GLFW_REPEAT)
-			s_KeyStates[key] = PressState::Held;
+			s_KeyStates[key] = KeyState::Held;
 
 		if (action == GLFW_RELEASE)
-			s_KeyStates[key] = PressState::Up;
+			s_KeyStates[key] = KeyState::Up;
 	}
 
 
@@ -87,7 +87,7 @@ namespace leopph
 		impl::GLWindowImpl::SetMouseCallback(MouseCallback);
 
 		for (const auto& pair : s_KeyCodes)
-			s_KeyStates[pair.second] = PressState::Released;
+			s_KeyStates[pair.second] = KeyState::Released;
 	}
 
 
@@ -95,28 +95,28 @@ namespace leopph
 	void Input::UpdateReleasedKeys()
 	{
 		for (auto& keyPair : s_KeyStates)
-			if (keyPair.second == PressState::Up)
-				keyPair.second = PressState::Released;
+			if (keyPair.second == KeyState::Up)
+				keyPair.second = KeyState::Released;
 	}
 
 
 	// keystate getters
 	bool Input::GetKey(KeyCode key)
 	{
-		PressState state = s_KeyStates[s_KeyCodes.at(key)];
+		KeyState state = s_KeyStates[s_KeyCodes.at(key)];
 		return
-			state == PressState::Down ||
-			state == PressState::Held;
+			state == KeyState::Down ||
+			state == KeyState::Held;
 	}
 
 	bool Input::GetKeyDown(KeyCode key)
 	{
-		return s_KeyStates[s_KeyCodes.at(key)] == PressState::Down;
+		return s_KeyStates[s_KeyCodes.at(key)] == KeyState::Down;
 	}
 
 	bool Input::GetKeyUp(KeyCode key)
 	{
-		return s_KeyStates[s_KeyCodes.at(key)] == PressState::Up;
+		return s_KeyStates[s_KeyCodes.at(key)] == KeyState::Up;
 	}
 
 

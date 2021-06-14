@@ -23,7 +23,7 @@ namespace leopph
 
 		/* Contructor and destructor used internally */
 		LEOPPHAPI Behavior();
-		LEOPPHAPI virtual ~Behavior() = 0;
+		LEOPPHAPI ~Behavior() override = 0;
 
 		/* This function gets called every frame. Override this to provide business logic */
 		LEOPPHAPI virtual void OnFrameUpdate() {}

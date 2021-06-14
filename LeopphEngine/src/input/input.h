@@ -5,41 +5,13 @@
 
 #include "../api/leopphapi.h"
 #include "../windowing/window.h"
+#include "keycodes.h"
+#include "keystate.h"
+#include "cursorstate.h"
 
 
 namespace leopph
 {
-	/*---------------------------------------------
-	A list of all supported keys.
-	Use these to get information about user inputs.
-	---------------------------------------------*/
-	// TODO separate header
-
-	enum class KeyCode
-	{
-		ZERO, ONE, TWO, THREE, FOUR, FIVE, SIX, SEVEN, EIGHT, NINE,
-		Q, W, E, R, T, Y, U, I, O, P,
-		A, S, D, F, G, H, J, K, L,
-		Z, X, C, V, B, N, M
-	};
-
-
-	/*---------------------------------------------
-	A list of all supported keystates.
-	Use these to get information about user inputs.
-	---------------------------------------------*/
-	// TODO separater header
-
-	enum class PressState
-	{
-		Down, Held, Up, Released,
-	};
-
-	
-	// TODO separate header
-	using CursorState = impl::Window::CursorState;
-
-
 	/*--------------------------------------------------------------------
 	The Input class provides ways to gather information about user inputs.
 	--------------------------------------------------------------------*/
@@ -73,7 +45,7 @@ namespace leopph
 
 	private:
 		const static std::map<KeyCode, int> s_KeyCodes;
-		static std::map<int, PressState> s_KeyStates;
+		static std::map<int, KeyState> s_KeyStates;
 		static std::pair<float, float> s_MousePos;
 
 		static void KeyCallback(int key, int action);

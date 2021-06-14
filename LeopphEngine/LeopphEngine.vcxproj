@@ -111,6 +111,9 @@
     <ClInclude Include="src\components\component.h" />
     <ClInclude Include="src\components\lighting\dirlight.h" />
     <ClInclude Include="src\entry\entry.h" />
+    <ClInclude Include="src\input\cursorstate.h" />
+    <ClInclude Include="src\input\keycodes.h" />
+    <ClInclude Include="src\input\keystate.h" />
     <ClInclude Include="src\rendering\opengl\gl.h" />
     <ClInclude Include="src\input\input.h" />
     <ClInclude Include="src\instances\instancedata.h" />

@@ -2,20 +2,13 @@
 
 #include <string>
 #include "../api/leopphapi.h"
+#include "../input/cursorstate.h"
 
 namespace leopph::impl
 {
 	class Window
 	{
 	public:
-		// TODO separate header
-		enum class LEOPPHAPI CursorState
-		{
-			Shown,
-			Hidden,
-			Disabled
-		};
-
 		LEOPPHAPI static Window& Get(unsigned width = 1280u, unsigned height = 720u,
 			const std::string& title = "Window", bool fullscreen = false);
 		LEOPPHAPI static void Destroy();

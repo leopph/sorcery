@@ -55,6 +55,9 @@
     <ClInclude Include="src\rendering\model.h" />
     <ClInclude Include="src\windowing\window.h" />
     <ClInclude Include="src\config\settings.h" />
+    <ClInclude Include="src\input\keycodes.h" />
+    <ClInclude Include="src\input\keystate.h" />
+    <ClInclude Include="src\input\cursorstate.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\shaders\fragment.frag" />
