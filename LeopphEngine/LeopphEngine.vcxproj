@@ -115,6 +115,7 @@
     <ClInclude Include="src\input\inputhandler.h" />
     <ClInclude Include="src\input\keycodes.h" />
     <ClInclude Include="src\input\keystate.h" />
+    <ClInclude Include="src\util\modelhash.h" />
     <ClInclude Include="src\rendering\opengl\gl.h" />
     <ClInclude Include="src\input\input.h" />
     <ClInclude Include="src\instances\instancedata.h" />

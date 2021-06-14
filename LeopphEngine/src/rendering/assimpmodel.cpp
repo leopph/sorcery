@@ -1,10 +1,8 @@
 #include "assimpmodel.h"
-
+#include <utility>
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
 #include <iostream>
-#include <glad/glad.h>
-#include <stb_image.h>
 
 using leopph::impl::Shader;
 using leopph::impl::Texture;
@@ -13,11 +11,12 @@ using leopph::impl::Mesh;
 
 namespace leopph::impl
 {
-	AssimpModelImpl::AssimpModelImpl(const std::filesystem::path& path)
+	AssimpModelImpl::AssimpModelImpl(std::filesystem::path path) :
+		m_Path{ std::move(path) }
 	{
 		// read model data
 		Assimp::Importer importer;
-		const aiScene* scene{ importer.ReadFile(path.string(), aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_MakeLeftHanded) };
+		const aiScene* scene{ importer.ReadFile(m_Path.string(), aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_MakeLeftHanded) };
 
 		if (scene == nullptr || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || scene->mRootNode == nullptr)
 		{
@@ -25,7 +24,7 @@ namespace leopph::impl
 			return;
 		}
 
-		m_Directory = path.parent_path();
+		m_Directory = m_Path.parent_path();
 
 		// recursively process all nodes
 		ProcessNode(scene->mRootNode, scene);
@@ -45,6 +44,14 @@ namespace leopph::impl
 		for (size_t i = 0; i < m_Meshes.size(); i++)
 			m_Meshes[i].Draw(shader);
 	}
+
+
+
+	const std::filesystem::path& AssimpModelImpl::Path() const
+	{
+		return m_Path;
+	}
+
 
 
 
@@ -89,16 +96,13 @@ namespace leopph::impl
 				indices.push_back(mesh->mFaces[i].mIndices[j]);
 
 		// get texture data
-		if (mesh->mMaterialIndex >= 0)
-		{
-			aiMaterial* material{ scene->mMaterials[mesh->mMaterialIndex] };
+		aiMaterial* material{ scene->mMaterials[mesh->mMaterialIndex] };
 
-			std::vector<Texture> diffuseMaps{ LoadTexturesByType(material, aiTextureType_DIFFUSE, Texture::TextureType::DIFFUSE) };
-			textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
+		std::vector diffuseMaps{ LoadTexturesByType(material, aiTextureType_DIFFUSE, Texture::TextureType::DIFFUSE) };
+		textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
 
-			std::vector<Texture> specularMaps{ LoadTexturesByType(material, aiTextureType_SPECULAR, Texture::TextureType::SPECULAR) };
-			textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
-		}
+		std::vector specularMaps{ LoadTexturesByType(material, aiTextureType_SPECULAR, Texture::TextureType::SPECULAR) };
+		textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
 
 		return Mesh(vertices, indices, textures);
 	}
@@ -119,11 +123,11 @@ namespace leopph::impl
 			bool isAlreadyLoaded{ false };
 
 			// if already loaded, reference that one
-			for (unsigned j = 0; j < m_CachedTextures.size(); j++)
+			for (const auto& texture : m_CachedTextures)
 			{
-				if (m_CachedTextures[j] == m_Directory / location.C_Str())
+				if (texture == m_Directory / location.C_Str())
 				{
-					textures.push_back(m_CachedTextures[j]);
+					textures.push_back(texture);
 					isAlreadyLoaded = true;
 					break;
 				}

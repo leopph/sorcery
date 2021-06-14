@@ -60,6 +60,7 @@
     <ClInclude Include="src\input\keystate.h" />
     <ClInclude Include="src\input\cursorstate.h" />
     <ClInclude Include="src\input\inputhandler.h" />
+    <ClInclude Include="src\util\modelhash.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\shaders\fragment.frag" />

@@ -97,7 +97,7 @@ void leopph::AppStart()
 	camera->AddComponent<CameraController>();
 
 	Object* backpack = Object::Create();
-	backpack->AddModel(Model{ "models/backpack/backpack.obj" });
+	backpack->AddModel("models/backpack/backpack.obj");
 	backpack->Transform().Position({ 0, 0, 5 });
 	backpack->AddComponent<Rotate>();
 

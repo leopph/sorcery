@@ -9,6 +9,7 @@
 
 namespace leopph
 {
+	// TODO document
 	class Transform
 	{
 	public:

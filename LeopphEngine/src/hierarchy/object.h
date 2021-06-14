@@ -4,14 +4,17 @@
 #include "../rendering/model.h"
 #include "../components/behavior.h"
 #include "transform.h"
-
-
-#include <vector>
 #include <string>
 #include <set>
+#include <unordered_set>
 #include <concepts>
+#include <filesystem>
 
-
+/* Instantiation of std::unordered_map
+ * requires std::hash specialization
+ * to be visible
+ */
+#include "../util/modelhash.h"
 
 namespace leopph
 {
@@ -27,34 +30,20 @@ namespace leopph
 	class Object final
 	{
 	public:
-		friend class impl::InstanceData;
-
-
 		// instance management
 		LEOPPHAPI static Object* Create();
 		LEOPPHAPI static void Destroy(Object*& object);
 		LEOPPHAPI static Object* Find(const std::string& name);
 
-
-
-
-		LEOPPHAPI leopph::Transform& Transform();
+		LEOPPHAPI Transform& Transform();
 		LEOPPHAPI const leopph::Transform& Transform() const;
 
-
-
 		LEOPPHAPI const std::string& Name() const;
-		LEOPPHAPI void Name(std::string newName);
+		LEOPPHAPI void Name(const std::string& newName);
 
-
-
-
-		LEOPPHAPI const std::vector<Model>& Models() const;
-		LEOPPHAPI void AddModel(Model&& model);
-		LEOPPHAPI void RemoveModel(size_t index);
-
-
-
+		LEOPPHAPI const std::unordered_set<Model>& Models() const;
+		LEOPPHAPI const Model* AddModel(std::filesystem::path path);
+		LEOPPHAPI void RemoveModel(const Model*& model);
 
 		LEOPPHAPI const std::set<Component*>& Components() const;
 
@@ -72,7 +61,11 @@ namespace leopph
 		template<std::derived_from<Component> T>
 		T* GetComponent() const
 		{
-			// TODO
+			for (const auto& x : m_Components)
+				if (auto ret = dynamic_cast<T* const>(x); ret != nullptr)
+					return const_cast<T*>(ret);
+
+			return nullptr;
 		}
 
 
@@ -83,7 +76,9 @@ namespace leopph
 		leopph::Transform m_Transform;
 		std::string m_Name;
 
-		std::vector<Model> m_Models;
+		std::unordered_set<Model> m_Models;
 		std::set<Component*> m_Components;
+
+		friend class impl::InstanceData;
 	};
 }

@@ -1,10 +1,11 @@
 #include "model.h"
 #include "assimpmodel.h"
+#include <utility>
 
 namespace leopph
 {
-	Model::Model(const std::filesystem::path& path) :
-		m_Pointer{ new impl::AssimpModelImpl{path} }
+	Model::Model(std::filesystem::path path) :
+		m_Pointer{ new impl::AssimpModelImpl{ std::move(path) } }
 	{}
 
 	Model::Model(const Model& other) :
@@ -23,7 +24,7 @@ namespace leopph
 		delete m_Pointer;
 	}
 
-	
+
 	Model& Model::operator=(const Model& other)
 	{
 		delete m_Pointer;
@@ -49,5 +50,11 @@ namespace leopph
 	void Model::Draw(const impl::Shader& shader) const
 	{
 		m_Pointer->Draw(shader);
+	}
+
+
+	const std::filesystem::path& Model::Path() const
+	{
+		return m_Pointer->Path();
 	}
 }

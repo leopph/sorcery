@@ -13,10 +13,11 @@ namespace leopph
 
 
 	// TODO document
+	// TODO public path or other ID needed
 	class Model
 	{
 	public:
-		LEOPPHAPI Model(const std::filesystem::path& path);
+		LEOPPHAPI Model(std::filesystem::path path);
 		LEOPPHAPI Model(const Model& other);
 		LEOPPHAPI Model(Model&& other) noexcept;
 
@@ -28,6 +29,8 @@ namespace leopph
 		LEOPPHAPI bool operator==(const Model& other) const;
 
 		LEOPPHAPI void Draw(const impl::Shader& shader) const;
+
+		LEOPPHAPI const std::filesystem::path& Path() const;
 
 	private:
 		impl::AssimpModelImpl* m_Pointer;
