@@ -61,7 +61,10 @@ namespace leopph
 		template<std::derived_from<Component> T>
 		T* AddComponent()
 		{
-			return reinterpret_cast<T*>(*m_Components.emplace(new T{ *this }).first);
+			auto component = reinterpret_cast<T*>(*m_Components.emplace(new T{}).first);
+			component->m_Object = this;
+			component->Init();
+			return component;
 		}
 
 		LEOPPHAPI void RemoveComponent(Component* behavior);

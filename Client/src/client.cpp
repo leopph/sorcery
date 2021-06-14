@@ -13,8 +13,6 @@ private:
 	float m_DeltaTime = 0.0f;
 
 public:
-	using Behavior::Behavior;
-
 	void OnFrameUpdate() override
 	{
 		m_DeltaTime += Time::DeltaTime();
@@ -38,8 +36,6 @@ private:
 	float lastY = Input::GetMousePosition().second;
 
 public:
-	using Behavior::Behavior;
-
 	void OnFrameUpdate() override
 	{
 		if (Camera::Active() == nullptr)
@@ -84,8 +80,6 @@ public:
 class Rotate : public Behavior
 {
 public:
-	using Behavior::Behavior;
-
 	void OnFrameUpdate() override
 	{
 		Object().Transform().RotateGlobal(Quaternion { {0, 1, 0}, 10 * Time::DeltaTime() });

@@ -14,7 +14,7 @@ namespace leopph
 	{
 	public:
 		/* Internally used constructor */
-		LEOPPHAPI PointLight(leopph::Object& object);
+		LEOPPHAPI PointLight();
 
 		/* The range at which the light completely diminishes */
 		LEOPPHAPI float Range() const;

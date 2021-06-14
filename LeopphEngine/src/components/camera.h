@@ -19,7 +19,7 @@ namespace leopph
 		LEOPPHAPI static Camera* Active();
 
 		/* Internally used constructor and destructor */
-		LEOPPHAPI Camera(leopph::Object& object);
+		LEOPPHAPI Camera();
 		LEOPPHAPI ~Camera();
 
 		/* Enum to help determining FOV conversion details */

@@ -16,10 +16,18 @@ namespace leopph
 
 	class Component
 	{
+		friend class Object;
+
 	public:
 		/* Constructors and destructors used internally */
-		LEOPPHAPI Component(Object& object);
+		LEOPPHAPI Component();
 		LEOPPHAPI virtual ~Component() = 0;
+
+
+		/* This function is called immediately after construction.
+		If you need to refer to your component's owning object during initialization,
+		use this. DO NOT REFER TO IT IN CONSTRUCTORS! */
+		LEOPPHAPI virtual void Init() {}
 
 
 		/* These provide access to the owning Object */
@@ -27,6 +35,6 @@ namespace leopph
 		LEOPPHAPI const leopph::Object& Object() const;
 
 	private:
-		leopph::Object& m_Object;
+		leopph::Object* m_Object;
 	};
 }

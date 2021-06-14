@@ -3,8 +3,7 @@
 namespace leopph
 {
 	// constructor
-	Behavior::Behavior(leopph::Object& object) :
-		Component{ object }
+	Behavior::Behavior()
 	{
 		s_Behaviors.emplace(this);
 	}

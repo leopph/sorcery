@@ -16,7 +16,7 @@ namespace leopph
 	{
 	public:
 		/* Internally used constructor */
-		LEOPPHAPI DirectionalLight(leopph::Object& object);
+		LEOPPHAPI DirectionalLight();
 
 		/* The lighing direction of the component */
 		LEOPPHAPI void Direction(const Vector3& newDir);

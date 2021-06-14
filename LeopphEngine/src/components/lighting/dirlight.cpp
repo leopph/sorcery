@@ -2,8 +2,7 @@
 
 namespace leopph
 {
-	DirectionalLight::DirectionalLight(leopph::Object& object) :
-		Light{ object }
+	DirectionalLight::DirectionalLight()
 	{
 		RegisterDirectionalLight(this);
 	}

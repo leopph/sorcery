@@ -22,7 +22,7 @@ namespace leopph
 		LEOPPHAPI static void UpdateAll();
 
 		/* Contructor and destructor used internally */
-		LEOPPHAPI Behavior(leopph::Object& object);
+		LEOPPHAPI Behavior();
 		LEOPPHAPI virtual ~Behavior() = 0;
 
 		/* This function gets called every frame. Override this to provide business logic */
