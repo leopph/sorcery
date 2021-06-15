@@ -13,7 +13,6 @@ namespace leopph
 
 
 	// TODO document
-	// TODO public path or other ID needed
 	class Model
 	{
 	public:

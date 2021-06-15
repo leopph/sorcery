@@ -20,6 +20,7 @@ namespace leopph::impl
 
 		if (scene == nullptr || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || scene->mRootNode == nullptr)
 		{
+			// TODO constructor should throw to prevent invalid model objects
 			std::cerr << "ASSIMP ERROR: " << importer.GetErrorString() << std::endl;
 			return;
 		}

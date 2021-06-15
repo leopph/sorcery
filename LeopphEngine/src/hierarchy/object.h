@@ -10,10 +10,11 @@
 #include <concepts>
 #include <filesystem>
 
-/* Instantiation of std::unordered_map
+/* -----------------------------------
+ * Instantiation of std::unordered_set
  * requires std::hash specialization
  * to be visible
- */
+----------------------------------- */
 #include "../util/modelhash.h"
 
 namespace leopph
