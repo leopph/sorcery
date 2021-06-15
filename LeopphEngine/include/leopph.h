@@ -1,6 +1,10 @@
 #pragma once
 
-/* LEOPPHENGINE API */
+/*------------------------------------------
+Standard LeopphEngine API
+See individual headers for more information.
+------------------------------------------*/
+
 #include "../src/components/component.h"
 #include "../src/components/behavior.h"
 #include "../src/components/camera.h"
@@ -15,7 +19,11 @@
 #include "../src/hierarchy/object.h"
 #include "../src/timing/timekeeping.h"
 
-/* INCLUDE ENTRY POINT IF CLIENT REQUIRES */
+/*-----------------------------------------------------
+Define LEOPPH_ENTRY in exactly one of your source files
+to create an entry point in your application.
+-----------------------------------------------------*/
+
 #ifdef LEOPPH_ENTRY
 #include "../src/entry/entry.h"
 #endif

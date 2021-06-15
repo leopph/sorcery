@@ -25,6 +25,7 @@
     <ClCompile Include="src\rendering\model.cpp" />
     <ClCompile Include="src\windowing\window.cpp" />
     <ClCompile Include="src\input\inputhandler.cpp" />
+    <ClCompile Include="src\entry\launch.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\behavior.h" />
@@ -61,6 +62,8 @@
     <ClInclude Include="src\input\cursorstate.h" />
     <ClInclude Include="src\input\inputhandler.h" />
     <ClInclude Include="src\util\modelhash.h" />
+    <ClInclude Include="src\entry\launch.h" />
+    <ClInclude Include="src\entry\appstart.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\shaders\fragment.frag" />

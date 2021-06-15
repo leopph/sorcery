@@ -110,7 +110,9 @@
     <ClInclude Include="src\components\camera.h" />
     <ClInclude Include="src\components\component.h" />
     <ClInclude Include="src\components\lighting\dirlight.h" />
+    <ClInclude Include="src\entry\appstart.h" />
     <ClInclude Include="src\entry\entry.h" />
+    <ClInclude Include="src\entry\launch.h" />
     <ClInclude Include="src\input\cursorstate.h" />
     <ClInclude Include="src\input\inputhandler.h" />
     <ClInclude Include="src\input\keycodes.h" />
@@ -145,6 +147,7 @@
     <ClCompile Include="src\components\camera.cpp" />
     <ClCompile Include="src\components\component.cpp" />
     <ClCompile Include="src\components\lighting\dirlight.cpp" />
+    <ClCompile Include="src\entry\launch.cpp" />
     <ClCompile Include="src\input\inputhandler.cpp" />
     <ClCompile Include="src\rendering\opengl\gl.cpp" />
     <ClCompile Include="src\windowing\window.cpp" />
