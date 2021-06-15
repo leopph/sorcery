@@ -1,12 +1,11 @@
 #pragma once
 
-#include "../api/leopphapi.h"
 #include "../hierarchy/object.h"
 #include <cstddef>
 
 namespace leopph::impl
 {
-	class LEOPPHAPI Renderer
+	class Renderer
 	{
 	private:
 		Renderer();

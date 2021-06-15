@@ -1,7 +1,6 @@
 #pragma once
 
 #include <string>
-#include "../api/leopphapi.h"
 #include "../input/cursorstate.h"
 
 namespace leopph::impl
@@ -9,27 +8,27 @@ namespace leopph::impl
 	class Window
 	{
 	public:
-		LEOPPHAPI static Window& Get(unsigned width = 1280u, unsigned height = 720u,
+		static Window& Get(unsigned width = 1280u, unsigned height = 720u,
 			const std::string& title = "Window", bool fullscreen = false);
-		LEOPPHAPI static void Destroy();
+		static void Destroy();
 
-		LEOPPHAPI virtual unsigned Width() const;
-		LEOPPHAPI virtual void Width(unsigned newWidth);
+		virtual unsigned Width() const;
+		virtual void Width(unsigned newWidth);
 
-		LEOPPHAPI virtual unsigned Height() const;
-		LEOPPHAPI virtual void Height(unsigned newHeight);
+		virtual unsigned Height() const;
+		virtual void Height(unsigned newHeight);
 
-		LEOPPHAPI float AspectRatio() const;
+		float AspectRatio() const;
 
-		LEOPPHAPI bool Fullscreen() const;
+		bool Fullscreen() const;
 
-		LEOPPHAPI virtual void PollEvents() = 0;
-		LEOPPHAPI virtual void SwapBuffers() = 0;
-		LEOPPHAPI virtual bool ShouldClose() = 0;
-		LEOPPHAPI virtual void Clear() = 0;
+		virtual void PollEvents() = 0;
+		virtual void SwapBuffers() = 0;
+		virtual bool ShouldClose() = 0;
+		virtual void Clear() = 0;
 
-		LEOPPHAPI virtual CursorState CursorMode() const = 0;
-		LEOPPHAPI virtual void CursorMode(CursorState newState) = 0;
+		virtual CursorState CursorMode() const = 0;
+		virtual void CursorMode(CursorState newState) = 0;
 
 	protected:
 		Window(unsigned width, unsigned height,

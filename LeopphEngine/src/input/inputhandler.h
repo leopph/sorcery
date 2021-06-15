@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../api/leopphapi.h"
 #include "keycodes.h"
 #include "keystate.h"
 
@@ -11,7 +10,7 @@ namespace leopph::impl
 	to decouple implementation details.
 	---------------------------------------------------------*/
 	
-	class LEOPPHAPI InputHandler
+	class InputHandler
 	{
 	public:
 		static void OnInputChange(KeyCode keyCode, KeyState keyState);
