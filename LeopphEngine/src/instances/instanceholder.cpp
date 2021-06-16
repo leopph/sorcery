@@ -43,8 +43,7 @@ namespace leopph::impl
 	
 	void InstanceHolder::AddObject(Object* object)
 	{
-		// TODO avoid set move constructor
-		s_Objects.emplace(object, decltype(s_Objects)::mapped_type{});
+		s_Objects.try_emplace(object);
 	}
 
 	void InstanceHolder::RemoveObject(Object* object)

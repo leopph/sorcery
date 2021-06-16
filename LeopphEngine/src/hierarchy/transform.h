@@ -17,7 +17,6 @@ namespace leopph
 	class Transform
 	{
 	public:
-		/* TODO this should not be accessible to user */
 		/* Internally used constructor */
 		LEOPPHAPI Transform();
 
