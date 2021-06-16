@@ -105,8 +105,9 @@ namespace leopph::impl
 
 
 
-		for (const auto& object : InstanceHolder::Objects())
-			for (const auto& model : object->Models())
+		for (const auto& pair : InstanceHolder::Objects())
+		{
+			for (const auto& object = pair.first; const auto& model : object->Models())
 			{
 				Matrix4 modelMatrix{ 1.0f };
 				modelMatrix *= Matrix4::Scale(object->Transform().Scale());
@@ -118,5 +119,6 @@ namespace leopph::impl
 
 				model.Draw(shader);
 			}
+		}
 	}
 }

@@ -51,8 +51,8 @@ namespace leopph
 		template<std::derived_from<Component> T>
 		T* AddComponent()
 		{
-			auto component = reinterpret_cast<T*>(*m_Components.emplace(new T{}).first);
-			component->m_Object = this;
+			auto component = new T{};
+			component->SetOwnership(this);
 			component->Init();
 			return component;
 		}
@@ -62,7 +62,7 @@ namespace leopph
 		template<std::derived_from<Component> T>
 		T* GetComponent() const
 		{
-			for (const auto& x : m_Components)
+			for (const auto& x : GetComponents())
 				if (auto ret = dynamic_cast<T* const>(x); ret != nullptr)
 					return const_cast<T*>(ret);
 
@@ -72,13 +72,11 @@ namespace leopph
 
 	private:
 		Object();
-		~Object();
+		LEOPPHAPI const std::set<Component*>& GetComponents() const;
 
 		leopph::Transform m_Transform;
 		std::string m_Name;
-
 		std::unordered_set<Model> m_Models;
-		std::set<Component*> m_Components;
 
 		friend class impl::InstanceHolder;
 	};

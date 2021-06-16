@@ -8,6 +8,7 @@
 #include "../components/lighting/dirlight.h"
 #include "../components/lighting/pointlight.h"
 #include <vector>
+#include <map>
 
 namespace leopph::impl
 {
@@ -27,7 +28,7 @@ namespace leopph::impl
 	public:
 		static void DestroyAll();
 
-		static const std::set<Object*, ObjectComparator>& Objects();
+		static const std::map<Object*, std::set<Component*>, ObjectComparator>& Objects();
 		static void AddObject(Object* object);
 		static void RemoveObject(Object* object);
 		static Object* FindObject(const std::string& name);
@@ -44,7 +45,7 @@ namespace leopph::impl
 		static void AddBehavior(Behavior* behavior);
 		static void RemoveBehavior(Behavior* behavior);
 
-		static const std::set<Component*>& Components();
+		static const std::set<Component*>& Components(Object* object);
 		static void AddComponent(Component* component);
 		static void RemoveComponent(Component* component);
 
@@ -58,9 +59,8 @@ namespace leopph::impl
 	private:
 		static std::unordered_map<unsigned, std::size_t> s_Textures;
 		static std::unordered_map<unsigned, size_t> s_Meshes;
-		static std::set<Object*, ObjectComparator> s_Objects;
+		static std::map<Object*, std::set<Component*>, ObjectComparator> s_Objects;
 		static std::set<Behavior*> s_Behaviors;
-		static std::set<Component*> s_Components;
 		static leopph::DirectionalLight* s_DirLight;
 		static std::vector<PointLight*> s_PointLights;
 	};

@@ -29,12 +29,6 @@ namespace leopph
 		m_Name{ "Object" + std::to_string(impl::InstanceHolder::Objects().size()) }
 	{}
 
-	Object::~Object()
-	{
-		for (Component* component : m_Components)
-			delete component;
-	}
-
 
 
 	leopph::Transform& Object::Transform()
@@ -69,17 +63,6 @@ namespace leopph
 			model = nullptr;
 	}
 
-	const std::set<Component*>& Object::Components() const
-	{
-		return m_Components;
-	}
-	
-	void Object::RemoveComponent(Component* behavior)
-	{
-		m_Components.erase(behavior);
-		delete behavior;
-	}
-
 	const std::string& Object::Name() const
 	{
 		return m_Name;
@@ -95,5 +78,26 @@ namespace leopph
 		impl::InstanceHolder::RemoveObject(this);
 		m_Name = newName;
 		impl::InstanceHolder::AddObject(this);
+	}
+
+
+	const std::set<Component*>& Object::Components() const
+	{
+		return impl::InstanceHolder::Components(const_cast<Object*>(this));
+	}
+
+
+	void Object::RemoveComponent(Component* behavior)
+	{
+		if (&behavior->Object() != this)
+			throw std::invalid_argument{ "The given Component is not attached to Object [" + Name() + "]!" };
+		
+		impl::InstanceHolder::RemoveComponent(behavior);
+	}
+
+
+	const std::set<Component*>& Object::GetComponents() const
+	{
+		return impl::InstanceHolder::Components(const_cast<Object*>(this));
 	}
 }

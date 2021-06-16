@@ -20,8 +20,7 @@ namespace leopph::impl
 	
 	std::unordered_map<unsigned, size_t> InstanceHolder::s_Textures{};
 	std::unordered_map<unsigned, size_t> InstanceHolder::s_Meshes{};
-	std::set<Object*, InstanceHolder::ObjectComparator> InstanceHolder::s_Objects{};
-	std::set<Component*> InstanceHolder::s_Components{};
+	std::map<Object*, std::set<Component*>, InstanceHolder::ObjectComparator> InstanceHolder::s_Objects{};
 	std::set<Behavior*> InstanceHolder::s_Behaviors{};
 	DirectionalLight* InstanceHolder::s_DirLight{ nullptr };
 	std::vector<PointLight*> InstanceHolder::s_PointLights{};
@@ -29,8 +28,12 @@ namespace leopph::impl
 	
 	void InstanceHolder::DestroyAll()
 	{
-		for (Object* object : s_Objects)
-			delete object;
+		for (const auto& pair : s_Objects)
+		{
+			for (const auto component : pair.second)
+				delete component;
+			delete pair.first;
+		}
 
 		s_Meshes.clear();
 		s_Textures.clear();
@@ -40,23 +43,28 @@ namespace leopph::impl
 	
 	void InstanceHolder::AddObject(Object* object)
 	{
-		s_Objects.emplace(object);
+		// TODO avoid set move constructor
+		s_Objects.emplace(object, decltype(s_Objects)::mapped_type{});
 	}
 
 	void InstanceHolder::RemoveObject(Object* object)
 	{
 		const auto it = s_Objects.find(object);
+
+		for (const auto component : it->second)
+			delete component;
 		delete object;
+		
 		s_Objects.erase(it);
 	}
 
 	Object* InstanceHolder::FindObject(const std::string& name)
 	{
 		const auto it = s_Objects.find(name);
-		return it != s_Objects.end() ? *it : nullptr;
+		return it != s_Objects.end() ? it->first : nullptr;
 	}
 
-	const std::set<Object*, InstanceHolder::ObjectComparator>& InstanceHolder::Objects()
+	const std::map<Object*, std::set<Component*>, InstanceHolder::ObjectComparator>& InstanceHolder::Objects()
 	{
 		return s_Objects;
 	}
@@ -114,19 +122,20 @@ namespace leopph::impl
 		s_Behaviors.erase(behavior);
 	}
 
-	const std::set<Component*>& InstanceHolder::Components()
+	const std::set<Component*>& InstanceHolder::Components(Object* object)
 	{
-		return s_Components;
+		return s_Objects[object];
 	}
 
 	void InstanceHolder::AddComponent(Component* component)
 	{
-		s_Components.insert(component);
+		s_Objects[&component->Object()].insert(component);
 	}
 
 	void InstanceHolder::RemoveComponent(Component* component)
 	{
-		s_Components.erase(component);
+		s_Objects[&component->Object()].erase(component);
+		delete component;
 	}
 
 	DirectionalLight* InstanceHolder::DirectionalLight()

@@ -4,16 +4,7 @@
 
 namespace leopph
 {
-	Component::Component() :
-		m_Object{ nullptr }
-	{
-		impl::InstanceHolder::AddComponent(this);
-	}
-
-	Component::~Component()
-	{
-		impl::InstanceHolder::RemoveComponent(this);
-	}
+	Component::~Component() = default;
 
 	
 	leopph::Object& Component::Object()
@@ -33,5 +24,13 @@ namespace leopph
 			};
 
 		return *m_Object;
+	}
+
+
+	void Component::SetOwnership(leopph::Object* object)
+	{
+		m_Object = object;
+		impl::InstanceHolder::AddComponent(this);
+		
 	}
 }

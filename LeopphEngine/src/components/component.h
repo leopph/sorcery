@@ -20,7 +20,7 @@ namespace leopph
 
 	public:
 		/* Constructors and destructors used internally */
-		Component();
+		Component() = default;
 		virtual ~Component() = 0;
 
 
@@ -35,6 +35,8 @@ namespace leopph
 		const leopph::Object& Object() const;
 
 	private:
-		leopph::Object* m_Object;
+		void SetOwnership(leopph::Object* object);
+		
+		leopph::Object* m_Object{};
 	};
 }
