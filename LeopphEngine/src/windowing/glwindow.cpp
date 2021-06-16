@@ -65,7 +65,7 @@ namespace leopph::impl
 		: Window{ width, height, title, fullscreen }
 	{
 		if (!glfwInit())
-			throw std::exception{};
+			throw std::exception{"Failed to initialize GLFW!" };
 
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
@@ -89,6 +89,7 @@ namespace leopph::impl
 	GLWindowImpl::~GLWindowImpl()
 	{
 		glfwDestroyWindow(m_Window);
+		glfwTerminate();
 	}
 
 

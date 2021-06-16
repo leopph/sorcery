@@ -1,7 +1,12 @@
+#ifdef _DEBUG
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+#endif
+
 #include "launch.h"
 #include "../windowing/window.h"
 #include "../rendering/opengl/gl.h"
-#include "../hierarchy/object.h"
 #include "../rendering/renderer.h"
 #include "../timing/timer.h"
 #include "../input/inputhandler.h"
@@ -11,34 +16,38 @@ namespace leopph::impl
 {
 	int Launch(decltype(AppStart) appStart)
 	{
-		auto& window{ leopph::impl::Window::Get(1280, 720, "LeopphEngine Application", false) };
+#ifdef _DEBUG
+		_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+#endif
+		
+		auto& window{ Window::Get(1280, 720, "LeopphEngine Application", false) };
 
-		if (!leopph::impl::InitGL())
+		if (!InitGL())
 		{
-			leopph::impl::TerminateGL();
+			Window::Destroy();
 			return -1;
 		}
 
 		appStart();
 
-		leopph::impl::Timer::Init();
+		Timer::Init();
 
 		while (!window.ShouldClose())
 		{
-			leopph::impl::InputHandler::UpdateReleasedKeys();
+			InputHandler::UpdateReleasedKeys();
 			window.PollEvents();
 
 			for (const auto& x : InstanceHolder::Behaviors())
 				x->OnFrameUpdate();
 			
 			window.Clear();
-			leopph::impl::Renderer::Instance().Render();
-			leopph::impl::Timer::OnFrameComplete();
+			Renderer::Instance().Render();
+			Timer::OnFrameComplete();
 			window.SwapBuffers();
 		}
 
-		leopph::impl::Window::Destroy();
-		leopph::impl::TerminateGL();
+		InstanceHolder::DestroyAll();
+		Window::Destroy();
 		return 0;
 	}
 }
