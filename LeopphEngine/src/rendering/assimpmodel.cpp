@@ -3,11 +3,8 @@
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
 #include <iostream>
-
-using leopph::impl::Shader;
-using leopph::impl::Texture;
-using leopph::impl::Vertex;
-using leopph::impl::Mesh;
+#include <stdexcept>
+#include <string>
 
 namespace leopph::impl
 {
@@ -19,11 +16,7 @@ namespace leopph::impl
 		const aiScene* scene{ importer.ReadFile(m_Path.string(), aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_MakeLeftHanded) };
 
 		if (scene == nullptr || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || scene->mRootNode == nullptr)
-		{
-			// TODO constructor should throw to prevent invalid model objects
-			std::cerr << "ASSIMP ERROR: " << importer.GetErrorString() << std::endl;
-			return;
-		}
+			throw std::invalid_argument{ std::string{"ASSIMP ERROR: "} + importer.GetErrorString() };
 
 		m_Directory = m_Path.parent_path();
 
