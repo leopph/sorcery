@@ -4,9 +4,8 @@
 #include "../components/lighting/pointlight.h"
 #include "../components/lighting/dirlight.h"
 #include "../components/camera.h"
-#include "../math/leopphmath.h"
 #include "../math/matrix.h"
-#include "../instances/instancedata.h"
+#include "../instances/instanceholder.h"
 #include <string>
 #include <glad/glad.h>
 
@@ -27,7 +26,7 @@ namespace leopph::impl
 	}
 
 
-	void Renderer::Render()
+	void Renderer::Render() const
 	{
 		static Shader shader{ "./shaders/vertex.vert", "./shaders/fragment.frag" };
 
@@ -37,7 +36,7 @@ namespace leopph::impl
 
 		PointLight* pointLights[MAX_POINT_LIGHTS]{};
 
-		for (Light* light : Light::PointLights())
+		for (Light* light : InstanceHolder::PointLights())
 		{
 			if (pointLights[0] == nullptr)
 				pointLights[0] = reinterpret_cast<PointLight*>(light);
@@ -86,11 +85,9 @@ namespace leopph::impl
 
 
 
-		if (Light::DirectionalLight() != nullptr)
+		if (const auto dirLight = InstanceHolder::DirectionalLight(); dirLight != nullptr)
 		{
 			shader.SetUniform("existsDirLight", true);
-
-			DirectionalLight* dirLight = reinterpret_cast<DirectionalLight*>(Light::DirectionalLight());
 			shader.SetUniform("dirLight.direction", dirLight->Direction());
 			shader.SetUniform("dirLight.ambient", dirLight->Ambient());
 			shader.SetUniform("dirLight.diffuse", dirLight->Diffuse());
@@ -108,7 +105,7 @@ namespace leopph::impl
 
 
 
-		for (const auto& object : InstanceData::Objects())
+		for (const auto& object : InstanceHolder::Objects())
 			for (const auto& model : object->Models())
 			{
 				Matrix4 modelMatrix{ 1.0f };

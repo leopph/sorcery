@@ -17,7 +17,7 @@
     <ClCompile Include="src\rendering\renderer.cpp" />
     <ClCompile Include="src\input\input.cpp" />
     <ClCompile Include="src\components\lighting\dirlight.cpp" />
-    <ClCompile Include="src\instances\instancedata.cpp" />
+    <ClCompile Include="src\instances\instanceholder.cpp" />
     <ClCompile Include="src\math\quaternion.cpp" />
     <ClCompile Include="src\components\component.cpp" />
     <ClCompile Include="src\hierarchy\transform.cpp" />
@@ -35,7 +35,7 @@
     <ClInclude Include="src\entry\entry.h" />
     <ClInclude Include="src\rendering\opengl\gl.h" />
     <ClInclude Include="src\input\input.h" />
-    <ClInclude Include="src\instances\instancedata.h" />
+    <ClInclude Include="src\instances\instanceholder.h" />
     <ClInclude Include="src\api\leopphapi.h" />
     <ClInclude Include="src\math\leopphmath.h" />
     <ClInclude Include="src\components\lighting\light.h" />

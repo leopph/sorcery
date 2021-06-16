@@ -2,51 +2,9 @@
 
 namespace leopph::impl
 {
-	// destructor
 	Light::~Light() = default;
 
-
-	// init static members
-	std::set<Light*> Light::s_PointLights{};
-	Light* Light::s_DirectionalLight{};
-
-
-	// getters
-	const std::set<Light*>& Light::PointLights()
-	{
-		return s_PointLights;
-	}
-
-	Light* Light::DirectionalLight()
-	{
-		return s_DirectionalLight;
-	}
-
-
-
-	// registration
-	void Light::RegisterDirectionalLight(Light* light)
-	{
-		s_DirectionalLight = light;
-	}
-
-	void Light::RegisterPointLight(Light* light)
-	{
-		s_PointLights.insert(light);
-	}
-
-
-	void Light::UnregisterDirectionalLight()
-	{
-		s_DirectionalLight = nullptr;
-	}
-
-	void Light::UnregisterPointLight(Light* light)
-	{
-		s_PointLights.erase(light);
-	}
-
-
+	
 	const Vector3& Light::Ambient() const
 	{
 		return m_Ambient;

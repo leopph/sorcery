@@ -1,9 +1,8 @@
 #include "texture.h"
-#include "../instances/instancedata.h"
+#include "../instances/instanceholder.h"
 
 #include <glad/glad.h>
 #include <stb_image.h>
-#include <stdexcept>
 
 namespace leopph::impl
 {
@@ -55,14 +54,14 @@ namespace leopph::impl
 
 		stbi_image_free(data);
 
-		InstanceData::AddTexture(m_ID);
+		InstanceHolder::AddTexture(m_ID);
 	}
 
 
 	Texture::~Texture()
 	{
-		InstanceData::RemoveTexture(m_ID);
-		if (InstanceData::TextureCount(m_ID) == 0)
+		InstanceHolder::RemoveTexture(m_ID);
+		if (InstanceHolder::TextureCount(m_ID) == 0)
 			glDeleteTextures(1, &m_ID);
 	}
 
@@ -70,7 +69,7 @@ namespace leopph::impl
 	Texture::Texture(const Texture& other)
 		: m_ID{ other.m_ID }, m_Path{ other.m_Path }, m_Type{ other.m_Type }
 	{
-		InstanceData::AddTexture(m_ID);
+		InstanceHolder::AddTexture(m_ID);
 	}
 
 
@@ -80,7 +79,7 @@ namespace leopph::impl
 		other.m_ID = 0;
 		other.m_Path.clear();
 
-		InstanceData::AddTexture(0);
+		InstanceHolder::AddTexture(0);
 	}
 
 
@@ -89,15 +88,15 @@ namespace leopph::impl
 		if (*this == other)
 			return *this;
 
-		InstanceData::RemoveTexture(m_ID);
-		if (InstanceData::TextureCount(m_ID) == 0)
+		InstanceHolder::RemoveTexture(m_ID);
+		if (InstanceHolder::TextureCount(m_ID) == 0)
 			glDeleteTextures(1, &m_ID);
 
 		this->m_ID = other.m_ID;
 		this->m_Path = other.m_Path;
 		this->m_Type = other.m_Type;
 
-		InstanceData::AddTexture(m_ID);
+		InstanceHolder::AddTexture(m_ID);
 
 		return *this;
 	}
@@ -108,8 +107,8 @@ namespace leopph::impl
 		if (*this == other)
 			return *this;
 
-		InstanceData::RemoveTexture(m_ID);
-		if (InstanceData::TextureCount(m_ID) == 0)
+		InstanceHolder::RemoveTexture(m_ID);
+		if (InstanceHolder::TextureCount(m_ID) == 0)
 			glDeleteTextures(1, &m_ID);
 
 		this->m_ID = other.m_ID;
@@ -119,7 +118,7 @@ namespace leopph::impl
 		other.m_ID = 0;
 		other.m_Path.clear();
 
-		InstanceData::AddTexture(0);
+		InstanceHolder::AddTexture(0);
 
 		return *this;
 	}

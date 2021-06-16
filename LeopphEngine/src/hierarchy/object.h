@@ -21,7 +21,7 @@ namespace leopph
 {
 	namespace impl
 	{
-		class InstanceData;
+		class InstanceHolder;
 	}
 
 
@@ -80,6 +80,6 @@ namespace leopph
 		std::unordered_set<Model> m_Models;
 		std::set<Component*> m_Components;
 
-		friend class impl::InstanceData;
+		friend class impl::InstanceHolder;
 	};
 }

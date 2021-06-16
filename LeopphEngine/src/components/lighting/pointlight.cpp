@@ -1,11 +1,18 @@
 #include "pointlight.h"
+#include "../../instances/instanceholder.h"
 
 namespace leopph
 {
 	PointLight::PointLight()
 	{
-		RegisterPointLight(this);
+		impl::InstanceHolder::AddPointLight(this);
 	}
+
+	PointLight::~PointLight()
+	{
+		impl::InstanceHolder::RemovePointLight(this);
+	}
+
 
 
 	float PointLight::Range() const

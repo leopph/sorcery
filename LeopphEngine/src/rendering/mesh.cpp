@@ -1,5 +1,5 @@
 #include "mesh.h"
-#include "../instances/instancedata.h"
+#include "../instances/instanceholder.h"
 
 #include <glad/glad.h>
 
@@ -35,15 +35,15 @@ namespace leopph::impl
 
 		glBindVertexArray(0);
 
-		InstanceData::AddMesh(m_ID);
+		InstanceHolder::AddMesh(m_ID);
 	}
 
 
 
 	Mesh::~Mesh()
 	{
-		InstanceData::RemoveMesh(m_ID);
-		if (InstanceData::MeshCount(m_ID) == 0)
+		InstanceHolder::RemoveMesh(m_ID);
+		if (InstanceHolder::MeshCount(m_ID) == 0)
 		{
 			glDeleteBuffers(1, &m_VBO);
 			glDeleteBuffers(1, &m_EBO);
@@ -57,7 +57,7 @@ namespace leopph::impl
 		: m_VAO{ other.m_VAO }, m_VBO{ other.m_VBO }, m_EBO{ other.m_EBO },
 		m_Vertices{ other.m_Vertices }, m_Indices{ other.m_Indices }, m_Textures{ other.m_Textures }
 	{
-		InstanceData::AddMesh(m_ID);
+		InstanceHolder::AddMesh(m_ID);
 	}
 
 
@@ -71,7 +71,7 @@ namespace leopph::impl
 		other.m_VBO = 0;
 		other.m_EBO = 0;
 
-		InstanceData::AddMesh(0);
+		InstanceHolder::AddMesh(0);
 	}
 
 
@@ -81,8 +81,8 @@ namespace leopph::impl
 		if (*this == other)
 			return *this;
 
-		InstanceData::RemoveMesh(m_ID);
-		if (InstanceData::MeshCount(m_ID) == 0)
+		InstanceHolder::RemoveMesh(m_ID);
+		if (InstanceHolder::MeshCount(m_ID) == 0)
 		{
 			glDeleteBuffers(1, &m_VBO);
 			glDeleteBuffers(1, &m_EBO);
@@ -97,7 +97,7 @@ namespace leopph::impl
 		this->m_Indices = other.m_Indices;
 		this->m_Textures = other.m_Textures;
 
-		InstanceData::AddMesh(m_ID);
+		InstanceHolder::AddMesh(m_ID);
 
 		return *this;
 	}
@@ -109,8 +109,8 @@ namespace leopph::impl
 		if (*this == other)
 			return *this;
 
-		InstanceData::RemoveMesh(m_ID);
-		if (InstanceData::MeshCount(m_ID) == 0)
+		InstanceHolder::RemoveMesh(m_ID);
+		if (InstanceHolder::MeshCount(m_ID) == 0)
 		{
 			glDeleteBuffers(1, &m_VBO);
 			glDeleteBuffers(1, &m_EBO);
@@ -129,7 +129,7 @@ namespace leopph::impl
 		other.m_VBO = 0;
 		other.m_EBO = 0;
 
-		InstanceData::AddMesh(0);
+		InstanceHolder::AddMesh(0);
 
 		return *this;
 	}

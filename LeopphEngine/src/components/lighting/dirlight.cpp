@@ -1,11 +1,18 @@
 #include "dirlight.h"
+#include "../../instances/instanceholder.h"
 
 namespace leopph
 {
 	DirectionalLight::DirectionalLight()
 	{
-		RegisterDirectionalLight(this);
+		impl::InstanceHolder::DirectionalLight(this);
 	}
+
+	DirectionalLight::~DirectionalLight()
+	{
+		impl::InstanceHolder::DirectionalLight(nullptr);
+	}
+
 
 	void DirectionalLight::Direction(const Vector3& newDir)
 	{

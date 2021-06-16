@@ -1,5 +1,5 @@
 #include "object.h"
-#include "../instances/instancedata.h"
+#include "../instances/instanceholder.h"
 #include <stdexcept>
 #include <string>
 
@@ -8,25 +8,25 @@ namespace leopph
 	Object* Object::Create()
 	{
 		const auto ret = new Object;
-		impl::InstanceData::AddObject(ret);
+		impl::InstanceHolder::AddObject(ret);
 		return ret;
 	}
 
 	void Object::Destroy(Object*& object)
 	{
-		impl::InstanceData::RemoveObject(object);
+		impl::InstanceHolder::RemoveObject(object);
 		object = nullptr;
 	}
 
 	Object* Object::Find(const std::string& name)
 	{
-		return impl::InstanceData::FindObject(name);
+		return impl::InstanceHolder::FindObject(name);
 	}
 
 
 	
 	Object::Object():
-		m_Name{ "Object" + std::to_string(impl::InstanceData::Objects().size()) }
+		m_Name{ "Object" + std::to_string(impl::InstanceHolder::Objects().size()) }
 	{}
 
 	Object::~Object()
@@ -89,11 +89,11 @@ namespace leopph
 	{
 		/* Removing the node is necessary, because m_Name is the ordering key. */
 		
-		if (impl::InstanceData::FindObject(newName) != nullptr)
+		if (impl::InstanceHolder::FindObject(newName) != nullptr)
 			throw std::invalid_argument{ "Object [" + newName + "] already exists!" };
 		
-		impl::InstanceData::RemoveObject(this);
+		impl::InstanceHolder::RemoveObject(this);
 		m_Name = newName;
-		impl::InstanceData::AddObject(this);
+		impl::InstanceHolder::AddObject(this);
 	}
 }

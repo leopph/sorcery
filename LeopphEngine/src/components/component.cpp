@@ -1,18 +1,21 @@
 #include "component.h"
 #include <stdexcept>
+#include "../instances/instanceholder.h"
 
 namespace leopph
 {
-	// constructor
 	Component::Component() :
 		m_Object{ nullptr }
-	{}
+	{
+		impl::InstanceHolder::AddComponent(this);
+	}
 
-	// destructor
-	Component::~Component() = default;
+	Component::~Component()
+	{
+		impl::InstanceHolder::RemoveComponent(this);
+	}
 
-
-
+	
 	leopph::Object& Component::Object()
 	{
 		return const_cast<leopph::Object&>(const_cast<const Component*>(this)->Object());

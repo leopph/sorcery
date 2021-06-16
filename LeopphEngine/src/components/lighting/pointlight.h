@@ -10,11 +10,12 @@ namespace leopph
 	See "component.h" for more information.
 	------------------------------------------------------------------------------------*/
 
-	class  PointLight final : public impl::Light
+	class PointLight final : public impl::Light
 	{
 	public:
-		/* Internally used constructor */
+		/* Internally used functions */
 		LEOPPHAPI PointLight();
+		LEOPPHAPI ~PointLight() override;
 
 		/* The range at which the light completely diminishes */
 		LEOPPHAPI float Range() const;

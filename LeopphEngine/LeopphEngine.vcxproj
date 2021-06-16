@@ -121,7 +121,7 @@
     <ClInclude Include="src\util\modelhash.h" />
     <ClInclude Include="src\rendering\opengl\gl.h" />
     <ClInclude Include="src\input\input.h" />
-    <ClInclude Include="src\instances\instancedata.h" />
+    <ClInclude Include="src\instances\instanceholder.h" />
     <ClInclude Include="src\api\leopphapi.h" />
     <ClInclude Include="src\math\leopphmath.h" />
     <ClInclude Include="src\components\lighting\light.h" />
@@ -154,7 +154,7 @@
     <ClCompile Include="src\timing\timer.cpp" />
     <ClCompile Include="src\windowing\window.cpp" />
     <ClCompile Include="src\input\input.cpp" />
-    <ClCompile Include="src\instances\instancedata.cpp" />
+    <ClCompile Include="src\instances\instanceholder.cpp" />
     <ClCompile Include="src\math\leopphmath.cpp" />
     <ClCompile Include="src\components\lighting\light.cpp" />
     <ClCompile Include="src\rendering\mesh.cpp" />

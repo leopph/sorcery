@@ -1,26 +1,15 @@
 #include "behavior.h"
+#include "../instances/instanceholder.h"
 
 namespace leopph
 {
-	// constructor
 	Behavior::Behavior()
 	{
-		s_Behaviors.emplace(this);
+		impl::InstanceHolder::AddBehavior(this);
 	}
 
-	// destructor
 	Behavior::~Behavior()
 	{
-		s_Behaviors.erase(this);
-	}
-
-
-	std::set<Behavior*> Behavior::s_Behaviors{};
-
-
-	void Behavior::UpdateAll()
-	{
-		for (Behavior* behavior : s_Behaviors)
-			behavior->OnFrameUpdate();
+		impl::InstanceHolder::RemoveBehavior(this);
 	}
 }

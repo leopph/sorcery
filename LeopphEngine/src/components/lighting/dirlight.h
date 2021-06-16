@@ -15,8 +15,9 @@ namespace leopph
 	class DirectionalLight : public impl::Light
 	{
 	public:
-		/* Internally used constructor */
+		/* Internally used functions */
 		LEOPPHAPI DirectionalLight();
+		LEOPPHAPI ~DirectionalLight() override;
 
 		/* The lighing direction of the component */
 		LEOPPHAPI void Direction(const Vector3& newDir);

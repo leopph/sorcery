@@ -3,7 +3,6 @@
 
 #include "../api/leopphapi.h"
 #include "component.h"
-#include <set>
 
 
 namespace leopph
@@ -14,21 +13,14 @@ namespace leopph
 	See "object.h" and "component.h" for more information.
 	------------------------------------------------------------------------------------------------------*/
 
-	class Behavior : public Component
+	class LEOPPHAPI Behavior : public Component
 	{
 	public:
-		/* Internal tool to update all current Behaviors */
-		// TODO this should not be accessible outside
-		LEOPPHAPI static void UpdateAll();
-
 		/* Contructor and destructor used internally */
-		LEOPPHAPI Behavior();
-		LEOPPHAPI ~Behavior() override = 0;
+		Behavior();
+		~Behavior() override = 0;
 
 		/* This function gets called every frame. Override this to provide business logic */
-		LEOPPHAPI virtual void OnFrameUpdate() {}
-
-	private:
-		static std::set<Behavior*> s_Behaviors;
+		virtual void OnFrameUpdate() {}
 	};
 }

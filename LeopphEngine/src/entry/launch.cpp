@@ -5,6 +5,7 @@
 #include "../rendering/renderer.h"
 #include "../timing/timer.h"
 #include "../input/inputhandler.h"
+#include "../instances/instanceholder.h"
 
 namespace leopph::impl
 {
@@ -26,7 +27,10 @@ namespace leopph::impl
 		{
 			leopph::impl::InputHandler::UpdateReleasedKeys();
 			window.PollEvents();
-			leopph::Behavior::UpdateAll();
+
+			for (const auto& x : InstanceHolder::Behaviors())
+				x->OnFrameUpdate();
+			
 			window.Clear();
 			leopph::impl::Renderer::Instance().Render();
 			leopph::impl::Timer::OnFrameComplete();

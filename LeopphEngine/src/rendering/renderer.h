@@ -7,14 +7,12 @@ namespace leopph::impl
 {
 	class Renderer
 	{
-	private:
-		Renderer();
-
-		const static std::size_t MAX_POINT_LIGHTS = 4;
-
 	public:
 		static Renderer& Instance();
+		void Render() const;
 
-		void Render();
+	private:
+		const static std::size_t MAX_POINT_LIGHTS = 4;
+		Renderer();
 	};
 }
