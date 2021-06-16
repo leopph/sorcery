@@ -2,6 +2,7 @@
 #include "../instances/instanceholder.h"
 #include <stdexcept>
 #include <string>
+#include <utility>
 
 namespace leopph
 {
@@ -48,7 +49,7 @@ namespace leopph
 
 	const Model* Object::AddModel(std::filesystem::path path)
 	{
-		const auto insertionData= m_Models.emplace(path);
+		const auto insertionData= m_Models.emplace(std::move(path));
 
 		if (!insertionData.second)
 			throw std::runtime_error{ "Model was not inserted due to an error!" };
@@ -93,11 +94,5 @@ namespace leopph
 			throw std::invalid_argument{ "The given Component is not attached to Object [" + Name() + "]!" };
 		
 		impl::InstanceHolder::RemoveComponent(behavior);
-	}
-
-
-	const std::set<Component*>& Object::GetComponents() const
-	{
-		return impl::InstanceHolder::Components(const_cast<Object*>(this));
 	}
 }
