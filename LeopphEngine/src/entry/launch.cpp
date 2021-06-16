@@ -3,7 +3,7 @@
 #include "../rendering/opengl/gl.h"
 #include "../hierarchy/object.h"
 #include "../rendering/renderer.h"
-#include "../timing/timekeeping.h"
+#include "../timing/timer.h"
 #include "../input/inputhandler.h"
 
 namespace leopph::impl
@@ -20,7 +20,7 @@ namespace leopph::impl
 
 		appStart();
 
-		leopph::Time::Init();
+		leopph::impl::Timer::Init();
 
 		while (!window.ShouldClose())
 		{
@@ -29,7 +29,7 @@ namespace leopph::impl
 			leopph::Behavior::UpdateAll();
 			window.Clear();
 			leopph::impl::Renderer::Instance().Render();
-			leopph::Time::OnFrameComplete();
+			leopph::impl::Timer::OnFrameComplete();
 			window.SwapBuffers();
 		}
 

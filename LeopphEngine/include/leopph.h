@@ -17,7 +17,7 @@ See individual headers for more information.
 #include "../src/math/quaternion.h"
 #include "../src/rendering/model.h"
 #include "../src/hierarchy/object.h"
-#include "../src/timing/timekeeping.h"
+#include "../src/timing/leopphtime.h"
 
 /*-----------------------------------------------------
 Define LEOPPH_ENTRY in exactly one of your source files

@@ -11,7 +11,7 @@
     <ClCompile Include="src\hierarchy\object.cpp" />
     <ClCompile Include="src\rendering\shader.cpp" />
     <ClCompile Include="src\rendering\texture.cpp" />
-    <ClCompile Include="src\timing\timekeeping.cpp" />
+    <ClCompile Include="src\timing\leopphtime.cpp" />
     <ClCompile Include="src\windowing\glwindow.cpp" />
     <ClCompile Include="src\components\lighting\pointlight.cpp" />
     <ClCompile Include="src\rendering\renderer.cpp" />
@@ -26,6 +26,7 @@
     <ClCompile Include="src\windowing\window.cpp" />
     <ClCompile Include="src\input\inputhandler.cpp" />
     <ClCompile Include="src\entry\launch.cpp" />
+    <ClCompile Include="src\timing\timer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\behavior.h" />
@@ -47,7 +48,7 @@
     <ClInclude Include="src\rendering\renderer.h" />
     <ClInclude Include="src\rendering\shader.h" />
     <ClInclude Include="src\rendering\texture.h" />
-    <ClInclude Include="src\timing\timekeeping.h" />
+    <ClInclude Include="src\timing\leopphtime.h" />
     <ClInclude Include="src\math\vector.h" />
     <ClInclude Include="src\rendering\vertex.h" />
     <ClInclude Include="src\windowing\glwindow.h" />
@@ -64,6 +65,7 @@
     <ClInclude Include="src\util\modelhash.h" />
     <ClInclude Include="src\entry\launch.h" />
     <ClInclude Include="src\entry\appstart.h" />
+    <ClInclude Include="src\timing\timer.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\shaders\fragment.frag" />

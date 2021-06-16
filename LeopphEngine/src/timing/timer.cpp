@@ -1,17 +1,17 @@
-#include "timekeeping.h"
+#include "timer.h"
 
-namespace leopph
+namespace leopph::impl
 {
-	Time::TimePoint Time::s_LastFrameCompletionTime{};
-	Time::Seconds Time::s_LastFrameDeltaTime{};
-	Time::Seconds Time::s_FullTime{};
+	Timer::TimePoint Timer::s_LastFrameCompletionTime{};
+	Timer::Seconds Timer::s_LastFrameDeltaTime{};
+	Timer::Seconds Timer::s_FullTime{};
 
-	void Time::Init()
+	void Timer::Init()
 	{
 		s_LastFrameCompletionTime = Clock::now();
 	}
 
-	void Time::OnFrameComplete()
+	void Timer::OnFrameComplete()
 	{
 		TimePoint currentTime{ Clock::now() };
 		s_LastFrameDeltaTime = currentTime - s_LastFrameCompletionTime;
@@ -19,12 +19,12 @@ namespace leopph
 		s_FullTime += s_LastFrameDeltaTime;
 	}
 
-	float Time::DeltaTime()
+	float Timer::DeltaTime()
 	{
 		return s_LastFrameDeltaTime.count();
 	}
 
-	float Time::FullTime()
+	float Timer::FullTime()
 	{
 		return s_FullTime.count();
 	}
