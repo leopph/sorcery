@@ -12,7 +12,12 @@ namespace leopph
 	}
 
 
-	// TODO document
+	/*-----------------------------------------------------------------------------
+	The Model class represents a renderable entity that can be attached to Objects.
+	The way it is rendered depends on the owning Object's current state in space.
+	See "object.h" for more information.
+	-----------------------------------------------------------------------------*/
+
 	class Model
 	{
 	public:
@@ -27,6 +32,7 @@ namespace leopph
 
 		LEOPPHAPI bool operator==(const Model& other) const;
 
+		/* TODO this should not be accessible to user */
 		LEOPPHAPI void Draw(const impl::Shader& shader) const;
 
 		LEOPPHAPI const std::filesystem::path& Path() const;
