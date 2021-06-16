@@ -45,12 +45,14 @@ namespace leopph::impl
 
 	void InstanceHolder::RemoveObject(Object* object)
 	{
-		s_Objects.erase(s_Objects.find(object));
+		const auto it = s_Objects.find(object);
+		delete object;
+		s_Objects.erase(it);
 	}
 
 	Object* InstanceHolder::FindObject(const std::string& name)
 	{
-		auto it = s_Objects.find(name);
+		const auto it = s_Objects.find(name);
 		return it != s_Objects.end() ? *it : nullptr;
 	}
 
