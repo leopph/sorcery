@@ -20,12 +20,12 @@ namespace leopph
 	Quaternion::Quaternion(const Vector3& axis, float angleDegrees)
 	{
 		Vector3 normalizedAxis = axis.Normalized();
-		float angleHalfRadians = Math::ToRadians(angleDegrees) / 2.0f;
+		float angleHalfRadians = math::ToRadians(angleDegrees) / 2.0f;
 
-		w = Math::Cos(angleHalfRadians);
-		x = normalizedAxis[0] * Math::Sin(angleHalfRadians);
-		y = normalizedAxis[1] * Math::Sin(angleHalfRadians);
-		z = normalizedAxis[2] * Math::Sin(angleHalfRadians);
+		w = math::Cos(angleHalfRadians);
+		x = normalizedAxis[0] * math::Sin(angleHalfRadians);
+		y = normalizedAxis[1] * math::Sin(angleHalfRadians);
+		z = normalizedAxis[2] * math::Sin(angleHalfRadians);
 	}
 
 
@@ -61,9 +61,9 @@ namespace leopph
 	{
 		return Matrix4
 		{
-			1 - 2 * (Math::Pow(y, 2) + Math::Pow(z, 2)),		2 * (x * y + z * w),		2 * (x * z - y * w),		0,
-			2 * (x * y - z * w),		1 - 2 * (Math::Pow(x, 2) + Math::Pow(z, 2)),		2 * (y * z + x * w),		0,
-			2 * (x * z + y * w),		2 * (y * z - x * w),		1 - 2 * (Math::Pow(x, 2) + Math::Pow(y, 2)),		0,
+			1 - 2 * (math::Pow(y, 2) + math::Pow(z, 2)),		2 * (x * y + z * w),		2 * (x * z - y * w),		0,
+			2 * (x * y - z * w),		1 - 2 * (math::Pow(x, 2) + math::Pow(z, 2)),		2 * (y * z + x * w),		0,
+			2 * (x * z + y * w),		2 * (y * z - x * w),		1 - 2 * (math::Pow(x, 2) + math::Pow(y, 2)),		0,
 			0,		0,		0,		1
 		};
 	}
@@ -74,7 +74,7 @@ namespace leopph
 
 	float Quaternion::Magnitude() const
 	{
-		return Math::Sqrt(Math::Pow(w, 2) + Math::Pow(x, 2) + Math::Pow(y, 2) + Math::Pow(z, 2));
+		return math::Sqrt(math::Pow(w, 2) + math::Pow(x, 2) + math::Pow(y, 2) + math::Pow(z, 2));
 	}
 
 

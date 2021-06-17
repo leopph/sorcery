@@ -1,68 +1,68 @@
 #include <cmath>
 #include "leopphmath.h"
 
-namespace leopph
+namespace leopph::math
 {
-	float Math::Pi()
+	float Pi()
 	{
 		static float ret{ 2 * std::acosf(0) };
 		return ret;
 	}
 
 
-	float Math::ToRadians(float degrees)
+	float ToRadians(float degrees)
 	{
 		return degrees * Pi() / 180.0f;
 	}
 
-	float Math::ToDegrees(float radians)
+	float ToDegrees(float radians)
 	{
 		return radians * 180.0f / Pi();
 	}
 
 
-	float Math::Sin(float radians)
+	float Sin(float radians)
 	{
 		return std::sinf(radians);
 	}
 
-	float Math::Asin(float radians)
+	float Asin(float radians)
 	{
 		return std::asinf(radians);
 	}
 
 
-	float Math::Cos(float radians)
+	float Cos(float radians)
 	{
 		return std::cosf(radians);
 	}
 
-	float Math::Acos(float radians)
+	float Acos(float radians)
 	{
 		return std::acosf(radians);
 	}
 
 
-	float Math::Tan(float radians)
+	float Tan(float radians)
 	{
 		return std::tanf(radians);
 	}
 
-	float Math::Atan(float radians)
+	float Atan(float radians)
 	{
 		return std::atanf(radians);
 	}
 
 
 
-	float Math::Pow(float base, float exp)
+	float Pow(float base, float exp)
 	{
 		return std::powf(base, exp);
 	}
 
 
 
-	float Math::Sqrt(float value)
+	float Sqrt(float value)
 	{
 		return std::sqrtf(value);
 	}

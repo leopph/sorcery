@@ -129,7 +129,7 @@ namespace leopph
 			/* Perspective Projection Matrix for the rendering pipeline that is calculated based on FOV, aspect ratio, and the near and far clip planes */
 			static Matrix<T, 4, 4> Perspective(const T& fov, const T& aspectRatio, const T& nearClipPlane, const T& farClipPlane)  requires (N == 4 && M == 4)
 			{
-				T tanHalfFov{ static_cast<T>(Math::Tan(fov / static_cast<T>(2))) };
+				T tanHalfFov{ static_cast<T>(math::Tan(fov / static_cast<T>(2))) };
 				T top{ nearClipPlane * tanHalfFov };
 				T bottom{ -top };
 				T right{ top * aspectRatio };

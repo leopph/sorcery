@@ -41,7 +41,7 @@ namespace leopph
 		/* Current Field of View of the Camera.
 		Use FOV_HORIZONTAL or FOV_VERTICAL to help interpret the provided input */
 		LEOPPHAPI void FOV(float fov, unsigned char direction);
-		LEOPPHAPI float FOV(unsigned char direction);
+		LEOPPHAPI float FOV(unsigned char direction) const;
 
 		/* Internally used matrices for the rendering engine */
 		LEOPPHAPI Matrix4 ViewMatrix() const;

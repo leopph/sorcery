@@ -3,7 +3,6 @@
 #include "../windowing/window.h"
 #include "../math/leopphmath.h"
 #include <stdexcept>
-#include <utility>
 
 
 
@@ -47,13 +46,13 @@ namespace leopph
 		switch (conversion)
 		{
 		case VERTICAL_TO_HORIZONTAL:
-			return Math::ToDegrees(2.0f * Math::Atan(Math::Tan(Math::ToRadians(fov) / 2.0f) * m_AspectRatio));
+			return math::ToDegrees(2.0f * math::Atan(math::Tan(math::ToRadians(fov) / 2.0f) * m_AspectRatio));
 
 		case HORIZONTAL_TO_VERTICAL:
-			return Math::ToDegrees(2.0f * Math::Atan(Math::Tan(Math::ToRadians(fov) / 2.0f) / m_AspectRatio));
+			return math::ToDegrees(2.0f * math::Atan(math::Tan(math::ToRadians(fov) / 2.0f) / m_AspectRatio));
 
 		default:
-			throw std::exception{ "INVALID FOV CONVERSION DIRECTION!" };
+			throw std::runtime_error{ "INVALID FOV CONVERSION DIRECTION!" };
 		}
 	}
 
@@ -67,7 +66,7 @@ namespace leopph
 
 	void Camera::AspectRatio(int width, int height)
 	{
-		m_AspectRatio = static_cast<float>(width) / height;
+		m_AspectRatio = static_cast<float>(width) / static_cast<float>(height);
 	}
 
 	float Camera::AspectRatio() const
@@ -119,7 +118,7 @@ namespace leopph
 
 	}
 
-	float Camera::FOV(unsigned char direction)
+	float Camera::FOV(unsigned char direction) const
 	{
 		switch (direction)
 		{
@@ -144,7 +143,7 @@ namespace leopph
 
 	Matrix4 Camera::ProjectionMatrix() const
 	{
-		float fov{ Math::ToRadians(ConvertFOV(m_HorizontalFOVDegrees, HORIZONTAL_TO_VERTICAL)) };
+		float fov{ math::ToRadians(ConvertFOV(m_HorizontalFOVDegrees, HORIZONTAL_TO_VERTICAL)) };
 		return Matrix4::Perspective(fov, m_AspectRatio, m_NearClip, m_FarClip);
 	}
 }

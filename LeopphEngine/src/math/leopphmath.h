@@ -5,29 +5,28 @@
 namespace leopph
 {
 	/*----------------------------------------------------------------------------------------------------
-	The Math class provides functions to help with mathematical computations.
+	The math namespace provides functions to help with mathematical computations.
 	You can also use other implementations, but prefer these to ensure best performance and compatibility.
 	----------------------------------------------------------------------------------------------------*/
 
-	class LEOPPHAPI Math
+	namespace math
 	{
-	public:
-		static float Pi();
+		LEOPPHAPI float Pi();
 
-		static float ToRadians(float degrees);
-		static float ToDegrees(float radians);
+		LEOPPHAPI float ToRadians(float degrees);
+		LEOPPHAPI float ToDegrees(float radians);
 
-		static float Sin(float radians);
-		static float Asin(float radians);
+		LEOPPHAPI float Sin(float radians);
+		LEOPPHAPI float Asin(float radians);
 
-		static float Cos(float radians);
-		static float Acos(float radians);
+		LEOPPHAPI float Cos(float radians);
+		LEOPPHAPI float Acos(float radians);
 
-		static float Tan(float radians);
-		static float Atan(float radians);
+		LEOPPHAPI float Tan(float radians);
+		LEOPPHAPI float Atan(float radians);
 
-		static float Pow(float base, float exp);
+		LEOPPHAPI float Pow(float base, float exp);
 
-		static float Sqrt(float value);
+		LEOPPHAPI float Sqrt(float value);
 	};
 }
