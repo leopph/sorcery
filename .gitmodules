@@ -9,3 +9,6 @@
 	path = LeopphEngine/vendor/glad
 	url = https://github.com/Dav1dde/glad.git
 	ignore = dirty
+[submodule "LeopphEngine/vendor/spdlog"]
+	path = LeopphEngine/vendor/spdlog
+	url = https://github.com/gabime/spdlog.git
