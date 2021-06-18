@@ -34,5 +34,7 @@ At this point LeopphEngine provides basic utilities to aid in mathematical compu
 I'm trying to place as much info into header/module files as I can. For now, users can use these to get more info on specific behaviors. I will eventually create a standalone document about all the different APIs LeopphEngine provides.
 
 ## Support and Usage
-Currently only Windows is supported. The easiest way you can get started is to open the Visual Studio solution and create a new project in it, then reference the LeopphEngine project from it. This way, you get all the necessary public headers.
-*Disclaimer: LeopphEngine uses C++20 features that are on the edge of stability and not yet fully implemented. You should probably use the latest Visual Studio version available (or even the preview) to make sure your compiler has the necessary features.*
+Currently only Windows is supported.  
+To get started, pull all the submodules and compile GLFW, glad, and Assimp. Then compile LeopphEngine using the provided VS solution.
+You should now include **leopph.h** from **LeopphEngine/include** in your project, link against **leopph.lib**, and copy **leopph.dll** (both found in **LeopphEngine/*<target_config>***) to your output directory, and everything should work!  
+*Disclaimer: LeopphEngine uses Microsoft's WIP C++20 implementation. It is recommended to use the latest Visual Studio release and set your project to std:c++latest to make sure your compiler has the necessary features.*
