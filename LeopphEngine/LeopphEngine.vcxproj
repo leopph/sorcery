@@ -49,7 +49,6 @@
     <IntDir>$(SolutionDir)int\$(ProjectName)\$(Configuration)_$(Platform)\</IntDir>
     <TargetName>leopph</TargetName>
     <LibraryPath>$(ProjectDir)vendor\spdlog\build\$(Configuration)\;$(ProjectDir)vendor\glad\$(Configuration)\;$(ProjectDir)vendor\assimp\lib\$(Configuration)\;$(ProjectDir)vendor\glfw\src\$(Configuration)\;$(LibraryPath)</LibraryPath>
-    <PublicIncludeDirectories>include</PublicIncludeDirectories>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -57,7 +56,6 @@
     <IntDir>$(SolutionDir)int\$(ProjectName)\$(Configuration)_$(Platform)\</IntDir>
     <TargetName>leopph</TargetName>
     <LibraryPath>$(ProjectDir)vendor\spdlog\build\$(Configuration)\;$(ProjectDir)vendor\glad\$(Configuration)\;$(ProjectDir)vendor\assimp\lib\$(Configuration)\;$(ProjectDir)vendor\glfw\src\$(Configuration)\;$(LibraryPath)</LibraryPath>
-    <PublicIncludeDirectories>include</PublicIncludeDirectories>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -68,7 +66,6 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <AdditionalIncludeDirectories>$(ProjectDir)vendor\spdlog\include;$(ProjectDir)vendor\stb_image;$(ProjectDir)vendor\glfw\include;$(ProjectDir)vendor\glad\include;$(ProjectDir)vendor\assimp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
     <Link>
       <SubSystem>NotSet</SubSystem>
