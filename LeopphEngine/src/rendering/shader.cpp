@@ -7,28 +7,10 @@
 
 namespace leopph::impl
 {
-	/* CONSTRUCTOR
-	LOAD, READ, COMPILE SHADER FILES AND LINK THE SHADER */
-	Shader::Shader(const std::filesystem::path& vertexPath, const std::filesystem::path& fragmentPath)
+	Shader::Shader()
 	{
-		// read source files
-		std::ifstream vertexInput{ vertexPath };
-		std::ifstream fragmentInput{ fragmentPath };
-
-		std::stringstream vertexStream;
-		std::stringstream fragmentStream;
-
-		vertexStream << vertexInput.rdbuf();
-		fragmentStream << fragmentInput.rdbuf();
-
-		vertexInput.close();
-		fragmentInput.close();
-
-		std::string vertexString{ vertexStream.str() };
-		std::string fragmentString{ fragmentStream.str() };
-
-		const char* vertexSource{ vertexString.c_str() };
-		const char* fragmentSource{ fragmentString.c_str() };
+		const char* vertexSource{ s_VertexSource.c_str() };
+		const char* fragmentSource{ s_FragmentSource.c_str() };
 
 
 		// compile vertex shader

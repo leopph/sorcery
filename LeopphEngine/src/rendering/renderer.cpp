@@ -28,7 +28,7 @@ namespace leopph::impl
 
 	void Renderer::Render() const
 	{
-		static Shader shader{ "./shaders/vertex.vert", "./shaders/fragment.frag" };
+		static Shader shader;
 
 		if (Camera::Active() == nullptr)
 			return;

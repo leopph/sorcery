@@ -12,11 +12,8 @@ namespace leopph::impl
 	CURRENTLY INCORPORATES A VERTEX AND A FRAGMENT SHADER */
 	class Shader
 	{
-	private:
-		unsigned m_ID;
-
 	public:
-		Shader(const std::filesystem::path& vertexPath, const std::filesystem::path& fragmentPath);
+		Shader();
 		~Shader();
 
 		unsigned GetID() const;
@@ -28,5 +25,11 @@ namespace leopph::impl
 		void SetUniform(const std::string& name, float value) const;
 		void SetUniform(const std::string& name, const Vector3& value) const;
 		void SetUniform(const std::string& name, const Matrix4& value) const;
+
+	private:
+		unsigned m_ID;
+
+		static std::string s_VertexSource;
+		static std::string s_FragmentSource;
 	};
 }

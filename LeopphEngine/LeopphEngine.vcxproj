@@ -76,6 +76,14 @@
       <Command>
       </Command>
     </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>
+      </Command>
+    </PreBuildEvent>
+    <PreLinkEvent>
+      <Command>$(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(ProjectDir)src\shaders\vertex.vert" "$(ProjectDir)src\shaders\vertex.cpp" "leopph::impl::Shader::s_VertexSource" "$(ProjectDir)src/rendering/shader.h"
+$(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(ProjectDir)src\shaders\fragment.frag" "$(ProjectDir)src\shaders\fragment.cpp" "leopph::impl::Shader::s_FragmentSource" "$(ProjectDir)src/rendering/shader.h"</Command>
+    </PreLinkEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -100,6 +108,14 @@
       <Command>
       </Command>
     </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>
+      </Command>
+    </PreBuildEvent>
+    <PreLinkEvent>
+      <Command>$(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(ProjectDir)src\shaders\vertex.vert" "$(ProjectDir)src\shaders\vertex.cpp" "leopph::impl::Shader::s_VertexSource" "$(ProjectDir)src/rendering/shader.h"
+$(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(ProjectDir)src\shaders\fragment.frag" "$(ProjectDir)src\shaders\fragment.cpp" "leopph::impl::Shader::s_FragmentSource" "$(ProjectDir)src/rendering/shader.h"</Command>
+    </PreLinkEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="include\leopph.h" />
@@ -148,6 +164,8 @@
     <ClCompile Include="src\entry\launch.cpp" />
     <ClCompile Include="src\input\inputhandler.cpp" />
     <ClCompile Include="src\rendering\opengl\gl.cpp" />
+    <ClCompile Include="src\shaders\fragment.cpp" />
+    <ClCompile Include="src\shaders\vertex.cpp" />
     <ClCompile Include="src\timing\timer.cpp" />
     <ClCompile Include="src\windowing\window.cpp" />
     <ClCompile Include="src\input\input.cpp" />

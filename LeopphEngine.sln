@@ -4,11 +4,16 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 16.0.30907.101
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LeopphEngine", "LeopphEngine\LeopphEngine.vcxproj", "{03803A6B-9F79-4245-936D-059A695AA449}"
+	ProjectSection(ProjectDependencies) = postProject
+		{1422D73A-FE9C-4FC9-BC03-DC863C0D2B28} = {1422D73A-FE9C-4FC9-BC03-DC863C0D2B28}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Client", "Client\Client.vcxproj", "{FF07732F-0F49-4B4D-9444-0B6C503AE511}"
 	ProjectSection(ProjectDependencies) = postProject
 		{03803A6B-9F79-4245-936D-059A695AA449} = {03803A6B-9F79-4245-936D-059A695AA449}
 	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ShaderParser", "ShaderParser\ShaderParser.vcxproj", "{1422D73A-FE9C-4FC9-BC03-DC863C0D2B28}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -30,6 +35,12 @@ Global
 		{FF07732F-0F49-4B4D-9444-0B6C503AE511}.Release|x64.ActiveCfg = Release|x64
 		{FF07732F-0F49-4B4D-9444-0B6C503AE511}.Release|x64.Build.0 = Release|x64
 		{FF07732F-0F49-4B4D-9444-0B6C503AE511}.Release|x86.ActiveCfg = Release|x64
+		{1422D73A-FE9C-4FC9-BC03-DC863C0D2B28}.Debug|x64.ActiveCfg = Debug|x64
+		{1422D73A-FE9C-4FC9-BC03-DC863C0D2B28}.Debug|x64.Build.0 = Debug|x64
+		{1422D73A-FE9C-4FC9-BC03-DC863C0D2B28}.Debug|x86.ActiveCfg = Debug|x64
+		{1422D73A-FE9C-4FC9-BC03-DC863C0D2B28}.Release|x64.ActiveCfg = Release|x64
+		{1422D73A-FE9C-4FC9-BC03-DC863C0D2B28}.Release|x64.Build.0 = Release|x64
+		{1422D73A-FE9C-4FC9-BC03-DC863C0D2B28}.Release|x86.ActiveCfg = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
