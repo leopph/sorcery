@@ -8,8 +8,6 @@
 
 namespace leopph::impl
 {
-	/* A CLASS THAT REPRESENTS AN OPENGL SHADER PROGRAM
-	CURRENTLY INCORPORATES A VERTEX AND A FRAGMENT SHADER */
 	class Shader
 	{
 	public:
@@ -31,5 +29,11 @@ namespace leopph::impl
 
 		static std::string s_VertexSource;
 		static std::string s_FragmentSource;
+
+		static const std::filesystem::path s_ProgramFileName;
+
+		void Compile();
+		bool ReadFromCache(const std::filesystem::path& path);
+		void WriteToCache(const std::filesystem::path& path);
 	};
 }

@@ -86,11 +86,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="parse_file.cpp" />
+    <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\parse_file.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="parse_file.h" />
+    <ClInclude Include="src\parse_file.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

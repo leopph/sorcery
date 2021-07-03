@@ -161,6 +161,7 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClCompile Include="src\components\camera.cpp" />
     <ClCompile Include="src\components\component.cpp" />
     <ClCompile Include="src\components\lighting\dirlight.cpp" />
+    <ClCompile Include="src\config\settings.cpp" />
     <ClCompile Include="src\entry\launch.cpp" />
     <ClCompile Include="src\input\inputhandler.cpp" />
     <ClCompile Include="src\rendering\opengl\gl.cpp" />

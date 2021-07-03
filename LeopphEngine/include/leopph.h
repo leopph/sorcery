@@ -10,6 +10,7 @@ See individual headers for more information.
 #include "../src/components/camera.h"
 #include "../src/components/lighting/dirlight.h"
 #include "../src/components/lighting/pointlight.h"
+#include "../src/config/settings.h"
 #include "../src/input/input.h"
 #include "../src/math/leopphmath.h"
 #include "../src/math/vector.h"

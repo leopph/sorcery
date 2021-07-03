@@ -29,6 +29,7 @@
     <ClCompile Include="src\timing\timer.cpp" />
     <ClCompile Include="src\shaders\fragment.cpp" />
     <ClCompile Include="src\shaders\vertex.cpp" />
+    <ClCompile Include="src\config\settings.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\behavior.h" />
