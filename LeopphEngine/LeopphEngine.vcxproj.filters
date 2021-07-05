@@ -30,6 +30,7 @@
     <ClCompile Include="src\shaders\fragment.cpp" />
     <ClCompile Include="src\shaders\vertex.cpp" />
     <ClCompile Include="src\config\settings.cpp" />
+    <ClCompile Include="src\util\logger.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\behavior.h" />
@@ -69,6 +70,7 @@
     <ClInclude Include="src\entry\launch.h" />
     <ClInclude Include="src\entry\appstart.h" />
     <ClInclude Include="src\timing\timer.h" />
+    <ClInclude Include="src\util\logger.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\shaders\fragment.frag" />

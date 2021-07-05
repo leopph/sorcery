@@ -3,9 +3,8 @@
 #include "../api/leopphapi.h"
 #include "vector.h"
 #include "matrix.h"
+
 #include <cstddef>
-#include <stdexcept>
-#include <string>
 #include <ostream>
 
 namespace leopph

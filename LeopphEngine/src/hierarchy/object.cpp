@@ -1,8 +1,12 @@
 #include "object.h"
+
 #include "../instances/instanceholder.h"
+
+#include "../util/logger.h"
+
+#include <utility>
 #include <stdexcept>
 #include <string>
-#include <utility>
 
 namespace leopph
 {
@@ -52,7 +56,11 @@ namespace leopph
 		const auto insertionData= m_Models.emplace(std::move(path));
 
 		if (!insertionData.second)
-			throw std::runtime_error{ "Model was not inserted due to an error!" };
+		{
+			const auto errorMsg{ "Model was not inserted due to an error." };
+			impl::Logger::Instance().Error(errorMsg);
+			throw std::runtime_error{ errorMsg };
+		}
 		
 		return &*insertionData.first;
 	}
@@ -74,7 +82,11 @@ namespace leopph
 		/* Removing the node is necessary, because m_Name is the ordering key. */
 		
 		if (impl::InstanceHolder::FindObject(newName) != nullptr)
-			throw std::invalid_argument{ "Object [" + newName + "] already exists!" };
+		{
+			const auto errorMsg{ "Object [" + newName + "] already exists." };
+			impl::Logger::Instance().Error(errorMsg);
+			throw std::invalid_argument{ errorMsg };
+		}
 		
 		impl::InstanceHolder::RemoveObject(this);
 		m_Name = newName;
@@ -91,7 +103,11 @@ namespace leopph
 	void Object::RemoveComponent(Component* behavior)
 	{
 		if (&behavior->Object() != this)
-			throw std::invalid_argument{ "The given Component is not attached to Object [" + Name() + "]!" };
+		{
+			const auto errorMsg{ "The given Component is not attached to Object [" + Name() + "]." };
+			impl::Logger::Instance().Error(errorMsg);
+			throw std::invalid_argument{ errorMsg };
+		}
 		
 		impl::InstanceHolder::RemoveComponent(behavior);
 	}

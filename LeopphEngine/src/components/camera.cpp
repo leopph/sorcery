@@ -1,7 +1,11 @@
 #include "camera.h"
+
 #include "../hierarchy/object.h"
 #include "../windowing/window.h"
 #include "../math/leopphmath.h"
+
+#include "../util/logger.h"
+
 #include <stdexcept>
 
 
@@ -40,7 +44,6 @@ namespace leopph
 
 
 
-	// FOV HORIZ-VERT CONVERSION
 	float Camera::ConvertFOV(float fov, unsigned char conversion) const
 	{
 		switch (conversion)
@@ -52,13 +55,14 @@ namespace leopph
 			return math::ToDegrees(2.0f * math::Atan(math::Tan(math::ToRadians(fov) / 2.0f) / m_AspectRatio));
 
 		default:
-			throw std::runtime_error{ "INVALID FOV CONVERSION DIRECTION!" };
+			const auto errorMsg{ "Invalid FOV conversion direction." };
+			impl::Logger::Instance().Error(errorMsg);
+			throw std::runtime_error{ errorMsg };
 		}
 	}
 
 
 
-	// ASPECT RATIO SETTERS AND GETTERS
 	void Camera::AspectRatio(float newRatio)
 	{
 		m_AspectRatio = newRatio;
@@ -76,7 +80,6 @@ namespace leopph
 
 
 
-	// CLIP PLANE SETTERS AND GETTERS
 	void Camera::NearClipPlane(float newPlane)
 	{
 		m_NearClip = newPlane;
@@ -99,7 +102,6 @@ namespace leopph
 
 
 
-	// FOV SETTER AND GETTER
 	void Camera::FOV(float fov, unsigned char direction)
 	{
 		switch (direction)
@@ -113,9 +115,10 @@ namespace leopph
 			return;
 
 		default:
-			throw std::exception{ "INVALID FOV DIRECTION!" };
-		}
-
+			auto errorMsg{ "Invalid FOV direction." };
+			impl::Logger::Instance().Error(errorMsg);
+			throw std::exception{ errorMsg };
+		};
 	}
 
 	float Camera::FOV(unsigned char direction) const
@@ -129,13 +132,14 @@ namespace leopph
 			return ConvertFOV(m_HorizontalFOVDegrees, HORIZONTAL_TO_VERTICAL);
 
 		default:
-			throw std::exception{ "INVALID FOV DIRECTION!" };
+			const auto errorMsg{ "Invalid FOV direction." };
+			impl::Logger::Instance().Error(errorMsg);
+			throw std::runtime_error{ errorMsg };
 		}
 	}
 
 
 
-	// CAMERA MATRIX CALCULATIONS
 	Matrix4 Camera::ViewMatrix() const
 	{
 		return Matrix4::LookAt(Object().Transform().Position(), Object().Transform().Position() + Object().Transform().Forward(), Vector3::Up());

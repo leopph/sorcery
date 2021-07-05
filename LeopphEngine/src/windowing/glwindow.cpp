@@ -1,13 +1,15 @@
 #include "glwindow.h"
+
 #include "../components/camera.h"
 #include "../input/input.h"
 #include "../input/inputhandler.h"
 
-#include <stdexcept>
+#include "../util/logger.h"
+
 #include <glad/glad.h>
-#include <utility>
 #include <map>
-#include <iostream>
+#include <utility>
+#include <stdexcept>
 
 
 namespace leopph::impl
@@ -65,7 +67,11 @@ namespace leopph::impl
 		: Window{ width, height, title, fullscreen }
 	{
 		if (!glfwInit())
-			throw std::exception{"Failed to initialize GLFW!" };
+		{
+			const auto erroMsg{ "Failed to initialize GLFW." };
+			Logger::Instance().Error(erroMsg);
+			throw std::exception{ erroMsg };
+		}
 
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
@@ -125,7 +131,7 @@ namespace leopph::impl
 		}
 		catch (const std::out_of_range&)
 		{
-			std::cerr << "INVALID KEY INPUT DETECTED" << std::endl;
+			Logger::Instance().Warning("Invalid key input detected.");
 		}
 	}
 	

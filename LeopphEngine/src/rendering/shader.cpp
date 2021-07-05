@@ -2,9 +2,10 @@
 
 #include "../config/settings.h"
 
+#include "../util/logger.h"
+
 #include <fstream>
 #include <glad/glad.h>
-#include <iostream>
 #include <memory>
 #include <vector>
 
@@ -47,7 +48,7 @@ namespace leopph::impl
 		int status;
 		glGetShaderiv(vertexShaderID, GL_COMPILE_STATUS, &status);
 		if (!status)
-			std::cerr << "There was an error during vertex shader compilation!" << std::endl;
+			Logger::Instance().Error("There was an error during vertex shader compilation!");
 
 
 		glShaderSource(fragmentShaderID, 1, &fragmentSource, nullptr);
@@ -55,7 +56,7 @@ namespace leopph::impl
 
 		glGetShaderiv(fragmentShaderID, GL_COMPILE_STATUS, &status);
 		if (!status)
-			std::cerr << "There was an error during fragment shader compilation!" << std::endl;
+			Logger::Instance().Error("There was an error during fragment shader compilation!");
 
 
 		m_ID = glCreateProgram();
@@ -65,7 +66,7 @@ namespace leopph::impl
 
 		glGetProgramiv(m_ID, GL_LINK_STATUS, &status);
 		if (!status)
-			std::cerr << "There was an error during shader program linking!" << std::endl;
+			Logger::Instance().Error("There was an error during shader program linking!");
 
 		glDeleteShader(vertexShaderID);
 		glDeleteShader(fragmentShaderID);

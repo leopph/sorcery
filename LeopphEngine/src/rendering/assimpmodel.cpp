@@ -1,8 +1,10 @@
 #include "assimpmodel.h"
-#include <utility>
+
+#include "../util/logger.h"
+
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
-#include <iostream>
+#include <utility>
 #include <stdexcept>
 #include <string>
 
@@ -11,16 +13,18 @@ namespace leopph::impl
 	AssimpModelImpl::AssimpModelImpl(std::filesystem::path path) :
 		m_Path{ std::move(path) }
 	{
-		// read model data
 		Assimp::Importer importer;
 		const aiScene* scene{ importer.ReadFile(m_Path.string(), aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_MakeLeftHanded) };
 
 		if (scene == nullptr || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || scene->mRootNode == nullptr)
-			throw std::invalid_argument{ std::string{"ASSIMP ERROR: "} + importer.GetErrorString() };
+		{
+			const auto errorMsg{ std::string{"Assimp error: "} + importer.GetErrorString() };
+			Logger::Instance().Error(errorMsg);
+			throw std::invalid_argument{ errorMsg };
+		}
 
 		m_Directory = m_Path.parent_path();
 
-		// recursively process all nodes
 		ProcessNode(scene->mRootNode, scene);
 	}
 
@@ -35,8 +39,8 @@ namespace leopph::impl
 
 	void AssimpModelImpl::Draw(const Shader& shader) const
 	{
-		for (size_t i = 0; i < m_Meshes.size(); i++)
-			m_Meshes[i].Draw(shader);
+		for (const auto & mesh : m_Meshes)
+			mesh.Draw(shader);
 	}
 
 

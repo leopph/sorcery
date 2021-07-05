@@ -131,6 +131,7 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClInclude Include="src\input\keycodes.h" />
     <ClInclude Include="src\input\keystate.h" />
     <ClInclude Include="src\timing\timer.h" />
+    <ClInclude Include="src\util\logger.h" />
     <ClInclude Include="src\util\modelhash.h" />
     <ClInclude Include="src\rendering\opengl\gl.h" />
     <ClInclude Include="src\input\input.h" />
@@ -168,6 +169,7 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClCompile Include="src\shaders\fragment.cpp" />
     <ClCompile Include="src\shaders\vertex.cpp" />
     <ClCompile Include="src\timing\timer.cpp" />
+    <ClCompile Include="src\util\logger.cpp" />
     <ClCompile Include="src\windowing\window.cpp" />
     <ClCompile Include="src\input\input.cpp" />
     <ClCompile Include="src\instances\instanceholder.cpp" />

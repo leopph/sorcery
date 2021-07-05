@@ -1,5 +1,11 @@
 #include "quaternion.h"
+
 #include "leopphmath.h"
+
+#include "../util/logger.h"
+
+#include <stdexcept>
+#include <string>
 
 namespace leopph
 {
@@ -45,7 +51,9 @@ namespace leopph
 		case 3:
 			return z;
 		default:
-			throw std::out_of_range{ "Invalid quaternion index '" + std::to_string(index) + "'" };
+			const auto errorMsg{ "Invalid quaternion index '" + std::to_string(index) + "'." };
+			impl::Logger::Instance().Error(errorMsg);
+			throw std::out_of_range{ errorMsg };
 		}
 	}
 
