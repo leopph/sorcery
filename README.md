@@ -35,6 +35,6 @@ I'm trying to place as much info into header/module files as I can. For now, use
 
 ## Support and Usage
 Currently only Windows is supported.  
-To get started, pull all the submodules and compile GLFW, glad, and Assimp. Then compile LeopphEngine using the provided VS solution.
+To get started, pull all the submodules and compile Assimp, glad, GLFW, and spdlog. Then compile LeopphEngine using the provided VS solution.
 You should now include **leopph.h** from **LeopphEngine/include** in your project, link against **leopph.lib**, and copy **leopph.dll** (both found in **LeopphEngine/*<target_config>***) to your output directory, and everything should work!  
 *Disclaimer: LeopphEngine uses Microsoft's WIP C++20 implementation. It is recommended to use the latest Visual Studio release and set your project to std:c++latest to make sure your compiler has the necessary features.*
