@@ -1,7 +1,8 @@
 #pragma once
 
-#include "../../math/vector.h"
 #include "../behavior.h"
+#include "../../api/leopphapi.h"
+#include "../../math/vector.h"
 
 namespace leopph::impl
 {
@@ -11,13 +12,13 @@ namespace leopph::impl
 		using Component::Component;
 		~Light() override = 0;
 
-		const Vector3& Ambient() const;
-		const Vector3& Diffuse() const;
-		const Vector3& Specular() const;
+		LEOPPHAPI const Vector3& Ambient() const;
+		LEOPPHAPI const Vector3& Diffuse() const;
+		LEOPPHAPI const Vector3& Specular() const;
 
-		void Ambient(const Vector3& value);
-		void Diffuse(const Vector3& value);
-		void Specular(const Vector3& value);
+		LEOPPHAPI void Ambient(const Vector3& value);
+		LEOPPHAPI void Diffuse(const Vector3& value);
+		LEOPPHAPI void Specular(const Vector3& value);
 
 	private:
 		Vector3 m_Ambient{ 0.05f, 0.05f, 0.05f };

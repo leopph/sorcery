@@ -101,9 +101,10 @@ void leopph::AppStart()
 	backpack->Transform().Position({ 0, 0, 5 });
 	backpack->AddComponent<Rotate>();
 
-	Object* pointLightObj = Object::Create();
-	pointLightObj->Transform().Position({ 0, 0, 3 });
-	pointLightObj->AddComponent<PointLight>();
+	Object* dirLightObj = Object::Create();
+	auto dirLight = dirLightObj->AddComponent<DirectionalLight>();
+	dirLight->Direction({ 0, -1, 0 });
+	dirLight->Ambient({ 0.5f, 0.5f, 0.5f });
 
 	Object* fpsCounter = Object::Create();
 	fpsCounter->AddComponent<FPSCounter>();
