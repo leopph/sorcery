@@ -20,31 +20,21 @@ namespace leopph::impl
 	}
 
 
-	Renderer& Renderer::Instance()
-	{
-		static Renderer instance;
-		return instance;
-	}
-
-
 	void Renderer::Render() const
 	{
-		static Shader shader;
-
 		if (Camera::Active() == nullptr)
 			return;
-
 
 		PointLight* pointLights[MAX_POINT_LIGHTS]{};
 
 		for (Light* light : InstanceHolder::PointLights())
 		{
 			if (pointLights[0] == nullptr)
+			{
 				pointLights[0] = reinterpret_cast<PointLight*>(light);
-
+			}
 			else
 			{
-
 				light = reinterpret_cast<PointLight*>(light);
 
 				Vector3 lightPos = light->Object().Transform().Position();
@@ -60,51 +50,43 @@ namespace leopph::impl
 			}
 		}
 
-
-
-		shader.Use();
-
-
+		m_Shader.Use();
 
 		size_t lightNumber = 0;
 
-		for (auto & pointLight : pointLights)
+		for (auto& pointLight : pointLights)
+		{
 			if (pointLight != nullptr)
 			{
-				shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].position", pointLight->Object().Transform().Position());
-				shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].ambient", pointLight->Ambient());
-				shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].diffuse", pointLight->Diffuse());
-				shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].specular", pointLight->Specular());
-				shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].constant", pointLight->Constant());
-				shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].linear", pointLight->Linear());
-				shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].quadratic", pointLight->Quadratic());
+				m_Shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].position", pointLight->Object().Transform().Position());
+				m_Shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].ambient", pointLight->Ambient());
+				m_Shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].diffuse", pointLight->Diffuse());
+				m_Shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].specular", pointLight->Specular());
+				m_Shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].constant", pointLight->Constant());
+				m_Shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].linear", pointLight->Linear());
+				m_Shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].quadratic", pointLight->Quadratic());
 
 				lightNumber++;
 			}
-		shader.SetUniform("lightNumber", static_cast<int>(lightNumber));
-
-
-
+		}
+		m_Shader.SetUniform("lightNumber", static_cast<int>(lightNumber));
 
 		if (const auto dirLight = InstanceHolder::DirectionalLight(); dirLight != nullptr)
 		{
-			shader.SetUniform("existsDirLight", true);
-			shader.SetUniform("dirLight.direction", dirLight->Direction());
-			shader.SetUniform("dirLight.ambient", dirLight->Ambient());
-			shader.SetUniform("dirLight.diffuse", dirLight->Diffuse());
-			shader.SetUniform("dirLight.specular", dirLight->Specular());
+			m_Shader.SetUniform("existsDirLight", true);
+			m_Shader.SetUniform("dirLight.direction", dirLight->Direction());
+			m_Shader.SetUniform("dirLight.ambient", dirLight->Ambient());
+			m_Shader.SetUniform("dirLight.diffuse", dirLight->Diffuse());
+			m_Shader.SetUniform("dirLight.specular", dirLight->Specular());
 		}
 		else
-			shader.SetUniform("existsDirLight", false);
+		{
+			m_Shader.SetUniform("existsDirLight", false);
+		}
 
-
-
-
-		shader.SetUniform("viewPosition", Camera::Active()->Object().Transform().Position());
-		shader.SetUniform("view", Camera::Active()->ViewMatrix());
-		shader.SetUniform("projection", Camera::Active()->ProjectionMatrix());
-
-
+		m_Shader.SetUniform("viewPosition", Camera::Active()->Object().Transform().Position());
+		m_Shader.SetUniform("view", Camera::Active()->ViewMatrix());
+		m_Shader.SetUniform("projection", Camera::Active()->ProjectionMatrix());
 
 		for (const auto& pair : InstanceHolder::Models())
 		{
@@ -115,10 +97,10 @@ namespace leopph::impl
 				modelMatrix *= static_cast<Matrix4>(object->Transform().Rotation());
 				modelMatrix *= Matrix4::Translate(object->Transform().Position());
 
-				shader.SetUniform("model", modelMatrix);
-				shader.SetUniform("normalMatrix", modelMatrix.Inverse().Transposed());
+				m_Shader.SetUniform("model", modelMatrix);
+				m_Shader.SetUniform("normalMatrix", modelMatrix.Inverse().Transposed());
 
-				modelReference.ReferenceModel().Draw(shader);
+				modelReference.ReferenceModel().Draw(m_Shader);
 			}
 		}
 	}

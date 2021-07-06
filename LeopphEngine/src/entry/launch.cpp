@@ -38,24 +38,30 @@ namespace leopph::impl
 		appStart();
 		Logger::Instance().Debug("App initialized.");
 
-		Timer::Init();
-		Logger::Instance().Debug("Timer initialized.");
-
-		Logger::Instance().Debug("Starting render loop.");
-		while (!window.ShouldClose())
 		{
-			InputHandler::UpdateReleasedKeys();
-			window.PollEvents();
+			Renderer renderer;
+			Logger::Instance().Debug("Renderer initialized");
 
-			for (const auto& x : InstanceHolder::Behaviors())
-				x->OnFrameUpdate();
-			
-			window.Clear();
-			Renderer::Instance().Render();
-			Timer::OnFrameComplete();
-			window.SwapBuffers();
+			Timer::Init();
+			Logger::Instance().Debug("Timer initialized.");
+
+			Logger::Instance().Debug("Starting render loop.");
+			while (!window.ShouldClose())
+			{
+				InputHandler::UpdateReleasedKeys();
+				window.PollEvents();
+
+				for (const auto& x : InstanceHolder::Behaviors())
+					x->OnFrameUpdate();
+
+				window.Clear();
+				renderer.Render();
+				Timer::OnFrameComplete();
+				window.SwapBuffers();
+			}
+			Logger::Instance().Debug("Render loop finished.");
 		}
-		Logger::Instance().Debug("Render loop finished.");
+		Logger::Instance().Debug("Renderer destroyed");
 
 		InstanceHolder::DestroyAll();
 		Logger::Instance().Debug("All objects destroyed.");
