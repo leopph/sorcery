@@ -1,25 +1,31 @@
 #include "texture.h"
+
 #include "../instances/instanceholder.h"
+#include "../util/logger.h"
 
 #include <glad/glad.h>
 #include <stb_image.h>
+#include <stdexcept>
+#include <string>
 
 namespace leopph::impl
 {
-	// LOAD IMAGE FROM PATH
-	Texture::Texture(const std::filesystem::path& path, TextureType type)
-		: m_Path{ path }, m_Type{ type }
+	Texture::Texture(const std::filesystem::path& path)
+		: path{ path }, id{ m_ID }
 	{
 		stbi_set_flip_vertically_on_load(true);
 
 		glGenTextures(1, &m_ID);
 
-		// load image
 		int width, height, channels;
 		unsigned char* data{ stbi_load(path.string().c_str(), &width, &height, &channels, 0) };
 
 		if (data == nullptr)
-			throw std::exception{};
+		{
+			const auto msg{ "Texture on path [" + path.string() + "] could not be loaded." };
+			Logger::Instance().Error(msg);
+			throw std::runtime_error{ msg };
+		}
 
 		GLenum colorFormat{};
 
@@ -39,111 +45,53 @@ namespace leopph::impl
 
 		default:
 			stbi_image_free(data);
-			throw std::exception{};
+			const auto msg{ "Unknown channel number [" + std::to_string(channels) + "]."};
+			Logger::Instance().Error(msg);
+			throw std::runtime_error{ msg };
 		}
 
-		// load texture data
-		glBindTexture(GL_TEXTURE_2D, m_ID);
+		glBindTexture(GL_TEXTURE_2D, id);
 		glTexImage2D(GL_TEXTURE_2D, 0, colorFormat, width, height, 0, colorFormat, GL_UNSIGNED_BYTE, data);
 		glGenerateMipmap(GL_TEXTURE_2D);
 
-		// set filtering
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 
 		stbi_image_free(data);
 
-		InstanceHolder::AddTexture(m_ID);
+		InstanceHolder::StoreTexture(*this);
 	}
 
 
 	Texture::~Texture()
 	{
-		InstanceHolder::RemoveTexture(m_ID);
-		if (InstanceHolder::TextureCount(m_ID) == 0)
-			glDeleteTextures(1, &m_ID);
+		InstanceHolder::RemoveTexture(path);
+		if (!InstanceHolder::IsTextureStored(path))
+			glDeleteTextures(1, &id);
 	}
 
 
 	Texture::Texture(const Texture& other)
-		: m_ID{ other.m_ID }, m_Path{ other.m_Path }, m_Type{ other.m_Type }
+		: m_ID{ other.m_ID }, path{ other.path }, id{ m_ID }
 	{
-		InstanceHolder::AddTexture(m_ID);
+		InstanceHolder::AddTexture(path);
 	}
 
-
-	Texture::Texture(Texture&& other) noexcept
-		: m_ID{ other.m_ID }, m_Path{ std::move(other.m_Path) }, m_Type{ other.m_Type }
+	Texture::Texture(const TextureReference& reference) :
+		m_ID{ reference.id }, id{ m_ID }, path{ reference.path }
 	{
-		other.m_ID = 0;
-		other.m_Path.clear();
-
-		InstanceHolder::AddTexture(0);
+		InstanceHolder::AddTexture(path);
 	}
-
-
-	Texture& Texture::operator=(const Texture& other)
-	{
-		if (*this == other)
-			return *this;
-
-		InstanceHolder::RemoveTexture(m_ID);
-		if (InstanceHolder::TextureCount(m_ID) == 0)
-			glDeleteTextures(1, &m_ID);
-
-		this->m_ID = other.m_ID;
-		this->m_Path = other.m_Path;
-		this->m_Type = other.m_Type;
-
-		InstanceHolder::AddTexture(m_ID);
-
-		return *this;
-	}
-
-
-	Texture& Texture::operator=(Texture&& other) noexcept
-	{
-		if (*this == other)
-			return *this;
-
-		InstanceHolder::RemoveTexture(m_ID);
-		if (InstanceHolder::TextureCount(m_ID) == 0)
-			glDeleteTextures(1, &m_ID);
-
-		this->m_ID = other.m_ID;
-		this->m_Path = std::move(other.m_Path);
-		this->m_Type = other.m_Type;
-
-		other.m_ID = 0;
-		other.m_Path.clear();
-
-		InstanceHolder::AddTexture(0);
-
-		return *this;
-	}
-
 
 	bool Texture::operator==(const Texture& other) const
 	{
-		return this->m_ID == other.m_ID;
+		return this->id == other.id;
 	}
 
 
-	bool Texture::operator==(const std::filesystem::path& path) const
+	bool Texture::operator==(const std::filesystem::path& other) const
 	{
-		return this->m_Path == path;
-	}
-
-	
-	unsigned Texture::ID() const
-	{
-		return m_ID;
-	}
-
-	
-	Texture::TextureType Texture::Type() const
-	{
-		return m_Type;
+		return this->path == other;
 	}
 }

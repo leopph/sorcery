@@ -46,32 +46,6 @@ namespace leopph
 		return m_Transform;
 	}
 
-	const std::unordered_set<Model>& Object::Models() const
-	{
-		return m_Models;
-	}
-
-	const Model* Object::AddModel(std::filesystem::path path)
-	{
-		const auto insertionData= m_Models.emplace(std::move(path));
-
-		if (!insertionData.second)
-		{
-			const auto errorMsg{ "Model was not inserted due to an error." };
-			impl::Logger::Instance().Error(errorMsg);
-			throw std::runtime_error{ errorMsg };
-		}
-		
-		return &*insertionData.first;
-	}
-
-	void Object::RemoveModel(const Model* & model)
-	{
-		/* erase returns 0-1 depending on whether the element was removed */
-		if (m_Models.erase(*model) == 1)
-			model = nullptr;
-	}
-
 	const std::string& Object::Name() const
 	{
 		return m_Name;

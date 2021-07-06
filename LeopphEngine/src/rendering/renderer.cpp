@@ -1,15 +1,16 @@
 #include "renderer.h"
-#include "shader.h"
+
 #include "../components/lighting/light.h"
 #include "../components/lighting/pointlight.h"
 #include "../components/lighting/dirlight.h"
 #include "../components/camera.h"
 #include "../math/matrix.h"
 #include "../instances/instanceholder.h"
-#include <string>
+#include "shader.h"
+
 #include <glad/glad.h>
 
-using std::size_t;
+#include <string>
 
 namespace leopph::impl
 {
@@ -67,16 +68,16 @@ namespace leopph::impl
 
 		size_t lightNumber = 0;
 
-		for (size_t i = 0; i < MAX_POINT_LIGHTS; i++)
-			if (pointLights[i] != nullptr)
+		for (auto & pointLight : pointLights)
+			if (pointLight != nullptr)
 			{
-				shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].position", pointLights[i]->Object().Transform().Position());
-				shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].ambient", pointLights[i]->Ambient());
-				shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].diffuse", pointLights[i]->Diffuse());
-				shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].specular", pointLights[i]->Specular());
-				shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].constant", pointLights[i]->Constant());
-				shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].linear", pointLights[i]->Linear());
-				shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].quadratic", pointLights[i]->Quadratic());
+				shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].position", pointLight->Object().Transform().Position());
+				shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].ambient", pointLight->Ambient());
+				shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].diffuse", pointLight->Diffuse());
+				shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].specular", pointLight->Specular());
+				shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].constant", pointLight->Constant());
+				shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].linear", pointLight->Linear());
+				shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].quadratic", pointLight->Quadratic());
 
 				lightNumber++;
 			}
@@ -101,13 +102,13 @@ namespace leopph::impl
 
 		shader.SetUniform("viewPosition", Camera::Active()->Object().Transform().Position());
 		shader.SetUniform("view", Camera::Active()->ViewMatrix());
-		shader.SetUniform("proj", Camera::Active()->ProjectionMatrix());
+		shader.SetUniform("projection", Camera::Active()->ProjectionMatrix());
 
 
 
-		for (const auto& pair : InstanceHolder::Objects())
+		for (const auto& pair : InstanceHolder::Models())
 		{
-			for (const auto& object = pair.first; const auto& model : object->Models())
+			for (const auto& modelReference = pair.second; const auto& object : modelReference.Objects())
 			{
 				Matrix4 modelMatrix{ 1.0f };
 				modelMatrix *= Matrix4::Scale(object->Transform().Scale());
@@ -117,7 +118,7 @@ namespace leopph::impl
 				shader.SetUniform("model", modelMatrix);
 				shader.SetUniform("normalMatrix", modelMatrix.Inverse().Transposed());
 
-				model.Draw(shader);
+				modelReference.ReferenceModel().Draw(shader);
 			}
 		}
 	}

@@ -4,7 +4,6 @@
 
 namespace leopph::impl
 {
-	// STRUCT TO REPRESENT A VERTEX
 	struct Vertex
 	{
 		Vector3 position;

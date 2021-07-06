@@ -4,34 +4,25 @@
 
 namespace leopph::impl
 {
-	// CLASS TO REPRESENT A LOADED TEXTURE
-	class Texture
+	struct TextureReference;
+
+	struct Texture
 	{
-	public:
-		enum class TextureType
-		{
-			DIFFUSE, SPECULAR
-		};
+		const unsigned& id;
+		const std::filesystem::path path;
 
 
-		Texture(const std::filesystem::path& path, TextureType type);
+		Texture(const std::filesystem::path& path);
+		Texture(const TextureReference& reference);
 		~Texture();
 
 		Texture(const Texture& other);
-		Texture(Texture&& other) noexcept;
-
-		Texture& operator=(const Texture& other);
-		Texture& operator=(Texture&& other) noexcept;
+		Texture& operator=(const Texture& other) = delete;
 
 		bool operator==(const Texture& other) const;
-		bool operator==(const std::filesystem::path& path) const;
-
-		unsigned ID() const;
-		TextureType Type() const;
+		bool operator==(const std::filesystem::path& other) const;
 
 	private:
 		unsigned m_ID;
-		TextureType m_Type;
-		std::filesystem::path m_Path;
 	};
 }

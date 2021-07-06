@@ -10,7 +10,7 @@ layout (location = 2) in vec2 inTextureCoords;
 
 uniform mat4 model;
 uniform mat4 view;
-uniform mat4 proj;
+uniform mat4 projection;
 uniform mat4 normalMatrix;
 
 
@@ -21,7 +21,7 @@ out vec2 textureCoords;
 
 void main()
 {
-    gl_Position = vec4(inPosition, 1.0) * model * view * proj;
+    gl_Position = vec4(inPosition, 1.0) * model * view * projection;
     fragmentPosition = vec3(vec4(inPosition, 1.0f) * model);
     normal = inNormal * mat3(normalMatrix);
     textureCoords = inTextureCoords;

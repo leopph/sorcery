@@ -1,29 +1,19 @@
 #include "instanceholder.h"
 
+#include "../util/logger.h"
+
+#include <stdexcept>
+#include <utility>
+
 namespace leopph::impl
 {
-	bool InstanceHolder::ObjectComparator::operator()(const Object* left, const Object* right) const
-	{
-		return left->Name() < right->Name();
-	}
-
-	bool InstanceHolder::ObjectComparator::operator()(const Object* left, const std::string& right) const
-	{
-		return left->Name() < right;
-	}
-
-	bool InstanceHolder::ObjectComparator::operator()(const std::string& left, const Object* right) const
-	{
-		return left < right->Name();
-	}
-
-	
-	std::unordered_map<unsigned, size_t> InstanceHolder::s_Textures{};
-	std::unordered_map<unsigned, size_t> InstanceHolder::s_Meshes{};
-	std::map<Object*, std::set<Component*>, InstanceHolder::ObjectComparator> InstanceHolder::s_Objects{};
+	std::unordered_set<TextureReference, TextureHash, TextureEqual> InstanceHolder::s_Textures{};
+	std::map<Object*, std::set<Component*>, ObjectComparator> InstanceHolder::s_Objects{};
 	std::set<Behavior*> InstanceHolder::s_Behaviors{};
 	DirectionalLight* InstanceHolder::s_DirLight{ nullptr };
 	std::vector<PointLight*> InstanceHolder::s_PointLights{};
+	std::unordered_map<unsigned, std::size_t> InstanceHolder::s_MeshCounts{};
+	std::unordered_map<std::filesystem::path, ModelReference> InstanceHolder::s_Models{};
 
 	
 	void InstanceHolder::DestroyAll()
@@ -35,7 +25,6 @@ namespace leopph::impl
 			delete pair.first;
 		}
 
-		s_Meshes.clear();
 		s_Textures.clear();
 	}
 
@@ -63,45 +52,68 @@ namespace leopph::impl
 		return it != s_Objects.end() ? it->first : nullptr;
 	}
 
-	const std::map<Object*, std::set<Component*>, InstanceHolder::ObjectComparator>& InstanceHolder::Objects()
+	const std::map<Object*, std::set<Component*>, ObjectComparator>& InstanceHolder::Objects()
 	{
 		return s_Objects;
 	}
 
 	
-
-	void InstanceHolder::AddTexture(unsigned id)
+	bool InstanceHolder::IsTextureStored(const std::filesystem::path& path)
 	{
-		s_Textures.try_emplace(id, 0);
-		s_Textures[id]++;
+		return s_Textures.contains(path);
 	}
 
-	void InstanceHolder::RemoveTexture(unsigned id)
+	std::unique_ptr<Texture> InstanceHolder::GetTexture(const std::filesystem::path& path)
 	{
-		s_Textures[id]--;
+		if (!s_Textures.contains(path))
+		{
+			const auto msg{ "Texture on path [" + path.string() + "] has not been loaded yet." };
+			Logger::Instance().Error(msg);
+			throw std::runtime_error{ msg };
+		}
+
+		return std::make_unique<Texture>(*s_Textures.find(path));
 	}
 
-	std::size_t InstanceHolder::TextureCount(unsigned id)
+	void InstanceHolder::StoreTexture(const Texture& other)
 	{
-		return s_Textures[id];
+		if (s_Textures.contains(other.path))
+		{
+			const auto msg{ "Texture on path [" + other.path.string() + "] has already been loaded." };
+			Logger::Instance().Error(msg);
+			throw std::runtime_error{ msg };
+		}
+
+		s_Textures.emplace(TextureReference{ .path = other.path, .id = other.id, .count = 1 });
 	}
 
-
-	
-	void InstanceHolder::AddMesh(unsigned id)
+	void InstanceHolder::AddTexture(const std::filesystem::path& path)
 	{
-		s_Meshes.try_emplace(id, 0);
-		s_Meshes[id]++;
+		if (!s_Textures.contains(path))
+		{
+			const auto msg{ "Texture on path [" + path.string() + "] has not been loaded yet." };
+			Logger::Instance().Error(msg);
+			throw std::runtime_error{ msg };
+		}
+
+		s_Textures.find(path)->count++;
 	}
 
-	void InstanceHolder::RemoveMesh(unsigned id)
+	void InstanceHolder::RemoveTexture(const std::filesystem::path& path)
 	{
-		s_Meshes[id]--;
-	}
+		if (!s_Textures.contains(path))
+		{
+			const auto msg{ "Texture on path [" + path.string() + "] has not been loaded yet." };
+			Logger::Instance().Error(msg);
+			throw std::runtime_error{ msg };
+		}
 
-	std::size_t InstanceHolder::MeshCount(unsigned id)
-	{
-		return s_Meshes[id];
+		const auto& it{ s_Textures.find(path) };
+
+		it->count--;
+
+		if (it->count == 0)
+			s_Textures.erase(it);
 	}
 
 
@@ -166,4 +178,82 @@ namespace leopph::impl
 				return;
 			}
 	}
+
+	const AssimpModelImpl& InstanceHolder::GetModelReference(const std::filesystem::path& path)
+	{
+		if (!s_Models.contains(path))
+			return (*s_Models.emplace(path, path).first).second.ReferenceModel();
+
+		return (*s_Models.find(path)).second.ReferenceModel();
+	}
+
+	void InstanceHolder::RegisterModelObject(const std::filesystem::path& path, Object* object)
+	{
+		if (!s_Models.contains(path))
+		{
+			const auto errorMsg{ "Model on path [" + path.string() + "] has not been loaded yet." };
+			Logger::Instance().Error(errorMsg);
+			throw std::runtime_error(errorMsg);
+		}
+
+		s_Models.at(path).AddObject(object);
+	}
+
+	void InstanceHolder::UnregisterModelObject(const std::filesystem::path& path, Object* object)
+	{
+		if (!s_Models.contains(path))
+		{
+			const auto errorMsg{ "Model on path [" + path.string() + "] has not been loaded yet." };
+			Logger::Instance().Error(errorMsg);
+			throw std::runtime_error(errorMsg);
+		}
+
+		s_Models.at(path).RemoveObject(object);
+
+		if (s_Models.at(path).ReferenceCount() == 0)
+			s_Models.erase(path);
+	}
+
+	const std::unordered_map<std::filesystem::path, leopph::impl::ModelReference>& InstanceHolder::Models()
+	{
+		return s_Models;
+	}
+
+	std::size_t InstanceHolder::MeshCount(unsigned id)
+	{
+		if (s_MeshCounts.contains(id))
+			return s_MeshCounts.at(id);
+		
+		return 0;
+	}
+
+	void InstanceHolder::AddMesh(unsigned id)
+	{
+		if (id == 0)
+			return;
+
+		if (!s_MeshCounts.contains(id))
+			s_MeshCounts.insert({ id, 1 });
+		else
+			s_MeshCounts.at(id)++;
+	}
+
+	void InstanceHolder::RemoveMesh(unsigned id)
+	{
+		if (id == 0)
+			return;
+
+		if (!s_MeshCounts.contains(id))
+		{
+			const auto errorMsg{ "Mesh with ID [" + std::to_string(id) + "] has not been loaded yet." };
+			Logger::Instance().Error(errorMsg);
+			throw std::runtime_error(errorMsg);
+		}
+
+		s_MeshCounts.at(id)--;
+
+		if (s_MeshCounts.at(id) == 0)
+			s_MeshCounts.erase(id);
+	}
+
 }

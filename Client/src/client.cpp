@@ -97,12 +97,13 @@ void leopph::AppStart()
 	camera->AddComponent<CameraController>();
 
 	Object* backpack = Object::Create();
-	backpack->AddModel("models/backpack/backpack.obj");
+	backpack->AddComponent<Model>("models/backpack/backpack.obj");
 	backpack->Transform().Position({ 0, 0, 5 });
 	backpack->AddComponent<Rotate>();
 
-	Object* dirLight = Object::Create();
-	dirLight->AddComponent<DirectionalLight>()->Direction({ -1, 0, 1 });
+	Object* pointLightObj = Object::Create();
+	pointLightObj->Transform().Position({ 0, 0, 3 });
+	pointLightObj->AddComponent<PointLight>();
 
 	Object* fpsCounter = Object::Create();
 	fpsCounter->AddComponent<FPSCounter>();

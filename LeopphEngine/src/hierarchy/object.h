@@ -1,21 +1,13 @@
 #pragma once
 
 #include "../api/leopphapi.h"
-#include "../rendering/model.h"
-#include "../components/behavior.h"
+#include "../components/component.h"
 #include "transform.h"
-#include <string>
-#include <set>
-#include <unordered_set>
-#include <concepts>
-#include <filesystem>
 
-/* -----------------------------------
- * Instantiation of std::unordered_set
- * requires std::hash specialization
- * to be visible
------------------------------------ */
-#include "../util/modelhash.h"
+#include <concepts>
+#include <set>
+#include <string>
+#include <utility>
 
 namespace leopph
 {
@@ -55,18 +47,6 @@ namespace leopph
 		LEOPPHAPI const std::string& Name() const;
 		LEOPPHAPI void Name(const std::string& newName);
 
-		/* The set of Models attached to the Object. */
-		LEOPPHAPI const std::unordered_set<Model>& Models() const;
-
-		/* Attach a new Model to the Object.
-		 * Multiple Models can be attached to an Object at the same time. */
-		LEOPPHAPI const Model* AddModel(std::filesystem::path path);
-
-		/* Detach and destroy the Model.
-		 * If the given Model is attached to the Object, the given pointer will be set to NULL.
-		 * Otherwise, the error is silently ignored. */
-		LEOPPHAPI void RemoveModel(const Model*& model);
-
 		/* The set of Components attached to the Object. */
 		LEOPPHAPI const std::set<Component*>& Components() const;
 
@@ -76,6 +56,15 @@ namespace leopph
 		T* AddComponent()
 		{
 			auto component = new T{};
+			component->SetOwnership(this);
+			component->Init();
+			return component;
+		}
+
+		template<std::derived_from<Component> T, class... Args>
+		T* AddComponent(Args&&... args)
+		{
+			auto component = new T{ std::forward<Args>(args)... };
 			component->SetOwnership(this);
 			component->Init();
 			return component;
@@ -106,7 +95,6 @@ namespace leopph
 
 		leopph::Transform m_Transform;
 		std::string m_Name;
-		std::unordered_set<Model> m_Models;
 
 		friend class impl::InstanceHolder;
 	};

@@ -1,21 +1,21 @@
 #pragma once
 
-#include <assimp/scene.h>
 #include "mesh.h"
+
+#include <assimp/scene.h>
+
+#include <memory>
 
 namespace leopph::impl
 {
-	// CLASS TO REPRESENT A MODEL AS A COLLECTION OF MESHES
 	class AssimpModelImpl
 	{
 	public:
 		AssimpModelImpl(std::filesystem::path path);
 
-		AssimpModelImpl(const AssimpModelImpl& other) = default;
-		AssimpModelImpl(AssimpModelImpl&& other) noexcept = default;
+		AssimpModelImpl(const AssimpModelImpl& other) = delete;
 
-		AssimpModelImpl& operator=(const AssimpModelImpl& other) = default;
-		AssimpModelImpl& operator=(AssimpModelImpl&& other) noexcept = default;
+		AssimpModelImpl& operator=(const AssimpModelImpl& other) = delete;
 
 		bool operator==(const AssimpModelImpl& other) const;
 
@@ -27,10 +27,9 @@ namespace leopph::impl
 		std::vector<Mesh> m_Meshes;
 		std::filesystem::path m_Directory;
 		std::filesystem::path m_Path;
-		std::vector<Texture> m_CachedTextures;
 
 		void ProcessNode(aiNode* node, const aiScene* scene);
 		Mesh ProcessMesh(aiMesh* mesh, const aiScene* scene);
-		std::vector<Texture> LoadTexturesByType(aiMaterial* material, aiTextureType assimpType, Texture::TextureType abstractType);
+		std::unique_ptr<Texture> LoadTexturesByType(aiMaterial* material, aiTextureType assimpType);
 	};
 }

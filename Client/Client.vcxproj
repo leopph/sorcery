@@ -70,8 +70,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(SolutionDir)out\LeopphEngine\$(Configuration)_$(Platform)\leopph.dll" "$(OutDir)" /d /y
-xcopy "$(ProjectDir)models" "$(OutDir)models" /d /y /s /i</Command>
+      <Command>xcopy "$(ProjectDir)models" "$(OutDir)models" /d /y /s /i</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -93,8 +92,7 @@ xcopy "$(ProjectDir)models" "$(OutDir)models" /d /y /s /i</Command>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(SolutionDir)out\LeopphEngine\$(Configuration)_$(Platform)\leopph.dll" "$(OutDir)" /d /y
-xcopy "$(ProjectDir)models" "$(OutDir)models" /d /y /s /i</Command>
+      <Command>xcopy "$(ProjectDir)models" "$(OutDir)models" /d /y /s /i</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

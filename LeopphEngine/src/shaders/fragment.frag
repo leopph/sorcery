@@ -31,9 +31,15 @@ in vec3 normal;
 in vec3 fragmentPosition;
 in vec2 textureCoords;
 
+uniform vec3 materialDiffuseColor;
+uniform vec3 materialSpecularColor;
 
-uniform sampler2D texture_diffuse0;
-uniform sampler2D texture_specular0;
+uniform sampler2D materialDiffuseMap;
+uniform sampler2D materialSpecularMap;
+
+uniform int materialHasDiffuseMap;
+uniform int materialHasSpecularMap;
+
 uniform vec3 viewPosition;
 uniform PointLight pointLights[4];
 uniform int lightNumber;
@@ -86,8 +92,16 @@ void main()
 {
 	vec3 norm = normalize(normal);
 	vec3 viewDirection = normalize(viewPosition - fragmentPosition);
-	vec3 diffuseColor = texture(texture_diffuse0, textureCoords).rgb;
-	vec3 specularColor = texture(texture_specular0, textureCoords).rgb;
+
+	vec3 diffuseColor = materialDiffuseColor;
+	
+	if (materialHasDiffuseMap != 0)
+		diffuseColor *= texture(materialDiffuseMap, textureCoords).rgb;
+
+	vec3 specularColor = materialSpecularColor;
+	
+	if (materialHasSpecularMap != 0)
+		specularColor *= texture(materialSpecularMap, textureCoords).rgb;
 
 	vec3 colorSum = vec3(0.0f);
 

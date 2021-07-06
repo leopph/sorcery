@@ -1,8 +1,10 @@
 #pragma once
 
-#include <filesystem>
 #include "../api/leopphapi.h"
+#include "../components/component.h"
 #include "shader.h"
+
+#include <filesystem>
 
 namespace leopph
 {
@@ -18,26 +20,21 @@ namespace leopph
 	See "object.h" for more information.
 	-----------------------------------------------------------------------------*/
 
-	class Model
+	class Model : public Component
 	{
 	public:
 		LEOPPHAPI Model(std::filesystem::path path);
-		LEOPPHAPI Model(const Model& other);
-		LEOPPHAPI Model(Model&& other) noexcept;
-
+		LEOPPHAPI Model(const Model& other) = delete;
 		LEOPPHAPI ~Model();
+
+		LEOPPHAPI void Init() override;
 		
-		LEOPPHAPI Model& operator=(const Model& other);
-		LEOPPHAPI Model& operator=(Model&& other) noexcept;
-
+		LEOPPHAPI Model& operator=(const Model& other) = delete;
 		LEOPPHAPI bool operator==(const Model& other) const;
-
-		/* TODO this should not be accessible to user */
-		LEOPPHAPI void Draw(const impl::Shader& shader) const;
 
 		LEOPPHAPI const std::filesystem::path& Path() const;
 
 	private:
-		impl::AssimpModelImpl* m_Pointer;
+		const impl::AssimpModelImpl* m_Ref;
 	};
 }
