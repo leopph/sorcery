@@ -15,7 +15,8 @@
 
 namespace leopph::impl
 {
-	Renderer::Renderer()
+	Renderer::Renderer() :
+		m_Shader{ Shader::Type::GENERAL }, m_SkyboxShader{ Shader::Type::SKYBOX }
 	{
 		glEnable(GL_DEPTH_TEST);
 	}
@@ -26,7 +27,16 @@ namespace leopph::impl
 		if (Camera::Active() == nullptr)
 			return;
 
-		const auto viewMatrix{ Camera::Active()->ViewMatrix() };
+		auto viewMatrix{ Camera::Active()->ViewMatrix() };
+		auto projectionMatrix{ Camera::Active()->ProjectionMatrix() };
+
+		if (const auto& skybox{ Camera::Active()->Background().skybox }; skybox != nullptr)
+		{
+			m_SkyboxShader.Use();
+			m_SkyboxShader.SetUniform("viewMatrix", static_cast<Matrix4>(static_cast<Matrix3>(viewMatrix)));
+			m_SkyboxShader.SetUniform("projectionMatrix", projectionMatrix);
+			InstanceHolder::GetSkybox(*skybox).Draw(m_SkyboxShader);
+		}
 
 		PointLight* pointLights[MAX_POINT_LIGHTS]{};
 
@@ -77,7 +87,7 @@ namespace leopph::impl
 		if (const auto dirLight = InstanceHolder::DirectionalLight(); dirLight != nullptr)
 		{
 			m_Shader.SetUniform("existsDirLight", true);
-			m_Shader.SetUniform("dirLight.direction", (static_cast<Vector4>(dirLight->Direction()) * viewMatrix).Normalize());
+			m_Shader.SetUniform("dirLight.direction", static_cast<Vector3>(static_cast<Vector4>(dirLight->Direction()) * viewMatrix).Normalize());
 			m_Shader.SetUniform("dirLight.ambient", dirLight->Ambient());
 			m_Shader.SetUniform("dirLight.diffuse", dirLight->Diffuse());
 			m_Shader.SetUniform("dirLight.specular", dirLight->Specular());
@@ -87,7 +97,7 @@ namespace leopph::impl
 			m_Shader.SetUniform("existsDirLight", false);
 		}
 
-		m_Shader.SetUniform("projectionMatrix", Camera::Active()->ProjectionMatrix());
+		m_Shader.SetUniform("projectionMatrix", projectionMatrix);
 
 		for (const auto& pair : InstanceHolder::Models())
 		{

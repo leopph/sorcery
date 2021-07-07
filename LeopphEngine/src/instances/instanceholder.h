@@ -3,6 +3,8 @@
 #include "../components/lighting/pointlight.h"
 #include "../components/lighting/dirlight.h"
 #include "../hierarchy/object.h"
+#include "../util/skybox.h"
+#include "../util/skyboximpl.h"
 #include "../rendering/texture.h"
 
 #include "../util/objectcomparator.h"
@@ -70,10 +72,25 @@ namespace leopph::impl
 		static void AddMesh(unsigned id);
 		static void RemoveMesh(unsigned id);
 
+		static const SkyboxImpl* GetSkybox(const std::filesystem::path& left, const std::filesystem::path& right,
+			const std::filesystem::path& top, const std::filesystem::path& bottom,
+			const std::filesystem::path& back, const std::filesystem::path& front);
+
+		static const SkyboxImpl& GetSkybox(const Skybox& skybox);
+
+		static const SkyboxImpl* RegisterSkybox(const std::filesystem::path& left, const std::filesystem::path& right,
+			const std::filesystem::path& top, const std::filesystem::path& bottom,
+			const std::filesystem::path& back, const std::filesystem::path& front);
+		static void IncSkybox(const SkyboxImpl* skybox);
+		static void DecSkybox(const SkyboxImpl* skybox);
+
+		
+
 	private:
 		static std::unordered_set<TextureReference, TextureHash, TextureEqual> s_Textures;
 		static std::unordered_map<unsigned, std::size_t> s_MeshCounts;
 		static std::unordered_map<std::filesystem::path, ModelReference> s_Models;
+		static std::unordered_map<SkyboxImpl, std::size_t, SkyboxImplHash, SkyboxImplEqual> s_Skyboxes;
 
 		static std::set<Behavior*> s_Behaviors;
 		static std::map<Object*, std::set<Component*>, ObjectComparator> s_Objects;

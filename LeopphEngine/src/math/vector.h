@@ -211,13 +211,24 @@ namespace leopph
 			}
 
 
-			operator Vector<T, N + 1>() const
+			explicit operator Vector<T, N + 1>() const
 			{
 				Vector<T, N + 1> ret;
 
 				for (std::size_t i = 0; i < N; i++)
 					ret[i] = m_Data[i];
 				ret[N] = static_cast<T>(1);
+
+				return ret;
+			}
+
+
+			explicit operator auto() const requires (N > 2)
+			{
+				Vector<T, N - 1> ret;
+				
+				for (std::size_t i = 0; i < N - 1; i++)
+					ret[i] = m_Data[i];
 
 				return ret;
 			}

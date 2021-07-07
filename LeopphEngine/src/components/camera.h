@@ -1,8 +1,9 @@
 #pragma once
 
+#include "../util/camerabackground.h"
+#include "component.h"
 #include "../api/leopphapi.h"
 #include "../math/matrix.h"
-#include "component.h"
 
 namespace leopph
 {
@@ -50,7 +51,9 @@ namespace leopph
 		/* Set this Camera to be the used for rendering */
 		LEOPPHAPI void Activate();
 
-
+		/* Background graphics used by the Camera */
+		LEOPPHAPI const CameraBackground& Background() const;
+		LEOPPHAPI void Background(CameraBackground&& background);
 
 	private:
 		static Camera* s_Active;
@@ -59,6 +62,8 @@ namespace leopph
 		float m_HorizontalFOVDegrees;
 		float m_NearClip;
 		float m_FarClip;
+
+		CameraBackground m_Background;
 
 		enum : unsigned char { VERTICAL_TO_HORIZONTAL, HORIZONTAL_TO_VERTICAL };
 		float ConvertFOV(float fov, unsigned char conversion) const;

@@ -73,4 +73,14 @@ namespace leopph::impl
 	{
 		return m_Fullscreen;
 	}
+
+	const leopph::Color& Window::Background() const
+	{
+		return m_Background;
+	}
+
+	void Window::Background(const Color& color)
+	{
+		m_Background = color;
+	}
 }

@@ -15,6 +15,7 @@ namespace leopph::impl
 
 	private:
 		Shader m_Shader;
+		Shader m_SkyboxShader;
 
 		const static std::size_t MAX_POINT_LIGHTS = 64;
 	};

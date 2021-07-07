@@ -3,6 +3,7 @@
 #include "../util/logger.h"
 
 #include <stdexcept>
+#include <tuple>
 #include <utility>
 
 namespace leopph::impl
@@ -14,6 +15,7 @@ namespace leopph::impl
 	std::vector<PointLight*> InstanceHolder::s_PointLights{};
 	std::unordered_map<unsigned, std::size_t> InstanceHolder::s_MeshCounts{};
 	std::unordered_map<std::filesystem::path, ModelReference> InstanceHolder::s_Models{};
+	std::unordered_map<SkyboxImpl, std::size_t, SkyboxImplHash, SkyboxImplEqual> InstanceHolder::s_Skyboxes{};
 
 	
 	void InstanceHolder::DestroyAll()
@@ -84,7 +86,7 @@ namespace leopph::impl
 			throw std::runtime_error{ msg };
 		}
 
-		s_Textures.emplace(TextureReference{ .path = other.path, .id = other.id, .isTransparent = other.isTransparent, .count = 1 });
+		s_Textures.emplace(other.path, other.id, other.isTransparent, 1);
 	}
 
 	void InstanceHolder::AddTexture(const std::filesystem::path& path)
@@ -254,6 +256,71 @@ namespace leopph::impl
 
 		if (s_MeshCounts.at(id) == 0)
 			s_MeshCounts.erase(id);
+	}
+
+	const leopph::impl::SkyboxImpl* InstanceHolder::GetSkybox(const std::filesystem::path& left, const std::filesystem::path& right, const std::filesystem::path& top, const std::filesystem::path& bottom, const std::filesystem::path& back, const std::filesystem::path& front)
+	{
+		const auto fileNames{ left.string() + right.string() + top.string() + bottom.string() + back.string() + front.string() };
+		auto it{ s_Skyboxes.find(fileNames) };
+
+		if (it == s_Skyboxes.end())
+			return nullptr;
+
+		return &it->first;
+	}
+
+	const leopph::impl::SkyboxImpl& InstanceHolder::GetSkybox(const Skybox& skybox)
+	{
+		if (!s_Skyboxes.contains(skybox))
+		{
+			const auto msg{ "The requested skybox does not exist." };
+			Logger::Instance().Error(msg);
+			throw std::runtime_error{ msg };
+		}
+
+		return s_Skyboxes.find(skybox)->first;
+	}
+
+	const SkyboxImpl* InstanceHolder::RegisterSkybox(const std::filesystem::path& left, const std::filesystem::path& right, const std::filesystem::path& top, const std::filesystem::path& bottom, const std::filesystem::path& back, const std::filesystem::path& front)
+	{
+		const auto fileNames{ left.string() + right.string() + top.string() + bottom.string() + back.string() + front.string() };
+
+		if (s_Skyboxes.contains(fileNames))
+		{
+			const auto msg{"Skybox of files [" + left.string() + ";" + right.string() + ";" + top.string() + ";" + bottom.string() + ";" + back.string() + ";" + front.string() + "] is already registered."};
+
+			Logger::Instance().Error(msg);
+			throw std::runtime_error{ msg };
+		}
+
+		return &s_Skyboxes.emplace(std::piecewise_construct, std::make_tuple(left, right, top, bottom, back, front), std::make_tuple(1)).first->first;
+	}
+
+	void InstanceHolder::IncSkybox(const SkyboxImpl* skybox)
+	{
+		if (!s_Skyboxes.contains(*skybox))
+		{
+			const auto msg{ "Skybox with ID [" + std::to_string(skybox->ID()) + "] is not yet registered." };
+			Logger::Instance().Error(msg);
+			throw std::runtime_error{ msg };
+		}
+
+		s_Skyboxes.at(*skybox)++;
+	}
+
+	void InstanceHolder::DecSkybox(const SkyboxImpl* skybox)
+	{
+		if (!s_Skyboxes.contains(*skybox))
+		{
+			const auto msg{ "Skybox with ID [" + std::to_string(skybox->ID()) + "] is not yet registered." };
+			Logger::Instance().Error(msg);
+			throw std::runtime_error{ msg };
+		}
+
+		s_Skyboxes.at(*skybox)--;
+
+		if (s_Skyboxes.at(*skybox) == 0)
+			s_Skyboxes.erase(*skybox);
 	}
 
 }

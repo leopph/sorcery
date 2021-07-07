@@ -210,7 +210,8 @@ namespace leopph::impl
 
 	void GLWindowImpl::Clear()
 	{
-		glClearColor(0, 0, 0, 0);
+		auto color{ Background() };
+		glClearColor(color.red / 255.f, color.green / 255.f, color.blue / 255.f, 1);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	}
 }

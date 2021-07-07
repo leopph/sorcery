@@ -6,6 +6,7 @@
 
 #include "../util/logger.h"
 
+#include <utility>
 #include <stdexcept>
 
 
@@ -28,8 +29,22 @@ namespace leopph
 
 
 
+	const leopph::CameraBackground& Camera::Background() const
+	{
+		return m_Background;
+	}
+
+	void Camera::Background(CameraBackground&& background)
+	{
+		m_Background.color = background.color;
+		m_Background.skybox = std::move(background.skybox);
+		impl::Window::Get().Background(m_Background.color);
+	}
+
 	Camera::Camera() :
-		m_AspectRatio{ leopph::impl::Window::Get().AspectRatio() }, m_HorizontalFOVDegrees{ 100.0f }, m_NearClip{ 0.3f }, m_FarClip{ 1000.f }
+		m_AspectRatio{ leopph::impl::Window::Get().AspectRatio() },
+		m_HorizontalFOVDegrees{ 100.0f }, m_NearClip{ 0.3f }, m_FarClip{ 1000.f },
+		m_Background{ .color{0, 0, 0}, .skybox{nullptr} }
 	{
 		if (s_Active == nullptr)
 			Activate();

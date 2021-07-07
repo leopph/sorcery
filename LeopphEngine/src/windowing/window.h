@@ -1,7 +1,9 @@
 #pragma once
 
-#include <string>
 #include "../input/cursorstate.h"
+#include "../rendering/color.h"
+
+#include <string>
 
 namespace leopph::impl
 {
@@ -33,6 +35,9 @@ namespace leopph::impl
 		virtual CursorState CursorMode() const = 0;
 		virtual void CursorMode(CursorState newState) = 0;
 
+		virtual const Color& Background() const;
+		virtual void Background(const Color& color);
+
 	protected:
 		Window(unsigned width, unsigned height,
 			const std::string& title, bool fullscreen);
@@ -47,5 +52,6 @@ namespace leopph::impl
 		unsigned m_Height;
 		std::string m_Title;
 		bool m_Fullscreen;
+		Color m_Background;
 	};
 }

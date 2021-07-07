@@ -15,7 +15,7 @@ namespace leopph
 		/*-------------------------------------------------------------------------------------------------
 		The Matrix class template provides several ways to aid in solving linear algebraic problems.
 		It is built to work seamlessly with the Vector class template. See "vector.h" for more information.
-		Matrices are represented as row-major and stored row-continously. They have N rows and M columns.
+		Matrices are represented as row-major and stored row-continuously. They have N rows and M columns.
 		DO NOT INSTANTIATE THIS TEMPLATE EXPLICITLY UNLESS NECESSARY!
 		There are several predefined implementations at the bottom of this file.
 		-------------------------------------------------------------------------------------------------*/
@@ -33,7 +33,7 @@ namespace leopph
 				m_Data{}
 			{}
 
-			/* Main Diagional Fill Constructor */
+			/* Main Diagonal Fill Constructor */
 			Matrix(const T& value) :
 				m_Data{}
 			{
@@ -302,6 +302,18 @@ namespace leopph
 					for (std::size_t j = 0; j < N - 1; j++)
 						ret[i][j] = m_Data[i][j];
 
+				return ret;
+			}
+
+			explicit operator Matrix<T, N + 1, N + 1>() requires (N == M)
+			{
+				Matrix<T, N + 1, N + 1> ret{};
+
+				for (std::size_t i = 0; i < N; i++)
+					for (std::size_t j = 0; j < N; j++)
+						ret[i][j] = m_Data[i][j];
+
+				ret[N][N] = static_cast<T>(1);
 				return ret;
 			}
 		};

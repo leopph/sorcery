@@ -36,6 +36,10 @@
     <ClCompile Include="src\util\textureequal.cpp" />
     <ClCompile Include="src\util\objectcomparator.cpp" />
     <ClCompile Include="src\util\modelreference.cpp" />
+    <ClCompile Include="src\util\skybox.cpp" />
+    <ClCompile Include="src\util\skyboximpl.cpp" />
+    <ClCompile Include="src\shaders\skyboxfragment.cpp" />
+    <ClCompile Include="src\shaders\skyboxvertex.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\behavior.h" />
@@ -83,9 +87,14 @@
     <ClInclude Include="src\util\texturereference.h" />
     <ClInclude Include="src\util\objectcomparator.h" />
     <ClInclude Include="src\util\modelreference.h" />
+    <ClInclude Include="src\util\camerabackground.h" />
+    <ClInclude Include="src\util\skybox.h" />
+    <ClInclude Include="src\util\skyboximpl.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\shaders\fragment.frag" />
     <None Include="src\shaders\vertex.vert" />
+    <None Include="src\shaders\skyboxvertex.vert" />
+    <None Include="src\shaders\skyboxfragment.frag" />
   </ItemGroup>
 </Project>

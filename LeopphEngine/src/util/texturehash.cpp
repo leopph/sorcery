@@ -4,15 +4,6 @@
 #include <functional>
 #include <type_traits>
 
-namespace
-{
-	template<class T>
-	struct GetType
-	{
-		using type = T;
-	};
-}
-
 std::size_t leopph::impl::TextureHash::operator()(const TextureReference& texture) const
 {
 	return std::filesystem::hash_value(texture.path);

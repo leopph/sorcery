@@ -11,7 +11,12 @@ namespace leopph::impl
 	class Shader
 	{
 	public:
-		Shader();
+		enum class Type
+		{
+			GENERAL, SKYBOX
+		};
+
+		Shader(Type type);
 		~Shader();
 
 		unsigned GetID() const;
@@ -29,11 +34,15 @@ namespace leopph::impl
 
 		static std::string s_VertexSource;
 		static std::string s_FragmentSource;
+		static std::string s_SkyboxVertexSource;
+		static std::string s_SkyboxFragmentSource;
 
-		static const std::filesystem::path s_ProgramFileName;
+		const std::filesystem::path m_ProgramFileName;
 
-		void Compile();
+		void Compile(const char* vertexSource, const char* fragmentSource);
 		bool ReadFromCache(const std::filesystem::path& path);
 		void WriteToCache(const std::filesystem::path& path);
+
+		static std::string GetFileName(Type type);
 	};
 }

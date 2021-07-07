@@ -70,7 +70,8 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(ProjectDir)models" "$(OutDir)models" /d /y /s /i</Command>
+      <Command>xcopy "$(ProjectDir)models" "$(OutDir)models" /d /y /s /i
+xcopy "$(ProjectDirs)skybox" "$(OutDir)skybox" /d /y /s /i</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -92,7 +93,8 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(ProjectDir)models" "$(OutDir)models" /d /y /s /i</Command>
+      <Command>xcopy "$(ProjectDir)models" "$(OutDir)models" /d /y /s /i
+xcopy "$(ProjectDirs)skybox" "$(OutDir)skybox" /d /y /s /i</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

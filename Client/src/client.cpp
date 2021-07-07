@@ -1,10 +1,11 @@
 #define LEOPPH_ENTRY
 #include "leopph.h"
+
 #include <iostream>
+#include <cstdlib>
+#include <memory>
 
 using namespace leopph;
-
-
 
 class FPSCounter : public Behavior
 {
@@ -24,8 +25,6 @@ public:
 		}
 	}
 };
-
-
 
 class CameraController : public Behavior
 {
@@ -75,8 +74,6 @@ public:
 	}
 };
 
-
-
 class Rotate : public Behavior
 {
 public:
@@ -86,8 +83,6 @@ public:
 	}
 };
 
-
-
 void leopph::AppStart()
 {
 	Input::CursorMode(CursorState::Disabled);
@@ -96,10 +91,17 @@ void leopph::AppStart()
 	camera->AddComponent<Camera>();
 	camera->AddComponent<CameraController>();
 
-	Object* backpack = Object::Create();
-	backpack->AddComponent<Model>("models/backpack/backpack.obj");
-	backpack->Transform().Position({ 0, 0, 5 });
-	backpack->AddComponent<Rotate>();
+	Camera::Active()->Background(CameraBackground{ .color{255, 0, 0}, .skybox{std::make_unique<Skybox>("skybox/left.jpg", "skybox/right.jpg", "skybox/top.jpg", "skybox/bottom.jpg", "skybox/back.jpg", "skybox/front.jpg")}});
+
+	Object* objects[10];
+
+	for (auto& object : objects)
+	{
+		object = Object::Create();
+		object->AddComponent<Model>("models/backpack/backpack.obj");
+		object->Transform().Position({ (std::rand() % 50) - 25, (std::rand() % 50) - 25 , (std::rand() % 50) - 25 });
+		object->AddComponent<Rotate>();
+	}
 
 	Object* dirLightObj = Object::Create();
 	auto dirLight = dirLightObj->AddComponent<DirectionalLight>();

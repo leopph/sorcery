@@ -11,34 +11,44 @@
 
 namespace leopph::impl
 {
-	const std::filesystem::path Shader::s_ProgramFileName{ "shader" };
-
-
-	Shader::Shader()
+	Shader::Shader(Type type) :
+		m_ProgramFileName{ GetFileName(type) }
 	{
+		const char* vertexSource{ nullptr };
+		const char* fragmentSource{ nullptr };
+
+		switch (type)
+		{
+		case Type::GENERAL:
+			vertexSource = s_VertexSource.c_str();
+			fragmentSource = s_FragmentSource.c_str();
+			break;
+
+		case Type::SKYBOX:
+			vertexSource = s_SkyboxVertexSource.c_str();
+			fragmentSource = s_SkyboxFragmentSource.c_str();
+			break;
+		}
+
 		if (Settings::IsCachingShaders())
 		{
-			std::filesystem::path fullPath{ Settings::ShaderCacheLocation() / s_ProgramFileName };
+			std::filesystem::path fullPath{ Settings::ShaderCacheLocation() / m_ProgramFileName };
 
 			if (std::filesystem::exists(fullPath) && ReadFromCache(fullPath))
 					return;
 
-			Compile();
+			Compile(vertexSource, fragmentSource);
 			WriteToCache(fullPath);
 		}
 		else
 		{
-			Compile();
+			Compile(vertexSource, fragmentSource);
 		}
 	}
 
 
-	void Shader::Compile()
+	void Shader::Compile(const char* vertexSource, const char* fragmentSource)
 	{
-		const char* vertexSource{ s_VertexSource.c_str() };
-		const char* fragmentSource{ s_FragmentSource.c_str() };
-
-
 		unsigned vertexShaderID{ glCreateShader(GL_VERTEX_SHADER) };
 		unsigned fragmentShaderID{ glCreateShader(GL_FRAGMENT_SHADER) };
 
@@ -128,5 +138,19 @@ namespace leopph::impl
 	Shader::~Shader()
 	{
 		glDeleteProgram(m_ID);
+	}
+
+	std::string Shader::GetFileName(Type type)
+	{
+		switch (type)
+		{
+		case Type::GENERAL:
+			return "generalShader";
+			
+		case Type::SKYBOX:
+			return "skyboxShader";
+		}
+		
+		return "";
 	}
 }

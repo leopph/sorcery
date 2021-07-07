@@ -14,7 +14,7 @@ namespace leopph
 
 
 	/*-----------------------------------------------------------------------------
-	The Model class represents a renderable entity that can be attached to Objects.
+	The Model class represents a drawable entity that can be attached to Objects.
 	The way it is rendered depends on the owning Object's current state in space.
 	See "object.h" for more information.
 	-----------------------------------------------------------------------------*/
