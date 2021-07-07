@@ -22,6 +22,9 @@ namespace leopph::impl
 
 		bool Fullscreen() const;
 
+		virtual bool Vsync() const = 0;
+		virtual void Vsync(bool value) = 0;
+
 		virtual void PollEvents() = 0;
 		virtual void SwapBuffers() = 0;
 		virtual bool ShouldClose() = 0;
@@ -43,6 +46,6 @@ namespace leopph::impl
 		unsigned m_Width;
 		unsigned m_Height;
 		std::string m_Title;
-		bool m_Fullscreen; 
+		bool m_Fullscreen;
 	};
 }

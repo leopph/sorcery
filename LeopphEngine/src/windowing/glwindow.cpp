@@ -64,7 +64,7 @@ namespace leopph::impl
 	
 
 	GLWindowImpl::GLWindowImpl(unsigned width, unsigned height, const std::string& title, bool fullscreen)
-		: Window{ width, height, title, fullscreen }
+		: Window{ width, height, title, fullscreen }, m_Vsync{ false }
 	{
 		if (!glfwInit())
 		{
@@ -90,6 +90,7 @@ namespace leopph::impl
 		glfwSetKeyCallback(m_Window, KeyCallback);
 		glfwSetCursorPosCallback(m_Window, MouseCallback);
 		glfwSetCursorPos(m_Window, 0, 0);
+		glfwSwapInterval(0);
 	}
 	
 	GLWindowImpl::~GLWindowImpl()
@@ -179,7 +180,18 @@ namespace leopph::impl
 		glfwSetWindowSize(m_Window, static_cast<int>(Window::Width()), static_cast<int>(newHeight));
 	}
 
+	void GLWindowImpl::Vsync(bool value)
+	{
+		if (value)
+			glfwSwapInterval(1);
+		else
+			glfwSwapInterval(0);
+	}
 
+	bool GLWindowImpl::Vsync() const
+	{
+		return m_Vsync;
+	}
 	
 	void GLWindowImpl::PollEvents()
 	{

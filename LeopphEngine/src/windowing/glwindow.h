@@ -21,6 +21,9 @@ namespace leopph::impl
 		void Width(unsigned newWidth) override;
 		void Height(unsigned newHeight) override;
 
+		void Vsync(bool value) override;
+		bool Vsync() const override;
+
 		void PollEvents() override;
 		void SwapBuffers() override;
 		bool ShouldClose() override;
@@ -40,5 +43,6 @@ namespace leopph::impl
 		const static std::unordered_map<int, KeyState> s_KeyStates;
 
 		GLFWwindow* m_Window;
+		bool m_Vsync;
 	};
 }

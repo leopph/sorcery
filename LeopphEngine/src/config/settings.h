@@ -33,6 +33,11 @@ namespace leopph
 		static LEOPPHAPI const GraphicsAPI RenderAPI;
 		static LEOPPHAPI void SetRenderAPI(GraphicsAPI newAPI);
 
+		/* You can turn on or off vertical synchronization for the application window.
+		You can also check its status. */
+		static LEOPPHAPI bool Vsync();
+		static LEOPPHAPI void Vsync(bool value);
+
 	private:
 		static std::filesystem::path s_ShaderLocation;
 		static GraphicsAPI s_PendingRenderAPI;

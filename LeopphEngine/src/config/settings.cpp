@@ -1,5 +1,7 @@
 #include "settings.h"
 
+#include "../windowing/window.h"
+
 #include <utility>
 
 namespace leopph
@@ -27,4 +29,15 @@ namespace leopph
 	{
 		s_PendingRenderAPI = newAPI;
 	}
+
+	LEOPPHAPI bool Settings::Vsync()
+	{
+		return impl::Window::Get().Vsync();
+	}
+
+	LEOPPHAPI void Settings::Vsync(bool value)
+	{
+		impl::Window::Get().Vsync(value);
+	}
+
 }
