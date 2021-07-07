@@ -1,12 +1,13 @@
 #include "renderer.h"
 
-#include "../components/lighting/light.h"
-#include "../components/lighting/pointlight.h"
-#include "../components/lighting/dirlight.h"
 #include "../components/camera.h"
-#include "../math/matrix.h"
+#include "../components/lighting/dirlight.h"
 #include "../instances/instanceholder.h"
+#include "../components/lighting/light.h"
+#include "../math/matrix.h"
+#include "../components/lighting/pointlight.h"
 #include "shader.h"
+#include "../math/vector.h"
 
 #include <glad/glad.h>
 
@@ -24,6 +25,8 @@ namespace leopph::impl
 	{
 		if (Camera::Active() == nullptr)
 			return;
+
+		const auto viewMatrix{ Camera::Active()->ViewMatrix() };
 
 		PointLight* pointLights[MAX_POINT_LIGHTS]{};
 
@@ -58,7 +61,7 @@ namespace leopph::impl
 		{
 			if (pointLight != nullptr)
 			{
-				m_Shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].position", pointLight->Object().Transform().Position());
+				m_Shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].position", static_cast<Vector4>(pointLight->Object().Transform().Position()) * viewMatrix);
 				m_Shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].ambient", pointLight->Ambient());
 				m_Shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].diffuse", pointLight->Diffuse());
 				m_Shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].specular", pointLight->Specular());
@@ -74,7 +77,7 @@ namespace leopph::impl
 		if (const auto dirLight = InstanceHolder::DirectionalLight(); dirLight != nullptr)
 		{
 			m_Shader.SetUniform("existsDirLight", true);
-			m_Shader.SetUniform("dirLight.direction", dirLight->Direction());
+			m_Shader.SetUniform("dirLight.direction", (static_cast<Vector4>(dirLight->Direction()) * viewMatrix).Normalize());
 			m_Shader.SetUniform("dirLight.ambient", dirLight->Ambient());
 			m_Shader.SetUniform("dirLight.diffuse", dirLight->Diffuse());
 			m_Shader.SetUniform("dirLight.specular", dirLight->Specular());
@@ -84,21 +87,20 @@ namespace leopph::impl
 			m_Shader.SetUniform("existsDirLight", false);
 		}
 
-		m_Shader.SetUniform("viewPosition", Camera::Active()->Object().Transform().Position());
-		m_Shader.SetUniform("view", Camera::Active()->ViewMatrix());
-		m_Shader.SetUniform("projection", Camera::Active()->ProjectionMatrix());
+		m_Shader.SetUniform("projectionMatrix", Camera::Active()->ProjectionMatrix());
 
 		for (const auto& pair : InstanceHolder::Models())
 		{
 			for (const auto& modelReference = pair.second; const auto& object : modelReference.Objects())
 			{
-				Matrix4 modelMatrix{ 1.0f };
-				modelMatrix *= Matrix4::Scale(object->Transform().Scale());
-				modelMatrix *= static_cast<Matrix4>(object->Transform().Rotation());
-				modelMatrix *= Matrix4::Translate(object->Transform().Position());
+				Matrix4 modelViewMatrix{ 1.0f };
+				modelViewMatrix *= Matrix4::Scale(object->Transform().Scale());
+				modelViewMatrix *= static_cast<Matrix4>(object->Transform().Rotation());
+				modelViewMatrix *= Matrix4::Translate(object->Transform().Position());
+				modelViewMatrix *= viewMatrix;
 
-				m_Shader.SetUniform("model", modelMatrix);
-				m_Shader.SetUniform("normalMatrix", modelMatrix.Inverse().Transposed());
+				m_Shader.SetUniform("modelViewMatrix", modelViewMatrix);
+				m_Shader.SetUniform("normalMatrix", modelViewMatrix.Inverse().Transposed());
 
 				modelReference.ReferenceModel().Draw(m_Shader);
 			}

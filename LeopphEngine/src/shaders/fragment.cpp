@@ -2,8 +2,6 @@
 #include <string>
 std::string leopph::impl::Shader::s_FragmentSource{ R"#fileContents#(#version 460 core
 
-
-
 struct PointLight
 {
 	vec3 position;
@@ -17,7 +15,6 @@ struct PointLight
 	float quadratic;
 };
 
-
 struct DirLight
 {
 	vec3 direction;
@@ -27,10 +24,7 @@ struct DirLight
 	vec3 specular;
 };
 
-
-
 in vec3 normal;
-in vec3 fragmentPosition;
 in vec2 textureCoords;
 
 uniform vec3 materialDiffuseColor;
@@ -42,16 +36,13 @@ uniform sampler2D materialSpecularMap;
 uniform int materialHasDiffuseMap;
 uniform int materialHasSpecularMap;
 
-uniform vec3 viewPosition;
-uniform PointLight pointLights[4];
+uniform PointLight pointLights[64];
 uniform int lightNumber;
 
 uniform DirLight dirLight;
 uniform bool existsDirLight;
 
 out vec4 fragmentColor;
-
-
 
 vec3 CalculatePointLight(PointLight light, vec3 surfaceNormal, vec3 fragmentPosition, vec3 viewDirection, vec3 diffuseColor, vec3 specularColor)
 {
@@ -71,8 +62,6 @@ vec3 CalculatePointLight(PointLight light, vec3 surfaceNormal, vec3 fragmentPosi
 	return ambient + diffuse + specular;
 }
 
-
-
 vec3 CalculateDirLight(DirLight light, vec3 surfaceNormal, vec3 viewDirection, vec3 diffuseColor, vec3 specularColor)
 {
 	vec3 lightDirection = normalize(-light.direction);
@@ -88,12 +77,11 @@ vec3 CalculateDirLight(DirLight light, vec3 surfaceNormal, vec3 viewDirection, v
 	return ambient + diffuse + specular;
 }
 
-
-
 void main()
 {
 	vec3 norm = normalize(normal);
-	vec3 viewDirection = normalize(viewPosition - fragmentPosition);
+	vec3 fragCoord = vec3(gl_FragCoord);
+	vec3 viewDirection = normalize(-fragCoord);
 
 	vec3 diffuseColor = materialDiffuseColor;
 	
@@ -111,7 +99,7 @@ void main()
 		colorSum += CalculateDirLight(dirLight, norm, viewDirection, diffuseColor, specularColor);
 	
 	for (int i = 0; i < lightNumber; i++)
-		colorSum += CalculatePointLight(pointLights[i], norm, fragmentPosition, viewDirection, diffuseColor, specularColor);
+		colorSum += CalculatePointLight(pointLights[i], norm, fragCoord, viewDirection, diffuseColor, specularColor);
 
-   fragmentColor = vec4(colorSum, 1.0f);
+	fragmentColor = vec4(colorSum, 1.0f);
 })#fileContents#" };

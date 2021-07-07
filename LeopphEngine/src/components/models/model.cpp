@@ -1,7 +1,7 @@
 #include "model.h"
 
-#include "assimpmodel.h"
-#include "../instances/instanceholder.h"
+#include "../../rendering/assimpmodel.h"
+#include "../../instances/instanceholder.h"
 
 #include <utility>
 

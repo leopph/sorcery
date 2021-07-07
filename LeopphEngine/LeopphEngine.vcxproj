@@ -143,7 +143,7 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClInclude Include="src\math\matrix.h" />
     <ClInclude Include="src\rendering\mesh.h" />
     <ClInclude Include="src\rendering\assimpmodel.h" />
-    <ClInclude Include="src\rendering\model.h" />
+    <ClInclude Include="src\components\models\model.h" />
     <ClInclude Include="src\hierarchy\object.h" />
     <ClInclude Include="src\components\lighting\pointlight.h" />
     <ClInclude Include="src\math\quaternion.h" />
@@ -189,7 +189,7 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClCompile Include="src\components\lighting\light.cpp" />
     <ClCompile Include="src\rendering\mesh.cpp" />
     <ClCompile Include="src\rendering\assimpmodel.cpp" />
-    <ClCompile Include="src\rendering\model.cpp" />
+    <ClCompile Include="src\components\models\model.cpp" />
     <ClCompile Include="src\hierarchy\object.cpp" />
     <ClCompile Include="src\components\lighting\pointlight.cpp" />
     <ClCompile Include="src\math\quaternion.cpp" />

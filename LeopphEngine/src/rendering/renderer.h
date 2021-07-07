@@ -16,6 +16,6 @@ namespace leopph::impl
 	private:
 		Shader m_Shader;
 
-		const static std::size_t MAX_POINT_LIGHTS = 4;
+		const static std::size_t MAX_POINT_LIGHTS = 64;
 	};
 }

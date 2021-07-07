@@ -1,8 +1,7 @@
 #pragma once
 
-#include "../api/leopphapi.h"
-#include "../components/component.h"
-#include "shader.h"
+#include "../../api/leopphapi.h"
+#include "../component.h"
 
 #include <filesystem>
 

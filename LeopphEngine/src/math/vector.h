@@ -209,6 +209,18 @@ namespace leopph
 
 				return static_cast<T>(std::sqrt(sum));
 			}
+
+
+			operator Vector<T, N + 1>() const
+			{
+				Vector<T, N + 1> ret;
+
+				for (std::size_t i = 0; i < N; i++)
+					ret[i] = m_Data[i];
+				ret[N] = static_cast<T>(1);
+
+				return ret;
+			}
 		};
 
 
