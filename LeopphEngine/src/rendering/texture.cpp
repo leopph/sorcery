@@ -11,7 +11,7 @@
 namespace leopph::impl
 {
 	Texture::Texture(const std::filesystem::path& path)
-		: path{ path }, id{ m_ID }
+		: path{ path }, id{ m_ID }, m_IsTransparent{ false }, isTransparent{ m_IsTransparent }
 	{
 		stbi_set_flip_vertically_on_load(true);
 
@@ -41,6 +41,7 @@ namespace leopph::impl
 
 		case 4:
 			colorFormat = GL_RGBA;
+			m_IsTransparent = true;
 			break;
 
 		default:
@@ -72,14 +73,16 @@ namespace leopph::impl
 	}
 
 
-	Texture::Texture(const Texture& other)
-		: m_ID{ other.m_ID }, path{ other.path }, id{ m_ID }
+	Texture::Texture(const Texture& other) :
+		m_ID{ other.m_ID }, path{ other.path }, id{ m_ID },
+		m_IsTransparent{ other.m_IsTransparent }, isTransparent{ m_IsTransparent }
 	{
 		InstanceHolder::AddTexture(path);
 	}
 
 	Texture::Texture(const TextureReference& reference) :
-		m_ID{ reference.id }, id{ m_ID }, path{ reference.path }
+		m_ID{ reference.id }, id{ m_ID }, path{ reference.path },
+		m_IsTransparent{ reference.isTransparent }, isTransparent{ m_IsTransparent }
 	{
 		InstanceHolder::AddTexture(path);
 	}

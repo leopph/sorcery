@@ -100,6 +100,7 @@ namespace leopph::impl
 			glActiveTexture(GL_TEXTURE0 + static_cast<GLenum>(texCount));
 			shader.SetUniform("materialHasDiffuseMap", true);
 			shader.SetUniform("materialDiffuseMap", static_cast<int>(texCount));
+			shader.SetUniform("materialDiffuseMapIsTransparent", m_Material.m_DiffuseTexture->isTransparent);
 			glBindTexture(GL_TEXTURE_2D, m_Material.m_DiffuseTexture->id);
 			texCount++;
 		}
@@ -113,6 +114,7 @@ namespace leopph::impl
 			glActiveTexture(GL_TEXTURE0 + static_cast<GLenum>(texCount));
 			shader.SetUniform("materialHasSpecularMap", true);
 			shader.SetUniform("materialSpecularMap", static_cast<int>(texCount));
+			shader.SetUniform("materialSpecularMapIsTransparent", m_Material.m_SpecularTexture->isTransparent);
 			glBindTexture(GL_TEXTURE_2D, m_Material.m_SpecularTexture->id);
 			texCount++;
 		}

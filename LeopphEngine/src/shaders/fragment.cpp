@@ -2,6 +2,8 @@
 #include <string>
 std::string leopph::impl::Shader::s_FragmentSource{ R"#fileContents#(#version 460 core
 
+#define ALPHA_THRESHOLD 0.01
+
 struct PointLight
 {
 	vec3 position;
@@ -36,6 +38,9 @@ uniform sampler2D materialSpecularMap;
 uniform int materialHasDiffuseMap;
 uniform int materialHasSpecularMap;
 
+uniform int materialDiffuseMapIsTransparent;
+uniform int materialSpecularMapIsTransparent;
+
 uniform PointLight pointLights[64];
 uniform int lightNumber;
 
@@ -44,7 +49,7 @@ uniform bool existsDirLight;
 
 out vec4 fragmentColor;
 
-vec3 CalculatePointLight(PointLight light, vec3 surfaceNormal, vec3 fragmentPosition, vec3 viewDirection, vec3 diffuseColor, vec3 specularColor)
+vec4 CalculatePointLight(PointLight light, vec3 surfaceNormal, vec3 fragmentPosition, vec3 viewDirection, vec4 diffuseColor, vec4 specularColor)
 {
 	vec3 lightDirection = normalize(light.position - fragmentPosition);
 	vec3 reflectionDirection = reflect(-lightDirection, surfaceNormal);
@@ -55,14 +60,14 @@ vec3 CalculatePointLight(PointLight light, vec3 surfaceNormal, vec3 fragmentPosi
 	float diffuseComponent = max(dot(surfaceNormal, lightDirection), 0.0f);
 	float specularComponent = pow(max(dot(viewDirection, reflectionDirection), 0.0f), 32);
 
-	vec3 ambient = attenuation * light.ambient * diffuseColor;
-	vec3 diffuse = attenuation * light.diffuse * diffuseComponent * diffuseColor;
-	vec3 specular = attenuation * light.specular * specularComponent * specularColor;
+	vec4 ambient = attenuation * vec4(light.ambient, 1) * diffuseColor;
+	vec4 diffuse = attenuation * vec4(light.diffuse, 1) * diffuseComponent * diffuseColor;
+	vec4 specular = attenuation * vec4(light.specular, 1) * specularComponent * specularColor;
 
 	return ambient + diffuse + specular;
 }
 
-vec3 CalculateDirLight(DirLight light, vec3 surfaceNormal, vec3 viewDirection, vec3 diffuseColor, vec3 specularColor)
+vec4 CalculateDirLight(DirLight light, vec3 surfaceNormal, vec3 viewDirection, vec4 diffuseColor, vec4 specularColor)
 {
 	vec3 lightDirection = normalize(-light.direction);
 	vec3 reflectionDirection = reflect(-lightDirection, surfaceNormal);
@@ -70,9 +75,9 @@ vec3 CalculateDirLight(DirLight light, vec3 surfaceNormal, vec3 viewDirection, v
 	float diffuseComponent = max(dot(surfaceNormal, lightDirection), 0.0f);
 	float specularComponent = pow(max(dot(viewDirection, reflectionDirection), 0.0f), 32);
 
-	vec3 ambient = light.ambient * diffuseColor;
-	vec3 diffuse = light.diffuse * diffuseComponent * diffuseColor;
-	vec3 specular = light.specular * specularComponent * specularColor;
+	vec4 ambient = vec4(light.ambient, 1) * diffuseColor;
+	vec4 diffuse = vec4(light.diffuse, 1) * diffuseComponent * diffuseColor;
+	vec4 specular = vec4(light.specular, 1) * specularComponent * specularColor;
 
 	return ambient + diffuse + specular;
 }
@@ -83,23 +88,41 @@ void main()
 	vec3 fragCoord = vec3(gl_FragCoord);
 	vec3 viewDirection = normalize(-fragCoord);
 
-	vec3 diffuseColor = materialDiffuseColor;
+	vec4 diffuseColor = vec4(materialDiffuseColor, 1);
 	
 	if (materialHasDiffuseMap != 0)
-		diffuseColor *= texture(materialDiffuseMap, textureCoords).rgb;
+	{
+		if (materialDiffuseMapIsTransparent != 0)
+		{
+			diffuseColor *= texture(materialDiffuseMap, textureCoords);
+			
+			if (diffuseColor.a < ALPHA_THRESHOLD)
+				discard;
+		}
+		else
+		{
+			diffuseColor *= vec4(texture(materialDiffuseMap, textureCoords).rgb, 1);
+		}
+	}
 
-	vec3 specularColor = materialSpecularColor;
+	vec4 specularColor = vec4(materialSpecularColor, 1);
 	
 	if (materialHasSpecularMap != 0)
-		specularColor *= texture(materialSpecularMap, textureCoords).rgb;
+	{
+		if (materialSpecularMapIsTransparent != 0)
+			specularColor *= texture(materialSpecularMap, textureCoords);
+		else
+			specularColor *= vec4(texture(materialSpecularMap, textureCoords).rgb, 1);
+	}
 
-	vec3 colorSum = vec3(0.0f);
+	fragmentColor = vec4(0.0f);
 
 	if (existsDirLight)
-		colorSum += CalculateDirLight(dirLight, norm, viewDirection, diffuseColor, specularColor);
+		fragmentColor += CalculateDirLight(dirLight, norm, viewDirection, diffuseColor, specularColor);
 	
 	for (int i = 0; i < lightNumber; i++)
-		colorSum += CalculatePointLight(pointLights[i], norm, fragCoord, viewDirection, diffuseColor, specularColor);
+		fragmentColor += CalculatePointLight(pointLights[i], norm, fragCoord, viewDirection, diffuseColor, specularColor);
 
-	fragmentColor = vec4(colorSum, 1.0f);
+	if (fragmentColor.a < 0.1)
+		discard;
 })#fileContents#" };

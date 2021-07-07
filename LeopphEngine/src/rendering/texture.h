@@ -10,6 +10,7 @@ namespace leopph::impl
 	{
 		const unsigned& id;
 		const std::filesystem::path path;
+		const bool& isTransparent;
 
 
 		Texture(const std::filesystem::path& path);
@@ -24,5 +25,6 @@ namespace leopph::impl
 
 	private:
 		unsigned m_ID;
+		bool m_IsTransparent;
 	};
 }

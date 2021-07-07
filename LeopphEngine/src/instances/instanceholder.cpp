@@ -84,7 +84,7 @@ namespace leopph::impl
 			throw std::runtime_error{ msg };
 		}
 
-		s_Textures.emplace(TextureReference{ .path = other.path, .id = other.id, .count = 1 });
+		s_Textures.emplace(TextureReference{ .path = other.path, .id = other.id, .isTransparent = other.isTransparent, .count = 1 });
 	}
 
 	void InstanceHolder::AddTexture(const std::filesystem::path& path)

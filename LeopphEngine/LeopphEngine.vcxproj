@@ -49,6 +49,7 @@
     <IntDir>$(SolutionDir)int\$(ProjectName)\$(Configuration)_$(Platform)\</IntDir>
     <TargetName>leopph</TargetName>
     <LibraryPath>$(ProjectDir)vendor\spdlog\build\$(Configuration)\;$(ProjectDir)vendor\glad\$(Configuration)\;$(ProjectDir)vendor\assimp\lib\$(Configuration)\;$(ProjectDir)vendor\glfw\src\$(Configuration)\;$(LibraryPath)</LibraryPath>
+    <CustomBuildBeforeTargets>BuildGenerateSources</CustomBuildBeforeTargets>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -56,6 +57,7 @@
     <IntDir>$(SolutionDir)int\$(ProjectName)\$(Configuration)_$(Platform)\</IntDir>
     <TargetName>leopph</TargetName>
     <LibraryPath>$(ProjectDir)vendor\spdlog\build\$(Configuration)\;$(ProjectDir)vendor\glad\$(Configuration)\;$(ProjectDir)vendor\assimp\lib\$(Configuration)\;$(ProjectDir)vendor\glfw\src\$(Configuration)\;$(LibraryPath)</LibraryPath>
+    <CustomBuildBeforeTargets>BuildGenerateSources</CustomBuildBeforeTargets>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -72,18 +74,22 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>glad.lib;glfw3.lib;zlibstaticd.lib;assimp-vc142-mtd.lib;IrrXMLd.lib;spdlogd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
-    <PostBuildEvent>
-      <Command>
-      </Command>
-    </PostBuildEvent>
-    <PreBuildEvent>
-      <Command>
-      </Command>
-    </PreBuildEvent>
-    <PreLinkEvent>
+    <PostBuildEvent />
+    <PreBuildEvent />
+    <PreLinkEvent />
+    <CustomBuildStep>
       <Command>$(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(ProjectDir)src\shaders\vertex.vert" "$(ProjectDir)src\shaders\vertex.cpp" "leopph::impl::Shader::s_VertexSource" "$(ProjectDir)src/rendering/shader.h"
 $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(ProjectDir)src\shaders\fragment.frag" "$(ProjectDir)src\shaders\fragment.cpp" "leopph::impl::Shader::s_FragmentSource" "$(ProjectDir)src/rendering/shader.h"</Command>
-    </PreLinkEvent>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Message>Creating shader sources.</Message>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Outputs>$(ProjectDir)src\shaders\vertex.cpp;$(ProjectDir)src\shaders\fragment.cpp</Outputs>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Inputs>$(ProjectDir)src\shaders\vertex.vert;$(ProjectDir)src\shaders\fragment.frag</Inputs>
+    </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -104,18 +110,22 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>glad.lib;glfw3.lib;zlibstatic.lib;assimp-vc142-mt.lib;IrrXML.lib;spdlog.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
-    <PostBuildEvent>
-      <Command>
-      </Command>
-    </PostBuildEvent>
-    <PreBuildEvent>
-      <Command>
-      </Command>
-    </PreBuildEvent>
-    <PreLinkEvent>
+    <PostBuildEvent />
+    <PreBuildEvent />
+    <PreLinkEvent />
+    <CustomBuildStep>
       <Command>$(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(ProjectDir)src\shaders\vertex.vert" "$(ProjectDir)src\shaders\vertex.cpp" "leopph::impl::Shader::s_VertexSource" "$(ProjectDir)src/rendering/shader.h"
 $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(ProjectDir)src\shaders\fragment.frag" "$(ProjectDir)src\shaders\fragment.cpp" "leopph::impl::Shader::s_FragmentSource" "$(ProjectDir)src/rendering/shader.h"</Command>
-    </PreLinkEvent>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Message>Creating shader sources.</Message>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Outputs>$(ProjectDir)src\shaders\vertex.cpp;$(ProjectDir)src\shaders\fragment.cpp</Outputs>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Inputs>$(ProjectDir)src\shaders\vertex.vert;$(ProjectDir)src\shaders\fragment.frag</Inputs>
+    </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="include\leopph.h" />
