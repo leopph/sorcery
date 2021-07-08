@@ -15,49 +15,59 @@ namespace leopph::impl
 	{
 		stbi_set_flip_vertically_on_load(true);
 
-		glGenTextures(1, &m_ID);
+		glCreateTextures(GL_TEXTURE_2D, 1, &m_ID);
 
 		int width, height, channels;
 		unsigned char* data{ stbi_load(path.string().c_str(), &width, &height, &channels, 0) };
 
 		if (data == nullptr)
 		{
+			glDeleteTextures(1, &m_ID);
+
 			const auto msg{ "Texture on path [" + path.string() + "] could not be loaded." };
 			Logger::Instance().Error(msg);
+
 			throw std::runtime_error{ msg };
 		}
 
 		GLenum colorFormat{};
+		GLenum internalFormat{};
 
 		switch (channels)
 		{
 		case 1:
 			colorFormat = GL_RED;
+			internalFormat = GL_R8;
 			break;
 
 		case 3:
 			colorFormat = GL_RGB;
+			internalFormat = GL_RGB8;
 			break;
 
 		case 4:
 			colorFormat = GL_RGBA;
+			internalFormat = GL_RGBA8;
 			m_IsTransparent = true;
 			break;
 
 		default:
 			stbi_image_free(data);
+			glDeleteTextures(1, &m_ID);
+
 			const auto msg{ "Unknown channel number [" + std::to_string(channels) + "]."};
 			Logger::Instance().Error(msg);
+
 			throw std::runtime_error{ msg };
 		}
 
-		glBindTexture(GL_TEXTURE_2D, id);
-		glTexImage2D(GL_TEXTURE_2D, 0, colorFormat, width, height, 0, colorFormat, GL_UNSIGNED_BYTE, data);
-		glGenerateMipmap(GL_TEXTURE_2D);
+		glTextureStorage2D(m_ID, 1, internalFormat, width, height);
+		glTextureSubImage2D(m_ID, 0, 0, 0, width, height, colorFormat, GL_UNSIGNED_BYTE, data);
 
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glGenerateTextureMipmap(m_ID);
 
+		glTextureParameteri(m_ID, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		glTextureParameteri(m_ID, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 		stbi_image_free(data);
 

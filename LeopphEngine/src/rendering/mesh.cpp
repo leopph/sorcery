@@ -31,17 +31,6 @@ namespace leopph::impl
 		glEnableVertexArrayAttrib(m_VertexArray, 0);
 		glEnableVertexArrayAttrib(m_VertexArray, 1);
 		glEnableVertexArrayAttrib(m_VertexArray, 2);
-
-		glVertexArrayAttribFormat(m_VertexArray, 0, 3, GL_FLOAT, GL_FALSE, offsetof(decltype(this->m_Vertices)::value_type, position));
-		glVertexArrayAttribFormat(m_VertexArray, 1, 3, GL_FLOAT, GL_FALSE, offsetof(decltype(this->m_Vertices)::value_type, normal));
-		glVertexArrayAttribFormat(m_VertexArray, 2, 2, GL_FLOAT, GL_FALSE, offsetof(decltype(this->m_Vertices)::value_type, textureCoordinates));
-
-		glVertexArrayAttribBinding(m_VertexArray, 0, 0);
-		glVertexArrayAttribBinding(m_VertexArray, 1, 0);
-		glVertexArrayAttribBinding(m_VertexArray, 2, 0);
-
-		SetModelBuffer();
-
 		glEnableVertexArrayAttrib(m_VertexArray, 3);
 		glEnableVertexArrayAttrib(m_VertexArray, 4);
 		glEnableVertexArrayAttrib(m_VertexArray, 5);
@@ -51,6 +40,9 @@ namespace leopph::impl
 		glEnableVertexArrayAttrib(m_VertexArray, 9);
 		glEnableVertexArrayAttrib(m_VertexArray, 10);
 
+		glVertexArrayAttribFormat(m_VertexArray, 0, 3, GL_FLOAT, GL_FALSE, offsetof(decltype(this->m_Vertices)::value_type, position));
+		glVertexArrayAttribFormat(m_VertexArray, 1, 3, GL_FLOAT, GL_FALSE, offsetof(decltype(this->m_Vertices)::value_type, normal));
+		glVertexArrayAttribFormat(m_VertexArray, 2, 2, GL_FLOAT, GL_FALSE, offsetof(decltype(this->m_Vertices)::value_type, textureCoordinates));
 		glVertexArrayAttribFormat(m_VertexArray, 3, 4, GL_FLOAT, GL_FALSE, 0);
 		glVertexArrayAttribFormat(m_VertexArray, 4, 4, GL_FLOAT, GL_FALSE, sizeof(Vector4));
 		glVertexArrayAttribFormat(m_VertexArray, 5, 4, GL_FLOAT, GL_FALSE, 2 * sizeof(Vector4));
@@ -60,6 +52,9 @@ namespace leopph::impl
 		glVertexArrayAttribFormat(m_VertexArray, 9, 4, GL_FLOAT, GL_FALSE, 2 * sizeof(Vector4));
 		glVertexArrayAttribFormat(m_VertexArray, 10, 4, GL_FLOAT, GL_FALSE, 3 * sizeof(Vector4));
 
+		glVertexArrayAttribBinding(m_VertexArray, 0, 0);
+		glVertexArrayAttribBinding(m_VertexArray, 1, 0);
+		glVertexArrayAttribBinding(m_VertexArray, 2, 0);
 		glVertexArrayAttribBinding(m_VertexArray, 3, 1);
 		glVertexArrayAttribBinding(m_VertexArray, 4, 1);
 		glVertexArrayAttribBinding(m_VertexArray, 5, 1);
@@ -71,6 +66,8 @@ namespace leopph::impl
 
 		glVertexArrayBindingDivisor(m_VertexArray, 1, 1);
 		glVertexArrayBindingDivisor(m_VertexArray, 2, 1);
+
+		SetModelBuffer();
 
 		InstanceHolder::IncMesh(m_VertexArray);
 	}
@@ -146,12 +143,11 @@ namespace leopph::impl
 
 		if (m_Material.m_DiffuseTexture != nullptr)
 		{
-			glActiveTexture(GL_TEXTURE0 + static_cast<GLenum>(texCount));
 			shader.SetUniform("materialHasDiffuseMap", true);
 			shader.SetUniform("materialDiffuseMap", static_cast<int>(texCount));
 			shader.SetUniform("materialDiffuseMapIsTransparent", m_Material.m_DiffuseTexture->isTransparent);
-			glBindTexture(GL_TEXTURE_2D, m_Material.m_DiffuseTexture->id);
-			texCount++;
+			glBindTextureUnit(static_cast<GLuint>(texCount), m_Material.m_DiffuseTexture->id);
+			++texCount;
 		}
 		else
 		{
@@ -160,12 +156,11 @@ namespace leopph::impl
 
 		if (m_Material.m_SpecularTexture != nullptr)
 		{
-			glActiveTexture(GL_TEXTURE0 + static_cast<GLenum>(texCount));
 			shader.SetUniform("materialHasSpecularMap", true);
 			shader.SetUniform("materialSpecularMap", static_cast<int>(texCount));
 			shader.SetUniform("materialSpecularMapIsTransparent", m_Material.m_SpecularTexture->isTransparent);
-			glBindTexture(GL_TEXTURE_2D, m_Material.m_SpecularTexture->id);
-			texCount++;
+			glBindTextureUnit(static_cast<GLuint>(texCount), m_Material.m_SpecularTexture->id);
+			++texCount;
 		}
 		else
 		{
@@ -178,8 +173,6 @@ namespace leopph::impl
 		glBindVertexArray(m_VertexArray);
 		glDrawElementsInstanced(GL_TRIANGLES, static_cast<GLsizei>(m_Indices.size()), GL_UNSIGNED_INT, nullptr, static_cast<GLsizei>(modelMatrices.size()));
 		glBindVertexArray(0);
-
-		glActiveTexture(GL_TEXTURE0);
 	}
 
 	void Mesh::CleanUp()
@@ -211,6 +204,7 @@ namespace leopph::impl
 	{
 		glDeleteBuffers(2, &m_Buffers[MODEL]);
 		glCreateBuffers(2, &m_Buffers[MODEL]);
+
 		glNamedBufferStorage(m_Buffers[MODEL], m_ModelBufferSize * sizeof(Matrix4), nullptr, GL_DYNAMIC_STORAGE_BIT);
 		glNamedBufferStorage(m_Buffers[NORMAL], m_ModelBufferSize * sizeof(Matrix4), nullptr, GL_DYNAMIC_STORAGE_BIT);
 
