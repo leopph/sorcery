@@ -30,14 +30,6 @@ namespace leopph::impl
 		auto viewMatrix{ Camera::Active()->ViewMatrix() };
 		auto projectionMatrix{ Camera::Active()->ProjectionMatrix() };
 
-		if (const auto& skybox{ Camera::Active()->Background().skybox }; skybox != nullptr)
-		{
-			m_SkyboxShader.Use();
-			m_SkyboxShader.SetUniform("viewMatrix", static_cast<Matrix4>(static_cast<Matrix3>(viewMatrix)));
-			m_SkyboxShader.SetUniform("projectionMatrix", projectionMatrix);
-			InstanceHolder::GetSkybox(*skybox).Draw(m_SkyboxShader);
-		}
-
 		PointLight* pointLights[MAX_POINT_LIGHTS]{};
 
 		for (Light* light : InstanceHolder::PointLights())
@@ -118,6 +110,14 @@ namespace leopph::impl
 			}
 
 			modelReference.ReferenceModel().Draw(m_Shader, modelViewMatrices, normalMatrices);
+		}
+
+		if (const auto& skybox{ Camera::Active()->Background().skybox }; skybox != nullptr)
+		{
+			m_SkyboxShader.Use();
+			m_SkyboxShader.SetUniform("viewMatrix", static_cast<Matrix4>(static_cast<Matrix3>(viewMatrix)));
+			m_SkyboxShader.SetUniform("projectionMatrix", projectionMatrix);
+			InstanceHolder::GetSkybox(*skybox).Draw(m_SkyboxShader);
 		}
 	}
 }

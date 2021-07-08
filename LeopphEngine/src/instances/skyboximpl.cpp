@@ -80,9 +80,9 @@ void leopph::impl::SkyboxImpl::Draw(const Shader& shader) const
 	glBindTexture(GL_TEXTURE_CUBE_MAP, m_TexID);
 
 	glBindVertexArray(m_VAO);
-	glDepthMask(GL_FALSE);
+	glDepthFunc(GL_LEQUAL);
 	glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(s_CubeVertices.size()));
-	glDepthMask(GL_TRUE);
+	glDepthFunc(GL_LESS);
 
 	glBindVertexArray(0);
 }
