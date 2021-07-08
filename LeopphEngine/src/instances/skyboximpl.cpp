@@ -27,8 +27,6 @@ leopph::impl::SkyboxImpl::SkyboxImpl(const std::filesystem::path& left, const st
 	{
 		data = stbi_load(path->string().data(), &width, &height, &nrChannels, 0);
 
-		Logger::Instance().Debug(std::to_string(nrChannels));
-
 		if (data == nullptr)
 		{
 			auto msg{ "Skybox texture on path [" + path->string() + "] could not be loaded." };
@@ -49,16 +47,15 @@ leopph::impl::SkyboxImpl::SkyboxImpl(const std::filesystem::path& left, const st
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
-	glGenVertexArrays(1, &m_VAO);
-	glGenBuffers(1, &m_VBO);
+	glCreateBuffers(1, &m_VBO);
+	glNamedBufferStorage(m_VBO, s_CubeVertices.size() * sizeof(decltype(s_CubeVertices)::value_type), s_CubeVertices.data(), 0);
 
-	glBindVertexArray(m_VAO);
-	glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
-	glBufferData(GL_ARRAY_BUFFER, s_CubeVertices.size() * sizeof(decltype(s_CubeVertices)::value_type), s_CubeVertices.data(), GL_STATIC_DRAW);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0/*3 * sizeof(decltype(s_CubeVertices)::value_type)*/, nullptr);
+	glCreateVertexArrays(1, &m_VAO);
+	glVertexArrayVertexBuffer(m_VAO, 0, m_VBO, 0, 3 * sizeof(decltype(s_CubeVertices)::value_type));
 
-	glBindVertexArray(0);
+	glEnableVertexArrayAttrib(m_VAO, 0);
+	glVertexArrayAttribFormat(m_VAO, 0, 3, GL_FLOAT, GL_FALSE, 0);
+	glVertexArrayAttribBinding(m_VAO, 0, 0);
 }
 
 leopph::impl::SkyboxImpl::~SkyboxImpl()
@@ -83,7 +80,6 @@ void leopph::impl::SkyboxImpl::Draw(const Shader& shader) const
 	glDepthFunc(GL_LEQUAL);
 	glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(s_CubeVertices.size()));
 	glDepthFunc(GL_LESS);
-
 	glBindVertexArray(0);
 }
 

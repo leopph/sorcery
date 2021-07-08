@@ -19,7 +19,28 @@ namespace leopph::impl
 		m_Vertices{ std::move(vertices) }, m_Indices{ std::move(indices) }, m_Material{ std::move(material) },
 		m_ModelBufferSize{ 1 }
 	{
-		glGenVertexArrays(1, &m_VAO);
+		glCreateBuffers(2, m_Buffers);
+		glCreateVertexArrays(1, &m_VertexArray);
+
+		glNamedBufferStorage(m_Buffers[VERTEX], m_Vertices.size() * sizeof(decltype(m_Vertices)::value_type), m_Vertices.data(), 0);
+		glNamedBufferStorage(m_Buffers[INDEX], m_Indices.size() * sizeof(unsigned), m_Indices.data(), 0);
+
+		glVertexArrayVertexBuffer(m_VertexArray, 0, m_Buffers[VERTEX], 0, sizeof(decltype(m_Vertices)::value_type));
+		glVertexArrayElementBuffer(m_VertexArray, m_Buffers[INDEX]);
+
+		glEnableVertexArrayAttrib(m_VertexArray, 0);
+		glEnableVertexArrayAttrib(m_VertexArray, 1);
+		glEnableVertexArrayAttrib(m_VertexArray, 2);
+
+		glVertexArrayAttribFormat(m_VertexArray, 0, 3, GL_FLOAT, GL_FALSE, offsetof(decltype(this->m_Vertices)::value_type, position));
+		glVertexArrayAttribFormat(m_VertexArray, 1, 3, GL_FLOAT, GL_FALSE, offsetof(decltype(this->m_Vertices)::value_type, normal));
+		glVertexArrayAttribFormat(m_VertexArray, 2, 2, GL_FLOAT, GL_FALSE, offsetof(decltype(this->m_Vertices)::value_type, textureCoordinates));
+
+		glVertexArrayAttribBinding(m_VertexArray, 0, 0);
+		glVertexArrayAttribBinding(m_VertexArray, 1, 0);
+		glVertexArrayAttribBinding(m_VertexArray, 2, 0);
+
+		/*glGenVertexArrays(1, &m_VAO);
 		glGenBuffers(1, &m_VBO);
 		glGenBuffers(1, &m_EBO);
 		glGenBuffers(1, &m_ModelBuffer);
@@ -40,31 +61,29 @@ namespace leopph::impl
 		glEnableVertexAttribArray(1);
 
 		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(decltype(this->m_Vertices)::value_type), reinterpret_cast<void*>(offsetof(decltype(this->m_Vertices)::value_type, textureCoordinates)));
-		glEnableVertexAttribArray(2);
+		glEnableVertexAttribArray(2);*/
 
 		SetModelBuffer();
 
-		glBindVertexArray(0);
+		//glBindVertexArray(0);
 
-		InstanceHolder::IncMesh(m_ID);
+		InstanceHolder::IncMesh(m_VertexArray);
 	}
 
 	Mesh::Mesh(Mesh&& other) noexcept :
 		m_Vertices{ std::move(other.m_Vertices) },
 		m_Indices{ std::move(other.m_Indices) },
 		m_Material{ std::move(other.m_Material) },
-		m_VAO{ other.m_VAO },
-		m_VBO{ other.m_VBO },
-		m_EBO{ other.m_EBO },
-		m_ModelBuffer{ other.m_ModelBuffer },
-		m_ModelBufferSize{ other.m_ModelBufferSize },
-		m_NormalBuffer{ other.m_NormalBuffer }
+		m_VertexArray{ other.m_VertexArray },
+		m_ModelBufferSize{ other.m_ModelBufferSize }
 	{
-		other.m_VAO = 0;
-		other.m_VBO = 0;
-		other.m_EBO = 0;
-		other.m_ModelBuffer = 0;
-		other.m_NormalBuffer = 0;
+		for (int i = 0; i < s_NumBuffers; ++i)
+		{
+			m_Buffers[i] = other.m_Buffers[i];
+			other.m_Buffers[i] = 0;
+		}
+
+		other.m_VertexArray = 0;
 		other.m_ModelBufferSize = 0;
 
 		//InstanceHolder::IncMesh(m_ID);
@@ -80,18 +99,16 @@ namespace leopph::impl
 	{
 		CleanUp();
 
-		m_VAO = other.m_VAO;
-		m_VBO = other.m_VBO;
-		m_EBO = other.m_EBO;
-		m_ModelBuffer = other.m_ModelBuffer;
+		m_VertexArray = other.m_VertexArray;
 		m_ModelBufferSize = other.m_ModelBufferSize;
-		m_NormalBuffer = other.m_NormalBuffer;
 
-		other.m_VAO = 0;
-		other.m_VBO = 0;
-		other.m_EBO = 0;
-		other.m_ModelBuffer = 0;
-		other.m_NormalBuffer = 0;
+		for (int i = 0; i < s_NumBuffers; ++i)
+		{
+			m_Buffers[i] = other.m_Buffers[i];
+			other.m_Buffers[i] = 0;
+		}
+
+		other.m_VertexArray = 0;
 		other.m_ModelBufferSize = 0;
 
 		m_Vertices = std::move(other.m_Vertices);
@@ -107,7 +124,7 @@ namespace leopph::impl
 
 	bool Mesh::operator==(const Mesh& other) const
 	{
-		return this->m_VAO == other.m_VAO;
+		return this->m_VertexArray == other.m_VertexArray;
 	}
 
 
@@ -154,31 +171,24 @@ namespace leopph::impl
 			shader.SetUniform("materialHasSpecularMap", false);
 		}
 
-		glBindBuffer(GL_ARRAY_BUFFER, m_ModelBuffer);
-		glBufferSubData(GL_ARRAY_BUFFER, 0, modelMatrices.size() * sizeof(std::remove_reference<decltype(modelMatrices)>::type::value_type), modelMatrices.data());
-		glBindBuffer(GL_ARRAY_BUFFER, m_NormalBuffer);
-		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(std::remove_reference<decltype(normalMatrices)>::type::value_type), normalMatrices.data());
+		glNamedBufferSubData(m_Buffers[MODEL], 0, modelMatrices.size() * sizeof(std::remove_reference<decltype(modelMatrices)>::type::value_type), modelMatrices.data());
+		glNamedBufferSubData(m_Buffers[NORMAL], 0, modelMatrices.size() * sizeof(std::remove_reference<decltype(normalMatrices)>::type::value_type), normalMatrices.data());
 
-		glBindVertexArray(m_VAO);
+		glBindVertexArray(m_VertexArray);
 		glDrawElementsInstanced(GL_TRIANGLES, static_cast<GLsizei>(m_Indices.size()), GL_UNSIGNED_INT, nullptr, static_cast<GLsizei>(modelMatrices.size()));
 		glBindVertexArray(0);
 
 		glActiveTexture(GL_TEXTURE0);
-
-		auto error = glGetError();
-		if (error != GL_NO_ERROR)
-			Logger::Instance().Debug(std::to_string(error));
 	}
 
 	void Mesh::CleanUp()
 	{
-		InstanceHolder::DecMesh(m_ID);
+		InstanceHolder::DecMesh(m_VertexArray);
 
-		if (InstanceHolder::MeshCount(m_ID) == 0)
+		if (InstanceHolder::MeshCount(m_VertexArray) == 0)
 		{
-			glDeleteBuffers(1, &m_VBO);
-			glDeleteBuffers(1, &m_EBO);
-			glDeleteVertexArrays(1, &m_VAO);
+			glDeleteBuffers(s_NumBuffers, m_Buffers);
+			glDeleteVertexArrays(1, &m_VertexArray);
 		}
 	}
 
@@ -198,7 +208,45 @@ namespace leopph::impl
 
 	void Mesh::SetModelBuffer() const
 	{
-		glBindVertexArray(m_VAO);
+		glDeleteBuffers(2, &m_Buffers[MODEL]);
+		glCreateBuffers(2, &m_Buffers[MODEL]);
+		glNamedBufferStorage(m_Buffers[MODEL], m_ModelBufferSize * sizeof(Matrix4), nullptr, GL_DYNAMIC_STORAGE_BIT);
+		glNamedBufferStorage(m_Buffers[NORMAL], m_ModelBufferSize * sizeof(Matrix4), nullptr, GL_DYNAMIC_STORAGE_BIT);
+
+		glVertexArrayVertexBuffer(m_VertexArray, 1, m_Buffers[MODEL], 0, sizeof(Matrix4));
+		glVertexArrayVertexBuffer(m_VertexArray, 2, m_Buffers[NORMAL], 0, sizeof(Matrix4));
+
+		glEnableVertexArrayAttrib(m_VertexArray, 3);
+		glEnableVertexArrayAttrib(m_VertexArray, 4);
+		glEnableVertexArrayAttrib(m_VertexArray, 5);
+		glEnableVertexArrayAttrib(m_VertexArray, 6);
+		glEnableVertexArrayAttrib(m_VertexArray, 7);
+		glEnableVertexArrayAttrib(m_VertexArray, 8);
+		glEnableVertexArrayAttrib(m_VertexArray, 9);
+		glEnableVertexArrayAttrib(m_VertexArray, 10);
+
+		glVertexArrayAttribFormat(m_VertexArray, 3, 4, GL_FLOAT, GL_FALSE, 0);
+		glVertexArrayAttribFormat(m_VertexArray, 4, 4, GL_FLOAT, GL_FALSE, sizeof(Vector4));
+		glVertexArrayAttribFormat(m_VertexArray, 5, 4, GL_FLOAT, GL_FALSE, 2 * sizeof(Vector4));
+		glVertexArrayAttribFormat(m_VertexArray, 6, 4, GL_FLOAT, GL_FALSE, 3 * sizeof(Vector4));
+		glVertexArrayAttribFormat(m_VertexArray, 7, 4, GL_FLOAT, GL_FALSE, 0);
+		glVertexArrayAttribFormat(m_VertexArray, 8, 4, GL_FLOAT, GL_FALSE, sizeof(Vector4));
+		glVertexArrayAttribFormat(m_VertexArray, 9, 4, GL_FLOAT, GL_FALSE, 2 * sizeof(Vector4));
+		glVertexArrayAttribFormat(m_VertexArray, 10, 4, GL_FLOAT, GL_FALSE, 3 * sizeof(Vector4));
+
+		glVertexArrayAttribBinding(m_VertexArray, 3, 1);
+		glVertexArrayAttribBinding(m_VertexArray, 4, 1);
+		glVertexArrayAttribBinding(m_VertexArray, 5, 1);
+		glVertexArrayAttribBinding(m_VertexArray, 6, 1);
+		glVertexArrayAttribBinding(m_VertexArray, 7, 2);
+		glVertexArrayAttribBinding(m_VertexArray, 8, 2);
+		glVertexArrayAttribBinding(m_VertexArray, 9, 2);
+		glVertexArrayAttribBinding(m_VertexArray, 10, 2);
+
+		glVertexArrayBindingDivisor(m_VertexArray, 1, 1);
+		glVertexArrayBindingDivisor(m_VertexArray, 2, 1);
+
+		/*glBindVertexArray(m_VertexArray);
 
 		glBindBuffer(GL_ARRAY_BUFFER, m_ModelBuffer);
 		glBufferData(GL_ARRAY_BUFFER, m_ModelBufferSize * sizeof(Matrix4), nullptr, GL_STATIC_DRAW);
@@ -230,7 +278,7 @@ namespace leopph::impl
 		glVertexAttribDivisor(9, 1);
 		glVertexAttribDivisor(10, 1);
 
-		glBindVertexArray(0);
+		glBindVertexArray(0);*/
 	}
 
 }

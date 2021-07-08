@@ -31,14 +31,16 @@ namespace leopph::impl
 		void CleanUp();
 		void SetModelBuffer() const;
 
-		unsigned m_VAO;
-		unsigned m_VBO;
+		enum { VERTEX, INDEX, MODEL, NORMAL };
+		static constexpr std::size_t s_NumBuffers{ 4 };
+
+		unsigned m_VertexArray;
+		mutable unsigned m_Buffers[s_NumBuffers];
+		/*unsigned m_VBO;
 		unsigned m_EBO;
 		unsigned m_ModelBuffer;
-		unsigned m_NormalBuffer;
+		unsigned m_NormalBuffer;*/
 		mutable std::size_t m_ModelBufferSize;
-
-		const unsigned& m_ID{ m_VAO };
 
 		std::vector<Vertex> m_Vertices;
 		std::vector<unsigned> m_Indices;
