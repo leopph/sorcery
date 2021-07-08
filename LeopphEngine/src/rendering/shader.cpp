@@ -22,26 +22,47 @@ namespace leopph::impl
 		case Type::GENERAL:
 			vertexSource = s_VertexSource.c_str();
 			fragmentSource = s_FragmentSource.c_str();
+			Logger::Instance().Debug("Constructing general shader.");
 			break;
 
 		case Type::SKYBOX:
 			vertexSource = s_SkyboxVertexSource.c_str();
 			fragmentSource = s_SkyboxFragmentSource.c_str();
+			Logger::Instance().Debug("Constructing skybox shader.");
 			break;
 		}
 
 		if (Settings::IsCachingShaders())
 		{
+			Logger::Instance().Debug("Looking for shader caches.");
+
 			std::filesystem::path fullPath{ Settings::ShaderCacheLocation() / m_ProgramFileName };
 
-			if (std::filesystem::exists(fullPath) && ReadFromCache(fullPath))
+			if (std::filesystem::exists(fullPath))
+			{
+				Logger::Instance().Debug("Found cached shader. Attempting to parse.");
+
+				if (ReadFromCache(fullPath))
+				{
+					Logger::Instance().Debug("Successfully parsed shader.");
 					return;
+				}
+				
+				Logger::Instance().Debug("Failed to parse shader from cache. Reverting to compilation.");
+			}
+			else
+			{
+				Logger::Instance().Debug("No cached shader found. Compiling.");
+			}
 
 			Compile(vertexSource, fragmentSource);
+
+			Logger::Instance().Debug("Writing shader to cache.");
 			WriteToCache(fullPath);
 		}
 		else
 		{
+			Logger::Instance().Debug("Compiling shader.");
 			Compile(vertexSource, fragmentSource);
 		}
 	}
