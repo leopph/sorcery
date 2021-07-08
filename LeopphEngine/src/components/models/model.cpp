@@ -13,13 +13,13 @@ namespace leopph
 
 	void Model::Init()
 	{
-		impl::InstanceHolder::RegisterModelObject(Path(), &Component::Object());
+		impl::InstanceHolder::IncModel(Path(), &Component::Object());
 	}
 
 
 	Model::~Model()
 	{
-		impl::InstanceHolder::UnregisterModelObject(Path(), &Component::Object());
+		impl::InstanceHolder::DecModel(Path(), &Component::Object());
 	}
 
 

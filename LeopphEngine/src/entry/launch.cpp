@@ -63,7 +63,7 @@ namespace leopph::impl
 		}
 		Logger::Instance().Debug("Renderer destroyed");
 
-		InstanceHolder::DestroyAll();
+		InstanceHolder::DestroyAllObjects();
 		Logger::Instance().Debug("All objects destroyed.");
 
 		Window::Destroy();

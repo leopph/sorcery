@@ -294,7 +294,7 @@ namespace leopph
 			/* Applicable to N*N Matrices (N > 2).
 			Returns a new (N-1)*(N-1) Matrix that is created by dropping the
 			Nth row and column of the original square Matrix */
-			explicit operator auto() requires(N == M && N > 2)
+			explicit operator auto() const requires(N == M && N > 2)
 			{
 				Matrix<T, N - 1, N - 1> ret{};
 
@@ -305,7 +305,11 @@ namespace leopph
 				return ret;
 			}
 
-			explicit operator Matrix<T, N + 1, N + 1>() requires (N == M)
+			/* Applicable to N*N matrices.
+			Returns a new (N+1)*(N+1) Matrix that is created by adding
+			a new row and column to the Matrix. All new elements are zero,
+			except the one in the main diagonal, which is 1. */
+			explicit operator Matrix<T, N + 1, N + 1>() const requires (N == M)
 			{
 				Matrix<T, N + 1, N + 1> ret{};
 

@@ -210,7 +210,8 @@ namespace leopph
 				return static_cast<T>(std::sqrt(sum));
 			}
 
-
+			/* Return a new Vector of length N + 1.
+			The new component's value will be 1. */
 			explicit operator Vector<T, N + 1>() const
 			{
 				Vector<T, N + 1> ret;
@@ -222,7 +223,8 @@ namespace leopph
 				return ret;
 			}
 
-
+			/* Return a new Vector of length N - 1.
+			The last component is thrown away. */
 			explicit operator auto() const requires (N > 2)
 			{
 				Vector<T, N - 1> ret;

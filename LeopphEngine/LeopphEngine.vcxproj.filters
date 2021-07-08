@@ -35,11 +35,14 @@
     <ClCompile Include="src\util\texturehash.cpp" />
     <ClCompile Include="src\util\textureequal.cpp" />
     <ClCompile Include="src\util\objectcomparator.cpp" />
-    <ClCompile Include="src\util\modelreference.cpp" />
-    <ClCompile Include="src\util\skybox.cpp" />
-    <ClCompile Include="src\util\skyboximpl.cpp" />
+    <ClCompile Include="src\instances\modelreference.cpp" />
+    <ClCompile Include="src\misc\skybox.cpp" />
+    <ClCompile Include="src\instances\skyboximpl.cpp" />
     <ClCompile Include="src\shaders\skyboxfragment.cpp" />
     <ClCompile Include="src\shaders\skyboxvertex.cpp" />
+    <ClCompile Include="src\util\skyboximplhash.cpp" />
+    <ClCompile Include="src\util\skyboximplequal.cpp" />
+    <ClCompile Include="src\misc\color.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\behavior.h" />
@@ -80,16 +83,18 @@
     <ClInclude Include="src\timing\timer.h" />
     <ClInclude Include="src\util\logger.h" />
     <ClInclude Include="src\rendering\material.h" />
-    <ClInclude Include="src\rendering\color.h" />
+    <ClInclude Include="src\misc\color.h" />
     <ClInclude Include="src\util\pathhash.h" />
     <ClInclude Include="src\util\texturehash.h" />
     <ClInclude Include="src\util\textureequal.h" />
-    <ClInclude Include="src\util\texturereference.h" />
+    <ClInclude Include="src\instances\texturereference.h" />
     <ClInclude Include="src\util\objectcomparator.h" />
-    <ClInclude Include="src\util\modelreference.h" />
-    <ClInclude Include="src\util\camerabackground.h" />
-    <ClInclude Include="src\util\skybox.h" />
-    <ClInclude Include="src\util\skyboximpl.h" />
+    <ClInclude Include="src\instances\modelreference.h" />
+    <ClInclude Include="src\misc\camerabackground.h" />
+    <ClInclude Include="src\misc\skybox.h" />
+    <ClInclude Include="src\instances\skyboximpl.h" />
+    <ClInclude Include="src\util\skyboximplhash.h" />
+    <ClInclude Include="src\util\skyboximplequal.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\shaders\fragment.frag" />

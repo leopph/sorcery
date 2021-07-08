@@ -13,13 +13,13 @@ namespace leopph
 	Object* Object::Create()
 	{
 		const auto ret = new Object;
-		impl::InstanceHolder::AddObject(ret);
+		impl::InstanceHolder::StoreObject(ret);
 		return ret;
 	}
 
 	void Object::Destroy(Object*& object)
 	{
-		impl::InstanceHolder::RemoveObject(object);
+		impl::InstanceHolder::DeleteObject(object);
 		object = nullptr;
 	}
 
@@ -52,9 +52,7 @@ namespace leopph
 	}
 
 	void Object::Name(const std::string& newName)
-	{
-		/* Removing the node is necessary, because m_Name is the ordering key. */
-		
+	{		
 		if (impl::InstanceHolder::FindObject(newName) != nullptr)
 		{
 			const auto errorMsg{ "Object [" + newName + "] already exists." };
@@ -62,9 +60,7 @@ namespace leopph
 			throw std::invalid_argument{ errorMsg };
 		}
 		
-		impl::InstanceHolder::RemoveObject(this);
-		m_Name = newName;
-		impl::InstanceHolder::AddObject(this);
+		impl::InstanceHolder::RenameObject(this, newName);
 	}
 
 
@@ -83,6 +79,6 @@ namespace leopph
 			throw std::invalid_argument{ errorMsg };
 		}
 		
-		impl::InstanceHolder::RemoveComponent(behavior);
+		impl::InstanceHolder::UnregisterComponent(behavior);
 	}
 }

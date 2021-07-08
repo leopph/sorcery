@@ -34,7 +34,7 @@ namespace leopph
 	void Component::SetOwnership(leopph::Object* object)
 	{
 		m_Object = object;
-		impl::InstanceHolder::AddComponent(this);
+		impl::InstanceHolder::RegisterComponent(this);
 		
 	}
 }

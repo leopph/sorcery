@@ -17,9 +17,10 @@ See individual headers for more information.
 #include "../src/math/vector.h"
 #include "../src/math/matrix.h"
 #include "../src/math/quaternion.h"
+#include "../src/misc/camerabackground.h"
+#include "../src/misc/skybox.h"
 #include "../src/hierarchy/object.h"
 #include "../src/timing/leopphtime.h"
-#include "../src/util/camerabackground.h"
 
 /*-----------------------------------------------------
 Define LEOPPH_ENTRY in exactly one of your source files

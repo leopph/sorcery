@@ -1,6 +1,6 @@
 #pragma once
 
-#include "color.h"
+#include "../misc/color.h"
 #include "texture.h"
 
 #include <memory>

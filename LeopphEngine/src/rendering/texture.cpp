@@ -61,13 +61,13 @@ namespace leopph::impl
 
 		stbi_image_free(data);
 
-		InstanceHolder::StoreTexture(*this);
+		InstanceHolder::StoreTextureRef(*this);
 	}
 
 
 	Texture::~Texture()
 	{
-		InstanceHolder::RemoveTexture(path);
+		InstanceHolder::DecTexture(path);
 		if (!InstanceHolder::IsTextureStored(path))
 			glDeleteTextures(1, &id);
 	}
@@ -77,14 +77,14 @@ namespace leopph::impl
 		m_ID{ other.m_ID }, path{ other.path }, id{ m_ID },
 		m_IsTransparent{ other.m_IsTransparent }, isTransparent{ m_IsTransparent }
 	{
-		InstanceHolder::AddTexture(path);
+		InstanceHolder::IncTexture(path);
 	}
 
 	Texture::Texture(const TextureReference& reference) :
 		m_ID{ reference.id }, id{ m_ID }, path{ reference.path },
 		m_IsTransparent{ reference.isTransparent }, isTransparent{ m_IsTransparent }
 	{
-		InstanceHolder::AddTexture(path);
+		InstanceHolder::IncTexture(path);
 	}
 
 	bool Texture::operator==(const Texture& other) const

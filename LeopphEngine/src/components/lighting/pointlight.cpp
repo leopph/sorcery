@@ -5,12 +5,12 @@ namespace leopph
 {
 	PointLight::PointLight()
 	{
-		impl::InstanceHolder::AddPointLight(this);
+		impl::InstanceHolder::RegisterPointLight(this);
 	}
 
 	PointLight::~PointLight()
 	{
-		impl::InstanceHolder::RemovePointLight(this);
+		impl::InstanceHolder::UnregisterPointLight(this);
 	}
 
 

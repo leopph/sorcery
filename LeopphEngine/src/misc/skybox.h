@@ -11,7 +11,11 @@ namespace leopph
 		class SkyboxImpl;
 	}
 
-
+	/*---------------------------------------------------------------------------------------------
+	The Skybox class represents a cube map that is used to paint the background of a Camera object.
+	It consists of 6 faces, or separate textures files, that MUST BE given in the specified order.
+	See "camerabackground.h" for more details.
+	---------------------------------------------------------------------------------------------*/
 	class Skybox
 	{
 	public:
@@ -27,9 +31,11 @@ namespace leopph
 		LEOPPHAPI Skybox& operator=(const Skybox& other);
 		LEOPPHAPI Skybox& operator=(Skybox&& other) noexcept;
 
+		/* Two Skyboxes only compare equal if the order of the given files matches */
 		LEOPPHAPI bool operator==(const Skybox& other) const;
 		LEOPPHAPI bool operator==(const impl::SkyboxImpl& other) const;
 
+		/* Semicolon separated list of given file names */
 		LEOPPHAPI const std::string& FileNames() const;
 
 	private:

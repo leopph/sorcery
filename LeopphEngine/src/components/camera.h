@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../util/camerabackground.h"
+#include "../misc/camerabackground.h"
 #include "component.h"
 #include "../api/leopphapi.h"
 #include "../math/matrix.h"
@@ -51,7 +51,8 @@ namespace leopph
 		/* Set this Camera to be the used for rendering */
 		LEOPPHAPI void Activate();
 
-		/* Background graphics used by the Camera */
+		/* Background graphics used by the Camera.
+		You can use a combination of Colors and Skyboxes. */
 		LEOPPHAPI const CameraBackground& Background() const;
 		LEOPPHAPI void Background(CameraBackground&& background);
 

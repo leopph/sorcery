@@ -1,8 +1,8 @@
 #include "skyboximpl.h"
 
-#include "skybox.h"
+#include "../misc/skybox.h"
 
-#include "logger.h"
+#include "../util/logger.h"
 
 #include <glad/glad.h>
 #include <stb_image.h>
@@ -12,7 +12,7 @@
 #include <stdexcept>
 
 leopph::impl::SkyboxImpl::SkyboxImpl(const std::filesystem::path& left, const std::filesystem::path& right, const std::filesystem::path& top, const std::filesystem::path& bottom, const std::filesystem::path& back, const std::filesystem::path& front) :
-	fileNames{ left.string() + right.string() + top.string() + bottom.string() + back.string() + front.string() }
+	fileNames{ left.string() + ";" + right.string() + ";" + top.string() + ";" + bottom.string() + ";" + back.string() + ";" + front.string()}
 {
 	glActiveTexture(GL_TEXTURE0);
 	glGenTextures(1, &m_TexID);
@@ -85,46 +85,6 @@ void leopph::impl::SkyboxImpl::Draw(const Shader& shader) const
 	glDepthMask(GL_TRUE);
 
 	glBindVertexArray(0);
-}
-
-std::size_t leopph::impl::SkyboxImplHash::operator()(const SkyboxImpl& skyboxImpl) const
-{
-	return std::hash<std::string>{}(skyboxImpl.fileNames);
-}
-
-std::size_t leopph::impl::SkyboxImplHash::operator()(const Skybox& skybox) const
-{
-	return std::hash<std::string>{}(skybox.FileNames());
-}
-
-std::size_t leopph::impl::SkyboxImplHash::operator()(const std::string& string) const
-{
-	return std::hash<std::string>{}(string);
-}
-
-bool leopph::impl::SkyboxImplEqual::operator()(const SkyboxImpl& left, const SkyboxImpl& right) const
-{
-	return left.fileNames == right.fileNames;
-}
-
-bool leopph::impl::SkyboxImplEqual::operator()(const Skybox& left, const SkyboxImpl& right) const
-{
-	return left == right;
-}
-
-bool leopph::impl::SkyboxImplEqual::operator()(const SkyboxImpl& left, const Skybox& right) const
-{
-	return left == right;
-}
-
-bool leopph::impl::SkyboxImplEqual::operator()(const std::string& left, const SkyboxImpl& right) const
-{
-	return left == right.fileNames;
-}
-
-bool leopph::impl::SkyboxImplEqual::operator()(const SkyboxImpl& left, const std::string& right) const
-{
-	return left.fileNames == right;
 }
 
 const std::vector<float> leopph::impl::SkyboxImpl::s_CubeVertices

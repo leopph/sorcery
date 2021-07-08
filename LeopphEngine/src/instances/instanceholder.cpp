@@ -18,7 +18,7 @@ namespace leopph::impl
 	std::unordered_map<SkyboxImpl, std::size_t, SkyboxImplHash, SkyboxImplEqual> InstanceHolder::s_Skyboxes{};
 
 	
-	void InstanceHolder::DestroyAll()
+	void InstanceHolder::DestroyAllObjects()
 	{
 		for (const auto& pair : s_Objects)
 		{
@@ -26,18 +26,16 @@ namespace leopph::impl
 				delete component;
 			delete pair.first;
 		}
-
-		s_Textures.clear();
 	}
 
 
 	
-	void InstanceHolder::AddObject(Object* object)
+	void InstanceHolder::StoreObject(Object* object)
 	{
 		s_Objects.try_emplace(object);
 	}
 
-	void InstanceHolder::RemoveObject(Object* object)
+	void InstanceHolder::DeleteObject(Object* object)
 	{
 		const auto it = s_Objects.find(object);
 
@@ -46,6 +44,20 @@ namespace leopph::impl
 		delete object;
 		
 		s_Objects.erase(it);
+	}
+
+	void InstanceHolder::RenameObject(Object* object, std::string name)
+	{
+		if (FindObject(name) != nullptr)
+		{
+			auto msg{ "Cannot rename Object [" + object->Name() + "] to [" + name + "] because the new name is already in use." };
+			Logger::Instance().Error(msg);
+			throw std::runtime_error{ msg };
+		}
+
+		auto node = s_Objects.extract(object);
+		node.key()->m_Name = std::move(name);
+		s_Objects.insert(std::move(node));
 	}
 
 	Object* InstanceHolder::FindObject(const std::string& name)
@@ -65,7 +77,7 @@ namespace leopph::impl
 		return s_Textures.contains(path);
 	}
 
-	std::unique_ptr<Texture> InstanceHolder::GetTexture(const std::filesystem::path& path)
+	std::unique_ptr<Texture> InstanceHolder::CreateTexture(const std::filesystem::path& path)
 	{
 		if (!s_Textures.contains(path))
 		{
@@ -77,7 +89,7 @@ namespace leopph::impl
 		return std::make_unique<Texture>(*s_Textures.find(path));
 	}
 
-	void InstanceHolder::StoreTexture(const Texture& other)
+	void InstanceHolder::StoreTextureRef(const Texture& other)
 	{
 		if (s_Textures.contains(other.path))
 		{
@@ -89,7 +101,7 @@ namespace leopph::impl
 		s_Textures.emplace(other.path, other.id, other.isTransparent, 1);
 	}
 
-	void InstanceHolder::AddTexture(const std::filesystem::path& path)
+	void InstanceHolder::IncTexture(const std::filesystem::path& path)
 	{
 		if (!s_Textures.contains(path))
 		{
@@ -101,7 +113,7 @@ namespace leopph::impl
 		s_Textures.find(path)->count++;
 	}
 
-	void InstanceHolder::RemoveTexture(const std::filesystem::path& path)
+	void InstanceHolder::DecTexture(const std::filesystem::path& path)
 	{
 		if (!s_Textures.contains(path))
 		{
@@ -140,12 +152,12 @@ namespace leopph::impl
 		return s_Objects[object];
 	}
 
-	void InstanceHolder::AddComponent(Component* component)
+	void InstanceHolder::RegisterComponent(Component* component)
 	{
 		s_Objects[&component->Object()].insert(component);
 	}
 
-	void InstanceHolder::RemoveComponent(Component* component)
+	void InstanceHolder::UnregisterComponent(Component* component)
 	{
 		s_Objects[&component->Object()].erase(component);
 		delete component;
@@ -166,12 +178,12 @@ namespace leopph::impl
 		return s_PointLights;
 	}
 
-	void InstanceHolder::AddPointLight(PointLight* pointLight)
+	void InstanceHolder::RegisterPointLight(PointLight* pointLight)
 	{
 		s_PointLights.push_back(pointLight);
 	}
 
-	void InstanceHolder::RemovePointLight(PointLight* pointLight)
+	void InstanceHolder::UnregisterPointLight(PointLight* pointLight)
 	{
 		for (auto it = s_PointLights.begin(); it != s_PointLights.end(); ++it)
 			if (*it == pointLight)
@@ -189,7 +201,7 @@ namespace leopph::impl
 		return (*s_Models.find(path)).second.ReferenceModel();
 	}
 
-	void InstanceHolder::RegisterModelObject(const std::filesystem::path& path, Object* object)
+	void InstanceHolder::IncModel(const std::filesystem::path& path, Object* object)
 	{
 		if (!s_Models.contains(path))
 		{
@@ -201,7 +213,7 @@ namespace leopph::impl
 		s_Models.at(path).AddObject(object);
 	}
 
-	void InstanceHolder::UnregisterModelObject(const std::filesystem::path& path, Object* object)
+	void InstanceHolder::DecModel(const std::filesystem::path& path, Object* object)
 	{
 		if (!s_Models.contains(path))
 		{
@@ -229,7 +241,7 @@ namespace leopph::impl
 		return 0;
 	}
 
-	void InstanceHolder::AddMesh(unsigned id)
+	void InstanceHolder::IncMesh(unsigned id)
 	{
 		if (id == 0)
 			return;
@@ -240,7 +252,7 @@ namespace leopph::impl
 			s_MeshCounts.at(id)++;
 	}
 
-	void InstanceHolder::RemoveMesh(unsigned id)
+	void InstanceHolder::DecMesh(unsigned id)
 	{
 		if (id == 0)
 			return;
@@ -283,11 +295,11 @@ namespace leopph::impl
 
 	const SkyboxImpl* InstanceHolder::RegisterSkybox(const std::filesystem::path& left, const std::filesystem::path& right, const std::filesystem::path& top, const std::filesystem::path& bottom, const std::filesystem::path& back, const std::filesystem::path& front)
 	{
-		const auto fileNames{ left.string() + right.string() + top.string() + bottom.string() + back.string() + front.string() };
+		const auto fileNames{ left.string() + ";" + right.string() + ";" + top.string() + ";" + bottom.string() + ";" + back.string() + ";" + front.string()};
 
 		if (s_Skyboxes.contains(fileNames))
 		{
-			const auto msg{"Skybox of files [" + left.string() + ";" + right.string() + ";" + top.string() + ";" + bottom.string() + ";" + back.string() + ";" + front.string() + "] is already registered."};
+			const auto msg{"Skybox of files [" + fileNames + "] is already registered."};
 
 			Logger::Instance().Error(msg);
 			throw std::runtime_error{ msg };
@@ -322,5 +334,4 @@ namespace leopph::impl
 		if (s_Skyboxes.at(*skybox) == 0)
 			s_Skyboxes.erase(*skybox);
 	}
-
 }

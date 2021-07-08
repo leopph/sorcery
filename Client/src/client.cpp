@@ -91,9 +91,9 @@ void leopph::AppStart()
 	camera->AddComponent<Camera>();
 	camera->AddComponent<CameraController>();
 
-	Camera::Active()->Background(CameraBackground{ .color{255, 0, 0}, .skybox{std::make_unique<Skybox>("skybox/left.jpg", "skybox/right.jpg", "skybox/top.jpg", "skybox/bottom.jpg", "skybox/back.jpg", "skybox/front.jpg")}});
+	Camera::Active()->Background(CameraBackground{ .skybox{std::make_unique<Skybox>("skybox/left.jpg", "skybox/right.jpg", "skybox/top.jpg", "skybox/bottom.jpg", "skybox/back.jpg", "skybox/front.jpg")}});
 
-	Object* objects[10];
+	Object* objects[1000];
 
 	for (auto& object : objects)
 	{

@@ -123,7 +123,7 @@ namespace leopph::impl
 			if (InstanceHolder::IsTextureStored(m_Directory / location.C_Str()))
 			{
 				Logger::Instance().Debug("Texture on path [" + (m_Directory / location.C_Str()).string() + "] requested from cache.");
-				return InstanceHolder::GetTexture(m_Directory / location.C_Str());
+				return InstanceHolder::CreateTexture(m_Directory / location.C_Str());
 			}
 
 			Logger::Instance().Debug("Texture on path [" + (m_Directory / location.C_Str()).string() + "] loaded from disk.");

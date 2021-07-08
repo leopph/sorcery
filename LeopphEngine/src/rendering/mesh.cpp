@@ -34,7 +34,7 @@ namespace leopph::impl
 
 		glBindVertexArray(0);
 
-		InstanceHolder::AddMesh(m_ID);
+		InstanceHolder::IncMesh(m_ID);
 	}
 
 	Mesh::Mesh(Mesh&& other) noexcept :
@@ -49,7 +49,7 @@ namespace leopph::impl
 		other.m_VBO = 0;
 		other.m_EBO = 0;
 
-		InstanceHolder::AddMesh(m_ID);
+		InstanceHolder::IncMesh(m_ID);
 	}
 
 	Mesh::~Mesh()
@@ -74,7 +74,7 @@ namespace leopph::impl
 		m_Indices = std::move(m_Indices);
 		m_Material = std::move(m_Material);
 
-		InstanceHolder::AddMesh(m_ID);
+		InstanceHolder::IncMesh(m_ID);
 
 		return *this;
 	}
@@ -132,7 +132,7 @@ namespace leopph::impl
 
 	void Mesh::CleanUp()
 	{
-		InstanceHolder::RemoveMesh(m_ID);
+		InstanceHolder::DecMesh(m_ID);
 
 		if (InstanceHolder::MeshCount(m_ID) == 0)
 		{
