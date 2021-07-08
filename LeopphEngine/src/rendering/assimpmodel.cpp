@@ -41,10 +41,10 @@ namespace leopph::impl
 
 
 
-	void AssimpModelImpl::Draw(const Shader& shader) const
+	void AssimpModelImpl::Draw(const Shader& shader, const std::vector<Matrix4>& modelMatrices, const std::vector<Matrix4>& normalMatrices) const
 	{
 		for (const auto & mesh : m_Meshes)
-			mesh.Draw(shader);
+			mesh.Draw(shader, modelMatrices, normalMatrices);
 	}
 
 
@@ -132,5 +132,11 @@ namespace leopph::impl
 
 		Logger::Instance().Debug("Mesh contains no texture of the requested type.");
 		return nullptr;
+	}
+
+	void AssimpModelImpl::OnReferringObjectsChanged(std::size_t newAmount) const
+	{
+		for (const auto& mesh : m_Meshes)
+			mesh.OnReferringObjectsChanged(newAmount);
 	}
 }

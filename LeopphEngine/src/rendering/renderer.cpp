@@ -101,7 +101,11 @@ namespace leopph::impl
 
 		for (const auto& pair : InstanceHolder::Models())
 		{
-			for (const auto& modelReference = pair.second; const auto& object : modelReference.Objects())
+			std::vector<Matrix4> modelViewMatrices;
+			std::vector<Matrix4> normalMatrices;
+			const auto& modelReference = pair.second;
+
+			for (const auto& object : modelReference.Objects())
 			{
 				Matrix4 modelViewMatrix{ 1.0f };
 				modelViewMatrix *= Matrix4::Scale(object->Transform().Scale());
@@ -109,11 +113,11 @@ namespace leopph::impl
 				modelViewMatrix *= Matrix4::Translate(object->Transform().Position());
 				modelViewMatrix *= viewMatrix;
 
-				m_Shader.SetUniform("modelViewMatrix", modelViewMatrix);
-				m_Shader.SetUniform("normalMatrix", modelViewMatrix.Inverse().Transposed());
-
-				modelReference.ReferenceModel().Draw(m_Shader);
+				modelViewMatrices.push_back(modelViewMatrix.Transposed());
+				normalMatrices.push_back(modelViewMatrix.Inverse());
 			}
+
+			modelReference.ReferenceModel().Draw(m_Shader, modelViewMatrices, normalMatrices);
 		}
 	}
 }

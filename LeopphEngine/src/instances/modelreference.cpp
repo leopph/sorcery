@@ -9,11 +9,13 @@ namespace leopph::impl
 	void ModelReference::AddObject(Object* object)
 	{
 		m_Objects.insert(object);
+		m_ReferenceModel.OnReferringObjectsChanged(m_Objects.size());
 	}
 
 	void ModelReference::RemoveObject(Object* object)
 	{
 		m_Objects.erase(object);
+		m_ReferenceModel.OnReferringObjectsChanged(m_Objects.size());
 	}
 
 	std::size_t ModelReference::ReferenceCount() const

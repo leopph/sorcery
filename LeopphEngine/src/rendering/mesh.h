@@ -5,6 +5,7 @@
 #include "shader.h"
 #include "material.h"
 
+#include <cstddef>
 #include <vector>
 
 namespace leopph::impl
@@ -22,14 +23,20 @@ namespace leopph::impl
 
 		bool operator==(const Mesh& other) const;
 
-		void Draw(const Shader& shader) const;
+		void Draw(const Shader& shader, const std::vector<Matrix4>& modelMatrices, const std::vector<Matrix4>& normalMatrices) const;
+
+		void OnReferringObjectsChanged(std::size_t newAmount) const;
 
 	private:
 		void CleanUp();
+		void SetModelBuffer() const;
 
 		unsigned m_VAO;
 		unsigned m_VBO;
 		unsigned m_EBO;
+		unsigned m_ModelBuffer;
+		unsigned m_NormalBuffer;
+		mutable std::size_t m_ModelBufferSize;
 
 		const unsigned& m_ID{ m_VAO };
 

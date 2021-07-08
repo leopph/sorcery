@@ -5,10 +5,10 @@ std::string leopph::impl::Shader::s_VertexSource{ R"#fileContents#(#version 460 
 layout (location = 0) in vec3 inPosition;
 layout (location = 1) in vec3 inNormal;
 layout (location = 2) in vec2 inTextureCoords;
+layout (location = 3) in mat4 modelViewMatrix;
+layout (location = 7) in mat4 normalMatrix;
 
 uniform mat4 projectionMatrix;
-uniform mat4 modelViewMatrix;
-uniform mat4 normalMatrix;
 
 out vec3 normal;
 out vec2 textureCoords;

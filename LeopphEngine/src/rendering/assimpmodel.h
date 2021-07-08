@@ -1,10 +1,13 @@
 #pragma once
 
 #include "mesh.h"
+#include "../math/matrix.h"
 
 #include <assimp/scene.h>
 
+#include <cstddef>
 #include <memory>
+#include <vector>
 
 namespace leopph::impl
 {
@@ -19,9 +22,11 @@ namespace leopph::impl
 
 		bool operator==(const AssimpModelImpl& other) const;
 
-		void Draw(const Shader& shader) const;
+		void Draw(const Shader& shader, const std::vector<Matrix4>& modelMatrices, const std::vector<Matrix4>& normalMatrices) const;
 
 		const std::filesystem::path& Path() const;
+
+		void OnReferringObjectsChanged(std::size_t newAmount) const;
 
 	private:
 		std::vector<Mesh> m_Meshes;
