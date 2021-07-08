@@ -93,11 +93,9 @@ void leopph::AppStart()
 
 	Camera::Active()->Background(CameraBackground{ .skybox{std::make_unique<Skybox>("skybox/left.jpg", "skybox/right.jpg", "skybox/top.jpg", "skybox/bottom.jpg", "skybox/back.jpg", "skybox/front.jpg")}});
 
-	Object* objects[1000];
-
-	for (auto& object : objects)
+	for (int i = 0; i < 1000; i++)
 	{
-		object = Object::Create();
+		auto object = Object::Create();
 		object->AddComponent<Model>("models/backpack/backpack.obj");
 		object->Transform().Position({ (std::rand() % 50) - 25, (std::rand() % 50) - 25 , (std::rand() % 50) - 25 });
 		object->AddComponent<Rotate>();

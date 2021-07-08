@@ -40,32 +40,37 @@ namespace leopph::impl
 		glVertexArrayAttribBinding(m_VertexArray, 1, 0);
 		glVertexArrayAttribBinding(m_VertexArray, 2, 0);
 
-		/*glGenVertexArrays(1, &m_VAO);
-		glGenBuffers(1, &m_VBO);
-		glGenBuffers(1, &m_EBO);
-		glGenBuffers(1, &m_ModelBuffer);
-		glGenBuffers(1, &m_NormalBuffer);
-
-		glBindVertexArray(m_VAO);
-
-		glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
-		glBufferData(GL_ARRAY_BUFFER, this->m_Vertices.size() * sizeof(decltype(this->m_Vertices)::value_type), this->m_Vertices.data(), GL_STATIC_DRAW);
-
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_EBO);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, this->m_Indices.size() * sizeof(unsigned), this->m_Indices.data(), GL_STATIC_DRAW);
-
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(decltype(this->m_Vertices)::value_type), reinterpret_cast<void*>(offsetof(decltype(this->m_Vertices)::value_type, position)));
-		glEnableVertexAttribArray(0);
-
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(decltype(this->m_Vertices)::value_type), reinterpret_cast<void*>(offsetof(decltype(this->m_Vertices)::value_type, normal)));
-		glEnableVertexAttribArray(1);
-
-		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(decltype(this->m_Vertices)::value_type), reinterpret_cast<void*>(offsetof(decltype(this->m_Vertices)::value_type, textureCoordinates)));
-		glEnableVertexAttribArray(2);*/
-
 		SetModelBuffer();
 
-		//glBindVertexArray(0);
+		glEnableVertexArrayAttrib(m_VertexArray, 3);
+		glEnableVertexArrayAttrib(m_VertexArray, 4);
+		glEnableVertexArrayAttrib(m_VertexArray, 5);
+		glEnableVertexArrayAttrib(m_VertexArray, 6);
+		glEnableVertexArrayAttrib(m_VertexArray, 7);
+		glEnableVertexArrayAttrib(m_VertexArray, 8);
+		glEnableVertexArrayAttrib(m_VertexArray, 9);
+		glEnableVertexArrayAttrib(m_VertexArray, 10);
+
+		glVertexArrayAttribFormat(m_VertexArray, 3, 4, GL_FLOAT, GL_FALSE, 0);
+		glVertexArrayAttribFormat(m_VertexArray, 4, 4, GL_FLOAT, GL_FALSE, sizeof(Vector4));
+		glVertexArrayAttribFormat(m_VertexArray, 5, 4, GL_FLOAT, GL_FALSE, 2 * sizeof(Vector4));
+		glVertexArrayAttribFormat(m_VertexArray, 6, 4, GL_FLOAT, GL_FALSE, 3 * sizeof(Vector4));
+		glVertexArrayAttribFormat(m_VertexArray, 7, 4, GL_FLOAT, GL_FALSE, 0);
+		glVertexArrayAttribFormat(m_VertexArray, 8, 4, GL_FLOAT, GL_FALSE, sizeof(Vector4));
+		glVertexArrayAttribFormat(m_VertexArray, 9, 4, GL_FLOAT, GL_FALSE, 2 * sizeof(Vector4));
+		glVertexArrayAttribFormat(m_VertexArray, 10, 4, GL_FLOAT, GL_FALSE, 3 * sizeof(Vector4));
+
+		glVertexArrayAttribBinding(m_VertexArray, 3, 1);
+		glVertexArrayAttribBinding(m_VertexArray, 4, 1);
+		glVertexArrayAttribBinding(m_VertexArray, 5, 1);
+		glVertexArrayAttribBinding(m_VertexArray, 6, 1);
+		glVertexArrayAttribBinding(m_VertexArray, 7, 2);
+		glVertexArrayAttribBinding(m_VertexArray, 8, 2);
+		glVertexArrayAttribBinding(m_VertexArray, 9, 2);
+		glVertexArrayAttribBinding(m_VertexArray, 10, 2);
+
+		glVertexArrayBindingDivisor(m_VertexArray, 1, 1);
+		glVertexArrayBindingDivisor(m_VertexArray, 2, 1);
 
 		InstanceHolder::IncMesh(m_VertexArray);
 	}
@@ -85,8 +90,6 @@ namespace leopph::impl
 
 		other.m_VertexArray = 0;
 		other.m_ModelBufferSize = 0;
-
-		//InstanceHolder::IncMesh(m_ID);
 	}
 
 	Mesh::~Mesh()
@@ -114,8 +117,6 @@ namespace leopph::impl
 		m_Vertices = std::move(other.m_Vertices);
 		m_Indices = std::move(m_Indices);
 		m_Material = std::move(m_Material);
-
-		//InstanceHolder::IncMesh(m_ID);
 
 		return *this;
 	}
@@ -215,70 +216,5 @@ namespace leopph::impl
 
 		glVertexArrayVertexBuffer(m_VertexArray, 1, m_Buffers[MODEL], 0, sizeof(Matrix4));
 		glVertexArrayVertexBuffer(m_VertexArray, 2, m_Buffers[NORMAL], 0, sizeof(Matrix4));
-
-		glEnableVertexArrayAttrib(m_VertexArray, 3);
-		glEnableVertexArrayAttrib(m_VertexArray, 4);
-		glEnableVertexArrayAttrib(m_VertexArray, 5);
-		glEnableVertexArrayAttrib(m_VertexArray, 6);
-		glEnableVertexArrayAttrib(m_VertexArray, 7);
-		glEnableVertexArrayAttrib(m_VertexArray, 8);
-		glEnableVertexArrayAttrib(m_VertexArray, 9);
-		glEnableVertexArrayAttrib(m_VertexArray, 10);
-
-		glVertexArrayAttribFormat(m_VertexArray, 3, 4, GL_FLOAT, GL_FALSE, 0);
-		glVertexArrayAttribFormat(m_VertexArray, 4, 4, GL_FLOAT, GL_FALSE, sizeof(Vector4));
-		glVertexArrayAttribFormat(m_VertexArray, 5, 4, GL_FLOAT, GL_FALSE, 2 * sizeof(Vector4));
-		glVertexArrayAttribFormat(m_VertexArray, 6, 4, GL_FLOAT, GL_FALSE, 3 * sizeof(Vector4));
-		glVertexArrayAttribFormat(m_VertexArray, 7, 4, GL_FLOAT, GL_FALSE, 0);
-		glVertexArrayAttribFormat(m_VertexArray, 8, 4, GL_FLOAT, GL_FALSE, sizeof(Vector4));
-		glVertexArrayAttribFormat(m_VertexArray, 9, 4, GL_FLOAT, GL_FALSE, 2 * sizeof(Vector4));
-		glVertexArrayAttribFormat(m_VertexArray, 10, 4, GL_FLOAT, GL_FALSE, 3 * sizeof(Vector4));
-
-		glVertexArrayAttribBinding(m_VertexArray, 3, 1);
-		glVertexArrayAttribBinding(m_VertexArray, 4, 1);
-		glVertexArrayAttribBinding(m_VertexArray, 5, 1);
-		glVertexArrayAttribBinding(m_VertexArray, 6, 1);
-		glVertexArrayAttribBinding(m_VertexArray, 7, 2);
-		glVertexArrayAttribBinding(m_VertexArray, 8, 2);
-		glVertexArrayAttribBinding(m_VertexArray, 9, 2);
-		glVertexArrayAttribBinding(m_VertexArray, 10, 2);
-
-		glVertexArrayBindingDivisor(m_VertexArray, 1, 1);
-		glVertexArrayBindingDivisor(m_VertexArray, 2, 1);
-
-		/*glBindVertexArray(m_VertexArray);
-
-		glBindBuffer(GL_ARRAY_BUFFER, m_ModelBuffer);
-		glBufferData(GL_ARRAY_BUFFER, m_ModelBufferSize * sizeof(Matrix4), nullptr, GL_STATIC_DRAW);
-		glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(Matrix4), reinterpret_cast<void*>(0));
-		glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(Matrix4), reinterpret_cast<void*>(sizeof(Vector4)));
-		glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(Matrix4), reinterpret_cast<void*>(2 * sizeof(Vector4)));
-		glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(Matrix4), reinterpret_cast<void*>(3 * sizeof(Vector4)));
-		glEnableVertexAttribArray(3);
-		glEnableVertexAttribArray(4);
-		glEnableVertexAttribArray(5);
-		glEnableVertexAttribArray(6);
-		glVertexAttribDivisor(3, 1);
-		glVertexAttribDivisor(4, 1);
-		glVertexAttribDivisor(5, 1);
-		glVertexAttribDivisor(6, 1);
-
-		glBindBuffer(GL_ARRAY_BUFFER, m_NormalBuffer);
-		glBufferData(GL_ARRAY_BUFFER, m_ModelBufferSize * sizeof(Matrix4), nullptr, GL_STATIC_DRAW);
-		glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, sizeof(Matrix4), reinterpret_cast<void*>(0));
-		glVertexAttribPointer(8, 4, GL_FLOAT, GL_FALSE, sizeof(Matrix4), reinterpret_cast<void*>(sizeof(Vector4)));
-		glVertexAttribPointer(9, 4, GL_FLOAT, GL_FALSE, sizeof(Matrix4), reinterpret_cast<void*>(2 * sizeof(Vector4)));
-		glVertexAttribPointer(10, 4, GL_FLOAT, GL_FALSE, sizeof(Matrix4), reinterpret_cast<void*>(3 * sizeof(Vector4)));
-		glEnableVertexAttribArray(7);
-		glEnableVertexAttribArray(8);
-		glEnableVertexAttribArray(9);
-		glEnableVertexAttribArray(10);
-		glVertexAttribDivisor(7, 1);
-		glVertexAttribDivisor(8, 1);
-		glVertexAttribDivisor(9, 1);
-		glVertexAttribDivisor(10, 1);
-
-		glBindVertexArray(0);*/
 	}
-
 }
