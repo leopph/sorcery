@@ -8,44 +8,52 @@
 #include <stb_image.h>
 
 #include <cstddef>
-#include <functional>
 #include <stdexcept>
 
 leopph::impl::SkyboxImpl::SkyboxImpl(const std::filesystem::path& left, const std::filesystem::path& right, const std::filesystem::path& top, const std::filesystem::path& bottom, const std::filesystem::path& back, const std::filesystem::path& front) :
 	fileNames{ left.string() + ";" + right.string() + ";" + top.string() + ";" + bottom.string() + ";" + back.string() + ";" + front.string()}
 {
-	glActiveTexture(GL_TEXTURE0);
-	glGenTextures(1, &m_TexID);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, m_TexID);
-
 	const std::filesystem::path* paths[]{ &right, &left, &top, &bottom, &front, &back };
 
-	int width, height, nrChannels;
-	unsigned char* data{ nullptr };
-
-	for (std::size_t i{ 0 }; const auto& path : paths)
+	struct Face
 	{
-		data = stbi_load(path->string().data(), &width, &height, &nrChannels, 0);
+		unsigned char* data{ nullptr };
+		int width{ 0 };
+		int height{ 0 };
+		int channels{ 0 };
 
-		if (data == nullptr)
+		~Face()
 		{
-			auto msg{ "Skybox texture on path [" + path->string() + "] could not be loaded." };
+			stbi_image_free(data);
+		}
+	};
+
+	Face faces[6]{};
+
+	for (unsigned char i = 0; i < 6; ++i)
+	{
+		faces[i].data = stbi_load(paths[i]->string().data(), &faces[i].width, &faces[i].height, &faces[i].channels, 0);
+
+		if (faces[i].data == nullptr)
+		{
+			auto msg{ "Skybox texture on path [" + paths[i]->string() + "] could not be loaded." };
 			Logger::Instance().Error(msg);
-			glDeleteTextures(1, &m_TexID);
 			throw std::runtime_error{ msg };
 		}
-
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + static_cast<GLenum>(i), 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-		stbi_image_free(data);
-
-		i++;
 	}
 
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+	glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &m_TexID);
+
+	glTextureStorage2D(m_TexID, 1, GL_RGB8, faces[0].width, faces[0].height);
+
+	for (std::size_t i = 0; i < 6; ++i)
+		glTextureSubImage3D(m_TexID, 0, 0, 0, static_cast<GLint>(i), faces[i].width, faces[i].height, 1, GL_RGB, GL_UNSIGNED_BYTE, faces[i].data);
+
+	glTextureParameteri(m_TexID, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTextureParameteri(m_TexID, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTextureParameteri(m_TexID, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTextureParameteri(m_TexID, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTextureParameteri(m_TexID, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
 	glCreateBuffers(1, &m_VBO);
 	glNamedBufferStorage(m_VBO, s_CubeVertices.size() * sizeof(decltype(s_CubeVertices)::value_type), s_CubeVertices.data(), 0);
@@ -72,15 +80,15 @@ unsigned leopph::impl::SkyboxImpl::ID() const
 
 void leopph::impl::SkyboxImpl::Draw(const Shader& shader) const
 {
-	glActiveTexture(GL_TEXTURE0);
 	shader.SetUniform("skybox", 0);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, m_TexID);
 
+	glBindTextureUnit(0, m_TexID);
 	glBindVertexArray(m_VAO);
 	glDepthFunc(GL_LEQUAL);
 	glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(s_CubeVertices.size()));
 	glDepthFunc(GL_LESS);
 	glBindVertexArray(0);
+	glBindTextureUnit(0, 0);
 }
 
 const std::vector<float> leopph::impl::SkyboxImpl::s_CubeVertices
