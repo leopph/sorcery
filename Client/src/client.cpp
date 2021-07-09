@@ -93,14 +93,17 @@ void leopph::AppStart()
 
 	Camera::Active()->Background(CameraBackground{ .skybox{std::make_unique<Skybox>("skybox/left.jpg", "skybox/right.jpg", "skybox/top.jpg", "skybox/bottom.jpg", "skybox/back.jpg", "skybox/front.jpg")}});
 
-
 	auto cube = Object::Create();
 	cube->Transform().Position({ 0, 0, 5 });
 	cube->AddComponent<Model>("models/cube/cube.dae");
 
-	Object* light = Object::Create();
-	light->Transform().Position({ 0, 0, 3.5 });
-	light->AddComponent<PointLight>();
+	Object* pointLight = Object::Create();
+	pointLight->Transform().Position({ 0, 0, 3.5 });
+	pointLight->AddComponent<PointLight>();
+
+	Object* dirLight = Object::Create();
+	dirLight->AddComponent<DirectionalLight>();
+	dirLight->Transform().RotateGlobal(Quaternion{ { -1, -1, 1 }, 90 });
 
 	Object* fpsCounter = Object::Create();
 	fpsCounter->AddComponent<FPSCounter>();

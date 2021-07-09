@@ -78,7 +78,7 @@ namespace leopph::impl
 		if (const auto dirLight = InstanceHolder::DirectionalLight(); dirLight != nullptr)
 		{
 			m_Shader.SetUniform("existsDirLight", true);
-			m_Shader.SetUniform("dirLight.direction", static_cast<Vector3>(static_cast<Vector4>(dirLight->Direction()) * viewMatrix).Normalize());
+			m_Shader.SetUniform("dirLight.direction", dirLight->Direction().Normalized() * static_cast<Matrix3>(viewMatrix));
 			m_Shader.SetUniform("dirLight.diffuseColor", dirLight->Diffuse());
 			m_Shader.SetUniform("dirLight.specularColor", dirLight->Specular());
 		}
