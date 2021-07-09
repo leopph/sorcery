@@ -69,10 +69,7 @@
       <SubSystem>NotSet</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
-    <PostBuildEvent>
-      <Command>xcopy "$(ProjectDir)models" "$(OutDir)models" /d /y /s /i
-xcopy "$(ProjectDirs)skybox" "$(OutDir)skybox" /d /y /s /i</Command>
-    </PostBuildEvent>
+    <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -92,10 +89,7 @@ xcopy "$(ProjectDirs)skybox" "$(OutDir)skybox" /d /y /s /i</Command>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
-    <PostBuildEvent>
-      <Command>xcopy "$(ProjectDir)models" "$(OutDir)models" /d /y /s /i
-xcopy "$(ProjectDirs)skybox" "$(OutDir)skybox" /d /y /s /i</Command>
-    </PostBuildEvent>
+    <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\client.cpp" />
