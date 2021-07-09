@@ -19,11 +19,9 @@ namespace leopph
 		LEOPPHAPI DirectionalLight();
 		LEOPPHAPI ~DirectionalLight() override;
 
-		/* The lighing direction of the component */
-		LEOPPHAPI void Direction(const Vector3& newDir);
+		/* The direction of the Light. This is exactly the same
+		as the forward vector of the Object that the
+		DirectionalLight is attached to. */
 		LEOPPHAPI const Vector3& Direction() const;
-
-	private:
-		Vector3 m_Direction{ 1.0f, 1.0f, 1.0f };
 	};
 }

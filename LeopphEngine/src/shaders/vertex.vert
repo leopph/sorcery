@@ -10,10 +10,12 @@ uniform mat4 projectionMatrix;
 
 out vec3 normal;
 out vec2 textureCoords;
+out vec3 fragPos;
 
 void main()
 {
     gl_Position = vec4(inPosition, 1.0) * modelViewMatrix * projectionMatrix;
     normal = inNormal * mat3(normalMatrix);
     textureCoords = inTextureCoords;
+    fragPos = vec3(vec4(inPosition, 1.0) * modelViewMatrix);
 }

@@ -64,9 +64,8 @@ namespace leopph::impl
 			if (pointLight != nullptr)
 			{
 				m_Shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].position", static_cast<Vector4>(pointLight->Object().Transform().Position()) * viewMatrix);
-				m_Shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].ambient", pointLight->Ambient());
-				m_Shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].diffuse", pointLight->Diffuse());
-				m_Shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].specular", pointLight->Specular());
+				m_Shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].diffuseColor", pointLight->Diffuse());
+				m_Shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].specularColor", pointLight->Specular());
 				m_Shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].constant", pointLight->Constant());
 				m_Shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].linear", pointLight->Linear());
 				m_Shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].quadratic", pointLight->Quadratic());
@@ -80,9 +79,8 @@ namespace leopph::impl
 		{
 			m_Shader.SetUniform("existsDirLight", true);
 			m_Shader.SetUniform("dirLight.direction", static_cast<Vector3>(static_cast<Vector4>(dirLight->Direction()) * viewMatrix).Normalize());
-			m_Shader.SetUniform("dirLight.ambient", dirLight->Ambient());
-			m_Shader.SetUniform("dirLight.diffuse", dirLight->Diffuse());
-			m_Shader.SetUniform("dirLight.specular", dirLight->Specular());
+			m_Shader.SetUniform("dirLight.diffuseColor", dirLight->Diffuse());
+			m_Shader.SetUniform("dirLight.specularColor", dirLight->Specular());
 		}
 		else
 		{

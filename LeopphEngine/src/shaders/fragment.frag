@@ -6,9 +6,8 @@ struct PointLight
 {
 	vec3 position;
 
-	vec3 ambient;
-	vec3 diffuse;
-	vec3 specular;
+	vec3 diffuseColor;
+	vec3 specularColor;
 
 	float constant;
 	float linear;
@@ -19,25 +18,30 @@ struct DirLight
 {
 	vec3 direction;
 	
-	vec3 ambient;
-	vec3 diffuse;
-	vec3 specular;
+	vec3 diffuseColor;
+	vec3 specularColor;
+};
+
+struct Material
+{
+	vec3 ambientcolor;
+	vec3 diffuseColor;
+	vec3 specularColor;
+
+	float shininess;
+
+	sampler2D diffuseMap;
+	sampler2D specularMap;
+
+	int hasDiffuseMap;
+	int hasSpecularMap;
 };
 
 in vec3 normal;
 in vec2 textureCoords;
+in vec3 fragPos;
 
-uniform vec3 materialDiffuseColor;
-uniform vec3 materialSpecularColor;
-
-uniform sampler2D materialDiffuseMap;
-uniform sampler2D materialSpecularMap;
-
-uniform int materialHasDiffuseMap;
-uniform int materialHasSpecularMap;
-
-uniform int materialDiffuseMapIsTransparent;
-uniform int materialSpecularMapIsTransparent;
+uniform Material material;
 
 uniform PointLight pointLights[64];
 uniform int lightNumber;
@@ -47,80 +51,73 @@ uniform bool existsDirLight;
 
 out vec4 fragmentColor;
 
-vec4 CalculatePointLight(PointLight light, vec3 surfaceNormal, vec3 fragmentPosition, vec3 viewDirection, vec4 diffuseColor, vec4 specularColor)
+vec3 CalculatePointLight(PointLight pointLight, vec3 surfaceNormal, vec3 materialDiffuseColor, vec3 materialSpecularColor)
 {
-	vec3 lightDirection = normalize(light.position - fragmentPosition);
-	vec3 reflectionDirection = reflect(-lightDirection, surfaceNormal);
+	vec3 directionToLight = normalize(pointLight.position - fragPos);
+	float diffuseDot = max(dot(directionToLight, surfaceNormal), 0);
+	vec3 diffuse = materialDiffuseColor * diffuseDot * pointLight.diffuseColor;
 
-	float lightDistance = length(light.position - fragmentPosition);
-	float attenuation = 1.0f / (light.constant + light.linear * lightDistance + light.quadratic * pow(lightDistance, 2));
+	if (diffuseDot != 0)
+	{
+		vec3 reflection = normalize(2 * max(dot(directionToLight, surfaceNormal), 0) * surfaceNormal - directionToLight);
+		vec3 specular = materialSpecularColor * pow(max(dot(reflection, normalize(-fragPos)), 0), material.shininess) * pointLight.specularColor;
+		return diffuse + specular;
+	}
 
-	float diffuseComponent = max(dot(surfaceNormal, lightDirection), 0.0f);
-	float specularComponent = pow(max(dot(viewDirection, reflectionDirection), 0.0f), 32);
-
-	vec4 ambient = attenuation * vec4(light.ambient, 1) * diffuseColor;
-	vec4 diffuse = attenuation * vec4(light.diffuse, 1) * diffuseComponent * diffuseColor;
-	vec4 specular = attenuation * vec4(light.specular, 1) * specularComponent * specularColor;
-
-	return ambient + diffuse + specular;
+	return diffuse;
 }
 
-vec4 CalculateDirLight(DirLight light, vec3 surfaceNormal, vec3 viewDirection, vec4 diffuseColor, vec4 specularColor)
+vec3 CalculateDirLight(DirLight dirLight, vec3 surfaceNormal, vec3 materialDiffuseColor, vec3 materialSpecularColor)
 {
-	vec3 lightDirection = normalize(-light.direction);
-	vec3 reflectionDirection = reflect(-lightDirection, surfaceNormal);
+	vec3 directionToLight = -dirLight.direction;
+	float diffuseDot = max(dot(directionToLight, surfaceNormal), 0);
+	vec3 diffuse = materialDiffuseColor * diffuseDot * dirLight.diffuseColor;
 
-	float diffuseComponent = max(dot(surfaceNormal, lightDirection), 0.0f);
-	float specularComponent = pow(max(dot(viewDirection, reflectionDirection), 0.0f), 32);
+	if (diffuseDot != 0)
+	{
+		vec3 reflection = normalize(2 * max(dot(directionToLight, surfaceNormal), 0) * surfaceNormal - directionToLight);	
+		vec3 specular = materialSpecularColor * pow(max(dot(reflection, normalize(-fragPos)), 0), material.shininess) * dirLight.specularColor;
+		return diffuse + specular;
+	}
 
-	vec4 ambient = vec4(light.ambient, 1) * diffuseColor;
-	vec4 diffuse = vec4(light.diffuse, 1) * diffuseComponent * diffuseColor;
-	vec4 specular = vec4(light.specular, 1) * specularComponent * specularColor;
-
-	return ambient + diffuse + specular;
+	return diffuse;
 }
 
 void main()
 {
-	vec3 norm = normalize(normal);
-	vec3 fragCoord = vec3(gl_FragCoord);
-	vec3 viewDirection = normalize(-fragCoord);
-
-	vec4 diffuseColor = vec4(materialDiffuseColor, 1);
-	
-	if (materialHasDiffuseMap != 0)
+	vec3 diffuseColor = material.diffuseColor;
+	vec4 diffuseMapColor = vec4(0, 0, 0, 1);
+	if (material.hasDiffuseMap != 0)
 	{
-		if (materialDiffuseMapIsTransparent != 0)
-		{
-			diffuseColor *= texture(materialDiffuseMap, textureCoords);
-			
-			if (diffuseColor.a < ALPHA_THRESHOLD)
-				discard;
-		}
-		else
-		{
-			diffuseColor *= vec4(texture(materialDiffuseMap, textureCoords).rgb, 1);
-		}
+		diffuseMapColor = texture(material.diffuseMap, textureCoords);
+
+		if (diffuseMapColor.a < ALPHA_THRESHOLD)
+			discard;
+
+		diffuseColor *= diffuseMapColor.rgb;
 	}
 
-	vec4 specularColor = vec4(materialSpecularColor, 1);
-	
-	if (materialHasSpecularMap != 0)
+	vec3 specularColor = material.specularColor;
+	vec4 specularMapColor = vec4(0, 0, 0, 1);
+	if (material.hasSpecularMap != 0)
 	{
-		if (materialSpecularMapIsTransparent != 0)
-			specularColor *= texture(materialSpecularMap, textureCoords);
-		else
-			specularColor *= vec4(texture(materialSpecularMap, textureCoords).rgb, 1);
+		specularMapColor = texture(material.specularMap, textureCoords);
+
+		if (specularMapColor.a < ALPHA_THRESHOLD)
+			discard;
+
+		specularColor *= specularMapColor.rgb;
 	}
 
-	fragmentColor = vec4(0.0f);
+	vec3 normalizedNormal = normalize(normal);
+
+	vec3 colorSum = vec3(0);
 
 	if (existsDirLight)
-		fragmentColor += CalculateDirLight(dirLight, norm, viewDirection, diffuseColor, specularColor);
-	
-	for (int i = 0; i < lightNumber; i++)
-		fragmentColor += CalculatePointLight(pointLights[i], norm, fragCoord, viewDirection, diffuseColor, specularColor);
+		colorSum += CalculateDirLight(dirLight, normalizedNormal, diffuseColor, specularColor);
 
-	if (fragmentColor.a < 0.1)
-		discard;
+	for (int i = 0; i < lightNumber; i++)
+		colorSum += CalculatePointLight(pointLights[i], normalizedNormal, diffuseColor, specularColor);
+
+	fragmentColor = vec4(colorSum, min(diffuseMapColor.a, specularMapColor.a));
 }

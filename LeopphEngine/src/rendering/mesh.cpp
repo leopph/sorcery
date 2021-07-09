@@ -111,35 +111,35 @@ namespace leopph::impl
 			throw std::runtime_error{ msg };
 		}
 
-		shader.SetUniform("materialDiffuseColor", static_cast<Vector3>(m_Material.m_DiffuseColor));
-		shader.SetUniform("materialSpecularColor", static_cast<Vector3>(m_Material.m_SpecularColor));
+		shader.SetUniform("material.ambientColor", static_cast<Vector3>(m_Material.ambientColor));
+		shader.SetUniform("material.diffuseColor", static_cast<Vector3>(m_Material.diffuseColor));
+		shader.SetUniform("material.specularColor", static_cast<Vector3>(m_Material.specularColor));
+		shader.SetUniform("material.shininess", m_Material.shininess);
 
 		std::size_t texCount{ 0 };
 
-		if (m_Material.m_DiffuseTexture != nullptr)
+		if (m_Material.diffuseMap != nullptr)
 		{
-			shader.SetUniform("materialHasDiffuseMap", true);
-			shader.SetUniform("materialDiffuseMap", static_cast<int>(texCount));
-			shader.SetUniform("materialDiffuseMapIsTransparent", m_Material.m_DiffuseTexture->isTransparent);
-			glBindTextureUnit(static_cast<GLuint>(texCount), m_Material.m_DiffuseTexture->id);
+			shader.SetUniform("material.hasDiffuseMap", true);
+			shader.SetUniform("material.diffuseMap", static_cast<int>(texCount));
+			glBindTextureUnit(static_cast<GLuint>(texCount), m_Material.diffuseMap->id);
 			++texCount;
 		}
 		else
 		{
-			shader.SetUniform("materialHasDiffuseMap", false);
+			shader.SetUniform("material.hasDiffuseMap", false);
 		}
 
-		if (m_Material.m_SpecularTexture != nullptr)
+		if (m_Material.specularMap != nullptr)
 		{
-			shader.SetUniform("materialHasSpecularMap", true);
-			shader.SetUniform("materialSpecularMap", static_cast<int>(texCount));
-			shader.SetUniform("materialSpecularMapIsTransparent", m_Material.m_SpecularTexture->isTransparent);
-			glBindTextureUnit(static_cast<GLuint>(texCount), m_Material.m_SpecularTexture->id);
+			shader.SetUniform("material.hasSpecularMap", true);
+			shader.SetUniform("material.specularMap", static_cast<int>(texCount));
+			glBindTextureUnit(static_cast<GLuint>(texCount), m_Material.specularMap->id);
 			++texCount;
 		}
 		else
 		{
-			shader.SetUniform("materialHasSpecularMap", false);
+			shader.SetUniform("material.hasSpecularMap", false);
 		}
 
 		glNamedBufferSubData(m_Buffers[MODEL], 0, modelMatrices.size() * sizeof(std::remove_reference<decltype(modelMatrices)>::type::value_type), modelMatrices.data());

@@ -10,11 +10,15 @@ namespace leopph
 	struct Material
 	{
 	public:
-		Color m_DiffuseColor;
-		std::unique_ptr<impl::Texture> m_DiffuseTexture;
+		Color ambientColor;
+		Color diffuseColor;
+		Color specularColor;
 
-		Color m_SpecularColor;
-		std::unique_ptr<impl::Texture> m_SpecularTexture;
+		float shininess;
+
+		std::unique_ptr<impl::Texture> diffuseMap;
+		std::unique_ptr<impl::Texture> specularMap;
+
 
 		Material();
 	};

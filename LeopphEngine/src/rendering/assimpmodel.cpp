@@ -122,8 +122,8 @@ namespace leopph::impl
 
 		Material material;
 
-		material.m_DiffuseTexture = LoadTexturesByType(assimpMaterial, aiTextureType_DIFFUSE);
-		material.m_SpecularTexture = LoadTexturesByType(assimpMaterial, aiTextureType_SPECULAR);
+		material.diffuseMap = LoadTexturesByType(assimpMaterial, aiTextureType_DIFFUSE);
+		material.specularMap = LoadTexturesByType(assimpMaterial, aiTextureType_SPECULAR);
 
 		return Mesh(vertices, indices, std::move(material));
 	}
