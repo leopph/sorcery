@@ -63,7 +63,7 @@ namespace leopph::impl
 		{
 			if (pointLight != nullptr)
 			{
-				m_Shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].position", static_cast<Vector4>(pointLight->Object().Transform().Position()) * viewMatrix);
+				m_Shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].position", static_cast<Vector3>(static_cast<Vector4>(pointLight->Object().Transform().Position()) * viewMatrix));
 				m_Shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].diffuseColor", pointLight->Diffuse());
 				m_Shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].specularColor", pointLight->Specular());
 				m_Shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].constant", pointLight->Constant());
@@ -110,9 +110,10 @@ namespace leopph::impl
 			modelReference.ReferenceModel().Draw(m_Shader, modelViewMatrices, normalMatrices);
 		}
 
+		m_SkyboxShader.Use();
+
 		if (const auto& skybox{ Camera::Active()->Background().skybox }; skybox != nullptr)
 		{
-			m_SkyboxShader.Use();
 			m_SkyboxShader.SetUniform("viewMatrix", static_cast<Matrix4>(static_cast<Matrix3>(viewMatrix)));
 			m_SkyboxShader.SetUniform("projectionMatrix", projectionMatrix);
 			InstanceHolder::GetSkybox(*skybox).Draw(m_SkyboxShader);
