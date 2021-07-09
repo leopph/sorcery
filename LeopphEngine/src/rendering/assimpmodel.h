@@ -33,8 +33,7 @@ namespace leopph::impl
 		std::filesystem::path m_Directory;
 		std::filesystem::path m_Path;
 
-		void ProcessNode(aiNode* node, const aiScene* scene);
-		Mesh ProcessMesh(aiMesh* mesh, const aiScene* scene);
+		Mesh ProcessMesh(aiMesh* mesh, const aiScene* scene, const Matrix3& trafo);
 		std::unique_ptr<Texture> LoadTexturesByType(aiMaterial* material, aiTextureType assimpType);
 	};
 }

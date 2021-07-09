@@ -111,8 +111,8 @@ namespace leopph::impl
 			throw std::runtime_error{ msg };
 		}
 
-		shader.SetUniform("materialDiffuseColor", leopph::Vector3{ m_Material.m_DiffuseColor.red / 255.f, m_Material.m_DiffuseColor.green / 255.f, m_Material.m_DiffuseColor.blue / 255.f });
-		shader.SetUniform("materialSpecularColor", leopph::Vector3{ m_Material.m_SpecularColor.red / 255.f, m_Material.m_SpecularColor.green / 255.f, m_Material.m_SpecularColor.blue / 255.f });
+		shader.SetUniform("materialDiffuseColor", static_cast<Vector3>(m_Material.m_DiffuseColor));
+		shader.SetUniform("materialSpecularColor", static_cast<Vector3>(m_Material.m_SpecularColor));
 
 		std::size_t texCount{ 0 };
 
