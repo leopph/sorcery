@@ -95,14 +95,6 @@ namespace leopph::impl
 		/* Dec count of ModelRef on given path with given Object */
 		static void DecModel(const std::filesystem::path& path, Object* object);
 
-		/* Count of Mesh instances with given id */
-		static std::size_t MeshCount(unsigned id);
-		/* Inc count of Mesh with given ID.
-		If 0, create new with count 1. */
-		static void IncMesh(unsigned id);
-		/* Dec count of Mesh with given ID */
-		static void DecMesh(unsigned id);
-
 		/* Return pointer to SkyboxImpl on the given path, or nullptr, if not loaded yet */
 		static const SkyboxImpl* GetSkybox(const std::filesystem::path& left, const std::filesystem::path& right,
 			const std::filesystem::path& top, const std::filesystem::path& bottom,
@@ -120,7 +112,6 @@ namespace leopph::impl
 
 	private:
 		static std::unordered_set<TextureReference, TextureHash, TextureEqual> s_Textures;
-		static std::unordered_map<unsigned, std::size_t> s_MeshCounts;
 		static std::unordered_map<std::filesystem::path, ModelReference> s_Models;
 		static std::unordered_map<SkyboxImpl, std::size_t, SkyboxImplHash, SkyboxImplEqual> s_Skyboxes;
 

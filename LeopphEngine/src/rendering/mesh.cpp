@@ -68,8 +68,6 @@ namespace leopph::impl
 		glVertexArrayBindingDivisor(m_VertexArray, 2, 1);
 
 		SetModelBuffer();
-
-		InstanceHolder::IncMesh(m_VertexArray);
 	}
 
 	Mesh::Mesh(Mesh&& other) noexcept :
@@ -91,31 +89,8 @@ namespace leopph::impl
 
 	Mesh::~Mesh()
 	{
-		CleanUp();
-	}
-
-
-	leopph::impl::Mesh& Mesh::operator=(Mesh&& other) noexcept
-	{
-		CleanUp();
-
-		m_VertexArray = other.m_VertexArray;
-		m_ModelBufferSize = other.m_ModelBufferSize;
-
-		for (int i = 0; i < s_NumBuffers; ++i)
-		{
-			m_Buffers[i] = other.m_Buffers[i];
-			other.m_Buffers[i] = 0;
-		}
-
-		other.m_VertexArray = 0;
-		other.m_ModelBufferSize = 0;
-
-		m_Vertices = std::move(other.m_Vertices);
-		m_Indices = std::move(m_Indices);
-		m_Material = std::move(m_Material);
-
-		return *this;
+		glDeleteBuffers(s_NumBuffers, m_Buffers);
+		glDeleteVertexArrays(1, &m_VertexArray);
 	}
 
 
@@ -173,17 +148,6 @@ namespace leopph::impl
 		glBindVertexArray(m_VertexArray);
 		glDrawElementsInstanced(GL_TRIANGLES, static_cast<GLsizei>(m_Indices.size()), GL_UNSIGNED_INT, nullptr, static_cast<GLsizei>(modelMatrices.size()));
 		glBindVertexArray(0);
-	}
-
-	void Mesh::CleanUp()
-	{
-		InstanceHolder::DecMesh(m_VertexArray);
-
-		if (InstanceHolder::MeshCount(m_VertexArray) == 0)
-		{
-			glDeleteBuffers(s_NumBuffers, m_Buffers);
-			glDeleteVertexArrays(1, &m_VertexArray);
-		}
 	}
 
 	void Mesh::OnReferringObjectsChanged(std::size_t newAmount) const

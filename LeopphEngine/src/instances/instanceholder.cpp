@@ -13,7 +13,6 @@ namespace leopph::impl
 	std::set<Behavior*> InstanceHolder::s_Behaviors{};
 	DirectionalLight* InstanceHolder::s_DirLight{ nullptr };
 	std::vector<PointLight*> InstanceHolder::s_PointLights{};
-	std::unordered_map<unsigned, std::size_t> InstanceHolder::s_MeshCounts{};
 	std::unordered_map<std::filesystem::path, ModelReference> InstanceHolder::s_Models{};
 	std::unordered_map<SkyboxImpl, std::size_t, SkyboxImplHash, SkyboxImplEqual> InstanceHolder::s_Skyboxes{};
 
@@ -231,43 +230,6 @@ namespace leopph::impl
 	const std::unordered_map<std::filesystem::path, leopph::impl::ModelReference>& InstanceHolder::Models()
 	{
 		return s_Models;
-	}
-
-	std::size_t InstanceHolder::MeshCount(unsigned id)
-	{
-		if (s_MeshCounts.contains(id))
-			return s_MeshCounts.at(id);
-		
-		return 0;
-	}
-
-	void InstanceHolder::IncMesh(unsigned id)
-	{
-		if (id == 0)
-			return;
-
-		if (!s_MeshCounts.contains(id))
-			s_MeshCounts.insert({ id, 1 });
-		else
-			s_MeshCounts.at(id)++;
-	}
-
-	void InstanceHolder::DecMesh(unsigned id)
-	{
-		if (id == 0)
-			return;
-
-		if (!s_MeshCounts.contains(id))
-		{
-			const auto errorMsg{ "Mesh with ID [" + std::to_string(id) + "] has not been loaded yet." };
-			Logger::Instance().Error(errorMsg);
-			throw std::runtime_error(errorMsg);
-		}
-
-		s_MeshCounts.at(id)--;
-
-		if (s_MeshCounts.at(id) == 0)
-			s_MeshCounts.erase(id);
 	}
 
 	const leopph::impl::SkyboxImpl* InstanceHolder::GetSkybox(const std::filesystem::path& left, const std::filesystem::path& right, const std::filesystem::path& top, const std::filesystem::path& bottom, const std::filesystem::path& back, const std::filesystem::path& front)
