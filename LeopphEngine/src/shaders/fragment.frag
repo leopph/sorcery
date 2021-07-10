@@ -2,6 +2,7 @@
 
 #define ALPHA_THRESHOLD 0.01
 
+
 struct PointLight
 {
 	vec3 position;
@@ -37,6 +38,7 @@ struct Material
 	int hasSpecularMap;
 };
 
+
 in vec3 normal;
 in vec2 textureCoords;
 in vec3 fragPos;
@@ -51,36 +53,32 @@ uniform bool existsDirLight;
 
 out vec4 fragmentColor;
 
-vec3 CalculatePointLight(PointLight pointLight, vec3 surfaceNormal, vec3 materialDiffuseColor, vec3 materialSpecularColor)
-{
-	vec3 directionToLight = normalize(pointLight.position - fragPos);
-	float diffuseDot = max(dot(directionToLight, surfaceNormal), 0);
-	vec3 diffuse = materialDiffuseColor * diffuseDot * pointLight.diffuseColor;
 
-	if (diffuseDot != 0)
+vec3 CalculateLightEffect(vec3 direction, vec3 normal, vec3 matDiff, vec3 matSpec, vec3 lightDiff, vec3 lightSpec)
+{
+	float diffuseDot = max(dot(direction, normal), 0);
+	vec3 diffuse = matDiff * diffuseDot * lightDiff;
+
+	if (diffuseDot > 0)
 	{
-		vec3 reflection = normalize(2 * max(dot(directionToLight, surfaceNormal), 0) * surfaceNormal - directionToLight);
-		vec3 specular = materialSpecularColor * pow(max(dot(reflection, normalize(-fragPos)), 0), material.shininess) * pointLight.specularColor;
+		vec3 reflection = normalize(2 * diffuseDot * normal - direction);
+		vec3 specular = matSpec * pow(max(dot(reflection, normalize(-fragPos)), 0), material.shininess) * lightSpec;
 		return diffuse + specular;
 	}
 
 	return diffuse;
 }
 
+vec3 CalculatePointLight(PointLight pointLight, vec3 surfaceNormal, vec3 materialDiffuseColor, vec3 materialSpecularColor)
+{
+	vec3 directionToLight = normalize(pointLight.position - fragPos);
+	return CalculateLightEffect(directionToLight, surfaceNormal, materialDiffuseColor, materialSpecularColor, pointLight.diffuseColor, pointLight.specularColor);
+}
+
 vec3 CalculateDirLight(DirLight dirLight, vec3 surfaceNormal, vec3 materialDiffuseColor, vec3 materialSpecularColor)
 {
 	vec3 directionToLight = -dirLight.direction;
-	float diffuseDot = max(dot(directionToLight, surfaceNormal), 0);
-	vec3 diffuse = materialDiffuseColor * diffuseDot * dirLight.diffuseColor;
-
-	if (diffuseDot != 0)
-	{
-		vec3 reflection = normalize(2 * max(dot(directionToLight, surfaceNormal), 0) * surfaceNormal - directionToLight);	
-		vec3 specular = materialSpecularColor * pow(max(dot(reflection, normalize(-fragPos)), 0), material.shininess) * dirLight.specularColor;
-		return diffuse + specular;
-	}
-
-	return diffuse;
+	return CalculateLightEffect(directionToLight, surfaceNormal, materialDiffuseColor, materialSpecularColor, dirLight.diffuseColor, dirLight.specularColor);
 }
 
 void main()
