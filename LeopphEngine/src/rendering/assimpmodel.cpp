@@ -138,7 +138,7 @@ namespace leopph::impl
 			static_cast<unsigned char>(parsedSpecularColor.g * 255), static_cast<unsigned char>(parsedSpecularColor.b * 255) };
 
 		aiColor3D parsedAmbientColor;
-		if (assimpMaterial->Get(AI_MATKEY_COLOR_AMBIENT, parsedSpecularColor) == aiReturn_SUCCESS)
+		if (assimpMaterial->Get(AI_MATKEY_COLOR_AMBIENT, parsedAmbientColor) == aiReturn_SUCCESS)
 			material.ambientColor = { static_cast<unsigned char>(parsedAmbientColor.r * 255),
 			static_cast<unsigned char>(parsedAmbientColor.g * 255), static_cast<unsigned char>(parsedAmbientColor.b * 255) };
 
