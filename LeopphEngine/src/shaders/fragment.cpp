@@ -41,9 +41,11 @@ struct Material
 };
 
 
-in vec3 normal;
-in vec2 textureCoords;
-in vec3 fragPos;
+layout (location = 0) in vec3 inNormal;
+layout (location = 1) in vec2 inTexCoords;
+layout (location = 2) in vec3 inFragPos;
+
+out vec4 fragmentColor;
 
 uniform Material material;
 
@@ -52,8 +54,6 @@ uniform int lightNumber;
 
 uniform DirLight dirLight;
 uniform bool existsDirLight;
-
-out vec4 fragmentColor;
 
 
 vec3 CalculateLightEffect(vec3 direction, vec3 normal, vec3 matDiff, vec3 matSpec, vec3 lightDiff, vec3 lightSpec)
@@ -64,7 +64,7 @@ vec3 CalculateLightEffect(vec3 direction, vec3 normal, vec3 matDiff, vec3 matSpe
 	if (diffuseDot > 0)
 	{
 		vec3 reflection = normalize(2 * diffuseDot * normal - direction);
-		vec3 specular = matSpec * pow(max(dot(reflection, normalize(-fragPos)), 0), material.shininess) * lightSpec;
+		vec3 specular = matSpec * pow(max(dot(reflection, normalize(-inFragPos)), 0), material.shininess) * lightSpec;
 		return diffuse + specular;
 	}
 
@@ -73,7 +73,7 @@ vec3 CalculateLightEffect(vec3 direction, vec3 normal, vec3 matDiff, vec3 matSpe
 
 vec3 CalculatePointLight(PointLight pointLight, vec3 surfaceNormal, vec3 materialDiffuseColor, vec3 materialSpecularColor)
 {
-	vec3 directionToLight = normalize(pointLight.position - fragPos);
+	vec3 directionToLight = normalize(pointLight.position - inFragPos);
 	return CalculateLightEffect(directionToLight, surfaceNormal, materialDiffuseColor, materialSpecularColor, pointLight.diffuseColor, pointLight.specularColor);
 }
 
@@ -89,7 +89,7 @@ void main()
 	vec4 diffuseMapColor = vec4(0, 0, 0, 1);
 	if (material.hasDiffuseMap != 0)
 	{
-		diffuseMapColor = texture(material.diffuseMap, textureCoords);
+		diffuseMapColor = texture(material.diffuseMap, inTexCoords);
 
 		if (diffuseMapColor.a < ALPHA_THRESHOLD)
 			discard;
@@ -101,7 +101,7 @@ void main()
 	vec4 specularMapColor = vec4(0, 0, 0, 1);
 	if (material.hasSpecularMap != 0)
 	{
-		specularMapColor = texture(material.specularMap, textureCoords);
+		specularMapColor = texture(material.specularMap, inTexCoords);
 
 		if (specularMapColor.a < ALPHA_THRESHOLD)
 			discard;
@@ -109,15 +109,15 @@ void main()
 		specularColor *= specularMapColor.rgb;
 	}
 
-	vec3 normalizedNormal = normalize(normal);
+	vec3 normal = normalize(inNormal);
 
 	vec3 colorSum = vec3(0);
 
 	if (existsDirLight)
-		colorSum += CalculateDirLight(dirLight, normalizedNormal, diffuseColor, specularColor);
+		colorSum += CalculateDirLight(dirLight, normal, diffuseColor, specularColor);
 
 	for (int i = 0; i < lightNumber; i++)
-		colorSum += CalculatePointLight(pointLights[i], normalizedNormal, diffuseColor, specularColor);
+		colorSum += CalculatePointLight(pointLights[i], normal, diffuseColor, specularColor);
 
 	fragmentColor = vec4(colorSum, min(diffuseMapColor.a, specularMapColor.a));
 })#fileContents#" };
