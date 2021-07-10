@@ -120,10 +120,34 @@ namespace leopph::impl
 
 		aiMaterial* assimpMaterial{ scene->mMaterials[mesh->mMaterialIndex] };
 
+		std::cout << "Processing mesh: " << mesh->mName.C_Str() << std::endl;
+		for (std::size_t j = 0; j < assimpMaterial->mNumProperties; ++j)
+			std::cout << assimpMaterial->mProperties[j]->mKey.C_Str() << std::endl;
+
 		Material material;
 
 		material.diffuseMap = LoadTexturesByType(assimpMaterial, aiTextureType_DIFFUSE);
 		material.specularMap = LoadTexturesByType(assimpMaterial, aiTextureType_SPECULAR);
+		
+		ai_real parsedShininess;
+		if (assimpMaterial->Get(AI_MATKEY_SHININESS, parsedShininess) == aiReturn_SUCCESS)
+			material.shininess = static_cast<decltype(Material::shininess)>(parsedShininess);
+
+		aiColor3D parsedDiffuseColor;
+		if (assimpMaterial->Get(AI_MATKEY_COLOR_DIFFUSE, parsedDiffuseColor) == aiReturn_SUCCESS)
+			material.diffuseColor = { static_cast<unsigned char>(parsedDiffuseColor.r * 255),
+			static_cast<unsigned char>(parsedDiffuseColor.g * 255), static_cast<unsigned char>(parsedDiffuseColor.b * 255) };
+
+		aiColor3D parsedSpecularColor;
+		if (assimpMaterial->Get(AI_MATKEY_COLOR_SPECULAR, parsedSpecularColor) == aiReturn_SUCCESS)
+			material.specularColor = { static_cast<unsigned char>(parsedSpecularColor.r * 255),
+			static_cast<unsigned char>(parsedSpecularColor.g * 255), static_cast<unsigned char>(parsedSpecularColor.b * 255) };
+
+		aiColor3D parsedAmbientColor;
+		if (assimpMaterial->Get(AI_MATKEY_COLOR_AMBIENT, parsedSpecularColor) == aiReturn_SUCCESS)
+			material.ambientColor = { static_cast<unsigned char>(parsedAmbientColor.r * 255),
+			static_cast<unsigned char>(parsedAmbientColor.g * 255), static_cast<unsigned char>(parsedAmbientColor.b * 255) };
+
 
 		return Mesh(vertices, indices, std::move(material));
 	}

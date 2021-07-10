@@ -3,7 +3,7 @@
 namespace leopph::impl
 {
 	Light::Light() :
-		m_Diffuse{ 0.8f, 0.8f, 0.8f },
+		m_Diffuse{ 1.0f, 1.0f, 1.0f },
 		m_Specular{ 1.0f, 1.0f, 1.0f }
 	{}
 
