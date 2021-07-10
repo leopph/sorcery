@@ -16,6 +16,7 @@ namespace leopph
 
 		float shininess;
 
+		std::unique_ptr<impl::Texture> ambientMap;
 		std::unique_ptr<impl::Texture> diffuseMap;
 		std::unique_ptr<impl::Texture> specularMap;
 

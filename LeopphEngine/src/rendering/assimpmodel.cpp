@@ -12,8 +12,6 @@
 #include <queue>
 #include <utility>
 
-#include <iostream>
-
 namespace leopph::impl
 {
 	AssimpModelImpl::AssimpModelImpl(std::filesystem::path path) :
@@ -119,13 +117,9 @@ namespace leopph::impl
 
 
 		aiMaterial* assimpMaterial{ scene->mMaterials[mesh->mMaterialIndex] };
-
-		std::cout << "Processing mesh: " << mesh->mName.C_Str() << std::endl;
-		for (std::size_t j = 0; j < assimpMaterial->mNumProperties; ++j)
-			std::cout << assimpMaterial->mProperties[j]->mKey.C_Str() << std::endl;
-
 		Material material;
 
+		material.ambientMap = LoadTexturesByType(assimpMaterial, aiTextureType_AMBIENT);
 		material.diffuseMap = LoadTexturesByType(assimpMaterial, aiTextureType_DIFFUSE);
 		material.specularMap = LoadTexturesByType(assimpMaterial, aiTextureType_SPECULAR);
 		

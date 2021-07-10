@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../components/lighting/ambientlight.h"
 #include "../components/lighting/pointlight.h"
 #include "../components/lighting/dirlight.h"
 #include "../hierarchy/object.h"
@@ -86,6 +87,11 @@ namespace leopph::impl
 		/* Remove pointer of PointLight from registry */
 		static void UnregisterPointLight(PointLight* pointLight);
 
+		/* AmbientLight instance */
+		static leopph::AmbientLight* AmbientLight();
+		/* Set the instance */
+		static void AmbientLight(leopph::AmbientLight*&& light);
+
 		/* All ModelRefs */
 		static const std::unordered_map<std::filesystem::path, ModelReference>& Models();
 		/* Reference to ModelRef on the given path */
@@ -120,5 +126,6 @@ namespace leopph::impl
 
 		static leopph::DirectionalLight* s_DirLight;
 		static std::vector<PointLight*> s_PointLights;
+		static std::unique_ptr<leopph::AmbientLight> s_AmbientLight;
 	};
 }

@@ -43,6 +43,7 @@
     <ClCompile Include="src\util\skyboximplhash.cpp" />
     <ClCompile Include="src\util\skyboximplequal.cpp" />
     <ClCompile Include="src\misc\color.cpp" />
+    <ClCompile Include="src\components\lighting\ambientlight.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\behavior.h" />
@@ -95,6 +96,7 @@
     <ClInclude Include="src\instances\skyboximpl.h" />
     <ClInclude Include="src\util\skyboximplhash.h" />
     <ClInclude Include="src\util\skyboximplequal.h" />
+    <ClInclude Include="src\components\lighting\ambientlight.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\shaders\fragment.frag" />

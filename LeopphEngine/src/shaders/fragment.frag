@@ -25,15 +25,17 @@ struct DirLight
 
 struct Material
 {
-	vec3 ambientcolor;
+	vec3 ambientColor;
 	vec3 diffuseColor;
 	vec3 specularColor;
 
 	float shininess;
 
+	sampler2D ambientMap;
 	sampler2D diffuseMap;
 	sampler2D specularMap;
 
+	int hasAmbientMap;
 	int hasDiffuseMap;
 	int hasSpecularMap;
 };
@@ -52,6 +54,8 @@ uniform int lightNumber;
 
 uniform DirLight dirLight;
 uniform bool existsDirLight;
+
+uniform vec3 ambientLight;
 
 
 vec3 CalculateLightEffect(vec3 direction, vec3 normal, vec3 matDiff, vec3 matSpec, vec3 lightDiff, vec3 lightSpec)
@@ -86,6 +90,20 @@ vec3 CalculateDirLight(DirLight dirLight, vec3 surfaceNormal, vec3 materialDiffu
 
 void main()
 {
+	/* Calculate ambient RGB */
+	vec3 ambientColor = material.ambientColor;
+	vec4 ambientMapColor = vec4(0, 0, 0, 1);
+	if (material.hasAmbientMap != 0)
+	{
+		ambientMapColor = texture(material.ambientMap, inTexCoords);
+
+		if (ambientMapColor.a < ALPHA_THRESHOLD)
+			discard;
+
+		ambientColor *= ambientMapColor.rgb;
+	}
+
+	/* Calculate diffuse RGB */
 	vec3 diffuseColor = material.diffuseColor;
 	vec4 diffuseMapColor = vec4(0, 0, 0, 1);
 	if (material.hasDiffuseMap != 0)
@@ -98,6 +116,7 @@ void main()
 		diffuseColor *= diffuseMapColor.rgb;
 	}
 
+	/* Calculate specular RGB */
 	vec3 specularColor = material.specularColor;
 	vec4 specularMapColor = vec4(0, 0, 0, 1);
 	if (material.hasSpecularMap != 0)
@@ -112,13 +131,15 @@ void main()
 
 	vec3 normal = normalize(inNormal);
 
-	vec3 colorSum = vec3(0);
+	/* Base color is ambient */
+	vec3 colorSum = ambientColor;
 
+	/* Process and add diffuse and specular colors */
 	if (existsDirLight)
 		colorSum += CalculateDirLight(dirLight, normal, diffuseColor, specularColor);
-
 	for (int i = 0; i < lightNumber; i++)
 		colorSum += CalculatePointLight(pointLights[i], normal, diffuseColor, specularColor);
 
-	fragmentColor = vec4(colorSum, min(diffuseMapColor.a, specularMapColor.a));
+	/* Combie fragment RGB color with the smallest of the maps' alpha values for transparency */
+	fragmentColor = vec4(colorSum, min(min(ambientMapColor.a, diffuseMapColor.a), specularMapColor.a));
 }

@@ -87,6 +87,8 @@ namespace leopph::impl
 			m_Shader.SetUniform("existsDirLight", false);
 		}
 
+		m_Shader.SetUniform("ambientLight", AmbientLight::Instance().Intensity());
+
 		m_Shader.SetUniform("projectionMatrix", projectionMatrix);
 
 		for (const auto& pair : InstanceHolder::Models())

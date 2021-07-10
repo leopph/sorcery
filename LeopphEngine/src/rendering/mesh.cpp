@@ -118,6 +118,18 @@ namespace leopph::impl
 
 		std::size_t texCount{ 0 };
 
+		if (m_Material.ambientMap != nullptr)
+		{
+			shader.SetUniform("material.hasAmbientMap", true);
+			shader.SetUniform("material.ambientMap", static_cast<int>(texCount));
+			glBindTextureUnit(static_cast<GLuint>(texCount), m_Material.ambientMap->id);
+			++texCount;
+		}
+		else
+		{
+			shader.SetUniform("material.hasAmbientMap", false);
+		}
+
 		if (m_Material.diffuseMap != nullptr)
 		{
 			shader.SetUniform("material.hasDiffuseMap", true);

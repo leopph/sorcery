@@ -136,6 +136,7 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClInclude Include="src\components\behavior.h" />
     <ClInclude Include="src\components\camera.h" />
     <ClInclude Include="src\components\component.h" />
+    <ClInclude Include="src\components\lighting\ambientlight.h" />
     <ClInclude Include="src\components\lighting\dirlight.h" />
     <ClInclude Include="src\entry\appstart.h" />
     <ClInclude Include="src\entry\entry.h" />
@@ -187,6 +188,7 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClCompile Include="src\components\behavior.cpp" />
     <ClCompile Include="src\components\camera.cpp" />
     <ClCompile Include="src\components\component.cpp" />
+    <ClCompile Include="src\components\lighting\ambientlight.cpp" />
     <ClCompile Include="src\components\lighting\dirlight.cpp" />
     <ClCompile Include="src\config\settings.cpp" />
     <ClCompile Include="src\entry\launch.cpp" />

@@ -13,6 +13,7 @@ namespace leopph::impl
 	std::set<Behavior*> InstanceHolder::s_Behaviors{};
 	DirectionalLight* InstanceHolder::s_DirLight{ nullptr };
 	std::vector<PointLight*> InstanceHolder::s_PointLights{};
+	std::unique_ptr<AmbientLight> InstanceHolder::s_AmbientLight{ nullptr };
 	std::unordered_map<std::filesystem::path, ModelReference> InstanceHolder::s_Models{};
 	std::unordered_map<SkyboxImpl, std::size_t, SkyboxImplHash, SkyboxImplEqual> InstanceHolder::s_Skyboxes{};
 
@@ -295,5 +296,15 @@ namespace leopph::impl
 
 		if (s_Skyboxes.at(*skybox) == 0)
 			s_Skyboxes.erase(*skybox);
+	}
+
+	leopph::AmbientLight* InstanceHolder::AmbientLight()
+	{
+		return s_AmbientLight.get();
+	}
+
+	void InstanceHolder::AmbientLight(leopph::AmbientLight*&& light)
+	{
+		s_AmbientLight = std::unique_ptr<leopph::AmbientLight>(std::forward<leopph::AmbientLight*>(light));
 	}
 }
