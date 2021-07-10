@@ -37,7 +37,7 @@ namespace leopph
 		/* Rotate the transform around the world's axes */
 		LEOPPHAPI void RotateGlobal(const Quaternion& rotation);
 
-		/* Spactial scaling */
+		/* Spatial scaling */
 		LEOPPHAPI const Vector3& Scale() const;
 		LEOPPHAPI void Scale(Vector3 newScale);
 

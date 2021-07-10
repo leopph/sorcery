@@ -42,8 +42,8 @@ namespace leopph::impl
 		Matrix3 rootTrafo;
 		for (unsigned i = 0; i < 3; ++i)
 			for (unsigned j = 0; j < 3; ++j)
-				rootTrafo[i][j] = scene->mRootNode->mTransformation[i][j];
-		rootTrafo = Matrix3{ 1, 1, -1 } * rootTrafo * Matrix3{ 1, 1, -1 }.Inverse();
+				rootTrafo[i][j] = scene->mRootNode->mTransformation[j][i];
+		rootTrafo *= Matrix3{ 1, 1, -1 };
 		nodes.emplace(scene->mRootNode, rootTrafo);
 
 		while (!nodes.empty())
@@ -59,7 +59,7 @@ namespace leopph::impl
 				Matrix3 childTrafo;
 				for (unsigned j = 0; j < 3; ++j)
 					for (unsigned k = 0; k < 3; ++k)
-						childTrafo[j][k] = entry.node->mChildren[i]->mTransformation[j][k];
+						childTrafo[j][k] = entry.node->mChildren[i]->mTransformation[k][j];
 
 				nodes.emplace(entry.node->mChildren[i], entry.trafo * childTrafo);
 			}

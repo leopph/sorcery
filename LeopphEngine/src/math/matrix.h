@@ -72,7 +72,7 @@ namespace leopph
 						m_Data[i][j] = argArr[i * M + j];
 			}
 
-			/* Main Diagional Vector Constructor */
+			/* Main Diagonal Vector Constructor */
 			template<std::size_t N1> requires(N1 == (M > N ? N : M))
 				Matrix(const Vector<T, N1>& vec) :
 				m_Data{}
@@ -159,8 +159,6 @@ namespace leopph
 
 				for (size_t i = 0; i < 3; i++)
 					ret[i][i] = vector[i];
-
-				ret[3][3] = 1;
 
 				return ret;
 			}
