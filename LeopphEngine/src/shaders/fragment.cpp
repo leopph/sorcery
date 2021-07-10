@@ -73,8 +73,11 @@ vec3 CalculateLightEffect(vec3 direction, vec3 normal, vec3 matDiff, vec3 matSpe
 
 vec3 CalculatePointLight(PointLight pointLight, vec3 surfaceNormal, vec3 materialDiffuseColor, vec3 materialSpecularColor)
 {
-	vec3 directionToLight = normalize(pointLight.position - inFragPos);
-	return CalculateLightEffect(directionToLight, surfaceNormal, materialDiffuseColor, materialSpecularColor, pointLight.diffuseColor, pointLight.specularColor);
+	vec3 posDiff = pointLight.position - inFragPos;
+	float dist = length(posDiff);
+	float att = 1.0 / (pointLight.constant + (pointLight.linear * dist) + (pointLight.quadratic * pow(dist, 2)));
+	vec3 directionToLight = normalize(posDiff);
+	return att * CalculateLightEffect(directionToLight, surfaceNormal, materialDiffuseColor, materialSpecularColor, pointLight.diffuseColor, pointLight.specularColor);
 }
 
 vec3 CalculateDirLight(DirLight dirLight, vec3 surfaceNormal, vec3 materialDiffuseColor, vec3 materialSpecularColor)

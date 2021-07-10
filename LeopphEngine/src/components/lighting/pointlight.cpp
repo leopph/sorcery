@@ -3,7 +3,8 @@
 
 namespace leopph
 {
-	PointLight::PointLight()
+	PointLight::PointLight() :
+		m_Constant{ 1.0f }, m_Linear{ 0.14f }, m_Quadratic{ 0.07f }
 	{
 		impl::InstanceHolder::RegisterPointLight(this);
 	}
@@ -11,14 +12,6 @@ namespace leopph
 	PointLight::~PointLight()
 	{
 		impl::InstanceHolder::UnregisterPointLight(this);
-	}
-
-
-
-	float PointLight::Range() const
-	{
-		// TODO
-		return 0;
 	}
 
 
