@@ -3,6 +3,7 @@
 #include "../hierarchy/object.h"
 #include "../rendering/assimpmodel.h"
 
+#include <cstddef>
 #include <filesystem>
 
 namespace leopph::impl
@@ -10,14 +11,14 @@ namespace leopph::impl
 	class ModelReference
 	{
 	public:
-		ModelReference(std::filesystem::path path);
+		explicit ModelReference(std::filesystem::path path);
 
 		void AddObject(Object* object);
 		void RemoveObject(Object* object);
-		std::size_t ReferenceCount() const;
-		const std::set<Object*> Objects() const;
+		[[nodiscard]] std::size_t ReferenceCount() const;
+		[[nodiscard]] const std::set<Object*>& Objects() const;
 
-		const AssimpModelImpl& ReferenceModel() const;
+		[[nodiscard]] const AssimpModelImpl& ReferenceModel() const;
 
 	private:
 		std::set<Object*> m_Objects;

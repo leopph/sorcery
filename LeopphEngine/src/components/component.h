@@ -19,9 +19,14 @@ namespace leopph
 		friend class Object;
 
 	public:
-		/* Constructors and destructors used internally */
 		Component() = default;
+		Component(const Component&) = delete;
+		Component(Component&&) = delete;
+		
 		virtual ~Component() = 0;
+
+		void operator=(const Component&) = delete;
+		void operator=(Component&&) = delete;
 
 
 		/* This function is called immediately after construction.
@@ -32,7 +37,7 @@ namespace leopph
 
 		/* These provide access to the owning Object */
 		leopph::Object& Object();
-		const leopph::Object& Object() const;
+		[[nodiscard]] const leopph::Object& Object() const;
 
 	private:
 		void SetOwnership(leopph::Object* object);

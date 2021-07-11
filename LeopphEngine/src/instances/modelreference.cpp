@@ -28,7 +28,7 @@ namespace leopph::impl
 		return m_ReferenceModel;
 	}
 
-	const std::set<Object*> ModelReference::Objects() const
+	const std::set<Object*>& ModelReference::Objects() const
 	{
 		return m_Objects;
 	}
