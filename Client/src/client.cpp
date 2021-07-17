@@ -96,9 +96,13 @@ void leopph::AppStart()
 	auto portrait = Object::Create();
 	portrait->AddComponent<Model>("models/portrait/cropped_textured_mesh.obj");
 
-	auto cube = Object::Create();
-	cube->Transform().Position({ 0, 0, 3 });
-	cube->AddComponent<Model>("models/cube/cube.dae");
+	constexpr const std::size_t cubeNumber{ 5000u };
+	for (std::size_t i = 0; i < cubeNumber; i++)
+	{
+		auto cube = Object::Create();
+		cube->Transform().Position({ rand() % 100 - 50, rand() % 100 -50, rand() % 100 - 50 });
+		cube->AddComponent<Model>("models/cube/cube.dae");
+	}
 
 	Object* dirLight = Object::Create();
 	dirLight->AddComponent<DirectionalLight>();

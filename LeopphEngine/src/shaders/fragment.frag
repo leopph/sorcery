@@ -65,9 +65,15 @@ vec3 CalculateLightEffect(vec3 direction, vec3 normal, vec3 matDiff, vec3 matSpe
 
 	if (diffuseDot > 0)
 	{
-		vec3 reflection = normalize(2 * diffuseDot * normal - direction);
-		vec3 specular = matSpec * pow(max(dot(reflection, normalize(-inFragPos)), 0), material.shininess) * lightSpec;
+		// Blinn-Phong
+		vec3 halfway = normalize(direction + normalize(-inFragPos));
+		vec3 specular = matSpec * pow(max(dot(normal, halfway), 0), 4 * material.shininess) * lightSpec;
 		return diffuse + specular;
+
+		// Phong
+		/*vec3 reflection = normalize(2 * diffuseDot * normal - direction);
+		vec3 specular = matSpec * pow(max(dot(reflection, normalize(-inFragPos)), 0), material.shininess) * lightSpec;
+		return diffuse + specular;*/
 	}
 
 	return diffuse;
