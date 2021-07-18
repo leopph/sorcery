@@ -92,12 +92,20 @@
     <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\client.cpp" />
+    <ClCompile Include="src\behaviors\cameracontroller.cpp" />
+    <ClCompile Include="src\behaviors\fpscounter.cpp" />
+    <ClCompile Include="src\behaviors\rotate.cpp" />
+    <ClCompile Include="src\start.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\LeopphEngine\LeopphEngine.vcxproj">
       <Project>{03803a6b-9f79-4245-936d-059a695aa449}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\behaviors\cameracontroller.h" />
+    <ClInclude Include="src\behaviors\fpscounter.h" />
+    <ClInclude Include="src\behaviors\rotate.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
