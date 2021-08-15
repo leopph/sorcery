@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../hierarchy/object.h"
+#include "../hierarchy/Object.hpp"
 #include "../rendering/assimpmodel.h"
 
 #include <cstddef>

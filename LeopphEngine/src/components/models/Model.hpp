@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../../api/leopphapi.h"
-#include "../component.h"
+#include "../Component.hpp"
 
 #include <filesystem>
 
@@ -12,24 +12,25 @@ namespace leopph
 		class AssimpModelImpl;
 	}
 
+	class Object;
 
 	/*-----------------------------------------------------------------------------
 	The Model class represents a drawable entity that can be attached to Objects.
 	The way it is rendered depends on the owning Object's current state in space.
 	See "object.h" for more information.
 	-----------------------------------------------------------------------------*/
-
-	class Model : public Component
+	class Model final : public Component
 	{
 	public:
-		LEOPPHAPI Model(std::filesystem::path path);
-		LEOPPHAPI Model(const Model& other) = delete;
-		LEOPPHAPI ~Model();
+		LEOPPHAPI explicit Model(Object& owner, const std::filesystem::path& path);
+		LEOPPHAPI ~Model() override;
 
-		LEOPPHAPI void Init() override;
-		
-		LEOPPHAPI Model& operator=(const Model& other) = delete;
-		LEOPPHAPI bool operator==(const Model& other) const;
+		Model(const Model&) = delete;
+		Model(Model&&) = delete;
+		void operator=(const Model&) = delete;
+		void operator=(Model&&) = delete;
+
+		bool operator==(const Model& other) const;
 
 		LEOPPHAPI const std::filesystem::path& Path() const;
 

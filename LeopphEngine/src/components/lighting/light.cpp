@@ -1,8 +1,9 @@
-#include "light.h"
+#include "Light.hpp"
 
 namespace leopph::impl
 {
-	Light::Light() :
+	Light::Light(Object& owner) :
+		Component{ owner },
 		m_Diffuse{ 1.0f, 1.0f, 1.0f },
 		m_Specular{ 1.0f, 1.0f, 1.0f }
 	{}

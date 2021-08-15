@@ -1,10 +1,11 @@
-#include "pointlight.h"
-#include "../../instances/instanceholder.h"
+#include "PointLight.hpp"
+
+#include "../../instances/InstanceHolder.hpp"
 
 namespace leopph
 {
-	PointLight::PointLight() :
-		m_Constant{ 1.0f }, m_Linear{ 0.14f }, m_Quadratic{ 0.07f }
+	PointLight::PointLight(Object& owner) :
+		Light{ owner }, m_Constant{ 1.0f }, m_Linear{ 0.14f }, m_Quadratic{ 0.07f }
 	{
 		impl::InstanceHolder::RegisterPointLight(this);
 	}
@@ -32,17 +33,17 @@ namespace leopph
 	}
 
 
-	void PointLight::Constant(float value)
+	void PointLight::Constant(const float value)
 	{
 		m_Constant = value;
 	}
 
-	void PointLight::Linear(float value)
+	void PointLight::Linear(const float value)
 	{
 		m_Linear = value;
 	}
 
-	void PointLight::Quadratic(float value)
+	void PointLight::Quadratic(const float value)
 	{
 		m_Quadratic = value;
 	}

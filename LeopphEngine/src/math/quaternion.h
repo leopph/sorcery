@@ -35,10 +35,10 @@ namespace leopph
 		float& operator[](std::size_t index);
 
 		/* Mathematical magnitude of the Quaternion */
-		float Magnitude() const;
+		[[nodiscard]] float Magnitude() const;
 
 		/* Cast the Quaternion to a 3D rotation Matrix */
-		operator Matrix4() const;
+		explicit operator Matrix4() const;
 
 	private:
 		float w{ 1.0f };
@@ -53,5 +53,6 @@ namespace leopph
 	----------------*/
 
 	LEOPPHAPI Quaternion operator*(const Quaternion& left, const Quaternion& right);
+	LEOPPHAPI Quaternion& operator*=(Quaternion& left, const Quaternion& right);
 	LEOPPHAPI std::ostream& operator<<(std::ostream& os, const Quaternion& q);
 }

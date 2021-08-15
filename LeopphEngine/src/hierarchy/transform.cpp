@@ -1,23 +1,33 @@
-#include "transform.h"
+#include "Transform.hpp"
+
+#include "Object.hpp"
+
+#include "../util/logger.h"
 
 namespace leopph
 {
-	Transform::Transform() :
-		m_Position{}, m_Rotation{}, m_Scale{ 1, 1, 1 },
-		m_Forward{ Vector3::Forward() }, m_Right{ Vector3::Right() }, m_Up{ Vector3::Up() }
+	Transform::Transform(Object& owner) :
+		Component{ owner },
+		m_Scale{ 1, 1, 1 },
+		m_Forward{ Vector3::Forward() },
+		m_Right{ Vector3::Right() },
+		m_Up{ Vector3::Up() }
 	{}
-
-
-
 
 	const Vector3& Transform::Position() const
 	{
 		return m_Position;
 	}
 
-	void Transform::Position(Vector3 newPos)
+	void Transform::Position(const Vector3& newPos)
 	{
-		m_Position = std::move(newPos);
+		if (object.isStatic)
+		{
+			impl::Logger::Instance().Warning("Trying to set position on static object [" + object.name + "]. Ignoring...");
+			return;
+		}
+
+		m_Position = newPos;
 	}
 
 	const Quaternion& Transform::Rotation() const
@@ -25,11 +35,17 @@ namespace leopph
 		return m_Rotation;
 	}
 
-	void Transform::Rotation(Quaternion newRot)
+	void Transform::Rotation(const Quaternion newRot)
 	{
-		m_Rotation = std::move(newRot);
+		if (object.isStatic)
+		{
+			impl::Logger::Instance().Warning("Trying to set rotation on static object [" + object.name + "]. Ignoring...");
+			return;
+		}
 
-		auto rotMatrix = static_cast<Matrix3>(static_cast<Matrix4>(m_Rotation));
+		m_Rotation = newRot;
+
+		const auto rotMatrix = static_cast<Matrix3>(static_cast<Matrix4>(m_Rotation));
 		m_Forward = Vector3::Forward() * rotMatrix;
 		m_Right = Vector3::Right() * rotMatrix;
 		m_Up = Vector3::Up() * rotMatrix;
@@ -40,12 +56,73 @@ namespace leopph
 		return m_Scale;
 	}
 
-	void Transform::Scale(Vector3 newScale)
+	void Transform::Scale(const Vector3& newScale)
 	{
-		m_Scale = std::move(newScale);
+		if (object.isStatic)
+		{
+			impl::Logger::Instance().Warning("Trying to set scale on static object [" + object.name + "]. Ignoring...");
+			return;
+		}
+
+		m_Scale = newScale;
 	}
 
+	void Transform::Translate(const Vector3& vector)
+	{
+		if (object.isStatic)
+		{
+			impl::Logger::Instance().Warning("Trying to translate position on static object [" + object.name + "]. Ignoring...");
+			return;
+		}
 
+		Position(Position() + vector);
+	}
+
+	void Transform::Translate(const float x, const float y, const float z)
+	{
+		if (object.isStatic)
+		{
+			impl::Logger::Instance().Warning("Trying to translate position on static object [" + object.name + "]. Ignoring...");
+			return;
+		}
+
+		Position(Position() + Vector3{ x, y, z });
+	}
+
+	void Transform::RotateLocal(const Quaternion& rotation)
+	{
+		if (object.isStatic)
+		{
+			impl::Logger::Instance().Warning("Trying to rotate static object [" + object.name + "]. Ignoring...");
+			return;
+		}
+
+		Rotation(Rotation() * rotation);
+	}
+
+	void Transform::RotateGlobal(const Quaternion& rotation)
+	{
+		if (object.isStatic)
+		{
+			impl::Logger::Instance().Warning("Trying to rotate static object [" + object.name + "]. Ignoring...");
+			return;
+		}
+
+		Rotation(rotation * Rotation());
+	}
+
+	void Transform::Rescale(const float x, const float y, const float z)
+	{
+		if (object.isStatic)
+		{
+			impl::Logger::Instance().Warning("Trying to rescale static object [" + object.name + "]. Ignoring...");
+			return;
+		}
+
+		m_Scale[0] *= x;
+		m_Scale[1] *= y;
+		m_Scale[2] *= z;
+	}
 
 	const Vector3& Transform::Forward() const
 	{
@@ -62,32 +139,4 @@ namespace leopph
 		return m_Up;
 	}
 
-
-
-	void Transform::Translate(const Vector3& vector)
-	{
-		Position(Position() + vector);
-	}
-
-	void Transform::Translate(float x, float y, float z)
-	{
-		Position(Position() + Vector3{ x, y, z });
-	}
-
-	void Transform::RotateLocal(const Quaternion& rotation)
-	{
-		Rotation(Rotation() * rotation);
-	}
-
-	void Transform::RotateGlobal(const Quaternion& rotation)
-	{
-		Rotation(rotation * Rotation());
-	}
-
-	void Transform::Rescale(float x, float y, float z)
-	{
-		m_Scale[0] *= x;
-		m_Scale[1] *= y;
-		m_Scale[2] *= z;
-	}
 }

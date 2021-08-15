@@ -2,7 +2,7 @@
 
 
 #include "../api/leopphapi.h"
-#include "component.h"
+#include "Component.hpp"
 
 
 namespace leopph
@@ -13,12 +13,16 @@ namespace leopph
 	See "object.h" and "component.h" for more information.
 	------------------------------------------------------------------------------------------------------*/
 
-	class LEOPPHAPI Behavior : public Component
+	class Behavior : public Component
 	{
 	public:
-		/* Contructor and destructor used internally */
-		Behavior();
-		~Behavior() override = 0;
+		LEOPPHAPI explicit Behavior(Object& owner);
+		LEOPPHAPI ~Behavior() override = 0;
+
+		Behavior(const Behavior&) = delete;
+		Behavior(Behavior&&) = delete;
+		void operator=(const Behavior&) = delete;
+		void operator=(Behavior&&) = delete;
 
 		/* This function gets called every frame. Override this to provide business logic */
 		virtual void OnFrameUpdate() {}

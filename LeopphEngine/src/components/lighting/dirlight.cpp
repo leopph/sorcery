@@ -1,9 +1,11 @@
-#include "dirlight.h"
-#include "../../instances/instanceholder.h"
+#include "DirLight.hpp"
+
+#include "../../instances/InstanceHolder.hpp"
 
 namespace leopph
 {
-	DirectionalLight::DirectionalLight()
+	DirectionalLight::DirectionalLight(Object& owner) :
+		Light{ owner }
 	{
 		impl::InstanceHolder::DirectionalLight(this);
 	}
@@ -15,6 +17,6 @@ namespace leopph
 
 	const Vector3& DirectionalLight::Direction() const
 	{
-		return Light::Object().Transform().Forward();
+		return object.Transform().Forward();
 	}
 }

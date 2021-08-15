@@ -1,17 +1,10 @@
-#include "fpscounter.h"
+#include "FPSCounter.hpp"
 
 #include <iostream>
 
-FPSCounter::FPSCounter() :
-	m_PollInterval{ 0.5f }
+FPSCounter::FPSCounter(leopph::Object& owner) :
+	Behavior{ owner }, m_PollInterval{ 0.5f }, m_DeltaTime{ 0.0f }
 {}
-
-
-void FPSCounter::Init()
-{
-	m_DeltaTime = 0.0f;
-}
-
 
 void FPSCounter::OnFrameUpdate()
 {

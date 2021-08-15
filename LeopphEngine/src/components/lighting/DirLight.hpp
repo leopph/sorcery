@@ -1,23 +1,28 @@
 #pragma once
 
 #include "../../api/leopphapi.h"
-#include "light.h"
+#include "Light.hpp"
 #include "../../math/vector.h"
 
 namespace leopph
 {
+	class Object;
+
 	/*-----------------------------------------------------------------------------------------------------------------------
 	Directional lights are components that provide a way to light your scene with a source that appears to be infinitely far.
 	The position of the light source does not matter, it always lights the objects from the direction it is set to.
 	See "component.h" for more information.
 	-----------------------------------------------------------------------------------------------------------------------*/
-
-	class DirectionalLight : public impl::Light
+	class DirectionalLight final : public impl::Light
 	{
 	public:
-		/* Internally used functions */
-		LEOPPHAPI DirectionalLight();
+		LEOPPHAPI explicit DirectionalLight(Object& owner);
 		LEOPPHAPI ~DirectionalLight() override;
+
+		DirectionalLight(const DirectionalLight&) = delete;
+		DirectionalLight(DirectionalLight&&) = delete;
+		void operator=(const DirectionalLight&) = delete;
+		void operator=(DirectionalLight&&) = delete;
 
 		/* The direction of the Light. This is exactly the same
 		as the forward vector of the Object that the

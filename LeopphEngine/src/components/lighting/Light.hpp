@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../behavior.h"
+#include "../Component.hpp"
 #include "../../api/leopphapi.h"
 #include "../../math/vector.h"
 
@@ -9,8 +9,13 @@ namespace leopph::impl
 	class Light : public Component
 	{
 	public:
-		Light();
-		~Light() override = 0;
+		LEOPPHAPI explicit Light(Object& owner);
+		LEOPPHAPI ~Light() override = 0;
+
+		Light(const Light&) = delete;
+		Light(Light&&) = delete;
+		void operator=(const Light&) = delete;
+		void operator=(Light&&) = delete;
 
 		LEOPPHAPI const Vector3& Diffuse() const;
 		LEOPPHAPI const Vector3& Specular() const;

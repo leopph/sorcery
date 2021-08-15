@@ -1,28 +1,27 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="src\components\behavior.cpp" />
+    <ClCompile Include="src\components\Behavior.cpp" />
     <ClCompile Include="src\components\camera.cpp" />
     <ClCompile Include="src\rendering\opengl\gl.cpp" />
     <ClCompile Include="src\math\leopphmath.cpp" />
-    <ClCompile Include="src\components\lighting\light.cpp" />
+    <ClCompile Include="src\components\lighting\Light.cpp" />
     <ClCompile Include="src\rendering\mesh.cpp" />
     <ClCompile Include="src\rendering\assimpmodel.cpp" />
-    <ClCompile Include="src\hierarchy\object.cpp" />
+    <ClCompile Include="src\hierarchy\Object.cpp" />
     <ClCompile Include="src\rendering\shader.cpp" />
     <ClCompile Include="src\rendering\texture.cpp" />
     <ClCompile Include="src\timing\leopphtime.cpp" />
     <ClCompile Include="src\windowing\glwindow.cpp" />
-    <ClCompile Include="src\components\lighting\pointlight.cpp" />
+    <ClCompile Include="src\components\lighting\PointLight.cpp" />
     <ClCompile Include="src\rendering\renderer.cpp" />
     <ClCompile Include="src\input\input.cpp" />
-    <ClCompile Include="src\components\lighting\dirlight.cpp" />
-    <ClCompile Include="src\instances\instanceholder.cpp" />
+    <ClCompile Include="src\components\lighting\DirLight.cpp" />
+    <ClCompile Include="src\instances\InstanceHolder.cpp" />
     <ClCompile Include="src\math\quaternion.cpp" />
-    <ClCompile Include="src\components\component.cpp" />
-    <ClCompile Include="src\hierarchy\transform.cpp" />
+    <ClCompile Include="src\components\Component.cpp" />
     <ClCompile Include="vendor\stb_image\stb_image.cpp" />
-    <ClCompile Include="src\components\models\model.cpp" />
+    <ClCompile Include="src\components\models\Model.cpp" />
     <ClCompile Include="src\windowing\window.cpp" />
     <ClCompile Include="src\input\inputhandler.cpp" />
     <ClCompile Include="src\entry\launch.cpp" />
@@ -43,24 +42,25 @@
     <ClCompile Include="src\util\skyboximplhash.cpp" />
     <ClCompile Include="src\util\skyboximplequal.cpp" />
     <ClCompile Include="src\misc\color.cpp" />
-    <ClCompile Include="src\components\lighting\ambientlight.cpp" />
+    <ClCompile Include="src\components\lighting\AmbientLight.cpp" />
+    <ClCompile Include="src\hierarchy\Transform.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\components\behavior.h" />
-    <ClInclude Include="src\components\camera.h" />
-    <ClInclude Include="src\components\lighting\dirlight.h" />
+    <ClInclude Include="src\components\Behavior.hpp" />
+    <ClInclude Include="src\components\Camera.hpp" />
+    <ClInclude Include="src\components\lighting\DirLight.hpp" />
     <ClInclude Include="src\entry\entry.h" />
     <ClInclude Include="src\rendering\opengl\gl.h" />
     <ClInclude Include="src\input\input.h" />
-    <ClInclude Include="src\instances\instanceholder.h" />
+    <ClInclude Include="src\instances\InstanceHolder.hpp" />
     <ClInclude Include="src\api\leopphapi.h" />
     <ClInclude Include="src\math\leopphmath.h" />
-    <ClInclude Include="src\components\lighting\light.h" />
+    <ClInclude Include="src\components\lighting\Light.hpp" />
     <ClInclude Include="src\math\matrix.h" />
     <ClInclude Include="src\rendering\mesh.h" />
     <ClInclude Include="src\rendering\assimpmodel.h" />
-    <ClInclude Include="src\hierarchy\object.h" />
-    <ClInclude Include="src\components\lighting\pointlight.h" />
+    <ClInclude Include="src\hierarchy\Object.hpp" />
+    <ClInclude Include="src\components\lighting\PointLight.hpp" />
     <ClInclude Include="src\math\quaternion.h" />
     <ClInclude Include="src\rendering\renderer.h" />
     <ClInclude Include="src\rendering\shader.h" />
@@ -70,9 +70,8 @@
     <ClInclude Include="src\rendering\vertex.h" />
     <ClInclude Include="src\windowing\glwindow.h" />
     <ClInclude Include="include\leopph.h" />
-    <ClInclude Include="src\components\component.h" />
-    <ClInclude Include="src\hierarchy\transform.h" />
-    <ClInclude Include="src\components\models\model.h" />
+    <ClInclude Include="src\components\Component.hpp" />
+    <ClInclude Include="src\components\models\Model.hpp" />
     <ClInclude Include="src\windowing\window.h" />
     <ClInclude Include="src\config\settings.h" />
     <ClInclude Include="src\input\keycodes.h" />
@@ -96,12 +95,14 @@
     <ClInclude Include="src\instances\skyboximpl.h" />
     <ClInclude Include="src\util\skyboximplhash.h" />
     <ClInclude Include="src\util\skyboximplequal.h" />
-    <ClInclude Include="src\components\lighting\ambientlight.h" />
+    <ClInclude Include="src\components\lighting\AmbientLight.hpp" />
+    <ClInclude Include="src\hierarchy\Transform.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\shaders\fragment.frag" />
     <None Include="src\shaders\vertex.vert" />
     <None Include="src\shaders\skyboxvertex.vert" />
     <None Include="src\shaders\skyboxfragment.frag" />
+    <None Include="src\cpp.hint" />
   </ItemGroup>
 </Project>

@@ -18,24 +18,24 @@
     <ClCompile Include="src\start.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\behaviors\fpscounter.cpp">
+    <ClCompile Include="src\behaviors\FPSCounter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\behaviors\cameracontroller.cpp">
+    <ClCompile Include="src\behaviors\CameraController.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\behaviors\rotate.cpp">
+    <ClCompile Include="src\behaviors\Rotate.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\behaviors\fpscounter.h">
+    <ClInclude Include="src\behaviors\FPSCounter.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\behaviors\cameracontroller.h">
+    <ClInclude Include="src\behaviors\CameraController.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\behaviors\rotate.h">
+    <ClInclude Include="src\behaviors\Rotate.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

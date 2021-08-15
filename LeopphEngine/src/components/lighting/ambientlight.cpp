@@ -1,9 +1,6 @@
-#include "ambientlight.h"
+#include "AmbientLight.hpp"
 
-#include "../../instances/instanceholder.h"
-
-#include <memory>
-#include <utility>
+#include "../../instances/InstanceHolder.hpp"
 
 leopph::AmbientLight& leopph::AmbientLight::Instance()
 {
@@ -23,9 +20,9 @@ const leopph::Vector3& leopph::AmbientLight::Intensity() const
 	return m_Intensity;
 }
 
-void leopph::AmbientLight::Intensity(Vector3 newColor)
+void leopph::AmbientLight::Intensity(const Vector3& newInt)
 {
-	m_Intensity = std::move(newColor);
+	m_Intensity = newInt;
 }
 
 leopph::AmbientLight::AmbientLight() :

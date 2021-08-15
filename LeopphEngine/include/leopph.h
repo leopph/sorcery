@@ -5,15 +5,15 @@ Standard LeopphEngine API
 See individual headers for more information.
 ------------------------------------------*/
 
-#include "../src/components/component.h"
-#include "../src/components/behavior.h"
-#include "../src/components/camera.h"
-#include "../src/components/lighting/ambientlight.h"
-#include "../src/components/lighting/dirlight.h"
-#include "../src/components/lighting/pointlight.h"
-#include "../src/components/models/model.h"
+#include "../src/components/Component.hpp"
+#include "../src/components/Behavior.hpp"
+#include "../src/components/Camera.hpp"
+#include "../src/components/lighting/AmbientLight.hpp"
+#include "../src/components/lighting/DirLight.hpp"
+#include "../src/components/lighting/PointLight.hpp"
+#include "../src/components/models/Model.hpp"
 #include "../src/config/settings.h"
-#include "../src/hierarchy/object.h"
+#include "../src/hierarchy/Object.hpp"
 #include "../src/input/input.h"
 #include "../src/math/leopphmath.h"
 #include "../src/math/matrix.h"

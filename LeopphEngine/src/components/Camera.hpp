@@ -1,27 +1,32 @@
 #pragma once
 
 #include "../misc/camerabackground.h"
-#include "component.h"
+#include "Component.hpp"
 #include "../api/leopphapi.h"
 #include "../math/matrix.h"
 
 namespace leopph
 {
+	class Object;
+
 	/*-------------------------------------------------------------------------------------------------------------
 	The Camera component is used to determine the image to be rendered.
 	Attach this to your Objects and switch between them to provide different viewing angles dynamically at runtime.
 	See "object.h" and "component.h" for more information.
 	-------------------------------------------------------------------------------------------------------------*/
-
 	class Camera final : public Component
 	{
 	public:
 		/* Get the current active camera that is used to render the scene */
 		LEOPPHAPI static Camera* Active();
 
-		/* Internally used constructor and destructor */
-		LEOPPHAPI Camera();
+		LEOPPHAPI explicit Camera(Object& owner);
 		LEOPPHAPI ~Camera() override;
+
+		Camera(const Camera&) = delete;
+		Camera(Camera&&) = delete;
+		void operator=(const Camera&) = delete;
+		void operator=(Camera&&) = delete;
 
 		/* Enum to help determining FOV conversion details */
 		enum : unsigned char { FOV_HORIZONTAL, FOV_VERTICAL };
@@ -67,6 +72,6 @@ namespace leopph
 		CameraBackground m_Background;
 
 		enum : unsigned char { VERTICAL_TO_HORIZONTAL, HORIZONTAL_TO_VERTICAL };
-		float ConvertFOV(float fov, unsigned char conversion) const;
+		[[nodiscard]] float ConvertFOV(float fov, unsigned char conversion) const;
 	};
 }

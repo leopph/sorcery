@@ -1,9 +1,11 @@
 #pragma once
 
-#include "../components/lighting/ambientlight.h"
-#include "../components/lighting/pointlight.h"
-#include "../components/lighting/dirlight.h"
-#include "../hierarchy/object.h"
+#include "../components/Component.hpp"
+#include "../components/Behavior.hpp"
+#include "../components/lighting/AmbientLight.hpp"
+#include "../components/lighting/PointLight.hpp"
+#include "../components/lighting/DirLight.hpp"
+#include "../hierarchy/Object.hpp"
 #include "../misc/skybox.h"
 #include "skyboximpl.h"
 #include "../rendering/texture.h"
@@ -40,11 +42,9 @@ namespace leopph::impl
 		/* All Objects*/
 		static const std::map<Object*, std::set<Component*>, ObjectComparator>& Objects();
 		/* Store pointer to Object !!!OWNERSHIP!!! */
-		static void StoreObject(Object* object);
+		static void RegisterObject(Object* object);
 		/* Destruct Object and remove pointer */
-		static void DeleteObject(Object* object);
-		/* Rename the given Object using the given name */
-		static void RenameObject(Object* object, std::string name);
+		static void UnregisterObject(Object* object);
 		/* Return pointer to Object based on name, or nullptr if it doesn't exist */
 		static Object* FindObject(const std::string& name);
 		/* Call destructor on all Objects */
@@ -64,9 +64,9 @@ namespace leopph::impl
 		/* All Behaviors */
 		static const std::set<Behavior*>& Behaviors();
 		/* Add pointer of Behavior to registry */
-		static void AddBehavior(Behavior* behavior);
+		static void RegisterBehavior(Behavior* behavior);
 		/* Remove pointer of Behavior from registry */
-		static void RemoveBehavior(Behavior* behavior);
+		static void UnregisterBehavior(Behavior* behavior);
 
 		/* All Components attached to the given Object */
 		static const std::set<Component*>& Components(Object* object);

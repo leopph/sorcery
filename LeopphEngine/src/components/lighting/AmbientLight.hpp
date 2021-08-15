@@ -19,7 +19,7 @@ namespace leopph
 		/* Intensity on different color channels.
 		Values are in range [0, 1]. */
 		LEOPPHAPI const Vector3& Intensity() const;
-		LEOPPHAPI void Intensity(Vector3 newInt);
+		LEOPPHAPI void Intensity(const Vector3& newInt);
 
 	private:
 		AmbientLight();

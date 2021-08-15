@@ -1,15 +1,11 @@
-#include "cameracontroller.h"
+#include "CameraController.hpp"
 
 #include <tuple>
 
-CameraController::CameraController() :
-	m_Speed{ 2.0f }, m_Sens{ 0.1f },
-	lastX{}, lastY{}
-{}
-
-void CameraController::Init()
+CameraController::CameraController(leopph::Object& owner) :
+	Behavior{ owner }, m_Speed{ 2.0f }, m_Sens{ 0.1f }, lastX{}, lastY{}
 {
-	std::tie(lastX, lastY) = leopph::Input::GetMousePosition();
+	//std::tie(lastX, lastY) = leopph::Input::GetMousePosition();
 }
 
 void CameraController::OnFrameUpdate()
@@ -17,7 +13,7 @@ void CameraController::OnFrameUpdate()
 	if (leopph::Camera::Active() == nullptr)
 		return;
 
-	leopph::Transform& camTransform = leopph::Camera::Active()->Object().Transform();
+	leopph::Transform& camTransform = leopph::Camera::Active()->object.Transform();
 
 
 	if (leopph::Input::GetKey(leopph::KeyCode::W))

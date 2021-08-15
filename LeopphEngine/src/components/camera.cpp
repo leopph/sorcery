@@ -1,6 +1,6 @@
-#include "camera.h"
+#include "Camera.hpp"
 
-#include "../hierarchy/object.h"
+#include "../hierarchy/Object.hpp"
 #include "../windowing/window.h"
 #include "../math/leopphmath.h"
 
@@ -41,7 +41,8 @@ namespace leopph
 		impl::Window::Get().Background(m_Background.color);
 	}
 
-	Camera::Camera() :
+	Camera::Camera(Object& owner) :
+		Component{ owner },
 		m_AspectRatio{ leopph::impl::Window::Get().AspectRatio() },
 		m_HorizontalFOVDegrees{ 100.0f }, m_NearClip{ 0.3f }, m_FarClip{ 1000.f },
 		m_Background{ .color{0, 0, 0}, .skybox{nullptr} }
@@ -157,7 +158,7 @@ namespace leopph
 
 	Matrix4 Camera::ViewMatrix() const
 	{
-		return Matrix4::LookAt(Object().Transform().Position(), Object().Transform().Position() + Object().Transform().Forward(), Vector3::Up());
+		return Matrix4::LookAt(object.Transform().Position(), object.Transform().Position() + object.Transform().Forward(), Vector3::Up());
 	}
 
 	Matrix4 Camera::ProjectionMatrix() const

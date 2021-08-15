@@ -1,6 +1,6 @@
 #include "skybox.h"
 
-#include "../instances/instanceholder.h"
+#include "../instances/InstanceHolder.hpp"
 
 #include <stdexcept>
 

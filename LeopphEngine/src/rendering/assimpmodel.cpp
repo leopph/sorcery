@@ -1,6 +1,6 @@
 #include "assimpmodel.h"
 
-#include "../instances/instanceholder.h"
+#include "../instances/InstanceHolder.hpp"
 #include "../util/logger.h"
 
 #include <assimp/Importer.hpp>

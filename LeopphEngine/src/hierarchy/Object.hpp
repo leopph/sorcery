@@ -1,8 +1,8 @@
 #pragma once
 
 #include "../api/leopphapi.h"
-#include "../components/component.h"
-#include "transform.h"
+#include "../components/Component.hpp"
+#include "Transform.hpp"
 
 #include <concepts>
 #include <set>
@@ -16,24 +16,28 @@ namespace leopph
 		class InstanceHolder;
 	}
 
+	class DynamicObject;
+
 
 	/*---------------------------------------------------------------------------------------------------------------
-	Objects are the bases of the entity hierarchy. They have spatial characteristics through a Transform,
+	Objects are the bases of the entity hierarchy. They have spatial characteristics through a DynamicTransform,
 	can have Models that are later rendered according to these characteristics, and have components attached to them,
 	that may give them their own unique properties or behaviors.
 	See "component.h", "behavior.h", and "model.h" for additional information.
 	---------------------------------------------------------------------------------------------------------------*/
-	
 	class Object final
 	{
 	public:
-		/* Factory to create Objects */
-		LEOPPHAPI static Object* Create();
-		
-		/* Manually destroy an Object.
-		 * The given pointer will be set to NULL, and all attached components will be destroyed.
-		 * Objects not destroyed manually will be automatically cleaned up upon exiting your application. */
-		LEOPPHAPI static void Destroy(Object*& object);
+		LEOPPHAPI explicit Object(bool isStatic, std::string name);
+		LEOPPHAPI explicit Object(bool isStatic);
+		LEOPPHAPI explicit  Object(std::string name);
+		LEOPPHAPI Object();
+		LEOPPHAPI ~Object();
+
+		Object(const Object&) = delete;
+		Object(Object&&) = delete;
+		void operator=(const Object&) = delete;
+		void operator=(Object&&) = delete;
 
 		/* Returns a pointer to the Object that's name is equal to the given string.
 		 * Returns NULL if no such Object exists. */
@@ -41,33 +45,17 @@ namespace leopph
 
 		/* The Object's Transform describes its spatial properties. */
 		LEOPPHAPI Transform& Transform();
-		LEOPPHAPI const leopph::Transform& Transform() const;
-
-		/* The Object's name is a unique identifier. */
-		LEOPPHAPI const std::string& Name() const;
-		LEOPPHAPI void Name(const std::string& newName);
+		[[nodiscard]] LEOPPHAPI const leopph::Transform& Transform() const;
 
 		/* The set of Components attached to the Object. */
 		LEOPPHAPI const std::set<Component*>& Components() const;
 
 		/* Attach a new Component of type T to the Object.
 		 * It is constructed in-place, and a pointer to it is returned. */
-		template<std::derived_from<Component> T>
-		T* AddComponent()
-		{
-			auto component = new T{};
-			component->SetOwnership(this);
-			component->Init();
-			return component;
-		}
-
 		template<std::derived_from<Component> T, class... Args>
 		T* AddComponent(Args&&... args)
 		{
-			auto component = new T{ std::forward<Args>(args)... };
-			component->SetOwnership(this);
-			component->Init();
-			return component;
+			return new T{ *this, std::forward<Args>(args)... };
 		}
 
 		/* Remove the given Component from the Object.
@@ -89,13 +77,13 @@ namespace leopph
 			return nullptr;
 		}
 
+		/* Static objects cannot be moved, rotated, or scaled. */
+		const bool isStatic;
+		/* The Object's name is a unique identifier. */
+		const std::string& name;
 
 	private:
-		Object();
-
-		leopph::Transform m_Transform;
 		std::string m_Name;
-
-		friend class impl::InstanceHolder;
+		mutable leopph::Transform* m_Transform;
 	};
 }

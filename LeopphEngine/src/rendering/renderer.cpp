@@ -1,11 +1,11 @@
 #include "renderer.h"
 
-#include "../components/camera.h"
-#include "../components/lighting/dirlight.h"
-#include "../instances/instanceholder.h"
-#include "../components/lighting/light.h"
+#include "../components/Camera.hpp"
+#include "../components/lighting/DirLight.hpp"
+#include "../instances/InstanceHolder.hpp"
+#include "../components/lighting/Light.hpp"
 #include "../math/matrix.h"
-#include "../components/lighting/pointlight.h"
+#include "../components/lighting/PointLight.hpp"
 #include "shader.h"
 #include "../math/vector.h"
 
@@ -42,10 +42,10 @@ namespace leopph::impl
 			{
 				light = reinterpret_cast<PointLight*>(light);
 
-				Vector3 lightPos = light->Object().Transform().Position();
-				Vector3 camPos = Camera::Active()->Object().Transform().Position();
+				Vector3 lightPos = light->object.Transform().Position();
+				Vector3 camPos = Camera::Active()->object.Transform().Position();
 
-				if (Vector3::Distance(lightPos, camPos) < Vector3::Distance(camPos, pointLights[0]->Object().Transform().Position()))
+				if (Vector3::Distance(lightPos, camPos) < Vector3::Distance(camPos, pointLights[0]->object.Transform().Position()))
 				{
 					for (size_t i = MAX_POINT_LIGHTS - 1; i > 0; i--)
 						pointLights[i] = pointLights[i - 1];
@@ -63,7 +63,7 @@ namespace leopph::impl
 		{
 			if (pointLight != nullptr)
 			{
-				m_Shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].position", static_cast<Vector3>(static_cast<Vector4>(pointLight->Object().Transform().Position()) * viewMatrix));
+				m_Shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].position", static_cast<Vector3>(static_cast<Vector4>(pointLight->object.Transform().Position()) * viewMatrix));
 				m_Shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].diffuseColor", pointLight->Diffuse());
 				m_Shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].specularColor", pointLight->Specular());
 				m_Shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].constant", pointLight->Constant());

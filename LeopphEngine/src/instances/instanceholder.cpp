@@ -1,4 +1,4 @@
-#include "instanceholder.h"
+#include "InstanceHolder.hpp"
 
 #include "../util/logger.h"
 
@@ -20,44 +20,23 @@ namespace leopph::impl
 	
 	void InstanceHolder::DestroyAllObjects()
 	{
-		for (const auto& pair : s_Objects)
+		for (auto it = s_Objects.begin(); it != s_Objects.end();)
 		{
-			for (const auto component : pair.second)
-				delete component;
-			delete pair.first;
+			delete it->first;
+			it = s_Objects.begin();
 		}
 	}
 
 
 	
-	void InstanceHolder::StoreObject(Object* object)
+	void InstanceHolder::RegisterObject(Object* object)
 	{
 		s_Objects.try_emplace(object);
 	}
 
-	void InstanceHolder::DeleteObject(Object* object)
+	void InstanceHolder::UnregisterObject(Object* object)
 	{
-		const auto it = s_Objects.find(object);
-
-		for (const auto component : it->second)
-			delete component;
-		delete object;
-		
-		s_Objects.erase(it);
-	}
-
-	void InstanceHolder::RenameObject(Object* object, std::string name)
-	{
-		if (FindObject(name) != nullptr)
-		{
-			auto msg{ "Cannot rename Object [" + object->Name() + "] to [" + name + "] because the new name is already in use." };
-			Logger::Instance().Error(msg);
-			throw std::runtime_error{ msg };
-		}
-
-		auto node = s_Objects.extract(object);
-		node.key()->m_Name = std::move(name);
-		s_Objects.insert(std::move(node));
+		s_Objects.erase(object);
 	}
 
 	Object* InstanceHolder::FindObject(const std::string& name)
@@ -137,12 +116,12 @@ namespace leopph::impl
 		return s_Behaviors;
 	}
 
-	void InstanceHolder::AddBehavior(Behavior* behavior)
+	void InstanceHolder::RegisterBehavior(Behavior* behavior)
 	{
 		s_Behaviors.insert(behavior);
 	}
 
-	void InstanceHolder::RemoveBehavior(Behavior* behavior)
+	void InstanceHolder::UnregisterBehavior(Behavior* behavior)
 	{
 		s_Behaviors.erase(behavior);
 	}
@@ -154,13 +133,12 @@ namespace leopph::impl
 
 	void InstanceHolder::RegisterComponent(Component* component)
 	{
-		s_Objects[&component->Object()].insert(component);
+		s_Objects[&component->object].insert(component);
 	}
 
 	void InstanceHolder::UnregisterComponent(Component* component)
 	{
-		s_Objects[&component->Object()].erase(component);
-		delete component;
+		s_Objects[&component->object].erase(component);
 	}
 
 	DirectionalLight* InstanceHolder::DirectionalLight()

@@ -11,7 +11,7 @@
 #include "../rendering/renderer.h"
 #include "../timing/timer.h"
 #include "../input/inputhandler.h"
-#include "../instances/instanceholder.h"
+#include "../instances/InstanceHolder.hpp"
 
 #include "../util/logger.h"
 

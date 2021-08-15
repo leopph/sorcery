@@ -1,15 +1,17 @@
-#include "behavior.h"
-#include "../instances/instanceholder.h"
+#include "Behavior.hpp"
+
+#include "../instances/InstanceHolder.hpp"
 
 namespace leopph
 {
-	Behavior::Behavior()
+	Behavior::Behavior(Object& owner) :
+		Component{ owner }
 	{
-		impl::InstanceHolder::AddBehavior(this);
+		impl::InstanceHolder::RegisterBehavior(this);
 	}
 
 	Behavior::~Behavior()
 	{
-		impl::InstanceHolder::RemoveBehavior(this);
+		impl::InstanceHolder::UnregisterBehavior(this);
 	}
 }

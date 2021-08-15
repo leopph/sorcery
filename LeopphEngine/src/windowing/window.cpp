@@ -1,7 +1,7 @@
 #include "window.h"
 #include "../config/settings.h"
 #include "glwindow.h"
-#include "../components/camera.h"
+#include "../components/Camera.hpp"
 
 namespace leopph::impl
 {

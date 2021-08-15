@@ -5,7 +5,7 @@
 class Rotate final : public leopph::Behavior
 {
 public:
-	Rotate();
+	explicit Rotate(leopph::Object& owner);
 	void OnFrameUpdate() override;
 
 private:

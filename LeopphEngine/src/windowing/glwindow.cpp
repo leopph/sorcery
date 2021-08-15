@@ -1,6 +1,6 @@
 #include "glwindow.h"
 
-#include "../components/camera.h"
+#include "../components/Camera.hpp"
 #include "../input/input.h"
 #include "../input/inputhandler.h"
 

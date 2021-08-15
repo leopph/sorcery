@@ -100,6 +100,11 @@ namespace leopph
 		};
 	}
 
+	Quaternion& operator*=(Quaternion& left, const Quaternion& right)
+	{
+		return left = left * right;
+	}
+
 
 
 
