@@ -6,13 +6,13 @@
 
 namespace leopph
 {
-	Transform::Transform(Object& owner) :
+	Transform::Transform(Object& owner, const Vector3& pos, Quaternion rot, const Vector3& scale) :
 		Component{ owner },
-		m_Scale{ 1, 1, 1 },
-		m_Forward{ Vector3::Forward() },
-		m_Right{ Vector3::Right() },
-		m_Up{ Vector3::Up() }
-	{}
+		m_Position{ pos }, m_Rotation{ rot }, m_Scale{ scale },
+		m_Forward{ Vector3::Forward() }, m_Right{ Vector3::Right() }, m_Up{ Vector3::Up() }
+	{
+		CalculateLocalAxes();
+	}
 
 	const Vector3& Transform::Position() const
 	{
@@ -44,11 +44,7 @@ namespace leopph
 		}
 
 		m_Rotation = newRot;
-
-		const auto rotMatrix = static_cast<Matrix3>(static_cast<Matrix4>(m_Rotation));
-		m_Forward = Vector3::Forward() * rotMatrix;
-		m_Right = Vector3::Right() * rotMatrix;
-		m_Up = Vector3::Up() * rotMatrix;
+		CalculateLocalAxes();
 	}
 
 	const Vector3& Transform::Scale() const
@@ -75,7 +71,7 @@ namespace leopph
 			return;
 		}
 
-		Position(Position() + vector);
+		m_Position += vector;
 	}
 
 	void Transform::Translate(const float x, const float y, const float z)
@@ -86,7 +82,7 @@ namespace leopph
 			return;
 		}
 
-		Position(Position() + Vector3{ x, y, z });
+		m_Position += Vector3{ x, y, z };
 	}
 
 	void Transform::RotateLocal(const Quaternion& rotation)
@@ -97,7 +93,8 @@ namespace leopph
 			return;
 		}
 
-		Rotation(Rotation() * rotation);
+		m_Rotation *= rotation;
+		CalculateLocalAxes();
 	}
 
 	void Transform::RotateGlobal(const Quaternion& rotation)
@@ -108,7 +105,8 @@ namespace leopph
 			return;
 		}
 
-		Rotation(rotation * Rotation());
+		m_Rotation = rotation * Rotation();
+		CalculateLocalAxes();
 	}
 
 	void Transform::Rescale(const float x, const float y, const float z)
@@ -137,6 +135,14 @@ namespace leopph
 	const Vector3& Transform::Up() const
 	{
 		return m_Up;
+	}
+
+	void Transform::CalculateLocalAxes()
+	{
+		const auto rotMatrix = static_cast<Matrix3>(static_cast<Matrix4>(m_Rotation));
+		m_Forward = Vector3::Forward() * rotMatrix;
+		m_Right = Vector3::Right() * rotMatrix;
+		m_Up = Vector3::Up() * rotMatrix;
 	}
 
 }

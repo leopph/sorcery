@@ -23,6 +23,7 @@ See individual headers for more information.
 #include "../src/misc/color.h"
 #include "../src/misc/skybox.h"
 #include "../src/timing/leopphtime.h"
+#include "../src/util/ObjectProperties.hpp"
 
 /*-----------------------------------------------------
 Define LEOPPH_ENTRY in exactly one of your source files

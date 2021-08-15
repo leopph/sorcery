@@ -3,6 +3,7 @@
 #include "../api/leopphapi.h"
 #include "../components/Component.hpp"
 #include "Transform.hpp"
+#include "../util/ObjectProperties.hpp"
 
 #include <concepts>
 #include <set>
@@ -16,11 +17,9 @@ namespace leopph
 		class InstanceHolder;
 	}
 
-	class DynamicObject;
-
 
 	/*---------------------------------------------------------------------------------------------------------------
-	Objects are the bases of the entity hierarchy. They have spatial characteristics through a DynamicTransform,
+	Objects are the bases of the entity hierarchy. They have spatial characteristics through a Transform,
 	can have Models that are later rendered according to these characteristics, and have components attached to them,
 	that may give them their own unique properties or behaviors.
 	See "component.h", "behavior.h", and "model.h" for additional information.
@@ -28,6 +27,7 @@ namespace leopph
 	class Object final
 	{
 	public:
+		LEOPPHAPI explicit Object(const ObjectProperties& properties);
 		LEOPPHAPI explicit Object(bool isStatic, std::string name);
 		LEOPPHAPI explicit Object(bool isStatic);
 		LEOPPHAPI explicit  Object(std::string name);

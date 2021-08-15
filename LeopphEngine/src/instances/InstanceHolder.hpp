@@ -116,6 +116,8 @@ namespace leopph::impl
 		/* Dec count of given SkyboxImpl */
 		static void DecSkybox(const SkyboxImpl* skybox);
 
+		static const Matrix4& ModelMatrix(const Object* object);
+
 	private:
 		static std::unordered_set<TextureReference, TextureHash, TextureEqual> s_Textures;
 		static std::unordered_map<std::filesystem::path, ModelReference> s_Models;
@@ -123,6 +125,7 @@ namespace leopph::impl
 
 		static std::set<Behavior*> s_Behaviors;
 		static std::map<Object*, std::set<Component*>, ObjectComparator> s_Objects;
+		static std::unordered_map<const Object*, const Matrix4> s_ModelMatrixCache;
 
 		static leopph::DirectionalLight* s_DirLight;
 		static std::vector<PointLight*> s_PointLights;

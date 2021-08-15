@@ -164,7 +164,7 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClInclude Include="src\hierarchy\Object.hpp" />
     <ClInclude Include="src\components\lighting\PointLight.hpp" />
     <ClInclude Include="src\math\quaternion.h" />
-    <ClInclude Include="src\rendering\renderer.h" />
+    <ClInclude Include="src\rendering\Renderer.hpp" />
     <ClInclude Include="src\config\settings.h" />
     <ClInclude Include="src\rendering\shader.h" />
     <ClInclude Include="src\rendering\texture.h" />
@@ -173,6 +173,7 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClInclude Include="src\rendering\vertex.h" />
     <ClInclude Include="src\instances\modelreference.h" />
     <ClInclude Include="src\util\objectcomparator.h" />
+    <ClInclude Include="src\util\ObjectProperties.hpp" />
     <ClInclude Include="src\util\pathhash.h" />
     <ClInclude Include="src\misc\skybox.h" />
     <ClInclude Include="src\instances\skyboximpl.h" />
@@ -222,7 +223,7 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClCompile Include="src\hierarchy\Object.cpp" />
     <ClCompile Include="src\components\lighting\PointLight.cpp" />
     <ClCompile Include="src\math\quaternion.cpp" />
-    <ClCompile Include="src\rendering\renderer.cpp" />
+    <ClCompile Include="src\rendering\Renderer.cpp" />
     <ClCompile Include="src\rendering\shader.cpp" />
     <ClCompile Include="src\rendering\texture.cpp" />
     <ClCompile Include="src\timing\leopphtime.cpp" />

@@ -1,4 +1,4 @@
-#include "renderer.h"
+#include "Renderer.hpp"
 
 #include "../components/Camera.hpp"
 #include "../components/lighting/DirLight.hpp"
@@ -12,6 +12,7 @@
 #include <glad/glad.h>
 
 #include <string>
+#include <utility>
 
 namespace leopph::impl
 {
@@ -27,8 +28,8 @@ namespace leopph::impl
 		if (Camera::Active() == nullptr)
 			return;
 
-		auto viewMatrix{ Camera::Active()->ViewMatrix() };
-		auto projectionMatrix{ Camera::Active()->ProjectionMatrix() };
+		const auto viewMatrix{ Camera::Active()->ViewMatrix() };
+		const auto projectionMatrix{ Camera::Active()->ProjectionMatrix() };
 
 		PointLight* pointLights[MAX_POINT_LIGHTS]{};
 
@@ -41,11 +42,10 @@ namespace leopph::impl
 			else
 			{
 				light = reinterpret_cast<PointLight*>(light);
-
 				Vector3 lightPos = light->object.Transform().Position();
-				Vector3 camPos = Camera::Active()->object.Transform().Position();
 
-				if (Vector3::Distance(lightPos, camPos) < Vector3::Distance(camPos, pointLights[0]->object.Transform().Position()))
+				if (Vector3 camPos = Camera::Active()->object.Transform().Position();
+					Vector3::Distance(lightPos, camPos) < Vector3::Distance(camPos, pointLights[0]->object.Transform().Position()))
 				{
 					for (size_t i = MAX_POINT_LIGHTS - 1; i > 0; i--)
 						pointLights[i] = pointLights[i - 1];
@@ -91,22 +91,30 @@ namespace leopph::impl
 
 		m_Shader.SetUniform("projectionMatrix", projectionMatrix);
 
-		for (const auto& pair : InstanceHolder::Models())
+		for (const auto& [path, modelReference] : InstanceHolder::Models())
 		{
 			std::vector<Matrix4> modelViewMatrices;
 			std::vector<Matrix4> normalMatrices;
-			const auto& modelReference = pair.second;
 
 			for (const auto& object : modelReference.Objects())
 			{
-				Matrix4 modelViewMatrix{ 1.0f };
-				modelViewMatrix *= Matrix4::Scale(object->Transform().Scale());
-				modelViewMatrix *= static_cast<Matrix4>(object->Transform().Rotation());
-				modelViewMatrix *= Matrix4::Translate(object->Transform().Position());
-				modelViewMatrix *= viewMatrix;
+				if (object->isStatic)
+				{
+					const auto& modelViewMatrix = InstanceHolder::ModelMatrix(object) * viewMatrix;
+					modelViewMatrices.push_back(modelViewMatrix.Transposed());
+					normalMatrices.push_back(modelViewMatrix.Inverse());
+				}
+				else
+				{
+					Matrix4 modelViewMatrix{ 1.0f };
+					modelViewMatrix *= Matrix4::Scale(object->Transform().Scale());
+					modelViewMatrix *= static_cast<Matrix4>(object->Transform().Rotation());
+					modelViewMatrix *= Matrix4::Translate(object->Transform().Position());
+					modelViewMatrix *= viewMatrix;
 
-				modelViewMatrices.push_back(modelViewMatrix.Transposed());
-				normalMatrices.push_back(modelViewMatrix.Inverse());
+					modelViewMatrices.push_back(modelViewMatrix.Transposed());
+					normalMatrices.push_back(modelViewMatrix.Inverse());
+				}
 			}
 
 			modelReference.ReferenceModel().Draw(m_Shader, modelViewMatrices, normalMatrices);

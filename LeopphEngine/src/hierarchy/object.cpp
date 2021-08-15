@@ -17,12 +17,11 @@ namespace leopph
 	}
 
 
-	Object::Object(const bool isStatic,
-				   std::string name) :
-	isStatic{ isStatic },
-	name { m_Name },
-	m_Name{ name.empty() ? "Object" + std::to_string(impl::InstanceHolder::Objects().size()) : std::move(name) },
-	m_Transform{ nullptr }
+	Object::Object(const ObjectProperties& properties) :
+		isStatic{ properties.isStatic },
+		name { m_Name },
+		m_Name{ properties.name.empty() ? "Object" + std::to_string(impl::InstanceHolder::Objects().size()) : properties.name },
+		m_Transform{ nullptr }
 	{
 		if (Find(this->name) != nullptr)
 		{
@@ -42,7 +41,7 @@ namespace leopph
 		}
 
 		impl::InstanceHolder::RegisterObject(this);
-		AddComponent<leopph::Transform>();
+		AddComponent<leopph::Transform>(properties.position, properties.rotation, properties.scale);
 	}
 
 	Object::Object(const bool isStatic) :
@@ -55,6 +54,10 @@ namespace leopph
 
 	Object::Object() :
 		Object{ false, std::string{} }
+	{}
+
+	Object::Object(const bool isStatic, std::string name) :
+		Object{ ObjectProperties{ .name = std::move(name), .isStatic = isStatic } }
 	{}
 
 

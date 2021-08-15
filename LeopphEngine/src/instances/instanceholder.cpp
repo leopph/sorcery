@@ -16,6 +16,7 @@ namespace leopph::impl
 	std::unique_ptr<AmbientLight> InstanceHolder::s_AmbientLight{ nullptr };
 	std::unordered_map<std::filesystem::path, ModelReference> InstanceHolder::s_Models{};
 	std::unordered_map<SkyboxImpl, std::size_t, SkyboxImplHash, SkyboxImplEqual> InstanceHolder::s_Skyboxes{};
+	std::unordered_map<const Object*, const Matrix4> InstanceHolder::s_ModelMatrixCache{};
 
 	
 	void InstanceHolder::DestroyAllObjects()
@@ -37,6 +38,7 @@ namespace leopph::impl
 	void InstanceHolder::UnregisterObject(Object* object)
 	{
 		s_Objects.erase(object);
+		s_ModelMatrixCache.erase(object);
 	}
 
 	Object* InstanceHolder::FindObject(const std::string& name)
@@ -285,4 +287,25 @@ namespace leopph::impl
 	{
 		s_AmbientLight = std::unique_ptr<leopph::AmbientLight>(std::forward<leopph::AmbientLight*>(light));
 	}
+
+
+	const Matrix4& InstanceHolder::ModelMatrix(const Object* const object)
+	{
+		if (!object->isStatic)
+		{
+			const auto msg{ "Trying to access cached model matrix for dynamic object [" + object->name + "]." };
+			Logger::Instance().Warning(msg);
+			throw std::runtime_error{ msg };
+		}
+
+		if (auto it = s_ModelMatrixCache.find(object); it != s_ModelMatrixCache.end())
+			return it->second;
+
+		Matrix4 modelMatrix = Matrix4::Scale(object->Transform().Scale());
+		modelMatrix *= static_cast<Matrix4>(object->Transform().Rotation());
+		modelMatrix *= Matrix4::Translate(object->Transform().Position());
+
+		return s_ModelMatrixCache.emplace(object, modelMatrix).first->second;
+	}
+
 }

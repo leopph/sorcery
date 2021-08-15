@@ -4,6 +4,7 @@
 
 #include <cstddef>
 
+
 namespace leopph::impl
 {
 	class Renderer

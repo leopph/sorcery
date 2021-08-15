@@ -18,16 +18,20 @@ void leopph::AppStart()
 
 	Camera::Active()->Background(CameraBackground{ .skybox{std::make_unique<Skybox>("skybox/left.jpg", "skybox/right.jpg", "skybox/top.jpg", "skybox/bottom.jpg", "skybox/back.jpg", "skybox/front.jpg")}});
 
-	const auto portrait = new Object();
+	const auto portrait = new Object{};
 	portrait->AddComponent<Model>("models/portrait/cropped_textured_mesh.obj");
 
 	constexpr std::size_t cubeNumber{ 5000u };
 	for (std::size_t i = 0; i < cubeNumber; i++)
 	{
-		auto cube = new Object{};
-		cube->Transform().Position({ rand() % 100 - 50, rand() % 100 -50, rand() % 100 - 50 });
+		const ObjectProperties properties
+		{
+			.isStatic = true,
+			.position { rand() % 100 - 50, rand() % 100 - 50, rand() % 100 - 50 }
+		};
+
+		const auto cube = new Object{ properties };
 		cube->AddComponent<Model>("models/cube/cube.dae");
-		cube->AddComponent<Rotate>();
 	}
 
 	const auto dirLight = new Object{};

@@ -14,7 +14,7 @@
     <ClCompile Include="src\timing\leopphtime.cpp" />
     <ClCompile Include="src\windowing\glwindow.cpp" />
     <ClCompile Include="src\components\lighting\PointLight.cpp" />
-    <ClCompile Include="src\rendering\renderer.cpp" />
+    <ClCompile Include="src\rendering\Renderer.cpp" />
     <ClCompile Include="src\input\input.cpp" />
     <ClCompile Include="src\components\lighting\DirLight.cpp" />
     <ClCompile Include="src\instances\InstanceHolder.cpp" />
@@ -62,7 +62,7 @@
     <ClInclude Include="src\hierarchy\Object.hpp" />
     <ClInclude Include="src\components\lighting\PointLight.hpp" />
     <ClInclude Include="src\math\quaternion.h" />
-    <ClInclude Include="src\rendering\renderer.h" />
+    <ClInclude Include="src\rendering\Renderer.hpp" />
     <ClInclude Include="src\rendering\shader.h" />
     <ClInclude Include="src\rendering\texture.h" />
     <ClInclude Include="src\timing\leopphtime.h" />
@@ -97,6 +97,7 @@
     <ClInclude Include="src\util\skyboximplequal.h" />
     <ClInclude Include="src\components\lighting\AmbientLight.hpp" />
     <ClInclude Include="src\hierarchy\Transform.hpp" />
+    <ClInclude Include="src\util\ObjectProperties.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\shaders\fragment.frag" />

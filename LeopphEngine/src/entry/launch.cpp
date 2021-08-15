@@ -8,7 +8,7 @@
 
 #include "../windowing/window.h"
 #include "../rendering/opengl/gl.h"
-#include "../rendering/renderer.h"
+#include "../rendering/Renderer.hpp"
 #include "../timing/timer.h"
 #include "../input/inputhandler.h"
 #include "../instances/InstanceHolder.hpp"

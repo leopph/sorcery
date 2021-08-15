@@ -13,8 +13,7 @@ namespace leopph
 	class Transform final : public Component
 	{
 	public:
-
-		LEOPPHAPI explicit Transform(Object& owner);
+		LEOPPHAPI explicit Transform(Object& owner, const Vector3& pos, Quaternion rot, const Vector3& scale);
 		LEOPPHAPI ~Transform() override = default;
 
 		Transform(const Transform&) = delete;
@@ -60,5 +59,7 @@ namespace leopph
 		Vector3 m_Forward;
 		Vector3 m_Right;
 		Vector3 m_Up;
+
+		void CalculateLocalAxes();
 	};
 }
