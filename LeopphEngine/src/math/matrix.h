@@ -138,6 +138,21 @@ namespace leopph
 				return Perspective(left, right, top, bottom, nearClipPlane, farClipPlane);
 			}
 
+			/* Orthographgic Projection Matrix for the rendering pipeline that is calculated based on
+			 * the left, right, top, and bottom coordinates of the view frustum. */
+			static Matrix<T, 4, 4> Ortographic(const T& left, const T& right, const T& top, const T& bottom, const T& nearClipPlane, const T& farClipPlane)
+			{
+				Matrix<T, 4, 4> ret;
+				ret[0][0] = static_cast<T>(static_cast<T>(2) / (right - left));
+				ret[1][1] = static_cast<T>(static_cast<T>(2) / (top - bottom));
+				ret[2][2] = static_cast<T>(static_cast<T>(-2) / (farClipPlane - nearClipPlane));
+				ret[3][0] = static_cast<T>(-((right + left) / (right - left)));
+				ret[3][1] = static_cast<T>(-((top + bottom) / (top - bottom)));
+				ret[3][2] = static_cast<T>(-((farClipPlane + nearClipPlane) / (farClipPlane - nearClipPlane)));
+				ret[3][3] = static_cast<T>(1);
+				return ret;
+			}
+
 
 
 			/* Mathematical Translation Matrix */
@@ -292,7 +307,8 @@ namespace leopph
 			/* Applicable to N*N Matrices (N > 2).
 			Returns a new (N-1)*(N-1) Matrix that is created by dropping the
 			Nth row and column of the original square Matrix */
-			explicit operator auto() const requires(N == M && N > 2)
+			template<std::size_t N1 = N, std::size_t M1 = M>
+			explicit operator Matrix<T, N1 - 1, N1 - 1>() const requires(N1 == M1 && N1 > 2)
 			{
 				Matrix<T, N - 1, N - 1> ret{};
 

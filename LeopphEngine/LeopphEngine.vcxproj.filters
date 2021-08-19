@@ -44,6 +44,8 @@
     <ClCompile Include="src\hierarchy\Transform.cpp" />
     <ClCompile Include="src\shaders\ObjectFragment.cpp" />
     <ClCompile Include="src\shaders\ObjectVertex.cpp" />
+    <ClCompile Include="src\rendering\ShadowMap.cpp" />
+    <ClCompile Include="src\util\ShadowMapLess.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\Behavior.hpp" />
@@ -98,6 +100,8 @@
     <ClInclude Include="src\components\lighting\AmbientLight.hpp" />
     <ClInclude Include="src\hierarchy\Transform.hpp" />
     <ClInclude Include="src\util\ObjectProperties.hpp" />
+    <ClInclude Include="src\rendering\ShadowMap.hpp" />
+    <ClInclude Include="src\util\ShadowMapLess.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\shaders\ObjectFragment.frag" />
@@ -105,5 +109,7 @@
     <None Include="src\shaders\skyboxvertex.vert" />
     <None Include="src\shaders\skyboxfragment.frag" />
     <None Include="src\cpp.hint" />
+    <None Include="src\shaders\DirectionalShadowMapVertex.vert" />
+    <None Include="src\shaders\DirectionalShadowMapFragment.frag" />
   </ItemGroup>
 </Project>

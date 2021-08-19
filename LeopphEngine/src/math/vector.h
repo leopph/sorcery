@@ -225,7 +225,8 @@ namespace leopph
 
 			/* Return a new Vector of length N - 1.
 			The last component is thrown away. */
-			explicit operator auto() const requires (N > 2)
+			template<std::size_t N1 = N>
+			explicit operator Vector<T, N1 - 1>() const requires (N1 > 2)
 			{
 				Vector<T, N - 1> ret;
 				

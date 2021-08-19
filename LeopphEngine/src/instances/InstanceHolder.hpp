@@ -9,6 +9,7 @@
 #include "../misc/skybox.h"
 #include "skyboximpl.h"
 #include "../rendering/texture.h"
+#include "../rendering/ShadowMap.hpp"
 
 #include "../util/objectcomparator.h"
 #include "modelreference.h"
@@ -21,6 +22,7 @@
 #include <cstddef>
 #include <functional>
 #include <filesystem>
+#include <forward_list>
 #include <map>
 #include <memory>
 #include <set>
@@ -33,6 +35,12 @@
 std::hash<std::filesystem::path> must be visible to s_Models*/
 #include "../util/pathhash.h"
 /*----------------------------------------------------------*/
+
+/*---------------------------------------------------------
+ * Definition of std::less<leopph::impl::ShadowMap> must be
+ * visible to s_ShadowMaps */
+#include "../util/ShadowMapLess.hpp"
+ /*------------------------------------------------------*/
 
 namespace leopph::impl
 {
@@ -118,6 +126,11 @@ namespace leopph::impl
 
 		static const Matrix4& ModelMatrix(const Object* object);
 
+		static const std::forward_list<ShadowMap>& ShadowMaps();
+		static void CreateShadowMap(const Vector2& resolution);
+		/* Removes the last stored Shadow Map */
+		static void DeleteShadowMap();
+
 	private:
 		static std::unordered_set<TextureReference, TextureHash, TextureEqual> s_Textures;
 		static std::unordered_map<std::filesystem::path, ModelReference> s_Models;
@@ -130,5 +143,7 @@ namespace leopph::impl
 		static leopph::DirectionalLight* s_DirLight;
 		static std::vector<PointLight*> s_PointLights;
 		static std::unique_ptr<leopph::AmbientLight> s_AmbientLight;
+
+		static std::forward_list<ShadowMap> s_ShadowMaps;
 	};
 }

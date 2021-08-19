@@ -17,6 +17,7 @@ namespace leopph::impl
 	std::unordered_map<std::filesystem::path, ModelReference> InstanceHolder::s_Models{};
 	std::unordered_map<SkyboxImpl, std::size_t, SkyboxImplHash, SkyboxImplEqual> InstanceHolder::s_Skyboxes{};
 	std::unordered_map<const Object*, const Matrix4> InstanceHolder::s_ModelMatrixCache{};
+	std::forward_list<ShadowMap> InstanceHolder::s_ShadowMaps{};
 
 	
 	void InstanceHolder::DestroyAllObjects()
@@ -306,6 +307,24 @@ namespace leopph::impl
 		modelMatrix *= Matrix4::Translate(object->Transform().Position());
 
 		return s_ModelMatrixCache.emplace(object, modelMatrix).first->second;
+	}
+
+	const std::forward_list<ShadowMap>& InstanceHolder::ShadowMaps()
+	{
+		return s_ShadowMaps;
+	}
+
+	void InstanceHolder::CreateShadowMap(const Vector2& resolution)
+	{
+		s_ShadowMaps.emplace_front(resolution);
+	}
+
+	void InstanceHolder::DeleteShadowMap()
+	{
+		if (!s_ShadowMaps.empty())
+		{
+			s_ShadowMaps.pop_front();
+		}
 	}
 
 }
