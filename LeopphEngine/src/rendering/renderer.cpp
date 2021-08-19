@@ -17,13 +17,26 @@
 namespace leopph::impl
 {
 	Renderer::Renderer() :
-		m_Shader{ Shader::Type::GENERAL }, m_SkyboxShader{ Shader::Type::SKYBOX }
+		m_ObjectShader{ Shader::Type::GENERAL }, m_SkyboxShader{ Shader::Type::SKYBOX },
+		m_PointsLights{ [] (const PointLight* const left, const PointLight* const right)
+		{
+			const auto camPosition{Camera::Active()->object.Transform().Position()};
+			const auto leftDistance{ Vector3::Distance(camPosition, left->object.Transform().Position()) };
+			const auto rightDistance{ Vector3::Distance(camPosition, right->object.Transform().Position()) };
+
+			if (leftDistance != rightDistance)
+			{
+				return leftDistance < rightDistance;
+			}
+
+			return left < right;
+		} }
 	{
 		glEnable(GL_DEPTH_TEST);
 	}
 
 
-	void Renderer::Render() const
+	void Renderer::Render()
 	{
 		if (Camera::Active() == nullptr)
 			return;
@@ -31,65 +44,51 @@ namespace leopph::impl
 		const auto viewMatrix{ Camera::Active()->ViewMatrix() };
 		const auto projectionMatrix{ Camera::Active()->ProjectionMatrix() };
 
-		PointLight* pointLights[MAX_POINT_LIGHTS]{};
+		m_PointsLights.clear();
 
-		for (Light* light : InstanceHolder::PointLights())
+		for (const PointLight* const light : InstanceHolder::PointLights())
 		{
-			if (pointLights[0] == nullptr)
-			{
-				pointLights[0] = reinterpret_cast<PointLight*>(light);
-			}
-			else
-			{
-				light = reinterpret_cast<PointLight*>(light);
-				Vector3 lightPos = light->object.Transform().Position();
-
-				if (Vector3 camPos = Camera::Active()->object.Transform().Position();
-					Vector3::Distance(lightPos, camPos) < Vector3::Distance(camPos, pointLights[0]->object.Transform().Position()))
-				{
-					for (size_t i = MAX_POINT_LIGHTS - 1; i > 0; i--)
-						pointLights[i] = pointLights[i - 1];
-
-					pointLights[0] = reinterpret_cast<PointLight*>(light);
-				}
-			}
+			m_PointsLights.emplace(light);
 		}
 
-		m_Shader.Use();
+		m_ObjectShader.Use();
 
 		size_t lightNumber = 0;
 
-		for (auto& pointLight : pointLights)
+		for (const auto& pointLight : m_PointsLights)
 		{
-			if (pointLight != nullptr)
+			if (lightNumber == MAX_POINT_LIGHTS)
 			{
-				m_Shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].position", static_cast<Vector3>(static_cast<Vector4>(pointLight->object.Transform().Position()) * viewMatrix));
-				m_Shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].diffuseColor", pointLight->Diffuse());
-				m_Shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].specularColor", pointLight->Specular());
-				m_Shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].constant", pointLight->Constant());
-				m_Shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].linear", pointLight->Linear());
-				m_Shader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].quadratic", pointLight->Quadratic());
-
-				lightNumber++;
+				break;
 			}
+
+			m_ObjectShader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].position", static_cast<Vector3>(static_cast<Vector4>(pointLight->object.Transform().Position()) * viewMatrix));
+			m_ObjectShader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].diffuseColor", pointLight->Diffuse());
+			m_ObjectShader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].specularColor", pointLight->Specular());
+			m_ObjectShader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].constant", pointLight->Constant());
+			m_ObjectShader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].linear", pointLight->Linear());
+			m_ObjectShader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].quadratic", pointLight->Quadratic());
+
+			lightNumber++;
 		}
-		m_Shader.SetUniform("lightNumber", static_cast<int>(lightNumber));
+
+		m_ObjectShader.SetUniform("lightNumber", static_cast<int>(lightNumber));
 
 		if (const auto dirLight = InstanceHolder::DirectionalLight(); dirLight != nullptr)
 		{
-			m_Shader.SetUniform("existsDirLight", true);
-			m_Shader.SetUniform("dirLight.direction", dirLight->Direction() * static_cast<Matrix3>(viewMatrix));
-			m_Shader.SetUniform("dirLight.diffuseColor", dirLight->Diffuse());
-			m_Shader.SetUniform("dirLight.specularColor", dirLight->Specular());
+			m_ObjectShader.SetUniform("existsDirLight", true);
+			m_ObjectShader.SetUniform("dirLight.direction", dirLight->Direction() * static_cast<Matrix3>(viewMatrix));
+			m_ObjectShader.SetUniform("dirLight.diffuseColor", dirLight->Diffuse());
+			m_ObjectShader.SetUniform("dirLight.specularColor", dirLight->Specular());
 		}
 		else
 		{
-			m_Shader.SetUniform("existsDirLight", false);
+			m_ObjectShader.SetUniform("existsDirLight", false);
 		}
 
-		m_Shader.SetUniform("ambientLight", AmbientLight::Instance().Intensity());
+		m_ObjectShader.SetUniform("ambientLight", AmbientLight::Instance().Intensity());
 
-		m_Shader.SetUniform("projectionMatrix", projectionMatrix);
+		m_ObjectShader.SetUniform("projectionMatrix", projectionMatrix);
 
 		for (const auto& [path, modelReference] : InstanceHolder::Models())
 		{
@@ -117,7 +116,7 @@ namespace leopph::impl
 				}
 			}
 
-			modelReference.ReferenceModel().Draw(m_Shader, modelViewMatrices, normalMatrices);
+			modelReference.ReferenceModel().Draw(m_ObjectShader, modelViewMatrices, normalMatrices);
 		}
 
 		m_SkyboxShader.Use();

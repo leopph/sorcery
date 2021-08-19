@@ -2,7 +2,11 @@
 
 #include "shader.h"
 
+#include "../components/lighting/PointLight.hpp"
+
 #include <cstddef>
+#include <functional>
+#include <set>
 
 
 namespace leopph::impl
@@ -11,12 +15,13 @@ namespace leopph::impl
 	{
 	public:
 		Renderer();
-		void Render() const;
+		void Render();
 
 	private:
-		Shader m_Shader;
+		Shader m_ObjectShader;
 		Shader m_SkyboxShader;
 
 		constexpr static std::size_t MAX_POINT_LIGHTS = 64;
+		std::set<const PointLight*, std::function<bool(const PointLight*, const PointLight*)>> m_PointsLights;
 	};
 }

@@ -78,8 +78,8 @@
     <PreBuildEvent />
     <PreLinkEvent />
     <CustomBuildStep>
-      <Command>$(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(ProjectDir)src\shaders\vertex.vert" "$(ProjectDir)src\shaders\vertex.cpp" "leopph::impl::Shader::s_VertexSource" "$(ProjectDir)src/rendering/shader.h"
-$(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(ProjectDir)src\shaders\fragment.frag" "$(ProjectDir)src\shaders\fragment.cpp" "leopph::impl::Shader::s_FragmentSource" "$(ProjectDir)src/rendering/shader.h"
+      <Command>$(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(ProjectDir)src\shaders\ObjectVertex.vert" "$(ProjectDir)src\shaders\ObjectVertex.cpp" "leopph::impl::Shader::s_VertexSource" "$(ProjectDir)src/rendering/shader.h"
+$(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(ProjectDir)src\shaders\ObjectFragment.frag" "$(ProjectDir)src\shaders\ObjectFragment.cpp" "leopph::impl::Shader::s_FragmentSource" "$(ProjectDir)src/rendering/shader.h"
 $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(ProjectDir)src\shaders\skyboxvertex.vert" "$(ProjectDir)src\shaders\skyboxvertex.cpp" "leopph::impl::Shader::s_SkyboxVertexSource" "$(ProjectDir)src/rendering/shader.h"
 $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(ProjectDir)src\shaders\skyboxfragment.frag" "$(ProjectDir)src\shaders\skyboxfragment.cpp" "leopph::impl::Shader::s_SkyboxFragmentSource" "$(ProjectDir)src/rendering/shader.h"</Command>
     </CustomBuildStep>
@@ -87,10 +87,10 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
       <Message>Creating shader sources.</Message>
     </CustomBuildStep>
     <CustomBuildStep>
-      <Outputs>$(ProjectDir)src\shaders\vertex.cpp;$(ProjectDir)src\shaders\fragment.cpp;$(ProjectDir)src\shaders\skyboxvertex.cpp;$(ProjectDir)src\shaders\skyboxfragment.cpp</Outputs>
+      <Outputs>$(ProjectDir)src\shaders\ObjectVertex.cpp;$(ProjectDir)src\shaders\ObjectFragment.cpp;$(ProjectDir)src\shaders\skyboxvertex.cpp;$(ProjectDir)src\shaders\skyboxfragment.cpp</Outputs>
     </CustomBuildStep>
     <CustomBuildStep>
-      <Inputs>$(ProjectDir)src\shaders\vertex.vert;$(ProjectDir)src\shaders\fragment.frag;$(ProjectDir)src\shaders\skyboxvertex.vert;$(ProjectDir)src\shaders\skyboxfragment.frag</Inputs>
+      <Inputs>$(ProjectDir)src\shaders\ObjectVertex.vert;$(ProjectDir)src\shaders\ObjectFragment.frag;$(ProjectDir)src\shaders\skyboxvertex.vert;$(ProjectDir)src\shaders\skyboxfragment.frag</Inputs>
     </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -116,8 +116,8 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <PreBuildEvent />
     <PreLinkEvent />
     <CustomBuildStep>
-      <Command>$(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(ProjectDir)src\shaders\vertex.vert" "$(ProjectDir)src\shaders\vertex.cpp" "leopph::impl::Shader::s_VertexSource" "$(ProjectDir)src/rendering/shader.h"
-$(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(ProjectDir)src\shaders\fragment.frag" "$(ProjectDir)src\shaders\fragment.cpp" "leopph::impl::Shader::s_FragmentSource" "$(ProjectDir)src/rendering/shader.h"
+      <Command>$(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(ProjectDir)src\shaders\ObjectVertex.vert" "$(ProjectDir)src\shaders\ObjectVertex.cpp" "leopph::impl::Shader::s_VertexSource" "$(ProjectDir)src/rendering/shader.h"
+$(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(ProjectDir)src\shaders\ObjectFragment.frag" "$(ProjectDir)src\shaders\ObjectFragment.cpp" "leopph::impl::Shader::s_FragmentSource" "$(ProjectDir)src/rendering/shader.h"
 $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(ProjectDir)src\shaders\skyboxvertex.vert" "$(ProjectDir)src\shaders\skyboxvertex.cpp" "leopph::impl::Shader::s_SkyboxVertexSource" "$(ProjectDir)src/rendering/shader.h"
 $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(ProjectDir)src\shaders\skyboxfragment.frag" "$(ProjectDir)src\shaders\skyboxfragment.cpp" "leopph::impl::Shader::s_SkyboxFragmentSource" "$(ProjectDir)src/rendering/shader.h"</Command>
     </CustomBuildStep>
@@ -125,10 +125,10 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
       <Message>Creating shader sources.</Message>
     </CustomBuildStep>
     <CustomBuildStep>
-      <Outputs>$(ProjectDir)src\shaders\vertex.cpp;$(ProjectDir)src\shaders\fragment.cpp;$(ProjectDir)src\shaders\skyboxvertex.cpp;$(ProjectDir)src\shaders\skyboxfragment.cpp</Outputs>
+      <Outputs>$(ProjectDir)src\shaders\ObjectVertex.cpp;$(ProjectDir)src\shaders\ObjectFragment.cpp;$(ProjectDir)src\shaders\skyboxvertex.cpp;$(ProjectDir)src\shaders\skyboxfragment.cpp</Outputs>
     </CustomBuildStep>
     <CustomBuildStep>
-      <Inputs>$(ProjectDir)src\shaders\vertex.vert;$(ProjectDir)src\shaders\fragment.frag;$(ProjectDir)src\shaders\skyboxvertex.vert;$(ProjectDir)src\shaders\skyboxfragment.frag</Inputs>
+      <Inputs>$(ProjectDir)src\shaders\ObjectVertex.vert;$(ProjectDir)src\shaders\ObjectFragment.frag;$(ProjectDir)src\shaders\skyboxvertex.vert;$(ProjectDir)src\shaders\skyboxfragment.frag</Inputs>
     </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -198,10 +198,10 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClCompile Include="src\misc\color.cpp" />
     <ClCompile Include="src\rendering\material.cpp" />
     <ClCompile Include="src\rendering\opengl\gl.cpp" />
-    <ClCompile Include="src\shaders\fragment.cpp" />
+    <ClCompile Include="src\shaders\ObjectFragment.cpp" />
+    <ClCompile Include="src\shaders\ObjectVertex.cpp" />
     <ClCompile Include="src\shaders\skyboxfragment.cpp" />
     <ClCompile Include="src\shaders\skyboxvertex.cpp" />
-    <ClCompile Include="src\shaders\vertex.cpp" />
     <ClCompile Include="src\timing\timer.cpp" />
     <ClCompile Include="src\util\logger.cpp" />
     <ClCompile Include="src\instances\modelreference.cpp" />
@@ -232,10 +232,10 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
   </ItemGroup>
   <ItemGroup>
     <None Include="src\cpp.hint" />
-    <None Include="src\shaders\fragment.frag" />
+    <None Include="src\shaders\ObjectFragment.frag" />
     <None Include="src\shaders\skyboxfragment.frag" />
     <None Include="src\shaders\skyboxvertex.vert" />
-    <None Include="src\shaders\vertex.vert" />
+    <None Include="src\shaders\ObjectVertex.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

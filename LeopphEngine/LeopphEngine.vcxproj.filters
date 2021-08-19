@@ -26,8 +26,6 @@
     <ClCompile Include="src\input\inputhandler.cpp" />
     <ClCompile Include="src\entry\launch.cpp" />
     <ClCompile Include="src\timing\timer.cpp" />
-    <ClCompile Include="src\shaders\fragment.cpp" />
-    <ClCompile Include="src\shaders\vertex.cpp" />
     <ClCompile Include="src\config\settings.cpp" />
     <ClCompile Include="src\util\logger.cpp" />
     <ClCompile Include="src\rendering\material.cpp" />
@@ -44,6 +42,8 @@
     <ClCompile Include="src\misc\color.cpp" />
     <ClCompile Include="src\components\lighting\AmbientLight.cpp" />
     <ClCompile Include="src\hierarchy\Transform.cpp" />
+    <ClCompile Include="src\shaders\ObjectFragment.cpp" />
+    <ClCompile Include="src\shaders\ObjectVertex.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\Behavior.hpp" />
@@ -100,8 +100,8 @@
     <ClInclude Include="src\util\ObjectProperties.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="src\shaders\fragment.frag" />
-    <None Include="src\shaders\vertex.vert" />
+    <None Include="src\shaders\ObjectFragment.frag" />
+    <None Include="src\shaders\ObjectVertex.vert" />
     <None Include="src\shaders\skyboxvertex.vert" />
     <None Include="src\shaders\skyboxfragment.frag" />
     <None Include="src\cpp.hint" />
