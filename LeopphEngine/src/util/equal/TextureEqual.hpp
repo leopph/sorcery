@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../instances/texturereference.h"
+#include "../../instances/texturereference.h"
 
 #include <filesystem>
 

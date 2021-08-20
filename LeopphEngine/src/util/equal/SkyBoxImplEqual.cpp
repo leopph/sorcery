@@ -1,4 +1,4 @@
-#include "skyboximplequal.h"
+#include "SkyBoxImplEqual.hpp"
 
 bool leopph::impl::SkyboxImplEqual::operator()(const SkyboxImpl& left, const SkyboxImpl& right) const
 {

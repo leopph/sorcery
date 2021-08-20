@@ -1,26 +1,26 @@
 #pragma once
 
-#include "../components/Component.hpp"
 #include "../components/Behavior.hpp"
+#include "../components/Component.hpp"
 #include "../components/lighting/AmbientLight.hpp"
-#include "../components/lighting/PointLight.hpp"
 #include "../components/lighting/DirLight.hpp"
+#include "../components/lighting/PointLight.hpp"
 #include "../hierarchy/Object.hpp"
 #include "../misc/skybox.h"
-#include "skyboximpl.h"
 #include "../rendering/texture.h"
 #include "../rendering/ShadowMap.hpp"
+#include "skyboximpl.h"
 
-#include "../util/objectcomparator.h"
+#include "../util/equal/SkyBoxImplEqual.hpp"
+#include "../util/equal/TextureEqual.hpp"
+#include "../util/hash/PathHash.hpp"
+#include "../util/hash/SkyBoxImplHash.hpp"
+#include "../util/hash/TextureHash.hpp"
+#include "../util/less/ObjectLess.hpp"
 #include "modelreference.h"
-#include "../util/skyboximplequal.h"
-#include "../util/skyboximplhash.h"
-#include "../util/textureequal.h"
-#include "../util/texturehash.h"
 #include "texturereference.h"
 
 #include <cstddef>
-#include <functional>
 #include <filesystem>
 #include <forward_list>
 #include <map>
@@ -31,24 +31,13 @@
 #include <unordered_set>
 #include <vector>
 
-/*------------------------------------------------------------
-std::hash<std::filesystem::path> must be visible to s_Models*/
-#include "../util/pathhash.h"
-/*----------------------------------------------------------*/
-
-/*---------------------------------------------------------
- * Definition of std::less<leopph::impl::ShadowMap> must be
- * visible to s_ShadowMaps */
-#include "../util/ShadowMapLess.hpp"
- /*------------------------------------------------------*/
-
 namespace leopph::impl
 {
 	class InstanceHolder
 	{
 	public:
 		/* All Objects*/
-		static const std::map<Object*, std::set<Component*>, ObjectComparator>& Objects();
+		static const std::map<Object*, std::set<Component*>, ObjectLess>& Objects();
 		/* Store pointer to Object !!!OWNERSHIP!!! */
 		static void RegisterObject(Object* object);
 		/* Destruct Object and remove pointer */
@@ -101,7 +90,7 @@ namespace leopph::impl
 		static void AmbientLight(leopph::AmbientLight*&& light);
 
 		/* All ModelRefs */
-		static const std::unordered_map<std::filesystem::path, ModelReference>& Models();
+		static const std::unordered_map<std::filesystem::path, ModelReference, PathHash>& Models();
 		/* Reference to ModelRef on the given path */
 		static const AssimpModelImpl& GetModelReference(const std::filesystem::path& path);
 		/* Inc count of ModelRef on given path with given Object */
@@ -133,11 +122,11 @@ namespace leopph::impl
 
 	private:
 		static std::unordered_set<TextureReference, TextureHash, TextureEqual> s_Textures;
-		static std::unordered_map<std::filesystem::path, ModelReference> s_Models;
+		static std::unordered_map<std::filesystem::path, ModelReference, PathHash> s_Models;
 		static std::unordered_map<SkyboxImpl, std::size_t, SkyboxImplHash, SkyboxImplEqual> s_Skyboxes;
 
 		static std::set<Behavior*> s_Behaviors;
-		static std::map<Object*, std::set<Component*>, ObjectComparator> s_Objects;
+		static std::map<Object*, std::set<Component*>, ObjectLess> s_Objects;
 		static std::unordered_map<const Object*, const Matrix4> s_ModelMatrixCache;
 
 		static leopph::DirectionalLight* s_DirLight;

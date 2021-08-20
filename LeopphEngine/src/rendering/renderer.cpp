@@ -17,20 +17,7 @@
 namespace leopph::impl
 {
 	Renderer::Renderer() :
-		m_ObjectShader{ Shader::Type::GENERAL }, m_SkyboxShader{ Shader::Type::SKYBOX },
-		m_PointsLights{ [] (const PointLight* const left, const PointLight* const right)
-		{
-			const auto camPosition{Camera::Active()->object.Transform().Position()};
-			const auto leftDistance{ Vector3::Distance(camPosition, left->object.Transform().Position()) };
-			const auto rightDistance{ Vector3::Distance(camPosition, right->object.Transform().Position()) };
-
-			if (leftDistance != rightDistance)
-			{
-				return leftDistance < rightDistance;
-			}
-
-			return left < right;
-		} }
+		m_ObjectShader{ Shader::Type::GENERAL }, m_SkyboxShader{ Shader::Type::SKYBOX }
 	{
 		glEnable(GL_DEPTH_TEST);
 	}
@@ -128,4 +115,19 @@ namespace leopph::impl
 			InstanceHolder::GetSkybox(*skybox).Draw(m_SkyboxShader);
 		}
 	}
+
+	bool Renderer::PointLightLess::operator()(const PointLight* left, const PointLight* right) const
+	{
+		const auto camPosition{ Camera::Active()->object.Transform().Position() };
+		const auto leftDistance{ Vector3::Distance(camPosition, left->object.Transform().Position()) };
+		const auto rightDistance{ Vector3::Distance(camPosition, right->object.Transform().Position()) };
+
+		if (leftDistance != rightDistance)
+		{
+			return leftDistance < rightDistance;
+		}
+
+		return left < right;
+	}
+
 }

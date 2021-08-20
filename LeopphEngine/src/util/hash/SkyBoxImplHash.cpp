@@ -1,4 +1,4 @@
-#include "skyboximplhash.h"
+#include "SkyBoxImplHash.hpp"
 
 std::size_t leopph::impl::SkyboxImplHash::operator()(const SkyboxImpl& skyboxImpl) const
 {

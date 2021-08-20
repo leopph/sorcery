@@ -1,12 +1,12 @@
 #pragma once
 
-#include "../hierarchy/Object.hpp"
+#include "../../hierarchy/Object.hpp"
 
 #include <string>
 
 namespace leopph::impl
 {
-	struct ObjectComparator
+	struct ObjectLess
 	{
 		using is_transparent = void;
 		bool operator()(const Object* left, const Object* right) const;

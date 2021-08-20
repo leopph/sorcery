@@ -18,10 +18,16 @@ namespace leopph::impl
 		void Render();
 
 	private:
+		struct PointLightLess
+		{
+			bool operator()(const PointLight* left, const PointLight* right) const;
+		};
+
 		Shader m_ObjectShader;
 		Shader m_SkyboxShader;
 
 		constexpr static std::size_t MAX_POINT_LIGHTS = 64;
-		std::set<const PointLight*, std::function<bool(const PointLight*, const PointLight*)>> m_PointsLights;
+		std::set<const PointLight*, PointLightLess> m_PointsLights;
+
 	};
 }

@@ -1,4 +1,4 @@
-#include "texturehash.h"
+#include "TextureHash.hpp"
 
 #include <filesystem>
 #include <functional>

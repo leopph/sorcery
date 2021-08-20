@@ -9,12 +9,12 @@
 namespace leopph::impl
 {
 	std::unordered_set<TextureReference, TextureHash, TextureEqual> InstanceHolder::s_Textures{};
-	std::map<Object*, std::set<Component*>, ObjectComparator> InstanceHolder::s_Objects{};
+	std::map<Object*, std::set<Component*>, ObjectLess> InstanceHolder::s_Objects{};
 	std::set<Behavior*> InstanceHolder::s_Behaviors{};
 	DirectionalLight* InstanceHolder::s_DirLight{ nullptr };
 	std::vector<PointLight*> InstanceHolder::s_PointLights{};
 	std::unique_ptr<AmbientLight> InstanceHolder::s_AmbientLight{ nullptr };
-	std::unordered_map<std::filesystem::path, ModelReference> InstanceHolder::s_Models{};
+	std::unordered_map<std::filesystem::path, ModelReference, PathHash> InstanceHolder::s_Models{};
 	std::unordered_map<SkyboxImpl, std::size_t, SkyboxImplHash, SkyboxImplEqual> InstanceHolder::s_Skyboxes{};
 	std::unordered_map<const Object*, const Matrix4> InstanceHolder::s_ModelMatrixCache{};
 	std::forward_list<ShadowMap> InstanceHolder::s_ShadowMaps{};
@@ -48,7 +48,7 @@ namespace leopph::impl
 		return it != s_Objects.end() ? it->first : nullptr;
 	}
 
-	const std::map<Object*, std::set<Component*>, ObjectComparator>& InstanceHolder::Objects()
+	const std::map<Object*, std::set<Component*>, ObjectLess>& InstanceHolder::Objects()
 	{
 		return s_Objects;
 	}
@@ -209,7 +209,7 @@ namespace leopph::impl
 			s_Models.erase(path);
 	}
 
-	const std::unordered_map<std::filesystem::path, leopph::impl::ModelReference>& InstanceHolder::Models()
+	const std::unordered_map<std::filesystem::path, ModelReference, PathHash>& InstanceHolder::Models()
 	{
 		return s_Models;
 	}

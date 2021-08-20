@@ -1,4 +1,4 @@
-#include "textureequal.h"
+#include "TextureEqual.hpp"
 
 bool leopph::impl::TextureEqual::operator()(const TextureReference& left, const TextureReference& right) const
 {
