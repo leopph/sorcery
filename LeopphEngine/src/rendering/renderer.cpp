@@ -214,10 +214,7 @@ namespace leopph::impl
 		}
 
 		m_ObjectShader.SetUniform("ambientLight", AmbientLight::Instance().Intensity());
-
-		m_ObjectShader.SetUniform("viewMatrix", m_CurrentFrameViewMatrix);
-		m_ObjectShader.SetUniform("projectionMatrix", m_CurrentFrameProjectionMatrix);
-
+		m_ObjectShader.SetUniform("viewProjectionMatrix", m_CurrentFrameViewMatrix * m_CurrentFrameProjectionMatrix);
 		m_ObjectShader.SetUniform("cameraPosition", Camera::Active()->object.Transform().Position());
 
 		std::vector<Matrix4> normalMatrices;

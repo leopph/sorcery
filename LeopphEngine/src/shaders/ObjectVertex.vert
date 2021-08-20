@@ -10,12 +10,11 @@ layout (location = 0) out vec3 outNormal;
 layout (location = 1) out vec2 outTexCoords;
 layout (location = 2) out vec3 outFragPos;
 
-uniform mat4 viewMatrix;
-uniform mat4 projectionMatrix;
+uniform mat4 viewProjectionMatrix;
 
 void main()
 {
-    gl_Position = vec4(inPos, 1.0) * modelMatrix * viewMatrix * projectionMatrix;
+    gl_Position = vec4(inPos, 1.0) * modelMatrix * viewProjectionMatrix;
     outNormal = inNormal * mat3(normalMatrix);
     outTexCoords = inTexCoords;
     outFragPos = vec3(vec4(inPos, 1.0) * modelMatrix);
