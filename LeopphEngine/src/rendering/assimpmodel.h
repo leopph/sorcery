@@ -1,7 +1,7 @@
 #pragma once
 
 #include "mesh.h"
-#include "../math/matrix.h"
+#include "../math/Matrix.hpp"
 
 #include <assimp/scene.h>
 

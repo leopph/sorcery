@@ -1,9 +1,11 @@
 #pragma once
 
+#include <algorithm>
+#include <array>
 #include <cstddef>
 #include <concepts>
 
-#include "vector.h"
+#include "Vector.hpp"
 #include "leopphmath.h"
 
 
@@ -14,7 +16,7 @@ namespace leopph
 	{
 		/*-------------------------------------------------------------------------------------------------
 		The Matrix class template provides several ways to aid in solving linear algebraic problems.
-		It is built to work seamlessly with the Vector class template. See "vector.h" for more information.
+		It is built to work seamlessly with the Vector class template. See "Vector.hpp" for more information.
 		Matrices are represented as row-major and stored row-continuously. They have N rows and M columns.
 		DO NOT INSTANTIATE THIS TEMPLATE EXPLICITLY UNLESS NECESSARY!
 		There are several predefined implementations at the bottom of this file.
@@ -24,7 +26,7 @@ namespace leopph
 		class Matrix
 		{
 		private:
-			Vector<T, M> m_Data[N];
+			std::array<Vector<T, M>, N> m_Data;
 
 
 		public:
@@ -34,7 +36,7 @@ namespace leopph
 			{}
 
 			/* Main Diagonal Fill Constructor */
-			Matrix(const T& value) :
+			explicit Matrix(const T& value) :
 				m_Data{}
 			{
 				for (size_t i = 0; i < N && i < M; i++)
@@ -42,16 +44,14 @@ namespace leopph
 			}
 
 			/* Copy Constructor */
-			Matrix(const Matrix<T, N, M>& other) :
-				m_Data{}
+			Matrix(const Matrix<T, N, M>& other)
 			{
-				for (size_t i = 0; i < N; i++)
-					m_Data[i] = other.m_Data[i];
+				std::copy(other.m_Data.begin(), other.m_Data.end(), m_Data.begin());
 			}
 
 			/* Main Diagonal Elements Constructor */
 			template<std::convertible_to<T>... T1> requires(sizeof...(T1) == (N > M ? M : N))
-				Matrix(const T1&... args) :
+				explicit Matrix(const T1&... args) :
 				m_Data{}
 			{
 				T argArr[M > N ? N : M]{ static_cast<T>(args)... };
@@ -62,7 +62,7 @@ namespace leopph
 
 			/* All Elements Constructor */
 			template<std::convertible_to<T> ... T1> requires(sizeof...(T1) == (N * M))
-				Matrix(const T1&... args) :
+				explicit Matrix(const T1&... args) :
 				m_Data{}
 			{
 				T argArr[M * N]{ static_cast<T>(args)... };
@@ -74,7 +74,7 @@ namespace leopph
 
 			/* Main Diagonal Vector Constructor */
 			template<std::size_t N1> requires(N1 == (M > N ? N : M))
-				Matrix(const Vector<T, N1>& vec) :
+				explicit Matrix(const Vector<T, N1>& vec) :
 				m_Data{}
 			{
 				for (size_t i = 0; i < N1; i++)

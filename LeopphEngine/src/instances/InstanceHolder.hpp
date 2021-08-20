@@ -29,6 +29,7 @@
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 namespace leopph::impl
@@ -113,7 +114,7 @@ namespace leopph::impl
 		/* Dec count of given SkyboxImpl */
 		static void DecSkybox(const SkyboxImpl* skybox);
 
-		static const Matrix4& ModelMatrix(const Object* object);
+		static const std::pair<const Matrix4, const Matrix4>& ModelAndNormalMatrices(const Object* object);
 
 		static const std::list<ShadowMap>& ShadowMaps();
 		static void CreateShadowMap(const Vector2& resolution);
@@ -127,7 +128,7 @@ namespace leopph::impl
 
 		static std::set<Behavior*> s_Behaviors;
 		static std::map<Object*, std::set<Component*>, ObjectLess> s_Objects;
-		static std::unordered_map<const Object*, const Matrix4> s_ModelMatrixCache;
+		static std::unordered_map<const Object*, std::pair<const Matrix4, const Matrix4>> s_MatrixCache;
 
 		static leopph::DirectionalLight* s_DirLight;
 		static std::vector<PointLight*> s_PointLights;

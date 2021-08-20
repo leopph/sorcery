@@ -1,8 +1,8 @@
 #include "mesh.h"
 
 #include "../instances/InstanceHolder.hpp"
-#include "../math/matrix.h"
-#include "../math/vector.h"
+#include "../math/Matrix.hpp"
+#include "../math/Vector.hpp"
 
 #include "../util/logger.h"
 

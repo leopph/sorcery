@@ -3,7 +3,7 @@
 #include "../misc/camerabackground.h"
 #include "Component.hpp"
 #include "../api/leopphapi.h"
-#include "../math/matrix.h"
+#include "../math/Matrix.hpp"
 
 namespace leopph
 {

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../math/quaternion.h"
-#include "../math/vector.h"
+#include "../math/Vector.hpp"
 
 #include <string>
 

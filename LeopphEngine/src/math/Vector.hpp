@@ -1,9 +1,10 @@
 #pragma once
 
-#include <type_traits>
-#include <ostream>
-#include <cstddef>
+#include <algorithm>
+#include <array>
 #include <concepts>
+#include <cstddef>
+#include <ostream>
 
 
 namespace leopph
@@ -22,7 +23,7 @@ namespace leopph
 		class Vector
 		{
 		private:
-			T m_Data[N];
+			std::array<T, N> m_Data;
 
 
 		public:
@@ -40,11 +41,9 @@ namespace leopph
 			}
 
 			/* Copy Constructor */
-			Vector(const Vector<T, N>& other) :
-				m_Data{}
+			Vector(const Vector<T, N>& other)
 			{
-				for (size_t i = 0; i < N; i++)
-					m_Data[i] = other.m_Data[i];
+				std::copy(other.m_Data.begin(), other.m_Data.end(), m_Data.begin());
 			}
 
 			/* All Elements Constructor */

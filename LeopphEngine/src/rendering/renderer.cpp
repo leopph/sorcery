@@ -5,8 +5,8 @@
 #include "../components/lighting/Light.hpp"
 #include "../components/lighting/PointLight.hpp"
 #include "../instances/InstanceHolder.hpp"
-#include "../math/matrix.h"
-#include "../math/vector.h"
+#include "../math/Matrix.hpp"
+#include "../math/Vector.hpp"
 #include "Shader.hpp"
 
 #include <glad/glad.h>
@@ -31,7 +31,7 @@ namespace leopph::impl
 			return;
 
 		/* We collect the model matrices from the existing models' objects */
-		CollectModelMatrices();
+		CalcAndCollectModelAndNormalMatrices();
 
 		/* We collect the nearest pointlights */
 		CollectPointLights();
@@ -64,20 +64,22 @@ namespace leopph::impl
 	}
 
 
-	void Renderer::CollectModelMatrices()
+	void Renderer::CalcAndCollectModelAndNormalMatrices()
 	{
 		m_CurrentFrameModelMatrices.clear();
 
 		for (const auto& [path, modelReference] : InstanceHolder::Models())
 		{
-			auto& matrices = m_CurrentFrameModelMatrices.try_emplace(path).first->second;
+			auto& [models, normals] = m_CurrentFrameModelMatrices.try_emplace(path).first->second;
 
 			for (const auto& object : modelReference.Objects())
 			{
 				/* If the objet is static we query for its cached matrix */
 				if (object->isStatic)
 				{
-					matrices.emplace_back(InstanceHolder::ModelMatrix(object).Transposed());
+					const auto& [model, normal] {InstanceHolder::ModelAndNormalMatrices(object)};
+					models.emplace_back(model.Transposed());
+					normals.emplace_back(normal.Transposed());
 				}
 				/* Otherwise we calculate it */
 				else
@@ -85,7 +87,8 @@ namespace leopph::impl
 					auto modelMatrix{ Matrix4::Scale(object->Transform().Scale()) };
 					modelMatrix *= static_cast<Matrix4>(object->Transform().Rotation());
 					modelMatrix *= Matrix4::Translate(object->Transform().Position());
-					matrices.emplace_back(modelMatrix.Transposed());
+					models.emplace_back(modelMatrix.Transposed());
+					normals.emplace_back(modelMatrix.Inverse());
 				}
 			}
 		}
@@ -148,7 +151,7 @@ namespace leopph::impl
 
 		for (const auto& [modelPath, matrices] : m_CurrentFrameModelMatrices)
 		{
-			InstanceHolder::GetModelReference(modelPath).DrawDepth(m_DirectionalShadowMapShader, matrices);
+			InstanceHolder::GetModelReference(modelPath).DrawDepth(m_DirectionalShadowMapShader, matrices.first);
 		}
 
 		shadowMaps.front().Unbind();
@@ -171,11 +174,11 @@ namespace leopph::impl
 		{
 			for (const auto& [modelPath, matrices] : m_CurrentFrameModelMatrices)
 			{
-				for (const auto& model{ InstanceHolder::GetModelReference(modelPath) };
-					const auto & matrix : matrices)
+				/*for (const auto& model{ InstanceHolder::GetModelReference(modelPath) };
+					const auto & [models, normals] : matrices)
 				{
 
-				}
+				}*/
 			}
 
 			++shadowMapIt;
@@ -217,17 +220,9 @@ namespace leopph::impl
 		m_ObjectShader.SetUniform("viewProjectionMatrix", m_CurrentFrameViewMatrix * m_CurrentFrameProjectionMatrix);
 		m_ObjectShader.SetUniform("cameraPosition", Camera::Active()->object.Transform().Position());
 
-		std::vector<Matrix4> normalMatrices;
 		for (const auto& [modelPath, matrices] : m_CurrentFrameModelMatrices)
 		{
-			normalMatrices.clear();
-
-			for (const auto& matrix : matrices)
-			{
-				normalMatrices.push_back(matrix.Inverse());
-			}
-
-			InstanceHolder::GetModelReference(modelPath).DrawShaded(m_ObjectShader, matrices, normalMatrices);
+			InstanceHolder::GetModelReference(modelPath).DrawShaded(m_ObjectShader, matrices.first, matrices.second);
 		}
 	}
 

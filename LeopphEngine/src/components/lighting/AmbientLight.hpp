@@ -2,7 +2,7 @@
 
 #include "../../api/leopphapi.h"
 
-#include "../../math/vector.h"
+#include "../../math/Vector.hpp"
 
 namespace leopph
 {

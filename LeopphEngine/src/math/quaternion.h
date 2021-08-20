@@ -1,8 +1,8 @@
 #pragma once
 
 #include "../api/leopphapi.h"
-#include "vector.h"
-#include "matrix.h"
+#include "Vector.hpp"
+#include "Matrix.hpp"
 
 #include <cstddef>
 #include <ostream>

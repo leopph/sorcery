@@ -2,7 +2,7 @@
 
 #include "../rendering/Shader.hpp"
 #include "../components/lighting/Light.hpp"
-#include "../math/vector.h"
+#include "../math/Vector.hpp"
 
 namespace leopph::impl
 {
