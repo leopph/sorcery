@@ -30,7 +30,7 @@ namespace leopph::impl
 
 		void CalcAndCollectModelAndNormalMatrices();
 		void CollectPointLights();
-		void RenderDirectionalShadowMap() const;
+		void RenderDirectionalShadowMap();
 		void RenderPointShadowMaps();
 		void RenderShadedObjects();
 		void RenderSkybox() const;
@@ -48,5 +48,6 @@ namespace leopph::impl
 
 		Matrix4 m_CurrentFrameViewMatrix;
 		Matrix4 m_CurrentFrameProjectionMatrix;
+		Matrix4 m_CurrentFrameDirectionalTransformMatrix;
 	};
 }

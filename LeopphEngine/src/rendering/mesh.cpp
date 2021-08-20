@@ -102,7 +102,7 @@ namespace leopph::impl
 
 
 
-	void Mesh::DrawShaded(const Shader& shader, const std::vector<Matrix4>& modelMatrices, const std::vector<Matrix4>& normalMatrices) const
+	void Mesh::DrawShaded(const Shader& shader, const std::vector<Matrix4>& modelMatrices, const std::vector<Matrix4>& normalMatrices, std::size_t nextFreeTextureUnit) const
 	{
 		if (modelMatrices.size() > m_ModelBufferSize)
 		{
@@ -116,14 +116,12 @@ namespace leopph::impl
 		shader.SetUniform("material.specularColor", static_cast<Vector3>(m_Material.specularColor));
 		shader.SetUniform("material.shininess", m_Material.shininess);
 
-		std::size_t texCount{ 0 };
-
 		if (m_Material.ambientMap != nullptr)
 		{
 			shader.SetUniform("material.hasAmbientMap", true);
-			shader.SetUniform("material.ambientMap", static_cast<int>(texCount));
-			glBindTextureUnit(static_cast<GLuint>(texCount), m_Material.ambientMap->id);
-			++texCount;
+			shader.SetUniform("material.ambientMap", static_cast<int>(nextFreeTextureUnit));
+			glBindTextureUnit(static_cast<GLuint>(nextFreeTextureUnit), m_Material.ambientMap->id);
+			++nextFreeTextureUnit;
 		}
 		else
 		{
@@ -133,9 +131,9 @@ namespace leopph::impl
 		if (m_Material.diffuseMap != nullptr)
 		{
 			shader.SetUniform("material.hasDiffuseMap", true);
-			shader.SetUniform("material.diffuseMap", static_cast<int>(texCount));
-			glBindTextureUnit(static_cast<GLuint>(texCount), m_Material.diffuseMap->id);
-			++texCount;
+			shader.SetUniform("material.diffuseMap", static_cast<int>(nextFreeTextureUnit));
+			glBindTextureUnit(static_cast<GLuint>(nextFreeTextureUnit), m_Material.diffuseMap->id);
+			++nextFreeTextureUnit;
 		}
 		else
 		{
@@ -145,9 +143,9 @@ namespace leopph::impl
 		if (m_Material.specularMap != nullptr)
 		{
 			shader.SetUniform("material.hasSpecularMap", true);
-			shader.SetUniform("material.specularMap", static_cast<int>(texCount));
-			glBindTextureUnit(static_cast<GLuint>(texCount), m_Material.specularMap->id);
-			++texCount;
+			shader.SetUniform("material.specularMap", static_cast<int>(nextFreeTextureUnit));
+			glBindTextureUnit(static_cast<GLuint>(nextFreeTextureUnit), m_Material.specularMap->id);
+			++nextFreeTextureUnit;
 		}
 		else
 		{

@@ -73,10 +73,10 @@ namespace leopph::impl
 
 
 
-	void AssimpModelImpl::DrawShaded(const Shader& shader, const std::vector<Matrix4>& modelMatrices, const std::vector<Matrix4>& normalMatrices) const
+	void AssimpModelImpl::DrawShaded(const Shader& shader, const std::vector<Matrix4>& modelMatrices, const std::vector<Matrix4>& normalMatrices, std::size_t nextFreeTextureUnit) const
 	{
 		for (const auto & mesh : m_Meshes)
-			mesh.DrawShaded(shader, modelMatrices, normalMatrices);
+			mesh.DrawShaded(shader, modelMatrices, normalMatrices, nextFreeTextureUnit);
 	}
 
 

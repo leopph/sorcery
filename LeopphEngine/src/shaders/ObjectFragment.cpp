@@ -23,6 +23,8 @@ struct DirLight
 	
 	vec3 diffuseColor;
 	vec3 specularColor;
+
+	sampler2D shadowMap;
 };
 
 struct Material
@@ -46,6 +48,7 @@ struct Material
 layout (location = 0) in vec3 inNormal;
 layout (location = 1) in vec2 inTexCoords;
 layout (location = 2) in vec3 inFragPos;
+layout (location = 3) in vec4 inFragPosDirSpace;
 
 out vec4 fragmentColor;
 
@@ -61,6 +64,19 @@ uniform vec3 ambientLight;
 
 uniform vec3 cameraPosition;
 
+uniform mat4 dirLightTransformMatrix;
+
+
+float CalculateDirectionalShadow(DirLight dirLight)
+{
+	vec3 coords = inFragPosDirSpace.xyz / inFragPosDirSpace.w;
+	coords *= 0.5;
+	coords += 0.5;
+
+	float shadowDepth = texture(dirLight.shadowMap, coords.xy).r;
+
+	return coords.z > shadowDepth ? 1.0 : 0.0;
+}
 
 vec3 CalculateLightEffect(vec3 direction, vec3 normal, vec3 matDiff, vec3 matSpec, vec3 lightDiff, vec3 lightSpec)
 {
@@ -95,7 +111,7 @@ vec3 CalculatePointLight(PointLight pointLight, vec3 surfaceNormal, vec3 materia
 vec3 CalculateDirLight(DirLight dirLight, vec3 surfaceNormal, vec3 materialDiffuseColor, vec3 materialSpecularColor)
 {
 	vec3 directionToLight = -dirLight.direction;
-	return CalculateLightEffect(directionToLight, surfaceNormal, materialDiffuseColor, materialSpecularColor, dirLight.diffuseColor, dirLight.specularColor);
+	return (1 - CalculateDirectionalShadow(dirLight)) * CalculateLightEffect(directionToLight, surfaceNormal, materialDiffuseColor, materialSpecularColor, dirLight.diffuseColor, dirLight.specularColor);
 }
 
 void main()

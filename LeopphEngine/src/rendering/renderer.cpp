@@ -40,7 +40,7 @@ namespace leopph::impl
 		m_CurrentFrameViewMatrix = Camera::Active()->ViewMatrix();
 		m_CurrentFrameProjectionMatrix = Camera::Active()->ProjectionMatrix();
 
-		//RenderDirectionalShadowMap();
+		RenderDirectionalShadowMap();
 		//RenderPointShadowMaps();
 		RenderShadedObjects();
 		RenderSkybox();
@@ -51,9 +51,9 @@ namespace leopph::impl
 
 	bool Renderer::PointLightLess::operator()(const PointLight* left, const PointLight* right) const
 	{
-		const auto camPosition{ Camera::Active()->object.Transform().Position() };
-		const auto leftDistance{ Vector3::Distance(camPosition, left->object.Transform().Position()) };
-		const auto rightDistance{ Vector3::Distance(camPosition, right->object.Transform().Position()) };
+		const auto& camPosition{ Camera::Active()->object.Transform().Position() };
+		const auto& leftDistance{ Vector3::Distance(camPosition, left->object.Transform().Position()) };
+		const auto& rightDistance{ Vector3::Distance(camPosition, right->object.Transform().Position()) };
 
 		if (leftDistance != rightDistance)
 		{
@@ -124,7 +124,7 @@ namespace leopph::impl
 	}
 
 
-	void Renderer::RenderDirectionalShadowMap() const
+	void Renderer::RenderDirectionalShadowMap()
 	{
 		const auto& dirLight = InstanceHolder::DirectionalLight();
 
@@ -143,18 +143,19 @@ namespace leopph::impl
 
 		const auto projection{ Matrix4::LookAt(-dirLight->Direction(), Vector3{}, Vector3::Up()) };
 		const auto view{ Matrix4::Ortographic(-10, 10, -10, 10, Camera::Active()->NearClipPlane(), Camera::Active()->FarClipPlane()) };
+		m_CurrentFrameDirectionalTransformMatrix = view * projection;
 
 		m_DirectionalShadowMapShader.Use();
-		shadowMaps.front().Bind();
+		shadowMaps.front().BindToBuffer();
 
-		m_DirectionalShadowMapShader.SetUniform("lightSpaceMatrix", view * projection);
+		m_DirectionalShadowMapShader.SetUniform("lightSpaceMatrix", m_CurrentFrameDirectionalTransformMatrix);
 
 		for (const auto& [modelPath, matrices] : m_CurrentFrameModelMatrices)
 		{
 			InstanceHolder::GetModelReference(modelPath).DrawDepth(m_DirectionalShadowMapShader, matrices.first);
 		}
 
-		shadowMaps.front().Unbind();
+		shadowMaps.front().UnbindFromBuffer();
 	}
 
 
@@ -190,6 +191,8 @@ namespace leopph::impl
 	{
 		m_ObjectShader.Use();
 
+		std::size_t usedTextureUnits{ 0 };
+
 		for (std::size_t i = 0; i < m_CurrentFrameUsedPointLights.size(); i++)
 		{
 			const auto& pointLight = m_CurrentFrameUsedPointLights[i];
@@ -210,6 +213,11 @@ namespace leopph::impl
 			m_ObjectShader.SetUniform("dirLight.direction", dirLight->Direction());
 			m_ObjectShader.SetUniform("dirLight.diffuseColor", dirLight->Diffuse());
 			m_ObjectShader.SetUniform("dirLight.specularColor", dirLight->Specular());
+			m_ObjectShader.SetUniform("dirLight.shadowMap", static_cast<int>(usedTextureUnits));
+			m_ObjectShader.SetUniform("dirLightTransformMatrix", m_CurrentFrameDirectionalTransformMatrix);
+
+			InstanceHolder::ShadowMaps().front().BindToTexture(usedTextureUnits);
+			++usedTextureUnits;
 		}
 		else
 		{
@@ -222,7 +230,7 @@ namespace leopph::impl
 
 		for (const auto& [modelPath, matrices] : m_CurrentFrameModelMatrices)
 		{
-			InstanceHolder::GetModelReference(modelPath).DrawShaded(m_ObjectShader, matrices.first, matrices.second);
+			InstanceHolder::GetModelReference(modelPath).DrawShaded(m_ObjectShader, matrices.first, matrices.second, usedTextureUnits);
 		}
 	}
 

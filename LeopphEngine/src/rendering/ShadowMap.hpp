@@ -1,7 +1,5 @@
 #pragma once
 
-#include "../rendering/Shader.hpp"
-#include "../components/lighting/Light.hpp"
 #include "../math/Vector.hpp"
 
 namespace leopph::impl
@@ -17,12 +15,15 @@ namespace leopph::impl
 		void operator=(const ShadowMap&) = delete;
 		ShadowMap& operator=(ShadowMap&& other) noexcept;
 
-		void Bind() const;
-		void Unbind() const;
+		void BindToBuffer() const;
+		void UnbindFromBuffer() const;
+
+		void BindToTexture(std::size_t textureUnit) const;
 
 		const unsigned& id;
 
 	private:
+		Vector2 m_Resolution;
 		unsigned m_FrameBufferHandle;
 		unsigned m_DepthMapHandle;
 	};
