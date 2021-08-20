@@ -2,22 +2,23 @@
 
 #include "../components/Camera.hpp"
 #include "../components/lighting/DirLight.hpp"
-#include "../instances/InstanceHolder.hpp"
 #include "../components/lighting/Light.hpp"
-#include "../math/matrix.h"
 #include "../components/lighting/PointLight.hpp"
-#include "shader.h"
+#include "../instances/InstanceHolder.hpp"
+#include "../math/matrix.h"
 #include "../math/vector.h"
+#include "shader.h"
 
 #include <glad/glad.h>
 
+#include <set>
 #include <string>
 #include <utility>
 
 namespace leopph::impl
 {
 	Renderer::Renderer() :
-		m_ObjectShader{ Shader::Type::GENERAL }, m_SkyboxShader{ Shader::Type::SKYBOX }
+		m_ObjectShader{ Shader::Type::OBJECT }, m_SkyboxShader{ Shader::Type::SKYBOX }, m_DirectionalShadowMapShader{ Shader::Type::DIRECTIONAL_SHADOW_MAP }
 	{
 		glEnable(GL_DEPTH_TEST);
 	}
@@ -25,24 +26,26 @@ namespace leopph::impl
 
 	void Renderer::Render()
 	{
+		/* We don't render if there is no camera to use */
 		if (Camera::Active() == nullptr)
 			return;
+
+		/* We collect the model matrices from the existing models' objects */
+		CollectModelMatrices();
+
+		/* We collect the nearest pointlights */
+		CollectPointLights();
 
 		const auto viewMatrix{ Camera::Active()->ViewMatrix() };
 		const auto projectionMatrix{ Camera::Active()->ProjectionMatrix() };
 
-		m_PointsLights.clear();
 
-		for (const PointLight* const light : InstanceHolder::PointLights())
-		{
-			m_PointsLights.emplace(light);
-		}
 
 		m_ObjectShader.Use();
 
 		size_t lightNumber = 0;
 
-		for (const auto& pointLight : m_PointsLights)
+		/*for (const auto& pointLight : m_AllPointsLightsOrdered)
 		{
 			if (lightNumber == MAX_POINT_LIGHTS)
 			{
@@ -57,7 +60,7 @@ namespace leopph::impl
 			m_ObjectShader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].quadratic", pointLight->Quadratic());
 
 			lightNumber++;
-		}
+		}*/
 
 		m_ObjectShader.SetUniform("lightNumber", static_cast<int>(lightNumber));
 
@@ -116,6 +119,7 @@ namespace leopph::impl
 		}
 	}
 
+
 	bool Renderer::PointLightLess::operator()(const PointLight* left, const PointLight* right) const
 	{
 		const auto camPosition{ Camera::Active()->object.Transform().Position() };
@@ -128,6 +132,74 @@ namespace leopph::impl
 		}
 
 		return left < right;
+	}
+
+
+	void Renderer::CollectModelMatrices()
+	{
+		m_CurrentFrameModelMatrices.clear();
+
+		for (const auto& [path, modelReference] : InstanceHolder::Models())
+		{
+			auto& matrices = m_CurrentFrameModelMatrices.try_emplace(path).first->second;
+
+			for (const auto& object : modelReference.Objects())
+			{
+				/* If the objet is static we query for its cached matrix */
+				if (object->isStatic)
+				{
+					matrices.emplace_back(InstanceHolder::ModelMatrix(object));
+				}
+				/* Otherwise we calculate it */
+				else
+				{
+					auto modelMatrix{ Matrix4::Scale(object->Transform().Scale()) };
+					modelMatrix *= static_cast<Matrix4>(object->Transform().Rotation());
+					modelMatrix *= Matrix4::Translate(object->Transform().Position());
+					matrices.emplace_back(modelMatrix);
+				}
+			}
+		}
+	}
+
+
+	void Renderer::CollectPointLights()
+	{
+		/* This set stores lights in an ascending order based on distance from camera */
+		static std::set<const PointLight*, PointLightLess> allPointsLightsOrdered;
+
+		allPointsLightsOrdered.clear();
+
+		/* We sort the lights based on distance from camera */
+		for (const PointLight* const light : InstanceHolder::PointLights())
+		{
+			allPointsLightsOrdered.emplace(light);
+		}
+
+		m_CurrentFrameUsedPointLights.clear();
+
+		/* We collect the first MAX_POINT_LIGHTS number of them */
+		for (std::size_t count = 0; const auto& pointLight : allPointsLightsOrdered)
+		{
+			if (count == MAX_POINT_LIGHTS)
+			{
+				break;
+			}
+
+			m_CurrentFrameUsedPointLights.emplace_back(pointLight);
+			++count;
+		}
+	}
+
+	void Renderer::RenderShadowMaps()
+	{
+		for (const auto& pointLight : m_CurrentFrameUsedPointLights)
+		{
+			for (const auto& [modelPath, matrices] : m_CurrentFrameModelMatrices)
+			{
+				
+			}
+		}
 	}
 
 }

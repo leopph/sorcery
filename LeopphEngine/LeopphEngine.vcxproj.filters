@@ -46,6 +46,8 @@
     <ClCompile Include="src\shaders\ObjectVertex.cpp" />
     <ClCompile Include="src\rendering\ShadowMap.cpp" />
     <ClCompile Include="src\util\hash\PathHash.cpp" />
+    <ClCompile Include="src\shaders\DirectionalShadowMapFragment.cpp" />
+    <ClCompile Include="src\shaders\DirectionalShadowMapVertex.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\Behavior.hpp" />

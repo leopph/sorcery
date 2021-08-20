@@ -11,15 +11,15 @@
 
 namespace leopph::impl
 {
-	Shader::Shader(Type type) :
-		m_ProgramFileName{ GetFileName(type) }
+	Shader::Shader(const Type type) :
+		id{ m_ID }, m_ID{}, m_ProgramFileName{ GetFileName(type) }
 	{
 		const char* vertexSource{ nullptr };
 		const char* fragmentSource{ nullptr };
 
 		switch (type)
 		{
-		case Type::GENERAL:
+		case Type::OBJECT:
 			vertexSource = s_VertexSource.c_str();
 			fragmentSource = s_FragmentSource.c_str();
 			Logger::Instance().Debug("Constructing general shader.");
@@ -29,6 +29,12 @@ namespace leopph::impl
 			vertexSource = s_SkyboxVertexSource.c_str();
 			fragmentSource = s_SkyboxFragmentSource.c_str();
 			Logger::Instance().Debug("Constructing skybox shader.");
+			break;
+
+		case Type::DIRECTIONAL_SHADOW_MAP:
+			vertexSource = s_DirectionalShadowMapVertexSource.c_str();
+			fragmentSource = s_DirectionalShadowMapFragmentSource.c_str();
+			Logger::Instance().Debug("Constructing directional shadow map shader.");
 			break;
 		}
 
@@ -146,9 +152,8 @@ namespace leopph::impl
 	}
 
 
-	unsigned Shader::GetID() const { return m_ID; }
-
 	void Shader::Use() const { glUseProgram(m_ID); }
+
 
 	void Shader::SetUniform(const std::string& name, bool value) const { glUniform1i(glGetUniformLocation(m_ID, name.data()), value); }
 	void Shader::SetUniform(const std::string& name, int value) const { glUniform1i(glGetUniformLocation(m_ID, name.data()), value); }
@@ -165,11 +170,14 @@ namespace leopph::impl
 	{
 		switch (type)
 		{
-		case Type::GENERAL:
-			return "generalShader";
+		case Type::OBJECT:
+			return "objectShader";
 			
 		case Type::SKYBOX:
 			return "skyboxShader";
+
+		case Type::DIRECTIONAL_SHADOW_MAP:
+			return "directionalShadowMapShader";
 		}
 		
 		return "";

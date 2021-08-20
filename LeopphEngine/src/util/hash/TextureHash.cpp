@@ -16,5 +16,5 @@ std::size_t leopph::impl::TextureHash::operator()(const std::filesystem::path& p
 
 std::size_t leopph::impl::TextureHash::operator()(const decltype(TextureReference::id)& id) const
 {
-	return std::hash<std::decay<decltype(id)>::type>{}(id);
+	return std::hash<std::decay_t<decltype(id)>>{}(id);
 }

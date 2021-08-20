@@ -13,13 +13,13 @@ namespace leopph::impl
 	public:
 		enum class Type
 		{
-			GENERAL, SKYBOX
+			OBJECT, SKYBOX, DIRECTIONAL_SHADOW_MAP
 		};
 
-		Shader(Type type);
+		explicit Shader(Type type);
 		~Shader();
 
-		unsigned GetID() const;
+		const unsigned& id;
 
 		void Use() const;
 
@@ -36,6 +36,8 @@ namespace leopph::impl
 		static std::string s_FragmentSource;
 		static std::string s_SkyboxVertexSource;
 		static std::string s_SkyboxFragmentSource;
+		static std::string s_DirectionalShadowMapVertexSource;
+		static std::string s_DirectionalShadowMapFragmentSource;
 
 		const std::filesystem::path m_ProgramFileName;
 
