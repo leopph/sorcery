@@ -102,7 +102,7 @@ namespace leopph::impl
 
 
 
-	void Mesh::Draw(const Shader& shader, const std::vector<Matrix4>& modelMatrices, const std::vector<Matrix4>& normalMatrices) const
+	void Mesh::DrawShaded(const Shader& shader, const std::vector<Matrix4>& modelMatrices, const std::vector<Matrix4>& normalMatrices) const
 	{
 		if (modelMatrices.size() > m_ModelBufferSize)
 		{
@@ -161,6 +161,16 @@ namespace leopph::impl
 		glDrawElementsInstanced(GL_TRIANGLES, static_cast<GLsizei>(m_Indices.size()), GL_UNSIGNED_INT, nullptr, static_cast<GLsizei>(modelMatrices.size()));
 		glBindVertexArray(0);
 	}
+
+
+	void Mesh::DrawDepth(const Shader& shader, const std::vector<Matrix4>& modelMatrices) const
+	{
+		glNamedBufferSubData(m_Buffers[MODEL], 0, modelMatrices.size() * sizeof(std::remove_reference_t<decltype(modelMatrices)>::value_type), modelMatrices.data());
+		glBindVertexArray(m_VertexArray);
+		glDrawElementsInstanced(GL_TRIANGLES, static_cast<GLsizei>(m_Indices.size()), GL_UNSIGNED_INT, nullptr, static_cast<GLsizei>(modelMatrices.size()));
+		glBindVertexArray(0);
+	}
+
 
 	void Mesh::OnReferringObjectsChanged(std::size_t newAmount) const
 	{

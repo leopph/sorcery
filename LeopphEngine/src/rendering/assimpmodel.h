@@ -22,7 +22,8 @@ namespace leopph::impl
 
 		bool operator==(const AssimpModelImpl& other) const;
 
-		void Draw(const Shader& shader, const std::vector<Matrix4>& modelMatrices, const std::vector<Matrix4>& normalMatrices) const;
+		void DrawShaded(const Shader& shader, const std::vector<Matrix4>& modelMatrices, const std::vector<Matrix4>& normalMatrices) const;
+		void DrawDepth(const Shader& shader, const std::vector<Matrix4>& modelMatrices) const;
 
 		const std::filesystem::path& Path() const;
 

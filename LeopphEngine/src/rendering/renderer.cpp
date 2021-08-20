@@ -7,7 +7,7 @@
 #include "../instances/InstanceHolder.hpp"
 #include "../math/matrix.h"
 #include "../math/vector.h"
-#include "shader.h"
+#include "Shader.hpp"
 
 #include <glad/glad.h>
 
@@ -36,87 +36,16 @@ namespace leopph::impl
 		/* We collect the nearest pointlights */
 		CollectPointLights();
 
-		const auto viewMatrix{ Camera::Active()->ViewMatrix() };
-		const auto projectionMatrix{ Camera::Active()->ProjectionMatrix() };
+		/* We store the main camera's view and projection matrices for the frame */
+		m_CurrentFrameViewMatrix = Camera::Active()->ViewMatrix();
+		m_CurrentFrameProjectionMatrix = Camera::Active()->ProjectionMatrix();
 
+		//RenderDirectionalShadowMap();
+		//RenderPointShadowMaps();
+		RenderShadedObjects();
+		RenderSkybox();
 
-
-		m_ObjectShader.Use();
-
-		size_t lightNumber = 0;
-
-		/*for (const auto& pointLight : m_AllPointsLightsOrdered)
-		{
-			if (lightNumber == MAX_POINT_LIGHTS)
-			{
-				break;
-			}
-
-			m_ObjectShader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].position", static_cast<Vector3>(static_cast<Vector4>(pointLight->object.Transform().Position()) * viewMatrix));
-			m_ObjectShader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].diffuseColor", pointLight->Diffuse());
-			m_ObjectShader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].specularColor", pointLight->Specular());
-			m_ObjectShader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].constant", pointLight->Constant());
-			m_ObjectShader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].linear", pointLight->Linear());
-			m_ObjectShader.SetUniform("pointLights[" + std::to_string(lightNumber) + "].quadratic", pointLight->Quadratic());
-
-			lightNumber++;
-		}*/
-
-		m_ObjectShader.SetUniform("lightNumber", static_cast<int>(lightNumber));
-
-		if (const auto dirLight = InstanceHolder::DirectionalLight(); dirLight != nullptr)
-		{
-			m_ObjectShader.SetUniform("existsDirLight", true);
-			m_ObjectShader.SetUniform("dirLight.direction", dirLight->Direction() * static_cast<Matrix3>(viewMatrix));
-			m_ObjectShader.SetUniform("dirLight.diffuseColor", dirLight->Diffuse());
-			m_ObjectShader.SetUniform("dirLight.specularColor", dirLight->Specular());
-		}
-		else
-		{
-			m_ObjectShader.SetUniform("existsDirLight", false);
-		}
-
-		m_ObjectShader.SetUniform("ambientLight", AmbientLight::Instance().Intensity());
-
-		m_ObjectShader.SetUniform("projectionMatrix", projectionMatrix);
-
-		for (const auto& [path, modelReference] : InstanceHolder::Models())
-		{
-			std::vector<Matrix4> modelViewMatrices;
-			std::vector<Matrix4> normalMatrices;
-
-			for (const auto& object : modelReference.Objects())
-			{
-				if (object->isStatic)
-				{
-					const auto& modelViewMatrix = InstanceHolder::ModelMatrix(object) * viewMatrix;
-					modelViewMatrices.push_back(modelViewMatrix.Transposed());
-					normalMatrices.push_back(modelViewMatrix.Inverse());
-				}
-				else
-				{
-					Matrix4 modelViewMatrix{ 1.0f };
-					modelViewMatrix *= Matrix4::Scale(object->Transform().Scale());
-					modelViewMatrix *= static_cast<Matrix4>(object->Transform().Rotation());
-					modelViewMatrix *= Matrix4::Translate(object->Transform().Position());
-					modelViewMatrix *= viewMatrix;
-
-					modelViewMatrices.push_back(modelViewMatrix.Transposed());
-					normalMatrices.push_back(modelViewMatrix.Inverse());
-				}
-			}
-
-			modelReference.ReferenceModel().Draw(m_ObjectShader, modelViewMatrices, normalMatrices);
-		}
-
-		m_SkyboxShader.Use();
-
-		if (const auto& skybox{ Camera::Active()->Background().skybox }; skybox != nullptr)
-		{
-			m_SkyboxShader.SetUniform("viewMatrix", static_cast<Matrix4>(static_cast<Matrix3>(viewMatrix)));
-			m_SkyboxShader.SetUniform("projectionMatrix", projectionMatrix);
-			InstanceHolder::GetSkybox(*skybox).Draw(m_SkyboxShader);
-		}
+		
 	}
 
 
@@ -191,15 +120,129 @@ namespace leopph::impl
 		}
 	}
 
-	void Renderer::RenderShadowMaps()
+
+	void Renderer::RenderDirectionalShadowMap() const
 	{
-		for (const auto& pointLight : m_CurrentFrameUsedPointLights)
+		const auto& dirLight = InstanceHolder::DirectionalLight();
+
+		if (dirLight == nullptr)
+		{
+			return;
+		}
+
+		const auto& shadowMaps{ InstanceHolder::ShadowMaps() };
+
+		/* If we don't have a shadow map, we create one */
+		if (shadowMaps.empty())
+		{
+			InstanceHolder::CreateShadowMap(SHADOW_MAP_RESOLUTION);
+		}
+
+		const auto projection{ Matrix4::LookAt(-dirLight->Direction(), Vector3{}, Vector3::Up()) };
+		const auto view{ Matrix4::Ortographic(-10, 10, -10, 10, Camera::Active()->NearClipPlane(), Camera::Active()->FarClipPlane()) };
+
+		m_DirectionalShadowMapShader.Use();
+		shadowMaps.front().Bind();
+
+		m_DirectionalShadowMapShader.SetUniform("lightSpaceMatrix", view * projection);
+
+		for (const auto& [modelPath, matrices] : m_CurrentFrameModelMatrices)
+		{
+			InstanceHolder::GetModelReference(modelPath).DrawDepth(m_DirectionalShadowMapShader, matrices);
+		}
+
+		shadowMaps.front().Unbind();
+	}
+
+
+	void Renderer::RenderPointShadowMaps()
+	{
+		const auto& shadowMaps{ InstanceHolder::ShadowMaps() };
+
+		/* If we lack the necessary number of shadow maps, we create new ones */
+		while (m_CurrentFrameUsedPointLights.size() > shadowMaps.size())
+		{
+			InstanceHolder::CreateShadowMap(SHADOW_MAP_RESOLUTION);
+		}
+
+		/* Iterate over the lights and use a different shadow map for each */
+		for (auto shadowMapIt{ InstanceHolder::DirectionalLight() == nullptr ? shadowMaps.begin() : ++shadowMaps.begin()};
+			const auto & pointLight : m_CurrentFrameUsedPointLights)
 		{
 			for (const auto& [modelPath, matrices] : m_CurrentFrameModelMatrices)
 			{
-				
+				for (const auto& model{ InstanceHolder::GetModelReference(modelPath) };
+					const auto & matrix : matrices)
+				{
+
+				}
 			}
+
+			++shadowMapIt;
 		}
 	}
 
+
+	void Renderer::RenderShadedObjects()
+	{
+		m_ObjectShader.Use();
+
+		for (std::size_t i = 0; i < m_CurrentFrameUsedPointLights.size(); i++)
+		{
+			const auto& pointLight = m_CurrentFrameUsedPointLights[i];
+
+			m_ObjectShader.SetUniform("pointLights[" + std::to_string(i) + "].position", pointLight->object.Transform().Position());
+			m_ObjectShader.SetUniform("pointLights[" + std::to_string(i) + "].diffuseColor", pointLight->Diffuse());
+			m_ObjectShader.SetUniform("pointLights[" + std::to_string(i) + "].specularColor", pointLight->Specular());
+			m_ObjectShader.SetUniform("pointLights[" + std::to_string(i) + "].constant", pointLight->Constant());
+			m_ObjectShader.SetUniform("pointLights[" + std::to_string(i) + "].linear", pointLight->Linear());
+			m_ObjectShader.SetUniform("pointLights[" + std::to_string(i) + "].quadratic", pointLight->Quadratic());
+		}
+
+		m_ObjectShader.SetUniform("lightNumber", static_cast<int>(m_CurrentFrameUsedPointLights.size()));
+
+		if (const auto dirLight = InstanceHolder::DirectionalLight(); dirLight != nullptr)
+		{
+			m_ObjectShader.SetUniform("existsDirLight", true);
+			m_ObjectShader.SetUniform("dirLight.direction", dirLight->Direction());
+			m_ObjectShader.SetUniform("dirLight.diffuseColor", dirLight->Diffuse());
+			m_ObjectShader.SetUniform("dirLight.specularColor", dirLight->Specular());
+		}
+		else
+		{
+			m_ObjectShader.SetUniform("existsDirLight", false);
+		}
+
+		m_ObjectShader.SetUniform("ambientLight", AmbientLight::Instance().Intensity());
+
+		m_ObjectShader.SetUniform("viewMatrix", m_CurrentFrameViewMatrix);
+		m_ObjectShader.SetUniform("projectionMatrix", m_CurrentFrameProjectionMatrix);
+
+		m_ObjectShader.SetUniform("cameraPosition", Camera::Active()->object.Transform().Position());
+
+		std::vector<Matrix4> normalMatrices;
+		for (const auto& [modelPath, matrices] : m_CurrentFrameModelMatrices)
+		{
+			normalMatrices.clear();
+
+			for (const auto& matrix : matrices)
+			{
+				normalMatrices.push_back(matrix.Inverse());
+			}
+
+			InstanceHolder::GetModelReference(modelPath).DrawShaded(m_ObjectShader, matrices, normalMatrices);
+		}
+	}
+
+
+	void Renderer::RenderSkybox() const
+	{
+		if (const auto& skybox{ Camera::Active()->Background().skybox }; skybox != nullptr)
+		{
+			m_SkyboxShader.Use();
+			m_SkyboxShader.SetUniform("viewMatrix", static_cast<Matrix4>(static_cast<Matrix3>(m_CurrentFrameViewMatrix)));
+			m_SkyboxShader.SetUniform("projectionMatrix", m_CurrentFrameProjectionMatrix);
+			InstanceHolder::GetSkybox(*skybox).Draw(m_SkyboxShader);
+		}
+	}
 }

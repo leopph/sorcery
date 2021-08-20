@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../rendering/Shader.hpp"
+#include "../components/lighting/Light.hpp"
 #include "../math/vector.h"
 
 namespace leopph::impl
@@ -14,6 +16,9 @@ namespace leopph::impl
 		ShadowMap(ShadowMap&& other) noexcept;
 		void operator=(const ShadowMap&) = delete;
 		ShadowMap& operator=(ShadowMap&& other) noexcept;
+
+		void Bind() const;
+		void Unbind() const;
 
 		const unsigned& id;
 

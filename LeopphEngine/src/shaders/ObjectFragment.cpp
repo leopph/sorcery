@@ -1,4 +1,4 @@
-#include "C:\Dev\LeopphEngine\LeopphEngine\src/rendering/shader.h"
+#include "C:\Dev\LeopphEngine\LeopphEngine\src/rendering/Shader.hpp"
 #include <string>
 std::string leopph::impl::Shader::s_FragmentSource{ R"#fileContents#(#version 460 core
 
@@ -59,6 +59,8 @@ uniform bool existsDirLight;
 
 uniform vec3 ambientLight;
 
+uniform vec3 cameraPosition;
+
 
 vec3 CalculateLightEffect(vec3 direction, vec3 normal, vec3 matDiff, vec3 matSpec, vec3 lightDiff, vec3 lightSpec)
 {
@@ -68,7 +70,7 @@ vec3 CalculateLightEffect(vec3 direction, vec3 normal, vec3 matDiff, vec3 matSpe
 	if (diffuseDot > 0)
 	{
 		// Blinn-Phong
-		vec3 halfway = normalize(direction + normalize(-inFragPos));
+		vec3 halfway = normalize(direction + normalize(cameraPosition - inFragPos));
 		vec3 specular = matSpec * pow(max(dot(normal, halfway), 0), 4 * material.shininess) * lightSpec;
 		return diffuse + specular;
 

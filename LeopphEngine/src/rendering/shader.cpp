@@ -1,4 +1,4 @@
-#include "shader.h"
+#include "Shader.hpp"
 
 #include "../config/settings.h"
 

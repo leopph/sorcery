@@ -44,5 +44,15 @@ namespace leopph::impl
 		return *this;
 	}
 
+	void ShadowMap::Bind() const
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, m_FrameBufferHandle);
+		glClear(GL_DEPTH_BUFFER_BIT);
+	}
+
+	void ShadowMap::Unbind() const
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
 
 }

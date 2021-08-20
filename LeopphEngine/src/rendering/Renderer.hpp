@@ -1,6 +1,6 @@
 #pragma once
 
-#include "shader.h"
+#include "Shader.hpp"
 
 #include "../components/lighting/PointLight.hpp"
 #include "../math/matrix.h"
@@ -29,7 +29,10 @@ namespace leopph::impl
 
 		void CollectModelMatrices();
 		void CollectPointLights();
-		void RenderShadowMaps();
+		void RenderDirectionalShadowMap() const;
+		void RenderPointShadowMaps();
+		void RenderShadedObjects();
+		void RenderSkybox() const;
 
 		Shader m_ObjectShader;
 		Shader m_SkyboxShader;
@@ -39,5 +42,10 @@ namespace leopph::impl
 		std::vector<const PointLight*> m_CurrentFrameUsedPointLights;
 
 		std::unordered_map<std::filesystem::path, std::vector<Matrix4>, PathHash> m_CurrentFrameModelMatrices;
+
+		inline const static Vector2 SHADOW_MAP_RESOLUTION{ 1024, 1024 };
+
+		Matrix4 m_CurrentFrameViewMatrix;
+		Matrix4 m_CurrentFrameProjectionMatrix;
 	};
 }

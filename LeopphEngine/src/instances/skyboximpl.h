@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../rendering/shader.h"
+#include "../rendering/Shader.hpp"
 
 #include <cstddef>
 #include <filesystem>

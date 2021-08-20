@@ -22,7 +22,7 @@
 
 #include <cstddef>
 #include <filesystem>
-#include <forward_list>
+#include <list>
 #include <map>
 #include <memory>
 #include <set>
@@ -115,7 +115,7 @@ namespace leopph::impl
 
 		static const Matrix4& ModelMatrix(const Object* object);
 
-		static const std::forward_list<ShadowMap>& ShadowMaps();
+		static const std::list<ShadowMap>& ShadowMaps();
 		static void CreateShadowMap(const Vector2& resolution);
 		/* Removes the last stored Shadow Map */
 		static void DeleteShadowMap();
@@ -133,6 +133,6 @@ namespace leopph::impl
 		static std::vector<PointLight*> s_PointLights;
 		static std::unique_ptr<leopph::AmbientLight> s_AmbientLight;
 
-		static std::forward_list<ShadowMap> s_ShadowMaps;
+		static std::list<ShadowMap> s_ShadowMaps;
 	};
 }

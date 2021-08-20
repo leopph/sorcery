@@ -1,4 +1,4 @@
-#include "C:\Dev\LeopphEngine\LeopphEngine\src/rendering/shader.h"
+#include "C:\Dev\LeopphEngine\LeopphEngine\src/rendering/Shader.hpp"
 #include <string>
 std::string leopph::impl::Shader::s_SkyboxVertexSource{ R"#fileContents#(#version 460 core
 

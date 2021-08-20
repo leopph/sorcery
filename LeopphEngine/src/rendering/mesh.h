@@ -1,8 +1,7 @@
 #pragma once
 
 #include "material.h"
-#include "shader.h"
-#include "texture.h"
+#include "Shader.hpp"
 #include "vertex.h"
 
 #include <cstddef>
@@ -24,7 +23,8 @@ namespace leopph::impl
 
 		bool operator==(const Mesh& other) const;
 
-		void Draw(const Shader& shader, const std::vector<Matrix4>& modelMatrices, const std::vector<Matrix4>& normalMatrices) const;
+		void DrawShaded(const Shader& shader, const std::vector<Matrix4>& modelMatrices, const std::vector<Matrix4>& normalMatrices) const;
+		void DrawDepth(const Shader& shader, const std::vector<Matrix4>& modelMatrices) const;
 
 		void OnReferringObjectsChanged(std::size_t newAmount) const;
 
