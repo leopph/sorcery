@@ -1,10 +1,13 @@
 #pragma once
 
 #include <array>
+#include <algorithm>
 #include <concepts>
 #include <cstddef>
+#include <numeric>
 #include <ostream>
 
+#include "leopphmath.h"
 
 namespace leopph
 {
@@ -30,11 +33,9 @@ namespace leopph
 
 
 			/* Fill Constructor */
-			explicit Vector(const T& value) :
-				m_Data{}
+			explicit Vector(const T& value)
 			{
-				for (size_t i = 0; i < N; i++)
-					m_Data[i] = value;
+				m_Data.fill(value);
 			}
 
 
@@ -104,13 +105,13 @@ namespace leopph
 			DO NOT USE THIS UNLESS NECESSARY! */
 			[[nodiscard]] const T* Data() const
 			{
-				return &m_Data[0];
+				return m_Data.data();
 			}
 
 
 			T* Data()
 			{
-				return const_cast<T*>(const_cast<const Vector<T, N>*>(this)->Data());
+				return m_Data.data();
 			}
 
 
@@ -130,12 +131,8 @@ namespace leopph
 			/* Mathematical vector magnitude */
 			[[nodiscard]] float Length() const
 			{
-				float sqrSum{};
-
-				for (size_t i = 0; i < N; i++)
-					sqrSum += std::powf(m_Data[i], 2);
-
-				return std::sqrtf(sqrSum);
+				return math::Sqrt(static_cast<float>(std::accumulate(m_Data.begin(), m_Data.end(), static_cast<T>(0),
+					[](const T& sum, const T& elem) { return sum + math::Pow(elem, 2); })));
 			}
 
 
@@ -144,10 +141,7 @@ namespace leopph
 			Vector<T, N>& Normalize()
 			{
 				float length = Length();
-
-				for (size_t i = 0; i < N; i++)
-					m_Data[i] /= length;
-
+				std::for_each(m_Data.begin(), m_Data.end(), [length](T& elem) { elem /= static_cast<T>(length); });
 				return *this;
 			}
 
@@ -174,9 +168,12 @@ namespace leopph
 			/* Mathematical cross product, only between 3D vectors */
 			static Vector<T, N> Cross(const Vector<T, N>& left, const Vector<T, N>& right) requires(N == 3)
 			{
-				return Vector<T, N> {	left[1] * right[2] - left[2] * right[1],
+				return Vector<T, N>
+				{
+					left[1] * right[2] - left[2] * right[1],
 					left[2] * right[0] - left[0] * right[2],
-					left[0] * right[1] - left[1] * right[0] };
+					left[0] * right[1] - left[1] * right[0]
+				};
 			}
 
 
@@ -186,9 +183,9 @@ namespace leopph
 				T sum{};
 
 				for (size_t i = 0; i < N; i++)
-					sum += static_cast<T>(std::powf(static_cast<float>(left[i] - right[i]), 2));
+					sum += static_cast<T>(math::Pow(static_cast<float>(left[i] - right[i]), 2));
 
-				return static_cast<T>(std::sqrt(sum));
+				return static_cast<T>(math::Sqrt(sum));
 			}
 
 
@@ -199,9 +196,11 @@ namespace leopph
 				Vector<T, N + 1> ret;
 
 				for (std::size_t i = 0; i < N; i++)
+				{
 					ret[i] = m_Data[i];
-				ret[N] = static_cast<T>(1);
+				}
 
+				ret[N] = static_cast<T>(1);
 				return ret;
 			}
 
@@ -214,7 +213,9 @@ namespace leopph
 				Vector<T, N - 1> ret;
 				
 				for (std::size_t i = 0; i < N - 1; i++)
+				{
 					ret[i] = m_Data[i];
+				}
 
 				return ret;
 			}
