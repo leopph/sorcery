@@ -77,7 +77,7 @@ namespace leopph::impl
 				/* If the objet is static we query for its cached matrix */
 				if (object->isStatic)
 				{
-					matrices.emplace_back(InstanceHolder::ModelMatrix(object));
+					matrices.emplace_back(InstanceHolder::ModelMatrix(object).Transposed());
 				}
 				/* Otherwise we calculate it */
 				else
@@ -85,7 +85,7 @@ namespace leopph::impl
 					auto modelMatrix{ Matrix4::Scale(object->Transform().Scale()) };
 					modelMatrix *= static_cast<Matrix4>(object->Transform().Rotation());
 					modelMatrix *= Matrix4::Translate(object->Transform().Position());
-					matrices.emplace_back(modelMatrix);
+					matrices.emplace_back(modelMatrix.Transposed());
 				}
 			}
 		}

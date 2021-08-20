@@ -21,7 +21,7 @@ void leopph::AppStart()
 	const auto portraitObj = new Object{};
 	new Model{ *portraitObj, "models/portrait/cropped_textured_mesh.obj" };
 
-	constexpr std::size_t cubeNumber{ 1u };
+	constexpr std::size_t cubeNumber{ 5000u };
 	for (std::size_t i = 0; i < cubeNumber; i++)
 	{
 		const ObjectProperties properties
