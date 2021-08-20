@@ -27,7 +27,7 @@ void leopph::AppStart()
 		const ObjectProperties properties
 		{
 			.isStatic = true,
-			.position { rand() % 100 - 50, rand() % 100 - 50, rand() % 100 - 50 }
+			.position { Vector3{rand() % 100 - 50, rand() % 100 - 50, rand() % 100 - 50} }
 		};
 
 		const auto cube = new Object{ properties };
@@ -36,8 +36,8 @@ void leopph::AppStart()
 
 	const auto dirLightObj = new Object{};
 	new DirectionalLight{ *dirLightObj };
-	dirLightObj->Transform().RotateGlobal(Quaternion{ { 0, 1, 0 }, 225 });
-	dirLightObj->Transform().RotateLocal(Quaternion{ { 1, 0, 0 }, 45 });
+	dirLightObj->Transform().RotateGlobal(Quaternion{ Vector3{ 0, 1, 0 }, 225 });
+	dirLightObj->Transform().RotateLocal(Quaternion{ Vector3{ 1, 0, 0 }, 45 });
 
 	new FPSCounter{*new Object};
 }

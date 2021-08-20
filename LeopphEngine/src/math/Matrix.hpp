@@ -1,13 +1,11 @@
 #pragma once
 
-#include <algorithm>
 #include <array>
 #include <cstddef>
 #include <concepts>
 
 #include "Vector.hpp"
 #include "leopphmath.h"
-
 
 
 namespace leopph
@@ -21,19 +19,17 @@ namespace leopph
 		DO NOT INSTANTIATE THIS TEMPLATE EXPLICITLY UNLESS NECESSARY!
 		There are several predefined implementations at the bottom of this file.
 		-------------------------------------------------------------------------------------------------*/
-
 		template<class T, std::size_t N, std::size_t M> requires(N > 1 && M > 1)
 		class Matrix
 		{
-		private:
 			std::array<Vector<T, M>, N> m_Data;
 
 
 		public:
-			/* Zero Constructor */
 			Matrix() :
 				m_Data{}
 			{}
+
 
 			/* Main Diagonal Fill Constructor */
 			explicit Matrix(const T& value) :
@@ -43,11 +39,6 @@ namespace leopph
 					m_Data[i][i] = value;
 			}
 
-			/* Copy Constructor */
-			Matrix(const Matrix<T, N, M>& other)
-			{
-				std::copy(other.m_Data.begin(), other.m_Data.end(), m_Data.begin());
-			}
 
 			/* Main Diagonal Elements Constructor */
 			template<std::convertible_to<T>... T1> requires(sizeof...(T1) == (N > M ? M : N))
@@ -59,6 +50,7 @@ namespace leopph
 				for (size_t i = 0; i < M && i < N; i++)
 					m_Data[i][i] = argArr[i];
 			}
+
 
 			/* All Elements Constructor */
 			template<std::convertible_to<T> ... T1> requires(sizeof...(T1) == (N * M))
@@ -72,6 +64,7 @@ namespace leopph
 						m_Data[i][j] = argArr[i * M + j];
 			}
 
+
 			/* Main Diagonal Vector Constructor */
 			template<std::size_t N1> requires(N1 == (M > N ? N : M))
 				explicit Matrix(const Vector<T, N1>& vec) :
@@ -82,12 +75,18 @@ namespace leopph
 			}
 
 
+			Matrix(const Matrix<T, N, M>& other) = default;
+			Matrix(Matrix<T, N, M>&& other) = default;
+			Matrix<T, N, M>& operator=(const Matrix& other) = default;
+			Matrix<T, N, M>& operator=(Matrix&& other) = default;
+			~Matrix() = default;
+
+
 			/* Mathematical Identity Matrix */
 			static Matrix<T, N, M> Identity() requires(N == M)
 			{
 				return Matrix<T, N, M>{1};
 			}
-
 
 
 			/* View Matrix for the rendering pipeline that is calculated based on current position, target position, and the world's vertical axis */
@@ -105,7 +104,6 @@ namespace leopph
 						-Vector3::Dot(x, position), -Vector3::Dot(y, position), -Vector3::Dot(z, position), 1
 				};
 			}
-
 
 
 			/* Perspective Projection Matrix for the rendering pipeline that is calculated based on the left, right, top, and bottom coordinates of the view frustum
@@ -126,6 +124,7 @@ namespace leopph
 
 			}
 
+
 			/* Perspective Projection Matrix for the rendering pipeline that is calculated based on FOV, aspect ratio, and the near and far clip planes */
 			static Matrix<T, 4, 4> Perspective(const T& fov, const T& aspectRatio, const T& nearClipPlane, const T& farClipPlane)  requires (N == 4 && M == 4)
 			{
@@ -137,6 +136,7 @@ namespace leopph
 
 				return Perspective(left, right, top, bottom, nearClipPlane, farClipPlane);
 			}
+
 
 			/* Orthographgic Projection Matrix for the rendering pipeline that is calculated based on
 			 * the left, right, top, and bottom coordinates of the view frustum. */
@@ -152,7 +152,6 @@ namespace leopph
 				ret[3][3] = static_cast<T>(1);
 				return ret;
 			}
-
 
 
 			/* Mathematical Translation Matrix */
@@ -181,30 +180,15 @@ namespace leopph
 
 			/* Returns a pointer to the internal data structure.
 			DO NOT USE THIS UNLESS NECASSARY */
-			const T* Data() const
+			[[nodiscard]] const T* Data() const
 			{
 				return m_Data[0].Data();
 			}
+
+
 			T* Data()
 			{
 				return const_cast<T*>(const_cast<const Matrix<T, N, M>*>(this)->Data());
-			}
-
-
-
-
-
-			/* Copy Assignment */
-			Matrix<T, N, M>& operator=(const Matrix<T, N, M>& other)
-			{
-				if (this == &other)
-					return *this;
-
-				for (size_t i = 0; i < N; i++)
-					for (size_t j = 0; j < M; j++)
-						m_Data[i][j] = other.m_Data[i][j];
-
-				return *this;
 			}
 
 
@@ -213,17 +197,16 @@ namespace leopph
 			{
 				return m_Data[index];
 			}
-			Vector<T, M>& operator[](size_t index)
+
+
+			Vector<T, M>& operator[](const size_t index)
 			{
 				return const_cast<Vector<T, M>&>(const_cast<const Matrix<T, N, M>*>(this)->operator[](index));
 			}
 
 
-
-
-
 			/* Mathematical Matrix Determinant for square Matrices */
-			float Det() const requires(N == M)
+			[[nodiscard]] float Det() const requires(N == M)
 			{
 				Matrix<T, N, M> tmp{ *this };
 
@@ -243,11 +226,8 @@ namespace leopph
 			}
 
 
-
-
-
 			/* Returns a new Matrix that is the Mathematical Transposed of this Matrix */
-			Matrix<T, M, N> Transposed() const
+			[[nodiscard]] Matrix<T, M, N> Transposed() const
 			{
 				Matrix<T, M, N> ret;
 
@@ -257,6 +237,7 @@ namespace leopph
 
 				return ret;
 			}
+
 
 			/* Mathematical Transposition of the Matrix in-place. */
 			Matrix<T, N, M> Transpose() requires(N == M)
@@ -271,10 +252,8 @@ namespace leopph
 			}
 
 
-
-
 			/* Returns a new Matrix that is the Mathematical Inverse of this Matrix */
-			Matrix<T, N, M> Inverse() const requires(N == M)
+			[[nodiscard]] Matrix<T, N, M> Inverse() const requires(N == M)
 			{
 				Matrix<T, N, M> copyOfThis{ *this };
 				Matrix<T, N, M> inverse{ Matrix<T, N, M>::Identity() };
@@ -307,8 +286,8 @@ namespace leopph
 			/* Applicable to N*N Matrices (N > 2).
 			Returns a new (N-1)*(N-1) Matrix that is created by dropping the
 			Nth row and column of the original square Matrix */
-			template<std::size_t N1 = N, std::size_t M1 = M>
-			explicit operator Matrix<T, N1 - 1, N1 - 1>() const requires(N1 == M1 && N1 > 2)
+			template<std::size_t N1 = N, std::size_t M1 = M> requires(N1 == M1 && N1 > 2)
+			explicit operator Matrix<T, N1 - 1, N1 - 1>() const
 			{
 				Matrix<T, N - 1, N - 1> ret{};
 
@@ -318,6 +297,7 @@ namespace leopph
 
 				return ret;
 			}
+
 
 			/* Applicable to N*N matrices.
 			Returns a new (N+1)*(N+1) Matrix that is created by adding
@@ -335,8 +315,6 @@ namespace leopph
 				return ret;
 			}
 		};
-
-
 
 
 		/*-----------------------------------
@@ -364,7 +342,6 @@ namespace leopph
 		}
 
 
-
 		template<class T, std::size_t N, std::size_t M, std::size_t P>
 		Matrix<T, N, P> operator*(const Matrix<T, N, M>& left, const Matrix<T, M, P>& right)
 		{
@@ -379,13 +356,11 @@ namespace leopph
 		}
 
 
-
 		template<class T, std::size_t N, std::size_t M>
 		Matrix<T, N, M>& operator*=(Matrix<T, N, M>& left, const Matrix<T, M, M>& right)
 		{
 			return left = left * right;
 		}
-
 
 
 		template<class T, std::size_t N, std::size_t M>
@@ -413,8 +388,6 @@ namespace leopph
 			return ret;
 		}
 	}
-
-
 
 
 	/*------------------------------------------------------

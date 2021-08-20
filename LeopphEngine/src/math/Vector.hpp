@@ -1,6 +1,5 @@
 #pragma once
 
-#include <algorithm>
 #include <array>
 #include <concepts>
 #include <cstddef>
@@ -18,75 +17,81 @@ namespace leopph
 		DO NOT INSTANTIATE THIS TEMPLATE EXPLICITLY UNLESS NECESSARY!
 		There are several predefined implementations at the bottom of this file.
 		------------------------------------------------------------------------------------------*/
-
 		template<class T, std::size_t N> requires(N > 1)
 		class Vector
 		{
-		private:
 			std::array<T, N> m_Data;
 
 
 		public:
-			/* Zero Constructor */
 			Vector() :
 				m_Data{}
 			{}
 
+
 			/* Fill Constructor */
-			Vector(const T& value) :
+			explicit Vector(const T& value) :
 				m_Data{}
 			{
 				for (size_t i = 0; i < N; i++)
 					m_Data[i] = value;
 			}
 
-			/* Copy Constructor */
-			Vector(const Vector<T, N>& other)
-			{
-				std::copy(other.m_Data.begin(), other.m_Data.end(), m_Data.begin());
-			}
 
 			/* All Elements Constructor */
 			template<std::convertible_to<T>... T1>
-			Vector(const T1&... args) requires(sizeof...(T1) == N) :
+			explicit Vector(const T1&... args) requires(sizeof...(T1) == N) :
 				m_Data{ static_cast<T>(args)... }
 			{}
 
 
+			Vector(const Vector<T, N>& other) = default;
+			Vector(Vector<T, N>&& other) = default;
+			Vector<T, N>& operator=(const Vector<T, N>& other) = default;
+			Vector<T, N>& operator=(Vector<T, N> && other) = default;
+			~Vector() = default;
 
 
-
-			/* Quick Access Factories */
 			static Vector<T, N> Up()
 			{
 				Vector<T, N> ret;
 				ret[1] = 1;
 				return ret;
 			}
+
+
 			static Vector<T, N> Down()
 			{
 				Vector<T, N> ret;
 				ret[1] = -1;
 				return ret;
 			}
+
+
 			static Vector<T, N> Left()
 			{
 				Vector<T, N> ret;
 				ret[0] = -1;
 				return ret;
 			}
+
+
 			static Vector<T, N> Right()
 			{
 				Vector<T, N> ret;
 				ret[0] = 1;
 				return ret;
 			}
+
+
 			static Vector<T, N> Forward() requires(N >= 3)
 			{
 				Vector<T, N> ret;
 				ret[2] = 1;
 				return ret;
 			}
+
+
 			static Vector<T, N> Backward() requires(N >= 3)
 			{
 				Vector<T, N> ret;
@@ -95,34 +100,17 @@ namespace leopph
 			}
 
 
-
-
-
 			/* Returns a pointer to the internal data structure.
 			DO NOT USE THIS UNLESS NECESSARY! */
-			const T* Data() const
+			[[nodiscard]] const T* Data() const
 			{
 				return &m_Data[0];
 			}
+
+
 			T* Data()
 			{
 				return const_cast<T*>(const_cast<const Vector<T, N>*>(this)->Data());
-			}
-
-
-
-
-
-			/* Copy Assignment */
-			Vector<T, N>& operator=(const Vector<T, N>& other)
-			{
-				if (this == &other)
-					return *this;
-
-				for (size_t i = 0; i < N; i++)
-					m_Data[i] = other.m_Data[i];
-
-				return *this;
 			}
 
 
@@ -131,16 +119,16 @@ namespace leopph
 			{
 				return m_Data[index];
 			}
-			T& operator[](size_t index)
+
+
+			T& operator[](const size_t index)
 			{
 				return const_cast<T&>(const_cast<const Vector<T, N>*>(this)->operator[](index));
 			}
 
 
-
-
 			/* Mathematical vector magnitude */
-			float Length() const
+			[[nodiscard]] float Length() const
 			{
 				float sqrSum{};
 
@@ -149,8 +137,6 @@ namespace leopph
 
 				return std::sqrtf(sqrSum);
 			}
-
-
 
 
 			/* Normalization changes the vector in-place to have a magnitude of 1,
@@ -165,14 +151,12 @@ namespace leopph
 				return *this;
 			}
 
+
 			/* Returns a new vector that has a magnitude of 1 and points in the same direction */
-			Vector<T, N> Normalized() const
+			[[nodiscard]] Vector<T, N> Normalized() const
 			{
 				return Vector<T, N>{ *this }.Normalize();
 			}
-
-
-
 
 
 			/* Mathematical dot product of two equal dimension vectors */
@@ -185,8 +169,6 @@ namespace leopph
 
 				return ret;
 			}
-
-
 
 
 			/* Mathematical cross product, only between 3D vectors */
@@ -209,6 +191,7 @@ namespace leopph
 				return static_cast<T>(std::sqrt(sum));
 			}
 
+
 			/* Return a new Vector of length N + 1.
 			The new component's value will be 1. */
 			explicit operator Vector<T, N + 1>() const
@@ -222,10 +205,11 @@ namespace leopph
 				return ret;
 			}
 
+
 			/* Return a new Vector of length N - 1.
 			The last component is thrown away. */
-			template<std::size_t N1 = N>
-			explicit operator Vector<T, N1 - 1>() const requires (N1 > 2)
+			template<std::size_t N1 = N> requires (N1 > 2)
+			explicit operator Vector<T, N1 - 1>() const
 			{
 				Vector<T, N - 1> ret;
 				
@@ -235,9 +219,6 @@ namespace leopph
 				return ret;
 			}
 		};
-
-
-
 
 
 		/*-----------------------------------
@@ -256,8 +237,6 @@ namespace leopph
 		}
 
 
-
-
 		template<class T, std::size_t N>
 		Vector<T, N> operator+(const Vector<T, N>& left, const Vector<T, N>& right)
 		{
@@ -269,13 +248,12 @@ namespace leopph
 			return ret;
 		}
 
+
 		template<class T, std::size_t N>
 		Vector<T, N> operator+=(Vector<T, N>& left, const Vector<T, N>& right)
 		{
 			return left = left + right;
 		}
-
-
 
 
 		template<class T, std::size_t N>
@@ -284,13 +262,12 @@ namespace leopph
 			return left + -right;
 		}
 
+
 		template<class T, std::size_t N>
 		Vector<T, N> operator-=(Vector<T, N>& left, const Vector<T, N>& right)
 		{
 			return left = left - right;
 		}
-
-
 
 
 		template<class T1, std::convertible_to<T1> T2, std::size_t N>
@@ -304,17 +281,20 @@ namespace leopph
 			return ret;
 		}
 
+
 		template<class T1, std::convertible_to<T1> T2, std::size_t N>
 		Vector<T1, N> operator*(const T2& left, const Vector<T1, N>& right)
 		{
 			return right * left;
 		}
 
+
 		template<class T1, std::convertible_to<T1> T2, std::size_t N>
 		Vector<T1, N> operator*=(Vector<T1, N>& left, const T2& right)
 		{
 			return left = left * right;
 		}
+
 
 		template<class T1, std::convertible_to<T1> T2, std::size_t N>
 		Vector<T1, N> operator*=(const T2& left, Vector<T1, N>& right)
@@ -323,21 +303,18 @@ namespace leopph
 		}
 
 
-
-
 		template<class T1, std::convertible_to<T1> T2, std::size_t N>
 		Vector<T1, N> operator/(const Vector<T1, N>& left, const T2& right)
 		{
 			return left * (static_cast<T1>(1) / right);
 		}
 
+
 		template<class T1, std::convertible_to<T1> T2, std::size_t N>
 		Vector<T1, N> operator/=(Vector<T1, N>& left, const T2& right)
 		{
 			return left = left * (static_cast<T1>(1) / right);
 		}
-
-
 
 
 		template<class T, std::size_t N>
@@ -350,13 +327,12 @@ namespace leopph
 			return true;
 		}
 
+
 		template<class T, std::size_t N>
 		bool operator!=(const Vector<T, N>& left, const Vector<T, N>& right)
 		{
 			return !(left == right);
 		}
-
-
 
 
 		template<class T, std::size_t N>
@@ -377,8 +353,6 @@ namespace leopph
 			return stream;
 		}
 	}
-
-
 
 
 	/*------------------------------------------------------
