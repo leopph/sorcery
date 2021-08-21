@@ -141,7 +141,12 @@ namespace leopph
 			Vector<T, N>& Normalize()
 			{
 				float length = Length();
-				std::for_each(m_Data.begin(), m_Data.end(), [length](T& elem) { elem /= static_cast<T>(length); });
+
+				if (length != 0)
+				{
+					std::for_each(m_Data.begin(), m_Data.end(), [length](T& elem) { elem /= static_cast<T>(length); });
+				}
+
 				return *this;
 			}
 

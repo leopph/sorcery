@@ -15,25 +15,28 @@ void CameraController::OnFrameUpdate()
 
 	leopph::Transform& camTransform = leopph::Camera::Active()->object.Transform();
 
+	leopph::Vector3 movementVector;
 
 	if (leopph::Input::GetKey(leopph::KeyCode::W))
-		camTransform.Translate(camTransform.Forward() * m_Speed * leopph::Time::DeltaTime());
+		movementVector += camTransform.Forward();
 
 	if (leopph::Input::GetKey(leopph::KeyCode::S))
-		camTransform.Translate(-camTransform.Forward() * m_Speed * leopph::Time::DeltaTime());
+		movementVector -= camTransform.Forward();
 
 	if (leopph::Input::GetKey(leopph::KeyCode::D))
-		camTransform.Translate(camTransform.Right() * m_Speed * leopph::Time::DeltaTime());
+		movementVector += camTransform.Right();
 
 	if (leopph::Input::GetKey(leopph::KeyCode::A))
-		camTransform.Translate(-camTransform.Right() * m_Speed * leopph::Time::DeltaTime());
+		movementVector -= camTransform.Right();
 
 	if (leopph::Input::GetKey(leopph::KeyCode::Space))
-		camTransform.Translate(leopph::Vector3::Up() * m_Speed * leopph::Time::DeltaTime());
+		movementVector += leopph::Vector3::Up();
 
 	if (leopph::Input::GetKey(leopph::KeyCode::LeftControl))
-		camTransform.Translate(leopph::Vector3::Down() * m_Speed * leopph::Time::DeltaTime());
+		movementVector += leopph::Vector3::Down();
 
+	movementVector.Normalize();
+	camTransform.Translate(movementVector * m_Speed * leopph::Time::DeltaTime());
 
 	const auto [posX, posY] = leopph::Input::GetMousePosition();
 	const float diffX = posX - lastX;
