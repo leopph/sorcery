@@ -15,39 +15,11 @@
 #include <string>
 #include <utility>
 
-static unsigned int quadVAO = 0;
-static unsigned int quadVBO;
-static void renderQuad()
-{
-	if (quadVAO == 0)
-	{
-		float quadVertices[] = {
-			// positions        // texture Coords
-			-1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
-			-1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
-			 1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
-			 1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
-		};
-		// setup plane VAO
-		glGenVertexArrays(1, &quadVAO);
-		glGenBuffers(1, &quadVBO);
-		glBindVertexArray(quadVAO);
-		glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
-		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-		glEnableVertexAttribArray(1);
-		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-	}
-	glBindVertexArray(quadVAO);
-	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-	glBindVertexArray(0);
-}
 
 namespace leopph::impl
 {
 	Renderer::Renderer() :
-		m_ObjectShader{ Shader::Type::OBJECT }, m_SkyboxShader{ Shader::Type::SKYBOX }, m_DirectionalShadowMapShader{ Shader::Type::DIRECTIONAL_SHADOW_MAP }, m_DebugShader{ Shader::Type::DEBUG }
+		m_ObjectShader{ Shader::Type::OBJECT }, m_SkyboxShader{ Shader::Type::SKYBOX }, m_DirectionalShadowMapShader{ Shader::Type::DIRECTIONAL_SHADOW_MAP }
 	{
 		glEnable(GL_DEPTH_TEST);
 	}
@@ -71,15 +43,8 @@ namespace leopph::impl
 
 		RenderDirectionalShadowMap();
 		//RenderPointShadowMaps();
-		m_DebugShader.Use();
-		m_DebugShader.SetUniform("near_plane", Camera::Active()->NearClipPlane());
-		m_DebugShader.SetUniform("far_plane", Camera::Active()->FarClipPlane());
-		InstanceHolder::ShadowMaps().front().BindToTexture(0);
-		renderQuad();// Debug
-		//RenderShadedObjects();
+		RenderShadedObjects();
 		RenderSkybox();
-
-		
 	}
 
 
@@ -175,8 +140,8 @@ namespace leopph::impl
 			InstanceHolder::CreateShadowMap(SHADOW_MAP_RESOLUTION);
 		}
 
-		const auto projection{ Matrix4::LookAt(-dirLight->Direction(), Vector3{}, Vector3::Up()) };
-		const auto view{ Matrix4::Ortographic(-10, 10, -10, 10, Camera::Active()->NearClipPlane(), Camera::Active()->FarClipPlane()) };
+		const auto view{ Matrix4::LookAt(-dirLight->Direction(), Vector3{}, Vector3::Up()) };
+		const auto projection{ Matrix4::Ortographic(-10, 10, 10, -10, Camera::Active()->NearClipPlane(), Camera::Active()->FarClipPlane()) };
 		m_CurrentFrameDirectionalTransformMatrix = view * projection;
 
 		m_DirectionalShadowMapShader.Use();

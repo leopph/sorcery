@@ -145,7 +145,7 @@ namespace leopph
 				Matrix<T, 4, 4> ret;
 				ret[0][0] = static_cast<T>(static_cast<T>(2) / (right - left));
 				ret[1][1] = static_cast<T>(static_cast<T>(2) / (top - bottom));
-				ret[2][2] = static_cast<T>(static_cast<T>(-2) / (farClipPlane - nearClipPlane));
+				ret[2][2] = static_cast<T>(static_cast<T>(2) / (farClipPlane - nearClipPlane));
 				ret[3][0] = static_cast<T>(-((right + left) / (right - left)));
 				ret[3][1] = static_cast<T>(-((top + bottom) / (top - bottom)));
 				ret[3][2] = static_cast<T>(-((farClipPlane + nearClipPlane) / (farClipPlane - nearClipPlane)));

@@ -48,8 +48,6 @@
     <ClCompile Include="src\util\hash\PathHash.cpp" />
     <ClCompile Include="src\shaders\DirectionalShadowMapFragment.cpp" />
     <ClCompile Include="src\shaders\DirectionalShadowMapVertex.cpp" />
-    <ClCompile Include="src\shaders\DebugFragment.cpp" />
-    <ClCompile Include="src\shaders\DebugVertex.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\Behavior.hpp" />
@@ -114,7 +112,5 @@
     <None Include="src\cpp.hint" />
     <None Include="src\shaders\DirectionalShadowMapVertex.vert" />
     <None Include="src\shaders\DirectionalShadowMapFragment.frag" />
-    <None Include="src\shaders\DebugVertex.vert" />
-    <None Include="src\shaders\DebugFragment.frag" />
   </ItemGroup>
 </Project>

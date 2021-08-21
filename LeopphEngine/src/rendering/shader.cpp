@@ -36,12 +36,6 @@ namespace leopph::impl
 			fragmentSource = s_DirectionalShadowMapFragmentSource.c_str();
 			Logger::Instance().Debug("Constructing directional shadow map shader.");
 			break;
-
-		case Type::DEBUG:
-			vertexSource = s_DebugVertexSource.c_str();
-			fragmentSource = s_DebugFragmentSource.c_str();
-			Logger::Instance().Debug("Constructing debug shader.");
-			break;
 		}
 
 		if (Settings::IsCachingShaders())
