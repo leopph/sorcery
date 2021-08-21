@@ -5,7 +5,7 @@
 namespace leopph
 {
 	SpotLight::SpotLight(Object& owner) :
-		AttenuatedLight{ owner, 1.f, 0.1f, 0.1f }, m_Angle{ 30.f }
+		AttenuatedLight{ owner, 1.f, 0.1f, 0.1f }, m_InnerAngle{ 30.f }, m_OuterAngle{ m_InnerAngle }
 	{
 		impl::InstanceHolder::RegisterSpotLight(this);
 	}
@@ -15,14 +15,24 @@ namespace leopph
 		impl::InstanceHolder::UnregisterSpotLight(this);
 	}
 
-	float SpotLight::Angle() const
+	float SpotLight::InnerAngle() const
 	{
-		return m_Angle;
+		return m_InnerAngle;
 	}
 
-	void SpotLight::Angle(const float degrees)
+	void SpotLight::InnerAngle(const float degrees)
 	{
-		m_Angle = degrees;
+		m_InnerAngle = degrees;
+	}
+
+	float SpotLight::OuterAngle() const
+	{
+		return m_OuterAngle;
+	}
+
+	void SpotLight::OuterAngle(const float degrees)
+	{
+		m_OuterAngle = degrees;
 	}
 
 }

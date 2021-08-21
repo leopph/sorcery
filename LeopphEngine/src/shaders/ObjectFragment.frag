@@ -41,7 +41,8 @@ struct SpotLight
 	float linear;
 	float quadratic;
 	
-	float cutOffCosine;
+	float innerAngleCosine;
+	float outerAngleCosine;
 };
 
 struct Material
@@ -165,12 +166,15 @@ vec3 CalculateSpotLight(SpotLight spotLight, vec3 surfaceNormal, vec3 materialDi
 	float dist = length(posDiff);
 	vec3 directionToLight = normalize(posDiff);
 	float thetaCosine = dot(directionToLight, -spotLight.direction);
+	float epsilon = spotLight.innerAngleCosine - spotLight.outerAngleCosine;
 
-	if (thetaCosine > spotLight.cutOffCosine)
+	float intensity = clamp((thetaCosine - spotLight.outerAngleCosine) / epsilon, 0.0, 1.0);
+
+	if (intensity > 0)
 	{
 		float attenuation = CalculateAttenuation(spotLight.constant, spotLight.linear, spotLight.quadratic, dist);
 		vec3 light = CalculateLightEffect(directionToLight, surfaceNormal, materialDiffuseColor, materialSpecularColor, spotLight.diffuseColor, spotLight.specularColor);
-		return attenuation * light;
+		return intensity * attenuation * light;
 	}
 
 	return vec3(0);

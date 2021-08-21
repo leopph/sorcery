@@ -8,6 +8,7 @@
 
 #include <glad/glad.h>
 
+#include <algorithm>
 #include <cstddef>
 #include <stdexcept>
 #include <string>
@@ -179,7 +180,7 @@ namespace leopph::impl
 		}
 		else if (newAmount * 2 < m_ModelBufferSize)
 		{
-			m_ModelBufferSize /= 2;
+			m_ModelBufferSize = std::max(m_ModelBufferSize / 2, 1ull);
 			SetModelBuffer();
 		}
 	}

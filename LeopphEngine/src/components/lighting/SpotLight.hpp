@@ -22,11 +22,16 @@ namespace leopph
 		void operator=(const SpotLight&) = delete;
 		void operator=(SpotLight&&) = delete;
 
-		/* The cutoff angle in degrees */
-		[[nodiscard]] LEOPPHAPI float Angle() const;
-		LEOPPHAPI void Angle(float degrees);
+		/* The angle in degrees at which the light starts to fade out */
+		[[nodiscard]] LEOPPHAPI float InnerAngle() const;
+		LEOPPHAPI void InnerAngle(float degrees);
+
+		/* The angle in degrees at which the light is completely cut */
+		[[nodiscard]] LEOPPHAPI float OuterAngle() const;
+		LEOPPHAPI void OuterAngle(float degrees);
 
 	private:
-		float m_Angle;
+		float m_InnerAngle;
+		float m_OuterAngle;
 	};
 }

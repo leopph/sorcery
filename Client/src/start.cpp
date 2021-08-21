@@ -16,7 +16,8 @@ void leopph::AppStart()
 	new Camera{ *cameraObj };
 	new CameraController{ *cameraObj };
 	const auto spotLight = new SpotLight{ *cameraObj };
-	spotLight->Angle(15);
+	spotLight->InnerAngle(15);
+	spotLight->OuterAngle(20);
 
 	Camera::Active()->Background(CameraBackground{ .skybox{std::make_unique<Skybox>("skybox/left.jpg", "skybox/right.jpg", "skybox/top.jpg", "skybox/bottom.jpg", "skybox/back.jpg", "skybox/front.jpg")}});
 

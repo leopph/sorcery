@@ -268,7 +268,8 @@ namespace leopph::impl
 			m_ObjectShader.SetUniform("spotLights[" + std::to_string(i) + "].constant", spotLight->Constant());
 			m_ObjectShader.SetUniform("spotLights[" + std::to_string(i) + "].linear", spotLight->Linear());
 			m_ObjectShader.SetUniform("spotLights[" + std::to_string(i) + "].quadratic", spotLight->Quadratic());
-			m_ObjectShader.SetUniform("spotLights[" + std::to_string(i) + "].cutOffCosine", math::Cos(math::ToRadians(spotLight->Angle())));
+			m_ObjectShader.SetUniform("spotLights[" + std::to_string(i) + "].innerAngleCosine", math::Cos(math::ToRadians(spotLight->InnerAngle())));
+			m_ObjectShader.SetUniform("spotLights[" + std::to_string(i) + "].outerAngleCosine", math::Cos(math::ToRadians(spotLight->OuterAngle())));
 		}
 
 		/* Draw the shaded objects */
