@@ -11,7 +11,7 @@ namespace leopph
 	/*-----------------------------------------------------------------------------------------------------------------------
 	Directional lights are components that provide a way to light your scene with a source that appears to be infinitely far.
 	The position of the light source does not matter, it always lights the objects from the direction it is set to.
-	See "component.h" for more information.
+	See "Light.hpp" and "Component.hpp" for more information.
 	-----------------------------------------------------------------------------------------------------------------------*/
 	class DirectionalLight final : public impl::Light
 	{

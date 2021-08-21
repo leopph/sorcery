@@ -141,6 +141,7 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClInclude Include="src\components\Camera.hpp" />
     <ClInclude Include="src\components\Component.hpp" />
     <ClInclude Include="src\components\lighting\AmbientLight.hpp" />
+    <ClInclude Include="src\components\lighting\AttenuatedLight.hpp" />
     <ClInclude Include="src\components\lighting\DirLight.hpp" />
     <ClInclude Include="src\components\lighting\SpotLight.hpp" />
     <ClInclude Include="src\entry\appstart.h" />
@@ -196,6 +197,7 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClCompile Include="src\components\camera.cpp" />
     <ClCompile Include="src\components\Component.cpp" />
     <ClCompile Include="src\components\lighting\AmbientLight.cpp" />
+    <ClCompile Include="src\components\lighting\AttenuatedLight.cpp" />
     <ClCompile Include="src\components\lighting\DirLight.cpp" />
     <ClCompile Include="src\components\lighting\SpotLight.cpp" />
     <ClCompile Include="src\config\settings.cpp" />

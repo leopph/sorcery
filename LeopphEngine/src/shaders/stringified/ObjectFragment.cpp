@@ -38,6 +38,10 @@ struct SpotLight
 
 	vec3 diffuseColor;
 	vec3 specularColor;
+
+	float constant;
+	float linear;
+	float quadratic;
 	
 	float cutOffCosine;
 };
@@ -83,6 +87,12 @@ uniform int spotLightCount;
 uniform vec3 cameraPosition;
 
 uniform mat4 dirLightTransformMatrix;
+
+
+float CalculateAttenuation(float constant, float linear, float quadratic, float dist)
+{
+	return 1.0 / (constant + linear * dist + quadratic * pow(dist, 2));
+}
 
 
 float CalculateShadow(vec4 lightSpaceFragPos, vec3 lightDirection, vec3 surfaceNormal, sampler2D shadowMap)
@@ -143,20 +153,26 @@ vec3 CalculatePointLight(PointLight pointLight, vec3 surfaceNormal, vec3 materia
 {
 	vec3 posDiff = pointLight.position - inFragPos;
 	float dist = length(posDiff);
-	float att = 1.0 / (pointLight.constant + (pointLight.linear * dist) + (pointLight.quadratic * pow(dist, 2)));
 	vec3 directionToLight = normalize(posDiff);
-	return att * CalculateLightEffect(directionToLight, surfaceNormal, materialDiffuseColor, materialSpecularColor, pointLight.diffuseColor, pointLight.specularColor);
+
+	float attenuation = CalculateAttenuation(pointLight.constant, pointLight.linear, pointLight.quadratic, dist);
+	vec3 light = CalculateLightEffect(directionToLight, surfaceNormal, materialDiffuseColor, materialSpecularColor, pointLight.diffuseColor, pointLight.specularColor);
+	return attenuation * light;
 }
 
 
 vec3 CalculateSpotLight(SpotLight spotLight, vec3 surfaceNormal, vec3 materialDiffuseColor, vec3 materialSpecularColor)
 {
-	vec3 directionToLight = normalize(spotLight.position - inFragPos);
-	float thetaCosine = dot(directionToLight, normalize(-spotLight.direction));
+	vec3 posDiff = spotLight.position - inFragPos;
+	float dist = length(posDiff);
+	vec3 directionToLight = normalize(posDiff);
+	float thetaCosine = dot(directionToLight, -spotLight.direction);
 
 	if (thetaCosine > spotLight.cutOffCosine)
 	{
-		return CalculateLightEffect(directionToLight, surfaceNormal, materialDiffuseColor, materialSpecularColor, spotLight.diffuseColor, spotLight.specularColor);
+		float attenuation = CalculateAttenuation(spotLight.constant, spotLight.linear, spotLight.quadratic, dist);
+		vec3 light = CalculateLightEffect(directionToLight, surfaceNormal, materialDiffuseColor, materialSpecularColor, spotLight.diffuseColor, spotLight.specularColor);
+		return attenuation * light;
 	}
 
 	return vec3(0);

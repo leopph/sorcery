@@ -49,6 +49,7 @@
     <ClCompile Include="src\shaders\stringified\ObjectVertex.cpp" />
     <ClCompile Include="src\shaders\stringified\skyboxfragment.cpp" />
     <ClCompile Include="src\components\lighting\SpotLight.cpp" />
+    <ClCompile Include="src\components\lighting\AttenuatedLight.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\Behavior.hpp" />
@@ -105,6 +106,7 @@
     <ClInclude Include="src\util\ObjectProperties.hpp" />
     <ClInclude Include="src\rendering\ShadowMap.hpp" />
     <ClInclude Include="src\components\lighting\SpotLight.hpp" />
+    <ClInclude Include="src\components\lighting\AttenuatedLight.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\shaders\ObjectFragment.frag" />
