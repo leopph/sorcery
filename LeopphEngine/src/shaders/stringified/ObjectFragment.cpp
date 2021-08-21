@@ -3,6 +3,8 @@
 std::string leopph::impl::Shader::s_FragmentSource{ R"#fileContents#(#version 460 core
 
 #define ALPHA_THRESHOLD 0.01
+#define MIN_SHADOW_BIAS 0.0001
+#define MAX_SHADOW_BIAS 0.001
 
 
 struct PointLight
@@ -67,14 +69,15 @@ uniform vec3 cameraPosition;
 uniform mat4 dirLightTransformMatrix;
 
 
-float CalculateDirectionalShadow(DirLight dirLight)
+float CalculateShadow(vec4 lightSpaceFragPos, vec3 lightDirection, vec3 surfaceNormal, sampler2D shadowMap)
 {
-	vec3 coords = inFragPosDirSpace.xyz / inFragPosDirSpace.w;
-	coords *= 0.5;
-	coords += 0.5;
+	vec3 normalizedPos = lightSpaceFragPos.xyz / lightSpaceFragPos.w;
+	normalizedPos *= 0.5;
+	normalizedPos += 0.5;
 
-	float shadowDepth = texture(dirLight.shadowMap, coords.xy).r;
-	return coords.z > shadowDepth ? 1.0 : 0.0;
+	float shadowDepth = texture(dirLight.shadowMap, normalizedPos.xy).r;
+	float bias = max(MAX_SHADOW_BIAS * (1.0 - dot(surfaceNormal, lightDirection)), MIN_SHADOW_BIAS);
+	return (normalizedPos.z - bias) > shadowDepth ? 1.0 : 0.0;
 }
 
 vec3 CalculateLightEffect(vec3 direction, vec3 normal, vec3 matDiff, vec3 matSpec, vec3 lightDiff, vec3 lightSpec)
@@ -110,7 +113,9 @@ vec3 CalculatePointLight(PointLight pointLight, vec3 surfaceNormal, vec3 materia
 vec3 CalculateDirLight(DirLight dirLight, vec3 surfaceNormal, vec3 materialDiffuseColor, vec3 materialSpecularColor)
 {
 	vec3 directionToLight = -dirLight.direction;
-	return (1 - CalculateDirectionalShadow(dirLight)) * CalculateLightEffect(directionToLight, surfaceNormal, materialDiffuseColor, materialSpecularColor, dirLight.diffuseColor, dirLight.specularColor);
+	float shadow = (1 - CalculateShadow(inFragPosDirSpace, directionToLight, surfaceNormal, dirLight.shadowMap));
+	vec3 light = CalculateLightEffect(directionToLight, surfaceNormal, materialDiffuseColor, materialSpecularColor, dirLight.diffuseColor, dirLight.specularColor);
+	return shadow * light;
 }
 
 void main()

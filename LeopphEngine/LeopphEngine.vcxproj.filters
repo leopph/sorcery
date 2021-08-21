@@ -35,19 +35,19 @@
     <ClCompile Include="src\instances\modelreference.cpp" />
     <ClCompile Include="src\misc\skybox.cpp" />
     <ClCompile Include="src\instances\skyboximpl.cpp" />
-    <ClCompile Include="src\shaders\skyboxfragment.cpp" />
-    <ClCompile Include="src\shaders\skyboxvertex.cpp" />
     <ClCompile Include="src\util\hash\SkyBoxImplHash.cpp" />
     <ClCompile Include="src\util\equal\SkyBoxImplEqual.cpp" />
     <ClCompile Include="src\misc\color.cpp" />
     <ClCompile Include="src\components\lighting\AmbientLight.cpp" />
     <ClCompile Include="src\hierarchy\Transform.cpp" />
-    <ClCompile Include="src\shaders\ObjectFragment.cpp" />
-    <ClCompile Include="src\shaders\ObjectVertex.cpp" />
     <ClCompile Include="src\rendering\ShadowMap.cpp" />
     <ClCompile Include="src\util\hash\PathHash.cpp" />
-    <ClCompile Include="src\shaders\DirectionalShadowMapFragment.cpp" />
-    <ClCompile Include="src\shaders\DirectionalShadowMapVertex.cpp" />
+    <ClCompile Include="src\shaders\stringified\skyboxvertex.cpp" />
+    <ClCompile Include="src\shaders\stringified\DirectionalShadowMapFragment.cpp" />
+    <ClCompile Include="src\shaders\stringified\DirectionalShadowMapVertex.cpp" />
+    <ClCompile Include="src\shaders\stringified\ObjectFragment.cpp" />
+    <ClCompile Include="src\shaders\stringified\ObjectVertex.cpp" />
+    <ClCompile Include="src\shaders\stringified\skyboxfragment.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\Behavior.hpp" />
