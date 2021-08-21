@@ -28,10 +28,10 @@ void CameraController::OnFrameUpdate()
 	if (leopph::Input::GetKey(leopph::KeyCode::A))
 		camTransform.Translate(-camTransform.Right() * m_Speed * leopph::Time::DeltaTime());
 
-	if (leopph::Input::GetKey(leopph::KeyCode::E))
+	if (leopph::Input::GetKey(leopph::KeyCode::Space))
 		camTransform.Translate(leopph::Vector3::Up() * m_Speed * leopph::Time::DeltaTime());
 
-	if (leopph::Input::GetKey(leopph::KeyCode::Q))
+	if (leopph::Input::GetKey(leopph::KeyCode::LeftControl))
 		camTransform.Translate(leopph::Vector3::Down() * m_Speed * leopph::Time::DeltaTime());
 
 
