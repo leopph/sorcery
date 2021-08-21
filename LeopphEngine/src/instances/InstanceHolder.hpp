@@ -5,6 +5,7 @@
 #include "../components/lighting/AmbientLight.hpp"
 #include "../components/lighting/DirLight.hpp"
 #include "../components/lighting/PointLight.hpp"
+#include "../components/lighting/SpotLight.hpp"
 #include "../hierarchy/Object.hpp"
 #include "../misc/skybox.h"
 #include "../rendering/texture.h"
@@ -121,6 +122,10 @@ namespace leopph::impl
 		/* Removes the last stored Shadow Map */
 		static void DeleteShadowMap();
 
+		static const std::unordered_set<const SpotLight*>& SpotLights();
+		static void RegisterSpotLight(const SpotLight* spotLight);
+		static void UnregisterSpotLight(const SpotLight* spotLight);
+
 	private:
 		static std::unordered_set<TextureReference, TextureHash, TextureEqual> s_Textures;
 		static std::unordered_map<std::filesystem::path, ModelReference, PathHash> s_Models;
@@ -130,9 +135,10 @@ namespace leopph::impl
 		static std::map<Object*, std::set<Component*>, ObjectLess> s_Objects;
 		static std::unordered_map<const Object*, std::pair<const Matrix4, const Matrix4>> s_MatrixCache;
 
+		static std::unique_ptr<leopph::AmbientLight> s_AmbientLight;
 		static leopph::DirectionalLight* s_DirLight;
 		static std::vector<PointLight*> s_PointLights;
-		static std::unique_ptr<leopph::AmbientLight> s_AmbientLight;
+		static std::unordered_set<const SpotLight*> s_SpotLights;
 
 		static std::list<ShadowMap> s_ShadowMaps;
 	};

@@ -151,7 +151,7 @@ namespace leopph::impl
 
 		for (const auto& [modelPath, matrices] : m_CurrentFrameMatrices)
 		{
-			InstanceHolder::GetModelReference(modelPath).DrawDepth(m_DirectionalShadowMapShader, matrices.first);
+			InstanceHolder::GetModelReference(modelPath).DrawDepth(matrices.first);
 		}
 
 		shadowMaps.front().UnbindFromBuffer();

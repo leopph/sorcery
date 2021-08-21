@@ -161,7 +161,7 @@ namespace leopph::impl
 	}
 
 
-	void Mesh::DrawDepth(const Shader& shader, const std::vector<Matrix4>& modelMatrices) const
+	void Mesh::DrawDepth(const std::vector<Matrix4>& modelMatrices) const
 	{
 		glNamedBufferSubData(m_Buffers[MODEL], 0, modelMatrices.size() * sizeof(std::remove_reference_t<decltype(modelMatrices)>::value_type), modelMatrices.data());
 		glBindVertexArray(m_VertexArray);

@@ -80,11 +80,11 @@ namespace leopph::impl
 	}
 
 
-	void AssimpModelImpl::DrawDepth(const Shader& shader, const std::vector<Matrix4>& modelMatrices) const
+	void AssimpModelImpl::DrawDepth(const std::vector<Matrix4>& modelMatrices) const
 	{
 		for (const auto& mesh : m_Meshes)
 		{
-			mesh.DrawDepth(shader, modelMatrices);
+			mesh.DrawDepth(modelMatrices);
 		}
 	}
 

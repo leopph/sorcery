@@ -7,16 +7,22 @@
 
 namespace leopph::impl
 {
-	std::unordered_set<TextureReference, TextureHash, TextureEqual> InstanceHolder::s_Textures{};
-	std::map<Object*, std::set<Component*>, ObjectLess> InstanceHolder::s_Objects{};
-	std::set<Behavior*> InstanceHolder::s_Behaviors{};
+	std::unique_ptr<AmbientLight> InstanceHolder::s_AmbientLight{ nullptr };
 	DirectionalLight* InstanceHolder::s_DirLight{ nullptr };
 	std::vector<PointLight*> InstanceHolder::s_PointLights{};
-	std::unique_ptr<AmbientLight> InstanceHolder::s_AmbientLight{ nullptr };
+	std::unordered_set<const SpotLight*> InstanceHolder::s_SpotLights{};
+
+	std::map<Object*, std::set<Component*>, ObjectLess> InstanceHolder::s_Objects{};
+	std::set<Behavior*> InstanceHolder::s_Behaviors{};
+
+	std::unordered_set<TextureReference, TextureHash, TextureEqual> InstanceHolder::s_Textures{};
 	std::unordered_map<std::filesystem::path, ModelReference, PathHash> InstanceHolder::s_Models{};
+
 	std::unordered_map<SkyboxImpl, std::size_t, SkyboxImplHash, SkyboxImplEqual> InstanceHolder::s_Skyboxes{};
-	std::unordered_map<const Object*, std::pair<const Matrix4, const Matrix4>> InstanceHolder::s_MatrixCache{};
+
 	std::list<ShadowMap> InstanceHolder::s_ShadowMaps{};
+
+	std::unordered_map<const Object*, std::pair<const Matrix4, const Matrix4>> InstanceHolder::s_MatrixCache{};
 
 	
 	void InstanceHolder::DestroyAllObjects()
@@ -326,6 +332,22 @@ namespace leopph::impl
 		{
 			s_ShadowMaps.pop_back();
 		}
+	}
+
+	const std::unordered_set<const SpotLight*>& InstanceHolder::SpotLights()
+	{
+		return s_SpotLights;
+	}
+
+	void InstanceHolder::RegisterSpotLight(const SpotLight* spotLight)
+	{
+		s_SpotLights.emplace(spotLight);
+	}
+
+
+	void InstanceHolder::UnregisterSpotLight(const SpotLight* spotLight)
+	{
+		s_SpotLights.erase(spotLight);
 	}
 
 }
