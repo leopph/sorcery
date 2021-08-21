@@ -3,6 +3,7 @@
 #include "Shader.hpp"
 
 #include "../components/lighting/PointLight.hpp"
+#include "../components/lighting/SpotLight.hpp"
 #include "../math/Matrix.hpp"
 
 #include "../util/hash/PathHash.hpp"
@@ -23,13 +24,14 @@ namespace leopph::impl
 		void Render();
 
 	private:
-		struct PointLightLess
+		struct LightLess
 		{
-			bool operator()(const PointLight* left, const PointLight* right) const;
+			bool operator()(const Light* left, const Light* right) const;
 		};
 
 		void CalcAndCollectModelAndNormalMatrices();
 		void CollectPointLights();
+		void CollectSpotLights();
 		void RenderDirectionalShadowMap();
 		void RenderPointShadowMaps();
 		void RenderShadedObjects();
@@ -41,6 +43,9 @@ namespace leopph::impl
 
 		constexpr static std::size_t MAX_POINT_LIGHTS = 64;
 		std::vector<const PointLight*> m_CurrentFrameUsedPointLights;
+
+		constexpr static std::size_t MAX_SPOT_LIGHTS = 64;
+		std::vector<const SpotLight*> m_CurrentFrameUsedSpotLights;
 
 		std::unordered_map<std::filesystem::path, std::pair<std::vector<Matrix4>, std::vector<Matrix4>>, PathHash> m_CurrentFrameMatrices;
 

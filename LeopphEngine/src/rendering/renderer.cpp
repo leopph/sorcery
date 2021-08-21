@@ -5,12 +5,15 @@
 #include "../components/lighting/Light.hpp"
 #include "../components/lighting/PointLight.hpp"
 #include "../instances/InstanceHolder.hpp"
+#include "../math/leopphmath.h"
 #include "../math/Matrix.hpp"
 #include "../math/Vector.hpp"
 #include "Shader.hpp"
 
 #include <glad/glad.h>
 
+#include <algorithm>
+#include <iterator>
 #include <set>
 #include <string>
 #include <utility>
@@ -37,6 +40,9 @@ namespace leopph::impl
 		/* We collect the nearest pointlights */
 		CollectPointLights();
 
+		/* We collect the nearest spotlights */
+		CollectSpotLights();
+
 		/* We store the main camera's view and projection matrices for the frame */
 		m_CurrentFrameViewMatrix = Camera::Active()->ViewMatrix();
 		m_CurrentFrameProjectionMatrix = Camera::Active()->ProjectionMatrix();
@@ -48,7 +54,7 @@ namespace leopph::impl
 	}
 
 
-	bool Renderer::PointLightLess::operator()(const PointLight* left, const PointLight* right) const
+	bool Renderer::LightLess::operator()(const Light* left, const Light* right) const
 	{
 		const auto& camPosition{ Camera::Active()->object.Transform().Position() };
 		const auto& leftDistance{ Vector3::Distance(camPosition, left->object.Transform().Position()) };
@@ -97,7 +103,7 @@ namespace leopph::impl
 	void Renderer::CollectPointLights()
 	{
 		/* This set stores lights in an ascending order based on distance from camera */
-		static std::set<const PointLight*, PointLightLess> allPointsLightsOrdered;
+		static std::set<const PointLight*, LightLess> allPointsLightsOrdered;
 
 		allPointsLightsOrdered.clear();
 
@@ -121,6 +127,25 @@ namespace leopph::impl
 			++count;
 		}
 	}
+
+
+	void Renderer::CollectSpotLights()
+	{
+		/* This set stores lights in an ascending order based on distance from camera */
+		static std::set<const SpotLight*, LightLess> allSpotLightsOrdered;
+
+		allSpotLightsOrdered.clear();
+
+		/* We sort the lights based on distance from camera */
+		std::ranges::copy(InstanceHolder::SpotLights().begin(), InstanceHolder::SpotLights().end(), std::inserter(allSpotLightsOrdered, allSpotLightsOrdered.begin()));
+
+		m_CurrentFrameUsedSpotLights.clear();
+
+		/* We collect at most MAX_SPOT_LIGHTS number of them */
+		const std::size_t spotLightCount{ std::min(allSpotLightsOrdered.size(), MAX_SPOT_LIGHTS) };
+		std::copy_n(allSpotLightsOrdered.begin(), spotLightCount, std::back_inserter(m_CurrentFrameUsedSpotLights));
+	}
+
 
 
 	void Renderer::RenderDirectionalShadowMap()
@@ -190,22 +215,15 @@ namespace leopph::impl
 	{
 		m_ObjectShader.Use();
 
+		m_ObjectShader.SetUniform("viewProjectionMatrix", m_CurrentFrameViewMatrix * m_CurrentFrameProjectionMatrix);
+		m_ObjectShader.SetUniform("cameraPosition", Camera::Active()->object.Transform().Position());
+
 		std::size_t usedTextureUnits{ 0 };
 
-		for (std::size_t i = 0; i < m_CurrentFrameUsedPointLights.size(); i++)
-		{
-			const auto& pointLight = m_CurrentFrameUsedPointLights[i];
+		/* Set up ambient light data */
+		m_ObjectShader.SetUniform("ambientLight", AmbientLight::Instance().Intensity());
 
-			m_ObjectShader.SetUniform("pointLights[" + std::to_string(i) + "].position", pointLight->object.Transform().Position());
-			m_ObjectShader.SetUniform("pointLights[" + std::to_string(i) + "].diffuseColor", pointLight->Diffuse());
-			m_ObjectShader.SetUniform("pointLights[" + std::to_string(i) + "].specularColor", pointLight->Specular());
-			m_ObjectShader.SetUniform("pointLights[" + std::to_string(i) + "].constant", pointLight->Constant());
-			m_ObjectShader.SetUniform("pointLights[" + std::to_string(i) + "].linear", pointLight->Linear());
-			m_ObjectShader.SetUniform("pointLights[" + std::to_string(i) + "].quadratic", pointLight->Quadratic());
-		}
-
-		m_ObjectShader.SetUniform("lightNumber", static_cast<int>(m_CurrentFrameUsedPointLights.size()));
-
+		/* Set up DirLight data */
 		if (const auto dirLight = InstanceHolder::DirectionalLight(); dirLight != nullptr)
 		{
 			m_ObjectShader.SetUniform("existsDirLight", true);
@@ -223,10 +241,34 @@ namespace leopph::impl
 			m_ObjectShader.SetUniform("existsDirLight", false);
 		}
 
-		m_ObjectShader.SetUniform("ambientLight", AmbientLight::Instance().Intensity());
-		m_ObjectShader.SetUniform("viewProjectionMatrix", m_CurrentFrameViewMatrix * m_CurrentFrameProjectionMatrix);
-		m_ObjectShader.SetUniform("cameraPosition", Camera::Active()->object.Transform().Position());
+		/* Set up PointLight data */
+		m_ObjectShader.SetUniform("pointLightCount", static_cast<int>(m_CurrentFrameUsedPointLights.size()));
+		for (std::size_t i = 0; i < m_CurrentFrameUsedPointLights.size(); i++)
+		{
+			const auto& pointLight = m_CurrentFrameUsedPointLights[i];
 
+			m_ObjectShader.SetUniform("pointLights[" + std::to_string(i) + "].position", pointLight->object.Transform().Position());
+			m_ObjectShader.SetUniform("pointLights[" + std::to_string(i) + "].diffuseColor", pointLight->Diffuse());
+			m_ObjectShader.SetUniform("pointLights[" + std::to_string(i) + "].specularColor", pointLight->Specular());
+			m_ObjectShader.SetUniform("pointLights[" + std::to_string(i) + "].constant", pointLight->Constant());
+			m_ObjectShader.SetUniform("pointLights[" + std::to_string(i) + "].linear", pointLight->Linear());
+			m_ObjectShader.SetUniform("pointLights[" + std::to_string(i) + "].quadratic", pointLight->Quadratic());
+		}
+
+		/* Set up SpotLight data */
+		m_ObjectShader.SetUniform("spotLightCount", static_cast<int>(m_CurrentFrameUsedSpotLights.size()));
+		for (std::size_t i = 0; i < m_CurrentFrameUsedSpotLights.size(); i++)
+		{
+			const auto& spotLight{ m_CurrentFrameUsedSpotLights[i] };
+
+			m_ObjectShader.SetUniform("spotLights[" + std::to_string(i) + "].position", spotLight->object.Transform().Position());
+			m_ObjectShader.SetUniform("spotLights[" + std::to_string(i) + "].direction", spotLight->object.Transform().Forward());
+			m_ObjectShader.SetUniform("spotLights[" + std::to_string(i) + "].diffuseColor", spotLight->Diffuse());
+			m_ObjectShader.SetUniform("spotLights[" + std::to_string(i) + "].specularColor", spotLight->Specular());
+			m_ObjectShader.SetUniform("spotLights[" + std::to_string(i) + "].cutOffCosine", math::Cos(math::ToRadians(spotLight->Angle())));
+		}
+
+		/* Draw the shaded objects */
 		for (const auto& [modelPath, matrices] : m_CurrentFrameMatrices)
 		{
 			InstanceHolder::GetModelReference(modelPath).DrawShaded(m_ObjectShader, matrices.first, matrices.second, usedTextureUnits);

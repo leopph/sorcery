@@ -2,10 +2,22 @@
 #include <string>
 std::string leopph::impl::Shader::s_FragmentSource{ R"#fileContents#(#version 460 core
 
+#define MAX_POINT_LIGHT_COUNT 64
+#define MAX_SPOT_LIGHT_COUNT 64
 #define ALPHA_THRESHOLD 0.01
 #define MIN_SHADOW_BIAS 0.0001
 #define MAX_SHADOW_BIAS 0.001
 
+
+struct DirLight
+{
+	vec3 direction;
+	
+	vec3 diffuseColor;
+	vec3 specularColor;
+
+	sampler2D shadowMap;
+};
 
 struct PointLight
 {
@@ -19,14 +31,15 @@ struct PointLight
 	float quadratic;
 };
 
-struct DirLight
+struct SpotLight
 {
+	vec3 position;
 	vec3 direction;
-	
+
 	vec3 diffuseColor;
 	vec3 specularColor;
-
-	sampler2D shadowMap;
+	
+	float cutOffCosine;
 };
 
 struct Material
@@ -56,13 +69,16 @@ out vec4 fragmentColor;
 
 uniform Material material;
 
-uniform PointLight pointLights[64];
-uniform int lightNumber;
+uniform vec3 ambientLight;
 
 uniform DirLight dirLight;
 uniform bool existsDirLight;
 
-uniform vec3 ambientLight;
+uniform PointLight pointLights[MAX_POINT_LIGHT_COUNT];
+uniform int pointLightCount;
+
+uniform SpotLight spotLights[MAX_SPOT_LIGHT_COUNT];
+uniform int spotLightCount;
 
 uniform vec3 cameraPosition;
 
@@ -91,6 +107,7 @@ float CalculateShadow(vec4 lightSpaceFragPos, vec3 lightDirection, vec3 surfaceN
 	return shadow / 9.0;
 }
 
+
 vec3 CalculateLightEffect(vec3 direction, vec3 normal, vec3 matDiff, vec3 matSpec, vec3 lightDiff, vec3 lightSpec)
 {
 	float diffuseDot = max(dot(direction, normal), 0);
@@ -112,6 +129,16 @@ vec3 CalculateLightEffect(vec3 direction, vec3 normal, vec3 matDiff, vec3 matSpe
 	return diffuse;
 }
 
+
+vec3 CalculateDirLight(DirLight dirLight, vec3 surfaceNormal, vec3 materialDiffuseColor, vec3 materialSpecularColor)
+{
+	vec3 directionToLight = -dirLight.direction;
+	float shadow = (1 - CalculateShadow(inFragPosDirSpace, directionToLight, surfaceNormal, dirLight.shadowMap));
+	vec3 light = CalculateLightEffect(directionToLight, surfaceNormal, materialDiffuseColor, materialSpecularColor, dirLight.diffuseColor, dirLight.specularColor);
+	return shadow * light;
+}
+
+
 vec3 CalculatePointLight(PointLight pointLight, vec3 surfaceNormal, vec3 materialDiffuseColor, vec3 materialSpecularColor)
 {
 	vec3 posDiff = pointLight.position - inFragPos;
@@ -121,13 +148,20 @@ vec3 CalculatePointLight(PointLight pointLight, vec3 surfaceNormal, vec3 materia
 	return att * CalculateLightEffect(directionToLight, surfaceNormal, materialDiffuseColor, materialSpecularColor, pointLight.diffuseColor, pointLight.specularColor);
 }
 
-vec3 CalculateDirLight(DirLight dirLight, vec3 surfaceNormal, vec3 materialDiffuseColor, vec3 materialSpecularColor)
+
+vec3 CalculateSpotLight(SpotLight spotLight, vec3 surfaceNormal, vec3 materialDiffuseColor, vec3 materialSpecularColor)
 {
-	vec3 directionToLight = -dirLight.direction;
-	float shadow = (1 - CalculateShadow(inFragPosDirSpace, directionToLight, surfaceNormal, dirLight.shadowMap));
-	vec3 light = CalculateLightEffect(directionToLight, surfaceNormal, materialDiffuseColor, materialSpecularColor, dirLight.diffuseColor, dirLight.specularColor);
-	return shadow * light;
+	vec3 directionToLight = normalize(spotLight.position - inFragPos);
+	float thetaCosine = dot(directionToLight, normalize(-spotLight.direction));
+
+	if (thetaCosine > spotLight.cutOffCosine)
+	{
+		return CalculateLightEffect(directionToLight, surfaceNormal, materialDiffuseColor, materialSpecularColor, spotLight.diffuseColor, spotLight.specularColor);
+	}
+
+	return vec3(0);
 }
+
 
 void main()
 {
@@ -177,9 +211,19 @@ void main()
 
 	/* Process and add diffuse and specular colors */
 	if (existsDirLight)
+	{
 		colorSum += CalculateDirLight(dirLight, normal, diffuseColor, specularColor);
-	for (int i = 0; i < lightNumber; i++)
+	}
+
+	for (int i = 0; i < pointLightCount; i++)
+	{
 		colorSum += CalculatePointLight(pointLights[i], normal, diffuseColor, specularColor);
+	}
+
+	for (int i = 0; i < spotLightCount; i++)
+	{
+		colorSum += CalculateSpotLight(spotLights[i], normal, diffuseColor, specularColor);
+	}
 
 	/* Combie fragment RGB color with the smallest of the maps' alpha values for transparency */
 	fragmentColor = vec4(colorSum, min(min(ambientMapColor.a, diffuseMapColor.a), specularMapColor.a));
