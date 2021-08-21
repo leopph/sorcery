@@ -4,5 +4,5 @@ std::string leopph::impl::Shader::s_DirectionalShadowMapFragmentSource{ R"#fileC
 
 void main()
 {
-	gl_FragDepth = gl_FragCoord.z;
+	//gl_FragDepth = gl_FragCoord.z;
 })#fileContents#" };

@@ -75,7 +75,7 @@ float CalculateDirectionalShadow(DirLight dirLight)
 
 	float shadowDepth = texture(dirLight.shadowMap, coords.xy).r;
 
-	return coords.z > shadowDepth ? 1.0 : 0.0;
+	return coords.z > shadowDepth ? 0.0 : 1.0;
 }
 
 vec3 CalculateLightEffect(vec3 direction, vec3 normal, vec3 matDiff, vec3 matSpec, vec3 lightDiff, vec3 lightSpec)

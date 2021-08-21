@@ -15,10 +15,39 @@
 #include <string>
 #include <utility>
 
+static unsigned int quadVAO = 0;
+static unsigned int quadVBO;
+static void renderQuad()
+{
+	if (quadVAO == 0)
+	{
+		float quadVertices[] = {
+			// positions        // texture Coords
+			-1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
+			-1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+			 1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
+			 1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+		};
+		// setup plane VAO
+		glGenVertexArrays(1, &quadVAO);
+		glGenBuffers(1, &quadVBO);
+		glBindVertexArray(quadVAO);
+		glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+	}
+	glBindVertexArray(quadVAO);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	glBindVertexArray(0);
+}
+
 namespace leopph::impl
 {
 	Renderer::Renderer() :
-		m_ObjectShader{ Shader::Type::OBJECT }, m_SkyboxShader{ Shader::Type::SKYBOX }, m_DirectionalShadowMapShader{ Shader::Type::DIRECTIONAL_SHADOW_MAP }
+		m_ObjectShader{ Shader::Type::OBJECT }, m_SkyboxShader{ Shader::Type::SKYBOX }, m_DirectionalShadowMapShader{ Shader::Type::DIRECTIONAL_SHADOW_MAP }, m_DebugShader{ Shader::Type::DEBUG }
 	{
 		glEnable(GL_DEPTH_TEST);
 	}
@@ -42,7 +71,12 @@ namespace leopph::impl
 
 		RenderDirectionalShadowMap();
 		//RenderPointShadowMaps();
-		RenderShadedObjects();
+		m_DebugShader.Use();
+		m_DebugShader.SetUniform("near_plane", Camera::Active()->NearClipPlane());
+		m_DebugShader.SetUniform("far_plane", Camera::Active()->FarClipPlane());
+		InstanceHolder::ShadowMaps().front().BindToTexture(0);
+		renderQuad();// Debug
+		//RenderShadedObjects();
 		RenderSkybox();
 
 		
@@ -66,11 +100,11 @@ namespace leopph::impl
 
 	void Renderer::CalcAndCollectModelAndNormalMatrices()
 	{
-		m_CurrentFrameModelMatrices.clear();
+		m_CurrentFrameMatrices.clear();
 
 		for (const auto& [path, modelReference] : InstanceHolder::Models())
 		{
-			auto& [models, normals] = m_CurrentFrameModelMatrices.try_emplace(path).first->second;
+			auto& [models, normals] = m_CurrentFrameMatrices.try_emplace(path).first->second;
 
 			for (const auto& object : modelReference.Objects())
 			{
@@ -150,7 +184,7 @@ namespace leopph::impl
 
 		m_DirectionalShadowMapShader.SetUniform("lightSpaceMatrix", m_CurrentFrameDirectionalTransformMatrix);
 
-		for (const auto& [modelPath, matrices] : m_CurrentFrameModelMatrices)
+		for (const auto& [modelPath, matrices] : m_CurrentFrameMatrices)
 		{
 			InstanceHolder::GetModelReference(modelPath).DrawDepth(m_DirectionalShadowMapShader, matrices.first);
 		}
@@ -173,7 +207,7 @@ namespace leopph::impl
 		for (auto shadowMapIt{ InstanceHolder::DirectionalLight() == nullptr ? shadowMaps.begin() : ++shadowMaps.begin()};
 			const auto & pointLight : m_CurrentFrameUsedPointLights)
 		{
-			for (const auto& [modelPath, matrices] : m_CurrentFrameModelMatrices)
+			for (const auto& [modelPath, matrices] : m_CurrentFrameMatrices)
 			{
 				/*for (const auto& model{ InstanceHolder::GetModelReference(modelPath) };
 					const auto & [models, normals] : matrices)
@@ -228,7 +262,7 @@ namespace leopph::impl
 		m_ObjectShader.SetUniform("viewProjectionMatrix", m_CurrentFrameViewMatrix * m_CurrentFrameProjectionMatrix);
 		m_ObjectShader.SetUniform("cameraPosition", Camera::Active()->object.Transform().Position());
 
-		for (const auto& [modelPath, matrices] : m_CurrentFrameModelMatrices)
+		for (const auto& [modelPath, matrices] : m_CurrentFrameMatrices)
 		{
 			InstanceHolder::GetModelReference(modelPath).DrawShaded(m_ObjectShader, matrices.first, matrices.second, usedTextureUnits);
 		}
