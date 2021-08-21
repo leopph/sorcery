@@ -75,9 +75,20 @@ float CalculateShadow(vec4 lightSpaceFragPos, vec3 lightDirection, vec3 surfaceN
 	normalizedPos *= 0.5;
 	normalizedPos += 0.5;
 
-	float shadowDepth = texture(dirLight.shadowMap, normalizedPos.xy).r;
+	vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
+	float shadow = 0;
 	float bias = max(MAX_SHADOW_BIAS * (1.0 - dot(surfaceNormal, lightDirection)), MIN_SHADOW_BIAS);
-	return (normalizedPos.z - bias) > shadowDepth ? 1.0 : 0.0;
+
+	for (int i = -1; i <= 1; i++)
+	{
+		for (int j = -1; j <= 1; j++)
+		{
+			float pcfDepth = texture(shadowMap, normalizedPos.xy + vec2(i, j) * texelSize).r;
+			shadow += normalizedPos.z - bias > pcfDepth ? 1.0 : 0.0;
+		}
+	}
+
+	return shadow / 9.0;
 }
 
 vec3 CalculateLightEffect(vec3 direction, vec3 normal, vec3 matDiff, vec3 matSpec, vec3 lightDiff, vec3 lightSpec)
