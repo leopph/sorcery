@@ -7,7 +7,7 @@
 #include <numeric>
 #include <ostream>
 
-#include "leopphmath.h"
+#include "LeopphMath.hpp"
 
 namespace leopph
 {

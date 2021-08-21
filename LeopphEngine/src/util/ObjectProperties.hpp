@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../math/quaternion.h"
+#include "../math/Quaternion.hpp"
 #include "../math/Vector.hpp"
 
 #include <string>

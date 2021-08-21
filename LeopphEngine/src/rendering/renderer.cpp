@@ -5,7 +5,7 @@
 #include "../components/lighting/Light.hpp"
 #include "../components/lighting/PointLight.hpp"
 #include "../instances/InstanceHolder.hpp"
-#include "../math/leopphmath.h"
+#include "../math/LeopphMath.hpp"
 #include "../math/Matrix.hpp"
 #include "../math/Vector.hpp"
 #include "Shader.hpp"

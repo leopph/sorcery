@@ -3,7 +3,7 @@
 #include "../components/Component.hpp"
 #include "../api/leopphapi.h"
 #include "../math/Vector.hpp"
-#include "../math/quaternion.h"
+#include "../math/Quaternion.hpp"
 
 namespace leopph
 {

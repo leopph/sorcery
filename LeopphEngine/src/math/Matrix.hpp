@@ -5,7 +5,7 @@
 #include <concepts>
 
 #include "Vector.hpp"
-#include "leopphmath.h"
+#include "LeopphMath.hpp"
 
 
 namespace leopph

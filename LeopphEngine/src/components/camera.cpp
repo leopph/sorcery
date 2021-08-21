@@ -2,7 +2,7 @@
 
 #include "../hierarchy/Object.hpp"
 #include "../windowing/window.h"
-#include "../math/leopphmath.h"
+#include "../math/LeopphMath.hpp"
 
 #include "../util/logger.h"
 

@@ -1,32 +1,38 @@
-#include "quaternion.h"
+#include "Quaternion.hpp"
 
-#include "leopphmath.h"
+#include "LeopphMath.hpp"
 
 #include "../util/logger.h"
 
+#include <cmath>
 #include <stdexcept>
 #include <string>
 
+
 namespace leopph
 {
-	Quaternion::Quaternion(float w, float x, float y, float z) :
+	/*---------------
+	 MEMBER FUNCTIONS
+	 --------------*/
+
+	Quaternion::Quaternion(const float w, const float x, const float y, const float z) :
 		w{ w }, x{ x }, y{ y }, z{ z }
 	{
-		float length = Magnitude();
-		if (length != 1)
+		if (const float length = Magnitude();
+			length != 1)
 		{
-			w /= length;
-			x /= length;
-			y /= length;
-			z /= length;
+			this->w /= length;
+			this->x /= length;
+			this->y /= length;
+			this->z /= length;
 		}
 	}
 
 
-	Quaternion::Quaternion(const Vector3& axis, float angleDegrees)
+	Quaternion::Quaternion(const Vector3& axis, const float angleDegrees)
 	{
 		Vector3 normalizedAxis = axis.Normalized();
-		float angleHalfRadians = math::ToRadians(angleDegrees) / 2.0f;
+		const float angleHalfRadians = math::ToRadians(angleDegrees) / 2.0f;
 
 		w = math::Cos(angleHalfRadians);
 		x = normalizedAxis[0] * math::Sin(angleHalfRadians);
@@ -35,10 +41,29 @@ namespace leopph
 	}
 
 
+	Vector3 Quaternion::EulerAngles() const
+	{
+		float secondComponent{ 2 * (w * y - z * x) };
+
+		if (math::Abs(secondComponent) > 1)
+		{
+			secondComponent = std::copysign(math::Pi() / 2, secondComponent);
+		}
+		else
+		{
+			secondComponent = math::Asin(secondComponent);
+		}
+
+		return Vector3
+		{
+			math::ToDegrees(math::Atan2(2 * (w * x + y * z), 1 - 2 * (math::Pow(x, 2) + math::Pow(y, 2)))),
+			math::ToDegrees(secondComponent),
+			math::ToDegrees(math::Atan2(2 * (w * z + x * y), 1 - 2 * (math::Pow(y, 2) + math::Pow(z, 2))))
+		};
+	}
 
 
-
-	const float& Quaternion::operator[](std::size_t index) const
+	const float& Quaternion::operator[](const std::size_t index) const
 	{
 		switch (index)
 		{
@@ -57,12 +82,11 @@ namespace leopph
 		}
 	}
 
-	float& Quaternion::operator[](std::size_t index)
+
+	float& Quaternion::operator[](const std::size_t index)
 	{
 		return const_cast<float&>(const_cast<const Quaternion*>(this)->operator[](index));
 	}
-
-
 
 
 	Quaternion::operator Matrix4() const
@@ -77,17 +101,15 @@ namespace leopph
 	}
 
 
-
-
-
 	float Quaternion::Magnitude() const
 	{
 		return math::Sqrt(math::Pow(w, 2) + math::Pow(x, 2) + math::Pow(y, 2) + math::Pow(z, 2));
 	}
 
 
-
-
+	/*-------------------
+	 NON-MEMBER FUNCTIONS
+	 ------------------*/
 
 	Quaternion operator*(const Quaternion& left, const Quaternion& right)
 	{
@@ -100,12 +122,11 @@ namespace leopph
 		};
 	}
 
+
 	Quaternion& operator*=(Quaternion& left, const Quaternion& right)
 	{
 		return left = left * right;
 	}
-
-
 
 
 	std::ostream& operator<<(std::ostream& os, const Quaternion& q)

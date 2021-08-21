@@ -1,11 +1,12 @@
 #pragma once
 
 #include "../api/leopphapi.h"
-#include "Vector.hpp"
 #include "Matrix.hpp"
+#include "Vector.hpp"
 
 #include <cstddef>
 #include <ostream>
+
 
 namespace leopph
 {
@@ -20,11 +21,18 @@ namespace leopph
 	public:
 		/* Initialize the Quaternion directly with its components' values.
 		It is recommended to use different constructors instead. */
-		Quaternion(float w = 1.0f, float x = 0.0f, float y = 0.0f, float z = 0.0f);
+		explicit Quaternion(float w = 1.0f, float x = 0.0f, float y = 0.0f, float z = 0.0f);
 
 		/* Create a Quaternion that rotates "angle" amount around the "axis" axis */
-		Quaternion(const Vector3& axis, float angle);
+		Quaternion(const Vector3& axis, float angleDegrees);
 
+		Quaternion(const Quaternion& other) = default;
+		Quaternion(Quaternion&& other) = default;
+		Quaternion& operator=(const Quaternion& other) = default;
+		Quaternion& operator=(Quaternion&& other) = default;
+		~Quaternion() = default;
+
+		[[nodiscard]] Vector3 EulerAngles() const;
 
 		/* Get the individual elements using an index.
 		* 0 - W component

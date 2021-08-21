@@ -4,7 +4,7 @@
     <ClCompile Include="src\components\Behavior.cpp" />
     <ClCompile Include="src\components\camera.cpp" />
     <ClCompile Include="src\rendering\opengl\gl.cpp" />
-    <ClCompile Include="src\math\leopphmath.cpp" />
+    <ClCompile Include="src\math\LeopphMath.cpp" />
     <ClCompile Include="src\components\lighting\Light.cpp" />
     <ClCompile Include="src\rendering\mesh.cpp" />
     <ClCompile Include="src\rendering\assimpmodel.cpp" />
@@ -18,7 +18,7 @@
     <ClCompile Include="src\input\input.cpp" />
     <ClCompile Include="src\components\lighting\DirLight.cpp" />
     <ClCompile Include="src\instances\InstanceHolder.cpp" />
-    <ClCompile Include="src\math\quaternion.cpp" />
+    <ClCompile Include="src\math\Quaternion.cpp" />
     <ClCompile Include="src\components\Component.cpp" />
     <ClCompile Include="vendor\stb_image\stb_image.cpp" />
     <ClCompile Include="src\components\models\Model.cpp" />
@@ -60,14 +60,14 @@
     <ClInclude Include="src\input\input.h" />
     <ClInclude Include="src\instances\InstanceHolder.hpp" />
     <ClInclude Include="src\api\leopphapi.h" />
-    <ClInclude Include="src\math\leopphmath.h" />
+    <ClInclude Include="src\math\LeopphMath.hpp" />
     <ClInclude Include="src\components\lighting\Light.hpp" />
     <ClInclude Include="src\math\Matrix.hpp" />
     <ClInclude Include="src\rendering\mesh.h" />
     <ClInclude Include="src\rendering\assimpmodel.h" />
     <ClInclude Include="src\hierarchy\Object.hpp" />
     <ClInclude Include="src\components\lighting\PointLight.hpp" />
-    <ClInclude Include="src\math\quaternion.h" />
+    <ClInclude Include="src\math\Quaternion.hpp" />
     <ClInclude Include="src\rendering\Renderer.hpp" />
     <ClInclude Include="src\rendering\Shader.hpp" />
     <ClInclude Include="src\rendering\texture.h" />

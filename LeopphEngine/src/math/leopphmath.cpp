@@ -1,5 +1,8 @@
+#include "LeopphMath.hpp"
+
+#include <algorithm>
 #include <cmath>
-#include "leopphmath.h"
+
 
 namespace leopph::math
 {
@@ -10,60 +13,80 @@ namespace leopph::math
 	}
 
 
-	float ToRadians(float degrees)
+	float ToRadians(const float degrees)
 	{
 		return degrees * Pi() / 180.0f;
 	}
 
-	float ToDegrees(float radians)
+
+	float ToDegrees(const float radians)
 	{
 		return radians * 180.0f / Pi();
 	}
 
 
-	float Sin(float radians)
+	float Sin(const float radians)
 	{
 		return std::sinf(radians);
 	}
 
-	float Asin(float radians)
+
+	float Asin(const float radians)
 	{
 		return std::asinf(radians);
 	}
 
 
-	float Cos(float radians)
+	float Cos(const float radians)
 	{
 		return std::cosf(radians);
 	}
 
-	float Acos(float radians)
+
+	float Acos(const float radians)
 	{
 		return std::acosf(radians);
 	}
 
 
-	float Tan(float radians)
+	float Tan(const float radians)
 	{
 		return std::tanf(radians);
 	}
 
-	float Atan(float radians)
+
+	float Atan(const float radians)
 	{
 		return std::atanf(radians);
 	}
 
 
+	float Atan2(const float y, const float x)
+	{
+		return std::atan2(y, x);
+	}
 
-	float Pow(float base, float exp)
+
+	float Pow(const float base, const float exp)
 	{
 		return std::powf(base, exp);
 	}
 
 
-
-	float Sqrt(float value)
+	float Sqrt(const float value)
 	{
 		return std::sqrtf(value);
+	}
+
+
+	float Clamp(const float value, const float min, const float max)
+	{
+		return std::clamp(value, min, max);
+	}
+
+
+	float Abs(const float value)
+	{
+		return std::abs(value);
 	}
 }

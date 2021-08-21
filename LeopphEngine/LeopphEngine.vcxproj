@@ -162,7 +162,7 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClInclude Include="src\input\input.h" />
     <ClInclude Include="src\instances\InstanceHolder.hpp" />
     <ClInclude Include="src\api\leopphapi.h" />
-    <ClInclude Include="src\math\leopphmath.h" />
+    <ClInclude Include="src\math\LeopphMath.hpp" />
     <ClInclude Include="src\components\lighting\Light.hpp" />
     <ClInclude Include="src\math\Matrix.hpp" />
     <ClInclude Include="src\rendering\mesh.h" />
@@ -170,7 +170,7 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClInclude Include="src\components\models\Model.hpp" />
     <ClInclude Include="src\hierarchy\Object.hpp" />
     <ClInclude Include="src\components\lighting\PointLight.hpp" />
-    <ClInclude Include="src\math\quaternion.h" />
+    <ClInclude Include="src\math\Quaternion.hpp" />
     <ClInclude Include="src\rendering\Renderer.hpp" />
     <ClInclude Include="src\config\settings.h" />
     <ClInclude Include="src\rendering\Shader.hpp" />
@@ -228,14 +228,14 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClCompile Include="src\windowing\window.cpp" />
     <ClCompile Include="src\input\input.cpp" />
     <ClCompile Include="src\instances\InstanceHolder.cpp" />
-    <ClCompile Include="src\math\leopphmath.cpp" />
+    <ClCompile Include="src\math\LeopphMath.cpp" />
     <ClCompile Include="src\components\lighting\Light.cpp" />
     <ClCompile Include="src\rendering\mesh.cpp" />
     <ClCompile Include="src\rendering\assimpmodel.cpp" />
     <ClCompile Include="src\components\models\Model.cpp" />
     <ClCompile Include="src\hierarchy\Object.cpp" />
     <ClCompile Include="src\components\lighting\PointLight.cpp" />
-    <ClCompile Include="src\math\quaternion.cpp" />
+    <ClCompile Include="src\math\Quaternion.cpp" />
     <ClCompile Include="src\rendering\Renderer.cpp" />
     <ClCompile Include="src\rendering\Shader.cpp" />
     <ClCompile Include="src\rendering\texture.cpp" />
