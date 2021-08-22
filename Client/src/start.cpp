@@ -42,7 +42,7 @@ void leopph::AppStart()
 	const auto cubeObj = new Object;
 	cubeObj->Transform().Position(Vector3{ 0, 0, 5 });
 	new Model{ *cubeObj, "models/cube/cube.dae" };
-	new Rotate{ *cubeObj };
+	new Rotate{ *cubeObj, Vector3::Up(), 30 };
 
 	const auto dirLightObj = new Object{};
 	dirLightObj->Transform().RotateGlobal(Quaternion{ Vector3::Up(), 315 });
