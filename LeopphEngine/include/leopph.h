@@ -13,7 +13,7 @@ See individual headers for more information.
 #include "../src/components/lighting/PointLight.hpp"
 #include "../src/components/lighting/SpotLight.hpp"
 #include "../src/components/models/Model.hpp"
-#include "../src/config/settings.h"
+#include "../src/config/Settings.hpp"
 #include "../src/hierarchy/Object.hpp"
 #include "../src/input/input.h"
 #include "../src/math/LeopphMath.hpp"

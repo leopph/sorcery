@@ -40,16 +40,11 @@ namespace leopph::impl
 		Shader m_ObjectShader;
 		Shader m_SkyboxShader;
 		Shader m_DirectionalShadowMapShader;
-
-		constexpr static std::size_t MAX_POINT_LIGHTS = 64;
+		
 		std::vector<const PointLight*> m_CurrentFrameUsedPointLights;
-
-		constexpr static std::size_t MAX_SPOT_LIGHTS = 64;
 		std::vector<const SpotLight*> m_CurrentFrameUsedSpotLights;
 
 		std::unordered_map<std::filesystem::path, std::pair<std::vector<Matrix4>, std::vector<Matrix4>>, PathHash> m_CurrentFrameMatrices;
-
-		inline const static Vector2 SHADOW_MAP_RESOLUTION{ 1024, 1024 };
 
 		Matrix4 m_CurrentFrameViewMatrix;
 		Matrix4 m_CurrentFrameProjectionMatrix;

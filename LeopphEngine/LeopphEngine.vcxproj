@@ -172,7 +172,7 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClInclude Include="src\components\lighting\PointLight.hpp" />
     <ClInclude Include="src\math\Quaternion.hpp" />
     <ClInclude Include="src\rendering\Renderer.hpp" />
-    <ClInclude Include="src\config\settings.h" />
+    <ClInclude Include="src\config\Settings.hpp" />
     <ClInclude Include="src\rendering\Shader.hpp" />
     <ClInclude Include="src\rendering\texture.h" />
     <ClInclude Include="src\timing\leopphtime.h" />
@@ -200,7 +200,7 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClCompile Include="src\components\lighting\AttenuatedLight.cpp" />
     <ClCompile Include="src\components\lighting\DirLight.cpp" />
     <ClCompile Include="src\components\lighting\SpotLight.cpp" />
-    <ClCompile Include="src\config\settings.cpp" />
+    <ClCompile Include="src\config\Settings.cpp" />
     <ClCompile Include="src\entry\launch.cpp" />
     <ClCompile Include="src\components\Transform.cpp" />
     <ClCompile Include="src\input\inputhandler.cpp" />

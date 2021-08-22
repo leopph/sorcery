@@ -1,6 +1,6 @@
 #include "Shader.hpp"
 
-#include "../config/settings.h"
+#include "../config/Settings.hpp"
 
 #include "../util/logger.h"
 

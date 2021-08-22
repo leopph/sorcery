@@ -4,6 +4,7 @@
 #include "../components/lighting/DirLight.hpp"
 #include "../components/lighting/Light.hpp"
 #include "../components/lighting/PointLight.hpp"
+#include "../config/Settings.hpp"
 #include "../instances/InstanceHolder.hpp"
 #include "../math/LeopphMath.hpp"
 #include "../math/Matrix.hpp"
@@ -118,7 +119,7 @@ namespace leopph::impl
 		/* We collect the first MAX_POINT_LIGHTS number of them */
 		for (std::size_t count = 0; const auto& pointLight : allPointsLightsOrdered)
 		{
-			if (count == MAX_POINT_LIGHTS)
+			if (count == Settings::MaxPointLightCount())
 			{
 				break;
 			}
@@ -142,7 +143,7 @@ namespace leopph::impl
 		m_CurrentFrameUsedSpotLights.clear();
 
 		/* We collect at most MAX_SPOT_LIGHTS number of them */
-		const std::size_t spotLightCount{ std::min(allSpotLightsOrdered.size(), MAX_SPOT_LIGHTS) };
+		const std::size_t spotLightCount{ std::min(allSpotLightsOrdered.size(), Settings::MaxSpotLightCount()) };
 		std::copy_n(allSpotLightsOrdered.begin(), spotLightCount, std::back_inserter(m_CurrentFrameUsedSpotLights));
 	}
 
@@ -162,7 +163,7 @@ namespace leopph::impl
 		/* If we don't have a shadow map, we create one */
 		if (shadowMaps.empty())
 		{
-			InstanceHolder::CreateShadowMap(SHADOW_MAP_RESOLUTION);
+			InstanceHolder::CreateShadowMap(Settings::DirectionalLightShadowMapResolution());
 		}
 
 		const auto view{ Matrix4::LookAt(-dirLight->Direction(), Vector3{}, Vector3::Up()) };
@@ -190,7 +191,7 @@ namespace leopph::impl
 		/* If we lack the necessary number of shadow maps, we create new ones */
 		while (m_CurrentFrameUsedPointLights.size() > shadowMaps.size())
 		{
-			InstanceHolder::CreateShadowMap(SHADOW_MAP_RESOLUTION);
+			InstanceHolder::CreateShadowMap(Settings::PointLightShadowMapResolution());
 		}
 
 		/* Iterate over the lights and use a different shadow map for each */
@@ -199,11 +200,7 @@ namespace leopph::impl
 		{
 			for (const auto& [modelPath, matrices] : m_CurrentFrameMatrices)
 			{
-				/*for (const auto& model{ InstanceHolder::GetModelReference(modelPath) };
-					const auto & [models, normals] : matrices)
-				{
-
-				}*/
+				InstanceHolder::GetModelReference(modelPath).DrawDepth(matrices.first);
 			}
 
 			++shadowMapIt;

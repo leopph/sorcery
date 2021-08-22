@@ -1,5 +1,5 @@
 #include "window.h"
-#include "../config/settings.h"
+#include "../config/Settings.hpp"
 #include "glwindow.h"
 #include "../components/Camera.hpp"
 
