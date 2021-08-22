@@ -5,7 +5,7 @@
 CameraController::CameraController(leopph::Object& owner) :
 	Behavior{ owner }, m_Speed{ 2.0f }, m_Sens{ 0.1f }, lastX{}, lastY{}
 {
-	//std::tie(lastX, lastY) = leopph::Input::GetMousePosition();
+	std::tie(lastX, lastY) = leopph::Input::GetMousePosition();
 }
 
 void CameraController::OnFrameUpdate()
@@ -42,7 +42,14 @@ void CameraController::OnFrameUpdate()
 	const float diffX = posX - lastX;
 	const float diffY = posY - lastY;
 
-	camTransform.RotateGlobal(leopph::Quaternion{ leopph::Vector3::Up(), diffX * m_Sens });
+
+	short coefficient = 1;
+	if (leopph::Vector3::Dot(camTransform.Up(), leopph::Vector3::Up()) < 0)
+	{
+		coefficient = -1;
+	}
+
+	camTransform.RotateGlobal(leopph::Quaternion{ coefficient * leopph::Vector3::Up(), diffX * m_Sens });
 	camTransform.RotateLocal(leopph::Quaternion{ leopph::Vector3::Right(), diffY * m_Sens });
 
 	lastX = posX;
