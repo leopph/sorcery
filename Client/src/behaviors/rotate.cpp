@@ -1,10 +1,19 @@
 #include "Rotate.hpp"
 
-Rotate::Rotate(leopph::Object& owner) :
-	Behavior{ owner }, m_Axis{ 0, 1, 0 }, m_Angle{ 10.f }
+Rotate::Rotate(leopph::Object& owner, const leopph::Vector3& axis, const float anglePerSec, const bool rotateLocally) :
+	Behavior{ owner }, m_Axis{ axis }, m_Angle{ anglePerSec }, m_RotateLocally{ rotateLocally }
 {}
 
 void Rotate::OnFrameUpdate()
 {
-	object.Transform().RotateGlobal(leopph::Quaternion{ m_Axis, m_Angle * leopph::Time::DeltaTime() });
+	const leopph::Quaternion rotation{ m_Axis, m_Angle * leopph::Time::DeltaTime() };
+
+	if (m_RotateLocally)
+	{
+		object.Transform().RotateLocal(rotation);
+	}
+	else
+	{
+		object.Transform().RotateGlobal(rotation);
+	}
 }
