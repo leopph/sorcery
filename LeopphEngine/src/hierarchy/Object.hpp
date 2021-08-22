@@ -2,7 +2,7 @@
 
 #include "../api/leopphapi.h"
 #include "../components/Component.hpp"
-#include "Transform.hpp"
+#include "../components/Transform.hpp"
 #include "../util/ObjectProperties.hpp"
 
 #include <concepts>

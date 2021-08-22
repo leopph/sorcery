@@ -1,9 +1,9 @@
 #pragma once
 
-#include "../components/Component.hpp"
 #include "../api/leopphapi.h"
 #include "../math/Vector.hpp"
 #include "../math/Quaternion.hpp"
+#include "Component.hpp"
 
 namespace leopph
 {

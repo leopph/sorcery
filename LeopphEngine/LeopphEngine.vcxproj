@@ -147,7 +147,7 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClInclude Include="src\entry\appstart.h" />
     <ClInclude Include="src\entry\entry.h" />
     <ClInclude Include="src\entry\launch.h" />
-    <ClInclude Include="src\hierarchy\Transform.hpp" />
+    <ClInclude Include="src\components\Transform.hpp" />
     <ClInclude Include="src\input\cursorstate.h" />
     <ClInclude Include="src\input\inputhandler.h" />
     <ClInclude Include="src\input\keycodes.h" />
@@ -202,7 +202,7 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClCompile Include="src\components\lighting\SpotLight.cpp" />
     <ClCompile Include="src\config\settings.cpp" />
     <ClCompile Include="src\entry\launch.cpp" />
-    <ClCompile Include="src\hierarchy\Transform.cpp" />
+    <ClCompile Include="src\components\Transform.cpp" />
     <ClCompile Include="src\input\inputhandler.cpp" />
     <ClCompile Include="src\misc\color.cpp" />
     <ClCompile Include="src\rendering\material.cpp" />

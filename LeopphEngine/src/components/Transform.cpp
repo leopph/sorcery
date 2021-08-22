@@ -1,6 +1,6 @@
 #include "Transform.hpp"
 
-#include "Object.hpp"
+#include "../hierarchy/Object.hpp"
 
 #include "../util/logger.h"
 
