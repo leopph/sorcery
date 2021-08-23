@@ -14,7 +14,7 @@
     <ClCompile Include="src\timing\leopphtime.cpp" />
     <ClCompile Include="src\windowing\glwindow.cpp" />
     <ClCompile Include="src\components\lighting\PointLight.cpp" />
-    <ClCompile Include="src\rendering\Renderer.cpp" />
+    <ClCompile Include="src\rendering\ForwardRenderer.cpp" />
     <ClCompile Include="src\input\input.cpp" />
     <ClCompile Include="src\components\lighting\DirLight.cpp" />
     <ClCompile Include="src\instances\InstanceHolder.cpp" />
@@ -53,6 +53,11 @@
     <ClCompile Include="src\rendering\buffers\Buffer.cpp" />
     <ClCompile Include="src\rendering\buffers\Framebuffer.cpp" />
     <ClCompile Include="src\rendering\buffers\RefCountedBuffer.cpp" />
+    <ClCompile Include="src\util\less\LightCloserToCamera.cpp" />
+    <ClCompile Include="src\rendering\DeferredRenderer.cpp" />
+    <ClCompile Include="src\rendering\buffers\GeometryBuffer.cpp" />
+    <ClCompile Include="src\shaders\stringified\deferred\GPassObjectFragment.cpp" />
+    <ClCompile Include="src\shaders\stringified\deferred\GPassObjectVertex.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\Behavior.hpp" />
@@ -71,7 +76,7 @@
     <ClInclude Include="src\hierarchy\Object.hpp" />
     <ClInclude Include="src\components\lighting\PointLight.hpp" />
     <ClInclude Include="src\math\Quaternion.hpp" />
-    <ClInclude Include="src\rendering\Renderer.hpp" />
+    <ClInclude Include="src\rendering\ForwardRenderer.hpp" />
     <ClInclude Include="src\rendering\Shader.hpp" />
     <ClInclude Include="src\rendering\texture.h" />
     <ClInclude Include="src\timing\leopphtime.h" />
@@ -113,6 +118,9 @@
     <ClInclude Include="src\rendering\buffers\Buffer.hpp" />
     <ClInclude Include="src\rendering\buffers\Framebuffer.hpp" />
     <ClInclude Include="src\rendering\buffers\RefCountedBuffer.hpp" />
+    <ClInclude Include="src\rendering\DeferredRenderer.hpp" />
+    <ClInclude Include="src\util\less\LightCloserToCamera.hpp" />
+    <ClInclude Include="src\rendering\buffers\GeometryBuffer.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\shaders\ObjectFragment.frag" />
@@ -122,5 +130,7 @@
     <None Include="src\cpp.hint" />
     <None Include="src\shaders\DirectionalShadowMapVertex.vert" />
     <None Include="src\shaders\DirectionalShadowMapFragment.frag" />
+    <None Include="src\shaders\deferred\GPassObject.vert" />
+    <None Include="src\shaders\deferred\GPassObject.frag" />
   </ItemGroup>
 </Project>

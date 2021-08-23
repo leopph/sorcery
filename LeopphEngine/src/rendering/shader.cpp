@@ -36,13 +36,19 @@ namespace leopph::impl
 			fragmentSource = s_DirectionalShadowMapFragmentSource.c_str();
 			Logger::Instance().Debug("Constructing directional shadow map shader.");
 			break;
+
+		case Type::GPASS_OBJECT:
+			vertexSource = s_GPassObjectVertexSource.c_str();
+			fragmentSource = s_GPassObjectFragmentSource.c_str();
+			Logger::Instance().Debug("Constructing geometry pass object shader.");
+			break;
 		}
 
 		if (Settings::IsCachingShaders())
 		{
 			Logger::Instance().Debug("Looking for shader caches.");
 
-			std::filesystem::path fullPath{ Settings::ShaderCacheLocation() / m_ProgramFileName };
+			const std::filesystem::path fullPath{ Settings::ShaderCacheLocation() / m_ProgramFileName };
 
 			if (std::filesystem::exists(fullPath))
 			{
@@ -76,8 +82,8 @@ namespace leopph::impl
 
 	void Shader::Compile(const char* vertexSource, const char* fragmentSource)
 	{
-		unsigned vertexShaderID{ glCreateShader(GL_VERTEX_SHADER) };
-		unsigned fragmentShaderID{ glCreateShader(GL_FRAGMENT_SHADER) };
+		const unsigned vertexShaderID{ glCreateShader(GL_VERTEX_SHADER) };
+		const unsigned fragmentShaderID{ glCreateShader(GL_FRAGMENT_SHADER) };
 
 		glShaderSource(vertexShaderID, 1, &vertexSource, nullptr);
 		glCompileShader(vertexShaderID);
@@ -178,6 +184,9 @@ namespace leopph::impl
 
 		case Type::DIRECTIONAL_SHADOW_MAP:
 			return "directionalShadowMapShader";
+
+		case Type::GPASS_OBJECT:
+			return "gpassObjectShader";
 		}
 		
 		return "";

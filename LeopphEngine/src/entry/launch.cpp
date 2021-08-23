@@ -8,7 +8,7 @@
 
 #include "../windowing/window.h"
 #include "../rendering/opengl/gl.h"
-#include "../rendering/Renderer.hpp"
+#include "../rendering/ForwardRenderer.hpp"
 #include "../timing/timer.h"
 #include "../input/inputhandler.h"
 #include "../instances/InstanceHolder.hpp"
@@ -39,7 +39,7 @@ namespace leopph::impl
 		Logger::Instance().Debug("App initialized.");
 
 		{
-			Renderer renderer;
+			ForwardRenderer renderer;
 			Logger::Instance().Debug("Renderer initialized");
 
 			Timer::Init();

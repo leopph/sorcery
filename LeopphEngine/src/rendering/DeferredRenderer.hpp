@@ -1,46 +1,41 @@
 #pragma once
 
-#include "Shader.hpp"
-
 #include "../components/lighting/PointLight.hpp"
 #include "../components/lighting/SpotLight.hpp"
 #include "../math/Matrix.hpp"
+#include "buffers/GeometryBuffer.hpp"
+#include "Shader.hpp"
 
 #include "../util/hash/PathHash.hpp"
 
-#include <cstddef>
 #include <filesystem>
 #include <unordered_map>
-#include <utility>
 #include <vector>
 
 
 namespace leopph::impl
 {
-	class Renderer
+	class DeferredRenderer
 	{
 	public:
-		Renderer();
+		DeferredRenderer();
+
+		DeferredRenderer(const DeferredRenderer& other) = default;
+		DeferredRenderer(DeferredRenderer&& other) = default;
+
+		DeferredRenderer& operator=(const DeferredRenderer& other) = default;
+		DeferredRenderer& operator=(DeferredRenderer&& other) = default;
+
+		~DeferredRenderer() = default;
+
 		void Render();
 
 	private:
-		struct LightLess
-		{
-			bool operator()(const Light* left, const Light* right) const;
-		};
-
 		void CalcAndCollectModelAndNormalMatrices();
 		void CollectPointLights();
 		void CollectSpotLights();
-		void RenderDirectionalShadowMap();
-		void RenderPointShadowMaps();
-		void RenderShadedObjects();
-		void RenderSkybox() const;
+		void DrawGeometry();
 
-		Shader m_ObjectShader;
-		Shader m_SkyboxShader;
-		Shader m_DirectionalShadowMapShader;
-		
 		std::vector<const PointLight*> m_CurrentFrameUsedPointLights;
 		std::vector<const SpotLight*> m_CurrentFrameUsedSpotLights;
 
@@ -48,6 +43,9 @@ namespace leopph::impl
 
 		Matrix4 m_CurrentFrameViewMatrix;
 		Matrix4 m_CurrentFrameProjectionMatrix;
-		Matrix4 m_CurrentFrameDirectionalTransformMatrix;
+
+		GeometryBuffer m_GBuffer;
+
+		Shader m_GPassObjectShader;
 	};
 }

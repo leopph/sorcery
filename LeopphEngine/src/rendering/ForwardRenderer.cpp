@@ -1,4 +1,4 @@
-#include "Renderer.hpp"
+#include "ForwardRenderer.hpp"
 
 #include "../components/Camera.hpp"
 #include "../components/lighting/DirLight.hpp"
@@ -22,14 +22,14 @@
 
 namespace leopph::impl
 {
-	Renderer::Renderer() :
+	ForwardRenderer::ForwardRenderer() :
 		m_ObjectShader{ Shader::Type::OBJECT }, m_SkyboxShader{ Shader::Type::SKYBOX }, m_DirectionalShadowMapShader{ Shader::Type::DIRECTIONAL_SHADOW_MAP }
 	{
 		glEnable(GL_DEPTH_TEST);
 	}
 
 
-	void Renderer::Render()
+	void ForwardRenderer::Render()
 	{
 		/* We don't render if there is no camera to use */
 		if (Camera::Active() == nullptr)
@@ -55,7 +55,7 @@ namespace leopph::impl
 	}
 
 
-	bool Renderer::LightLess::operator()(const Light* left, const Light* right) const
+	bool ForwardRenderer::LightLess::operator()(const Light* left, const Light* right) const
 	{
 		const auto& camPosition{ Camera::Active()->object.Transform().Position() };
 		const auto& leftDistance{ Vector3::Distance(camPosition, left->object.Transform().Position()) };
@@ -70,7 +70,7 @@ namespace leopph::impl
 	}
 
 
-	void Renderer::CalcAndCollectModelAndNormalMatrices()
+	void ForwardRenderer::CalcAndCollectModelAndNormalMatrices()
 	{
 		m_CurrentFrameMatrices.clear();
 
@@ -101,7 +101,7 @@ namespace leopph::impl
 	}
 
 
-	void Renderer::CollectPointLights()
+	void ForwardRenderer::CollectPointLights()
 	{
 		/* This set stores lights in an ascending order based on distance from camera */
 		static std::set<const PointLight*, LightLess> allPointsLightsOrdered;
@@ -130,7 +130,7 @@ namespace leopph::impl
 	}
 
 
-	void Renderer::CollectSpotLights()
+	void ForwardRenderer::CollectSpotLights()
 	{
 		/* This set stores lights in an ascending order based on distance from camera */
 		static std::set<const SpotLight*, LightLess> allSpotLightsOrdered;
@@ -149,7 +149,7 @@ namespace leopph::impl
 
 
 
-	void Renderer::RenderDirectionalShadowMap()
+	void ForwardRenderer::RenderDirectionalShadowMap()
 	{
 		const auto& dirLight = InstanceHolder::DirectionalLight();
 
@@ -184,7 +184,7 @@ namespace leopph::impl
 	}
 
 
-	void Renderer::RenderPointShadowMaps()
+	void ForwardRenderer::RenderPointShadowMaps()
 	{
 		const auto& shadowMaps{ InstanceHolder::ShadowMaps() };
 
@@ -208,7 +208,7 @@ namespace leopph::impl
 	}
 
 
-	void Renderer::RenderShadedObjects()
+	void ForwardRenderer::RenderShadedObjects()
 	{
 		m_ObjectShader.Use();
 
@@ -277,7 +277,7 @@ namespace leopph::impl
 	}
 
 
-	void Renderer::RenderSkybox() const
+	void ForwardRenderer::RenderSkybox() const
 	{
 		if (const auto& skybox{ Camera::Active()->Background().skybox }; skybox != nullptr)
 		{

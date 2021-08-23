@@ -83,16 +83,18 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
 $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(ProjectDir)src\shaders\skyboxvertex.vert" "$(ProjectDir)src\shaders\stringified\skyboxvertex.cpp" "leopph::impl::Shader::s_SkyboxVertexSource" "$(ProjectDir)src/rendering/Shader.hpp"
 $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(ProjectDir)src\shaders\skyboxfragment.frag" "$(ProjectDir)src\shaders\stringified\skyboxfragment.cpp" "leopph::impl::Shader::s_SkyboxFragmentSource" "$(ProjectDir)src/rendering/Shader.hpp"
 $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(ProjectDir)src\shaders\DirectionalShadowMapVertex.vert" "$(ProjectDir)src\shaders\stringified\DirectionalShadowMapVertex.cpp" "leopph::impl::Shader::s_DirectionalShadowMapVertexSource" "$(ProjectDir)src/rendering/Shader.hpp"
-$(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(ProjectDir)src\shaders\DirectionalShadowMapFragment.frag" "$(ProjectDir)src\shaders\stringified\DirectionalShadowMapFragment.cpp" "leopph::impl::Shader::s_DirectionalShadowMapFragmentSource" "$(ProjectDir)src/rendering/Shader.hpp"</Command>
+$(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(ProjectDir)src\shaders\DirectionalShadowMapFragment.frag" "$(ProjectDir)src\shaders\stringified\DirectionalShadowMapFragment.cpp" "leopph::impl::Shader::s_DirectionalShadowMapFragmentSource" "$(ProjectDir)src/rendering/Shader.hpp"
+$(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(ProjectDir)src\shaders\deferred\GPassObject.vert" "$(ProjectDir)src\shaders\stringified\deferred\GPassObjectVertex.cpp" "leopph::impl::Shader::s_GPassObjectVertexSource" "$(ProjectDir)src/rendering/Shader.hpp"
+$(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(ProjectDir)src\shaders\deferred\GPassObject.frag" "$(ProjectDir)src\shaders\stringified\deferred\GPassObjectFragment.cpp" "leopph::impl::Shader::s_GPassObjectFragmentSource" "$(ProjectDir)src/rendering/Shader.hpp"</Command>
     </CustomBuildStep>
     <CustomBuildStep>
       <Message>Creating shader sources.</Message>
     </CustomBuildStep>
     <CustomBuildStep>
-      <Outputs>$(ProjectDir)src\shaders\stringified\ObjectVertex.cpp;$(ProjectDir)src\shaders\stringified\ObjectFragment.cpp;$(ProjectDir)src\shaders\stringified\skyboxvertex.cpp;$(ProjectDir)src\shaders\stringified\skyboxfragment.cpp;$(ProjectDir)src\shaders\stringified\DirectionalShadowMapVertex.cpp;$(ProjectDir)src\shaders\stringified\DirectionalShadowMapFragment.cpp</Outputs>
+      <Outputs>$(ProjectDir)src\shaders\stringified\ObjectVertex.cpp;$(ProjectDir)src\shaders\stringified\ObjectFragment.cpp;$(ProjectDir)src\shaders\stringified\skyboxvertex.cpp;$(ProjectDir)src\shaders\stringified\skyboxfragment.cpp;$(ProjectDir)src\shaders\stringified\DirectionalShadowMapVertex.cpp;$(ProjectDir)src\shaders\stringified\DirectionalShadowMapFragment.cpp;$(ProjectDir)src\shaders\stringified\GPassObjectVertex.cpp;$(ProjectDir)src\shaders\stringified\GPassObjectFragment.cpp</Outputs>
     </CustomBuildStep>
     <CustomBuildStep>
-      <Inputs>$(ProjectDir)src\shaders\ObjectVertex.vert;$(ProjectDir)src\shaders\ObjectFragment.frag;$(ProjectDir)src\shaders\skyboxvertex.vert;$(ProjectDir)src\shaders\skyboxfragment.frag;$(ProjectDir)src\shaders\DirectionalShadowMapVertex.vert;$(ProjectDir)src\shaders\DirectionalShadowMapFragment.frag</Inputs>
+      <Inputs>$(ProjectDir)src\shaders\ObjectVertex.vert;$(ProjectDir)src\shaders\ObjectFragment.frag;$(ProjectDir)src\shaders\skyboxvertex.vert;$(ProjectDir)src\shaders\skyboxfragment.frag;$(ProjectDir)src\shaders\DirectionalShadowMapVertex.vert;$(ProjectDir)src\shaders\DirectionalShadowMapFragment.frag;$(ProjectDir)src\shaders\deferred\GPassObject.vert;$(ProjectDir)src\shaders\deferred\GPassObject.frag</Inputs>
     </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -123,16 +125,18 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
 $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(ProjectDir)src\shaders\skyboxvertex.vert" "$(ProjectDir)src\shaders\stringified\skyboxvertex.cpp" "leopph::impl::Shader::s_SkyboxVertexSource" "$(ProjectDir)src/rendering/Shader.hpp"
 $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(ProjectDir)src\shaders\skyboxfragment.frag" "$(ProjectDir)src\shaders\stringified\skyboxfragment.cpp" "leopph::impl::Shader::s_SkyboxFragmentSource" "$(ProjectDir)src/rendering/Shader.hpp"
 $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(ProjectDir)src\shaders\DirectionalShadowMapVertex.vert" "$(ProjectDir)src\shaders\stringified\DirectionalShadowMapVertex.cpp" "leopph::impl::Shader::s_DirectionalShadowMapVertexSource" "$(ProjectDir)src/rendering/Shader.hpp"
-$(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(ProjectDir)src\shaders\DirectionalShadowMapFragment.frag" "$(ProjectDir)src\shaders\stringified\DirectionalShadowMapFragment.cpp" "leopph::impl::Shader::s_DirectionalShadowMapFragmentSource" "$(ProjectDir)src/rendering/Shader.hpp"</Command>
+$(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(ProjectDir)src\shaders\DirectionalShadowMapFragment.frag" "$(ProjectDir)src\shaders\stringified\DirectionalShadowMapFragment.cpp" "leopph::impl::Shader::s_DirectionalShadowMapFragmentSource" "$(ProjectDir)src/rendering/Shader.hpp"
+$(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(ProjectDir)src\shaders\deferred\GPassObject.vert" "$(ProjectDir)src\shaders\stringified\deferred\GPassObjectVertex.cpp" "leopph::impl::Shader::s_GPassObjectVertexSource" "$(ProjectDir)src/rendering/Shader.hpp"
+$(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(ProjectDir)src\shaders\deferred\GPassObject.frag" "$(ProjectDir)src\shaders\stringified\deferred\GPassObjectFragment.cpp" "leopph::impl::Shader::s_GPassObjectFragmentSource" "$(ProjectDir)src/rendering/Shader.hpp"</Command>
     </CustomBuildStep>
     <CustomBuildStep>
       <Message>Creating shader sources.</Message>
     </CustomBuildStep>
     <CustomBuildStep>
-      <Outputs>$(ProjectDir)src\shaders\stringified\ObjectVertex.cpp;$(ProjectDir)src\shaders\stringified\ObjectFragment.cpp;$(ProjectDir)src\shaders\stringified\skyboxvertex.cpp;$(ProjectDir)src\shaders\stringified\skyboxfragment.cpp;$(ProjectDir)src\shaders\stringified\DirectionalShadowMapVertex.cpp;$(ProjectDir)src\shaders\stringified\DirectionalShadowMapFragment.cpp</Outputs>
+      <Outputs>$(ProjectDir)src\shaders\stringified\ObjectVertex.cpp;$(ProjectDir)src\shaders\stringified\ObjectFragment.cpp;$(ProjectDir)src\shaders\stringified\skyboxvertex.cpp;$(ProjectDir)src\shaders\stringified\skyboxfragment.cpp;$(ProjectDir)src\shaders\stringified\DirectionalShadowMapVertex.cpp;$(ProjectDir)src\shaders\stringified\DirectionalShadowMapFragment.cpp;$(ProjectDir)src\shaders\stringified\GPassObjectVertex.cpp;$(ProjectDir)src\shaders\stringified\GPassObjectFragment.cpp</Outputs>
     </CustomBuildStep>
     <CustomBuildStep>
-      <Inputs>$(ProjectDir)src\shaders\ObjectVertex.vert;$(ProjectDir)src\shaders\ObjectFragment.frag;$(ProjectDir)src\shaders\skyboxvertex.vert;$(ProjectDir)src\shaders\skyboxfragment.frag;$(ProjectDir)src\shaders\DirectionalShadowMapVertex.vert;$(ProjectDir)src\shaders\DirectionalShadowMapFragment.frag</Inputs>
+      <Inputs>$(ProjectDir)src\shaders\ObjectVertex.vert;$(ProjectDir)src\shaders\ObjectFragment.frag;$(ProjectDir)src\shaders\skyboxvertex.vert;$(ProjectDir)src\shaders\skyboxfragment.frag;$(ProjectDir)src\shaders\DirectionalShadowMapVertex.vert;$(ProjectDir)src\shaders\DirectionalShadowMapFragment.frag;$(ProjectDir)src\shaders\deferred\GPassObject.vert;$(ProjectDir)src\shaders\deferred\GPassObject.frag</Inputs>
     </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -155,11 +159,14 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClInclude Include="src\misc\color.h" />
     <ClInclude Include="src\rendering\buffers\Buffer.hpp" />
     <ClInclude Include="src\rendering\buffers\Framebuffer.hpp" />
+    <ClInclude Include="src\rendering\buffers\GeometryBuffer.hpp" />
+    <ClInclude Include="src\rendering\DeferredRenderer.hpp" />
     <ClInclude Include="src\rendering\material.h" />
     <ClInclude Include="src\rendering\buffers\RefCountedBuffer.hpp" />
     <ClInclude Include="src\rendering\ShadowMap.hpp" />
     <ClInclude Include="src\timing\timer.h" />
     <ClInclude Include="src\misc\camerabackground.h" />
+    <ClInclude Include="src\util\less\LightCloserToCamera.hpp" />
     <ClInclude Include="src\util\logger.h" />
     <ClInclude Include="src\rendering\opengl\gl.h" />
     <ClInclude Include="src\input\input.h" />
@@ -174,7 +181,7 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClInclude Include="src\hierarchy\Object.hpp" />
     <ClInclude Include="src\components\lighting\PointLight.hpp" />
     <ClInclude Include="src\math\Quaternion.hpp" />
-    <ClInclude Include="src\rendering\Renderer.hpp" />
+    <ClInclude Include="src\rendering\ForwardRenderer.hpp" />
     <ClInclude Include="src\config\Settings.hpp" />
     <ClInclude Include="src\rendering\Shader.hpp" />
     <ClInclude Include="src\rendering\texture.h" />
@@ -210,10 +217,14 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClCompile Include="src\misc\color.cpp" />
     <ClCompile Include="src\rendering\buffers\Buffer.cpp" />
     <ClCompile Include="src\rendering\buffers\Framebuffer.cpp" />
+    <ClCompile Include="src\rendering\buffers\GeometryBuffer.cpp" />
+    <ClCompile Include="src\rendering\DeferredRenderer.cpp" />
     <ClCompile Include="src\rendering\material.cpp" />
     <ClCompile Include="src\rendering\opengl\gl.cpp" />
     <ClCompile Include="src\rendering\buffers\RefCountedBuffer.cpp" />
     <ClCompile Include="src\rendering\ShadowMap.cpp" />
+    <ClCompile Include="src\shaders\stringified\deferred\GPassObjectFragment.cpp" />
+    <ClCompile Include="src\shaders\stringified\deferred\GPassObjectVertex.cpp" />
     <ClCompile Include="src\shaders\stringified\DirectionalShadowMapFragment.cpp" />
     <ClCompile Include="src\shaders\stringified\DirectionalShadowMapVertex.cpp" />
     <ClCompile Include="src\shaders\stringified\ObjectFragment.cpp" />
@@ -222,6 +233,7 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClCompile Include="src\shaders\stringified\skyboxvertex.cpp" />
     <ClCompile Include="src\timing\timer.cpp" />
     <ClCompile Include="src\util\hash\PathHash.cpp" />
+    <ClCompile Include="src\util\less\LightCloserToCamera.cpp" />
     <ClCompile Include="src\util\logger.cpp" />
     <ClCompile Include="src\instances\modelreference.cpp" />
     <ClCompile Include="src\util\less\ObjectLess.cpp" />
@@ -242,7 +254,7 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClCompile Include="src\hierarchy\Object.cpp" />
     <ClCompile Include="src\components\lighting\PointLight.cpp" />
     <ClCompile Include="src\math\Quaternion.cpp" />
-    <ClCompile Include="src\rendering\Renderer.cpp" />
+    <ClCompile Include="src\rendering\ForwardRenderer.cpp" />
     <ClCompile Include="src\rendering\Shader.cpp" />
     <ClCompile Include="src\rendering\texture.cpp" />
     <ClCompile Include="src\timing\leopphtime.cpp" />
@@ -251,6 +263,8 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
   </ItemGroup>
   <ItemGroup>
     <None Include="src\cpp.hint" />
+    <None Include="src\shaders\deferred\GPassObject.frag" />
+    <None Include="src\shaders\deferred\GPassObject.vert" />
     <None Include="src\shaders\DirectionalShadowMapFragment.frag" />
     <None Include="src\shaders\ObjectFragment.frag" />
     <None Include="src\shaders\DirectionalShadowMapVertex.vert" />
