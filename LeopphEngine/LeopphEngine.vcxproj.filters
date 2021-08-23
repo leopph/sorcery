@@ -50,6 +50,9 @@
     <ClCompile Include="src\shaders\stringified\skyboxfragment.cpp" />
     <ClCompile Include="src\components\lighting\SpotLight.cpp" />
     <ClCompile Include="src\components\lighting\AttenuatedLight.cpp" />
+    <ClCompile Include="src\rendering\buffers\Buffer.cpp" />
+    <ClCompile Include="src\rendering\buffers\Framebuffer.cpp" />
+    <ClCompile Include="src\rendering\buffers\RefCountedBuffer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\Behavior.hpp" />
@@ -107,6 +110,9 @@
     <ClInclude Include="src\rendering\ShadowMap.hpp" />
     <ClInclude Include="src\components\lighting\SpotLight.hpp" />
     <ClInclude Include="src\components\lighting\AttenuatedLight.hpp" />
+    <ClInclude Include="src\rendering\buffers\Buffer.hpp" />
+    <ClInclude Include="src\rendering\buffers\Framebuffer.hpp" />
+    <ClInclude Include="src\rendering\buffers\RefCountedBuffer.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\shaders\ObjectFragment.frag" />

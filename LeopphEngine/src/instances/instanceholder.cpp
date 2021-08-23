@@ -24,6 +24,8 @@ namespace leopph::impl
 
 	std::unordered_map<const Object*, std::pair<const Matrix4, const Matrix4>> InstanceHolder::s_MatrixCache{};
 
+	std::unordered_map<unsigned, std::size_t> InstanceHolder::s_Buffers{};
+
 	
 	void InstanceHolder::DestroyAllObjects()
 	{
@@ -348,6 +350,39 @@ namespace leopph::impl
 	void InstanceHolder::UnregisterSpotLight(const SpotLight* spotLight)
 	{
 		s_SpotLights.erase(spotLight);
+	}
+
+
+	void InstanceHolder::RegisterBuffer(const RefCountedBuffer& buffer)
+	{
+		s_Buffers.try_emplace(buffer.name, 0);
+		s_Buffers[buffer.name]++;
+	}
+
+
+	void InstanceHolder::UnregisterBuffer(const RefCountedBuffer& buffer)
+	{
+		if (s_Buffers.contains(buffer.name))
+		{
+			s_Buffers[buffer.name]--;
+		}
+		else
+		{
+			Logger::Instance().Warning("Trying to unregister buffer [" + std::to_string(buffer.name) + "] but it is not registered.");
+		}
+	}
+
+
+	std::size_t InstanceHolder::ReferenceCount(const RefCountedBuffer& buffer)
+	{
+		const auto it{ s_Buffers.find(buffer.name) };
+
+		if (it == s_Buffers.end())
+		{
+			return 0;
+		}
+
+		return it->second;
 	}
 
 }

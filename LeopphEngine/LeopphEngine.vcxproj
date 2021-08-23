@@ -153,7 +153,10 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClInclude Include="src\input\keycodes.h" />
     <ClInclude Include="src\input\keystate.h" />
     <ClInclude Include="src\misc\color.h" />
+    <ClInclude Include="src\rendering\buffers\Buffer.hpp" />
+    <ClInclude Include="src\rendering\buffers\Framebuffer.hpp" />
     <ClInclude Include="src\rendering\material.h" />
+    <ClInclude Include="src\rendering\buffers\RefCountedBuffer.hpp" />
     <ClInclude Include="src\rendering\ShadowMap.hpp" />
     <ClInclude Include="src\timing\timer.h" />
     <ClInclude Include="src\misc\camerabackground.h" />
@@ -205,8 +208,11 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClCompile Include="src\components\Transform.cpp" />
     <ClCompile Include="src\input\inputhandler.cpp" />
     <ClCompile Include="src\misc\color.cpp" />
+    <ClCompile Include="src\rendering\buffers\Buffer.cpp" />
+    <ClCompile Include="src\rendering\buffers\Framebuffer.cpp" />
     <ClCompile Include="src\rendering\material.cpp" />
     <ClCompile Include="src\rendering\opengl\gl.cpp" />
+    <ClCompile Include="src\rendering\buffers\RefCountedBuffer.cpp" />
     <ClCompile Include="src\rendering\ShadowMap.cpp" />
     <ClCompile Include="src\shaders\stringified\DirectionalShadowMapFragment.cpp" />
     <ClCompile Include="src\shaders\stringified\DirectionalShadowMapVertex.cpp" />

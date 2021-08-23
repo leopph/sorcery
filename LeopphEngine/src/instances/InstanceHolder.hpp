@@ -8,8 +8,9 @@
 #include "../components/lighting/SpotLight.hpp"
 #include "../hierarchy/Object.hpp"
 #include "../misc/skybox.h"
-#include "../rendering/texture.h"
 #include "../rendering/ShadowMap.hpp"
+#include "../rendering/buffers/RefCountedBuffer.hpp"
+#include "../rendering/texture.h"
 #include "skyboximpl.h"
 
 #include "../util/equal/SkyBoxImplEqual.hpp"
@@ -126,6 +127,11 @@ namespace leopph::impl
 		static void RegisterSpotLight(const SpotLight* spotLight);
 		static void UnregisterSpotLight(const SpotLight* spotLight);
 
+		static void RegisterBuffer(const RefCountedBuffer& buffer);
+		static void UnregisterBuffer(const RefCountedBuffer& buffer);
+		static std::size_t ReferenceCount(const RefCountedBuffer& buffer);
+
+
 	private:
 		static std::unordered_set<TextureReference, TextureHash, TextureEqual> s_Textures;
 		static std::unordered_map<std::filesystem::path, ModelReference, PathHash> s_Models;
@@ -141,5 +147,7 @@ namespace leopph::impl
 		static std::unordered_set<const SpotLight*> s_SpotLights;
 
 		static std::list<ShadowMap> s_ShadowMaps;
+
+		static std::unordered_map<unsigned, std::size_t> s_Buffers;
 	};
 }
