@@ -20,19 +20,19 @@ namespace leopph::impl
 	{
 		glCreateTextures(GL_TEXTURE_2D, 5, m_Textures.data());
 
-		glTextureStorage2D(m_Textures[Position], 1, GL_RGBA16F, static_cast<GLint>(Window::Get().Width()), static_cast<GLint>(Window::Get().Height()));
+		glTextureStorage2D(m_Textures[Position], 1, GL_RGB32F, static_cast<GLint>(Window::Get().Width()), static_cast<GLint>(Window::Get().Height()));
 		glTextureParameteri(m_Textures[Position], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTextureParameteri(m_Textures[Position], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-		glTextureStorage2D(m_Textures[Normal], 1, GL_RGBA16F, static_cast<GLint>(Window::Get().Width()), static_cast<GLint>(Window::Get().Height()));
+		glTextureStorage2D(m_Textures[Normal], 1, GL_RGB32F, static_cast<GLint>(Window::Get().Width()), static_cast<GLint>(Window::Get().Height()));
 		glTextureParameteri(m_Textures[Normal], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTextureParameteri(m_Textures[Normal], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-		glTextureStorage2D(m_Textures[Ambient], 1, GL_RGBA8, static_cast<GLint>(Window::Get().Width()), static_cast<GLint>(Window::Get().Height()));
+		glTextureStorage2D(m_Textures[Ambient], 1, GL_RGB8, static_cast<GLint>(Window::Get().Width()), static_cast<GLint>(Window::Get().Height()));
 		glTextureParameteri(m_Textures[Ambient], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTextureParameteri(m_Textures[Ambient], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-		glTextureStorage2D(m_Textures[Diffuse], 1, GL_RGBA8, static_cast<GLint>(Window::Get().Width()), static_cast<GLint>(Window::Get().Height()));
+		glTextureStorage2D(m_Textures[Diffuse], 1, GL_RGB8, static_cast<GLint>(Window::Get().Width()), static_cast<GLint>(Window::Get().Height()));
 		glTextureParameteri(m_Textures[Diffuse], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTextureParameteri(m_Textures[Diffuse], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
