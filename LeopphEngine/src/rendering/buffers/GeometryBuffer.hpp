@@ -29,14 +29,15 @@ namespace leopph::impl
 		const unsigned& ambientTextureName;
 		const unsigned& diffuseTextureName;
 		const unsigned& specularTextureName;
+		const unsigned& shineTextureName;
 
 	private:
 		enum TextureType
 		{
-			Position, Normal, Ambient, Diffuse, Specular
+			Position, Normal, Ambient, Diffuse, Specular, Shine
 		};
 
-		std::array<unsigned, 5> m_Textures;
+		std::array<unsigned, 6> m_Textures;
 		unsigned m_DepthBuffer;
 	};
 }

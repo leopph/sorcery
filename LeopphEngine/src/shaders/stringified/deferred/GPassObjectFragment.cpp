@@ -28,7 +28,8 @@ layout (location = 0) out vec3 outPosition;
 layout (location = 1) out vec3 outNormal;
 layout (location = 2) out vec3 outAmbientColor;
 layout (location = 3) out vec3 outDiffuseColor;
-layout (location = 4) out vec4 outSpecularColor;
+layout (location = 4) out vec3 outSpecularColor;
+layout (location = 5) out float outShine;
 
 uniform Material material;
 
@@ -39,7 +40,8 @@ void main()
     outNormal = normalize(inNormal);
     outAmbientColor = material.ambientColor;
     outDiffuseColor = material.diffuseColor;
-    outSpecularColor = vec4(material.specularColor, material.shininess);
+    outSpecularColor = material.specularColor;
+    outShine = material.shininess;
 
     if (material.hasAmbientMap != 0)
     {
@@ -53,6 +55,6 @@ void main()
 
     if (material.hasSpecularMap != 0)
     {
-        outSpecularColor.rgb *= texture(material.specularMap, inTexCoords).rgb;
+        outSpecularColor *= texture(material.specularMap, inTexCoords).rgb;
     }
 })#fileContents#" };

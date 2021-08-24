@@ -178,12 +178,14 @@ namespace leopph::impl
 		glBindTextureUnit(2, m_GBuffer.ambientTextureName);
 		glBindTextureUnit(3, m_GBuffer.diffuseTextureName);
 		glBindTextureUnit(4, m_GBuffer.specularTextureName);
+		glBindTextureUnit(5, m_GBuffer.shineTextureName);
 
 		m_LightPassShader.SetUniform("positionTexture", 0);
 		m_LightPassShader.SetUniform("normalTexture", 1);
 		m_LightPassShader.SetUniform("ambientTexture", 2);
 		m_LightPassShader.SetUniform("diffuseTexture", 3);
 		m_LightPassShader.SetUniform("specularTexture", 4);
+		m_LightPassShader.SetUniform("shineTexture", 5);
 
 		m_LightPassShader.SetUniform("cameraPosition", Camera::Active()->object.Transform().Position());
 
