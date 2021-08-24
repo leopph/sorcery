@@ -13,7 +13,7 @@ namespace leopph::impl
 		Framebuffer& operator=(const Framebuffer&) = delete;
 		Framebuffer& operator=(Framebuffer&&) = delete;
 
-		~Framebuffer();
+		virtual ~Framebuffer();
 
 		const unsigned& name;
 

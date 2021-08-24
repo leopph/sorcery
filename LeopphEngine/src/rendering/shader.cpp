@@ -42,6 +42,12 @@ namespace leopph::impl
 			fragmentSource = s_GPassObjectFragmentSource.c_str();
 			Logger::Instance().Debug("Constructing geometry pass object shader.");
 			break;
+
+		case Type::LIGHTPASS:
+			vertexSource = s_LightPassVertexSource.c_str();
+			fragmentSource = s_LightPassFragmentSource.c_str();
+			Logger::Instance().Debug("Constructing lighting pass shader.");
+			break;
 		}
 
 		if (Settings::IsCachingShaders())
@@ -187,6 +193,9 @@ namespace leopph::impl
 
 		case Type::GPASS_OBJECT:
 			return "gpassObjectShader";
+
+		case Type::LIGHTPASS:
+			return "lightPassShader";
 		}
 		
 		return "";

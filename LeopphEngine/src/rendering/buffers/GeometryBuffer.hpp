@@ -7,7 +7,7 @@
 
 namespace leopph::impl
 {
-	class GeometryBuffer : public Framebuffer
+	class GeometryBuffer final : public Framebuffer
 	{
 	public:
 		GeometryBuffer();
@@ -18,7 +18,7 @@ namespace leopph::impl
 		GeometryBuffer& operator=(const GeometryBuffer&) = delete;
 		GeometryBuffer& operator=(GeometryBuffer&&) = delete;
 
-		~GeometryBuffer();
+		~GeometryBuffer() override;
 
 		void Clear() const;
 		void Bind() const;
@@ -37,5 +37,6 @@ namespace leopph::impl
 		};
 
 		std::array<unsigned, 5> m_Textures;
+		unsigned m_DepthBuffer;
 	};
 }

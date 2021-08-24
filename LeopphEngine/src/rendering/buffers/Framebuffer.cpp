@@ -8,7 +8,7 @@ namespace leopph::impl
 	Framebuffer::Framebuffer() :
 		name{ m_Name }, m_Name{}
 	{
-		glGenFramebuffers(1, &m_Name);
+		glCreateFramebuffers(1, &m_Name);
 	}
 
 

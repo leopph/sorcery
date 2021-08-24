@@ -13,7 +13,7 @@ namespace leopph::impl
 	public:
 		enum class Type
 		{
-			OBJECT, SKYBOX, DIRECTIONAL_SHADOW_MAP, GPASS_OBJECT
+			OBJECT, SKYBOX, DIRECTIONAL_SHADOW_MAP, GPASS_OBJECT, LIGHTPASS
 		};
 
 		explicit Shader(Type type);
@@ -40,6 +40,8 @@ namespace leopph::impl
 		static std::string s_DirectionalShadowMapFragmentSource;
 		static std::string s_GPassObjectVertexSource;
 		static std::string s_GPassObjectFragmentSource;
+		static std::string s_LightPassVertexSource;
+		static std::string s_LightPassFragmentSource;
 
 		const std::filesystem::path m_ProgramFileName;
 

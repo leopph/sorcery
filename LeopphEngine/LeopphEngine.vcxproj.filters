@@ -58,6 +58,8 @@
     <ClCompile Include="src\rendering\buffers\GeometryBuffer.cpp" />
     <ClCompile Include="src\shaders\stringified\deferred\GPassObjectFragment.cpp" />
     <ClCompile Include="src\shaders\stringified\deferred\GPassObjectVertex.cpp" />
+    <ClCompile Include="src\shaders\stringified\deferred\LightPassFragment.cpp" />
+    <ClCompile Include="src\shaders\stringified\deferred\LightPassVertex.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\Behavior.hpp" />
@@ -132,5 +134,7 @@
     <None Include="src\shaders\DirectionalShadowMapFragment.frag" />
     <None Include="src\shaders\deferred\GPassObject.vert" />
     <None Include="src\shaders\deferred\GPassObject.frag" />
+    <None Include="src\shaders\deferred\LightPass.vert" />
+    <None Include="src\shaders\deferred\LightPass.frag" />
   </ItemGroup>
 </Project>

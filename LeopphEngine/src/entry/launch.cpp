@@ -6,12 +6,13 @@
 
 #include "launch.h"
 
-#include "../windowing/window.h"
-#include "../rendering/opengl/gl.h"
-#include "../rendering/ForwardRenderer.hpp"
-#include "../timing/timer.h"
 #include "../input/inputhandler.h"
 #include "../instances/InstanceHolder.hpp"
+#include "../rendering/DeferredRenderer.hpp"
+#include "../rendering/ForwardRenderer.hpp"
+#include "../rendering/opengl/gl.h"
+#include "../timing/timer.h"
+#include "../windowing/window.h"
 
 #include "../util/logger.h"
 
@@ -39,7 +40,7 @@ namespace leopph::impl
 		Logger::Instance().Debug("App initialized.");
 
 		{
-			ForwardRenderer renderer;
+			DeferredRenderer renderer;
 			Logger::Instance().Debug("Renderer initialized");
 
 			Timer::Init();

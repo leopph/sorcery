@@ -35,6 +35,7 @@ namespace leopph::impl
 		void CollectPointLights();
 		void CollectSpotLights();
 		void DrawGeometry();
+		void DrawLights();
 
 		std::vector<const PointLight*> m_CurrentFrameUsedPointLights;
 		std::vector<const SpotLight*> m_CurrentFrameUsedSpotLights;
@@ -47,5 +48,6 @@ namespace leopph::impl
 		GeometryBuffer m_GBuffer;
 
 		Shader m_GPassObjectShader;
+		Shader m_LightPassShader;
 	};
 }
