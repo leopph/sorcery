@@ -156,6 +156,7 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClInclude Include="src\entry\entry.h" />
     <ClInclude Include="src\entry\launch.h" />
     <ClInclude Include="src\components\Transform.hpp" />
+    <ClInclude Include="src\events\Event.hpp" />
     <ClInclude Include="src\input\cursorstate.h" />
     <ClInclude Include="src\input\inputhandler.h" />
     <ClInclude Include="src\input\keycodes.h" />
@@ -170,6 +171,8 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClInclude Include="src\rendering\ShadowMap.hpp" />
     <ClInclude Include="src\timing\timer.h" />
     <ClInclude Include="src\misc\camerabackground.h" />
+    <ClInclude Include="src\util\equal\FuncEqual.hpp" />
+    <ClInclude Include="src\util\hash\FuncHash.hpp" />
     <ClInclude Include="src\util\less\LightCloserToCamera.hpp" />
     <ClInclude Include="src\util\logger.h" />
     <ClInclude Include="src\rendering\opengl\gl.h" />

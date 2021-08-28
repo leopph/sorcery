@@ -123,6 +123,9 @@
     <ClInclude Include="src\rendering\DeferredRenderer.hpp" />
     <ClInclude Include="src\util\less\LightCloserToCamera.hpp" />
     <ClInclude Include="src\rendering\buffers\GeometryBuffer.hpp" />
+    <ClInclude Include="src\util\equal\FuncEqual.hpp" />
+    <ClInclude Include="src\util\hash\FuncHash.hpp" />
+    <ClInclude Include="src\events\Event.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\shaders\ObjectFragment.frag" />
