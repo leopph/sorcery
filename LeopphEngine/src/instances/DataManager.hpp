@@ -36,7 +36,7 @@
 
 namespace leopph::impl
 {
-	class InstanceHolder
+	class DataManager
 	{
 	public:
 		/* All Objects*/

@@ -1,6 +1,6 @@
 #include "Object.hpp"
 
-#include "../instances/InstanceHolder.hpp"
+#include "../instances/DataManager.hpp"
 
 #include "../util/logger.h"
 
@@ -13,14 +13,14 @@ namespace leopph
 {
 	Object* Object::Find(const std::string& name)
 	{
-		return impl::InstanceHolder::FindObject(name);
+		return impl::DataManager::FindObject(name);
 	}
 
 
 	Object::Object(const ObjectProperties& properties) :
 		isStatic{ properties.isStatic },
 		name { m_Name },
-		m_Name{ properties.name.empty() ? "Object" + std::to_string(impl::InstanceHolder::Objects().size()) : properties.name },
+		m_Name{ properties.name.empty() ? "Object" + std::to_string(impl::DataManager::Objects().size()) : properties.name },
 		m_Transform{ nullptr }
 	{
 		if (Find(this->name) != nullptr)
@@ -40,7 +40,7 @@ namespace leopph
 			m_Name = newName;
 		}
 
-		impl::InstanceHolder::RegisterObject(this);
+		impl::DataManager::RegisterObject(this);
 		AddComponent<leopph::Transform>(properties.position, properties.rotation, properties.scale);
 	}
 
@@ -64,13 +64,13 @@ namespace leopph
 
 	Object::~Object()
 	{
-		for (auto it = impl::InstanceHolder::Components(this).begin(); it != impl::InstanceHolder::Components(this).end();)
+		for (auto it = impl::DataManager::Components(this).begin(); it != impl::DataManager::Components(this).end();)
 		{
 			delete* it;
-			it = impl::InstanceHolder::Components(this).begin();
+			it = impl::DataManager::Components(this).begin();
 		}
 
-		impl::InstanceHolder::UnregisterObject(this);
+		impl::DataManager::UnregisterObject(this);
 	}
 
 
@@ -94,7 +94,7 @@ namespace leopph
 
 	const std::set<Component*>& Object::Components() const
 	{
-		return impl::InstanceHolder::Components(const_cast<Object*>(this));
+		return impl::DataManager::Components(const_cast<Object*>(this));
 	}
 
 
@@ -109,6 +109,6 @@ namespace leopph
 
 		if (dynamic_cast<leopph::Transform*>(behavior))
 		
-		impl::InstanceHolder::UnregisterComponent(behavior);
+		impl::DataManager::UnregisterComponent(behavior);
 	}
 }

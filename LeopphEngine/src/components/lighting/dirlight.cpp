@@ -1,18 +1,18 @@
 #include "DirLight.hpp"
 
-#include "../../instances/InstanceHolder.hpp"
+#include "../../instances/DataManager.hpp"
 
 namespace leopph
 {
 	DirectionalLight::DirectionalLight(Object& owner) :
 		Light{ owner }
 	{
-		impl::InstanceHolder::DirectionalLight(this);
+		impl::DataManager::DirectionalLight(this);
 	}
 
 	DirectionalLight::~DirectionalLight()
 	{
-		impl::InstanceHolder::DirectionalLight(nullptr);
+		impl::DataManager::DirectionalLight(nullptr);
 	}
 
 	const Vector3& DirectionalLight::Direction() const

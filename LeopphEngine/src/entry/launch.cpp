@@ -7,7 +7,7 @@
 #include "launch.h"
 
 #include "../input/inputhandler.h"
-#include "../instances/InstanceHolder.hpp"
+#include "../instances/DataManager.hpp"
 #include "../rendering/DeferredRenderer.hpp"
 #include "../rendering/ForwardRenderer.hpp"
 #include "../rendering/opengl/gl.h"
@@ -52,7 +52,7 @@ namespace leopph::impl
 				InputHandler::UpdateReleasedKeys();
 				window.PollEvents();
 
-				for (const auto& x : InstanceHolder::Behaviors())
+				for (const auto& x : DataManager::Behaviors())
 					x->OnFrameUpdate();
 
 				window.Clear();
@@ -64,7 +64,7 @@ namespace leopph::impl
 		}
 		Logger::Instance().Debug("Renderer destroyed");
 
-		InstanceHolder::DestroyAllObjects();
+		DataManager::DestroyAllObjects();
 		Logger::Instance().Debug("All objects destroyed.");
 
 		Window::Destroy();

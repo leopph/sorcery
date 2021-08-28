@@ -5,7 +5,7 @@
 #include "../components/lighting/Light.hpp"
 #include "../components/lighting/PointLight.hpp"
 #include "../config/Settings.hpp"
-#include "../instances/InstanceHolder.hpp"
+#include "../instances/DataManager.hpp"
 #include "../math/LeopphMath.hpp"
 #include "../math/Matrix.hpp"
 #include "../math/Vector.hpp"
@@ -74,7 +74,7 @@ namespace leopph::impl
 	{
 		m_CurrentFrameMatrices.clear();
 
-		for (const auto& [path, modelReference] : InstanceHolder::Models())
+		for (const auto& [path, modelReference] : DataManager::Models())
 		{
 			auto& [models, normals] = m_CurrentFrameMatrices.try_emplace(path).first->second;
 
@@ -83,7 +83,7 @@ namespace leopph::impl
 				/* If the objet is static we query for its cached matrix */
 				if (object->isStatic)
 				{
-					const auto& [model, normal] {InstanceHolder::ModelAndNormalMatrices(object)};
+					const auto& [model, normal] {DataManager::ModelAndNormalMatrices(object)};
 					models.emplace_back(model.Transposed());
 					normals.emplace_back(normal.Transposed());
 				}
@@ -109,7 +109,7 @@ namespace leopph::impl
 		allPointsLightsOrdered.clear();
 
 		/* We sort the lights based on distance from camera */
-		for (const PointLight* const light : InstanceHolder::PointLights())
+		for (const PointLight* const light : DataManager::PointLights())
 		{
 			allPointsLightsOrdered.emplace(light);
 		}
@@ -138,7 +138,7 @@ namespace leopph::impl
 		allSpotLightsOrdered.clear();
 
 		/* We sort the lights based on distance from camera */
-		std::ranges::copy(InstanceHolder::SpotLights().begin(), InstanceHolder::SpotLights().end(), std::inserter(allSpotLightsOrdered, allSpotLightsOrdered.begin()));
+		std::ranges::copy(DataManager::SpotLights().begin(), DataManager::SpotLights().end(), std::inserter(allSpotLightsOrdered, allSpotLightsOrdered.begin()));
 
 		m_CurrentFrameUsedSpotLights.clear();
 
@@ -151,19 +151,19 @@ namespace leopph::impl
 
 	void ForwardRenderer::RenderDirectionalShadowMap()
 	{
-		const auto& dirLight = InstanceHolder::DirectionalLight();
+		const auto& dirLight = DataManager::DirectionalLight();
 
 		if (dirLight == nullptr)
 		{
 			return;
 		}
 
-		const auto& shadowMaps{ InstanceHolder::ShadowMaps() };
+		const auto& shadowMaps{ DataManager::ShadowMaps() };
 
 		/* If we don't have a shadow map, we create one */
 		if (shadowMaps.empty())
 		{
-			InstanceHolder::CreateShadowMap(Settings::DirectionalLightShadowMapResolution());
+			DataManager::CreateShadowMap(Settings::DirectionalLightShadowMapResolution());
 		}
 
 		const auto view{ Matrix4::LookAt(-dirLight->Direction(), Vector3{}, Vector3::Up()) };
@@ -177,7 +177,7 @@ namespace leopph::impl
 
 		for (const auto& [modelPath, matrices] : m_CurrentFrameMatrices)
 		{
-			InstanceHolder::GetModelReference(modelPath).DrawDepth(matrices.first);
+			DataManager::GetModelReference(modelPath).DrawDepth(matrices.first);
 		}
 
 		shadowMaps.front().UnbindFromBuffer();
@@ -186,21 +186,21 @@ namespace leopph::impl
 
 	void ForwardRenderer::RenderPointShadowMaps()
 	{
-		const auto& shadowMaps{ InstanceHolder::ShadowMaps() };
+		const auto& shadowMaps{ DataManager::ShadowMaps() };
 
 		/* If we lack the necessary number of shadow maps, we create new ones */
 		while (m_CurrentFrameUsedPointLights.size() > shadowMaps.size())
 		{
-			InstanceHolder::CreateShadowMap(Settings::PointLightShadowMapResolution());
+			DataManager::CreateShadowMap(Settings::PointLightShadowMapResolution());
 		}
 
 		/* Iterate over the lights and use a different shadow map for each */
-		for (auto shadowMapIt{ InstanceHolder::DirectionalLight() == nullptr ? shadowMaps.begin() : ++shadowMaps.begin()};
+		for (auto shadowMapIt{ DataManager::DirectionalLight() == nullptr ? shadowMaps.begin() : ++shadowMaps.begin()};
 			const auto & pointLight : m_CurrentFrameUsedPointLights)
 		{
 			for (const auto& [modelPath, matrices] : m_CurrentFrameMatrices)
 			{
-				InstanceHolder::GetModelReference(modelPath).DrawDepth(matrices.first);
+				DataManager::GetModelReference(modelPath).DrawDepth(matrices.first);
 			}
 
 			++shadowMapIt;
@@ -221,7 +221,7 @@ namespace leopph::impl
 		m_ObjectShader.SetUniform("ambientLight", AmbientLight::Instance().Intensity());
 
 		/* Set up DirLight data */
-		if (const auto dirLight = InstanceHolder::DirectionalLight(); dirLight != nullptr)
+		if (const auto dirLight = DataManager::DirectionalLight(); dirLight != nullptr)
 		{
 			m_ObjectShader.SetUniform("existsDirLight", true);
 			m_ObjectShader.SetUniform("dirLight.direction", dirLight->Direction());
@@ -230,7 +230,7 @@ namespace leopph::impl
 			m_ObjectShader.SetUniform("dirLight.shadowMap", static_cast<int>(usedTextureUnits));
 			m_ObjectShader.SetUniform("dirLightTransformMatrix", m_CurrentFrameDirectionalTransformMatrix);
 
-			InstanceHolder::ShadowMaps().front().BindToTexture(usedTextureUnits);
+			DataManager::ShadowMaps().front().BindToTexture(usedTextureUnits);
 			++usedTextureUnits;
 		}
 		else
@@ -272,7 +272,7 @@ namespace leopph::impl
 		/* Draw the shaded objects */
 		for (const auto& [modelPath, matrices] : m_CurrentFrameMatrices)
 		{
-			InstanceHolder::GetModelReference(modelPath).DrawShaded(m_ObjectShader, matrices.first, matrices.second, usedTextureUnits);
+			DataManager::GetModelReference(modelPath).DrawShaded(m_ObjectShader, matrices.first, matrices.second, usedTextureUnits);
 		}
 	}
 
@@ -284,7 +284,7 @@ namespace leopph::impl
 			m_SkyboxShader.Use();
 			m_SkyboxShader.SetUniform("viewMatrix", static_cast<Matrix4>(static_cast<Matrix3>(m_CurrentFrameViewMatrix)));
 			m_SkyboxShader.SetUniform("projectionMatrix", m_CurrentFrameProjectionMatrix);
-			InstanceHolder::GetSkybox(*skybox).Draw(m_SkyboxShader);
+			DataManager::GetSkybox(*skybox).Draw(m_SkyboxShader);
 		}
 	}
 }

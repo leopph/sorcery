@@ -174,7 +174,7 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClInclude Include="src\util\logger.h" />
     <ClInclude Include="src\rendering\opengl\gl.h" />
     <ClInclude Include="src\input\input.h" />
-    <ClInclude Include="src\instances\InstanceHolder.hpp" />
+    <ClInclude Include="src\instances\DataManager.hpp" />
     <ClInclude Include="src\api\leopphapi.h" />
     <ClInclude Include="src\math\LeopphMath.hpp" />
     <ClInclude Include="src\components\lighting\Light.hpp" />
@@ -251,7 +251,7 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClCompile Include="src\util\hash\TextureHash.cpp" />
     <ClCompile Include="src\windowing\window.cpp" />
     <ClCompile Include="src\input\input.cpp" />
-    <ClCompile Include="src\instances\InstanceHolder.cpp" />
+    <ClCompile Include="src\instances\DataManager.cpp" />
     <ClCompile Include="src\math\LeopphMath.cpp" />
     <ClCompile Include="src\components\lighting\Light.cpp" />
     <ClCompile Include="src\rendering\mesh.cpp" />

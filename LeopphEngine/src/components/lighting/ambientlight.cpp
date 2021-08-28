@@ -1,15 +1,15 @@
 #include "AmbientLight.hpp"
 
-#include "../../instances/InstanceHolder.hpp"
+#include "../../instances/DataManager.hpp"
 
 leopph::AmbientLight& leopph::AmbientLight::Instance()
 {
-	auto ret = impl::InstanceHolder::AmbientLight();
+	auto ret = impl::DataManager::AmbientLight();
 
 	if (ret == nullptr)
 	{
-		impl::InstanceHolder::AmbientLight(new AmbientLight{});
-		ret = impl::InstanceHolder::AmbientLight();
+		impl::DataManager::AmbientLight(new AmbientLight{});
+		ret = impl::DataManager::AmbientLight();
 	}
 
 	return *ret;

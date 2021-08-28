@@ -17,7 +17,7 @@
     <ClCompile Include="src\rendering\ForwardRenderer.cpp" />
     <ClCompile Include="src\input\input.cpp" />
     <ClCompile Include="src\components\lighting\DirLight.cpp" />
-    <ClCompile Include="src\instances\InstanceHolder.cpp" />
+    <ClCompile Include="src\instances\DataManager.cpp" />
     <ClCompile Include="src\math\Quaternion.cpp" />
     <ClCompile Include="src\components\Component.cpp" />
     <ClCompile Include="vendor\stb_image\stb_image.cpp" />
@@ -68,7 +68,7 @@
     <ClInclude Include="src\entry\entry.h" />
     <ClInclude Include="src\rendering\opengl\gl.h" />
     <ClInclude Include="src\input\input.h" />
-    <ClInclude Include="src\instances\InstanceHolder.hpp" />
+    <ClInclude Include="src\instances\DataManager.hpp" />
     <ClInclude Include="src\api\leopphapi.h" />
     <ClInclude Include="src\math\LeopphMath.hpp" />
     <ClInclude Include="src\components\lighting\Light.hpp" />

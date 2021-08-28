@@ -1,6 +1,6 @@
 #include "RefCountedBuffer.hpp"
 
-#include "../../instances/InstanceHolder.hpp"
+#include "../../instances/DataManager.hpp"
 
 #include <glad/glad.h>
 
@@ -11,14 +11,14 @@ namespace leopph::impl
 		name{ m_Name }, m_Name{}
 	{
 		glGenBuffers(1, &m_Name);
-		InstanceHolder::RegisterBuffer(*this);
+		DataManager::RegisterBuffer(*this);
 	}
 
 
 	RefCountedBuffer::RefCountedBuffer(const RefCountedBuffer& other) :
 		name { m_Name }, m_Name { other.m_Name }
 	{
-		InstanceHolder::RegisterBuffer(*this);
+		DataManager::RegisterBuffer(*this);
 	}
 
 
@@ -33,15 +33,15 @@ namespace leopph::impl
 	{
 		if (m_Name != 0)
 		{
-			InstanceHolder::UnregisterBuffer(*this);
-			if (InstanceHolder::ReferenceCount(*this) == 0)
+			DataManager::UnregisterBuffer(*this);
+			if (DataManager::ReferenceCount(*this) == 0)
 			{
 				glDeleteBuffers(1, &m_Name);
 			}
 		}
 
 		m_Name = other.m_Name;
-		InstanceHolder::RegisterBuffer(*this);
+		DataManager::RegisterBuffer(*this);
 		return *this;
 	}
 
@@ -50,8 +50,8 @@ namespace leopph::impl
 	{
 		if (m_Name != 0)
 		{
-			InstanceHolder::UnregisterBuffer(*this);
-			if (InstanceHolder::ReferenceCount(*this) == 0)
+			DataManager::UnregisterBuffer(*this);
+			if (DataManager::ReferenceCount(*this) == 0)
 			{
 				glDeleteBuffers(1, &m_Name);
 			}
@@ -67,8 +67,8 @@ namespace leopph::impl
 	{
 		if (m_Name != 0)
 		{
-			InstanceHolder::UnregisterBuffer(*this);
-			if (InstanceHolder::ReferenceCount(*this) == 0)
+			DataManager::UnregisterBuffer(*this);
+			if (DataManager::ReferenceCount(*this) == 0)
 			{
 				glDeleteBuffers(1, &m_Name);
 			}

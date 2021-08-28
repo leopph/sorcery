@@ -1,6 +1,6 @@
 #include "texture.h"
 
-#include "../instances/InstanceHolder.hpp"
+#include "../instances/DataManager.hpp"
 #include "../util/logger.h"
 
 #include <glad/glad.h>
@@ -71,14 +71,14 @@ namespace leopph::impl
 
 		stbi_image_free(data);
 
-		InstanceHolder::StoreTextureRef(*this);
+		DataManager::StoreTextureRef(*this);
 	}
 
 
 	Texture::~Texture()
 	{
-		InstanceHolder::DecTexture(path);
-		if (!InstanceHolder::IsTextureStored(path))
+		DataManager::DecTexture(path);
+		if (!DataManager::IsTextureStored(path))
 			glDeleteTextures(1, &id);
 	}
 
@@ -87,14 +87,14 @@ namespace leopph::impl
 		m_ID{ other.m_ID }, path{ other.path }, id{ m_ID },
 		m_IsTransparent{ other.m_IsTransparent }, isTransparent{ m_IsTransparent }
 	{
-		InstanceHolder::IncTexture(path);
+		DataManager::IncTexture(path);
 	}
 
 	Texture::Texture(const TextureReference& reference) :
 		m_ID{ reference.id }, id{ m_ID }, path{ reference.path },
 		m_IsTransparent{ reference.isTransparent }, isTransparent{ m_IsTransparent }
 	{
-		InstanceHolder::IncTexture(path);
+		DataManager::IncTexture(path);
 	}
 
 	bool Texture::operator==(const Texture& other) const

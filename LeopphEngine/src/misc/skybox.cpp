@@ -1,24 +1,24 @@
 #include "skybox.h"
 
-#include "../instances/InstanceHolder.hpp"
+#include "../instances/DataManager.hpp"
 
 #include <stdexcept>
 
 namespace leopph
 {
 	Skybox::Skybox(const std::filesystem::path& left, const std::filesystem::path& right, const std::filesystem::path& top, const std::filesystem::path& bottom, const std::filesystem::path& back, const std::filesystem::path& front) :
-		m_Impl{ impl::InstanceHolder::GetSkybox(left, right, top, bottom, back, front) }
+		m_Impl{ impl::DataManager::GetSkybox(left, right, top, bottom, back, front) }
 	{
 		if (m_Impl == nullptr)
-			m_Impl = impl::InstanceHolder::RegisterSkybox(left, right, top, bottom, back, front);
+			m_Impl = impl::DataManager::RegisterSkybox(left, right, top, bottom, back, front);
 		else
-			impl::InstanceHolder::IncSkybox(m_Impl);
+			impl::DataManager::IncSkybox(m_Impl);
 	}
 
 	Skybox::Skybox(const Skybox& other) :
 		m_Impl{ other.m_Impl }
 	{
-		impl::InstanceHolder::IncSkybox(m_Impl);
+		impl::DataManager::IncSkybox(m_Impl);
 	}
 
 	Skybox::Skybox(Skybox&& other) noexcept :
@@ -27,7 +27,7 @@ namespace leopph
 
 	Skybox::~Skybox()
 	{
-		impl::InstanceHolder::DecSkybox(m_Impl);
+		impl::DataManager::DecSkybox(m_Impl);
 	}
 
 	LEOPPHAPI const std::string& Skybox::FileNames() const
@@ -42,9 +42,9 @@ namespace leopph
 
 	leopph::Skybox& Skybox::operator=(const Skybox& other)
 	{
-		impl::InstanceHolder::DecSkybox(m_Impl);
+		impl::DataManager::DecSkybox(m_Impl);
 		m_Impl = other.m_Impl;
-		impl::InstanceHolder::IncSkybox(m_Impl);
+		impl::DataManager::IncSkybox(m_Impl);
 
 		return *this;
 	}

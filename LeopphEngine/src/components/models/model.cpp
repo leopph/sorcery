@@ -1,22 +1,22 @@
 #include "Model.hpp"
 
 #include "../../rendering/assimpmodel.h"
-#include "../../instances/InstanceHolder.hpp"
+#include "../../instances/DataManager.hpp"
 
 #include <utility>
 
 namespace leopph
 {
 	Model::Model(Object& owner, const std::filesystem::path& path) :
-		Component{ owner }, m_Ref{ &impl::InstanceHolder::GetModelReference(path) }
+		Component{ owner }, m_Ref{ &impl::DataManager::GetModelReference(path) }
 	{
-		impl::InstanceHolder::IncModel(Path(), &object);
+		impl::DataManager::IncModel(Path(), &object);
 	}
 
 
 	Model::~Model()
 	{
-		impl::InstanceHolder::DecModel(Path(), &object);
+		impl::DataManager::DecModel(Path(), &object);
 	}
 
 

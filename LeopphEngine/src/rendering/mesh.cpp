@@ -1,6 +1,6 @@
 #include "mesh.h"
 
-#include "../instances/InstanceHolder.hpp"
+#include "../instances/DataManager.hpp"
 #include "../math/Matrix.hpp"
 #include "../math/Vector.hpp"
 

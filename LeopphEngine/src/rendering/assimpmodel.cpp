@@ -1,6 +1,6 @@
 #include "assimpmodel.h"
 
-#include "../instances/InstanceHolder.hpp"
+#include "../instances/DataManager.hpp"
 #include "../util/logger.h"
 
 #include <assimp/Importer.hpp>
@@ -163,10 +163,10 @@ namespace leopph::impl
 			aiString location;
 			material->GetTexture(assimpType, 0, &location);
 
-			if (InstanceHolder::IsTextureStored(m_Directory / location.C_Str()))
+			if (DataManager::IsTextureStored(m_Directory / location.C_Str()))
 			{
 				Logger::Instance().Debug("Texture on path [" + (m_Directory / location.C_Str()).string() + "] requested from cache.");
-				return InstanceHolder::CreateTexture(m_Directory / location.C_Str());
+				return DataManager::CreateTexture(m_Directory / location.C_Str());
 			}
 
 			Logger::Instance().Debug("Texture on path [" + (m_Directory / location.C_Str()).string() + "] loaded from disk.");

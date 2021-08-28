@@ -1,18 +1,18 @@
 #include "PointLight.hpp"
 
-#include "../../instances/InstanceHolder.hpp"
+#include "../../instances/DataManager.hpp"
 
 namespace leopph
 {
 	PointLight::PointLight(Object& owner) :
 		AttenuatedLight{ owner }
 	{
-		impl::InstanceHolder::RegisterPointLight(this);
+		impl::DataManager::RegisterPointLight(this);
 	}
 
 	PointLight::~PointLight()
 	{
-		impl::InstanceHolder::UnregisterPointLight(this);
+		impl::DataManager::UnregisterPointLight(this);
 	}
 
 }

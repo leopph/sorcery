@@ -14,7 +14,7 @@ namespace leopph
 {
 	namespace impl
 	{
-		class InstanceHolder;
+		class DataManager;
 	}
 
 

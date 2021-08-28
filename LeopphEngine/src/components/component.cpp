@@ -1,17 +1,17 @@
 #include "Component.hpp"
 
-#include "../instances/InstanceHolder.hpp"
+#include "../instances/DataManager.hpp"
 
 namespace leopph
 {
 	Component::Component(Object& owner) :
 		object{ owner }
 	{
-		impl::InstanceHolder::RegisterComponent(this);
+		impl::DataManager::RegisterComponent(this);
 	}
 
 	Component::~Component()
 	{
-		impl::InstanceHolder::UnregisterComponent(this);
+		impl::DataManager::UnregisterComponent(this);
 	}
 }

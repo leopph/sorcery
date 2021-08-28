@@ -2,7 +2,7 @@
 
 #include "../components/Camera.hpp"
 #include "../config/Settings.hpp"
-#include "../instances/InstanceHolder.hpp"
+#include "../instances/DataManager.hpp"
 #include "../util/less/LightCloserToCamera.hpp"
 
 #include <glad/glad.h>
@@ -78,7 +78,7 @@ namespace leopph::impl
 	{
 		m_CurrentFrameMatrices.clear();
 
-		for (const auto& [path, modelReference] : InstanceHolder::Models())
+		for (const auto& [path, modelReference] : DataManager::Models())
 		{
 			auto& [models, normals] = m_CurrentFrameMatrices.try_emplace(path).first->second;
 
@@ -87,7 +87,7 @@ namespace leopph::impl
 				/* If the objet is static we query for its cached matrix */
 				if (object->isStatic)
 				{
-					const auto& [model, normal] {InstanceHolder::ModelAndNormalMatrices(object)};
+					const auto& [model, normal] {DataManager::ModelAndNormalMatrices(object)};
 					models.emplace_back(model.Transposed());
 					normals.emplace_back(normal.Transposed());
 				}
@@ -113,7 +113,7 @@ namespace leopph::impl
 		allPointsLightsOrdered.clear();
 
 		/* We sort the lights based on distance from camera */
-		for (const PointLight* const light : InstanceHolder::PointLights())
+		for (const PointLight* const light : DataManager::PointLights())
 		{
 			allPointsLightsOrdered.emplace(light);
 		}
@@ -142,7 +142,7 @@ namespace leopph::impl
 		allSpotLightsOrdered.clear();
 
 		/* We sort the lights based on distance from camera */
-		std::ranges::copy(InstanceHolder::SpotLights().begin(), InstanceHolder::SpotLights().end(), std::inserter(allSpotLightsOrdered, allSpotLightsOrdered.begin()));
+		std::ranges::copy(DataManager::SpotLights().begin(), DataManager::SpotLights().end(), std::inserter(allSpotLightsOrdered, allSpotLightsOrdered.begin()));
 
 		m_CurrentFrameUsedSpotLights.clear();
 
@@ -162,7 +162,7 @@ namespace leopph::impl
 
 		for (const auto& [modelPath, matrices] : m_CurrentFrameMatrices)
 		{
-			InstanceHolder::GetModelReference(modelPath).DrawShaded(m_GPassObjectShader, matrices.first, matrices.second, 0);
+			DataManager::GetModelReference(modelPath).DrawShaded(m_GPassObjectShader, matrices.first, matrices.second, 0);
 		}
 
 		m_GBuffer.Unbind();
@@ -193,7 +193,7 @@ namespace leopph::impl
 		m_LightPassShader.SetUniform("ambientLight", AmbientLight::Instance().Intensity());
 
 		/* Set up DirLight data */
-		if (const auto dirLight = InstanceHolder::DirectionalLight(); dirLight != nullptr)
+		if (const auto dirLight = DataManager::DirectionalLight(); dirLight != nullptr)
 		{
 			m_LightPassShader.SetUniform("existsDirLight", true);
 			m_LightPassShader.SetUniform("dirLight.direction", dirLight->Direction());
