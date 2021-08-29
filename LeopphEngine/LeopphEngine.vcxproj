@@ -162,8 +162,10 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClInclude Include="src\events\EventReceiver.hpp" />
     <ClInclude Include="src\events\EventReceiverBase.hpp" />
     <ClInclude Include="src\events\EventReceiverHandle.hpp" />
+    <ClInclude Include="src\events\FrameBeginsEvent.hpp" />
+    <ClInclude Include="src\events\KeyEvent.hpp" />
+    <ClInclude Include="src\events\MouseEvent.hpp" />
     <ClInclude Include="src\input\cursorstate.h" />
-    <ClInclude Include="src\input\inputhandler.h" />
     <ClInclude Include="src\input\keycodes.h" />
     <ClInclude Include="src\input\keystate.h" />
     <ClInclude Include="src\misc\color.h" />
@@ -181,7 +183,7 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClInclude Include="src\util\less\LightCloserToCamera.hpp" />
     <ClInclude Include="src\util\logger.h" />
     <ClInclude Include="src\rendering\opengl\gl.h" />
-    <ClInclude Include="src\input\input.h" />
+    <ClInclude Include="src\input\Input.hpp" />
     <ClInclude Include="src\instances\DataManager.hpp" />
     <ClInclude Include="src\api\leopphapi.h" />
     <ClInclude Include="src\math\LeopphMath.hpp" />
@@ -229,7 +231,8 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClCompile Include="src\events\Event.cpp" />
     <ClCompile Include="src\events\EventManager.cpp" />
     <ClCompile Include="src\events\EventReceiverBase.cpp" />
-    <ClCompile Include="src\input\inputhandler.cpp" />
+    <ClCompile Include="src\events\KeyEvent.cpp" />
+    <ClCompile Include="src\events\MouseEvent.cpp" />
     <ClCompile Include="src\misc\color.cpp" />
     <ClCompile Include="src\rendering\buffers\Buffer.cpp" />
     <ClCompile Include="src\rendering\buffers\Framebuffer.cpp" />
@@ -262,7 +265,7 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClCompile Include="src\util\equal\TextureEqual.cpp" />
     <ClCompile Include="src\util\hash\TextureHash.cpp" />
     <ClCompile Include="src\windowing\window.cpp" />
-    <ClCompile Include="src\input\input.cpp" />
+    <ClCompile Include="src\input\Input.cpp" />
     <ClCompile Include="src\instances\DataManager.cpp" />
     <ClCompile Include="src\math\LeopphMath.cpp" />
     <ClCompile Include="src\components\lighting\Light.cpp" />

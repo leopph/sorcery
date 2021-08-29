@@ -1,31 +1,37 @@
-#include "input.h"
+#include "Input.hpp"
+
 #include "../windowing/window.h"
-#include "../windowing/glwindow.h"
 
 namespace leopph
 {
 	std::map<KeyCode, KeyState> Input::s_KeyStates{};
+
+
 	std::pair<float, float> Input::s_MousePos{};
 
 
-	
-	void Input::OnInputChange(KeyCode keyCode, KeyState keyState)
+	EventReceiverHandle<impl::KeyEvent> Input::keyEventReceiver{ [](const impl::KeyEvent& event)
 	{
-		s_KeyStates[keyCode] = keyState;
-	}
+		s_KeyStates[event.keyCode] = event.keyState;
+	} };
 
-	void Input::OnInputChange(double x, double y)
+
+	EventReceiverHandle<impl::MouseEvent> Input::mouseEventReceiver{ [](const impl::MouseEvent& event)
 	{
-		s_MousePos = { static_cast<float>(x), static_cast<float>(y) };
-	}
+		s_MousePos = {event.position[0], event.position[1]};
+	} };
 
-	void Input::UpdateReleasedKeys()
+
+	EventReceiverHandle<impl::FrameBeginsEvent> Input::frameBeginsEventReceiver{ [](const impl::FrameBeginsEvent& event)
 	{
-		for (auto& keyPair : s_KeyStates)
-			if (keyPair.second == KeyState::Up)
-				keyPair.second = KeyState::Released;
-	}
-
+		for (auto& [keyCode, keyState] : s_KeyStates)
+		{
+			if (keyState == KeyState::Up)
+			{
+				keyState = KeyState::Released;
+			}
+		}
+	} };
 
 	
 	bool Input::GetKey(KeyCode key)
@@ -36,25 +42,30 @@ namespace leopph
 			state == KeyState::Held;
 	}
 
+
 	bool Input::GetKeyDown(KeyCode key)
 	{
 		return s_KeyStates.at(key) == KeyState::Down;
 	}
+
 
 	bool Input::GetKeyUp(KeyCode key)
 	{
 		return s_KeyStates.at(key) == KeyState::Up;
 	}
 
+
 	const std::pair<float, float>& Input::GetMousePosition()
 	{
 		return s_MousePos;
 	}
 
+
 	CursorState Input::CursorMode()
 	{
 		return impl::Window::Get().CursorMode();
 	}
+
 
 	void Input::CursorMode(CursorState newState)
 	{

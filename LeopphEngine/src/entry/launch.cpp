@@ -6,7 +6,8 @@
 
 #include "launch.h"
 
-#include "../input/inputhandler.h"
+#include "../events/EventManager.hpp"
+#include "../events/FrameBeginsEvent.hpp"
 #include "../instances/DataManager.hpp"
 #include "../rendering/DeferredRenderer.hpp"
 #include "../rendering/ForwardRenderer.hpp"
@@ -49,7 +50,7 @@ namespace leopph::impl
 			Logger::Instance().Debug("Starting render loop.");
 			while (!window.ShouldClose())
 			{
-				InputHandler::UpdateReleasedKeys();
+				EventManager::Instance().Send<FrameBeginsEvent>();
 				window.PollEvents();
 
 				for (const auto& x : DataManager::Behaviors())

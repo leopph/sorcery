@@ -2,8 +2,9 @@
 
 #include "../events/DisplayResolutionChangedEvent.hpp"
 #include "../events/EventManager.hpp"
-#include "../input/input.h"
-#include "../input/inputhandler.h"
+#include "../events/KeyEvent.hpp"
+#include "../events/MouseEvent.hpp"
+#include "../input/Input.hpp"
 
 #include "../util/logger.h"
 
@@ -181,8 +182,10 @@ namespace leopph::impl
 	
 	void GLWindowImpl::InitKeys()
 	{
-		for (const auto& pair : s_KeyCodes)
-			InputHandler::OnInputChange(pair.second, KeyState::Released);
+		for (const auto& [_, keyCode] : s_KeyCodes)
+		{
+			EventManager::Instance().Send<KeyEvent>(keyCode, KeyState::Released);
+		}
 	}
 
 
@@ -205,8 +208,8 @@ namespace leopph::impl
 		try
 		{
 			const KeyCode keyCode = s_KeyCodes.at(key);
-			const KeyState keyState = s_KeyStates.at(action);	
-			InputHandler::OnInputChange(keyCode, keyState);
+			const KeyState keyState = s_KeyStates.at(action);
+			EventManager::Instance().Send<KeyEvent>(keyCode, keyState);
 		}
 		catch (const std::out_of_range&)
 		{
@@ -217,7 +220,7 @@ namespace leopph::impl
 
 	void GLWindowImpl::MouseCallback(GLFWwindow* window, double x, double y)
 	{
-		InputHandler::OnInputChange(x, y);
+		EventManager::Instance().Send<MouseEvent>(Vector2{ x, y });
 	}
 #pragma warning(pop)
 

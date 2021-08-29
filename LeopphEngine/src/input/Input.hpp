@@ -1,25 +1,21 @@
 #pragma once
 
-#include <map>
-#include <utility>
-
 #include "../api/leopphapi.h"
+#include "../events/EventReceiverHandle.hpp"
+#include "../events/FrameBeginsEvent.hpp"
+#include "../events/KeyEvent.hpp"
+#include "../events/MouseEvent.hpp"
+#include "cursorstate.h"
 #include "keycodes.h"
 #include "keystate.h"
-#include "cursorstate.h"
+
+#include <map>
+#include <utility>
 
 
 namespace leopph
 {
-	namespace impl
-	{
-		class InputHandler;
-	}
-	
-	/*--------------------------------------------------------------------
-	The Input class provides ways to gather information about user inputs.
-	--------------------------------------------------------------------*/
-
+	/* The Input class provides ways to gather information about user inputs. */
 	class Input
 	{
 	public:
@@ -42,14 +38,13 @@ namespace leopph
 		LEOPPHAPI static CursorState CursorMode();
 		LEOPPHAPI static void CursorMode(CursorState newState);
 
+
 	private:
 		static std::map<KeyCode, KeyState> s_KeyStates;
 		static std::pair<float, float> s_MousePos;
 
-		static void OnInputChange(KeyCode, KeyState);
-		static void OnInputChange(double x, double y);
-		static void UpdateReleasedKeys();
-
-		friend class impl::InputHandler;
+		static EventReceiverHandle<impl::KeyEvent> keyEventReceiver;
+		static EventReceiverHandle<impl::MouseEvent> mouseEventReceiver;
+		static EventReceiverHandle<impl::FrameBeginsEvent> frameBeginsEventReceiver;
 	};
 }

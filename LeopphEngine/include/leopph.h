@@ -19,7 +19,7 @@ See individual headers for more information.
 #include "../src/events/EventReceiver.hpp"
 #include "../src/events/EventReceiverHandle.hpp"
 #include "../src/hierarchy/Object.hpp"
-#include "../src/input/input.h"
+#include "../src/input/Input.hpp"
 #include "../src/math/LeopphMath.hpp"
 #include "../src/math/Matrix.hpp"
 #include "../src/math/Quaternion.hpp"
