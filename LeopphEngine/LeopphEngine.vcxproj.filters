@@ -60,6 +60,7 @@
     <ClCompile Include="src\shaders\stringified\deferred\GPassObjectVertex.cpp" />
     <ClCompile Include="src\shaders\stringified\deferred\LightPassFragment.cpp" />
     <ClCompile Include="src\shaders\stringified\deferred\LightPassVertex.cpp" />
+    <ClCompile Include="src\events\EventHandler.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\Behavior.hpp" />
@@ -126,6 +127,7 @@
     <ClInclude Include="src\util\equal\FuncEqual.hpp" />
     <ClInclude Include="src\util\hash\FuncHash.hpp" />
     <ClInclude Include="src\events\Event.hpp" />
+    <ClInclude Include="src\events\EventHandler.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\shaders\ObjectFragment.frag" />
