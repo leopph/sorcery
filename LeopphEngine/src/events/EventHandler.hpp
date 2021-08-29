@@ -1,42 +1,37 @@
 #pragma once
 
-#include <concepts>
+#include "Event.hpp"
+
 #include <cstddef>
 #include <functional>
 #include <type_traits>
-#include <utility>
 
 
 namespace leopph
 {
-	template<class... T>
 	class EventHandler
 	{
-		public:
-			using CallbackType = std::function<void(std::decay_t<T>...)>;
+	public:
+		using ParameterType = const std::decay_t<Event>&;
+		using CallbackType = void(ParameterType);
 
-			explicit EventHandler(CallbackType function);
-			EventHandler(const EventHandler<T...>& other);
-			EventHandler(EventHandler<T...>&& other) = delete;
+		explicit EventHandler(std::function<CallbackType> callback);
 
-			EventHandler<T...>& operator=(const EventHandler<T...>& other);
-			EventHandler<T...>& operator=(EventHandler<T...>&& other) = delete;
+		EventHandler(const EventHandler& other) = default;
+		EventHandler(EventHandler&& other) = default;
+		EventHandler& operator=(const EventHandler& other) = default;
+		EventHandler& operator=(EventHandler&& other) = default;
+		~EventHandler() = default;
 
-			bool operator==(const EventHandler<T...>& other) const;
+		void operator()(ParameterType event) const;
 
-			~EventHandler() = default;
-
-			template<std::convertible_to<std::decay_t<T>>... Args>
-			void operator()(Args&&... args)
-			{
-				m_Callback(std::forward<std::decay_t<T>>(args)...);
-			}
+		bool operator==(const EventHandler& other) const;
 
 
-		private:
-			std::size_t m_ID;
-			CallbackType m_Callback;
+	private:
+		std::function<CallbackType> m_Callback;
+		std::size_t m_Id;
 
-			static std::size_t s_NextHandlerID;
+		static std::size_t s_NextId;
 	};
 }

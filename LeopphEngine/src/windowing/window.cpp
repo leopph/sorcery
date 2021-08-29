@@ -18,10 +18,7 @@ namespace leopph::impl
 			{
 			case Settings::GraphicsAPI::OpenGL:
 				s_Instance = new GLWindowImpl{ width, height, title, fullscreen };
-			};
-
-			if (Camera::Active())
-				Camera::Active()->AspectRatio(s_Instance->m_Width, s_Instance->m_Height);
+			}
 
 			s_Instance->InitKeys();
 		}

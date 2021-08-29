@@ -156,7 +156,9 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClInclude Include="src\entry\entry.h" />
     <ClInclude Include="src\entry\launch.h" />
     <ClInclude Include="src\components\Transform.hpp" />
+    <ClInclude Include="src\events\DisplayResolutionChangedEvent.hpp" />
     <ClInclude Include="src\events\Event.hpp" />
+    <ClInclude Include="src\events\EventManager.hpp" />
     <ClInclude Include="src\events\EventHandler.hpp" />
     <ClInclude Include="src\input\cursorstate.h" />
     <ClInclude Include="src\input\inputhandler.h" />
@@ -212,7 +214,7 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\components\Behavior.cpp" />
-    <ClCompile Include="src\components\camera.cpp" />
+    <ClCompile Include="src\components\Camera.cpp" />
     <ClCompile Include="src\components\Component.cpp" />
     <ClCompile Include="src\components\lighting\AmbientLight.cpp" />
     <ClCompile Include="src\components\lighting\AttenuatedLight.cpp" />
@@ -221,7 +223,10 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClCompile Include="src\config\Settings.cpp" />
     <ClCompile Include="src\entry\launch.cpp" />
     <ClCompile Include="src\components\Transform.cpp" />
+    <ClCompile Include="src\events\DisplayResolutionChangedEvent.cpp" />
+    <ClCompile Include="src\events\Event.cpp" />
     <ClCompile Include="src\events\EventHandler.cpp" />
+    <ClCompile Include="src\events\EventManager.cpp" />
     <ClCompile Include="src\input\inputhandler.cpp" />
     <ClCompile Include="src\misc\color.cpp" />
     <ClCompile Include="src\rendering\buffers\Buffer.cpp" />

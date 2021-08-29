@@ -1,9 +1,10 @@
 #pragma once
 
+#include "../api/leopphapi.h"
+#include "../events/EventHandler.hpp"
+#include "../math/Matrix.hpp"
 #include "../misc/camerabackground.h"
 #include "Component.hpp"
-#include "../api/leopphapi.h"
-#include "../math/Matrix.hpp"
 
 namespace leopph
 {
@@ -30,11 +31,6 @@ namespace leopph
 
 		/* Enum to help determining FOV conversion details */
 		enum : unsigned char { FOV_HORIZONTAL, FOV_VERTICAL };
-
-		/* Aspect ratio (width / height) of the Camera */
-		LEOPPHAPI void AspectRatio(float newRatio);
-		LEOPPHAPI void AspectRatio(int width, int height);
-		LEOPPHAPI float AspectRatio() const;
 
 		/* The plane closest to the Camera where rendering begins */
 		LEOPPHAPI void NearClipPlane(float newPlane);
@@ -70,6 +66,8 @@ namespace leopph
 		float m_FarClip;
 
 		CameraBackground m_Background;
+
+		EventHandler m_ResChangeHandler;
 
 		enum : unsigned char { VERTICAL_TO_HORIZONTAL, HORIZONTAL_TO_VERTICAL };
 		[[nodiscard]] float ConvertFOV(float fov, unsigned char conversion) const;

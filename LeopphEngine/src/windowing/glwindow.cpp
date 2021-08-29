@@ -1,6 +1,7 @@
 #include "glwindow.h"
 
-#include "../components/Camera.hpp"
+#include "../events/DisplayResolutionChangedEvent.hpp"
+#include "../events/EventManager.hpp"
 #include "../input/input.h"
 #include "../input/inputhandler.h"
 
@@ -131,6 +132,7 @@ namespace leopph::impl
 		{ GLFW_MOUSE_BUTTON_8, KeyCode::Mouse8 }
 	};
 
+
 	const std::unordered_map<int, KeyState> GLWindowImpl::s_KeyStates
 	{
 		{ GLFW_PRESS, KeyState::Down },
@@ -138,7 +140,6 @@ namespace leopph::impl
 		{ GLFW_RELEASE, KeyState::Up }
 	};
 
-	
 
 	GLWindowImpl::GLWindowImpl(unsigned width, unsigned height, const std::string& title, bool fullscreen)
 		: Window{ width, height, title, fullscreen }, m_Vsync{ false }
@@ -169,13 +170,13 @@ namespace leopph::impl
 		glfwSetCursorPos(m_Window, 0, 0);
 		glfwSwapInterval(0);
 	}
-	
+
+
 	GLWindowImpl::~GLWindowImpl()
 	{
 		glfwDestroyWindow(m_Window);
 		glfwTerminate();
 	}
-
 
 	
 	void GLWindowImpl::InitKeys()
@@ -195,9 +196,9 @@ namespace leopph::impl
 		windowInstance.Width(width);
 		windowInstance.Height(height);
 
-		if (Camera::Active() != nullptr)
-			Camera::Active()->AspectRatio(width, height);
+		EventManager::Instance().Send<DisplayResolutionChangedEvent>(Vector2{ width, height });
 	}
+
 
 	void GLWindowImpl::KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 	{
@@ -212,13 +213,13 @@ namespace leopph::impl
 			Logger::Instance().Warning("Invalid key input detected.");
 		}
 	}
-	
+
+
 	void GLWindowImpl::MouseCallback(GLFWwindow* window, double x, double y)
 	{
 		InputHandler::OnInputChange(x, y);
 	}
 #pragma warning(pop)
-
 
 
 	CursorState GLWindowImpl::CursorMode() const
@@ -233,6 +234,7 @@ namespace leopph::impl
 		return cursorStates.at(glfwGetInputMode(this->m_Window, GLFW_CURSOR));
 	}
 
+
 	void GLWindowImpl::CursorMode(CursorState newState)
 	{
 		static const std::map<CursorState, decltype(GLFW_CURSOR_NORMAL)> cursorStates
@@ -245,17 +247,20 @@ namespace leopph::impl
 		glfwSetInputMode(this->m_Window, GLFW_CURSOR, cursorStates.at(newState));
 	}
 
+
 	void GLWindowImpl::Width(unsigned newWidth)
 	{
 		Window::Width(newWidth);
 		glfwSetWindowSize(m_Window, static_cast<int>(newWidth), static_cast<int>(Window::Height()));
 	}
 
+
 	void GLWindowImpl::Height(unsigned newHeight)
 	{
 		Window::Height(newHeight);
 		glfwSetWindowSize(m_Window, static_cast<int>(Window::Width()), static_cast<int>(newHeight));
 	}
+
 
 	void GLWindowImpl::Vsync(bool value)
 	{
@@ -265,25 +270,30 @@ namespace leopph::impl
 			glfwSwapInterval(0);
 	}
 
+
 	bool GLWindowImpl::Vsync() const
 	{
 		return m_Vsync;
 	}
-	
+
+
 	void GLWindowImpl::PollEvents()
 	{
 		glfwPollEvents();
 	}
+
 
 	void GLWindowImpl::SwapBuffers()
 	{
 		glfwSwapBuffers(m_Window);
 	}
 
+
 	bool GLWindowImpl::ShouldClose()
 	{
 		return glfwWindowShouldClose(m_Window);
 	}
+
 
 	void GLWindowImpl::Clear()
 	{

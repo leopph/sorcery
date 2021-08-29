@@ -1,14 +1,15 @@
 #include "Camera.hpp"
 
+#include "../events/DisplayResolutionChangedEvent.hpp"
+#include "../events/EventManager.hpp"
 #include "../hierarchy/Object.hpp"
-#include "../windowing/window.h"
 #include "../math/LeopphMath.hpp"
+#include "../windowing/window.h"
 
 #include "../util/logger.h"
 
 #include <utility>
 #include <stdexcept>
-
 
 
 namespace leopph
@@ -28,11 +29,11 @@ namespace leopph
 	}
 
 
-
 	const leopph::CameraBackground& Camera::Background() const
 	{
 		return m_Background;
 	}
+
 
 	void Camera::Background(CameraBackground&& background)
 	{
@@ -41,23 +42,30 @@ namespace leopph
 		impl::Window::Get().Background(m_Background.color);
 	}
 
+
 	Camera::Camera(Object& owner) :
 		Component{ owner },
 		m_AspectRatio{ leopph::impl::Window::Get().AspectRatio() },
 		m_HorizontalFOVDegrees{ 100.0f }, m_NearClip{ 0.3f }, m_FarClip{ 1000.f },
-		m_Background{ .color{0, 0, 0}, .skybox{nullptr} }
+		m_Background{ .color{0, 0, 0}, .skybox{nullptr} },
+		m_ResChangeHandler{ EventManager::Instance().RegisterFor<impl::DisplayResolutionChangedEvent>([this](const Event& event)
+		{
+			const auto& res{reinterpret_cast<const impl::DisplayResolutionChangedEvent&>(event).newResolution};
+			m_AspectRatio = res[0] / res[1];
+		})}
 	{
 		if (s_Active == nullptr)
+		{
 			Activate();
+		}
 	}
+
 
 	Camera::~Camera()
 	{
 		if (s_Active == this)
 			s_Active = nullptr;
 	}
-
-
 
 
 	float Camera::ConvertFOV(float fov, unsigned char conversion) const
@@ -78,44 +86,28 @@ namespace leopph
 	}
 
 
-
-	void Camera::AspectRatio(float newRatio)
-	{
-		m_AspectRatio = newRatio;
-	}
-
-	void Camera::AspectRatio(int width, int height)
-	{
-		m_AspectRatio = static_cast<float>(width) / static_cast<float>(height);
-	}
-
-	float Camera::AspectRatio() const
-	{
-		return m_AspectRatio;
-	}
-
-
-
 	void Camera::NearClipPlane(float newPlane)
 	{
 		m_NearClip = newPlane;
 	}
+
 
 	float Camera::NearClipPlane() const
 	{
 		return m_NearClip;
 	}
 
+
 	void Camera::FarClipPlane(float newPlane)
 	{
 		m_FarClip = newPlane;
 	}
 
+
 	float Camera::FarClipPlane() const
 	{
 		return m_FarClip;
 	}
-
 
 
 	void Camera::FOV(float fov, unsigned char direction)
@@ -137,6 +129,7 @@ namespace leopph
 		};
 	}
 
+
 	float Camera::FOV(unsigned char direction) const
 	{
 		switch (direction)
@@ -155,12 +148,12 @@ namespace leopph
 	}
 
 
-
 	Matrix4 Camera::ViewMatrix() const
 	{
 		return (static_cast<Matrix4>(object.Transform().Rotation()) * Matrix4::Translate(object.Transform().Position())).Inverse();
 		//return Matrix4::LookAt(object.Transform().Position(), object.Transform().Position() + object.Transform().Forward(), Vector3::Up());
 	}
+
 
 	Matrix4 Camera::ProjectionMatrix() const
 	{
