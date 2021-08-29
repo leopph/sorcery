@@ -47,12 +47,7 @@ namespace leopph
 		Component{ owner },
 		m_AspectRatio{ leopph::impl::Window::Get().AspectRatio() },
 		m_HorizontalFOVDegrees{ 100.0f }, m_NearClip{ 0.3f }, m_FarClip{ 1000.f },
-		m_Background{ .color{0, 0, 0}, .skybox{nullptr} },
-		m_ResChangeHandler{ EventManager::Instance().RegisterFor<impl::DisplayResolutionChangedEvent>([this](const Event& event)
-		{
-			const auto& res{reinterpret_cast<const impl::DisplayResolutionChangedEvent&>(event).newResolution};
-			m_AspectRatio = res[0] / res[1];
-		})}
+		m_Background{ .color{0, 0, 0}, .skybox{nullptr} }
 	{
 		if (s_Active == nullptr)
 		{
@@ -159,5 +154,11 @@ namespace leopph
 	{
 		const float fov{ math::ToRadians(ConvertFOV(m_HorizontalFOVDegrees, HORIZONTAL_TO_VERTICAL)) };
 		return Matrix4::Perspective(fov, m_AspectRatio, m_NearClip, m_FarClip);
+	}
+
+
+	void Camera::OnEventReceived(EventParamType event)
+	{
+		m_AspectRatio = event.newResolution[0] / event.newResolution[1];
 	}
 }

@@ -159,7 +159,9 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClInclude Include="src\events\DisplayResolutionChangedEvent.hpp" />
     <ClInclude Include="src\events\Event.hpp" />
     <ClInclude Include="src\events\EventManager.hpp" />
-    <ClInclude Include="src\events\EventHandler.hpp" />
+    <ClInclude Include="src\events\EventReceiver.hpp" />
+    <ClInclude Include="src\events\EventReceiverBase.hpp" />
+    <ClInclude Include="src\events\EventReceiverHandle.hpp" />
     <ClInclude Include="src\input\cursorstate.h" />
     <ClInclude Include="src\input\inputhandler.h" />
     <ClInclude Include="src\input\keycodes.h" />
@@ -225,8 +227,8 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClCompile Include="src\components\Transform.cpp" />
     <ClCompile Include="src\events\DisplayResolutionChangedEvent.cpp" />
     <ClCompile Include="src\events\Event.cpp" />
-    <ClCompile Include="src\events\EventHandler.cpp" />
     <ClCompile Include="src\events\EventManager.cpp" />
+    <ClCompile Include="src\events\EventReceiverBase.cpp" />
     <ClCompile Include="src\input\inputhandler.cpp" />
     <ClCompile Include="src\misc\color.cpp" />
     <ClCompile Include="src\rendering\buffers\Buffer.cpp" />

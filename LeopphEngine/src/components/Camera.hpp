@@ -1,7 +1,8 @@
 #pragma once
 
 #include "../api/leopphapi.h"
-#include "../events/EventHandler.hpp"
+#include "../events/EventReceiver.hpp"
+#include "../events/DisplayResolutionChangedEvent.hpp"
 #include "../math/Matrix.hpp"
 #include "../misc/camerabackground.h"
 #include "Component.hpp"
@@ -15,7 +16,7 @@ namespace leopph
 	Attach this to your Objects and switch between them to provide different viewing angles dynamically at runtime.
 	See "object.h" and "component.h" for more information.
 	-------------------------------------------------------------------------------------------------------------*/
-	class Camera final : public Component
+	class Camera final : public Component, public EventReceiver<impl::DisplayResolutionChangedEvent>
 	{
 	public:
 		/* Get the current active camera that is used to render the scene */
@@ -67,9 +68,9 @@ namespace leopph
 
 		CameraBackground m_Background;
 
-		EventHandler m_ResChangeHandler;
-
 		enum : unsigned char { VERTICAL_TO_HORIZONTAL, HORIZONTAL_TO_VERTICAL };
 		[[nodiscard]] float ConvertFOV(float fov, unsigned char conversion) const;
+
+		void OnEventReceived(EventParamType event) override;
 	};
 }

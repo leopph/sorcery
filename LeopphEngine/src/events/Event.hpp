@@ -1,16 +1,21 @@
 #pragma once
 
+#include "../api/leopphapi.h"
+
 
 namespace leopph
 {
+	/* Event is the base class for all of the objects that
+	 * can circulate in the Event System. Subclass this to
+	 * add your own data and broadcast it. */
 	class Event
 	{
 	public:
-		Event() = default;
-		Event(const Event& other) = default;
-		Event(Event&& other) = default;
-		Event& operator=(const Event& other) = default;
-		Event& operator=(Event&& other) = default;
-		virtual ~Event() = 0;
+		LEOPPHAPI Event() = default;
+		LEOPPHAPI Event(const Event& other) = default;
+		LEOPPHAPI Event(Event&& other) = default;
+		LEOPPHAPI Event& operator=(const Event& other) = default;
+		LEOPPHAPI Event& operator=(Event&& other) = default;
+		LEOPPHAPI virtual ~Event() = 0;
 	};
 }
