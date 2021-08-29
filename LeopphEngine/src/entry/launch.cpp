@@ -27,7 +27,6 @@ namespace leopph::impl
 #endif
 		
 		auto& window{ Window::Get(1280, 720, "LeopphEngine Application", false) };
-		Logger::Instance().Debug("Window created.");
 
 		if (!InitGL())
 		{
@@ -42,12 +41,10 @@ namespace leopph::impl
 
 		{
 			DeferredRenderer renderer;
-			Logger::Instance().Debug("Renderer initialized");
 
 			Timer::Init();
 			Logger::Instance().Debug("Timer initialized.");
 
-			Logger::Instance().Debug("Starting render loop.");
 			while (!window.ShouldClose())
 			{
 				EventManager::Instance().Send<FrameBeginsEvent>();
@@ -61,16 +58,10 @@ namespace leopph::impl
 				Timer::OnFrameComplete();
 				window.SwapBuffers();
 			}
-			Logger::Instance().Debug("Render loop finished.");
 		}
-		Logger::Instance().Debug("Renderer destroyed");
 
 		DataManager::DestroyAllObjects();
-		Logger::Instance().Debug("All objects destroyed.");
-
 		Window::Destroy();
-		Logger::Instance().Debug("Window destroyed.");
-
 		return 0;
 	}
 }

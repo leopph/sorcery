@@ -22,7 +22,7 @@ namespace leopph
 	} };
 
 
-	EventReceiverHandle<impl::FrameBeginsEvent> Input::frameBeginsEventReceiver{ [](const impl::FrameBeginsEvent& event)
+	EventReceiverHandle<impl::FrameBeginsEvent> Input::frameBeginsEventReceiver{ [](const impl::FrameBeginsEvent&)
 	{
 		for (auto& [keyCode, keyState] : s_KeyStates)
 		{

@@ -36,6 +36,8 @@ namespace leopph::impl
 		}
 
 		s_ShadowMaps.clear();
+
+		Logger::Instance().Debug("All objects destroyed.");
 	}
 
 

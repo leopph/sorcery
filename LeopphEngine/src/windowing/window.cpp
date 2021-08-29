@@ -1,7 +1,10 @@
 #include "window.h"
+
+#include "../components/Camera.hpp"
 #include "../config/Settings.hpp"
 #include "glwindow.h"
-#include "../components/Camera.hpp"
+
+#include "../util/logger.h"
 
 namespace leopph::impl
 {
@@ -21,6 +24,8 @@ namespace leopph::impl
 			}
 
 			s_Instance->InitKeys();
+
+			Logger::Instance().Debug("Window created.");
 		}
 
 		return *s_Instance;
@@ -29,6 +34,7 @@ namespace leopph::impl
 	void Window::Destroy()
 	{
 		delete s_Instance;
+		Logger::Instance().Debug("Window destroyed.");
 	}
 
 
