@@ -19,44 +19,7 @@ namespace leopph::impl
 		shineTextureName{ m_Textures[Shine] },
 		m_Textures{}, m_DepthBuffer{}
 	{
-		glCreateTextures(GL_TEXTURE_2D, static_cast<GLsizei>(m_Textures.size()), m_Textures.data());
-
-		glTextureStorage2D(m_Textures[Position], 1, GL_RGB32F, static_cast<GLint>(Window::Get().Width()), static_cast<GLint>(Window::Get().Height()));
-		glTextureParameteri(m_Textures[Position], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTextureParameteri(m_Textures[Position], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-		glTextureStorage2D(m_Textures[Normal], 1, GL_RGB32F, static_cast<GLint>(Window::Get().Width()), static_cast<GLint>(Window::Get().Height()));
-		glTextureParameteri(m_Textures[Normal], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTextureParameteri(m_Textures[Normal], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-		glTextureStorage2D(m_Textures[Ambient], 1, GL_RGB8, static_cast<GLint>(Window::Get().Width()), static_cast<GLint>(Window::Get().Height()));
-		glTextureParameteri(m_Textures[Ambient], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTextureParameteri(m_Textures[Ambient], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-		glTextureStorage2D(m_Textures[Diffuse], 1, GL_RGB8, static_cast<GLint>(Window::Get().Width()), static_cast<GLint>(Window::Get().Height()));
-		glTextureParameteri(m_Textures[Diffuse], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTextureParameteri(m_Textures[Diffuse], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-		glTextureStorage2D(m_Textures[Specular], 1, GL_RGB8, static_cast<GLint>(Window::Get().Width()), static_cast<GLint>(Window::Get().Height()));
-		glTextureParameteri(m_Textures[Specular], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTextureParameteri(m_Textures[Specular], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-		glTextureStorage2D(m_Textures[Shine], 1, GL_R32F, static_cast<GLint>(Window::Get().Width()), static_cast<GLint>(Window::Get().Height()));
-		glTextureParameteri(m_Textures[Shine], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTextureParameteri(m_Textures[Shine], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-		glCreateRenderbuffers(1, &m_DepthBuffer);
-		glNamedRenderbufferStorage(m_DepthBuffer, GL_DEPTH_COMPONENT, static_cast<GLint>(Window::Get().Width()), static_cast<GLint>(Window::Get().Height()));
-
-		glNamedFramebufferTexture(name, GL_COLOR_ATTACHMENT0, m_Textures[Position], 0);
-		glNamedFramebufferTexture(name, GL_COLOR_ATTACHMENT1, m_Textures[Normal], 0);
-		glNamedFramebufferTexture(name, GL_COLOR_ATTACHMENT2, m_Textures[Ambient], 0);
-		glNamedFramebufferTexture(name, GL_COLOR_ATTACHMENT3, m_Textures[Diffuse], 0);
-		glNamedFramebufferTexture(name, GL_COLOR_ATTACHMENT4, m_Textures[Specular], 0);
-		glNamedFramebufferTexture(name, GL_COLOR_ATTACHMENT5, m_Textures[Shine], 0);
-		glNamedFramebufferRenderbuffer(name, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_DepthBuffer);
-
-		glNamedFramebufferDrawBuffers(name, 6, std::array<GLenum, 6>{ GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5 }.data());
+		SetUpBuffers(Vector2{ Window::Get().Width(), Window::Get().Height() });
 	}
 
 
@@ -87,5 +50,57 @@ namespace leopph::impl
 	void GeometryBuffer::Unbind() const
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
+
+
+	void GeometryBuffer::SetUpBuffers(const Vector2& res)
+	{
+		glDeleteTextures(static_cast<GLsizei>(m_Textures.size()), m_Textures.data());
+		glDeleteRenderbuffers(1, &m_DepthBuffer);
+
+		glCreateTextures(GL_TEXTURE_2D, static_cast<GLsizei>(m_Textures.size()), m_Textures.data());
+
+		glTextureStorage2D(m_Textures[Position], 1, GL_RGB32F, static_cast<GLint>(res[0]), static_cast<GLint>(res[1]));
+		glTextureParameteri(m_Textures[Position], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTextureParameteri(m_Textures[Position], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+		glTextureStorage2D(m_Textures[Normal], 1, GL_RGB32F, static_cast<GLint>(res[0]), static_cast<GLint>(res[1]));
+		glTextureParameteri(m_Textures[Normal], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTextureParameteri(m_Textures[Normal], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+		glTextureStorage2D(m_Textures[Ambient], 1, GL_RGB8, static_cast<GLint>(res[0]), static_cast<GLint>(res[1]));
+		glTextureParameteri(m_Textures[Ambient], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTextureParameteri(m_Textures[Ambient], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+		glTextureStorage2D(m_Textures[Diffuse], 1, GL_RGB8, static_cast<GLint>(res[0]), static_cast<GLint>(res[1]));
+		glTextureParameteri(m_Textures[Diffuse], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTextureParameteri(m_Textures[Diffuse], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+		glTextureStorage2D(m_Textures[Specular], 1, GL_RGB8, static_cast<GLint>(res[0]), static_cast<GLint>(res[1]));
+		glTextureParameteri(m_Textures[Specular], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTextureParameteri(m_Textures[Specular], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+		glTextureStorage2D(m_Textures[Shine], 1, GL_R32F, static_cast<GLint>(res[0]), static_cast<GLint>(res[1]));
+		glTextureParameteri(m_Textures[Shine], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTextureParameteri(m_Textures[Shine], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+		glCreateRenderbuffers(1, &m_DepthBuffer);
+		glNamedRenderbufferStorage(m_DepthBuffer, GL_DEPTH_COMPONENT, static_cast<GLint>(res[0]), static_cast<GLint>(res[1]));
+
+		glNamedFramebufferTexture(name, GL_COLOR_ATTACHMENT0, m_Textures[Position], 0);
+		glNamedFramebufferTexture(name, GL_COLOR_ATTACHMENT1, m_Textures[Normal], 0);
+		glNamedFramebufferTexture(name, GL_COLOR_ATTACHMENT2, m_Textures[Ambient], 0);
+		glNamedFramebufferTexture(name, GL_COLOR_ATTACHMENT3, m_Textures[Diffuse], 0);
+		glNamedFramebufferTexture(name, GL_COLOR_ATTACHMENT4, m_Textures[Specular], 0);
+		glNamedFramebufferTexture(name, GL_COLOR_ATTACHMENT5, m_Textures[Shine], 0);
+		glNamedFramebufferRenderbuffer(name, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_DepthBuffer);
+
+		glNamedFramebufferDrawBuffers(name, static_cast<GLsizei>(m_Textures.size()), std::array<GLenum, 6>{ GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5 }.data());
+	}
+
+
+	void GeometryBuffer::OnEventReceived(EventParamType event)
+	{
+		SetUpBuffers(event.newResolution);
 	}
 }
