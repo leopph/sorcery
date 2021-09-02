@@ -6,10 +6,9 @@
     <ClCompile Include="src\rendering\opengl\gl.cpp" />
     <ClCompile Include="src\math\LeopphMath.cpp" />
     <ClCompile Include="src\components\lighting\Light.cpp" />
-    <ClCompile Include="src\rendering\geometry\mesh.cpp" />
+    <ClCompile Include="src\rendering\geometry\Mesh.cpp" />
     <ClCompile Include="src\hierarchy\Object.cpp" />
     <ClCompile Include="src\rendering\Shader.cpp" />
-    <ClCompile Include="src\rendering\texture.cpp" />
     <ClCompile Include="src\timing\leopphtime.cpp" />
     <ClCompile Include="src\windowing\glwindow.cpp" />
     <ClCompile Include="src\components\lighting\PointLight.cpp" />
@@ -26,9 +25,7 @@
     <ClCompile Include="src\timing\timer.cpp" />
     <ClCompile Include="src\config\Settings.cpp" />
     <ClCompile Include="src\util\logger.cpp" />
-    <ClCompile Include="src\rendering\material.cpp" />
-    <ClCompile Include="src\util\hash\TextureHash.cpp" />
-    <ClCompile Include="src\util\equal\TextureEqual.cpp" />
+    <ClCompile Include="src\rendering\Material.cpp" />
     <ClCompile Include="src\util\less\ObjectLess.cpp" />
     <ClCompile Include="src\misc\skybox.cpp" />
     <ClCompile Include="src\data\skyboximpl.cpp" />
@@ -71,6 +68,8 @@
     <ClCompile Include="src\rendering\geometry\ModelResource.cpp" />
     <ClCompile Include="src\rendering\geometry\AssimpModel.cpp" />
     <ClCompile Include="src\rendering\renderers\Renderer.cpp" />
+    <ClCompile Include="src\rendering\TextureResource.cpp" />
+    <ClCompile Include="src\rendering\Texture.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\Behavior.hpp" />
@@ -84,13 +83,12 @@
     <ClInclude Include="src\math\LeopphMath.hpp" />
     <ClInclude Include="src\components\lighting\Light.hpp" />
     <ClInclude Include="src\math\Matrix.hpp" />
-    <ClInclude Include="src\rendering\geometry\mesh.h" />
+    <ClInclude Include="src\rendering\geometry\Mesh.hpp" />
     <ClInclude Include="src\hierarchy\Object.hpp" />
     <ClInclude Include="src\components\lighting\PointLight.hpp" />
     <ClInclude Include="src\math\Quaternion.hpp" />
     <ClInclude Include="src\rendering\renderers\ForwardRenderer.hpp" />
     <ClInclude Include="src\rendering\Shader.hpp" />
-    <ClInclude Include="src\rendering\texture.h" />
     <ClInclude Include="src\timing\leopphtime.h" />
     <ClInclude Include="src\math\Vector.hpp" />
     <ClInclude Include="src\rendering\vertex.h" />
@@ -107,11 +105,9 @@
     <ClInclude Include="src\entry\appstart.h" />
     <ClInclude Include="src\timing\timer.h" />
     <ClInclude Include="src\util\logger.h" />
-    <ClInclude Include="src\rendering\material.h" />
+    <ClInclude Include="src\rendering\Material.hpp" />
     <ClInclude Include="src\misc\color.h" />
     <ClInclude Include="src\util\hash\PathHash.hpp" />
-    <ClInclude Include="src\util\hash\TextureHash.hpp" />
-    <ClInclude Include="src\util\equal\TextureEqual.hpp" />
     <ClInclude Include="src\util\less\ObjectLess.hpp" />
     <ClInclude Include="src\misc\camerabackground.h" />
     <ClInclude Include="src\misc\skybox.h" />
@@ -148,9 +144,10 @@
     <ClInclude Include="src\util\hash\UniqueResourceHash.hpp" />
     <ClInclude Include="src\rendering\geometry\ModelResource.hpp" />
     <ClInclude Include="src\rendering\geometry\AssimpModel.hpp" />
-    <ClInclude Include="src\data\texturereference.h" />
     <ClInclude Include="src\rendering\renderers\Renderer.hpp" />
     <ClInclude Include="src\data\managed\ResourceHandle.hpp" />
+    <ClInclude Include="src\rendering\TextureResource.hpp" />
+    <ClInclude Include="src\rendering\Texture.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\shaders\ObjectFragment.frag" />

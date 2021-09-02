@@ -8,14 +8,16 @@
 namespace leopph::impl
 {
 	std::unique_ptr<AmbientLight> DataManager::s_AmbientLight{ nullptr };
+
 	DirectionalLight* DataManager::s_DirLight{ nullptr };
+
 	std::vector<PointLight*> DataManager::s_PointLights{};
+
 	std::unordered_set<const SpotLight*> DataManager::s_SpotLights{};
 
-	std::map<Object*, std::set<Component*>, ObjectLess> DataManager::s_Objects{};
+	std::map<Object*, std::set<Component*>, ObjectLess> DataManager::s_Objects{}
+	;
 	std::set<Behavior*> DataManager::s_Behaviors{};
-
-	std::unordered_set<TextureReference, TextureHash, TextureEqual> DataManager::s_Textures{};
 
 	std::unordered_map<SkyboxImpl, std::size_t, SkyboxImplHash, SkyboxImplEqual> DataManager::s_Skyboxes{};
 
@@ -45,12 +47,12 @@ namespace leopph::impl
 		Logger::Instance().Debug("All objects destroyed.");
 	}
 
-
 	
 	void DataManager::RegisterObject(Object* object)
 	{
 		s_Objects.try_emplace(object);
 	}
+
 
 	void DataManager::UnregisterObject(Object* object)
 	{
@@ -58,76 +60,18 @@ namespace leopph::impl
 		s_MatrixCache.erase(object);
 	}
 
+
 	Object* DataManager::FindObject(const std::string& name)
 	{
 		const auto it = s_Objects.find(name);
 		return it != s_Objects.end() ? it->first : nullptr;
 	}
 
+
 	const std::map<Object*, std::set<Component*>, ObjectLess>& DataManager::Objects()
 	{
 		return s_Objects;
 	}
-
-	
-	bool DataManager::IsTextureStored(const std::filesystem::path& path)
-	{
-		return s_Textures.contains(path);
-	}
-
-	std::unique_ptr<Texture> DataManager::CreateTexture(const std::filesystem::path& path)
-	{
-		if (!s_Textures.contains(path))
-		{
-			const auto msg{ "Texture on path [" + path.string() + "] has not been loaded yet." };
-			Logger::Instance().Error(msg);
-			throw std::runtime_error{ msg };
-		}
-
-		return std::make_unique<Texture>(*s_Textures.find(path));
-	}
-
-	void DataManager::StoreTextureRef(const Texture& other)
-	{
-		if (s_Textures.contains(other.path))
-		{
-			const auto msg{ "Texture on path [" + other.path.string() + "] has already been loaded." };
-			Logger::Instance().Error(msg);
-			throw std::runtime_error{ msg };
-		}
-
-		s_Textures.emplace(other.path, other.id, other.isTransparent, 1);
-	}
-
-	void DataManager::IncTexture(const std::filesystem::path& path)
-	{
-		if (!s_Textures.contains(path))
-		{
-			const auto msg{ "Texture on path [" + path.string() + "] has not been loaded yet." };
-			Logger::Instance().Error(msg);
-			throw std::runtime_error{ msg };
-		}
-
-		s_Textures.find(path)->count++;
-	}
-
-	void DataManager::DecTexture(const std::filesystem::path& path)
-	{
-		if (!s_Textures.contains(path))
-		{
-			const auto msg{ "Texture on path [" + path.string() + "] has not been loaded yet." };
-			Logger::Instance().Error(msg);
-			throw std::runtime_error{ msg };
-		}
-
-		const auto& it{ s_Textures.find(path) };
-
-		it->count--;
-
-		if (it->count == 0)
-			s_Textures.erase(it);
-	}
-
 
 
 	const std::set<Behavior*>& DataManager::Behaviors()
@@ -135,50 +79,60 @@ namespace leopph::impl
 		return s_Behaviors;
 	}
 
+
 	void DataManager::RegisterBehavior(Behavior* behavior)
 	{
 		s_Behaviors.insert(behavior);
 	}
+
 
 	void DataManager::UnregisterBehavior(Behavior* behavior)
 	{
 		s_Behaviors.erase(behavior);
 	}
 
+
 	const std::set<Component*>& DataManager::Components(Object* object)
 	{
 		return s_Objects[object];
 	}
+
 
 	void DataManager::RegisterComponent(Component* component)
 	{
 		s_Objects[&component->object].insert(component);
 	}
 
+
 	void DataManager::UnregisterComponent(Component* component)
 	{
 		s_Objects[&component->object].erase(component);
 	}
+
 
 	DirectionalLight* DataManager::DirectionalLight()
 	{
 		return s_DirLight;
 	}
 
+
 	void DataManager::DirectionalLight(leopph::DirectionalLight* dirLight)
 	{
 		s_DirLight = dirLight;
 	}
+
 
 	const std::vector<PointLight*>& DataManager::PointLights()
 	{
 		return s_PointLights;
 	}
 
+
 	void DataManager::RegisterPointLight(PointLight* pointLight)
 	{
 		s_PointLights.push_back(pointLight);
 	}
+
 
 	void DataManager::UnregisterPointLight(PointLight* pointLight)
 	{
@@ -189,6 +143,7 @@ namespace leopph::impl
 				return;
 			}
 	}
+
 
 	const leopph::impl::SkyboxImpl* DataManager::GetSkybox(const std::filesystem::path& left, const std::filesystem::path& right, const std::filesystem::path& top, const std::filesystem::path& bottom, const std::filesystem::path& back, const std::filesystem::path& front)
 	{
@@ -201,6 +156,7 @@ namespace leopph::impl
 		return &it->first;
 	}
 
+
 	const leopph::impl::SkyboxImpl& DataManager::GetSkybox(const Skybox& skybox)
 	{
 		if (!s_Skyboxes.contains(skybox))
@@ -212,6 +168,7 @@ namespace leopph::impl
 
 		return s_Skyboxes.find(skybox)->first;
 	}
+
 
 	const SkyboxImpl* DataManager::RegisterSkybox(const std::filesystem::path& left, const std::filesystem::path& right, const std::filesystem::path& top, const std::filesystem::path& bottom, const std::filesystem::path& back, const std::filesystem::path& front)
 	{
@@ -228,6 +185,7 @@ namespace leopph::impl
 		return &s_Skyboxes.emplace(std::piecewise_construct, std::make_tuple(left, right, top, bottom, back, front), std::make_tuple(1)).first->first;
 	}
 
+
 	void DataManager::IncSkybox(const SkyboxImpl* skybox)
 	{
 		if (!s_Skyboxes.contains(*skybox))
@@ -239,6 +197,7 @@ namespace leopph::impl
 
 		s_Skyboxes.at(*skybox)++;
 	}
+
 
 	void DataManager::DecSkybox(const SkyboxImpl* skybox)
 	{
@@ -254,6 +213,7 @@ namespace leopph::impl
 		if (s_Skyboxes.at(*skybox) == 0)
 			s_Skyboxes.erase(*skybox);
 	}
+
 
 	leopph::AmbientLight* DataManager::AmbientLight()
 	{
@@ -285,15 +245,18 @@ namespace leopph::impl
 		return s_MatrixCache.emplace(object, std::make_pair(modelMatrix, modelMatrix.Inverse().Transposed())).first->second;
 	}
 
+
 	const std::list<ShadowMap>& DataManager::ShadowMaps()
 	{
 		return s_ShadowMaps;
 	}
 
+
 	void DataManager::CreateShadowMap(const Vector2& resolution)
 	{
 		s_ShadowMaps.emplace_back(resolution);
 	}
+
 
 	void DataManager::DeleteShadowMap()
 	{
@@ -303,10 +266,12 @@ namespace leopph::impl
 		}
 	}
 
+
 	const std::unordered_set<const SpotLight*>& DataManager::SpotLights()
 	{
 		return s_SpotLights;
 	}
+
 
 	void DataManager::RegisterSpotLight(const SpotLight* spotLight)
 	{

@@ -156,7 +156,6 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClInclude Include="src\data\managed\ResourceHandle.hpp" />
     <ClInclude Include="src\data\managed\ResourceHandleBase.hpp" />
     <ClInclude Include="src\data\managed\UniqueResource.hpp" />
-    <ClInclude Include="src\data\texturereference.h" />
     <ClInclude Include="src\entry\appstart.h" />
     <ClInclude Include="src\entry\entry.h" />
     <ClInclude Include="src\entry\launch.h" />
@@ -179,11 +178,13 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClInclude Include="src\rendering\buffers\Framebuffer.hpp" />
     <ClInclude Include="src\rendering\buffers\GeometryBuffer.hpp" />
     <ClInclude Include="src\rendering\renderers\DeferredRenderer.hpp" />
-    <ClInclude Include="src\rendering\material.h" />
+    <ClInclude Include="src\rendering\Material.hpp" />
     <ClInclude Include="src\rendering\buffers\RefCountedBuffer.hpp" />
     <ClInclude Include="src\rendering\geometry\ModelResource.hpp" />
     <ClInclude Include="src\rendering\renderers\Renderer.hpp" />
     <ClInclude Include="src\rendering\ShadowMap.hpp" />
+    <ClInclude Include="src\rendering\Texture.hpp" />
+    <ClInclude Include="src\rendering\TextureResource.hpp" />
     <ClInclude Include="src\timing\timer.h" />
     <ClInclude Include="src\misc\camerabackground.h" />
     <ClInclude Include="src\util\equal\FuncEqual.hpp" />
@@ -199,7 +200,7 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClInclude Include="src\math\LeopphMath.hpp" />
     <ClInclude Include="src\components\lighting\Light.hpp" />
     <ClInclude Include="src\math\Matrix.hpp" />
-    <ClInclude Include="src\rendering\geometry\mesh.h" />
+    <ClInclude Include="src\rendering\geometry\Mesh.hpp" />
     <ClInclude Include="src\components\Model.hpp" />
     <ClInclude Include="src\hierarchy\Object.hpp" />
     <ClInclude Include="src\components\lighting\PointLight.hpp" />
@@ -207,7 +208,6 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClInclude Include="src\rendering\renderers\ForwardRenderer.hpp" />
     <ClInclude Include="src\config\Settings.hpp" />
     <ClInclude Include="src\rendering\Shader.hpp" />
-    <ClInclude Include="src\rendering\texture.h" />
     <ClInclude Include="src\timing\leopphtime.h" />
     <ClInclude Include="src\math\Vector.hpp" />
     <ClInclude Include="src\rendering\vertex.h" />
@@ -218,8 +218,6 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClInclude Include="src\data\skyboximpl.h" />
     <ClInclude Include="src\util\equal\SkyBoxImplEqual.hpp" />
     <ClInclude Include="src\util\hash\SkyBoxImplHash.hpp" />
-    <ClInclude Include="src\util\equal\TextureEqual.hpp" />
-    <ClInclude Include="src\util\hash\TextureHash.hpp" />
     <ClInclude Include="src\windowing\glwindow.h" />
     <ClInclude Include="src\windowing\window.h" />
   </ItemGroup>
@@ -249,12 +247,14 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClCompile Include="src\rendering\buffers\Framebuffer.cpp" />
     <ClCompile Include="src\rendering\buffers\GeometryBuffer.cpp" />
     <ClCompile Include="src\rendering\renderers\DeferredRenderer.cpp" />
-    <ClCompile Include="src\rendering\material.cpp" />
+    <ClCompile Include="src\rendering\Material.cpp" />
     <ClCompile Include="src\rendering\geometry\ModelResource.cpp" />
     <ClCompile Include="src\rendering\opengl\gl.cpp" />
     <ClCompile Include="src\rendering\buffers\RefCountedBuffer.cpp" />
     <ClCompile Include="src\rendering\renderers\Renderer.cpp" />
     <ClCompile Include="src\rendering\ShadowMap.cpp" />
+    <ClCompile Include="src\rendering\Texture.cpp" />
+    <ClCompile Include="src\rendering\TextureResource.cpp" />
     <ClCompile Include="src\shaders\stringified\deferred\GPassObjectFragment.cpp" />
     <ClCompile Include="src\shaders\stringified\deferred\GPassObjectVertex.cpp" />
     <ClCompile Include="src\shaders\stringified\deferred\LightPassFragment.cpp" />
@@ -276,21 +276,18 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClCompile Include="src\data\skyboximpl.cpp" />
     <ClCompile Include="src\util\equal\SkyBoxImplEqual.cpp" />
     <ClCompile Include="src\util\hash\SkyBoxImplHash.cpp" />
-    <ClCompile Include="src\util\equal\TextureEqual.cpp" />
-    <ClCompile Include="src\util\hash\TextureHash.cpp" />
     <ClCompile Include="src\windowing\window.cpp" />
     <ClCompile Include="src\input\Input.cpp" />
     <ClCompile Include="src\data\DataManager.cpp" />
     <ClCompile Include="src\math\LeopphMath.cpp" />
     <ClCompile Include="src\components\lighting\Light.cpp" />
-    <ClCompile Include="src\rendering\geometry\mesh.cpp" />
+    <ClCompile Include="src\rendering\geometry\Mesh.cpp" />
     <ClCompile Include="src\components\Model.cpp" />
     <ClCompile Include="src\hierarchy\Object.cpp" />
     <ClCompile Include="src\components\lighting\PointLight.cpp" />
     <ClCompile Include="src\math\Quaternion.cpp" />
     <ClCompile Include="src\rendering\renderers\ForwardRenderer.cpp" />
     <ClCompile Include="src\rendering\Shader.cpp" />
-    <ClCompile Include="src\rendering\texture.cpp" />
     <ClCompile Include="src\timing\leopphtime.cpp" />
     <ClCompile Include="src\windowing\glwindow.cpp" />
     <ClCompile Include="vendor\stb_image\stb_image.cpp" />

@@ -2,7 +2,8 @@
 
 #include "../../math/Matrix.hpp"
 #include "../Shader.hpp"
-#include "mesh.h"
+#include "../Texture.hpp"
+#include "Mesh.hpp"
 
 #include <assimp/scene.h>
 

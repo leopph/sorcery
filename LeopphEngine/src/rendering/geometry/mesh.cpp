@@ -1,4 +1,4 @@
-#include "mesh.h"
+#include "Mesh.hpp"
 
 #include "../../data/DataManager.hpp"
 #include "../../math/Matrix.hpp"
@@ -121,7 +121,7 @@ namespace leopph::impl
 		{
 			shader.SetUniform("material.hasAmbientMap", true);
 			shader.SetUniform("material.ambientMap", static_cast<int>(nextFreeTextureUnit));
-			glBindTextureUnit(static_cast<GLuint>(nextFreeTextureUnit), m_Material.ambientMap->id);
+			glBindTextureUnit(static_cast<GLuint>(nextFreeTextureUnit), m_Material.ambientMap->Id());
 			++nextFreeTextureUnit;
 		}
 		else
@@ -133,7 +133,7 @@ namespace leopph::impl
 		{
 			shader.SetUniform("material.hasDiffuseMap", true);
 			shader.SetUniform("material.diffuseMap", static_cast<int>(nextFreeTextureUnit));
-			glBindTextureUnit(static_cast<GLuint>(nextFreeTextureUnit), m_Material.diffuseMap->id);
+			glBindTextureUnit(static_cast<GLuint>(nextFreeTextureUnit), m_Material.diffuseMap->Id());
 			++nextFreeTextureUnit;
 		}
 		else
@@ -145,7 +145,7 @@ namespace leopph::impl
 		{
 			shader.SetUniform("material.hasSpecularMap", true);
 			shader.SetUniform("material.specularMap", static_cast<int>(nextFreeTextureUnit));
-			glBindTextureUnit(static_cast<GLuint>(nextFreeTextureUnit), m_Material.specularMap->id);
+			glBindTextureUnit(static_cast<GLuint>(nextFreeTextureUnit), m_Material.specularMap->Id());
 			++nextFreeTextureUnit;
 		}
 		else

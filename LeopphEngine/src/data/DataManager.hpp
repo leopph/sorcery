@@ -11,21 +11,17 @@
 #include "../rendering/buffers/RefCountedBuffer.hpp"
 #include "../rendering/geometry/ModelResource.hpp"
 #include "../rendering/ShadowMap.hpp"
-#include "../rendering/texture.h"
 #include "managed/Resource.hpp"
 #include "managed/ResourceHandleBase.hpp"
 #include "managed/UniqueResource.hpp"
 #include "skyboximpl.h"
 
 #include "../util/equal/SkyBoxImplEqual.hpp"
-#include "../util/equal/TextureEqual.hpp"
 #include "../util/equal/UniqueResourceEqual.hpp"
 #include "../util/hash/PathHash.hpp"
 #include "../util/hash/SkyBoxImplHash.hpp"
-#include "../util/hash/TextureHash.hpp"
 #include "../util/hash/UniqueResourceHash.hpp"
 #include "../util/less/ObjectLess.hpp"
-#include "texturereference.h"
 
 #include <cstddef>
 #include <filesystem>
@@ -54,17 +50,7 @@ namespace leopph::impl
 		static Object* FindObject(const std::string& name);
 		/* Call destructor on all Objects */
 		static void DestroyAllObjects();
-		
-		/* Whether a TextureRef with given path is in the set */
-		static bool IsTextureStored(const std::filesystem::path& path);
-		/* Create a TextureRef from a new Texture and set count to 1 */
-		static void StoreTextureRef(const Texture& other);
-		/* Create a Texture from TextureRef and return it */
-		static std::unique_ptr<Texture> CreateTexture(const std::filesystem::path& path);
-		/* Inc count on TextureRef with give path */
-		static void IncTexture(const std::filesystem::path& path);
-		/* Dec count on TextureRef with give path */
-		static void DecTexture(const std::filesystem::path& path);
+
 
 		/* All Behaviors */
 		static const std::set<Behavior*>& Behaviors();
@@ -73,6 +59,7 @@ namespace leopph::impl
 		/* Remove pointer of Behavior from registry */
 		static void UnregisterBehavior(Behavior* behavior);
 
+
 		/* All Components attached to the given Object */
 		static const std::set<Component*>& Components(Object* object);
 		/* Add pointer of Component to registry */
@@ -80,10 +67,12 @@ namespace leopph::impl
 		/* Remove pointer of Component from registry */
 		static void UnregisterComponent(Component* component);
 
+
 		/* Current DirectionalLight */
 		static DirectionalLight* DirectionalLight();
 		/* Set DirectionalLight */
 		static void DirectionalLight(leopph::DirectionalLight* dirLight);
+
 
 		/* All PointLights */
 		static const std::vector<PointLight*>& PointLights();
@@ -92,10 +81,12 @@ namespace leopph::impl
 		/* Remove pointer of PointLight from registry */
 		static void UnregisterPointLight(PointLight* pointLight);
 
+
 		/* AmbientLight instance */
 		static leopph::AmbientLight* AmbientLight();
 		/* Set the instance */
 		static void AmbientLight(leopph::AmbientLight*&& light);
+
 
 		/* Return pointer to SkyboxImpl on the given path, or nullptr, if not loaded yet */
 		static const SkyboxImpl* GetSkybox(const std::filesystem::path& left, const std::filesystem::path& right,
@@ -112,20 +103,25 @@ namespace leopph::impl
 		/* Dec count of given SkyboxImpl */
 		static void DecSkybox(const SkyboxImpl* skybox);
 
+
 		static const std::pair<const Matrix4, const Matrix4>& ModelAndNormalMatrices(const Object* object);
+
 
 		static const std::list<ShadowMap>& ShadowMaps();
 		static void CreateShadowMap(const Vector2& resolution);
 		/* Removes the last stored Shadow Map */
 		static void DeleteShadowMap();
 
+
 		static const std::unordered_set<const SpotLight*>& SpotLights();
 		static void RegisterSpotLight(const SpotLight* spotLight);
 		static void UnregisterSpotLight(const SpotLight* spotLight);
 
+
 		static void RegisterBuffer(const RefCountedBuffer& buffer);
 		static void UnregisterBuffer(const RefCountedBuffer& buffer);
 		static std::size_t ReferenceCount(const RefCountedBuffer& buffer);
+
 
 		static void RegisterResource(const Resource* resource);
 		static void UnregisterResource(const Resource* resource);
@@ -139,13 +135,13 @@ namespace leopph::impl
 		static std::size_t ResourceHandleCount(const UniqueResource* resource);
 		static UniqueResource* FindUniqueResource(const std::filesystem::path& path);
 
+
 		static const std::unordered_set<const ModelResource*> Models();
 		static void RegisterModel(const ModelResource* model);
 		static void UnregisterModel(const ModelResource* model);
 		static std::unordered_set<const ResourceHandleBase*> ModelComponents(const ModelResource* model);
 
 	private:
-		static std::unordered_set<TextureReference, TextureHash, TextureEqual> s_Textures;
 		static std::unordered_map<SkyboxImpl, std::size_t, SkyboxImplHash, SkyboxImplEqual> s_Skyboxes;
 
 		static std::set<Behavior*> s_Behaviors;

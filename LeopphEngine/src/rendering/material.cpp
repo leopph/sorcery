@@ -1,4 +1,4 @@
-#include "material.h"
+#include "Material.hpp"
 
 namespace leopph
 {

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../material.h"
+#include "../Material.hpp"
 #include "../Shader.hpp"
 #include "../vertex.h"
 
