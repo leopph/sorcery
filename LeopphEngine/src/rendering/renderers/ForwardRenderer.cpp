@@ -1,19 +1,21 @@
 #include "ForwardRenderer.hpp"
 
-#include "../components/Camera.hpp"
-#include "../components/lighting/DirLight.hpp"
-#include "../components/lighting/Light.hpp"
-#include "../components/lighting/PointLight.hpp"
-#include "../config/Settings.hpp"
-#include "../data/DataManager.hpp"
-#include "../math/LeopphMath.hpp"
-#include "../math/Matrix.hpp"
-#include "../math/Vector.hpp"
-#include "Shader.hpp"
+#include "../../components/Camera.hpp"
+#include "../../components/lighting/DirLight.hpp"
+#include "../../components/lighting/Light.hpp"
+#include "../../components/lighting/PointLight.hpp"
+#include "../../config/Settings.hpp"
+#include "../../data/DataManager.hpp"
+#include "../../math/LeopphMath.hpp"
+#include "../../math/Matrix.hpp"
+#include "../../math/Vector.hpp"
+#include "../geometry/ModelResource.hpp"
+#include "../Shader.hpp"
 
 #include <glad/glad.h>
 
 #include <algorithm>
+#include <cstddef>
 #include <iterator>
 #include <set>
 #include <string>
@@ -55,100 +57,6 @@ namespace leopph::impl
 	}
 
 
-	bool ForwardRenderer::LightLess::operator()(const Light* left, const Light* right) const
-	{
-		const auto& camPosition{ Camera::Active()->object.Transform().Position() };
-		const auto& leftDistance{ Vector3::Distance(camPosition, left->object.Transform().Position()) };
-		const auto& rightDistance{ Vector3::Distance(camPosition, right->object.Transform().Position()) };
-
-		if (leftDistance != rightDistance)
-		{
-			return leftDistance < rightDistance;
-		}
-
-		return left < right;
-	}
-
-
-	void ForwardRenderer::CalcAndCollectModelAndNormalMatrices()
-	{
-		m_CurrentFrameMatrices.clear();
-
-		for (const auto& [path, modelReference] : DataManager::Models())
-		{
-			auto& [models, normals] = m_CurrentFrameMatrices.try_emplace(path).first->second;
-
-			for (const auto& object : modelReference.Objects())
-			{
-				/* If the objet is static we query for its cached matrix */
-				if (object->isStatic)
-				{
-					const auto& [model, normal] {DataManager::ModelAndNormalMatrices(object)};
-					models.emplace_back(model.Transposed());
-					normals.emplace_back(normal.Transposed());
-				}
-				/* Otherwise we calculate it */
-				else
-				{
-					auto modelMatrix{ Matrix4::Scale(object->Transform().Scale()) };
-					modelMatrix *= static_cast<Matrix4>(object->Transform().Rotation());
-					modelMatrix *= Matrix4::Translate(object->Transform().Position());
-					models.emplace_back(modelMatrix.Transposed());
-					normals.emplace_back(modelMatrix.Inverse());
-				}
-			}
-		}
-	}
-
-
-	void ForwardRenderer::CollectPointLights()
-	{
-		/* This set stores lights in an ascending order based on distance from camera */
-		static std::set<const PointLight*, LightLess> allPointsLightsOrdered;
-
-		allPointsLightsOrdered.clear();
-
-		/* We sort the lights based on distance from camera */
-		for (const PointLight* const light : DataManager::PointLights())
-		{
-			allPointsLightsOrdered.emplace(light);
-		}
-
-		m_CurrentFrameUsedPointLights.clear();
-
-		/* We collect the first MAX_POINT_LIGHTS number of them */
-		for (std::size_t count = 0; const auto& pointLight : allPointsLightsOrdered)
-		{
-			if (count == Settings::MaxPointLightCount())
-			{
-				break;
-			}
-
-			m_CurrentFrameUsedPointLights.emplace_back(pointLight);
-			++count;
-		}
-	}
-
-
-	void ForwardRenderer::CollectSpotLights()
-	{
-		/* This set stores lights in an ascending order based on distance from camera */
-		static std::set<const SpotLight*, LightLess> allSpotLightsOrdered;
-
-		allSpotLightsOrdered.clear();
-
-		/* We sort the lights based on distance from camera */
-		std::ranges::copy(DataManager::SpotLights().begin(), DataManager::SpotLights().end(), std::inserter(allSpotLightsOrdered, allSpotLightsOrdered.begin()));
-
-		m_CurrentFrameUsedSpotLights.clear();
-
-		/* We collect at most MAX_SPOT_LIGHTS number of them */
-		const std::size_t spotLightCount{ std::min(allSpotLightsOrdered.size(), Settings::MaxSpotLightCount()) };
-		std::copy_n(allSpotLightsOrdered.begin(), spotLightCount, std::back_inserter(m_CurrentFrameUsedSpotLights));
-	}
-
-
-
 	void ForwardRenderer::RenderDirectionalShadowMap()
 	{
 		const auto& dirLight = DataManager::DirectionalLight();
@@ -177,7 +85,7 @@ namespace leopph::impl
 
 		for (const auto& [modelPath, matrices] : m_CurrentFrameMatrices)
 		{
-			DataManager::GetModelReference(modelPath).DrawDepth(matrices.first);
+			static_cast<ModelResource*>(DataManager::FindUniqueResource(modelPath))->DrawDepth(matrices.first);
 		}
 
 		shadowMaps.front().UnbindFromBuffer();
@@ -200,7 +108,7 @@ namespace leopph::impl
 		{
 			for (const auto& [modelPath, matrices] : m_CurrentFrameMatrices)
 			{
-				DataManager::GetModelReference(modelPath).DrawDepth(matrices.first);
+				static_cast<ModelResource*>(DataManager::FindUniqueResource(modelPath))->DrawDepth(matrices.first);
 			}
 
 			++shadowMapIt;
@@ -272,7 +180,7 @@ namespace leopph::impl
 		/* Draw the shaded objects */
 		for (const auto& [modelPath, matrices] : m_CurrentFrameMatrices)
 		{
-			DataManager::GetModelReference(modelPath).DrawShaded(m_ObjectShader, matrices.first, matrices.second, usedTextureUnits);
+			static_cast<ModelResource*>(DataManager::FindUniqueResource(modelPath))->DrawShaded(m_ObjectShader, matrices.first, matrices.second, usedTextureUnits);
 		}
 	}
 

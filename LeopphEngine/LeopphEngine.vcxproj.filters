@@ -6,22 +6,21 @@
     <ClCompile Include="src\rendering\opengl\gl.cpp" />
     <ClCompile Include="src\math\LeopphMath.cpp" />
     <ClCompile Include="src\components\lighting\Light.cpp" />
-    <ClCompile Include="src\rendering\mesh.cpp" />
-    <ClCompile Include="src\rendering\assimpmodel.cpp" />
+    <ClCompile Include="src\rendering\geometry\mesh.cpp" />
     <ClCompile Include="src\hierarchy\Object.cpp" />
     <ClCompile Include="src\rendering\Shader.cpp" />
     <ClCompile Include="src\rendering\texture.cpp" />
     <ClCompile Include="src\timing\leopphtime.cpp" />
     <ClCompile Include="src\windowing\glwindow.cpp" />
     <ClCompile Include="src\components\lighting\PointLight.cpp" />
-    <ClCompile Include="src\rendering\ForwardRenderer.cpp" />
+    <ClCompile Include="src\rendering\renderers\ForwardRenderer.cpp" />
     <ClCompile Include="src\input\Input.cpp" />
     <ClCompile Include="src\components\lighting\DirLight.cpp" />
     <ClCompile Include="src\data\DataManager.cpp" />
     <ClCompile Include="src\math\Quaternion.cpp" />
     <ClCompile Include="src\components\Component.cpp" />
     <ClCompile Include="vendor\stb_image\stb_image.cpp" />
-    <ClCompile Include="src\components\models\Model.cpp" />
+    <ClCompile Include="src\components\Model.cpp" />
     <ClCompile Include="src\windowing\window.cpp" />
     <ClCompile Include="src\entry\launch.cpp" />
     <ClCompile Include="src\timing\timer.cpp" />
@@ -31,7 +30,6 @@
     <ClCompile Include="src\util\hash\TextureHash.cpp" />
     <ClCompile Include="src\util\equal\TextureEqual.cpp" />
     <ClCompile Include="src\util\less\ObjectLess.cpp" />
-    <ClCompile Include="src\data\modelreference.cpp" />
     <ClCompile Include="src\misc\skybox.cpp" />
     <ClCompile Include="src\data\skyboximpl.cpp" />
     <ClCompile Include="src\util\hash\SkyBoxImplHash.cpp" />
@@ -53,7 +51,7 @@
     <ClCompile Include="src\rendering\buffers\Framebuffer.cpp" />
     <ClCompile Include="src\rendering\buffers\RefCountedBuffer.cpp" />
     <ClCompile Include="src\util\less\LightCloserToCamera.cpp" />
-    <ClCompile Include="src\rendering\DeferredRenderer.cpp" />
+    <ClCompile Include="src\rendering\renderers\DeferredRenderer.cpp" />
     <ClCompile Include="src\rendering\buffers\GeometryBuffer.cpp" />
     <ClCompile Include="src\shaders\stringified\deferred\GPassObjectFragment.cpp" />
     <ClCompile Include="src\shaders\stringified\deferred\GPassObjectVertex.cpp" />
@@ -67,10 +65,12 @@
     <ClCompile Include="src\events\MouseEvent.cpp" />
     <ClCompile Include="src\data\managed\ResourceHandleBase.cpp" />
     <ClCompile Include="src\data\managed\Resource.cpp" />
-    <ClCompile Include="src\data\managed\ResourceHandle.ixx" />
     <ClCompile Include="src\data\managed\UniqueResource.cpp" />
     <ClCompile Include="src\util\equal\UniqueResourceEqual.cpp" />
     <ClCompile Include="src\util\hash\UniqueResourceHash.cpp" />
+    <ClCompile Include="src\rendering\geometry\ModelResource.cpp" />
+    <ClCompile Include="src\rendering\geometry\AssimpModel.cpp" />
+    <ClCompile Include="src\rendering\renderers\Renderer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\Behavior.hpp" />
@@ -84,12 +84,11 @@
     <ClInclude Include="src\math\LeopphMath.hpp" />
     <ClInclude Include="src\components\lighting\Light.hpp" />
     <ClInclude Include="src\math\Matrix.hpp" />
-    <ClInclude Include="src\rendering\mesh.h" />
-    <ClInclude Include="src\rendering\assimpmodel.h" />
+    <ClInclude Include="src\rendering\geometry\mesh.h" />
     <ClInclude Include="src\hierarchy\Object.hpp" />
     <ClInclude Include="src\components\lighting\PointLight.hpp" />
     <ClInclude Include="src\math\Quaternion.hpp" />
-    <ClInclude Include="src\rendering\ForwardRenderer.hpp" />
+    <ClInclude Include="src\rendering\renderers\ForwardRenderer.hpp" />
     <ClInclude Include="src\rendering\Shader.hpp" />
     <ClInclude Include="src\rendering\texture.h" />
     <ClInclude Include="src\timing\leopphtime.h" />
@@ -98,7 +97,7 @@
     <ClInclude Include="src\windowing\glwindow.h" />
     <ClInclude Include="include\leopph.h" />
     <ClInclude Include="src\components\Component.hpp" />
-    <ClInclude Include="src\components\models\Model.hpp" />
+    <ClInclude Include="src\components\Model.hpp" />
     <ClInclude Include="src\windowing\window.h" />
     <ClInclude Include="src\config\Settings.hpp" />
     <ClInclude Include="src\input\keycodes.h" />
@@ -113,9 +112,7 @@
     <ClInclude Include="src\util\hash\PathHash.hpp" />
     <ClInclude Include="src\util\hash\TextureHash.hpp" />
     <ClInclude Include="src\util\equal\TextureEqual.hpp" />
-    <ClInclude Include="src\data\texturereference.h" />
     <ClInclude Include="src\util\less\ObjectLess.hpp" />
-    <ClInclude Include="src\data\modelreference.h" />
     <ClInclude Include="src\misc\camerabackground.h" />
     <ClInclude Include="src\misc\skybox.h" />
     <ClInclude Include="src\data\skyboximpl.h" />
@@ -130,7 +127,7 @@
     <ClInclude Include="src\rendering\buffers\Buffer.hpp" />
     <ClInclude Include="src\rendering\buffers\Framebuffer.hpp" />
     <ClInclude Include="src\rendering\buffers\RefCountedBuffer.hpp" />
-    <ClInclude Include="src\rendering\DeferredRenderer.hpp" />
+    <ClInclude Include="src\rendering\renderers\DeferredRenderer.hpp" />
     <ClInclude Include="src\util\less\LightCloserToCamera.hpp" />
     <ClInclude Include="src\rendering\buffers\GeometryBuffer.hpp" />
     <ClInclude Include="src\util\equal\FuncEqual.hpp" />
@@ -149,6 +146,11 @@
     <ClInclude Include="src\data\managed\UniqueResource.hpp" />
     <ClInclude Include="src\util\equal\UniqueResourceEqual.hpp" />
     <ClInclude Include="src\util\hash\UniqueResourceHash.hpp" />
+    <ClInclude Include="src\rendering\geometry\ModelResource.hpp" />
+    <ClInclude Include="src\rendering\geometry\AssimpModel.hpp" />
+    <ClInclude Include="src\data\texturereference.h" />
+    <ClInclude Include="src\rendering\renderers\Renderer.hpp" />
+    <ClInclude Include="src\data\managed\ResourceHandle.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\shaders\ObjectFragment.frag" />

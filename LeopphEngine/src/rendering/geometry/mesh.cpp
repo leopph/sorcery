@@ -1,10 +1,10 @@
 #include "mesh.h"
 
-#include "../data/DataManager.hpp"
-#include "../math/Matrix.hpp"
-#include "../math/Vector.hpp"
+#include "../../data/DataManager.hpp"
+#include "../../math/Matrix.hpp"
+#include "../../math/Vector.hpp"
 
-#include "../util/logger.h"
+#include "../../util/logger.h"
 
 #include <glad/glad.h>
 

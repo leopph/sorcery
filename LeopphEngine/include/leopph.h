@@ -12,7 +12,7 @@ See individual headers for more information.
 #include "../src/components/lighting/DirLight.hpp"
 #include "../src/components/lighting/PointLight.hpp"
 #include "../src/components/lighting/SpotLight.hpp"
-#include "../src/components/models/Model.hpp"
+#include "../src/components/Model.hpp"
 #include "../src/config/Settings.hpp"
 #include "../src/events/Event.hpp"
 #include "../src/events/EventManager.hpp"

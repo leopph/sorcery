@@ -11,6 +11,6 @@ namespace leopph::impl
 		ResourceHandleBase(ResourceHandleBase&& other) = default;
 		ResourceHandleBase& operator=(const ResourceHandleBase& other) = default;
 		ResourceHandleBase& operator=(ResourceHandleBase&& other) = default;
-		virtual ~ResourceHandleBase() = 0;
+		virtual ~ResourceHandleBase() = default;
 	};
 }

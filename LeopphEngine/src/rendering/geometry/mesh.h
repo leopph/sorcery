@@ -1,8 +1,8 @@
 #pragma once
 
-#include "material.h"
-#include "Shader.hpp"
-#include "vertex.h"
+#include "../material.h"
+#include "../Shader.hpp"
+#include "../vertex.h"
 
 #include <cstddef>
 #include <vector>

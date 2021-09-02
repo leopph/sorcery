@@ -8,8 +8,9 @@
 #include "../components/lighting/SpotLight.hpp"
 #include "../hierarchy/Object.hpp"
 #include "../misc/skybox.h"
-#include "../rendering/ShadowMap.hpp"
 #include "../rendering/buffers/RefCountedBuffer.hpp"
+#include "../rendering/geometry/ModelResource.hpp"
+#include "../rendering/ShadowMap.hpp"
 #include "../rendering/texture.h"
 #include "managed/Resource.hpp"
 #include "managed/ResourceHandleBase.hpp"
@@ -24,7 +25,6 @@
 #include "../util/hash/TextureHash.hpp"
 #include "../util/hash/UniqueResourceHash.hpp"
 #include "../util/less/ObjectLess.hpp"
-#include "modelreference.h"
 #include "texturereference.h"
 
 #include <cstddef>
@@ -97,15 +97,6 @@ namespace leopph::impl
 		/* Set the instance */
 		static void AmbientLight(leopph::AmbientLight*&& light);
 
-		/* All ModelRefs */
-		static const std::unordered_map<std::filesystem::path, ModelReference, PathHash>& Models();
-		/* Reference to ModelRef on the given path */
-		static const AssimpModelImpl& GetModelReference(const std::filesystem::path& path);
-		/* Inc count of ModelRef on given path with given Object */
-		static void IncModel(const std::filesystem::path& path, Object* object);
-		/* Dec count of ModelRef on given path with given Object */
-		static void DecModel(const std::filesystem::path& path, Object* object);
-
 		/* Return pointer to SkyboxImpl on the given path, or nullptr, if not loaded yet */
 		static const SkyboxImpl* GetSkybox(const std::filesystem::path& left, const std::filesystem::path& right,
 			const std::filesystem::path& top, const std::filesystem::path& bottom,
@@ -148,10 +139,13 @@ namespace leopph::impl
 		static std::size_t ResourceHandleCount(const UniqueResource* resource);
 		static UniqueResource* FindUniqueResource(const std::filesystem::path& path);
 
+		static const std::unordered_set<const ModelResource*> Models();
+		static void RegisterModel(const ModelResource* model);
+		static void UnregisterModel(const ModelResource* model);
+		static std::unordered_set<const ResourceHandleBase*> ModelComponents(const ModelResource* model);
 
 	private:
 		static std::unordered_set<TextureReference, TextureHash, TextureEqual> s_Textures;
-		static std::unordered_map<std::filesystem::path, ModelReference, PathHash> s_Models;
 		static std::unordered_map<SkyboxImpl, std::size_t, SkyboxImplHash, SkyboxImplEqual> s_Skyboxes;
 
 		static std::set<Behavior*> s_Behaviors;
@@ -169,5 +163,7 @@ namespace leopph::impl
 
 		static std::unordered_map<const Resource*, std::unordered_set<const ResourceHandleBase*>> s_ResourcesAndHandles;
 		static std::unordered_map<const UniqueResource*, std::unordered_set<const ResourceHandleBase*>, UniqueResourceHash, UniqueResourceEqual> s_UniqueResourcesAndHandles;
+
+		static std::unordered_set<const ModelResource*> s_ModelResources;
 	};
 }

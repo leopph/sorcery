@@ -16,7 +16,6 @@ namespace leopph::impl
 	std::set<Behavior*> DataManager::s_Behaviors{};
 
 	std::unordered_set<TextureReference, TextureHash, TextureEqual> DataManager::s_Textures{};
-	std::unordered_map<std::filesystem::path, ModelReference, PathHash> DataManager::s_Models{};
 
 	std::unordered_map<SkyboxImpl, std::size_t, SkyboxImplHash, SkyboxImplEqual> DataManager::s_Skyboxes{};
 
@@ -29,6 +28,8 @@ namespace leopph::impl
 	std::unordered_map<const Resource*, std::unordered_set<const ResourceHandleBase*>> DataManager::s_ResourcesAndHandles{};
 
 	std::unordered_map<const UniqueResource*, std::unordered_set<const ResourceHandleBase*>, UniqueResourceHash, UniqueResourceEqual> DataManager::s_UniqueResourcesAndHandles{};
+
+	std::unordered_set<const ModelResource*> DataManager::s_ModelResources{};
 
 	
 	void DataManager::DestroyAllObjects()
@@ -187,46 +188,6 @@ namespace leopph::impl
 				s_PointLights.erase(it);
 				return;
 			}
-	}
-
-	const AssimpModelImpl& DataManager::GetModelReference(const std::filesystem::path& path)
-	{
-		if (!s_Models.contains(path))
-			return (*s_Models.emplace(path, path).first).second.ReferenceModel();
-
-		return (*s_Models.find(path)).second.ReferenceModel();
-	}
-
-	void DataManager::IncModel(const std::filesystem::path& path, Object* object)
-	{
-		if (!s_Models.contains(path))
-		{
-			const auto errorMsg{ "Model on path [" + path.string() + "] has not been loaded yet." };
-			Logger::Instance().Error(errorMsg);
-			throw std::runtime_error(errorMsg);
-		}
-
-		s_Models.at(path).AddObject(object);
-	}
-
-	void DataManager::DecModel(const std::filesystem::path& path, Object* object)
-	{
-		if (!s_Models.contains(path))
-		{
-			const auto errorMsg{ "Model on path [" + path.string() + "] has not been loaded yet." };
-			Logger::Instance().Error(errorMsg);
-			throw std::runtime_error(errorMsg);
-		}
-
-		s_Models.at(path).RemoveObject(object);
-
-		if (s_Models.at(path).ReferenceCount() == 0)
-			s_Models.erase(path);
-	}
-
-	const std::unordered_map<std::filesystem::path, ModelReference, PathHash>& DataManager::Models()
-	{
-		return s_Models;
 	}
 
 	const leopph::impl::SkyboxImpl* DataManager::GetSkybox(const std::filesystem::path& left, const std::filesystem::path& right, const std::filesystem::path& top, const std::filesystem::path& bottom, const std::filesystem::path& back, const std::filesystem::path& front)
@@ -456,5 +417,29 @@ namespace leopph::impl
 	{
 		auto it = s_UniqueResourcesAndHandles.find(path);
 		return it == s_UniqueResourcesAndHandles.end() ? nullptr : const_cast<UniqueResource*>(it->first);
+	}
+
+
+	const std::unordered_set<const ModelResource*> DataManager::Models()
+	{
+		return s_ModelResources;
+	}
+
+
+	void DataManager::RegisterModel(const ModelResource* model)
+	{
+		s_ModelResources.insert(model);
+	}
+
+
+	void DataManager::UnregisterModel(const ModelResource* model)
+	{
+		s_ModelResources.erase(model);
+	}
+
+
+	std::unordered_set<const ResourceHandleBase*> DataManager::ModelComponents(const ModelResource* model)
+	{
+		return s_UniqueResourcesAndHandles.at(model);
 	}
 }

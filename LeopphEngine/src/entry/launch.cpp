@@ -9,8 +9,8 @@
 #include "../events/EventManager.hpp"
 #include "../events/FrameBeginsEvent.hpp"
 #include "../data/DataManager.hpp"
-#include "../rendering/DeferredRenderer.hpp"
-#include "../rendering/ForwardRenderer.hpp"
+#include "../rendering/renderers/DeferredRenderer.hpp"
+#include "../rendering/renderers/ForwardRenderer.hpp"
 #include "../rendering/opengl/gl.h"
 #include "../timing/timer.h"
 #include "../windowing/window.h"
@@ -40,7 +40,7 @@ namespace leopph::impl
 		Logger::Instance().Debug("App initialized.");
 
 		{
-			DeferredRenderer renderer;
+			ForwardRenderer renderer;
 
 			Timer::Init();
 			Logger::Instance().Debug("Timer initialized.");

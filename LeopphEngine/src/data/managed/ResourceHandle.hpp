@@ -1,4 +1,5 @@
-module;
+#pragma once
+
 #include "../DataManager.hpp"
 #include "Resource.hpp"
 #include "ResourceHandleBase.hpp"
@@ -7,19 +8,20 @@ module;
 #include <concepts>
 #include <filesystem>
 #include <utility>
-export module ResourceHandle;
+
+// TODO this leaks lots of headers
 
 
 namespace leopph::impl
 {
-	export template<typename T>
+	template<typename T>
 		requires std::derived_from<T, Resource> || std::derived_from<T, UniqueResource>
-	class ResourceHandle : public ResourceHandleBase
+		class ResourceHandle : public ResourceHandleBase
 	{
 	public:
 		explicit ResourceHandle(auto&&... args)
 			requires std::derived_from<T, Resource> :
-				m_ResPtr{ new T{ std::forward<decltype(args)>(args)... } }, resource{ m_ResPtr }
+			m_ResPtr{ new T{ std::forward<decltype(args)>(args)... } }, resource{ m_ResPtr }
 		{
 			Init();
 		}
@@ -27,12 +29,14 @@ namespace leopph::impl
 
 		explicit ResourceHandle(std::filesystem::path path)
 			requires std::derived_from<T, UniqueResource> :
-				m_ResPtr{ DataManager::FindUniqueResource(path) }
+		m_ResPtr{ static_cast<T*>(DataManager::FindUniqueResource(path)) }, resource{ m_ResPtr }
 		{
 			if (m_ResPtr == nullptr)
 			{
 				m_ResPtr = new T{ std::forward<std::filesystem::path>(path) };
 			}
+
+			Init();
 		}
 
 

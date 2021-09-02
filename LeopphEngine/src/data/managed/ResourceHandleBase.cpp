@@ -3,5 +3,5 @@
 
 namespace leopph::impl
 {
-	ResourceHandleBase::~ResourceHandleBase() = default;
+	//ResourceHandleBase::~ResourceHandleBase() = default;
 }
