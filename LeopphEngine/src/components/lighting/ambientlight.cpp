@@ -1,6 +1,6 @@
 #include "AmbientLight.hpp"
 
-#include "../../instances/DataManager.hpp"
+#include "../../data/DataManager.hpp"
 
 leopph::AmbientLight& leopph::AmbientLight::Instance()
 {

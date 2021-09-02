@@ -1,6 +1,6 @@
 #include "RefCountedBuffer.hpp"
 
-#include "../../instances/DataManager.hpp"
+#include "../../data/DataManager.hpp"
 
 #include <glad/glad.h>
 

@@ -5,7 +5,7 @@
 #include "../components/lighting/Light.hpp"
 #include "../components/lighting/PointLight.hpp"
 #include "../config/Settings.hpp"
-#include "../instances/DataManager.hpp"
+#include "../data/DataManager.hpp"
 #include "../math/LeopphMath.hpp"
 #include "../math/Matrix.hpp"
 #include "../math/Vector.hpp"

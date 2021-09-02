@@ -17,7 +17,7 @@
     <ClCompile Include="src\rendering\ForwardRenderer.cpp" />
     <ClCompile Include="src\input\Input.cpp" />
     <ClCompile Include="src\components\lighting\DirLight.cpp" />
-    <ClCompile Include="src\instances\DataManager.cpp" />
+    <ClCompile Include="src\data\DataManager.cpp" />
     <ClCompile Include="src\math\Quaternion.cpp" />
     <ClCompile Include="src\components\Component.cpp" />
     <ClCompile Include="vendor\stb_image\stb_image.cpp" />
@@ -31,9 +31,9 @@
     <ClCompile Include="src\util\hash\TextureHash.cpp" />
     <ClCompile Include="src\util\equal\TextureEqual.cpp" />
     <ClCompile Include="src\util\less\ObjectLess.cpp" />
-    <ClCompile Include="src\instances\modelreference.cpp" />
+    <ClCompile Include="src\data\modelreference.cpp" />
     <ClCompile Include="src\misc\skybox.cpp" />
-    <ClCompile Include="src\instances\skyboximpl.cpp" />
+    <ClCompile Include="src\data\skyboximpl.cpp" />
     <ClCompile Include="src\util\hash\SkyBoxImplHash.cpp" />
     <ClCompile Include="src\util\equal\SkyBoxImplEqual.cpp" />
     <ClCompile Include="src\misc\color.cpp" />
@@ -65,6 +65,12 @@
     <ClCompile Include="src\events\EventReceiverBase.cpp" />
     <ClCompile Include="src\events\KeyEvent.cpp" />
     <ClCompile Include="src\events\MouseEvent.cpp" />
+    <ClCompile Include="src\data\managed\ResourceHandleBase.cpp" />
+    <ClCompile Include="src\data\managed\Resource.cpp" />
+    <ClCompile Include="src\data\managed\ResourceHandle.ixx" />
+    <ClCompile Include="src\data\managed\UniqueResource.cpp" />
+    <ClCompile Include="src\util\equal\UniqueResourceEqual.cpp" />
+    <ClCompile Include="src\util\hash\UniqueResourceHash.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\Behavior.hpp" />
@@ -73,7 +79,7 @@
     <ClInclude Include="src\entry\entry.h" />
     <ClInclude Include="src\rendering\opengl\gl.h" />
     <ClInclude Include="src\input\Input.hpp" />
-    <ClInclude Include="src\instances\DataManager.hpp" />
+    <ClInclude Include="src\data\DataManager.hpp" />
     <ClInclude Include="src\api\leopphapi.h" />
     <ClInclude Include="src\math\LeopphMath.hpp" />
     <ClInclude Include="src\components\lighting\Light.hpp" />
@@ -107,12 +113,12 @@
     <ClInclude Include="src\util\hash\PathHash.hpp" />
     <ClInclude Include="src\util\hash\TextureHash.hpp" />
     <ClInclude Include="src\util\equal\TextureEqual.hpp" />
-    <ClInclude Include="src\instances\texturereference.h" />
+    <ClInclude Include="src\data\texturereference.h" />
     <ClInclude Include="src\util\less\ObjectLess.hpp" />
-    <ClInclude Include="src\instances\modelreference.h" />
+    <ClInclude Include="src\data\modelreference.h" />
     <ClInclude Include="src\misc\camerabackground.h" />
     <ClInclude Include="src\misc\skybox.h" />
-    <ClInclude Include="src\instances\skyboximpl.h" />
+    <ClInclude Include="src\data\skyboximpl.h" />
     <ClInclude Include="src\util\hash\SkyBoxImplHash.hpp" />
     <ClInclude Include="src\util\equal\SkyBoxImplEqual.hpp" />
     <ClInclude Include="src\components\lighting\AmbientLight.hpp" />
@@ -138,6 +144,11 @@
     <ClInclude Include="src\events\KeyEvent.hpp" />
     <ClInclude Include="src\events\MouseEvent.hpp" />
     <ClInclude Include="src\events\FrameBeginsEvent.hpp" />
+    <ClInclude Include="src\data\managed\Resource.hpp" />
+    <ClInclude Include="src\data\managed\ResourceHandleBase.hpp" />
+    <ClInclude Include="src\data\managed\UniqueResource.hpp" />
+    <ClInclude Include="src\util\equal\UniqueResourceEqual.hpp" />
+    <ClInclude Include="src\util\hash\UniqueResourceHash.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\shaders\ObjectFragment.frag" />

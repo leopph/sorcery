@@ -11,13 +11,18 @@
 #include "../rendering/ShadowMap.hpp"
 #include "../rendering/buffers/RefCountedBuffer.hpp"
 #include "../rendering/texture.h"
+#include "managed/Resource.hpp"
+#include "managed/ResourceHandleBase.hpp"
+#include "managed/UniqueResource.hpp"
 #include "skyboximpl.h"
 
 #include "../util/equal/SkyBoxImplEqual.hpp"
 #include "../util/equal/TextureEqual.hpp"
+#include "../util/equal/UniqueResourceEqual.hpp"
 #include "../util/hash/PathHash.hpp"
 #include "../util/hash/SkyBoxImplHash.hpp"
 #include "../util/hash/TextureHash.hpp"
+#include "../util/hash/UniqueResourceHash.hpp"
 #include "../util/less/ObjectLess.hpp"
 #include "modelreference.h"
 #include "texturereference.h"
@@ -131,6 +136,18 @@ namespace leopph::impl
 		static void UnregisterBuffer(const RefCountedBuffer& buffer);
 		static std::size_t ReferenceCount(const RefCountedBuffer& buffer);
 
+		static void RegisterResource(const Resource* resource);
+		static void UnregisterResource(const Resource* resource);
+		static void RegisterResource(const UniqueResource* resource);
+		static void UnregisterResource(const UniqueResource* resource);
+		static void RegisterResourceHandle(const Resource* resource, const ResourceHandleBase* handle);
+		static void UnregisterResourceHandle(const Resource* resource, const ResourceHandleBase* handle);
+		static void RegisterResourceHandle(const UniqueResource* resource, const ResourceHandleBase* handle);
+		static void UnregisterResourceHandle(const UniqueResource* resource, const ResourceHandleBase* handle);
+		static std::size_t ResourceHandleCount(const Resource* resource);
+		static std::size_t ResourceHandleCount(const UniqueResource* resource);
+		static UniqueResource* FindUniqueResource(const std::filesystem::path& path);
+
 
 	private:
 		static std::unordered_set<TextureReference, TextureHash, TextureEqual> s_Textures;
@@ -149,5 +166,8 @@ namespace leopph::impl
 		static std::list<ShadowMap> s_ShadowMaps;
 
 		static std::unordered_map<unsigned, std::size_t> s_Buffers;
+
+		static std::unordered_map<const Resource*, std::unordered_set<const ResourceHandleBase*>> s_ResourcesAndHandles;
+		static std::unordered_map<const UniqueResource*, std::unordered_set<const ResourceHandleBase*>, UniqueResourceHash, UniqueResourceEqual> s_UniqueResourcesAndHandles;
 	};
 }

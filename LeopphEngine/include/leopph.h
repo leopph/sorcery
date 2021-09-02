@@ -1,7 +1,7 @@
 #pragma once
 
 /*------------------------------------------
-Standard LeopphEngine API
+Standard LeopphEngine API headers.
 See individual headers for more information.
 ------------------------------------------*/
 

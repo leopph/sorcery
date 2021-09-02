@@ -1,6 +1,6 @@
 #include "Behavior.hpp"
 
-#include "../instances/DataManager.hpp"
+#include "../data/DataManager.hpp"
 
 namespace leopph
 {

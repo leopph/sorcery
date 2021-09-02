@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../../misc/skybox.h"
-#include "../../instances/skyboximpl.h"
+#include "../../data/skyboximpl.h"
 
 #include <string>
 

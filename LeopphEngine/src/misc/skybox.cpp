@@ -1,6 +1,6 @@
 #include "skybox.h"
 
-#include "../instances/DataManager.hpp"
+#include "../data/DataManager.hpp"
 
 #include <stdexcept>
 

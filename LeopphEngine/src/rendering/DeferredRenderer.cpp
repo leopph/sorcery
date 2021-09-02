@@ -2,7 +2,7 @@
 
 #include "../components/Camera.hpp"
 #include "../config/Settings.hpp"
-#include "../instances/DataManager.hpp"
+#include "../data/DataManager.hpp"
 #include "../util/less/LightCloserToCamera.hpp"
 
 #include <glad/glad.h>

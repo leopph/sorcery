@@ -8,7 +8,7 @@
 
 #include "../events/EventManager.hpp"
 #include "../events/FrameBeginsEvent.hpp"
-#include "../instances/DataManager.hpp"
+#include "../data/DataManager.hpp"
 #include "../rendering/DeferredRenderer.hpp"
 #include "../rendering/ForwardRenderer.hpp"
 #include "../rendering/opengl/gl.h"

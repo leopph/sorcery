@@ -1,6 +1,6 @@
 #include "texture.h"
 
-#include "../instances/DataManager.hpp"
+#include "../data/DataManager.hpp"
 #include "../util/logger.h"
 
 #include <glad/glad.h>

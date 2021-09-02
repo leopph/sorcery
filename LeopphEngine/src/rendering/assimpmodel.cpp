@@ -1,6 +1,6 @@
 #include "assimpmodel.h"
 
-#include "../instances/DataManager.hpp"
+#include "../data/DataManager.hpp"
 #include "../util/logger.h"
 
 #include <assimp/Importer.hpp>
@@ -108,11 +108,11 @@ namespace leopph::impl
 			vertex.normal = Vector3{ mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z } * trafo;
 
 			// ONLY 1 UV LAYER SUPPORTED
-			vertex.textureCoordinates = { 0.0f, 0.0f };
+			vertex.textureCoordinates = Vector2{ 0.0f, 0.0f };
 			for (std::size_t j = 0; j < AI_MAX_NUMBER_OF_TEXTURECOORDS; j++)
 				if (mesh->HasTextureCoords(static_cast<unsigned>(j)))
 				{
-					vertex.textureCoordinates = { mesh->mTextureCoords[j][i].x, mesh->mTextureCoords[j][i].y };
+					vertex.textureCoordinates = Vector2{ mesh->mTextureCoords[j][i].x, mesh->mTextureCoords[j][i].y };
 					break;
 				}
 					

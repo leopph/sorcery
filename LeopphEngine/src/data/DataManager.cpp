@@ -26,6 +26,10 @@ namespace leopph::impl
 
 	std::unordered_map<unsigned, std::size_t> DataManager::s_Buffers{};
 
+	std::unordered_map<const Resource*, std::unordered_set<const ResourceHandleBase*>> DataManager::s_ResourcesAndHandles{};
+
+	std::unordered_map<const UniqueResource*, std::unordered_set<const ResourceHandleBase*>, UniqueResourceHash, UniqueResourceEqual> DataManager::s_UniqueResourcesAndHandles{};
+
 	
 	void DataManager::DestroyAllObjects()
 	{
@@ -387,4 +391,70 @@ namespace leopph::impl
 		return it->second;
 	}
 
+
+	void DataManager::RegisterResource(const Resource* resource)
+	{
+		s_ResourcesAndHandles.try_emplace(resource);
+	}
+
+
+	void DataManager::RegisterResource(const UniqueResource* resource)
+	{
+		s_UniqueResourcesAndHandles.try_emplace(resource);
+	}
+
+
+	void DataManager::UnregisterResource(const Resource* resource)
+	{
+		s_ResourcesAndHandles.erase(resource);
+	}
+
+
+	void DataManager::UnregisterResource(const UniqueResource* resource)
+	{
+		s_UniqueResourcesAndHandles.erase(resource);
+	}
+
+
+	void DataManager::RegisterResourceHandle(const Resource* resource, const ResourceHandleBase* handle)
+	{
+		s_ResourcesAndHandles.at(resource).insert(handle);
+	}
+
+
+	void DataManager::RegisterResourceHandle(const UniqueResource* resource, const ResourceHandleBase* handle)
+	{
+		s_UniqueResourcesAndHandles.at(resource).insert(handle);
+	}
+
+
+	void DataManager::UnregisterResourceHandle(const Resource* resource, const ResourceHandleBase* handle)
+	{
+		s_ResourcesAndHandles.at(resource).erase(handle);
+	}
+
+
+	void DataManager::UnregisterResourceHandle(const UniqueResource* resource, const ResourceHandleBase* handle)
+	{
+		s_UniqueResourcesAndHandles.at(resource).erase(handle);
+	}
+
+
+	std::size_t DataManager::ResourceHandleCount(const Resource* resource)
+	{
+		return s_ResourcesAndHandles.at(resource).size();
+	}
+
+
+	std::size_t DataManager::ResourceHandleCount(const UniqueResource* resource)
+	{
+		return s_UniqueResourcesAndHandles.at(resource).size();
+	}
+
+
+	UniqueResource* DataManager::FindUniqueResource(const std::filesystem::path& path)
+	{
+		auto it = s_UniqueResourcesAndHandles.find(path);
+		return it == s_UniqueResourcesAndHandles.end() ? nullptr : const_cast<UniqueResource*>(it->first);
+	}
 }

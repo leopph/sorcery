@@ -1,6 +1,6 @@
 #include "Object.hpp"
 
-#include "../instances/DataManager.hpp"
+#include "../data/DataManager.hpp"
 
 #include "../util/logger.h"
 
