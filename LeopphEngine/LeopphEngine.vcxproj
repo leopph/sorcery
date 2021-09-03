@@ -144,6 +144,7 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClInclude Include="src\data\managed\ResourceHandle.hpp" />
     <ClInclude Include="src\data\managed\ResourceHandleBase.hpp" />
     <ClInclude Include="src\data\managed\UniqueResource.hpp" />
+    <ClInclude Include="src\data\Proxy.hpp" />
     <ClInclude Include="src\entry\appstart.h" />
     <ClInclude Include="src\entry\entry.h" />
     <ClInclude Include="src\entry\launch.h" />
@@ -171,6 +172,8 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClInclude Include="src\rendering\geometry\ModelResource.hpp" />
     <ClInclude Include="src\rendering\renderers\Renderer.hpp" />
     <ClInclude Include="src\rendering\ShadowMap.hpp" />
+    <ClInclude Include="src\rendering\SkyboxHandle.hpp" />
+    <ClInclude Include="src\rendering\SkyboxResource.hpp" />
     <ClInclude Include="src\rendering\Texture.hpp" />
     <ClInclude Include="src\rendering\TextureResource.hpp" />
     <ClInclude Include="src\timing\timer.h" />
@@ -202,10 +205,7 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClInclude Include="src\util\less\ObjectLess.hpp" />
     <ClInclude Include="src\util\ObjectProperties.hpp" />
     <ClInclude Include="src\util\hash\PathHash.hpp" />
-    <ClInclude Include="src\misc\skybox.h" />
-    <ClInclude Include="src\data\skyboximpl.h" />
-    <ClInclude Include="src\util\equal\SkyBoxImplEqual.hpp" />
-    <ClInclude Include="src\util\hash\SkyBoxImplHash.hpp" />
+    <ClInclude Include="src\misc\Skybox.hpp" />
     <ClInclude Include="src\windowing\glwindow.h" />
     <ClInclude Include="src\windowing\window.h" />
   </ItemGroup>
@@ -241,6 +241,8 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClCompile Include="src\rendering\buffers\RefCountedBuffer.cpp" />
     <ClCompile Include="src\rendering\renderers\Renderer.cpp" />
     <ClCompile Include="src\rendering\ShadowMap.cpp" />
+    <ClCompile Include="src\rendering\SkyboxHandle.cpp" />
+    <ClCompile Include="src\rendering\SkyboxResource.cpp" />
     <ClCompile Include="src\rendering\Texture.cpp" />
     <ClCompile Include="src\rendering\TextureResource.cpp" />
     <ClCompile Include="src\shaders\stringified\deferred\GPassObjectFragment.cpp" />
@@ -260,10 +262,7 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClCompile Include="src\util\less\LightCloserToCamera.cpp" />
     <ClCompile Include="src\util\logger.cpp" />
     <ClCompile Include="src\util\less\ObjectLess.cpp" />
-    <ClCompile Include="src\misc\skybox.cpp" />
-    <ClCompile Include="src\data\skyboximpl.cpp" />
-    <ClCompile Include="src\util\equal\SkyBoxImplEqual.cpp" />
-    <ClCompile Include="src\util\hash\SkyBoxImplHash.cpp" />
+    <ClCompile Include="src\misc\Skybox.cpp" />
     <ClCompile Include="src\windowing\window.cpp" />
     <ClCompile Include="src\input\Input.cpp" />
     <ClCompile Include="src\data\DataManager.cpp" />

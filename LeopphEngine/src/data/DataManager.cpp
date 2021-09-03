@@ -19,8 +19,6 @@ namespace leopph::impl
 	;
 	std::set<Behavior*> DataManager::s_Behaviors{};
 
-	std::unordered_map<SkyboxImpl, std::size_t, SkyboxImplHash, SkyboxImplEqual> DataManager::s_Skyboxes{};
-
 	std::list<ShadowMap> DataManager::s_ShadowMaps{};
 
 	std::unordered_map<const Object*, std::pair<const Matrix4, const Matrix4>> DataManager::s_MatrixCache{};
@@ -142,76 +140,6 @@ namespace leopph::impl
 				s_PointLights.erase(it);
 				return;
 			}
-	}
-
-
-	const leopph::impl::SkyboxImpl* DataManager::GetSkybox(const std::filesystem::path& left, const std::filesystem::path& right, const std::filesystem::path& top, const std::filesystem::path& bottom, const std::filesystem::path& back, const std::filesystem::path& front)
-	{
-		const auto fileNames{ left.string() + right.string() + top.string() + bottom.string() + back.string() + front.string() };
-		auto it{ s_Skyboxes.find(fileNames) };
-
-		if (it == s_Skyboxes.end())
-			return nullptr;
-
-		return &it->first;
-	}
-
-
-	const leopph::impl::SkyboxImpl& DataManager::GetSkybox(const Skybox& skybox)
-	{
-		if (!s_Skyboxes.contains(skybox))
-		{
-			const auto msg{ "The requested skybox does not exist." };
-			Logger::Instance().Error(msg);
-			throw std::runtime_error{ msg };
-		}
-
-		return s_Skyboxes.find(skybox)->first;
-	}
-
-
-	const SkyboxImpl* DataManager::RegisterSkybox(const std::filesystem::path& left, const std::filesystem::path& right, const std::filesystem::path& top, const std::filesystem::path& bottom, const std::filesystem::path& back, const std::filesystem::path& front)
-	{
-		const auto fileNames{ left.string() + ";" + right.string() + ";" + top.string() + ";" + bottom.string() + ";" + back.string() + ";" + front.string()};
-
-		if (s_Skyboxes.contains(fileNames))
-		{
-			const auto msg{"Skybox of files [" + fileNames + "] is already registered."};
-
-			Logger::Instance().Error(msg);
-			throw std::runtime_error{ msg };
-		}
-
-		return &s_Skyboxes.emplace(std::piecewise_construct, std::make_tuple(left, right, top, bottom, back, front), std::make_tuple(1)).first->first;
-	}
-
-
-	void DataManager::IncSkybox(const SkyboxImpl* skybox)
-	{
-		if (!s_Skyboxes.contains(*skybox))
-		{
-			const auto msg{ "Skybox with ID [" + std::to_string(skybox->ID()) + "] is not yet registered." };
-			Logger::Instance().Error(msg);
-			throw std::runtime_error{ msg };
-		}
-
-		s_Skyboxes.at(*skybox)++;
-	}
-
-
-	void DataManager::DecSkybox(const SkyboxImpl* skybox)
-	{
-		if (!s_Skyboxes.contains(*skybox))
-		{
-			const auto msg{ "Skybox with ID [" + std::to_string(skybox->ID()) + "] is not yet registered." };
-			Logger::Instance().Error(msg);
-			throw std::runtime_error{ msg };
-		}
-
-		s_Skyboxes.at(*skybox)--;
-
-		if (s_Skyboxes.at(*skybox) == 0)
-			s_Skyboxes.erase(*skybox);
 	}
 
 

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../misc/color.h"
-#include "skybox.h"
+#include "Skybox.hpp"
 
 #include <memory>
 

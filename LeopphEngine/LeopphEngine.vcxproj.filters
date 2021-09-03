@@ -27,10 +27,7 @@
     <ClCompile Include="src\util\logger.cpp" />
     <ClCompile Include="src\rendering\Material.cpp" />
     <ClCompile Include="src\util\less\ObjectLess.cpp" />
-    <ClCompile Include="src\misc\skybox.cpp" />
-    <ClCompile Include="src\data\skyboximpl.cpp" />
-    <ClCompile Include="src\util\hash\SkyBoxImplHash.cpp" />
-    <ClCompile Include="src\util\equal\SkyBoxImplEqual.cpp" />
+    <ClCompile Include="src\misc\Skybox.cpp" />
     <ClCompile Include="src\misc\color.cpp" />
     <ClCompile Include="src\components\lighting\AmbientLight.cpp" />
     <ClCompile Include="src\components\Transform.cpp" />
@@ -70,6 +67,8 @@
     <ClCompile Include="src\rendering\renderers\Renderer.cpp" />
     <ClCompile Include="src\rendering\TextureResource.cpp" />
     <ClCompile Include="src\rendering\Texture.cpp" />
+    <ClCompile Include="src\rendering\SkyboxResource.cpp" />
+    <ClCompile Include="src\rendering\SkyboxHandle.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\Behavior.hpp" />
@@ -110,10 +109,7 @@
     <ClInclude Include="src\util\hash\PathHash.hpp" />
     <ClInclude Include="src\util\less\ObjectLess.hpp" />
     <ClInclude Include="src\misc\camerabackground.h" />
-    <ClInclude Include="src\misc\skybox.h" />
-    <ClInclude Include="src\data\skyboximpl.h" />
-    <ClInclude Include="src\util\hash\SkyBoxImplHash.hpp" />
-    <ClInclude Include="src\util\equal\SkyBoxImplEqual.hpp" />
+    <ClInclude Include="src\misc\Skybox.hpp" />
     <ClInclude Include="src\components\lighting\AmbientLight.hpp" />
     <ClInclude Include="src\components\Transform.hpp" />
     <ClInclude Include="src\util\ObjectProperties.hpp" />
@@ -148,6 +144,9 @@
     <ClInclude Include="src\data\managed\ResourceHandle.hpp" />
     <ClInclude Include="src\rendering\TextureResource.hpp" />
     <ClInclude Include="src\rendering\Texture.hpp" />
+    <ClInclude Include="src\rendering\SkyboxResource.hpp" />
+    <ClInclude Include="src\data\Proxy.hpp" />
+    <ClInclude Include="src\rendering\SkyboxHandle.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\shaders\ObjectFragment.frag" />

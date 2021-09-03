@@ -1,14 +1,18 @@
 #pragma once
 
 #include "../api/leopphapi.h"
+#include "../data/Proxy.hpp"
+#include "../rendering/SkyboxHandle.hpp"
 
+#include <concepts>
 #include <filesystem>
+
 
 namespace leopph
 {
 	namespace impl
 	{
-		class SkyboxImpl;
+		//class SkyboxHandle;
 	}
 
 	/*---------------------------------------------------------------------------------------------
@@ -16,29 +20,27 @@ namespace leopph
 	It consists of 6 faces, or separate textures files, that MUST BE given in the specified order.
 	See "camerabackground.h" for more details.
 	---------------------------------------------------------------------------------------------*/
-	class Skybox
+	class Skybox : impl::Proxy<impl::SkyboxHandle>
 	{
 	public:
 		LEOPPHAPI Skybox(const std::filesystem::path& left, const std::filesystem::path& right,
-			const std::filesystem::path& top, const std::filesystem::path& bottom,
-			const std::filesystem::path& back, const std::filesystem::path& front);
+						 const std::filesystem::path& top, const std::filesystem::path& bottom,
+						 const std::filesystem::path& back, const std::filesystem::path& front);
 
 		LEOPPHAPI Skybox(const Skybox& other);
 		LEOPPHAPI Skybox(Skybox&& other) noexcept;
 
-		LEOPPHAPI ~Skybox();
-
 		LEOPPHAPI Skybox& operator=(const Skybox& other);
 		LEOPPHAPI Skybox& operator=(Skybox&& other) noexcept;
 
-		/* Two Skyboxes only compare equal if the order of the given files matches */
-		LEOPPHAPI bool operator==(const Skybox& other) const;
-		LEOPPHAPI bool operator==(const impl::SkyboxImpl& other) const;
+		LEOPPHAPI ~Skybox() = default;
 
-		/* Semicolon separated list of given file names */
-		LEOPPHAPI const std::string& FileNames() const;
-
-	private:
-		const impl::SkyboxImpl* m_Impl;
+		LEOPPHAPI inline const std::filesystem::path& AllFilePaths() const;
+		LEOPPHAPI inline const std::filesystem::path& RightPath() const;
+		LEOPPHAPI inline const std::filesystem::path& LeftPath() const;
+		LEOPPHAPI inline const std::filesystem::path& TopPath() const;
+		LEOPPHAPI inline const std::filesystem::path& BottomPath() const;
+		LEOPPHAPI inline const std::filesystem::path& FrontPath() const;
+		LEOPPHAPI inline const std::filesystem::path& BackPath() const;
 	};
 }

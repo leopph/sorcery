@@ -23,6 +23,5 @@ namespace leopph::impl
 		const decltype(TextureResource::Id)& Id() const;
 		const decltype(TextureResource::IsTransparent)& IsTransparent() const;
 		const decltype(TextureResource::Path)& Path() const;
-
 	};
 }

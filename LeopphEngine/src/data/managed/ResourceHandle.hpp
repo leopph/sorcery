@@ -99,5 +99,9 @@ namespace leopph::impl
 
 	protected:
 		T* const& resource;
+
+
+		friend class Resource;
+		friend class UniqueResource;
 	};
 }

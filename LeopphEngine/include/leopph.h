@@ -26,7 +26,7 @@ See individual headers for more information.
 #include "../src/math/Vector.hpp"
 #include "../src/misc/camerabackground.h"
 #include "../src/misc/color.h"
-#include "../src/misc/skybox.h"
+#include "../src/misc/Skybox.hpp"
 #include "../src/timing/leopphtime.h"
 #include "../src/util/ObjectProperties.hpp"
 

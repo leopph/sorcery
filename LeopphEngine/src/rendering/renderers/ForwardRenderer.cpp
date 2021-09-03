@@ -11,6 +11,7 @@
 #include "../../math/Vector.hpp"
 #include "../geometry/ModelResource.hpp"
 #include "../Shader.hpp"
+#include "../SkyboxResource.hpp"
 
 #include <glad/glad.h>
 
@@ -192,7 +193,7 @@ namespace leopph::impl
 			m_SkyboxShader.Use();
 			m_SkyboxShader.SetUniform("viewMatrix", static_cast<Matrix4>(static_cast<Matrix3>(m_CurrentFrameViewMatrix)));
 			m_SkyboxShader.SetUniform("projectionMatrix", m_CurrentFrameProjectionMatrix);
-			DataManager::GetSkybox(*skybox).Draw(m_SkyboxShader);
+			static_cast<SkyboxResource*>(DataManager::FindUniqueResource(skybox->AllFilePaths()))->Draw(m_SkyboxShader);
 		}
 	}
 }

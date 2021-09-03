@@ -7,19 +7,15 @@
 #include "../components/lighting/PointLight.hpp"
 #include "../components/lighting/SpotLight.hpp"
 #include "../hierarchy/Object.hpp"
-#include "../misc/skybox.h"
 #include "../rendering/buffers/RefCountedBuffer.hpp"
 #include "../rendering/geometry/ModelResource.hpp"
 #include "../rendering/ShadowMap.hpp"
 #include "managed/Resource.hpp"
 #include "managed/ResourceHandleBase.hpp"
 #include "managed/UniqueResource.hpp"
-#include "skyboximpl.h"
 
-#include "../util/equal/SkyBoxImplEqual.hpp"
 #include "../util/equal/UniqueResourceEqual.hpp"
 #include "../util/hash/PathHash.hpp"
-#include "../util/hash/SkyBoxImplHash.hpp"
 #include "../util/hash/UniqueResourceHash.hpp"
 #include "../util/less/ObjectLess.hpp"
 
@@ -88,22 +84,6 @@ namespace leopph::impl
 		static void AmbientLight(leopph::AmbientLight*&& light);
 
 
-		/* Return pointer to SkyboxImpl on the given path, or nullptr, if not loaded yet */
-		static const SkyboxImpl* GetSkybox(const std::filesystem::path& left, const std::filesystem::path& right,
-			const std::filesystem::path& top, const std::filesystem::path& bottom,
-			const std::filesystem::path& back, const std::filesystem::path& front);
-		/* Return reference to SkyboxImpl based on the given Skybox's file names */
-		static const SkyboxImpl& GetSkybox(const Skybox& skybox);
-		/* Create a new SkyboxImpl on the given path and return a pointer to it */
-		static const SkyboxImpl* RegisterSkybox(const std::filesystem::path& left, const std::filesystem::path& right,
-			const std::filesystem::path& top, const std::filesystem::path& bottom,
-			const std::filesystem::path& back, const std::filesystem::path& front);
-		/* Inc count of given SkyboxImpl */
-		static void IncSkybox(const SkyboxImpl* skybox);
-		/* Dec count of given SkyboxImpl */
-		static void DecSkybox(const SkyboxImpl* skybox);
-
-
 		static const std::pair<const Matrix4, const Matrix4>& ModelAndNormalMatrices(const Object* object);
 
 
@@ -142,8 +122,6 @@ namespace leopph::impl
 		static std::unordered_set<const ResourceHandleBase*> ModelComponents(const ModelResource* model);
 
 	private:
-		static std::unordered_map<SkyboxImpl, std::size_t, SkyboxImplHash, SkyboxImplEqual> s_Skyboxes;
-
 		static std::set<Behavior*> s_Behaviors;
 		static std::map<Object*, std::set<Component*>, ObjectLess> s_Objects;
 		static std::unordered_map<const Object*, std::pair<const Matrix4, const Matrix4>> s_MatrixCache;
