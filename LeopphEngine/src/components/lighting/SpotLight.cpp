@@ -7,12 +7,12 @@ namespace leopph
 	SpotLight::SpotLight(Object& owner) :
 		AttenuatedLight{ owner, 1.f, 0.1f, 0.1f }, m_InnerAngle{ 30.f }, m_OuterAngle{ m_InnerAngle }
 	{
-		impl::DataManager::RegisterSpotLight(this);
+		impl::DataManager::Register(this);
 	}
 
 	SpotLight::~SpotLight()
 	{
-		impl::DataManager::UnregisterSpotLight(this);
+		impl::DataManager::Unregister(this);
 	}
 
 	float SpotLight::InnerAngle() const

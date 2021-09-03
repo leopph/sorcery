@@ -11,14 +11,14 @@ namespace leopph::impl
 		name{ m_Name }, m_Name{}
 	{
 		glGenBuffers(1, &m_Name);
-		DataManager::RegisterBuffer(*this);
+		DataManager::Register(*this);
 	}
 
 
 	RefCountedBuffer::RefCountedBuffer(const RefCountedBuffer& other) :
 		name { m_Name }, m_Name { other.m_Name }
 	{
-		DataManager::RegisterBuffer(*this);
+		DataManager::Register(*this);
 	}
 
 
@@ -33,15 +33,15 @@ namespace leopph::impl
 	{
 		if (m_Name != 0)
 		{
-			DataManager::UnregisterBuffer(*this);
-			if (DataManager::ReferenceCount(*this) == 0)
+			DataManager::Unregister(*this);
+			if (DataManager::Count(*this) == 0)
 			{
 				glDeleteBuffers(1, &m_Name);
 			}
 		}
 
 		m_Name = other.m_Name;
-		DataManager::RegisterBuffer(*this);
+		DataManager::Register(*this);
 		return *this;
 	}
 
@@ -50,8 +50,8 @@ namespace leopph::impl
 	{
 		if (m_Name != 0)
 		{
-			DataManager::UnregisterBuffer(*this);
-			if (DataManager::ReferenceCount(*this) == 0)
+			DataManager::Unregister(*this);
+			if (DataManager::Count(*this) == 0)
 			{
 				glDeleteBuffers(1, &m_Name);
 			}
@@ -67,8 +67,8 @@ namespace leopph::impl
 	{
 		if (m_Name != 0)
 		{
-			DataManager::UnregisterBuffer(*this);
-			if (DataManager::ReferenceCount(*this) == 0)
+			DataManager::Unregister(*this);
+			if (DataManager::Count(*this) == 0)
 			{
 				glDeleteBuffers(1, &m_Name);
 			}

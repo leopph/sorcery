@@ -7,11 +7,11 @@ namespace leopph
 	Component::Component(Object& owner) :
 		object{ owner }
 	{
-		impl::DataManager::RegisterComponent(this);
+		impl::DataManager::Register(this);
 	}
 
 	Component::~Component()
 	{
-		impl::DataManager::UnregisterComponent(this);
+		impl::DataManager::Unregister(this);
 	}
 }

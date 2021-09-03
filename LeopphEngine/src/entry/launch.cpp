@@ -60,7 +60,7 @@ namespace leopph::impl
 			}
 		}
 
-		DataManager::DestroyAllObjects();
+		DataManager::Clear();
 		Window::Destroy();
 		return 0;
 	}

@@ -10,12 +10,12 @@ namespace leopph::impl
 	UniqueResource::UniqueResource(std::filesystem::path path) :
 		Path{ std::move(path) }
 	{
-		DataManager::RegisterResource(this);
+		DataManager::Register(this);
 	}
 
 
 	UniqueResource::~UniqueResource()
 	{
-		DataManager::UnregisterResource(this);
+		DataManager::Unregister(this);
 	}
 }

@@ -7,11 +7,11 @@ namespace leopph
 	Behavior::Behavior(Object& owner) :
 		Component{ owner }
 	{
-		impl::DataManager::RegisterBehavior(this);
+		impl::DataManager::Register(this);
 	}
 
 	Behavior::~Behavior()
 	{
-		impl::DataManager::UnregisterBehavior(this);
+		impl::DataManager::Unregister(this);
 	}
 }

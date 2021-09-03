@@ -7,21 +7,23 @@
 
 namespace leopph::impl
 {
+	std::map<Object*, std::set<Component*>, ObjectLess> DataManager::s_Objects{};
+
+	std::set<Behavior*> DataManager::s_Behaviors{};
+
 	std::unique_ptr<AmbientLight> DataManager::s_AmbientLight{ nullptr };
 
 	DirectionalLight* DataManager::s_DirLight{ nullptr };
 
+	std::unordered_set<const SpotLight*> DataManager::s_SpotLights{};
+	;
 	std::vector<PointLight*> DataManager::s_PointLights{};
 
-	std::unordered_set<const SpotLight*> DataManager::s_SpotLights{};
-
-	std::map<Object*, std::set<Component*>, ObjectLess> DataManager::s_Objects{}
-	;
-	std::set<Behavior*> DataManager::s_Behaviors{};
-
-	std::list<ShadowMap> DataManager::s_ShadowMaps{};
+	std::unordered_set<const ModelResource*> DataManager::s_ModelResources{};
 
 	std::unordered_map<const Object*, std::pair<const Matrix4, const Matrix4>> DataManager::s_MatrixCache{};
+
+	std::list<ShadowMap> DataManager::s_ShadowMaps{};
 
 	std::unordered_map<unsigned, std::size_t> DataManager::s_Buffers{};
 
@@ -29,10 +31,8 @@ namespace leopph::impl
 
 	std::unordered_map<const UniqueResource*, std::unordered_set<const ResourceHandleBase*>, UniqueResourceHash, UniqueResourceEqual> DataManager::s_UniqueResourcesAndHandles{};
 
-	std::unordered_set<const ModelResource*> DataManager::s_ModelResources{};
-
 	
-	void DataManager::DestroyAllObjects()
+	void DataManager::Clear()
 	{
 		for (auto it = s_Objects.begin(); it != s_Objects.end();)
 		{
@@ -46,20 +46,20 @@ namespace leopph::impl
 	}
 
 	
-	void DataManager::RegisterObject(Object* object)
+	void DataManager::Register(Object* object)
 	{
 		s_Objects.try_emplace(object);
 	}
 
 
-	void DataManager::UnregisterObject(Object* object)
+	void DataManager::Unregister(Object* object)
 	{
 		s_Objects.erase(object);
 		s_MatrixCache.erase(object);
 	}
 
 
-	Object* DataManager::FindObject(const std::string& name)
+	Object* DataManager::Find(const std::string& name)
 	{
 		const auto it = s_Objects.find(name);
 		return it != s_Objects.end() ? it->first : nullptr;
@@ -78,13 +78,13 @@ namespace leopph::impl
 	}
 
 
-	void DataManager::RegisterBehavior(Behavior* behavior)
+	void DataManager::Register(Behavior* behavior)
 	{
 		s_Behaviors.insert(behavior);
 	}
 
 
-	void DataManager::UnregisterBehavior(Behavior* behavior)
+	void DataManager::Unregister(Behavior* behavior)
 	{
 		s_Behaviors.erase(behavior);
 	}
@@ -96,13 +96,13 @@ namespace leopph::impl
 	}
 
 
-	void DataManager::RegisterComponent(Component* component)
+	void DataManager::Register(Component* component)
 	{
 		s_Objects[&component->object].insert(component);
 	}
 
 
-	void DataManager::UnregisterComponent(Component* component)
+	void DataManager::Unregister(Component* component)
 	{
 		s_Objects[&component->object].erase(component);
 	}
@@ -126,13 +126,13 @@ namespace leopph::impl
 	}
 
 
-	void DataManager::RegisterPointLight(PointLight* pointLight)
+	void DataManager::Register(PointLight* pointLight)
 	{
 		s_PointLights.push_back(pointLight);
 	}
 
 
-	void DataManager::UnregisterPointLight(PointLight* pointLight)
+	void DataManager::Unregister(PointLight* pointLight)
 	{
 		for (auto it = s_PointLights.begin(); it != s_PointLights.end(); ++it)
 			if (*it == pointLight)
@@ -201,26 +201,26 @@ namespace leopph::impl
 	}
 
 
-	void DataManager::RegisterSpotLight(const SpotLight* spotLight)
+	void DataManager::Register(const SpotLight* spotLight)
 	{
 		s_SpotLights.emplace(spotLight);
 	}
 
 
-	void DataManager::UnregisterSpotLight(const SpotLight* spotLight)
+	void DataManager::Unregister(const SpotLight* spotLight)
 	{
 		s_SpotLights.erase(spotLight);
 	}
 
 
-	void DataManager::RegisterBuffer(const RefCountedBuffer& buffer)
+	void DataManager::Register(const RefCountedBuffer& buffer)
 	{
 		s_Buffers.try_emplace(buffer.name, 0);
 		s_Buffers[buffer.name]++;
 	}
 
 
-	void DataManager::UnregisterBuffer(const RefCountedBuffer& buffer)
+	void DataManager::Unregister(const RefCountedBuffer& buffer)
 	{
 		if (s_Buffers.contains(buffer.name))
 		{
@@ -233,7 +233,7 @@ namespace leopph::impl
 	}
 
 
-	std::size_t DataManager::ReferenceCount(const RefCountedBuffer& buffer)
+	std::size_t DataManager::Count(const RefCountedBuffer& buffer)
 	{
 		const auto it{ s_Buffers.find(buffer.name) };
 
@@ -246,67 +246,67 @@ namespace leopph::impl
 	}
 
 
-	void DataManager::RegisterResource(const Resource* resource)
+	void DataManager::Register(const Resource* resource)
 	{
 		s_ResourcesAndHandles.try_emplace(resource);
 	}
 
 
-	void DataManager::RegisterResource(const UniqueResource* resource)
+	void DataManager::Register(const UniqueResource* resource)
 	{
 		s_UniqueResourcesAndHandles.try_emplace(resource);
 	}
 
 
-	void DataManager::UnregisterResource(const Resource* resource)
+	void DataManager::Unregister(const Resource* resource)
 	{
 		s_ResourcesAndHandles.erase(resource);
 	}
 
 
-	void DataManager::UnregisterResource(const UniqueResource* resource)
+	void DataManager::Unregister(const UniqueResource* resource)
 	{
 		s_UniqueResourcesAndHandles.erase(resource);
 	}
 
 
-	void DataManager::RegisterResourceHandle(const Resource* resource, const ResourceHandleBase* handle)
+	void DataManager::Register(const Resource* resource, const ResourceHandleBase* handle)
 	{
 		s_ResourcesAndHandles.at(resource).insert(handle);
 	}
 
 
-	void DataManager::RegisterResourceHandle(const UniqueResource* resource, const ResourceHandleBase* handle)
+	void DataManager::Register(const UniqueResource* resource, const ResourceHandleBase* handle)
 	{
 		s_UniqueResourcesAndHandles.at(resource).insert(handle);
 	}
 
 
-	void DataManager::UnregisterResourceHandle(const Resource* resource, const ResourceHandleBase* handle)
+	void DataManager::Unregister(const Resource* resource, const ResourceHandleBase* handle)
 	{
 		s_ResourcesAndHandles.at(resource).erase(handle);
 	}
 
 
-	void DataManager::UnregisterResourceHandle(const UniqueResource* resource, const ResourceHandleBase* handle)
+	void DataManager::Unregister(const UniqueResource* resource, const ResourceHandleBase* handle)
 	{
 		s_UniqueResourcesAndHandles.at(resource).erase(handle);
 	}
 
 
-	std::size_t DataManager::ResourceHandleCount(const Resource* resource)
+	std::size_t DataManager::Count(const Resource* resource)
 	{
 		return s_ResourcesAndHandles.at(resource).size();
 	}
 
 
-	std::size_t DataManager::ResourceHandleCount(const UniqueResource* resource)
+	std::size_t DataManager::Count(const UniqueResource* resource)
 	{
 		return s_UniqueResourcesAndHandles.at(resource).size();
 	}
 
 
-	UniqueResource* DataManager::FindUniqueResource(const std::filesystem::path& path)
+	UniqueResource* DataManager::Find(const std::filesystem::path& path)
 	{
 		auto it = s_UniqueResourcesAndHandles.find(path);
 		return it == s_UniqueResourcesAndHandles.end() ? nullptr : const_cast<UniqueResource*>(it->first);
@@ -319,13 +319,13 @@ namespace leopph::impl
 	}
 
 
-	void DataManager::RegisterModel(const ModelResource* model)
+	void DataManager::Register(const ModelResource* model)
 	{
 		s_ModelResources.insert(model);
 	}
 
 
-	void DataManager::UnregisterModel(const ModelResource* model)
+	void DataManager::Unregister(const ModelResource* model)
 	{
 		s_ModelResources.erase(model);
 	}

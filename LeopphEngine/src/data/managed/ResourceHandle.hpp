@@ -29,7 +29,7 @@ namespace leopph::impl
 
 		explicit ResourceHandle(std::filesystem::path path)
 			requires std::derived_from<T, UniqueResource> :
-		m_ResPtr{ static_cast<T*>(DataManager::FindUniqueResource(path)) }, resource{ m_ResPtr }
+		m_ResPtr{ static_cast<T*>(DataManager::Find(path)) }, resource{ m_ResPtr }
 		{
 			if (m_ResPtr == nullptr)
 			{
@@ -82,15 +82,15 @@ namespace leopph::impl
 
 		void Init()
 		{
-			DataManager::RegisterResourceHandle(m_ResPtr, this);
+			DataManager::Register(m_ResPtr, this);
 		}
 
 
 		void Deinit()
 		{
-			DataManager::UnregisterResourceHandle(m_ResPtr, this);
+			DataManager::Unregister(m_ResPtr, this);
 
-			if (DataManager::ResourceHandleCount(m_ResPtr) == 0)
+			if (DataManager::Count(m_ResPtr) == 0)
 			{
 				delete m_ResPtr;
 			}

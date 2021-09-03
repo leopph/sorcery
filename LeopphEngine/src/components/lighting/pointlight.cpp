@@ -7,12 +7,12 @@ namespace leopph
 	PointLight::PointLight(Object& owner) :
 		AttenuatedLight{ owner }
 	{
-		impl::DataManager::RegisterPointLight(this);
+		impl::DataManager::Register(this);
 	}
 
 	PointLight::~PointLight()
 	{
-		impl::DataManager::UnregisterPointLight(this);
+		impl::DataManager::Unregister(this);
 	}
 
 }

@@ -13,7 +13,7 @@ namespace leopph
 {
 	Object* Object::Find(const std::string& name)
 	{
-		return impl::DataManager::FindObject(name);
+		return impl::DataManager::Find(name);
 	}
 
 
@@ -40,7 +40,7 @@ namespace leopph
 			m_Name = newName;
 		}
 
-		impl::DataManager::RegisterObject(this);
+		impl::DataManager::Register(this);
 		AddComponent<leopph::Transform>(properties.position, properties.rotation, properties.scale);
 	}
 
@@ -70,7 +70,7 @@ namespace leopph
 			it = impl::DataManager::Components(this).begin();
 		}
 
-		impl::DataManager::UnregisterObject(this);
+		impl::DataManager::Unregister(this);
 	}
 
 
@@ -109,6 +109,6 @@ namespace leopph
 
 		if (dynamic_cast<leopph::Transform*>(behavior))
 		
-		impl::DataManager::UnregisterComponent(behavior);
+		impl::DataManager::Unregister(behavior);
 	}
 }

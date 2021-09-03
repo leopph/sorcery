@@ -9,13 +9,13 @@ namespace leopph
 	Model::Model(Object& owner, const std::filesystem::path& path) :
 		Component{ owner }, ResourceHandle{ path }
 	{
-		impl::DataManager::RegisterModel(resource);
+		impl::DataManager::Register(resource);
 	}
 
 
 	Model::~Model()
 	{
-		impl::DataManager::UnregisterModel(resource);
+		impl::DataManager::Unregister(resource);
 	}
 
 

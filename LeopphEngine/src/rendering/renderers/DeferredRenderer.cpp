@@ -84,7 +84,7 @@ namespace leopph::impl
 
 		for (const auto& [modelPath, matrices] : m_CurrentFrameMatrices)
 		{
-			static_cast<ModelResource*>(DataManager::FindUniqueResource(modelPath))->DrawShaded(m_GPassObjectShader, matrices.first, matrices.second, 0);
+			static_cast<ModelResource*>(DataManager::Find(modelPath))->DrawShaded(m_GPassObjectShader, matrices.first, matrices.second, 0);
 		}
 
 		m_GBuffer.Unbind();

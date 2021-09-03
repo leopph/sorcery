@@ -7,12 +7,12 @@ namespace leopph::impl
 {
 	Resource::Resource()
 	{
-		DataManager::RegisterResource(this);
+		DataManager::Register(this);
 	}
 
 
 	Resource::~Resource()
 	{
-		DataManager::UnregisterResource(this);
+		DataManager::Unregister(this);
 	}
 }

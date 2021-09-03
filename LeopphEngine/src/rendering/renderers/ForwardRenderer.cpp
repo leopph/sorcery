@@ -86,7 +86,7 @@ namespace leopph::impl
 
 		for (const auto& [modelPath, matrices] : m_CurrentFrameMatrices)
 		{
-			static_cast<ModelResource*>(DataManager::FindUniqueResource(modelPath))->DrawDepth(matrices.first);
+			static_cast<ModelResource*>(DataManager::Find(modelPath))->DrawDepth(matrices.first);
 		}
 
 		shadowMaps.front().UnbindFromBuffer();
@@ -109,7 +109,7 @@ namespace leopph::impl
 		{
 			for (const auto& [modelPath, matrices] : m_CurrentFrameMatrices)
 			{
-				static_cast<ModelResource*>(DataManager::FindUniqueResource(modelPath))->DrawDepth(matrices.first);
+				static_cast<ModelResource*>(DataManager::Find(modelPath))->DrawDepth(matrices.first);
 			}
 
 			++shadowMapIt;
@@ -181,7 +181,7 @@ namespace leopph::impl
 		/* Draw the shaded objects */
 		for (const auto& [modelPath, matrices] : m_CurrentFrameMatrices)
 		{
-			static_cast<ModelResource*>(DataManager::FindUniqueResource(modelPath))->DrawShaded(m_ObjectShader, matrices.first, matrices.second, usedTextureUnits);
+			static_cast<ModelResource*>(DataManager::Find(modelPath))->DrawShaded(m_ObjectShader, matrices.first, matrices.second, usedTextureUnits);
 		}
 	}
 
@@ -193,7 +193,7 @@ namespace leopph::impl
 			m_SkyboxShader.Use();
 			m_SkyboxShader.SetUniform("viewMatrix", static_cast<Matrix4>(static_cast<Matrix3>(m_CurrentFrameViewMatrix)));
 			m_SkyboxShader.SetUniform("projectionMatrix", m_CurrentFrameProjectionMatrix);
-			static_cast<SkyboxResource*>(DataManager::FindUniqueResource(skybox->AllFilePaths()))->Draw(m_SkyboxShader);
+			static_cast<SkyboxResource*>(DataManager::Find(skybox->AllFilePaths()))->Draw(m_SkyboxShader);
 		}
 	}
 }
