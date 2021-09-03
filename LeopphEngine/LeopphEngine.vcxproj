@@ -88,14 +88,8 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
 $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(ProjectDir)src\shaders\deferred\GPassObject.frag" "$(ProjectDir)src\shaders\stringified\deferred\GPassObjectFragment.cpp" "leopph::impl::Shader::s_GPassObjectFragmentSource" "$(ProjectDir)src/rendering/Shader.hpp"
 $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(ProjectDir)src\shaders\deferred\LightPass.vert" "$(ProjectDir)src\shaders\stringified\deferred\LightPassVertex.cpp" "leopph::impl::Shader::s_LightPassVertexSource" "$(ProjectDir)src/rendering/Shader.hpp"
 $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(ProjectDir)src\shaders\deferred\LightPass.frag" "$(ProjectDir)src\shaders\stringified\deferred\LightPassFragment.cpp" "leopph::impl::Shader::s_LightPassFragmentSource" "$(ProjectDir)src/rendering/Shader.hpp"</Command>
-    </CustomBuildStep>
-    <CustomBuildStep>
       <Message>Creating shader sources.</Message>
-    </CustomBuildStep>
-    <CustomBuildStep>
-      <Outputs>$(ProjectDir)src\shaders\stringified\ObjectVertex.cpp;$(ProjectDir)src\shaders\stringified\ObjectFragment.cpp;$(ProjectDir)src\shaders\stringified\skyboxvertex.cpp;$(ProjectDir)src\shaders\stringified\skyboxfragment.cpp;$(ProjectDir)src\shaders\stringified\DirectionalShadowMapVertex.cpp;$(ProjectDir)src\shaders\stringified\DirectionalShadowMapFragment.cpp;$(ProjectDir)src\shaders\stringified\GPassObjectVertex.cpp;$(ProjectDir)src\shaders\stringified\GPassObjectFragment.cpp;$(ProjectDir)src\shaders\stringified\LightPassVertex.cpp;$(ProjectDir)src\shaders\stringified\LightPassFragment.cpp</Outputs>
-    </CustomBuildStep>
-    <CustomBuildStep>
+      <Outputs>$(ProjectDir)src\shaders\stringified\ObjectVertex.cpp;$(ProjectDir)src\shaders\stringified\ObjectFragment.cpp;$(ProjectDir)src\shaders\stringified\skyboxvertex.cpp;$(ProjectDir)src\shaders\stringified\skyboxfragment.cpp;$(ProjectDir)src\shaders\stringified\DirectionalShadowMapVertex.cpp;$(ProjectDir)src\shaders\stringified\DirectionalShadowMapFragment.cpp;$(ProjectDir)src\shaders\stringified\deferred\GPassObjectVertex.cpp;$(ProjectDir)src\shaders\stringified\deferred\GPassObjectFragment.cpp;$(ProjectDir)src\shaders\stringified\deferred\LightPassVertex.cpp;$(ProjectDir)src\shaders\stringified\deferred\LightPassFragment.cpp</Outputs>
       <Inputs>$(ProjectDir)src\shaders\ObjectVertex.vert;$(ProjectDir)src\shaders\ObjectFragment.frag;$(ProjectDir)src\shaders\skyboxvertex.vert;$(ProjectDir)src\shaders\skyboxfragment.frag;$(ProjectDir)src\shaders\DirectionalShadowMapVertex.vert;$(ProjectDir)src\shaders\DirectionalShadowMapFragment.frag;$(ProjectDir)src\shaders\deferred\GPassObject.vert;$(ProjectDir)src\shaders\deferred\GPassObject.frag;$(ProjectDir)src\shaders\deferred\LightPass.vert;$(ProjectDir)src\shaders\deferred\LightPass.frag</Inputs>
     </CustomBuildStep>
   </ItemDefinitionGroup>
@@ -132,14 +126,8 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
 $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(ProjectDir)src\shaders\deferred\GPassObject.frag" "$(ProjectDir)src\shaders\stringified\deferred\GPassObjectFragment.cpp" "leopph::impl::Shader::s_GPassObjectFragmentSource" "$(ProjectDir)src/rendering/Shader.hpp"
 $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(ProjectDir)src\shaders\deferred\LightPass.vert" "$(ProjectDir)src\shaders\stringified\deferred\LightPassVertex.cpp" "leopph::impl::Shader::s_LightPassVertexSource" "$(ProjectDir)src/rendering/Shader.hpp"
 $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(ProjectDir)src\shaders\deferred\LightPass.frag" "$(ProjectDir)src\shaders\stringified\deferred\LightPassFragment.cpp" "leopph::impl::Shader::s_LightPassFragmentSource" "$(ProjectDir)src/rendering/Shader.hpp"</Command>
-    </CustomBuildStep>
-    <CustomBuildStep>
       <Message>Creating shader sources.</Message>
-    </CustomBuildStep>
-    <CustomBuildStep>
-      <Outputs>$(ProjectDir)src\shaders\stringified\ObjectVertex.cpp;$(ProjectDir)src\shaders\stringified\ObjectFragment.cpp;$(ProjectDir)src\shaders\stringified\skyboxvertex.cpp;$(ProjectDir)src\shaders\stringified\skyboxfragment.cpp;$(ProjectDir)src\shaders\stringified\DirectionalShadowMapVertex.cpp;$(ProjectDir)src\shaders\stringified\DirectionalShadowMapFragment.cpp;$(ProjectDir)src\shaders\stringified\GPassObjectVertex.cpp;$(ProjectDir)src\shaders\stringified\GPassObjectFragment.cpp;$(ProjectDir)src\shaders\stringified\LightPassVertex.cpp;$(ProjectDir)src\shaders\stringified\LightPassFragment.cpp</Outputs>
-    </CustomBuildStep>
-    <CustomBuildStep>
+      <Outputs>$(ProjectDir)src\shaders\stringified\ObjectVertex.cpp;$(ProjectDir)src\shaders\stringified\ObjectFragment.cpp;$(ProjectDir)src\shaders\stringified\skyboxvertex.cpp;$(ProjectDir)src\shaders\stringified\skyboxfragment.cpp;$(ProjectDir)src\shaders\stringified\DirectionalShadowMapVertex.cpp;$(ProjectDir)src\shaders\stringified\DirectionalShadowMapFragment.cpp;$(ProjectDir)src\shaders\stringified\deferred\GPassObjectVertex.cpp;$(ProjectDir)src\shaders\stringified\deferred\GPassObjectFragment.cpp;$(ProjectDir)src\shaders\stringified\deferred\LightPassVertex.cpp;$(ProjectDir)src\shaders\stringified\deferred\LightPassFragment.cpp</Outputs>
       <Inputs>$(ProjectDir)src\shaders\ObjectVertex.vert;$(ProjectDir)src\shaders\ObjectFragment.frag;$(ProjectDir)src\shaders\skyboxvertex.vert;$(ProjectDir)src\shaders\skyboxfragment.frag;$(ProjectDir)src\shaders\DirectionalShadowMapVertex.vert;$(ProjectDir)src\shaders\DirectionalShadowMapFragment.frag;$(ProjectDir)src\shaders\deferred\GPassObject.vert;$(ProjectDir)src\shaders\deferred\GPassObject.frag;$(ProjectDir)src\shaders\deferred\LightPass.vert;$(ProjectDir)src\shaders\deferred\LightPass.frag</Inputs>
     </CustomBuildStep>
   </ItemDefinitionGroup>
