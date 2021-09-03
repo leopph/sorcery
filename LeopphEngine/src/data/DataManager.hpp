@@ -7,7 +7,6 @@
 #include "../components/lighting/PointLight.hpp"
 #include "../components/lighting/SpotLight.hpp"
 #include "../hierarchy/Object.hpp"
-#include "../rendering/buffers/RefCountedBuffer.hpp"
 #include "../rendering/geometry/ModelResource.hpp"
 #include "../rendering/ShadowMap.hpp"
 #include "managed/Resource.hpp"
@@ -48,7 +47,6 @@ namespace leopph::impl
 		static void Register(const Resource* resource, const ResourceHandleBase* handle);
 		static void Register(const UniqueResource* resource, const ResourceHandleBase* handle);
 		static void Register(const SpotLight* spotLight);
-		static void Register(const RefCountedBuffer& buffer);
 
 
 		static void Unregister(Object* object);
@@ -61,14 +59,12 @@ namespace leopph::impl
 		static void Unregister(const Resource* resource, const ResourceHandleBase* handle);
 		static void Unregister(const UniqueResource* resource, const ResourceHandleBase* handle);
 		static void Unregister(const SpotLight* spotLight);
-		static void Unregister(const RefCountedBuffer& buffer);
 
 
 		static Object* Find(const std::string& name);
 		static UniqueResource* Find(const std::filesystem::path& path);
 
 
-		static std::size_t Count(const RefCountedBuffer& buffer);
 		static std::size_t Count(const Resource* resource);
 		static std::size_t Count(const UniqueResource* resource);
 
@@ -110,8 +106,6 @@ namespace leopph::impl
 		static std::unordered_set<const ModelResource*> s_ModelResources;
 
 		static std::list<ShadowMap> s_ShadowMaps;
-
-		static std::unordered_map<unsigned, std::size_t> s_Buffers;
 
 		static std::unordered_map<const Resource*, std::unordered_set<const ResourceHandleBase*>> s_ResourcesAndHandles;
 

@@ -40,7 +40,7 @@ namespace leopph::impl
 		Logger::Instance().Debug("App initialized.");
 
 		{
-			ForwardRenderer renderer;
+			DeferredRenderer renderer;
 
 			Timer::Init();
 			Logger::Instance().Debug("Timer initialized.");

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../buffers/GeometryBuffer.hpp"
+#include "../GeometryBuffer.hpp"
 #include "../Shader.hpp"
 #include "Renderer.hpp"
 

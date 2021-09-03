@@ -1,16 +1,15 @@
 #pragma once
 
-#include "Framebuffer.hpp"
-#include "../../events/DisplayResolutionChangedEvent.hpp"
-#include "../../events/EventReceiver.hpp"
-#include "../../math/Vector.hpp"
+#include "../events/DisplayResolutionChangedEvent.hpp"
+#include "../events/EventReceiver.hpp"
+#include "../math/Vector.hpp"
 
 #include <array>
 
 
 namespace leopph::impl
 {
-	class GeometryBuffer final : public Framebuffer, public EventReceiver<DisplayResolutionChangedEvent>
+	class GeometryBuffer final : public EventReceiver<DisplayResolutionChangedEvent>
 	{
 	public:
 		GeometryBuffer();
@@ -34,6 +33,7 @@ namespace leopph::impl
 		const unsigned& specularTextureName;
 		const unsigned& shineTextureName;
 
+
 	private:
 		enum TextureType
 		{
@@ -42,6 +42,7 @@ namespace leopph::impl
 
 		std::array<unsigned, 6> m_Textures;
 		unsigned m_DepthBuffer;
+		unsigned m_FrameBuffer;
 
 		void SetUpBuffers(const Vector2& res);
 		void OnEventReceived(EventParamType event) override;

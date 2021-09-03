@@ -1,7 +1,6 @@
 #include "GeometryBuffer.hpp"
 
-#include "../../math/Vector.hpp"
-#include "../../windowing/window.h"
+#include "../windowing/window.h"
 
 #include <glad/glad.h>
 
@@ -17,8 +16,9 @@ namespace leopph::impl
 		diffuseTextureName{ m_Textures[Diffuse] },
 		specularTextureName{ m_Textures[Specular] },
 		shineTextureName{ m_Textures[Shine] },
-		m_Textures{}, m_DepthBuffer{}
+		m_Textures{}, m_DepthBuffer{}, m_FrameBuffer{}
 	{
+		glCreateFramebuffers(1, &m_FrameBuffer);
 		SetUpBuffers(Vector2{ Window::Get().Width(), Window::Get().Height() });
 	}
 
@@ -27,6 +27,7 @@ namespace leopph::impl
 	{
 		glDeleteTextures(static_cast<GLsizei>(m_Textures.size()), m_Textures.data());
 		glDeleteRenderbuffers(1, &m_DepthBuffer);
+		glDeleteFramebuffers(1, &m_FrameBuffer);
 	}
 
 
@@ -34,16 +35,16 @@ namespace leopph::impl
 	{
 		for (std::size_t i = 0; i < m_Textures.size(); i++)
 		{
-			glClearNamedFramebufferfv(name, GL_COLOR, static_cast<GLint>(i), Vector4{ 0, 0, 0, 1 }.Data());
+			glClearNamedFramebufferfv(m_FrameBuffer, GL_COLOR, static_cast<GLint>(i), Vector4{ 0, 0, 0, 1 }.Data());
 		}
 
-		glClearNamedFramebufferfv(name, GL_DEPTH, 0, std::array<GLfloat, 1>{ 1 }.data());
+		glClearNamedFramebufferfv(m_FrameBuffer, GL_DEPTH, 0, std::array<GLfloat, 1>{ 1 }.data());
 	}
 
 
 	void GeometryBuffer::Bind() const
 	{
-		glBindFramebuffer(GL_FRAMEBUFFER, name);
+		glBindFramebuffer(GL_FRAMEBUFFER, m_FrameBuffer);
 	}
 
 
@@ -87,15 +88,15 @@ namespace leopph::impl
 		glCreateRenderbuffers(1, &m_DepthBuffer);
 		glNamedRenderbufferStorage(m_DepthBuffer, GL_DEPTH_COMPONENT, static_cast<GLint>(res[0]), static_cast<GLint>(res[1]));
 
-		glNamedFramebufferTexture(name, GL_COLOR_ATTACHMENT0, m_Textures[Position], 0);
-		glNamedFramebufferTexture(name, GL_COLOR_ATTACHMENT1, m_Textures[Normal], 0);
-		glNamedFramebufferTexture(name, GL_COLOR_ATTACHMENT2, m_Textures[Ambient], 0);
-		glNamedFramebufferTexture(name, GL_COLOR_ATTACHMENT3, m_Textures[Diffuse], 0);
-		glNamedFramebufferTexture(name, GL_COLOR_ATTACHMENT4, m_Textures[Specular], 0);
-		glNamedFramebufferTexture(name, GL_COLOR_ATTACHMENT5, m_Textures[Shine], 0);
-		glNamedFramebufferRenderbuffer(name, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_DepthBuffer);
+		glNamedFramebufferTexture(m_FrameBuffer, GL_COLOR_ATTACHMENT0, m_Textures[Position], 0);
+		glNamedFramebufferTexture(m_FrameBuffer, GL_COLOR_ATTACHMENT1, m_Textures[Normal], 0);
+		glNamedFramebufferTexture(m_FrameBuffer, GL_COLOR_ATTACHMENT2, m_Textures[Ambient], 0);
+		glNamedFramebufferTexture(m_FrameBuffer, GL_COLOR_ATTACHMENT3, m_Textures[Diffuse], 0);
+		glNamedFramebufferTexture(m_FrameBuffer, GL_COLOR_ATTACHMENT4, m_Textures[Specular], 0);
+		glNamedFramebufferTexture(m_FrameBuffer, GL_COLOR_ATTACHMENT5, m_Textures[Shine], 0);
+		glNamedFramebufferRenderbuffer(m_FrameBuffer, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_DepthBuffer);
 
-		glNamedFramebufferDrawBuffers(name, static_cast<GLsizei>(m_Textures.size()), std::array<GLenum, 6>{ GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5 }.data());
+		glNamedFramebufferDrawBuffers(m_FrameBuffer, static_cast<GLsizei>(m_Textures.size()), std::array<GLenum, 6>{ GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5 }.data());
 	}
 
 

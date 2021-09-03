@@ -25,8 +25,6 @@ namespace leopph::impl
 
 	std::list<ShadowMap> DataManager::s_ShadowMaps{};
 
-	std::unordered_map<unsigned, std::size_t> DataManager::s_Buffers{};
-
 	std::unordered_map<const Resource*, std::unordered_set<const ResourceHandleBase*>> DataManager::s_ResourcesAndHandles{};
 
 	std::unordered_map<const UniqueResource*, std::unordered_set<const ResourceHandleBase*>, UniqueResourceHash, UniqueResourceEqual> DataManager::s_UniqueResourcesAndHandles{};
@@ -210,39 +208,6 @@ namespace leopph::impl
 	void DataManager::Unregister(const SpotLight* spotLight)
 	{
 		s_SpotLights.erase(spotLight);
-	}
-
-
-	void DataManager::Register(const RefCountedBuffer& buffer)
-	{
-		s_Buffers.try_emplace(buffer.name, 0);
-		s_Buffers[buffer.name]++;
-	}
-
-
-	void DataManager::Unregister(const RefCountedBuffer& buffer)
-	{
-		if (s_Buffers.contains(buffer.name))
-		{
-			s_Buffers[buffer.name]--;
-		}
-		else
-		{
-			Logger::Instance().Warning("Trying to unregister buffer [" + std::to_string(buffer.name) + "] but it is not registered.");
-		}
-	}
-
-
-	std::size_t DataManager::Count(const RefCountedBuffer& buffer)
-	{
-		const auto it{ s_Buffers.find(buffer.name) };
-
-		if (it == s_Buffers.end())
-		{
-			return 0;
-		}
-
-		return it->second;
 	}
 
 

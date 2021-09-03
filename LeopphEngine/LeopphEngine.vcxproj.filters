@@ -40,12 +40,9 @@
     <ClCompile Include="src\shaders\stringified\skyboxfragment.cpp" />
     <ClCompile Include="src\components\lighting\SpotLight.cpp" />
     <ClCompile Include="src\components\lighting\AttenuatedLight.cpp" />
-    <ClCompile Include="src\rendering\buffers\Buffer.cpp" />
-    <ClCompile Include="src\rendering\buffers\Framebuffer.cpp" />
-    <ClCompile Include="src\rendering\buffers\RefCountedBuffer.cpp" />
     <ClCompile Include="src\util\less\LightCloserToCamera.cpp" />
     <ClCompile Include="src\rendering\renderers\DeferredRenderer.cpp" />
-    <ClCompile Include="src\rendering\buffers\GeometryBuffer.cpp" />
+    <ClCompile Include="src\rendering\GeometryBuffer.cpp" />
     <ClCompile Include="src\shaders\stringified\deferred\GPassObjectFragment.cpp" />
     <ClCompile Include="src\shaders\stringified\deferred\GPassObjectVertex.cpp" />
     <ClCompile Include="src\shaders\stringified\deferred\LightPassFragment.cpp" />
@@ -116,12 +113,9 @@
     <ClInclude Include="src\rendering\ShadowMap.hpp" />
     <ClInclude Include="src\components\lighting\SpotLight.hpp" />
     <ClInclude Include="src\components\lighting\AttenuatedLight.hpp" />
-    <ClInclude Include="src\rendering\buffers\Buffer.hpp" />
-    <ClInclude Include="src\rendering\buffers\Framebuffer.hpp" />
-    <ClInclude Include="src\rendering\buffers\RefCountedBuffer.hpp" />
     <ClInclude Include="src\rendering\renderers\DeferredRenderer.hpp" />
     <ClInclude Include="src\util\less\LightCloserToCamera.hpp" />
-    <ClInclude Include="src\rendering\buffers\GeometryBuffer.hpp" />
+    <ClInclude Include="src\rendering\GeometryBuffer.hpp" />
     <ClInclude Include="src\events\Event.hpp" />
     <ClInclude Include="src\events\EventManager.hpp" />
     <ClInclude Include="src\events\DisplayResolutionChangedEvent.hpp" />
