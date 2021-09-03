@@ -26,7 +26,6 @@
     <ClCompile Include="src\config\Settings.cpp" />
     <ClCompile Include="src\util\logger.cpp" />
     <ClCompile Include="src\rendering\Material.cpp" />
-    <ClCompile Include="src\util\less\ObjectLess.cpp" />
     <ClCompile Include="src\misc\Skybox.cpp" />
     <ClCompile Include="src\misc\color.cpp" />
     <ClCompile Include="src\components\lighting\AmbientLight.cpp" />
@@ -69,6 +68,8 @@
     <ClCompile Include="src\rendering\Texture.cpp" />
     <ClCompile Include="src\rendering\SkyboxResource.cpp" />
     <ClCompile Include="src\rendering\SkyboxHandle.cpp" />
+    <ClCompile Include="src\util\equal\ObjectEqual.cpp" />
+    <ClCompile Include="src\util\hash\ObjectHash.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\Behavior.hpp" />
@@ -107,7 +108,6 @@
     <ClInclude Include="src\rendering\Material.hpp" />
     <ClInclude Include="src\misc\color.h" />
     <ClInclude Include="src\util\hash\PathHash.hpp" />
-    <ClInclude Include="src\util\less\ObjectLess.hpp" />
     <ClInclude Include="src\misc\camerabackground.h" />
     <ClInclude Include="src\misc\Skybox.hpp" />
     <ClInclude Include="src\components\lighting\AmbientLight.hpp" />
@@ -122,8 +122,6 @@
     <ClInclude Include="src\rendering\renderers\DeferredRenderer.hpp" />
     <ClInclude Include="src\util\less\LightCloserToCamera.hpp" />
     <ClInclude Include="src\rendering\buffers\GeometryBuffer.hpp" />
-    <ClInclude Include="src\util\equal\FuncEqual.hpp" />
-    <ClInclude Include="src\util\hash\FuncHash.hpp" />
     <ClInclude Include="src\events\Event.hpp" />
     <ClInclude Include="src\events\EventManager.hpp" />
     <ClInclude Include="src\events\DisplayResolutionChangedEvent.hpp" />
@@ -147,6 +145,8 @@
     <ClInclude Include="src\rendering\SkyboxResource.hpp" />
     <ClInclude Include="src\data\Proxy.hpp" />
     <ClInclude Include="src\rendering\SkyboxHandle.hpp" />
+    <ClInclude Include="src\util\equal\ObjectEqual.hpp" />
+    <ClInclude Include="src\util\hash\ObjectHash.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\shaders\ObjectFragment.frag" />

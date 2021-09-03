@@ -9,6 +9,7 @@
 #include <string>
 #include <utility>
 
+
 namespace leopph
 {
 	Object* Object::Find(const std::string& name)
@@ -92,7 +93,7 @@ namespace leopph
 	}
 
 
-	const std::set<Component*>& Object::Components() const
+	const std::unordered_set<Component*>& Object::Components() const
 	{
 		return impl::DataManager::Components(const_cast<Object*>(this));
 	}

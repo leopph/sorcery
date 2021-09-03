@@ -178,9 +178,9 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClInclude Include="src\rendering\TextureResource.hpp" />
     <ClInclude Include="src\timing\timer.h" />
     <ClInclude Include="src\misc\camerabackground.h" />
-    <ClInclude Include="src\util\equal\FuncEqual.hpp" />
+    <ClInclude Include="src\util\equal\ObjectEqual.hpp" />
     <ClInclude Include="src\util\equal\UniqueResourceEqual.hpp" />
-    <ClInclude Include="src\util\hash\FuncHash.hpp" />
+    <ClInclude Include="src\util\hash\ObjectHash.hpp" />
     <ClInclude Include="src\util\hash\UniqueResourceHash.hpp" />
     <ClInclude Include="src\util\less\LightCloserToCamera.hpp" />
     <ClInclude Include="src\util\logger.h" />
@@ -202,7 +202,6 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClInclude Include="src\timing\leopphtime.h" />
     <ClInclude Include="src\math\Vector.hpp" />
     <ClInclude Include="src\rendering\vertex.h" />
-    <ClInclude Include="src\util\less\ObjectLess.hpp" />
     <ClInclude Include="src\util\ObjectProperties.hpp" />
     <ClInclude Include="src\util\hash\PathHash.hpp" />
     <ClInclude Include="src\misc\Skybox.hpp" />
@@ -256,12 +255,13 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClCompile Include="src\shaders\stringified\skyboxfragment.cpp" />
     <ClCompile Include="src\shaders\stringified\skyboxvertex.cpp" />
     <ClCompile Include="src\timing\timer.cpp" />
+    <ClCompile Include="src\util\equal\ObjectEqual.cpp" />
     <ClCompile Include="src\util\equal\UniqueResourceEqual.cpp" />
+    <ClCompile Include="src\util\hash\ObjectHash.cpp" />
     <ClCompile Include="src\util\hash\PathHash.cpp" />
     <ClCompile Include="src\util\hash\UniqueResourceHash.cpp" />
     <ClCompile Include="src\util\less\LightCloserToCamera.cpp" />
     <ClCompile Include="src\util\logger.cpp" />
-    <ClCompile Include="src\util\less\ObjectLess.cpp" />
     <ClCompile Include="src\misc\Skybox.cpp" />
     <ClCompile Include="src\windowing\window.cpp" />
     <ClCompile Include="src\input\Input.cpp" />

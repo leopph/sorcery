@@ -14,17 +14,15 @@
 #include "managed/ResourceHandleBase.hpp"
 #include "managed/UniqueResource.hpp"
 
+#include "../util/equal/ObjectEqual.hpp"
 #include "../util/equal/UniqueResourceEqual.hpp"
-#include "../util/hash/PathHash.hpp"
+#include "../util/hash/ObjectHash.hpp"
 #include "../util/hash/UniqueResourceHash.hpp"
-#include "../util/less/ObjectLess.hpp"
 
 #include <cstddef>
 #include <filesystem>
 #include <list>
-#include <map>
 #include <memory>
-#include <set>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -75,9 +73,9 @@ namespace leopph::impl
 		static std::size_t Count(const UniqueResource* resource);
 
 
-		static const std::map<Object*, std::set<Component*>, ObjectLess>& Objects();
-		static const std::set<Behavior*>& Behaviors();
-		static const std::set<Component*>& Components(Object* object);
+		static const std::unordered_map<Object*, std::unordered_set<Component*>, ObjectHash, ObjectEqual>& Objects();
+		static const std::unordered_set<Behavior*>& Behaviors();
+		static const std::unordered_set<Component*>& Components(Object* object);
 		static leopph::AmbientLight* AmbientLight();
 		static DirectionalLight* DirectionalLight();
 		static const std::unordered_set<const SpotLight*>& SpotLights();
@@ -95,9 +93,9 @@ namespace leopph::impl
 
 
 	private:
-		static std::map<Object*, std::set<Component*>, ObjectLess> s_Objects;
+		static std::unordered_map<Object*, std::unordered_set<Component*>, ObjectHash, ObjectEqual> s_Objects;
 
-		static std::set<Behavior*> s_Behaviors;
+		static std::unordered_set<Behavior*> s_Behaviors;
 
 		static std::unique_ptr<leopph::AmbientLight> s_AmbientLight;
 
@@ -118,7 +116,5 @@ namespace leopph::impl
 		static std::unordered_map<const Resource*, std::unordered_set<const ResourceHandleBase*>> s_ResourcesAndHandles;
 
 		static std::unordered_map<const UniqueResource*, std::unordered_set<const ResourceHandleBase*>, UniqueResourceHash, UniqueResourceEqual> s_UniqueResourcesAndHandles;
-
-
 	};
 }

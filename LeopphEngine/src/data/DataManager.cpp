@@ -7,9 +7,9 @@
 
 namespace leopph::impl
 {
-	std::map<Object*, std::set<Component*>, ObjectLess> DataManager::s_Objects{};
+	std::unordered_map<Object*, std::unordered_set<Component*>, ObjectHash, ObjectEqual> DataManager::s_Objects{};
 
-	std::set<Behavior*> DataManager::s_Behaviors{};
+	std::unordered_set<Behavior*> DataManager::s_Behaviors{};
 
 	std::unique_ptr<AmbientLight> DataManager::s_AmbientLight{ nullptr };
 
@@ -66,13 +66,13 @@ namespace leopph::impl
 	}
 
 
-	const std::map<Object*, std::set<Component*>, ObjectLess>& DataManager::Objects()
+	const std::unordered_map<Object*, std::unordered_set<Component*>, ObjectHash, ObjectEqual>& DataManager::Objects()
 	{
 		return s_Objects;
 	}
 
 
-	const std::set<Behavior*>& DataManager::Behaviors()
+	const std::unordered_set<Behavior*>& DataManager::Behaviors()
 	{
 		return s_Behaviors;
 	}
@@ -90,7 +90,7 @@ namespace leopph::impl
 	}
 
 
-	const std::set<Component*>& DataManager::Components(Object* object)
+	const std::unordered_set<Component*>& DataManager::Components(Object* object)
 	{
 		return s_Objects[object];
 	}

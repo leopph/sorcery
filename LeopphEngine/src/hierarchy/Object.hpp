@@ -6,7 +6,7 @@
 #include "../util/ObjectProperties.hpp"
 
 #include <concepts>
-#include <set>
+#include <unordered_set>
 #include <string>
 #include <utility>
 
@@ -48,7 +48,7 @@ namespace leopph
 		[[nodiscard]] LEOPPHAPI const leopph::Transform& Transform() const;
 
 		/* The set of Components attached to the Object. */
-		LEOPPHAPI const std::set<Component*>& Components() const;
+		LEOPPHAPI const std::unordered_set<Component*>& Components() const;
 
 		/* Attach a new Component of type T to the Object.
 		 * It is constructed in-place, and a pointer to it is returned. */
