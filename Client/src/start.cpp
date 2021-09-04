@@ -5,8 +5,8 @@
 #include "behaviors/FPSCounter.hpp"
 #include "behaviors/Rotate.hpp"
 
-#include <cstdlib>
 #include <memory>
+
 
 void leopph::AppStart()
 {
@@ -25,19 +25,6 @@ void leopph::AppStart()
 	portraitObj->Transform().Position(Vector3{ 0, 0, 5 });
 	portraitObj->Transform().RotateGlobal(Quaternion{ Vector3::Up(), 180 });
 	new Model{ *portraitObj, "models/portrait/cropped_textured_mesh.obj" };
-
-	/*constexpr std::size_t cubeNumber{ 5000u };
-	for (std::size_t i = 0; i < cubeNumber; i++)
-	{
-		const ObjectProperties properties
-		{
-			.isStatic = true,
-			.position { Vector3{rand() % 100 - 50, rand() % 100 - 50, rand() % 100 - 50} }
-		};
-
-		const auto cube = new Object{ properties };
-		cube->AddComponent<Model>("models/cube/cube.dae");
-	}*/
 
 	const auto cubeObj = new Object;
 	cubeObj->Transform().Position(Vector3{ 0, 0, 5 });

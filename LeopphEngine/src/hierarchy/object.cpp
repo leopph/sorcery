@@ -19,10 +19,9 @@ namespace leopph
 
 
 	Object::Object(const ObjectProperties& properties) :
-		isStatic{ properties.isStatic },
-		name { m_Name },
-		m_Name{ properties.name.empty() ? "Object" + std::to_string(impl::DataManager::Objects().size()) : properties.name },
-		m_Transform{ nullptr }
+		name{m_Name},
+		m_Name{properties.name.empty() ? "Object" + std::to_string(impl::DataManager::Objects().size()) : properties.name},
+		m_Transform{nullptr}
 	{
 		if (Find(this->name) != nullptr)
 		{
@@ -35,7 +34,7 @@ namespace leopph
 			}
 			if (newName.empty())
 			{
-				throw std::runtime_error{ "Could not solve name conflict during creation of new object [" + m_Name + "]." };
+				throw std::runtime_error{"Could not solve name conflict during creation of new object [" + m_Name + "]."};
 			}
 			impl::Logger::Instance().Warning("Object name [" + m_Name + "] is already taken. Renaming object to [" + newName + "]...");
 			m_Name = newName;
@@ -45,22 +44,17 @@ namespace leopph
 		AddComponent<leopph::Transform>(properties.position, properties.rotation, properties.scale);
 	}
 
-	Object::Object(const bool isStatic) :
-		Object{ isStatic, std::string{} }
-	{}
 
 	Object::Object(std::string name) :
-		Object { false, std::move(name) }
-	{}
+		Object{ObjectProperties {std::move(name)}}
+	{
+	}
+
 
 	Object::Object() :
-		Object{ false, std::string{} }
-	{}
-
-	Object::Object(const bool isStatic, std::string name) :
-		Object{ ObjectProperties{ .name = std::move(name), .isStatic = isStatic } }
-	{}
-
+		Object{std::string{}}
+	{
+	}
 
 
 	Object::~Object()
@@ -75,12 +69,11 @@ namespace leopph
 	}
 
 
-
-
 	Transform& Object::Transform()
 	{
 		return const_cast<leopph::Transform&>(const_cast<const Object*>(this)->Transform());
 	}
+
 
 	const Transform& Object::Transform() const
 	{
@@ -103,13 +96,14 @@ namespace leopph
 	{
 		if (&behavior->object != this)
 		{
-			const auto errorMsg{ "The given Component is not attached to Object [" + name + "]." };
+			const auto errorMsg{"The given Component is not attached to Object [" + name + "]."};
 			impl::Logger::Instance().Error(errorMsg);
-			throw std::invalid_argument{ errorMsg };
+			throw std::invalid_argument{errorMsg};
 		}
 
 		if (dynamic_cast<leopph::Transform*>(behavior))
-		
-		impl::DataManager::Unregister(behavior);
+		{
+			impl::DataManager::Unregister(behavior);
+		}
 	}
 }

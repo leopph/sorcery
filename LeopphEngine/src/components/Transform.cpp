@@ -32,12 +32,6 @@ namespace leopph
 
 	void Transform::Position(const Vector3& newPos)
 	{
-		if (object.isStatic)
-		{
-			impl::Logger::Instance().Warning("Trying to set position on static object [" + object.name + "]. Ignoring...");
-			return;
-		}
-
 		m_Position = newPos;
 		m_WasAltered = true;
 	}
@@ -51,12 +45,6 @@ namespace leopph
 
 	void Transform::Rotation(const Quaternion newRot)
 	{
-		if (object.isStatic)
-		{
-			impl::Logger::Instance().Warning("Trying to set rotation on static object [" + object.name + "]. Ignoring...");
-			return;
-		}
-
 		m_Rotation = newRot;
 		CalculateLocalAxes();
 		m_WasAltered = true;
@@ -71,12 +59,6 @@ namespace leopph
 
 	void Transform::Scale(const Vector3& newScale)
 	{
-		if (object.isStatic)
-		{
-			impl::Logger::Instance().Warning("Trying to set scale on static object [" + object.name + "]. Ignoring...");
-			return;
-		}
-
 		m_Scale = newScale;
 		m_WasAltered = true;
 	}
@@ -84,61 +66,30 @@ namespace leopph
 
 	void Transform::Translate(const Vector3& vector)
 	{
-		if (object.isStatic)
-		{
-			impl::Logger::Instance().Warning("Trying to translate position on static object [" + object.name + "]. Ignoring...");
-			return;
-		}
-
-
 		Position(Position() + vector);
 	}
 
 
 	void Transform::Translate(const float x, const float y, const float z)
 	{
-		if (object.isStatic)
-		{
-			impl::Logger::Instance().Warning("Trying to translate position on static object [" + object.name + "]. Ignoring...");
-			return;
-		}
-
 		Position(Position() + Vector3{ x, y, z });
 	}
 
 
 	void Transform::RotateLocal(const Quaternion& rotation)
 	{
-		if (object.isStatic)
-		{
-			impl::Logger::Instance().Warning("Trying to rotate static object [" + object.name + "]. Ignoring...");
-			return;
-		}
-
 		Rotation(Rotation() * rotation);
 	}
 
 
 	void Transform::RotateGlobal(const Quaternion& rotation)
 	{
-		if (object.isStatic)
-		{
-			impl::Logger::Instance().Warning("Trying to rotate static object [" + object.name + "]. Ignoring...");
-			return;
-		}
-
 		Rotation(rotation * Rotation());
 	}
 
 
 	void Transform::Rescale(const float x, const float y, const float z)
 	{
-		if (object.isStatic)
-		{
-			impl::Logger::Instance().Warning("Trying to rescale static object [" + object.name + "]. Ignoring...");
-			return;
-		}
-
 		Vector3 scale{Scale()};
 		scale[0] *= x;
 		scale[1] *= y;

@@ -10,6 +10,7 @@
 #include <string>
 #include <utility>
 
+
 namespace leopph
 {
 	namespace impl
@@ -27,17 +28,16 @@ namespace leopph
 	class Object final
 	{
 	public:
-		LEOPPHAPI explicit Object(const ObjectProperties& properties);
-		LEOPPHAPI explicit Object(bool isStatic, std::string name);
-		LEOPPHAPI explicit Object(bool isStatic);
-		LEOPPHAPI explicit  Object(std::string name);
 		LEOPPHAPI Object();
-		LEOPPHAPI ~Object();
+		LEOPPHAPI explicit  Object(std::string name);
+		LEOPPHAPI explicit Object(const ObjectProperties& properties);
 
 		Object(const Object&) = delete;
 		Object(Object&&) = delete;
 		void operator=(const Object&) = delete;
 		void operator=(Object&&) = delete;
+
+		LEOPPHAPI ~Object();
 
 		/* Returns a pointer to the Object that's name is equal to the given string.
 		 * Returns NULL if no such Object exists. */
@@ -77,10 +77,9 @@ namespace leopph
 			return nullptr;
 		}
 
-		/* Static objects cannot be moved, rotated, or scaled. */
-		const bool isStatic;
 		/* The Object's name is a unique identifier. */
 		const std::string& name;
+
 
 	private:
 		std::string m_Name;
