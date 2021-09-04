@@ -1,21 +1,25 @@
 #include "Model.hpp"
 
 #include "../data/DataManager.hpp"
+#include "../events/EventManager.hpp"
+#include "../events/ModelCountChangedEvent.hpp"
 
 #include <utility>
 
 namespace leopph
 {
-	Model::Model(Object& owner, const std::filesystem::path& path) :
+	Model::Model(Entity& owner, const std::filesystem::path& path) :
 		Component{ owner }, ResourceHandle{ path }
 	{
 		impl::DataManager::Register(resource);
+		EventManager::Instance().Send<impl::ModelCountChangedEvent>(resource);
 	}
 
 
 	Model::~Model()
 	{
 		impl::DataManager::Unregister(resource);
+		EventManager::Instance().Send<impl::ModelCountChangedEvent>(resource);
 	}
 
 

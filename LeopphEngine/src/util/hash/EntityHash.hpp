@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../hierarchy/Object.hpp"
+#include "../../entity/Entity.hpp"
 
 #include <cstddef>
 #include <functional>
@@ -9,14 +9,14 @@
 
 namespace leopph::impl
 {
-	class ObjectHash
+	class EntityHash
 	{
 	public:
 		using is_transparent = void;
 
-		ObjectHash();
+		EntityHash();
 
-		std::size_t operator()(const Object* object) const;
+		std::size_t operator()(const Entity* entity) const;
 		std::size_t operator()(const std::string& str) const;
 
 

@@ -2,7 +2,7 @@
 
 #include <tuple>
 
-CameraController::CameraController(leopph::Object& owner) :
+CameraController::CameraController(leopph::Entity& owner) :
 	Behavior{ owner }, m_Speed{ 2.0f }, m_Sens{ 0.1f }, lastX{}, lastY{}
 {
 	std::tie(lastX, lastY) = leopph::Input::GetMousePosition();
@@ -13,7 +13,7 @@ void CameraController::OnFrameUpdate()
 	if (leopph::Camera::Active() == nullptr)
 		return;
 
-	leopph::Transform& camTransform = leopph::Camera::Active()->object.Transform();
+	leopph::Transform& camTransform = leopph::Camera::Active()->entity.Transform();
 
 	leopph::Vector3 movementVector;
 

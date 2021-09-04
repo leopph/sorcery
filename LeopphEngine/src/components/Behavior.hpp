@@ -8,15 +8,15 @@
 namespace leopph
 {
 	/*------------------------------------------------------------------------------------------------------
-	Behaviors are special components that provide can hook into and effect the status of objects at runtime.
+	Behaviors are special components that provide can hook into and effect the status of Entities at runtime.
 	Subclass this to provide the logic for your application.
-	See "object.h" and "component.h" for more information.
+	See "Entity.hpp" and "Component.hpp" for more information.
 	------------------------------------------------------------------------------------------------------*/
 
 	class Behavior : public Component
 	{
 	public:
-		LEOPPHAPI explicit Behavior(Object& owner);
+		LEOPPHAPI explicit Behavior(Entity& owner);
 		LEOPPHAPI ~Behavior() override = 0;
 
 		Behavior(const Behavior&) = delete;

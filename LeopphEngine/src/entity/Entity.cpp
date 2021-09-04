@@ -1,4 +1,4 @@
-#include "Object.hpp"
+#include "Entity.hpp"
 
 #include "../data/DataManager.hpp"
 
@@ -12,15 +12,15 @@
 
 namespace leopph
 {
-	Object* Object::Find(const std::string& name)
+	Entity* Entity::Find(const std::string& name)
 	{
 		return impl::DataManager::Find(name);
 	}
 
 
-	Object::Object(std::string name) :
+	Entity::Entity(std::string name) :
 		name{m_Name},
-		m_Name{name.empty() ? "Object" + std::to_string(impl::DataManager::Objects().size()) : name},
+		m_Name{name.empty() ? "Entity" + std::to_string(impl::DataManager::EntitiesAndComponents().size()) : name},
 		m_Transform{nullptr}
 	{
 		if (Find(this->name) != nullptr)
@@ -34,9 +34,9 @@ namespace leopph
 			}
 			if (newName.empty())
 			{
-				throw std::runtime_error{"Could not solve name conflict during creation of new object [" + m_Name + "]."};
+				throw std::runtime_error{"Could not solve name conflict during creation of new Entity [" + m_Name + "]."};
 			}
-			impl::Logger::Instance().Warning("Object name [" + m_Name + "] is already taken. Renaming object to [" + newName + "]...");
+			impl::Logger::Instance().Warning("Entity name [" + m_Name + "] is already taken. Renaming Entity to [" + newName + "]...");
 			m_Name = newName;
 		}
 
@@ -45,13 +45,13 @@ namespace leopph
 	}
 
 
-	Object::Object() :
-		Object{std::string{}}
+	Entity::Entity() :
+		Entity{std::string{}}
 	{
 	}
 
 
-	Object::~Object()
+	Entity::~Entity()
 	{
 		for (auto it = impl::DataManager::Components(this).begin(); it != impl::DataManager::Components(this).end();)
 		{
@@ -63,13 +63,13 @@ namespace leopph
 	}
 
 
-	Transform& Object::Transform()
+	Transform& Entity::Transform()
 	{
-		return const_cast<leopph::Transform&>(const_cast<const Object*>(this)->Transform());
+		return const_cast<leopph::Transform&>(const_cast<const Entity*>(this)->Transform());
 	}
 
 
-	const Transform& Object::Transform() const
+	const Transform& Entity::Transform() const
 	{
 		if (m_Transform == nullptr)
 		{
@@ -80,17 +80,17 @@ namespace leopph
 	}
 
 
-	const std::unordered_set<Component*>& Object::Components() const
+	const std::unordered_set<Component*>& Entity::Components() const
 	{
-		return impl::DataManager::Components(const_cast<Object*>(this));
+		return impl::DataManager::Components(const_cast<Entity*>(this));
 	}
 
 
-	void Object::RemoveComponent(Component* behavior)
+	void Entity::RemoveComponent(Component* behavior)
 	{
-		if (&behavior->object != this)
+		if (&behavior->entity != this)
 		{
-			const auto errorMsg{"The given Component is not attached to Object [" + name + "]."};
+			const auto errorMsg{"The given Component is not attached to Entity [" + name + "]."};
 			impl::Logger::Instance().Error(errorMsg);
 			throw std::invalid_argument{errorMsg};
 		}

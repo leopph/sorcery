@@ -39,8 +39,13 @@ namespace leopph::impl
 	}
 
 
-	void ModelResource::OnReferringObjectsChanged(std::size_t newAmount) const
+	void ModelResource::OnEventReceived(const ModelCountChangedEvent& event)
 	{
-		m_AssimpModel->OnReferringObjectsChanged(newAmount);
+		if (event.Model != this)
+		{
+			return;
+		}
+
+		m_AssimpModel->OnReferringEntitiesChanged(event.Count);
 	}
 }

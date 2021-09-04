@@ -7,16 +7,16 @@
 #include "../components/lighting/PointLight.hpp"
 #include "../components/lighting/SpotLight.hpp"
 #include "../components/Transform.hpp"
-#include "../hierarchy/Object.hpp"
+#include "../entity/Entity.hpp"
 #include "../rendering/geometry/ModelResource.hpp"
 #include "../rendering/ShadowMap.hpp"
 #include "managed/Resource.hpp"
 #include "managed/ResourceHandleBase.hpp"
 #include "managed/UniqueResource.hpp"
 
-#include "../util/equal/ObjectEqual.hpp"
+#include "../util/equal/EntityEqual.hpp"
 #include "../util/equal/UniqueResourceEqual.hpp"
-#include "../util/hash/ObjectHash.hpp"
+#include "../util/hash/EntityHash.hpp"
 #include "../util/hash/UniqueResourceHash.hpp"
 
 #include <cstddef>
@@ -38,7 +38,7 @@ namespace leopph::impl
 		static void Clear();
 
 
-		static void Register(Object* object);
+		static void Register(Entity* entity);
 		static void Register(Behavior* behavior);
 		static void Register(Component* component);
 		static void Register(PointLight* pointLight);
@@ -50,7 +50,7 @@ namespace leopph::impl
 		static void Register(const SpotLight* spotLight);
 
 
-		static void Unregister(Object* object);
+		static void Unregister(Entity* entity);
 		static void Unregister(Behavior* behavior);
 		static void Unregister(Component* component);
 		static void Unregister(PointLight* pointLight);
@@ -62,7 +62,7 @@ namespace leopph::impl
 		static void Unregister(const SpotLight* spotLight);
 
 
-		static Object* Find(const std::string& name);
+		static Entity* Find(const std::string& name);
 		static UniqueResource* Find(const std::filesystem::path& path);
 
 
@@ -70,9 +70,9 @@ namespace leopph::impl
 		static std::size_t Count(const UniqueResource* resource);
 
 
-		static const std::unordered_map<Object*, std::unordered_set<Component*>, ObjectHash, ObjectEqual>& Objects();
+		static const std::unordered_map<Entity*, std::unordered_set<Component*>, EntityHash, EntityEqual>& EntitiesAndComponents();
 		static const std::unordered_set<Behavior*>& Behaviors();
-		static const std::unordered_set<Component*>& Components(Object* object);
+		static const std::unordered_set<Component*>& Components(Entity* entity);
 		static leopph::AmbientLight* AmbientLight();
 		static DirectionalLight* DirectionalLight();
 		static const std::unordered_set<const SpotLight*>& SpotLights();
@@ -93,7 +93,7 @@ namespace leopph::impl
 
 
 	private:
-		static std::unordered_map<Object*, std::unordered_set<Component*>, ObjectHash, ObjectEqual> s_Objects;
+		static std::unordered_map<Entity*, std::unordered_set<Component*>, EntityHash, EntityEqual> s_EntitiesAndComponents;
 
 		static std::unordered_set<Behavior*> s_Behaviors;
 

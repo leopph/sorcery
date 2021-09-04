@@ -4,17 +4,17 @@
 
 namespace leopph
 {
-	class Object;
+	class Entity;
 
 	/* A SpotLight is a kind of light that shines in a cone.
 	* It has a position, attenuation, an orientation, and a radius. 
-	* SpotLights always point in the direction of the owning Object's Forward vector.
+	* SpotLights always point in the direction of the owning Entity's Transform's Forward vector.
 	* See "AttenuatedLight.hpp", "Light.hpp", and "Component.hpp" for more information.
 	*/
 	class SpotLight final : public impl::AttenuatedLight
 	{
 	public:
-		LEOPPHAPI explicit SpotLight(Object& owner);
+		LEOPPHAPI explicit SpotLight(Entity& owner);
 		LEOPPHAPI ~SpotLight() override;
 
 		SpotLight(const SpotLight&) = delete;

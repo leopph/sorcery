@@ -4,7 +4,7 @@
 
 namespace leopph
 {
-	class Object;
+	class Entity;
 
 	namespace impl
 	{
@@ -14,7 +14,7 @@ namespace leopph
 		class AttenuatedLight : public Light
 		{
 		public:
-			LEOPPHAPI explicit AttenuatedLight(Object& owner, float constant = 1.0f, float linear = 0.14f, float quadratic = 0.07f);
+			LEOPPHAPI explicit AttenuatedLight(Entity& owner, float constant = 1.0f, float linear = 0.14f, float quadratic = 0.07f);
 			LEOPPHAPI ~AttenuatedLight() override = 0;
 
 			AttenuatedLight(const AttenuatedLight&) = delete;

@@ -4,7 +4,7 @@
 
 namespace leopph
 {
-	SpotLight::SpotLight(Object& owner) :
+	SpotLight::SpotLight(Entity& owner) :
 		AttenuatedLight{ owner, 1.f, 0.1f, 0.1f }, m_InnerAngle{ 30.f }, m_OuterAngle{ m_InnerAngle }
 	{
 		impl::DataManager::Register(this);

@@ -10,17 +10,17 @@
 
 namespace leopph
 {
-	class Object;
+	class Entity;
 
 	/*-----------------------------------------------------------------------------
-	The Model class represents a drawable entity that can be attached to Objects.
-	The way it is rendered depends on the owning Object's current state in space.
-	See "object.h" for more information.
+	The Model class represents a drawable object that can be attached to Entites.
+	The way it is rendered depends on the owning Entity's current state in space.
+	See "Entity.hpp" for more information.
 	-----------------------------------------------------------------------------*/
 	class Model final : public Component, public impl::ResourceHandle<impl::ModelResource>
 	{
 	public:
-		LEOPPHAPI explicit Model(Object& owner, const std::filesystem::path& path);
+		LEOPPHAPI explicit Model(Entity& owner, const std::filesystem::path& path);
 
 		LEOPPHAPI ~Model();
 

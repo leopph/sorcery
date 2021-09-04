@@ -5,7 +5,7 @@
 class Rotate final : public leopph::Behavior
 {
 public:
-	explicit Rotate(leopph::Object& owner, const leopph::Vector3& axis, float anglePerSec, bool rotateLocally = false);
+	explicit Rotate(leopph::Entity& owner, const leopph::Vector3& axis, float anglePerSec, bool rotateLocally = false);
 	void OnFrameUpdate() override;
 
 private:

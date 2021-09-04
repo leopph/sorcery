@@ -26,7 +26,7 @@ namespace leopph::impl
 
 			for (const auto& handle : DataManager::ModelComponents(modelResource))
 			{
-				const auto& transform{ static_cast<const Model*>(handle)->object.Transform() };
+				const auto& transform{ static_cast<const Model*>(handle)->entity.Transform() };
 
 				if (transform.WasAltered)
 				{

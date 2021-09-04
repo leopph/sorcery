@@ -18,7 +18,7 @@ See individual headers for more information.
 #include "../src/events/EventManager.hpp"
 #include "../src/events/EventReceiver.hpp"
 #include "../src/events/EventReceiverHandle.hpp"
-#include "../src/hierarchy/Object.hpp"
+#include "../src/entity/Entity.hpp"
 #include "../src/input/Input.hpp"
 #include "../src/math/LeopphMath.hpp"
 #include "../src/math/Matrix.hpp"

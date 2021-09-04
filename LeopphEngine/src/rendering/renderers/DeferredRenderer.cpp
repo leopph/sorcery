@@ -60,7 +60,7 @@ namespace leopph::impl
 		m_CurrentFrameViewMatrix = Camera::Active()->ViewMatrix();
 		m_CurrentFrameProjectionMatrix = Camera::Active()->ProjectionMatrix();
 
-		/* We collect the model matrices from the existing models' objects */
+		/* We collect the model matrices from the existing Models' Entities */
 		CalcAndCollectMatrices();
 
 		/* We collect the nearest pointlights */
@@ -109,7 +109,7 @@ namespace leopph::impl
 		m_LightPassShader.SetUniform("specularTexture", 4);
 		m_LightPassShader.SetUniform("shineTexture", 5);
 
-		m_LightPassShader.SetUniform("cameraPosition", Camera::Active()->object.Transform().Position());
+		m_LightPassShader.SetUniform("cameraPosition", Camera::Active()->entity.Transform().Position());
 
 		/* Set up ambient light data */
 		m_LightPassShader.SetUniform("ambientLight", AmbientLight::Instance().Intensity());
@@ -133,7 +133,7 @@ namespace leopph::impl
 		{
 			const auto& pointLight = m_CurrentFrameUsedPointLights[i];
 
-			m_LightPassShader.SetUniform("pointLights[" + std::to_string(i) + "].position", pointLight->object.Transform().Position());
+			m_LightPassShader.SetUniform("pointLights[" + std::to_string(i) + "].position", pointLight->entity.Transform().Position());
 			m_LightPassShader.SetUniform("pointLights[" + std::to_string(i) + "].diffuseColor", pointLight->Diffuse());
 			m_LightPassShader.SetUniform("pointLights[" + std::to_string(i) + "].specularColor", pointLight->Specular());
 			m_LightPassShader.SetUniform("pointLights[" + std::to_string(i) + "].constant", pointLight->Constant());
@@ -147,8 +147,8 @@ namespace leopph::impl
 		{
 			const auto& spotLight{ m_CurrentFrameUsedSpotLights[i] };
 
-			m_LightPassShader.SetUniform("spotLights[" + std::to_string(i) + "].position", spotLight->object.Transform().Position());
-			m_LightPassShader.SetUniform("spotLights[" + std::to_string(i) + "].direction", spotLight->object.Transform().Forward());
+			m_LightPassShader.SetUniform("spotLights[" + std::to_string(i) + "].position", spotLight->entity.Transform().Position());
+			m_LightPassShader.SetUniform("spotLights[" + std::to_string(i) + "].direction", spotLight->entity.Transform().Forward());
 			m_LightPassShader.SetUniform("spotLights[" + std::to_string(i) + "].diffuseColor", spotLight->Diffuse());
 			m_LightPassShader.SetUniform("spotLights[" + std::to_string(i) + "].specularColor", spotLight->Specular());
 			m_LightPassShader.SetUniform("spotLights[" + std::to_string(i) + "].constant", spotLight->Constant());

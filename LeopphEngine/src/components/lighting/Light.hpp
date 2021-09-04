@@ -9,7 +9,7 @@ namespace leopph::impl
 	class Light : public Component
 	{
 	public:
-		LEOPPHAPI explicit Light(Object& owner);
+		LEOPPHAPI explicit Light(Entity& owner);
 		LEOPPHAPI ~Light() override = 0;
 
 		Light(const Light&) = delete;

@@ -64,7 +64,7 @@ namespace leopph
 		}
 
 
-		/* Register an object as a receiver.
+		/* Register as a receiver.
 		 * This is used internally by instances of
 		 * EventReceiver, and should not be called explicitly. */
 		template<std::derived_from<Event> EventType>

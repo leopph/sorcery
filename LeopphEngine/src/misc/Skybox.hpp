@@ -16,7 +16,7 @@ namespace leopph
 	}
 
 	/*---------------------------------------------------------------------------------------------
-	The Skybox class represents a cube map that is used to paint the background of a Camera object.
+	The Skybox class represents a cube map that is used to paint the background of a Camera component.
 	It consists of 6 faces, or separate textures files, that MUST BE given in the specified order.
 	See "camerabackground.h" for more details.
 	---------------------------------------------------------------------------------------------*/

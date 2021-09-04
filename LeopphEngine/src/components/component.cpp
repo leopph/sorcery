@@ -4,8 +4,8 @@
 
 namespace leopph
 {
-	Component::Component(Object& owner) :
-		object{ owner }
+	Component::Component(Entity& owner) :
+		entity{ owner }
 	{
 		impl::DataManager::Register(this);
 	}

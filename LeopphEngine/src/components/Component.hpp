@@ -5,22 +5,22 @@
 
 namespace leopph
 {
-	class Object;
+	class Entity;
 
 
 	/* --------------------------------------------------------------------------------------
-	Components are entities that are attached to Objects to provide additional functionality.
+	Components are objects that are attached to Entities to provide additional functionality.
 	Subclass this to provide your implementation.
-	See "object.h" for more information.
+	See "Entity.hpp" for more information.
 	---------------------------------------------------------------------------------------*/
 
 	class Component
 	{
 	public:
-		LEOPPHAPI explicit Component(Object& owner);
+		LEOPPHAPI explicit Component(Entity& owner);
 		LEOPPHAPI virtual ~Component() = 0;
 
-		Object& object;
+		Entity& entity;
 
 		Component(const Component&) = delete;
 		Component(Component&&) = delete;

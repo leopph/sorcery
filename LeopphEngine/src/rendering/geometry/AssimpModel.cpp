@@ -92,11 +92,11 @@ namespace leopph::impl
 	}
 
 
-	void AssimpModel::OnReferringObjectsChanged(std::size_t newAmount) const
+	void AssimpModel::OnReferringEntitiesChanged(std::size_t newAmount) const
 	{
 		for (const auto& mesh : m_Meshes)
 		{
-			mesh.OnReferringObjectsChanged(newAmount);
+			mesh.OnReferringEntitiesChanged(newAmount);
 		}
 	}
 

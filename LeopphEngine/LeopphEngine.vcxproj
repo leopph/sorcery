@@ -157,6 +157,7 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClInclude Include="src\events\EventReceiverHandle.hpp" />
     <ClInclude Include="src\events\FrameEndedEvent.hpp" />
     <ClInclude Include="src\events\KeyEvent.hpp" />
+    <ClInclude Include="src\events\ModelCountChangedEvent.hpp" />
     <ClInclude Include="src\events\MouseEvent.hpp" />
     <ClInclude Include="src\input\cursorstate.h" />
     <ClInclude Include="src\input\keycodes.h" />
@@ -175,9 +176,9 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClInclude Include="src\rendering\TextureResource.hpp" />
     <ClInclude Include="src\timing\timer.h" />
     <ClInclude Include="src\misc\camerabackground.h" />
-    <ClInclude Include="src\util\equal\ObjectEqual.hpp" />
+    <ClInclude Include="src\util\equal\EntityEqual.hpp" />
     <ClInclude Include="src\util\equal\UniqueResourceEqual.hpp" />
-    <ClInclude Include="src\util\hash\ObjectHash.hpp" />
+    <ClInclude Include="src\util\hash\EntityHash.hpp" />
     <ClInclude Include="src\util\hash\UniqueResourceHash.hpp" />
     <ClInclude Include="src\util\less\LightCloserToCamera.hpp" />
     <ClInclude Include="src\util\logger.h" />
@@ -190,7 +191,7 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClInclude Include="src\math\Matrix.hpp" />
     <ClInclude Include="src\rendering\geometry\Mesh.hpp" />
     <ClInclude Include="src\components\Model.hpp" />
-    <ClInclude Include="src\hierarchy\Object.hpp" />
+    <ClInclude Include="src\entity\Entity.hpp" />
     <ClInclude Include="src\components\lighting\PointLight.hpp" />
     <ClInclude Include="src\math\Quaternion.hpp" />
     <ClInclude Include="src\rendering\renderers\ForwardRenderer.hpp" />
@@ -223,6 +224,7 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClCompile Include="src\events\EventManager.cpp" />
     <ClCompile Include="src\events\EventReceiverBase.cpp" />
     <ClCompile Include="src\events\KeyEvent.cpp" />
+    <ClCompile Include="src\events\ModelCountChangedEvent.cpp" />
     <ClCompile Include="src\events\MouseEvent.cpp" />
     <ClCompile Include="src\misc\color.cpp" />
     <ClCompile Include="src\rendering\geometry\AssimpModel.cpp" />
@@ -248,9 +250,9 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClCompile Include="src\shaders\stringified\skyboxfragment.cpp" />
     <ClCompile Include="src\shaders\stringified\skyboxvertex.cpp" />
     <ClCompile Include="src\timing\timer.cpp" />
-    <ClCompile Include="src\util\equal\ObjectEqual.cpp" />
+    <ClCompile Include="src\util\equal\EntityEqual.cpp" />
     <ClCompile Include="src\util\equal\UniqueResourceEqual.cpp" />
-    <ClCompile Include="src\util\hash\ObjectHash.cpp" />
+    <ClCompile Include="src\util\hash\EntityHash.cpp" />
     <ClCompile Include="src\util\hash\PathHash.cpp" />
     <ClCompile Include="src\util\hash\UniqueResourceHash.cpp" />
     <ClCompile Include="src\util\less\LightCloserToCamera.cpp" />
@@ -263,7 +265,7 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClCompile Include="src\components\lighting\Light.cpp" />
     <ClCompile Include="src\rendering\geometry\Mesh.cpp" />
     <ClCompile Include="src\components\Model.cpp" />
-    <ClCompile Include="src\hierarchy\Object.cpp" />
+    <ClCompile Include="src\entity\Entity.cpp" />
     <ClCompile Include="src\components\lighting\PointLight.cpp" />
     <ClCompile Include="src\math\Quaternion.cpp" />
     <ClCompile Include="src\rendering\renderers\ForwardRenderer.cpp" />

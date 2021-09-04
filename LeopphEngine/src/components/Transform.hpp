@@ -9,13 +9,13 @@
 
 namespace leopph
 {
-	class Object;
+	class Entity;
 
 
 	class Transform final : public Component, public EventReceiver<impl::FrameEndedEvent>
 	{
 	public:
-		LEOPPHAPI explicit Transform(Object& owner,
+		LEOPPHAPI explicit Transform(Entity& owner,
 									 const Vector3& pos = Vector3{},
 									 const Quaternion& rot = Quaternion{},
 									 const Vector3& scale = Vector3{1, 1, 1});

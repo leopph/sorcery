@@ -4,7 +4,7 @@
 
 namespace leopph
 {
-	class Object;
+	class Entity;
 
 	/* A PointLight spreads in all directions, filling the scene.
 	 * It has a position and attenuation.
@@ -13,7 +13,7 @@ namespace leopph
 	class PointLight final : public impl::AttenuatedLight
 	{
 	public:
-		LEOPPHAPI explicit PointLight(Object& owner);
+		LEOPPHAPI explicit PointLight(Entity& owner);
 		LEOPPHAPI ~PointLight() override;
 
 		PointLight(const PointLight&) = delete;

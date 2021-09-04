@@ -26,7 +26,7 @@ namespace leopph::impl
 		void DrawShaded(const Shader& shader, const std::vector<Matrix4>& modelMatrices, const std::vector<Matrix4>& normalMatrices, std::size_t nextFreeTextureUnit) const;
 		void DrawDepth(const std::vector<Matrix4>& modelMatrices) const;
 
-		void OnReferringObjectsChanged(std::size_t newAmount) const;
+		void OnReferringEntitiesChanged(std::size_t newAmount) const;
 
 	private:
 		void SetModelBuffer() const;

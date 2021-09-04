@@ -5,7 +5,7 @@
 class FPSCounter final : public leopph::Behavior
 {
 public:
-	explicit FPSCounter(leopph::Object& owner);
+	explicit FPSCounter(leopph::Entity& owner);
 	void OnFrameUpdate() override;
 
 private:

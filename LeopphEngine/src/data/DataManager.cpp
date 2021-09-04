@@ -7,7 +7,7 @@
 
 namespace leopph::impl
 {
-	std::unordered_map<Object*, std::unordered_set<Component*>, ObjectHash, ObjectEqual> DataManager::s_Objects{};
+	std::unordered_map<Entity*, std::unordered_set<Component*>, EntityHash, EntityEqual> DataManager::s_EntitiesAndComponents{};
 
 	std::unordered_set<Behavior*> DataManager::s_Behaviors{};
 
@@ -32,40 +32,40 @@ namespace leopph::impl
 	
 	void DataManager::Clear()
 	{
-		for (auto it = s_Objects.begin(); it != s_Objects.end();)
+		for (auto it = s_EntitiesAndComponents.begin(); it != s_EntitiesAndComponents.end();)
 		{
 			delete it->first;
-			it = s_Objects.begin();
+			it = s_EntitiesAndComponents.begin();
 		}
 
 		s_ShadowMaps.clear();
 
-		Logger::Instance().Debug("All objects destroyed.");
+		Logger::Instance().Debug("All data have been cleared.");
 	}
 
 	
-	void DataManager::Register(Object* object)
+	void DataManager::Register(Entity* entity)
 	{
-		s_Objects.try_emplace(object);
+		s_EntitiesAndComponents.try_emplace(entity);
 	}
 
 
-	void DataManager::Unregister(Object* object)
+	void DataManager::Unregister(Entity* entity)
 	{
-		s_Objects.erase(object);
+		s_EntitiesAndComponents.erase(entity);
 	}
 
 
-	Object* DataManager::Find(const std::string& name)
+	Entity* DataManager::Find(const std::string& name)
 	{
-		const auto it = s_Objects.find(name);
-		return it != s_Objects.end() ? it->first : nullptr;
+		const auto it = s_EntitiesAndComponents.find(name);
+		return it != s_EntitiesAndComponents.end() ? it->first : nullptr;
 	}
 
 
-	const std::unordered_map<Object*, std::unordered_set<Component*>, ObjectHash, ObjectEqual>& DataManager::Objects()
+	const std::unordered_map<Entity*, std::unordered_set<Component*>, EntityHash, EntityEqual>& DataManager::EntitiesAndComponents()
 	{
-		return s_Objects;
+		return s_EntitiesAndComponents;
 	}
 
 
@@ -87,21 +87,21 @@ namespace leopph::impl
 	}
 
 
-	const std::unordered_set<Component*>& DataManager::Components(Object* object)
+	const std::unordered_set<Component*>& DataManager::Components(Entity* entity)
 	{
-		return s_Objects[object];
+		return s_EntitiesAndComponents[entity];
 	}
 
 
 	void DataManager::Register(Component* component)
 	{
-		s_Objects[&component->object].insert(component);
+		s_EntitiesAndComponents[&component->entity].insert(component);
 	}
 
 
 	void DataManager::Unregister(Component* component)
 	{
-		s_Objects[&component->object].erase(component);
+		s_EntitiesAndComponents[&component->entity].erase(component);
 	}
 
 

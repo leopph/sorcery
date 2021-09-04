@@ -9,12 +9,12 @@
 
 namespace leopph
 {
-	class Object;
+	class Entity;
 
 	/*-------------------------------------------------------------------------------------------------------------
 	The Camera component is used to determine the image to be rendered.
-	Attach this to your Objects and switch between them to provide different viewing angles dynamically at runtime.
-	See "object.h" and "component.h" for more information.
+	Attach this to your Entities and switch between them to provide different viewing angles dynamically at runtime.
+	See "Entity.hpp" and "Component.hpp" for more information.
 	-------------------------------------------------------------------------------------------------------------*/
 	class Camera final : public Component, public EventReceiver<impl::DisplayResolutionChangedEvent>
 	{
@@ -22,7 +22,7 @@ namespace leopph
 		/* Get the current active camera that is used to render the scene */
 		LEOPPHAPI static Camera* Active();
 
-		LEOPPHAPI explicit Camera(Object& owner);
+		LEOPPHAPI explicit Camera(Entity& owner);
 		LEOPPHAPI ~Camera() override;
 
 		Camera(const Camera&) = delete;

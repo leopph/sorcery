@@ -171,7 +171,7 @@ namespace leopph::impl
 	}
 
 
-	void Mesh::OnReferringObjectsChanged(std::size_t newAmount) const
+	void Mesh::OnReferringEntitiesChanged(std::size_t newAmount) const
 	{
 		if (newAmount > m_ModelBufferSize)
 		{

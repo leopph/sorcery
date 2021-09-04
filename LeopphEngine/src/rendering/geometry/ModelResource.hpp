@@ -1,6 +1,8 @@
 #pragma once
 
 #include "../../data/managed/UniqueResource.hpp"
+#include "../../events/EventReceiver.hpp"
+#include "../../events/ModelCountChangedEvent.hpp"
 
 #include "../../math/Matrix.hpp"
 #include "../Shader.hpp"
@@ -15,7 +17,7 @@ namespace leopph::impl
 	class AssimpModel;
 
 
-	class ModelResource final : public UniqueResource
+	class ModelResource final : public UniqueResource, public EventReceiver<ModelCountChangedEvent>
 	{
 	public:
 		explicit ModelResource(const std::filesystem::path& path);
@@ -29,9 +31,10 @@ namespace leopph::impl
 
 		void DrawShaded(const Shader& shader, const std::vector<Matrix4>& modelMatrices, const std::vector<Matrix4>& normalMatrices, std::size_t nextFreeTextureUnit) const;
 		void DrawDepth(const std::vector<Matrix4>& modelMatrices) const;
-		void OnReferringObjectsChanged(std::size_t newAmount) const;
 
 	private:
 		const AssimpModel* const m_AssimpModel;
+
+		void OnEventReceived(const ModelCountChangedEvent& event) override;
 	};
 }

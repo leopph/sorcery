@@ -2,7 +2,7 @@
 
 #include "../events/DisplayResolutionChangedEvent.hpp"
 #include "../events/EventManager.hpp"
-#include "../hierarchy/Object.hpp"
+#include "../entity/Entity.hpp"
 #include "../math/LeopphMath.hpp"
 #include "../windowing/window.h"
 
@@ -43,7 +43,7 @@ namespace leopph
 	}
 
 
-	Camera::Camera(Object& owner) :
+	Camera::Camera(Entity& owner) :
 		Component{ owner },
 		m_AspectRatio{ leopph::impl::Window::Get().AspectRatio() },
 		m_HorizontalFOVDegrees{ 100.0f }, m_NearClip{ 0.3f }, m_FarClip{ 1000.f },
@@ -145,7 +145,7 @@ namespace leopph
 
 	Matrix4 Camera::ViewMatrix() const
 	{
-		return (static_cast<Matrix4>(object.Transform().Rotation()) * Matrix4::Translate(object.Transform().Position())).Inverse();
+		return (static_cast<Matrix4>(entity.Transform().Rotation()) * Matrix4::Translate(entity.Transform().Position())).Inverse();
 		//return Matrix4::LookAt(object.Transform().Position(), object.Transform().Position() + object.Transform().Forward(), Vector3::Up());
 	}
 

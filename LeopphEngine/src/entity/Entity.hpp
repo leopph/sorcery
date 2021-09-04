@@ -19,36 +19,36 @@ namespace leopph
 
 
 	/*---------------------------------------------------------------------------------------------------------------
-	Objects are the bases of the entity hierarchy. They have spatial characteristics through a Transform,
+	Entities are the bases of the entity hierarchy. They have spatial characteristics through a Transform,
 	can have Models that are later rendered according to these characteristics, and have components attached to them,
 	that may give them their own unique properties or behaviors.
 	See "component.h", "behavior.h", and "model.h" for additional information.
 	---------------------------------------------------------------------------------------------------------------*/
-	class Object final
+	class Entity final
 	{
 	public:
-		LEOPPHAPI Object();
-		LEOPPHAPI explicit  Object(std::string name);
+		LEOPPHAPI Entity();
+		LEOPPHAPI explicit  Entity(std::string name);
 
-		Object(const Object&) = delete;
-		Object(Object&&) = delete;
-		void operator=(const Object&) = delete;
-		void operator=(Object&&) = delete;
+		Entity(const Entity&) = delete;
+		Entity(Entity&&) = delete;
+		void operator=(const Entity&) = delete;
+		void operator=(Entity&&) = delete;
 
-		LEOPPHAPI ~Object();
+		LEOPPHAPI ~Entity();
 
-		/* Returns a pointer to the Object that's name is equal to the given string.
-		 * Returns NULL if no such Object exists. */
-		LEOPPHAPI static Object* Find(const std::string& name);
+		/* Returns a pointer to the Entity that's name is equal to the given string.
+		 * Returns NULL if no such Entity exists. */
+		LEOPPHAPI static Entity* Find(const std::string& name);
 
-		/* The Object's Transform describes its spatial properties. */
+		/* The Entity's Transform describes its spatial properties. */
 		LEOPPHAPI Transform& Transform();
 		[[nodiscard]] LEOPPHAPI const leopph::Transform& Transform() const;
 
-		/* The set of Components attached to the Object. */
+		/* The set of Components attached to the Entity. */
 		LEOPPHAPI const std::unordered_set<Component*>& Components() const;
 
-		/* Attach a new Component of type T to the Object.
+		/* Attach a new Component of type T to the Entity.
 		 * It is constructed in-place, and a pointer to it is returned. */
 		template<std::derived_from<Component> T, class... Args>
 		T* AddComponent(Args&&... args)
@@ -56,15 +56,15 @@ namespace leopph
 			return new T{ *this, std::forward<Args>(args)... };
 		}
 
-		/* Remove the given Component from the Object.
-		 * If it is not attached to this Object, std::invalid_exception is thrown.
+		/* Remove the given Component from the Entity.
+		 * If it is not attached to this Entity, std::invalid_exception is thrown.
 		 * Otherwise, the component is detached and destroyed. */
 		LEOPPHAPI void RemoveComponent(Component* behavior);
 
-		/* Look for a Component of type T that is attached to the Object.
+		/* Look for a Component of type T that is attached to the Entity.
 		 * If there is none, NULL is returned.
 		 * Otherwise, a pointer to the first matching Component is returned.
-		 * There are no guarantees of the order of Components attached to the Object. */
+		 * There are no guarantees of the order of Components attached to the Entity. */
 		template<std::derived_from<Component> T>
 		T* GetComponent() const
 		{
@@ -75,7 +75,7 @@ namespace leopph
 			return nullptr;
 		}
 
-		/* The Object's name is a unique identifier. */
+		/* The Entity's name is a unique identifier. */
 		const std::string& name;
 
 
