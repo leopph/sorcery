@@ -23,12 +23,14 @@ namespace leopph::impl
 		void Render() override;
 
 	private:
-		void DrawGeometry();
-		void DrawLights();
+		void RenderGeometry();
+		void RenderLights();
+		void RenderSkybox() const;
 
 		GeometryBuffer m_GBuffer;
 
 		Shader m_GPassObjectShader;
 		Shader m_LightPassShader;
+		Shader m_SkyboxShader;
 	};
 }

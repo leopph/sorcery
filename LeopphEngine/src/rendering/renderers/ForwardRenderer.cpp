@@ -38,18 +38,12 @@ namespace leopph::impl
 		if (Camera::Active() == nullptr)
 			return;
 
-		/* We collect the model matrices from the existing Models' ENtities */
-		CalcAndCollectMatrices();
-
-		/* We collect the nearest pointlights */
-		CollectPointLights();
-
-		/* We collect the nearest spotlights */
-		CollectSpotLights();
-
-		/* We store the main camera's view and projection matrices for the frame */
 		m_CurrentFrameViewMatrix = Camera::Active()->ViewMatrix();
 		m_CurrentFrameProjectionMatrix = Camera::Active()->ProjectionMatrix();
+
+		CalcAndCollectMatrices();
+		CollectPointLights();
+		CollectSpotLights();
 
 		RenderDirectionalShadowMap();
 		//RenderPointShadowMaps();

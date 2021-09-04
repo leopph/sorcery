@@ -44,7 +44,7 @@ static void renderQuad()
 namespace leopph::impl
 {
 	DeferredRenderer::DeferredRenderer() :
-		m_GPassObjectShader{ Shader::Type::GPASS_OBJECT }, m_LightPassShader{ Shader::Type::LIGHTPASS }
+		m_GPassObjectShader{ Shader::Type::GPASS_OBJECT }, m_LightPassShader{ Shader::Type::LIGHTPASS }, m_SkyboxShader{Shader::Type::SKYBOX}
 	{
 		glEnable(GL_DEPTH_TEST);
 	}
@@ -56,25 +56,20 @@ namespace leopph::impl
 		if (Camera::Active() == nullptr)
 			return;
 
-		/* We store the main camera's view and projection matrices for the frame */
 		m_CurrentFrameViewMatrix = Camera::Active()->ViewMatrix();
 		m_CurrentFrameProjectionMatrix = Camera::Active()->ProjectionMatrix();
 
-		/* We collect the model matrices from the existing Models' Entities */
 		CalcAndCollectMatrices();
-
-		/* We collect the nearest pointlights */
 		CollectPointLights();
-
-		/* We collect the nearest spotlights */
 		CollectSpotLights();
 
-		DrawGeometry();
-		DrawLights();
+		RenderGeometry();
+		RenderLights();
+		RenderSkybox();
 	}
 
 
-	void DeferredRenderer::DrawGeometry()
+	void DeferredRenderer::RenderGeometry()
 	{
 		m_GBuffer.Clear();
 		m_GBuffer.Bind();
@@ -91,7 +86,7 @@ namespace leopph::impl
 	}
 
 
-	void DeferredRenderer::DrawLights()
+	void DeferredRenderer::RenderLights()
 	{
 		m_LightPassShader.Use();
 
@@ -159,5 +154,17 @@ namespace leopph::impl
 		}
 
 		renderQuad();
+	}
+
+
+	void DeferredRenderer::RenderSkybox() const
+	{
+		if (const auto& skybox{Camera::Active()->Background().skybox}; skybox != nullptr)
+		{
+			m_SkyboxShader.Use();
+			m_SkyboxShader.SetUniform("viewMatrix", static_cast<Matrix4>(static_cast<Matrix3>(m_CurrentFrameViewMatrix)));
+			m_SkyboxShader.SetUniform("projectionMatrix", m_CurrentFrameProjectionMatrix);
+			static_cast<SkyboxResource*>(DataManager::Find(skybox->AllFilePaths()))->Draw(m_SkyboxShader);
+		}
 	}
 }
