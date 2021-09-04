@@ -19,7 +19,7 @@ void leopph::AppStart()
 	spotLight->InnerAngle(15);
 	spotLight->OuterAngle(20);
 
-	Camera::Active()->Background(CameraBackground{ .skybox{std::make_unique<Skybox>("skybox/left.jpg", "skybox/right.jpg", "skybox/top.jpg", "skybox/bottom.jpg", "skybox/back.jpg", "skybox/front.jpg")}});
+	Camera::Active()->Background(CameraBackground{ .skybox{std::make_unique<Skybox>("skybox/megasun/right.hdr", "skybox/megasun/left.hdr", "skybox/megasun/top.hdr", "skybox/megasun/bottom.hdr", "skybox/megasun/back.hdr", "skybox/megasun/front.hdr")}});
 
 	const auto portraitObj = new Entity{};
 	portraitObj->Transform().Position(Vector3{ 0, 0, 5 });
@@ -32,7 +32,7 @@ void leopph::AppStart()
 	new Rotate{*cubeObj, Vector3::Up(), 30};
 
 	const auto dirLightObj = new Entity{};
-	dirLightObj->Transform().RotateGlobal(Quaternion{ Vector3::Up(), 315 });
+	dirLightObj->Transform().RotateGlobal(Quaternion{ Vector3::Up(), 135 });
 	dirLightObj->Transform().RotateLocal({ Quaternion{Vector3::Right(), 45} });
 	new DirectionalLight{ *dirLightObj };
 
