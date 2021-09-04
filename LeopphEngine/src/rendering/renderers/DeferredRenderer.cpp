@@ -4,6 +4,7 @@
 #include "../../config/Settings.hpp"
 #include "../../data/DataManager.hpp"
 #include "../../util/less/LightCloserToCamera.hpp"
+#include "../../windowing/window.h"
 
 #include <glad/glad.h>
 
@@ -159,6 +160,9 @@ namespace leopph::impl
 
 	void DeferredRenderer::RenderSkybox() const
 	{
+		const auto& window{Window::Get()};
+		glBlitNamedFramebuffer(m_GBuffer.frameBufferName, 0, 0, 0, window.Width(), window.Height(), 0, 0, window.Width(), window.Height(), GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+
 		if (const auto& skybox{Camera::Active()->Background().skybox}; skybox != nullptr)
 		{
 			m_SkyboxShader.Use();

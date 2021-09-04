@@ -26,6 +26,8 @@ namespace leopph::impl
 		void Bind() const;
 		void Unbind() const;
 
+		const unsigned& frameBufferName;
+		const unsigned& depthBufferName;
 		const unsigned& positionTextureName;
 		const unsigned& normalTextureName;
 		const unsigned& ambientTextureName;

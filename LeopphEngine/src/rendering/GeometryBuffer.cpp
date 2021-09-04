@@ -10,6 +10,8 @@
 namespace leopph::impl
 {
 	GeometryBuffer::GeometryBuffer() :
+		frameBufferName{m_FrameBuffer},
+		depthBufferName{m_DepthBuffer},
 		positionTextureName{ m_Textures[Position] },
 		normalTextureName{ m_Textures[Normal] },
 		ambientTextureName{ m_Textures[Ambient] },
