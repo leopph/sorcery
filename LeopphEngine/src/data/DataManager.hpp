@@ -6,6 +6,7 @@
 #include "../components/lighting/DirLight.hpp"
 #include "../components/lighting/PointLight.hpp"
 #include "../components/lighting/SpotLight.hpp"
+#include "../components/Transform.hpp"
 #include "../hierarchy/Object.hpp"
 #include "../rendering/geometry/ModelResource.hpp"
 #include "../rendering/ShadowMap.hpp"
@@ -76,7 +77,6 @@ namespace leopph::impl
 		static DirectionalLight* DirectionalLight();
 		static const std::unordered_set<const SpotLight*>& SpotLights();
 		static const std::vector<PointLight*>& PointLights();
-		static const std::pair<const Matrix4, const Matrix4>& ModelAndNormalMatrices(const Object* object);
 		static const std::list<ShadowMap>& ShadowMaps();
 		static const std::unordered_set<const ModelResource*> Models();
 		static std::unordered_set<const ResourceHandleBase*> ModelComponents(const ModelResource* model);
@@ -86,6 +86,10 @@ namespace leopph::impl
 		static void AmbientLight(leopph::AmbientLight*&& light);
 		static void CreateShadowMap(const Vector2& resolution);
 		static void DeleteShadowMap();
+
+		static void StoreMatrices(const Transform* transform, const Matrix4& model, const Matrix4& normal);
+		static void DiscardMatrices(const Transform* transform);
+		static const std::pair<Matrix4, Matrix4>& GetMatrices(const Transform* transform);
 
 
 	private:
@@ -101,7 +105,7 @@ namespace leopph::impl
 
 		static std::vector<PointLight*> s_PointLights;
 
-		static std::unordered_map<const Object*, std::pair<const Matrix4, const Matrix4>> s_MatrixCache;
+		static std::unordered_map<const Transform*, std::pair<Matrix4, Matrix4>> s_Matrices;
 
 		static std::unordered_set<const ModelResource*> s_ModelResources;
 

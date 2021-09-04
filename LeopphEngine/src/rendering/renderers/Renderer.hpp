@@ -28,7 +28,7 @@ namespace leopph::impl
 
 
 	protected:
-		void CalcAndCollectModelAndNormalMatrices();
+		void CalcAndCollectMatrices();
 		void CollectPointLights();
 		void CollectSpotLights();
 

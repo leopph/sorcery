@@ -39,7 +39,7 @@ namespace leopph::impl
 			return;
 
 		/* We collect the model matrices from the existing models' objects */
-		CalcAndCollectModelAndNormalMatrices();
+		CalcAndCollectMatrices();
 
 		/* We collect the nearest pointlights */
 		CollectPointLights();

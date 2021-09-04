@@ -124,7 +124,7 @@
     <ClInclude Include="src\events\EventReceiverHandle.hpp" />
     <ClInclude Include="src\events\KeyEvent.hpp" />
     <ClInclude Include="src\events\MouseEvent.hpp" />
-    <ClInclude Include="src\events\FrameBeginsEvent.hpp" />
+    <ClInclude Include="src\events\FrameEndedEvent.hpp" />
     <ClInclude Include="src\data\managed\Resource.hpp" />
     <ClInclude Include="src\data\managed\ResourceHandleBase.hpp" />
     <ClInclude Include="src\data\managed\UniqueResource.hpp" />

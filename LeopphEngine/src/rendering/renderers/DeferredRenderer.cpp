@@ -61,7 +61,7 @@ namespace leopph::impl
 		m_CurrentFrameProjectionMatrix = Camera::Active()->ProjectionMatrix();
 
 		/* We collect the model matrices from the existing models' objects */
-		CalcAndCollectModelAndNormalMatrices();
+		CalcAndCollectMatrices();
 
 		/* We collect the nearest pointlights */
 		CollectPointLights();

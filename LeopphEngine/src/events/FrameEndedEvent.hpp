@@ -5,5 +5,5 @@
 
 namespace leopph::impl
 {
-	struct FrameBeginsEvent final : Event {};
+	struct FrameEndedEvent final : Event {};
 }

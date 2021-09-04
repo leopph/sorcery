@@ -7,7 +7,7 @@
 #include "launch.h"
 
 #include "../events/EventManager.hpp"
-#include "../events/FrameBeginsEvent.hpp"
+#include "../events/FrameEndedEvent.hpp"
 #include "../data/DataManager.hpp"
 #include "../rendering/renderers/DeferredRenderer.hpp"
 #include "../rendering/renderers/ForwardRenderer.hpp"
@@ -47,7 +47,6 @@ namespace leopph::impl
 
 			while (!window.ShouldClose())
 			{
-				EventManager::Instance().Send<FrameBeginsEvent>();
 				window.PollEvents();
 
 				for (const auto& x : DataManager::Behaviors())
@@ -57,6 +56,7 @@ namespace leopph::impl
 				renderer.Render();
 				Timer::OnFrameComplete();
 				window.SwapBuffers();
+				EventManager::Instance().Send<FrameEndedEvent>();
 			}
 		}
 

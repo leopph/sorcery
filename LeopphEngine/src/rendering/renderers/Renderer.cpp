@@ -16,7 +16,7 @@ namespace leopph::impl
 	Renderer::~Renderer() = default;
 
 
-	void Renderer::CalcAndCollectModelAndNormalMatrices()
+	void Renderer::CalcAndCollectMatrices()
 	{
 		m_CurrentFrameMatrices.clear();
 
@@ -26,24 +26,22 @@ namespace leopph::impl
 
 			for (const auto& handle : DataManager::ModelComponents(modelResource))
 			{
-				Object& object{ static_cast<const Model*>(handle)->object };
+				const auto& transform{ static_cast<const Model*>(handle)->object.Transform() };
 
-				/* If the objet is static we query for its cached matrix */
-				if (object.isStatic)
+				if (transform.WasAltered)
 				{
-					const auto& [model, normal] {DataManager::ModelAndNormalMatrices(&object)};
-					models.emplace_back(model.Transposed());
-					normals.emplace_back(normal.Transposed());
+					auto modelMatrix{Matrix4::Scale(transform.Scale())};
+					modelMatrix *= static_cast<Matrix4>(transform.Rotation());
+					modelMatrix *= Matrix4::Translate(transform.Position());
+
+					/* OpenGL accepts our matrices transposed,
+					 * that's why this is done this way. Weird, eh? */
+					DataManager::StoreMatrices(&transform, modelMatrix.Transposed(), modelMatrix.Inverse());
 				}
-				/* Otherwise we calculate it */
-				else
-				{
-					auto modelMatrix{ Matrix4::Scale(object.Transform().Scale()) };
-					modelMatrix *= static_cast<Matrix4>(object.Transform().Rotation());
-					modelMatrix *= Matrix4::Translate(object.Transform().Position());
-					models.emplace_back(modelMatrix.Transposed());
-					normals.emplace_back(modelMatrix.Inverse());
-				}
+
+				const auto& [model, normal]{DataManager::GetMatrices(&transform)};
+				models.emplace_back(model);
+				normals.emplace_back(normal);
 			}
 		}
 	}

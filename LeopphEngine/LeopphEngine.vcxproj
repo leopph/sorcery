@@ -155,7 +155,7 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClInclude Include="src\events\EventReceiver.hpp" />
     <ClInclude Include="src\events\EventReceiverBase.hpp" />
     <ClInclude Include="src\events\EventReceiverHandle.hpp" />
-    <ClInclude Include="src\events\FrameBeginsEvent.hpp" />
+    <ClInclude Include="src\events\FrameEndedEvent.hpp" />
     <ClInclude Include="src\events\KeyEvent.hpp" />
     <ClInclude Include="src\events\MouseEvent.hpp" />
     <ClInclude Include="src\input\cursorstate.h" />

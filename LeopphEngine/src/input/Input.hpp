@@ -2,7 +2,7 @@
 
 #include "../api/leopphapi.h"
 #include "../events/EventReceiverHandle.hpp"
-#include "../events/FrameBeginsEvent.hpp"
+#include "../events/FrameEndedEvent.hpp"
 #include "../events/KeyEvent.hpp"
 #include "../events/MouseEvent.hpp"
 #include "cursorstate.h"
@@ -45,6 +45,6 @@ namespace leopph
 
 		static EventReceiverHandle<impl::KeyEvent> keyEventReceiver;
 		static EventReceiverHandle<impl::MouseEvent> mouseEventReceiver;
-		static EventReceiverHandle<impl::FrameBeginsEvent> frameBeginsEventReceiver;
+		static EventReceiverHandle<impl::FrameEndedEvent> frameBeginsEventReceiver;
 	};
 }

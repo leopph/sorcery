@@ -21,7 +21,7 @@ namespace leopph::impl
 
 	std::unordered_set<const ModelResource*> DataManager::s_ModelResources{};
 
-	std::unordered_map<const Object*, std::pair<const Matrix4, const Matrix4>> DataManager::s_MatrixCache{};
+	std::unordered_map<const Transform*, std::pair<Matrix4, Matrix4>> DataManager::s_Matrices{};
 
 	std::list<ShadowMap> DataManager::s_ShadowMaps{};
 
@@ -53,7 +53,6 @@ namespace leopph::impl
 	void DataManager::Unregister(Object* object)
 	{
 		s_Objects.erase(object);
-		s_MatrixCache.erase(object);
 	}
 
 
@@ -149,26 +148,6 @@ namespace leopph::impl
 	void DataManager::AmbientLight(leopph::AmbientLight*&& light)
 	{
 		s_AmbientLight = std::unique_ptr<leopph::AmbientLight>(std::forward<leopph::AmbientLight*>(light));
-	}
-
-
-	const std::pair<const Matrix4, const Matrix4>& DataManager::ModelAndNormalMatrices(const Object* const object)
-	{
-		if (!object->isStatic)
-		{
-			const auto msg{ "Trying to access cached model matrix for dynamic object [" + object->name + "]." };
-			Logger::Instance().Warning(msg);
-			throw std::runtime_error{ msg };
-		}
-
-		if (auto it = s_MatrixCache.find(object); it != s_MatrixCache.end())
-			return it->second;
-
-		Matrix4 modelMatrix = Matrix4::Scale(object->Transform().Scale());
-		modelMatrix *= static_cast<Matrix4>(object->Transform().Rotation());
-		modelMatrix *= Matrix4::Translate(object->Transform().Position());
-
-		return s_MatrixCache.emplace(object, std::make_pair(modelMatrix, modelMatrix.Inverse().Transposed())).first->second;
 	}
 
 
@@ -299,5 +278,23 @@ namespace leopph::impl
 	std::unordered_set<const ResourceHandleBase*> DataManager::ModelComponents(const ModelResource* model)
 	{
 		return s_UniqueResourcesAndHandles.at(model);
+	}
+
+
+	void DataManager::StoreMatrices(const Transform* transform, const Matrix4& model, const Matrix4& normal)
+	{
+		s_Matrices.insert_or_assign(transform, std::pair<Matrix4, Matrix4>{model, normal});
+	}
+
+
+	void DataManager::DiscardMatrices(const Transform* transform)
+	{
+		s_Matrices.erase(transform);
+	}
+
+
+	const std::pair<Matrix4, Matrix4>& DataManager::GetMatrices(const Transform* transform)
+	{
+		return s_Matrices.at(transform);
 	}
 }

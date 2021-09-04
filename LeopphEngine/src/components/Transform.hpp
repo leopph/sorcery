@@ -3,6 +3,8 @@
 #include "../api/leopphapi.h"
 #include "../math/Vector.hpp"
 #include "../math/Quaternion.hpp"
+#include "../events/EventReceiver.hpp"
+#include "../events/FrameEndedEvent.hpp"
 #include "Component.hpp"
 
 namespace leopph
@@ -10,16 +12,17 @@ namespace leopph
 	class Object;
 
 
-	class Transform final : public Component
+	class Transform final : public Component, public EventReceiver<impl::FrameEndedEvent>
 	{
 	public:
 		LEOPPHAPI explicit Transform(Object& owner, const Vector3& pos, Quaternion rot, const Vector3& scale);
-		LEOPPHAPI ~Transform() override = default;
 
 		Transform(const Transform&) = delete;
 		Transform(Transform&&) = delete;
 		void operator=(const Transform&) = delete;
 		void operator=(Transform&&) = delete;
+
+		LEOPPHAPI ~Transform() override;
 
 		/* Spatial position in 3D space */
 		[[nodiscard]] LEOPPHAPI const Vector3& Position() const;
@@ -50,6 +53,12 @@ namespace leopph
 		[[nodiscard]] LEOPPHAPI auto Up() const -> const Vector3&;
 
 
+		/* This flag is set true if any property of the Transform
+		 * was altered since the last time it's matrix was calculatted.
+		 * This is mostly used internally but can come in handy in your
+		 * logic too. */
+		const bool& WasAltered;
+
 
 	private:
 		Vector3 m_Position;
@@ -60,6 +69,9 @@ namespace leopph
 		Vector3 m_Right;
 		Vector3 m_Up;
 
+		bool m_WasAltered;
+
 		void CalculateLocalAxes();
+		void OnEventReceived(const impl::FrameEndedEvent&) override;
 	};
 }
