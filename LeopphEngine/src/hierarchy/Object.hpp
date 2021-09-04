@@ -3,7 +3,6 @@
 #include "../api/leopphapi.h"
 #include "../components/Component.hpp"
 #include "../components/Transform.hpp"
-#include "../util/ObjectProperties.hpp"
 
 #include <concepts>
 #include <unordered_set>
@@ -30,7 +29,6 @@ namespace leopph
 	public:
 		LEOPPHAPI Object();
 		LEOPPHAPI explicit  Object(std::string name);
-		LEOPPHAPI explicit Object(const ObjectProperties& properties);
 
 		Object(const Object&) = delete;
 		Object(Object&&) = delete;

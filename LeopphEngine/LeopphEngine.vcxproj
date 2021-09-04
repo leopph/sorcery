@@ -199,7 +199,6 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClInclude Include="src\timing\leopphtime.h" />
     <ClInclude Include="src\math\Vector.hpp" />
     <ClInclude Include="src\rendering\vertex.h" />
-    <ClInclude Include="src\util\ObjectProperties.hpp" />
     <ClInclude Include="src\util\hash\PathHash.hpp" />
     <ClInclude Include="src\misc\Skybox.hpp" />
     <ClInclude Include="src\windowing\glwindow.h" />

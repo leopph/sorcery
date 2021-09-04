@@ -18,9 +18,9 @@ namespace leopph
 	}
 
 
-	Object::Object(const ObjectProperties& properties) :
+	Object::Object(std::string name) :
 		name{m_Name},
-		m_Name{properties.name.empty() ? "Object" + std::to_string(impl::DataManager::Objects().size()) : properties.name},
+		m_Name{name.empty() ? "Object" + std::to_string(impl::DataManager::Objects().size()) : name},
 		m_Transform{nullptr}
 	{
 		if (Find(this->name) != nullptr)
@@ -41,13 +41,7 @@ namespace leopph
 		}
 
 		impl::DataManager::Register(this);
-		AddComponent<leopph::Transform>(properties.position, properties.rotation, properties.scale);
-	}
-
-
-	Object::Object(std::string name) :
-		Object{ObjectProperties {std::move(name)}}
-	{
+		AddComponent<leopph::Transform>();
 	}
 
 

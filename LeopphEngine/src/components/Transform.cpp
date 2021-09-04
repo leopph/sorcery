@@ -8,7 +8,7 @@
 
 namespace leopph
 {
-	Transform::Transform(Object& owner, const Vector3& pos, Quaternion rot, const Vector3& scale) :
+	Transform::Transform(Object& owner, const Vector3& pos, const Quaternion& rot, const Vector3& scale) :
 		Component{ owner },
 		m_Position{ pos }, m_Rotation{ rot }, m_Scale{ scale },
 		m_Forward{ Vector3::Forward() }, m_Right{ Vector3::Right() }, m_Up{ Vector3::Up() },
