@@ -68,6 +68,7 @@
     <ClCompile Include="src\util\equal\EntityEqual.cpp" />
     <ClCompile Include="src\util\hash\EntityHash.cpp" />
     <ClCompile Include="src\events\ModelCountChangedEvent.cpp" />
+    <ClCompile Include="src\rendering\ScreenTexture.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\Behavior.hpp" />
@@ -142,6 +143,7 @@
     <ClInclude Include="src\util\equal\EntityEqual.hpp" />
     <ClInclude Include="src\util\hash\EntityHash.hpp" />
     <ClInclude Include="src\events\ModelCountChangedEvent.hpp" />
+    <ClInclude Include="src\rendering\ScreenTexture.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\shaders\ObjectFragment.frag" />

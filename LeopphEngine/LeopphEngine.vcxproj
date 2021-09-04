@@ -169,6 +169,7 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClInclude Include="src\rendering\Material.hpp" />
     <ClInclude Include="src\rendering\geometry\ModelResource.hpp" />
     <ClInclude Include="src\rendering\renderers\Renderer.hpp" />
+    <ClInclude Include="src\rendering\ScreenTexture.hpp" />
     <ClInclude Include="src\rendering\ShadowMap.hpp" />
     <ClInclude Include="src\rendering\SkyboxHandle.hpp" />
     <ClInclude Include="src\rendering\SkyboxResource.hpp" />
@@ -234,6 +235,7 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClCompile Include="src\rendering\geometry\ModelResource.cpp" />
     <ClCompile Include="src\rendering\opengl\gl.cpp" />
     <ClCompile Include="src\rendering\renderers\Renderer.cpp" />
+    <ClCompile Include="src\rendering\ScreenTexture.cpp" />
     <ClCompile Include="src\rendering\ShadowMap.cpp" />
     <ClCompile Include="src\rendering\SkyboxHandle.cpp" />
     <ClCompile Include="src\rendering\SkyboxResource.cpp" />
