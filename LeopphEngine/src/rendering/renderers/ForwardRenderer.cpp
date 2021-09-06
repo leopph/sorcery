@@ -66,7 +66,7 @@ namespace leopph::impl
 		/* If we don't have a shadow map, we create one */
 		if (shadowMaps.empty())
 		{
-			DataManager::CreateShadowMap(Settings::DirectionalLightShadowMapResolution());
+			DataManager::CreateShadowMap(Vector2{static_cast<float>(Settings::DirectionalShadowMapResolutions()[0])});
 		}
 
 		const auto view{ Matrix4::LookAt(-dirLight->Direction(), Vector3{}, Vector3::Up()) };

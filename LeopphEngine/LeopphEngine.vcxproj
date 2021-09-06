@@ -149,6 +149,7 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClInclude Include="src\entry\entry.h" />
     <ClInclude Include="src\entry\launch.h" />
     <ClInclude Include="src\components\Transform.hpp" />
+    <ClInclude Include="src\events\DirShadowMapResChangedEvent.hpp" />
     <ClInclude Include="src\events\DisplayResolutionChangedEvent.hpp" />
     <ClInclude Include="src\events\Event.hpp" />
     <ClInclude Include="src\events\EventManager.hpp" />
@@ -163,6 +164,7 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClInclude Include="src\input\keycodes.h" />
     <ClInclude Include="src\input\keystate.h" />
     <ClInclude Include="src\misc\color.h" />
+    <ClInclude Include="src\rendering\CascadedShadowMap.hpp" />
     <ClInclude Include="src\rendering\geometry\AssimpModel.hpp" />
     <ClInclude Include="src\rendering\GeometryBuffer.hpp" />
     <ClInclude Include="src\rendering\renderers\DeferredRenderer.hpp" />
@@ -220,6 +222,7 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClCompile Include="src\data\managed\UniqueResource.cpp" />
     <ClCompile Include="src\entry\launch.cpp" />
     <ClCompile Include="src\components\Transform.cpp" />
+    <ClCompile Include="src\events\DirShadowMapResChangedEvent.cpp" />
     <ClCompile Include="src\events\DisplayResolutionChangedEvent.cpp" />
     <ClCompile Include="src\events\Event.cpp" />
     <ClCompile Include="src\events\EventManager.cpp" />
@@ -228,6 +231,7 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     <ClCompile Include="src\events\ModelCountChangedEvent.cpp" />
     <ClCompile Include="src\events\MouseEvent.cpp" />
     <ClCompile Include="src\misc\color.cpp" />
+    <ClCompile Include="src\rendering\CascadedShadowMap.cpp" />
     <ClCompile Include="src\rendering\geometry\AssimpModel.cpp" />
     <ClCompile Include="src\rendering\GeometryBuffer.cpp" />
     <ClCompile Include="src\rendering\renderers\DeferredRenderer.cpp" />
