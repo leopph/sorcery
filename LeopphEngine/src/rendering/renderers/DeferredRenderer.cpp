@@ -38,7 +38,7 @@ namespace leopph::impl
 		CollectPointLights();
 		CollectSpotLights();
 
-		//RenderGeometry();
+		RenderGeometry();
 
 		glEnable(GL_BLEND);
 		glBlendEquation(GL_FUNC_ADD);
@@ -47,7 +47,7 @@ namespace leopph::impl
 		//RenderLights();
 		glDisable(GL_BLEND);
 
-		//RenderSkybox();
+		RenderSkybox();
 	}
 
 
@@ -81,12 +81,14 @@ namespace leopph::impl
 		m_DirShadowShader.Use();
 
 		const auto lightTransform{Matrix4::LookAt(Vector3{}, dirLight->Direction(), Vector3::Up())};
+		std::vector<Matrix4> transformMatrices;
 
 		for (std::size_t i = 0; i < Settings::CameraDirectionalShadowCascadeCount(); ++i)
 		{
 			const auto projection{m_DirShadowMap.ProjectionMatrix(i, *dirLight, lightTransform)};
 			m_DirShadowMap.BindTextureForWriting(i);
-			m_DirShadowShader.SetUniform("lightSpaceMatrix", lightTransform * projection);
+			transformMatrices.push_back(lightTransform * projection);
+			m_DirShadowShader.SetUniform("lightSpaceMatrix", transformMatrices.back());
 
 			for (const auto& [modelPath, matrices] : m_CurrentFrameMatrices)
 			{
@@ -96,7 +98,7 @@ namespace leopph::impl
 		}
 
 		m_DirShadowMap.UnbindTextureFromWriting();
-		/*m_DirLightShader.Use();
+		m_DirLightShader.Use();
 
 		glBindTextureUnit(0, m_GBuffer.positionTextureName);
 		glBindTextureUnit(1, m_GBuffer.normalTextureName);
@@ -122,14 +124,17 @@ namespace leopph::impl
 		m_DirLightShader.SetUniform("u_CameraPosition", Camera::Active()->entity.Transform().Position());
 		m_DirLightShader.SetUniform("u_CascadeCount", static_cast<unsigned>(Settings::CameraDirectionalShadowCascadeCount()));
 		m_DirLightShader.SetUniform("u_CascadeDepth", (Camera::Active()->FarClipPlane() - Camera::Active()->NearClipPlane()) / Settings::CameraDirectionalShadowCascadeCount());
-		m_DirLightShader.SetUniform("u_LightTransform", lightTransform);
+		for (std::size_t i = 0; i < Settings::CameraDirectionalShadowCascadeCount(); i++)
+		{
+			m_DirLightShader.SetUniform("u_LightTransforms[" + std::to_string(i) + "]", transformMatrices.at(i));
+		}
 
-		m_ScreenTexture.Draw();*/
+		m_ScreenTexture.Draw();
 
-		m_TextureShader.Use();
+		/*m_TextureShader.Use();
 		m_DirShadowMap.BindTexturesForReading(0);
 		m_TextureShader.SetUniform("u_Texture", 0);
-		m_ScreenTexture.Draw();
+		m_ScreenTexture.Draw();*/
 	}
 
 
@@ -157,7 +162,8 @@ namespace leopph::impl
 		m_LightPassShader.SetUniform("ambientLight", AmbientLight::Instance().Intensity());
 
 		/* Set up DirLight data */
-		if (const auto dirLight = DataManager::DirectionalLight(); dirLight != nullptr)
+		m_LightPassShader.SetUniform("existsDirLight", false);
+		/*if (const auto dirLight = DataManager::DirectionalLight(); dirLight != nullptr)
 		{
 			m_LightPassShader.SetUniform("existsDirLight", true);
 			m_LightPassShader.SetUniform("dirLight.direction", dirLight->Direction());
@@ -167,7 +173,7 @@ namespace leopph::impl
 		else
 		{
 			m_LightPassShader.SetUniform("existsDirLight", false);
-		}
+		}*/
 
 		/* Set up PointLight data */
 		m_LightPassShader.SetUniform("pointLightCount", static_cast<int>(m_CurrentFrameUsedPointLights.size()));

@@ -22,7 +22,7 @@ uniform vec3 u_CameraPosition;
 uniform DirLight u_DirLight;
 uniform uint u_CascadeCount;
 uniform float u_CascadeDepth;
-uniform mat4 u_LightTransform;
+uniform mat4 u_LightTransforms[MAX_DIR_LIGHT_CASCADE_COUNT];
 uniform sampler2D u_PositionTexture;
 uniform sampler2D u_NormalTexture;
 uniform sampler2D u_AmbientTexture;
@@ -52,13 +52,12 @@ void main()
 		light += fragSpecular * pow(max(dot(fragNormal, halfway), 0), 4 * fragShine) * u_DirLight.specularColor;
 	}
 
-	vec4 fragPosLightSpace = vec4(fragPos, 1) * u_LightTransform;
-
 	for (int i = 0; i < u_CascadeCount; i++)
 	{
-		//if (fragPosLightSpace.z < (i * u_CascadeDepth) / (u_CascadeCount * u_CascadeDepth))
+		if (fragPos.z < ((i * u_CascadeDepth) / (u_CascadeCount * u_CascadeDepth)))
 		{
-			vec3 normalizedPos = fragPosLightSpace.xyz / fragPosLightSpace.w;
+			vec4 fragPosLightSpace = vec4(fragPos, 1) * u_LightTransforms[i];
+			vec3 normalizedPos = fragPosLightSpace.xyz;
 			normalizedPos *= 0.5;
 			normalizedPos += 0.5;
 
@@ -75,10 +74,10 @@ void main()
 				}
 			}
 
-			light *= shadow / 9;
+			light *= (1 - (shadow / 9));
 			break;
 		}
 	}
 
-	out_FragmentColor = vec4(fragAmbient + light, 1);
+	out_FragmentColor = vec4(light, 1);
 }
