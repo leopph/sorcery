@@ -14,7 +14,12 @@
 namespace leopph::impl
 {
 	DeferredRenderer::DeferredRenderer() :
-		m_GPassObjectShader{ Shader::Type::GPASS_OBJECT }, m_LightPassShader{ Shader::Type::LIGHTPASS }, m_SkyboxShader{Shader::Type::SKYBOX}
+		m_GPassObjectShader{Shader::Type::GPASS_OBJECT},
+		m_LightPassShader{Shader::Type::LIGHTPASS},
+		m_SkyboxShader{Shader::Type::SKYBOX},
+		m_DirShadowShader{Shader::Type::DIRECTIONAL_SHADOW_MAP},
+		m_DirLightShader{Shader::Type::DIRLIGHTPASS},
+		m_TextureShader{Shader::Type::TEXTURE}
 	{
 		glEnable(GL_DEPTH_TEST);
 	}
@@ -33,9 +38,16 @@ namespace leopph::impl
 		CollectPointLights();
 		CollectSpotLights();
 
-		RenderGeometry();
-		RenderLights();
-		RenderSkybox();
+		//RenderGeometry();
+
+		glEnable(GL_BLEND);
+		glBlendEquation(GL_FUNC_ADD);
+		glBlendFunc(GL_ONE, GL_ONE);
+		RenderDirectionalLights();
+		//RenderLights();
+		glDisable(GL_BLEND);
+
+		//RenderSkybox();
 	}
 
 
@@ -53,6 +65,71 @@ namespace leopph::impl
 		}
 
 		m_GBuffer.Unbind();
+	}
+
+
+	void DeferredRenderer::RenderDirectionalLights()
+	{
+		const auto& dirLight{DataManager::DirectionalLight()};
+
+		if (dirLight == nullptr)
+		{
+			return;
+		}
+
+		m_DirShadowMap.Clear();
+		m_DirShadowShader.Use();
+
+		const auto lightTransform{Matrix4::LookAt(Vector3{}, dirLight->Direction(), Vector3::Up())};
+
+		for (std::size_t i = 0; i < Settings::CameraDirectionalShadowCascadeCount(); ++i)
+		{
+			const auto projection{m_DirShadowMap.ProjectionMatrix(i, *dirLight, lightTransform)};
+			m_DirShadowMap.BindTextureForWriting(i);
+			m_DirShadowShader.SetUniform("lightSpaceMatrix", lightTransform * projection);
+
+			for (const auto& [modelPath, matrices] : m_CurrentFrameMatrices)
+			{
+				static_cast<ModelResource*>(DataManager::Find(modelPath))->DrawDepth(matrices.first);
+			}
+
+		}
+
+		m_DirShadowMap.UnbindTextureFromWriting();
+		/*m_DirLightShader.Use();
+
+		glBindTextureUnit(0, m_GBuffer.positionTextureName);
+		glBindTextureUnit(1, m_GBuffer.normalTextureName);
+		glBindTextureUnit(2, m_GBuffer.ambientTextureName);
+		glBindTextureUnit(3, m_GBuffer.diffuseTextureName);
+		glBindTextureUnit(4, m_GBuffer.specularTextureName);
+		glBindTextureUnit(5, m_GBuffer.shineTextureName);
+
+		m_DirLightShader.SetUniform("u_PositionTexture", 0);
+		m_DirLightShader.SetUniform("u_NormalTexture", 1);
+		m_DirLightShader.SetUniform("u_AmbientTexture", 2);
+		m_DirLightShader.SetUniform("u_DiffuseTexture", 3);
+		m_DirLightShader.SetUniform("u_SpecularTexture", 4);
+		m_DirLightShader.SetUniform("u_ShineTexture", 5);
+
+		m_DirShadowMap.BindTexturesForReading(6);
+		m_DirLightShader.SetUniform("u_ShadowMaps", 6);
+
+		m_DirLightShader.SetUniform("u_DirLight.direction", dirLight->Direction());
+		m_DirLightShader.SetUniform("u_DirLight.diffuseColor", dirLight->Diffuse());
+		m_DirLightShader.SetUniform("u_DirLight.specularColor", dirLight->Specular());
+
+		m_DirLightShader.SetUniform("u_CameraPosition", Camera::Active()->entity.Transform().Position());
+		m_DirLightShader.SetUniform("u_CascadeCount", static_cast<unsigned>(Settings::CameraDirectionalShadowCascadeCount()));
+		m_DirLightShader.SetUniform("u_CascadeDepth", (Camera::Active()->FarClipPlane() - Camera::Active()->NearClipPlane()) / Settings::CameraDirectionalShadowCascadeCount());
+		m_DirLightShader.SetUniform("u_LightTransform", lightTransform);
+
+		m_ScreenTexture.Draw();*/
+
+		m_TextureShader.Use();
+		m_DirShadowMap.BindTexturesForReading(0);
+		m_TextureShader.SetUniform("u_Texture", 0);
+		m_ScreenTexture.Draw();
 	}
 
 
@@ -110,7 +187,7 @@ namespace leopph::impl
 		m_LightPassShader.SetUniform("spotLightCount", static_cast<int>(m_CurrentFrameUsedSpotLights.size()));
 		for (std::size_t i = 0; i < m_CurrentFrameUsedSpotLights.size(); i++)
 		{
-			const auto& spotLight{ m_CurrentFrameUsedSpotLights[i] };
+			const auto& spotLight{m_CurrentFrameUsedSpotLights[i]};
 
 			m_LightPassShader.SetUniform("spotLights[" + std::to_string(i) + "].position", spotLight->entity.Transform().Position());
 			m_LightPassShader.SetUniform("spotLights[" + std::to_string(i) + "].direction", spotLight->entity.Transform().Forward());

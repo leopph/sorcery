@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../components/lighting/DirLight.hpp"
 #include "../events/EventReceiver.hpp"
 #include "../events/DirShadowMapResChangedEvent.hpp"
 #include "../math/Matrix.hpp"
@@ -12,6 +13,7 @@ namespace leopph::impl
 {
 	class CascadedShadowMap : public EventReceiver<DirShadowMapResChangedEvent>
 	{
+	public:
 		CascadedShadowMap();
 
 		CascadedShadowMap(const CascadedShadowMap& other) = delete;
@@ -30,7 +32,7 @@ namespace leopph::impl
 
 		void Clear() const;
 
-		Matrix4 ProjectionMatrix(std::size_t cascadeIndex) const;
+		Matrix4 ProjectionMatrix(std::size_t cascadeIndex, const DirectionalLight& light, const Matrix4& lightTransform) const;
 
 
 	private:

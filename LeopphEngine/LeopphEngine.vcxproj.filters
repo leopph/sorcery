@@ -71,6 +71,8 @@
     <ClCompile Include="src\rendering\ScreenTexture.cpp" />
     <ClCompile Include="src\rendering\CascadedShadowMap.cpp" />
     <ClCompile Include="src\events\DirShadowMapResChangedEvent.cpp" />
+    <ClCompile Include="src\shaders\stringified\deferred\DirLightPassFragment.cpp" />
+    <ClCompile Include="src\shaders\stringified\TextureFragment.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\Behavior.hpp" />
@@ -161,5 +163,7 @@
     <None Include="src\shaders\deferred\GPassObject.frag" />
     <None Include="src\shaders\deferred\LightPass.vert" />
     <None Include="src\shaders\deferred\LightPass.frag" />
+    <None Include="src\shaders\deferred\DirLightPass.frag" />
+    <None Include="src\shaders\Texture.frag" />
   </ItemGroup>
 </Project>

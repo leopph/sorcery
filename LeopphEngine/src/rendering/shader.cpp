@@ -4,57 +4,71 @@
 
 #include "../util/logger.h"
 
-#include <fstream>
 #include <glad/glad.h>
+
+#include <fstream>
 #include <memory>
 #include <vector>
+
 
 namespace leopph::impl
 {
 	Shader::Shader(const Type type) :
-		id{ m_ID }, m_ID{}, m_ProgramFileName{ GetFileName(type) }
+		id{m_ID}, m_ID{}, m_ProgramFileName{GetFileName(type)}
 	{
-		const char* vertexSource{ nullptr };
-		const char* fragmentSource{ nullptr };
+		const char* vertexSource{nullptr};
+		const char* fragmentSource{nullptr};
 
 		switch (type)
 		{
-		case Type::OBJECT:
-			vertexSource = s_VertexSource.c_str();
-			fragmentSource = s_FragmentSource.c_str();
-			Logger::Instance().Debug("Constructing general shader.");
-			break;
+			case Type::OBJECT:
+				vertexSource = s_VertexSource.c_str();
+				fragmentSource = s_FragmentSource.c_str();
+				Logger::Instance().Debug("Constructing general shader.");
+				break;
 
-		case Type::SKYBOX:
-			vertexSource = s_SkyboxVertexSource.c_str();
-			fragmentSource = s_SkyboxFragmentSource.c_str();
-			Logger::Instance().Debug("Constructing skybox shader.");
-			break;
+			case Type::SKYBOX:
+				vertexSource = s_SkyboxVertexSource.c_str();
+				fragmentSource = s_SkyboxFragmentSource.c_str();
+				Logger::Instance().Debug("Constructing skybox shader.");
+				break;
 
-		case Type::DIRECTIONAL_SHADOW_MAP:
-			vertexSource = s_DirectionalShadowMapVertexSource.c_str();
-			fragmentSource = s_DirectionalShadowMapFragmentSource.c_str();
-			Logger::Instance().Debug("Constructing directional shadow map shader.");
-			break;
+			case Type::DIRECTIONAL_SHADOW_MAP:
+				vertexSource = s_DirectionalShadowMapVertexSource.c_str();
+				fragmentSource = s_DirectionalShadowMapFragmentSource.c_str();
+				Logger::Instance().Debug("Constructing directional shadow map shader.");
+				break;
 
-		case Type::GPASS_OBJECT:
-			vertexSource = s_GPassObjectVertexSource.c_str();
-			fragmentSource = s_GPassObjectFragmentSource.c_str();
-			Logger::Instance().Debug("Constructing geometry pass object shader.");
-			break;
+			case Type::GPASS_OBJECT:
+				vertexSource = s_GPassObjectVertexSource.c_str();
+				fragmentSource = s_GPassObjectFragmentSource.c_str();
+				Logger::Instance().Debug("Constructing geometry pass object shader.");
+				break;
 
-		case Type::LIGHTPASS:
-			vertexSource = s_LightPassVertexSource.c_str();
-			fragmentSource = s_LightPassFragmentSource.c_str();
-			Logger::Instance().Debug("Constructing lighting pass shader.");
-			break;
+			case Type::LIGHTPASS:
+				vertexSource = s_LightPassVertexSource.c_str();
+				fragmentSource = s_LightPassFragmentSource.c_str();
+				Logger::Instance().Debug("Constructing lighting pass shader.");
+				break;
+
+			case Type::DIRLIGHTPASS:
+				vertexSource = s_LightPassVertexSource.c_str();
+				fragmentSource = s_DirLightPassFragmentSource.c_str();
+				Logger::Instance().Debug("Constructing directional lighting pass shader.");
+				break;
+
+			case Type::TEXTURE:
+				vertexSource = s_LightPassVertexSource.c_str();
+				fragmentSource = s_TextureFragmentSource.c_str();
+				Logger::Instance().Debug("Constructing full screen texture shader.");
+				break;
 		}
 
 		if (Settings::IsCachingShaders())
 		{
 			Logger::Instance().Debug("Looking for shader caches.");
 
-			const std::filesystem::path fullPath{ Settings::ShaderCacheLocation() / m_ProgramFileName };
+			const std::filesystem::path fullPath{Settings::ShaderCacheLocation() / m_ProgramFileName};
 
 			if (std::filesystem::exists(fullPath))
 			{
@@ -65,7 +79,7 @@ namespace leopph::impl
 					Logger::Instance().Debug("Successfully parsed shader.");
 					return;
 				}
-				
+
 				Logger::Instance().Debug("Failed to parse shader from cache. Reverting to compilation.");
 			}
 			else
@@ -88,8 +102,8 @@ namespace leopph::impl
 
 	void Shader::Compile(const char* vertexSource, const char* fragmentSource)
 	{
-		const unsigned vertexShaderID{ glCreateShader(GL_VERTEX_SHADER) };
-		const unsigned fragmentShaderID{ glCreateShader(GL_FRAGMENT_SHADER) };
+		const unsigned vertexShaderID{glCreateShader(GL_VERTEX_SHADER)};
+		const unsigned fragmentShaderID{glCreateShader(GL_FRAGMENT_SHADER)};
 
 		glShaderSource(vertexShaderID, 1, &vertexSource, nullptr);
 		glCompileShader(vertexShaderID);
@@ -121,10 +135,11 @@ namespace leopph::impl
 		glDeleteShader(fragmentShaderID);
 	}
 
+
 	bool Shader::ReadFromCache(const std::filesystem::path& path)
 	{
-		std::ifstream input{ path, std::ios::binary };
-		std::vector<char> buffer{ std::istreambuf_iterator<char>(input), {} };
+		std::ifstream input{path, std::ios::binary};
+		std::vector<char> buffer{std::istreambuf_iterator<char>(input), {}};
 		input.close();
 
 		GLint nFormats;
@@ -148,56 +163,97 @@ namespace leopph::impl
 		return false;
 	}
 
+
 	void Shader::WriteToCache(const std::filesystem::path& path)
 	{
 		GLint binaryLength;
 		glGetProgramiv(m_ID, GL_PROGRAM_BINARY_LENGTH, &binaryLength);
 
-		auto binary{ std::make_unique<char[]>(binaryLength) };
+		auto binary{std::make_unique<char[]>(binaryLength)};
 		GLenum binaryFormat;
 		GLsizei actualLength;
 		glGetProgramBinary(m_ID, static_cast<GLsizei>(binaryLength), &actualLength, &binaryFormat, binary.get());
 
-		std::ofstream output{ path, std::ios::binary };
+		std::ofstream output{path, std::ios::binary};
 		output.write(static_cast<const char*>(binary.get()), actualLength);
 		output.close();
 	}
 
 
-	void Shader::Use() const { glUseProgram(m_ID); }
+	void Shader::Use() const
+	{
+		glUseProgram(m_ID);
+	}
 
 
-	void Shader::SetUniform(const std::string& name, bool value) const { glUniform1i(glGetUniformLocation(m_ID, name.data()), value); }
-	void Shader::SetUniform(const std::string& name, int value) const { glUniform1i(glGetUniformLocation(m_ID, name.data()), value); }
-	void Shader::SetUniform(const std::string& name, float value) const { glUniform1f(glGetUniformLocation(m_ID, name.data()), value); }
-	void Shader::SetUniform(const std::string& name, const Vector3& value) const { glUniform3fv(glGetUniformLocation(m_ID, name.data()), 1, value.Data()); }
-	void Shader::SetUniform(const std::string& name, const Matrix4& value) const { glUniformMatrix4fv(glGetUniformLocation(m_ID, name.data()), 1, GL_TRUE, value.Data()); }
+	void Shader::SetUniform(const std::string& name, bool value) const
+	{
+		glUniform1i(glGetUniformLocation(m_ID, name.data()), value);
+	}
+
+
+	void Shader::SetUniform(const std::string& name, int value) const
+	{
+		glUniform1i(glGetUniformLocation(m_ID, name.data()), value);
+	}
+
+
+	void Shader::SetUniform(const std::string& name, unsigned value) const
+	{
+		glUniform1ui(glGetUniformLocation(m_ID, name.data()), value);
+	}
+
+
+	void Shader::SetUniform(const std::string& name, float value) const
+	{
+		glUniform1f(glGetUniformLocation(m_ID, name.data()), value);
+	}
+
+
+	void Shader::SetUniform(const std::string& name, const Vector3& value) const
+	{
+		glUniform3fv(glGetUniformLocation(m_ID, name.data()), 1, value.Data());
+	}
+
+
+	void Shader::SetUniform(const std::string& name, const Matrix4& value) const
+	{
+		glUniformMatrix4fv(glGetUniformLocation(m_ID, name.data()), 1, GL_TRUE, value.Data());
+	}
+
 
 	Shader::~Shader()
 	{
 		glDeleteProgram(m_ID);
 	}
 
+
 	std::string Shader::GetFileName(Type type)
 	{
 		switch (type)
 		{
-		case Type::OBJECT:
-			return "objectShader";
-			
-		case Type::SKYBOX:
-			return "skyboxShader";
+			case Type::OBJECT:
+				return "objectShader";
 
-		case Type::DIRECTIONAL_SHADOW_MAP:
-			return "directionalShadowMapShader";
+			case Type::SKYBOX:
+				return "skyboxShader";
 
-		case Type::GPASS_OBJECT:
-			return "gpassObjectShader";
+			case Type::DIRECTIONAL_SHADOW_MAP:
+				return "directionalShadowMapShader";
 
-		case Type::LIGHTPASS:
-			return "lightPassShader";
+			case Type::GPASS_OBJECT:
+				return "gpassObjectShader";
+
+			case Type::LIGHTPASS:
+				return "lightPassShader";
+
+			case Type::DIRLIGHTPASS:
+				return "dirLightPassShader";
+
+			case Type::TEXTURE:
+				return "textureShader";
 		}
-		
+
 		return "";
 	}
 }

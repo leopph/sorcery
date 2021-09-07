@@ -7,6 +7,10 @@
 
 #include <glad/glad.h>
 
+#include <algorithm>
+#include <array>
+#include <limits>
+
 
 namespace leopph::impl
 {
@@ -15,6 +19,8 @@ namespace leopph::impl
 	{
 		glCreateFramebuffers(1, &m_Fbo);
 		Init(Settings::DirectionalShadowMapResolutions());
+
+		GLenum status = glCheckNamedFramebufferStatus(m_Fbo, GL_FRAMEBUFFER);
 	}
 
 
@@ -64,15 +70,15 @@ namespace leopph::impl
 
 	void CascadedShadowMap::Clear() const
 	{
-		int clearValue{1};
-		glClearNamedFramebufferiv(m_Fbo, GL_DEPTH, 0, &clearValue);
+		float clearValue{1};
+		glClearNamedFramebufferfv(m_Fbo, GL_DEPTH, 0, &clearValue);
 	}
 
 
-	Matrix4 CascadedShadowMap::ProjectionMatrix(std::size_t cascadeIndex) const
+	Matrix4 CascadedShadowMap::ProjectionMatrix(std::size_t cascadeIndex, const DirectionalLight& light, const Matrix4& lightTransform) const
 	{
 		const auto& camera{*Camera::Active()};
-		const auto cascadeDepth{camera.FarClipPlane() - camera.NearClipPlane()};
+		const auto cascadeDepth{(camera.FarClipPlane() - camera.NearClipPlane()) / m_TexIds.size()};
 		const auto cascadeNear{cascadeIndex * cascadeDepth};
 		const auto cascadeFar{(cascadeIndex + 1) * cascadeDepth};
 
@@ -84,9 +90,31 @@ namespace leopph::impl
 		const auto yn{cascadeNear * tanHalfVertFov};
 		const auto yf{cascadeFar * tanHalfVertFov};
 
-		// TODO
+		const auto cameraViewInverse{camera.ViewMatrix().Inverse()};
 
-		return {};
+		std::array frustumVertices
+		{
+			Vector4{-xn, -yn, cascadeNear, 1.f},
+			Vector4{xn, -yn, cascadeNear, 1.f},
+			Vector4{xn, yn, cascadeNear, 1.f},
+			Vector4{-xn, yn, cascadeNear, 1.f},
+			Vector4{-xf, -yf, cascadeFar, 1.f},
+			Vector4{xf, -yf, cascadeFar, 1.f},
+			Vector4{xf, yf, cascadeFar, 1.f},
+			Vector4{-xf, yf, cascadeFar, 1.f},
+		};
+
+		Vector3 min{std::numeric_limits<float>::max()};
+		Vector3 max{std::numeric_limits<float>::min()};
+
+		std::ranges::for_each(frustumVertices.begin(), frustumVertices.end(), [&](const auto& vertex)
+		{
+			const auto lightSpaceVertex = vertex * cameraViewInverse * lightTransform;
+			min = Vector3{std::min(min[0], lightSpaceVertex[0]), std::min(min[1], lightSpaceVertex[1]), std::min(min[2], lightSpaceVertex[2])};
+			max = Vector3{std::max(max[0], lightSpaceVertex[0]), std::max(max[1], lightSpaceVertex[1]), std::max(max[2], lightSpaceVertex[2])};
+		});
+
+		return Matrix4::Ortographic(min[0], max[0], max[1], min[1], min[2], max[2]);
 	}
 
 
@@ -114,6 +142,7 @@ namespace leopph::impl
 
 		glNamedFramebufferDrawBuffer(m_Fbo, GL_NONE);
 		glNamedFramebufferReadBuffer(m_Fbo, GL_NONE);
+		glNamedFramebufferTexture(m_Fbo, GL_DEPTH_ATTACHMENT, m_TexIds.at(0), 0);
 	}
 
 

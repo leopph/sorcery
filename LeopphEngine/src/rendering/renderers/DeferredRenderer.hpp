@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../CascadedShadowMap.hpp"
 #include "../GeometryBuffer.hpp"
 #include "../ScreenTexture.hpp"
 #include "../Shader.hpp"
@@ -26,13 +27,18 @@ namespace leopph::impl
 	private:
 		void RenderGeometry();
 		void RenderLights();
+		void RenderDirectionalLights();
 		void RenderSkybox() const;
 
 		GeometryBuffer m_GBuffer;
+		CascadedShadowMap m_DirShadowMap;
 		ScreenTexture m_ScreenTexture;
 
 		Shader m_GPassObjectShader;
 		Shader m_LightPassShader;
 		Shader m_SkyboxShader;
+		Shader m_DirShadowShader;
+		Shader m_DirLightShader;
+		Shader m_TextureShader;
 	};
 }

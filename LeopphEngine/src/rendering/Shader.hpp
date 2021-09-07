@@ -13,7 +13,7 @@ namespace leopph::impl
 	public:
 		enum class Type
 		{
-			OBJECT, SKYBOX, DIRECTIONAL_SHADOW_MAP, GPASS_OBJECT, LIGHTPASS
+			OBJECT, SKYBOX, DIRECTIONAL_SHADOW_MAP, GPASS_OBJECT, LIGHTPASS, DIRLIGHTPASS, TEXTURE
 		};
 
 		explicit Shader(Type type);
@@ -25,6 +25,7 @@ namespace leopph::impl
 
 		void SetUniform(const std::string& name, bool value) const;
 		void SetUniform(const std::string& name, int value) const;
+		void SetUniform(const std::string& name, unsigned value) const;
 		void SetUniform(const std::string& name, float value) const;
 		void SetUniform(const std::string& name, const Vector3& value) const;
 		void SetUniform(const std::string& name, const Matrix4& value) const;
@@ -42,6 +43,8 @@ namespace leopph::impl
 		static std::string s_GPassObjectFragmentSource;
 		static std::string s_LightPassVertexSource;
 		static std::string s_LightPassFragmentSource;
+		static std::string s_DirLightPassFragmentSource;
+		static std::string s_TextureFragmentSource;
 
 		const std::filesystem::path m_ProgramFileName;
 

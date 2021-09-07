@@ -377,6 +377,13 @@ namespace leopph
 
 
 		template<class T, std::size_t N, std::size_t M>
+		Vector<T, M>& operator*=(Vector<T, N>& left, const Matrix<T, N, M>& right)
+		{
+			return left = left * right;
+		}
+
+
+		template<class T, std::size_t N, std::size_t M>
 		Vector<T, N> operator*(const Matrix<T, N, M>& left, const Vector<T, M>& right)
 		{
 			Vector<T, N> ret;
