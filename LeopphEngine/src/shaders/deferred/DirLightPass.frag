@@ -22,7 +22,7 @@ uniform vec3 u_CameraPosition;
 uniform DirLight u_DirLight;
 uniform uint u_CascadeCount;
 uniform float u_CascadeDepth;
-uniform mat4 u_LightTransforms[MAX_DIR_LIGHT_CASCADE_COUNT];
+uniform mat4 u_LightClipMatrices[MAX_DIR_LIGHT_CASCADE_COUNT];
 uniform sampler2D u_PositionTexture;
 uniform sampler2D u_NormalTexture;
 uniform sampler2D u_AmbientTexture;
@@ -56,7 +56,7 @@ void main()
 	{
 		if (fragPos.z < ((i * u_CascadeDepth) / (u_CascadeCount * u_CascadeDepth)))
 		{
-			vec4 fragPosLightSpace = vec4(fragPos, 1) * u_LightTransforms[i];
+			vec4 fragPosLightSpace = vec4(fragPos, 1) * u_LightClipMatrices[i];
 			vec3 normalizedPos = fragPosLightSpace.xyz;
 			normalizedPos *= 0.5;
 			normalizedPos += 0.5;

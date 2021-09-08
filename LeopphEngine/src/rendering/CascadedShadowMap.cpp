@@ -75,7 +75,7 @@ namespace leopph::impl
 	}
 
 
-	Matrix4 CascadedShadowMap::ProjectionMatrix(std::size_t cascadeIndex, const DirectionalLight& light, const Matrix4& lightTransform) const
+	Matrix4 CascadedShadowMap::WorldToClipMatrix(std::size_t cascadeIndex, const Matrix4& cameraViewMatrix, const Matrix4& lightViewMatrix) const
 	{
 		const auto& camera{*Camera::Active()};
 		const auto cascadeDepth{(camera.FarClipPlane() - camera.NearClipPlane()) / m_TexIds.size()};
@@ -90,7 +90,7 @@ namespace leopph::impl
 		const auto yn{cascadeNear * tanHalfVertFov};
 		const auto yf{cascadeFar * tanHalfVertFov};
 
-		const auto cameraViewInverse{camera.ViewMatrix().Inverse()};
+		const auto cameraViewInverse{cameraViewMatrix.Inverse()};
 
 		std::array frustumVertices
 		{
@@ -109,12 +109,12 @@ namespace leopph::impl
 
 		std::ranges::for_each(frustumVertices.begin(), frustumVertices.end(), [&](const auto& vertex)
 		{
-			const auto lightSpaceVertex = vertex * cameraViewInverse * lightTransform;
+			const auto lightSpaceVertex = vertex * cameraViewInverse * lightViewMatrix;
 			min = Vector3{std::min(min[0], lightSpaceVertex[0]), std::min(min[1], lightSpaceVertex[1]), std::min(min[2], lightSpaceVertex[2])};
 			max = Vector3{std::max(max[0], lightSpaceVertex[0]), std::max(max[1], lightSpaceVertex[1]), std::max(max[2], lightSpaceVertex[2])};
 		});
 
-		return Matrix4::Ortographic(min[0], max[0], max[1], min[1], min[2], max[2]);
+		return lightViewMatrix * Matrix4::Ortographic(min[0], max[0], max[1], min[1], min[2], max[2]);
 	}
 
 
@@ -142,7 +142,7 @@ namespace leopph::impl
 
 		glNamedFramebufferDrawBuffer(m_Fbo, GL_NONE);
 		glNamedFramebufferReadBuffer(m_Fbo, GL_NONE);
-		glNamedFramebufferTexture(m_Fbo, GL_DEPTH_ATTACHMENT, m_TexIds.at(0), 0);
+		glNamedFramebufferTexture(m_Fbo, GL_DEPTH_ATTACHMENT, m_TexIds.front(), 0);
 	}
 
 

@@ -76,7 +76,7 @@ namespace leopph::impl
 		m_DirectionalShadowMapShader.Use();
 		shadowMaps.front().BindToBuffer();
 
-		m_DirectionalShadowMapShader.SetUniform("lightSpaceMatrix", m_CurrentFrameDirectionalTransformMatrix);
+		m_DirectionalShadowMapShader.SetUniform("lightClipMatrix", m_CurrentFrameDirectionalTransformMatrix);
 
 		for (const auto& [modelPath, matrices] : m_CurrentFrameMatrices)
 		{

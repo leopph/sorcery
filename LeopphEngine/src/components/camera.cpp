@@ -46,7 +46,7 @@ namespace leopph
 	Camera::Camera(Entity& owner) :
 		Component{ owner },
 		m_AspectRatio{ leopph::impl::Window::Get().AspectRatio() },
-		m_HorizontalFOVDegrees{ 100.0f }, m_NearClip{ 0.3f }, m_FarClip{ 1000.f },
+		m_HorizontalFOVDegrees{ 100.0f }, m_NearClip{ 0.1f }, m_FarClip{ 100.f },
 		m_Background{ .color{0, 0, 0}, .skybox{nullptr} }
 	{
 		if (s_Active == nullptr)

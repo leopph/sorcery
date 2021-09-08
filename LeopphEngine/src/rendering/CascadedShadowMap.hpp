@@ -32,7 +32,7 @@ namespace leopph::impl
 
 		void Clear() const;
 
-		Matrix4 ProjectionMatrix(std::size_t cascadeIndex, const DirectionalLight& light, const Matrix4& lightTransform) const;
+		Matrix4 WorldToClipMatrix(std::size_t cascadeIndex, const Matrix4& cameraViewMatrix, const Matrix4& lightViewMatrix) const;
 
 
 	private:

@@ -80,15 +80,14 @@ namespace leopph::impl
 		m_DirShadowMap.Clear();
 		m_DirShadowShader.Use();
 
-		const auto lightTransform{Matrix4::LookAt(Vector3{}, dirLight->Direction(), Vector3::Up())};
-		std::vector<Matrix4> transformMatrices;
+		const auto lightWorldToView{Matrix4::LookAt(Vector3{}, dirLight->Direction(), Vector3::Up())};
 
 		for (std::size_t i = 0; i < Settings::CameraDirectionalShadowCascadeCount(); ++i)
 		{
-			const auto projection{m_DirShadowMap.ProjectionMatrix(i, *dirLight, lightTransform)};
+			const auto lightWorldToClip{m_DirShadowMap.WorldToClipMatrix(i, m_CurrentFrameViewMatrix, lightWorldToView)};
+			m_CurrentFrameDirLightMatrices.push_back(lightWorldToClip);
 			m_DirShadowMap.BindTextureForWriting(i);
-			transformMatrices.push_back(lightTransform * projection);
-			m_DirShadowShader.SetUniform("lightSpaceMatrix", transformMatrices.back());
+			m_DirShadowShader.SetUniform("lightClipMatrix", m_CurrentFrameDirLightMatrices.back());
 
 			for (const auto& [modelPath, matrices] : m_CurrentFrameMatrices)
 			{
@@ -126,7 +125,7 @@ namespace leopph::impl
 		m_DirLightShader.SetUniform("u_CascadeDepth", (Camera::Active()->FarClipPlane() - Camera::Active()->NearClipPlane()) / Settings::CameraDirectionalShadowCascadeCount());
 		for (std::size_t i = 0; i < Settings::CameraDirectionalShadowCascadeCount(); i++)
 		{
-			m_DirLightShader.SetUniform("u_LightTransforms[" + std::to_string(i) + "]", transformMatrices.at(i));
+			m_DirLightShader.SetUniform("u_LightClipMatrices[" + std::to_string(i) + "]", m_CurrentFrameDirLightMatrices.at(i));
 		}
 
 		m_ScreenTexture.Draw();
@@ -134,7 +133,8 @@ namespace leopph::impl
 		/*m_TextureShader.Use();
 		m_DirShadowMap.BindTexturesForReading(0);
 		m_TextureShader.SetUniform("u_Texture", 0);
-		m_ScreenTexture.Draw();*/
+		m_ScreenTexture.Draw();
+		m_DirShadowMap.UnbindTexturesFromReading();*/
 	}
 
 
