@@ -186,39 +186,51 @@ namespace leopph::impl
 	}
 
 
-	void Shader::SetUniform(const std::string& name, bool value) const
+	void Shader::SetUniform(std::string_view name, bool value) const
 	{
-		glUniform1i(glGetUniformLocation(m_ID, name.data()), value);
+		glProgramUniform1i(m_ID, glGetUniformLocation(m_ID, name.data()), value);
 	}
 
 
-	void Shader::SetUniform(const std::string& name, int value) const
+	void Shader::SetUniform(std::string_view name, int value) const
 	{
-		glUniform1i(glGetUniformLocation(m_ID, name.data()), value);
+		glProgramUniform1i(m_ID, glGetUniformLocation(m_ID, name.data()), value);
 	}
 
 
-	void Shader::SetUniform(const std::string& name, unsigned value) const
+	void Shader::SetUniform(std::string_view name, unsigned value) const
 	{
-		glUniform1ui(glGetUniformLocation(m_ID, name.data()), value);
+		glProgramUniform1ui(m_ID, glGetUniformLocation(m_ID, name.data()), value);
 	}
 
 
-	void Shader::SetUniform(const std::string& name, float value) const
+	void Shader::SetUniform(std::string_view name, float value) const
 	{
-		glUniform1f(glGetUniformLocation(m_ID, name.data()), value);
+		glProgramUniform1f(m_ID, glGetUniformLocation(m_ID, name.data()), value);
 	}
 
 
-	void Shader::SetUniform(const std::string& name, const Vector3& value) const
+	void Shader::SetUniform(std::string_view name, const Vector3& value) const
 	{
-		glUniform3fv(glGetUniformLocation(m_ID, name.data()), 1, value.Data());
+		glProgramUniform3fv(m_ID, glGetUniformLocation(m_ID, name.data()), 1, value.Data());
 	}
 
 
-	void Shader::SetUniform(const std::string& name, const Matrix4& value) const
+	void Shader::SetUniform(std::string_view name, const Matrix4& value) const
 	{
-		glUniformMatrix4fv(glGetUniformLocation(m_ID, name.data()), 1, GL_TRUE, value.Data());
+		glProgramUniformMatrix4fv(m_ID, glGetUniformLocation(m_ID, name.data()), 1, GL_TRUE, value.Data());
+	}
+
+
+	void Shader::SetUniform(std::string_view name, const std::vector<Vector3>& value) const
+	{
+		glProgramUniform3fv(m_ID, glGetUniformLocation(m_ID, name.data()), value.size(), reinterpret_cast<const GLfloat*>(value.data()));
+	}
+
+
+	void Shader::SetUniform(std::string_view name, const std::vector<Matrix4>& value) const
+	{
+		glProgramUniformMatrix4fv(m_ID, glGetUniformLocation(m_ID, name.data()), value.size(), GL_TRUE, reinterpret_cast<const GLfloat*>(value.data()));
 	}
 
 

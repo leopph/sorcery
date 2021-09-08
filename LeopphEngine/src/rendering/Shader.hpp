@@ -5,6 +5,8 @@
 
 #include <filesystem>
 #include <string>
+#include <string_view>
+#include <vector>
 
 namespace leopph::impl
 {
@@ -23,12 +25,14 @@ namespace leopph::impl
 
 		void Use() const;
 
-		void SetUniform(const std::string& name, bool value) const;
-		void SetUniform(const std::string& name, int value) const;
-		void SetUniform(const std::string& name, unsigned value) const;
-		void SetUniform(const std::string& name, float value) const;
-		void SetUniform(const std::string& name, const Vector3& value) const;
-		void SetUniform(const std::string& name, const Matrix4& value) const;
+		void SetUniform(std::string_view name, bool value) const;
+		void SetUniform(std::string_view name, int value) const;
+		void SetUniform(std::string_view name, unsigned value) const;
+		void SetUniform(std::string_view name, float value) const;
+		void SetUniform(std::string_view name, const Vector3& value) const;
+		void SetUniform(std::string_view name, const Matrix4& value) const;
+		void SetUniform(std::string_view name, const std::vector<Vector3>& value) const;
+		void SetUniform(std::string_view name, const std::vector<Matrix4>& value) const;
 
 	private:
 		unsigned m_ID;
