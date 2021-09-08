@@ -22,6 +22,7 @@ namespace leopph::impl
 		m_TextureShader{Shader::Type::TEXTURE}
 	{
 		glEnable(GL_DEPTH_TEST);
+		glDepthFunc(GL_LESS);
 	}
 
 
@@ -55,9 +56,10 @@ namespace leopph::impl
 	{
 		m_GBuffer.Clear();
 		m_GBuffer.Bind();
-		m_GPassObjectShader.Use();
 
 		m_GPassObjectShader.SetUniform("viewProjectionMatrix", m_CurrentFrameViewMatrix * m_CurrentFrameProjectionMatrix);
+
+		m_GPassObjectShader.Use();
 
 		for (const auto& [modelPath, matrices] : m_CurrentFrameMatrices)
 		{
@@ -77,16 +79,17 @@ namespace leopph::impl
 			return;
 		}
 
-		m_DirShadowMap.Clear();
 		m_DirShadowShader.Use();
 
-		const auto lightWorldToView{Matrix4::LookAt(Vector3{}, dirLight->Direction(), Vector3::Up())};
+		const auto lightWorldToView{Matrix4::LookAt(-dirLight->Direction(), Vector3{}, Vector3::Up())};
+		m_CurrentFrameDirLightMatrices.clear();
 
 		for (std::size_t i = 0; i < Settings::CameraDirectionalShadowCascadeCount(); ++i)
 		{
 			const auto lightWorldToClip{m_DirShadowMap.WorldToClipMatrix(i, m_CurrentFrameViewMatrix, lightWorldToView)};
 			m_CurrentFrameDirLightMatrices.push_back(lightWorldToClip);
 			m_DirShadowMap.BindTextureForWriting(i);
+			m_DirShadowMap.Clear();
 			m_DirShadowShader.SetUniform("lightClipMatrix", m_CurrentFrameDirLightMatrices.back());
 
 			for (const auto& [modelPath, matrices] : m_CurrentFrameMatrices)
@@ -97,7 +100,6 @@ namespace leopph::impl
 		}
 
 		m_DirShadowMap.UnbindTextureFromWriting();
-		m_DirLightShader.Use();
 
 		glBindTextureUnit(0, m_GBuffer.positionTextureName);
 		glBindTextureUnit(1, m_GBuffer.normalTextureName);
@@ -123,11 +125,10 @@ namespace leopph::impl
 		m_DirLightShader.SetUniform("u_CameraPosition", Camera::Active()->entity.Transform().Position());
 		m_DirLightShader.SetUniform("u_CascadeCount", static_cast<unsigned>(Settings::CameraDirectionalShadowCascadeCount()));
 		m_DirLightShader.SetUniform("u_CascadeDepth", (Camera::Active()->FarClipPlane() - Camera::Active()->NearClipPlane()) / Settings::CameraDirectionalShadowCascadeCount());
-		for (std::size_t i = 0; i < Settings::CameraDirectionalShadowCascadeCount(); i++)
-		{
-			m_DirLightShader.SetUniform("u_LightClipMatrices[" + std::to_string(i) + "]", m_CurrentFrameDirLightMatrices.at(i));
-		}
 
+		m_DirLightShader.SetUniform("u_LightClipMatrices", m_CurrentFrameDirLightMatrices);
+
+		m_DirLightShader.Use();
 		m_ScreenTexture.Draw();
 
 		/*m_TextureShader.Use();
@@ -217,9 +218,10 @@ namespace leopph::impl
 
 		if (const auto& skybox{Camera::Active()->Background().skybox}; skybox != nullptr)
 		{
-			m_SkyboxShader.Use();
 			m_SkyboxShader.SetUniform("viewMatrix", static_cast<Matrix4>(static_cast<Matrix3>(m_CurrentFrameViewMatrix)));
 			m_SkyboxShader.SetUniform("projectionMatrix", m_CurrentFrameProjectionMatrix);
+
+			m_SkyboxShader.Use();
 			static_cast<SkyboxResource*>(DataManager::Find(skybox->AllFilePaths()))->Draw(m_SkyboxShader);
 		}
 	}

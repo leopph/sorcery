@@ -54,32 +54,26 @@ void main()
 		light += fragSpecular * pow(max(dot(fragNormal, halfway), 0), 4 * fragShine) * u_DirLight.specularColor;
 	}
 
-	for (int i = 0; i < u_CascadeCount; i++)
+	
+	vec4 fragPosLightSpace = vec4(fragPos, 1) * u_LightClipMatrices[0];
+	vec3 normalizedPos = fragPosLightSpace.xyz;
+	normalizedPos *= 0.5;
+	normalizedPos += 0.5;
+
+	vec2 texelSize = 1.0 / textureSize(u_ShadowMaps[0], 0);
+	float shadow = 0;
+	float bias = max(MAX_SHADOW_BIAS * (1.0 - dot(fragNormal, directionToLight)), MIN_SHADOW_BIAS);
+
+	for (int i = -1; i <= 1; i++)
 	{
-		if (fragPos.z < ((i * u_CascadeDepth) / (u_CascadeCount * u_CascadeDepth)))
+		for (int j = -1; j <= 1; j++)
 		{
-			vec4 fragPosLightSpace = vec4(fragPos, 1) * u_LightClipMatrices[i];
-			vec3 normalizedPos = fragPosLightSpace.xyz / fragPosLightSpace.w;
-			normalizedPos *= 0.5;
-			normalizedPos += 0.5;
-
-			vec2 texelSize = 1.0 / textureSize(u_ShadowMaps[i], 0);
-			float shadow = 0;
-			float bias = max(MAX_SHADOW_BIAS * (1.0 - dot(fragNormal, directionToLight)), MIN_SHADOW_BIAS);
-
-			for (int i = -1; i <= 1; i++)
-			{
-				for (int j = -1; j <= 1; j++)
-				{
-					float pcfDepth = texture(u_ShadowMaps[i], normalizedPos.xy + vec2(i, j) * texelSize).r;
-					shadow += normalizedPos.z - bias > pcfDepth ? 1.0 : 0.0;
-				}
-			}
-
-			light *= (1 - (shadow / 9));
-			break;
+			float pcfDepth = texture(u_ShadowMaps[0], normalizedPos.xy + vec2(i, j) * texelSize).r;
+			shadow += normalizedPos.z - bias > pcfDepth ? 1.0 : 0.0;
 		}
 	}
+
+	light *= (1 - (shadow / 9));
 
 	out_FragmentColor = vec4(light, 1);
 })#fileContents#" };

@@ -11,7 +11,7 @@ namespace leopph
 	std::filesystem::path Settings::s_ShaderLocation{};
 	const Settings::GraphicsAPI Settings::RenderAPI{ GraphicsAPI::OpenGL };
 	Settings::GraphicsAPI Settings::s_PendingRenderAPI{ RenderAPI };
-	std::vector<std::size_t> Settings::s_DirectionalLightShadowMapResolutions{4096, 3584, 3072, 2560, 2048};
+	std::vector<std::size_t> Settings::s_DirectionalLightShadowMapResolutions{4096, 3072, 2048};
 	Vector2 Settings::s_PointLightShadowMapResolution{ 1024, 1024 };
 	Vector2 Settings::s_SpotLightShadowMapResolution{ 2048, 2048 };
 	std::size_t Settings::s_MaxPointLightCount{ 64 };
