@@ -73,7 +73,7 @@ void main()
 		}
 	}
 
-	light *= (1 - (shadow / 9));
+	light *= 1 - shadow / 9;
 
 	out_FragmentColor = vec4(light, 1);
 })#fileContents#" };

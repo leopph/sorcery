@@ -79,8 +79,8 @@ namespace leopph::impl
 	{
 		const auto& camera{*Camera::Active()};
 		const auto cascadeDepth{(camera.FarClipPlane() - camera.NearClipPlane()) / m_TexIds.size()};
-		const auto cascadeNear{cascadeIndex * cascadeDepth};
-		const auto cascadeFar{(cascadeIndex + 1) * cascadeDepth};
+		const auto cascadeNear{camera.NearClipPlane() + cascadeIndex * cascadeDepth};
+		const auto cascadeFar{camera.NearClipPlane() + (cascadeIndex + 1)* cascadeDepth};
 
 		const auto tanHalfHorizFov{math::Tan(math::ToRadians(camera.FOV(Camera::FOV_HORIZONTAL)) / 2.0f)};
 		const auto tanHalfVertFov{math::Tan(math::ToRadians(camera.FOV(Camera::FOV_VERTICAL)) / 2.0f)};
