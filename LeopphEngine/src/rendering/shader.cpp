@@ -108,18 +108,32 @@ namespace leopph::impl
 		glShaderSource(vertexShaderID, 1, &vertexSource, nullptr);
 		glCompileShader(vertexShaderID);
 
-		int status;
+		GLint status;
 		glGetShaderiv(vertexShaderID, GL_COMPILE_STATUS, &status);
-		if (!status)
-			Logger::Instance().Error("There was an error during vertex shader compilation!");
+		if (status == GL_FALSE)
+		{
+			GLint logLength;
+			glGetShaderiv(vertexShaderID, GL_INFO_LOG_LENGTH, &logLength);
+			std::string errMsg;
+			errMsg.resize(logLength);
+			glGetShaderInfoLog(vertexShaderID, logLength, &logLength, errMsg.data());
+			Logger::Instance().Error(errMsg);
+		}
 
 
 		glShaderSource(fragmentShaderID, 1, &fragmentSource, nullptr);
 		glCompileShader(fragmentShaderID);
 
 		glGetShaderiv(fragmentShaderID, GL_COMPILE_STATUS, &status);
-		if (!status)
-			Logger::Instance().Error("There was an error during fragment shader compilation!");
+		if (status == GL_FALSE)
+		{
+			GLint logLength;
+			glGetShaderiv(fragmentShaderID, GL_INFO_LOG_LENGTH, &logLength);
+			std::string errMsg;
+			errMsg.resize(logLength);
+			glGetShaderInfoLog(fragmentShaderID, logLength, &logLength, errMsg.data());
+			Logger::Instance().Error(errMsg);
+		}
 
 
 		m_ID = glCreateProgram();
@@ -128,8 +142,15 @@ namespace leopph::impl
 		glLinkProgram(m_ID);
 
 		glGetProgramiv(m_ID, GL_LINK_STATUS, &status);
-		if (!status)
-			Logger::Instance().Error("There was an error during shader program linking!");
+		if (status == GL_FALSE)
+		{
+			GLint logLength;
+			glGetProgramiv(m_ID, GL_INFO_LOG_LENGTH, &logLength);
+			std::string errMsg;
+			errMsg.resize(logLength);
+			glGetProgramInfoLog(m_ID, logLength, &logLength, errMsg.data());
+			Logger::Instance().Error(errMsg);
+		}
 
 		glDeleteShader(vertexShaderID);
 		glDeleteShader(fragmentShaderID);
