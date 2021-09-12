@@ -68,3 +68,16 @@ Currently only Windows is supported.
 To get started, pull all the submodules and build them. Then compile LeopphEngine using the provided VS solution.
 You should now include **Leopph.hpp** from **LeopphEngine/include** in your project, link against **leopph.lib**, and copy **leopph.dll** (both found in **LeopphEngine/*<target_config>***) to your output directory, and everything should work!  
 *Disclaimer: LeopphEngine uses Microsoft's WIP C++ 20 implementation. It is recommended that you use the latest Visual Studio release and set your project language version to C++ 20 to make sure your compiler has the necessary features.*
+
+## Rings and Releases
+Development of LeopphEngine takes place on two branches.  
+- The **master** branch always contains the latest code that is verified to compile and be stable, and can be used for game development purposes. Features may disappear from it, so it is in no way a "release" channel, but it is the most stable, slowest branch that never contains code that hasn't passed the dev branch.  
+- The **dev** branch is where all the new stuff goes. As soon as anything changes, it is reflected in this channel. Features are highly volatile here, code may be heavily buggy, incomplete, or even non-compiling. If you happen to check this branch out and spend some time exploring it, your comments and suggestions would be very welcome.
+- There may appear other branches outside of the standard 2 ring setup. These can safely be ignored by developers as more than likely I just set them up for organizing development of a feature according to my personal taste.  
+
+Every now and then I release "PB" builds. What does PB stand for? It may be "Public Beta". It could be "Published Build". It just might be "Product Breakthrough". Who knows? The versioning is as follows:  
+  
+**LeopphEngine_PB** *[ENGINE_VERSION_NUMBER]* **_D** *[DEMO_VERSION_NUMBER]*, where  
+- *ENGINE_VERSION_NUMBER* is the version number of the engine,  
+- *DEMO_VERSION_NUMBER* is the version number of the provided demo application,  
+- both version numbers are in the format **ProductGenNumber.MajorBuildNumber.MinorBuildNumber**.
