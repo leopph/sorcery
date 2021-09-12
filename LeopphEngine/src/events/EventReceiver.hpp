@@ -45,7 +45,7 @@ namespace leopph
 		/* Used internally to invoke the receiver. Do not override or call this explicitly. */
 		void Handle(EventReceiverBase::EventParamType event) const override
 		{
-			const_cast<EventReceiver*>(this)->OnEventReceived(reinterpret_cast<EventParamType>(event));
+			const_cast<EventReceiver*>(this)->OnEventReceived(static_cast<EventParamType>(event));
 		}
 
 
