@@ -13,8 +13,8 @@ layout (location = 1) out vec2 outTexCoords;
 layout (location = 2) out vec3 outFragPos;
 layout (location = 3) out vec4 outFragPosDirSpace;
 
-uniform mat4 dirLightTransformMatrix;
-uniform mat4 viewProjectionMatrix;
+layout (location = 0) uniform mat4 dirLightTransformMatrix;
+layout (location = 1) uniform mat4 viewProjectionMatrix;
 
 void main()
 {

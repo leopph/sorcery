@@ -70,24 +70,22 @@ layout (location = 1) in vec2 inTexCoords;
 layout (location = 2) in vec3 inFragPos;
 layout (location = 3) in vec4 inFragPosDirSpace;
 
-out vec4 fragmentColor;
+layout (location = 0) out vec4 fragmentColor;
 
-uniform Material material;
+layout (location = 2) uniform Material material;
 
-uniform vec3 ambientLight;
+layout (location = 12) uniform vec3 ambientLight;
 
-uniform DirLight dirLight;
-uniform bool existsDirLight;
+layout (location = 13) uniform DirLight dirLight;
+layout (location = 17) uniform bool existsDirLight;
 
-uniform PointLight pointLights[MAX_POINT_LIGHT_COUNT];
-uniform int pointLightCount;
+layout (location = 21) uniform PointLight pointLights[MAX_POINT_LIGHT_COUNT];
+layout (location = 18) uniform int pointLightCount;
 
-uniform SpotLight spotLights[MAX_SPOT_LIGHT_COUNT];
-uniform int spotLightCount;
+layout (location = 21 + MAX_POINT_LIGHT_COUNT * 6) uniform SpotLight spotLights[MAX_SPOT_LIGHT_COUNT];
+layout (location = 19) uniform int spotLightCount;
 
-uniform vec3 cameraPosition;
-
-uniform mat4 dirLightTransformMatrix;
+layout (location = 20) uniform vec3 cameraPosition;
 
 
 float CalculateAttenuation(float constant, float linear, float quadratic, float dist)
