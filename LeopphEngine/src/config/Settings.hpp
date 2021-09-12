@@ -67,7 +67,15 @@ namespace leopph
 		static LEOPPHAPI void MaxSpotLightCount(std::size_t newCount);
 
 		static LEOPPHAPI std::size_t CameraDirectionalShadowCascadeCount();
-		static LEOPPHAPI void CameraDirectionalShadowCascadeCount(std::size_t newCount);
+
+		enum class RenderType
+		{
+			Forward, Deferred
+		};
+
+		static LEOPPHAPI RenderType RenderingPipeline();
+		static LEOPPHAPI void RenderingPipeline(RenderType type);
+
 
 	private:
 		static std::filesystem::path s_ShaderLocation;
@@ -77,5 +85,6 @@ namespace leopph
 		static Vector2 s_SpotLightShadowMapResolution;
 		static std::size_t s_MaxPointLightCount;
 		static std::size_t s_MaxSpotLightCount;
+		static RenderType s_RenderingPipeline;
 	};
 }

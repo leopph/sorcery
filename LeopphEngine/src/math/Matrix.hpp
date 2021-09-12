@@ -26,9 +26,7 @@ namespace leopph
 
 
 		public:
-			Matrix() :
-				m_Data{}
-			{}
+			Matrix() = default;
 
 
 			/* Main Diagonal Fill Constructor */
@@ -322,7 +320,7 @@ namespace leopph
 		-----------------------------------*/
 		
 		template<class T, std::size_t N, std::size_t M>
-		std::ostream& operator<<(std::ostream& stream, const Matrix<T, N, M>& matrix)
+		auto operator<<(std::ostream& stream, const Matrix<T, N, M>& matrix) -> std::ostream&
 		{
 			for (size_t i = 0; i < N; i++)
 			{

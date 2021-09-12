@@ -6,6 +6,7 @@
 #include "../../util/hash/PathHash.hpp"
 
 #include <filesystem>
+#include <memory>
 #include <unordered_map>
 #include <vector>
 
@@ -15,6 +16,8 @@ namespace leopph::impl
 	class Renderer
 	{
 	public:
+		static std::unique_ptr<Renderer> Create();
+
 		Renderer() = default;
 		Renderer(const Renderer& other) = default;
 		Renderer(Renderer&& other) = default;

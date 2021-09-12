@@ -1,5 +1,8 @@
 #include "Renderer.hpp"
 
+#include "DeferredRenderer.hpp"
+#include "ForwardRenderer.hpp"
+
 #include "../../data/DataManager.hpp"
 #include "../../components/Model.hpp"
 #include "../../config/Settings.hpp"
@@ -13,6 +16,19 @@
 
 namespace leopph::impl
 {
+	std::unique_ptr<Renderer> Renderer::Create()
+	{
+		switch (Settings::RenderingPipeline())
+		{
+			case Settings::RenderType::Forward:
+				return std::make_unique<ForwardRenderer>();
+
+			case Settings::RenderType::Deferred:
+				return std::make_unique<DeferredRenderer>();
+		}
+	}
+
+
 	Renderer::~Renderer() = default;
 
 

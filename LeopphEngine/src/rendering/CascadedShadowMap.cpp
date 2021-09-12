@@ -19,8 +19,6 @@ namespace leopph::impl
 	{
 		glCreateFramebuffers(1, &m_Fbo);
 		Init(Settings::DirectionalShadowMapResolutions());
-
-		GLenum status = glCheckNamedFramebufferStatus(m_Fbo, GL_FRAMEBUFFER);
 	}
 
 

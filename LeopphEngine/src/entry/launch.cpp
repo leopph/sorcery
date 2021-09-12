@@ -9,8 +9,7 @@
 #include "../events/EventManager.hpp"
 #include "../events/FrameEndedEvent.hpp"
 #include "../data/DataManager.hpp"
-#include "../rendering/renderers/DeferredRenderer.hpp"
-#include "../rendering/renderers/ForwardRenderer.hpp"
+#include "../rendering/renderers/Renderer.hpp"
 #include "../rendering/opengl/gl.h"
 #include "../timing/timer.h"
 #include "../windowing/window.h"
@@ -40,7 +39,7 @@ namespace leopph::impl
 		Logger::Instance().Debug("App initialized.");
 
 		{
-			DeferredRenderer renderer;
+			const auto renderer{Renderer::Create()};
 
 			Timer::Init();
 			Logger::Instance().Debug("Timer initialized.");
@@ -53,7 +52,7 @@ namespace leopph::impl
 					x->OnFrameUpdate();
 
 				window.Clear();
-				renderer.Render();
+				renderer->Render();
 				Timer::OnFrameComplete();
 				window.SwapBuffers();
 				EventManager::Instance().Send<FrameEndedEvent>();
