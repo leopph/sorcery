@@ -1,6 +1,6 @@
 #pragma once
 
-#include "leopph.h"
+#include "Leopph.hpp"
 
 class CameraController final : public leopph::Behavior
 {

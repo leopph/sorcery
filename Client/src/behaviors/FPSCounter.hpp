@@ -1,6 +1,6 @@
 #pragma once
 
-#include "leopph.h"
+#include "Leopph.hpp"
 
 class FPSCounter final : public leopph::Behavior
 {

@@ -96,7 +96,7 @@
     <ClInclude Include="src\math\Vector.hpp" />
     <ClInclude Include="src\rendering\vertex.h" />
     <ClInclude Include="src\windowing\glwindow.h" />
-    <ClInclude Include="include\leopph.h" />
+    <ClInclude Include="include\Leopph.hpp" />
     <ClInclude Include="src\components\Component.hpp" />
     <ClInclude Include="src\components\Model.hpp" />
     <ClInclude Include="src\windowing\window.h" />

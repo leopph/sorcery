@@ -1,5 +1,5 @@
 #define LEOPPH_ENTRY
-#include "leopph.h"
+#include "Leopph.hpp"
 
 #include "behaviors/CameraController.hpp"
 #include "behaviors/FPSCounter.hpp"

@@ -136,7 +136,7 @@ $(SolutionDir)out/ShaderParser/$(Configuration)_$(Platform)/ShaderParser.exe "$(
     </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="include\leopph.h" />
+    <ClInclude Include="include\Leopph.hpp" />
     <ClInclude Include="src\components\Behavior.hpp" />
     <ClInclude Include="src\components\Camera.hpp" />
     <ClInclude Include="src\components\Component.hpp" />
