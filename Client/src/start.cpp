@@ -34,7 +34,8 @@ void leopph::AppStart()
 	const auto dirLightObj = new Entity{};
 	dirLightObj->Transform().RotateGlobal(Quaternion{ Vector3::Up(), 135 });
 	dirLightObj->Transform().RotateLocal({ Quaternion{Vector3::Right(), 45} });
-	new DirectionalLight{ *dirLightObj };
+	const auto dirLight = new DirectionalLight{ *dirLightObj };
+	dirLight->Diffuse(Vector3{0.5, 0.5, 0.5});
 
 	new FPSCounter{*new Entity};
 }
