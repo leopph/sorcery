@@ -78,8 +78,8 @@ namespace leopph::impl
 		static const std::unordered_set<const SpotLight*>& SpotLights();
 		static const std::vector<PointLight*>& PointLights();
 		static const std::list<ShadowMap>& ShadowMaps();
-		static const std::unordered_set<const ModelResource*> Models();
-		static std::unordered_set<const ResourceHandleBase*> ModelComponents(const ModelResource* model);
+		static const std::unordered_set<const ModelResource*>& Models();
+		static const std::unordered_set<const ResourceHandleBase*>& ModelComponents(const ModelResource* model);
 
 
 		static void DirectionalLight(leopph::DirectionalLight* dirLight);

@@ -257,7 +257,7 @@ namespace leopph::impl
 	}
 
 
-	const std::unordered_set<const ModelResource*> DataManager::Models()
+	const std::unordered_set<const ModelResource*>& DataManager::Models()
 	{
 		return s_ModelResources;
 	}
@@ -275,7 +275,7 @@ namespace leopph::impl
 	}
 
 
-	std::unordered_set<const ResourceHandleBase*> DataManager::ModelComponents(const ModelResource* model)
+	const std::unordered_set<const ResourceHandleBase*>& DataManager::ModelComponents(const ModelResource* model)
 	{
 		return s_UniqueResourcesAndHandles.at(model);
 	}
