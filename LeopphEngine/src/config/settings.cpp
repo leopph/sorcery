@@ -16,7 +16,7 @@ namespace leopph
 	Vector2 Settings::s_SpotLightShadowMapResolution{ 2048, 2048 };
 	std::size_t Settings::s_MaxPointLightCount{ 64 };
 	std::size_t Settings::s_MaxSpotLightCount{ 64 };
-	Settings::RenderType Settings::s_RenderingPipeline{RenderType::Deferred};
+	Settings::RenderType Settings::s_RenderingPipeline{RenderType::Forward};
 
 
 	bool Settings::IsCachingShaders()
