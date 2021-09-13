@@ -41,10 +41,6 @@ namespace leopph
 		 * Returns NULL if no such Entity exists. */
 		LEOPPHAPI static Entity* Find(const std::string& name);
 
-		/* The Entity's Transform describes its spatial properties. */
-		LEOPPHAPI Transform& Transform();
-		[[nodiscard]] LEOPPHAPI const leopph::Transform& Transform() const;
-
 		/* The set of Components attached to the Entity. */
 		LEOPPHAPI const std::unordered_set<Component*>& Components() const;
 
@@ -76,11 +72,13 @@ namespace leopph
 		}
 
 		/* The Entity's name is a unique identifier. */
-		const std::string& name;
+		const std::string& Name;
+		/* The Entity's Transform describes its spatial properties. */
+		Transform* const& Transform;
 
 
 	private:
 		std::string m_Name;
-		mutable leopph::Transform* m_Transform;
+		leopph::Transform* m_Transform;
 	};
 }

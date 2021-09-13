@@ -79,17 +79,20 @@ namespace leopph::impl
 			return;
 		}
 
-		m_DirShadowShader.Use();
+		const auto cameraInverseMatrix{m_CurrentFrameViewMatrix.Inverse()};
+		const auto lightViewMatrix{Matrix4::LookAt(Vector3{}, dirLight->Direction(), Vector3::Up())};
 
-		const auto lightWorldToView{Matrix4::LookAt(-dirLight->Direction(), Vector3{}, Vector3::Up())};
 		m_CurrentFrameDirLightMatrices.clear();
+		m_DirShadowShader.Use();
 
 		for (std::size_t i = 0; i < Settings::CameraDirectionalShadowCascadeCount(); ++i)
 		{
-			const auto lightWorldToClip{m_DirShadowMap.WorldToClipMatrix(i, m_CurrentFrameViewMatrix, lightWorldToView)};
+			const auto lightWorldToClip{m_DirShadowMap.WorldToClipMatrix(i, cameraInverseMatrix, lightViewMatrix)};
 			m_CurrentFrameDirLightMatrices.push_back(lightWorldToClip);
+
 			m_DirShadowMap.BindTextureForWriting(i);
 			m_DirShadowMap.Clear();
+
 			m_DirShadowShader.SetUniform("lightClipMatrix", m_CurrentFrameDirLightMatrices.back());
 
 			for (const auto& [modelPath, matrices] : m_CurrentFrameMatrices)
@@ -122,7 +125,7 @@ namespace leopph::impl
 		m_DirLightShader.SetUniform("u_DirLight.diffuseColor", dirLight->Diffuse());
 		m_DirLightShader.SetUniform("u_DirLight.specularColor", dirLight->Specular());
 
-		m_DirLightShader.SetUniform("u_CameraPosition", Camera::Active()->entity.Transform().Position());
+		m_DirLightShader.SetUniform("u_CameraPosition", Camera::Active()->entity.Transform->Position());
 		m_DirLightShader.SetUniform("u_CascadeCount", static_cast<unsigned>(Settings::CameraDirectionalShadowCascadeCount()));
 		m_DirLightShader.SetUniform("u_CascadeDepth", (Camera::Active()->FarClipPlane() - Camera::Active()->NearClipPlane()) / Settings::CameraDirectionalShadowCascadeCount());
 
@@ -157,7 +160,7 @@ namespace leopph::impl
 		m_LightPassShader.SetUniform("specularTexture", 4);
 		m_LightPassShader.SetUniform("shineTexture", 5);
 
-		m_LightPassShader.SetUniform("cameraPosition", Camera::Active()->entity.Transform().Position());
+		m_LightPassShader.SetUniform("cameraPosition", Camera::Active()->entity.Transform->Position());
 
 		/* Set up ambient light data */
 		m_LightPassShader.SetUniform("ambientLight", AmbientLight::Instance().Intensity());
@@ -182,7 +185,7 @@ namespace leopph::impl
 		{
 			const auto& pointLight = m_CurrentFrameUsedPointLights[i];
 
-			m_LightPassShader.SetUniform("pointLights[" + std::to_string(i) + "].position", pointLight->entity.Transform().Position());
+			m_LightPassShader.SetUniform("pointLights[" + std::to_string(i) + "].position", pointLight->entity.Transform->Position());
 			m_LightPassShader.SetUniform("pointLights[" + std::to_string(i) + "].diffuseColor", pointLight->Diffuse());
 			m_LightPassShader.SetUniform("pointLights[" + std::to_string(i) + "].specularColor", pointLight->Specular());
 			m_LightPassShader.SetUniform("pointLights[" + std::to_string(i) + "].constant", pointLight->Constant());
@@ -196,8 +199,8 @@ namespace leopph::impl
 		{
 			const auto& spotLight{m_CurrentFrameUsedSpotLights[i]};
 
-			m_LightPassShader.SetUniform("spotLights[" + std::to_string(i) + "].position", spotLight->entity.Transform().Position());
-			m_LightPassShader.SetUniform("spotLights[" + std::to_string(i) + "].direction", spotLight->entity.Transform().Forward());
+			m_LightPassShader.SetUniform("spotLights[" + std::to_string(i) + "].position", spotLight->entity.Transform->Position());
+			m_LightPassShader.SetUniform("spotLights[" + std::to_string(i) + "].direction", spotLight->entity.Transform->Forward());
 			m_LightPassShader.SetUniform("spotLights[" + std::to_string(i) + "].diffuseColor", spotLight->Diffuse());
 			m_LightPassShader.SetUniform("spotLights[" + std::to_string(i) + "].specularColor", spotLight->Specular());
 			m_LightPassShader.SetUniform("spotLights[" + std::to_string(i) + "].constant", spotLight->Constant());

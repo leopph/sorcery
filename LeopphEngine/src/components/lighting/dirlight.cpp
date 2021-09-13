@@ -17,6 +17,6 @@ namespace leopph
 
 	const Vector3& DirectionalLight::Direction() const
 	{
-		return entity.Transform().Forward();
+		return entity.Transform->Forward();
 	}
 }

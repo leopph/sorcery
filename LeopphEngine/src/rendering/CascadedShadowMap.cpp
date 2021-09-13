@@ -73,12 +73,12 @@ namespace leopph::impl
 	}
 
 
-	Matrix4 CascadedShadowMap::WorldToClipMatrix(std::size_t cascadeIndex, const Matrix4& cameraViewMatrix, const Matrix4& lightViewMatrix) const
+	Matrix4 CascadedShadowMap::WorldToClipMatrix(std::size_t cascadeIndex, const Matrix4& cameraInverseMatrix, const Matrix4& lightViewMatrix) const
 	{
 		const auto& camera{*Camera::Active()};
 		const auto cascadeDepth{(camera.FarClipPlane() - camera.NearClipPlane()) / m_TexIds.size()};
 		const auto cascadeNear{camera.NearClipPlane() + cascadeIndex * cascadeDepth};
-		const auto cascadeFar{camera.NearClipPlane() + (cascadeIndex + 1)* cascadeDepth};
+		const auto cascadeFar{camera.NearClipPlane() + (cascadeIndex + 1) * cascadeDepth};
 
 		const auto tanHalfHorizFov{math::Tan(math::ToRadians(camera.Fov(Camera::FovDirection::Horizontal)) / 2.0f)};
 		const auto tanHalfVertFov{math::Tan(math::ToRadians(camera.Fov(Camera::FovDirection::Vertical)) / 2.0f)};
@@ -87,8 +87,6 @@ namespace leopph::impl
 		const auto xf{cascadeFar * tanHalfHorizFov};
 		const auto yn{cascadeNear * tanHalfVertFov};
 		const auto yf{cascadeFar * tanHalfVertFov};
-
-		const auto cameraViewInverse{cameraViewMatrix.Inverse()};
 
 		std::array frustumVertices
 		{
@@ -107,13 +105,12 @@ namespace leopph::impl
 
 		std::ranges::for_each(frustumVertices.begin(), frustumVertices.end(), [&](const auto& vertex)
 		{
-			const auto lightSpaceVertex = vertex * cameraViewInverse * lightViewMatrix;
+			const auto lightSpaceVertex = vertex * cameraInverseMatrix * lightViewMatrix;
 			min = Vector3{std::min(min[0], lightSpaceVertex[0]), std::min(min[1], lightSpaceVertex[1]), std::min(min[2], lightSpaceVertex[2])};
 			max = Vector3{std::max(max[0], lightSpaceVertex[0]), std::max(max[1], lightSpaceVertex[1]), std::max(max[2], lightSpaceVertex[2])};
 		});
 
-		return lightViewMatrix * Matrix4::Ortographic(min[0], max[0], max[1], min[1], min[2], max[2]);
-		//return lightViewMatrix * Matrix4::Ortographic(min[0], max[0], max[1], min[1], Camera::Active()->NearClipPlane(), Camera::Active()->FarClipPlane());
+		return lightViewMatrix * Matrix4::Ortographic(min[0], max[0], max[1], min[1], min[2] - 100, max[2]); // TODO make near clip plane offset a parameter for light or calculate bounding spheres and measure distance
 	}
 
 

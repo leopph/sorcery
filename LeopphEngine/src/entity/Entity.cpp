@@ -19,11 +19,11 @@ namespace leopph
 
 
 	Entity::Entity(std::string name) :
-		name{m_Name},
+		Name{m_Name},
 		m_Name{name.empty() ? "Entity" + std::to_string(impl::DataManager::EntitiesAndComponents().size()) : name},
-		m_Transform{nullptr}
+		Transform{m_Transform}
 	{
-		if (Find(this->name) != nullptr)
+		if (Find(this->Name) != nullptr)
 		{
 			std::string newName{};
 			for (std::size_t i = 0; i < std::numeric_limits<std::size_t>::max(); i++)
@@ -41,7 +41,7 @@ namespace leopph
 		}
 
 		impl::DataManager::Register(this);
-		AddComponent<leopph::Transform>();
+		m_Transform = AddComponent<leopph::Transform>();
 	}
 
 
@@ -63,23 +63,6 @@ namespace leopph
 	}
 
 
-	Transform& Entity::Transform()
-	{
-		return const_cast<leopph::Transform&>(const_cast<const Entity*>(this)->Transform());
-	}
-
-
-	const Transform& Entity::Transform() const
-	{
-		if (m_Transform == nullptr)
-		{
-			m_Transform = GetComponent<leopph::Transform>();
-		}
-
-		return *m_Transform;
-	}
-
-
 	const std::unordered_set<Component*>& Entity::Components() const
 	{
 		return impl::DataManager::Components(const_cast<Entity*>(this));
@@ -90,7 +73,7 @@ namespace leopph
 	{
 		if (&behavior->entity != this)
 		{
-			const auto errorMsg{"The given Component is not attached to Entity [" + name + "]."};
+			const auto errorMsg{"The given Component is not attached to Entity [" + Name + "]."};
 			impl::Logger::Instance().Error(errorMsg);
 			throw std::invalid_argument{errorMsg};
 		}

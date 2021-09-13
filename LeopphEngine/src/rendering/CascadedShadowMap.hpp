@@ -1,8 +1,7 @@
 #pragma once
 
-#include "../components/lighting/DirLight.hpp"
-#include "../events/EventReceiver.hpp"
 #include "../events/DirShadowMapResChangedEvent.hpp"
+#include "../events/EventReceiver.hpp"
 #include "../math/Matrix.hpp"
 
 #include <cstddef>
@@ -11,7 +10,7 @@
 
 namespace leopph::impl
 {
-	class CascadedShadowMap : public EventReceiver<DirShadowMapResChangedEvent>
+	class CascadedShadowMap final : public EventReceiver<DirShadowMapResChangedEvent>
 	{
 	public:
 		CascadedShadowMap();
@@ -22,7 +21,7 @@ namespace leopph::impl
 		CascadedShadowMap& operator=(const CascadedShadowMap& other) = delete;
 		CascadedShadowMap& operator=(CascadedShadowMap&& other) = delete;
 
-		~CascadedShadowMap();
+		~CascadedShadowMap() override;
 
 		void BindTextureForWriting(std::size_t cascadeIndex) const;
 		void UnbindTextureFromWriting() const;
@@ -32,7 +31,7 @@ namespace leopph::impl
 
 		void Clear() const;
 
-		Matrix4 WorldToClipMatrix(std::size_t cascadeIndex, const Matrix4& cameraViewMatrix, const Matrix4& lightViewMatrix) const;
+		[[nodiscard]] Matrix4 WorldToClipMatrix(std::size_t cascadeIndex, const Matrix4& cameraInverseMatrix, const Matrix4& lightViewMatrix) const;
 
 
 	private:

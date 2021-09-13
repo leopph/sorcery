@@ -10,10 +10,10 @@ void Rotate::OnFrameUpdate()
 
 	if (m_RotateLocally)
 	{
-		entity.Transform().RotateLocal(rotation);
+		entity.Transform->RotateLocal(rotation);
 	}
 	else
 	{
-		entity.Transform().RotateGlobal(rotation);
+		entity.Transform->RotateGlobal(rotation);
 	}
 }

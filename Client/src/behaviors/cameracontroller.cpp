@@ -13,7 +13,7 @@ void CameraController::OnFrameUpdate()
 	if (leopph::Camera::Active() == nullptr)
 		return;
 
-	leopph::Transform& camTransform = leopph::Camera::Active()->entity.Transform();
+	auto& camTransform = *leopph::Camera::Active()->entity.Transform;
 
 	leopph::Vector3 movementVector;
 

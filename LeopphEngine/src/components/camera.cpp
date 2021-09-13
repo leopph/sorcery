@@ -130,8 +130,8 @@ namespace leopph
 
 	Matrix4 Camera::ViewMatrix() const
 	{
-		return (static_cast<Matrix4>(entity.Transform().Rotation()) * Matrix4::Translate(entity.Transform().Position())).Inverse();
-		//return Matrix4::LookAt(object.Transform().Position(), object.Transform().Position() + object.Transform().Forward(), Vector3::Up());
+		return (static_cast<Matrix4>(entity.Transform->Rotation()) * Matrix4::Translate(entity.Transform->Position())).Inverse();
+		//return Matrix4::LookAt(object.Transform->Position(), object.Transform->Position() + object.Transform->Forward(), Vector3::Up());
 	}
 
 

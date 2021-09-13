@@ -116,7 +116,7 @@ namespace leopph::impl
 		m_ObjectShader.Use();
 
 		m_ObjectShader.SetUniform("viewProjectionMatrix", m_CurrentFrameViewMatrix * m_CurrentFrameProjectionMatrix);
-		m_ObjectShader.SetUniform("cameraPosition", Camera::Active()->entity.Transform().Position());
+		m_ObjectShader.SetUniform("cameraPosition", Camera::Active()->entity.Transform->Position());
 
 		std::size_t usedTextureUnits{ 0 };
 
@@ -147,7 +147,7 @@ namespace leopph::impl
 		{
 			const auto& pointLight = m_CurrentFrameUsedPointLights[i];
 
-			m_ObjectShader.SetUniform("pointLights[" + std::to_string(i) + "].position", pointLight->entity.Transform().Position());
+			m_ObjectShader.SetUniform("pointLights[" + std::to_string(i) + "].position", pointLight->entity.Transform->Position());
 			m_ObjectShader.SetUniform("pointLights[" + std::to_string(i) + "].diffuseColor", pointLight->Diffuse());
 			m_ObjectShader.SetUniform("pointLights[" + std::to_string(i) + "].specularColor", pointLight->Specular());
 			m_ObjectShader.SetUniform("pointLights[" + std::to_string(i) + "].constant", pointLight->Constant());
@@ -161,8 +161,8 @@ namespace leopph::impl
 		{
 			const auto& spotLight{ m_CurrentFrameUsedSpotLights[i] };
 
-			m_ObjectShader.SetUniform("spotLights[" + std::to_string(i) + "].position", spotLight->entity.Transform().Position());
-			m_ObjectShader.SetUniform("spotLights[" + std::to_string(i) + "].direction", spotLight->entity.Transform().Forward());
+			m_ObjectShader.SetUniform("spotLights[" + std::to_string(i) + "].position", spotLight->entity.Transform->Position());
+			m_ObjectShader.SetUniform("spotLights[" + std::to_string(i) + "].direction", spotLight->entity.Transform->Forward());
 			m_ObjectShader.SetUniform("spotLights[" + std::to_string(i) + "].diffuseColor", spotLight->Diffuse());
 			m_ObjectShader.SetUniform("spotLights[" + std::to_string(i) + "].specularColor", spotLight->Specular());
 			m_ObjectShader.SetUniform("spotLights[" + std::to_string(i) + "].constant", spotLight->Constant());

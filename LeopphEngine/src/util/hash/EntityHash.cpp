@@ -13,7 +13,7 @@ namespace leopph::impl
 
 	std::size_t EntityHash::operator()(const Entity* entity) const
 	{
-		return m_Hash(entity->name);
+		return m_Hash(entity->Name);
 	}
 
 

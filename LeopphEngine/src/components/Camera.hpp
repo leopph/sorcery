@@ -41,8 +41,7 @@ namespace leopph
 		LEOPPHAPI void FarClipPlane(float newPlane);
 		LEOPPHAPI float FarClipPlane() const;
 
-		/* Current Field of View of the Camera.
-		Use FOV_HORIZONTAL or FOV_VERTICAL to help interpret the provided input */
+		/* Current Field of View of the Camera. */
 		LEOPPHAPI void Fov(float fov, FovDirection direction);
 		LEOPPHAPI float Fov(FovDirection direction) const;
 
