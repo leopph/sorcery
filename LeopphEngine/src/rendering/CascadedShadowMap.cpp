@@ -80,8 +80,8 @@ namespace leopph::impl
 		const auto cascadeNear{camera.NearClipPlane() + cascadeIndex * cascadeDepth};
 		const auto cascadeFar{camera.NearClipPlane() + (cascadeIndex + 1)* cascadeDepth};
 
-		const auto tanHalfHorizFov{math::Tan(math::ToRadians(camera.FOV(Camera::FOV_HORIZONTAL)) / 2.0f)};
-		const auto tanHalfVertFov{math::Tan(math::ToRadians(camera.FOV(Camera::FOV_VERTICAL)) / 2.0f)};
+		const auto tanHalfHorizFov{math::Tan(math::ToRadians(camera.Fov(Camera::FovDirection::Horizontal)) / 2.0f)};
+		const auto tanHalfVertFov{math::Tan(math::ToRadians(camera.Fov(Camera::FovDirection::Vertical)) / 2.0f)};
 
 		const auto xn{cascadeNear * tanHalfHorizFov};
 		const auto xf{cascadeFar * tanHalfHorizFov};
@@ -113,6 +113,7 @@ namespace leopph::impl
 		});
 
 		return lightViewMatrix * Matrix4::Ortographic(min[0], max[0], max[1], min[1], min[2], max[2]);
+		//return lightViewMatrix * Matrix4::Ortographic(min[0], max[0], max[1], min[1], Camera::Active()->NearClipPlane(), Camera::Active()->FarClipPlane());
 	}
 
 

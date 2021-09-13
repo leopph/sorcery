@@ -31,7 +31,7 @@ namespace leopph
 		void operator=(Camera&&) = delete;
 
 		/* Enum to help determining FOV conversion details */
-		enum : unsigned char { FOV_HORIZONTAL, FOV_VERTICAL };
+		enum class FovDirection { Horizontal, Vertical };
 
 		/* The plane closest to the Camera where rendering begins */
 		LEOPPHAPI void NearClipPlane(float newPlane);
@@ -43,8 +43,8 @@ namespace leopph
 
 		/* Current Field of View of the Camera.
 		Use FOV_HORIZONTAL or FOV_VERTICAL to help interpret the provided input */
-		LEOPPHAPI void FOV(float fov, unsigned char direction);
-		LEOPPHAPI float FOV(unsigned char direction) const;
+		LEOPPHAPI void Fov(float fov, FovDirection direction);
+		LEOPPHAPI float Fov(FovDirection direction) const;
 
 		/* Internally used matrices for the rendering engine */
 		LEOPPHAPI Matrix4 ViewMatrix() const;
@@ -68,8 +68,9 @@ namespace leopph
 
 		CameraBackground m_Background;
 
-		enum : unsigned char { VERTICAL_TO_HORIZONTAL, HORIZONTAL_TO_VERTICAL };
-		[[nodiscard]] float ConvertFOV(float fov, unsigned char conversion) const;
+		enum class FovConversionDirection { VerticalToHorizontal, HorizontalToVertical};
+
+		[[nodiscard]] float ConvertFOV(float fov, FovConversionDirection conversion) const;
 
 		void OnEventReceived(EventParamType event) override;
 	};
