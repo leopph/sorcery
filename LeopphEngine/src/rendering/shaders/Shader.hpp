@@ -21,7 +21,7 @@ namespace leopph::impl
 			void operator=(const Shader& other) = delete;
 			void operator=(Shader&& other) = delete;
 
-			virtual ~Shader();
+			virtual ~Shader() = 0;
 
 			const unsigned& Id;
 
@@ -61,8 +61,8 @@ namespace leopph::impl
 
 			void Compile(std::string_view vertSrc, std::string_view fragSrc) const;
 
-			bool ReadFromCache(const std::filesystem::path& path);
-			void WriteToCache(const std::filesystem::path& path);
+			bool ReadFromCache(const std::filesystem::path& path) const;
+			void WriteToCache(const std::filesystem::path& path) const;
 
 			// True for error-free
 			static bool CheckForCompilationErrors(unsigned shaderName);

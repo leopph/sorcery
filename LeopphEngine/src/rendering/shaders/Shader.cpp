@@ -81,7 +81,7 @@ namespace leopph::impl
 	}
 
 
-	bool Shader::ReadFromCache(const std::filesystem::path& path)
+	bool Shader::ReadFromCache(const std::filesystem::path& path) const
 	{
 		std::ifstream input{path, std::ios::binary};
 		const std::vector buffer{std::istreambuf_iterator(input), {}};
@@ -109,7 +109,7 @@ namespace leopph::impl
 	}
 
 
-	void Shader::WriteToCache(const std::filesystem::path& path)
+	void Shader::WriteToCache(const std::filesystem::path& path) const
 	{
 		GLint binaryLength;
 		glGetProgramiv(m_ProgramName, GL_PROGRAM_BINARY_LENGTH, &binaryLength);
