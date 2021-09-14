@@ -106,20 +106,18 @@ namespace leopph::impl
 
 		glBindTextureUnit(0, m_GBuffer.positionTextureName);
 		glBindTextureUnit(1, m_GBuffer.normalTextureName);
-		glBindTextureUnit(2, m_GBuffer.ambientTextureName);
-		glBindTextureUnit(3, m_GBuffer.diffuseTextureName);
-		glBindTextureUnit(4, m_GBuffer.specularTextureName);
-		glBindTextureUnit(5, m_GBuffer.shineTextureName);
+		glBindTextureUnit(2, m_GBuffer.diffuseTextureName);
+		glBindTextureUnit(3, m_GBuffer.specularTextureName);
+		glBindTextureUnit(4, m_GBuffer.shineTextureName);
 
 		m_DirLightShader.SetUniform("u_PositionTexture", 0);
 		m_DirLightShader.SetUniform("u_NormalTexture", 1);
-		m_DirLightShader.SetUniform("u_AmbientTexture", 2);
-		m_DirLightShader.SetUniform("u_DiffuseTexture", 3);
-		m_DirLightShader.SetUniform("u_SpecularTexture", 4);
-		m_DirLightShader.SetUniform("u_ShineTexture", 5);
+		m_DirLightShader.SetUniform("u_DiffuseTexture", 2);
+		m_DirLightShader.SetUniform("u_SpecularTexture", 3);
+		m_DirLightShader.SetUniform("u_ShineTexture", 4);
 
-		m_DirShadowMap.BindTexturesForReading(6);
-		m_DirLightShader.SetUniform("u_ShadowMaps", 6);
+		m_DirShadowMap.BindTexturesForReading(5);
+		m_DirLightShader.SetUniform("u_ShadowMaps", 5);
 
 		m_DirLightShader.SetUniform("u_DirLight.direction", dirLight->Direction());
 		m_DirLightShader.SetUniform("u_DirLight.diffuseColor", dirLight->Diffuse());
