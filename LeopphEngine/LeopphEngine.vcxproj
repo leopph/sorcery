@@ -156,6 +156,7 @@
     <ClInclude Include="src\rendering\geometry\ModelResource.hpp" />
     <ClInclude Include="src\rendering\renderers\Renderer.hpp" />
     <ClInclude Include="src\rendering\ScreenTexture.hpp" />
+    <ClInclude Include="src\rendering\shaders\DeferredAmbLightShader.hpp" />
     <ClInclude Include="src\rendering\shaders\DeferredDirLightShader.hpp" />
     <ClInclude Include="src\rendering\shaders\DeferredGeometryShader.hpp" />
     <ClInclude Include="src\rendering\shaders\DirShadowMapShader.hpp" />
@@ -230,6 +231,7 @@
     <ClCompile Include="src\rendering\opengl\gl.cpp" />
     <ClCompile Include="src\rendering\renderers\Renderer.cpp" />
     <ClCompile Include="src\rendering\ScreenTexture.cpp" />
+    <ClCompile Include="src\rendering\shaders\DeferredAmbLightShader.cpp" />
     <ClCompile Include="src\rendering\shaders\DeferredDirLightShader.cpp" />
     <ClCompile Include="src\rendering\shaders\DeferredGeometryShader.cpp" />
     <ClCompile Include="src\rendering\shaders\DirShadowMapShader.cpp" />
@@ -302,6 +304,9 @@
       <FileType>Document</FileType>
     </CustomBuild>
     <CustomBuild Include="src\rendering\shaders\glsl\TextureFrag.frag">
+      <FileType>Document</FileType>
+    </CustomBuild>
+    <CustomBuild Include="src\rendering\shaders\glsl\deferred\AmbLightFrag.frag">
       <FileType>Document</FileType>
     </CustomBuild>
   </ItemGroup>

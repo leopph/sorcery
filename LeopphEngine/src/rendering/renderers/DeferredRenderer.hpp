@@ -4,6 +4,7 @@
 #include "../CascadedShadowMap.hpp"
 #include "../GeometryBuffer.hpp"
 #include "../ScreenTexture.hpp"
+#include "../shaders/DeferredAmbLightShader.hpp"
 #include "../shaders/DeferredDirLightShader.hpp"
 #include "../shaders/DeferredGeometryShader.hpp"
 #include "../shaders/DirShadowMapShader.hpp"
@@ -33,6 +34,7 @@ namespace leopph::impl
 		private:
 			void RenderGeometry();
 			void RenderLights();
+			void RenderAmbientLight() const;
 			void RenderDirectionalLights();
 			void RenderSkybox() const;
 
@@ -46,5 +48,6 @@ namespace leopph::impl
 			DirShadowMapShader m_DirShadowShader;
 			DeferredDirLightShader m_DirLightShader;
 			TextureShader m_TextureShader;
+			DeferredAmbLightShader m_AmbientShader;
 	};
 }

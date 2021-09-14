@@ -37,6 +37,7 @@ namespace leopph::impl
 		glEnable(GL_BLEND);
 		glBlendEquation(GL_FUNC_ADD);
 		glBlendFunc(GL_ONE, GL_ONE);
+		RenderAmbientLight();
 		RenderDirectionalLights();
 		//RenderLights();
 		glDisable(GL_BLEND);
@@ -60,6 +61,20 @@ namespace leopph::impl
 		}
 
 		m_GBuffer.Unbind();
+	}
+
+
+	void DeferredRenderer::RenderAmbientLight() const
+	{
+		glBindTextureUnit(0, m_GBuffer.ambientTextureName);
+
+		m_AmbientShader.SetUniform("u_AmbientMap", 0);
+		m_AmbientShader.SetUniform("u_AmbientLight", AmbientLight::Instance().Intensity());
+
+		glDisable(GL_DEPTH_TEST);
+		m_AmbientShader.Use();
+		m_ScreenTexture.Draw();
+		glEnable(GL_DEPTH_TEST);
 	}
 
 
@@ -144,8 +159,10 @@ namespace leopph::impl
 
 		m_DirLightShader.SetUniform("u_CascadeFarBounds", cascadeFarBounds);
 
+		glDisable(GL_DEPTH_TEST);
 		m_DirLightShader.Use();
 		m_ScreenTexture.Draw();
+		glEnable(GL_DEPTH_TEST);
 
 		/*m_TextureShader.Use();
 		m_DirShadowMap.BindTexturesForReading(2);

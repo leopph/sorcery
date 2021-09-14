@@ -51,6 +51,7 @@ namespace leopph::impl
 			static const std::string s_LightPassFragSrc;
 			static const std::string s_DirLightPassFragSrc;
 			static const std::string s_TextureFragSrc;
+			static const std::string s_AmbLightFragSrc;
 
 			Shader(std::string_view vertSrc, std::string_view fragSrc);
 
