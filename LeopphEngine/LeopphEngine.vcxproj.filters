@@ -32,21 +32,11 @@
     <ClCompile Include="src\components\Transform.cpp" />
     <ClCompile Include="src\rendering\ShadowMap.cpp" />
     <ClCompile Include="src\util\hash\PathHash.cpp" />
-    <ClCompile Include="src\shaders\stringified\skyboxvertex.cpp" />
-    <ClCompile Include="src\shaders\stringified\DirectionalShadowMapFragment.cpp" />
-    <ClCompile Include="src\shaders\stringified\DirectionalShadowMapVertex.cpp" />
-    <ClCompile Include="src\shaders\stringified\ObjectFragment.cpp" />
-    <ClCompile Include="src\shaders\stringified\ObjectVertex.cpp" />
-    <ClCompile Include="src\shaders\stringified\skyboxfragment.cpp" />
     <ClCompile Include="src\components\lighting\SpotLight.cpp" />
     <ClCompile Include="src\components\lighting\AttenuatedLight.cpp" />
     <ClCompile Include="src\util\less\LightCloserToCamera.cpp" />
     <ClCompile Include="src\rendering\renderers\DeferredRenderer.cpp" />
     <ClCompile Include="src\rendering\GeometryBuffer.cpp" />
-    <ClCompile Include="src\shaders\stringified\deferred\GPassObjectFragment.cpp" />
-    <ClCompile Include="src\shaders\stringified\deferred\GPassObjectVertex.cpp" />
-    <ClCompile Include="src\shaders\stringified\deferred\LightPassFragment.cpp" />
-    <ClCompile Include="src\shaders\stringified\deferred\LightPassVertex.cpp" />
     <ClCompile Include="src\events\Event.cpp" />
     <ClCompile Include="src\events\DisplayResolutionChangedEvent.cpp" />
     <ClCompile Include="src\events\EventManager.cpp" />
@@ -71,8 +61,6 @@
     <ClCompile Include="src\rendering\ScreenTexture.cpp" />
     <ClCompile Include="src\rendering\CascadedShadowMap.cpp" />
     <ClCompile Include="src\events\DirShadowMapResChangedEvent.cpp" />
-    <ClCompile Include="src\shaders\stringified\deferred\DirLightPassFragment.cpp" />
-    <ClCompile Include="src\shaders\stringified\TextureFragment.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\Behavior.hpp" />
@@ -152,18 +140,20 @@
     <ClInclude Include="src\rendering\CascadedShadowMap.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="src\shaders\ObjectFragment.frag" />
-    <None Include="src\shaders\ObjectVertex.vert" />
-    <None Include="src\shaders\skyboxvertex.vert" />
-    <None Include="src\shaders\skyboxfragment.frag" />
     <None Include="src\cpp.hint" />
-    <None Include="src\shaders\DirectionalShadowMapVertex.vert" />
-    <None Include="src\shaders\DirectionalShadowMapFragment.frag" />
-    <None Include="src\shaders\deferred\GPassObject.vert" />
-    <None Include="src\shaders\deferred\GPassObject.frag" />
-    <None Include="src\shaders\deferred\LightPass.vert" />
-    <None Include="src\shaders\deferred\LightPass.frag" />
-    <None Include="src\shaders\deferred\DirLightPass.frag" />
-    <None Include="src\shaders\Texture.frag" />
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="src\shaders\TextureFrag.frag" />
+    <CustomBuild Include="src\shaders\SkyboxVert.vert" />
+    <CustomBuild Include="src\shaders\SkyboxFrag.frag" />
+    <CustomBuild Include="src\shaders\forward\ObjectVert.vert" />
+    <CustomBuild Include="src\shaders\forward\ObjectFrag.frag" />
+    <CustomBuild Include="src\shaders\DirShadowMapVert.vert" />
+    <CustomBuild Include="src\shaders\DirShadowMapFrag.frag" />
+    <CustomBuild Include="src\shaders\deferred\LightPassVert.vert" />
+    <CustomBuild Include="src\shaders\deferred\LightPassFrag.frag" />
+    <CustomBuild Include="src\shaders\deferred\GPassObjectVert.vert" />
+    <CustomBuild Include="src\shaders\deferred\GPassObjectFrag.frag" />
+    <CustomBuild Include="src\shaders\deferred\DirLightPassFrag.frag" />
   </ItemGroup>
 </Project>

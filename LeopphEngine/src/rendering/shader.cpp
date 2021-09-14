@@ -22,44 +22,44 @@ namespace leopph::impl
 		switch (type)
 		{
 			case Type::OBJECT:
-				vertexSource = s_VertexSource.c_str();
-				fragmentSource = s_FragmentSource.c_str();
+				vertexSource = s_ObjectVertSource.c_str();
+				fragmentSource = s_ObjectFragSource.c_str();
 				Logger::Instance().Debug("Constructing general shader.");
 				break;
 
 			case Type::SKYBOX:
-				vertexSource = s_SkyboxVertexSource.c_str();
-				fragmentSource = s_SkyboxFragmentSource.c_str();
+				vertexSource = s_SkyboxVertSource.c_str();
+				fragmentSource = s_SkyboxFragSource.c_str();
 				Logger::Instance().Debug("Constructing skybox shader.");
 				break;
 
 			case Type::DIRECTIONAL_SHADOW_MAP:
-				vertexSource = s_DirectionalShadowMapVertexSource.c_str();
-				fragmentSource = s_DirectionalShadowMapFragmentSource.c_str();
+				vertexSource = s_DirShadowMapVertSource.c_str();
+				fragmentSource = s_DirShadowMapFragSource.c_str();
 				Logger::Instance().Debug("Constructing directional shadow map shader.");
 				break;
 
 			case Type::GPASS_OBJECT:
-				vertexSource = s_GPassObjectVertexSource.c_str();
-				fragmentSource = s_GPassObjectFragmentSource.c_str();
+				vertexSource = s_GPassObjectVertSource.c_str();
+				fragmentSource = s_GPassObjectFragSource.c_str();
 				Logger::Instance().Debug("Constructing geometry pass object shader.");
 				break;
 
 			case Type::LIGHTPASS:
-				vertexSource = s_LightPassVertexSource.c_str();
-				fragmentSource = s_LightPassFragmentSource.c_str();
+				vertexSource = s_LightPassVertSource.c_str();
+				fragmentSource = s_LightPassFragSource.c_str();
 				Logger::Instance().Debug("Constructing lighting pass shader.");
 				break;
 
 			case Type::DIRLIGHTPASS:
-				vertexSource = s_LightPassVertexSource.c_str();
-				fragmentSource = s_DirLightPassFragmentSource.c_str();
+				vertexSource = s_LightPassVertSource.c_str();
+				fragmentSource = s_DirLightPassFragSource.c_str();
 				Logger::Instance().Debug("Constructing directional lighting pass shader.");
 				break;
 
 			case Type::TEXTURE:
-				vertexSource = s_LightPassVertexSource.c_str();
-				fragmentSource = s_TextureFragmentSource.c_str();
+				vertexSource = s_LightPassVertSource.c_str();
+				fragmentSource = s_TextureFragSource.c_str();
 				Logger::Instance().Debug("Constructing full screen texture shader.");
 				break;
 		}

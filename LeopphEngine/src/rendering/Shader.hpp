@@ -38,18 +38,18 @@ namespace leopph::impl
 	private:
 		unsigned m_ID;
 
-		static std::string s_VertexSource;
-		static std::string s_FragmentSource;
-		static std::string s_SkyboxVertexSource;
-		static std::string s_SkyboxFragmentSource;
-		static std::string s_DirectionalShadowMapVertexSource;
-		static std::string s_DirectionalShadowMapFragmentSource;
-		static std::string s_GPassObjectVertexSource;
-		static std::string s_GPassObjectFragmentSource;
-		static std::string s_LightPassVertexSource;
-		static std::string s_LightPassFragmentSource;
-		static std::string s_DirLightPassFragmentSource;
-		static std::string s_TextureFragmentSource;
+		static std::string s_ObjectVertSource;
+		static std::string s_ObjectFragSource;
+		static std::string s_SkyboxVertSource;
+		static std::string s_SkyboxFragSource;
+		static std::string s_DirShadowMapVertSource;
+		static std::string s_DirShadowMapFragSource;
+		static std::string s_GPassObjectVertSource;
+		static std::string s_GPassObjectFragSource;
+		static std::string s_LightPassVertSource;
+		static std::string s_LightPassFragSource;
+		static std::string s_DirLightPassFragSource;
+		static std::string s_TextureFragSource;
 
 		const std::filesystem::path m_ProgramFileName;
 
