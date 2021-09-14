@@ -9,7 +9,7 @@
 namespace parser
 {
 	const std::string stringIncludeLine{ "#include <string>\n" };
-	const std::string declType{ "std::string " };
+	const std::string declType{ "const std::string " };
 	const std::string stringOpening{ "{ R\"#fileContents#(" };
 	const std::string stringEnding{ ")#fileContents#\" };" };
 }

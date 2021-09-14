@@ -1,44 +1,50 @@
 #pragma once
 
+#include "Renderer.hpp"
 #include "../CascadedShadowMap.hpp"
 #include "../GeometryBuffer.hpp"
 #include "../ScreenTexture.hpp"
-#include "../Shader.hpp"
-#include "Renderer.hpp"
+#include "../shaders/DeferredDirLightShader.hpp"
+#include "../shaders/DeferredGeometryShader.hpp"
+#include "../shaders/DirShadowMapShader.hpp"
+#include "../shaders/SkyboxShader.hpp"
+#include "../shaders/TextureShader.hpp"
+
 
 
 namespace leopph::impl
 {
-	class DeferredRenderer : public Renderer
+	class DeferredRenderer final : public Renderer
 	{
-	public:
-		DeferredRenderer();
+		public:
+			DeferredRenderer();
 
-		DeferredRenderer(const DeferredRenderer& other) = default;
-		DeferredRenderer(DeferredRenderer&& other) = default;
+			DeferredRenderer(const DeferredRenderer& other) = default;
+			DeferredRenderer(DeferredRenderer&& other) = default;
 
-		DeferredRenderer& operator=(const DeferredRenderer& other) = default;
-		DeferredRenderer& operator=(DeferredRenderer&& other) = default;
+			DeferredRenderer& operator=(const DeferredRenderer& other) = default;
+			DeferredRenderer& operator=(DeferredRenderer&& other) = default;
 
-		~DeferredRenderer() = default;
+			~DeferredRenderer() override = default;
 
-		void Render() override;
+			void Render() override;
 
-	private:
-		void RenderGeometry();
-		void RenderLights();
-		void RenderDirectionalLights();
-		void RenderSkybox() const;
 
-		GeometryBuffer m_GBuffer;
-		CascadedShadowMap m_DirShadowMap;
-		ScreenTexture m_ScreenTexture;
+		private:
+			void RenderGeometry();
+			void RenderLights();
+			void RenderDirectionalLights();
+			void RenderSkybox() const;
 
-		Shader m_GPassObjectShader;
-		Shader m_LightPassShader;
-		Shader m_SkyboxShader;
-		Shader m_DirShadowShader;
-		Shader m_DirLightShader;
-		Shader m_TextureShader;
+			GeometryBuffer m_GBuffer;
+			CascadedShadowMap m_DirShadowMap;
+			ScreenTexture m_ScreenTexture;
+
+			DeferredGeometryShader m_GPassObjectShader;
+			//Shader m_LightPassShader;
+			SkyboxShader m_SkyboxShader;
+			DirShadowMapShader m_DirShadowShader;
+			DeferredDirLightShader m_DirLightShader;
+			TextureShader m_TextureShader;
 	};
 }

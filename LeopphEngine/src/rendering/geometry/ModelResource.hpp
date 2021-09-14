@@ -5,7 +5,7 @@
 #include "../../events/ModelCountChangedEvent.hpp"
 
 #include "../../math/Matrix.hpp"
-#include "../Shader.hpp"
+#include "../shaders/Shader.hpp"
 
 #include <cstddef>
 #include <filesystem>

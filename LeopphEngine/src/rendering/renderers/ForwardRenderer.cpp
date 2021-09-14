@@ -1,5 +1,6 @@
 #include "ForwardRenderer.hpp"
 
+#include "../SkyboxResource.hpp"
 #include "../../components/Camera.hpp"
 #include "../../components/lighting/DirLight.hpp"
 #include "../../components/lighting/Light.hpp"
@@ -10,8 +11,6 @@
 #include "../../math/Matrix.hpp"
 #include "../../math/Vector.hpp"
 #include "../geometry/ModelResource.hpp"
-#include "../Shader.hpp"
-#include "../SkyboxResource.hpp"
 
 #include <glad/glad.h>
 
@@ -23,10 +22,10 @@
 #include <utility>
 
 
+
 namespace leopph::impl
 {
-	ForwardRenderer::ForwardRenderer() :
-		m_ObjectShader{ Shader::Type::OBJECT }, m_SkyboxShader{ Shader::Type::SKYBOX }, m_DirectionalShadowMapShader{ Shader::Type::DIRECTIONAL_SHADOW_MAP }
+	ForwardRenderer::ForwardRenderer()
 	{
 		glEnable(GL_DEPTH_TEST);
 	}
@@ -36,7 +35,9 @@ namespace leopph::impl
 	{
 		/* We don't render if there is no camera to use */
 		if (Camera::Active() == nullptr)
+		{
 			return;
+		}
 
 		m_CurrentFrameViewMatrix = Camera::Active()->ViewMatrix();
 		m_CurrentFrameProjectionMatrix = Camera::Active()->ProjectionMatrix();
@@ -61,7 +62,7 @@ namespace leopph::impl
 			return;
 		}
 
-		const auto& shadowMaps{ DataManager::ShadowMaps() };
+		const auto& shadowMaps{DataManager::ShadowMaps()};
 
 		/* If we don't have a shadow map, we create one */
 		if (shadowMaps.empty())
@@ -69,8 +70,8 @@ namespace leopph::impl
 			DataManager::CreateShadowMap(Vector2{static_cast<float>(Settings::DirectionalShadowMapResolutions()[0])});
 		}
 
-		const auto view{ Matrix4::LookAt(-dirLight->Direction(), Vector3{}, Vector3::Up()) };
-		const auto projection{ Matrix4::Ortographic(-10, 10, 10, -10, Camera::Active()->NearClipPlane(), Camera::Active()->FarClipPlane()) };
+		const auto view{Matrix4::LookAt(-dirLight->Direction(), Vector3{}, Vector3::Up())};
+		const auto projection{Matrix4::Ortographic(-10, 10, 10, -10, Camera::Active()->NearClipPlane(), Camera::Active()->FarClipPlane())};
 		m_CurrentFrameDirectionalTransformMatrix = view * projection;
 
 		m_DirectionalShadowMapShader.Use();
@@ -89,7 +90,7 @@ namespace leopph::impl
 
 	void ForwardRenderer::RenderPointShadowMaps()
 	{
-		const auto& shadowMaps{ DataManager::ShadowMaps() };
+		const auto& shadowMaps{DataManager::ShadowMaps()};
 
 		/* If we lack the necessary number of shadow maps, we create new ones */
 		while (m_CurrentFrameUsedPointLights.size() > shadowMaps.size())
@@ -98,8 +99,8 @@ namespace leopph::impl
 		}
 
 		/* Iterate over the lights and use a different shadow map for each */
-		for (auto shadowMapIt{ DataManager::DirectionalLight() == nullptr ? shadowMaps.begin() : ++shadowMaps.begin()};
-			const auto & pointLight : m_CurrentFrameUsedPointLights)
+		for (auto shadowMapIt{DataManager::DirectionalLight() == nullptr ? shadowMaps.begin() : ++shadowMaps.begin()};
+		     const auto& pointLight : m_CurrentFrameUsedPointLights)
 		{
 			for (const auto& [modelPath, matrices] : m_CurrentFrameMatrices)
 			{
@@ -118,7 +119,7 @@ namespace leopph::impl
 		m_ObjectShader.SetUniform("viewProjectionMatrix", m_CurrentFrameViewMatrix * m_CurrentFrameProjectionMatrix);
 		m_ObjectShader.SetUniform("cameraPosition", Camera::Active()->entity.Transform->Position());
 
-		std::size_t usedTextureUnits{ 0 };
+		std::size_t usedTextureUnits{0};
 
 		/* Set up ambient light data */
 		m_ObjectShader.SetUniform("ambientLight", AmbientLight::Instance().Intensity());
@@ -159,7 +160,7 @@ namespace leopph::impl
 		m_ObjectShader.SetUniform("spotLightCount", static_cast<int>(m_CurrentFrameUsedSpotLights.size()));
 		for (std::size_t i = 0; i < m_CurrentFrameUsedSpotLights.size(); i++)
 		{
-			const auto& spotLight{ m_CurrentFrameUsedSpotLights[i] };
+			const auto& spotLight{m_CurrentFrameUsedSpotLights[i]};
 
 			m_ObjectShader.SetUniform("spotLights[" + std::to_string(i) + "].position", spotLight->entity.Transform->Position());
 			m_ObjectShader.SetUniform("spotLights[" + std::to_string(i) + "].direction", spotLight->entity.Transform->Forward());
@@ -182,7 +183,7 @@ namespace leopph::impl
 
 	void ForwardRenderer::RenderSkybox() const
 	{
-		if (const auto& skybox{ Camera::Active()->Background().skybox }; skybox != nullptr)
+		if (const auto& skybox{Camera::Active()->Background().skybox}; skybox != nullptr)
 		{
 			m_SkyboxShader.Use();
 			m_SkyboxShader.SetUniform("viewMatrix", static_cast<Matrix4>(static_cast<Matrix3>(m_CurrentFrameViewMatrix)));

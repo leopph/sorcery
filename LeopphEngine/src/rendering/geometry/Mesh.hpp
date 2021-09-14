@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../Material.hpp"
-#include "../Shader.hpp"
+#include "../shaders/Shader.hpp"
 #include "../vertex.h"
 
 #include <cstddef>

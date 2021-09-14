@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../data/managed/UniqueResource.hpp"
-#include "Shader.hpp"
+#include "shaders/Shader.hpp"
 
 #include <array>
 #include <filesystem>

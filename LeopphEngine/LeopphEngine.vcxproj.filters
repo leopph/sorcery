@@ -8,7 +8,7 @@
     <ClCompile Include="src\components\lighting\Light.cpp" />
     <ClCompile Include="src\rendering\geometry\Mesh.cpp" />
     <ClCompile Include="src\entity\Entity.cpp" />
-    <ClCompile Include="src\rendering\Shader.cpp" />
+    <ClCompile Include="src\rendering\shaders\Shader.cpp" />
     <ClCompile Include="src\timing\leopphtime.cpp" />
     <ClCompile Include="src\windowing\glwindow.cpp" />
     <ClCompile Include="src\components\lighting\PointLight.cpp" />
@@ -61,6 +61,12 @@
     <ClCompile Include="src\rendering\ScreenTexture.cpp" />
     <ClCompile Include="src\rendering\CascadedShadowMap.cpp" />
     <ClCompile Include="src\events\DirShadowMapResChangedEvent.cpp" />
+    <ClCompile Include="src\rendering\shaders\SkyboxShader.cpp" />
+    <ClCompile Include="src\rendering\shaders\ForwardObjectShader.cpp" />
+    <ClCompile Include="src\rendering\shaders\TextureShader.cpp" />
+    <ClCompile Include="src\rendering\shaders\DirShadowMapShader.cpp" />
+    <ClCompile Include="src\rendering\shaders\DeferredDirLightShader.cpp" />
+    <ClCompile Include="src\rendering\shaders\DeferredGeometryShader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\Behavior.hpp" />
@@ -79,7 +85,7 @@
     <ClInclude Include="src\components\lighting\PointLight.hpp" />
     <ClInclude Include="src\math\Quaternion.hpp" />
     <ClInclude Include="src\rendering\renderers\ForwardRenderer.hpp" />
-    <ClInclude Include="src\rendering\Shader.hpp" />
+    <ClInclude Include="src\rendering\shaders\Shader.hpp" />
     <ClInclude Include="src\timing\leopphtime.h" />
     <ClInclude Include="src\math\Vector.hpp" />
     <ClInclude Include="src\rendering\vertex.h" />
@@ -138,22 +144,28 @@
     <ClInclude Include="src\rendering\ScreenTexture.hpp" />
     <ClInclude Include="src\events\DirShadowMapResChangedEvent.hpp" />
     <ClInclude Include="src\rendering\CascadedShadowMap.hpp" />
+    <ClInclude Include="src\rendering\shaders\SkyboxShader.hpp" />
+    <ClInclude Include="src\rendering\shaders\ForwardObjectShader.hpp" />
+    <ClInclude Include="src\rendering\shaders\TextureShader.hpp" />
+    <ClInclude Include="src\rendering\shaders\DirShadowMapShader.hpp" />
+    <ClInclude Include="src\rendering\shaders\DeferredDirLightShader.hpp" />
+    <ClInclude Include="src\rendering\shaders\DeferredGeometryShader.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\cpp.hint" />
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="src\shaders\TextureFrag.frag" />
-    <CustomBuild Include="src\shaders\SkyboxVert.vert" />
-    <CustomBuild Include="src\shaders\SkyboxFrag.frag" />
-    <CustomBuild Include="src\shaders\forward\ObjectVert.vert" />
-    <CustomBuild Include="src\shaders\forward\ObjectFrag.frag" />
-    <CustomBuild Include="src\shaders\DirShadowMapVert.vert" />
-    <CustomBuild Include="src\shaders\DirShadowMapFrag.frag" />
-    <CustomBuild Include="src\shaders\deferred\LightPassVert.vert" />
-    <CustomBuild Include="src\shaders\deferred\LightPassFrag.frag" />
-    <CustomBuild Include="src\shaders\deferred\GPassObjectVert.vert" />
-    <CustomBuild Include="src\shaders\deferred\GPassObjectFrag.frag" />
-    <CustomBuild Include="src\shaders\deferred\DirLightPassFrag.frag" />
+    <CustomBuild Include="src\rendering\shaders\glsl\TextureFrag.frag" />
+    <CustomBuild Include="src\rendering\shaders\glsl\SkyboxVert.vert" />
+    <CustomBuild Include="src\rendering\shaders\glsl\SkyboxFrag.frag" />
+    <CustomBuild Include="src\rendering\shaders\glsl\forward\ObjectVert.vert" />
+    <CustomBuild Include="src\rendering\shaders\glsl\forward\ObjectFrag.frag" />
+    <CustomBuild Include="src\rendering\shaders\glsl\DirShadowMapVert.vert" />
+    <CustomBuild Include="src\rendering\shaders\glsl\DirShadowMapFrag.frag" />
+    <CustomBuild Include="src\rendering\shaders\glsl\deferred\LightPassVert.vert" />
+    <CustomBuild Include="src\rendering\shaders\glsl\deferred\LightPassFrag.frag" />
+    <CustomBuild Include="src\rendering\shaders\glsl\deferred\GPassObjectVert.vert" />
+    <CustomBuild Include="src\rendering\shaders\glsl\deferred\GPassObjectFrag.frag" />
+    <CustomBuild Include="src\rendering\shaders\glsl\deferred\DirLightPassFrag.frag" />
   </ItemGroup>
 </Project>

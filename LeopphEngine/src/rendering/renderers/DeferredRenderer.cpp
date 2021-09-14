@@ -12,13 +12,7 @@
 
 namespace leopph::impl
 {
-	DeferredRenderer::DeferredRenderer() :
-		m_GPassObjectShader{Shader::Type::GPASS_OBJECT},
-		m_LightPassShader{Shader::Type::LIGHTPASS},
-		m_SkyboxShader{Shader::Type::SKYBOX},
-		m_DirShadowShader{Shader::Type::DIRECTIONAL_SHADOW_MAP},
-		m_DirLightShader{Shader::Type::DIRLIGHTPASS},
-		m_TextureShader{Shader::Type::TEXTURE}
+	DeferredRenderer::DeferredRenderer()
 	{
 		glEnable(GL_DEPTH_TEST);
 		glDepthFunc(GL_LESS);
@@ -163,7 +157,7 @@ namespace leopph::impl
 
 	void DeferredRenderer::RenderLights()
 	{
-		m_LightPassShader.Use();
+		/*m_LightPassShader.Use();
 
 		glBindTextureUnit(0, m_GBuffer.positionTextureName);
 		glBindTextureUnit(1, m_GBuffer.normalTextureName);
@@ -179,13 +173,13 @@ namespace leopph::impl
 		m_LightPassShader.SetUniform("specularTexture", 4);
 		m_LightPassShader.SetUniform("shineTexture", 5);
 
-		m_LightPassShader.SetUniform("cameraPosition", Camera::Active()->entity.Transform->Position());
+		m_LightPassShader.SetUniform("cameraPosition", Camera::Active()->entity.Transform->Position());*/
 
 		/* Set up ambient light data */
-		m_LightPassShader.SetUniform("ambientLight", AmbientLight::Instance().Intensity());
+		//m_LightPassShader.SetUniform("ambientLight", AmbientLight::Instance().Intensity());
 
 		/* Set up DirLight data */
-		m_LightPassShader.SetUniform("existsDirLight", false);
+		//m_LightPassShader.SetUniform("existsDirLight", false);
 		/*if (const auto dirLight = DataManager::DirectionalLight(); dirLight != nullptr)
 		{
 			m_LightPassShader.SetUniform("existsDirLight", true);
@@ -199,7 +193,7 @@ namespace leopph::impl
 		}*/
 
 		/* Set up PointLight data */
-		m_LightPassShader.SetUniform("pointLightCount", static_cast<int>(m_CurrentFrameUsedPointLights.size()));
+		/*m_LightPassShader.SetUniform("pointLightCount", static_cast<int>(m_CurrentFrameUsedPointLights.size()));
 		for (std::size_t i = 0; i < m_CurrentFrameUsedPointLights.size(); i++)
 		{
 			const auto& pointLight = m_CurrentFrameUsedPointLights[i];
@@ -210,10 +204,10 @@ namespace leopph::impl
 			m_LightPassShader.SetUniform("pointLights[" + std::to_string(i) + "].constant", pointLight->Constant());
 			m_LightPassShader.SetUniform("pointLights[" + std::to_string(i) + "].linear", pointLight->Linear());
 			m_LightPassShader.SetUniform("pointLights[" + std::to_string(i) + "].quadratic", pointLight->Quadratic());
-		}
+		}*/
 
 		/* Set up SpotLight data */
-		m_LightPassShader.SetUniform("spotLightCount", static_cast<int>(m_CurrentFrameUsedSpotLights.size()));
+		/*m_LightPassShader.SetUniform("spotLightCount", static_cast<int>(m_CurrentFrameUsedSpotLights.size()));
 		for (std::size_t i = 0; i < m_CurrentFrameUsedSpotLights.size(); i++)
 		{
 			const auto& spotLight{m_CurrentFrameUsedSpotLights[i]};
@@ -229,7 +223,7 @@ namespace leopph::impl
 			m_LightPassShader.SetUniform("spotLights[" + std::to_string(i) + "].outerAngleCosine", math::Cos(math::ToRadians(spotLight->OuterAngle())));
 		}
 
-		m_ScreenTexture.Draw();
+		m_ScreenTexture.Draw();*/
 	}
 
 
