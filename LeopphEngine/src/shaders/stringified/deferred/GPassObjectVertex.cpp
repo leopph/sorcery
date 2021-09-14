@@ -11,14 +11,19 @@ layout (location = 7) in mat4 inNormalMatrix;
 layout (location = 0) out vec3 outFragPos;
 layout (location = 1) out vec3 outNormal;
 layout (location = 2) out vec2 outTexCoords;
+layout (location = 3) out float outClipSpaceZ;
 
 uniform mat4 viewProjectionMatrix;
 
 
 void main()
 {
-    outFragPos = vec3(vec4(inPos, 1.0) * inModelMatrix);
+    vec4 fragPosWorldSpace = vec4(inPos, 1.0) * inModelMatrix;
+
+    outFragPos = fragPosWorldSpace.xyz;
     outNormal = inNormal * mat3(inNormalMatrix);
     outTexCoords = inTexCoords;
-    gl_Position = vec4(outFragPos, 1.0) * viewProjectionMatrix;
+
+    gl_Position = fragPosWorldSpace * viewProjectionMatrix;
+    outClipSpaceZ = gl_Position.z;
 })#fileContents#" };

@@ -3,6 +3,7 @@
 #include "../events/DirShadowMapResChangedEvent.hpp"
 #include "../events/EventReceiver.hpp"
 #include "../math/Matrix.hpp"
+#include "../math/Vector.hpp"
 
 #include <cstddef>
 #include <vector>
@@ -32,6 +33,7 @@ namespace leopph::impl
 		void Clear() const;
 
 		[[nodiscard]] Matrix4 WorldToClipMatrix(std::size_t cascadeIndex, const Matrix4& cameraInverseMatrix, const Matrix4& lightViewMatrix) const;
+		[[nodiscard]] Vector2 CascadeBounds(std::size_t cascadeIndex) const;
 
 
 	private:

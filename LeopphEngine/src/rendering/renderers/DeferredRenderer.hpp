@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../../math/Matrix.hpp"
 #include "../CascadedShadowMap.hpp"
 #include "../GeometryBuffer.hpp"
 #include "../ScreenTexture.hpp"
@@ -41,7 +40,5 @@ namespace leopph::impl
 		Shader m_DirShadowShader;
 		Shader m_DirLightShader;
 		Shader m_TextureShader;
-
-		std::vector<Matrix4> m_CurrentFrameDirLightMatrices;
 	};
 }

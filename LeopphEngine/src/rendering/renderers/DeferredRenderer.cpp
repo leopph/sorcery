@@ -3,12 +3,11 @@
 #include "../../components/Camera.hpp"
 #include "../../config/Settings.hpp"
 #include "../../data/DataManager.hpp"
+#include "../../math/Matrix.hpp"
 #include "../../util/less/LightCloserToCamera.hpp"
 #include "../../windowing/window.h"
 
 #include <glad/glad.h>
-
-#include <set>
 
 
 namespace leopph::impl
@@ -80,20 +79,22 @@ namespace leopph::impl
 		}
 
 		const auto cameraInverseMatrix{m_CurrentFrameViewMatrix.Inverse()};
-		const auto lightViewMatrix{Matrix4::LookAt(Vector3{}, dirLight->Direction(), Vector3::Up())};
+		const auto lightViewMatrix{Matrix4::LookAt(100 * -dirLight->Direction(), Vector3{}, Vector3::Up())}; // TODO light pos
 
-		m_CurrentFrameDirLightMatrices.clear();
+		static std::vector<Matrix4> dirLightMatrices;
+		dirLightMatrices.clear();
+
 		m_DirShadowShader.Use();
 
 		for (std::size_t i = 0; i < Settings::CameraDirectionalShadowCascadeCount(); ++i)
 		{
 			const auto lightWorldToClip{m_DirShadowMap.WorldToClipMatrix(i, cameraInverseMatrix, lightViewMatrix)};
-			m_CurrentFrameDirLightMatrices.push_back(lightWorldToClip);
+			dirLightMatrices.push_back(lightWorldToClip);
 
 			m_DirShadowMap.BindTextureForWriting(i);
 			m_DirShadowMap.Clear();
 
-			m_DirShadowShader.SetUniform("lightClipMatrix", m_CurrentFrameDirLightMatrices.back());
+			m_DirShadowShader.SetUniform("lightClipMatrix", lightWorldToClip);
 
 			for (const auto& [modelPath, matrices] : m_CurrentFrameMatrices)
 			{
@@ -110,14 +111,20 @@ namespace leopph::impl
 		glBindTextureUnit(3, m_GBuffer.specularTextureName);
 		glBindTextureUnit(4, m_GBuffer.shineTextureName);
 
-		m_DirLightShader.SetUniform("u_PositionTexture", 0);
-		m_DirLightShader.SetUniform("u_NormalTexture", 1);
-		m_DirLightShader.SetUniform("u_DiffuseTexture", 2);
-		m_DirLightShader.SetUniform("u_SpecularTexture", 3);
-		m_DirLightShader.SetUniform("u_ShineTexture", 4);
+		auto texCount{0};
 
-		m_DirShadowMap.BindTexturesForReading(5);
-		m_DirLightShader.SetUniform("u_ShadowMaps", 5);
+		m_DirLightShader.SetUniform("u_PositionTexture", texCount++);
+		m_DirLightShader.SetUniform("u_NormalTexture", texCount++);
+		m_DirLightShader.SetUniform("u_DiffuseTexture", texCount++);
+		m_DirLightShader.SetUniform("u_SpecularTexture", texCount++);
+		m_DirLightShader.SetUniform("u_ShineTexture", texCount++);
+
+		m_DirShadowMap.BindTexturesForReading(texCount);
+
+		for (std::size_t i = 0; i < Settings::CameraDirectionalShadowCascadeCount(); i++)
+		{
+			m_DirLightShader.SetUniform("u_ShadowMaps[" + std::to_string(i) + "]", texCount++);
+		}
 
 		m_DirLightShader.SetUniform("u_DirLight.direction", dirLight->Direction());
 		m_DirLightShader.SetUniform("u_DirLight.diffuseColor", dirLight->Diffuse());
@@ -127,14 +134,28 @@ namespace leopph::impl
 		m_DirLightShader.SetUniform("u_CascadeCount", static_cast<unsigned>(Settings::CameraDirectionalShadowCascadeCount()));
 		m_DirLightShader.SetUniform("u_CascadeDepth", (Camera::Active()->FarClipPlane() - Camera::Active()->NearClipPlane()) / Settings::CameraDirectionalShadowCascadeCount());
 
-		m_DirLightShader.SetUniform("u_LightClipMatrices", m_CurrentFrameDirLightMatrices);
+		m_DirLightShader.SetUniform("u_LightClipMatrices", dirLightMatrices);
+
+		static std::vector<float> cascadeFarBounds;
+		cascadeFarBounds.clear();
+
+		for (std::size_t i = 0; i < Settings::CameraDirectionalShadowCascadeCount(); ++i)
+		{
+			const auto viewSpaceBound{m_DirShadowMap.CascadeBounds(i)[1]};
+			const Vector4 viewSpaceBoundVector{0, 0, viewSpaceBound, 1};
+			const auto clipSpaceBoundVector{viewSpaceBoundVector * m_CurrentFrameProjectionMatrix};
+			const auto clipSpaceBound{clipSpaceBoundVector[2]};
+			cascadeFarBounds.push_back(clipSpaceBound);
+		}
+
+		m_DirLightShader.SetUniform("u_CascadeFarBounds", cascadeFarBounds);
 
 		m_DirLightShader.Use();
 		m_ScreenTexture.Draw();
 
 		/*m_TextureShader.Use();
-		m_DirShadowMap.BindTexturesForReading(0);
-		m_TextureShader.SetUniform("u_Texture", 0);
+		m_DirShadowMap.BindTexturesForReading(2);
+		m_TextureShader.SetUniform("u_Texture", 2);
 		m_ScreenTexture.Draw();
 		m_DirShadowMap.UnbindTexturesFromReading();*/
 	}

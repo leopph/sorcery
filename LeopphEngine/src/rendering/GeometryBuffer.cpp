@@ -63,7 +63,7 @@ namespace leopph::impl
 
 		glCreateTextures(GL_TEXTURE_2D, static_cast<GLsizei>(m_Textures.size()), m_Textures.data());
 
-		glTextureStorage2D(m_Textures[Position], 1, GL_RGB32F, static_cast<GLint>(res[0]), static_cast<GLint>(res[1]));
+		glTextureStorage2D(m_Textures[Position], 1, GL_RGBA32F, static_cast<GLint>(res[0]), static_cast<GLint>(res[1]));
 		glTextureParameteri(m_Textures[Position], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTextureParameteri(m_Textures[Position], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 

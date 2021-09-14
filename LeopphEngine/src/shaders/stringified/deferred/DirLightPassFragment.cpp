@@ -31,6 +31,7 @@ uniform sampler2D u_DiffuseTexture;
 uniform sampler2D u_SpecularTexture;
 uniform sampler2D u_ShineTexture;
 uniform sampler2D u_ShadowMaps[MAX_DIR_LIGHT_CASCADE_COUNT];
+uniform float u_CascadeFarBounds[MAX_DIR_LIGHT_CASCADE_COUNT];
 
 
 
@@ -52,22 +53,32 @@ vec3 CalculateBlinnPhong(vec3 fragPos, vec3 fragNormal, vec3 fragDiffuse, vec3 f
 
 
 
-float CalculateShadow(vec3 fragPos, vec3 fragNormal)
+float CalculateShadow(vec3 fragPos, float fragPosCameraClipZ, vec3 fragNormal)
 {
-	vec4 fragPosLightSpace = vec4(fragPos, 1) * u_LightClipMatrices[0];
+	int cascadeIndex = -1;
+	for (int i = 0; i < u_CascadeCount; ++i)
+	{
+		if (fragPosCameraClipZ < u_CascadeFarBounds[i])
+		{
+			cascadeIndex = i;
+			break;
+		}
+	}
+
+	vec4 fragPosLightSpace = vec4(fragPos, 1) * u_LightClipMatrices[cascadeIndex];
 	vec3 normalizedPos = fragPosLightSpace.xyz;
 	normalizedPos *= 0.5;
 	normalizedPos += 0.5;
 
-	vec2 texelSize = 1.0 / textureSize(u_ShadowMaps[0], 0);
-	float shadow = 0;
+	vec2 texelSize = 1.0 / textureSize(u_ShadowMaps[cascadeIndex], 0);
 	float bias = max(MAX_SHADOW_BIAS * (1.0 - dot(fragNormal, -u_DirLight.direction)), MIN_SHADOW_BIAS);
+	float shadow = 0;
 
 	for (int i = -1; i <= 1; i++)
 	{
 		for (int j = -1; j <= 1; j++)
 		{
-			float pcfDepth = texture(u_ShadowMaps[0], normalizedPos.xy + vec2(i, j) * texelSize).r;
+			float pcfDepth = texture(u_ShadowMaps[cascadeIndex], normalizedPos.xy + vec2(i, j) * texelSize).r;
 			shadow += normalizedPos.z - bias > pcfDepth ? 1 : 0;
 		}
 	}
@@ -79,14 +90,14 @@ float CalculateShadow(vec3 fragPos, vec3 fragNormal)
 
 void main()
 {
-    vec3 fragPos = texture(u_PositionTexture, in_TexCoords).rgb;
+    vec4 fragPos = texture(u_PositionTexture, in_TexCoords);
     vec3 fragNormal = texture(u_NormalTexture, in_TexCoords).rgb;
     vec3 fragDiffuse = texture(u_DiffuseTexture, in_TexCoords).rgb;
     vec3 fragSpecular = texture(u_SpecularTexture, in_TexCoords).rgb;
 	float fragShine = texture(u_ShineTexture, in_TexCoords).r;
 
-	vec3 light = CalculateBlinnPhong(fragPos, fragNormal, fragDiffuse, fragSpecular, fragShine);
-	light *= CalculateShadow(fragPos, fragNormal);
+	vec3 light = CalculateBlinnPhong(fragPos.xyz, fragNormal, fragDiffuse, fragSpecular, fragShine);
+	light *= CalculateShadow(fragPos.xyz, fragPos.w, fragNormal);
 
 	out_FragmentColor = vec4(light, 1);
 })#fileContents#" };

@@ -110,8 +110,21 @@ namespace leopph::impl
 			max = Vector3{std::max(max[0], lightSpaceVertex[0]), std::max(max[1], lightSpaceVertex[1]), std::max(max[2], lightSpaceVertex[2])};
 		});
 
-		return lightViewMatrix * Matrix4::Ortographic(min[0], max[0], max[1], min[1], min[2] - 100, max[2]); // TODO make near clip plane offset a parameter for light or calculate bounding spheres and measure distance
+		return lightViewMatrix * Matrix4::Ortographic(min[0], max[0], max[1], min[1], 0, max[2]);
 	}
+
+
+	Vector2 CascadedShadowMap::CascadeBounds(const std::size_t cascadeIndex) const
+	{
+		const auto& camera{*Camera::Active()};
+		const auto cascadeDepth{(camera.FarClipPlane() - camera.NearClipPlane()) / static_cast<float>(m_TexIds.size())};
+		return Vector2
+		{
+			camera.NearClipPlane() + static_cast<float>(cascadeIndex) * cascadeDepth,
+			camera.NearClipPlane() + static_cast<float>(cascadeIndex + 1) * cascadeDepth
+		};
+	}
+
 
 
 	void CascadedShadowMap::OnEventReceived(const DirShadowMapResChangedEvent& event)

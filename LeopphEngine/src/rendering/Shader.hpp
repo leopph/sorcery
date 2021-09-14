@@ -31,6 +31,7 @@ namespace leopph::impl
 		void SetUniform(std::string_view name, float value) const;
 		void SetUniform(std::string_view name, const Vector3& value) const;
 		void SetUniform(std::string_view name, const Matrix4& value) const;
+		void SetUniform(std::string_view name, const std::vector<float>& value) const;
 		void SetUniform(std::string_view name, const std::vector<Vector3>& value) const;
 		void SetUniform(std::string_view name, const std::vector<Matrix4>& value) const;
 

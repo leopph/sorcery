@@ -243,6 +243,12 @@ namespace leopph::impl
 	}
 
 
+	void Shader::SetUniform(const std::string_view name, const std::vector<float>& value) const
+	{
+		glProgramUniform1fv(m_ID, glGetUniformLocation(m_ID, name.data()), static_cast<GLsizei>(value.size()), value.data());
+	}
+
+
 	void Shader::SetUniform(std::string_view name, const std::vector<Vector3>& value) const
 	{
 		glProgramUniform3fv(m_ID, glGetUniformLocation(m_ID, name.data()), value.size(), reinterpret_cast<const GLfloat*>(value.data()));

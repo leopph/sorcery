@@ -23,8 +23,9 @@ struct Material
 layout (location = 0) in vec3 inFragPos;
 layout (location = 1) in vec3 inNormal;
 layout (location = 2) in vec2 inTexCoords;
+layout (location = 3) in float inClipSpaceZ;
 
-layout (location = 0) out vec3 outPosition;
+layout (location = 0) out vec4 outPosition;
 layout (location = 1) out vec3 outNormal;
 layout (location = 2) out vec3 outAmbientColor;
 layout (location = 3) out vec3 outDiffuseColor;
@@ -36,7 +37,7 @@ uniform Material material;
 
 void main()
 {
-    outPosition = inFragPos;
+    outPosition = vec4(inFragPos, inClipSpaceZ);
     outNormal = normalize(inNormal);
     outAmbientColor = material.ambientColor;
     outDiffuseColor = material.diffuseColor;
