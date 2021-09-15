@@ -6,6 +6,8 @@
 #include "../shaders/ForwardObjectShader.hpp"
 #include "../shaders/SkyboxShader.hpp"
 
+#include <optional>
+
 
 
 namespace leopph::impl
@@ -17,15 +19,22 @@ namespace leopph::impl
 			void Render() override;
 
 		private:
-			void RenderDirectionalShadowMap();
-			void RenderPointShadowMaps();
-			void RenderShadedObjects();
-			void RenderSkybox() const;
+			[[nodiscard]] std::optional<Matrix4> RenderDirectionalShadowMap(const std::unordered_map<const ModelResource*, std::pair<std::vector<Matrix4>, std::vector<Matrix4>>>& modelsAndMats) const;
+
+			static void RenderPointShadowMaps(const std::vector<const PointLight*>& pointLights,
+									   const std::unordered_map<const ModelResource*, std::pair<std::vector<Matrix4>, std::vector<Matrix4>>>& modelsAndMats);
+
+			void RenderShadedObjects(const Matrix4& camViewMat,
+									 const Matrix4& camProjMat,
+									 const std::optional<Matrix4>& lightTransformMat,
+									 const std::unordered_map<const ModelResource*, std::pair<std::vector<Matrix4>, std::vector<Matrix4>>>& modelsAndMats,
+									 const std::vector<const PointLight*>& pointLights,
+									 const std::vector<const SpotLight*>& spotLights) const;
+
+			void RenderSkybox(const Matrix4& camViewMat, const Matrix4& camProjMat) const;
 
 			ForwardObjectShader m_ObjectShader;
 			SkyboxShader m_SkyboxShader;
 			DirShadowMapShader m_DirectionalShadowMapShader;
-
-			Matrix4 m_CurrentFrameDirectionalTransformMatrix;
 	};
 }

@@ -25,39 +25,40 @@ namespace leopph::impl
 		if (Camera::Active() == nullptr)
 			return;
 
-		m_CurrentFrameViewMatrix = Camera::Active()->ViewMatrix();
-		m_CurrentFrameProjectionMatrix = Camera::Active()->ProjectionMatrix();
+		const auto camViewMat{Camera::Active()->ViewMatrix()};
+		const auto camProjMat{Camera::Active()->ProjectionMatrix()};
 
-		CalcAndCollectMatrices();
-		CollectPointLights();
-		CollectSpotLights();
+		const auto& modelsAndMats{CalcAndCollectMatrices()};
+		const auto& pointLights{CollectPointLights()};
+		const auto& spotLights{CollectSpotLights()};
 
-		RenderGeometry();
+		RenderGeometry(camViewMat, camProjMat, modelsAndMats);
 
 		glEnable(GL_BLEND);
 		glBlendEquation(GL_FUNC_ADD);
 		glBlendFunc(GL_ONE, GL_ONE);
 		RenderAmbientLight();
-		RenderDirectionalLights();
+		RenderDirectionalLights(camViewMat, camProjMat, modelsAndMats);
 		//RenderLights();
 		glDisable(GL_BLEND);
 
-		RenderSkybox();
+		RenderSkybox(camViewMat, camProjMat);
 	}
 
 
-	void DeferredRenderer::RenderGeometry()
+	void DeferredRenderer::RenderGeometry(const Matrix4& camViewMat,
+										  const Matrix4& camProjMat,
+										  const std::unordered_map<const ModelResource*, std::pair<std::vector<Matrix4>, std::vector<Matrix4>>>& modelsAndMats) const
 	{
 		m_GBuffer.Clear();
 		m_GBuffer.Bind();
 
-		m_GPassObjectShader.SetUniform("viewProjectionMatrix", m_CurrentFrameViewMatrix * m_CurrentFrameProjectionMatrix);
-
+		m_GPassObjectShader.SetUniform("viewProjectionMatrix", camViewMat * camProjMat);
 		m_GPassObjectShader.Use();
 
-		for (const auto& [modelPath, matrices] : m_CurrentFrameMatrices)
+		for (const auto& [modelRes, matrices] : modelsAndMats)
 		{
-			static_cast<ModelResource*>(DataManager::Find(modelPath))->DrawShaded(m_GPassObjectShader, matrices.first, matrices.second, 0);
+			modelRes->DrawShaded(m_GPassObjectShader, matrices.first, matrices.second, 0);
 		}
 
 		m_GBuffer.Unbind();
@@ -78,7 +79,9 @@ namespace leopph::impl
 	}
 
 
-	void DeferredRenderer::RenderDirectionalLights()
+	void DeferredRenderer::RenderDirectionalLights(const Matrix4& camViewMat,
+												   const Matrix4& camProjMat,
+												   const std::unordered_map<const ModelResource*, std::pair<std::vector<Matrix4>, std::vector<Matrix4>>>& modelsAndMats)
 	{
 		const auto& dirLight{DataManager::DirectionalLight()};
 
@@ -87,7 +90,7 @@ namespace leopph::impl
 			return;
 		}
 
-		const auto cameraInverseMatrix{m_CurrentFrameViewMatrix.Inverse()};
+		const auto cameraInverseMatrix{camViewMat.Inverse()};
 		const auto lightViewMatrix{Matrix4::LookAt(100 * -dirLight->Direction(), Vector3{}, Vector3::Up())}; // TODO light pos
 
 		static std::vector<Matrix4> dirLightMatrices;
@@ -105,9 +108,9 @@ namespace leopph::impl
 
 			m_DirShadowShader.SetUniform("lightClipMatrix", lightWorldToClip);
 
-			for (const auto& [modelPath, matrices] : m_CurrentFrameMatrices)
+			for (const auto& [modelRes, matrices] : modelsAndMats)
 			{
-				static_cast<ModelResource*>(DataManager::Find(modelPath))->DrawDepth(matrices.first);
+				modelRes->DrawDepth(matrices.first);
 			}
 
 		}
@@ -152,7 +155,7 @@ namespace leopph::impl
 		{
 			const auto viewSpaceBound{m_DirShadowMap.CascadeBounds(i)[1]};
 			const Vector4 viewSpaceBoundVector{0, 0, viewSpaceBound, 1};
-			const auto clipSpaceBoundVector{viewSpaceBoundVector * m_CurrentFrameProjectionMatrix};
+			const auto clipSpaceBoundVector{viewSpaceBoundVector * camProjMat};
 			const auto clipSpaceBound{clipSpaceBoundVector[2]};
 			cascadeFarBounds.push_back(clipSpaceBound);
 		}
@@ -244,15 +247,15 @@ namespace leopph::impl
 	}
 
 
-	void DeferredRenderer::RenderSkybox() const
+	void DeferredRenderer::RenderSkybox(const Matrix4& camViewMat, const Matrix4& camProjMat) const
 	{
 		const auto& window{Window::Get()};
 		glBlitNamedFramebuffer(m_GBuffer.frameBufferName, 0, 0, 0, window.Width(), window.Height(), 0, 0, window.Width(), window.Height(), GL_DEPTH_BUFFER_BIT, GL_NEAREST);
 
 		if (const auto& skybox{Camera::Active()->Background().skybox}; skybox != nullptr)
 		{
-			m_SkyboxShader.SetUniform("viewMatrix", static_cast<Matrix4>(static_cast<Matrix3>(m_CurrentFrameViewMatrix)));
-			m_SkyboxShader.SetUniform("projectionMatrix", m_CurrentFrameProjectionMatrix);
+			m_SkyboxShader.SetUniform("viewMatrix", static_cast<Matrix4>(static_cast<Matrix3>(camViewMat)));
+			m_SkyboxShader.SetUniform("projectionMatrix", camProjMat);
 
 			m_SkyboxShader.Use();
 			static_cast<SkyboxResource*>(DataManager::Find(skybox->AllFilePaths()))->Draw(m_SkyboxShader);

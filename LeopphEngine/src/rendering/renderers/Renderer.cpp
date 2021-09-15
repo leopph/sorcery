@@ -2,16 +2,16 @@
 
 #include "DeferredRenderer.hpp"
 #include "ForwardRenderer.hpp"
-
-#include "../../data/DataManager.hpp"
 #include "../../components/Model.hpp"
 #include "../../config/Settings.hpp"
+#include "../../data/DataManager.hpp"
 #include "../../util/less/LightCloserToCamera.hpp"
 
 #include <algorithm>
 #include <cstddef>
 #include <iterator>
 #include <set>
+
 
 
 namespace leopph::impl
@@ -32,17 +32,18 @@ namespace leopph::impl
 	Renderer::~Renderer() = default;
 
 
-	void Renderer::CalcAndCollectMatrices()
+	const std::unordered_map<const ModelResource*, std::pair<std::vector<Matrix4>, std::vector<Matrix4>>>& Renderer::CalcAndCollectMatrices()
 	{
-		m_CurrentFrameMatrices.clear();
+		static std::unordered_map<const ModelResource*, std::pair<std::vector<Matrix4>, std::vector<Matrix4>>> ret;
+		ret.clear();
 
 		for (const auto& modelResource : DataManager::Models())
 		{
-			auto& [models, normals] = m_CurrentFrameMatrices.try_emplace(modelResource->Path).first->second;
+			auto& [models, normals] = ret.try_emplace(modelResource).first->second;
 
 			for (const auto& handle : DataManager::ModelComponents(modelResource))
 			{
-				const auto& transform{ *static_cast<const Model*>(handle)->entity.Transform };
+				const auto& transform{*static_cast<const Model*>(handle)->entity.Transform};
 
 				if (transform.WasAltered)
 				{
@@ -60,13 +61,16 @@ namespace leopph::impl
 				normals.emplace_back(normal);
 			}
 		}
+
+		return ret;
 	}
 
 
-	void Renderer::CollectPointLights()
+	const std::vector<const PointLight*>& Renderer::CollectPointLights()
 	{
 		/* This set stores lights in an ascending order based on distance from camera */
 		static std::set<const PointLight*, LightCloserToCamera> allPointsLightsOrdered;
+		static std::vector<const PointLight*> ret;
 
 		allPointsLightsOrdered.clear();
 
@@ -76,36 +80,41 @@ namespace leopph::impl
 			allPointsLightsOrdered.emplace(light);
 		}
 
-		m_CurrentFrameUsedPointLights.clear();
+		ret.clear();
 
 		/* We collect the first MAX_POINT_LIGHTS number of them */
-		for (std::size_t count = 0; const auto & pointLight : allPointsLightsOrdered)
+		for (std::size_t count = 0; const auto& pointLight : allPointsLightsOrdered)
 		{
 			if (count == Settings::MaxPointLightCount())
 			{
 				break;
 			}
 
-			m_CurrentFrameUsedPointLights.emplace_back(pointLight);
+			ret.push_back(pointLight);
 			++count;
 		}
+
+		return ret;
 	}
 
 
-	void Renderer::CollectSpotLights()
+	const std::vector<const SpotLight*>& Renderer::CollectSpotLights()
 	{
 		/* This set stores lights in an ascending order based on distance from camera */
 		static std::set<const SpotLight*, LightCloserToCamera> allSpotLightsOrdered;
+		static std::vector<const SpotLight*> ret;
 
 		allSpotLightsOrdered.clear();
 
 		/* We sort the lights based on distance from camera */
 		std::ranges::copy(DataManager::SpotLights().begin(), DataManager::SpotLights().end(), std::inserter(allSpotLightsOrdered, allSpotLightsOrdered.begin()));
 
-		m_CurrentFrameUsedSpotLights.clear();
+		ret.clear();
 
 		/* We collect at most MAX_SPOT_LIGHTS number of them */
-		const std::size_t spotLightCount{ std::min(allSpotLightsOrdered.size(), Settings::MaxSpotLightCount()) };
-		std::copy_n(allSpotLightsOrdered.begin(), spotLightCount, std::back_inserter(m_CurrentFrameUsedSpotLights));
+		const auto spotLightCount{std::min(allSpotLightsOrdered.size(), Settings::MaxSpotLightCount())};
+		std::copy_n(allSpotLightsOrdered.begin(), spotLightCount, std::back_inserter(ret));
+
+		return ret;
 	}
 }

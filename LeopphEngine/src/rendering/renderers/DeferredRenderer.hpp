@@ -4,6 +4,7 @@
 #include "../CascadedShadowMap.hpp"
 #include "../GeometryBuffer.hpp"
 #include "../ScreenTexture.hpp"
+#include "../../math/Matrix.hpp"
 #include "../shaders/DeferredAmbLightShader.hpp"
 #include "../shaders/DeferredDirLightShader.hpp"
 #include "../shaders/DeferredGeometryShader.hpp"
@@ -20,23 +21,23 @@ namespace leopph::impl
 		public:
 			DeferredRenderer();
 
-			DeferredRenderer(const DeferredRenderer& other) = default;
-			DeferredRenderer(DeferredRenderer&& other) = default;
-
-			DeferredRenderer& operator=(const DeferredRenderer& other) = default;
-			DeferredRenderer& operator=(DeferredRenderer&& other) = default;
-
-			~DeferredRenderer() override = default;
-
 			void Render() override;
 
 
 		private:
-			void RenderGeometry();
+			void RenderGeometry(const Matrix4& camViewMat,
+								const Matrix4& camProjMat,
+								const std::unordered_map<const ModelResource*, std::pair<std::vector<Matrix4>, std::vector<Matrix4>>>& modelsAndMats) const;
+
 			void RenderLights();
+
 			void RenderAmbientLight() const;
-			void RenderDirectionalLights();
-			void RenderSkybox() const;
+
+			void RenderDirectionalLights(const Matrix4& camViewMat,
+										 const Matrix4& camProjMat,
+										 const std::unordered_map<const ModelResource*, std::pair<std::vector<Matrix4>, std::vector<Matrix4>>>& modelsAndMats);
+
+			void RenderSkybox(const Matrix4& camViewMat, const Matrix4& camProjMat) const;
 
 			GeometryBuffer m_GBuffer;
 			CascadedShadowMap m_DirShadowMap;

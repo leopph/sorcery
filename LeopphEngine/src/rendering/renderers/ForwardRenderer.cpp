@@ -39,27 +39,27 @@ namespace leopph::impl
 			return;
 		}
 
-		m_CurrentFrameViewMatrix = Camera::Active()->ViewMatrix();
-		m_CurrentFrameProjectionMatrix = Camera::Active()->ProjectionMatrix();
+		const auto camViewMat{Camera::Active()->ViewMatrix()};
+		const auto camProjMat{Camera::Active()->ProjectionMatrix()};
 
-		CalcAndCollectMatrices();
-		CollectPointLights();
-		CollectSpotLights();
+		const auto& modelsAndMats{CalcAndCollectMatrices()};
+		const auto& pointLights{CollectPointLights()};
+		const auto& spotLights{CollectSpotLights()};
 
-		RenderDirectionalShadowMap();
+		const auto& lightTransformMat{RenderDirectionalShadowMap(modelsAndMats)};
 		//RenderPointShadowMaps();
-		RenderShadedObjects();
-		RenderSkybox();
+		RenderShadedObjects(camViewMat, camProjMat, lightTransformMat, modelsAndMats, pointLights, spotLights);
+		RenderSkybox(camViewMat, camProjMat);
 	}
 
 
-	void ForwardRenderer::RenderDirectionalShadowMap()
+	std::optional<Matrix4> ForwardRenderer::RenderDirectionalShadowMap(const std::unordered_map<const ModelResource*, std::pair<std::vector<Matrix4>, std::vector<Matrix4>>>& modelsAndMats) const
 	{
 		const auto& dirLight = DataManager::DirectionalLight();
 
 		if (dirLight == nullptr)
 		{
-			return;
+			return {};
 		}
 
 		const auto& shadowMaps{DataManager::ShadowMaps()};
@@ -70,41 +70,44 @@ namespace leopph::impl
 			DataManager::CreateShadowMap(Vector2{static_cast<float>(Settings::DirectionalShadowMapResolutions()[0])});
 		}
 
-		const auto view{Matrix4::LookAt(-dirLight->Direction(), Vector3{}, Vector3::Up())};
-		const auto projection{Matrix4::Ortographic(-10, 10, 10, -10, Camera::Active()->NearClipPlane(), Camera::Active()->FarClipPlane())};
-		m_CurrentFrameDirectionalTransformMatrix = view * projection;
+		const auto lightViewMat{Matrix4::LookAt(-dirLight->Direction(), Vector3{}, Vector3::Up())};
+		const auto lightProjMat{Matrix4::Ortographic(-10, 10, 10, -10, Camera::Active()->NearClipPlane(), Camera::Active()->FarClipPlane())};
+		const auto lightTransformMat{lightViewMat * lightProjMat};
 
 		m_DirectionalShadowMapShader.Use();
 		shadowMaps.front().BindToBuffer();
 
-		m_DirectionalShadowMapShader.SetUniform("lightClipMatrix", m_CurrentFrameDirectionalTransformMatrix);
+		m_DirectionalShadowMapShader.SetUniform("lightClipMatrix", lightTransformMat);
 
-		for (const auto& [modelPath, matrices] : m_CurrentFrameMatrices)
+		for (const auto& [modelRes, matrices] : modelsAndMats)
 		{
-			static_cast<ModelResource*>(DataManager::Find(modelPath))->DrawDepth(matrices.first);
+			modelRes->DrawDepth(matrices.first);
 		}
 
 		shadowMaps.front().UnbindFromBuffer();
+
+		return {lightTransformMat};
 	}
 
 
-	void ForwardRenderer::RenderPointShadowMaps()
+	void ForwardRenderer::RenderPointShadowMaps(const std::vector<const PointLight*>& pointLights,
+												const std::unordered_map<const ModelResource*, std::pair<std::vector<Matrix4>, std::vector<Matrix4>>>& modelsAndMats)
 	{
 		const auto& shadowMaps{DataManager::ShadowMaps()};
 
 		/* If we lack the necessary number of shadow maps, we create new ones */
-		while (m_CurrentFrameUsedPointLights.size() > shadowMaps.size())
+		while (pointLights.size() > shadowMaps.size())
 		{
 			DataManager::CreateShadowMap(Settings::PointLightShadowMapResolution());
 		}
 
 		/* Iterate over the lights and use a different shadow map for each */
 		for (auto shadowMapIt{DataManager::DirectionalLight() == nullptr ? shadowMaps.begin() : ++shadowMaps.begin()};
-		     const auto& pointLight : m_CurrentFrameUsedPointLights)
+		     const auto& pointLight : pointLights)
 		{
-			for (const auto& [modelPath, matrices] : m_CurrentFrameMatrices)
+			for (const auto& [modelRes, matrices] : modelsAndMats)
 			{
-				static_cast<ModelResource*>(DataManager::Find(modelPath))->DrawDepth(matrices.first);
+				modelRes->DrawDepth(matrices.first);
 			}
 
 			++shadowMapIt;
@@ -112,11 +115,16 @@ namespace leopph::impl
 	}
 
 
-	void ForwardRenderer::RenderShadedObjects()
+	void ForwardRenderer::RenderShadedObjects(const Matrix4& camViewMat, 
+											  const Matrix4& camProjMat,
+											  const std::optional<Matrix4>& lightTransformMat,
+											  const std::unordered_map<const ModelResource*, std::pair<std::vector<Matrix4>, std::vector<Matrix4>>>& modelsAndMats,
+											  const std::vector<const PointLight*>& pointLights,
+											  const std::vector<const SpotLight*>& spotLights) const
 	{
 		m_ObjectShader.Use();
 
-		m_ObjectShader.SetUniform("viewProjectionMatrix", m_CurrentFrameViewMatrix * m_CurrentFrameProjectionMatrix);
+		m_ObjectShader.SetUniform("viewProjectionMatrix", camViewMat * camProjMat);
 		m_ObjectShader.SetUniform("cameraPosition", Camera::Active()->entity.Transform->Position());
 
 		std::size_t usedTextureUnits{0};
@@ -132,7 +140,7 @@ namespace leopph::impl
 			m_ObjectShader.SetUniform("dirLight.diffuseColor", dirLight->Diffuse());
 			m_ObjectShader.SetUniform("dirLight.specularColor", dirLight->Specular());
 			m_ObjectShader.SetUniform("dirLight.shadowMap", static_cast<int>(usedTextureUnits));
-			m_ObjectShader.SetUniform("dirLightTransformMatrix", m_CurrentFrameDirectionalTransformMatrix);
+			m_ObjectShader.SetUniform("dirLightTransformMatrix", lightTransformMat.value());
 
 			DataManager::ShadowMaps().front().BindToTexture(usedTextureUnits);
 			++usedTextureUnits;
@@ -143,10 +151,10 @@ namespace leopph::impl
 		}
 
 		/* Set up PointLight data */
-		m_ObjectShader.SetUniform("pointLightCount", static_cast<int>(m_CurrentFrameUsedPointLights.size()));
-		for (std::size_t i = 0; i < m_CurrentFrameUsedPointLights.size(); i++)
+		m_ObjectShader.SetUniform("pointLightCount", static_cast<int>(pointLights.size()));
+		for (std::size_t i = 0; i < pointLights.size(); i++)
 		{
-			const auto& pointLight = m_CurrentFrameUsedPointLights[i];
+			const auto& pointLight = pointLights[i];
 
 			m_ObjectShader.SetUniform("pointLights[" + std::to_string(i) + "].position", pointLight->entity.Transform->Position());
 			m_ObjectShader.SetUniform("pointLights[" + std::to_string(i) + "].diffuseColor", pointLight->Diffuse());
@@ -157,10 +165,10 @@ namespace leopph::impl
 		}
 
 		/* Set up SpotLight data */
-		m_ObjectShader.SetUniform("spotLightCount", static_cast<int>(m_CurrentFrameUsedSpotLights.size()));
-		for (std::size_t i = 0; i < m_CurrentFrameUsedSpotLights.size(); i++)
+		m_ObjectShader.SetUniform("spotLightCount", static_cast<int>(spotLights.size()));
+		for (std::size_t i = 0; i < spotLights.size(); i++)
 		{
-			const auto& spotLight{m_CurrentFrameUsedSpotLights[i]};
+			const auto& spotLight{spotLights[i]};
 
 			m_ObjectShader.SetUniform("spotLights[" + std::to_string(i) + "].position", spotLight->entity.Transform->Position());
 			m_ObjectShader.SetUniform("spotLights[" + std::to_string(i) + "].direction", spotLight->entity.Transform->Forward());
@@ -174,20 +182,20 @@ namespace leopph::impl
 		}
 
 		/* Draw the shaded objects */
-		for (const auto& [modelPath, matrices] : m_CurrentFrameMatrices)
+		for (const auto& [modelRes, matrices] : modelsAndMats)
 		{
-			static_cast<ModelResource*>(DataManager::Find(modelPath))->DrawShaded(m_ObjectShader, matrices.first, matrices.second, usedTextureUnits);
+			modelRes->DrawShaded(m_ObjectShader, matrices.first, matrices.second, usedTextureUnits);
 		}
 	}
 
 
-	void ForwardRenderer::RenderSkybox() const
+	void ForwardRenderer::RenderSkybox(const Matrix4& camViewMat, const Matrix4& camProjMat) const
 	{
 		if (const auto& skybox{Camera::Active()->Background().skybox}; skybox != nullptr)
 		{
 			m_SkyboxShader.Use();
-			m_SkyboxShader.SetUniform("viewMatrix", static_cast<Matrix4>(static_cast<Matrix3>(m_CurrentFrameViewMatrix)));
-			m_SkyboxShader.SetUniform("projectionMatrix", m_CurrentFrameProjectionMatrix);
+			m_SkyboxShader.SetUniform("viewMatrix", static_cast<Matrix4>(static_cast<Matrix3>(camViewMat)));
+			m_SkyboxShader.SetUniform("projectionMatrix", camProjMat);
 			static_cast<SkyboxResource*>(DataManager::Find(skybox->AllFilePaths()))->Draw(m_SkyboxShader);
 		}
 	}
