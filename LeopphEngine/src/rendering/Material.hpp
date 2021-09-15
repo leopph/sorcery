@@ -1,26 +1,28 @@
 #pragma once
 
-#include "../misc/color.h"
 #include "Texture.hpp"
+#include "../misc/color.h"
 
-#include <memory>
+#include <optional>
+
+
 
 namespace leopph
 {
-	struct Material
+	class Material
 	{
-	public:
-		Color ambientColor;
-		Color diffuseColor;
-		Color specularColor;
+		public:
+			Color AmbientColor;
+			Color DiffuseColor;
+			Color SpecularColor;
 
-		float shininess;
+			float Shininess;
 
-		std::unique_ptr<impl::Texture> ambientMap;
-		std::unique_ptr<impl::Texture> diffuseMap;
-		std::unique_ptr<impl::Texture> specularMap;
+			std::optional<impl::Texture> AmbientMap;
+			std::optional<impl::Texture> DiffuseMap;
+			std::optional<impl::Texture> SpecularMap;
 
 
-		Material();
+			Material();
 	};
 }

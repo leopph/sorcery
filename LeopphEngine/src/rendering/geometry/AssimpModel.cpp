@@ -4,28 +4,29 @@
 #include "../../util/logger.h"
 
 #include <assimp/Importer.hpp>
-#include <assimp/postprocess.h>
 #include <assimp/matrix4x4.h>
+#include <assimp/postprocess.h>
 
+#include <queue>
 #include <stdexcept>
 #include <string>
-#include <queue>
 #include <utility>
+
 
 
 namespace leopph::impl
 {
 	AssimpModel::AssimpModel(const std::filesystem::path& path) :
-		m_Directory{ path.parent_path() }
+		m_Directory{path.parent_path()}
 	{
 		Assimp::Importer importer;
-		const aiScene* scene{ importer.ReadFile(path.string(), aiProcess_Triangulate | aiProcess_GenNormals)};
+		const auto scene{importer.ReadFile(path.string(), aiProcess_Triangulate | aiProcess_GenNormals)};
 
 		if (scene == nullptr || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || scene->mRootNode == nullptr)
 		{
-			const auto errorMsg{ std::string{"Assimp error: "} + importer.GetErrorString() };
+			const auto errorMsg{std::string{"Assimp error: "} + importer.GetErrorString()};
 			Logger::Instance().Error(errorMsg);
-			throw std::invalid_argument{ errorMsg };
+			throw std::invalid_argument{errorMsg};
 		}
 
 		struct NodeWithTrafo
@@ -44,7 +45,7 @@ namespace leopph::impl
 				rootTrafo[i][j] = scene->mRootNode->mTransformation[j][i];
 			}
 		}
-		rootTrafo *= Matrix3{ 1, 1, -1 };
+		rootTrafo *= Matrix3{1, 1, -1};
 		nodes.emplace(scene->mRootNode, rootTrafo);
 
 		while (!nodes.empty())
@@ -74,11 +75,11 @@ namespace leopph::impl
 	}
 
 
-	void AssimpModel::DrawShaded(const Shader& shader, const std::vector<Matrix4>& modelMatrices, const std::vector<Matrix4>& normalMatrices, std::size_t nextFreeTextureUnit) const
+	void AssimpModel::DrawShaded(const Shader& shader, const std::vector<Matrix4>& modelMatrices, const std::vector<Matrix4>& normalMatrices, const std::size_t nextFreeTextureUnit) const
 	{
 		for (const auto& mesh : m_Meshes)
 		{
-			mesh.DrawShaded(shader, modelMatrices, normalMatrices, nextFreeTextureUnit);
+			mesh.DrawShaded(shader, modelMatrices, normalMatrices, nextFreeTextureUnit); // TODO meshes can clash on static texture unit
 		}
 	}
 
@@ -92,7 +93,7 @@ namespace leopph::impl
 	}
 
 
-	void AssimpModel::OnReferringEntitiesChanged(std::size_t newAmount) const
+	void AssimpModel::OnReferringEntitiesChanged(const std::size_t newAmount) const
 	{
 		for (const auto& mesh : m_Meshes)
 		{
@@ -101,7 +102,7 @@ namespace leopph::impl
 	}
 
 
-	Mesh AssimpModel::ProcessMesh(aiMesh* mesh, const aiScene* scene, const Matrix3& trafo)
+	Mesh AssimpModel::ProcessMesh(const aiMesh* mesh, const aiScene* scene, const Matrix3& trafo) const
 	{
 		std::vector<Vertex> vertices;
 		std::vector<unsigned> indices;
@@ -109,20 +110,20 @@ namespace leopph::impl
 		for (unsigned i = 0; i < mesh->mNumVertices; i++)
 		{
 			Vertex vertex;
-			vertex.position = Vector3{ mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z } * trafo;
-			vertex.normal = Vector3{ mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z } * trafo;
+			vertex.position = Vector3{mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z} * trafo;
+			vertex.normal = Vector3{mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z} * trafo;
 
 			// ONLY 1 UV LAYER SUPPORTED
-			vertex.textureCoordinates = Vector2{ 0.0f, 0.0f };
+			vertex.textureCoordinates = Vector2{0.0f, 0.0f};
 			for (std::size_t j = 0; j < AI_MAX_NUMBER_OF_TEXTURECOORDS; j++)
 			{
 				if (mesh->HasTextureCoords(static_cast<unsigned>(j)))
 				{
-					vertex.textureCoordinates = Vector2{ mesh->mTextureCoords[j][i].x, mesh->mTextureCoords[j][i].y };
+					vertex.textureCoordinates = Vector2{mesh->mTextureCoords[j][i].x, mesh->mTextureCoords[j][i].y};
 					break;
 				}
 			}
-					
+
 			vertices.push_back(vertex);
 		}
 
@@ -134,47 +135,51 @@ namespace leopph::impl
 			}
 		}
 
-
-		aiMaterial* assimpMaterial{ scene->mMaterials[mesh->mMaterialIndex] };
+		const auto assimpMaterial{scene->mMaterials[mesh->mMaterialIndex]};
 		Material material;
 
-		material.ambientMap = LoadTexturesByType(assimpMaterial, aiTextureType_AMBIENT);
-		material.diffuseMap = LoadTexturesByType(assimpMaterial, aiTextureType_DIFFUSE);
-		material.specularMap = LoadTexturesByType(assimpMaterial, aiTextureType_SPECULAR);
+		material.AmbientMap = LoadTexturesByType(assimpMaterial, aiTextureType_AMBIENT);
+		material.DiffuseMap = LoadTexturesByType(assimpMaterial, aiTextureType_DIFFUSE);
+		material.SpecularMap = LoadTexturesByType(assimpMaterial, aiTextureType_SPECULAR);
+
+		if (ai_real parsedShininess;
+			assimpMaterial->Get(AI_MATKEY_SHININESS, parsedShininess) == aiReturn_SUCCESS)
+		{
+			material.Shininess = static_cast<decltype(Material::Shininess)>(parsedShininess);
+		}
+
+		if (aiColor3D parsedDiffuseColor;
+			assimpMaterial->Get(AI_MATKEY_COLOR_DIFFUSE, parsedDiffuseColor) == aiReturn_SUCCESS)
+		{
+			material.DiffuseColor = {
+				static_cast<unsigned char>(parsedDiffuseColor.r * 255),
+				static_cast<unsigned char>(parsedDiffuseColor.g * 255), static_cast<unsigned char>(parsedDiffuseColor.b * 255)
+			};
+		}
+
+		if (aiColor3D parsedSpecularColor;
+			assimpMaterial->Get(AI_MATKEY_COLOR_SPECULAR, parsedSpecularColor) == aiReturn_SUCCESS)
+		{
+			material.SpecularColor = {
+				static_cast<unsigned char>(parsedSpecularColor.r * 255),
+				static_cast<unsigned char>(parsedSpecularColor.g * 255), static_cast<unsigned char>(parsedSpecularColor.b * 255)
+			};
+		}
 		
-		ai_real parsedShininess;
-		if (assimpMaterial->Get(AI_MATKEY_SHININESS, parsedShininess) == aiReturn_SUCCESS)
+		if (aiColor3D parsedAmbientColor;
+			assimpMaterial->Get(AI_MATKEY_COLOR_AMBIENT, parsedAmbientColor) == aiReturn_SUCCESS)
 		{
-			material.shininess = static_cast<decltype(Material::shininess)>(parsedShininess);
+			material.AmbientColor = {
+				static_cast<unsigned char>(parsedAmbientColor.r * 255),
+				static_cast<unsigned char>(parsedAmbientColor.g * 255), static_cast<unsigned char>(parsedAmbientColor.b * 255)
+			};
 		}
-
-		aiColor3D parsedDiffuseColor;
-		if (assimpMaterial->Get(AI_MATKEY_COLOR_DIFFUSE, parsedDiffuseColor) == aiReturn_SUCCESS)
-		{
-			material.diffuseColor = { static_cast<unsigned char>(parsedDiffuseColor.r * 255),
-			static_cast<unsigned char>(parsedDiffuseColor.g * 255), static_cast<unsigned char>(parsedDiffuseColor.b * 255) };
-		}
-
-		aiColor3D parsedSpecularColor;
-		if (assimpMaterial->Get(AI_MATKEY_COLOR_SPECULAR, parsedSpecularColor) == aiReturn_SUCCESS)
-		{
-			material.specularColor = { static_cast<unsigned char>(parsedSpecularColor.r * 255),
-			static_cast<unsigned char>(parsedSpecularColor.g * 255), static_cast<unsigned char>(parsedSpecularColor.b * 255) };
-		}
-
-		aiColor3D parsedAmbientColor;
-		if (assimpMaterial->Get(AI_MATKEY_COLOR_AMBIENT, parsedAmbientColor) == aiReturn_SUCCESS)
-		{
-			material.ambientColor = { static_cast<unsigned char>(parsedAmbientColor.r * 255),
-			static_cast<unsigned char>(parsedAmbientColor.g * 255), static_cast<unsigned char>(parsedAmbientColor.b * 255) };
-		}
-
 
 		return Mesh(vertices, indices, std::move(material));
 	}
 
 
-	std::unique_ptr<Texture> AssimpModel::LoadTexturesByType(aiMaterial* material, aiTextureType assimpType)
+	std::optional<Texture> AssimpModel::LoadTexturesByType(const aiMaterial* material, const aiTextureType assimpType) const
 	{
 		if (material->GetTextureCount(assimpType) > 0)
 		{
@@ -182,10 +187,10 @@ namespace leopph::impl
 			material->GetTexture(assimpType, 0, &location);
 
 			Logger::Instance().Debug("Loading texture on path [" + (m_Directory / location.C_Str()).string() + "].");
-			return std::make_unique<Texture>(m_Directory / location.C_Str());
+			return std::make_optional<Texture>(m_Directory / location.C_Str());
 		}
 
 		Logger::Instance().Debug("Mesh contains no texture of the requested type.");
-		return nullptr;
+		return {};
 	}
 }
