@@ -134,7 +134,7 @@ namespace leopph::impl
 	}
 
 
-	void CascadedShadowMap::Init(std::vector<std::size_t> resolutions)
+	void CascadedShadowMap::Init(const std::vector<std::size_t>& resolutions)
 	{
 		m_TexIds.resize(resolutions.size());
 		glCreateTextures(GL_TEXTURE_2D, static_cast<GLsizei>(resolutions.size()), m_TexIds.data());
@@ -147,6 +147,8 @@ namespace leopph::impl
 			glTextureParameteri(m_TexIds[i], GL_TEXTURE_COMPARE_MODE, GL_NONE);
 			glTextureParameteri(m_TexIds[i], GL_TEXTURE_WRAP_S, GL_REPEAT);
 			glTextureParameteri(m_TexIds[i], GL_TEXTURE_WRAP_T, GL_REPEAT);
+			glTextureParameteri(m_TexIds[i], GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+			glTextureParameteri(m_TexIds[i], GL_TEXTURE_COMPARE_FUNC, GL_LESS);
 		}
 
 		glNamedFramebufferDrawBuffer(m_Fbo, GL_NONE);

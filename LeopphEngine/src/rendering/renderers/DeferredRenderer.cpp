@@ -91,7 +91,7 @@ namespace leopph::impl
 		}
 
 		const auto cameraInverseMatrix{camViewMat.Inverse()};
-		const auto lightViewMatrix{Matrix4::LookAt(100 * -dirLight->Direction(), Vector3{}, Vector3::Up())}; // TODO light pos
+		const auto lightViewMatrix{Matrix4::LookAt(1000 * -dirLight->Direction(), Vector3{}, Vector3::Up())}; // TODO light pos
 
 		static std::vector<Matrix4> dirLightMatrices;
 		dirLightMatrices.clear();
@@ -117,23 +117,28 @@ namespace leopph::impl
 
 		m_DirShadowMap.UnbindTextureFromWriting();
 
-		glBindTextureUnit(0, m_GBuffer.positionTextureName);
-		glBindTextureUnit(1, m_GBuffer.normalTextureName);
-		glBindTextureUnit(2, m_GBuffer.diffuseTextureName);
-		glBindTextureUnit(3, m_GBuffer.specularTextureName);
-		glBindTextureUnit(4, m_GBuffer.shineTextureName);
-
 		auto texCount{0};
 
+		glBindTextureUnit(texCount, m_GBuffer.positionTextureName);
 		m_DirLightShader.SetUniform("u_PositionTexture", texCount++);
+
+		glBindTextureUnit(texCount, m_GBuffer.normalTextureName);
 		m_DirLightShader.SetUniform("u_NormalTexture", texCount++);
+
+		glBindTextureUnit(texCount, m_GBuffer.diffuseTextureName);
 		m_DirLightShader.SetUniform("u_DiffuseTexture", texCount++);
+
+		glBindTextureUnit(texCount, m_GBuffer.specularTextureName);
 		m_DirLightShader.SetUniform("u_SpecularTexture", texCount++);
+
+		glBindTextureUnit(texCount, m_GBuffer.shineTextureName);
 		m_DirLightShader.SetUniform("u_ShineTexture", texCount++);
 
 		m_DirShadowMap.BindTexturesForReading(texCount);
 
-		for (std::size_t i = 0; i < Settings::CameraDirectionalShadowCascadeCount(); i++)
+		const auto cascadeCount{Settings::CameraDirectionalShadowCascadeCount()};
+
+		for (std::size_t i = 0; i < cascadeCount; i++)
 		{
 			m_DirLightShader.SetUniform("u_ShadowMaps[" + std::to_string(i) + "]", texCount++);
 		}
@@ -141,17 +146,15 @@ namespace leopph::impl
 		m_DirLightShader.SetUniform("u_DirLight.direction", dirLight->Direction());
 		m_DirLightShader.SetUniform("u_DirLight.diffuseColor", dirLight->Diffuse());
 		m_DirLightShader.SetUniform("u_DirLight.specularColor", dirLight->Specular());
-
 		m_DirLightShader.SetUniform("u_CameraPosition", Camera::Active()->entity.Transform->Position());
 		m_DirLightShader.SetUniform("u_CascadeCount", static_cast<unsigned>(Settings::CameraDirectionalShadowCascadeCount()));
-		m_DirLightShader.SetUniform("u_CascadeDepth", (Camera::Active()->FarClipPlane() - Camera::Active()->NearClipPlane()) / Settings::CameraDirectionalShadowCascadeCount());
-
+		m_DirLightShader.SetUniform("u_CascadeDepth", (Camera::Active()->FarClipPlane() - Camera::Active()->NearClipPlane()) / static_cast<float>(cascadeCount));
 		m_DirLightShader.SetUniform("u_LightClipMatrices", dirLightMatrices);
 
 		static std::vector<float> cascadeFarBounds;
 		cascadeFarBounds.clear();
 
-		for (std::size_t i = 0; i < Settings::CameraDirectionalShadowCascadeCount(); ++i)
+		for (std::size_t i = 0; i < cascadeCount; ++i)
 		{
 			const auto viewSpaceBound{m_DirShadowMap.CascadeBounds(i)[1]};
 			const Vector4 viewSpaceBoundVector{0, 0, viewSpaceBound, 1};

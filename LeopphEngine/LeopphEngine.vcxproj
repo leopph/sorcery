@@ -282,9 +282,6 @@
     <CustomBuild Include="src\rendering\shaders\glsl\deferred\LightPassFrag.frag">
       <FileType>Document</FileType>
     </CustomBuild>
-    <CustomBuild Include="src\rendering\shaders\glsl\DirShadowMapFrag.frag">
-      <FileType>Document</FileType>
-    </CustomBuild>
     <CustomBuild Include="src\rendering\shaders\glsl\forward\ObjectFrag.frag">
       <FileType>Document</FileType>
     </CustomBuild>

@@ -43,7 +43,7 @@ namespace leopph::impl
 		std::vector<Matrix4> m_ProjMatrices;
 
 		void OnEventReceived(const DirShadowMapResChangedEvent& event) override;
-		void Init(std::vector<std::size_t> resolutions);
+		void Init(const std::vector<std::size_t>& resolutions);
 		void Deinit();
 	};
 }
