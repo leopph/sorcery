@@ -79,7 +79,7 @@ namespace leopph::impl
 	{
 		for (const auto& mesh : m_Meshes)
 		{
-			mesh.DrawShaded(shader, modelMatrices, normalMatrices, nextFreeTextureUnit); // TODO meshes can clash on static texture unit
+			mesh.DrawShaded(shader, modelMatrices, normalMatrices, nextFreeTextureUnit);
 		}
 	}
 

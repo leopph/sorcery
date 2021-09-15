@@ -112,15 +112,15 @@ namespace leopph::impl
 			throw std::runtime_error{ msg };
 		}
 
-		shader.SetUniform("material.AmbientColor", static_cast<Vector3>(m_Material.AmbientColor));
-		shader.SetUniform("material.DiffuseColor", static_cast<Vector3>(m_Material.DiffuseColor));
-		shader.SetUniform("material.SpecularColor", static_cast<Vector3>(m_Material.SpecularColor));
-		shader.SetUniform("material.Shininess", m_Material.Shininess);
+		shader.SetUniform("material.ambientColor", static_cast<Vector3>(m_Material.AmbientColor));
+		shader.SetUniform("material.diffuseColor", static_cast<Vector3>(m_Material.DiffuseColor));
+		shader.SetUniform("material.specularColor", static_cast<Vector3>(m_Material.SpecularColor));
+		shader.SetUniform("material.shininess", m_Material.Shininess);
 
 		if (m_Material.AmbientMap.has_value())
 		{
 			shader.SetUniform("material.hasAmbientMap", true);
-			shader.SetUniform("material.AmbientMap", static_cast<int>(nextFreeTextureUnit));
+			shader.SetUniform("material.ambientMap", static_cast<int>(nextFreeTextureUnit));
 			glBindTextureUnit(static_cast<GLuint>(nextFreeTextureUnit), m_Material.AmbientMap->Id());
 			++nextFreeTextureUnit;
 		}
@@ -132,7 +132,7 @@ namespace leopph::impl
 		if (m_Material.DiffuseMap.has_value())
 		{
 			shader.SetUniform("material.hasDiffuseMap", true);
-			shader.SetUniform("material.DiffuseMap", static_cast<int>(nextFreeTextureUnit));
+			shader.SetUniform("material.diffuseMap", static_cast<int>(nextFreeTextureUnit));
 			glBindTextureUnit(static_cast<GLuint>(nextFreeTextureUnit), m_Material.DiffuseMap->Id());
 			++nextFreeTextureUnit;
 		}
@@ -144,7 +144,7 @@ namespace leopph::impl
 		if (m_Material.SpecularMap.has_value())
 		{
 			shader.SetUniform("material.hasSpecularMap", true);
-			shader.SetUniform("material.SpecularMap", static_cast<int>(nextFreeTextureUnit));
+			shader.SetUniform("material.specularMap", static_cast<int>(nextFreeTextureUnit));
 			glBindTextureUnit(static_cast<GLuint>(nextFreeTextureUnit), m_Material.SpecularMap->Id());
 			++nextFreeTextureUnit;
 		}
