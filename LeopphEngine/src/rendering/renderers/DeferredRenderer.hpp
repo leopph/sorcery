@@ -29,8 +29,6 @@ namespace leopph::impl
 								const Matrix4& camProjMat,
 								const std::unordered_map<const ModelResource*, std::pair<std::vector<Matrix4>, std::vector<Matrix4>>>& modelsAndMats) const;
 
-			void RenderLights();
-
 			void RenderAmbientLight() const;
 
 			void RenderDirectionalLights(const Matrix4& camViewMat,

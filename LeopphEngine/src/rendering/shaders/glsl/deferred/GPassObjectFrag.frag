@@ -30,7 +30,7 @@ layout (location = 3) out vec3 outDiffuseColor;
 layout (location = 4) out vec3 outSpecularColor;
 layout (location = 5) out float outShine;
 
-uniform Material material;
+layout (location = 1) uniform Material material;
 
 
 void main()

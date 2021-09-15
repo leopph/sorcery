@@ -11,7 +11,7 @@ layout (location = 1) out vec3 outNormal;
 layout (location = 2) out vec2 outTexCoords;
 layout (location = 3) out float outClipSpaceZ;
 
-uniform mat4 viewProjectionMatrix;
+layout (location = 0) uniform mat4 u_ViewProjectionMatrix;
 
 
 void main()
@@ -22,6 +22,6 @@ void main()
     outNormal = inNormal * mat3(inNormalMatrix);
     outTexCoords = inTexCoords;
 
-    gl_Position = fragPosWorldSpace * viewProjectionMatrix;
+    gl_Position = fragPosWorldSpace * u_ViewProjectionMatrix;
     outClipSpaceZ = gl_Position.z;
 }
