@@ -1,8 +1,8 @@
 #version 460 core
 
-#define MAX_DIR_LIGHT_CASCADE_COUNT 5
+#define MAX_DIR_LIGHT_CASCADE_COUNT 3
 #define MIN_SHADOW_BIAS 0.0001
-#define MAX_SHADOW_BIAS 0.001
+#define MAX_SHADOW_BIAS 0.0005
 
 
 struct DirLight
@@ -26,7 +26,7 @@ layout (location = 9) uniform sampler2D u_ShineTexture;
 layout (location = 1) uniform DirLight u_DirLight;
 layout (location = 0) uniform vec3 u_CameraPosition;
 layout (location = 4) uniform uint u_CascadeCount;
-layout (location = 10) uniform sampler2D u_ShadowMaps[MAX_DIR_LIGHT_CASCADE_COUNT];
+layout (location = 10) uniform sampler2DShadow u_ShadowMaps[MAX_DIR_LIGHT_CASCADE_COUNT];
 layout (location = 10 + 8 * MAX_DIR_LIGHT_CASCADE_COUNT) uniform float u_CascadeFarBounds[MAX_DIR_LIGHT_CASCADE_COUNT];
 layout (location = 10 + MAX_DIR_LIGHT_CASCADE_COUNT * 4) uniform mat4 u_LightClipMatrices[MAX_DIR_LIGHT_CASCADE_COUNT];
 
@@ -75,9 +75,7 @@ float CalculateShadow(vec3 fragPos, float fragPosCameraClipZ, vec3 fragNormal)
 	{
 		for (int j = -1; j <= 1; j++)
 		{
-			//shadow += texture(u_ShadowMaps[cascadeIndex], vec3(normalizedPos.xy + vec2(i, j) * texelSize, normalizedPos.z - bias));
-			float pcfDepth = texture(u_ShadowMaps[cascadeIndex], normalizedPos.xy + vec2(i, j) * texelSize).r;
-			shadow += normalizedPos.z - bias < pcfDepth ? 1 : 0;
+			shadow += texture(u_ShadowMaps[cascadeIndex], vec3(normalizedPos.xy + vec2(i, j) * texelSize, normalizedPos.z - bias));
 		}
 	}
 
