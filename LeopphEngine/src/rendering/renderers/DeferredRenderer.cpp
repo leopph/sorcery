@@ -10,6 +10,7 @@
 #include <glad/glad.h>
 
 
+
 namespace leopph::impl
 {
 	DeferredRenderer::DeferredRenderer()
@@ -23,7 +24,9 @@ namespace leopph::impl
 	{
 		/* We don't render if there is no camera to use */
 		if (Camera::Active() == nullptr)
+		{
 			return;
+		}
 
 		const auto camViewMat{Camera::Active()->ViewMatrix()};
 		const auto camProjMat{Camera::Active()->ProjectionMatrix()};
@@ -47,8 +50,8 @@ namespace leopph::impl
 
 
 	void DeferredRenderer::RenderGeometry(const Matrix4& camViewMat,
-										  const Matrix4& camProjMat,
-										  const std::unordered_map<const ModelResource*, std::pair<std::vector<Matrix4>, std::vector<Matrix4>>>& modelsAndMats) const
+	                                      const Matrix4& camProjMat,
+	                                      const std::unordered_map<const ModelResource*, std::pair<std::vector<Matrix4>, std::vector<Matrix4>>>& modelsAndMats) const
 	{
 		m_GBuffer.Clear();
 		m_GBuffer.Bind();
@@ -67,9 +70,7 @@ namespace leopph::impl
 
 	void DeferredRenderer::RenderAmbientLight() const
 	{
-		glBindTextureUnit(0, m_GBuffer.ambientTextureName);
-
-		m_AmbientShader.SetUniform("u_AmbientMap", 0);
+		static_cast<void>(m_GBuffer.BindTextureForReading(m_AmbientShader, GeometryBuffer::TextureType::Ambient, 0));
 		m_AmbientShader.SetUniform("u_AmbientLight", AmbientLight::Instance().Intensity());
 
 		glDisable(GL_DEPTH_TEST);
@@ -80,8 +81,8 @@ namespace leopph::impl
 
 
 	void DeferredRenderer::RenderDirectionalLights(const Matrix4& camViewMat,
-												   const Matrix4& camProjMat,
-												   const std::unordered_map<const ModelResource*, std::pair<std::vector<Matrix4>, std::vector<Matrix4>>>& modelsAndMats)
+	                                               const Matrix4& camProjMat,
+	                                               const std::unordered_map<const ModelResource*, std::pair<std::vector<Matrix4>, std::vector<Matrix4>>>& modelsAndMats)
 	{
 		const auto& dirLight{DataManager::DirectionalLight()};
 
@@ -112,28 +113,17 @@ namespace leopph::impl
 			{
 				modelRes->DrawDepth(matrices.first);
 			}
-
 		}
 
 		m_DirShadowMap.UnbindTextureFromWriting();
 
 		auto texCount{0};
 
-		glBindTextureUnit(texCount, m_GBuffer.positionTextureName);
-		m_DirLightShader.SetPositionTexture(texCount++);
-
-		glBindTextureUnit(texCount, m_GBuffer.normalTextureName);
-		m_DirLightShader.SetNormalTexture(texCount++);
-
-		glBindTextureUnit(texCount, m_GBuffer.diffuseTextureName);
-		m_DirLightShader.SetDiffuseTexture(texCount++);
-
-		glBindTextureUnit(texCount, m_GBuffer.specularTextureName);
-		m_DirLightShader.SetSpecularTexture(texCount++);
-
-		glBindTextureUnit(texCount, m_GBuffer.shineTextureName);
-		m_DirLightShader.SetShineTexture(texCount++);
-
+		texCount = m_GBuffer.BindTextureForReading(m_DirLightShader, GeometryBuffer::TextureType::Position, texCount);
+		texCount = m_GBuffer.BindTextureForReading(m_DirLightShader, GeometryBuffer::Normal, texCount);
+		texCount = m_GBuffer.BindTextureForReading(m_DirLightShader, GeometryBuffer::TextureType::Diffuse, texCount);
+		texCount = m_GBuffer.BindTextureForReading(m_DirLightShader, GeometryBuffer::TextureType::Specular, texCount);
+		texCount = m_GBuffer.BindTextureForReading(m_DirLightShader, GeometryBuffer::TextureType::Shine, texCount);
 		texCount = m_DirShadowMap.BindTexturesForReading(m_DirLightShader, texCount);
 
 		const auto cascadeCount{Settings::CameraDirectionalShadowCascadeCount()};
@@ -245,7 +235,7 @@ namespace leopph::impl
 	void DeferredRenderer::RenderSkybox(const Matrix4& camViewMat, const Matrix4& camProjMat) const
 	{
 		const auto& window{Window::Get()};
-		glBlitNamedFramebuffer(m_GBuffer.frameBufferName, 0, 0, 0, window.Width(), window.Height(), 0, 0, window.Width(), window.Height(), GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+		m_GBuffer.CopyDepthData(0, Vector2{window.Width(), window.Height()});
 
 		if (const auto& skybox{Camera::Active()->Background().skybox}; skybox != nullptr)
 		{

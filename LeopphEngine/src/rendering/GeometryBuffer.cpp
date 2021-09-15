@@ -10,15 +10,7 @@
 namespace leopph::impl
 {
 	GeometryBuffer::GeometryBuffer() :
-		frameBufferName{m_FrameBuffer},
-		depthBufferName{m_DepthBuffer},
-		positionTextureName{ m_Textures[Position] },
-		normalTextureName{ m_Textures[Normal] },
-		ambientTextureName{ m_Textures[Ambient] },
-		diffuseTextureName{ m_Textures[Diffuse] },
-		specularTextureName{ m_Textures[Specular] },
-		shineTextureName{ m_Textures[Shine] },
-		m_Textures{}, m_DepthBuffer{}, m_FrameBuffer{}
+	m_Textures{}, m_DepthBuffer{}, m_FrameBuffer{}
 	{
 		glCreateFramebuffers(1, &m_FrameBuffer);
 		SetUpBuffers(Vector2{ Window::Get().Width(), Window::Get().Height() });
@@ -54,6 +46,48 @@ namespace leopph::impl
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
+
+
+	int GeometryBuffer::BindTextureForReading(const DeferredLightShader& shader, const TextureType type, int texUnit) const
+	{
+		glBindTextureUnit(static_cast<unsigned>(texUnit), m_Textures[type]);
+
+		switch (type)
+		{
+			case Position:
+				shader.SetPositionTexture(texUnit);
+				break;
+
+			case Normal:
+				shader.SetNormalTexture(texUnit);
+				break;
+
+			case Ambient:
+				shader.SetAmbientTexture(texUnit);
+				break;
+
+			case Diffuse:
+				shader.SetDiffuseTexture(texUnit);
+				break;
+
+			case Specular:
+				shader.SetSpecularTexture(texUnit);
+				break;
+
+			case Shine:
+				shader.SetShineTexture(texUnit);
+				break;
+		}
+
+		return ++texUnit;
+	}
+
+
+	void GeometryBuffer::CopyDepthData(const unsigned bufferName, const Vector2& resolution) const
+	{
+		glBlitNamedFramebuffer(m_FrameBuffer, bufferName, 0, 0, static_cast<GLint>(resolution[0]), static_cast<GLint>(resolution[1]), 0, 0, static_cast<GLint>(resolution[0]), static_cast<GLint>(resolution[1]), GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+	}
+
 
 
 	void GeometryBuffer::SetUpBuffers(const Vector2& res)

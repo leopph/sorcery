@@ -3,6 +3,7 @@
 #include "../events/DisplayResolutionChangedEvent.hpp"
 #include "../events/EventReceiver.hpp"
 #include "../math/Vector.hpp"
+#include "shaders/DeferredLightShader.hpp"
 
 #include <array>
 
@@ -12,6 +13,11 @@ namespace leopph::impl
 	class GeometryBuffer final : public EventReceiver<DisplayResolutionChangedEvent>
 	{
 	public:
+		enum TextureType
+		{
+			Position, Normal, Ambient, Diffuse, Specular, Shine
+		};
+
 		GeometryBuffer();
 
 		GeometryBuffer(const GeometryBuffer&) = delete;
@@ -26,22 +32,13 @@ namespace leopph::impl
 		void Bind() const;
 		void Unbind() const;
 
-		const unsigned& frameBufferName;
-		const unsigned& depthBufferName;
-		const unsigned& positionTextureName;
-		const unsigned& normalTextureName;
-		const unsigned& ambientTextureName;
-		const unsigned& diffuseTextureName;
-		const unsigned& specularTextureName;
-		const unsigned& shineTextureName;
+		// Returns the next available texture unit after binding
+		[[nodiscard]] int BindTextureForReading(const DeferredLightShader& shader, TextureType type, int texUnit) const;
+
+		void CopyDepthData(unsigned bufferName, const Vector2& resolution) const;
 
 
 	private:
-		enum TextureType
-		{
-			Position, Normal, Ambient, Diffuse, Specular, Shine
-		};
-
 		std::array<unsigned, 6> m_Textures;
 		unsigned m_DepthBuffer;
 		unsigned m_FrameBuffer;

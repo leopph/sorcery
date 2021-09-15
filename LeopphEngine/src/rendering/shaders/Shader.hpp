@@ -23,7 +23,6 @@ namespace leopph::impl
 
 			virtual ~Shader() = 0;
 
-			const unsigned& Id;
 
 			void Use() const;
 
@@ -52,16 +51,17 @@ namespace leopph::impl
 			static const std::string s_TextureFragSrc;
 			static const std::string s_AmbLightFragSrc;
 
+			const unsigned m_ProgramName;
+
 			Shader(std::string_view vertSrc, std::string_view fragSrc);
 
 
 		private:
-			const unsigned m_ProgramName;
 			const std::filesystem::path m_ProgramFileName;
 
 			void Compile(std::string_view vertSrc, std::string_view fragSrc) const;
 
-			bool ReadFromCache(const std::filesystem::path& path) const;
+			[[nodiscard]] bool ReadFromCache(const std::filesystem::path& path) const;
 			void WriteToCache(const std::filesystem::path& path) const;
 
 			// True for error-free

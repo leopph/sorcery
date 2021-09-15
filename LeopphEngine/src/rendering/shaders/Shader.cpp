@@ -14,7 +14,7 @@
 namespace leopph::impl
 {
 	Shader::Shader(const std::string_view vertSrc, const std::string_view fragSrc) :
-		Id{m_ProgramName}, m_ProgramName{glCreateProgram()}
+		m_ProgramName{glCreateProgram()}
 	{
 		if (Settings::IsCachingShaders())
 		{

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Shader.hpp"
+#include "DeferredLightShader.hpp"
 #include "../../components/lighting/DirLight.hpp"
 #include "../../math/Vector.hpp"
 
@@ -10,16 +10,11 @@
 
 namespace leopph::impl
 {
-	class DeferredDirLightShader final : public Shader
+	class DeferredDirLightShader final : public DeferredLightShader
 	{
 		public:
 			DeferredDirLightShader();
 
-			void SetPositionTexture(int unit) const;
-			void SetNormalTexture(int unit) const;
-			void SetDiffuseTexture(int unit) const;
-			void SetSpecularTexture(int unit) const;
-			void SetShineTexture(int unit) const;
 			void SetCameraPosition(const Vector3& pos) const;
 			void SetDirLight(const DirectionalLight& dirLight) const;
 			void SetCascadeCount(unsigned count) const;
@@ -29,11 +24,6 @@ namespace leopph::impl
 
 
 		private:
-			const static std::string s_PosTexName;
-			const static std::string s_NormTexName;
-			const static std::string s_DiffTexName;
-			const static std::string s_SpecTexName;
-			const static std::string s_ShineTexName;
 			const static std::string s_ShadowMapArrName;
 			const static std::string s_CamPosName;
 			const static std::string s_DirLightDirName;
@@ -43,11 +33,6 @@ namespace leopph::impl
 			const static std::string s_ClipMatName;
 			const static std::string s_CascBoundsName;
 
-			const int m_PosTexLoc;
-			const int m_NormTexLoc;
-			const int m_DiffTexLoc;
-			const int m_SpecTexLoc;
-			const int m_ShineTexLoc;
 			const int m_ShadowMapArrLoc;
 			const int m_CamPosLoc;
 			const int m_DirLightDirLoc;

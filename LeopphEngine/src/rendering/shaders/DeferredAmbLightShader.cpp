@@ -4,7 +4,7 @@
 namespace leopph::impl
 {
 	DeferredAmbLightShader::DeferredAmbLightShader() :
-		Shader{s_LightPassVertSrc, s_AmbLightFragSrc}
+		DeferredLightShader{s_LightPassVertSrc, s_AmbLightFragSrc}
 	{}
 
 }

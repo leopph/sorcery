@@ -68,6 +68,7 @@
     <ClCompile Include="src\rendering\shaders\DeferredDirLightShader.cpp" />
     <ClCompile Include="src\rendering\shaders\DeferredGeometryShader.cpp" />
     <ClCompile Include="src\rendering\shaders\DeferredAmbLightShader.cpp" />
+    <ClCompile Include="src\rendering\shaders\DeferredLightShader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\Behavior.hpp" />
@@ -152,6 +153,7 @@
     <ClInclude Include="src\rendering\shaders\DeferredDirLightShader.hpp" />
     <ClInclude Include="src\rendering\shaders\DeferredGeometryShader.hpp" />
     <ClInclude Include="src\rendering\shaders\DeferredAmbLightShader.hpp" />
+    <ClInclude Include="src\rendering\shaders\DeferredLightShader.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\cpp.hint" />

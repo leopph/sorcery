@@ -159,6 +159,7 @@
     <ClInclude Include="src\rendering\shaders\DeferredAmbLightShader.hpp" />
     <ClInclude Include="src\rendering\shaders\DeferredDirLightShader.hpp" />
     <ClInclude Include="src\rendering\shaders\DeferredGeometryShader.hpp" />
+    <ClInclude Include="src\rendering\shaders\DeferredLightShader.hpp" />
     <ClInclude Include="src\rendering\shaders\DirShadowMapShader.hpp" />
     <ClInclude Include="src\rendering\shaders\ForwardObjectShader.hpp" />
     <ClInclude Include="src\rendering\shaders\TextureShader.hpp" />
@@ -234,6 +235,7 @@
     <ClCompile Include="src\rendering\shaders\DeferredAmbLightShader.cpp" />
     <ClCompile Include="src\rendering\shaders\DeferredDirLightShader.cpp" />
     <ClCompile Include="src\rendering\shaders\DeferredGeometryShader.cpp" />
+    <ClCompile Include="src\rendering\shaders\DeferredLightShader.cpp" />
     <ClCompile Include="src\rendering\shaders\DirShadowMapShader.cpp" />
     <ClCompile Include="src\rendering\shaders\ForwardObjectShader.cpp" />
     <ClCompile Include="src\rendering\shaders\TextureShader.cpp" />
