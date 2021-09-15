@@ -18,17 +18,17 @@ layout (location = 0) in vec2 in_TexCoords;
 
 layout (location = 0) out vec4 out_FragmentColor;
 
-layout (location = 0) uniform vec3 u_CameraPosition;
-layout (location = 1) uniform DirLight u_DirLight;
-layout (location = 4) uniform uint u_CascadeCount;
-layout (location = 10 + MAX_DIR_LIGHT_CASCADE_COUNT * 4) uniform mat4 u_LightClipMatrices[MAX_DIR_LIGHT_CASCADE_COUNT];
 layout (location = 5) uniform sampler2D u_PositionTexture;
 layout (location = 6) uniform sampler2D u_NormalTexture;
 layout (location = 7) uniform sampler2D u_DiffuseTexture;
 layout (location = 8) uniform sampler2D u_SpecularTexture;
 layout (location = 9) uniform sampler2D u_ShineTexture;
-layout (location = 10) uniform sampler2DShadow u_ShadowMaps[MAX_DIR_LIGHT_CASCADE_COUNT];
+layout (location = 1) uniform DirLight u_DirLight;
+layout (location = 0) uniform vec3 u_CameraPosition;
+layout (location = 4) uniform uint u_CascadeCount;
+layout (location = 10) uniform sampler2D u_ShadowMaps[MAX_DIR_LIGHT_CASCADE_COUNT];
 layout (location = 10 + 8 * MAX_DIR_LIGHT_CASCADE_COUNT) uniform float u_CascadeFarBounds[MAX_DIR_LIGHT_CASCADE_COUNT];
+layout (location = 10 + MAX_DIR_LIGHT_CASCADE_COUNT * 4) uniform mat4 u_LightClipMatrices[MAX_DIR_LIGHT_CASCADE_COUNT];
 
 
 
@@ -71,15 +71,13 @@ float CalculateShadow(vec3 fragPos, float fragPosCameraClipZ, vec3 fragNormal)
 	float bias = max(MAX_SHADOW_BIAS * (1.0 - dot(fragNormal, -u_DirLight.direction)), MIN_SHADOW_BIAS);
 	float shadow = 0;
 
-	
-
 	for (int i = -1; i <= 1; i++)
 	{
 		for (int j = -1; j <= 1; j++)
 		{
-			shadow += texture(u_ShadowMaps[cascadeIndex], vec3(normalizedPos.xy + vec2(i, j) * texelSize, normalizedPos.z - bias));
-			//float pcfDepth = texture(u_ShadowMaps[cascadeIndex], normalizedPos.xy + vec2(i, j) * texelSize).r;
-			//shadow += normalizedPos.z - bias < pcfDepth ? 1 : 0;
+			//shadow += texture(u_ShadowMaps[cascadeIndex], vec3(normalizedPos.xy + vec2(i, j) * texelSize, normalizedPos.z - bias));
+			float pcfDepth = texture(u_ShadowMaps[cascadeIndex], normalizedPos.xy + vec2(i, j) * texelSize).r;
+			shadow += normalizedPos.z - bias < pcfDepth ? 1 : 0;
 		}
 	}
 

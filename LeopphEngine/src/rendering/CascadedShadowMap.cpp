@@ -45,21 +45,28 @@ namespace leopph::impl
 	}
 
 
-	void CascadedShadowMap::BindTexturesForReading(std::size_t texUnit)
+	int CascadedShadowMap::BindTexturesForReading(const DeferredDirLightShader& shader, int texUnit)
 	{
 		m_TexBindStartIndex = texUnit;
+
+		static std::vector<int> texUnits;
+		texUnits.clear();
 
 		for (const auto& texture : m_TexIds)
 		{
 			glBindTextureUnit(static_cast<GLuint>(texUnit), static_cast<GLuint>(texture));
+			texUnits.push_back(texUnit);
 			++texUnit;
 		}
+
+		shader.SetShadowMaps(texUnits);
+		return texUnit;
 	}
 
 
 	void CascadedShadowMap::UnbindTexturesFromReading() const
 	{
-		for (std::size_t texUnit{m_TexBindStartIndex}, i{0}; i < m_TexIds.size(); ++i, ++texUnit)
+		for (auto texUnit{m_TexBindStartIndex}, i{0}; i < m_TexIds.size(); ++i, ++texUnit)
 		{
 			glBindTextureUnit(static_cast<GLuint>(texUnit), static_cast<GLuint>(0));
 		}
@@ -147,8 +154,8 @@ namespace leopph::impl
 			glTextureParameteri(m_TexIds[i], GL_TEXTURE_COMPARE_MODE, GL_NONE);
 			glTextureParameteri(m_TexIds[i], GL_TEXTURE_WRAP_S, GL_REPEAT);
 			glTextureParameteri(m_TexIds[i], GL_TEXTURE_WRAP_T, GL_REPEAT);
-			glTextureParameteri(m_TexIds[i], GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
-			glTextureParameteri(m_TexIds[i], GL_TEXTURE_COMPARE_FUNC, GL_LESS);
+			/*glTextureParameteri(m_TexIds[i], GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+			glTextureParameteri(m_TexIds[i], GL_TEXTURE_COMPARE_FUNC, GL_LESS);*/
 		}
 
 		glNamedFramebufferDrawBuffer(m_Fbo, GL_NONE);

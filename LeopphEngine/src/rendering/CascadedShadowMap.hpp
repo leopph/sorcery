@@ -4,6 +4,7 @@
 #include "../events/EventReceiver.hpp"
 #include "../math/Matrix.hpp"
 #include "../math/Vector.hpp"
+#include "shaders/DeferredDirLightShader.hpp"
 
 #include <cstddef>
 #include <vector>
@@ -27,7 +28,8 @@ namespace leopph::impl
 		void BindTextureForWriting(std::size_t cascadeIndex) const;
 		void UnbindTextureFromWriting() const;
 
-		void BindTexturesForReading(std::size_t texUnit);
+		// Returns the next available texture unit after binding
+		[[nodiscard]] int BindTexturesForReading(const DeferredDirLightShader& shader, int texUnit);
 		void UnbindTexturesFromReading() const;
 
 		void Clear() const;
@@ -39,7 +41,7 @@ namespace leopph::impl
 	private:
 		unsigned m_Fbo;
 		std::vector<unsigned> m_TexIds;
-		std::size_t m_TexBindStartIndex;
+		int m_TexBindStartIndex;
 		std::vector<Matrix4> m_ProjMatrices;
 
 		void OnEventReceived(const DirShadowMapResChangedEvent& event) override;

@@ -120,36 +120,28 @@ namespace leopph::impl
 		auto texCount{0};
 
 		glBindTextureUnit(texCount, m_GBuffer.positionTextureName);
-		m_DirLightShader.SetUniform("u_PositionTexture", texCount++);
+		m_DirLightShader.SetPositionTexture(texCount++);
 
 		glBindTextureUnit(texCount, m_GBuffer.normalTextureName);
-		m_DirLightShader.SetUniform("u_NormalTexture", texCount++);
+		m_DirLightShader.SetNormalTexture(texCount++);
 
 		glBindTextureUnit(texCount, m_GBuffer.diffuseTextureName);
-		m_DirLightShader.SetUniform("u_DiffuseTexture", texCount++);
+		m_DirLightShader.SetDiffuseTexture(texCount++);
 
 		glBindTextureUnit(texCount, m_GBuffer.specularTextureName);
-		m_DirLightShader.SetUniform("u_SpecularTexture", texCount++);
+		m_DirLightShader.SetSpecularTexture(texCount++);
 
 		glBindTextureUnit(texCount, m_GBuffer.shineTextureName);
-		m_DirLightShader.SetUniform("u_ShineTexture", texCount++);
+		m_DirLightShader.SetShineTexture(texCount++);
 
-		m_DirShadowMap.BindTexturesForReading(texCount);
+		texCount = m_DirShadowMap.BindTexturesForReading(m_DirLightShader, texCount);
 
 		const auto cascadeCount{Settings::CameraDirectionalShadowCascadeCount()};
 
-		for (std::size_t i = 0; i < cascadeCount; i++)
-		{
-			m_DirLightShader.SetUniform("u_ShadowMaps[" + std::to_string(i) + "]", texCount++);
-		}
-
-		m_DirLightShader.SetUniform("u_DirLight.direction", dirLight->Direction());
-		m_DirLightShader.SetUniform("u_DirLight.diffuseColor", dirLight->Diffuse());
-		m_DirLightShader.SetUniform("u_DirLight.specularColor", dirLight->Specular());
-		m_DirLightShader.SetUniform("u_CameraPosition", Camera::Active()->entity.Transform->Position());
-		m_DirLightShader.SetUniform("u_CascadeCount", static_cast<unsigned>(Settings::CameraDirectionalShadowCascadeCount()));
-		m_DirLightShader.SetUniform("u_CascadeDepth", (Camera::Active()->FarClipPlane() - Camera::Active()->NearClipPlane()) / static_cast<float>(cascadeCount));
-		m_DirLightShader.SetUniform("u_LightClipMatrices", dirLightMatrices);
+		m_DirLightShader.SetDirLight(*dirLight);
+		m_DirLightShader.SetCameraPosition(Camera::Active()->entity.Transform->Position());
+		m_DirLightShader.SetCascadeCount(static_cast<unsigned>(cascadeCount));
+		m_DirLightShader.SetLightClipMatrices(dirLightMatrices);
 
 		static std::vector<float> cascadeFarBounds;
 		cascadeFarBounds.clear();
@@ -163,7 +155,7 @@ namespace leopph::impl
 			cascadeFarBounds.push_back(clipSpaceBound);
 		}
 
-		m_DirLightShader.SetUniform("u_CascadeFarBounds", cascadeFarBounds);
+		m_DirLightShader.SetCascadeFarBounds(cascadeFarBounds);
 
 		glDisable(GL_DEPTH_TEST);
 		m_DirLightShader.Use();
