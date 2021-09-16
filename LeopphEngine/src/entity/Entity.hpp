@@ -53,8 +53,7 @@ namespace leopph
 		}
 
 		/* Remove the given Component from the Entity.
-		 * If it is not attached to this Entity, std::invalid_exception is thrown.
-		 * Otherwise, the component is detached and destroyed. */
+		 * The component is detached and destroyed. */
 		LEOPPHAPI void RemoveComponent(Component* behavior);
 
 		/* Look for a Component of type T that is attached to the Entity.

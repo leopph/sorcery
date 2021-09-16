@@ -35,9 +35,9 @@ namespace leopph::impl
 	private:
 		void InitKeys() override;
 		
-		static void FramebufferSizeCallback(GLFWwindow* window, int width, int height);
-		static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
-		static void MouseCallback(GLFWwindow* window, double x, double y);
+		static void FramebufferSizeCallback(GLFWwindow*, int width, int height);
+		static void KeyCallback(GLFWwindow*, int key, int, int action, int);
+		static void MouseCallback(GLFWwindow*, double x, double y);
 
 		const static std::unordered_map<int, KeyCode> s_KeyCodes;
 		const static std::unordered_map<int, KeyState> s_KeyStates;

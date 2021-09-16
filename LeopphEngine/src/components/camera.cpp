@@ -3,8 +3,10 @@
 #include "../entity/Entity.hpp"
 #include "../events/DisplayResolutionChangedEvent.hpp"
 #include "../math/LeopphMath.hpp"
+#include "../util/logger.h"
 #include "../windowing/window.h"
 
+#include <stdexcept>
 #include <utility>
 
 
@@ -43,7 +45,7 @@ namespace leopph
 	Camera::Camera(Entity& owner) :
 		Component{owner},
 		m_AspectRatio{leopph::impl::Window::Get().AspectRatio()},
-		m_HorizontalFOVDegrees{100.0f},
+		m_HorizontalFovDegrees{100.0f},
 		m_NearClip{0.1f},
 		m_FarClip{100.f},
 		m_Background{.color{0, 0, 0}, .skybox{nullptr}}
@@ -64,7 +66,7 @@ namespace leopph
 	}
 
 
-	float Camera::ConvertFOV(const float fov, FovConversionDirection conversion) const
+	float Camera::ConvertFov(const float fov, const FovConversionDirection conversion) const
 	{
 		if (conversion == FovConversionDirection::VerticalToHorizontal)
 		{
@@ -75,10 +77,14 @@ namespace leopph
 		{
 			return math::ToDegrees(2.0f * math::Atan(math::Tan(math::ToRadians(fov) / 2.0f) / m_AspectRatio));
 		}
+
+		const auto errMsg{"Invalid FOV conversion direction."};
+		impl::Logger::Instance().Critical(errMsg);
+		throw std::invalid_argument{errMsg};
 	}
 
 
-	void Camera::NearClipPlane(float newPlane)
+	void Camera::NearClipPlane(const float newPlane)
 	{
 		m_NearClip = newPlane;
 	}
@@ -90,7 +96,7 @@ namespace leopph
 	}
 
 
-	void Camera::FarClipPlane(float newPlane)
+	void Camera::FarClipPlane(const float newPlane)
 	{
 		m_FarClip = newPlane;
 	}
@@ -106,11 +112,11 @@ namespace leopph
 	{
 		if (direction == FovDirection::Horizontal)
 		{
-			m_HorizontalFOVDegrees = fov;
+			m_HorizontalFovDegrees = fov;
 		}
 		else if (direction == FovDirection::Vertical)
 		{
-			m_HorizontalFOVDegrees = ConvertFOV(fov, FovConversionDirection::VerticalToHorizontal);
+			m_HorizontalFovDegrees = ConvertFov(fov, FovConversionDirection::VerticalToHorizontal);
 		}
 	}
 
@@ -119,12 +125,16 @@ namespace leopph
 	{
 		if (direction == FovDirection::Horizontal)
 		{
-			return m_HorizontalFOVDegrees;
+			return m_HorizontalFovDegrees;
 		}
 		if (direction == FovDirection::Vertical)
 		{
-			return ConvertFOV(m_HorizontalFOVDegrees, FovConversionDirection::HorizontalToVertical);
+			return ConvertFov(m_HorizontalFovDegrees, FovConversionDirection::HorizontalToVertical);
 		}
+
+		const auto errMsg{"Invalid FOV direction."};
+		impl::Logger::Instance().Critical(errMsg);
+		throw std::invalid_argument{errMsg};
 	}
 
 
@@ -137,7 +147,7 @@ namespace leopph
 
 	Matrix4 Camera::ProjectionMatrix() const
 	{
-		const auto fov{math::ToRadians(ConvertFOV(m_HorizontalFOVDegrees, FovConversionDirection::HorizontalToVertical))};
+		const auto fov{math::ToRadians(ConvertFov(m_HorizontalFovDegrees, FovConversionDirection::HorizontalToVertical))};
 		return Matrix4::Perspective(fov, m_AspectRatio, m_NearClip, m_FarClip);
 	}
 

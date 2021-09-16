@@ -3,22 +3,24 @@
 #include "../../data/DataManager.hpp"
 #include "../../math/Matrix.hpp"
 #include "../../math/Vector.hpp"
-
 #include "../../util/logger.h"
 
 #include <glad/glad.h>
 
 #include <algorithm>
 #include <cstddef>
-#include <stdexcept>
 #include <string>
 #include <type_traits>
+
+
 
 namespace leopph::impl
 {
 	Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned> indices, Material material) :
-		m_Vertices{ std::move(vertices) }, m_Indices{ std::move(indices) }, m_Material{ std::move(material) },
-		m_ModelBufferSize{ 1 }
+		m_Vertices{std::move(vertices)},
+		m_Indices{std::move(indices)},
+		m_Material{std::move(material)},
+		m_ModelBufferSize{1}
 	{
 		glCreateBuffers(2, m_Buffers);
 		glCreateVertexArrays(1, &m_VertexArray);
@@ -71,14 +73,16 @@ namespace leopph::impl
 		SetModelBuffer();
 	}
 
+
 	Mesh::Mesh(Mesh&& other) noexcept :
-		m_Vertices{ std::move(other.m_Vertices) },
-		m_Indices{ std::move(other.m_Indices) },
-		m_Material{ std::move(other.m_Material) },
-		m_VertexArray{ other.m_VertexArray },
-		m_ModelBufferSize{ other.m_ModelBufferSize }
+		m_Buffers{},
+		m_Vertices{std::move(other.m_Vertices)},
+		m_VertexArray{other.m_VertexArray},
+		m_Indices{std::move(other.m_Indices)},
+		m_ModelBufferSize{other.m_ModelBufferSize},
+		m_Material{std::move(other.m_Material)}
 	{
-		for (int i = 0; i < s_NumBuffers; ++i)
+		for (auto i = 0u; i < s_NumBuffers; ++i)
 		{
 			m_Buffers[i] = other.m_Buffers[i];
 			other.m_Buffers[i] = 0;
@@ -88,12 +92,12 @@ namespace leopph::impl
 		other.m_ModelBufferSize = 0;
 	}
 
+
 	Mesh::~Mesh()
 	{
 		glDeleteBuffers(s_NumBuffers, m_Buffers);
 		glDeleteVertexArrays(1, &m_VertexArray);
 	}
-
 
 
 	bool Mesh::operator==(const Mesh& other) const
@@ -102,14 +106,13 @@ namespace leopph::impl
 	}
 
 
-
 	void Mesh::DrawShaded(const Shader& shader, const std::vector<Matrix4>& modelMatrices, const std::vector<Matrix4>& normalMatrices, std::size_t nextFreeTextureUnit) const
 	{
 		if (modelMatrices.size() > m_ModelBufferSize)
 		{
-			auto msg{ "The number of model matrices is [" + std::to_string(modelMatrices.size()) + "] while the buffer is only for [" + std::to_string(m_ModelBufferSize) + "] matrices." };
-			Logger::Instance().Error(msg);
-			throw std::runtime_error{ msg };
+			const auto errMsg{"The number of model matrices is [" + std::to_string(modelMatrices.size()) + "] while the buffer is only for [" + std::to_string(m_ModelBufferSize) + "] matrices."};
+			Logger::Instance().Error(errMsg);
+			return;
 		}
 
 		shader.SetUniform("material.ambientColor", static_cast<Vector3>(m_Material.AmbientColor));
@@ -184,6 +187,7 @@ namespace leopph::impl
 			SetModelBuffer();
 		}
 	}
+
 
 	void Mesh::SetModelBuffer() const
 	{

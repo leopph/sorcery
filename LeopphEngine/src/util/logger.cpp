@@ -4,6 +4,8 @@
 
 #include <stdexcept>
 
+
+
 namespace leopph::impl
 {
 	Logger::Logger()
@@ -11,59 +13,65 @@ namespace leopph::impl
 		CurrentLevel(Level::RELEASE);
 	}
 
+
 	Logger& Logger::Instance()
 	{
 		static Logger instance;
 		return instance;
 	}
 
-	void Logger::CurrentLevel(Level level)
+
+	void Logger::CurrentLevel(const Level level)
 	{
 		switch (level)
 		{
-		case Level::DEBUG:
-			spdlog::set_level(spdlog::level::debug);
-			break;
+			case Level::DEBUG:
+				spdlog::set_level(spdlog::level::debug);
+				break;
 
-		case Level::RELEASE:
-			spdlog::set_level(spdlog::level::warn);
+			case Level::RELEASE:
+				spdlog::set_level(spdlog::level::warn);
 		}
 	}
+
 
 	Logger::Level Logger::CurrentLevel() const
 	{
 		switch (spdlog::get_level())
 		{
-		case spdlog::level::debug:
-			return Level::DEBUG;
-			break;
+			case spdlog::level::debug:
+				return Level::DEBUG;
 
-		case spdlog::level::warn:
-			return Level::RELEASE;
+			case spdlog::level::warn:
+				return Level::RELEASE;
 
-		default:
-			const auto errorMsg{"Internal error: Unknown log level found."};
-			spdlog::error(errorMsg);
-			throw std::runtime_error{ errorMsg };
+			default:
+				const auto errMsg{"Internal error: Unknown log level found."};
+				spdlog::error(errMsg);
+				throw std::domain_error{errMsg};
 		}
 	}
 
-	void Logger::Debug(std::string_view msg) const
+
+	void Logger::Debug(const std::string_view msg) const
 	{
 		spdlog::debug(msg);
 	}
 
-	void Logger::Critical(std::string_view msg) const
+
+	void Logger::Critical(const std::string_view msg) const
 	{
 		spdlog::critical(msg);
 	}
 
-	void Logger::Error(std::string_view msg) const
+
+	void Logger::Error(const std::string_view msg) const
 	{
 		spdlog::error(msg);
 	}
 
-	void Logger::Warning(std::string_view msg) const
+
+	void Logger::Warning(const std::string_view msg) const
 	{
 		spdlog::warn(msg);
 	}

@@ -3,60 +3,64 @@
 #include "../util/logger.h"
 
 #include <glad/glad.h>
+
 #include <stb_image.h>
+
 
 
 namespace leopph::impl
 {
 	TextureResource::TextureResource(const std::filesystem::path& path) :
-		UniqueResource{ path }, Id{ m_ID }, IsTransparent{ m_IsTransparent }, m_ID{}, m_IsTransparent{}
+		UniqueResource{path},
+		Id{m_ID},
+		IsTransparent{m_IsTransparent},
+		m_ID{},
+		m_IsTransparent{}
 	{
 		stbi_set_flip_vertically_on_load(true);
 
 		glCreateTextures(GL_TEXTURE_2D, 1, &m_ID);
 
 		int width, height, channels;
-		unsigned char* data{ stbi_load(path.string().c_str(), &width, &height, &channels, 0) };
+		const auto data{stbi_load(path.string().c_str(), &width, &height, &channels, 0)};
 
 		if (data == nullptr)
 		{
 			glDeleteTextures(1, &m_ID);
 
-			const auto msg{ "Texture on path [" + path.string() + "] could not be loaded." };
+			const auto msg{"Texture on path [" + path.string() + "] could not be loaded."};
 			Logger::Instance().Error(msg);
-
-			throw std::runtime_error{ msg };
+			return;
 		}
 
-		GLenum colorFormat{};
-		GLenum internalFormat{};
+		GLenum colorFormat;
+		GLenum internalFormat;
 
 		switch (channels)
 		{
-		case 1:
-			colorFormat = GL_RED;
-			internalFormat = GL_R8;
-			break;
+			case 1:
+				colorFormat = GL_RED;
+				internalFormat = GL_R8;
+				break;
 
-		case 3:
-			colorFormat = GL_RGB;
-			internalFormat = GL_RGB8;
-			break;
+			case 3:
+				colorFormat = GL_RGB;
+				internalFormat = GL_RGB8;
+				break;
 
-		case 4:
-			colorFormat = GL_RGBA;
-			internalFormat = GL_RGBA8;
-			m_IsTransparent = true;
-			break;
+			case 4:
+				colorFormat = GL_RGBA;
+				internalFormat = GL_RGBA8;
+				m_IsTransparent = true;
+				break;
 
-		default:
-			stbi_image_free(data);
-			glDeleteTextures(1, &m_ID);
+			default:
+				stbi_image_free(data);
+				glDeleteTextures(1, &m_ID);
 
-			const auto msg{ "Texture error: unknown color channel number: [" + std::to_string(channels) + "]." };
-			Logger::Instance().Error(msg);
-
-			throw std::runtime_error{ msg };
+				const auto errMsg{"Texture error: unknown color channel number: [" + std::to_string(channels) + "]."};
+				Logger::Instance().Error(errMsg);
+				return;
 		}
 
 		glTextureStorage2D(m_ID, 1, internalFormat, width, height);

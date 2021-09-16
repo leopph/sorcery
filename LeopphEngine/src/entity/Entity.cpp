@@ -1,13 +1,13 @@
 #include "Entity.hpp"
 
 #include "../data/DataManager.hpp"
-
 #include "../util/logger.h"
 
 #include <limits>
 #include <stdexcept>
 #include <string>
 #include <utility>
+
 
 
 namespace leopph
@@ -20,8 +20,8 @@ namespace leopph
 
 	Entity::Entity(std::string name) :
 		Name{m_Name},
-		m_Name{name.empty() ? "Entity" + std::to_string(impl::DataManager::EntitiesAndComponents().size()) : name},
-		Transform{m_Transform}
+		Transform{m_Transform},
+		m_Name{name.empty() ? "Entity" + std::to_string(impl::DataManager::EntitiesAndComponents().size()) : std::move(name)}
 	{
 		if (Find(this->Name) != nullptr)
 		{
@@ -30,11 +30,15 @@ namespace leopph
 			{
 				newName = m_Name + "(" + std::to_string(i) + ")";
 				if (Find(newName) == nullptr)
+				{
 					break;
+				}
 			}
 			if (newName.empty())
 			{
-				throw std::runtime_error{"Could not solve name conflict during creation of new Entity [" + m_Name + "]."};
+				const auto errMsg{"Could not solve name conflict during creation of new Entity [" + m_Name + "]."};
+				impl::Logger::Instance().Critical(errMsg);
+				throw std::invalid_argument{errMsg};
 			}
 			impl::Logger::Instance().Warning("Entity name [" + m_Name + "] is already taken. Renaming Entity to [" + newName + "]...");
 			m_Name = newName;
@@ -47,15 +51,14 @@ namespace leopph
 
 	Entity::Entity() :
 		Entity{std::string{}}
-	{
-	}
+	{}
 
 
 	Entity::~Entity()
 	{
 		for (auto it = impl::DataManager::Components(this).begin(); it != impl::DataManager::Components(this).end();)
 		{
-			delete* it;
+			delete*it;
 			it = impl::DataManager::Components(this).begin();
 		}
 
@@ -75,7 +78,7 @@ namespace leopph
 		{
 			const auto errorMsg{"The given Component is not attached to Entity [" + Name + "]."};
 			impl::Logger::Instance().Error(errorMsg);
-			throw std::invalid_argument{errorMsg};
+			return;
 		}
 
 		if (dynamic_cast<leopph::Transform*>(behavior))

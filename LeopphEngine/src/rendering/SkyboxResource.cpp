@@ -3,10 +3,11 @@
 #include "../util/logger.h"
 
 #include <glad/glad.h>
-#include <stb_image.h>
 
 #include <cstddef>
+#include <stb_image.h>
 #include <stdexcept>
+
 
 
 namespace leopph::impl
@@ -20,13 +21,12 @@ namespace leopph::impl
 		BottomPath{m_Paths.at(BOTTOM)},
 		FrontPath{m_Paths.at(FRONT)},
 		BackPath{m_Paths.at(BACK)},
-		m_Paths{},
 		m_TexId{},
 		m_Vao{},
 		m_Vbo{}
 	{
-		std::string allFilePathStrings{allFilePaths.string()};
-		for (std::size_t separatorPos{}, faceIndex{RIGHT}; (separatorPos = allFilePathStrings.find(FileSeparator)) != std::string::npos; allFilePathStrings.erase(0, separatorPos + FileSeparator.length()), ++faceIndex)
+		auto allFilePathStrings{allFilePaths.string()};
+		for (std::size_t separatorPos, faceIndex{RIGHT}; (separatorPos = allFilePathStrings.find(FileSeparator)) != std::string::npos; allFilePathStrings.erase(0, separatorPos + FileSeparator.length()), ++faceIndex)
 		{
 			m_Paths.at(faceIndex) = allFilePathStrings.substr(0, separatorPos);
 		}
@@ -42,9 +42,9 @@ namespace leopph::impl
 
 			if (faces.at(i).data == nullptr)
 			{
-				const auto msg{"Skybox texture on path [" + m_Paths.at(i).string() + "] could not be loaded."};
-				Logger::Instance().Error(msg);
-				throw std::runtime_error{msg};
+				const auto errMsg{"Skybox texture on path [" + m_Paths.at(i).string() + "] could not be loaded."};
+				Logger::Instance().Error(errMsg);
+				return;
 			}
 		}
 
@@ -105,46 +105,46 @@ namespace leopph::impl
 
 	const std::array<float, 108> SkyboxResource::s_CubeVertices
 	{
-		-1.0f,  1.0f, -1.0f,
+		-1.0f, 1.0f, -1.0f,
 		-1.0f, -1.0f, -1.0f,
-		 1.0f, -1.0f, -1.0f,
-		 1.0f, -1.0f, -1.0f,
-		 1.0f,  1.0f, -1.0f,
-		-1.0f,  1.0f, -1.0f,
+		1.0f, -1.0f, -1.0f,
+		1.0f, -1.0f, -1.0f,
+		1.0f, 1.0f, -1.0f,
+		-1.0f, 1.0f, -1.0f,
 
-		-1.0f, -1.0f,  1.0f,
+		-1.0f, -1.0f, 1.0f,
 		-1.0f, -1.0f, -1.0f,
-		-1.0f,  1.0f, -1.0f,
-		-1.0f,  1.0f, -1.0f,
-		-1.0f,  1.0f,  1.0f,
-		-1.0f, -1.0f,  1.0f,
+		-1.0f, 1.0f, -1.0f,
+		-1.0f, 1.0f, -1.0f,
+		-1.0f, 1.0f, 1.0f,
+		-1.0f, -1.0f, 1.0f,
 
-		 1.0f, -1.0f, -1.0f,
-		 1.0f, -1.0f,  1.0f,
-		 1.0f,  1.0f,  1.0f,
-		 1.0f,  1.0f,  1.0f,
-		 1.0f,  1.0f, -1.0f,
-		 1.0f, -1.0f, -1.0f,
+		1.0f, -1.0f, -1.0f,
+		1.0f, -1.0f, 1.0f,
+		1.0f, 1.0f, 1.0f,
+		1.0f, 1.0f, 1.0f,
+		1.0f, 1.0f, -1.0f,
+		1.0f, -1.0f, -1.0f,
 
-		-1.0f, -1.0f,  1.0f,
-		-1.0f,  1.0f,  1.0f,
-		 1.0f,  1.0f,  1.0f,
-		 1.0f,  1.0f,  1.0f,
-		 1.0f, -1.0f,  1.0f,
-		-1.0f, -1.0f,  1.0f,
+		-1.0f, -1.0f, 1.0f,
+		-1.0f, 1.0f, 1.0f,
+		1.0f, 1.0f, 1.0f,
+		1.0f, 1.0f, 1.0f,
+		1.0f, -1.0f, 1.0f,
+		-1.0f, -1.0f, 1.0f,
 
-		-1.0f,  1.0f, -1.0f,
-		 1.0f,  1.0f, -1.0f,
-		 1.0f,  1.0f,  1.0f,
-		 1.0f,  1.0f,  1.0f,
-		-1.0f,  1.0f,  1.0f,
-		-1.0f,  1.0f, -1.0f,
+		-1.0f, 1.0f, -1.0f,
+		1.0f, 1.0f, -1.0f,
+		1.0f, 1.0f, 1.0f,
+		1.0f, 1.0f, 1.0f,
+		-1.0f, 1.0f, 1.0f,
+		-1.0f, 1.0f, -1.0f,
 
 		-1.0f, -1.0f, -1.0f,
-		-1.0f, -1.0f,  1.0f,
-		 1.0f, -1.0f, -1.0f,
-		 1.0f, -1.0f, -1.0f,
-		-1.0f, -1.0f,  1.0f,
-		 1.0f, -1.0f,  1.0f
+		-1.0f, -1.0f, 1.0f,
+		1.0f, -1.0f, -1.0f,
+		1.0f, -1.0f, -1.0f,
+		-1.0f, -1.0f, 1.0f,
+		1.0f, -1.0f, 1.0f
 	};
 }

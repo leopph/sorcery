@@ -24,9 +24,8 @@ namespace leopph::impl
 
 		if (scene == nullptr || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || scene->mRootNode == nullptr)
 		{
-			const auto errorMsg{std::string{"Assimp error: "} + importer.GetErrorString()};
-			Logger::Instance().Error(errorMsg);
-			throw std::invalid_argument{errorMsg};
+			Logger::Instance().Error(importer.GetErrorString());
+			return;
 		}
 
 		struct NodeWithTrafo

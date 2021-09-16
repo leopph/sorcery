@@ -3,7 +3,6 @@
 #include "LeopphMath.hpp"
 #include "Vector.hpp"
 
-#include <algorithm>
 #include <array>
 #include <concepts>
 #include <cstddef>
@@ -90,7 +89,7 @@ namespace leopph
 
 
 				/* Applicable to N*N Matrices.
-				 * Construct a new (N-1)*(N-1) Matrix tby dropping the
+				 * Construct a new (N-1)*(N-1) Matrix by dropping the
 				 * Nth row and column of the original square Matrix */
 				explicit Matrix(const Matrix<T, N + 1, M + 1>& other)
 					requires(N == M)

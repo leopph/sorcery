@@ -5,12 +5,14 @@
 #include "../../components/Model.hpp"
 #include "../../config/Settings.hpp"
 #include "../../data/DataManager.hpp"
+#include "../../util/logger.h"
 #include "../../util/less/LightCloserToCamera.hpp"
 
 #include <algorithm>
 #include <cstddef>
 #include <iterator>
 #include <set>
+#include <stdexcept>
 
 
 
@@ -26,6 +28,10 @@ namespace leopph::impl
 			case Settings::RenderType::Deferred:
 				return std::make_unique<DeferredRenderer>();
 		}
+
+		const auto errMsg{"There is no rendering pipeline available of the chosen type."};
+		Logger::Instance().Critical(errMsg);
+		throw std::domain_error{errMsg};
 	}
 
 
