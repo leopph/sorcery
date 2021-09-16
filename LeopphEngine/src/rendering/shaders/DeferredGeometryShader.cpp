@@ -16,6 +16,6 @@ namespace leopph::impl
 
 	void DeferredGeometryShader::SetViewProjectionMatrix(const Matrix4& viewProjMat) const
 	{
-		glProgramUniformMatrix4fv(m_ProgramName, m_ViewProjMatLoc, 1, GL_TRUE, viewProjMat.Data());
+		glProgramUniformMatrix4fv(m_ProgramName, m_ViewProjMatLoc, 1, GL_TRUE, reinterpret_cast<const GLfloat*>(viewProjMat.Data().data()));
 	}
 }

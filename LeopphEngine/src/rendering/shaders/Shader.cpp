@@ -157,13 +157,13 @@ namespace leopph::impl
 
 	void Shader::SetUniform(std::string_view name, const Vector3& value) const
 	{
-		glProgramUniform3fv(m_ProgramName, glGetUniformLocation(m_ProgramName, name.data()), 1, value.Data());
+		glProgramUniform3fv(m_ProgramName, glGetUniformLocation(m_ProgramName, name.data()), 1, value.Data().data());
 	}
 
 
 	void Shader::SetUniform(std::string_view name, const Matrix4& value) const
 	{
-		glProgramUniformMatrix4fv(m_ProgramName, glGetUniformLocation(m_ProgramName, name.data()), 1, GL_TRUE, value.Data());
+		glProgramUniformMatrix4fv(m_ProgramName, glGetUniformLocation(m_ProgramName, name.data()), 1, GL_TRUE, reinterpret_cast<const GLfloat*>(value.Data().data()));
 	}
 
 

@@ -3,6 +3,7 @@
 #include "LeopphMath.hpp"
 #include "Vector.hpp"
 
+#include <algorithm>
 #include <array>
 #include <concepts>
 #include <cstddef>
@@ -88,14 +89,23 @@ namespace leopph
 				}
 
 
+				/* Applicable to N*N Matrices.
+				 * Construct a new (N-1)*(N-1) Matrix tby dropping the
+				 * Nth row and column of the original square Matrix */
+				explicit Matrix(const Matrix<T, N + 1, M + 1>& other)
+					requires(N == M)
+				{
+					for (std::size_t i = 0; i < N; ++i)
+					{
+						m_Data[i] = static_cast<Vector<T, M>>(other[i]);
+					}
+				}
+
+
 				Matrix(const Matrix<T, N, M>& other) = default;
-
 				Matrix(Matrix<T, N, M>&& other) = default;
-
 				Matrix<T, N, M>& operator=(const Matrix& other) = default;
-
 				Matrix<T, N, M>& operator=(Matrix&& other) = default;
-
 				~Matrix() = default;
 
 
@@ -204,17 +214,11 @@ namespace leopph
 				}
 
 
-				/* Returns a pointer to the internal data structure.
+				/* Returns a reference to the internal data structure.
 				DO NOT USE THIS UNLESS NECASSARY */
-				[[nodiscard]] const T* Data() const
+				[[nodiscard]] const std::array<Vector<T, M>, N>& Data() const
 				{
-					return m_Data[0].Data();
-				}
-
-
-				T* Data()
-				{
-					return const_cast<T*>(const_cast<const Matrix<T, N, M>*>(this)->Data());
+					return m_Data;
 				}
 
 
@@ -327,27 +331,6 @@ namespace leopph
 					}
 
 					return inverse;
-				}
-
-
-				/* Applicable to N*N Matrices (N > 2).
-				Returns a new (N-1)*(N-1) Matrix that is created by dropping the
-				Nth row and column of the original square Matrix */
-				template<std::size_t N1 = N, std::size_t M1 = M>
-					requires(N1 == M1 && N1 > 2)
-				explicit operator Matrix<T, N1 - 1, N1 - 1>() const
-				{
-					Matrix<T, N - 1, N - 1> ret{};
-
-					for (std::size_t i = 0; i < N - 1; i++)
-					{
-						for (std::size_t j = 0; j < N - 1; j++)
-						{
-							ret[i][j] = m_Data[i][j];
-						}
-					}
-
-					return ret;
 				}
 
 

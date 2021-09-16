@@ -37,15 +37,15 @@ namespace leopph::impl
 
 	void DeferredDirLightShader::SetCameraPosition(const Vector3& pos) const
 	{
-		glProgramUniform3fv(m_ProgramName, m_CamPosLoc, 1, pos.Data());
+		glProgramUniform3fv(m_ProgramName, m_CamPosLoc, 1, pos.Data().data());
 	}
 
 
 	void DeferredDirLightShader::SetDirLight(const DirectionalLight& dirLight) const
 	{
-		glProgramUniform3fv(m_ProgramName, m_DirLightDirLoc, 1, dirLight.Direction().Data());
-		glProgramUniform3fv(m_ProgramName, m_DirLightDiffLoc, 1, dirLight.Diffuse().Data());
-		glProgramUniform3fv(m_ProgramName, m_DirLightSpecLoc, 1, dirLight.Specular().Data());
+		glProgramUniform3fv(m_ProgramName, m_DirLightDirLoc, 1, dirLight.Direction().Data().data());
+		glProgramUniform3fv(m_ProgramName, m_DirLightDiffLoc, 1, dirLight.Diffuse().Data().data());
+		glProgramUniform3fv(m_ProgramName, m_DirLightSpecLoc, 1, dirLight.Specular().Data().data());
 	}
 
 

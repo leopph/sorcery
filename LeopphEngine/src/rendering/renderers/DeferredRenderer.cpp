@@ -4,7 +4,6 @@
 #include "../../config/Settings.hpp"
 #include "../../data/DataManager.hpp"
 #include "../../math/Matrix.hpp"
-#include "../../util/less/LightCloserToCamera.hpp"
 #include "../../windowing/window.h"
 
 #include <glad/glad.h>
@@ -125,7 +124,7 @@ namespace leopph::impl
 		texCount = m_GBuffer.BindTextureForReading(m_DirLightShader, GeometryBuffer::TextureType::Diffuse, texCount);
 		texCount = m_GBuffer.BindTextureForReading(m_DirLightShader, GeometryBuffer::TextureType::Specular, texCount);
 		texCount = m_GBuffer.BindTextureForReading(m_DirLightShader, GeometryBuffer::TextureType::Shine, texCount);
-		texCount = m_DirShadowMap.BindTexturesForReading(m_DirLightShader, texCount);
+		static_cast<void>(m_DirShadowMap.BindTexturesForReading(m_DirLightShader, texCount));
 
 		const auto cascadeCount{Settings::CameraDirectionalShadowCascadeCount()};
 

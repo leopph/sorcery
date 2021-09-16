@@ -16,7 +16,7 @@ namespace leopph::impl
 
 	void DeferredAmbLightShader::SetAmbientLight(const Vector3& ambientLight) const
 	{
-		glProgramUniform3fv(m_ProgramName, m_AmbLightLoc, 1, ambientLight.Data());
+		glProgramUniform3fv(m_ProgramName, m_AmbLightLoc, 1, ambientLight.Data().data());
 	}
 
 }
