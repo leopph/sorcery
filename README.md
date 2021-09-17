@@ -21,8 +21,8 @@ These are the planned features and their current states:
   - ✅ Instancing of models for fast rendering
   - ❌ Normal mapping
   - ❌ Parallax mapping
-  - 〽️ Cascaded shadow mapping for directional lights 
-  - ❌ Shadow mapping for spotlights 
+  - ✅ Cascaded shadow mapping for directional lights 
+  - ✅ Shadow mapping for spotlights 
   - ❌ Shadow mapping for pointlights
   - ❌ Screen space reflections
   - ❌ FXAA
