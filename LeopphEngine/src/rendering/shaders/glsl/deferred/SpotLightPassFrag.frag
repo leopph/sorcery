@@ -82,35 +82,33 @@ float CalculateShadow(vec3 dirToLight, vec3 fragPos, vec3 fragNormal)
 void main()
 {
 	vec3 fragPos = texture(u_PositionTexture, in_TexCoords).rgb;
-	vec3 posDiff = u_SpotLight.position - fragPos;
-	float dist = length(posDiff);
-
-	if (dist > u_SpotLight.range)
-	{
-		out_FragmentColor = vec4(0, 0, 0, 1);
-		return;
-	}
-
-    vec3 fragNormal = texture(u_NormalTexture, in_TexCoords).rgb;
+	vec3 fragNormal = texture(u_NormalTexture, in_TexCoords).rgb;
     vec3 fragDiffuse = texture(u_DiffuseTexture, in_TexCoords).rgb;
     vec3 fragSpecular = texture(u_SpecularTexture, in_TexCoords).rgb;
 	float fragShine = texture(u_ShineTexture, in_TexCoords).r;
 
-	
-	vec3 dirToLight = normalize(posDiff);
+	vec3 dirToLight = u_SpotLight.position - fragPos;
+	float dist = length(dirToLight);
+	dirToLight = normalize(dirToLight);
+
+	/* Let theta be the angle between
+	 * the direction vector pointing from the fragment to the light
+	 * and the reverse of the light's direction vector. */
 	float thetaCosine = dot(dirToLight, -u_SpotLight.direction);
+
+	/* Let epsilon be the difference between
+	 * the cosines of the light's cutoff angles. */
 	float epsilon = u_SpotLight.innerAngleCosine - u_SpotLight.outerAngleCosine;
+
+	/* Determine if the frag is
+	 * inside the inner angle, or
+	 * between the inner and outer angles, or
+	 * outside the outer angle. */
 	float intensity = clamp((thetaCosine - u_SpotLight.outerAngleCosine) / epsilon, 0.0, 1.0);
 
-	if (intensity > 0)
-	{
-		float attenuation = CalculateAttenuation(u_SpotLight.constant, u_SpotLight.linear, u_SpotLight.quadratic, dist);
-		vec3 light = CalculateBlinnPhong(dirToLight, fragPos, fragNormal, fragDiffuse, fragSpecular, fragShine);
-		float shadow = CalculateShadow(dirToLight, fragPos, fragNormal);
-		out_FragmentColor = vec4(shadow * intensity * attenuation * light, 1);
-	}
-	else
-	{
-		out_FragmentColor = vec4(0, 0, 0, 1);
-	}
+	vec3 light = CalculateBlinnPhong(dirToLight, fragPos, fragNormal, fragDiffuse, fragSpecular, fragShine);
+	float attenuation = CalculateAttenuation(u_SpotLight.constant, u_SpotLight.linear, u_SpotLight.quadratic, dist);
+	float shadow = CalculateShadow(dirToLight, fragPos, fragNormal);
+
+	out_FragmentColor = vec4(light * intensity * attenuation * shadow, 1);
 }

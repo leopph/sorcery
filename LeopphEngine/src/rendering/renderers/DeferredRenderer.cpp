@@ -180,7 +180,7 @@ namespace leopph::impl
 			const auto lightWorldToClipMat
 			{
 				Matrix4::LookAt(spotLight->entity.Transform->Position(), spotLight->entity.Transform->Position() + spotLight->entity.Transform->Forward(), Vector3::Up()) *
-				Matrix4::Perspective(math::ToRadians(spotLight->OuterAngle()), 1.f, 0.001f, spotLight->Range())
+				Matrix4::Perspective(math::ToRadians(spotLight->OuterAngle() * 2), 1.f, 0.1f, spotLight->Range())
 			};
 
 			m_ShadowShader.SetLightWorldToClipMatrix(lightWorldToClipMat);

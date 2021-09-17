@@ -1,41 +1,61 @@
 #define LEOPPH_ENTRY
-#include "Leopph.hpp"
 
+#include "Leopph.hpp"
 #include "behaviors/CameraController.hpp"
 #include "behaviors/FPSCounter.hpp"
 #include "behaviors/Rotate.hpp"
-
-#include <memory>
 
 
 void leopph::AppStart()
 {
 	Input::CursorMode(CursorState::Disabled);
 
-	const auto cameraObj = new Entity{};
-	cameraObj->Transform->RotateGlobal(Quaternion{Vector3::Up(), 180});
-	new Camera{ *cameraObj };
-	new CameraController{ *cameraObj };
-	const auto spotLight = new SpotLight{ *cameraObj };
-	spotLight->InnerAngle(15);
-	spotLight->OuterAngle(20);
+	const auto playerEntity = new Entity{};
+	playerEntity->Transform->RotateGlobal(Quaternion{Vector3::Up(), 180});
 
-	Camera::Active()->Background(CameraBackground{ .skybox{std::make_unique<Skybox>("skybox/megasun/right.hdr", "skybox/megasun/left.hdr", "skybox/megasun/top.hdr", "skybox/megasun/bottom.hdr", "skybox/megasun/back.hdr", "skybox/megasun/front.hdr")}});
+	const auto camera{playerEntity->AddComponent<Camera>()};
+	camera->Background(CameraBackground
+		{
+			.color{0, 0, 0},
+			.skybox{std::make_unique<Skybox>(
+				Skybox
+				{
+					"skybox/megasun/right.hdr",
+					"skybox/megasun/left.hdr",
+					"skybox/megasun/top.hdr",
+					"skybox/megasun/bottom.hdr",
+					"skybox/megasun/back.hdr",
+					"skybox/megasun/front.hdr"
+				})
+			}
+		});
 
-	const auto portraitObj = new Entity{};
-	portraitObj->Transform->Position(Vector3{ 0, 0, -5 });
-	new Model{ *portraitObj, "models/portrait/cropped_textured_mesh.obj" };
+	playerEntity->AddComponent<CameraController>();
 
-	const auto cubeObj = new Entity;
-	cubeObj->Transform->Position(Vector3{ 0, 0, -5 });
-	new Model{*cubeObj, "models/cube/cube.dae"};
-	new Rotate{*cubeObj, Vector3::Up(), 30};
+	const auto playerSpotLight = playerEntity->AddComponent<SpotLight>();
+	playerSpotLight->InnerAngle(15);
+	playerSpotLight->OuterAngle(20);
 
-	const auto dirLightObj = new Entity{};
-	dirLightObj->Transform->RotateGlobal(Quaternion{ Vector3::Up(), 135 });
-	dirLightObj->Transform->RotateLocal({ Quaternion{Vector3::Right(), 45} });
-	const auto dirLight = new DirectionalLight{ *dirLightObj };
+	const auto portraitEntity = new Entity{};
+	portraitEntity->Transform->Position(Vector3{0, 0, -5});
+	portraitEntity->AddComponent<Model>("models/portrait/cropped_textured_mesh.obj");
+
+	const auto cubeEntity = new Entity;
+	cubeEntity->Transform->Position(Vector3{0, 0, -5});
+	cubeEntity->AddComponent<Model>("models/cube/cube.dae");
+	cubeEntity->AddComponent<Rotate>(Vector3::Up(), 30.f);
+
+	const auto dirLightEntity = new Entity{};
+	dirLightEntity->Transform->RotateGlobal(Quaternion{Vector3::Up(), 135});
+	dirLightEntity->Transform->RotateLocal({Quaternion{Vector3::Right(), 45}});
+	const auto dirLight = dirLightEntity->AddComponent<DirectionalLight>();
 	dirLight->Diffuse(Vector3{0.5, 0.5, 0.5});
 
-	new FPSCounter{*new Entity};
+	const auto globalSpotLightEntity = new Entity;
+	globalSpotLightEntity->Transform->RotateGlobal(Quaternion{Vector3::Up(), 180});
+	const auto globalSpotLight = globalSpotLightEntity->AddComponent<SpotLight>();
+	globalSpotLight->InnerAngle(45);
+	globalSpotLight->OuterAngle(60);
+
+	(new Entity{})->AddComponent<FPSCounter>();
 }
