@@ -64,12 +64,14 @@
     <ClCompile Include="src\rendering\shaders\SkyboxShader.cpp" />
     <ClCompile Include="src\rendering\shaders\ForwardObjectShader.cpp" />
     <ClCompile Include="src\rendering\shaders\TextureShader.cpp" />
-    <ClCompile Include="src\rendering\shaders\DirShadowMapShader.cpp" />
+    <ClCompile Include="src\rendering\shaders\ShadowMapShader.cpp" />
     <ClCompile Include="src\rendering\shaders\DeferredDirLightShader.cpp" />
     <ClCompile Include="src\rendering\shaders\DeferredGeometryShader.cpp" />
     <ClCompile Include="src\rendering\shaders\DeferredAmbLightShader.cpp" />
     <ClCompile Include="src\rendering\shaders\DeferredLightShader.cpp" />
     <ClCompile Include="src\rendering\shaders\DeferredSpotLightShader.cpp" />
+    <ClCompile Include="src\events\SpotShadowMapResChangedEvent.cpp" />
+    <ClCompile Include="src\rendering\SpotLightShadowMap.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\Behavior.hpp" />
@@ -150,12 +152,14 @@
     <ClInclude Include="src\rendering\shaders\SkyboxShader.hpp" />
     <ClInclude Include="src\rendering\shaders\ForwardObjectShader.hpp" />
     <ClInclude Include="src\rendering\shaders\TextureShader.hpp" />
-    <ClInclude Include="src\rendering\shaders\DirShadowMapShader.hpp" />
+    <ClInclude Include="src\rendering\shaders\ShadowMapShader.hpp" />
     <ClInclude Include="src\rendering\shaders\DeferredDirLightShader.hpp" />
     <ClInclude Include="src\rendering\shaders\DeferredGeometryShader.hpp" />
     <ClInclude Include="src\rendering\shaders\DeferredAmbLightShader.hpp" />
     <ClInclude Include="src\rendering\shaders\DeferredLightShader.hpp" />
     <ClInclude Include="src\rendering\shaders\DeferredSpotLightShader.hpp" />
+    <ClInclude Include="src\rendering\SpotLightShadowMap.hpp" />
+    <ClInclude Include="src\events\SpotShadowMapResChangedEvent.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\cpp.hint" />

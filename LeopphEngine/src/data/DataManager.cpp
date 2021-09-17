@@ -157,7 +157,7 @@ namespace leopph::impl
 	}
 
 
-	void DataManager::CreateShadowMap(const Vector2& resolution)
+	void DataManager::CreateShadowMap(std::size_t resolution)
 	{
 		s_ShadowMaps.emplace_back(resolution);
 	}

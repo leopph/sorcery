@@ -1,36 +1,43 @@
 #pragma once
 
-#include "../math/Vector.hpp"
+#include <cstddef>
+
 
 namespace leopph::impl
 {
 	class ShadowMap
 	{
-	public:
-		explicit ShadowMap(const Vector2& resolution);
+		public:
+			explicit ShadowMap(std::size_t resolution);
 
-		ShadowMap(const ShadowMap&) = delete;
-		ShadowMap(ShadowMap&& other) noexcept;
+			ShadowMap(const ShadowMap&) = delete;
+			ShadowMap(ShadowMap&& other) noexcept;
 
-		void operator=(const ShadowMap&) = delete;
-		ShadowMap& operator=(ShadowMap&& other) noexcept;
+			void operator=(const ShadowMap&) = delete;
+			ShadowMap& operator=(ShadowMap&& other) noexcept;
 
-		~ShadowMap();
+			virtual ~ShadowMap();
 
-		void BindForWriting() const;
-		void UnbindFromWriting() const;
+			void BindForWriting() const;
+			void UnbindFromWriting() const;
 
-		[[nodiscard]] int BindForReading(int textureUnit) const;
-		void UnbindFromReading() const;
+			[[nodiscard]] int BindForReading(int textureUnit) const;
+			void UnbindFromReading() const;
 
-		void Clear() const;
+			void Clear() const;
 
-		const unsigned& Id;
+			const unsigned& Id;
 
-	private:
-		Vector2 m_Resolution;
-		unsigned m_Fbo;
-		unsigned m_DepthTex;
-		mutable int m_CurrentBindIndex;
+
+		protected:
+			std::size_t m_Resolution;
+			void Init();
+			void Deinit() const;
+
+
+		private:
+			unsigned m_Fbo;
+			unsigned m_DepthTex;
+			mutable int m_CurrentBindIndex;
 	};
 }

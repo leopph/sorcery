@@ -144,6 +144,7 @@
     <ClInclude Include="src\events\KeyEvent.hpp" />
     <ClInclude Include="src\events\ModelCountChangedEvent.hpp" />
     <ClInclude Include="src\events\MouseEvent.hpp" />
+    <ClInclude Include="src\events\SpotShadowMapResChangedEvent.hpp" />
     <ClInclude Include="src\input\cursorstate.h" />
     <ClInclude Include="src\input\keycodes.h" />
     <ClInclude Include="src\input\keystate.h" />
@@ -161,13 +162,14 @@
     <ClInclude Include="src\rendering\shaders\DeferredGeometryShader.hpp" />
     <ClInclude Include="src\rendering\shaders\DeferredLightShader.hpp" />
     <ClInclude Include="src\rendering\shaders\DeferredSpotLightShader.hpp" />
-    <ClInclude Include="src\rendering\shaders\DirShadowMapShader.hpp" />
+    <ClInclude Include="src\rendering\shaders\ShadowMapShader.hpp" />
     <ClInclude Include="src\rendering\shaders\ForwardObjectShader.hpp" />
     <ClInclude Include="src\rendering\shaders\TextureShader.hpp" />
     <ClInclude Include="src\rendering\ShadowMap.hpp" />
     <ClInclude Include="src\rendering\SkyboxHandle.hpp" />
     <ClInclude Include="src\rendering\SkyboxResource.hpp" />
     <ClInclude Include="src\rendering\shaders\SkyboxShader.hpp" />
+    <ClInclude Include="src\rendering\SpotLightShadowMap.hpp" />
     <ClInclude Include="src\rendering\Texture.hpp" />
     <ClInclude Include="src\rendering\TextureResource.hpp" />
     <ClInclude Include="src\timing\timer.h" />
@@ -223,6 +225,7 @@
     <ClCompile Include="src\events\KeyEvent.cpp" />
     <ClCompile Include="src\events\ModelCountChangedEvent.cpp" />
     <ClCompile Include="src\events\MouseEvent.cpp" />
+    <ClCompile Include="src\events\SpotShadowMapResChangedEvent.cpp" />
     <ClCompile Include="src\misc\color.cpp" />
     <ClCompile Include="src\rendering\CascadedShadowMap.cpp" />
     <ClCompile Include="src\rendering\geometry\AssimpModel.cpp" />
@@ -238,12 +241,13 @@
     <ClCompile Include="src\rendering\shaders\DeferredGeometryShader.cpp" />
     <ClCompile Include="src\rendering\shaders\DeferredLightShader.cpp" />
     <ClCompile Include="src\rendering\shaders\DeferredSpotLightShader.cpp" />
-    <ClCompile Include="src\rendering\shaders\DirShadowMapShader.cpp" />
+    <ClCompile Include="src\rendering\shaders\ShadowMapShader.cpp" />
     <ClCompile Include="src\rendering\shaders\ForwardObjectShader.cpp" />
     <ClCompile Include="src\rendering\shaders\TextureShader.cpp" />
     <ClCompile Include="src\rendering\ShadowMap.cpp" />
     <ClCompile Include="src\rendering\SkyboxHandle.cpp" />
     <ClCompile Include="src\rendering\SkyboxResource.cpp" />
+    <ClCompile Include="src\rendering\SpotLightShadowMap.cpp" />
     <ClCompile Include="src\rendering\Texture.cpp" />
     <ClCompile Include="src\rendering\TextureResource.cpp" />
     <ClCompile Include="src\rendering\shaders\SkyboxShader.cpp" />

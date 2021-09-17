@@ -19,7 +19,7 @@ namespace leopph::impl
 		{
 			switch (Settings::RenderAPI)
 			{
-			case Settings::GraphicsAPI::OpenGL:
+			case Settings::GraphicsApi::OpenGL:
 				s_Instance = new GLWindowImpl{ width, height, title, fullscreen };
 			}
 

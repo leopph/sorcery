@@ -4,13 +4,14 @@
 #include "../CascadedShadowMap.hpp"
 #include "../GeometryBuffer.hpp"
 #include "../ScreenTexture.hpp"
+#include "../SpotLightShadowMap.hpp"
 #include "../../components/lighting/SpotLight.hpp"
 #include "../../math/Matrix.hpp"
 #include "../shaders/DeferredAmbLightShader.hpp"
 #include "../shaders/DeferredDirLightShader.hpp"
 #include "../shaders/DeferredGeometryShader.hpp"
 #include "../shaders/DeferredSpotLightShader.hpp"
-#include "../shaders/DirShadowMapShader.hpp"
+#include "../shaders/ShadowMapShader.hpp"
 #include "../shaders/SkyboxShader.hpp"
 #include "../shaders/TextureShader.hpp"
 
@@ -50,11 +51,13 @@ namespace leopph::impl
 			ScreenTexture m_ScreenTexture;
 
 			TextureShader m_TextureShader;
+			ShadowMapShader m_ShadowShader;
 			DeferredGeometryShader m_GPassObjectShader;
-			DirShadowMapShader m_DirShadowShader;
 			DeferredAmbLightShader m_AmbientShader;
 			DeferredDirLightShader m_DirLightShader;
 			DeferredSpotLightShader m_SpotLightShader;
 			SkyboxShader m_SkyboxShader;
+
+			SpotLightShadowMap m_SpotShadowMap;
 	};
 }

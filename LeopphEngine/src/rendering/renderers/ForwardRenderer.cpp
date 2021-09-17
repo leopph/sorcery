@@ -67,17 +67,17 @@ namespace leopph::impl
 		/* If we don't have a shadow map, we create one */
 		if (shadowMaps.empty())
 		{
-			DataManager::CreateShadowMap(Vector2{static_cast<float>(Settings::DirectionalShadowMapResolutions()[0])});
+			DataManager::CreateShadowMap(Settings::DirectionalShadowMapResolutions()[0]); // TODO cascades
 		}
 
 		const auto lightViewMat{Matrix4::LookAt(-dirLight->Direction(), Vector3{}, Vector3::Up())};
 		const auto lightProjMat{Matrix4::Ortographic(-10, 10, 10, -10, Camera::Active()->NearClipPlane(), Camera::Active()->FarClipPlane())};
 		const auto lightTransformMat{lightViewMat * lightProjMat};
 
-		m_DirectionalShadowMapShader.Use();
+		m_ShadowShader.Use();
 		shadowMaps.front().BindForWriting();
 
-		m_DirectionalShadowMapShader.SetUniform("lightClipMatrix", lightTransformMat);
+		m_ShadowShader.SetLightWorldToClipMatrix(lightTransformMat);
 
 		for (const auto& [modelRes, matrices] : modelsAndMats)
 		{

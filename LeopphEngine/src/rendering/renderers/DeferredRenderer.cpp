@@ -98,7 +98,7 @@ namespace leopph::impl
 		static std::vector<Matrix4> dirLightMatrices;
 		dirLightMatrices.clear();
 
-		m_DirShadowShader.Use();
+		m_ShadowShader.Use();
 
 		for (std::size_t i = 0; i < Settings::CameraDirectionalShadowCascadeCount(); ++i)
 		{
@@ -108,7 +108,7 @@ namespace leopph::impl
 			m_DirShadowMap.BindForWriting(i);
 			m_DirShadowMap.Clear();
 
-			m_DirShadowShader.SetUniform("lightClipMatrix", lightWorldToClip);
+			m_ShadowShader.SetLightWorldToClipMatrix(lightWorldToClip);
 
 			for (const auto& [modelRes, matrices] : modelsAndMats)
 			{
@@ -158,6 +158,17 @@ namespace leopph::impl
 
 	void DeferredRenderer::RenderSpotLights(const std::vector<const SpotLight*>& spotLights) const
 	{
+		if (spotLights.empty())
+		{
+			return;
+		}
+
+		for (const auto& spotLight : spotLights)
+		{
+			auto worldToClipMat{(static_cast<Matrix4>(spotLight->entity.Transform->Rotation()) * Matrix4::Translate(spotLight->entity.Transform->Position())).Inverse()};
+			worldToClipMat *= Matrix4::Perspective(spotLight->OuterAngle(), 1, 0.01f, spotLight->Range());
+		}
+
 		auto texCount{0};
 		texCount = m_GBuffer.BindTextureForReading(m_SpotLightShader, GeometryBuffer::TextureType::Position, texCount);
 		texCount = m_GBuffer.BindTextureForReading(m_SpotLightShader, GeometryBuffer::TextureType::Normal, texCount);

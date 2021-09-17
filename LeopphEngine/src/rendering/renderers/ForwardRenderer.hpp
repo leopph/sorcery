@@ -2,7 +2,7 @@
 
 #include "Renderer.hpp"
 #include "../../math/Matrix.hpp"
-#include "../shaders/DirShadowMapShader.hpp"
+#include "../shaders/ShadowMapShader.hpp"
 #include "../shaders/ForwardObjectShader.hpp"
 #include "../shaders/SkyboxShader.hpp"
 
@@ -35,6 +35,6 @@ namespace leopph::impl
 
 			ForwardObjectShader m_ObjectShader;
 			SkyboxShader m_SkyboxShader;
-			DirShadowMapShader m_DirectionalShadowMapShader;
+			ShadowMapShader m_ShadowShader;
 	};
 }

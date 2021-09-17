@@ -1,21 +1,24 @@
 #include "Settings.hpp"
 
-#include "../windowing/window.h"
 #include "../events/DirShadowMapResChangedEvent.hpp"
 #include "../events/EventManager.hpp"
+#include "../events/SpotShadowMapResChangedEvent.hpp"
+#include "../windowing/window.h"
 
 #include <utility>
+
+
 
 namespace leopph
 {
 	std::filesystem::path Settings::s_ShaderLocation{};
-	const Settings::GraphicsAPI Settings::RenderAPI{ GraphicsAPI::OpenGL };
-	Settings::GraphicsAPI Settings::s_PendingRenderAPI{ RenderAPI };
+	const Settings::GraphicsApi Settings::RenderAPI{GraphicsApi::OpenGL};
+	Settings::GraphicsApi Settings::s_PendingRenderApi{RenderAPI};
 	std::vector<std::size_t> Settings::s_DirectionalLightShadowMapResolutions{4096, 2048, 1024};
-	Vector2 Settings::s_PointLightShadowMapResolution{ 1024, 1024 };
-	Vector2 Settings::s_SpotLightShadowMapResolution{ 2048, 2048 };
-	std::size_t Settings::s_MaxPointLightCount{ 64 };
-	std::size_t Settings::s_MaxSpotLightCount{ 64 };
+	std::size_t Settings::s_PointLightShadowMapResolution{1024};
+	std::size_t Settings::s_SpotLightShadowMapResolution{2048};
+	std::size_t Settings::s_MaxPointLightCount{64};
+	std::size_t Settings::s_MaxSpotLightCount{64};
 	Settings::RenderType Settings::s_RenderingPipeline{RenderType::Deferred};
 
 
@@ -37,9 +40,9 @@ namespace leopph
 	}
 
 
-	void Settings::SetRenderAPI(const GraphicsAPI newAPI)
+	void Settings::SetRenderApi(const GraphicsApi newApi)
 	{
-		s_PendingRenderAPI = newAPI;
+		s_PendingRenderApi = newApi;
 	}
 
 
@@ -74,27 +77,28 @@ namespace leopph
 	}
 
 
-	const Vector2& Settings::PointLightShadowMapResolution()
+	std::size_t Settings::PointLightShadowMapResolution()
 	{
 		return s_PointLightShadowMapResolution;
 	}
 
 
-	void Settings::PointLightShadowMapResolution(const Vector2& newRes)
+	void Settings::PointLightShadowMapResolution(const std::size_t newRes)
 	{
 		s_PointLightShadowMapResolution = newRes;
 	}
 
 
-	const Vector2& Settings::SpotLightShadowMapResolution()
+	std::size_t Settings::SpotLightShadowMapResolution()
 	{
 		return s_SpotLightShadowMapResolution;
 	}
 
 
-	void Settings::SpotLightShadowMapResolution(const Vector2& newRes)
+	void Settings::SpotLightShadowMapResolution(const std::size_t newRes)
 	{
 		s_SpotLightShadowMapResolution = newRes;
+		EventManager::Instance().Send<impl::SpotShadowMapResChangedEvent>(s_SpotLightShadowMapResolution);
 	}
 
 
@@ -128,7 +132,7 @@ namespace leopph
 	}
 
 
-	void Settings::RenderingPipeline(RenderType type)
+	void Settings::RenderingPipeline(const RenderType type)
 	{
 		s_RenderingPipeline = type;
 	}
