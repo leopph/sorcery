@@ -3,7 +3,7 @@
 #include "../components/Camera.hpp"
 #include "../config/Settings.hpp"
 #include "../math/LeopphMath.hpp"
-#include "../windowing/window.h"
+#include "../windowing/Window.hpp"
 
 #include <glad/glad.h>
 

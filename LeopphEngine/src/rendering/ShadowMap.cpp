@@ -1,6 +1,6 @@
 #include "ShadowMap.hpp"
 
-#include "../windowing/window.h"
+#include "../windowing/Window.hpp"
 
 #include <glad/glad.h>
 

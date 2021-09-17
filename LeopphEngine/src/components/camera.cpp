@@ -4,7 +4,7 @@
 #include "../events/DisplayResolutionChangedEvent.hpp"
 #include "../math/LeopphMath.hpp"
 #include "../util/logger.h"
-#include "../windowing/window.h"
+#include "../windowing/Window.hpp"
 
 #include <stdexcept>
 #include <utility>

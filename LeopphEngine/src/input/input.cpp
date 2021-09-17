@@ -1,6 +1,6 @@
 #include "Input.hpp"
 
-#include "../windowing/window.h"
+#include "../windowing/Window.hpp"
 
 namespace leopph
 {

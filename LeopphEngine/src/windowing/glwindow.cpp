@@ -1,4 +1,4 @@
-#include "glwindow.h"
+#include "GLWindow.hpp"
 
 #include "../events/DisplayResolutionChangedEvent.hpp"
 #include "../events/EventManager.hpp"
@@ -9,6 +9,7 @@
 
 #include <glad/glad.h>
 
+#include <array>
 #include <map>
 #include <stdexcept>
 #include <utility>
@@ -305,8 +306,7 @@ namespace leopph::impl
 
 	void GLWindowImpl::Clear()
 	{
-		Vector3 color{Background()};
-		glClearColor(color[0], color[1], color[2], 1);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glClearNamedFramebufferfv(0, GL_COLOR, 0, Vector4{static_cast<Vector3>(Background())}.Data().data());
+		glClearNamedFramebufferfv(0, GL_DEPTH, 0, std::array{1.f}.data());
 	}
 }

@@ -16,7 +16,6 @@ void leopph::AppStart()
 	const auto camera{playerEntity->AddComponent<Camera>()};
 	camera->Background(CameraBackground
 		{
-			.color{0, 0, 0},
 			.skybox{
 				Skybox
 				{

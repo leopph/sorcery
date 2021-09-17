@@ -1,6 +1,6 @@
 #include "GeometryBuffer.hpp"
 
-#include "../windowing/window.h"
+#include "../windowing/Window.hpp"
 
 #include <glad/glad.h>
 
@@ -29,7 +29,7 @@ namespace leopph::impl
 	{
 		for (std::size_t i = 0; i < m_Textures.size(); i++)
 		{
-			glClearNamedFramebufferfv(m_FrameBuffer, GL_COLOR, static_cast<GLint>(i), Vector4{ 0, 0, 0, 1 }.Data().data());
+			glClearNamedFramebufferfv(m_FrameBuffer, GL_COLOR, static_cast<GLint>(i), Vector4{static_cast<Vector3>(Window::Get().Background())}.Data().data());
 		}
 
 		glClearNamedFramebufferfv(m_FrameBuffer, GL_DEPTH, 0, std::array<GLfloat, 1>{ 1 }.data());

@@ -5,7 +5,7 @@
 #include "../../data/DataManager.hpp"
 #include "../../math/LeopphMath.hpp"
 #include "../../math/Matrix.hpp"
-#include "../../windowing/window.h"
+#include "../../windowing/Window.hpp"
 
 #include <glad/glad.h>
 
@@ -41,8 +41,8 @@ namespace leopph::impl
 
 		RenderGeometry(camViewMat, camProjMat, modelsAndMats);
 
-		glEnable(GL_BLEND);
 		RenderAmbientLight();
+		glEnable(GL_BLEND);
 		RenderDirectionalLights(camViewMat, camProjMat, modelsAndMats);
 		RenderSpotLights(spotLights, modelsAndMats);
 		glDisable(GL_BLEND);

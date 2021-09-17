@@ -3,7 +3,7 @@
 #include "../events/DirShadowMapResChangedEvent.hpp"
 #include "../events/EventManager.hpp"
 #include "../events/SpotShadowMapResChangedEvent.hpp"
-#include "../windowing/window.h"
+#include "../windowing/Window.hpp"
 
 #include <utility>
 
