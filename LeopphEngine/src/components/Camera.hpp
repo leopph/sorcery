@@ -5,7 +5,7 @@
 #include "../events/DisplayResolutionChangedEvent.hpp"
 #include "../events/EventReceiver.hpp"
 #include "../math/Matrix.hpp"
-#include "../misc/camerabackground.h"
+#include "../misc/CameraBackground.hpp"
 
 
 

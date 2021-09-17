@@ -27,7 +27,7 @@
     <ClCompile Include="src\util\logger.cpp" />
     <ClCompile Include="src\rendering\Material.cpp" />
     <ClCompile Include="src\misc\Skybox.cpp" />
-    <ClCompile Include="src\misc\color.cpp" />
+    <ClCompile Include="src\misc\Color.cpp" />
     <ClCompile Include="src\components\lighting\AmbientLight.cpp" />
     <ClCompile Include="src\components\Transform.cpp" />
     <ClCompile Include="src\rendering\ShadowMap.cpp" />
@@ -108,9 +108,9 @@
     <ClInclude Include="src\timing\timer.h" />
     <ClInclude Include="src\util\logger.h" />
     <ClInclude Include="src\rendering\Material.hpp" />
-    <ClInclude Include="src\misc\color.h" />
+    <ClInclude Include="src\misc\Color.hpp" />
     <ClInclude Include="src\util\hash\PathHash.hpp" />
-    <ClInclude Include="src\misc\camerabackground.h" />
+    <ClInclude Include="src\misc\CameraBackground.hpp" />
     <ClInclude Include="src\misc\Skybox.hpp" />
     <ClInclude Include="src\components\lighting\AmbientLight.hpp" />
     <ClInclude Include="src\components\Transform.hpp" />

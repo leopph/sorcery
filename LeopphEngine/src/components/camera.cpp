@@ -48,7 +48,7 @@ namespace leopph
 		m_HorizontalFovDegrees{100.0f},
 		m_NearClip{0.1f},
 		m_FarClip{100.f},
-		m_Background{.color{0, 0, 0}, .skybox{nullptr}}
+		m_Background{.color{0, 0, 0}, .skybox{}}
 	{
 		if (s_Active == nullptr)
 		{

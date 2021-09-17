@@ -1,9 +1,11 @@
 #pragma once
 
-#include "../misc/color.h"
 #include "Skybox.hpp"
+#include "../misc/Color.hpp"
 
-#include <memory>
+#include <optional>
+
+
 
 namespace leopph
 {
@@ -16,6 +18,6 @@ namespace leopph
 	struct CameraBackground
 	{
 		Color color;
-		std::unique_ptr<Skybox> skybox;
+		std::optional<Skybox> skybox;
 	};
 }

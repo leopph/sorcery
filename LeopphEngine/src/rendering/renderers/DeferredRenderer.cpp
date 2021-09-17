@@ -213,7 +213,7 @@ namespace leopph::impl
 		const auto& window{Window::Get()};
 		m_GBuffer.CopyDepthData(0, Vector2{window.Width(), window.Height()});
 
-		if (const auto& skybox{Camera::Active()->Background().skybox}; skybox != nullptr)
+		if (const auto& skybox{Camera::Active()->Background().skybox}; skybox.has_value())
 		{
 			m_SkyboxShader.SetUniform("viewMatrix", static_cast<Matrix4>(static_cast<Matrix3>(camViewMat)));
 			m_SkyboxShader.SetUniform("projectionMatrix", camProjMat);

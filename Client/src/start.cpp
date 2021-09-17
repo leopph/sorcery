@@ -17,7 +17,7 @@ void leopph::AppStart()
 	camera->Background(CameraBackground
 		{
 			.color{0, 0, 0},
-			.skybox{std::make_unique<Skybox>(
+			.skybox{
 				Skybox
 				{
 					"skybox/megasun/right.hdr",
@@ -26,7 +26,7 @@ void leopph::AppStart()
 					"skybox/megasun/bottom.hdr",
 					"skybox/megasun/back.hdr",
 					"skybox/megasun/front.hdr"
-				})
+				}
 			}
 		});
 

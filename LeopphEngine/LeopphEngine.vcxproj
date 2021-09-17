@@ -148,7 +148,7 @@
     <ClInclude Include="src\input\cursorstate.h" />
     <ClInclude Include="src\input\keycodes.h" />
     <ClInclude Include="src\input\keystate.h" />
-    <ClInclude Include="src\misc\color.h" />
+    <ClInclude Include="src\misc\Color.hpp" />
     <ClInclude Include="src\rendering\CascadedShadowMap.hpp" />
     <ClInclude Include="src\rendering\geometry\AssimpModel.hpp" />
     <ClInclude Include="src\rendering\GeometryBuffer.hpp" />
@@ -173,7 +173,7 @@
     <ClInclude Include="src\rendering\Texture.hpp" />
     <ClInclude Include="src\rendering\TextureResource.hpp" />
     <ClInclude Include="src\timing\timer.h" />
-    <ClInclude Include="src\misc\camerabackground.h" />
+    <ClInclude Include="src\misc\CameraBackground.hpp" />
     <ClInclude Include="src\util\equal\EntityEqual.hpp" />
     <ClInclude Include="src\util\equal\UniqueResourceEqual.hpp" />
     <ClInclude Include="src\util\hash\EntityHash.hpp" />
@@ -226,7 +226,7 @@
     <ClCompile Include="src\events\ModelCountChangedEvent.cpp" />
     <ClCompile Include="src\events\MouseEvent.cpp" />
     <ClCompile Include="src\events\SpotShadowMapResChangedEvent.cpp" />
-    <ClCompile Include="src\misc\color.cpp" />
+    <ClCompile Include="src\misc\Color.cpp" />
     <ClCompile Include="src\rendering\CascadedShadowMap.cpp" />
     <ClCompile Include="src\rendering\geometry\AssimpModel.cpp" />
     <ClCompile Include="src\rendering\GeometryBuffer.cpp" />

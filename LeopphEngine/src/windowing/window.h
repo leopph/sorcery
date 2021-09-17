@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../input/cursorstate.h"
-#include "../misc/color.h"
+#include "../misc/Color.hpp"
 
 #include <string>
 

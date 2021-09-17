@@ -190,7 +190,7 @@ namespace leopph::impl
 
 	void ForwardRenderer::RenderSkybox(const Matrix4& camViewMat, const Matrix4& camProjMat) const
 	{
-		if (const auto& skybox{Camera::Active()->Background().skybox}; skybox != nullptr)
+		if (const auto& skybox{Camera::Active()->Background().skybox}; skybox.has_value())
 		{
 			m_SkyboxShader.Use();
 			m_SkyboxShader.SetUniform("viewMatrix", static_cast<Matrix4>(static_cast<Matrix3>(camViewMat)));
