@@ -14,7 +14,7 @@ namespace leopph
 		class AttenuatedLight : public Light
 		{
 		public:
-			LEOPPHAPI explicit AttenuatedLight(Entity& owner, float constant = 1.0f, float linear = 0.14f, float quadratic = 0.07f);
+			LEOPPHAPI explicit AttenuatedLight(Entity& owner, float constant = 1.0f, float linear = 0.14f, float quadratic = 0.07f, float range = 32);
 			LEOPPHAPI ~AttenuatedLight() override = 0;
 
 			AttenuatedLight(const AttenuatedLight&) = delete;
@@ -31,11 +31,15 @@ namespace leopph
 			LEOPPHAPI float Quadratic() const;
 			LEOPPHAPI void Quadratic(float value);
 
+			LEOPPHAPI float Range() const;
+			LEOPPHAPI void Range(float value);
+
 
 		private:
 			float m_Constant;
 			float m_Linear;
 			float m_Quadratic;
+			float m_Range;
 		};
 	}
 }

@@ -15,6 +15,7 @@ struct SpotLight
 	float constant;
 	float linear;
 	float quadratic;
+	float range;
 	
 	float innerAngleCosine;
 	float outerAngleCosine;
@@ -26,14 +27,14 @@ layout (location = 0) in vec2 in_TexCoords;
 layout (location = 0) out vec4 out_FragmentColor;
 
 layout (location = 0) uniform SpotLight u_SpotLight;
-layout (location = 9) uniform sampler2D u_PositionTexture;
-layout (location = 10) uniform sampler2D u_NormalTexture;
-layout (location = 11) uniform sampler2D u_DiffuseTexture;
-layout (location = 12) uniform sampler2D u_SpecularTexture;
-layout (location = 13) uniform sampler2D u_ShineTexture;
-layout (location = 14) uniform vec3 u_CameraPosition;
-layout (location = 15) uniform sampler2DShadow u_ShadowMap;
-layout (location = 16) uniform mat4 u_LightClipMatrix;
+layout (location = 10) uniform sampler2D u_PositionTexture;
+layout (location = 11) uniform sampler2D u_NormalTexture;
+layout (location = 12) uniform sampler2D u_DiffuseTexture;
+layout (location = 13) uniform sampler2D u_SpecularTexture;
+layout (location = 14) uniform sampler2D u_ShineTexture;
+layout (location = 15) uniform vec3 u_CameraPosition;
+layout (location = 16) uniform sampler2DShadow u_ShadowMap;
+layout (location = 17) uniform mat4 u_LightClipMatrix;
 
 
 vec3 CalculateBlinnPhong(vec3 dirToLight, vec3 fragPos, vec3 fragNormal, vec3 fragDiffuse, vec3 fragSpecular, float fragShine)
@@ -83,13 +84,21 @@ float CalculateShadow(vec3 dirToLight, vec3 fragPos, vec3 fragNormal)
 void main()
 {
 	vec3 fragPos = texture(u_PositionTexture, in_TexCoords).rgb;
+	vec3 posDiff = u_SpotLight.position - fragPos;
+	float dist = length(posDiff);
+
+	if (dist > u_SpotLight.range)
+	{
+		out_FragmentColor = vec4(0, 0, 0, 1);
+		return;
+	}
+
     vec3 fragNormal = texture(u_NormalTexture, in_TexCoords).rgb;
     vec3 fragDiffuse = texture(u_DiffuseTexture, in_TexCoords).rgb;
     vec3 fragSpecular = texture(u_SpecularTexture, in_TexCoords).rgb;
 	float fragShine = texture(u_ShineTexture, in_TexCoords).r;
 
-	vec3 posDiff = u_SpotLight.position - fragPos;
-	float dist = length(posDiff);
+	
 	vec3 dirToLight = normalize(posDiff);
 	float thetaCosine = dot(dirToLight, -u_SpotLight.direction);
 	float epsilon = u_SpotLight.innerAngleCosine - u_SpotLight.outerAngleCosine;

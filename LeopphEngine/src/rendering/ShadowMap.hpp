@@ -8,23 +8,29 @@ namespace leopph::impl
 	{
 	public:
 		explicit ShadowMap(const Vector2& resolution);
-		~ShadowMap();
 
 		ShadowMap(const ShadowMap&) = delete;
 		ShadowMap(ShadowMap&& other) noexcept;
+
 		void operator=(const ShadowMap&) = delete;
 		ShadowMap& operator=(ShadowMap&& other) noexcept;
 
-		void BindToBuffer() const;
-		void UnbindFromBuffer() const;
+		~ShadowMap();
 
-		void BindToTexture(std::size_t textureUnit) const;
+		void BindForWriting() const;
+		void UnbindFromWriting() const;
 
-		const unsigned& id;
+		[[nodiscard]] int BindForReading(int textureUnit) const;
+		void UnbindFromReading() const;
+
+		void Clear() const;
+
+		const unsigned& Id;
 
 	private:
 		Vector2 m_Resolution;
-		unsigned m_FrameBufferHandle;
-		unsigned m_DepthMapHandle;
+		unsigned m_Fbo;
+		unsigned m_DepthTex;
+		mutable int m_CurrentBindIndex;
 	};
 }

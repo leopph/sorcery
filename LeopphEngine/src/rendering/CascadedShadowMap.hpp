@@ -25,17 +25,17 @@ namespace leopph::impl
 
 		~CascadedShadowMap() override;
 
-		void BindTextureForWriting(std::size_t cascadeIndex) const;
-		void UnbindTextureFromWriting() const;
+		void BindForWriting(std::size_t cascadeIndex) const;
+		void UnbindFromWriting() const;
 
 		// Returns the next available texture unit after binding
-		[[nodiscard]] int BindTexturesForReading(const DeferredDirLightShader& shader, int texUnit);
-		void UnbindTexturesFromReading() const;
+		[[nodiscard]] int BindForReading(const DeferredDirLightShader& shader, int texUnit);
+		void UnbindFromReading() const;
 
 		void Clear() const;
 
 		[[nodiscard]] Matrix4 WorldToClipMatrix(std::size_t cascadeIndex, const Matrix4& cameraInverseMatrix, const Matrix4& lightViewMatrix) const;
-		[[nodiscard]] Vector2 CascadeBounds(std::size_t cascadeIndex) const;
+		[[nodiscard]] Vector2 CascadeBoundsViewSpace(std::size_t cascadeIndex) const;
 
 
 	private:

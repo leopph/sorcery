@@ -105,7 +105,7 @@ namespace leopph::impl
 			const auto lightWorldToClip{m_DirShadowMap.WorldToClipMatrix(i, cameraInverseMatrix, lightViewMatrix)};
 			dirLightMatrices.push_back(lightWorldToClip);
 
-			m_DirShadowMap.BindTextureForWriting(i);
+			m_DirShadowMap.BindForWriting(i);
 			m_DirShadowMap.Clear();
 
 			m_DirShadowShader.SetUniform("lightClipMatrix", lightWorldToClip);
@@ -116,7 +116,7 @@ namespace leopph::impl
 			}
 		}
 
-		m_DirShadowMap.UnbindTextureFromWriting();
+		m_DirShadowMap.UnbindFromWriting();
 
 		auto texCount{0};
 
@@ -125,7 +125,7 @@ namespace leopph::impl
 		texCount = m_GBuffer.BindTextureForReading(m_DirLightShader, GeometryBuffer::TextureType::Diffuse, texCount);
 		texCount = m_GBuffer.BindTextureForReading(m_DirLightShader, GeometryBuffer::TextureType::Specular, texCount);
 		texCount = m_GBuffer.BindTextureForReading(m_DirLightShader, GeometryBuffer::TextureType::Shine, texCount);
-		static_cast<void>(m_DirShadowMap.BindTexturesForReading(m_DirLightShader, texCount));
+		static_cast<void>(m_DirShadowMap.BindForReading(m_DirLightShader, texCount));
 
 		const auto cascadeCount{Settings::CameraDirectionalShadowCascadeCount()};
 
@@ -139,7 +139,7 @@ namespace leopph::impl
 
 		for (std::size_t i = 0; i < cascadeCount; ++i)
 		{
-			const auto viewSpaceBound{m_DirShadowMap.CascadeBounds(i)[1]};
+			const auto viewSpaceBound{m_DirShadowMap.CascadeBoundsViewSpace(i)[1]};
 			const Vector4 viewSpaceBoundVector{0, 0, viewSpaceBound, 1};
 			const auto clipSpaceBoundVector{viewSpaceBoundVector * camProjMat};
 			const auto clipSpaceBound{clipSpaceBoundVector[2]};

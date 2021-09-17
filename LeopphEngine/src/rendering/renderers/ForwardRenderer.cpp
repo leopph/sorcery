@@ -75,7 +75,7 @@ namespace leopph::impl
 		const auto lightTransformMat{lightViewMat * lightProjMat};
 
 		m_DirectionalShadowMapShader.Use();
-		shadowMaps.front().BindToBuffer();
+		shadowMaps.front().BindForWriting();
 
 		m_DirectionalShadowMapShader.SetUniform("lightClipMatrix", lightTransformMat);
 
@@ -84,7 +84,7 @@ namespace leopph::impl
 			modelRes->DrawDepth(matrices.first);
 		}
 
-		shadowMaps.front().UnbindFromBuffer();
+		shadowMaps.front().UnbindFromWriting();
 
 		return {lightTransformMat};
 	}
@@ -127,7 +127,7 @@ namespace leopph::impl
 		m_ObjectShader.SetUniform("viewProjectionMatrix", camViewMat * camProjMat);
 		m_ObjectShader.SetUniform("cameraPosition", Camera::Active()->entity.Transform->Position());
 
-		std::size_t usedTextureUnits{0};
+		auto usedTextureUnits{0};
 
 		/* Set up ambient light data */
 		m_ObjectShader.SetUniform("ambientLight", AmbientLight::Instance().Intensity());
@@ -139,11 +139,10 @@ namespace leopph::impl
 			m_ObjectShader.SetUniform("dirLight.direction", dirLight->Direction());
 			m_ObjectShader.SetUniform("dirLight.diffuseColor", dirLight->Diffuse());
 			m_ObjectShader.SetUniform("dirLight.specularColor", dirLight->Specular());
-			m_ObjectShader.SetUniform("dirLight.shadowMap", static_cast<int>(usedTextureUnits));
+			m_ObjectShader.SetUniform("dirLight.shadowMap", usedTextureUnits);
 			m_ObjectShader.SetUniform("dirLightTransformMatrix", lightTransformMat.value());
 
-			DataManager::ShadowMaps().front().BindToTexture(usedTextureUnits);
-			++usedTextureUnits;
+			usedTextureUnits = DataManager::ShadowMaps().front().BindForReading(usedTextureUnits);
 		}
 		else
 		{

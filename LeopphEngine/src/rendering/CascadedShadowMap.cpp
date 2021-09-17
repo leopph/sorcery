@@ -15,7 +15,7 @@
 namespace leopph::impl
 {
 	CascadedShadowMap::CascadedShadowMap() :
-		m_Fbo{}, m_TexIds{}, m_TexBindStartIndex{}
+		m_Fbo{}, m_TexBindStartIndex{}
 	{
 		glCreateFramebuffers(1, &m_Fbo);
 		Init(Settings::DirectionalShadowMapResolutions());
@@ -29,7 +29,7 @@ namespace leopph::impl
 	}
 
 
-	void CascadedShadowMap::BindTextureForWriting(std::size_t cascadeIndex) const
+	void CascadedShadowMap::BindForWriting(const std::size_t cascadeIndex) const
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, m_Fbo);
 		glNamedFramebufferTexture(m_Fbo, GL_DEPTH_ATTACHMENT, m_TexIds.at(cascadeIndex), 0);
@@ -38,14 +38,14 @@ namespace leopph::impl
 	}
 
 	
-	void CascadedShadowMap::UnbindTextureFromWriting() const
+	void CascadedShadowMap::UnbindFromWriting() const
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glViewport(0, 0, static_cast<GLsizei>(Window::Get().Width()), static_cast<GLsizei>(Window::Get().Height()));
 	}
 
 
-	int CascadedShadowMap::BindTexturesForReading(const DeferredDirLightShader& shader, int texUnit)
+	int CascadedShadowMap::BindForReading(const DeferredDirLightShader& shader, int texUnit)
 	{
 		m_TexBindStartIndex = texUnit;
 
@@ -64,7 +64,7 @@ namespace leopph::impl
 	}
 
 
-	void CascadedShadowMap::UnbindTexturesFromReading() const
+	void CascadedShadowMap::UnbindFromReading() const
 	{
 		for (auto texUnit{m_TexBindStartIndex}, i{0}; i < m_TexIds.size(); ++i, ++texUnit)
 		{
@@ -75,12 +75,12 @@ namespace leopph::impl
 
 	void CascadedShadowMap::Clear() const
 	{
-		float clearValue{1};
+		constexpr float clearValue{1};
 		glClearNamedFramebufferfv(m_Fbo, GL_DEPTH, 0, &clearValue);
 	}
 
 
-	Matrix4 CascadedShadowMap::WorldToClipMatrix(std::size_t cascadeIndex, const Matrix4& cameraInverseMatrix, const Matrix4& lightViewMatrix) const
+	Matrix4 CascadedShadowMap::WorldToClipMatrix(const std::size_t cascadeIndex, const Matrix4& cameraInverseMatrix, const Matrix4& lightViewMatrix) const
 	{
 		const auto& camera{*Camera::Active()};
 		const auto cascadeDepth{(camera.FarClipPlane() - camera.NearClipPlane()) / m_TexIds.size()};
@@ -121,7 +121,7 @@ namespace leopph::impl
 	}
 
 
-	Vector2 CascadedShadowMap::CascadeBounds(const std::size_t cascadeIndex) const
+	Vector2 CascadedShadowMap::CascadeBoundsViewSpace(const std::size_t cascadeIndex) const
 	{
 		const auto& camera{*Camera::Active()};
 		const auto cascadeDepth{(camera.FarClipPlane() - camera.NearClipPlane()) / static_cast<float>(m_TexIds.size())};

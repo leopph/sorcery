@@ -30,6 +30,7 @@ namespace leopph::impl
 			static const std::string s_LightConstName;
 			static const std::string s_LightLinName;
 			static const std::string s_LightQuadName;
+			static const std::string s_LightRangeName;
 			static const std::string s_LightInAngName;
 			static const std::string s_LightOutAngName;
 			static const std::string s_LightClipMatName;
@@ -43,6 +44,7 @@ namespace leopph::impl
 			const int m_LightConstLoc;
 			const int m_LightLinLoc;
 			const int m_LightQuadLoc;
+			const int m_LightRangeLoc;
 			const int m_LightInAngLoc;
 			const int m_LightOutAngLoc;
 			const int m_LightClipMatLoc;

@@ -17,6 +17,7 @@ namespace leopph::impl
 	const std::string DeferredSpotLightShader::s_LightConstName{"u_SpotLight.constant"};
 	const std::string DeferredSpotLightShader::s_LightLinName{"u_SpotLight.linear"};
 	const std::string DeferredSpotLightShader::s_LightQuadName{"u_SpotLight.quadratic"};
+	const std::string DeferredSpotLightShader::s_LightRangeName{"u_SpotLight.range"};
 	const std::string DeferredSpotLightShader::s_LightInAngName{"u_SpotLight.innerAngleCosine"};
 	const std::string DeferredSpotLightShader::s_LightOutAngName{"u_SpotLight.outerAngleCosine"};
 	const std::string DeferredSpotLightShader::s_LightClipMatName{"u_LightClipMatrix"};
@@ -33,6 +34,7 @@ namespace leopph::impl
 		m_LightConstLoc{glGetUniformLocation(m_ProgramName, s_LightConstName.data())},
 		m_LightLinLoc{glGetUniformLocation(m_ProgramName, s_LightLinName.data())},
 		m_LightQuadLoc{glGetUniformLocation(m_ProgramName, s_LightQuadName.data())},
+		m_LightRangeLoc{glGetUniformLocation(m_ProgramName, s_LightRangeName.data())},
 		m_LightInAngLoc{glGetUniformLocation(m_ProgramName, s_LightInAngName.data())},
 		m_LightOutAngLoc{glGetUniformLocation(m_ProgramName, s_LightOutAngName.data())},
 		m_LightClipMatLoc{glGetUniformLocation(m_ProgramName, s_LightClipMatName.data())}
@@ -54,6 +56,7 @@ namespace leopph::impl
 		glProgramUniform1f(m_ProgramName, m_LightConstLoc, spotLight.Constant());
 		glProgramUniform1f(m_ProgramName, m_LightLinLoc, spotLight.Linear());
 		glProgramUniform1f(m_ProgramName, m_LightQuadLoc, spotLight.Quadratic());
+		glProgramUniform1f(m_ProgramName, m_LightRangeLoc, spotLight.Range());
 		glProgramUniform1f(m_ProgramName, m_LightInAngLoc, math::Cos(math::ToRadians(spotLight.InnerAngle())));
 		glProgramUniform1f(m_ProgramName, m_LightOutAngLoc, math::Cos(math::ToRadians(spotLight.OuterAngle())));
 	}

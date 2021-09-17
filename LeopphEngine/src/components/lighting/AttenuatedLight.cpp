@@ -1,9 +1,15 @@
 #include "AttenuatedLight.hpp"
 
+
+
 namespace leopph::impl
 {
-	AttenuatedLight::AttenuatedLight(Entity& owner, const float constant, const float linear, const float quadratic) :
-		Light{ owner }, m_Constant{ constant }, m_Linear{ linear }, m_Quadratic{ quadratic }
+	AttenuatedLight::AttenuatedLight(Entity& owner, const float constant, const float linear, const float quadratic, const float range) :
+		Light{owner},
+		m_Constant{constant},
+		m_Linear{linear},
+		m_Quadratic{quadratic},
+		m_Range{range}
 	{}
 
 
@@ -43,5 +49,17 @@ namespace leopph::impl
 	void AttenuatedLight::Quadratic(const float value)
 	{
 		m_Quadratic = value;
+	}
+
+
+	float AttenuatedLight::Range() const
+	{
+		return m_Range;
+	}
+
+
+	void AttenuatedLight::Range(const float value)
+	{
+		m_Range = value;
 	}
 }
