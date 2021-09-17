@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Texture.hpp"
-#include "../misc/color.h"
+#include "../misc/Color.hpp"
 
 #include <optional>
 
