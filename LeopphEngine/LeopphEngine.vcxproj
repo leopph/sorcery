@@ -160,6 +160,7 @@
     <ClInclude Include="src\rendering\shaders\DeferredDirLightShader.hpp" />
     <ClInclude Include="src\rendering\shaders\DeferredGeometryShader.hpp" />
     <ClInclude Include="src\rendering\shaders\DeferredLightShader.hpp" />
+    <ClInclude Include="src\rendering\shaders\DeferredSpotLightShader.hpp" />
     <ClInclude Include="src\rendering\shaders\DirShadowMapShader.hpp" />
     <ClInclude Include="src\rendering\shaders\ForwardObjectShader.hpp" />
     <ClInclude Include="src\rendering\shaders\TextureShader.hpp" />
@@ -236,6 +237,7 @@
     <ClCompile Include="src\rendering\shaders\DeferredDirLightShader.cpp" />
     <ClCompile Include="src\rendering\shaders\DeferredGeometryShader.cpp" />
     <ClCompile Include="src\rendering\shaders\DeferredLightShader.cpp" />
+    <ClCompile Include="src\rendering\shaders\DeferredSpotLightShader.cpp" />
     <ClCompile Include="src\rendering\shaders\DirShadowMapShader.cpp" />
     <ClCompile Include="src\rendering\shaders\ForwardObjectShader.cpp" />
     <ClCompile Include="src\rendering\shaders\TextureShader.cpp" />
@@ -306,6 +308,9 @@
       <FileType>Document</FileType>
     </CustomBuild>
     <CustomBuild Include="src\rendering\shaders\glsl\deferred\AmbLightFrag.frag">
+      <FileType>Document</FileType>
+    </CustomBuild>
+    <CustomBuild Include="src\rendering\shaders\glsl\deferred\SpotLightPassFrag.frag">
       <FileType>Document</FileType>
     </CustomBuild>
   </ItemGroup>

@@ -32,16 +32,14 @@ layout (location = 10 + MAX_DIR_LIGHT_CASCADE_COUNT * 4) uniform mat4 u_LightCli
 
 
 
-vec3 CalculateBlinnPhong(vec3 fragPos, vec3 fragNormal, vec3 fragDiffuse, vec3 fragSpecular, float fragShine)
+vec3 CalculateBlinnPhong(vec3 dirToLight, vec3 fragPos, vec3 fragNormal, vec3 fragDiffuse, vec3 fragSpecular, float fragShine)
 {
-	vec3 directionToLight = -u_DirLight.direction;
-
-	float diffuseDot = max(dot(directionToLight, fragNormal), 0);
+	float diffuseDot = max(dot(dirToLight, fragNormal), 0);
 	vec3 light = fragDiffuse * diffuseDot * u_DirLight.diffuseColor;
 
 	if (diffuseDot > 0)
 	{
-		vec3 halfway = normalize(directionToLight + normalize(u_CameraPosition - fragPos));
+		vec3 halfway = normalize(dirToLight + normalize(u_CameraPosition - fragPos));
 		light += fragSpecular * pow(max(dot(fragNormal, halfway), 0), 4 * fragShine) * u_DirLight.specularColor;
 	}
 
@@ -92,7 +90,9 @@ void main()
     vec3 fragSpecular = texture(u_SpecularTexture, in_TexCoords).rgb;
 	float fragShine = texture(u_ShineTexture, in_TexCoords).r;
 
-	vec3 light = CalculateBlinnPhong(fragPos.xyz, fragNormal, fragDiffuse, fragSpecular, fragShine);
+	vec3 dirToLight = -u_DirLight.direction;
+
+	vec3 light = CalculateBlinnPhong(dirToLight, fragPos.xyz, fragNormal, fragDiffuse, fragSpecular, fragShine);
 	light *= CalculateShadow(fragPos.xyz, fragPos.w, fragNormal);
 
 	out_FragmentColor = vec4(light, 1);

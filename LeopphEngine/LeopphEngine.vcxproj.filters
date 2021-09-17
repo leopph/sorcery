@@ -69,6 +69,7 @@
     <ClCompile Include="src\rendering\shaders\DeferredGeometryShader.cpp" />
     <ClCompile Include="src\rendering\shaders\DeferredAmbLightShader.cpp" />
     <ClCompile Include="src\rendering\shaders\DeferredLightShader.cpp" />
+    <ClCompile Include="src\rendering\shaders\DeferredSpotLightShader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\Behavior.hpp" />
@@ -154,6 +155,7 @@
     <ClInclude Include="src\rendering\shaders\DeferredGeometryShader.hpp" />
     <ClInclude Include="src\rendering\shaders\DeferredAmbLightShader.hpp" />
     <ClInclude Include="src\rendering\shaders\DeferredLightShader.hpp" />
+    <ClInclude Include="src\rendering\shaders\DeferredSpotLightShader.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\cpp.hint" />
@@ -171,5 +173,6 @@
     <CustomBuild Include="src\rendering\shaders\glsl\deferred\GPassObjectFrag.frag" />
     <CustomBuild Include="src\rendering\shaders\glsl\deferred\DirLightPassFrag.frag" />
     <CustomBuild Include="src\rendering\shaders\glsl\deferred\AmbLightFrag.frag" />
+    <CustomBuild Include="src\rendering\shaders\glsl\deferred\SpotLightPassFrag.frag" />
   </ItemGroup>
 </Project>

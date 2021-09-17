@@ -43,6 +43,7 @@ namespace leopph::impl
 		glEnable(GL_BLEND);
 		RenderAmbientLight();
 		RenderDirectionalLights(camViewMat, camProjMat, modelsAndMats);
+		RenderSpotLights(spotLights);
 		glDisable(GL_BLEND);
 
 		RenderSkybox(camViewMat, camProjMat);
@@ -147,9 +148,33 @@ namespace leopph::impl
 
 		m_DirLightShader.SetCascadeFarBounds(cascadeFarBounds);
 
-		glDisable(GL_DEPTH_TEST);
 		m_DirLightShader.Use();
+
+		glDisable(GL_DEPTH_TEST);
 		m_ScreenTexture.Draw();
+		glEnable(GL_DEPTH_TEST);
+	}
+
+
+	void DeferredRenderer::RenderSpotLights(const std::vector<const SpotLight*>& spotLights) const
+	{
+		auto texCount{0};
+		texCount = m_GBuffer.BindTextureForReading(m_SpotLightShader, GeometryBuffer::TextureType::Position, texCount);
+		texCount = m_GBuffer.BindTextureForReading(m_SpotLightShader, GeometryBuffer::TextureType::Normal, texCount);
+		texCount = m_GBuffer.BindTextureForReading(m_SpotLightShader, GeometryBuffer::TextureType::Diffuse, texCount);
+		texCount = m_GBuffer.BindTextureForReading(m_SpotLightShader, GeometryBuffer::TextureType::Specular, texCount);
+		static_cast<void>(m_GBuffer.BindTextureForReading(m_SpotLightShader, GeometryBuffer::TextureType::Shine, texCount));
+
+		m_SpotLightShader.SetCameraPosition(Camera::Active()->entity.Transform->Position());
+
+		m_SpotLightShader.Use();
+
+		glDisable(GL_DEPTH_TEST);
+		for (const auto& spotLight : spotLights)
+		{
+			m_SpotLightShader.SetSpotLight(*spotLight);
+			m_ScreenTexture.Draw();
+		}
 		glEnable(GL_DEPTH_TEST);
 	}
 
