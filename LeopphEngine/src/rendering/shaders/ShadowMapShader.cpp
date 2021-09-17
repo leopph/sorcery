@@ -9,7 +9,7 @@ namespace leopph::impl
 
 
 	ShadowMapShader::ShadowMapShader() :
-		Shader{s_DirShadowMapVertSrc, {}},
+		Shader{s_ShadowMapVertSrc, {}},
 		m_WorldToClipMatLoc{glGetUniformLocation(m_ProgramName, s_WorldToClipMatName.data())}
 	{}
 

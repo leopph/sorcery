@@ -34,7 +34,7 @@ layout (location = 13) uniform sampler2D u_SpecularTexture;
 layout (location = 14) uniform sampler2D u_ShineTexture;
 layout (location = 15) uniform vec3 u_CameraPosition;
 layout (location = 16) uniform sampler2DShadow u_ShadowMap;
-layout (location = 17) uniform mat4 u_LightClipMatrix;
+layout (location = 17) uniform mat4 u_LightWorldToClipMatrix;
 
 
 vec3 CalculateBlinnPhong(vec3 dirToLight, vec3 fragPos, vec3 fragNormal, vec3 fragDiffuse, vec3 fragSpecular, float fragShine)
@@ -60,12 +60,10 @@ float CalculateAttenuation(float constant, float linear, float quadratic, float 
 
 float CalculateShadow(vec3 dirToLight, vec3 fragPos, vec3 fragNormal)
 {
-	vec4 fragPosLightSpace = vec4(fragPos, 1) * u_LightClipMatrix;
-	vec3 normalizedPos = fragPosLightSpace.xyz;
-	normalizedPos *= 0.5;
-	normalizedPos += 0.5;
+	vec4 fragPosLightSpace = vec4(fragPos, 1) * u_LightWorldToClipMatrix;
+	vec3 normalizedPos = (fragPosLightSpace.xyz / fragPosLightSpace.w) * 0.5 + 0.5;
 
-		vec2 texelSize = 1.0 / textureSize(u_ShadowMap, 0);
+	vec2 texelSize = 1.0 / textureSize(u_ShadowMap, 0);
 	float bias = max(MAX_SHADOW_BIAS * (1.0 - dot(fragNormal, dirToLight)), MIN_SHADOW_BIAS);
 	float shadow = 0;
 
@@ -108,7 +106,8 @@ void main()
 	{
 		float attenuation = CalculateAttenuation(u_SpotLight.constant, u_SpotLight.linear, u_SpotLight.quadratic, dist);
 		vec3 light = CalculateBlinnPhong(dirToLight, fragPos, fragNormal, fragDiffuse, fragSpecular, fragShine);
-		out_FragmentColor = vec4(intensity * attenuation * light, 1);
+		float shadow = CalculateShadow(dirToLight, fragPos, fragNormal);
+		out_FragmentColor = vec4(shadow * intensity * attenuation * light, 1);
 	}
 	else
 	{

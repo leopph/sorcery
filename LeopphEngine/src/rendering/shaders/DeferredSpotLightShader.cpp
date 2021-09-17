@@ -20,7 +20,7 @@ namespace leopph::impl
 	const std::string DeferredSpotLightShader::s_LightRangeName{"u_SpotLight.range"};
 	const std::string DeferredSpotLightShader::s_LightInAngName{"u_SpotLight.innerAngleCosine"};
 	const std::string DeferredSpotLightShader::s_LightOutAngName{"u_SpotLight.outerAngleCosine"};
-	const std::string DeferredSpotLightShader::s_LightClipMatName{"u_LightClipMatrix"};
+	const std::string DeferredSpotLightShader::s_LightClipMatName{"u_LightWorldToClipMatrix"};
 
 
 	DeferredSpotLightShader::DeferredSpotLightShader() :

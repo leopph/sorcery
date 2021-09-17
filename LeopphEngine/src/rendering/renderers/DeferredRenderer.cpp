@@ -3,6 +3,7 @@
 #include "../../components/Camera.hpp"
 #include "../../config/Settings.hpp"
 #include "../../data/DataManager.hpp"
+#include "../../math/LeopphMath.hpp"
 #include "../../math/Matrix.hpp"
 #include "../../windowing/window.h"
 
@@ -43,7 +44,7 @@ namespace leopph::impl
 		glEnable(GL_BLEND);
 		RenderAmbientLight();
 		RenderDirectionalLights(camViewMat, camProjMat, modelsAndMats);
-		RenderSpotLights(spotLights);
+		RenderSpotLights(spotLights, modelsAndMats);
 		glDisable(GL_BLEND);
 
 		RenderSkybox(camViewMat, camProjMat);
@@ -156,17 +157,12 @@ namespace leopph::impl
 	}
 
 
-	void DeferredRenderer::RenderSpotLights(const std::vector<const SpotLight*>& spotLights) const
+	void DeferredRenderer::RenderSpotLights(const std::vector<const SpotLight*>& spotLights,
+	                                        const std::unordered_map<const ModelResource*, std::pair<std::vector<Matrix4>, std::vector<Matrix4>>>& modelsAndMats) const
 	{
 		if (spotLights.empty())
 		{
 			return;
-		}
-
-		for (const auto& spotLight : spotLights)
-		{
-			auto worldToClipMat{(static_cast<Matrix4>(spotLight->entity.Transform->Rotation()) * Matrix4::Translate(spotLight->entity.Transform->Position())).Inverse()};
-			worldToClipMat *= Matrix4::Perspective(spotLight->OuterAngle(), 1, 0.01f, spotLight->Range());
 		}
 
 		auto texCount{0};
@@ -174,19 +170,41 @@ namespace leopph::impl
 		texCount = m_GBuffer.BindTextureForReading(m_SpotLightShader, GeometryBuffer::TextureType::Normal, texCount);
 		texCount = m_GBuffer.BindTextureForReading(m_SpotLightShader, GeometryBuffer::TextureType::Diffuse, texCount);
 		texCount = m_GBuffer.BindTextureForReading(m_SpotLightShader, GeometryBuffer::TextureType::Specular, texCount);
-		static_cast<void>(m_GBuffer.BindTextureForReading(m_SpotLightShader, GeometryBuffer::TextureType::Shine, texCount));
+		texCount = m_GBuffer.BindTextureForReading(m_SpotLightShader, GeometryBuffer::TextureType::Shine, texCount);
+		static_cast<void>(m_SpotShadowMap.BindForReading(m_SpotLightShader, texCount));
 
 		m_SpotLightShader.SetCameraPosition(Camera::Active()->entity.Transform->Position());
 
-		m_SpotLightShader.Use();
-
-		glDisable(GL_DEPTH_TEST);
 		for (const auto& spotLight : spotLights)
 		{
+			const auto lightWorldToClipMat
+			{
+				Matrix4::LookAt(spotLight->entity.Transform->Position(), spotLight->entity.Transform->Position() + spotLight->entity.Transform->Forward(), Vector3::Up()) *
+				Matrix4::Perspective(math::ToRadians(spotLight->OuterAngle()), 1.f, 0.001f, spotLight->Range())
+			};
+
+			m_ShadowShader.SetLightWorldToClipMatrix(lightWorldToClipMat);
+
+			m_SpotShadowMap.BindForWriting();
+			m_SpotShadowMap.Clear();
+
+			m_ShadowShader.Use();
+
+			for (const auto& [modelRes, matrices] : modelsAndMats)
+			{
+				modelRes->DrawDepth(matrices.first);
+			}
+
+			m_SpotShadowMap.UnbindFromWriting();
+
 			m_SpotLightShader.SetSpotLight(*spotLight);
+			m_SpotLightShader.SetLightClipMatrix(lightWorldToClipMat);
+			m_SpotLightShader.Use();
+
+			glDisable(GL_DEPTH_TEST);
 			m_ScreenTexture.Draw();
+			glEnable(GL_DEPTH_TEST);
 		}
-		glEnable(GL_DEPTH_TEST);
 	}
 
 

@@ -42,7 +42,7 @@ namespace leopph::impl
 			static const std::string s_ObjectFragSrc;
 			static const std::string s_SkyboxVertSrc;
 			static const std::string s_SkyboxFragSrc;
-			static const std::string s_DirShadowMapVertSrc;
+			static const std::string s_ShadowMapVertSrc;
 			static const std::string s_GPassObjectVertSrc;
 			static const std::string s_GPassObjectFragSrc;
 			static const std::string s_LightPassVertSrc;

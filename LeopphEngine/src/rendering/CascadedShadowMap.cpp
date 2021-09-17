@@ -151,7 +151,6 @@ namespace leopph::impl
 			glTextureStorage2D(m_TexIds[i], 1, GL_DEPTH_COMPONENT32F, static_cast<GLsizei>(resolutions[i]), static_cast<GLsizei>(resolutions[i]));
 			glTextureParameteri(m_TexIds[i], GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 			glTextureParameteri(m_TexIds[i], GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-			glTextureParameteri(m_TexIds[i], GL_TEXTURE_COMPARE_MODE, GL_NONE);
 			glTextureParameteri(m_TexIds[i], GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 			glTextureParameteri(m_TexIds[i], GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 			glTextureParameteri(m_TexIds[i], GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);

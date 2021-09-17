@@ -14,7 +14,7 @@ struct DirLight
 	vec3 diffuseColor;
 	vec3 specularColor;
 
-	sampler2D shadowMap;
+	sampler2DShadow shadowMap;
 };
 
 struct PointLight
@@ -92,7 +92,7 @@ float CalculateAttenuation(float constant, float linear, float quadratic, float 
 }
 
 
-float CalculateShadow(vec4 lightSpaceFragPos, vec3 lightDirection, vec3 surfaceNormal, sampler2D shadowMap)
+float CalculateShadow(vec4 lightSpaceFragPos, vec3 lightDirection, vec3 surfaceNormal, sampler2DShadow shadowMap)
 {
 	vec3 normalizedPos = lightSpaceFragPos.xyz / lightSpaceFragPos.w;
 	normalizedPos *= 0.5;
@@ -106,8 +106,7 @@ float CalculateShadow(vec4 lightSpaceFragPos, vec3 lightDirection, vec3 surfaceN
 	{
 		for (int j = -1; j <= 1; j++)
 		{
-			float pcfDepth = texture(shadowMap, normalizedPos.xy + vec2(i, j) * texelSize).r;
-			shadow += normalizedPos.z - bias > pcfDepth ? 1.0 : 0.0;
+			shadow += texture(shadowMap, vec3(normalizedPos.xy + vec2(i, j) * texelSize, normalizedPos.z - bias));
 		}
 	}
 
@@ -140,7 +139,7 @@ vec3 CalculateLightEffect(vec3 direction, vec3 normal, vec3 matDiff, vec3 matSpe
 vec3 CalculateDirLight(DirLight dirLight, vec3 surfaceNormal, vec3 materialDiffuseColor, vec3 materialSpecularColor)
 {
 	vec3 directionToLight = -dirLight.direction;
-	float shadow = (1 - CalculateShadow(inFragPosDirSpace, directionToLight, surfaceNormal, dirLight.shadowMap));
+	float shadow = CalculateShadow(inFragPosDirSpace, directionToLight, surfaceNormal, dirLight.shadowMap);
 	vec3 light = CalculateLightEffect(directionToLight, surfaceNormal, materialDiffuseColor, materialSpecularColor, dirLight.diffuseColor, dirLight.specularColor);
 	return shadow * light;
 }

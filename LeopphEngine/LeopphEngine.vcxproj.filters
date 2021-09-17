@@ -170,7 +170,7 @@
     <CustomBuild Include="src\rendering\shaders\glsl\SkyboxFrag.frag" />
     <CustomBuild Include="src\rendering\shaders\glsl\forward\ObjectVert.vert" />
     <CustomBuild Include="src\rendering\shaders\glsl\forward\ObjectFrag.frag" />
-    <CustomBuild Include="src\rendering\shaders\glsl\DirShadowMapVert.vert" />
+    <CustomBuild Include="src\rendering\shaders\glsl\ShadowMapVert.vert" />
     <CustomBuild Include="src\rendering\shaders\glsl\deferred\LightPassVert.vert" />
     <CustomBuild Include="src\rendering\shaders\glsl\deferred\LightPassFrag.frag" />
     <CustomBuild Include="src\rendering\shaders\glsl\deferred\GPassObjectVert.vert" />

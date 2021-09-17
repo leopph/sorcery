@@ -42,7 +42,8 @@ namespace leopph::impl
 			                             const Matrix4& camProjMat,
 			                             const std::unordered_map<const ModelResource*, std::pair<std::vector<Matrix4>, std::vector<Matrix4>>>& modelsAndMats);
 
-			void RenderSpotLights(const std::vector<const SpotLight*>& spotLights) const;
+			void RenderSpotLights(const std::vector<const SpotLight*>& spotLights,
+			                      const std::unordered_map<const ModelResource*, std::pair<std::vector<Matrix4>, std::vector<Matrix4>>>& modelsAndMats) const;
 
 			void RenderSkybox(const Matrix4& camViewMat, const Matrix4& camProjMat) const;
 
