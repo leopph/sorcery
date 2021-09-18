@@ -4,27 +4,34 @@
 #include "../../api/leopphapi.h"
 #include "../../math/Vector.hpp"
 
+
+
 namespace leopph::impl
 {
 	class Light : public Component
 	{
-	public:
-		LEOPPHAPI explicit Light(Entity& owner);
-		LEOPPHAPI ~Light() override = 0;
+		public:
+			LEOPPHAPI explicit Light(Entity& owner);
+			LEOPPHAPI ~Light() override = 0;
 
-		Light(const Light&) = delete;
-		Light(Light&&) = delete;
-		void operator=(const Light&) = delete;
-		void operator=(Light&&) = delete;
+			Light(const Light&) = delete;
+			Light(Light&&) = delete;
+			void operator=(const Light&) = delete;
+			void operator=(Light&&) = delete;
 
-		LEOPPHAPI const Vector3& Diffuse() const;
-		LEOPPHAPI const Vector3& Specular() const;
+			LEOPPHAPI const Vector3& Diffuse() const;
+			LEOPPHAPI const Vector3& Specular() const;
 
-		LEOPPHAPI void Diffuse(const Vector3& value);
-		LEOPPHAPI void Specular(const Vector3& value);
+			LEOPPHAPI void Diffuse(const Vector3& value);
+			LEOPPHAPI void Specular(const Vector3& value);
 
-	private:
-		Vector3 m_Diffuse;
-		Vector3 m_Specular;
+			LEOPPHAPI float Range() const;
+			LEOPPHAPI void Range(float value);
+
+
+		private:
+			float m_Range;
+			Vector3 m_Diffuse;
+			Vector3 m_Specular;
 	};
 }

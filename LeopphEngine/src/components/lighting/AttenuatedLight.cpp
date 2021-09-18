@@ -8,9 +8,10 @@ namespace leopph::impl
 		Light{owner},
 		m_Constant{constant},
 		m_Linear{linear},
-		m_Quadratic{quadratic},
-		m_Range{range}
-	{}
+		m_Quadratic{quadratic}
+	{
+		Range(range);
+	}
 
 
 	AttenuatedLight::~AttenuatedLight() = default;
@@ -49,17 +50,5 @@ namespace leopph::impl
 	void AttenuatedLight::Quadratic(const float value)
 	{
 		m_Quadratic = value;
-	}
-
-
-	float AttenuatedLight::Range() const
-	{
-		return m_Range;
-	}
-
-
-	void AttenuatedLight::Range(const float value)
-	{
-		m_Range = value;
 	}
 }

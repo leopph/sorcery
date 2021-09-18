@@ -1,8 +1,10 @@
 #pragma once
 
-#include "../../api/leopphapi.h"
 #include "Light.hpp"
+#include "../../api/leopphapi.h"
 #include "../../math/Vector.hpp"
+
+
 
 namespace leopph
 {
@@ -15,18 +17,18 @@ namespace leopph
 	-----------------------------------------------------------------------------------------------------------------------*/
 	class DirectionalLight final : public impl::Light
 	{
-	public:
-		LEOPPHAPI explicit DirectionalLight(Entity& owner);
-		LEOPPHAPI ~DirectionalLight() override;
+		public:
+			LEOPPHAPI explicit DirectionalLight(Entity& owner);
+			LEOPPHAPI ~DirectionalLight() override;
 
-		DirectionalLight(const DirectionalLight&) = delete;
-		DirectionalLight(DirectionalLight&&) = delete;
-		void operator=(const DirectionalLight&) = delete;
-		void operator=(DirectionalLight&&) = delete;
+			DirectionalLight(const DirectionalLight&) = delete;
+			DirectionalLight(DirectionalLight&&) = delete;
+			void operator=(const DirectionalLight&) = delete;
+			void operator=(DirectionalLight&&) = delete;
 
-		/* The direction of the Light. This is exactly the same
-		as the forward vector of the Entity's Transform that the
-		DirectionalLight is attached to. */
-		LEOPPHAPI const Vector3& Direction() const;
+			/* The direction of the Light. This is exactly the same
+			as the forward vector of the Entity's Transform that the
+			DirectionalLight is attached to. */
+			LEOPPHAPI const Vector3& Direction() const;
 	};
 }

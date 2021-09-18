@@ -94,7 +94,7 @@ namespace leopph::impl
 		}
 
 		const auto cameraInverseMatrix{camViewMat.Inverse()};
-		const auto lightViewMatrix{Matrix4::LookAt(1000 * -dirLight->Direction(), Vector3{}, Vector3::Up())}; // TODO light pos
+		const auto lightViewMatrix{Matrix4::LookAt(dirLight->Range() * -dirLight->Direction(), Vector3{}, Vector3::Up())};
 
 		static std::vector<Matrix4> dirLightMatrices;
 		dirLightMatrices.clear();
