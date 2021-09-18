@@ -1,14 +1,15 @@
 #pragma once
 
-#include "Shader.hpp"
+#include "ShaderProgram.hpp"
+#include "ShaderStage.hpp"
 
 #include <string>
-#include <string_view>
+#include <vector>
 
 
 namespace leopph::impl
 {
-	class DeferredLightShader : public Shader
+	class DefLightShader : public ShaderProgram
 	{
 		public:
 			void SetPositionTexture(int unit) const;
@@ -20,7 +21,7 @@ namespace leopph::impl
 
 
 		protected:
-			DeferredLightShader(std::string_view vertSrc, std::string_view fragSrc);
+			DefLightShader(const std::vector<ShaderStage>& stages);
 
 
 		private:

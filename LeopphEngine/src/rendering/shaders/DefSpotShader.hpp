@@ -1,18 +1,20 @@
 #pragma once
 
-#include "DeferredLightShader.hpp"
+#include "DefLightShader.hpp"
+#include "ShaderStage.hpp"
 #include "../../components/lighting/SpotLight.hpp"
 #include "../../math/Matrix.hpp"
 
 #include <string>
+#include <vector>
 
 
 namespace leopph::impl
 {
-	class DeferredSpotLightShader final : public DeferredLightShader
+	class DefSpotShader final : public DefLightShader
 	{
 		public:
-			DeferredSpotLightShader();
+			DefSpotShader();
 
 			void SetCameraPosition(const Vector3& pos) const;
 			void SetSpotLight(const SpotLight& spotLight) const;
@@ -21,6 +23,8 @@ namespace leopph::impl
 
 
 		private:
+			static std::vector<ShaderStage> GetStages();
+
 			static const std::string s_ShadowMapName;
 			static const std::string s_CamPosName;
 			static const std::string s_LightPosName;

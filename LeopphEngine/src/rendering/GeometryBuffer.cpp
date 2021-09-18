@@ -4,16 +4,26 @@
 
 #include <glad/glad.h>
 
+#include <algorithm>
 #include <cstddef>
+
 
 
 namespace leopph::impl
 {
+	constexpr int GeometryBuffer::s_BindFillValue{-1};
+
+
 	GeometryBuffer::GeometryBuffer() :
-	m_Textures{}, m_DepthBuffer{}, m_FrameBuffer{}
+		m_Textures{},
+		m_BindIndices{},
+		m_DepthBuffer{},
+		m_FrameBuffer{},
+		m_Resolution{Vector2{Window::Get().Width(), Window::Get().Height()}}
 	{
+		std::ranges::fill(m_BindIndices, s_BindFillValue);
 		glCreateFramebuffers(1, &m_FrameBuffer);
-		SetUpBuffers(Vector2{ Window::Get().Width(), Window::Get().Height() });
+		SetUpBuffers(m_Resolution);
 	}
 
 
@@ -32,23 +42,26 @@ namespace leopph::impl
 			glClearNamedFramebufferfv(m_FrameBuffer, GL_COLOR, static_cast<GLint>(i), Vector4{static_cast<Vector3>(Window::Get().Background())}.Data().data());
 		}
 
-		glClearNamedFramebufferfv(m_FrameBuffer, GL_DEPTH, 0, std::array<GLfloat, 1>{ 1 }.data());
+		glClearNamedFramebufferfv(m_FrameBuffer, GL_DEPTH, 0, std::array<GLfloat, 1>{1}.data());
 	}
 
 
-	void GeometryBuffer::Bind() const
+	void GeometryBuffer::BindForWriting() const
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, m_FrameBuffer);
+		glViewport(0, 0, static_cast<GLsizei>(m_Resolution[0]), static_cast<GLsizei>(m_Resolution[1]));
 	}
 
 
-	void GeometryBuffer::Unbind() const
+	void GeometryBuffer::UnbindFromWriting() const
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		const auto& window{Window::Get()};
+		glViewport(0, 0, static_cast<GLsizei>(window.Width()), static_cast<GLsizei>(window.Height()));
 	}
 
 
-	int GeometryBuffer::BindTextureForReading(const DeferredLightShader& shader, const TextureType type, int texUnit) const
+	int GeometryBuffer::BindForReading(const DefLightShader& shader, const TextureType type, int texUnit) const
 	{
 		glBindTextureUnit(static_cast<unsigned>(texUnit), m_Textures[type]);
 
@@ -79,7 +92,38 @@ namespace leopph::impl
 				break;
 		}
 
+		m_BindIndices[type] = texUnit;
 		return ++texUnit;
+	}
+
+
+	int GeometryBuffer::BindForReading(const DefLightShader& shader, int texUnit) const
+	{
+		for (std::size_t i = 0; i < m_Textures.size(); ++i)
+		{
+			texUnit = BindForReading(shader, static_cast<TextureType>(i), texUnit);
+		}
+
+		return texUnit;
+	}
+
+
+	void GeometryBuffer::UnbindFromReading(const TextureType type) const
+	{
+		if (m_BindIndices[type] != s_BindFillValue)
+		{
+			glBindTextureUnit(m_BindIndices[type], 0);
+			m_BindIndices[type] = s_BindFillValue;
+		}
+	}
+
+
+	void GeometryBuffer::UnbindFromReading() const
+	{
+		for (std::size_t i = 0; i < m_Textures.size(); ++i)
+		{
+			UnbindFromReading(static_cast<TextureType>(i));
+		}
 	}
 
 
@@ -87,7 +131,6 @@ namespace leopph::impl
 	{
 		glBlitNamedFramebuffer(m_FrameBuffer, bufferName, 0, 0, static_cast<GLint>(resolution[0]), static_cast<GLint>(resolution[1]), 0, 0, static_cast<GLint>(resolution[0]), static_cast<GLint>(resolution[1]), GL_DEPTH_BUFFER_BIT, GL_NEAREST);
 	}
-
 
 
 	void GeometryBuffer::SetUpBuffers(const Vector2& res)
@@ -132,12 +175,13 @@ namespace leopph::impl
 		glNamedFramebufferTexture(m_FrameBuffer, GL_COLOR_ATTACHMENT5, m_Textures[Shine], 0);
 		glNamedFramebufferRenderbuffer(m_FrameBuffer, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_DepthBuffer);
 
-		glNamedFramebufferDrawBuffers(m_FrameBuffer, static_cast<GLsizei>(m_Textures.size()), std::array<GLenum, 6>{ GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5 }.data());
+		glNamedFramebufferDrawBuffers(m_FrameBuffer, static_cast<GLsizei>(m_Textures.size()), std::array<GLenum, 6>{GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5}.data());
 	}
 
 
 	void GeometryBuffer::OnEventReceived(EventParamType event)
 	{
-		SetUpBuffers(event.newResolution);
+		m_Resolution = event.newResolution;
+		SetUpBuffers(m_Resolution);
 	}
 }

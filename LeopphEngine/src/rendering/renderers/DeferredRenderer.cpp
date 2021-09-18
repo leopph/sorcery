@@ -56,9 +56,9 @@ namespace leopph::impl
 	                                      const std::unordered_map<const ModelResource*, std::pair<std::vector<Matrix4>, std::vector<Matrix4>>>& modelsAndMats) const
 	{
 		m_GBuffer.Clear();
-		m_GBuffer.Bind();
-
 		m_GPassObjectShader.SetViewProjectionMatrix(camViewMat * camProjMat);
+
+		m_GBuffer.BindForWriting();
 		m_GPassObjectShader.Use();
 
 		for (const auto& [modelRes, matrices] : modelsAndMats)
@@ -66,19 +66,24 @@ namespace leopph::impl
 			modelRes->DrawShaded(m_GPassObjectShader, matrices.first, matrices.second, 0);
 		}
 
-		m_GBuffer.Unbind();
+		m_GPassObjectShader.Unuse();
+		m_GBuffer.UnbindFromWriting();
 	}
 
 
 	void DeferredRenderer::RenderAmbientLight() const
 	{
-		static_cast<void>(m_GBuffer.BindTextureForReading(m_AmbientShader, GeometryBuffer::TextureType::Ambient, 0));
 		m_AmbientShader.SetAmbientLight(AmbientLight::Instance().Intensity());
 
-		glDisable(GL_DEPTH_TEST);
+		static_cast<void>(m_GBuffer.BindForReading(m_AmbientShader, GeometryBuffer::TextureType::Ambient, 0));
 		m_AmbientShader.Use();
+
+		glDisable(GL_DEPTH_TEST);
 		m_ScreenTexture.Draw();
 		glEnable(GL_DEPTH_TEST);
+
+		m_AmbientShader.Unuse();
+		m_GBuffer.UnbindFromReading(GeometryBuffer::TextureType::Ambient);
 	}
 
 
@@ -92,68 +97,83 @@ namespace leopph::impl
 		{
 			return;
 		}
-
-		const auto cameraInverseMatrix{camViewMat.Inverse()};
-		const auto lightViewMatrix{Matrix4::LookAt(dirLight->Range() * -dirLight->Direction(), Vector3{}, Vector3::Up())};
-
-		static std::vector<Matrix4> dirLightMatrices;
-		dirLightMatrices.clear();
-
-		m_ShadowShader.Use();
-
-		for (std::size_t i = 0; i < Settings::CameraDirectionalShadowCascadeCount(); ++i)
-		{
-			const auto lightWorldToClip{m_DirShadowMap.WorldToClipMatrix(i, cameraInverseMatrix, lightViewMatrix)};
-			dirLightMatrices.push_back(lightWorldToClip);
-
-			m_DirShadowMap.BindForWriting(i);
-			m_DirShadowMap.Clear();
-
-			m_ShadowShader.SetLightWorldToClipMatrix(lightWorldToClip);
-
-			for (const auto& [modelRes, matrices] : modelsAndMats)
-			{
-				modelRes->DrawDepth(matrices.first);
-			}
-		}
-
-		m_DirShadowMap.UnbindFromWriting();
+		
+		const DefDirShader* const lightShaderPtr = dirLight->CastsShadow() ? static_cast<DefDirShader*>(&m_ShadowedDirLightShader) : static_cast<DefDirShader*>(&m_UnshadowedDirLightShader);
+		auto& lightShader =  *lightShaderPtr;
 
 		auto texCount{0};
 
-		texCount = m_GBuffer.BindTextureForReading(m_DirLightShader, GeometryBuffer::TextureType::Position, texCount);
-		texCount = m_GBuffer.BindTextureForReading(m_DirLightShader, GeometryBuffer::Normal, texCount);
-		texCount = m_GBuffer.BindTextureForReading(m_DirLightShader, GeometryBuffer::TextureType::Diffuse, texCount);
-		texCount = m_GBuffer.BindTextureForReading(m_DirLightShader, GeometryBuffer::TextureType::Specular, texCount);
-		texCount = m_GBuffer.BindTextureForReading(m_DirLightShader, GeometryBuffer::TextureType::Shine, texCount);
-		static_cast<void>(m_DirShadowMap.BindForReading(m_DirLightShader, texCount));
+		texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::TextureType::Position, texCount);
+		texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::Normal, texCount);
+		texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::TextureType::Diffuse, texCount);
+		texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::TextureType::Specular, texCount);
+		texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::TextureType::Shine, texCount);
 
-		const auto cascadeCount{Settings::CameraDirectionalShadowCascadeCount()};
+		lightShader.SetDirLight(*dirLight);
+		lightShader.SetCameraPosition(Camera::Active()->entity.Transform->Position());
 
-		m_DirLightShader.SetDirLight(*dirLight);
-		m_DirLightShader.SetCameraPosition(Camera::Active()->entity.Transform->Position());
-		m_DirLightShader.SetCascadeCount(static_cast<unsigned>(cascadeCount));
-		m_DirLightShader.SetLightClipMatrices(dirLightMatrices);
-
-		static std::vector<float> cascadeFarBounds;
-		cascadeFarBounds.clear();
-
-		for (std::size_t i = 0; i < cascadeCount; ++i)
+		if (dirLight->CastsShadow())
 		{
-			const auto viewSpaceBound{m_DirShadowMap.CascadeBoundsViewSpace(i)[1]};
-			const Vector4 viewSpaceBoundVector{0, 0, viewSpaceBound, 1};
-			const auto clipSpaceBoundVector{viewSpaceBoundVector * camProjMat};
-			const auto clipSpaceBound{clipSpaceBoundVector[2]};
-			cascadeFarBounds.push_back(clipSpaceBound);
+			static std::vector<Matrix4> dirLightMatrices;
+			static std::vector<float> cascadeFarBounds;
+
+			dirLightMatrices.clear();
+			cascadeFarBounds.clear();
+
+			const auto cameraInverseMatrix{camViewMat.Inverse()};
+			const auto lightViewMatrix{Matrix4::LookAt(dirLight->Range() * -dirLight->Direction(), Vector3{}, Vector3::Up())};
+			const auto cascadeCount{Settings::CameraDirectionalShadowCascadeCount()};
+
+			m_ShadowShader.Use();
+
+			for (std::size_t i = 0; i < cascadeCount; ++i)
+			{
+				const auto lightWorldToClip{m_DirShadowMap.WorldToClipMatrix(i, cameraInverseMatrix, lightViewMatrix)};
+				dirLightMatrices.push_back(lightWorldToClip);
+
+				m_ShadowShader.SetLightWorldToClipMatrix(lightWorldToClip);
+
+				m_DirShadowMap.BindForWriting(i);
+				m_DirShadowMap.Clear();
+
+				for (const auto& [modelRes, matrices] : modelsAndMats)
+				{
+					modelRes->DrawDepth(matrices.first);
+				}
+			}
+
+			m_DirShadowMap.UnbindFromWriting();
+			m_ShadowShader.Unuse();
+
+			for (std::size_t i = 0; i < cascadeCount; ++i)
+			{
+				const auto viewSpaceBound{m_DirShadowMap.CascadeBoundsViewSpace(i)[1]};
+				const Vector4 viewSpaceBoundVector{0, 0, viewSpaceBound, 1};
+				const auto clipSpaceBoundVector{viewSpaceBoundVector * camProjMat};
+				const auto clipSpaceBound{clipSpaceBoundVector[2]};
+				cascadeFarBounds.push_back(clipSpaceBound);
+			}
+
+			lightShader.SetCascadeCount(static_cast<unsigned>(cascadeCount));
+			lightShader.SetLightClipMatrices(dirLightMatrices);
+			lightShader.SetCascadeFarBounds(cascadeFarBounds);
+			static_cast<void>(m_DirShadowMap.BindForReading(lightShader, texCount));
 		}
 
-		m_DirLightShader.SetCascadeFarBounds(cascadeFarBounds);
-
-		m_DirLightShader.Use();
+		lightShader.Use();
 
 		glDisable(GL_DEPTH_TEST);
 		m_ScreenTexture.Draw();
 		glEnable(GL_DEPTH_TEST);
+
+		lightShader.Unuse();
+
+		if (dirLight->CastsShadow())
+		{
+			m_DirShadowMap.UnbindFromReading();
+		}
+
+		m_GBuffer.UnbindFromReading();
 	}
 
 
@@ -166,11 +186,11 @@ namespace leopph::impl
 		}
 
 		auto texCount{0};
-		texCount = m_GBuffer.BindTextureForReading(m_SpotLightShader, GeometryBuffer::TextureType::Position, texCount);
-		texCount = m_GBuffer.BindTextureForReading(m_SpotLightShader, GeometryBuffer::TextureType::Normal, texCount);
-		texCount = m_GBuffer.BindTextureForReading(m_SpotLightShader, GeometryBuffer::TextureType::Diffuse, texCount);
-		texCount = m_GBuffer.BindTextureForReading(m_SpotLightShader, GeometryBuffer::TextureType::Specular, texCount);
-		texCount = m_GBuffer.BindTextureForReading(m_SpotLightShader, GeometryBuffer::TextureType::Shine, texCount);
+		texCount = m_GBuffer.BindForReading(m_SpotLightShader, GeometryBuffer::TextureType::Position, texCount);
+		texCount = m_GBuffer.BindForReading(m_SpotLightShader, GeometryBuffer::TextureType::Normal, texCount);
+		texCount = m_GBuffer.BindForReading(m_SpotLightShader, GeometryBuffer::TextureType::Diffuse, texCount);
+		texCount = m_GBuffer.BindForReading(m_SpotLightShader, GeometryBuffer::TextureType::Specular, texCount);
+		texCount = m_GBuffer.BindForReading(m_SpotLightShader, GeometryBuffer::TextureType::Shine, texCount);
 		static_cast<void>(m_SpotShadowMap.BindForReading(m_SpotLightShader, texCount));
 
 		m_SpotLightShader.SetCameraPosition(Camera::Active()->entity.Transform->Position());

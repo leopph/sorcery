@@ -7,10 +7,11 @@
 #include "../SpotLightShadowMap.hpp"
 #include "../../components/lighting/SpotLight.hpp"
 #include "../../math/Matrix.hpp"
-#include "../shaders/DeferredAmbLightShader.hpp"
-#include "../shaders/DeferredDirLightShader.hpp"
-#include "../shaders/DeferredGeometryShader.hpp"
-#include "../shaders/DeferredSpotLightShader.hpp"
+#include "../shaders/DefAmbShader.hpp"
+#include "../shaders/DefDirShaderCastShadow.hpp"
+#include "../shaders/DefDirShaderNoCastShadow.hpp"
+#include "../shaders/DefGeomShader.hpp"
+#include "../shaders/DefSpotShader.hpp"
 #include "../shaders/ShadowMapShader.hpp"
 #include "../shaders/SkyboxShader.hpp"
 #include "../shaders/TextureShader.hpp"
@@ -53,10 +54,11 @@ namespace leopph::impl
 
 			TextureShader m_TextureShader;
 			ShadowMapShader m_ShadowShader;
-			DeferredGeometryShader m_GPassObjectShader;
-			DeferredAmbLightShader m_AmbientShader;
-			DeferredDirLightShader m_DirLightShader;
-			DeferredSpotLightShader m_SpotLightShader;
+			DefGeomShader m_GPassObjectShader;
+			DefAmbShader m_AmbientShader;
+			DefDirShaderCastShadow m_ShadowedDirLightShader;
+			DefDirShaderNoCastShadow m_UnshadowedDirLightShader;
+			DefSpotShader m_SpotLightShader;
 			SkyboxShader m_SkyboxShader;
 
 			SpotLightShadowMap m_SpotShadowMap;

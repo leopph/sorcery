@@ -49,6 +49,7 @@ void leopph::AppStart()
 	dirLightEntity->Transform->RotateLocal({Quaternion{Vector3::Right(), 45}});
 	const auto dirLight = dirLightEntity->AddComponent<DirectionalLight>();
 	dirLight->Diffuse(Vector3{0.5, 0.5, 0.5});
+	dirLight->CastsShadow(true);
 
 	const auto globalSpotLightEntity = new Entity;
 	globalSpotLightEntity->Transform->RotateGlobal(Quaternion{Vector3::Up(), 180});

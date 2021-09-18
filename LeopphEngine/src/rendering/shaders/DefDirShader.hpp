@@ -1,20 +1,20 @@
 #pragma once
 
-#include "DeferredLightShader.hpp"
+#include "DefLightShader.hpp"
+#include "ShaderStage.hpp"
 #include "../../components/lighting/DirLight.hpp"
 #include "../../math/Vector.hpp"
 
 #include <string>
+#include <vector>
 
 
 
 namespace leopph::impl
 {
-	class DeferredDirLightShader final : public DeferredLightShader
+	class DefDirShader : public DefLightShader
 	{
 		public:
-			DeferredDirLightShader();
-
 			void SetCameraPosition(const Vector3& pos) const;
 			void SetDirLight(const DirectionalLight& dirLight) const;
 			void SetCascadeCount(unsigned count) const;
@@ -23,7 +23,13 @@ namespace leopph::impl
 			void SetLightClipMatrices(const std::vector<Matrix4>& mats) const;
 
 
+		protected:
+			DefDirShader(const std::vector<std::string>& vertFlags, const std::vector<std::string>& fragFlags);
+
+
 		private:
+			static std::vector<ShaderStage> GetStages(const std::vector<std::string>& vertFlags, const std::vector<std::string>& fragFlags);
+
 			const static std::string s_ShadowMapArrName;
 			const static std::string s_CamPosName;
 			const static std::string s_DirLightDirName;

@@ -106,7 +106,7 @@ namespace leopph::impl
 	}
 
 
-	void Mesh::DrawShaded(const Shader& shader, const std::vector<Matrix4>& modelMatrices, const std::vector<Matrix4>& normalMatrices, std::size_t nextFreeTextureUnit) const
+	void Mesh::DrawShaded(const ShaderProgram& shader, const std::vector<Matrix4>& modelMatrices, const std::vector<Matrix4>& normalMatrices, std::size_t nextFreeTextureUnit) const
 	{
 		if (modelMatrices.size() > m_ModelBufferSize)
 		{

@@ -6,6 +6,7 @@ namespace leopph::impl
 {
 	Light::Light(Entity& owner) :
 		Component{owner},
+		m_CastsShadow{false},
 		m_Range{1000.f},
 		m_Diffuse{1.0f, 1.0f, 1.0f},
 		m_Specular{1.0f, 1.0f, 1.0f}
@@ -49,4 +50,17 @@ namespace leopph::impl
 	{
 		m_Range = value;
 	}
+
+
+	bool Light::CastsShadow() const
+	{
+		return m_CastsShadow;
+	}
+
+
+	void Light::CastsShadow(const bool value)
+	{
+		m_CastsShadow = value;
+	}
+
 }

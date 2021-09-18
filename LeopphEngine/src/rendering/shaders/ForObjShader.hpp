@@ -8,10 +8,10 @@
 
 namespace leopph::impl
 {
-	class TextureShader final : public ShaderProgram
+	class ForObjShader final : public ShaderProgram
 	{
 		public:
-			TextureShader();
+			ForObjShader();
 
 
 		private:

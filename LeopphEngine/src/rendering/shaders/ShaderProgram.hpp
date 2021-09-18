@@ -1,30 +1,29 @@
 #pragma once
 
+#include "ShaderStage.hpp"
 #include "../../math/Matrix.hpp"
 #include "../../math/Vector.hpp"
 
-#include <filesystem>
+#include <optional>
 #include <string>
-#include <string_view>
 #include <vector>
-
 
 
 namespace leopph::impl
 {
-	class Shader
+	class ShaderProgram
 	{
 		public:
-			Shader(const Shader& other) = delete;
-			Shader(Shader&& other) = delete;
+			ShaderProgram(const ShaderProgram& other) = delete;
+			ShaderProgram(ShaderProgram&& other) = delete;
 
-			void operator=(const Shader& other) = delete;
-			void operator=(Shader&& other) = delete;
+			~ShaderProgram();
 
-			virtual ~Shader() = 0;
-
+			ShaderProgram& operator=(const ShaderProgram& other) = delete;
+			ShaderProgram& operator=(ShaderProgram&& other) = delete;
 
 			void Use() const;
+			void Unuse() const;
 
 			void SetUniform(std::string_view name, bool value) const;
 			void SetUniform(std::string_view name, int value) const;
@@ -35,6 +34,8 @@ namespace leopph::impl
 			void SetUniform(std::string_view name, const std::vector<float>& value) const;
 			void SetUniform(std::string_view name, const std::vector<Vector3>& value) const;
 			void SetUniform(std::string_view name, const std::vector<Matrix4>& value) const;
+
+			const unsigned& Name;
 
 
 		protected:
@@ -52,22 +53,12 @@ namespace leopph::impl
 			static const std::string s_AmbLightFragSrc;
 			static const std::string s_SpotLightPassFragSrc;
 
-			const unsigned m_ProgramName;
-
-			Shader(std::string_view vertSrc, std::string_view fragSrc);
+			explicit ShaderProgram(const std::vector<ShaderStage>& stages);
 
 
 		private:
-			const std::filesystem::path m_ProgramFileName;
+			[[nodiscard]] std::optional<std::string> CheckForLinkErrors() const;
 
-			void Compile(std::string_view vertSrc, std::string_view fragSrc) const;
-
-			[[nodiscard]] bool ReadFromCache(const std::filesystem::path& path) const;
-			void WriteToCache(const std::filesystem::path& path) const;
-
-			// True for error-free
-			static bool CheckForCompilationErrors(unsigned shaderName);
-			// True for error-free
-			static bool CheckForLinkErrors(unsigned programName);
+			unsigned m_Name;
 	};
 }

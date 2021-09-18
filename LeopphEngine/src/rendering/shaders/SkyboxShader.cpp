@@ -4,7 +4,17 @@
 namespace leopph::impl
 {
 	SkyboxShader::SkyboxShader() :
-		Shader{s_SkyboxVertSrc, s_SkyboxFragSrc}
+		ShaderProgram{GetStages()}
 	{}
+
+
+
+	std::vector<ShaderStage> SkyboxShader::GetStages()
+	{
+		std::vector<ShaderStage> ret;
+		ret.emplace_back(s_SkyboxVertSrc, ShaderType::Vertex);
+		ret.emplace_back(s_SkyboxFragSrc, ShaderType::Fragment);
+		return ret;
+	}
 
 }

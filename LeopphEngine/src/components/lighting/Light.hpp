@@ -28,8 +28,12 @@ namespace leopph::impl
 			LEOPPHAPI float Range() const;
 			LEOPPHAPI void Range(float value);
 
+			LEOPPHAPI bool CastsShadow() const;
+			LEOPPHAPI void CastsShadow(bool value);
+
 
 		private:
+			bool m_CastsShadow;
 			float m_Range;
 			Vector3 m_Diffuse;
 			Vector3 m_Specular;

@@ -77,10 +77,10 @@
     <PreLinkEvent />
     <CustomBuildStep />
     <CustomBuild>
-      <Command>$(SolutionDir)out\ShaderParser\$(Configuration)_$(Platform)\ShaderParser.exe %(Fullpath) $(IntDir)%(Filename).cpp leopph::impl::Shader::s_%(Filename)Src $(ProjectDir)src\rendering\shaders\Shader.hpp</Command>
+      <Command>$(SolutionDir)out\ShaderParser\$(Configuration)_$(Platform)\ShaderParser.exe %(Fullpath) $(IntDir)%(Filename).cpp leopph::impl::ShaderProgram::s_%(Filename)Src $(ProjectDir)src\rendering\shaders\ShaderProgram.hpp</Command>
       <Message>Transpiling %(Filename)%(Extension)...</Message>
       <Outputs>$(IntDir)%(Filename).cpp</Outputs>
-      <AdditionalInputs>$(ProjectDir)src\rendering\shaders\Shader.hpp</AdditionalInputs>
+      <AdditionalInputs>$(ProjectDir)src\rendering\shaders\ShaderProgram.hpp</AdditionalInputs>
       <OutputItemType>ClCompile</OutputItemType>
     </CustomBuild>
   </ItemDefinitionGroup>
@@ -108,10 +108,10 @@
     <PreLinkEvent />
     <CustomBuildStep />
     <CustomBuild>
-      <Command>$(SolutionDir)out\ShaderParser\$(Configuration)_$(Platform)\ShaderParser.exe %(Fullpath) $(IntDir)%(Filename).cpp leopph::impl::Shader::s_%(Filename)Src $(ProjectDir)src\rendering\shaders\Shader.hpp</Command>
+      <Command>$(SolutionDir)out\ShaderParser\$(Configuration)_$(Platform)\ShaderParser.exe %(Fullpath) $(IntDir)%(Filename).cpp leopph::impl::ShaderProgram::s_%(Filename)Src $(ProjectDir)src\rendering\shaders\ShaderProgram.hpp</Command>
       <Message>Transpiling %(Filename)%(Extension)...</Message>
       <Outputs>$(IntDir)%(Filename).cpp</Outputs>
-      <AdditionalInputs>$(ProjectDir)src\rendering\shaders\Shader.hpp</AdditionalInputs>
+      <AdditionalInputs>$(ProjectDir)src\rendering\shaders\ShaderProgram.hpp</AdditionalInputs>
       <OutputItemType>ClCompile</OutputItemType>
     </CustomBuild>
   </ItemDefinitionGroup>
@@ -157,13 +157,18 @@
     <ClInclude Include="src\rendering\geometry\ModelResource.hpp" />
     <ClInclude Include="src\rendering\renderers\Renderer.hpp" />
     <ClInclude Include="src\rendering\ScreenTexture.hpp" />
-    <ClInclude Include="src\rendering\shaders\DeferredAmbLightShader.hpp" />
-    <ClInclude Include="src\rendering\shaders\DeferredDirLightShader.hpp" />
-    <ClInclude Include="src\rendering\shaders\DeferredGeometryShader.hpp" />
-    <ClInclude Include="src\rendering\shaders\DeferredLightShader.hpp" />
-    <ClInclude Include="src\rendering\shaders\DeferredSpotLightShader.hpp" />
+    <ClInclude Include="src\rendering\shaders\DefAmbShader.hpp" />
+    <ClInclude Include="src\rendering\shaders\DefDirShader.hpp" />
+    <ClInclude Include="src\rendering\shaders\DefDirShaderCastShadow.hpp" />
+    <ClInclude Include="src\rendering\shaders\DefDirShaderNoCastShadow.hpp" />
+    <ClInclude Include="src\rendering\shaders\DefGeomShader.hpp" />
+    <ClInclude Include="src\rendering\shaders\DefLightShader.hpp" />
+    <ClInclude Include="src\rendering\shaders\DefSpotShader.hpp" />
+    <ClInclude Include="src\rendering\shaders\ShaderProgram.hpp" />
+    <ClInclude Include="src\rendering\shaders\ShaderStage.hpp" />
+    <ClInclude Include="src\rendering\shaders\ShaderType.hpp" />
     <ClInclude Include="src\rendering\shaders\ShadowMapShader.hpp" />
-    <ClInclude Include="src\rendering\shaders\ForwardObjectShader.hpp" />
+    <ClInclude Include="src\rendering\shaders\ForObjShader.hpp" />
     <ClInclude Include="src\rendering\shaders\TextureShader.hpp" />
     <ClInclude Include="src\rendering\ShadowMap.hpp" />
     <ClInclude Include="src\rendering\SkyboxHandle.hpp" />
@@ -174,10 +179,14 @@
     <ClInclude Include="src\rendering\TextureResource.hpp" />
     <ClInclude Include="src\timing\timer.h" />
     <ClInclude Include="src\misc\CameraBackground.hpp" />
+    <ClInclude Include="src\util\containers\Bimap.hpp" />
     <ClInclude Include="src\util\equal\EntityEqual.hpp" />
+    <ClInclude Include="src\util\equal\ShaderTypeEqual.hpp" />
     <ClInclude Include="src\util\equal\UniqueResourceEqual.hpp" />
     <ClInclude Include="src\util\hash\EntityHash.hpp" />
+    <ClInclude Include="src\util\hash\ShaderTypeHash.hpp" />
     <ClInclude Include="src\util\hash\UniqueResourceHash.hpp" />
+    <ClInclude Include="src\util\interface\OpenGLAdapter.hpp" />
     <ClInclude Include="src\util\less\LightCloserToCamera.hpp" />
     <ClInclude Include="src\util\logger.h" />
     <ClInclude Include="src\rendering\opengl\gl.h" />
@@ -194,7 +203,6 @@
     <ClInclude Include="src\math\Quaternion.hpp" />
     <ClInclude Include="src\rendering\renderers\ForwardRenderer.hpp" />
     <ClInclude Include="src\config\Settings.hpp" />
-    <ClInclude Include="src\rendering\shaders\Shader.hpp" />
     <ClInclude Include="src\timing\leopphtime.h" />
     <ClInclude Include="src\math\Vector.hpp" />
     <ClInclude Include="src\rendering\vertex.h" />
@@ -236,13 +244,17 @@
     <ClCompile Include="src\rendering\opengl\gl.cpp" />
     <ClCompile Include="src\rendering\renderers\Renderer.cpp" />
     <ClCompile Include="src\rendering\ScreenTexture.cpp" />
-    <ClCompile Include="src\rendering\shaders\DeferredAmbLightShader.cpp" />
-    <ClCompile Include="src\rendering\shaders\DeferredDirLightShader.cpp" />
-    <ClCompile Include="src\rendering\shaders\DeferredGeometryShader.cpp" />
-    <ClCompile Include="src\rendering\shaders\DeferredLightShader.cpp" />
-    <ClCompile Include="src\rendering\shaders\DeferredSpotLightShader.cpp" />
+    <ClCompile Include="src\rendering\shaders\DefAmbShader.cpp" />
+    <ClCompile Include="src\rendering\shaders\DefDirShader.cpp" />
+    <ClCompile Include="src\rendering\shaders\DefDirShaderCastShadow.cpp" />
+    <ClCompile Include="src\rendering\shaders\DefDirShaderNoCastShadow.cpp" />
+    <ClCompile Include="src\rendering\shaders\DefGeomShader.cpp" />
+    <ClCompile Include="src\rendering\shaders\DefLightShader.cpp" />
+    <ClCompile Include="src\rendering\shaders\DefSpotShader.cpp" />
+    <ClCompile Include="src\rendering\shaders\ShaderProgram.cpp" />
+    <ClCompile Include="src\rendering\shaders\ShaderStage.cpp" />
     <ClCompile Include="src\rendering\shaders\ShadowMapShader.cpp" />
-    <ClCompile Include="src\rendering\shaders\ForwardObjectShader.cpp" />
+    <ClCompile Include="src\rendering\shaders\ForObjShader.cpp" />
     <ClCompile Include="src\rendering\shaders\TextureShader.cpp" />
     <ClCompile Include="src\rendering\ShadowMap.cpp" />
     <ClCompile Include="src\rendering\SkyboxHandle.cpp" />
@@ -253,10 +265,13 @@
     <ClCompile Include="src\rendering\shaders\SkyboxShader.cpp" />
     <ClCompile Include="src\timing\timer.cpp" />
     <ClCompile Include="src\util\equal\EntityEqual.cpp" />
+    <ClCompile Include="src\util\equal\ShaderTypeEqual.cpp" />
     <ClCompile Include="src\util\equal\UniqueResourceEqual.cpp" />
     <ClCompile Include="src\util\hash\EntityHash.cpp" />
     <ClCompile Include="src\util\hash\PathHash.cpp" />
+    <ClCompile Include="src\util\hash\ShaderTypeHash.cpp" />
     <ClCompile Include="src\util\hash\UniqueResourceHash.cpp" />
+    <ClCompile Include="src\util\interface\OpenGLAdapter.cpp" />
     <ClCompile Include="src\util\less\LightCloserToCamera.cpp" />
     <ClCompile Include="src\util\logger.cpp" />
     <ClCompile Include="src\misc\Skybox.cpp" />
@@ -271,7 +286,6 @@
     <ClCompile Include="src\components\lighting\PointLight.cpp" />
     <ClCompile Include="src\math\Quaternion.cpp" />
     <ClCompile Include="src\rendering\renderers\ForwardRenderer.cpp" />
-    <ClCompile Include="src\rendering\shaders\Shader.cpp" />
     <ClCompile Include="src\timing\leopphtime.cpp" />
     <ClCompile Include="src\windowing\GLWindow.cpp" />
     <ClCompile Include="vendor\stb_image\stb_image.cpp" />

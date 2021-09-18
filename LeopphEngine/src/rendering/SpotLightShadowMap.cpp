@@ -10,7 +10,7 @@ namespace leopph::impl
 	{}
 
 
-	int SpotLightShadowMap::BindForReading(const DeferredSpotLightShader& shader, const int textureUnit) const
+	int SpotLightShadowMap::BindForReading(const DefSpotShader& shader, const int textureUnit) const
 	{
 		const auto ret{ShadowMap::BindForReading(textureUnit)};
 		shader.SetShadowMap(textureUnit);

@@ -1,13 +1,20 @@
 #pragma once
 
-#include "Shader.hpp"
+#include "ShaderProgram.hpp"
+#include "ShaderStage.hpp"
+
+#include <vector>
 
 
 namespace leopph::impl
 {
-	class SkyboxShader final : public Shader
+	class SkyboxShader final : public ShaderProgram
 	{
 		public:
 			SkyboxShader();
+
+
+		private:
+			static std::vector<ShaderStage> GetStages();
 	};
 }

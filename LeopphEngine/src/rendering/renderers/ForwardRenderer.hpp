@@ -3,7 +3,7 @@
 #include "Renderer.hpp"
 #include "../../math/Matrix.hpp"
 #include "../shaders/ShadowMapShader.hpp"
-#include "../shaders/ForwardObjectShader.hpp"
+#include "../shaders/ForObjShader.hpp"
 #include "../shaders/SkyboxShader.hpp"
 
 #include <optional>
@@ -33,7 +33,7 @@ namespace leopph::impl
 
 			void RenderSkybox(const Matrix4& camViewMat, const Matrix4& camProjMat) const;
 
-			ForwardObjectShader m_ObjectShader;
+			ForObjShader m_ObjectShader;
 			SkyboxShader m_SkyboxShader;
 			ShadowMapShader m_ShadowShader;
 	};

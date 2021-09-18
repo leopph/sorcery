@@ -272,48 +272,52 @@ namespace leopph::impl
 		}
 
 
-		const auto& operator[](const T1& o1) const
+		[[nodiscard]] const auto& operator[](const T1& o1) const
 		{
-			return m_T1ToT2[const_cast<T1*>(&o1)];
+			const auto& elem{*m_T1.find(o1)};
+			return m_T1ToT2[const_cast<T1*>(&elem)];
 		}
 
 
-		auto& operator[](const T1& o1)
+		[[nodiscard]] auto& operator[](const T1& o1)
 		{
 			return const_cast<T2&>(const_cast<const Bimap*>(this)->operator[](o1));
 		}
 
 
-		const auto& operator[](const T2& o2) const
+		[[nodiscard]] const auto& operator[](const T2& o2) const
 		{
-			return m_T2ToT1[const_cast<T2*>(&o2)];
+			const auto& elem{*m_T2.find(o2)};
+			return m_T2ToT1[const_cast<T2*>(&elem)];
 		}
 
 
-		auto& operator[](const T2& o2)
+		[[nodiscard]] auto& operator[](const T2& o2)
 		{
 			return const_cast<T1&>(const_cast<const Bimap*>(this)->operator[](o2));
 		}
 
 
-		const auto& At(const T1& o1) const
+		[[nodiscard]] const auto& At(const T1& o1) const
 		{
-			return *m_T1ToT2.at(const_cast<T1*>(&o1));
+			const auto& elem{*m_T1.find(o1)};
+			return *m_T1ToT2.at(const_cast<T1*>(&elem));
 		}
 
 
-		auto& At(const T1& o1)
+		[[nodiscard]] auto& At(const T1& o1)
 		{
 			return const_cast<T2&>(const_cast<const Bimap*>(this)->At(o1));
 		}
 
 
-		const auto& At(const T2& o2) const
+		[[nodiscard]] const auto& At(const T2& o2) const
 		{
-			return *m_T2ToT1.at(const_cast<T2*>(&o2));
+			const auto& elem{*m_T2.find(o2)};
+			return *m_T2ToT1.at(const_cast<T2*>(&elem));
 		}
 
-		auto& At(const T2& o2)
+		[[nodiscard]] auto& At(const T2& o2)
 		{
 			return const_cast<T1&>(const_cast<const Bimap*>(this)->At(o2));
 		}

@@ -6,9 +6,9 @@
 namespace leopph::impl
 {
 #ifdef _DEBUG
-	Bimap<int, ShaderType, ShaderTypeHash, ShaderTypeEqual, true> OpenGLAdapter::s_ShaderTypes
+	const Bimap<int, ShaderType, ShaderTypeHash, ShaderTypeEqual, true> OpenGLAdapter::s_ShaderTypes
 #else
-	Bimap<int, ShaderType, ShaderTypeHash, ShaderTypeEqual> OpenGLAdapter::s_ShaderTypes;
+	const Bimap<int, ShaderType, ShaderTypeHash, ShaderTypeEqual> OpenGLAdapter::s_ShaderTypes;
 #endif
 	{
 		{GL_VERTEX_SHADER, ShaderType::Vertex},

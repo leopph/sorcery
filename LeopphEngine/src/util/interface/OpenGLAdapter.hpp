@@ -28,9 +28,9 @@ namespace leopph::impl
 
 		private:
 		#ifdef _DEBUG
-			static Bimap<int, ShaderType, ShaderTypeHash, ShaderTypeEqual, true> s_ShaderTypes;
+			static const Bimap<int, ShaderType, ShaderTypeHash, ShaderTypeEqual, true> s_ShaderTypes;
 		#else
-			static Bimap<int, ShaderType, ShaderTypeHash, ShaderTypeEqual> s_ShaderTypes;
+			static const Bimap<int, ShaderType, ShaderTypeHash, ShaderTypeEqual> s_ShaderTypes;
 		#endif
 	};
 }

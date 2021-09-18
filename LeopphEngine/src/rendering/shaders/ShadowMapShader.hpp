@@ -1,14 +1,15 @@
 #pragma once
 
-#include "Shader.hpp"
+#include "ShaderProgram.hpp"
 #include "../../math/Matrix.hpp"
 
 #include <string>
+#include <vector>
 
 
 namespace leopph::impl
 {
-	class ShadowMapShader final : public Shader
+	class ShadowMapShader final : public ShaderProgram
 	{
 		public:
 			ShadowMapShader();
@@ -17,6 +18,8 @@ namespace leopph::impl
 
 
 		private:
+			static std::vector<ShaderStage> GetStages();
+
 			static const std::string s_WorldToClipMatName;
 
 			const int m_WorldToClipMatLoc;

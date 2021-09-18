@@ -9,14 +9,22 @@ namespace leopph::impl
 
 
 	ShadowMapShader::ShadowMapShader() :
-		Shader{s_ShadowMapVertSrc, {}},
-		m_WorldToClipMatLoc{glGetUniformLocation(m_ProgramName, s_WorldToClipMatName.data())}
+		ShaderProgram{GetStages()},
+		m_WorldToClipMatLoc{glGetUniformLocation(Name, s_WorldToClipMatName.data())}
 	{}
 
 
 	void ShadowMapShader::SetLightWorldToClipMatrix(const Matrix4& mat) const
 	{
-		glProgramUniformMatrix4fv(m_ProgramName, m_WorldToClipMatLoc, 1, GL_TRUE, reinterpret_cast<const GLfloat*>(mat.Data().data()));
+		glProgramUniformMatrix4fv(Name, m_WorldToClipMatLoc, 1, GL_TRUE, reinterpret_cast<const GLfloat*>(mat.Data().data()));
+	}
+
+
+	std::vector<ShaderStage> ShadowMapShader::GetStages()
+	{
+		std::vector<ShaderStage> ret;
+		ret.emplace_back(s_ShadowMapVertSrc, ShaderType::Vertex);
+		return ret;
 	}
 
 }

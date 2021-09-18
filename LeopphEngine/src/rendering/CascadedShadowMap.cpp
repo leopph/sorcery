@@ -45,7 +45,7 @@ namespace leopph::impl
 	}
 
 
-	int CascadedShadowMap::BindForReading(const DeferredDirLightShader& shader, int texUnit)
+	int CascadedShadowMap::BindForReading(const DefDirShader& shader, int texUnit)
 	{
 		m_TexBindStartIndex = texUnit;
 

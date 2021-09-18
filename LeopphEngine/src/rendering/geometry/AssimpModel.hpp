@@ -3,7 +3,7 @@
 #include "Mesh.hpp"
 #include "../Texture.hpp"
 #include "../../math/Matrix.hpp"
-#include "../shaders/Shader.hpp"
+#include "../shaders/ShaderProgram.hpp"
 
 #include <assimp/scene.h>
 
@@ -28,7 +28,7 @@ namespace leopph::impl
 
 			~AssimpModel() = default;
 
-			void DrawShaded(const Shader& shader, const std::vector<Matrix4>& modelMatrices, const std::vector<Matrix4>& normalMatrices, std::size_t nextFreeTextureUnit) const;
+			void DrawShaded(const ShaderProgram& shader, const std::vector<Matrix4>& modelMatrices, const std::vector<Matrix4>& normalMatrices, std::size_t nextFreeTextureUnit) const;
 			void DrawDepth(const std::vector<Matrix4>& modelMatrices) const;
 			void OnReferringEntitiesChanged(std::size_t newAmount) const;
 

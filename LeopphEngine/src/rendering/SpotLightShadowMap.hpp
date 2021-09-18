@@ -3,7 +3,7 @@
 #include "ShadowMap.hpp"
 #include "../events/EventReceiver.hpp"
 #include "../events/SpotShadowMapResChangedEvent.hpp"
-#include "shaders/DeferredSpotLightShader.hpp"
+#include "shaders/DefSpotShader.hpp"
 
 
 
@@ -14,7 +14,7 @@ namespace leopph::impl
 		public:
 			SpotLightShadowMap();
 
-			[[nodiscard]] int BindForReading(const DeferredSpotLightShader& shader, int textureUnit) const;
+			[[nodiscard]] int BindForReading(const DefSpotShader& shader, int textureUnit) const;
 
 
 		private:

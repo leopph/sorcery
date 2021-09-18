@@ -4,7 +4,7 @@
 #include "../events/EventReceiver.hpp"
 #include "../math/Matrix.hpp"
 #include "../math/Vector.hpp"
-#include "shaders/DeferredDirLightShader.hpp"
+#include "shaders/DefDirShader.hpp"
 
 #include <cstddef>
 #include <vector>
@@ -29,7 +29,7 @@ namespace leopph::impl
 		void UnbindFromWriting() const;
 
 		// Returns the next available texture unit after binding
-		[[nodiscard]] int BindForReading(const DeferredDirLightShader& shader, int texUnit);
+		[[nodiscard]] int BindForReading(const DefDirShader& shader, int texUnit);
 		void UnbindFromReading() const;
 
 		void Clear() const;
