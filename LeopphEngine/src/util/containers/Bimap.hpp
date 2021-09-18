@@ -4,6 +4,7 @@
 #include <array>
 #include <concepts>
 #include <cstddef>
+#include <initializer_list>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
@@ -62,6 +63,24 @@ namespace leopph::impl
 				m_T1ToT2{std::move(other.m_T1ToT2)},
 				m_T2ToT1{std::move(other.m_T2ToT1)}
 			{}
+
+
+			Bimap(std::initializer_list<std::pair<T1, T2>> initList)
+			{
+				std::ranges::for_each(initList, [this](auto& pair)
+				{
+					Insert(std::move(pair.first), std::move(pair.second));
+				});
+			}
+
+
+			Bimap(std::initializer_list<std::pair<T2, T1>> initList)
+			{
+				std::ranges::for_each(initList, [this](auto& pair)
+				{
+					Insert(std::move(pair.first), std::move(pair.second));
+				});
+			}
 
 
 			Bimap& operator=(const Bimap& other) = default;
@@ -165,7 +184,7 @@ namespace leopph::impl
 		auto Insert(T1&& o1, T2&& o2 = T2{})
 		{
 			const auto& ins1{*m_T1.insert(std::move(o1)).first};
-			const auto& ins2{*m_T2.insert(std::move(o2))};
+			const auto& ins2{*m_T2.insert(std::move(o2)).first};
 			InsertPointers(ins1, ins2);
 		}
 
@@ -305,8 +324,8 @@ namespace leopph::impl
 			{
 				const auto leftPtr{const_cast<T1*>(&left)};
 				const auto rightPtr{const_cast<T2*>(&right)};
-				m_T1ToT2.insert(leftPtr, rightPtr);
-				m_T2ToT1.insert(rightPtr, leftPtr);
+				m_T1ToT2[leftPtr] = rightPtr;
+				m_T2ToT1[rightPtr] = leftPtr;
 			}
 
 			void Erase(const T1& o1, const T2& o2)
