@@ -14,10 +14,7 @@
 
 #include <glad/glad.h>
 
-#include <algorithm>
 #include <cstddef>
-#include <iterator>
-#include <set>
 #include <string>
 #include <utility>
 
@@ -29,7 +26,7 @@ namespace leopph::impl
 		m_ObjectShader{
 			{
 				{ShaderProgram::ObjectVertSrc, ShaderType::Vertex, {}},
-				{ShaderProgram::GPassObjectFragSrc, ShaderType::Fragment, {}}
+				{ShaderProgram::ObjectFragSrc, ShaderType::Fragment, {}}
 			}},
 	m_SkyboxShader{
 		{
