@@ -3,7 +3,6 @@
 #include "../components/Behavior.hpp"
 #include "../components/Component.hpp"
 #include "../components/Transform.hpp"
-#include "../components/lighting/AmbientLight.hpp"
 #include "../components/lighting/DirLight.hpp"
 #include "../components/lighting/PointLight.hpp"
 #include "../components/lighting/SpotLight.hpp"
@@ -73,7 +72,6 @@ namespace leopph::impl
 			static const std::unordered_map<Entity*, std::unordered_set<Component*>, EntityHash, EntityEqual>& EntitiesAndComponents();
 			static const std::unordered_set<Behavior*>& Behaviors();
 			static const std::unordered_set<Component*>& Components(Entity* entity);
-			static leopph::AmbientLight* AmbientLight();
 			static DirectionalLight* DirectionalLight();
 			static const std::unordered_set<const SpotLight*>& SpotLights();
 			static const std::vector<PointLight*>& PointLights();
@@ -83,7 +81,6 @@ namespace leopph::impl
 
 
 			static void DirectionalLight(leopph::DirectionalLight* dirLight);
-			static void AmbientLight(leopph::AmbientLight*&& light);
 			static void CreateShadowMap(std::size_t resolution);
 			static void DeleteShadowMap();
 
@@ -96,8 +93,6 @@ namespace leopph::impl
 			static std::unordered_map<Entity*, std::unordered_set<Component*>, EntityHash, EntityEqual> s_EntitiesAndComponents;
 
 			static std::unordered_set<Behavior*> s_Behaviors;
-
-			static std::unique_ptr<leopph::AmbientLight> s_AmbientLight;
 
 			static leopph::DirectionalLight* s_DirLight;
 

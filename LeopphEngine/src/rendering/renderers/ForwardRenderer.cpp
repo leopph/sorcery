@@ -2,6 +2,7 @@
 
 #include "../SkyboxResource.hpp"
 #include "../../components/Camera.hpp"
+#include "../../components/lighting/AmbientLight.hpp"
 #include "../../components/lighting/DirLight.hpp"
 #include "../../components/lighting/Light.hpp"
 #include "../../components/lighting/PointLight.hpp"

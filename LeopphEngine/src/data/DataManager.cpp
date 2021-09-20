@@ -2,8 +2,7 @@
 
 #include "../util/logger.h"
 
-#include <stdexcept>
-#include <tuple>
+
 
 namespace leopph::impl
 {
@@ -11,9 +10,7 @@ namespace leopph::impl
 
 	std::unordered_set<Behavior*> DataManager::s_Behaviors{};
 
-	std::unique_ptr<AmbientLight> DataManager::s_AmbientLight{ nullptr };
-
-	DirectionalLight* DataManager::s_DirLight{ nullptr };
+	DirectionalLight* DataManager::s_DirLight{nullptr};
 
 	std::unordered_set<const SpotLight*> DataManager::s_SpotLights{};
 	;
@@ -29,7 +26,7 @@ namespace leopph::impl
 
 	std::unordered_map<const UniqueResource*, std::unordered_set<const ResourceHandleBase*>, UniqueResourceHash, UniqueResourceEqual> DataManager::s_UniqueResourcesAndHandles{};
 
-	
+
 	void DataManager::Clear()
 	{
 		for (auto it = s_EntitiesAndComponents.begin(); it != s_EntitiesAndComponents.end();)
@@ -43,7 +40,7 @@ namespace leopph::impl
 		Logger::Instance().Debug("All data have been cleared.");
 	}
 
-	
+
 	void DataManager::Register(Entity* entity)
 	{
 		s_EntitiesAndComponents.try_emplace(entity);
@@ -132,22 +129,13 @@ namespace leopph::impl
 	void DataManager::Unregister(PointLight* pointLight)
 	{
 		for (auto it = s_PointLights.begin(); it != s_PointLights.end(); ++it)
+		{
 			if (*it == pointLight)
 			{
 				s_PointLights.erase(it);
 				return;
 			}
-	}
-
-
-	leopph::AmbientLight* DataManager::AmbientLight()
-	{
-		return s_AmbientLight.get();
-	}
-
-	void DataManager::AmbientLight(leopph::AmbientLight*&& light)
-	{
-		s_AmbientLight = std::unique_ptr<leopph::AmbientLight>(std::forward<leopph::AmbientLight*>(light));
+		}
 	}
 
 

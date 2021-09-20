@@ -4,15 +4,8 @@
 
 leopph::AmbientLight& leopph::AmbientLight::Instance()
 {
-	auto ret = impl::DataManager::AmbientLight();
-
-	if (ret == nullptr)
-	{
-		impl::DataManager::AmbientLight(new AmbientLight{});
-		ret = impl::DataManager::AmbientLight();
-	}
-
-	return *ret;
+	static AmbientLight instance;
+	return instance;
 }
 
 const leopph::Vector3& leopph::AmbientLight::Intensity() const

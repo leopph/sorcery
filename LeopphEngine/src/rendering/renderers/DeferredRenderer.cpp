@@ -1,6 +1,7 @@
 #include "DeferredRenderer.hpp"
 
 #include "../../components/Camera.hpp"
+#include "../../components/lighting/AmbientLight.hpp"
 #include "../../config/Settings.hpp"
 #include "../../data/DataManager.hpp"
 #include "../../math/LeopphMath.hpp"
@@ -16,7 +17,8 @@ namespace leopph::impl
 	DeferredRenderer::DeferredRenderer() :
 		m_TextureShader{
 			{
-				{ShaderProgram::LightPassVertSrc, ShaderType::Vertex, {}}, {ShaderProgram::TextureFragSrc, ShaderType::Fragment, {}}
+				{ShaderProgram::LightPassVertSrc, ShaderType::Vertex, {}},
+				{ShaderProgram::TextureFragSrc, ShaderType::Fragment, {}}
 			}
 		},
 		m_ShadowShader{
@@ -26,22 +28,26 @@ namespace leopph::impl
 		},
 		m_GPassObjectShader{
 			{
-				{ShaderProgram::GPassObjectVertSrc, ShaderType::Vertex, {}}, {ShaderProgram::GPassObjectFragSrc, ShaderType::Fragment, {}}
+				{ShaderProgram::GPassObjectVertSrc, ShaderType::Vertex, {}},
+				{ShaderProgram::GPassObjectFragSrc, ShaderType::Fragment, {}}
 			}
 		},
 		m_AmbientShader{
 			{
-				{ShaderProgram::LightPassVertSrc, ShaderType::Vertex, {}}, {ShaderProgram::AmbLightFragSrc, ShaderType::Fragment, {}}
+				{ShaderProgram::LightPassVertSrc, ShaderType::Vertex, {}},
+				{ShaderProgram::AmbLightFragSrc, ShaderType::Fragment, {}}
 			}
 		},
 		m_ShadowedDirLightShader{
 			{
-				{ShaderProgram::LightPassVertSrc, ShaderType::Vertex, {}}, {ShaderProgram::DirLightPassFragSrc, ShaderType::Fragment, {"CAST_SHADOW"}}
+				{ShaderProgram::LightPassVertSrc, ShaderType::Vertex, {}},
+				{ShaderProgram::DirLightPassFragSrc, ShaderType::Fragment, {"CAST_SHADOW"}}
 			}
 		},
 		m_UnshadowedDirLightShader{
 			{
-				{ShaderProgram::LightPassVertSrc, ShaderType::Vertex, {}}, {ShaderProgram::DirLightPassFragSrc, ShaderType::Fragment, {}}
+				{ShaderProgram::LightPassVertSrc, ShaderType::Vertex, {}},
+				{ShaderProgram::DirLightPassFragSrc, ShaderType::Fragment, {}}
 			}
 		},
 		m_SpotLightShader{
