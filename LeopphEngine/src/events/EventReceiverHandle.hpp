@@ -1,64 +1,65 @@
 #pragma once
 
-#include "../api/leopphapi.h"
 #include "Event.hpp"
 #include "EventReceiver.hpp"
+#include "../api/leopphapi.h"
 
 #include <concepts>
-#include <cstddef>
 #include <functional>
+#include <memory>
+
 
 
 namespace leopph
 {
 	/* The EventReceiverHandle class provides a way to wrap individual functions
-	 * into EventReceivers. Registering a function at the EventManager returns an instance
-	 * of this class that acts as a reference particular internally stored receiver.
-	 * Make sure to store store handles as the only way to unregister listeners registered
-	 * this way is by passing the handle to the EventManager. */
+	 * into EventReceivers. Creating a handle registers the wrapper in the EventManager.
+	 * The internal receivers live as long as there are handles to them. */
 	template<std::derived_from<Event> EventType>
-	class EventReceiverHandle final : public EventReceiver<EventType>
+	class EventReceiverHandle final
 	{
-	public:
-		/* The signature of the handler function. */
-		using EventCallbackType = void(typename EventReceiver<EventType>::EventParamType);
+		public:
+			/* The signature of the handler function. */
+			using EventCallbackType = void(typename EventReceiver<EventType>::EventParamType);
 
 
-		explicit EventReceiverHandle(std::function<EventCallbackType> callback) :
-			m_Callback{ std::move(callback) }, m_Id{ s_NextId++ }
-		{}
+		private:
+			class InternalReceiver final : public EventReceiver<EventType>
+			{
+				public:
+					explicit InternalReceiver(std::function<EventCallbackType> callback) :
+						m_Callback{std::move(callback)}
+					{}
 
 
-		LEOPPHAPI EventReceiverHandle(const EventReceiverHandle& other) = default;
-		LEOPPHAPI EventReceiverHandle(EventReceiverHandle&& other) = default;
-		LEOPPHAPI EventReceiverHandle& operator=(const EventReceiverHandle& other) = default;
-		LEOPPHAPI EventReceiverHandle& operator=(EventReceiverHandle&& other) = default;
-		LEOPPHAPI ~EventReceiverHandle() override = default;
+				private:
+					void OnEventReceived(typename EventReceiver<EventType>::EventParamType event) override
+					{
+						m_Callback(event);
+					}
 
 
-		/* Handlers are equal if they refer to the same internally stored receiver.
-		 * Duplicated handlers are equal, but handler referring to identical but
-		 * separately registered receivers are not. */
-		bool operator==(const impl::EventReceiverBase& other) const override
-		{
-			const auto otherPtr{ dynamic_cast<const EventReceiverHandle*>(&other) };
-			return otherPtr != nullptr && m_Id == otherPtr->m_Id;
-		}
+					std::function<EventCallbackType> m_Callback;
+			};
 
 
-	private:
-		void OnEventReceived(typename EventReceiver<EventType>::EventParamType event) override
-		{
-			m_Callback(event);
-		}
 
-		std::function<EventCallbackType> m_Callback;
-		std::size_t m_Id;
+		public:
+			LEOPPHAPI explicit EventReceiverHandle(std::function<EventCallbackType> callback) :
+				m_Receiver{std::make_shared<InternalReceiver>(std::move(callback))}
+			{}
 
-		static std::size_t s_NextId;
+
+			/* Handlers are equal if they refer to the same internally stored receiver.
+			 * Duplicated handlers are equal, but handler referring to identical but
+			 * separately registered receivers are not. */
+			LEOPPHAPI bool operator==(const EventReceiverHandle& other) const
+			{
+				return m_Receiver == other.m_Receiver;
+			}
+
+
+		private:
+			std::shared_ptr<InternalReceiver> m_Receiver;
 	};
-
-
-	template<std::derived_from<Event> EventType>
-	std::size_t EventReceiverHandle<EventType>::s_NextId{};
 }
