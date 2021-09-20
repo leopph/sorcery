@@ -45,7 +45,7 @@ namespace leopph
 					it != m_Handlers.end())
 				{
 					EventType event{args...};
-					std::for_each(it->second.begin(), it->second.end(), [&event](auto& handler)
+					std::for_each(it->second.begin(), it->second.end(), [&event](const auto& handler)
 					{
 						handler->Handle(event);
 					});
@@ -54,34 +54,19 @@ namespace leopph
 			}
 
 
-			/* Register as a receiver.
-			 * This is used internally by instances of
-			 * EventReceiver, and should not be called explicitly. */
+			/* Internally used. */
 			template<std::derived_from<Event> EventType>
 			void RegisterFor(const EventReceiver<EventType>& receiver) // TODO create internal implementation with no dllexport
 			{
-				m_Handlers[typeid(EventType)].push_back(const_cast<EventReceiver<EventType>*>(&receiver));
+				InternalRegister(typeid(EventType), &receiver);
 			}
 
 
-			/* Unregister the given receiver.
-			 * For EventReceivers this is automatically called and requires
-			 * no user input at all.
-			 * For Handles, this invalidates all instances referring to the
-			 * unregistered receiver. */
+			/* Internally used. */
 			template<std::derived_from<Event> EventType>
-			EventManager& UnregisterFrom(const impl::EventReceiverBase& handler) // TODO create internal implementation with no dllexport
+			void UnregisterFrom(const impl::EventReceiverBase& handler) // TODO create internal implementation with no dllexport
 			{
-				auto& handlers{m_Handlers[typeid(EventType)]};
-				for (auto it{handlers.begin()}; it != handlers.end(); ++it)
-				{
-					if (*it == &handler)
-					{
-						handlers.erase(it);
-						break;
-					}
-				}
-				return *this;
+				InternalUregister(typeid(EventType), &handler);
 			}
 
 
@@ -89,7 +74,10 @@ namespace leopph
 			EventManager() = default;
 			~EventManager() = default;
 
+			void InternalRegister(const std::type_index& typeIndex, const impl::EventReceiverBase* receiver);
+			void InternalUregister(const std::type_index& typeIndex, const impl::EventReceiverBase* receiver);
 
-			std::unordered_map<std::type_index, std::vector<impl::EventReceiverBase*>> m_Handlers;
+
+			std::unordered_map<std::type_index, std::vector<const impl::EventReceiverBase*>> m_Handlers;
 	};
 }
