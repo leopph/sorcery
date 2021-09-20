@@ -25,7 +25,7 @@ namespace leopph::impl
 
 			bool operator==(const Mesh& other) const;
 
-			void DrawShaded(const ShaderProgram& shader, const std::vector<Matrix4>& modelMatrices, const std::vector<Matrix4>& normalMatrices, std::size_t nextFreeTextureUnit) const;
+			void DrawShaded(ShaderProgram& shader, const std::vector<Matrix4>& modelMatrices, const std::vector<Matrix4>& normalMatrices, std::size_t nextFreeTextureUnit) const;
 			void DrawDepth(const std::vector<Matrix4>& modelMatrices) const;
 
 			void OnReferringEntitiesChanged(std::size_t newAmount) const;

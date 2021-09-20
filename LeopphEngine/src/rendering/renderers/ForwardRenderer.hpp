@@ -19,7 +19,7 @@ namespace leopph::impl
 			void Render() override;
 
 		private:
-			[[nodiscard]] std::optional<Matrix4> RenderDirectionalShadowMap(const std::unordered_map<const ModelResource*, std::pair<std::vector<Matrix4>, std::vector<Matrix4>>>& modelsAndMats) const;
+			[[nodiscard]] std::optional<Matrix4> RenderDirectionalShadowMap(const std::unordered_map<const ModelResource*, std::pair<std::vector<Matrix4>, std::vector<Matrix4>>>& modelsAndMats);
 
 			static void RenderPointShadowMaps(const std::vector<const PointLight*>& pointLights,
 									   const std::unordered_map<const ModelResource*, std::pair<std::vector<Matrix4>, std::vector<Matrix4>>>& modelsAndMats);
@@ -29,9 +29,9 @@ namespace leopph::impl
 									 const std::optional<Matrix4>& lightTransformMat,
 									 const std::unordered_map<const ModelResource*, std::pair<std::vector<Matrix4>, std::vector<Matrix4>>>& modelsAndMats,
 									 const std::vector<const PointLight*>& pointLights,
-									 const std::vector<const SpotLight*>& spotLights) const;
+									 const std::vector<const SpotLight*>& spotLights);
 
-			void RenderSkybox(const Matrix4& camViewMat, const Matrix4& camProjMat) const;
+			void RenderSkybox(const Matrix4& camViewMat, const Matrix4& camProjMat);
 
 			ForObjShader m_ObjectShader;
 			SkyboxShader m_SkyboxShader;

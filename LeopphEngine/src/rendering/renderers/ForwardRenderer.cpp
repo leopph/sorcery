@@ -53,7 +53,7 @@ namespace leopph::impl
 	}
 
 
-	std::optional<Matrix4> ForwardRenderer::RenderDirectionalShadowMap(const std::unordered_map<const ModelResource*, std::pair<std::vector<Matrix4>, std::vector<Matrix4>>>& modelsAndMats) const
+	std::optional<Matrix4> ForwardRenderer::RenderDirectionalShadowMap(const std::unordered_map<const ModelResource*, std::pair<std::vector<Matrix4>, std::vector<Matrix4>>>& modelsAndMats)
 	{
 		const auto& dirLight = DataManager::DirectionalLight();
 
@@ -120,7 +120,7 @@ namespace leopph::impl
 											  const std::optional<Matrix4>& lightTransformMat,
 											  const std::unordered_map<const ModelResource*, std::pair<std::vector<Matrix4>, std::vector<Matrix4>>>& modelsAndMats,
 											  const std::vector<const PointLight*>& pointLights,
-											  const std::vector<const SpotLight*>& spotLights) const
+											  const std::vector<const SpotLight*>& spotLights)
 	{
 		m_ObjectShader.Use();
 
@@ -188,7 +188,7 @@ namespace leopph::impl
 	}
 
 
-	void ForwardRenderer::RenderSkybox(const Matrix4& camViewMat, const Matrix4& camProjMat) const
+	void ForwardRenderer::RenderSkybox(const Matrix4& camViewMat, const Matrix4& camProjMat)
 	{
 		if (const auto& skybox{Camera::Active()->Background().skybox}; skybox.has_value())
 		{

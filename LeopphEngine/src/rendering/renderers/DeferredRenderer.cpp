@@ -53,7 +53,7 @@ namespace leopph::impl
 
 	void DeferredRenderer::RenderGeometry(const Matrix4& camViewMat,
 	                                      const Matrix4& camProjMat,
-	                                      const std::unordered_map<const ModelResource*, std::pair<std::vector<Matrix4>, std::vector<Matrix4>>>& modelsAndMats) const
+	                                      const std::unordered_map<const ModelResource*, std::pair<std::vector<Matrix4>, std::vector<Matrix4>>>& modelsAndMats)
 	{
 		m_GBuffer.Clear();
 		m_GPassObjectShader.SetViewProjectionMatrix(camViewMat * camProjMat);
@@ -178,7 +178,7 @@ namespace leopph::impl
 
 
 	void DeferredRenderer::RenderSpotLights(const std::vector<const SpotLight*>& spotLights,
-	                                        const std::unordered_map<const ModelResource*, std::pair<std::vector<Matrix4>, std::vector<Matrix4>>>& modelsAndMats) const
+	                                        const std::unordered_map<const ModelResource*, std::pair<std::vector<Matrix4>, std::vector<Matrix4>>>& modelsAndMats)
 	{
 		if (spotLights.empty())
 		{
@@ -228,7 +228,7 @@ namespace leopph::impl
 	}
 
 
-	void DeferredRenderer::RenderSkybox(const Matrix4& camViewMat, const Matrix4& camProjMat) const
+	void DeferredRenderer::RenderSkybox(const Matrix4& camViewMat, const Matrix4& camProjMat)
 	{
 		const auto& window{Window::Get()};
 		m_GBuffer.CopyDepthData(0, Vector2{window.Width(), window.Height()});

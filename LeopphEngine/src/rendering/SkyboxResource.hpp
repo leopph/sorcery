@@ -24,7 +24,7 @@ namespace leopph::impl
 
 			~SkyboxResource() override;
 
-			void Draw(const ShaderProgram& shader) const;
+			void Draw(ShaderProgram& shader) const;
 
 			const std::filesystem::path AllFilePaths;
 			const std::filesystem::path& RightPath;

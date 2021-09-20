@@ -6,6 +6,8 @@
 
 #include <optional>
 #include <string>
+#include <string_view>
+#include <unordered_map>
 #include <vector>
 
 
@@ -25,15 +27,15 @@ namespace leopph::impl
 			void Use() const;
 			void Unuse() const;
 
-			void SetUniform(std::string_view name, bool value) const;
-			void SetUniform(std::string_view name, int value) const;
-			void SetUniform(std::string_view name, unsigned value) const;
-			void SetUniform(std::string_view name, float value) const;
-			void SetUniform(std::string_view name, const Vector3& value) const;
-			void SetUniform(std::string_view name, const Matrix4& value) const;
-			void SetUniform(std::string_view name, const std::vector<float>& value) const;
-			void SetUniform(std::string_view name, const std::vector<Vector3>& value) const;
-			void SetUniform(std::string_view name, const std::vector<Matrix4>& value) const;
+			void SetUniform(std::string_view name, bool value);
+			void SetUniform(std::string_view name, int value);
+			void SetUniform(std::string_view name, unsigned value);
+			void SetUniform(std::string_view name, float value);
+			void SetUniform(std::string_view name, const Vector3& value);
+			void SetUniform(std::string_view name, const Matrix4& value);
+			void SetUniform(std::string_view name, const std::vector<float>& value);
+			void SetUniform(std::string_view name, const std::vector<Vector3>& value);
+			void SetUniform(std::string_view name, const std::vector<Matrix4>& value);
 
 			const unsigned& Name;
 
@@ -58,7 +60,9 @@ namespace leopph::impl
 
 		private:
 			[[nodiscard]] std::optional<std::string> CheckForLinkErrors() const;
+			[[nodiscard]] unsigned GetUniformLocation(std::string_view);
 
+			std::unordered_map<std::string_view, unsigned> m_UniformLocations;
 			unsigned m_Name;
 	};
 }

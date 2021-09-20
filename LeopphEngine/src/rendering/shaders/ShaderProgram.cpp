@@ -48,57 +48,58 @@ namespace leopph::impl
 	}
 
 
-	void ShaderProgram::SetUniform(std::string_view name, bool value) const
+	void ShaderProgram::SetUniform(const std::string_view name, const bool value)
 	{
-		glProgramUniform1i(m_Name, glGetUniformLocation(m_Name, name.data()), value);
+
+		glProgramUniform1i(m_Name, GetUniformLocation(name), value);
 	}
 
 
-	void ShaderProgram::SetUniform(std::string_view name, int value) const
+	void ShaderProgram::SetUniform(const std::string_view name, const int value)
 	{
-		glProgramUniform1i(m_Name, glGetUniformLocation(m_Name, name.data()), value);
+		glProgramUniform1i(m_Name, GetUniformLocation(name), value);
 	}
 
 
-	void ShaderProgram::SetUniform(std::string_view name, unsigned value) const
+	void ShaderProgram::SetUniform(const std::string_view name, const unsigned value)
 	{
-		glProgramUniform1ui(m_Name, glGetUniformLocation(m_Name, name.data()), value);
+		glProgramUniform1ui(m_Name, GetUniformLocation(name), value);
 	}
 
 
-	void ShaderProgram::SetUniform(std::string_view name, float value) const
+	void ShaderProgram::SetUniform(const std::string_view name, const float value)
 	{
-		glProgramUniform1f(m_Name, glGetUniformLocation(m_Name, name.data()), value);
+		glProgramUniform1f(m_Name, GetUniformLocation(name), value);
 	}
 
 
-	void ShaderProgram::SetUniform(std::string_view name, const Vector3& value) const
+	void ShaderProgram::SetUniform(const std::string_view name, const Vector3& value)
 	{
-		glProgramUniform3fv(m_Name, glGetUniformLocation(m_Name, name.data()), 1, value.Data().data());
+		glProgramUniform3fv(m_Name, GetUniformLocation(name), 1, value.Data().data());
 	}
 
 
-	void ShaderProgram::SetUniform(std::string_view name, const Matrix4& value) const
+	void ShaderProgram::SetUniform(const std::string_view name, const Matrix4& value)
 	{
-		glProgramUniformMatrix4fv(m_Name, glGetUniformLocation(m_Name, name.data()), 1, GL_TRUE, reinterpret_cast<const GLfloat*>(value.Data().data()));
+		glProgramUniformMatrix4fv(m_Name, GetUniformLocation(name), 1, GL_TRUE, reinterpret_cast<const GLfloat*>(value.Data().data()));
 	}
 
 
-	void ShaderProgram::SetUniform(const std::string_view name, const std::vector<float>& value) const
+	void ShaderProgram::SetUniform(const std::string_view name, const std::vector<float>& value)
 	{
-		glProgramUniform1fv(m_Name, glGetUniformLocation(m_Name, name.data()), static_cast<GLsizei>(value.size()), value.data());
+		glProgramUniform1fv(m_Name, GetUniformLocation(name), static_cast<GLsizei>(value.size()), value.data());
 	}
 
 
-	void ShaderProgram::SetUniform(std::string_view name, const std::vector<Vector3>& value) const
+	void ShaderProgram::SetUniform(const std::string_view name, const std::vector<Vector3>& value)
 	{
-		glProgramUniform3fv(m_Name, glGetUniformLocation(m_Name, name.data()), static_cast<GLsizei>(value.size()), reinterpret_cast<const GLfloat*>(value.data()));
+		glProgramUniform3fv(m_Name, GetUniformLocation(name), static_cast<GLsizei>(value.size()), reinterpret_cast<const GLfloat*>(value.data()));
 	}
 
 
-	void ShaderProgram::SetUniform(std::string_view name, const std::vector<Matrix4>& value) const
+	void ShaderProgram::SetUniform(const std::string_view name, const std::vector<Matrix4>& value)
 	{
-		glProgramUniformMatrix4fv(m_Name, glGetUniformLocation(m_Name, name.data()), static_cast<GLsizei>(value.size()), GL_TRUE, reinterpret_cast<const GLfloat*>(value.data()));
+		glProgramUniformMatrix4fv(m_Name, GetUniformLocation(name), static_cast<GLsizei>(value.size()), GL_TRUE, reinterpret_cast<const GLfloat*>(value.data()));
 	}
 
 
@@ -120,4 +121,18 @@ namespace leopph::impl
 
 		return {};
 	}
+
+
+	unsigned ShaderProgram::GetUniformLocation(const std::string_view name)
+	{
+		auto it{m_UniformLocations.find(name)};
+
+		if (it == m_UniformLocations.end())
+		{
+			it = m_UniformLocations.emplace(name, glGetUniformLocation(m_Name, name.data())).first;
+		}
+
+		return it->second;
+	}
+
 }

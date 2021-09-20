@@ -83,7 +83,7 @@ namespace leopph::impl
 	}
 
 
-	void SkyboxResource::Draw(const ShaderProgram& shader) const
+	void SkyboxResource::Draw(ShaderProgram& shader) const
 	{
 		shader.SetUniform("skybox", 0);
 

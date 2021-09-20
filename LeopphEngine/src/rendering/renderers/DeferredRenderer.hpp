@@ -35,7 +35,7 @@ namespace leopph::impl
 		private:
 			void RenderGeometry(const Matrix4& camViewMat,
 			                    const Matrix4& camProjMat,
-			                    const std::unordered_map<const ModelResource*, std::pair<std::vector<Matrix4>, std::vector<Matrix4>>>& modelsAndMats) const;
+			                    const std::unordered_map<const ModelResource*, std::pair<std::vector<Matrix4>, std::vector<Matrix4>>>& modelsAndMats);
 
 			void RenderAmbientLight() const;
 
@@ -44,9 +44,9 @@ namespace leopph::impl
 			                             const std::unordered_map<const ModelResource*, std::pair<std::vector<Matrix4>, std::vector<Matrix4>>>& modelsAndMats);
 
 			void RenderSpotLights(const std::vector<const SpotLight*>& spotLights,
-			                      const std::unordered_map<const ModelResource*, std::pair<std::vector<Matrix4>, std::vector<Matrix4>>>& modelsAndMats) const;
+			                      const std::unordered_map<const ModelResource*, std::pair<std::vector<Matrix4>, std::vector<Matrix4>>>& modelsAndMats);
 
-			void RenderSkybox(const Matrix4& camViewMat, const Matrix4& camProjMat) const;
+			void RenderSkybox(const Matrix4& camViewMat, const Matrix4& camProjMat);
 
 			GeometryBuffer m_GBuffer;
 			CascadedShadowMap m_DirShadowMap;
