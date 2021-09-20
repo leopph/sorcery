@@ -13,7 +13,49 @@
 
 namespace leopph::impl
 {
-	DeferredRenderer::DeferredRenderer()
+	DeferredRenderer::DeferredRenderer() :
+		m_TextureShader{
+			{
+				{ShaderProgram::LightPassVertSrc, ShaderType::Vertex, {}}, {ShaderProgram::TextureFragSrc, ShaderType::Fragment, {}}
+			}
+		},
+		m_ShadowShader{
+			{
+				{ShaderProgram::ShadowMapVertSrc, ShaderType::Vertex, {}}
+			}
+		},
+		m_GPassObjectShader{
+			{
+				{ShaderProgram::GPassObjectVertSrc, ShaderType::Vertex, {}}, {ShaderProgram::GPassObjectFragSrc, ShaderType::Fragment, {}}
+			}
+		},
+		m_AmbientShader{
+			{
+				{ShaderProgram::LightPassVertSrc, ShaderType::Vertex, {}}, {ShaderProgram::AmbLightFragSrc, ShaderType::Fragment, {}}
+			}
+		},
+		m_ShadowedDirLightShader{
+			{
+				{ShaderProgram::LightPassVertSrc, ShaderType::Vertex, {}}, {ShaderProgram::DirLightPassFragSrc, ShaderType::Fragment, {"CAST_SHADOW"}}
+			}
+		},
+		m_UnshadowedDirLightShader{
+			{
+				{ShaderProgram::LightPassVertSrc, ShaderType::Vertex, {}}, {ShaderProgram::DirLightPassFragSrc, ShaderType::Fragment, {}}
+			}
+		},
+		m_SpotLightShader{
+			{
+				{ShaderProgram::LightPassVertSrc, ShaderType::Vertex, {}},
+				{ShaderProgram::SpotLightPassFragSrc, ShaderType::Fragment, {}}
+			}
+		},
+		m_SkyboxShader{
+			{
+				{ShaderProgram::SkyboxVertSrc, ShaderType::Vertex, {}},
+				{ShaderProgram::SkyboxFragSrc, ShaderType::Fragment, {}}
+			}
+		}
 	{
 		glEnable(GL_DEPTH_TEST);
 		glDepthFunc(GL_LESS);
@@ -56,7 +98,7 @@ namespace leopph::impl
 	                                      const std::unordered_map<const ModelResource*, std::pair<std::vector<Matrix4>, std::vector<Matrix4>>>& modelsAndMats)
 	{
 		m_GBuffer.Clear();
-		m_GPassObjectShader.SetViewProjectionMatrix(camViewMat * camProjMat);
+		m_GPassObjectShader.SetUniform("u_ViewProjectionMatrix", camViewMat * camProjMat);
 
 		m_GBuffer.BindForWriting();
 		m_GPassObjectShader.Use();
@@ -71,9 +113,9 @@ namespace leopph::impl
 	}
 
 
-	void DeferredRenderer::RenderAmbientLight() const
+	void DeferredRenderer::RenderAmbientLight()
 	{
-		m_AmbientShader.SetAmbientLight(AmbientLight::Instance().Intensity());
+		m_AmbientShader.SetUniform("u_AmbientLight", AmbientLight::Instance().Intensity());
 
 		static_cast<void>(m_GBuffer.BindForReading(m_AmbientShader, GeometryBuffer::TextureType::Ambient, 0));
 		m_AmbientShader.Use();
@@ -98,8 +140,7 @@ namespace leopph::impl
 			return;
 		}
 		
-		const DefDirShader* const lightShaderPtr = dirLight->CastsShadow() ? static_cast<DefDirShader*>(&m_ShadowedDirLightShader) : static_cast<DefDirShader*>(&m_UnshadowedDirLightShader);
-		auto& lightShader =  *lightShaderPtr;
+		auto& lightShader = dirLight->CastsShadow() ? m_ShadowedDirLightShader : m_UnshadowedDirLightShader;
 
 		auto texCount{0};
 
@@ -109,8 +150,10 @@ namespace leopph::impl
 		texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::TextureType::Specular, texCount);
 		texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::TextureType::Shine, texCount);
 
-		lightShader.SetDirLight(*dirLight);
-		lightShader.SetCameraPosition(Camera::Active()->entity.Transform->Position());
+		lightShader.SetUniform("u_DirLight.direction", dirLight->Direction());
+		lightShader.SetUniform("u_DirLight.diffuseColor", dirLight->Diffuse());
+		lightShader.SetUniform("u_DirLight.specularColor", dirLight->Specular());
+		lightShader.SetUniform("u_CameraPosition", Camera::Active()->entity.Transform->Position());
 
 		if (dirLight->CastsShadow())
 		{
@@ -131,7 +174,7 @@ namespace leopph::impl
 				const auto lightWorldToClip{m_DirShadowMap.WorldToClipMatrix(i, cameraInverseMatrix, lightViewMatrix)};
 				dirLightMatrices.push_back(lightWorldToClip);
 
-				m_ShadowShader.SetLightWorldToClipMatrix(lightWorldToClip);
+				m_ShadowShader.SetUniform("u_LightWorldToClipMatrix", lightWorldToClip);
 
 				m_DirShadowMap.BindForWriting(i);
 				m_DirShadowMap.Clear();
@@ -154,9 +197,9 @@ namespace leopph::impl
 				cascadeFarBounds.push_back(clipSpaceBound);
 			}
 
-			lightShader.SetCascadeCount(static_cast<unsigned>(cascadeCount));
-			lightShader.SetLightClipMatrices(dirLightMatrices);
-			lightShader.SetCascadeFarBounds(cascadeFarBounds);
+			lightShader.SetUniform("u_CascadeCount", static_cast<unsigned>(cascadeCount));
+			lightShader.SetUniform("u_LightClipMatrices", dirLightMatrices);
+			lightShader.SetUniform("u_CascadeFarBounds", cascadeFarBounds);
 			static_cast<void>(m_DirShadowMap.BindForReading(lightShader, texCount));
 		}
 
@@ -193,7 +236,7 @@ namespace leopph::impl
 		texCount = m_GBuffer.BindForReading(m_SpotLightShader, GeometryBuffer::TextureType::Shine, texCount);
 		static_cast<void>(m_SpotShadowMap.BindForReading(m_SpotLightShader, texCount));
 
-		m_SpotLightShader.SetCameraPosition(Camera::Active()->entity.Transform->Position());
+		m_SpotLightShader.SetUniform("u_CameraPosition", Camera::Active()->entity.Transform->Position());
 
 		for (const auto& spotLight : spotLights)
 		{
@@ -203,7 +246,7 @@ namespace leopph::impl
 				Matrix4::Perspective(math::ToRadians(spotLight->OuterAngle() * 2), 1.f, 0.1f, spotLight->Range())
 			};
 
-			m_ShadowShader.SetLightWorldToClipMatrix(lightWorldToClipMat);
+			m_ShadowShader.SetUniform("u_LightWorldToClipMatrix", lightWorldToClipMat);
 
 			m_SpotShadowMap.BindForWriting();
 			m_SpotShadowMap.Clear();
@@ -217,8 +260,17 @@ namespace leopph::impl
 
 			m_SpotShadowMap.UnbindFromWriting();
 
-			m_SpotLightShader.SetSpotLight(*spotLight);
-			m_SpotLightShader.SetLightClipMatrix(lightWorldToClipMat);
+			m_SpotLightShader.SetUniform("u_SpotLight.position", spotLight->entity.Transform->Position());
+			m_SpotLightShader.SetUniform("u_SpotLight.direction", spotLight->entity.Transform->Forward());
+			m_SpotLightShader.SetUniform("u_SpotLight.diffuseColor", spotLight->Diffuse());
+			m_SpotLightShader.SetUniform("u_SpotLight.specularColor", spotLight->Specular());
+			m_SpotLightShader.SetUniform("u_SpotLight.constant", spotLight->Constant());
+			m_SpotLightShader.SetUniform("u_SpotLight.linear", spotLight->Linear());
+			m_SpotLightShader.SetUniform("u_SpotLight.quadratic", spotLight->Quadratic());
+			m_SpotLightShader.SetUniform("u_SpotLight.range", spotLight->Range());
+			m_SpotLightShader.SetUniform("u_SpotLight.innerAngleCosine", math::Cos(math::ToRadians(spotLight->InnerAngle())));
+			m_SpotLightShader.SetUniform("u_SpotLight.outerAngleCosine", math::Cos(math::ToRadians(spotLight->OuterAngle())));
+			m_SpotLightShader.SetUniform("u_LightWorldToClipMatrix", lightWorldToClipMat);
 			m_SpotLightShader.Use();
 
 			glDisable(GL_DEPTH_TEST);

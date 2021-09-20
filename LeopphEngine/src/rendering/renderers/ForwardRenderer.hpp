@@ -2,9 +2,7 @@
 
 #include "Renderer.hpp"
 #include "../../math/Matrix.hpp"
-#include "../shaders/ShadowMapShader.hpp"
-#include "../shaders/ForObjShader.hpp"
-#include "../shaders/SkyboxShader.hpp"
+#include "../shaders/ShaderProgram.hpp"
 
 #include <optional>
 
@@ -33,8 +31,8 @@ namespace leopph::impl
 
 			void RenderSkybox(const Matrix4& camViewMat, const Matrix4& camProjMat);
 
-			ForObjShader m_ObjectShader;
-			SkyboxShader m_SkyboxShader;
-			ShadowMapShader m_ShadowShader;
+			ShaderProgram m_ObjectShader;
+			ShaderProgram m_SkyboxShader;
+			ShaderProgram m_ShadowShader;
 	};
 }

@@ -77,7 +77,7 @@
     <PreLinkEvent />
     <CustomBuildStep />
     <CustomBuild>
-      <Command>$(SolutionDir)out\ShaderParser\$(Configuration)_$(Platform)\ShaderParser.exe %(Fullpath) $(IntDir)%(Filename).cpp leopph::impl::ShaderProgram::s_%(Filename)Src $(ProjectDir)src\rendering\shaders\ShaderProgram.hpp</Command>
+      <Command>$(SolutionDir)out\ShaderParser\$(Configuration)_$(Platform)\ShaderParser.exe %(Fullpath) $(IntDir)%(Filename).cpp leopph::impl::ShaderProgram::%(Filename)Src $(ProjectDir)src\rendering\shaders\ShaderProgram.hpp</Command>
       <Message>Transpiling %(Filename)%(Extension)...</Message>
       <Outputs>$(IntDir)%(Filename).cpp</Outputs>
       <AdditionalInputs>$(ProjectDir)src\rendering\shaders\ShaderProgram.hpp</AdditionalInputs>
@@ -108,7 +108,7 @@
     <PreLinkEvent />
     <CustomBuildStep />
     <CustomBuild>
-      <Command>$(SolutionDir)out\ShaderParser\$(Configuration)_$(Platform)\ShaderParser.exe %(Fullpath) $(IntDir)%(Filename).cpp leopph::impl::ShaderProgram::s_%(Filename)Src $(ProjectDir)src\rendering\shaders\ShaderProgram.hpp</Command>
+      <Command>$(SolutionDir)out\ShaderParser\$(Configuration)_$(Platform)\ShaderParser.exe %(Fullpath) $(IntDir)%(Filename).cpp leopph::impl::ShaderProgram::%(Filename)Src $(ProjectDir)src\rendering\shaders\ShaderProgram.hpp</Command>
       <Message>Transpiling %(Filename)%(Extension)...</Message>
       <Outputs>$(IntDir)%(Filename).cpp</Outputs>
       <AdditionalInputs>$(ProjectDir)src\rendering\shaders\ShaderProgram.hpp</AdditionalInputs>
@@ -157,23 +157,12 @@
     <ClInclude Include="src\rendering\geometry\ModelResource.hpp" />
     <ClInclude Include="src\rendering\renderers\Renderer.hpp" />
     <ClInclude Include="src\rendering\ScreenTexture.hpp" />
-    <ClInclude Include="src\rendering\shaders\DefAmbShader.hpp" />
-    <ClInclude Include="src\rendering\shaders\DefDirShader.hpp" />
-    <ClInclude Include="src\rendering\shaders\DefDirShaderCastShadow.hpp" />
-    <ClInclude Include="src\rendering\shaders\DefDirShaderNoCastShadow.hpp" />
-    <ClInclude Include="src\rendering\shaders\DefGeomShader.hpp" />
-    <ClInclude Include="src\rendering\shaders\DefLightShader.hpp" />
-    <ClInclude Include="src\rendering\shaders\DefSpotShader.hpp" />
     <ClInclude Include="src\rendering\shaders\ShaderProgram.hpp" />
     <ClInclude Include="src\rendering\shaders\ShaderStage.hpp" />
     <ClInclude Include="src\rendering\shaders\ShaderType.hpp" />
-    <ClInclude Include="src\rendering\shaders\ShadowMapShader.hpp" />
-    <ClInclude Include="src\rendering\shaders\ForObjShader.hpp" />
-    <ClInclude Include="src\rendering\shaders\TextureShader.hpp" />
     <ClInclude Include="src\rendering\ShadowMap.hpp" />
     <ClInclude Include="src\rendering\SkyboxHandle.hpp" />
     <ClInclude Include="src\rendering\SkyboxResource.hpp" />
-    <ClInclude Include="src\rendering\shaders\SkyboxShader.hpp" />
     <ClInclude Include="src\rendering\SpotLightShadowMap.hpp" />
     <ClInclude Include="src\rendering\Texture.hpp" />
     <ClInclude Include="src\rendering\TextureResource.hpp" />
@@ -244,25 +233,14 @@
     <ClCompile Include="src\rendering\opengl\gl.cpp" />
     <ClCompile Include="src\rendering\renderers\Renderer.cpp" />
     <ClCompile Include="src\rendering\ScreenTexture.cpp" />
-    <ClCompile Include="src\rendering\shaders\DefAmbShader.cpp" />
-    <ClCompile Include="src\rendering\shaders\DefDirShader.cpp" />
-    <ClCompile Include="src\rendering\shaders\DefDirShaderCastShadow.cpp" />
-    <ClCompile Include="src\rendering\shaders\DefDirShaderNoCastShadow.cpp" />
-    <ClCompile Include="src\rendering\shaders\DefGeomShader.cpp" />
-    <ClCompile Include="src\rendering\shaders\DefLightShader.cpp" />
-    <ClCompile Include="src\rendering\shaders\DefSpotShader.cpp" />
     <ClCompile Include="src\rendering\shaders\ShaderProgram.cpp" />
     <ClCompile Include="src\rendering\shaders\ShaderStage.cpp" />
-    <ClCompile Include="src\rendering\shaders\ShadowMapShader.cpp" />
-    <ClCompile Include="src\rendering\shaders\ForObjShader.cpp" />
-    <ClCompile Include="src\rendering\shaders\TextureShader.cpp" />
     <ClCompile Include="src\rendering\ShadowMap.cpp" />
     <ClCompile Include="src\rendering\SkyboxHandle.cpp" />
     <ClCompile Include="src\rendering\SkyboxResource.cpp" />
     <ClCompile Include="src\rendering\SpotLightShadowMap.cpp" />
     <ClCompile Include="src\rendering\Texture.cpp" />
     <ClCompile Include="src\rendering\TextureResource.cpp" />
-    <ClCompile Include="src\rendering\shaders\SkyboxShader.cpp" />
     <ClCompile Include="src\timing\timer.cpp" />
     <ClCompile Include="src\util\equal\EntityEqual.cpp" />
     <ClCompile Include="src\util\equal\ShaderTypeEqual.cpp" />

@@ -25,7 +25,21 @@
 
 namespace leopph::impl
 {
-	ForwardRenderer::ForwardRenderer()
+	ForwardRenderer::ForwardRenderer() :
+		m_ObjectShader{
+			{
+				{ShaderProgram::ObjectVertSrc, ShaderType::Vertex, {}},
+				{ShaderProgram::GPassObjectFragSrc, ShaderType::Fragment, {}}
+			}},
+	m_SkyboxShader{
+		{
+			{ShaderProgram::SkyboxVertSrc, ShaderType::Vertex, {}},
+			{ShaderProgram::SkyboxFragSrc, ShaderType::Fragment, {}}
+		}},
+	m_ShadowShader{
+		{
+			{ShaderProgram::ShadowMapVertSrc, ShaderType::Vertex, {}}
+		}}
 	{
 		glEnable(GL_DEPTH_TEST);
 	}
@@ -77,7 +91,7 @@ namespace leopph::impl
 		m_ShadowShader.Use();
 		shadowMaps.front().BindForWriting();
 
-		m_ShadowShader.SetLightWorldToClipMatrix(lightTransformMat);
+		m_ShadowShader.SetUniform("u_LightWorldToClipMatrix", lightTransformMat);
 
 		for (const auto& [modelRes, matrices] : modelsAndMats)
 		{

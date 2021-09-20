@@ -16,10 +16,10 @@
 
 namespace leopph::impl
 {
-	ShaderStage::ShaderStage(const std::string& src, const ShaderType type, const std::vector<std::string>& flags) :
-		m_Name{glCreateShader(OpenGLAdapter::OpenGLShaderType(type))}
+	ShaderStage::ShaderStage(const ShaderStageInfo info) :
+		m_Name{glCreateShader(OpenGLAdapter::OpenGLShaderType(info.type))}
 	{
-		const auto procSrc{PreProcess(src, flags)};
+		const auto procSrc{PreProcess(info.src, info.flags)};
 
 		if (!procSrc.has_value())
 		{

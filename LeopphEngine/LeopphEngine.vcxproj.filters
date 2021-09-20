@@ -60,23 +60,12 @@
     <ClCompile Include="src\rendering\ScreenTexture.cpp" />
     <ClCompile Include="src\rendering\CascadedShadowMap.cpp" />
     <ClCompile Include="src\events\DirShadowMapResChangedEvent.cpp" />
-    <ClCompile Include="src\rendering\shaders\SkyboxShader.cpp" />
-    <ClCompile Include="src\rendering\shaders\ForObjShader.cpp" />
-    <ClCompile Include="src\rendering\shaders\TextureShader.cpp" />
-    <ClCompile Include="src\rendering\shaders\ShadowMapShader.cpp" />
-    <ClCompile Include="src\rendering\shaders\DefDirShader.cpp" />
-    <ClCompile Include="src\rendering\shaders\DefGeomShader.cpp" />
-    <ClCompile Include="src\rendering\shaders\DefAmbShader.cpp" />
-    <ClCompile Include="src\rendering\shaders\DefLightShader.cpp" />
-    <ClCompile Include="src\rendering\shaders\DefSpotShader.cpp" />
     <ClCompile Include="src\events\SpotShadowMapResChangedEvent.cpp" />
     <ClCompile Include="src\rendering\SpotLightShadowMap.cpp" />
     <ClCompile Include="src\util\hash\ShaderTypeHash.cpp" />
     <ClCompile Include="src\util\equal\ShaderTypeEqual.cpp" />
     <ClCompile Include="src\util\interface\OpenGLAdapter.cpp" />
     <ClCompile Include="src\rendering\shaders\ShaderProgram.cpp" />
-    <ClCompile Include="src\rendering\shaders\DefDirShaderCastShadow.cpp" />
-    <ClCompile Include="src\rendering\shaders\DefDirShaderNoCastShadow.cpp" />
     <ClCompile Include="src\rendering\shaders\ShaderStage.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -154,15 +143,6 @@
     <ClInclude Include="src\rendering\ScreenTexture.hpp" />
     <ClInclude Include="src\events\DirShadowMapResChangedEvent.hpp" />
     <ClInclude Include="src\rendering\CascadedShadowMap.hpp" />
-    <ClInclude Include="src\rendering\shaders\SkyboxShader.hpp" />
-    <ClInclude Include="src\rendering\shaders\ForObjShader.hpp" />
-    <ClInclude Include="src\rendering\shaders\TextureShader.hpp" />
-    <ClInclude Include="src\rendering\shaders\ShadowMapShader.hpp" />
-    <ClInclude Include="src\rendering\shaders\DefDirShader.hpp" />
-    <ClInclude Include="src\rendering\shaders\DefGeomShader.hpp" />
-    <ClInclude Include="src\rendering\shaders\DefAmbShader.hpp" />
-    <ClInclude Include="src\rendering\shaders\DefLightShader.hpp" />
-    <ClInclude Include="src\rendering\shaders\DefSpotShader.hpp" />
     <ClInclude Include="src\rendering\SpotLightShadowMap.hpp" />
     <ClInclude Include="src\events\SpotShadowMapResChangedEvent.hpp" />
     <ClInclude Include="src\rendering\shaders\ShaderStage.hpp" />
@@ -172,8 +152,6 @@
     <ClInclude Include="src\util\hash\ShaderTypeHash.hpp" />
     <ClInclude Include="src\util\equal\ShaderTypeEqual.hpp" />
     <ClInclude Include="src\rendering\shaders\ShaderProgram.hpp" />
-    <ClInclude Include="src\rendering\shaders\DefDirShaderCastShadow.hpp" />
-    <ClInclude Include="src\rendering\shaders\DefDirShaderNoCastShadow.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\cpp.hint" />

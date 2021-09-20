@@ -7,14 +7,7 @@
 #include "../SpotLightShadowMap.hpp"
 #include "../../components/lighting/SpotLight.hpp"
 #include "../../math/Matrix.hpp"
-#include "../shaders/DefAmbShader.hpp"
-#include "../shaders/DefDirShaderCastShadow.hpp"
-#include "../shaders/DefDirShaderNoCastShadow.hpp"
-#include "../shaders/DefGeomShader.hpp"
-#include "../shaders/DefSpotShader.hpp"
-#include "../shaders/ShadowMapShader.hpp"
-#include "../shaders/SkyboxShader.hpp"
-#include "../shaders/TextureShader.hpp"
+#include "../shaders/ShaderProgram.hpp"
 
 #include <unordered_map>
 #include <utility>
@@ -37,7 +30,7 @@ namespace leopph::impl
 			                    const Matrix4& camProjMat,
 			                    const std::unordered_map<const ModelResource*, std::pair<std::vector<Matrix4>, std::vector<Matrix4>>>& modelsAndMats);
 
-			void RenderAmbientLight() const;
+			void RenderAmbientLight();
 
 			void RenderDirectionalLights(const Matrix4& camViewMat,
 			                             const Matrix4& camProjMat,
@@ -52,14 +45,14 @@ namespace leopph::impl
 			CascadedShadowMap m_DirShadowMap;
 			ScreenTexture m_ScreenTexture;
 
-			TextureShader m_TextureShader;
-			ShadowMapShader m_ShadowShader;
-			DefGeomShader m_GPassObjectShader;
-			DefAmbShader m_AmbientShader;
-			DefDirShaderCastShadow m_ShadowedDirLightShader;
-			DefDirShaderNoCastShadow m_UnshadowedDirLightShader;
-			DefSpotShader m_SpotLightShader;
-			SkyboxShader m_SkyboxShader;
+			ShaderProgram m_TextureShader;
+			ShaderProgram m_ShadowShader;
+			ShaderProgram m_GPassObjectShader;
+			ShaderProgram m_AmbientShader;
+			ShaderProgram m_ShadowedDirLightShader;
+			ShaderProgram m_UnshadowedDirLightShader;
+			ShaderProgram m_SpotLightShader;
+			ShaderProgram m_SkyboxShader;
 
 			SpotLightShadowMap m_SpotShadowMap;
 	};

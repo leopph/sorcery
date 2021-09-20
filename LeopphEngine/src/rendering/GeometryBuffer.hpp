@@ -3,7 +3,7 @@
 #include "../events/DisplayResolutionChangedEvent.hpp"
 #include "../events/EventReceiver.hpp"
 #include "../math/Vector.hpp"
-#include "shaders/DefLightShader.hpp"
+#include "shaders/ShaderProgram.hpp"
 
 #include <array>
 
@@ -36,9 +36,9 @@ namespace leopph::impl
 			void UnbindFromWriting() const;
 
 			// Returns the next available texture unit after binding
-			[[nodiscard]] int BindForReading(const DefLightShader& shader, TextureType type, int texUnit) const;
+			[[nodiscard]] int BindForReading(ShaderProgram& shader, TextureType type, int texUnit) const;
 			// Returns the next available texture unit after binding
-			[[nodiscard]] int BindForReading(const DefLightShader& shader, int texUnit) const;
+			[[nodiscard]] int BindForReading(ShaderProgram& shader, int texUnit) const;
 			void UnbindFromReading(TextureType type) const;
 			void UnbindFromReading() const;
 

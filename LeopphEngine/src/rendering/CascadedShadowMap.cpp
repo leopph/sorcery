@@ -45,7 +45,7 @@ namespace leopph::impl
 	}
 
 
-	int CascadedShadowMap::BindForReading(const DefDirShader& shader, int texUnit)
+	int CascadedShadowMap::BindForReading(ShaderProgram& shader, int texUnit)
 	{
 		m_TexBindStartIndex = texUnit;
 
@@ -59,7 +59,7 @@ namespace leopph::impl
 			++texUnit;
 		}
 
-		shader.SetShadowMaps(texUnits);
+		shader.SetUniform("u_ShadowMaps", texUnits);
 		return texUnit;
 	}
 

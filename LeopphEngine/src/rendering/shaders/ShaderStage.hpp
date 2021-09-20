@@ -15,10 +15,19 @@ namespace leopph::impl
 
 
 
+	struct ShaderStageInfo
+	{
+		std::string src;
+		ShaderType type;
+		std::vector<std::string> flags;
+	};
+
+
+
 	class ShaderStage final
 	{
 		public:
-			ShaderStage(const std::string& src,ShaderType type, const std::vector<std::string>& flags = {});
+			ShaderStage(ShaderStageInfo info);
 
 			ShaderStage(const ShaderStage& other) = delete;
 			ShaderStage(ShaderStage&& other) noexcept;

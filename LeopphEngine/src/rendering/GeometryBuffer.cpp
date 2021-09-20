@@ -61,43 +61,47 @@ namespace leopph::impl
 	}
 
 
-	int GeometryBuffer::BindForReading(const DefLightShader& shader, const TextureType type, int texUnit) const
+	int GeometryBuffer::BindForReading(ShaderProgram& shader, const TextureType type, int texUnit) const
 	{
 		glBindTextureUnit(static_cast<unsigned>(texUnit), m_Textures[type]);
+
+		auto uniformName{""};
 
 		switch (type)
 		{
 			case Position:
-				shader.SetPositionTexture(texUnit);
+				uniformName = "u_PositionTexture";
 				break;
 
 			case Normal:
-				shader.SetNormalTexture(texUnit);
+				uniformName = "u_NormalTexture";
 				break;
 
 			case Ambient:
-				shader.SetAmbientTexture(texUnit);
+				uniformName = "u_AmbientTexture";
 				break;
 
 			case Diffuse:
-				shader.SetDiffuseTexture(texUnit);
+				uniformName = "u_DiffuseTexture";
 				break;
 
 			case Specular:
-				shader.SetSpecularTexture(texUnit);
+				uniformName = "u_SpecularTexture";
 				break;
 
 			case Shine:
-				shader.SetShineTexture(texUnit);
+				uniformName = "u_ShineTexture";
 				break;
 		}
+
+		shader.SetUniform(uniformName, texUnit);
 
 		m_BindIndices[type] = texUnit;
 		return ++texUnit;
 	}
 
 
-	int GeometryBuffer::BindForReading(const DefLightShader& shader, int texUnit) const
+	int GeometryBuffer::BindForReading(ShaderProgram& shader, int texUnit) const
 	{
 		for (std::size_t i = 0; i < m_Textures.size(); ++i)
 		{
