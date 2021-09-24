@@ -56,6 +56,7 @@ void leopph::AppStart()
 	const auto globalSpotLight = globalSpotLightEntity->AddComponent<SpotLight>();
 	globalSpotLight->InnerAngle(45);
 	globalSpotLight->OuterAngle(60);
+	globalSpotLight->CastsShadow(true);
 
 	(new Entity{})->AddComponent<FPSCounter>();
 }

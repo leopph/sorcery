@@ -8,8 +8,6 @@
 #include <assimp/postprocess.h>
 
 #include <queue>
-#include <stdexcept>
-#include <string>
 #include <utility>
 
 
@@ -74,7 +72,7 @@ namespace leopph::impl
 	}
 
 
-	void AssimpModel::DrawShaded(ShaderProgram& shader, const std::vector<Matrix4>& modelMatrices, const std::vector<Matrix4>& normalMatrices, const std::size_t nextFreeTextureUnit) const
+	void AssimpModel::DrawShaded(::leopph::impl::ShaderProgram& shader, const std::vector<Matrix4>& modelMatrices, const std::vector<Matrix4>& normalMatrices, const std::size_t nextFreeTextureUnit) const
 	{
 		for (const auto& mesh : m_Meshes)
 		{

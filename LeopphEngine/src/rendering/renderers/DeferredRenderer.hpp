@@ -7,7 +7,7 @@
 #include "../SpotLightShadowMap.hpp"
 #include "../../components/lighting/SpotLight.hpp"
 #include "../../math/Matrix.hpp"
-#include "../shaders/ShaderProgram.hpp"
+#include "../shaders/ShaderFamily.hpp"
 
 #include <unordered_map>
 #include <utility>
@@ -45,14 +45,13 @@ namespace leopph::impl
 			CascadedShadowMap m_DirShadowMap;
 			ScreenTexture m_ScreenTexture;
 
-			ShaderProgram m_TextureShader;
-			ShaderProgram m_ShadowShader;
-			ShaderProgram m_GPassObjectShader;
-			ShaderProgram m_AmbientShader;
-			ShaderProgram m_ShadowedDirLightShader;
-			ShaderProgram m_UnshadowedDirLightShader;
-			ShaderProgram m_SpotLightShader;
-			ShaderProgram m_SkyboxShader;
+			ShaderFamily m_TextureShader;
+			ShaderFamily m_ShadowShader;
+			ShaderFamily m_GeometryShader;
+			ShaderFamily m_AmbientShader;
+			ShaderFamily m_DirLightShader;
+			ShaderFamily m_SpotLightShader;
+			ShaderFamily m_SkyboxShader;
 
 			SpotLightShadowMap m_SpotShadowMap;
 	};

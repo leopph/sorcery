@@ -1,5 +1,6 @@
 #include "Mesh.hpp"
 
+#include "AssimpModel.hpp"
 #include "../../data/DataManager.hpp"
 #include "../../math/Matrix.hpp"
 #include "../../math/Vector.hpp"
@@ -106,7 +107,7 @@ namespace leopph::impl
 	}
 
 
-	void Mesh::DrawShaded(ShaderProgram& shader, const std::vector<Matrix4>& modelMatrices, const std::vector<Matrix4>& normalMatrices, std::size_t nextFreeTextureUnit) const
+	void Mesh::DrawShaded(::leopph::impl::ShaderProgram& shader, const std::vector<Matrix4>& modelMatrices, const std::vector<Matrix4>& normalMatrices, std::size_t nextFreeTextureUnit) const
 	{
 		if (modelMatrices.size() > m_ModelBufferSize)
 		{

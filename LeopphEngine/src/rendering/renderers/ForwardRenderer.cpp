@@ -26,17 +26,17 @@ namespace leopph::impl
 	ForwardRenderer::ForwardRenderer() :
 		m_ObjectShader{
 			{
-				{ShaderProgram::ObjectVertSrc, ShaderType::Vertex, {}},
-				{ShaderProgram::ObjectFragSrc, ShaderType::Fragment, {}}
+				{ShaderFamily::ObjectVertSrc, ShaderType::Vertex},
+				{ShaderFamily::ObjectFragSrc, ShaderType::Fragment}
 			}},
 	m_SkyboxShader{
 		{
-			{ShaderProgram::SkyboxVertSrc, ShaderType::Vertex, {}},
-			{ShaderProgram::SkyboxFragSrc, ShaderType::Fragment, {}}
+			{ShaderFamily::SkyboxVertSrc, ShaderType::Vertex},
+			{ShaderFamily::SkyboxFragSrc, ShaderType::Fragment}
 		}},
 	m_ShadowShader{
 		{
-			{ShaderProgram::ShadowMapVertSrc, ShaderType::Vertex, {}}
+			{ShaderFamily::ShadowMapVertSrc, ShaderType::Vertex}
 		}}
 	{
 		glEnable(GL_DEPTH_TEST);
@@ -74,6 +74,9 @@ namespace leopph::impl
 			return {};
 		}
 
+		static auto shadowFlagInfo{m_ShadowShader.GetFlagInfo()};
+		auto& shadowShader{m_ShadowShader.GetPermutation(shadowFlagInfo)};
+
 		const auto& shadowMaps{DataManager::ShadowMaps()};
 
 		/* If we don't have a shadow map, we create one */
@@ -86,10 +89,10 @@ namespace leopph::impl
 		const auto lightProjMat{Matrix4::Ortographic(-10, 10, 10, -10, Camera::Active()->NearClipPlane(), Camera::Active()->FarClipPlane())};
 		const auto lightTransformMat{lightViewMat * lightProjMat};
 
-		m_ShadowShader.Use();
+		shadowShader.Use();
 		shadowMaps.front().BindForWriting();
 
-		m_ShadowShader.SetUniform("u_LightWorldToClipMatrix", lightTransformMat);
+		shadowShader.SetUniform("u_LightWorldToClipMatrix", lightTransformMat);
 
 		for (const auto& [modelRes, matrices] : modelsAndMats)
 		{
@@ -134,80 +137,86 @@ namespace leopph::impl
 											  const std::vector<const PointLight*>& pointLights,
 											  const std::vector<const SpotLight*>& spotLights)
 	{
-		m_ObjectShader.Use();
+		static auto objectFlagInfo{m_ObjectShader.GetFlagInfo()};
+		auto& objectShader{m_ObjectShader.GetPermutation(objectFlagInfo)};
 
-		m_ObjectShader.SetUniform("viewProjectionMatrix", camViewMat * camProjMat);
-		m_ObjectShader.SetUniform("cameraPosition", Camera::Active()->entity.Transform->Position());
+		objectShader.Use();
+
+		objectShader.SetUniform("viewProjectionMatrix", camViewMat * camProjMat);
+		objectShader.SetUniform("cameraPosition", Camera::Active()->entity.Transform->Position());
 
 		auto usedTextureUnits{0};
 
 		/* Set up ambient light data */
-		m_ObjectShader.SetUniform("ambientLight", AmbientLight::Instance().Intensity());
+		objectShader.SetUniform("ambientLight", AmbientLight::Instance().Intensity());
 
 		/* Set up DirLight data */
 		if (const auto dirLight = DataManager::DirectionalLight(); dirLight != nullptr)
 		{
-			m_ObjectShader.SetUniform("existsDirLight", true);
-			m_ObjectShader.SetUniform("dirLight.direction", dirLight->Direction());
-			m_ObjectShader.SetUniform("dirLight.diffuseColor", dirLight->Diffuse());
-			m_ObjectShader.SetUniform("dirLight.specularColor", dirLight->Specular());
-			m_ObjectShader.SetUniform("dirLight.shadowMap", usedTextureUnits);
-			m_ObjectShader.SetUniform("dirLightTransformMatrix", lightTransformMat.value());
+			objectShader.SetUniform("existsDirLight", true);
+			objectShader.SetUniform("dirLight.direction", dirLight->Direction());
+			objectShader.SetUniform("dirLight.diffuseColor", dirLight->Diffuse());
+			objectShader.SetUniform("dirLight.specularColor", dirLight->Specular());
+			objectShader.SetUniform("dirLight.shadowMap", usedTextureUnits);
+			objectShader.SetUniform("dirLightTransformMatrix", lightTransformMat.value());
 
 			usedTextureUnits = DataManager::ShadowMaps().front().BindForReading(usedTextureUnits);
 		}
 		else
 		{
-			m_ObjectShader.SetUniform("existsDirLight", false);
+			objectShader.SetUniform("existsDirLight", false);
 		}
 
 		/* Set up PointLight data */
-		m_ObjectShader.SetUniform("pointLightCount", static_cast<int>(pointLights.size()));
+		objectShader.SetUniform("pointLightCount", static_cast<int>(pointLights.size()));
 		for (std::size_t i = 0; i < pointLights.size(); i++)
 		{
 			const auto& pointLight = pointLights[i];
 
-			m_ObjectShader.SetUniform("pointLights[" + std::to_string(i) + "].position", pointLight->entity.Transform->Position());
-			m_ObjectShader.SetUniform("pointLights[" + std::to_string(i) + "].diffuseColor", pointLight->Diffuse());
-			m_ObjectShader.SetUniform("pointLights[" + std::to_string(i) + "].specularColor", pointLight->Specular());
-			m_ObjectShader.SetUniform("pointLights[" + std::to_string(i) + "].constant", pointLight->Constant());
-			m_ObjectShader.SetUniform("pointLights[" + std::to_string(i) + "].linear", pointLight->Linear());
-			m_ObjectShader.SetUniform("pointLights[" + std::to_string(i) + "].quadratic", pointLight->Quadratic());
+			objectShader.SetUniform("pointLights[" + std::to_string(i) + "].position", pointLight->entity.Transform->Position());
+			objectShader.SetUniform("pointLights[" + std::to_string(i) + "].diffuseColor", pointLight->Diffuse());
+			objectShader.SetUniform("pointLights[" + std::to_string(i) + "].specularColor", pointLight->Specular());
+			objectShader.SetUniform("pointLights[" + std::to_string(i) + "].constant", pointLight->Constant());
+			objectShader.SetUniform("pointLights[" + std::to_string(i) + "].linear", pointLight->Linear());
+			objectShader.SetUniform("pointLights[" + std::to_string(i) + "].quadratic", pointLight->Quadratic());
 		}
 
 		/* Set up SpotLight data */
-		m_ObjectShader.SetUniform("spotLightCount", static_cast<int>(spotLights.size()));
+		objectShader.SetUniform("spotLightCount", static_cast<int>(spotLights.size()));
 		for (std::size_t i = 0; i < spotLights.size(); i++)
 		{
 			const auto& spotLight{spotLights[i]};
 
-			m_ObjectShader.SetUniform("spotLights[" + std::to_string(i) + "].position", spotLight->entity.Transform->Position());
-			m_ObjectShader.SetUniform("spotLights[" + std::to_string(i) + "].direction", spotLight->entity.Transform->Forward());
-			m_ObjectShader.SetUniform("spotLights[" + std::to_string(i) + "].diffuseColor", spotLight->Diffuse());
-			m_ObjectShader.SetUniform("spotLights[" + std::to_string(i) + "].specularColor", spotLight->Specular());
-			m_ObjectShader.SetUniform("spotLights[" + std::to_string(i) + "].constant", spotLight->Constant());
-			m_ObjectShader.SetUniform("spotLights[" + std::to_string(i) + "].linear", spotLight->Linear());
-			m_ObjectShader.SetUniform("spotLights[" + std::to_string(i) + "].quadratic", spotLight->Quadratic());
-			m_ObjectShader.SetUniform("spotLights[" + std::to_string(i) + "].innerAngleCosine", math::Cos(math::ToRadians(spotLight->InnerAngle())));
-			m_ObjectShader.SetUniform("spotLights[" + std::to_string(i) + "].outerAngleCosine", math::Cos(math::ToRadians(spotLight->OuterAngle())));
+			objectShader.SetUniform("spotLights[" + std::to_string(i) + "].position", spotLight->entity.Transform->Position());
+			objectShader.SetUniform("spotLights[" + std::to_string(i) + "].direction", spotLight->entity.Transform->Forward());
+			objectShader.SetUniform("spotLights[" + std::to_string(i) + "].diffuseColor", spotLight->Diffuse());
+			objectShader.SetUniform("spotLights[" + std::to_string(i) + "].specularColor", spotLight->Specular());
+			objectShader.SetUniform("spotLights[" + std::to_string(i) + "].constant", spotLight->Constant());
+			objectShader.SetUniform("spotLights[" + std::to_string(i) + "].linear", spotLight->Linear());
+			objectShader.SetUniform("spotLights[" + std::to_string(i) + "].quadratic", spotLight->Quadratic());
+			objectShader.SetUniform("spotLights[" + std::to_string(i) + "].innerAngleCosine", math::Cos(math::ToRadians(spotLight->InnerAngle())));
+			objectShader.SetUniform("spotLights[" + std::to_string(i) + "].outerAngleCosine", math::Cos(math::ToRadians(spotLight->OuterAngle())));
 		}
 
 		/* Draw the shaded objects */
 		for (const auto& [modelRes, matrices] : modelsAndMats)
 		{
-			modelRes->DrawShaded(m_ObjectShader, matrices.first, matrices.second, usedTextureUnits);
+			modelRes->DrawShaded(objectShader, matrices.first, matrices.second, usedTextureUnits);
 		}
 	}
 
 
 	void ForwardRenderer::RenderSkybox(const Matrix4& camViewMat, const Matrix4& camProjMat)
 	{
+		static auto skyboxFlagInfo{m_SkyboxShader.GetFlagInfo()};
+		auto& skyboxShader{m_SkyboxShader.GetPermutation(skyboxFlagInfo)};
+
 		if (const auto& skybox{Camera::Active()->Background().skybox}; skybox.has_value())
 		{
-			m_SkyboxShader.Use();
-			m_SkyboxShader.SetUniform("viewMatrix", static_cast<Matrix4>(static_cast<Matrix3>(camViewMat)));
-			m_SkyboxShader.SetUniform("projectionMatrix", camProjMat);
-			static_cast<SkyboxResource*>(DataManager::Find(skybox->AllFilePaths()))->Draw(m_SkyboxShader);
+			skyboxShader.Use();
+			skyboxShader.SetUniform("viewMatrix", static_cast<Matrix4>(static_cast<Matrix3>(camViewMat)));
+			skyboxShader.SetUniform("projectionMatrix", camProjMat);
+			static_cast<SkyboxResource*>(DataManager::Find(skybox->AllFilePaths()))->Draw(skyboxShader);
 		}
 	}
 }

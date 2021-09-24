@@ -1,5 +1,9 @@
 #include "ModelResource.hpp"
 
+#include "AssimpModel.hpp"
+#include "AssimpModel.hpp"
+#include "AssimpModel.hpp"
+#include "AssimpModel.hpp"
 #include "../../data/DataManager.hpp"
 #include "../../util/logger.h"
 #include "AssimpModel.hpp"
@@ -27,7 +31,7 @@ namespace leopph::impl
 	}
 
 
-	void ModelResource::DrawShaded(ShaderProgram& shader, const std::vector<Matrix4>& modelMatrices, const std::vector<Matrix4>& normalMatrices, std::size_t nextFreeTextureUnit) const
+	void ModelResource::DrawShaded(::leopph::impl::ShaderProgram& shader, const std::vector<Matrix4>& modelMatrices, const std::vector<Matrix4>& normalMatrices, std::size_t nextFreeTextureUnit) const
 	{
 		m_AssimpModel->DrawShaded(shader, modelMatrices, normalMatrices, nextFreeTextureUnit);
 	}

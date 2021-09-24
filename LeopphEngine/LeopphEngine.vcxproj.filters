@@ -65,8 +65,8 @@
     <ClCompile Include="src\util\hash\ShaderTypeHash.cpp" />
     <ClCompile Include="src\util\equal\ShaderTypeEqual.cpp" />
     <ClCompile Include="src\util\interface\OpenGLAdapter.cpp" />
+    <ClCompile Include="src\rendering\shaders\ShaderFamily.cpp" />
     <ClCompile Include="src\rendering\shaders\ShaderProgram.cpp" />
-    <ClCompile Include="src\rendering\shaders\ShaderStage.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\Behavior.hpp" />
@@ -145,13 +145,14 @@
     <ClInclude Include="src\rendering\CascadedShadowMap.hpp" />
     <ClInclude Include="src\rendering\SpotLightShadowMap.hpp" />
     <ClInclude Include="src\events\SpotShadowMapResChangedEvent.hpp" />
-    <ClInclude Include="src\rendering\shaders\ShaderStage.hpp" />
     <ClInclude Include="src\rendering\shaders\ShaderType.hpp" />
     <ClInclude Include="src\util\containers\Bimap.hpp" />
     <ClInclude Include="src\util\interface\OpenGLAdapter.hpp" />
     <ClInclude Include="src\util\hash\ShaderTypeHash.hpp" />
     <ClInclude Include="src\util\equal\ShaderTypeEqual.hpp" />
+    <ClInclude Include="src\rendering\shaders\ShaderFamily.hpp" />
     <ClInclude Include="src\rendering\shaders\ShaderProgram.hpp" />
+    <ClInclude Include="src\rendering\shaders\ShaderStageInfo.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\cpp.hint" />

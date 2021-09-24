@@ -4,6 +4,7 @@
 #include "../events/EventReceiver.hpp"
 #include "../math/Matrix.hpp"
 #include "../math/Vector.hpp"
+#include "shaders/ShaderFamily.hpp"
 #include "shaders/ShaderProgram.hpp"
 
 #include <cstddef>
@@ -29,7 +30,7 @@ namespace leopph::impl
 		void UnbindFromWriting() const;
 
 		// Returns the next available texture unit after binding
-		[[nodiscard]] int BindForReading(ShaderProgram & shader, int texUnit);
+		[[nodiscard]] int BindForReading(ShaderProgram& shader, int texUnit);
 		void UnbindFromReading() const;
 
 		void Clear() const;

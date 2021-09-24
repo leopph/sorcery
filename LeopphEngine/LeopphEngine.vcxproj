@@ -77,10 +77,10 @@
     <PreLinkEvent />
     <CustomBuildStep />
     <CustomBuild>
-      <Command>$(SolutionDir)out\ShaderParser\$(Configuration)_$(Platform)\ShaderParser.exe %(Fullpath) $(IntDir)%(Filename).cpp leopph::impl::ShaderProgram::%(Filename)Src $(ProjectDir)src\rendering\shaders\ShaderProgram.hpp</Command>
+      <Command>$(SolutionDir)out\ShaderParser\$(Configuration)_$(Platform)\ShaderParser.exe %(Fullpath) $(IntDir)%(Filename).cpp leopph::impl::ShaderFamily::%(Filename)Src $(ProjectDir)src\rendering\shaders\ShaderFamily.hpp</Command>
       <Message>Transpiling %(Filename)%(Extension)...</Message>
       <Outputs>$(IntDir)%(Filename).cpp</Outputs>
-      <AdditionalInputs>$(ProjectDir)src\rendering\shaders\ShaderProgram.hpp</AdditionalInputs>
+      <AdditionalInputs>$(ProjectDir)src\rendering\shaders\ShaderFamily.hpp</AdditionalInputs>
       <OutputItemType>ClCompile</OutputItemType>
     </CustomBuild>
   </ItemDefinitionGroup>
@@ -108,10 +108,10 @@
     <PreLinkEvent />
     <CustomBuildStep />
     <CustomBuild>
-      <Command>$(SolutionDir)out\ShaderParser\$(Configuration)_$(Platform)\ShaderParser.exe %(Fullpath) $(IntDir)%(Filename).cpp leopph::impl::ShaderProgram::%(Filename)Src $(ProjectDir)src\rendering\shaders\ShaderProgram.hpp</Command>
+      <Command>$(SolutionDir)out\ShaderParser\$(Configuration)_$(Platform)\ShaderParser.exe %(Fullpath) $(IntDir)%(Filename).cpp leopph::impl::ShaderFamily::%(Filename)Src $(ProjectDir)src\rendering\shaders\ShaderFamily.hpp</Command>
       <Message>Transpiling %(Filename)%(Extension)...</Message>
       <Outputs>$(IntDir)%(Filename).cpp</Outputs>
-      <AdditionalInputs>$(ProjectDir)src\rendering\shaders\ShaderProgram.hpp</AdditionalInputs>
+      <AdditionalInputs>$(ProjectDir)src\rendering\shaders\ShaderFamily.hpp</AdditionalInputs>
       <OutputItemType>ClCompile</OutputItemType>
     </CustomBuild>
   </ItemDefinitionGroup>
@@ -158,7 +158,8 @@
     <ClInclude Include="src\rendering\renderers\Renderer.hpp" />
     <ClInclude Include="src\rendering\ScreenTexture.hpp" />
     <ClInclude Include="src\rendering\shaders\ShaderProgram.hpp" />
-    <ClInclude Include="src\rendering\shaders\ShaderStage.hpp" />
+    <ClInclude Include="src\rendering\shaders\ShaderFamily.hpp" />
+    <ClInclude Include="src\rendering\shaders\ShaderStageInfo.hpp" />
     <ClInclude Include="src\rendering\shaders\ShaderType.hpp" />
     <ClInclude Include="src\rendering\ShadowMap.hpp" />
     <ClInclude Include="src\rendering\SkyboxHandle.hpp" />
@@ -234,7 +235,7 @@
     <ClCompile Include="src\rendering\renderers\Renderer.cpp" />
     <ClCompile Include="src\rendering\ScreenTexture.cpp" />
     <ClCompile Include="src\rendering\shaders\ShaderProgram.cpp" />
-    <ClCompile Include="src\rendering\shaders\ShaderStage.cpp" />
+    <ClCompile Include="src\rendering\shaders\ShaderFamily.cpp" />
     <ClCompile Include="src\rendering\ShadowMap.cpp" />
     <ClCompile Include="src\rendering\SkyboxHandle.cpp" />
     <ClCompile Include="src\rendering\SkyboxResource.cpp" />
