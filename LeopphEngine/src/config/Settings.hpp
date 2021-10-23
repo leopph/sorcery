@@ -47,7 +47,6 @@ namespace leopph
 			 * Higher values produce sharper shadows but require more VRAM. */
 			static LEOPPHAPI const std::vector<std::size_t>& DirectionalShadowMapResolutions();
 			static LEOPPHAPI void DirectionalShadowMapResolutions(std::vector<std::size_t> newRess);
-			static LEOPPHAPI std::size_t DirectionalShadowCascadeCount();
 
 			/* The resolution of the shadows cast by pointlights.
 			 * Higher values produce sharper shadows but require more VRAM. */

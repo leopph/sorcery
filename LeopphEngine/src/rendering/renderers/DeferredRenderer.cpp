@@ -10,6 +10,8 @@
 
 #include <glad/glad.h>
 
+#include <array>
+
 
 
 namespace leopph::impl
@@ -26,10 +28,23 @@ namespace leopph::impl
 				{ShaderFamily::ShadowMapVertSrc, ShaderType::Vertex}
 			}
 		},
+		m_CubeShadowShader{
+			{
+				{ShaderFamily::CubeShadowMapVertSrc, ShaderType::Vertex},
+				{ShaderFamily::CubeShadowMapGeomSrc, ShaderType::Geometry},
+				{ShaderFamily::CubeShadowMapFragSrc, ShaderType::Fragment}
+			}
+		},
 		m_GeometryShader{
 			{
 				{ShaderFamily::GPassObjectVertSrc, ShaderType::Vertex},
 				{ShaderFamily::GPassObjectFragSrc, ShaderType::Fragment}
+			}
+		},
+		m_SkyboxShader{
+			{
+				{ShaderFamily::SkyboxVertSrc, ShaderType::Vertex},
+				{ShaderFamily::SkyboxFragSrc, ShaderType::Fragment}
 			}
 		},
 		m_AmbientShader{
@@ -48,12 +63,6 @@ namespace leopph::impl
 			{
 				{ShaderFamily::LightPassVertSrc, ShaderType::Vertex},
 				{ShaderFamily::SpotLightPassFragSrc, ShaderType::Fragment}
-			}
-		},
-		m_SkyboxShader{
-			{
-				{ShaderFamily::SkyboxVertSrc, ShaderType::Vertex},
-				{ShaderFamily::SkyboxFragSrc, ShaderType::Fragment}
 			}
 		}
 	{
@@ -87,6 +96,7 @@ namespace leopph::impl
 		glEnable(GL_BLEND);
 		RenderDirectionalLights(camViewMat, camProjMat, modelsAndMats);
 		RenderSpotLights(spotLights, modelsAndMats);
+		RenderPointLights(pointLights, modelsAndMats);
 		glDisable(GL_BLEND);
 
 		RenderSkybox(camViewMat, camProjMat);
@@ -297,6 +307,58 @@ namespace leopph::impl
 			glDisable(GL_DEPTH_TEST);
 			m_ScreenTexture.Draw();
 			glEnable(GL_DEPTH_TEST);
+		}
+	}
+
+
+	void DeferredRenderer::RenderPointLights(const std::vector<const PointLight*>& pointLights,
+	                                         const std::unordered_map<const ModelResource*, std::pair<std::vector<Matrix4>, std::vector<Matrix4>>>& modelsAndMats)
+	{
+		if (pointLights.empty())
+		{
+			return;
+		}
+
+		static auto& shadowShader{m_CubeShadowShader.GetPermutation(m_CubeShadowShader.GetFlagInfo())};
+
+		static constexpr auto shadowFarPlane = 25;
+		static const auto shadowProj{Matrix4::Perspective(90, 1, 1, shadowFarPlane)}; // TODO
+		static std::vector<Matrix4> shadowViewProjMats;
+		shadowViewProjMats.reserve(6);
+
+		for (const auto& pointLight : pointLights)
+		{
+			shadowViewProjMats.clear();
+			const auto& lightPos{pointLight->entity.Transform->Position()};
+
+			for (static const std::array directions
+			{
+				Vector3{1, 0, 0},
+				Vector3{-1, 0, 0},
+				Vector3{0, 1, 0},
+				Vector3{0, -1, 0},
+				Vector3{0, 0, 1},
+				Vector3{0, 0, -1}
+			}; const auto& direction : directions)
+			{
+				shadowViewProjMats.emplace_back(shadowProj * Matrix4::LookAt(lightPos, lightPos + direction, Vector3::Up()));
+			}
+
+			shadowShader.SetUniform("u_ViewProjMats", shadowViewProjMats);
+			shadowShader.SetUniform("u_LightPos", lightPos);
+			shadowShader.SetUniform("u_FarPlane", shadowFarPlane);
+
+			m_PointShadowMap.BindForWriting();
+			m_PointShadowMap.Clear();
+
+			shadowShader.Use();
+
+			for (const auto& [modelRes, matrices] : modelsAndMats)
+			{
+				modelRes->DrawDepth(matrices.first);
+			}
+
+			m_PointShadowMap.UnbindFromWriting();
 		}
 	}
 

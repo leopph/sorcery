@@ -144,12 +144,14 @@
     <ClInclude Include="src\events\KeyEvent.hpp" />
     <ClInclude Include="src\events\ModelCountChangedEvent.hpp" />
     <ClInclude Include="src\events\MouseEvent.hpp" />
+    <ClInclude Include="src\events\PointShadowMapResChangedEvent.hpp" />
     <ClInclude Include="src\events\SpotShadowMapResChangedEvent.hpp" />
     <ClInclude Include="src\input\cursorstate.h" />
     <ClInclude Include="src\input\keycodes.h" />
     <ClInclude Include="src\input\keystate.h" />
     <ClInclude Include="src\misc\Color.hpp" />
     <ClInclude Include="src\rendering\CascadedShadowMap.hpp" />
+    <ClInclude Include="src\rendering\CubeShadowMap.hpp" />
     <ClInclude Include="src\rendering\geometry\AssimpModel.hpp" />
     <ClInclude Include="src\rendering\GeometryBuffer.hpp" />
     <ClInclude Include="src\rendering\renderers\DeferredRenderer.hpp" />
@@ -223,9 +225,11 @@
     <ClCompile Include="src\events\KeyEvent.cpp" />
     <ClCompile Include="src\events\ModelCountChangedEvent.cpp" />
     <ClCompile Include="src\events\MouseEvent.cpp" />
+    <ClCompile Include="src\events\PointShadowMapResChangedEvent.cpp" />
     <ClCompile Include="src\events\SpotShadowMapResChangedEvent.cpp" />
     <ClCompile Include="src\misc\Color.cpp" />
     <ClCompile Include="src\rendering\CascadedShadowMap.cpp" />
+    <ClCompile Include="src\rendering\CubeShadowMap.cpp" />
     <ClCompile Include="src\rendering\geometry\AssimpModel.cpp" />
     <ClCompile Include="src\rendering\GeometryBuffer.cpp" />
     <ClCompile Include="src\rendering\renderers\DeferredRenderer.cpp" />
@@ -286,7 +290,7 @@
     <CustomBuild Include="src\rendering\shaders\glsl\forward\ObjectFrag.frag">
       <FileType>Document</FileType>
     </CustomBuild>
-    <CustomBuild Include="src\rendering\shaders\glsl\ShadowMapVert.vert">
+    <CustomBuild Include="src\rendering\shaders\glsl\shadows\ShadowMapVert.vert">
       <FileType>Document</FileType>
     </CustomBuild>
     <CustomBuild Include="src\rendering\shaders\glsl\SkyboxFrag.frag">
@@ -308,6 +312,15 @@
       <FileType>Document</FileType>
     </CustomBuild>
     <CustomBuild Include="src\rendering\shaders\glsl\deferred\SpotLightPassFrag.frag">
+      <FileType>Document</FileType>
+    </CustomBuild>
+    <CustomBuild Include="src\rendering\shaders\glsl\shadows\CubeShadowMapFrag.frag">
+      <FileType>Document</FileType>
+    </CustomBuild>
+    <CustomBuild Include="src\rendering\shaders\glsl\shadows\CubeShadowMapGeom.geom">
+      <FileType>Document</FileType>
+    </CustomBuild>
+    <CustomBuild Include="src\rendering\shaders\glsl\shadows\CubeShadowMapVert.vert">
       <FileType>Document</FileType>
     </CustomBuild>
   </ItemGroup>

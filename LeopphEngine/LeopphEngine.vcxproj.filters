@@ -67,6 +67,8 @@
     <ClCompile Include="src\util\interface\OpenGLAdapter.cpp" />
     <ClCompile Include="src\rendering\shaders\ShaderFamily.cpp" />
     <ClCompile Include="src\rendering\shaders\ShaderProgram.cpp" />
+    <ClCompile Include="src\events\PointShadowMapResChangedEvent.cpp" />
+    <ClCompile Include="src\rendering\CubeShadowMap.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\Behavior.hpp" />
@@ -153,6 +155,8 @@
     <ClInclude Include="src\rendering\shaders\ShaderFamily.hpp" />
     <ClInclude Include="src\rendering\shaders\ShaderProgram.hpp" />
     <ClInclude Include="src\rendering\shaders\ShaderStageInfo.hpp" />
+    <ClInclude Include="src\rendering\CubeShadowMap.hpp" />
+    <ClInclude Include="src\events\PointShadowMapResChangedEvent.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\cpp.hint" />
@@ -163,7 +167,7 @@
     <CustomBuild Include="src\rendering\shaders\glsl\SkyboxFrag.frag" />
     <CustomBuild Include="src\rendering\shaders\glsl\forward\ObjectVert.vert" />
     <CustomBuild Include="src\rendering\shaders\glsl\forward\ObjectFrag.frag" />
-    <CustomBuild Include="src\rendering\shaders\glsl\ShadowMapVert.vert" />
+    <CustomBuild Include="src\rendering\shaders\glsl\shadows\ShadowMapVert.vert" />
     <CustomBuild Include="src\rendering\shaders\glsl\deferred\LightPassVert.vert" />
     <CustomBuild Include="src\rendering\shaders\glsl\deferred\LightPassFrag.frag" />
     <CustomBuild Include="src\rendering\shaders\glsl\deferred\GPassObjectVert.vert" />
@@ -171,5 +175,8 @@
     <CustomBuild Include="src\rendering\shaders\glsl\deferred\DirLightPassFrag.frag" />
     <CustomBuild Include="src\rendering\shaders\glsl\deferred\AmbLightFrag.frag" />
     <CustomBuild Include="src\rendering\shaders\glsl\deferred\SpotLightPassFrag.frag" />
+    <CustomBuild Include="src\rendering\shaders\glsl\shadows\CubeShadowMapFrag.frag" />
+    <CustomBuild Include="src\rendering\shaders\glsl\shadows\CubeShadowMapGeom.geom" />
+    <CustomBuild Include="src\rendering\shaders\glsl\shadows\CubeShadowMapVert.vert" />
   </ItemGroup>
 </Project>
