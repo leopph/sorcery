@@ -31,9 +31,9 @@ void leopph::AppStart()
 
 	playerEntity->AddComponent<CameraController>();
 
-	const auto playerSpotLight = playerEntity->AddComponent<SpotLight>();
+	/*const auto playerSpotLight = playerEntity->AddComponent<SpotLight>();
 	playerSpotLight->InnerAngle(15);
-	playerSpotLight->OuterAngle(20);
+	playerSpotLight->OuterAngle(20);*/
 
 	const auto portraitEntity = new Entity{};
 	portraitEntity->Transform->Position(Vector3{0, 0, -5});
@@ -44,19 +44,26 @@ void leopph::AppStart()
 	cubeEntity->AddComponent<Model>("models/cube/cube.dae");
 	cubeEntity->AddComponent<Rotate>(Vector3::Up(), 30.f);
 
-	const auto dirLightEntity = new Entity{};
+	/*const auto dirLightEntity = new Entity{};
 	dirLightEntity->Transform->RotateGlobal(Quaternion{Vector3::Up(), 135});
 	dirLightEntity->Transform->RotateLocal({Quaternion{Vector3::Right(), 45}});
 	const auto dirLight = dirLightEntity->AddComponent<DirectionalLight>();
 	dirLight->Diffuse(Vector3{0.5, 0.5, 0.5});
-	dirLight->CastsShadow(true);
+	dirLight->CastsShadow(true);*/
 
-	const auto globalSpotLightEntity = new Entity;
+	/*const auto globalSpotLightEntity = new Entity;
 	globalSpotLightEntity->Transform->RotateGlobal(Quaternion{Vector3::Up(), 180});
 	const auto globalSpotLight = globalSpotLightEntity->AddComponent<SpotLight>();
 	globalSpotLight->InnerAngle(45);
 	globalSpotLight->OuterAngle(60);
-	globalSpotLight->CastsShadow(true);
+	globalSpotLight->CastsShadow(true);*/
+
+	const auto pointLightEntity = new Entity{};
+	pointLightEntity->Transform->Position(Vector3{0, 0, -3.5});
+	const auto pointLight = pointLightEntity->AddComponent<PointLight>();
+	pointLight->CastsShadow(true);
+
+	AmbientLight::Instance().Intensity(Vector3{0, 0, 0});
 
 	(new Entity{})->AddComponent<FPSCounter>();
 }

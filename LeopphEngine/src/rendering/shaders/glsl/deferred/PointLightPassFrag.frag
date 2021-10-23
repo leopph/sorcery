@@ -28,7 +28,7 @@ layout (location = 11) uniform sampler2D u_SpecularTexture;
 layout (location = 12) uniform sampler2D u_ShineTexture;
 
 #ifdef CAST_SHADOW
-layout(location = 7) uniform samplerCubeShadow u_ShadowMap;
+layout(location = 13) uniform samplerCubeShadow u_ShadowMap;
 #endif
 
 
@@ -54,9 +54,9 @@ float CalculateAttenuation(float constant, float linear, float quadratic, float 
 
 
 #ifdef CAST_SHADOW
-float CalculateShadow(vec3 dirToLight, vec3 fragPos, vec3 fragNormal)
+float CalculateShadow(vec3 dirFragToLight, vec3 fragPos)
 {
-	return 1;
+	return texture(u_ShadowMap, vec4(-normalize(dirFragToLight), 0), length(dirFragToLight) / 25);
 }
 #endif
 
@@ -85,7 +85,7 @@ void main()
 	light *= CalculateAttenuation(u_PointLight.constant, u_PointLight.linear, u_PointLight.quadratic, dist);
 
 	#ifdef CAST_SHADOW
-	light *= CalculateShadow(dirToLight, fragPos, fragNormal);
+	light *= CalculateShadow(fragPos - u_PointLight.position, fragPos);
 	#endif
 
 	out_FragColor = vec4(light, 1);

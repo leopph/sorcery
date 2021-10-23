@@ -376,7 +376,8 @@ namespace leopph::impl
 			texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::TextureType::Normal, texCount);
 			texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::TextureType::Diffuse, texCount);
 			texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::TextureType::Specular, texCount);
-			static_cast<void>(m_GBuffer.BindForReading(lightShader, GeometryBuffer::TextureType::Shine, texCount));
+			texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::TextureType::Shine, texCount);
+			static_cast<void>(m_PointShadowMap.BindForReading(lightShader, texCount));
 
 			lightShader.SetUniform("u_PointLight.position", pointLight->entity.Transform->Position());
 			lightShader.SetUniform("u_PointLight.diffuseColor", pointLight->Diffuse());
