@@ -62,6 +62,7 @@ namespace leopph::impl
 			ShaderFamily m_AmbientShader;
 			ShaderFamily m_DirLightShader;
 			ShaderFamily m_SpotLightShader;
+			ShaderFamily m_PointLightShader;
 
 			CascadedShadowMap m_DirShadowMap;
 			SpotLightShadowMap m_SpotShadowMap;

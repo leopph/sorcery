@@ -49,6 +49,7 @@ namespace leopph::impl
 			static const std::string AmbLightFragSrc;
 			static const std::string DirLightPassFragSrc;
 			static const std::string SpotLightPassFragSrc;
+			static const std::string PointLightPassFragSrc;
 
 			static const std::string TextureFragSrc;
 

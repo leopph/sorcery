@@ -323,6 +323,9 @@
     <CustomBuild Include="src\rendering\shaders\glsl\shadows\CubeShadowMapVert.vert">
       <FileType>Document</FileType>
     </CustomBuild>
+    <CustomBuild Include="src\rendering\shaders\glsl\deferred\PointLightPassFrag.frag">
+      <FileType>Document</FileType>
+    </CustomBuild>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -36,10 +36,10 @@ namespace leopph::impl
 		glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &m_CubeMapName);
 		glTextureStorage2D(m_CubeMapName, 1, GL_DEPTH_COMPONENT32F, static_cast<GLsizei>(resolution), static_cast<GLsizei>(resolution));
 
-		for (std::size_t i = 0; i < 6; i++)
+		/*for (std::size_t i = 0; i < 6; i++)
 		{
 			glTextureSubImage3D(m_CubeMapName, 0, 0, 0, static_cast<GLsizei>(i), static_cast<GLsizei>(resolution), static_cast<GLsizei>(resolution), 1, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
-		}
+		}*/
 
 		glTextureParameteri(m_CubeMapName, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glTextureParameteri(m_CubeMapName, GL_TEXTURE_MIN_FILTER, GL_NEAREST);

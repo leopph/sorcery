@@ -64,6 +64,12 @@ namespace leopph::impl
 				{ShaderFamily::LightPassVertSrc, ShaderType::Vertex},
 				{ShaderFamily::SpotLightPassFragSrc, ShaderType::Fragment}
 			}
+		},
+		m_PointLightShader{
+			{
+				{ShaderFamily::LightPassVertSrc, ShaderType::Vertex},
+				{ShaderFamily::PointLightPassFragSrc, ShaderType::Fragment}
+			}
 		}
 	{
 		glEnable(GL_DEPTH_TEST);
@@ -319,9 +325,10 @@ namespace leopph::impl
 			return;
 		}
 
+		static auto lightShaderFlagInfo{m_PointLightShader.GetFlagInfo()};
 		static auto& shadowShader{m_CubeShadowShader.GetPermutation(m_CubeShadowShader.GetFlagInfo())};
 
-		static constexpr auto shadowFarPlane = 25;
+		static constexpr auto shadowFarPlane = 25.f;
 		static const auto shadowProj{Matrix4::Perspective(90, 1, 1, shadowFarPlane)}; // TODO
 		static std::vector<Matrix4> shadowViewProjMats;
 		shadowViewProjMats.reserve(6);
@@ -359,6 +366,32 @@ namespace leopph::impl
 			}
 
 			m_PointShadowMap.UnbindFromWriting();
+
+			lightShaderFlagInfo.Clear();
+			lightShaderFlagInfo["CAST_SHADOW"] = pointLight->CastsShadow();
+			auto& lightShader{m_PointLightShader.GetPermutation(lightShaderFlagInfo)};
+
+			auto texCount{0};
+			texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::TextureType::Position, texCount);
+			texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::TextureType::Normal, texCount);
+			texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::TextureType::Diffuse, texCount);
+			texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::TextureType::Specular, texCount);
+			static_cast<void>(m_GBuffer.BindForReading(lightShader, GeometryBuffer::TextureType::Shine, texCount));
+
+			lightShader.SetUniform("u_PointLight.position", pointLight->entity.Transform->Position());
+			lightShader.SetUniform("u_PointLight.diffuseColor", pointLight->Diffuse());
+			lightShader.SetUniform("u_PointLight.specularColor", pointLight->Specular());
+			lightShader.SetUniform("u_PointLight.constant", pointLight->Constant());
+			lightShader.SetUniform("u_PointLight.linear", pointLight->Linear());
+			lightShader.SetUniform("u_PointLight.quadratic", pointLight->Quadratic());
+			lightShader.SetUniform("u_PointLight.range", pointLight->Range());
+			lightShader.SetUniform("u_CamPos", Camera::Active()->entity.Transform->Position());
+
+			lightShader.Use();
+
+			glDisable(GL_DEPTH_TEST);
+			m_ScreenTexture.Draw();
+			glEnable(GL_DEPTH_TEST);
 		}
 	}
 

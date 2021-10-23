@@ -178,5 +178,6 @@
     <CustomBuild Include="src\rendering\shaders\glsl\shadows\CubeShadowMapFrag.frag" />
     <CustomBuild Include="src\rendering\shaders\glsl\shadows\CubeShadowMapGeom.geom" />
     <CustomBuild Include="src\rendering\shaders\glsl\shadows\CubeShadowMapVert.vert" />
+    <CustomBuild Include="src\rendering\shaders\glsl\deferred\PointLightPassFrag.frag" />
   </ItemGroup>
 </Project>
