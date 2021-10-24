@@ -334,9 +334,31 @@ namespace leopph::impl
 		{
 			const auto& lightPos{pointLight->entity.Transform->Position()};
 
+			lightShaderFlagInfo.Clear();
+			lightShaderFlagInfo["CAST_SHADOW"] = pointLight->CastsShadow();
+			auto& lightShader{m_PointLightShader.GetPermutation(lightShaderFlagInfo)};
+
+			auto texCount{0};
+			texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::TextureType::Position, texCount);
+			texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::TextureType::Normal, texCount);
+			texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::TextureType::Diffuse, texCount);
+			texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::TextureType::Specular, texCount);
+			texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::TextureType::Shine, texCount);
+
+			lightShader.SetUniform("u_PointLight.position", lightPos);
+			lightShader.SetUniform("u_PointLight.diffuseColor", pointLight->Diffuse());
+			lightShader.SetUniform("u_PointLight.specularColor", pointLight->Specular());
+			lightShader.SetUniform("u_PointLight.constant", pointLight->Constant());
+			lightShader.SetUniform("u_PointLight.linear", pointLight->Linear());
+			lightShader.SetUniform("u_PointLight.quadratic", pointLight->Quadratic());
+			lightShader.SetUniform("u_PointLight.range", pointLight->Range());
+			lightShader.SetUniform("u_CamPos", Camera::Active()->entity.Transform->Position());
+
 			if (pointLight->CastsShadow())
 			{
-				static const auto shadowProj{Matrix4::Perspective(math::ToRadians(90), 1, 0.01f, pointLight->Range())}; // TODO
+				static_cast<void>(m_PointShadowMap.BindForReading(lightShader, texCount));
+
+				const auto shadowProj{Matrix4::Perspective(math::ToRadians(90), 1, 0.01f, pointLight->Range())};
 
 				shadowViewProjMats.clear();
 
@@ -370,31 +392,6 @@ namespace leopph::impl
 				shadowShader.Unuse();
 				m_PointShadowMap.UnbindFromWriting();
 			}
-
-			lightShaderFlagInfo.Clear();
-			lightShaderFlagInfo["CAST_SHADOW"] = pointLight->CastsShadow();
-			auto& lightShader{m_PointLightShader.GetPermutation(lightShaderFlagInfo)};
-
-			auto texCount{0};
-			texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::TextureType::Position, texCount);
-			texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::TextureType::Normal, texCount);
-			texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::TextureType::Diffuse, texCount);
-			texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::TextureType::Specular, texCount);
-			texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::TextureType::Shine, texCount);
-
-			if (pointLight->CastsShadow())
-			{
-				static_cast<void>(m_PointShadowMap.BindForReading(lightShader, texCount));
-			}
-
-			lightShader.SetUniform("u_PointLight.position", lightPos);
-			lightShader.SetUniform("u_PointLight.diffuseColor", pointLight->Diffuse());
-			lightShader.SetUniform("u_PointLight.specularColor", pointLight->Specular());
-			lightShader.SetUniform("u_PointLight.constant", pointLight->Constant());
-			lightShader.SetUniform("u_PointLight.linear", pointLight->Linear());
-			lightShader.SetUniform("u_PointLight.quadratic", pointLight->Quadratic());
-			lightShader.SetUniform("u_PointLight.range", pointLight->Range());
-			lightShader.SetUniform("u_CamPos", Camera::Active()->entity.Transform->Position());
 
 			lightShader.Use();
 

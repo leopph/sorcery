@@ -96,7 +96,7 @@ namespace leopph::impl
 	{
 		glCreateTextures(GL_TEXTURE_2D, 1, &m_DepthTex);
 
-		glTextureStorage2D(m_DepthTex, 1, GL_DEPTH_COMPONENT32F, static_cast<GLsizei>(m_Resolution), static_cast<GLsizei>(m_Resolution));
+		glTextureStorage2D(m_DepthTex, 1, GL_DEPTH_COMPONENT24, static_cast<GLsizei>(m_Resolution), static_cast<GLsizei>(m_Resolution));
 		glTextureParameteri(m_DepthTex, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTextureParameteri(m_DepthTex, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTextureParameteri(m_DepthTex, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);

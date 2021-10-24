@@ -35,12 +35,7 @@ namespace leopph::impl
 	void CubeShadowMap::Init(const std::size_t resolution)
 	{
 		glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &m_CubeMapName);
-		glTextureStorage2D(m_CubeMapName, 1, GL_DEPTH_COMPONENT32F, static_cast<GLsizei>(resolution), static_cast<GLsizei>(resolution));
-
-		/*for (std::size_t i = 0; i < 6; i++)
-		{
-			glTextureSubImage3D(m_CubeMapName, 0, 0, 0, static_cast<GLsizei>(i), static_cast<GLsizei>(resolution), static_cast<GLsizei>(resolution), 1, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
-		}*/
+		glTextureStorage2D(m_CubeMapName, 1, GL_DEPTH_COMPONENT24, static_cast<GLsizei>(resolution), static_cast<GLsizei>(resolution));
 
 		glTextureParameteri(m_CubeMapName, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTextureParameteri(m_CubeMapName, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -84,7 +79,7 @@ namespace leopph::impl
 	}
 
 
-	int CubeShadowMap::BindForReading(ShaderProgram& shader, int texUnit)
+	int CubeShadowMap::BindForReading(ShaderProgram& shader, const int texUnit)
 	{
 		m_BoundTexUnit = texUnit;
 		glBindTextureUnit(m_BoundTexUnit, m_CubeMapName);

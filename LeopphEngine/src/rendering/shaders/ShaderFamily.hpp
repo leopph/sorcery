@@ -5,7 +5,6 @@
 #include "ShaderType.hpp"
 
 #include <map>
-#include <optional>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -44,7 +43,6 @@ namespace leopph::impl
 			static const std::string GPassObjectFragSrc;
 
 			static const std::string LightPassVertSrc;
-			static const std::string LightPassFragSrc;
 
 			static const std::string AmbLightFragSrc;
 			static const std::string DirLightPassFragSrc;

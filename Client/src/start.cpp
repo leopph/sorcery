@@ -31,10 +31,6 @@ void leopph::AppStart()
 
 	playerEntity->AddComponent<CameraController>();
 
-	/*const auto playerSpotLight = playerEntity->AddComponent<SpotLight>();
-	playerSpotLight->InnerAngle(15);
-	playerSpotLight->OuterAngle(20);*/
-
 	const auto portraitEntity = new Entity{};
 	portraitEntity->Transform->Position(Vector3{0, 0, -5});
 	portraitEntity->AddComponent<Model>("models/portrait/cropped_textured_mesh.obj");
@@ -49,18 +45,23 @@ void leopph::AppStart()
 	dirLightEntity->Transform->RotateLocal({Quaternion{Vector3::Right(), 45}});
 	const auto dirLight = dirLightEntity->AddComponent<DirectionalLight>();
 	dirLight->Diffuse(Vector3{0.5, 0.5, 0.5});
-	dirLight->CastsShadow(true);*/
+	dirLight->CastsShadow(true);
 
-	/*const auto globalSpotLightEntity = new Entity;
+	const auto globalSpotLightEntity = new Entity;
 	globalSpotLightEntity->Transform->RotateGlobal(Quaternion{Vector3::Up(), 180});
 	const auto globalSpotLight = globalSpotLightEntity->AddComponent<SpotLight>();
 	globalSpotLight->InnerAngle(45);
 	globalSpotLight->OuterAngle(60);
-	globalSpotLight->CastsShadow(true);*/
+	globalSpotLight->CastsShadow(true);
+
+	const auto playerSpotLight = playerEntity->AddComponent<SpotLight>();
+	playerSpotLight->InnerAngle(15);
+	playerSpotLight->OuterAngle(20);*/
 
 	const auto pointLightEntity = new Entity{};
-	pointLightEntity->Transform->Position(Vector3{0, 1.5, -5});
+	pointLightEntity->Transform->Position(Vector3{0, 0, -3.5});
 	const auto pointLight = pointLightEntity->AddComponent<PointLight>();
+	pointLight->Range(15);
 	pointLight->CastsShadow(true);
 
 	AmbientLight::Instance().Intensity(Vector3{0, 0, 0});
