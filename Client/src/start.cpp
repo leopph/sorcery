@@ -59,7 +59,7 @@ void leopph::AppStart()
 	globalSpotLight->CastsShadow(true);*/
 
 	const auto pointLightEntity = new Entity{};
-	pointLightEntity->Transform->Position(Vector3{0, 0, -3.5});
+	pointLightEntity->Transform->Position(Vector3{0, 1.5, -5});
 	const auto pointLight = pointLightEntity->AddComponent<PointLight>();
 	pointLight->CastsShadow(true);
 

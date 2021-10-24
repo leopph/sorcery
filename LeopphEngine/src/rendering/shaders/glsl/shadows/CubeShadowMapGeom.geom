@@ -18,7 +18,7 @@ void main()
 		for (int j = 0; j < 3; j++)
 		{
 			out_FragPos = gl_in[j].gl_Position;
-			gl_Position = u_ViewProjMats[i] * out_FragPos;
+			gl_Position = out_FragPos * u_ViewProjMats[i];
 			EmitVertex();
 		}
 

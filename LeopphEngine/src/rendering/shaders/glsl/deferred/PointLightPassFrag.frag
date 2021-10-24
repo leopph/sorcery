@@ -54,9 +54,10 @@ float CalculateAttenuation(float constant, float linear, float quadratic, float 
 
 
 #ifdef CAST_SHADOW
-float CalculateShadow(vec3 dirFragToLight, vec3 fragPos)
+float CalculateShadow(vec3 fragPos)
 {
-	return texture(u_ShadowMap, vec4(-normalize(dirFragToLight), 0), length(dirFragToLight) / 25);
+	vec3 dirToFrag = fragPos - u_PointLight.position;
+	return texture(u_ShadowMap, vec4(dirToFrag, length(dirToFrag) / u_PointLight.range));
 }
 #endif
 
@@ -77,15 +78,15 @@ void main()
 	dirToLight = normalize(dirToLight);
 
 	vec3 fragNormal = texture(u_NormalTexture, in_TexCoords).rgb;
-    vec3 fragDiffuse = texture(u_DiffuseTexture, in_TexCoords).rgb;
-    vec3 fragSpecular = texture(u_SpecularTexture, in_TexCoords).rgb;
+	vec3 fragDiffuse = texture(u_DiffuseTexture, in_TexCoords).rgb;
+	vec3 fragSpecular = texture(u_SpecularTexture, in_TexCoords).rgb;
 	float fragShine = texture(u_ShineTexture, in_TexCoords).r;
 
 	vec3 light = CalculateBlinnPhong(dirToLight, fragPos, fragNormal, fragDiffuse, fragSpecular, fragShine);
 	light *= CalculateAttenuation(u_PointLight.constant, u_PointLight.linear, u_PointLight.quadratic, dist);
 
 	#ifdef CAST_SHADOW
-	light *= CalculateShadow(fragPos - u_PointLight.position, fragPos);
+	light *= CalculateShadow(fragPos);
 	#endif
 
 	out_FragColor = vec4(light, 1);

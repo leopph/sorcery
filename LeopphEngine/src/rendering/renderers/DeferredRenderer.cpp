@@ -328,44 +328,48 @@ namespace leopph::impl
 		static auto lightShaderFlagInfo{m_PointLightShader.GetFlagInfo()};
 		static auto& shadowShader{m_CubeShadowShader.GetPermutation(m_CubeShadowShader.GetFlagInfo())};
 
-		static constexpr auto shadowFarPlane = 25.f;
-		static const auto shadowProj{Matrix4::Perspective(90, 1, 1, shadowFarPlane)}; // TODO
 		static std::vector<Matrix4> shadowViewProjMats;
-		shadowViewProjMats.reserve(6);
 
 		for (const auto& pointLight : pointLights)
 		{
-			shadowViewProjMats.clear();
 			const auto& lightPos{pointLight->entity.Transform->Position()};
 
-			for (static const std::array directions
+			if (pointLight->CastsShadow())
 			{
-				Vector3{1, 0, 0},
-				Vector3{-1, 0, 0},
-				Vector3{0, 1, 0},
-				Vector3{0, -1, 0},
-				Vector3{0, 0, 1},
-				Vector3{0, 0, -1}
-			}; const auto& direction : directions)
-			{
-				shadowViewProjMats.emplace_back(shadowProj * Matrix4::LookAt(lightPos, lightPos + direction, Vector3::Up()));
+				static const auto shadowProj{Matrix4::Perspective(math::ToRadians(90), 1, 0.01f, pointLight->Range())}; // TODO
+
+				shadowViewProjMats.clear();
+
+				for (static const std::array directionData
+				     {
+						std::pair{Vector3::Right(), Vector3::Up()},
+						std::pair{Vector3::Left(), Vector3::Up()},
+						std::pair{Vector3::Up(), Vector3::Backward()},
+						std::pair{Vector3::Down(), Vector3::Forward()},
+						std::pair{Vector3::Forward(), Vector3::Up()},
+						std::pair{Vector3::Backward(), Vector3::Up()}
+				     }; const auto& [target, up] : directionData)
+				{
+					shadowViewProjMats.emplace_back(Matrix4::LookAt(lightPos, lightPos + target, up) * shadowProj);
+				}
+
+				shadowShader.SetUniform("u_ViewProjMats", shadowViewProjMats);
+				shadowShader.SetUniform("u_LightPos", lightPos);
+				shadowShader.SetUniform("u_FarPlane", pointLight->Range());
+
+				m_PointShadowMap.Clear();
+
+				m_PointShadowMap.BindForWriting();
+				shadowShader.Use();
+
+				for (const auto& [modelRes, matrices] : modelsAndMats)
+				{
+					modelRes->DrawDepth(matrices.first);
+				}
+
+				shadowShader.Unuse();
+				m_PointShadowMap.UnbindFromWriting();
 			}
-
-			shadowShader.SetUniform("u_ViewProjMats", shadowViewProjMats);
-			shadowShader.SetUniform("u_LightPos", lightPos);
-			shadowShader.SetUniform("u_FarPlane", shadowFarPlane);
-
-			m_PointShadowMap.BindForWriting();
-			m_PointShadowMap.Clear();
-
-			shadowShader.Use();
-
-			for (const auto& [modelRes, matrices] : modelsAndMats)
-			{
-				modelRes->DrawDepth(matrices.first);
-			}
-
-			m_PointShadowMap.UnbindFromWriting();
 
 			lightShaderFlagInfo.Clear();
 			lightShaderFlagInfo["CAST_SHADOW"] = pointLight->CastsShadow();
@@ -377,9 +381,13 @@ namespace leopph::impl
 			texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::TextureType::Diffuse, texCount);
 			texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::TextureType::Specular, texCount);
 			texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::TextureType::Shine, texCount);
-			static_cast<void>(m_PointShadowMap.BindForReading(lightShader, texCount));
 
-			lightShader.SetUniform("u_PointLight.position", pointLight->entity.Transform->Position());
+			if (pointLight->CastsShadow())
+			{
+				static_cast<void>(m_PointShadowMap.BindForReading(lightShader, texCount));
+			}
+
+			lightShader.SetUniform("u_PointLight.position", lightPos);
 			lightShader.SetUniform("u_PointLight.diffuseColor", pointLight->Diffuse());
 			lightShader.SetUniform("u_PointLight.specularColor", pointLight->Specular());
 			lightShader.SetUniform("u_PointLight.constant", pointLight->Constant());
@@ -393,6 +401,8 @@ namespace leopph::impl
 			glDisable(GL_DEPTH_TEST);
 			m_ScreenTexture.Draw();
 			glEnable(GL_DEPTH_TEST);
+
+			lightShader.Unuse();
 		}
 	}
 
