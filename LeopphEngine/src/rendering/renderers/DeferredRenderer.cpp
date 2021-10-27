@@ -364,12 +364,12 @@ namespace leopph::impl
 
 				for (static const std::array directionData
 				     {
-						std::pair{Vector3::Right(), Vector3::Up()},
-						std::pair{Vector3::Left(), Vector3::Up()},
+						std::pair{Vector3::Right(), Vector3::Down()},
+						std::pair{Vector3::Left(), Vector3::Down()},
 						std::pair{Vector3::Up(), Vector3::Backward()},
 						std::pair{Vector3::Down(), Vector3::Forward()},
-						std::pair{Vector3::Forward(), Vector3::Up()},
-						std::pair{Vector3::Backward(), Vector3::Up()}
+						std::pair{Vector3::Backward(), Vector3::Down()},
+						std::pair{Vector3::Forward(), Vector3::Down()}
 				     }; const auto& [target, up] : directionData)
 				{
 					shadowViewProjMats.emplace_back(Matrix4::LookAt(lightPos, lightPos + target, up) * shadowProj);
