@@ -8,7 +8,7 @@ These are the planned features and their current states:
 ✅ - implemented  
 〽️ - work in progress  
 ❌ - planned  
-- 〽️ Entity-Component Model and Scene Hierarchy 
+- 〽️ Entity-Component Model and Scene Hierarchy
   - ✅ Fundamental Entity-Component structure
   - ✅ Necessary engine-provided components
   - ✅ API to make functionality extension possible
@@ -22,11 +22,12 @@ These are the planned features and their current states:
   - ❌ Normal mapping
   - ❌ Parallax mapping
   - ✅ Cascaded shadow mapping for directional lights 
-  - ✅ Shadow mapping for spotlights 
-  - ❌ Shadow mapping for pointlights
+  - ✅ Shadow mapping for spotlights
+  - ✅ Shadow mapping for pointlights
   - ❌ Screen space reflections
   - ❌ FXAA
   - ❌ Skeletal animation system
+  - ❌ Transparent object rendering
 - 〽️ Resource Management API
 - ✅ Event System
 - ❌ Sound Management API
