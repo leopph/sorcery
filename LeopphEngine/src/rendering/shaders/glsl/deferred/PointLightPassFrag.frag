@@ -1,5 +1,8 @@
 #version 460 core
 
+#define MIN_SHADOW_BIAS 0.005
+#define MAX_SHADOW_BIAS 0.05
+
 
 struct PointLight
 {
@@ -54,10 +57,11 @@ float CalculateAttenuation(float constant, float linear, float quadratic, float 
 
 
 #ifdef CAST_SHADOW
-float CalculateShadow(vec3 fragPos)
+float CalculateShadow(vec3 fragPos, vec3 fragNormal)
 {
 	vec3 dirToFrag = fragPos - u_PointLight.position;
-	return texture(u_ShadowMap, vec4(dirToFrag, length(dirToFrag) / u_PointLight.range));
+	float bias = max(MAX_SHADOW_BIAS * (1.0 - dot(fragNormal, normalize(-dirToFrag))), MIN_SHADOW_BIAS);
+	return texture(u_ShadowMap, vec4(dirToFrag, (length(dirToFrag) / u_PointLight.range) - bias));
 }
 #endif
 
@@ -86,7 +90,7 @@ void main()
 	light *= CalculateAttenuation(u_PointLight.constant, u_PointLight.linear, u_PointLight.quadratic, dist);
 
 	#ifdef CAST_SHADOW
-	light *= CalculateShadow(fragPos);
+	light *= CalculateShadow(fragPos, fragNormal);
 	#endif
 
 	out_FragColor = vec4(light, 1);

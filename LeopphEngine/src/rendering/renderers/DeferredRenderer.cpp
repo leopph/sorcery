@@ -362,17 +362,17 @@ namespace leopph::impl
 
 				shadowViewProjMats.clear();
 
-				for (static const std::array directionData
-				     {
-						std::pair{Vector3::Right(), Vector3::Down()},
-						std::pair{Vector3::Left(), Vector3::Down()},
-						std::pair{Vector3::Up(), Vector3::Backward()},
-						std::pair{Vector3::Down(), Vector3::Forward()},
-						std::pair{Vector3::Backward(), Vector3::Down()},
-						std::pair{Vector3::Forward(), Vector3::Down()}
-				     }; const auto& [target, up] : directionData)
+				for (static const std::array cubeFaceMatrices
+					{
+						Matrix4{0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 1}, // +X
+						Matrix4{0, 0, -1, 0, 0, -1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1}, // -X
+						Matrix4{1, 0, 0, 0, 0, 0, 1, 0, 0, 1 ,0, 0, 0, 0, 0, 1}, // +Y
+						Matrix4{1, 0, 0, 0, 0, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 1}, // -Y
+						Matrix4{1, 0, 0, 0, 0, -1, 0, 0, 0 ,0, 1, 0, 0, 0, 0, 1}, // +Z
+						Matrix4{-1, 0, 0, 0, 0, -1, 0, 0, 0, 0, -1, 0, 0 , 0, 0, 1} // -Z
+					}; const auto& cubeFaceMatrix : cubeFaceMatrices)
 				{
-					shadowViewProjMats.emplace_back(Matrix4::LookAt(lightPos, lightPos + target, up) * shadowProj);
+					shadowViewProjMats.emplace_back(Matrix4::Translate(-pointLight->entity.Transform->Position()) * cubeFaceMatrix * shadowProj);
 				}
 
 				shadowShader.SetUniform("u_ViewProjMats", shadowViewProjMats);
