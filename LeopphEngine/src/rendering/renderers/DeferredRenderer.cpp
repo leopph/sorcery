@@ -209,7 +209,10 @@ namespace leopph::impl
 
 				for (const auto& [modelRes, matrices] : modelsAndMats)
 				{
-					modelRes->DrawDepth(matrices.first);
+					if (modelRes->CastsShadow())
+					{
+						modelRes->DrawDepth(matrices.first);
+					}
 				}
 			}
 
@@ -292,7 +295,10 @@ namespace leopph::impl
 
 			for (const auto& [modelRes, matrices] : modelsAndMats)
 			{
-				modelRes->DrawDepth(matrices.first);
+				if (modelRes->CastsShadow())
+				{
+					modelRes->DrawDepth(matrices.first);
+				}
 			}
 
 			m_SpotShadowMap.UnbindFromWriting();
@@ -386,7 +392,10 @@ namespace leopph::impl
 
 				for (const auto& [modelRes, matrices] : modelsAndMats)
 				{
-					modelRes->DrawDepth(matrices.first);
+					if (modelRes->CastsShadow())
+					{
+						modelRes->DrawDepth(matrices.first);
+					}
 				}
 
 				shadowShader.Unuse();

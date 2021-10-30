@@ -22,8 +22,17 @@ namespace leopph
 	public:
 		LEOPPHAPI explicit Model(Entity& owner, const std::filesystem::path& path);
 
-		LEOPPHAPI ~Model();
+		LEOPPHAPI Model(const Model& other) = delete;
+		LEOPPHAPI Model(Model&& other) = delete;
+
+		LEOPPHAPI ~Model() override;
+
+		LEOPPHAPI Model& operator=(const Model& other) = delete;
+		LEOPPHAPI Model& operator=(Model&& other) = delete;
 
 		LEOPPHAPI const std::filesystem::path& Path() const;
+
+		LEOPPHAPI bool CastsShadow() const;
+		LEOPPHAPI void CastsShadow(bool value);
 	};
 }

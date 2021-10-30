@@ -37,10 +37,11 @@ void leopph::AppStart()
 
 	const auto cubeEntity = new Entity;
 	cubeEntity->Transform->Position(Vector3{0, 0, -5});
-	cubeEntity->AddComponent<Model>("models/cube/cube.dae");
+	const auto cubeModel = cubeEntity->AddComponent<Model>("models/cube/cube.dae");
+	cubeModel->CastsShadow(true);
 	cubeEntity->AddComponent<Rotate>(Vector3::Up(), 30.f);
 
-	/*const auto dirLightEntity = new Entity{};
+	const auto dirLightEntity = new Entity{};
 	dirLightEntity->Transform->RotateGlobal(Quaternion{Vector3::Up(), 135});
 	dirLightEntity->Transform->RotateLocal({Quaternion{Vector3::Right(), 45}});
 	const auto dirLight = dirLightEntity->AddComponent<DirectionalLight>();
@@ -53,10 +54,6 @@ void leopph::AppStart()
 	globalSpotLight->InnerAngle(45);
 	globalSpotLight->OuterAngle(60);
 	globalSpotLight->CastsShadow(true);
-
-	const auto playerSpotLight = playerEntity->AddComponent<SpotLight>();
-	playerSpotLight->InnerAngle(15);
-	playerSpotLight->OuterAngle(20);*/
 
 	const auto pointLightEntity = new Entity{};
 	pointLightEntity->Transform->Position(Vector3{0, 0, -3.5});

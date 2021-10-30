@@ -33,9 +33,13 @@ namespace leopph::impl
 			void DrawShaded(ShaderProgram& shader, const std::vector<Matrix4>& modelMatrices, const std::vector<Matrix4>& normalMatrices, std::size_t nextFreeTextureUnit) const;
 			void DrawDepth(const std::vector<Matrix4>& modelMatrices) const;
 
+			[[nodiscard]] bool CastsShadow() const;
+			void CastsShadow(bool value);
+
 
 		private:
 			const AssimpModel* const m_AssimpModel;
+			bool m_CastsShadow;
 
 			void OnEventReceived(const ModelCountChangedEvent& event) override;
 	};

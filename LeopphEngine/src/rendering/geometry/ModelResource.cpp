@@ -21,7 +21,7 @@
 namespace leopph::impl
 {
 	ModelResource::ModelResource(const std::filesystem::path& path) :
-		UniqueResource{ path }, m_AssimpModel { new AssimpModel{ path } }
+		UniqueResource{ path }, m_AssimpModel { new AssimpModel{ path } }, m_CastsShadow{false}
 	{}
 
 	
@@ -52,4 +52,17 @@ namespace leopph::impl
 
 		m_AssimpModel->OnReferringEntitiesChanged(event.Count);
 	}
+
+
+	bool ModelResource::CastsShadow() const
+	{
+		return m_CastsShadow;
+	}
+
+
+	void ModelResource::CastsShadow(const bool value)
+	{
+		m_CastsShadow = value;
+	}
+
 }

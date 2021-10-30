@@ -27,4 +27,17 @@ namespace leopph
 	{
 		return resource->Path;
 	}
+
+
+	bool Model::CastsShadow() const
+	{
+		return resource->CastsShadow();
+	}
+
+
+	void Model::CastsShadow(const bool value)
+	{
+		resource->CastsShadow(value);
+	}
+
 }
