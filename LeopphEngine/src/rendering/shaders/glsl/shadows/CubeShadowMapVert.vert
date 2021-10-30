@@ -1,7 +1,7 @@
 #version 460 core
 
 layout (location = 0) in vec3 in_Pos;
-layout (location = 1) in mat4 in_ModelMat;
+layout (location = 3) in mat4 in_ModelMat;
 
 
 void main()
