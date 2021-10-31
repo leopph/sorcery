@@ -9,15 +9,12 @@ layout (location = 7) in mat4 normalMatrix;
 layout (location = 0) out vec3 outNormal;
 layout (location = 1) out vec2 outTexCoords;
 layout (location = 2) out vec3 outFragPos;
-layout (location = 3) out vec4 outFragPosDirSpace;
 
-layout (location = 0) uniform mat4 dirLightTransformMatrix;
 layout (location = 1) uniform mat4 viewProjectionMatrix;
 
 void main()
 {
     outFragPos = vec3(vec4(inPos, 1.0) * modelMatrix);
-    outFragPosDirSpace = vec4(outFragPos, 1.0) * dirLightTransformMatrix;
     gl_Position = vec4(outFragPos, 1.0) * viewProjectionMatrix;
     outNormal = inNormal * mat3(normalMatrix);
     outTexCoords = inTexCoords;

@@ -81,8 +81,6 @@ namespace leopph::impl
 
 
 			static void DirectionalLight(leopph::DirectionalLight* dirLight);
-			static void CreateShadowMap(std::size_t resolution);
-			static void DeleteShadowMap();
 
 			static void StoreMatrices(const Transform* transform, const Matrix4& model, const Matrix4& normal);
 			static void DiscardMatrices(const Transform* transform);
@@ -103,8 +101,6 @@ namespace leopph::impl
 			static std::unordered_map<const Transform*, std::pair<Matrix4, Matrix4>> s_Matrices;
 
 			static std::unordered_set<const ModelResource*> s_ModelResources;
-
-			static std::list<ShadowMap> s_ShadowMaps;
 
 			static std::unordered_map<const Resource*, std::unordered_set<const ResourceHandleBase*>> s_ResourcesAndHandles;
 

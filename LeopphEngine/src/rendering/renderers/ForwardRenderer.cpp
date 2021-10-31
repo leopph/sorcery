@@ -11,6 +11,7 @@
 #include "../../math/LeopphMath.hpp"
 #include "../../math/Matrix.hpp"
 #include "../../math/Vector.hpp"
+#include "../../util/logger.h"
 #include "../geometry/ModelResource.hpp"
 
 #include <glad/glad.h>
@@ -40,6 +41,8 @@ namespace leopph::impl
 		}}
 	{
 		glEnable(GL_DEPTH_TEST);
+
+		Logger::Instance().Warning("The forward rendering pipeline is currently not feature complete. It is recommended to use the deferred pipeline.");
 	}
 
 
@@ -58,81 +61,13 @@ namespace leopph::impl
 		const auto& pointLights{CollectPointLights()};
 		const auto& spotLights{CollectSpotLights()};
 
-		const auto& lightTransformMat{RenderDirectionalShadowMap(modelsAndMats)};
-		//RenderPointShadowMaps();
-		RenderShadedObjects(camViewMat, camProjMat, lightTransformMat, modelsAndMats, pointLights, spotLights);
+		RenderShadedObjects(camViewMat, camProjMat, modelsAndMats, pointLights, spotLights);
 		RenderSkybox(camViewMat, camProjMat);
-	}
-
-
-	std::optional<Matrix4> ForwardRenderer::RenderDirectionalShadowMap(const std::unordered_map<const ModelResource*, std::pair<std::vector<Matrix4>, std::vector<Matrix4>>>& modelsAndMats)
-	{
-		const auto& dirLight = DataManager::DirectionalLight();
-
-		if (dirLight == nullptr)
-		{
-			return {};
-		}
-
-		static auto shadowFlagInfo{m_ShadowShader.GetFlagInfo()};
-		auto& shadowShader{m_ShadowShader.GetPermutation(shadowFlagInfo)};
-
-		const auto& shadowMaps{DataManager::ShadowMaps()};
-
-		/* If we don't have a shadow map, we create one */
-		if (shadowMaps.empty())
-		{
-			DataManager::CreateShadowMap(Settings::DirectionalShadowMapResolutions()[0]); // TODO cascades
-		}
-
-		const auto lightViewMat{Matrix4::LookAt(-dirLight->Direction(), Vector3{}, Vector3::Up())};
-		const auto lightProjMat{Matrix4::Ortographic(-10, 10, 10, -10, Camera::Active()->NearClipPlane(), Camera::Active()->FarClipPlane())};
-		const auto lightTransformMat{lightViewMat * lightProjMat};
-
-		shadowShader.Use();
-		shadowMaps.front().BindForWriting();
-
-		shadowShader.SetUniform("u_LightWorldToClipMatrix", lightTransformMat);
-
-		for (const auto& [modelRes, matrices] : modelsAndMats)
-		{
-			modelRes->DrawDepth(matrices.first);
-		}
-
-		shadowMaps.front().UnbindFromWriting();
-
-		return {lightTransformMat};
-	}
-
-
-	void ForwardRenderer::RenderPointShadowMaps(const std::vector<const PointLight*>& pointLights,
-												const std::unordered_map<const ModelResource*, std::pair<std::vector<Matrix4>, std::vector<Matrix4>>>& modelsAndMats)
-	{
-		const auto& shadowMaps{DataManager::ShadowMaps()};
-
-		/* If we lack the necessary number of shadow maps, we create new ones */
-		while (pointLights.size() > shadowMaps.size())
-		{
-			DataManager::CreateShadowMap(Settings::PointLightShadowMapResolution());
-		}
-
-		/* Iterate over the lights and use a different shadow map for each */
-		for (auto shadowMapIt{DataManager::DirectionalLight() == nullptr ? shadowMaps.begin() : ++shadowMaps.begin()};
-		     const auto& pointLight : pointLights)
-		{
-			for (const auto& [modelRes, matrices] : modelsAndMats)
-			{
-				modelRes->DrawDepth(matrices.first);
-			}
-
-			++shadowMapIt;
-		}
 	}
 
 
 	void ForwardRenderer::RenderShadedObjects(const Matrix4& camViewMat, 
 											  const Matrix4& camProjMat,
-											  const std::optional<Matrix4>& lightTransformMat,
 											  const std::unordered_map<const ModelResource*, std::pair<std::vector<Matrix4>, std::vector<Matrix4>>>& modelsAndMats,
 											  const std::vector<const PointLight*>& pointLights,
 											  const std::vector<const SpotLight*>& spotLights)
@@ -145,8 +80,6 @@ namespace leopph::impl
 		objectShader.SetUniform("viewProjectionMatrix", camViewMat * camProjMat);
 		objectShader.SetUniform("cameraPosition", Camera::Active()->entity.Transform->Position());
 
-		auto usedTextureUnits{0};
-
 		/* Set up ambient light data */
 		objectShader.SetUniform("ambientLight", AmbientLight::Instance().Intensity());
 
@@ -157,10 +90,6 @@ namespace leopph::impl
 			objectShader.SetUniform("dirLight.direction", dirLight->Direction());
 			objectShader.SetUniform("dirLight.diffuseColor", dirLight->Diffuse());
 			objectShader.SetUniform("dirLight.specularColor", dirLight->Specular());
-			objectShader.SetUniform("dirLight.shadowMap", usedTextureUnits);
-			objectShader.SetUniform("dirLightTransformMatrix", lightTransformMat.value());
-
-			usedTextureUnits = DataManager::ShadowMaps().front().BindForReading(usedTextureUnits);
 		}
 		else
 		{
@@ -201,7 +130,7 @@ namespace leopph::impl
 		/* Draw the shaded objects */
 		for (const auto& [modelRes, matrices] : modelsAndMats)
 		{
-			modelRes->DrawShaded(objectShader, matrices.first, matrices.second, usedTextureUnits);
+			modelRes->DrawShaded(objectShader, matrices.first, matrices.second, 0);
 		}
 	}
 

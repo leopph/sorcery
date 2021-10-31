@@ -20,8 +20,6 @@ namespace leopph::impl
 
 	std::unordered_map<const Transform*, std::pair<Matrix4, Matrix4>> DataManager::s_Matrices{};
 
-	std::list<ShadowMap> DataManager::s_ShadowMaps{};
-
 	std::unordered_map<const Resource*, std::unordered_set<const ResourceHandleBase*>> DataManager::s_ResourcesAndHandles{};
 
 	std::unordered_map<const UniqueResource*, std::unordered_set<const ResourceHandleBase*>, UniqueResourceHash, UniqueResourceEqual> DataManager::s_UniqueResourcesAndHandles{};
@@ -34,8 +32,6 @@ namespace leopph::impl
 			delete it->first;
 			it = s_EntitiesAndComponents.begin();
 		}
-
-		s_ShadowMaps.clear();
 
 		Logger::Instance().Debug("All data have been cleared.");
 	}
@@ -135,27 +131,6 @@ namespace leopph::impl
 				s_PointLights.erase(it);
 				return;
 			}
-		}
-	}
-
-
-	const std::list<ShadowMap>& DataManager::ShadowMaps()
-	{
-		return s_ShadowMaps;
-	}
-
-
-	void DataManager::CreateShadowMap(std::size_t resolution)
-	{
-		s_ShadowMaps.emplace_back(resolution);
-	}
-
-
-	void DataManager::DeleteShadowMap()
-	{
-		if (!s_ShadowMaps.empty())
-		{
-			s_ShadowMaps.pop_back();
 		}
 	}
 
