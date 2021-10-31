@@ -30,6 +30,10 @@ namespace leopph
 			{
 				keyState = KeyState::Released;
 			}
+			else if (keyState == KeyState::Down)
+			{
+				keyState = KeyState::Held;
+			}
 		}
 	} };
 
