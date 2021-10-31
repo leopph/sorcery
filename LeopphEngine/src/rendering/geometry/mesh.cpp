@@ -160,18 +160,38 @@ namespace leopph::impl
 		glNamedBufferSubData(m_Buffers[MODEL], 0, modelMatrices.size() * sizeof(std::remove_reference<decltype(modelMatrices)>::type::value_type), modelMatrices.data());
 		glNamedBufferSubData(m_Buffers[NORMAL], 0, modelMatrices.size() * sizeof(std::remove_reference<decltype(normalMatrices)>::type::value_type), normalMatrices.data());
 
+		if (!m_Material.TwoSided)
+		{
+			glDisable(GL_CULL_FACE);
+		}
+
 		glBindVertexArray(m_VertexArray);
 		glDrawElementsInstanced(GL_TRIANGLES, static_cast<GLsizei>(m_Indices.size()), GL_UNSIGNED_INT, nullptr, static_cast<GLsizei>(modelMatrices.size()));
 		glBindVertexArray(0);
+
+		if (!m_Material.TwoSided)
+		{
+			glEnable(GL_CULL_FACE);
+		}
 	}
 
 
 	void Mesh::DrawDepth(const std::vector<Matrix4>& modelMatrices) const
 	{
+		if (!m_Material.TwoSided)
+		{
+			glDisable(GL_CULL_FACE);
+		}
+
 		glNamedBufferSubData(m_Buffers[MODEL], 0, modelMatrices.size() * sizeof(std::remove_reference_t<decltype(modelMatrices)>::value_type), modelMatrices.data());
 		glBindVertexArray(m_VertexArray);
 		glDrawElementsInstanced(GL_TRIANGLES, static_cast<GLsizei>(m_Indices.size()), GL_UNSIGNED_INT, nullptr, static_cast<GLsizei>(modelMatrices.size()));
 		glBindVertexArray(0);
+
+		if (!m_Material.TwoSided)
+		{
+			glEnable(GL_CULL_FACE);
+		}
 	}
 
 

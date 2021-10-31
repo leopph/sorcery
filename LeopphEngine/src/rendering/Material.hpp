@@ -22,6 +22,7 @@ namespace leopph
 			std::optional<impl::Texture> DiffuseMap;
 			std::optional<impl::Texture> SpecularMap;
 
+			bool TwoSided;
 
 			Material();
 	};

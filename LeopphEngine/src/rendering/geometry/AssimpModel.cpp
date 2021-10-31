@@ -172,6 +172,12 @@ namespace leopph::impl
 			};
 		}
 
+		if (int twoSided;
+			assimpMaterial->Get(AI_MATKEY_TWOSIDED, twoSided) == aiReturn_SUCCESS)
+		{
+			material.TwoSided = !twoSided;
+		}
+
 		return Mesh(vertices, indices, std::move(material));
 	}
 

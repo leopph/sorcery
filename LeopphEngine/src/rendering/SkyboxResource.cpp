@@ -87,6 +87,8 @@ namespace leopph::impl
 	{
 		shader.SetUniform("skybox", 0);
 
+		glDisable(GL_CULL_FACE);
+
 		glBindTextureUnit(0, m_TexId);
 		glBindVertexArray(m_Vao);
 		glDepthFunc(GL_LEQUAL);
@@ -94,6 +96,8 @@ namespace leopph::impl
 		glDepthFunc(GL_LESS);
 		glBindVertexArray(0);
 		glBindTextureUnit(0, 0);
+
+		glEnable(GL_CULL_FACE);
 	}
 
 
