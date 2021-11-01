@@ -4,10 +4,13 @@
 #include "behaviors/CameraController.hpp"
 #include "behaviors/FPSCounter.hpp"
 #include "behaviors/Rotate.hpp"
+#include "behaviors/WindowTester.hpp"
 
 
 void leopph::AppStart()
 {
+	Window::Title("LeopphEngine Demo");
+
 	Input::CursorMode(CursorState::Disabled);
 
 	const auto playerEntity = new Entity{};
@@ -64,4 +67,5 @@ void leopph::AppStart()
 	AmbientLight::Instance().Intensity(Vector3{0, 0, 0});
 
 	(new Entity{})->AddComponent<FPSCounter>();
+	(new Entity{})->AddComponent<WindowTester>();
 }

@@ -56,7 +56,7 @@ namespace leopph
 
 			/* Internally used. */
 			template<std::derived_from<Event> EventType>
-			void RegisterFor(const EventReceiver<EventType>& receiver) // TODO create internal implementation with no dllexport
+			void RegisterFor(const EventReceiver<EventType>& receiver)
 			{
 				InternalRegister(typeid(EventType), &receiver);
 			}
@@ -64,7 +64,7 @@ namespace leopph
 
 			/* Internally used. */
 			template<std::derived_from<Event> EventType>
-			void UnregisterFrom(const impl::EventReceiverBase& handler) // TODO create internal implementation with no dllexport
+			void UnregisterFrom(const impl::EventReceiverBase& handler)
 			{
 				InternalUregister(typeid(EventType), &handler);
 			}

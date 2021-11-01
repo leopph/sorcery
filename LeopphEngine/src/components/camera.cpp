@@ -4,7 +4,7 @@
 #include "../events/DisplayResolutionChangedEvent.hpp"
 #include "../math/LeopphMath.hpp"
 #include "../util/logger.h"
-#include "../windowing/Window.hpp"
+#include "../windowing/WindowBase.hpp"
 
 #include <stdexcept>
 #include <utility>
@@ -38,13 +38,13 @@ namespace leopph
 	{
 		m_Background.color = background.color;
 		m_Background.skybox = std::move(background.skybox);
-		impl::Window::Get().Background(m_Background.color);
+		impl::WindowBase::Get().Background(m_Background.color);
 	}
 
 
 	Camera::Camera(Entity& owner) :
 		Component{owner},
-		m_AspectRatio{leopph::impl::Window::Get().AspectRatio()},
+		m_AspectRatio{leopph::impl::WindowBase::Get().AspectRatio()},
 		m_HorizontalFovDegrees{100.0f},
 		m_NearClip{0.1f},
 		m_FarClip{100.f},

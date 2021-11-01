@@ -3,7 +3,7 @@
 #include "../components/Camera.hpp"
 #include "../config/Settings.hpp"
 #include "../math/LeopphMath.hpp"
-#include "../windowing/Window.hpp"
+#include "../windowing/WindowBase.hpp"
 
 #include <glad/glad.h>
 
@@ -41,7 +41,7 @@ namespace leopph::impl
 	void CascadedShadowMap::UnbindFromWriting() const
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		glViewport(0, 0, static_cast<GLsizei>(Window::Get().Width()), static_cast<GLsizei>(Window::Get().Height()));
+		glViewport(0, 0, static_cast<GLsizei>(WindowBase::Get().Width()), static_cast<GLsizei>(WindowBase::Get().Height()));
 	}
 
 

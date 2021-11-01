@@ -1,6 +1,6 @@
 #include "GeometryBuffer.hpp"
 
-#include "../windowing/Window.hpp"
+#include "../windowing/WindowBase.hpp"
 
 #include <glad/glad.h>
 
@@ -19,7 +19,7 @@ namespace leopph::impl
 		m_BindIndices{},
 		m_DepthBuffer{},
 		m_FrameBuffer{},
-		m_Resolution{Vector2{Window::Get().Width(), Window::Get().Height()}}
+		m_Resolution{Vector2{WindowBase::Get().Width(), WindowBase::Get().Height()}}
 	{
 		std::ranges::fill(m_BindIndices, s_BindFillValue);
 		glCreateFramebuffers(1, &m_FrameBuffer);
@@ -39,7 +39,7 @@ namespace leopph::impl
 	{
 		for (std::size_t i = 0; i < m_Textures.size(); i++)
 		{
-			glClearNamedFramebufferfv(m_FrameBuffer, GL_COLOR, static_cast<GLint>(i), Vector4{static_cast<Vector3>(Window::Get().Background())}.Data().data());
+			glClearNamedFramebufferfv(m_FrameBuffer, GL_COLOR, static_cast<GLint>(i), Vector4{static_cast<Vector3>(WindowBase::Get().Background())}.Data().data());
 		}
 
 		glClearNamedFramebufferfv(m_FrameBuffer, GL_DEPTH, 0, std::array<GLfloat, 1>{1}.data());
@@ -56,7 +56,7 @@ namespace leopph::impl
 	void GeometryBuffer::UnbindFromWriting() const
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		const auto& window{Window::Get()};
+		const auto& window{WindowBase::Get()};
 		glViewport(0, 0, static_cast<GLsizei>(window.Width()), static_cast<GLsizei>(window.Height()));
 	}
 

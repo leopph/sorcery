@@ -1,4 +1,4 @@
-#include "GLWindow.hpp"
+#include "GlWindow.hpp"
 
 #include "../events/DisplayResolutionChangedEvent.hpp"
 #include "../events/EventManager.hpp"
@@ -15,10 +15,228 @@
 #include <utility>
 
 
-
 namespace leopph::impl
 {
-	const std::unordered_map<int, KeyCode> GLWindowImpl::s_KeyCodes
+	GlWindow::GlWindow(const int width, const int height, const std::string& title, const bool fullscreen) :
+		WindowBase{},
+		m_Width{width},
+		m_Height{height},
+		m_Fullscreen{fullscreen},
+		m_Vsync{false},
+		m_Title{title},
+		m_Background{}
+	{
+		if (!glfwInit())
+		{
+			const auto erroMsg{"Failed to initialize GLFW."};
+			Logger::Instance().Error(erroMsg);
+			throw std::runtime_error{erroMsg};
+		}
+
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+		glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+		auto const monitor{m_Fullscreen ? glfwGetPrimaryMonitor() : nullptr};
+		m_Window = glfwCreateWindow(width, height, title.data(), monitor, nullptr);
+
+		glfwMakeContextCurrent(m_Window);
+		glfwSetFramebufferSizeCallback(m_Window, FramebufferSizeCallback);
+		glfwSetKeyCallback(m_Window, KeyCallback);
+		glfwSetCursorPosCallback(m_Window, MouseCallback);
+		glfwSetCursorPos(m_Window, 0, 0);
+		glfwSwapInterval(0);
+	}
+
+
+	GlWindow::~GlWindow()
+	{
+		glfwDestroyWindow(m_Window);
+		glfwTerminate();
+	}
+
+
+	unsigned GlWindow::Width() const
+	{
+		return static_cast<int>(m_Width);
+	}
+
+
+	void GlWindow::Width(const unsigned newWidth)
+	{
+		m_Width = static_cast<int>(newWidth);
+		glfwSetWindowSize(m_Window, m_Width, m_Height);
+	}
+
+
+	unsigned GlWindow::Height() const
+	{
+		return static_cast<int>(m_Height);
+	}
+
+
+	void GlWindow::Height(const unsigned newHeight)
+	{
+		m_Height = static_cast<int>(newHeight);
+		glfwSetWindowSize(m_Window, m_Width, m_Height);
+	}
+
+
+	bool GlWindow::Fullscreen() const
+	{
+		return m_Fullscreen;
+	}
+
+
+	void GlWindow::Fullscreen(const bool newValue)
+	{
+		m_Fullscreen = newValue;
+		auto const monitor{newValue ? glfwGetPrimaryMonitor() : nullptr};
+		glfwSetWindowMonitor(m_Window, monitor, 0, 0, m_Width, m_Height, GLFW_DONT_CARE);
+	}
+
+
+	bool GlWindow::Vsync() const
+	{
+		return m_Vsync;
+	}
+
+
+	void GlWindow::Vsync(const bool newValue)
+	{
+		m_Vsync = newValue;
+		glfwSwapInterval(m_Vsync ? 1 : 0);
+	}
+
+
+	std::string_view GlWindow::Title() const
+	{
+		return m_Title;
+	}
+
+
+	void GlWindow::Title(std::string newTitle)
+	{
+		m_Title = std::move(newTitle);
+		glfwSetWindowTitle(m_Window, m_Title.c_str());
+	}
+
+
+	const Color& GlWindow::Background() const
+	{
+		return m_Background;
+	}
+
+
+	void GlWindow::Background(const Color& color)
+	{
+		m_Background = color;
+	}
+
+
+	CursorState GlWindow::CursorMode() const
+	{
+		static const std::map<decltype(GLFW_CURSOR_NORMAL), CursorState> cursorStates
+		{
+			{GLFW_CURSOR_NORMAL, CursorState::Shown},
+			{GLFW_CURSOR_HIDDEN, CursorState::Hidden},
+			{GLFW_CURSOR_DISABLED, CursorState::Disabled}
+		};
+
+		return cursorStates.at(glfwGetInputMode(this->m_Window, GLFW_CURSOR));
+	}
+
+
+	void GlWindow::CursorMode(const CursorState newState)
+	{
+		static const std::map<CursorState, decltype(GLFW_CURSOR_NORMAL)> cursorStates
+		{
+			{CursorState::Shown, GLFW_CURSOR_NORMAL},
+			{CursorState::Hidden, GLFW_CURSOR_HIDDEN},
+			{CursorState::Disabled, GLFW_CURSOR_DISABLED}
+		};
+
+		glfwSetInputMode(this->m_Window, GLFW_CURSOR, cursorStates.at(newState));
+	}
+
+
+	void GlWindow::PollEvents()
+	{
+		glfwPollEvents();
+	}
+
+
+	void GlWindow::SwapBuffers()
+	{
+		glfwSwapBuffers(m_Window);
+	}
+
+
+	bool GlWindow::ShouldClose()
+	{
+		return glfwWindowShouldClose(m_Window);
+	}
+
+
+	void GlWindow::Clear()
+	{
+		glClearNamedFramebufferfv(0, GL_COLOR, 0, Vector4{static_cast<Vector3>(Background())}.Data().data());
+		glClearNamedFramebufferfv(0, GL_DEPTH, 0, std::array{1.f}.data());
+	}
+
+
+		void GlWindow::InitKeys()
+	{
+		for (const auto& [_, keyCode] : s_KeyCodes)
+		{
+			EventManager::Instance().Send<KeyEvent>(keyCode, KeyState::Released);
+		}
+	}
+
+
+	void GlWindow::FramebufferSizeCallback(GLFWwindow*, const int width, const int height)
+	{
+		glViewport(0, 0, width, height);
+
+		auto& windowInstance{Get()};
+		windowInstance.Width(width);
+		windowInstance.Height(height);
+
+		EventManager::Instance().Send<DisplayResolutionChangedEvent>(Vector2{width, height});
+	}
+
+
+	void GlWindow::KeyCallback(GLFWwindow*, const int key, int, const int action, int)
+	{
+		try
+		{
+			const auto keyCode = s_KeyCodes.at(key);
+			const auto keyState = s_KeyStates.at(action);
+			EventManager::Instance().Send<KeyEvent>(keyCode, keyState);
+		}
+		catch (const std::out_of_range&)
+		{
+			Logger::Instance().Warning("Invalid key input detected.");
+		}
+	}
+
+
+	void GlWindow::MouseCallback(GLFWwindow*, const double x, const double y)
+	{
+		EventManager::Instance().Send<MouseEvent>(Vector2{x, y});
+	}
+
+
+	const std::unordered_map<int, KeyState> GlWindow::s_KeyStates
+	{
+		{GLFW_PRESS, KeyState::Down},
+		{GLFW_REPEAT, KeyState::Held},
+		{GLFW_RELEASE, KeyState::Up}
+	};
+
+
+	const std::unordered_map<int, KeyCode> GlWindow::s_KeyCodes
 	{
 		{GLFW_KEY_0, KeyCode::Zero},
 		{GLFW_KEY_1, KeyCode::One},
@@ -134,179 +352,4 @@ namespace leopph::impl
 		{GLFW_MOUSE_BUTTON_7, KeyCode::Mouse7},
 		{GLFW_MOUSE_BUTTON_8, KeyCode::Mouse8}
 	};
-
-
-	const std::unordered_map<int, KeyState> GLWindowImpl::s_KeyStates
-	{
-		{GLFW_PRESS, KeyState::Down},
-		{GLFW_REPEAT, KeyState::Held},
-		{GLFW_RELEASE, KeyState::Up}
-	};
-
-
-	GLWindowImpl::GLWindowImpl(const unsigned width, const unsigned height, const std::string& title, const bool fullscreen) :
-		Window{width, height, title, fullscreen},
-		m_Vsync{false}
-	{
-		if (!glfwInit())
-		{
-			const auto erroMsg{"Failed to initialize GLFW."};
-			Logger::Instance().Error(erroMsg);
-			throw std::runtime_error{erroMsg};
-		}
-
-		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
-		glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-		GLFWmonitor* monitor{nullptr};
-
-		if (Fullscreen())
-		{
-			monitor = glfwGetPrimaryMonitor();
-		}
-
-		m_Window = glfwCreateWindow(static_cast<int>(width), static_cast<int>(height), title.data(), monitor, nullptr);
-
-		glfwMakeContextCurrent(m_Window);
-		glfwSetFramebufferSizeCallback(m_Window, FramebufferSizeCallback);
-		glfwSetKeyCallback(m_Window, KeyCallback);
-		glfwSetCursorPosCallback(m_Window, MouseCallback);
-		glfwSetCursorPos(m_Window, 0, 0);
-		glfwSwapInterval(0);
-	}
-
-
-	GLWindowImpl::~GLWindowImpl()
-	{
-		glfwDestroyWindow(m_Window);
-		glfwTerminate();
-	}
-
-
-	void GLWindowImpl::InitKeys()
-	{
-		for (const auto& [_, keyCode] : s_KeyCodes)
-		{
-			EventManager::Instance().Send<KeyEvent>(keyCode, KeyState::Released);
-		}
-	}
-
-
-	void GLWindowImpl::FramebufferSizeCallback(GLFWwindow*, const int width, const int height)
-	{
-		glViewport(0, 0, width, height);
-
-		auto& windowInstance{Get()};
-		windowInstance.Width(width);
-		windowInstance.Height(height);
-
-		EventManager::Instance().Send<DisplayResolutionChangedEvent>(Vector2{width, height});
-	}
-
-
-	void GLWindowImpl::KeyCallback(GLFWwindow*, const int key, int, const int action, int)
-	{
-		try
-		{
-			const auto keyCode = s_KeyCodes.at(key);
-			const auto keyState = s_KeyStates.at(action);
-			EventManager::Instance().Send<KeyEvent>(keyCode, keyState);
-		}
-		catch (const std::out_of_range&)
-		{
-			Logger::Instance().Warning("Invalid key input detected.");
-		}
-	}
-
-
-	void GLWindowImpl::MouseCallback(GLFWwindow*, const double x, const double y)
-	{
-		EventManager::Instance().Send<MouseEvent>(Vector2{x, y});
-	}
-
-
-	CursorState GLWindowImpl::CursorMode() const
-	{
-		static const std::map<decltype(GLFW_CURSOR_NORMAL), CursorState> cursorStates
-		{
-			{GLFW_CURSOR_NORMAL, CursorState::Shown},
-			{GLFW_CURSOR_HIDDEN, CursorState::Hidden},
-			{GLFW_CURSOR_DISABLED, CursorState::Disabled}
-		};
-
-		return cursorStates.at(glfwGetInputMode(this->m_Window, GLFW_CURSOR));
-	}
-
-
-	void GLWindowImpl::CursorMode(const CursorState newState)
-	{
-		static const std::map<CursorState, decltype(GLFW_CURSOR_NORMAL)> cursorStates
-		{
-			{CursorState::Shown, GLFW_CURSOR_NORMAL},
-			{CursorState::Hidden, GLFW_CURSOR_HIDDEN},
-			{CursorState::Disabled, GLFW_CURSOR_DISABLED}
-		};
-
-		glfwSetInputMode(this->m_Window, GLFW_CURSOR, cursorStates.at(newState));
-	}
-
-
-	void GLWindowImpl::Width(const unsigned newWidth)
-	{
-		Window::Width(newWidth);
-		glfwSetWindowSize(m_Window, static_cast<int>(newWidth), static_cast<int>(Window::Height()));
-	}
-
-
-	void GLWindowImpl::Height(const unsigned newHeight)
-	{
-		Window::Height(newHeight);
-		glfwSetWindowSize(m_Window, static_cast<int>(Window::Width()), static_cast<int>(newHeight));
-	}
-
-
-	void GLWindowImpl::Vsync(const bool value)
-	{
-		if (value)
-		{
-			glfwSwapInterval(1);
-		}
-		else
-		{
-			glfwSwapInterval(0);
-		}
-	}
-
-
-	bool GLWindowImpl::Vsync() const
-	{
-		return m_Vsync;
-	}
-
-
-	void GLWindowImpl::PollEvents()
-	{
-		glfwPollEvents();
-	}
-
-
-	void GLWindowImpl::SwapBuffers()
-	{
-		glfwSwapBuffers(m_Window);
-	}
-
-
-	bool GLWindowImpl::ShouldClose()
-	{
-		return glfwWindowShouldClose(m_Window);
-	}
-
-
-	void GLWindowImpl::Clear()
-	{
-		glClearNamedFramebufferfv(0, GL_COLOR, 0, Vector4{static_cast<Vector3>(Background())}.Data().data());
-		glClearNamedFramebufferfv(0, GL_DEPTH, 0, std::array{1.f}.data());
-	}
 }

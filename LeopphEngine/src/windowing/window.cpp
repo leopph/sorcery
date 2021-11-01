@@ -1,97 +1,65 @@
 #include "Window.hpp"
 
-#include "GLWindow.hpp"
-#include "../components/Camera.hpp"
-#include "../config/Settings.hpp"
-#include "../util/logger.h"
+#include "WindowBase.hpp"
+
+#include <utility>
 
 
-
-namespace leopph::impl
+namespace leopph
 {
-	Window* Window::s_Instance{nullptr};
-
-
-	Window& Window::Get(unsigned width, unsigned height,
-	                    const std::string& title, bool fullscreen)
+	unsigned Window::Width()
 	{
-		if (s_Instance == nullptr)
-		{
-			switch (Settings::RenderAPI)
-			{
-				case Settings::GraphicsApi::OpenGL:
-					s_Instance = new GLWindowImpl{width, height, title, fullscreen};
-			}
-
-			s_Instance->InitKeys();
-
-			Logger::Instance().Debug("Window created.");
-		}
-
-		return *s_Instance;
+		return impl::WindowBase::Get().Width();
 	}
 
-
-	void Window::Destroy()
+	void Window::Width(const unsigned newWidth)
 	{
-		delete s_Instance;
-		Logger::Instance().Debug("Window destroyed.");
+		impl::WindowBase::Get().Width(newWidth);
 	}
 
-
-	Window::Window(unsigned width, unsigned height,
-	               const std::string& title, bool fullscreen) :
-		m_Width{width},
-		m_Height{height},
-		m_Title{title},
-		m_Fullscreen{fullscreen}
-	{}
-
-
-	unsigned Window::Width() const
+	unsigned Window::Height()
 	{
-		return m_Width;
+		return impl::WindowBase::Get().Height();
 	}
 
-
-	void Window::Width(unsigned newWidth)
+	void Window::Height(const unsigned newHeight)
 	{
-		m_Width = newWidth;
+		impl::WindowBase::Get().Height(newHeight);
 	}
 
-
-	unsigned Window::Height() const
+	float Window::AspectRatio()
 	{
-		return m_Height;
+		return impl::WindowBase::Get().AspectRatio();
 	}
 
-
-	void Window::Height(unsigned newHeight)
+	bool Window::FullScreen()
 	{
-		m_Height = newHeight;
+		return impl::WindowBase::Get().Fullscreen();
 	}
 
-
-	float Window::AspectRatio() const
+	void Window::FullScreen(const bool newValue)
 	{
-		return static_cast<float>(Width()) / Height();
+		impl::WindowBase::Get().Fullscreen(newValue);
 	}
 
-
-	bool Window::Fullscreen() const
+	bool Window::Vsync()
 	{
-		return m_Fullscreen;
+		return impl::WindowBase::Get().Vsync();
 	}
 
-
-	const leopph::Color& Window::Background() const
+	void Window::Vsync(const bool newValue)
 	{
-		return m_Background;
+		impl::WindowBase::Get().Vsync(newValue);
 	}
 
-
-	void Window::Background(const Color& color)
+	std::string_view Window::Title()
 	{
-		m_Background = color;
+		return impl::WindowBase::Get().Title();
 	}
+
+	void Window::Title(std::string newTitle)
+	{
+		impl::WindowBase::Get().Title(std::move(newTitle));
+	}
+
 }

@@ -9,7 +9,7 @@
     <ClCompile Include="src\rendering\geometry\Mesh.cpp" />
     <ClCompile Include="src\entity\Entity.cpp" />
     <ClCompile Include="src\timing\leopphtime.cpp" />
-    <ClCompile Include="src\windowing\GLWindow.cpp" />
+    <ClCompile Include="src\windowing\GlWindow.cpp" />
     <ClCompile Include="src\components\lighting\PointLight.cpp" />
     <ClCompile Include="src\rendering\renderers\ForwardRenderer.cpp" />
     <ClCompile Include="src\input\Input.cpp" />
@@ -19,7 +19,7 @@
     <ClCompile Include="src\components\Component.cpp" />
     <ClCompile Include="vendor\stb_image\stb_image.cpp" />
     <ClCompile Include="src\components\Model.cpp" />
-    <ClCompile Include="src\windowing\Window.cpp" />
+    <ClCompile Include="src\windowing\WindowBase.cpp" />
     <ClCompile Include="src\entry\launch.cpp" />
     <ClCompile Include="src\timing\timer.cpp" />
     <ClCompile Include="src\config\Settings.cpp" />
@@ -69,6 +69,7 @@
     <ClCompile Include="src\rendering\shaders\ShaderProgram.cpp" />
     <ClCompile Include="src\events\PointShadowMapResChangedEvent.cpp" />
     <ClCompile Include="src\rendering\CubeShadowMap.cpp" />
+    <ClCompile Include="src\windowing\Window.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\Behavior.hpp" />
@@ -90,11 +91,11 @@
     <ClInclude Include="src\timing\leopphtime.h" />
     <ClInclude Include="src\math\Vector.hpp" />
     <ClInclude Include="src\rendering\vertex.h" />
-    <ClInclude Include="src\windowing\GLWindow.hpp" />
+    <ClInclude Include="src\windowing\GlWindow.hpp" />
     <ClInclude Include="include\Leopph.hpp" />
     <ClInclude Include="src\components\Component.hpp" />
     <ClInclude Include="src\components\Model.hpp" />
-    <ClInclude Include="src\windowing\Window.hpp" />
+    <ClInclude Include="src\windowing\WindowBase.hpp" />
     <ClInclude Include="src\config\Settings.hpp" />
     <ClInclude Include="src\input\keycodes.h" />
     <ClInclude Include="src\input\keystate.h" />
@@ -157,6 +158,7 @@
     <ClInclude Include="src\rendering\shaders\ShaderStageInfo.hpp" />
     <ClInclude Include="src\rendering\CubeShadowMap.hpp" />
     <ClInclude Include="src\events\PointShadowMapResChangedEvent.hpp" />
+    <ClInclude Include="src\windowing\Window.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\cpp.hint" />

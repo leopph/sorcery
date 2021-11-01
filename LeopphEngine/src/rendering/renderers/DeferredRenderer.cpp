@@ -6,7 +6,7 @@
 #include "../../data/DataManager.hpp"
 #include "../../math/LeopphMath.hpp"
 #include "../../math/Matrix.hpp"
-#include "../../windowing/Window.hpp"
+#include "../../windowing/WindowBase.hpp"
 
 #include <glad/glad.h>
 
@@ -422,7 +422,7 @@ namespace leopph::impl
 		static auto skyboxFlagInfo{m_SkyboxShader.GetFlagInfo()};
 		auto& skyboxShader{m_SkyboxShader.GetPermutation(skyboxFlagInfo)};
 
-		const auto& window{Window::Get()};
+		const auto& window{WindowBase::Get()};
 		m_GBuffer.CopyDepthData(0, Vector2{window.Width(), window.Height()});
 
 		if (const auto& skybox{Camera::Active()->Background().skybox}; skybox.has_value())

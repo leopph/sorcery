@@ -13,7 +13,7 @@
 #include "../rendering/renderers/Renderer.hpp"
 #include "../timing/timer.h"
 #include "../util/logger.h"
-#include "../windowing/Window.hpp"
+#include "../windowing/WindowBase.hpp"
 
 
 
@@ -26,11 +26,11 @@ namespace leopph::impl
 		Logger::Instance().CurrentLevel(Logger::Level::DEBUG);
 		#endif
 
-		auto& window{Window::Get(1280, 720, "LeopphEngine Application", false)};
+		auto& window{WindowBase::Get()};
 
 		if (!InitGL())
 		{
-			Window::Destroy();
+			WindowBase::Destroy();
 			Logger::Instance().Critical("OpenGL could not be initialized.");
 			return -1;
 		}
@@ -71,7 +71,7 @@ namespace leopph::impl
 
 		DataManager::Clear();
 
-		Window::Destroy();
+		WindowBase::Destroy();
 
 		return 0;
 	}

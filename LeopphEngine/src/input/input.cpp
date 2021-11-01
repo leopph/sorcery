@@ -1,6 +1,6 @@
 #include "Input.hpp"
 
-#include "../windowing/Window.hpp"
+#include "../windowing/WindowBase.hpp"
 
 namespace leopph
 {
@@ -67,12 +67,12 @@ namespace leopph
 
 	CursorState Input::CursorMode()
 	{
-		return impl::Window::Get().CursorMode();
+		return impl::WindowBase::Get().CursorMode();
 	}
 
 
 	void Input::CursorMode(CursorState newState)
 	{
-		impl::Window::Get().CursorMode(newState);
+		impl::WindowBase::Get().CursorMode(newState);
 	}
 }

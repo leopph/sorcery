@@ -1,6 +1,6 @@
 #include "ShadowMap.hpp"
 
-#include "../windowing/Window.hpp"
+#include "../windowing/WindowBase.hpp"
 
 #include <glad/glad.h>
 
@@ -66,7 +66,7 @@ namespace leopph::impl
 	void ShadowMap::UnbindFromWriting() const
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		const auto& window{Window::Get()};
+		const auto& window{WindowBase::Get()};
 		glViewport(0, 0, static_cast<GLsizei>(window.Width()), static_cast<GLsizei>(window.Height()));
 	}
 

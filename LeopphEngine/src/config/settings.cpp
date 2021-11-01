@@ -3,7 +3,7 @@
 #include "../events/DirShadowMapResChangedEvent.hpp"
 #include "../events/EventManager.hpp"
 #include "../events/SpotShadowMapResChangedEvent.hpp"
-#include "../windowing/Window.hpp"
+#include "../windowing/WindowBase.hpp"
 
 #include <utility>
 
@@ -48,13 +48,13 @@ namespace leopph
 
 	LEOPPHAPI bool Settings::Vsync()
 	{
-		return impl::Window::Get().Vsync();
+		return impl::WindowBase::Get().Vsync();
 	}
 
 
 	LEOPPHAPI void Settings::Vsync(const bool value)
 	{
-		impl::Window::Get().Vsync(value);
+		impl::WindowBase::Get().Vsync(value);
 	}
 
 

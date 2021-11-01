@@ -200,8 +200,9 @@
     <ClInclude Include="src\rendering\vertex.h" />
     <ClInclude Include="src\util\hash\PathHash.hpp" />
     <ClInclude Include="src\misc\Skybox.hpp" />
-    <ClInclude Include="src\windowing\GLWindow.hpp" />
+    <ClInclude Include="src\windowing\GlWindow.hpp" />
     <ClInclude Include="src\windowing\Window.hpp" />
+    <ClInclude Include="src\windowing\WindowBase.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\components\Behavior.cpp" />
@@ -259,6 +260,7 @@
     <ClCompile Include="src\util\logger.cpp" />
     <ClCompile Include="src\misc\Skybox.cpp" />
     <ClCompile Include="src\windowing\Window.cpp" />
+    <ClCompile Include="src\windowing\WindowBase.cpp" />
     <ClCompile Include="src\input\Input.cpp" />
     <ClCompile Include="src\data\DataManager.cpp" />
     <ClCompile Include="src\math\LeopphMath.cpp" />
@@ -270,7 +272,7 @@
     <ClCompile Include="src\math\Quaternion.cpp" />
     <ClCompile Include="src\rendering\renderers\ForwardRenderer.cpp" />
     <ClCompile Include="src\timing\leopphtime.cpp" />
-    <ClCompile Include="src\windowing\GLWindow.cpp" />
+    <ClCompile Include="src\windowing\GlWindow.cpp" />
     <ClCompile Include="vendor\stb_image\stb_image.cpp" />
   </ItemGroup>
   <ItemGroup>

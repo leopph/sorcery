@@ -1,57 +1,47 @@
 #pragma once
 
-#include "../input/cursorstate.h"
-#include "../misc/Color.hpp"
+#include "../api/leopphapi.h"
 
 #include <string>
+#include <string_view>
 
-namespace leopph::impl
+
+namespace leopph
 {
 	class Window
 	{
-	public:
-		static Window& Get(unsigned width = 1280u, unsigned height = 720u,
-			const std::string& title = "Window", bool fullscreen = false);
-		static void Destroy();
+		public:
+			[[nodiscard]]
+			LEOPPHAPI static unsigned Width();
+			LEOPPHAPI static void Width(unsigned newWidth);
 
-		virtual unsigned Width() const;
-		virtual void Width(unsigned newWidth);
+			[[nodiscard]]
+			LEOPPHAPI static unsigned Height();
+			LEOPPHAPI static void Height(unsigned newHeight);
 
-		virtual unsigned Height() const;
-		virtual void Height(unsigned newHeight);
+			[[nodiscard]]
+			LEOPPHAPI static float AspectRatio();
 
-		float AspectRatio() const;
+			[[nodiscard]]
+			LEOPPHAPI static bool FullScreen();
+			LEOPPHAPI static void FullScreen(bool newValue);
 
-		bool Fullscreen() const;
+			[[nodiscard]]
+			LEOPPHAPI static bool Vsync();
+			LEOPPHAPI static void Vsync(bool newValue);
 
-		virtual bool Vsync() const = 0;
-		virtual void Vsync(bool value) = 0;
+			[[nodiscard]]
+			LEOPPHAPI static std::string_view Title();
+			LEOPPHAPI static void Title(std::string newTitle);
 
-		virtual void PollEvents() = 0;
-		virtual void SwapBuffers() = 0;
-		virtual bool ShouldClose() = 0;
-		virtual void Clear() = 0;
 
-		virtual CursorState CursorMode() const = 0;
-		virtual void CursorMode(CursorState newState) = 0;
+			Window() = delete;
+			Window(const Window& other) = delete;
+			Window(Window&& other) = delete;
 
-		virtual const Color& Background() const;
-		virtual void Background(const Color& color);
+			Window& operator=(const Window& other) = delete;
+			Window& operator=(Window&& other) = delete;
 
-	protected:
-		Window(unsigned width, unsigned height,
-			const std::string& title, bool fullscreen);
-		virtual ~Window() = default;
-		
-	private:
-		virtual void InitKeys() = 0;
-		
-		static Window* s_Instance;
-
-		unsigned m_Width;
-		unsigned m_Height;
-		std::string m_Title;
-		bool m_Fullscreen;
-		Color m_Background;
+			~Window() = delete;
 	};
 }
