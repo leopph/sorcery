@@ -65,6 +65,8 @@ namespace leopph::impl
 
 		private:
 			void InitKeys() override;
+			void InternalSetWidth(int newWidth);
+			void InternalSetHeight(int newHeight);
 
 			static void FramebufferSizeCallback(GLFWwindow*, int width, int height);
 			static void KeyCallback(GLFWwindow*, int key, int, int action, int);

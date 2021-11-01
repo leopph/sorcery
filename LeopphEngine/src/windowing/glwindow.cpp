@@ -186,7 +186,7 @@ namespace leopph::impl
 	}
 
 
-		void GlWindow::InitKeys()
+	void GlWindow::InitKeys()
 	{
 		for (const auto& [_, keyCode] : s_KeyCodes)
 		{
@@ -195,13 +195,27 @@ namespace leopph::impl
 	}
 
 
+	void GlWindow::InternalSetWidth(const int newWidth)
+	{
+		m_Width = newWidth;
+	}
+
+
+	void GlWindow::InternalSetHeight(const int newHeight)
+	{
+		m_Height = newHeight;
+	}
+
+
 	void GlWindow::FramebufferSizeCallback(GLFWwindow*, const int width, const int height)
 	{
 		glViewport(0, 0, width, height);
 
-		auto& windowInstance{Get()};
-		windowInstance.Width(width);
-		windowInstance.Height(height);
+		auto& windowInstance{static_cast<GlWindow&>(Get())};
+		//windowInstance.Width(width);
+		//windowInstance.Height(height);
+		windowInstance.InternalSetWidth(width);
+		windowInstance.InternalSetHeight(height);
 
 		EventManager::Instance().Send<DisplayResolutionChangedEvent>(Vector2{width, height});
 	}
