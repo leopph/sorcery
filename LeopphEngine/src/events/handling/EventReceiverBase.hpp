@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Event.hpp"
+#include "../Event.hpp"
 
 #include <type_traits>
 

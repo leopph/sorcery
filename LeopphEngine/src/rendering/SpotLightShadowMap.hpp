@@ -1,15 +1,15 @@
 #pragma once
 
 #include "ShadowMap.hpp"
-#include "../events/EventReceiver.hpp"
-#include "../events/SpotShadowMapResChangedEvent.hpp"
+#include "../events/SpotShadowResolutionEvent.hpp"
+#include "../events/handling/EventReceiver.hpp"
 #include "shaders/ShaderProgram.hpp"
 
 
 
 namespace leopph::impl
 {
-	class SpotLightShadowMap final : public ShadowMap, EventReceiver<SpotShadowMapResChangedEvent>
+	class SpotLightShadowMap final : public ShadowMap, EventReceiver<SpotShadowResolutionEvent>
 	{
 		public:
 			SpotLightShadowMap();

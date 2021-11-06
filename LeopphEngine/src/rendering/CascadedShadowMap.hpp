@@ -1,10 +1,9 @@
 #pragma once
 
-#include "../events/DirShadowMapResChangedEvent.hpp"
-#include "../events/EventReceiver.hpp"
+#include "../events/DirShadowResolutionEvent.hpp"
+#include "../events/handling/EventReceiver.hpp"
 #include "../math/Matrix.hpp"
 #include "../math/Vector.hpp"
-#include "shaders/ShaderFamily.hpp"
 #include "shaders/ShaderProgram.hpp"
 
 #include <cstddef>
@@ -13,7 +12,7 @@
 
 namespace leopph::impl
 {
-	class CascadedShadowMap final : public EventReceiver<DirShadowMapResChangedEvent>
+	class CascadedShadowMap final : public EventReceiver<DirShadowResolutionEvent>
 	{
 	public:
 		CascadedShadowMap();
@@ -45,7 +44,7 @@ namespace leopph::impl
 		int m_TexBindStartIndex;
 		std::vector<Matrix4> m_ProjMatrices;
 
-		void OnEventReceived(const DirShadowMapResChangedEvent& event) override;
+		void OnEventReceived(const DirShadowResolutionEvent& event) override;
 		void Init(const std::vector<std::size_t>& resolutions);
 		void Deinit();
 	};

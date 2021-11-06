@@ -7,8 +7,8 @@
 #include "launch.h"
 
 #include "../data/DataManager.hpp"
-#include "../events/EventManager.hpp"
-#include "../events/FrameEndedEvent.hpp"
+#include "../events/handling/EventManager.hpp"
+#include "../events/FrameEndEvent.hpp"
 #include "../rendering/opengl/gl.h"
 #include "../rendering/renderers/Renderer.hpp"
 #include "../timing/timer.h"

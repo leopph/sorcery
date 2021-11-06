@@ -1,11 +1,12 @@
 #pragma once
 
-#include "../api/leopphapi.h"
-#include "../math/Vector.hpp"
-#include "../math/Quaternion.hpp"
-#include "../events/EventReceiver.hpp"
-#include "../events/FrameEndedEvent.hpp"
 #include "Component.hpp"
+#include "../api/leopphapi.h"
+#include "../events/FrameEndEvent.hpp"
+#include "../events/handling/EventReceiver.hpp"
+#include "../math/Quaternion.hpp"
+#include "../math/Vector.hpp"
+
 
 namespace leopph
 {

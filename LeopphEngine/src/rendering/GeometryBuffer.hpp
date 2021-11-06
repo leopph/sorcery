@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../events/DisplayResolutionChangedEvent.hpp"
-#include "../events/EventReceiver.hpp"
+#include "../events/ScreenResolutionEvent.hpp"
+#include "../events/handling/EventReceiver.hpp"
 #include "../math/Vector.hpp"
 #include "shaders/ShaderProgram.hpp"
 
@@ -11,7 +11,7 @@
 
 namespace leopph::impl
 {
-	class GeometryBuffer final : public EventReceiver<DisplayResolutionChangedEvent>
+	class GeometryBuffer final : public EventReceiver<ScreenResolutionEvent>
 	{
 		public:
 			enum TextureType

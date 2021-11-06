@@ -1,8 +1,8 @@
 #pragma once
 
 #include "../../data/managed/UniqueResource.hpp"
-#include "../../events/EventReceiver.hpp"
-#include "../../events/ModelCountChangedEvent.hpp"
+#include "../../events/ModelInstanceCountEvent.hpp"
+#include "../../events/handling/EventReceiver.hpp"
 #include "../../math/Matrix.hpp"
 #include "../shaders/ShaderProgram.hpp"
 
@@ -18,7 +18,7 @@ namespace leopph::impl
 
 
 
-	class ModelResource final : public UniqueResource, public EventReceiver<ModelCountChangedEvent>
+	class ModelResource final : public UniqueResource, public EventReceiver<ModelInstanceCountEvent>
 	{
 		public:
 			explicit ModelResource(const std::filesystem::path& path);
@@ -41,6 +41,6 @@ namespace leopph::impl
 			const AssimpModel* const m_AssimpModel;
 			bool m_CastsShadow;
 
-			void OnEventReceived(const ModelCountChangedEvent& event) override;
+			void OnEventReceived(const ModelInstanceCountEvent& event) override;
 	};
 }

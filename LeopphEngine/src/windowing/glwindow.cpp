@@ -1,9 +1,9 @@
 #include "GlWindow.hpp"
 
-#include "../events/DisplayResolutionChangedEvent.hpp"
-#include "../events/EventManager.hpp"
 #include "../events/KeyEvent.hpp"
 #include "../events/MouseEvent.hpp"
+#include "../events/ScreenResolutionEvent.hpp"
+#include "../events/handling/EventManager.hpp"
 #include "../input/Input.hpp"
 #include "../util/logger.h"
 
@@ -217,7 +217,7 @@ namespace leopph::impl
 		windowInstance.InternalSetWidth(width);
 		windowInstance.InternalSetHeight(height);
 
-		EventManager::Instance().Send<DisplayResolutionChangedEvent>(Vector2{width, height});
+		EventManager::Instance().Send<ScreenResolutionEvent>(Vector2{width, height});
 	}
 
 

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../events/EventReceiver.hpp"
-#include "../events/PointShadowMapResChangedEvent.hpp"
+#include "../events/PointShadowResolutionEvent.hpp"
+#include "../events/handling/EventReceiver.hpp"
 #include "../rendering/shaders/ShaderProgram.hpp"
 
 #include <cstddef>
@@ -9,7 +9,7 @@
 
 namespace leopph::impl
 {
-	class CubeShadowMap final : EventReceiver<PointShadowMapChangedEvent>
+	class CubeShadowMap final : EventReceiver<PointShadowResolutionEvent>
 	{
 		public:
 			CubeShadowMap();

@@ -1,7 +1,7 @@
 #include "Camera.hpp"
 
 #include "../entity/Entity.hpp"
-#include "../events/DisplayResolutionChangedEvent.hpp"
+#include "../events/ScreenResolutionEvent.hpp"
 #include "../math/LeopphMath.hpp"
 #include "../util/logger.h"
 #include "../windowing/WindowBase.hpp"

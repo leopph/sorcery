@@ -8,10 +8,10 @@
 
 namespace leopph::impl
 {
-	class PointShadowMapChangedEvent final : public Event
+	class PointShadowResolutionEvent final : public Event
 	{
 		public:
-			explicit PointShadowMapChangedEvent(std::size_t resolution);
+			explicit PointShadowResolutionEvent(std::size_t resolution);
 
 			const std::size_t Resolution;
 	};

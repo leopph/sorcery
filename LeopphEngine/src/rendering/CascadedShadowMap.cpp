@@ -134,7 +134,7 @@ namespace leopph::impl
 
 
 
-	void CascadedShadowMap::OnEventReceived(const DirShadowMapResChangedEvent& event)
+	void CascadedShadowMap::OnEventReceived(const DirShadowResolutionEvent& event)
 	{
 		Deinit();
 		Init(event.Resolutions);

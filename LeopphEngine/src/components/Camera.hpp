@@ -2,11 +2,10 @@
 
 #include "Component.hpp"
 #include "../api/leopphapi.h"
-#include "../events/DisplayResolutionChangedEvent.hpp"
-#include "../events/EventReceiver.hpp"
+#include "../events/ScreenResolutionEvent.hpp"
+#include "../events/handling/EventReceiver.hpp"
 #include "../math/Matrix.hpp"
 #include "../misc/CameraBackground.hpp"
-
 
 
 namespace leopph
@@ -18,7 +17,7 @@ namespace leopph
 	Attach this to your Entities and switch between them to provide different viewing angles dynamically at runtime.
 	See "Entity.hpp" and "Component.hpp" for more information.
 	-------------------------------------------------------------------------------------------------------------*/
-	class Camera final : public Component, public EventReceiver<impl::DisplayResolutionChangedEvent>
+	class Camera final : public Component, public EventReceiver<impl::ScreenResolutionEvent>
 	{
 		public:
 			/* Get the current active camera that is used to render the scene */

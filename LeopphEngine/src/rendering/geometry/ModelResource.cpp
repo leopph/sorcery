@@ -43,7 +43,7 @@ namespace leopph::impl
 	}
 
 
-	void ModelResource::OnEventReceived(const ModelCountChangedEvent& event)
+	void ModelResource::OnEventReceived(const ModelInstanceCountEvent& event)
 	{
 		if (event.Model != this)
 		{

@@ -1,9 +1,9 @@
 #pragma once
 
-#include "../api/leopphapi.h"
-#include "Event.hpp"
-#include "EventReceiverBase.hpp"
 #include "EventManager.hpp"
+#include "EventReceiverBase.hpp"
+#include "../Event.hpp"
+#include "../../api/leopphapi.h"
 
 #include <concepts>
 

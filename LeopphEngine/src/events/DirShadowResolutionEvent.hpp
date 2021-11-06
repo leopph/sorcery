@@ -8,9 +8,9 @@
 
 namespace leopph::impl
 {
-	struct DirShadowMapResChangedEvent : public Event
+	struct DirShadowResolutionEvent : public Event
 	{
-		DirShadowMapResChangedEvent(const std::vector<std::size_t>& resolutions);
+		DirShadowResolutionEvent(const std::vector<std::size_t>& resolutions);
 
 		const std::vector<std::size_t>& Resolutions;
 	};

@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Event.hpp"
 #include "EventReceiver.hpp"
-#include "../api/leopphapi.h"
+#include "../Event.hpp"
+#include "../../api/leopphapi.h"
 
 #include <concepts>
 #include <functional>

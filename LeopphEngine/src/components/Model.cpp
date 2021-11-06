@@ -1,10 +1,9 @@
 #include "Model.hpp"
 
 #include "../data/DataManager.hpp"
-#include "../events/EventManager.hpp"
-#include "../events/ModelCountChangedEvent.hpp"
+#include "../events/ModelInstanceCountEvent.hpp"
+#include "../events/handling/EventManager.hpp"
 
-#include <utility>
 
 namespace leopph
 {
@@ -12,14 +11,14 @@ namespace leopph
 		Component{ owner }, ResourceHandle{ path }
 	{
 		impl::DataManager::Register(resource);
-		EventManager::Instance().Send<impl::ModelCountChangedEvent>(resource);
+		EventManager::Instance().Send<impl::ModelInstanceCountEvent>(resource);
 	}
 
 
 	Model::~Model()
 	{
 		impl::DataManager::Unregister(resource);
-		EventManager::Instance().Send<impl::ModelCountChangedEvent>(resource);
+		EventManager::Instance().Send<impl::ModelInstanceCountEvent>(resource);
 	}
 
 

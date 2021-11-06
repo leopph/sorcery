@@ -1,8 +1,8 @@
 #include "Settings.hpp"
 
-#include "../events/DirShadowMapResChangedEvent.hpp"
-#include "../events/EventManager.hpp"
-#include "../events/SpotShadowMapResChangedEvent.hpp"
+#include "../events/DirShadowResolutionEvent.hpp"
+#include "../events/SpotShadowResolutionEvent.hpp"
+#include "../events/handling/EventManager.hpp"
 #include "../windowing/WindowBase.hpp"
 
 #include <utility>
@@ -67,7 +67,7 @@ namespace leopph
 	void Settings::DirectionalShadowMapResolutions(std::vector<std::size_t> newRess)
 	{
 		s_DirectionalLightShadowMapResolutions = std::move(newRess);
-		EventManager::Instance().Send<impl::DirShadowMapResChangedEvent>(s_DirectionalLightShadowMapResolutions);
+		EventManager::Instance().Send<impl::DirShadowResolutionEvent>(s_DirectionalLightShadowMapResolutions);
 	}
 
 
@@ -98,7 +98,7 @@ namespace leopph
 	void Settings::SpotLightShadowMapResolution(const std::size_t newRes)
 	{
 		s_SpotLightShadowMapResolution = newRes;
-		EventManager::Instance().Send<impl::SpotShadowMapResChangedEvent>(s_SpotLightShadowMapResolution);
+		EventManager::Instance().Send<impl::SpotShadowResolutionEvent>(s_SpotLightShadowMapResolution);
 	}
 
 
