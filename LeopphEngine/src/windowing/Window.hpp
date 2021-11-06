@@ -34,6 +34,10 @@ namespace leopph
 			LEOPPHAPI static std::string_view Title();
 			LEOPPHAPI static void Title(std::string newTitle);
 
+			[[nodiscard]]
+			LEOPPHAPI static float RenderResolution();
+			LEOPPHAPI static void RenderResolution(float newMult);
+
 
 			Window() = delete;
 			Window(const Window& other) = delete;

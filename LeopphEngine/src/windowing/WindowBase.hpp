@@ -47,6 +47,10 @@ namespace leopph::impl
 		virtual CursorState CursorMode() const = 0;
 		virtual void CursorMode(CursorState newState) = 0;
 
+		[[nodiscard]]
+		virtual float RenderResolution() = 0;
+		virtual void RenderResolution(float newMult) = 0;
+
 		virtual void PollEvents() = 0;
 		virtual void SwapBuffers() = 0;
 		virtual bool ShouldClose() = 0;

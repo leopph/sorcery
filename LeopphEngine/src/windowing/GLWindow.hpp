@@ -50,6 +50,10 @@ namespace leopph::impl
 			CursorState CursorMode() const override;
 			void CursorMode(CursorState newState) override;
 
+			[[nodiscard]]
+			float RenderResolution() override;
+			void RenderResolution(float newMult) override;
+
 			void PollEvents() override;
 			void SwapBuffers() override;
 			bool ShouldClose() override;
@@ -82,5 +86,6 @@ namespace leopph::impl
 			bool m_Vsync;
 			std::string m_Title;
 			Color m_Background;
+			float m_RenderMult;
 	};
 }

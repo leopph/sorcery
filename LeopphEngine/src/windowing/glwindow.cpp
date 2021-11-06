@@ -24,7 +24,8 @@ namespace leopph::impl
 		m_Fullscreen{fullscreen},
 		m_Vsync{false},
 		m_Title{title},
-		m_Background{}
+		m_Background{},
+		m_RenderMult{1.f}
 	{
 		if (!glfwInit())
 		{
@@ -158,6 +159,18 @@ namespace leopph::impl
 		};
 
 		glfwSetInputMode(this->m_Window, GLFW_CURSOR, cursorStates.at(newState));
+	}
+
+
+	float GlWindow::RenderResolution()
+	{
+		return m_RenderMult;
+	}
+
+
+	void GlWindow::RenderResolution(const float newMult)
+	{
+		m_RenderMult = newMult;
 	}
 
 
