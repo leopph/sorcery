@@ -17,12 +17,6 @@
 namespace leopph::impl
 {
 	DeferredRenderer::DeferredRenderer() :
-		m_TextureShader{
-			{
-				{ShaderFamily::LightPassVertSrc, ShaderType::Vertex},
-				{ShaderFamily::TextureFragSrc, ShaderType::Fragment}
-			}
-		},
 		m_ShadowShader{
 			{
 				{ShaderFamily::ShadowMapVertSrc, ShaderType::Vertex}
@@ -102,6 +96,8 @@ namespace leopph::impl
 
 		RenderGeometry(camViewMat, camProjMat, modelsAndMats);
 
+		m_RenderTexture.Clear();
+
 		RenderAmbientLight();
 		glEnable(GL_BLEND);
 		RenderDirectionalLights(camViewMat, camProjMat, modelsAndMats);
@@ -110,6 +106,8 @@ namespace leopph::impl
 		glDisable(GL_BLEND);
 
 		RenderSkybox(camViewMat, camProjMat);
+
+		m_RenderTexture.DrawToWindow();
 	}
 
 
@@ -147,7 +145,7 @@ namespace leopph::impl
 		shader.Use();
 
 		glDisable(GL_DEPTH_TEST);
-		m_ScreenTexture.Draw();
+		m_RenderTexture.DrawToTexture();
 		glEnable(GL_DEPTH_TEST);
 
 		shader.Unuse();
@@ -241,7 +239,7 @@ namespace leopph::impl
 		lightShader.Use();
 
 		glDisable(GL_DEPTH_TEST);
-		m_ScreenTexture.Draw();
+		m_RenderTexture.DrawToTexture();
 		glEnable(GL_DEPTH_TEST);
 
 		lightShader.Unuse();
@@ -321,7 +319,7 @@ namespace leopph::impl
 			lightShader.Use();
 
 			glDisable(GL_DEPTH_TEST);
-			m_ScreenTexture.Draw();
+			m_RenderTexture.DrawToTexture();
 			glEnable(GL_DEPTH_TEST);
 		}
 	}
@@ -409,7 +407,7 @@ namespace leopph::impl
 			lightShader.Use();
 
 			glDisable(GL_DEPTH_TEST);
-			m_ScreenTexture.Draw();
+			m_RenderTexture.DrawToTexture();
 			glEnable(GL_DEPTH_TEST);
 
 			lightShader.Unuse();
@@ -421,9 +419,8 @@ namespace leopph::impl
 	{
 		static auto skyboxFlagInfo{m_SkyboxShader.GetFlagInfo()};
 		auto& skyboxShader{m_SkyboxShader.GetPermutation(skyboxFlagInfo)};
-
-		const auto& window{WindowBase::Get()};
-		m_GBuffer.CopyDepthData(0, Vector2{window.Width(), window.Height()});
+		
+		m_GBuffer.CopyDepthData(m_RenderTexture.FramebufferName());
 
 		if (const auto& skybox{Camera::Active()->Background().skybox}; skybox.has_value())
 		{
@@ -431,7 +428,9 @@ namespace leopph::impl
 			skyboxShader.SetUniform("projectionMatrix", camProjMat);
 
 			skyboxShader.Use();
+			m_RenderTexture.BindAsRenderTarget();
 			static_cast<SkyboxResource*>(DataManager::Find(skybox->AllFilePaths()))->Draw(skyboxShader);
+			m_RenderTexture.UnbindAsRenderTarget();
 		}
 	}
 }

@@ -48,8 +48,8 @@ namespace leopph::impl
 		virtual void CursorMode(CursorState newState) = 0;
 
 		[[nodiscard]]
-		virtual float RenderResolution() = 0;
-		virtual void RenderResolution(float newMult) = 0;
+		virtual float RenderMultiplier() = 0;
+		virtual void RenderMultiplier(float newMult) = 0;
 
 		virtual void PollEvents() = 0;
 		virtual void SwapBuffers() = 0;

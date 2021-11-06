@@ -62,14 +62,14 @@ namespace leopph
 		impl::WindowBase::Get().Title(std::move(newTitle));
 	}
 
-	float Window::RenderResolution()
+	float Window::RenderMultiplier()
 	{
-		return impl::WindowBase::Get().RenderResolution();
+		return impl::WindowBase::Get().RenderMultiplier();
 	}
 
-	void Window::RenderResolution(const float newMult)
+	void Window::RenderMultiplier(const float newMult)
 	{
-		impl::WindowBase::Get().RenderResolution(newMult);
+		impl::WindowBase::Get().RenderMultiplier(newMult);
 	}
 
 }

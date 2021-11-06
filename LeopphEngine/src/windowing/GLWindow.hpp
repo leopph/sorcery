@@ -51,8 +51,8 @@ namespace leopph::impl
 			void CursorMode(CursorState newState) override;
 
 			[[nodiscard]]
-			float RenderResolution() override;
-			void RenderResolution(float newMult) override;
+			float RenderMultiplier() override;
+			void RenderMultiplier(float newMult) override;
 
 			void PollEvents() override;
 			void SwapBuffers() override;
@@ -69,8 +69,6 @@ namespace leopph::impl
 
 		private:
 			void InitKeys() override;
-			void InternalSetWidth(int newWidth);
-			void InternalSetHeight(int newHeight);
 
 			static void FramebufferSizeCallback(GLFWwindow*, int width, int height);
 			static void KeyCallback(GLFWwindow*, int key, int, int action, int);

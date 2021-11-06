@@ -158,7 +158,7 @@
     <ClInclude Include="src\rendering\Material.hpp" />
     <ClInclude Include="src\rendering\geometry\ModelResource.hpp" />
     <ClInclude Include="src\rendering\renderers\Renderer.hpp" />
-    <ClInclude Include="src\rendering\ScreenTexture.hpp" />
+    <ClInclude Include="src\rendering\RenderTexture.hpp" />
     <ClInclude Include="src\rendering\shaders\ShaderProgram.hpp" />
     <ClInclude Include="src\rendering\shaders\ShaderFamily.hpp" />
     <ClInclude Include="src\rendering\shaders\ShaderStageInfo.hpp" />
@@ -238,7 +238,7 @@
     <ClCompile Include="src\rendering\geometry\ModelResource.cpp" />
     <ClCompile Include="src\rendering\opengl\gl.cpp" />
     <ClCompile Include="src\rendering\renderers\Renderer.cpp" />
-    <ClCompile Include="src\rendering\ScreenTexture.cpp" />
+    <ClCompile Include="src\rendering\RenderTexture.cpp" />
     <ClCompile Include="src\rendering\shaders\ShaderProgram.cpp" />
     <ClCompile Include="src\rendering\shaders\ShaderFamily.cpp" />
     <ClCompile Include="src\rendering\ShadowMap.cpp" />
@@ -302,9 +302,6 @@
       <FileType>Document</FileType>
     </CustomBuild>
     <CustomBuild Include="src\rendering\shaders\glsl\deferred\LightPassVert.vert">
-      <FileType>Document</FileType>
-    </CustomBuild>
-    <CustomBuild Include="src\rendering\shaders\glsl\TextureFrag.frag">
       <FileType>Document</FileType>
     </CustomBuild>
     <CustomBuild Include="src\rendering\shaders\glsl\deferred\AmbLightFrag.frag">

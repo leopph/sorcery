@@ -52,4 +52,17 @@ void WindowTester::OnFrameUpdate()
 		Window::Width(640);
 		Window::Height(480);
 	}
+
+	if (Input::GetKeyDown(KeyCode::Q))
+	{
+		if (Window::RenderMultiplier() > 0.1f)
+		{
+			Window::RenderMultiplier(Window::RenderMultiplier() - 0.1f);
+		}
+	}
+
+	if (Input::GetKeyDown(KeyCode::E))
+	{
+		Window::RenderMultiplier(Window::RenderMultiplier() + 0.1f);
+	}
 }

@@ -162,15 +162,16 @@ namespace leopph::impl
 	}
 
 
-	float GlWindow::RenderResolution()
+	float GlWindow::RenderMultiplier()
 	{
 		return m_RenderMult;
 	}
 
 
-	void GlWindow::RenderResolution(const float newMult)
+	void GlWindow::RenderMultiplier(const float newMult)
 	{
 		m_RenderMult = newMult;
+		EventManager::Instance().Send<ScreenResolutionEvent>(Vector2{m_Width, m_Height}, m_RenderMult);
 	}
 
 
@@ -208,29 +209,15 @@ namespace leopph::impl
 	}
 
 
-	void GlWindow::InternalSetWidth(const int newWidth)
-	{
-		m_Width = newWidth;
-	}
-
-
-	void GlWindow::InternalSetHeight(const int newHeight)
-	{
-		m_Height = newHeight;
-	}
-
-
 	void GlWindow::FramebufferSizeCallback(GLFWwindow*, const int width, const int height)
 	{
 		glViewport(0, 0, width, height);
 
 		auto& windowInstance{static_cast<GlWindow&>(Get())};
-		//windowInstance.Width(width);
-		//windowInstance.Height(height);
-		windowInstance.InternalSetWidth(width);
-		windowInstance.InternalSetHeight(height);
+		windowInstance.m_Width = width;
+		windowInstance.m_Height = height;
 
-		EventManager::Instance().Send<ScreenResolutionEvent>(Vector2{width, height});
+		EventManager::Instance().Send<ScreenResolutionEvent>(Vector2{width, height}, windowInstance.RenderMultiplier());
 	}
 
 

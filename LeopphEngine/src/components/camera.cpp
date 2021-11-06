@@ -154,6 +154,6 @@ namespace leopph
 
 	void Camera::OnEventReceived(EventParamType event)
 	{
-		m_AspectRatio = event.newResolution[0] / event.newResolution[1];
+		m_AspectRatio = event.NewResolution[0] / event.NewResolution[1];
 	}
 }

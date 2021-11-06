@@ -4,7 +4,7 @@
 #include "../CascadedShadowMap.hpp"
 #include "../CubeShadowMap.hpp"
 #include "../GeometryBuffer.hpp"
-#include "../ScreenTexture.hpp"
+#include "../RenderTexture.hpp"
 #include "../SpotLightShadowMap.hpp"
 #include "../../components/lighting/PointLight.hpp"
 #include "../../components/lighting/SpotLight.hpp"
@@ -48,9 +48,7 @@ namespace leopph::impl
 			void RenderSkybox(const Matrix4& camViewMat, const Matrix4& camProjMat);
 
 			GeometryBuffer m_GBuffer;
-			ScreenTexture m_ScreenTexture;
-
-			ShaderFamily m_TextureShader;
+			RenderTexture m_RenderTexture;
 
 			ShaderFamily m_ShadowShader;
 			ShaderFamily m_CubeShadowShader;

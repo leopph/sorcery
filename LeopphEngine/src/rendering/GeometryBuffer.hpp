@@ -42,7 +42,7 @@ namespace leopph::impl
 			void UnbindFromReading(TextureType type) const;
 			void UnbindFromReading() const;
 
-			void CopyDepthData(unsigned bufferName, const Vector2& resolution) const;
+			void CopyDepthData(unsigned bufferName) const;
 
 
 		private:
@@ -55,6 +55,6 @@ namespace leopph::impl
 			void SetUpBuffers(const Vector2& res);
 			void OnEventReceived(EventParamType event) override;
 
-			static const int s_BindFillValue;
+			static constexpr int BIND_FILL_VALUE{-1};
 	};
 }

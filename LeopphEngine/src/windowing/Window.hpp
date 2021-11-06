@@ -35,8 +35,8 @@ namespace leopph
 			LEOPPHAPI static void Title(std::string newTitle);
 
 			[[nodiscard]]
-			LEOPPHAPI static float RenderResolution();
-			LEOPPHAPI static void RenderResolution(float newMult);
+			LEOPPHAPI static float RenderMultiplier();
+			LEOPPHAPI static void RenderMultiplier(float newMult);
 
 
 			Window() = delete;

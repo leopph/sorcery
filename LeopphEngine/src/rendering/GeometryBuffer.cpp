@@ -11,17 +11,14 @@
 
 namespace leopph::impl
 {
-	constexpr int GeometryBuffer::s_BindFillValue{-1};
-
-
 	GeometryBuffer::GeometryBuffer() :
 		m_Textures{},
 		m_BindIndices{},
 		m_DepthBuffer{},
 		m_FrameBuffer{},
-		m_Resolution{Vector2{WindowBase::Get().Width(), WindowBase::Get().Height()}}
+		m_Resolution{Vector2{WindowBase::Get().Width(), WindowBase::Get().Height()} * WindowBase::Get().RenderMultiplier()}
 	{
-		std::ranges::fill(m_BindIndices, s_BindFillValue);
+		std::ranges::fill(m_BindIndices, BIND_FILL_VALUE);
 		glCreateFramebuffers(1, &m_FrameBuffer);
 		SetUpBuffers(m_Resolution);
 	}
@@ -114,10 +111,10 @@ namespace leopph::impl
 
 	void GeometryBuffer::UnbindFromReading(const TextureType type) const
 	{
-		if (m_BindIndices[type] != s_BindFillValue)
+		if (m_BindIndices[type] != BIND_FILL_VALUE)
 		{
 			glBindTextureUnit(m_BindIndices[type], 0);
-			m_BindIndices[type] = s_BindFillValue;
+			m_BindIndices[type] = BIND_FILL_VALUE;
 		}
 	}
 
@@ -131,9 +128,9 @@ namespace leopph::impl
 	}
 
 
-	void GeometryBuffer::CopyDepthData(const unsigned bufferName, const Vector2& resolution) const
+	void GeometryBuffer::CopyDepthData(const unsigned bufferName) const
 	{
-		glBlitNamedFramebuffer(m_FrameBuffer, bufferName, 0, 0, static_cast<GLint>(resolution[0]), static_cast<GLint>(resolution[1]), 0, 0, static_cast<GLint>(resolution[0]), static_cast<GLint>(resolution[1]), GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+		glBlitNamedFramebuffer(m_FrameBuffer, bufferName, 0, 0, static_cast<GLint>(m_Resolution[0]), static_cast<GLint>(m_Resolution[1]), 0, 0, static_cast<GLint>(m_Resolution[0]), static_cast<GLint>(m_Resolution[1]), GL_DEPTH_BUFFER_BIT, GL_NEAREST);
 	}
 
 
@@ -185,7 +182,7 @@ namespace leopph::impl
 
 	void GeometryBuffer::OnEventReceived(EventParamType event)
 	{
-		m_Resolution = event.newResolution;
+		m_Resolution = event.NewResolution * event.NewResolutionMultiplier;
 		SetUpBuffers(m_Resolution);
 	}
 }

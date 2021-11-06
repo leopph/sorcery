@@ -49,8 +49,6 @@ namespace leopph::impl
 			static const std::string SpotLightPassFragSrc;
 			static const std::string PointLightPassFragSrc;
 
-			static const std::string TextureFragSrc;
-
 
 		private:
 			class FlagInfoBase

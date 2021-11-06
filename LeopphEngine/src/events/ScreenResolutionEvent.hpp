@@ -9,12 +9,9 @@ namespace leopph::impl
 	class ScreenResolutionEvent final : public Event
 	{
 	public:
-		explicit ScreenResolutionEvent(const Vector2& newRes);
+		explicit ScreenResolutionEvent(const Vector2& newScreenRes, float newResMult);
 
-		const Vector2& newResolution;
-
-
-	private:
-		Vector2 m_Res;
+		const Vector2 NewResolution;
+		const float NewResolutionMultiplier;
 	};
 }
