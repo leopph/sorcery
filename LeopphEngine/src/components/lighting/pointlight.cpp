@@ -4,7 +4,7 @@
 
 namespace leopph
 {
-	PointLight::PointLight(Entity& owner) :
+	PointLight::PointLight(leopph::Entity& owner) :
 		AttenuatedLight{ owner }
 	{
 		impl::DataManager::Register(this);

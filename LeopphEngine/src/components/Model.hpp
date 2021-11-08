@@ -1,27 +1,21 @@
 #pragma once
 
-#include "../api/leopphapi.h"
+#include "Component.hpp"
+#include "../api/LeopphApi.hpp"
 #include "../data/managed/ResourceHandle.hpp"
 #include "../rendering/geometry/ModelResource.hpp"
-#include "Component.hpp"
 
 #include <filesystem>
 
 
 namespace leopph
 {
-	class Entity;
-
-	/*-----------------------------------------------------------------------------
-	The Model class represents a drawable object that can be attached to Entites.
-	The way it is rendered depends on the owning Entity's current state in space.
-	See "Entity.hpp" for more information.
-	-----------------------------------------------------------------------------*/
+	// The Model class represents a drawable object that can be attached to Entites.
 	class Model final : public Component, public impl::ResourceHandle<impl::ModelResource>
 	{
 	public:
-		LEOPPHAPI explicit Model(Entity& owner, const std::filesystem::path& path);
-
+		// Load a Model from a file on disk.
+		LEOPPHAPI explicit Model(leopph::Entity& owner, const std::filesystem::path& path);
 		LEOPPHAPI Model(const Model& other) = delete;
 		LEOPPHAPI Model(Model&& other) = delete;
 
@@ -30,9 +24,17 @@ namespace leopph
 		LEOPPHAPI Model& operator=(const Model& other) = delete;
 		LEOPPHAPI Model& operator=(Model&& other) = delete;
 
+		// Get the filepath of the loaded Model.
 		LEOPPHAPI const std::filesystem::path& Path() const;
 
+		/* Get whether the Model occludes light from other Models.
+		 * This only works if the Light used also has this property set to true.
+		 * This value is false by default. */
 		LEOPPHAPI bool CastsShadow() const;
-		LEOPPHAPI void CastsShadow(bool value);
+
+		/* Set whether the Model occludes light from other Models.
+		 * This only works if the Light used also has this property set to true.
+		 * This value is false by default. */
+		LEOPPHAPI void CastsShadow(bool value) const;
 	};
 }

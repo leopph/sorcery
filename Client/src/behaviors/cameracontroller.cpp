@@ -10,10 +10,10 @@ CameraController::CameraController(leopph::Entity& owner) :
 
 void CameraController::OnFrameUpdate()
 {
-	if (leopph::Camera::Active() == nullptr)
+	if (leopph::Camera::Active == nullptr)
 		return;
 
-	auto& camTransform = *leopph::Camera::Active()->entity.Transform;
+	auto& camTransform = *leopph::Camera::Active->Entity.Transform;
 
 	leopph::Vector3 movementVector;
 

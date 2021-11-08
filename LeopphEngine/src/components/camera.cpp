@@ -10,16 +10,10 @@
 #include <utility>
 
 
-
 namespace leopph
 {
-	Camera* Camera::s_Active = nullptr;
-
-
-	Camera* Camera::Active()
-	{
-		return s_Active;
-	}
+	Camera* Camera::s_Active{nullptr};
+	Camera* const& Camera::Active{s_Active};
 
 
 	void Camera::Activate()
@@ -42,7 +36,7 @@ namespace leopph
 	}
 
 
-	Camera::Camera(Entity& owner) :
+	Camera::Camera(leopph::Entity& owner) :
 		Component{owner},
 		m_AspectRatio{leopph::impl::WindowBase::Get().AspectRatio()},
 		m_HorizontalFovDegrees{100.0f},
@@ -108,15 +102,15 @@ namespace leopph
 	}
 
 
-	void Camera::Fov(const float fov, const FovDirection direction)
+	void Camera::Fov(const float degrees, const FovDirection direction)
 	{
 		if (direction == FovDirection::Horizontal)
 		{
-			m_HorizontalFovDegrees = fov;
+			m_HorizontalFovDegrees = degrees;
 		}
 		else if (direction == FovDirection::Vertical)
 		{
-			m_HorizontalFovDegrees = ConvertFov(fov, FovConversionDirection::VerticalToHorizontal);
+			m_HorizontalFovDegrees = ConvertFov(degrees, FovConversionDirection::VerticalToHorizontal);
 		}
 	}
 
@@ -140,8 +134,7 @@ namespace leopph
 
 	Matrix4 Camera::ViewMatrix() const
 	{
-		return (static_cast<Matrix4>(entity.Transform->Rotation()) * Matrix4::Translate(entity.Transform->Position())).Inverse();
-		//return Matrix4::LookAt(object.Transform->Position(), object.Transform->Position() + object.Transform->Forward(), Vector3::Up());
+		return (static_cast<Matrix4>(Entity.Transform->Rotation()) * Matrix4::Translate(Entity.Transform->Position())).Inverse();
 	}
 
 

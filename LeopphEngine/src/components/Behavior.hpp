@@ -1,30 +1,27 @@
 #pragma once
 
-
-#include "../api/leopphapi.h"
 #include "Component.hpp"
+#include "../api/LeopphApi.hpp"
 
 
 namespace leopph
 {
-	/*------------------------------------------------------------------------------------------------------
-	Behaviors are special components that provide can hook into and effect the status of Entities at runtime.
-	Subclass this to provide the logic for your application.
-	See "Entity.hpp" and "Component.hpp" for more information.
-	------------------------------------------------------------------------------------------------------*/
-
+	/* Behaviors are special components that represent actions and can affect the status of Entities at runtime.
+	 * Subclass this to provide the logic for your application. */
 	class Behavior : public Component
 	{
 	public:
-		LEOPPHAPI explicit Behavior(Entity& owner);
-		LEOPPHAPI ~Behavior() override = 0;
+		// This function gets called every frame.
+		virtual void OnFrameUpdate() {}
 
+
+		LEOPPHAPI explicit Behavior(leopph::Entity& owner);
 		Behavior(const Behavior&) = delete;
 		Behavior(Behavior&&) = delete;
+
+		LEOPPHAPI ~Behavior() override = 0;
+
 		void operator=(const Behavior&) = delete;
 		void operator=(Behavior&&) = delete;
-
-		/* This function gets called every frame. Override this to provide business logic */
-		virtual void OnFrameUpdate() {}
 	};
 }

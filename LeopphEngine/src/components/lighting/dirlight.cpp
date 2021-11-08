@@ -4,7 +4,7 @@
 
 namespace leopph
 {
-	DirectionalLight::DirectionalLight(Entity& owner) :
+	DirectionalLight::DirectionalLight(leopph::Entity& owner) :
 		Light{ owner }
 	{
 		impl::DataManager::DirectionalLight(this);
@@ -17,6 +17,6 @@ namespace leopph
 
 	const Vector3& DirectionalLight::Direction() const
 	{
-		return entity.Transform->Forward();
+		return Entity.Transform->Forward();
 	}
 }

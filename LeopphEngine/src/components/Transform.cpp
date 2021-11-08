@@ -1,18 +1,22 @@
 #include "Transform.hpp"
 
-#include "../entity/Entity.hpp"
 #include "../data/DataManager.hpp"
-#include "../util/logger.h"
+#include "../entity/Entity.hpp"
 
 
 
 namespace leopph
 {
-	Transform::Transform(Entity& owner, const Vector3& pos, const Quaternion& rot, const Vector3& scale) :
-		Component{ owner },
-		m_Position{ pos }, m_Rotation{ rot }, m_Scale{ scale },
-		m_Forward{ Vector3::Forward() }, m_Right{ Vector3::Right() }, m_Up{ Vector3::Up() },
-		m_WasAltered{true}, WasAltered{m_WasAltered}
+	Transform::Transform(leopph::Entity& owner, const Vector3& pos, const Quaternion& rot, const Vector3& scale) :
+		Component{owner},
+		WasAltered{m_WasAltered},
+		m_Position{pos},
+		m_Rotation{rot},
+		m_Scale{scale},
+		m_Forward{Vector3::Forward()},
+		m_Right{Vector3::Right()},
+		m_Up{Vector3::Up()},
+		m_WasAltered{true}
 	{
 		CalculateLocalAxes();
 	}
@@ -72,7 +76,7 @@ namespace leopph
 
 	void Transform::Translate(const float x, const float y, const float z)
 	{
-		Position(Position() + Vector3{ x, y, z });
+		Position(Position() + Vector3{x, y, z});
 	}
 
 
@@ -90,7 +94,7 @@ namespace leopph
 
 	void Transform::Rescale(const float x, const float y, const float z)
 	{
-		Vector3 scale{Scale()};
+		auto scale{Scale()};
 		scale[0] *= x;
 		scale[1] *= y;
 		scale[2] *= z;

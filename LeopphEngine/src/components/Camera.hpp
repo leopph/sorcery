@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Component.hpp"
-#include "../api/leopphapi.h"
+#include "../api/LeopphApi.hpp"
 #include "../events/ScreenResolutionEvent.hpp"
 #include "../events/handling/EventReceiver.hpp"
 #include "../math/Matrix.hpp"
@@ -10,66 +10,88 @@
 
 namespace leopph
 {
-	class Entity;
-
-	/*-------------------------------------------------------------------------------------------------------------
-	The Camera component is used to determine the image to be rendered.
-	Attach this to your Entities and switch between them to provide different viewing angles dynamically at runtime.
-	See "Entity.hpp" and "Component.hpp" for more information.
-	-------------------------------------------------------------------------------------------------------------*/
+	/* Cameras are special Components that determine the images to be rendered.
+	 * Multiple Cameras can exist, but only one is used at a time.
+	 * You can dynamically switch between them at runtime. */
 	class Camera final : public Component, public EventReceiver<impl::ScreenResolutionEvent>
 	{
 		public:
-			/* Get the current active camera that is used to render the scene */
-			LEOPPHAPI static Camera* Active();
+			// The currently active camera that is used to render the scene.
+			LEOPPHAPI static Camera* const& Active;
 
-			LEOPPHAPI explicit Camera(Entity& owner);
-			LEOPPHAPI ~Camera() override;
+			/* When adjusting FOV, this is used to specify which direction
+			 * the FOV value should be interpreted in for non-symmetric viewing volumes. */
+			enum class FovDirection
+			{
+				Horizontal,
+				Vertical
+			};
 
-			Camera(const Camera&) = delete;
-			Camera(Camera&&) = delete;
-			void operator=(const Camera&) = delete;
-			void operator=(Camera&&) = delete;
-
-
-
-			/* Enum to help determining FOV conversion details */
-			enum class FovDirection { Horizontal, Vertical };
-
-
-
-			/* The plane closest to the Camera where rendering begins */
+			/* Set the near clip plane distance.
+			 * The near clip plane is the plane closest to the Camera, where rendering begins.
+			 * Objects closer to the Camera than this value will not be visible. */
 			LEOPPHAPI void NearClipPlane(float newPlane);
+
+			/* Get the near clip plane distance.
+			 * The near clip plane is the plane closest to the Camera, where rendering begins.
+			 * Objects closer to the Camera than this value will not be visible. */
 			LEOPPHAPI float NearClipPlane() const;
 
-			/* The plane farthest from the Camera where rendering ends */
+			/* Set the far clip plane distance.
+			 * The far clip plane is the plane farthest from the Camera, where rendering ends.
+			 * Objects farther from the Camera than this value will not be visible. */
 			LEOPPHAPI void FarClipPlane(float newPlane);
+
+			/* Get the far clip plane distance.
+			 * The far clip plane is the plane farthest from the Camera, where rendering ends.
+			 * Objects farther from the Camera than this value will not be visible. */
 			LEOPPHAPI float FarClipPlane() const;
 
-			/* Current Field of View of the Camera. */
-			LEOPPHAPI void Fov(float fov, FovDirection direction);
+			/* Set the current FOV value of the Camera in degrees.
+			 * For non-symmetric viewing volumes, direction specifies the interpretation. */
+			LEOPPHAPI void Fov(float degrees, FovDirection direction);
+
+			/* Get the current FOV value of the Camera in degrees.
+			 * For non-symmetric viewing volumes, direction specifies the interpretation. */
 			LEOPPHAPI float Fov(FovDirection direction) const;
 
-			/* Internally used matrices for the rendering engine */
+			/* Matrix that translates world positions to Camera-space.
+			 * Used during rendering. */
 			LEOPPHAPI Matrix4 ViewMatrix() const;
+
+			/* Matrix that projects Camera-space coordinates to Clip-space.
+			 * Used during rendering. */
 			LEOPPHAPI Matrix4 ProjectionMatrix() const;
 
-			/* Set this Camera to be the used for rendering */
+			/* Set this Camera as the currently active one.
+			 * The active Camera will be used to render scene. */
 			LEOPPHAPI void Activate();
 
-			/* Background graphics used by the Camera.
-			You can use a combination of Colors and Skyboxes. */
+			/* Get the Camera's background.
+			 * The Camera's background determines the visuals that the Camera "sees" where no Objects have been drawn to. */
 			LEOPPHAPI const CameraBackground& Background() const;
+
+			/* Set the Camera's background.
+			 * The Camera's background determines the visuals that the Camera "sees" where no Objects have been drawn to. */
 			LEOPPHAPI void Background(CameraBackground&& background);
+
+
+			LEOPPHAPI explicit Camera(leopph::Entity& owner);
+			Camera(const Camera&) = delete;
+			Camera(Camera&&) = delete;
+
+			LEOPPHAPI ~Camera() override;
+
+			void operator=(const Camera&) = delete;
+			void operator=(Camera&&) = delete;
 
 
 		private:
 			enum class FovConversionDirection
 			{
-				VerticalToHorizontal, HorizontalToVertical
+				VerticalToHorizontal,
+				HorizontalToVertical
 			};
-
-
 
 			static Camera* s_Active;
 

@@ -1,25 +1,38 @@
 #pragma once
 
-#include "../../api/leopphapi.h"
-
+#include "../../api/LeopphApi.hpp"
 #include "../../math/Vector.hpp"
+
 
 namespace leopph
 {
-	/*---------------------------------------------------------------------------
-	The AmbientLight class provides your scene with a global ambient light level.
-	There is only one of it per scene. 
-	---------------------------------------------------------------------------*/
+	/* The AmbientLight class provides your scene with a global ambient light level.
+	 * There is always exaclty one of it in a scene.
+	 * Ambient lights do not provied shadow or specular highlights. */
 	class AmbientLight
 	{
 	public:
-		/* The only instance of AmbientLight */
+		// Get the AmbientLight instance.
 		LEOPPHAPI static AmbientLight& Instance();
 
-		/* Intensity on different color channels.
-		Values are in range [0, 1]. */
+		/* Get the current color values the AmbientLight uses to light objects.
+		 * Component values are in the [0; 1] range. */
+		[[nodiscard]]
 		LEOPPHAPI const Vector3& Intensity() const;
+
+		/* Get the current color values the AmbientLight uses to light objects.
+		 * Component values must be in the [0; 1] range. */
 		LEOPPHAPI void Intensity(const Vector3& newInt);
+
+
+		AmbientLight(const AmbientLight& other) = delete;
+		AmbientLight(AmbientLight&& other) = delete;
+
+		~AmbientLight() = default;
+
+		AmbientLight& operator=(const AmbientLight& other) = delete;
+		AmbientLight& operator=(AmbientLight&& other) = delete;
+
 
 	private:
 		AmbientLight();

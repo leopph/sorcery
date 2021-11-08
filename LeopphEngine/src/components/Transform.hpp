@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Component.hpp"
-#include "../api/leopphapi.h"
+#include "../api/LeopphApi.hpp"
 #include "../events/FrameEndEvent.hpp"
 #include "../events/handling/EventReceiver.hpp"
 #include "../math/Quaternion.hpp"
@@ -10,58 +10,71 @@
 
 namespace leopph
 {
-	class Entity;
-
-
+	/* Transforms are special Components that are automatically created on new Entities.
+	 * Transforms provide Entities with spatial properties such as position, orientation and scale. */
 	class Transform final : public Component, public EventReceiver<impl::FrameEndedEvent>
 	{
 	public:
-		LEOPPHAPI explicit Transform(Entity& owner,
+		// Get the spatial position in 3D space.
+		[[nodiscard]] LEOPPHAPI const Vector3& Position() const;
+
+		// Set the spatial position in 3D space.
+		LEOPPHAPI void Position(const Vector3& newPos);
+
+		// Get the spatial orientation in 3D space.
+		[[nodiscard]] LEOPPHAPI const Quaternion& Rotation() const;
+
+		// Set the spatial orientation in 3D space.
+		LEOPPHAPI void Rotation(Quaternion newRot);
+
+		// Get the spatial scale in 3D space.
+		[[nodiscard]] LEOPPHAPI const Vector3& Scale() const;
+
+		// Set the spatial scale in 3D space.
+		LEOPPHAPI void Scale(const Vector3& newScale);
+
+		// Move the Transform relative to its current position by the input vector.
+		LEOPPHAPI void Translate(const Vector3& vector);
+
+		// Move the Transform relative to its current position by the input values.
+		LEOPPHAPI void Translate(float x, float y, float z);
+
+		/* Rotate the Transform from its current rotation specified by the input Quaternion.
+		 * The rotation will be interpreted in Local-space, so X, Y, and Z will mean the Transforms respective axes. */
+		LEOPPHAPI void RotateLocal(const Quaternion& rotation);
+
+		/* Rotate the Transform from its current rotation specified by the input Quaternion.
+		 * The rotation will be interpreted in World-space, so X, Y, and Z will mean the world's respective axes. */
+		LEOPPHAPI void RotateGlobal(const Quaternion& rotation);
+
+		// Scale the Transform relative to its current scaling by the input values.
+		LEOPPHAPI void Rescale(float x, float y, float z);
+
+		// Get the Transform's current forward, or Z vector.
+		[[nodiscard]] LEOPPHAPI auto Forward() const -> const Vector3&;
+
+		// Get the Transform's current right, or X vector.
+		[[nodiscard]] LEOPPHAPI auto Right() const -> const Vector3&;
+
+		// Get the Transform's current up, or Y vector.
+		[[nodiscard]] LEOPPHAPI auto Up() const -> const Vector3&;
+
+		/* A flag representing whether the Transform's matrices have changed since their last calculations.
+		 * If this flag is set, new matrix calculations will take place during the rendering of the current frame. */
+		const bool& WasAltered;
+
+
+		LEOPPHAPI explicit Transform(leopph::Entity& owner,
 									 const Vector3& pos = Vector3{},
 									 const Quaternion& rot = Quaternion{},
 									 const Vector3& scale = Vector3{1, 1, 1});
-
 		Transform(const Transform&) = delete;
 		Transform(Transform&&) = delete;
-		void operator=(const Transform&) = delete;
-		void operator=(Transform&&) = delete;
 
 		LEOPPHAPI ~Transform() override;
 
-		/* Spatial position in 3D space */
-		[[nodiscard]] LEOPPHAPI const Vector3& Position() const;
-		LEOPPHAPI void Position(const Vector3& newPos);
-
-		/* Spatial rotation */
-		[[nodiscard]] LEOPPHAPI const Quaternion& Rotation() const;
-		LEOPPHAPI void Rotation(Quaternion newRot);
-
-		/* Spatial scaling */
-		[[nodiscard]] LEOPPHAPI const Vector3& Scale() const;
-		LEOPPHAPI void Scale(const Vector3& newScale);
-
-		/* Move the DynamicTransform relative to its current position */
-		LEOPPHAPI void Translate(const Vector3& vector);
-		LEOPPHAPI void Translate(float x, float y, float z);
-
-		/* Rotate the DynamicTransform around the specified axis */
-		LEOPPHAPI void RotateLocal(const Quaternion& rotation);
-		LEOPPHAPI void RotateGlobal(const Quaternion& rotation);
-
-		/* Scale the DynamicTransform relative to its current scaling */
-		LEOPPHAPI void Rescale(float x, float y, float z);
-
-		/* Current local axes */
-		[[nodiscard]] LEOPPHAPI auto Forward() const -> const Vector3&;
-		[[nodiscard]] LEOPPHAPI auto Right() const -> const Vector3&;
-		[[nodiscard]] LEOPPHAPI auto Up() const -> const Vector3&;
-
-
-		/* This flag is set true if any property of the Transform
-		 * was altered since the last time it's matrix was calculatted.
-		 * This is mostly used internally but can come in handy in your
-		 * logic too. */
-		const bool& WasAltered;
+		void operator=(const Transform&) = delete;
+		void operator=(Transform&&) = delete;
 
 
 	private:

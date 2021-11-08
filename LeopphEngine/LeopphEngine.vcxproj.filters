@@ -79,7 +79,7 @@
     <ClInclude Include="src\rendering\opengl\gl.h" />
     <ClInclude Include="src\input\Input.hpp" />
     <ClInclude Include="src\data\DataManager.hpp" />
-    <ClInclude Include="src\api\leopphapi.h" />
+    <ClInclude Include="src\api\LeopphApi.hpp" />
     <ClInclude Include="src\math\LeopphMath.hpp" />
     <ClInclude Include="src\components\lighting\Light.hpp" />
     <ClInclude Include="src\math\Matrix.hpp" />

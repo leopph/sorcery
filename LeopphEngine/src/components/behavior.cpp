@@ -4,7 +4,7 @@
 
 namespace leopph
 {
-	Behavior::Behavior(Entity& owner) :
+	Behavior::Behavior(leopph::Entity& owner) :
 		Component{ owner }
 	{
 		impl::DataManager::Register(this);

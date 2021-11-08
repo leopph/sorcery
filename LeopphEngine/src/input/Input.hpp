@@ -3,7 +3,7 @@
 #include "cursorstate.h"
 #include "keycodes.h"
 #include "keystate.h"
-#include "../api/leopphapi.h"
+#include "../api/LeopphApi.hpp"
 #include "../events/FrameEndEvent.hpp"
 #include "../events/KeyEvent.hpp"
 #include "../events/MouseEvent.hpp"

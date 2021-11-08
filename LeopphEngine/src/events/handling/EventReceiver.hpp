@@ -3,7 +3,7 @@
 #include "EventManager.hpp"
 #include "EventReceiverBase.hpp"
 #include "../Event.hpp"
-#include "../../api/leopphapi.h"
+#include "../../api/LeopphApi.hpp"
 
 #include <concepts>
 

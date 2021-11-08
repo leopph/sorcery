@@ -82,13 +82,13 @@ namespace leopph::impl
 	void DeferredRenderer::Render()
 	{
 		/* We don't render if there is no camera to use */
-		if (Camera::Active() == nullptr)
+		if (Camera::Active == nullptr)
 		{
 			return;
 		}
 
-		const auto camViewMat{Camera::Active()->ViewMatrix()};
-		const auto camProjMat{Camera::Active()->ProjectionMatrix()};
+		const auto camViewMat{Camera::Active->ViewMatrix()};
+		const auto camProjMat{Camera::Active->ProjectionMatrix()};
 
 		const auto& modelsAndMats{CalcAndCollectMatrices()};
 		const auto& pointLights{CollectPointLights()};
@@ -183,7 +183,7 @@ namespace leopph::impl
 		lightShader.SetUniform("u_DirLight.direction", dirLight->Direction());
 		lightShader.SetUniform("u_DirLight.diffuseColor", dirLight->Diffuse());
 		lightShader.SetUniform("u_DirLight.specularColor", dirLight->Specular());
-		lightShader.SetUniform("u_CameraPosition", Camera::Active()->entity.Transform->Position());
+		lightShader.SetUniform("u_CameraPosition", Camera::Active->Entity.Transform->Position());
 
 		if (dirLight->CastsShadow())
 		{
@@ -195,7 +195,7 @@ namespace leopph::impl
 
 			const auto cameraInverseMatrix{camViewMat.Inverse()};
 			const auto lightViewMatrix{Matrix4::LookAt(dirLight->Range() * -dirLight->Direction(), Vector3{}, Vector3::Up())};
-			const auto cascadeCount{Settings::CameraDirectionalShadowCascadeCount()};
+			const auto cascadeCount{Settings::DirectionalShadowCascadeCount()};
 
 			shadowShader.Use();
 
@@ -280,11 +280,11 @@ namespace leopph::impl
 			texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::TextureType::Shine, texCount);
 			static_cast<void>(m_SpotShadowMap.BindForReading(lightShader, texCount));
 
-			lightShader.SetUniform("u_CameraPosition", Camera::Active()->entity.Transform->Position());
+			lightShader.SetUniform("u_CameraPosition", Camera::Active->Entity.Transform->Position());
 
 			const auto lightWorldToClipMat
 			{
-				Matrix4::LookAt(spotLight->entity.Transform->Position(), spotLight->entity.Transform->Position() + spotLight->entity.Transform->Forward(), Vector3::Up()) *
+				Matrix4::LookAt(spotLight->Entity.Transform->Position(), spotLight->Entity.Transform->Position() + spotLight->Entity.Transform->Forward(), Vector3::Up()) *
 				Matrix4::Perspective(math::ToRadians(spotLight->OuterAngle() * 2), 1.f, 0.1f, spotLight->Range())
 			};
 
@@ -305,8 +305,8 @@ namespace leopph::impl
 
 			m_SpotShadowMap.UnbindFromWriting();
 
-			lightShader.SetUniform("u_SpotLight.position", spotLight->entity.Transform->Position());
-			lightShader.SetUniform("u_SpotLight.direction", spotLight->entity.Transform->Forward());
+			lightShader.SetUniform("u_SpotLight.position", spotLight->Entity.Transform->Position());
+			lightShader.SetUniform("u_SpotLight.direction", spotLight->Entity.Transform->Forward());
 			lightShader.SetUniform("u_SpotLight.diffuseColor", spotLight->Diffuse());
 			lightShader.SetUniform("u_SpotLight.specularColor", spotLight->Specular());
 			lightShader.SetUniform("u_SpotLight.constant", spotLight->Constant());
@@ -340,7 +340,7 @@ namespace leopph::impl
 
 		for (const auto& pointLight : pointLights)
 		{
-			const auto& lightPos{pointLight->entity.Transform->Position()};
+			const auto& lightPos{pointLight->Entity.Transform->Position()};
 
 			lightShaderFlagInfo.Clear();
 			lightShaderFlagInfo["CAST_SHADOW"] = pointLight->CastsShadow();
@@ -360,7 +360,7 @@ namespace leopph::impl
 			lightShader.SetUniform("u_PointLight.linear", pointLight->Linear());
 			lightShader.SetUniform("u_PointLight.quadratic", pointLight->Quadratic());
 			lightShader.SetUniform("u_PointLight.range", pointLight->Range());
-			lightShader.SetUniform("u_CamPos", Camera::Active()->entity.Transform->Position());
+			lightShader.SetUniform("u_CamPos", Camera::Active->Entity.Transform->Position());
 
 			if (pointLight->CastsShadow())
 			{
@@ -380,7 +380,7 @@ namespace leopph::impl
 						Matrix4{-1, 0, 0, 0, 0, -1, 0, 0, 0, 0, -1, 0, 0 , 0, 0, 1} // -Z
 					}; const auto& cubeFaceMatrix : cubeFaceMatrices)
 				{
-					shadowViewProjMats.emplace_back(Matrix4::Translate(-pointLight->entity.Transform->Position()) * cubeFaceMatrix * shadowProj);
+					shadowViewProjMats.emplace_back(Matrix4::Translate(-pointLight->Entity.Transform->Position()) * cubeFaceMatrix * shadowProj);
 				}
 
 				shadowShader.SetUniform("u_ViewProjMats", shadowViewProjMats);
@@ -422,7 +422,7 @@ namespace leopph::impl
 		
 		m_GBuffer.CopyDepthData(m_RenderTexture.FramebufferName());
 
-		if (const auto& skybox{Camera::Active()->Background().skybox}; skybox.has_value())
+		if (const auto& skybox{Camera::Active->Background().skybox}; skybox.has_value())
 		{
 			skyboxShader.SetUniform("viewMatrix", static_cast<Matrix4>(static_cast<Matrix3>(camViewMat)));
 			skyboxShader.SetUniform("projectionMatrix", camProjMat);

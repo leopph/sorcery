@@ -4,7 +4,7 @@
 
 namespace leopph::impl
 {
-	Light::Light(Entity& owner) :
+	Light::Light(leopph::Entity& owner) :
 		Component{owner},
 		m_CastsShadow{false},
 		m_Range{1000.f},

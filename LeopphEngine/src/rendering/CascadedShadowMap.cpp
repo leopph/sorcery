@@ -82,7 +82,7 @@ namespace leopph::impl
 
 	Matrix4 CascadedShadowMap::WorldToClipMatrix(const std::size_t cascadeIndex, const Matrix4& cameraInverseMatrix, const Matrix4& lightViewMatrix) const
 	{
-		const auto& camera{*Camera::Active()};
+		const auto& camera{*Camera::Active};
 		const auto cascadeDepth{(camera.FarClipPlane() - camera.NearClipPlane()) / m_TexIds.size()};
 		const auto cascadeNear{camera.NearClipPlane() + cascadeIndex * cascadeDepth};
 		const auto cascadeFar{camera.NearClipPlane() + (cascadeIndex + 1) * cascadeDepth};
@@ -123,7 +123,7 @@ namespace leopph::impl
 
 	Vector2 CascadedShadowMap::CascadeBoundsViewSpace(const std::size_t cascadeIndex) const
 	{
-		const auto& camera{*Camera::Active()};
+		const auto& camera{*Camera::Active};
 		const auto cascadeDepth{(camera.FarClipPlane() - camera.NearClipPlane()) / static_cast<float>(m_TexIds.size())};
 		return Vector2
 		{

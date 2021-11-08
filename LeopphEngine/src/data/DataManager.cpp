@@ -88,13 +88,13 @@ namespace leopph::impl
 
 	void DataManager::Register(Component* component)
 	{
-		s_EntitiesAndComponents[&component->entity].insert(component);
+		s_EntitiesAndComponents[&component->Entity].insert(component);
 	}
 
 
 	void DataManager::Unregister(Component* component)
 	{
-		s_EntitiesAndComponents[&component->entity].erase(component);
+		s_EntitiesAndComponents[&component->Entity].erase(component);
 	}
 
 

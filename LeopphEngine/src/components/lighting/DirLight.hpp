@@ -1,34 +1,30 @@
 #pragma once
 
 #include "Light.hpp"
-#include "../../api/leopphapi.h"
+#include "../../api/LeopphApi.hpp"
 #include "../../math/Vector.hpp"
-
 
 
 namespace leopph
 {
-	class Entity;
-
-	/*-----------------------------------------------------------------------------------------------------------------------
-	Directional lights are components that provide a way to light your scene with a source that appears to be infinitely far.
-	The position of the light source does not matter, it always lights things from the direction it is set to.
-	See "Light.hpp" and "Component.hpp" for more information.
-	-----------------------------------------------------------------------------------------------------------------------*/
+	
+	/* DirectionalLights are special Lights that provide a way to light your scene with a source that appears to be infinitely far.
+	 * The position of the DirectionalLight does not matter, it always affects things from the direction it is set to. */
 	class DirectionalLight final : public impl::Light
 	{
 		public:
-			LEOPPHAPI explicit DirectionalLight(Entity& owner);
-			LEOPPHAPI ~DirectionalLight() override;
+			/* The direction where the DirectionalLight shines.
+			 * This is exactly the same as the owning Entity's forward, or Z vector. */
+			LEOPPHAPI const Vector3& Direction() const;
 
+
+			LEOPPHAPI explicit DirectionalLight(leopph::Entity& owner);
 			DirectionalLight(const DirectionalLight&) = delete;
 			DirectionalLight(DirectionalLight&&) = delete;
+
+			LEOPPHAPI ~DirectionalLight() override;
+
 			void operator=(const DirectionalLight&) = delete;
 			void operator=(DirectionalLight&&) = delete;
-
-			/* The direction of the Light. This is exactly the same
-			as the forward vector of the Entity's Transform that the
-			DirectionalLight is attached to. */
-			LEOPPHAPI const Vector3& Direction() const;
 	};
 }

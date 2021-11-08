@@ -12,7 +12,7 @@
 namespace leopph
 {
 	std::filesystem::path Settings::s_ShaderLocation{};
-	const Settings::GraphicsApi Settings::RenderAPI{GraphicsApi::OpenGL};
+	const Settings::GraphicsApi Settings::RenderAPI{GraphicsApi::OpenGl};
 	Settings::GraphicsApi Settings::s_PendingRenderApi{RenderAPI};
 	std::vector<std::size_t> Settings::s_DirectionalLightShadowMapResolutions{4096, 2048, 1024};
 	std::size_t Settings::s_PointLightShadowMapResolution{1024};
@@ -22,7 +22,7 @@ namespace leopph
 	Settings::RenderType Settings::s_RenderingPipeline{RenderType::Deferred};
 
 
-	bool Settings::IsCachingShaders()
+	bool Settings::CacheShaders()
 	{
 		return !s_ShaderLocation.empty();
 	}
@@ -71,7 +71,7 @@ namespace leopph
 	}
 
 
-	std::size_t Settings::CameraDirectionalShadowCascadeCount()
+	std::size_t Settings::DirectionalShadowCascadeCount()
 	{
 		return s_DirectionalLightShadowMapResolutions.size();
 	}

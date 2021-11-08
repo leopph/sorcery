@@ -49,13 +49,13 @@ namespace leopph::impl
 	void ForwardRenderer::Render()
 	{
 		/* We don't render if there is no camera to use */
-		if (Camera::Active() == nullptr)
+		if (Camera::Active == nullptr)
 		{
 			return;
 		}
 
-		const auto camViewMat{Camera::Active()->ViewMatrix()};
-		const auto camProjMat{Camera::Active()->ProjectionMatrix()};
+		const auto camViewMat{Camera::Active->ViewMatrix()};
+		const auto camProjMat{Camera::Active->ProjectionMatrix()};
 
 		const auto& modelsAndMats{CalcAndCollectMatrices()};
 		const auto& pointLights{CollectPointLights()};
@@ -78,7 +78,7 @@ namespace leopph::impl
 		objectShader.Use();
 
 		objectShader.SetUniform("viewProjectionMatrix", camViewMat * camProjMat);
-		objectShader.SetUniform("cameraPosition", Camera::Active()->entity.Transform->Position());
+		objectShader.SetUniform("cameraPosition", Camera::Active->Entity.Transform->Position());
 
 		/* Set up ambient light data */
 		objectShader.SetUniform("ambientLight", AmbientLight::Instance().Intensity());
@@ -102,7 +102,7 @@ namespace leopph::impl
 		{
 			const auto& pointLight = pointLights[i];
 
-			objectShader.SetUniform("pointLights[" + std::to_string(i) + "].position", pointLight->entity.Transform->Position());
+			objectShader.SetUniform("pointLights[" + std::to_string(i) + "].position", pointLight->Entity.Transform->Position());
 			objectShader.SetUniform("pointLights[" + std::to_string(i) + "].diffuseColor", pointLight->Diffuse());
 			objectShader.SetUniform("pointLights[" + std::to_string(i) + "].specularColor", pointLight->Specular());
 			objectShader.SetUniform("pointLights[" + std::to_string(i) + "].constant", pointLight->Constant());
@@ -116,8 +116,8 @@ namespace leopph::impl
 		{
 			const auto& spotLight{spotLights[i]};
 
-			objectShader.SetUniform("spotLights[" + std::to_string(i) + "].position", spotLight->entity.Transform->Position());
-			objectShader.SetUniform("spotLights[" + std::to_string(i) + "].direction", spotLight->entity.Transform->Forward());
+			objectShader.SetUniform("spotLights[" + std::to_string(i) + "].position", spotLight->Entity.Transform->Position());
+			objectShader.SetUniform("spotLights[" + std::to_string(i) + "].direction", spotLight->Entity.Transform->Forward());
 			objectShader.SetUniform("spotLights[" + std::to_string(i) + "].diffuseColor", spotLight->Diffuse());
 			objectShader.SetUniform("spotLights[" + std::to_string(i) + "].specularColor", spotLight->Specular());
 			objectShader.SetUniform("spotLights[" + std::to_string(i) + "].constant", spotLight->Constant());
@@ -140,7 +140,7 @@ namespace leopph::impl
 		static auto skyboxFlagInfo{m_SkyboxShader.GetFlagInfo()};
 		auto& skyboxShader{m_SkyboxShader.GetPermutation(skyboxFlagInfo)};
 
-		if (const auto& skybox{Camera::Active()->Background().skybox}; skybox.has_value())
+		if (const auto& skybox{Camera::Active->Background().skybox}; skybox.has_value())
 		{
 			skyboxShader.Use();
 			skyboxShader.SetUniform("viewMatrix", static_cast<Matrix4>(static_cast<Matrix3>(camViewMat)));

@@ -74,7 +74,7 @@ namespace leopph
 
 	void Entity::RemoveComponent(Component* behavior)
 	{
-		if (&behavior->entity != this)
+		if (&behavior->Entity != this)
 		{
 			const auto errorMsg{"The given Component is not attached to Entity [" + Name + "]."};
 			impl::Logger::Instance().Error(errorMsg);

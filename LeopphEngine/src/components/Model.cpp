@@ -7,7 +7,7 @@
 
 namespace leopph
 {
-	Model::Model(Entity& owner, const std::filesystem::path& path) :
+	Model::Model(leopph::Entity& owner, const std::filesystem::path& path) :
 		Component{ owner }, ResourceHandle{ path }
 	{
 		impl::DataManager::Register(resource);
@@ -34,7 +34,7 @@ namespace leopph
 	}
 
 
-	void Model::CastsShadow(const bool value)
+	void Model::CastsShadow(const bool value) const
 	{
 		resource->CastsShadow(value);
 	}

@@ -4,7 +4,7 @@
 
 namespace leopph::impl
 {
-	AttenuatedLight::AttenuatedLight(Entity& owner, const float constant, const float linear, const float quadratic, const float range) :
+	AttenuatedLight::AttenuatedLight(leopph::Entity& owner, const float constant, const float linear, const float quadratic, const float range) :
 		Light{owner},
 		m_Constant{constant},
 		m_Linear{linear},

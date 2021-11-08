@@ -2,7 +2,7 @@
 
 #include "EventReceiver.hpp"
 #include "../Event.hpp"
-#include "../../api/leopphapi.h"
+#include "../../api/LeopphApi.hpp"
 
 #include <concepts>
 #include <functional>

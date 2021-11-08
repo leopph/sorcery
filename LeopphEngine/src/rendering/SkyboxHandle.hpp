@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../api/leopphapi.h"
+#include "../api/LeopphApi.hpp"
 #include "../data/managed/ResourceHandle.hpp"
 #include "SkyboxResource.hpp"
 
