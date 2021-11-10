@@ -2,3 +2,4 @@
 *.user
 int
 out
+LeopphEngine/vendor/*
