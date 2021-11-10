@@ -1,14 +1,6 @@
-[submodule "LeopphEngine/vendor/assimp"]
-	path = LeopphEngine/vendor/assimp
-	url = https://github.com/assimp/assimp.git
-	ignore = dirty
 [submodule "LeopphEngine/vendor/glfw"]
 	path = LeopphEngine/vendor/glfw
 	url = https://github.com/glfw/glfw.git
-[submodule "LeopphEngine/vendor/glad"]
-	path = LeopphEngine/vendor/glad
-	url = https://github.com/Dav1dde/glad.git
-	ignore = dirty
 [submodule "LeopphEngine/vendor/spdlog"]
 	path = LeopphEngine/vendor/spdlog
 	url = https://github.com/gabime/spdlog.git
