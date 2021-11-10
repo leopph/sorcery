@@ -1,6 +1,5 @@
 [submodule "LeopphEngine/vendor/glfw"]
 	path = LeopphEngine/vendor/glfw
 	url = https://github.com/glfw/glfw.git
-[submodule "LeopphEngine/vendor/spdlog"]
-	path = LeopphEngine/vendor/spdlog
-	url = https://github.com/gabime/spdlog.git
+[submodule "LeopphEngine\\vendor\\glfw"]
+	branch = latest
