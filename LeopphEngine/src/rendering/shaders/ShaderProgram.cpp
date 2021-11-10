@@ -3,7 +3,7 @@
 #include "../../util/logger.h"
 #include "../../util/interface/OpenGLAdapter.hpp"
 
-#include <glad/glad.h>
+#include <glad/gl.h>
 
 
 

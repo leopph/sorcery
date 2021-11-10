@@ -5,7 +5,7 @@
 #include "../math/LeopphMath.hpp"
 #include "../windowing/WindowBase.hpp"
 
-#include <glad/glad.h>
+#include <glad/gl.h>
 
 #include <algorithm>
 #include <array>

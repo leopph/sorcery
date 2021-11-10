@@ -2,7 +2,7 @@
 
 #include "../windowing/WindowBase.hpp"
 
-#include <glad/glad.h>
+#include <glad/gl.h>
 
 #include <array>
 

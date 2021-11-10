@@ -1,8 +1,10 @@
-#include "gl.h"
+#include "InitGl.hpp"
 
 #include "../../util/logger.h"
 
-#include <glad/glad.h>
+#include <glad/gl.h>
+#define GLFW_INCLUDE_NONE
+#include <GLFW/glfw3.h>
 
 #include <iostream>
 #include <string>
@@ -93,7 +95,7 @@ namespace leopph::impl
 
 	bool InitGL()
 	{
-		auto ret = gladLoadGL();
+		auto ret = gladLoadGL(glfwGetProcAddress);
 
 		if (Logger::Instance().CurrentLevel() == Logger::Level::DEBUG && ret)
 		{

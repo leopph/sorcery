@@ -2,7 +2,7 @@
 
 #include "../util/logger.h"
 
-#include <glad/glad.h>
+#include <glad/gl.h>
 
 #include <cstddef>
 #include <stb_image.h>

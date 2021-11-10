@@ -48,14 +48,14 @@
     <OutDir>$(SolutionDir)out\$(ProjectName)\$(Configuration)_$(Platform)\</OutDir>
     <IntDir>$(SolutionDir)int\$(ProjectName)\$(Configuration)_$(Platform)\</IntDir>
     <TargetName>leopph</TargetName>
-    <LibraryPath>$(ProjectDir)vendor\spdlog\build\$(Configuration)\;$(ProjectDir)vendor\glad\$(Configuration)\;$(ProjectDir)vendor\assimp\lib\$(Configuration)\;$(ProjectDir)vendor\glfw\src\$(Configuration)\;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(ProjectDir)vendor\spdlog\build\$(Configuration)\;$(ProjectDir)vendor\assimp\lib\$(Configuration)\;$(ProjectDir)vendor\glfw\src\$(Configuration)\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)out\$(ProjectName)\$(Configuration)_$(Platform)\</OutDir>
     <IntDir>$(SolutionDir)int\$(ProjectName)\$(Configuration)_$(Platform)\</IntDir>
     <TargetName>leopph</TargetName>
-    <LibraryPath>$(ProjectDir)vendor\spdlog\build\$(Configuration)\;$(ProjectDir)vendor\glad\$(Configuration)\;$(ProjectDir)vendor\assimp\lib\$(Configuration)\;$(ProjectDir)vendor\glfw\src\$(Configuration)\;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(ProjectDir)vendor\spdlog\build\$(Configuration)\;$(ProjectDir)vendor\assimp\lib\$(Configuration)\;$(ProjectDir)vendor\glfw\src\$(Configuration)\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -70,7 +70,7 @@
     <Link>
       <SubSystem>NotSet</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>glad.lib;glfw3.lib;zlibstaticd.lib;assimp-vc143-mtd.lib;IrrXMLd.lib;spdlogd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glfw3.lib;zlibstaticd.lib;assimp-vc143-mtd.lib;IrrXMLd.lib;spdlogd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent />
     <PreBuildEvent />
@@ -101,7 +101,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>glad.lib;glfw3.lib;zlibstatic.lib;assimp-vc143-mt.lib;IrrXML.lib;spdlog.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glfw3.lib;zlibstatic.lib;assimp-vc143-mt.lib;IrrXML.lib;spdlog.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent />
     <PreBuildEvent />
@@ -181,7 +181,7 @@
     <ClInclude Include="src\util\interface\OpenGLAdapter.hpp" />
     <ClInclude Include="src\util\less\LightCloserToCamera.hpp" />
     <ClInclude Include="src\util\logger.h" />
-    <ClInclude Include="src\rendering\opengl\gl.h" />
+    <ClInclude Include="src\rendering\opengl\InitGl.hpp" />
     <ClInclude Include="src\input\Input.hpp" />
     <ClInclude Include="src\data\DataManager.hpp" />
     <ClInclude Include="src\api\LeopphApi.hpp" />
@@ -236,7 +236,7 @@
     <ClCompile Include="src\rendering\renderers\DeferredRenderer.cpp" />
     <ClCompile Include="src\rendering\Material.cpp" />
     <ClCompile Include="src\rendering\geometry\ModelResource.cpp" />
-    <ClCompile Include="src\rendering\opengl\gl.cpp" />
+    <ClCompile Include="src\rendering\opengl\InitGl.cpp" />
     <ClCompile Include="src\rendering\renderers\Renderer.cpp" />
     <ClCompile Include="src\rendering\RenderTexture.cpp" />
     <ClCompile Include="src\rendering\shaders\ShaderProgram.cpp" />
@@ -273,6 +273,7 @@
     <ClCompile Include="src\rendering\renderers\ForwardRenderer.cpp" />
     <ClCompile Include="src\timing\leopphtime.cpp" />
     <ClCompile Include="src\windowing\GlWindow.cpp" />
+    <ClCompile Include="vendor\glad\src\gl.c" />
     <ClCompile Include="vendor\stb_image\stb_image.cpp" />
   </ItemGroup>
   <ItemGroup>

@@ -3,7 +3,7 @@
   <ItemGroup>
     <ClCompile Include="src\components\Behavior.cpp" />
     <ClCompile Include="src\components\Camera.cpp" />
-    <ClCompile Include="src\rendering\opengl\gl.cpp" />
+    <ClCompile Include="src\rendering\opengl\InitGl.cpp" />
     <ClCompile Include="src\math\LeopphMath.cpp" />
     <ClCompile Include="src\components\lighting\Light.cpp" />
     <ClCompile Include="src\rendering\geometry\Mesh.cpp" />
@@ -70,13 +70,14 @@
     <ClCompile Include="src\rendering\CubeShadowMap.cpp" />
     <ClCompile Include="src\windowing\Window.cpp" />
     <ClCompile Include="src\rendering\RenderTexture.cpp" />
+    <ClCompile Include="vendor\glad\src\gl.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\Behavior.hpp" />
     <ClInclude Include="src\components\Camera.hpp" />
     <ClInclude Include="src\components\lighting\DirLight.hpp" />
     <ClInclude Include="src\entry\entry.h" />
-    <ClInclude Include="src\rendering\opengl\gl.h" />
+    <ClInclude Include="src\rendering\opengl\InitGl.hpp" />
     <ClInclude Include="src\input\Input.hpp" />
     <ClInclude Include="src\data\DataManager.hpp" />
     <ClInclude Include="src\api\LeopphApi.hpp" />
