@@ -1,5 +1,5 @@
 [submodule "LeopphEngine/vendor/glfw"]
 	path = LeopphEngine/vendor/glfw
 	url = https://github.com/glfw/glfw.git
-[submodule "LeopphEngine\\vendor\\glfw"]
 	branch = latest
+	
