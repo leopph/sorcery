@@ -226,10 +226,7 @@ namespace leopph
 	{
 		m_GlobalPosition = m_Parent != nullptr ? m_Parent->m_GlobalPosition + m_LocalPosition : m_LocalPosition;
 		m_WasAltered = true;
-		std::ranges::for_each(m_Children, [](auto& child)
-		{
-			child->CalculateGlobalPosition();
-		});
+		std::ranges::for_each(m_Children, &Transform::CalculateGlobalPosition);
 	}
 
 	void Transform::CalculateGlobalRotation()
@@ -237,19 +234,13 @@ namespace leopph
 		m_GlobalRotation = m_Parent != nullptr ? m_Parent->m_GlobalRotation * m_LocalRotation : m_LocalRotation;
 		CalculateLocalAxes();
 		m_WasAltered = true;
-		std::ranges::for_each(m_Children, [](auto& child)
-		{
-			child->CalculateGlobalRotation();
-		});
+		std::ranges::for_each(m_Children, &Transform::CalculateGlobalRotation);
 	}
 
 	void Transform::CalculateGlobalScale()
 	{
 		m_GlobalScale = m_Parent != nullptr ? m_Parent->m_GlobalScale * m_LocalScale : m_LocalScale;
 		m_WasAltered = true;
-		std::ranges::for_each(m_Children, [](auto& child)
-		{
-			child->CalculateGlobalScale();
-		});
+		std::ranges::for_each(m_Children, &Transform::CalculateGlobalScale);
 	}
 }

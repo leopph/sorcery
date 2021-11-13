@@ -13,6 +13,14 @@
 
 namespace leopph
 {
+	/// The Space enum helps determine how transformation information should be interpreted.
+	enum class Space
+	{
+		World,
+		Local
+	};
+
+
 	/* Transforms are special Components that are automatically created on new Entities.
 	 * Transforms provide Entities with spatial properties such as position, orientation and scale.
 	 * They define a hierarchy in which each child inherits its parent's properties. */
