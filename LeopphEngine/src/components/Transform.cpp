@@ -192,9 +192,15 @@ namespace leopph
 			return;
 		}
 
-		auto modelMatrix{Matrix4::Scale(m_GlobalScale)};
-		modelMatrix *= static_cast<Matrix4>(m_GlobalRotation);
-		modelMatrix *= Matrix4::Translate(m_GlobalPosition);
+		auto modelMatrix{Matrix4::Scale(m_LocalScale)};
+		modelMatrix *= static_cast<Matrix4>(m_LocalRotation);
+		modelMatrix *= Matrix4::Translate(m_LocalPosition);
+
+		if (m_Parent != nullptr)
+		{
+			m_Parent->CalculateMatrices();
+			modelMatrix *= impl::DataManager::GetMatrices(m_Parent).first;
+		}
 
 		/* OpenGL accepts our matrices transposed,
 		 * that's why this is done this way. Weird, eh? */
@@ -202,7 +208,7 @@ namespace leopph
 
 		m_WasAltered = false;
 	}
-
+	
 	void Transform::CalculateLocalAxes()
 	{
 		const auto rotMatrix = static_cast<Matrix3>(static_cast<Matrix4>(m_GlobalRotation));
@@ -228,7 +234,7 @@ namespace leopph
 
 	void Transform::CalculateGlobalRotation()
 	{
-		m_GlobalRotation = m_Parent != nullptr ? m_LocalRotation * m_Parent->m_GlobalRotation : m_LocalRotation;
+		m_GlobalRotation = m_Parent != nullptr ? m_Parent->m_GlobalRotation * m_LocalRotation : m_LocalRotation;
 		CalculateLocalAxes();
 		m_WasAltered = true;
 		std::ranges::for_each(m_Children, [](auto& child)

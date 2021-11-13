@@ -14,6 +14,7 @@ void leopph::AppStart()
 	Input::CursorMode(CursorState::Disabled);
 
 	const auto groupEntity = new Entity{"group"};
+	groupEntity->Transform->RotateGlobal(Quaternion{Vector3::Up(), 180});
 
 	const auto playerEntity = new Entity{"player"};
 	playerEntity->Transform->Parent(groupEntity);
@@ -50,6 +51,7 @@ void leopph::AppStart()
 	cubeEntity->AddComponent<Rotate>(Vector3::Up(), 30.f);
 
 	const auto dirLightEntity = new Entity{"dirlight"};
+	dirLightEntity->Transform->Parent(groupEntity);
 	dirLightEntity->Transform->RotateGlobal(Quaternion{Vector3::Up(), 315});
 	dirLightEntity->Transform->RotateLocal({Quaternion{Vector3::Right(), 45}});
 	const auto dirLight = dirLightEntity->AddComponent<DirectionalLight>();
