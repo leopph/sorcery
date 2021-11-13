@@ -12,7 +12,7 @@ These are the planned features and their current states:
   - ✅ Fundamental Entity-Component structure
   - ✅ Necessary engine-provided components
   - ✅ API to make functionality extension possible
-  - ❌ Parent-child relation between Entities
+  - ✅ Parent-child relation between Entities
 - 〽️ OpenGL Renderer
   - ✅ Blinn-Phong model
     - ✅ Directional, point, and spotlights
