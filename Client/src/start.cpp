@@ -72,8 +72,8 @@ void leopph::AppStart()
 	const auto pointLight = pointLightEntity->AddComponent<PointLight>();
 	pointLight->Range(15);
 	pointLight->CastsShadow(true);
-	const auto lightCubeModel{pointLightEntity->AddComponent<Model>("models/cube/cube.dae")};
-	lightCubeModel->CastsShadow(false);
+	//const auto lightCubeModel{pointLightEntity->AddComponent<Model>("models/cube/cube.dae")};
+	//lightCubeModel->CastsShadow(false);
 
 
 	AmbientLight::Instance().Intensity(Vector3{0, 0, 0});

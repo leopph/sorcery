@@ -285,16 +285,15 @@ namespace leopph
 				Matrix<T, N, M> Transpose()
 					requires(N == M)
 				{
-					Matrix<T, N, M> transposed = Transposed();
-
-					for (size_t i = 0; i < N; i++)
+					for (std::size_t i = 0; i < N; i++)
 					{
-						for (size_t j = 0; j < M; j++)
+						for (std::size_t j = i + 1; j < M; j++)
 						{
-							m_Data[i][j] = transposed[i][j];
+							auto temp{m_Data[i][j]};
+							m_Data[i][j] = m_Data[j][i];
+							m_Data[j][i] = temp;
 						}
 					}
-
 					return *this;
 				}
 
@@ -386,54 +385,72 @@ namespace leopph
 		}
 
 
-		template<class T, std::size_t N, std::size_t M, std::size_t P>
-		Matrix<T, N, P> operator*(const Matrix<T, N, M>& left, const Matrix<T, M, P>& right)
+		template<class T, std::size_t N, std::size_t M>
+		Matrix<T, N, M> operator+(const Matrix<T, N, M>& left, const Matrix<T, N, M>& right)
 		{
-			Matrix<T, N, P> ret;
-
-			for (size_t i = 0; i < N; i++)
+			Matrix<T, N, M> ret;
+			for (std::size_t i = 0; i < N; i++)
 			{
-				for (size_t j = 0; j < P; j++)
-				{
-					for (size_t k = 0; k < M; k++)
-					{
-						ret[i][j] += left[i][k] * right[k][j];
-					}
-				}
+				ret[i] = left[i] + right[i];
 			}
-
 			return ret;
 		}
 
 
 		template<class T, std::size_t N, std::size_t M>
-		Matrix<T, N, M>& operator*=(Matrix<T, N, M>& left, const Matrix<T, M, M>& right)
+		Matrix<T, N, M>& operator+=(Matrix<T, N, M>& left, const Matrix<T, N, M>& right)
 		{
-			return left = left * right;
+			for (std::size_t i = 0; i < N; i++)
+			{
+				left[i] += right[i];
+			}
+			return left;
 		}
 
 
 		template<class T, std::size_t N, std::size_t M>
-		Vector<T, M> operator*(const Vector<T, N>& left, const Matrix<T, N, M>& right)
+		Matrix<T, N, M> operator-(const Matrix<T, N, M>& left, const Matrix<T, N, M>& right)
 		{
-			Vector<T, M> ret;
-
-			for (size_t j = 0; j < M; j++)
+			Matrix<T, N, M> ret;
+			for (std::size_t i = 0; i < N; i++)
 			{
-				for (size_t k = 0; k < N; k++)
-				{
-					ret[j] += left[k] * right[k][j];
-				}
+				ret[i] = left[i] - right[i];
 			}
-
 			return ret;
 		}
 
 
 		template<class T, std::size_t N, std::size_t M>
-		Vector<T, M>& operator*=(Vector<T, N>& left, const Matrix<T, N, M>& right)
+		Matrix<T, N, M>& operator-=(Matrix<T, N, M>& left, const Matrix<T, N, M>& right)
 		{
-			return left = left * right;
+			for (std::size_t i = 0; i < N; i++)
+			{
+				left[i] -= right[i];
+			}
+			return left;
+		}
+
+
+		template<class T, std::size_t N, std::size_t M, std::convertible_to<T> T1>
+		Matrix<T, N, M> operator*(const Matrix<T, N, M>& left, const T1& right)
+		{
+			Matrix<T, N, M> ret;
+			for (std::size_t i = 0; i < N; i++)
+			{
+				ret[i] = left[i] * static_cast<T>(right);
+			}
+			return ret;
+		}
+
+		template<class T, std::size_t N, std::size_t M, std::convertible_to<T> T1>
+		Matrix<T, N, M> operator*(const T1& left, const Matrix<T, N, M>& right)
+		{
+			Matrix<T, N, M> ret;
+			for (std::size_t i = 0; i < N; i++)
+			{
+				ret[i] = static_cast<T>(left) * right[i];
+			}
+			return ret;
 		}
 
 
@@ -441,16 +458,72 @@ namespace leopph
 		Vector<T, N> operator*(const Matrix<T, N, M>& left, const Vector<T, M>& right)
 		{
 			Vector<T, N> ret;
-
 			for (size_t i = 0; i < N; i++)
 			{
-				for (size_t k = 0; k < M; k++)
+				for (size_t j = 0; j < M; j++)
 				{
-					ret[i] += left[i][k] * right[k];
+					ret[i] += left[i][j] * right[j];
 				}
 			}
-
 			return ret;
+		}
+
+
+		template<class T, std::size_t N, std::size_t M>
+		Vector<T, M> operator*(const Vector<T, N>& left, const Matrix<T, N, M>& right)
+		{
+			Vector<T, M> ret;
+			for (size_t j = 0; j < M; j++)
+			{
+				for (size_t i = 0; i < N; i++)
+				{
+					ret[j] += left[i] * right[i][j];
+				}
+			}
+			return ret;
+		}
+
+
+		template<class T, std::size_t N, std::size_t M, std::size_t P>
+		Matrix<T, N, P> operator*(const Matrix<T, N, M>& left, const Matrix<T, M, P>& right)
+		{
+			Matrix<T, N, P> ret;
+			for (size_t i = 0; i < N; i++)
+			{
+				for (size_t k = 0; k < P; k++)
+				{
+					for (size_t j = 0; j < M; j++)
+					{
+						ret[i][k] += left[i][j] * right[j][k];
+					}
+				}
+			}
+			return ret;
+		}
+
+
+		template<class T, std::size_t N, std::size_t M, std::convertible_to<T> T1>
+		Matrix<T, N, M>& operator*=(Matrix<T, N, M>& left, const T1& right)
+		{
+			for (std::size_t i = 0; i < N; i++)
+			{
+				left[i] *= static_cast<T>(right);
+			}
+			return left;
+		}
+
+
+		template<class T, std::size_t N>
+		Vector<T, N>& operator*=(Vector<T, N>& left, const Matrix<T, N, N>& right)
+		{
+			return left = left * right;
+		}
+
+
+		template<class T, std::size_t N, std::size_t M>
+		Matrix<T, N, M>& operator*=(Matrix<T, N, M>& left, const Matrix<T, M, M>& right)
+		{
+			return left = left * right;
 		}
 	}
 
