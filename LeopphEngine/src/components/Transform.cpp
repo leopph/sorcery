@@ -71,7 +71,7 @@ namespace leopph
 		return m_LocalRotation;
 	}
 
-	void Transform::Rotation(const Quaternion newRot)
+	void Transform::Rotation(const Quaternion& newRot)
 	{
 		m_LocalRotation = newRot;
 		CalculateGlobalRotation();
@@ -93,27 +93,29 @@ namespace leopph
 		CalculateGlobalScale();
 	}
 
-	void Transform::Translate(const Vector3& vector)
+	void Transform::Translate(const Vector3& vector, Space base)
 	{
 		Position(m_LocalPosition + vector);
 	}
 
-	void Transform::Translate(const float x, const float y, const float z)
+	void Transform::Translate(const float x, const float y, const float z, Space base)
 	{
 		Position(m_LocalPosition + Vector3{x, y, z});
 	}
 
-	void Transform::RotateLocal(const Quaternion& rotation)
+	void Transform::Rotate(const Quaternion& rotation, Space base)
 	{
-		Rotation(m_LocalRotation * rotation);
+		if (base == Space::World)
+		{
+			Rotation(rotation * m_LocalRotation);
+		}
+		else if (base == Space::Local)
+		{
+			Rotation(m_LocalRotation * rotation);
+		}
 	}
 
-	void Transform::RotateGlobal(const Quaternion& rotation)
-	{
-		Rotation(rotation * m_LocalRotation);
-	}
-
-	void Transform::Rescale(const float x, const float y, const float z)
+	void Transform::Rescale(const float x, const float y, const float z, Space base)
 	{
 		auto scale{m_LocalScale};
 		scale[0] *= x;

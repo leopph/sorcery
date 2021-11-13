@@ -8,12 +8,5 @@ void Rotate::OnFrameUpdate()
 {
 	const leopph::Quaternion rotation{ m_Axis, m_Angle * leopph::Time::DeltaTime() };
 
-	if (m_RotateLocally)
-	{
-		Entity.Transform->RotateLocal(rotation);
-	}
-	else
-	{
-		Entity.Transform->RotateGlobal(rotation);
-	}
+	Entity.Transform->Rotate(rotation, m_RotateLocally ? leopph::Space::Local : leopph::Space::World);
 }

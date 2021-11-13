@@ -49,8 +49,8 @@ void CameraController::OnFrameUpdate()
 		coefficient = -1;
 	}
 
-	camTransform.RotateGlobal(leopph::Quaternion{ coefficient * leopph::Vector3::Up(), diffX * m_Sens });
-	camTransform.RotateLocal(leopph::Quaternion{ leopph::Vector3::Right(), diffY * m_Sens });
+	camTransform.Rotate(leopph::Quaternion{ coefficient * leopph::Vector3::Up(), diffX * m_Sens }, leopph::Space::World);
+	camTransform.Rotate(leopph::Quaternion{ leopph::Vector3::Right(), diffY * m_Sens }, leopph::Space::Local);
 
 	lastX = posX;
 	lastY = posY;

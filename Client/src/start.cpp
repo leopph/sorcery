@@ -14,7 +14,7 @@ void leopph::AppStart()
 	Input::CursorMode(CursorState::Disabled);
 
 	const auto groupEntity = new Entity{"group"};
-	groupEntity->Transform->RotateGlobal(Quaternion{Vector3::Up(), 180});
+	groupEntity->Transform->Rotate(Quaternion{Vector3::Up(), 180});
 
 	const auto playerEntity = new Entity{"player"};
 	playerEntity->Transform->Parent(groupEntity);
@@ -39,7 +39,7 @@ void leopph::AppStart()
 
 	const auto portraitEntity = new Entity{"portrait"};
 	portraitEntity->Transform->Parent(groupEntity);
-	portraitEntity->Transform->RotateGlobal(Quaternion{Vector3::Up(), 180});
+	portraitEntity->Transform->Rotate(Quaternion{Vector3::Up(), 180});
 	portraitEntity->Transform->Position(Vector3{0, 0, 5});
 	portraitEntity->AddComponent<Model>("models/portrait/cropped_textured_mesh.obj");
 

@@ -27,75 +27,102 @@ namespace leopph
 	class Transform final : public Component, public EventReceiver<impl::FrameEndedEvent>
 	{
 	public:
-		// Get the absolute spatial position.
+		/* Get the World Space position.
+		 * If parent is null, this has the same value as Transform::LocalPosition. */
 		[[nodiscard]]
 		LEOPPHAPI const Vector3& Position() const;
 
-		/* Get the spatial position relative to the parent.
-		 * If parent is null, this has the same value as Position(). */
+		/* Get the Local Space position relative to the parent.
+		 * If parent is null, this has the same value as Transform::Position. */
 		[[nodiscard]]
 		LEOPPHAPI const Vector3& LocalPosition() const;
 
-		/* Set the spatial position relative to the parent.
-		 * If parent is null, this will also be the absolute position. */
+		/* Set the World Space position.
+		 * This adjusts the local position so that the Transform has the desired World Space position. */
 		LEOPPHAPI void Position(const Vector3& newPos);
 
-		// Get the absolute spatial orientation.
+		/* Set the Local Space position relative to the parent.
+		 * If parent is null, this has the same effect as Transform::Position. */
+		LEOPPHAPI void LocalPosition(const Vector3& newPos);
+
+		/* Get the World Space orientation.
+		 * If parent is null, this has the same value as Transform::LocalRotation. */
 		[[nodiscard]]
 		LEOPPHAPI const Quaternion& Rotation() const;
 
-		/* Get the spatial orientation relative to the parent.
-		 * If parent is null, this has the same value as Rotation(). */
+		/* Get the Local Space orientation relative to the parent.
+		 * If parent is null, this has the same value as Transform::Rotation. */
 		[[nodiscard]]
 		LEOPPHAPI const Quaternion& LocalRotation() const;
 
-		/* Set the spatial orientation relative to the parent.
-		 * If parent is null, this will also be the absolute rotation. */
-		LEOPPHAPI void Rotation(Quaternion newRot);
+		/* Set the World Space orientation.
+		 * This adjusts the local rotation so that the Transform has the desired World Space orientation. */
+		LEOPPHAPI void Rotation(const Quaternion& newRot);
 
-		// Get the absolute spatial scale.
+		/* Set the Local Space orientation.
+		 * If parent is null, this has the same effect as Transform::Rotation. */
+		LEOPPHAPI void LocalRotation(const Quaternion& newRot);
+
+		/* Get the World Space scale.
+		 * If parent is null, this has the same value as Transform::LocalScale. */
 		[[nodiscard]]
 		LEOPPHAPI const Vector3& Scale() const;
 
-		/* Get the spatial scale relative to the parent.
-		 * If parent is null, this has the same value as Scale(). */
+		/* Get the Local Space scale relative to the parent.
+		 * If parent is null, this has the same value as Transform::Scale. */
 		[[nodiscard]]
 		LEOPPHAPI const Vector3& LocalScale() const;
 
-		/* Set the spatial scale relative to the parent.
-		 * If parent is null, this will also be the absolute scale. */
+		/* Set the World Space scale.
+		 * This adjusts local scale so that the Transform has the desired World Space scale. */
 		LEOPPHAPI void Scale(const Vector3& newScale);
 
-		/* Move the Transform relative to its current position by the input vector.
-		 * The vector is interpreted to be in World Space. */
-		LEOPPHAPI void Translate(const Vector3& vector);
+		/* Set the Local Space scale.
+		 * If parent is null, this has the same effect as Transform::Scale. */
+		LEOPPHAPI void LocalScale(const Vector3& newScale);
+
+		/* Move the Transform relative to its current position by the input Vector.
+		 * The second parameter defines the Space in which the input is interpreted to be.
+		 * World Space values adjust the local position so that the World Space delta matches the desired value. */
+		LEOPPHAPI void Translate(const Vector3& vector, Space base = Space::World);
 
 		/* Move the Transform relative to its current position by the input values.
-		 * The input values are interpreted to be in World Space. */
-		LEOPPHAPI void Translate(float x, float y, float z);
+		 * The fourth parameter defines the Space in which the input is interpreted to be.
+		 * World Space values adjust the local position so that the World Space delta matches the desired value. */
+		LEOPPHAPI void Translate(float x, float y, float z, Space base = Space::World);
 
-		/* Rotate the Transform from its current rotation specified by the input Quaternion.
-		 * The rotation will be interpreted in Local-space, so X, Y, and Z will mean the Transforms respective axes. */
-		LEOPPHAPI void RotateLocal(const Quaternion& rotation);
+		/* Rotate the Transform from its current orientation by the input Quaternion.
+		 * The second parameter defines the Space in which the input is interpreted to be.
+		 * World Space values adjust the local rotation so that the World Space delta matches the desired value. */
+		LEOPPHAPI void Rotate(const Quaternion& rotation, Space base = Space::World);
 
-		/* Rotate the Transform from its current rotation specified by the input Quaternion.
-		 * The rotation will be interpreted in World-space, so X, Y, and Z will mean the world's respective axes. */
-		LEOPPHAPI void RotateGlobal(const Quaternion& rotation);
+		/* Rotate the Transform from its current orientation on the specified axis by the specified amount.
+		 * The third parameter defines the Space in which the input is interpreted to be.
+		 * World Space values adjust the local rotation so that the World Space delta matches the desired value.
+		 * The rotation amount is in degrees. */
+		LEOPPHAPI void Rotate(const Vector3& axis, float amountDegrees, Space base = Space::World);
 
-		// Scale the Transform relative to its current local scaling by the input values.
-		LEOPPHAPI void Rescale(float x, float y, float z);
+		/* Scale the Transform relative to its current scaling by the input Vector.
+		 * The second parameter defines the Space in which the input is interpreted to be.
+		 * World Space values adjust the local scale so that the World Space delta matches the desired value. */
+		LEOPPHAPI void Rescale(const Vector3& scaling, Space base = Space::World);
 
-		// Get the Transform's current forward, or Z vector.
+		/* Scale the Transform relative to its current scaling by the input values.
+		 * The fourth parameter defines the Space in which the input is interpreted to be.
+		 * World Space values adjust the local scale so that the World Space delta matches the desired value. */
+		LEOPPHAPI void Rescale(float x, float y, float z, Space base = Space::World);
+
+		// Get the Transform's current forward, Z vector in World Space.
 		[[nodiscard]]
-		LEOPPHAPI auto Forward() const -> const Vector3&;
+		LEOPPHAPI const Vector3& Forward() const;
 
-		// Get the Transform's current right, or X vector.
+		// Get the Transform's current right, X vector in World Space.
 		[[nodiscard]]
-		LEOPPHAPI auto Right() const -> const Vector3&;
+		LEOPPHAPI const Vector3& Right() const;
 
-		// Get the Transform's current up, or Y vector.
+		// Get the Transform's current up, Y vector in World Space.
 		[[nodiscard]]
-		LEOPPHAPI auto Up() const -> const Vector3&;
+		LEOPPHAPI const Vector3& Up() const;
 
 		/* A flag representing whether the Transform's matrices have changed since their last calculations.
 		 * If this flag is set, new matrix calculations will take place during the rendering of the current frame. */
