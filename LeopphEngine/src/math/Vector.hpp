@@ -318,6 +318,28 @@ namespace leopph
 			return right = left * right;
 		}
 
+		
+		template<class T, std::size_t N>
+		Vector<T, N> operator*(const Vector<T, N>& left, const Vector<T, N>& right)
+		{
+			Vector<T, N> ret;
+			for (std::size_t i = 0; i < N; i++)
+			{
+				ret[i] = left[i] * right[i];
+			}
+			return ret;
+		}
+
+
+		template<class T, std::size_t N>
+		Vector<T, N>& operator*=(Vector<T, N>& left, const Vector<T, N>& right)
+		{
+			for (std::size_t i = 0; i < N; i++)
+			{
+				left[i] *= right;
+			}
+		}
+
 
 		template<class T1, std::convertible_to<T1> T2, std::size_t N>
 		Vector<T1, N> operator/(const Vector<T1, N>& left, const T2& right)

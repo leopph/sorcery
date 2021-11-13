@@ -49,20 +49,11 @@ namespace leopph::impl
 
 			for (const auto& handle : DataManager::ModelComponents(modelResource))
 			{
-				const auto& transform{*static_cast<const Model*>(handle)->Entity.Transform};
+				auto const transform{static_cast<const Model*>(handle)->Entity.Transform};
 
-				if (transform.WasAltered)
-				{
-					auto modelMatrix{Matrix4::Scale(transform.Scale())};
-					modelMatrix *= static_cast<Matrix4>(transform.Rotation());
-					modelMatrix *= Matrix4::Translate(transform.Position());
+				transform->CalculateMatrices();
 
-					/* OpenGL accepts our matrices transposed,
-					 * that's why this is done this way. Weird, eh? */
-					DataManager::StoreMatrices(&transform, modelMatrix.Transposed(), modelMatrix.Inverse());
-				}
-
-				const auto& [model, normal]{DataManager::GetMatrices(&transform)};
+				const auto& [model, normal]{DataManager::GetMatrices(transform)};
 				models.emplace_back(model);
 				normals.emplace_back(normal);
 			}
