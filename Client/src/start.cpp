@@ -40,12 +40,12 @@ void leopph::AppStart()
 	const auto portraitEntity = new Entity{"portrait"};
 	portraitEntity->Transform->Parent(groupEntity);
 	portraitEntity->Transform->Rotate(Quaternion{Vector3::Up(), 180});
-	portraitEntity->Transform->Position(Vector3{0, 0, 5});
+	portraitEntity->Transform->LocalPosition(Vector3{0, 0, 5});
 	portraitEntity->AddComponent<Model>("models/portrait/cropped_textured_mesh.obj");
 
 	const auto cubeEntity = new Entity{"cube"};
 	cubeEntity->Transform->Parent(groupEntity);
-	cubeEntity->Transform->Position(Vector3{0, 0, 5});
+	cubeEntity->Transform->LocalPosition(Vector3{0, 0, 5});
 	const auto cubeModel = cubeEntity->AddComponent<Model>("models/cube/cube.dae");
 	cubeModel->CastsShadow(true);
 	cubeEntity->AddComponent<Rotate>(Vector3::Up(), 30.f);
@@ -67,8 +67,8 @@ void leopph::AppStart()
 
 	const auto pointLightEntity = new Entity{"pointlight"};
 	pointLightEntity->Transform->Parent(groupEntity);
-	pointLightEntity->Transform->Position(Vector3{0, 0, 3.5});
-	pointLightEntity->Transform->Scale(Vector3{0.1, 0.1, 0.1});
+	pointLightEntity->Transform->LocalPosition(Vector3{0, 0, 3.5});
+	pointLightEntity->Transform->LocalScale(Vector3{0.1, 0.1, 0.1});
 	const auto pointLight = pointLightEntity->AddComponent<PointLight>();
 	pointLight->Range(15);
 	pointLight->CastsShadow(true);

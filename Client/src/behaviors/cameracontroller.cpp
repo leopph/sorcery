@@ -18,16 +18,16 @@ void CameraController::OnFrameUpdate()
 	leopph::Vector3 movementVector;
 
 	if (leopph::Input::GetKey(leopph::KeyCode::W))
-		movementVector += camTransform.Forward();
+		movementVector += leopph::Vector3::Forward();
 
 	if (leopph::Input::GetKey(leopph::KeyCode::S))
-		movementVector -= camTransform.Forward();
+		movementVector -= leopph::Vector3::Forward();
 
 	if (leopph::Input::GetKey(leopph::KeyCode::D))
-		movementVector += camTransform.Right();
+		movementVector += leopph::Vector3::Right();
 
 	if (leopph::Input::GetKey(leopph::KeyCode::A))
-		movementVector -= camTransform.Right();
+		movementVector -= leopph::Vector3::Right();
 
 	if (leopph::Input::GetKey(leopph::KeyCode::Space))
 		movementVector += leopph::Vector3::Up();
@@ -36,7 +36,7 @@ void CameraController::OnFrameUpdate()
 		movementVector += leopph::Vector3::Down();
 
 	movementVector.Normalize();
-	camTransform.Translate(movementVector * m_Speed * leopph::Time::DeltaTime());
+	camTransform.Translate(movementVector * m_Speed * leopph::Time::DeltaTime(), leopph::Space::Local);
 
 	const auto [posX, posY] = leopph::Input::GetMousePosition();
 	const float diffX = posX - lastX;

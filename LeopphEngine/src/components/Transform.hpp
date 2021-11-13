@@ -126,7 +126,7 @@ namespace leopph
 
 		/* A flag representing whether the Transform's matrices have changed since their last calculations.
 		 * If this flag is set, new matrix calculations will take place during the rendering of the current frame. */
-		const bool& WasAltered;
+		const bool& Changed;
 
 		// Get the Transform's parent.
 		[[nodiscard]]
@@ -154,7 +154,7 @@ namespace leopph
 		/* Force calculate the Transform's matrices.
 		 * LeopphEngine automatically calles this right before rendering, so there is usually no reason to do so explicitly.
 		 * If the matrices are up-to-date, this function is NOP.
-		 * If new matrices were calculated, WasAltered is set to false.
+		 * If new matrices were calculated, Changed is set to false.
 		 * If any ancestor's matrices are out of date, those, and all its descendants' matrices will be recalculated. */
 		LEOPPHAPI void CalculateMatrices();
 
@@ -173,9 +173,9 @@ namespace leopph
 
 
 	private:
-		Vector3 m_GlobalPosition;
-		Quaternion m_GlobalRotation;
-		Vector3 m_GlobalScale;
+		Vector3 m_WorldPosition;
+		Quaternion m_WorldRotation;
+		Vector3 m_WorldScale;
 
 		Vector3 m_LocalPosition;
 		Quaternion m_LocalRotation;
@@ -185,7 +185,7 @@ namespace leopph
 		Vector3 m_Right;
 		Vector3 m_Up;
 
-		bool m_WasAltered;
+		bool m_Changed;
 
 		Transform* m_Parent;
 		std::unordered_set<Transform*> m_Children;
@@ -193,11 +193,11 @@ namespace leopph
 		void CalculateLocalAxes();
 		void OnEventReceived(const impl::FrameEndedEvent&) override;
 
-		// Calculates global position, sets WasAltered, then updates children recursively.
-		void CalculateGlobalPosition();
-		// Calculates global rotation, calculates local axes, sets WasAltered, then updates children recursively.
-		void CalculateGlobalRotation();
+		// Calculates global position, sets Changed, then updates children recursively.
+		void CalculateWorldPosition();
+		// Calculates global rotation, calculates local axes, sets Changed, then updates children recursively.
+		void CalculateWorldRotation();
 		// Calculates global scale, then updates children recursively.
-		void CalculateGlobalScale();
+		void CalculateWorldScale();
 	};
 }

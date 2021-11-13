@@ -10,18 +10,18 @@ namespace leopph
 {
 	Transform::Transform(leopph::Entity& owner, const Vector3& pos, const Quaternion& rot, const Vector3& scale) :
 		Component{owner},
-		WasAltered{m_WasAltered},
+		Changed{m_Changed},
 		m_LocalPosition{pos},
 		m_LocalRotation{rot},
 		m_LocalScale{scale},
-		m_GlobalPosition{pos},
-		m_GlobalRotation{rot},
-		m_GlobalScale{scale},
+		m_WorldPosition{pos},
+		m_WorldRotation{rot},
+		m_WorldScale{scale},
 		m_Forward{Vector3::Forward()},
 		m_Right{Vector3::Right()},
 		m_Up{Vector3::Up()},
 		m_Parent{nullptr},
-		m_WasAltered{true}
+		m_Changed{true}
 	{
 		CalculateLocalAxes();
 	}
@@ -39,15 +39,15 @@ namespace leopph
 		{
 			// Can't call parent setter, because that would remove child from this's m_Children, and the loop would crash.
 			child->m_Parent = nullptr;
-			child->CalculateGlobalPosition();
-			child->CalculateGlobalRotation();
-			child->CalculateGlobalScale();
+			child->CalculateWorldPosition();
+			child->CalculateWorldRotation();
+			child->CalculateWorldScale();
 		});
 	}
 
 	const Vector3& Transform::Position() const
 	{
-		return m_GlobalPosition;
+		return m_WorldPosition;
 	}
 
 	const Vector3& Transform::LocalPosition() const
@@ -57,13 +57,26 @@ namespace leopph
 
 	void Transform::Position(const Vector3& newPos)
 	{
+		if (m_Parent != nullptr)
+		{
+			m_LocalPosition = newPos * static_cast<Matrix3>(static_cast<Matrix4>(m_Parent->m_WorldRotation).Transpose()) - m_Parent->m_WorldPosition;
+		}
+		else
+		{
+			m_LocalPosition = newPos;
+		}
+		CalculateWorldPosition();
+	}
+
+	void Transform::LocalPosition(const Vector3& newPos)
+	{
 		m_LocalPosition = newPos;
-		CalculateGlobalPosition();
+		CalculateWorldPosition();
 	}
 
 	const Quaternion& Transform::Rotation() const
 	{
-		return m_GlobalRotation;
+		return m_WorldRotation;
 	}
 
 	const Quaternion& Transform::LocalRotation() const
@@ -73,13 +86,18 @@ namespace leopph
 
 	void Transform::Rotation(const Quaternion& newRot)
 	{
+		// TODO
+	}
+
+	void Transform::LocalRotation(const Quaternion& newRot)
+	{
 		m_LocalRotation = newRot;
-		CalculateGlobalRotation();
+		CalculateWorldRotation();
 	}
 
 	const Vector3& Transform::Scale() const
 	{
-		return m_GlobalScale;
+		return m_WorldScale;
 	}
 
 	const Vector3& Transform::LocalScale() const
@@ -89,39 +107,64 @@ namespace leopph
 
 	void Transform::Scale(const Vector3& newScale)
 	{
+		// TODO
+	}
+
+	void Transform::LocalScale(const Vector3& newScale)
+	{
 		m_LocalScale = newScale;
-		CalculateGlobalScale();
+		CalculateWorldScale();
 	}
 
-	void Transform::Translate(const Vector3& vector, Space base)
-	{
-		Position(m_LocalPosition + vector);
-	}
-
-	void Transform::Translate(const float x, const float y, const float z, Space base)
-	{
-		Position(m_LocalPosition + Vector3{x, y, z});
-	}
-
-	void Transform::Rotate(const Quaternion& rotation, Space base)
+	void Transform::Translate(const Vector3& vector, const Space base)
 	{
 		if (base == Space::World)
 		{
-			Rotation(rotation * m_LocalRotation);
+			Position(m_WorldPosition + vector);
 		}
 		else if (base == Space::Local)
 		{
-			Rotation(m_LocalRotation * rotation);
+			LocalPosition(m_LocalPosition + (vector * static_cast<Matrix3>(static_cast<Matrix4>(m_LocalRotation))));
 		}
 	}
 
-	void Transform::Rescale(const float x, const float y, const float z, Space base)
+	void Transform::Translate(const float x, const float y, const float z, const Space base)
 	{
-		auto scale{m_LocalScale};
-		scale[0] *= x;
-		scale[1] *= y;
-		scale[2] *= z;
-		Scale(scale);
+		Translate(Vector3{ x, y, z });
+	}
+
+	void Transform::Rotate(const Quaternion& rotation, const Space base)
+	{
+		if (base == Space::World)
+		{
+			LocalRotation(rotation * m_LocalRotation);
+		}
+		else if (base == Space::Local)
+		{
+			LocalRotation(m_LocalRotation * rotation);
+		}
+	}
+
+	void Transform::Rotate(const Vector3& axis, float amountDegrees, const Space base)
+	{
+		Rotate(Quaternion{axis, amountDegrees}, base);
+	}
+
+	void Transform::Rescale(const Vector3& scaling, const Space base)
+	{
+		if (base == Space::World)
+		{
+			// TODO
+		}
+		else if (base == Space::Local)
+		{
+			LocalScale(m_LocalScale * scaling);
+		}
+	}
+
+	void Transform::Rescale(const float x, const float y, const float z, const Space base)
+	{
+		Rescale(Vector3{x, y, z}, base);
 	}
 
 	const Vector3& Transform::Forward() const
@@ -167,9 +210,9 @@ namespace leopph
 			parent->m_Children.insert(this);
 		}
 
-		CalculateGlobalPosition();
-		CalculateGlobalRotation();
-		CalculateGlobalScale();
+		CalculateWorldPosition();
+		CalculateWorldRotation();
+		CalculateWorldScale();
 	}
 
 	void Transform::Parent(Transform& parent)
@@ -189,7 +232,7 @@ namespace leopph
 
 	void Transform::CalculateMatrices()
 	{
-		if (!WasAltered)
+		if (!Changed)
 		{
 			return;
 		}
@@ -208,12 +251,12 @@ namespace leopph
 		 * that's why this is done this way. Weird, eh? */
 		impl::DataManager::StoreMatrices(this, modelMatrix.Transposed(), modelMatrix.Inverse());
 
-		m_WasAltered = false;
+		m_Changed = false;
 	}
 	
 	void Transform::CalculateLocalAxes()
 	{
-		const auto rotMatrix = static_cast<Matrix3>(static_cast<Matrix4>(m_GlobalRotation));
+		const auto rotMatrix = static_cast<Matrix3>(static_cast<Matrix4>(m_WorldRotation));
 		m_Forward = Vector3::Forward() * rotMatrix;
 		m_Right = Vector3::Right() * rotMatrix;
 		m_Up = Vector3::Up() * rotMatrix;
@@ -221,28 +264,28 @@ namespace leopph
 
 	void Transform::OnEventReceived(const impl::FrameEndedEvent&)
 	{
-		m_WasAltered = false;
+		m_Changed = false;
 	}
 
-	void Transform::CalculateGlobalPosition()
+	void Transform::CalculateWorldPosition()
 	{
-		m_GlobalPosition = m_Parent != nullptr ? m_Parent->m_GlobalPosition + m_LocalPosition : m_LocalPosition;
-		m_WasAltered = true;
-		std::ranges::for_each(m_Children, &Transform::CalculateGlobalPosition);
+		m_WorldPosition = m_Parent != nullptr ? (m_Parent->m_WorldPosition + m_LocalPosition) * static_cast<Matrix3>(static_cast<Matrix4>(m_Parent->m_WorldRotation)) : m_LocalPosition;
+		m_Changed = true;
+		std::ranges::for_each(m_Children, &Transform::CalculateWorldPosition);
 	}
 
-	void Transform::CalculateGlobalRotation()
+	void Transform::CalculateWorldRotation()
 	{
-		m_GlobalRotation = m_Parent != nullptr ? m_Parent->m_GlobalRotation * m_LocalRotation : m_LocalRotation;
+		m_WorldRotation = m_Parent != nullptr ? m_Parent->m_WorldRotation * m_LocalRotation : m_LocalRotation;
 		CalculateLocalAxes();
-		m_WasAltered = true;
-		std::ranges::for_each(m_Children, &Transform::CalculateGlobalRotation);
+		m_Changed = true;
+		std::ranges::for_each(m_Children, &Transform::CalculateWorldRotation);
 	}
 
-	void Transform::CalculateGlobalScale()
+	void Transform::CalculateWorldScale()
 	{
-		m_GlobalScale = m_Parent != nullptr ? m_Parent->m_GlobalScale * m_LocalScale : m_LocalScale;
-		m_WasAltered = true;
-		std::ranges::for_each(m_Children, &Transform::CalculateGlobalScale);
+		m_WorldScale = m_Parent != nullptr ? m_Parent->m_WorldScale * m_LocalScale : m_LocalScale;
+		m_Changed = true;
+		std::ranges::for_each(m_Children, &Transform::CalculateWorldScale);
 	}
 }
