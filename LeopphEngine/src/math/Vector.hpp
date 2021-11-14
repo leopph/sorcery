@@ -10,231 +10,213 @@
 #include <ostream>
 
 
-
 namespace leopph
 {
 	namespace impl
 	{
-		/*------------------------------------------------------------------------------------------
-		The Vector class template provides several ways to aid in solving linear algebraic problems.
-		Vector are row/column agnostic, they are always interpreted in the form they have to be
-		in order for formulas to make sense.
-		DO NOT INSTANTIATE THIS TEMPLATE EXPLICITLY UNLESS NECESSARY!
-		There are several predefined implementations at the bottom of this file.
-		------------------------------------------------------------------------------------------*/
+		/* The Vector class template provides a way to represent N dimensional vectors over a T type.
+		 * Vectors are row/column agnostic. They are always interpreted in the necessary form for the specific formulas.
+		 * This template may be explicitly instantiated, but LeopphEngine provides several predefined instantiations at the bottom of this file. */
 		template<class T, std::size_t N>
 			requires(N > 1)
 		class Vector
 		{
-			std::array<T, N> m_Data;
+		public:
+			// Creates a Vector with all components set to 0.
+			Vector() :
+				m_Data{}
+			{}
 
+			// Creates a Vector with all components set to the input value.
+			explicit Vector(const T& value)
+			{
+				m_Data.fill(value);
+			}
 
-			public:
-				Vector() :
-					m_Data{}
-				{}
+			// Creates a Vector with components set to the input values.
+			template<std::convertible_to<T>... T1>
+			explicit Vector(const T1&... args)
+				requires(sizeof...(T1) == N) :
+				m_Data{static_cast<T>(args)...}
+			{}
 
+			// Creates an N-1 dimensional Vector that is the same as the input Vector without its last component.
+			explicit Vector(const Vector<T, N + 1>& other)
+			{
+				std::ranges::copy_n(other.Data().begin(), N, m_Data.begin());
+			}
 
-				/* Fill Constructor */
-				explicit Vector(const T& value)
+			Vector(const Vector<T, N>& other) = default;
+			Vector(Vector<T, N>&& other) = default;
+
+			~Vector() = default;
+
+			Vector<T, N>& operator=(const Vector<T, N>& other) = default;
+			Vector<T, N>& operator=(Vector<T, N>&& other) = default;
+
+			// Creates a Vector with its second component set to 1 and all other components set to 0.
+			static Vector<T, N> Up()
+			{
+				Vector<T, N> ret;
+				ret[1] = 1;
+				return ret;
+			}
+
+			// Creates a Vector with its second component set to -1 and all other components set to 0.
+			static Vector<T, N> Down()
+			{
+				Vector<T, N> ret;
+				ret[1] = -1;
+				return ret;
+			}
+
+			// Creates a Vector with its first component set to -1 and all other components set to 0.
+			static Vector<T, N> Left()
+			{
+				Vector<T, N> ret;
+				ret[0] = -1;
+				return ret;
+			}
+
+			// Creates a Vector with its first component set to 1 and all other components set to 0.
+			static Vector<T, N> Right()
+			{
+				Vector<T, N> ret;
+				ret[0] = 1;
+				return ret;
+			}
+
+			// Creates a Vector with its third component set to 1 and all other components set to 0.
+			static Vector<T, N> Forward()
+				requires(N >= 3)
+			{
+				Vector<T, N> ret;
+				ret[2] = 1;
+				return ret;
+			}
+
+			// Creates a Vector with its third component set to -1 and all other components set to 0.
+			static Vector<T, N> Backward()
+				requires(N >= 3)
+			{
+				Vector<T, N> ret;
+				ret[2] = -1;
+				return ret;
+			}
+
+			// Returns a reference to the internal data structure.
+			[[nodiscard]] const std::array<T, N>& Data() const
+			{
+				return m_Data;
+			}
+
+			/* Get the Vector's components.
+			 * Indexes are not bounds-checked. */
+			const T& operator[](size_t index) const
+			{
+				return m_Data[index];
+			}
+
+			/* Get the Vector's components.
+			 * Indexes are not bounds-checked. */
+			T& operator[](const size_t index)
+			{
+				return const_cast<T&>(const_cast<const Vector<T, N>*>(this)->operator[](index));
+			}
+
+			// Get the length of this Vector.
+			[[nodiscard]] float Length() const
+			{
+				return math::Sqrt(
+					static_cast<float>(
+						std::accumulate(m_Data.begin(), m_Data.end(), static_cast<T>(0), [](const T& sum, const T& elem)
 				{
-					m_Data.fill(value);
-				}
+					return sum + math::Pow(elem, 2);
+				})));
+			}
 
+			// Returns a Vector that has the same direction as this Vector, but has a length of 1.
+			[[nodiscard]] Vector<T, N> Normalized() const
+			{
+				return Vector<T, N>{*this}.Normalize();
+			}
 
-				/* All Elements Constructor */
-				template<std::convertible_to<T>... T1>
-				explicit Vector(const T1&... args)
-					requires(sizeof...(T1) == N) :
-					m_Data{static_cast<T>(args)...}
-				{}
+			/* Changes this Vector so that it has the same direction, but a length of 1.
+			 * Returns a reference to this Vector. */
+			Vector<T, N>& Normalize()
+			{
+				auto length = Length();
 
-
-				/* Construct a vector of length N - 1 by throwing away the last component. */
-				explicit Vector(const Vector<T, N + 1>& other)
+				if (length != 0)
 				{
-					std::ranges::copy_n(other.Data().begin(), N, m_Data.begin());
-				}
-
-
-				Vector(const Vector<T, N>& other) = default;
-				Vector(Vector<T, N>&& other) = default;
-				Vector<T, N>& operator=(const Vector<T, N>& other) = default;
-				Vector<T, N>& operator=(Vector<T, N>&& other) = default;
-				~Vector() = default;
-
-
-				static Vector<T, N> Up()
-				{
-					Vector<T, N> ret;
-					ret[1] = 1;
-					return ret;
-				}
-
-
-				static Vector<T, N> Down()
-				{
-					Vector<T, N> ret;
-					ret[1] = -1;
-					return ret;
-				}
-
-
-				static Vector<T, N> Left()
-				{
-					Vector<T, N> ret;
-					ret[0] = -1;
-					return ret;
-				}
-
-
-				static Vector<T, N> Right()
-				{
-					Vector<T, N> ret;
-					ret[0] = 1;
-					return ret;
-				}
-
-
-				static Vector<T, N> Forward()
-					requires(N >= 3)
-				{
-					Vector<T, N> ret;
-					ret[2] = 1;
-					return ret;
-				}
-
-
-				static Vector<T, N> Backward()
-					requires(N >= 3)
-				{
-					Vector<T, N> ret;
-					ret[2] = -1;
-					return ret;
-				}
-
-
-				/* Returns a reference to the internal data structure.
-				DO NOT USE THIS UNLESS NECESSARY! */
-				[[nodiscard]] const std::array<T, N>& Data() const
-				{
-					return m_Data;
-				}
-
-
-				/* Returns the Nth component of the vector */
-				const T& operator[](size_t index) const
-				{
-					return m_Data[index];
-				}
-
-
-				T& operator[](const size_t index)
-				{
-					return const_cast<T&>(const_cast<const Vector<T, N>*>(this)->operator[](index));
-				}
-
-
-				/* Mathematical vector magnitude */
-				[[nodiscard]] float Length() const
-				{
-					return math::Sqrt(
-						static_cast<float>(
-							std::accumulate(m_Data.begin(), m_Data.end(), static_cast<T>(0), [](const T& sum, const T& elem)
-							{
-								return sum + math::Pow(elem, 2);
-							})));
-				}
-
-
-				/* Normalization changes the vector in-place to have a magnitude of 1,
-				but point in the same direction */
-				Vector<T, N>& Normalize()
-				{
-					auto length = Length();
-
-					if (length != 0)
+					std::for_each(m_Data.begin(), m_Data.end(), [length](T& elem)
 					{
-						std::for_each(m_Data.begin(), m_Data.end(), [length](T& elem)
-						{
-							elem /= static_cast<T>(length);
-						});
-					}
-
-					return *this;
+						elem /= static_cast<T>(length);
+					});
 				}
 
+				return *this;
+			}
 
-				/* Returns a new vector that has a magnitude of 1 and points in the same direction */
-				[[nodiscard]] Vector<T, N> Normalized() const
+	        // Creates a Vector that is the copy of this Vector, extended with an additional component with a value of 1.
+			explicit operator Vector<T, N + 1>() const
+			{
+				Vector<T, N + 1> ret;
+
+				for (std::size_t i = 0; i < N; i++)
 				{
-					return Vector<T, N>{*this}.Normalize();
+					ret[i] = m_Data[i];
 				}
 
+				ret[N] = static_cast<T>(1);
+				return ret;
+			}
 
-				/* Mathematical dot product of two equal dimension vectors */
-				static T Dot(const Vector<T, N>& left, const Vector<T, N>& right)
+			// Returns the dot product of the input Vectors.
+			static T Dot(const Vector<T, N>& left, const Vector<T, N>& right)
+			{
+				T ret{};
+
+				for (size_t i = 0; i < N; i++)
 				{
-					T ret{};
-
-					for (size_t i = 0; i < N; i++)
-					{
-						ret += left[i] * right[i];
-					}
-
-					return ret;
+					ret += left[i] * right[i];
 				}
 
+				return ret;
+			}
 
-				/* Mathematical cross product, only between 3D vectors */
-				static Vector<T, N> Cross(const Vector<T, N>& left, const Vector<T, N>& right)
-					requires(N == 3)
+			// Returns the cross product of the input Vectors.
+			static Vector<T, N> Cross(const Vector<T, N>& left, const Vector<T, N>& right)
+				requires(N == 3)
+			{
+				return Vector<T, N>
 				{
-					return Vector<T, N>
-					{
-						left[1] * right[2] - left[2] * right[1],
+					left[1] * right[2] - left[2] * right[1],
 						left[2] * right[0] - left[0] * right[2],
 						left[0] * right[1] - left[1] * right[0]
-					};
-				}
+				};
+			}
 
+			// Returns the Euclidean distance of the input Vectors.
+			static float Distance(const Vector<T, N>& left, const Vector<T, N>& right)
+			{
+				T sum{};
 
-				/* Mathematical vector distance */
-				static float Distance(const Vector<T, N>& left, const Vector<T, N>& right)
+				for (size_t i = 0; i < N; i++)
 				{
-					T sum{};
-
-					for (size_t i = 0; i < N; i++)
-					{
-						sum += static_cast<T>(math::Pow(static_cast<float>(left[i] - right[i]), 2));
-					}
-
-					return static_cast<T>(math::Sqrt(sum));
+					sum += static_cast<T>(math::Pow(static_cast<float>(left[i] - right[i]), 2));
 				}
 
+				return static_cast<T>(math::Sqrt(sum));
+			}
 
-				/* Return a new Vector of length N + 1.
-				The new component's value will be 1. */
-				explicit operator Vector<T, N + 1>() const
-				{
-					Vector<T, N + 1> ret;
 
-					for (std::size_t i = 0; i < N; i++)
-					{
-						ret[i] = m_Data[i];
-					}
-
-					ret[N] = static_cast<T>(1);
-					return ret;
-				}
+		private:
+			std::array<T, N> m_Data;
 		};
 
 
-
-		/*-----------------------------------
-		Other standard mathematical operators
-		-----------------------------------*/
-
+		// Returns a Vector that's components are the additives inverses of this Vector's components.
 		template<class T, std::size_t N>
 		Vector<T, N> operator-(const Vector<T, N>& operand)
 		{
@@ -246,7 +228,7 @@ namespace leopph
 			return ret;
 		}
 
-
+		// Returns the sum of the input Vectors.
 		template<class T, std::size_t N>
 		Vector<T, N> operator+(const Vector<T, N>& left, const Vector<T, N>& right)
 		{
@@ -258,7 +240,8 @@ namespace leopph
 			return ret;
 		}
 
-
+		/* Sets the left operand to the sum of the input Vectors.
+		 * Returns a reference to the left operand. */
 		template<class T, std::size_t N>
 		Vector<T, N>& operator+=(Vector<T, N>& left, const Vector<T, N>& right)
 		{
@@ -269,7 +252,7 @@ namespace leopph
 			return left;
 		}
 
-
+		// Returns the difference of the input Vectors.
 		template<class T, std::size_t N>
 		Vector<T, N> operator-(const Vector<T, N>& left, const Vector<T, N>& right)
 		{
@@ -281,7 +264,8 @@ namespace leopph
 			return ret;
 		}
 
-
+		/* Sets the left operand to the difference of the input Vectors.
+		 * Returns a reference to the left operand. */
 		template<class T, std::size_t N>
 		Vector<T, N>& operator-=(Vector<T, N>& left, const Vector<T, N>& right)
 		{
@@ -292,7 +276,7 @@ namespace leopph
 			return left;
 		}
 
-
+		// Returns the result of the scalar multiplication of the input values.
 		template<class T1, std::convertible_to<T1> T2, std::size_t N>
 		Vector<T1, N> operator*(const Vector<T1, N>& left, const T2& right)
 		{
@@ -304,7 +288,7 @@ namespace leopph
 			return ret;
 		}
 
-
+		// Returns the result of the scalar multiplication of the input values.
 		template<class T1, std::convertible_to<T1> T2, std::size_t N>
 		Vector<T1, N> operator*(const T2& left, const Vector<T1, N>& right)
 		{
@@ -316,7 +300,7 @@ namespace leopph
 			return ret;
 		}
 
-
+		// Returns the component-wise product of the input Vectors.
 		template<class T, std::size_t N>
 		Vector<T, N> operator*(const Vector<T, N>& left, const Vector<T, N>& right)
 		{
@@ -328,7 +312,8 @@ namespace leopph
 			return ret;
 		}
 
-
+		/* Sets the left operand to the result of the scalar multiplication of the input values.
+		 * Returns a reference to the left operand. */
 		template<class T1, std::convertible_to<T1> T2, std::size_t N>
 		Vector<T1, N>& operator*=(Vector<T1, N>& left, const T2& right)
 		{
@@ -339,7 +324,8 @@ namespace leopph
 			return left;
 		}
 
-
+		/* Sets the left oparend to the component-wise product of the input Vectors.
+		 * Returns a reference to the left operand. */
 		template<class T, std::size_t N>
 		Vector<T, N>& operator*=(Vector<T, N>& left, const Vector<T, N>& right)
 		{
@@ -350,7 +336,7 @@ namespace leopph
 			return left;
 		}
 
-
+		// Returns the result of the scalar division of the input values.
 		template<class T1, std::convertible_to<T1> T2, std::size_t N>
 		Vector<T1, N> operator/(const Vector<T1, N>& left, const T2& right)
 		{
@@ -362,7 +348,7 @@ namespace leopph
 			return ret;
 		}
 
-
+		// Returns the component-wise quotient of the input Vectors.
 		template<class T, std::size_t N>
 		Vector<T, N> operator/(const Vector<T, N>& left, const Vector<T, N>& right)
 		{
@@ -374,7 +360,8 @@ namespace leopph
 			return ret;
 		}
 
-
+		/* Sets the left operand to the result of the scalar division of the input values.
+		 * Returns a reference to the left operand. */
 		template<class T1, std::convertible_to<T1> T2, std::size_t N>
 		Vector<T1, N>& operator/=(Vector<T1, N>& left, const T2& right)
 		{
@@ -385,7 +372,8 @@ namespace leopph
 			return left;
 		}
 
-
+		/* Sets the left operand to the component-wise quotient of the input Vectors.
+		 * Returns a reference to the left operand. */
 		template<class T, std::size_t N>
 		Vector<T, N>& operator/=(Vector<T, N>& left, const Vector<T, N>& right)
 		{
@@ -396,7 +384,7 @@ namespace leopph
 			return left;
 		}
 
-
+		// Returns whether the input Vectors are equal.
 		template<class T, std::size_t N>
 		bool operator==(const Vector<T, N>& left, const Vector<T, N>& right)
 		{
@@ -411,14 +399,14 @@ namespace leopph
 			return true;
 		}
 
-
+		// Returns whether the input Vectors are not equal.
 		template<class T, std::size_t N>
 		bool operator!=(const Vector<T, N>& left, const Vector<T, N>& right)
 		{
 			return !(left == right);
 		}
 
-
+		// Prints the input Vector on the specified output stream.
 		template<class T, std::size_t N>
 		std::ostream& operator<<(std::ostream& stream, const Vector<T, N>& vector)
 		{
@@ -441,13 +429,12 @@ namespace leopph
 	}
 
 
-
-	/*------------------------------------------------------
-	Use these instances where you can in your business logic
-	to get the best compatibility and performance.
-	------------------------------------------------------*/
-
+	// 4D single-precision floating-point Vector.
 	using Vector4 = impl::Vector<float, 4>;
+
+	// 3D single-precision floating-point Vector.
 	using Vector3 = impl::Vector<float, 3>;
+
+	// 2D single-precision floating-point Vector.
 	using Vector2 = impl::Vector<float, 2>;
 }

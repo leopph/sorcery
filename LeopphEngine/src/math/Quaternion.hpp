@@ -117,6 +117,6 @@ namespace leopph
 	 * Returns a reference to the left operand. */
 	LEOPPHAPI Quaternion& operator*=(Quaternion& left, const Quaternion& right);
 
-	// Prints the input Quaternion on the specified output stream. */
+	// Prints the input Quaternion on the specified output stream.
 	LEOPPHAPI std::ostream& operator<<(std::ostream& os, const Quaternion& q);
 }

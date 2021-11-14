@@ -14,7 +14,7 @@ void leopph::AppStart()
 	Input::CursorMode(CursorState::Disabled);
 
 	const auto groupEntity = new Entity{"group"};
-	groupEntity->Transform->Rotate(Quaternion{Vector3::Up(), 180});
+	groupEntity->Transform->Rotate(Vector3::Up(), 180, Space::World);
 
 	const auto playerEntity = new Entity{"player"};
 	playerEntity->Transform->Parent(groupEntity);
@@ -39,7 +39,7 @@ void leopph::AppStart()
 
 	const auto portraitEntity = new Entity{"portrait"};
 	portraitEntity->Transform->Parent(groupEntity);
-	portraitEntity->Transform->Rotate(Quaternion{Vector3::Up(), 180});
+	portraitEntity->Transform->Rotate(Vector3::Up(), 180);
 	portraitEntity->Transform->LocalPosition(Vector3{0, 0, 5});
 	portraitEntity->AddComponent<Model>("models/portrait/cropped_textured_mesh.obj");
 
@@ -50,20 +50,20 @@ void leopph::AppStart()
 	cubeModel->CastsShadow(true);
 	cubeEntity->AddComponent<Rotate>(Vector3::Up(), 30.f);
 
-	/*const auto dirLightEntity = new Entity{"dirlight"};
+	const auto dirLightEntity = new Entity{"dirlight"};
 	dirLightEntity->Transform->Parent(groupEntity);
-	dirLightEntity->Transform->RotateGlobal(Quaternion{Vector3::Up(), 315});
-	dirLightEntity->Transform->RotateLocal({Quaternion{Vector3::Right(), 45}});
+	dirLightEntity->Transform->Rotate(Vector3::Up(), 315, Space::World);
+	dirLightEntity->Transform->Rotate(Vector3::Right(), 45, Space::Local);
 	const auto dirLight = dirLightEntity->AddComponent<DirectionalLight>();
 	dirLight->Diffuse(Vector3{0.5, 0.5, 0.5});
-	dirLight->CastsShadow(true);*/
+	dirLight->CastsShadow(true);
 
-	/*const auto spotLightEntity = new Entity{"spotlight"};
+	const auto spotLightEntity = new Entity{"spotlight"};
 	spotLightEntity->Transform->Parent(groupEntity);
 	const auto spotLight = spotLightEntity->AddComponent<SpotLight>();
 	spotLight->InnerAngle(45);
 	spotLight->OuterAngle(60);
-	spotLight->CastsShadow(true);*/
+	spotLight->CastsShadow(true);
 
 	const auto pointLightEntity = new Entity{"pointlight"};
 	pointLightEntity->Transform->Parent(groupEntity);
@@ -72,8 +72,6 @@ void leopph::AppStart()
 	const auto pointLight = pointLightEntity->AddComponent<PointLight>();
 	pointLight->Range(15);
 	pointLight->CastsShadow(true);
-	//const auto lightCubeModel{pointLightEntity->AddComponent<Model>("models/cube/cube.dae")};
-	//lightCubeModel->CastsShadow(false);
 
 
 	AmbientLight::Instance().Intensity(Vector3{0, 0, 0});
