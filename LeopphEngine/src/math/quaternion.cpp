@@ -189,10 +189,10 @@ namespace leopph
 	{
 		return Quaternion
 		{
-			left[0] * right[0] - left[1] * right[1] - left[2] * right[2] - left[3] * right[3],
-			left[0] * right[1] + left[1] * right[0] + left[2] * right[3] - left[3] * right[2],
-			left[0] * right[2] - left[1] * right[3] + left[2] * right[0] + left[3] * right[1],
-			left[0] * right[3] + left[1] * right[2] - left[2] * right[1] + left[3] * right[0]
+			left.W * right.W - left.X * right.X - left.Y * right.Y - left.Z * right.Z,
+			left.W * right.X + left.X * right.W + left.Y * right.Z - left.Z * right.Y,
+			left.W * right.Y - left.X * right.Z + left.Y * right.W + left.Z * right.X,
+			left.W * right.Z + left.X * right.Y - left.Y * right.X + left.Z * right.W
 		};
 	}
 
