@@ -11,39 +11,101 @@
 
 namespace leopph
 {
-	/*---------------
-	 MEMBER FUNCTIONS
-	 --------------*/
-
 	Quaternion::Quaternion(const float w, const float x, const float y, const float z) :
-		w{ w }, x{ x }, y{ y }, z{ z }
+		W{m_W},
+		X{m_X},
+		Y{m_Y},
+		Z{m_Z},
+		m_W{w},
+		m_X{x},
+		m_Y{y},
+		m_Z{z}
+	{}
+
+	Quaternion::Quaternion(const Vector3& axis, const float angleDegrees) :
+		W{m_W},
+		X{m_X},
+		Y{m_Y},
+		Z{m_Z}
 	{
-		if (const float length = Magnitude();
-			length != 1)
+		Vector3 normalizedAxis{axis.Normalized()};
+		const float angleHalfRadians = math::ToRadians(angleDegrees) / 2.0f;
+
+		m_W = math::Cos(angleHalfRadians);
+		normalizedAxis *= math::Sin(angleHalfRadians);
+		m_X = normalizedAxis[0];
+		m_Y = normalizedAxis[1];
+		m_Z = normalizedAxis[2];
+	}
+
+	Quaternion::Quaternion(const Quaternion& other) :
+		W{m_W},
+		X{m_X},
+		Y{m_Y},
+		Z{m_Z},
+		m_W{other.m_W},
+		m_X{other.m_X},
+		m_Y{other.m_Y},
+		m_Z{other.m_Z}
+	{}
+
+	Quaternion::Quaternion(Quaternion&& other) noexcept :
+		Quaternion{other}
+	{}
+
+	Quaternion& Quaternion::operator=(const Quaternion& other)
+	{
+		m_W = other.m_W;
+		m_X = other.m_X;
+		m_Y = other.m_Y;
+		m_Z = other.m_Z;
+		return *this;
+	}
+
+	Quaternion& Quaternion::operator=(Quaternion&& other) noexcept
+	{
+		return operator=(other);
+	}
+
+	const float& Quaternion::operator[](const std::size_t index) const
+	{
+		switch (index)
 		{
-			this->w /= length;
-			this->x /= length;
-			this->y /= length;
-			this->z /= length;
+			case 0:
+			{
+				return m_W;
+			}
+			case 1:
+			{
+				return m_X;
+			}
+			case 2:
+			{
+				return m_Y;
+			}
+			case 3:
+			{
+				return m_Z;
+			}
+			default:
+			{
+				const auto errorMsg{"Invalid quaternion index '" + std::to_string(index) + "'."};
+				impl::Logger::Instance().Error(errorMsg);
+				throw std::out_of_range{errorMsg};
+			}
 		}
 	}
 
-
-	Quaternion::Quaternion(const Vector3& axis, const float angleDegrees)
+	float& Quaternion::operator[](const std::size_t index)
 	{
-		Vector3 normalizedAxis = axis.Normalized();
-		const float angleHalfRadians = math::ToRadians(angleDegrees) / 2.0f;
-
-		w = math::Cos(angleHalfRadians);
-		x = normalizedAxis[0] * math::Sin(angleHalfRadians);
-		y = normalizedAxis[1] * math::Sin(angleHalfRadians);
-		z = normalizedAxis[2] * math::Sin(angleHalfRadians);
+		return const_cast<float&>(const_cast<const Quaternion*>(this)->operator[](index));
 	}
-
 
 	Vector3 Quaternion::EulerAngles() const
 	{
-		float secondComponent{ 2 * (w * y - z * x) };
+		// ???
+
+		float secondComponent{2 * (m_W * m_Y - m_Z * m_X)};
 
 		if (math::Abs(secondComponent) > 1)
 		{
@@ -56,60 +118,40 @@ namespace leopph
 
 		return Vector3
 		{
-			math::ToDegrees(math::Atan2(2 * (w * x + y * z), 1 - 2 * (math::Pow(x, 2) + math::Pow(y, 2)))),
+			math::ToDegrees(math::Atan2(2 * (m_W * m_X + m_Y * m_Z), 1 - 2 * (math::Pow(m_X, 2) + math::Pow(m_Y, 2)))),
 			math::ToDegrees(secondComponent),
-			math::ToDegrees(math::Atan2(2 * (w * z + x * y), 1 - 2 * (math::Pow(y, 2) + math::Pow(z, 2))))
+			math::ToDegrees(math::Atan2(2 * (m_W * m_Z + m_X * m_Y), 1 - 2 * (math::Pow(m_Y, 2) + math::Pow(m_Z, 2))))
 		};
 	}
 
-
-	const float& Quaternion::operator[](const std::size_t index) const
+	float Quaternion::Norm() const
 	{
-		switch (index)
-		{
-		case 0:
-			return w;
-		case 1:
-			return x;
-		case 2:
-			return y;
-		case 3:
-			return z;
-		default:
-			const auto errorMsg{ "Invalid quaternion index '" + std::to_string(index) + "'." };
-			impl::Logger::Instance().Error(errorMsg);
-			throw std::out_of_range{ errorMsg };
-		}
+		return math::Sqrt(math::Pow(m_W, 2) + math::Pow(m_X, 2) + math::Pow(m_Y, 2) + math::Pow(m_Z, 2));
 	}
 
-
-	float& Quaternion::operator[](const std::size_t index)
+	Quaternion Quaternion::Conjugate() const
 	{
-		return const_cast<float&>(const_cast<const Quaternion*>(this)->operator[](index));
+		return Quaternion{m_W, -m_X, -m_Y, -m_Z};
 	}
 
+	Quaternion& Quaternion::ConjugateInPlace()
+	{
+		m_X = -m_X;
+		m_Y = -m_Y;
+		m_Z = -m_Z;
+		return *this;
+	}
 
 	Quaternion::operator Matrix4() const
 	{
 		return Matrix4
 		{
-			1 - 2 * (math::Pow(y, 2) + math::Pow(z, 2)),		2 * (x * y + z * w),		2 * (x * z - y * w),		0,
-			2 * (x * y - z * w),		1 - 2 * (math::Pow(x, 2) + math::Pow(z, 2)),		2 * (y * z + x * w),		0,
-			2 * (x * z + y * w),		2 * (y * z - x * w),		1 - 2 * (math::Pow(x, 2) + math::Pow(y, 2)),		0,
-			0,		0,		0,		1
+			1 - 2 * (math::Pow(m_Y, 2) + math::Pow(m_Z, 2)), 2 * (m_X * m_Y + m_Z * m_W), 2 * (m_X * m_Z - m_Y * m_W), 0,
+			2 * (m_X * m_Y - m_Z * m_W), 1 - 2 * (math::Pow(m_X, 2) + math::Pow(m_Z, 2)), 2 * (m_Y * m_Z + m_X * m_W), 0,
+			2 * (m_X * m_Z + m_Y * m_W), 2 * (m_Y * m_Z - m_X * m_W), 1 - 2 * (math::Pow(m_X, 2) + math::Pow(m_Y, 2)), 0,
+			0, 0, 0, 1
 		};
 	}
-
-
-	float Quaternion::Magnitude() const
-	{
-		return math::Sqrt(math::Pow(w, 2) + math::Pow(x, 2) + math::Pow(y, 2) + math::Pow(z, 2));
-	}
-
-
-	/*-------------------
-	 NON-MEMBER FUNCTIONS
-	 ------------------*/
 
 	Quaternion operator*(const Quaternion& left, const Quaternion& right)
 	{
@@ -122,12 +164,10 @@ namespace leopph
 		};
 	}
 
-
 	Quaternion& operator*=(Quaternion& left, const Quaternion& right)
 	{
 		return left = left * right;
 	}
-
 
 	std::ostream& operator<<(std::ostream& os, const Quaternion& q)
 	{

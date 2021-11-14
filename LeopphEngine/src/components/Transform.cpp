@@ -59,7 +59,7 @@ namespace leopph
 	{
 		if (m_Parent != nullptr)
 		{
-			m_LocalPosition = newPos * static_cast<Matrix3>(static_cast<Matrix4>(m_Parent->m_WorldRotation).Transpose()) - m_Parent->m_WorldPosition;
+			m_LocalPosition = m_Parent->m_WorldRotation.Conjugate().Rotate(newPos) - m_Parent->m_WorldPosition;
 		}
 		else
 		{
@@ -256,10 +256,9 @@ namespace leopph
 	
 	void Transform::CalculateLocalAxes()
 	{
-		const auto rotMatrix = static_cast<Matrix3>(static_cast<Matrix4>(m_WorldRotation));
-		m_Forward = Vector3::Forward() * rotMatrix;
-		m_Right = Vector3::Right() * rotMatrix;
-		m_Up = Vector3::Up() * rotMatrix;
+		m_Forward = m_WorldRotation.Rotate(Vector3::Forward());
+		m_Right = m_WorldRotation.Rotate(Vector3::Right());
+		m_Up = m_WorldRotation.Rotate(Vector3::Up());
 	}
 
 	void Transform::OnEventReceived(const impl::FrameEndedEvent&)
@@ -269,7 +268,7 @@ namespace leopph
 
 	void Transform::CalculateWorldPosition()
 	{
-		m_WorldPosition = m_Parent != nullptr ? (m_Parent->m_WorldPosition + m_LocalPosition) * static_cast<Matrix3>(static_cast<Matrix4>(m_Parent->m_WorldRotation)) : m_LocalPosition;
+		m_WorldPosition = m_Parent != nullptr ? m_Parent->m_WorldRotation.Rotate(m_Parent->m_WorldPosition + m_LocalPosition) : m_LocalPosition;
 		m_Changed = true;
 		std::ranges::for_each(m_Children, &Transform::CalculateWorldPosition);
 	}
