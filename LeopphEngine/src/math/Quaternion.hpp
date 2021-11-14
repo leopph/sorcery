@@ -25,7 +25,9 @@ namespace leopph
 
 		float& W, & X, & Y, & Z;
 
+		[[nodiscard]]
 		const float& operator[](std::size_t index) const;
+		[[nodiscard]]
 		float& operator[](std::size_t index);
 
 		[[nodiscard]]
@@ -35,14 +37,27 @@ namespace leopph
 		float Norm() const;
 
 		[[nodiscard]]
-		Quaternion Conjugate() const;
+		Quaternion Normalized() const;
+		Quaternion& Normalize();
 
+		[[nodiscard]]
+		Quaternion Conjugate() const;
 		Quaternion& ConjugateInPlace();
 
+		[[nodiscard]]
+		Quaternion Inverse() const;
+		Quaternion& Invert();
+
+		[[nodiscard]]
 		explicit operator Matrix4() const;
 
 		template<class T>
-		impl::Vector<T, 3> Rotate(const impl::Vector<T, 3>& vec) const;
+		[[nodiscard]]
+		impl::Vector<T, 3> Rotate(const impl::Vector<T, 3>& vec) const
+		{
+			const auto retQuat{*this * Quaternion{0, vec[0], vec[1], vec[2]} *Conjugate()};
+			return impl::Vector<T, 3>{retQuat.m_X, retQuat.m_Y, retQuat.m_Z};
+		}
 
 
 	private:
@@ -56,11 +71,4 @@ namespace leopph
 	LEOPPHAPI Quaternion operator*(const Quaternion& left, const Quaternion& right);
 	LEOPPHAPI Quaternion& operator*=(Quaternion& left, const Quaternion& right);
 	LEOPPHAPI std::ostream& operator<<(std::ostream& os, const Quaternion& q);
-
-	template<class T>
-	impl::Vector<T, 3> Quaternion::Rotate(const impl::Vector<T, 3>& vec) const
-	{
-		const auto retQuat{*this * Quaternion{0, vec[0], vec[1], vec[2]} * Conjugate()};
-		return impl::Vector<T, 3>{retQuat.m_X, retQuat.m_Y, retQuat.m_Z};
-	}
 }

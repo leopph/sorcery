@@ -129,6 +129,22 @@ namespace leopph
 		return math::Sqrt(math::Pow(m_W, 2) + math::Pow(m_X, 2) + math::Pow(m_Y, 2) + math::Pow(m_Z, 2));
 	}
 
+	Quaternion Quaternion::Normalized() const
+	{
+		const auto norm{Norm()};
+		return Quaternion{m_W / norm, m_X / norm, m_Y / norm, m_Z / norm};
+	}
+
+	Quaternion& Quaternion::Normalize()
+	{
+		const auto norm{Norm()};
+		m_W /= norm;
+		m_X /= norm;
+		m_Y /= norm;
+		m_Z /= norm;
+		return *this;
+	}
+
 	Quaternion Quaternion::Conjugate() const
 	{
 		return Quaternion{m_W, -m_X, -m_Y, -m_Z};
@@ -139,6 +155,22 @@ namespace leopph
 		m_X = -m_X;
 		m_Y = -m_Y;
 		m_Z = -m_Z;
+		return *this;
+	}
+
+	Quaternion Quaternion::Inverse() const
+	{
+		const auto normSquared{math::Pow(m_W, 2) + math::Pow(m_X, 2) + math::Pow(m_Y, 2) + math::Pow(m_Z, 2)};
+		return Quaternion{m_W / normSquared, -m_X / normSquared, -m_Y / normSquared, -m_Z / normSquared};
+	}
+
+	Quaternion& Quaternion::Invert()
+	{
+		const auto normSquared{math::Pow(m_W, 2) + math::Pow(m_X, 2) + math::Pow(m_Y, 2) + math::Pow(m_Z, 2)};
+		m_W /= normSquared;
+		m_X = -m_X / normSquared;
+		m_Y = -m_Y / normSquared;
+		m_Z = -m_Z / normSquared;
 		return *this;
 	}
 
