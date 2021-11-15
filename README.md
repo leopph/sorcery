@@ -13,6 +13,7 @@ These are the planned features and their current states:
   - ✅ Necessary engine-provided components
   - ✅ API to make functionality extension possible
   - ✅ Parent-child relation between Entities
+  - ❌ Abstraction for easy and fast scene changes
 - 〽️ OpenGL Renderer
   - ✅ Blinn-Phong model
     - ✅ Directional, point, and spotlights
