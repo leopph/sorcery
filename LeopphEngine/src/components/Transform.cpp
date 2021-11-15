@@ -86,7 +86,15 @@ namespace leopph
 
 	void Transform::Rotation(const Quaternion& newRot)
 	{
-		// TODO
+		if (m_Parent != nullptr)
+		{
+			m_LocalRotation = m_Parent->m_WorldRotation.Conjugate() * newRot;
+		}
+		else
+		{
+			m_LocalRotation = newRot;
+		}
+		CalculateWorldRotation();
 	}
 
 	void Transform::LocalRotation(const Quaternion& newRot)
@@ -107,7 +115,15 @@ namespace leopph
 
 	void Transform::Scale(const Vector3& newScale)
 	{
-		// TODO
+		if (m_Parent != nullptr)
+		{
+			m_LocalScale = newScale / m_Parent->m_WorldScale;
+		}
+		else
+		{
+			m_LocalScale = newScale;
+		}
+		CalculateWorldScale();
 	}
 
 	void Transform::LocalScale(const Vector3& newScale)
@@ -130,7 +146,7 @@ namespace leopph
 
 	void Transform::Translate(const float x, const float y, const float z, const Space base)
 	{
-		Translate(Vector3{ x, y, z });
+		Translate(Vector3{ x, y, z }, base);
 	}
 
 	void Transform::Rotate(const Quaternion& rotation, const Space base)
@@ -154,7 +170,7 @@ namespace leopph
 	{
 		if (base == Space::World)
 		{
-			// TODO
+			Scale(m_WorldScale * scaling);
 		}
 		else if (base == Space::Local)
 		{
@@ -259,11 +275,6 @@ namespace leopph
 		m_Forward = m_WorldRotation.Rotate(Vector3::Forward());
 		m_Right = m_WorldRotation.Rotate(Vector3::Right());
 		m_Up = m_WorldRotation.Rotate(Vector3::Up());
-	}
-
-	void Transform::OnEventReceived(const impl::FrameEndedEvent&)
-	{
-		m_Changed = false;
 	}
 
 	void Transform::CalculateWorldPosition()

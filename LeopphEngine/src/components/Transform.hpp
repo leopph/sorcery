@@ -2,8 +2,6 @@
 
 #include "Component.hpp"
 #include "../api/LeopphApi.hpp"
-#include "../events/FrameEndEvent.hpp"
-#include "../events/handling/EventReceiver.hpp"
 #include "../math/Quaternion.hpp"
 #include "../math/Vector.hpp"
 
@@ -24,7 +22,7 @@ namespace leopph
 	/* Transforms are special Components that are automatically created on new Entities.
 	 * Transforms provide Entities with spatial properties such as position, orientation and scale.
 	 * They define a hierarchy in which each child inherits its parent's properties. */
-	class Transform final : public Component, public EventReceiver<impl::FrameEndedEvent>
+	class Transform final : public Component
 	{
 	public:
 		/* Get the World Space position.
@@ -190,8 +188,8 @@ namespace leopph
 		Transform* m_Parent;
 		std::unordered_set<Transform*> m_Children;
 
+		// Calculates local bases using the global rotation.
 		void CalculateLocalAxes();
-		void OnEventReceived(const impl::FrameEndedEvent&) override;
 
 		// Calculates global position, sets Changed, then updates children recursively.
 		void CalculateWorldPosition();
