@@ -97,6 +97,15 @@ namespace leopph::impl
 	{
 		auto ret = gladLoadGL(glfwGetProcAddress);
 
+		if (ret)
+		{
+			int major, minor;
+			glGetIntegerv(GL_MAJOR_VERSION, &major);
+			glGetIntegerv(GL_MINOR_VERSION, &minor);
+			Logger::Instance().Debug("Using OpenGL " + std::to_string(major) + "." + std::to_string(minor) + ".");
+			Logger::Instance().Debug(std::string{"Using renderer ["} + reinterpret_cast<const char*>(glGetString(GL_RENDERER)) + "].");
+		}
+
 		if (Logger::Instance().CurrentLevel() == Logger::Level::DEBUG && ret)
 		{
 			glEnable(GL_DEBUG_OUTPUT);

@@ -1,4 +1,4 @@
-#version 460 core
+#version 440 core
 
 
 #ifdef CAST_SHADOW

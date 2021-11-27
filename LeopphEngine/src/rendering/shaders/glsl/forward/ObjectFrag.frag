@@ -1,4 +1,4 @@
-#version 460 core
+#version 440 core
 
 #define MAX_POINT_LIGHT_COUNT 64
 #define MAX_SPOT_LIGHT_COUNT 64

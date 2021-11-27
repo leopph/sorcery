@@ -34,13 +34,23 @@ namespace leopph::impl
 			throw std::runtime_error{erroMsg};
 		}
 
+		int major, minor, rev;
+		glfwGetVersion(&major, &minor, &rev);
+		Logger::Instance().Debug("Using GLFW " + std::to_string(major) + "." + std::to_string(minor) + "." + std::to_string(rev) + ".");
+
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
-		glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
 		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 		auto const monitor{m_Fullscreen ? glfwGetPrimaryMonitor() : nullptr};
 		m_Window = glfwCreateWindow(width, height, title.data(), monitor, nullptr);
+
+		if (m_Window == nullptr)
+		{
+			const auto errMsg{"Failed to create window."};
+			Logger::Instance().Error(errMsg);
+			throw std::runtime_error{errMsg};
+		}
 
 		glfwMakeContextCurrent(m_Window);
 		glfwSetFramebufferSizeCallback(m_Window, FramebufferSizeCallback);

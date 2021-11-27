@@ -1,4 +1,4 @@
-#version 460 core
+#version 430 core
 
 #define MIN_SHADOW_BIAS 0.0001
 #define MAX_SHADOW_BIAS 0.0005
