@@ -20,25 +20,38 @@ namespace leopph::impl
 			glShaderSource(shaderName, 1, std::array{info.src.data()}.data(), nullptr);
 			glCompileShader(shaderName);
 
-			if (const auto errMsg{CheckForCompilationErrors(shaderName)};
-				errMsg.has_value())
+			if (const auto status{CompilationStatus(shaderName)};
+				status.second.has_value())
 			{
-				Logger::Instance().Error(errMsg.value());
-				glDeleteShader(shaderName);
+				if (status.first)
+				{
+					Logger::Instance().Debug(status.second.value());
+				}
+				else
+				{
+					Logger::Instance().Error(status.second.value());
+					glDeleteShader(shaderName);
+					return;
+				}
 			}
-			else
-			{
-				shaderNames.push_back(shaderName);
-				glAttachShader(m_ProgramName, shaderName);
-			}
+
+			shaderNames.push_back(shaderName);
+			glAttachShader(m_ProgramName, shaderName);
 		});
 
 		glLinkProgram(m_ProgramName);
 
-		if (const auto errMsg{CheckForLinkErrors()};
-			errMsg.has_value())
+		if (const auto status{LinkStatus()};
+			status.second.has_value())
 		{
-			Logger::Instance().Error(errMsg.value());
+			if (status.first)
+			{
+				Logger::Instance().Debug(status.second.value());
+			}
+			else
+			{
+				Logger::Instance().Error(status.second.value());
+			}
 		}
 
 		std::ranges::for_each(shaderNames, [](const auto& shaderName)
@@ -138,43 +151,46 @@ namespace leopph::impl
 	}
 
 
-	std::optional<std::string> ShaderProgram::CheckForCompilationErrors(const unsigned name)
+	std::pair<bool, std::optional<std::string>> ShaderProgram::CompilationStatus(const unsigned name)
 	{
-		GLint status;
-		glGetShaderiv(name, GL_COMPILE_STATUS, &status);
+		std::pair<bool, std::optional<std::string>> ret;
 
-		if (status == GL_FALSE)
+		GLint logLength;
+		glGetShaderiv(name, GL_INFO_LOG_LENGTH, &logLength);
+
+		if (logLength > 0)
 		{
-			GLint logLength;
-			glGetShaderiv(name, GL_INFO_LOG_LENGTH, &logLength);
-
-			std::string errMsg;
-			errMsg.resize(logLength);
-			glGetShaderInfoLog(name, logLength, &logLength, errMsg.data());
-			return {errMsg};
+			std::string infoLog;
+			infoLog.resize(logLength);
+			glGetShaderInfoLog(name, logLength, &logLength, infoLog.data());
+			ret.second = infoLog;
 		}
 
-		return {};
+		GLint status;
+		glGetShaderiv(name, GL_COMPILE_STATUS, &status);
+		ret.first = status == GL_TRUE;
+		return ret;
 	}
 
 
-	std::optional<std::string> ShaderProgram::CheckForLinkErrors() const
+	std::pair<bool, std::optional<std::string>> ShaderProgram::LinkStatus() const
 	{
-		GLint status;
-		glGetProgramiv(m_ProgramName, GL_LINK_STATUS, &status);
+		std::pair<bool, std::optional<std::string>> ret;
 
-		if (status == GL_FALSE)
+		GLint logLength;
+		glGetProgramiv(m_ProgramName, GL_INFO_LOG_LENGTH, &logLength);
+
+		if (logLength > 0)
 		{
-			GLint logLength;
-			glGetProgramiv(m_ProgramName, GL_INFO_LOG_LENGTH, &logLength);
-
-			std::string errMsg;
-			errMsg.resize(logLength);
-			glGetProgramInfoLog(m_ProgramName, logLength, &logLength, errMsg.data());
-			return {errMsg};
+			std::string infoLog;
+			infoLog.resize(logLength);
+			glGetProgramInfoLog(m_ProgramName, logLength, &logLength, infoLog.data());
 		}
 
-		return {};
+		GLint status;
+		glGetProgramiv(m_ProgramName, GL_LINK_STATUS, &status);
+		ret.first = status == GL_TRUE;
+		return ret;
 	}
 
 

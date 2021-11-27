@@ -8,6 +8,7 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 
@@ -44,8 +45,8 @@ namespace leopph::impl
 
 
 		private:
-			[[nodiscard]] static std::optional<std::string> CheckForCompilationErrors(unsigned name);
-			[[nodiscard]] std::optional<std::string> CheckForLinkErrors() const;
+			[[nodiscard]] static std::pair<bool, std::optional<std::string>> CompilationStatus(unsigned name);
+			[[nodiscard]] std::pair<bool, std::optional<std::string>> LinkStatus() const;
 			[[nodiscard]] int GetUniformLocation(std::string_view);
 
 			std::unordered_map<std::string_view, int> m_UniformLocations;
