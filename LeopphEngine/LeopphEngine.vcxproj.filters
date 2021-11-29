@@ -24,7 +24,6 @@
     <ClCompile Include="src\config\Settings.cpp" />
     <ClCompile Include="src\util\logger.cpp" />
     <ClCompile Include="src\rendering\Material.cpp" />
-    <ClCompile Include="src\misc\Skybox.cpp" />
     <ClCompile Include="src\misc\Color.cpp" />
     <ClCompile Include="src\components\lighting\AmbientLight.cpp" />
     <ClCompile Include="src\components\Transform.cpp" />
@@ -46,7 +45,7 @@
     <ClCompile Include="src\rendering\TextureImpl.cpp" />
     <ClCompile Include="src\rendering\Texture.cpp" />
     <ClCompile Include="src\rendering\SkyboxImpl.cpp" />
-    <ClCompile Include="src\rendering\SkyboxHandle.cpp" />
+    <ClCompile Include="src\rendering\Skybox.cpp" />
     <ClCompile Include="src\util\equal\EntityEqual.cpp" />
     <ClCompile Include="src\util\hash\EntityHash.cpp" />
     <ClCompile Include="src\rendering\CascadedShadowMap.cpp" />
@@ -102,7 +101,6 @@
     <ClInclude Include="src\misc\Color.hpp" />
     <ClInclude Include="src\util\hash\PathHash.hpp" />
     <ClInclude Include="src\misc\CameraBackground.hpp" />
-    <ClInclude Include="src\misc\Skybox.hpp" />
     <ClInclude Include="src\components\lighting\AmbientLight.hpp" />
     <ClInclude Include="src\components\Transform.hpp" />
     <ClInclude Include="src\rendering\ShadowMap.hpp" />
@@ -126,7 +124,7 @@
     <ClInclude Include="src\rendering\Texture.hpp" />
     <ClInclude Include="src\rendering\SkyboxImpl.hpp" />
     <ClInclude Include="src\data\Proxy.hpp" />
-    <ClInclude Include="src\rendering\SkyboxHandle.hpp" />
+    <ClInclude Include="src\rendering\Skybox.hpp" />
     <ClInclude Include="src\util\equal\EntityEqual.hpp" />
     <ClInclude Include="src\util\hash\EntityHash.hpp" />
     <ClInclude Include="src\events\DirShadowResolutionEvent.hpp" />

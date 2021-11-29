@@ -13,7 +13,7 @@ namespace leopph::impl
 	std::unordered_map<const Transform*, std::pair<Matrix4, Matrix4>> DataManager::s_Matrices{};
 	std::unordered_map<ModelImpl, std::unordered_set<Model*>, PathedHash<ModelImpl>, PathedEqual<ModelImpl>> DataManager::s_Models{};
 	std::unordered_map<TextureImpl, std::unordered_set<Texture*>, PathedHash<TextureImpl>, PathedEqual<TextureImpl>> DataManager::s_Textures{};
-	std::unordered_map<SkyboxImpl, std::unordered_set<SkyboxHandle*>, PathedHash<SkyboxImpl>, PathedEqual<SkyboxImpl>> DataManager::s_Skyboxes{};
+	std::unordered_map<SkyboxImpl, std::unordered_set<Skybox*>, PathedHash<SkyboxImpl>, PathedEqual<SkyboxImpl>> DataManager::s_Skyboxes{};
 
 
 	void DataManager::Clear()
@@ -213,7 +213,7 @@ namespace leopph::impl
 
 	SkyboxImpl* DataManager::CreateOrGetSkyboxImpl(std::filesystem::path allPaths)
 	{
-		return &const_cast<SkyboxImpl&>(s_Skyboxes.emplace(std::move(allPaths), std::unordered_set<SkyboxHandle*>{}).first->first);
+		return &const_cast<SkyboxImpl&>(s_Skyboxes.emplace(std::move(allPaths), std::unordered_set<Skybox*>{}).first->first);
 	}
 
 	void DataManager::DestroySkyboxImpl(SkyboxImpl* const skybox)
@@ -221,17 +221,17 @@ namespace leopph::impl
 		s_Skyboxes.erase(*skybox);
 	}
 
-	void DataManager::RegisterSkyboxHandle(SkyboxImpl* const skybox, SkyboxHandle* const handle)
+	void DataManager::RegisterSkyboxHandle(SkyboxImpl* const skybox, Skybox* const handle)
 	{
 		s_Skyboxes.at(*skybox).insert(handle);
 	}
 
-	void DataManager::UnregisterSkyboxHandle(SkyboxImpl* const skybox, SkyboxHandle* const handle)
+	void DataManager::UnregisterSkyboxHandle(SkyboxImpl* const skybox, Skybox* const handle)
 	{
 		s_Skyboxes.at(*skybox).erase(handle);
 	}
 
-	const std::unordered_map<SkyboxImpl, std::unordered_set<SkyboxHandle*>, PathedHash<SkyboxImpl>, PathedEqual<SkyboxImpl>>& DataManager::Skyboxes()
+	const std::unordered_map<SkyboxImpl, std::unordered_set<Skybox*>, PathedHash<SkyboxImpl>, PathedEqual<SkyboxImpl>>& DataManager::Skyboxes()
 	{
 		return s_Skyboxes;
 	}

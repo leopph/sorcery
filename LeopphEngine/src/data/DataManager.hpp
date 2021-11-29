@@ -16,7 +16,7 @@
 #include "../util/hash/PathedHash.hpp"
 #include "../rendering/TextureImpl.hpp"
 #include "../rendering/Texture.hpp"
-#include "../rendering/SkyboxHandle.hpp"
+#include "../rendering/Skybox.hpp"
 #include "../rendering/SkyboxImpl.hpp"
 
 #include <cstddef>
@@ -52,11 +52,11 @@ namespace leopph::impl
 		static const std::unordered_map<TextureImpl, std::unordered_set<Texture*>, PathedHash<TextureImpl>, PathedEqual<TextureImpl>>& Textures();
 
 		static SkyboxImpl* CreateOrGetSkyboxImpl(std::filesystem::path allPaths);
-		// Also unregisters all SkyboxHandles.
+		// Also unregisters all Skybox handles.
 		static void DestroySkyboxImpl(SkyboxImpl* skybox);
-		static void RegisterSkyboxHandle(SkyboxImpl* skybox, SkyboxHandle* handle);
-		static void UnregisterSkyboxHandle(SkyboxImpl* skybox, SkyboxHandle* handle);
-		static const std::unordered_map<SkyboxImpl, std::unordered_set<SkyboxHandle*>, PathedHash<SkyboxImpl>, PathedEqual<SkyboxImpl>>& Skyboxes();
+		static void RegisterSkyboxHandle(SkyboxImpl* skybox, Skybox* handle);
+		static void UnregisterSkyboxHandle(SkyboxImpl* skybox, Skybox* handle);
+		static const std::unordered_map<SkyboxImpl, std::unordered_set<Skybox*>, PathedHash<SkyboxImpl>, PathedEqual<SkyboxImpl>>& Skyboxes();
 
 
 		static void Register(Entity* entity);
@@ -98,7 +98,7 @@ namespace leopph::impl
 		static std::unordered_map<ModelImpl, std::unordered_set<Model*>, PathedHash<ModelImpl>, PathedEqual<ModelImpl>> s_Models;
 		// Stores TextureImpl instances along with all the Texture handles pointing to it.
 		static std::unordered_map<TextureImpl, std::unordered_set<Texture*>, PathedHash<TextureImpl>, PathedEqual<TextureImpl>> s_Textures;
-		// Stores SkyboxImpl instances along with all the SkyboxHandles pointing to it.
-		static std::unordered_map<SkyboxImpl, std::unordered_set<SkyboxHandle*>, PathedHash<SkyboxImpl>, PathedEqual<SkyboxImpl>> s_Skyboxes;
+		// Stores SkyboxImpl instances along with all the Skybox handles pointing to it.
+		static std::unordered_map<SkyboxImpl, std::unordered_set<Skybox*>, PathedHash<SkyboxImpl>, PathedEqual<SkyboxImpl>> s_Skyboxes;
 	};
 }

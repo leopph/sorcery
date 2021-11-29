@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Skybox.hpp"
+#include "../rendering/Skybox.hpp"
 #include "../misc/Color.hpp"
 
 #include <optional>

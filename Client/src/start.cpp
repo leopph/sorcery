@@ -29,8 +29,8 @@ void leopph::AppStart()
 					"skybox/megasun/left.hdr",
 					"skybox/megasun/top.hdr",
 					"skybox/megasun/bottom.hdr",
-					"skybox/megasun/back.hdr",
-					"skybox/megasun/front.hdr"
+					"skybox/megasun/front.hdr",
+					"skybox/megasun/back.hdr"
 				}
 			}
 		});

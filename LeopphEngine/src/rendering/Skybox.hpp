@@ -5,24 +5,30 @@
 #include <filesystem>
 
 
-namespace leopph::impl
+namespace leopph
 {
-	class SkyboxImpl;
+	namespace impl
+	{
+		class SkyboxImpl;
+	}
 
 
-	class SkyboxHandle
+	/* The Skybox class represents a cube map that is used to paint the background of a Camera component.
+	 * It consists of 6 faces, or separate textures files, that MUST BE given in the specified order.
+	 * See "camerabackground.h" for more details. */
+	class Skybox
 	{
 	public:
-		explicit SkyboxHandle(const std::filesystem::path& right, const std::filesystem::path& left,
+		LEOPPHAPI explicit Skybox(const std::filesystem::path& right, const std::filesystem::path& left,
 							  const std::filesystem::path& top, const std::filesystem::path& bottom,
 							  const std::filesystem::path& front,const std::filesystem::path& back);
-		SkyboxHandle(const SkyboxHandle& other);
-		SkyboxHandle(SkyboxHandle&& other) noexcept;
+		LEOPPHAPI Skybox(const Skybox& other);
+		LEOPPHAPI Skybox(Skybox&& other) noexcept;
 
-		~SkyboxHandle();
+		LEOPPHAPI ~Skybox();
 
-		SkyboxHandle& operator=(const SkyboxHandle& other);
-		SkyboxHandle& operator=(SkyboxHandle&& other) noexcept;
+		LEOPPHAPI Skybox& operator=(const Skybox& other);
+		LEOPPHAPI Skybox& operator=(Skybox&& other) noexcept;
 
 		LEOPPHAPI inline const std::filesystem::path& AllFilePaths() const;
 		LEOPPHAPI inline const std::filesystem::path& RightPath() const;
@@ -36,6 +42,6 @@ namespace leopph::impl
 	private:
 		void Deinit();
 
-		SkyboxImpl* m_Impl;
+		impl::SkyboxImpl* m_Impl;
 	};
 }
