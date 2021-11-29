@@ -2,20 +2,22 @@
 
 #include "../components/Behavior.hpp"
 #include "../components/Component.hpp"
+#include "../components/Model.hpp"
 #include "../components/Transform.hpp"
 #include "../components/lighting/DirLight.hpp"
 #include "../components/lighting/PointLight.hpp"
 #include "../components/lighting/SpotLight.hpp"
 #include "../entity/Entity.hpp"
 #include "../rendering/ShadowMap.hpp"
-#include "../rendering/geometry/ModelResource.hpp"
+#include "../rendering/geometry/ModelImpl.hpp"
 #include "../util/equal/EntityEqual.hpp"
-#include "../util/equal/UniqueResourceEqual.hpp"
+#include "../util/equal/PathedEqual.hpp"
 #include "../util/hash/EntityHash.hpp"
-#include "../util/hash/UniqueResourceHash.hpp"
-#include "managed/Resource.hpp"
-#include "managed/ResourceHandleBase.hpp"
-#include "managed/UniqueResource.hpp"
+#include "../util/hash/PathedHash.hpp"
+#include "../rendering/TextureImpl.hpp"
+#include "../rendering/Texture.hpp"
+#include "../rendering/SkyboxHandle.hpp"
+#include "../rendering/SkyboxImpl.hpp"
 
 #include <cstddef>
 #include <filesystem>
@@ -28,82 +30,75 @@
 #include <vector>
 
 
-
 namespace leopph::impl
 {
 	class DataManager
 	{
-		public:
-			static void Clear();
+	public:
+		static void Clear();
+
+		static ModelImpl* CreateOrGetModelImpl(std::filesystem::path path);
+		// Also unregisters all Model components.
+		static void DestroyModelImpl(ModelImpl* model);
+		static void RegisterModelComponent(ModelImpl* model, Model* component);
+		static void UnregisterModelComponent(ModelImpl* model, Model* component);
+		static const std::unordered_map<ModelImpl, std::unordered_set<Model*>, PathedHash<ModelImpl>, PathedEqual<ModelImpl>>& Models();
+
+		static TextureImpl* CreateOrGetTextureImpl(std::filesystem::path path);
+		// Also unregisters all Texture handles.
+		static void DestroyTextureImpl(TextureImpl* texture);
+		static void RegisterTextureHandle(TextureImpl* texture, Texture* handle);
+		static void UnregisterTextureHandle(TextureImpl* texture, Texture* handle);
+		static const std::unordered_map<TextureImpl, std::unordered_set<Texture*>, PathedHash<TextureImpl>, PathedEqual<TextureImpl>>& Textures();
+
+		static SkyboxImpl* CreateOrGetSkyboxImpl(std::filesystem::path allPaths);
+		// Also unregisters all SkyboxHandles.
+		static void DestroySkyboxImpl(SkyboxImpl* skybox);
+		static void RegisterSkyboxHandle(SkyboxImpl* skybox, SkyboxHandle* handle);
+		static void UnregisterSkyboxHandle(SkyboxImpl* skybox, SkyboxHandle* handle);
+		static const std::unordered_map<SkyboxImpl, std::unordered_set<SkyboxHandle*>, PathedHash<SkyboxImpl>, PathedEqual<SkyboxImpl>>& Skyboxes();
 
 
-			static void Register(Entity* entity);
-			static void Register(Behavior* behavior);
-			static void Register(Component* component);
-			static void Register(PointLight* pointLight);
-			static void Register(ModelResource* model);
-			static void Register(const Resource* resource);
-			static void Register(const UniqueResource* resource);
-			static void Register(const Resource* resource, const ResourceHandleBase* handle);
-			static void Register(const UniqueResource* resource, const ResourceHandleBase* handle);
-			static void Register(const SpotLight* spotLight);
+		static void Register(Entity* entity);
+		static void Register(Behavior* behavior);
+		static void Register(Component* component);
+		static void Register(PointLight* pointLight);
+		static void Register(const SpotLight* spotLight);
+
+		static void Unregister(Entity* entity);
+		static void Unregister(Behavior* behavior);
+		static void Unregister(Component* component);
+		static void Unregister(PointLight* pointLight);
+		static void Unregister(const SpotLight* spotLight);
+
+		static Entity* Find(const std::string& name);
+
+		static const std::unordered_map<Entity*, std::unordered_set<Component*>, EntityHash, EntityEqual>& EntitiesAndComponents();
+		static const std::unordered_set<Behavior*>& Behaviors();
+		static const std::unordered_set<Component*>& Components(Entity* entity);
+		static DirectionalLight* DirectionalLight();
+		static const std::unordered_set<const SpotLight*>& SpotLights();
+		static const std::vector<PointLight*>& PointLights();
+
+		static void DirectionalLight(leopph::DirectionalLight* dirLight);
+
+		static void StoreMatrices(const Transform* transform, const Matrix4& model, const Matrix4& normal);
+		static void DiscardMatrices(const Transform* transform);
+		static const std::pair<Matrix4, Matrix4>& GetMatrices(const Transform* transform);
 
 
-			static void Unregister(Entity* entity);
-			static void Unregister(Behavior* behavior);
-			static void Unregister(Component* component);
-			static void Unregister(PointLight* pointLight);
-			static void Unregister(ModelResource* model);
-			static void Unregister(const Resource* resource);
-			static void Unregister(const UniqueResource* resource);
-			static void Unregister(const Resource* resource, const ResourceHandleBase* handle);
-			static void Unregister(const UniqueResource* resource, const ResourceHandleBase* handle);
-			static void Unregister(const SpotLight* spotLight);
-
-
-			static Entity* Find(const std::string& name);
-			static UniqueResource* Find(const std::filesystem::path& path);
-
-
-			static std::size_t Count(const Resource* resource);
-			static std::size_t Count(const UniqueResource* resource);
-
-
-			static const std::unordered_map<Entity*, std::unordered_set<Component*>, EntityHash, EntityEqual>& EntitiesAndComponents();
-			static const std::unordered_set<Behavior*>& Behaviors();
-			static const std::unordered_set<Component*>& Components(Entity* entity);
-			static DirectionalLight* DirectionalLight();
-			static const std::unordered_set<const SpotLight*>& SpotLights();
-			static const std::vector<PointLight*>& PointLights();
-			static const std::list<ShadowMap>& ShadowMaps();
-			static const std::unordered_set<ModelResource*>& Models();
-			static const std::unordered_set<const ResourceHandleBase*>& ModelComponents(ModelResource* model);
-
-
-			static void DirectionalLight(leopph::DirectionalLight* dirLight);
-
-			static void StoreMatrices(const Transform* transform, const Matrix4& model, const Matrix4& normal);
-			static void DiscardMatrices(const Transform* transform);
-			static const std::pair<Matrix4, Matrix4>& GetMatrices(const Transform* transform);
-
-
-		private:
-			static std::unordered_map<Entity*, std::unordered_set<Component*>, EntityHash, EntityEqual> s_EntitiesAndComponents;
-
-			static std::unordered_set<Behavior*> s_Behaviors;
-
-			static leopph::DirectionalLight* s_DirLight;
-
-			static std::unordered_set<const SpotLight*> s_SpotLights;
-
-			static std::vector<PointLight*> s_PointLights;
-
-			static std::unordered_map<const Transform*, std::pair<Matrix4, Matrix4>> s_Matrices;
-
-			static std::unordered_set<ModelResource*> s_ModelResources;
-
-			static std::unordered_map<const Resource*, std::unordered_set<const ResourceHandleBase*>> s_ResourcesAndHandles;
-
-			static std::unordered_map<const UniqueResource*, std::unordered_set<const ResourceHandleBase*>, UniqueResourceHash, UniqueResourceEqual> s_UniqueResourcesAndHandles;
+	private:
+		static std::unordered_map<Entity*, std::unordered_set<Component*>, EntityHash, EntityEqual> s_EntitiesAndComponents;
+		static std::unordered_set<Behavior*> s_Behaviors;
+		static leopph::DirectionalLight* s_DirLight;
+		static std::unordered_set<const SpotLight*> s_SpotLights;
+		static std::vector<PointLight*> s_PointLights;
+		static std::unordered_map<const Transform*, std::pair<Matrix4, Matrix4>> s_Matrices;
+		// Stores ModelImpl instances along with all the Model components pointing to it.
+		static std::unordered_map<ModelImpl, std::unordered_set<Model*>, PathedHash<ModelImpl>, PathedEqual<ModelImpl>> s_Models;
+		// Stores TextureImpl instances along with all the Texture handles pointing to it.
+		static std::unordered_map<TextureImpl, std::unordered_set<Texture*>, PathedHash<TextureImpl>, PathedEqual<TextureImpl>> s_Textures;
+		// Stores SkyboxImpl instances along with all the SkyboxHandles pointing to it.
+		static std::unordered_map<SkyboxImpl, std::unordered_set<SkyboxHandle*>, PathedHash<SkyboxImpl>, PathedEqual<SkyboxImpl>> s_Skyboxes;
 	};
 }

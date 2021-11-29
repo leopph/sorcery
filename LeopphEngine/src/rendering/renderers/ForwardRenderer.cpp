@@ -1,6 +1,5 @@
 #include "ForwardRenderer.hpp"
 
-#include "../SkyboxResource.hpp"
 #include "../../components/Camera.hpp"
 #include "../../components/lighting/AmbientLight.hpp"
 #include "../../components/lighting/DirLight.hpp"
@@ -12,7 +11,7 @@
 #include "../../math/Matrix.hpp"
 #include "../../math/Vector.hpp"
 #include "../../util/logger.h"
-#include "../geometry/ModelResource.hpp"
+#include "../geometry/ModelImpl.hpp"
 
 #include <glad/gl.h>
 
@@ -68,7 +67,7 @@ namespace leopph::impl
 
 	void ForwardRenderer::RenderShadedObjects(const Matrix4& camViewMat, 
 											  const Matrix4& camProjMat,
-											  const std::unordered_map<ModelResource*, std::vector< std::pair<Matrix4, Matrix4>>>& modelsAndMats,
+											  const std::unordered_map<const ModelImpl*, std::vector< std::pair<Matrix4, Matrix4>>>& modelsAndMats,
 											  const std::vector<const PointLight*>& pointLights,
 											  const std::vector<const SpotLight*>& spotLights)
 	{
@@ -145,7 +144,7 @@ namespace leopph::impl
 			skyboxShader.Use();
 			skyboxShader.SetUniform("viewMatrix", static_cast<Matrix4>(static_cast<Matrix3>(camViewMat)));
 			skyboxShader.SetUniform("projectionMatrix", camProjMat);
-			static_cast<SkyboxResource*>(DataManager::Find(skybox->AllFilePaths()))->Draw(skyboxShader);
+			DataManager::Skyboxes().find(skybox->AllFilePaths())->first.Draw(skyboxShader);
 		}
 	}
 }

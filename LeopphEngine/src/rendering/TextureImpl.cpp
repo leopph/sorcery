@@ -1,17 +1,18 @@
-#include "TextureResource.hpp"
+#include "TextureImpl.hpp"
 
 #include "../util/logger.h"
 
 #include <glad/gl.h>
-
 #include <stb_image.h>
+
+#include <utility>
 
 
 
 namespace leopph::impl
 {
-	TextureResource::TextureResource(const std::filesystem::path& path) :
-		UniqueResource{path},
+	TextureImpl::TextureImpl(std::filesystem::path path) :
+		Path{std::move(path)},
 		Id{m_ID},
 		IsTransparent{m_IsTransparent},
 		m_ID{},
@@ -22,13 +23,13 @@ namespace leopph::impl
 		glCreateTextures(GL_TEXTURE_2D, 1, &m_ID);
 
 		int width, height, channels;
-		const auto data{stbi_load(path.string().c_str(), &width, &height, &channels, 0)};
+		const auto data{stbi_load(Path.string().c_str(), &width, &height, &channels, 0)};
 
 		if (data == nullptr)
 		{
 			glDeleteTextures(1, &m_ID);
 
-			const auto msg{"Texture on path [" + path.string() + "] could not be loaded."};
+			const auto msg{"Texture on path [" + Path.string() + "] could not be loaded."};
 			Logger::Instance().Error(msg);
 			return;
 		}
@@ -75,7 +76,7 @@ namespace leopph::impl
 	}
 
 
-	TextureResource::~TextureResource()
+	TextureImpl::~TextureImpl()
 	{
 		glDeleteTextures(1, &Id);
 	}

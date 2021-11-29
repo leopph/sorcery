@@ -1,4 +1,4 @@
-#include "AssimpModel.hpp"
+#include "ModelImpl.hpp"
 
 #include "../Material.hpp"
 #include "../../util/logger.h"
@@ -17,11 +17,11 @@
 
 namespace leopph::impl
 {
-	AssimpModel::AssimpModel(const std::filesystem::path& path) :
-		m_Directory{path.parent_path()}, m_InstanceBufferSize{1}, m_InstanceBuffer{}
+	ModelImpl::ModelImpl(std::filesystem::path path) :
+		Path{std::move(path)}, m_Directory{Path.parent_path()}, m_InstanceBufferSize{1}, m_InstanceBuffer{}, m_CastsShadow{false}
 	{
 		Assimp::Importer importer;
-		const auto scene{importer.ReadFile(path.string(), aiProcess_Triangulate | aiProcess_GenNormals)};
+		const auto scene{importer.ReadFile(Path.string(), aiProcess_Triangulate | aiProcess_GenNormals)};
 
 		if (scene == nullptr || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || scene->mRootNode == nullptr)
 		{
@@ -38,7 +38,7 @@ namespace leopph::impl
 	}
 
 
-	void AssimpModel::DrawShaded(leopph::impl::ShaderProgram& shader, const std::vector<std::pair<Matrix4, Matrix4>>& instanceMatrices, const std::size_t nextFreeTextureUnit)
+	void ModelImpl::DrawShaded(leopph::impl::ShaderProgram& shader, const std::vector<std::pair<Matrix4, Matrix4>>& instanceMatrices, const std::size_t nextFreeTextureUnit) const
 	{
 		AdjustInstanceBuffer(instanceMatrices);
 
@@ -49,7 +49,7 @@ namespace leopph::impl
 	}
 
 
-	void AssimpModel::DrawDepth(const std::vector<std::pair<Matrix4, Matrix4>>& instanceMatrices)
+	void ModelImpl::DrawDepth(const std::vector<std::pair<Matrix4, Matrix4>>& instanceMatrices) const
 	{
 		AdjustInstanceBuffer(instanceMatrices);
 
@@ -60,7 +60,19 @@ namespace leopph::impl
 	}
 
 
-	void AssimpModel::AdjustInstanceBuffer(const std::vector<std::pair<Matrix4, Matrix4>>& instanceMatrices)
+	bool ModelImpl::CastsShadow() const
+	{
+		return m_CastsShadow;
+	}
+
+
+	void ModelImpl::CastsShadow(const bool value)
+	{
+		m_CastsShadow = value;
+	}
+
+
+	void ModelImpl::AdjustInstanceBuffer(const std::vector<std::pair<Matrix4, Matrix4>>& instanceMatrices) const
 	{
 		if (instanceMatrices.size() > m_InstanceBufferSize)
 		{
@@ -79,7 +91,7 @@ namespace leopph::impl
 	}
 
 
-	void AssimpModel::ProcessNodes(const aiScene* scene)
+	void ModelImpl::ProcessNodes(const aiScene* scene)
 	{
 		struct NodeWithTrafo
 		{
@@ -127,7 +139,7 @@ namespace leopph::impl
 	}
 
 
-	Mesh AssimpModel::ProcessMesh(const aiMesh* mesh, const aiScene* scene, const Matrix3& trafo) const
+	Mesh ModelImpl::ProcessMesh(const aiMesh* mesh, const aiScene* scene, const Matrix3& trafo) const
 	{
 		std::vector<Vertex> vertices;
 		std::vector<unsigned> indices;
@@ -210,7 +222,7 @@ namespace leopph::impl
 	}
 
 
-	std::optional<Texture> AssimpModel::LoadTexturesByType(const aiMaterial* material, const aiTextureType assimpType) const
+	std::optional<Texture> ModelImpl::LoadTexturesByType(const aiMaterial* material, const aiTextureType assimpType) const
 	{
 		if (material->GetTextureCount(assimpType) > 0)
 		{

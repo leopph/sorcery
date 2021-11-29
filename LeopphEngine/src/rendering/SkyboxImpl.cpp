@@ -1,20 +1,19 @@
-#include "SkyboxResource.hpp"
+#include "SkyboxImpl.hpp"
 
 #include "../util/logger.h"
 
 #include <glad/gl.h>
+#include <stb_image.h>
 
 #include <cstddef>
-#include <stb_image.h>
-#include <stdexcept>
-
+#include <utility>
 
 
 namespace leopph::impl
 {
-	SkyboxResource::SkyboxResource(const std::filesystem::path& allFilePaths) :
-		UniqueResource{allFilePaths},
-		AllFilePaths{allFilePaths},
+	SkyboxImpl::SkyboxImpl(std::filesystem::path allFilePaths) :
+		Path{std::move(allFilePaths)},
+		AllFilePaths{Path},
 		RightPath{m_Paths.at(RIGHT)},
 		LeftPath{m_Paths.at(LEFT)},
 		TopPath{m_Paths.at(TOP)},
@@ -25,7 +24,7 @@ namespace leopph::impl
 		m_Vao{},
 		m_Vbo{}
 	{
-		auto allFilePathStrings{allFilePaths.string()};
+		auto allFilePathStrings{AllFilePaths.string()};
 		for (std::size_t separatorPos, faceIndex{RIGHT}; (separatorPos = allFilePathStrings.find(FileSeparator)) != std::string::npos; allFilePathStrings.erase(0, separatorPos + FileSeparator.length()), ++faceIndex)
 		{
 			m_Paths.at(faceIndex) = allFilePathStrings.substr(0, separatorPos);
@@ -75,7 +74,7 @@ namespace leopph::impl
 	}
 
 
-	SkyboxResource::~SkyboxResource()
+	SkyboxImpl::~SkyboxImpl()
 	{
 		glDeleteTextures(1, &m_TexId);
 		glDeleteBuffers(1, &m_Vbo);
@@ -83,7 +82,7 @@ namespace leopph::impl
 	}
 
 
-	void SkyboxResource::Draw(ShaderProgram& shader) const
+	void SkyboxImpl::Draw(ShaderProgram& shader) const
 	{
 		shader.SetUniform("skybox", 0);
 
@@ -101,13 +100,13 @@ namespace leopph::impl
 	}
 
 
-	SkyboxResource::ImageData::~ImageData()
+	SkyboxImpl::ImageData::~ImageData()
 	{
 		stbi_image_free(data);
 	}
 
 
-	const std::array<float, 108> SkyboxResource::s_CubeVertices
+	const std::array<float, 108> SkyboxImpl::s_CubeVertices
 	{
 		-1.0f, 1.0f, -1.0f,
 		-1.0f, -1.0f, -1.0f,

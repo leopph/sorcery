@@ -3,7 +3,7 @@
 #include "../../components/lighting/PointLight.hpp"
 #include "../../components/lighting/SpotLight.hpp"
 #include "../../math/Matrix.hpp"
-#include "../geometry/ModelResource.hpp"
+#include "../geometry/ModelImpl.hpp"
 
 #include <memory>
 #include <unordered_map>
@@ -32,7 +32,7 @@ namespace leopph::impl
 
 
 		protected:
-			static const std::unordered_map<ModelResource*, std::vector<std::pair<Matrix4, Matrix4>>>& CalcAndCollectMatrices();
+			static const std::unordered_map<const ModelImpl*, std::vector<std::pair<Matrix4, Matrix4>>>& CalcAndCollectMatrices();
 			static const std::vector<const PointLight*>& CollectPointLights();
 			static const std::vector<const SpotLight*>& CollectSpotLights();
 	};

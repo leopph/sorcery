@@ -38,18 +38,18 @@ namespace leopph::impl
 	Renderer::~Renderer() = default;
 
 
-	const std::unordered_map<ModelResource*, std::vector<std::pair<Matrix4, Matrix4>>>& Renderer::CalcAndCollectMatrices()
+	const std::unordered_map<const ModelImpl*, std::vector<std::pair<Matrix4, Matrix4>>>& Renderer::CalcAndCollectMatrices()
 	{
-		static std::unordered_map<ModelResource*, std::vector<std::pair<Matrix4, Matrix4>>> ret;
+		static std::unordered_map<const ModelImpl*, std::vector<std::pair<Matrix4, Matrix4>>> ret;
 		ret.clear();
 
-		for (const auto& modelResource : DataManager::Models())
+		for (const auto& [impl, components] : DataManager::Models())
 		{
-			auto& matrices = ret[modelResource];
+			auto& matrices = ret[&impl];
 
-			for (const auto& handle : DataManager::ModelComponents(modelResource))
+			for (const auto& component : components)
 			{
-				auto const transform{static_cast<const Model*>(handle)->Entity.Transform};
+				auto const transform{component->Entity.Transform};
 
 				transform->CalculateMatrices();
 

@@ -1,17 +1,11 @@
 #include "Mesh.hpp"
 
-#include "AssimpModel.hpp"
-#include "../../data/DataManager.hpp"
 #include "../../math/Matrix.hpp"
 #include "../../math/Vector.hpp"
-#include "../../util/logger.h"
 
 #include <glad/gl.h>
 
-#include <algorithm>
 #include <cstddef>
-#include <string>
-#include <type_traits>
 #include <utility>
 
 

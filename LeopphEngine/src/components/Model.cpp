@@ -2,37 +2,46 @@
 
 #include "../data/DataManager.hpp"
 
+#include <utility>
+
 
 namespace leopph
 {
-	Model::Model(leopph::Entity& owner, const std::filesystem::path& path) :
-		Component{ owner }, ResourceHandle{ path }
+	Model::Model(leopph::Entity& owner, std::filesystem::path path) :
+		Component{owner}, m_Impl{impl::DataManager::CreateOrGetModelImpl(std::move(path))}
 	{
-		impl::DataManager::Register(resource);
+		impl::DataManager::RegisterModelComponent(m_Impl, this);
 	}
 
 
 	Model::~Model()
 	{
-		impl::DataManager::Unregister(resource);
+		if (impl::DataManager::Models().at(*m_Impl).size() == 1ull)
+		{
+			impl::DataManager::DestroyModelImpl(m_Impl);
+		}
+		else
+		{
+			impl::DataManager::UnregisterModelComponent(m_Impl, this);
+		}
 	}
 
 
 	const std::filesystem::path& Model::Path() const
 	{
-		return resource->Path;
+		return m_Impl->Path;
 	}
 
 
 	bool Model::CastsShadow() const
 	{
-		return resource->CastsShadow();
+		return m_Impl->CastsShadow();
 	}
 
 
 	void Model::CastsShadow(const bool value) const
 	{
-		resource->CastsShadow(value);
+		m_Impl->CastsShadow(value);
 	}
 
 }

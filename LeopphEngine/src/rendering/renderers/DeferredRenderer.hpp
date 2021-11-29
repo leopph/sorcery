@@ -30,19 +30,19 @@ namespace leopph::impl
 		private:
 			void RenderGeometry(const Matrix4& camViewMat,
 			                    const Matrix4& camProjMat,
-			                    const std::unordered_map<ModelResource*, std::vector<std::pair<Matrix4, Matrix4>>>& modelsAndMats);
+			                    const std::unordered_map<const ModelImpl*, std::vector<std::pair<Matrix4, Matrix4>>>& modelsAndMats);
 
 			void RenderAmbientLight();
 
 			void RenderDirectionalLights(const Matrix4& camViewMat,
 			                             const Matrix4& camProjMat,
-			                             const std::unordered_map<ModelResource*, std::vector<std::pair<Matrix4, Matrix4>>>& modelsAndMats);
+			                             const std::unordered_map<const ModelImpl*, std::vector<std::pair<Matrix4, Matrix4>>>& modelsAndMats);
 
 			void RenderSpotLights(const std::vector<const SpotLight*>& spotLights,
-			                      const std::unordered_map<ModelResource*, std::vector<std::pair<Matrix4, Matrix4>>>& modelsAndMats);
+			                      const std::unordered_map<const ModelImpl*, std::vector<std::pair<Matrix4, Matrix4>>>& modelsAndMats);
 
 			void RenderPointLights(const std::vector<const PointLight*>& pointLights,
-			                       const std::unordered_map<ModelResource*, std::vector<std::pair<Matrix4, Matrix4>>>& modelsAndMats);
+			                       const std::unordered_map<const ModelImpl*, std::vector<std::pair<Matrix4, Matrix4>>>& modelsAndMats);
 
 
 			void RenderSkybox(const Matrix4& camViewMat, const Matrix4& camProjMat);

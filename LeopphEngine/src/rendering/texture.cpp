@@ -1,51 +1,70 @@
 #include "Texture.hpp"
 
+#include "../data/DataManager.hpp"
+
+#include <utility>
+
 
 namespace leopph::impl
 {
-	Texture::Texture(const std::filesystem::path& path) :
-		ResourceHandle{ path }
-	{}
-
+	Texture::Texture(std::filesystem::path path) :
+		m_Impl{DataManager::CreateOrGetTextureImpl(std::move(path))}
+	{
+		DataManager::RegisterTextureHandle(m_Impl, this);
+	}
 
 	Texture::Texture(const Texture& other) :
-		ResourceHandle{ static_cast<const ResourceHandle&>(other) }
-	{}
-
+		m_Impl{other.m_Impl}
+	{
+		DataManager::RegisterTextureHandle(m_Impl, this);
+	}
 
 	Texture::Texture(Texture&& other) :
 		Texture{ other }
 	{}
 
+	Texture::~Texture()
+	{
+		Deinit();
+	}
 
 	Texture& Texture::operator=(const Texture& other)
 	{
-		ResourceHandle::operator=(static_cast<const ResourceHandle&>(other));
+		Deinit();
+		m_Impl = other.m_Impl;
+		DataManager::RegisterTextureHandle(m_Impl, this);
 		return *this;
 	}
-
 
 	Texture& Texture::operator=(Texture&& other)
 	{
-		operator=(other);
-		return *this;
+		return operator=(other);
 	}
 
-
-	const decltype(TextureResource::Id)& Texture::Id() const
+	const decltype(TextureImpl::Id)& Texture::Id() const
 	{
-		return resource->Id;
+		return m_Impl->Id;
 	}
 
-
-	const decltype(TextureResource::IsTransparent)& Texture::IsTransparent() const
+	const decltype(TextureImpl::IsTransparent)& Texture::IsTransparent() const
 	{
-		return resource->IsTransparent;
+		return m_Impl->IsTransparent;
 	}
 
-
-	const decltype(TextureResource::Path)& Texture::Path() const
+	const decltype(TextureImpl::Path)& Texture::Path() const
 	{
-		return resource->Path;
+		return m_Impl->Path;
+	}
+
+	void Texture::Deinit()
+	{
+		if (DataManager::Textures().at(*m_Impl).size() == 1ull)
+		{
+			DataManager::DestroyTextureImpl(m_Impl);
+		}
+		else
+		{
+			DataManager::UnregisterTextureHandle(m_Impl, this);
+		}
 	}
 }

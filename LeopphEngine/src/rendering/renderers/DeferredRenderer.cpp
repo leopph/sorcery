@@ -73,8 +73,8 @@ namespace leopph::impl
 		glBlendEquation(GL_FUNC_ADD);
 		glBlendFunc(GL_ONE, GL_ONE);
 
-		glFrontFace(GL_CCW);
 		glEnable(GL_CULL_FACE);
+		glFrontFace(GL_CCW);
 		glCullFace(GL_BACK);
 	}
 
@@ -113,7 +113,7 @@ namespace leopph::impl
 
 	void DeferredRenderer::RenderGeometry(const Matrix4& camViewMat,
 	                                      const Matrix4& camProjMat,
-	                                      const std::unordered_map<ModelResource*, std::vector<std::pair<Matrix4, Matrix4>>>& modelsAndMats)
+	                                      const std::unordered_map<const ModelImpl*, std::vector<std::pair<Matrix4, Matrix4>>>& modelsAndMats)
 	{
 		static auto gPassFlagInfo{m_GeometryShader.GetFlagInfo()};
 		auto& shader{m_GeometryShader.GetPermutation(gPassFlagInfo)};
@@ -155,7 +155,7 @@ namespace leopph::impl
 
 	void DeferredRenderer::RenderDirectionalLights(const Matrix4& camViewMat,
 	                                               const Matrix4& camProjMat,
-	                                               const std::unordered_map<ModelResource*, std::vector<std::pair<Matrix4, Matrix4>>>& modelsAndMats)
+	                                               const std::unordered_map<const ModelImpl*, std::vector<std::pair<Matrix4, Matrix4>>>& modelsAndMats)
 	{
 		const auto& dirLight{DataManager::DirectionalLight()};
 
@@ -254,7 +254,7 @@ namespace leopph::impl
 
 
 	void DeferredRenderer::RenderSpotLights(const std::vector<const SpotLight*>& spotLights,
-	                                        const std::unordered_map<ModelResource*, std::vector<std::pair<Matrix4, Matrix4>>>& modelsAndMats)
+	                                        const std::unordered_map<const ModelImpl*, std::vector<std::pair<Matrix4, Matrix4>>>& modelsAndMats)
 	{
 		if (spotLights.empty())
 		{
@@ -326,7 +326,7 @@ namespace leopph::impl
 
 
 	void DeferredRenderer::RenderPointLights(const std::vector<const PointLight*>& pointLights,
-	                                         const std::unordered_map<ModelResource*, std::vector<std::pair<Matrix4, Matrix4>>>& modelsAndMats)
+	                                         const std::unordered_map<const ModelImpl*, std::vector<std::pair<Matrix4, Matrix4>>>& modelsAndMats)
 	{
 		if (pointLights.empty())
 		{
@@ -429,7 +429,7 @@ namespace leopph::impl
 
 			skyboxShader.Use();
 			m_RenderTexture.BindAsRenderTarget();
-			static_cast<SkyboxResource*>(DataManager::Find(skybox->AllFilePaths()))->Draw(skyboxShader);
+			DataManager::Skyboxes().find(skybox->AllFilePaths())->first.Draw(skyboxShader);
 			m_RenderTexture.UnbindAsRenderTarget();
 		}
 	}

@@ -14,7 +14,6 @@
     <ClCompile Include="src\rendering\renderers\ForwardRenderer.cpp" />
     <ClCompile Include="src\input\Input.cpp" />
     <ClCompile Include="src\components\lighting\DirLight.cpp" />
-    <ClCompile Include="src\data\DataManager.cpp" />
     <ClCompile Include="src\math\Quaternion.cpp" />
     <ClCompile Include="src\components\Component.cpp" />
     <ClCompile Include="vendor\stb_image\stb_image.cpp" />
@@ -42,17 +41,11 @@
     <ClCompile Include="src\events\handling\EventReceiverBase.cpp" />
     <ClCompile Include="src\events\KeyEvent.cpp" />
     <ClCompile Include="src\events\MouseEvent.cpp" />
-    <ClCompile Include="src\data\managed\ResourceHandleBase.cpp" />
-    <ClCompile Include="src\data\managed\Resource.cpp" />
-    <ClCompile Include="src\data\managed\UniqueResource.cpp" />
-    <ClCompile Include="src\util\equal\UniqueResourceEqual.cpp" />
-    <ClCompile Include="src\util\hash\UniqueResourceHash.cpp" />
-    <ClCompile Include="src\rendering\geometry\ModelResource.cpp" />
-    <ClCompile Include="src\rendering\geometry\AssimpModel.cpp" />
+    <ClCompile Include="src\rendering\geometry\ModelImpl.cpp" />
     <ClCompile Include="src\rendering\renderers\Renderer.cpp" />
-    <ClCompile Include="src\rendering\TextureResource.cpp" />
+    <ClCompile Include="src\rendering\TextureImpl.cpp" />
     <ClCompile Include="src\rendering\Texture.cpp" />
-    <ClCompile Include="src\rendering\SkyboxResource.cpp" />
+    <ClCompile Include="src\rendering\SkyboxImpl.cpp" />
     <ClCompile Include="src\rendering\SkyboxHandle.cpp" />
     <ClCompile Include="src\util\equal\EntityEqual.cpp" />
     <ClCompile Include="src\util\hash\EntityHash.cpp" />
@@ -70,6 +63,7 @@
     <ClCompile Include="src\windowing\Window.cpp" />
     <ClCompile Include="src\rendering\RenderTexture.cpp" />
     <ClCompile Include="vendor\glad\src\gl.c" />
+    <ClCompile Include="src\data\DataManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\Behavior.hpp" />
@@ -126,18 +120,11 @@
     <ClInclude Include="src\events\KeyEvent.hpp" />
     <ClInclude Include="src\events\MouseEvent.hpp" />
     <ClInclude Include="src\events\FrameEndEvent.hpp" />
-    <ClInclude Include="src\data\managed\Resource.hpp" />
-    <ClInclude Include="src\data\managed\ResourceHandleBase.hpp" />
-    <ClInclude Include="src\data\managed\UniqueResource.hpp" />
-    <ClInclude Include="src\util\equal\UniqueResourceEqual.hpp" />
-    <ClInclude Include="src\util\hash\UniqueResourceHash.hpp" />
-    <ClInclude Include="src\rendering\geometry\ModelResource.hpp" />
-    <ClInclude Include="src\rendering\geometry\AssimpModel.hpp" />
+    <ClInclude Include="src\rendering\geometry\ModelImpl.hpp" />
     <ClInclude Include="src\rendering\renderers\Renderer.hpp" />
-    <ClInclude Include="src\data\managed\ResourceHandle.hpp" />
-    <ClInclude Include="src\rendering\TextureResource.hpp" />
+    <ClInclude Include="src\rendering\TextureImpl.hpp" />
     <ClInclude Include="src\rendering\Texture.hpp" />
-    <ClInclude Include="src\rendering\SkyboxResource.hpp" />
+    <ClInclude Include="src\rendering\SkyboxImpl.hpp" />
     <ClInclude Include="src\data\Proxy.hpp" />
     <ClInclude Include="src\rendering\SkyboxHandle.hpp" />
     <ClInclude Include="src\util\equal\EntityEqual.hpp" />
@@ -158,6 +145,9 @@
     <ClInclude Include="src\events\PointShadowResolutionEvent.hpp" />
     <ClInclude Include="src\windowing\Window.hpp" />
     <ClInclude Include="src\rendering\RenderTexture.hpp" />
+    <ClInclude Include="src\util\hash\PathedHash.hpp" />
+    <ClInclude Include="src\util\equal\PathedEqual.hpp" />
+    <ClInclude Include="src\util\concepts\Pathed.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\cpp.hint" />

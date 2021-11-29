@@ -3,26 +3,17 @@
 #include "../util/logger.h"
 
 
-
 namespace leopph::impl
 {
 	std::unordered_map<Entity*, std::unordered_set<Component*>, EntityHash, EntityEqual> DataManager::s_EntitiesAndComponents{};
-
 	std::unordered_set<Behavior*> DataManager::s_Behaviors{};
-
 	DirectionalLight* DataManager::s_DirLight{nullptr};
-
 	std::unordered_set<const SpotLight*> DataManager::s_SpotLights{};
-	;
 	std::vector<PointLight*> DataManager::s_PointLights{};
-
-	std::unordered_set<ModelResource*> DataManager::s_ModelResources{};
-
 	std::unordered_map<const Transform*, std::pair<Matrix4, Matrix4>> DataManager::s_Matrices{};
-
-	std::unordered_map<const Resource*, std::unordered_set<const ResourceHandleBase*>> DataManager::s_ResourcesAndHandles{};
-
-	std::unordered_map<const UniqueResource*, std::unordered_set<const ResourceHandleBase*>, UniqueResourceHash, UniqueResourceEqual> DataManager::s_UniqueResourcesAndHandles{};
+	std::unordered_map<ModelImpl, std::unordered_set<Model*>, PathedHash<ModelImpl>, PathedEqual<ModelImpl>> DataManager::s_Models{};
+	std::unordered_map<TextureImpl, std::unordered_set<Texture*>, PathedHash<TextureImpl>, PathedEqual<TextureImpl>> DataManager::s_Textures{};
+	std::unordered_map<SkyboxImpl, std::unordered_set<SkyboxHandle*>, PathedHash<SkyboxImpl>, PathedEqual<SkyboxImpl>> DataManager::s_Skyboxes{};
 
 
 	void DataManager::Clear()
@@ -153,97 +144,6 @@ namespace leopph::impl
 	}
 
 
-	void DataManager::Register(const Resource* resource)
-	{
-		s_ResourcesAndHandles.try_emplace(resource);
-	}
-
-
-	void DataManager::Register(const UniqueResource* resource)
-	{
-		s_UniqueResourcesAndHandles.try_emplace(resource);
-	}
-
-
-	void DataManager::Unregister(const Resource* resource)
-	{
-		s_ResourcesAndHandles.erase(resource);
-	}
-
-
-	void DataManager::Unregister(const UniqueResource* resource)
-	{
-		s_UniqueResourcesAndHandles.erase(resource);
-	}
-
-
-	void DataManager::Register(const Resource* resource, const ResourceHandleBase* handle)
-	{
-		s_ResourcesAndHandles.at(resource).insert(handle);
-	}
-
-
-	void DataManager::Register(const UniqueResource* resource, const ResourceHandleBase* handle)
-	{
-		s_UniqueResourcesAndHandles.at(resource).insert(handle);
-	}
-
-
-	void DataManager::Unregister(const Resource* resource, const ResourceHandleBase* handle)
-	{
-		s_ResourcesAndHandles.at(resource).erase(handle);
-	}
-
-
-	void DataManager::Unregister(const UniqueResource* resource, const ResourceHandleBase* handle)
-	{
-		s_UniqueResourcesAndHandles.at(resource).erase(handle);
-	}
-
-
-	std::size_t DataManager::Count(const Resource* resource)
-	{
-		return s_ResourcesAndHandles.at(resource).size();
-	}
-
-
-	std::size_t DataManager::Count(const UniqueResource* resource)
-	{
-		return s_UniqueResourcesAndHandles.at(resource).size();
-	}
-
-
-	UniqueResource* DataManager::Find(const std::filesystem::path& path)
-	{
-		auto it = s_UniqueResourcesAndHandles.find(path);
-		return it == s_UniqueResourcesAndHandles.end() ? nullptr : const_cast<UniqueResource*>(it->first);
-	}
-
-
-	const std::unordered_set<ModelResource*>& DataManager::Models()
-	{
-		return s_ModelResources;
-	}
-
-
-	void DataManager::Register(ModelResource* model)
-	{
-		s_ModelResources.insert(model);
-	}
-
-
-	void DataManager::Unregister(ModelResource* model)
-	{
-		s_ModelResources.erase(model);
-	}
-
-
-	const std::unordered_set<const ResourceHandleBase*>& DataManager::ModelComponents(ModelResource* model)
-	{
-		return s_UniqueResourcesAndHandles.at(model);
-	}
-
-
 	void DataManager::StoreMatrices(const Transform* transform, const Matrix4& model, const Matrix4& normal)
 	{
 		s_Matrices.insert_or_assign(transform, std::pair<Matrix4, Matrix4>{model, normal});
@@ -259,5 +159,80 @@ namespace leopph::impl
 	const std::pair<Matrix4, Matrix4>& DataManager::GetMatrices(const Transform* transform)
 	{
 		return s_Matrices.at(transform);
+	}
+
+	ModelImpl* DataManager::CreateOrGetModelImpl(std::filesystem::path path)
+	{
+		return &const_cast<ModelImpl&>(s_Models.emplace(std::move(path), std::unordered_set<Model*>{}).first->first);
+	}
+
+	void DataManager::DestroyModelImpl(ModelImpl* const model)
+	{
+		s_Models.erase(*model);
+	}
+
+	void DataManager::RegisterModelComponent(ModelImpl* const model, Model* const component)
+	{
+		s_Models.at(*model).insert(component);
+	}
+
+	void DataManager::UnregisterModelComponent(ModelImpl* const model, Model* const component)
+	{
+		s_Models.at(*model).erase(component);
+	}
+
+	const std::unordered_map<ModelImpl, std::unordered_set<Model*>, PathedHash<ModelImpl>, PathedEqual<ModelImpl>>& DataManager::Models()
+	{
+		return s_Models;
+	}
+
+	TextureImpl* DataManager::CreateOrGetTextureImpl(std::filesystem::path path)
+	{
+		return &const_cast<TextureImpl&>(s_Textures.emplace(std::move(path), std::unordered_set<Texture*>{}).first->first);
+	}
+
+	void DataManager::DestroyTextureImpl(TextureImpl* const texture)
+	{
+		s_Textures.erase(*texture);
+	}
+
+	void DataManager::RegisterTextureHandle(TextureImpl* const texture, Texture* const handle)
+	{
+		s_Textures.at(*texture).insert(handle);
+	}
+
+	void DataManager::UnregisterTextureHandle(TextureImpl* const texture, Texture* const handle)
+	{
+		s_Textures.at(*texture).erase(handle);
+	}
+
+	const std::unordered_map<TextureImpl, std::unordered_set<Texture*>, PathedHash<TextureImpl>, PathedEqual<TextureImpl>>& DataManager::Textures()
+	{
+		return s_Textures;
+	}
+
+	SkyboxImpl* DataManager::CreateOrGetSkyboxImpl(std::filesystem::path allPaths)
+	{
+		return &const_cast<SkyboxImpl&>(s_Skyboxes.emplace(std::move(allPaths), std::unordered_set<SkyboxHandle*>{}).first->first);
+	}
+
+	void DataManager::DestroySkyboxImpl(SkyboxImpl* const skybox)
+	{
+		s_Skyboxes.erase(*skybox);
+	}
+
+	void DataManager::RegisterSkyboxHandle(SkyboxImpl* const skybox, SkyboxHandle* const handle)
+	{
+		s_Skyboxes.at(*skybox).insert(handle);
+	}
+
+	void DataManager::UnregisterSkyboxHandle(SkyboxImpl* const skybox, SkyboxHandle* const handle)
+	{
+		s_Skyboxes.at(*skybox).erase(handle);
+	}
+
+	const std::unordered_map<SkyboxImpl, std::unordered_set<SkyboxHandle*>, PathedHash<SkyboxImpl>, PathedEqual<SkyboxImpl>>& DataManager::Skyboxes()
+	{
+		return s_Skyboxes;
 	}
 }
