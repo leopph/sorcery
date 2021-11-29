@@ -16,7 +16,7 @@ namespace leopph::impl
 	;
 	std::vector<PointLight*> DataManager::s_PointLights{};
 
-	std::unordered_set<const ModelResource*> DataManager::s_ModelResources{};
+	std::unordered_set<ModelResource*> DataManager::s_ModelResources{};
 
 	std::unordered_map<const Transform*, std::pair<Matrix4, Matrix4>> DataManager::s_Matrices{};
 
@@ -220,25 +220,25 @@ namespace leopph::impl
 	}
 
 
-	const std::unordered_set<const ModelResource*>& DataManager::Models()
+	const std::unordered_set<ModelResource*>& DataManager::Models()
 	{
 		return s_ModelResources;
 	}
 
 
-	void DataManager::Register(const ModelResource* model)
+	void DataManager::Register(ModelResource* model)
 	{
 		s_ModelResources.insert(model);
 	}
 
 
-	void DataManager::Unregister(const ModelResource* model)
+	void DataManager::Unregister(ModelResource* model)
 	{
 		s_ModelResources.erase(model);
 	}
 
 
-	const std::unordered_set<const ResourceHandleBase*>& DataManager::ModelComponents(const ModelResource* model)
+	const std::unordered_set<const ResourceHandleBase*>& DataManager::ModelComponents(ModelResource* model)
 	{
 		return s_UniqueResourcesAndHandles.at(model);
 	}

@@ -7,6 +7,7 @@
 
 #include <assimp/scene.h>
 
+#include <array>
 #include <cstddef>
 #include <filesystem>
 #include <optional>
@@ -28,16 +29,20 @@ namespace leopph::impl
 
 			~AssimpModel() = default;
 
-			void DrawShaded(ShaderProgram& shader, const std::vector<Matrix4>& modelMatrices, const std::vector<Matrix4>& normalMatrices, std::size_t nextFreeTextureUnit) const;
-			void DrawDepth(const std::vector<Matrix4>& modelMatrices) const;
-			void OnReferringEntitiesChanged(std::size_t newAmount) const;
+			void DrawShaded(ShaderProgram& shader, const std::vector<std::pair<Matrix4, Matrix4>>& instanceMatrices, std::size_t nextFreeTextureUnit);
+			void DrawDepth(const std::vector<std::pair<Matrix4, Matrix4>>& instanceMatrices);
 
 
 		private:
 			std::vector<Mesh> m_Meshes;
 			std::filesystem::path m_Directory;
 
+			void ProcessNodes(const aiScene* scene);
 			Mesh ProcessMesh(const aiMesh* mesh, const aiScene* scene, const Matrix3& trafo) const;
 			std::optional<Texture> LoadTexturesByType(const aiMaterial* material, aiTextureType assimpType) const;
+			void AdjustInstanceBuffer(const std::vector<std::pair<Matrix4, Matrix4>>& instanceMatrices);
+
+			std::size_t m_InstanceBufferSize;
+			unsigned m_InstanceBuffer;
 	};
 }

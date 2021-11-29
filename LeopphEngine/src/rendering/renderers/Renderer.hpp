@@ -32,7 +32,7 @@ namespace leopph::impl
 
 
 		protected:
-			static const std::unordered_map<const ModelResource*, std::pair<std::vector<Matrix4>, std::vector<Matrix4>>>& CalcAndCollectMatrices();
+			static const std::unordered_map<ModelResource*, std::vector<std::pair<Matrix4, Matrix4>>>& CalcAndCollectMatrices();
 			static const std::vector<const PointLight*>& CollectPointLights();
 			static const std::vector<const SpotLight*>& CollectSpotLights();
 	};

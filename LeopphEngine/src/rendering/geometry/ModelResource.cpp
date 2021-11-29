@@ -31,26 +31,15 @@ namespace leopph::impl
 	}
 
 
-	void ModelResource::DrawShaded(::leopph::impl::ShaderProgram& shader, const std::vector<Matrix4>& modelMatrices, const std::vector<Matrix4>& normalMatrices, std::size_t nextFreeTextureUnit) const
+	void ModelResource::DrawShaded(::leopph::impl::ShaderProgram& shader, const std::vector<std::pair<Matrix4, Matrix4>>& instanceMatrices, std::size_t nextFreeTextureUnit)
 	{
-		m_AssimpModel->DrawShaded(shader, modelMatrices, normalMatrices, nextFreeTextureUnit);
+		m_AssimpModel->DrawShaded(shader, instanceMatrices, nextFreeTextureUnit);
 	}
 
 
-	void ModelResource::DrawDepth(const std::vector<Matrix4>& modelMatrices) const
+	void ModelResource::DrawDepth(const std::vector<std::pair<Matrix4, Matrix4>>& instanceMatrices)
 	{
-		m_AssimpModel->DrawDepth(modelMatrices);
-	}
-
-
-	void ModelResource::OnEventReceived(const ModelInstanceCountEvent& event)
-	{
-		if (event.Model != this)
-		{
-			return;
-		}
-
-		m_AssimpModel->OnReferringEntitiesChanged(event.Count);
+		m_AssimpModel->DrawDepth(instanceMatrices);
 	}
 
 

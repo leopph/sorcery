@@ -38,14 +38,14 @@ namespace leopph::impl
 	Renderer::~Renderer() = default;
 
 
-	const std::unordered_map<const ModelResource*, std::pair<std::vector<Matrix4>, std::vector<Matrix4>>>& Renderer::CalcAndCollectMatrices()
+	const std::unordered_map<ModelResource*, std::vector<std::pair<Matrix4, Matrix4>>>& Renderer::CalcAndCollectMatrices()
 	{
-		static std::unordered_map<const ModelResource*, std::pair<std::vector<Matrix4>, std::vector<Matrix4>>> ret;
+		static std::unordered_map<ModelResource*, std::vector<std::pair<Matrix4, Matrix4>>> ret;
 		ret.clear();
 
 		for (const auto& modelResource : DataManager::Models())
 		{
-			auto& [models, normals] = ret.try_emplace(modelResource).first->second;
+			auto& matrices = ret[modelResource];
 
 			for (const auto& handle : DataManager::ModelComponents(modelResource))
 			{
@@ -54,8 +54,7 @@ namespace leopph::impl
 				transform->CalculateMatrices();
 
 				const auto& [model, normal]{DataManager::GetMatrices(transform)};
-				models.emplace_back(model);
-				normals.emplace_back(normal);
+				matrices.emplace_back(model, normal);
 			}
 		}
 

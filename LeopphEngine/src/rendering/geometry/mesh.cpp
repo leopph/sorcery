@@ -12,66 +12,73 @@
 #include <cstddef>
 #include <string>
 #include <type_traits>
+#include <utility>
 
 
 
 namespace leopph::impl
 {
-	Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned> indices, Material material) :
+	Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned> indices, Material material, unsigned instanceBuffer) :
 		m_Vertices{std::move(vertices)},
 		m_Indices{std::move(indices)},
-		m_Material{std::move(material)},
-		m_ModelBufferSize{1}
+		m_Material{std::move(material)}
 	{
-		glCreateBuffers(2, m_Buffers);
+		glCreateBuffers(static_cast<GLsizei>(m_Buffers.size()), m_Buffers.data());
 		glCreateVertexArrays(1, &m_VertexArray);
 
 		glNamedBufferStorage(m_Buffers[VERTEX], m_Vertices.size() * sizeof(decltype(m_Vertices)::value_type), m_Vertices.data(), 0);
 		glNamedBufferStorage(m_Buffers[INDEX], m_Indices.size() * sizeof(unsigned), m_Indices.data(), 0);
 
-		glVertexArrayVertexBuffer(m_VertexArray, 0, m_Buffers[VERTEX], 0, sizeof(decltype(m_Vertices)::value_type));
+		glVertexArrayVertexBuffers(m_VertexArray, 0, 2, std::array{m_Buffers[VERTEX], instanceBuffer}.data(), std::array{static_cast<GLintptr>(0), static_cast<GLintptr>(0)}.data(), std::array{static_cast<GLint>(sizeof(decltype(m_Vertices)::value_type)), static_cast<GLint>(sizeof(std::pair<Matrix4, Matrix4>) )}.data());
+
 		glVertexArrayElementBuffer(m_VertexArray, m_Buffers[INDEX]);
 
-		glEnableVertexArrayAttrib(m_VertexArray, 0);
-		glEnableVertexArrayAttrib(m_VertexArray, 1);
-		glEnableVertexArrayAttrib(m_VertexArray, 2);
-		glEnableVertexArrayAttrib(m_VertexArray, 3);
-		glEnableVertexArrayAttrib(m_VertexArray, 4);
-		glEnableVertexArrayAttrib(m_VertexArray, 5);
-		glEnableVertexArrayAttrib(m_VertexArray, 6);
-		glEnableVertexArrayAttrib(m_VertexArray, 7);
-		glEnableVertexArrayAttrib(m_VertexArray, 8);
-		glEnableVertexArrayAttrib(m_VertexArray, 9);
-		glEnableVertexArrayAttrib(m_VertexArray, 10);
 
 		glVertexArrayAttribFormat(m_VertexArray, 0, 3, GL_FLOAT, GL_FALSE, offsetof(decltype(this->m_Vertices)::value_type, position));
-		glVertexArrayAttribFormat(m_VertexArray, 1, 3, GL_FLOAT, GL_FALSE, offsetof(decltype(this->m_Vertices)::value_type, normal));
-		glVertexArrayAttribFormat(m_VertexArray, 2, 2, GL_FLOAT, GL_FALSE, offsetof(decltype(this->m_Vertices)::value_type, textureCoordinates));
-		glVertexArrayAttribFormat(m_VertexArray, 3, 4, GL_FLOAT, GL_FALSE, 0);
-		glVertexArrayAttribFormat(m_VertexArray, 4, 4, GL_FLOAT, GL_FALSE, sizeof(Vector4));
-		glVertexArrayAttribFormat(m_VertexArray, 5, 4, GL_FLOAT, GL_FALSE, 2 * sizeof(Vector4));
-		glVertexArrayAttribFormat(m_VertexArray, 6, 4, GL_FLOAT, GL_FALSE, 3 * sizeof(Vector4));
-		glVertexArrayAttribFormat(m_VertexArray, 7, 4, GL_FLOAT, GL_FALSE, 0);
-		glVertexArrayAttribFormat(m_VertexArray, 8, 4, GL_FLOAT, GL_FALSE, sizeof(Vector4));
-		glVertexArrayAttribFormat(m_VertexArray, 9, 4, GL_FLOAT, GL_FALSE, 2 * sizeof(Vector4));
-		glVertexArrayAttribFormat(m_VertexArray, 10, 4, GL_FLOAT, GL_FALSE, 3 * sizeof(Vector4));
-
 		glVertexArrayAttribBinding(m_VertexArray, 0, 0);
+		glEnableVertexArrayAttrib(m_VertexArray, 0);
+
+		glVertexArrayAttribFormat(m_VertexArray, 1, 3, GL_FLOAT, GL_FALSE, offsetof(decltype(this->m_Vertices)::value_type, normal));
 		glVertexArrayAttribBinding(m_VertexArray, 1, 0);
+		glEnableVertexArrayAttrib(m_VertexArray, 1);
+
+		glVertexArrayAttribFormat(m_VertexArray, 2, 2, GL_FLOAT, GL_FALSE, offsetof(decltype(this->m_Vertices)::value_type, textureCoordinates));
 		glVertexArrayAttribBinding(m_VertexArray, 2, 0);
+		glEnableVertexArrayAttrib(m_VertexArray, 2);
+
+		glVertexArrayAttribFormat(m_VertexArray, 3, 4, GL_FLOAT, GL_FALSE, 0);
 		glVertexArrayAttribBinding(m_VertexArray, 3, 1);
+		glEnableVertexArrayAttrib(m_VertexArray, 3);
+
+		glVertexArrayAttribFormat(m_VertexArray, 4, 4, GL_FLOAT, GL_FALSE, sizeof(Vector4));
 		glVertexArrayAttribBinding(m_VertexArray, 4, 1);
+		glEnableVertexArrayAttrib(m_VertexArray, 4);
+
+		glVertexArrayAttribFormat(m_VertexArray, 5, 4, GL_FLOAT, GL_FALSE, 2 * sizeof(Vector4));
 		glVertexArrayAttribBinding(m_VertexArray, 5, 1);
+		glEnableVertexArrayAttrib(m_VertexArray, 5);
+
+		glVertexArrayAttribFormat(m_VertexArray, 6, 4, GL_FLOAT, GL_FALSE, 3 * sizeof(Vector4));
 		glVertexArrayAttribBinding(m_VertexArray, 6, 1);
-		glVertexArrayAttribBinding(m_VertexArray, 7, 2);
-		glVertexArrayAttribBinding(m_VertexArray, 8, 2);
-		glVertexArrayAttribBinding(m_VertexArray, 9, 2);
-		glVertexArrayAttribBinding(m_VertexArray, 10, 2);
+		glEnableVertexArrayAttrib(m_VertexArray, 6);
+
+		glEnableVertexArrayAttrib(m_VertexArray, 7);
+		glVertexArrayAttribFormat(m_VertexArray, 7, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(Vector4));
+		glVertexArrayAttribBinding(m_VertexArray, 7, 1);
+
+		glVertexArrayAttribFormat(m_VertexArray, 8, 4, GL_FLOAT, GL_FALSE, 5 *sizeof(Vector4));
+		glVertexArrayAttribBinding(m_VertexArray, 8, 1);
+		glEnableVertexArrayAttrib(m_VertexArray, 8);
+
+		glVertexArrayAttribFormat(m_VertexArray, 9, 4, GL_FLOAT, GL_FALSE, 6 * sizeof(Vector4));
+		glVertexArrayAttribBinding(m_VertexArray, 9, 1);
+		glEnableVertexArrayAttrib(m_VertexArray, 9);
+
+		glVertexArrayAttribFormat(m_VertexArray, 10, 4, GL_FLOAT, GL_FALSE, 7 * sizeof(Vector4));
+		glVertexArrayAttribBinding(m_VertexArray, 10, 1);
+		glEnableVertexArrayAttrib(m_VertexArray, 10);
 
 		glVertexArrayBindingDivisor(m_VertexArray, 1, 1);
-		glVertexArrayBindingDivisor(m_VertexArray, 2, 1);
-
-		SetModelBuffer();
 	}
 
 
@@ -80,23 +87,21 @@ namespace leopph::impl
 		m_Vertices{std::move(other.m_Vertices)},
 		m_VertexArray{other.m_VertexArray},
 		m_Indices{std::move(other.m_Indices)},
-		m_ModelBufferSize{other.m_ModelBufferSize},
 		m_Material{std::move(other.m_Material)}
 	{
-		for (auto i = 0u; i < s_NumBuffers; ++i)
+		for (auto i = 0u; i < m_Buffers.size(); ++i)
 		{
 			m_Buffers[i] = other.m_Buffers[i];
 			other.m_Buffers[i] = 0;
 		}
 
 		other.m_VertexArray = 0;
-		other.m_ModelBufferSize = 0;
 	}
 
 
 	Mesh::~Mesh()
 	{
-		glDeleteBuffers(s_NumBuffers, m_Buffers);
+		glDeleteBuffers(static_cast<GLsizei>(m_Buffers.size()), m_Buffers.data());
 		glDeleteVertexArrays(1, &m_VertexArray);
 	}
 
@@ -107,15 +112,8 @@ namespace leopph::impl
 	}
 
 
-	void Mesh::DrawShaded(::leopph::impl::ShaderProgram& shader, const std::vector<Matrix4>& modelMatrices, const std::vector<Matrix4>& normalMatrices, std::size_t nextFreeTextureUnit) const
+	void Mesh::DrawShaded(ShaderProgram& shader, std::size_t nextFreeTextureUnit, std::size_t instanceCount) const
 	{
-		if (modelMatrices.size() > m_ModelBufferSize)
-		{
-			const auto errMsg{"The number of model matrices is [" + std::to_string(modelMatrices.size()) + "] while the buffer is only for [" + std::to_string(m_ModelBufferSize) + "] matrices."};
-			Logger::Instance().Error(errMsg);
-			return;
-		}
-
 		shader.SetUniform("material.ambientColor", static_cast<Vector3>(m_Material.AmbientColor));
 		shader.SetUniform("material.diffuseColor", static_cast<Vector3>(m_Material.DiffuseColor));
 		shader.SetUniform("material.specularColor", static_cast<Vector3>(m_Material.SpecularColor));
@@ -157,16 +155,13 @@ namespace leopph::impl
 			shader.SetUniform("material.hasSpecularMap", false);
 		}
 
-		glNamedBufferSubData(m_Buffers[MODEL], 0, modelMatrices.size() * sizeof(std::remove_reference<decltype(modelMatrices)>::type::value_type), modelMatrices.data());
-		glNamedBufferSubData(m_Buffers[NORMAL], 0, modelMatrices.size() * sizeof(std::remove_reference<decltype(normalMatrices)>::type::value_type), normalMatrices.data());
-
 		if (!m_Material.TwoSided)
 		{
 			glDisable(GL_CULL_FACE);
 		}
 
 		glBindVertexArray(m_VertexArray);
-		glDrawElementsInstanced(GL_TRIANGLES, static_cast<GLsizei>(m_Indices.size()), GL_UNSIGNED_INT, nullptr, static_cast<GLsizei>(modelMatrices.size()));
+		glDrawElementsInstanced(GL_TRIANGLES, static_cast<GLsizei>(m_Indices.size()), GL_UNSIGNED_INT, nullptr, static_cast<GLsizei>(instanceCount));
 		glBindVertexArray(0);
 
 		if (!m_Material.TwoSided)
@@ -176,49 +171,20 @@ namespace leopph::impl
 	}
 
 
-	void Mesh::DrawDepth(const std::vector<Matrix4>& modelMatrices) const
+	void Mesh::DrawDepth(std::size_t instanceCount) const
 	{
 		if (!m_Material.TwoSided)
 		{
 			glDisable(GL_CULL_FACE);
 		}
 
-		glNamedBufferSubData(m_Buffers[MODEL], 0, modelMatrices.size() * sizeof(std::remove_reference_t<decltype(modelMatrices)>::value_type), modelMatrices.data());
 		glBindVertexArray(m_VertexArray);
-		glDrawElementsInstanced(GL_TRIANGLES, static_cast<GLsizei>(m_Indices.size()), GL_UNSIGNED_INT, nullptr, static_cast<GLsizei>(modelMatrices.size()));
+		glDrawElementsInstanced(GL_TRIANGLES, static_cast<GLsizei>(m_Indices.size()), GL_UNSIGNED_INT, nullptr, static_cast<GLsizei>(instanceCount));
 		glBindVertexArray(0);
 
 		if (!m_Material.TwoSided)
 		{
 			glEnable(GL_CULL_FACE);
 		}
-	}
-
-
-	void Mesh::OnReferringEntitiesChanged(std::size_t newAmount) const
-	{
-		if (newAmount > m_ModelBufferSize)
-		{
-			m_ModelBufferSize *= 2;
-			SetModelBuffer();
-		}
-		else if (newAmount * 2 < m_ModelBufferSize)
-		{
-			m_ModelBufferSize = std::max(m_ModelBufferSize / 2, 1ull);
-			SetModelBuffer();
-		}
-	}
-
-
-	void Mesh::SetModelBuffer() const
-	{
-		glDeleteBuffers(2, &m_Buffers[MODEL]);
-		glCreateBuffers(2, &m_Buffers[MODEL]);
-
-		glNamedBufferStorage(m_Buffers[MODEL], m_ModelBufferSize * sizeof(Matrix4), nullptr, GL_DYNAMIC_STORAGE_BIT);
-		glNamedBufferStorage(m_Buffers[NORMAL], m_ModelBufferSize * sizeof(Matrix4), nullptr, GL_DYNAMIC_STORAGE_BIT);
-
-		glVertexArrayVertexBuffer(m_VertexArray, 1, m_Buffers[MODEL], 0, sizeof(Matrix4));
-		glVertexArrayVertexBuffer(m_VertexArray, 2, m_Buffers[NORMAL], 0, sizeof(Matrix4));
 	}
 }

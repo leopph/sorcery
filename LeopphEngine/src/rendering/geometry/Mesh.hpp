@@ -4,6 +4,7 @@
 #include "../vertex.h"
 #include "../shaders/ShaderProgram.hpp"
 
+#include <array>
 #include <cstddef>
 #include <vector>
 
@@ -14,7 +15,7 @@ namespace leopph::impl
 	class Mesh
 	{
 		public:
-			Mesh(std::vector<Vertex> vertices, std::vector<unsigned> indices, Material material);
+			Mesh(std::vector<Vertex> vertices, std::vector<unsigned> indices, Material material, unsigned instanceBuffer);
 			Mesh(const Mesh&) = delete;
 			Mesh(Mesh&& other) noexcept;
 
@@ -25,25 +26,14 @@ namespace leopph::impl
 
 			bool operator==(const Mesh& other) const;
 
-			void DrawShaded(ShaderProgram& shader, const std::vector<Matrix4>& modelMatrices, const std::vector<Matrix4>& normalMatrices, std::size_t nextFreeTextureUnit) const;
-			void DrawDepth(const std::vector<Matrix4>& modelMatrices) const;
-
-			void OnReferringEntitiesChanged(std::size_t newAmount) const;
+			void DrawShaded(ShaderProgram& shader, std::size_t nextFreeTextureUnit, std::size_t instanceCount) const;
+			void DrawDepth(std::size_t instanceCount) const;
 
 		private:
-			void SetModelBuffer() const;
-
-
-
-			enum { VERTEX, INDEX, MODEL, NORMAL };
-
-
-
-			static constexpr std::size_t s_NumBuffers{4};
+			enum {VERTEX, INDEX};
 
 			unsigned m_VertexArray;
-			mutable unsigned m_Buffers[s_NumBuffers];
-			mutable std::size_t m_ModelBufferSize;
+			std::array<unsigned, 2> m_Buffers;
 
 			std::vector<Vertex> m_Vertices;
 			std::vector<unsigned> m_Indices;

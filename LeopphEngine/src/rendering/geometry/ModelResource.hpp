@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../../data/managed/UniqueResource.hpp"
-#include "../../events/ModelInstanceCountEvent.hpp"
 #include "../../events/handling/EventReceiver.hpp"
 #include "../../math/Matrix.hpp"
 #include "../shaders/ShaderProgram.hpp"
@@ -18,7 +17,7 @@ namespace leopph::impl
 
 
 
-	class ModelResource final : public UniqueResource, public EventReceiver<ModelInstanceCountEvent>
+	class ModelResource final : public UniqueResource
 	{
 		public:
 			explicit ModelResource(const std::filesystem::path& path);
@@ -30,17 +29,15 @@ namespace leopph::impl
 
 			~ModelResource() override;
 
-			void DrawShaded(ShaderProgram& shader, const std::vector<Matrix4>& modelMatrices, const std::vector<Matrix4>& normalMatrices, std::size_t nextFreeTextureUnit) const;
-			void DrawDepth(const std::vector<Matrix4>& modelMatrices) const;
+			void DrawShaded(ShaderProgram& shader, const std::vector<std::pair<Matrix4, Matrix4>>& instanceMatrices, std::size_t nextFreeTextureUnit);
+			void DrawDepth(const std::vector<std::pair<Matrix4, Matrix4>>& instanceMatrices);
 
 			[[nodiscard]] bool CastsShadow() const;
 			void CastsShadow(bool value);
 
 
 		private:
-			const AssimpModel* const m_AssimpModel;
+			AssimpModel* const m_AssimpModel;
 			bool m_CastsShadow;
-
-			void OnEventReceived(const ModelInstanceCountEvent& event) override;
 	};
 }

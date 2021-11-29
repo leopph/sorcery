@@ -68,7 +68,7 @@ namespace leopph::impl
 
 	void ForwardRenderer::RenderShadedObjects(const Matrix4& camViewMat, 
 											  const Matrix4& camProjMat,
-											  const std::unordered_map<const ModelResource*, std::pair<std::vector<Matrix4>, std::vector<Matrix4>>>& modelsAndMats,
+											  const std::unordered_map<ModelResource*, std::vector< std::pair<Matrix4, Matrix4>>>& modelsAndMats,
 											  const std::vector<const PointLight*>& pointLights,
 											  const std::vector<const SpotLight*>& spotLights)
 	{
@@ -130,7 +130,7 @@ namespace leopph::impl
 		/* Draw the shaded objects */
 		for (const auto& [modelRes, matrices] : modelsAndMats)
 		{
-			modelRes->DrawShaded(objectShader, matrices.first, matrices.second, 0);
+			modelRes->DrawShaded(objectShader, matrices, 0);
 		}
 	}
 

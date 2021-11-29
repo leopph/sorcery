@@ -113,7 +113,7 @@ namespace leopph::impl
 
 	void DeferredRenderer::RenderGeometry(const Matrix4& camViewMat,
 	                                      const Matrix4& camProjMat,
-	                                      const std::unordered_map<const ModelResource*, std::pair<std::vector<Matrix4>, std::vector<Matrix4>>>& modelsAndMats)
+	                                      const std::unordered_map<ModelResource*, std::vector<std::pair<Matrix4, Matrix4>>>& modelsAndMats)
 	{
 		static auto gPassFlagInfo{m_GeometryShader.GetFlagInfo()};
 		auto& shader{m_GeometryShader.GetPermutation(gPassFlagInfo)};
@@ -127,7 +127,7 @@ namespace leopph::impl
 
 		for (const auto& [modelRes, matrices] : modelsAndMats)
 		{
-			modelRes->DrawShaded(shader, matrices.first, matrices.second, 0);
+			modelRes->DrawShaded(shader, matrices, 0);
 		}
 
 		shader.Unuse();
@@ -155,7 +155,7 @@ namespace leopph::impl
 
 	void DeferredRenderer::RenderDirectionalLights(const Matrix4& camViewMat,
 	                                               const Matrix4& camProjMat,
-	                                               const std::unordered_map<const ModelResource*, std::pair<std::vector<Matrix4>, std::vector<Matrix4>>>& modelsAndMats)
+	                                               const std::unordered_map<ModelResource*, std::vector<std::pair<Matrix4, Matrix4>>>& modelsAndMats)
 	{
 		const auto& dirLight{DataManager::DirectionalLight()};
 
@@ -213,7 +213,7 @@ namespace leopph::impl
 				{
 					if (modelRes->CastsShadow())
 					{
-						modelRes->DrawDepth(matrices.first);
+						modelRes->DrawDepth(matrices);
 					}
 				}
 			}
@@ -254,7 +254,7 @@ namespace leopph::impl
 
 
 	void DeferredRenderer::RenderSpotLights(const std::vector<const SpotLight*>& spotLights,
-	                                        const std::unordered_map<const ModelResource*, std::pair<std::vector<Matrix4>, std::vector<Matrix4>>>& modelsAndMats)
+	                                        const std::unordered_map<ModelResource*, std::vector<std::pair<Matrix4, Matrix4>>>& modelsAndMats)
 	{
 		if (spotLights.empty())
 		{
@@ -299,7 +299,7 @@ namespace leopph::impl
 			{
 				if (modelRes->CastsShadow())
 				{
-					modelRes->DrawDepth(matrices.first);
+					modelRes->DrawDepth(matrices);
 				}
 			}
 
@@ -326,7 +326,7 @@ namespace leopph::impl
 
 
 	void DeferredRenderer::RenderPointLights(const std::vector<const PointLight*>& pointLights,
-	                                         const std::unordered_map<const ModelResource*, std::pair<std::vector<Matrix4>, std::vector<Matrix4>>>& modelsAndMats)
+	                                         const std::unordered_map<ModelResource*, std::vector<std::pair<Matrix4, Matrix4>>>& modelsAndMats)
 	{
 		if (pointLights.empty())
 		{
@@ -396,7 +396,7 @@ namespace leopph::impl
 				{
 					if (modelRes->CastsShadow())
 					{
-						modelRes->DrawDepth(matrices.first);
+						modelRes->DrawDepth(matrices);
 					}
 				}
 

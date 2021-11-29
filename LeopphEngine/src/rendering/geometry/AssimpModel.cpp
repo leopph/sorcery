@@ -6,7 +6,10 @@
 #include <assimp/Importer.hpp>
 #include <assimp/matrix4x4.h>
 #include <assimp/postprocess.h>
+#include <glad/gl.h>
 
+#include <algorithm>
+#include <type_traits>
 #include <queue>
 #include <utility>
 
@@ -15,7 +18,7 @@
 namespace leopph::impl
 {
 	AssimpModel::AssimpModel(const std::filesystem::path& path) :
-		m_Directory{path.parent_path()}
+		m_Directory{path.parent_path()}, m_InstanceBufferSize{1}, m_InstanceBuffer{}
 	{
 		Assimp::Importer importer;
 		const auto scene{importer.ReadFile(path.string(), aiProcess_Triangulate | aiProcess_GenNormals)};
@@ -26,6 +29,58 @@ namespace leopph::impl
 			return;
 		}
 
+		glCreateBuffers(1, &m_InstanceBuffer);
+		glNamedBufferData(m_InstanceBuffer, 2 * sizeof(Matrix4), nullptr, GL_STATIC_DRAW);
+
+		ProcessNodes(scene);
+
+
+	}
+
+
+	void AssimpModel::DrawShaded(leopph::impl::ShaderProgram& shader, const std::vector<std::pair<Matrix4, Matrix4>>& instanceMatrices, const std::size_t nextFreeTextureUnit)
+	{
+		AdjustInstanceBuffer(instanceMatrices);
+
+		for (const auto& mesh : m_Meshes)
+		{
+			mesh.DrawShaded(shader, nextFreeTextureUnit, instanceMatrices.size());
+		}
+	}
+
+
+	void AssimpModel::DrawDepth(const std::vector<std::pair<Matrix4, Matrix4>>& instanceMatrices)
+	{
+		AdjustInstanceBuffer(instanceMatrices);
+
+		for (const auto& mesh : m_Meshes)
+		{
+			mesh.DrawDepth(instanceMatrices.size());
+		}
+	}
+
+
+	void AssimpModel::AdjustInstanceBuffer(const std::vector<std::pair<Matrix4, Matrix4>>& instanceMatrices)
+	{
+		if (instanceMatrices.size() > m_InstanceBufferSize)
+		{
+			m_InstanceBufferSize *= 2;
+			glNamedBufferData(m_InstanceBuffer, m_InstanceBufferSize * sizeof(std::remove_reference_t<decltype(instanceMatrices)>::value_type), instanceMatrices.data(), GL_STATIC_DRAW);
+		}
+		else if (instanceMatrices.size() * 2 < m_InstanceBufferSize)
+		{
+			m_InstanceBufferSize = std::max(m_InstanceBufferSize / 2, 1ull);
+			glNamedBufferData(m_InstanceBuffer, m_InstanceBufferSize * sizeof(std::remove_reference_t<decltype(instanceMatrices)>::value_type), instanceMatrices.data(), GL_STATIC_DRAW);
+		}
+		else
+		{
+			glNamedBufferSubData(m_InstanceBuffer, 0, instanceMatrices.size() * sizeof(std::remove_reference_t<decltype(instanceMatrices)>::value_type), instanceMatrices.data());
+		}
+	}
+
+
+	void AssimpModel::ProcessNodes(const aiScene* scene)
+	{
 		struct NodeWithTrafo
 		{
 			aiNode* node;
@@ -68,33 +123,6 @@ namespace leopph::impl
 			}
 
 			nodes.pop();
-		}
-	}
-
-
-	void AssimpModel::DrawShaded(::leopph::impl::ShaderProgram& shader, const std::vector<Matrix4>& modelMatrices, const std::vector<Matrix4>& normalMatrices, const std::size_t nextFreeTextureUnit) const
-	{
-		for (const auto& mesh : m_Meshes)
-		{
-			mesh.DrawShaded(shader, modelMatrices, normalMatrices, nextFreeTextureUnit);
-		}
-	}
-
-
-	void AssimpModel::DrawDepth(const std::vector<Matrix4>& modelMatrices) const
-	{
-		for (const auto& mesh : m_Meshes)
-		{
-			mesh.DrawDepth(modelMatrices);
-		}
-	}
-
-
-	void AssimpModel::OnReferringEntitiesChanged(const std::size_t newAmount) const
-	{
-		for (const auto& mesh : m_Meshes)
-		{
-			mesh.OnReferringEntitiesChanged(newAmount);
 		}
 	}
 
@@ -178,7 +206,7 @@ namespace leopph::impl
 			material.TwoSided = !twoSided;
 		}
 
-		return Mesh(vertices, indices, std::move(material));
+		return Mesh(vertices, indices, std::move(material), m_InstanceBuffer);
 	}
 
 

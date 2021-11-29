@@ -142,7 +142,6 @@
     <ClInclude Include="src\events\handling\EventReceiverHandle.hpp" />
     <ClInclude Include="src\events\FrameEndEvent.hpp" />
     <ClInclude Include="src\events\KeyEvent.hpp" />
-    <ClInclude Include="src\events\ModelInstanceCountEvent.hpp" />
     <ClInclude Include="src\events\MouseEvent.hpp" />
     <ClInclude Include="src\events\PointShadowResolutionEvent.hpp" />
     <ClInclude Include="src\events\SpotShadowResolutionEvent.hpp" />
@@ -224,7 +223,6 @@
     <ClCompile Include="src\events\handling\EventManager.cpp" />
     <ClCompile Include="src\events\handling\EventReceiverBase.cpp" />
     <ClCompile Include="src\events\KeyEvent.cpp" />
-    <ClCompile Include="src\events\ModelInstanceCountEvent.cpp" />
     <ClCompile Include="src\events\MouseEvent.cpp" />
     <ClCompile Include="src\events\PointShadowResolutionEvent.cpp" />
     <ClCompile Include="src\events\SpotShadowResolutionEvent.cpp" />

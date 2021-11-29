@@ -41,7 +41,7 @@ namespace leopph::impl
 			static void Register(Behavior* behavior);
 			static void Register(Component* component);
 			static void Register(PointLight* pointLight);
-			static void Register(const ModelResource* model);
+			static void Register(ModelResource* model);
 			static void Register(const Resource* resource);
 			static void Register(const UniqueResource* resource);
 			static void Register(const Resource* resource, const ResourceHandleBase* handle);
@@ -53,7 +53,7 @@ namespace leopph::impl
 			static void Unregister(Behavior* behavior);
 			static void Unregister(Component* component);
 			static void Unregister(PointLight* pointLight);
-			static void Unregister(const ModelResource* model);
+			static void Unregister(ModelResource* model);
 			static void Unregister(const Resource* resource);
 			static void Unregister(const UniqueResource* resource);
 			static void Unregister(const Resource* resource, const ResourceHandleBase* handle);
@@ -76,8 +76,8 @@ namespace leopph::impl
 			static const std::unordered_set<const SpotLight*>& SpotLights();
 			static const std::vector<PointLight*>& PointLights();
 			static const std::list<ShadowMap>& ShadowMaps();
-			static const std::unordered_set<const ModelResource*>& Models();
-			static const std::unordered_set<const ResourceHandleBase*>& ModelComponents(const ModelResource* model);
+			static const std::unordered_set<ModelResource*>& Models();
+			static const std::unordered_set<const ResourceHandleBase*>& ModelComponents(ModelResource* model);
 
 
 			static void DirectionalLight(leopph::DirectionalLight* dirLight);
@@ -100,7 +100,7 @@ namespace leopph::impl
 
 			static std::unordered_map<const Transform*, std::pair<Matrix4, Matrix4>> s_Matrices;
 
-			static std::unordered_set<const ModelResource*> s_ModelResources;
+			static std::unordered_set<ModelResource*> s_ModelResources;
 
 			static std::unordered_map<const Resource*, std::unordered_set<const ResourceHandleBase*>> s_ResourcesAndHandles;
 
