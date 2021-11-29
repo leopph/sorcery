@@ -33,8 +33,6 @@ namespace leopph::impl
 		glNamedBufferData(m_InstanceBuffer, 2 * sizeof(Matrix4), nullptr, GL_STATIC_DRAW);
 
 		ProcessNodes(scene);
-
-
 	}
 
 

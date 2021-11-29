@@ -56,11 +56,11 @@ namespace leopph::impl
 		glVertexArrayAttribBinding(m_VertexArray, 6, 1);
 		glEnableVertexArrayAttrib(m_VertexArray, 6);
 
-		glEnableVertexArrayAttrib(m_VertexArray, 7);
 		glVertexArrayAttribFormat(m_VertexArray, 7, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(Vector4));
 		glVertexArrayAttribBinding(m_VertexArray, 7, 1);
+		glEnableVertexArrayAttrib(m_VertexArray, 7);
 
-		glVertexArrayAttribFormat(m_VertexArray, 8, 4, GL_FLOAT, GL_FALSE, 5 *sizeof(Vector4));
+		glVertexArrayAttribFormat(m_VertexArray, 8, 4, GL_FLOAT, GL_FALSE, 5 * sizeof(Vector4));
 		glVertexArrayAttribBinding(m_VertexArray, 8, 1);
 		glEnableVertexArrayAttrib(m_VertexArray, 8);
 
