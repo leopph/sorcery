@@ -69,19 +69,8 @@ float CalculateShadow(vec3 fragPos, float fragPosCameraClipZ, vec3 fragNormal)
 	normalizedPos *= 0.5;
 	normalizedPos += 0.5;
 
-	vec2 texelSize = 1.0 / textureSize(u_DirLightShadowMaps[cascadeIndex], 0);
 	float bias = max(MAX_SHADOW_BIAS * (1.0 - dot(fragNormal, -u_DirLight.direction)), MIN_SHADOW_BIAS);
-	float shadow = 0;
-
-	for (int i = -1; i <= 1; i++)
-	{
-		for (int j = -1; j <= 1; j++)
-		{
-			shadow += texture(u_DirLightShadowMaps[cascadeIndex], vec3(normalizedPos.xy + vec2(i, j) * texelSize, normalizedPos.z - bias));
-		}
-	}
-
-	return shadow / 9;
+	return texture(u_DirLightShadowMaps[cascadeIndex], vec3(normalizedPos.xy, normalizedPos.z - bias));
 }
 #endif
 
