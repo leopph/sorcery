@@ -185,6 +185,7 @@ namespace leopph::impl
 			std::string infoLog;
 			infoLog.resize(logLength);
 			glGetProgramInfoLog(m_ProgramName, logLength, &logLength, infoLog.data());
+			ret.second = infoLog;
 		}
 
 		GLint status;
