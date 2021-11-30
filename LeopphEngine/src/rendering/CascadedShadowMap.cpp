@@ -59,7 +59,7 @@ namespace leopph::impl
 			++texUnit;
 		}
 
-		shader.SetUniform("u_ShadowMaps", texUnits);
+		shader.SetUniform("u_DirLightShadowMaps", texUnits);
 		return texUnit;
 	}
 

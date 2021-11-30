@@ -108,45 +108,45 @@ namespace leopph::impl
 
 	void Mesh::DrawShaded(ShaderProgram& shader, std::size_t nextFreeTextureUnit, std::size_t instanceCount) const
 	{
-		shader.SetUniform("material.ambientColor", static_cast<Vector3>(m_Material.AmbientColor));
-		shader.SetUniform("material.diffuseColor", static_cast<Vector3>(m_Material.DiffuseColor));
-		shader.SetUniform("material.specularColor", static_cast<Vector3>(m_Material.SpecularColor));
-		shader.SetUniform("material.shininess", m_Material.Shininess);
+		shader.SetUniform("u_Material.ambientColor", static_cast<Vector3>(m_Material.AmbientColor));
+		shader.SetUniform("u_Material.diffuseColor", static_cast<Vector3>(m_Material.DiffuseColor));
+		shader.SetUniform("u_Material.specularColor", static_cast<Vector3>(m_Material.SpecularColor));
+		shader.SetUniform("u_Material.shininess", m_Material.Shininess);
 
 		if (m_Material.AmbientMap.has_value())
 		{
-			shader.SetUniform("material.hasAmbientMap", true);
-			shader.SetUniform("material.ambientMap", static_cast<int>(nextFreeTextureUnit));
+			shader.SetUniform("u_Material.hasAmbientMap", true);
+			shader.SetUniform("u_Material.ambientMap", static_cast<int>(nextFreeTextureUnit));
 			glBindTextureUnit(static_cast<GLuint>(nextFreeTextureUnit), m_Material.AmbientMap->Id());
 			++nextFreeTextureUnit;
 		}
 		else
 		{
-			shader.SetUniform("material.hasAmbientMap", false);
+			shader.SetUniform("u_Material.hasAmbientMap", false);
 		}
 
 		if (m_Material.DiffuseMap.has_value())
 		{
-			shader.SetUniform("material.hasDiffuseMap", true);
-			shader.SetUniform("material.diffuseMap", static_cast<int>(nextFreeTextureUnit));
+			shader.SetUniform("u_Material.hasDiffuseMap", true);
+			shader.SetUniform("u_Material.diffuseMap", static_cast<int>(nextFreeTextureUnit));
 			glBindTextureUnit(static_cast<GLuint>(nextFreeTextureUnit), m_Material.DiffuseMap->Id());
 			++nextFreeTextureUnit;
 		}
 		else
 		{
-			shader.SetUniform("material.hasDiffuseMap", false);
+			shader.SetUniform("u_Material.hasDiffuseMap", false);
 		}
 
 		if (m_Material.SpecularMap.has_value())
 		{
-			shader.SetUniform("material.hasSpecularMap", true);
-			shader.SetUniform("material.specularMap", static_cast<int>(nextFreeTextureUnit));
+			shader.SetUniform("u_Material.hasSpecularMap", true);
+			shader.SetUniform("u_Material.specularMap", static_cast<int>(nextFreeTextureUnit));
 			glBindTextureUnit(static_cast<GLuint>(nextFreeTextureUnit), m_Material.SpecularMap->Id());
 			++nextFreeTextureUnit;
 		}
 		else
 		{
-			shader.SetUniform("material.hasSpecularMap", false);
+			shader.SetUniform("u_Material.hasSpecularMap", false);
 		}
 
 		if (!m_Material.TwoSided)

@@ -30,30 +30,30 @@ layout (location = 3) out vec3 outDiffuseColor;
 layout (location = 4) out vec3 outSpecularColor;
 layout (location = 5) out float outShine;
 
-layout (location = 1) uniform Material material;
+layout (location = 1) uniform Material u_Material;
 
 
 void main()
 {
     outPosition = vec4(inFragPos, inClipSpaceZ);
     outNormal = normalize(inNormal);
-    outAmbientColor = material.ambientColor;
-    outDiffuseColor = material.diffuseColor;
-    outSpecularColor = material.specularColor;
-    outShine = material.shininess;
+    outAmbientColor = u_Material.ambientColor;
+    outDiffuseColor = u_Material.diffuseColor;
+    outSpecularColor = u_Material.specularColor;
+    outShine = u_Material.shininess;
 
-    if (material.hasAmbientMap != 0)
+    if (u_Material.hasAmbientMap != 0)
     {
-        outAmbientColor *= texture(material.ambientMap, inTexCoords).rgb;
+        outAmbientColor *= texture(u_Material.ambientMap, inTexCoords).rgb;
     }
 
-    if (material.hasDiffuseMap != 0)
+    if (u_Material.hasDiffuseMap != 0)
     {
-        outDiffuseColor *= texture(material.diffuseMap, inTexCoords).rgb;
+        outDiffuseColor *= texture(u_Material.diffuseMap, inTexCoords).rgb;
     }
 
-    if (material.hasSpecularMap != 0)
+    if (u_Material.hasSpecularMap != 0)
     {
-        outSpecularColor *= texture(material.specularMap, inTexCoords).rgb;
+        outSpecularColor *= texture(u_Material.specularMap, inTexCoords).rgb;
     }
 }

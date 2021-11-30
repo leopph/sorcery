@@ -78,65 +78,125 @@ namespace leopph::impl
 											  const std::vector<const PointLight*>& pointLights,
 											  const std::vector<const SpotLight*>& spotLights)
 	{
+		static auto shadowShaderFlagInfo{m_ShadowShader.GetFlagInfo()};
+		auto& shadowShader{m_ShadowShader.GetPermutation(shadowShaderFlagInfo)};
+
 		static auto objectFlagInfo{m_ObjectShader.GetFlagInfo()};
+		objectFlagInfo.Clear();
+
+		const auto dirLight{DataManager::DirectionalLight()};
+
+		objectFlagInfo["EXISTS_DIRLIGHT"] = dirLight != nullptr;
+		objectFlagInfo["DIRLIGHT_SHADOW"] = dirLight != nullptr && dirLight->CastsShadow();
+		objectFlagInfo["EXISTS_SPOTLIGHT"] = spotLights.size() != 0ull;
+		objectFlagInfo["EXISTS_POINTLIGHT"] = pointLights.size() != 0ull;
+
 		auto& objectShader{m_ObjectShader.GetPermutation(objectFlagInfo)};
 
-		objectShader.Use();
+		std::size_t texCount{0ull};
 
-		objectShader.SetUniform("viewProjectionMatrix", camViewMat * camProjMat);
-		objectShader.SetUniform("cameraPosition", Camera::Active->Entity.Transform->Position());
+		objectShader.SetUniform("u_ViewProjMat", camViewMat * camProjMat);
+		objectShader.SetUniform("u_CamPos", Camera::Active->Entity.Transform->Position());
 
 		/* Set up ambient light data */
-		objectShader.SetUniform("ambientLight", AmbientLight::Instance().Intensity());
+		objectShader.SetUniform("u_AmbientLight", AmbientLight::Instance().Intensity());
 
 		/* Set up DirLight data */
-		if (const auto dirLight = DataManager::DirectionalLight(); dirLight != nullptr)
+		if (dirLight != nullptr)
 		{
-			objectShader.SetUniform("existsDirLight", true);
-			objectShader.SetUniform("dirLight.direction", dirLight->Direction());
-			objectShader.SetUniform("dirLight.diffuseColor", dirLight->Diffuse());
-			objectShader.SetUniform("dirLight.specularColor", dirLight->Specular());
-		}
-		else
-		{
-			objectShader.SetUniform("existsDirLight", false);
+			objectShader.SetUniform("u_DirLight.direction", dirLight->Direction());
+			objectShader.SetUniform("u_DirLight.diffuseColor", dirLight->Diffuse());
+			objectShader.SetUniform("u_DirLight.specularColor", dirLight->Specular());
+
+			if (dirLight->CastsShadow())
+			{
+				static std::vector<Matrix4> dirLightMatrices;
+				static std::vector<float> cascadeFarBounds;
+
+				dirLightMatrices.clear();
+				cascadeFarBounds.clear();
+
+				const auto cameraInverseMatrix{camViewMat.Inverse()};
+				const auto lightViewMatrix{Matrix4::LookAt(dirLight->Range() * -dirLight->Direction(), Vector3{}, Vector3::Up())};
+				const auto cascadeCount{Settings::DirectionalShadowCascadeCount()};
+
+				shadowShader.Use();
+
+				for (std::size_t i = 0; i < cascadeCount; ++i)
+				{
+					const auto lightWorldToClip{m_DirLightShadowMap.WorldToClipMatrix(i, cameraInverseMatrix, lightViewMatrix)};
+					dirLightMatrices.push_back(lightWorldToClip);
+
+					shadowShader.SetUniform("u_LightWorldToClipMatrix", lightWorldToClip);
+
+					m_DirLightShadowMap.BindForWriting(i);
+					m_DirLightShadowMap.Clear();
+
+					for (const auto& [modelRes, matrices] : modelsAndMats)
+					{
+						if (modelRes->CastsShadow())
+						{
+							modelRes->DrawDepth(matrices);
+						}
+					}
+				}
+
+				m_DirLightShadowMap.UnbindFromWriting();
+				shadowShader.Unuse();
+
+				for (std::size_t i = 0; i < cascadeCount; ++i)
+				{
+					const auto viewSpaceBound{m_DirLightShadowMap.CascadeBoundsViewSpace(i)[1]};
+					const Vector4 viewSpaceBoundVector{0, 0, viewSpaceBound, 1};
+					const auto clipSpaceBoundVector{viewSpaceBoundVector * camProjMat};
+					const auto clipSpaceBound{clipSpaceBoundVector[2]};
+					cascadeFarBounds.push_back(clipSpaceBound);
+				}
+
+				objectShader.SetUniform("u_DirLightCascadeCount", static_cast<unsigned>(cascadeCount));
+				objectShader.SetUniform("u_DirLightClipMatrices", dirLightMatrices);
+				objectShader.SetUniform("u_u_DirLightCascadeFarBounds", cascadeFarBounds);
+				texCount = m_DirLightShadowMap.BindForReading(objectShader, texCount);
+			}
 		}
 
 		/* Set up PointLight data */
-		objectShader.SetUniform("pointLightCount", static_cast<int>(pointLights.size()));
+		objectShader.SetUniform("u_PointLightCount", static_cast<int>(pointLights.size()));
 		for (std::size_t i = 0; i < pointLights.size(); i++)
 		{
 			const auto& pointLight = pointLights[i];
 
-			objectShader.SetUniform("pointLights[" + std::to_string(i) + "].position", pointLight->Entity.Transform->Position());
-			objectShader.SetUniform("pointLights[" + std::to_string(i) + "].diffuseColor", pointLight->Diffuse());
-			objectShader.SetUniform("pointLights[" + std::to_string(i) + "].specularColor", pointLight->Specular());
-			objectShader.SetUniform("pointLights[" + std::to_string(i) + "].constant", pointLight->Constant());
-			objectShader.SetUniform("pointLights[" + std::to_string(i) + "].linear", pointLight->Linear());
-			objectShader.SetUniform("pointLights[" + std::to_string(i) + "].quadratic", pointLight->Quadratic());
+			objectShader.SetUniform("u_PointLights[" + std::to_string(i) + "].position", pointLight->Entity.Transform->Position());
+			objectShader.SetUniform("u_PointLights[" + std::to_string(i) + "].diffuseColor", pointLight->Diffuse());
+			objectShader.SetUniform("u_PointLights[" + std::to_string(i) + "].specularColor", pointLight->Specular());
+			objectShader.SetUniform("u_PointLights[" + std::to_string(i) + "].constant", pointLight->Constant());
+			objectShader.SetUniform("u_PointLights[" + std::to_string(i) + "].linear", pointLight->Linear());
+			objectShader.SetUniform("u_PointLights[" + std::to_string(i) + "].quadratic", pointLight->Quadratic());
 		}
 
 		/* Set up SpotLight data */
-		objectShader.SetUniform("spotLightCount", static_cast<int>(spotLights.size()));
+		objectShader.SetUniform("u_SpotLightCount", static_cast<int>(spotLights.size()));
 		for (std::size_t i = 0; i < spotLights.size(); i++)
 		{
 			const auto& spotLight{spotLights[i]};
 
-			objectShader.SetUniform("spotLights[" + std::to_string(i) + "].position", spotLight->Entity.Transform->Position());
-			objectShader.SetUniform("spotLights[" + std::to_string(i) + "].direction", spotLight->Entity.Transform->Forward());
-			objectShader.SetUniform("spotLights[" + std::to_string(i) + "].diffuseColor", spotLight->Diffuse());
-			objectShader.SetUniform("spotLights[" + std::to_string(i) + "].specularColor", spotLight->Specular());
-			objectShader.SetUniform("spotLights[" + std::to_string(i) + "].constant", spotLight->Constant());
-			objectShader.SetUniform("spotLights[" + std::to_string(i) + "].linear", spotLight->Linear());
-			objectShader.SetUniform("spotLights[" + std::to_string(i) + "].quadratic", spotLight->Quadratic());
-			objectShader.SetUniform("spotLights[" + std::to_string(i) + "].innerAngleCosine", math::Cos(math::ToRadians(spotLight->InnerAngle())));
-			objectShader.SetUniform("spotLights[" + std::to_string(i) + "].outerAngleCosine", math::Cos(math::ToRadians(spotLight->OuterAngle())));
+			objectShader.SetUniform("u_SpotLights[" + std::to_string(i) + "].position", spotLight->Entity.Transform->Position());
+			objectShader.SetUniform("u_SpotLights[" + std::to_string(i) + "].direction", spotLight->Entity.Transform->Forward());
+			objectShader.SetUniform("u_SpotLights[" + std::to_string(i) + "].diffuseColor", spotLight->Diffuse());
+			objectShader.SetUniform("u_SpotLights[" + std::to_string(i) + "].specularColor", spotLight->Specular());
+			objectShader.SetUniform("u_SpotLights[" + std::to_string(i) + "].constant", spotLight->Constant());
+			objectShader.SetUniform("u_SpotLights[" + std::to_string(i) + "].linear", spotLight->Linear());
+			objectShader.SetUniform("u_SpotLights[" + std::to_string(i) + "].quadratic", spotLight->Quadratic());
+			objectShader.SetUniform("u_SpotLights[" + std::to_string(i) + "].innerAngleCosine", math::Cos(math::ToRadians(spotLight->InnerAngle())));
+			objectShader.SetUniform("u_SpotLights[" + std::to_string(i) + "].outerAngleCosine", math::Cos(math::ToRadians(spotLight->OuterAngle())));
 		}
+
+		objectShader.Use();
 
 		/* Draw the shaded objects */
 		for (const auto& [modelRes, matrices] : modelsAndMats)
 		{
-			modelRes->DrawShaded(objectShader, matrices, 0);
+			modelRes->DrawShaded(objectShader, matrices, texCount);
 		}
 	}
 

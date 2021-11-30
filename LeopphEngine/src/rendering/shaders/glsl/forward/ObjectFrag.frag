@@ -1,10 +1,27 @@
-#version 440 core
+#version 410 core
 
-#define MAX_POINT_LIGHT_COUNT 64
-#define MAX_SPOT_LIGHT_COUNT 64
 #define ALPHA_THRESHOLD 0.01
 #define MIN_SHADOW_BIAS 0.0001
 #define MAX_SHADOW_BIAS 0.001
+
+//#define EXISTS_DIRLIGHT;
+//#define EXISTS_SPOTLIGHT
+//#define EXISTS_POINTLIGHT;
+//#define DIRLIGHT_SHADOW;
+
+#ifdef EXISTS_DIRLIGHT
+#ifdef DIRLIGHT_SHADOW
+#define MAX_DIR_LIGHT_CASCADE_COUNT 3
+#endif
+#endif
+
+#ifdef EXISTS_SPOTLIGHT
+#define MAX_SPOT_LIGHT_COUNT 64
+#endif
+
+#ifdef EXISTS_POINTLIGHT
+#define MAX_POINT_LIGHT_COUNT 64
+#endif
 
 
 struct DirLight
@@ -15,17 +32,6 @@ struct DirLight
 	vec3 specularColor;
 };
 
-struct PointLight
-{
-	vec3 position;
-
-	vec3 diffuseColor;
-	vec3 specularColor;
-
-	float constant;
-	float linear;
-	float quadratic;
-};
 
 struct SpotLight
 {
@@ -42,6 +48,20 @@ struct SpotLight
 	float innerAngleCosine;
 	float outerAngleCosine;
 };
+
+
+struct PointLight
+{
+	vec3 position;
+
+	vec3 diffuseColor;
+	vec3 specularColor;
+
+	float constant;
+	float linear;
+	float quadratic;
+};
+
 
 struct Material
 {
@@ -61,26 +81,48 @@ struct Material
 };
 
 
-layout (location = 0) in vec3 inNormal;
-layout (location = 1) in vec2 inTexCoords;
-layout (location = 2) in vec3 inFragPos;
+layout (location = 2) in vec3 in_FragPos;
+layout (location = 0) in vec3 in_Normal;
+layout (location = 1) in vec2 in_TexCoords;
 
-layout (location = 0) out vec4 fragmentColor;
+layout (location = 0) out vec4 out_FragColor;
 
-layout (location = 2) uniform Material material;
+uniform Material u_Material;
+uniform vec3 u_AmbientLight;
+uniform vec3 u_CamPos;
 
-layout (location = 12) uniform vec3 ambientLight;
+#ifdef EXISTS_DIRLIGHT
+uniform DirLight u_DirLight;
+#ifdef DIRLIGHT_SHADOW
+layout (location = 3) flat in uint in_DirLightCascadeIndex;
+layout (location = 4) in vec3 in_DirLightNormFragPos;
+uniform sampler2DShadow u_DirLightShadowMaps[MAX_DIR_LIGHT_CASCADE_COUNT];
+#endif
+#endif
 
-layout (location = 13) uniform DirLight dirLight;
-layout (location = 17) uniform bool existsDirLight;
+#ifdef EXISTS_SPOTLIGHT
+uniform SpotLight u_SpotLights[MAX_SPOT_LIGHT_COUNT];
+uniform int u_SpotLightCount;
+#endif
 
-layout (location = 21) uniform PointLight pointLights[MAX_POINT_LIGHT_COUNT];
-layout (location = 18) uniform int pointLightCount;
+#ifdef EXISTS_POINTLIGHT
+uniform PointLight u_PointLights[MAX_POINT_LIGHT_COUNT];
+uniform int u_PointLightCount;
+#endif
 
-layout (location = 21 + MAX_POINT_LIGHT_COUNT * 6) uniform SpotLight spotLights[MAX_SPOT_LIGHT_COUNT];
-layout (location = 19) uniform int spotLightCount;
 
-layout (location = 20) uniform vec3 cameraPosition;
+#ifdef EXISTS_DIRLIGHT
+#ifdef DIRLIGHT_SHADOW
+float CalculateDirLightShadow(vec3 fragNormal)
+{
+	uint cascadeIndex = in_DirLightCascadeIndex;
+	vec2 texelSize = 1.0 / textureSize(u_DirLightShadowMaps[cascadeIndex], 0);
+	float bias = max(MAX_SHADOW_BIAS * (1.0 - dot(fragNormal, -u_DirLight.direction)), MIN_SHADOW_BIAS);
+	vec3 normalizedPos = in_DirLightNormFragPos;
+	return texture(u_DirLightShadowMaps[cascadeIndex], vec3(normalizedPos.xy * texelSize, normalizedPos.z - bias));
+}
+#endif
+#endif
 
 
 float CalculateAttenuation(float constant, float linear, float quadratic, float dist)
@@ -97,8 +139,8 @@ vec3 CalculateLightEffect(vec3 direction, vec3 normal, vec3 matDiff, vec3 matSpe
 	if (diffuseDot > 0)
 	{
 		// Blinn-Phong
-		vec3 halfway = normalize(direction + normalize(cameraPosition - inFragPos));
-		vec3 specular = matSpec * pow(max(dot(normal, halfway), 0), 4 * material.shininess) * lightSpec;
+		vec3 halfway = normalize(direction + normalize(u_CamPos - in_FragPos));
+		vec3 specular = matSpec * pow(max(dot(normal, halfway), 0), 4 * u_Material.shininess) * lightSpec;
 		return diffuse + specular;
 
 		// Phong
@@ -111,29 +153,20 @@ vec3 CalculateLightEffect(vec3 direction, vec3 normal, vec3 matDiff, vec3 matSpe
 }
 
 
+#ifdef EXISTS_DIRLIGHT
 vec3 CalculateDirLight(DirLight dirLight, vec3 surfaceNormal, vec3 materialDiffuseColor, vec3 materialSpecularColor)
 {
 	vec3 directionToLight = -dirLight.direction;
 	vec3 light = CalculateLightEffect(directionToLight, surfaceNormal, materialDiffuseColor, materialSpecularColor, dirLight.diffuseColor, dirLight.specularColor);
 	return light;
 }
+#endif
 
 
-vec3 CalculatePointLight(PointLight pointLight, vec3 surfaceNormal, vec3 materialDiffuseColor, vec3 materialSpecularColor)
-{
-	vec3 posDiff = pointLight.position - inFragPos;
-	float dist = length(posDiff);
-	vec3 directionToLight = normalize(posDiff);
-
-	float attenuation = CalculateAttenuation(pointLight.constant, pointLight.linear, pointLight.quadratic, dist);
-	vec3 light = CalculateLightEffect(directionToLight, surfaceNormal, materialDiffuseColor, materialSpecularColor, pointLight.diffuseColor, pointLight.specularColor);
-	return attenuation * light;
-}
-
-
+#ifdef EXISTS_SPOTLIGHT
 vec3 CalculateSpotLight(SpotLight spotLight, vec3 surfaceNormal, vec3 materialDiffuseColor, vec3 materialSpecularColor)
 {
-	vec3 posDiff = spotLight.position - inFragPos;
+	vec3 posDiff = spotLight.position - in_FragPos;
 	float dist = length(posDiff);
 	vec3 directionToLight = normalize(posDiff);
 	float thetaCosine = dot(directionToLight, -spotLight.direction);
@@ -150,16 +183,31 @@ vec3 CalculateSpotLight(SpotLight spotLight, vec3 surfaceNormal, vec3 materialDi
 
 	return vec3(0);
 }
+#endif
+
+
+#ifdef EXISTS_POINTLIGHT
+vec3 CalculatePointLight(PointLight pointLight, vec3 surfaceNormal, vec3 materialDiffuseColor, vec3 materialSpecularColor)
+{
+	vec3 posDiff = pointLight.position - in_FragPos;
+	float dist = length(posDiff);
+	vec3 directionToLight = normalize(posDiff);
+
+	float attenuation = CalculateAttenuation(pointLight.constant, pointLight.linear, pointLight.quadratic, dist);
+	vec3 light = CalculateLightEffect(directionToLight, surfaceNormal, materialDiffuseColor, materialSpecularColor, pointLight.diffuseColor, pointLight.specularColor);
+	return attenuation * light;
+}
+#endif
 
 
 void main()
 {
 	/* Calculate ambient RGB */
-	vec3 ambientColor = material.ambientColor;
+	vec3 ambientColor = u_Material.ambientColor;
 	vec4 ambientMapColor = vec4(0, 0, 0, 1);
-	if (material.hasAmbientMap != 0)
+	if (u_Material.hasAmbientMap != 0)
 	{
-		ambientMapColor = texture(material.ambientMap, inTexCoords);
+		ambientMapColor = texture(u_Material.ambientMap, in_TexCoords);
 
 		if (ambientMapColor.a < ALPHA_THRESHOLD)
 			discard;
@@ -168,11 +216,11 @@ void main()
 	}
 
 	/* Calculate diffuse RGB */
-	vec3 diffuseColor = material.diffuseColor;
+	vec3 diffuseColor = u_Material.diffuseColor;
 	vec4 diffuseMapColor = vec4(0, 0, 0, 1);
-	if (material.hasDiffuseMap != 0)
+	if (u_Material.hasDiffuseMap != 0)
 	{
-		diffuseMapColor = texture(material.diffuseMap, inTexCoords);
+		diffuseMapColor = texture(u_Material.diffuseMap, in_TexCoords);
 
 		if (diffuseMapColor.a < ALPHA_THRESHOLD)
 			discard;
@@ -181,11 +229,11 @@ void main()
 	}
 
 	/* Calculate specular RGB */
-	vec3 specularColor = material.specularColor;
+	vec3 specularColor = u_Material.specularColor;
 	vec4 specularMapColor = vec4(0, 0, 0, 1);
-	if (material.hasSpecularMap != 0)
+	if (u_Material.hasSpecularMap != 0)
 	{
-		specularMapColor = texture(material.specularMap, inTexCoords);
+		specularMapColor = texture(u_Material.specularMap, in_TexCoords);
 
 		if (specularMapColor.a < ALPHA_THRESHOLD)
 			discard;
@@ -193,27 +241,33 @@ void main()
 		specularColor *= specularMapColor.rgb;
 	}
 
-	vec3 normal = normalize(inNormal);
+	vec3 normal = normalize(in_Normal);
 
 	/* Base color is ambient */
 	vec3 colorSum = ambientColor;
 
 	/* Process and add diffuse and specular colors */
-	if (existsDirLight)
-	{
-		colorSum += CalculateDirLight(dirLight, normal, diffuseColor, specularColor);
-	}
+	#ifdef EXISTS_DIRLIGHT
+	colorSum += CalculateDirLight(u_DirLight, normal, diffuseColor, specularColor);
+	#ifdef DIRLIGHT_SHADOW
+	colorSum *= CalculateDirLightShadow(normal);
+	#endif
+	#endif
 
-	for (int i = 0; i < pointLightCount; i++)
+	#ifdef EXISTS_SPOTLIGHT
+	for (int i = 0; i < u_SpotLightCount; i++)
 	{
-		colorSum += CalculatePointLight(pointLights[i], normal, diffuseColor, specularColor);
+		colorSum += CalculateSpotLight(u_SpotLights[i], normal, diffuseColor, specularColor);
 	}
+	#endif
 
-	for (int i = 0; i < spotLightCount; i++)
+	#ifdef EXISTS_POINTLIGHT
+	for (int i = 0; i < u_PointLightCount; i++)
 	{
-		colorSum += CalculateSpotLight(spotLights[i], normal, diffuseColor, specularColor);
+		colorSum += CalculatePointLight(u_PointLights[i], normal, diffuseColor, specularColor);
 	}
+	#endif
 
 	/* Combie fragment RGB color with the smallest of the maps' alpha values for transparency */
-	fragmentColor = vec4(colorSum, min(min(ambientMapColor.a, diffuseMapColor.a), specularMapColor.a));
+	out_FragColor = vec4(colorSum, min(min(ambientMapColor.a, diffuseMapColor.a), specularMapColor.a));
 }

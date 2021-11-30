@@ -30,7 +30,7 @@ layout (location = 5) uniform vec3 u_CameraPosition;
 layout (location = 6) uniform DirLight u_DirLight;
 #ifdef CAST_SHADOW
 layout (location = 9) uniform uint u_CascadeCount;
-layout (location = 10) uniform sampler2DShadow u_ShadowMaps[MAX_DIR_LIGHT_CASCADE_COUNT];
+layout (location = 10) uniform sampler2DShadow u_DirLightShadowMaps[MAX_DIR_LIGHT_CASCADE_COUNT];
 layout (location = 10 + MAX_DIR_LIGHT_CASCADE_COUNT) uniform mat4 u_LightClipMatrices[MAX_DIR_LIGHT_CASCADE_COUNT];
 layout (location = 10 + 8 * MAX_DIR_LIGHT_CASCADE_COUNT) uniform float u_CascadeFarBounds[MAX_DIR_LIGHT_CASCADE_COUNT];
 #endif
@@ -69,7 +69,7 @@ float CalculateShadow(vec3 fragPos, float fragPosCameraClipZ, vec3 fragNormal)
 	normalizedPos *= 0.5;
 	normalizedPos += 0.5;
 
-	vec2 texelSize = 1.0 / textureSize(u_ShadowMaps[cascadeIndex], 0);
+	vec2 texelSize = 1.0 / textureSize(u_DirLightShadowMaps[cascadeIndex], 0);
 	float bias = max(MAX_SHADOW_BIAS * (1.0 - dot(fragNormal, -u_DirLight.direction)), MIN_SHADOW_BIAS);
 	float shadow = 0;
 
@@ -77,7 +77,7 @@ float CalculateShadow(vec3 fragPos, float fragPosCameraClipZ, vec3 fragNormal)
 	{
 		for (int j = -1; j <= 1; j++)
 		{
-			shadow += texture(u_ShadowMaps[cascadeIndex], vec3(normalizedPos.xy + vec2(i, j) * texelSize, normalizedPos.z - bias));
+			shadow += texture(u_DirLightShadowMaps[cascadeIndex], vec3(normalizedPos.xy + vec2(i, j) * texelSize, normalizedPos.z - bias));
 		}
 	}
 

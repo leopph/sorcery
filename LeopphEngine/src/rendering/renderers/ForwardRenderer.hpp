@@ -3,6 +3,7 @@
 #include "Renderer.hpp"
 #include "../../math/Matrix.hpp"
 #include "../shaders/ShaderFamily.hpp"
+#include "../CascadedShadowMap.hpp"
 
 
 
@@ -26,5 +27,7 @@ namespace leopph::impl
 			ShaderFamily m_ObjectShader;
 			ShaderFamily m_SkyboxShader;
 			ShaderFamily m_ShadowShader;
+
+			CascadedShadowMap m_DirLightShadowMap;
 	};
 }
