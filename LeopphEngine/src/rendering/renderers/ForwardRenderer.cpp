@@ -40,6 +40,13 @@ namespace leopph::impl
 		}}
 	{
 		glEnable(GL_DEPTH_TEST);
+		glDepthFunc(GL_LESS);
+
+		glEnable(GL_CULL_FACE);
+		glFrontFace(GL_CCW);
+		glCullFace(GL_BACK);
+
+		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
 		Logger::Instance().Warning("The forward rendering pipeline is currently not feature complete. It is recommended to use the deferred pipeline.");
 	}
