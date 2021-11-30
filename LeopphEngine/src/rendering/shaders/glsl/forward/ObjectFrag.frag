@@ -4,11 +4,6 @@
 #define MIN_SHADOW_BIAS 0.0001
 #define MAX_SHADOW_BIAS 0.001
 
-//#define EXISTS_DIRLIGHT;
-//#define EXISTS_SPOTLIGHT
-//#define EXISTS_POINTLIGHT;
-//#define DIRLIGHT_SHADOW;
-
 #ifdef EXISTS_DIRLIGHT
 #ifdef DIRLIGHT_SHADOW
 #define MAX_DIR_LIGHT_CASCADE_COUNT 3
@@ -94,9 +89,11 @@ uniform vec3 u_CamPos;
 #ifdef EXISTS_DIRLIGHT
 uniform DirLight u_DirLight;
 #ifdef DIRLIGHT_SHADOW
-layout (location = 3) flat in uint in_DirLightCascadeIndex;
-layout (location = 4) in vec3 in_DirLightNormFragPos;
+layout (location = 3) in float in_ClipPosZ;
 uniform sampler2DShadow u_DirLightShadowMaps[MAX_DIR_LIGHT_CASCADE_COUNT];
+uniform mat4 u_DirLightClipMatrices[MAX_DIR_LIGHT_CASCADE_COUNT];
+uniform float u_DirLightCascadeFarBounds[MAX_DIR_LIGHT_CASCADE_COUNT];
+uniform uint u_DirLightCascadeCount;
 #endif
 #endif
 
@@ -115,10 +112,19 @@ uniform int u_PointLightCount;
 #ifdef DIRLIGHT_SHADOW
 float CalculateDirLightShadow(vec3 fragNormal)
 {
-	uint cascadeIndex = in_DirLightCascadeIndex;
+	uint cascadeIndex = 0;
+    for (int i = 0; i < u_DirLightCascadeCount; i++)
+    {
+        if (in_ClipPosZ < u_DirLightCascadeFarBounds[i])
+        {
+            cascadeIndex = i;
+            break;
+        }
+    }
+    vec4 fragPosDirLightSpace = vec4(in_FragPos, 1) * u_DirLightClipMatrices[cascadeIndex];
+    vec3 normalizedPos = fragPosDirLightSpace.xyz * 0.5 + 0.5;
 	vec2 texelSize = 1.0 / textureSize(u_DirLightShadowMaps[cascadeIndex], 0);
 	float bias = max(MAX_SHADOW_BIAS * (1.0 - dot(fragNormal, -u_DirLight.direction)), MIN_SHADOW_BIAS);
-	vec3 normalizedPos = in_DirLightNormFragPos;
 	return texture(u_DirLightShadowMaps[cascadeIndex], vec3(normalizedPos.xy * texelSize, normalizedPos.z - bias));
 }
 #endif

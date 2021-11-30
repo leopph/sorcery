@@ -93,7 +93,7 @@ namespace leopph::impl
 
 		auto& objectShader{m_ObjectShader.GetPermutation(objectFlagInfo)};
 
-		std::size_t texCount{0ull};
+		auto texCount{1};
 
 		objectShader.SetUniform("u_ViewProjMat", camViewMat * camProjMat);
 		objectShader.SetUniform("u_CamPos", Camera::Active->Entity.Transform->Position());
@@ -155,7 +155,7 @@ namespace leopph::impl
 
 				objectShader.SetUniform("u_DirLightCascadeCount", static_cast<unsigned>(cascadeCount));
 				objectShader.SetUniform("u_DirLightClipMatrices", dirLightMatrices);
-				objectShader.SetUniform("u_u_DirLightCascadeFarBounds", cascadeFarBounds);
+				objectShader.SetUniform("u_DirLightCascadeFarBounds", cascadeFarBounds);
 				texCount = m_DirLightShadowMap.BindForReading(objectShader, texCount);
 			}
 		}

@@ -1,10 +1,5 @@
 #version 410 core
 
-//#define EXISTS_DIRLIGHT;
-//#define EXISTS_SPOTLIGHT
-//#define EXISTS_POINTLIGHT;
-//#define DIRLIGHT_SHADOW
-
 #ifdef EXISTS_DIRLIGHT
 #ifdef DIRLIGHT_SHADOW
 #define MAX_DIR_LIGHT_CASCADE_COUNT 3
@@ -25,11 +20,7 @@ uniform mat4 u_ViewProjMat;
 
 #ifdef EXISTS_DIRLIGHT
 #ifdef DIRLIGHT_SHADOW
-layout (location = 3) flat out uint out_DirLightCascadeIndex;
-layout (location = 4) out vec3 out_DirLightNormFragPos;
-uniform mat4 u_DirLightClipMatrices[MAX_DIR_LIGHT_CASCADE_COUNT];
-uniform float u_u_DirLightCascadeFarBounds[MAX_DIR_LIGHT_CASCADE_COUNT];
-uniform uint u_DirLightCascadeCount;
+layout (location = 3) out float out_ClipPosZ;
 #endif
 #endif
 
@@ -41,27 +32,11 @@ void main()
     out_FragPos = fragPosWorldSpace.xyz;
     out_Normal = in_Normal * mat3(in_NormalMatrix);
     out_TexCoords = in_TexCoords;
-
     gl_Position = fragPosWorldSpace * u_ViewProjMat;
 
     #ifdef EXISTS_DIRLIGHT
     #ifdef DIRLIGHT_SHADOW
-    uint cascadeIndex = 0;
-    float fragClipZ = gl_Position.z;
-    for (int i = 0; i < u_DirLightCascadeCount; i++)
-    {
-        if (fragClipZ < u_u_DirLightCascadeFarBounds[i])
-        {
-            cascadeIndex = i;
-            out_DirLightCascadeIndex = cascadeIndex;
-            break;
-        }
-    }
-    vec4 fragPosDirLightSpace = fragPosWorldSpace * u_DirLightClipMatrices[cascadeIndex];
-    vec3 normalizedPos = fragPosDirLightSpace.xyz;
-    normalizedPos *= 0.5;
-    normalizedPos += 0.5;
-    out_DirLightNormFragPos = normalizedPos;
+    out_ClipPosZ = gl_Position.z;
     #endif
     #endif
 }
