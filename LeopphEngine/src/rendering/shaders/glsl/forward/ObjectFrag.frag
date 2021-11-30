@@ -76,9 +76,9 @@ struct Material
 };
 
 
-layout (location = 2) in vec3 in_FragPos;
-layout (location = 0) in vec3 in_Normal;
-layout (location = 1) in vec2 in_TexCoords;
+layout (location = 0) in vec3 in_FragPos;
+layout (location = 1) in vec3 in_Normal;
+layout (location = 2) in vec2 in_TexCoords;
 
 layout (location = 0) out vec4 out_FragColor;
 
@@ -123,9 +123,8 @@ float CalculateDirLightShadow(vec3 fragNormal)
     }
     vec4 fragPosDirLightSpace = vec4(in_FragPos, 1) * u_DirLightClipMatrices[cascadeIndex];
     vec3 normalizedPos = fragPosDirLightSpace.xyz * 0.5 + 0.5;
-	vec2 texelSize = 1.0 / textureSize(u_DirLightShadowMaps[cascadeIndex], 0);
 	float bias = max(MAX_SHADOW_BIAS * (1.0 - dot(fragNormal, -u_DirLight.direction)), MIN_SHADOW_BIAS);
-	return texture(u_DirLightShadowMaps[cascadeIndex], vec3(normalizedPos.xy * texelSize, normalizedPos.z - bias));
+	return texture(u_DirLightShadowMaps[cascadeIndex], vec3(normalizedPos.xy, normalizedPos.z - bias));
 }
 #endif
 #endif
@@ -254,10 +253,13 @@ void main()
 
 	/* Process and add diffuse and specular colors */
 	#ifdef EXISTS_DIRLIGHT
-	colorSum += CalculateDirLight(u_DirLight, normal, diffuseColor, specularColor);
-	#ifdef DIRLIGHT_SHADOW
-	colorSum *= CalculateDirLightShadow(normal);
-	#endif
+	{
+		vec3 light = CalculateDirLight(u_DirLight, normal, diffuseColor, specularColor);
+		#ifdef DIRLIGHT_SHADOW
+		light *= CalculateDirLightShadow(normal);
+		#endif
+		colorSum += light;
+	}
 	#endif
 
 	#ifdef EXISTS_SPOTLIGHT

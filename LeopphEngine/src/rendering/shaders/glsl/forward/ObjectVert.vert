@@ -1,20 +1,14 @@
 #version 410 core
 
-#ifdef EXISTS_DIRLIGHT
-#ifdef DIRLIGHT_SHADOW
-#define MAX_DIR_LIGHT_CASCADE_COUNT 3
-#endif
-#endif
-
 layout (location = 0) in vec3 in_Pos;
 layout (location = 1) in vec3 in_Normal;
 layout (location = 2) in vec2 in_TexCoords;
 layout (location = 3) in mat4 in_ModelMatrix;
 layout (location = 7) in mat4 in_NormalMatrix;
 
-layout (location = 2) out vec3 out_FragPos;
-layout (location = 0) out vec3 out_Normal;
-layout (location = 1) out vec2 out_TexCoords;
+layout (location = 0) out vec3 out_FragPos;
+layout (location = 1) out vec3 out_Normal;
+layout (location = 2) out vec2 out_TexCoords;
 
 uniform mat4 u_ViewProjMat;
 
