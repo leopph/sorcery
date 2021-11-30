@@ -157,7 +157,6 @@
     <ClInclude Include="src\rendering\shaders\ShaderFamily.hpp" />
     <ClInclude Include="src\rendering\shaders\ShaderStageInfo.hpp" />
     <ClInclude Include="src\rendering\shaders\ShaderType.hpp" />
-    <ClInclude Include="src\rendering\ShadowMap.hpp" />
     <ClInclude Include="src\rendering\Skybox.hpp" />
     <ClInclude Include="src\rendering\SkyboxImpl.hpp" />
     <ClInclude Include="src\rendering\SpotLightShadowMap.hpp" />
@@ -231,7 +230,6 @@
     <ClCompile Include="src\rendering\RenderTexture.cpp" />
     <ClCompile Include="src\rendering\shaders\ShaderProgram.cpp" />
     <ClCompile Include="src\rendering\shaders\ShaderFamily.cpp" />
-    <ClCompile Include="src\rendering\ShadowMap.cpp" />
     <ClCompile Include="src\rendering\Skybox.cpp" />
     <ClCompile Include="src\rendering\SkyboxImpl.cpp" />
     <ClCompile Include="src\rendering\SpotLightShadowMap.cpp" />

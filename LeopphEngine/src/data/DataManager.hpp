@@ -8,7 +8,6 @@
 #include "../components/lighting/PointLight.hpp"
 #include "../components/lighting/SpotLight.hpp"
 #include "../entity/Entity.hpp"
-#include "../rendering/ShadowMap.hpp"
 #include "../rendering/geometry/ModelImpl.hpp"
 #include "../util/equal/EntityEqual.hpp"
 #include "../util/equal/PathedEqual.hpp"

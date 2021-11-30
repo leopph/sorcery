@@ -59,7 +59,7 @@ void leopph::AppStart()
 	dirLight->Diffuse(Vector3{0.5, 0.5, 0.5});
 	dirLight->CastsShadow(true);
 
-	/*const auto spotLightEntity = new Entity{"spotlight"};
+	const auto spotLightEntity = new Entity{"spotlight"};
 	spotLightEntity->Transform->Parent(groupEntity);
 	const auto spotLight = spotLightEntity->AddComponent<SpotLight>();
 	spotLight->InnerAngle(45);
@@ -72,7 +72,7 @@ void leopph::AppStart()
 	pointLightEntity->Transform->LocalScale(Vector3{0.1, 0.1, 0.1});
 	const auto pointLight = pointLightEntity->AddComponent<PointLight>();
 	pointLight->Range(15);
-	pointLight->CastsShadow(true);*/
+	pointLight->CastsShadow(true);
 
 
 	AmbientLight::Instance().Intensity(Vector3{0, 0, 0});
