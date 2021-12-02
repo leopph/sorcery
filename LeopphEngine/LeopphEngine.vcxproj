@@ -124,7 +124,8 @@
     <ClInclude Include="src\components\lighting\AttenuatedLight.hpp" />
     <ClInclude Include="src\components\lighting\DirLight.hpp" />
     <ClInclude Include="src\components\lighting\SpotLight.hpp" />
-    <ClInclude Include="src\components\RenderComponent.hpp" />
+    <ClInclude Include="src\components\rendering\Model.hpp" />
+    <ClInclude Include="src\components\rendering\RenderComponent.hpp" />
     <ClInclude Include="src\data\Proxy.hpp" />
     <ClInclude Include="src\entry\appstart.h" />
     <ClInclude Include="src\entry\entry.h" />
@@ -190,7 +191,7 @@
     <ClInclude Include="src\components\lighting\Light.hpp" />
     <ClInclude Include="src\math\Matrix.hpp" />
     <ClInclude Include="src\rendering\geometry\InstancedMesh.hpp" />
-    <ClInclude Include="src\components\InstancedModel.hpp" />
+    <ClInclude Include="src\components\rendering\InstancedModel.hpp" />
     <ClInclude Include="src\entity\Entity.hpp" />
     <ClInclude Include="src\components\lighting\PointLight.hpp" />
     <ClInclude Include="src\math\Quaternion.hpp" />
@@ -212,7 +213,8 @@
     <ClCompile Include="src\components\lighting\AttenuatedLight.cpp" />
     <ClCompile Include="src\components\lighting\DirLight.cpp" />
     <ClCompile Include="src\components\lighting\SpotLight.cpp" />
-    <ClCompile Include="src\components\RenderComponent.cpp" />
+    <ClCompile Include="src\components\rendering\Model.cpp" />
+    <ClCompile Include="src\components\rendering\RenderComponent.cpp" />
     <ClCompile Include="src\config\Settings.cpp" />
     <ClCompile Include="src\data\DataManager.cpp" />
     <ClCompile Include="src\entry\launch.cpp" />
@@ -263,7 +265,7 @@
     <ClCompile Include="src\math\LeopphMath.cpp" />
     <ClCompile Include="src\components\lighting\Light.cpp" />
     <ClCompile Include="src\rendering\geometry\InstancedMesh.cpp" />
-    <ClCompile Include="src\components\InstancedModel.cpp" />
+    <ClCompile Include="src\components\rendering\InstancedModel.cpp" />
     <ClCompile Include="src\entity\Entity.cpp" />
     <ClCompile Include="src\components\lighting\PointLight.cpp" />
     <ClCompile Include="src\math\Quaternion.cpp" />

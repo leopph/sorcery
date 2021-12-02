@@ -17,7 +17,7 @@
     <ClCompile Include="src\math\Quaternion.cpp" />
     <ClCompile Include="src\components\Component.cpp" />
     <ClCompile Include="vendor\stb_image\stb_image.cpp" />
-    <ClCompile Include="src\components\InstancedModel.cpp" />
+    <ClCompile Include="src\components\rendering\InstancedModel.cpp" />
     <ClCompile Include="src\windowing\WindowBase.cpp" />
     <ClCompile Include="src\entry\launch.cpp" />
     <ClCompile Include="src\timing\timer.cpp" />
@@ -67,7 +67,8 @@
     <ClCompile Include="src\rendering\geometry\Renderable.cpp" />
     <ClCompile Include="src\util\equal\InstancedModelImplEqual.cpp" />
     <ClCompile Include="src\util\hash\InstancedModelImplHash.cpp" />
-    <ClCompile Include="src\components\RenderComponent.cpp" />
+    <ClCompile Include="src\components\rendering\RenderComponent.cpp" />
+    <ClCompile Include="src\components\rendering\Model.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\Behavior.hpp" />
@@ -92,7 +93,7 @@
     <ClInclude Include="src\windowing\GlWindow.hpp" />
     <ClInclude Include="include\Leopph.hpp" />
     <ClInclude Include="src\components\Component.hpp" />
-    <ClInclude Include="src\components\InstancedModel.hpp" />
+    <ClInclude Include="src\components\rendering\InstancedModel.hpp" />
     <ClInclude Include="src\windowing\WindowBase.hpp" />
     <ClInclude Include="src\config\Settings.hpp" />
     <ClInclude Include="src\input\keycodes.h" />
@@ -156,7 +157,8 @@
     <ClInclude Include="src\rendering\geometry\Renderable.hpp" />
     <ClInclude Include="src\util\equal\InstancedModelImplEqual.hpp" />
     <ClInclude Include="src\util\hash\InstancedModelImplHash.hpp" />
-    <ClInclude Include="src\components\RenderComponent.hpp" />
+    <ClInclude Include="src\components\rendering\RenderComponent.hpp" />
+    <ClInclude Include="src\components\rendering\Model.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\cpp.hint" />

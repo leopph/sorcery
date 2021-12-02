@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Component.hpp"
-#include "../api/LeopphApi.hpp"
+#include "../Component.hpp"
+#include "../../api/LeopphApi.hpp"
 
 
 namespace leopph::impl

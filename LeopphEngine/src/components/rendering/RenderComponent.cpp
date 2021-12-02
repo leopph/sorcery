@@ -1,6 +1,6 @@
 #include "RenderComponent.hpp"
 
-#include "../data/DataManager.hpp"
+#include "../../data/DataManager.hpp"
 
 
 namespace leopph::impl

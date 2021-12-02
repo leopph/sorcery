@@ -1,6 +1,6 @@
 #include "InstancedModel.hpp"
 
-#include "../data/DataManager.hpp"
+#include "../../data/DataManager.hpp"
 
 #include <utility>
 

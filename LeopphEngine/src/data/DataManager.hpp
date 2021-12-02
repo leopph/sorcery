@@ -2,9 +2,9 @@
 
 #include "../components/Behavior.hpp"
 #include "../components/Component.hpp"
-#include "../components/InstancedModel.hpp"
 #include "../components/Transform.hpp"
-#include "../components/RenderComponent.hpp"
+#include "../components/rendering/InstancedModel.hpp"
+#include "../components/rendering/RenderComponent.hpp"
 #include "../components/lighting/DirLight.hpp"
 #include "../components/lighting/PointLight.hpp"
 #include "../components/lighting/SpotLight.hpp"

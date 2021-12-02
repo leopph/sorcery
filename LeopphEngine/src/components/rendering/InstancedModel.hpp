@@ -1,7 +1,7 @@
 #pragma once
 
 #include "RenderComponent.hpp"
-#include "../api/LeopphApi.hpp"
+#include "../../api/LeopphApi.hpp"
 
 #include <filesystem>
 
