@@ -27,6 +27,8 @@ namespace leopph::impl
 			it = s_EntitiesAndComponents.begin();
 		}
 
+		s_FileModelData.clear();
+
 		Logger::Instance().Debug("All data have been cleared.");
 	}
 
