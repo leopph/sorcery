@@ -8,7 +8,7 @@ See individual headers for more information.
 #include "../src/components/Behavior.hpp"
 #include "../src/components/Camera.hpp"
 #include "../src/components/Component.hpp"
-#include "../src/components/Model.hpp"
+#include "../src/components/InstancedModel.hpp"
 #include "../src/components/lighting/AmbientLight.hpp"
 #include "../src/components/lighting/DirLight.hpp"
 #include "../src/components/lighting/PointLight.hpp"

@@ -16,12 +16,8 @@ namespace leopph::impl
 			void Render() override;
 
 		private:
-			void RenderShadedObjects(const Matrix4& camViewMat,
-									 const Matrix4& camProjMat,
-									 const std::unordered_map<const ModelImpl*, std::vector< std::pair<Matrix4, Matrix4>>>& modelsAndMats,
-									 const std::vector<const PointLight*>& pointLights,
-									 const std::vector<const SpotLight*>& spotLights);
-
+			void RenderShadedObjects(const Matrix4& camViewMat, const Matrix4& camProjMat,
+									 const std::vector<const PointLight*>& pointLights, const std::vector<const SpotLight*>& spotLights);
 			void RenderSkybox(const Matrix4& camViewMat, const Matrix4& camProjMat);
 
 			ShaderFamily m_ObjectShader;

@@ -6,7 +6,7 @@
     <ClCompile Include="src\rendering\opengl\InitGl.cpp" />
     <ClCompile Include="src\math\LeopphMath.cpp" />
     <ClCompile Include="src\components\lighting\Light.cpp" />
-    <ClCompile Include="src\rendering\geometry\Mesh.cpp" />
+    <ClCompile Include="src\rendering\geometry\InstancedMesh.cpp" />
     <ClCompile Include="src\entity\Entity.cpp" />
     <ClCompile Include="src\timing\leopphtime.cpp" />
     <ClCompile Include="src\windowing\GlWindow.cpp" />
@@ -17,13 +17,13 @@
     <ClCompile Include="src\math\Quaternion.cpp" />
     <ClCompile Include="src\components\Component.cpp" />
     <ClCompile Include="vendor\stb_image\stb_image.cpp" />
-    <ClCompile Include="src\components\Model.cpp" />
+    <ClCompile Include="src\components\InstancedModel.cpp" />
     <ClCompile Include="src\windowing\WindowBase.cpp" />
     <ClCompile Include="src\entry\launch.cpp" />
     <ClCompile Include="src\timing\timer.cpp" />
     <ClCompile Include="src\config\Settings.cpp" />
     <ClCompile Include="src\util\logger.cpp" />
-    <ClCompile Include="src\rendering\Material.cpp" />
+    <ClCompile Include="src\rendering\geometry\Material.cpp" />
     <ClCompile Include="src\misc\Color.cpp" />
     <ClCompile Include="src\components\lighting\AmbientLight.cpp" />
     <ClCompile Include="src\components\Transform.cpp" />
@@ -39,7 +39,7 @@
     <ClCompile Include="src\events\handling\EventReceiverBase.cpp" />
     <ClCompile Include="src\events\KeyEvent.cpp" />
     <ClCompile Include="src\events\MouseEvent.cpp" />
-    <ClCompile Include="src\rendering\geometry\ModelImpl.cpp" />
+    <ClCompile Include="src\rendering\geometry\InstancedModelImpl.cpp" />
     <ClCompile Include="src\rendering\renderers\Renderer.cpp" />
     <ClCompile Include="src\rendering\TextureImpl.cpp" />
     <ClCompile Include="src\rendering\Texture.cpp" />
@@ -62,6 +62,11 @@
     <ClCompile Include="src\rendering\RenderTexture.cpp" />
     <ClCompile Include="vendor\glad\src\gl.c" />
     <ClCompile Include="src\data\DataManager.cpp" />
+    <ClCompile Include="src\rendering\geometry\ModelData.cpp" />
+    <ClCompile Include="src\rendering\geometry\FileModelData.cpp" />
+    <ClCompile Include="src\rendering\geometry\Renderable.cpp" />
+    <ClCompile Include="src\util\equal\InstancedModelImplEqual.cpp" />
+    <ClCompile Include="src\util\hash\InstancedModelImplHash.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\Behavior.hpp" />
@@ -75,18 +80,18 @@
     <ClInclude Include="src\math\LeopphMath.hpp" />
     <ClInclude Include="src\components\lighting\Light.hpp" />
     <ClInclude Include="src\math\Matrix.hpp" />
-    <ClInclude Include="src\rendering\geometry\Mesh.hpp" />
+    <ClInclude Include="src\rendering\geometry\InstancedMesh.hpp" />
     <ClInclude Include="src\entity\Entity.hpp" />
     <ClInclude Include="src\components\lighting\PointLight.hpp" />
     <ClInclude Include="src\math\Quaternion.hpp" />
     <ClInclude Include="src\rendering\renderers\ForwardRenderer.hpp" />
     <ClInclude Include="src\timing\leopphtime.h" />
     <ClInclude Include="src\math\Vector.hpp" />
-    <ClInclude Include="src\rendering\vertex.h" />
+    <ClInclude Include="src\rendering\geometry\Vertex.hpp" />
     <ClInclude Include="src\windowing\GlWindow.hpp" />
     <ClInclude Include="include\Leopph.hpp" />
     <ClInclude Include="src\components\Component.hpp" />
-    <ClInclude Include="src\components\Model.hpp" />
+    <ClInclude Include="src\components\InstancedModel.hpp" />
     <ClInclude Include="src\windowing\WindowBase.hpp" />
     <ClInclude Include="src\config\Settings.hpp" />
     <ClInclude Include="src\input\keycodes.h" />
@@ -96,7 +101,7 @@
     <ClInclude Include="src\entry\appstart.h" />
     <ClInclude Include="src\timing\timer.h" />
     <ClInclude Include="src\util\logger.h" />
-    <ClInclude Include="src\rendering\Material.hpp" />
+    <ClInclude Include="src\rendering\geometry\Material.hpp" />
     <ClInclude Include="src\misc\Color.hpp" />
     <ClInclude Include="src\util\hash\PathHash.hpp" />
     <ClInclude Include="src\misc\CameraBackground.hpp" />
@@ -116,7 +121,7 @@
     <ClInclude Include="src\events\KeyEvent.hpp" />
     <ClInclude Include="src\events\MouseEvent.hpp" />
     <ClInclude Include="src\events\FrameEndEvent.hpp" />
-    <ClInclude Include="src\rendering\geometry\ModelImpl.hpp" />
+    <ClInclude Include="src\rendering\geometry\InstancedModelImpl.hpp" />
     <ClInclude Include="src\rendering\renderers\Renderer.hpp" />
     <ClInclude Include="src\rendering\TextureImpl.hpp" />
     <ClInclude Include="src\rendering\Texture.hpp" />
@@ -144,6 +149,12 @@
     <ClInclude Include="src\util\hash\PathedHash.hpp" />
     <ClInclude Include="src\util\equal\PathedEqual.hpp" />
     <ClInclude Include="src\util\concepts\Pathed.hpp" />
+    <ClInclude Include="src\rendering\geometry\MeshData.hpp" />
+    <ClInclude Include="src\rendering\geometry\ModelData.hpp" />
+    <ClInclude Include="src\rendering\geometry\FileModelData.hpp" />
+    <ClInclude Include="src\rendering\geometry\Renderable.hpp" />
+    <ClInclude Include="src\util\equal\InstancedModelImplEqual.hpp" />
+    <ClInclude Include="src\util\hash\InstancedModelImplHash.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\cpp.hint" />

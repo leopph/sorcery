@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../../rendering/geometry/ModelImpl.hpp"
 #include "../concepts/Pathed.hpp"
 
 #include <cstddef>

@@ -1,10 +1,9 @@
 #pragma once
 
-#include "Texture.hpp"
-#include "../misc/Color.hpp"
+#include "../Texture.hpp"
+#include "../../misc/Color.hpp"
 
 #include <optional>
-
 
 
 namespace leopph
@@ -12,18 +11,17 @@ namespace leopph
 	class Material
 	{
 		public:
+			Material();
+
 			Color AmbientColor;
 			Color DiffuseColor;
 			Color SpecularColor;
-
-			float Shininess;
 
 			std::optional<impl::Texture> AmbientMap;
 			std::optional<impl::Texture> DiffuseMap;
 			std::optional<impl::Texture> SpecularMap;
 
+			float Shininess;
 			bool TwoSided;
-
-			Material();
 	};
 }

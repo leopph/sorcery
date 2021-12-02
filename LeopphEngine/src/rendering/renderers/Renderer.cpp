@@ -2,7 +2,6 @@
 
 #include "DeferredRenderer.hpp"
 #include "ForwardRenderer.hpp"
-#include "../../components/Model.hpp"
 #include "../../config/Settings.hpp"
 #include "../../data/DataManager.hpp"
 #include "../../util/logger.h"
@@ -13,6 +12,7 @@
 #include <iterator>
 #include <set>
 #include <stdexcept>
+#include <utility>
 
 
 
@@ -38,27 +38,20 @@ namespace leopph::impl
 	Renderer::~Renderer() = default;
 
 
-	const std::unordered_map<const ModelImpl*, std::vector<std::pair<Matrix4, Matrix4>>>& Renderer::CalcAndCollectMatrices()
+	void Renderer::UpdateMatrices()
 	{
-		static std::unordered_map<const ModelImpl*, std::vector<std::pair<Matrix4, Matrix4>>> ret;
-		ret.clear();
-
-		for (const auto& [impl, components] : DataManager::Models())
+		for (const auto& [impl, components] : DataManager::InstancedModels())
 		{
-			auto& matrices = ret[&impl];
-
+			static std::vector<std::pair<Matrix4, Matrix4>> instanceMatrices;
 			for (const auto& component : components)
 			{
-				auto const transform{component->Entity.Transform};
-
+				const auto& transform{component->Entity.Transform};
 				transform->CalculateMatrices();
-
-				const auto& [model, normal]{DataManager::GetMatrices(transform)};
-				matrices.emplace_back(model, normal);
+				instanceMatrices.push_back(DataManager::GetMatrices(transform));
 			}
+			impl.SetInstanceData(instanceMatrices);
+			instanceMatrices.clear();
 		}
-
-		return ret;
 	}
 
 

@@ -11,7 +11,6 @@
 #include "../../math/Matrix.hpp"
 #include "../../math/Vector.hpp"
 #include "../../util/logger.h"
-#include "../geometry/ModelImpl.hpp"
 
 #include <glad/gl.h>
 
@@ -60,21 +59,21 @@ namespace leopph::impl
 			return;
 		}
 
+		UpdateMatrices();
+
 		const auto camViewMat{Camera::Active->ViewMatrix()};
 		const auto camProjMat{Camera::Active->ProjectionMatrix()};
 
-		const auto& modelsAndMats{CalcAndCollectMatrices()};
 		const auto& pointLights{CollectPointLights()};
 		const auto& spotLights{CollectSpotLights()};
 
-		RenderShadedObjects(camViewMat, camProjMat, modelsAndMats, pointLights, spotLights);
+		RenderShadedObjects(camViewMat, camProjMat, pointLights, spotLights);
 		RenderSkybox(camViewMat, camProjMat);
 	}
 
 
 	void ForwardRenderer::RenderShadedObjects(const Matrix4& camViewMat, 
 											  const Matrix4& camProjMat,
-											  const std::unordered_map<const ModelImpl*, std::vector< std::pair<Matrix4, Matrix4>>>& modelsAndMats,
 											  const std::vector<const PointLight*>& pointLights,
 											  const std::vector<const SpotLight*>& spotLights)
 	{
@@ -132,11 +131,11 @@ namespace leopph::impl
 					m_DirLightShadowMap.BindForWriting(i);
 					m_DirLightShadowMap.Clear();
 
-					for (const auto& [modelRes, matrices] : modelsAndMats)
+					for (const auto& renderable : DataManager::Renderables())
 					{
-						if (modelRes->CastsShadow())
+						if (renderable->CastsShadow())
 						{
-							modelRes->DrawDepth(matrices);
+							renderable->DrawDepth();
 						}
 					}
 				}
@@ -194,9 +193,9 @@ namespace leopph::impl
 		objectShader.Use();
 
 		/* Draw the shaded objects */
-		for (const auto& [modelRes, matrices] : modelsAndMats)
+		for (const auto& renderable : DataManager::Renderables())
 		{
-			modelRes->DrawShaded(objectShader, matrices, texCount);
+			renderable->DrawShaded(objectShader, texCount);
 		}
 	}
 

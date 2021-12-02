@@ -2,14 +2,8 @@
 
 #include "../../components/lighting/PointLight.hpp"
 #include "../../components/lighting/SpotLight.hpp"
-#include "../../math/Matrix.hpp"
-#include "../geometry/ModelImpl.hpp"
 
-#include <memory>
-#include <unordered_map>
-#include <utility>
 #include <vector>
-
 
 
 namespace leopph::impl
@@ -23,16 +17,16 @@ namespace leopph::impl
 			Renderer(const Renderer& other) = default;
 			Renderer(Renderer&& other) = default;
 
+			virtual ~Renderer() = 0;
+
 			Renderer& operator=(const Renderer& other) = default;
 			Renderer& operator=(Renderer&& other) = default;
-
-			virtual ~Renderer() = 0;
 
 			virtual void Render() = 0;
 
 
 		protected:
-			static const std::unordered_map<const ModelImpl*, std::vector<std::pair<Matrix4, Matrix4>>>& CalcAndCollectMatrices();
+			static void UpdateMatrices();
 			static const std::vector<const PointLight*>& CollectPointLights();
 			static const std::vector<const SpotLight*>& CollectSpotLights();
 	};

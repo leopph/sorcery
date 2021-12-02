@@ -10,26 +10,26 @@ namespace leopph
 {
 	namespace impl
 	{
-		class ModelImpl;
+		class InstancedModelImpl;
 	}
 
 
 	// The Model class represents a drawable object that can be attached to Entites.
-	class Model final : public Component
+	class InstancedModel final : public Component
 	{
 	public:
 		// Load a Model from a file on disk.
-		LEOPPHAPI explicit Model(leopph::Entity& owner, std::filesystem::path path);
-		LEOPPHAPI Model(const Model& other) = delete;
-		LEOPPHAPI Model(Model&& other) = delete;
+		LEOPPHAPI explicit InstancedModel(leopph::Entity& owner, std::filesystem::path path);
+		LEOPPHAPI InstancedModel(const InstancedModel& other) = delete;
+		LEOPPHAPI InstancedModel(InstancedModel&& other) = delete;
 
-		LEOPPHAPI ~Model() override;
+		LEOPPHAPI ~InstancedModel() override;
 
-		LEOPPHAPI Model& operator=(const Model& other) = delete;
-		LEOPPHAPI Model& operator=(Model&& other) = delete;
+		LEOPPHAPI InstancedModel& operator=(const InstancedModel& other) = delete;
+		LEOPPHAPI InstancedModel& operator=(InstancedModel&& other) = delete;
 
-		// Get the filepath of the loaded Model.
-		LEOPPHAPI const std::filesystem::path& Path() const;
+		// File path of the loaded InstancedModel.
+		const std::filesystem::path Path;
 
 		/* Get whether the Model occludes light from other Models.
 		 * This only works if the Light used also has this property set to true.
@@ -43,6 +43,6 @@ namespace leopph
 
 
 	private:
-		impl::ModelImpl* m_Impl;
+		impl::InstancedModelImpl* m_Impl;
 	};
 }

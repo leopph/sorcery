@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../math/Vector.hpp"
+#include "../../math/Vector.hpp"
 
 namespace leopph::impl
 {

@@ -41,13 +41,13 @@ void leopph::AppStart()
 	portraitEntity->Transform->Parent(groupEntity);
 	portraitEntity->Transform->Rotate(Vector3::Up(), 180);
 	portraitEntity->Transform->LocalPosition(Vector3{0, 0, 5});
-	const auto portrairModel = portraitEntity->AddComponent<Model>("models/portrait/cropped_textured_mesh.obj");
+	const auto portrairModel = portraitEntity->AddComponent<InstancedModel>("models/portrait/cropped_textured_mesh.obj");
 	portrairModel->CastsShadow(true);
 
 	const auto cubeEntity = new Entity{"cube"};
 	cubeEntity->Transform->Parent(groupEntity);
 	cubeEntity->Transform->LocalPosition(Vector3{0, 0, 5});
-	const auto cubeModel = cubeEntity->AddComponent<Model>("models/cube/cube.dae");
+	const auto cubeModel = cubeEntity->AddComponent<InstancedModel>("models/cube/cube.dae");
 	cubeModel->CastsShadow(true);
 	cubeEntity->AddComponent<Rotate>(Vector3::Up(), 30.f);
 

@@ -89,22 +89,23 @@ namespace leopph::impl
 			return;
 		}
 
+		UpdateMatrices();
+
 		const auto camViewMat{Camera::Active->ViewMatrix()};
 		const auto camProjMat{Camera::Active->ProjectionMatrix()};
 
-		const auto& modelsAndMats{CalcAndCollectMatrices()};
 		const auto& pointLights{CollectPointLights()};
 		const auto& spotLights{CollectSpotLights()};
 
-		RenderGeometry(camViewMat, camProjMat, modelsAndMats);
+		RenderGeometry(camViewMat, camProjMat);
 
 		m_RenderTexture.Clear();
 
 		RenderAmbientLight();
 		glEnable(GL_BLEND);
-		RenderDirectionalLights(camViewMat, camProjMat, modelsAndMats);
-		RenderSpotLights(spotLights, modelsAndMats);
-		RenderPointLights(pointLights, modelsAndMats);
+		RenderDirectionalLights(camViewMat, camProjMat);
+		RenderSpotLights(spotLights);
+		RenderPointLights(pointLights);
 		glDisable(GL_BLEND);
 
 		RenderSkybox(camViewMat, camProjMat);
@@ -113,9 +114,7 @@ namespace leopph::impl
 	}
 
 
-	void DeferredRenderer::RenderGeometry(const Matrix4& camViewMat,
-	                                      const Matrix4& camProjMat,
-	                                      const std::unordered_map<const ModelImpl*, std::vector<std::pair<Matrix4, Matrix4>>>& modelsAndMats)
+	void DeferredRenderer::RenderGeometry(const Matrix4& camViewMat, const Matrix4& camProjMat)
 	{
 		static auto gPassFlagInfo{m_GeometryShader.GetFlagInfo()};
 		auto& shader{m_GeometryShader.GetPermutation(gPassFlagInfo)};
@@ -127,9 +126,9 @@ namespace leopph::impl
 		m_GBuffer.BindForWriting();
 		shader.Use();
 
-		for (const auto& [modelRes, matrices] : modelsAndMats)
+		for (const auto& renderable : DataManager::Renderables())
 		{
-			modelRes->DrawShaded(shader, matrices, 0);
+			renderable->DrawShaded(shader, 0);
 		}
 
 		shader.Unuse();
@@ -155,9 +154,7 @@ namespace leopph::impl
 	}
 
 
-	void DeferredRenderer::RenderDirectionalLights(const Matrix4& camViewMat,
-	                                               const Matrix4& camProjMat,
-	                                               const std::unordered_map<const ModelImpl*, std::vector<std::pair<Matrix4, Matrix4>>>& modelsAndMats)
+	void DeferredRenderer::RenderDirectionalLights(const Matrix4& camViewMat, const Matrix4& camProjMat)
 	{
 		const auto& dirLight{DataManager::DirectionalLight()};
 
@@ -211,11 +208,11 @@ namespace leopph::impl
 				m_DirShadowMap.BindForWriting(i);
 				m_DirShadowMap.Clear();
 
-				for (const auto& [modelRes, matrices] : modelsAndMats)
+				for (const auto& renderable : DataManager::Renderables())
 				{
-					if (modelRes->CastsShadow())
+					if (renderable->CastsShadow())
 					{
-						modelRes->DrawDepth(matrices);
+						renderable->DrawDepth();
 					}
 				}
 			}
@@ -255,8 +252,7 @@ namespace leopph::impl
 	}
 
 
-	void DeferredRenderer::RenderSpotLights(const std::vector<const SpotLight*>& spotLights,
-	                                        const std::unordered_map<const ModelImpl*, std::vector<std::pair<Matrix4, Matrix4>>>& modelsAndMats)
+	void DeferredRenderer::RenderSpotLights(const std::vector<const SpotLight*>& spotLights)
 	{
 		if (spotLights.empty())
 		{
@@ -297,11 +293,11 @@ namespace leopph::impl
 
 			shadowShader.Use();
 
-			for (const auto& [modelRes, matrices] : modelsAndMats)
+			for (const auto& renderable : DataManager::Renderables())
 			{
-				if (modelRes->CastsShadow())
+				if (renderable->CastsShadow())
 				{
-					modelRes->DrawDepth(matrices);
+					renderable->DrawDepth();
 				}
 			}
 
@@ -327,8 +323,7 @@ namespace leopph::impl
 	}
 
 
-	void DeferredRenderer::RenderPointLights(const std::vector<const PointLight*>& pointLights,
-	                                         const std::unordered_map<const ModelImpl*, std::vector<std::pair<Matrix4, Matrix4>>>& modelsAndMats)
+	void DeferredRenderer::RenderPointLights(const std::vector<const PointLight*>& pointLights)
 	{
 		if (pointLights.empty())
 		{
@@ -394,11 +389,11 @@ namespace leopph::impl
 				m_PointShadowMap.BindForWriting();
 				shadowShader.Use();
 
-				for (const auto& [modelRes, matrices] : modelsAndMats)
+				for (const auto& renderable : DataManager::Renderables())
 				{
-					if (modelRes->CastsShadow())
+					if (renderable->CastsShadow())
 					{
-						modelRes->DrawDepth(matrices);
+						renderable->DrawDepth();
 					}
 				}
 

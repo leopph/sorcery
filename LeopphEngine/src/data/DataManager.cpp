@@ -11,9 +11,11 @@ namespace leopph::impl
 	std::unordered_set<const SpotLight*> DataManager::s_SpotLights{};
 	std::vector<PointLight*> DataManager::s_PointLights{};
 	std::unordered_map<const Transform*, std::pair<Matrix4, Matrix4>> DataManager::s_Matrices{};
-	std::unordered_map<ModelImpl, std::unordered_set<Model*>, PathedHash<ModelImpl>, PathedEqual<ModelImpl>> DataManager::s_Models{};
 	std::unordered_map<TextureImpl, std::unordered_set<Texture*>, PathedHash<TextureImpl>, PathedEqual<TextureImpl>> DataManager::s_Textures{};
 	std::unordered_map<SkyboxImpl, std::unordered_set<Skybox*>, PathedHash<SkyboxImpl>, PathedEqual<SkyboxImpl>> DataManager::s_Skyboxes{};
+	std::unordered_set<FileModelData, PathedHash<FileModelData>, PathedEqual<FileModelData>> DataManager::s_FileModelData{};
+	std::unordered_set<const Renderable*> DataManager::s_Renderables{};
+	std::unordered_map<InstancedModelImpl, std::unordered_set<InstancedModel*>, InstancedModelImplHash, InstancedModelImplEqual> DataManager::s_InstancedModels{};
 
 
 	void DataManager::Clear()
@@ -161,29 +163,35 @@ namespace leopph::impl
 		return s_Matrices.at(transform);
 	}
 
-	ModelImpl* DataManager::CreateOrGetModelImpl(std::filesystem::path path)
+	InstancedModelImpl& DataManager::CreateOrGetInstancedModelImpl(ModelData& modelData)
 	{
-		return &const_cast<ModelImpl&>(s_Models.emplace(std::move(path), std::unordered_set<Model*>{}).first->first);
+		if (const auto it{s_InstancedModels.find(modelData)};
+			it != s_InstancedModels.end())
+		{
+			return const_cast<InstancedModelImpl&>(it->first);
+		}
+
+		return const_cast<InstancedModelImpl&>(s_InstancedModels.emplace(modelData, std::unordered_set<InstancedModel*>{}).first->first);
 	}
 
-	void DataManager::DestroyModelImpl(ModelImpl* const model)
+	void DataManager::DestroyInstancedModelImpl(const InstancedModelImpl& model)
 	{
-		s_Models.erase(*model);
+		s_InstancedModels.erase(model);
 	}
 
-	void DataManager::RegisterModelComponent(ModelImpl* const model, Model* const component)
+	void DataManager::RegisterModelComponent(const InstancedModelImpl& model, InstancedModel* const component)
 	{
-		s_Models.at(*model).insert(component);
+		s_InstancedModels.at(model).insert(component);
 	}
 
-	void DataManager::UnregisterModelComponent(ModelImpl* const model, Model* const component)
+	void DataManager::UnregisterModelComponent(const InstancedModelImpl& model, InstancedModel* const component)
 	{
-		s_Models.at(*model).erase(component);
+		s_InstancedModels.at(model).erase(component);
 	}
 
-	const std::unordered_map<ModelImpl, std::unordered_set<Model*>, PathedHash<ModelImpl>, PathedEqual<ModelImpl>>& DataManager::Models()
+	const std::unordered_map<InstancedModelImpl, std::unordered_set<InstancedModel*>, InstancedModelImplHash, InstancedModelImplEqual>& DataManager::InstancedModels()
 	{
-		return s_Models;
+		return s_InstancedModels;
 	}
 
 	TextureImpl* DataManager::CreateOrGetTextureImpl(std::filesystem::path path)
@@ -234,5 +242,31 @@ namespace leopph::impl
 	const std::unordered_map<SkyboxImpl, std::unordered_set<Skybox*>, PathedHash<SkyboxImpl>, PathedEqual<SkyboxImpl>>& DataManager::Skyboxes()
 	{
 		return s_Skyboxes;
+	}
+
+	FileModelData& DataManager::LoadOrGetFileModelData(std::filesystem::path path)
+	{
+		if (const auto it{s_FileModelData.find(path)};
+			it != s_FileModelData.end())
+		{
+			return const_cast<FileModelData&>(*it);
+		}
+
+		return const_cast<FileModelData&>(*s_FileModelData.emplace(std::move(path)).first);
+	}
+
+	const std::unordered_set<const Renderable*>& DataManager::Renderables()
+	{
+		return s_Renderables;
+	}
+
+	void DataManager::RegisterRenderable(const Renderable* const renderable)
+	{
+		s_Renderables.insert(renderable);
+	}
+
+	void DataManager::UnregisterRenderable(const Renderable* const renderable)
+	{
+		s_Renderables.erase(renderable);
 	}
 }
