@@ -4,6 +4,7 @@
 #include "../components/Component.hpp"
 #include "../components/InstancedModel.hpp"
 #include "../components/Transform.hpp"
+#include "../components/RenderComponent.hpp"
 #include "../components/lighting/DirLight.hpp"
 #include "../components/lighting/PointLight.hpp"
 #include "../components/lighting/SpotLight.hpp"
@@ -67,6 +68,10 @@ namespace leopph::impl
 		static const std::unordered_set<const Renderable*>& Renderables();
 		static void RegisterRenderable(const Renderable* renderable);
 		static void UnregisterRenderable(const Renderable* renderable);
+		
+		static const std::unordered_set<const RenderComponent*>& RenderComponents();
+		static void RegisterRenderComponent(const RenderComponent* renderComponent);
+		static void UnregisterRenderComponent(const RenderComponent* renderComponent);
 
 
 		static void Register(Entity* entity);
@@ -112,6 +117,8 @@ namespace leopph::impl
 		static std::unordered_set<FileModelData, PathedHash<FileModelData>, PathedEqual<FileModelData>> s_FileModelData;
 		// Stores non-owning pointers to all created Renderables. Does not manage lifetime.
 		static std::unordered_set<const Renderable*> s_Renderables;
+		// Stores non-owning pointers to all created RenderComponents. Does not manage lifetime.
+		static std::unordered_set<const RenderComponent*> s_RenderComponents;
 		// Stores all InstancedModelImpl instances along with all the InstancedModel components pointing to it.
 		static std::unordered_map<InstancedModelImpl, std::unordered_set<InstancedModel*>, InstancedModelImplHash, InstancedModelImplEqual> s_InstancedModels;
 	};

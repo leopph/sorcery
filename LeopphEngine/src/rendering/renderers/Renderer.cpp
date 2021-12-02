@@ -40,16 +40,19 @@ namespace leopph::impl
 
 	void Renderer::UpdateMatrices()
 	{
-		for (const auto& [impl, components] : DataManager::InstancedModels())
+		std::ranges::for_each(DataManager::RenderComponents(), [](const auto& renderComponent)
+		{
+			renderComponent->Entity.Transform->CalculateMatrices();
+		});
+
+		for (const auto& [modelImpl, modelComponents] : DataManager::InstancedModels())
 		{
 			static std::vector<std::pair<Matrix4, Matrix4>> instanceMatrices;
-			for (const auto& component : components)
+			std::ranges::for_each(modelComponents, [&](const auto& modelComponent)
 			{
-				const auto& transform{component->Entity.Transform};
-				transform->CalculateMatrices();
-				instanceMatrices.push_back(DataManager::GetMatrices(transform));
-			}
-			impl.SetInstanceData(instanceMatrices);
+				instanceMatrices.emplace_back(DataManager::GetMatrices(modelComponent->Entity.Transform));
+			});
+			modelImpl.SetInstanceData(instanceMatrices);
 			instanceMatrices.clear();
 		}
 	}

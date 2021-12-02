@@ -8,7 +8,7 @@
 namespace leopph
 {
 	InstancedModel::InstancedModel(leopph::Entity& owner, std::filesystem::path path) :
-		Component{owner}, Path{path}, m_Impl{&impl::DataManager::CreateOrGetInstancedModelImpl(impl::DataManager::LoadOrGetFileModelData(std::move(path)))}
+		impl::RenderComponent{owner}, Path{path}, m_Impl{&impl::DataManager::CreateOrGetInstancedModelImpl(impl::DataManager::LoadOrGetFileModelData(std::move(path)))}
 	{
 		impl::DataManager::RegisterModelComponent(*m_Impl, this);
 	}
@@ -33,9 +33,8 @@ namespace leopph
 	}
 
 
-	void InstancedModel::CastsShadow(const bool value) const
+	void InstancedModel::CastsShadow(bool value)
 	{
 		m_Impl->CastsShadow(value);
 	}
-
 }

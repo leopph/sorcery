@@ -67,6 +67,7 @@
     <ClCompile Include="src\rendering\geometry\Renderable.cpp" />
     <ClCompile Include="src\util\equal\InstancedModelImplEqual.cpp" />
     <ClCompile Include="src\util\hash\InstancedModelImplHash.cpp" />
+    <ClCompile Include="src\components\RenderComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\Behavior.hpp" />
@@ -155,6 +156,7 @@
     <ClInclude Include="src\rendering\geometry\Renderable.hpp" />
     <ClInclude Include="src\util\equal\InstancedModelImplEqual.hpp" />
     <ClInclude Include="src\util\hash\InstancedModelImplHash.hpp" />
+    <ClInclude Include="src\components\RenderComponent.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\cpp.hint" />
