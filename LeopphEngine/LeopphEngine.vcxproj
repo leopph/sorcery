@@ -124,7 +124,9 @@
     <ClInclude Include="src\components\lighting\AttenuatedLight.hpp" />
     <ClInclude Include="src\components\lighting\DirLight.hpp" />
     <ClInclude Include="src\components\lighting\SpotLight.hpp" />
+    <ClInclude Include="src\components\rendering\InstancedRenderComponent.hpp" />
     <ClInclude Include="src\components\rendering\Model.hpp" />
+    <ClInclude Include="src\components\rendering\NonInstancedRenderComponent.hpp" />
     <ClInclude Include="src\components\rendering\RenderComponent.hpp" />
     <ClInclude Include="src\data\Proxy.hpp" />
     <ClInclude Include="src\entry\appstart.h" />
@@ -150,10 +152,12 @@
     <ClInclude Include="src\rendering\CascadedShadowMap.hpp" />
     <ClInclude Include="src\rendering\CubeShadowMap.hpp" />
     <ClInclude Include="src\rendering\geometry\FileModelData.hpp" />
+    <ClInclude Include="src\rendering\geometry\Mesh.hpp" />
     <ClInclude Include="src\rendering\geometry\MeshData.hpp" />
     <ClInclude Include="src\rendering\geometry\ModelData.hpp" />
-    <ClInclude Include="src\rendering\geometry\InstancedModelImpl.hpp" />
+    <ClInclude Include="src\rendering\geometry\InstancedRenderable.hpp" />
     <ClInclude Include="src\rendering\GeometryBuffer.hpp" />
+    <ClInclude Include="src\rendering\geometry\NonInstancedRenderable.hpp" />
     <ClInclude Include="src\rendering\geometry\Renderable.hpp" />
     <ClInclude Include="src\rendering\renderers\DeferredRenderer.hpp" />
     <ClInclude Include="src\rendering\geometry\Material.hpp" />
@@ -172,12 +176,14 @@
     <ClInclude Include="src\misc\CameraBackground.hpp" />
     <ClInclude Include="src\util\concepts\Pathed.hpp" />
     <ClInclude Include="src\util\containers\Bimap.hpp" />
+    <ClInclude Include="src\util\equal\PointerEqual.hpp" />
     <ClInclude Include="src\util\equal\EntityEqual.hpp" />
-    <ClInclude Include="src\util\equal\InstancedModelImplEqual.hpp" />
+    <ClInclude Include="src\util\equal\RenderableEqual.hpp" />
     <ClInclude Include="src\util\equal\PathedEqual.hpp" />
     <ClInclude Include="src\util\equal\ShaderTypeEqual.hpp" />
+    <ClInclude Include="src\util\hash\PointerHash.hpp" />
     <ClInclude Include="src\util\hash\EntityHash.hpp" />
-    <ClInclude Include="src\util\hash\InstancedModelImplHash.hpp" />
+    <ClInclude Include="src\util\hash\RenderableHash.hpp" />
     <ClInclude Include="src\util\hash\PathedHash.hpp" />
     <ClInclude Include="src\util\hash\ShaderTypeHash.hpp" />
     <ClInclude Include="src\util\interface\OpenGLAdapter.hpp" />
@@ -213,8 +219,9 @@
     <ClCompile Include="src\components\lighting\AttenuatedLight.cpp" />
     <ClCompile Include="src\components\lighting\DirLight.cpp" />
     <ClCompile Include="src\components\lighting\SpotLight.cpp" />
+    <ClCompile Include="src\components\rendering\InstancedRenderComponent.cpp" />
     <ClCompile Include="src\components\rendering\Model.cpp" />
-    <ClCompile Include="src\components\rendering\RenderComponent.cpp" />
+    <ClCompile Include="src\components\rendering\NonInstancedRenderComponent.cpp" />
     <ClCompile Include="src\config\Settings.cpp" />
     <ClCompile Include="src\data\DataManager.cpp" />
     <ClCompile Include="src\entry\launch.cpp" />
@@ -232,9 +239,11 @@
     <ClCompile Include="src\rendering\CascadedShadowMap.cpp" />
     <ClCompile Include="src\rendering\CubeShadowMap.cpp" />
     <ClCompile Include="src\rendering\geometry\FileModelData.cpp" />
+    <ClCompile Include="src\rendering\geometry\Mesh.cpp" />
     <ClCompile Include="src\rendering\geometry\ModelData.cpp" />
-    <ClCompile Include="src\rendering\geometry\InstancedModelImpl.cpp" />
+    <ClCompile Include="src\rendering\geometry\InstancedRenderable.cpp" />
     <ClCompile Include="src\rendering\GeometryBuffer.cpp" />
+    <ClCompile Include="src\rendering\geometry\NonInstancedRenderable.cpp" />
     <ClCompile Include="src\rendering\geometry\Renderable.cpp" />
     <ClCompile Include="src\rendering\renderers\DeferredRenderer.cpp" />
     <ClCompile Include="src\rendering\geometry\Material.cpp" />
@@ -250,10 +259,10 @@
     <ClCompile Include="src\rendering\TextureImpl.cpp" />
     <ClCompile Include="src\timing\timer.cpp" />
     <ClCompile Include="src\util\equal\EntityEqual.cpp" />
-    <ClCompile Include="src\util\equal\InstancedModelImplEqual.cpp" />
+    <ClCompile Include="src\util\equal\RenderableEqual.cpp" />
     <ClCompile Include="src\util\equal\ShaderTypeEqual.cpp" />
     <ClCompile Include="src\util\hash\EntityHash.cpp" />
-    <ClCompile Include="src\util\hash\InstancedModelImplHash.cpp" />
+    <ClCompile Include="src\util\hash\RenderableHash.cpp" />
     <ClCompile Include="src\util\hash\PathHash.cpp" />
     <ClCompile Include="src\util\hash\ShaderTypeHash.cpp" />
     <ClCompile Include="src\util\interface\OpenGLAdapter.cpp" />
@@ -283,13 +292,13 @@
     <CustomBuild Include="src\rendering\shaders\glsl\deferred\GPassObjectFrag.frag">
       <FileType>Document</FileType>
     </CustomBuild>
-    <CustomBuild Include="src\rendering\shaders\glsl\deferred\GPassObjectVert.vert">
+    <CustomBuild Include="src\rendering\shaders\glsl\deferred\GPassObjectVertInstanced.vert">
       <FileType>Document</FileType>
     </CustomBuild>
     <CustomBuild Include="src\rendering\shaders\glsl\forward\ObjectFrag.frag">
       <FileType>Document</FileType>
     </CustomBuild>
-    <CustomBuild Include="src\rendering\shaders\glsl\shadows\ShadowMapVert.vert">
+    <CustomBuild Include="src\rendering\shaders\glsl\shadows\ShadowMapVertInstanced.vert">
       <FileType>Document</FileType>
     </CustomBuild>
     <CustomBuild Include="src\rendering\shaders\glsl\SkyboxFrag.frag">
@@ -298,7 +307,7 @@
     <CustomBuild Include="src\rendering\shaders\glsl\SkyboxVert.vert">
       <FileType>Document</FileType>
     </CustomBuild>
-    <CustomBuild Include="src\rendering\shaders\glsl\forward\ObjectVert.vert">
+    <CustomBuild Include="src\rendering\shaders\glsl\forward\ObjectVertInstanced.vert">
       <FileType>Document</FileType>
     </CustomBuild>
     <CustomBuild Include="src\rendering\shaders\glsl\deferred\LightPassVert.vert">
@@ -316,10 +325,22 @@
     <CustomBuild Include="src\rendering\shaders\glsl\shadows\CubeShadowMapGeom.geom">
       <FileType>Document</FileType>
     </CustomBuild>
-    <CustomBuild Include="src\rendering\shaders\glsl\shadows\CubeShadowMapVert.vert">
+    <CustomBuild Include="src\rendering\shaders\glsl\shadows\CubeShadowMapVertInstanced.vert">
       <FileType>Document</FileType>
     </CustomBuild>
     <CustomBuild Include="src\rendering\shaders\glsl\deferred\PointLightPassFrag.frag">
+      <FileType>Document</FileType>
+    </CustomBuild>
+    <CustomBuild Include="src\rendering\shaders\glsl\deferred\GPassObjectVert.vert">
+      <FileType>Document</FileType>
+    </CustomBuild>
+    <CustomBuild Include="src\rendering\shaders\glsl\forward\ObjectVert.vert">
+      <FileType>Document</FileType>
+    </CustomBuild>
+    <CustomBuild Include="src\rendering\shaders\glsl\shadows\CubeShadowMapVert.vert">
+      <FileType>Document</FileType>
+    </CustomBuild>
+    <CustomBuild Include="src\rendering\shaders\glsl\shadows\ShadowMapVert.vert">
       <FileType>Document</FileType>
     </CustomBuild>
   </ItemGroup>

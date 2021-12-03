@@ -14,9 +14,8 @@ namespace leopph::impl
 	std::unordered_map<TextureImpl, std::unordered_set<Texture*>, PathedHash<TextureImpl>, PathedEqual<TextureImpl>> DataManager::s_Textures{};
 	std::unordered_map<SkyboxImpl, std::unordered_set<Skybox*>, PathedHash<SkyboxImpl>, PathedEqual<SkyboxImpl>> DataManager::s_Skyboxes{};
 	std::unordered_set<FileModelData, PathedHash<FileModelData>, PathedEqual<FileModelData>> DataManager::s_FileModelData{};
-	std::unordered_set<const Renderable*> DataManager::s_Renderables{};
-	std::unordered_set<const RenderComponent*> DataManager::s_RenderComponents{};
-	std::unordered_map<InstancedModelImpl, std::unordered_set<InstancedModel*>, InstancedModelImplHash, InstancedModelImplEqual> DataManager::s_InstancedModels{};
+	std::unordered_map<InstancedRenderable, std::unordered_set<InstancedRenderComponent*>, RenderableHash, RenderableEqual> DataManager::s_InstancedRenderables{};
+	std::unordered_map<std::unique_ptr<NonInstancedRenderable>, NonInstancedRenderComponent*, PointerHash, PointerEqual> DataManager::s_NonInstancedRenderables{};
 
 
 	void DataManager::Clear()
@@ -166,35 +165,35 @@ namespace leopph::impl
 		return s_Matrices.at(transform);
 	}
 
-	InstancedModelImpl& DataManager::CreateOrGetInstancedModelImpl(ModelData& modelData)
+	InstancedRenderable& DataManager::CreateOrGetInstancedRenderable(ModelData& modelData)
 	{
-		if (const auto it{s_InstancedModels.find(modelData)};
-			it != s_InstancedModels.end())
+		if (const auto it{s_InstancedRenderables.find(modelData)};
+			it != s_InstancedRenderables.end())
 		{
-			return const_cast<InstancedModelImpl&>(it->first);
+			return const_cast<InstancedRenderable&>(it->first);
 		}
 
-		return const_cast<InstancedModelImpl&>(s_InstancedModels.emplace(modelData, std::unordered_set<InstancedModel*>{}).first->first);
+		return const_cast<InstancedRenderable&>(s_InstancedRenderables.emplace(modelData, std::unordered_set<InstancedRenderComponent*>{}).first->first);
 	}
 
-	void DataManager::DestroyInstancedModelImpl(const InstancedModelImpl& model)
+	void DataManager::DestroyInstancedRenderable(const InstancedRenderable& renderable)
 	{
-		s_InstancedModels.erase(model);
+		s_InstancedRenderables.erase(renderable);
 	}
 
-	void DataManager::RegisterModelComponent(const InstancedModelImpl& model, InstancedModel* const component)
+	void DataManager::RegisterInstancedRenderComponent(const InstancedRenderable& renderable, InstancedRenderComponent * const component)
 	{
-		s_InstancedModels.at(model).insert(component);
+		s_InstancedRenderables.at(renderable).insert(component);
 	}
 
-	void DataManager::UnregisterModelComponent(const InstancedModelImpl& model, InstancedModel* const component)
+	void DataManager::UnregisterInstancedRenderComponent(const InstancedRenderable& renderable, InstancedRenderComponent* const component)
 	{
-		s_InstancedModels.at(model).erase(component);
+		s_InstancedRenderables.at(renderable).erase(component);
 	}
 
-	const std::unordered_map<InstancedModelImpl, std::unordered_set<InstancedModel*>, InstancedModelImplHash, InstancedModelImplEqual>& DataManager::InstancedModels()
+	const std::unordered_map<InstancedRenderable, std::unordered_set<InstancedRenderComponent*>, RenderableHash, RenderableEqual>& DataManager::InstancedRenderables()
 	{
-		return s_InstancedModels;
+		return s_InstancedRenderables;
 	}
 
 	TextureImpl* DataManager::CreateOrGetTextureImpl(std::filesystem::path path)
@@ -269,33 +268,18 @@ namespace leopph::impl
 		return const_cast<FileModelData&>(*s_FileModelData.emplace(std::move(path)).first);
 	}
 
-	const std::unordered_set<const Renderable*>& DataManager::Renderables()
+	NonInstancedRenderable& DataManager::CreateNonInstancedRenderable(ModelData& modelData, NonInstancedRenderComponent* const component)
 	{
-		return s_Renderables;
+		return *s_NonInstancedRenderables.emplace(new NonInstancedRenderable{modelData}, component).first->first;
 	}
 
-	void DataManager::RegisterRenderable(const Renderable* const renderable)
+	void DataManager::DestroyNonInstancedRenderable(const NonInstancedRenderable& renderable)
 	{
-		s_Renderables.insert(renderable);
+		s_NonInstancedRenderables.erase(s_NonInstancedRenderables.find(&renderable));
 	}
 
-	void DataManager::UnregisterRenderable(const Renderable* const renderable)
+	const std::unordered_map<std::unique_ptr<NonInstancedRenderable>, NonInstancedRenderComponent*, PointerHash, PointerEqual>& DataManager::NonInstancedRenderables()
 	{
-		s_Renderables.erase(renderable);
-	}
-
-	const std::unordered_set<const RenderComponent*>& DataManager::RenderComponents()
-	{
-		return s_RenderComponents;
-	} 
-
-	void DataManager::RegisterRenderComponent(const RenderComponent* const renderComponent)
-	{
-		s_RenderComponents.insert(renderComponent);
-	}
-
-	void DataManager::UnregisterRenderComponent(const RenderComponent* const renderComponent)
-	{
-		s_RenderComponents.erase(renderComponent);
+		return s_NonInstancedRenderables;
 	}
 }

@@ -39,7 +39,7 @@
     <ClCompile Include="src\events\handling\EventReceiverBase.cpp" />
     <ClCompile Include="src\events\KeyEvent.cpp" />
     <ClCompile Include="src\events\MouseEvent.cpp" />
-    <ClCompile Include="src\rendering\geometry\InstancedModelImpl.cpp" />
+    <ClCompile Include="src\rendering\geometry\InstancedRenderable.cpp" />
     <ClCompile Include="src\rendering\renderers\Renderer.cpp" />
     <ClCompile Include="src\rendering\TextureImpl.cpp" />
     <ClCompile Include="src\rendering\Texture.cpp" />
@@ -65,10 +65,13 @@
     <ClCompile Include="src\rendering\geometry\ModelData.cpp" />
     <ClCompile Include="src\rendering\geometry\FileModelData.cpp" />
     <ClCompile Include="src\rendering\geometry\Renderable.cpp" />
-    <ClCompile Include="src\util\equal\InstancedModelImplEqual.cpp" />
-    <ClCompile Include="src\util\hash\InstancedModelImplHash.cpp" />
-    <ClCompile Include="src\components\rendering\RenderComponent.cpp" />
+    <ClCompile Include="src\util\equal\RenderableEqual.cpp" />
+    <ClCompile Include="src\util\hash\RenderableHash.cpp" />
     <ClCompile Include="src\components\rendering\Model.cpp" />
+    <ClCompile Include="src\rendering\geometry\NonInstancedRenderable.cpp" />
+    <ClCompile Include="src\rendering\geometry\Mesh.cpp" />
+    <ClCompile Include="src\components\rendering\InstancedRenderComponent.cpp" />
+    <ClCompile Include="src\components\rendering\NonInstancedRenderComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\Behavior.hpp" />
@@ -123,7 +126,7 @@
     <ClInclude Include="src\events\KeyEvent.hpp" />
     <ClInclude Include="src\events\MouseEvent.hpp" />
     <ClInclude Include="src\events\FrameEndEvent.hpp" />
-    <ClInclude Include="src\rendering\geometry\InstancedModelImpl.hpp" />
+    <ClInclude Include="src\rendering\geometry\InstancedRenderable.hpp" />
     <ClInclude Include="src\rendering\renderers\Renderer.hpp" />
     <ClInclude Include="src\rendering\TextureImpl.hpp" />
     <ClInclude Include="src\rendering\Texture.hpp" />
@@ -155,10 +158,16 @@
     <ClInclude Include="src\rendering\geometry\ModelData.hpp" />
     <ClInclude Include="src\rendering\geometry\FileModelData.hpp" />
     <ClInclude Include="src\rendering\geometry\Renderable.hpp" />
-    <ClInclude Include="src\util\equal\InstancedModelImplEqual.hpp" />
-    <ClInclude Include="src\util\hash\InstancedModelImplHash.hpp" />
+    <ClInclude Include="src\util\equal\RenderableEqual.hpp" />
+    <ClInclude Include="src\util\hash\RenderableHash.hpp" />
     <ClInclude Include="src\components\rendering\RenderComponent.hpp" />
     <ClInclude Include="src\components\rendering\Model.hpp" />
+    <ClInclude Include="src\rendering\geometry\NonInstancedRenderable.hpp" />
+    <ClInclude Include="src\rendering\geometry\Mesh.hpp" />
+    <ClInclude Include="src\components\rendering\InstancedRenderComponent.hpp" />
+    <ClInclude Include="src\components\rendering\NonInstancedRenderComponent.hpp" />
+    <ClInclude Include="src\util\equal\PointerEqual.hpp" />
+    <ClInclude Include="src\util\hash\PointerHash.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\cpp.hint" />
@@ -166,18 +175,22 @@
   <ItemGroup>
     <CustomBuild Include="src\rendering\shaders\glsl\SkyboxVert.vert" />
     <CustomBuild Include="src\rendering\shaders\glsl\SkyboxFrag.frag" />
-    <CustomBuild Include="src\rendering\shaders\glsl\forward\ObjectVert.vert" />
+    <CustomBuild Include="src\rendering\shaders\glsl\forward\ObjectVertInstanced.vert" />
     <CustomBuild Include="src\rendering\shaders\glsl\forward\ObjectFrag.frag" />
-    <CustomBuild Include="src\rendering\shaders\glsl\shadows\ShadowMapVert.vert" />
+    <CustomBuild Include="src\rendering\shaders\glsl\shadows\ShadowMapVertInstanced.vert" />
     <CustomBuild Include="src\rendering\shaders\glsl\deferred\LightPassVert.vert" />
-    <CustomBuild Include="src\rendering\shaders\glsl\deferred\GPassObjectVert.vert" />
+    <CustomBuild Include="src\rendering\shaders\glsl\deferred\GPassObjectVertInstanced.vert" />
     <CustomBuild Include="src\rendering\shaders\glsl\deferred\GPassObjectFrag.frag" />
     <CustomBuild Include="src\rendering\shaders\glsl\deferred\DirLightPassFrag.frag" />
     <CustomBuild Include="src\rendering\shaders\glsl\deferred\AmbLightFrag.frag" />
     <CustomBuild Include="src\rendering\shaders\glsl\deferred\SpotLightPassFrag.frag" />
     <CustomBuild Include="src\rendering\shaders\glsl\shadows\CubeShadowMapFrag.frag" />
     <CustomBuild Include="src\rendering\shaders\glsl\shadows\CubeShadowMapGeom.geom" />
-    <CustomBuild Include="src\rendering\shaders\glsl\shadows\CubeShadowMapVert.vert" />
+    <CustomBuild Include="src\rendering\shaders\glsl\shadows\CubeShadowMapVertInstanced.vert" />
     <CustomBuild Include="src\rendering\shaders\glsl\deferred\PointLightPassFrag.frag" />
+    <CustomBuild Include="src\rendering\shaders\glsl\deferred\GPassObjectVert.vert" />
+    <CustomBuild Include="src\rendering\shaders\glsl\shadows\CubeShadowMapVert.vert" />
+    <CustomBuild Include="src\rendering\shaders\glsl\forward\ObjectVert.vert" />
+    <CustomBuild Include="src\rendering\shaders\glsl\shadows\ShadowMapVert.vert" />
   </ItemGroup>
 </Project>

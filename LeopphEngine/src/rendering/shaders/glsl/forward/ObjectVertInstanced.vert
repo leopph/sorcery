@@ -3,14 +3,14 @@
 layout (location = 0) in vec3 in_Pos;
 layout (location = 1) in vec3 in_Normal;
 layout (location = 2) in vec2 in_TexCoords;
+layout (location = 3) in mat4 in_ModelMatrix;
+layout (location = 7) in mat4 in_NormalMatrix;
 
 layout (location = 0) out vec3 out_FragPos;
 layout (location = 1) out vec3 out_Normal;
 layout (location = 2) out vec2 out_TexCoords;
 
 uniform mat4 u_ViewProjMat;
-uniform mat4 u_ModelMat;
-uniform mat4 u_NormalMat;
 
 #ifdef EXISTS_DIRLIGHT
 #ifdef DIRLIGHT_SHADOW
@@ -21,10 +21,10 @@ layout (location = 3) out float out_ClipPosZ;
 
 void main()
 {
-    vec4 fragPosWorldSpace = vec4(in_Pos, 1.0) * u_ModelMat;
+    vec4 fragPosWorldSpace = vec4(in_Pos, 1.0) * in_ModelMatrix;
 
     out_FragPos = fragPosWorldSpace.xyz;
-    out_Normal = in_Normal * mat3(u_NormalMat);
+    out_Normal = in_Normal * mat3(in_NormalMatrix);
     out_TexCoords = in_TexCoords;
     gl_Position = fragPosWorldSpace * u_ViewProjMat;
 

@@ -1,14 +1,14 @@
-#version 330 core
+#version 410 core
 
-layout(location = 0) in vec3 inPos;
+layout (location = 0) in vec3 in_Pos;
 
-out vec3 texCoords;
+layout (location = 0) out vec3 out_TexCoords;;
 
-uniform mat4 viewMatrix;
-uniform mat4 projectionMatrix;
+uniform mat4 u_ViewProjMat;
+
 
 void main()
 {
-	texCoords = inPos;
-	gl_Position = (vec4(inPos, 1) * viewMatrix * projectionMatrix).xyww;
+	out_TexCoords = in_Pos;
+	gl_Position = (vec4(in_Pos, 1) * u_ViewProjMat).xyww;
 }

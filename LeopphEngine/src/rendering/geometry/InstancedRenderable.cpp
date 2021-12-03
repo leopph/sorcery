@@ -1,4 +1,4 @@
-#include "InstancedModelImpl.hpp"
+#include "InstancedRenderable.hpp"
 
 #include <glad/gl.h>
 
@@ -8,7 +8,7 @@
 
 namespace leopph::impl
 {
-	InstancedModelImpl::InstancedModelImpl(ModelData& modelData) :
+	InstancedRenderable::InstancedRenderable(ModelData& modelData) :
 		Renderable{modelData},
 		m_Meshes{},
 		m_InstanceBuffer{},
@@ -22,12 +22,10 @@ namespace leopph::impl
 		{
 			m_Meshes.emplace_back(std::make_unique<InstancedMesh>(meshData, m_InstanceBuffer));
 		});
-
-		// Register in DataManager
 	}
 
 
-	void InstancedModelImpl::DrawShaded(leopph::impl::ShaderProgram& shader, const std::size_t nextFreeTextureUnit) const
+	void InstancedRenderable::DrawShaded(leopph::impl::ShaderProgram& shader, const std::size_t nextFreeTextureUnit) const
 	{
 		for (const auto& mesh : m_Meshes)
 		{
@@ -36,7 +34,7 @@ namespace leopph::impl
 	}
 
 
-	void InstancedModelImpl::DrawDepth() const
+	void InstancedRenderable::DrawDepth() const
 	{
 		for (const auto& mesh : m_Meshes)
 		{
@@ -45,7 +43,7 @@ namespace leopph::impl
 	}
 
 
-	void InstancedModelImpl::SetInstanceData(const std::vector<std::pair<Matrix4, Matrix4>>& instanceMatrices) const
+	void InstancedRenderable::SetInstanceData(const std::vector<std::pair<Matrix4, Matrix4>>& instanceMatrices) const
 	{
 		m_InstanceCount = instanceMatrices.size();
 
@@ -66,7 +64,7 @@ namespace leopph::impl
 	}
 
 
-	void InstancedModelImpl::Update()
+	void InstancedRenderable::Update()
 	{
 		m_Meshes.clear();
 		std::ranges::for_each(ModelDataSrc.MeshData, [&](auto& meshData)

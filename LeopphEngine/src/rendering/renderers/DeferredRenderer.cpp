@@ -10,7 +10,9 @@
 
 #include <glad/gl.h>
 
+#include <algorithm>
 #include <array>
+#include <iterator>
 
 
 
@@ -18,53 +20,71 @@ namespace leopph::impl
 {
 	DeferredRenderer::DeferredRenderer() :
 		m_ShadowShader{
+	{
+		{ShaderFamily::ShadowMapVertSrc, ShaderType::Vertex}
+	}
+	},
+		m_ShadowShaderInstanced{
 			{
-				{ShaderFamily::ShadowMapVertSrc, ShaderType::Vertex}
+				{ShaderFamily::ShadowMapVertInstancedSrc, ShaderType::Vertex}
 			}
-		},
+	},
 		m_CubeShadowShader{
 			{
 				{ShaderFamily::CubeShadowMapVertSrc, ShaderType::Vertex},
 				{ShaderFamily::CubeShadowMapGeomSrc, ShaderType::Geometry},
 				{ShaderFamily::CubeShadowMapFragSrc, ShaderType::Fragment}
 			}
-		},
+	},
+		m_CubeShadowShaderInstanced{
+	{
+		{ShaderFamily::CubeShadowMapVertInstancedSrc, ShaderType::Vertex},
+		{ShaderFamily::CubeShadowMapGeomSrc, ShaderType::Geometry},
+		{ShaderFamily::CubeShadowMapFragSrc, ShaderType::Fragment}
+	}
+	},
 		m_GeometryShader{
+	{
+		{ShaderFamily::GPassObjectVertSrc, ShaderType::Vertex},
+		{ShaderFamily::GPassObjectFragSrc, ShaderType::Fragment}
+	}
+	},
+		m_GeometryShaderInstanced{
 			{
-				{ShaderFamily::GPassObjectVertSrc, ShaderType::Vertex},
+				{ShaderFamily::GPassObjectVertInstancedSrc, ShaderType::Vertex},
 				{ShaderFamily::GPassObjectFragSrc, ShaderType::Fragment}
 			}
-		},
+	},
 		m_SkyboxShader{
 			{
 				{ShaderFamily::SkyboxVertSrc, ShaderType::Vertex},
 				{ShaderFamily::SkyboxFragSrc, ShaderType::Fragment}
 			}
-		},
+	},
 		m_AmbientShader{
 			{
 				{ShaderFamily::LightPassVertSrc, ShaderType::Vertex},
 				{ShaderFamily::AmbLightFragSrc, ShaderType::Fragment}
 			}
-		},
+	},
 		m_DirLightShader{
 			{
 				{ShaderFamily::LightPassVertSrc, ShaderType::Vertex},
 				{ShaderFamily::DirLightPassFragSrc, ShaderType::Fragment}
 			}
-		},
+	},
 		m_SpotLightShader{
 			{
 				{ShaderFamily::LightPassVertSrc, ShaderType::Vertex},
 				{ShaderFamily::SpotLightPassFragSrc, ShaderType::Fragment}
 			}
-		},
+	},
 		m_PointLightShader{
 			{
 				{ShaderFamily::LightPassVertSrc, ShaderType::Vertex},
 				{ShaderFamily::PointLightPassFragSrc, ShaderType::Fragment}
 			}
-		}
+	}
 	{
 		glEnable(GL_DEPTH_TEST);
 		glDepthFunc(GL_LESS);
@@ -98,6 +118,7 @@ namespace leopph::impl
 		const auto& spotLights{CollectSpotLights()};
 
 		RenderGeometry(camViewMat, camProjMat);
+		RenderGeometry(camViewMat, camProjMat);
 
 		m_RenderTexture.Clear();
 
@@ -116,22 +137,37 @@ namespace leopph::impl
 
 	void DeferredRenderer::RenderGeometry(const Matrix4& camViewMat, const Matrix4& camProjMat)
 	{
-		static auto gPassFlagInfo{m_GeometryShader.GetFlagInfo()};
-		auto& shader{m_GeometryShader.GetPermutation(gPassFlagInfo)};
+		static auto nonInstFlagInfo{m_GeometryShader.GetFlagInfo()};
+		static auto instFlagInfo{m_GeometryShaderInstanced.GetFlagInfo()};
+
+		nonInstFlagInfo.Clear();
+		instFlagInfo.Clear();
+
+		auto& nonInstShader{m_GeometryShader.GetPermutation(nonInstFlagInfo)};
+		auto& instShader{m_GeometryShaderInstanced.GetPermutation(instFlagInfo)};
 
 		m_GBuffer.Clear();
 
-		shader.SetUniform("u_ViewProjectionMatrix", camViewMat * camProjMat);
+		nonInstShader.SetUniform("u_ViewProjMat", camViewMat * camProjMat);
+		instShader.SetUniform("u_ViewProjMat", camViewMat * camProjMat);
 
 		m_GBuffer.BindForWriting();
-		shader.Use();
-
-		for (const auto& renderable : DataManager::Renderables())
+		
+		nonInstShader.Use();
+		for (const auto& [renderable, component] : DataManager::NonInstancedRenderables())
 		{
-			renderable->DrawShaded(shader, 0);
+			const auto& [modelMat, normalMat]{DataManager::GetMatrices(component->Entity.Transform)};
+			nonInstShader.SetUniform("u_ModelMat", modelMat);
+			nonInstShader.SetUniform("u_NormalMat", normalMat);
+			renderable->DrawShaded(nonInstShader, 0);
 		}
 
-		shader.Unuse();
+		instShader.Use();
+		for (const auto& [renderable, components] : DataManager::InstancedRenderables())
+		{
+			renderable.DrawShaded(instShader, 0);
+		}
+
 		m_GBuffer.UnbindFromWriting();
 	}
 
@@ -140,6 +176,7 @@ namespace leopph::impl
 	{
 		static auto ambientFlagInfo{m_AmbientShader.GetFlagInfo()};
 		auto& shader{m_AmbientShader.GetPermutation(ambientFlagInfo)};
+
 		shader.SetUniform("u_AmbientLight", AmbientLight::Instance().Intensity());
 
 		static_cast<void>(m_GBuffer.BindForReading(shader, GeometryBuffer::TextureType::Ambient, 0));
@@ -148,9 +185,6 @@ namespace leopph::impl
 		glDisable(GL_DEPTH_TEST);
 		m_RenderTexture.DrawToTexture();
 		glEnable(GL_DEPTH_TEST);
-
-		shader.Unuse();
-		m_GBuffer.UnbindFromReading(GeometryBuffer::TextureType::Ambient);
 	}
 
 
@@ -163,13 +197,19 @@ namespace leopph::impl
 			return;
 		}
 
-		static auto lightShaderFlagInfo{m_DirLightShader.GetFlagInfo()};
-		static auto shadowShaderFlagInfo{m_ShadowShader.GetFlagInfo()};
+		static auto lightFlagInfo{m_DirLightShader.GetFlagInfo()};
+		static auto nonInstShadowFlagInfo{m_ShadowShader.GetFlagInfo()};
+		static auto instShadowFlagInfo{m_ShadowShaderInstanced.GetFlagInfo()};
 
-		lightShaderFlagInfo["CAST_SHADOW"] = dirLight->CastsShadow();
+		lightFlagInfo.Clear();
+		nonInstShadowFlagInfo.Clear();
+		instShadowFlagInfo.Clear();
 
-		auto& lightShader{m_DirLightShader.GetPermutation(lightShaderFlagInfo)};
-		auto& shadowShader{m_ShadowShader.GetPermutation(shadowShaderFlagInfo)};
+		lightFlagInfo["CAST_SHADOW"] = dirLight->CastsShadow();
+
+		auto& lightShader{m_DirLightShader.GetPermutation(lightFlagInfo)};
+		auto& nonInstShadowShader{m_ShadowShader.GetPermutation(nonInstShadowFlagInfo)};
+		auto& instShadowShader{m_ShadowShaderInstanced.GetPermutation(instShadowFlagInfo)};
 
 		auto texCount{0};
 
@@ -196,29 +236,35 @@ namespace leopph::impl
 			const auto lightViewMatrix{Matrix4::LookAt(dirLight->Range() * -dirLight->Direction(), Vector3{}, Vector3::Up())};
 			const auto cascadeCount{Settings::DirectionalShadowCascadeCount()};
 
-			shadowShader.Use();
-
 			for (std::size_t i = 0; i < cascadeCount; ++i)
 			{
 				const auto lightWorldToClip{m_DirShadowMap.WorldToClipMatrix(i, cameraInverseMatrix, lightViewMatrix)};
 				dirLightMatrices.push_back(lightWorldToClip);
 
-				shadowShader.SetUniform("u_LightWorldToClipMatrix", lightWorldToClip);
+				nonInstShadowShader.SetUniform("u_WorldToClipMat", lightWorldToClip);
+				instShadowShader.SetUniform("u_WorldToClipMat", lightWorldToClip);
 
 				m_DirShadowMap.BindForWriting(i);
 				m_DirShadowMap.Clear();
 
-				for (const auto& renderable : DataManager::Renderables())
+				nonInstShadowShader.Use();
+				for (const auto& [renderable, component] : DataManager::NonInstancedRenderables())
 				{
-					if (renderable->CastsShadow())
+					nonInstShadowShader.SetUniform("u_ModelMat", DataManager::GetMatrices(component->Entity.Transform).first);
+					renderable->DrawDepth();
+				}
+
+				instShadowShader.Use();
+				for (const auto& [renderable, components] : DataManager::InstancedRenderables())
+				{
+					if (renderable.CastsShadow())
 					{
-						renderable->DrawDepth();
+						renderable.DrawDepth();
 					}
 				}
 			}
 
 			m_DirShadowMap.UnbindFromWriting();
-			shadowShader.Unuse();
 
 			for (std::size_t i = 0; i < cascadeCount; ++i)
 			{
@@ -236,19 +282,9 @@ namespace leopph::impl
 		}
 
 		lightShader.Use();
-
 		glDisable(GL_DEPTH_TEST);
 		m_RenderTexture.DrawToTexture();
 		glEnable(GL_DEPTH_TEST);
-
-		lightShader.Unuse();
-
-		if (dirLight->CastsShadow())
-		{
-			m_DirShadowMap.UnbindFromReading();
-		}
-
-		m_GBuffer.UnbindFromReading();
 	}
 
 
@@ -259,10 +295,15 @@ namespace leopph::impl
 			return;
 		}
 
-		static auto lightFlagInfo{m_SpotLightShader.GetFlagInfo()};
-		static auto shadowFlagInfo{m_ShadowShader.GetFlagInfo()};
+		static auto lightFlagInfo{m_DirLightShader.GetFlagInfo()};
+		static auto nonInstShadowFlagInfo{m_ShadowShader.GetFlagInfo()};
+		static auto instShadowFlagInfo{m_ShadowShaderInstanced.GetFlagInfo()};
 
-		auto& shadowShader{m_ShadowShader.GetPermutation(shadowFlagInfo)};
+		nonInstShadowFlagInfo.Clear();
+		instShadowFlagInfo.Clear();
+
+		auto& nonInstShadowShader{m_ShadowShader.GetPermutation(nonInstShadowFlagInfo)};
+		auto& instShadowShader{m_ShadowShaderInstanced.GetPermutation(instShadowFlagInfo)};
 
 		for (const auto& spotLight : spotLights)
 		{
@@ -271,6 +312,7 @@ namespace leopph::impl
 			auto& lightShader{m_SpotLightShader.GetPermutation(lightFlagInfo)};
 
 			auto texCount{0};
+
 			texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::TextureType::Position, texCount);
 			texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::TextureType::Normal, texCount);
 			texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::TextureType::Diffuse, texCount);
@@ -278,7 +320,7 @@ namespace leopph::impl
 			texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::TextureType::Shine, texCount);
 			static_cast<void>(m_SpotShadowMap.BindForReading(lightShader, texCount));
 
-			lightShader.SetUniform("u_CameraPosition", Camera::Active->Entity.Transform->Position());
+			lightShader.SetUniform("u_CamPos", Camera::Active->Entity.Transform->Position());
 
 			const auto lightWorldToClipMat
 			{
@@ -286,18 +328,25 @@ namespace leopph::impl
 				Matrix4::Perspective(math::ToRadians(spotLight->OuterAngle() * 2), 1.f, 0.1f, spotLight->Range())
 			};
 
-			shadowShader.SetUniform("u_LightWorldToClipMatrix", lightWorldToClipMat);
+			nonInstShadowShader.SetUniform("u_WorldToClipMat", lightWorldToClipMat);
+			instShadowShader.SetUniform("u_WorldToClipMat", lightWorldToClipMat);
 
 			m_SpotShadowMap.BindForWriting();
 			m_SpotShadowMap.Clear();
 
-			shadowShader.Use();
-
-			for (const auto& renderable : DataManager::Renderables())
+			nonInstShadowShader.Use();
+			for (const auto& [renderable, component] : DataManager::NonInstancedRenderables())
 			{
-				if (renderable->CastsShadow())
+				nonInstShadowShader.SetUniform("u_ModelMat", DataManager::GetMatrices(component->Entity.Transform).first);
+				renderable->DrawDepth();
+			}
+
+			instShadowShader.Use();
+			for (const auto& [renderable, components] : DataManager::InstancedRenderables())
+			{
+				if (renderable.CastsShadow())
 				{
-					renderable->DrawDepth();
+					renderable.DrawDepth();
 				}
 			}
 
@@ -314,6 +363,7 @@ namespace leopph::impl
 			lightShader.SetUniform("u_SpotLight.innerAngleCosine", math::Cos(math::ToRadians(spotLight->InnerAngle())));
 			lightShader.SetUniform("u_SpotLight.outerAngleCosine", math::Cos(math::ToRadians(spotLight->OuterAngle())));
 			lightShader.SetUniform("u_LightWorldToClipMatrix", lightWorldToClipMat);
+
 			lightShader.Use();
 
 			glDisable(GL_DEPTH_TEST);
@@ -330,18 +380,23 @@ namespace leopph::impl
 			return;
 		}
 
-		static auto lightShaderFlagInfo{m_PointLightShader.GetFlagInfo()};
-		static auto& shadowShader{m_CubeShadowShader.GetPermutation(m_CubeShadowShader.GetFlagInfo())};
+		static auto lightFlagInfo{m_PointLightShader.GetFlagInfo()};
+		static auto nonInstShadowFlagInfo{m_ShadowShader.GetFlagInfo()};
+		static auto instShadowFlagInfo{m_ShadowShaderInstanced.GetFlagInfo()};
+
+		nonInstShadowFlagInfo.Clear();
+		instShadowFlagInfo.Clear();
+
+		auto& nonInstShadowShader{m_CubeShadowShader.GetPermutation(nonInstShadowFlagInfo)};
+		auto& instShadowShader{m_CubeShadowShaderInstanced.GetPermutation(instShadowFlagInfo)};
 
 		static std::vector<Matrix4> shadowViewProjMats;
 
 		for (const auto& pointLight : pointLights)
 		{
-			const auto& lightPos{pointLight->Entity.Transform->Position()};
-
-			lightShaderFlagInfo.Clear();
-			lightShaderFlagInfo["CAST_SHADOW"] = pointLight->CastsShadow();
-			auto& lightShader{m_PointLightShader.GetPermutation(lightShaderFlagInfo)};
+			lightFlagInfo.Clear();
+			lightFlagInfo["CAST_SHADOW"] = pointLight->CastsShadow();
+			auto& lightShader{m_PointLightShader.GetPermutation(lightFlagInfo)};
 
 			auto texCount{0};
 			texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::TextureType::Position, texCount);
@@ -350,7 +405,7 @@ namespace leopph::impl
 			texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::TextureType::Specular, texCount);
 			texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::TextureType::Shine, texCount);
 
-			lightShader.SetUniform("u_PointLight.position", lightPos);
+			lightShader.SetUniform("u_PointLight.position", pointLight->Entity.Transform->Position());
 			lightShader.SetUniform("u_PointLight.diffuseColor", pointLight->Diffuse());
 			lightShader.SetUniform("u_PointLight.specularColor", pointLight->Specular());
 			lightShader.SetUniform("u_PointLight.constant", pointLight->Constant());
@@ -367,37 +422,47 @@ namespace leopph::impl
 
 				shadowViewProjMats.clear();
 
-				for (static const std::array cubeFaceMatrices
-					{
-						Matrix4{0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 1}, // +X
-						Matrix4{0, 0, -1, 0, 0, -1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1}, // -X
-						Matrix4{1, 0, 0, 0, 0, 0, 1, 0, 0, 1 ,0, 0, 0, 0, 0, 1}, // +Y
-						Matrix4{1, 0, 0, 0, 0, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 1}, // -Y
-						Matrix4{1, 0, 0, 0, 0, -1, 0, 0, 0 ,0, 1, 0, 0, 0, 0, 1}, // +Z
-						Matrix4{-1, 0, 0, 0, 0, -1, 0, 0, 0, 0, -1, 0, 0 , 0, 0, 1} // -Z
-					}; const auto& cubeFaceMatrix : cubeFaceMatrices)
+				static const std::array cubeFaceMats
 				{
-					shadowViewProjMats.emplace_back(Matrix4::Translate(-pointLight->Entity.Transform->Position()) * cubeFaceMatrix * shadowProj);
-				}
+					 Matrix4{0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 1}, // +X
+					 Matrix4{0, 0, -1, 0, 0, -1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1}, // -X
+					 Matrix4{1, 0, 0, 0, 0, 0, 1, 0, 0, 1 ,0, 0, 0, 0, 0, 1}, // +Y
+					 Matrix4{1, 0, 0, 0, 0, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 1}, // -Y
+					 Matrix4{1, 0, 0, 0, 0, -1, 0, 0, 0 ,0, 1, 0, 0, 0, 0, 1}, // +Z
+					 Matrix4{-1, 0, 0, 0, 0, -1, 0, 0, 0, 0, -1, 0, 0 , 0, 0, 1} // -Z
+				};
 
-				shadowShader.SetUniform("u_ViewProjMats", shadowViewProjMats);
-				shadowShader.SetUniform("u_LightPos", lightPos);
-				shadowShader.SetUniform("u_FarPlane", pointLight->Range());
+				std::ranges::transform(cubeFaceMats, std::back_inserter(shadowViewProjMats), [&](const auto& cubeFaceMat)
+				{
+					return Matrix4::Translate(-pointLight->Entity.Transform->Position()) * cubeFaceMat * shadowProj;
+				});
 
-				m_PointShadowMap.Clear();
+				nonInstShadowShader.SetUniform("u_ViewProjMats", shadowViewProjMats);
+				instShadowShader.SetUniform("u_ViewProjMats", shadowViewProjMats);
+				nonInstShadowShader.SetUniform("u_LightPos", pointLight->Entity.Transform->Position());
+				instShadowShader.SetUniform("u_LightPos", pointLight->Entity.Transform->Position());
+				nonInstShadowShader.SetUniform("u_FarPlane", pointLight->Range());
+				instShadowShader.SetUniform("u_FarPlane", pointLight->Range());
 
 				m_PointShadowMap.BindForWriting();
-				shadowShader.Use();
-
-				for (const auto& renderable : DataManager::Renderables())
+				m_PointShadowMap.Clear();
+				
+				nonInstShadowShader.Use();
+				for (const auto& [renderable, component] : DataManager::NonInstancedRenderables())
 				{
-					if (renderable->CastsShadow())
+					nonInstShadowShader.SetUniform("u_ModelMat", DataManager::GetMatrices(component->Entity.Transform).first);
+					renderable->DrawDepth();
+				}
+
+				instShadowShader.Use();
+				for (const auto& [renderable, components] : DataManager::InstancedRenderables())
+				{
+					if (renderable.CastsShadow())
 					{
-						renderable->DrawDepth();
+						renderable.DrawDepth();
 					}
 				}
 
-				shadowShader.Unuse();
 				m_PointShadowMap.UnbindFromWriting();
 			}
 
@@ -406,27 +471,27 @@ namespace leopph::impl
 			glDisable(GL_DEPTH_TEST);
 			m_RenderTexture.DrawToTexture();
 			glEnable(GL_DEPTH_TEST);
-
-			lightShader.Unuse();
 		}
 	}
 
 
 	void DeferredRenderer::RenderSkybox(const Matrix4& camViewMat, const Matrix4& camProjMat)
 	{
-		static auto skyboxFlagInfo{m_SkyboxShader.GetFlagInfo()};
-		auto& skyboxShader{m_SkyboxShader.GetPermutation(skyboxFlagInfo)};
-		
-		m_GBuffer.CopyDepthData(m_RenderTexture.FramebufferName());
-
 		if (const auto& skybox{Camera::Active->Background().skybox}; skybox.has_value())
 		{
-			skyboxShader.SetUniform("viewMatrix", static_cast<Matrix4>(static_cast<Matrix3>(camViewMat)));
-			skyboxShader.SetUniform("projectionMatrix", camProjMat);
+			static auto skyboxFlagInfo{m_SkyboxShader.GetFlagInfo()};
+			auto& skyboxShader{m_SkyboxShader.GetPermutation(skyboxFlagInfo)};
+
+			m_GBuffer.CopyDepthData(m_RenderTexture.FramebufferName());
+
+			skyboxShader.SetUniform("u_ViewProjMat", static_cast<Matrix4>(static_cast<Matrix3>(camViewMat)) * camProjMat);
+
+			m_RenderTexture.BindAsRenderTarget();
 
 			skyboxShader.Use();
-			m_RenderTexture.BindAsRenderTarget();
+
 			DataManager::Skyboxes().find(skybox->AllFilePaths())->first.Draw(skyboxShader);
+
 			m_RenderTexture.UnbindAsRenderTarget();
 		}
 	}

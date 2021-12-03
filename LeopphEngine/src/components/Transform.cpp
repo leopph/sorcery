@@ -263,8 +263,6 @@ namespace leopph
 			modelMatrix *= impl::DataManager::GetMatrices(m_Parent).first;
 		}
 
-		/* OpenGL accepts our matrices transposed,
-		 * that's why this is done this way. Weird, eh? */
 		impl::DataManager::StoreMatrices(this, modelMatrix.Transposed(), modelMatrix.Inverse());
 
 		m_Changed = false;

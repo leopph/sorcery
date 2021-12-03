@@ -7,14 +7,7 @@ namespace leopph::impl
 {
 	Renderable::Renderable(ModelData& modelData) :
 		ModelDataSrc{modelData}
-	{
-		DataManager::RegisterRenderable(this);
-	}
-
-	Renderable::~Renderable()
-	{
-		DataManager::UnregisterRenderable(this);
-	}
+	{}
 
 	bool Renderable::CastsShadow() const
 	{

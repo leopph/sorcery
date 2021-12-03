@@ -1,27 +1,23 @@
 #include "Model.hpp"
 
+#include "../../data/DataManager.hpp"
+
+#include <utility>
+
 
 namespace leopph
 {
 	Model::Model(leopph::Entity& owner, std::filesystem::path path) :
-		impl::RenderComponent{owner}, Path{path}, m_Impl{/*create new ModelImpl*/}
-	{
-
-	}
-
-	Model::~Model()
-	{
-		// delete m_Impl
-	}
+		impl::NonInstancedRenderComponent{owner, impl::DataManager::LoadOrGetFileModelData(path)}, Path{std::move(path)}
+	{}
 
 	bool Model::CastsShadow() const
 	{
-		//return m_Impl->CastsShadow();
-		return false;
+		return m_Impl.CastsShadow();
 	}
 
 	void Model::CastsShadow(bool value)
 	{
-		//m_Impl->CastsShadow(value);
+		m_Impl.CastsShadow(value);
 	}
 }

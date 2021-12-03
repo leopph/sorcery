@@ -6,15 +6,12 @@
 #include "../GeometryBuffer.hpp"
 #include "../RenderTexture.hpp"
 #include "../SpotLightShadowMap.hpp"
+#include "../shaders/ShaderFamily.hpp"
 #include "../../components/lighting/PointLight.hpp"
 #include "../../components/lighting/SpotLight.hpp"
 #include "../../math/Matrix.hpp"
-#include "../shaders/ShaderFamily.hpp"
 
-#include <unordered_map>
-#include <utility>
 #include <vector>
-
 
 
 namespace leopph::impl
@@ -39,9 +36,12 @@ namespace leopph::impl
 			RenderTexture m_RenderTexture;
 
 			ShaderFamily m_ShadowShader;
+			ShaderFamily m_ShadowShaderInstanced;
 			ShaderFamily m_CubeShadowShader;
+			ShaderFamily m_CubeShadowShaderInstanced;
 
 			ShaderFamily m_GeometryShader;
+			ShaderFamily m_GeometryShaderInstanced;
 
 			ShaderFamily m_SkyboxShader;
 

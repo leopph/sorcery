@@ -32,7 +32,7 @@ layout (location = 11) uniform sampler2D u_NormalTexture;
 layout (location = 12) uniform sampler2D u_DiffuseTexture;
 layout (location = 13) uniform sampler2D u_SpecularTexture;
 layout (location = 14) uniform sampler2D u_ShineTexture;
-layout (location = 15) uniform vec3 u_CameraPosition;
+layout (location = 15) uniform vec3 u_CamPos;
 
 #ifdef CAST_SHADOW
 layout (location = 16) uniform sampler2DShadow u_ShadowMap;
@@ -47,7 +47,7 @@ vec3 CalculateBlinnPhong(vec3 dirToLight, vec3 fragPos, vec3 fragNormal, vec3 fr
 
 	if (diffuseDot > 0)
 	{
-		vec3 halfway = normalize(dirToLight + normalize(u_CameraPosition - fragPos));
+		vec3 halfway = normalize(dirToLight + normalize(u_CamPos - fragPos));
 		light += fragSpecular * pow(max(dot(fragNormal, halfway), 0), 4 * fragShine) * u_SpotLight.specularColor;
 	}
 

@@ -15,7 +15,7 @@ namespace leopph::impl
 		Renderable(const Renderable& other) = delete;
 		Renderable(Renderable&& other) = delete;
 
-		virtual ~Renderable();
+		virtual ~Renderable() = default;
 
 		Renderable& operator=(const Renderable& other) = delete;
 		Renderable& operator=(Renderable&& other) = delete;

@@ -10,11 +10,9 @@ namespace leopph::impl
 	class RenderComponent : public Component
 	{
 	public:
-		LEOPPHAPI RenderComponent(leopph::Entity& owner);
-		RenderComponent(const RenderComponent& other) = delete;
-		RenderComponent(RenderComponent&& other) = delete;
+		using Component::Component;
 
-		LEOPPHAPI ~RenderComponent() override;
+		LEOPPHAPI ~RenderComponent() override = default;;
 
 		RenderComponent& operator=(const RenderComponent& other) = delete;
 		RenderComponent& operator=(RenderComponent&& other) = delete;

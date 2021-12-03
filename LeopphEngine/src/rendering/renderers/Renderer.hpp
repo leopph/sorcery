@@ -1,7 +1,9 @@
 #pragma once
 
+#include "../geometry/Renderable.hpp"
 #include "../../components/lighting/PointLight.hpp"
 #include "../../components/lighting/SpotLight.hpp"
+#include "../../math/Matrix.hpp"
 
 #include <vector>
 

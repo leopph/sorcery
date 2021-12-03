@@ -82,7 +82,7 @@ namespace leopph::impl
 
 	void SkyboxImpl::Draw(ShaderProgram& shader) const
 	{
-		shader.SetUniform("skybox", 0);
+		shader.SetUniform("u_CubeMap", 0);
 
 		glDisable(GL_CULL_FACE);
 		glDepthFunc(GL_LEQUAL);

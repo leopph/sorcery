@@ -3,25 +3,30 @@
 #include "../components/Behavior.hpp"
 #include "../components/Component.hpp"
 #include "../components/Transform.hpp"
-#include "../components/rendering/InstancedModel.hpp"
-#include "../components/rendering/RenderComponent.hpp"
 #include "../components/lighting/DirLight.hpp"
 #include "../components/lighting/PointLight.hpp"
 #include "../components/lighting/SpotLight.hpp"
+#include "../components/rendering/InstancedRenderComponent.hpp"
+#include "../components/rendering/NonInstancedRenderComponent.hpp"
+#include "../components/rendering/RenderComponent.hpp"
 #include "../entity/Entity.hpp"
-#include "../util/equal/EntityEqual.hpp"
-#include "../util/equal/InstancedModelImplEqual.hpp"
-#include "../util/equal/PathedEqual.hpp"
-#include "../util/hash/EntityHash.hpp"
-#include "../util/hash/InstancedModelImplHash.hpp"
-#include "../util/hash/PathedHash.hpp"
 #include "../rendering/TextureImpl.hpp"
 #include "../rendering/Texture.hpp"
 #include "../rendering/Skybox.hpp"
 #include "../rendering/SkyboxImpl.hpp"
 #include "../rendering/geometry/FileModelData.hpp"
-#include "../rendering/geometry/Renderable.hpp"
+#include "../rendering/geometry/InstancedRenderable.hpp"
+#include "../rendering/geometry/InstancedRenderable.hpp"
 #include "../rendering/geometry/ModelData.hpp"
+#include "../rendering/geometry/NonInstancedRenderable.hpp"
+#include "../util/equal/EntityEqual.hpp"
+#include "../util/equal/PathedEqual.hpp"
+#include "../util/equal/PointerEqual.hpp"
+#include "../util/equal/RenderableEqual.hpp"
+#include "../util/hash/EntityHash.hpp"
+#include "../util/hash/PathedHash.hpp"
+#include "../util/hash/PointerHash.hpp"
+#include "../util/hash/RenderableHash.hpp"
 
 #include <cstddef>
 #include <filesystem>
@@ -41,13 +46,13 @@ namespace leopph::impl
 	public:
 		static void Clear();
 
-		// Returns (and creates if non-existent) the InstancedModelImpl that sources its data from the given ModelData object.
-		static InstancedModelImpl& CreateOrGetInstancedModelImpl(ModelData& modelData);
-		// Also unregisters all Model components.
-		static void DestroyInstancedModelImpl(const InstancedModelImpl& model);
-		static void RegisterModelComponent(const InstancedModelImpl& model, InstancedModel* component);
-		static void UnregisterModelComponent(const InstancedModelImpl& model, InstancedModel* component);
-		static const std::unordered_map<InstancedModelImpl, std::unordered_set<InstancedModel*>, InstancedModelImplHash, InstancedModelImplEqual>& InstancedModels();
+		// Returns (and creates if non-existent) the InstancedRenderable that sources its data from the given ModelData object.
+		static InstancedRenderable& CreateOrGetInstancedRenderable(ModelData& modelData);
+		// Also unregisters all InstancedRenderComponents.
+		static void DestroyInstancedRenderable(const InstancedRenderable& renderable);
+		static void RegisterInstancedRenderComponent(const InstancedRenderable& renderable, InstancedRenderComponent* const component);
+		static void UnregisterInstancedRenderComponent(const InstancedRenderable& renderable, InstancedRenderComponent* const component);
+		static const std::unordered_map<InstancedRenderable, std::unordered_set<InstancedRenderComponent*>, RenderableHash, RenderableEqual>& InstancedRenderables();
 
 		static TextureImpl* CreateOrGetTextureImpl(std::filesystem::path path);
 		// Also unregisters all Texture handles.
@@ -65,13 +70,11 @@ namespace leopph::impl
 
 		static FileModelData& LoadOrGetFileModelData(std::filesystem::path path);
 
-		static const std::unordered_set<const Renderable*>& Renderables();
-		static void RegisterRenderable(const Renderable* renderable);
-		static void UnregisterRenderable(const Renderable* renderable);
-		
-		static const std::unordered_set<const RenderComponent*>& RenderComponents();
-		static void RegisterRenderComponent(const RenderComponent* renderComponent);
-		static void UnregisterRenderComponent(const RenderComponent* renderComponent);
+		// Creates a new NonInstancedRenderable instance, stores the referring NonInstancedRenderComponent with it, and returns a reference to it.
+		static NonInstancedRenderable& CreateNonInstancedRenderable(ModelData& modelData, NonInstancedRenderComponent* const component);
+		// Also unregister the NonInstancedRenderComponent.
+		static void DestroyNonInstancedRenderable(const NonInstancedRenderable& renderable);
+		static const std::unordered_map<std::unique_ptr<NonInstancedRenderable>, NonInstancedRenderComponent*, PointerHash, PointerEqual>& NonInstancedRenderables();
 
 
 		static void Register(Entity* entity);
@@ -109,17 +112,20 @@ namespace leopph::impl
 		static std::unordered_set<const SpotLight*> s_SpotLights;
 		static std::vector<PointLight*> s_PointLights;
 		static std::unordered_map<const Transform*, std::pair<Matrix4, Matrix4>> s_Matrices;
+
 		// Stores TextureImpl instances along with all the Texture handles pointing to it.
 		static std::unordered_map<TextureImpl, std::unordered_set<Texture*>, PathedHash<TextureImpl>, PathedEqual<TextureImpl>> s_Textures;
+
 		// Stores SkyboxImpl instances along with all the Skybox handles pointing to it.
 		static std::unordered_map<SkyboxImpl, std::unordered_set<Skybox*>, PathedHash<SkyboxImpl>, PathedEqual<SkyboxImpl>> s_Skyboxes;
+
 		// Stores FileModelData instances identified by their file paths.
 		static std::unordered_set<FileModelData, PathedHash<FileModelData>, PathedEqual<FileModelData>> s_FileModelData;
-		// Stores non-owning pointers to all created Renderables. Does not manage lifetime.
-		static std::unordered_set<const Renderable*> s_Renderables;
-		// Stores non-owning pointers to all created RenderComponents. Does not manage lifetime.
-		static std::unordered_set<const RenderComponent*> s_RenderComponents;
-		// Stores all InstancedModelImpl instances along with all the InstancedModel components pointing to it.
-		static std::unordered_map<InstancedModelImpl, std::unordered_set<InstancedModel*>, InstancedModelImplHash, InstancedModelImplEqual> s_InstancedModels;
+
+		// Stores all InstancedRenderable instances along with non-owning pointers to all the InstancedRenderComponents pointing to it.
+		static std::unordered_map<InstancedRenderable, std::unordered_set<InstancedRenderComponent*>, RenderableHash, RenderableEqual> s_InstancedRenderables;
+
+		// Stores unique_ptrs to all NonInstancedRenderable instances along with a non-owning pointer to the InstancedRenderComponent pointing to it.
+		static std::unordered_map<std::unique_ptr<NonInstancedRenderable>, NonInstancedRenderComponent*, PointerHash, PointerEqual> s_NonInstancedRenderables;
 	};
 }

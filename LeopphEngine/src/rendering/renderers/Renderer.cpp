@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <iterator>
+#include <memory>
 #include <set>
 #include <stdexcept>
 #include <utility>
@@ -40,21 +41,24 @@ namespace leopph::impl
 
 	void Renderer::UpdateMatrices()
 	{
-		std::ranges::for_each(DataManager::RenderComponents(), [](const auto& renderComponent)
-		{
-			renderComponent->Entity.Transform->CalculateMatrices();
-		});
-
-		for (const auto& [modelImpl, modelComponents] : DataManager::InstancedModels())
+		for (const auto& [renderable, components] : DataManager::InstancedRenderables())
 		{
 			static std::vector<std::pair<Matrix4, Matrix4>> instanceMatrices;
-			std::ranges::for_each(modelComponents, [&](const auto& modelComponent)
+			std::ranges::for_each(components, [&](const auto& component)
 			{
-				instanceMatrices.emplace_back(DataManager::GetMatrices(modelComponent->Entity.Transform));
+				component->Entity.Transform->CalculateMatrices();
+				//const auto& [modelMat, normalMat]{DataManager::GetMatrices(component->Entity.Transform)};
+				//instanceMatrices.emplace_back(modelMat.Transposed(), modelMat.Inverse()); // TODO
+				instanceMatrices.emplace_back(DataManager::GetMatrices(component->Entity.Transform));
 			});
-			modelImpl.SetInstanceData(instanceMatrices);
+			renderable.SetInstanceData(instanceMatrices);
 			instanceMatrices.clear();
 		}
+
+		std::ranges::for_each(DataManager::NonInstancedRenderables(), [](const auto& entry)
+		{
+			entry.second->Entity.Transform->CalculateMatrices();
+		});
 	}
 
 

@@ -15,17 +15,17 @@
 
 namespace leopph::impl
 {
-	class InstancedModelImpl : public Renderable
+	class InstancedRenderable : public Renderable
 	{
 		public:
-			explicit InstancedModelImpl(ModelData& modelData);
-			InstancedModelImpl(const InstancedModelImpl& other) = delete;
-			InstancedModelImpl(InstancedModelImpl&& other) = delete;
+			explicit InstancedRenderable(ModelData& modelData);
+			InstancedRenderable(const InstancedRenderable& other) = delete;
+			InstancedRenderable(InstancedRenderable&& other) = delete;
 
-			~InstancedModelImpl() override = default;
+			~InstancedRenderable() override = default;
 
-			InstancedModelImpl& operator=(const InstancedModelImpl& other) = delete;
-			InstancedModelImpl& operator=(InstancedModelImpl&& other) = delete;
+			InstancedRenderable& operator=(const InstancedRenderable& other) = delete;
+			InstancedRenderable& operator=(InstancedRenderable&& other) = delete;
 
 			void DrawShaded(ShaderProgram& shader, std::size_t nextFreeTextureUnit) const override;
 			void DrawDepth() const override;
