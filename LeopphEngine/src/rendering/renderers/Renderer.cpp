@@ -47,9 +47,8 @@ namespace leopph::impl
 			std::ranges::for_each(components, [&](const auto& component)
 			{
 				component->Entity.Transform->CalculateMatrices();
-				//const auto& [modelMat, normalMat]{DataManager::GetMatrices(component->Entity.Transform)};
-				//instanceMatrices.emplace_back(modelMat.Transposed(), modelMat.Inverse()); // TODO
-				instanceMatrices.emplace_back(DataManager::GetMatrices(component->Entity.Transform));
+				const auto& [modelMat, normalMat]{DataManager::GetMatrices(component->Entity.Transform)};
+				instanceMatrices.emplace_back(modelMat.Transposed(), normalMat.Transposed());
 			});
 			renderable.SetInstanceData(instanceMatrices);
 			instanceMatrices.clear();

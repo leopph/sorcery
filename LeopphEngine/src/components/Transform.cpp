@@ -263,7 +263,7 @@ namespace leopph
 			modelMatrix *= impl::DataManager::GetMatrices(m_Parent).first;
 		}
 
-		impl::DataManager::StoreMatrices(this, modelMatrix.Transposed(), modelMatrix.Inverse());
+		impl::DataManager::StoreMatrices(this, modelMatrix, modelMatrix.Inverse().Transposed());
 
 		m_Changed = false;
 	}
