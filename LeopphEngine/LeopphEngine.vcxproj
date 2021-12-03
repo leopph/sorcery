@@ -172,6 +172,7 @@
     <ClInclude Include="src\rendering\SpotLightShadowMap.hpp" />
     <ClInclude Include="src\rendering\Texture.hpp" />
     <ClInclude Include="src\rendering\TextureImpl.hpp" />
+    <ClInclude Include="src\rendering\UniformBuffer.hpp" />
     <ClInclude Include="src\timing\timer.h" />
     <ClInclude Include="src\misc\CameraBackground.hpp" />
     <ClInclude Include="src\util\concepts\Pathed.hpp" />
@@ -257,6 +258,7 @@
     <ClCompile Include="src\rendering\SpotLightShadowMap.cpp" />
     <ClCompile Include="src\rendering\Texture.cpp" />
     <ClCompile Include="src\rendering\TextureImpl.cpp" />
+    <ClCompile Include="src\rendering\UniformBuffer.cpp" />
     <ClCompile Include="src\timing\timer.cpp" />
     <ClCompile Include="src\util\equal\EntityEqual.cpp" />
     <ClCompile Include="src\util\equal\RenderableEqual.cpp" />

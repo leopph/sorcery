@@ -72,6 +72,7 @@
     <ClCompile Include="src\rendering\geometry\Mesh.cpp" />
     <ClCompile Include="src\components\rendering\InstancedRenderComponent.cpp" />
     <ClCompile Include="src\components\rendering\NonInstancedRenderComponent.cpp" />
+    <ClCompile Include="src\rendering\UniformBuffer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\Behavior.hpp" />
@@ -168,6 +169,7 @@
     <ClInclude Include="src\components\rendering\NonInstancedRenderComponent.hpp" />
     <ClInclude Include="src\util\equal\PointerEqual.hpp" />
     <ClInclude Include="src\util\hash\PointerHash.hpp" />
+    <ClInclude Include="src\rendering\UniformBuffer.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\cpp.hint" />
