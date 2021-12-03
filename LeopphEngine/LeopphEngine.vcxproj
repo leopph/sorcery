@@ -292,22 +292,13 @@
     <CustomBuild Include="src\rendering\shaders\glsl\deferred\GPassObjectFrag.frag">
       <FileType>Document</FileType>
     </CustomBuild>
-    <CustomBuild Include="src\rendering\shaders\glsl\deferred\GPassObjectVertInstanced.vert">
-      <FileType>Document</FileType>
-    </CustomBuild>
     <CustomBuild Include="src\rendering\shaders\glsl\forward\ObjectFrag.frag">
-      <FileType>Document</FileType>
-    </CustomBuild>
-    <CustomBuild Include="src\rendering\shaders\glsl\shadows\ShadowMapVertInstanced.vert">
       <FileType>Document</FileType>
     </CustomBuild>
     <CustomBuild Include="src\rendering\shaders\glsl\SkyboxFrag.frag">
       <FileType>Document</FileType>
     </CustomBuild>
     <CustomBuild Include="src\rendering\shaders\glsl\SkyboxVert.vert">
-      <FileType>Document</FileType>
-    </CustomBuild>
-    <CustomBuild Include="src\rendering\shaders\glsl\forward\ObjectVertInstanced.vert">
       <FileType>Document</FileType>
     </CustomBuild>
     <CustomBuild Include="src\rendering\shaders\glsl\deferred\LightPassVert.vert">
@@ -323,9 +314,6 @@
       <FileType>Document</FileType>
     </CustomBuild>
     <CustomBuild Include="src\rendering\shaders\glsl\shadows\CubeShadowMapGeom.geom">
-      <FileType>Document</FileType>
-    </CustomBuild>
-    <CustomBuild Include="src\rendering\shaders\glsl\shadows\CubeShadowMapVertInstanced.vert">
       <FileType>Document</FileType>
     </CustomBuild>
     <CustomBuild Include="src\rendering\shaders\glsl\deferred\PointLightPassFrag.frag">

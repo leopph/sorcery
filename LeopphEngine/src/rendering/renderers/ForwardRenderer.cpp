@@ -30,13 +30,6 @@ namespace leopph::impl
 			{ShaderFamily::ObjectFragSrc, ShaderType::Fragment}
 		}
 	},
-		m_ObjectShaderInstanced
-	{
-		{
-			{ShaderFamily::ObjectVertInstancedSrc, ShaderType::Vertex},
-			{ShaderFamily::ObjectFragSrc, ShaderType::Fragment}
-		}
-	},
 		m_SkyboxShader
 	{
 		{
@@ -48,12 +41,6 @@ namespace leopph::impl
 	{
 		{
 			{ShaderFamily::ShadowMapVertSrc, ShaderType::Vertex}
-		}
-	},
-		m_ShadowShaderInstanced
-	{
-		{
-			{ShaderFamily::ShadowMapVertInstancedSrc, ShaderType::Vertex}
 		}
 	}
 	{
@@ -83,42 +70,36 @@ namespace leopph::impl
 		const auto camViewMat{Camera::Active->ViewMatrix()};
 		const auto camProjMat{Camera::Active->ProjectionMatrix()};
 
-		const auto& pointLights{CollectPointLights()};
+		const auto& dirLight{DataManager::DirectionalLight()};
 		const auto& spotLights{CollectSpotLights()};
+		const auto& pointLights{CollectPointLights()};
 
-		RenderShadedObjects(camViewMat, camProjMat, pointLights, spotLights);
+		RenderShadedObjects(camViewMat, camProjMat, dirLight, spotLights, pointLights);
 		RenderSkybox(camViewMat, camProjMat);
 	}
 
 
-	void ForwardRenderer::RenderShadedObjects(const Matrix4& camViewMat, const Matrix4& camProjMat,
-											  const std::vector<const PointLight*>& pointLights, const std::vector<const SpotLight*>& spotLights)
+	void ForwardRenderer::RenderShadedObjects(const Matrix4& camViewMat, const Matrix4& camProjMat, const DirectionalLight* dirLight, const std::vector<const SpotLight*>& spotLights, const std::vector<const PointLight*>& pointLights)
 	{
-		static auto nonInstObjectFlagInfo{m_ObjectShader.GetFlagInfo()};
-		static auto instObjectFlagInfo{m_ObjectShaderInstanced.GetFlagInfo()};
-		static auto nonInstShadowFlagInfo{m_ShadowShader.GetFlagInfo()};
-		static auto instShadowFlagInfo{m_ShadowShaderInstanced.GetFlagInfo()};
+		static auto objectFlagInfo{m_ObjectShader.GetFlagInfo()};
+		objectFlagInfo.Clear();
+		objectFlagInfo["EXISTS_DIRLIGHT"] = dirLight != nullptr;
+		objectFlagInfo["DIRLIGHT_SHADOW"] = dirLight != nullptr && dirLight->CastsShadow();
+		objectFlagInfo["EXISTS_SPOTLIGHT"] = spotLights.size() != 0ull;
+		objectFlagInfo["EXISTS_POINTLIGHT"] = pointLights.size() != 0ull;
+		objectFlagInfo["INSTANCED"] = false;
+		auto& nonInstObjectShader{m_ObjectShader.GetPermutation(objectFlagInfo)};
 
-		nonInstObjectFlagInfo.Clear();
-		instObjectFlagInfo.Clear();
-		nonInstShadowFlagInfo.Clear();
-		instShadowFlagInfo.Clear();
+		objectFlagInfo["INSTANCED"] = true;
+		auto& instObjectShader{m_ObjectShader.GetPermutation(objectFlagInfo)};
 
-		const auto dirLight{DataManager::DirectionalLight()};
+		static auto shadowFlagInfo{m_ShadowShader.GetFlagInfo()};
+		shadowFlagInfo.Clear();
+		shadowFlagInfo["INSTANCED"] = false;
+		auto& nonInstShadowShader{m_ShadowShader.GetPermutation(shadowFlagInfo)};
 
-		nonInstObjectFlagInfo["EXISTS_DIRLIGHT"] = dirLight != nullptr;
-		instObjectFlagInfo["EXISTS_DIRLIGHT"] = dirLight != nullptr;
-		nonInstObjectFlagInfo["DIRLIGHT_SHADOW"] = dirLight != nullptr && dirLight->CastsShadow();
-		instObjectFlagInfo["DIRLIGHT_SHADOW"] = dirLight != nullptr && dirLight->CastsShadow();
-		nonInstObjectFlagInfo["EXISTS_SPOTLIGHT"] = spotLights.size() != 0ull;
-		instObjectFlagInfo["EXISTS_SPOTLIGHT"] = spotLights.size() != 0ull;
-		nonInstObjectFlagInfo["EXISTS_POINTLIGHT"] = pointLights.size() != 0ull;
-		instObjectFlagInfo["EXISTS_POINTLIGHT"] = pointLights.size() != 0ull;
-
-		auto& nonInstObjectShader{m_ObjectShader.GetPermutation(nonInstObjectFlagInfo)};
-		auto& instObjectShader{m_ObjectShaderInstanced.GetPermutation(instObjectFlagInfo)};
-		auto& nonInstShadowShader{m_ShadowShader.GetPermutation(nonInstShadowFlagInfo)};
-		auto& instShadowShader{m_ShadowShaderInstanced.GetPermutation(instShadowFlagInfo)};
+		shadowFlagInfo["INSTANCED"] = true;
+		auto& instShadowShader{m_ShadowShader.GetPermutation(shadowFlagInfo)};
 
 		auto texCount{1};
 

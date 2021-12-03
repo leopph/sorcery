@@ -22,13 +22,7 @@ namespace leopph::impl
 		m_ShadowShader{
 	{
 		{ShaderFamily::ShadowMapVertSrc, ShaderType::Vertex}
-	}
-	},
-		m_ShadowShaderInstanced{
-			{
-				{ShaderFamily::ShadowMapVertInstancedSrc, ShaderType::Vertex}
-			}
-	},
+	}},
 		m_CubeShadowShader{
 			{
 				{ShaderFamily::CubeShadowMapVertSrc, ShaderType::Vertex},
@@ -36,24 +30,11 @@ namespace leopph::impl
 				{ShaderFamily::CubeShadowMapFragSrc, ShaderType::Fragment}
 			}
 	},
-		m_CubeShadowShaderInstanced{
-	{
-		{ShaderFamily::CubeShadowMapVertInstancedSrc, ShaderType::Vertex},
-		{ShaderFamily::CubeShadowMapGeomSrc, ShaderType::Geometry},
-		{ShaderFamily::CubeShadowMapFragSrc, ShaderType::Fragment}
-	}
-	},
 		m_GeometryShader{
 	{
 		{ShaderFamily::GPassObjectVertSrc, ShaderType::Vertex},
 		{ShaderFamily::GPassObjectFragSrc, ShaderType::Fragment}
 	}
-	},
-		m_GeometryShaderInstanced{
-			{
-				{ShaderFamily::GPassObjectVertInstancedSrc, ShaderType::Vertex},
-				{ShaderFamily::GPassObjectFragSrc, ShaderType::Fragment}
-			}
 	},
 		m_SkyboxShader{
 			{
@@ -137,14 +118,14 @@ namespace leopph::impl
 
 	void DeferredRenderer::RenderGeometry(const Matrix4& camViewMat, const Matrix4& camProjMat)
 	{
-		static auto nonInstFlagInfo{m_GeometryShader.GetFlagInfo()};
-		static auto instFlagInfo{m_GeometryShaderInstanced.GetFlagInfo()};
+		static auto flagInfo{m_GeometryShader.GetFlagInfo()};
 
-		nonInstFlagInfo.Clear();
-		instFlagInfo.Clear();
+		flagInfo.Clear();
+		flagInfo["INSTANCED"] = false;
+		auto& nonInstShader{m_GeometryShader.GetPermutation(flagInfo)};
 
-		auto& nonInstShader{m_GeometryShader.GetPermutation(nonInstFlagInfo)};
-		auto& instShader{m_GeometryShaderInstanced.GetPermutation(instFlagInfo)};
+		flagInfo["INSTANCED"] = true;
+		auto& instShader{m_GeometryShader.GetPermutation(flagInfo)};
 
 		m_GBuffer.Clear();
 
@@ -198,18 +179,17 @@ namespace leopph::impl
 		}
 
 		static auto lightFlagInfo{m_DirLightShader.GetFlagInfo()};
-		static auto nonInstShadowFlagInfo{m_ShadowShader.GetFlagInfo()};
-		static auto instShadowFlagInfo{m_ShadowShaderInstanced.GetFlagInfo()};
-
 		lightFlagInfo.Clear();
-		nonInstShadowFlagInfo.Clear();
-		instShadowFlagInfo.Clear();
-
 		lightFlagInfo["CAST_SHADOW"] = dirLight->CastsShadow();
-
 		auto& lightShader{m_DirLightShader.GetPermutation(lightFlagInfo)};
-		auto& nonInstShadowShader{m_ShadowShader.GetPermutation(nonInstShadowFlagInfo)};
-		auto& instShadowShader{m_ShadowShaderInstanced.GetPermutation(instShadowFlagInfo)};
+
+		static auto shadowFlagInfo{m_ShadowShader.GetFlagInfo()};
+		shadowFlagInfo.Clear();
+		shadowFlagInfo["INSTANCED"] = false;
+		auto& nonInstShadowShader{m_ShadowShader.GetPermutation(shadowFlagInfo)};
+
+		shadowFlagInfo["INSTANCED"] = true;
+		auto& instShadowShader{m_ShadowShader.GetPermutation(shadowFlagInfo)};
 
 		auto texCount{0};
 
@@ -295,18 +275,17 @@ namespace leopph::impl
 			return;
 		}
 
-		static auto lightFlagInfo{m_DirLightShader.GetFlagInfo()};
-		static auto nonInstShadowFlagInfo{m_ShadowShader.GetFlagInfo()};
-		static auto instShadowFlagInfo{m_ShadowShaderInstanced.GetFlagInfo()};
+		static auto shadowFlagInfo{m_ShadowShader.GetFlagInfo()};
+		shadowFlagInfo.Clear();
+		shadowFlagInfo["INSTANCED"] = false;
+		auto& nonInstShadowShader{m_ShadowShader.GetPermutation(shadowFlagInfo)};
 
-		nonInstShadowFlagInfo.Clear();
-		instShadowFlagInfo.Clear();
-
-		auto& nonInstShadowShader{m_ShadowShader.GetPermutation(nonInstShadowFlagInfo)};
-		auto& instShadowShader{m_ShadowShaderInstanced.GetPermutation(instShadowFlagInfo)};
+		shadowFlagInfo["INSTANCED"] = true;
+		auto& instShadowShader{m_ShadowShader.GetPermutation(shadowFlagInfo)};
 
 		for (const auto& spotLight : spotLights)
 		{
+			static auto lightFlagInfo{m_DirLightShader.GetFlagInfo()};
 			lightFlagInfo.Clear();
 			lightFlagInfo["CAST_SHADOW"] = spotLight->CastsShadow();
 			auto& lightShader{m_SpotLightShader.GetPermutation(lightFlagInfo)};
@@ -380,20 +359,17 @@ namespace leopph::impl
 			return;
 		}
 
-		static auto lightFlagInfo{m_PointLightShader.GetFlagInfo()};
-		static auto nonInstShadowFlagInfo{m_ShadowShader.GetFlagInfo()};
-		static auto instShadowFlagInfo{m_ShadowShaderInstanced.GetFlagInfo()};
+		static auto shadowFlagInfo{m_CubeShadowShader.GetFlagInfo()};
+		shadowFlagInfo.Clear();
+		shadowFlagInfo["INSTANCED"] = false;
+		auto& nonInstShadowShader{m_CubeShadowShader.GetPermutation(shadowFlagInfo)};
 
-		nonInstShadowFlagInfo.Clear();
-		instShadowFlagInfo.Clear();
-
-		auto& nonInstShadowShader{m_CubeShadowShader.GetPermutation(nonInstShadowFlagInfo)};
-		auto& instShadowShader{m_CubeShadowShaderInstanced.GetPermutation(instShadowFlagInfo)};
-
-		static std::vector<Matrix4> shadowViewProjMats;
+		shadowFlagInfo["INSTANCED"] = true;
+		auto& instShadowShader{m_CubeShadowShader.GetPermutation(shadowFlagInfo)};
 
 		for (const auto& pointLight : pointLights)
 		{
+			static auto lightFlagInfo{m_PointLightShader.GetFlagInfo()};
 			lightFlagInfo.Clear();
 			lightFlagInfo["CAST_SHADOW"] = pointLight->CastsShadow();
 			auto& lightShader{m_PointLightShader.GetPermutation(lightFlagInfo)};
@@ -420,6 +396,7 @@ namespace leopph::impl
 
 				const auto shadowProj{Matrix4::Perspective(math::ToRadians(90), 1, 0.01f, pointLight->Range())};
 
+				static std::vector<Matrix4> shadowViewProjMats;
 				shadowViewProjMats.clear();
 
 				static const std::array cubeFaceMats

@@ -29,21 +29,17 @@ namespace leopph::impl
 			ShaderFamily& operator=(ShaderFamily&& other) = delete;
 
 			static const std::string ObjectVertSrc;
-			static const std::string ObjectVertInstancedSrc;
 			static const std::string ObjectFragSrc;
 
 			static const std::string SkyboxVertSrc;
 			static const std::string SkyboxFragSrc;
 
 			static const std::string ShadowMapVertSrc;
-			static const std::string ShadowMapVertInstancedSrc;
 			static const std::string CubeShadowMapVertSrc;
-			static const std::string CubeShadowMapVertInstancedSrc;
 			static const std::string CubeShadowMapGeomSrc;
 			static const std::string CubeShadowMapFragSrc;
 
 			static const std::string GPassObjectVertSrc;
-			static const std::string GPassObjectVertInstancedSrc;
 			static const std::string GPassObjectFragSrc;
 
 			static const std::string LightPassVertSrc;

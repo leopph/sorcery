@@ -36,12 +36,9 @@ namespace leopph::impl
 			RenderTexture m_RenderTexture;
 
 			ShaderFamily m_ShadowShader;
-			ShaderFamily m_ShadowShaderInstanced;
 			ShaderFamily m_CubeShadowShader;
-			ShaderFamily m_CubeShadowShaderInstanced;
 
 			ShaderFamily m_GeometryShader;
-			ShaderFamily m_GeometryShaderInstanced;
 
 			ShaderFamily m_SkyboxShader;
 
