@@ -50,12 +50,12 @@ namespace leopph::impl
 		if (instanceMatrices.size() > m_InstanceBufferSize)
 		{
 			m_InstanceBufferSize *= 2;
-			glNamedBufferData(m_InstanceBuffer, m_InstanceBufferSize * sizeof(std::remove_reference_t<decltype(instanceMatrices)>::value_type), instanceMatrices.data(), GL_STATIC_DRAW);
+			glNamedBufferData(m_InstanceBuffer, m_InstanceBufferSize * sizeof(std::remove_reference_t<decltype(instanceMatrices)>::value_type), instanceMatrices.data(), GL_DYNAMIC_DRAW);
 		}
 		else if (instanceMatrices.size() * 2 < m_InstanceBufferSize)
 		{
 			m_InstanceBufferSize = std::max(m_InstanceBufferSize / 2, 1ull);
-			glNamedBufferData(m_InstanceBuffer, m_InstanceBufferSize * sizeof(std::remove_reference_t<decltype(instanceMatrices)>::value_type), instanceMatrices.data(), GL_STATIC_DRAW);
+			glNamedBufferData(m_InstanceBuffer, m_InstanceBufferSize * sizeof(std::remove_reference_t<decltype(instanceMatrices)>::value_type), instanceMatrices.data(), GL_DYNAMIC_DRAW);
 		}
 		else
 		{
