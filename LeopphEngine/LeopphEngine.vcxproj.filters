@@ -73,6 +73,8 @@
     <ClCompile Include="src\components\rendering\InstancedRenderComponent.cpp" />
     <ClCompile Include="src\components\rendering\NonInstancedRenderComponent.cpp" />
     <ClCompile Include="src\rendering\UniformBuffer.cpp" />
+    <ClCompile Include="src\util\hash\StringHash.cpp" />
+    <ClCompile Include="src\util\equal\StringEqual.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\Behavior.hpp" />
@@ -170,6 +172,8 @@
     <ClInclude Include="src\util\equal\PointerEqual.hpp" />
     <ClInclude Include="src\util\hash\PointerHash.hpp" />
     <ClInclude Include="src\rendering\UniformBuffer.hpp" />
+    <ClInclude Include="src\util\hash\StringHash.hpp" />
+    <ClInclude Include="src\util\equal\StringEqual.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\cpp.hint" />

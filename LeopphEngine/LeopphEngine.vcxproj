@@ -185,11 +185,13 @@
     <ClInclude Include="src\util\equal\RenderableEqual.hpp" />
     <ClInclude Include="src\util\equal\PathedEqual.hpp" />
     <ClInclude Include="src\util\equal\ShaderTypeEqual.hpp" />
+    <ClInclude Include="src\util\equal\StringEqual.hpp" />
     <ClInclude Include="src\util\hash\PointerHash.hpp" />
     <ClInclude Include="src\util\hash\EntityHash.hpp" />
     <ClInclude Include="src\util\hash\RenderableHash.hpp" />
     <ClInclude Include="src\util\hash\PathedHash.hpp" />
     <ClInclude Include="src\util\hash\ShaderTypeHash.hpp" />
+    <ClInclude Include="src\util\hash\StringHash.hpp" />
     <ClInclude Include="src\util\interface\OpenGLAdapter.hpp" />
     <ClInclude Include="src\util\less\LightCloserToCamera.hpp" />
     <ClInclude Include="src\util\logger.h" />
@@ -266,10 +268,12 @@
     <ClCompile Include="src\util\equal\EntityEqual.cpp" />
     <ClCompile Include="src\util\equal\RenderableEqual.cpp" />
     <ClCompile Include="src\util\equal\ShaderTypeEqual.cpp" />
+    <ClCompile Include="src\util\equal\StringEqual.cpp" />
     <ClCompile Include="src\util\hash\EntityHash.cpp" />
     <ClCompile Include="src\util\hash\RenderableHash.cpp" />
     <ClCompile Include="src\util\hash\PathHash.cpp" />
     <ClCompile Include="src\util\hash\ShaderTypeHash.cpp" />
+    <ClCompile Include="src\util\hash\StringHash.cpp" />
     <ClCompile Include="src\util\interface\OpenGLAdapter.cpp" />
     <ClCompile Include="src\util\less\LightCloserToCamera.cpp" />
     <ClCompile Include="src\util\logger.cpp" />

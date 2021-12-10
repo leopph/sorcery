@@ -3,6 +3,8 @@
 #include "ShaderStageInfo.hpp"
 #include "../../math/Matrix.hpp"
 #include "../../math/Vector.hpp"
+#include "../../util/equal/StringEqual.hpp"
+#include "../../util/hash/StringHash.hpp"
 
 #include <optional>
 #include <string>
@@ -49,7 +51,7 @@ namespace leopph::impl
 			[[nodiscard]] std::pair<bool, std::optional<std::string>> LinkStatus() const;
 			[[nodiscard]] int GetUniformLocation(std::string_view);
 
-			std::unordered_map<std::string_view, int> m_UniformLocations;
+			std::unordered_map<std::string, int, StringHash, StringEqual> m_UniformLocations;
 			unsigned m_ProgramName;
 	};
 }
