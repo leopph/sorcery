@@ -49,14 +49,14 @@
     <OutDir>$(SolutionDir)out\$(ProjectName)\$(Configuration)_$(Platform)\</OutDir>
     <IntDir>$(SolutionDir)int\$(ProjectName)\$(Configuration)_$(Platform)\</IntDir>
     <TargetName>leopph</TargetName>
-    <LibraryPath>$(ProjectDir)vendor\spdlog\build\$(Configuration)\;$(ProjectDir)vendor\assimp\lib\$(Configuration)\;$(ProjectDir)vendor\assimp\contrib\zlib\$(Configuration)\;$(ProjectDir)vendor\glfw\src\$(Configuration)\;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(ProjectDir)vendor\spdlog\$(Configuration)\;$(ProjectDir)vendor\assimp\lib\$(Configuration)\;$(ProjectDir)vendor\assimp\contrib\zlib\$(Configuration)\;$(ProjectDir)vendor\glfw\src\$(Configuration)\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)out\$(ProjectName)\$(Configuration)_$(Platform)\</OutDir>
     <IntDir>$(SolutionDir)int\$(ProjectName)\$(Configuration)_$(Platform)\</IntDir>
     <TargetName>leopph</TargetName>
-    <LibraryPath>$(ProjectDir)vendor\spdlog\build\$(Configuration)\;$(ProjectDir)vendor\assimp\lib\$(Configuration)\;$(ProjectDir)vendor\assimp\contrib\zlib\$(Configuration)\;$(ProjectDir)vendor\glfw\src\$(Configuration)\;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(ProjectDir)vendor\spdlog\$(Configuration)\;$(ProjectDir)vendor\assimp\lib\$(Configuration)\;$(ProjectDir)vendor\assimp\contrib\zlib\$(Configuration)\;$(ProjectDir)vendor\glfw\src\$(Configuration)\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
