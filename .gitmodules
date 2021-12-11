@@ -1,9 +1,8 @@
-[submodule "LeopphEngine/vendor/glfw"]
-	path = LeopphEngine/vendor/glfw
-	url = https://github.com/glfw/glfw.git
-	branch = latest
-	
-[submodule "LeopphEngine/vendor/glad"]
+[submodule "glad"]
 	path = LeopphEngine/vendor/glad
 	url = https://github.com/Dav1dde/glad.git
-	branch = glad2
+	branch = master
+[submodule "glfw"]
+	path = LeopphEngine/vendor/glfw
+	url = https://github.com/glfw/glfw.git
+	branch = 3.3-stable
