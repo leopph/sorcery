@@ -2,7 +2,7 @@
 
 #include "../../util/logger.h"
 
-#include <glad/gl.h>
+#include <glad/glad.h>
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
@@ -95,7 +95,7 @@ namespace leopph::impl
 
 	bool InitGL()
 	{
-		auto ret = gladLoadGL(glfwGetProcAddress);
+		auto ret = gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress));
 
 		if (ret)
 		{

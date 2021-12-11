@@ -60,7 +60,6 @@
     <ClCompile Include="src\rendering\CubeShadowMap.cpp" />
     <ClCompile Include="src\windowing\Window.cpp" />
     <ClCompile Include="src\rendering\RenderTexture.cpp" />
-    <ClCompile Include="vendor\glad\src\gl.c" />
     <ClCompile Include="src\data\DataManager.cpp" />
     <ClCompile Include="src\rendering\geometry\ModelData.cpp" />
     <ClCompile Include="src\rendering\geometry\FileModelData.cpp" />

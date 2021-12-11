@@ -3,7 +3,7 @@
 #include "../../math/Matrix.hpp"
 #include "../../math/Vector.hpp"
 
-#include <glad/gl.h>
+#include <glad/glad.h>
 
 #include <cstddef>
 #include <utility>

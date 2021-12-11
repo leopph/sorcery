@@ -1,6 +1,6 @@
 #include "InstancedRenderable.hpp"
 
-#include <glad/gl.h>
+#include <glad/glad.h>
 
 #include <functional>
 #include <type_traits>
