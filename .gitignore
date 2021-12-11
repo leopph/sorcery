@@ -2,4 +2,5 @@
 *.user
 int
 out
-LeopphEngine/vendor/*
+LeopphEngine/vendor/assimp
+LeopphEngine/vendor/spdlog
