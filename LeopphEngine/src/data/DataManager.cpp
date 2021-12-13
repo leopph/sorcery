@@ -213,17 +213,14 @@ namespace leopph::impl
 
 	std::shared_ptr<Texture> DataManager::FindTexture(const std::filesystem::path& path)
 	{
-		if (const auto it{std::ranges::lower_bound(s_Textures, path,
-		[&](const std::filesystem::path& elemPath, const std::filesystem::path& valPath) -> bool
+		if (const auto it{std::ranges::lower_bound(s_Textures, path, [](const auto& elemPath, const auto& valPath)
 		{
-			auto ret = (elemPath.compare(valPath)) < 0;
-			return ret;
-		},
-		[](const Texture* const texture) -> const std::filesystem::path&
+			return elemPath.compare(valPath);
+		}, [](const auto& texture) -> const auto&
 		{
 			return texture->Path;
 		})};
-			it != s_Textures.end() && (*it)->Path == path)
+			it != s_Textures.end())
 		{
 			return (*it)->shared_from_this();
 		}
@@ -232,9 +229,9 @@ namespace leopph::impl
 
 	void DataManager::SortTextures()
 	{
-		std::ranges::sort(s_Textures, [](const Texture* const left, const Texture* const right) -> bool
+		std::ranges::sort(s_Textures, [](const auto& left, const auto& right)
 		{
-			return (left->Path.compare(right->Path)) < 0;
+			return left->Path.compare(right->Path);
 		});
 	}
 
