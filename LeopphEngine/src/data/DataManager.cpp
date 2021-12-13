@@ -2,6 +2,9 @@
 
 #include "../util/logger.h"
 
+#include <algorithm>
+#include <iostream>
+
 
 namespace leopph::impl
 {
@@ -11,7 +14,7 @@ namespace leopph::impl
 	std::unordered_set<const SpotLight*> DataManager::s_SpotLights{};
 	std::vector<PointLight*> DataManager::s_PointLights{};
 	std::unordered_map<const Transform*, std::pair<Matrix4, Matrix4>> DataManager::s_Matrices{};
-	std::unordered_map<TextureImpl, std::unordered_set<Texture*>, PathedHash<TextureImpl>, PathedEqual<TextureImpl>> DataManager::s_Textures{};
+	std::vector<Texture*> DataManager::s_Textures{};
 	std::unordered_map<SkyboxImpl, std::unordered_set<Skybox*>, PathedHash<SkyboxImpl>, PathedEqual<SkyboxImpl>> DataManager::s_Skyboxes{};
 	std::unordered_set<FileModelData, PathedHash<FileModelData>, PathedEqual<FileModelData>> DataManager::s_FileModelData{};
 	std::unordered_map<InstancedRenderable, std::unordered_set<InstancedRenderComponent*>, RenderableHash, RenderableEqual> DataManager::s_InstancedRenderables{};
@@ -181,7 +184,7 @@ namespace leopph::impl
 		s_InstancedRenderables.erase(renderable);
 	}
 
-	void DataManager::RegisterInstancedRenderComponent(const InstancedRenderable& renderable, InstancedRenderComponent * const component)
+	void DataManager::RegisterInstancedRenderComponent(const InstancedRenderable& renderable, InstancedRenderComponent* const component)
 	{
 		s_InstancedRenderables.at(renderable).insert(component);
 	}
@@ -196,35 +199,43 @@ namespace leopph::impl
 		return s_InstancedRenderables;
 	}
 
-	TextureImpl* DataManager::CreateOrGetTextureImpl(std::filesystem::path path)
+	void DataManager::RegisterTexture(Texture* const texture)
 	{
-		if (const auto it{s_Textures.find(path)};
-			it != s_Textures.end())
+		s_Textures.push_back(texture);
+		SortTextures();
+	}
+
+	void DataManager::UnregisterTexture(Texture* const texture)
+	{
+		std::erase(s_Textures, texture);
+		SortTextures();
+	}
+
+	std::shared_ptr<Texture> DataManager::FindTexture(const std::filesystem::path& path)
+	{
+		if (const auto it{std::ranges::lower_bound(s_Textures, path,
+		[&](const std::filesystem::path& elemPath, const std::filesystem::path& valPath) -> bool
 		{
-			return &const_cast<TextureImpl&>(it->first);
+			auto ret = (elemPath.compare(valPath)) < 0;
+			return ret;
+		},
+		[](const Texture* const texture) -> const std::filesystem::path&
+		{
+			return texture->Path;
+		})};
+			it != s_Textures.end() && (*it)->Path == path)
+		{
+			return (*it)->shared_from_this();
 		}
-
-		return &const_cast<TextureImpl&>(s_Textures.emplace(std::move(path), std::unordered_set<Texture*>{}).first->first);
+		return nullptr;
 	}
 
-	void DataManager::DestroyTextureImpl(TextureImpl* const texture)
+	void DataManager::SortTextures()
 	{
-		s_Textures.erase(*texture);
-	}
-
-	void DataManager::RegisterTextureHandle(TextureImpl* const texture, Texture* const handle)
-	{
-		s_Textures.at(*texture).insert(handle);
-	}
-
-	void DataManager::UnregisterTextureHandle(TextureImpl* const texture, Texture* const handle)
-	{
-		s_Textures.at(*texture).erase(handle);
-	}
-
-	const std::unordered_map<TextureImpl, std::unordered_set<Texture*>, PathedHash<TextureImpl>, PathedEqual<TextureImpl>>& DataManager::Textures()
-	{
-		return s_Textures;
+		std::ranges::sort(s_Textures, [](const Texture* const left, const Texture* const right) -> bool
+		{
+			return (left->Path.compare(right->Path)) < 0;
+		});
 	}
 
 	SkyboxImpl* DataManager::CreateOrGetSkyboxImpl(std::filesystem::path allPaths)

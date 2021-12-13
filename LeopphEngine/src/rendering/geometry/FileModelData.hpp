@@ -7,7 +7,7 @@
 #include <assimp/scene.h>
 
 #include <filesystem>
-#include <optional>
+#include <memory>
 
 
 namespace leopph::impl
@@ -25,6 +25,6 @@ namespace leopph::impl
 
 		std::vector<impl::MeshData> ProcessNodes(const aiScene* scene) const;
 		impl::MeshData ProcessMesh(const aiMesh* mesh, const aiScene* scene, const Matrix3& trafo) const;
-		std::optional<Texture> LoadTexture(const aiMaterial* material, const aiTextureType type) const;
+		std::shared_ptr<Texture> LoadTexture(const aiMaterial* material, const aiTextureType type) const;
 	};
 }

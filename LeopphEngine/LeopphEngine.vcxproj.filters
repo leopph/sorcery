@@ -41,7 +41,6 @@
     <ClCompile Include="src\events\MouseEvent.cpp" />
     <ClCompile Include="src\rendering\geometry\InstancedRenderable.cpp" />
     <ClCompile Include="src\rendering\renderers\Renderer.cpp" />
-    <ClCompile Include="src\rendering\TextureImpl.cpp" />
     <ClCompile Include="src\rendering\Texture.cpp" />
     <ClCompile Include="src\rendering\SkyboxImpl.cpp" />
     <ClCompile Include="src\rendering\Skybox.cpp" />
@@ -130,7 +129,6 @@
     <ClInclude Include="src\events\FrameEndEvent.hpp" />
     <ClInclude Include="src\rendering\geometry\InstancedRenderable.hpp" />
     <ClInclude Include="src\rendering\renderers\Renderer.hpp" />
-    <ClInclude Include="src\rendering\TextureImpl.hpp" />
     <ClInclude Include="src\rendering\Texture.hpp" />
     <ClInclude Include="src\rendering\SkyboxImpl.hpp" />
     <ClInclude Include="src\data\Proxy.hpp" />

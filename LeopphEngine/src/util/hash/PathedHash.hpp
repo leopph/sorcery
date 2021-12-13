@@ -12,9 +12,16 @@ namespace leopph::impl
 	{
 		using is_transparent = void;
 
-		std::size_t operator()(const T& model) const
+		// For references.
+		std::size_t operator()(const T& pathed) const
 		{
-			return hash_value(model.Path);
+			return hash_value(pathed.Path);
+		}
+
+		// For pointers.
+		std::size_t operator()(const T* const model) const
+		{
+			return hash_value(model->Path);
 		}
 
 		std::size_t operator()(const std::filesystem::path& path) const

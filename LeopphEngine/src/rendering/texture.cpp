@@ -1,70 +1,87 @@
 #include "Texture.hpp"
 
+#include "../util/logger.h"
 #include "../data/DataManager.hpp"
+
+#include <glad/glad.h>
+#include <stb_image.h>
 
 #include <utility>
 
 
-namespace leopph::impl
+
+namespace leopph
 {
 	Texture::Texture(std::filesystem::path path) :
-		m_Impl{DataManager::CreateOrGetTextureImpl(std::move(path))}
+		Path{std::move(path)},
+		Id{m_ID},
+		IsTransparent{m_IsTransparent},
+		m_ID{},
+		m_IsTransparent{}
 	{
-		DataManager::RegisterTextureHandle(m_Impl, this);
+		stbi_set_flip_vertically_on_load(true);
+
+		glCreateTextures(GL_TEXTURE_2D, 1, &m_ID);
+
+		int width, height, channels;
+		const auto data{stbi_load(Path.string().c_str(), &width, &height, &channels, 0)};
+
+		if (data == nullptr)
+		{
+			glDeleteTextures(1, &m_ID);
+
+			const auto msg{"Texture on path [" + Path.string() + "] could not be loaded."};
+			impl::Logger::Instance().Error(msg);
+			return;
+		}
+
+		GLenum colorFormat;
+		GLenum internalFormat;
+
+		switch (channels)
+		{
+			case 1:
+				colorFormat = GL_RED;
+				internalFormat = GL_R8;
+				break;
+
+			case 3:
+				colorFormat = GL_RGB;
+				internalFormat = GL_RGB8;
+				break;
+
+			case 4:
+				colorFormat = GL_RGBA;
+				internalFormat = GL_RGBA8;
+				m_IsTransparent = true;
+				break;
+
+			default:
+				stbi_image_free(data);
+				glDeleteTextures(1, &m_ID);
+
+				const auto errMsg{"Texture error: unknown color channel number: [" + std::to_string(channels) + "]."};
+				impl::Logger::Instance().Error(errMsg);
+				return;
+		}
+
+		glTextureStorage2D(m_ID, 1, internalFormat, width, height);
+		glTextureSubImage2D(m_ID, 0, 0, 0, width, height, colorFormat, GL_UNSIGNED_BYTE, data);
+
+		glGenerateTextureMipmap(m_ID);
+
+		glTextureParameteri(m_ID, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		glTextureParameteri(m_ID, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+		stbi_image_free(data);
+
+		impl::DataManager::RegisterTexture(this);
 	}
 
-	Texture::Texture(const Texture& other) :
-		m_Impl{other.m_Impl}
-	{
-		DataManager::RegisterTextureHandle(m_Impl, this);
-	}
-
-	Texture::Texture(Texture&& other) :
-		Texture{ other }
-	{}
 
 	Texture::~Texture()
 	{
-		Deinit();
-	}
-
-	Texture& Texture::operator=(const Texture& other)
-	{
-		Deinit();
-		m_Impl = other.m_Impl;
-		DataManager::RegisterTextureHandle(m_Impl, this);
-		return *this;
-	}
-
-	Texture& Texture::operator=(Texture&& other)
-	{
-		return operator=(other);
-	}
-
-	const decltype(TextureImpl::Id)& Texture::Id() const
-	{
-		return m_Impl->Id;
-	}
-
-	const decltype(TextureImpl::IsTransparent)& Texture::IsTransparent() const
-	{
-		return m_Impl->IsTransparent;
-	}
-
-	const decltype(TextureImpl::Path)& Texture::Path() const
-	{
-		return m_Impl->Path;
-	}
-
-	void Texture::Deinit()
-	{
-		if (DataManager::Textures().at(*m_Impl).size() == 1ull)
-		{
-			DataManager::DestroyTextureImpl(m_Impl);
-		}
-		else
-		{
-			DataManager::UnregisterTextureHandle(m_Impl, this);
-		}
+		glDeleteTextures(1, &Id);
+		impl::DataManager::UnregisterTexture(this);
 	}
 }

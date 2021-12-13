@@ -10,7 +10,6 @@
 #include "../components/rendering/NonInstancedRenderComponent.hpp"
 #include "../components/rendering/RenderComponent.hpp"
 #include "../entity/Entity.hpp"
-#include "../rendering/TextureImpl.hpp"
 #include "../rendering/Texture.hpp"
 #include "../rendering/Skybox.hpp"
 #include "../rendering/SkyboxImpl.hpp"
@@ -54,12 +53,9 @@ namespace leopph::impl
 		static void UnregisterInstancedRenderComponent(const InstancedRenderable& renderable, InstancedRenderComponent* const component);
 		static const std::unordered_map<InstancedRenderable, std::unordered_set<InstancedRenderComponent*>, RenderableHash, RenderableEqual>& InstancedRenderables();
 
-		static TextureImpl* CreateOrGetTextureImpl(std::filesystem::path path);
-		// Also unregisters all Texture handles.
-		static void DestroyTextureImpl(TextureImpl* texture);
-		static void RegisterTextureHandle(TextureImpl* texture, Texture* handle);
-		static void UnregisterTextureHandle(TextureImpl* texture, Texture* handle);
-		static const std::unordered_map<TextureImpl, std::unordered_set<Texture*>, PathedHash<TextureImpl>, PathedEqual<TextureImpl>>& Textures();
+		static void RegisterTexture(Texture* texture);
+		static void UnregisterTexture(Texture* texture);
+		static std::shared_ptr<Texture> FindTexture(const std::filesystem::path& path);
 
 		static SkyboxImpl* CreateOrGetSkyboxImpl(std::filesystem::path allPaths);
 		// Also unregisters all Skybox handles.
@@ -113,8 +109,8 @@ namespace leopph::impl
 		static std::vector<PointLight*> s_PointLights;
 		static std::unordered_map<const Transform*, std::pair<Matrix4, Matrix4>> s_Matrices;
 
-		// Stores TextureImpl instances along with all the Texture handles pointing to it.
-		static std::unordered_map<TextureImpl, std::unordered_set<Texture*>, PathedHash<TextureImpl>, PathedEqual<TextureImpl>> s_Textures;
+		// Stores non-owning pointers to all Texture instances.
+		static std::vector<Texture*> s_Textures;
 
 		// Stores SkyboxImpl instances along with all the Skybox handles pointing to it.
 		static std::unordered_map<SkyboxImpl, std::unordered_set<Skybox*>, PathedHash<SkyboxImpl>, PathedEqual<SkyboxImpl>> s_Skyboxes;
@@ -127,5 +123,7 @@ namespace leopph::impl
 
 		// Stores unique_ptrs to all NonInstancedRenderable instances along with a non-owning pointer to the InstancedRenderComponent pointing to it.
 		static std::unordered_map<std::unique_ptr<NonInstancedRenderable>, NonInstancedRenderComponent*, PointerHash, PointerEqual> s_NonInstancedRenderables;
+
+		static void SortTextures();
 	};
 }

@@ -3,7 +3,7 @@
 #include "../Texture.hpp"
 #include "../../misc/Color.hpp"
 
-#include <optional>
+#include <memory>
 
 
 namespace leopph
@@ -17,9 +17,9 @@ namespace leopph
 			Color DiffuseColor;
 			Color SpecularColor;
 
-			std::optional<impl::Texture> AmbientMap;
-			std::optional<impl::Texture> DiffuseMap;
-			std::optional<impl::Texture> SpecularMap;
+			std::shared_ptr<Texture> AmbientMap;
+			std::shared_ptr<Texture> DiffuseMap;
+			std::shared_ptr<Texture> SpecularMap;
 
 			float Shininess;
 			bool TwoSided;

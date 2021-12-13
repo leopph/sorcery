@@ -103,11 +103,11 @@ namespace leopph::impl
 		shader.SetUniform("u_Material.specularColor", static_cast<Vector3>(m_Material->SpecularColor));
 		shader.SetUniform("u_Material.shininess", m_Material->Shininess);
 
-		if (m_Material->AmbientMap.has_value())
+		if (m_Material->AmbientMap != nullptr)
 		{
 			shader.SetUniform("u_Material.hasAmbientMap", true);
 			shader.SetUniform("u_Material.ambientMap", static_cast<int>(nextFreeTextureUnit));
-			glBindTextureUnit(static_cast<GLuint>(nextFreeTextureUnit), m_Material->AmbientMap->Id());
+			glBindTextureUnit(static_cast<GLuint>(nextFreeTextureUnit), m_Material->AmbientMap->Id);
 			++nextFreeTextureUnit;
 		}
 		else
@@ -115,11 +115,11 @@ namespace leopph::impl
 			shader.SetUniform("u_Material.hasAmbientMap", false);
 		}
 
-		if (m_Material->DiffuseMap.has_value())
+		if (m_Material->DiffuseMap != nullptr)
 		{
 			shader.SetUniform("u_Material.hasDiffuseMap", true);
 			shader.SetUniform("u_Material.diffuseMap", static_cast<int>(nextFreeTextureUnit));
-			glBindTextureUnit(static_cast<GLuint>(nextFreeTextureUnit), m_Material->DiffuseMap->Id());
+			glBindTextureUnit(static_cast<GLuint>(nextFreeTextureUnit), m_Material->DiffuseMap->Id);
 			++nextFreeTextureUnit;
 		}
 		else
@@ -127,11 +127,11 @@ namespace leopph::impl
 			shader.SetUniform("u_Material.hasDiffuseMap", false);
 		}
 
-		if (m_Material->SpecularMap.has_value())
+		if (m_Material->SpecularMap != nullptr)
 		{
 			shader.SetUniform("u_Material.hasSpecularMap", true);
 			shader.SetUniform("u_Material.specularMap", static_cast<int>(nextFreeTextureUnit));
-			glBindTextureUnit(static_cast<GLuint>(nextFreeTextureUnit), m_Material->SpecularMap->Id());
+			glBindTextureUnit(static_cast<GLuint>(nextFreeTextureUnit), m_Material->SpecularMap->Id);
 			++nextFreeTextureUnit;
 		}
 		else

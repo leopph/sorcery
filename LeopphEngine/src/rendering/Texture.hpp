@@ -1,33 +1,31 @@
 #pragma once
 
 #include <filesystem>
+#include <memory>
 
 
-namespace leopph::impl
+namespace leopph
 {
-	class TextureImpl;
-
-
-	class Texture
+	class Texture : public std::enable_shared_from_this<Texture>
 	{
 	public:
-		explicit Texture(std::filesystem::path path);
-		Texture(const Texture& other);
-		Texture(Texture&& other);
+		Texture(std::filesystem::path path);
+
+		Texture(const Texture& other) = delete;
+		Texture(Texture&& other) = delete;
 
 		~Texture();
 
-		Texture& operator=(const Texture& other);
-		Texture& operator=(Texture&& other);
+		Texture& operator=(const Texture& other) = delete;
+		Texture& operator=(Texture&& other) = delete;
 
-		const unsigned& Id() const;
-		const bool& IsTransparent() const;
-		const std::filesystem::path& Path() const;
+		const unsigned& Id;
+		const std::filesystem::path Path;
+		const bool& IsTransparent;
 
 
 	private:
-		void Deinit();
-
-		TextureImpl* m_Impl;
+		unsigned m_ID;
+		bool m_IsTransparent;
 	};
 }

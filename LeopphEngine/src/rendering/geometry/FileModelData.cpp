@@ -1,6 +1,7 @@
 #include "FileModelData.hpp"
 
 #include "../../util/logger.h"
+#include "../../data/DataManager.hpp"
 
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
@@ -163,7 +164,7 @@ namespace leopph::impl
 	}
 
 
-	std::optional<Texture> FileModelData::LoadTexture(const aiMaterial* const material, const aiTextureType type) const
+	std::shared_ptr<Texture> FileModelData::LoadTexture(const aiMaterial* const material, const aiTextureType type) const
 	{
 		if (material->GetTextureCount(type) > 0)
 		{
@@ -171,7 +172,16 @@ namespace leopph::impl
 			material->GetTexture(type, 0, &location);
 
 			Logger::Instance().Debug("Loading texture on path [" + (Path.parent_path() / location.C_Str()).string() + "].");
-			return std::make_optional<Texture>(Path.parent_path() / location.C_Str());
+
+			const auto texPath{Path.parent_path() / location.C_Str()};
+
+			if (auto p{DataManager::FindTexture(texPath)};
+				p != nullptr)
+			{
+				return p;
+			}
+
+			return std::make_shared<Texture>(texPath);
 		}
 		return {};
 	}
