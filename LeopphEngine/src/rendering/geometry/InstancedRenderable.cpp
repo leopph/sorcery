@@ -3,25 +3,17 @@
 #include <glad/glad.h>
 
 #include <functional>
-#include <type_traits>
 
 
 namespace leopph::impl
 {
 	InstancedRenderable::InstancedRenderable(ModelData& modelData) :
-		Renderable{modelData},
-		m_Meshes{},
-		m_InstanceBuffer{},
-		m_InstanceBufferSize{1},
-		m_InstanceCount{0ull}
+		Renderable{modelData}
 	{
 		glCreateBuffers(1, &m_InstanceBuffer);
 		glNamedBufferData(m_InstanceBuffer, 2 * sizeof(Matrix4), nullptr, GL_STATIC_DRAW);
 
-		std::ranges::for_each(modelData.MeshData, [&](auto& meshData)
-		{
-			m_Meshes.emplace_back(std::make_unique<InstancedMesh>(meshData, m_InstanceBuffer));
-		});
+		Update();
 	}
 
 
@@ -29,7 +21,7 @@ namespace leopph::impl
 	{
 		for (const auto& mesh : m_Meshes)
 		{
-			mesh->DrawShaded(shader, nextFreeTextureUnit, m_InstanceCount);
+			mesh.DrawShaded(shader, nextFreeTextureUnit, m_InstanceCount);
 		}
 	}
 
@@ -38,7 +30,7 @@ namespace leopph::impl
 	{
 		for (const auto& mesh : m_Meshes)
 		{
-			mesh->DrawDepth(m_InstanceCount);
+			mesh.DrawDepth(m_InstanceCount);
 		}
 	}
 
@@ -69,7 +61,7 @@ namespace leopph::impl
 		m_Meshes.clear();
 		std::ranges::for_each(ModelDataSrc.MeshData, [&](auto& meshData)
 		{
-			m_Meshes.emplace_back(std::make_unique<InstancedMesh>(meshData, m_InstanceBuffer));
+			m_Meshes.emplace_back(meshData, m_InstanceBuffer);
 		});
 	}
 }

@@ -11,29 +11,28 @@
 
 namespace leopph::impl
 {
-	InstancedMesh::InstancedMesh(MeshData& meshData, unsigned instanceBuffer) :
-		m_VertexArray{},
-		m_Buffers{},
+	InstancedMesh::InstancedMesh(MeshData& meshData, const unsigned instanceBuffer) :
 		m_MeshDataSrc{&meshData},
+		m_Material{meshData.Material},
+		m_RefCount{std::make_shared<std::size_t>(1ull)},
 		m_VertexCount{meshData.Vertices.size()},
-		m_IndexCount{meshData.Indices.size()},
-		m_Material{meshData.Material}
+		m_IndexCount{meshData.Indices.size()}
 	{
 		glCreateVertexArrays(1, &m_VertexArray);
 
 		if (m_IndexCount > 0ull)
 		{
 			glCreateBuffers(static_cast<GLsizei>(m_Buffers.size()), m_Buffers.data());
-			glNamedBufferStorage(m_Buffers[INDEX], meshData.Indices.size() * sizeof(unsigned), meshData.Indices.data(), 0);
-			glVertexArrayElementBuffer(m_VertexArray, m_Buffers[INDEX]);
+			glNamedBufferStorage(m_Buffers[INDEX_BUFFER], meshData.Indices.size() * sizeof(unsigned), meshData.Indices.data(), 0);
+			glVertexArrayElementBuffer(m_VertexArray, m_Buffers[INDEX_BUFFER]);
 		}
 		else
 		{
-			glCreateBuffers(1, &m_Buffers[VERTEX]);
+			glCreateBuffers(1, &m_Buffers[VERTEX_BUFFER]);
 		}
 
-		glNamedBufferStorage(m_Buffers[VERTEX], meshData.Vertices.size() * sizeof(decltype(meshData.Vertices)::value_type), meshData.Vertices.data(), 0);
-		glVertexArrayVertexBuffers(m_VertexArray, 0, 2, std::array{m_Buffers[VERTEX], instanceBuffer}.data(), std::array{static_cast<GLintptr>(0), static_cast<GLintptr>(0)}.data(), std::array{static_cast<GLint>(sizeof(decltype(meshData.Vertices)::value_type)), static_cast<GLint>(sizeof(std::pair<Matrix4, Matrix4>) )}.data());
+		glNamedBufferStorage(m_Buffers[VERTEX_BUFFER], meshData.Vertices.size() * sizeof(decltype(meshData.Vertices)::value_type), meshData.Vertices.data(), 0);
+		glVertexArrayVertexBuffers(m_VertexArray, 0, 2, std::array{m_Buffers[VERTEX_BUFFER], instanceBuffer}.data(), std::array{static_cast<GLintptr>(0), static_cast<GLintptr>(0)}.data(), std::array{static_cast<GLint>(sizeof(decltype(meshData.Vertices)::value_type)), static_cast<GLint>(sizeof(std::pair<Matrix4, Matrix4>))}.data());
 
 		glVertexArrayAttribFormat(m_VertexArray, 0, 3, GL_FLOAT, GL_FALSE, offsetof(decltype(meshData.Vertices)::value_type, position));
 		glVertexArrayAttribBinding(m_VertexArray, 0, 0);
@@ -82,11 +81,49 @@ namespace leopph::impl
 		glVertexArrayBindingDivisor(m_VertexArray, 1, 1);
 	}
 
+	InstancedMesh::InstancedMesh(const InstancedMesh& other) :
+		m_MeshDataSrc{other.m_MeshDataSrc},
+		m_Material{other.m_Material},
+		m_RefCount{other.m_RefCount},
+		m_VertexArray{other.m_VertexArray},
+		m_Buffers{other.m_Buffers},
+		m_VertexCount{other.m_VertexCount},
+		m_IndexCount{other.m_IndexCount}
+	{
+		++*m_RefCount;
+	}
+
+	InstancedMesh& InstancedMesh::operator=(const InstancedMesh& other)
+	{
+		if (this == &other)
+		{
+			return *this;
+		}
+
+		Deinit();
+		m_MeshDataSrc = other.m_MeshDataSrc;
+		m_Material = other.m_Material;
+		m_RefCount = other.m_RefCount;
+		m_VertexArray = other.m_VertexArray;
+		m_Buffers = other.m_Buffers;
+		m_VertexCount = other.m_VertexCount;
+		m_IndexCount = other.m_IndexCount;
+		++*m_RefCount;
+		return *this;
+	}
+
+	InstancedMesh::InstancedMesh(InstancedMesh&& other) noexcept :
+		InstancedMesh{other}
+	{}
+
+	InstancedMesh& InstancedMesh::operator=(InstancedMesh&& other) noexcept
+	{
+		return *this = other;
+	}
 
 	InstancedMesh::~InstancedMesh()
 	{
-		glDeleteBuffers(static_cast<GLsizei>(m_Buffers.size()), m_Buffers.data());
-		glDeleteVertexArrays(1, &m_VertexArray);
+		Deinit();
 	}
 
 
@@ -96,7 +133,7 @@ namespace leopph::impl
 	}
 
 
-	void InstancedMesh::DrawShaded(ShaderProgram& shader, std::size_t nextFreeTextureUnit, std::size_t instanceCount) const
+	void InstancedMesh::DrawShaded(ShaderProgram& shader, std::size_t nextFreeTextureUnit, const std::size_t instanceCount) const
 	{
 		shader.SetUniform("u_Material.ambientColor", static_cast<Vector3>(m_Material->AmbientColor));
 		shader.SetUniform("u_Material.diffuseColor", static_cast<Vector3>(m_Material->DiffuseColor));
@@ -197,15 +234,26 @@ namespace leopph::impl
 		if (m_IndexCount > 0ull)
 		{
 			glCreateBuffers(static_cast<GLsizei>(m_Buffers.size()), m_Buffers.data());
-			glNamedBufferStorage(m_Buffers[INDEX], m_MeshDataSrc->Indices.size() * sizeof(unsigned), m_MeshDataSrc->Indices.data(), 0);
-			glVertexArrayElementBuffer(m_VertexArray, m_Buffers[INDEX]);
+			glNamedBufferStorage(m_Buffers[INDEX_BUFFER], m_MeshDataSrc->Indices.size() * sizeof(unsigned), m_MeshDataSrc->Indices.data(), 0);
+			glVertexArrayElementBuffer(m_VertexArray, m_Buffers[INDEX_BUFFER]);
 		}
 		else
 		{
-			glCreateBuffers(1, &m_Buffers[VERTEX]);
+			glCreateBuffers(1, &m_Buffers[VERTEX_BUFFER]);
 		}
 
-		glNamedBufferStorage(m_Buffers[VERTEX], m_MeshDataSrc->Vertices.size() * sizeof(decltype(m_MeshDataSrc->Vertices)::value_type), m_MeshDataSrc->Vertices.data(), 0);
-		glVertexArrayVertexBuffer(m_VertexArray, 0, m_Buffers[VERTEX], 0, static_cast<GLsizei>(sizeof(decltype(m_MeshDataSrc->Vertices)::value_type)));
+		glNamedBufferStorage(m_Buffers[VERTEX_BUFFER], m_MeshDataSrc->Vertices.size() * sizeof(decltype(m_MeshDataSrc->Vertices)::value_type), m_MeshDataSrc->Vertices.data(), 0);
+		glVertexArrayVertexBuffer(m_VertexArray, 0, m_Buffers[VERTEX_BUFFER], 0, static_cast<GLsizei>(sizeof(decltype(m_MeshDataSrc->Vertices)::value_type)));
+	}
+
+	void InstancedMesh::Deinit() const
+	{
+		--*m_RefCount;
+
+		if (*m_RefCount == 0ull)
+		{
+			glDeleteBuffers(static_cast<GLsizei>(m_Buffers.size()), m_Buffers.data());
+			glDeleteVertexArrays(1, &m_VertexArray);
+		}
 	}
 }

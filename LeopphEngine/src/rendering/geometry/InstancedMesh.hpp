@@ -6,7 +6,6 @@
 #include <array>
 #include <cstddef>
 #include <memory>
-#include <vector>
 
 
 namespace leopph::impl
@@ -15,13 +14,14 @@ namespace leopph::impl
 	{
 		public:
 			InstancedMesh(MeshData& meshData, unsigned instanceBuffer);
-			InstancedMesh(const InstancedMesh&) = delete;
-			InstancedMesh(InstancedMesh&& other) = delete;
+
+			InstancedMesh(const InstancedMesh& other);
+			InstancedMesh& operator=(const InstancedMesh& other);
+
+			InstancedMesh(InstancedMesh&& other) noexcept;
+			InstancedMesh& operator=(InstancedMesh&& other) noexcept;
 
 			~InstancedMesh();
-
-			InstancedMesh& operator=(const InstancedMesh&) = delete;
-			InstancedMesh& operator=(InstancedMesh&& other) = delete;
 
 			bool operator==(const InstancedMesh& other) const;
 
@@ -33,14 +33,23 @@ namespace leopph::impl
 
 
 		private:
-			enum {VERTEX, INDEX};
+			// Decrements ref count and deletes GL resources if necessary.
+			void Deinit() const;
 
-			unsigned m_VertexArray;
-			std::array<unsigned, 2> m_Buffers;
+			constexpr static std::size_t VERTEX_BUFFER{0ull};
+			constexpr static std::size_t INDEX_BUFFER{1ull};
 
-			MeshData* const m_MeshDataSrc;
-			std::size_t m_VertexCount;
-			std::size_t m_IndexCount;
-			std::shared_ptr<Material> m_Material;
+
+			MeshData* m_MeshDataSrc{nullptr};
+			std::shared_ptr<Material> m_Material{nullptr};
+			/* This is shared between copies of an original object.
+			 * We don't have to worry about newly created objects because as long as a buffer name is used by at least one copy, GL will not hand out the same name twice.
+			 * MUST NOT BE LEFT AS NULLPTR AFTER CONSTRUCTION! */
+			std::shared_ptr<std::size_t> m_RefCount{nullptr};
+
+			unsigned m_VertexArray{0};
+			std::array<unsigned, 2> m_Buffers{0, 0};
+			std::size_t m_VertexCount{0};
+			std::size_t m_IndexCount{0};
 	};
 }

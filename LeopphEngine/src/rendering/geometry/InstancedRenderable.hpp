@@ -3,19 +3,17 @@
 #include "InstancedMesh.hpp"
 #include "ModelData.hpp"
 #include "Renderable.hpp"
-#include "../shaders/ShaderProgram.hpp"
 #include "../../math/Matrix.hpp"
+#include "../shaders/ShaderProgram.hpp"
 
 #include <cstddef>
-#include <memory>
-#include <optional>
 #include <utility>
 #include <vector>
 
 
 namespace leopph::impl
 {
-	class InstancedRenderable : public Renderable
+	class InstancedRenderable final : public Renderable
 	{
 		public:
 			explicit InstancedRenderable(ModelData& modelData);
@@ -37,10 +35,10 @@ namespace leopph::impl
 
 
 		private:
-			std::vector<std::unique_ptr<InstancedMesh>> m_Meshes;
+			std::vector<InstancedMesh> m_Meshes;
 
-			unsigned m_InstanceBuffer;
-			mutable std::size_t m_InstanceBufferSize;
-			mutable std::size_t m_InstanceCount;
+			unsigned m_InstanceBuffer{0u};
+			mutable std::size_t m_InstanceBufferSize{1ull};
+			mutable std::size_t m_InstanceCount{0ull};
 	};
 }
