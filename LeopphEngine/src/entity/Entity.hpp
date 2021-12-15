@@ -5,9 +5,11 @@
 #include "../components/Transform.hpp"
 
 #include <concepts>
-#include <unordered_set>
+#include <memory>
 #include <string>
+#include <unordered_set>
 #include <utility>
+#include <vector>
 
 
 namespace leopph
@@ -18,66 +20,76 @@ namespace leopph
 	}
 
 
-	/*---------------------------------------------------------------------------------------------------------------
-	Entities are the bases of the entity hierarchy. They have spatial characteristics through a Transform,
-	can have Models that are later rendered according to these characteristics, and have components attached to them,
-	that may give them their own unique properties or behaviors.
-	See "component.h", "behavior.h", and "model.h" for additional information.
-	---------------------------------------------------------------------------------------------------------------*/
+	/* Entities are kind of object skeletons and form the basis of the object hierarchy.
+	 * These are the objects Components must be attached to in order to have an effect at runtime.
+	 * Entities are provided spatial properties through a Transform component. */
 	class Entity final
 	{
-	public:
-		LEOPPHAPI Entity();
-		LEOPPHAPI explicit  Entity(std::string name);
+		public:
+			LEOPPHAPI Entity();
+			LEOPPHAPI explicit Entity(std::string name);
 
-		Entity(const Entity&) = delete;
-		Entity(Entity&&) = delete;
-		void operator=(const Entity&) = delete;
-		void operator=(Entity&&) = delete;
+			Entity(const Entity&) = delete;
+			void operator=(const Entity&) = delete;
 
-		LEOPPHAPI ~Entity();
+			Entity(Entity&&) = delete;
+			void operator=(Entity&&) = delete;
 
-		/* Returns a pointer to the Entity that's name is equal to the given string.
-		 * Returns NULL if no such Entity exists. */
-		LEOPPHAPI static Entity* Find(const std::string& name);
+			LEOPPHAPI ~Entity() noexcept;
 
-		/* The set of Components attached to the Entity. */
-		LEOPPHAPI const std::unordered_set<Component*>& Components() const;
+			/* Returns a pointer to the Entity that's name is equal to the given string.
+			 * Returns NULL if no such Entity exists. */
+			LEOPPHAPI static Entity* Find(const std::string& name);
 
-		/* Attach a new Component of type T to the Entity.
-		 * It is constructed in-place, and a pointer to it is returned. */
-		template<std::derived_from<Component> T, class... Args>
-		T* AddComponent(Args&&... args)
-		{
-			return new T{ *this, std::forward<Args>(args)... };
-		}
+			/* Attach a newly constructed Component of type T to the Entity.
+			 * Returns a non-owning pointer the Component. */
+			template<std::derived_from<Component> T, class... Args>
+			T* CreateComponent(Args&&... args)
+			{
+				auto component{std::make_unique<T>(*this, std::forward<Args>(args)...)};
+				auto ret{component.get()};
+				RegisterComponent(std::move(component));
+				return ret;
+			}
 
-		/* Remove the given Component from the Entity.
-		 * The component is detached and destroyed. */
-		LEOPPHAPI void RemoveComponent(Component* behavior);
+			/* Remove the given Component from the Entity.
+			 * The component is detached and destroyed. */
+			LEOPPHAPI void RemoveComponent(const Component* component) const;
 
-		/* Look for a Component of type T that is attached to the Entity.
-		 * If there is none, NULL is returned.
-		 * Otherwise, a pointer to the first matching Component is returned.
-		 * There are no guarantees of the order of Components attached to the Entity. */
-		template<std::derived_from<Component> T>
-		T* GetComponent() const
-		{
-			for (const auto& x : Components())
-				if (auto ret = dynamic_cast<T* const>(x); ret != nullptr)
-					return const_cast<T*>(ret);
+			/* Look for a Component of type T that is attached to the Entity.
+			 * If there is none, NULL is returned.
+			 * Otherwise, a pointer to the first matching Component is returned.
+			 * There are no guarantees of the order of Components attached to the Entity. */
+			template<std::derived_from<Component> T>
+			T* GetComponent() const
+			{
+				for (const auto& component : Components())
+				{
+					if (const auto ret = dynamic_cast<T*>(component);
+						ret != nullptr)
+					{
+						return ret;
+					}
+				}
 
-			return nullptr;
-		}
+				return nullptr;
+			}
 
-		/* The Entity's name is a unique identifier. */
-		const std::string& Name;
-		/* The Entity's Transform describes its spatial properties. */
-		Transform* const& Transform;
+			/* The Entity's name is a unique identifier. */
+			const std::string& Name;
+			/* The Entity's Transform describes its spatial properties. */
+			Transform* const& Transform;
 
 
-	private:
-		std::string m_Name;
-		leopph::Transform* m_Transform;
+		private:
+			// Registers the passed Component in DataManager.
+			LEOPPHAPI void RegisterComponent(std::unique_ptr<Component>&& component) const;
+
+			// Returns the set of Components attached to the Entity.
+			[[nodiscard]]
+			LEOPPHAPI std::vector<Component*> Components() const;
+
+			std::string m_Name;
+			leopph::Transform* m_Transform;
 	};
 }

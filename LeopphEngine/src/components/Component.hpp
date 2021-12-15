@@ -14,17 +14,17 @@ namespace leopph
 	class Component
 	{
 	public:
-		// The Entity the Component is attached to.
-		Entity& Entity;
+		LEOPPHAPI explicit Component(Entity& owner);
 
-
-		LEOPPHAPI explicit Component(leopph::Entity& owner);
 		Component(const Component&) = delete;
+		void operator=(const Component&) = delete;
+
 		Component(Component&&) = delete;
+		void operator=(Component&&) = delete;
 
 		LEOPPHAPI virtual ~Component() = 0;
 
-		void operator=(const Component&) = delete;
-		void operator=(Component&&) = delete;
+		// The Entity the Component is attached to.
+		Entity& Entity;
 	};
 }

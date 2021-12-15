@@ -8,15 +8,12 @@
 #include "../components/lighting/SpotLight.hpp"
 #include "../components/rendering/InstancedRenderComponent.hpp"
 #include "../components/rendering/NonInstancedRenderComponent.hpp"
-#include "../components/rendering/RenderComponent.hpp"
 #include "../entity/Entity.hpp"
-#include "../rendering/Texture.hpp"
 #include "../rendering/Skybox.hpp"
 #include "../rendering/SkyboxImpl.hpp"
+#include "../rendering/Texture.hpp"
 #include "../rendering/geometry/FileModelData.hpp"
 #include "../rendering/geometry/InstancedRenderable.hpp"
-#include "../rendering/geometry/InstancedRenderable.hpp"
-#include "../rendering/geometry/ModelData.hpp"
 #include "../rendering/geometry/NonInstancedRenderable.hpp"
 #include "../util/equal/EntityEqual.hpp"
 #include "../util/equal/PathedEqual.hpp"
@@ -27,9 +24,7 @@
 #include "../util/hash/PointerHash.hpp"
 #include "../util/hash/RenderableHash.hpp"
 
-#include <cstddef>
 #include <filesystem>
-#include <list>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -72,24 +67,25 @@ namespace leopph::impl
 		static void DestroyNonInstancedRenderable(const NonInstancedRenderable& renderable);
 		static const std::unordered_map<std::unique_ptr<NonInstancedRenderable>, NonInstancedRenderComponent*, PointerHash, PointerEqual>& NonInstancedRenderables();
 
+		static void RegisterComponentForEntity(const Entity* entity, std::unique_ptr<Component>&& component);
+		// Destroys the Component object.
+		static void UnregisterComponentFromEntity(const Entity* entity, const Component* component);
+		static const std::unordered_set<std::unique_ptr<Component>, PointerHash, PointerEqual>& ComponentsOfEntity(const Entity* entity);
 
 		static void Register(Entity* entity);
 		static void Register(Behavior* behavior);
-		static void Register(Component* component);
 		static void Register(PointLight* pointLight);
 		static void Register(const SpotLight* spotLight);
 
 		static void Unregister(Entity* entity);
 		static void Unregister(Behavior* behavior);
-		static void Unregister(Component* component);
 		static void Unregister(PointLight* pointLight);
 		static void Unregister(const SpotLight* spotLight);
 
 		static Entity* Find(const std::string& name);
 
-		static const std::unordered_map<Entity*, std::unordered_set<Component*>, EntityHash, EntityEqual>& EntitiesAndComponents();
+		static const std::unordered_map<Entity*, std::unordered_set<std::unique_ptr<Component>, PointerHash, PointerEqual>, EntityHash, EntityEqual>& EntitiesAndComponents();
 		static const std::unordered_set<Behavior*>& Behaviors();
-		static const std::unordered_set<Component*>& Components(Entity* entity);
 		static DirectionalLight* DirectionalLight();
 		static const std::unordered_set<const SpotLight*>& SpotLights();
 		static const std::vector<PointLight*>& PointLights();
@@ -102,7 +98,9 @@ namespace leopph::impl
 
 
 	private:
-		static std::unordered_map<Entity*, std::unordered_set<Component*>, EntityHash, EntityEqual> s_EntitiesAndComponents;
+		// Stores owning pointers to all Entities and the Components attached to them.
+		static std::unordered_map<Entity*, std::unordered_set<std::unique_ptr<Component>, PointerHash, PointerEqual>, EntityHash, EntityEqual> s_EntitiesAndComponents;
+
 		static std::unordered_set<Behavior*> s_Behaviors;
 		static leopph::DirectionalLight* s_DirLight;
 		static std::unordered_set<const SpotLight*> s_SpotLights;

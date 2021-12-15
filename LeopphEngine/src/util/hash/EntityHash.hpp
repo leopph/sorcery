@@ -14,11 +14,8 @@ namespace leopph::impl
 	public:
 		using is_transparent = void;
 
-		EntityHash();
-
 		std::size_t operator()(const Entity* entity) const;
 		std::size_t operator()(const std::string& str) const;
-
 
 	private:
 		std::hash<std::string> m_Hash;

@@ -1,17 +1,11 @@
 #include "Component.hpp"
 
-#include "../data/DataManager.hpp"
 
 namespace leopph
 {
 	Component::Component(leopph::Entity& owner) :
-		Entity{ owner }
-	{
-		impl::DataManager::Register(this);
-	}
+		Entity{owner}
+	{}
 
-	Component::~Component()
-	{
-		impl::DataManager::Unregister(this);
-	}
+	Component::~Component() = default;
 }

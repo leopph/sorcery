@@ -4,11 +4,12 @@
 
 #include <algorithm>
 #include <iostream>
+#include <stdexcept>
 
 
 namespace leopph::impl
 {
-	std::unordered_map<Entity*, std::unordered_set<Component*>, EntityHash, EntityEqual> DataManager::s_EntitiesAndComponents{};
+	std::unordered_map<Entity*, std::unordered_set<std::unique_ptr<Component>, PointerHash, PointerEqual>, EntityHash, EntityEqual> DataManager::s_EntitiesAndComponents{};
 	std::unordered_set<Behavior*> DataManager::s_Behaviors{};
 	DirectionalLight* DataManager::s_DirLight{nullptr};
 	std::unordered_set<const SpotLight*> DataManager::s_SpotLights{};
@@ -23,15 +24,14 @@ namespace leopph::impl
 
 	void DataManager::Clear()
 	{
-		for (auto it = s_EntitiesAndComponents.begin(); it != s_EntitiesAndComponents.end();)
+		while (!s_EntitiesAndComponents.empty())
 		{
-			delete it->first;
-			it = s_EntitiesAndComponents.begin();
+			auto node{s_EntitiesAndComponents.extract(s_EntitiesAndComponents.begin())};
+			delete node.key();
+			node.mapped().clear();
 		}
 
 		s_FileModelData.clear();
-
-		Logger::Instance().Debug("All data have been cleared.");
 	}
 
 
@@ -54,7 +54,7 @@ namespace leopph::impl
 	}
 
 
-	const std::unordered_map<Entity*, std::unordered_set<Component*>, EntityHash, EntityEqual>& DataManager::EntitiesAndComponents()
+	const std::unordered_map<Entity*, std::unordered_set<std::unique_ptr<Component>, PointerHash, PointerEqual>, EntityHash, EntityEqual>& DataManager::EntitiesAndComponents()
 	{
 		return s_EntitiesAndComponents;
 	}
@@ -78,21 +78,59 @@ namespace leopph::impl
 	}
 
 
-	const std::unordered_set<Component*>& DataManager::Components(Entity* entity)
+	const std::unordered_set<std::unique_ptr<Component>, PointerHash, PointerEqual>& DataManager::ComponentsOfEntity(const Entity* entity)
 	{
-		return s_EntitiesAndComponents[entity];
+		if (const auto it{s_EntitiesAndComponents.find(entity)};
+			it != s_EntitiesAndComponents.end())
+		{
+			return it->second;
+		}
+
+		const auto msg{"Entity at address [" + std::to_string(reinterpret_cast<unsigned long long>(entity)) + "] was not found while trying access its components."};
+		Logger::Instance().Error(msg);
+		throw std::out_of_range{msg};
 	}
 
 
-	void DataManager::Register(Component* component)
+	void DataManager::RegisterComponentForEntity(const Entity* entity, std::unique_ptr<Component>&& component)
 	{
-		s_EntitiesAndComponents[&component->Entity].insert(component);
+		if (const auto it{s_EntitiesAndComponents.find(entity)};
+			it != s_EntitiesAndComponents.end())
+		{
+			it->second.emplace(std::move(component));
+		}
+		else
+		{
+			const auto msg{"Entity at address [" + std::to_string(reinterpret_cast<unsigned long long>(entity)) + "] was not found while trying to register component at address [" + std::to_string(reinterpret_cast<unsigned long long>(component.get())) + "] to it."};
+			Logger::Instance().Error(msg);
+			throw std::out_of_range{msg};
+		}
 	}
 
 
-	void DataManager::Unregister(Component* component)
+	void DataManager::UnregisterComponentFromEntity(const Entity* entity, const Component* component)
 	{
-		s_EntitiesAndComponents[&component->Entity].erase(component);
+		if (const auto entityIt{s_EntitiesAndComponents.find(entity)};
+			entityIt != s_EntitiesAndComponents.end())
+		{
+			if (const auto componentIt{entityIt->second.find(component)};
+				componentIt != entityIt->second.end())
+			{
+				entityIt->second.erase(componentIt);
+			}
+			else
+			{
+				const auto msg{"Component at address [" + std::to_string(reinterpret_cast<unsigned long long>(component)) + "] was not found while trying to unregister it from Entity at address [" + std::to_string(reinterpret_cast<unsigned long long>(entity)) + "]."};
+				Logger::Instance().Error(msg);
+				throw std::out_of_range{msg};
+			}
+		}
+		else
+		{
+			const auto msg{"Entity at address [" + std::to_string(reinterpret_cast<unsigned long long>(entity)) + "] was not found while trying to unregister component at address [" + std::to_string(reinterpret_cast<unsigned long long>(component)) + "] from it."};
+			Logger::Instance().Error(msg);
+			throw std::out_of_range{msg};
+		}
 	}
 
 
@@ -213,13 +251,15 @@ namespace leopph::impl
 
 	std::shared_ptr<Texture> DataManager::FindTexture(const std::filesystem::path& path)
 	{
-		if (const auto it{std::ranges::lower_bound(s_Textures, path, [](const auto& elemPath, const auto& valPath)
-		{
-			return elemPath.compare(valPath);
-		}, [](const auto& texture) -> const auto&
-		{
-			return texture->Path;
-		})};
+		if (const auto it{
+				std::ranges::lower_bound(s_Textures, path, [](const auto& elemPath, const auto& valPath)
+				                         {
+					                         return elemPath.compare(valPath);
+				                         }, [](const auto& texture) -> const auto&
+				                         {
+					                         return texture->Path;
+				                         })
+			};
 			it != s_Textures.end())
 		{
 			return (*it)->shared_from_this();

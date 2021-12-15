@@ -3,11 +3,9 @@
 #include "../data/DataManager.hpp"
 #include "../util/logger.h"
 
+#include <iterator>
 #include <limits>
 #include <stdexcept>
-#include <string>
-#include <utility>
-
 
 
 namespace leopph
@@ -45,7 +43,7 @@ namespace leopph
 		}
 
 		impl::DataManager::Register(this);
-		m_Transform = AddComponent<leopph::Transform>();
+		m_Transform = CreateComponent<leopph::Transform>();
 	}
 
 
@@ -54,36 +52,39 @@ namespace leopph
 	{}
 
 
-	Entity::~Entity()
+	Entity::~Entity() noexcept
 	{
-		for (auto it = impl::DataManager::Components(this).begin(); it != impl::DataManager::Components(this).end();)
-		{
-			delete*it;
-			it = impl::DataManager::Components(this).begin();
-		}
-
 		impl::DataManager::Unregister(this);
 	}
 
 
-	const std::unordered_set<Component*>& Entity::Components() const
+	std::vector<Component*> Entity::Components() const
 	{
-		return impl::DataManager::Components(const_cast<Entity*>(this));
+		const auto& components{impl::DataManager::ComponentsOfEntity(this)};
+		std::vector<Component*> ret(components.size());
+		std::ranges::transform(components, std::back_inserter(ret), [](const auto& compPtr)
+		{
+			return compPtr.get();
+		});
+		return ret;
 	}
 
 
-	void Entity::RemoveComponent(Component* behavior)
+	void Entity::RemoveComponent(const Component* component) const
 	{
-		if (&behavior->Entity != this)
+		if (&component->Entity != this)
 		{
-			const auto errorMsg{"The given Component is not attached to Entity [" + Name + "]."};
-			impl::Logger::Instance().Error(errorMsg);
-			return;
+			const auto msg{"Error while trying to remove Component at address [" + std::to_string(reinterpret_cast<unsigned long long>(component)) + "] from Entity [" + m_Name + "]. The Component's owning Entity is different from this."};
+			impl::Logger::Instance().Error(msg);
 		}
+		else
+		{
+			impl::DataManager::UnregisterComponentFromEntity(this, component);
+		}
+	}
 
-		if (dynamic_cast<leopph::Transform*>(behavior))
-		{
-			impl::DataManager::Unregister(behavior);
-		}
+	void Entity::RegisterComponent(std::unique_ptr<Component>&& component) const
+	{
+		impl::DataManager::RegisterComponentForEntity(this, std::move(component));
 	}
 }
