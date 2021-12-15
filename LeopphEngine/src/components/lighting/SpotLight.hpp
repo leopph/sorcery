@@ -6,7 +6,7 @@
 namespace leopph
 {
 	/* SpotLights are special Lights that shine in a cone.
-	 * They have position, orientation, attenuation, and radius. */
+	 * They have Position, orientation, attenuation, and radius. */
 	class SpotLight final : public impl::AttenuatedLight
 	{
 		public:

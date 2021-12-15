@@ -116,7 +116,7 @@ namespace leopph
 				}
 
 
-				/* View Matrix for the rendering pipeline that is calculated based on current position, target position, and the world's vertical axis */
+				/* View Matrix for the rendering pipeline that is calculated based on current Position, target Position, and the world's vertical axis */
 				static Matrix<T, 4, 4> LookAt(const Vector<T, 3>& position, const Vector<T, 3>& target, const Vector<T, 3>& worldUp)
 					requires(N == 4 && M == 4)
 				{

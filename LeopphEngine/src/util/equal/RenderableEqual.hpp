@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../../rendering/geometry/ModelData.hpp"
-#include "../../rendering/geometry/Renderable.hpp"
+#include "../../rendering/geometry/GlMeshCollection.hpp"
+#include "../../rendering/geometry/MeshDataCollection.hpp"
 
 
 namespace leopph::impl
@@ -11,8 +11,8 @@ namespace leopph::impl
 	public:
 		using is_transparent = void;
 
-		bool operator()(const Renderable& left, const Renderable& right) const;
-		bool operator()(const Renderable& left, const ModelData& right) const;
-		bool operator()(const ModelData& left, const Renderable& right) const;
+		bool operator()(const GlMeshCollection& left, const GlMeshCollection& right) const;
+		bool operator()(const GlMeshCollection& left, const MeshDataCollection& right) const;
+		bool operator()(const MeshDataCollection& left, const GlMeshCollection& right) const;
 	};
 }

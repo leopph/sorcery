@@ -3,13 +3,13 @@
 
 namespace leopph::impl
 {
-	std::size_t RenderableHash::operator()(const Renderable& model) const
+	std::size_t RenderableHash::operator()(const GlMeshCollection& model) const
 	{
-		return m_Hash(& model.ModelDataSrc);
+		return m_Hash(model.MeshDataCollection().Id());
 	}
 
-	std::size_t RenderableHash::operator()(const ModelData& modelData) const
+	std::size_t RenderableHash::operator()(const MeshDataCollection& modelData) const
 	{
-		return m_Hash(&modelData);
+		return m_Hash(modelData.Id());
 	}
 }

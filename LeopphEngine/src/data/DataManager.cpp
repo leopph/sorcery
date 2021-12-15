@@ -17,9 +17,9 @@ namespace leopph::impl
 	std::unordered_map<const Transform*, std::pair<Matrix4, Matrix4>> DataManager::s_Matrices{};
 	std::vector<Texture*> DataManager::s_Textures{};
 	std::unordered_map<SkyboxImpl, std::unordered_set<Skybox*>, PathedHash<SkyboxImpl>, PathedEqual<SkyboxImpl>> DataManager::s_Skyboxes{};
-	std::unordered_set<FileModelData, PathedHash<FileModelData>, PathedEqual<FileModelData>> DataManager::s_FileModelData{};
-	std::unordered_map<InstancedRenderable, std::unordered_set<InstancedRenderComponent*>, RenderableHash, RenderableEqual> DataManager::s_InstancedRenderables{};
-	std::unordered_map<std::unique_ptr<NonInstancedRenderable>, NonInstancedRenderComponent*, PointerHash, PointerEqual> DataManager::s_NonInstancedRenderables{};
+	std::unordered_set<MeshDataCollection, IdHash, IdEqual> DataManager::s_MeshData{};
+	std::vector<GlMeshCollection> DataManager::s_NonInstancedRenders{};
+	std::unordered_set<GlMeshCollection, RenderableHash, RenderableEqual> DataManager::s_InstancedRenders{};
 
 
 	void DataManager::Clear()
@@ -30,8 +30,6 @@ namespace leopph::impl
 			delete node.key();
 			node.mapped().clear();
 		}
-
-		s_FileModelData.clear();
 	}
 
 
@@ -206,33 +204,33 @@ namespace leopph::impl
 		return s_Matrices.at(transform);
 	}
 
-	InstancedRenderable& DataManager::CreateOrGetInstancedRenderable(ModelData& modelData)
+	GlMeshCollection& DataManager::CreateOrGetInstancedRenderable(MeshDataCollection& modelData)
 	{
 		if (const auto it{s_InstancedRenderables.find(modelData)};
 			it != s_InstancedRenderables.end())
 		{
-			return const_cast<InstancedRenderable&>(it->first);
+			return const_cast<GlMeshCollection&>(it->first);
 		}
 
-		return const_cast<InstancedRenderable&>(s_InstancedRenderables.emplace(modelData, std::unordered_set<InstancedRenderComponent*>{}).first->first);
+		return const_cast<GlMeshCollection&>(s_InstancedRenderables.emplace(modelData, std::unordered_set<InstancedRenderComponent*>{}).first->first);
 	}
 
-	void DataManager::DestroyInstancedRenderable(const InstancedRenderable& renderable)
+	void DataManager::DestroyInstancedRenderable(const GlMeshCollection& renderable)
 	{
 		s_InstancedRenderables.erase(renderable);
 	}
 
-	void DataManager::RegisterInstancedRenderComponent(const InstancedRenderable& renderable, InstancedRenderComponent* const component)
+	void DataManager::RegisterInstancedRenderComponent(const GlMeshCollection& renderable, InstancedRenderComponent* const component)
 	{
 		s_InstancedRenderables.at(renderable).insert(component);
 	}
 
-	void DataManager::UnregisterInstancedRenderComponent(const InstancedRenderable& renderable, InstancedRenderComponent* const component)
+	void DataManager::UnregisterInstancedRenderComponent(const GlMeshCollection& renderable, InstancedRenderComponent* const component)
 	{
 		s_InstancedRenderables.at(renderable).erase(component);
 	}
 
-	const std::unordered_map<InstancedRenderable, std::unordered_set<InstancedRenderComponent*>, RenderableHash, RenderableEqual>& DataManager::InstancedRenderables()
+	const std::unordered_map<GlMeshCollection, std::unordered_set<InstancedRenderComponent*>, RenderableHash, RenderableEqual>& DataManager::InstancedRenderables()
 	{
 		return s_InstancedRenderables;
 	}
@@ -305,29 +303,18 @@ namespace leopph::impl
 		return s_Skyboxes;
 	}
 
-	FileModelData& DataManager::LoadOrGetFileModelData(std::filesystem::path path)
+	void DataManager::StoreMeshDataCollection(const MeshDataCollection& meshData)
 	{
-		if (const auto it{s_FileModelData.find(path)};
-			it != s_FileModelData.end())
+		s_MeshData.insert(meshData);
+	}
+
+	const MeshDataCollection* DataManager::FindMeshDataCollection(const std::string& id)
+	{
+		if (const auto it{s_MeshData.find(id)};
+			it != s_MeshData.end())
 		{
-			return const_cast<FileModelData&>(*it);
+			return  &*it;
 		}
-
-		return const_cast<FileModelData&>(*s_FileModelData.emplace(std::move(path)).first);
-	}
-
-	NonInstancedRenderable& DataManager::CreateNonInstancedRenderable(ModelData& modelData, NonInstancedRenderComponent* const component)
-	{
-		return *s_NonInstancedRenderables.emplace(new NonInstancedRenderable{modelData}, component).first->first;
-	}
-
-	void DataManager::DestroyNonInstancedRenderable(const NonInstancedRenderable& renderable)
-	{
-		s_NonInstancedRenderables.erase(s_NonInstancedRenderables.find(&renderable));
-	}
-
-	const std::unordered_map<std::unique_ptr<NonInstancedRenderable>, NonInstancedRenderComponent*, PointerHash, PointerEqual>& DataManager::NonInstancedRenderables()
-	{
-		return s_NonInstancedRenderables;
+		return nullptr;
 	}
 }

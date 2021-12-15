@@ -1,10 +1,9 @@
 #pragma once
 
-#include "../../rendering/geometry/ModelData.hpp"
-#include "../../rendering/geometry/Renderable.hpp"
+#include "../../rendering/geometry/GlMeshCollection.hpp"
+#include "../../rendering/geometry/MeshDataCollection.hpp"
 
 #include <functional>
-#include <cstddef>
 
 
 namespace leopph::impl
@@ -14,11 +13,11 @@ namespace leopph::impl
 	public:
 		using is_transparent = void;
 
-		std::size_t operator()(const Renderable& model) const;
-		std::size_t operator()(const ModelData& modelData) const;
+		std::size_t operator()(const GlMeshCollection& model) const;
+		std::size_t operator()(const MeshDataCollection& modelData) const;
 
 
 	private:
-		std::hash<const ModelData*> m_Hash;
+		std::hash<std::string> m_Hash;
 	};
 }

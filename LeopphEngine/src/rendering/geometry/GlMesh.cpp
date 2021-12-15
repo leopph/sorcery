@@ -1,4 +1,4 @@
-#include "InstancedMesh.hpp"
+#include "GlMesh.hpp"
 
 #include "../../math/Matrix.hpp"
 #include "../../math/Vector.hpp"
@@ -11,8 +11,7 @@
 
 namespace leopph::impl
 {
-	InstancedMesh::InstancedMesh(MeshData& meshData, const unsigned instanceBuffer) :
-		m_MeshDataSrc{&meshData},
+	GlMesh::GlMesh(MeshData& meshData, const unsigned instanceBuffer) :
 		m_Material{meshData.Material},
 		m_RefCount{std::make_shared<std::size_t>(1ull)},
 		m_VertexCount{meshData.Vertices.size()},
@@ -34,15 +33,15 @@ namespace leopph::impl
 		glNamedBufferStorage(m_Buffers[VERTEX_BUFFER], meshData.Vertices.size() * sizeof(decltype(meshData.Vertices)::value_type), meshData.Vertices.data(), 0);
 		glVertexArrayVertexBuffers(m_VertexArray, 0, 2, std::array{m_Buffers[VERTEX_BUFFER], instanceBuffer}.data(), std::array{static_cast<GLintptr>(0), static_cast<GLintptr>(0)}.data(), std::array{static_cast<GLint>(sizeof(decltype(meshData.Vertices)::value_type)), static_cast<GLint>(sizeof(std::pair<Matrix4, Matrix4>))}.data());
 
-		glVertexArrayAttribFormat(m_VertexArray, 0, 3, GL_FLOAT, GL_FALSE, offsetof(decltype(meshData.Vertices)::value_type, position));
+		glVertexArrayAttribFormat(m_VertexArray, 0, 3, GL_FLOAT, GL_FALSE, offsetof(decltype(meshData.Vertices)::value_type, Position));
 		glVertexArrayAttribBinding(m_VertexArray, 0, 0);
 		glEnableVertexArrayAttrib(m_VertexArray, 0);
 
-		glVertexArrayAttribFormat(m_VertexArray, 1, 3, GL_FLOAT, GL_FALSE, offsetof(decltype(meshData.Vertices)::value_type, normal));
+		glVertexArrayAttribFormat(m_VertexArray, 1, 3, GL_FLOAT, GL_FALSE, offsetof(decltype(meshData.Vertices)::value_type, Normal));
 		glVertexArrayAttribBinding(m_VertexArray, 1, 0);
 		glEnableVertexArrayAttrib(m_VertexArray, 1);
 
-		glVertexArrayAttribFormat(m_VertexArray, 2, 2, GL_FLOAT, GL_FALSE, offsetof(decltype(meshData.Vertices)::value_type, textureCoordinates));
+		glVertexArrayAttribFormat(m_VertexArray, 2, 2, GL_FLOAT, GL_FALSE, offsetof(decltype(meshData.Vertices)::value_type, TexCoord));
 		glVertexArrayAttribBinding(m_VertexArray, 2, 0);
 		glEnableVertexArrayAttrib(m_VertexArray, 2);
 
@@ -81,8 +80,7 @@ namespace leopph::impl
 		glVertexArrayBindingDivisor(m_VertexArray, 1, 1);
 	}
 
-	InstancedMesh::InstancedMesh(const InstancedMesh& other) :
-		m_MeshDataSrc{other.m_MeshDataSrc},
+	GlMesh::GlMesh(const GlMesh& other) :
 		m_Material{other.m_Material},
 		m_RefCount{other.m_RefCount},
 		m_VertexArray{other.m_VertexArray},
@@ -93,7 +91,7 @@ namespace leopph::impl
 		++*m_RefCount;
 	}
 
-	InstancedMesh& InstancedMesh::operator=(const InstancedMesh& other)
+	GlMesh& GlMesh::operator=(const GlMesh& other)
 	{
 		if (this == &other)
 		{
@@ -101,7 +99,6 @@ namespace leopph::impl
 		}
 
 		Deinit();
-		m_MeshDataSrc = other.m_MeshDataSrc;
 		m_Material = other.m_Material;
 		m_RefCount = other.m_RefCount;
 		m_VertexArray = other.m_VertexArray;
@@ -112,28 +109,28 @@ namespace leopph::impl
 		return *this;
 	}
 
-	InstancedMesh::InstancedMesh(InstancedMesh&& other) noexcept :
-		InstancedMesh{other}
+	GlMesh::GlMesh(GlMesh&& other) noexcept :
+		GlMesh{other}
 	{}
 
-	InstancedMesh& InstancedMesh::operator=(InstancedMesh&& other) noexcept
+	GlMesh& GlMesh::operator=(GlMesh&& other) noexcept
 	{
 		return *this = other;
 	}
 
-	InstancedMesh::~InstancedMesh()
+	GlMesh::~GlMesh()
 	{
 		Deinit();
 	}
 
 
-	bool InstancedMesh::operator==(const InstancedMesh& other) const
+	bool GlMesh::operator==(const GlMesh& other) const
 	{
 		return this->m_VertexArray == other.m_VertexArray;
 	}
 
 
-	void InstancedMesh::DrawShaded(ShaderProgram& shader, std::size_t nextFreeTextureUnit, const std::size_t instanceCount) const
+	void GlMesh::DrawShaded(ShaderProgram& shader, std::size_t nextFreeTextureUnit, const std::size_t instanceCount) const
 	{
 		shader.SetUniform("u_Material.ambientColor", static_cast<Vector3>(m_Material->AmbientColor));
 		shader.SetUniform("u_Material.diffuseColor", static_cast<Vector3>(m_Material->DiffuseColor));
@@ -199,7 +196,7 @@ namespace leopph::impl
 	}
 
 
-	void InstancedMesh::DrawDepth(std::size_t instanceCount) const
+	void GlMesh::DrawDepth(const std::size_t instanceCount) const
 	{
 		if (!m_Material->TwoSided)
 		{
@@ -223,30 +220,7 @@ namespace leopph::impl
 		}
 	}
 
-	void InstancedMesh::Update()
-	{
-		glDeleteBuffers(static_cast<GLsizei>(m_Buffers.size()), m_Buffers.data());
-
-		m_VertexCount = m_MeshDataSrc->Vertices.size();
-		m_IndexCount = m_MeshDataSrc->Vertices.size();
-		m_Material = m_MeshDataSrc->Material;
-
-		if (m_IndexCount > 0ull)
-		{
-			glCreateBuffers(static_cast<GLsizei>(m_Buffers.size()), m_Buffers.data());
-			glNamedBufferStorage(m_Buffers[INDEX_BUFFER], m_MeshDataSrc->Indices.size() * sizeof(unsigned), m_MeshDataSrc->Indices.data(), 0);
-			glVertexArrayElementBuffer(m_VertexArray, m_Buffers[INDEX_BUFFER]);
-		}
-		else
-		{
-			glCreateBuffers(1, &m_Buffers[VERTEX_BUFFER]);
-		}
-
-		glNamedBufferStorage(m_Buffers[VERTEX_BUFFER], m_MeshDataSrc->Vertices.size() * sizeof(decltype(m_MeshDataSrc->Vertices)::value_type), m_MeshDataSrc->Vertices.data(), 0);
-		glVertexArrayVertexBuffer(m_VertexArray, 0, m_Buffers[VERTEX_BUFFER], 0, static_cast<GLsizei>(sizeof(decltype(m_MeshDataSrc->Vertices)::value_type)));
-	}
-
-	void InstancedMesh::Deinit() const
+	void GlMesh::Deinit() const
 	{
 		--*m_RefCount;
 

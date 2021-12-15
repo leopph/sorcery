@@ -20,26 +20,26 @@ namespace leopph
 
 
 	/* Transforms are special Components that are automatically created on new Entities.
-	 * Transforms provide Entities with spatial properties such as position, orientation and scale.
+	 * Transforms provide Entities with spatial properties such as Position, orientation and scale.
 	 * They define a hierarchy in which each child inherits its parent's properties. */
 	class Transform final : public Component
 	{
 		public:
-			/* Get the World Space position.
+			/* Get the World Space Position.
 			 * If parent is null, this has the same value as Transform::LocalPosition. */
 			[[nodiscard]]
 			LEOPPHAPI const Vector3& Position() const;
 
-			/* Get the Local Space position relative to the parent.
+			/* Get the Local Space Position relative to the parent.
 			 * If parent is null, this has the same value as Transform::Position. */
 			[[nodiscard]]
 			LEOPPHAPI const Vector3& LocalPosition() const;
 
-			/* Set the World Space position.
-			 * This adjusts the local position so that the Transform has the desired World Space position. */
+			/* Set the World Space Position.
+			 * This adjusts the local Position so that the Transform has the desired World Space Position. */
 			LEOPPHAPI void Position(const Vector3& newPos);
 
-			/* Set the Local Space position relative to the parent.
+			/* Set the Local Space Position relative to the parent.
 			 * If parent is null, this has the same effect as Transform::Position. */
 			LEOPPHAPI void LocalPosition(const Vector3& newPos);
 
@@ -79,14 +79,14 @@ namespace leopph
 			 * If parent is null, this has the same effect as Transform::Scale. */
 			LEOPPHAPI void LocalScale(const Vector3& newScale);
 
-			/* Move the Transform relative to its current position by the input Vector.
+			/* Move the Transform relative to its current Position by the input Vector.
 			 * The second parameter defines the Space in which the input is interpreted to be.
-			 * World Space values adjust the local position so that the World Space delta matches the desired value. */
+			 * World Space values adjust the local Position so that the World Space delta matches the desired value. */
 			LEOPPHAPI void Translate(const Vector3& vector, Space base = Space::World);
 
-			/* Move the Transform relative to its current position by the input values.
+			/* Move the Transform relative to its current Position by the input values.
 			 * The fourth parameter defines the Space in which the input is interpreted to be.
-			 * World Space values adjust the local position so that the World Space delta matches the desired value. */
+			 * World Space values adjust the local Position so that the World Space delta matches the desired value. */
 			LEOPPHAPI void Translate(float x, float y, float z, Space base = Space::World);
 
 			/* Rotate the Transform from its current orientation by the input Quaternion.
@@ -193,7 +193,7 @@ namespace leopph
 			// Calculates local bases using the global rotation.
 			void CalculateLocalAxes();
 
-			// Calculates global position, sets Changed, then updates children recursively.
+			// Calculates global Position, sets Changed, then updates children recursively.
 			void CalculateWorldPosition();
 			// Calculates global rotation, calculates local axes, sets Changed, then updates children recursively.
 			void CalculateWorldRotation();

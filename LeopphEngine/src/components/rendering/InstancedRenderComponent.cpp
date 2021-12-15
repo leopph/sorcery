@@ -5,7 +5,7 @@
 
 namespace leopph::impl
 {
-	InstancedRenderComponent::InstancedRenderComponent(leopph::Entity* const entity, ModelData& modelData) :
+	InstancedRenderComponent::InstancedRenderComponent(leopph::Entity* const entity, MeshDataCollection& modelData) :
 		RenderComponent{entity},
 		m_Impl{DataManager::CreateOrGetInstancedRenderable(modelData)}
 	{

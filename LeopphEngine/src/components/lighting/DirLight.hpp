@@ -8,7 +8,7 @@
 namespace leopph
 {
 	/* DirectionalLights are special Lights that provide a way to light your scene with a source that appears to be infinitely far.
-	 * The position of the DirectionalLight does not matter, it always affects things from the direction it is set to. */
+	 * The Position of the DirectionalLight does not matter, it always affects things from the direction it is set to. */
 	class DirectionalLight final : public impl::Light
 	{
 		public:

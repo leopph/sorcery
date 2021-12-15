@@ -6,7 +6,7 @@
     <ClCompile Include="src\rendering\opengl\InitGl.cpp" />
     <ClCompile Include="src\math\LeopphMath.cpp" />
     <ClCompile Include="src\components\lighting\Light.cpp" />
-    <ClCompile Include="src\rendering\geometry\InstancedMesh.cpp" />
+    <ClCompile Include="src\rendering\geometry\GlMesh.cpp" />
     <ClCompile Include="src\entity\Entity.cpp" />
     <ClCompile Include="src\timing\leopphtime.cpp" />
     <ClCompile Include="src\windowing\GlWindow.cpp" />
@@ -39,7 +39,7 @@
     <ClCompile Include="src\events\handling\EventReceiverBase.cpp" />
     <ClCompile Include="src\events\KeyEvent.cpp" />
     <ClCompile Include="src\events\MouseEvent.cpp" />
-    <ClCompile Include="src\rendering\geometry\InstancedRenderable.cpp" />
+    <ClCompile Include="src\rendering\geometry\GlMeshCollection.cpp" />
     <ClCompile Include="src\rendering\renderers\Renderer.cpp" />
     <ClCompile Include="src\rendering\Texture.cpp" />
     <ClCompile Include="src\rendering\SkyboxImpl.cpp" />
@@ -60,19 +60,14 @@
     <ClCompile Include="src\windowing\Window.cpp" />
     <ClCompile Include="src\rendering\RenderTexture.cpp" />
     <ClCompile Include="src\data\DataManager.cpp" />
-    <ClCompile Include="src\rendering\geometry\ModelData.cpp" />
-    <ClCompile Include="src\rendering\geometry\FileModelData.cpp" />
-    <ClCompile Include="src\rendering\geometry\Renderable.cpp" />
+    <ClCompile Include="src\rendering\geometry\FileMeshDataCollection.cpp" />
     <ClCompile Include="src\util\equal\RenderableEqual.cpp" />
     <ClCompile Include="src\util\hash\RenderableHash.cpp" />
-    <ClCompile Include="src\components\rendering\Model.cpp" />
-    <ClCompile Include="src\rendering\geometry\NonInstancedRenderable.cpp" />
-    <ClCompile Include="src\rendering\geometry\Mesh.cpp" />
     <ClCompile Include="src\components\rendering\InstancedRenderComponent.cpp" />
-    <ClCompile Include="src\components\rendering\NonInstancedRenderComponent.cpp" />
     <ClCompile Include="src\rendering\UniformBuffer.cpp" />
     <ClCompile Include="src\util\hash\StringHash.cpp" />
     <ClCompile Include="src\util\equal\StringEqual.cpp" />
+    <ClCompile Include="src\rendering\geometry\MeshDataCollection.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\Behavior.hpp" />
@@ -86,7 +81,7 @@
     <ClInclude Include="src\math\LeopphMath.hpp" />
     <ClInclude Include="src\components\lighting\Light.hpp" />
     <ClInclude Include="src\math\Matrix.hpp" />
-    <ClInclude Include="src\rendering\geometry\InstancedMesh.hpp" />
+    <ClInclude Include="src\rendering\geometry\GlMesh.hpp" />
     <ClInclude Include="src\entity\Entity.hpp" />
     <ClInclude Include="src\components\lighting\PointLight.hpp" />
     <ClInclude Include="src\math\Quaternion.hpp" />
@@ -127,7 +122,7 @@
     <ClInclude Include="src\events\KeyEvent.hpp" />
     <ClInclude Include="src\events\MouseEvent.hpp" />
     <ClInclude Include="src\events\FrameEndEvent.hpp" />
-    <ClInclude Include="src\rendering\geometry\InstancedRenderable.hpp" />
+    <ClInclude Include="src\rendering\geometry\GlMeshCollection.hpp" />
     <ClInclude Include="src\rendering\renderers\Renderer.hpp" />
     <ClInclude Include="src\rendering\Texture.hpp" />
     <ClInclude Include="src\rendering\SkyboxImpl.hpp" />
@@ -155,22 +150,21 @@
     <ClInclude Include="src\util\equal\PathedEqual.hpp" />
     <ClInclude Include="src\util\concepts\Pathed.hpp" />
     <ClInclude Include="src\rendering\geometry\MeshData.hpp" />
-    <ClInclude Include="src\rendering\geometry\ModelData.hpp" />
-    <ClInclude Include="src\rendering\geometry\FileModelData.hpp" />
-    <ClInclude Include="src\rendering\geometry\Renderable.hpp" />
+    <ClInclude Include="src\rendering\geometry\MeshDataCollection.hpp" />
+    <ClInclude Include="src\rendering\geometry\FileMeshDataCollection.hpp" />
     <ClInclude Include="src\util\equal\RenderableEqual.hpp" />
     <ClInclude Include="src\util\hash\RenderableHash.hpp" />
     <ClInclude Include="src\components\rendering\RenderComponent.hpp" />
-    <ClInclude Include="src\components\rendering\Model.hpp" />
-    <ClInclude Include="src\rendering\geometry\NonInstancedRenderable.hpp" />
-    <ClInclude Include="src\rendering\geometry\Mesh.hpp" />
     <ClInclude Include="src\components\rendering\InstancedRenderComponent.hpp" />
-    <ClInclude Include="src\components\rendering\NonInstancedRenderComponent.hpp" />
     <ClInclude Include="src\util\equal\PointerEqual.hpp" />
     <ClInclude Include="src\util\hash\PointerHash.hpp" />
     <ClInclude Include="src\rendering\UniformBuffer.hpp" />
     <ClInclude Include="src\util\hash\StringHash.hpp" />
     <ClInclude Include="src\util\equal\StringEqual.hpp" />
+    <ClInclude Include="src\util\equal\IdEqual.hpp" />
+    <ClInclude Include="src\util\concepts\Idable.hpp" />
+    <ClInclude Include="src\util\concepts\Pointer.hpp" />
+    <ClInclude Include="src\util\hash\IdHash.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\cpp.hint" />

@@ -10,26 +10,23 @@
 
 namespace leopph::impl
 {
-	class InstancedMesh
+	class GlMesh
 	{
 		public:
-			InstancedMesh(MeshData& meshData, unsigned instanceBuffer);
+			GlMesh(MeshData& meshData, unsigned instanceBuffer);
 
-			InstancedMesh(const InstancedMesh& other);
-			InstancedMesh& operator=(const InstancedMesh& other);
+			GlMesh(const GlMesh& other);
+			GlMesh& operator=(const GlMesh& other);
 
-			InstancedMesh(InstancedMesh&& other) noexcept;
-			InstancedMesh& operator=(InstancedMesh&& other) noexcept;
+			GlMesh(GlMesh&& other) noexcept;
+			GlMesh& operator=(GlMesh&& other) noexcept;
 
-			~InstancedMesh();
+			~GlMesh();
 
-			bool operator==(const InstancedMesh& other) const;
+			bool operator==(const GlMesh& other) const;
 
 			void DrawShaded(ShaderProgram& shader, std::size_t nextFreeTextureUnit, std::size_t instanceCount) const;
 			void DrawDepth(std::size_t instanceCount) const;
-
-			// Reload the InstancedMesh by rereading the data from its original MeshData source.
-			void Update();
 
 
 		private:
@@ -39,8 +36,6 @@ namespace leopph::impl
 			constexpr static std::size_t VERTEX_BUFFER{0ull};
 			constexpr static std::size_t INDEX_BUFFER{1ull};
 
-
-			MeshData* m_MeshDataSrc{nullptr};
 			std::shared_ptr<Material> m_Material{nullptr};
 			/* This is shared between copies of an original object.
 			 * We don't have to worry about newly created objects because as long as a buffer name is used by at least one copy, GL will not hand out the same name twice.

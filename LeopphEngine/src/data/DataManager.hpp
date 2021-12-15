@@ -7,19 +7,19 @@
 #include "../components/lighting/PointLight.hpp"
 #include "../components/lighting/SpotLight.hpp"
 #include "../components/rendering/InstancedRenderComponent.hpp"
-#include "../components/rendering/NonInstancedRenderComponent.hpp"
 #include "../entity/Entity.hpp"
 #include "../rendering/Skybox.hpp"
 #include "../rendering/SkyboxImpl.hpp"
 #include "../rendering/Texture.hpp"
-#include "../rendering/geometry/FileModelData.hpp"
-#include "../rendering/geometry/InstancedRenderable.hpp"
-#include "../rendering/geometry/NonInstancedRenderable.hpp"
+#include "../rendering/geometry/GlMeshCollection.hpp"
+#include "../rendering/geometry/MeshDataCollection.hpp"
 #include "../util/equal/EntityEqual.hpp"
+#include "../util/equal/IdEqual.hpp"
 #include "../util/equal/PathedEqual.hpp"
 #include "../util/equal/PointerEqual.hpp"
 #include "../util/equal/RenderableEqual.hpp"
 #include "../util/hash/EntityHash.hpp"
+#include "../util/hash/IdHash.hpp"
 #include "../util/hash/PathedHash.hpp"
 #include "../util/hash/PointerHash.hpp"
 #include "../util/hash/RenderableHash.hpp"
@@ -40,13 +40,13 @@ namespace leopph::impl
 	public:
 		static void Clear();
 
-		// Returns (and creates if non-existent) the InstancedRenderable that sources its data from the given ModelData object.
-		static InstancedRenderable& CreateOrGetInstancedRenderable(ModelData& modelData);
+		// Returns (and creates if non-existent) the GlMeshCollection that sources its data from the given MeshDataCollection object.
+		static GlMeshCollection& CreateOrGetInstancedRenderable(MeshDataCollection& modelData);
 		// Also unregisters all InstancedRenderComponents.
-		static void DestroyInstancedRenderable(const InstancedRenderable& renderable);
-		static void RegisterInstancedRenderComponent(const InstancedRenderable& renderable, InstancedRenderComponent* const component);
-		static void UnregisterInstancedRenderComponent(const InstancedRenderable& renderable, InstancedRenderComponent* const component);
-		static const std::unordered_map<InstancedRenderable, std::unordered_set<InstancedRenderComponent*>, RenderableHash, RenderableEqual>& InstancedRenderables();
+		static void DestroyInstancedRenderable(const GlMeshCollection& renderable);
+		static void RegisterInstancedRenderComponent(const GlMeshCollection& renderable, InstancedRenderComponent* const component);
+		static void UnregisterInstancedRenderComponent(const GlMeshCollection& renderable, InstancedRenderComponent* const component);
+		static const std::unordered_map<GlMeshCollection, std::unordered_set<InstancedRenderComponent*>, RenderableHash, RenderableEqual>& InstancedRenderables();
 
 		static void RegisterTexture(Texture* texture);
 		static void UnregisterTexture(Texture* texture);
@@ -59,18 +59,13 @@ namespace leopph::impl
 		static void UnregisterSkyboxHandle(SkyboxImpl* skybox, Skybox* handle);
 		static const std::unordered_map<SkyboxImpl, std::unordered_set<Skybox*>, PathedHash<SkyboxImpl>, PathedEqual<SkyboxImpl>>& Skyboxes();
 
-		static FileModelData& LoadOrGetFileModelData(std::filesystem::path path);
-
-		// Creates a new NonInstancedRenderable instance, stores the referring NonInstancedRenderComponent with it, and returns a reference to it.
-		static NonInstancedRenderable& CreateNonInstancedRenderable(ModelData& modelData, NonInstancedRenderComponent* const component);
-		// Also unregister the NonInstancedRenderComponent.
-		static void DestroyNonInstancedRenderable(const NonInstancedRenderable& renderable);
-		static const std::unordered_map<std::unique_ptr<NonInstancedRenderable>, NonInstancedRenderComponent*, PointerHash, PointerEqual>& NonInstancedRenderables();
-
 		static void RegisterComponentForEntity(const Entity* entity, std::unique_ptr<Component>&& component);
 		// Destroys the Component object.
 		static void UnregisterComponentFromEntity(const Entity* entity, const Component* component);
 		static const std::unordered_set<std::unique_ptr<Component>, PointerHash, PointerEqual>& ComponentsOfEntity(const Entity* entity);
+
+		static void StoreMeshDataCollection(const MeshDataCollection& meshData);
+		static const MeshDataCollection* FindMeshDataCollection(const std::string& id);
 
 		static void Register(Entity* entity);
 		static void Register(Behavior* behavior);
@@ -113,14 +108,10 @@ namespace leopph::impl
 		// Stores SkyboxImpl instances along with all the Skybox handles pointing to it.
 		static std::unordered_map<SkyboxImpl, std::unordered_set<Skybox*>, PathedHash<SkyboxImpl>, PathedEqual<SkyboxImpl>> s_Skyboxes;
 
-		// Stores FileModelData instances identified by their file paths.
-		static std::unordered_set<FileModelData, PathedHash<FileModelData>, PathedEqual<FileModelData>> s_FileModelData;
+		static std::unordered_set<MeshDataCollection, IdHash, IdEqual> s_MeshData;
 
-		// Stores all InstancedRenderable instances along with non-owning pointers to all the InstancedRenderComponents pointing to it.
-		static std::unordered_map<InstancedRenderable, std::unordered_set<InstancedRenderComponent*>, RenderableHash, RenderableEqual> s_InstancedRenderables;
-
-		// Stores unique_ptrs to all NonInstancedRenderable instances along with a non-owning pointer to the InstancedRenderComponent pointing to it.
-		static std::unordered_map<std::unique_ptr<NonInstancedRenderable>, NonInstancedRenderComponent*, PointerHash, PointerEqual> s_NonInstancedRenderables;
+		static std::vector<GlMeshCollection> s_NonInstancedRenders;
+		static std::unordered_set<GlMeshCollection, RenderableHash, RenderableEqual> s_InstancedRenders;
 
 		static void SortTextures();
 	};
