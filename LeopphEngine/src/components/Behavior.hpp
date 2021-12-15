@@ -10,18 +10,21 @@ namespace leopph
 	 * Subclass this to provide the logic for your application. */
 	class Behavior : public Component
 	{
-	public:
-		// This function gets called every frame.
-		virtual void OnFrameUpdate() {}
+		public:
+			Behavior(const Behavior& other) = default;
+			Behavior& operator=(const Behavior& other) = default;
 
+			Behavior(Behavior&& other) = default;
+			Behavior& operator=(Behavior&& other) = default;
 
-		LEOPPHAPI explicit Behavior(leopph::Entity& owner);
-		Behavior(const Behavior&) = delete;
-		Behavior(Behavior&&) = delete;
+			LEOPPHAPI ~Behavior() override;
 
-		LEOPPHAPI ~Behavior() override = 0;
+			// This function gets called every frame.
+			virtual void OnFrameUpdate()
+			{}
 
-		void operator=(const Behavior&) = delete;
-		void operator=(Behavior&&) = delete;
+		protected:
+			LEOPPHAPI explicit Behavior(leopph::Entity* entity);
+
 	};
 }

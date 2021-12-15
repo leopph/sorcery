@@ -48,14 +48,15 @@ namespace leopph::impl
 			LEOPPHAPI void CastsShadow(bool value);
 
 
-			LEOPPHAPI explicit Light(leopph::Entity& owner);
+			LEOPPHAPI explicit Light(leopph::Entity* entity);
+
 			Light(const Light&) = delete;
+			void operator=(const Light&) = delete;
+
 			Light(Light&&) = delete;
+			void operator=(Light&&) = delete;
 
 			LEOPPHAPI ~Light() override = 0;
-
-			void operator=(const Light&) = delete;
-			void operator=(Light&&) = delete;
 
 
 		private:

@@ -2,10 +2,11 @@
 
 #include "../../data/DataManager.hpp"
 
+
 namespace leopph
 {
-	PointLight::PointLight(leopph::Entity& owner) :
-		AttenuatedLight{ owner }
+	PointLight::PointLight(leopph::Entity* const entity) :
+		AttenuatedLight{entity}
 	{
 		impl::DataManager::Register(this);
 	}
@@ -14,5 +15,4 @@ namespace leopph
 	{
 		impl::DataManager::Unregister(this);
 	}
-
 }

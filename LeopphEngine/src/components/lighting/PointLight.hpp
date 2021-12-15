@@ -9,14 +9,15 @@ namespace leopph
 	 * They have position and attenuation. */
 	class PointLight final : public impl::AttenuatedLight
 	{
-	public:
-		LEOPPHAPI explicit PointLight(leopph::Entity& owner);
-		PointLight(const PointLight&) = delete;
-		PointLight(PointLight&&) = delete;
+		public:
+			LEOPPHAPI explicit PointLight(leopph::Entity* entity);
 
-		LEOPPHAPI ~PointLight() override;
+			PointLight(const PointLight&) = delete;
+			void operator=(const PointLight&) = delete;
 
-		void operator=(const PointLight&) = delete;
-		void operator=(PointLight&&) = delete;
+			PointLight(PointLight&&) = delete;
+			void operator=(PointLight&&) = delete;
+
+			LEOPPHAPI ~PointLight() override;
 	};
 }

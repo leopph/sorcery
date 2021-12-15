@@ -11,14 +11,15 @@ namespace leopph
 	class Model : public impl::NonInstancedRenderComponent
 	{
 		// Load a Model from a file on disk.
-		LEOPPHAPI Model(leopph::Entity& owner, std::filesystem::path);
+		LEOPPHAPI Model(leopph::Entity* entity, std::filesystem::path);
+
 		Model(const Model& other) = delete;
+		Model& operator=(const Model& other) = delete;
+
 		Model(Model&& other) = delete;
+		Model& operator=(Model&& other) = delete;
 
 		LEOPPHAPI ~Model() override = default;
-
-		Model& operator=(const Model& other) = delete;
-		Model& operator=(Model&& other) = delete;
 
 		// File path of the loaded InstancedModel.
 		const std::filesystem::path Path;

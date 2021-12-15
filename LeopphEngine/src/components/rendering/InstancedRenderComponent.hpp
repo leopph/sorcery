@@ -11,7 +11,7 @@ namespace leopph::impl
 	class InstancedRenderComponent : public RenderComponent
 	{
 	protected:
-		InstancedRenderComponent(leopph::Entity& owner, ModelData& modelData);
+		InstancedRenderComponent(leopph::Entity* entity, ModelData& modelData);
 		
 		~InstancedRenderComponent() override;
 

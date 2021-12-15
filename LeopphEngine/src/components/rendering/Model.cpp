@@ -7,8 +7,9 @@
 
 namespace leopph
 {
-	Model::Model(leopph::Entity& owner, std::filesystem::path path) :
-		impl::NonInstancedRenderComponent{owner, impl::DataManager::LoadOrGetFileModelData(path)}, Path{std::move(path)}
+	Model::Model(leopph::Entity* const entity, std::filesystem::path path) :
+		impl::NonInstancedRenderComponent{entity, impl::DataManager::LoadOrGetFileModelData(path)},
+		Path{std::move(path)}
 	{}
 
 	bool Model::CastsShadow() const

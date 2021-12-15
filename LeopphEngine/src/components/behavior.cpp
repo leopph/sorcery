@@ -2,10 +2,11 @@
 
 #include "../data/DataManager.hpp"
 
+
 namespace leopph
 {
-	Behavior::Behavior(leopph::Entity& owner) :
-		Component{ owner }
+	Behavior::Behavior(leopph::Entity* const entity) :
+		Component{entity}
 	{
 		impl::DataManager::Register(this);
 	}

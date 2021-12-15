@@ -5,8 +5,9 @@
 
 namespace leopph::impl
 {
-	NonInstancedRenderComponent::NonInstancedRenderComponent(leopph::Entity& owner, ModelData& modelData) :
-		RenderComponent{owner}, m_Impl{DataManager::CreateNonInstancedRenderable(modelData, this)}
+	NonInstancedRenderComponent::NonInstancedRenderComponent(leopph::Entity* entity, ModelData& modelData) :
+		RenderComponent{entity},
+		m_Impl{DataManager::CreateNonInstancedRenderable(modelData, this)}
 	{}
 
 	NonInstancedRenderComponent::~NonInstancedRenderComponent()

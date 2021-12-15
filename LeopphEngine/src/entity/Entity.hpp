@@ -7,7 +7,6 @@
 #include <concepts>
 #include <memory>
 #include <string>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -46,7 +45,7 @@ namespace leopph
 			template<std::derived_from<Component> T, class... Args>
 			T* CreateComponent(Args&&... args)
 			{
-				auto component{std::make_unique<T>(*this, std::forward<Args>(args)...)};
+				auto component{std::make_unique<T>(this, std::forward<Args>(args)...)};
 				auto ret{component.get()};
 				RegisterComponent(std::move(component));
 				return ret;
@@ -76,16 +75,17 @@ namespace leopph
 			}
 
 			/* The Entity's name is a unique identifier. */
-			const std::string& Name;
+			LEOPPHAPI const std::string& Name() const;
+
 			/* The Entity's Transform describes its spatial properties. */
-			Transform* const& Transform;
+			LEOPPHAPI Transform* Transform() const;
 
 
 		private:
 			// Registers the passed Component in DataManager.
 			LEOPPHAPI void RegisterComponent(std::unique_ptr<Component>&& component) const;
 
-			// Returns the set of Components attached to the Entity.
+			// Returns a collection of Components attached to the Entity.
 			[[nodiscard]]
 			LEOPPHAPI std::vector<Component*> Components() const;
 

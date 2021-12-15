@@ -7,8 +7,8 @@
 
 namespace leopph
 {
-	InstancedModel::InstancedModel(leopph::Entity& owner, std::filesystem::path path) :
-		impl::InstancedRenderComponent{owner, impl::DataManager::LoadOrGetFileModelData(path)},
+	InstancedModel::InstancedModel(leopph::Entity* const entity, std::filesystem::path path) :
+		impl::InstancedRenderComponent{entity, impl::DataManager::LoadOrGetFileModelData(path)},
 		Path{std::move(path)}
 	{}
 

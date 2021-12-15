@@ -2,8 +2,10 @@
 
 #include <iostream>
 
-FPSCounter::FPSCounter(leopph::Entity& owner) :
-	Behavior{ owner }, m_PollInterval{ 0.5f }, m_DeltaTime{ 0.0f }
+FPSCounter::FPSCounter(leopph::Entity* const entity) :
+	Behavior{entity},
+	m_PollInterval{0.5f},
+	m_DeltaTime{0.0f}
 {}
 
 void FPSCounter::OnFrameUpdate()

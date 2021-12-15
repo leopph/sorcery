@@ -3,18 +3,20 @@
 #include <tuple>
 
 
-CameraController::CameraController(leopph::Entity& owner) :
-	Behavior{owner}, m_Speed{2.0f}, m_Sens{0.1f}, lastX{}, lastY{}
+CameraController::CameraController(leopph::Entity* const entity) :
+	Behavior{entity}
 {
-	std::tie(lastX, lastY) = leopph::Input::GetMousePosition();
+	std::tie(m_LastX, m_LastY) = leopph::Input::GetMousePosition();
 }
 
 void CameraController::OnFrameUpdate()
 {
 	if (leopph::Camera::Active == nullptr)
+	{
 		return;
+	}
 
-	auto& camTransform = *leopph::Camera::Active->Entity.Transform;
+	auto& camTransform = *leopph::Camera::Active->Entity()->Transform();
 
 	leopph::Vector3 movementVector;
 
@@ -52,8 +54,8 @@ void CameraController::OnFrameUpdate()
 	camTransform.Translate(movementVector * m_Speed * leopph::Time::DeltaTime(), leopph::Space::World);
 
 	const auto [posX, posY] = leopph::Input::GetMousePosition();
-	const float diffX = posX - lastX;
-	const float diffY = posY - lastY;
+	const auto diffX = posX - m_LastX;
+	const auto diffY = posY - m_LastY;
 
 
 	short coefficient = 1;
@@ -65,6 +67,6 @@ void CameraController::OnFrameUpdate()
 	camTransform.Rotate(coefficient * leopph::Vector3::Up(), diffX * m_Sens, leopph::Space::World);
 	camTransform.Rotate(leopph::Vector3::Right(), diffY * m_Sens, leopph::Space::Local);
 
-	lastX = posX;
-	lastY = posY;
+	m_LastX = posX;
+	m_LastY = posY;
 }

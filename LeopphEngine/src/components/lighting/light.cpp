@@ -1,11 +1,10 @@
 #include "Light.hpp"
 
 
-
 namespace leopph::impl
 {
-	Light::Light(leopph::Entity& owner) :
-		Component{owner},
+	Light::Light(leopph::Entity* const entity) :
+		Component{entity},
 		m_CastsShadow{false},
 		m_Range{1000.f},
 		m_Diffuse{1.0f, 1.0f, 1.0f},
@@ -62,5 +61,4 @@ namespace leopph::impl
 	{
 		m_CastsShadow = value;
 	}
-
 }

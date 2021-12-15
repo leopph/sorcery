@@ -137,7 +137,7 @@ namespace leopph::impl
 		nonInstShader.Use();
 		for (const auto& [renderable, component] : DataManager::NonInstancedRenderables())
 		{
-			const auto& [modelMat, normalMat]{DataManager::GetMatrices(component->Entity.Transform)};
+			const auto& [modelMat, normalMat]{DataManager::GetMatrices(component->Entity()->Transform())};
 			nonInstShader.SetUniform("u_ModelMat", modelMat);
 			nonInstShader.SetUniform("u_NormalMat", normalMat);
 			renderable->DrawShaded(nonInstShader, 0);
@@ -202,7 +202,7 @@ namespace leopph::impl
 		lightShader.SetUniform("u_DirLight.direction", dirLight->Direction());
 		lightShader.SetUniform("u_DirLight.diffuseColor", dirLight->Diffuse());
 		lightShader.SetUniform("u_DirLight.specularColor", dirLight->Specular());
-		lightShader.SetUniform("u_CameraPosition", Camera::Active->Entity.Transform->Position());
+		lightShader.SetUniform("u_CameraPosition", Camera::Active->Entity()->Transform()->Position());
 
 		if (dirLight->CastsShadow())
 		{
@@ -230,7 +230,7 @@ namespace leopph::impl
 				nonInstShadowShader.Use();
 				for (const auto& [renderable, component] : DataManager::NonInstancedRenderables())
 				{
-					nonInstShadowShader.SetUniform("u_ModelMat", DataManager::GetMatrices(component->Entity.Transform).first);
+					nonInstShadowShader.SetUniform("u_ModelMat", DataManager::GetMatrices(component->Entity()->Transform()).first);
 					renderable->DrawDepth();
 				}
 
@@ -299,11 +299,11 @@ namespace leopph::impl
 			texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::TextureType::Shine, texCount);
 			static_cast<void>(m_SpotShadowMap.BindForReading(lightShader, texCount));
 
-			lightShader.SetUniform("u_CamPos", Camera::Active->Entity.Transform->Position());
+			lightShader.SetUniform("u_CamPos", Camera::Active->Entity()->Transform()->Position());
 
 			const auto lightWorldToClipMat
 			{
-				Matrix4::LookAt(spotLight->Entity.Transform->Position(), spotLight->Entity.Transform->Position() + spotLight->Entity.Transform->Forward(), Vector3::Up()) *
+				Matrix4::LookAt(spotLight->Entity()->Transform()->Position(), spotLight->Entity()->Transform()->Position() + spotLight->Entity()->Transform()->Forward(), Vector3::Up()) *
 				Matrix4::Perspective(math::ToRadians(spotLight->OuterAngle() * 2), 1.f, 0.1f, spotLight->Range())
 			};
 
@@ -316,7 +316,7 @@ namespace leopph::impl
 			nonInstShadowShader.Use();
 			for (const auto& [renderable, component] : DataManager::NonInstancedRenderables())
 			{
-				nonInstShadowShader.SetUniform("u_ModelMat", DataManager::GetMatrices(component->Entity.Transform).first);
+				nonInstShadowShader.SetUniform("u_ModelMat", DataManager::GetMatrices(component->Entity()->Transform()).first);
 				renderable->DrawDepth();
 			}
 
@@ -331,8 +331,8 @@ namespace leopph::impl
 
 			m_SpotShadowMap.UnbindFromWriting();
 
-			lightShader.SetUniform("u_SpotLight.position", spotLight->Entity.Transform->Position());
-			lightShader.SetUniform("u_SpotLight.direction", spotLight->Entity.Transform->Forward());
+			lightShader.SetUniform("u_SpotLight.position", spotLight->Entity()->Transform()->Position());
+			lightShader.SetUniform("u_SpotLight.direction", spotLight->Entity()->Transform()->Forward());
 			lightShader.SetUniform("u_SpotLight.diffuseColor", spotLight->Diffuse());
 			lightShader.SetUniform("u_SpotLight.specularColor", spotLight->Specular());
 			lightShader.SetUniform("u_SpotLight.constant", spotLight->Constant());
@@ -381,14 +381,14 @@ namespace leopph::impl
 			texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::TextureType::Specular, texCount);
 			texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::TextureType::Shine, texCount);
 
-			lightShader.SetUniform("u_PointLight.position", pointLight->Entity.Transform->Position());
+			lightShader.SetUniform("u_PointLight.position", pointLight->Entity()->Transform()->Position());
 			lightShader.SetUniform("u_PointLight.diffuseColor", pointLight->Diffuse());
 			lightShader.SetUniform("u_PointLight.specularColor", pointLight->Specular());
 			lightShader.SetUniform("u_PointLight.constant", pointLight->Constant());
 			lightShader.SetUniform("u_PointLight.linear", pointLight->Linear());
 			lightShader.SetUniform("u_PointLight.quadratic", pointLight->Quadratic());
 			lightShader.SetUniform("u_PointLight.range", pointLight->Range());
-			lightShader.SetUniform("u_CamPos", Camera::Active->Entity.Transform->Position());
+			lightShader.SetUniform("u_CamPos", Camera::Active->Entity()->Transform()->Position());
 
 			if (pointLight->CastsShadow())
 			{
@@ -411,13 +411,13 @@ namespace leopph::impl
 
 				std::ranges::transform(cubeFaceMats, std::back_inserter(shadowViewProjMats), [&](const auto& cubeFaceMat)
 				{
-					return Matrix4::Translate(-pointLight->Entity.Transform->Position()) * cubeFaceMat * shadowProj;
+					return Matrix4::Translate(-pointLight->Entity()->Transform()->Position()) * cubeFaceMat * shadowProj;
 				});
 
 				nonInstShadowShader.SetUniform("u_ViewProjMats", shadowViewProjMats);
 				instShadowShader.SetUniform("u_ViewProjMats", shadowViewProjMats);
-				nonInstShadowShader.SetUniform("u_LightPos", pointLight->Entity.Transform->Position());
-				instShadowShader.SetUniform("u_LightPos", pointLight->Entity.Transform->Position());
+				nonInstShadowShader.SetUniform("u_LightPos", pointLight->Entity()->Transform()->Position());
+				instShadowShader.SetUniform("u_LightPos", pointLight->Entity()->Transform()->Position());
 				nonInstShadowShader.SetUniform("u_FarPlane", pointLight->Range());
 				instShadowShader.SetUniform("u_FarPlane", pointLight->Range());
 
@@ -427,7 +427,7 @@ namespace leopph::impl
 				nonInstShadowShader.Use();
 				for (const auto& [renderable, component] : DataManager::NonInstancedRenderables())
 				{
-					nonInstShadowShader.SetUniform("u_ModelMat", DataManager::GetMatrices(component->Entity.Transform).first);
+					nonInstShadowShader.SetUniform("u_ModelMat", DataManager::GetMatrices(component->Entity()->Transform()).first);
 					renderable->DrawDepth();
 				}
 

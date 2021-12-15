@@ -2,10 +2,13 @@
 
 #include "../../data/DataManager.hpp"
 
+
 namespace leopph
 {
-	SpotLight::SpotLight(leopph::Entity& owner) :
-		AttenuatedLight{ owner, 1.f, 0.1f, 0.1f }, m_InnerAngle{ 30.f }, m_OuterAngle{ m_InnerAngle }
+	SpotLight::SpotLight(leopph::Entity* const entity) :
+		AttenuatedLight{entity, 1.f, 0.1f, 0.1f},
+		m_InnerAngle{30.f},
+		m_OuterAngle{m_InnerAngle}
 	{
 		impl::DataManager::Register(this);
 	}
@@ -34,5 +37,4 @@ namespace leopph
 	{
 		m_OuterAngle = degrees;
 	}
-
 }

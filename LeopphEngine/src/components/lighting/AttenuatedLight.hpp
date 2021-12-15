@@ -35,14 +35,15 @@ namespace leopph::impl
 			LEOPPHAPI void Quadratic(float value);
 
 
-			LEOPPHAPI explicit AttenuatedLight(leopph::Entity& owner, float constant = 1.0f, float linear = 0.14f, float quadratic = 0.07f, float range = 32);
+			LEOPPHAPI explicit AttenuatedLight(leopph::Entity* entity, float constant = 1.0f, float linear = 0.14f, float quadratic = 0.07f, float range = 32);
+
 			AttenuatedLight(const AttenuatedLight&) = delete;
+			void operator=(const AttenuatedLight&) = delete;
+
 			AttenuatedLight(AttenuatedLight&&) = delete;
+			void operator=(AttenuatedLight&&) = delete;
 
 			LEOPPHAPI ~AttenuatedLight() override = 0;
-
-			void operator=(const AttenuatedLight&) = delete;
-			void operator=(AttenuatedLight&&) = delete;
 
 
 		private:

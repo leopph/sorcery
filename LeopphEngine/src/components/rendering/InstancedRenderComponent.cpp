@@ -5,8 +5,9 @@
 
 namespace leopph::impl
 {
-	InstancedRenderComponent::InstancedRenderComponent(leopph::Entity& owner, ModelData& modelData) :
-		RenderComponent{owner}, m_Impl{DataManager::CreateOrGetInstancedRenderable(modelData)}
+	InstancedRenderComponent::InstancedRenderComponent(leopph::Entity* const entity, ModelData& modelData) :
+		RenderComponent{entity},
+		m_Impl{DataManager::CreateOrGetInstancedRenderable(modelData)}
 	{
 		DataManager::RegisterInstancedRenderComponent(m_Impl, this);
 	}

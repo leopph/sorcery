@@ -1,11 +1,10 @@
 #include "AttenuatedLight.hpp"
 
 
-
 namespace leopph::impl
 {
-	AttenuatedLight::AttenuatedLight(leopph::Entity& owner, const float constant, const float linear, const float quadratic, const float range) :
-		Light{owner},
+	AttenuatedLight::AttenuatedLight(leopph::Entity* const entity, const float constant, const float linear, const float quadratic, const float range) :
+		Light{entity},
 		m_Constant{constant},
 		m_Linear{linear},
 		m_Quadratic{quadratic}

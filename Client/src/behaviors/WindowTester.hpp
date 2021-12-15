@@ -6,7 +6,7 @@
 class WindowTester : public leopph::Behavior
 {
 	public:
-		using Behavior::Behavior;
+		WindowTester(leopph::Entity* entity);
 
 		void OnFrameUpdate() override;
 };

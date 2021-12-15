@@ -46,8 +46,8 @@ namespace leopph::impl
 			static std::vector<std::pair<Matrix4, Matrix4>> instanceMatrices;
 			std::ranges::for_each(components, [&](const auto& component)
 			{
-				component->Entity.Transform->CalculateMatrices();
-				const auto& [modelMat, normalMat]{DataManager::GetMatrices(component->Entity.Transform)};
+				component->Entity()->Transform()->CalculateMatrices();
+				const auto& [modelMat, normalMat]{DataManager::GetMatrices(component->Entity()->Transform())};
 				instanceMatrices.emplace_back(modelMat.Transposed(), normalMat.Transposed());
 			});
 			renderable.SetInstanceData(instanceMatrices);
@@ -56,7 +56,7 @@ namespace leopph::impl
 
 		std::ranges::for_each(DataManager::NonInstancedRenderables(), [](const auto& entry)
 		{
-			entry.second->Entity.Transform->CalculateMatrices();
+			entry.second->Entity()->Transform()->CalculateMatrices();
 		});
 	}
 

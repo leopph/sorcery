@@ -76,14 +76,15 @@ namespace leopph
 			LEOPPHAPI void Background(CameraBackground&& background);
 
 
-			LEOPPHAPI explicit Camera(leopph::Entity& owner);
+			LEOPPHAPI explicit Camera(leopph::Entity* entity);
+
 			Camera(const Camera&) = delete;
+			void operator=(const Camera&) = delete;
+
 			Camera(Camera&&) = delete;
+			void operator=(Camera&&) = delete;
 
 			LEOPPHAPI ~Camera() override;
-
-			void operator=(const Camera&) = delete;
-			void operator=(Camera&&) = delete;
 
 
 		private:

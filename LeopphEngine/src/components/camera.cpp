@@ -22,7 +22,7 @@ namespace leopph
 	}
 
 
-	const leopph::CameraBackground& Camera::Background() const
+	const CameraBackground& Camera::Background() const
 	{
 		return m_Background;
 	}
@@ -36,8 +36,8 @@ namespace leopph
 	}
 
 
-	Camera::Camera(leopph::Entity& owner) :
-		Component{owner},
+	Camera::Camera(leopph::Entity* const entity) :
+		Component{entity},
 		m_AspectRatio{leopph::impl::WindowBase::Get().AspectRatio()},
 		m_HorizontalFovDegrees{100.0f},
 		m_NearClip{0.1f},
@@ -134,7 +134,7 @@ namespace leopph
 
 	Matrix4 Camera::ViewMatrix() const
 	{
-		return (static_cast<Matrix4>(Entity.Transform->Rotation()) * Matrix4::Translate(Entity.Transform->Position())).Inverse();
+		return (static_cast<Matrix4>(Entity()->Transform()->Rotation()) * Matrix4::Translate(Entity()->Transform()->Position())).Inverse();
 	}
 
 

@@ -13,18 +13,22 @@ namespace leopph
 	 * Subclass this to provide your own properties to Entities. */
 	class Component
 	{
-	public:
-		LEOPPHAPI explicit Component(Entity& owner);
+		public:
+			Component(const Component& other) = default;
+			Component& operator=(const Component& other) = default;
 
-		Component(const Component&) = delete;
-		void operator=(const Component&) = delete;
+			Component(Component&& other) = default;
+			Component& operator=(Component&& other) = default;
 
-		Component(Component&&) = delete;
-		void operator=(Component&&) = delete;
+			LEOPPHAPI virtual ~Component() = default;
 
-		LEOPPHAPI virtual ~Component() = 0;
+			// The Entity the Component is attached to.
+			LEOPPHAPI Entity* Entity() const;
 
-		// The Entity the Component is attached to.
-		Entity& Entity;
+		protected:
+			LEOPPHAPI explicit Component(leopph::Entity* entity);
+
+		private:
+			leopph::Entity* m_Entity;
 	};
 }

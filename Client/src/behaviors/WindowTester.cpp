@@ -5,6 +5,11 @@ using leopph::KeyCode;
 using leopph::Window;
 
 
+WindowTester::WindowTester(leopph::Entity* const entity) :
+	Behavior{entity}
+{}
+
+
 void WindowTester::OnFrameUpdate()
 {
 	if (Input::GetKeyDown(KeyCode::F))

@@ -105,8 +105,8 @@ namespace leopph::impl
 
 		nonInstObjectShader.SetUniform("u_ViewProjMat", camViewMat * camProjMat);
 		instObjectShader.SetUniform("u_ViewProjMat", camViewMat * camProjMat);
-		nonInstObjectShader.SetUniform("u_CamPos", Camera::Active->Entity.Transform->Position());
-		instObjectShader.SetUniform("u_CamPos", Camera::Active->Entity.Transform->Position());
+		nonInstObjectShader.SetUniform("u_CamPos", Camera::Active->Entity()->Transform()->Position());
+		instObjectShader.SetUniform("u_CamPos", Camera::Active->Entity()->Transform()->Position());
 
 		/* Set up ambient light data */
 		nonInstObjectShader.SetUniform("u_AmbientLight", AmbientLight::Instance().Intensity());
@@ -148,7 +148,7 @@ namespace leopph::impl
 					nonInstShadowShader.Use();
 					for (const auto& [renderable, component] : DataManager::NonInstancedRenderables())
 					{
-						nonInstShadowShader.SetUniform("u_ModelMat", DataManager::GetMatrices(component->Entity.Transform).first);
+						nonInstShadowShader.SetUniform("u_ModelMat", DataManager::GetMatrices(component->Entity()->Transform()).first);
 						renderable->DrawDepth();
 					}
 
@@ -191,8 +191,8 @@ namespace leopph::impl
 		{
 			const auto& pointLight = pointLights[i];
 
-			nonInstObjectShader.SetUniform("u_PointLights[" + std::to_string(i) + "].position", pointLight->Entity.Transform->Position());
-			instObjectShader.SetUniform("u_PointLights[" + std::to_string(i) + "].position", pointLight->Entity.Transform->Position());
+			nonInstObjectShader.SetUniform("u_PointLights[" + std::to_string(i) + "].position", pointLight->Entity()->Transform()->Position());
+			instObjectShader.SetUniform("u_PointLights[" + std::to_string(i) + "].position", pointLight->Entity()->Transform()->Position());
 			nonInstObjectShader.SetUniform("u_PointLights[" + std::to_string(i) + "].diffuseColor", pointLight->Diffuse());
 			instObjectShader.SetUniform("u_PointLights[" + std::to_string(i) + "].diffuseColor", pointLight->Diffuse());
 			nonInstObjectShader.SetUniform("u_PointLights[" + std::to_string(i) + "].specularColor", pointLight->Specular());
@@ -212,10 +212,10 @@ namespace leopph::impl
 		{
 			const auto& spotLight{spotLights[i]};
 
-			nonInstObjectShader.SetUniform("u_SpotLights[" + std::to_string(i) + "].position", spotLight->Entity.Transform->Position());
-			instObjectShader.SetUniform("u_SpotLights[" + std::to_string(i) + "].position", spotLight->Entity.Transform->Position());
-			nonInstObjectShader.SetUniform("u_SpotLights[" + std::to_string(i) + "].direction", spotLight->Entity.Transform->Forward());
-			instObjectShader.SetUniform("u_SpotLights[" + std::to_string(i) + "].direction", spotLight->Entity.Transform->Forward());
+			nonInstObjectShader.SetUniform("u_SpotLights[" + std::to_string(i) + "].position", spotLight->Entity()->Transform()->Position());
+			instObjectShader.SetUniform("u_SpotLights[" + std::to_string(i) + "].position", spotLight->Entity()->Transform()->Position());
+			nonInstObjectShader.SetUniform("u_SpotLights[" + std::to_string(i) + "].direction", spotLight->Entity()->Transform()->Forward());
+			instObjectShader.SetUniform("u_SpotLights[" + std::to_string(i) + "].direction", spotLight->Entity()->Transform()->Forward());
 			nonInstObjectShader.SetUniform("u_SpotLights[" + std::to_string(i) + "].diffuseColor", spotLight->Diffuse());
 			instObjectShader.SetUniform("u_SpotLights[" + std::to_string(i) + "].diffuseColor", spotLight->Diffuse());
 			nonInstObjectShader.SetUniform("u_SpotLights[" + std::to_string(i) + "].specularColor", spotLight->Specular());
@@ -237,7 +237,7 @@ namespace leopph::impl
 		{
 			const auto& [modelMat, normalMat]
 			{
-				DataManager::GetMatrices(component->Entity.Transform)
+				DataManager::GetMatrices(component->Entity()->Transform())
 			};
 			nonInstObjectShader.SetUniform("u_ModelMat", modelMat);
 			nonInstObjectShader.SetUniform("u_NormalMat", normalMat);

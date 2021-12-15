@@ -13,14 +13,15 @@ namespace leopph
 	{
 	public:
 		// Load a Model from a file on disk.
-		LEOPPHAPI InstancedModel(leopph::Entity& owner, std::filesystem::path path);
+		LEOPPHAPI InstancedModel(leopph::Entity* entity, std::filesystem::path path);
+
 		InstancedModel(const InstancedModel& other) = delete;
+		InstancedModel& operator=(const InstancedModel& other) = delete;
+
 		InstancedModel(InstancedModel&& other) = delete;
+		InstancedModel& operator=(InstancedModel&& other) = delete;
 
 		LEOPPHAPI ~InstancedModel() override = default;
-
-		InstancedModel& operator=(const InstancedModel& other) = delete;
-		InstancedModel& operator=(InstancedModel&& other) = delete;
 
 		// File path of the loaded InstancedModel.
 		const std::filesystem::path Path;

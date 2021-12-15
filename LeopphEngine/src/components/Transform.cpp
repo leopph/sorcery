@@ -8,20 +8,19 @@
 
 namespace leopph
 {
-	Transform::Transform(leopph::Entity& owner, const Vector3& pos, const Quaternion& rot, const Vector3& scale) :
-		Component{owner},
-		Changed{m_Changed},
-		m_LocalPosition{pos},
-		m_LocalRotation{rot},
-		m_LocalScale{scale},
+	Transform::Transform(leopph::Entity* const entity, const Vector3& pos, const Quaternion& rot, const Vector3& scale) :
+		Component{entity},
 		m_WorldPosition{pos},
 		m_WorldRotation{rot},
 		m_WorldScale{scale},
+		m_LocalPosition{pos},
+		m_LocalRotation{rot},
+		m_LocalScale{scale},
 		m_Forward{Vector3::Forward()},
 		m_Right{Vector3::Right()},
 		m_Up{Vector3::Up()},
-		m_Parent{nullptr},
-		m_Changed{true}
+		m_Changed{true},
+		m_Parent{nullptr}
 	{
 		CalculateLocalAxes();
 	}
@@ -146,7 +145,7 @@ namespace leopph
 
 	void Transform::Translate(const float x, const float y, const float z, const Space base)
 	{
-		Translate(Vector3{ x, y, z }, base);
+		Translate(Vector3{x, y, z}, base);
 	}
 
 	void Transform::Rotate(const Quaternion& rotation, const Space base)
@@ -198,22 +197,27 @@ namespace leopph
 		return m_Up;
 	}
 
+	bool Transform::Changed() const
+	{
+		return m_Changed;
+	}
+
 	Transform* Transform::Parent() const
 	{
 		return m_Parent;
 	}
 
-	void Transform::Parent(leopph::Entity* parent)
+	void Transform::Parent(const leopph::Entity* const parent)
 	{
-		Parent(parent->Transform);
+		Parent(parent->Transform());
 	}
 
-	void Transform::Parent(leopph::Entity& parent)
+	void Transform::Parent(const leopph::Entity& parent)
 	{
-		Parent(parent.Transform);
+		Parent(parent.Transform());
 	}
 
-	void Transform::Parent(Transform* parent)
+	void Transform::Parent(Transform* const parent)
 	{
 		if (m_Parent != nullptr)
 		{
@@ -248,7 +252,7 @@ namespace leopph
 
 	void Transform::CalculateMatrices()
 	{
-		if (!Changed)
+		if (!m_Changed)
 		{
 			return;
 		}
@@ -267,7 +271,7 @@ namespace leopph
 
 		m_Changed = false;
 	}
-	
+
 	void Transform::CalculateLocalAxes()
 	{
 		m_Forward = m_WorldRotation.Rotate(Vector3::Forward());

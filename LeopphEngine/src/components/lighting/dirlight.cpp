@@ -2,10 +2,11 @@
 
 #include "../../data/DataManager.hpp"
 
+
 namespace leopph
 {
-	DirectionalLight::DirectionalLight(leopph::Entity& owner) :
-		Light{ owner }
+	DirectionalLight::DirectionalLight(leopph::Entity* const entity) :
+		Light{entity}
 	{
 		impl::DataManager::DirectionalLight(this);
 	}
@@ -17,6 +18,6 @@ namespace leopph
 
 	const Vector3& DirectionalLight::Direction() const
 	{
-		return Entity.Transform->Forward();
+		return Entity()->Transform()->Forward();
 	}
 }

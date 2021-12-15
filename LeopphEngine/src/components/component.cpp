@@ -3,9 +3,13 @@
 
 namespace leopph
 {
-	Component::Component(leopph::Entity& owner) :
-		Entity{owner}
+	Component::Component(leopph::Entity* const owner) :
+		m_Entity{owner}
 	{}
 
-	Component::~Component() = default;
+	Entity* Component::Entity() const
+	{
+		return m_Entity;
+	}
+
 }

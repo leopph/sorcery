@@ -11,7 +11,7 @@ namespace leopph::impl
 	class NonInstancedRenderComponent : public RenderComponent
 	{
 	protected:
-		NonInstancedRenderComponent(leopph::Entity& owner, ModelData& modelData);
+		NonInstancedRenderComponent(leopph::Entity* entity, ModelData& modelData);
 
 		~NonInstancedRenderComponent() override;
 

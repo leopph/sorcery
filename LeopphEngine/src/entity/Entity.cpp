@@ -17,11 +17,9 @@ namespace leopph
 
 
 	Entity::Entity(std::string name) :
-		Name{m_Name},
-		Transform{m_Transform},
 		m_Name{name.empty() ? "Entity" + std::to_string(impl::DataManager::EntitiesAndComponents().size()) : std::move(name)}
 	{
-		if (Find(this->Name) != nullptr)
+		if (Find(this->m_Name) != nullptr)
 		{
 			std::string newName{};
 			for (std::size_t i = 0; i < std::numeric_limits<std::size_t>::max(); i++)
@@ -72,7 +70,7 @@ namespace leopph
 
 	void Entity::RemoveComponent(const Component* component) const
 	{
-		if (&component->Entity != this)
+		if (component->Entity() != this)
 		{
 			const auto msg{"Error while trying to remove Component at address [" + std::to_string(reinterpret_cast<unsigned long long>(component)) + "] from Entity [" + m_Name + "]. The Component's owning Entity is different from this."};
 			impl::Logger::Instance().Error(msg);
@@ -86,5 +84,15 @@ namespace leopph
 	void Entity::RegisterComponent(std::unique_ptr<Component>&& component) const
 	{
 		impl::DataManager::RegisterComponentForEntity(this, std::move(component));
+	}
+
+	const std::string& Entity::Name() const
+	{
+		return m_Name;
+	}
+
+	Transform* Entity::Transform() const
+	{
+		return m_Transform;
 	}
 }
