@@ -39,7 +39,7 @@
     <ClCompile Include="src\events\handling\EventReceiverBase.cpp" />
     <ClCompile Include="src\events\KeyEvent.cpp" />
     <ClCompile Include="src\events\MouseEvent.cpp" />
-    <ClCompile Include="src\rendering\geometry\GlMeshCollection.cpp" />
+    <ClCompile Include="src\rendering\geometry\GlMeshGroup.cpp" />
     <ClCompile Include="src\rendering\renderers\Renderer.cpp" />
     <ClCompile Include="src\rendering\Texture.cpp" />
     <ClCompile Include="src\rendering\SkyboxImpl.cpp" />
@@ -60,14 +60,14 @@
     <ClCompile Include="src\windowing\Window.cpp" />
     <ClCompile Include="src\rendering\RenderTexture.cpp" />
     <ClCompile Include="src\data\DataManager.cpp" />
-    <ClCompile Include="src\rendering\geometry\FileMeshDataCollection.cpp" />
+    <ClCompile Include="src\rendering\geometry\FileMeshDataGroup.cpp" />
     <ClCompile Include="src\util\equal\RenderableEqual.cpp" />
     <ClCompile Include="src\util\hash\RenderableHash.cpp" />
     <ClCompile Include="src\components\rendering\InstancedRenderComponent.cpp" />
     <ClCompile Include="src\rendering\UniformBuffer.cpp" />
     <ClCompile Include="src\util\hash\StringHash.cpp" />
     <ClCompile Include="src\util\equal\StringEqual.cpp" />
-    <ClCompile Include="src\rendering\geometry\MeshDataCollection.cpp" />
+    <ClCompile Include="src\rendering\geometry\MeshDataGroup.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\Behavior.hpp" />
@@ -122,7 +122,7 @@
     <ClInclude Include="src\events\KeyEvent.hpp" />
     <ClInclude Include="src\events\MouseEvent.hpp" />
     <ClInclude Include="src\events\FrameEndEvent.hpp" />
-    <ClInclude Include="src\rendering\geometry\GlMeshCollection.hpp" />
+    <ClInclude Include="src\rendering\geometry\GlMeshGroup.hpp" />
     <ClInclude Include="src\rendering\renderers\Renderer.hpp" />
     <ClInclude Include="src\rendering\Texture.hpp" />
     <ClInclude Include="src\rendering\SkyboxImpl.hpp" />
@@ -150,8 +150,8 @@
     <ClInclude Include="src\util\equal\PathedEqual.hpp" />
     <ClInclude Include="src\util\concepts\Pathed.hpp" />
     <ClInclude Include="src\rendering\geometry\MeshData.hpp" />
-    <ClInclude Include="src\rendering\geometry\MeshDataCollection.hpp" />
-    <ClInclude Include="src\rendering\geometry\FileMeshDataCollection.hpp" />
+    <ClInclude Include="src\rendering\geometry\MeshDataGroup.hpp" />
+    <ClInclude Include="src\rendering\geometry\FileMeshDataGroup.hpp" />
     <ClInclude Include="src\util\equal\RenderableEqual.hpp" />
     <ClInclude Include="src\util\hash\RenderableHash.hpp" />
     <ClInclude Include="src\components\rendering\RenderComponent.hpp" />

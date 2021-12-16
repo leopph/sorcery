@@ -1,7 +1,7 @@
 #pragma once
 
 #include "GlMesh.hpp"
-#include "MeshDataCollection.hpp"
+#include "MeshDataGroup.hpp"
 #include "../shaders/ShaderProgram.hpp"
 
 #include <cstddef>
@@ -14,18 +14,18 @@ namespace leopph::impl
 	class RenderComponent;
 
 
-	class GlMeshCollection final
+	class GlMeshGroup final
 	{
 		public:
-			explicit GlMeshCollection(const MeshDataCollection& modelData);
+			explicit GlMeshGroup(const MeshDataGroup& modelData);
 
-			GlMeshCollection(const GlMeshCollection& other);
-			GlMeshCollection& operator=(const GlMeshCollection& other);
+			GlMeshGroup(const GlMeshGroup& other);
+			GlMeshGroup& operator=(const GlMeshGroup& other);
 
-			GlMeshCollection(GlMeshCollection&& other) noexcept;
-			GlMeshCollection& operator=(GlMeshCollection&& other) noexcept;
+			GlMeshGroup(GlMeshGroup&& other) noexcept;
+			GlMeshGroup& operator=(GlMeshGroup&& other) noexcept;
 
-			~GlMeshCollection() noexcept;
+			~GlMeshGroup() noexcept;
 
 			void DrawShaded(ShaderProgram& shader, std::size_t nextFreeTextureUnit) const;
 			void DrawDepth() const;
@@ -37,7 +37,7 @@ namespace leopph::impl
 			void UpdateInstanceGeometry() const;
 
 			[[nodiscard]]
-			const MeshDataCollection& MeshDataCollection() const;
+			const MeshDataGroup& MeshDataCollection() const;
 
 		private:
 			void Deinit() const;
@@ -49,7 +49,7 @@ namespace leopph::impl
 				unsigned InstanceBuffer{0u};
 				std::size_t InstanceBufferSize{1ull};
 				std::size_t HandleCount{1ull};
-				impl::MeshDataCollection MeshDataCollection;
+				impl::MeshDataGroup MeshDataCollection;
 			};
 
 

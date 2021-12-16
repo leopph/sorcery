@@ -11,8 +11,8 @@
 #include "../rendering/Skybox.hpp"
 #include "../rendering/SkyboxImpl.hpp"
 #include "../rendering/Texture.hpp"
-#include "../rendering/geometry/GlMeshCollection.hpp"
-#include "../rendering/geometry/MeshDataCollection.hpp"
+#include "../rendering/geometry/GlMeshGroup.hpp"
+#include "../rendering/geometry/MeshDataGroup.hpp"
 #include "../util/equal/EntityEqual.hpp"
 #include "../util/equal/IdEqual.hpp"
 #include "../util/equal/PathedEqual.hpp"
@@ -40,13 +40,13 @@ namespace leopph::impl
 	public:
 		static void Clear();
 
-		// Returns (and creates if non-existent) the GlMeshCollection that sources its data from the given MeshDataCollection object.
-		static GlMeshCollection& CreateOrGetInstancedRenderable(MeshDataCollection& modelData);
+		// Returns (and creates if non-existent) the GlMeshGroup that sources its data from the given MeshDataGroup object.
+		static GlMeshGroup& CreateOrGetInstancedRenderable(MeshDataGroup& modelData);
 		// Also unregisters all InstancedRenderComponents.
-		static void DestroyInstancedRenderable(const GlMeshCollection& renderable);
-		static void RegisterInstancedRenderComponent(const GlMeshCollection& renderable, InstancedRenderComponent* const component);
-		static void UnregisterInstancedRenderComponent(const GlMeshCollection& renderable, InstancedRenderComponent* const component);
-		static const std::unordered_map<GlMeshCollection, std::unordered_set<InstancedRenderComponent*>, RenderableHash, RenderableEqual>& InstancedRenderables();
+		static void DestroyInstancedRenderable(const GlMeshGroup& renderable);
+		static void RegisterInstancedRenderComponent(const GlMeshGroup& renderable, InstancedRenderComponent* const component);
+		static void UnregisterInstancedRenderComponent(const GlMeshGroup& renderable, InstancedRenderComponent* const component);
+		static const std::unordered_map<GlMeshGroup, std::unordered_set<InstancedRenderComponent*>, RenderableHash, RenderableEqual>& InstancedRenderables();
 
 		static void RegisterTexture(Texture* texture);
 		static void UnregisterTexture(Texture* texture);
@@ -64,8 +64,8 @@ namespace leopph::impl
 		static void UnregisterComponentFromEntity(const Entity* entity, const Component* component);
 		static const std::unordered_set<std::unique_ptr<Component>, PointerHash, PointerEqual>& ComponentsOfEntity(const Entity* entity);
 
-		static void StoreMeshDataCollection(const MeshDataCollection& meshData);
-		static const MeshDataCollection* FindMeshDataCollection(const std::string& id);
+		static void StoreMeshDataCollection(const MeshDataGroup& meshData);
+		static const MeshDataGroup* FindMeshDataCollection(const std::string& id);
 
 		static void Register(Entity* entity);
 		static void Register(Behavior* behavior);
@@ -108,10 +108,10 @@ namespace leopph::impl
 		// Stores SkyboxImpl instances along with all the Skybox handles pointing to it.
 		static std::unordered_map<SkyboxImpl, std::unordered_set<Skybox*>, PathedHash<SkyboxImpl>, PathedEqual<SkyboxImpl>> s_Skyboxes;
 
-		static std::unordered_set<MeshDataCollection, IdHash, IdEqual> s_MeshData;
+		static std::unordered_set<MeshDataGroup, IdHash, IdEqual> s_MeshData;
 
-		static std::vector<GlMeshCollection> s_NonInstancedRenders;
-		static std::unordered_set<GlMeshCollection, RenderableHash, RenderableEqual> s_InstancedRenders;
+		static std::vector<GlMeshGroup> s_NonInstancedRenders;
+		static std::unordered_set<GlMeshGroup, RenderableHash, RenderableEqual> s_InstancedRenders;
 
 		static void SortTextures();
 	};

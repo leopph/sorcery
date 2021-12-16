@@ -5,14 +5,14 @@
 
 namespace leopph::impl
 {
-	class MeshDataCollection;
+	class MeshDataGroup;
 
 
 	// The RenderComponent class provides a base for all Components related to rendering objects.
 	class RenderComponent : public Component
 	{
 		public:
-			RenderComponent(leopph::Entity* entity, const MeshDataCollection& meshData);
+			RenderComponent(leopph::Entity* entity, const MeshDataGroup& meshData);
 
 			/* Get whether the rendered object occludes light from other objects.
 			 * This only works if the Light used also has this property set to true.

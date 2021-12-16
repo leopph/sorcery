@@ -5,16 +5,16 @@
 
 namespace leopph::impl
 {
-	class MeshDataCollection;
-	class GlMeshCollection;
+	class MeshDataGroup;
+	class GlMeshGroup;
 
 	class InstancedRenderComponent : public RenderComponent
 	{
 	protected:
-		InstancedRenderComponent(leopph::Entity* entity, MeshDataCollection& modelData);
+		InstancedRenderComponent(leopph::Entity* entity, MeshDataGroup& modelData);
 		
 		~InstancedRenderComponent() override;
 
-		GlMeshCollection& m_Impl;
+		GlMeshGroup& m_Impl;
 	};
 };

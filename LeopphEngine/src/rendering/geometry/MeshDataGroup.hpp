@@ -8,10 +8,10 @@
 
 namespace leopph::impl
 {
-	class MeshDataCollection
+	class MeshDataGroup
 	{
 		public:
-			explicit MeshDataCollection(std::string id = GenerateId());
+			explicit MeshDataGroup(std::string id = GenerateId());
 
 			[[nodiscard]]
 			const std::string& Id() const;

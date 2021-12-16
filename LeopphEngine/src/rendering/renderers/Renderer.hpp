@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../geometry/GlMeshCollection.hpp"
+#include "../geometry/GlMeshGroup.hpp"
 #include "../../components/lighting/PointLight.hpp"
 #include "../../components/lighting/SpotLight.hpp"
 #include "../../math/Matrix.hpp"

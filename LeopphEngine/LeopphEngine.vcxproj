@@ -152,10 +152,10 @@
     <ClInclude Include="src\misc\Color.hpp" />
     <ClInclude Include="src\rendering\CascadedShadowMap.hpp" />
     <ClInclude Include="src\rendering\CubeShadowMap.hpp" />
-    <ClInclude Include="src\rendering\geometry\FileMeshDataCollection.hpp" />
+    <ClInclude Include="src\rendering\geometry\FileMeshDataGroup.hpp" />
     <ClInclude Include="src\rendering\geometry\MeshData.hpp" />
-    <ClInclude Include="src\rendering\geometry\MeshDataCollection.hpp" />
-    <ClInclude Include="src\rendering\geometry\GlMeshCollection.hpp" />
+    <ClInclude Include="src\rendering\geometry\MeshDataGroup.hpp" />
+    <ClInclude Include="src\rendering\geometry\GlMeshGroup.hpp" />
     <ClInclude Include="src\rendering\GeometryBuffer.hpp" />
     <ClInclude Include="src\rendering\renderers\DeferredRenderer.hpp" />
     <ClInclude Include="src\rendering\geometry\Material.hpp" />
@@ -240,10 +240,10 @@
     <ClCompile Include="src\misc\Color.cpp" />
     <ClCompile Include="src\rendering\CascadedShadowMap.cpp" />
     <ClCompile Include="src\rendering\CubeShadowMap.cpp" />
-    <ClCompile Include="src\rendering\geometry\FileMeshDataCollection.cpp" />
-    <ClCompile Include="src\rendering\geometry\GlMeshCollection.cpp" />
+    <ClCompile Include="src\rendering\geometry\FileMeshDataGroup.cpp" />
+    <ClCompile Include="src\rendering\geometry\GlMeshGroup.cpp" />
     <ClCompile Include="src\rendering\GeometryBuffer.cpp" />
-    <ClCompile Include="src\rendering\geometry\MeshDataCollection.cpp" />
+    <ClCompile Include="src\rendering\geometry\MeshDataGroup.cpp" />
     <ClCompile Include="src\rendering\renderers\DeferredRenderer.cpp" />
     <ClCompile Include="src\rendering\geometry\Material.cpp" />
     <ClCompile Include="src\rendering\opengl\InitGl.cpp" />

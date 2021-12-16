@@ -1,6 +1,6 @@
 #pragma once
 
-#include "MeshDataCollection.hpp"
+#include "MeshDataGroup.hpp"
 #include "../Texture.hpp"
 #include "../../math/Matrix.hpp"
 
@@ -12,10 +12,10 @@
 
 namespace leopph::impl
 {
-	class FileMeshDataCollection : public MeshDataCollection
+	class FileMeshDataGroup : public MeshDataGroup
 	{
 		public:
-			explicit FileMeshDataCollection(std::filesystem::path path);
+			explicit FileMeshDataGroup(std::filesystem::path path);
 
 			[[nodiscard]]
 			const std::filesystem::path& Path() const;

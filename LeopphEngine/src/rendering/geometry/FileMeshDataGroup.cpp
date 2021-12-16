@@ -1,4 +1,4 @@
-#include "FileMeshDataCollection.hpp"
+#include "FileMeshDataGroup.hpp"
 
 #include "../../data/DataManager.hpp"
 #include "../../util/logger.h"
@@ -14,7 +14,7 @@
 
 namespace leopph::impl
 {
-	FileMeshDataCollection::FileMeshDataCollection(std::filesystem::path path) :
+	FileMeshDataGroup::FileMeshDataGroup(std::filesystem::path path) :
 		m_Path{std::move(path)}
 	{
 		Assimp::Importer importer;
@@ -29,13 +29,13 @@ namespace leopph::impl
 	}
 
 
-	const std::filesystem::path& FileMeshDataCollection::Path() const
+	const std::filesystem::path& FileMeshDataGroup::Path() const
 	{
 		return m_Path;
 	}
 
 
-	std::vector<impl::MeshData> FileMeshDataCollection::ProcessNodes(const aiScene* const scene) const
+	std::vector<impl::MeshData> FileMeshDataGroup::ProcessNodes(const aiScene* const scene) const
 	{
 		struct NodeAndTransform
 		{
@@ -87,7 +87,7 @@ namespace leopph::impl
 	}
 
 
-	impl::MeshData FileMeshDataCollection::ProcessMesh(const aiMesh* const mesh, const aiScene* const scene, const Matrix3& trafo) const
+	impl::MeshData FileMeshDataGroup::ProcessMesh(const aiMesh* const mesh, const aiScene* const scene, const Matrix3& trafo) const
 	{
 		std::vector<Vertex> vertices;
 		std::vector<unsigned> indices;
@@ -170,7 +170,7 @@ namespace leopph::impl
 	}
 
 
-	std::shared_ptr<Texture> FileMeshDataCollection::LoadTexture(const aiMaterial* const material, const aiTextureType type) const
+	std::shared_ptr<Texture> FileMeshDataGroup::LoadTexture(const aiMaterial* const material, const aiTextureType type) const
 	{
 		if (material->GetTextureCount(type) > 0)
 		{

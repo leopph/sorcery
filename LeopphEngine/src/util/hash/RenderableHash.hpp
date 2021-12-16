@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../../rendering/geometry/GlMeshCollection.hpp"
-#include "../../rendering/geometry/MeshDataCollection.hpp"
+#include "../../rendering/geometry/GlMeshGroup.hpp"
+#include "../../rendering/geometry/MeshDataGroup.hpp"
 
 #include <functional>
 
@@ -13,8 +13,8 @@ namespace leopph::impl
 	public:
 		using is_transparent = void;
 
-		std::size_t operator()(const GlMeshCollection& model) const;
-		std::size_t operator()(const MeshDataCollection& modelData) const;
+		std::size_t operator()(const GlMeshGroup& model) const;
+		std::size_t operator()(const MeshDataGroup& modelData) const;
 
 
 	private:

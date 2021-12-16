@@ -1,4 +1,4 @@
-#include "GlMeshCollection.hpp"
+#include "GlMeshGroup.hpp"
 
 #include "../../data/DataManager.hpp"
 #include "../../math/Matrix.hpp"
@@ -12,7 +12,7 @@
 
 namespace leopph::impl
 {
-	GlMeshCollection::GlMeshCollection(const impl::MeshDataCollection& modelData) :
+	GlMeshGroup::GlMeshGroup(const impl::MeshDataGroup& modelData) :
 		m_SharedData{std::make_shared_for_overwrite<SharedData>()}
 	{
 		m_SharedData->MeshDataCollection = modelData;
@@ -26,13 +26,13 @@ namespace leopph::impl
 		});
 	}
 
-	GlMeshCollection::GlMeshCollection(const GlMeshCollection& other) :
+	GlMeshGroup::GlMeshGroup(const GlMeshGroup& other) :
 		m_SharedData{other.m_SharedData}
 	{
 		++m_SharedData->HandleCount;
 	}
 
-	GlMeshCollection& GlMeshCollection::operator=(const GlMeshCollection& other) noexcept
+	GlMeshGroup& GlMeshGroup::operator=(const GlMeshGroup& other) noexcept
 	{
 		if (&other == this)
 		{
@@ -44,21 +44,21 @@ namespace leopph::impl
 		++m_SharedData->HandleCount;
 	}
 
-	GlMeshCollection::GlMeshCollection(GlMeshCollection&& other) noexcept :
-		GlMeshCollection{other}
+	GlMeshGroup::GlMeshGroup(GlMeshGroup&& other) noexcept :
+		GlMeshGroup{other}
 	{}
 
-	GlMeshCollection& GlMeshCollection::operator=(GlMeshCollection&& other)
+	GlMeshGroup& GlMeshGroup::operator=(GlMeshGroup&& other)
 	{
 		return *this = other;
 	}
 
-	GlMeshCollection::~GlMeshCollection() noexcept
+	GlMeshGroup::~GlMeshGroup() noexcept
 	{
 		Deinit();
 	}
 
-	void GlMeshCollection::DrawShaded(leopph::impl::ShaderProgram& shader, const std::size_t nextFreeTextureUnit) const
+	void GlMeshGroup::DrawShaded(leopph::impl::ShaderProgram& shader, const std::size_t nextFreeTextureUnit) const
 	{
 		for (const auto& mesh : m_SharedData->Meshes)
 		{
@@ -67,7 +67,7 @@ namespace leopph::impl
 	}
 
 
-	void GlMeshCollection::DrawDepth() const
+	void GlMeshGroup::DrawDepth() const
 	{
 		for (const auto& mesh : m_SharedData->Meshes)
 		{
@@ -75,7 +75,7 @@ namespace leopph::impl
 		}
 	}
 
-	void GlMeshCollection::UpdateInstanceGeometry() const
+	void GlMeshGroup::UpdateInstanceGeometry() const
 	{
 		static std::vector<std::pair<Matrix4, Matrix4>> instanceMatrices;
 		instanceMatrices.clear();
@@ -101,23 +101,23 @@ namespace leopph::impl
 		}
 	}
 
-	void GlMeshCollection::AddInstance(const RenderComponent* component) const
+	void GlMeshGroup::AddInstance(const RenderComponent* component) const
 	{
 		m_SharedData->RenderInstances.push_back(component);
 	}
 
-	void GlMeshCollection::RemoveInstance(const RenderComponent* component) const
+	void GlMeshGroup::RemoveInstance(const RenderComponent* component) const
 	{
 		std::erase(m_SharedData->RenderInstances, component);
 	}
 
-	const MeshDataCollection& GlMeshCollection::MeshDataCollection() const
+	const MeshDataGroup& GlMeshGroup::MeshDataCollection() const
 	{
 		return m_SharedData->MeshDataCollection;
 	}
 
 
-	void GlMeshCollection::Deinit() const
+	void GlMeshGroup::Deinit() const
 	{
 		--m_SharedData->HandleCount;
 
