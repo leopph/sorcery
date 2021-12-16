@@ -27,6 +27,9 @@ namespace leopph::impl
 			delete node.key();
 			node.mapped().clear();
 		}
+
+		s_Renderables.clear();
+		s_MeshData.clear();
 	}
 
 	void DataManager::Register(Entity* entity)

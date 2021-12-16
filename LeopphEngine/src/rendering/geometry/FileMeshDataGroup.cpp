@@ -15,6 +15,7 @@
 namespace leopph::impl
 {
 	FileMeshDataGroup::FileMeshDataGroup(std::filesystem::path path) :
+		MeshDataGroup{path.generic_string()},
 		m_Path{std::move(path)}
 	{
 		Assimp::Importer importer;
@@ -23,6 +24,7 @@ namespace leopph::impl
 		if (scene == nullptr || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || scene->mRootNode == nullptr)
 		{
 			Logger::Instance().Error(importer.GetErrorString());
+			return;
 		}
 
 		Data() = ProcessNodes(scene);

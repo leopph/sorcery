@@ -8,7 +8,7 @@
 
 namespace leopph
 {
-	class Material
+	class Material final
 	{
 		public:
 			Material();

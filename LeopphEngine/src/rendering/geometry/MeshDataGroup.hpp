@@ -19,6 +19,8 @@ namespace leopph::impl
 			[[nodiscard]]
 			const std::vector<MeshData>& Data() const;
 
+			virtual ~MeshDataGroup() = default;
+
 		protected:
 			[[nodiscard]]
 			std::vector<MeshData>& Data();

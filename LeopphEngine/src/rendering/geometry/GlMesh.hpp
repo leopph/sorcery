@@ -14,7 +14,7 @@ namespace leopph::impl
 	 * It acts as an opaque handle to OpenGL buffers ready for rendering.
 	 * It also provides simple abstractions to make rendering easier.
 	 * GlMesh instances only hold minimal data - copies share a single shared space in memory and keep reference counts. */
-	class GlMesh
+	class GlMesh final
 	{
 		public:
 			GlMesh(const MeshData& meshData, unsigned instanceBuffer);

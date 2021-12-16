@@ -12,7 +12,7 @@
 
 namespace leopph::impl
 {
-	class FileMeshDataGroup : public MeshDataGroup
+	class FileMeshDataGroup final : public MeshDataGroup
 	{
 		public:
 			explicit FileMeshDataGroup(std::filesystem::path path);

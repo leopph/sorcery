@@ -28,6 +28,6 @@ namespace leopph
 		private:
 			std::filesystem::path m_Path;
 
-			const impl::MeshDataGroup* GetMeshData() const;
+			const impl::MeshDataGroup* GetMeshData(const std::filesystem::path& path) const;
 	};
 }
