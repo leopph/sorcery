@@ -5,7 +5,7 @@ namespace leopph::impl
 {
 	bool RenderableEqual::operator()(const GlMeshGroup& left, const GlMeshGroup& right) const
 	{
-		return left.MeshDataCollection().Id() == right.MeshDataCollection().Id();
+		return left.MeshData().Id() == right.MeshData().Id();
 	}
 
 	bool RenderableEqual::operator()(const GlMeshGroup& left, const MeshDataGroup& right) const
@@ -15,6 +15,6 @@ namespace leopph::impl
 
 	bool RenderableEqual::operator()(const MeshDataGroup& left, const GlMeshGroup& right) const
 	{
-		return left.Id() == right.MeshDataCollection().Id();
+		return left.Id() == right.MeshData().Id();
 	}
 }

@@ -6,7 +6,6 @@
 #include <glad/glad.h>
 
 #include <algorithm>
-#include <iterator>
 #include <utility>
 
 
@@ -15,21 +14,21 @@ namespace leopph::impl
 	GlMeshGroup::GlMeshGroup(const impl::MeshDataGroup& modelData) :
 		m_SharedData{std::make_shared_for_overwrite<SharedData>()}
 	{
-		m_SharedData->MeshDataCollection = modelData;
+		m_SharedData->MeshData = modelData;
 
-		glCreateBuffers(1, &m_SharedData->InstanceBuffer);
-		glNamedBufferData(m_SharedData->InstanceBuffer, 2 * sizeof(Matrix4), nullptr, GL_STATIC_DRAW);
+		glCreateBuffers(1, &m_SharedData->InstBuf);
+		glNamedBufferData(m_SharedData->InstBuf, 2 * sizeof(Matrix4), nullptr, GL_STATIC_DRAW);
 
 		std::ranges::for_each(modelData.Data(), [&](const auto& meshData)
 		{
-			m_SharedData->Meshes.emplace_back(meshData, m_SharedData->InstanceBuffer);
+			m_SharedData->Meshes.emplace_back(meshData, m_SharedData->InstBuf);
 		});
 	}
 
 	GlMeshGroup::GlMeshGroup(const GlMeshGroup& other) :
 		m_SharedData{other.m_SharedData}
 	{
-		++m_SharedData->HandleCount;
+		++m_SharedData->RefCount;
 	}
 
 	GlMeshGroup& GlMeshGroup::operator=(const GlMeshGroup& other) noexcept
@@ -41,7 +40,8 @@ namespace leopph::impl
 
 		Deinit();
 		m_SharedData = other.m_SharedData;
-		++m_SharedData->HandleCount;
+		++m_SharedData->RefCount;
+		return *this;
 	}
 
 	GlMeshGroup::GlMeshGroup(GlMeshGroup&& other) noexcept :
@@ -62,68 +62,50 @@ namespace leopph::impl
 	{
 		for (const auto& mesh : m_SharedData->Meshes)
 		{
-			mesh.DrawShaded(shader, nextFreeTextureUnit, m_SharedData->RenderInstances.size());
+			mesh.DrawShaded(shader, nextFreeTextureUnit, m_SharedData->InstCount);
 		}
 	}
-
 
 	void GlMeshGroup::DrawDepth() const
 	{
 		for (const auto& mesh : m_SharedData->Meshes)
 		{
-			mesh.DrawDepth(m_SharedData->RenderInstances.size());
+			mesh.DrawDepth(m_SharedData->InstCount);
 		}
 	}
 
-	void GlMeshGroup::UpdateInstanceGeometry() const
+	void GlMeshGroup::SetInstanceData(const std::vector<std::pair<Matrix4, Matrix4>>& instMats) const 
 	{
-		static std::vector<std::pair<Matrix4, Matrix4>> instanceMatrices;
-		instanceMatrices.clear();
-		std::ranges::transform(m_SharedData->RenderInstances, std::back_inserter(instanceMatrices), [](const auto& component)
-		{
-			const auto [modelMatrix, normalMatrix]{DataManager::GetMatrices(component->Entity()->Transform())};
-			return std::make_pair(modelMatrix.Transposed(), normalMatrix.Transposed());
-		});
+		m_SharedData->InstCount = instMats.size();
 
-		if (instanceMatrices.size() > m_SharedData->InstanceBufferSize)
+		if (instMats.size() > m_SharedData->InstBufSz)
 		{
-			m_SharedData->InstanceBufferSize *= 2;
-			glNamedBufferData(m_SharedData->InstanceBuffer, m_SharedData->InstanceBufferSize * sizeof(std::remove_reference_t<decltype(instanceMatrices)>::value_type), instanceMatrices.data(), GL_DYNAMIC_DRAW);
+			m_SharedData->InstBufSz *= 2;
+			glNamedBufferData(m_SharedData->InstBuf, m_SharedData->InstBufSz * sizeof(std::remove_reference_t<decltype(instMats)>::value_type), instMats.data(), GL_DYNAMIC_DRAW);
 		}
-		else if (instanceMatrices.size() * 2 < m_SharedData->InstanceBufferSize)
+		else if (instMats.size() * 2 < m_SharedData->InstBufSz)
 		{
-			m_SharedData->InstanceBufferSize = std::max(m_SharedData->InstanceBufferSize / 2, 1ull);
-			glNamedBufferData(m_SharedData->InstanceBuffer, m_SharedData->InstanceBufferSize * sizeof(std::remove_reference_t<decltype(instanceMatrices)>::value_type), instanceMatrices.data(), GL_DYNAMIC_DRAW);
+			m_SharedData->InstBufSz = std::max(m_SharedData->InstBufSz / 2, 1ull);
+			glNamedBufferData(m_SharedData->InstBuf, m_SharedData->InstBufSz * sizeof(std::remove_reference_t<decltype(instMats)>::value_type), instMats.data(), GL_DYNAMIC_DRAW);
 		}
 		else
 		{
-			glNamedBufferSubData(m_SharedData->InstanceBuffer, 0, instanceMatrices.size() * sizeof(std::remove_reference_t<decltype(instanceMatrices)>::value_type), instanceMatrices.data());
+			glNamedBufferSubData(m_SharedData->InstBuf, 0, instMats.size() * sizeof(std::remove_reference_t<decltype(instMats)>::value_type), instMats.data());
 		}
 	}
 
-	void GlMeshGroup::AddInstance(const RenderComponent* component) const
+	const MeshDataGroup& GlMeshGroup::MeshData() const
 	{
-		m_SharedData->RenderInstances.push_back(component);
+		return m_SharedData->MeshData;
 	}
-
-	void GlMeshGroup::RemoveInstance(const RenderComponent* component) const
-	{
-		std::erase(m_SharedData->RenderInstances, component);
-	}
-
-	const MeshDataGroup& GlMeshGroup::MeshDataCollection() const
-	{
-		return m_SharedData->MeshDataCollection;
-	}
-
 
 	void GlMeshGroup::Deinit() const
 	{
-		--m_SharedData->HandleCount;
+		--m_SharedData->RefCount;
 
-		if (m_SharedData->HandleCount == 0)
+		if (m_SharedData->RefCount == 0)
 		{
-			glDeleteBuffers(1, &m_SharedData->InstanceBuffer);
+			glDeleteBuffers(1, &m_SharedData->InstBuf);
 		}
 	}
 

@@ -5,7 +5,7 @@ namespace leopph::impl
 {
 	std::size_t RenderableHash::operator()(const GlMeshGroup& model) const
 	{
-		return m_Hash(model.MeshDataCollection().Id());
+		return m_Hash(model.MeshData().Id());
 	}
 
 	std::size_t RenderableHash::operator()(const MeshDataGroup& modelData) const

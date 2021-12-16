@@ -2,10 +2,12 @@
 
 #include "GlMesh.hpp"
 #include "MeshDataGroup.hpp"
+#include "../../math/Matrix.hpp"
 #include "../shaders/ShaderProgram.hpp"
 
 #include <cstddef>
 #include <memory>
+#include <utility>
 #include <vector>
 
 
@@ -30,26 +32,22 @@ namespace leopph::impl
 			void DrawShaded(ShaderProgram& shader, std::size_t nextFreeTextureUnit) const;
 			void DrawDepth() const;
 
-			void AddInstance(const RenderComponent* component) const;
-			void RemoveInstance(const RenderComponent* component) const;
-
-			// Matrices must be up-to-date when calling this!
-			void UpdateInstanceGeometry() const;
+			void SetInstanceData(const std::vector<std::pair<Matrix4, Matrix4>>& instMats) const;
 
 			[[nodiscard]]
-			const MeshDataGroup& MeshDataCollection() const;
+			const MeshDataGroup& MeshData() const;
 
 		private:
 			void Deinit() const;
 
 			struct SharedData
 			{
+				MeshDataGroup MeshData;
 				std::vector<GlMesh> Meshes;
-				std::vector<const RenderComponent*> RenderInstances;
-				unsigned InstanceBuffer{0u};
-				std::size_t InstanceBufferSize{1ull};
-				std::size_t HandleCount{1ull};
-				impl::MeshDataGroup MeshDataCollection;
+				unsigned InstBuf{0u};
+				std::size_t InstBufSz{1ull};
+				std::size_t InstCount{0ull};
+				std::size_t RefCount{1ull};
 			};
 
 
