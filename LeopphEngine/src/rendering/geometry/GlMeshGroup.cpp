@@ -11,15 +11,15 @@
 
 namespace leopph::impl
 {
-	GlMeshGroup::GlMeshGroup(const impl::MeshDataGroup& modelData) :
+	GlMeshGroup::GlMeshGroup(const impl::MeshDataGroup& meshDataGroup) :
 		m_SharedData{std::make_shared_for_overwrite<SharedData>()}
 	{
-		m_SharedData->MeshData = modelData;
+		m_SharedData->MeshData = meshDataGroup;
 
 		glCreateBuffers(1, &m_SharedData->InstBuf);
 		glNamedBufferData(m_SharedData->InstBuf, 2 * sizeof(Matrix4), nullptr, GL_STATIC_DRAW);
 
-		std::ranges::for_each(modelData.Data(), [&](const auto& meshData)
+		std::ranges::for_each(meshDataGroup.Data(), [&](const auto& meshData)
 		{
 			m_SharedData->Meshes.emplace_back(meshData, m_SharedData->InstBuf);
 		});
