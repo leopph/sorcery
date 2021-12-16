@@ -38,8 +38,7 @@ namespace leopph::impl
 
 	const std::vector<Renderer::RenderableData>& Renderer::CollectRenderables()
 	{
-		static std::vector<RenderableData> ret;
-		ret.clear();
+		m_CurFrameRenderables.clear();
 
 		for (const auto& [renderable, instances] : DataManager::MeshGroupsAndInstances())
 		{
@@ -58,16 +57,16 @@ namespace leopph::impl
 				}
 				else
 				{
-					ret.emplace_back(renderable, std::vector{std::make_pair(modelMat.Transposed(), normalMat.Transposed())}, instance->CastsShadow());
+					m_CurFrameRenderables.emplace_back(renderable, std::vector{std::make_pair(modelMat.Transposed(), normalMat.Transposed())}, instance->CastsShadow());
 				}
 			}
 
 			if (!instMats.empty())
 			{
-				ret.emplace_back(renderable, instMats, instShadow);
+				m_CurFrameRenderables.emplace_back(renderable, instMats, instShadow);
 			}
 		}
-		return ret;
+		return m_CurFrameRenderables;
 	}
 
 	const std::vector<const PointLight*>& Renderer::CollectPointLights()

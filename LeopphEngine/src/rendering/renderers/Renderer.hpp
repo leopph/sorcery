@@ -36,8 +36,11 @@ namespace leopph::impl
 			};
 
 
-			static const std::vector<RenderableData>& CollectRenderables();
+			const std::vector<RenderableData>& CollectRenderables();
 			static const std::vector<const PointLight*>& CollectPointLights();
 			static const std::vector<const SpotLight*>& CollectSpotLights();
+
+		private:
+			std::vector<RenderableData> m_CurFrameRenderables;
 	};
 }
