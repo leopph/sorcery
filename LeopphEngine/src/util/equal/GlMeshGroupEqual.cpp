@@ -8,13 +8,13 @@ namespace leopph::impl
 		return left.MeshData().Id() == right.MeshData().Id();
 	}
 
-	bool GlMeshGroupEqual::operator()(const GlMeshGroup& left, const MeshDataGroup& right) const
+	bool GlMeshGroupEqual::operator()(const GlMeshGroup& left, const std::shared_ptr<const MeshDataGroup>& right) const
 	{
-		return MeshDataGroup().Id() == right.Id();
+		return left.MeshData().Id() == right->Id();
 	}
 
-	bool GlMeshGroupEqual::operator()(const MeshDataGroup& left, const GlMeshGroup& right) const
+	bool GlMeshGroupEqual::operator()(const std::shared_ptr<const MeshDataGroup>& left, const GlMeshGroup& right) const
 	{
-		return left.Id() == right.MeshData().Id();
+		return left->Id() == right.MeshData().Id();
 	}
 }

@@ -4,6 +4,7 @@
 #include "../../api/LeopphApi.hpp"
 
 #include <filesystem>
+#include <memory>
 
 
 namespace leopph
@@ -23,11 +24,13 @@ namespace leopph
 			LEOPPHAPI ~Model() override = default;
 
 			// File path of the loaded Model.
+			[[nodiscard]]
 			const std::filesystem::path& Path() const;
 
 		private:
 			std::filesystem::path m_Path;
 
-			const impl::MeshDataGroup* GetMeshData(const std::filesystem::path& path) const;
+			[[nodiscard]]
+			std::shared_ptr<impl::MeshDataGroup> GetMeshData(const std::filesystem::path& path) const;
 	};
 }

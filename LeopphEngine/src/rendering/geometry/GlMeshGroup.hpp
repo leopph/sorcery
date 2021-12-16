@@ -19,7 +19,7 @@ namespace leopph::impl
 	class GlMeshGroup final
 	{
 		public:
-			explicit GlMeshGroup(const MeshDataGroup& meshDataGroup);
+			explicit GlMeshGroup(std::shared_ptr<const MeshDataGroup> meshDataGroup);
 
 			GlMeshGroup(const GlMeshGroup& other);
 			GlMeshGroup& operator=(const GlMeshGroup& other);
@@ -43,7 +43,7 @@ namespace leopph::impl
 
 			struct SharedData
 			{
-				MeshDataGroup MeshData;
+				std::shared_ptr<const MeshDataGroup> MeshData{nullptr};
 				std::vector<GlMesh> Meshes;
 				unsigned InstBuf{0u};
 				std::size_t InstBufSz{1ull};

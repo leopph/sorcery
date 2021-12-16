@@ -9,7 +9,7 @@
 
 namespace leopph::impl
 {
-	/* The MeshData class represents a loaded set of vertices, indices, and materials.
+	/* The m_MeshData class represents a loaded set of vertices, indices, and materials.
 	 * It can be used to create renderable objects. */ 
 	struct MeshData
 	{
@@ -20,7 +20,7 @@ namespace leopph::impl
 		std::vector<unsigned> Indices;
 
 		/* Materials are used to define the visual appearance of geometric primitives in the mesh.
-		 * You can share Materials between different MeshData objects to achieve a form of instancing or use separate Materials for unique customizations.
+		 * You can share Materials between different m_MeshData objects to achieve a form of instancing or use separate Materials for unique customizations.
 		 * Materials are required for rendering. Settings this pointer to NULL is an error and will result in undefined behavior. */
 		std::shared_ptr<Material> Material;
 	};

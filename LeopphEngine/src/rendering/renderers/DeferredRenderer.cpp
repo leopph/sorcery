@@ -6,7 +6,6 @@
 #include "../../data/DataManager.hpp"
 #include "../../math/LeopphMath.hpp"
 #include "../../math/Matrix.hpp"
-#include "../../windowing/WindowBase.hpp"
 
 #include <glad/glad.h>
 

@@ -8,10 +8,19 @@
 
 namespace leopph::impl
 {
-	class MeshDataGroup
+	/* MeshDataGroups are unique stores that contain geometry data.
+	 * Their purpose is to cache that data so they are not copyable.
+	 * Use shared_ptrs to distribute them. */
+	class MeshDataGroup : public std::enable_shared_from_this<MeshDataGroup>
 	{
 		public:
 			explicit MeshDataGroup(std::string id = GenerateId());
+
+			MeshDataGroup(const MeshDataGroup& other) = delete;
+			MeshDataGroup& operator=(const MeshDataGroup& other) = delete;
+
+			MeshDataGroup(MeshDataGroup&& other) noexcept = delete;
+			MeshDataGroup& operator=(MeshDataGroup&& other) noexcept = delete;
 
 			[[nodiscard]]
 			const std::string& Id() const;
@@ -19,7 +28,7 @@ namespace leopph::impl
 			[[nodiscard]]
 			const std::vector<MeshData>& Data() const;
 
-			virtual ~MeshDataGroup() = default;
+			virtual ~MeshDataGroup() noexcept;
 
 		protected:
 			[[nodiscard]]
@@ -27,8 +36,8 @@ namespace leopph::impl
 
 		private:
 			std::string m_Id;
-			std::shared_ptr<std::vector<MeshData>> m_MeshData{std::make_shared_for_overwrite<std::vector<MeshData>>()};
-
+			std::vector<MeshData> m_MeshData;
+			
 			static std::string GenerateId() noexcept;
 	};
 }

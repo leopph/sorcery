@@ -15,7 +15,7 @@ namespace leopph::impl
 		public:
 			using is_transparent = void;
 
-			template<Idable T>
+			template<class T> requires Idable<T> && NotPointer<T>
 			std::size_t operator()(const T& obj) const
 			{
 				return m_Hash(obj.Id());

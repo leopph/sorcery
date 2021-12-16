@@ -1,5 +1,7 @@
 #include "MeshDataGroup.hpp"
 
+#include "../../data/DataManager.hpp"
+
 #include <utility>
 
 
@@ -7,7 +9,14 @@ namespace leopph::impl
 {
 	MeshDataGroup::MeshDataGroup(std::string id) :
 		m_Id{std::move(id)}
-	{}
+	{
+		DataManager::RegisterMeshDataGroup(this);
+	}
+
+	MeshDataGroup::~MeshDataGroup() noexcept
+	{
+		DataManager::UnregisterMeshDataGroup(this);
+	}
 
 	const std::string& MeshDataGroup::Id() const
 	{
@@ -16,14 +25,13 @@ namespace leopph::impl
 
 	const std::vector<MeshData>& MeshDataGroup::Data() const
 	{
-		return *m_MeshData;
+		return m_MeshData;
 	}
 
 	std::vector<MeshData>& MeshDataGroup::Data()
 	{
-		return *m_MeshData;
+		return m_MeshData;
 	}
-
 
 	std::string MeshDataGroup::GenerateId() noexcept
 	{

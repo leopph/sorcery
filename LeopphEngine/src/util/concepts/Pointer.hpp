@@ -41,4 +41,7 @@ namespace leopph::impl
 
 	template<class T>
 	concept Pointer = SharedPtr<T> || UniquePtr<T> || RawPtr<T> || NullPtr<T>;
+
+	template<class T>
+	concept NotPointer = !Pointer<T>;
 }

@@ -49,7 +49,7 @@ namespace leopph::impl
 			LEOPPHAPI void Instanced(bool value);
 
 		protected:
-			RenderComponent(leopph::Entity* entity, const MeshDataGroup& meshDataGroup);
+			RenderComponent(leopph::Entity* entity, std::shared_ptr<const MeshDataGroup> meshDataGroup);
 
 		private:
 			bool m_CastsShadow{false};

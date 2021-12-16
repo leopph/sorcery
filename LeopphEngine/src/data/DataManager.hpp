@@ -52,6 +52,7 @@ namespace leopph::impl
 		static void RegisterComponentForEntity(const Entity* entity, std::unique_ptr<Component>&& component);
 		// Destroys the Component object.
 		static void UnregisterComponentFromEntity(const Entity* entity, const Component* component);
+		[[nodiscard]]
 		static const std::unordered_set<std::unique_ptr<Component>, PointerHash, PointerEqual>& ComponentsOfEntity(const Entity* entity);
 
 		static void Register(Entity* entity);
@@ -73,14 +74,19 @@ namespace leopph::impl
 		static const std::vector<PointLight*>& PointLights();
 		static void DirectionalLight(leopph::DirectionalLight* dirLight);
 
-		static void StoreMeshDataGroup(const MeshDataGroup& meshData);
-		static const MeshDataGroup* FindMeshDataGroup(const std::string& id);
+		static void RegisterMeshDataGroup(MeshDataGroup* meshData);
+		static void UnregisterMeshDataGroup(MeshDataGroup* meshData);
+		[[nodiscard]]
+		static std::shared_ptr<MeshDataGroup> FindMeshDataGroup(const std::string& id);
 
 		/* Returns a copy of the stored GlMeshGroup that sources its data from the passed MeshDataGroup.
 		 * If no instance is found, the function creates a new one. */
-		static GlMeshGroup CreateOrGetMeshGroup(const MeshDataGroup& meshDataGroup);
+		[[nodiscard]]
+		static GlMeshGroup CreateOrGetMeshGroup(std::shared_ptr<const MeshDataGroup>&& meshDataGroup);
 		static void RegisterInstanceForMeshGroup(const GlMeshGroup& meshGroup, RenderComponent* instance);
+		// If the MeshGroup runs out of instances it is destroyed.
 		static void UnregisterInstanceFromMeshGroup(const GlMeshGroup& meshGroup, RenderComponent* instance);
+		[[nodiscard]]
 		static std::unordered_map<GlMeshGroup, std::unordered_set<RenderComponent*>, GlMeshGroupHash, GlMeshGroupEqual>& MeshGroupsAndInstances();
 
 
@@ -99,7 +105,7 @@ namespace leopph::impl
 		// Stores SkyboxImpl instances along with all the Skybox handles pointing to it.
 		static std::unordered_map<SkyboxImpl, std::unordered_set<Skybox*>, PathedHash<SkyboxImpl>, PathedEqual<SkyboxImpl>> s_Skyboxes;
 
-		static std::unordered_set<MeshDataGroup, IdHash, IdEqual> s_MeshData;
+		static std::unordered_set<MeshDataGroup*, IdHash, IdEqual> s_MeshData;
 
 		static std::unordered_map<GlMeshGroup, std::unordered_set<RenderComponent*>, GlMeshGroupHash, GlMeshGroupEqual> s_Renderables;
 

@@ -16,7 +16,7 @@ namespace leopph::impl
 	std::vector<PointLight*> DataManager::s_PointLights{};
 	std::vector<Texture*> DataManager::s_Textures{};
 	std::unordered_map<SkyboxImpl, std::unordered_set<Skybox*>, PathedHash<SkyboxImpl>, PathedEqual<SkyboxImpl>> DataManager::s_Skyboxes{};
-	std::unordered_set<MeshDataGroup, IdHash, IdEqual> DataManager::s_MeshData{};
+	std::unordered_set<MeshDataGroup*, IdHash, IdEqual> DataManager::s_MeshData{};
 	std::unordered_map<GlMeshGroup, std::unordered_set<RenderComponent*>, GlMeshGroupHash, GlMeshGroupEqual> DataManager::s_Renderables{};
 
 	void DataManager::Clear()
@@ -27,9 +27,6 @@ namespace leopph::impl
 			delete node.key();
 			node.mapped().clear();
 		}
-
-		s_Renderables.clear();
-		s_MeshData.clear();
 	}
 
 	void DataManager::Register(Entity* entity)
@@ -236,29 +233,34 @@ namespace leopph::impl
 		return s_Skyboxes;
 	}
 
-	void DataManager::StoreMeshDataGroup(const MeshDataGroup& meshData)
+	void DataManager::RegisterMeshDataGroup(MeshDataGroup* const meshData)
 	{
 		s_MeshData.insert(meshData);
 	}
 
-	const MeshDataGroup* DataManager::FindMeshDataGroup(const std::string& id)
+	void DataManager::UnregisterMeshDataGroup(MeshDataGroup* const meshData)
+	{
+		s_MeshData.erase(meshData);
+	}
+
+	std::shared_ptr<MeshDataGroup> DataManager::FindMeshDataGroup(const std::string& id)
 	{
 		if (const auto it{s_MeshData.find(id)};
 			it != s_MeshData.end())
 		{
-			return &*it;
+			return (*it)->shared_from_this();
 		}
 		return nullptr;
 	}
 
-	GlMeshGroup DataManager::CreateOrGetMeshGroup(const MeshDataGroup& meshDataGroup)
+	GlMeshGroup DataManager::CreateOrGetMeshGroup(std::shared_ptr<const MeshDataGroup>&& meshDataGroup)
 	{
 		if (const auto it{s_Renderables.find(meshDataGroup)};
 			it != s_Renderables.end())
 		{
 			return it->first;
 		}
-		return s_Renderables.emplace(meshDataGroup, decltype(s_Renderables)::mapped_type{}).first->first;
+		return s_Renderables.emplace(std::move(meshDataGroup), decltype(s_Renderables)::mapped_type{}).first->first;
 	}
 
 	void DataManager::RegisterInstanceForMeshGroup(const GlMeshGroup& meshGroup, RenderComponent* instance)
@@ -269,6 +271,11 @@ namespace leopph::impl
 	void DataManager::UnregisterInstanceFromMeshGroup(const GlMeshGroup& meshGroup, RenderComponent* instance)
 	{
 		s_Renderables.at(meshGroup).erase(instance);
+
+		if (s_Renderables.at(meshGroup).empty())
+		{
+			s_Renderables.erase(s_Renderables.find(meshGroup));
+		}
 	}
 
 	std::unordered_map<GlMeshGroup, std::unordered_set<RenderComponent*>, GlMeshGroupHash, GlMeshGroupEqual>& DataManager::MeshGroupsAndInstances()

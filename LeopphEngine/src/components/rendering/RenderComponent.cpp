@@ -7,10 +7,10 @@
 
 namespace leopph::impl
 {
-	RenderComponent::RenderComponent(leopph::Entity* const entity, const MeshDataGroup& meshDataGroup) :
+	RenderComponent::RenderComponent(leopph::Entity* const entity, std::shared_ptr<const MeshDataGroup> meshDataGroup) :
 		Component{entity}
 	{
-		m_Renderable = std::make_unique<GlMeshGroup>(DataManager::CreateOrGetMeshGroup(meshDataGroup));
+		m_Renderable = std::make_unique<GlMeshGroup>(DataManager::CreateOrGetMeshGroup(std::move(meshDataGroup)));
 		DataManager::RegisterInstanceForMeshGroup(*m_Renderable, this);
 	}
 

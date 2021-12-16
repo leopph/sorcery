@@ -4,6 +4,7 @@
 #include "../../rendering/geometry/MeshDataGroup.hpp"
 
 #include <functional>
+#include <memory>
 
 
 namespace leopph::impl
@@ -14,7 +15,7 @@ namespace leopph::impl
 		using is_transparent = void;
 
 		std::size_t operator()(const GlMeshGroup& model) const;
-		std::size_t operator()(const MeshDataGroup& modelData) const;
+		std::size_t operator()(const std::shared_ptr<const MeshDataGroup>& meshDataGroup) const;
 
 
 	private:
