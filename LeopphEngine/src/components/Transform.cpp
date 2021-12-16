@@ -27,8 +27,6 @@ namespace leopph
 
 	Transform::~Transform()
 	{
-		impl::DataManager::DiscardMatrices(this);
-
 		if (m_Parent != nullptr)
 		{
 			m_Parent->m_Children.erase(this);
@@ -197,11 +195,6 @@ namespace leopph
 		return m_Up;
 	}
 
-	bool Transform::Changed() const
-	{
-		return m_Changed;
-	}
-
 	Transform* Transform::Parent() const
 	{
 		return m_Parent;
@@ -250,11 +243,11 @@ namespace leopph
 		return m_Children;
 	}
 
-	void Transform::CalculateMatrices()
+	const std::pair<Matrix4, Matrix4>& Transform::Matrices() const
 	{
 		if (!m_Changed)
 		{
-			return;
+			return m_Matrices;
 		}
 
 		auto modelMatrix{Matrix4::Scale(m_LocalScale)};
@@ -263,14 +256,13 @@ namespace leopph
 
 		if (m_Parent != nullptr)
 		{
-			m_Parent->CalculateMatrices();
-			modelMatrix *= impl::DataManager::GetMatrices(m_Parent).first;
+			modelMatrix *= m_Parent->Matrices().first;
 		}
 
-		impl::DataManager::StoreMatrices(this, modelMatrix, modelMatrix.Inverse().Transposed());
-
-		m_Changed = false;
+		m_Matrices = std::make_pair(modelMatrix, modelMatrix.Inverse().Transposed());
+		return m_Matrices;
 	}
+
 
 	void Transform::CalculateLocalAxes()
 	{

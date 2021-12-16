@@ -16,7 +16,6 @@
 #include <utility>
 
 
-
 namespace leopph::impl
 {
 	std::unique_ptr<Renderer> Renderer::Create()
@@ -35,31 +34,41 @@ namespace leopph::impl
 		throw std::domain_error{errMsg};
 	}
 
-
 	Renderer::~Renderer() = default;
 
-
-	void Renderer::UpdateMatrices()
+	const std::vector<Renderer::RenderableData>& Renderer::CollectRenderables()
 	{
-		for (const auto& [renderable, components] : DataManager::InstancedRenderables())
+		static std::vector<RenderableData> ret;
+		ret.clear();
+
+		for (const auto& [renderable, instances] : DataManager::MeshGroupsAndInstances())
 		{
-			static std::vector<std::pair<Matrix4, Matrix4>> instanceMatrices;
-			std::ranges::for_each(components, [&](const auto& component)
+			static std::vector<std::pair<Matrix4, Matrix4>> instMats;
+			instMats.clear();
+			auto instShadow{false};
+
+			for (const auto& instance : instances)
 			{
-				component->Entity()->Transform()->CalculateMatrices();
-				const auto& [modelMat, normalMat]{DataManager::GetMatrices(component->Entity()->Transform())};
-				instanceMatrices.emplace_back(modelMat.Transposed(), normalMat.Transposed());
-			});
-			renderable.SetInstanceData(instanceMatrices);
-			instanceMatrices.clear();
+				const auto& [modelMat, normalMat]{instance->Entity()->Transform()->Matrices()};
+
+				if (instance->Instanced())
+				{
+					instMats.emplace_back(modelMat.Transposed(), normalMat.Transposed());
+					instShadow = instShadow || instance->CastsShadow();
+				}
+				else
+				{
+					ret.emplace_back(renderable, std::vector{std::make_pair(modelMat.Transposed(), normalMat.Transposed())}, instance->CastsShadow());
+				}
+			}
+
+			if (!instMats.empty())
+			{
+				ret.emplace_back(renderable, instMats, instShadow);
+			}
 		}
-
-		std::ranges::for_each(DataManager::NonInstancedRenderables(), [](const auto& entry)
-		{
-			entry.second->Entity()->Transform()->CalculateMatrices();
-		});
+		return ret;
 	}
-
 
 	const std::vector<const PointLight*>& Renderer::CollectPointLights()
 	{
@@ -91,7 +100,6 @@ namespace leopph::impl
 
 		return ret;
 	}
-
 
 	const std::vector<const SpotLight*>& Renderer::CollectSpotLights()
 	{

@@ -14,13 +14,10 @@ namespace leopph::impl
 	DirectionalLight* DataManager::s_DirLight{nullptr};
 	std::unordered_set<const SpotLight*> DataManager::s_SpotLights{};
 	std::vector<PointLight*> DataManager::s_PointLights{};
-	std::unordered_map<const Transform*, std::pair<Matrix4, Matrix4>> DataManager::s_Matrices{};
 	std::vector<Texture*> DataManager::s_Textures{};
 	std::unordered_map<SkyboxImpl, std::unordered_set<Skybox*>, PathedHash<SkyboxImpl>, PathedEqual<SkyboxImpl>> DataManager::s_Skyboxes{};
 	std::unordered_set<MeshDataGroup, IdHash, IdEqual> DataManager::s_MeshData{};
-	std::vector<GlMeshGroup> DataManager::s_NonInstancedRenders{};
-	std::unordered_set<GlMeshGroup, RenderableHash, RenderableEqual> DataManager::s_InstancedRenders{};
-
+	std::unordered_map<GlMeshGroup, std::unordered_set<RenderComponent*>, GlMeshGroupHash, GlMeshGroupEqual> DataManager::s_Renderables{};
 
 	void DataManager::Clear()
 	{
@@ -32,18 +29,15 @@ namespace leopph::impl
 		}
 	}
 
-
 	void DataManager::Register(Entity* entity)
 	{
 		s_EntitiesAndComponents.try_emplace(entity);
 	}
 
-
 	void DataManager::Unregister(Entity* entity)
 	{
 		s_EntitiesAndComponents.erase(entity);
 	}
-
 
 	Entity* DataManager::Find(const std::string& name)
 	{
@@ -51,30 +45,25 @@ namespace leopph::impl
 		return it != s_EntitiesAndComponents.end() ? it->first : nullptr;
 	}
 
-
 	const std::unordered_map<Entity*, std::unordered_set<std::unique_ptr<Component>, PointerHash, PointerEqual>, EntityHash, EntityEqual>& DataManager::EntitiesAndComponents()
 	{
 		return s_EntitiesAndComponents;
 	}
-
 
 	const std::unordered_set<Behavior*>& DataManager::Behaviors()
 	{
 		return s_Behaviors;
 	}
 
-
 	void DataManager::Register(Behavior* behavior)
 	{
 		s_Behaviors.insert(behavior);
 	}
 
-
 	void DataManager::Unregister(Behavior* behavior)
 	{
 		s_Behaviors.erase(behavior);
 	}
-
 
 	const std::unordered_set<std::unique_ptr<Component>, PointerHash, PointerEqual>& DataManager::ComponentsOfEntity(const Entity* entity)
 	{
@@ -88,7 +77,6 @@ namespace leopph::impl
 		Logger::Instance().Error(msg);
 		throw std::out_of_range{msg};
 	}
-
 
 	void DataManager::RegisterComponentForEntity(const Entity* entity, std::unique_ptr<Component>&& component)
 	{
@@ -104,7 +92,6 @@ namespace leopph::impl
 			throw std::out_of_range{msg};
 		}
 	}
-
 
 	void DataManager::UnregisterComponentFromEntity(const Entity* entity, const Component* component)
 	{
@@ -131,30 +118,25 @@ namespace leopph::impl
 		}
 	}
 
-
 	DirectionalLight* DataManager::DirectionalLight()
 	{
 		return s_DirLight;
 	}
-
 
 	void DataManager::DirectionalLight(leopph::DirectionalLight* dirLight)
 	{
 		s_DirLight = dirLight;
 	}
 
-
 	const std::vector<PointLight*>& DataManager::PointLights()
 	{
 		return s_PointLights;
 	}
 
-
 	void DataManager::Register(PointLight* pointLight)
 	{
 		s_PointLights.push_back(pointLight);
 	}
-
 
 	void DataManager::Unregister(PointLight* pointLight)
 	{
@@ -168,71 +150,19 @@ namespace leopph::impl
 		}
 	}
 
-
 	const std::unordered_set<const SpotLight*>& DataManager::SpotLights()
 	{
 		return s_SpotLights;
 	}
-
 
 	void DataManager::Register(const SpotLight* spotLight)
 	{
 		s_SpotLights.emplace(spotLight);
 	}
 
-
 	void DataManager::Unregister(const SpotLight* spotLight)
 	{
 		s_SpotLights.erase(spotLight);
-	}
-
-
-	void DataManager::StoreMatrices(const Transform* transform, const Matrix4& model, const Matrix4& normal)
-	{
-		s_Matrices.insert_or_assign(transform, std::pair<Matrix4, Matrix4>{model, normal});
-	}
-
-
-	void DataManager::DiscardMatrices(const Transform* transform)
-	{
-		s_Matrices.erase(transform);
-	}
-
-
-	const std::pair<Matrix4, Matrix4>& DataManager::GetMatrices(const Transform* transform)
-	{
-		return s_Matrices.at(transform);
-	}
-
-	GlMeshGroup& DataManager::CreateOrGetInstancedRenderable(MeshDataGroup& modelData)
-	{
-		if (const auto it{s_InstancedRenderables.find(modelData)};
-			it != s_InstancedRenderables.end())
-		{
-			return const_cast<GlMeshGroup&>(it->first);
-		}
-
-		return const_cast<GlMeshGroup&>(s_InstancedRenderables.emplace(modelData, std::unordered_set<InstancedRenderComponent*>{}).first->first);
-	}
-
-	void DataManager::DestroyInstancedRenderable(const GlMeshGroup& renderable)
-	{
-		s_InstancedRenderables.erase(renderable);
-	}
-
-	void DataManager::RegisterInstancedRenderComponent(const GlMeshGroup& renderable, InstancedRenderComponent* const component)
-	{
-		s_InstancedRenderables.at(renderable).insert(component);
-	}
-
-	void DataManager::UnregisterInstancedRenderComponent(const GlMeshGroup& renderable, InstancedRenderComponent* const component)
-	{
-		s_InstancedRenderables.at(renderable).erase(component);
-	}
-
-	const std::unordered_map<GlMeshGroup, std::unordered_set<InstancedRenderComponent*>, RenderableHash, RenderableEqual>& DataManager::InstancedRenderables()
-	{
-		return s_InstancedRenderables;
 	}
 
 	void DataManager::RegisterTexture(Texture* const texture)
@@ -303,18 +233,43 @@ namespace leopph::impl
 		return s_Skyboxes;
 	}
 
-	void DataManager::StoreMeshDataCollection(const MeshDataGroup& meshData)
+	void DataManager::StoreMeshDataGroup(const MeshDataGroup& meshData)
 	{
 		s_MeshData.insert(meshData);
 	}
 
-	const MeshDataGroup* DataManager::FindMeshDataCollection(const std::string& id)
+	const MeshDataGroup* DataManager::FindMeshDataGroup(const std::string& id)
 	{
 		if (const auto it{s_MeshData.find(id)};
 			it != s_MeshData.end())
 		{
-			return  &*it;
+			return &*it;
 		}
 		return nullptr;
+	}
+
+	GlMeshGroup DataManager::CreateOrGetMeshGroup(const MeshDataGroup& meshDataGroup)
+	{
+		if (const auto it{s_Renderables.find(meshDataGroup)};
+			it != s_Renderables.end())
+		{
+			return it->first;
+		}
+		return s_Renderables.emplace(meshDataGroup).first->first;
+	}
+
+	void DataManager::RegisterInstanceForMeshGroup(const GlMeshGroup& meshGroup, RenderComponent* instance)
+	{
+		s_Renderables.at(meshGroup).insert(instance);
+	}
+
+	void DataManager::UnregisterInstanceFromMeshGroup(const GlMeshGroup& meshGroup, RenderComponent* instance)
+	{
+		s_Renderables.at(meshGroup).erase(instance);
+	}
+
+	std::unordered_map<GlMeshGroup, std::unordered_set<RenderComponent*>, GlMeshGroupHash, GlMeshGroupEqual>& DataManager::MeshGroupsAndInstances()
+	{
+		return s_Renderables;
 	}
 }

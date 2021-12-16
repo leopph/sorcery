@@ -17,7 +17,7 @@
     <ClCompile Include="src\math\Quaternion.cpp" />
     <ClCompile Include="src\components\Component.cpp" />
     <ClCompile Include="vendor\stb_image\stb_image.cpp" />
-    <ClCompile Include="src\components\rendering\InstancedModel.cpp" />
+    <ClCompile Include="src\components\rendering\Model.cpp" />
     <ClCompile Include="src\windowing\WindowBase.cpp" />
     <ClCompile Include="src\entry\launch.cpp" />
     <ClCompile Include="src\timing\timer.cpp" />
@@ -61,13 +61,13 @@
     <ClCompile Include="src\rendering\RenderTexture.cpp" />
     <ClCompile Include="src\data\DataManager.cpp" />
     <ClCompile Include="src\rendering\geometry\FileMeshDataGroup.cpp" />
-    <ClCompile Include="src\util\equal\RenderableEqual.cpp" />
-    <ClCompile Include="src\util\hash\RenderableHash.cpp" />
-    <ClCompile Include="src\components\rendering\InstancedRenderComponent.cpp" />
+    <ClCompile Include="src\util\equal\GlMeshGroupEqual.cpp" />
+    <ClCompile Include="src\util\hash\GlMeshGroupHash.cpp" />
     <ClCompile Include="src\rendering\UniformBuffer.cpp" />
     <ClCompile Include="src\util\hash\StringHash.cpp" />
     <ClCompile Include="src\util\equal\StringEqual.cpp" />
     <ClCompile Include="src\rendering\geometry\MeshDataGroup.cpp" />
+    <ClCompile Include="src\components\rendering\RenderComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\Behavior.hpp" />
@@ -92,7 +92,7 @@
     <ClInclude Include="src\windowing\GlWindow.hpp" />
     <ClInclude Include="include\Leopph.hpp" />
     <ClInclude Include="src\components\Component.hpp" />
-    <ClInclude Include="src\components\rendering\InstancedModel.hpp" />
+    <ClInclude Include="src\components\rendering\Model.hpp" />
     <ClInclude Include="src\windowing\WindowBase.hpp" />
     <ClInclude Include="src\config\Settings.hpp" />
     <ClInclude Include="src\input\keycodes.h" />
@@ -152,10 +152,9 @@
     <ClInclude Include="src\rendering\geometry\MeshData.hpp" />
     <ClInclude Include="src\rendering\geometry\MeshDataGroup.hpp" />
     <ClInclude Include="src\rendering\geometry\FileMeshDataGroup.hpp" />
-    <ClInclude Include="src\util\equal\RenderableEqual.hpp" />
-    <ClInclude Include="src\util\hash\RenderableHash.hpp" />
+    <ClInclude Include="src\util\equal\GlMeshGroupEqual.hpp" />
+    <ClInclude Include="src\util\hash\GlMeshGroupHash.hpp" />
     <ClInclude Include="src\components\rendering\RenderComponent.hpp" />
-    <ClInclude Include="src\components\rendering\InstancedRenderComponent.hpp" />
     <ClInclude Include="src\util\equal\PointerEqual.hpp" />
     <ClInclude Include="src\util\hash\PointerHash.hpp" />
     <ClInclude Include="src\rendering\UniformBuffer.hpp" />

@@ -31,7 +31,7 @@ namespace leopph::impl
 		++m_SharedData->RefCount;
 	}
 
-	GlMeshGroup& GlMeshGroup::operator=(const GlMeshGroup& other) noexcept
+	GlMeshGroup& GlMeshGroup::operator=(const GlMeshGroup& other)
 	{
 		if (&other == this)
 		{
@@ -48,7 +48,7 @@ namespace leopph::impl
 		GlMeshGroup{other}
 	{}
 
-	GlMeshGroup& GlMeshGroup::operator=(GlMeshGroup&& other)
+	GlMeshGroup& GlMeshGroup::operator=(GlMeshGroup&& other) noexcept
 	{
 		return *this = other;
 	}

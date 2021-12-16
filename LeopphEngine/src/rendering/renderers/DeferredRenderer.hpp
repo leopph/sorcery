@@ -25,11 +25,11 @@ namespace leopph::impl
 
 
 		private:
-			void RenderGeometry(const Matrix4& camViewMat, const Matrix4& camProjMat);
+			void RenderGeometry(const Matrix4& camViewMat, const Matrix4& camProjMat, const std::vector<RenderableData>& renderables);
 			void RenderAmbientLight();
-			void RenderDirectionalLights(const Matrix4& camViewMat, const Matrix4& camProjMat);
-			void RenderSpotLights(const std::vector<const SpotLight*>& spotLights);
-			void RenderPointLights(const std::vector<const PointLight*>& pointLights);
+			void RenderDirectionalLights(const Matrix4& camViewMat, const Matrix4& camProjMat, const std::vector<RenderableData>& renderables);
+			void RenderSpotLights(const std::vector<const SpotLight*>& spotLights, const std::vector<RenderableData>& renderables);
+			void RenderPointLights(const std::vector<const PointLight*>& pointLights, const std::vector<RenderableData>& renderables);
 			void RenderSkybox(const Matrix4& camViewMat, const Matrix4& camProjMat);
 
 			GeometryBuffer m_GBuffer;

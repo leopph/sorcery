@@ -2,11 +2,13 @@
 
 #include "Component.hpp"
 #include "../api/LeopphApi.hpp"
+#include "../math/Matrix.hpp"
 #include "../math/Quaternion.hpp"
 #include "../math/Vector.hpp"
 
 #include <cstddef>
 #include <unordered_set>
+#include <utility>
 
 
 namespace leopph
@@ -122,11 +124,6 @@ namespace leopph
 			[[nodiscard]]
 			LEOPPHAPI const Vector3& Up() const;
 
-			/* A flag representing whether the Transform's matrices have changed since their last calculations.
-			 * If this flag is set, new matrix calculations will take place during the rendering of the current frame. */
-			[[nodiscard]]
-			bool Changed() const;
-
 			// Get the Transform's parent.
 			[[nodiscard]]
 			LEOPPHAPI Transform* Parent() const;
@@ -150,12 +147,10 @@ namespace leopph
 			 * The elements are guaranteed to be non-null. */
 			LEOPPHAPI const std::unordered_set<Transform*>& Children() const;
 
-			/* Force calculate the Transform's matrices.
-			 * LeopphEngine automatically calles this right before rendering, so there is usually no reason to do so explicitly.
-			 * If the matrices are up-to-date, this function is NOP.
-			 * If new matrices were calculated, Changed is set to false.
-			 * If any ancestor's matrices are out of date, those, and all its descendants' matrices will be recalculated. */
-			LEOPPHAPI void CalculateMatrices();
+			/* Returns the Matrices used by LeopphEngine during rendering.
+			 * Calling this may cause a recursive recalculation of matrices on all descendants of the Transform.
+			 * Calling this in client code is not recommended. */
+			LEOPPHAPI const std::pair<Matrix4, Matrix4>& Matrices() const;
 
 
 			LEOPPHAPI explicit Transform(leopph::Entity* entity,
@@ -185,10 +180,13 @@ namespace leopph
 			Vector3 m_Right;
 			Vector3 m_Up;
 
-			bool m_Changed;
-
 			Transform* m_Parent;
 			std::unordered_set<Transform*> m_Children;
+
+			mutable bool m_Changed;
+
+			// First is model, second is normal.
+			mutable std::pair<Matrix4, Matrix4> m_Matrices;
 
 			// Calculates local bases using the global rotation.
 			void CalculateLocalAxes();

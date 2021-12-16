@@ -6,7 +6,7 @@
 
 namespace leopph::impl
 {
-	class RenderableEqual
+	class GlMeshGroupEqual
 	{
 	public:
 		using is_transparent = void;

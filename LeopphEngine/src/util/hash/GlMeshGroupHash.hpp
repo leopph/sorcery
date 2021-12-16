@@ -8,7 +8,7 @@
 
 namespace leopph::impl
 {
-	class RenderableHash
+	class GlMeshGroupHash
 	{
 	public:
 		using is_transparent = void;

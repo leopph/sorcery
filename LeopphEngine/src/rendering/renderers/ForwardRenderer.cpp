@@ -19,30 +19,30 @@
 #include <utility>
 
 
-
 namespace leopph::impl
 {
 	ForwardRenderer::ForwardRenderer() :
 		m_ObjectShader
-	{
 		{
-			{ShaderFamily::ObjectVertSrc, ShaderType::Vertex},
-			{ShaderFamily::ObjectFragSrc, ShaderType::Fragment}
-		}
-	},
-		m_SkyboxShader
-	{
-		{
-			{ShaderFamily::SkyboxVertSrc, ShaderType::Vertex},
-			{ShaderFamily::SkyboxFragSrc, ShaderType::Fragment}
-		}
-	},
+			{
+				{ShaderFamily::ObjectVertSrc, ShaderType::Vertex},
+				{ShaderFamily::ObjectFragSrc, ShaderType::Fragment}
+			}
+		},
 		m_ShadowShader
-	{
 		{
-			{ShaderFamily::ShadowMapVertSrc, ShaderType::Vertex}
+			{
+				{ShaderFamily::ShadowMapVertSrc, ShaderType::Vertex}
+			}
+		},
+
+		m_SkyboxShader
+		{
+			{
+				{ShaderFamily::SkyboxVertSrc, ShaderType::Vertex},
+				{ShaderFamily::SkyboxFragSrc, ShaderType::Fragment}
+			}
 		}
-	}
 	{
 		glEnable(GL_DEPTH_TEST);
 		glDepthFunc(GL_LESS);
@@ -56,7 +56,6 @@ namespace leopph::impl
 		Logger::Instance().Warning("The forward rendering pipeline is currently not feature complete. It is recommended to use the deferred pipeline.");
 	}
 
-
 	void ForwardRenderer::Render()
 	{
 		/* We don't render if there is no camera to use */
@@ -65,7 +64,7 @@ namespace leopph::impl
 			return;
 		}
 
-		UpdateMatrices();
+		const auto& renderables{CollectRenderables()};
 
 		const auto camViewMat{Camera::Active->ViewMatrix()};
 		const auto camProjMat{Camera::Active->ProjectionMatrix()};
@@ -74,53 +73,39 @@ namespace leopph::impl
 		const auto& spotLights{CollectSpotLights()};
 		const auto& pointLights{CollectPointLights()};
 
-		RenderShadedObjects(camViewMat, camProjMat, dirLight, spotLights, pointLights);
+		RenderShadedObjects(camViewMat, camProjMat, renderables, dirLight, spotLights, pointLights);
 		RenderSkybox(camViewMat, camProjMat);
 	}
 
-
-	void ForwardRenderer::RenderShadedObjects(const Matrix4& camViewMat, const Matrix4& camProjMat, const DirectionalLight* dirLight, const std::vector<const SpotLight*>& spotLights, const std::vector<const PointLight*>& pointLights)
+	void ForwardRenderer::RenderShadedObjects(const Matrix4& camViewMat, const Matrix4& camProjMat, const std::vector<RenderableData>& renderables, const DirectionalLight* dirLight, const std::vector<const SpotLight*>& spotLights, const std::vector<const PointLight*>& pointLights)
 	{
 		static auto objectFlagInfo{m_ObjectShader.GetFlagInfo()};
 		objectFlagInfo.Clear();
 		objectFlagInfo["EXISTS_DIRLIGHT"] = dirLight != nullptr;
 		objectFlagInfo["DIRLIGHT_SHADOW"] = dirLight != nullptr && dirLight->CastsShadow();
-		objectFlagInfo["EXISTS_SPOTLIGHT"] = spotLights.size() != 0ull;
-		objectFlagInfo["EXISTS_POINTLIGHT"] = pointLights.size() != 0ull;
-		objectFlagInfo["INSTANCED"] = false;
-		auto& nonInstObjectShader{m_ObjectShader.GetPermutation(objectFlagInfo)};
+		objectFlagInfo["EXISTS_SPOTLIGHT"] = !spotLights.empty();
+		objectFlagInfo["EXISTS_POINTLIGHT"] = !pointLights.empty();
 
-		objectFlagInfo["INSTANCED"] = true;
-		auto& instObjectShader{m_ObjectShader.GetPermutation(objectFlagInfo)};
+		auto& objectShader{m_ObjectShader.GetPermutation(objectFlagInfo)};
 
 		static auto shadowFlagInfo{m_ShadowShader.GetFlagInfo()};
 		shadowFlagInfo.Clear();
-		shadowFlagInfo["INSTANCED"] = false;
 		auto& nonInstShadowShader{m_ShadowShader.GetPermutation(shadowFlagInfo)};
-
-		shadowFlagInfo["INSTANCED"] = true;
-		auto& instShadowShader{m_ShadowShader.GetPermutation(shadowFlagInfo)};
 
 		auto texCount{1};
 
-		nonInstObjectShader.SetUniform("u_ViewProjMat", camViewMat * camProjMat);
-		instObjectShader.SetUniform("u_ViewProjMat", camViewMat * camProjMat);
-		nonInstObjectShader.SetUniform("u_CamPos", Camera::Active->Entity()->Transform()->Position());
-		instObjectShader.SetUniform("u_CamPos", Camera::Active->Entity()->Transform()->Position());
+		objectShader.SetUniform("u_ViewProjMat", camViewMat * camProjMat);
+		objectShader.SetUniform("u_CamPos", Camera::Active->Entity()->Transform()->Position());
 
 		/* Set up ambient light data */
-		nonInstObjectShader.SetUniform("u_AmbientLight", AmbientLight::Instance().Intensity());
-		instObjectShader.SetUniform("u_AmbientLight", AmbientLight::Instance().Intensity());
+		objectShader.SetUniform("u_AmbientLight", AmbientLight::Instance().Intensity());
 
 		/* Set up DirLight data */
 		if (dirLight != nullptr)
 		{
-			nonInstObjectShader.SetUniform("u_DirLight.direction", dirLight->Direction());
-			instObjectShader.SetUniform("u_DirLight.direction", dirLight->Direction());
-			nonInstObjectShader.SetUniform("u_DirLight.diffuseColor", dirLight->Diffuse());
-			instObjectShader.SetUniform("u_DirLight.diffuseColor", dirLight->Diffuse());
-			nonInstObjectShader.SetUniform("u_DirLight.specularColor", dirLight->Specular());
-			instObjectShader.SetUniform("u_DirLight.specularColor", dirLight->Specular());
+			objectShader.SetUniform("u_DirLight.direction", dirLight->Direction());
+			objectShader.SetUniform("u_DirLight.diffuseColor", dirLight->Diffuse());
+			objectShader.SetUniform("u_DirLight.specularColor", dirLight->Specular());
 
 			if (dirLight->CastsShadow())
 			{
@@ -140,23 +125,16 @@ namespace leopph::impl
 					dirLightMatrices.push_back(lightWorldToClip);
 
 					nonInstShadowShader.SetUniform("u_WorldToClipMat", lightWorldToClip);
-					instShadowShader.SetUniform("u_WorldToClipMat", lightWorldToClip);
 
 					m_DirLightShadowMap.BindForWriting(i);
 					m_DirLightShadowMap.Clear();
 
 					nonInstShadowShader.Use();
-					for (const auto& [renderable, component] : DataManager::NonInstancedRenderables())
+					for (const auto& [renderable, instances, castsShadow] : renderables)
 					{
-						nonInstShadowShader.SetUniform("u_ModelMat", DataManager::GetMatrices(component->Entity()->Transform()).first);
-						renderable->DrawDepth();
-					}
-
-					instShadowShader.Use();
-					for (const auto& [renderable, components] : DataManager::InstancedRenderables())
-					{
-						if (renderable.CastsShadow())
+						if (castsShadow)
 						{
+							renderable.SetInstanceData(instances);
 							renderable.DrawDepth();
 						}
 					}
@@ -173,84 +151,51 @@ namespace leopph::impl
 					cascadeFarBounds.push_back(clipSpaceBound);
 				}
 
-				nonInstObjectShader.SetUniform("u_DirLightCascadeCount", static_cast<unsigned>(cascadeCount));
-				instObjectShader.SetUniform("u_DirLightCascadeCount", static_cast<unsigned>(cascadeCount));
-				nonInstObjectShader.SetUniform("u_DirLightClipMatrices", dirLightMatrices);
-				instObjectShader.SetUniform("u_DirLightClipMatrices", dirLightMatrices);
-				nonInstObjectShader.SetUniform("u_DirLightCascadeFarBounds", cascadeFarBounds);
-				instObjectShader.SetUniform("u_DirLightCascadeFarBounds", cascadeFarBounds);
-				static_cast<void>(m_DirLightShadowMap.BindForReading(nonInstObjectShader, texCount));
-				texCount = m_DirLightShadowMap.BindForReading(instObjectShader, texCount);
+				objectShader.SetUniform("u_DirLightCascadeCount", static_cast<unsigned>(cascadeCount));
+				objectShader.SetUniform("u_DirLightClipMatrices", dirLightMatrices);
+				objectShader.SetUniform("u_DirLightCascadeFarBounds", cascadeFarBounds);
+				static_cast<void>(m_DirLightShadowMap.BindForReading(objectShader, texCount));
 			}
 		}
 
 		/* Set up PointLight data */
-		nonInstObjectShader.SetUniform("u_PointLightCount", static_cast<int>(pointLights.size()));
-		instObjectShader.SetUniform("u_PointLightCount", static_cast<int>(pointLights.size()));
+		objectShader.SetUniform("u_PointLightCount", static_cast<int>(pointLights.size()));
 		for (std::size_t i = 0; i < pointLights.size(); i++)
 		{
 			const auto& pointLight = pointLights[i];
 
-			nonInstObjectShader.SetUniform("u_PointLights[" + std::to_string(i) + "].position", pointLight->Entity()->Transform()->Position());
-			instObjectShader.SetUniform("u_PointLights[" + std::to_string(i) + "].position", pointLight->Entity()->Transform()->Position());
-			nonInstObjectShader.SetUniform("u_PointLights[" + std::to_string(i) + "].diffuseColor", pointLight->Diffuse());
-			instObjectShader.SetUniform("u_PointLights[" + std::to_string(i) + "].diffuseColor", pointLight->Diffuse());
-			nonInstObjectShader.SetUniform("u_PointLights[" + std::to_string(i) + "].specularColor", pointLight->Specular());
-			instObjectShader.SetUniform("u_PointLights[" + std::to_string(i) + "].specularColor", pointLight->Specular());
-			nonInstObjectShader.SetUniform("u_PointLights[" + std::to_string(i) + "].constant", pointLight->Constant());
-			instObjectShader.SetUniform("u_PointLights[" + std::to_string(i) + "].constant", pointLight->Constant());
-			nonInstObjectShader.SetUniform("u_PointLights[" + std::to_string(i) + "].linear", pointLight->Linear());
-			instObjectShader.SetUniform("u_PointLights[" + std::to_string(i) + "].linear", pointLight->Linear());
-			nonInstObjectShader.SetUniform("u_PointLights[" + std::to_string(i) + "].quadratic", pointLight->Quadratic());
-			instObjectShader.SetUniform("u_PointLights[" + std::to_string(i) + "].quadratic", pointLight->Quadratic());
+			objectShader.SetUniform("u_PointLights[" + std::to_string(i) + "].position", pointLight->Entity()->Transform()->Position());
+			objectShader.SetUniform("u_PointLights[" + std::to_string(i) + "].diffuseColor", pointLight->Diffuse());
+			objectShader.SetUniform("u_PointLights[" + std::to_string(i) + "].specularColor", pointLight->Specular());
+			objectShader.SetUniform("u_PointLights[" + std::to_string(i) + "].constant", pointLight->Constant());
+			objectShader.SetUniform("u_PointLights[" + std::to_string(i) + "].linear", pointLight->Linear());
+			objectShader.SetUniform("u_PointLights[" + std::to_string(i) + "].quadratic", pointLight->Quadratic());
 		}
 
 		/* Set up SpotLight data */
-		nonInstObjectShader.SetUniform("u_SpotLightCount", static_cast<int>(spotLights.size()));
-		instObjectShader.SetUniform("u_SpotLightCount", static_cast<int>(spotLights.size()));
+		objectShader.SetUniform("u_SpotLightCount", static_cast<int>(spotLights.size()));
 		for (std::size_t i = 0; i < spotLights.size(); i++)
 		{
 			const auto& spotLight{spotLights[i]};
 
-			nonInstObjectShader.SetUniform("u_SpotLights[" + std::to_string(i) + "].position", spotLight->Entity()->Transform()->Position());
-			instObjectShader.SetUniform("u_SpotLights[" + std::to_string(i) + "].position", spotLight->Entity()->Transform()->Position());
-			nonInstObjectShader.SetUniform("u_SpotLights[" + std::to_string(i) + "].direction", spotLight->Entity()->Transform()->Forward());
-			instObjectShader.SetUniform("u_SpotLights[" + std::to_string(i) + "].direction", spotLight->Entity()->Transform()->Forward());
-			nonInstObjectShader.SetUniform("u_SpotLights[" + std::to_string(i) + "].diffuseColor", spotLight->Diffuse());
-			instObjectShader.SetUniform("u_SpotLights[" + std::to_string(i) + "].diffuseColor", spotLight->Diffuse());
-			nonInstObjectShader.SetUniform("u_SpotLights[" + std::to_string(i) + "].specularColor", spotLight->Specular());
-			instObjectShader.SetUniform("u_SpotLights[" + std::to_string(i) + "].specularColor", spotLight->Specular());
-			nonInstObjectShader.SetUniform("u_SpotLights[" + std::to_string(i) + "].constant", spotLight->Constant());
-			instObjectShader.SetUniform("u_SpotLights[" + std::to_string(i) + "].constant", spotLight->Constant());
-			nonInstObjectShader.SetUniform("u_SpotLights[" + std::to_string(i) + "].linear", spotLight->Linear());
-			instObjectShader.SetUniform("u_SpotLights[" + std::to_string(i) + "].linear", spotLight->Linear());
-			nonInstObjectShader.SetUniform("u_SpotLights[" + std::to_string(i) + "].quadratic", spotLight->Quadratic());
-			instObjectShader.SetUniform("u_SpotLights[" + std::to_string(i) + "].quadratic", spotLight->Quadratic());
-			nonInstObjectShader.SetUniform("u_SpotLights[" + std::to_string(i) + "].innerAngleCosine", math::Cos(math::ToRadians(spotLight->InnerAngle())));
-			instObjectShader.SetUniform("u_SpotLights[" + std::to_string(i) + "].innerAngleCosine", math::Cos(math::ToRadians(spotLight->InnerAngle())));
-			nonInstObjectShader.SetUniform("u_SpotLights[" + std::to_string(i) + "].outerAngleCosine", math::Cos(math::ToRadians(spotLight->OuterAngle())));
-			instObjectShader.SetUniform("u_SpotLights[" + std::to_string(i) + "].outerAngleCosine", math::Cos(math::ToRadians(spotLight->OuterAngle())));
+			objectShader.SetUniform("u_SpotLights[" + std::to_string(i) + "].position", spotLight->Entity()->Transform()->Position());
+			objectShader.SetUniform("u_SpotLights[" + std::to_string(i) + "].direction", spotLight->Entity()->Transform()->Forward());
+			objectShader.SetUniform("u_SpotLights[" + std::to_string(i) + "].diffuseColor", spotLight->Diffuse());
+			objectShader.SetUniform("u_SpotLights[" + std::to_string(i) + "].specularColor", spotLight->Specular());
+			objectShader.SetUniform("u_SpotLights[" + std::to_string(i) + "].constant", spotLight->Constant());
+			objectShader.SetUniform("u_SpotLights[" + std::to_string(i) + "].linear", spotLight->Linear());
+			objectShader.SetUniform("u_SpotLights[" + std::to_string(i) + "].quadratic", spotLight->Quadratic());
+			objectShader.SetUniform("u_SpotLights[" + std::to_string(i) + "].innerAngleCosine", math::Cos(math::ToRadians(spotLight->InnerAngle())));
+			objectShader.SetUniform("u_SpotLights[" + std::to_string(i) + "].outerAngleCosine", math::Cos(math::ToRadians(spotLight->OuterAngle())));
 		}
 
-		nonInstObjectShader.Use();
-		for (const auto& [renderable, component] : DataManager::NonInstancedRenderables())
+		objectShader.Use();
+		for (const auto& [renderable, instances, castsShadow] : renderables)
 		{
-			const auto& [modelMat, normalMat]
-			{
-				DataManager::GetMatrices(component->Entity()->Transform())
-			};
-			nonInstObjectShader.SetUniform("u_ModelMat", modelMat);
-			nonInstObjectShader.SetUniform("u_NormalMat", normalMat);
-			renderable->DrawShaded(nonInstObjectShader, 0);
-		}
-
-		instObjectShader.Use();
-		for (const auto& [renderable, components] : DataManager::InstancedRenderables())
-		{
-			renderable.DrawShaded(instObjectShader, 0);
+			renderable.SetInstanceData(instances);
+			renderable.DrawShaded(objectShader, 0);
 		}
 	}
-
 
 	void ForwardRenderer::RenderSkybox(const Matrix4& camViewMat, const Matrix4& camProjMat)
 	{

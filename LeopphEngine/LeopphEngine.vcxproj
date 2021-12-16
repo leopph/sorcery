@@ -127,7 +127,6 @@
     <ClInclude Include="src\components\lighting\AttenuatedLight.hpp" />
     <ClInclude Include="src\components\lighting\DirLight.hpp" />
     <ClInclude Include="src\components\lighting\SpotLight.hpp" />
-    <ClInclude Include="src\components\rendering\InstancedRenderComponent.hpp" />
     <ClInclude Include="src\components\rendering\RenderComponent.hpp" />
     <ClInclude Include="src\data\Proxy.hpp" />
     <ClInclude Include="src\entry\appstart.h" />
@@ -179,14 +178,14 @@
     <ClInclude Include="src\util\equal\IdEqual.hpp" />
     <ClInclude Include="src\util\equal\PointerEqual.hpp" />
     <ClInclude Include="src\util\equal\EntityEqual.hpp" />
-    <ClInclude Include="src\util\equal\RenderableEqual.hpp" />
+    <ClInclude Include="src\util\equal\GlMeshGroupEqual.hpp" />
     <ClInclude Include="src\util\equal\PathedEqual.hpp" />
     <ClInclude Include="src\util\equal\ShaderTypeEqual.hpp" />
     <ClInclude Include="src\util\equal\StringEqual.hpp" />
     <ClInclude Include="src\util\hash\IdHash.hpp" />
     <ClInclude Include="src\util\hash\PointerHash.hpp" />
     <ClInclude Include="src\util\hash\EntityHash.hpp" />
-    <ClInclude Include="src\util\hash\RenderableHash.hpp" />
+    <ClInclude Include="src\util\hash\GlMeshGroupHash.hpp" />
     <ClInclude Include="src\util\hash\PathedHash.hpp" />
     <ClInclude Include="src\util\hash\ShaderTypeHash.hpp" />
     <ClInclude Include="src\util\hash\StringHash.hpp" />
@@ -201,7 +200,7 @@
     <ClInclude Include="src\components\lighting\Light.hpp" />
     <ClInclude Include="src\math\Matrix.hpp" />
     <ClInclude Include="src\rendering\geometry\GlMesh.hpp" />
-    <ClInclude Include="src\components\rendering\InstancedModel.hpp" />
+    <ClInclude Include="src\components\rendering\Model.hpp" />
     <ClInclude Include="src\entity\Entity.hpp" />
     <ClInclude Include="src\components\lighting\PointLight.hpp" />
     <ClInclude Include="src\math\Quaternion.hpp" />
@@ -223,7 +222,7 @@
     <ClCompile Include="src\components\lighting\AttenuatedLight.cpp" />
     <ClCompile Include="src\components\lighting\DirLight.cpp" />
     <ClCompile Include="src\components\lighting\SpotLight.cpp" />
-    <ClCompile Include="src\components\rendering\InstancedRenderComponent.cpp" />
+    <ClCompile Include="src\components\rendering\RenderComponent.cpp" />
     <ClCompile Include="src\config\Settings.cpp" />
     <ClCompile Include="src\data\DataManager.cpp" />
     <ClCompile Include="src\entry\launch.cpp" />
@@ -258,11 +257,11 @@
     <ClCompile Include="src\rendering\UniformBuffer.cpp" />
     <ClCompile Include="src\timing\timer.cpp" />
     <ClCompile Include="src\util\equal\EntityEqual.cpp" />
-    <ClCompile Include="src\util\equal\RenderableEqual.cpp" />
+    <ClCompile Include="src\util\equal\GlMeshGroupEqual.cpp" />
     <ClCompile Include="src\util\equal\ShaderTypeEqual.cpp" />
     <ClCompile Include="src\util\equal\StringEqual.cpp" />
     <ClCompile Include="src\util\hash\EntityHash.cpp" />
-    <ClCompile Include="src\util\hash\RenderableHash.cpp" />
+    <ClCompile Include="src\util\hash\GlMeshGroupHash.cpp" />
     <ClCompile Include="src\util\hash\PathHash.cpp" />
     <ClCompile Include="src\util\hash\ShaderTypeHash.cpp" />
     <ClCompile Include="src\util\hash\StringHash.cpp" />
@@ -275,7 +274,7 @@
     <ClCompile Include="src\math\LeopphMath.cpp" />
     <ClCompile Include="src\components\lighting\Light.cpp" />
     <ClCompile Include="src\rendering\geometry\GlMesh.cpp" />
-    <ClCompile Include="src\components\rendering\InstancedModel.cpp" />
+    <ClCompile Include="src\components\rendering\Model.cpp" />
     <ClCompile Include="src\entity\Entity.cpp" />
     <ClCompile Include="src\components\lighting\PointLight.cpp" />
     <ClCompile Include="src\math\Quaternion.cpp" />
