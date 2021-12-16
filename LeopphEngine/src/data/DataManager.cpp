@@ -255,7 +255,7 @@ namespace leopph::impl
 		{
 			return it->first;
 		}
-		return s_Renderables.emplace(meshDataGroup).first->first;
+		return s_Renderables.emplace(meshDataGroup, decltype(s_Renderables)::mapped_type{}).first->first;
 	}
 
 	void DataManager::RegisterInstanceForMeshGroup(const GlMeshGroup& meshGroup, RenderComponent* instance)

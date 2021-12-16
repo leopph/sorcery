@@ -11,7 +11,7 @@
 
 namespace leopph::impl
 {
-	GlMesh::GlMesh(MeshData& meshData, const unsigned instanceBuffer) :
+	GlMesh::GlMesh(const MeshData& meshData, const unsigned instanceBuffer) :
 		m_SharedData{new SharedData
 			{
 				.Material = meshData.Material,

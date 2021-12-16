@@ -17,7 +17,7 @@ namespace leopph::impl
 	class GlMesh
 	{
 		public:
-			GlMesh(MeshData& meshData, unsigned instanceBuffer);
+			GlMesh(const MeshData& meshData, unsigned instanceBuffer);
 
 			GlMesh(const GlMesh& other);
 			GlMesh& operator=(const GlMesh& other);
