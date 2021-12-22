@@ -22,12 +22,14 @@ namespace leopph::impl
 			explicit ShaderFamily(const std::vector<ShaderStageInfo>& stages);
 
 			ShaderFamily(const ShaderFamily& other) = delete;
-			ShaderFamily(ShaderFamily&& other) = delete;
-
-			~ShaderFamily();
-
 			ShaderFamily& operator=(const ShaderFamily& other) = delete;
+
+			ShaderFamily(ShaderFamily&& other) = delete;
 			ShaderFamily& operator=(ShaderFamily&& other) = delete;
+
+			~ShaderFamily() = default;
+
+			void SetBufferBinding(std::string_view bufName, int bindingIndex);
 
 			static const std::string ObjectVertSrc;
 			static const std::string ObjectFragSrc;
@@ -51,68 +53,40 @@ namespace leopph::impl
 			static const std::string PointLightPassFragSrc;
 
 		private:
-			class FlagInfoBase
-			{
-				public:
-					FlagInfoBase() = default;
-					FlagInfoBase(const FlagInfoBase& other) = default;
-					FlagInfoBase(FlagInfoBase&& other) = default;
-
-					virtual ~FlagInfoBase() = default;
-
-					FlagInfoBase& operator=(const FlagInfoBase& other) = default;
-					FlagInfoBase& operator=(FlagInfoBase&& other) = default;
-
-					virtual bool& operator[](const std::string& flag) = 0;
-					virtual const bool& operator[](const std::string& flag) const = 0;
-					virtual explicit operator std::vector<bool>() const = 0;
-					virtual explicit operator std::vector<std::string>() const = 0;
-
-					[[nodiscard]] virtual bool Empty() const = 0;
-
-					virtual void Clear() = 0;
-			};
-
-
-			class FlagInfo final : FlagInfoBase
+			class FlagInfo final
 			{
 				public:
 					explicit FlagInfo(const std::unordered_set<std::string>& flags);
-					FlagInfo(const FlagInfo&) = default;
-					FlagInfo(FlagInfo&& other) noexcept;
 
-					FlagInfo& operator=(const FlagInfo& other) = default;
-					FlagInfo& operator=(FlagInfo&& other) noexcept;
+					[[nodiscard]]
+					bool Empty() const;
+					void Clear();
 
-					~FlagInfo() override = default;
+					bool& operator[](const std::string& flag);
+					const bool& operator[](const std::string& flag) const;
 
-					bool& operator[](const std::string& flag) override;
-					const bool& operator[](const std::string& flag) const override;
-					explicit operator std::vector<bool>() const override;
-					explicit operator std::vector<std::string>() const override;
-
-					[[nodiscard]] bool Empty() const override;
-
-					void Clear() override;
+					explicit operator std::vector<bool>() const;
+					explicit operator std::vector<std::string>() const;
 
 				private:
 					std::map<std::string, bool> m_Flags;
 			};
 
 
-			class FlagInfoProxy final : public FlagInfoBase
+			class FlagInfoProxy final
 			{
 				public:
 					explicit FlagInfoProxy(FlagInfo flagInfo);
 
-					bool& operator[](const std::string& flag) override;
-					const bool& operator[](const std::string& flag) const override;
-					explicit operator std::vector<bool>() const override;
-					explicit operator std::vector<std::string>() const override;
+					[[nodiscard]]
+					bool Empty() const;
+					void Clear();
 
-					[[nodiscard]] bool Empty() const override;
+					bool& operator[](const std::string& flag);
+					const bool& operator[](const std::string& flag) const;
 
-					void Clear() override;
+					explicit operator std::vector<bool>() const;
+					explicit operator std::vector<std::string>() const;
 
 				private:
 					FlagInfo m_FlagInfo;
@@ -124,7 +98,6 @@ namespace leopph::impl
 			FlagInfoProxy GetFlagInfo() const;
 			[[nodiscard]]
 			ShaderProgram& GetPermutation(const FlagInfoProxy& flagInfo);
-			void SetBufferBinding(std::string_view bufName, int bindingIndex);
 
 		private:
 			struct ProcessedSource

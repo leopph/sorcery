@@ -248,6 +248,7 @@
     <ClCompile Include="src\rendering\opengl\InitGl.cpp" />
     <ClCompile Include="src\rendering\renderers\Renderer.cpp" />
     <ClCompile Include="src\rendering\RenderTexture.cpp" />
+    <ClCompile Include="src\rendering\shaders\FlagInfo.cpp" />
     <ClCompile Include="src\rendering\shaders\ShaderProgram.cpp" />
     <ClCompile Include="src\rendering\shaders\ShaderFamily.cpp" />
     <ClCompile Include="src\rendering\Skybox.cpp" />

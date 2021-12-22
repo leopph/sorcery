@@ -68,6 +68,7 @@
     <ClCompile Include="src\util\equal\StringEqual.cpp" />
     <ClCompile Include="src\rendering\geometry\MeshDataGroup.cpp" />
     <ClCompile Include="src\components\rendering\RenderComponent.cpp" />
+    <ClCompile Include="src\rendering\shaders\FlagInfo.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\Behavior.hpp" />

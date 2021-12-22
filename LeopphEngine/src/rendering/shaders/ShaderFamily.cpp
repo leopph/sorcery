@@ -6,7 +6,6 @@
 #include <array>
 #include <cstring>
 #include <sstream>
-#include <stdexcept>
 #include <utility>
 
 
@@ -22,114 +21,21 @@ namespace leopph::impl
 		});
 	}
 
-	ShaderFamily::~ShaderFamily() = default;
-
-	ShaderFamily::FlagInfo::FlagInfo(const std::unordered_set<std::string>& flags)
+	void ShaderFamily::SetBufferBinding(const std::string_view bufName, const int bindingIndex)
 	{
-		std::ranges::for_each(flags, [&](auto& flag)
+		if (const auto it{m_Bindings.find(bufName)};
+			it != m_Bindings.end())
 		{
-			m_Flags.emplace(std::move(flag), false);
-		});
-	}
-
-	ShaderFamily::FlagInfo::FlagInfo(FlagInfo&& other) noexcept :
-		m_Flags{std::move(other.m_Flags)}
-	{}
-
-	ShaderFamily::FlagInfo& ShaderFamily::FlagInfo::operator=(FlagInfo&& other) noexcept
-	{
-		m_Flags = std::move(other.m_Flags);
-		return *this;
-	}
-
-	bool& ShaderFamily::FlagInfo::operator[](const std::string& flag)
-	{
-		return const_cast<bool&>(const_cast<const FlagInfo*>(this)->operator[](flag));
-	}
-
-	const bool& ShaderFamily::FlagInfo::operator[](const std::string& flag) const
-	{
-		if (const auto& it{m_Flags.find(flag)};
-			it != m_Flags.end())
-		{
-			return it->second;
+			it->second = bindingIndex;
 		}
-
-		throw std::runtime_error{"Invalid flag."};
-	}
-
-	ShaderFamily::FlagInfo::operator std::vector<bool>() const
-	{
-		std::vector<bool> ret;
-
-		std::ranges::for_each(m_Flags, [&](const auto& flagPair)
+		else
 		{
-			ret.push_back(flagPair.second);
-		});
-
-		return ret;
-	}
-
-	ShaderFamily::FlagInfo::operator std::vector<std::string>() const
-	{
-		std::vector<std::string> ret;
-
-		std::ranges::for_each(m_Flags, [&](const auto& flagPair)
+			m_Bindings.emplace(bufName, bindingIndex);
+		}
+		for (auto& [bitmap, shaderProgram] : m_Permutations)
 		{
-			if (flagPair.second)
-			{
-				ret.push_back(flagPair.first);
-			}
-		});
-
-		return ret;
-	}
-
-	bool ShaderFamily::FlagInfo::Empty() const
-	{
-		return m_Flags.empty();
-	}
-
-	void ShaderFamily::FlagInfo::Clear()
-	{
-		std::ranges::for_each(m_Flags, [](auto& flagPair)
-		{
-			flagPair.second = false;
-		});
-	}
-
-	ShaderFamily::FlagInfoProxy::FlagInfoProxy(FlagInfo flagInfo) :
-		m_FlagInfo{std::move(flagInfo)}
-	{}
-
-	bool& ShaderFamily::FlagInfoProxy::operator[](const std::string& flag)
-	{
-		return m_FlagInfo[flag];
-	}
-
-	const bool& ShaderFamily::FlagInfoProxy::operator[](const std::string& flag) const
-	{
-		return m_FlagInfo[flag];
-	}
-
-	ShaderFamily::FlagInfoProxy::operator std::vector<bool>() const
-	{
-		return static_cast<std::vector<bool>>(m_FlagInfo);
-	}
-
-	ShaderFamily::FlagInfoProxy::operator std::vector<std::string>() const
-	{
-		return static_cast<std::vector<std::string>>(m_FlagInfo);
-	}
-
-	bool ShaderFamily::FlagInfoProxy::Empty() const
-	{
-		return m_FlagInfo.Empty();
-	}
-
-	void ShaderFamily::FlagInfoProxy::Clear()
-	{
-		m_FlagInfo.Clear();
+			shaderProgram.SetBufferBinding(bufName, bindingIndex);
+		}
 	}
 
 	ShaderFamily::FlagInfoProxy ShaderFamily::GetFlagInfo() const
@@ -161,23 +67,6 @@ namespace leopph::impl
 			shaderProgram.SetBufferBinding(bufName, binding);
 		}
 		return shaderProgram;
-	}
-
-	void ShaderFamily::SetBufferBinding(const std::string_view bufName, const int bindingIndex)
-	{
-		if (const auto it{m_Bindings.find(bufName)};
-			it != m_Bindings.end())
-		{
-			it->second = bindingIndex;
-		}
-		else
-		{
-			m_Bindings.emplace(bufName, bindingIndex);
-		}
-		for (auto& [bitmap, shaderProgram] : m_Permutations)
-		{
-			shaderProgram.SetBufferBinding(bufName, bindingIndex);
-		}
 	}
 
 	std::string ShaderFamily::BuildSourceString(std::vector<std::string> srcLines, const std::vector<std::string>& flags)
@@ -225,11 +114,9 @@ namespace leopph::impl
 						break;
 					}
 				}
-
 				ret.srcLines.push_back(std::move(line));
 			}
 		}
-
 		return ret;
 	}
 }
