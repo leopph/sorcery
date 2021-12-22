@@ -3,6 +3,8 @@
 #include "ShaderProgram.hpp"
 #include "ShaderStageInfo.hpp"
 #include "ShaderType.hpp"
+#include "../../util/equal/StringEqual.hpp"
+#include "../../util/hash/StringHash.hpp"
 
 #include <map>
 #include <string>
@@ -10,7 +12,6 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
-
 
 
 namespace leopph::impl
@@ -49,7 +50,6 @@ namespace leopph::impl
 			static const std::string SpotLightPassFragSrc;
 			static const std::string PointLightPassFragSrc;
 
-
 		private:
 			class FlagInfoBase
 			{
@@ -74,59 +74,57 @@ namespace leopph::impl
 			};
 
 
-		class FlagInfo final : FlagInfoBase
-		{
-			public:
-				explicit FlagInfo(const std::unordered_set<std::string>& flags);
-				FlagInfo(const FlagInfo&) = default;
-				FlagInfo(FlagInfo&& other) noexcept;
+			class FlagInfo final : FlagInfoBase
+			{
+				public:
+					explicit FlagInfo(const std::unordered_set<std::string>& flags);
+					FlagInfo(const FlagInfo&) = default;
+					FlagInfo(FlagInfo&& other) noexcept;
 
-				FlagInfo& operator=(const FlagInfo& other) = default;
-				FlagInfo& operator=(FlagInfo&& other) noexcept;
+					FlagInfo& operator=(const FlagInfo& other) = default;
+					FlagInfo& operator=(FlagInfo&& other) noexcept;
 
-				~FlagInfo() override = default;
+					~FlagInfo() override = default;
 
+					bool& operator[](const std::string& flag) override;
+					const bool& operator[](const std::string& flag) const override;
+					explicit operator std::vector<bool>() const override;
+					explicit operator std::vector<std::string>() const override;
 
-				bool& operator[](const std::string& flag) override;
-				const bool& operator[](const std::string& flag) const override;
-				explicit operator std::vector<bool>() const override;
-				explicit operator std::vector<std::string>() const override;
+					[[nodiscard]] bool Empty() const override;
 
-				[[nodiscard]] bool Empty() const override;
+					void Clear() override;
 
-				void Clear() override;
-
-
-			private:
-				std::map<std::string, bool> m_Flags;
-		};
+				private:
+					std::map<std::string, bool> m_Flags;
+			};
 
 
-		class FlagInfoProxy final : public FlagInfoBase
-		{
-			public:
-				explicit FlagInfoProxy(FlagInfo flagInfo);
+			class FlagInfoProxy final : public FlagInfoBase
+			{
+				public:
+					explicit FlagInfoProxy(FlagInfo flagInfo);
 
+					bool& operator[](const std::string& flag) override;
+					const bool& operator[](const std::string& flag) const override;
+					explicit operator std::vector<bool>() const override;
+					explicit operator std::vector<std::string>() const override;
 
-				bool& operator[](const std::string& flag) override;
-				const bool& operator[](const std::string& flag) const override;
-				explicit operator std::vector<bool>() const override;
-				explicit operator std::vector<std::string>() const override;
+					[[nodiscard]] bool Empty() const override;
 
-				[[nodiscard]] bool Empty() const override;
+					void Clear() override;
 
-				void Clear() override;
-
-
-			private:
-				FlagInfo m_FlagInfo;
-		};
+				private:
+					FlagInfo m_FlagInfo;
+			};
 
 
 		public:
-			[[nodiscard]] FlagInfoProxy GetFlagInfo() const;
-			[[nodiscard]] ShaderProgram& GetPermutation(const FlagInfoProxy& flagInfo);
-
+			[[nodiscard]]
+			FlagInfoProxy GetFlagInfo() const;
+			[[nodiscard]]
+			ShaderProgram& GetPermutation(const FlagInfoProxy& flagInfo);
+			void SetBufferBinding(std::string_view bufName, int bindingIndex);
 
 		private:
 			struct ProcessedSource
@@ -134,12 +132,15 @@ namespace leopph::impl
 				std::unordered_set<std::string> flags;
 				std::vector<std::string> srcLines;
 			};
-			
-			[[nodiscard]] static std::string BuildSourceString(std::vector<std::string> srcLines, const std::vector<std::string>& flags);
+
+
+			[[nodiscard]]
+			static std::string BuildSourceString(std::vector<std::string> srcLines, const std::vector<std::string>& flags);
 			static ProcessedSource ProcessSource(const std::string& src);
 
+			std::unordered_map<std::string, int, StringHash, StringEqual> m_Bindings;
 			std::unordered_map<std::vector<bool>, ShaderProgram> m_Permutations;
 			std::unordered_map<ShaderType, std::vector<std::string>> m_Sources;
 			std::unordered_set<std::string> m_Flags;
-		};
+	};
 }

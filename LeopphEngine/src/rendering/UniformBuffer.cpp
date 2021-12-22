@@ -6,8 +6,6 @@
 namespace leopph::impl
 {
 	UniformBuffer::UniformBuffer() :
-		Name{m_Name},
-		Size{m_Size},
 		m_Name{},
 		m_Size{}
 	{
@@ -17,6 +15,21 @@ namespace leopph::impl
 	UniformBuffer::~UniformBuffer()
 	{
 		glDeleteBuffers(1, &m_Name);
+	}
+
+	unsigned UniformBuffer::Name() const
+	{
+		return m_Name;
+	}
+
+	std::size_t UniformBuffer::Size() const
+	{
+		return m_Size;
+	}
+
+	void UniformBuffer::Bind(const int bindingIndex, const int offset, const std::size_t size) const
+	{
+		glBindBufferRange(GL_UNIFORM_BUFFER, bindingIndex, m_Name, offset, size);
 	}
 
 	void UniformBuffer::Store(const int i, const std::size_t offset) const
@@ -69,8 +82,4 @@ namespace leopph::impl
 		glNamedBufferSubData(m_Name, offset, sizeof(Matrix4) * vec.size(), vec.data());
 	}
 
-	void UniformBuffer::Bind(const int bindingIndex, const int offset, const std::size_t size) const
-	{
-		glBindBufferRange(GL_UNIFORM_BUFFER, bindingIndex, m_Name, offset, size);
-	}
 }

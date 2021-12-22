@@ -11,34 +11,37 @@ namespace leopph::impl
 {
 	class UniformBuffer
 	{
-		UniformBuffer();
-		UniformBuffer(const UniformBuffer& other) = delete;
-		UniformBuffer(UniformBuffer&& other) = delete;
+		public:
+			UniformBuffer();
 
-		~UniformBuffer();
+			UniformBuffer(const UniformBuffer& other) = delete;
+			UniformBuffer& operator=(const UniformBuffer& other) = delete;
 
-		UniformBuffer& operator=(const UniformBuffer& other) = delete;
-		UniformBuffer& operator=(UniformBuffer&& other) = delete;
+			UniformBuffer(UniformBuffer&& other) = delete;
+			UniformBuffer& operator=(UniformBuffer&& other) = delete;
 
-		const unsigned& Name;
-		const std::size_t& Size;
+			~UniformBuffer();
 
-		void Store(int i, std::size_t offset) const;
-		void Store(unsigned u, std::size_t offset) const;
-		void Store(float f, std::size_t offset) const;
-		void Store(const Vector3& vec, std::size_t offset) const;
-		void Store(const Matrix4& mat, std::size_t offset) const;
-		void Store(const std::vector<int>& vec, std::size_t offset) const;
-		void Store(const std::vector<unsigned>& vec, std::size_t offset) const;
-		void Store(const std::vector<float>& vec, std::size_t offset) const;
-		void Store(const std::vector<Vector3>& vec, std::size_t offset) const;
-		void Store(const std::vector<Matrix4>& vec, std::size_t offset) const;
+			[[nodiscard]]
+			unsigned Name() const;
+			[[nodiscard]]
+			std::size_t Size() const;
 
-		void Bind(int bindingIndex, int offset, std::size_t size) const;
+			void Bind(int bindingIndex, int offset, std::size_t size) const;
 
+			void Store(int i, std::size_t offset) const;
+			void Store(unsigned u, std::size_t offset) const;
+			void Store(float f, std::size_t offset) const;
+			void Store(const Vector3& vec, std::size_t offset) const;
+			void Store(const Matrix4& mat, std::size_t offset) const;
+			void Store(const std::vector<int>& vec, std::size_t offset) const;
+			void Store(const std::vector<unsigned>& vec, std::size_t offset) const;
+			void Store(const std::vector<float>& vec, std::size_t offset) const;
+			void Store(const std::vector<Vector3>& vec, std::size_t offset) const;
+			void Store(const std::vector<Matrix4>& vec, std::size_t offset) const;
 
-	private:
-		unsigned m_Name;
-		std::size_t m_Size;
+		private:
+			unsigned m_Name;
+			std::size_t m_Size;
 	};
 }

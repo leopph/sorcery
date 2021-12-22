@@ -6,7 +6,6 @@
 #include <glad/glad.h>
 
 
-
 namespace leopph::impl
 {
 	ShaderProgram::ShaderProgram(const std::vector<ShaderStageInfo>& stageInfo) :
@@ -60,96 +59,85 @@ namespace leopph::impl
 		});
 	}
 
-
 	ShaderProgram::~ShaderProgram()
 	{
 		glDeleteProgram(m_ProgramName);
 	}
-
 
 	void ShaderProgram::Use() const
 	{
 		glUseProgram(m_ProgramName);
 	}
 
-
 	void ShaderProgram::Unuse() const
 	{
 		glUseProgram(0);
 	}
-
 
 	void ShaderProgram::SetUniform(const std::string_view name, const bool value)
 	{
 		glProgramUniform1i(m_ProgramName, GetUniformLocation(name), value);
 	}
 
-
 	void ShaderProgram::SetUniform(const std::string_view name, const int value)
 	{
 		glProgramUniform1i(m_ProgramName, GetUniformLocation(name), value);
 	}
-
 
 	void ShaderProgram::SetUniform(const std::string_view name, const unsigned value)
 	{
 		glProgramUniform1ui(m_ProgramName, GetUniformLocation(name), value);
 	}
 
-
 	void ShaderProgram::SetUniform(const std::string_view name, const float value)
 	{
 		glProgramUniform1f(m_ProgramName, GetUniformLocation(name), value);
 	}
-
 
 	void ShaderProgram::SetUniform(const std::string_view name, const Vector3& value)
 	{
 		glProgramUniform3fv(m_ProgramName, GetUniformLocation(name), 1, value.Data().data());
 	}
 
-
 	void ShaderProgram::SetUniform(const std::string_view name, const Matrix4& value)
 	{
 		glProgramUniformMatrix4fv(m_ProgramName, GetUniformLocation(name), 1, GL_TRUE, reinterpret_cast<const GLfloat*>(value.Data().data()));
 	}
-
 
 	void ShaderProgram::SetUniform(const std::string_view name, const std::vector<bool>& value)
 	{
 		// TODO
 	}
 
-
 	void ShaderProgram::SetUniform(const std::string_view name, const std::vector<int>& value)
 	{
 		glProgramUniform1iv(m_ProgramName, GetUniformLocation(name), static_cast<GLsizei>(value.size()), value.data());
 	}
-
 
 	void ShaderProgram::SetUniform(const std::string_view name, const std::vector<unsigned>& value)
 	{
 		glProgramUniform1uiv(m_ProgramName, GetUniformLocation(name), static_cast<GLsizei>(value.size()), value.data());
 	}
 
-
 	void ShaderProgram::SetUniform(const std::string_view name, const std::vector<float>& value)
 	{
 		glProgramUniform1fv(m_ProgramName, GetUniformLocation(name), static_cast<GLsizei>(value.size()), value.data());
 	}
-
 
 	void ShaderProgram::SetUniform(const std::string_view name, const std::vector<Vector3>& value)
 	{
 		glProgramUniform3fv(m_ProgramName, GetUniformLocation(name), static_cast<GLsizei>(value.size()), reinterpret_cast<const GLfloat*>(value.data()));
 	}
 
-
 	void ShaderProgram::SetUniform(const std::string_view name, const std::vector<Matrix4>& value)
 	{
 		glProgramUniformMatrix4fv(m_ProgramName, GetUniformLocation(name), static_cast<GLsizei>(value.size()), GL_TRUE, reinterpret_cast<const GLfloat*>(value.data()));
 	}
 
+	void ShaderProgram::SetBufferBinding(const std::string_view bufName, const int bindingIndex)
+	{
+		
+	}
 
 	std::pair<bool, std::optional<std::string>> ShaderProgram::CompilationStatus(const unsigned name)
 	{
@@ -172,7 +160,6 @@ namespace leopph::impl
 		return ret;
 	}
 
-
 	std::pair<bool, std::optional<std::string>> ShaderProgram::LinkStatus() const
 	{
 		std::pair<bool, std::optional<std::string>> ret;
@@ -194,7 +181,6 @@ namespace leopph::impl
 		return ret;
 	}
 
-
 	int ShaderProgram::GetUniformLocation(const std::string_view name)
 	{
 		auto it{m_UniformLocations.find(name)};
@@ -206,4 +192,6 @@ namespace leopph::impl
 
 		return it->second;
 	}
+
+
 }

@@ -45,6 +45,7 @@ namespace leopph::impl
 			void SetUniform(std::string_view name, const std::vector<Vector3>& value);
 			void SetUniform(std::string_view name, const std::vector<Matrix4>& value);
 
+			void SetBufferBinding(std::string_view bufName, int bindingIndex);
 
 		private:
 			[[nodiscard]] static std::pair<bool, std::optional<std::string>> CompilationStatus(unsigned name);
