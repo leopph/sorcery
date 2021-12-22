@@ -129,9 +129,9 @@
     <ClInclude Include="src\components\lighting\SpotLight.hpp" />
     <ClInclude Include="src\components\rendering\RenderComponent.hpp" />
     <ClInclude Include="src\data\Proxy.hpp" />
-    <ClInclude Include="src\entry\appstart.h" />
-    <ClInclude Include="src\entry\entry.h" />
-    <ClInclude Include="src\entry\launch.h" />
+    <ClInclude Include="src\entry\Init.hpp" />
+    <ClInclude Include="src\entry\Entry.hpp" />
+    <ClInclude Include="src\entry\Main.hpp" />
     <ClInclude Include="src\components\Transform.hpp" />
     <ClInclude Include="src\events\DirShadowResolutionEvent.hpp" />
     <ClInclude Include="src\events\ScreenResolutionEvent.hpp" />
@@ -225,7 +225,7 @@
     <ClCompile Include="src\components\rendering\RenderComponent.cpp" />
     <ClCompile Include="src\config\Settings.cpp" />
     <ClCompile Include="src\data\DataManager.cpp" />
-    <ClCompile Include="src\entry\launch.cpp" />
+    <ClCompile Include="src\entry\Main.cpp" />
     <ClCompile Include="src\components\Transform.cpp" />
     <ClCompile Include="src\events\DirShadowResolutionEvent.cpp" />
     <ClCompile Include="src\events\ScreenResolutionEvent.cpp" />

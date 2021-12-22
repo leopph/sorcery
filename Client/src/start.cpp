@@ -7,7 +7,7 @@
 #include "behaviors/WindowTester.hpp"
 
 
-void leopph::AppStart()
+void leopph::Init()
 {
 	Window::Title("LeopphEngine Demo");
 

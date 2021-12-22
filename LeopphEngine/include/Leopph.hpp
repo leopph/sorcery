@@ -8,12 +8,12 @@ See individual headers for more information.
 #include "../src/components/Behavior.hpp"
 #include "../src/components/Camera.hpp"
 #include "../src/components/Component.hpp"
-#include "../src/components/rendering/Model.hpp"
-#include "../src/components/rendering/Model.hpp"
 #include "../src/components/lighting/AmbientLight.hpp"
 #include "../src/components/lighting/DirLight.hpp"
 #include "../src/components/lighting/PointLight.hpp"
 #include "../src/components/lighting/SpotLight.hpp"
+#include "../src/components/rendering/Model.hpp"
+#include "../src/components/rendering/Model.hpp"
 #include "../src/config/Settings.hpp"
 #include "../src/entity/Entity.hpp"
 #include "../src/events/Event.hpp"
@@ -37,5 +37,5 @@ to create an entry point in your application.
 -----------------------------------------------------*/
 
 #ifdef LEOPPH_ENTRY
-#include "../src/entry/entry.h"
+#include "../src/entry/Entry.hpp"
 #endif

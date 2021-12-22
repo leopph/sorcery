@@ -4,11 +4,11 @@
 #include <crtdbg.h>
 #endif
 
-#include "launch.h"
+#include "Main.hpp"
 
 #include "../data/DataManager.hpp"
-#include "../events/handling/EventManager.hpp"
 #include "../events/FrameEndEvent.hpp"
+#include "../events/handling/EventManager.hpp"
 #include "../rendering/opengl/InitGl.hpp"
 #include "../rendering/renderers/Renderer.hpp"
 #include "../timing/timer.h"
@@ -16,10 +16,9 @@
 #include "../windowing/WindowBase.hpp"
 
 
-
 namespace leopph::impl
 {
-	int Launch(decltype(AppStart) appStart)
+	int Main(decltype(Init) initFunc)
 	{
 		#ifdef _DEBUG
 		_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
@@ -37,16 +36,18 @@ namespace leopph::impl
 
 		Logger::Instance().Debug("OpenGL initialized.");
 
-		appStart();
-
-		Logger::Instance().Debug("App initialized.");
-
 		{
 			const auto renderer{Renderer::Create()};
+
+			Logger::Instance().Debug("Renderer initialized.");
 
 			Timer::Init();
 
 			Logger::Instance().Debug("Timer initialized.");
+
+			initFunc();
+
+			Logger::Instance().Debug("App initialized.");
 
 			while (!window.ShouldClose())
 			{
@@ -71,7 +72,11 @@ namespace leopph::impl
 
 		DataManager::Clear();
 
+		Logger::Instance().Debug("Application data cleared.");
+
 		WindowBase::Destroy();
+
+		Logger::Instance().Debug("Window destroyed.");
 
 		return 0;
 	}

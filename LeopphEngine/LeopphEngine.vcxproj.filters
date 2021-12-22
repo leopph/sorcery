@@ -19,7 +19,7 @@
     <ClCompile Include="vendor\stb_image\stb_image.cpp" />
     <ClCompile Include="src\components\rendering\Model.cpp" />
     <ClCompile Include="src\windowing\WindowBase.cpp" />
-    <ClCompile Include="src\entry\launch.cpp" />
+    <ClCompile Include="src\entry\Main.cpp" />
     <ClCompile Include="src\timing\timer.cpp" />
     <ClCompile Include="src\config\Settings.cpp" />
     <ClCompile Include="src\util\logger.cpp" />
@@ -74,7 +74,7 @@
     <ClInclude Include="src\components\Behavior.hpp" />
     <ClInclude Include="src\components\Camera.hpp" />
     <ClInclude Include="src\components\lighting\DirLight.hpp" />
-    <ClInclude Include="src\entry\entry.h" />
+    <ClInclude Include="src\entry\Entry.hpp" />
     <ClInclude Include="src\rendering\opengl\InitGl.hpp" />
     <ClInclude Include="src\input\Input.hpp" />
     <ClInclude Include="src\data\DataManager.hpp" />
@@ -99,8 +99,8 @@
     <ClInclude Include="src\input\keycodes.h" />
     <ClInclude Include="src\input\keystate.h" />
     <ClInclude Include="src\input\cursorstate.h" />
-    <ClInclude Include="src\entry\launch.h" />
-    <ClInclude Include="src\entry\appstart.h" />
+    <ClInclude Include="src\entry\Main.hpp" />
+    <ClInclude Include="src\entry\Init.hpp" />
     <ClInclude Include="src\timing\timer.h" />
     <ClInclude Include="src\util\logger.h" />
     <ClInclude Include="src\rendering\geometry\Material.hpp" />
