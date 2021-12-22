@@ -76,8 +76,6 @@ namespace leopph::impl
 
 		WindowBase::Destroy();
 
-		Logger::Instance().Debug("Window destroyed.");
-
 		return 0;
 	}
 }
