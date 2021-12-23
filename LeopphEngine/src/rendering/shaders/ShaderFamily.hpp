@@ -22,14 +22,14 @@ namespace leopph::internal
 			explicit ShaderFamily(const std::vector<ShaderStageInfo>& stages);
 
 			ShaderFamily(const ShaderFamily& other) = delete;
-			ShaderFamily& operator=(const ShaderFamily& other) = delete;
+			auto operator=(const ShaderFamily& other) -> ShaderFamily& = delete;
 
 			ShaderFamily(ShaderFamily&& other) = delete;
-			ShaderFamily& operator=(ShaderFamily&& other) = delete;
+			auto operator=(ShaderFamily&& other) -> ShaderFamily& = delete;
 
 			~ShaderFamily() = default;
 
-			void SetBufferBinding(std::string_view bufName, int bindingIndex);
+			auto SetBufferBinding(std::string_view bufName, int bindingIndex) -> void;
 
 			static const std::string ObjectVertSrc;
 			static const std::string ObjectFragSrc;
@@ -59,11 +59,11 @@ namespace leopph::internal
 					explicit FlagInfo(const std::unordered_set<std::string>& flags);
 
 					[[nodiscard]]
-					bool Empty() const;
-					void Clear();
+					auto Empty() const -> bool;
+					auto Clear() -> void;
 
-					bool& operator[](const std::string& flag);
-					const bool& operator[](const std::string& flag) const;
+					auto operator[](const std::string& flag) -> bool&;
+					auto operator[](const std::string& flag) const -> const bool&;
 
 					explicit operator std::vector<bool>() const;
 					explicit operator std::vector<std::string>() const;
@@ -79,11 +79,11 @@ namespace leopph::internal
 					explicit FlagInfoProxy(FlagInfo flagInfo);
 
 					[[nodiscard]]
-					bool Empty() const;
-					void Clear();
+					auto Empty() const -> bool;
+					auto Clear() -> void;
 
-					bool& operator[](const std::string& flag);
-					const bool& operator[](const std::string& flag) const;
+					auto operator[](const std::string& flag) -> bool&;
+					auto operator[](const std::string& flag) const -> const bool&;
 
 					explicit operator std::vector<bool>() const;
 					explicit operator std::vector<std::string>() const;
@@ -95,9 +95,9 @@ namespace leopph::internal
 
 		public:
 			[[nodiscard]]
-			FlagInfoProxy GetFlagInfo() const;
+			auto GetFlagInfo() const -> FlagInfoProxy;
 			[[nodiscard]]
-			ShaderProgram& GetPermutation(const FlagInfoProxy& flagInfo);
+			auto GetPermutation(const FlagInfoProxy& flagInfo) -> ShaderProgram&;
 
 		private:
 			struct ProcessedSource
@@ -108,8 +108,8 @@ namespace leopph::internal
 
 
 			[[nodiscard]]
-			static std::string BuildSourceString(std::vector<std::string> srcLines, const std::vector<std::string>& flags);
-			static ProcessedSource ProcessSource(const std::string& src);
+			static auto BuildSourceString(std::vector<std::string> srcLines, const std::vector<std::string>& flags) -> std::string;
+			static auto ProcessSource(const std::string& src) -> ProcessedSource;
 
 			std::unordered_map<std::string, int, StringHash, StringEqual> m_Bindings;
 			std::unordered_map<std::vector<bool>, ShaderProgram> m_Permutations;

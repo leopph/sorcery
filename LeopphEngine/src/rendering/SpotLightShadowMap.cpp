@@ -10,10 +10,10 @@ namespace leopph::internal
 {
 	SpotLightShadowMap::SpotLightShadowMap() :
 		Id{m_Fbo},
-		m_Resolution{Settings::SpotLightShadowMapResolution()},
 		m_Fbo{},
 		m_DepthTex{},
-		m_CurrentBindIndex{}
+		m_CurrentBindIndex{},
+		m_Resolution{Settings::SpotLightShadowMapResolution()}
 	{
 		glCreateFramebuffers(1, &m_Fbo);
 		glNamedFramebufferDrawBuffer(m_Fbo, GL_NONE);
@@ -39,7 +39,7 @@ namespace leopph::internal
 		glDeleteFramebuffers(1, &m_Fbo);
 	}
 
-	SpotLightShadowMap& SpotLightShadowMap::operator=(SpotLightShadowMap&& other) noexcept
+	auto SpotLightShadowMap::operator=(SpotLightShadowMap&& other) noexcept -> SpotLightShadowMap&
 	{
 		m_Fbo = other.m_Fbo;
 		m_DepthTex = other.m_DepthTex;
@@ -53,21 +53,21 @@ namespace leopph::internal
 		return *this;
 	}
 
-	void SpotLightShadowMap::BindForWriting() const
+	auto SpotLightShadowMap::BindForWriting() const -> void
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, m_Fbo);
 		glViewport(0, 0, static_cast<GLsizei>(m_Resolution), static_cast<GLsizei>(m_Resolution));
 		Clear();
 	}
 
-	void SpotLightShadowMap::UnbindFromWriting() const
+	auto SpotLightShadowMap::UnbindFromWriting() const -> void
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		const auto& window{WindowBase::Get()};
 		glViewport(0, 0, static_cast<GLsizei>(window.Width()), static_cast<GLsizei>(window.Height()));
 	}
 
-	int SpotLightShadowMap::BindForReading(ShaderProgram& shader, const int textureUnit) const
+	auto SpotLightShadowMap::BindForReading(ShaderProgram& shader, const int textureUnit) const -> int
 	{
 		m_CurrentBindIndex = textureUnit;
 		glBindTextureUnit(static_cast<GLuint>(m_CurrentBindIndex), m_DepthTex);
@@ -75,19 +75,18 @@ namespace leopph::internal
 		return m_CurrentBindIndex + 1;
 	}
 
-	void SpotLightShadowMap::UnbindFromReading() const
+	auto SpotLightShadowMap::UnbindFromReading() const -> void
 	{
 		glBindTextureUnit(m_CurrentBindIndex, 0);
 	}
 
-	void SpotLightShadowMap::Clear() const
+	auto SpotLightShadowMap::Clear() const -> void
 	{
 		constexpr float clearValue{1};
 		glClearNamedFramebufferfv(m_Fbo, GL_DEPTH, 0, &clearValue);
 	}
 
-
-	void SpotLightShadowMap::Init()
+	auto SpotLightShadowMap::Init() -> void
 	{
 		glCreateTextures(GL_TEXTURE_2D, 1, &m_DepthTex);
 
@@ -102,18 +101,15 @@ namespace leopph::internal
 		glNamedFramebufferTexture(m_Fbo, GL_DEPTH_ATTACHMENT, m_DepthTex, 0);
 	}
 
-
-	void SpotLightShadowMap::Deinit() const
+	auto SpotLightShadowMap::Deinit() const -> void
 	{
 		glDeleteTextures(1, &m_DepthTex);
 	}
 
-
-	void SpotLightShadowMap::OnEventReceived(EventParamType event)
+	auto SpotLightShadowMap::OnEventReceived(EventParamType event) -> void
 	{
 		m_Resolution = event.Resolution;
 		Deinit();
 		Init();
 	}
-
 }

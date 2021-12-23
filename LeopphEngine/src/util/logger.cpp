@@ -5,7 +5,6 @@
 #include <stdexcept>
 
 
-
 namespace leopph::internal
 {
 	Logger::Logger()
@@ -13,15 +12,13 @@ namespace leopph::internal
 		CurrentLevel(Level::RELEASE);
 	}
 
-
-	Logger& Logger::Instance()
+	auto Logger::Instance() -> Logger&
 	{
 		static Logger instance;
 		return instance;
 	}
 
-
-	void Logger::CurrentLevel(const Level level)
+	auto Logger::CurrentLevel(const Level level) -> void
 	{
 		switch (level)
 		{
@@ -34,8 +31,7 @@ namespace leopph::internal
 		}
 	}
 
-
-	Logger::Level Logger::CurrentLevel() const
+	auto Logger::CurrentLevel() const -> Logger::Level
 	{
 		switch (spdlog::get_level())
 		{
@@ -52,26 +48,22 @@ namespace leopph::internal
 		}
 	}
 
-
-	void Logger::Debug(const std::string_view msg) const
+	auto Logger::Debug(const std::string_view msg) const -> void
 	{
 		spdlog::debug(msg);
 	}
 
-
-	void Logger::Critical(const std::string_view msg) const
+	auto Logger::Critical(const std::string_view msg) const -> void
 	{
 		spdlog::critical(msg);
 	}
 
-
-	void Logger::Error(const std::string_view msg) const
+	auto Logger::Error(const std::string_view msg) const -> void
 	{
 		spdlog::error(msg);
 	}
 
-
-	void Logger::Warning(const std::string_view msg) const
+	auto Logger::Warning(const std::string_view msg) const -> void
 	{
 		spdlog::warn(msg);
 	}

@@ -17,27 +17,27 @@ namespace leopph::internal
 			explicit MeshDataGroup(std::string id = GenerateId());
 
 			MeshDataGroup(const MeshDataGroup& other) = delete;
-			MeshDataGroup& operator=(const MeshDataGroup& other) = delete;
+			auto operator=(const MeshDataGroup& other) -> MeshDataGroup& = delete;
 
 			MeshDataGroup(MeshDataGroup&& other) noexcept = delete;
-			MeshDataGroup& operator=(MeshDataGroup&& other) noexcept = delete;
+			auto operator=(MeshDataGroup&& other) noexcept -> MeshDataGroup& = delete;
 
 			[[nodiscard]]
-			const std::string& Id() const;
+			auto Id() const -> const std::string&;
 
 			[[nodiscard]]
-			const std::vector<MeshData>& Data() const;
+			auto Data() const -> const std::vector<MeshData>&;
 
 			virtual ~MeshDataGroup() noexcept;
 
 		protected:
 			[[nodiscard]]
-			std::vector<MeshData>& Data();
+			auto Data() -> std::vector<MeshData>&;
 
 		private:
 			std::string m_Id;
 			std::vector<MeshData> m_MeshData;
-			
-			static std::string GenerateId() noexcept;
+
+			static auto GenerateId() noexcept -> std::string;
 	};
 }

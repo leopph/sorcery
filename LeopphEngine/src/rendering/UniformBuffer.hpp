@@ -15,30 +15,30 @@ namespace leopph::internal
 			UniformBuffer();
 
 			UniformBuffer(const UniformBuffer& other) = delete;
-			UniformBuffer& operator=(const UniformBuffer& other) = delete;
+			auto operator=(const UniformBuffer& other) -> UniformBuffer& = delete;
 
 			UniformBuffer(UniformBuffer&& other) = delete;
-			UniformBuffer& operator=(UniformBuffer&& other) = delete;
+			auto operator=(UniformBuffer&& other) -> UniformBuffer& = delete;
 
 			~UniformBuffer();
 
 			[[nodiscard]]
-			unsigned Name() const;
+			auto Name() const -> unsigned;
 			[[nodiscard]]
-			std::size_t Size() const;
+			auto Size() const -> std::size_t;
 
-			void Bind(int bindingIndex, int offset, std::size_t size) const;
+			auto Bind(int bindingIndex, int offset, std::size_t size) const -> void;
 
-			void Store(int i, std::size_t offset) const;
-			void Store(unsigned u, std::size_t offset) const;
-			void Store(float f, std::size_t offset) const;
-			void Store(const Vector3& vec, std::size_t offset) const;
-			void Store(const Matrix4& mat, std::size_t offset) const;
-			void Store(const std::vector<int>& vec, std::size_t offset) const;
-			void Store(const std::vector<unsigned>& vec, std::size_t offset) const;
-			void Store(const std::vector<float>& vec, std::size_t offset) const;
-			void Store(const std::vector<Vector3>& vec, std::size_t offset) const;
-			void Store(const std::vector<Matrix4>& vec, std::size_t offset) const;
+			auto Store(int i, std::size_t offset) const -> void;
+			auto Store(unsigned u, std::size_t offset) const -> void;
+			auto Store(float f, std::size_t offset) const -> void;
+			auto Store(const Vector3& vec, std::size_t offset) const -> void;
+			auto Store(const Matrix4& mat, std::size_t offset) const -> void;
+			auto Store(const std::vector<int>& vec, std::size_t offset) const -> void;
+			auto Store(const std::vector<unsigned>& vec, std::size_t offset) const -> void;
+			auto Store(const std::vector<float>& vec, std::size_t offset) const -> void;
+			auto Store(const std::vector<Vector3>& vec, std::size_t offset) const -> void;
+			auto Store(const std::vector<Matrix4>& vec, std::size_t offset) const -> void;
 
 		private:
 			unsigned m_Name;

@@ -3,12 +3,12 @@
 
 namespace leopph::internal
 {
-	std::size_t GlMeshGroupHash::operator()(const GlMeshGroup& model) const
+	auto GlMeshGroupHash::operator()(const GlMeshGroup& model) const -> std::size_t
 	{
 		return m_Hash(model.MeshData().Id());
 	}
 
-	std::size_t GlMeshGroupHash::operator()(const std::shared_ptr<const MeshDataGroup>& meshDataGroup) const
+	auto GlMeshGroupHash::operator()(const std::shared_ptr<const MeshDataGroup>& meshDataGroup) const -> std::size_t
 	{
 		return m_Hash(meshDataGroup->Id());
 	}

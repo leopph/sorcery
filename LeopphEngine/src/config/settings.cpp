@@ -8,7 +8,6 @@
 #include <utility>
 
 
-
 namespace leopph
 {
 	std::filesystem::path Settings::s_ShaderLocation{};
@@ -21,118 +20,99 @@ namespace leopph
 	std::size_t Settings::s_MaxSpotLightCount{64};
 	Settings::RenderType Settings::s_RenderingPipeline{RenderType::Deferred};
 
-
-	bool Settings::CacheShaders()
+	auto Settings::CacheShaders() -> bool
 	{
 		return !s_ShaderLocation.empty();
 	}
 
-
-	const std::filesystem::path& Settings::ShaderCacheLocation()
+	auto Settings::ShaderCacheLocation() -> const std::filesystem::path&
 	{
 		return s_ShaderLocation;
 	}
 
-
-	void Settings::ShaderCacheLocation(std::filesystem::path path)
+	auto Settings::ShaderCacheLocation(std::filesystem::path path) -> void
 	{
 		s_ShaderLocation = std::move(path);
 	}
 
-
-	void Settings::SetRenderApi(const GraphicsApi newApi)
+	auto Settings::SetRenderApi(const GraphicsApi newApi) -> void
 	{
 		s_PendingRenderApi = newApi;
 	}
 
-
-	LEOPPHAPI bool Settings::Vsync()
+	LEOPPHAPI auto Settings::Vsync() -> bool
 	{
 		return internal::WindowBase::Get().Vsync();
 	}
 
-
-	LEOPPHAPI void Settings::Vsync(const bool value)
+	LEOPPHAPI auto Settings::Vsync(const bool value) -> void
 	{
 		internal::WindowBase::Get().Vsync(value);
 	}
 
-
-	const std::vector<std::size_t>& Settings::DirectionalShadowMapResolutions()
+	auto Settings::DirectionalShadowMapResolutions() -> const std::vector<std::size_t>&
 	{
 		return s_DirectionalLightShadowMapResolutions;
 	}
 
-
-	void Settings::DirectionalShadowMapResolutions(std::vector<std::size_t> newRess)
+	auto Settings::DirectionalShadowMapResolutions(std::vector<std::size_t> newRess) -> void
 	{
 		s_DirectionalLightShadowMapResolutions = std::move(newRess);
 		EventManager::Instance().Send<internal::DirShadowResolutionEvent>(s_DirectionalLightShadowMapResolutions);
 	}
 
-
-	std::size_t Settings::DirectionalShadowCascadeCount()
+	auto Settings::DirectionalShadowCascadeCount() -> std::size_t
 	{
 		return s_DirectionalLightShadowMapResolutions.size();
 	}
 
-
-	std::size_t Settings::PointLightShadowMapResolution()
+	auto Settings::PointLightShadowMapResolution() -> std::size_t
 	{
 		return s_PointLightShadowMapResolution;
 	}
 
-
-	void Settings::PointLightShadowMapResolution(const std::size_t newRes)
+	auto Settings::PointLightShadowMapResolution(const std::size_t newRes) -> void
 	{
 		s_PointLightShadowMapResolution = newRes;
 	}
 
-
-	std::size_t Settings::SpotLightShadowMapResolution()
+	auto Settings::SpotLightShadowMapResolution() -> std::size_t
 	{
 		return s_SpotLightShadowMapResolution;
 	}
 
-
-	void Settings::SpotLightShadowMapResolution(const std::size_t newRes)
+	auto Settings::SpotLightShadowMapResolution(const std::size_t newRes) -> void
 	{
 		s_SpotLightShadowMapResolution = newRes;
 		EventManager::Instance().Send<internal::SpotShadowResolutionEvent>(s_SpotLightShadowMapResolution);
 	}
 
-
-	std::size_t Settings::MaxPointLightCount()
+	auto Settings::MaxPointLightCount() -> std::size_t
 	{
 		return s_MaxPointLightCount;
 	}
 
-
-	void Settings::MaxPointLightCount(const std::size_t newCount)
+	auto Settings::MaxPointLightCount(const std::size_t newCount) -> void
 	{
 		s_MaxPointLightCount = newCount;
 	}
 
-
-	std::size_t Settings::MaxSpotLightCount()
+	auto Settings::MaxSpotLightCount() -> std::size_t
 	{
 		return s_MaxSpotLightCount;
 	}
 
-
-	void Settings::MaxSpotLightCount(const std::size_t newCount)
+	auto Settings::MaxSpotLightCount(const std::size_t newCount) -> void
 	{
 		s_MaxSpotLightCount = newCount;
 	}
 
-
-	Settings::RenderType Settings::RenderingPipeline()
+	auto Settings::RenderingPipeline() -> Settings::RenderType
 	{
 		return s_RenderingPipeline;
 	}
 
-
-	void Settings::RenderingPipeline(const RenderType type)
+	auto Settings::RenderingPipeline(const RenderType type) -> void
 	{
 		s_RenderingPipeline = type;
 	}

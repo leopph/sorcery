@@ -3,13 +3,12 @@
 
 namespace leopph::internal
 {
-	bool ShaderTypeEqual::operator()(ShaderType left, ShaderType right) const
+	auto ShaderTypeEqual::operator()(ShaderType left, ShaderType right) const -> bool
 	{
 		return left == right;
 	}
 
-
-	bool ShaderTypeEqual::operator()(const int left, const int right) const
+	auto ShaderTypeEqual::operator()(const int left, const int right) const -> bool
 	{
 		return left == right;
 	}

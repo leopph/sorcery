@@ -15,12 +15,12 @@
 namespace leopph::internal
 {
 	CascadedShadowMap::CascadedShadowMap() :
-		m_Fbo{}, m_TexBindStartIndex{}
+		m_Fbo{},
+		m_TexBindStartIndex{}
 	{
 		glCreateFramebuffers(1, &m_Fbo);
 		Init(Settings::DirectionalShadowMapResolutions());
 	}
-
 
 	CascadedShadowMap::~CascadedShadowMap()
 	{
@@ -28,8 +28,7 @@ namespace leopph::internal
 		glDeleteFramebuffers(1, &m_Fbo);
 	}
 
-
-	void CascadedShadowMap::BindForWriting(const std::size_t cascadeIndex) const
+	auto CascadedShadowMap::BindForWriting(const std::size_t cascadeIndex) const -> void
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, m_Fbo);
 		glNamedFramebufferTexture(m_Fbo, GL_DEPTH_ATTACHMENT, m_TexIds.at(cascadeIndex), 0);
@@ -37,15 +36,13 @@ namespace leopph::internal
 		Clear();
 	}
 
-	
-	void CascadedShadowMap::UnbindFromWriting() const
+	auto CascadedShadowMap::UnbindFromWriting() const -> void
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glViewport(0, 0, static_cast<GLsizei>(WindowBase::Get().Width()), static_cast<GLsizei>(WindowBase::Get().Height()));
 	}
 
-
-	int CascadedShadowMap::BindForReading(ShaderProgram& shader, int texUnit)
+	auto CascadedShadowMap::BindForReading(ShaderProgram& shader, int texUnit) -> int
 	{
 		m_TexBindStartIndex = texUnit;
 
@@ -63,8 +60,7 @@ namespace leopph::internal
 		return texUnit;
 	}
 
-
-	void CascadedShadowMap::UnbindFromReading() const
+	auto CascadedShadowMap::UnbindFromReading() const -> void
 	{
 		for (auto texUnit{m_TexBindStartIndex}, i{0}; i < m_TexIds.size(); ++i, ++texUnit)
 		{
@@ -72,15 +68,13 @@ namespace leopph::internal
 		}
 	}
 
-
-	void CascadedShadowMap::Clear() const
+	auto CascadedShadowMap::Clear() const -> void
 	{
 		constexpr float clearValue{1};
 		glClearNamedFramebufferfv(m_Fbo, GL_DEPTH, 0, &clearValue);
 	}
 
-
-	Matrix4 CascadedShadowMap::WorldToClipMatrix(const std::size_t cascadeIndex, const Matrix4& cameraInverseMatrix, const Matrix4& lightViewMatrix) const
+	auto CascadedShadowMap::WorldToClipMatrix(const std::size_t cascadeIndex, const Matrix4& cameraInverseMatrix, const Matrix4& lightViewMatrix) const -> Matrix4
 	{
 		const auto& camera{*Camera::Active};
 		const auto cascadeDepth{(camera.FarClipPlane() - camera.NearClipPlane()) / m_TexIds.size()};
@@ -120,8 +114,7 @@ namespace leopph::internal
 		return lightViewMatrix * Matrix4::Ortographic(min[0], max[0], max[1], min[1], 0, max[2]);
 	}
 
-
-	Vector2 CascadedShadowMap::CascadeBoundsViewSpace(const std::size_t cascadeIndex) const
+	auto CascadedShadowMap::CascadeBoundsViewSpace(const std::size_t cascadeIndex) const -> Vector2
 	{
 		const auto& camera{*Camera::Active};
 		const auto cascadeDepth{(camera.FarClipPlane() - camera.NearClipPlane()) / static_cast<float>(m_TexIds.size())};
@@ -132,16 +125,13 @@ namespace leopph::internal
 		};
 	}
 
-
-
-	void CascadedShadowMap::OnEventReceived(const DirShadowResolutionEvent& event)
+	auto CascadedShadowMap::OnEventReceived(const DirShadowResolutionEvent& event) -> void
 	{
 		Deinit();
 		Init(event.Resolutions);
 	}
 
-
-	void CascadedShadowMap::Init(const std::vector<std::size_t>& resolutions)
+	auto CascadedShadowMap::Init(const std::vector<std::size_t>& resolutions) -> void
 	{
 		m_TexIds.resize(resolutions.size());
 		glCreateTextures(GL_TEXTURE_2D, static_cast<GLsizei>(resolutions.size()), m_TexIds.data());
@@ -162,8 +152,7 @@ namespace leopph::internal
 		glNamedFramebufferTexture(m_Fbo, GL_DEPTH_ATTACHMENT, m_TexIds.front(), 0);
 	}
 
-
-	void CascadedShadowMap::Deinit()
+	auto CascadedShadowMap::Deinit() -> void
 	{
 		glDeleteTextures(static_cast<GLsizei>(m_TexIds.size()), m_TexIds.data());
 	}

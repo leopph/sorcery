@@ -16,7 +16,7 @@ namespace leopph
 		internal::DataManager::Instance().DirectionalLight(nullptr);
 	}
 
-	const Vector3& DirectionalLight::Direction() const
+	auto DirectionalLight::Direction() const -> const Vector3&
 	{
 		return Entity()->Transform()->Forward();
 	}

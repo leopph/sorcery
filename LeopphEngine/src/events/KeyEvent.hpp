@@ -1,8 +1,8 @@
 #pragma once
 
+#include "Event.hpp"
 #include "../input/keycodes.h"
 #include "../input/keystate.h"
-#include "Event.hpp"
 
 
 namespace leopph::internal

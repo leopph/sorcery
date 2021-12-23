@@ -2,6 +2,7 @@
 
 #include "../api/LeopphApi.hpp"
 
+
 namespace leopph
 {
 	/*---------------------------------------------------------------------------
@@ -10,11 +11,11 @@ namespace leopph
 
 	class LEOPPHAPI Time
 	{
-	public:
-		/* The time it took in seconds to render the previous frame */
-		static float DeltaTime();
+		public:
+			/* The time it took in seconds to render the previous frame */
+			static auto DeltaTime() -> float;
 
-		/* The time that has passed since the initialization of your application in seconds */
-		static float FullTime();
+			/* The time that has passed since the initialization of your application in seconds */
+			static auto FullTime() -> float;
 	};
 }

@@ -7,69 +7,68 @@
 
 namespace leopph
 {
-	unsigned Window::Width()
+	auto Window::Width() -> unsigned
 	{
 		return internal::WindowBase::Get().Width();
 	}
 
-	void Window::Width(const unsigned newWidth)
+	auto Window::Width(const unsigned newWidth) -> void
 	{
 		internal::WindowBase::Get().Width(newWidth);
 	}
 
-	unsigned Window::Height()
+	auto Window::Height() -> unsigned
 	{
 		return internal::WindowBase::Get().Height();
 	}
 
-	void Window::Height(const unsigned newHeight)
+	auto Window::Height(const unsigned newHeight) -> void
 	{
 		internal::WindowBase::Get().Height(newHeight);
 	}
 
-	float Window::AspectRatio()
+	auto Window::AspectRatio() -> float
 	{
 		return internal::WindowBase::Get().AspectRatio();
 	}
 
-	bool Window::FullScreen()
+	auto Window::FullScreen() -> bool
 	{
 		return internal::WindowBase::Get().Fullscreen();
 	}
 
-	void Window::FullScreen(const bool newValue)
+	auto Window::FullScreen(const bool newValue) -> void
 	{
 		internal::WindowBase::Get().Fullscreen(newValue);
 	}
 
-	bool Window::Vsync()
+	auto Window::Vsync() -> bool
 	{
 		return internal::WindowBase::Get().Vsync();
 	}
 
-	void Window::Vsync(const bool newValue)
+	auto Window::Vsync(const bool newValue) -> void
 	{
 		internal::WindowBase::Get().Vsync(newValue);
 	}
 
-	std::string_view Window::Title()
+	auto Window::Title() -> std::string_view
 	{
 		return internal::WindowBase::Get().Title();
 	}
 
-	void Window::Title(std::string newTitle)
+	auto Window::Title(std::string newTitle) -> void
 	{
 		internal::WindowBase::Get().Title(std::move(newTitle));
 	}
 
-	float Window::RenderMultiplier()
+	auto Window::RenderMultiplier() -> float
 	{
 		return internal::WindowBase::Get().RenderMultiplier();
 	}
 
-	void Window::RenderMultiplier(const float newMult)
+	auto Window::RenderMultiplier(const float newMult) -> void
 	{
 		internal::WindowBase::Get().RenderMultiplier(newMult);
 	}
-
 }

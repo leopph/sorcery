@@ -10,11 +10,11 @@ namespace leopph::internal
 {
 	class GlMeshGroupEqual
 	{
-	public:
-		using is_transparent = void;
+		public:
+			using is_transparent = void;
 
-		bool operator()(const GlMeshGroup& left, const GlMeshGroup& right) const;
-		bool operator()(const GlMeshGroup& left, const std::shared_ptr<const MeshDataGroup>& right) const;
-		bool operator()(const std::shared_ptr<const MeshDataGroup>& left, const GlMeshGroup& right) const;
+			auto operator()(const GlMeshGroup& left, const GlMeshGroup& right) const -> bool;
+			auto operator()(const GlMeshGroup& left, const std::shared_ptr<const MeshDataGroup>& right) const -> bool;
+			auto operator()(const std::shared_ptr<const MeshDataGroup>& left, const GlMeshGroup& right) const -> bool;
 	};
 }

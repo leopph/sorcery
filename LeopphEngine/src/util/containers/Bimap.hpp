@@ -30,7 +30,6 @@ namespace leopph::internal
 		} -> std::same_as<std::size_t>;
 	};
 
-
 	template<class EqualTester, class T1, class T2>
 	concept Equal =
 	requires(const EqualTester& tester, T1 tested1, T1 tested2)
@@ -48,22 +47,18 @@ namespace leopph::internal
 	};
 
 
-
 	template<class T1, class T2, Hash<T1, T2> Hash, Equal<T1, T2> Equal, bool SafeMode = false>
 	class Bimap
 	{
 		public:
 			Bimap() = default;
 
-
 			Bimap(const Bimap& other) = default;
-
 
 			Bimap(Bimap&& other) noexcept :
 				m_T1ToT2{std::move(other.m_T1ToT2)},
 				m_T2ToT1{std::move(other.m_T2ToT1)}
 			{}
-
 
 			Bimap(std::initializer_list<std::pair<T1, T2>> initList)
 			{
@@ -73,7 +68,6 @@ namespace leopph::internal
 				});
 			}
 
-
 			Bimap(std::initializer_list<std::pair<T2, T1>> initList)
 			{
 				std::ranges::for_each(initList, [this](auto& pair)
@@ -82,249 +76,221 @@ namespace leopph::internal
 				});
 			}
 
+			auto operator=(const Bimap& other) -> Bimap& = default;
 
-			Bimap& operator=(const Bimap& other) = default;
-
-
-			Bimap& operator=(Bimap&& other) noexcept
+			auto operator=(Bimap&& other) noexcept -> Bimap&
 			{
 				m_T1ToT2 = std::move(other.m_T1ToT2);
 				m_T2ToT1 = std::move(other.m_T1ToT2);
 				return *this;
 			}
 
-
 			~Bimap() = default;
 
-
-		[[nodiscard]] auto Empty() const
-		{
-			const auto t1Empty{m_T1.empty()};
-
-			if constexpr (SafeMode)
+			[[nodiscard]] auto Empty() const
 			{
-				if (const std::array allEmpties{t1Empty, m_T2.empty(), m_T1ToT2.empty(), m_T2ToT1.empty()};
-					!std::equal(allEmpties))
+				const auto t1Empty{m_T1.empty()};
+
+				if constexpr (SafeMode)
 				{
+					if (const std::array allEmpties{t1Empty, m_T2.empty(), m_T1ToT2.empty(), m_T2ToT1.empty()};
+						!std::equal(allEmpties))
+					{
 						throw std::runtime_error{ERR_MSG_PREFIX + "emptiness is undecidable."};
+					}
 				}
+
+				return t1Empty;
 			}
 
-			return t1Empty;
-		}
-
-
-		[[nodiscard]] auto Size() const
-		{
-			const auto firstSize{m_T1.size()};
-
-			if constexpr (SafeMode)
+			[[nodiscard]] auto Size() const
 			{
-				if (const std::array allSizes{firstSize, m_T2.size(), m_T1ToT2.size(), m_T2ToT1.size()};
-					!std::equal(allSizes))
+				const auto firstSize{m_T1.size()};
+
+				if constexpr (SafeMode)
 				{
-					throw std::runtime_error{ERR_MSG_PREFIX + "size is undecidable."};
+					if (const std::array allSizes{firstSize, m_T2.size(), m_T1ToT2.size(), m_T2ToT1.size()};
+						!std::equal(allSizes))
+					{
+						throw std::runtime_error{ERR_MSG_PREFIX + "size is undecidable."};
+					}
 				}
+
+				return firstSize;
 			}
 
-			return firstSize;
-		}
-
-
-		[[nodiscard]] auto MaxSize() const
-		{
-			const auto firstMaxSize{m_T1.max_size()};
-
-			if constexpr (SafeMode)
+			[[nodiscard]] auto MaxSize() const
 			{
-				if (const std::array allMaxSizes{firstMaxSize, m_T2.max_size(), m_T1ToT2.max_size(), m_T2ToT1.max_size()};
-					!std::equal(allMaxSizes))
+				const auto firstMaxSize{m_T1.max_size()};
+
+				if constexpr (SafeMode)
 				{
-					throw std::runtime_error{ERR_MSG_PREFIX + "max size is undecidable."};
+					if (const std::array allMaxSizes{firstMaxSize, m_T2.max_size(), m_T1ToT2.max_size(), m_T2ToT1.max_size()};
+						!std::equal(allMaxSizes))
+					{
+						throw std::runtime_error{ERR_MSG_PREFIX + "max size is undecidable."};
+					}
 				}
+
+				return firstMaxSize;
 			}
 
-			return firstMaxSize;
-		}
-
-
-		auto Clear()
-		{
-			m_T1.clear();
-			m_T2.clear();
-			m_T1ToT2.clear();
-			m_T2ToT1.clear();
-		}
-
-
-		auto Insert(const T1& o1, const T2& o2 = T2{})
-		{
-			const auto& ins1{*m_T1.insert(o1).first};
-			const auto& ins2{*m_T2.insert(o2).first};
-			InsertPointers(ins1, ins2);
-		}
-
-
-		auto Insert(T1&& o1, const T2& o2 = T2{})
-		{
-			const auto& ins1{*m_T1.insert(std::move(o1)).first};
-			const auto& ins2{*m_T2.insert(o2).first};
-			InsertPointers(ins1, ins2);
-		}
-
-
-		auto Insert(const T1& o1, T2&& o2 = T2{})
-		{
-			const auto& ins1{*m_T1.insert(o1).first};
-			const auto& ins2{*m_T2.insert(std::move(o2)).first};
-			InsertPointers(ins1, ins2);
-		}
-
-
-		auto Insert(T1&& o1, T2&& o2 = T2{})
-		{
-			const auto& ins1{*m_T1.insert(std::move(o1)).first};
-			const auto& ins2{*m_T2.insert(std::move(o2)).first};
-			InsertPointers(ins1, ins2);
-		}
-
-
-		auto Insert(const T2& o2, const T1& o1 = T1{})
-		{
-			Insert(o1, o2);
-		}
-
-
-		auto Insert(T2&& o2, const T1& o1 = T1{})
-		{
-			Insert(o1, std::move(o2));
-		}
-
-
-		auto Insert(const T2& o2, T1&& o1 = T1{})
-		{
-			Insert(std::move(o1), o2);
-		}
-
-
-		auto Insert(T2&& o2, T1&& o1 = T1{})
-		{
-			Insert(std::move(o1), std::move(o2));
-		}
-
-
-		auto Erase(const T1& o1)
-		{
-			const auto& o2{*m_T2.find(m_T1ToT2.find(const_cast<T1*>(&o1))->second)};
-			Erase(o1, o2);
-		}
-
-
-		auto Erase(const T2& o2)
-		{
-			const auto& o1{*m_T1.find(m_T2ToT1.find(const_cast<T2*>(&o2))->second)};
-			Erase(o1, o2);
-		}
-
-
-		auto Swap(Bimap& other)
-		{
-			m_T1.swap(other.m_T1);
-			m_T2.swap(other.m_T2);
-			m_T1ToT2.swap(other.m_T1ToT2);
-			m_T2ToT1.swap(other.m_T2ToT1);
-		}
-
-
-		[[nodiscard]] auto Contains(const T1& o1)
-		{
-			const auto t1Contains{m_T1.contains(o1)};
-
-			if constexpr (SafeMode)
+			auto Clear()
 			{
-				const auto t1ToT2It{m_T1ToT2.find(const_cast<T1*>(&o1))};
-				if (const std::array allContains{t1Contains, (t1ToT2It != nullptr), m_T2.find(*t1ToT2It->second)};
-					!std::equal(allContains))
-				{
-					throw std::runtime_error{ERR_MSG_PREFIX + "inclusion is undecidable."};
-				}
+				m_T1.clear();
+				m_T2.clear();
+				m_T1ToT2.clear();
+				m_T2ToT1.clear();
 			}
 
-			return t1Contains;
-		}
-
-
-		[[nodiscard]] auto Contains(const T2& o2)
-		{
-			const auto t2Contains{m_T2.contains(o2)};
-
-			if constexpr (SafeMode)
+			auto Insert(const T1& o1, const T2& o2 = T2{})
 			{
-				const auto t2ToT1It{m_T1ToT2.find(const_cast<T2*>(&o2))};
-				if (const std::array allContains{t2Contains, (t2ToT1It != nullptr), m_T1.find(*t2ToT1It->second)};
-					!std::equal(allContains))
-				{
-					throw std::runtime_error{ERR_MSG_PREFIX + "inclusion is undecidable."};
-				}
+				const auto& ins1{*m_T1.insert(o1).first};
+				const auto& ins2{*m_T2.insert(o2).first};
+				InsertPointers(ins1, ins2);
 			}
 
-			return t2Contains;
-		}
+			auto Insert(T1&& o1, const T2& o2 = T2{})
+			{
+				const auto& ins1{*m_T1.insert(std::move(o1)).first};
+				const auto& ins2{*m_T2.insert(o2).first};
+				InsertPointers(ins1, ins2);
+			}
 
+			auto Insert(const T1& o1, T2&& o2 = T2{})
+			{
+				const auto& ins1{*m_T1.insert(o1).first};
+				const auto& ins2{*m_T2.insert(std::move(o2)).first};
+				InsertPointers(ins1, ins2);
+			}
 
-		[[nodiscard]] const auto& operator[](const T1& o1) const
-		{
-			const auto& elem{*m_T1.find(o1)};
-			return m_T1ToT2[const_cast<T1*>(&elem)];
-		}
+			auto Insert(T1&& o1, T2&& o2 = T2{})
+			{
+				const auto& ins1{*m_T1.insert(std::move(o1)).first};
+				const auto& ins2{*m_T2.insert(std::move(o2)).first};
+				InsertPointers(ins1, ins2);
+			}
 
+			auto Insert(const T2& o2, const T1& o1 = T1{})
+			{
+				Insert(o1, o2);
+			}
 
-		[[nodiscard]] auto& operator[](const T1& o1)
-		{
-			return const_cast<T2&>(const_cast<const Bimap*>(this)->operator[](o1));
-		}
+			auto Insert(T2&& o2, const T1& o1 = T1{})
+			{
+				Insert(o1, std::move(o2));
+			}
 
+			auto Insert(const T2& o2, T1&& o1 = T1{})
+			{
+				Insert(std::move(o1), o2);
+			}
 
-		[[nodiscard]] const auto& operator[](const T2& o2) const
-		{
-			const auto& elem{*m_T2.find(o2)};
-			return m_T2ToT1[const_cast<T2*>(&elem)];
-		}
+			auto Insert(T2&& o2, T1&& o1 = T1{})
+			{
+				Insert(std::move(o1), std::move(o2));
+			}
 
+			auto Erase(const T1& o1)
+			{
+				const auto& o2{*m_T2.find(m_T1ToT2.find(const_cast<T1*>(&o1))->second)};
+				Erase(o1, o2);
+			}
 
-		[[nodiscard]] auto& operator[](const T2& o2)
-		{
-			return const_cast<T1&>(const_cast<const Bimap*>(this)->operator[](o2));
-		}
+			auto Erase(const T2& o2)
+			{
+				const auto& o1{*m_T1.find(m_T2ToT1.find(const_cast<T2*>(&o2))->second)};
+				Erase(o1, o2);
+			}
 
+			auto Swap(Bimap& other)
+			{
+				m_T1.swap(other.m_T1);
+				m_T2.swap(other.m_T2);
+				m_T1ToT2.swap(other.m_T1ToT2);
+				m_T2ToT1.swap(other.m_T2ToT1);
+			}
 
-		[[nodiscard]] const auto& At(const T1& o1) const
-		{
-			const auto& elem{*m_T1.find(o1)};
-			return *m_T1ToT2.at(const_cast<T1*>(&elem));
-		}
+			[[nodiscard]] auto Contains(const T1& o1)
+			{
+				const auto t1Contains{m_T1.contains(o1)};
 
+				if constexpr (SafeMode)
+				{
+					const auto t1ToT2It{m_T1ToT2.find(const_cast<T1*>(&o1))};
+					if (const std::array allContains{t1Contains, (t1ToT2It != nullptr), m_T2.find(*t1ToT2It->second)};
+						!std::equal(allContains))
+					{
+						throw std::runtime_error{ERR_MSG_PREFIX + "inclusion is undecidable."};
+					}
+				}
 
-		[[nodiscard]] auto& At(const T1& o1)
-		{
-			return const_cast<T2&>(const_cast<const Bimap*>(this)->At(o1));
-		}
+				return t1Contains;
+			}
 
+			[[nodiscard]] auto Contains(const T2& o2)
+			{
+				const auto t2Contains{m_T2.contains(o2)};
 
-		[[nodiscard]] const auto& At(const T2& o2) const
-		{
-			const auto& elem{*m_T2.find(o2)};
-			return *m_T2ToT1.at(const_cast<T2*>(&elem));
-		}
+				if constexpr (SafeMode)
+				{
+					const auto t2ToT1It{m_T1ToT2.find(const_cast<T2*>(&o2))};
+					if (const std::array allContains{t2Contains, (t2ToT1It != nullptr), m_T1.find(*t2ToT1It->second)};
+						!std::equal(allContains))
+					{
+						throw std::runtime_error{ERR_MSG_PREFIX + "inclusion is undecidable."};
+					}
+				}
 
-		[[nodiscard]] auto& At(const T2& o2)
-		{
-			return const_cast<T1&>(const_cast<const Bimap*>(this)->At(o2));
-		}
+				return t2Contains;
+			}
 
+			[[nodiscard]] auto operator[](const T1& o1) const -> const auto&
+			{
+				const auto& elem{*m_T1.find(o1)};
+				return m_T1ToT2[const_cast<T1*>(&elem)];
+			}
+
+			[[nodiscard]] auto operator[](const T1& o1) -> auto&
+			{
+				return const_cast<T2&>(const_cast<const Bimap*>(this)->operator[](o1));
+			}
+
+			[[nodiscard]] auto operator[](const T2& o2) const -> const auto&
+			{
+				const auto& elem{*m_T2.find(o2)};
+				return m_T2ToT1[const_cast<T2*>(&elem)];
+			}
+
+			[[nodiscard]] auto operator[](const T2& o2) -> auto&
+			{
+				return const_cast<T1&>(const_cast<const Bimap*>(this)->operator[](o2));
+			}
+
+			[[nodiscard]] auto At(const T1& o1) const -> const auto&
+			{
+				const auto& elem{*m_T1.find(o1)};
+				return *m_T1ToT2.at(const_cast<T1*>(&elem));
+			}
+
+			[[nodiscard]] auto At(const T1& o1) -> auto&
+			{
+				return const_cast<T2&>(const_cast<const Bimap*>(this)->At(o1));
+			}
+
+			[[nodiscard]] auto At(const T2& o2) const -> const auto&
+			{
+				const auto& elem{*m_T2.find(o2)};
+				return *m_T2ToT1.at(const_cast<T2*>(&elem));
+			}
+
+			[[nodiscard]] auto At(const T2& o2) -> auto&
+			{
+				return const_cast<T1&>(const_cast<const Bimap*>(this)->At(o2));
+			}
 
 		private:
-			void InsertPointers(const T1& left, const T2& right)
+			auto InsertPointers(const T1& left, const T2& right) -> void
 			{
 				const auto leftPtr{const_cast<T1*>(&left)};
 				const auto rightPtr{const_cast<T2*>(&right)};
@@ -332,7 +298,7 @@ namespace leopph::internal
 				m_T2ToT1[rightPtr] = leftPtr;
 			}
 
-			void Erase(const T1& o1, const T2& o2)
+			auto Erase(const T1& o1, const T2& o2) -> void
 			{
 				m_T1ToT2.erase(const_cast<T1*>(&o1));
 				m_T2ToT1.erase(const_cast<T2*>(&o2));

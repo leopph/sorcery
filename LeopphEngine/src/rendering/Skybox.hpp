@@ -18,30 +18,29 @@ namespace leopph
 	 * See "camerabackground.h" for more details. */
 	class Skybox
 	{
-	public:
-		LEOPPHAPI explicit Skybox(const std::filesystem::path& right, const std::filesystem::path& left,
-							  const std::filesystem::path& top, const std::filesystem::path& bottom,
-							  const std::filesystem::path& front,const std::filesystem::path& back);
-		LEOPPHAPI Skybox(const Skybox& other);
-		LEOPPHAPI Skybox(Skybox&& other) noexcept;
+		public:
+			LEOPPHAPI explicit Skybox(const std::filesystem::path& right, const std::filesystem::path& left,
+			                          const std::filesystem::path& top, const std::filesystem::path& bottom,
+			                          const std::filesystem::path& front, const std::filesystem::path& back);
+			LEOPPHAPI Skybox(const Skybox& other);
+			LEOPPHAPI Skybox(Skybox&& other) noexcept;
 
-		LEOPPHAPI ~Skybox();
+			LEOPPHAPI ~Skybox();
 
-		LEOPPHAPI Skybox& operator=(const Skybox& other);
-		LEOPPHAPI Skybox& operator=(Skybox&& other) noexcept;
+			LEOPPHAPI auto operator=(const Skybox& other) -> Skybox&;
+			LEOPPHAPI auto operator=(Skybox&& other) noexcept -> Skybox&;
 
-		LEOPPHAPI inline const std::filesystem::path& AllFilePaths() const;
-		LEOPPHAPI inline const std::filesystem::path& RightPath() const;
-		LEOPPHAPI inline const std::filesystem::path& LeftPath() const;
-		LEOPPHAPI inline const std::filesystem::path& TopPath() const;
-		LEOPPHAPI inline const std::filesystem::path& BottomPath() const;
-		LEOPPHAPI inline const std::filesystem::path& FrontPath() const;
-		LEOPPHAPI inline const std::filesystem::path& BackPath() const;
+			LEOPPHAPI inline auto AllFilePaths() const -> const std::filesystem::path&;
+			LEOPPHAPI inline auto RightPath() const -> const std::filesystem::path&;
+			LEOPPHAPI inline auto LeftPath() const -> const std::filesystem::path&;
+			LEOPPHAPI inline auto TopPath() const -> const std::filesystem::path&;
+			LEOPPHAPI inline auto BottomPath() const -> const std::filesystem::path&;
+			LEOPPHAPI inline auto FrontPath() const -> const std::filesystem::path&;
+			LEOPPHAPI inline auto BackPath() const -> const std::filesystem::path&;
 
+		private:
+			auto Deinit() -> void;
 
-	private:
-		void Deinit();
-
-		internal::SkyboxImpl* m_Impl;
+			internal::SkyboxImpl* m_Impl;
 	};
 }

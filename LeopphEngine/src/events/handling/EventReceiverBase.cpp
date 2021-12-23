@@ -3,7 +3,7 @@
 
 namespace leopph::internal
 {
-	bool EventReceiverBase::operator==(const EventReceiverBase& other) const
+	auto EventReceiverBase::operator==(const EventReceiverBase& other) const -> bool
 	{
 		return this == &other;
 	}

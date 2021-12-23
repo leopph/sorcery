@@ -9,7 +9,6 @@
 #include <memory>
 
 
-
 namespace leopph
 {
 	/* The EventReceiverHandle class provides a way to wrap individual functions
@@ -22,7 +21,6 @@ namespace leopph
 			/* The signature of the handler function. */
 			using EventCallbackType = void(typename EventReceiver<EventType>::EventParamType);
 
-
 		private:
 			class InternalReceiver final : public EventReceiver<EventType>
 			{
@@ -31,17 +29,14 @@ namespace leopph
 						m_Callback{std::move(callback)}
 					{}
 
-
 				private:
-					void OnEventReceived(typename EventReceiver<EventType>::EventParamType event) override
+					auto OnEventReceived(typename EventReceiver<EventType>::EventParamType event) -> void override
 					{
 						m_Callback(event);
 					}
 
-
 					std::function<EventCallbackType> m_Callback;
 			};
-
 
 
 		public:
@@ -49,15 +44,13 @@ namespace leopph
 				m_Receiver{std::make_shared<InternalReceiver>(std::move(callback))}
 			{}
 
-
 			/* Handlers are equal if they refer to the same internally stored receiver.
 			 * Duplicated handlers are equal, but handler referring to identical but
 			 * separately registered receivers are not. */
-			LEOPPHAPI bool operator==(const EventReceiverHandle& other) const
+			LEOPPHAPI auto operator==(const EventReceiverHandle& other) const -> bool
 			{
 				return m_Receiver == other.m_Receiver;
 			}
-
 
 		private:
 			std::shared_ptr<InternalReceiver> m_Receiver;

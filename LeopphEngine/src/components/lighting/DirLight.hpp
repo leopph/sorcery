@@ -14,15 +14,15 @@ namespace leopph
 		public:
 			/* The direction where the DirectionalLight shines.
 			 * This is exactly the same as the owning Entity's forward, or Z vector. */
-			LEOPPHAPI const Vector3& Direction() const;
+			LEOPPHAPI auto Direction() const -> const Vector3&;
 
 			LEOPPHAPI explicit DirectionalLight(leopph::Entity* entity);
 
 			DirectionalLight(const DirectionalLight&) = delete;
-			void operator=(const DirectionalLight&) = delete;
+			auto operator=(const DirectionalLight&) -> void = delete;
 
 			DirectionalLight(DirectionalLight&&) = delete;
-			void operator=(DirectionalLight&&) = delete;
+			auto operator=(DirectionalLight&&) -> void = delete;
 
 			LEOPPHAPI ~DirectionalLight() override;
 	};

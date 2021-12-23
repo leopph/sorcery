@@ -10,7 +10,7 @@
 namespace leopph::internal
 {
 	/* The m_MeshData class represents a loaded set of vertices, indices, and materials.
-	 * It can be used to create renderable objects. */ 
+	 * It can be used to create renderable objects. */
 	struct MeshData
 	{
 		// The vertex data.

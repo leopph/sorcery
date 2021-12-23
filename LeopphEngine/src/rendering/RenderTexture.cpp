@@ -18,7 +18,7 @@ namespace leopph::internal
 		m_Resolution{Vector2{WindowBase::Get().Width(), WindowBase::Get().Height()} * WindowBase::Get().RenderMultiplier()}
 	{
 		glCreateFramebuffers(1, &m_FramebufferName);
-		
+
 		InitTextures(static_cast<unsigned>(m_Resolution[0]), static_cast<unsigned>(m_Resolution[1]));
 
 		glCreateBuffers(1, &m_VertexBufferName);
@@ -37,7 +37,6 @@ namespace leopph::internal
 		glVertexArrayAttribBinding(m_VertexArrayName, 1, 0);
 	}
 
-
 	RenderTexture::~RenderTexture()
 	{
 		DeinitTextures();
@@ -46,8 +45,7 @@ namespace leopph::internal
 		glDeleteBuffers(1, &m_VertexBufferName);
 	}
 
-
-	void RenderTexture::DrawToTexture() const
+	auto RenderTexture::DrawToTexture() const -> void
 	{
 		BindAsRenderTarget();
 		glBindVertexArray(m_VertexArrayName);
@@ -56,34 +54,29 @@ namespace leopph::internal
 		UnbindAsRenderTarget();
 	}
 
-
-	void RenderTexture::DrawToWindow() const
+	auto RenderTexture::DrawToWindow() const -> void
 	{
 		glBlitNamedFramebuffer(m_FramebufferName, 0, 0, 0, static_cast<GLsizei>(m_Resolution[0]), static_cast<GLsizei>(m_Resolution[1]), 0, 0, static_cast<GLsizei>(WindowBase::Get().Width()), static_cast<GLsizei>(WindowBase::Get().Height()), GL_COLOR_BUFFER_BIT, GL_LINEAR);
 	}
 
-
-	void RenderTexture::BindAsRenderTarget() const
+	auto RenderTexture::BindAsRenderTarget() const -> void
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, m_FramebufferName);
 		glViewport(0, 0, static_cast<GLsizei>(m_Resolution[0]), static_cast<GLsizei>(m_Resolution[1]));
 	}
 
-
-	void RenderTexture::UnbindAsRenderTarget() const
+	auto RenderTexture::UnbindAsRenderTarget() const -> void
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		glViewport(0 ,0, static_cast<GLsizei>(WindowBase::Get().Width()), static_cast<GLsizei>(WindowBase::Get().Height()));
+		glViewport(0, 0, static_cast<GLsizei>(WindowBase::Get().Width()), static_cast<GLsizei>(WindowBase::Get().Height()));
 	}
 
-
-	unsigned RenderTexture::FramebufferName() const
+	auto RenderTexture::FramebufferName() const -> unsigned
 	{
 		return m_FramebufferName;
 	}
 
-
-	void RenderTexture::Clear() const
+	auto RenderTexture::Clear() const -> void
 	{
 		constexpr std::array clearColor{0.f, 0.f, 0.f, 1.f};
 		glClearNamedFramebufferfv(m_FramebufferName, GL_COLOR, 0, clearColor.data());
@@ -91,8 +84,7 @@ namespace leopph::internal
 		glClearNamedFramebufferfv(m_FramebufferName, GL_DEPTH, 0, clearDepth.data());
 	}
 
-
-	void RenderTexture::InitTextures(const unsigned width, const unsigned height)
+	auto RenderTexture::InitTextures(const unsigned width, const unsigned height) -> void
 	{
 		glCreateTextures(GL_TEXTURE_2D, 1, &m_ColorTextureName);
 		glTextureStorage2D(m_ColorTextureName, 1, GL_RGB8, static_cast<GLsizei>(width), static_cast<GLsizei>(height));
@@ -108,18 +100,16 @@ namespace leopph::internal
 		glNamedFramebufferDrawBuffer(m_FramebufferName, GL_COLOR_ATTACHMENT0);
 	}
 
-
-	void RenderTexture::DeinitTextures() const
+	auto RenderTexture::DeinitTextures() const -> void
 	{
 		glDeleteTextures(1, &m_ColorTextureName);
 		glDeleteRenderbuffers(1, &m_DepthBufferName);
 	}
 
-	void RenderTexture::OnEventReceived(EventParamType event)
+	auto RenderTexture::OnEventReceived(EventParamType event) -> void
 	{
 		m_Resolution = event.NewResolution * event.NewResolutionMultiplier;
 		DeinitTextures();
 		InitTextures(static_cast<unsigned>(m_Resolution[0]), static_cast<unsigned>(m_Resolution[1]));
 	}
-
 }

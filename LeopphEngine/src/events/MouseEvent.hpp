@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../math/Vector.hpp"
 #include "Event.hpp"
+#include "../math/Vector.hpp"
 
 
 namespace leopph::internal

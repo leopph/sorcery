@@ -21,7 +21,7 @@ namespace leopph::internal
 		});
 	}
 
-	void ShaderFamily::SetBufferBinding(const std::string_view bufName, const int bindingIndex)
+	auto ShaderFamily::SetBufferBinding(const std::string_view bufName, const int bindingIndex) -> void
 	{
 		if (const auto it{m_Bindings.find(bufName)};
 			it != m_Bindings.end())
@@ -38,12 +38,12 @@ namespace leopph::internal
 		}
 	}
 
-	ShaderFamily::FlagInfoProxy ShaderFamily::GetFlagInfo() const
+	auto ShaderFamily::GetFlagInfo() const -> ShaderFamily::FlagInfoProxy
 	{
 		return FlagInfoProxy{FlagInfo{m_Flags}};
 	}
 
-	ShaderProgram& ShaderFamily::GetPermutation(const FlagInfoProxy& flagInfo)
+	auto ShaderFamily::GetPermutation(const FlagInfoProxy& flagInfo) -> ShaderProgram&
 	{
 		const auto flagBitMap{static_cast<std::vector<bool>>(flagInfo)};
 
@@ -69,7 +69,7 @@ namespace leopph::internal
 		return shaderProgram;
 	}
 
-	std::string ShaderFamily::BuildSourceString(std::vector<std::string> srcLines, const std::vector<std::string>& flags)
+	auto ShaderFamily::BuildSourceString(std::vector<std::string> srcLines, const std::vector<std::string>& flags) -> std::string
 	{
 		std::string ret;
 
@@ -92,7 +92,7 @@ namespace leopph::internal
 		return ret;
 	}
 
-	ShaderFamily::ProcessedSource ShaderFamily::ProcessSource(const std::string& src)
+	auto ShaderFamily::ProcessSource(const std::string& src) -> ShaderFamily::ProcessedSource
 	{
 		ProcessedSource ret;
 

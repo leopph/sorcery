@@ -10,12 +10,12 @@ namespace leopph
 	 * add your own data and broadcast it. */
 	class Event
 	{
-	public:
-		LEOPPHAPI Event() = default;
-		LEOPPHAPI Event(const Event& other) = default;
-		LEOPPHAPI Event(Event&& other) = default;
-		LEOPPHAPI Event& operator=(const Event& other) = default;
-		LEOPPHAPI Event& operator=(Event&& other) = default;
-		LEOPPHAPI virtual ~Event() = 0;
+		public:
+			LEOPPHAPI Event() = default;
+			LEOPPHAPI Event(const Event& other) = default;
+			LEOPPHAPI Event(Event&& other) = default;
+			LEOPPHAPI auto operator=(const Event& other) -> Event& = default;
+			LEOPPHAPI auto operator=(Event&& other) -> Event& = default;
+			LEOPPHAPI virtual ~Event() = 0;
 	};
 }

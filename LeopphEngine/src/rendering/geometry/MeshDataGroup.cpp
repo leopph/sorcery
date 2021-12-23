@@ -18,22 +18,22 @@ namespace leopph::internal
 		DataManager::Instance().UnregisterMeshDataGroup(this);
 	}
 
-	const std::string& MeshDataGroup::Id() const
+	auto MeshDataGroup::Id() const -> const std::string&
 	{
 		return m_Id;
 	}
 
-	const std::vector<MeshData>& MeshDataGroup::Data() const
+	auto MeshDataGroup::Data() const -> const std::vector<MeshData>&
 	{
 		return m_MeshData;
 	}
 
-	std::vector<MeshData>& MeshDataGroup::Data()
+	auto MeshDataGroup::Data() -> std::vector<MeshData>&
 	{
 		return m_MeshData;
 	}
 
-	std::string MeshDataGroup::GenerateId() noexcept
+	auto MeshDataGroup::GenerateId() noexcept -> std::string
 	{
 		static std::string idBase{"Leopph+Engine?Mesh&Data%Collection#"};
 		static auto idCount{0ull};

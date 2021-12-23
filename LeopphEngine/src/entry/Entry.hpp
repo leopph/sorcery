@@ -7,7 +7,7 @@ Entry point for the engine.
 INCLUDE THIS EXACTLY ONCE IN YOUR CODE!
 -------------------------------------*/
 
-int main()
+auto main() -> int
 {
 	return leopph::internal::Main(leopph::Init);
 }

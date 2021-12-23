@@ -7,41 +7,39 @@
 #include <cstddef>
 
 
-
 namespace leopph::internal
 {
 	class SpotLightShadowMap final : EventReceiver<SpotShadowResolutionEvent>
 	{
-	public:
-		SpotLightShadowMap();
+		public:
+			SpotLightShadowMap();
 
-		SpotLightShadowMap(const SpotLightShadowMap&) = delete;
-		SpotLightShadowMap(SpotLightShadowMap&& other) noexcept;
+			SpotLightShadowMap(const SpotLightShadowMap&) = delete;
+			SpotLightShadowMap(SpotLightShadowMap&& other) noexcept;
 
-		~SpotLightShadowMap() override;
+			~SpotLightShadowMap() override;
 
-		void operator=(const SpotLightShadowMap&) = delete;
-		SpotLightShadowMap& operator=(SpotLightShadowMap&& other) noexcept;
+			auto operator=(const SpotLightShadowMap&) -> void = delete;
+			auto operator=(SpotLightShadowMap&& other) noexcept -> SpotLightShadowMap&;
 
-		void BindForWriting() const;
-		void UnbindFromWriting() const;
+			auto BindForWriting() const -> void;
+			auto UnbindFromWriting() const -> void;
 
-		[[nodiscard]] int BindForReading(ShaderProgram& shader, int textureUnit) const;
-		void UnbindFromReading() const;
+			[[nodiscard]] auto BindForReading(ShaderProgram& shader, int textureUnit) const -> int;
+			auto UnbindFromReading() const -> void;
 
-		void Clear() const;
+			auto Clear() const -> void;
 
-		const unsigned& Id;
+			const unsigned& Id;
 
+		private:
+			auto Init() -> void;
+			auto Deinit() const -> void;
+			auto OnEventReceived(EventParamType event) -> void override;
 
-	private:
-		void Init();
-		void Deinit() const;
-		void OnEventReceived(EventParamType event) override;
-
-		unsigned m_Fbo;
-		unsigned m_DepthTex;
-		mutable int m_CurrentBindIndex;
-		std::size_t m_Resolution;
+			unsigned m_Fbo;
+			unsigned m_DepthTex;
+			mutable int m_CurrentBindIndex;
+			std::size_t m_Resolution;
 	};
 }

@@ -27,65 +27,64 @@ namespace leopph
 				Vertical
 			};
 
+
 			/* Set the near clip plane distance.
 			 * The near clip plane is the plane closest to the Camera, where rendering begins.
 			 * Objects closer to the Camera than this value will not be visible. */
-			LEOPPHAPI void NearClipPlane(float newPlane);
+			LEOPPHAPI auto NearClipPlane(float newPlane) -> void;
 
 			/* Get the near clip plane distance.
 			 * The near clip plane is the plane closest to the Camera, where rendering begins.
 			 * Objects closer to the Camera than this value will not be visible. */
-			LEOPPHAPI float NearClipPlane() const;
+			LEOPPHAPI auto NearClipPlane() const -> float;
 
 			/* Set the far clip plane distance.
 			 * The far clip plane is the plane farthest from the Camera, where rendering ends.
 			 * Objects farther from the Camera than this value will not be visible. */
-			LEOPPHAPI void FarClipPlane(float newPlane);
+			LEOPPHAPI auto FarClipPlane(float newPlane) -> void;
 
 			/* Get the far clip plane distance.
 			 * The far clip plane is the plane farthest from the Camera, where rendering ends.
 			 * Objects farther from the Camera than this value will not be visible. */
-			LEOPPHAPI float FarClipPlane() const;
+			LEOPPHAPI auto FarClipPlane() const -> float;
 
 			/* Set the current FOV value of the Camera in degrees.
 			 * For non-symmetric viewing volumes, direction specifies the interpretation. */
-			LEOPPHAPI void Fov(float degrees, FovDirection direction);
+			LEOPPHAPI auto Fov(float degrees, FovDirection direction) -> void;
 
 			/* Get the current FOV value of the Camera in degrees.
 			 * For non-symmetric viewing volumes, direction specifies the interpretation. */
-			LEOPPHAPI float Fov(FovDirection direction) const;
+			LEOPPHAPI auto Fov(FovDirection direction) const -> float;
 
 			/* Matrix that translates world positions to Camera-space.
 			 * Used during rendering. */
-			LEOPPHAPI Matrix4 ViewMatrix() const;
+			LEOPPHAPI auto ViewMatrix() const -> Matrix4;
 
 			/* Matrix that projects Camera-space coordinates to Clip-space.
 			 * Used during rendering. */
-			LEOPPHAPI Matrix4 ProjectionMatrix() const;
+			LEOPPHAPI auto ProjectionMatrix() const -> Matrix4;
 
 			/* Set this Camera as the currently active one.
 			 * The active Camera will be used to render scene. */
-			LEOPPHAPI void Activate();
+			LEOPPHAPI auto Activate() -> void;
 
 			/* Get the Camera's background.
 			 * The Camera's background determines the visuals that the Camera "sees" where no Objects have been drawn to. */
-			LEOPPHAPI const CameraBackground& Background() const;
+			LEOPPHAPI auto Background() const -> const CameraBackground&;
 
 			/* Set the Camera's background.
 			 * The Camera's background determines the visuals that the Camera "sees" where no Objects have been drawn to. */
-			LEOPPHAPI void Background(CameraBackground&& background);
-
+			LEOPPHAPI auto Background(CameraBackground&& background) -> void;
 
 			LEOPPHAPI explicit Camera(leopph::Entity* entity);
 
 			Camera(const Camera&) = delete;
-			void operator=(const Camera&) = delete;
+			auto operator=(const Camera&) -> void = delete;
 
 			Camera(Camera&&) = delete;
-			void operator=(Camera&&) = delete;
+			auto operator=(Camera&&) -> void = delete;
 
 			LEOPPHAPI ~Camera() override;
-
 
 		private:
 			enum class FovConversionDirection
@@ -93,6 +92,7 @@ namespace leopph
 				VerticalToHorizontal,
 				HorizontalToVertical
 			};
+
 
 			static Camera* s_Active;
 
@@ -103,7 +103,7 @@ namespace leopph
 
 			CameraBackground m_Background;
 
-			[[nodiscard]] float ConvertFov(float fov, FovConversionDirection conversion) const;
-			void OnEventReceived(EventParamType event) override;
+			[[nodiscard]] auto ConvertFov(float fov, FovConversionDirection conversion) const -> float;
+			auto OnEventReceived(EventParamType event) -> void override;
 	};
 }

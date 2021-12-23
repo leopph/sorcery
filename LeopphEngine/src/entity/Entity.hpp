@@ -29,21 +29,21 @@ namespace leopph
 			LEOPPHAPI explicit Entity(std::string name);
 
 			Entity(const Entity&) = delete;
-			void operator=(const Entity&) = delete;
+			auto operator=(const Entity&) -> void = delete;
 
 			Entity(Entity&&) = delete;
-			void operator=(Entity&&) = delete;
+			auto operator=(Entity&&) -> void = delete;
 
 			LEOPPHAPI ~Entity() noexcept;
 
 			/* Returns a pointer to the Entity that's name is equal to the given string.
 			 * Returns NULL if no such Entity exists. */
-			LEOPPHAPI static Entity* Find(const std::string& name);
+			LEOPPHAPI static auto Find(const std::string& name) -> Entity*;
 
 			/* Attach a newly constructed Component of type T to the Entity.
 			 * Returns a non-owning pointer the Component. */
 			template<std::derived_from<Component> T, class... Args>
-			T* CreateComponent(Args&&... args)
+			auto CreateComponent(Args&&... args) -> T*
 			{
 				auto component{std::make_unique<T>(this, std::forward<Args>(args)...)};
 				auto ret{component.get()};
@@ -53,14 +53,14 @@ namespace leopph
 
 			/* Remove the given Component from the Entity.
 			 * The component is detached and destroyed. */
-			LEOPPHAPI void RemoveComponent(const Component* component) const;
+			LEOPPHAPI auto RemoveComponent(const Component* component) const -> void;
 
 			/* Look for a Component of type T that is attached to the Entity.
 			 * If there is none, NULL is returned.
 			 * Otherwise, a pointer to the first matching Component is returned.
 			 * There are no guarantees of the order of Components attached to the Entity. */
 			template<std::derived_from<Component> T>
-			T* GetComponent() const
+			auto GetComponent() const -> T*
 			{
 				for (const auto& component : Components())
 				{
@@ -75,19 +75,18 @@ namespace leopph
 			}
 
 			/* The Entity's name is a unique identifier. */
-			LEOPPHAPI const std::string& Name() const;
+			LEOPPHAPI auto Name() const -> const std::string&;
 
 			/* The Entity's Transform describes its spatial properties. */
-			LEOPPHAPI Transform* Transform() const;
-
+			LEOPPHAPI auto Transform() const -> Transform*;
 
 		private:
 			// Registers the passed Component in DataManager.
-			LEOPPHAPI void RegisterComponent(std::unique_ptr<Component>&& component) const;
+			LEOPPHAPI auto RegisterComponent(std::unique_ptr<Component>&& component) const -> void;
 
 			// Returns a collection of Components attached to the Entity.
 			[[nodiscard]]
-			LEOPPHAPI std::vector<Component*> Components() const;
+			LEOPPHAPI auto Components() const -> std::vector<Component*>;
 
 			std::string m_Name;
 			leopph::Transform* m_Transform;

@@ -12,29 +12,27 @@ namespace leopph
 		public:
 			// Get the angle in degrees at which the light starts to fade out.
 			[[nodiscard]]
-			LEOPPHAPI float InnerAngle() const;
+			LEOPPHAPI auto InnerAngle() const -> float;
 
 			// Set the angle in degrees at which the light starts to fade out.
-			LEOPPHAPI void InnerAngle(float degrees);
+			LEOPPHAPI auto InnerAngle(float degrees) -> void;
 
 			// Get the angle in degrees at which the light is completely cut.
 			[[nodiscard]]
-			LEOPPHAPI float OuterAngle() const;
+			LEOPPHAPI auto OuterAngle() const -> float;
 
 			// Set the angle in degrees at which the light is completely cut.
-			LEOPPHAPI void OuterAngle(float degrees);
-
+			LEOPPHAPI auto OuterAngle(float degrees) -> void;
 
 			LEOPPHAPI explicit SpotLight(leopph::Entity* entity);
 
 			SpotLight(const SpotLight&) = delete;
-			void operator=(const SpotLight&) = delete;
+			auto operator=(const SpotLight&) -> void = delete;
 
 			SpotLight(SpotLight&&) = delete;
-			void operator=(SpotLight&&) = delete;
+			auto operator=(SpotLight&&) -> void = delete;
 
 			LEOPPHAPI ~SpotLight() override;
-
 
 		private:
 			float m_InnerAngle;

@@ -17,28 +17,27 @@ namespace leopph::internal
 			CubeShadowMap(const CubeShadowMap& other) = delete;
 			CubeShadowMap(CubeShadowMap&& other) = delete;
 
-			CubeShadowMap& operator=(const CubeShadowMap& other) = delete;
-			CubeShadowMap& operator=(CubeShadowMap&& other) = delete;
+			auto operator=(const CubeShadowMap& other) -> CubeShadowMap& = delete;
+			auto operator=(CubeShadowMap&& other) -> CubeShadowMap& = delete;
 
 			~CubeShadowMap() override;
 
-			void BindForWriting() const;
-			void UnbindFromWriting() const;
+			auto BindForWriting() const -> void;
+			auto UnbindFromWriting() const -> void;
 
-			[[nodiscard]] int BindForReading(ShaderProgram& shader, int texUnit);
-			void UnbindFromReading() const;
+			[[nodiscard]] auto BindForReading(ShaderProgram& shader, int texUnit) -> int;
+			auto UnbindFromReading() const -> void;
 
-			void Clear() const;
-
+			auto Clear() const -> void;
 
 		private:
 			unsigned m_FrameBufferName;
 			unsigned m_CubeMapName;
 			int m_BoundTexUnit;
 
-			void OnEventReceived(EventParamType event) override;
+			auto OnEventReceived(EventParamType event) -> void override;
 
-			void Init(std::size_t resolution);
-			void Deinit() const;
+			auto Init(std::size_t resolution) -> void;
+			auto Deinit() const -> void;
 	};
 }

@@ -10,5 +10,5 @@ DO NOT CALL THIS EXPLICITLY!
 
 namespace leopph::internal
 {
-	LEOPPHAPI int Main(decltype(Init) initFunc);
+	LEOPPHAPI auto Main(decltype(Init) initFunc) -> int;
 }

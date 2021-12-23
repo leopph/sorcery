@@ -11,40 +11,38 @@ namespace leopph::internal
 		public:
 			// Get the attenuations constanst value.
 			[[nodiscard]]
-			LEOPPHAPI float Constant() const;
+			LEOPPHAPI auto Constant() const -> float;
 
 			// Set the attenuation's constanst value.
-			LEOPPHAPI void Constant(float value);
+			LEOPPHAPI auto Constant(float value) -> void;
 
 			/* Get the attenuation's linear value.
 			 * This scales linearly with distance. */
 			[[nodiscard]]
-			LEOPPHAPI float Linear() const;
+			LEOPPHAPI auto Linear() const -> float;
 
 			/* Set the attenuation's linear value.
 			 * This scales linearly with distance. */
-			LEOPPHAPI void Linear(float value);
+			LEOPPHAPI auto Linear(float value) -> void;
 
 			/* Get the attenuation's quadratic value.
 			 * This scales quadratically with distance. */
 			[[nodiscard]]
-			LEOPPHAPI float Quadratic() const;
+			LEOPPHAPI auto Quadratic() const -> float;
 
 			/* Set the attenuation's quadratic value.
 			 * This scales quadratically with distance. */
-			LEOPPHAPI void Quadratic(float value);
-
+			LEOPPHAPI auto Quadratic(float value) -> void;
 
 			LEOPPHAPI explicit AttenuatedLight(leopph::Entity* entity, float constant = 1.0f, float linear = 0.14f, float quadratic = 0.07f, float range = 32);
 
 			AttenuatedLight(const AttenuatedLight&) = delete;
-			void operator=(const AttenuatedLight&) = delete;
+			auto operator=(const AttenuatedLight&) -> void = delete;
 
 			AttenuatedLight(AttenuatedLight&&) = delete;
-			void operator=(AttenuatedLight&&) = delete;
+			auto operator=(AttenuatedLight&&) -> void = delete;
 
 			LEOPPHAPI ~AttenuatedLight() override = 0;
-
 
 		private:
 			float m_Constant;

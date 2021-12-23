@@ -15,26 +15,22 @@ namespace leopph
 	Camera* Camera::s_Active{nullptr};
 	Camera* const& Camera::Active{s_Active};
 
-
-	void Camera::Activate()
+	auto Camera::Activate() -> void
 	{
 		s_Active = this;
 	}
 
-
-	const CameraBackground& Camera::Background() const
+	auto Camera::Background() const -> const CameraBackground&
 	{
 		return m_Background;
 	}
 
-
-	void Camera::Background(CameraBackground&& background)
+	auto Camera::Background(CameraBackground&& background) -> void
 	{
 		m_Background.color = background.color;
 		m_Background.skybox = std::move(background.skybox);
 		internal::WindowBase::Get().Background(m_Background.color);
 	}
-
 
 	Camera::Camera(leopph::Entity* const entity) :
 		Component{entity},
@@ -50,7 +46,6 @@ namespace leopph
 		}
 	}
 
-
 	Camera::~Camera()
 	{
 		if (s_Active == this)
@@ -59,8 +54,7 @@ namespace leopph
 		}
 	}
 
-
-	float Camera::ConvertFov(const float fov, const FovConversionDirection conversion) const
+	auto Camera::ConvertFov(const float fov, const FovConversionDirection conversion) const -> float
 	{
 		if (conversion == FovConversionDirection::VerticalToHorizontal)
 		{
@@ -77,32 +71,27 @@ namespace leopph
 		throw std::invalid_argument{errMsg};
 	}
 
-
-	void Camera::NearClipPlane(const float newPlane)
+	auto Camera::NearClipPlane(const float newPlane) -> void
 	{
 		m_NearClip = newPlane;
 	}
 
-
-	float Camera::NearClipPlane() const
+	auto Camera::NearClipPlane() const -> float
 	{
 		return m_NearClip;
 	}
 
-
-	void Camera::FarClipPlane(const float newPlane)
+	auto Camera::FarClipPlane(const float newPlane) -> void
 	{
 		m_FarClip = newPlane;
 	}
 
-
-	float Camera::FarClipPlane() const
+	auto Camera::FarClipPlane() const -> float
 	{
 		return m_FarClip;
 	}
 
-
-	void Camera::Fov(const float degrees, const FovDirection direction)
+	auto Camera::Fov(const float degrees, const FovDirection direction) -> void
 	{
 		if (direction == FovDirection::Horizontal)
 		{
@@ -114,8 +103,7 @@ namespace leopph
 		}
 	}
 
-
-	float Camera::Fov(const FovDirection direction) const
+	auto Camera::Fov(const FovDirection direction) const -> float
 	{
 		if (direction == FovDirection::Horizontal)
 		{
@@ -131,21 +119,18 @@ namespace leopph
 		throw std::invalid_argument{errMsg};
 	}
 
-
-	Matrix4 Camera::ViewMatrix() const
+	auto Camera::ViewMatrix() const -> Matrix4
 	{
 		return (static_cast<Matrix4>(Entity()->Transform()->Rotation()) * Matrix4::Translate(Entity()->Transform()->Position())).Inverse();
 	}
 
-
-	Matrix4 Camera::ProjectionMatrix() const
+	auto Camera::ProjectionMatrix() const -> Matrix4
 	{
 		const auto fov{math::ToRadians(ConvertFov(m_HorizontalFovDegrees, FovConversionDirection::HorizontalToVertical))};
 		return Matrix4::Perspective(fov, m_AspectRatio, m_NearClip, m_FarClip);
 	}
 
-
-	void Camera::OnEventReceived(EventParamType event)
+	auto Camera::OnEventReceived(EventParamType event) -> void
 	{
 		m_AspectRatio = event.NewResolution[0] / event.NewResolution[1];
 	}

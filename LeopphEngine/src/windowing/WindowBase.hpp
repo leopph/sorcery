@@ -11,67 +11,65 @@ namespace leopph::internal
 {
 	class WindowBase
 	{
-	public:
-		static WindowBase& Get(unsigned width = 1280u, unsigned height = 720u,
-			const std::string& title = "LeopphEngine Application", bool fullscreen = false);
-		static void Destroy();
+		public:
+			static auto Get(unsigned width = 1280u, unsigned height = 720u,
+			                const std::string& title = "LeopphEngine Application", bool fullscreen = false) -> WindowBase&;
+			static auto Destroy() -> void;
 
-		[[nodiscard]]
-		virtual unsigned Width() const = 0;
-		virtual void Width(unsigned newWidth) = 0;
+			[[nodiscard]]
+			virtual auto Width() const -> unsigned = 0;
+			virtual auto Width(unsigned newWidth) -> void = 0;
 
-		[[nodiscard]]
-		virtual unsigned Height() const = 0;
-		virtual void Height(unsigned newHeight) = 0;
+			[[nodiscard]]
+			virtual auto Height() const -> unsigned = 0;
+			virtual auto Height(unsigned newHeight) -> void = 0;
 
-		[[nodiscard]]
-		float AspectRatio() const;
+			[[nodiscard]]
+			auto AspectRatio() const -> float;
 
-		[[nodiscard]]
-		virtual bool Fullscreen() const = 0;
-		virtual void Fullscreen(bool newValue) = 0;
+			[[nodiscard]]
+			virtual auto Fullscreen() const -> bool = 0;
+			virtual auto Fullscreen(bool newValue) -> void = 0;
 
-		[[nodiscard]]
-		virtual bool Vsync() const = 0;
-		virtual void Vsync(bool newValue) = 0;
+			[[nodiscard]]
+			virtual auto Vsync() const -> bool = 0;
+			virtual auto Vsync(bool newValue) -> void = 0;
 
-		[[nodiscard]]
-		virtual std::string_view Title() const = 0;
-		virtual void Title(std::string newTitle) = 0;
+			[[nodiscard]]
+			virtual auto Title() const -> std::string_view = 0;
+			virtual auto Title(std::string newTitle) -> void = 0;
 
-		[[nodiscard]]
-		virtual const Color& Background() const = 0;
-		virtual void Background(const Color& color) = 0;
+			[[nodiscard]]
+			virtual auto Background() const -> const Color& = 0;
+			virtual auto Background(const Color& color) -> void = 0;
 
-		[[nodiscard]]
-		virtual CursorState CursorMode() const = 0;
-		virtual void CursorMode(CursorState newState) = 0;
+			[[nodiscard]]
+			virtual auto CursorMode() const -> CursorState = 0;
+			virtual auto CursorMode(CursorState newState) -> void = 0;
 
-		[[nodiscard]]
-		virtual float RenderMultiplier() = 0;
-		virtual void RenderMultiplier(float newMult) = 0;
+			[[nodiscard]]
+			virtual auto RenderMultiplier() -> float = 0;
+			virtual auto RenderMultiplier(float newMult) -> void = 0;
 
-		virtual void PollEvents() = 0;
-		virtual void SwapBuffers() = 0;
-		virtual bool ShouldClose() = 0;
-		virtual void Clear() = 0;
+			virtual auto PollEvents() -> void = 0;
+			virtual auto SwapBuffers() -> void = 0;
+			virtual auto ShouldClose() -> bool = 0;
+			virtual auto Clear() -> void = 0;
 
+			WindowBase(const WindowBase& other) = delete;
+			WindowBase(WindowBase&& other) = delete;
 
-		WindowBase(const WindowBase& other) = delete;
-		WindowBase(WindowBase&& other) = delete;
+			auto operator=(const WindowBase& other) -> WindowBase& = delete;
+			auto operator=(WindowBase&& other) -> WindowBase& = delete;
 
-		WindowBase& operator=(const WindowBase& other) = delete;
-		WindowBase& operator=(WindowBase&& other) = delete;
+			virtual ~WindowBase() = 0;
 
-		virtual ~WindowBase() = 0;
+		protected:
+			WindowBase() = default;
 
+		private:
+			virtual auto InitKeys() -> void = 0;
 
-	protected:
-		WindowBase() = default;
-		
-	private:
-		virtual void InitKeys() = 0;
-		
-		static WindowBase* s_Instance;
+			static WindowBase* s_Instance;
 	};
 }

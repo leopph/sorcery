@@ -11,8 +11,8 @@ namespace leopph::internal
 	{
 		using is_transparent = void;
 
-		bool operator()(const Entity* left, const Entity* right) const;
-		bool operator()(const std::string& left, const Entity* right) const;
-		bool operator()(const Entity* left, const std::string& right) const;
+		auto operator()(const Entity* left, const Entity* right) const -> bool;
+		auto operator()(const std::string& left, const Entity* right) const -> bool;
+		auto operator()(const Entity* left, const std::string& right) const -> bool;
 	};
 }

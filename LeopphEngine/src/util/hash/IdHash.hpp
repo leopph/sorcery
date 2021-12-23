@@ -15,19 +15,21 @@ namespace leopph::internal
 		public:
 			using is_transparent = void;
 
-			template<class T> requires Idable<T> && NotPointer<T>
-			std::size_t operator()(const T& obj) const
+			template<class T>
+				requires Idable<T> && NotPointer<T>
+			auto operator()(const T& obj) const -> std::size_t
 			{
 				return m_Hash(obj.Id());
 			}
 
-			template<class T> requires Idable<T> && Pointer<T>
-			std::size_t operator()(const T& obj) const
+			template<class T>
+				requires Idable<T> && Pointer<T>
+			auto operator()(const T& obj) const -> std::size_t
 			{
 				return m_Hash(obj->Id());
 			}
 
-			std::size_t operator()(const std::string& str) const
+			auto operator()(const std::string& str) const -> std::size_t
 			{
 				return m_Hash(str);
 			}

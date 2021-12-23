@@ -5,7 +5,6 @@
 #include <cstddef>
 
 
-
 namespace leopph::internal
 {
 	class PointShadowResolutionEvent final : public Event

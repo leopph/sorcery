@@ -5,7 +5,6 @@
 #include <cstddef>
 
 
-
 namespace leopph::internal
 {
 	class SpotShadowResolutionEvent final : public Event

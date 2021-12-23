@@ -18,26 +18,25 @@ namespace leopph::internal
 
 			~RenderTexture() override;
 
-			RenderTexture& operator=(const RenderTexture& other) = delete;
-			RenderTexture& operator=(RenderTexture&& other) = delete;
+			auto operator=(const RenderTexture& other) -> RenderTexture& = delete;
+			auto operator=(RenderTexture&& other) -> RenderTexture& = delete;
 
-			void DrawToTexture() const;
-			void DrawToWindow() const;
+			auto DrawToTexture() const -> void;
+			auto DrawToWindow() const -> void;
 
-			void BindAsRenderTarget() const;
-			void UnbindAsRenderTarget() const;
+			auto BindAsRenderTarget() const -> void;
+			auto UnbindAsRenderTarget() const -> void;
 
 			[[nodiscard]]
-			unsigned FramebufferName() const;
+			auto FramebufferName() const -> unsigned;
 
-			void Clear() const;
-
+			auto Clear() const -> void;
 
 		private:
-			void InitTextures(unsigned width, unsigned height);
-			void DeinitTextures() const;
+			auto InitTextures(unsigned width, unsigned height) -> void;
+			auto DeinitTextures() const -> void;
 
-			void OnEventReceived(EventParamType event) override;
+			auto OnEventReceived(EventParamType event) -> void override;
 
 			unsigned m_FramebufferName;
 			unsigned m_ColorTextureName;
@@ -48,9 +47,9 @@ namespace leopph::internal
 
 			static constexpr std::array<float, 20> QUAD_VERTICES
 			{
-				-1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
+				-1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
 				-1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
-				1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
+				1.0f, 1.0f, 0.0f, 1.0f, 1.0f,
 				1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
 			};
 	};

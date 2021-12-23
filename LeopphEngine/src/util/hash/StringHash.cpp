@@ -3,12 +3,12 @@
 
 namespace leopph::internal
 {
-	std::size_t StringHash::operator()(const std::string_view sv) const
+	auto StringHash::operator()(const std::string_view sv) const -> std::size_t
 	{
 		return m_Hash(sv);
 	}
 
-	std::size_t StringHash::operator()(const std::string& str) const
+	auto StringHash::operator()(const std::string& str) const -> std::size_t
 	{
 		return m_Hash(str);
 	}

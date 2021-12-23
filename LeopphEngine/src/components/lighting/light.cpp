@@ -11,53 +11,44 @@ namespace leopph::internal
 		m_Specular{1.0f, 1.0f, 1.0f}
 	{}
 
-
 	Light::~Light() = default;
 
-
-	const Vector3& Light::Diffuse() const
+	auto Light::Diffuse() const -> const Vector3&
 	{
 		return m_Diffuse;
 	}
 
-
-	void Light::Diffuse(const Vector3& value)
+	auto Light::Diffuse(const Vector3& value) -> void
 	{
 		m_Diffuse = value;
 	}
 
-
-	const Vector3& Light::Specular() const
+	auto Light::Specular() const -> const Vector3&
 	{
 		return m_Specular;
 	}
 
-
-	void Light::Specular(const Vector3& value)
+	auto Light::Specular(const Vector3& value) -> void
 	{
 		m_Specular = value;
 	}
 
-
-	float Light::Range() const
+	auto Light::Range() const -> float
 	{
 		return m_Range;
 	}
 
-
-	void Light::Range(const float value)
+	auto Light::Range(const float value) -> void
 	{
 		m_Range = value;
 	}
 
-
-	bool Light::CastsShadow() const
+	auto Light::CastsShadow() const -> bool
 	{
 		return m_CastsShadow;
 	}
 
-
-	void Light::CastsShadow(const bool value)
+	auto Light::CastsShadow(const bool value) -> void
 	{
 		m_CastsShadow = value;
 	}

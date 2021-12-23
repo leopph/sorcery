@@ -13,11 +13,11 @@ namespace leopph::internal
 	{
 		public:
 			ForwardRenderer();
-			void Render() override;
+			auto Render() -> void override;
 
 		private:
-			void RenderShadedObjects(const Matrix4& camViewMat, const Matrix4& camProjMat, const std::vector<RenderableData>& renderables, const DirectionalLight* dirLight, const std::vector<const SpotLight*>& spotLights, const std::vector<const PointLight*>& pointLights);
-			void RenderSkybox(const Matrix4& camViewMat, const Matrix4& camProjMat);
+			auto RenderShadedObjects(const Matrix4& camViewMat, const Matrix4& camProjMat, const std::vector<RenderableData>& renderables, const DirectionalLight* dirLight, const std::vector<const SpotLight*>& spotLights, const std::vector<const PointLight*>& pointLights) -> void;
+			auto RenderSkybox(const Matrix4& camViewMat, const Matrix4& camProjMat) -> void;
 
 			ShaderFamily m_ObjectShader;
 			ShaderFamily m_ShadowShader;

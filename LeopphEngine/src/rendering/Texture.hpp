@@ -8,24 +8,23 @@ namespace leopph
 {
 	class Texture : public std::enable_shared_from_this<Texture>
 	{
-	public:
-		Texture(std::filesystem::path path);
+		public:
+			Texture(std::filesystem::path path);
 
-		Texture(const Texture& other) = delete;
-		Texture(Texture&& other) = delete;
+			Texture(const Texture& other) = delete;
+			Texture(Texture&& other) = delete;
 
-		~Texture();
+			~Texture();
 
-		Texture& operator=(const Texture& other) = delete;
-		Texture& operator=(Texture&& other) = delete;
+			auto operator=(const Texture& other) -> Texture& = delete;
+			auto operator=(Texture&& other) -> Texture& = delete;
 
-		const unsigned& Id;
-		const std::filesystem::path Path;
-		const bool& IsTransparent;
+			const unsigned& Id;
+			const std::filesystem::path Path;
+			const bool& IsTransparent;
 
-
-	private:
-		unsigned m_ID;
-		bool m_IsTransparent;
+		private:
+			unsigned m_ID;
+			bool m_IsTransparent;
 	};
 }

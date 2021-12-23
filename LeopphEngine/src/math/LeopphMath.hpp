@@ -2,6 +2,7 @@
 
 #include "../api/LeopphApi.hpp"
 
+
 namespace leopph
 {
 	/*----------------------------------------------------------------------------------------------------
@@ -11,28 +12,28 @@ namespace leopph
 
 	namespace math
 	{
-		[[nodiscard]] LEOPPHAPI float Pi();
+		[[nodiscard]] LEOPPHAPI auto Pi() -> float;
 
-		[[nodiscard]] LEOPPHAPI float ToRadians(float degrees);
-		[[nodiscard]] LEOPPHAPI float ToDegrees(float radians);
+		[[nodiscard]] LEOPPHAPI auto ToRadians(float degrees) -> float;
+		[[nodiscard]] LEOPPHAPI auto ToDegrees(float radians) -> float;
 
-		[[nodiscard]] LEOPPHAPI float Sin(float radians);
-		[[nodiscard]] LEOPPHAPI float Asin(float radians);
+		[[nodiscard]] LEOPPHAPI auto Sin(float radians) -> float;
+		[[nodiscard]] LEOPPHAPI auto Asin(float radians) -> float;
 
-		[[nodiscard]] LEOPPHAPI float Cos(float radians);
-		[[nodiscard]] LEOPPHAPI float Acos(float radians);
+		[[nodiscard]] LEOPPHAPI auto Cos(float radians) -> float;
+		[[nodiscard]] LEOPPHAPI auto Acos(float radians) -> float;
 
-		[[nodiscard]] LEOPPHAPI float Tan(float radians);
-		[[nodiscard]] LEOPPHAPI float Atan(float radians);
+		[[nodiscard]] LEOPPHAPI auto Tan(float radians) -> float;
+		[[nodiscard]] LEOPPHAPI auto Atan(float radians) -> float;
 
-		[[nodiscard]] LEOPPHAPI float Atan2(float y, float x);
+		[[nodiscard]] LEOPPHAPI auto Atan2(float y, float x) -> float;
 
-		[[nodiscard]] LEOPPHAPI float Pow(float base, float exp);
+		[[nodiscard]] LEOPPHAPI auto Pow(float base, float exp) -> float;
 
-		[[nodiscard]] LEOPPHAPI float Sqrt(float value);
+		[[nodiscard]] LEOPPHAPI auto Sqrt(float value) -> float;
 
-		[[nodiscard]] LEOPPHAPI float Clamp(float value, float min, float max);
+		[[nodiscard]] LEOPPHAPI auto Clamp(float value, float min, float max) -> float;
 
-		[[nodiscard]] LEOPPHAPI float Abs(float value);
+		[[nodiscard]] LEOPPHAPI auto Abs(float value) -> float;
 	};
 }

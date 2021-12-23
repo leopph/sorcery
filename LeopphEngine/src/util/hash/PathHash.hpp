@@ -2,10 +2,11 @@
 
 #include <filesystem>
 
+
 namespace leopph::internal
 {
 	struct PathHash
 	{
-		std::size_t operator()(const std::filesystem::path& path) const;
+		auto operator()(const std::filesystem::path& path) const -> std::size_t;
 	};
 }

@@ -17,22 +17,19 @@ namespace leopph::internal
 		Init(Settings::PointLightShadowMapResolution());
 	}
 
-
 	CubeShadowMap::~CubeShadowMap()
 	{
 		Deinit();
 		glDeleteFramebuffers(1, &m_FrameBufferName);
 	}
 
-
-	void CubeShadowMap::OnEventReceived(EventParamType event)
+	auto CubeShadowMap::OnEventReceived(EventParamType event) -> void
 	{
 		Deinit();
 		Init(event.Resolution);
 	}
 
-
-	void CubeShadowMap::Init(const std::size_t resolution)
+	auto CubeShadowMap::Init(const std::size_t resolution) -> void
 	{
 		glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &m_CubeMapName);
 		glTextureStorage2D(m_CubeMapName, 1, GL_DEPTH_COMPONENT24, static_cast<GLsizei>(resolution), static_cast<GLsizei>(resolution));
@@ -50,36 +47,31 @@ namespace leopph::internal
 		glNamedFramebufferTexture(m_FrameBufferName, GL_DEPTH_ATTACHMENT, m_CubeMapName, 0);
 	}
 
-
-	void CubeShadowMap::Deinit() const
+	auto CubeShadowMap::Deinit() const -> void
 	{
 		glDeleteTextures(1, &m_CubeMapName);
 	}
 
-
-	void CubeShadowMap::Clear() const
+	auto CubeShadowMap::Clear() const -> void
 	{
 		constexpr float clearValue{1};
 		glClearNamedFramebufferfv(m_FrameBufferName, GL_DEPTH, 0, &clearValue);
 	}
-	
 
-	void CubeShadowMap::BindForWriting() const
+	auto CubeShadowMap::BindForWriting() const -> void
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, m_FrameBufferName);
 		glViewport(0, 0, static_cast<GLsizei>(Settings::PointLightShadowMapResolution()), static_cast<GLsizei>(Settings::PointLightShadowMapResolution()));
 	}
 
-
-	void CubeShadowMap::UnbindFromWriting() const
+	auto CubeShadowMap::UnbindFromWriting() const -> void
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		const auto& window{WindowBase::Get()};
 		glViewport(0, 0, static_cast<GLsizei>(window.Width()), static_cast<GLsizei>(window.Height()));
 	}
 
-
-	int CubeShadowMap::BindForReading(ShaderProgram& shader, const int texUnit)
+	auto CubeShadowMap::BindForReading(ShaderProgram& shader, const int texUnit) -> int
 	{
 		m_BoundTexUnit = texUnit;
 		glBindTextureUnit(m_BoundTexUnit, m_CubeMapName);
@@ -87,10 +79,8 @@ namespace leopph::internal
 		return texUnit + 1;
 	}
 
-
-	void CubeShadowMap::UnbindFromReading() const
+	auto CubeShadowMap::UnbindFromReading() const -> void
 	{
 		glBindTextureUnit(m_BoundTexUnit, 0);
 	}
-
 }

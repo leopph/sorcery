@@ -13,10 +13,10 @@ namespace leopph
 			LEOPPHAPI explicit PointLight(leopph::Entity* entity);
 
 			PointLight(const PointLight&) = delete;
-			void operator=(const PointLight&) = delete;
+			auto operator=(const PointLight&) -> void = delete;
 
 			PointLight(PointLight&&) = delete;
-			void operator=(PointLight&&) = delete;
+			auto operator=(PointLight&&) -> void = delete;
 
 			LEOPPHAPI ~PointLight() override;
 	};

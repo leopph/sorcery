@@ -5,13 +5,12 @@
 
 namespace leopph::internal
 {
-	std::size_t EntityHash::operator()(const Entity* entity) const
+	auto EntityHash::operator()(const Entity* entity) const -> std::size_t
 	{
 		return m_Hash(entity->Name());
 	}
 
-
-	std::size_t EntityHash::operator()(const std::string& str) const
+	auto EntityHash::operator()(const std::string& str) const -> std::size_t
 	{
 		return m_Hash(str);
 	}

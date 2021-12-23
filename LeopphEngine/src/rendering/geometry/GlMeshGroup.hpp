@@ -22,24 +22,25 @@ namespace leopph::internal
 			explicit GlMeshGroup(std::shared_ptr<const MeshDataGroup> meshDataGroup);
 
 			GlMeshGroup(const GlMeshGroup& other);
-			GlMeshGroup& operator=(const GlMeshGroup& other);
+			auto operator=(const GlMeshGroup& other) -> GlMeshGroup&;
 
 			GlMeshGroup(GlMeshGroup&& other) noexcept;
-			GlMeshGroup& operator=(GlMeshGroup&& other) noexcept;
+			auto operator=(GlMeshGroup&& other) noexcept -> GlMeshGroup&;
 
 			~GlMeshGroup() noexcept;
-			
-			void DrawShaded(ShaderProgram& shader, std::size_t nextFreeTextureUnit) const;
-			void DrawDepth() const;
+
+			auto DrawShaded(ShaderProgram& shader, std::size_t nextFreeTextureUnit) const -> void;
+			auto DrawDepth() const -> void;
 
 			// Loads the passed matrices into the instance buffer.
-			void SetInstanceData(const std::vector<std::pair<Matrix4, Matrix4>>& instMats) const;
+			auto SetInstanceData(const std::vector<std::pair<Matrix4, Matrix4>>& instMats) const -> void;
 
 			[[nodiscard]]
-			const MeshDataGroup& MeshData() const;
+			auto MeshData() const -> const MeshDataGroup&;
 
 		private:
-			void Deinit() const;
+			auto Deinit() const -> void;
+
 
 			struct SharedData
 			{

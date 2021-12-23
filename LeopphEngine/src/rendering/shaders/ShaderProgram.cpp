@@ -64,82 +64,80 @@ namespace leopph::internal
 		glDeleteProgram(m_ProgramName);
 	}
 
-	void ShaderProgram::Use() const
+	auto ShaderProgram::Use() const -> void
 	{
 		glUseProgram(m_ProgramName);
 	}
 
-	void ShaderProgram::Unuse() const
+	auto ShaderProgram::Unuse() const -> void
 	{
 		glUseProgram(0);
 	}
 
-	void ShaderProgram::SetUniform(const std::string_view name, const bool value)
+	auto ShaderProgram::SetUniform(const std::string_view name, const bool value) -> void
 	{
 		glProgramUniform1i(m_ProgramName, GetUniformLocation(name), value);
 	}
 
-	void ShaderProgram::SetUniform(const std::string_view name, const int value)
+	auto ShaderProgram::SetUniform(const std::string_view name, const int value) -> void
 	{
 		glProgramUniform1i(m_ProgramName, GetUniformLocation(name), value);
 	}
 
-	void ShaderProgram::SetUniform(const std::string_view name, const unsigned value)
+	auto ShaderProgram::SetUniform(const std::string_view name, const unsigned value) -> void
 	{
 		glProgramUniform1ui(m_ProgramName, GetUniformLocation(name), value);
 	}
 
-	void ShaderProgram::SetUniform(const std::string_view name, const float value)
+	auto ShaderProgram::SetUniform(const std::string_view name, const float value) -> void
 	{
 		glProgramUniform1f(m_ProgramName, GetUniformLocation(name), value);
 	}
 
-	void ShaderProgram::SetUniform(const std::string_view name, const Vector3& value)
+	auto ShaderProgram::SetUniform(const std::string_view name, const Vector3& value) -> void
 	{
 		glProgramUniform3fv(m_ProgramName, GetUniformLocation(name), 1, value.Data().data());
 	}
 
-	void ShaderProgram::SetUniform(const std::string_view name, const Matrix4& value)
+	auto ShaderProgram::SetUniform(const std::string_view name, const Matrix4& value) -> void
 	{
 		glProgramUniformMatrix4fv(m_ProgramName, GetUniformLocation(name), 1, GL_TRUE, reinterpret_cast<const GLfloat*>(value.Data().data()));
 	}
 
-	void ShaderProgram::SetUniform(const std::string_view name, const std::vector<bool>& value)
+	auto ShaderProgram::SetUniform(const std::string_view name, const std::vector<bool>& value) -> void
 	{
 		// TODO
 	}
 
-	void ShaderProgram::SetUniform(const std::string_view name, const std::vector<int>& value)
+	auto ShaderProgram::SetUniform(const std::string_view name, const std::vector<int>& value) -> void
 	{
 		glProgramUniform1iv(m_ProgramName, GetUniformLocation(name), static_cast<GLsizei>(value.size()), value.data());
 	}
 
-	void ShaderProgram::SetUniform(const std::string_view name, const std::vector<unsigned>& value)
+	auto ShaderProgram::SetUniform(const std::string_view name, const std::vector<unsigned>& value) -> void
 	{
 		glProgramUniform1uiv(m_ProgramName, GetUniformLocation(name), static_cast<GLsizei>(value.size()), value.data());
 	}
 
-	void ShaderProgram::SetUniform(const std::string_view name, const std::vector<float>& value)
+	auto ShaderProgram::SetUniform(const std::string_view name, const std::vector<float>& value) -> void
 	{
 		glProgramUniform1fv(m_ProgramName, GetUniformLocation(name), static_cast<GLsizei>(value.size()), value.data());
 	}
 
-	void ShaderProgram::SetUniform(const std::string_view name, const std::vector<Vector3>& value)
+	auto ShaderProgram::SetUniform(const std::string_view name, const std::vector<Vector3>& value) -> void
 	{
 		glProgramUniform3fv(m_ProgramName, GetUniformLocation(name), static_cast<GLsizei>(value.size()), reinterpret_cast<const GLfloat*>(value.data()));
 	}
 
-	void ShaderProgram::SetUniform(const std::string_view name, const std::vector<Matrix4>& value)
+	auto ShaderProgram::SetUniform(const std::string_view name, const std::vector<Matrix4>& value) -> void
 	{
 		glProgramUniformMatrix4fv(m_ProgramName, GetUniformLocation(name), static_cast<GLsizei>(value.size()), GL_TRUE, reinterpret_cast<const GLfloat*>(value.data()));
 	}
 
-	void ShaderProgram::SetBufferBinding(const std::string_view bufName, const int bindingIndex)
-	{
-		
-	}
+	auto ShaderProgram::SetBufferBinding(const std::string_view bufName, const int bindingIndex) -> void
+	{ }
 
-	std::pair<bool, std::optional<std::string>> ShaderProgram::CompilationStatus(const unsigned name)
+	auto ShaderProgram::CompilationStatus(const unsigned name) -> std::pair<bool, std::optional<std::string>>
 	{
 		std::pair<bool, std::optional<std::string>> ret;
 
@@ -160,7 +158,7 @@ namespace leopph::internal
 		return ret;
 	}
 
-	std::pair<bool, std::optional<std::string>> ShaderProgram::LinkStatus() const
+	auto ShaderProgram::LinkStatus() const -> std::pair<bool, std::optional<std::string>>
 	{
 		std::pair<bool, std::optional<std::string>> ret;
 
@@ -181,7 +179,7 @@ namespace leopph::internal
 		return ret;
 	}
 
-	int ShaderProgram::GetUniformLocation(const std::string_view name)
+	auto ShaderProgram::GetUniformLocation(const std::string_view name) -> int
 	{
 		auto it{m_UniformLocations.find(name)};
 
@@ -192,6 +190,4 @@ namespace leopph::internal
 
 		return it->second;
 	}
-
-
 }

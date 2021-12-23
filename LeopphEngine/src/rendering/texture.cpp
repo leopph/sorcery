@@ -1,20 +1,19 @@
 #include "Texture.hpp"
 
-#include "../util/logger.h"
 #include "../data/DataManager.hpp"
+#include "../util/logger.h"
 
 #include <glad/glad.h>
+
 #include <stb_image.h>
-
 #include <utility>
-
 
 
 namespace leopph
 {
 	Texture::Texture(std::filesystem::path path) :
-		Path{std::move(path)},
 		Id{m_ID},
+		Path{std::move(path)},
 		IsTransparent{m_IsTransparent},
 		m_ID{},
 		m_IsTransparent{}
@@ -77,7 +76,6 @@ namespace leopph
 
 		internal::DataManager::Instance().RegisterTexture(this);
 	}
-
 
 	Texture::~Texture()
 	{

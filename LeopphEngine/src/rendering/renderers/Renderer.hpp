@@ -13,7 +13,7 @@ namespace leopph::internal
 	class Renderer
 	{
 		public:
-			static std::unique_ptr<Renderer> Create();
+			static auto Create() -> std::unique_ptr<Renderer>;
 
 			Renderer() = default;
 			Renderer(const Renderer& other) = default;
@@ -21,10 +21,10 @@ namespace leopph::internal
 
 			virtual ~Renderer() = 0;
 
-			Renderer& operator=(const Renderer& other) = default;
-			Renderer& operator=(Renderer&& other) = default;
+			auto operator=(const Renderer& other) -> Renderer& = default;
+			auto operator=(Renderer&& other) -> Renderer& = default;
 
-			virtual void Render() = 0;
+			virtual auto Render() -> void = 0;
 
 		protected:
 			struct RenderableData
@@ -36,9 +36,9 @@ namespace leopph::internal
 			};
 
 
-			const std::vector<RenderableData>& CollectRenderables();
-			static const std::vector<const PointLight*>& CollectPointLights();
-			static const std::vector<const SpotLight*>& CollectSpotLights();
+			auto CollectRenderables() -> const std::vector<RenderableData>&;
+			static auto CollectPointLights() -> const std::vector<const PointLight*>&;
+			static auto CollectSpotLights() -> const std::vector<const SpotLight*>&;
 
 		private:
 			std::vector<RenderableData> m_CurFrameRenderables;

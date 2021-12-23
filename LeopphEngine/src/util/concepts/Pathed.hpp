@@ -6,7 +6,6 @@
 
 namespace leopph::internal
 {
-
 	template<class T>
 	concept Pathed = requires(T obj)
 	{

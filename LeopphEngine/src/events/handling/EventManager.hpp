@@ -10,7 +10,6 @@
 #include <vector>
 
 
-
 namespace leopph
 {
 	template<std::derived_from<Event> EventType>
@@ -19,7 +18,6 @@ namespace leopph
 	template<std::derived_from<Event> EventType>
 	class EventReceiverHandle;
 
-
 	/* The EventManager singleton is the center of the Event System.
 	 * It registers receivers for events and manages event dispatch. */
 	class EventManager
@@ -27,19 +25,17 @@ namespace leopph
 		public:
 			EventManager(const EventManager&) = delete;
 			EventManager(EventManager&&) = delete;
-			void operator=(const EventManager&) = delete;
-			void operator=(EventManager&&) = delete;
+			auto operator=(const EventManager&) -> void = delete;
+			auto operator=(EventManager&&) -> void = delete;
 
-
-			LEOPPHAPI static EventManager& Instance();
-
+			LEOPPHAPI static auto Instance() -> EventManager&;
 
 			/* Send the specified event to all registered receivers.
 			 * This creates a new instance of the specified event with
 			 * the given arguments and passes it to all of registed receivers.
 			 * The Event object is not guaranteed to live past this function call. */
 			template<std::derived_from<Event> EventType, class... Args>
-			EventManager& Send(Args&&... args)
+			auto Send(Args&&... args) -> EventManager&
 			{
 				if (const auto it{m_Handlers.find(typeid(EventType))};
 					it != m_Handlers.end())
@@ -53,30 +49,26 @@ namespace leopph
 				return *this;
 			}
 
-
 			/* Internally used. */
 			template<std::derived_from<Event> EventType>
-			void RegisterFor(const EventReceiver<EventType>& receiver)
+			auto RegisterFor(const EventReceiver<EventType>& receiver) -> void
 			{
 				InternalRegister(typeid(EventType), &receiver);
 			}
 
-
 			/* Internally used. */
 			template<std::derived_from<Event> EventType>
-			void UnregisterFrom(const internal::EventReceiverBase& handler)
+			auto UnregisterFrom(const internal::EventReceiverBase& handler) -> void
 			{
 				InternalUregister(typeid(EventType), &handler);
 			}
-
 
 		private:
 			EventManager() = default;
 			~EventManager() = default;
 
-			void InternalRegister(const std::type_index& typeIndex, const internal::EventReceiverBase* receiver);
-			void InternalUregister(const std::type_index& typeIndex, const internal::EventReceiverBase* receiver);
-
+			auto InternalRegister(const std::type_index& typeIndex, const internal::EventReceiverBase* receiver) -> void;
+			auto InternalUregister(const std::type_index& typeIndex, const internal::EventReceiverBase* receiver) -> void;
 
 			std::unordered_map<std::type_index, std::vector<const internal::EventReceiverBase*>> m_Handlers;
 	};

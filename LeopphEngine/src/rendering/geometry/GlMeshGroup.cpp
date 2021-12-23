@@ -31,7 +31,7 @@ namespace leopph::internal
 		++m_SharedData->RefCount;
 	}
 
-	GlMeshGroup& GlMeshGroup::operator=(const GlMeshGroup& other)
+	auto GlMeshGroup::operator=(const GlMeshGroup& other) -> GlMeshGroup&
 	{
 		if (&other == this)
 		{
@@ -48,7 +48,7 @@ namespace leopph::internal
 		GlMeshGroup{other}
 	{}
 
-	GlMeshGroup& GlMeshGroup::operator=(GlMeshGroup&& other) noexcept
+	auto GlMeshGroup::operator=(GlMeshGroup&& other) noexcept -> GlMeshGroup&
 	{
 		return *this = other;
 	}
@@ -58,7 +58,7 @@ namespace leopph::internal
 		Deinit();
 	}
 
-	void GlMeshGroup::DrawShaded(leopph::internal::ShaderProgram& shader, const std::size_t nextFreeTextureUnit) const
+	auto GlMeshGroup::DrawShaded(leopph::internal::ShaderProgram& shader, const std::size_t nextFreeTextureUnit) const -> void
 	{
 		for (const auto& mesh : m_SharedData->Meshes)
 		{
@@ -66,7 +66,7 @@ namespace leopph::internal
 		}
 	}
 
-	void GlMeshGroup::DrawDepth() const
+	auto GlMeshGroup::DrawDepth() const -> void
 	{
 		for (const auto& mesh : m_SharedData->Meshes)
 		{
@@ -74,7 +74,7 @@ namespace leopph::internal
 		}
 	}
 
-	void GlMeshGroup::SetInstanceData(const std::vector<std::pair<Matrix4, Matrix4>>& instMats) const 
+	auto GlMeshGroup::SetInstanceData(const std::vector<std::pair<Matrix4, Matrix4>>& instMats) const -> void
 	{
 		m_SharedData->InstCount = instMats.size();
 
@@ -94,12 +94,12 @@ namespace leopph::internal
 		}
 	}
 
-	const MeshDataGroup& GlMeshGroup::MeshData() const
+	auto GlMeshGroup::MeshData() const -> const MeshDataGroup&
 	{
 		return *m_SharedData->MeshData;
 	}
 
-	void GlMeshGroup::Deinit() const
+	auto GlMeshGroup::Deinit() const -> void
 	{
 		--m_SharedData->RefCount;
 
@@ -108,5 +108,4 @@ namespace leopph::internal
 			glDeleteBuffers(1, &m_SharedData->InstBuf);
 		}
 	}
-
 }

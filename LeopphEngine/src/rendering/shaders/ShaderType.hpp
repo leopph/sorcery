@@ -1,6 +1,5 @@
 #pragma once
 
-
 namespace leopph::internal
 {
 	enum class ShaderType

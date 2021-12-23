@@ -8,7 +8,6 @@
 #include <array>
 
 
-
 namespace leopph::internal
 {
 	class GeometryBuffer final : public EventReceiver<ScreenResolutionEvent>
@@ -20,30 +19,28 @@ namespace leopph::internal
 			};
 
 
-
 			GeometryBuffer();
 
 			GeometryBuffer(const GeometryBuffer&) = delete;
 			GeometryBuffer(GeometryBuffer&&) = delete;
 
-			GeometryBuffer& operator=(const GeometryBuffer&) = delete;
-			GeometryBuffer& operator=(GeometryBuffer&&) = delete;
+			auto operator=(const GeometryBuffer&) -> GeometryBuffer& = delete;
+			auto operator=(GeometryBuffer&&) -> GeometryBuffer& = delete;
 
 			~GeometryBuffer() override;
 
-			void Clear() const;
-			void BindForWriting() const;
-			void UnbindFromWriting() const;
+			auto Clear() const -> void;
+			auto BindForWriting() const -> void;
+			auto UnbindFromWriting() const -> void;
 
 			// Returns the next available texture unit after binding
-			[[nodiscard]] int BindForReading(ShaderProgram& shader, TextureType type, int texUnit) const;
+			[[nodiscard]] auto BindForReading(ShaderProgram& shader, TextureType type, int texUnit) const -> int;
 			// Returns the next available texture unit after binding
-			[[nodiscard]] int BindForReading(ShaderProgram& shader, int texUnit) const;
-			void UnbindFromReading(TextureType type) const;
-			void UnbindFromReading() const;
+			[[nodiscard]] auto BindForReading(ShaderProgram& shader, int texUnit) const -> int;
+			auto UnbindFromReading(TextureType type) const -> void;
+			auto UnbindFromReading() const -> void;
 
-			void CopyDepthData(unsigned bufferName) const;
-
+			auto CopyDepthData(unsigned bufferName) const -> void;
 
 		private:
 			std::array<unsigned, 6> m_Textures;
@@ -52,8 +49,8 @@ namespace leopph::internal
 			unsigned m_FrameBuffer;
 			Vector2 m_Resolution;
 
-			void SetUpBuffers(const Vector2& res);
-			void OnEventReceived(EventParamType event) override;
+			auto SetUpBuffers(const Vector2& res) -> void;
+			auto OnEventReceived(EventParamType event) -> void override;
 
 			static constexpr int BIND_FILL_VALUE{-1};
 	};

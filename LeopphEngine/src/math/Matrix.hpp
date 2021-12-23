@@ -8,7 +8,6 @@
 #include <cstddef>
 
 
-
 namespace leopph
 {
 	namespace internal
@@ -26,10 +25,8 @@ namespace leopph
 		{
 			std::array<Vector<T, M>, N> m_Data;
 
-
 			public:
 				Matrix() = default;
-
 
 				/* Main Diagonal Fill Constructor */
 				explicit Matrix(const T& value) :
@@ -40,7 +37,6 @@ namespace leopph
 						m_Data[i][i] = value;
 					}
 				}
-
 
 				/* Main Diagonal Elements Constructor */
 				template<std::convertible_to<T>... T1>
@@ -55,7 +51,6 @@ namespace leopph
 						m_Data[i][i] = argArr[i];
 					}
 				}
-
 
 				/* All Elements Constructor */
 				template<std::convertible_to<T> ... T1>
@@ -74,7 +69,6 @@ namespace leopph
 					}
 				}
 
-
 				/* Main Diagonal Vector Constructor */
 				template<std::size_t N1>
 					requires(N1 == (M > N ? N : M))
@@ -86,7 +80,6 @@ namespace leopph
 						m_Data[i][i] = vec[i];
 					}
 				}
-
 
 				/* Applicable to N*N Matrices.
 				 * Construct a new (N-1)*(N-1) Matrix by dropping the
@@ -100,24 +93,21 @@ namespace leopph
 					}
 				}
 
-
 				Matrix(const Matrix<T, N, M>& other) = default;
 				Matrix(Matrix<T, N, M>&& other) = default;
-				Matrix<T, N, M>& operator=(const Matrix& other) = default;
-				Matrix<T, N, M>& operator=(Matrix&& other) = default;
+				auto operator=(const Matrix& other) -> Matrix<T, N, M>& = default;
+				auto operator=(Matrix&& other) -> Matrix<T, N, M>& = default;
 				~Matrix() = default;
 
-
 				/* Mathematical Identity Matrix */
-				static Matrix<T, N, M> Identity()
+				static auto Identity() -> Matrix<T, N, M>
 					requires(N == M)
 				{
 					return Matrix<T, N, M>{1};
 				}
 
-
 				/* View Matrix for the rendering pipeline that is calculated based on current Position, target Position, and the world's vertical axis */
-				static Matrix<T, 4, 4> LookAt(const Vector<T, 3>& position, const Vector<T, 3>& target, const Vector<T, 3>& worldUp)
+				static auto LookAt(const Vector<T, 3>& position, const Vector<T, 3>& target, const Vector<T, 3>& worldUp) -> Matrix<T, 4, 4>
 					requires(N == 4 && M == 4)
 				{
 					Vector<T, 3> z{(target - position).Normalized()};
@@ -133,10 +123,9 @@ namespace leopph
 					};
 				}
 
-
 				/* Perspective Projection Matrix for the rendering pipeline that is calculated based on the left, right, top, and bottom coordinates of the view frustum
 				as well as near and far clip planes */
-				static Matrix<T, 4, 4> Perspective(const T& left, const T& right, const T& top, const T& bottom, const T& nearClipPlane, const T& farClipPlane)
+				static auto Perspective(const T& left, const T& right, const T& top, const T& bottom, const T& nearClipPlane, const T& farClipPlane) -> Matrix<T, 4, 4>
 					requires (N == 4 && M == 4)
 				{
 					Matrix<T, 4, 4> ret;
@@ -152,9 +141,8 @@ namespace leopph
 					return ret;
 				}
 
-
 				/* Perspective Projection Matrix for the rendering pipeline that is calculated based on FOV, aspect ratio, and the near and far clip planes */
-				static Matrix<T, 4, 4> Perspective(const T& fov, const T& aspectRatio, const T& nearClipPlane, const T& farClipPlane)
+				static auto Perspective(const T& fov, const T& aspectRatio, const T& nearClipPlane, const T& farClipPlane) -> Matrix<T, 4, 4>
 					requires (N == 4 && M == 4)
 				{
 					T tanHalfFov{static_cast<T>(math::Tan(fov / static_cast<T>(2)))};
@@ -166,10 +154,9 @@ namespace leopph
 					return Perspective(left, right, top, bottom, nearClipPlane, farClipPlane);
 				}
 
-
 				/* Orthographgic Projection Matrix for the rendering pipeline that is calculated based on
 				 * the left, right, top, and bottom coordinates of the view frustum. */
-				static Matrix<T, 4, 4> Ortographic(const T& left, const T& right, const T& top, const T& bottom, const T& nearClipPlane, const T& farClipPlane)
+				static auto Ortographic(const T& left, const T& right, const T& top, const T& bottom, const T& nearClipPlane, const T& farClipPlane) -> Matrix<T, 4, 4>
 				{
 					Matrix<T, 4, 4> ret;
 					ret[0][0] = static_cast<T>(static_cast<T>(2) / (right - left));
@@ -182,9 +169,8 @@ namespace leopph
 					return ret;
 				}
 
-
 				/* Mathematical Translation Matrix */
-				static Matrix<T, 4, 4> Translate(const Vector<T, 3>& vector)
+				static auto Translate(const Vector<T, 3>& vector) -> Matrix<T, 4, 4>
 					requires (N == 4 && M == 4)
 				{
 					Matrix<T, 4, 4> ret = Identity();
@@ -197,9 +183,8 @@ namespace leopph
 					return ret;
 				}
 
-
 				/* Mathematical Scaling Matrix */
-				static Matrix<T, 4, 4> Scale(const Vector<T, 3>& vector)
+				static auto Scale(const Vector<T, 3>& vector) -> Matrix<T, 4, 4>
 					requires (N == 4 && M == 4)
 				{
 					Matrix<T, 4, 4> ret = Identity();
@@ -212,30 +197,26 @@ namespace leopph
 					return ret;
 				}
 
-
 				/* Returns a reference to the internal data structure.
 				DO NOT USE THIS UNLESS NECASSARY */
-				[[nodiscard]] const std::array<Vector<T, M>, N>& Data() const
+				[[nodiscard]] auto Data() const -> const std::array<Vector<T, M>, N>&
 				{
 					return m_Data;
 				}
 
-
 				/* Returns the Nth row of the Matrix as an M dimensional Vector */
-				const Vector<T, M>& operator[](size_t index) const
+				auto operator[](size_t index) const -> const Vector<T, M>&
 				{
 					return m_Data[index];
 				}
 
-
-				Vector<T, M>& operator[](const size_t index)
+				auto operator[](const size_t index) -> Vector<T, M>&
 				{
 					return const_cast<Vector<T, M>&>(const_cast<const Matrix<T, N, M>*>(this)->operator[](index));
 				}
 
-
 				/* Mathematical Matrix Determinant for square Matrices */
-				[[nodiscard]] float Det() const
+				[[nodiscard]] auto Det() const -> float
 					requires(N == M)
 				{
 					Matrix<T, N, M> tmp{*this};
@@ -263,9 +244,8 @@ namespace leopph
 					return ret;
 				}
 
-
 				/* Returns a new Matrix that is the Mathematical Transposed of this Matrix */
-				[[nodiscard]] Matrix<T, M, N> Transposed() const
+				[[nodiscard]] auto Transposed() const -> Matrix<T, M, N>
 				{
 					Matrix<T, M, N> ret;
 
@@ -280,14 +260,13 @@ namespace leopph
 					return ret;
 				}
 
-
 				/* Mathematical Transposition of the Matrix in-place. */
-				Matrix<T, N, M> Transpose()
+				auto Transpose() -> Matrix<T, N, M>
 					requires(N == M)
 				{
 					for (std::size_t i = 0; i < N; i++)
 					{
-						for (std::size_t j = i + 1; j < M; j++)
+						for (auto j = i + 1; j < M; j++)
 						{
 							auto temp{m_Data[i][j]};
 							m_Data[i][j] = m_Data[j][i];
@@ -297,9 +276,8 @@ namespace leopph
 					return *this;
 				}
 
-
 				/* Returns a new Matrix that is the Mathematical Inverse of this Matrix */
-				[[nodiscard]] Matrix<T, N, M> Inverse() const
+				[[nodiscard]] auto Inverse() const -> Matrix<T, N, M>
 					requires(N == M)
 				{
 					Matrix<T, N, M> copyOfThis{*this};
@@ -331,7 +309,6 @@ namespace leopph
 					return inverse;
 				}
 
-
 				/* Applicable to N*N matrices.
 				Returns a new (N+1)*(N+1) Matrix that is created by adding
 				a new row and column to the Matrix. All new elements are zero,
@@ -355,13 +332,12 @@ namespace leopph
 		};
 
 
-
 		/*-----------------------------------
 		Other standard mathematical operators
 		-----------------------------------*/
 
 		template<class T, std::size_t N, std::size_t M>
-		std::ostream& operator<<(std::ostream& stream, const Matrix<T, N, M>& matrix)
+		auto operator<<(std::ostream& stream, const Matrix<T, N, M>& matrix) -> std::ostream&
 		{
 			for (size_t i = 0; i < N; i++)
 			{
@@ -384,9 +360,8 @@ namespace leopph
 			return stream;
 		}
 
-
 		template<class T, std::size_t N, std::size_t M>
-		Matrix<T, N, M> operator+(const Matrix<T, N, M>& left, const Matrix<T, N, M>& right)
+		auto operator+(const Matrix<T, N, M>& left, const Matrix<T, N, M>& right) -> Matrix<T, N, M>
 		{
 			Matrix<T, N, M> ret;
 			for (std::size_t i = 0; i < N; i++)
@@ -396,9 +371,8 @@ namespace leopph
 			return ret;
 		}
 
-
 		template<class T, std::size_t N, std::size_t M>
-		Matrix<T, N, M>& operator+=(Matrix<T, N, M>& left, const Matrix<T, N, M>& right)
+		auto operator+=(Matrix<T, N, M>& left, const Matrix<T, N, M>& right) -> Matrix<T, N, M>&
 		{
 			for (std::size_t i = 0; i < N; i++)
 			{
@@ -407,9 +381,8 @@ namespace leopph
 			return left;
 		}
 
-
 		template<class T, std::size_t N, std::size_t M>
-		Matrix<T, N, M> operator-(const Matrix<T, N, M>& left, const Matrix<T, N, M>& right)
+		auto operator-(const Matrix<T, N, M>& left, const Matrix<T, N, M>& right) -> Matrix<T, N, M>
 		{
 			Matrix<T, N, M> ret;
 			for (std::size_t i = 0; i < N; i++)
@@ -419,9 +392,8 @@ namespace leopph
 			return ret;
 		}
 
-
 		template<class T, std::size_t N, std::size_t M>
-		Matrix<T, N, M>& operator-=(Matrix<T, N, M>& left, const Matrix<T, N, M>& right)
+		auto operator-=(Matrix<T, N, M>& left, const Matrix<T, N, M>& right) -> Matrix<T, N, M>&
 		{
 			for (std::size_t i = 0; i < N; i++)
 			{
@@ -430,9 +402,8 @@ namespace leopph
 			return left;
 		}
 
-
 		template<class T, std::size_t N, std::size_t M, std::convertible_to<T> T1>
-		Matrix<T, N, M> operator*(const Matrix<T, N, M>& left, const T1& right)
+		auto operator*(const Matrix<T, N, M>& left, const T1& right) -> Matrix<T, N, M>
 		{
 			Matrix<T, N, M> ret;
 			for (std::size_t i = 0; i < N; i++)
@@ -443,7 +414,7 @@ namespace leopph
 		}
 
 		template<class T, std::size_t N, std::size_t M, std::convertible_to<T> T1>
-		Matrix<T, N, M> operator*(const T1& left, const Matrix<T, N, M>& right)
+		auto operator*(const T1& left, const Matrix<T, N, M>& right) -> Matrix<T, N, M>
 		{
 			Matrix<T, N, M> ret;
 			for (std::size_t i = 0; i < N; i++)
@@ -453,9 +424,8 @@ namespace leopph
 			return ret;
 		}
 
-
 		template<class T, std::size_t N, std::size_t M>
-		Vector<T, N> operator*(const Matrix<T, N, M>& left, const Vector<T, M>& right)
+		auto operator*(const Matrix<T, N, M>& left, const Vector<T, M>& right) -> Vector<T, N>
 		{
 			Vector<T, N> ret;
 			for (size_t i = 0; i < N; i++)
@@ -468,9 +438,8 @@ namespace leopph
 			return ret;
 		}
 
-
 		template<class T, std::size_t N, std::size_t M>
-		Vector<T, M> operator*(const Vector<T, N>& left, const Matrix<T, N, M>& right)
+		auto operator*(const Vector<T, N>& left, const Matrix<T, N, M>& right) -> Vector<T, M>
 		{
 			Vector<T, M> ret;
 			for (size_t j = 0; j < M; j++)
@@ -483,9 +452,8 @@ namespace leopph
 			return ret;
 		}
 
-
 		template<class T, std::size_t N, std::size_t M, std::size_t P>
-		Matrix<T, N, P> operator*(const Matrix<T, N, M>& left, const Matrix<T, M, P>& right)
+		auto operator*(const Matrix<T, N, M>& left, const Matrix<T, M, P>& right) -> Matrix<T, N, P>
 		{
 			Matrix<T, N, P> ret;
 			for (size_t i = 0; i < N; i++)
@@ -501,9 +469,8 @@ namespace leopph
 			return ret;
 		}
 
-
 		template<class T, std::size_t N, std::size_t M, std::convertible_to<T> T1>
-		Matrix<T, N, M>& operator*=(Matrix<T, N, M>& left, const T1& right)
+		auto operator*=(Matrix<T, N, M>& left, const T1& right) -> Matrix<T, N, M>&
 		{
 			for (std::size_t i = 0; i < N; i++)
 			{
@@ -512,21 +479,18 @@ namespace leopph
 			return left;
 		}
 
-
 		template<class T, std::size_t N>
-		Vector<T, N>& operator*=(Vector<T, N>& left, const Matrix<T, N, N>& right)
+		auto operator*=(Vector<T, N>& left, const Matrix<T, N, N>& right) -> Vector<T, N>&
 		{
 			return left = left * right;
 		}
 
-
 		template<class T, std::size_t N, std::size_t M>
-		Matrix<T, N, M>& operator*=(Matrix<T, N, M>& left, const Matrix<T, M, M>& right)
+		auto operator*=(Matrix<T, N, M>& left, const Matrix<T, M, M>& right) -> Matrix<T, N, M>&
 		{
 			return left = left * right;
 		}
 	}
-
 
 
 	/*------------------------------------------------------

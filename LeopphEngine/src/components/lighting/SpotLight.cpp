@@ -18,22 +18,22 @@ namespace leopph
 		internal::DataManager::Instance().UnregisterSpotLight(this);
 	}
 
-	float SpotLight::InnerAngle() const
+	auto SpotLight::InnerAngle() const -> float
 	{
 		return m_InnerAngle;
 	}
 
-	void SpotLight::InnerAngle(const float degrees)
+	auto SpotLight::InnerAngle(const float degrees) -> void
 	{
 		m_InnerAngle = degrees;
 	}
 
-	float SpotLight::OuterAngle() const
+	auto SpotLight::OuterAngle() const -> float
 	{
 		return m_OuterAngle;
 	}
 
-	void SpotLight::OuterAngle(const float degrees)
+	auto SpotLight::OuterAngle(const float degrees) -> void
 	{
 		m_OuterAngle = degrees;
 	}

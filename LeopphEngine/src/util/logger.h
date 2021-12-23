@@ -2,27 +2,29 @@
 
 #include <string_view>
 
+
 namespace leopph::internal
 {
 	class Logger
 	{
-	public:
-		enum class Level
-		{
-			DEBUG, RELEASE
-		};
+		public:
+			enum class Level
+			{
+				DEBUG, RELEASE
+			};
 
-		static Logger& Instance();
 
-		void CurrentLevel(Level level);
-		Level CurrentLevel() const;
-		
-		void Debug(std::string_view msg) const;
-		void Critical(std::string_view msg) const;
-		void Error(std::string_view msg) const;
-		void Warning(std::string_view msg) const;
+			static auto Instance() -> Logger&;
 
-	private:
-		Logger();
+			auto CurrentLevel(Level level) -> void;
+			auto CurrentLevel() const -> Level;
+
+			auto Debug(std::string_view msg) const -> void;
+			auto Critical(std::string_view msg) const -> void;
+			auto Error(std::string_view msg) const -> void;
+			auto Warning(std::string_view msg) const -> void;
+
+		private:
+			Logger();
 	};
 }

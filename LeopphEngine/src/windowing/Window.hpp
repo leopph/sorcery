@@ -12,39 +12,38 @@ namespace leopph
 	{
 		public:
 			[[nodiscard]]
-			LEOPPHAPI static unsigned Width();
-			LEOPPHAPI static void Width(unsigned newWidth);
+			LEOPPHAPI static auto Width() -> unsigned;
+			LEOPPHAPI static auto Width(unsigned newWidth) -> void;
 
 			[[nodiscard]]
-			LEOPPHAPI static unsigned Height();
-			LEOPPHAPI static void Height(unsigned newHeight);
+			LEOPPHAPI static auto Height() -> unsigned;
+			LEOPPHAPI static auto Height(unsigned newHeight) -> void;
 
 			[[nodiscard]]
-			LEOPPHAPI static float AspectRatio();
+			LEOPPHAPI static auto AspectRatio() -> float;
 
 			[[nodiscard]]
-			LEOPPHAPI static bool FullScreen();
-			LEOPPHAPI static void FullScreen(bool newValue);
+			LEOPPHAPI static auto FullScreen() -> bool;
+			LEOPPHAPI static auto FullScreen(bool newValue) -> void;
 
 			[[nodiscard]]
-			LEOPPHAPI static bool Vsync();
-			LEOPPHAPI static void Vsync(bool newValue);
+			LEOPPHAPI static auto Vsync() -> bool;
+			LEOPPHAPI static auto Vsync(bool newValue) -> void;
 
 			[[nodiscard]]
-			LEOPPHAPI static std::string_view Title();
-			LEOPPHAPI static void Title(std::string newTitle);
+			LEOPPHAPI static auto Title() -> std::string_view;
+			LEOPPHAPI static auto Title(std::string newTitle) -> void;
 
 			[[nodiscard]]
-			LEOPPHAPI static float RenderMultiplier();
-			LEOPPHAPI static void RenderMultiplier(float newMult);
-
+			LEOPPHAPI static auto RenderMultiplier() -> float;
+			LEOPPHAPI static auto RenderMultiplier(float newMult) -> void;
 
 			Window() = delete;
 			Window(const Window& other) = delete;
 			Window(Window&& other) = delete;
 
-			Window& operator=(const Window& other) = delete;
-			Window& operator=(Window&& other) = delete;
+			auto operator=(const Window& other) -> Window& = delete;
+			auto operator=(Window&& other) -> Window& = delete;
 
 			~Window() = delete;
 	};

@@ -1,10 +1,9 @@
 #pragma once
 
-#include "../rendering/Skybox.hpp"
 #include "../misc/Color.hpp"
+#include "../rendering/Skybox.hpp"
 
 #include <optional>
-
 
 
 namespace leopph

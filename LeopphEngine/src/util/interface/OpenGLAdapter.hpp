@@ -6,7 +6,6 @@
 #include "../containers/Bimap.hpp"
 
 
-
 namespace leopph::internal
 {
 	class OpenGLAdapter final
@@ -18,19 +17,17 @@ namespace leopph::internal
 
 			~OpenGLAdapter() = delete;
 
-			OpenGLAdapter& operator=(const OpenGLAdapter& other) = delete;
-			OpenGLAdapter& operator=(OpenGLAdapter&& other) = delete;
+			auto operator=(const OpenGLAdapter& other) -> OpenGLAdapter& = delete;
+			auto operator=(OpenGLAdapter&& other) -> OpenGLAdapter& = delete;
 
-
-			static int OpenGLShaderType(ShaderType type);
-			static ShaderType AbstractShaderType(int type);
-
+			static auto OpenGLShaderType(ShaderType type) -> int;
+			static auto AbstractShaderType(int type) -> ShaderType;
 
 		private:
-		#ifdef _DEBUG
+			#ifdef _DEBUG
 			static const Bimap<int, ShaderType, ShaderTypeHash, ShaderTypeEqual, true> s_ShaderTypes;
-		#else
+			#else
 			static const Bimap<int, ShaderType, ShaderTypeHash, ShaderTypeEqual> s_ShaderTypes;
-		#endif
+			#endif
 	};
 }

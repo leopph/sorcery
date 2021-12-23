@@ -30,14 +30,12 @@ namespace leopph::internal
 		Data() = ProcessNodes(scene);
 	}
 
-
-	const std::filesystem::path& FileMeshDataGroup::Path() const
+	auto FileMeshDataGroup::Path() const -> const std::filesystem::path&
 	{
 		return m_Path;
 	}
 
-
-	std::vector<internal::MeshData> FileMeshDataGroup::ProcessNodes(const aiScene* const scene) const
+	auto FileMeshDataGroup::ProcessNodes(const aiScene* const scene) const -> std::vector<internal::MeshData>
 	{
 		struct NodeAndTransform
 		{
@@ -88,8 +86,7 @@ namespace leopph::internal
 		return ret;
 	}
 
-
-	internal::MeshData FileMeshDataGroup::ProcessMesh(const aiMesh* const mesh, const aiScene* const scene, const Matrix3& trafo) const
+	auto FileMeshDataGroup::ProcessMesh(const aiMesh* const mesh, const aiScene* const scene, const Matrix3& trafo) const -> internal::MeshData
 	{
 		std::vector<Vertex> vertices;
 		std::vector<unsigned> indices;
@@ -171,8 +168,7 @@ namespace leopph::internal
 		return internal::MeshData(vertices, indices, material);
 	}
 
-
-	std::shared_ptr<Texture> FileMeshDataGroup::LoadTexture(const aiMaterial* const material, const aiTextureType type) const
+	auto FileMeshDataGroup::LoadTexture(const aiMaterial* const material, const aiTextureType type) const -> std::shared_ptr<Texture>
 	{
 		if (material->GetTextureCount(type) > 0)
 		{

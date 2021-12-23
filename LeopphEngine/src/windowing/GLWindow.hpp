@@ -23,56 +23,54 @@ namespace leopph::internal
 			~GlWindow() override;
 
 			[[nodiscard]]
-			unsigned Width() const override;
-			void Width(unsigned newWidth) override;
+			auto Width() const -> unsigned override;
+			auto Width(unsigned newWidth) -> void override;
 
 			[[nodiscard]]
-			unsigned Height() const override;
-			void Height(unsigned newHeight) override;
+			auto Height() const -> unsigned override;
+			auto Height(unsigned newHeight) -> void override;
 
 			[[nodiscard]]
-			bool Fullscreen() const override;
-			void Fullscreen(bool newValue) override;
+			auto Fullscreen() const -> bool override;
+			auto Fullscreen(bool newValue) -> void override;
 
 			[[nodiscard]]
-			bool Vsync() const override;
-			void Vsync(bool newValue) override;
+			auto Vsync() const -> bool override;
+			auto Vsync(bool newValue) -> void override;
 
 			[[nodiscard]]
-			std::string_view Title() const override;
-			void Title(std::string newTitle) override;
+			auto Title() const -> std::string_view override;
+			auto Title(std::string newTitle) -> void override;
 
 			[[nodiscard]]
-			const Color& Background() const override;
-			void Background(const Color& color) override;
+			auto Background() const -> const Color& override;
+			auto Background(const Color& color) -> void override;
 
 			[[nodiscard]]
-			CursorState CursorMode() const override;
-			void CursorMode(CursorState newState) override;
+			auto CursorMode() const -> CursorState override;
+			auto CursorMode(CursorState newState) -> void override;
 
 			[[nodiscard]]
-			float RenderMultiplier() override;
-			void RenderMultiplier(float newMult) override;
+			auto RenderMultiplier() -> float override;
+			auto RenderMultiplier(float newMult) -> void override;
 
-			void PollEvents() override;
-			void SwapBuffers() override;
-			bool ShouldClose() override;
-			void Clear() override;
-
+			auto PollEvents() -> void override;
+			auto SwapBuffers() -> void override;
+			auto ShouldClose() -> bool override;
+			auto Clear() -> void override;
 
 			GlWindow(const GlWindow& other) = delete;
 			GlWindow(GlWindow&& other) = delete;
 
-			GlWindow& operator=(const GlWindow& other) = delete;
-			GlWindow& operator=(GlWindow&& other) = delete;
-
+			auto operator=(const GlWindow& other) -> GlWindow& = delete;
+			auto operator=(GlWindow&& other) -> GlWindow& = delete;
 
 		private:
-			void InitKeys() override;
+			auto InitKeys() -> void override;
 
-			static void FramebufferSizeCallback(GLFWwindow*, int width, int height);
-			static void KeyCallback(GLFWwindow*, int key, int, int action, int);
-			static void MouseCallback(GLFWwindow*, double x, double y);
+			static auto FramebufferSizeCallback(GLFWwindow*, int width, int height) -> void;
+			static auto KeyCallback(GLFWwindow*, int key, int, int action, int) -> void;
+			static auto MouseCallback(GLFWwindow*, double x, double y) -> void;
 
 			const static std::unordered_map<int, KeyState> s_KeyStates;
 			const static std::unordered_map<int, KeyCode> s_KeyCodes;

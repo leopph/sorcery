@@ -16,21 +16,21 @@ namespace leopph
 			LEOPPHAPI Model(leopph::Entity* entity, std::filesystem::path path);
 
 			Model(const Model& other) = delete;
-			Model& operator=(const Model& other) = delete;
+			auto operator=(const Model& other) -> Model& = delete;
 
 			Model(Model&& other) = delete;
-			Model& operator=(Model&& other) = delete;
+			auto operator=(Model&& other) -> Model& = delete;
 
 			LEOPPHAPI ~Model() override = default;
 
 			// File path of the loaded Model.
 			[[nodiscard]]
-			const std::filesystem::path& Path() const;
+			auto Path() const -> const std::filesystem::path&;
 
 		private:
 			std::filesystem::path m_Path;
 
 			[[nodiscard]]
-			std::shared_ptr<internal::MeshDataGroup> GetMeshData(const std::filesystem::path& path) const;
+			auto GetMeshData(const std::filesystem::path& path) const -> std::shared_ptr<internal::MeshDataGroup>;
 	};
 }

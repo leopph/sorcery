@@ -6,20 +6,17 @@
 #include "../util/logger.h"
 
 
-
 namespace leopph::internal
 {
 	WindowBase* WindowBase::s_Instance{nullptr};
-
 
 	WindowBase::~WindowBase()
 	{
 		s_Instance = nullptr;
 	}
 
-
-	WindowBase& WindowBase::Get(const unsigned width, const unsigned height,
-	                    const std::string& title, const bool fullscreen)
+	auto WindowBase::Get(const unsigned width, const unsigned height,
+	                     const std::string& title, const bool fullscreen) -> WindowBase&
 	{
 		if (s_Instance == nullptr)
 		{
@@ -37,15 +34,13 @@ namespace leopph::internal
 		return *s_Instance;
 	}
 
-
-	void WindowBase::Destroy()
+	auto WindowBase::Destroy() -> void
 	{
 		delete s_Instance;
 		Logger::Instance().Debug("Window destroyed.");
 	}
 
-
-	float WindowBase::AspectRatio() const
+	auto WindowBase::AspectRatio() const -> float
 	{
 		return static_cast<float>(Width()) / static_cast<float>(Height());
 	}

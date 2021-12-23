@@ -18,7 +18,7 @@
 
 namespace leopph::internal
 {
-	std::unique_ptr<Renderer> Renderer::Create()
+	auto Renderer::Create() -> std::unique_ptr<Renderer>
 	{
 		switch (Settings::RenderingPipeline())
 		{
@@ -36,7 +36,7 @@ namespace leopph::internal
 
 	Renderer::~Renderer() = default;
 
-	const std::vector<Renderer::RenderableData>& Renderer::CollectRenderables()
+	auto Renderer::CollectRenderables() -> const std::vector<Renderer::RenderableData>&
 	{
 		m_CurFrameRenderables.clear();
 
@@ -69,7 +69,7 @@ namespace leopph::internal
 		return m_CurFrameRenderables;
 	}
 
-	const std::vector<const PointLight*>& Renderer::CollectPointLights()
+	auto Renderer::CollectPointLights() -> const std::vector<const PointLight*>&
 	{
 		/* This set stores lights in an ascending order based on distance from camera */
 		static std::set<const PointLight*, LightCloserToCamera> allPointsLightsOrdered;
@@ -100,7 +100,7 @@ namespace leopph::internal
 		return ret;
 	}
 
-	const std::vector<const SpotLight*>& Renderer::CollectSpotLights()
+	auto Renderer::CollectSpotLights() -> const std::vector<const SpotLight*>&
 	{
 		/* This set stores lights in an ascending order based on distance from camera */
 		static std::set<const SpotLight*, LightCloserToCamera> allSpotLightsOrdered;

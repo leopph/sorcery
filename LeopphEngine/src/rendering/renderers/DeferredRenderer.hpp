@@ -6,10 +6,10 @@
 #include "../GeometryBuffer.hpp"
 #include "../RenderTexture.hpp"
 #include "../SpotLightShadowMap.hpp"
-#include "../shaders/ShaderFamily.hpp"
 #include "../../components/lighting/PointLight.hpp"
 #include "../../components/lighting/SpotLight.hpp"
 #include "../../math/Matrix.hpp"
+#include "../shaders/ShaderFamily.hpp"
 
 #include <vector>
 
@@ -21,16 +21,15 @@ namespace leopph::internal
 		public:
 			DeferredRenderer();
 
-			void Render() override;
-
+			auto Render() -> void override;
 
 		private:
-			void RenderGeometry(const Matrix4& camViewMat, const Matrix4& camProjMat, const std::vector<RenderableData>& renderables);
-			void RenderAmbientLight();
-			void RenderDirectionalLights(const Matrix4& camViewMat, const Matrix4& camProjMat, const std::vector<RenderableData>& renderables);
-			void RenderSpotLights(const std::vector<const SpotLight*>& spotLights, const std::vector<RenderableData>& renderables);
-			void RenderPointLights(const std::vector<const PointLight*>& pointLights, const std::vector<RenderableData>& renderables);
-			void RenderSkybox(const Matrix4& camViewMat, const Matrix4& camProjMat);
+			auto RenderGeometry(const Matrix4& camViewMat, const Matrix4& camProjMat, const std::vector<RenderableData>& renderables) -> void;
+			auto RenderAmbientLight() -> void;
+			auto RenderDirectionalLights(const Matrix4& camViewMat, const Matrix4& camProjMat, const std::vector<RenderableData>& renderables) -> void;
+			auto RenderSpotLights(const std::vector<const SpotLight*>& spotLights, const std::vector<RenderableData>& renderables) -> void;
+			auto RenderPointLights(const std::vector<const PointLight*>& pointLights, const std::vector<RenderableData>& renderables) -> void;
+			auto RenderSkybox(const Matrix4& camViewMat, const Matrix4& camProjMat) -> void;
 
 			GeometryBuffer m_GBuffer;
 			RenderTexture m_RenderTexture;

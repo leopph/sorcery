@@ -2,6 +2,7 @@
 
 #include "../math/Vector.hpp"
 
+
 namespace leopph
 {
 	/*------------------------------------------------

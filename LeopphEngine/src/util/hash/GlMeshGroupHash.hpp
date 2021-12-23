@@ -11,14 +11,13 @@ namespace leopph::internal
 {
 	class GlMeshGroupHash
 	{
-	public:
-		using is_transparent = void;
+		public:
+			using is_transparent = void;
 
-		std::size_t operator()(const GlMeshGroup& model) const;
-		std::size_t operator()(const std::shared_ptr<const MeshDataGroup>& meshDataGroup) const;
+			auto operator()(const GlMeshGroup& model) const -> std::size_t;
+			auto operator()(const std::shared_ptr<const MeshDataGroup>& meshDataGroup) const -> std::size_t;
 
-
-	private:
-		std::hash<std::string> m_Hash;
+		private:
+			std::hash<std::string> m_Hash;
 	};
 }

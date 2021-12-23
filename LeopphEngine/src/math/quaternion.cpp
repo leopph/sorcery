@@ -1,7 +1,6 @@
 #include "Quaternion.hpp"
 
 #include "LeopphMath.hpp"
-
 #include "../util/logger.h"
 
 #include <cmath>
@@ -28,8 +27,8 @@ namespace leopph
 		Y{m_Y},
 		Z{m_Z}
 	{
-		Vector3 normalizedAxis{axis.Normalized()};
-		const float angleHalfRadians = math::ToRadians(angleDegrees) / 2.0f;
+		auto normalizedAxis{axis.Normalized()};
+		const auto angleHalfRadians = math::ToRadians(angleDegrees) / 2.0f;
 
 		m_W = math::Cos(angleHalfRadians);
 		normalizedAxis *= math::Sin(angleHalfRadians);
@@ -53,7 +52,7 @@ namespace leopph
 		Quaternion{other}
 	{}
 
-	Quaternion& Quaternion::operator=(const Quaternion& other)
+	auto Quaternion::operator=(const Quaternion& other) -> Quaternion&
 	{
 		m_W = other.m_W;
 		m_X = other.m_X;
@@ -62,12 +61,12 @@ namespace leopph
 		return *this;
 	}
 
-	Quaternion& Quaternion::operator=(Quaternion&& other) noexcept
+	auto Quaternion::operator=(Quaternion&& other) noexcept -> Quaternion&
 	{
 		return operator=(other);
 	}
 
-	const float& Quaternion::operator[](const std::size_t index) const
+	auto Quaternion::operator[](const std::size_t index) const -> const float&
 	{
 		switch (index)
 		{
@@ -96,16 +95,16 @@ namespace leopph
 		}
 	}
 
-	float& Quaternion::operator[](const std::size_t index)
+	auto Quaternion::operator[](const std::size_t index) -> float&
 	{
 		return const_cast<float&>(const_cast<const Quaternion*>(this)->operator[](index));
 	}
 
-	Vector3 Quaternion::EulerAngles() const
+	auto Quaternion::EulerAngles() const -> Vector3
 	{
 		// ???
 
-		float secondComponent{2 * (m_W * m_Y - m_Z * m_X)};
+		auto secondComponent{2 * (m_W * m_Y - m_Z * m_X)};
 
 		if (math::Abs(secondComponent) > 1)
 		{
@@ -124,18 +123,18 @@ namespace leopph
 		};
 	}
 
-	float Quaternion::Norm() const
+	auto Quaternion::Norm() const -> float
 	{
 		return math::Sqrt(math::Pow(m_W, 2) + math::Pow(m_X, 2) + math::Pow(m_Y, 2) + math::Pow(m_Z, 2));
 	}
 
-	Quaternion Quaternion::Normalized() const
+	auto Quaternion::Normalized() const -> Quaternion
 	{
 		const auto norm{Norm()};
 		return Quaternion{m_W / norm, m_X / norm, m_Y / norm, m_Z / norm};
 	}
 
-	Quaternion& Quaternion::Normalize()
+	auto Quaternion::Normalize() -> Quaternion&
 	{
 		const auto norm{Norm()};
 		m_W /= norm;
@@ -145,12 +144,12 @@ namespace leopph
 		return *this;
 	}
 
-	Quaternion Quaternion::Conjugate() const
+	auto Quaternion::Conjugate() const -> Quaternion
 	{
 		return Quaternion{m_W, -m_X, -m_Y, -m_Z};
 	}
 
-	Quaternion& Quaternion::ConjugateInPlace()
+	auto Quaternion::ConjugateInPlace() -> Quaternion&
 	{
 		m_X = -m_X;
 		m_Y = -m_Y;
@@ -158,13 +157,13 @@ namespace leopph
 		return *this;
 	}
 
-	Quaternion Quaternion::Inverse() const
+	auto Quaternion::Inverse() const -> Quaternion
 	{
 		const auto normSquared{math::Pow(m_W, 2) + math::Pow(m_X, 2) + math::Pow(m_Y, 2) + math::Pow(m_Z, 2)};
 		return Quaternion{m_W / normSquared, -m_X / normSquared, -m_Y / normSquared, -m_Z / normSquared};
 	}
 
-	Quaternion& Quaternion::Invert()
+	auto Quaternion::Invert() -> Quaternion&
 	{
 		const auto normSquared{math::Pow(m_W, 2) + math::Pow(m_X, 2) + math::Pow(m_Y, 2) + math::Pow(m_Z, 2)};
 		m_W /= normSquared;
@@ -185,7 +184,7 @@ namespace leopph
 		};
 	}
 
-	Quaternion operator*(const Quaternion& left, const Quaternion& right)
+	auto operator*(const Quaternion& left, const Quaternion& right) -> Quaternion
 	{
 		return Quaternion
 		{
@@ -196,12 +195,12 @@ namespace leopph
 		};
 	}
 
-	Quaternion& operator*=(Quaternion& left, const Quaternion& right)
+	auto operator*=(Quaternion& left, const Quaternion& right) -> Quaternion&
 	{
 		return left = left * right;
 	}
 
-	std::ostream& operator<<(std::ostream& os, const Quaternion& q)
+	auto operator<<(std::ostream& os, const Quaternion& q) -> std::ostream&
 	{
 		os << "(" << q[0] << ", " << q[1] << ", " << q[2] << ", " << q[3] << ")";
 		return os;

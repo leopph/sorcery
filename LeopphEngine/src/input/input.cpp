@@ -2,76 +2,73 @@
 
 #include "../windowing/WindowBase.hpp"
 
+
 namespace leopph
 {
 	std::map<KeyCode, KeyState> Input::s_KeyStates{};
 
-
 	std::pair<float, float> Input::s_MousePos{};
 
-
-	EventReceiverHandle<internal::KeyEvent> Input::keyEventReceiver{ [](const internal::KeyEvent& event)
-	{
-		s_KeyStates[event.keyCode] = event.keyState;
-	} };
-
-
-	EventReceiverHandle<internal::MouseEvent> Input::mouseEventReceiver{ [](const internal::MouseEvent& event)
-	{
-		s_MousePos = {event.position[0], event.position[1]};
-	} };
-
-
-	EventReceiverHandle<internal::FrameEndedEvent> Input::frameBeginsEventReceiver{ [](const internal::FrameEndedEvent&)
-	{
-		for (auto& [keyCode, keyState] : s_KeyStates)
+	EventReceiverHandle<internal::KeyEvent> Input::keyEventReceiver{
+		[](const internal::KeyEvent& event)
 		{
-			if (keyState == KeyState::Up)
+			s_KeyStates[event.keyCode] = event.keyState;
+		}
+	};
+
+	EventReceiverHandle<internal::MouseEvent> Input::mouseEventReceiver{
+		[](const internal::MouseEvent& event)
+		{
+			s_MousePos = {event.position[0], event.position[1]};
+		}
+	};
+
+	EventReceiverHandle<internal::FrameEndedEvent> Input::frameBeginsEventReceiver{
+		[](const internal::FrameEndedEvent&)
+		{
+			for (auto& [keyCode, keyState] : s_KeyStates)
 			{
-				keyState = KeyState::Released;
-			}
-			else if (keyState == KeyState::Down)
-			{
-				keyState = KeyState::Held;
+				if (keyState == KeyState::Up)
+				{
+					keyState = KeyState::Released;
+				}
+				else if (keyState == KeyState::Down)
+				{
+					keyState = KeyState::Held;
+				}
 			}
 		}
-	} };
+	};
 
-	
-	bool Input::GetKey(KeyCode key)
+	auto Input::GetKey(KeyCode key) -> bool
 	{
-		const KeyState state = s_KeyStates.at(key);
+		const auto state = s_KeyStates.at(key);
 		return
 			state == KeyState::Down ||
 			state == KeyState::Held;
 	}
 
-
-	bool Input::GetKeyDown(KeyCode key)
+	auto Input::GetKeyDown(KeyCode key) -> bool
 	{
 		return s_KeyStates.at(key) == KeyState::Down;
 	}
 
-
-	bool Input::GetKeyUp(KeyCode key)
+	auto Input::GetKeyUp(KeyCode key) -> bool
 	{
 		return s_KeyStates.at(key) == KeyState::Up;
 	}
 
-
-	const std::pair<float, float>& Input::GetMousePosition()
+	auto Input::GetMousePosition() -> const std::pair<float, float>&
 	{
 		return s_MousePos;
 	}
 
-
-	CursorState Input::CursorMode()
+	auto Input::CursorMode() -> CursorState
 	{
 		return internal::WindowBase::Get().CursorMode();
 	}
 
-
-	void Input::CursorMode(CursorState newState)
+	auto Input::CursorMode(CursorState newState) -> void
 	{
 		internal::WindowBase::Get().CursorMode(newState);
 	}

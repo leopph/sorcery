@@ -5,5 +5,6 @@
 
 namespace leopph::internal
 {
-	struct FrameEndedEvent final : Event {};
+	struct FrameEndedEvent final : Event
+	{};
 }

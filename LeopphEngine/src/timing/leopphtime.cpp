@@ -1,14 +1,16 @@
 #include "leopphtime.h"
+
 #include "timer.h"
+
 
 namespace leopph
 {
-	float Time::DeltaTime()
+	auto Time::DeltaTime() -> float
 	{
 		return internal::Timer::DeltaTime();
 	}
 
-	float Time::FullTime()
+	auto Time::FullTime() -> float
 	{
 		return internal::Timer::FullTime();
 	}

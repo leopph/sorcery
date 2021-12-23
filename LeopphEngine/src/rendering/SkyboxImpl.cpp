@@ -3,9 +3,9 @@
 #include "../util/logger.h"
 
 #include <glad/glad.h>
-#include <stb_image.h>
 
 #include <cstddef>
+#include <stb_image.h>
 #include <utility>
 
 
@@ -30,7 +30,6 @@ namespace leopph::internal
 
 		m_Paths.at(5) = std::filesystem::path{allFilePathStrings};
 
-
 		std::array<ImageData, 6> faces;
 
 		for (std::size_t i = 0; i < 6; i++)
@@ -44,7 +43,6 @@ namespace leopph::internal
 				return;
 			}
 		}
-
 
 		glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &m_GlNames[CUBEMAP]);
 		glTextureStorage2D(m_GlNames[CUBEMAP], 1, GL_RGB8, faces.front().width, faces.front().height);
@@ -71,7 +69,6 @@ namespace leopph::internal
 		glVertexArrayElementBuffer(m_GlNames[VAO], m_GlNames[EBO]);
 	}
 
-
 	SkyboxImpl::~SkyboxImpl()
 	{
 		glDeleteTextures(1, &m_GlNames[CUBEMAP]);
@@ -79,8 +76,7 @@ namespace leopph::internal
 		glDeleteVertexArrays(1, &m_GlNames[VAO]);
 	}
 
-
-	void SkyboxImpl::Draw(ShaderProgram& shader) const
+	auto SkyboxImpl::Draw(ShaderProgram& shader) const -> void
 	{
 		shader.SetUniform("u_CubeMap", 0);
 
@@ -98,7 +94,6 @@ namespace leopph::internal
 		glDepthFunc(GL_LESS);
 		glEnable(GL_CULL_FACE);
 	}
-
 
 	SkyboxImpl::ImageData::~ImageData()
 	{

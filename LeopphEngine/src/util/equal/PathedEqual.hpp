@@ -6,41 +6,40 @@
 namespace leopph::internal
 {
 	template<Pathed T>
-	struct PathedEqual 
+	struct PathedEqual
 	{
 		using is_transparent = void;
 
 		// For references.
 
-		bool operator()(const T& left, const T& right) const
+		auto operator()(const T& left, const T& right) const -> bool
 		{
 			return left.Path == right.Path;
 		}
 
-		bool operator()(const std::filesystem::path& left, const T& right) const
+		auto operator()(const std::filesystem::path& left, const T& right) const -> bool
 		{
 			return left == right.Path;
 		}
 
-		bool operator()(const T& left, const std::filesystem::path& right) const
+		auto operator()(const T& left, const std::filesystem::path& right) const -> bool
 		{
 			return left.Path == right;
 		}
 
 		// For pointers.
 
-
-		bool operator()(const T* const left, const T* const right) const
+		auto operator()(const T* const left, const T* const right) const -> bool
 		{
 			return left->Path == right->Path;
 		}
 
-		bool operator()(const std::filesystem::path& left, const T* const right) const
+		auto operator()(const std::filesystem::path& left, const T* const right) const -> bool
 		{
 			return left == right->Path;
 		}
 
-		bool operator()(const T* const left, const std::filesystem::path& right) const
+		auto operator()(const T* const left, const std::filesystem::path& right) const -> bool
 		{
 			return left->Path == right;
 		}

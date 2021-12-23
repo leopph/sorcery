@@ -6,86 +6,73 @@
 
 namespace leopph::math
 {
-	float Pi()
+	auto Pi() -> float
 	{
-		static float ret{ 2 * std::acosf(0) };
+		static auto ret{2 * std::acosf(0)};
 		return ret;
 	}
 
-
-	float ToRadians(const float degrees)
+	auto ToRadians(const float degrees) -> float
 	{
 		return degrees * Pi() / 180.0f;
 	}
 
-
-	float ToDegrees(const float radians)
+	auto ToDegrees(const float radians) -> float
 	{
 		return radians * 180.0f / Pi();
 	}
 
-
-	float Sin(const float radians)
+	auto Sin(const float radians) -> float
 	{
 		return std::sinf(radians);
 	}
 
-
-	float Asin(const float radians)
+	auto Asin(const float radians) -> float
 	{
 		return std::asinf(radians);
 	}
 
-
-	float Cos(const float radians)
+	auto Cos(const float radians) -> float
 	{
 		return std::cosf(radians);
 	}
 
-
-	float Acos(const float radians)
+	auto Acos(const float radians) -> float
 	{
 		return std::acosf(radians);
 	}
 
-
-	float Tan(const float radians)
+	auto Tan(const float radians) -> float
 	{
 		return std::tanf(radians);
 	}
 
-
-	float Atan(const float radians)
+	auto Atan(const float radians) -> float
 	{
 		return std::atanf(radians);
 	}
 
-
-	float Atan2(const float y, const float x)
+	auto Atan2(const float y, const float x) -> float
 	{
 		return std::atan2(y, x);
 	}
 
-
-	float Pow(const float base, const float exp)
+	auto Pow(const float base, const float exp) -> float
 	{
 		return std::powf(base, exp);
 	}
 
-
-	float Sqrt(const float value)
+	auto Sqrt(const float value) -> float
 	{
 		return std::sqrtf(value);
 	}
 
-
-	float Clamp(const float value, const float min, const float max)
+	auto Clamp(const float value, const float min, const float max) -> float
 	{
 		return std::clamp(value, min, max);
 	}
 
-
-	float Abs(const float value)
+	auto Abs(const float value) -> float
 	{
 		return std::abs(value);
 	}

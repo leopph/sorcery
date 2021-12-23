@@ -1,7 +1,7 @@
 #ifdef _DEBUG
 #define _CRTDBG_MAP_ALLOC
-#include <stdlib.h>
 #include <crtdbg.h>
+#include <stdlib.h>
 #endif
 
 #include "Main.hpp"
@@ -18,7 +18,7 @@
 
 namespace leopph::internal
 {
-	int Main(decltype(Init) initFunc)
+	auto Main(decltype(Init) initFunc) -> int
 	{
 		#ifdef _DEBUG
 		_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);

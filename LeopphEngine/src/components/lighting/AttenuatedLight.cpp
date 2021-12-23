@@ -12,41 +12,34 @@ namespace leopph::internal
 		Range(range);
 	}
 
-
 	AttenuatedLight::~AttenuatedLight() = default;
 
-
-	float AttenuatedLight::Constant() const
+	auto AttenuatedLight::Constant() const -> float
 	{
 		return m_Constant;
 	}
 
-
-	float AttenuatedLight::Quadratic() const
+	auto AttenuatedLight::Quadratic() const -> float
 	{
 		return m_Quadratic;
 	}
 
-
-	float AttenuatedLight::Linear() const
+	auto AttenuatedLight::Linear() const -> float
 	{
 		return m_Linear;
 	}
 
-
-	void AttenuatedLight::Linear(const float value)
+	auto AttenuatedLight::Linear(const float value) -> void
 	{
 		m_Linear = value;
 	}
 
-
-	void AttenuatedLight::Constant(const float value)
+	auto AttenuatedLight::Constant(const float value) -> void
 	{
 		m_Constant = value;
 	}
 
-
-	void AttenuatedLight::Quadratic(const float value)
+	auto AttenuatedLight::Quadratic(const float value) -> void
 	{
 		m_Quadratic = value;
 	}

@@ -3,15 +3,13 @@
 
 namespace leopph::internal
 {
-	std::size_t ShaderTypeHash::operator()(ShaderType type) const
+	auto ShaderTypeHash::operator()(ShaderType type) const -> std::size_t
 	{
 		return m_Hash(static_cast<int>(type));
 	}
 
-
-	std::size_t ShaderTypeHash::operator()(const int i) const
+	auto ShaderTypeHash::operator()(const int i) const -> std::size_t
 	{
 		return m_Hash(i);
 	}
-
 }

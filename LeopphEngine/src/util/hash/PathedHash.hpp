@@ -13,18 +13,18 @@ namespace leopph::internal
 		using is_transparent = void;
 
 		// For references.
-		std::size_t operator()(const T& pathed) const
+		auto operator()(const T& pathed) const -> std::size_t
 		{
 			return hash_value(pathed.Path);
 		}
 
 		// For pointers.
-		std::size_t operator()(const T* const model) const
+		auto operator()(const T* const model) const -> std::size_t
 		{
 			return hash_value(model->Path);
 		}
 
-		std::size_t operator()(const std::filesystem::path& path) const
+		auto operator()(const std::filesystem::path& path) const -> std::size_t
 		{
 			return hash_value(path);
 		}

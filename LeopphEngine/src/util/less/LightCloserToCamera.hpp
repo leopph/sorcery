@@ -7,6 +7,6 @@ namespace leopph::internal
 {
 	struct LightCloserToCamera
 	{
-		bool operator()(const Light* left, const Light* right) const;
+		auto operator()(const Light* left, const Light* right) const -> bool;
 	};
 }

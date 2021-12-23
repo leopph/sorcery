@@ -56,7 +56,7 @@ namespace leopph::internal
 		Logger::Instance().Warning("The forward rendering pipeline is currently not feature complete. It is recommended to use the deferred pipeline.");
 	}
 
-	void ForwardRenderer::Render()
+	auto ForwardRenderer::Render() -> void
 	{
 		/* We don't render if there is no camera to use */
 		if (Camera::Active == nullptr)
@@ -77,7 +77,7 @@ namespace leopph::internal
 		RenderSkybox(camViewMat, camProjMat);
 	}
 
-	void ForwardRenderer::RenderShadedObjects(const Matrix4& camViewMat, const Matrix4& camProjMat, const std::vector<RenderableData>& renderables, const DirectionalLight* dirLight, const std::vector<const SpotLight*>& spotLights, const std::vector<const PointLight*>& pointLights)
+	auto ForwardRenderer::RenderShadedObjects(const Matrix4& camViewMat, const Matrix4& camProjMat, const std::vector<RenderableData>& renderables, const DirectionalLight* dirLight, const std::vector<const SpotLight*>& spotLights, const std::vector<const PointLight*>& pointLights) -> void
 	{
 		static auto objectFlagInfo{m_ObjectShader.GetFlagInfo()};
 		objectFlagInfo.Clear();
@@ -197,7 +197,7 @@ namespace leopph::internal
 		}
 	}
 
-	void ForwardRenderer::RenderSkybox(const Matrix4& camViewMat, const Matrix4& camProjMat)
+	auto ForwardRenderer::RenderSkybox(const Matrix4& camViewMat, const Matrix4& camProjMat) -> void
 	{
 		if (const auto& skybox{Camera::Active->Background().skybox}; skybox.has_value())
 		{

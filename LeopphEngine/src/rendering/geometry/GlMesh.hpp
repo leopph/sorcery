@@ -20,21 +20,21 @@ namespace leopph::internal
 			GlMesh(const MeshData& meshData, unsigned instanceBuffer);
 
 			GlMesh(const GlMesh& other);
-			GlMesh& operator=(const GlMesh& other);
+			auto operator=(const GlMesh& other) -> GlMesh&;
 
 			GlMesh(GlMesh&& other) noexcept;
-			GlMesh& operator=(GlMesh&& other) noexcept;
+			auto operator=(GlMesh&& other) noexcept -> GlMesh&;
 
 			~GlMesh();
 
-			bool operator==(const GlMesh& other) const;
+			auto operator==(const GlMesh& other) const -> bool;
 
-			void DrawShaded(ShaderProgram& shader, std::size_t nextFreeTextureUnit, std::size_t instanceCount) const;
-			void DrawDepth(std::size_t instanceCount) const;
+			auto DrawShaded(ShaderProgram& shader, std::size_t nextFreeTextureUnit, std::size_t instanceCount) const -> void;
+			auto DrawDepth(std::size_t instanceCount) const -> void;
 
 		private:
 			// Decrements ref count and deletes GL resources if necessary.
-			void Deinit() const;
+			auto Deinit() const -> void;
 
 			constexpr static std::size_t VERTEX_BUFFER{0ull};
 			constexpr static std::size_t INDEX_BUFFER{1ull};

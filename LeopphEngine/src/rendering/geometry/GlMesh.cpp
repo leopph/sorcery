@@ -12,12 +12,13 @@
 namespace leopph::internal
 {
 	GlMesh::GlMesh(const MeshData& meshData, const unsigned instanceBuffer) :
-		m_SharedData{new SharedData
-			{
+		m_SharedData{
+			new SharedData{
 				.Material = meshData.Material,
 				.VertexCount = meshData.Vertices.size(),
 				.IndexCount = meshData.Indices.size()
-			}}
+			}
+		}
 	{
 		glCreateVertexArrays(1, &m_SharedData->VertexArray);
 
@@ -88,7 +89,7 @@ namespace leopph::internal
 		++m_SharedData->RefCount;
 	}
 
-	GlMesh& GlMesh::operator=(const GlMesh& other)
+	auto GlMesh::operator=(const GlMesh& other) -> GlMesh&
 	{
 		if (this == &other)
 		{
@@ -105,7 +106,7 @@ namespace leopph::internal
 		GlMesh{other}
 	{}
 
-	GlMesh& GlMesh::operator=(GlMesh&& other) noexcept
+	auto GlMesh::operator=(GlMesh&& other) noexcept -> GlMesh&
 	{
 		return *this = other;
 	}
@@ -115,12 +116,12 @@ namespace leopph::internal
 		Deinit();
 	}
 
-	bool GlMesh::operator==(const GlMesh& other) const
+	auto GlMesh::operator==(const GlMesh& other) const -> bool
 	{
 		return m_SharedData == other.m_SharedData;
 	}
 
-	void GlMesh::DrawShaded(ShaderProgram& shader, std::size_t nextFreeTextureUnit, const std::size_t instanceCount) const
+	auto GlMesh::DrawShaded(ShaderProgram& shader, std::size_t nextFreeTextureUnit, const std::size_t instanceCount) const -> void
 	{
 		shader.SetUniform("u_Material.ambientColor", static_cast<Vector3>(m_SharedData->Material->AmbientColor));
 		shader.SetUniform("u_Material.diffuseColor", static_cast<Vector3>(m_SharedData->Material->DiffuseColor));
@@ -185,7 +186,7 @@ namespace leopph::internal
 		}
 	}
 
-	void GlMesh::DrawDepth(const std::size_t instanceCount) const
+	auto GlMesh::DrawDepth(const std::size_t instanceCount) const -> void
 	{
 		if (!m_SharedData->Material->TwoSided)
 		{
@@ -209,7 +210,7 @@ namespace leopph::internal
 		}
 	}
 
-	void GlMesh::Deinit() const
+	auto GlMesh::Deinit() const -> void
 	{
 		--m_SharedData->RefCount;
 

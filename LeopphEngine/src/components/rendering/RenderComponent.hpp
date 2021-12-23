@@ -17,10 +17,10 @@ namespace leopph::internal
 	{
 		public:
 			RenderComponent(const RenderComponent& other) = delete;
-			RenderComponent& operator=(const RenderComponent& other) = delete;
+			auto operator=(const RenderComponent& other) -> RenderComponent& = delete;
 
 			RenderComponent(RenderComponent&& other) = delete;
-			RenderComponent& operator=(RenderComponent&& other) = delete;
+			auto operator=(RenderComponent&& other) -> RenderComponent& = delete;
 
 			~RenderComponent() noexcept override;
 
@@ -29,24 +29,24 @@ namespace leopph::internal
 			 * When instancing is turned on if any of the instances have this property set to true, all instances will cast shadow regardless of what is set on them.
 			 * This value is false by default. */
 			[[nodiscard]]
-			LEOPPHAPI bool CastsShadow() const;
+			LEOPPHAPI auto CastsShadow() const -> bool;
 
 			/* Set whether the rendered object occludes light from other objects.
 			 * This only works if the Light used also has this property set to true.
 			 * When instancing is turned on if any of the instances have this property set to true, all instances will cast shadow regardless of what is set on them.
 			 * This value is false by default. */
-			LEOPPHAPI void CastsShadow(bool value);
+			LEOPPHAPI auto CastsShadow(bool value) -> void;
 
 			/* Get whether the object is rendered together with other objects that use the same data source.
 			 * This speeds up rendering but limits the amount of customization that can be applied e.g. shadow casting.
 			 * The default value is false. */
 			[[nodiscard]]
-			LEOPPHAPI bool Instanced() const;
+			LEOPPHAPI auto Instanced() const -> bool;
 
 			/* Set whether the object is rendered together with other objects that use the same data source.
 			 * This speeds up rendering but limits the amount of customization that can be applied e.g. shadow casting.
 			 * The default value is false. */
-			LEOPPHAPI void Instanced(bool value);
+			LEOPPHAPI auto Instanced(bool value) -> void;
 
 		protected:
 			RenderComponent(leopph::Entity* entity, std::shared_ptr<const MeshDataGroup> meshDataGroup);

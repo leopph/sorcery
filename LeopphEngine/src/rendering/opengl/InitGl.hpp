@@ -2,5 +2,5 @@
 
 namespace leopph::internal
 {
-	bool InitGL();
+	auto InitGL() -> bool;
 }

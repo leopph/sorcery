@@ -14,57 +14,57 @@
 #include <iterator>
 
 
-
 namespace leopph::internal
 {
 	DeferredRenderer::DeferredRenderer() :
 		m_ShadowShader{
-	{
-		{ShaderFamily::ShadowMapVertSrc, ShaderType::Vertex}
-	}},
+			{
+				{ShaderFamily::ShadowMapVertSrc, ShaderType::Vertex}
+			}
+		},
 		m_CubeShadowShader{
 			{
 				{ShaderFamily::CubeShadowMapVertSrc, ShaderType::Vertex},
 				{ShaderFamily::CubeShadowMapGeomSrc, ShaderType::Geometry},
 				{ShaderFamily::CubeShadowMapFragSrc, ShaderType::Fragment}
 			}
-	},
+		},
 		m_GeometryShader{
-	{
-		{ShaderFamily::GPassObjectVertSrc, ShaderType::Vertex},
-		{ShaderFamily::GPassObjectFragSrc, ShaderType::Fragment}
-	}
-	},
+			{
+				{ShaderFamily::GPassObjectVertSrc, ShaderType::Vertex},
+				{ShaderFamily::GPassObjectFragSrc, ShaderType::Fragment}
+			}
+		},
 		m_SkyboxShader{
 			{
 				{ShaderFamily::SkyboxVertSrc, ShaderType::Vertex},
 				{ShaderFamily::SkyboxFragSrc, ShaderType::Fragment}
 			}
-	},
+		},
 		m_AmbientShader{
 			{
 				{ShaderFamily::LightPassVertSrc, ShaderType::Vertex},
 				{ShaderFamily::AmbLightFragSrc, ShaderType::Fragment}
 			}
-	},
+		},
 		m_DirLightShader{
 			{
 				{ShaderFamily::LightPassVertSrc, ShaderType::Vertex},
 				{ShaderFamily::DirLightPassFragSrc, ShaderType::Fragment}
 			}
-	},
+		},
 		m_SpotLightShader{
 			{
 				{ShaderFamily::LightPassVertSrc, ShaderType::Vertex},
 				{ShaderFamily::SpotLightPassFragSrc, ShaderType::Fragment}
 			}
-	},
+		},
 		m_PointLightShader{
 			{
 				{ShaderFamily::LightPassVertSrc, ShaderType::Vertex},
 				{ShaderFamily::PointLightPassFragSrc, ShaderType::Fragment}
 			}
-	}
+		}
 	{
 		glEnable(GL_DEPTH_TEST);
 		glDepthFunc(GL_LESS);
@@ -80,8 +80,7 @@ namespace leopph::internal
 		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 	}
 
-
-	void DeferredRenderer::Render()
+	auto DeferredRenderer::Render() -> void
 	{
 		/* We don't render if there is no camera to use */
 		if (Camera::Active == nullptr)
@@ -113,8 +112,7 @@ namespace leopph::internal
 		m_RenderTexture.DrawToWindow();
 	}
 
-
-	void DeferredRenderer::RenderGeometry(const Matrix4& camViewMat, const Matrix4& camProjMat, const std::vector<RenderableData>& renderables)
+	auto DeferredRenderer::RenderGeometry(const Matrix4& camViewMat, const Matrix4& camProjMat, const std::vector<RenderableData>& renderables) -> void
 	{
 		static auto flagInfo{m_GeometryShader.GetFlagInfo()};
 		flagInfo.Clear();
@@ -125,7 +123,7 @@ namespace leopph::internal
 		shader.SetUniform("u_ViewProjMat", camViewMat * camProjMat);
 
 		m_GBuffer.BindForWriting();
-		
+
 		shader.Use();
 		for (const auto& [renderable, instances, castsShadow] : renderables)
 		{
@@ -136,8 +134,7 @@ namespace leopph::internal
 		m_GBuffer.UnbindFromWriting();
 	}
 
-
-	void DeferredRenderer::RenderAmbientLight()
+	auto DeferredRenderer::RenderAmbientLight() -> void
 	{
 		static auto ambientFlagInfo{m_AmbientShader.GetFlagInfo()};
 		auto& shader{m_AmbientShader.GetPermutation(ambientFlagInfo)};
@@ -152,8 +149,7 @@ namespace leopph::internal
 		glEnable(GL_DEPTH_TEST);
 	}
 
-
-	void DeferredRenderer::RenderDirectionalLights(const Matrix4& camViewMat, const Matrix4& camProjMat, const std::vector<RenderableData>& renderables)
+	auto DeferredRenderer::RenderDirectionalLights(const Matrix4& camViewMat, const Matrix4& camProjMat, const std::vector<RenderableData>& renderables) -> void
 	{
 		const auto& dirLight{DataManager::Instance().DirectionalLight()};
 
@@ -240,8 +236,7 @@ namespace leopph::internal
 		glEnable(GL_DEPTH_TEST);
 	}
 
-
-	void DeferredRenderer::RenderSpotLights(const std::vector<const SpotLight*>& spotLights, const std::vector<RenderableData>& renderables)
+	auto DeferredRenderer::RenderSpotLights(const std::vector<const SpotLight*>& spotLights, const std::vector<RenderableData>& renderables) -> void
 	{
 		if (spotLights.empty())
 		{
@@ -313,8 +308,7 @@ namespace leopph::internal
 		}
 	}
 
-
-	void DeferredRenderer::RenderPointLights(const std::vector<const PointLight*>& pointLights, const std::vector<RenderableData>& renderables)
+	auto DeferredRenderer::RenderPointLights(const std::vector<const PointLight*>& pointLights, const std::vector<RenderableData>& renderables) -> void
 	{
 		if (pointLights.empty())
 		{
@@ -359,12 +353,12 @@ namespace leopph::internal
 
 				static const std::array cubeFaceMats
 				{
-					 Matrix4{0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 1}, // +X
-					 Matrix4{0, 0, -1, 0, 0, -1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1}, // -X
-					 Matrix4{1, 0, 0, 0, 0, 0, 1, 0, 0, 1 ,0, 0, 0, 0, 0, 1}, // +Y
-					 Matrix4{1, 0, 0, 0, 0, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 1}, // -Y
-					 Matrix4{1, 0, 0, 0, 0, -1, 0, 0, 0 ,0, 1, 0, 0, 0, 0, 1}, // +Z
-					 Matrix4{-1, 0, 0, 0, 0, -1, 0, 0, 0, 0, -1, 0, 0 , 0, 0, 1} // -Z
+					Matrix4{0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 1}, // +X
+					Matrix4{0, 0, -1, 0, 0, -1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1}, // -X
+					Matrix4{1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1}, // +Y
+					Matrix4{1, 0, 0, 0, 0, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 1}, // -Y
+					Matrix4{1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1}, // +Z
+					Matrix4{-1, 0, 0, 0, 0, -1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1} // -Z
 				};
 
 				std::ranges::transform(cubeFaceMats, std::back_inserter(shadowViewProjMats), [&](const auto& cubeFaceMat)
@@ -378,7 +372,7 @@ namespace leopph::internal
 
 				m_PointShadowMap.BindForWriting();
 				m_PointShadowMap.Clear();
-				
+
 				shadowShader.Use();
 				for (const auto& [renderable, instances, castsShadow] : renderables)
 				{
@@ -400,8 +394,7 @@ namespace leopph::internal
 		}
 	}
 
-
-	void DeferredRenderer::RenderSkybox(const Matrix4& camViewMat, const Matrix4& camProjMat)
+	auto DeferredRenderer::RenderSkybox(const Matrix4& camViewMat, const Matrix4& camProjMat) -> void
 	{
 		if (const auto& skybox{Camera::Active->Background().skybox}; skybox.has_value())
 		{

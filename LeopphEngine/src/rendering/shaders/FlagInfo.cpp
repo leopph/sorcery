@@ -13,12 +13,12 @@ namespace leopph::internal
 		});
 	}
 
-	bool ShaderFamily::FlagInfo::Empty() const
+	auto ShaderFamily::FlagInfo::Empty() const -> bool
 	{
 		return m_Flags.empty();
 	}
 
-	void ShaderFamily::FlagInfo::Clear()
+	auto ShaderFamily::FlagInfo::Clear() -> void
 	{
 		std::ranges::for_each(m_Flags, [](auto& flagPair)
 		{
@@ -26,12 +26,12 @@ namespace leopph::internal
 		});
 	}
 
-	bool& ShaderFamily::FlagInfo::operator[](const std::string& flag)
+	auto ShaderFamily::FlagInfo::operator[](const std::string& flag) -> bool&
 	{
 		return m_Flags.at(flag);
 	}
 
-	const bool& ShaderFamily::FlagInfo::operator[](const std::string& flag) const
+	auto ShaderFamily::FlagInfo::operator[](const std::string& flag) const -> const bool&
 	{
 		return m_Flags.at(flag);
 	}
@@ -67,22 +67,22 @@ namespace leopph::internal
 		m_FlagInfo{std::move(flagInfo)}
 	{}
 
-	bool ShaderFamily::FlagInfoProxy::Empty() const
+	auto ShaderFamily::FlagInfoProxy::Empty() const -> bool
 	{
 		return m_FlagInfo.Empty();
 	}
 
-	void ShaderFamily::FlagInfoProxy::Clear()
+	auto ShaderFamily::FlagInfoProxy::Clear() -> void
 	{
 		m_FlagInfo.Clear();
 	}
 
-	bool& ShaderFamily::FlagInfoProxy::operator[](const std::string& flag)
+	auto ShaderFamily::FlagInfoProxy::operator[](const std::string& flag) -> bool&
 	{
 		return m_FlagInfo[flag];
 	}
 
-	const bool& ShaderFamily::FlagInfoProxy::operator[](const std::string& flag) const
+	auto ShaderFamily::FlagInfoProxy::operator[](const std::string& flag) const -> const bool&
 	{
 		return m_FlagInfo[flag];
 	}

@@ -2,6 +2,7 @@
 
 #include <chrono>
 
+
 namespace leopph::internal
 {
 	/*----------------------------------------------------------------------
@@ -10,19 +11,19 @@ namespace leopph::internal
 
 	class Timer
 	{
-	public:
-		static void Init();
-		static void OnFrameComplete();
-		static float DeltaTime();
-		static float FullTime();
+		public:
+			static auto Init() -> void;
+			static auto OnFrameComplete() -> void;
+			static auto DeltaTime() -> float;
+			static auto FullTime() -> float;
 
-	private:
-		using Clock = std::chrono::high_resolution_clock;
-		using Seconds = std::chrono::duration<float>;
-		using TimePoint = std::chrono::time_point<std::chrono::high_resolution_clock>;
+		private:
+			using Clock = std::chrono::high_resolution_clock;
+			using Seconds = std::chrono::duration<float>;
+			using TimePoint = std::chrono::time_point<std::chrono::high_resolution_clock>;
 
-		static TimePoint s_LastFrameCompletionTime;
-		static Seconds s_LastFrameDeltaTime;
-		static Seconds s_FullTime;
+			static TimePoint s_LastFrameCompletionTime;
+			static Seconds s_LastFrameDeltaTime;
+			static Seconds s_FullTime;
 	};
 }
