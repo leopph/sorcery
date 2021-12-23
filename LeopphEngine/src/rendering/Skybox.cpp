@@ -9,16 +9,16 @@ namespace leopph
 	Skybox::Skybox(const std::filesystem::path& right, const std::filesystem::path& left,
 							   const std::filesystem::path& top, const std::filesystem::path& bottom,
 							   const std::filesystem::path& front, const std::filesystem::path& back) :
-		m_Impl{impl::DataManager::CreateOrGetSkyboxImpl(right.string() + impl::SkyboxImpl::FileSeparator + left.string() + impl::SkyboxImpl::FileSeparator + top.string() + impl::SkyboxImpl::FileSeparator + bottom.string() + impl::SkyboxImpl::FileSeparator + front.string() + impl::SkyboxImpl::FileSeparator + back.string())}
+		m_Impl{impl::DataManager::Instance().CreateOrGetSkyboxImpl(right.string() + impl::SkyboxImpl::FileSeparator + left.string() + impl::SkyboxImpl::FileSeparator + top.string() + impl::SkyboxImpl::FileSeparator + bottom.string() + impl::SkyboxImpl::FileSeparator + front.string() + impl::SkyboxImpl::FileSeparator + back.string())}
 	{
-		impl::DataManager::RegisterSkyboxHandle(m_Impl, this);
+		impl::DataManager::Instance().RegisterSkyboxHandle(m_Impl, this);
 	}
 
 
 	Skybox::Skybox(const Skybox& other) :
 		m_Impl{other.m_Impl}
 	{
-		impl::DataManager::RegisterSkyboxHandle(m_Impl, this);
+		impl::DataManager::Instance().RegisterSkyboxHandle(m_Impl, this);
 	}
 
 	Skybox::Skybox(Skybox&& other) noexcept :
@@ -34,7 +34,7 @@ namespace leopph
 	{
 		Deinit();
 		m_Impl = other.m_Impl;
-		impl::DataManager::RegisterSkyboxHandle(m_Impl, this);
+		impl::DataManager::Instance().RegisterSkyboxHandle(m_Impl, this);
 		return *this;
 	}
 
@@ -80,13 +80,13 @@ namespace leopph
 
 	void Skybox::Deinit()
 	{
-		if (impl::DataManager::Skyboxes().at(*m_Impl).size() == 1ull)
+		if (impl::DataManager::Instance().Skyboxes().at(*m_Impl).size() == 1ull)
 		{
-			impl::DataManager::DestroySkyboxImpl(m_Impl);
+			impl::DataManager::Instance().DestroySkyboxImpl(m_Impl);
 		}
 		else
 		{
-			impl::DataManager::UnregisterSkyboxHandle(m_Impl, this);
+			impl::DataManager::Instance().UnregisterSkyboxHandle(m_Impl, this);
 		}
 	}
 }

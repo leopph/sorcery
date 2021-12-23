@@ -10,12 +10,12 @@ namespace leopph
 		m_InnerAngle{30.f},
 		m_OuterAngle{m_InnerAngle}
 	{
-		impl::DataManager::Register(this);
+		impl::DataManager::Instance().RegisterSpotLight(this);
 	}
 
 	SpotLight::~SpotLight()
 	{
-		impl::DataManager::Unregister(this);
+		impl::DataManager::Instance().UnregisterSpotLight(this);
 	}
 
 	float SpotLight::InnerAngle() const

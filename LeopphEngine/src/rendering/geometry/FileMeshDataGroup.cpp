@@ -183,7 +183,7 @@ namespace leopph::impl
 
 			const auto texPath{m_Path.parent_path() / location.C_Str()};
 
-			if (auto p{DataManager::FindTexture(texPath)};
+			if (auto p{DataManager::Instance().FindTexture(texPath)};
 				p != nullptr)
 			{
 				return p;

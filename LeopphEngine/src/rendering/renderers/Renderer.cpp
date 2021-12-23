@@ -40,7 +40,7 @@ namespace leopph::impl
 	{
 		m_CurFrameRenderables.clear();
 
-		for (const auto& [renderable, instances] : DataManager::MeshGroupsAndInstances())
+		for (const auto& [renderable, instances] : DataManager::Instance().MeshGroupsAndInstances())
 		{
 			static std::vector<std::pair<Matrix4, Matrix4>> instMats;
 			instMats.clear();
@@ -78,7 +78,7 @@ namespace leopph::impl
 		allPointsLightsOrdered.clear();
 
 		/* We sort the lights based on distance from camera */
-		for (const PointLight* const light : DataManager::PointLights())
+		for (const PointLight* const light : DataManager::Instance().PointLights())
 		{
 			allPointsLightsOrdered.emplace(light);
 		}
@@ -109,7 +109,7 @@ namespace leopph::impl
 		allSpotLightsOrdered.clear();
 
 		/* We sort the lights based on distance from camera */
-		std::ranges::copy(DataManager::SpotLights().begin(), DataManager::SpotLights().end(), std::inserter(allSpotLightsOrdered, allSpotLightsOrdered.begin()));
+		std::ranges::copy(DataManager::Instance().SpotLights().begin(), DataManager::Instance().SpotLights().end(), std::inserter(allSpotLightsOrdered, allSpotLightsOrdered.begin()));
 
 		ret.clear();
 

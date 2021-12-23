@@ -10,13 +10,13 @@ namespace leopph::impl
 	RenderComponent::RenderComponent(leopph::Entity* const entity, std::shared_ptr<const MeshDataGroup> meshDataGroup) :
 		Component{entity}
 	{
-		m_Renderable = std::make_unique<GlMeshGroup>(DataManager::CreateOrGetMeshGroup(std::move(meshDataGroup)));
-		DataManager::RegisterInstanceForMeshGroup(*m_Renderable, this);
+		m_Renderable = std::make_unique<GlMeshGroup>(DataManager::Instance().CreateOrGetMeshGroup(std::move(meshDataGroup)));
+		DataManager::Instance().RegisterInstanceForMeshGroup(*m_Renderable, this);
 	}
 
 	RenderComponent::~RenderComponent() noexcept
 	{
-		DataManager::UnregisterInstanceFromMeshGroup(*m_Renderable, this);
+		DataManager::Instance().UnregisterInstanceFromMeshGroup(*m_Renderable, this);
 	}
 
 	bool RenderComponent::CastsShadow() const

@@ -75,13 +75,13 @@ namespace leopph
 
 		stbi_image_free(data);
 
-		impl::DataManager::RegisterTexture(this);
+		impl::DataManager::Instance().RegisterTexture(this);
 	}
 
 
 	Texture::~Texture()
 	{
 		glDeleteTextures(1, &Id);
-		impl::DataManager::UnregisterTexture(this);
+		impl::DataManager::Instance().UnregisterTexture(this);
 	}
 }

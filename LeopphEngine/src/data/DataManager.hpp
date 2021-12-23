@@ -35,80 +35,121 @@ namespace leopph::impl
 {
 	class DataManager
 	{
-	public:
-		static void Clear();
+		public:
+			static auto Instance() -> DataManager&;
 
-		static void RegisterTexture(Texture* texture);
-		static void UnregisterTexture(Texture* texture);
-		static std::shared_ptr<Texture> FindTexture(const std::filesystem::path& path);
+			auto Clear() -> void;
 
-		static SkyboxImpl* CreateOrGetSkyboxImpl(std::filesystem::path allPaths);
-		// Also unregisters all Skybox handles.
-		static void DestroySkyboxImpl(SkyboxImpl* skybox);
-		static void RegisterSkyboxHandle(SkyboxImpl* skybox, Skybox* handle);
-		static void UnregisterSkyboxHandle(SkyboxImpl* skybox, Skybox* handle);
-		static const std::unordered_map<SkyboxImpl, std::unordered_set<Skybox*>, PathedHash<SkyboxImpl>, PathedEqual<SkyboxImpl>>& Skyboxes();
+			auto RegisterTexture(Texture* texture) -> void;
+			auto UnregisterTexture(Texture* texture) -> void;
+			auto FindTexture(const std::filesystem::path& path) -> std::shared_ptr<Texture>;
 
-		static void RegisterComponentForEntity(const Entity* entity, std::unique_ptr<Component>&& component);
-		// Destroys the Component object.
-		static void UnregisterComponentFromEntity(const Entity* entity, const Component* component);
-		[[nodiscard]]
-		static const std::unordered_set<std::unique_ptr<Component>, PointerHash, PointerEqual>& ComponentsOfEntity(const Entity* entity);
+			auto CreateOrGetSkyboxImpl(std::filesystem::path allPaths) -> SkyboxImpl*;
+			// Also unregisters all Skybox handles.
+			auto DestroySkyboxImpl(const SkyboxImpl* skybox) -> void;
+			auto RegisterSkyboxHandle(const SkyboxImpl* skybox, Skybox* handle) -> void;
+			auto UnregisterSkyboxHandle(const SkyboxImpl* skybox, Skybox* handle) -> void;
 
-		static void Register(Entity* entity);
-		static void Register(Behavior* behavior);
-		static void Register(PointLight* pointLight);
-		static void Register(const SpotLight* spotLight);
+			auto RegisterComponentForEntity(const Entity* entity, std::unique_ptr<Component>&& component) -> void;
+			// Destroys the Component object.
+			auto UnregisterComponentFromEntity(const Entity* entity, const Component* component) -> void;
+			[[nodiscard]]
+			auto ComponentsOfEntity(const Entity* entity) const -> const std::unordered_set<std::unique_ptr<Component>, PointerHash, PointerEqual>&;
 
-		static void Unregister(Entity* entity);
-		static void Unregister(Behavior* behavior);
-		static void Unregister(PointLight* pointLight);
-		static void Unregister(const SpotLight* spotLight);
+			auto RegisterEntity(Entity* entity) -> void;
+			auto UnregisterEntity(Entity* entity) -> void;
+			auto FindEntity(const std::string& name) -> Entity*;
 
-		static Entity* Find(const std::string& name);
+			auto RegisterBehavior(Behavior* behavior) -> void;
+			auto UnregisterBehavior(Behavior* behavior) -> void;
 
-		static const std::unordered_map<Entity*, std::unordered_set<std::unique_ptr<Component>, PointerHash, PointerEqual>, EntityHash, EntityEqual>& EntitiesAndComponents();
-		static const std::unordered_set<Behavior*>& Behaviors();
-		static DirectionalLight* DirectionalLight();
-		static const std::unordered_set<const SpotLight*>& SpotLights();
-		static const std::vector<PointLight*>& PointLights();
-		static void DirectionalLight(leopph::DirectionalLight* dirLight);
+			auto RegisterSpotLight(const SpotLight* spotLight) -> void;
+			auto UnregisterSpotLight(const SpotLight* spotLight) -> void;
 
-		static void RegisterMeshDataGroup(MeshDataGroup* meshData);
-		static void UnregisterMeshDataGroup(MeshDataGroup* meshData);
-		[[nodiscard]]
-		static std::shared_ptr<MeshDataGroup> FindMeshDataGroup(const std::string& id);
+			auto RegisterPointLight(PointLight* pointLight) -> void;
+			auto UnregisterPointLight(PointLight* pointLight) -> void;
 
-		/* Returns a copy of the stored GlMeshGroup that sources its data from the passed MeshDataGroup.
-		 * If no instance is found, the function creates a new one. */
-		[[nodiscard]]
-		static GlMeshGroup CreateOrGetMeshGroup(std::shared_ptr<const MeshDataGroup>&& meshDataGroup);
-		static void RegisterInstanceForMeshGroup(const GlMeshGroup& meshGroup, RenderComponent* instance);
-		// If the MeshGroup runs out of instances it is destroyed.
-		static void UnregisterInstanceFromMeshGroup(const GlMeshGroup& meshGroup, RenderComponent* instance);
-		[[nodiscard]]
-		static std::unordered_map<GlMeshGroup, std::unordered_set<RenderComponent*>, GlMeshGroupHash, GlMeshGroupEqual>& MeshGroupsAndInstances();
+			auto RegisterMeshDataGroup(MeshDataGroup* meshData) -> void;
+			auto UnregisterMeshDataGroup(MeshDataGroup* meshData) -> void;
+			[[nodiscard]]
+			auto FindMeshDataGroup(const std::string& id) -> std::shared_ptr<MeshDataGroup>;
 
+			/* Returns a copy of the stored GlMeshGroup that sources its data from the passed MeshDataGroup.
+			 * If no instance is found, the function creates a new one. */
+			[[nodiscard]]
+			auto CreateOrGetMeshGroup(std::shared_ptr<const MeshDataGroup>&& meshDataGroup) -> GlMeshGroup;
+			auto RegisterInstanceForMeshGroup(const GlMeshGroup& meshGroup, RenderComponent* instance) -> void;
+			// If the MeshGroup runs out of instances it is destroyed.
+			auto UnregisterInstanceFromMeshGroup(const GlMeshGroup& meshGroup, RenderComponent* instance) -> void;
 
-	private:
-		// Stores owning pointers to all Entities and the Components attached to them.
-		static std::unordered_map<Entity*, std::unordered_set<std::unique_ptr<Component>, PointerHash, PointerEqual>, EntityHash, EntityEqual> s_EntitiesAndComponents;
+			[[nodiscard]] constexpr auto EntitiesAndComponents() const noexcept -> auto&
+			{
+				return m_EntitiesAndComponents;
+			}
 
-		static std::unordered_set<Behavior*> s_Behaviors;
-		static leopph::DirectionalLight* s_DirLight;
-		static std::unordered_set<const SpotLight*> s_SpotLights;
-		static std::vector<PointLight*> s_PointLights;
+			[[nodiscard]] constexpr auto Behaviors() const noexcept -> auto&
+			{
+				return m_Behaviors;
+			}
 
-		// Stores non-owning pointers to all Texture instances.
-		static std::vector<Texture*> s_Textures;
+			[[nodiscard]] constexpr auto DirectionalLight() const noexcept
+			{
+				return m_DirLight;
+			}
 
-		// Stores SkyboxImpl instances along with all the Skybox handles pointing to it.
-		static std::unordered_map<SkyboxImpl, std::unordered_set<Skybox*>, PathedHash<SkyboxImpl>, PathedEqual<SkyboxImpl>> s_Skyboxes;
+			[[nodiscard]] constexpr auto SpotLights() const noexcept -> auto&
+			{
+				return m_SpotLights;
+			}
 
-		static std::unordered_set<MeshDataGroup*, IdHash, IdEqual> s_MeshData;
+			[[nodiscard]] constexpr auto PointLights() const noexcept -> auto&
+			{
+				return m_PointLights;
+			}
 
-		static std::unordered_map<GlMeshGroup, std::unordered_set<RenderComponent*>, GlMeshGroupHash, GlMeshGroupEqual> s_Renderables;
+			[[nodiscard]] constexpr auto Skyboxes() const noexcept -> auto&
+			{
+				return m_Skyboxes;
+			}
 
-		static void SortTextures();
+			[[nodiscard]] constexpr auto MeshGroupsAndInstances() const noexcept -> auto&
+			{
+				return m_Renderables;
+			}
+
+			constexpr auto DirectionalLight(leopph::DirectionalLight* const dirLight) noexcept
+			{
+				m_DirLight = dirLight;
+			}
+
+		private:
+			// Owning pointers to all Entities and the Components attached to them.
+			std::unordered_map<Entity*, std::unordered_set<std::unique_ptr<Component>, PointerHash, PointerEqual>, EntityHash, EntityEqual> m_EntitiesAndComponents;
+
+			// Non-owning pointers to all Behaviors.
+			std::unordered_set<Behavior*> m_Behaviors;
+
+			// Non-owning pointer to the lastly created DirectionalLight.
+			leopph::DirectionalLight* m_DirLight{nullptr};
+
+			// Non-owning pointers to all SpotLights.
+			std::unordered_set<const SpotLight*> m_SpotLights;
+
+			// Non-owning pointers to all PointLights.
+			std::vector<PointLight*> m_PointLights;
+
+			// Non-owning pointers to all Texture instances.
+			std::vector<Texture*> m_Textures;
+
+			// SkyboxImpl instances and non-owning pointer to all the Skybox handles pointing to them.
+			std::unordered_map<SkyboxImpl, std::unordered_set<Skybox*>, PathedHash<SkyboxImpl>, PathedEqual<SkyboxImpl>> m_Skyboxes;
+
+			// Non-owning pointers to all MeshDataGroup instances.
+			std::unordered_set<MeshDataGroup*, IdHash, IdEqual> m_MeshData;
+
+			// GlMeshGroup instances and non-owning pointers to RenderComponents pointing to them.
+			std::unordered_map<GlMeshGroup, std::unordered_set<RenderComponent*>, GlMeshGroupHash, GlMeshGroupEqual> m_Renderables;
+
+			auto SortTextures() -> void;
 	};
 }

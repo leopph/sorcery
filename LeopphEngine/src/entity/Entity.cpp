@@ -12,12 +12,12 @@ namespace leopph
 {
 	Entity* Entity::Find(const std::string& name)
 	{
-		return impl::DataManager::Find(name);
+		return impl::DataManager::Instance().FindEntity(name);
 	}
 
 
 	Entity::Entity(std::string name) :
-		m_Name{name.empty() ? "Entity" + std::to_string(impl::DataManager::EntitiesAndComponents().size()) : std::move(name)}
+		m_Name{name.empty() ? "Entity" + std::to_string(impl::DataManager::Instance().EntitiesAndComponents().size()) : std::move(name)}
 	{
 		if (Find(this->m_Name) != nullptr)
 		{
@@ -40,7 +40,7 @@ namespace leopph
 			m_Name = newName;
 		}
 
-		impl::DataManager::Register(this);
+		impl::DataManager::Instance().RegisterEntity(this);
 		m_Transform = CreateComponent<leopph::Transform>();
 	}
 
@@ -52,13 +52,13 @@ namespace leopph
 
 	Entity::~Entity() noexcept
 	{
-		impl::DataManager::Unregister(this);
+		impl::DataManager::Instance().UnregisterEntity(this);
 	}
 
 
 	std::vector<Component*> Entity::Components() const
 	{
-		const auto& components{impl::DataManager::ComponentsOfEntity(this)};
+		const auto& components{impl::DataManager::Instance().ComponentsOfEntity(this)};
 		std::vector<Component*> ret(components.size());
 		std::ranges::transform(components, std::back_inserter(ret), [](const auto& compPtr)
 		{
@@ -77,13 +77,13 @@ namespace leopph
 		}
 		else
 		{
-			impl::DataManager::UnregisterComponentFromEntity(this, component);
+			impl::DataManager::Instance().UnregisterComponentFromEntity(this, component);
 		}
 	}
 
 	void Entity::RegisterComponent(std::unique_ptr<Component>&& component) const
 	{
-		impl::DataManager::RegisterComponentForEntity(this, std::move(component));
+		impl::DataManager::Instance().RegisterComponentForEntity(this, std::move(component));
 	}
 
 	const std::string& Entity::Name() const

@@ -15,7 +15,7 @@ namespace leopph
 
 	std::shared_ptr<impl::MeshDataGroup> Model::GetMeshData(const std::filesystem::path& path) const
 	{
-		if (const auto p{impl::DataManager::FindMeshDataGroup(path.generic_string())};
+		if (const auto p{impl::DataManager::Instance().FindMeshDataGroup(path.generic_string())};
 			p != nullptr)
 		{
 			return p;

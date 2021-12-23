@@ -69,7 +69,7 @@ namespace leopph::impl
 		const auto camViewMat{Camera::Active->ViewMatrix()};
 		const auto camProjMat{Camera::Active->ProjectionMatrix()};
 
-		const auto& dirLight{DataManager::DirectionalLight()};
+		const auto& dirLight{DataManager::Instance().DirectionalLight()};
 		const auto& spotLights{CollectSpotLights()};
 		const auto& pointLights{CollectPointLights()};
 
@@ -206,7 +206,7 @@ namespace leopph::impl
 
 			skyboxShader.Use();
 			skyboxShader.SetUniform("u_ViewProjMat", static_cast<Matrix4>(static_cast<Matrix3>(camViewMat)) * camProjMat);
-			DataManager::Skyboxes().find(skybox->AllFilePaths())->first.Draw(skyboxShader);
+			DataManager::Instance().Skyboxes().find(skybox->AllFilePaths())->first.Draw(skyboxShader);
 		}
 	}
 }

@@ -10,12 +10,12 @@ namespace leopph::impl
 	MeshDataGroup::MeshDataGroup(std::string id) :
 		m_Id{std::move(id)}
 	{
-		DataManager::RegisterMeshDataGroup(this);
+		DataManager::Instance().RegisterMeshDataGroup(this);
 	}
 
 	MeshDataGroup::~MeshDataGroup() noexcept
 	{
-		DataManager::UnregisterMeshDataGroup(this);
+		DataManager::Instance().UnregisterMeshDataGroup(this);
 	}
 
 	const std::string& MeshDataGroup::Id() const

@@ -8,11 +8,11 @@ namespace leopph
 	Behavior::Behavior(leopph::Entity* const entity) :
 		Component{entity}
 	{
-		impl::DataManager::Register(this);
+		impl::DataManager::Instance().RegisterBehavior(this);
 	}
 
 	Behavior::~Behavior()
 	{
-		impl::DataManager::Unregister(this);
+		impl::DataManager::Instance().UnregisterBehavior(this);
 	}
 }

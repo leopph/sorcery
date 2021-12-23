@@ -53,7 +53,7 @@ namespace leopph::impl
 			{
 				window.PollEvents();
 
-				for (const auto& x : DataManager::Behaviors())
+				for (const auto& x : DataManager::Instance().Behaviors())
 				{
 					x->OnFrameUpdate();
 				}
@@ -70,7 +70,7 @@ namespace leopph::impl
 			}
 		}
 
-		DataManager::Clear();
+		DataManager::Instance().Clear();
 
 		Logger::Instance().Debug("Application data cleared.");
 

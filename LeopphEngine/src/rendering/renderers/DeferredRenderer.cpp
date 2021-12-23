@@ -155,7 +155,7 @@ namespace leopph::impl
 
 	void DeferredRenderer::RenderDirectionalLights(const Matrix4& camViewMat, const Matrix4& camProjMat, const std::vector<RenderableData>& renderables)
 	{
-		const auto& dirLight{DataManager::DirectionalLight()};
+		const auto& dirLight{DataManager::Instance().DirectionalLight()};
 
 		if (dirLight == nullptr)
 		{
@@ -416,7 +416,7 @@ namespace leopph::impl
 
 			skyboxShader.Use();
 
-			DataManager::Skyboxes().find(skybox->AllFilePaths())->first.Draw(skyboxShader);
+			DataManager::Instance().Skyboxes().find(skybox->AllFilePaths())->first.Draw(skyboxShader);
 
 			m_RenderTexture.UnbindAsRenderTarget();
 		}

@@ -3,72 +3,57 @@
 #include "../util/logger.h"
 
 #include <algorithm>
-#include <iostream>
 #include <stdexcept>
 
 
 namespace leopph::impl
 {
-	std::unordered_map<Entity*, std::unordered_set<std::unique_ptr<Component>, PointerHash, PointerEqual>, EntityHash, EntityEqual> DataManager::s_EntitiesAndComponents{};
-	std::unordered_set<Behavior*> DataManager::s_Behaviors{};
-	DirectionalLight* DataManager::s_DirLight{nullptr};
-	std::unordered_set<const SpotLight*> DataManager::s_SpotLights{};
-	std::vector<PointLight*> DataManager::s_PointLights{};
-	std::vector<Texture*> DataManager::s_Textures{};
-	std::unordered_map<SkyboxImpl, std::unordered_set<Skybox*>, PathedHash<SkyboxImpl>, PathedEqual<SkyboxImpl>> DataManager::s_Skyboxes{};
-	std::unordered_set<MeshDataGroup*, IdHash, IdEqual> DataManager::s_MeshData{};
-	std::unordered_map<GlMeshGroup, std::unordered_set<RenderComponent*>, GlMeshGroupHash, GlMeshGroupEqual> DataManager::s_Renderables{};
-
-	void DataManager::Clear()
+	auto DataManager::Instance() -> DataManager&
 	{
-		while (!s_EntitiesAndComponents.empty())
+		static DataManager instance;
+		return instance;
+	}
+
+	auto DataManager::Clear() -> void
+	{
+		while (!m_EntitiesAndComponents.empty())
 		{
-			auto node{s_EntitiesAndComponents.extract(s_EntitiesAndComponents.begin())};
+			auto node{m_EntitiesAndComponents.extract(m_EntitiesAndComponents.begin())};
 			delete node.key();
 			node.mapped().clear();
 		}
 	}
 
-	void DataManager::Register(Entity* entity)
+	auto DataManager::RegisterEntity(Entity* entity) -> void
 	{
-		s_EntitiesAndComponents.try_emplace(entity);
+		m_EntitiesAndComponents.try_emplace(entity);
 	}
 
-	void DataManager::Unregister(Entity* entity)
+	auto DataManager::UnregisterEntity(Entity* entity) -> void
 	{
-		s_EntitiesAndComponents.erase(entity);
+		m_EntitiesAndComponents.erase(entity);
 	}
 
-	Entity* DataManager::Find(const std::string& name)
+	auto DataManager::FindEntity(const std::string& name) -> Entity*
 	{
-		const auto it = s_EntitiesAndComponents.find(name);
-		return it != s_EntitiesAndComponents.end() ? it->first : nullptr;
+		const auto it = m_EntitiesAndComponents.find(name);
+		return it != m_EntitiesAndComponents.end() ? it->first : nullptr;
 	}
 
-	const std::unordered_map<Entity*, std::unordered_set<std::unique_ptr<Component>, PointerHash, PointerEqual>, EntityHash, EntityEqual>& DataManager::EntitiesAndComponents()
+	auto DataManager::RegisterBehavior(Behavior* behavior) -> void
 	{
-		return s_EntitiesAndComponents;
+		m_Behaviors.insert(behavior);
 	}
 
-	const std::unordered_set<Behavior*>& DataManager::Behaviors()
+	auto DataManager::UnregisterBehavior(Behavior* behavior) -> void
 	{
-		return s_Behaviors;
+		m_Behaviors.erase(behavior);
 	}
 
-	void DataManager::Register(Behavior* behavior)
+	auto DataManager::ComponentsOfEntity(const Entity* entity) const -> const std::unordered_set<std::unique_ptr<Component>, PointerHash, PointerEqual>&
 	{
-		s_Behaviors.insert(behavior);
-	}
-
-	void DataManager::Unregister(Behavior* behavior)
-	{
-		s_Behaviors.erase(behavior);
-	}
-
-	const std::unordered_set<std::unique_ptr<Component>, PointerHash, PointerEqual>& DataManager::ComponentsOfEntity(const Entity* entity)
-	{
-		if (const auto it{s_EntitiesAndComponents.find(entity)};
-			it != s_EntitiesAndComponents.end())
+		if (const auto it{m_EntitiesAndComponents.find(entity)};
+			it != m_EntitiesAndComponents.end())
 		{
 			return it->second;
 		}
@@ -78,10 +63,10 @@ namespace leopph::impl
 		throw std::out_of_range{msg};
 	}
 
-	void DataManager::RegisterComponentForEntity(const Entity* entity, std::unique_ptr<Component>&& component)
+	auto DataManager::RegisterComponentForEntity(const Entity* entity, std::unique_ptr<Component>&& component) -> void
 	{
-		if (const auto it{s_EntitiesAndComponents.find(entity)};
-			it != s_EntitiesAndComponents.end())
+		if (const auto it{m_EntitiesAndComponents.find(entity)};
+			it != m_EntitiesAndComponents.end())
 		{
 			it->second.emplace(std::move(component));
 		}
@@ -93,10 +78,10 @@ namespace leopph::impl
 		}
 	}
 
-	void DataManager::UnregisterComponentFromEntity(const Entity* entity, const Component* component)
+	auto DataManager::UnregisterComponentFromEntity(const Entity* entity, const Component* component) -> void
 	{
-		if (const auto entityIt{s_EntitiesAndComponents.find(entity)};
-			entityIt != s_EntitiesAndComponents.end())
+		if (const auto entityIt{m_EntitiesAndComponents.find(entity)};
+			entityIt != m_EntitiesAndComponents.end())
 		{
 			if (const auto componentIt{entityIt->second.find(component)};
 				componentIt != entityIt->second.end())
@@ -118,168 +103,141 @@ namespace leopph::impl
 		}
 	}
 
-	DirectionalLight* DataManager::DirectionalLight()
+	auto DataManager::RegisterPointLight(PointLight* pointLight) -> void
 	{
-		return s_DirLight;
+		m_PointLights.push_back(pointLight);
 	}
 
-	void DataManager::DirectionalLight(leopph::DirectionalLight* dirLight)
+	auto DataManager::UnregisterPointLight(PointLight* pointLight) -> void
 	{
-		s_DirLight = dirLight;
-	}
-
-	const std::vector<PointLight*>& DataManager::PointLights()
-	{
-		return s_PointLights;
-	}
-
-	void DataManager::Register(PointLight* pointLight)
-	{
-		s_PointLights.push_back(pointLight);
-	}
-
-	void DataManager::Unregister(PointLight* pointLight)
-	{
-		for (auto it = s_PointLights.begin(); it != s_PointLights.end(); ++it)
+		for (auto it = m_PointLights.begin(); it != m_PointLights.end(); ++it)
 		{
 			if (*it == pointLight)
 			{
-				s_PointLights.erase(it);
+				m_PointLights.erase(it);
 				return;
 			}
 		}
 	}
 
-	const std::unordered_set<const SpotLight*>& DataManager::SpotLights()
+	auto DataManager::RegisterSpotLight(const SpotLight* spotLight) -> void
 	{
-		return s_SpotLights;
+		m_SpotLights.emplace(spotLight);
 	}
 
-	void DataManager::Register(const SpotLight* spotLight)
+	auto DataManager::UnregisterSpotLight(const SpotLight* spotLight) -> void
 	{
-		s_SpotLights.emplace(spotLight);
+		m_SpotLights.erase(spotLight);
 	}
 
-	void DataManager::Unregister(const SpotLight* spotLight)
+	auto DataManager::RegisterTexture(Texture* const texture) -> void
 	{
-		s_SpotLights.erase(spotLight);
-	}
-
-	void DataManager::RegisterTexture(Texture* const texture)
-	{
-		s_Textures.push_back(texture);
+		m_Textures.push_back(texture);
 		SortTextures();
 	}
 
-	void DataManager::UnregisterTexture(Texture* const texture)
+	auto DataManager::UnregisterTexture(Texture* const texture) -> void
 	{
-		std::erase(s_Textures, texture);
+		std::erase(m_Textures, texture);
 		SortTextures();
 	}
 
-	std::shared_ptr<Texture> DataManager::FindTexture(const std::filesystem::path& path)
+	auto DataManager::FindTexture(const std::filesystem::path& path) -> std::shared_ptr<Texture>
 	{
 		if (const auto it{
-				std::ranges::lower_bound(s_Textures, path, [](const auto& elemPath, const auto& valPath)
+				std::ranges::lower_bound(m_Textures,
+				                         path,
+				                         [](const auto& elemPath, const auto& valPath)
 				                         {
 					                         return elemPath.compare(valPath);
-				                         }, [](const auto& texture) -> const auto&
+				                         },
+				                         [](const auto& texture) -> const auto&
 				                         {
 					                         return texture->Path;
 				                         })
 			};
-			it != s_Textures.end())
+			it != m_Textures.end())
 		{
 			return (*it)->shared_from_this();
 		}
 		return nullptr;
 	}
 
-	void DataManager::SortTextures()
+	auto DataManager::SortTextures() -> void
 	{
-		std::ranges::sort(s_Textures, [](const auto& left, const auto& right)
+		std::ranges::sort(m_Textures, [](const auto& left, const auto& right)
 		{
 			return left->Path.compare(right->Path);
 		});
 	}
 
-	SkyboxImpl* DataManager::CreateOrGetSkyboxImpl(std::filesystem::path allPaths)
+	auto DataManager::CreateOrGetSkyboxImpl(std::filesystem::path allPaths) -> SkyboxImpl*
 	{
-		if (const auto it{s_Skyboxes.find(allPaths)};
-			it != s_Skyboxes.end())
+		if (const auto it{m_Skyboxes.find(allPaths)};
+			it != m_Skyboxes.end())
 		{
 			return &const_cast<SkyboxImpl&>(it->first);
 		}
-		return &const_cast<SkyboxImpl&>(s_Skyboxes.emplace(std::move(allPaths), std::unordered_set<Skybox*>{}).first->first);
+		return &const_cast<SkyboxImpl&>(m_Skyboxes.emplace(std::move(allPaths), std::unordered_set<Skybox*>{}).first->first);
 	}
 
-	void DataManager::DestroySkyboxImpl(SkyboxImpl* const skybox)
+	auto DataManager::DestroySkyboxImpl(const SkyboxImpl* const skybox) -> void
 	{
-		s_Skyboxes.erase(*skybox);
+		m_Skyboxes.erase(*skybox);
 	}
 
-	void DataManager::RegisterSkyboxHandle(SkyboxImpl* const skybox, Skybox* const handle)
+	auto DataManager::RegisterSkyboxHandle(const SkyboxImpl* const skybox, Skybox* const handle) -> void
 	{
-		s_Skyboxes.at(*skybox).insert(handle);
+		m_Skyboxes.at(*skybox).insert(handle);
 	}
 
-	void DataManager::UnregisterSkyboxHandle(SkyboxImpl* const skybox, Skybox* const handle)
+	auto DataManager::UnregisterSkyboxHandle(const SkyboxImpl* const skybox, Skybox* const handle) -> void
 	{
-		s_Skyboxes.at(*skybox).erase(handle);
+		m_Skyboxes.at(*skybox).erase(handle);
 	}
 
-	const std::unordered_map<SkyboxImpl, std::unordered_set<Skybox*>, PathedHash<SkyboxImpl>, PathedEqual<SkyboxImpl>>& DataManager::Skyboxes()
+	auto DataManager::RegisterMeshDataGroup(MeshDataGroup* const meshData) -> void
 	{
-		return s_Skyboxes;
+		m_MeshData.insert(meshData);
 	}
 
-	void DataManager::RegisterMeshDataGroup(MeshDataGroup* const meshData)
+	auto DataManager::UnregisterMeshDataGroup(MeshDataGroup* const meshData) -> void
 	{
-		s_MeshData.insert(meshData);
+		m_MeshData.erase(meshData);
 	}
 
-	void DataManager::UnregisterMeshDataGroup(MeshDataGroup* const meshData)
+	auto DataManager::FindMeshDataGroup(const std::string& id) -> std::shared_ptr<MeshDataGroup>
 	{
-		s_MeshData.erase(meshData);
-	}
-
-	std::shared_ptr<MeshDataGroup> DataManager::FindMeshDataGroup(const std::string& id)
-	{
-		if (const auto it{s_MeshData.find(id)};
-			it != s_MeshData.end())
+		if (const auto it{m_MeshData.find(id)};
+			it != m_MeshData.end())
 		{
 			return (*it)->shared_from_this();
 		}
 		return nullptr;
 	}
 
-	GlMeshGroup DataManager::CreateOrGetMeshGroup(std::shared_ptr<const MeshDataGroup>&& meshDataGroup)
+	auto DataManager::CreateOrGetMeshGroup(std::shared_ptr<const MeshDataGroup>&& meshDataGroup) -> GlMeshGroup
 	{
-		if (const auto it{s_Renderables.find(meshDataGroup)};
-			it != s_Renderables.end())
+		if (const auto it{m_Renderables.find(meshDataGroup)};
+			it != m_Renderables.end())
 		{
 			return it->first;
 		}
-		return s_Renderables.emplace(std::move(meshDataGroup), decltype(s_Renderables)::mapped_type{}).first->first;
+		return m_Renderables.emplace(std::move(meshDataGroup), decltype(m_Renderables)::mapped_type{}).first->first;
 	}
 
-	void DataManager::RegisterInstanceForMeshGroup(const GlMeshGroup& meshGroup, RenderComponent* instance)
+	auto DataManager::RegisterInstanceForMeshGroup(const GlMeshGroup& meshGroup, RenderComponent* instance) -> void
 	{
-		s_Renderables.at(meshGroup).insert(instance);
+		m_Renderables.at(meshGroup).insert(instance);
 	}
 
-	void DataManager::UnregisterInstanceFromMeshGroup(const GlMeshGroup& meshGroup, RenderComponent* instance)
+	auto DataManager::UnregisterInstanceFromMeshGroup(const GlMeshGroup& meshGroup, RenderComponent* instance) -> void
 	{
-		s_Renderables.at(meshGroup).erase(instance);
+		m_Renderables.at(meshGroup).erase(instance);
 
-		if (s_Renderables.at(meshGroup).empty())
+		if (m_Renderables.at(meshGroup).empty())
 		{
-			s_Renderables.erase(s_Renderables.find(meshGroup));
+			m_Renderables.erase(m_Renderables.find(meshGroup));
 		}
-	}
-
-	std::unordered_map<GlMeshGroup, std::unordered_set<RenderComponent*>, GlMeshGroupHash, GlMeshGroupEqual>& DataManager::MeshGroupsAndInstances()
-	{
-		return s_Renderables;
 	}
 }
