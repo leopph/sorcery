@@ -9,7 +9,7 @@
 #include <iostream>
 #include <string>
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	namespace
 	{

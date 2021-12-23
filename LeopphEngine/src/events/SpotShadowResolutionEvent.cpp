@@ -1,7 +1,7 @@
 #include "SpotShadowResolutionEvent.hpp"
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	SpotShadowResolutionEvent::SpotShadowResolutionEvent(const std::size_t resolution) :
 		Resolution{resolution}

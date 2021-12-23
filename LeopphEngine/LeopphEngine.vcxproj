@@ -80,7 +80,7 @@
     <PreLinkEvent />
     <CustomBuildStep />
     <CustomBuild>
-      <Command>$(SolutionDir)out\ShaderParser\$(Configuration)_$(Platform)\ShaderParser.exe %(Fullpath) $(IntDir)%(Filename).cpp leopph::impl::ShaderFamily::%(Filename)Src $(ProjectDir)src\rendering\shaders\ShaderFamily.hpp</Command>
+      <Command>$(SolutionDir)out\ShaderParser\$(Configuration)_$(Platform)\ShaderParser.exe %(Fullpath) $(IntDir)%(Filename).cpp leopph::internal::ShaderFamily::%(Filename)Src $(ProjectDir)src\rendering\shaders\ShaderFamily.hpp</Command>
       <Message>Transpiling %(Filename)%(Extension)...</Message>
       <Outputs>$(IntDir)%(Filename).cpp</Outputs>
       <AdditionalInputs>$(ProjectDir)src\rendering\shaders\ShaderFamily.hpp</AdditionalInputs>
@@ -111,7 +111,7 @@
     <PreLinkEvent />
     <CustomBuildStep />
     <CustomBuild>
-      <Command>$(SolutionDir)out\ShaderParser\$(Configuration)_$(Platform)\ShaderParser.exe %(Fullpath) $(IntDir)%(Filename).cpp leopph::impl::ShaderFamily::%(Filename)Src $(ProjectDir)src\rendering\shaders\ShaderFamily.hpp</Command>
+      <Command>$(SolutionDir)out\ShaderParser\$(Configuration)_$(Platform)\ShaderParser.exe %(Fullpath) $(IntDir)%(Filename).cpp leopph::internal::ShaderFamily::%(Filename)Src $(ProjectDir)src\rendering\shaders\ShaderFamily.hpp</Command>
       <Message>Transpiling %(Filename)%(Extension)...</Message>
       <Outputs>$(IntDir)%(Filename).cpp</Outputs>
       <AdditionalInputs>$(ProjectDir)src\rendering\shaders\ShaderFamily.hpp</AdditionalInputs>

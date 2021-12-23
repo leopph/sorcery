@@ -10,19 +10,19 @@ namespace leopph
 	std::pair<float, float> Input::s_MousePos{};
 
 
-	EventReceiverHandle<impl::KeyEvent> Input::keyEventReceiver{ [](const impl::KeyEvent& event)
+	EventReceiverHandle<internal::KeyEvent> Input::keyEventReceiver{ [](const internal::KeyEvent& event)
 	{
 		s_KeyStates[event.keyCode] = event.keyState;
 	} };
 
 
-	EventReceiverHandle<impl::MouseEvent> Input::mouseEventReceiver{ [](const impl::MouseEvent& event)
+	EventReceiverHandle<internal::MouseEvent> Input::mouseEventReceiver{ [](const internal::MouseEvent& event)
 	{
 		s_MousePos = {event.position[0], event.position[1]};
 	} };
 
 
-	EventReceiverHandle<impl::FrameEndedEvent> Input::frameBeginsEventReceiver{ [](const impl::FrameEndedEvent&)
+	EventReceiverHandle<internal::FrameEndedEvent> Input::frameBeginsEventReceiver{ [](const internal::FrameEndedEvent&)
 	{
 		for (auto& [keyCode, keyState] : s_KeyStates)
 		{
@@ -67,12 +67,12 @@ namespace leopph
 
 	CursorState Input::CursorMode()
 	{
-		return impl::WindowBase::Get().CursorMode();
+		return internal::WindowBase::Get().CursorMode();
 	}
 
 
 	void Input::CursorMode(CursorState newState)
 	{
-		impl::WindowBase::Get().CursorMode(newState);
+		internal::WindowBase::Get().CursorMode(newState);
 	}
 }

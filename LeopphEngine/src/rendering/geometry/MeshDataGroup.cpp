@@ -5,7 +5,7 @@
 #include <utility>
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	MeshDataGroup::MeshDataGroup(std::string id) :
 		m_Id{std::move(id)}

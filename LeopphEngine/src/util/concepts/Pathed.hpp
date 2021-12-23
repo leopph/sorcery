@@ -4,7 +4,7 @@
 #include <filesystem>
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 
 	template<class T>

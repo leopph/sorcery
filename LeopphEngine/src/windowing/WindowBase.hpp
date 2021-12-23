@@ -7,7 +7,7 @@
 #include <string_view>
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	class WindowBase
 	{

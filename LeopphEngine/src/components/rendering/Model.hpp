@@ -9,7 +9,7 @@
 
 namespace leopph
 {
-	class Model final : public impl::RenderComponent
+	class Model final : public internal::RenderComponent
 	{
 		public:
 			// Load a Model from a file on disk.
@@ -31,6 +31,6 @@ namespace leopph
 			std::filesystem::path m_Path;
 
 			[[nodiscard]]
-			std::shared_ptr<impl::MeshDataGroup> GetMeshData(const std::filesystem::path& path) const;
+			std::shared_ptr<internal::MeshDataGroup> GetMeshData(const std::filesystem::path& path) const;
 	};
 }

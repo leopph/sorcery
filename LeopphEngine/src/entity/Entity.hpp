@@ -13,7 +13,7 @@
 
 namespace leopph
 {
-	namespace impl
+	namespace internal
 	{
 		class DataManager;
 	}

@@ -32,13 +32,13 @@ namespace leopph
 	{
 		m_Background.color = background.color;
 		m_Background.skybox = std::move(background.skybox);
-		impl::WindowBase::Get().Background(m_Background.color);
+		internal::WindowBase::Get().Background(m_Background.color);
 	}
 
 
 	Camera::Camera(leopph::Entity* const entity) :
 		Component{entity},
-		m_AspectRatio{leopph::impl::WindowBase::Get().AspectRatio()},
+		m_AspectRatio{leopph::internal::WindowBase::Get().AspectRatio()},
 		m_HorizontalFovDegrees{100.0f},
 		m_NearClip{0.1f},
 		m_FarClip{100.f},
@@ -73,7 +73,7 @@ namespace leopph
 		}
 
 		const auto errMsg{"Invalid FOV conversion direction."};
-		impl::Logger::Instance().Critical(errMsg);
+		internal::Logger::Instance().Critical(errMsg);
 		throw std::invalid_argument{errMsg};
 	}
 
@@ -127,7 +127,7 @@ namespace leopph
 		}
 
 		const auto errMsg{"Invalid FOV direction."};
-		impl::Logger::Instance().Critical(errMsg);
+		internal::Logger::Instance().Critical(errMsg);
 		throw std::invalid_argument{errMsg};
 	}
 

@@ -1,7 +1,7 @@
 #include "GlMeshGroupHash.hpp"
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	std::size_t GlMeshGroupHash::operator()(const GlMeshGroup& model) const
 	{

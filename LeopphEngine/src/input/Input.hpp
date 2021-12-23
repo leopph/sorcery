@@ -43,8 +43,8 @@ namespace leopph
 		static std::map<KeyCode, KeyState> s_KeyStates;
 		static std::pair<float, float> s_MousePos;
 
-		static EventReceiverHandle<impl::KeyEvent> keyEventReceiver;
-		static EventReceiverHandle<impl::MouseEvent> mouseEventReceiver;
-		static EventReceiverHandle<impl::FrameEndedEvent> frameBeginsEventReceiver;
+		static EventReceiverHandle<internal::KeyEvent> keyEventReceiver;
+		static EventReceiverHandle<internal::MouseEvent> mouseEventReceiver;
+		static EventReceiverHandle<internal::FrameEndedEvent> frameBeginsEventReceiver;
 	};
 }

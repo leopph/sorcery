@@ -7,7 +7,7 @@
 
 namespace leopph
 {
-	namespace impl
+	namespace internal
 	{
 		class SkyboxImpl;
 	}
@@ -42,6 +42,6 @@ namespace leopph
 	private:
 		void Deinit();
 
-		impl::SkyboxImpl* m_Impl;
+		internal::SkyboxImpl* m_Impl;
 	};
 }

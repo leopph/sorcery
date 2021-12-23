@@ -12,7 +12,7 @@
 #include <limits>
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	CascadedShadowMap::CascadedShadowMap() :
 		m_Fbo{}, m_TexBindStartIndex{}

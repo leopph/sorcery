@@ -1,7 +1,7 @@
 #include "ShaderTypeHash.hpp"
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	std::size_t ShaderTypeHash::operator()(ShaderType type) const
 	{

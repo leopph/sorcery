@@ -3,7 +3,7 @@
 #include <memory>
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	class PointerEqual
 	{

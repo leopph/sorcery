@@ -10,7 +10,7 @@
 #include <vector>
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	class CascadedShadowMap final : public EventReceiver<DirShadowResolutionEvent>
 	{

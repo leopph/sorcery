@@ -4,7 +4,7 @@
 #include "../math/Vector.hpp"
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	class ScreenResolutionEvent final : public Event
 	{

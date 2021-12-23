@@ -13,7 +13,7 @@
 #include <unordered_map>
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	class GlWindow final : public WindowBase
 	{

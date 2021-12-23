@@ -5,7 +5,7 @@
 #include <type_traits>
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	class EventReceiverBase
 	{

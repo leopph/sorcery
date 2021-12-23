@@ -3,7 +3,7 @@
 #include "Event.hpp"
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	struct FrameEndedEvent final : Event {};
 }

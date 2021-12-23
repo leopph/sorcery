@@ -13,7 +13,7 @@ namespace leopph
 	/* Cameras are special Components that determine the images to be rendered.
 	 * Multiple Cameras can exist, but only one is used at a time.
 	 * You can dynamically switch between them at runtime. */
-	class Camera final : public Component, public EventReceiver<impl::ScreenResolutionEvent>
+	class Camera final : public Component, public EventReceiver<internal::ScreenResolutionEvent>
 	{
 		public:
 			// The currently active camera that is used to render the scene.

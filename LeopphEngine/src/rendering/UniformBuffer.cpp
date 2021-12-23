@@ -3,7 +3,7 @@
 #include <glad/glad.h>
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	UniformBuffer::UniformBuffer() :
 		m_Name{},

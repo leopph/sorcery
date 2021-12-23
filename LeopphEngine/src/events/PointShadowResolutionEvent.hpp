@@ -6,7 +6,7 @@
 
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	class PointShadowResolutionEvent final : public Event
 	{

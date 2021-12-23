@@ -6,7 +6,7 @@
 #include "shaders/ShaderProgram.hpp"
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	class RenderTexture final : public EventReceiver<ScreenResolutionEvent>
 	{

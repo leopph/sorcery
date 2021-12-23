@@ -1,7 +1,7 @@
 #include "ShaderTypeEqual.hpp"
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	bool ShaderTypeEqual::operator()(ShaderType left, ShaderType right) const
 	{

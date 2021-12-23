@@ -9,7 +9,7 @@
 #include <utility>
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	SkyboxImpl::SkyboxImpl(std::filesystem::path allFilePaths) :
 		Path{std::move(allFilePaths)},

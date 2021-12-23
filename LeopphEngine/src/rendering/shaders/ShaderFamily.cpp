@@ -9,7 +9,7 @@
 #include <utility>
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	ShaderFamily::ShaderFamily(const std::vector<ShaderStageInfo>& stages)
 	{

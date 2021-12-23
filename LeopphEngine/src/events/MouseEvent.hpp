@@ -4,7 +4,7 @@
 #include "Event.hpp"
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	struct MouseEvent final : Event
 	{

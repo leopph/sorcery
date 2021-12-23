@@ -1,7 +1,7 @@
 #include "StringHash.hpp"
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	std::size_t StringHash::operator()(const std::string_view sv) const
 	{

@@ -64,7 +64,7 @@ namespace leopph
 
 			/* Internally used. */
 			template<std::derived_from<Event> EventType>
-			void UnregisterFrom(const impl::EventReceiverBase& handler)
+			void UnregisterFrom(const internal::EventReceiverBase& handler)
 			{
 				InternalUregister(typeid(EventType), &handler);
 			}
@@ -74,10 +74,10 @@ namespace leopph
 			EventManager() = default;
 			~EventManager() = default;
 
-			void InternalRegister(const std::type_index& typeIndex, const impl::EventReceiverBase* receiver);
-			void InternalUregister(const std::type_index& typeIndex, const impl::EventReceiverBase* receiver);
+			void InternalRegister(const std::type_index& typeIndex, const internal::EventReceiverBase* receiver);
+			void InternalUregister(const std::type_index& typeIndex, const internal::EventReceiverBase* receiver);
 
 
-			std::unordered_map<std::type_index, std::vector<const impl::EventReceiverBase*>> m_Handlers;
+			std::unordered_map<std::type_index, std::vector<const internal::EventReceiverBase*>> m_Handlers;
 	};
 }

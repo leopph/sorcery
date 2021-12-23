@@ -5,7 +5,7 @@
 #include "../../rendering/geometry/MeshDataGroup.hpp"
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	RenderComponent::RenderComponent(leopph::Entity* const entity, std::shared_ptr<const MeshDataGroup> meshDataGroup) :
 		Component{entity}

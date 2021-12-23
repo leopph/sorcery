@@ -12,7 +12,7 @@
 #include <utility>
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	template<class Hasher, class T1, class T2>
 	concept Hash =

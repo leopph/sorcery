@@ -31,7 +31,7 @@ namespace leopph
 			glDeleteTextures(1, &m_ID);
 
 			const auto msg{"Texture on path [" + Path.string() + "] could not be loaded."};
-			impl::Logger::Instance().Error(msg);
+			internal::Logger::Instance().Error(msg);
 			return;
 		}
 
@@ -61,7 +61,7 @@ namespace leopph
 				glDeleteTextures(1, &m_ID);
 
 				const auto errMsg{"Texture error: unknown color channel number: [" + std::to_string(channels) + "]."};
-				impl::Logger::Instance().Error(errMsg);
+				internal::Logger::Instance().Error(errMsg);
 				return;
 		}
 
@@ -75,13 +75,13 @@ namespace leopph
 
 		stbi_image_free(data);
 
-		impl::DataManager::Instance().RegisterTexture(this);
+		internal::DataManager::Instance().RegisterTexture(this);
 	}
 
 
 	Texture::~Texture()
 	{
 		glDeleteTextures(1, &Id);
-		impl::DataManager::Instance().UnregisterTexture(this);
+		internal::DataManager::Instance().UnregisterTexture(this);
 	}
 }

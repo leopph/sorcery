@@ -4,7 +4,7 @@
 
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	class ShaderTypeEqual
 	{

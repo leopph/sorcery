@@ -48,13 +48,13 @@ namespace leopph
 
 	LEOPPHAPI bool Settings::Vsync()
 	{
-		return impl::WindowBase::Get().Vsync();
+		return internal::WindowBase::Get().Vsync();
 	}
 
 
 	LEOPPHAPI void Settings::Vsync(const bool value)
 	{
-		impl::WindowBase::Get().Vsync(value);
+		internal::WindowBase::Get().Vsync(value);
 	}
 
 
@@ -67,7 +67,7 @@ namespace leopph
 	void Settings::DirectionalShadowMapResolutions(std::vector<std::size_t> newRess)
 	{
 		s_DirectionalLightShadowMapResolutions = std::move(newRess);
-		EventManager::Instance().Send<impl::DirShadowResolutionEvent>(s_DirectionalLightShadowMapResolutions);
+		EventManager::Instance().Send<internal::DirShadowResolutionEvent>(s_DirectionalLightShadowMapResolutions);
 	}
 
 
@@ -98,7 +98,7 @@ namespace leopph
 	void Settings::SpotLightShadowMapResolution(const std::size_t newRes)
 	{
 		s_SpotLightShadowMapResolution = newRes;
-		EventManager::Instance().Send<impl::SpotShadowResolutionEvent>(s_SpotLightShadowMapResolution);
+		EventManager::Instance().Send<internal::SpotShadowResolutionEvent>(s_SpotLightShadowMapResolution);
 	}
 
 

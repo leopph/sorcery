@@ -7,7 +7,7 @@
 #include <vector>
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	/* The m_MeshData class represents a loaded set of vertices, indices, and materials.
 	 * It can be used to create renderable objects. */ 

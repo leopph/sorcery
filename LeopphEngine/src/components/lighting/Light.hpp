@@ -5,7 +5,7 @@
 #include "../../math/Vector.hpp"
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	// Base class for all lights.
 	class Light : public Component

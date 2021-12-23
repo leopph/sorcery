@@ -16,7 +16,7 @@
 #include <utility>
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	std::unique_ptr<Renderer> Renderer::Create()
 	{

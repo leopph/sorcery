@@ -11,7 +11,7 @@
 
 namespace leopph
 {
-	namespace impl
+	namespace internal
 	{
 		/*-------------------------------------------------------------------------------------------------
 		The Matrix class template provides several ways to aid in solving linear algebraic problems.
@@ -534,7 +534,7 @@ namespace leopph
 	to get the best compatibility and performance.
 	------------------------------------------------------*/
 
-	using Matrix2 = impl::Matrix<float, 2, 2>;
-	using Matrix3 = impl::Matrix<float, 3, 3>;
-	using Matrix4 = impl::Matrix<float, 4, 4>;
+	using Matrix2 = internal::Matrix<float, 2, 2>;
+	using Matrix3 = internal::Matrix<float, 3, 3>;
+	using Matrix4 = internal::Matrix<float, 4, 4>;
 }

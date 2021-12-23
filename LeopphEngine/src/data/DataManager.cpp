@@ -6,7 +6,7 @@
 #include <stdexcept>
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	auto DataManager::Instance() -> DataManager&
 	{

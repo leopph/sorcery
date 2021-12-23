@@ -15,7 +15,7 @@
 
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	DeferredRenderer::DeferredRenderer() :
 		m_ShadowShader{

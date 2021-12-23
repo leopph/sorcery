@@ -9,7 +9,7 @@
 
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	class GeometryBuffer final : public EventReceiver<ScreenResolutionEvent>
 	{

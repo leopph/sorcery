@@ -2,7 +2,7 @@
 
 #include <chrono>
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	/*----------------------------------------------------------------------
 	Internal class that helps measure and produce timer related information.

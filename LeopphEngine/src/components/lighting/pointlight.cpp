@@ -8,11 +8,11 @@ namespace leopph
 	PointLight::PointLight(leopph::Entity* const entity) :
 		AttenuatedLight{entity}
 	{
-		impl::DataManager::Instance().RegisterPointLight(this);
+		internal::DataManager::Instance().RegisterPointLight(this);
 	}
 
 	PointLight::~PointLight()
 	{
-		impl::DataManager::Instance().UnregisterPointLight(this);
+		internal::DataManager::Instance().UnregisterPointLight(this);
 	}
 }

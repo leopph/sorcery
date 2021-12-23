@@ -7,7 +7,7 @@
 #include <vector>
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	class UniformBuffer
 	{

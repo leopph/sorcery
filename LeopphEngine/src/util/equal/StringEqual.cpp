@@ -1,7 +1,7 @@
 #include "StringEqual.hpp"
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	bool StringEqual::operator()(const std::string& left, const std::string& right) const
 	{

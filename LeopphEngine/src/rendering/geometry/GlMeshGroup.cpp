@@ -9,7 +9,7 @@
 #include <utility>
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	GlMeshGroup::GlMeshGroup(std::shared_ptr<const MeshDataGroup> meshDataGroup) :
 		m_SharedData{std::make_shared<SharedData>(meshDataGroup)}
@@ -58,7 +58,7 @@ namespace leopph::impl
 		Deinit();
 	}
 
-	void GlMeshGroup::DrawShaded(leopph::impl::ShaderProgram& shader, const std::size_t nextFreeTextureUnit) const
+	void GlMeshGroup::DrawShaded(leopph::internal::ShaderProgram& shader, const std::size_t nextFreeTextureUnit) const
 	{
 		for (const auto& mesh : m_SharedData->Meshes)
 		{

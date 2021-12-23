@@ -2,7 +2,7 @@
 
 #include <string_view>
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	class Logger
 	{

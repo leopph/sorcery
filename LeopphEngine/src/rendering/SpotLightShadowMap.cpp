@@ -6,7 +6,7 @@
 #include <glad/glad.h>
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	SpotLightShadowMap::SpotLightShadowMap() :
 		Id{m_Fbo},

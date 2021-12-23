@@ -16,7 +16,7 @@
 #include "../windowing/WindowBase.hpp"
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	int Main(decltype(Init) initFunc)
 	{

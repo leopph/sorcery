@@ -2,7 +2,7 @@
 
 #include <filesystem>
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	struct PathHash
 	{

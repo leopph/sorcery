@@ -8,7 +8,7 @@
 #include <string>
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	class IdHash
 	{

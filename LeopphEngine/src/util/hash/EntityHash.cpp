@@ -3,7 +3,7 @@
 #include <functional>
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	std::size_t EntityHash::operator()(const Entity* entity) const
 	{

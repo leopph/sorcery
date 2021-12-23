@@ -8,12 +8,12 @@ namespace leopph
 	DirectionalLight::DirectionalLight(leopph::Entity* const entity) :
 		Light{entity}
 	{
-		impl::DataManager::Instance().DirectionalLight(this);
+		internal::DataManager::Instance().DirectionalLight(this);
 	}
 
 	DirectionalLight::~DirectionalLight()
 	{
-		impl::DataManager::Instance().DirectionalLight(nullptr);
+		internal::DataManager::Instance().DirectionalLight(nullptr);
 	}
 
 	const Vector3& DirectionalLight::Direction() const

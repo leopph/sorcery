@@ -6,7 +6,7 @@
 #include <vector>
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	struct DirShadowResolutionEvent : public Event
 	{

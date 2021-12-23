@@ -12,7 +12,7 @@
 #include <utility>
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	FileMeshDataGroup::FileMeshDataGroup(std::filesystem::path path) :
 		MeshDataGroup{path.generic_string()},
@@ -37,7 +37,7 @@ namespace leopph::impl
 	}
 
 
-	std::vector<impl::MeshData> FileMeshDataGroup::ProcessNodes(const aiScene* const scene) const
+	std::vector<internal::MeshData> FileMeshDataGroup::ProcessNodes(const aiScene* const scene) const
 	{
 		struct NodeAndTransform
 		{
@@ -58,7 +58,7 @@ namespace leopph::impl
 		rootTrafo *= Matrix3{1, 1, -1};
 		nodes.emplace(scene->mRootNode, rootTrafo);
 
-		std::vector<impl::MeshData> ret;
+		std::vector<internal::MeshData> ret;
 
 		while (!nodes.empty())
 		{
@@ -89,7 +89,7 @@ namespace leopph::impl
 	}
 
 
-	impl::MeshData FileMeshDataGroup::ProcessMesh(const aiMesh* const mesh, const aiScene* const scene, const Matrix3& trafo) const
+	internal::MeshData FileMeshDataGroup::ProcessMesh(const aiMesh* const mesh, const aiScene* const scene, const Matrix3& trafo) const
 	{
 		std::vector<Vertex> vertices;
 		std::vector<unsigned> indices;
@@ -168,7 +168,7 @@ namespace leopph::impl
 			material->TwoSided = !twoSided;
 		}
 
-		return impl::MeshData(vertices, indices, material);
+		return internal::MeshData(vertices, indices, material);
 	}
 
 

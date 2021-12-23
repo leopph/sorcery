@@ -6,7 +6,7 @@
 #include <glad/glad.h>
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	ShaderProgram::ShaderProgram(const std::vector<ShaderStageInfo>& stageInfo) :
 		m_ProgramName{glCreateProgram()}

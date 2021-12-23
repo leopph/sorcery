@@ -5,11 +5,11 @@ namespace leopph
 {
 	float Time::DeltaTime()
 	{
-		return impl::Timer::DeltaTime();
+		return internal::Timer::DeltaTime();
 	}
 
 	float Time::FullTime()
 	{
-		return impl::Timer::FullTime();
+		return internal::Timer::FullTime();
 	}
 }

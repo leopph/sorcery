@@ -3,7 +3,7 @@
 #include "Light.hpp"
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	// Attenuated lights are special Lights whose intensity decreases the further photons travel.
 	class AttenuatedLight : public Light

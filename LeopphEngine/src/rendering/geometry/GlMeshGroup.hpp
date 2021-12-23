@@ -11,7 +11,7 @@
 #include <vector>
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	/* GlMeshGroup holds together multiple GlMeshes that logically belong together (e.g. are part of the same model).
 	 * It provides a simple abstraction over instanced rendering of the collected GlMeshes.

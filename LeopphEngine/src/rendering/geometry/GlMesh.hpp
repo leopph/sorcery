@@ -8,7 +8,7 @@
 #include <memory>
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	/* GlMesh is the smallest unit of rendering.
 	 * It acts as an opaque handle to OpenGL buffers ready for rendering.

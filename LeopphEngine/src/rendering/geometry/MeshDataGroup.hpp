@@ -6,7 +6,7 @@
 #include <string>
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	/* MeshDataGroups are unique stores that contain geometry data.
 	 * Their purpose is to cache that data so they are not copyable.

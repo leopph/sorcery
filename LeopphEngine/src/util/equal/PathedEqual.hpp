@@ -3,7 +3,7 @@
 #include "../concepts/Pathed.hpp"
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	template<Pathed T>
 	struct PathedEqual 

@@ -1,7 +1,7 @@
 #include "EventReceiverBase.hpp"
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	bool EventReceiverBase::operator==(const EventReceiverBase& other) const
 	{

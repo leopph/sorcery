@@ -17,7 +17,7 @@ namespace leopph
 	 * Instances of EventReceiver are automatically registered at
 	 * the EventManager and they're also unregistered during destruction. */
 	template<std::derived_from<Event> EventType>
-	class EventReceiver : public impl::EventReceiverBase
+	class EventReceiver : public internal::EventReceiverBase
 	{
 	public:
 		/* The parameter type used in the signature of handler function. */

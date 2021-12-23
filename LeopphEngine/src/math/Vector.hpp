@@ -12,7 +12,7 @@
 
 namespace leopph
 {
-	namespace impl
+	namespace internal
 	{
 		/* The Vector class template provides a way to represent N dimensional vectors over a T type.
 		 * Vectors are row/column agnostic. They are always interpreted in the necessary form for the specific formulas.
@@ -430,11 +430,11 @@ namespace leopph
 
 
 	// 4D single-precision floating-point Vector.
-	using Vector4 = impl::Vector<float, 4>;
+	using Vector4 = internal::Vector<float, 4>;
 
 	// 3D single-precision floating-point Vector.
-	using Vector3 = impl::Vector<float, 3>;
+	using Vector3 = internal::Vector<float, 3>;
 
 	// 2D single-precision floating-point Vector.
-	using Vector2 = impl::Vector<float, 2>;
+	using Vector2 = internal::Vector<float, 2>;
 }

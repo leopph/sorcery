@@ -1,6 +1,6 @@
 #pragma once
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	bool InitGL();
 }

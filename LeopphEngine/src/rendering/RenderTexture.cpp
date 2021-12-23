@@ -7,7 +7,7 @@
 #include <array>
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	RenderTexture::RenderTexture() :
 		m_FramebufferName{},

@@ -3,7 +3,7 @@
 #include <algorithm>
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	ShaderFamily::FlagInfo::FlagInfo(const std::unordered_set<std::string>& flags)
 	{

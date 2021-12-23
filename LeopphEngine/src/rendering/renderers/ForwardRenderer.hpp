@@ -7,7 +7,7 @@
 #include "../shaders/ShaderFamily.hpp"
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	class ForwardRenderer final : public Renderer
 	{

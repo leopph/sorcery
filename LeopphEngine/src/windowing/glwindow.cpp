@@ -15,7 +15,7 @@
 #include <utility>
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	GlWindow::GlWindow(const int width, const int height, const std::string& title, const bool fullscreen) :
 		WindowBase{},

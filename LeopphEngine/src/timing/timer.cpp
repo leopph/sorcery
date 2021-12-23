@@ -1,6 +1,6 @@
 #include "timer.h"
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	Timer::TimePoint Timer::s_LastFrameCompletionTime{};
 	Timer::Seconds Timer::s_LastFrameDeltaTime{};

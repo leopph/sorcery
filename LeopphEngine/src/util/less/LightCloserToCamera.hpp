@@ -3,7 +3,7 @@
 #include "../../components/lighting/Light.hpp"
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	struct LightCloserToCamera
 	{

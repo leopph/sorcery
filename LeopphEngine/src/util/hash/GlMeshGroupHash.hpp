@@ -7,7 +7,7 @@
 #include <memory>
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	class GlMeshGroupHash
 	{

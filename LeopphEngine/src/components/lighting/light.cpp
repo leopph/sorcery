@@ -1,7 +1,7 @@
 #include "Light.hpp"
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	Light::Light(leopph::Entity* const entity) :
 		Component{entity},

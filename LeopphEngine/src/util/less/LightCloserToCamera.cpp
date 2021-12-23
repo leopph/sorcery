@@ -4,7 +4,7 @@
 #include "../../entity/Entity.hpp"
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	bool LightCloserToCamera::operator()(const Light* const left, const Light* const right) const
 	{

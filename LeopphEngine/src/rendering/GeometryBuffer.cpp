@@ -9,7 +9,7 @@
 
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	GeometryBuffer::GeometryBuffer() :
 		m_Textures{},

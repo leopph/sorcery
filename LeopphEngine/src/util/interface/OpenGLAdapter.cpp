@@ -3,7 +3,7 @@
 #include <glad/glad.h>
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 #ifdef _DEBUG
 	const Bimap<int, ShaderType, ShaderTypeHash, ShaderTypeEqual, true> OpenGLAdapter::s_ShaderTypes

@@ -14,7 +14,7 @@
 #include <vector>
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	class DeferredRenderer final : public Renderer
 	{

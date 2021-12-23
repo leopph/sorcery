@@ -1,7 +1,7 @@
 #include "AttenuatedLight.hpp"
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	AttenuatedLight::AttenuatedLight(leopph::Entity* const entity, const float constant, const float linear, const float quadratic, const float range) :
 		Light{entity},

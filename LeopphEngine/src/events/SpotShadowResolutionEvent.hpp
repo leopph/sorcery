@@ -6,7 +6,7 @@
 
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	class SpotShadowResolutionEvent final : public Event
 	{

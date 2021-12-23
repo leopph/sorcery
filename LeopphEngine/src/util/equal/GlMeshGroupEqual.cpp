@@ -1,7 +1,7 @@
 #include "GlMeshGroupEqual.hpp"
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	bool GlMeshGroupEqual::operator()(const GlMeshGroup& left, const GlMeshGroup& right) const
 	{

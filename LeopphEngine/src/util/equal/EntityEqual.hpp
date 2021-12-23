@@ -5,7 +5,7 @@
 #include <string>
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	struct EntityEqual
 	{

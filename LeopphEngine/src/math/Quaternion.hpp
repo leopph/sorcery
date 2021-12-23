@@ -95,10 +95,10 @@ namespace leopph
 		 * Quaternions other than unit ones will produce invalid values. */
 		template<class T>
 		[[nodiscard]]
-		impl::Vector<T, 3> Rotate(const impl::Vector<T, 3>& vec) const
+		internal::Vector<T, 3> Rotate(const internal::Vector<T, 3>& vec) const
 		{
 			const auto retQuat{*this * Quaternion{0, vec[0], vec[1], vec[2]} *Conjugate()};
-			return impl::Vector<T, 3>{retQuat.m_X, retQuat.m_Y, retQuat.m_Z};
+			return internal::Vector<T, 3>{retQuat.m_X, retQuat.m_Y, retQuat.m_Z};
 		}
 
 

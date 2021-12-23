@@ -90,7 +90,7 @@ namespace leopph
 			default:
 			{
 				const auto errorMsg{"Invalid quaternion index '" + std::to_string(index) + "'."};
-				impl::Logger::Instance().Error(errorMsg);
+				internal::Logger::Instance().Error(errorMsg);
 				throw std::out_of_range{errorMsg};
 			}
 		}

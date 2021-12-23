@@ -9,7 +9,7 @@
 #include <utility>
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	GlMesh::GlMesh(const MeshData& meshData, const unsigned instanceBuffer) :
 		m_SharedData{new SharedData

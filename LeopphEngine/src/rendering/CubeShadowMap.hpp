@@ -7,7 +7,7 @@
 #include <cstddef>
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	class CubeShadowMap final : EventReceiver<PointShadowResolutionEvent>
 	{

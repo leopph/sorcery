@@ -8,7 +8,7 @@
 
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	class SpotLightShadowMap final : EventReceiver<SpotShadowResolutionEvent>
 	{

@@ -5,7 +5,7 @@
 #include <cstddef>
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	template<Pathed T>
 	struct PathedHash

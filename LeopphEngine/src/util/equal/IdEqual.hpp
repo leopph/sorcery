@@ -4,7 +4,7 @@
 #include "../concepts/Pointer.hpp"
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	class IdEqual
 	{

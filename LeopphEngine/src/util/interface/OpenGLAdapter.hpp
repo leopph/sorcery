@@ -7,7 +7,7 @@
 
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	class OpenGLAdapter final
 	{

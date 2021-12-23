@@ -1,7 +1,7 @@
 #include "EntityEqual.hpp"
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	bool EntityEqual::operator()(const Entity* left, const Entity* right) const
 	{

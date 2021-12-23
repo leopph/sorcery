@@ -9,5 +9,5 @@ INCLUDE THIS EXACTLY ONCE IN YOUR CODE!
 
 int main()
 {
-	return leopph::impl::Main(leopph::Init);
+	return leopph::internal::Main(leopph::Init);
 }

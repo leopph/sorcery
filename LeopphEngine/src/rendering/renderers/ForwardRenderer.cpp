@@ -19,7 +19,7 @@
 #include <utility>
 
 
-namespace leopph::impl
+namespace leopph::internal
 {
 	ForwardRenderer::ForwardRenderer() :
 		m_ObjectShader
