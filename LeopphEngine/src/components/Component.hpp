@@ -13,19 +13,19 @@ namespace leopph
 	class Component
 	{
 		public:
+			// The Entity the Component is attached to.
+			LEOPPHAPI auto Entity() const -> Entity*;
+
+			LEOPPHAPI virtual ~Component() = default;
+
+		protected:
+			LEOPPHAPI explicit Component(leopph::Entity* entity);
+
 			Component(const Component& other) = default;
 			auto operator=(const Component& other) -> Component& = default;
 
 			Component(Component&& other) = default;
 			auto operator=(Component&& other) -> Component& = default;
-
-			LEOPPHAPI virtual ~Component() = default;
-
-			// The Entity the Component is attached to.
-			LEOPPHAPI auto Entity() const -> Entity*;
-
-		protected:
-			LEOPPHAPI explicit Component(leopph::Entity* entity);
 
 		private:
 			leopph::Entity* m_Entity;

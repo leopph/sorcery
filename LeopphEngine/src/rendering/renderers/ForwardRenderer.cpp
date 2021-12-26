@@ -134,8 +134,8 @@ namespace leopph::internal
 					{
 						if (castsShadow)
 						{
-							renderable.SetInstanceData(instances);
-							renderable.DrawDepth();
+							renderable->SetInstanceData(instances);
+							renderable->DrawDepth();
 						}
 					}
 				}
@@ -192,8 +192,8 @@ namespace leopph::internal
 		objectShader.Use();
 		for (const auto& [renderable, instances, castsShadow] : renderables)
 		{
-			renderable.SetInstanceData(instances);
-			renderable.DrawShaded(objectShader, 0);
+			renderable->SetInstanceData(instances);
+			renderable->DrawShaded(objectShader, 0);
 		}
 	}
 

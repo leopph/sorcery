@@ -77,7 +77,7 @@ namespace leopph::internal
 			/* Returns a copy of the stored GlMeshGroup that sources its data from the passed MeshDataGroup.
 			 * If no instance is found, the function creates a new one. */
 			[[nodiscard]]
-			auto CreateOrGetMeshGroup(std::shared_ptr<const MeshDataGroup>&& meshDataGroup) -> GlMeshGroup;
+			auto CreateOrGetMeshGroup(std::shared_ptr<const MeshDataGroup>&& meshDataGroup) -> const GlMeshGroup*;
 			auto RegisterInstanceForMeshGroup(const GlMeshGroup& meshGroup, RenderComponent* instance) -> void;
 			// If the MeshGroup runs out of instances it is destroyed.
 			auto UnregisterInstanceFromMeshGroup(const GlMeshGroup& meshGroup, RenderComponent* instance) -> void;

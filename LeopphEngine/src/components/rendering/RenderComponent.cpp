@@ -1,16 +1,15 @@
 #include "RenderComponent.hpp"
 
 #include "../../data/DataManager.hpp"
-#include "../../rendering/geometry/GlMeshGroup.hpp"
 #include "../../rendering/geometry/MeshDataGroup.hpp"
 
 
 namespace leopph::internal
 {
 	RenderComponent::RenderComponent(leopph::Entity* const entity, std::shared_ptr<const MeshDataGroup> meshDataGroup) :
-		Component{entity}
+		Component{entity},
+		m_Renderable{DataManager::Instance().CreateOrGetMeshGroup(std::move(meshDataGroup))}
 	{
-		m_Renderable = std::make_unique<GlMeshGroup>(DataManager::Instance().CreateOrGetMeshGroup(std::move(meshDataGroup)));
 		DataManager::Instance().RegisterInstanceForMeshGroup(*m_Renderable, this);
 	}
 

@@ -216,14 +216,14 @@ namespace leopph::internal
 		return nullptr;
 	}
 
-	auto DataManager::CreateOrGetMeshGroup(std::shared_ptr<const MeshDataGroup>&& meshDataGroup) -> GlMeshGroup
+	auto DataManager::CreateOrGetMeshGroup(std::shared_ptr<const MeshDataGroup>&& meshDataGroup) -> const GlMeshGroup*
 	{
 		if (const auto it{m_Renderables.find(meshDataGroup)};
 			it != m_Renderables.end())
 		{
-			return it->first;
+			return &it->first;
 		}
-		return m_Renderables.emplace(std::move(meshDataGroup), decltype(m_Renderables)::mapped_type{}).first->first;
+		return &m_Renderables.emplace(std::move(meshDataGroup), decltype(m_Renderables)::mapped_type{}).first->first;
 	}
 
 	auto DataManager::RegisterInstanceForMeshGroup(const GlMeshGroup& meshGroup, RenderComponent* instance) -> void

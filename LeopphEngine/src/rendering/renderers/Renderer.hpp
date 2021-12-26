@@ -29,7 +29,7 @@ namespace leopph::internal
 		protected:
 			struct RenderableData
 			{
-				GlMeshGroup Renderable;
+				const GlMeshGroup* Renderable;
 				// Matrices are in the format of the rendering API.
 				std::vector<std::pair<Matrix4, Matrix4>> Instances;
 				bool CastsShadow;

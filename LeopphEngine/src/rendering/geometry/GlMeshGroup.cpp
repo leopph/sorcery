@@ -12,100 +12,60 @@
 namespace leopph::internal
 {
 	GlMeshGroup::GlMeshGroup(std::shared_ptr<const MeshDataGroup> meshDataGroup) :
-		m_SharedData{std::make_shared<SharedData>(meshDataGroup)}
+		m_MeshData{std::move(meshDataGroup)}
 	{
-		m_SharedData->MeshData = meshDataGroup;
+		glCreateBuffers(1, &m_InstBuf);
+		glNamedBufferData(m_InstBuf, 2 * sizeof(Matrix4), nullptr, GL_STATIC_DRAW);
 
-		glCreateBuffers(1, &m_SharedData->InstBuf);
-		glNamedBufferData(m_SharedData->InstBuf, 2 * sizeof(Matrix4), nullptr, GL_STATIC_DRAW);
-
-		std::ranges::for_each(m_SharedData->MeshData->Data(), [&](const auto& meshData)
+		std::ranges::for_each(m_MeshData->Data(), [&](const auto& meshData)
 		{
-			m_SharedData->Meshes.emplace_back(meshData, m_SharedData->InstBuf);
+			m_Meshes.emplace_back(meshData, m_InstBuf);
 		});
-	}
-
-	GlMeshGroup::GlMeshGroup(const GlMeshGroup& other) :
-		m_SharedData{other.m_SharedData}
-	{
-		++m_SharedData->RefCount;
-	}
-
-	auto GlMeshGroup::operator=(const GlMeshGroup& other) -> GlMeshGroup&
-	{
-		if (&other == this)
-		{
-			return *this;
-		}
-
-		Deinit();
-		m_SharedData = other.m_SharedData;
-		++m_SharedData->RefCount;
-		return *this;
-	}
-
-	GlMeshGroup::GlMeshGroup(GlMeshGroup&& other) noexcept :
-		GlMeshGroup{other}
-	{}
-
-	auto GlMeshGroup::operator=(GlMeshGroup&& other) noexcept -> GlMeshGroup&
-	{
-		return *this = other;
 	}
 
 	GlMeshGroup::~GlMeshGroup() noexcept
 	{
-		Deinit();
+		glDeleteBuffers(1, &m_InstBuf);
 	}
 
-	auto GlMeshGroup::DrawShaded(leopph::internal::ShaderProgram& shader, const std::size_t nextFreeTextureUnit) const -> void
+	auto GlMeshGroup::DrawShaded(ShaderProgram& shader, const std::size_t nextFreeTextureUnit) const -> void
 	{
-		for (const auto& mesh : m_SharedData->Meshes)
+		for (const auto& mesh : m_Meshes)
 		{
-			mesh.DrawShaded(shader, nextFreeTextureUnit, m_SharedData->InstCount);
+			mesh.DrawShaded(shader, nextFreeTextureUnit, m_InstCount);
 		}
 	}
 
 	auto GlMeshGroup::DrawDepth() const -> void
 	{
-		for (const auto& mesh : m_SharedData->Meshes)
+		for (const auto& mesh : m_Meshes)
 		{
-			mesh.DrawDepth(m_SharedData->InstCount);
+			mesh.DrawDepth(m_InstCount);
 		}
 	}
 
 	auto GlMeshGroup::SetInstanceData(const std::vector<std::pair<Matrix4, Matrix4>>& instMats) const -> void
 	{
-		m_SharedData->InstCount = instMats.size();
+		m_InstCount = instMats.size();
 
-		if (instMats.size() > m_SharedData->InstBufSz)
+		if (instMats.size() > m_InstBufSz)
 		{
-			m_SharedData->InstBufSz *= 2;
-			glNamedBufferData(m_SharedData->InstBuf, m_SharedData->InstBufSz * sizeof(std::remove_reference_t<decltype(instMats)>::value_type), instMats.data(), GL_DYNAMIC_DRAW);
+			m_InstBufSz *= 2;
+			glNamedBufferData(m_InstBuf, m_InstBufSz * sizeof(std::remove_reference_t<decltype(instMats)>::value_type), instMats.data(), GL_DYNAMIC_DRAW);
 		}
-		else if (instMats.size() * 2 < m_SharedData->InstBufSz)
+		else if (instMats.size() * 2 < m_InstBufSz)
 		{
-			m_SharedData->InstBufSz = std::max(m_SharedData->InstBufSz / 2, 1ull);
-			glNamedBufferData(m_SharedData->InstBuf, m_SharedData->InstBufSz * sizeof(std::remove_reference_t<decltype(instMats)>::value_type), instMats.data(), GL_DYNAMIC_DRAW);
+			m_InstBufSz = std::max(m_InstBufSz / 2, 1ull);
+			glNamedBufferData(m_InstBuf, m_InstBufSz * sizeof(std::remove_reference_t<decltype(instMats)>::value_type), instMats.data(), GL_DYNAMIC_DRAW);
 		}
 		else
 		{
-			glNamedBufferSubData(m_SharedData->InstBuf, 0, instMats.size() * sizeof(std::remove_reference_t<decltype(instMats)>::value_type), instMats.data());
+			glNamedBufferSubData(m_InstBuf, 0, instMats.size() * sizeof(std::remove_reference_t<decltype(instMats)>::value_type), instMats.data());
 		}
 	}
 
 	auto GlMeshGroup::MeshData() const -> const MeshDataGroup&
 	{
-		return *m_SharedData->MeshData;
-	}
-
-	auto GlMeshGroup::Deinit() const -> void
-	{
-		--m_SharedData->RefCount;
-
-		if (m_SharedData->RefCount == 0)
-		{
-			glDeleteBuffers(1, &m_SharedData->InstBuf);
-		}
+		return *m_MeshData;
 	}
 }
