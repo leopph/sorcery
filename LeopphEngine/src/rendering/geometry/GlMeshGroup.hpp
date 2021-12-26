@@ -5,6 +5,8 @@
 #include "../../math/Matrix.hpp"
 #include "../shaders/ShaderProgram.hpp"
 
+#include <glad/glad.h>
+
 #include <cstddef>
 #include <memory>
 #include <utility>
@@ -29,8 +31,8 @@ namespace leopph::internal
 
 			~GlMeshGroup() noexcept;
 
-			auto DrawShaded(ShaderProgram& shader, std::size_t nextFreeTextureUnit) const -> void;
-			auto DrawDepth() const -> void;
+			auto DrawWithMaterial(ShaderProgram& shader, GLuint nextFreeTextureUnit) const -> void;
+			auto DrawWithoutMaterial() const -> void;
 
 			// Loads the passed matrices into the instance buffer. Matrices must be in column major storage.
 			auto SetInstanceData(const std::vector<std::pair<Matrix4, Matrix4>>& instMats) const -> void;
@@ -39,10 +41,10 @@ namespace leopph::internal
 			auto MeshData() const -> const MeshDataGroup&;
 
 		private:
-			std::shared_ptr<const MeshDataGroup> m_MeshData{nullptr};
-			std::vector<GlMesh> m_Meshes;
-			unsigned m_InstBuf{0u};
-			mutable std::size_t m_InstBufSz{1ull};
-			mutable std::size_t m_InstCount{0ull};
+			std::shared_ptr<const MeshDataGroup> m_MeshData;
+			std::vector<std::unique_ptr<GlMesh>> m_Meshes;
+			unsigned m_InstBuf{0};
+			mutable GLsizeiptr m_InstBufSz{1};
+			mutable GLsizei m_InstCount{0};
 	};
 }

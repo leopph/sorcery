@@ -1,10 +1,5 @@
 #include "GlMeshGroup.hpp"
 
-#include "../../data/DataManager.hpp"
-#include "../../math/Matrix.hpp"
-
-#include <glad/glad.h>
-
 #include <algorithm>
 #include <utility>
 
@@ -19,7 +14,7 @@ namespace leopph::internal
 
 		std::ranges::for_each(m_MeshData->Data(), [&](const auto& meshData)
 		{
-			m_Meshes.emplace_back(meshData, m_InstBuf);
+			m_Meshes.emplace_back(std::make_unique<GlMesh>(meshData, m_InstBuf));
 		});
 	}
 
@@ -28,34 +23,34 @@ namespace leopph::internal
 		glDeleteBuffers(1, &m_InstBuf);
 	}
 
-	auto GlMeshGroup::DrawShaded(ShaderProgram& shader, const std::size_t nextFreeTextureUnit) const -> void
+	auto GlMeshGroup::DrawWithMaterial(ShaderProgram& shader, const GLuint nextFreeTextureUnit) const -> void
 	{
 		for (const auto& mesh : m_Meshes)
 		{
-			mesh.DrawShaded(shader, nextFreeTextureUnit, m_InstCount);
+			mesh->DrawWithMaterial(shader, nextFreeTextureUnit, m_InstCount);
 		}
 	}
 
-	auto GlMeshGroup::DrawDepth() const -> void
+	auto GlMeshGroup::DrawWithoutMaterial() const -> void
 	{
 		for (const auto& mesh : m_Meshes)
 		{
-			mesh.DrawDepth(m_InstCount);
+			mesh->DrawWithoutMaterial(m_InstCount);
 		}
 	}
 
 	auto GlMeshGroup::SetInstanceData(const std::vector<std::pair<Matrix4, Matrix4>>& instMats) const -> void
 	{
-		m_InstCount = instMats.size();
+		m_InstCount = static_cast<GLsizei>(instMats.size());
 
-		if (instMats.size() > m_InstBufSz)
+		if (m_InstCount > m_InstBufSz)
 		{
 			m_InstBufSz *= 2;
 			glNamedBufferData(m_InstBuf, m_InstBufSz * sizeof(std::remove_reference_t<decltype(instMats)>::value_type), instMats.data(), GL_DYNAMIC_DRAW);
 		}
-		else if (instMats.size() * 2 < m_InstBufSz)
+		else if (m_InstCount * 2 < m_InstBufSz)
 		{
-			m_InstBufSz = std::max(m_InstBufSz / 2, 1ull);
+			m_InstBufSz = std::max<GLsizeiptr>(m_InstBufSz / 2, 1);
 			glNamedBufferData(m_InstBuf, m_InstBufSz * sizeof(std::remove_reference_t<decltype(instMats)>::value_type), instMats.data(), GL_DYNAMIC_DRAW);
 		}
 		else

@@ -128,7 +128,7 @@ namespace leopph::internal
 		for (const auto& [renderable, instances, castsShadow] : renderables)
 		{
 			renderable->SetInstanceData(instances);
-			renderable->DrawShaded(shader, 0);
+			renderable->DrawWithMaterial(shader, 0);
 		}
 
 		m_GBuffer.UnbindFromWriting();
@@ -208,7 +208,7 @@ namespace leopph::internal
 					if (castsShadow)
 					{
 						renderable->SetInstanceData(instances);
-						renderable->DrawDepth();
+						renderable->DrawWithoutMaterial();
 					}
 				}
 			}
@@ -282,7 +282,7 @@ namespace leopph::internal
 				if (castsShadow)
 				{
 					renderable->SetInstanceData(instances);
-					renderable->DrawDepth();
+					renderable->DrawWithoutMaterial();
 				}
 			}
 
@@ -379,7 +379,7 @@ namespace leopph::internal
 					if (castsShadow)
 					{
 						renderable->SetInstanceData(instances);
-						renderable->DrawDepth();
+						renderable->DrawWithoutMaterial();
 					}
 				}
 

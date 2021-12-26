@@ -38,7 +38,6 @@ namespace leopph::internal
 			auto SetUniform(std::string_view name, float value) -> void;
 			auto SetUniform(std::string_view name, const Vector3& value) -> void;
 			auto SetUniform(std::string_view name, const Matrix4& value) -> void;
-			auto SetUniform(std::string_view name, const std::vector<bool>& value) -> void;
 			auto SetUniform(std::string_view name, const std::vector<int>& value) -> void;
 			auto SetUniform(std::string_view name, const std::vector<unsigned>& value) -> void;
 			auto SetUniform(std::string_view name, const std::vector<float>& value) -> void;

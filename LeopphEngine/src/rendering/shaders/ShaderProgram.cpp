@@ -104,11 +104,6 @@ namespace leopph::internal
 		glProgramUniformMatrix4fv(m_ProgramName, GetUniformLocation(name), 1, GL_TRUE, reinterpret_cast<const GLfloat*>(value.Data().data()));
 	}
 
-	auto ShaderProgram::SetUniform(const std::string_view name, const std::vector<bool>& value) -> void
-	{
-		// TODO
-	}
-
 	auto ShaderProgram::SetUniform(const std::string_view name, const std::vector<int>& value) -> void
 	{
 		glProgramUniform1iv(m_ProgramName, GetUniformLocation(name), static_cast<GLsizei>(value.size()), value.data());

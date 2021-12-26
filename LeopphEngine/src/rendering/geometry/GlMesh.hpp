@@ -3,6 +3,8 @@
 #include "MeshData.hpp"
 #include "../shaders/ShaderProgram.hpp"
 
+#include <glad/glad.h>
+
 #include <array>
 #include <cstddef>
 #include <memory>
@@ -19,39 +21,26 @@ namespace leopph::internal
 		public:
 			GlMesh(const MeshData& meshData, unsigned instanceBuffer);
 
-			GlMesh(const GlMesh& other);
-			auto operator=(const GlMesh& other) -> GlMesh&;
+			GlMesh(const GlMesh& other) = delete;
+			auto operator=(const GlMesh& other) -> GlMesh& = delete;
 
-			GlMesh(GlMesh&& other) noexcept;
-			auto operator=(GlMesh&& other) noexcept -> GlMesh&;
+			GlMesh(GlMesh&& other) noexcept = delete;
+			auto operator=(GlMesh&& other) noexcept -> GlMesh& = delete;
 
 			~GlMesh();
 
-			auto operator==(const GlMesh& other) const -> bool;
-
-			auto DrawShaded(ShaderProgram& shader, std::size_t nextFreeTextureUnit, std::size_t instanceCount) const -> void;
-			auto DrawDepth(std::size_t instanceCount) const -> void;
+			auto DrawWithMaterial(ShaderProgram& shader, GLuint nextFreeTextureUnit, GLsizei instanceCount) const -> void;
+			auto DrawWithoutMaterial(GLsizei instanceCount) const -> void;
 
 		private:
-			// Decrements ref count and deletes GL resources if necessary.
-			auto Deinit() const -> void;
+			constexpr static std::size_t VERTEX_BUFFER{0};
+			constexpr static std::size_t INDEX_BUFFER{1};
 
-			constexpr static std::size_t VERTEX_BUFFER{0ull};
-			constexpr static std::size_t INDEX_BUFFER{1ull};
-
-
-			struct SharedData
-			{
-				// Must not be null when in use!
-				std::shared_ptr<Material> Material{nullptr};
-				unsigned VertexArray{0u};
-				std::array<unsigned, 2> Buffers{0u, 0u};
-				std::size_t VertexCount{0};
-				std::size_t IndexCount{0};
-				std::size_t RefCount{1ull};
-			};
-
-
-			std::shared_ptr<SharedData> m_SharedData{nullptr};
+			// Must not be null when in use!
+			std::shared_ptr<Material> m_Material;
+			GLuint m_VertexArray{0};
+			std::array<GLuint, 2> m_Buffers{0, 0};
+			GLsizei m_IndexCount{0};
+			GLsizei m_VertexCount{0};
 	};
 }

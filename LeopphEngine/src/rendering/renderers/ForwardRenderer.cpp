@@ -135,7 +135,7 @@ namespace leopph::internal
 						if (castsShadow)
 						{
 							renderable->SetInstanceData(instances);
-							renderable->DrawDepth();
+							renderable->DrawWithoutMaterial();
 						}
 					}
 				}
@@ -193,7 +193,7 @@ namespace leopph::internal
 		for (const auto& [renderable, instances, castsShadow] : renderables)
 		{
 			renderable->SetInstanceData(instances);
-			renderable->DrawShaded(objectShader, 0);
+			renderable->DrawWithMaterial(objectShader, 0);
 		}
 	}
 
