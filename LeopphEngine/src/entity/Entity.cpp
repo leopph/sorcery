@@ -38,24 +38,24 @@ namespace leopph
 
 	auto Entity::RegisterComponent(std::unique_ptr<Component>&& component) const -> void
 	{
-		internal::DataManager::Instance().RegisterComponentForEntity(this, std::move(component));
+		internal::DataManager::Instance().RegisterComponentForEntity(std::move(component));
 	}
 
 	auto Entity::RemoveComponent(const Component* component) const -> void
 	{
-		if (component == Transform())
-		{
-			const auto msg{"Transform component cannot be removed from Entity."};
-			internal::Logger::Instance().Error(msg);
-			return;
-		}
 		if (component->Entity() != this)
 		{
 			const auto msg{"Error while trying to remove Component at address [" + std::to_string(reinterpret_cast<unsigned long long>(component)) + "] from Entity [" + m_Name + "]. The Component's owning Entity is different from this."};
 			internal::Logger::Instance().Error(msg);
 			return;
 		}
-		internal::DataManager::Instance().UnregisterComponentFromEntity(this, component);
+		if (component == Transform())
+		{
+			const auto msg{"Transform component cannot be removed from Entity."};
+			internal::Logger::Instance().Error(msg);
+			return;
+		}
+		internal::DataManager::Instance().UnregisterComponentFromEntity(component);
 	}
 
 	auto Entity::Name() const -> const std::string&

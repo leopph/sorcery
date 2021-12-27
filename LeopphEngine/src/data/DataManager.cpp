@@ -73,51 +73,24 @@ namespace leopph::internal
 	}
 
 
-	auto DataManager::RegisterComponentForEntity(const Entity* entity, std::unique_ptr<Component>&& component) -> void
+	auto DataManager::RegisterComponentForEntity(std::unique_ptr<Component>&& component) -> void
 	{
-		if (const auto it{FindEntityInternal(entity->Name())};
-			it != m_EntitiesAndComponents.end())
-		{
-			it->Components.emplace_back(std::move(component));
-		}
-		else
-		{
-			const auto msg{"Entity at address [" + std::to_string(reinterpret_cast<unsigned long long>(entity)) + "] was not found while trying to register component at address [" + std::to_string(reinterpret_cast<unsigned long long>(component.get())) + "] to it."};
-			Logger::Instance().Error(msg);
-			throw std::out_of_range{msg};
-		}
+		FindEntityInternal(component->Entity()->Name())->Components.emplace_back(std::move(component));
 	}
 
 
-	auto DataManager::UnregisterComponentFromEntity(const Entity* entity, const Component* component) -> void
+	auto DataManager::UnregisterComponentFromEntity(const Component* component) -> void
 	{
-		if (const auto entityIt{FindEntityInternal(entity->Name())};
-			entityIt != m_EntitiesAndComponents.end())
+		std::erase_if(FindEntityInternal(component->Entity()->Name())->Components, [&](const auto& elem)
 		{
-			std::erase_if(entityIt->Components, [&](const auto& elem)
-			{
-				return elem.get() == component;
-			});
-		}
-		else
-		{
-			const auto msg{"Entity at address [" + std::to_string(reinterpret_cast<unsigned long long>(entity)) + "] was not found while trying to unregister component at address [" + std::to_string(reinterpret_cast<unsigned long long>(component)) + "] from it."};
-			Logger::Instance().Error(msg);
-			throw std::out_of_range{msg};
-		}
+			return elem.get() == component;
+		});
 	}
 
 
 	auto DataManager::ComponentsOfEntity(const Entity* entity) const -> const std::vector<std::unique_ptr<Component>>&
 	{
-		if (const auto it{FindEntityInternal(entity->Name())};
-			it != m_EntitiesAndComponents.end())
-		{
-			return it->Components;
-		}
-		const auto msg{"Entity at address [" + std::to_string(reinterpret_cast<unsigned long long>(entity)) + "] was not found while trying access its components."};
-		Logger::Instance().Error(msg);
-		throw std::out_of_range{msg};
+		return FindEntityInternal(entity->Name())->Components;
 	}
 
 
