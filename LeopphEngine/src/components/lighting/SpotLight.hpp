@@ -5,24 +5,22 @@
 
 namespace leopph
 {
-	/* SpotLights are special Lights that shine in a cone.
-	 * They have Position, orientation, attenuation, and radius. */
+	// SpotLights are special Lights that shine in a cone.
+	// They have position, orientation, attenuation, and radius.
 	class SpotLight final : public internal::AttenuatedLight
 	{
 		public:
 			// Get the angle in degrees at which the light starts to fade out.
-			[[nodiscard]]
-			LEOPPHAPI auto InnerAngle() const -> float;
-
-			// Set the angle in degrees at which the light starts to fade out.
-			LEOPPHAPI auto InnerAngle(float degrees) -> void;
+			[[nodiscard]] constexpr auto InnerAngle() const noexcept;
 
 			// Get the angle in degrees at which the light is completely cut.
-			[[nodiscard]]
-			LEOPPHAPI auto OuterAngle() const -> float;
+			[[nodiscard]] constexpr auto OuterAngle() const noexcept;
+
+			// Set the angle in degrees at which the light starts to fade out.
+			constexpr auto InnerAngle(float degrees) noexcept;
 
 			// Set the angle in degrees at which the light is completely cut.
-			LEOPPHAPI auto OuterAngle(float degrees) -> void;
+			constexpr auto OuterAngle(float degrees) noexcept;
 
 			LEOPPHAPI explicit SpotLight(leopph::Entity* entity);
 
@@ -35,7 +33,31 @@ namespace leopph
 			LEOPPHAPI ~SpotLight() override;
 
 		private:
-			float m_InnerAngle;
-			float m_OuterAngle;
+			float m_InnerAngle{30.f};
+			float m_OuterAngle{30.f};
 	};
+
+
+	constexpr auto SpotLight::InnerAngle() const noexcept
+	{
+		return m_InnerAngle;
+	}
+
+
+	constexpr auto SpotLight::OuterAngle() const noexcept
+	{
+		return m_OuterAngle;
+	}
+
+
+	constexpr auto SpotLight::InnerAngle(const float degrees) noexcept
+	{
+		m_InnerAngle = degrees;
+	}
+
+
+	constexpr auto SpotLight::OuterAngle(const float degrees) noexcept
+	{
+		m_OuterAngle = degrees;
+	}
 }

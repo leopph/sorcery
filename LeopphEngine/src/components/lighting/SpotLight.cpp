@@ -6,9 +6,7 @@
 namespace leopph
 {
 	SpotLight::SpotLight(leopph::Entity* const entity) :
-		AttenuatedLight{entity},
-		m_InnerAngle{30.f},
-		m_OuterAngle{m_InnerAngle}
+		AttenuatedLight{entity}
 	{
 		internal::DataManager::Instance().RegisterSpotLight(this);
 	}
@@ -16,25 +14,5 @@ namespace leopph
 	SpotLight::~SpotLight()
 	{
 		internal::DataManager::Instance().UnregisterSpotLight(this);
-	}
-
-	auto SpotLight::InnerAngle() const -> float
-	{
-		return m_InnerAngle;
-	}
-
-	auto SpotLight::InnerAngle(const float degrees) -> void
-	{
-		m_InnerAngle = degrees;
-	}
-
-	auto SpotLight::OuterAngle() const -> float
-	{
-		return m_OuterAngle;
-	}
-
-	auto SpotLight::OuterAngle(const float degrees) -> void
-	{
-		m_OuterAngle = degrees;
 	}
 }

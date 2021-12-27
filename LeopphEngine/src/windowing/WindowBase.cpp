@@ -20,7 +20,7 @@ namespace leopph::internal
 	{
 		if (s_Instance == nullptr)
 		{
-			switch (Settings::RenderAPI)
+			switch (Settings::RenderingApi())
 			{
 				case Settings::GraphicsApi::OpenGl:
 					s_Instance = new GlWindow{static_cast<int>(width), static_cast<int>(height), title, fullscreen};

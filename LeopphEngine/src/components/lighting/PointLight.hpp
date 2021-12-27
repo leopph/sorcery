@@ -5,8 +5,8 @@
 
 namespace leopph
 {
-	/* PointLights are special Lights the effect of which spreads in all directions, filling the scene.
-	 * They have Position and attenuation. */
+	// PointLights are special Lights the effect of which spreads in all directions, filling the scene.
+	// They have position and attenuation.
 	class PointLight final : public internal::AttenuatedLight
 	{
 		public:
