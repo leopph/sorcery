@@ -82,11 +82,6 @@ namespace leopph::internal
 			// If the MeshGroup runs out of instances it is destroyed.
 			auto UnregisterInstanceFromMeshGroup(const GlMeshGroup& meshGroup, RenderComponent* instance) -> void;
 
-			[[nodiscard]] constexpr auto EntitiesAndComponents() const noexcept -> auto&
-			{
-				return m_EntitiesAndComponents;
-			}
-
 			[[nodiscard]] constexpr auto Behaviors() const noexcept -> auto&
 			{
 				return m_Behaviors;
