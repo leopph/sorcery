@@ -240,24 +240,43 @@ namespace leopph::internal
 
 	auto DataManager::RegisterMeshDataGroup(MeshDataGroup* const meshData) -> void
 	{
-		m_MeshData.insert(meshData);
+		m_MeshData.push_back(meshData);
+		SortMeshData();
 	}
 
 
 	auto DataManager::UnregisterMeshDataGroup(MeshDataGroup* const meshData) -> void
 	{
-		m_MeshData.erase(meshData);
+		std::erase(m_MeshData, meshData);
+		SortMeshData();
 	}
 
 
 	auto DataManager::FindMeshDataGroup(const std::string& id) -> std::shared_ptr<MeshDataGroup>
 	{
-		if (const auto it{m_MeshData.find(id)};
-			it != m_MeshData.end())
+		if (const auto it{
+				std::ranges::lower_bound(m_MeshData, id, [](const auto& elemId, const auto& value)
+				                         {
+					                         return elemId.compare(value) < 0;
+				                         }, [](const auto& elem) -> const auto&
+				                         {
+					                         return elem->Id();
+				                         })
+			};
+			it != m_MeshData.end() && (*it)->Id() == id)
 		{
 			return (*it)->shared_from_this();
 		}
 		return nullptr;
+	}
+
+
+	auto DataManager::SortMeshData() -> void
+	{
+		std::ranges::sort(m_MeshData, [](const auto& left, const auto& right)
+		{
+			return left->Id().compare(right->Id()) < 0;
+		});
 	}
 
 

@@ -1,4 +1,5 @@
 #pragma once
+
 #include "../components/Behavior.hpp"
 #include "../components/Component.hpp"
 #include "../components/lighting/DirLight.hpp"
@@ -12,10 +13,8 @@
 #include "../rendering/geometry/GlMeshGroup.hpp"
 #include "../rendering/geometry/MeshDataGroup.hpp"
 #include "../util/equal/GlMeshGroupEqual.hpp"
-#include "../util/equal/IdEqual.hpp"
 #include "../util/equal/PathedEqual.hpp"
 #include "../util/hash/GlMeshGroupHash.hpp"
-#include "../util/hash/IdHash.hpp"
 #include "../util/hash/PathedHash.hpp"
 
 #include <algorithm>
@@ -23,7 +22,6 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
 
@@ -99,8 +97,9 @@ namespace leopph::internal
 				std::vector<std::unique_ptr<Component>> Components;
 			};
 
+
 			// Non-owning pointers to all MeshDataGroup instances.
-			std::unordered_set<MeshDataGroup*, IdHash, IdEqual> m_MeshData;
+			std::vector<MeshDataGroup*> m_MeshData;
 
 			// Non-owning pointers to all Texture instances.
 			std::vector<Texture*> m_Textures;
@@ -125,9 +124,10 @@ namespace leopph::internal
 
 			// All Entities and all of their attached Components
 			std::vector<EntityAndComponents> m_EntitiesAndComponents;
-			 
+
 			auto SortTextures() -> void;
 			auto SortEntities() -> void;
+			auto SortMeshData() -> void;
 
 			// Return a non-const iterator to the element or past-the-end.
 			[[nodiscard]] auto FindEntityInternal(const std::string& name) -> decltype(m_EntitiesAndComponents)::iterator;
