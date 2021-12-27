@@ -2,7 +2,6 @@
 
 #include "../util/logger.h"
 
-#include <algorithm>
 #include <stdexcept>
 
 
@@ -16,28 +15,7 @@ namespace leopph::internal
 
 	auto DataManager::Clear() -> void
 	{
-		while (!m_EntitiesAndComponents.empty())
-		{
-			auto node{m_EntitiesAndComponents.extract(m_EntitiesAndComponents.begin())};
-			delete node.key();
-			node.mapped().clear();
-		}
-	}
-
-	auto DataManager::RegisterEntity(Entity* entity) -> void
-	{
-		m_EntitiesAndComponents.try_emplace(entity);
-	}
-
-	auto DataManager::UnregisterEntity(Entity* entity) -> void
-	{
-		m_EntitiesAndComponents.erase(entity);
-	}
-
-	auto DataManager::FindEntity(const std::string& name) -> Entity*
-	{
-		const auto it = m_EntitiesAndComponents.find(name);
-		return it != m_EntitiesAndComponents.end() ? it->first : nullptr;
+		m_EntitiesAndComponents.clear();
 	}
 
 	auto DataManager::RegisterBehavior(Behavior* behavior) -> void
@@ -50,25 +28,43 @@ namespace leopph::internal
 		m_Behaviors.erase(behavior);
 	}
 
-	auto DataManager::ComponentsOfEntity(const Entity* entity) const -> const std::unordered_set<std::unique_ptr<Component>, PointerHash, PointerEqual>&
+	auto DataManager::StoreEntity(std::unique_ptr<Entity> entity) -> void
 	{
-		if (const auto it{m_EntitiesAndComponents.find(entity)};
-			it != m_EntitiesAndComponents.end())
-		{
-			return it->second;
-		}
+		m_EntitiesAndComponents.emplace_back(std::move(entity));
+		SortEntities();
+	}
 
-		const auto msg{"Entity at address [" + std::to_string(reinterpret_cast<unsigned long long>(entity)) + "] was not found while trying access its components."};
-		Logger::Instance().Error(msg);
-		throw std::out_of_range{msg};
+	auto DataManager::DestroyEntity(const Entity* entity) -> void
+	{
+		std::erase_if(m_EntitiesAndComponents, [&](const auto& elem)
+		{
+			return elem.Entity.get() == entity;
+		});
+		SortEntities();
+	}
+
+	auto DataManager::FindEntityInternal(const std::string& name) -> decltype(m_EntitiesAndComponents)::iterator
+	{
+		return FindEntityInternalCommon(this, name);
+	}
+
+	auto DataManager::FindEntityInternal(const std::string& name) const -> decltype(m_EntitiesAndComponents)::const_iterator
+	{
+		return FindEntityInternalCommon(this, name);
+	}
+
+	auto DataManager::FindEntity(const std::string& name) -> Entity*
+	{
+		const auto it = FindEntityInternal(name);
+		return it != m_EntitiesAndComponents.end() ? it->Entity.get() : nullptr;
 	}
 
 	auto DataManager::RegisterComponentForEntity(const Entity* entity, std::unique_ptr<Component>&& component) -> void
 	{
-		if (const auto it{m_EntitiesAndComponents.find(entity)};
+		if (const auto it{FindEntityInternal(entity->Name())};
 			it != m_EntitiesAndComponents.end())
 		{
-			it->second.emplace(std::move(component));
+			it->Components.emplace_back(std::move(component));
 		}
 		else
 		{
@@ -80,20 +76,13 @@ namespace leopph::internal
 
 	auto DataManager::UnregisterComponentFromEntity(const Entity* entity, const Component* component) -> void
 	{
-		if (const auto entityIt{m_EntitiesAndComponents.find(entity)};
+		if (const auto entityIt{FindEntityInternal(entity->Name())};
 			entityIt != m_EntitiesAndComponents.end())
 		{
-			if (const auto componentIt{entityIt->second.find(component)};
-				componentIt != entityIt->second.end())
+			std::erase_if(entityIt->Components, [&](const auto& elem)
 			{
-				entityIt->second.erase(componentIt);
-			}
-			else
-			{
-				const auto msg{"Component at address [" + std::to_string(reinterpret_cast<unsigned long long>(component)) + "] was not found while trying to unregister it from Entity at address [" + std::to_string(reinterpret_cast<unsigned long long>(entity)) + "]."};
-				Logger::Instance().Error(msg);
-				throw std::out_of_range{msg};
-			}
+				return elem.get() == component;
+			});
 		}
 		else
 		{
@@ -101,6 +90,19 @@ namespace leopph::internal
 			Logger::Instance().Error(msg);
 			throw std::out_of_range{msg};
 		}
+	}
+
+	auto DataManager::ComponentsOfEntity(const Entity* entity) const -> const std::vector<std::unique_ptr<Component>>&
+	{
+		if (const auto it{FindEntityInternal(entity->Name())};
+			it != m_EntitiesAndComponents.end())
+		{
+			return it->Components;
+		}
+
+		const auto msg{"Entity at address [" + std::to_string(reinterpret_cast<unsigned long long>(entity)) + "] was not found while trying access its components."};
+		Logger::Instance().Error(msg);
+		throw std::out_of_range{msg};
 	}
 
 	auto DataManager::RegisterPointLight(PointLight* pointLight) -> void
@@ -168,6 +170,14 @@ namespace leopph::internal
 		std::ranges::sort(m_Textures, [](const auto& left, const auto& right)
 		{
 			return left->Path.compare(right->Path);
+		});
+	}
+
+	auto DataManager::SortEntities() -> void
+	{
+		std::ranges::sort(m_EntitiesAndComponents, [](const auto& left, const auto& right)
+		{
+			return left.Entity->Name() < right.Entity->Name();
 		});
 	}
 

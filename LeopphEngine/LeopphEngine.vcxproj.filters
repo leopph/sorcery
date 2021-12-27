@@ -44,8 +44,6 @@
     <ClCompile Include="src\rendering\Texture.cpp" />
     <ClCompile Include="src\rendering\SkyboxImpl.cpp" />
     <ClCompile Include="src\rendering\Skybox.cpp" />
-    <ClCompile Include="src\util\equal\EntityEqual.cpp" />
-    <ClCompile Include="src\util\hash\EntityHash.cpp" />
     <ClCompile Include="src\rendering\CascadedShadowMap.cpp" />
     <ClCompile Include="src\events\DirShadowResolutionEvent.cpp" />
     <ClCompile Include="src\events\SpotShadowResolutionEvent.cpp" />
@@ -129,8 +127,6 @@
     <ClInclude Include="src\rendering\SkyboxImpl.hpp" />
     <ClInclude Include="src\data\Proxy.hpp" />
     <ClInclude Include="src\rendering\Skybox.hpp" />
-    <ClInclude Include="src\util\equal\EntityEqual.hpp" />
-    <ClInclude Include="src\util\hash\EntityHash.hpp" />
     <ClInclude Include="src\events\DirShadowResolutionEvent.hpp" />
     <ClInclude Include="src\rendering\CascadedShadowMap.hpp" />
     <ClInclude Include="src\rendering\SpotLightShadowMap.hpp" />

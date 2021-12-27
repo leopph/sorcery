@@ -12,17 +12,14 @@
 #include "../rendering/Texture.hpp"
 #include "../rendering/geometry/GlMeshGroup.hpp"
 #include "../rendering/geometry/MeshDataGroup.hpp"
-#include "../util/equal/EntityEqual.hpp"
 #include "../util/equal/GlMeshGroupEqual.hpp"
 #include "../util/equal/IdEqual.hpp"
 #include "../util/equal/PathedEqual.hpp"
-#include "../util/equal/PointerEqual.hpp"
-#include "../util/hash/EntityHash.hpp"
 #include "../util/hash/GlMeshGroupHash.hpp"
 #include "../util/hash/IdHash.hpp"
 #include "../util/hash/PathedHash.hpp"
-#include "../util/hash/PointerHash.hpp"
 
+#include <algorithm>
 #include <filesystem>
 #include <memory>
 #include <string>
@@ -36,7 +33,7 @@ namespace leopph::internal
 	class DataManager
 	{
 		public:
-			static auto Instance() -> DataManager&;
+			[[nodiscard]] static auto Instance() -> DataManager&;
 
 			auto Clear() -> void;
 
@@ -50,15 +47,18 @@ namespace leopph::internal
 			auto RegisterSkyboxHandle(const SkyboxImpl* skybox, Skybox* handle) -> void;
 			auto UnregisterSkyboxHandle(const SkyboxImpl* skybox, Skybox* handle) -> void;
 
+			// Takes ownership of the Entity and stores it.
+			auto StoreEntity(std::unique_ptr<Entity> entity) -> void;
+			// Removes the registered entry, and destroys the Entity and its Components.
+			auto DestroyEntity(const Entity* entity) -> void;
+			// Returns a pointer to the stored Entity with the passed name, or nullptr.
+			auto FindEntity(const std::string& name) -> Entity*;
+			// Adds the Component to the list of Components for the Entity.
 			auto RegisterComponentForEntity(const Entity* entity, std::unique_ptr<Component>&& component) -> void;
 			// Destroys the Component object.
 			auto UnregisterComponentFromEntity(const Entity* entity, const Component* component) -> void;
 			[[nodiscard]]
-			auto ComponentsOfEntity(const Entity* entity) const -> const std::unordered_set<std::unique_ptr<Component>, PointerHash, PointerEqual>&;
-
-			auto RegisterEntity(Entity* entity) -> void;
-			auto UnregisterEntity(Entity* entity) -> void;
-			auto FindEntity(const std::string& name) -> Entity*;
+			auto ComponentsOfEntity(const Entity* entity) const -> const std::vector<std::unique_ptr<Component>>&;
 
 			auto RegisterBehavior(Behavior* behavior) -> void;
 			auto UnregisterBehavior(Behavior* behavior) -> void;
@@ -123,8 +123,17 @@ namespace leopph::internal
 			}
 
 		private:
-			// Owning pointers to all Entities and the Components attached to them.
-			std::unordered_map<Entity*, std::unordered_set<std::unique_ptr<Component>, PointerHash, PointerEqual>, EntityHash, EntityEqual> m_EntitiesAndComponents;
+			struct EntityAndComponents
+			{
+				// Owning pointer to Entity
+				std::unique_ptr<Entity> Entity;
+				// Owning pointers to Components
+				std::vector<std::unique_ptr<Component>> Components;
+			};
+
+
+			// All Entities and all of their attached Components
+			std::vector<EntityAndComponents> m_EntitiesAndComponents;
 
 			// Non-owning pointers to all Behaviors.
 			std::unordered_set<Behavior*> m_Behaviors;
@@ -151,5 +160,30 @@ namespace leopph::internal
 			std::unordered_map<GlMeshGroup, std::unordered_set<RenderComponent*>, GlMeshGroupHash, GlMeshGroupEqual> m_Renderables;
 
 			auto SortTextures() -> void;
+			auto SortEntities() -> void;
+
+			// Return a non-const iterator to the element or past-the-end.
+			[[nodiscard]] auto FindEntityInternal(const std::string& name) -> decltype(m_EntitiesAndComponents)::iterator;
+			// Return a const iterator to the element or past-the-end.
+			[[nodiscard]] auto FindEntityInternal(const std::string& name) const -> decltype(m_EntitiesAndComponents)::const_iterator;
+
+			// Helper function to get const and non-const iterators depending on context.
+			[[nodiscard]] static auto FindEntityInternalCommon(auto* const self, const std::string& name) -> decltype(auto)
+			{
+				const auto it{
+					std::ranges::lower_bound(self->m_EntitiesAndComponents, name, [](const auto& elemName, const auto& value)
+					                         {
+						                         return elemName < value;
+					                         }, [](const auto& elem) -> const auto&
+					                         {
+						                         return elem.Entity->Name();
+					                         })
+				};
+				if (it != self->m_EntitiesAndComponents.end() && it->Entity->Name() == name)
+				{
+					return it;
+				}
+				return decltype(it){self->m_EntitiesAndComponents.end()};
+			}
 	};
 }

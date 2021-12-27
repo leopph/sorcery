@@ -177,14 +177,12 @@
     <ClInclude Include="src\util\containers\Bimap.hpp" />
     <ClInclude Include="src\util\equal\IdEqual.hpp" />
     <ClInclude Include="src\util\equal\PointerEqual.hpp" />
-    <ClInclude Include="src\util\equal\EntityEqual.hpp" />
     <ClInclude Include="src\util\equal\GlMeshGroupEqual.hpp" />
     <ClInclude Include="src\util\equal\PathedEqual.hpp" />
     <ClInclude Include="src\util\equal\ShaderTypeEqual.hpp" />
     <ClInclude Include="src\util\equal\StringEqual.hpp" />
     <ClInclude Include="src\util\hash\IdHash.hpp" />
     <ClInclude Include="src\util\hash\PointerHash.hpp" />
-    <ClInclude Include="src\util\hash\EntityHash.hpp" />
     <ClInclude Include="src\util\hash\GlMeshGroupHash.hpp" />
     <ClInclude Include="src\util\hash\PathedHash.hpp" />
     <ClInclude Include="src\util\hash\ShaderTypeHash.hpp" />
@@ -257,11 +255,9 @@
     <ClCompile Include="src\rendering\Texture.cpp" />
     <ClCompile Include="src\rendering\UniformBuffer.cpp" />
     <ClCompile Include="src\timing\timer.cpp" />
-    <ClCompile Include="src\util\equal\EntityEqual.cpp" />
     <ClCompile Include="src\util\equal\GlMeshGroupEqual.cpp" />
     <ClCompile Include="src\util\equal\ShaderTypeEqual.cpp" />
     <ClCompile Include="src\util\equal\StringEqual.cpp" />
-    <ClCompile Include="src\util\hash\EntityHash.cpp" />
     <ClCompile Include="src\util\hash\GlMeshGroupHash.cpp" />
     <ClCompile Include="src\util\hash\PathHash.cpp" />
     <ClCompile Include="src\util\hash\ShaderTypeHash.cpp" />
