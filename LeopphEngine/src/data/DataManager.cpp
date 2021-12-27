@@ -20,12 +20,12 @@ namespace leopph::internal
 
 	auto DataManager::RegisterBehavior(Behavior* behavior) -> void
 	{
-		m_Behaviors.insert(behavior);
+		m_Behaviors.push_back(behavior);
 	}
 
-	auto DataManager::UnregisterBehavior(Behavior* behavior) -> void
+	auto DataManager::UnregisterBehavior(const Behavior* behavior) -> void
 	{
-		m_Behaviors.erase(behavior);
+		std::erase(m_Behaviors, behavior);
 	}
 
 	auto DataManager::StoreEntity(std::unique_ptr<Entity> entity) -> void

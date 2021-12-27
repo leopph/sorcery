@@ -61,7 +61,7 @@ namespace leopph::internal
 			auto ComponentsOfEntity(const Entity* entity) const -> const std::vector<std::unique_ptr<Component>>&;
 
 			auto RegisterBehavior(Behavior* behavior) -> void;
-			auto UnregisterBehavior(Behavior* behavior) -> void;
+			auto UnregisterBehavior(const Behavior* behavior) -> void;
 
 			auto RegisterSpotLight(const SpotLight* spotLight) -> void;
 			auto UnregisterSpotLight(const SpotLight* spotLight) -> void;
@@ -131,7 +131,7 @@ namespace leopph::internal
 			std::vector<EntityAndComponents> m_EntitiesAndComponents;
 
 			// Non-owning pointers to all Behaviors.
-			std::unordered_set<Behavior*> m_Behaviors;
+			std::vector<Behavior*> m_Behaviors;
 
 			// Non-owning pointer to the lastly created DirectionalLight.
 			leopph::DirectionalLight* m_DirLight{nullptr};
