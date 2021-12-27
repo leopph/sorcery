@@ -299,6 +299,12 @@ namespace leopph::internal
 	}
 
 
+	auto DataManager::DestroyMeshGroup(const GlMeshGroup* meshGroup) -> void
+	{
+		m_Renderables.erase(*meshGroup);
+	}
+
+
 	auto DataManager::RegisterInstanceForMeshGroup(const GlMeshGroup& meshGroup, RenderComponent* instance) -> void
 	{
 		m_Renderables.at(meshGroup).push_back(instance);
@@ -307,11 +313,12 @@ namespace leopph::internal
 
 	auto DataManager::UnregisterInstanceFromMeshGroup(const GlMeshGroup& meshGroup, RenderComponent* instance) -> void
 	{
-		const auto it{m_Renderables.find(meshGroup)};
-		std::erase(it->second, instance);
-		if (it->second.empty())
-		{
-			m_Renderables.erase(it);
-		}
+		std::erase(m_Renderables.at(meshGroup), instance);
+	}
+
+
+	auto DataManager::MeshGroupInstanceCount(const GlMeshGroup& meshGroup) const -> std::size_t
+	{
+		return m_Renderables.at(meshGroup).size();
 	}
 }

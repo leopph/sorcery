@@ -36,27 +36,26 @@ namespace leopph::internal
 
 			auto RegisterTexture(Texture* texture) -> void;
 			auto UnregisterTexture(Texture* texture) -> void;
-			auto FindTexture(const std::filesystem::path& path) -> std::shared_ptr<Texture>;
+			[[nodiscard]] auto FindTexture(const std::filesystem::path& path) -> std::shared_ptr<Texture>;
 
-			auto CreateOrGetSkyboxImpl(std::filesystem::path allPaths) -> SkyboxImpl*;
-			// Also unregisters all Skybox handles.
+			[[nodiscard]] auto CreateOrGetSkyboxImpl(std::filesystem::path allPaths) -> SkyboxImpl*;
+			[[nodiscard]] auto SkyboxHandleCount(const SkyboxImpl* skybox) const -> std::size_t;
+			// Unregisters all Skybox handles and destroys the impl instance.
 			auto DestroySkyboxImpl(const SkyboxImpl* skybox) -> void;
 			auto RegisterSkyboxHandle(const SkyboxImpl* skybox, Skybox* handle) -> void;
 			auto UnregisterSkyboxHandle(const SkyboxImpl* skybox, Skybox* handle) -> void;
-			auto SkyboxHandleCount(const SkyboxImpl* skybox) const -> std::size_t;
 
 			// Takes ownership of the Entity and stores it.
 			auto StoreEntity(std::unique_ptr<Entity> entity) -> void;
 			// Removes the registered entry, and destroys the Entity and its Components.
 			auto DestroyEntity(const Entity* entity) -> void;
 			// Returns a pointer to the stored Entity with the passed name, or nullptr.
-			auto FindEntity(const std::string& name) -> Entity*;
+			[[nodiscard]] auto FindEntity(const std::string& name) -> Entity*;
+			[[nodiscard]] auto ComponentsOfEntity(const Entity* entity) const -> const std::vector<std::unique_ptr<Component>>&;
 			// Adds the Component to the list of Components for the Entity.
 			auto RegisterComponentForEntity(const Entity* entity, std::unique_ptr<Component>&& component) -> void;
 			// Destroys the Component object.
 			auto UnregisterComponentFromEntity(const Entity* entity, const Component* component) -> void;
-			[[nodiscard]]
-			auto ComponentsOfEntity(const Entity* entity) const -> const std::vector<std::unique_ptr<Component>>&;
 
 			auto RegisterBehavior(Behavior* behavior) -> void;
 			auto UnregisterBehavior(const Behavior* behavior) -> void;
@@ -70,14 +69,14 @@ namespace leopph::internal
 			auto RegisterMeshDataGroup(MeshDataGroup* meshData) -> void;
 			auto UnregisterMeshDataGroup(MeshDataGroup* meshData) -> void;
 
-			[[nodiscard]]
-			auto FindMeshDataGroup(const std::string& id) -> std::shared_ptr<MeshDataGroup>;
 			/* Returns a copy of the stored GlMeshGroup that sources its data from the passed MeshDataGroup.
 			 * If no instance is found, the function creates a new one. */
-			[[nodiscard]]
-			auto CreateOrGetMeshGroup(std::shared_ptr<const MeshDataGroup>&& meshDataGroup) -> const GlMeshGroup*;
+			[[nodiscard]] auto CreateOrGetMeshGroup(std::shared_ptr<const MeshDataGroup>&& meshDataGroup) -> const GlMeshGroup*;
+			[[nodiscard]] auto FindMeshDataGroup(const std::string& id) -> std::shared_ptr<MeshDataGroup>;
+			[[nodiscard]] auto MeshGroupInstanceCount(const GlMeshGroup& meshGroup) const -> std::size_t;
+			// Unregisters all instances and destroys the MeshGroup
+			auto DestroyMeshGroup(const GlMeshGroup* meshGroup) -> void;
 			auto RegisterInstanceForMeshGroup(const GlMeshGroup& meshGroup, RenderComponent* instance) -> void;
-			// If the MeshGroup runs out of instances it is destroyed.
 			auto UnregisterInstanceFromMeshGroup(const GlMeshGroup& meshGroup, RenderComponent* instance) -> void;
 
 			[[nodiscard]] constexpr auto Behaviors() const noexcept -> auto&;
