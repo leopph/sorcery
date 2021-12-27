@@ -1,5 +1,4 @@
 #pragma once
-
 #include "../components/Behavior.hpp"
 #include "../components/Component.hpp"
 #include "../components/lighting/DirLight.hpp"
@@ -66,14 +65,14 @@ namespace leopph::internal
 			auto RegisterSpotLight(const SpotLight* spotLight) -> void;
 			auto UnregisterSpotLight(const SpotLight* spotLight) -> void;
 
-			auto RegisterPointLight(PointLight* pointLight) -> void;
-			auto UnregisterPointLight(PointLight* pointLight) -> void;
+			auto RegisterPointLight(const PointLight* pointLight) -> void;
+			auto UnregisterPointLight(const PointLight* pointLight) -> void;
 
 			auto RegisterMeshDataGroup(MeshDataGroup* meshData) -> void;
 			auto UnregisterMeshDataGroup(MeshDataGroup* meshData) -> void;
+
 			[[nodiscard]]
 			auto FindMeshDataGroup(const std::string& id) -> std::shared_ptr<MeshDataGroup>;
-
 			/* Returns a copy of the stored GlMeshGroup that sources its data from the passed MeshDataGroup.
 			 * If no instance is found, the function creates a new one. */
 			[[nodiscard]]
@@ -82,40 +81,14 @@ namespace leopph::internal
 			// If the MeshGroup runs out of instances it is destroyed.
 			auto UnregisterInstanceFromMeshGroup(const GlMeshGroup& meshGroup, RenderComponent* instance) -> void;
 
-			[[nodiscard]] constexpr auto Behaviors() const noexcept -> auto&
-			{
-				return m_Behaviors;
-			}
+			[[nodiscard]] constexpr auto Behaviors() const noexcept -> auto&;
+			[[nodiscard]] constexpr auto DirectionalLight() const noexcept;
+			[[nodiscard]] constexpr auto SpotLights() const noexcept -> auto&;
+			[[nodiscard]] constexpr auto PointLights() const noexcept -> auto&;
+			[[nodiscard]] constexpr auto Skyboxes() const noexcept -> auto&;
+			[[nodiscard]] constexpr auto MeshGroupsAndInstances() const noexcept -> auto&;
 
-			[[nodiscard]] constexpr auto DirectionalLight() const noexcept
-			{
-				return m_DirLight;
-			}
-
-			[[nodiscard]] constexpr auto SpotLights() const noexcept -> auto&
-			{
-				return m_SpotLights;
-			}
-
-			[[nodiscard]] constexpr auto PointLights() const noexcept -> auto&
-			{
-				return m_PointLights;
-			}
-
-			[[nodiscard]] constexpr auto Skyboxes() const noexcept -> auto&
-			{
-				return m_Skyboxes;
-			}
-
-			[[nodiscard]] constexpr auto MeshGroupsAndInstances() const noexcept -> auto&
-			{
-				return m_Renderables;
-			}
-
-			constexpr auto DirectionalLight(leopph::DirectionalLight* const dirLight) noexcept
-			{
-				m_DirLight = dirLight;
-			}
+			constexpr auto DirectionalLight(const leopph::DirectionalLight* dirLight) noexcept;
 
 		private:
 			struct EntityAndComponents
@@ -134,13 +107,13 @@ namespace leopph::internal
 			std::vector<Behavior*> m_Behaviors;
 
 			// Non-owning pointer to the lastly created DirectionalLight.
-			leopph::DirectionalLight* m_DirLight{nullptr};
+			const leopph::DirectionalLight* m_DirLight{nullptr};
 
 			// Non-owning pointers to all SpotLights.
-			std::unordered_set<const SpotLight*> m_SpotLights;
+			std::vector<const SpotLight*> m_SpotLights;
 
 			// Non-owning pointers to all PointLights.
-			std::vector<PointLight*> m_PointLights;
+			std::vector<const PointLight*> m_PointLights;
 
 			// Non-owning pointers to all Texture instances.
 			std::vector<Texture*> m_Textures;
@@ -161,24 +134,68 @@ namespace leopph::internal
 			[[nodiscard]] auto FindEntityInternal(const std::string& name) -> decltype(m_EntitiesAndComponents)::iterator;
 			// Return a const iterator to the element or past-the-end.
 			[[nodiscard]] auto FindEntityInternal(const std::string& name) const -> decltype(m_EntitiesAndComponents)::const_iterator;
-
 			// Helper function to get const and non-const iterators depending on context.
-			[[nodiscard]] static auto FindEntityInternalCommon(auto* const self, const std::string& name) -> decltype(auto)
-			{
-				const auto it{
-					std::ranges::lower_bound(self->m_EntitiesAndComponents, name, [](const auto& elemName, const auto& value)
-					                         {
-						                         return elemName < value;
-					                         }, [](const auto& elem) -> const auto&
-					                         {
-						                         return elem.Entity->Name();
-					                         })
-				};
-				if (it != self->m_EntitiesAndComponents.end() && it->Entity->Name() == name)
-				{
-					return it;
-				}
-				return decltype(it){self->m_EntitiesAndComponents.end()};
-			}
+			[[nodiscard]] static auto FindEntityInternalCommon(auto* const self, const std::string& name) -> decltype(auto);
 	};
+
+
+	[[nodiscard]] constexpr auto DataManager::Behaviors() const noexcept -> auto&
+	{
+		return m_Behaviors;
+	}
+
+
+	[[nodiscard]] constexpr auto DataManager::DirectionalLight() const noexcept
+	{
+		return m_DirLight;
+	}
+
+
+	[[nodiscard]] constexpr auto DataManager::SpotLights() const noexcept -> auto&
+	{
+		return m_SpotLights;
+	}
+
+
+	[[nodiscard]] constexpr auto DataManager::PointLights() const noexcept -> auto&
+	{
+		return m_PointLights;
+	}
+
+
+	[[nodiscard]] constexpr auto DataManager::Skyboxes() const noexcept -> auto&
+	{
+		return m_Skyboxes;
+	}
+
+
+	[[nodiscard]] constexpr auto DataManager::MeshGroupsAndInstances() const noexcept -> auto&
+	{
+		return m_Renderables;
+	}
+
+
+	constexpr auto DataManager::DirectionalLight(const leopph::DirectionalLight* const dirLight) noexcept
+	{
+		m_DirLight = dirLight;
+	}
+
+
+	[[nodiscard]] auto DataManager::FindEntityInternalCommon(auto* const self, const std::string& name) -> decltype(auto)
+	{
+		const auto it{
+			std::ranges::lower_bound(self->m_EntitiesAndComponents, name, [](const auto& elemName, const auto& value)
+			                         {
+				                         return elemName < value;
+			                         }, [](const auto& elem) -> const auto&
+			                         {
+				                         return elem.Entity->Name();
+			                         })
+		};
+		if (it != self->m_EntitiesAndComponents.end() && it->Entity->Name() == name)
+		{
+			return it;
+		}
+		return decltype(it){self->m_EntitiesAndComponents.end()};
+	}
 }
