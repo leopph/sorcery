@@ -25,28 +25,4 @@ namespace leopph::internal
 			DataManager::Instance().UnregisterInstanceFromMeshGroup(m_Renderable, this);
 		}
 	}
-
-
-	auto RenderComponent::CastsShadow() const -> bool
-	{
-		return m_CastsShadow;
-	}
-
-
-	auto RenderComponent::CastsShadow(const bool value) -> void
-	{
-		m_CastsShadow = value;
-	}
-
-
-	auto RenderComponent::Instanced() const -> bool
-	{
-		return m_Instanced;
-	}
-
-
-	auto RenderComponent::Instanced(const bool value) -> void
-	{
-		m_Instanced = value;
-	}
 }

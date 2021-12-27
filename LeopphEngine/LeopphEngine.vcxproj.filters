@@ -5,7 +5,6 @@
     <ClCompile Include="src\components\Camera.cpp" />
     <ClCompile Include="src\rendering\opengl\InitGl.cpp" />
     <ClCompile Include="src\math\LeopphMath.cpp" />
-    <ClCompile Include="src\components\lighting\Light.cpp" />
     <ClCompile Include="src\rendering\geometry\GlMesh.cpp" />
     <ClCompile Include="src\entity\Entity.cpp" />
     <ClCompile Include="src\timing\leopphtime.cpp" />
@@ -29,7 +28,6 @@
     <ClCompile Include="src\components\Transform.cpp" />
     <ClCompile Include="src\util\hash\PathHash.cpp" />
     <ClCompile Include="src\components\lighting\SpotLight.cpp" />
-    <ClCompile Include="src\components\lighting\AttenuatedLight.cpp" />
     <ClCompile Include="src\util\less\LightCloserToCamera.cpp" />
     <ClCompile Include="src\rendering\renderers\DeferredRenderer.cpp" />
     <ClCompile Include="src\rendering\GeometryBuffer.cpp" />

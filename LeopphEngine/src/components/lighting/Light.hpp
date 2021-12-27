@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../Component.hpp"
-#include "../../api/LeopphApi.hpp"
 #include "../../math/Vector.hpp"
 
 
@@ -11,56 +10,94 @@ namespace leopph::internal
 	class Light : public Component
 	{
 		public:
-			/* Get the current diffuse intensity and color.
-			 * This value is in the [0; 1] range per component. */
-			[[nodiscard]]
-			LEOPPHAPI auto Diffuse() const -> const Vector3&;
+			// Get the current diffuse intensity and color.
+			// This value is in the [0; 1] range per component.
+			[[nodiscard]] constexpr auto Diffuse() const noexcept -> auto&;
 
-			/* Set the current diffuse intensity and color.
-			 * This value must be in the [0; 1] range per component. */
-			LEOPPHAPI auto Diffuse(const Vector3& value) -> void;
+			// Get the current specular highlight intensity and color.
+			// This value is in the [0; 1] range per component.
+			[[nodiscard]] constexpr auto Specular() const -> auto&;
 
-			/* Get the current specular highlight intensity and color.
-			 * This value is in the [0; 1] range per component. */
-			[[nodiscard]]
-			LEOPPHAPI auto Specular() const -> const Vector3&;
+			// Get whether the Light's effect can be occluded by objects.
+			// This only works if objects have this property set to true.
+			// This value is false by default.
+			[[nodiscard]] constexpr auto CastsShadow() const noexcept;
 
-			/* Set the current specular highlight intensity and color.
-			 * This value must be in the [0; 1] range per component. */
-			LEOPPHAPI auto Specular(const Vector3& value) -> void;
+			// Get the distance where the Light's effect fully cuts off.
+			[[nodiscard]] constexpr auto Range() const noexcept;
 
-			/* Get the distance where the Light's effect fully cuts off. */
-			[[nodiscard]]
-			LEOPPHAPI auto Range() const -> float;
+			// Set the current diffuse intensity and color.
+			// This value must be in the [0; 1] range per component.
+			constexpr auto Diffuse(const Vector3& value);
 
-			/* Set the distance where the Light's effect fully cuts off. */
-			LEOPPHAPI auto Range(float value) -> void;
+			// Set the current specular highlight intensity and color.
+			// This value must be in the [0; 1] range per component.
+			constexpr auto Specular(const Vector3& value) noexcept;
 
-			/* Get whether the Light's effect can be occluded by objects.
-			 * This only works if objects have this property set to true.
-			 * This value is false by default. */
-			[[nodiscard]]
-			LEOPPHAPI auto CastsShadow() const -> bool;
+			// Set whether the Light's effect can be occluded by objects.
+			// This only works if objects have this property set to true.
+			// This value is false by default.
+			constexpr auto CastsShadow(bool value) noexcept;
 
-			/* Set whether the Light's effect can be occluded by objects.
-			 * This only works if objects have this property set to true.
-			 * This value is false by default. */
-			LEOPPHAPI auto CastsShadow(bool value) -> void;
+			// Set the distance where the Light's effect fully cuts off.
+			constexpr auto Range(float value) noexcept;
 
-			LEOPPHAPI explicit Light(leopph::Entity* entity);
-
-			Light(const Light&) = delete;
-			auto operator=(const Light&) -> void = delete;
-
-			Light(Light&&) = delete;
-			auto operator=(Light&&) -> void = delete;
-
-			LEOPPHAPI ~Light() override = 0;
+		protected:
+			using Component::Component;
+			using Component::operator=;
 
 		private:
-			bool m_CastsShadow;
-			float m_Range;
-			Vector3 m_Diffuse;
-			Vector3 m_Specular;
+			bool m_CastsShadow{false};
+			float m_Range{100.f};
+			Vector3 m_Diffuse{1.f, 1.f, 1.f};
+			Vector3 m_Specular{1.f, 1.f, 1.f};
 	};
+
+
+	constexpr auto Light::Diffuse() const noexcept -> auto&
+	{
+		return m_Diffuse;
+	}
+
+
+	constexpr auto Light::Specular() const -> auto&
+	{
+		return m_Specular;
+	}
+
+
+	constexpr auto Light::CastsShadow() const noexcept
+	{
+		return m_CastsShadow;
+	}
+
+
+	constexpr auto Light::Range() const noexcept
+	{
+		return m_Range;
+	}
+
+
+	constexpr auto Light::Diffuse(const Vector3& value)
+	{
+		m_Diffuse = value;
+	}
+
+
+	constexpr auto Light::Specular(const Vector3& value) noexcept
+	{
+		m_Specular = value;
+	}
+
+
+	constexpr auto Light::CastsShadow(const bool value) noexcept
+	{
+		m_CastsShadow = value;
+	}
+
+
+	constexpr auto Light::Range(const float value) noexcept
+	{
+		m_Range = value;
+	}
 }

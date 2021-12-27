@@ -16,7 +16,7 @@ void CameraController::OnFrameUpdate()
 		return;
 	}
 
-	auto& camTransform = *leopph::Camera::Active->Entity()->Transform();
+	auto& camTransform = *leopph::Camera::Active()->Entity()->Transform();
 
 	leopph::Vector3 movementVector;
 

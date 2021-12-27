@@ -22,9 +22,4 @@ namespace leopph
 		}
 		return std::make_shared<internal::FileMeshDataGroup>(path.generic_string());
 	}
-
-	auto Model::Path() const -> const std::filesystem::path&
-	{
-		return m_Path;
-	}
 }

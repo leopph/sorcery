@@ -90,8 +90,8 @@ namespace leopph::internal
 
 		const auto& renderables{CollectRenderables()};
 
-		const auto camViewMat{Camera::Active->ViewMatrix()};
-		const auto camProjMat{Camera::Active->ProjectionMatrix()};
+		const auto camViewMat{Camera::Active()->ViewMatrix()};
+		const auto camProjMat{Camera::Active()->ProjectionMatrix()};
 
 		const auto& pointLights{CollectPointLights()};
 		const auto& spotLights{CollectSpotLights()};
@@ -178,7 +178,7 @@ namespace leopph::internal
 		lightShader.SetUniform("u_DirLight.direction", dirLight->Direction());
 		lightShader.SetUniform("u_DirLight.diffuseColor", dirLight->Diffuse());
 		lightShader.SetUniform("u_DirLight.specularColor", dirLight->Specular());
-		lightShader.SetUniform("u_CameraPosition", Camera::Active->Entity()->Transform()->Position());
+		lightShader.SetUniform("u_CameraPosition", Camera::Active()->Entity()->Transform()->Position());
 
 		if (dirLight->CastsShadow())
 		{
@@ -263,7 +263,7 @@ namespace leopph::internal
 			texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::TextureType::Shine, texCount);
 			static_cast<void>(m_SpotShadowMap.BindForReading(lightShader, texCount));
 
-			lightShader.SetUniform("u_CamPos", Camera::Active->Entity()->Transform()->Position());
+			lightShader.SetUniform("u_CamPos", Camera::Active()->Entity()->Transform()->Position());
 
 			const auto lightWorldToClipMat
 			{
@@ -340,7 +340,7 @@ namespace leopph::internal
 			lightShader.SetUniform("u_PointLight.linear", pointLight->Linear());
 			lightShader.SetUniform("u_PointLight.quadratic", pointLight->Quadratic());
 			lightShader.SetUniform("u_PointLight.range", pointLight->Range());
-			lightShader.SetUniform("u_CamPos", Camera::Active->Entity()->Transform()->Position());
+			lightShader.SetUniform("u_CamPos", Camera::Active()->Entity()->Transform()->Position());
 
 			if (pointLight->CastsShadow())
 			{
@@ -396,7 +396,7 @@ namespace leopph::internal
 
 	auto DeferredRenderer::RenderSkybox(const Matrix4& camViewMat, const Matrix4& camProjMat) -> void
 	{
-		if (const auto& skybox{Camera::Active->Background().skybox}; skybox.has_value())
+		if (const auto& skybox{Camera::Active()->Background().skybox}; skybox.has_value())
 		{
 			static auto skyboxFlagInfo{m_SkyboxShader.GetFlagInfo()};
 			auto& skyboxShader{m_SkyboxShader.GetPermutation(skyboxFlagInfo)};

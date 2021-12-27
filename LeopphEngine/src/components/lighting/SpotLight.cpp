@@ -6,7 +6,7 @@
 namespace leopph
 {
 	SpotLight::SpotLight(leopph::Entity* const entity) :
-		AttenuatedLight{entity, 1.f, 0.1f, 0.1f},
+		AttenuatedLight{entity},
 		m_InnerAngle{30.f},
 		m_OuterAngle{m_InnerAngle}
 	{

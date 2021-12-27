@@ -6,12 +6,12 @@
 
 namespace leopph
 {
-	/* Behaviors are special components that represent actions and can affect the status of Entities at runtime.
-	 * Subclass this to provide the logic for your application. */
+	// Behaviors are special components that provide actions to and modify the status of Entities at runtime.
+	// Subclass this to provide logic for your application.
 	class Behavior : public Component
 	{
 		public:
-			// This function gets called every frame.
+			// This function is called on all Behaviors every frame.
 			virtual auto OnFrameUpdate() -> void
 			{}
 

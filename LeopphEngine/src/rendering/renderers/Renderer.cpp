@@ -90,7 +90,7 @@ namespace leopph::internal
 
 	auto Renderer::CompareLightsByDistToCam(const Light* left, const Light* right) -> bool
 	{
-		const auto& camPosition{Camera::Active->Entity()->Transform()->Position()};
+		const auto& camPosition{Camera::Active()->Entity()->Transform()->Position()};
 		const auto& leftDistance{Vector3::Distance(camPosition, left->Entity()->Transform()->Position())};
 		const auto& rightDistance{Vector3::Distance(camPosition, right->Entity()->Transform()->Position())};
 		if (std::abs(leftDistance - rightDistance) < std::numeric_limits<float>::epsilon())

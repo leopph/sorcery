@@ -218,7 +218,6 @@
     <ClCompile Include="src\components\Camera.cpp" />
     <ClCompile Include="src\components\Component.cpp" />
     <ClCompile Include="src\components\lighting\AmbientLight.cpp" />
-    <ClCompile Include="src\components\lighting\AttenuatedLight.cpp" />
     <ClCompile Include="src\components\lighting\DirLight.cpp" />
     <ClCompile Include="src\components\lighting\SpotLight.cpp" />
     <ClCompile Include="src\components\rendering\RenderComponent.cpp" />
@@ -270,7 +269,6 @@
     <ClCompile Include="src\windowing\WindowBase.cpp" />
     <ClCompile Include="src\input\Input.cpp" />
     <ClCompile Include="src\math\LeopphMath.cpp" />
-    <ClCompile Include="src\components\lighting\Light.cpp" />
     <ClCompile Include="src\rendering\geometry\GlMesh.cpp" />
     <ClCompile Include="src\components\rendering\Model.cpp" />
     <ClCompile Include="src\entity\Entity.cpp" />

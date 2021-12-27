@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../Component.hpp"
-#include "../../api/LeopphApi.hpp"
 
 #include <memory>
 
@@ -24,29 +23,27 @@ namespace leopph::internal
 
 			~RenderComponent() noexcept override;
 
-			/* Get whether the rendered object occludes light from other objects.
-			 * This only works if the Light used also has this property set to true.
-			 * When instancing is turned on if any of the instances have this property set to true, all instances will cast shadow regardless of what is set on them.
-			 * This value is false by default. */
-			[[nodiscard]]
-			LEOPPHAPI auto CastsShadow() const -> bool;
+			// Get whether the rendered object occludes light from other objects.
+			// This only works if the Light used also has this property set to true.
+			// When instancing is turned on if any of the instances have this property set to true, all instances will cast shadow regardless of what is set on them.
+			// This value is false by default.
+			[[nodiscard]] constexpr auto CastsShadow() const noexcept;
 
-			/* Set whether the rendered object occludes light from other objects.
-			 * This only works if the Light used also has this property set to true.
-			 * When instancing is turned on if any of the instances have this property set to true, all instances will cast shadow regardless of what is set on them.
-			 * This value is false by default. */
-			LEOPPHAPI auto CastsShadow(bool value) -> void;
+			// Set whether the rendered object occludes light from other objects.
+			// This only works if the Light used also has this property set to true.
+			// When instancing is turned on if any of the instances have this property set to true, all instances will cast shadow regardless of what is set on them.
+			// This value is false by default.
+			constexpr auto CastsShadow(bool value) noexcept;
 
-			/* Get whether the object is rendered together with other objects that use the same data source.
-			 * This speeds up rendering but limits the amount of customization that can be applied e.g. shadow casting.
-			 * The default value is false. */
-			[[nodiscard]]
-			LEOPPHAPI auto Instanced() const -> bool;
+			// Get whether the object is rendered together with other objects that use the same data source.
+			// This speeds up rendering but limits the amount of customization that can be applied e.g. shadow casting.
+			// The default value is false.
+			[[nodiscard]] constexpr auto Instanced() const noexcept;
 
-			/* Set whether the object is rendered together with other objects that use the same data source.
-			 * This speeds up rendering but limits the amount of customization that can be applied e.g. shadow casting.
-			 * The default value is false. */
-			LEOPPHAPI auto Instanced(bool value) -> void;
+			// Set whether the object is rendered together with other objects that use the same data source.
+			// This speeds up rendering but limits the amount of customization that can be applied e.g. shadow casting.
+			// The default value is false.
+			constexpr auto Instanced(bool value) noexcept;
 
 		protected:
 			RenderComponent(leopph::Entity* entity, std::shared_ptr<const MeshDataGroup> meshDataGroup);
@@ -56,4 +53,28 @@ namespace leopph::internal
 			bool m_Instanced{false};
 			const GlMeshGroup* m_Renderable;
 	};
+
+
+	constexpr auto RenderComponent::CastsShadow() const noexcept
+	{
+		return m_CastsShadow;
+	}
+
+
+	constexpr auto RenderComponent::CastsShadow(const bool value) noexcept
+	{
+		m_CastsShadow = value;
+	}
+
+
+	constexpr auto RenderComponent::Instanced() const noexcept
+	{
+		return m_Instanced;
+	}
+
+
+	constexpr auto RenderComponent::Instanced(const bool value) noexcept
+	{
+		m_Instanced = value;
+	}
 }

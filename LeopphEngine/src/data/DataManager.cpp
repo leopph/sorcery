@@ -1,9 +1,5 @@
 #include "DataManager.hpp"
 
-#include "../util/logger.h"
-
-#include <stdexcept>
-
 
 namespace leopph::internal
 {
@@ -282,13 +278,13 @@ namespace leopph::internal
 	}
 
 
-	auto DataManager::RegisterInstanceForMeshGroup(const GlMeshGroup* const meshGroup, RenderComponent* const instance) -> void
+	auto DataManager::RegisterInstanceForMeshGroup(const GlMeshGroup* const meshGroup, const RenderComponent* const instance) -> void
 	{
 		FindMeshGroupInternal(meshGroup)->Instances.push_back(instance);
 	}
 
 
-	auto DataManager::UnregisterInstanceFromMeshGroup(const GlMeshGroup* const meshGroup, RenderComponent* const instance) -> void
+	auto DataManager::UnregisterInstanceFromMeshGroup(const GlMeshGroup* const meshGroup, const RenderComponent* const instance) -> void
 	{
 		std::erase(FindMeshGroupInternal(meshGroup)->Instances, instance);
 	}

@@ -66,8 +66,8 @@ namespace leopph::internal
 
 		const auto& renderables{CollectRenderables()};
 
-		const auto camViewMat{Camera::Active->ViewMatrix()};
-		const auto camProjMat{Camera::Active->ProjectionMatrix()};
+		const auto camViewMat{Camera::Active()->ViewMatrix()};
+		const auto camProjMat{Camera::Active()->ProjectionMatrix()};
 
 		const auto& dirLight{DataManager::Instance().DirectionalLight()};
 		const auto& spotLights{CollectSpotLights()};
@@ -95,7 +95,7 @@ namespace leopph::internal
 		auto texCount{1};
 
 		objectShader.SetUniform("u_ViewProjMat", camViewMat * camProjMat);
-		objectShader.SetUniform("u_CamPos", Camera::Active->Entity()->Transform()->Position());
+		objectShader.SetUniform("u_CamPos", Camera::Active()->Entity()->Transform()->Position());
 
 		/* Set up ambient light data */
 		objectShader.SetUniform("u_AmbientLight", AmbientLight::Instance().Intensity());
@@ -199,7 +199,7 @@ namespace leopph::internal
 
 	auto ForwardRenderer::RenderSkybox(const Matrix4& camViewMat, const Matrix4& camProjMat) -> void
 	{
-		if (const auto& skybox{Camera::Active->Background().skybox}; skybox.has_value())
+		if (const auto& skybox{Camera::Active()->Background().skybox}; skybox.has_value())
 		{
 			static auto skyboxFlagInfo{m_SkyboxShader.GetFlagInfo()};
 			auto& skyboxShader{m_SkyboxShader.GetPermutation(skyboxFlagInfo)};

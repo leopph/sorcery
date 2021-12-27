@@ -5,48 +5,76 @@
 
 namespace leopph::internal
 {
-	// Attenuated lights are special Lights whose intensity decreases the further photons travel.
+	// Attenuated lights are special Lights whose intensity decreases by distance.
 	class AttenuatedLight : public Light
 	{
 		public:
 			// Get the attenuations constanst value.
-			[[nodiscard]]
-			LEOPPHAPI auto Constant() const -> float;
+			[[nodiscard]] constexpr auto Constant() const noexcept;
+
+			// Get the attenuation's linear value.
+			// This scales linearly with distance.
+			[[nodiscard]] constexpr auto Linear() const noexcept;
+
+			// Get the attenuation's quadratic value.
+			// This scales quadratically with distance.
+			[[nodiscard]] constexpr auto Quadratic() const noexcept;
 
 			// Set the attenuation's constanst value.
-			LEOPPHAPI auto Constant(float value) -> void;
+			constexpr auto Constant(float value) noexcept;
 
-			/* Get the attenuation's linear value.
-			 * This scales linearly with distance. */
-			[[nodiscard]]
-			LEOPPHAPI auto Linear() const -> float;
+			// Set the attenuation's linear value.
+			// This scales linearly with distance.
+			constexpr auto Linear(float value) noexcept;
 
-			/* Set the attenuation's linear value.
-			 * This scales linearly with distance. */
-			LEOPPHAPI auto Linear(float value) -> void;
+			// Set the attenuation's quadratic value.
+			// This scales quadratically with distance.
+			constexpr auto Quadratic(float value) noexcept;
 
-			/* Get the attenuation's quadratic value.
-			 * This scales quadratically with distance. */
-			[[nodiscard]]
-			LEOPPHAPI auto Quadratic() const -> float;
-
-			/* Set the attenuation's quadratic value.
-			 * This scales quadratically with distance. */
-			LEOPPHAPI auto Quadratic(float value) -> void;
-
-			LEOPPHAPI explicit AttenuatedLight(leopph::Entity* entity, float constant = 1.0f, float linear = 0.14f, float quadratic = 0.07f, float range = 32);
-
-			AttenuatedLight(const AttenuatedLight&) = delete;
-			auto operator=(const AttenuatedLight&) -> void = delete;
-
-			AttenuatedLight(AttenuatedLight&&) = delete;
-			auto operator=(AttenuatedLight&&) -> void = delete;
-
-			LEOPPHAPI ~AttenuatedLight() override = 0;
+		protected:
+			using Light::Light;
+			using Light::operator=;
 
 		private:
-			float m_Constant;
-			float m_Linear;
-			float m_Quadratic;
+			float m_Constant{1.0f};
+			float m_Linear{0.14f};
+			float m_Quadratic{0.07f};
+			float m_Range{32.f};
 	};
+
+
+	constexpr auto AttenuatedLight::Constant() const noexcept
+	{
+		return m_Constant;
+	}
+
+
+	constexpr auto AttenuatedLight::Constant(const float value) noexcept
+	{
+		m_Constant = value;
+	}
+
+
+	constexpr auto AttenuatedLight::Linear() const noexcept
+	{
+		return m_Linear;
+	}
+
+
+	constexpr auto AttenuatedLight::Linear(const float value) noexcept
+	{
+		m_Linear = value;
+	}
+
+
+	constexpr auto AttenuatedLight::Quadratic() const noexcept
+	{
+		return m_Quadratic;
+	}
+
+
+	constexpr auto AttenuatedLight::Quadratic(const float value) noexcept
+	{
+		m_Quadratic = value;
+	}
 }

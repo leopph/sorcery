@@ -29,7 +29,7 @@ namespace leopph
 	{
 		if (m_Parent != nullptr)
 		{
-			m_Parent->m_Children.erase(this);
+			std::erase(m_Parent->m_Children, this);
 		}
 
 		std::ranges::for_each(m_Children, [](const auto& child)
@@ -40,16 +40,6 @@ namespace leopph
 			child->CalculateWorldRotation();
 			child->CalculateWorldScale();
 		});
-	}
-
-	auto Transform::Position() const -> const Vector3&
-	{
-		return m_WorldPosition;
-	}
-
-	auto Transform::LocalPosition() const -> const Vector3&
-	{
-		return m_LocalPosition;
 	}
 
 	auto Transform::Position(const Vector3& newPos) -> void
@@ -71,16 +61,6 @@ namespace leopph
 		CalculateWorldPosition();
 	}
 
-	auto Transform::Rotation() const -> const Quaternion&
-	{
-		return m_WorldRotation;
-	}
-
-	auto Transform::LocalRotation() const -> const Quaternion&
-	{
-		return m_LocalRotation;
-	}
-
 	auto Transform::Rotation(const Quaternion& newRot) -> void
 	{
 		if (m_Parent != nullptr)
@@ -98,16 +78,6 @@ namespace leopph
 	{
 		m_LocalRotation = newRot;
 		CalculateWorldRotation();
-	}
-
-	auto Transform::Scale() const -> const Vector3&
-	{
-		return m_WorldScale;
-	}
-
-	auto Transform::LocalScale() const -> const Vector3&
-	{
-		return m_LocalScale;
 	}
 
 	auto Transform::Scale(const Vector3& newScale) -> void
@@ -180,26 +150,6 @@ namespace leopph
 		Rescale(Vector3{x, y, z}, base);
 	}
 
-	auto Transform::Forward() const -> const Vector3&
-	{
-		return m_Forward;
-	}
-
-	auto Transform::Right() const -> const Vector3&
-	{
-		return m_Right;
-	}
-
-	auto Transform::Up() const -> const Vector3&
-	{
-		return m_Up;
-	}
-
-	auto Transform::Parent() const -> Transform*
-	{
-		return m_Parent;
-	}
-
 	auto Transform::Parent(const leopph::Entity* const parent) -> void
 	{
 		Parent(parent->Transform());
@@ -214,13 +164,13 @@ namespace leopph
 	{
 		if (m_Parent != nullptr)
 		{
-			m_Parent->m_Children.erase(this);
+			std::erase(m_Parent->m_Children, this);
 		}
 
 		m_Parent = parent;
 		if (parent != nullptr)
 		{
-			parent->m_Children.insert(this);
+			parent->m_Children.push_back(this);
 		}
 
 		CalculateWorldPosition();
@@ -233,14 +183,9 @@ namespace leopph
 		Parent(&parent);
 	}
 
-	auto Transform::Parent(std::nullptr_t parent) -> void
+	auto Transform::Parent(std::nullptr_t const null) -> void
 	{
-		Parent(static_cast<Transform*>(parent));
-	}
-
-	auto Transform::Children() const -> const std::unordered_set<Transform*>&
-	{
-		return m_Children;
+		Parent(static_cast<Transform*>(null));
 	}
 
 	auto Transform::Matrices() const -> const std::pair<Matrix4, Matrix4>&

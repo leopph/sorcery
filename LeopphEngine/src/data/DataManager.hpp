@@ -134,11 +134,11 @@ namespace leopph::internal
 
 			// Stores the passed instance pointer for the MeshGroup pointed to by the passed pointer.
 			// The function does NOT check for duplicated or if the passed MeshGroup is even registered.
-			auto RegisterInstanceForMeshGroup(const GlMeshGroup* meshGroup, RenderComponent* instance) -> void;
+			auto RegisterInstanceForMeshGroup(const GlMeshGroup* meshGroup, const RenderComponent* instance) -> void;
 
 			/* Removes all instance pointers that point to the same instance as the passed pointer from the passed MeshGroup.
 			 * The function does NOT check whether the passed MeshGroup is registered or not. */
-			auto UnregisterInstanceFromMeshGroup(const GlMeshGroup* meshGroup, RenderComponent* instance) -> void;
+			auto UnregisterInstanceFromMeshGroup(const GlMeshGroup* meshGroup, const RenderComponent* instance) -> void;
 
 			[[nodiscard]] constexpr auto Behaviors() const noexcept -> auto&;
 			[[nodiscard]] constexpr auto DirectionalLight() const noexcept;

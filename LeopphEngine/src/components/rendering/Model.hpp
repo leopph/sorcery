@@ -24,13 +24,18 @@ namespace leopph
 			LEOPPHAPI ~Model() override = default;
 
 			// File path of the loaded Model.
-			[[nodiscard]]
-			auto Path() const -> const std::filesystem::path&;
+			[[nodiscard]] constexpr auto Path() const noexcept -> auto&;
 
 		private:
 			std::filesystem::path m_Path;
 
-			[[nodiscard]]
-			auto GetMeshData(const std::filesystem::path& path) const -> std::shared_ptr<internal::MeshDataGroup>;
+			[[nodiscard]] auto GetMeshData(const std::filesystem::path& path) const -> std::shared_ptr<internal::MeshDataGroup>;
 	};
+
+
+	constexpr auto Model::Path() const noexcept -> auto&
+	{
+		return m_Path;
+	}
+
 }
