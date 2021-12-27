@@ -10,19 +10,19 @@ namespace leopph::internal
 		Component{entity},
 		m_Renderable{DataManager::Instance().CreateOrGetMeshGroup(std::move(meshDataGroup))}
 	{
-		DataManager::Instance().RegisterInstanceForMeshGroup(*m_Renderable, this);
+		DataManager::Instance().RegisterInstanceForMeshGroup(m_Renderable, this);
 	}
 
 
 	RenderComponent::~RenderComponent() noexcept
 	{
-		if (DataManager::Instance().MeshGroupInstanceCount(*m_Renderable) == 1ull)
+		if (DataManager::Instance().MeshGroupInstanceCount(m_Renderable) == 1ull)
 		{
 			DataManager::Instance().DestroyMeshGroup(m_Renderable);
 		}
 		else
 		{
-			DataManager::Instance().UnregisterInstanceFromMeshGroup(*m_Renderable, this);
+			DataManager::Instance().UnregisterInstanceFromMeshGroup(m_Renderable, this);
 		}
 	}
 

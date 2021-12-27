@@ -50,12 +50,12 @@ namespace leopph::internal
 				}
 				else
 				{
-					m_CurFrameRenderables.emplace_back(&renderable, std::vector{std::make_pair(modelMat.Transposed(), normalMat.Transposed())}, instance->CastsShadow());
+					m_CurFrameRenderables.emplace_back(renderable.get(), std::vector{std::make_pair(modelMat.Transposed(), normalMat.Transposed())}, instance->CastsShadow());
 				}
 			}
 			if (!instMats.empty())
 			{
-				m_CurFrameRenderables.emplace_back(&renderable, instMats, instShadow);
+				m_CurFrameRenderables.emplace_back(renderable.get(), instMats, instShadow);
 			}
 		}
 		return m_CurFrameRenderables;

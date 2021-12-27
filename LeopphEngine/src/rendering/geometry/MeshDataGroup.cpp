@@ -13,25 +13,36 @@ namespace leopph::internal
 		DataManager::Instance().RegisterMeshDataGroup(this);
 	}
 
+
 	MeshDataGroup::~MeshDataGroup() noexcept
 	{
 		DataManager::Instance().UnregisterMeshDataGroup(this);
 	}
+
+
+	auto MeshDataGroup::operator==(const MeshDataGroup& other) const -> bool
+	{
+		return m_Id == other.m_Id;
+	}
+
 
 	auto MeshDataGroup::Id() const -> const std::string&
 	{
 		return m_Id;
 	}
 
+
 	auto MeshDataGroup::Data() const -> const std::vector<MeshData>&
 	{
 		return m_MeshData;
 	}
 
+
 	auto MeshDataGroup::Data() -> std::vector<MeshData>&
 	{
 		return m_MeshData;
 	}
+
 
 	auto MeshDataGroup::GenerateId() noexcept -> std::string
 	{

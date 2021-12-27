@@ -290,35 +290,51 @@ namespace leopph::internal
 
 	auto DataManager::CreateOrGetMeshGroup(std::shared_ptr<const MeshDataGroup>&& meshDataGroup) -> const GlMeshGroup*
 	{
-		if (const auto it{m_Renderables.find(meshDataGroup)};
-			it != m_Renderables.end())
+		if (const auto it{
+			std::ranges::find_if(m_Renderables, [&](const auto& elem)
+			{
+				return elem.MeshGroup->MeshData() == *meshDataGroup;
+			})
+		}; it != m_Renderables.end())
 		{
-			return &it->first;
+			return it->MeshGroup.get();
 		}
-		return &m_Renderables.emplace(std::move(meshDataGroup), decltype(m_Renderables)::mapped_type{}).first->first;
+		return m_Renderables.emplace_back(std::make_unique<GlMeshGroup>(std::move(meshDataGroup))).MeshGroup.get();
 	}
 
 
-	auto DataManager::DestroyMeshGroup(const GlMeshGroup* meshGroup) -> void
+	auto DataManager::DestroyMeshGroup(const GlMeshGroup* const meshGroup) -> void
 	{
-		m_Renderables.erase(*meshGroup);
+		m_Renderables.erase(FindMeshGroupInternal(meshGroup));
 	}
 
 
-	auto DataManager::RegisterInstanceForMeshGroup(const GlMeshGroup& meshGroup, RenderComponent* instance) -> void
+	auto DataManager::RegisterInstanceForMeshGroup(const GlMeshGroup* const meshGroup, RenderComponent* const instance) -> void
 	{
-		m_Renderables.at(meshGroup).push_back(instance);
+		FindMeshGroupInternal(meshGroup)->Instances.push_back(instance);
 	}
 
 
-	auto DataManager::UnregisterInstanceFromMeshGroup(const GlMeshGroup& meshGroup, RenderComponent* instance) -> void
+	auto DataManager::UnregisterInstanceFromMeshGroup(const GlMeshGroup* const meshGroup, RenderComponent* const instance) -> void
 	{
-		std::erase(m_Renderables.at(meshGroup), instance);
+		std::erase(FindMeshGroupInternal(meshGroup)->Instances, instance);
 	}
 
 
-	auto DataManager::MeshGroupInstanceCount(const GlMeshGroup& meshGroup) const -> std::size_t
+	auto DataManager::MeshGroupInstanceCount(const GlMeshGroup* const meshGroup) const -> std::size_t
 	{
-		return m_Renderables.at(meshGroup).size();
+		return FindMeshGroupInternal(meshGroup)->Instances.size();
+	}
+
+
+	auto DataManager::FindMeshGroupInternal(const GlMeshGroup* const meshGroup) -> decltype(m_Renderables)::iterator
+	{
+		return FindMeshGroupInternalCommon(this, meshGroup);
+	}
+
+
+	auto DataManager::FindMeshGroupInternal(const GlMeshGroup* const meshGroup) const -> decltype(m_Renderables)::const_iterator
+	{
+		return FindMeshGroupInternalCommon(this, meshGroup);
 	}
 }

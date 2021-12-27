@@ -22,6 +22,8 @@ namespace leopph::internal
 			MeshDataGroup(MeshDataGroup&& other) noexcept = delete;
 			auto operator=(MeshDataGroup&& other) noexcept -> MeshDataGroup& = delete;
 
+			auto operator==(const MeshDataGroup& other) const -> bool;
+
 			[[nodiscard]]
 			auto Id() const -> const std::string&;
 
