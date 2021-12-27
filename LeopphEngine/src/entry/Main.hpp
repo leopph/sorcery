@@ -3,12 +3,10 @@
 #include "Init.hpp"
 #include "../api/LeopphApi.hpp"
 
-/*-----------------------------------
-Internal engine initializer function.
-DO NOT CALL THIS EXPLICITLY!
------------------------------------*/
 
 namespace leopph::internal
 {
+	// LeopphEngine internal main function.
+	// Must not be called explicitly.
 	LEOPPHAPI auto Main(decltype(Init) initFunc) -> int;
 }

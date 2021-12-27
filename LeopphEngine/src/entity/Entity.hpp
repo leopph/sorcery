@@ -13,27 +13,27 @@
 
 namespace leopph
 {
-	/* Entities are kind of object skeletons and form the basis of the object hierarchy.
-	 * These are the objects Components must be attached to in order to have an effect at runtime.
-	 * Entities are provided spatial properties through a Transform component. */
+	// Entities form the basis of the object hierarchy.
+	// They have spatial properties through an unremovable Transform component.
+	// They can also be decorated with custom Components.
 	class Entity final
 	{
 		public:
-			/* Creates a new Entity instance and returns a pointer to it.
-			 * If the passed name is already in use, LeopphEngine generates an undefined sequence of characters and appends it to the desired name. */
+			// Creates a new Entity instance and returns a pointer to it.
+			// If the passed name is already in use, LeopphEngine generates an undefined sequence of characters and appends it to the desired name.
 			LEOPPHAPI static auto CreateEntity(std::string name = GenerateUnusedName()) -> Entity*;
 
-			/* Destroys the passed in Entity.
-			 * This also destroys attached Components.
-			 * Leftover pointers to either of them will be dangling. */
+			// Destroys the passed in Entity.
+			// This also destroys attached Components.
+			// Leftover pointers to either of them will be dangling.
 			LEOPPHAPI static auto DestroyEntity(const Entity* entity) -> void;
 
-			/* Returns a pointer to the Entity that's name is equal to the given string.
-			 * Returns NULL if no such Entity exists. */
+			// Returns a pointer to the Entity that's name is equal to the given string.
+			// Returns NULL if no such Entity exists.
 			LEOPPHAPI static auto FindEntity(const std::string& name) -> Entity*;
 
-			/* Attach a newly constructed Component of type T to the Entity.
-			 * Returns a non-owning pointer the Component. */
+			// Attach a newly constructed Component of type T to the Entity.
+			// Returns a non-owning pointer the Component.
 			template<std::derived_from<Component> T, class... Args>
 			auto CreateComponent(Args&&... args) -> T*
 			{
@@ -43,14 +43,15 @@ namespace leopph
 				return ret;
 			}
 
-			/* Remove the given Component from the Entity.
-			 * The component is detached and destroyed. */
+
+			// Remove the given Component from the Entity.
+			// The component is detached and destroyed.
 			LEOPPHAPI auto RemoveComponent(const Component* component) const -> void;
 
-			/* Look for a Component of type T that is attached to the Entity.
-			 * If there is none, NULL is returned.
-			 * Otherwise, a pointer to the first matching Component is returned.
-			 * There are no guarantees of the order of Components attached to the Entity. */
+			// Look for a Component of type T that is attached to the Entity.
+			// If there is none, NULL is returned.
+			// Otherwise, a pointer to the first matching Component is returned.
+			// There are no guarantees of the order of Components attached to the Entity.
 			template<std::derived_from<Component> T>
 			auto GetComponent() const -> T*
 			{
@@ -65,10 +66,11 @@ namespace leopph
 				return nullptr;
 			}
 
-			/* The Entity's name is a unique identifier. */
-			LEOPPHAPI auto Name() const -> const std::string&;
 
-			/* The Entity's Transform describes its spatial properties. */
+			// The Entity's name is a unique identifier.
+			constexpr auto Name() const noexcept -> auto&;
+
+			// The Entity's Transform describes its spatial properties.
 			LEOPPHAPI auto Transform() const -> Transform*;
 
 			Entity(const Entity&) = delete;
@@ -80,8 +82,8 @@ namespace leopph
 			LEOPPHAPI ~Entity() noexcept = default;
 
 		private:
-			/* Generate a name that is not used by any registered Entity at the time of calling.
-			 * The function uses the passed prefix and appends arbitrary characters to its end. */
+			// Generate a name that is not used by any registered Entity at the time of calling.
+			// The function uses the passed prefix and appends arbitrary characters to its end.
 			LEOPPHAPI static auto GenerateUnusedName(const std::string& namePrefix = "Entity#") -> std::string;
 			static auto NameIsUnused(const std::string& name) -> bool;
 
@@ -91,12 +93,17 @@ namespace leopph
 			LEOPPHAPI auto RegisterComponent(std::unique_ptr<Component>&& component) const -> void;
 
 			// Returns a collection of Components attached to the Entity.
-			[[nodiscard]]
-			LEOPPHAPI auto Components() const -> const std::vector<std::unique_ptr<Component>>&;
+			[[nodiscard]] LEOPPHAPI auto Components() const -> const std::vector<std::unique_ptr<Component>>&;
 
 			std::string m_Name;
 			mutable leopph::Transform* m_TransformCache;
 	};
+
+
+	constexpr auto Entity::Name() const noexcept -> auto&
+	{
+		return m_Name;
+	}
 
 
 	// Transforms cannot be explicitly created.
