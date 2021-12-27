@@ -17,6 +17,8 @@ namespace leopph::internal
 	auto DataManager::Clear() -> void
 	{
 		m_EntitiesAndComponents.clear();
+
+		// All containers should be empty at this point.
 	}
 
 
@@ -274,16 +276,17 @@ namespace leopph::internal
 
 	auto DataManager::RegisterInstanceForMeshGroup(const GlMeshGroup& meshGroup, RenderComponent* instance) -> void
 	{
-		m_Renderables.at(meshGroup).insert(instance);
+		m_Renderables.at(meshGroup).push_back(instance);
 	}
 
 
 	auto DataManager::UnregisterInstanceFromMeshGroup(const GlMeshGroup& meshGroup, RenderComponent* instance) -> void
 	{
-		m_Renderables.at(meshGroup).erase(instance);
-		if (m_Renderables.at(meshGroup).empty())
+		const auto it{m_Renderables.find(meshGroup)};
+		std::erase(it->second, instance);
+		if (it->second.empty())
 		{
-			m_Renderables.erase(m_Renderables.find(meshGroup));
+			m_Renderables.erase(it);
 		}
 	}
 }

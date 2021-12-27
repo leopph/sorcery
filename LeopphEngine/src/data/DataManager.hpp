@@ -99,12 +99,11 @@ namespace leopph::internal
 				std::vector<std::unique_ptr<Component>> Components;
 			};
 
+			// Non-owning pointers to all MeshDataGroup instances.
+			std::unordered_set<MeshDataGroup*, IdHash, IdEqual> m_MeshData;
 
-			// All Entities and all of their attached Components
-			std::vector<EntityAndComponents> m_EntitiesAndComponents;
-
-			// Non-owning pointers to all Behaviors.
-			std::vector<Behavior*> m_Behaviors;
+			// Non-owning pointers to all Texture instances.
+			std::vector<Texture*> m_Textures;
 
 			// Non-owning pointer to the lastly created DirectionalLight.
 			const leopph::DirectionalLight* m_DirLight{nullptr};
@@ -115,18 +114,18 @@ namespace leopph::internal
 			// Non-owning pointers to all PointLights.
 			std::vector<const PointLight*> m_PointLights;
 
-			// Non-owning pointers to all Texture instances.
-			std::vector<Texture*> m_Textures;
+			// Non-owning pointers to all Behaviors.
+			std::vector<Behavior*> m_Behaviors;
 
 			// SkyboxImpl instances and non-owning pointer to all the Skybox handles pointing to them.
 			std::unordered_map<SkyboxImpl, std::unordered_set<Skybox*>, PathedHash<SkyboxImpl>, PathedEqual<SkyboxImpl>> m_Skyboxes;
 
-			// Non-owning pointers to all MeshDataGroup instances.
-			std::unordered_set<MeshDataGroup*, IdHash, IdEqual> m_MeshData;
-
 			// GlMeshGroup instances and non-owning pointers to RenderComponents pointing to them.
-			std::unordered_map<GlMeshGroup, std::unordered_set<RenderComponent*>, GlMeshGroupHash, GlMeshGroupEqual> m_Renderables;
+			std::unordered_map<GlMeshGroup, std::vector<RenderComponent*>, GlMeshGroupHash, GlMeshGroupEqual> m_Renderables;
 
+			// All Entities and all of their attached Components
+			std::vector<EntityAndComponents> m_EntitiesAndComponents;
+			 
 			auto SortTextures() -> void;
 			auto SortEntities() -> void;
 
@@ -135,7 +134,7 @@ namespace leopph::internal
 			// Return a const iterator to the element or past-the-end.
 			[[nodiscard]] auto FindEntityInternal(const std::string& name) const -> decltype(m_EntitiesAndComponents)::const_iterator;
 			// Helper function to get const and non-const iterators depending on context.
-			[[nodiscard]] static auto FindEntityInternalCommon(auto* const self, const std::string& name) -> decltype(auto);
+			[[nodiscard]] static auto FindEntityInternalCommon(auto* self, const std::string& name) -> decltype(auto);
 	};
 
 
