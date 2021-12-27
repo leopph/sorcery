@@ -15,16 +15,9 @@ namespace leopph::internal
 		public:
 			static auto Create() -> std::unique_ptr<Renderer>;
 
-			Renderer() = default;
-			Renderer(const Renderer& other) = default;
-			Renderer(Renderer&& other) = default;
-
-			virtual ~Renderer() = 0;
-
-			auto operator=(const Renderer& other) -> Renderer& = default;
-			auto operator=(Renderer&& other) -> Renderer& = default;
-
 			virtual auto Render() -> void = 0;
+
+			virtual ~Renderer() = default;
 
 		protected:
 			struct RenderableData
@@ -37,10 +30,25 @@ namespace leopph::internal
 
 
 			auto CollectRenderables() -> const std::vector<RenderableData>&;
-			static auto CollectPointLights() -> const std::vector<const PointLight*>&;
-			static auto CollectSpotLights() -> const std::vector<const SpotLight*>&;
+			// Returns the first MAX_SPOT_LIGHT_COUNT SpotLights based on distance to the active Camera.
+			auto CollectSpotLights() -> const std::vector<const SpotLight*>&;
+			// Returns the first MAX_POINT_LIGHT_COUNT PointLights based on distance to the active Camera.
+			auto CollectPointLights() -> const std::vector<const PointLight*>&;
+
+			Renderer() = default;
+
+			Renderer(const Renderer& other) = default;
+			auto operator=(const Renderer& other) -> Renderer& = default;
+
+			Renderer(Renderer&& other) = default;
+			auto operator=(Renderer&& other) -> Renderer& = default;
 
 		private:
+			// Returns true if left is closer to the camera then right.
+			static auto CompareLightsByDistToCam(const Light* left, const Light* right) -> bool;
+
 			std::vector<RenderableData> m_CurFrameRenderables;
+			std::vector<const SpotLight*> m_CurFrameSpotLights;
+			std::vector<const PointLight*> m_CurFramePointLights;
 	};
 }
