@@ -79,7 +79,7 @@ namespace leopph
 
 	auto Skybox::Deinit() -> void
 	{
-		if (internal::DataManager::Instance().Skyboxes().at(*m_Impl).size() == 1ull)
+		if (internal::DataManager::Instance().SkyboxHandleCount(m_Impl) == 1ull)
 		{
 			internal::DataManager::Instance().DestroySkyboxImpl(m_Impl);
 		}

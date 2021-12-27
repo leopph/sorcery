@@ -236,6 +236,12 @@ namespace leopph::internal
 	}
 
 
+	auto DataManager::SkyboxHandleCount(const SkyboxImpl* const skybox) const -> std::size_t
+	{
+		return m_Skyboxes.at(*skybox).size();
+	}
+
+
 	// MESHDATA
 
 	auto DataManager::RegisterMeshDataGroup(MeshDataGroup* const meshData) -> void

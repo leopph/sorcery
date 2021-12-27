@@ -43,6 +43,7 @@ namespace leopph::internal
 			auto DestroySkyboxImpl(const SkyboxImpl* skybox) -> void;
 			auto RegisterSkyboxHandle(const SkyboxImpl* skybox, Skybox* handle) -> void;
 			auto UnregisterSkyboxHandle(const SkyboxImpl* skybox, Skybox* handle) -> void;
+			auto SkyboxHandleCount(const SkyboxImpl* skybox) const -> std::size_t;
 
 			// Takes ownership of the Entity and stores it.
 			auto StoreEntity(std::unique_ptr<Entity> entity) -> void;
@@ -83,7 +84,6 @@ namespace leopph::internal
 			[[nodiscard]] constexpr auto DirectionalLight() const noexcept;
 			[[nodiscard]] constexpr auto SpotLights() const noexcept -> auto&;
 			[[nodiscard]] constexpr auto PointLights() const noexcept -> auto&;
-			[[nodiscard]] constexpr auto Skyboxes() const noexcept -> auto&;
 			[[nodiscard]] constexpr auto MeshGroupsAndInstances() const noexcept -> auto&;
 
 			constexpr auto DirectionalLight(const leopph::DirectionalLight* dirLight) noexcept;
@@ -159,12 +159,6 @@ namespace leopph::internal
 	[[nodiscard]] constexpr auto DataManager::PointLights() const noexcept -> auto&
 	{
 		return m_PointLights;
-	}
-
-
-	[[nodiscard]] constexpr auto DataManager::Skyboxes() const noexcept -> auto&
-	{
-		return m_Skyboxes;
 	}
 
 

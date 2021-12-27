@@ -206,7 +206,7 @@ namespace leopph::internal
 
 			skyboxShader.Use();
 			skyboxShader.SetUniform("u_ViewProjMat", static_cast<Matrix4>(static_cast<Matrix3>(camViewMat)) * camProjMat);
-			DataManager::Instance().Skyboxes().find(skybox->AllFilePaths())->first.Draw(skyboxShader);
+			DataManager::Instance().CreateOrGetSkyboxImpl(skybox->AllFilePaths())->Draw(skyboxShader);
 		}
 	}
 }

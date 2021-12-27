@@ -409,7 +409,7 @@ namespace leopph::internal
 
 			skyboxShader.Use();
 
-			DataManager::Instance().Skyboxes().find(skybox->AllFilePaths())->first.Draw(skyboxShader);
+			DataManager::Instance().CreateOrGetSkyboxImpl(skybox->AllFilePaths())->Draw(skyboxShader);
 
 			m_RenderTexture.UnbindAsRenderTarget();
 		}
