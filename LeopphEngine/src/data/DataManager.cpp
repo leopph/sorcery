@@ -158,7 +158,7 @@ namespace leopph::internal
 					                         return texture->Path;
 				                         })
 			};
-			it != m_Textures.end())
+			it != m_Textures.end() && (*it)->Path == path)
 		{
 			return (*it)->shared_from_this();
 		}
