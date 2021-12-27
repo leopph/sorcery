@@ -17,7 +17,6 @@ namespace leopph::internal
 	auto DataManager::Clear() -> void
 	{
 		m_EntitiesAndComponents.clear();
-
 		// All containers should be empty at this point.
 	}
 
@@ -121,6 +120,7 @@ namespace leopph::internal
 		throw std::out_of_range{msg};
 	}
 
+
 	auto DataManager::SortEntities() -> void
 	{
 		std::ranges::sort(m_EntitiesAndComponents, [](const auto& left, const auto& right)
@@ -129,7 +129,7 @@ namespace leopph::internal
 		});
 	}
 
-	
+
 	// SPOTLIGHTS
 
 	auto DataManager::RegisterSpotLight(const SpotLight* const spotLight) -> void
@@ -214,7 +214,7 @@ namespace leopph::internal
 		{
 			return &const_cast<SkyboxImpl&>(it->first);
 		}
-		return &const_cast<SkyboxImpl&>(m_Skyboxes.emplace(std::move(allPaths), std::unordered_set<Skybox*>{}).first->first);
+		return &const_cast<SkyboxImpl&>(m_Skyboxes.emplace(std::move(allPaths), std::vector<Skybox*>{}).first->first);
 	}
 
 
@@ -226,13 +226,13 @@ namespace leopph::internal
 
 	auto DataManager::RegisterSkyboxHandle(const SkyboxImpl* const skybox, Skybox* const handle) -> void
 	{
-		m_Skyboxes.at(*skybox).insert(handle);
+		m_Skyboxes.at(*skybox).push_back(handle);
 	}
 
 
 	auto DataManager::UnregisterSkyboxHandle(const SkyboxImpl* const skybox, Skybox* const handle) -> void
 	{
-		m_Skyboxes.at(*skybox).erase(handle);
+		std::erase(m_Skyboxes.at(*skybox), handle);
 	}
 
 

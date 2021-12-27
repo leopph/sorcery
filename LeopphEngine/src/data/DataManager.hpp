@@ -118,7 +118,7 @@ namespace leopph::internal
 			std::vector<Behavior*> m_Behaviors;
 
 			// SkyboxImpl instances and non-owning pointer to all the Skybox handles pointing to them.
-			std::unordered_map<SkyboxImpl, std::unordered_set<Skybox*>, PathedHash<SkyboxImpl>, PathedEqual<SkyboxImpl>> m_Skyboxes;
+			std::unordered_map<SkyboxImpl, std::vector<Skybox*>, PathedHash<SkyboxImpl>, PathedEqual<SkyboxImpl>> m_Skyboxes;
 
 			// GlMeshGroup instances and non-owning pointers to RenderComponents pointing to them.
 			std::unordered_map<GlMeshGroup, std::vector<RenderComponent*>, GlMeshGroupHash, GlMeshGroupEqual> m_Renderables;
