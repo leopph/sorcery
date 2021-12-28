@@ -2,28 +2,25 @@
 
 #include "../Event.hpp"
 
-#include <type_traits>
-
 
 namespace leopph::internal
 {
+	// Base class for all EventReceivers.
 	class EventReceiverBase
 	{
 		public:
-			/* The parameter type of the handler. */
-			using EventParamType = const std::decay_t<Event>&;
+			// Internal function called by EventManager to dispatch virtual calls to the appropriate handler.
+			virtual auto Handle(const Event& event) const -> void = 0;
 
-			LEOPPHAPI EventReceiverBase() = default;
-			LEOPPHAPI EventReceiverBase(const EventReceiverBase& other) = default;
-			LEOPPHAPI EventReceiverBase(EventReceiverBase&& other) = default;
-			LEOPPHAPI auto operator=(const EventReceiverBase& other) -> EventReceiverBase& = default;
-			LEOPPHAPI auto operator=(EventReceiverBase&& other) -> EventReceiverBase& = default;
-			LEOPPHAPI virtual ~EventReceiverBase() = default;
+			constexpr virtual ~EventReceiverBase() = default;
 
-			/* Invokes handler. */
-			LEOPPHAPI virtual auto Handle(EventParamType event) const -> void = 0;
+		protected:
+			EventReceiverBase() = default;
 
-			/* Handler function. */
-			LEOPPHAPI virtual auto operator==(const EventReceiverBase& other) const -> bool;
+			EventReceiverBase(const EventReceiverBase& other) = default;
+			auto operator=(const EventReceiverBase& other) -> EventReceiverBase& = default;
+
+			EventReceiverBase(EventReceiverBase&& other) noexcept = default;
+			auto operator=(EventReceiverBase&& other) noexcept -> EventReceiverBase& = default;
 	};
 }

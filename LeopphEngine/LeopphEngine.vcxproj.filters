@@ -34,7 +34,6 @@
     <ClCompile Include="src\events\Event.cpp" />
     <ClCompile Include="src\events\ScreenResolutionEvent.cpp" />
     <ClCompile Include="src\events\handling\EventManager.cpp" />
-    <ClCompile Include="src\events\handling\EventReceiverBase.cpp" />
     <ClCompile Include="src\events\KeyEvent.cpp" />
     <ClCompile Include="src\events\MouseEvent.cpp" />
     <ClCompile Include="src\rendering\geometry\GlMeshGroup.cpp" />

@@ -32,46 +32,27 @@ namespace leopph
 			// Returns NULL if no such Entity exists.
 			LEOPPHAPI static auto FindEntity(const std::string& name) -> Entity*;
 
-			// Attach a newly constructed Component of type T to the Entity.
-			// Returns a non-owning pointer the Component.
-			template<std::derived_from<Component> T, class... Args>
-			auto CreateComponent(Args&&... args) -> T*
-			{
-				auto component{std::make_unique<T>(this, std::forward<Args>(args)...)};
-				auto ret{component.get()};
-				RegisterComponent(std::move(component));
-				return ret;
-			}
+			// The Entity's name is a unique identifier.
+			constexpr auto Name() const noexcept -> auto&;
 
-
-			// Remove the given Component from the Entity.
-			// The component is detached and destroyed.
-			LEOPPHAPI auto RemoveComponent(const Component* component) const -> void;
+			// The Entity's Transform describes its spatial properties.
+			LEOPPHAPI auto Transform() const -> Transform*;
 
 			// Look for a Component of type T that is attached to the Entity.
 			// If there is none, NULL is returned.
 			// Otherwise, a pointer to the first matching Component is returned.
 			// There are no guarantees of the order of Components attached to the Entity.
 			template<std::derived_from<Component> T>
-			auto GetComponent() const -> T*
-			{
-				for (const auto& component : Components())
-				{
-					if (const auto ret = dynamic_cast<T*>(component.get());
-						ret != nullptr)
-					{
-						return ret;
-					}
-				}
-				return nullptr;
-			}
+			auto GetComponent() const -> T*;
 
+			// Attach a newly constructed Component of type T to the Entity.
+			// Returns a non-owning pointer the Component.
+			template<std::derived_from<Component> T, class... Args>
+			auto CreateComponent(Args&&... args);
 
-			// The Entity's name is a unique identifier.
-			constexpr auto Name() const noexcept -> auto&;
-
-			// The Entity's Transform describes its spatial properties.
-			LEOPPHAPI auto Transform() const -> Transform*;
+			// Remove the given Component from the Entity.
+			// The component is detached and destroyed.
+			LEOPPHAPI auto RemoveComponent(const Component* component) const -> void;
 
 			Entity(const Entity&) = delete;
 			auto operator=(const Entity&) -> void = delete;
@@ -79,7 +60,7 @@ namespace leopph
 			Entity(Entity&&) = delete;
 			auto operator=(Entity&&) -> void = delete;
 
-			LEOPPHAPI ~Entity() noexcept = default;
+			constexpr ~Entity() noexcept = default;
 
 		private:
 			// Generate a name that is not used by any registered Entity at the time of calling.
@@ -106,7 +87,32 @@ namespace leopph
 	}
 
 
+	template<std::derived_from<Component> T, class... Args>
+	auto Entity::CreateComponent(Args&&... args)
+	{
+		auto component{std::make_unique<T>(this, std::forward<Args>(args)...)};
+		auto ret{component.get()};
+		RegisterComponent(std::move(component));
+		return ret;
+	}
+
+
+	template<std::derived_from<Component> T>
+	auto Entity::GetComponent() const -> T*
+	{
+		for (const auto& component : Components())
+		{
+			if (const auto ret = dynamic_cast<T*>(component.get());
+				ret != nullptr)
+			{
+				return ret;
+			}
+		}
+		return nullptr;
+	}
+
+
 	// Transforms cannot be explicitly created.
 	template<>
-	auto Entity::CreateComponent() -> leopph::Transform* = delete;
+	auto Entity::CreateComponent<Transform>() = delete;
 }
