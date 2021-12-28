@@ -24,7 +24,7 @@ namespace leopph::internal
 		m_Fullscreen{fullscreen},
 		m_Vsync{false},
 		m_Title{title},
-		m_Background{},
+		m_ClrColor{},
 		m_RenderMult{1.f}
 	{
 		if (!glfwInit())
@@ -60,16 +60,19 @@ namespace leopph::internal
 		glfwSwapInterval(0);
 	}
 
+
 	GlWindow::~GlWindow()
 	{
 		glfwDestroyWindow(m_Window);
 		glfwTerminate();
 	}
 
+
 	auto GlWindow::Width() const -> unsigned
 	{
 		return static_cast<int>(m_Width);
 	}
+
 
 	auto GlWindow::Width(const unsigned newWidth) -> void
 	{
@@ -77,10 +80,12 @@ namespace leopph::internal
 		glfwSetWindowSize(m_Window, m_Width, m_Height);
 	}
 
+
 	auto GlWindow::Height() const -> unsigned
 	{
 		return static_cast<int>(m_Height);
 	}
+
 
 	auto GlWindow::Height(const unsigned newHeight) -> void
 	{
@@ -88,10 +93,12 @@ namespace leopph::internal
 		glfwSetWindowSize(m_Window, m_Width, m_Height);
 	}
 
+
 	auto GlWindow::Fullscreen() const -> bool
 	{
 		return m_Fullscreen;
 	}
+
 
 	auto GlWindow::Fullscreen(const bool newValue) -> void
 	{
@@ -100,10 +107,12 @@ namespace leopph::internal
 		glfwSetWindowMonitor(m_Window, monitor, 0, 0, m_Width, m_Height, GLFW_DONT_CARE);
 	}
 
+
 	auto GlWindow::Vsync() const -> bool
 	{
 		return m_Vsync;
 	}
+
 
 	auto GlWindow::Vsync(const bool newValue) -> void
 	{
@@ -111,10 +120,12 @@ namespace leopph::internal
 		glfwSwapInterval(m_Vsync ? 1 : 0);
 	}
 
+
 	auto GlWindow::Title() const -> std::string_view
 	{
 		return m_Title;
 	}
+
 
 	auto GlWindow::Title(std::string newTitle) -> void
 	{
@@ -122,15 +133,18 @@ namespace leopph::internal
 		glfwSetWindowTitle(m_Window, m_Title.c_str());
 	}
 
-	auto GlWindow::Background() const -> const Color&
+
+	auto GlWindow::ClearColor() const -> const Vector4&
 	{
-		return m_Background;
+		return m_ClrColor;
 	}
 
-	auto GlWindow::Background(const Color& color) -> void
+
+	auto GlWindow::ClearColor(const Vector4& color) -> void
 	{
-		m_Background = color;
+		m_ClrColor = color;
 	}
+
 
 	auto GlWindow::CursorMode() const -> CursorState
 	{
@@ -144,6 +158,7 @@ namespace leopph::internal
 		return cursorStates.at(glfwGetInputMode(this->m_Window, GLFW_CURSOR));
 	}
 
+
 	auto GlWindow::CursorMode(const CursorState newState) -> void
 	{
 		static const std::map<CursorState, decltype(GLFW_CURSOR_NORMAL)> cursorStates
@@ -156,10 +171,12 @@ namespace leopph::internal
 		glfwSetInputMode(this->m_Window, GLFW_CURSOR, cursorStates.at(newState));
 	}
 
+
 	auto GlWindow::RenderMultiplier() -> float
 	{
 		return m_RenderMult;
 	}
+
 
 	auto GlWindow::RenderMultiplier(const float newMult) -> void
 	{
@@ -167,26 +184,31 @@ namespace leopph::internal
 		EventManager::Instance().Send<ScreenResolutionEvent>(Vector2{m_Width, m_Height}, m_RenderMult);
 	}
 
+
 	auto GlWindow::PollEvents() -> void
 	{
 		glfwPollEvents();
 	}
+
 
 	auto GlWindow::SwapBuffers() -> void
 	{
 		glfwSwapBuffers(m_Window);
 	}
 
+
 	auto GlWindow::ShouldClose() -> bool
 	{
 		return glfwWindowShouldClose(m_Window);
 	}
 
+
 	auto GlWindow::Clear() -> void
 	{
-		glClearNamedFramebufferfv(0, GL_COLOR, 0, Vector4{static_cast<Vector3>(Background())}.Data().data());
+		glClearNamedFramebufferfv(0, GL_COLOR, 0, m_ClrColor.Data().data());
 		glClearNamedFramebufferfv(0, GL_DEPTH, 0, std::array{1.f}.data());
 	}
+
 
 	auto GlWindow::InitKeys() -> void
 	{
@@ -195,6 +217,7 @@ namespace leopph::internal
 			EventManager::Instance().Send<KeyEvent>(keyCode, KeyState::Released);
 		}
 	}
+
 
 	auto GlWindow::FramebufferSizeCallback(GLFWwindow*, const int width, const int height) -> void
 	{
@@ -206,6 +229,7 @@ namespace leopph::internal
 
 		EventManager::Instance().Send<ScreenResolutionEvent>(Vector2{width, height}, windowInstance.RenderMultiplier());
 	}
+
 
 	auto GlWindow::KeyCallback(GLFWwindow*, const int key, int, const int action, int) -> void
 	{
@@ -221,10 +245,12 @@ namespace leopph::internal
 		}
 	}
 
+
 	auto GlWindow::MouseCallback(GLFWwindow*, const double x, const double y) -> void
 	{
 		EventManager::Instance().Send<MouseEvent>(Vector2{x, y});
 	}
+
 
 	const std::unordered_map<int, KeyState> GlWindow::s_KeyStates
 	{

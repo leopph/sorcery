@@ -7,7 +7,7 @@
 #include "behaviors/WindowTester.hpp"
 
 
-void leopph::Init()
+auto leopph::Init() -> void
 {
 	Window::Title("LeopphEngine Demo");
 
@@ -20,20 +20,18 @@ void leopph::Init()
 	playerEntity->Transform()->Parent(groupEntity);
 
 	const auto camera{playerEntity->CreateComponent<Camera>()};
-	camera->Background(CameraBackground
+	camera->Background(
+		Skybox
 		{
-			.skybox{
-				Skybox
-				{
-					"skybox/megasun/right.hdr",
-					"skybox/megasun/left.hdr",
-					"skybox/megasun/top.hdr",
-					"skybox/megasun/bottom.hdr",
-					"skybox/megasun/front.hdr",
-					"skybox/megasun/back.hdr"
-				}
-			}
-		});
+			"skybox/megasun/right.hdr",
+			"skybox/megasun/left.hdr",
+			"skybox/megasun/top.hdr",
+			"skybox/megasun/bottom.hdr",
+			"skybox/megasun/front.hdr",
+			"skybox/megasun/back.hdr"
+		}
+
+	);
 
 	playerEntity->CreateComponent<CameraController>();
 
@@ -73,7 +71,6 @@ void leopph::Init()
 	const auto pointLight = pointLightEntity->CreateComponent<PointLight>();
 	pointLight->Range(15);
 	pointLight->CastsShadow(true);
-
 
 	AmbientLight::Instance().Intensity(Vector3{0, 0, 0});
 

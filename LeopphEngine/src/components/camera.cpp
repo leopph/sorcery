@@ -21,27 +21,27 @@ namespace leopph
 	}
 
 
-	auto Camera::Background() const -> const CameraBackground&
+	auto Camera::Background() const -> const std::variant<Color, Skybox>&
 	{
 		return m_Background;
 	}
 
 
-	auto Camera::Background(CameraBackground&& background) -> void
+	auto Camera::Background(std::variant<Color, Skybox> background) -> void
 	{
-		m_Background.color = background.color;
-		m_Background.skybox = std::move(background.skybox);
-		internal::WindowBase::Get().Background(m_Background.color);
+		m_Background = std::move(background);
+
+		if (std::holds_alternative<Color>(m_Background))
+		{
+			internal::WindowBase::Get().ClearColor(static_cast<Vector4>(static_cast<Vector3>(std::get<Color>(m_Background))));
+		}
 	}
 
 
 	Camera::Camera(leopph::Entity* const entity) :
 		Component{entity},
-		m_AspectRatio{leopph::internal::WindowBase::Get().AspectRatio()},
-		m_HorizontalFovDegrees{100.0f},
-		m_NearClip{0.1f},
-		m_FarClip{100.f},
-		m_Background{.color{0, 0, 0}, .skybox{}}
+		m_AspectRatio{internal::WindowBase::Get().AspectRatio()},
+		m_Background{Color{static_cast<Vector3>(internal::WindowBase::Get().ClearColor())}}
 	{
 		if (s_Active == nullptr)
 		{

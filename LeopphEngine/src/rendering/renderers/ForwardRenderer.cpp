@@ -59,7 +59,7 @@ namespace leopph::internal
 	auto ForwardRenderer::Render() -> void
 	{
 		/* We don't render if there is no camera to use */
-		if (Camera::Active == nullptr)
+		if (Camera::Active() == nullptr)
 		{
 			return;
 		}
@@ -199,14 +199,14 @@ namespace leopph::internal
 
 	auto ForwardRenderer::RenderSkybox(const Matrix4& camViewMat, const Matrix4& camProjMat) -> void
 	{
-		if (const auto& skybox{Camera::Active()->Background().skybox}; skybox.has_value())
+		if (const auto& background{Camera::Active()->Background()}; std::holds_alternative<Skybox>(background))
 		{
 			static auto skyboxFlagInfo{m_SkyboxShader.GetFlagInfo()};
 			auto& skyboxShader{m_SkyboxShader.GetPermutation(skyboxFlagInfo)};
 
 			skyboxShader.Use();
 			skyboxShader.SetUniform("u_ViewProjMat", static_cast<Matrix4>(static_cast<Matrix3>(camViewMat)) * camProjMat);
-			DataManager::Instance().CreateOrGetSkyboxImpl(skybox->AllFilePaths())->Draw(skyboxShader);
+			DataManager::Instance().CreateOrGetSkyboxImpl(std::get<Skybox>(background).AllFilePaths())->Draw(skyboxShader);
 		}
 	}
 }

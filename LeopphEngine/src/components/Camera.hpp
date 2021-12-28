@@ -5,7 +5,10 @@
 #include "../events/ScreenResolutionEvent.hpp"
 #include "../events/handling/EventReceiver.hpp"
 #include "../math/Matrix.hpp"
-#include "../misc/CameraBackground.hpp"
+#include "../misc/Color.hpp"
+#include "../rendering/Skybox.hpp"
+
+#include <variant>
 
 
 namespace leopph
@@ -69,11 +72,11 @@ namespace leopph
 
 			// Get the Camera's background.
 			// The Camera's background determines the visuals that the Camera "sees" where no Objects have been drawn to.
-			LEOPPHAPI auto Background() const -> const CameraBackground&;
+			LEOPPHAPI auto Background() const -> const std::variant<Color, Skybox>&;
 
 			// Set the Camera's background.
 			// The Camera's background determines the visuals that the Camera "sees" where no Objects have been drawn to.
-			LEOPPHAPI auto Background(CameraBackground&& background) -> void;
+			LEOPPHAPI auto Background(std::variant<Color, Skybox> background) -> void;
 
 			LEOPPHAPI explicit Camera(leopph::Entity* entity);
 
@@ -99,10 +102,10 @@ namespace leopph
 			static Camera* s_Active;
 
 			float m_AspectRatio;
-			float m_HorizontalFovDegrees;
-			float m_NearClip;
-			float m_FarClip;
+			float m_HorizontalFovDegrees{100.f};
+			float m_NearClip{0.1f};
+			float m_FarClip{100.f};
 
-			CameraBackground m_Background;
+			std::variant<Color, Skybox> m_Background;
 	};
 }

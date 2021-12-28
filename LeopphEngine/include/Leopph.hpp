@@ -25,7 +25,6 @@ See individual headers for more information.
 #include "../src/math/Matrix.hpp"
 #include "../src/math/Quaternion.hpp"
 #include "../src/math/Vector.hpp"
-#include "../src/misc/CameraBackground.hpp"
 #include "../src/misc/Color.hpp"
 #include "../src/rendering/Skybox.hpp"
 #include "../src/timing/leopphtime.h"

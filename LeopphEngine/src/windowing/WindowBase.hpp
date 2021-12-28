@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../input/CursorState.hpp"
-#include "../misc/Color.hpp"
+#include "../math/Vector.hpp"
 
 #include <string>
 #include <string_view>
@@ -40,8 +40,8 @@ namespace leopph::internal
 			virtual auto Title(std::string newTitle) -> void = 0;
 
 			[[nodiscard]]
-			virtual auto Background() const -> const Color& = 0;
-			virtual auto Background(const Color& color) -> void = 0;
+			virtual auto ClearColor() const -> const Vector4& = 0;
+			virtual auto ClearColor(const Vector4& color) -> void = 0;
 
 			[[nodiscard]]
 			virtual auto CursorMode() const -> CursorState = 0;

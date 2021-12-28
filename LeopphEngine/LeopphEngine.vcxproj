@@ -171,7 +171,6 @@
     <ClInclude Include="src\rendering\Texture.hpp" />
     <ClInclude Include="src\rendering\UniformBuffer.hpp" />
     <ClInclude Include="src\timing\timer.h" />
-    <ClInclude Include="src\misc\CameraBackground.hpp" />
     <ClInclude Include="src\util\concepts\Idable.hpp" />
     <ClInclude Include="src\util\concepts\Pathed.hpp" />
     <ClInclude Include="src\util\concepts\Pointer.hpp" />

@@ -43,8 +43,8 @@ namespace leopph::internal
 			auto Title(std::string newTitle) -> void override;
 
 			[[nodiscard]]
-			auto Background() const -> const Color& override;
-			auto Background(const Color& color) -> void override;
+			auto ClearColor() const -> const Vector4& override;
+			auto ClearColor(const Vector4& color) -> void override;
 
 			[[nodiscard]]
 			auto CursorMode() const -> CursorState override;
@@ -81,7 +81,7 @@ namespace leopph::internal
 			bool m_Fullscreen;
 			bool m_Vsync;
 			std::string m_Title;
-			Color m_Background;
+			Vector4 m_ClrColor{0, 0, 0, 1};
 			float m_RenderMult;
 	};
 }
