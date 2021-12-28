@@ -47,23 +47,23 @@ namespace leopph
 				constexpr ~Vector() = default;
 
 				// Creates a Vector with its second component set to 1 and all other components set to 0.
-				constexpr static auto Up() noexcept;
+				[[nodiscard]] constexpr static auto Up() noexcept;
 
 				// Creates a Vector with its second component set to -1 and all other components set to 0.
-				constexpr static auto Down() noexcept;
+				[[nodiscard]] constexpr static auto Down() noexcept;
 
 				// Creates a Vector with its first component set to -1 and all other components set to 0.
-				constexpr static auto Left() noexcept;
+				[[nodiscard]] constexpr static auto Left() noexcept;
 
 				// Creates a Vector with its first component set to 1 and all other components set to 0.
-				constexpr static auto Right() noexcept;
+				[[nodiscard]] constexpr static auto Right() noexcept;
 
 				// Creates a Vector with its third component set to 1 and all other components set to 0.
-				constexpr static auto Forward() noexcept
+				[[nodiscard]] constexpr static auto Forward() noexcept
 					requires(N >= 3);
 
 				// Creates a Vector with its third component set to -1 and all other components set to 0.
-				constexpr static auto Backward() noexcept
+				[[nodiscard]] constexpr static auto Backward() noexcept
 					requires(N >= 3);
 
 				// Returns a reference to the internal data structure.
@@ -78,14 +78,14 @@ namespace leopph
 				[[nodiscard]] constexpr auto operator[](size_t index) noexcept -> auto&;
 
 				// Get the length of this Vector.
-				[[nodiscard]] constexpr auto Length() const noexcept;
+				[[nodiscard]] auto Length() const noexcept;
 
 				// Returns a Vector that has the same direction as this Vector, but has a length of 1.
-				[[nodiscard]] constexpr auto Normalized() const noexcept;
+				[[nodiscard]] auto Normalized() const noexcept;
 
 				// Changes this Vector so that it has the same direction, but a length of 1.
 				// Returns a reference to this Vector.
-				constexpr auto Normalize() noexcept -> auto&;
+				auto Normalize() noexcept -> auto&;
 
 				// Creates a Vector that is the copy of this Vector, extended with an additional component with a value of 1.
 				[[nodiscard]] constexpr explicit operator Vector<T, N + 1>() const noexcept;
@@ -98,7 +98,7 @@ namespace leopph
 					requires(N == 3);
 
 				// Returns the Euclidean distance of the input Vectors.
-				[[nodiscard]] constexpr static auto Distance(const Vector<T, N>& left, const Vector<T, N>& right) noexcept;
+				[[nodiscard]] static auto Distance(const Vector<T, N>& left, const Vector<T, N>& right) noexcept;
 
 			private:
 				// Helper function to get const and non-const references to elements depending on context.
@@ -223,7 +223,7 @@ namespace leopph
 
 		template<class T, std::size_t N>
 			requires (N > 1)
-		constexpr auto Vector<T, N>::Length() const noexcept
+		auto Vector<T, N>::Length() const noexcept
 		{
 			return math::Sqrt(
 				static_cast<float>(
@@ -236,7 +236,7 @@ namespace leopph
 
 		template<class T, std::size_t N>
 			requires (N > 1)
-		constexpr auto Vector<T, N>::Normalized() const noexcept
+		auto Vector<T, N>::Normalized() const noexcept
 		{
 			return Vector<T, N>{*this}.Normalize();
 		}
@@ -244,7 +244,7 @@ namespace leopph
 
 		template<class T, std::size_t N>
 			requires (N > 1)
-		constexpr auto Vector<T, N>::Normalize() noexcept -> auto&
+		auto Vector<T, N>::Normalize() noexcept -> auto&
 		{
 			if (auto length = Length(); std::abs(length) >= std::numeric_limits<float>::epsilon())
 			{
@@ -300,7 +300,7 @@ namespace leopph
 
 		template<class T, std::size_t N>
 			requires (N > 1)
-		constexpr auto Vector<T, N>::Distance(const Vector<T, N>& left, const Vector<T, N>& right) noexcept
+		auto Vector<T, N>::Distance(const Vector<T, N>& left, const Vector<T, N>& right) noexcept
 		{
 			T sum{};
 			for (size_t i = 0; i < N; i++)
@@ -528,7 +528,7 @@ namespace leopph
 
 		// Prints the input Vector on the specified output stream.
 		template<class T, std::size_t N>
-		constexpr auto operator<<(std::ostream& stream, const Vector<T, N>& vector) noexcept -> std::ostream&
+		auto operator<<(std::ostream& stream, const Vector<T, N>& vector) noexcept -> std::ostream&
 		{
 			stream << "(";
 			for (size_t i = 0; i < N; i++)
