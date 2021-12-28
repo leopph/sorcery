@@ -3,8 +3,8 @@
 #define GLFW_INCLUDE_NONE
 
 #include "WindowBase.hpp"
-#include "../input/keycodes.h"
-#include "../input/keystate.h"
+#include "../input/KeyCode.hpp"
+#include "../input/KeyState.hpp"
 #include "../misc/Color.hpp"
 
 #include <GLFW/glfw3.h>

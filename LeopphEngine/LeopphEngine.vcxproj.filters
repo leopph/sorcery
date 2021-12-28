@@ -91,9 +91,9 @@
     <ClInclude Include="src\components\rendering\Model.hpp" />
     <ClInclude Include="src\windowing\WindowBase.hpp" />
     <ClInclude Include="src\config\Settings.hpp" />
-    <ClInclude Include="src\input\keycodes.h" />
-    <ClInclude Include="src\input\keystate.h" />
-    <ClInclude Include="src\input\cursorstate.h" />
+    <ClInclude Include="src\input\KeyCode.hpp" />
+    <ClInclude Include="src\input\KeyState.hpp" />
+    <ClInclude Include="src\input\CursorState.hpp" />
     <ClInclude Include="src\entry\Main.hpp" />
     <ClInclude Include="src\entry\Init.hpp" />
     <ClInclude Include="src\timing\timer.h" />

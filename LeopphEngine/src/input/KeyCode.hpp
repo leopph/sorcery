@@ -1,12 +1,8 @@
 #pragma once
 
-/*---------------------------------------------
-A list of all supported keys.
-Use these to get information about user inputs.
----------------------------------------------*/
-
 namespace leopph
 {
+	// All supported keys.
 	enum class KeyCode
 	{
 		Zero,

@@ -146,9 +146,9 @@
     <ClInclude Include="src\events\MouseEvent.hpp" />
     <ClInclude Include="src\events\PointShadowResolutionEvent.hpp" />
     <ClInclude Include="src\events\SpotShadowResolutionEvent.hpp" />
-    <ClInclude Include="src\input\cursorstate.h" />
-    <ClInclude Include="src\input\keycodes.h" />
-    <ClInclude Include="src\input\keystate.h" />
+    <ClInclude Include="src\input\CursorState.hpp" />
+    <ClInclude Include="src\input\KeyCode.hpp" />
+    <ClInclude Include="src\input\KeyState.hpp" />
     <ClInclude Include="src\misc\Color.hpp" />
     <ClInclude Include="src\rendering\CascadedShadowMap.hpp" />
     <ClInclude Include="src\rendering\CubeShadowMap.hpp" />

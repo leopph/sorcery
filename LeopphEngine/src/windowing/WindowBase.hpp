@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../input/cursorstate.h"
+#include "../input/CursorState.hpp"
 #include "../misc/Color.hpp"
 
 #include <string>

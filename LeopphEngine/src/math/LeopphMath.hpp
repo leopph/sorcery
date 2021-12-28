@@ -5,11 +5,8 @@
 
 namespace leopph
 {
-	/*----------------------------------------------------------------------------------------------------
-	The math namespace provides functions to help with mathematical computations.
-	You can also use other implementations, but prefer these to ensure best performance and compatibility.
-	----------------------------------------------------------------------------------------------------*/
-
+	// Provides functions to help with mathematical computations.
+	// You can also use other implementations, but prefer these to ensure best performance and compatibility.
 	namespace math
 	{
 		[[nodiscard]] LEOPPHAPI auto Pi() -> float;

@@ -1,8 +1,8 @@
 #pragma once
 
-#include "cursorstate.h"
-#include "keycodes.h"
-#include "keystate.h"
+#include "CursorState.hpp"
+#include "KeyCode.hpp"
+#include "KeyState.hpp"
 #include "../api/LeopphApi.hpp"
 #include "../events/FrameEndEvent.hpp"
 #include "../events/KeyEvent.hpp"
@@ -15,27 +15,29 @@
 
 namespace leopph
 {
-	/* The Input class provides ways to gather information about user inputs. */
+	// The Input class provides access to information related to device inputs.
 	class Input
 	{
 		public:
-			/* Returns true if the given key is being pressed down in the current frame.
-			Returns true for held keys. */
+			// Returns true if the passed key is being pressed down in the current frame.
+			// Returns true for held keys.
 			LEOPPHAPI static auto GetKey(KeyCode key) -> bool;
 
-			/* Returns true if the given key was pressed in the current frame. 
-			Returns false for held keys. */
+			// Returns true if the passed key was pressed in the current frame. 
+			// Returns false for held keys.
 			LEOPPHAPI static auto GetKeyDown(KeyCode key) -> bool;
 
-			/* Returns true if the given key was released in this frame.
-			Returns false for untouched keys. */
+			// Returns true if the passed key was released in this frame.
+			// Returns false for untouched keys.
 			LEOPPHAPI static auto GetKeyUp(KeyCode key) -> bool;
 
-			/* Returns an (x, y) pair of mouse coordinates */
+			// Returns the (x, y) pair of mouse coordinates.
 			LEOPPHAPI static auto GetMousePosition() -> const std::pair<float, float>&;
 
-			/* Determines whether the Cursor is Shown, Hidden, or Disabled */
+			// Get whether the Cursor is Shown, Hidden, or Disabled.
 			LEOPPHAPI static auto CursorMode() -> CursorState;
+
+			// Set whether the Cursor is Shown, Hidden, or Disabled.
 			LEOPPHAPI static auto CursorMode(CursorState newState) -> void;
 
 		private:
