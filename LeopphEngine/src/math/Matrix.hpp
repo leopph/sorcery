@@ -36,7 +36,7 @@ namespace leopph
 				// Sets the main diagonal to the elements of the passed Vector. Other elements are zero initialized.
 				template<std::size_t K>
 					requires(K == std::min(N, M))
-				constexpr explicit Matrix(const Vector<T, K>& vec) noexcept ;
+				constexpr explicit Matrix(const Vector<T, K>& vec) noexcept;
 
 				// Sets all elements row-contiguously to the passed series of values.
 				template<std::convertible_to<T> ... Args>
@@ -91,7 +91,7 @@ namespace leopph
 				constexpr auto operator[](size_t index) -> auto&;
 
 				// Determinant of the Matrix.
-				[[nodiscard]] constexpr auto Det() const noexcept -> float
+				[[nodiscard]] constexpr auto Det() const noexcept -> T
 					requires(N == M);
 
 				// Returns a new Matrix that is the transposed of this Matrix.
@@ -99,7 +99,7 @@ namespace leopph
 
 				// In-place transpose.
 				// Returns a reference to this Matrix.
-				constexpr auto Transpose() noexcept -> Matrix<T, N, M>
+				constexpr auto Transpose() noexcept -> Matrix<T, N, M>&
 					requires(N == M);
 
 				// Returns a new Matrix that is the inverse of this Matrix.
@@ -290,7 +290,7 @@ namespace leopph
 
 		template<class T, std::size_t N, std::size_t M>
 			requires (N > 1 && M > 1)
-		constexpr auto Matrix<T, N, M>::Det() const noexcept -> float
+		constexpr auto Matrix<T, N, M>::Det() const noexcept -> T
 			requires (N == M)
 		{
 			Matrix<T, N, M> tmp{*this};
@@ -305,7 +305,7 @@ namespace leopph
 			{
 				tmp[i] -= tmp[0];
 			}
-			auto ret{1.0f};
+			auto ret{static_cast<T>(1)};
 			for (size_t i = 0; i < N; i++)
 			{
 				ret *= tmp[i][i];
@@ -332,7 +332,7 @@ namespace leopph
 
 		template<class T, std::size_t N, std::size_t M>
 			requires (N > 1 && M > 1)
-		constexpr auto Matrix<T, N, M>::Transpose() noexcept -> Matrix<T, N, M>
+		constexpr auto Matrix<T, N, M>::Transpose() noexcept -> Matrix<T, N, M>&
 			requires (N == M)
 		{
 			for (std::size_t i = 0; i < N; i++)
@@ -350,27 +350,37 @@ namespace leopph
 
 		template<class T, std::size_t N, std::size_t M>
 			requires (N > 1 && M > 1)
-		constexpr auto Matrix<T, N, M>::Inverse() const noexcept -> Matrix<T, N, M> // TODO check for edge cases
+		constexpr auto Matrix<T, N, M>::Inverse() const noexcept -> Matrix<T, N, M>
 			requires (N == M)
 		{
 			Matrix<T, N, M> copyOfThis{*this};
 			Matrix<T, N, M> inverse{Matrix<T, N, M>::Identity()};
 			for (std::size_t i = 0; i < N; i++)
 			{
-				if (copyOfThis[i][i] != static_cast<T>(1) && copyOfThis[i][i] != static_cast<T>(0))
+				if (copyOfThis[i][i] == static_cast<T>(0))
 				{
-					T mult = copyOfThis[i][i];
-					for (std::size_t k = 0; k < N; k++)
+					for (auto j{i + 1}; j < N; ++j)
 					{
-						copyOfThis[i][k] /= mult;
-						inverse[i][k] /= mult;
+						if (copyOfThis[j][i] != 0)
+						{
+							auto tmp{copyOfThis[j]};
+							copyOfThis[j] = copyOfThis[i];
+							copyOfThis[i] = tmp;
+							tmp = inverse[j];
+							inverse[j] = inverse[i];
+							inverse[i] = tmp;
+							break;
+						}
 					}
 				}
-				for (std::size_t j = 0; j < N; j++)
+				const auto pivot{copyOfThis[i][i]};
+				copyOfThis[i] /= pivot;
+				inverse[i] /= pivot;
+				for (std::size_t j{0}; j < N; ++j)
 				{
-					if (j != i)
+					if (i != j)
 					{
-						T mult = copyOfThis[j][i] / copyOfThis[i][i];
+						const auto mult{copyOfThis[j][i]};
 						copyOfThis[j] -= mult * copyOfThis[i];
 						inverse[j] -= mult * inverse[i];
 					}

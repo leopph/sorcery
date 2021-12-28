@@ -39,31 +39,31 @@ namespace leopph
 				constexpr explicit Vector(const Vector<T, N + 1>& other) noexcept;
 
 				constexpr Vector(const Vector<T, N>& other) = default;
-				constexpr Vector(Vector<T, N>&& other) = default;
-
 				constexpr auto operator=(const Vector<T, N>& other) -> Vector<T, N>& = default;
+
+				constexpr Vector(Vector<T, N>&& other) = default;
 				constexpr auto operator=(Vector<T, N>&& other) -> Vector<T, N>& = default;
 
 				constexpr ~Vector() = default;
 
 				// Creates a Vector with its second component set to 1 and all other components set to 0.
-				[[nodiscard]] constexpr static auto Up() noexcept;
+				[[nodiscard]] constexpr static auto Up() noexcept -> Vector<T, N>;
 
 				// Creates a Vector with its second component set to -1 and all other components set to 0.
-				[[nodiscard]] constexpr static auto Down() noexcept;
+				[[nodiscard]] constexpr static auto Down() noexcept -> Vector<T, N>;
 
 				// Creates a Vector with its first component set to -1 and all other components set to 0.
-				[[nodiscard]] constexpr static auto Left() noexcept;
+				[[nodiscard]] constexpr static auto Left() noexcept -> Vector<T, N>;
 
 				// Creates a Vector with its first component set to 1 and all other components set to 0.
-				[[nodiscard]] constexpr static auto Right() noexcept;
+				[[nodiscard]] constexpr static auto Right() noexcept -> Vector<T, N>;
 
 				// Creates a Vector with its third component set to 1 and all other components set to 0.
-				[[nodiscard]] constexpr static auto Forward() noexcept
+				[[nodiscard]] constexpr static auto Forward() noexcept -> Vector<T, N>
 					requires(N >= 3);
 
 				// Creates a Vector with its third component set to -1 and all other components set to 0.
-				[[nodiscard]] constexpr static auto Backward() noexcept
+				[[nodiscard]] constexpr static auto Backward() noexcept -> Vector<T, N>
 					requires(N >= 3);
 
 				// Returns a reference to the internal data structure.
@@ -78,27 +78,27 @@ namespace leopph
 				[[nodiscard]] constexpr auto operator[](size_t index) noexcept -> auto&;
 
 				// Get the length of this Vector.
-				[[nodiscard]] auto Length() const noexcept;
+				[[nodiscard]] auto Length() const noexcept -> float;
 
 				// Returns a Vector that has the same direction as this Vector, but has a length of 1.
-				[[nodiscard]] auto Normalized() const noexcept;
+				[[nodiscard]] auto Normalized() const noexcept -> Vector<T, N>;
 
 				// Changes this Vector so that it has the same direction, but a length of 1.
 				// Returns a reference to this Vector.
-				auto Normalize() noexcept -> auto&;
+				auto Normalize() noexcept -> Vector<T, N>&;
 
 				// Creates a Vector that is the copy of this Vector, extended with an additional component with a value of 1.
 				[[nodiscard]] constexpr explicit operator Vector<T, N + 1>() const noexcept;
 
 				// Returns the dot product of the input Vectors.
-				[[nodiscard]] constexpr static auto Dot(const Vector<T, N>& left, const Vector<T, N>& right) noexcept;
+				[[nodiscard]] constexpr static auto Dot(const Vector<T, N>& left, const Vector<T, N>& right) noexcept -> T;
 
 				// Returns the cross product of the input Vectors.
-				[[nodiscard]] constexpr static auto Cross(const Vector<T, N>& left, const Vector<T, N>& right) noexcept
+				[[nodiscard]] constexpr static auto Cross(const Vector<T, N>& left, const Vector<T, N>& right) noexcept -> Vector<T, N>
 					requires(N == 3);
 
 				// Returns the Euclidean distance of the input Vectors.
-				[[nodiscard]] static auto Distance(const Vector<T, N>& left, const Vector<T, N>& right) noexcept;
+				[[nodiscard]] static auto Distance(const Vector<T, N>& left, const Vector<T, N>& right) noexcept -> float;
 
 			private:
 				// Helper function to get const and non-const references to elements depending on context.
@@ -137,7 +137,7 @@ namespace leopph
 
 		template<class T, std::size_t N>
 			requires (N > 1)
-		constexpr auto Vector<T, N>::Up() noexcept
+		constexpr auto Vector<T, N>::Up() noexcept -> Vector<T, N>
 		{
 			Vector<T, N> ret;
 			ret[1] = 1;
@@ -147,7 +147,7 @@ namespace leopph
 
 		template<class T, std::size_t N>
 			requires (N > 1)
-		constexpr auto Vector<T, N>::Down() noexcept
+		constexpr auto Vector<T, N>::Down() noexcept -> Vector<T, N>
 		{
 			Vector<T, N> ret;
 			ret[1] = -1;
@@ -157,7 +157,7 @@ namespace leopph
 
 		template<class T, std::size_t N>
 			requires (N > 1)
-		constexpr auto Vector<T, N>::Left() noexcept
+		constexpr auto Vector<T, N>::Left() noexcept -> Vector<T, N>
 		{
 			Vector<T, N> ret;
 			ret[0] = -1;
@@ -167,7 +167,7 @@ namespace leopph
 
 		template<class T, std::size_t N>
 			requires (N > 1)
-		constexpr auto Vector<T, N>::Right() noexcept
+		constexpr auto Vector<T, N>::Right() noexcept -> Vector<T, N>
 		{
 			Vector<T, N> ret;
 			ret[0] = 1;
@@ -177,7 +177,7 @@ namespace leopph
 
 		template<class T, std::size_t N>
 			requires (N > 1)
-		constexpr auto Vector<T, N>::Forward() noexcept
+		constexpr auto Vector<T, N>::Forward() noexcept -> Vector<T, N>
 			requires (N >= 3)
 		{
 			Vector<T, N> ret;
@@ -188,7 +188,7 @@ namespace leopph
 
 		template<class T, std::size_t N>
 			requires (N > 1)
-		constexpr auto Vector<T, N>::Backward() noexcept
+		constexpr auto Vector<T, N>::Backward() noexcept -> Vector<T, N>
 			requires (N >= 3)
 		{
 			Vector<T, N> ret;
@@ -223,7 +223,7 @@ namespace leopph
 
 		template<class T, std::size_t N>
 			requires (N > 1)
-		auto Vector<T, N>::Length() const noexcept
+		auto Vector<T, N>::Length() const noexcept -> float
 		{
 			return math::Sqrt(
 				static_cast<float>(
@@ -236,7 +236,7 @@ namespace leopph
 
 		template<class T, std::size_t N>
 			requires (N > 1)
-		auto Vector<T, N>::Normalized() const noexcept
+		auto Vector<T, N>::Normalized() const noexcept -> Vector<T, N>
 		{
 			return Vector<T, N>{*this}.Normalize();
 		}
@@ -244,7 +244,7 @@ namespace leopph
 
 		template<class T, std::size_t N>
 			requires (N > 1)
-		auto Vector<T, N>::Normalize() noexcept -> auto&
+		auto Vector<T, N>::Normalize() noexcept -> Vector<T, N>&
 		{
 			if (auto length = Length(); std::abs(length) >= std::numeric_limits<float>::epsilon())
 			{
@@ -273,7 +273,7 @@ namespace leopph
 
 		template<class T, std::size_t N>
 			requires (N > 1)
-		constexpr auto Vector<T, N>::Dot(const Vector<T, N>& left, const Vector<T, N>& right) noexcept
+		constexpr auto Vector<T, N>::Dot(const Vector<T, N>& left, const Vector<T, N>& right) noexcept -> T
 		{
 			T ret{};
 			for (size_t i = 0; i < N; i++)
@@ -286,7 +286,7 @@ namespace leopph
 
 		template<class T, std::size_t N>
 			requires (N > 1)
-		constexpr auto Vector<T, N>::Cross(const Vector<T, N>& left, const Vector<T, N>& right) noexcept
+		constexpr auto Vector<T, N>::Cross(const Vector<T, N>& left, const Vector<T, N>& right) noexcept -> Vector<T, N>
 			requires (N == 3)
 		{
 			return Vector<T, N>
@@ -300,14 +300,14 @@ namespace leopph
 
 		template<class T, std::size_t N>
 			requires (N > 1)
-		auto Vector<T, N>::Distance(const Vector<T, N>& left, const Vector<T, N>& right) noexcept
+		auto Vector<T, N>::Distance(const Vector<T, N>& left, const Vector<T, N>& right) noexcept -> float
 		{
-			T sum{};
+			auto sum{0.f};
 			for (size_t i = 0; i < N; i++)
 			{
-				sum += static_cast<T>(math::Pow(static_cast<float>(left[i] - right[i]), 2));
+				sum += math::Pow(static_cast<float>(left[i] - right[i]), 2);
 			}
-			return static_cast<T>(math::Sqrt(sum));
+			return math::Sqrt(sum);
 		}
 
 
