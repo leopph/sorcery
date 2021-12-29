@@ -1,14 +1,14 @@
-#include "RenderTexture.hpp"
+#include "RenderBuffer.hpp"
 
 #include "../windowing/WindowBase.hpp"
 
 
 namespace leopph::internal
 {
-	RenderTexture::RenderTexture() :
+	RenderBuffer::RenderBuffer() :
 		m_Framebuffer{},
 		m_ColorBuffer{},
-		m_DepthStencilBuffer{},
+		m_StencilBuffer{},
 		m_VertexArray{},
 		m_VertexBuffer{},
 		m_Resolution{Vector2{WindowBase::Get().Width(), WindowBase::Get().Height()} * WindowBase::Get().RenderMultiplier()}
@@ -34,7 +34,7 @@ namespace leopph::internal
 	}
 
 
-	RenderTexture::~RenderTexture()
+	RenderBuffer::~RenderBuffer()
 	{
 		DeinitBuffers();
 		glDeleteFramebuffers(1, &m_Framebuffer);
@@ -43,7 +43,7 @@ namespace leopph::internal
 	}
 
 
-	auto RenderTexture::DrawToTexture() const -> void
+	auto RenderBuffer::DrawQuad() const -> void
 	{
 		BindAsRenderTarget();
 		glBindVertexArray(m_VertexArray);
@@ -53,62 +53,62 @@ namespace leopph::internal
 	}
 
 
-	auto RenderTexture::DrawToWindow() const -> void
+	auto RenderBuffer::CopyColorToDefaultBuffer() const -> void
 	{
 		glBlitNamedFramebuffer(m_Framebuffer, 0, 0, 0, static_cast<GLsizei>(m_Resolution[0]), static_cast<GLsizei>(m_Resolution[1]), 0, 0, static_cast<GLsizei>(WindowBase::Get().Width()), static_cast<GLsizei>(WindowBase::Get().Height()), GL_COLOR_BUFFER_BIT, GL_LINEAR);
 	}
 
 
-	auto RenderTexture::BindAsRenderTarget() const -> void
+	auto RenderBuffer::BindAsRenderTarget() const -> void
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, m_Framebuffer);
 		glViewport(0, 0, static_cast<GLsizei>(m_Resolution[0]), static_cast<GLsizei>(m_Resolution[1]));
 	}
 
 
-	auto RenderTexture::UnbindAsRenderTarget() -> void
+	auto RenderBuffer::UnbindAsRenderTarget() -> void
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glViewport(0, 0, static_cast<GLsizei>(WindowBase::Get().Width()), static_cast<GLsizei>(WindowBase::Get().Height()));
 	}
 
 
-	auto RenderTexture::FramebufferName() const -> unsigned
+	auto RenderBuffer::FramebufferName() const -> unsigned
 	{
 		return m_Framebuffer;
 	}
 
 
-	auto RenderTexture::Clear() const -> void
+	auto RenderBuffer::Clear() const -> void
 	{
 		glClearNamedFramebufferfv(m_Framebuffer, GL_COLOR, 0, WindowBase::Get().ClearColor().Data().data());
-		glClearNamedFramebufferfi(m_Framebuffer, GL_DEPTH_STENCIL, 0, CLEAR_DEPTH, CLEAR_STENCIL);
+		glClearNamedFramebufferiv(m_Framebuffer, GL_STENCIL, 0, &CLEAR_STENCIL);
 	}
 
 
-	auto RenderTexture::InitBuffers(const GLsizei width, const GLsizei height) -> void
+	auto RenderBuffer::InitBuffers(const GLsizei width, const GLsizei height) -> void
 	{
 		glCreateRenderbuffers(1, &m_ColorBuffer);
 		glNamedRenderbufferStorage(m_ColorBuffer, GL_RGB8, width, height);
 
-		glCreateRenderbuffers(1, &m_DepthStencilBuffer);
-		glNamedRenderbufferStorage(m_DepthStencilBuffer, GL_DEPTH24_STENCIL8, static_cast<GLsizei>(width), static_cast<GLsizei>(height));
+		glCreateRenderbuffers(1, &m_StencilBuffer);
+		glNamedRenderbufferStorage(m_StencilBuffer, GL_STENCIL_INDEX8, static_cast<GLsizei>(width), static_cast<GLsizei>(height));
 
 		glNamedFramebufferRenderbuffer(m_Framebuffer, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, m_ColorBuffer);
-		glNamedFramebufferRenderbuffer(m_Framebuffer, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_DepthStencilBuffer);
+		glNamedFramebufferRenderbuffer(m_Framebuffer, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_StencilBuffer);
 
 		glNamedFramebufferDrawBuffer(m_Framebuffer, GL_COLOR_ATTACHMENT0);
 	}
 
 
-	auto RenderTexture::DeinitBuffers() const -> void
+	auto RenderBuffer::DeinitBuffers() const -> void
 	{
 		glDeleteRenderbuffers(1, &m_ColorBuffer);
-		glDeleteRenderbuffers(1, &m_DepthStencilBuffer);
+		glDeleteRenderbuffers(1, &m_StencilBuffer);
 	}
 
 
-	auto RenderTexture::OnEventReceived(EventParamType event) -> void
+	auto RenderBuffer::OnEventReceived(EventParamType event) -> void
 	{
 		m_Resolution = event.NewResolution * event.NewResolutionMultiplier;
 		DeinitBuffers();

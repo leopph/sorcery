@@ -53,7 +53,7 @@
     <ClCompile Include="src\events\PointShadowResolutionEvent.cpp" />
     <ClCompile Include="src\rendering\CubeShadowMap.cpp" />
     <ClCompile Include="src\windowing\Window.cpp" />
-    <ClCompile Include="src\rendering\RenderTexture.cpp" />
+    <ClCompile Include="src\rendering\RenderBuffer.cpp" />
     <ClCompile Include="src\data\DataManager.cpp" />
     <ClCompile Include="src\rendering\geometry\FileMeshDataGroup.cpp" />
     <ClCompile Include="src\util\equal\GlMeshGroupEqual.cpp" />
@@ -138,7 +138,7 @@
     <ClInclude Include="src\rendering\CubeShadowMap.hpp" />
     <ClInclude Include="src\events\PointShadowResolutionEvent.hpp" />
     <ClInclude Include="src\windowing\Window.hpp" />
-    <ClInclude Include="src\rendering\RenderTexture.hpp" />
+    <ClInclude Include="src\rendering\RenderBuffer.hpp" />
     <ClInclude Include="src\util\hash\PathedHash.hpp" />
     <ClInclude Include="src\util\equal\PathedEqual.hpp" />
     <ClInclude Include="src\util\concepts\Pathed.hpp" />

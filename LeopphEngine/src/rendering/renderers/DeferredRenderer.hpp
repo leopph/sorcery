@@ -4,7 +4,7 @@
 #include "../CascadedShadowMap.hpp"
 #include "../CubeShadowMap.hpp"
 #include "../GeometryBuffer.hpp"
-#include "../RenderTexture.hpp"
+#include "../RenderBuffer.hpp"
 #include "../SpotLightShadowMap.hpp"
 #include "../../components/lighting/PointLight.hpp"
 #include "../../components/lighting/SpotLight.hpp"
@@ -32,7 +32,7 @@ namespace leopph::internal
 			auto RenderSkybox(const Matrix4& camViewMat, const Matrix4& camProjMat) -> void;
 
 			GeometryBuffer m_GBuffer;
-			RenderTexture m_RenderTexture;
+			RenderBuffer m_RenderTexture;
 
 			ShaderFamily m_ShadowShader;
 			ShaderFamily m_CubeShadowShader;
@@ -51,5 +51,6 @@ namespace leopph::internal
 			CubeShadowMap m_PointShadowMap;
 
 			static constexpr int STENCIL_REF{0};
+			static constexpr int STENCIL_AND_MASK{1};
 	};
 }

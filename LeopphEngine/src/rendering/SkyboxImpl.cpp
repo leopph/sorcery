@@ -81,7 +81,6 @@ namespace leopph::internal
 		shader.SetUniform("u_CubeMap", 0);
 
 		glDisable(GL_CULL_FACE);
-		glDepthFunc(GL_LEQUAL);
 
 		glBindTextureUnit(0, m_GlNames[CUBEMAP]);
 		glBindVertexArray(m_GlNames[VAO]);
@@ -90,8 +89,7 @@ namespace leopph::internal
 
 		glBindVertexArray(0);
 		glBindTextureUnit(0, 0);
-
-		glDepthFunc(GL_LESS);
+		
 		glEnable(GL_CULL_FACE);
 	}
 

@@ -12,21 +12,21 @@
 
 namespace leopph::internal
 {
-	class RenderTexture final : public EventReceiver<ScreenResolutionEvent>
+	class RenderBuffer final : public EventReceiver<ScreenResolutionEvent>
 	{
 		public:
-			RenderTexture();
+			RenderBuffer();
 
-			RenderTexture(const RenderTexture& other) = delete;
-			auto operator=(const RenderTexture& other) -> RenderTexture& = delete;
+			RenderBuffer(const RenderBuffer& other) = delete;
+			auto operator=(const RenderBuffer& other) -> RenderBuffer& = delete;
 
-			RenderTexture(RenderTexture&& other) = delete;
-			auto operator=(RenderTexture&& other) -> RenderTexture& = delete;
+			RenderBuffer(RenderBuffer&& other) = delete;
+			auto operator=(RenderBuffer&& other) -> RenderBuffer& = delete;
 
-			~RenderTexture() override;
+			~RenderBuffer() override;
 
-			auto DrawToTexture() const -> void;
-			auto DrawToWindow() const -> void;
+			auto DrawQuad() const -> void;
+			auto CopyColorToDefaultBuffer() const -> void;
 
 			auto BindAsRenderTarget() const -> void;
 			static auto UnbindAsRenderTarget() -> void;
@@ -42,13 +42,12 @@ namespace leopph::internal
 
 			GLuint m_Framebuffer;
 			GLuint m_ColorBuffer;
-			GLuint m_DepthStencilBuffer;
+			GLuint m_StencilBuffer;
 			GLuint m_VertexArray;
 			GLuint m_VertexBuffer;
 			Vector2 m_Resolution;
-
-			static constexpr GLfloat CLEAR_DEPTH{1.f};
-			static constexpr GLuint CLEAR_STENCIL{1};
+			
+			static constexpr GLint CLEAR_STENCIL{1};
 			static constexpr std::array<float, 20> QUAD_VERTICES
 			{
 				-1.0f, 1.0f, 0.0f, 0.0f, 1.0f,

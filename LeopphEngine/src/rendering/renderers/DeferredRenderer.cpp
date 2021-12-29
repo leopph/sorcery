@@ -99,10 +99,10 @@ namespace leopph::internal
 		const auto& spotLights{CollectSpotLights()};
 
 		
-		glStencilFunc(GL_ALWAYS, STENCIL_REF, 1);
+		glStencilFunc(GL_ALWAYS, STENCIL_REF, STENCIL_AND_MASK);
 		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 		RenderGeometry(camViewMat, camProjMat, renderables);
-		glStencilFunc(GL_EQUAL, STENCIL_REF, 1);
+		glStencilFunc(GL_EQUAL, STENCIL_REF, STENCIL_AND_MASK);
 		glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 
 		m_RenderTexture.Clear();
@@ -115,10 +115,10 @@ namespace leopph::internal
 		RenderPointLights(pointLights, renderables);
 		glDisable(GL_BLEND);
 
-		glStencilFunc(GL_ALWAYS, STENCIL_REF, 1);
+		glStencilFunc(GL_NOTEQUAL, STENCIL_REF, STENCIL_AND_MASK);
 		RenderSkybox(camViewMat, camProjMat);
 
-		m_RenderTexture.DrawToWindow();
+		m_RenderTexture.CopyColorToDefaultBuffer();
 	}
 
 	auto DeferredRenderer::RenderGeometry(const Matrix4& camViewMat, const Matrix4& camProjMat, const std::vector<RenderableData>& renderables) -> void
@@ -140,7 +140,7 @@ namespace leopph::internal
 			renderable->DrawWithMaterial(shader, 0);
 		}
 
-		m_GBuffer.UnbindFromWriting();
+		GeometryBuffer::UnbindFromWriting();
 	}
 
 	auto DeferredRenderer::RenderAmbientLight() -> void
@@ -152,10 +152,8 @@ namespace leopph::internal
 
 		static_cast<void>(m_GBuffer.BindForReading(shader, GeometryBuffer::Texture::Ambient, 0));
 		shader.Use();
-
-		glDisable(GL_DEPTH_TEST);
-		m_RenderTexture.DrawToTexture();
-		glEnable(GL_DEPTH_TEST);
+		
+		m_RenderTexture.DrawQuad();
 	}
 
 	auto DeferredRenderer::RenderDirectionalLights(const Matrix4& camViewMat, const Matrix4& camProjMat, const std::vector<RenderableData>& renderables) -> void
@@ -240,9 +238,7 @@ namespace leopph::internal
 		}
 
 		lightShader.Use();
-		glDisable(GL_DEPTH_TEST);
-		m_RenderTexture.DrawToTexture();
-		glEnable(GL_DEPTH_TEST);
+		m_RenderTexture.DrawQuad();
 	}
 
 	auto DeferredRenderer::RenderSpotLights(const std::vector<const SpotLight*>& spotLights, const std::vector<RenderableData>& renderables) -> void
@@ -310,10 +306,7 @@ namespace leopph::internal
 			lightShader.SetUniform("u_LightWorldToClipMatrix", lightWorldToClipMat);
 
 			lightShader.Use();
-
-			glDisable(GL_DEPTH_TEST);
-			m_RenderTexture.DrawToTexture();
-			glEnable(GL_DEPTH_TEST);
+			m_RenderTexture.DrawQuad();
 		}
 	}
 
@@ -360,7 +353,7 @@ namespace leopph::internal
 				static std::vector<Matrix4> shadowViewProjMats;
 				shadowViewProjMats.clear();
 
-				static const std::array cubeFaceMats
+				static constexpr std::array cubeFaceMats
 				{
 					Matrix4{0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 1}, // +X
 					Matrix4{0, 0, -1, 0, 0, -1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1}, // -X
@@ -396,10 +389,7 @@ namespace leopph::internal
 			}
 
 			lightShader.Use();
-
-			glDisable(GL_DEPTH_TEST);
-			m_RenderTexture.DrawToTexture();
-			glEnable(GL_DEPTH_TEST);
+			m_RenderTexture.DrawQuad();
 		}
 	}
 
@@ -410,17 +400,11 @@ namespace leopph::internal
 			static auto skyboxFlagInfo{m_SkyboxShader.GetFlagInfo()};
 			auto& skyboxShader{m_SkyboxShader.GetPermutation(skyboxFlagInfo)};
 
-			m_GBuffer.CopyDepthData(m_RenderTexture.FramebufferName());
-
 			skyboxShader.SetUniform("u_ViewProjMat", static_cast<Matrix4>(static_cast<Matrix3>(camViewMat)) * camProjMat);
-
 			m_RenderTexture.BindAsRenderTarget();
-
 			skyboxShader.Use();
-
 			DataManager::Instance().CreateOrGetSkyboxImpl(std::get<Skybox>(background).AllFilePaths())->Draw(skyboxShader);
-
-			m_RenderTexture.UnbindAsRenderTarget();
+			RenderBuffer::UnbindAsRenderTarget();
 		}
 	}
 }

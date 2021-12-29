@@ -160,7 +160,7 @@
     <ClInclude Include="src\rendering\renderers\DeferredRenderer.hpp" />
     <ClInclude Include="src\rendering\geometry\Material.hpp" />
     <ClInclude Include="src\rendering\renderers\Renderer.hpp" />
-    <ClInclude Include="src\rendering\RenderTexture.hpp" />
+    <ClInclude Include="src\rendering\RenderBuffer.hpp" />
     <ClInclude Include="src\rendering\shaders\ShaderProgram.hpp" />
     <ClInclude Include="src\rendering\shaders\ShaderFamily.hpp" />
     <ClInclude Include="src\rendering\shaders\ShaderStageInfo.hpp" />
@@ -243,7 +243,7 @@
     <ClCompile Include="src\rendering\geometry\Material.cpp" />
     <ClCompile Include="src\rendering\opengl\InitGl.cpp" />
     <ClCompile Include="src\rendering\renderers\Renderer.cpp" />
-    <ClCompile Include="src\rendering\RenderTexture.cpp" />
+    <ClCompile Include="src\rendering\RenderBuffer.cpp" />
     <ClCompile Include="src\rendering\shaders\FlagInfo.cpp" />
     <ClCompile Include="src\rendering\shaders\ShaderProgram.cpp" />
     <ClCompile Include="src\rendering\shaders\ShaderFamily.cpp" />
