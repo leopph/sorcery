@@ -73,12 +73,6 @@ namespace leopph::internal
 	}
 
 
-	auto RenderBuffer::FramebufferName() const -> unsigned
-	{
-		return m_Framebuffer;
-	}
-
-
 	auto RenderBuffer::Clear() const -> void
 	{
 		glClearNamedFramebufferfv(m_Framebuffer, GL_COLOR, 0, WindowBase::Get().ClearColor().Data().data());

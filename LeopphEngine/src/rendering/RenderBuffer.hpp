@@ -25,6 +25,7 @@ namespace leopph::internal
 
 			~RenderBuffer() override;
 
+			// Draws a full screen quad on its framebuffer.
 			auto DrawQuad() const -> void;
 			auto CopyColorToDefaultBuffer() const -> void;
 
@@ -33,7 +34,7 @@ namespace leopph::internal
 
 			auto Clear() const -> void;
 
-			[[nodiscard]] auto FramebufferName() const -> unsigned;
+			[[nodiscard]] constexpr auto FramebufferName() const noexcept;
 
 		private:
 			auto OnEventReceived(EventParamType event) -> void override;
@@ -46,7 +47,7 @@ namespace leopph::internal
 			GLuint m_VertexArray;
 			GLuint m_VertexBuffer;
 			Vector2 m_Resolution;
-			
+
 			static constexpr GLint CLEAR_STENCIL{1};
 			static constexpr std::array<float, 20> QUAD_VERTICES
 			{
@@ -56,4 +57,10 @@ namespace leopph::internal
 				1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
 			};
 	};
+
+
+	constexpr auto RenderBuffer::FramebufferName() const noexcept
+	{
+		return m_Framebuffer;
+	}
 }

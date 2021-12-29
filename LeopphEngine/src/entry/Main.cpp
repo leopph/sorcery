@@ -38,16 +38,13 @@ namespace leopph::internal
 
 		{
 			const auto renderer{Renderer::Create()};
-
 			Logger::Instance().Debug("Renderer initialized.");
 
-			Timer::Init();
-
-			Logger::Instance().Debug("Timer initialized.");
-
 			initFunc();
-
 			Logger::Instance().Debug("App initialized.");
+
+			Timer::Init();
+			Logger::Instance().Debug("Timer initialized.");
 
 			while (!window.ShouldClose())
 			{
@@ -59,19 +56,14 @@ namespace leopph::internal
 				}
 
 				window.Clear();
-
 				renderer->Render();
-
 				Timer::OnFrameComplete();
-
 				window.SwapBuffers();
-
 				EventManager::Instance().Send<FrameEndedEvent>();
 			}
 		}
 
 		DataManager::Instance().Clear();
-
 		Logger::Instance().Debug("Application data cleared.");
 
 		WindowBase::Destroy();
