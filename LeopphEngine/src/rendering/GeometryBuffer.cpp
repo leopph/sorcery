@@ -130,6 +130,12 @@ namespace leopph::internal
 	}
 
 
+	auto GeometryBuffer::CopyStencilData(const unsigned bufferName) const -> void
+	{
+		glBlitNamedFramebuffer(m_FrameBuffer, bufferName, 0, 0, static_cast<GLint>(m_Resolution[0]), static_cast<GLint>(m_Resolution[1]), 0, 0, static_cast<GLint>(m_Resolution[0]), static_cast<GLint>(m_Resolution[1]), GL_STENCIL_BUFFER_BIT, GL_NEAREST);
+	}
+
+
 	auto GeometryBuffer::SetUpBuffers(const Vector2& res) -> void
 	{
 		glDeleteTextures(static_cast<GLsizei>(m_Textures.size()), m_Textures.data());

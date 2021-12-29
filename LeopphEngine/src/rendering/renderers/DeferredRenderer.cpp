@@ -78,6 +78,8 @@ namespace leopph::internal
 		glCullFace(GL_BACK);
 
 		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+
+		glEnable(GL_STENCIL_TEST);
 	}
 
 	auto DeferredRenderer::Render() -> void
@@ -96,9 +98,15 @@ namespace leopph::internal
 		const auto& pointLights{CollectPointLights()};
 		const auto& spotLights{CollectSpotLights()};
 
+		
+		glStencilFunc(GL_ALWAYS, STENCIL_REF, 1);
+		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 		RenderGeometry(camViewMat, camProjMat, renderables);
+		glStencilFunc(GL_EQUAL, STENCIL_REF, 1);
+		glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 
 		m_RenderTexture.Clear();
+		m_GBuffer.CopyStencilData(m_RenderTexture.FramebufferName());
 
 		RenderAmbientLight();
 		glEnable(GL_BLEND);
@@ -107,6 +115,7 @@ namespace leopph::internal
 		RenderPointLights(pointLights, renderables);
 		glDisable(GL_BLEND);
 
+		glStencilFunc(GL_ALWAYS, STENCIL_REF, 1);
 		RenderSkybox(camViewMat, camProjMat);
 
 		m_RenderTexture.DrawToWindow();

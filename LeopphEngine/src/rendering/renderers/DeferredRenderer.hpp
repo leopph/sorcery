@@ -49,5 +49,7 @@ namespace leopph::internal
 			CascadedShadowMap m_DirShadowMap;
 			SpotLightShadowMap m_SpotShadowMap;
 			CubeShadowMap m_PointShadowMap;
+
+			static constexpr int STENCIL_REF{0};
 	};
 }

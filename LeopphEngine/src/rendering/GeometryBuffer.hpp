@@ -32,6 +32,7 @@ namespace leopph::internal
 			~GeometryBuffer() override;
 
 			auto Clear() const -> void;
+
 			auto BindForWriting() const -> void;
 			static auto UnbindFromWriting() -> void;
 
@@ -44,6 +45,7 @@ namespace leopph::internal
 			auto UnbindFromReading() const -> void;
 
 			auto CopyDepthData(unsigned bufferName) const -> void;
+			auto CopyStencilData(unsigned bufferName) const -> void;
 
 		private:
 			auto SetUpBuffers(const Vector2& res) -> void;
