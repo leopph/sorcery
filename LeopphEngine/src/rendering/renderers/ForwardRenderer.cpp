@@ -116,7 +116,7 @@ namespace leopph::internal
 				cascadeFarBounds.clear();
 
 				const auto cameraInverseMatrix{camViewMat.Inverse()};
-				const auto lightViewMatrix{Matrix4::LookAt(dirLight->Range() * -dirLight->Direction(), Vector3{}, Vector3::Up())};
+				const auto lightViewMatrix{Matrix4::LookAt(Vector3{0}, dirLight->Direction(), Vector3::Up())};
 				const auto cascadeCount{Settings::DirShadowCascadeCount()};
 
 				for (std::size_t i = 0; i < cascadeCount; ++i)

@@ -47,7 +47,6 @@ auto leopph::Init() -> void
 	const auto dirLight = dirLightEntity->CreateComponent<DirectionalLight>();
 	dirLight->Diffuse(Vector3{0.5, 0.5, 0.5});
 	dirLight->CastsShadow(true);
-	dirLight->Range(1000);
 
 	/*const auto spotLightEntity = Entity::CreateEntity("spotlight");
 	spotLightEntity->Transform()->Parent(groupEntity);

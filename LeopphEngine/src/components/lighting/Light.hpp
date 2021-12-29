@@ -23,9 +23,6 @@ namespace leopph::internal
 			// This value is false by default.
 			[[nodiscard]] constexpr auto CastsShadow() const noexcept;
 
-			// Get the distance where the Light's effect fully cuts off.
-			[[nodiscard]] constexpr auto Range() const noexcept;
-
 			// Set the current diffuse intensity and color.
 			// This value must be in the [0; 1] range per component.
 			constexpr auto Diffuse(const Vector3& value);
@@ -38,9 +35,6 @@ namespace leopph::internal
 			// This only works if objects have this property set to true.
 			// This value is false by default.
 			constexpr auto CastsShadow(bool value) noexcept;
-
-			// Set the distance where the Light's effect fully cuts off.
-			constexpr auto Range(float value) noexcept;
 
 		protected:
 			using Component::Component;
@@ -72,12 +66,6 @@ namespace leopph::internal
 	}
 
 
-	constexpr auto Light::Range() const noexcept
-	{
-		return m_Range;
-	}
-
-
 	constexpr auto Light::Diffuse(const Vector3& value)
 	{
 		m_Diffuse = value;
@@ -93,11 +81,5 @@ namespace leopph::internal
 	constexpr auto Light::CastsShadow(const bool value) noexcept
 	{
 		m_CastsShadow = value;
-	}
-
-
-	constexpr auto Light::Range(const float value) noexcept
-	{
-		m_Range = value;
 	}
 }

@@ -20,6 +20,9 @@ namespace leopph::internal
 			// This scales quadratically with distance.
 			[[nodiscard]] constexpr auto Quadratic() const noexcept;
 
+			// Get the distance where the light effect fully cuts off.
+			[[nodiscard]] constexpr auto Range() const noexcept;
+
 			// Set the attenuation's constanst value.
 			constexpr auto Constant(float value) noexcept;
 
@@ -30,6 +33,9 @@ namespace leopph::internal
 			// Set the attenuation's quadratic value.
 			// This scales quadratically with distance.
 			constexpr auto Quadratic(float value) noexcept;
+
+			// Set the distance where the light effect fully cuts off.
+			constexpr auto Range(float value) noexcept;
 
 		protected:
 			using Light::Light;
@@ -76,5 +82,17 @@ namespace leopph::internal
 	constexpr auto AttenuatedLight::Quadratic(const float value) noexcept
 	{
 		m_Quadratic = value;
+	}
+
+
+	constexpr auto AttenuatedLight::Range() const noexcept
+	{
+		return m_Range;
+	}
+
+
+	constexpr auto AttenuatedLight::Range(const float value) noexcept
+	{
+		m_Range = value;
 	}
 }
