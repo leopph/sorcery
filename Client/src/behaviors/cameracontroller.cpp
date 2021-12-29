@@ -51,6 +51,12 @@ void CameraController::OnFrameUpdate()
 	}
 
 	movementVector.Normalize();
+
+	if (leopph::Input::GetKey(leopph::KeyCode::LeftShift))
+	{
+		movementVector *= RUN_MULT;
+	}
+
 	camTransform.Translate(movementVector * m_Speed * leopph::Time::DeltaTime(), leopph::Space::World);
 
 	const auto [posX, posY] = leopph::Input::GetMousePosition();

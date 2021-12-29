@@ -22,12 +22,14 @@ auto leopph::Init() -> void
 	const auto camera{playerEntity->CreateComponent<Camera>()};
 	camera->Background(Skybox{"skybox/megasun/right.hdr","skybox/megasun/left.hdr","skybox/megasun/top.hdr","skybox/megasun/bottom.hdr","skybox/megasun/front.hdr","skybox/megasun/back.hdr"});
 
+	camera->FarClipPlane(100);
+
 	playerEntity->CreateComponent<CameraController>();
 
 	const auto portraitEntity = Entity::CreateEntity("portrait");
 	portraitEntity->Transform()->Parent(groupEntity);
 	portraitEntity->Transform()->Rotate(Vector3::Up(), 180);
-	portraitEntity->Transform()->LocalPosition(Vector3{0, 0, 5});
+	portraitEntity->Transform()->Translate(-5, 0, -10, Space::Local);
 	const auto portrairModel = portraitEntity->CreateComponent<Model>("models/portrait/cropped_textured_mesh.obj");
 	portrairModel->CastsShadow(true);
 
@@ -45,8 +47,9 @@ auto leopph::Init() -> void
 	const auto dirLight = dirLightEntity->CreateComponent<DirectionalLight>();
 	dirLight->Diffuse(Vector3{0.5, 0.5, 0.5});
 	dirLight->CastsShadow(true);
+	dirLight->Range(1000);
 
-	const auto spotLightEntity = Entity::CreateEntity("spotlight");
+	/*const auto spotLightEntity = Entity::CreateEntity("spotlight");
 	spotLightEntity->Transform()->Parent(groupEntity);
 	const auto spotLight = spotLightEntity->CreateComponent<SpotLight>();
 	spotLight->InnerAngle(45);
@@ -59,10 +62,15 @@ auto leopph::Init() -> void
 	pointLightEntity->Transform()->LocalScale(Vector3{0.1, 0.1, 0.1});
 	const auto pointLight = pointLightEntity->CreateComponent<PointLight>();
 	pointLight->Range(15);
-	pointLight->CastsShadow(true);
+	pointLight->CastsShadow(true);*/
 
-	AmbientLight::Instance().Intensity(Vector3{0, 0, 0});
+	Entity::CreateEntity("fpscounter")->CreateComponent<FPSCounter>();
+	Entity::CreateEntity("windowstester")->CreateComponent<WindowTester>();
 
-	(Entity::CreateEntity())->CreateComponent<FPSCounter>();
-	(Entity::CreateEntity())->CreateComponent<WindowTester>();
+	const auto entity = Entity::CreateEntity();
+	entity->Transform()->Parent(groupEntity);
+	entity->Transform()->Translate(0, -10, 0);
+	entity->Transform()->Rescale(-100, -100, -100);
+	const auto model = entity->CreateComponent<Model>("models/snowy/scene.gltf");
+	model->CastsShadow(true);
 }
