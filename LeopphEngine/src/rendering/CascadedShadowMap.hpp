@@ -1,18 +1,23 @@
 #pragma once
 
-#include "../events/DirShadowResolutionEvent.hpp"
+#include "../components/Camera.hpp"
+#include "../events/DirCascadeChangeEvent.hpp"
 #include "../events/handling/EventReceiver.hpp"
 #include "../math/Matrix.hpp"
 #include "../math/Vector.hpp"
+#include "../misc/ShadowCascade.hpp"
 #include "shaders/ShaderProgram.hpp"
 
+#include <glad/glad.h>
+
 #include <cstddef>
+#include <span>
 #include <vector>
 
 
 namespace leopph::internal
 {
-	class CascadedShadowMap final : public EventReceiver<DirShadowResolutionEvent>
+	class CascadedShadowMap final : public EventReceiver<DirCascadeChangeEvent>
 	{
 		public:
 			CascadedShadowMap();
@@ -23,10 +28,10 @@ namespace leopph::internal
 			auto operator=(const CascadedShadowMap& other) -> CascadedShadowMap& = delete;
 			auto operator=(CascadedShadowMap&& other) -> CascadedShadowMap& = delete;
 
-			~CascadedShadowMap() override;
+			~CascadedShadowMap() noexcept override;
 
 			auto BindForWriting(std::size_t cascadeIndex) const -> void;
-			auto UnbindFromWriting() const -> void;
+			static auto UnbindFromWriting() -> void;
 
 			// Returns the next available texture unit after binding
 			[[nodiscard]] auto BindForReading(ShaderProgram& shader, int texUnit) -> int;
@@ -38,13 +43,13 @@ namespace leopph::internal
 			[[nodiscard]] auto CascadeBoundsViewSpace(std::size_t cascadeIndex) const -> Vector2;
 
 		private:
-			unsigned m_Fbo;
-			std::vector<unsigned> m_TexIds;
+			auto OnEventReceived(const DirCascadeChangeEvent& event) -> void override;
+			auto Init(std::span<const ShadowCascade> cascades) -> void;
+			auto Deinit() const -> void;
+
+			GLuint m_Framebuffer;
+			std::vector<GLuint> m_Textures;
 			int m_TexBindStartIndex;
 			std::vector<Matrix4> m_ProjMatrices;
-
-			auto OnEventReceived(const DirShadowResolutionEvent& event) -> void override;
-			auto Init(const std::vector<std::size_t>& resolutions) -> void;
-			auto Deinit() -> void;
 	};
 }

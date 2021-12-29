@@ -34,7 +34,7 @@ namespace leopph
 		private:
 			AmbientLight() = default;
 
-			Vector3 m_Intensity{0.5f, 0.5f, 0.5f};
+			Vector3 m_Intensity{0.1f, 0.1f, 0.1f};
 	};
 
 

@@ -134,7 +134,7 @@
     <ClInclude Include="src\entry\Entry.hpp" />
     <ClInclude Include="src\entry\Main.hpp" />
     <ClInclude Include="src\components\Transform.hpp" />
-    <ClInclude Include="src\events\DirShadowResolutionEvent.hpp" />
+    <ClInclude Include="src\events\DirCascadeChangeEvent.hpp" />
     <ClInclude Include="src\events\ScreenResolutionEvent.hpp" />
     <ClInclude Include="src\events\Event.hpp" />
     <ClInclude Include="src\events\handling\EventManager.hpp" />
@@ -150,6 +150,7 @@
     <ClInclude Include="src\input\KeyCode.hpp" />
     <ClInclude Include="src\input\KeyState.hpp" />
     <ClInclude Include="src\misc\Color.hpp" />
+    <ClInclude Include="src\misc\ShadowCascade.hpp" />
     <ClInclude Include="src\rendering\CascadedShadowMap.hpp" />
     <ClInclude Include="src\rendering\CubeShadowMap.hpp" />
     <ClInclude Include="src\rendering\geometry\FileMeshDataGroup.hpp" />
@@ -224,7 +225,7 @@
     <ClCompile Include="src\data\DataManager.cpp" />
     <ClCompile Include="src\entry\Main.cpp" />
     <ClCompile Include="src\components\Transform.cpp" />
-    <ClCompile Include="src\events\DirShadowResolutionEvent.cpp" />
+    <ClCompile Include="src\events\DirCascadeChangeEvent.cpp" />
     <ClCompile Include="src\events\ScreenResolutionEvent.cpp" />
     <ClCompile Include="src\events\Event.cpp" />
     <ClCompile Include="src\events\handling\EventManager.cpp" />

@@ -4,7 +4,7 @@
 #ifdef CAST_SHADOW
 #define MAX_DIR_LIGHT_CASCADE_COUNT 3
 #define MIN_SHADOW_BIAS 0.0001
-#define MAX_SHADOW_BIAS 0.0005
+#define MAX_SHADOW_BIAS 0.01
 #endif
 
 
@@ -54,23 +54,20 @@ vec3 CalculateBlinnPhong(vec3 dirToLight, vec3 fragPos, vec3 fragNormal, vec3 fr
 #ifdef CAST_SHADOW
 float CalculateShadow(vec3 fragPos, float fragPosCameraClipZ, vec3 fragNormal)
 {
-	int cascadeIndex = -1;
 	for (int i = 0; i < u_CascadeCount; ++i)
 	{
 		if (fragPosCameraClipZ < u_CascadeFarBounds[i])
 		{
-			cascadeIndex = i;
-			break;
+			vec4 fragPosLightSpace = vec4(fragPos, 1) * u_LightClipMatrices[i];
+			vec3 normalizedPos = fragPosLightSpace.xyz;
+			normalizedPos *= 0.5;
+			normalizedPos += 0.5;
+			
+			float bias = max(MAX_SHADOW_BIAS * (1.0 - dot(fragNormal, -u_DirLight.direction)), MIN_SHADOW_BIAS);
+			return texture(u_DirLightShadowMaps[i], vec3(normalizedPos.xy, normalizedPos.z - bias));
 		}
 	}
-
-	vec4 fragPosLightSpace = vec4(fragPos, 1) * u_LightClipMatrices[cascadeIndex];
-	vec3 normalizedPos = fragPosLightSpace.xyz;
-	normalizedPos *= 0.5;
-	normalizedPos += 0.5;
-
-	float bias = max(MAX_SHADOW_BIAS * (1.0 - dot(fragNormal, -u_DirLight.direction)), MIN_SHADOW_BIAS);
-	return texture(u_DirLightShadowMaps[cascadeIndex], vec3(normalizedPos.xy, normalizedPos.z - bias));
+	return 1.0;
 }
 #endif
 

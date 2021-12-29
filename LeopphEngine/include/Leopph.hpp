@@ -26,6 +26,7 @@ See individual headers for more information.
 #include "../src/math/Quaternion.hpp"
 #include "../src/math/Vector.hpp"
 #include "../src/misc/Color.hpp"
+#include "../src/misc/ShadowCascade.hpp"
 #include "../src/rendering/Skybox.hpp"
 #include "../src/timing/leopphtime.h"
 #include "../src/windowing/Window.hpp"

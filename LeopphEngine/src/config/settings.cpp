@@ -1,6 +1,6 @@
 #include "Settings.hpp"
 
-#include "../events/DirShadowResolutionEvent.hpp"
+#include "../events/DirCascadeChangeEvent.hpp"
 #include "../events/SpotShadowResolutionEvent.hpp"
 #include "../events/handling/EventManager.hpp"
 #include "../windowing/WindowBase.hpp"
@@ -9,7 +9,7 @@
 namespace leopph
 {
 	std::filesystem::path Settings::s_CacheLoc;
-	std::vector<std::size_t> Settings::s_DirShadowRes{4096, 2048, 1024};
+	std::vector<ShadowCascade> Settings::s_DirShadowRes{{4096, 15}, {2048, 50}, {1024, 200}};
 	std::size_t Settings::s_SpotShadowRes{2048};
 	std::size_t Settings::s_PointShadowRes{1024};
 	std::size_t Settings::s_NumMaxSpot{64};
@@ -38,14 +38,14 @@ namespace leopph
 	}
 
 
-	auto Settings::DirectionalShadowMapResolutions(std::vector<std::size_t> newRess) -> void
+	auto Settings::DirShadowCascades(std::span<const ShadowCascade> cascades) -> void
 	{
-		s_DirShadowRes = std::move(newRess);
-		EventManager::Instance().Send<internal::DirShadowResolutionEvent>(s_DirShadowRes);
+		s_DirShadowRes.assign(cascades.begin(), cascades.end());
+		EventManager::Instance().Send<internal::DirCascadeChangeEvent>(s_DirShadowRes);
 	}
 
 
-	auto Settings::DirectionalShadowCascadeCount() -> std::size_t
+	auto Settings::DirShadowCascadeCount() -> std::size_t
 	{
 		return s_DirShadowRes.size();
 	}
