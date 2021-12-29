@@ -47,7 +47,7 @@ namespace leopph::internal
 			GLuint m_VertexArray;
 			GLuint m_VertexBuffer;
 			Vector2 m_Resolution;
-
+			
 			static constexpr GLint CLEAR_STENCIL{1};
 			static constexpr std::array<float, 20> QUAD_VERTICES
 			{

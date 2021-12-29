@@ -32,7 +32,7 @@ namespace leopph::internal
 			auto RenderSkybox(const Matrix4& camViewMat, const Matrix4& camProjMat) -> void;
 
 			GeometryBuffer m_GBuffer;
-			RenderBuffer m_RenderTexture;
+			RenderBuffer m_RenderBuffer;
 
 			ShaderFamily m_ShadowShader;
 			ShaderFamily m_CubeShadowShader;

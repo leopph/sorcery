@@ -102,11 +102,12 @@ namespace leopph::internal
 		glStencilFunc(GL_ALWAYS, STENCIL_REF, STENCIL_AND_MASK);
 		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 		RenderGeometry(camViewMat, camProjMat, renderables);
+
+		m_RenderBuffer.Clear();
+		m_GBuffer.CopyStencilData(m_RenderBuffer.FramebufferName());
+
 		glStencilFunc(GL_EQUAL, STENCIL_REF, STENCIL_AND_MASK);
 		glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
-
-		m_RenderTexture.Clear();
-		m_GBuffer.CopyStencilData(m_RenderTexture.FramebufferName());
 
 		RenderAmbientLight();
 		glEnable(GL_BLEND);
@@ -118,7 +119,7 @@ namespace leopph::internal
 		glStencilFunc(GL_NOTEQUAL, STENCIL_REF, STENCIL_AND_MASK);
 		RenderSkybox(camViewMat, camProjMat);
 
-		m_RenderTexture.CopyColorToDefaultBuffer();
+		m_RenderBuffer.CopyColorToDefaultBuffer();
 	}
 
 	auto DeferredRenderer::RenderGeometry(const Matrix4& camViewMat, const Matrix4& camProjMat, const std::vector<RenderableData>& renderables) -> void
@@ -152,8 +153,8 @@ namespace leopph::internal
 
 		static_cast<void>(m_GBuffer.BindForReading(shader, GeometryBuffer::Texture::Ambient, 0));
 		shader.Use();
-		
-		m_RenderTexture.DrawQuad();
+
+		m_RenderBuffer.DrawQuad();
 	}
 
 	auto DeferredRenderer::RenderDirectionalLights(const Matrix4& camViewMat, const Matrix4& camProjMat, const std::vector<RenderableData>& renderables) -> void
@@ -238,7 +239,7 @@ namespace leopph::internal
 		}
 
 		lightShader.Use();
-		m_RenderTexture.DrawQuad();
+		m_RenderBuffer.DrawQuad();
 	}
 
 	auto DeferredRenderer::RenderSpotLights(const std::vector<const SpotLight*>& spotLights, const std::vector<RenderableData>& renderables) -> void
@@ -304,9 +305,9 @@ namespace leopph::internal
 			lightShader.SetUniform("u_SpotLight.innerAngleCosine", math::Cos(math::ToRadians(spotLight->InnerAngle())));
 			lightShader.SetUniform("u_SpotLight.outerAngleCosine", math::Cos(math::ToRadians(spotLight->OuterAngle())));
 			lightShader.SetUniform("u_LightWorldToClipMatrix", lightWorldToClipMat);
-
+			
 			lightShader.Use();
-			m_RenderTexture.DrawQuad();
+			m_RenderBuffer.DrawQuad();
 		}
 	}
 
@@ -389,7 +390,7 @@ namespace leopph::internal
 			}
 
 			lightShader.Use();
-			m_RenderTexture.DrawQuad();
+			m_RenderBuffer.DrawQuad();
 		}
 	}
 
@@ -401,7 +402,7 @@ namespace leopph::internal
 			auto& skyboxShader{m_SkyboxShader.GetPermutation(skyboxFlagInfo)};
 
 			skyboxShader.SetUniform("u_ViewProjMat", static_cast<Matrix4>(static_cast<Matrix3>(camViewMat)) * camProjMat);
-			m_RenderTexture.BindAsRenderTarget();
+			m_RenderBuffer.BindAsRenderTarget();
 			skyboxShader.Use();
 			DataManager::Instance().CreateOrGetSkyboxImpl(std::get<Skybox>(background).AllFilePaths())->Draw(skyboxShader);
 			RenderBuffer::UnbindAsRenderTarget();

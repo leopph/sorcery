@@ -43,9 +43,8 @@ namespace leopph::internal
 
 			auto UnbindFromReading(Texture type) const -> void;
 			auto UnbindFromReading() const -> void;
-
-			auto CopyDepthData(unsigned bufferName) const -> void;
-			auto CopyStencilData(unsigned bufferName) const -> void;
+			
+			auto CopyStencilData(GLuint bufferName) const -> void;
 
 		private:
 			auto SetUpBuffers(const Vector2& res) -> void;
@@ -53,7 +52,7 @@ namespace leopph::internal
 
 			std::array<GLuint, 6> m_Textures;
 			mutable std::array<int, std::tuple_size_v<decltype(m_Textures)>> m_BindIndices;
-			GLuint m_DepthBuffer;
+			GLuint m_DepthStencilBuffer;
 			GLuint m_FrameBuffer;
 			Vector2 m_Resolution;
 

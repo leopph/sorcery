@@ -11,7 +11,7 @@ namespace leopph::internal
 	GeometryBuffer::GeometryBuffer() :
 		m_Textures{},
 		m_BindIndices{},
-		m_DepthBuffer{},
+		m_DepthStencilBuffer{},
 		m_FrameBuffer{},
 		m_Resolution{Vector2{WindowBase::Get().Width(), WindowBase::Get().Height()} * WindowBase::Get().RenderMultiplier()}
 	{
@@ -24,7 +24,7 @@ namespace leopph::internal
 	GeometryBuffer::~GeometryBuffer()
 	{
 		glDeleteTextures(static_cast<GLsizei>(m_Textures.size()), m_Textures.data());
-		glDeleteRenderbuffers(1, &m_DepthBuffer);
+		glDeleteRenderbuffers(1, &m_DepthStencilBuffer);
 		glDeleteFramebuffers(1, &m_FrameBuffer);
 	}
 
@@ -62,27 +62,27 @@ namespace leopph::internal
 
 		switch (type)
 		{
-		case Texture::Position:
+			case Texture::Position:
 				uniformName = "u_PositionTexture";
 				break;
 
-		case Texture::Normal:
+			case Texture::Normal:
 				uniformName = "u_NormalTexture";
 				break;
 
-		case Texture::Ambient:
+			case Texture::Ambient:
 				uniformName = "u_AmbientTexture";
 				break;
 
-		case Texture::Diffuse:
+			case Texture::Diffuse:
 				uniformName = "u_DiffuseTexture";
 				break;
 
-		case Texture::Specular:
+			case Texture::Specular:
 				uniformName = "u_SpecularTexture";
 				break;
 
-		case Texture::Shine:
+			case Texture::Shine:
 				uniformName = "u_ShineTexture";
 				break;
 		}
@@ -124,13 +124,7 @@ namespace leopph::internal
 	}
 
 
-	auto GeometryBuffer::CopyDepthData(const unsigned bufferName) const -> void
-	{
-		glBlitNamedFramebuffer(m_FrameBuffer, bufferName, 0, 0, static_cast<GLint>(m_Resolution[0]), static_cast<GLint>(m_Resolution[1]), 0, 0, static_cast<GLint>(m_Resolution[0]), static_cast<GLint>(m_Resolution[1]), GL_DEPTH_BUFFER_BIT, GL_NEAREST);
-	}
-
-
-	auto GeometryBuffer::CopyStencilData(const unsigned bufferName) const -> void
+	auto GeometryBuffer::CopyStencilData(const GLuint bufferName) const -> void
 	{
 		glBlitNamedFramebuffer(m_FrameBuffer, bufferName, 0, 0, static_cast<GLint>(m_Resolution[0]), static_cast<GLint>(m_Resolution[1]), 0, 0, static_cast<GLint>(m_Resolution[0]), static_cast<GLint>(m_Resolution[1]), GL_STENCIL_BUFFER_BIT, GL_NEAREST);
 	}
@@ -139,7 +133,7 @@ namespace leopph::internal
 	auto GeometryBuffer::SetUpBuffers(const Vector2& res) -> void
 	{
 		glDeleteTextures(static_cast<GLsizei>(m_Textures.size()), m_Textures.data());
-		glDeleteRenderbuffers(1, &m_DepthBuffer);
+		glDeleteRenderbuffers(1, &m_DepthStencilBuffer);
 
 		glCreateTextures(GL_TEXTURE_2D, static_cast<GLsizei>(m_Textures.size()), m_Textures.data());
 
@@ -167,8 +161,8 @@ namespace leopph::internal
 		glTextureParameteri(m_Textures[static_cast<int>(Texture::Shine)], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTextureParameteri(m_Textures[static_cast<int>(Texture::Shine)], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-		glCreateRenderbuffers(1, &m_DepthBuffer);
-		glNamedRenderbufferStorage(m_DepthBuffer, GL_DEPTH24_STENCIL8, static_cast<GLint>(res[0]), static_cast<GLint>(res[1]));
+		glCreateRenderbuffers(1, &m_DepthStencilBuffer);
+		glNamedRenderbufferStorage(m_DepthStencilBuffer, GL_DEPTH24_STENCIL8, static_cast<GLint>(res[0]), static_cast<GLint>(res[1]));
 
 		glNamedFramebufferTexture(m_FrameBuffer, GL_COLOR_ATTACHMENT0, m_Textures[static_cast<int>(Texture::Position)], 0);
 		glNamedFramebufferTexture(m_FrameBuffer, GL_COLOR_ATTACHMENT1, m_Textures[static_cast<int>(Texture::Normal)], 0);
@@ -176,7 +170,7 @@ namespace leopph::internal
 		glNamedFramebufferTexture(m_FrameBuffer, GL_COLOR_ATTACHMENT3, m_Textures[static_cast<int>(Texture::Diffuse)], 0);
 		glNamedFramebufferTexture(m_FrameBuffer, GL_COLOR_ATTACHMENT4, m_Textures[static_cast<int>(Texture::Specular)], 0);
 		glNamedFramebufferTexture(m_FrameBuffer, GL_COLOR_ATTACHMENT5, m_Textures[static_cast<int>(Texture::Shine)], 0);
-		glNamedFramebufferRenderbuffer(m_FrameBuffer, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_DepthBuffer);
+		glNamedFramebufferRenderbuffer(m_FrameBuffer, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_DepthStencilBuffer);
 
 		glNamedFramebufferDrawBuffers(m_FrameBuffer, static_cast<GLsizei>(m_Textures.size()), std::array<GLenum, 6>{GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5}.data());
 	}

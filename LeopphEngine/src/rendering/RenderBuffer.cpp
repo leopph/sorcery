@@ -86,7 +86,7 @@ namespace leopph::internal
 		glNamedRenderbufferStorage(m_ColorBuffer, GL_RGB8, width, height);
 
 		glCreateRenderbuffers(1, &m_StencilBuffer);
-		glNamedRenderbufferStorage(m_StencilBuffer, GL_STENCIL_INDEX8, static_cast<GLsizei>(width), static_cast<GLsizei>(height));
+		glNamedRenderbufferStorage(m_StencilBuffer, GL_DEPTH24_STENCIL8, width, height); // This could use GL_STENCIL_INDEX# format but NVidia decided to go against the standard and refuse to work with it so here we are wasting memory.
 
 		glNamedFramebufferRenderbuffer(m_Framebuffer, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, m_ColorBuffer);
 		glNamedFramebufferRenderbuffer(m_Framebuffer, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_StencilBuffer);
