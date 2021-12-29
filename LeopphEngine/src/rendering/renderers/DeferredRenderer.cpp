@@ -141,7 +141,7 @@ namespace leopph::internal
 
 		shader.SetUniform("u_AmbientLight", AmbientLight::Instance().Intensity());
 
-		static_cast<void>(m_GBuffer.BindForReading(shader, GeometryBuffer::TextureType::Ambient, 0));
+		static_cast<void>(m_GBuffer.BindForReading(shader, GeometryBuffer::Texture::Ambient, 0));
 		shader.Use();
 
 		glDisable(GL_DEPTH_TEST);
@@ -169,11 +169,11 @@ namespace leopph::internal
 
 		auto texCount{0};
 
-		texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::TextureType::Position, texCount);
-		texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::Normal, texCount);
-		texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::TextureType::Diffuse, texCount);
-		texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::TextureType::Specular, texCount);
-		texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::TextureType::Shine, texCount);
+		texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::Texture::Position, texCount);
+		texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::Texture::Normal, texCount);
+		texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::Texture::Diffuse, texCount);
+		texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::Texture::Specular, texCount);
+		texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::Texture::Shine, texCount);
 
 		lightShader.SetUniform("u_DirLight.direction", dirLight->Direction());
 		lightShader.SetUniform("u_DirLight.diffuseColor", dirLight->Diffuse());
@@ -256,11 +256,11 @@ namespace leopph::internal
 
 			auto texCount{0};
 
-			texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::TextureType::Position, texCount);
-			texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::TextureType::Normal, texCount);
-			texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::TextureType::Diffuse, texCount);
-			texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::TextureType::Specular, texCount);
-			texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::TextureType::Shine, texCount);
+			texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::Texture::Position, texCount);
+			texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::Texture::Normal, texCount);
+			texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::Texture::Diffuse, texCount);
+			texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::Texture::Specular, texCount);
+			texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::Texture::Shine, texCount);
 			static_cast<void>(m_SpotShadowMap.BindForReading(lightShader, texCount));
 
 			lightShader.SetUniform("u_CamPos", Camera::Active()->Entity()->Transform()->Position());
@@ -327,11 +327,11 @@ namespace leopph::internal
 			auto& lightShader{m_PointLightShader.GetPermutation(lightFlagInfo)};
 
 			auto texCount{0};
-			texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::TextureType::Position, texCount);
-			texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::TextureType::Normal, texCount);
-			texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::TextureType::Diffuse, texCount);
-			texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::TextureType::Specular, texCount);
-			texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::TextureType::Shine, texCount);
+			texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::Texture::Position, texCount);
+			texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::Texture::Normal, texCount);
+			texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::Texture::Diffuse, texCount);
+			texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::Texture::Specular, texCount);
+			texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::Texture::Shine, texCount);
 
 			lightShader.SetUniform("u_PointLight.position", pointLight->Entity()->Transform()->Position());
 			lightShader.SetUniform("u_PointLight.diffuseColor", pointLight->Diffuse());

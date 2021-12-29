@@ -2,8 +2,6 @@
 
 #include "../windowing/WindowBase.hpp"
 
-#include <glad/glad.h>
-
 #include <algorithm>
 #include <cstddef>
 
@@ -22,6 +20,7 @@ namespace leopph::internal
 		SetUpBuffers(m_Resolution);
 	}
 
+
 	GeometryBuffer::~GeometryBuffer()
 	{
 		glDeleteTextures(static_cast<GLsizei>(m_Textures.size()), m_Textures.data());
@@ -29,15 +28,16 @@ namespace leopph::internal
 		glDeleteFramebuffers(1, &m_FrameBuffer);
 	}
 
+
 	auto GeometryBuffer::Clear() const -> void
 	{
 		for (std::size_t i = 0; i < m_Textures.size(); i++)
 		{
-			glClearNamedFramebufferfv(m_FrameBuffer, GL_COLOR, static_cast<GLint>(i), Vector4{static_cast<Vector3>(WindowBase::Get().ClearColor())}.Data().data());
+			glClearNamedFramebufferfv(m_FrameBuffer, GL_COLOR, static_cast<GLint>(i), CLEAR_COLOR);
 		}
-
-		glClearNamedFramebufferfv(m_FrameBuffer, GL_DEPTH, 0, std::array<GLfloat, 1>{1}.data());
+		glClearNamedFramebufferfi(m_FrameBuffer, GL_DEPTH_STENCIL, 0, CLEAR_DEPTH, CLEAR_STENCIL);
 	}
+
 
 	auto GeometryBuffer::BindForWriting() const -> void
 	{
@@ -45,83 +45,90 @@ namespace leopph::internal
 		glViewport(0, 0, static_cast<GLsizei>(m_Resolution[0]), static_cast<GLsizei>(m_Resolution[1]));
 	}
 
-	auto GeometryBuffer::UnbindFromWriting() const -> void
+
+	auto GeometryBuffer::UnbindFromWriting() -> void
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		const auto& window{WindowBase::Get()};
 		glViewport(0, 0, static_cast<GLsizei>(window.Width()), static_cast<GLsizei>(window.Height()));
 	}
 
-	auto GeometryBuffer::BindForReading(ShaderProgram& shader, const TextureType type, int texUnit) const -> int
+
+	auto GeometryBuffer::BindForReading(ShaderProgram& shader, const Texture type, int texUnit) const -> int
 	{
-		glBindTextureUnit(static_cast<unsigned>(texUnit), m_Textures[type]);
+		glBindTextureUnit(static_cast<unsigned>(texUnit), m_Textures[static_cast<int>(type)]);
 
 		auto uniformName{""};
 
 		switch (type)
 		{
-			case Position:
+		case Texture::Position:
 				uniformName = "u_PositionTexture";
 				break;
 
-			case Normal:
+		case Texture::Normal:
 				uniformName = "u_NormalTexture";
 				break;
 
-			case Ambient:
+		case Texture::Ambient:
 				uniformName = "u_AmbientTexture";
 				break;
 
-			case Diffuse:
+		case Texture::Diffuse:
 				uniformName = "u_DiffuseTexture";
 				break;
 
-			case Specular:
+		case Texture::Specular:
 				uniformName = "u_SpecularTexture";
 				break;
 
-			case Shine:
+		case Texture::Shine:
 				uniformName = "u_ShineTexture";
 				break;
 		}
 
 		shader.SetUniform(uniformName, texUnit);
 
-		m_BindIndices[type] = texUnit;
+		m_BindIndices[static_cast<int>(type)] = texUnit;
 		return ++texUnit;
 	}
+
 
 	auto GeometryBuffer::BindForReading(ShaderProgram& shader, int texUnit) const -> int
 	{
 		for (std::size_t i = 0; i < m_Textures.size(); ++i)
 		{
-			texUnit = BindForReading(shader, static_cast<TextureType>(i), texUnit);
+			texUnit = BindForReading(shader, static_cast<Texture>(i), texUnit);
 		}
 
 		return texUnit;
 	}
 
-	auto GeometryBuffer::UnbindFromReading(const TextureType type) const -> void
+
+	auto GeometryBuffer::UnbindFromReading(const Texture type) const -> void
 	{
-		if (m_BindIndices[type] != BIND_FILL_VALUE)
+		if (m_BindIndices[static_cast<int>(type)] != BIND_FILL_VALUE)
 		{
-			glBindTextureUnit(m_BindIndices[type], 0);
-			m_BindIndices[type] = BIND_FILL_VALUE;
+			glBindTextureUnit(m_BindIndices[static_cast<int>(type)], 0);
+			m_BindIndices[static_cast<int>(type)] = BIND_FILL_VALUE;
 		}
 	}
+
 
 	auto GeometryBuffer::UnbindFromReading() const -> void
 	{
 		for (std::size_t i = 0; i < m_Textures.size(); ++i)
 		{
-			UnbindFromReading(static_cast<TextureType>(i));
+			UnbindFromReading(static_cast<Texture>(i));
 		}
 	}
+
 
 	auto GeometryBuffer::CopyDepthData(const unsigned bufferName) const -> void
 	{
 		glBlitNamedFramebuffer(m_FrameBuffer, bufferName, 0, 0, static_cast<GLint>(m_Resolution[0]), static_cast<GLint>(m_Resolution[1]), 0, 0, static_cast<GLint>(m_Resolution[0]), static_cast<GLint>(m_Resolution[1]), GL_DEPTH_BUFFER_BIT, GL_NEAREST);
 	}
+
 
 	auto GeometryBuffer::SetUpBuffers(const Vector2& res) -> void
 	{
@@ -130,43 +137,44 @@ namespace leopph::internal
 
 		glCreateTextures(GL_TEXTURE_2D, static_cast<GLsizei>(m_Textures.size()), m_Textures.data());
 
-		glTextureStorage2D(m_Textures[Position], 1, GL_RGBA32F, static_cast<GLint>(res[0]), static_cast<GLint>(res[1]));
-		glTextureParameteri(m_Textures[Position], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTextureParameteri(m_Textures[Position], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTextureStorage2D(m_Textures[static_cast<int>(Texture::Position)], 1, GL_RGBA32F, static_cast<GLint>(res[0]), static_cast<GLint>(res[1]));
+		glTextureParameteri(m_Textures[static_cast<int>(Texture::Position)], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTextureParameteri(m_Textures[static_cast<int>(Texture::Position)], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-		glTextureStorage2D(m_Textures[Normal], 1, GL_RGB32F, static_cast<GLint>(res[0]), static_cast<GLint>(res[1]));
-		glTextureParameteri(m_Textures[Normal], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTextureParameteri(m_Textures[Normal], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTextureStorage2D(m_Textures[static_cast<int>(Texture::Normal)], 1, GL_RGB32F, static_cast<GLint>(res[0]), static_cast<GLint>(res[1]));
+		glTextureParameteri(m_Textures[static_cast<int>(Texture::Normal)], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTextureParameteri(m_Textures[static_cast<int>(Texture::Normal)], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-		glTextureStorage2D(m_Textures[Ambient], 1, GL_RGB8, static_cast<GLint>(res[0]), static_cast<GLint>(res[1]));
-		glTextureParameteri(m_Textures[Ambient], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTextureParameteri(m_Textures[Ambient], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTextureStorage2D(m_Textures[static_cast<int>(Texture::Ambient)], 1, GL_RGB8, static_cast<GLint>(res[0]), static_cast<GLint>(res[1]));
+		glTextureParameteri(m_Textures[static_cast<int>(Texture::Ambient)], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTextureParameteri(m_Textures[static_cast<int>(Texture::Ambient)], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-		glTextureStorage2D(m_Textures[Diffuse], 1, GL_RGB8, static_cast<GLint>(res[0]), static_cast<GLint>(res[1]));
-		glTextureParameteri(m_Textures[Diffuse], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTextureParameteri(m_Textures[Diffuse], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTextureStorage2D(m_Textures[static_cast<int>(Texture::Diffuse)], 1, GL_RGB8, static_cast<GLint>(res[0]), static_cast<GLint>(res[1]));
+		glTextureParameteri(m_Textures[static_cast<int>(Texture::Diffuse)], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTextureParameteri(m_Textures[static_cast<int>(Texture::Diffuse)], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-		glTextureStorage2D(m_Textures[Specular], 1, GL_RGB8, static_cast<GLint>(res[0]), static_cast<GLint>(res[1]));
-		glTextureParameteri(m_Textures[Specular], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTextureParameteri(m_Textures[Specular], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTextureStorage2D(m_Textures[static_cast<int>(Texture::Specular)], 1, GL_RGB8, static_cast<GLint>(res[0]), static_cast<GLint>(res[1]));
+		glTextureParameteri(m_Textures[static_cast<int>(Texture::Specular)], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTextureParameteri(m_Textures[static_cast<int>(Texture::Specular)], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-		glTextureStorage2D(m_Textures[Shine], 1, GL_R32F, static_cast<GLint>(res[0]), static_cast<GLint>(res[1]));
-		glTextureParameteri(m_Textures[Shine], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTextureParameteri(m_Textures[Shine], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTextureStorage2D(m_Textures[static_cast<int>(Texture::Shine)], 1, GL_R32F, static_cast<GLint>(res[0]), static_cast<GLint>(res[1]));
+		glTextureParameteri(m_Textures[static_cast<int>(Texture::Shine)], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTextureParameteri(m_Textures[static_cast<int>(Texture::Shine)], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
 		glCreateRenderbuffers(1, &m_DepthBuffer);
-		glNamedRenderbufferStorage(m_DepthBuffer, GL_DEPTH_COMPONENT, static_cast<GLint>(res[0]), static_cast<GLint>(res[1]));
+		glNamedRenderbufferStorage(m_DepthBuffer, GL_DEPTH24_STENCIL8, static_cast<GLint>(res[0]), static_cast<GLint>(res[1]));
 
-		glNamedFramebufferTexture(m_FrameBuffer, GL_COLOR_ATTACHMENT0, m_Textures[Position], 0);
-		glNamedFramebufferTexture(m_FrameBuffer, GL_COLOR_ATTACHMENT1, m_Textures[Normal], 0);
-		glNamedFramebufferTexture(m_FrameBuffer, GL_COLOR_ATTACHMENT2, m_Textures[Ambient], 0);
-		glNamedFramebufferTexture(m_FrameBuffer, GL_COLOR_ATTACHMENT3, m_Textures[Diffuse], 0);
-		glNamedFramebufferTexture(m_FrameBuffer, GL_COLOR_ATTACHMENT4, m_Textures[Specular], 0);
-		glNamedFramebufferTexture(m_FrameBuffer, GL_COLOR_ATTACHMENT5, m_Textures[Shine], 0);
-		glNamedFramebufferRenderbuffer(m_FrameBuffer, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_DepthBuffer);
+		glNamedFramebufferTexture(m_FrameBuffer, GL_COLOR_ATTACHMENT0, m_Textures[static_cast<int>(Texture::Position)], 0);
+		glNamedFramebufferTexture(m_FrameBuffer, GL_COLOR_ATTACHMENT1, m_Textures[static_cast<int>(Texture::Normal)], 0);
+		glNamedFramebufferTexture(m_FrameBuffer, GL_COLOR_ATTACHMENT2, m_Textures[static_cast<int>(Texture::Ambient)], 0);
+		glNamedFramebufferTexture(m_FrameBuffer, GL_COLOR_ATTACHMENT3, m_Textures[static_cast<int>(Texture::Diffuse)], 0);
+		glNamedFramebufferTexture(m_FrameBuffer, GL_COLOR_ATTACHMENT4, m_Textures[static_cast<int>(Texture::Specular)], 0);
+		glNamedFramebufferTexture(m_FrameBuffer, GL_COLOR_ATTACHMENT5, m_Textures[static_cast<int>(Texture::Shine)], 0);
+		glNamedFramebufferRenderbuffer(m_FrameBuffer, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_DepthBuffer);
 
 		glNamedFramebufferDrawBuffers(m_FrameBuffer, static_cast<GLsizei>(m_Textures.size()), std::array<GLenum, 6>{GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5}.data());
 	}
+
 
 	auto GeometryBuffer::OnEventReceived(EventParamType event) -> void
 	{
