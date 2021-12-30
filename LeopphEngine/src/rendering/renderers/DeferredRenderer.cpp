@@ -232,9 +232,9 @@ namespace leopph::internal
 				cascadeFarBounds.push_back(clipSpaceBound);
 			}
 
-			lightShader.SetUniform("u_CascadeCount", static_cast<unsigned>(cascadeCount));
-			lightShader.SetUniform("u_LightClipMatrices", dirLightMatrices);
-			lightShader.SetUniform("u_CascadeFarBounds", cascadeFarBounds);
+			lightShader.SetUniform("u_NumCascades", static_cast<unsigned>(cascadeCount));
+			lightShader.SetUniform("u_CascadeMatrices", dirLightMatrices);
+			lightShader.SetUniform("u_CascadeBounds", cascadeFarBounds);
 			static_cast<void>(m_DirShadowMap.BindForReading(lightShader, texCount));
 		}
 

@@ -1,8 +1,7 @@
 #version 440 core
 
-
 #ifdef CAST_SHADOW
-#define MAX_DIR_LIGHT_CASCADE_COUNT 3
+#define MAX_NUM_CASCADES 3
 #define MIN_SHADOW_BIAS 0.0001
 #define MAX_SHADOW_BIAS 0.01
 #endif
@@ -21,18 +20,20 @@ layout (location = 0) in vec2 in_TexCoords;
 
 layout (location = 0) out vec4 out_FragmentColor;
 
-layout (location = 0) uniform sampler2D u_PositionTexture;
-layout (location = 1) uniform sampler2D u_NormalTexture;
-layout (location = 2) uniform sampler2D u_DiffuseTexture;
-layout (location = 3) uniform sampler2D u_SpecularTexture;
-layout (location = 4) uniform sampler2D u_ShineTexture;
-layout (location = 5) uniform vec3 u_CameraPosition;
-layout (location = 6) uniform DirLight u_DirLight;
+uniform sampler2D u_PositionTexture;
+uniform sampler2D u_NormalTexture;
+uniform sampler2D u_DiffuseTexture;
+uniform sampler2D u_SpecularTexture;
+uniform sampler2D u_ShineTexture;
+
+uniform vec3 u_CameraPosition;
+uniform DirLight u_DirLight;
+
 #ifdef CAST_SHADOW
-layout (location = 9) uniform uint u_CascadeCount;
-layout (location = 10) uniform sampler2DShadow u_DirLightShadowMaps[MAX_DIR_LIGHT_CASCADE_COUNT];
-layout (location = 10 + MAX_DIR_LIGHT_CASCADE_COUNT) uniform mat4 u_LightClipMatrices[MAX_DIR_LIGHT_CASCADE_COUNT];
-layout (location = 10 + 8 * MAX_DIR_LIGHT_CASCADE_COUNT) uniform float u_CascadeFarBounds[MAX_DIR_LIGHT_CASCADE_COUNT];
+uniform uint u_NumCascades;
+uniform mat4 u_CascadeMatrices[MAX_NUM_CASCADES];
+uniform float u_CascadeBounds[MAX_NUM_CASCADES];
+uniform sampler2DShadow u_DirLightShadowMaps[MAX_NUM_CASCADES];
 #endif
 
 
@@ -54,11 +55,11 @@ vec3 CalculateBlinnPhong(vec3 dirToLight, vec3 fragPos, vec3 fragNormal, vec3 fr
 #ifdef CAST_SHADOW
 float CalculateShadow(vec3 fragPos, float fragPosCameraClipZ, vec3 fragNormal)
 {
-	for (int i = 0; i < u_CascadeCount; ++i)
+	for (int i = 0; i < u_NumCascades; ++i)
 	{
-		if (fragPosCameraClipZ < u_CascadeFarBounds[i])
+		if (fragPosCameraClipZ < u_CascadeBounds[i])
 		{
-			vec4 fragPosLightSpace = vec4(fragPos, 1) * u_LightClipMatrices[i];
+			vec4 fragPosLightSpace = vec4(fragPos, 1) * u_CascadeMatrices[i];
 			vec3 normalizedPos = fragPosLightSpace.xyz;
 			normalizedPos *= 0.5;
 			normalizedPos += 0.5;

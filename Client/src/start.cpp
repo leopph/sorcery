@@ -23,6 +23,7 @@ auto leopph::Init() -> void
 	const auto camera{playerEntity->CreateComponent<Camera>()};
 	camera->Background(Skybox{"skybox/megasun/right.hdr","skybox/megasun/left.hdr","skybox/megasun/top.hdr","skybox/megasun/bottom.hdr","skybox/megasun/front.hdr","skybox/megasun/back.hdr"});
 
+	camera->NearClipPlane(0.1f);
 	camera->FarClipPlane(1000);
 
 	playerEntity->CreateComponent<CameraController>();
