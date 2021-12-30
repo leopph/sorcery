@@ -190,22 +190,22 @@ namespace leopph::internal
 
 		if (dirLight->CastsShadow())
 		{
-			static std::vector<Matrix4> dirLightMatrices;
-			static std::vector<float> cascadeFarBounds;
+			static std::vector<Matrix4> cascadeMats;
+			static std::vector<float> cascadeBoundsClip;
 
-			dirLightMatrices.clear();
-			cascadeFarBounds.clear();
+			cascadeMats.clear();
+			cascadeBoundsClip.clear();
 
-			const auto cameraInverseMatrix{camViewMat.Inverse()};
-			const auto lightViewMatrix{Matrix4::LookAt(Vector3{0}, dirLight->Direction(), Vector3::Up())};
-			const auto cascadeCount{Settings::DirShadowCascadeCount()};
+			const auto camInvMat{camViewMat.Inverse()};
+			const auto lightViewMat{Matrix4::LookAt(Vector3{0}, dirLight->Direction(), Vector3::Up())};
+			const auto numCascades{Settings::DirShadowCascadeCount()};
 
-			for (std::size_t i = 0; i < cascadeCount; ++i)
+			for (std::size_t i = 0; i < numCascades; ++i)
 			{
-				const auto lightWorldToClip{m_DirShadowMap.WorldToClipMatrix(i, cameraInverseMatrix, lightViewMatrix)};
-				dirLightMatrices.push_back(lightWorldToClip);
+				const auto cascadeMat{m_DirShadowMap.CascadeMatrix(i, camInvMat, lightViewMat)};
+				cascadeMats.push_back(cascadeMat);
 
-				shadowShader.SetUniform("u_WorldToClipMat", lightWorldToClip);
+				shadowShader.SetUniform("u_WorldToClipMat", cascadeMat);
 
 				m_DirShadowMap.BindForWriting(i);
 				m_DirShadowMap.Clear();
@@ -223,18 +223,18 @@ namespace leopph::internal
 
 			CascadedShadowMap::UnbindFromWriting();
 
-			for (std::size_t i = 0; i < cascadeCount; ++i)
+			for (std::size_t i = 0; i < numCascades; ++i)
 			{
 				const auto viewSpaceBound{m_DirShadowMap.CascadeBoundsViewSpace(i)[1]};
 				const Vector4 viewSpaceBoundVector{0, 0, viewSpaceBound, 1};
 				const auto clipSpaceBoundVector{viewSpaceBoundVector * camProjMat};
 				const auto clipSpaceBound{clipSpaceBoundVector[2]};
-				cascadeFarBounds.push_back(clipSpaceBound);
+				cascadeBoundsClip.push_back(clipSpaceBound);
 			}
 
-			lightShader.SetUniform("u_NumCascades", static_cast<unsigned>(cascadeCount));
-			lightShader.SetUniform("u_CascadeMatrices", dirLightMatrices);
-			lightShader.SetUniform("u_CascadeBounds", cascadeFarBounds);
+			lightShader.SetUniform("u_NumCascades", static_cast<unsigned>(numCascades));
+			lightShader.SetUniform("u_CascadeMatrices", cascadeMats);
+			lightShader.SetUniform("u_CascadeBounds", cascadeBoundsClip);
 			static_cast<void>(m_DirShadowMap.BindForReading(lightShader, texCount));
 		}
 

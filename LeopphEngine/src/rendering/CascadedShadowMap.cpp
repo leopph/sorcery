@@ -80,12 +80,14 @@ namespace leopph::internal
 	}
 
 
-	auto CascadedShadowMap::WorldToClipMatrix(const std::size_t cascadeIndex, const Matrix4& cameraInverseMatrix, const Matrix4& lightViewMatrix) const -> Matrix4
+	auto CascadedShadowMap::CascadeMatrix(const std::size_t cascadeIndex, const Matrix4& cameraInverseMatrix, const Matrix4& lightViewMatrix) const -> Matrix4
 	{
 		const auto& camera{*Camera::Active()};
 		const auto cascadeBounds = CascadeBoundsViewSpace(cascadeIndex);
 		const auto cascadeNear{cascadeBounds[0]};
 		const auto cascadeFar{cascadeBounds[1]};
+
+		// Calculate the cascade's vertices in camera space.
 
 		const auto tanHalfHorizFov{math::Tan(math::ToRadians(camera.Fov(Camera::FovDirection::Horizontal)) / 2.0f)};
 		const auto tanHalfVertFov{math::Tan(math::ToRadians(camera.Fov(Camera::FovDirection::Vertical)) / 2.0f)};
@@ -95,7 +97,8 @@ namespace leopph::internal
 		const auto yn{cascadeNear * tanHalfVertFov};
 		const auto yf{cascadeFar * tanHalfVertFov};
 
-		const std::array frustumVertices
+		// The cascade vertices in camera space.
+		const std::array cascadeVertsCam
 		{
 			Vector4{-xn, -yn, cascadeNear, 1.f},
 			Vector4{xn, -yn, cascadeNear, 1.f},
@@ -107,19 +110,38 @@ namespace leopph::internal
 			Vector4{-xf, yf, cascadeFar, 1.f},
 		};
 
-		Vector3 min{std::numeric_limits<float>::max()};
-		Vector3 max{std::numeric_limits<float>::min()};
+		// The light space mininum point of the bounding box of the cascade
+		Vector3 bBoxMinLight{std::numeric_limits<float>::max()};
+		// The light space maximum point of the bounding box of the cascade
+		Vector3 bBoxMaxLight{std::numeric_limits<float>::min()};
 
+		// Transform from camera space to light space
 		const auto camToLightMat{cameraInverseMatrix * lightViewMatrix};
 
-		std::ranges::for_each(frustumVertices, [&](const auto& vertex)
+		// Calculate the bounding box min and max points by transforming the vertices to light space.
+		std::ranges::for_each(cascadeVertsCam, [&](const auto& vertex)
 		{
-			const auto lightSpaceVertex = vertex * camToLightMat;
-			min = Vector3{std::min(min[0], lightSpaceVertex[0]), std::min(min[1], lightSpaceVertex[1]), std::min(min[2], lightSpaceVertex[2])};
-			max = Vector3{std::max(max[0], lightSpaceVertex[0]), std::max(max[1], lightSpaceVertex[1]), std::max(max[2], lightSpaceVertex[2])};
+			const auto vertLight = vertex * camToLightMat;
+			bBoxMinLight = Vector3{std::min(bBoxMinLight[0], vertLight[0]), std::min(bBoxMinLight[1], vertLight[1]), std::min(bBoxMinLight[2], vertLight[2])};
+			bBoxMaxLight = Vector3{std::max(bBoxMaxLight[0], vertLight[0]), std::max(bBoxMaxLight[1], vertLight[1]), std::max(bBoxMaxLight[2], vertLight[2])};
 		});
 
-		return lightViewMatrix * Matrix4::Ortographic(min[0], max[0], max[1], min[1], 0, max[2]);
+		// The projection matrix that uses the calculated min/max values of the bounding box. Essentially THE bounding box.
+		const auto lightProjMat{Matrix4::Ortographic(bBoxMinLight[0], bBoxMaxLight[0], bBoxMaxLight[1], bBoxMinLight[1], bBoxMinLight[2], bBoxMaxLight[2])};
+
+		// Crop matrix scale factor
+		const Vector2 cropScale{2.f / (bBoxMaxLight[0] - bBoxMinLight[0]), 2.f / (bBoxMaxLight[1] - bBoxMinLight[1])};
+		// Crop matrix offset
+		const Vector2 cropOffset{-0.5f * (bBoxMaxLight[0] + bBoxMinLight[0]) * cropScale[0], -0.5f * (bBoxMaxLight[1] + bBoxMinLight[1]) * cropScale[1]};
+		// Crop matrix
+		const Matrix4 cropMat{
+			cropScale[0], 0, 0, 0,
+			0, cropScale[1], 0, 0,
+			0, 0, 1, 0,
+			cropOffset[0], cropOffset[1], 0, 1
+		};
+
+		return lightViewMatrix * lightProjMat * cropMat;
 	}
 
 

@@ -3,7 +3,7 @@
 #ifdef CAST_SHADOW
 #define MAX_NUM_CASCADES 3
 #define MIN_SHADOW_BIAS 0.0001
-#define MAX_SHADOW_BIAS 0.01
+#define MAX_SHADOW_BIAS 0.0005
 #endif
 
 

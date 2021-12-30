@@ -121,7 +121,7 @@ namespace leopph::internal
 
 				for (std::size_t i = 0; i < cascadeCount; ++i)
 				{
-					const auto lightWorldToClip{m_DirLightShadowMap.WorldToClipMatrix(i, cameraInverseMatrix, lightViewMatrix)};
+					const auto lightWorldToClip{m_DirLightShadowMap.CascadeMatrix(i, cameraInverseMatrix, lightViewMatrix)};
 					dirLightMatrices.push_back(lightWorldToClip);
 
 					nonInstShadowShader.SetUniform("u_WorldToClipMat", lightWorldToClip);

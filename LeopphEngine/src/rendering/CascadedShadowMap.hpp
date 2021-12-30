@@ -39,7 +39,8 @@ namespace leopph::internal
 
 			auto Clear() const -> void;
 
-			[[nodiscard]] auto WorldToClipMatrix(std::size_t cascadeIndex, const Matrix4& cameraInverseMatrix, const Matrix4& lightViewMatrix) const -> Matrix4;
+			// Returns a Matrix that defines the transformation that is used to render world space primitives to shadow maps.
+			[[nodiscard]] auto CascadeMatrix(std::size_t cascadeIndex, const Matrix4& cameraInverseMatrix, const Matrix4& lightViewMatrix) const -> Matrix4;
 			[[nodiscard]] auto CascadeBoundsViewSpace(std::size_t cascadeIndex) const -> Vector2;
 
 		private:

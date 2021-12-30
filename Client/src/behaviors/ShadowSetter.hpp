@@ -15,5 +15,5 @@ class ShadowSetter final : public leopph::Behavior
 
 	private:
 		std::vector<leopph::Model*> m_Models;
-		bool m_Shadow{false};
+		bool m_Shadow{true};
 };

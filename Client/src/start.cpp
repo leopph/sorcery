@@ -32,8 +32,8 @@ auto leopph::Init() -> void
 	portraitEntity->Transform()->Parent(groupEntity);
 	portraitEntity->Transform()->Rotate(Vector3::Up(), 180);
 	portraitEntity->Transform()->Translate(-5, 0, -10, Space::Local);
-	const auto portrairModel = portraitEntity->CreateComponent<Model>("models/portrait/cropped_textured_mesh.obj");
-	portrairModel->CastsShadow(true);
+	const auto portraitModel = portraitEntity->CreateComponent<Model>("models/portrait/cropped_textured_mesh.obj");
+	portraitModel->CastsShadow(true);
 
 	const auto cubeEntity = Entity::CreateEntity("cube");
 	cubeEntity->Transform()->Parent(groupEntity);
@@ -60,7 +60,21 @@ auto leopph::Init() -> void
 	const auto model = entity->CreateComponent<Model>("models/snowy/scene.gltf");
 	model->CastsShadow(true);
 
-	Settings::DirShadowCascades(std::vector{ShadowCascade{4096, 20}, ShadowCascade{2048, 70}, ShadowCascade{1024, static_cast<std::size_t>(camera->FarClipPlane())}});
+	Settings::DirShadowCascades(std::vector{ShadowCascade{4096, 10}, ShadowCascade{2048, 50}, ShadowCascade{1024, 100}});
 
-	Entity::CreateEntity()->CreateComponent<ShadowSetter>(std::vector{portrairModel, cubeModel, model});
+	std::vector<ShadowCascade> cascades;
+	constexpr auto numCascades{3};
+	cascades.reserve(numCascades);
+	constexpr auto correction{0.01f};
+	const auto near{camera->NearClipPlane()};
+	const auto far{camera->FarClipPlane()};
+
+	for (auto i{0}; i < numCascades; ++i)
+	{
+		const auto res {math::Pow(2, 12 - i)};
+		const auto bound{correction * near * math::Pow(far / near, (i + 1.f) / numCascades) + (1 - correction) * (near + ((i + 1.f) / numCascades) * (far - near))};
+		cascades.emplace_back(res, bound);
+	}
+	Settings::DirShadowCascades(cascades);
+	Entity::CreateEntity()->CreateComponent<ShadowSetter>(std::vector{portraitModel, cubeModel, model});
 }

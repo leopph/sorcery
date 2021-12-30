@@ -9,7 +9,12 @@ using leopph::KeyCode;
 ShadowSetter::ShadowSetter(leopph::Entity* const entity, const std::span<leopph::Model* const> models) :
 	Behavior{entity},
 	m_Models{models.begin(), models.end()}
-{}
+{
+	std::ranges::for_each(m_Models, [&](const auto model)
+	{
+		model->CastsShadow(m_Shadow);
+	});
+}
 
 
 auto ShadowSetter::OnFrameUpdate() -> void
@@ -17,7 +22,7 @@ auto ShadowSetter::OnFrameUpdate() -> void
 	if (Input::GetKeyDown(KeyCode::T))
 	{
 		m_Shadow = !m_Shadow;
-		std::ranges::for_each(m_Models, [=](const auto model)
+		std::ranges::for_each(m_Models, [&](const auto model)
 		{
 			model->CastsShadow(m_Shadow);
 		});
