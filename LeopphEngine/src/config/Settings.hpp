@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../api/LeopphApi.hpp"
-#include "../misc/ShadowCascade.hpp"
 
 #include <cstddef>
 #include <filesystem>

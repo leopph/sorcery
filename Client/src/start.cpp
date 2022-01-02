@@ -59,4 +59,6 @@ auto leopph::Init() -> void
 	entity->Transform()->Rescale(-100, -100, -100);
 	const auto model = entity->CreateComponent<Model>("models/snowy/scene.gltf");
 	model->CastsShadow(true);
+
+	Entity::CreateEntity()->CreateComponent<ShadowSetter>(std::vector{model, portraitModel, cubeModel});
 }

@@ -157,7 +157,6 @@
     <ClInclude Include="src\util\concepts\Idable.hpp" />
     <ClInclude Include="src\util\concepts\Pointer.hpp" />
     <ClInclude Include="src\util\hash\IdHash.hpp" />
-    <ClInclude Include="src\misc\ShadowCascade.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\cpp.hint" />

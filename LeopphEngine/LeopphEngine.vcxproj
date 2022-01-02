@@ -150,7 +150,6 @@
     <ClInclude Include="src\input\KeyCode.hpp" />
     <ClInclude Include="src\input\KeyState.hpp" />
     <ClInclude Include="src\misc\Color.hpp" />
-    <ClInclude Include="src\misc\ShadowCascade.hpp" />
     <ClInclude Include="src\rendering\CascadedShadowMap.hpp" />
     <ClInclude Include="src\rendering\CubeShadowMap.hpp" />
     <ClInclude Include="src\rendering\geometry\FileMeshDataGroup.hpp" />
