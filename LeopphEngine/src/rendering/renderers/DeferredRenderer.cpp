@@ -203,7 +203,7 @@ namespace leopph::internal
 
 			for (std::size_t i = 0; i < numCascades; ++i)
 			{
-				const auto cascadeMat{m_DirShadowMap.CascadeMatrix(cascadeBounds[i], camInvMat, lightViewMat)};
+				const auto cascadeMat{m_DirShadowMap.CascadeMatrix(cascadeBounds[i], camInvMat, lightViewMat, dirLight->ShadowExtension())};
 				cascadeMats.push_back(cascadeMat);
 
 				shadowShader.SetUniform("u_WorldToClipMat", cascadeMat);

@@ -16,6 +16,16 @@ namespace leopph
 			// This is exactly the same as the owning Entity's forward, or Z vector.
 			[[nodiscard]] constexpr auto Direction() const noexcept -> auto&;
 
+			// This value is used as an offset on the shadow cascades' bounding boxes
+			// to extend shadowing to occluders not visible to the active Camera.
+			// The returned value is always non-negative.
+			[[nodiscard]] constexpr auto ShadowExtension() const noexcept;
+
+			// This value is used as an offset on the shadow cascades' bounding boxes
+			// to extend shadowing to occluders not visible to the active Camera.
+			// The input will be clamped to the range [0, inf).
+			auto ShadowExtension(float newRange);
+
 			LEOPPHAPI explicit DirectionalLight(leopph::Entity* entity);
 
 			DirectionalLight(const DirectionalLight&) = delete;
@@ -25,6 +35,9 @@ namespace leopph
 			auto operator=(DirectionalLight&&) -> void = delete;
 
 			LEOPPHAPI ~DirectionalLight() override;
+
+		private:
+			float m_ShadowRange{50.f};
 	};
 
 
@@ -33,4 +46,9 @@ namespace leopph
 		return Entity()->Transform()->Forward();
 	}
 
+
+	constexpr auto DirectionalLight::ShadowExtension() const noexcept
+	{
+		return m_ShadowRange;
+	}
 }

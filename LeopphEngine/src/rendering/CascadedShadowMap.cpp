@@ -80,7 +80,7 @@ namespace leopph::internal
 	}
 
 
-	auto CascadedShadowMap::CascadeMatrix(const CascadeBounds cascadeBounds, const Matrix4& cameraInverseMatrix, const Matrix4& lightViewMatrix) const -> Matrix4
+	auto CascadedShadowMap::CascadeMatrix(const CascadeBounds cascadeBounds, const Matrix4& cameraInverseMatrix, const Matrix4& lightViewMatrix, const float bBoxNearOffset) const -> Matrix4
 	{
 		const auto& camera{*Camera::Active()};
 
@@ -123,28 +123,10 @@ namespace leopph::internal
 			bBoxMaxLight = Vector3{std::max(bBoxMaxLight[0], vertLight[0]), std::max(bBoxMaxLight[1], vertLight[1]), std::max(bBoxMaxLight[2], vertLight[2])};
 		});
 
-		// The projection matrix that uses the calculated min/max values of the bounding box. Essentially THE bounding box.
-		auto lightProjMat{Matrix4::Ortographic(bBoxMinLight[0], bBoxMaxLight[0], bBoxMaxLight[1], bBoxMinLight[1], bBoxMinLight[2], bBoxMaxLight[2])};
+		// The projection matrix that uses the calculated min/max values of the bounding box. Essentially THE bounding box + the near clip offset of the DirectionalLight.
+		const auto lightProjMat{Matrix4::Ortographic(bBoxMinLight[0], bBoxMaxLight[0], bBoxMaxLight[1], bBoxMinLight[1], bBoxMinLight[2] - bBoxNearOffset, bBoxMaxLight[2])};
 
 		return lightViewMatrix * lightProjMat;
-
-		// CROP MATRIX TODO
-
-		lightProjMat = Matrix4::Ortographic(-1, 1, 1, -1, bBoxMinLight[2], bBoxMaxLight[2]);
-
-		// Crop matrix scale factor
-		const auto cropScale{Vector2{2.f} / Vector2{bBoxMaxLight[0] - bBoxMinLight[0], bBoxMaxLight[1] - bBoxMinLight[1]}};
-		// Crop matrix offset
-		const auto cropOffset{Vector2{-.5f} * Vector2{bBoxMaxLight[0] + bBoxMinLight[0], bBoxMaxLight[1] + bBoxMinLight[1]} * cropScale};
-		// Crop matrix
-		const Matrix4 cropMat{
-			cropScale[0], 0, 0, 0,
-			0, cropScale[1], 0, 0,
-			0, 0, 1, 0,
-			cropOffset[0], cropOffset[1], 0, 1
-		};
-
-		return lightViewMatrix * lightProjMat * cropMat;
 	}
 
 

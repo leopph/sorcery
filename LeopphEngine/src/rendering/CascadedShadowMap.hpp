@@ -40,7 +40,7 @@ namespace leopph::internal
 			auto Clear() const -> void;
 
 			// Returns a Matrix that defines the transformation that is used to render world space primitives to shadow maps.
-			[[nodiscard]] auto CascadeMatrix(CascadeBounds cascadeBounds, const Matrix4& cameraInverseMatrix, const Matrix4& lightViewMatrix) const -> Matrix4;
+			[[nodiscard]] auto CascadeMatrix(CascadeBounds cascadeBounds, const Matrix4& cameraInverseMatrix, const Matrix4& lightViewMatrix, float bBoxNearOffset) const -> Matrix4;
 
 			// Returns the bounds of the used shadow cascades in camera view space.
 			[[nodiscard]] auto CalculateCascadeBounds(const Camera& cam) const -> std::span<CascadeBounds>;
