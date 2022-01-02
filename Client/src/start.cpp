@@ -24,7 +24,7 @@ auto leopph::Init() -> void
 	camera->Background(Skybox{"skybox/megasun/right.hdr","skybox/megasun/left.hdr","skybox/megasun/top.hdr","skybox/megasun/bottom.hdr","skybox/megasun/front.hdr","skybox/megasun/back.hdr"});
 
 	camera->NearClipPlane(0.1f);
-	camera->FarClipPlane(1000);
+	camera->FarClipPlane(100);
 
 	playerEntity->CreateComponent<CameraController>();
 
@@ -59,22 +59,4 @@ auto leopph::Init() -> void
 	entity->Transform()->Rescale(-100, -100, -100);
 	const auto model = entity->CreateComponent<Model>("models/snowy/scene.gltf");
 	model->CastsShadow(true);
-
-	Settings::DirShadowCascades(std::vector{ShadowCascade{4096, 10}, ShadowCascade{2048, 50}, ShadowCascade{1024, 100}});
-
-	std::vector<ShadowCascade> cascades;
-	constexpr auto numCascades{3};
-	cascades.reserve(numCascades);
-	constexpr auto correction{0.01f};
-	const auto near{camera->NearClipPlane()};
-	const auto far{camera->FarClipPlane()};
-
-	for (auto i{0}; i < numCascades; ++i)
-	{
-		const auto res {math::Pow(2, 12 - i)};
-		const auto bound{correction * near * math::Pow(far / near, (i + 1.f) / numCascades) + (1 - correction) * (near + ((i + 1.f) / numCascades) * (far - near))};
-		cascades.emplace_back(res, bound);
-	}
-	Settings::DirShadowCascades(cascades);
-	Entity::CreateEntity()->CreateComponent<ShadowSetter>(std::vector{portraitModel, cubeModel, model});
 }

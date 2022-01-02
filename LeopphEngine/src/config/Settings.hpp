@@ -42,9 +42,11 @@ namespace leopph
 			// Get the currently used rendering API.
 			[[nodiscard]] inline static auto RenderingApi() noexcept;
 
-			// Get the properties of the cascades used by DirectionalLights.
-			// More and higher resolution cascades require more VRAM.
-			[[nodiscard]] inline static auto DirShadowCascades() -> const auto&;
+			// Get the resolution of the shadow maps used by DirectionalLights.
+			// Resolutions are returned in the order of the cascades that use them.
+			// More values mean more cascade splits.
+			// Higher values produce better quality shadows but increase VRAM and computation costs.
+			[[nodiscard]] inline static auto DirShadowRes() -> const auto&;
 
 			// Get the resolution of the shadows cast by SpotLights.
 			// Higher values produce sharper shadows but require more VRAM.
@@ -64,6 +66,9 @@ namespace leopph
 			// Higher values mean more detailed lighting but can significantly reduce performance.
 			[[nodiscard]] inline static auto MaxPointLightCount() noexcept;
 
+			// Get the correction factor when calculating shadow cascade bounds for DirectionalLights.
+			inline static auto DirLightShadowCascadeCorrection() noexcept;
+
 			// Get whether shaders are cached after compilation, or recompiled during each run.
 			[[nodiscard]] LEOPPHAPI static auto CacheShaders() -> bool;
 
@@ -72,7 +77,7 @@ namespace leopph
 			[[nodiscard]] LEOPPHAPI static auto Vsync() -> bool;
 
 			// Get the current number of shadow cascades DirectionalLights use.
-			// This is the same as the size of the vector set and returned by Settings::DirShadowCascades.
+			// This is the same as the size of the container set and returned by Settings::DirShadowRes.
 			[[nodiscard]] LEOPPHAPI static auto DirShadowCascadeCount() -> std::size_t;
 
 			// Set where on the disk shaders are cached after compilation.
@@ -101,13 +106,18 @@ namespace leopph
 			// Higher values mean more detailed lighting but can significantly reduce performance.
 			inline static auto MaxPointLightCount(std::size_t newCount) noexcept;
 
+			// Set the correction factor when calculating shadow cascade bounds for DirectionalLights.
+			inline static auto DirLightShadowCascadeCorrection(float newCor) noexcept;
+
 			// Set whether Vsync is turned on.
 			// This has exactly the same effect as using Window::Vsync.
 			LEOPPHAPI static auto Vsync(bool value) -> void;
 
-			// Set the properties of the cascades used by DirectionalLights.
-			// More and higher resolution cascades require more VRAM.
-			LEOPPHAPI static auto DirShadowCascades(std::span<const ShadowCascade> cascades) -> void;
+			// Set the resolution of the shadow maps used by DirectionalLights.
+			// Resolutions are accepted in the order of the cascades that use them.
+			// More values mean more cascade splits.
+			// Higher values produce better quality shadows but increase VRAM and computation costs.
+			LEOPPHAPI static auto DirShadowRes(std::span<const std::size_t> cascades) -> void;
 
 			// Set the resolution of the shadows cast by SpotLights.
 			// Higher values produce sharper shadows but require more VRAM.
@@ -115,7 +125,7 @@ namespace leopph
 
 		private:
 			static std::filesystem::path s_CacheLoc;
-			static std::vector<ShadowCascade> s_DirShadowRes;
+			static std::vector<std::size_t> s_DirShadowRes;
 			static std::size_t s_SpotShadowRes;
 			static std::size_t s_PointShadowRes;
 			static std::size_t s_NumMaxSpot;
@@ -124,6 +134,7 @@ namespace leopph
 			static GraphicsApi s_PendingApi;
 			static RenderType s_Pipeline;
 			static RenderType s_PendingPipeline;
+			static float s_DirShadowCascadeCorrection;
 	};
 
 
@@ -145,7 +156,7 @@ namespace leopph
 	}
 
 
-	inline auto Settings::DirShadowCascades() -> const auto&
+	inline auto Settings::DirShadowRes() -> const auto&
 	{
 		return s_DirShadowRes;
 	}
@@ -172,6 +183,12 @@ namespace leopph
 	inline auto Settings::MaxPointLightCount() noexcept
 	{
 		return s_NumMaxPoint;
+	}
+
+
+	inline auto Settings::DirLightShadowCascadeCorrection() noexcept
+	{
+		return s_DirShadowCascadeCorrection;
 	}
 
 
@@ -208,5 +225,11 @@ namespace leopph
 	inline auto Settings::MaxPointLightCount(const std::size_t newCount) noexcept
 	{
 		s_NumMaxPoint = newCount;
+	}
+
+
+	inline auto Settings::DirLightShadowCascadeCorrection(const float newCor) noexcept
+	{
+		s_DirShadowCascadeCorrection = newCor;
 	}
 }

@@ -1,10 +1,12 @@
 #pragma once
 
+#include "../CascadedShadowMap.hpp"
 #include "../../components/lighting/PointLight.hpp"
 #include "../../components/lighting/SpotLight.hpp"
 #include "../../math/Matrix.hpp"
 #include "../geometry/GlMeshGroup.hpp"
 
+#include <span>
 #include <vector>
 
 
@@ -29,11 +31,13 @@ namespace leopph::internal
 			};
 
 
-			auto CollectRenderables() -> const std::vector<RenderableData>&;
+			[[nodiscard]] auto CollectRenderables() -> const std::vector<RenderableData>&;
 			// Returns the first MAX_SPOT_LIGHT_COUNT SpotLights based on distance to the active Camera.
-			auto CollectSpotLights() -> const std::vector<const SpotLight*>&;
+			[[nodiscard]] auto CollectSpotLights() -> const std::vector<const SpotLight*>&;
 			// Returns the first MAX_POINT_LIGHT_COUNT PointLights based on distance to the active Camera.
-			auto CollectPointLights() -> const std::vector<const PointLight*>&;
+			[[nodiscard]] auto CollectPointLights() -> const std::vector<const PointLight*>&;
+			// Returns a collection of cascade far bounds in clip space.
+			[[nodiscard]] static auto CascadeFarBoundsClip(const Matrix4& camProjMat, std::span<const CascadedShadowMap::CascadeBounds> cascadeBounds) -> std::vector<float>;
 
 			Renderer() = default;
 

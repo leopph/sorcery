@@ -2,7 +2,6 @@
 
 #include "../../components/Camera.hpp"
 #include "../../components/lighting/AmbientLight.hpp"
-#include "../../config/Settings.hpp"
 #include "../../data/DataManager.hpp"
 #include "../../math/LeopphMath.hpp"
 #include "../../math/Matrix.hpp"
@@ -82,6 +81,7 @@ namespace leopph::internal
 		glEnable(GL_STENCIL_TEST);
 	}
 
+
 	auto DeferredRenderer::Render() -> void
 	{
 		/* We don't render if there is no camera to use */
@@ -98,7 +98,6 @@ namespace leopph::internal
 		const auto& pointLights{CollectPointLights()};
 		const auto& spotLights{CollectSpotLights()};
 
-		
 		glStencilFunc(GL_ALWAYS, STENCIL_REF, STENCIL_AND_MASK);
 		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 		RenderGeometry(camViewMat, camProjMat, renderables);
@@ -122,6 +121,7 @@ namespace leopph::internal
 		m_RenderBuffer.CopyColorToDefaultBuffer();
 	}
 
+
 	auto DeferredRenderer::RenderGeometry(const Matrix4& camViewMat, const Matrix4& camProjMat, const std::vector<RenderableData>& renderables) -> void
 	{
 		static auto flagInfo{m_GeometryShader.GetFlagInfo()};
@@ -144,6 +144,7 @@ namespace leopph::internal
 		GeometryBuffer::UnbindFromWriting();
 	}
 
+
 	auto DeferredRenderer::RenderAmbientLight() -> void
 	{
 		static auto ambientFlagInfo{m_AmbientShader.GetFlagInfo()};
@@ -156,6 +157,7 @@ namespace leopph::internal
 
 		m_RenderBuffer.DrawQuad();
 	}
+
 
 	auto DeferredRenderer::RenderDirectionalLights(const Matrix4& camViewMat, const Matrix4& camProjMat, const std::vector<RenderableData>& renderables) -> void
 	{
@@ -191,18 +193,20 @@ namespace leopph::internal
 		if (dirLight->CastsShadow())
 		{
 			static std::vector<Matrix4> cascadeMats;
-			static std::vector<float> cascadeBoundsClip;
+			static std::vector<float> cascadeFarBoundsClip;
 
 			cascadeMats.clear();
-			cascadeBoundsClip.clear();
 
 			const auto camInvMat{camViewMat.Inverse()};
 			const auto lightViewMat{Matrix4::LookAt(Vector3{0}, dirLight->Direction(), Vector3::Up())};
-			const auto numCascades{Settings::DirShadowCascadeCount()};
+
+			const auto cascadeBounds{m_DirShadowMap.CalculateCascadeBounds(*Camera::Active())};
+			cascadeFarBoundsClip = CascadeFarBoundsClip(camProjMat, cascadeBounds);
+			const auto numCascades{cascadeBounds.size()};
 
 			for (std::size_t i = 0; i < numCascades; ++i)
 			{
-				const auto cascadeMat{m_DirShadowMap.CascadeMatrix(i, camInvMat, lightViewMat)};
+				const auto cascadeMat{m_DirShadowMap.CascadeMatrix(cascadeBounds[i], camInvMat, lightViewMat)};
 				cascadeMats.push_back(cascadeMat);
 
 				shadowShader.SetUniform("u_WorldToClipMat", cascadeMat);
@@ -223,24 +227,16 @@ namespace leopph::internal
 
 			CascadedShadowMap::UnbindFromWriting();
 
-			for (std::size_t i = 0; i < numCascades; ++i)
-			{
-				const auto viewSpaceBound{m_DirShadowMap.CascadeBoundsViewSpace(i)[1]};
-				const Vector4 viewSpaceBoundVector{0, 0, viewSpaceBound, 1};
-				const auto clipSpaceBoundVector{viewSpaceBoundVector * camProjMat};
-				const auto clipSpaceBound{clipSpaceBoundVector[2]};
-				cascadeBoundsClip.push_back(clipSpaceBound);
-			}
-
 			lightShader.SetUniform("u_NumCascades", static_cast<unsigned>(numCascades));
 			lightShader.SetUniform("u_CascadeMatrices", cascadeMats);
-			lightShader.SetUniform("u_CascadeBounds", cascadeBoundsClip);
+			lightShader.SetUniform("u_CascadeBounds", cascadeFarBoundsClip);
 			static_cast<void>(m_DirShadowMap.BindForReading(lightShader, texCount));
 		}
 
 		lightShader.Use();
 		m_RenderBuffer.DrawQuad();
 	}
+
 
 	auto DeferredRenderer::RenderSpotLights(const std::vector<const SpotLight*>& spotLights, const std::vector<RenderableData>& renderables) -> void
 	{
@@ -305,11 +301,12 @@ namespace leopph::internal
 			lightShader.SetUniform("u_SpotLight.innerAngleCosine", math::Cos(math::ToRadians(spotLight->InnerAngle())));
 			lightShader.SetUniform("u_SpotLight.outerAngleCosine", math::Cos(math::ToRadians(spotLight->OuterAngle())));
 			lightShader.SetUniform("u_LightWorldToClipMatrix", lightWorldToClipMat);
-			
+
 			lightShader.Use();
 			m_RenderBuffer.DrawQuad();
 		}
 	}
+
 
 	auto DeferredRenderer::RenderPointLights(const std::vector<const PointLight*>& pointLights, const std::vector<RenderableData>& renderables) -> void
 	{
@@ -393,6 +390,7 @@ namespace leopph::internal
 			m_RenderBuffer.DrawQuad();
 		}
 	}
+
 
 	auto DeferredRenderer::RenderSkybox(const Matrix4& camViewMat, const Matrix4& camProjMat) -> void
 	{

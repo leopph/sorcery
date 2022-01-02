@@ -60,12 +60,11 @@ float CalculateShadow(vec3 fragPos, float fragPosCameraClipZ, vec3 fragNormal)
 		if (fragPosCameraClipZ < u_CascadeBounds[i])
 		{
 			vec4 fragPosLightSpace = vec4(fragPos, 1) * u_CascadeMatrices[i];
-			vec3 normalizedPos = fragPosLightSpace.xyz;
-			normalizedPos *= 0.5;
-			normalizedPos += 0.5;
+			vec3 normalizedPos = fragPosLightSpace.xyz * 0.5 + 0.5;
 			
-			float bias = max(MAX_SHADOW_BIAS * (1.0 - dot(fragNormal, -u_DirLight.direction)), MIN_SHADOW_BIAS);
+			const float bias = max(MAX_SHADOW_BIAS * (1.0 - dot(fragNormal, -u_DirLight.direction)), MIN_SHADOW_BIAS);
 			return texture(u_DirLightShadowMaps[i], vec3(normalizedPos.xy, normalizedPos.z - bias));
+			//return texture(u_DirLightShadowMaps[i], normalizedPos);
 		}
 	}
 	return 1.0;

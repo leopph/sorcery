@@ -1,11 +1,9 @@
 #pragma once
 
 #include "../components/Camera.hpp"
-#include "../events/DirCascadeChangeEvent.hpp"
+#include "../events/DirShadowResChangeEvent.hpp"
 #include "../events/handling/EventReceiver.hpp"
 #include "../math/Matrix.hpp"
-#include "../math/Vector.hpp"
-#include "../misc/ShadowCascade.hpp"
 #include "shaders/ShaderProgram.hpp"
 
 #include <glad/glad.h>
@@ -17,15 +15,17 @@
 
 namespace leopph::internal
 {
-	class CascadedShadowMap final : public EventReceiver<DirCascadeChangeEvent>
+	class CascadedShadowMap final : public EventReceiver<DirShadowResChangeEvent>
 	{
 		public:
+			struct CascadeBounds;
+
 			CascadedShadowMap();
 
 			CascadedShadowMap(const CascadedShadowMap& other) = delete;
-			CascadedShadowMap(CascadedShadowMap&& other) = delete;
-
 			auto operator=(const CascadedShadowMap& other) -> CascadedShadowMap& = delete;
+
+			CascadedShadowMap(CascadedShadowMap&& other) = delete;
 			auto operator=(CascadedShadowMap&& other) -> CascadedShadowMap& = delete;
 
 			~CascadedShadowMap() noexcept override;
@@ -40,17 +40,30 @@ namespace leopph::internal
 			auto Clear() const -> void;
 
 			// Returns a Matrix that defines the transformation that is used to render world space primitives to shadow maps.
-			[[nodiscard]] auto CascadeMatrix(std::size_t cascadeIndex, const Matrix4& cameraInverseMatrix, const Matrix4& lightViewMatrix) const -> Matrix4;
-			[[nodiscard]] auto CascadeBoundsViewSpace(std::size_t cascadeIndex) const -> Vector2;
+			[[nodiscard]] auto CascadeMatrix(CascadeBounds cascadeBounds, const Matrix4& cameraInverseMatrix, const Matrix4& lightViewMatrix) const -> Matrix4;
+
+			// Returns the bounds of the used shadow cascades in camera view space.
+			[[nodiscard]] auto CalculateCascadeBounds(const Camera& cam) const -> std::vector<CascadeBounds>;
 
 		private:
-			auto OnEventReceived(const DirCascadeChangeEvent& event) -> void override;
-			auto Init(std::span<const ShadowCascade> cascades) -> void;
-			auto Deinit() const -> void;
+			auto OnEventReceived(const DirShadowResChangeEvent& event) -> void override;
+			auto InitShadowMaps(std::span<const std::size_t> ress) -> void;
+			auto DeinitShadowMaps() const -> void;
 
 			GLuint m_Framebuffer;
-			std::vector<GLuint> m_Textures;
-			int m_TexBindStartIndex;
-			std::vector<Matrix4> m_ProjMatrices;
+			std::vector<GLuint> m_ShadowMaps;
+			// The binding index of the first shadow map.
+			// Shadow maps are bound to contiguously.
+			int m_FirstBindIndex;
+	};
+
+
+	// Utility struct for storing info about shadow cascades
+	struct CascadedShadowMap::CascadeBounds
+	{
+		// The edge of the cascade closer to the camera.
+		float Near;
+		// The edge of the cascade farther from the camera.
+		float Far;
 	};
 }

@@ -11,6 +11,6 @@ namespace leopph
 		// The resolution of the square shadow map when using this cascade.
 		std::size_t Resolution;
 		// The distance from the Camera at which rendering switches to the next cascade.
-		std::size_t Bound;
+		float Bound;
 	};
 }

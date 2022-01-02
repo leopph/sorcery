@@ -88,6 +88,19 @@ namespace leopph::internal
 	}
 
 
+	auto Renderer::CascadeFarBoundsClip(const Matrix4& camProjMat, const std::span<const CascadedShadowMap::CascadeBounds> cascadeBounds) -> std::vector<float>
+	{
+		std::vector<float> farBounds;
+		farBounds.reserve(cascadeBounds.size());
+		// Essentially we calculate (0, 0, bounds.Far, 1) * camProjMat, then take its Z component.
+		std::ranges::transform(cascadeBounds, std::back_inserter(farBounds), [&](const auto& bounds)
+		{
+			return bounds.Far * camProjMat[2][2] + camProjMat[3][2];
+		});
+		return farBounds;
+	}
+
+
 	auto Renderer::CompareLightsByDistToCam(const Light* left, const Light* right) -> bool
 	{
 		const auto& camPosition{Camera::Active()->Entity()->Transform()->Position()};
