@@ -7,6 +7,7 @@
 #include "../../util/hash/StringHash.hpp"
 
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -38,11 +39,11 @@ namespace leopph::internal
 			auto SetUniform(std::string_view name, float value) -> void;
 			auto SetUniform(std::string_view name, const Vector3& value) -> void;
 			auto SetUniform(std::string_view name, const Matrix4& value) -> void;
-			auto SetUniform(std::string_view name, const std::vector<int>& value) -> void;
-			auto SetUniform(std::string_view name, const std::vector<unsigned>& value) -> void;
-			auto SetUniform(std::string_view name, const std::vector<float>& value) -> void;
-			auto SetUniform(std::string_view name, const std::vector<Vector3>& value) -> void;
-			auto SetUniform(std::string_view name, const std::vector<Matrix4>& value) -> void;
+			auto SetUniform(std::string_view name, std::span<const int> values) -> void;
+			auto SetUniform(std::string_view name, std::span<const unsigned> values) -> void;
+			auto SetUniform(std::string_view name, std::span<const float> values) -> void;
+			auto SetUniform(std::string_view name, std::span<const Vector3> values) -> void;
+			auto SetUniform(std::string_view name, std::span<const Matrix4> values) -> void;
 
 			auto SetBufferBinding(std::string_view bufName, int bindingIndex) -> void;
 

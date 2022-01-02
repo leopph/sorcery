@@ -142,7 +142,7 @@ namespace leopph::internal
 	}
 
 
-	auto CascadedShadowMap::CalculateCascadeBounds(const Camera& cam) const -> std::vector<CascadeBounds>
+	auto CascadedShadowMap::CalculateCascadeBounds(const Camera& cam) const -> std::span<CascadeBounds>
 	{
 		const auto nearClip{cam.NearClipPlane()};
 		const auto farClip{cam.FarClipPlane()};
@@ -153,7 +153,8 @@ namespace leopph::internal
 		// On bound borders the far plane is multiplied by this value to avoid precision problems.
 		constexpr auto nearFarMult{1.005f};
 
-		std::vector<CascadeBounds> bounds(numCascades);
+		static std::vector<CascadeBounds> bounds;
+		bounds.resize(numCascades);
 
 		bounds[0].Near = nearClip;
 		for (auto i{1ull}; i < numCascades; ++i)

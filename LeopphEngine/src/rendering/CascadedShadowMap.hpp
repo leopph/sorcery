@@ -43,7 +43,7 @@ namespace leopph::internal
 			[[nodiscard]] auto CascadeMatrix(CascadeBounds cascadeBounds, const Matrix4& cameraInverseMatrix, const Matrix4& lightViewMatrix) const -> Matrix4;
 
 			// Returns the bounds of the used shadow cascades in camera view space.
-			[[nodiscard]] auto CalculateCascadeBounds(const Camera& cam) const -> std::vector<CascadeBounds>;
+			[[nodiscard]] auto CalculateCascadeBounds(const Camera& cam) const -> std::span<CascadeBounds>;
 
 		private:
 			auto OnEventReceived(const DirShadowResChangeEvent& event) -> void override;

@@ -193,15 +193,12 @@ namespace leopph::internal
 		if (dirLight->CastsShadow())
 		{
 			static std::vector<Matrix4> cascadeMats;
-			static std::vector<float> cascadeFarBoundsClip;
-
 			cascadeMats.clear();
 
 			const auto camInvMat{camViewMat.Inverse()};
 			const auto lightViewMat{Matrix4::LookAt(Vector3{0}, dirLight->Direction(), Vector3::Up())};
 
 			const auto cascadeBounds{m_DirShadowMap.CalculateCascadeBounds(*Camera::Active())};
-			cascadeFarBoundsClip = CascadeFarBoundsClip(camProjMat, cascadeBounds);
 			const auto numCascades{cascadeBounds.size()};
 
 			for (std::size_t i = 0; i < numCascades; ++i)
@@ -229,7 +226,7 @@ namespace leopph::internal
 
 			lightShader.SetUniform("u_NumCascades", static_cast<unsigned>(numCascades));
 			lightShader.SetUniform("u_CascadeMatrices", cascadeMats);
-			lightShader.SetUniform("u_CascadeBounds", cascadeFarBoundsClip);
+			lightShader.SetUniform("u_CascadeBounds", CascadeFarBoundsClip(camProjMat, cascadeBounds));
 			static_cast<void>(m_DirShadowMap.BindForReading(lightShader, texCount));
 		}
 

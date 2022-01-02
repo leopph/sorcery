@@ -37,7 +37,7 @@ namespace leopph::internal
 			// Returns the first MAX_POINT_LIGHT_COUNT PointLights based on distance to the active Camera.
 			[[nodiscard]] auto CollectPointLights() -> const std::vector<const PointLight*>&;
 			// Returns a collection of cascade far bounds in clip space.
-			[[nodiscard]] static auto CascadeFarBoundsClip(const Matrix4& camProjMat, std::span<const CascadedShadowMap::CascadeBounds> cascadeBounds) -> std::vector<float>;
+			[[nodiscard]] static auto CascadeFarBoundsClip(const Matrix4& camProjMat, std::span<const CascadedShadowMap::CascadeBounds> cascadeBounds) -> std::span<const float>;
 
 			Renderer() = default;
 

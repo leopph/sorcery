@@ -104,29 +104,29 @@ namespace leopph::internal
 		glProgramUniformMatrix4fv(m_ProgramName, GetUniformLocation(name), 1, GL_TRUE, reinterpret_cast<const GLfloat*>(value.Data().data()));
 	}
 
-	auto ShaderProgram::SetUniform(const std::string_view name, const std::vector<int>& value) -> void
+	auto ShaderProgram::SetUniform(const std::string_view name, const std::span<const int> values) -> void
 	{
-		glProgramUniform1iv(m_ProgramName, GetUniformLocation(name), static_cast<GLsizei>(value.size()), value.data());
+		glProgramUniform1iv(m_ProgramName, GetUniformLocation(name), static_cast<GLsizei>(values.size()), values.data());
 	}
 
-	auto ShaderProgram::SetUniform(const std::string_view name, const std::vector<unsigned>& value) -> void
+	auto ShaderProgram::SetUniform(const std::string_view name, const std::span<const unsigned> values) -> void
 	{
-		glProgramUniform1uiv(m_ProgramName, GetUniformLocation(name), static_cast<GLsizei>(value.size()), value.data());
+		glProgramUniform1uiv(m_ProgramName, GetUniformLocation(name), static_cast<GLsizei>(values.size()), values.data());
 	}
 
-	auto ShaderProgram::SetUniform(const std::string_view name, const std::vector<float>& value) -> void
+	auto ShaderProgram::SetUniform(const std::string_view name, const std::span<const float> values) -> void
 	{
-		glProgramUniform1fv(m_ProgramName, GetUniformLocation(name), static_cast<GLsizei>(value.size()), value.data());
+		glProgramUniform1fv(m_ProgramName, GetUniformLocation(name), static_cast<GLsizei>(values.size()), values.data());
 	}
 
-	auto ShaderProgram::SetUniform(const std::string_view name, const std::vector<Vector3>& value) -> void
+	auto ShaderProgram::SetUniform(const std::string_view name, const std::span<const Vector3> values) -> void
 	{
-		glProgramUniform3fv(m_ProgramName, GetUniformLocation(name), static_cast<GLsizei>(value.size()), reinterpret_cast<const GLfloat*>(value.data()));
+		glProgramUniform3fv(m_ProgramName, GetUniformLocation(name), static_cast<GLsizei>(values.size()), reinterpret_cast<const GLfloat*>(values.data()));
 	}
 
-	auto ShaderProgram::SetUniform(const std::string_view name, const std::vector<Matrix4>& value) -> void
+	auto ShaderProgram::SetUniform(const std::string_view name, const std::span<const Matrix4> values) -> void
 	{
-		glProgramUniformMatrix4fv(m_ProgramName, GetUniformLocation(name), static_cast<GLsizei>(value.size()), GL_TRUE, reinterpret_cast<const GLfloat*>(value.data()));
+		glProgramUniformMatrix4fv(m_ProgramName, GetUniformLocation(name), static_cast<GLsizei>(values.size()), GL_TRUE, reinterpret_cast<const GLfloat*>(values.data()));
 	}
 
 	auto ShaderProgram::SetBufferBinding(const std::string_view bufName, const int bindingIndex) -> void
