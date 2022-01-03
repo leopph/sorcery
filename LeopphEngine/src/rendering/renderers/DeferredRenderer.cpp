@@ -46,24 +46,6 @@ namespace leopph::internal
 				{ShaderFamily::SkyboxVertSrc, ShaderType::Vertex},
 				{ShaderFamily::SkyboxFragSrc, ShaderType::Fragment}
 			}
-		},
-		m_DirLightShader{
-			{
-				{ShaderFamily::LightPassVertSrc, ShaderType::Vertex},
-				{ShaderFamily::DirLightPassFragSrc, ShaderType::Fragment}
-			}
-		},
-		m_SpotLightShader{
-			{
-				{ShaderFamily::LightPassVertSrc, ShaderType::Vertex},
-				{ShaderFamily::SpotLightPassFragSrc, ShaderType::Fragment}
-			}
-		},
-		m_PointLightShader{
-			{
-				{ShaderFamily::LightPassVertSrc, ShaderType::Vertex},
-				{ShaderFamily::PointLightPassFragSrc, ShaderType::Fragment}
-			}
 		}
 	{
 		glEnable(GL_DEPTH_TEST);
@@ -141,8 +123,8 @@ namespace leopph::internal
 		glStencilFunc(GL_EQUAL, STENCIL_REF, STENCIL_AND_MASK);
 		glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 
-		shadowShader.Use();
 		auto nextTexUnit{0};
+		shadowShader.Use();
 
 		nextTexUnit = RenderDirShadowMap(dirLight, camViewMat.Inverse(), camProjMat, renderables, lightShader, shadowShader, nextTexUnit);
 		nextTexUnit = RenderSpotShadowMaps(spotLights, renderables, lightShader, shadowShader, spotShadows, nextTexUnit);
@@ -384,10 +366,7 @@ namespace leopph::internal
 				m_PointShadowMaps[shadowInd]->UnbindFromWriting();
 
 				// This is also not great, this should somehow be done with BindForReading
-				for (auto j{0}; j < 6; ++j)
-				{
-					lightShader.SetUniform("u_PointShadowMaps[" + std::to_string(shadowInd) + "]", nextTexUnit + j);
-				}
+				lightShader.SetUniform("u_PointShadowMaps[" + std::to_string(shadowInd) + "]", nextTexUnit);
 				nextTexUnit = m_PointShadowMaps[shadowInd]->BindForReading(lightShader, nextTexUnit);
 				++shadowInd;
 			}

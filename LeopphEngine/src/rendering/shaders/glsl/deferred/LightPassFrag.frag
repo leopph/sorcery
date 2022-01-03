@@ -141,7 +141,7 @@ vec3 CalcSpotLightEffect(Fragment frag, SpotLight spotLight)
 	spotLightEffect *= CalcAtten(spotLight.constant, spotLight.linear, spotLight.quadratic, dist);
 }
 
-#if NUM_POINTLIGHTS > NUM_SPOTLIGHT_SHADOWS
+#if NUM_SPOTLIGHTS > NUM_SPOTLIGHT_SHADOWS
 uniform SpotLight u_SpotLightsNoShadow[NUM_SPOTLIGHTS - NUM_SPOTLIGHT_SHADOWS];
 #endif
 #if NUM_SPOTLIGHT_SHADOWS > 0

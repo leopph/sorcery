@@ -68,12 +68,7 @@ namespace leopph::internal
 
 			ShaderFamily m_GeometryShader;
 			ShaderFamily m_LightShader;
-
 			ShaderFamily m_SkyboxShader;
-
-			ShaderFamily m_DirLightShader;
-			ShaderFamily m_SpotLightShader;
-			ShaderFamily m_PointLightShader;
 
 			CascadedShadowMap m_DirShadowMap;
 			std::vector<std::unique_ptr<SpotLightShadowMap>> m_SpotShadowMaps;
