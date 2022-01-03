@@ -63,27 +63,27 @@ namespace leopph::internal
 		switch (type)
 		{
 			case Texture::Position:
-				uniformName = "u_PositionTexture";
+				uniformName = "u_PosTex";
 				break;
 
 			case Texture::Normal:
-				uniformName = "u_NormalTexture";
+				uniformName = "u_NormTex";
 				break;
 
 			case Texture::Ambient:
-				uniformName = "u_AmbientTexture";
+				uniformName = "u_AmbTex";
 				break;
 
 			case Texture::Diffuse:
-				uniformName = "u_DiffuseTexture";
+				uniformName = "u_DiffTex";
 				break;
 
 			case Texture::Specular:
-				uniformName = "u_SpecularTexture";
+				uniformName = "u_SpecTex";
 				break;
 
 			case Texture::Shine:
-				uniformName = "u_ShineTexture";
+				uniformName = "u_ShineTex";
 				break;
 		}
 

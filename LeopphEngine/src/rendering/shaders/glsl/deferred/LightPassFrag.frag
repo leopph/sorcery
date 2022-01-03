@@ -1,16 +1,7 @@
 #version 410 core
 
-// DEBUG
-#define DIRLIGHT 1
-#define DIRLIGHT_SHADOW 1
-#define NUM_SPOTLIGHTS 2
-#define NUM_SPOTLIGHT_SHADOWS 1
-#define NUM_POINTLIGHTS 2
-#define NUM_POINTLIGHT_SHADOWS 1
-#define NUM_CASCADES 3
 #define MIN_SHADOW_BIAS 0.0001
 #define MAX_SHADOW_BIAS 0.01
-// ENDDEBUG
 
 // General variables used in all cases
 
@@ -20,14 +11,13 @@ layout (location = 0) out vec4 out_FragColor;
 
 uniform sampler2D u_PosTex;
 uniform sampler2D u_NormTex;
+uniform sampler2D u_AmbTex;
 uniform sampler2D u_DiffTex;
 uniform sampler2D u_SpecTex;
 uniform sampler2D u_ShineTex;
 
 uniform vec3 u_CamPos;
-
 uniform vec3 u_AmbientLight;
-uniform sampler2D u_AmbientMap;
 
 struct Fragment
 {
@@ -225,7 +215,7 @@ void main()
 	vec3 colorSum = vec3(0);
 
 	// Add ambient effects
-	colorSum += texture(u_AmbientMap, in_TexCoords).rgb * u_AmbientLight;
+	colorSum += texture(u_AmbTex, in_TexCoords).rgb * u_AmbientLight;
 	
 	// gbuffer contents
 	Fragment frag;
