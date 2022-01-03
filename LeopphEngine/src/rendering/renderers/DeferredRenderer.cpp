@@ -31,8 +31,8 @@ namespace leopph::internal
 		},
 		m_GeometryShader{
 			{
-				{ShaderFamily::GPassObjectVertSrc, ShaderType::Vertex},
-				{ShaderFamily::GPassObjectFragSrc, ShaderType::Fragment}
+				{ShaderFamily::GeometryPassVertSrc, ShaderType::Vertex},
+				{ShaderFamily::GeometryPassFragSrc, ShaderType::Fragment}
 			}
 		},
 		m_LightShader{

@@ -51,16 +51,11 @@ namespace leopph::internal
 			static const std::string CubeShadowMapGeomSrc;
 			static const std::string CubeShadowMapFragSrc;
 
-			static const std::string GPassObjectVertSrc;
-			static const std::string GPassObjectFragSrc;
+			static const std::string GeometryPassVertSrc;
+			static const std::string GeometryPassFragSrc;
 
 			static const std::string LightPassVertSrc;
 			static const std::string LightPassFragSrc;
-
-			static const std::string AmbLightFragSrc;
-			static const std::string DirLightPassFragSrc;
-			static const std::string SpotLightPassFragSrc;
-			static const std::string PointLightPassFragSrc;
 
 		private:
 			// Create a source that has the currently set flags inserted.

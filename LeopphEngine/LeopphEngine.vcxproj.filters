@@ -165,14 +165,10 @@
     <CustomBuild Include="src\rendering\shaders\glsl\SkyboxFrag.frag" />
     <CustomBuild Include="src\rendering\shaders\glsl\forward\ObjectFrag.frag" />
     <CustomBuild Include="src\rendering\shaders\glsl\deferred\LightPassVert.vert" />
-    <CustomBuild Include="src\rendering\shaders\glsl\deferred\GPassObjectFrag.frag" />
-    <CustomBuild Include="src\rendering\shaders\glsl\deferred\DirLightPassFrag.frag" />
-    <CustomBuild Include="src\rendering\shaders\glsl\deferred\AmbLightFrag.frag" />
-    <CustomBuild Include="src\rendering\shaders\glsl\deferred\SpotLightPassFrag.frag" />
+    <CustomBuild Include="src\rendering\shaders\glsl\deferred\GeometryPassFrag.frag" />
     <CustomBuild Include="src\rendering\shaders\glsl\shadows\CubeShadowMapFrag.frag" />
     <CustomBuild Include="src\rendering\shaders\glsl\shadows\CubeShadowMapGeom.geom" />
-    <CustomBuild Include="src\rendering\shaders\glsl\deferred\PointLightPassFrag.frag" />
-    <CustomBuild Include="src\rendering\shaders\glsl\deferred\GPassObjectVert.vert" />
+    <CustomBuild Include="src\rendering\shaders\glsl\deferred\GeometryPassVert.vert" />
     <CustomBuild Include="src\rendering\shaders\glsl\shadows\CubeShadowMapVert.vert" />
     <CustomBuild Include="src\rendering\shaders\glsl\forward\ObjectVert.vert" />
     <CustomBuild Include="src\rendering\shaders\glsl\shadows\ShadowMapVert.vert" />
