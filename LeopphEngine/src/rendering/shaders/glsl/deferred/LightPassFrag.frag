@@ -139,6 +139,7 @@ vec3 CalcSpotLightEffect(Fragment frag, SpotLight spotLight)
 
 	vec3 spotLightEffect = CalcBlinnPhong(frag, dirToLight, spotLight.diffuseColor, spotLight.specularColor);
 	spotLightEffect *= CalcAtten(spotLight.constant, spotLight.linear, spotLight.quadratic, dist);
+	return spotLightEffect;
 }
 
 #if NUM_SPOTLIGHTS > NUM_SPOTLIGHT_SHADOWS

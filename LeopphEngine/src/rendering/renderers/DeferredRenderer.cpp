@@ -103,11 +103,11 @@ namespace leopph::internal
 		m_LightShader.Clear();
 		m_LightShader["DIRLIGHT"] = std::to_string(dirLight != nullptr);
 		m_LightShader["DIRLIGHT_SHADOW"] = std::to_string(dirShadow);
+		m_LightShader["NUM_CASCADES"] = std::to_string(Settings::DirShadowCascadeCount());
 		m_LightShader["NUM_SPOTLIGHTS"] = std::to_string(spotLights.size());
 		m_LightShader["NUM_SPOTLIGHT_SHADOWS"] = std::to_string(spotShadows);
 		m_LightShader["NUM_POINTLIGHTS"] = std::to_string(pointLights.size());
 		m_LightShader["NUM_POINTLIGHT_SHADOWS"] = std::to_string(pointShadows);
-		m_LightShader["NUM_CASCADES"] = std::to_string(Settings::DirShadowCascadeCount());
 		auto& lightShader{m_LightShader.GetPermutation()};
 
 		auto& shadowShader{m_ShadowShader.GetPermutation()};
