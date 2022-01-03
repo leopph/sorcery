@@ -176,5 +176,6 @@
     <CustomBuild Include="src\rendering\shaders\glsl\shadows\CubeShadowMapVert.vert" />
     <CustomBuild Include="src\rendering\shaders\glsl\forward\ObjectVert.vert" />
     <CustomBuild Include="src\rendering\shaders\glsl\shadows\ShadowMapVert.vert" />
+    <CustomBuild Include="src\rendering\shaders\glsl\deferred\LightPassFrag.frag" />
   </ItemGroup>
 </Project>

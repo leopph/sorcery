@@ -55,6 +55,7 @@ namespace leopph::internal
 			static const std::string GPassObjectFragSrc;
 
 			static const std::string LightPassVertSrc;
+			static const std::string LightPassFragSrc;
 
 			static const std::string AmbLightFragSrc;
 			static const std::string DirLightPassFragSrc;
