@@ -9,7 +9,7 @@ namespace leopph::internal
 {
 	struct ShaderStageInfo
 	{
-		std::string src;
-		ShaderType type;
+		std::string Src;
+		ShaderType Type;
 	};
 }

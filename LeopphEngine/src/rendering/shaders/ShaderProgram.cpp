@@ -15,8 +15,8 @@ namespace leopph::internal
 
 		std::ranges::for_each(stageInfo, [&](const auto& info)
 		{
-			const auto shaderName{glCreateShader(OpenGLAdapter::OpenGLShaderType(info.type))};
-			glShaderSource(shaderName, 1, std::array{info.src.data()}.data(), nullptr);
+			const auto shaderName{glCreateShader(OpenGLAdapter::OpenGLShaderType(info.Type))};
+			glShaderSource(shaderName, 1, std::array{info.Src.data()}.data(), nullptr);
 			glCompileShader(shaderName);
 
 			if (const auto status{CompilationStatus(shaderName)};

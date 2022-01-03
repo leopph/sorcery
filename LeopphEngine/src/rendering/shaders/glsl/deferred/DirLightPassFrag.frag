@@ -1,6 +1,6 @@
 #version 440 core
 
-#ifdef CAST_SHADOW
+#if CAST_SHADOW
 #define MAX_NUM_CASCADES 3
 #define MIN_SHADOW_BIAS 0.0001
 #define MAX_SHADOW_BIAS 0.01
@@ -29,7 +29,7 @@ uniform sampler2D u_ShineTexture;
 uniform vec3 u_CameraPosition;
 uniform DirLight u_DirLight;
 
-#ifdef CAST_SHADOW
+#if CAST_SHADOW
 uniform uint u_NumCascades;
 uniform mat4 u_CascadeMatrices[MAX_NUM_CASCADES];
 uniform float u_CascadeBounds[MAX_NUM_CASCADES];
@@ -52,7 +52,7 @@ vec3 CalculateBlinnPhong(vec3 dirToLight, vec3 fragPos, vec3 fragNormal, vec3 fr
 }
 
 
-#ifdef CAST_SHADOW
+#if CAST_SHADOW
 float CalculateShadow(vec3 fragPos, float fragPosCameraClipZ, vec3 fragNormal)
 {
 	for (int i = 0; i < u_NumCascades; ++i)
@@ -84,7 +84,7 @@ void main()
 
 	vec3 light = CalculateBlinnPhong(dirToLight, fragPos.xyz, fragNormal, fragDiffuse, fragSpecular, fragShine);
 
-	#ifdef CAST_SHADOW
+	#if CAST_SHADOW
 	light *= CalculateShadow(fragPos.xyz, fragPos.w, fragNormal);
 	#endif
 

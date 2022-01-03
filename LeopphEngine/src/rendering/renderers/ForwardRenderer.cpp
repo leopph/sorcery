@@ -79,18 +79,13 @@ namespace leopph::internal
 
 	auto ForwardRenderer::RenderShadedObjects(const Matrix4& camViewMat, const Matrix4& camProjMat, const std::vector<RenderableData>& renderables, const DirectionalLight* dirLight, const std::vector<const SpotLight*>& spotLights, const std::vector<const PointLight*>& pointLights) -> void
 	{
-		static auto objectFlagInfo{m_ObjectShader.GetFlagInfo()};
-		objectFlagInfo.Clear();
-		objectFlagInfo["EXISTS_DIRLIGHT"] = dirLight != nullptr;
-		objectFlagInfo["DIRLIGHT_SHADOW"] = dirLight != nullptr && dirLight->CastsShadow();
-		objectFlagInfo["EXISTS_SPOTLIGHT"] = !spotLights.empty();
-		objectFlagInfo["EXISTS_POINTLIGHT"] = !pointLights.empty();
-
-		auto& objectShader{m_ObjectShader.GetPermutation(objectFlagInfo)};
-
-		static auto shadowFlagInfo{m_ShadowShader.GetFlagInfo()};
-		shadowFlagInfo.Clear();
-		auto& nonInstShadowShader{m_ShadowShader.GetPermutation(shadowFlagInfo)};
+		m_ObjectShader.Clear();
+		m_ObjectShader["EXISTS_DIRLIGHT"] = std::to_string(dirLight != nullptr);
+		m_ObjectShader["DIRLIGHT_SHADOW"] = std::to_string(dirLight != nullptr && dirLight->CastsShadow());
+		m_ObjectShader["EXISTS_SPOTLIGHT"] = std::to_string(!spotLights.empty());
+		m_ObjectShader["EXISTS_POINTLIGHT"] = std::to_string(!pointLights.empty());
+		auto& objectShader{m_ObjectShader.GetPermutation()};
+		auto& nonInstShadowShader{m_ShadowShader.GetPermutation()};
 
 		auto texCount{1};
 
@@ -191,11 +186,10 @@ namespace leopph::internal
 	{
 		if (const auto& background{Camera::Active()->Background()}; std::holds_alternative<Skybox>(background))
 		{
-			static auto skyboxFlagInfo{m_SkyboxShader.GetFlagInfo()};
-			auto& skyboxShader{m_SkyboxShader.GetPermutation(skyboxFlagInfo)};
-
-			skyboxShader.Use();
+			auto& skyboxShader{m_SkyboxShader.GetPermutation()};
 			skyboxShader.SetUniform("u_ViewProjMat", static_cast<Matrix4>(static_cast<Matrix3>(camViewMat)) * camProjMat);
+			skyboxShader.Use();
+
 			DataManager::Instance().CreateOrGetSkyboxImpl(std::get<Skybox>(background).AllFilePaths())->Draw(skyboxShader);
 		}
 	}

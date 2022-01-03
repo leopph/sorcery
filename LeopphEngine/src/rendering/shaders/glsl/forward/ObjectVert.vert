@@ -12,8 +12,8 @@ layout (location = 2) out vec2 out_TexCoords;
 
 uniform mat4 u_ViewProjMat;
 
-#ifdef EXISTS_DIRLIGHT
-#ifdef DIRLIGHT_SHADOW
+#if EXISTS_DIRLIGHT
+#if DIRLIGHT_SHADOW
 layout (location = 3) out float out_ClipPosZ;
 #endif
 #endif
@@ -28,8 +28,8 @@ void main()
     out_TexCoords = in_TexCoords;
     gl_Position = fragPosWorldSpace * u_ViewProjMat;
 
-    #ifdef EXISTS_DIRLIGHT
-    #ifdef DIRLIGHT_SHADOW
+    #if EXISTS_DIRLIGHT
+    #if DIRLIGHT_SHADOW
     out_ClipPosZ = gl_Position.z;
     #endif
     #endif

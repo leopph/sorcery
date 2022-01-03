@@ -124,17 +124,13 @@ namespace leopph::internal
 
 	auto DeferredRenderer::RenderGeometry(const Matrix4& camViewMat, const Matrix4& camProjMat, const std::vector<RenderableData>& renderables) -> void
 	{
-		static auto flagInfo{m_GeometryShader.GetFlagInfo()};
-		flagInfo.Clear();
-		auto& shader{m_GeometryShader.GetPermutation(flagInfo)};
-
 		m_GBuffer.Clear();
-
-		shader.SetUniform("u_ViewProjMat", camViewMat * camProjMat);
-
 		m_GBuffer.BindForWriting();
 
+		auto& shader{m_GeometryShader.GetPermutation()};
+		shader.SetUniform("u_ViewProjMat", camViewMat * camProjMat);
 		shader.Use();
+
 		for (const auto& [renderable, instances, castsShadow] : renderables)
 		{
 			renderable->SetInstanceData(instances);
@@ -147,13 +143,11 @@ namespace leopph::internal
 
 	auto DeferredRenderer::RenderAmbientLight() -> void
 	{
-		static auto ambientFlagInfo{m_AmbientShader.GetFlagInfo()};
-		auto& shader{m_AmbientShader.GetPermutation(ambientFlagInfo)};
-
+		auto& shader{m_AmbientShader.GetPermutation()};
 		shader.SetUniform("u_AmbientLight", AmbientLight::Instance().Intensity());
+		shader.Use();
 
 		static_cast<void>(m_GBuffer.BindForReading(shader, GeometryBuffer::Texture::Ambient, 0));
-		shader.Use();
 
 		m_RenderBuffer.DrawQuad();
 	}
@@ -168,14 +162,10 @@ namespace leopph::internal
 			return;
 		}
 
-		static auto lightFlagInfo{m_DirLightShader.GetFlagInfo()};
-		lightFlagInfo.Clear();
-		lightFlagInfo["CAST_SHADOW"] = dirLight->CastsShadow();
-		auto& lightShader{m_DirLightShader.GetPermutation(lightFlagInfo)};
-
-		static auto shadowFlagInfo{m_ShadowShader.GetFlagInfo()};
-		shadowFlagInfo.Clear();
-		auto& shadowShader{m_ShadowShader.GetPermutation(shadowFlagInfo)};
+		m_DirLightShader.Clear();
+		m_DirLightShader["CAST_SHADOW"] = std::to_string(dirLight->CastsShadow());
+		auto& lightShader{m_DirLightShader.GetPermutation()};
+		auto& shadowShader{m_ShadowShader.GetPermutation()};
 
 		auto texCount{0};
 
@@ -242,16 +232,13 @@ namespace leopph::internal
 			return;
 		}
 
-		static auto shadowFlagInfo{m_ShadowShader.GetFlagInfo()};
-		shadowFlagInfo.Clear();
-		auto& shadowShader{m_ShadowShader.GetPermutation(shadowFlagInfo)};
+		auto& shadowShader{m_ShadowShader.GetPermutation()};
 
 		for (const auto& spotLight : spotLights)
 		{
-			static auto lightFlagInfo{m_DirLightShader.GetFlagInfo()};
-			lightFlagInfo.Clear();
-			lightFlagInfo["CAST_SHADOW"] = spotLight->CastsShadow();
-			auto& lightShader{m_SpotLightShader.GetPermutation(lightFlagInfo)};
+			m_SpotLightShader.Clear();
+			m_SpotLightShader["CAST_SHADOW"] = std::to_string(spotLight->CastsShadow());
+			auto& lightShader{m_SpotLightShader.GetPermutation()};
 
 			auto texCount{0};
 
@@ -312,16 +299,13 @@ namespace leopph::internal
 			return;
 		}
 
-		static auto shadowFlagInfo{m_CubeShadowShader.GetFlagInfo()};
-		shadowFlagInfo.Clear();
-		auto& shadowShader{m_CubeShadowShader.GetPermutation(shadowFlagInfo)};
+		auto& shadowShader{m_CubeShadowShader.GetPermutation()};
 
 		for (const auto& pointLight : pointLights)
 		{
-			static auto lightFlagInfo{m_PointLightShader.GetFlagInfo()};
-			lightFlagInfo.Clear();
-			lightFlagInfo["CAST_SHADOW"] = pointLight->CastsShadow();
-			auto& lightShader{m_PointLightShader.GetPermutation(lightFlagInfo)};
+			m_PointLightShader.Clear();
+			m_PointLightShader["CAST_SHADOW"] = std::to_string(pointLight->CastsShadow());
+			auto& lightShader{m_PointLightShader.GetPermutation()};
 
 			auto texCount{0};
 			texCount = m_GBuffer.BindForReading(lightShader, GeometryBuffer::Texture::Position, texCount);
@@ -393,12 +377,11 @@ namespace leopph::internal
 	{
 		if (const auto& background{Camera::Active()->Background()}; std::holds_alternative<Skybox>(background))
 		{
-			static auto skyboxFlagInfo{m_SkyboxShader.GetFlagInfo()};
-			auto& skyboxShader{m_SkyboxShader.GetPermutation(skyboxFlagInfo)};
-
+			auto& skyboxShader{m_SkyboxShader.GetPermutation()};
 			skyboxShader.SetUniform("u_ViewProjMat", static_cast<Matrix4>(static_cast<Matrix3>(camViewMat)) * camProjMat);
-			m_RenderBuffer.BindAsRenderTarget();
 			skyboxShader.Use();
+
+			m_RenderBuffer.BindAsRenderTarget();
 			DataManager::Instance().CreateOrGetSkyboxImpl(std::get<Skybox>(background).AllFilePaths())->Draw(skyboxShader);
 			RenderBuffer::UnbindAsRenderTarget();
 		}

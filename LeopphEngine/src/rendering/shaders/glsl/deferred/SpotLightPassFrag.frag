@@ -34,7 +34,7 @@ layout (location = 13) uniform sampler2D u_SpecularTexture;
 layout (location = 14) uniform sampler2D u_ShineTexture;
 layout (location = 15) uniform vec3 u_CamPos;
 
-#ifdef CAST_SHADOW
+#if CAST_SHADOW
 layout (location = 16) uniform sampler2DShadow u_ShadowMap;
 layout (location = 17) uniform mat4 u_LightWorldToClipMatrix;
 #endif
@@ -61,7 +61,7 @@ float CalculateAttenuation(float constant, float linear, float quadratic, float 
 }
 
 
-#ifdef CAST_SHADOW
+#if CAST_SHADOW
 float CalculateShadow(vec3 dirToLight, vec3 fragPos, vec3 fragNormal)
 {
 	vec4 fragPosLightSpace = vec4(fragPos, 1) * u_LightWorldToClipMatrix;
@@ -128,7 +128,7 @@ void main()
 	vec3 light = CalculateBlinnPhong(dirToLight, fragPos, fragNormal, fragDiffuse, fragSpecular, fragShine);
 	light *= CalculateAttenuation(u_SpotLight.constant, u_SpotLight.linear, u_SpotLight.quadratic, dist);
 
-	#ifdef CAST_SHADOW
+	#if CAST_SHADOW
 	light *= CalculateShadow(dirToLight, fragPos, fragNormal);
 	#endif
 

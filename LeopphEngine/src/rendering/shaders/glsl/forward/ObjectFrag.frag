@@ -4,17 +4,17 @@
 #define MIN_SHADOW_BIAS 0.0001
 #define MAX_SHADOW_BIAS 0.001
 
-#ifdef EXISTS_DIRLIGHT
-#ifdef DIRLIGHT_SHADOW
+#if EXISTS_DIRLIGHT
+#if DIRLIGHT_SHADOW
 #define MAX_DIR_LIGHT_CASCADE_COUNT 3
 #endif
 #endif
 
-#ifdef EXISTS_SPOTLIGHT
+#if EXISTS_SPOTLIGHT
 #define MAX_SPOT_LIGHT_COUNT 64
 #endif
 
-#ifdef EXISTS_POINTLIGHT
+#if EXISTS_POINTLIGHT
 #define MAX_POINT_LIGHT_COUNT 64
 #endif
 
@@ -86,9 +86,9 @@ uniform Material u_Material;
 uniform vec3 u_AmbientLight;
 uniform vec3 u_CamPos;
 
-#ifdef EXISTS_DIRLIGHT
+#if EXISTS_DIRLIGHT
 uniform DirLight u_DirLight;
-#ifdef DIRLIGHT_SHADOW
+#if DIRLIGHT_SHADOW
 layout (location = 3) in float in_ClipPosZ;
 uniform sampler2DShadow u_DirLightShadowMaps[MAX_DIR_LIGHT_CASCADE_COUNT];
 uniform mat4 u_DirLightClipMatrices[MAX_DIR_LIGHT_CASCADE_COUNT];
@@ -97,19 +97,19 @@ uniform uint u_DirLightCascadeCount;
 #endif
 #endif
 
-#ifdef EXISTS_SPOTLIGHT
+#if EXISTS_SPOTLIGHT
 uniform SpotLight u_SpotLights[MAX_SPOT_LIGHT_COUNT];
 uniform int u_SpotLightCount;
 #endif
 
-#ifdef EXISTS_POINTLIGHT
+#if EXISTS_POINTLIGHT
 uniform PointLight u_PointLights[MAX_POINT_LIGHT_COUNT];
 uniform int u_PointLightCount;
 #endif
 
 
-#ifdef EXISTS_DIRLIGHT
-#ifdef DIRLIGHT_SHADOW
+#if EXISTS_DIRLIGHT
+#if DIRLIGHT_SHADOW
 float CalculateDirLightShadow(vec3 fragNormal)
 {
 	uint cascadeIndex = 0;
@@ -158,7 +158,7 @@ vec3 CalculateLightEffect(vec3 direction, vec3 normal, vec3 matDiff, vec3 matSpe
 }
 
 
-#ifdef EXISTS_DIRLIGHT
+#if EXISTS_DIRLIGHT
 vec3 CalculateDirLight(DirLight dirLight, vec3 surfaceNormal, vec3 materialDiffuseColor, vec3 materialSpecularColor)
 {
 	vec3 directionToLight = -dirLight.direction;
@@ -168,7 +168,7 @@ vec3 CalculateDirLight(DirLight dirLight, vec3 surfaceNormal, vec3 materialDiffu
 #endif
 
 
-#ifdef EXISTS_SPOTLIGHT
+#if EXISTS_SPOTLIGHT
 vec3 CalculateSpotLight(SpotLight spotLight, vec3 surfaceNormal, vec3 materialDiffuseColor, vec3 materialSpecularColor)
 {
 	vec3 posDiff = spotLight.position - in_FragPos;
@@ -191,7 +191,7 @@ vec3 CalculateSpotLight(SpotLight spotLight, vec3 surfaceNormal, vec3 materialDi
 #endif
 
 
-#ifdef EXISTS_POINTLIGHT
+#if EXISTS_POINTLIGHT
 vec3 CalculatePointLight(PointLight pointLight, vec3 surfaceNormal, vec3 materialDiffuseColor, vec3 materialSpecularColor)
 {
 	vec3 posDiff = pointLight.position - in_FragPos;
@@ -252,24 +252,24 @@ void main()
 	vec3 colorSum = ambientColor;
 
 	/* Process and add diffuse and specular colors */
-	#ifdef EXISTS_DIRLIGHT
+	#if EXISTS_DIRLIGHT
 	{
 		vec3 light = CalculateDirLight(u_DirLight, normal, diffuseColor, specularColor);
-		#ifdef DIRLIGHT_SHADOW
+		#if DIRLIGHT_SHADOW
 		light *= CalculateDirLightShadow(normal);
 		#endif
 		colorSum += light;
 	}
 	#endif
 
-	#ifdef EXISTS_SPOTLIGHT
+	#if EXISTS_SPOTLIGHT
 	for (int i = 0; i < u_SpotLightCount; i++)
 	{
 		colorSum += CalculateSpotLight(u_SpotLights[i], normal, diffuseColor, specularColor);
 	}
 	#endif
 
-	#ifdef EXISTS_POINTLIGHT
+	#if EXISTS_POINTLIGHT
 	for (int i = 0; i < u_PointLightCount; i++)
 	{
 		colorSum += CalculatePointLight(u_PointLights[i], normal, diffuseColor, specularColor);

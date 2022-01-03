@@ -188,7 +188,7 @@
     <ClInclude Include="src\util\hash\ShaderTypeHash.hpp" />
     <ClInclude Include="src\util\hash\StringHash.hpp" />
     <ClInclude Include="src\util\interface\OpenGLAdapter.hpp" />
-    <ClInclude Include="src\util\less\LightCloserToCamera.hpp" />
+    <ClInclude Include="src\util\less\StringLess.hpp" />
     <ClInclude Include="src\util\logger.h" />
     <ClInclude Include="src\rendering\opengl\InitGl.hpp" />
     <ClInclude Include="src\input\Input.hpp" />
@@ -244,7 +244,6 @@
     <ClCompile Include="src\rendering\opengl\InitGl.cpp" />
     <ClCompile Include="src\rendering\renderers\Renderer.cpp" />
     <ClCompile Include="src\rendering\RenderBuffer.cpp" />
-    <ClCompile Include="src\rendering\shaders\FlagInfo.cpp" />
     <ClCompile Include="src\rendering\shaders\ShaderProgram.cpp" />
     <ClCompile Include="src\rendering\shaders\ShaderFamily.cpp" />
     <ClCompile Include="src\rendering\Skybox.cpp" />
@@ -261,7 +260,7 @@
     <ClCompile Include="src\util\hash\ShaderTypeHash.cpp" />
     <ClCompile Include="src\util\hash\StringHash.cpp" />
     <ClCompile Include="src\util\interface\OpenGLAdapter.cpp" />
-    <ClCompile Include="src\util\less\LightCloserToCamera.cpp" />
+    <ClCompile Include="src\util\less\StringLess.cpp" />
     <ClCompile Include="src\util\logger.cpp" />
     <ClCompile Include="src\windowing\Window.cpp" />
     <ClCompile Include="src\windowing\WindowBase.cpp" />

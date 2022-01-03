@@ -1,11 +1,7 @@
 #include "ShaderFamily.hpp"
 
-#include "../../util/logger.h"
-
 #include <algorithm>
-#include <array>
-#include <cstring>
-#include <sstream>
+#include <iterator>
 #include <utility>
 
 
@@ -13,13 +9,12 @@ namespace leopph::internal
 {
 	ShaderFamily::ShaderFamily(const std::vector<ShaderStageInfo>& stages)
 	{
-		std::ranges::for_each(stages, [this](const auto& stageInfo)
+		std::ranges::transform(stages, std::inserter(m_Sources, m_Sources.begin()), [](const auto& stageInfo)
 		{
-			auto processedSrc{ProcessSource(stageInfo.src)};
-			m_Sources[stageInfo.type] = std::move(processedSrc.srcLines);
-			m_Flags.merge(processedSrc.flags);
+			return std::make_pair(stageInfo.Type, stageInfo.Src);
 		});
 	}
+
 
 	auto ShaderFamily::SetBufferBinding(const std::string_view bufName, const int bindingIndex) -> void
 	{
@@ -38,85 +33,76 @@ namespace leopph::internal
 		}
 	}
 
-	auto ShaderFamily::GetFlagInfo() const -> ShaderFamily::FlagInfoProxy
-	{
-		return FlagInfoProxy{FlagInfo{m_Flags}};
-	}
 
-	auto ShaderFamily::GetPermutation(const FlagInfoProxy& flagInfo) -> ShaderProgram&
+	auto ShaderFamily::GetPermutation() -> ShaderProgram&
 	{
-		const auto flagBitMap{static_cast<std::vector<bool>>(flagInfo)};
+		// Get the permutation id string
+		auto permStr{BuildPermString()};
 
-		if (const auto it{m_Permutations.find(flagBitMap)};
-			it != m_Permutations.end())
+		// Look up existing permutation
+		if (const auto it{m_Permutations.find(permStr)}; it != m_Permutations.end())
 		{
 			return it->second;
 		}
 
+		// Not found
+
 		std::vector<ShaderStageInfo> stageInfos;
-		const auto flagList{static_cast<std::vector<std::string>>(flagInfo)};
+		stageInfos.reserve(m_Sources.size());
 
-		std::ranges::for_each(m_Sources, [&](const auto& srcPair)
+		// Create new permutation
+		for (const auto& [type, src] : m_Sources)
 		{
-			stageInfos.emplace_back(BuildSourceString(srcPair.second, flagList), srcPair.first);
-		});
+			stageInfos.emplace_back(BuildSrcString(src), type);
+		}
 
-		auto& shaderProgram{m_Permutations.emplace(flagBitMap, stageInfos).first->second};
+		auto& shaderProgram{m_Permutations.emplace(std::move(permStr), stageInfos).first->second};
+
+		// Set up bindings for it
 		for (const auto& [bufName, binding] : m_Bindings)
 		{
 			shaderProgram.SetBufferBinding(bufName, binding);
 		}
+
 		return shaderProgram;
 	}
 
-	auto ShaderFamily::BuildSourceString(std::vector<std::string> srcLines, const std::vector<std::string>& flags) -> std::string
+
+	auto ShaderFamily::Clear() -> void
 	{
-		std::string ret;
+		m_CurrentFlags.clear();
+	}
 
-		if (srcLines.empty())
+
+	auto ShaderFamily::operator[](const std::string_view key) -> std::string&
+	{
+		if (const auto it{m_CurrentFlags.find(key)}; it != m_CurrentFlags.end())
 		{
-			Logger::Instance().Error("List of shader source lines was empty.");
-			return ret;
+			return it->second;
 		}
+		return m_CurrentFlags.emplace(std::string{key}, "").first->second;
+	}
 
-		for (std::size_t i = 0; i < flags.size(); ++i)
+
+	auto ShaderFamily::BuildSrcString(const std::string_view src) const -> std::string
+	{
+		std::string ret{src};
+		for (const auto& [name, value] : m_CurrentFlags)
 		{
-			srcLines.emplace(srcLines.begin() + 1 + static_cast<long long>(i), "#define " + flags[i]);
+			ret.insert(ret.find_first_of('\n') + 1, std::string{"#define "}.append(name).append(1, ' ').append(value).append(1, '\n'));
 		}
-
-		std::ranges::for_each(srcLines, [&](auto& line)
-		{
-			ret += std::move(line) + '\n';
-		});
-
 		return ret;
 	}
 
-	auto ShaderFamily::ProcessSource(const std::string& src) -> ShaderFamily::ProcessedSource
+
+	auto ShaderFamily::BuildPermString() const -> std::string
 	{
-		ProcessedSource ret;
-
-		std::istringstream inStream{src};
-
-		for (std::string line; std::getline(inStream, line);)
+		std::string ret{"{"};
+		for (const auto& [name, value] : m_CurrentFlags)
 		{
-			if (!line.empty() && !(line.find_first_not_of(' ') == std::string::npos) && !(line.find_first_not_of('\t') == std::string::npos))
-			{
-				for (constexpr std::array directives{"#ifdef ", "#ifndef "};
-				     const auto& directive : directives)
-				{
-					const auto directiveLength{std::strlen(directive)};
-
-					if (const auto index{line.find(directive)};
-						index != std::string::npos)
-					{
-						ret.flags.insert(line.substr(index + directiveLength, line.length() - index - directiveLength + 1));
-						break;
-					}
-				}
-				ret.srcLines.push_back(std::move(line));
-			}
+			ret.append(name).append(1, ':').append(value).append(1, ';');
 		}
+		ret.replace(ret.length() - 1, 1, "");
 		return ret;
 	}
 }

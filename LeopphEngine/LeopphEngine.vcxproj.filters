@@ -28,7 +28,6 @@
     <ClCompile Include="src\components\Transform.cpp" />
     <ClCompile Include="src\util\hash\PathHash.cpp" />
     <ClCompile Include="src\components\lighting\SpotLight.cpp" />
-    <ClCompile Include="src\util\less\LightCloserToCamera.cpp" />
     <ClCompile Include="src\rendering\renderers\DeferredRenderer.cpp" />
     <ClCompile Include="src\rendering\GeometryBuffer.cpp" />
     <ClCompile Include="src\events\Event.cpp" />
@@ -63,7 +62,7 @@
     <ClCompile Include="src\util\equal\StringEqual.cpp" />
     <ClCompile Include="src\rendering\geometry\MeshDataGroup.cpp" />
     <ClCompile Include="src\components\rendering\RenderComponent.cpp" />
-    <ClCompile Include="src\rendering\shaders\FlagInfo.cpp" />
+    <ClCompile Include="src\util\less\StringLess.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\Behavior.hpp" />
@@ -106,7 +105,6 @@
     <ClInclude Include="src\components\lighting\SpotLight.hpp" />
     <ClInclude Include="src\components\lighting\AttenuatedLight.hpp" />
     <ClInclude Include="src\rendering\renderers\DeferredRenderer.hpp" />
-    <ClInclude Include="src\util\less\LightCloserToCamera.hpp" />
     <ClInclude Include="src\rendering\GeometryBuffer.hpp" />
     <ClInclude Include="src\events\Event.hpp" />
     <ClInclude Include="src\events\handling\EventManager.hpp" />
@@ -157,6 +155,7 @@
     <ClInclude Include="src\util\concepts\Idable.hpp" />
     <ClInclude Include="src\util\concepts\Pointer.hpp" />
     <ClInclude Include="src\util\hash\IdHash.hpp" />
+    <ClInclude Include="src\util\less\StringLess.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\cpp.hint" />

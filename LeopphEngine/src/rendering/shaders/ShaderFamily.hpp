@@ -5,31 +5,40 @@
 #include "ShaderType.hpp"
 #include "../../util/equal/StringEqual.hpp"
 #include "../../util/hash/StringHash.hpp"
+#include "../../util/less/StringLess.hpp"
 
 #include <map>
 #include <string>
 #include <string_view>
 #include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
 
 namespace leopph::internal
 {
+	// A set of shaders with different flags set using the same source code.
 	class ShaderFamily
 	{
 		public:
 			explicit ShaderFamily(const std::vector<ShaderStageInfo>& stages);
 
-			ShaderFamily(const ShaderFamily& other) = delete;
-			auto operator=(const ShaderFamily& other) -> ShaderFamily& = delete;
+			ShaderFamily(const ShaderFamily& other) = default;
+			auto operator=(const ShaderFamily& other) -> ShaderFamily& = default;
 
 			ShaderFamily(ShaderFamily&& other) = delete;
 			auto operator=(ShaderFamily&& other) -> ShaderFamily& = delete;
 
-			~ShaderFamily() = default;
+			~ShaderFamily() noexcept = default;
 
 			auto SetBufferBinding(std::string_view bufName, int bindingIndex) -> void;
+
+			// Uses the currently set flags to look up or generate a permutation.
+			[[nodiscard]] auto GetPermutation() -> ShaderProgram&;
+
+			// Cleans all currently set flags.
+			auto Clear() -> void;
+
+			[[nodiscard]] auto operator[](std::string_view key) -> std::string&;
 
 			static const std::string ObjectVertSrc;
 			static const std::string ObjectFragSrc;
@@ -53,67 +62,17 @@ namespace leopph::internal
 			static const std::string PointLightPassFragSrc;
 
 		private:
-			class FlagInfo final
-			{
-				public:
-					explicit FlagInfo(const std::unordered_set<std::string>& flags);
-
-					[[nodiscard]]
-					auto Empty() const -> bool;
-					auto Clear() -> void;
-
-					auto operator[](const std::string& flag) -> bool&;
-					auto operator[](const std::string& flag) const -> const bool&;
-
-					explicit operator std::vector<bool>() const;
-					explicit operator std::vector<std::string>() const;
-
-				private:
-					std::map<std::string, bool> m_Flags;
-			};
-
-
-			class FlagInfoProxy final
-			{
-				public:
-					explicit FlagInfoProxy(FlagInfo flagInfo);
-
-					[[nodiscard]]
-					auto Empty() const -> bool;
-					auto Clear() -> void;
-
-					auto operator[](const std::string& flag) -> bool&;
-					auto operator[](const std::string& flag) const -> const bool&;
-
-					explicit operator std::vector<bool>() const;
-					explicit operator std::vector<std::string>() const;
-
-				private:
-					FlagInfo m_FlagInfo;
-			};
-
-
-		public:
-			[[nodiscard]]
-			auto GetFlagInfo() const -> FlagInfoProxy;
-			[[nodiscard]]
-			auto GetPermutation(const FlagInfoProxy& flagInfo) -> ShaderProgram&;
-
-		private:
-			struct ProcessedSource
-			{
-				std::unordered_set<std::string> flags;
-				std::vector<std::string> srcLines;
-			};
-
-
-			[[nodiscard]]
-			static auto BuildSourceString(std::vector<std::string> srcLines, const std::vector<std::string>& flags) -> std::string;
-			static auto ProcessSource(const std::string& src) -> ProcessedSource;
+			// Create a source that has the currently set flags inserted.
+			[[nodiscard]] auto BuildSrcString(std::string_view src) const -> std::string;
+			// Create the permutation key from the currently set flags
+			[[nodiscard]] auto BuildPermString() const -> std::string;
 
 			std::unordered_map<std::string, int, StringHash, StringEqual> m_Bindings;
-			std::unordered_map<std::vector<bool>, ShaderProgram> m_Permutations;
-			std::unordered_map<ShaderType, std::vector<std::string>> m_Sources;
-			std::unordered_set<std::string> m_Flags;
+			std::unordered_map<ShaderType, std::string> m_Sources;
+
+			// The flags currently set by a consumer. This will be used to generate a permutation.
+			std::map<std::string, std::string, StringLess> m_CurrentFlags;
+			// The permutations with key being the in format {name1:value1;name2:value2}.
+			std::unordered_map<std::string, ShaderProgram> m_Permutations;
 	};
 }
