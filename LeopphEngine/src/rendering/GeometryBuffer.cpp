@@ -13,11 +13,11 @@ namespace leopph::internal
 		m_BindIndices{},
 		m_DepthStencilBuffer{},
 		m_FrameBuffer{},
-		m_Resolution{Vector2{WindowBase::Get().Width(), WindowBase::Get().Height()} * WindowBase::Get().RenderMultiplier()}
+		m_Res{ResType{WindowBase::Get().Width(), WindowBase::Get().Height()} * WindowBase::Get().RenderMultiplier()}
 	{
 		std::ranges::fill(m_BindIndices, BIND_FILL_VALUE);
 		glCreateFramebuffers(1, &m_FrameBuffer);
-		SetUpBuffers(m_Resolution);
+		SetUpBuffers();
 	}
 
 
@@ -42,7 +42,7 @@ namespace leopph::internal
 	auto GeometryBuffer::BindForWriting() const -> void
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, m_FrameBuffer);
-		glViewport(0, 0, static_cast<GLsizei>(m_Resolution[0]), static_cast<GLsizei>(m_Resolution[1]));
+		glViewport(0, 0, m_Res[0], m_Res[1]);
 	}
 
 
@@ -126,43 +126,43 @@ namespace leopph::internal
 
 	auto GeometryBuffer::CopyStencilData(const GLuint bufferName) const -> void
 	{
-		glBlitNamedFramebuffer(m_FrameBuffer, bufferName, 0, 0, static_cast<GLint>(m_Resolution[0]), static_cast<GLint>(m_Resolution[1]), 0, 0, static_cast<GLint>(m_Resolution[0]), static_cast<GLint>(m_Resolution[1]), GL_STENCIL_BUFFER_BIT, GL_NEAREST);
+		glBlitNamedFramebuffer(m_FrameBuffer, bufferName, 0, 0, static_cast<GLint>(m_Res[0]), static_cast<GLint>(m_Res[1]), 0, 0, static_cast<GLint>(m_Res[0]), static_cast<GLint>(m_Res[1]), GL_STENCIL_BUFFER_BIT, GL_NEAREST);
 	}
 
 
-	auto GeometryBuffer::SetUpBuffers(const Vector2& res) -> void
+	auto GeometryBuffer::SetUpBuffers() -> void
 	{
 		glDeleteTextures(static_cast<GLsizei>(m_Textures.size()), m_Textures.data());
 		glDeleteRenderbuffers(1, &m_DepthStencilBuffer);
 
 		glCreateTextures(GL_TEXTURE_2D, static_cast<GLsizei>(m_Textures.size()), m_Textures.data());
 
-		glTextureStorage2D(m_Textures[static_cast<int>(Texture::Position)], 1, GL_RGBA32F, static_cast<GLint>(res[0]), static_cast<GLint>(res[1]));
+		glTextureStorage2D(m_Textures[static_cast<int>(Texture::Position)], 1, GL_RGBA32F, m_Res[0], m_Res[1]);
 		glTextureParameteri(m_Textures[static_cast<int>(Texture::Position)], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTextureParameteri(m_Textures[static_cast<int>(Texture::Position)], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-		glTextureStorage2D(m_Textures[static_cast<int>(Texture::Normal)], 1, GL_RGB32F, static_cast<GLint>(res[0]), static_cast<GLint>(res[1]));
+		glTextureStorage2D(m_Textures[static_cast<int>(Texture::Normal)], 1, GL_RGB32F, m_Res[0], m_Res[1]);
 		glTextureParameteri(m_Textures[static_cast<int>(Texture::Normal)], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTextureParameteri(m_Textures[static_cast<int>(Texture::Normal)], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-		glTextureStorage2D(m_Textures[static_cast<int>(Texture::Ambient)], 1, GL_RGB8, static_cast<GLint>(res[0]), static_cast<GLint>(res[1]));
+		glTextureStorage2D(m_Textures[static_cast<int>(Texture::Ambient)], 1, GL_RGB8, m_Res[0], m_Res[1]);
 		glTextureParameteri(m_Textures[static_cast<int>(Texture::Ambient)], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTextureParameteri(m_Textures[static_cast<int>(Texture::Ambient)], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-		glTextureStorage2D(m_Textures[static_cast<int>(Texture::Diffuse)], 1, GL_RGB8, static_cast<GLint>(res[0]), static_cast<GLint>(res[1]));
+		glTextureStorage2D(m_Textures[static_cast<int>(Texture::Diffuse)], 1, GL_RGB8, m_Res[0], m_Res[1]);
 		glTextureParameteri(m_Textures[static_cast<int>(Texture::Diffuse)], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTextureParameteri(m_Textures[static_cast<int>(Texture::Diffuse)], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-		glTextureStorage2D(m_Textures[static_cast<int>(Texture::Specular)], 1, GL_RGB8, static_cast<GLint>(res[0]), static_cast<GLint>(res[1]));
+		glTextureStorage2D(m_Textures[static_cast<int>(Texture::Specular)], 1, GL_RGB8, m_Res[0], m_Res[1]);
 		glTextureParameteri(m_Textures[static_cast<int>(Texture::Specular)], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTextureParameteri(m_Textures[static_cast<int>(Texture::Specular)], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-		glTextureStorage2D(m_Textures[static_cast<int>(Texture::Shine)], 1, GL_R32F, static_cast<GLint>(res[0]), static_cast<GLint>(res[1]));
+		glTextureStorage2D(m_Textures[static_cast<int>(Texture::Shine)], 1, GL_R32F, m_Res[0], m_Res[1]);
 		glTextureParameteri(m_Textures[static_cast<int>(Texture::Shine)], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTextureParameteri(m_Textures[static_cast<int>(Texture::Shine)], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
 		glCreateRenderbuffers(1, &m_DepthStencilBuffer);
-		glNamedRenderbufferStorage(m_DepthStencilBuffer, GL_DEPTH24_STENCIL8, static_cast<GLint>(res[0]), static_cast<GLint>(res[1]));
+		glNamedRenderbufferStorage(m_DepthStencilBuffer, GL_DEPTH24_STENCIL8, m_Res[0], m_Res[1]);
 
 		glNamedFramebufferTexture(m_FrameBuffer, GL_COLOR_ATTACHMENT0, m_Textures[static_cast<int>(Texture::Position)], 0);
 		glNamedFramebufferTexture(m_FrameBuffer, GL_COLOR_ATTACHMENT1, m_Textures[static_cast<int>(Texture::Normal)], 0);
@@ -178,7 +178,7 @@ namespace leopph::internal
 
 	auto GeometryBuffer::OnEventReceived(EventParamType event) -> void
 	{
-		m_Resolution = event.NewResolution * event.NewResolutionMultiplier;
-		SetUpBuffers(m_Resolution);
+		m_Res = ResType{event.NewResolution[0], event.NewResolution[1]} * event.NewResolutionMultiplier;
+		SetUpBuffers();
 	}
 }

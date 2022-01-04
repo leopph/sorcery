@@ -132,12 +132,7 @@ namespace leopph::internal
 		cubeShadowShader.Use();
 		nextTexUnit = RenderPointShadowMaps(pointLights, renderables, lightShader, cubeShadowShader, pointShadows, nextTexUnit);
 
-		nextTexUnit = m_GBuffer.BindForReading(lightShader, GeometryBuffer::Texture::Position, nextTexUnit);
-		nextTexUnit = m_GBuffer.BindForReading(lightShader, GeometryBuffer::Texture::Normal, nextTexUnit);
-		nextTexUnit = m_GBuffer.BindForReading(lightShader, GeometryBuffer::Texture::Ambient, nextTexUnit);
-		nextTexUnit = m_GBuffer.BindForReading(lightShader, GeometryBuffer::Texture::Diffuse, nextTexUnit);
-		nextTexUnit = m_GBuffer.BindForReading(lightShader, GeometryBuffer::Texture::Specular, nextTexUnit);
-		static_cast<void>(m_GBuffer.BindForReading(lightShader, GeometryBuffer::Texture::Shine, nextTexUnit));
+		static_cast<void>(m_GBuffer.BindForReading(lightShader, nextTexUnit));
 
 		SetAmbientData(AmbientLight::Instance(), lightShader);
 		SetDirectionalData(dirLight, lightShader);
