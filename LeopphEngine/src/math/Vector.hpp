@@ -393,7 +393,7 @@ namespace leopph
 			Vector<T1, N> ret;
 			for (size_t i = 0; i < N; i++)
 			{
-				ret[i] = left[i] * right;
+				ret[i] = left[i] * static_cast<T1>(right);
 			}
 			return ret;
 		}
@@ -406,7 +406,7 @@ namespace leopph
 			Vector<T1, N> ret;
 			for (std::size_t i = 0; i < N; i++)
 			{
-				ret[i] = left * right[i];
+				ret[i] = static_cast<T1>(left) * right[i];
 			}
 			return ret;
 		}
@@ -432,7 +432,7 @@ namespace leopph
 		{
 			for (std::size_t i = 0; i < N; i++)
 			{
-				left[i] *= right;
+				left[i] *= static_cast<T1>(right);
 			}
 			return left;
 		}
@@ -458,7 +458,7 @@ namespace leopph
 			Vector<T1, N> ret;
 			for (std::size_t i = 0; i < N; i++)
 			{
-				ret[i] = left[i] / right;
+				ret[i] = left[i] / static_cast<T1>(right);
 			}
 			return ret;
 		}
@@ -484,7 +484,7 @@ namespace leopph
 		{
 			for (std::size_t i = 0; i < N; i++)
 			{
-				left[i] /= right;
+				left[i] /= static_cast<T1>(right);
 			}
 			return left;
 		}
