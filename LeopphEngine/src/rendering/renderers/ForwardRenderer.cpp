@@ -120,8 +120,7 @@ namespace leopph::internal
 
 					nonInstShadowShader.SetUniform("u_WorldToClipMat", lightWorldToClip);
 
-					m_DirLightShadowMap.BindForWriting(i);
-					m_DirLightShadowMap.Clear();
+					m_DirLightShadowMap.BindForWritingAndClear(i);
 
 					nonInstShadowShader.Use();
 					for (const auto& [renderable, instances, castsShadow] : renderables)
@@ -133,8 +132,6 @@ namespace leopph::internal
 						}
 					}
 				}
-
-				CascadedShadowMap::UnbindFromWriting();
 
 				objectShader.SetUniform("u_DirLightCascadeCount", static_cast<unsigned>(numCascades));
 				objectShader.SetUniform("u_DirLightClipMatrices", dirLightMatrices);

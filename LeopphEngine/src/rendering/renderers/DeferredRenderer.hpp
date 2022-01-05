@@ -13,6 +13,8 @@
 #include "../../math/Matrix.hpp"
 #include "../shaders/ShaderFamily.hpp"
 
+#include <glad/glad.h>
+
 #include <memory>
 #include <vector>
 
@@ -39,21 +41,21 @@ namespace leopph::internal
 			                                      std::span<const RenderableData> renderables,
 			                                      ShaderProgram& lightShader,
 			                                      ShaderProgram& shadowShader,
-			                                      int nextTexUnit) -> int;
+			                                      GLuint nextTexUnit) const -> GLuint;
 			// Draws into the first N shadow maps, binds them to the light shader with the necessary data, and returns the next usable texture unit.
 			[[nodiscard]] auto RenderSpotShadowMaps(std::span<const SpotLight* const> spotLights,
 			                                        std::span<const RenderableData> renderables,
 			                                        ShaderProgram& lightShader,
 			                                        ShaderProgram& shadowShader,
 			                                        std::size_t numShadows,
-			                                        int nextTexUnit) -> int;
+			                                        GLuint nextTexUnit) -> GLuint;
 			// Draws into the first N shadow maps, binds them to the light shader with the necessary data, and returns the next usable texture unit.
 			[[nodiscard]] auto RenderPointShadowMaps(std::span<const PointLight* const> pointLights,
 			                                         std::span<const RenderableData> renderables,
 			                                         ShaderProgram& lightShader,
 			                                         ShaderProgram& shadowShader,
 			                                         std::size_t numShadows,
-			                                         int nextTexUnit) -> int;
+			                                         GLuint nextTexUnit) -> GLuint;
 
 			static auto SetAmbientData(const AmbientLight& light, ShaderProgram& lightShader) -> void;
 			static auto SetDirectionalData(const DirectionalLight* dirLight, ShaderProgram& lightShader) -> void;

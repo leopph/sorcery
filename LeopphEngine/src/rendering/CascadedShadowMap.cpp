@@ -13,8 +13,7 @@
 namespace leopph::internal
 {
 	CascadedShadowMap::CascadedShadowMap() :
-		m_Framebuffer{},
-		m_FirstBindIndex{}
+		m_Framebuffer{}
 	{
 		glCreateFramebuffers(1, &m_Framebuffer);
 		InitShadowMaps(Settings::DirShadowRes());
@@ -28,55 +27,31 @@ namespace leopph::internal
 	}
 
 
-	auto CascadedShadowMap::BindForWriting(const std::size_t cascadeIndex) const -> void
+	auto CascadedShadowMap::BindForWritingAndClear(const std::size_t cascadeIndex) const -> void
 	{
-		glBindFramebuffer(GL_FRAMEBUFFER, m_Framebuffer);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_Framebuffer);
 		glNamedFramebufferTexture(m_Framebuffer, GL_DEPTH_ATTACHMENT, m_ShadowMaps.at(cascadeIndex), 0);
 		const auto res{static_cast<GLsizei>(Settings::DirShadowRes()[cascadeIndex])};
 		glViewport(0, 0, res, res);
-		Clear();
+
+		glClearNamedFramebufferfv(m_Framebuffer, GL_DEPTH, 0, &CLEAR_DEPTH);
 	}
 
 
-	auto CascadedShadowMap::UnbindFromWriting() -> void
+	auto CascadedShadowMap::BindForReading(ShaderProgram& shader, GLuint texUnit) const -> GLuint
 	{
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		glViewport(0, 0, static_cast<GLsizei>(WindowBase::Get().Width()), static_cast<GLsizei>(WindowBase::Get().Height()));
-	}
-
-
-	auto CascadedShadowMap::BindForReading(ShaderProgram& shader, int texUnit) -> int
-	{
-		m_FirstBindIndex = texUnit;
-
 		static std::vector<int> texUnits;
 		texUnits.clear();
 
-		for (const auto& texture : m_ShadowMaps)
+		for (const auto texture : m_ShadowMaps)
 		{
-			glBindTextureUnit(static_cast<GLuint>(texUnit), static_cast<GLuint>(texture));
-			texUnits.push_back(texUnit);
+			glBindTextureUnit(texUnit, texture);
+			texUnits.push_back(static_cast<int>(texUnit));
 			++texUnit;
 		}
 
-		shader.SetUniform("u_DirLightShadowMaps", texUnits);
+		shader.SetUniform(SHADER_SHADOW_MAP_ARR_NAME, texUnits);
 		return texUnit;
-	}
-
-
-	auto CascadedShadowMap::UnbindFromReading() const -> void
-	{
-		for (auto texUnit{m_FirstBindIndex}, i{0}; i < m_ShadowMaps.size(); ++i, ++texUnit)
-		{
-			glBindTextureUnit(static_cast<GLuint>(texUnit), static_cast<GLuint>(0));
-		}
-	}
-
-
-	auto CascadedShadowMap::Clear() const -> void
-	{
-		constexpr float clearValue{1};
-		glClearNamedFramebufferfv(m_Framebuffer, GL_DEPTH, 0, &clearValue);
 	}
 
 

@@ -123,7 +123,7 @@ namespace leopph::internal
 		glStencilFunc(GL_EQUAL, STENCIL_REF, STENCIL_AND_MASK);
 		glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 
-		auto nextTexUnit{0};
+		GLuint nextTexUnit{0};
 		shadowShader.Use();
 
 		nextTexUnit = RenderDirShadowMap(dirLight, camViewMat.Inverse(), camProjMat, renderables, lightShader, shadowShader, nextTexUnit);
@@ -188,7 +188,7 @@ namespace leopph::internal
 	                                          const std::span<const RenderableData> renderables,
 	                                          ShaderProgram& lightShader,
 	                                          ShaderProgram& shadowShader,
-	                                          const int nextTexUnit) -> int
+	                                          const GLuint nextTexUnit) const -> GLuint
 	{
 		if (!dirLight || !dirLight->CastsShadow())
 		{
@@ -209,8 +209,7 @@ namespace leopph::internal
 
 			shadowShader.SetUniform("u_WorldToClipMat", cascadeMat);
 
-			m_DirShadowMap.BindForWriting(i);
-			m_DirShadowMap.Clear();
+			m_DirShadowMap.BindForWritingAndClear(i);
 
 			for (const auto& [renderable, instances, castsShadow] : renderables)
 			{
@@ -221,8 +220,6 @@ namespace leopph::internal
 				}
 			}
 		}
-
-		CascadedShadowMap::UnbindFromWriting();
 
 		lightShader.SetUniform("u_CascadeMatrices", cascadeMats);
 		lightShader.SetUniform("u_CascadeBounds", CascadeFarBoundsClip(camProjMat, cascadeBounds));
@@ -235,7 +232,7 @@ namespace leopph::internal
 	                                            ShaderProgram& lightShader,
 	                                            ShaderProgram& shadowShader,
 	                                            const std::size_t numShadows,
-	                                            int nextTexUnit) -> int
+	                                            GLuint nextTexUnit) -> GLuint
 	{
 		// Not really great in terms of allocations but will do for now
 		while (m_SpotShadowMaps.size() < numShadows)
@@ -255,9 +252,9 @@ namespace leopph::internal
 				const auto lightWorldToClipMat
 				{
 					Matrix4::LookAt(
-					                spotLights[i]->Entity()->Transform()->Position(),
-					                spotLights[i]->Entity()->Transform()->Position() + spotLights[i]->Entity()->Transform()->Forward(),
-					                Vector3::Up())
+						spotLights[i]->Entity()->Transform()->Position(),
+						spotLights[i]->Entity()->Transform()->Position() + spotLights[i]->Entity()->Transform()->Forward(),
+						Vector3::Up())
 					*
 					Matrix4::Perspective(math::ToRadians(spotLights[i]->OuterAngle() * 2),
 					                     1.f,
@@ -298,7 +295,7 @@ namespace leopph::internal
 	                                             ShaderProgram& lightShader,
 	                                             ShaderProgram& shadowShader,
 	                                             const std::size_t numShadows,
-	                                             int nextTexUnit) -> int
+	                                             GLuint nextTexUnit) -> GLuint
 	{
 		// Not really great in terms of allocations but will do for now
 		while (m_PointShadowMaps.size() < numShadows)
