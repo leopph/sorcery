@@ -33,7 +33,7 @@ namespace leopph::internal
 			// Binds the the shadow map referred to by cascadeIndex as render target and set its value to the default.
 			auto BindForWritingAndClear(std::size_t cascadeIndex) const -> void;
 
-			// Returns the next available texture unit after binding
+			// Binds the shadow maps to consecutive texture units starting at texUnit, sets the shader uniform, and returns the next available texture unit.
 			[[nodiscard]] auto BindForReading(ShaderProgram& shader, GLuint texUnit) const -> GLuint;
 
 			// Returns a Matrix that defines the transformation that is used to render world space primitives to shadow maps.

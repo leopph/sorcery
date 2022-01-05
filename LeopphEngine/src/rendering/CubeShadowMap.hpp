@@ -15,9 +15,9 @@ namespace leopph::internal
 			CubeShadowMap();
 
 			CubeShadowMap(const CubeShadowMap& other) = delete;
-			CubeShadowMap(CubeShadowMap&& other) = delete;
-
 			auto operator=(const CubeShadowMap& other) -> CubeShadowMap& = delete;
+
+			CubeShadowMap(CubeShadowMap&& other) = delete;
 			auto operator=(CubeShadowMap&& other) -> CubeShadowMap& = delete;
 
 			~CubeShadowMap() noexcept override;

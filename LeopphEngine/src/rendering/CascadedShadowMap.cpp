@@ -16,6 +16,9 @@ namespace leopph::internal
 		m_Framebuffer{}
 	{
 		glCreateFramebuffers(1, &m_Framebuffer);
+		glNamedFramebufferReadBuffer(m_Framebuffer, GL_NONE);
+		glNamedFramebufferDrawBuffer(m_Framebuffer, GL_NONE);
+
 		InitShadowMaps(Settings::DirShadowRes());
 	}
 
@@ -155,8 +158,6 @@ namespace leopph::internal
 			glTextureParameteri(m_ShadowMaps[i], GL_TEXTURE_COMPARE_FUNC, GL_LESS);
 		}
 
-		glNamedFramebufferDrawBuffer(m_Framebuffer, GL_NONE);
-		glNamedFramebufferReadBuffer(m_Framebuffer, GL_NONE);
 		glNamedFramebufferTexture(m_Framebuffer, GL_DEPTH_ATTACHMENT, m_ShadowMaps.front(), 0);
 	}
 

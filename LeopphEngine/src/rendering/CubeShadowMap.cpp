@@ -11,6 +11,9 @@ namespace leopph::internal
 		m_Res{static_cast<GLsizei>(Settings::PointLightShadowMapResolution())}
 	{
 		glCreateFramebuffers(1, &m_Framebuffer);
+		glNamedFramebufferReadBuffer(m_Framebuffer, GL_NONE);
+		glNamedFramebufferDrawBuffer(m_Framebuffer, GL_NONE);
+
 		InitCubemap();
 	}
 
@@ -60,8 +63,6 @@ namespace leopph::internal
 		glTextureParameteri(m_Cubemap, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
 		glTextureParameteri(m_Cubemap, GL_TEXTURE_COMPARE_FUNC, GL_LESS);
 
-		glNamedFramebufferDrawBuffer(m_Framebuffer, GL_NONE);
-		glNamedFramebufferReadBuffer(m_Framebuffer, GL_NONE);
 		glNamedFramebufferTexture(m_Framebuffer, GL_DEPTH_ATTACHMENT, m_Cubemap, 0);
 	}
 

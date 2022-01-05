@@ -5,7 +5,7 @@
 #include "../CubeShadowMap.hpp"
 #include "../GeometryBuffer.hpp"
 #include "../RenderBuffer.hpp"
-#include "../SpotLightShadowMap.hpp"
+#include "../SpotShadowMap.hpp"
 #include "../../components/lighting/AmbientLight.hpp"
 #include "../../components/lighting/DirLight.hpp"
 #include "../../components/lighting/PointLight.hpp"
@@ -73,7 +73,7 @@ namespace leopph::internal
 			ShaderFamily m_SkyboxShader;
 
 			CascadedShadowMap m_DirShadowMap;
-			std::vector<std::unique_ptr<SpotLightShadowMap>> m_SpotShadowMaps;
+			std::vector<std::unique_ptr<SpotShadowMap>> m_SpotShadowMaps;
 			std::vector<std::unique_ptr<CubeShadowMap>> m_PointShadowMaps;
 
 			static constexpr int STENCIL_REF{0};

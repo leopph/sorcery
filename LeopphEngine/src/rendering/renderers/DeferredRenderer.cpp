@@ -237,7 +237,7 @@ namespace leopph::internal
 		// Not really great in terms of allocations but will do for now
 		while (m_SpotShadowMaps.size() < numShadows)
 		{
-			m_SpotShadowMaps.push_back(std::make_unique<SpotLightShadowMap>());
+			m_SpotShadowMaps.push_back(std::make_unique<SpotShadowMap>());
 		}
 
 		if (numShadows * 2 < m_SpotShadowMaps.size())
@@ -264,8 +264,7 @@ namespace leopph::internal
 
 				shadowShader.SetUniform("u_WorldToClipMat", lightWorldToClipMat);
 
-				m_SpotShadowMaps[shadowInd]->BindForWriting();
-				m_SpotShadowMaps[shadowInd]->Clear();
+				m_SpotShadowMaps[shadowInd]->BindForWritingAndClear();
 
 				for (const auto& [renderable, instances, castsShadow] : renderables)
 				{
@@ -275,8 +274,6 @@ namespace leopph::internal
 						renderable->DrawWithoutMaterial();
 					}
 				}
-
-				m_SpotShadowMaps[shadowInd]->UnbindFromWriting();
 
 				lightShader.SetUniform("u_SpotShadowMats[" + std::to_string(shadowInd) + "]", lightWorldToClipMat);
 				// This is also not great, this should somehow be done with BindForReading
