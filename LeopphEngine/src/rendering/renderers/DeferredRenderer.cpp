@@ -186,7 +186,7 @@ namespace leopph::internal
 			const auto cascadeMat{m_DirShadowMap.CascadeMatrix(cascadeBounds[i], camViewInvMat, lightViewMat, dirLight->ShadowExtension())};
 			cascadeMats.push_back(cascadeMat);
 
-			shadowShader.SetUniform("u_WorldToClipMat", cascadeMat);
+			shadowShader.SetUniform("u_ViewProjMat", cascadeMat);
 
 			m_DirShadowMap.BindForWritingAndClear(i);
 
@@ -232,7 +232,7 @@ namespace leopph::internal
 				const auto lightProjMat{Matrix4::Perspective(math::ToRadians(spotLights[i]->OuterAngle() * 2), 1.f, 0.1f, spotLights[i]->Range())};
 				const auto lightViewProjMat{lightViewMat * lightProjMat};
 
-				shadowShader.SetUniform("u_WorldToClipMat", lightViewProjMat);
+				shadowShader.SetUniform("u_ViewProjMat", lightViewProjMat);
 
 				m_SpotShadowMaps[shadowInd]->BindForWritingAndClear();
 

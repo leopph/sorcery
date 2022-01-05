@@ -118,7 +118,7 @@ namespace leopph::internal
 					const auto lightWorldToClip{m_DirLightShadowMap.CascadeMatrix(cascadeBounds[i], cameraInverseMatrix, lightViewMatrix, dirLight->ShadowExtension())};
 					dirLightMatrices.push_back(lightWorldToClip);
 
-					nonInstShadowShader.SetUniform("u_WorldToClipMat", lightWorldToClip);
+					nonInstShadowShader.SetUniform("u_ViewProjMat", lightWorldToClip);
 
 					m_DirLightShadowMap.BindForWritingAndClear(i);
 
