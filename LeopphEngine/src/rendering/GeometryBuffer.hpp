@@ -8,6 +8,7 @@
 #include <glad/glad.h>
 
 #include <array>
+#include <cstddef>
 
 
 namespace leopph::internal
@@ -15,12 +16,6 @@ namespace leopph::internal
 	class GeometryBuffer final : public EventReceiver<ScreenResolutionEvent>
 	{
 		public:
-			enum class Texture
-			{
-				Position, NormalAndShine, Ambient, Diffuse, Specular
-			};
-
-
 			GeometryBuffer();
 
 			GeometryBuffer(const GeometryBuffer&) = delete;
@@ -53,6 +48,13 @@ namespace leopph::internal
 			static constexpr GLfloat CLEAR_COLOR[]{0, 0, 0, 1};
 			static constexpr GLdouble CLEAR_DEPTH{1};
 			static constexpr GLuint CLEAR_STENCIL{1};
+
+			static constexpr unsigned POS_TEX{0};
+			static constexpr unsigned NORM_SHINE_TEX{1};
+			static constexpr unsigned AMB_TEX{2};
+			static constexpr unsigned DIFF_TEX{3};
+			static constexpr unsigned SPEC_TEX{4};
+
 			static constexpr std::array SHADER_UNIFORM_NAMES
 			{
 				"u_PosTex", "u_NormShineTex", "u_AmbTex", "u_DiffTex", "u_SpecTex"

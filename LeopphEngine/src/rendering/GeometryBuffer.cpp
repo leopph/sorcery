@@ -61,34 +61,34 @@ namespace leopph::internal
 
 		glCreateTextures(GL_TEXTURE_2D, static_cast<GLsizei>(m_Textures.size()), m_Textures.data());
 
-		glTextureStorage2D(m_Textures[static_cast<int>(Texture::Position)], 1, GL_RGBA32F, m_Res[0], m_Res[1]);
-		glTextureParameteri(m_Textures[static_cast<int>(Texture::Position)], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTextureParameteri(m_Textures[static_cast<int>(Texture::Position)], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTextureStorage2D(m_Textures[POS_TEX], 1, GL_RGBA32F, m_Res[0], m_Res[1]);
+		glTextureParameteri(m_Textures[POS_TEX], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTextureParameteri(m_Textures[POS_TEX], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-		glTextureStorage2D(m_Textures[static_cast<int>(Texture::NormalAndShine)], 1, GL_RGBA32F, m_Res[0], m_Res[1]);
-		glTextureParameteri(m_Textures[static_cast<int>(Texture::NormalAndShine)], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTextureParameteri(m_Textures[static_cast<int>(Texture::NormalAndShine)], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTextureStorage2D(m_Textures[NORM_SHINE_TEX], 1, GL_RGBA32F, m_Res[0], m_Res[1]);
+		glTextureParameteri(m_Textures[NORM_SHINE_TEX], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTextureParameteri(m_Textures[NORM_SHINE_TEX], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-		glTextureStorage2D(m_Textures[static_cast<int>(Texture::Ambient)], 1, GL_RGB8, m_Res[0], m_Res[1]);
-		glTextureParameteri(m_Textures[static_cast<int>(Texture::Ambient)], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTextureParameteri(m_Textures[static_cast<int>(Texture::Ambient)], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTextureStorage2D(m_Textures[AMB_TEX], 1, GL_RGB8, m_Res[0], m_Res[1]);
+		glTextureParameteri(m_Textures[AMB_TEX], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTextureParameteri(m_Textures[AMB_TEX], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-		glTextureStorage2D(m_Textures[static_cast<int>(Texture::Diffuse)], 1, GL_RGB8, m_Res[0], m_Res[1]);
-		glTextureParameteri(m_Textures[static_cast<int>(Texture::Diffuse)], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTextureParameteri(m_Textures[static_cast<int>(Texture::Diffuse)], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTextureStorage2D(m_Textures[DIFF_TEX], 1, GL_RGB8, m_Res[0], m_Res[1]);
+		glTextureParameteri(m_Textures[DIFF_TEX], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTextureParameteri(m_Textures[DIFF_TEX], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-		glTextureStorage2D(m_Textures[static_cast<int>(Texture::Specular)], 1, GL_RGB8, m_Res[0], m_Res[1]);
-		glTextureParameteri(m_Textures[static_cast<int>(Texture::Specular)], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTextureParameteri(m_Textures[static_cast<int>(Texture::Specular)], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTextureStorage2D(m_Textures[SPEC_TEX], 1, GL_RGB8, m_Res[0], m_Res[1]);
+		glTextureParameteri(m_Textures[SPEC_TEX], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTextureParameteri(m_Textures[SPEC_TEX], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
 		glCreateRenderbuffers(1, &m_DepthStencilBuffer);
 		glNamedRenderbufferStorage(m_DepthStencilBuffer, GL_DEPTH24_STENCIL8, m_Res[0], m_Res[1]);
 
-		glNamedFramebufferTexture(m_FrameBuffer, GL_COLOR_ATTACHMENT0, m_Textures[static_cast<int>(Texture::Position)], 0);
-		glNamedFramebufferTexture(m_FrameBuffer, GL_COLOR_ATTACHMENT1, m_Textures[static_cast<int>(Texture::NormalAndShine)], 0);
-		glNamedFramebufferTexture(m_FrameBuffer, GL_COLOR_ATTACHMENT2, m_Textures[static_cast<int>(Texture::Ambient)], 0);
-		glNamedFramebufferTexture(m_FrameBuffer, GL_COLOR_ATTACHMENT3, m_Textures[static_cast<int>(Texture::Diffuse)], 0);
-		glNamedFramebufferTexture(m_FrameBuffer, GL_COLOR_ATTACHMENT4, m_Textures[static_cast<int>(Texture::Specular)], 0);
+		glNamedFramebufferTexture(m_FrameBuffer, GL_COLOR_ATTACHMENT0, m_Textures[POS_TEX], 0);
+		glNamedFramebufferTexture(m_FrameBuffer, GL_COLOR_ATTACHMENT1, m_Textures[NORM_SHINE_TEX], 0);
+		glNamedFramebufferTexture(m_FrameBuffer, GL_COLOR_ATTACHMENT2, m_Textures[AMB_TEX], 0);
+		glNamedFramebufferTexture(m_FrameBuffer, GL_COLOR_ATTACHMENT3, m_Textures[DIFF_TEX], 0);
+		glNamedFramebufferTexture(m_FrameBuffer, GL_COLOR_ATTACHMENT4, m_Textures[SPEC_TEX], 0);
 		glNamedFramebufferRenderbuffer(m_FrameBuffer, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_DepthStencilBuffer);
 
 		glNamedFramebufferDrawBuffers(m_FrameBuffer, static_cast<GLsizei>(m_Textures.size()), std::array<GLenum, std::tuple_size_v<decltype(m_Textures)>>{GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4}.data());
