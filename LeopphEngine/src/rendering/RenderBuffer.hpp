@@ -23,31 +23,38 @@ namespace leopph::internal
 			RenderBuffer(RenderBuffer&& other) = delete;
 			auto operator=(RenderBuffer&& other) -> RenderBuffer& = delete;
 
-			~RenderBuffer() override;
+			~RenderBuffer() noexcept override;
 
-			// Draws a full screen quad on its framebuffer.
-			auto DrawQuad() const -> void;
-			auto CopyColorToDefaultBuffer() const -> void;
+			// Binds the buffers for writing and clears the color values.
+			auto BindForWritingAndClearColor() const -> void;
 
-			auto BindAsRenderTarget() const -> void;
-			static auto UnbindAsRenderTarget() -> void;
+			// Binds the buffers for writing but does not clear any values.
+			auto BindForWriting() const -> void;
 
-			auto Clear() const -> void;
+			// Draws a full screen quad onto its framebuffer.
+			auto DrawScreenQuad() const -> void;
+
+			// Copies the contents of the color buffer to the default framebuffer.
+			auto CopyColorToDefaultFramebuffer() const -> void;
 
 			[[nodiscard]] constexpr auto FramebufferName() const noexcept;
 
 		private:
+			using ResType = Vector<GLsizei, 2>;
+
+			// Initializes the buffers to the current resolution.
+			auto InitBuffers() noexcept -> void;
+			// Destroys the buffers.
+			auto DeinitBuffers() const noexcept -> void;
 			auto OnEventReceived(EventParamType event) -> void override;
-			auto InitBuffers(GLsizei width, GLsizei height) -> void;
-			auto DeinitBuffers() const -> void;
 
 			GLuint m_Framebuffer;
 			GLuint m_ColorBuffer;
 			GLuint m_StencilBuffer;
 			GLuint m_VertexArray;
 			GLuint m_VertexBuffer;
-			Vector2 m_Resolution;
-			
+			ResType m_Res;
+
 			static constexpr GLint CLEAR_STENCIL{1};
 			static constexpr std::array<float, 20> QUAD_VERTICES
 			{

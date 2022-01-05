@@ -48,7 +48,7 @@ namespace leopph::internal
 			virtual auto CursorMode(CursorState newState) -> void = 0;
 
 			[[nodiscard]]
-			virtual auto RenderMultiplier() -> float = 0;
+			virtual auto RenderMultiplier() const -> float = 0;
 			virtual auto RenderMultiplier(float newMult) -> void = 0;
 
 			virtual auto PollEvents() -> void = 0;

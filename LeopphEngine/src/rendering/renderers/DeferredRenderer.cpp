@@ -116,8 +116,7 @@ namespace leopph::internal
 		glStencilFunc(GL_ALWAYS, STENCIL_REF, STENCIL_AND_MASK);
 		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 		RenderGeometry(camViewMat, camProjMat, renderables);
-
-		m_RenderBuffer.Clear();
+		
 		m_GBuffer.CopyStencilData(m_RenderBuffer.FramebufferName());
 
 		glStencilFunc(GL_EQUAL, STENCIL_REF, STENCIL_AND_MASK);
@@ -142,12 +141,12 @@ namespace leopph::internal
 		lightShader.SetUniform("u_CamPos", Camera::Active()->Entity()->Transform()->Position());
 
 		lightShader.Use();
-		m_RenderBuffer.DrawQuad();
+		m_RenderBuffer.DrawScreenQuad();
 
 		glStencilFunc(GL_NOTEQUAL, STENCIL_REF, STENCIL_AND_MASK);
 		RenderSkybox(camViewMat, camProjMat);
 
-		m_RenderBuffer.CopyColorToDefaultBuffer();
+		m_RenderBuffer.CopyColorToDefaultFramebuffer();
 	}
 
 
@@ -175,9 +174,8 @@ namespace leopph::internal
 			skyboxShader.SetUniform("u_ViewProjMat", static_cast<Matrix4>(static_cast<Matrix3>(camViewMat)) * camProjMat);
 			skyboxShader.Use();
 
-			m_RenderBuffer.BindAsRenderTarget();
+			m_RenderBuffer.BindForWriting();
 			DataManager::Instance().CreateOrGetSkyboxImpl(std::get<Skybox>(background).AllFilePaths())->Draw(skyboxShader);
-			RenderBuffer::UnbindAsRenderTarget();
 		}
 	}
 

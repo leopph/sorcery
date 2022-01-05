@@ -51,7 +51,7 @@ namespace leopph::internal
 			auto CursorMode(CursorState newState) -> void override;
 
 			[[nodiscard]]
-			auto RenderMultiplier() -> float override;
+			auto RenderMultiplier() const -> float override;
 			auto RenderMultiplier(float newMult) -> void override;
 
 			auto PollEvents() -> void override;

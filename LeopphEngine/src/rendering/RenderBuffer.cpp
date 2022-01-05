@@ -11,11 +11,19 @@ namespace leopph::internal
 		m_StencilBuffer{},
 		m_VertexArray{},
 		m_VertexBuffer{},
-		m_Resolution{Vector2{WindowBase::Get().Width(), WindowBase::Get().Height()} * WindowBase::Get().RenderMultiplier()}
+		m_Res{
+			[]
+			{
+				const auto& window{WindowBase::Get()};
+				const Vector2 displayRes{window.Width(), window.Height()};
+				const auto renderRes{displayRes * window.RenderMultiplier()};
+				return ResType{renderRes[0], renderRes[1]};
+			}()
+		}
 	{
 		glCreateFramebuffers(1, &m_Framebuffer);
 
-		InitBuffers(static_cast<GLsizei>(m_Resolution[0]), static_cast<GLsizei>(m_Resolution[1]));
+		InitBuffers();
 
 		glCreateBuffers(1, &m_VertexBuffer);
 		glNamedBufferStorage(m_VertexBuffer, QUAD_VERTICES.size() * sizeof(decltype(QUAD_VERTICES)::value_type), QUAD_VERTICES.data(), 0);
@@ -34,7 +42,7 @@ namespace leopph::internal
 	}
 
 
-	RenderBuffer::~RenderBuffer()
+	RenderBuffer::~RenderBuffer() noexcept
 	{
 		DeinitBuffers();
 		glDeleteFramebuffers(1, &m_Framebuffer);
@@ -43,50 +51,53 @@ namespace leopph::internal
 	}
 
 
-	auto RenderBuffer::DrawQuad() const -> void
+	auto RenderBuffer::BindForWritingAndClearColor() const -> void
 	{
-		BindAsRenderTarget();
+		BindForWriting();
+		glClearNamedFramebufferfv(m_Framebuffer, GL_COLOR, 0, WindowBase::Get().ClearColor().Data().data());
+	}
+
+
+	auto RenderBuffer::BindForWriting() const -> void
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, m_Framebuffer);
+		glViewport(0, 0, m_Res[0], m_Res[1]);
+	}
+
+
+	auto RenderBuffer::DrawScreenQuad() const -> void
+	{
+		BindForWritingAndClearColor();
+
 		glBindVertexArray(m_VertexArray);
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 		glBindVertexArray(0);
-		UnbindAsRenderTarget();
 	}
 
 
-	auto RenderBuffer::CopyColorToDefaultBuffer() const -> void
+	auto RenderBuffer::CopyColorToDefaultFramebuffer() const -> void
 	{
-		glBlitNamedFramebuffer(m_Framebuffer, 0, 0, 0, static_cast<GLsizei>(m_Resolution[0]), static_cast<GLsizei>(m_Resolution[1]), 0, 0, static_cast<GLsizei>(WindowBase::Get().Width()), static_cast<GLsizei>(WindowBase::Get().Height()), GL_COLOR_BUFFER_BIT, GL_LINEAR);
+		const auto& window{WindowBase::Get()};
+		glBlitNamedFramebuffer(m_Framebuffer, 0, 0, 0, m_Res[0], m_Res[1], 0, 0, static_cast<GLsizei>(window.Width()), static_cast<GLsizei>(window.Height()), GL_COLOR_BUFFER_BIT, GL_LINEAR);
 	}
 
 
-	auto RenderBuffer::BindAsRenderTarget() const -> void
+	auto RenderBuffer::OnEventReceived(EventParamType event) -> void
 	{
-		glBindFramebuffer(GL_FRAMEBUFFER, m_Framebuffer);
-		glViewport(0, 0, static_cast<GLsizei>(m_Resolution[0]), static_cast<GLsizei>(m_Resolution[1]));
+		const auto renderRes{event.NewResolution * event.NewResolutionMultiplier};
+		m_Res = ResType{renderRes[0], renderRes[1]};
+		DeinitBuffers();
+		InitBuffers();
 	}
 
 
-	auto RenderBuffer::UnbindAsRenderTarget() -> void
-	{
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		glViewport(0, 0, static_cast<GLsizei>(WindowBase::Get().Width()), static_cast<GLsizei>(WindowBase::Get().Height()));
-	}
-
-
-	auto RenderBuffer::Clear() const -> void
-	{
-		glClearNamedFramebufferfv(m_Framebuffer, GL_COLOR, 0, WindowBase::Get().ClearColor().Data().data());
-		glClearNamedFramebufferiv(m_Framebuffer, GL_STENCIL, 0, &CLEAR_STENCIL);
-	}
-
-
-	auto RenderBuffer::InitBuffers(const GLsizei width, const GLsizei height) -> void
+	auto RenderBuffer::InitBuffers() noexcept -> void
 	{
 		glCreateRenderbuffers(1, &m_ColorBuffer);
-		glNamedRenderbufferStorage(m_ColorBuffer, GL_RGB8, width, height);
+		glNamedRenderbufferStorage(m_ColorBuffer, GL_RGB8, m_Res[0], m_Res[1]);
 
 		glCreateRenderbuffers(1, &m_StencilBuffer);
-		glNamedRenderbufferStorage(m_StencilBuffer, GL_DEPTH24_STENCIL8, width, height); // This could use GL_STENCIL_INDEX# format but NVidia decided to go against the standard and refuse to work with it so here we are wasting memory.
+		glNamedRenderbufferStorage(m_StencilBuffer, GL_DEPTH24_STENCIL8, m_Res[0], m_Res[1]); // This could use GL_STENCIL_INDEX# format but Nvidia decided to go against the standard and refuse to work with it so here we are wasting memory.
 
 		glNamedFramebufferRenderbuffer(m_Framebuffer, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, m_ColorBuffer);
 		glNamedFramebufferRenderbuffer(m_Framebuffer, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_StencilBuffer);
@@ -95,17 +106,9 @@ namespace leopph::internal
 	}
 
 
-	auto RenderBuffer::DeinitBuffers() const -> void
+	auto RenderBuffer::DeinitBuffers() const noexcept -> void
 	{
 		glDeleteRenderbuffers(1, &m_ColorBuffer);
 		glDeleteRenderbuffers(1, &m_StencilBuffer);
-	}
-
-
-	auto RenderBuffer::OnEventReceived(EventParamType event) -> void
-	{
-		m_Resolution = event.NewResolution * event.NewResolutionMultiplier;
-		DeinitBuffers();
-		InitBuffers(static_cast<GLsizei>(m_Resolution[0]), static_cast<GLsizei>(m_Resolution[1]));
 	}
 }

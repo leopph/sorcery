@@ -172,7 +172,7 @@ namespace leopph::internal
 	}
 
 
-	auto GlWindow::RenderMultiplier() -> float
+	auto GlWindow::RenderMultiplier() const -> float
 	{
 		return m_RenderMult;
 	}
