@@ -66,8 +66,8 @@ namespace leopph::internal
 				uniformName = "u_PosTex";
 				break;
 
-			case Texture::Normal:
-				uniformName = "u_NormTex";
+			case Texture::NormalAndShine:
+				uniformName = "u_NormShineTex";
 				break;
 
 			case Texture::Ambient:
@@ -80,10 +80,6 @@ namespace leopph::internal
 
 			case Texture::Specular:
 				uniformName = "u_SpecTex";
-				break;
-
-			case Texture::Shine:
-				uniformName = "u_ShineTex";
 				break;
 		}
 
@@ -141,9 +137,9 @@ namespace leopph::internal
 		glTextureParameteri(m_Textures[static_cast<int>(Texture::Position)], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTextureParameteri(m_Textures[static_cast<int>(Texture::Position)], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-		glTextureStorage2D(m_Textures[static_cast<int>(Texture::Normal)], 1, GL_RGB32F, m_Res[0], m_Res[1]);
-		glTextureParameteri(m_Textures[static_cast<int>(Texture::Normal)], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTextureParameteri(m_Textures[static_cast<int>(Texture::Normal)], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTextureStorage2D(m_Textures[static_cast<int>(Texture::NormalAndShine)], 1, GL_RGBA32F, m_Res[0], m_Res[1]);
+		glTextureParameteri(m_Textures[static_cast<int>(Texture::NormalAndShine)], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTextureParameteri(m_Textures[static_cast<int>(Texture::NormalAndShine)], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
 		glTextureStorage2D(m_Textures[static_cast<int>(Texture::Ambient)], 1, GL_RGB8, m_Res[0], m_Res[1]);
 		glTextureParameteri(m_Textures[static_cast<int>(Texture::Ambient)], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -157,22 +153,17 @@ namespace leopph::internal
 		glTextureParameteri(m_Textures[static_cast<int>(Texture::Specular)], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTextureParameteri(m_Textures[static_cast<int>(Texture::Specular)], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-		glTextureStorage2D(m_Textures[static_cast<int>(Texture::Shine)], 1, GL_R32F, m_Res[0], m_Res[1]);
-		glTextureParameteri(m_Textures[static_cast<int>(Texture::Shine)], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTextureParameteri(m_Textures[static_cast<int>(Texture::Shine)], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
 		glCreateRenderbuffers(1, &m_DepthStencilBuffer);
 		glNamedRenderbufferStorage(m_DepthStencilBuffer, GL_DEPTH24_STENCIL8, m_Res[0], m_Res[1]);
 
 		glNamedFramebufferTexture(m_FrameBuffer, GL_COLOR_ATTACHMENT0, m_Textures[static_cast<int>(Texture::Position)], 0);
-		glNamedFramebufferTexture(m_FrameBuffer, GL_COLOR_ATTACHMENT1, m_Textures[static_cast<int>(Texture::Normal)], 0);
+		glNamedFramebufferTexture(m_FrameBuffer, GL_COLOR_ATTACHMENT1, m_Textures[static_cast<int>(Texture::NormalAndShine)], 0);
 		glNamedFramebufferTexture(m_FrameBuffer, GL_COLOR_ATTACHMENT2, m_Textures[static_cast<int>(Texture::Ambient)], 0);
 		glNamedFramebufferTexture(m_FrameBuffer, GL_COLOR_ATTACHMENT3, m_Textures[static_cast<int>(Texture::Diffuse)], 0);
 		glNamedFramebufferTexture(m_FrameBuffer, GL_COLOR_ATTACHMENT4, m_Textures[static_cast<int>(Texture::Specular)], 0);
-		glNamedFramebufferTexture(m_FrameBuffer, GL_COLOR_ATTACHMENT5, m_Textures[static_cast<int>(Texture::Shine)], 0);
 		glNamedFramebufferRenderbuffer(m_FrameBuffer, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_DepthStencilBuffer);
 
-		glNamedFramebufferDrawBuffers(m_FrameBuffer, static_cast<GLsizei>(m_Textures.size()), std::array<GLenum, 6>{GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5}.data());
+		glNamedFramebufferDrawBuffers(m_FrameBuffer, static_cast<GLsizei>(m_Textures.size()), std::array<GLenum, std::tuple_size_v<decltype(m_Textures)>>{GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4}.data());
 	}
 
 

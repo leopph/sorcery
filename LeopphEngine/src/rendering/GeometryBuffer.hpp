@@ -17,7 +17,7 @@ namespace leopph::internal
 		public:
 			enum class Texture
 			{
-				Position, Normal, Ambient, Diffuse, Specular, Shine
+				Position, NormalAndShine, Ambient, Diffuse, Specular
 			};
 
 
@@ -52,7 +52,7 @@ namespace leopph::internal
 			auto SetUpBuffers() -> void;
 			auto OnEventReceived(EventParamType event) -> void override;
 
-			std::array<GLuint, 6> m_Textures;
+			std::array<GLuint, 5> m_Textures;
 			mutable std::array<int, std::tuple_size_v<decltype(m_Textures)>> m_BindIndices;
 			GLuint m_DepthStencilBuffer;
 			GLuint m_FrameBuffer;

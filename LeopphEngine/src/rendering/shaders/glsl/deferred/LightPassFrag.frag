@@ -10,11 +10,10 @@ layout (location = 0) in vec2 in_TexCoords;
 layout (location = 0) out vec4 out_FragColor;
 
 uniform sampler2D u_PosTex;
-uniform sampler2D u_NormTex;
+uniform sampler2D u_NormShineTex;
 uniform sampler2D u_AmbTex;
 uniform sampler2D u_DiffTex;
 uniform sampler2D u_SpecTex;
-uniform sampler2D u_ShineTex;
 
 uniform vec3 u_CamPos;
 uniform vec3 u_AmbientLight;
@@ -220,13 +219,14 @@ void main()
 	
 	// gbuffer contents
 	Fragment frag;
-    frag.normal = texture(u_NormTex, in_TexCoords).rgb;
-    frag.diff = texture(u_DiffTex, in_TexCoords).rgb;
     frag.spec = texture(u_SpecTex, in_TexCoords).rgb;
-	frag.shine = texture(u_ShineTex, in_TexCoords).r;
-	vec4 fragPoss = texture(u_PosTex, in_TexCoords);
-	frag.pos = fragPoss.xyz;
-	frag.clipZ = fragPoss.w;
+    frag.diff = texture(u_DiffTex, in_TexCoords).rgb;
+	vec4 fragPosAndClipZ = texture(u_PosTex, in_TexCoords);
+	frag.pos = fragPosAndClipZ.xyz;
+	frag.clipZ = fragPosAndClipZ.w;
+	vec4 fragNormAndShine = texture(u_NormShineTex, in_TexCoords);
+    frag.normal = fragNormAndShine.xyz;
+	frag.shine = fragNormAndShine.w;
 
 
 	// Add directional effects
