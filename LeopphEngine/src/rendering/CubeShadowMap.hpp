@@ -27,7 +27,7 @@ namespace leopph::internal
 			// Binds the cubemap as render target and sets its value to the default.
 			auto BindForWritingAndClear() const -> void;
 
-			// Binds the cubemap to the passed texture unit, sets the shader uniform, and returns the next available texture unit.
+			// Binds the cubemap to the passed texture unit, sets the passed uniform, and returns the next available texture unit.
 			[[nodiscard]] auto BindForReading(ShaderProgram& shader, std::string_view uniformName, GLuint texUnit) const -> GLuint;
 
 		private:

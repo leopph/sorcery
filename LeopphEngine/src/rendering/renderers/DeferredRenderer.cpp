@@ -274,9 +274,7 @@ namespace leopph::internal
 				}
 
 				lightShader.SetUniform("u_SpotShadowMats[" + std::to_string(shadowInd) + "]", lightWorldToClipMat);
-				// This is also not great, this should somehow be done with BindForReading
-				lightShader.SetUniform("u_SpotShadowMaps[" + std::to_string(shadowInd) + "]", nextTexUnit);
-				nextTexUnit = m_SpotShadowMaps[shadowInd]->BindForReading(lightShader, nextTexUnit);
+				nextTexUnit = m_SpotShadowMaps[shadowInd]->BindForReading(lightShader, "u_SpotShadowMaps[" + std::to_string(shadowInd) + "]", nextTexUnit);
 				++shadowInd;
 			}
 		}
