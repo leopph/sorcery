@@ -340,8 +340,7 @@ namespace leopph::internal
 				shadowShader.SetUniform("u_LightPos", pointLights[i]->Entity()->Transform()->Position());
 				shadowShader.SetUniform("u_FarPlane", pointLights[i]->Range());
 
-				m_PointShadowMaps[shadowInd]->BindForWriting();
-				m_PointShadowMaps[shadowInd]->Clear();
+				m_PointShadowMaps[shadowInd]->BindForWritingAndClear();
 
 				for (const auto& [renderable, instances, castsShadow] : renderables)
 				{
@@ -351,8 +350,6 @@ namespace leopph::internal
 						renderable->DrawWithoutMaterial();
 					}
 				}
-
-				m_PointShadowMaps[shadowInd]->UnbindFromWriting();
 
 				// This is also not great, this should somehow be done with BindForReading
 				lightShader.SetUniform("u_PointShadowMaps[" + std::to_string(shadowInd) + "]", nextTexUnit);

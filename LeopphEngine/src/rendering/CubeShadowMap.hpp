@@ -4,7 +4,7 @@
 #include "../events/handling/EventReceiver.hpp"
 #include "../rendering/shaders/ShaderProgram.hpp"
 
-#include <cstddef>
+#include <glad/glad.h>
 
 
 namespace leopph::internal
@@ -20,24 +20,26 @@ namespace leopph::internal
 			auto operator=(const CubeShadowMap& other) -> CubeShadowMap& = delete;
 			auto operator=(CubeShadowMap&& other) -> CubeShadowMap& = delete;
 
-			~CubeShadowMap() override;
+			~CubeShadowMap() noexcept override;
 
-			auto BindForWriting() const -> void;
-			auto UnbindFromWriting() const -> void;
+			// Binds the cubemap as render target and sets its value to the default.
+			auto BindForWritingAndClear() const -> void;
 
-			[[nodiscard]] auto BindForReading(ShaderProgram& shader, int texUnit) -> int;
-			auto UnbindFromReading() const -> void;
-
-			auto Clear() const -> void;
+			// Binds the cubemap to the passed texture unit, sets the shader uniform, and returns the next available texture unit.
+			[[nodiscard]] auto BindForReading(ShaderProgram& shader, GLuint texUnit) const -> GLuint;
 
 		private:
-			unsigned m_FrameBufferName;
-			unsigned m_CubeMapName;
-			int m_BoundTexUnit;
-
+			// Initializes the cubemap to the current resolution.
+			auto InitCubemap() -> void;
+			// Destroys the cubemap.
+			auto DeinitCubemap() const -> void;
 			auto OnEventReceived(EventParamType event) -> void override;
 
-			auto Init(std::size_t resolution) -> void;
-			auto Deinit() const -> void;
+			GLuint m_Framebuffer;
+			GLuint m_Cubemap;
+			GLsizei m_Res;
+
+			constexpr static GLfloat CLEAR_DEPTH{1};
+			constexpr static const char* SHADER_SHADOW_MAP_NAME{"u_ShadowMap"};
 	};
 }
