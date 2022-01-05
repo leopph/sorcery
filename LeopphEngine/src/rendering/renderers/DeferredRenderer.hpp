@@ -15,6 +15,7 @@
 
 #include <glad/glad.h>
 
+#include <cstddef>
 #include <memory>
 #include <vector>
 
@@ -29,9 +30,13 @@ namespace leopph::internal
 			auto Render() -> void override;
 
 		private:
-			// Fill the gbuffer with geometry data
+			// Fill the GeometryBuffer with geometry data.
 			auto RenderGeometry(const Matrix4& camViewMat, const Matrix4& camProjMat, const std::vector<RenderableData>& renderables) -> void;
 
+			// Draw all lights in the RenderBuffer.
+			auto RenderLights(const Matrix4& camViewMat, const Matrix4& camProjMat, std::span<const RenderableData> renderables) -> void;
+
+			// Draw skybox in the empty parts of the RenderBuffer.
 			auto RenderSkybox(const Matrix4& camViewMat, const Matrix4& camProjMat) -> void;
 
 			// Draws into the dirlight shadow map, binds it to light shader with the necessary data, and returns the next usable texture unit.
@@ -57,10 +62,20 @@ namespace leopph::internal
 			                                         std::size_t numShadows,
 			                                         GLuint nextTexUnit) -> GLuint;
 
+
+			struct ShadowCount
+			{
+				bool Directional{false};
+				std::size_t Spot{0};
+				std::size_t Point{0};
+			};
+
+
 			static auto SetAmbientData(const AmbientLight& light, ShaderProgram& lightShader) -> void;
 			static auto SetDirectionalData(const DirectionalLight* dirLight, ShaderProgram& lightShader) -> void;
 			static auto SetSpotData(std::span<const SpotLight* const> spotLights, ShaderProgram& lightShader) -> void;
 			static auto SetPointData(std::span<const PointLight* const> pointLights, ShaderProgram& lightShader) -> void;
+			static auto CountShadows(const DirectionalLight* dirLight, std::span<const SpotLight* const> spotLights, std::span<const PointLight* const> pointLights) -> ShadowCount;
 
 			GeometryBuffer m_GBuffer;
 			RenderBuffer m_RenderBuffer;

@@ -7,8 +7,6 @@
 #include "../../math/LeopphMath.hpp"
 #include "../../math/Matrix.hpp"
 
-#include <glad/glad.h>
-
 #include <algorithm>
 #include <array>
 #include <numeric>
@@ -70,35 +68,46 @@ namespace leopph::internal
 		}
 
 		const auto& renderables{CollectRenderables()};
-
 		const auto camViewMat{Camera::Active()->ViewMatrix()};
 		const auto camProjMat{Camera::Active()->ProjectionMatrix()};
+
+		RenderGeometry(camViewMat, camProjMat, renderables);
+		RenderLights(camViewMat, camProjMat, renderables);
+		RenderSkybox(camViewMat, camProjMat);
+		m_RenderBuffer.CopyColorToDefaultFramebuffer();
+	}
+
+
+	auto DeferredRenderer::RenderGeometry(const Matrix4& camViewMat, const Matrix4& camProjMat, const std::vector<RenderableData>& renderables) -> void
+	{
+		glStencilFunc(GL_ALWAYS, STENCIL_REF, STENCIL_AND_MASK);
+		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+
+		m_GBuffer.BindForWritingAndClear();
+
+		auto& shader{m_GeometryShader.GetPermutation()};
+		shader.SetUniform("u_ViewProjMat", camViewMat * camProjMat);
+		shader.Use();
+
+		for (const auto& [renderable, instances, castsShadow] : renderables)
+		{
+			renderable->SetInstanceData(instances);
+			renderable->DrawWithMaterial(shader, 0);
+		}
+	}
+
+
+	auto DeferredRenderer::RenderLights(const Matrix4& camViewMat, const Matrix4& camProjMat, const std::span<const RenderableData> renderables) -> void
+	{
+		glStencilFunc(GL_EQUAL, STENCIL_REF, STENCIL_AND_MASK);
+		glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+
+		m_GBuffer.CopyStencilData(m_RenderBuffer.FramebufferName());
 
 		const auto dirLight{DataManager::Instance().DirectionalLight()};
 		const auto& spotLights{CollectSpotLights()};
 		const auto& pointLights{CollectPointLights()};
-
-		const auto dirShadow{dirLight != nullptr && dirLight->CastsShadow()};
-		const auto spotShadows{
-			std::accumulate(spotLights.begin(), spotLights.end(), 0ull, [](const auto sum, const auto elem)
-			{
-				if (elem->CastsShadow())
-				{
-					return sum + 1;
-				}
-				return sum;
-			})
-		};
-		const auto pointShadows{
-			std::accumulate(pointLights.begin(), pointLights.end(), 0ull, [](const auto sum, const auto elem)
-			{
-				if (elem->CastsShadow())
-				{
-					return sum + 1;
-				}
-				return sum;
-			})
-		};
+		const auto [dirShadow, spotShadows, pointShadows]{CountShadows(dirLight, spotLights, pointLights)};
 
 		m_LightShader.Clear();
 		m_LightShader["DIRLIGHT"] = std::to_string(dirLight != nullptr);
@@ -109,18 +118,8 @@ namespace leopph::internal
 		m_LightShader["NUM_POINTLIGHTS"] = std::to_string(pointLights.size());
 		m_LightShader["NUM_POINTLIGHT_SHADOWS"] = std::to_string(pointShadows);
 		auto& lightShader{m_LightShader.GetPermutation()};
-
 		auto& shadowShader{m_ShadowShader.GetPermutation()};
 		auto& cubeShadowShader{m_CubeShadowShader.GetPermutation()};
-
-		glStencilFunc(GL_ALWAYS, STENCIL_REF, STENCIL_AND_MASK);
-		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-		RenderGeometry(camViewMat, camProjMat, renderables);
-		
-		m_GBuffer.CopyStencilData(m_RenderBuffer.FramebufferName());
-
-		glStencilFunc(GL_EQUAL, STENCIL_REF, STENCIL_AND_MASK);
-		glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 
 		GLuint nextTexUnit{0};
 		shadowShader.Use();
@@ -142,27 +141,6 @@ namespace leopph::internal
 
 		lightShader.Use();
 		m_RenderBuffer.DrawScreenQuad();
-
-		glStencilFunc(GL_NOTEQUAL, STENCIL_REF, STENCIL_AND_MASK);
-		RenderSkybox(camViewMat, camProjMat);
-
-		m_RenderBuffer.CopyColorToDefaultFramebuffer();
-	}
-
-
-	auto DeferredRenderer::RenderGeometry(const Matrix4& camViewMat, const Matrix4& camProjMat, const std::vector<RenderableData>& renderables) -> void
-	{
-		m_GBuffer.BindForWritingAndClear();
-
-		auto& shader{m_GeometryShader.GetPermutation()};
-		shader.SetUniform("u_ViewProjMat", camViewMat * camProjMat);
-		shader.Use();
-
-		for (const auto& [renderable, instances, castsShadow] : renderables)
-		{
-			renderable->SetInstanceData(instances);
-			renderable->DrawWithMaterial(shader, 0);
-		}
 	}
 
 
@@ -170,11 +148,14 @@ namespace leopph::internal
 	{
 		if (const auto& background{Camera::Active()->Background()}; std::holds_alternative<Skybox>(background))
 		{
+			glStencilFunc(GL_NOTEQUAL, STENCIL_REF, STENCIL_AND_MASK);
+
+			m_RenderBuffer.BindForWriting();
+
 			auto& skyboxShader{m_SkyboxShader.GetPermutation()};
 			skyboxShader.SetUniform("u_ViewProjMat", static_cast<Matrix4>(static_cast<Matrix3>(camViewMat)) * camProjMat);
 			skyboxShader.Use();
 
-			m_RenderBuffer.BindForWriting();
 			DataManager::Instance().CreateOrGetSkyboxImpl(std::get<Skybox>(background).AllFilePaths())->Draw(skyboxShader);
 		}
 	}
@@ -247,20 +228,11 @@ namespace leopph::internal
 		{
 			if (spotLights[i]->CastsShadow())
 			{
-				const auto lightWorldToClipMat
-				{
-					Matrix4::LookAt(
-						spotLights[i]->Entity()->Transform()->Position(),
-						spotLights[i]->Entity()->Transform()->Position() + spotLights[i]->Entity()->Transform()->Forward(),
-						Vector3::Up())
-					*
-					Matrix4::Perspective(math::ToRadians(spotLights[i]->OuterAngle() * 2),
-					                     1.f,
-					                     0.1f,
-					                     spotLights[i]->Range())
-				};
+				const auto lightViewMat{Matrix4::LookAt(spotLights[i]->Entity()->Transform()->Position(), spotLights[i]->Entity()->Transform()->Position() + spotLights[i]->Entity()->Transform()->Forward(), Vector3::Up())};
+				const auto lightProjMat{Matrix4::Perspective(math::ToRadians(spotLights[i]->OuterAngle() * 2), 1.f, 0.1f, spotLights[i]->Range())};
+				const auto lightViewProjMat{lightViewMat * lightProjMat};
 
-				shadowShader.SetUniform("u_WorldToClipMat", lightWorldToClipMat);
+				shadowShader.SetUniform("u_WorldToClipMat", lightViewProjMat);
 
 				m_SpotShadowMaps[shadowInd]->BindForWritingAndClear();
 
@@ -273,7 +245,7 @@ namespace leopph::internal
 					}
 				}
 
-				lightShader.SetUniform("u_SpotShadowMats[" + std::to_string(shadowInd) + "]", lightWorldToClipMat);
+				lightShader.SetUniform("u_SpotShadowMats[" + std::to_string(shadowInd) + "]", lightViewProjMat);
 				nextTexUnit = m_SpotShadowMaps[shadowInd]->BindForReading(lightShader, "u_SpotShadowMaps[" + std::to_string(shadowInd) + "]", nextTexUnit);
 				++shadowInd;
 			}
@@ -307,12 +279,7 @@ namespace leopph::internal
 			{
 				std::array<Matrix4, 6> shadowViewProjMats;
 
-				const auto shadowProj{
-					Matrix4::Perspective(math::ToRadians(90),
-					                     1,
-					                     0.01f,
-					                     pointLights[i]->Range())
-				};
+				const auto shadowProjMat{Matrix4::Perspective(math::ToRadians(90), 1, 0.01f, pointLights[i]->Range())};
 
 				static constexpr std::array cubeFaceMats
 				{
@@ -326,7 +293,7 @@ namespace leopph::internal
 
 				std::ranges::transform(cubeFaceMats, shadowViewProjMats.begin(), [&](const auto& cubeFaceMat)
 				{
-					return Matrix4::Translate(-pointLights[i]->Entity()->Transform()->Position()) * cubeFaceMat * shadowProj;
+					return Matrix4::Translate(-pointLights[i]->Entity()->Transform()->Position()) * cubeFaceMat * shadowProjMat;
 				});
 
 				shadowShader.SetUniform("u_ViewProjMats", shadowViewProjMats);
@@ -444,5 +411,32 @@ namespace leopph::internal
 			lightShader.SetUniform(arrayPrefix + "quadratic", pointLight->Quadratic());
 			lightShader.SetUniform(arrayPrefix + "range", pointLight->Range());
 		}
+	}
+
+
+	auto DeferredRenderer::CountShadows(const DirectionalLight* const dirLight, const std::span<const SpotLight* const> spotLights, const std::span<const PointLight* const> pointLights) -> ShadowCount
+	{
+		const auto dirShadow{dirLight != nullptr && dirLight->CastsShadow()};
+		const auto spotShadows{
+			std::accumulate(spotLights.begin(), spotLights.end(), 0ull, [](const auto sum, const auto elem)
+			{
+				if (elem->CastsShadow())
+				{
+					return sum + 1;
+				}
+				return sum;
+			})
+		};
+		const auto pointShadows{
+			std::accumulate(pointLights.begin(), pointLights.end(), 0ull, [](const auto sum, const auto elem)
+			{
+				if (elem->CastsShadow())
+				{
+					return sum + 1;
+				}
+				return sum;
+			})
+		};
+		return {dirShadow, spotShadows, pointShadows};
 	}
 }
