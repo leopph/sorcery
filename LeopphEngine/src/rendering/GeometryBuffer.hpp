@@ -31,19 +31,12 @@ namespace leopph::internal
 
 			~GeometryBuffer() override;
 
-			auto Clear() const -> void;
+			// Binds the gbuffer as MRT render target and sets its values to the defaults.
+			auto BindForWritingAndClear() const -> void;
 
-			auto BindForWriting() const -> void;
-			static auto UnbindFromWriting() -> void;
+			// Bind all textures and returns the next available texture unit after binding.
+			[[nodiscard]] auto BindForReading(ShaderProgram& shader, GLuint texUnit) const -> GLuint;
 
-			// Binds the passed texture and returns the next available texture unit after binding
-			[[nodiscard]] auto BindForReading(ShaderProgram& shader, Texture type, int texUnit) const -> int;
-			// Bind all textures and returns the next available texture unit after binding
-			[[nodiscard]] auto BindForReading(ShaderProgram& shader, int texUnit) const -> int;
-
-			auto UnbindFromReading(Texture type) const -> void;
-			auto UnbindFromReading() const -> void;
-			
 			auto CopyStencilData(GLuint bufferName) const -> void;
 
 		private:
@@ -53,14 +46,16 @@ namespace leopph::internal
 			auto OnEventReceived(EventParamType event) -> void override;
 
 			std::array<GLuint, 5> m_Textures;
-			mutable std::array<int, std::tuple_size_v<decltype(m_Textures)>> m_BindIndices;
 			GLuint m_DepthStencilBuffer;
 			GLuint m_FrameBuffer;
 			ResType m_Res;
-
-			static constexpr int BIND_FILL_VALUE{-1};
-			static constexpr GLfloat CLEAR_COLOR[]{0.f, 0.f, 0.f, 1.f};
-			static constexpr GLfloat CLEAR_DEPTH{1.f};
+			
+			static constexpr GLfloat CLEAR_COLOR[]{0, 0, 0, 1};
+			static constexpr GLdouble CLEAR_DEPTH{1};
 			static constexpr GLuint CLEAR_STENCIL{1};
+			static constexpr std::array SHADER_UNIFORM_NAMES
+			{
+				"u_PosTex", "u_NormShineTex", "u_AmbTex", "u_DiffTex", "u_SpecTex"
+			};
 	};
 }

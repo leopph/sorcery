@@ -2,20 +2,15 @@
 
 #include "../windowing/WindowBase.hpp"
 
-#include <algorithm>
-#include <cstddef>
-
 
 namespace leopph::internal
 {
 	GeometryBuffer::GeometryBuffer() :
 		m_Textures{},
-		m_BindIndices{},
 		m_DepthStencilBuffer{},
 		m_FrameBuffer{},
 		m_Res{ResType{WindowBase::Get().Width(), WindowBase::Get().Height()} * WindowBase::Get().RenderMultiplier()}
 	{
-		std::ranges::fill(m_BindIndices, BIND_FILL_VALUE);
 		glCreateFramebuffers(1, &m_FrameBuffer);
 		SetUpBuffers();
 	}
@@ -29,94 +24,27 @@ namespace leopph::internal
 	}
 
 
-	auto GeometryBuffer::Clear() const -> void
+	auto GeometryBuffer::BindForWritingAndClear() const -> void
 	{
-		for (std::size_t i = 0; i < m_Textures.size(); i++)
-		{
-			glClearNamedFramebufferfv(m_FrameBuffer, GL_COLOR, static_cast<GLint>(i), CLEAR_COLOR);
-		}
-		glClearNamedFramebufferfi(m_FrameBuffer, GL_DEPTH_STENCIL, 0, CLEAR_DEPTH, CLEAR_STENCIL);
-	}
-
-
-	auto GeometryBuffer::BindForWriting() const -> void
-	{
-		glBindFramebuffer(GL_FRAMEBUFFER, m_FrameBuffer);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_FrameBuffer);
 		glViewport(0, 0, m_Res[0], m_Res[1]);
+
+		glClearColor(CLEAR_COLOR[0], CLEAR_COLOR[1], CLEAR_COLOR[2], CLEAR_COLOR[3]);
+		glClearDepth(CLEAR_DEPTH);
+		glClearStencil(CLEAR_STENCIL);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 	}
 
 
-	auto GeometryBuffer::UnbindFromWriting() -> void
+	auto GeometryBuffer::BindForReading(ShaderProgram& shader, const GLuint texUnit) const -> GLuint
 	{
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		const auto& window{WindowBase::Get()};
-		glViewport(0, 0, static_cast<GLsizei>(window.Width()), static_cast<GLsizei>(window.Height()));
-	}
-
-
-	auto GeometryBuffer::BindForReading(ShaderProgram& shader, const Texture type, int texUnit) const -> int
-	{
-		glBindTextureUnit(static_cast<unsigned>(texUnit), m_Textures[static_cast<int>(type)]);
-
-		auto uniformName{""};
-
-		switch (type)
+		for (auto i{0u}; i < m_Textures.size(); ++i)
 		{
-			case Texture::Position:
-				uniformName = "u_PosTex";
-				break;
-
-			case Texture::NormalAndShine:
-				uniformName = "u_NormShineTex";
-				break;
-
-			case Texture::Ambient:
-				uniformName = "u_AmbTex";
-				break;
-
-			case Texture::Diffuse:
-				uniformName = "u_DiffTex";
-				break;
-
-			case Texture::Specular:
-				uniformName = "u_SpecTex";
-				break;
+			glBindTextureUnit(texUnit + i, m_Textures[i]);
+			shader.SetUniform(SHADER_UNIFORM_NAMES[i], static_cast<int>(texUnit + i) /* cast to int because only glUniform1i[v] may be used to set sampler uniforms (wtf?) */);
 		}
 
-		shader.SetUniform(uniformName, texUnit);
-
-		m_BindIndices[static_cast<int>(type)] = texUnit;
-		return ++texUnit;
-	}
-
-
-	auto GeometryBuffer::BindForReading(ShaderProgram& shader, int texUnit) const -> int
-	{
-		for (std::size_t i = 0; i < m_Textures.size(); ++i)
-		{
-			texUnit = BindForReading(shader, static_cast<Texture>(i), texUnit);
-		}
-
-		return texUnit;
-	}
-
-
-	auto GeometryBuffer::UnbindFromReading(const Texture type) const -> void
-	{
-		if (m_BindIndices[static_cast<int>(type)] != BIND_FILL_VALUE)
-		{
-			glBindTextureUnit(m_BindIndices[static_cast<int>(type)], 0);
-			m_BindIndices[static_cast<int>(type)] = BIND_FILL_VALUE;
-		}
-	}
-
-
-	auto GeometryBuffer::UnbindFromReading() const -> void
-	{
-		for (std::size_t i = 0; i < m_Textures.size(); ++i)
-		{
-			UnbindFromReading(static_cast<Texture>(i));
-		}
+		return texUnit + static_cast<decltype(texUnit)>(m_Textures.size());
 	}
 
 

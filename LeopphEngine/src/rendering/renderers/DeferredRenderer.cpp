@@ -153,8 +153,7 @@ namespace leopph::internal
 
 	auto DeferredRenderer::RenderGeometry(const Matrix4& camViewMat, const Matrix4& camProjMat, const std::vector<RenderableData>& renderables) -> void
 	{
-		m_GBuffer.Clear();
-		m_GBuffer.BindForWriting();
+		m_GBuffer.BindForWritingAndClear();
 
 		auto& shader{m_GeometryShader.GetPermutation()};
 		shader.SetUniform("u_ViewProjMat", camViewMat * camProjMat);
@@ -165,8 +164,6 @@ namespace leopph::internal
 			renderable->SetInstanceData(instances);
 			renderable->DrawWithMaterial(shader, 0);
 		}
-
-		GeometryBuffer::UnbindFromWriting();
 	}
 
 
