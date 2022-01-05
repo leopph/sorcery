@@ -8,7 +8,6 @@
 #include <glad/glad.h>
 
 #include <array>
-#include <cstddef>
 
 
 namespace leopph::internal
@@ -24,7 +23,7 @@ namespace leopph::internal
 			auto operator=(const GeometryBuffer&) -> GeometryBuffer& = delete;
 			auto operator=(GeometryBuffer&&) -> GeometryBuffer& = delete;
 
-			~GeometryBuffer() override;
+			~GeometryBuffer() noexcept override;
 
 			// Binds the gbuffer as MRT render target and sets its values to the defaults.
 			auto BindForWritingAndClear() const -> void;
@@ -37,7 +36,8 @@ namespace leopph::internal
 		private:
 			using ResType = Vector<GLsizei, 2>;
 
-			auto SetUpBuffers() -> void;
+			auto InitBuffers() noexcept -> void;
+			auto DeinitBuffers() const noexcept -> void;
 			auto OnEventReceived(EventParamType event) -> void override;
 
 			std::array<GLuint, 5> m_Textures;

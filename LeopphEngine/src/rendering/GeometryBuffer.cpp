@@ -9,17 +9,24 @@ namespace leopph::internal
 		m_Textures{},
 		m_DepthStencilBuffer{},
 		m_FrameBuffer{},
-		m_Res{ResType{WindowBase::Get().Width(), WindowBase::Get().Height()} * WindowBase::Get().RenderMultiplier()}
+		m_Res{
+			[]
+			{
+				const auto& window{WindowBase::Get()};
+				const Vector2 displayRes{window.Width(), window.Height()};
+				const auto renderRes{displayRes * window.RenderMultiplier()};
+				return ResType{renderRes[0], renderRes[1]};
+			}()
+		}
 	{
 		glCreateFramebuffers(1, &m_FrameBuffer);
-		SetUpBuffers();
+		InitBuffers();
 	}
 
 
-	GeometryBuffer::~GeometryBuffer()
+	GeometryBuffer::~GeometryBuffer() noexcept
 	{
-		glDeleteTextures(static_cast<GLsizei>(m_Textures.size()), m_Textures.data());
-		glDeleteRenderbuffers(1, &m_DepthStencilBuffer);
+		DeinitBuffers();
 		glDeleteFramebuffers(1, &m_FrameBuffer);
 	}
 
@@ -54,11 +61,16 @@ namespace leopph::internal
 	}
 
 
-	auto GeometryBuffer::SetUpBuffers() -> void
+	auto GeometryBuffer::OnEventReceived(EventParamType event) -> void
 	{
-		glDeleteTextures(static_cast<GLsizei>(m_Textures.size()), m_Textures.data());
-		glDeleteRenderbuffers(1, &m_DepthStencilBuffer);
+		const auto renderRes{event.NewResolution * event.NewResolutionMultiplier};
+		m_Res = ResType{renderRes[0], renderRes[1]};
+		InitBuffers();
+	}
 
+
+	auto GeometryBuffer::InitBuffers() noexcept -> void
+	{
 		glCreateTextures(GL_TEXTURE_2D, static_cast<GLsizei>(m_Textures.size()), m_Textures.data());
 
 		glTextureStorage2D(m_Textures[POS_TEX], 1, GL_RGBA32F, m_Res[0], m_Res[1]);
@@ -95,9 +107,9 @@ namespace leopph::internal
 	}
 
 
-	auto GeometryBuffer::OnEventReceived(EventParamType event) -> void
+	auto GeometryBuffer::DeinitBuffers() const noexcept -> void
 	{
-		m_Res = ResType{event.NewResolution[0], event.NewResolution[1]} * event.NewResolutionMultiplier;
-		SetUpBuffers();
+		glDeleteTextures(static_cast<GLsizei>(m_Textures.size()), m_Textures.data());
+		glDeleteRenderbuffers(1, &m_DepthStencilBuffer);
 	}
 }
