@@ -65,7 +65,7 @@ uniform DirLight u_DirLight;
 #if DIRLIGHT_SHADOW
 uniform mat4 u_CascadeMatrices[NUM_CASCADES];
 uniform float u_CascadeBounds[NUM_CASCADES];
-uniform sampler2DShadow u_DirLightShadowMaps[NUM_CASCADES];
+uniform sampler2DShadow u_DirShadowMaps[NUM_CASCADES];
 
 float CalcDirShadow(vec3 fragPos, float fragPosCameraClipZ, vec3 fragNormal)
 {
@@ -76,7 +76,7 @@ float CalcDirShadow(vec3 fragPos, float fragPosCameraClipZ, vec3 fragNormal)
 			vec4 fragPosLightSpace = vec4(fragPos, 1) * u_CascadeMatrices[i];
 			vec3 normalizedPos = fragPosLightSpace.xyz * 0.5 + 0.5;
 			float bias = max(MAX_SHADOW_BIAS * (1.0 - dot(fragNormal, -u_DirLight.direction)), MIN_SHADOW_BIAS);
-			return texture(u_DirLightShadowMaps[i], vec3(normalizedPos.xy, normalizedPos.z - bias));
+			return texture(u_DirShadowMaps[i], vec3(normalizedPos.xy, normalizedPos.z - bias));
 		}
 	}
 	return 1.0;

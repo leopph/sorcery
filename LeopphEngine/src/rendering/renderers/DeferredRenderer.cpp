@@ -221,7 +221,7 @@ namespace leopph::internal
 
 		lightShader.SetUniform("u_CascadeMatrices", cascadeMats);
 		lightShader.SetUniform("u_CascadeBounds", CascadeFarBoundsClip(camProjMat, cascadeBounds));
-		return m_DirShadowMap.BindForReading(lightShader, nextTexUnit);
+		return m_DirShadowMap.BindForReading(lightShader, "u_DirShadowMaps", nextTexUnit);
 	}
 
 

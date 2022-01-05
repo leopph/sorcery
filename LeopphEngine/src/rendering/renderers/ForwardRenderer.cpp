@@ -136,7 +136,7 @@ namespace leopph::internal
 				objectShader.SetUniform("u_DirLightCascadeCount", static_cast<unsigned>(numCascades));
 				objectShader.SetUniform("u_DirLightClipMatrices", dirLightMatrices);
 				objectShader.SetUniform("u_DirLightCascadeFarBounds", CascadeFarBoundsClip(camProjMat, cascadeBounds));
-				static_cast<void>(m_DirLightShadowMap.BindForReading(objectShader, texCount));
+				static_cast<void>(m_DirLightShadowMap.BindForReading(objectShader, "u_DirLightShadowMaps", texCount));
 			}
 		}
 

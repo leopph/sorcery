@@ -41,7 +41,7 @@ namespace leopph::internal
 	}
 
 
-	auto CascadedShadowMap::BindForReading(ShaderProgram& shader, GLuint texUnit) const -> GLuint
+	auto CascadedShadowMap::BindForReading(ShaderProgram& shader, const std::string_view uniformName, GLuint texUnit) const -> GLuint
 	{
 		static std::vector<int> texUnits;
 		texUnits.clear();
@@ -53,7 +53,7 @@ namespace leopph::internal
 			++texUnit;
 		}
 
-		shader.SetUniform(SHADER_SHADOW_MAP_ARR_NAME, texUnits);
+		shader.SetUniform(uniformName, texUnits);
 		return texUnit;
 	}
 

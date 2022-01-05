@@ -10,6 +10,7 @@
 
 #include <cstddef>
 #include <span>
+#include <string_view>
 #include <vector>
 
 
@@ -33,8 +34,8 @@ namespace leopph::internal
 			// Binds the the shadow map referred to by cascadeIndex as render target and set its value to the default.
 			auto BindForWritingAndClear(std::size_t cascadeIndex) const -> void;
 
-			// Binds the shadow maps to consecutive texture units starting at texUnit, sets the shader uniform, and returns the next available texture unit.
-			[[nodiscard]] auto BindForReading(ShaderProgram& shader, GLuint texUnit) const -> GLuint;
+			// Binds the shadow maps to consecutive texture units starting at texUnit, sets the passed uniform, and returns the next available texture unit.
+			[[nodiscard]] auto BindForReading(ShaderProgram& shader, std::string_view uniformName, GLuint texUnit) const -> GLuint;
 
 			// Returns a Matrix that defines the transformation that is used to render world space primitives to shadow maps.
 			[[nodiscard]] auto CascadeMatrix(CascadeBounds cascadeBounds, const Matrix4& cameraInverseMatrix, const Matrix4& lightViewMatrix, float bBoxNearOffset) const -> Matrix4;
@@ -51,7 +52,6 @@ namespace leopph::internal
 			std::vector<GLuint> m_ShadowMaps;
 
 			constexpr static GLfloat CLEAR_DEPTH{1};
-			constexpr static const char* SHADER_SHADOW_MAP_ARR_NAME{"u_DirLightShadowMaps"};
 	};
 
 
