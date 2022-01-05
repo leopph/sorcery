@@ -6,6 +6,8 @@
 
 #include <glad/glad.h>
 
+#include <string_view>
+
 
 namespace leopph::internal
 {
@@ -26,7 +28,7 @@ namespace leopph::internal
 			auto BindForWritingAndClear() const -> void;
 
 			// Binds the cubemap to the passed texture unit, sets the shader uniform, and returns the next available texture unit.
-			[[nodiscard]] auto BindForReading(ShaderProgram& shader, GLuint texUnit) const -> GLuint;
+			[[nodiscard]] auto BindForReading(ShaderProgram& shader, std::string_view uniformName, GLuint texUnit) const -> GLuint;
 
 		private:
 			// Initializes the cubemap to the current resolution.
@@ -40,6 +42,5 @@ namespace leopph::internal
 			GLsizei m_Res;
 
 			constexpr static GLfloat CLEAR_DEPTH{1};
-			constexpr static const char* SHADER_SHADOW_MAP_NAME{"u_ShadowMap"};
 	};
 }

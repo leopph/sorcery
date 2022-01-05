@@ -34,10 +34,10 @@ namespace leopph::internal
 	}
 
 
-	auto CubeShadowMap::BindForReading(ShaderProgram& shader, const GLuint texUnit) const -> GLuint
+	auto CubeShadowMap::BindForReading(ShaderProgram& shader, const std::string_view uniformName, const GLuint texUnit) const -> GLuint
 	{
 		glBindTextureUnit(texUnit, m_Cubemap);
-		shader.SetUniform(SHADER_SHADOW_MAP_NAME, texUnit);
+		shader.SetUniform(uniformName, texUnit);
 		return texUnit + 1;
 	}
 

@@ -346,9 +346,7 @@ namespace leopph::internal
 					}
 				}
 
-				// This is also not great, this should somehow be done with BindForReading
-				lightShader.SetUniform("u_PointShadowMaps[" + std::to_string(shadowInd) + "]", nextTexUnit);
-				nextTexUnit = m_PointShadowMaps[shadowInd]->BindForReading(lightShader, nextTexUnit);
+				nextTexUnit = m_PointShadowMaps[shadowInd]->BindForReading(lightShader, "u_PointShadowMaps[" + std::to_string(shadowInd) + "]", nextTexUnit);
 				++shadowInd;
 			}
 		}
