@@ -129,7 +129,7 @@ namespace leopph::internal
 		if (ai_real parsedShininess;
 			assimpMaterial->Get(AI_MATKEY_SHININESS, parsedShininess) == aiReturn_SUCCESS)
 		{
-			material->Shininess = static_cast<decltype(Material::Shininess)>(parsedShininess);
+			material->Gloss = static_cast<decltype(Material::Gloss)>(parsedShininess);
 		}
 
 		if (aiColor3D parsedDiffuseColor;

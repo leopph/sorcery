@@ -25,7 +25,7 @@ struct Fragment
 	vec3 normal;
 	vec3 diff;
 	vec3 spec;
-	float shine;
+	float gloss;
 };
 
 // General functions
@@ -43,7 +43,7 @@ vec3 CalcBlinnPhong(Fragment frag, vec3 dirToLight, vec3 lightDiff, vec3 lightSp
 	if (diffuseDot > 0)
 	{
 		vec3 halfway = normalize(dirToLight + normalize(u_CamPos - frag.pos));
-		light += frag.spec * pow(max(dot(frag.normal, halfway), 0), 4 * frag.shine) * lightSpec;
+		light += frag.spec * pow(max(dot(frag.normal, halfway), 0), 4 * frag.gloss) * lightSpec;
 	}
 
 	return light;
@@ -222,7 +222,7 @@ void main()
     frag.diff = texture(u_DiffTex, in_TexCoords).rgb;
 	vec4 fragNormAndGloss = texture(u_NormGlossTex, in_TexCoords);
     frag.normal = fragNormAndGloss.xyz;
-	frag.shine = fragNormAndGloss.w;
+	frag.gloss = fragNormAndGloss.w;
 
 	vec4 fragPosNdc = vec4(in_TexCoords * 2 - 1, texture(u_DepthTex, in_TexCoords).r * 2 - 1, 1);
 	vec4 fragPosWorld = fragPosNdc * u_CamViewProjInv;

@@ -88,7 +88,7 @@ namespace leopph::internal
 		shader.SetUniform("u_Material.ambientColor", static_cast<Vector3>(m_Material->AmbientColor));
 		shader.SetUniform("u_Material.diffuseColor", static_cast<Vector3>(m_Material->DiffuseColor));
 		shader.SetUniform("u_Material.specularColor", static_cast<Vector3>(m_Material->SpecularColor));
-		shader.SetUniform("u_Material.shininess", m_Material->Shininess);
+		shader.SetUniform("u_Material.shininess", m_Material->Gloss);
 
 		if (m_Material->AmbientMap != nullptr)
 		{

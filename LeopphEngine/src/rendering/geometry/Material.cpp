@@ -7,7 +7,7 @@ namespace leopph
 		AmbientColor{32, 32, 32},
 		DiffuseColor{255, 255, 255},
 		SpecularColor{127, 127, 127},
-		Shininess{32},
+		Gloss{32},
 		TwoSided{false}
 	{}
 }

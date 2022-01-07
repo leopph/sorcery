@@ -21,7 +21,7 @@ namespace leopph
 			std::shared_ptr<Texture> DiffuseMap;
 			std::shared_ptr<Texture> SpecularMap;
 
-			float Shininess;
+			float Gloss;
 			bool TwoSided;
 	};
 }
