@@ -21,7 +21,7 @@ struct Material
 layout (location = 0) in vec3 in_Normal;
 layout (location = 1) in vec2 in_TexCoords;
 
-layout (location = 0) out vec4 out_NormalShine;
+layout (location = 0) out vec3 out_NormalShine;
 layout (location = 1) out vec3 out_AmbientColor;
 layout (location = 2) out vec3 out_DiffuseColor;
 layout (location = 3) out vec3 out_SpecularColor;
@@ -31,7 +31,11 @@ uniform Material u_Material;
 
 void main()
 {
-    out_NormalShine = vec4(normalize(in_Normal), u_Material.shininess);
+    // Encode normal
+    vec3 normal = normalize(in_Normal);
+    vec2 compressedNormal = normalize(normal.xy) * sqrt(normal.z * 0.5 + 0.5);
+    out_NormalShine = vec3(compressedNormal, u_Material.shininess);
+
     out_AmbientColor = u_Material.ambientColor;
     out_DiffuseColor = u_Material.diffuseColor;
     out_SpecularColor = u_Material.specularColor;

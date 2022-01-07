@@ -216,14 +216,20 @@ void main()
 	// Add ambient effects
 	colorSum += texture(u_AmbTex, in_TexCoords).rgb * u_AmbientLight;
 	
-	// gbuffer contents
+	// Parse gbuffer contents
 	Fragment frag;
-    frag.spec = texture(u_SpecTex, in_TexCoords).rgb;
     frag.diff = texture(u_DiffTex, in_TexCoords).rgb;
-	vec4 fragNormAndGloss = texture(u_NormGlossTex, in_TexCoords);
-    frag.normal = fragNormAndGloss.xyz;
-	frag.gloss = fragNormAndGloss.w;
+    frag.spec = texture(u_SpecTex, in_TexCoords).rgb;
 
+	vec3 fragCompNormAndGloss = texture(u_NormGlossTex, in_TexCoords).xyz;
+	frag.gloss = fragCompNormAndGloss.z;
+
+	// Decode normal
+	frag.normal = vec3(0);
+	frag.normal.z = pow(length(fragCompNormAndGloss.xy), 2) * 2 - 1;
+	frag.normal.xy = normalize(fragCompNormAndGloss.xy) * sqrt(1 - frag.normal.z * frag.normal.z);
+
+	// Reconstruct pos from depth
 	vec4 fragPosNdc = vec4(in_TexCoords * 2 - 1, texture(u_DepthTex, in_TexCoords).r * 2 - 1, 1);
 	vec4 fragPosWorld = fragPosNdc * u_CamViewProjInv;
 	fragPosWorld /= fragPosWorld.w;
