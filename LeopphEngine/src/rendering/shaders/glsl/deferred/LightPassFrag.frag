@@ -226,7 +226,7 @@ void main()
 
 	// Decode normal
 	frag.normal = vec3(0);
-	frag.normal.z = pow(length(fragCompNormAndGloss.xy), 2) * 2 - 1;
+	frag.normal.z = dot(fragCompNormAndGloss.xy, fragCompNormAndGloss.xy) * 2 - 1;
 	frag.normal.xy = normalize(fragCompNormAndGloss.xy) * sqrt(1 - frag.normal.z * frag.normal.z);
 
 	// Reconstruct pos from depth
