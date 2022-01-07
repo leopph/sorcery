@@ -138,6 +138,7 @@ namespace leopph::internal
 		SetPointData(pointLights, lightShader);
 
 		lightShader.SetUniform("u_CamPos", Camera::Active()->Entity()->Transform()->Position());
+		lightShader.SetUniform("u_CamViewProjInv", (camViewMat * camProjMat).Inverse());
 
 		lightShader.Use();
 		m_RenderBuffer.DrawScreenQuad();
@@ -201,7 +202,7 @@ namespace leopph::internal
 		}
 
 		lightShader.SetUniform("u_CascadeMatrices", cascadeMats);
-		lightShader.SetUniform("u_CascadeBounds", CascadeFarBoundsClip(camProjMat, cascadeBounds));
+		lightShader.SetUniform("u_CascadeBoundsNdc", CascadeFarBoundsNdc(camProjMat, cascadeBounds));
 		return m_DirShadowMap.BindForReading(lightShader, "u_DirShadowMaps", nextTexUnit);
 	}
 

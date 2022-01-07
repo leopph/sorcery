@@ -9,14 +9,15 @@ layout (location = 0) in vec2 in_TexCoords;
 
 layout (location = 0) out vec4 out_FragColor;
 
-uniform sampler2D u_PosTex;
-uniform sampler2D u_NormShineTex;
+uniform sampler2D u_NormGlossTex;
 uniform sampler2D u_AmbTex;
 uniform sampler2D u_DiffTex;
 uniform sampler2D u_SpecTex;
+uniform sampler2D u_DepthTex;
 
 uniform vec3 u_CamPos;
 uniform vec3 u_AmbientLight;
+uniform mat4 u_CamViewProjInv;
 
 struct Fragment
 {
@@ -25,7 +26,6 @@ struct Fragment
 	vec3 diff;
 	vec3 spec;
 	float shine;
-	float clipZ;
 };
 
 // General functions
@@ -64,19 +64,18 @@ uniform DirLight u_DirLight;
 
 #if DIRLIGHT_SHADOW
 uniform mat4 u_CascadeMatrices[NUM_CASCADES];
-uniform float u_CascadeBounds[NUM_CASCADES];
+uniform float u_CascadeBoundsNdc[NUM_CASCADES];
 uniform sampler2DShadow u_DirShadowMaps[NUM_CASCADES];
 
-float CalcDirShadow(vec3 fragPos, float fragPosCameraClipZ, vec3 fragNormal)
+float CalcDirShadow(vec3 fragPos, float fragPosNdcZ, vec3 fragNormal)
 {
 	for (int i = 0; i < NUM_CASCADES; ++i)
 	{
-		if (fragPosCameraClipZ < u_CascadeBounds[i])
+		if (fragPosNdcZ < u_CascadeBoundsNdc[i])
 		{
-			vec4 fragPosLightSpace = vec4(fragPos, 1) * u_CascadeMatrices[i];
-			vec3 normalizedPos = fragPosLightSpace.xyz * 0.5 + 0.5;
+			vec3 fragPosLightNorm = vec3(vec4(fragPos, 1) * u_CascadeMatrices[i]) * 0.5 + 0.5;
 			float bias = max(MAX_SHADOW_BIAS * (1.0 - dot(fragNormal, -u_DirLight.direction)), MIN_SHADOW_BIAS);
-			return texture(u_DirShadowMaps[i], vec3(normalizedPos.xy, normalizedPos.z - bias));
+			return texture(u_DirShadowMaps[i], vec3(fragPosLightNorm.xy, fragPosLightNorm.z - bias));
 		}
 	}
 	return 1.0;
@@ -221,19 +220,21 @@ void main()
 	Fragment frag;
     frag.spec = texture(u_SpecTex, in_TexCoords).rgb;
     frag.diff = texture(u_DiffTex, in_TexCoords).rgb;
-	vec4 fragPosAndClipZ = texture(u_PosTex, in_TexCoords);
-	frag.pos = fragPosAndClipZ.xyz;
-	frag.clipZ = fragPosAndClipZ.w;
-	vec4 fragNormAndShine = texture(u_NormShineTex, in_TexCoords);
-    frag.normal = fragNormAndShine.xyz;
-	frag.shine = fragNormAndShine.w;
+	vec4 fragNormAndGloss = texture(u_NormGlossTex, in_TexCoords);
+    frag.normal = fragNormAndGloss.xyz;
+	frag.shine = fragNormAndGloss.w;
+
+	vec4 fragPosNdc = vec4(in_TexCoords * 2 - 1, texture(u_DepthTex, in_TexCoords).r * 2 - 1, 1);
+	vec4 fragPosWorld = fragPosNdc * u_CamViewProjInv;
+	fragPosWorld /= fragPosWorld.w;
+	frag.pos = fragPosWorld.xyz;
 
 
 	// Add directional effects
 	#if DIRLIGHT
 	vec3 dirLightEffect = CalcBlinnPhong(frag, -u_DirLight.direction, u_DirLight.diffuseColor, u_DirLight.specularColor);
 	#if DIRLIGHT_SHADOW
-	dirLightEffect *= CalcDirShadow(frag.pos, frag.clipZ, frag.normal);
+	dirLightEffect *= CalcDirShadow(frag.pos, fragPosNdc.z, frag.normal);
 	#endif
 	colorSum += dirLightEffect;
 	#endif
