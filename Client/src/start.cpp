@@ -50,7 +50,7 @@ auto leopph::Init() -> void
 	dirLight->Diffuse(Vector3{0.5, 0.5, 0.5});
 	dirLight->CastsShadow(true);
 
-	Entity::CreateEntity("fpscounter")->CreateComponent<FrameRateAnalyzer>(0.5f, 10);
+	Entity::CreateEntity("fpscounter")->CreateComponent<FrameRateAnalyzer>(0.5f, 60);
 	Entity::CreateEntity("windowstester")->CreateComponent<WindowTester>();
 
 	const auto entity = Entity::CreateEntity();
