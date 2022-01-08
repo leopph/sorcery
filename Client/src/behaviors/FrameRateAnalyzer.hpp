@@ -26,4 +26,8 @@ class FrameRateAnalyzer final : public leopph::Behavior
 		unsigned m_MaxNumDataSets;
 		float m_PollInterval;
 		float m_DeltaTime;
+
+		constexpr static const char* DATA_SEPARATOR{"################"};
+		constexpr static const char* FPS_POSTFIX{" FPS, "};
+		constexpr static const char* FRAMETIME_POSTFIX{" ms"};
 };
