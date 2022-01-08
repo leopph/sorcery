@@ -9,9 +9,8 @@ layout (location = 0) in vec2 in_TexCoords;
 
 layout (location = 0) out vec4 out_FragColor;
 
-uniform sampler2D u_NormGlossTex;
-uniform sampler2D u_DiffTex;
-uniform sampler2D u_SpecTex;
+uniform sampler2D u_NormTex;
+uniform usampler2D u_ColorGlossTex;
 uniform sampler2D u_DepthTex;
 
 uniform vec3 u_CamPos;
@@ -211,22 +210,28 @@ void main()
 {	
 	// Parse gbuffer contents
 	Fragment frag;
-    frag.diff = texture(u_DiffTex, in_TexCoords).rgb;
-    frag.spec = texture(u_SpecTex, in_TexCoords).rgb;
-
-	vec3 fragCompNormAndGloss = texture(u_NormGlossTex, in_TexCoords).xyz;
-	frag.gloss = fragCompNormAndGloss.z;
 
 	// Decode normal
-	frag.normal = vec3(0);
-	frag.normal.z = dot(fragCompNormAndGloss.xy, fragCompNormAndGloss.xy) * 2 - 1;
-	frag.normal.xy = normalize(fragCompNormAndGloss.xy) * sqrt(1 - frag.normal.z * frag.normal.z);
+	vec2 fragCompNorm = texture(u_NormTex, in_TexCoords).xy;
+	frag.normal.z = dot(fragCompNorm, fragCompNorm) * 2 - 1;
+	frag.normal.xy = normalize(fragCompNorm) * sqrt(1 - frag.normal.z * frag.normal.z);
 
 	// Reconstruct pos from depth
 	vec4 fragPosNdc = vec4(in_TexCoords * 2 - 1, texture(u_DepthTex, in_TexCoords).r * 2 - 1, 1);
 	vec4 fragPosWorld = fragPosNdc * u_CamViewProjInv;
 	fragPosWorld /= fragPosWorld.w;
 	frag.pos = fragPosWorld.xyz;
+
+	// Unpack color and gloss bits
+	uvec4 packedColorGloss = texture(u_ColorGlossTex, in_TexCoords);
+	vec4 unPack = unpackUnorm4x8(packedColorGloss.x);
+	frag.diff.rg = unPack.xy;
+	unPack = unpackUnorm4x8(packedColorGloss.y);
+	frag.diff.b = unPack.x;
+	frag.spec.r = unPack.y;
+	unPack = unpackUnorm4x8(packedColorGloss.z);
+	frag.spec.gb = unPack.xy;
+	frag.gloss = unpackHalf2x16(packedColorGloss.w).x;
 
 	// Accumulate light effects in this
 	vec3 colorSum = vec3(0);

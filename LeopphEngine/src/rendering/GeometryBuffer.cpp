@@ -72,26 +72,21 @@ namespace leopph::internal
 	{
 		glCreateTextures(GL_TEXTURE_2D, static_cast<GLsizei>(m_Textures.size()), m_Textures.data());
 
-		glTextureStorage2D(m_Textures[NORM_GLOSS_TEX], 1, GL_RGB16F, m_Res[0], m_Res[1]);
-		glTextureParameteri(m_Textures[NORM_GLOSS_TEX], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTextureParameteri(m_Textures[NORM_GLOSS_TEX], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTextureStorage2D(m_Textures[NORM_TEX], 1, GL_RG16F, m_Res[0], m_Res[1]);
+		glTextureParameteri(m_Textures[NORM_TEX], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTextureParameteri(m_Textures[NORM_TEX], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-		glTextureStorage2D(m_Textures[DIFF_TEX], 1, GL_RGB8, m_Res[0], m_Res[1]);
-		glTextureParameteri(m_Textures[DIFF_TEX], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTextureParameteri(m_Textures[DIFF_TEX], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-		glTextureStorage2D(m_Textures[SPEC_TEX], 1, GL_RGB8, m_Res[0], m_Res[1]);
-		glTextureParameteri(m_Textures[SPEC_TEX], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTextureParameteri(m_Textures[SPEC_TEX], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTextureStorage2D(m_Textures[COLOR_GLOSS_TEX], 1, GL_RGBA16UI, m_Res[0], m_Res[1]);
+		glTextureParameteri(m_Textures[COLOR_GLOSS_TEX], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTextureParameteri(m_Textures[COLOR_GLOSS_TEX], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
 		glTextureStorage2D(m_Textures[DEPTH_STENCIL_TEX], 1, GL_DEPTH24_STENCIL8, m_Res[0], m_Res[1]);
 		
-		glNamedFramebufferTexture(m_FrameBuffer, GL_COLOR_ATTACHMENT0, m_Textures[NORM_GLOSS_TEX], 0);
-		glNamedFramebufferTexture(m_FrameBuffer, GL_COLOR_ATTACHMENT1, m_Textures[DIFF_TEX], 0);
-		glNamedFramebufferTexture(m_FrameBuffer, GL_COLOR_ATTACHMENT2, m_Textures[SPEC_TEX], 0);
+		glNamedFramebufferTexture(m_FrameBuffer, GL_COLOR_ATTACHMENT0, m_Textures[NORM_TEX], 0);
+		glNamedFramebufferTexture(m_FrameBuffer, GL_COLOR_ATTACHMENT1, m_Textures[COLOR_GLOSS_TEX], 0);
 		glNamedFramebufferTexture(m_FrameBuffer, GL_DEPTH_STENCIL_ATTACHMENT, m_Textures[DEPTH_STENCIL_TEX], 0);
 
-		const std::array<GLenum, std::tuple_size_v<decltype(m_Textures)>> drawBuffers{GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};
+		const std::array<GLenum, std::tuple_size_v<decltype(m_Textures)>> drawBuffers{GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
 		glNamedFramebufferDrawBuffers(m_FrameBuffer, static_cast<GLsizei>(drawBuffers.size()), drawBuffers.data());
 	}
 
