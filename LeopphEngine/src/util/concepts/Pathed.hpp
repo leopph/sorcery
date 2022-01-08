@@ -10,7 +10,7 @@ namespace leopph::internal
 	concept Pathed = requires(T obj)
 	{
 		{
-			obj.Path
+			obj.Path()
 		} -> std::convertible_to<const std::filesystem::path>;
 	};
 }

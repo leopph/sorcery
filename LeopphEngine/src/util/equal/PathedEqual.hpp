@@ -14,34 +14,34 @@ namespace leopph::internal
 
 		auto operator()(const T& left, const T& right) const -> bool
 		{
-			return left.Path == right.Path;
+			return left.Path() == right.Path();
 		}
 
 		auto operator()(const std::filesystem::path& left, const T& right) const -> bool
 		{
-			return left == right.Path;
+			return left == right.Path();
 		}
 
 		auto operator()(const T& left, const std::filesystem::path& right) const -> bool
 		{
-			return left.Path == right;
+			return left.Path() == right;
 		}
 
 		// For pointers.
 
 		auto operator()(const T* const left, const T* const right) const -> bool
 		{
-			return left->Path == right->Path;
+			return left->Path() == right->Path();
 		}
 
 		auto operator()(const std::filesystem::path& left, const T* const right) const -> bool
 		{
-			return left == right->Path;
+			return left == right->Path();
 		}
 
 		auto operator()(const T* const left, const std::filesystem::path& right) const -> bool
 		{
-			return left->Path == right;
+			return left->Path() == right;
 		}
 	};
 }

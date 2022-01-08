@@ -2,6 +2,8 @@
 
 #include "shaders/ShaderProgram.hpp"
 
+#include <glad/glad.h>
+
 #include <array>
 #include <filesystem>
 #include <string>
@@ -12,34 +14,50 @@ namespace leopph::internal
 	class SkyboxImpl
 	{
 		public:
-			SkyboxImpl(std::filesystem::path allFilePaths);
+			// Param is in the format that BuildAllPaths generates.
+			explicit SkyboxImpl(std::filesystem::path allFilePaths);
 
 			SkyboxImpl(const SkyboxImpl& other) = delete;
-			SkyboxImpl(SkyboxImpl&& other) = delete;
-
-			~SkyboxImpl();
-
 			auto operator=(const SkyboxImpl& other) -> SkyboxImpl& = delete;
+
+			SkyboxImpl(SkyboxImpl&& other) = delete;
 			auto operator=(SkyboxImpl&& other) -> SkyboxImpl = delete;
+
+			~SkyboxImpl() noexcept;
 
 			auto Draw(ShaderProgram& shader) const -> void;
 
-			// Same as AllFilePaths.
-			const std::filesystem::path Path;
-			// Same as Path.
-			const std::filesystem::path& AllFilePaths;
-			const std::filesystem::path& RightPath;
-			const std::filesystem::path& LeftPath;
-			const std::filesystem::path& TopPath;
-			const std::filesystem::path& BottomPath;
-			const std::filesystem::path& FrontPath;
-			const std::filesystem::path& BackPath;
+			[[nodiscard]] constexpr auto LeftPath() const noexcept -> auto&;
+			[[nodiscard]] constexpr auto RightPath() const noexcept -> auto&;
+			[[nodiscard]] constexpr auto TopPath() const noexcept -> auto&;
+			[[nodiscard]] constexpr auto BottomPath() const noexcept -> auto&;
+			[[nodiscard]] constexpr auto FrontPath() const noexcept -> auto&;
+			[[nodiscard]] constexpr auto BackPath() const noexcept -> auto&;
+			// All paths encoded in the format of BuildAllPaths.
+			[[nodiscard]] constexpr auto Path() const noexcept -> auto&;
 
-			inline static const std::string FileSeparator{";"};
+			// Encode all paths into one path.
+			[[nodiscard]] static auto BuildAllPaths(const std::filesystem::path& left, const std::filesystem::path& right,
+			                                        const std::filesystem::path& top, const std::filesystem::path& bottom,
+			                                        const std::filesystem::path& front, const std::filesystem::path& back) -> std::filesystem::path;
 
 		private:
+			std::filesystem::path m_AllPaths;
 			std::array<std::filesystem::path, 6> m_Paths;
-			std::array<unsigned, 4> m_GlNames;
+			GLuint m_VertexArray;
+			GLuint m_VertexBuffer;
+			GLuint m_IndexBuffer;
+			GLuint m_Cubemap;
+
+			// Used for encoding/decoding paths.
+			inline static std::string PATH_SEPARATOR{";"};
+
+			static constexpr unsigned LEFT_PATH_IND{1};
+			static constexpr unsigned RIGHT_PATH_IND{0};
+			static constexpr unsigned TOP_PATH_IND{2};
+			static constexpr unsigned BOT_PATH_IND{3};
+			static constexpr unsigned FRONT_PATH_IND{4};
+			static constexpr unsigned BACK_PATH_IND{5};
 
 			static constexpr std::array CUBE_VERTICES
 			{
@@ -70,26 +88,61 @@ namespace leopph::internal
 			};
 
 
-			enum
-			{
-				RIGHT, LEFT, TOP, BOTTOM, FRONT, BACK
-			};
-
-
-			enum
-			{
-				CUBEMAP, VAO, VBO, EBO
-			};
-
-
 			struct ImageData
 			{
-				unsigned char* data{nullptr};
-				int width{0};
-				int height{0};
-				int channels{0};
+				unsigned char* Data{nullptr};
+				int Width{0};
+				int Height{0};
+				int Channels{0};
 
-				~ImageData();
+				ImageData() = default;
+				ImageData(const ImageData& other) = default;
+				auto operator=(const ImageData& other) -> ImageData& = default;
+				ImageData(ImageData&& other) noexcept = default;
+				auto operator=(ImageData&& other) noexcept -> ImageData& = default;
+				~ImageData() noexcept;
 			};
 	};
+
+
+	constexpr auto SkyboxImpl::LeftPath() const noexcept -> auto&
+	{
+		return m_Paths[LEFT_PATH_IND];
+	}
+
+
+	constexpr auto SkyboxImpl::RightPath() const noexcept -> auto&
+	{
+		return m_Paths[RIGHT_PATH_IND];
+	}
+
+
+	constexpr auto SkyboxImpl::TopPath() const noexcept -> auto&
+	{
+		return m_Paths[TOP_PATH_IND];
+	}
+
+
+	constexpr auto SkyboxImpl::BottomPath() const noexcept -> auto&
+	{
+		return m_Paths[BOT_PATH_IND];
+	}
+
+
+	constexpr auto SkyboxImpl::FrontPath() const noexcept -> auto&
+	{
+		return m_Paths[FRONT_PATH_IND];
+	}
+
+
+	constexpr auto SkyboxImpl::BackPath() const noexcept -> auto&
+	{
+		return m_Paths[BACK_PATH_IND];
+	}
+
+
+	constexpr auto SkyboxImpl::Path() const noexcept -> auto&
+	{
+		return m_AllPaths;
+	}
 }
