@@ -76,7 +76,7 @@ namespace leopph::internal
 		glTextureParameteri(m_Textures[NORM_TEX], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTextureParameteri(m_Textures[NORM_TEX], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-		glTextureStorage2D(m_Textures[COLOR_GLOSS_TEX], 1, GL_RGBA16UI, m_Res[0], m_Res[1]);
+		glTextureStorage2D(m_Textures[COLOR_GLOSS_TEX], 1, GL_RG32UI, m_Res[0], m_Res[1]);
 		glTextureParameteri(m_Textures[COLOR_GLOSS_TEX], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTextureParameteri(m_Textures[COLOR_GLOSS_TEX], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 

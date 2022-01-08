@@ -1,4 +1,4 @@
-#version 410 core
+#version 420 core
 
 #define MIN_SHADOW_BIAS 0.0001
 #define MAX_SHADOW_BIAS 0.01
@@ -223,15 +223,12 @@ void main()
 	frag.pos = fragPosWorld.xyz;
 
 	// Unpack color and gloss bits
-	uvec4 packedColorGloss = texture(u_ColorGlossTex, in_TexCoords);
+	uvec2 packedColorGloss = texture(u_ColorGlossTex, in_TexCoords).xy;
 	vec4 unPack = unpackUnorm4x8(packedColorGloss.x);
-	frag.diff.rg = unPack.xy;
-	unPack = unpackUnorm4x8(packedColorGloss.y);
-	frag.diff.b = unPack.x;
-	frag.spec.r = unPack.y;
-	unPack = unpackUnorm4x8(packedColorGloss.z);
-	frag.spec.gb = unPack.xy;
-	frag.gloss = unpackHalf2x16(packedColorGloss.w).x;
+	frag.diff = unPack.xyz;
+	frag.spec.r = unPack.w;
+	frag.spec.gb = unpackUnorm4x8(packedColorGloss.y).xy;
+	frag.gloss = unpackHalf2x16(packedColorGloss.y).y;
 
 	// Accumulate light effects in this
 	vec3 colorSum = vec3(0);
