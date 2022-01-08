@@ -54,8 +54,6 @@
     <ClCompile Include="src\rendering\RenderBuffer.cpp" />
     <ClCompile Include="src\data\DataManager.cpp" />
     <ClCompile Include="src\rendering\geometry\FileMeshDataGroup.cpp" />
-    <ClCompile Include="src\util\equal\GlMeshGroupEqual.cpp" />
-    <ClCompile Include="src\util\hash\GlMeshGroupHash.cpp" />
     <ClCompile Include="src\rendering\UniformBuffer.cpp" />
     <ClCompile Include="src\util\hash\StringHash.cpp" />
     <ClCompile Include="src\util\equal\StringEqual.cpp" />
@@ -142,8 +140,6 @@
     <ClInclude Include="src\rendering\geometry\MeshData.hpp" />
     <ClInclude Include="src\rendering\geometry\MeshDataGroup.hpp" />
     <ClInclude Include="src\rendering\geometry\FileMeshDataGroup.hpp" />
-    <ClInclude Include="src\util\equal\GlMeshGroupEqual.hpp" />
-    <ClInclude Include="src\util\hash\GlMeshGroupHash.hpp" />
     <ClInclude Include="src\components\rendering\RenderComponent.hpp" />
     <ClInclude Include="src\util\equal\PointerEqual.hpp" />
     <ClInclude Include="src\util\hash\PointerHash.hpp" />
