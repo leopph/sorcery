@@ -154,10 +154,10 @@ namespace leopph::internal
 				                         },
 				                         [](const auto& texture) -> const auto&
 				                         {
-					                         return texture->Path;
+					                         return texture->Path();
 				                         })
 			};
-			it != m_Textures.end() && (*it)->Path == path)
+			it != m_Textures.end() && (*it)->Path() == path)
 		{
 			return (*it)->shared_from_this();
 		}
@@ -169,7 +169,7 @@ namespace leopph::internal
 	{
 		std::ranges::sort(m_Textures, [](const auto& left, const auto& right)
 		{
-			return left->Path.compare(right->Path);
+			return left->Path().compare(right->Path());
 		});
 	}
 

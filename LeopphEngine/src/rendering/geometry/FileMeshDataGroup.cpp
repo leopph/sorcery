@@ -30,10 +30,12 @@ namespace leopph::internal
 		Data() = ProcessNodes(scene);
 	}
 
+
 	auto FileMeshDataGroup::Path() const -> const std::filesystem::path&
 	{
 		return m_Path;
 	}
+
 
 	auto FileMeshDataGroup::ProcessNodes(const aiScene* const scene) const -> std::vector<internal::MeshData>
 	{
@@ -86,7 +88,8 @@ namespace leopph::internal
 		return ret;
 	}
 
-	auto FileMeshDataGroup::ProcessMesh(const aiMesh* const mesh, const aiScene* const scene, const Matrix3& trafo) const -> internal::MeshData
+
+	auto FileMeshDataGroup::ProcessMesh(const aiMesh* const mesh, const aiScene* const scene, const Matrix3& trafo) const -> MeshData
 	{
 		std::vector<Vertex> vertices;
 		std::vector<unsigned> indices;
@@ -122,51 +125,32 @@ namespace leopph::internal
 		const auto assimpMaterial{scene->mMaterials[mesh->mMaterialIndex]};
 		const auto material{std::make_shared<Material>()};
 
-		material->AmbientMap = LoadTexture(assimpMaterial, aiTextureType_AMBIENT);
 		material->DiffuseMap = LoadTexture(assimpMaterial, aiTextureType_DIFFUSE);
 		material->SpecularMap = LoadTexture(assimpMaterial, aiTextureType_SPECULAR);
 
-		if (ai_real parsedShininess;
-			assimpMaterial->Get(AI_MATKEY_SHININESS, parsedShininess) == aiReturn_SUCCESS)
+		if (aiColor3D parsedDiffuseColor; assimpMaterial->Get(AI_MATKEY_COLOR_DIFFUSE, parsedDiffuseColor) == aiReturn_SUCCESS)
 		{
-			material->Gloss = static_cast<decltype(Material::Gloss)>(parsedShininess);
+			material->DiffuseColor = Color{Vector3{parsedDiffuseColor.r, parsedDiffuseColor.g, parsedDiffuseColor.b}};
 		}
 
-		if (aiColor3D parsedDiffuseColor;
-			assimpMaterial->Get(AI_MATKEY_COLOR_DIFFUSE, parsedDiffuseColor) == aiReturn_SUCCESS)
+		if (aiColor3D parsedSpecularColor; assimpMaterial->Get(AI_MATKEY_COLOR_SPECULAR, parsedSpecularColor) == aiReturn_SUCCESS)
 		{
-			material->DiffuseColor = {
-				static_cast<unsigned char>(parsedDiffuseColor.r * 255),
-				static_cast<unsigned char>(parsedDiffuseColor.g * 255), static_cast<unsigned char>(parsedDiffuseColor.b * 255)
-			};
+			material->SpecularColor = Color{Vector3{parsedSpecularColor.r, parsedSpecularColor.g, parsedSpecularColor.b}};
 		}
 
-		if (aiColor3D parsedSpecularColor;
-			assimpMaterial->Get(AI_MATKEY_COLOR_SPECULAR, parsedSpecularColor) == aiReturn_SUCCESS)
+		if (ai_real parsedGloss; assimpMaterial->Get(AI_MATKEY_SHININESS, parsedGloss) == aiReturn_SUCCESS)
 		{
-			material->SpecularColor = {
-				static_cast<unsigned char>(parsedSpecularColor.r * 255),
-				static_cast<unsigned char>(parsedSpecularColor.g * 255), static_cast<unsigned char>(parsedSpecularColor.b * 255)
-			};
+			material->Gloss = parsedGloss;
 		}
 
-		if (aiColor3D parsedAmbientColor;
-			assimpMaterial->Get(AI_MATKEY_COLOR_AMBIENT, parsedAmbientColor) == aiReturn_SUCCESS)
-		{
-			material->AmbientColor = {
-				static_cast<unsigned char>(parsedAmbientColor.r * 255),
-				static_cast<unsigned char>(parsedAmbientColor.g * 255), static_cast<unsigned char>(parsedAmbientColor.b * 255)
-			};
-		}
-
-		if (int twoSided;
-			assimpMaterial->Get(AI_MATKEY_TWOSIDED, twoSided) == aiReturn_SUCCESS)
+		if (int twoSided; assimpMaterial->Get(AI_MATKEY_TWOSIDED, twoSided) == aiReturn_SUCCESS)
 		{
 			material->TwoSided = !twoSided;
 		}
 
-		return internal::MeshData(vertices, indices, material);
+		return MeshData(vertices, indices, material);
 	}
+
 
 	auto FileMeshDataGroup::LoadTexture(const aiMaterial* const material, const aiTextureType type) const -> std::shared_ptr<Texture>
 	{

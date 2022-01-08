@@ -10,7 +10,6 @@ layout (location = 0) in vec2 in_TexCoords;
 layout (location = 0) out vec4 out_FragColor;
 
 uniform sampler2D u_NormGlossTex;
-uniform sampler2D u_AmbTex;
 uniform sampler2D u_DiffTex;
 uniform sampler2D u_SpecTex;
 uniform sampler2D u_DepthTex;
@@ -209,13 +208,7 @@ float CalcPointShadow(uint shadowIndex, vec3 fragPos, vec3 fragNormal, vec3 ligh
 
 
 void main()
-{
-	// Accumulate light effects in this
-	vec3 colorSum = vec3(0);
-
-	// Add ambient effects
-	colorSum += texture(u_AmbTex, in_TexCoords).rgb * u_AmbientLight;
-	
+{	
 	// Parse gbuffer contents
 	Fragment frag;
     frag.diff = texture(u_DiffTex, in_TexCoords).rgb;
@@ -235,6 +228,11 @@ void main()
 	fragPosWorld /= fragPosWorld.w;
 	frag.pos = fragPosWorld.xyz;
 
+	// Accumulate light effects in this
+	vec3 colorSum = vec3(0);
+
+	// Add ambient effect
+	colorSum += frag.diff * u_AmbientLight;
 
 	// Add directional effects
 	#if DIRLIGHT

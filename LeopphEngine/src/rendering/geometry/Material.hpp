@@ -8,20 +8,16 @@
 
 namespace leopph
 {
-	class Material final
+	struct Material
 	{
-		public:
-			Material();
+		Color DiffuseColor{250, 255, 255};
+		Color SpecularColor{127, 127, 127};
 
-			Color AmbientColor;
-			Color DiffuseColor;
-			Color SpecularColor;
+		std::shared_ptr<Texture> DiffuseMap;
+		std::shared_ptr<Texture> SpecularMap;
 
-			std::shared_ptr<Texture> AmbientMap;
-			std::shared_ptr<Texture> DiffuseMap;
-			std::shared_ptr<Texture> SpecularMap;
+		float Gloss{32};
 
-			float Gloss;
-			bool TwoSided;
+		bool TwoSided{false};
 	};
 }

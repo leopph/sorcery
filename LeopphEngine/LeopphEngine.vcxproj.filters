@@ -22,7 +22,6 @@
     <ClCompile Include="src\timing\timer.cpp" />
     <ClCompile Include="src\config\Settings.cpp" />
     <ClCompile Include="src\util\logger.cpp" />
-    <ClCompile Include="src\rendering\geometry\Material.cpp" />
     <ClCompile Include="src\misc\Color.cpp" />
     <ClCompile Include="src\components\lighting\AmbientLight.cpp" />
     <ClCompile Include="src\components\Transform.cpp" />

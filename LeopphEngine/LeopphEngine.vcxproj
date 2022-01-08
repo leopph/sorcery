@@ -240,7 +240,6 @@
     <ClCompile Include="src\rendering\GeometryBuffer.cpp" />
     <ClCompile Include="src\rendering\geometry\MeshDataGroup.cpp" />
     <ClCompile Include="src\rendering\renderers\DeferredRenderer.cpp" />
-    <ClCompile Include="src\rendering\geometry\Material.cpp" />
     <ClCompile Include="src\rendering\opengl\InitGl.cpp" />
     <ClCompile Include="src\rendering\renderers\Renderer.cpp" />
     <ClCompile Include="src\rendering\RenderBuffer.cpp" />

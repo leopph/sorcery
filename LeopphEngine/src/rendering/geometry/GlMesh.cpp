@@ -85,28 +85,15 @@ namespace leopph::internal
 
 	auto GlMesh::DrawWithMaterial(ShaderProgram& shader, GLuint nextFreeTextureUnit, const GLsizei instanceCount) const -> void
 	{
-		shader.SetUniform("u_Material.ambientColor", static_cast<Vector3>(m_Material->AmbientColor));
 		shader.SetUniform("u_Material.diffuseColor", static_cast<Vector3>(m_Material->DiffuseColor));
 		shader.SetUniform("u_Material.specularColor", static_cast<Vector3>(m_Material->SpecularColor));
-		shader.SetUniform("u_Material.shininess", m_Material->Gloss);
-
-		if (m_Material->AmbientMap != nullptr)
-		{
-			shader.SetUniform("u_Material.hasAmbientMap", true);
-			shader.SetUniform("u_Material.ambientMap", static_cast<int>(nextFreeTextureUnit));
-			glBindTextureUnit(nextFreeTextureUnit, m_Material->AmbientMap->Id);
-			++nextFreeTextureUnit;
-		}
-		else
-		{
-			shader.SetUniform("u_Material.hasAmbientMap", false);
-		}
+		shader.SetUniform("u_Material.gloss", m_Material->Gloss);
 
 		if (m_Material->DiffuseMap != nullptr)
 		{
 			shader.SetUniform("u_Material.hasDiffuseMap", true);
 			shader.SetUniform("u_Material.diffuseMap", static_cast<int>(nextFreeTextureUnit));
-			glBindTextureUnit(nextFreeTextureUnit, m_Material->DiffuseMap->Id);
+			glBindTextureUnit(nextFreeTextureUnit, m_Material->DiffuseMap->Id());
 			++nextFreeTextureUnit;
 		}
 		else
@@ -118,7 +105,7 @@ namespace leopph::internal
 		{
 			shader.SetUniform("u_Material.hasSpecularMap", true);
 			shader.SetUniform("u_Material.specularMap", static_cast<int>(nextFreeTextureUnit));
-			glBindTextureUnit(nextFreeTextureUnit, m_Material->SpecularMap->Id);
+			glBindTextureUnit(nextFreeTextureUnit, m_Material->SpecularMap->Id());
 		}
 		else
 		{
@@ -130,7 +117,11 @@ namespace leopph::internal
 
 	auto GlMesh::DrawWithoutMaterial(const GLsizei instanceCount) const -> void
 	{
-		if (!m_Material->TwoSided)
+		if (m_Material->TwoSided)
+		{
+			glEnable(GL_CULL_FACE);
+		}
+		else
 		{
 			glDisable(GL_CULL_FACE);
 		}
@@ -147,10 +138,5 @@ namespace leopph::internal
 		}
 
 		glBindVertexArray(0);
-
-		if (!m_Material->TwoSided)
-		{
-			glEnable(GL_CULL_FACE);
-		}
 	}
 }
