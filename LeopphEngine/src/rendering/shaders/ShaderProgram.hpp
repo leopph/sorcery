@@ -23,15 +23,14 @@ namespace leopph::internal
 			explicit ShaderProgram(const std::vector<ShaderStageInfo>& stageInfo);
 
 			ShaderProgram(const ShaderProgram& other) = delete;
-			ShaderProgram(ShaderProgram&& other) = delete;
-
-			~ShaderProgram();
-
 			auto operator=(const ShaderProgram& other) -> ShaderProgram& = delete;
+
+			ShaderProgram(ShaderProgram&& other) = delete;
 			auto operator=(ShaderProgram&& other) -> ShaderProgram& = delete;
 
+			~ShaderProgram() noexcept;
+
 			auto Use() const -> void;
-			auto Unuse() const -> void;
 
 			auto SetUniform(std::string_view name, bool value) -> void;
 			auto SetUniform(std::string_view name, int value) -> void;

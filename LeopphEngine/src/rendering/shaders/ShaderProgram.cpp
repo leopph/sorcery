@@ -59,7 +59,7 @@ namespace leopph::internal
 		});
 	}
 
-	ShaderProgram::~ShaderProgram()
+	ShaderProgram::~ShaderProgram() noexcept
 	{
 		glDeleteProgram(m_ProgramName);
 	}
@@ -67,11 +67,6 @@ namespace leopph::internal
 	auto ShaderProgram::Use() const -> void
 	{
 		glUseProgram(m_ProgramName);
-	}
-
-	auto ShaderProgram::Unuse() const -> void
-	{
-		glUseProgram(0);
 	}
 
 	auto ShaderProgram::SetUniform(const std::string_view name, const bool value) -> void

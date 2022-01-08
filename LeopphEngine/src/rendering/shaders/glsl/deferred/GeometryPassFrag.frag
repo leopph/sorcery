@@ -1,4 +1,4 @@
-#version 430 core
+#version 410 core
 
 struct Material
 {
@@ -10,17 +10,17 @@ struct Material
 	sampler2D diffuseMap;
 	sampler2D specularMap;
 
-	int hasDiffuseMap;
-	int hasSpecularMap;
+	bool hasDiffuseMap;
+	bool hasSpecularMap;
 };
 
 
 layout (location = 0) in vec3 in_Normal;
 layout (location = 1) in vec2 in_TexCoords;
 
-layout (location = 0) out vec3 out_NormalGloss;
-layout (location = 1) out vec3 out_DiffuseColor;
-layout (location = 2) out vec3 out_SpecularColor;
+layout (location = 0) out vec3 out_NormGloss;
+layout (location = 1) out vec3 out_Diff;
+layout (location = 2) out vec3 out_Spec;
 
 uniform Material u_Material;
 
@@ -30,18 +30,21 @@ void main()
     // Encode normal
     vec3 normal = normalize(in_Normal);
     vec2 compressedNormal = normalize(normal.xy) * sqrt(normal.z * 0.5 + 0.5);
-    out_NormalGloss = vec3(compressedNormal, u_Material.gloss);
+    out_NormGloss = vec3(compressedNormal, u_Material.gloss);
 
-    out_DiffuseColor = u_Material.diffuseColor;
-    out_SpecularColor = u_Material.specularColor;
+    vec3 diffCol = u_Material.diffuseColor;
+    vec3 specCol = u_Material.specularColor;
 
-    if (u_Material.hasDiffuseMap != 0)
+    if (u_Material.hasDiffuseMap)
     {
-        out_DiffuseColor *= texture(u_Material.diffuseMap, in_TexCoords).rgb;
+        diffCol *= texture(u_Material.diffuseMap, in_TexCoords).rgb;
     }
 
-    if (u_Material.hasSpecularMap != 0)
+    if (u_Material.hasSpecularMap)
     {
-        out_SpecularColor *= texture(u_Material.specularMap, in_TexCoords).rgb;
+        specCol *= texture(u_Material.specularMap, in_TexCoords).rgb;
     }
+
+    out_Diff = diffCol;
+    out_Spec = specCol;
 }
