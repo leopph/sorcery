@@ -18,7 +18,7 @@
     <ClCompile Include="src\start.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\behaviors\FPSCounter.cpp">
+    <ClCompile Include="src\behaviors\FrameRateAnalyzer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\behaviors\CameraController.cpp">
@@ -35,7 +35,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\behaviors\FPSCounter.hpp">
+    <ClInclude Include="src\behaviors\FrameRateAnalyzer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\behaviors\CameraController.hpp">
