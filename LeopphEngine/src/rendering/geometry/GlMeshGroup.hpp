@@ -7,7 +7,6 @@
 
 #include <glad/glad.h>
 
-#include <cstddef>
 #include <memory>
 #include <utility>
 #include <vector>
@@ -15,9 +14,7 @@
 
 namespace leopph::internal
 {
-	/* GlMeshGroup holds together multiple GlMeshes that logically belong together (e.g. are part of the same model).
-	 * It provides a simple abstraction over instanced rendering of the collected GlMeshes.
-	 * GlMeshGroup instances hold minimal data - they share rources through a common memory area. */
+	// Holds together multiple GlMeshes that logically belong together (e.g. are part of the same model).
 	class GlMeshGroup final
 	{
 		public:
@@ -43,7 +40,7 @@ namespace leopph::internal
 		private:
 			std::shared_ptr<const MeshDataGroup> m_MeshData;
 			std::vector<std::unique_ptr<GlMesh>> m_Meshes;
-			unsigned m_InstBuf{0};
+			GLuint m_InstBuf{0};
 			mutable GLsizeiptr m_InstBufSz{1};
 			mutable GLsizei m_InstCount{0};
 	};
