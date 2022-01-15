@@ -20,31 +20,32 @@ These are the planned features and their current states:
   - ❌ Abstraction for easy and fast scene changes
 - 🟣 OpenGL 3D Renderer
   - ✅ Blinn-Phong lighting model
-    - ✅ Directional, point, and spotlights
-    - ✅ Ambient, diffuse and specular vertex colors
-    - ✅ Ambient, diffuse and specular maps
+    - ✅ Ambient, directional, point-, and spotlights
+    - ✅ Diffuse and specular vertex colors
+    - ✅ Diffuse and specular maps
   - 🟣 Forward rendering pipeline
   - ✅ Deferred rendering pipeline
+  - ❌ Transparent object rendering
+  - ✅ Shadow mapping for spot- and pointlights
+  - ✅ CSM for directional lights
+  - ✅ Instanced rendering capabilities
   - ❌ Normal mapping
   - ❌ Parallax mapping
-  - ✅ Cascaded shadow mapping for directional lights
-  - ✅ Shadow mapping for spotlights
-  - ✅ Shadow mapping for pointlights
-  - ✅ Optional instanced rendering
-  - ❌ Screen space reflections
-  - ❌ FXAA
+  - ❌ SSAO
+  - ❌ SSR
+  - ❌ Gamma correction
+  - ❌ Bloom
   - ❌ Skeletal animation system
-  - ❌ Transparent object rendering
-- 🟣 Resource Management API
-  - ✅ Caching of resources for easy reuse and lower number of IO ops
-  - 🟣 Backend management of lifetimes and references/pointers for objects acting as resources
+- 🟣 Resource Management System
+  - ✅ Resource caching for reuse and lower number of IO ops
+  - 🟣 Internal management of lifetimes and pointers of objects acting as resources
 - ✅ Event System
-- ❌ Sound Management API
-- ❌ 3D Physics Engine
 - ✅ Keyboard and Mouse Input Handling
-- 🟣 Several utilites to further help game development
-  - 🟣 Extensive math library mainly focusing on linear algebra and trigonometry
-  - ❌ Raycast and debug visuals system
+- ✅ Math library with special focus on linear algebra
+- ❌ Nvidia PhysX integration for physics simulations
+- ❌ Job system for efficient scaling across all CPU cores
+- ❌ UI System
+- ❌ Sound System
 
 ## Documentation
 I'm trying to place as much info into header/module files as I can. For now, developers can use these to get more info on specific behaviors. I will eventually create standalone documentation about all the different APIs LeopphEngine provides.
