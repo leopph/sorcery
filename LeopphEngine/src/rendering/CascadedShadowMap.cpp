@@ -49,7 +49,7 @@ namespace leopph::internal
 		for (const auto texture : m_ShadowMaps)
 		{
 			glBindTextureUnit(texUnit, texture);
-			texUnits.push_back(static_cast<int>(texUnit));
+			texUnits.push_back(static_cast<GLint>(texUnit)); /* cast to GLint because only glUniform1i[v] may be used to set sampler uniforms (wtf?) */
 			++texUnit;
 		}
 
