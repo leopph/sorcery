@@ -18,8 +18,7 @@ struct Material
 layout (location = 0) in vec3 in_Normal;
 layout (location = 1) in vec2 in_TexCoords;
 
-layout (location = 0) out vec2 out_Norm;
-layout (location = 1) out uvec2 out_ColorGloss;
+layout (location = 0) out uvec3 out_NormColorGloss;
 
 uniform Material u_Material;
 
@@ -28,8 +27,8 @@ void main()
 {
     // Encode normal
     vec3 normal = normalize(in_Normal);
-    vec2 compressedNormal = normalize(normal.xy) * sqrt(normal.z * 0.5 + 0.5);
-    out_Norm = compressedNormal;
+    vec2 comprNorm = normal.xy * inversesqrt(2.0 * normal.z + 2.0);
+    uint packedNorm = packSnorm2x16(comprNorm);
 
     vec3 diffCol = u_Material.diffuseColor;
     vec3 specCol = u_Material.specularColor;
@@ -47,5 +46,5 @@ void main()
     // Pack color and gloss into 2x32 bits
     uint packedDiffSpecR = packUnorm4x8(vec4(diffCol, specCol.r));
     uint packedSpecGbGloss = packUnorm4x8(vec4(specCol.gb, 0, 0)) | packHalf2x16(vec2(0, u_Material.gloss));
-    out_ColorGloss = uvec2(packedDiffSpecR, packedSpecGbGloss);
+    out_NormColorGloss = uvec3(packedNorm, packedDiffSpecR, packedSpecGbGloss);
 }

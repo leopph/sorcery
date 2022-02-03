@@ -40,7 +40,7 @@ namespace leopph::internal
 			auto DeinitBuffers() const noexcept -> void;
 			auto OnEventReceived(EventParamType event) -> void override;
 
-			std::array<GLuint, 3> m_Textures;
+			std::array<GLuint, 2> m_Textures;
 			GLuint m_FrameBuffer;
 			ResType m_Res;
 			
@@ -48,13 +48,12 @@ namespace leopph::internal
 			static constexpr GLfloat CLEAR_DEPTH{1};
 			static constexpr GLuint CLEAR_STENCIL{1};
 			
-			static constexpr unsigned NORM_TEX{0};
-			static constexpr unsigned COLOR_GLOSS_TEX{1};
-			static constexpr unsigned DEPTH_STENCIL_TEX{2};
+			static constexpr unsigned NORM_COLOR_GLOSS_TEX{0};
+			static constexpr unsigned DEPTH_STENCIL_TEX{1};
 
 			static constexpr std::array SHADER_UNIFORM_NAMES
 			{
-				"u_NormTex", "u_ColorGlossTex", "u_DepthTex"
+				"u_NormColorGlossTex", "u_DepthTex"
 			};
 	};
 }
