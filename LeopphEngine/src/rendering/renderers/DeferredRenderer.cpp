@@ -281,6 +281,7 @@ namespace leopph::internal
 				std::array<Matrix4, 6> shadowViewProjMats;
 
 				const auto shadowProjMat{Matrix4::Perspective(math::ToRadians(90), 1, 0.01f, pointLights[i]->Range())};
+				const auto lightTransMat{Matrix4::Translate(-pointLights[i]->Entity()->Transform()->Position())};
 
 				static constexpr std::array cubeFaceMats
 				{
@@ -294,7 +295,7 @@ namespace leopph::internal
 
 				std::ranges::transform(cubeFaceMats, shadowViewProjMats.begin(), [&](const auto& cubeFaceMat)
 				{
-					return Matrix4::Translate(-pointLights[i]->Entity()->Transform()->Position()) * cubeFaceMat * shadowProjMat;
+					return lightTransMat * cubeFaceMat * shadowProjMat;
 				});
 
 				shadowShader.SetUniform("u_ViewProjMats", shadowViewProjMats);
