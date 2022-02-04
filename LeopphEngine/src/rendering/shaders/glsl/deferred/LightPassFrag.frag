@@ -219,9 +219,10 @@ void main()
 	uvec3 packedNormColorGloss = texture(u_NormColorGlossTex, in_TexCoords).xyz;
 
 	// Decode normal
-	vec2 fragCompNorm = unpackSnorm2x16(packedNormColorGloss.x);
-	float f = dot(fragCompNorm, fragCompNorm);
-	frag.normal = vec3(2 * fragCompNorm * sqrt(1.0 - f), 1.0 - 2.0 * f);
+	vec2 comprNorm = unpackSnorm2x16(packedNormColorGloss.x);
+	frag.normal = vec3(comprNorm.xy, 1 - abs(comprNorm.x) - abs(comprNorm.y));
+	frag.normal.xy = frag.normal.z < 0 ? (1 - abs(frag.normal.yx)) * vec2(frag.normal.x >= 0 ? 1 : -1, frag.normal.y >= 0 ? 1 : -1) : frag.normal.xy;
+	frag.normal = normalize(frag.normal);
 
 	// Unpack color and gloss bits
 	vec4 unPack = unpackUnorm4x8(packedNormColorGloss.y);

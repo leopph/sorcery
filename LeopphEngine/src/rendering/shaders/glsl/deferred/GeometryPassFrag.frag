@@ -27,7 +27,8 @@ void main()
 {
     // Encode normal
     vec3 normal = normalize(in_Normal);
-    vec2 comprNorm = normal.xy * inversesqrt(2.0 * normal.z + 2.0);
+    vec2 comprNorm = normal.xy * (1.0 / (abs(normal.x) + abs(normal.y) + abs(normal.z)));
+    comprNorm = normal.z <= 0 ? (1 - abs(comprNorm.yx)) * vec2(normal.x >= 0 ? 1 : -1, normal.y >= 0.0 ? 1 : -1) : comprNorm;
     uint packedNorm = packSnorm2x16(comprNorm);
 
     vec3 diffCol = u_Material.diffuseColor;
