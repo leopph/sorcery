@@ -11,3 +11,4 @@
 	path = LeopphEngine/vendor/physx
 	url = https://github.com/NVIDIAGameWorks/PhysX.git
 	branch = 4.1
+	ignore = dirty
