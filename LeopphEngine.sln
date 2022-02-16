@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.30907.101
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.32112.339
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LeopphEngine", "LeopphEngine\LeopphEngine.vcxproj", "{03803A6B-9F79-4245-936D-059A695AA449}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -17,24 +17,38 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ShaderParser", "ShaderParse
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug_Asan|x64 = Debug_Asan|x64
+		Debug_Asan|x86 = Debug_Asan|x86
 		Debug|x64 = Debug|x64
 		Debug|x86 = Debug|x86
 		Release|x64 = Release|x64
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{03803A6B-9F79-4245-936D-059A695AA449}.Debug_Asan|x64.ActiveCfg = Debug_Asan|x64
+		{03803A6B-9F79-4245-936D-059A695AA449}.Debug_Asan|x64.Build.0 = Debug_Asan|x64
+		{03803A6B-9F79-4245-936D-059A695AA449}.Debug_Asan|x86.ActiveCfg = Debug_Asan|x64
+		{03803A6B-9F79-4245-936D-059A695AA449}.Debug_Asan|x86.Build.0 = Debug_Asan|x64
 		{03803A6B-9F79-4245-936D-059A695AA449}.Debug|x64.ActiveCfg = Debug|x64
 		{03803A6B-9F79-4245-936D-059A695AA449}.Debug|x64.Build.0 = Debug|x64
 		{03803A6B-9F79-4245-936D-059A695AA449}.Debug|x86.ActiveCfg = Debug|x64
 		{03803A6B-9F79-4245-936D-059A695AA449}.Release|x64.ActiveCfg = Release|x64
 		{03803A6B-9F79-4245-936D-059A695AA449}.Release|x64.Build.0 = Release|x64
 		{03803A6B-9F79-4245-936D-059A695AA449}.Release|x86.ActiveCfg = Release|x64
+		{FF07732F-0F49-4B4D-9444-0B6C503AE511}.Debug_Asan|x64.ActiveCfg = Debug_Asan|x64
+		{FF07732F-0F49-4B4D-9444-0B6C503AE511}.Debug_Asan|x64.Build.0 = Debug_Asan|x64
+		{FF07732F-0F49-4B4D-9444-0B6C503AE511}.Debug_Asan|x86.ActiveCfg = Debug_Asan|x64
+		{FF07732F-0F49-4B4D-9444-0B6C503AE511}.Debug_Asan|x86.Build.0 = Debug_Asan|x64
 		{FF07732F-0F49-4B4D-9444-0B6C503AE511}.Debug|x64.ActiveCfg = Debug|x64
 		{FF07732F-0F49-4B4D-9444-0B6C503AE511}.Debug|x64.Build.0 = Debug|x64
 		{FF07732F-0F49-4B4D-9444-0B6C503AE511}.Debug|x86.ActiveCfg = Debug|x64
 		{FF07732F-0F49-4B4D-9444-0B6C503AE511}.Release|x64.ActiveCfg = Release|x64
 		{FF07732F-0F49-4B4D-9444-0B6C503AE511}.Release|x64.Build.0 = Release|x64
 		{FF07732F-0F49-4B4D-9444-0B6C503AE511}.Release|x86.ActiveCfg = Release|x64
+		{1422D73A-FE9C-4FC9-BC03-DC863C0D2B28}.Debug_Asan|x64.ActiveCfg = Debug_Asan|x64
+		{1422D73A-FE9C-4FC9-BC03-DC863C0D2B28}.Debug_Asan|x64.Build.0 = Debug_Asan|x64
+		{1422D73A-FE9C-4FC9-BC03-DC863C0D2B28}.Debug_Asan|x86.ActiveCfg = Debug_Asan|x64
+		{1422D73A-FE9C-4FC9-BC03-DC863C0D2B28}.Debug_Asan|x86.Build.0 = Debug_Asan|x64
 		{1422D73A-FE9C-4FC9-BC03-DC863C0D2B28}.Debug|x64.ActiveCfg = Debug|x64
 		{1422D73A-FE9C-4FC9-BC03-DC863C0D2B28}.Debug|x64.Build.0 = Debug|x64
 		{1422D73A-FE9C-4FC9-BC03-DC863C0D2B28}.Debug|x86.ActiveCfg = Debug|x64
