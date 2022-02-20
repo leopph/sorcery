@@ -195,16 +195,15 @@ namespace leopph
 			return m_Matrices;
 		}
 
-		auto modelMatrix{Matrix4::Scale(m_LocalScale)};
-		modelMatrix *= static_cast<Matrix4>(m_LocalRotation);
-		modelMatrix *= Matrix4::Translate(m_LocalPosition);
-
-		if (m_Parent != nullptr)
-		{
-			modelMatrix *= m_Parent->Matrices().first;
-		}
+		Matrix4 modelMatrix;
+		modelMatrix[0] = Vector4{m_Right * m_WorldScale[0], 0};
+		modelMatrix[1] = Vector4{m_Up * m_WorldScale[1], 0};
+		modelMatrix[2] = Vector4{m_Forward * m_WorldScale[2], 0};
+		modelMatrix[3] = Vector4{m_WorldPosition};
 
 		m_Matrices = std::make_pair(modelMatrix, modelMatrix.Inverse().Transposed());
+		m_Changed = false;
+
 		return m_Matrices;
 	}
 
