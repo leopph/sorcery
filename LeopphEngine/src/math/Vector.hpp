@@ -35,8 +35,15 @@ namespace leopph
 					requires(sizeof...(Args) == N)
 				constexpr explicit(sizeof...(Args) <= 1) Vector(const Args&... args) noexcept;
 
-				// Creates an N-1 dimensional Vector that is the same as the input Vector without its last component.
-				constexpr explicit Vector(const Vector<T, N + 1>& other) noexcept;
+				// Creates a Vector from a higher dimensional one by dropping its last components.
+				template<std::size_t M>
+					requires (M > N)
+				constexpr explicit Vector(const Vector<T, M>& other) noexcept;
+
+				// Creates a Vector from a lower dimensional one and fills the remaining components with the passed scalar.
+				template<std::size_t M>
+					requires (N > M)
+				constexpr explicit Vector(const Vector<T, M>& other, const T& fillVal = 1) noexcept;
 
 				constexpr Vector(const Vector<T, N>& other) = default;
 				constexpr auto operator=(const Vector<T, N>& other) -> Vector<T, N>& = default;
@@ -87,9 +94,6 @@ namespace leopph
 				// Returns a reference to this Vector.
 				auto Normalize() noexcept -> Vector<T, N>&;
 
-				// Creates a Vector that is the copy of this Vector, extended with an additional component with a value of 1.
-				[[nodiscard]] constexpr explicit operator Vector<T, N + 1>() const noexcept;
-
 				// Returns the dot product of the input Vectors.
 				[[nodiscard]] constexpr static auto Dot(const Vector<T, N>& left, const Vector<T, N>& right) noexcept -> T;
 
@@ -129,9 +133,22 @@ namespace leopph
 
 		template<class T, std::size_t N>
 			requires (N > 1)
-		constexpr Vector<T, N>::Vector(const Vector<T, N + 1>& other) noexcept
+		template<std::size_t M>
+			requires (M > N)
+		constexpr Vector<T, N>::Vector(const Vector<T, M>& other) noexcept
 		{
 			std::ranges::copy_n(other.Data().begin(), N, m_Data.begin());
+		}
+
+
+		template<class T, std::size_t N>
+			requires (N > 1)
+		template<std::size_t M>
+			requires (N > M)
+		constexpr Vector<T, N>::Vector(const Vector<T, M>& other, const T& fillVal) noexcept
+		{
+			std::ranges::copy(other.Data(), m_Data.begin());
+			std::ranges::fill(m_Data.begin() + M, m_Data.end(), fillVal);
 		}
 
 
@@ -254,20 +271,6 @@ namespace leopph
 				});
 			}
 			return *this;
-		}
-
-
-		template<class T, std::size_t N>
-			requires (N > 1)
-		constexpr Vector<T, N>::operator Vector<T, N + 1>() const noexcept
-		{
-			Vector<T, N + 1> ret;
-			for (std::size_t i = 0; i < N; i++)
-			{
-				ret[i] = m_Data[i];
-			}
-			ret[N] = static_cast<T>(1);
-			return ret;
 		}
 
 
