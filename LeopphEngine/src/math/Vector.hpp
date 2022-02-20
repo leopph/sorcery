@@ -467,6 +467,20 @@ namespace leopph
 		}
 
 
+		// Returns the result of the scalar division of the input values.
+		template<class T1, std::convertible_to<T1> T2, std::size_t N>
+		constexpr auto operator/(const T2& left, const Vector<T1, N>& right) noexcept -> Vector<T1, N>
+		{
+			Vector<T1, N> ret;
+			const T1 numerator{static_cast<T1>(left)};
+			for (std::size_t i = 0; i < N; i++)
+			{
+				ret[i] = numerator / right[i];
+			}
+			return ret;
+		}
+
+
 		// Returns the component-wise quotient of the input Vectors.
 		template<class T, std::size_t N>
 		constexpr auto operator/(const Vector<T, N>& left, const Vector<T, N>& right) noexcept -> Vector<T, N>
