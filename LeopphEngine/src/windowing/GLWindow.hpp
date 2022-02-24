@@ -67,6 +67,7 @@ namespace leopph::internal
 
 		private:
 			auto InitKeys() -> void override;
+			auto OnEventReceived(EventParamType event) -> void override;
 
 			static auto FramebufferSizeCallback(GLFWwindow*, int width, int height) -> void;
 			static auto KeyCallback(GLFWwindow*, int key, int, int action, int) -> void;

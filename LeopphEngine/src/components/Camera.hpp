@@ -2,7 +2,7 @@
 
 #include "Component.hpp"
 #include "../api/LeopphApi.hpp"
-#include "../events/ScreenResolutionEvent.hpp"
+#include "../events/WindowEvent.hpp"
 #include "../events/handling/EventReceiver.hpp"
 #include "../math/Matrix.hpp"
 #include "../misc/Color.hpp"
@@ -14,7 +14,7 @@
 namespace leopph
 {
 	// Cameras are special Components that define the image that gets rendered.
-	class Camera final : public Component, public EventReceiver<internal::ScreenResolutionEvent>
+	class Camera final : public Component, public EventReceiver<internal::WindowEvent>
 	{
 		public:
 			// The currently active camera that is used to render the scene.

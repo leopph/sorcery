@@ -1,8 +1,9 @@
 #include "GlWindow.hpp"
 
+#include "../config/Settings.hpp"
 #include "../events/KeyEvent.hpp"
 #include "../events/MouseEvent.hpp"
-#include "../events/ScreenResolutionEvent.hpp"
+#include "../events/WindowEvent.hpp"
 #include "../events/handling/EventManager.hpp"
 #include "../input/Input.hpp"
 #include "../util/logger.h"
@@ -42,8 +43,15 @@ namespace leopph::internal
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
 		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
+		const auto& settings{Settings::Instance()};
+		m_Width = settings.WindowWidth();
+		m_Height = settings.WindowHeight();
+		m_Vsync = settings.Vsync();
+		m_RenderMult = settings.RenderMultiplier();
+		m_Fullscreen = settings.Fullscreen();
+
 		const auto monitor{m_Fullscreen ? glfwGetPrimaryMonitor() : nullptr};
-		m_Window = glfwCreateWindow(width, height, title.data(), monitor, nullptr);
+		m_Window = glfwCreateWindow(m_Width, m_Height, title.data(), monitor, nullptr);
 
 		if (m_Window == nullptr)
 		{
@@ -57,7 +65,7 @@ namespace leopph::internal
 		glfwSetKeyCallback(m_Window, KeyCallback);
 		glfwSetCursorPosCallback(m_Window, MouseCallback);
 		glfwSetCursorPos(m_Window, 0, 0);
-		glfwSwapInterval(0);
+		glfwSwapInterval(m_Vsync);
 	}
 
 
@@ -181,7 +189,7 @@ namespace leopph::internal
 	auto GlWindow::RenderMultiplier(const float newMult) -> void
 	{
 		m_RenderMult = newMult;
-		EventManager::Instance().Send<ScreenResolutionEvent>(Vector2{m_Width, m_Height}, m_RenderMult);
+		EventManager::Instance().Send<WindowEvent>(Vector2{m_Width, m_Height}, m_RenderMult, m_Vsync, m_Fullscreen);
 	}
 
 
@@ -219,6 +227,16 @@ namespace leopph::internal
 	}
 
 
+	auto GlWindow::OnEventReceived(EventParamType event) -> void
+	{
+		m_Fullscreen = event.Fullscreen;
+		m_Vsync = event.Vsync;
+		m_RenderMult = event.RenderMultiplier;
+		m_Width = static_cast<int>(event.Resolution[0]);
+		m_Height = static_cast<int>(event.Resolution[1]);
+	}
+
+
 	auto GlWindow::FramebufferSizeCallback(GLFWwindow*, const int width, const int height) -> void
 	{
 		glViewport(0, 0, width, height);
@@ -227,7 +245,7 @@ namespace leopph::internal
 		windowInstance.m_Width = width;
 		windowInstance.m_Height = height;
 
-		EventManager::Instance().Send<ScreenResolutionEvent>(Vector2{width, height}, windowInstance.RenderMultiplier());
+		EventManager::Instance().Send<WindowEvent>(Vector2{width, height}, windowInstance.RenderMultiplier(), windowInstance.m_Vsync, windowInstance.m_Fullscreen);
 	}
 
 

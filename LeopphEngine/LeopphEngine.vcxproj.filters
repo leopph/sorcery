@@ -30,7 +30,7 @@
     <ClCompile Include="src\rendering\renderers\DeferredRenderer.cpp" />
     <ClCompile Include="src\rendering\GeometryBuffer.cpp" />
     <ClCompile Include="src\events\Event.cpp" />
-    <ClCompile Include="src\events\ScreenResolutionEvent.cpp" />
+    <ClCompile Include="src\events\WindowEvent.cpp" />
     <ClCompile Include="src\events\handling\EventManager.cpp" />
     <ClCompile Include="src\events\KeyEvent.cpp" />
     <ClCompile Include="src\events\MouseEvent.cpp" />
@@ -105,7 +105,7 @@
     <ClInclude Include="src\rendering\GeometryBuffer.hpp" />
     <ClInclude Include="src\events\Event.hpp" />
     <ClInclude Include="src\events\handling\EventManager.hpp" />
-    <ClInclude Include="src\events\ScreenResolutionEvent.hpp" />
+    <ClInclude Include="src\events\WindowEvent.hpp" />
     <ClInclude Include="src\events\handling\EventReceiverBase.hpp" />
     <ClInclude Include="src\events\handling\EventReceiver.hpp" />
     <ClInclude Include="src\events\handling\EventReceiverHandle.hpp" />

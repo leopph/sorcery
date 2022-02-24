@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../events/ScreenResolutionEvent.hpp"
+#include "../events/WindowEvent.hpp"
 #include "../events/handling/EventReceiver.hpp"
 #include "../math/Vector.hpp"
 #include "shaders/ShaderProgram.hpp"
@@ -12,7 +12,7 @@
 
 namespace leopph::internal
 {
-	class RenderBuffer final : public EventReceiver<ScreenResolutionEvent>
+	class RenderBuffer final : public EventReceiver<WindowEvent>
 	{
 		public:
 			RenderBuffer();

@@ -2,7 +2,9 @@
 
 #include "../api/LeopphApi.hpp"
 #include "../events/FrameEndEvent.hpp"
+#include "../events/WindowEvent.hpp"
 #include "../events/handling/EventReceiver.hpp"
+#include "../math/Vector.hpp"
 
 #include <cstddef>
 #include <filesystem>
@@ -15,7 +17,7 @@ namespace leopph
 {
 	// The Settings class provides access LeopphEngine-related configurations.
 	// You can safely change these at runtime, though some may require an application restart.
-	class Settings : public EventReceiver<internal::FrameEndedEvent>
+	class Settings : public EventReceiver<internal::FrameEndedEvent>, public EventReceiver<internal::WindowEvent>
 	{
 		public:
 			// Enum for the different supported graphics APIs.
@@ -81,6 +83,18 @@ namespace leopph
 			// Get the correction factor when calculating shadow cascade bounds for DirectionalLights.
 			[[nodiscard]] constexpr auto DirLightShadowCascadeCorrection() const noexcept;
 
+			// Get the width of the current window. This is the same as Window::Width.
+			[[nodiscard]] constexpr auto WindowWidth() const noexcept;
+
+			// Get the height of the current window. This is the same as Window::Height.
+			[[nodiscard]] constexpr auto WindowHeight() const noexcept;
+
+			// Get whether the current window has exclusive access to the monitor. This is the same as Window::Fullscreen.
+			[[nodiscard]] constexpr auto Fullscreen() const noexcept;
+
+			// Get the current render multiplier. This is the same as Window::RenderMultiplier.
+			[[nodiscard]] constexpr auto RenderMultiplier() const noexcept;
+
 			// Get whether shaders are cached after compilation, or recompiled during each run.
 			[[nodiscard]] LEOPPHAPI auto CacheShaders() const -> bool;
 
@@ -94,7 +108,7 @@ namespace leopph
 
 			// Set where on the disk shaders are cached after compilation.
 			// Setting this property to an empty path turns shader caching off and setting a valid value turns it on.
-			constexpr auto ShaderCacheLocation(std::filesystem::path path) noexcept;
+			inline auto ShaderCacheLocation(std::filesystem::path path) noexcept;
 
 			// Set the currently used rendering technique.
 			// Your application must be restarted before the new value takes effect.
@@ -121,9 +135,21 @@ namespace leopph
 			// Set the correction factor when calculating shadow cascade bounds for DirectionalLights.
 			constexpr auto DirLightShadowCascadeCorrection(float newCor) noexcept;
 
+			// Set the width of the current window. This is the same as Window::Width.
+			auto WindowWidth(float newWidth) noexcept -> void;
+
+			// Set the height of the current window. This is the same as Window::Height.
+			auto WindowHeight(float newHeight) noexcept -> void;
+
+			// Set whether the window should have exclusive access to the monitor. This is the same as Window::Fullscreen.
+			auto Fullscreen(bool newVal) noexcept -> void;
+
+			// Set the render multiplier. This is the same as Window::RenderMultiplier.
+			auto RenderMultiplier(float newMult) noexcept -> void;
+
 			// Set whether Vsync is turned on.
 			// This has exactly the same effect as using Window::Vsync.
-			LEOPPHAPI auto Vsync(bool value) const -> void;
+			LEOPPHAPI auto Vsync(bool value) -> void;
 
 			// Set the resolution of the shadow maps used by DirectionalLights.
 			// Resolutions are accepted in the order of the cascades that use them.
@@ -138,7 +164,8 @@ namespace leopph
 		private:
 			auto Serialize() const -> void;
 			auto Deserialize() -> void;
-			auto OnEventReceived(EventParamType) -> void override;
+			auto OnEventReceived(EventReceiver<internal::FrameEndedEvent>::EventParamType) -> void override;
+			auto OnEventReceived(EventReceiver<internal::WindowEvent>::EventParamType event) -> void override;
 
 			std::filesystem::path m_CacheLoc;
 			std::vector<std::size_t> m_DirShadowRes{4096, 2048, 1024};
@@ -152,6 +179,10 @@ namespace leopph
 			RenderType m_PendingPipeline{m_Pipeline};
 			float m_DirShadowCascadeCorrection{.75f};
 			static std::filesystem::path s_FilePath;
+			bool m_Vsync{false};
+			Vector2 m_WindowRes{960, 540};
+			float m_RenderMult{1};
+			bool m_Fullscreen{false};
 
 			// When a value changes this is set to true
 			// Serialization will happen at the end of the frame
@@ -166,10 +197,10 @@ namespace leopph
 			constexpr static const char* JSON_PIPE = "pipeline";
 			constexpr static const char* JSON_DIR_CORRECT = "dirShadowCascadeCorrection";
 			constexpr static const char* JSON_VSYNC = "vsync";
-		constexpr static const char* JSON_RES_W = "resW";
-		constexpr static const char* JSON_RES_H = "resH";
-		constexpr static const char* JSON_RES_MULT = "resMult";
-		constexpr static const char* JSON_FULLSCREEN = "fullscreen";
+			constexpr static const char* JSON_RES_W = "resW";
+			constexpr static const char* JSON_RES_H = "resH";
+			constexpr static const char* JSON_RES_MULT = "resMult";
+			constexpr static const char* JSON_FULLSCREEN = "fullscreen";
 	};
 
 
@@ -227,44 +258,75 @@ namespace leopph
 	}
 
 
-	constexpr auto Settings::ShaderCacheLocation(std::filesystem::path path) noexcept
+	constexpr auto Settings::WindowWidth() const noexcept
+	{
+		return m_WindowRes[0];
+	}
+
+
+	constexpr auto Settings::WindowHeight() const noexcept
+	{
+		return m_WindowRes[1];
+	}
+
+
+	constexpr auto Settings::Fullscreen() const noexcept
+	{
+		return m_Fullscreen;
+	}
+
+
+	constexpr auto Settings::RenderMultiplier() const noexcept
+	{
+		return m_RenderMult;
+	}
+
+
+	inline auto Settings::ShaderCacheLocation(std::filesystem::path path) noexcept
 	{
 		m_CacheLoc = std::move(path);
+		m_Serialize = true;
 	}
 
 
 	constexpr auto Settings::RenderingPipeline(const RenderType type) noexcept
 	{
 		m_PendingPipeline = type;
+		m_Serialize = true;
 	}
 
 
 	constexpr auto Settings::RenderingApi(const GraphicsApi newApi) noexcept
 	{
 		m_PendingApi = newApi;
+		m_Serialize = true;
 	}
 
 
 	constexpr auto Settings::PointLightShadowMapResolution(const std::size_t newRes) noexcept
 	{
 		m_PointShadowRes = newRes;
+		m_Serialize = true;
 	}
 
 
 	constexpr auto Settings::MaxSpotLightCount(const std::size_t newCount) noexcept
 	{
 		m_NumMaxSpot = newCount;
+		m_Serialize = true;
 	}
 
 
 	constexpr auto Settings::MaxPointLightCount(const std::size_t newCount) noexcept
 	{
 		m_NumMaxPoint = newCount;
+		m_Serialize = true;
 	}
 
 
 	constexpr auto Settings::DirLightShadowCascadeCorrection(const float newCor) noexcept
 	{
 		m_DirShadowCascadeCorrection = newCor;
+		m_Serialize = true;
 	}
 }

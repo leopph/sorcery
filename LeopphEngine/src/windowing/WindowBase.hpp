@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../events/WindowEvent.hpp"
+#include "../events/handling/EventReceiver.hpp"
 #include "../input/CursorState.hpp"
 #include "../math/Vector.hpp"
 
@@ -9,7 +11,7 @@
 
 namespace leopph::internal
 {
-	class WindowBase
+	class WindowBase : public EventReceiver<WindowEvent>
 	{
 		public:
 			static auto Get(unsigned width = 1280u, unsigned height = 720u,
@@ -62,7 +64,7 @@ namespace leopph::internal
 			auto operator=(const WindowBase& other) -> WindowBase& = delete;
 			auto operator=(WindowBase&& other) -> WindowBase& = delete;
 
-			virtual ~WindowBase() = 0;
+			~WindowBase() override = 0;
 
 		protected:
 			WindowBase() = default;

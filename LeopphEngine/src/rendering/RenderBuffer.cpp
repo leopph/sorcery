@@ -84,7 +84,7 @@ namespace leopph::internal
 
 	auto RenderBuffer::OnEventReceived(EventParamType event) -> void
 	{
-		const auto renderRes{event.NewResolution * event.NewResolutionMultiplier};
+		const auto renderRes{event.Resolution * event.RenderMultiplier};
 		m_Res = ResType{renderRes[0], renderRes[1]};
 		DeinitBuffers();
 		InitBuffers();

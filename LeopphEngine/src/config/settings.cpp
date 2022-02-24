@@ -43,13 +43,47 @@ namespace leopph
 
 	LEOPPHAPI auto Settings::Vsync() const -> bool
 	{
-		return internal::WindowBase::Get().Vsync();
+		return m_Vsync;
 	}
 
 
-	LEOPPHAPI auto Settings::Vsync(const bool value) const -> void
+	auto Settings::WindowWidth(const float newWidth) noexcept -> void
 	{
-		internal::WindowBase::Get().Vsync(value);
+		m_WindowRes[0] = newWidth;
+		EventManager::Instance().Send<internal::WindowEvent>(m_WindowRes, m_RenderMult, m_Vsync, m_Fullscreen);
+		m_Serialize = true;
+	}
+
+
+	auto Settings::WindowHeight(const float newHeight) noexcept -> void
+	{
+		m_WindowRes[1] = newHeight;
+		EventManager::Instance().Send<internal::WindowEvent>(m_WindowRes, m_RenderMult, m_Vsync, m_Fullscreen);
+		m_Serialize = true;
+	}
+
+
+	auto Settings::Fullscreen(const bool newVal) noexcept -> void
+	{
+		m_Fullscreen = newVal;
+		EventManager::Instance().Send<internal::WindowEvent>(m_WindowRes, m_RenderMult, m_Vsync, m_Fullscreen);
+		m_Serialize = true;
+	}
+
+
+	auto Settings::RenderMultiplier(const float newMult) noexcept -> void
+	{
+		m_RenderMult = newMult;
+		EventManager::Instance().Send<internal::WindowEvent>(m_WindowRes, m_RenderMult, m_Vsync, m_Fullscreen);
+		m_Serialize = true;
+	}
+
+
+	LEOPPHAPI auto Settings::Vsync(const bool value) -> void
+	{
+		m_Vsync = value;
+		EventManager::Instance().Send<internal::WindowEvent>(m_WindowRes, m_RenderMult, m_Vsync, m_Fullscreen);
+		m_Serialize = true;
 	}
 
 
@@ -88,12 +122,11 @@ namespace leopph
 		json[JSON_API] = m_PendingApi;
 		json[JSON_PIPE] = m_PendingPipeline;
 		json[JSON_DIR_CORRECT] = m_DirShadowCascadeCorrection;
-		/*const auto& window{internal::WindowBase::Get()};
-		json[JSON_VSYNC] = window.Vsync();
-		json[JSON_RES_W] = window.Width();
-		json[JSON_RES_H] = window.Height();
-		json[JSON_RES_MULT] = window.RenderMultiplier();
-		json[JSON_FULLSCREEN] = window.Fullscreen();*/
+		json[JSON_VSYNC] = m_Vsync;
+		json[JSON_RES_W] = m_WindowRes[0];
+		json[JSON_RES_H] = m_WindowRes[1];
+		json[JSON_RES_MULT] = m_RenderMult;
+		json[JSON_FULLSCREEN] = m_Fullscreen;
 		std::ofstream output{s_FilePath};
 		output << json.dump(1);
 		internal::Logger::Instance().Debug("Settings serialized to " + s_FilePath.string() + ".");
@@ -102,13 +135,15 @@ namespace leopph
 
 	auto Settings::Deserialize() -> void
 	{
-		const auto json{[&]
-		{
-			std::ifstream input{s_FilePath};
-			nlohmann::json ret;
-			input >> ret;
-			return ret;
-		}()};
+		const auto json{
+			[&]
+			{
+				std::ifstream input{s_FilePath};
+				nlohmann::json ret;
+				input >> ret;
+				return ret;
+			}()
+		};
 		m_CacheLoc = std::filesystem::path{json[JSON_SHADER_LOC].get<std::string>()};
 		m_DirShadowRes.clear();
 		for (const auto& res : json[JSON_DIR_SHADOW_RES])
@@ -124,23 +159,33 @@ namespace leopph
 		m_Pipeline = json[JSON_PIPE];
 		m_PendingPipeline = m_Pipeline;
 		m_DirShadowCascadeCorrection = json[JSON_DIR_CORRECT];
-		/*auto& window{internal::WindowBase::Get()};
-		window.Vsync(json[JSON_VSYNC]);
-		window.Width(json[JSON_RES_W]);
-		window.Height(json[JSON_RES_H]);
-		window.RenderMultiplier(json[JSON_RES_MULT]);
-		window.Fullscreen(json[JSON_FULLSCREEN]);*/
+		m_Vsync = json[JSON_VSYNC];
+		m_WindowRes[0] = json[JSON_RES_W];
+		m_WindowRes[1] = json[JSON_RES_H];
+		m_RenderMult = json[JSON_RES_MULT];
+		m_Fullscreen = json[JSON_FULLSCREEN];
 
 		internal::Logger::Instance().Debug("Settings deserialized from " + s_FilePath.string() + ".");
 	}
 
 
-	auto Settings::OnEventReceived(EventParamType) -> void
+	auto Settings::OnEventReceived(EventReceiver<internal::FrameEndedEvent>::EventParamType) -> void
 	{
 		if (m_Serialize)
 		{
 			Serialize();
 			m_Serialize = false;
 		}
+	}
+
+
+	auto Settings::OnEventReceived(EventReceiver<internal::WindowEvent>::EventParamType event) -> void
+	{
+		m_WindowRes = event.Resolution;
+		m_Vsync = event.Vsync;
+		m_Fullscreen = event.Fullscreen;
+		m_RenderMult = event.RenderMultiplier;
+
+		m_Serialize = true;
 	}
 }

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../events/ScreenResolutionEvent.hpp"
+#include "../events/WindowEvent.hpp"
 #include "../events/handling/EventReceiver.hpp"
 #include "../math/Vector.hpp"
 #include "shaders/ShaderProgram.hpp"
@@ -12,7 +12,7 @@
 
 namespace leopph::internal
 {
-	class GeometryBuffer final : public EventReceiver<ScreenResolutionEvent>
+	class GeometryBuffer final : public EventReceiver<WindowEvent>
 	{
 		public:
 			GeometryBuffer();

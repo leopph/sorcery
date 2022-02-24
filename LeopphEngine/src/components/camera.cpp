@@ -1,7 +1,7 @@
 #include "Camera.hpp"
 
 #include "../entity/Entity.hpp"
-#include "../events/ScreenResolutionEvent.hpp"
+#include "../events/WindowEvent.hpp"
 #include "../math/LeopphMath.hpp"
 #include "../util/logger.h"
 #include "../windowing/WindowBase.hpp"
@@ -149,6 +149,6 @@ namespace leopph
 
 	auto Camera::OnEventReceived(EventParamType event) -> void
 	{
-		m_AspectRatio = event.NewResolution[0] / event.NewResolution[1];
+		m_AspectRatio = event.Resolution[0] / event.Resolution[1];
 	}
 }
