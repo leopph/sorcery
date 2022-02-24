@@ -8,7 +8,7 @@ namespace leopph::internal
 	SpotShadowMap::SpotShadowMap() :
 		m_Framebuffer{},
 		m_ShadowMap{},
-		m_Res{static_cast<GLsizei>(Settings::SpotLightShadowMapResolution())}
+		m_Res{static_cast<GLsizei>(Settings::Instance().SpotLightShadowMapResolution())}
 	{
 		glCreateFramebuffers(1, &m_Framebuffer);
 		glNamedFramebufferReadBuffer(m_Framebuffer, GL_NONE);

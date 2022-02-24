@@ -19,7 +19,7 @@ namespace leopph::internal
 {
 	auto Renderer::Create() -> std::unique_ptr<Renderer>
 	{
-		switch (Settings::RenderingPipeline())
+		switch (Settings::Instance().RenderingPipeline())
 		{
 			case Settings::RenderType::Forward:
 				return std::make_unique<ForwardRenderer>();
@@ -66,7 +66,7 @@ namespace leopph::internal
 	{
 		m_CurFrameSpotLights = DataManager::Instance().SpotLights();
 		std::ranges::sort(m_CurFrameSpotLights, CompareLightsByDistToCam);
-		if (const auto limit{Settings::MaxSpotLightCount()};
+		if (const auto limit{Settings::Instance().MaxSpotLightCount()};
 			m_CurFrameSpotLights.size() > limit)
 		{
 			m_CurFrameSpotLights.resize(limit);
@@ -79,7 +79,7 @@ namespace leopph::internal
 	{
 		m_CurFramePointLights = DataManager::Instance().PointLights();
 		std::ranges::sort(m_CurFramePointLights, CompareLightsByDistToCam);
-		if (const auto limit{Settings::MaxPointLightCount()};
+		if (const auto limit{Settings::Instance().MaxPointLightCount()};
 			m_CurFramePointLights.size() > limit)
 		{
 			m_CurFramePointLights.resize(limit);

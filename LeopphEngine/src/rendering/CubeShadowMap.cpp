@@ -8,7 +8,7 @@ namespace leopph::internal
 	CubeShadowMap::CubeShadowMap() :
 		m_Framebuffer{},
 		m_Cubemap{},
-		m_Res{static_cast<GLsizei>(Settings::PointLightShadowMapResolution())}
+		m_Res{static_cast<GLsizei>(Settings::Instance().PointLightShadowMapResolution())}
 	{
 		glCreateFramebuffers(1, &m_Framebuffer);
 		glNamedFramebufferReadBuffer(m_Framebuffer, GL_NONE);

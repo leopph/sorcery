@@ -11,7 +11,6 @@
 
 namespace leopph
 {
-	// TODO parse settings from file
 	// The Settings class provides access LeopphEngine-related configurations.
 	// You can safely change these at runtime, though some may require an application restart.
 	class Settings
@@ -31,204 +30,206 @@ namespace leopph
 			};
 
 
+			[[nodiscard]] static auto Instance() -> Settings&;
+
 			// Get where on the disk shaders are cached after compilation.
 			// An empty location is returned if shader caching is turned off.
-			[[nodiscard]] inline static auto ShaderCacheLocation() noexcept -> const auto&;
+			[[nodiscard]] constexpr auto ShaderCacheLocation() noexcept -> const auto&;
 
 			// Get the currently used rendering technique.
-			[[nodiscard]] inline static auto RenderingPipeline() noexcept;
+			[[nodiscard]] constexpr auto RenderingPipeline() const noexcept;
 
 			// Get the currently used rendering API.
-			[[nodiscard]] inline static auto RenderingApi() noexcept;
+			[[nodiscard]] constexpr auto RenderingApi() const noexcept;
 
 			// Get the resolution of the shadow maps used by DirectionalLights.
 			// Resolutions are returned in the order of the cascades that use them.
 			// More values mean more cascade splits.
 			// Higher values produce better quality shadows but increase VRAM and computation costs.
-			[[nodiscard]] inline static auto DirShadowRes() -> const auto&;
+			[[nodiscard]] constexpr auto DirShadowRes() -> const auto&;
 
 			// Get the resolution of the shadows cast by SpotLights.
 			// Higher values produce sharper shadows but require more VRAM.
-			[[nodiscard]] inline static auto SpotLightShadowMapResolution() noexcept;
+			[[nodiscard]] constexpr auto SpotLightShadowMapResolution() const noexcept;
 
 			// Get the resolution of the shadows cast by PointLights.
 			// Higher values produce sharper shadows but require more VRAM.
-			[[nodiscard]] inline static auto PointLightShadowMapResolution() noexcept;
+			[[nodiscard]] constexpr auto PointLightShadowMapResolution() const noexcept;
 
 			// Get the maximum number of SpotLights that will used in lighting calculations.
 			// If there are more SpotLights in the scene than this number, LeopphEngine uses the ones closest to the active Camera.
 			// Higher values mean more detailed lighting but can significantly reduce performance.
-			[[nodiscard]] inline static auto MaxSpotLightCount() noexcept;
+			[[nodiscard]] constexpr auto MaxSpotLightCount() const noexcept;
 
 			// Get the maximum number of PointLights that will used in lighting calculations.
 			// If there are more PointLights in the scene than this number, LeopphEngine uses the ones closest to the active Camera.
 			// Higher values mean more detailed lighting but can significantly reduce performance.
-			[[nodiscard]] inline static auto MaxPointLightCount() noexcept;
+			[[nodiscard]] constexpr auto MaxPointLightCount() const noexcept;
 
 			// Get the correction factor when calculating shadow cascade bounds for DirectionalLights.
-			inline static auto DirLightShadowCascadeCorrection() noexcept;
+			[[nodiscard]] constexpr auto DirLightShadowCascadeCorrection() const noexcept;
 
 			// Get whether shaders are cached after compilation, or recompiled during each run.
-			[[nodiscard]] LEOPPHAPI static auto CacheShaders() -> bool;
+			[[nodiscard]] LEOPPHAPI auto CacheShaders() const -> bool;
 
 			// Get whether Vsync is turned on.
 			// This is exactly the same value as what Window::Vsync returns.
-			[[nodiscard]] LEOPPHAPI static auto Vsync() -> bool;
+			[[nodiscard]] LEOPPHAPI auto Vsync() const -> bool;
 
 			// Get the current number of shadow cascades DirectionalLights use.
 			// This is the same as the size of the container set and returned by Settings::DirShadowRes.
-			[[nodiscard]] LEOPPHAPI static auto DirShadowCascadeCount() -> std::size_t;
+			[[nodiscard]] LEOPPHAPI auto DirShadowCascadeCount() const -> std::size_t;
 
 			// Set where on the disk shaders are cached after compilation.
 			// Setting this property to an empty path turns shader caching off and setting a valid value turns it on.
-			inline static auto ShaderCacheLocation(std::filesystem::path path) noexcept;
+			constexpr auto ShaderCacheLocation(std::filesystem::path path) noexcept;
 
 			// Set the currently used rendering technique.
 			// Your application must be restarted before the new value takes effect.
-			inline static auto RenderingPipeline(RenderType type) noexcept;
+			constexpr auto RenderingPipeline(RenderType type) noexcept;
 
 			// Set the currently used graphics API.
 			// Your application must be restarted before the new value takes effect.
-			inline static auto RenderingApi(GraphicsApi newApi) noexcept;
+			constexpr auto RenderingApi(GraphicsApi newApi) noexcept;
 
 			// Set the resolution of the shadows cast by PointLights.
 			// Higher values produce sharper shadows but require more VRAM.
-			inline static auto PointLightShadowMapResolution(std::size_t newRes) noexcept;
+			constexpr auto PointLightShadowMapResolution(std::size_t newRes) noexcept;
 
 			// Set the maximum number of SpotLights that will used in lighting calculations.
 			// If there are more SpotLights in the scene than this number, LeopphEngine uses the ones closest to the active Camera.
 			// Higher values mean more detailed lighting but can significantly reduce performance.
-			inline static auto MaxSpotLightCount(std::size_t newCount) noexcept;
+			constexpr auto MaxSpotLightCount(std::size_t newCount) noexcept;
 
 			// Set the maximum number of PointLights that will used in lighting calculations.
 			// If there are more PointLights in the scene than this number, LeopphEngine uses the ones closest to the active Camera.
 			// Higher values mean more detailed lighting but can significantly reduce performance.
-			inline static auto MaxPointLightCount(std::size_t newCount) noexcept;
+			constexpr auto MaxPointLightCount(std::size_t newCount) noexcept;
 
 			// Set the correction factor when calculating shadow cascade bounds for DirectionalLights.
-			inline static auto DirLightShadowCascadeCorrection(float newCor) noexcept;
+			constexpr auto DirLightShadowCascadeCorrection(float newCor) noexcept;
 
 			// Set whether Vsync is turned on.
 			// This has exactly the same effect as using Window::Vsync.
-			LEOPPHAPI static auto Vsync(bool value) -> void;
+			LEOPPHAPI auto Vsync(bool value) const -> void;
 
 			// Set the resolution of the shadow maps used by DirectionalLights.
 			// Resolutions are accepted in the order of the cascades that use them.
 			// More values mean more cascade splits.
 			// Higher values produce better quality shadows but increase VRAM and computation costs.
-			LEOPPHAPI static auto DirShadowRes(std::span<const std::size_t> cascades) -> void;
+			LEOPPHAPI auto DirShadowRes(std::span<const std::size_t> cascades) -> void;
 
 			// Set the resolution of the shadows cast by SpotLights.
 			// Higher values produce sharper shadows but require more VRAM.
-			LEOPPHAPI static auto SpotLightShadowMapResolution(std::size_t newRes) -> void;
+			LEOPPHAPI auto SpotLightShadowMapResolution(std::size_t newRes) -> void;
 
 		private:
-			static std::filesystem::path s_CacheLoc;
-			static std::vector<std::size_t> s_DirShadowRes;
-			static std::size_t s_SpotShadowRes;
-			static std::size_t s_PointShadowRes;
-			static std::size_t s_NumMaxSpot;
-			static std::size_t s_NumMaxPoint;
-			static GraphicsApi s_Api;
-			static GraphicsApi s_PendingApi;
-			static RenderType s_Pipeline;
-			static RenderType s_PendingPipeline;
-			static float s_DirShadowCascadeCorrection;
+			std::filesystem::path m_CacheLoc;
+			std::vector<std::size_t> m_DirShadowRes{4096, 2048, 1024};
+			std::size_t m_SpotShadowRes{2048};
+			std::size_t m_PointShadowRes{1024};
+			std::size_t m_NumMaxSpot{64};
+			std::size_t m_NumMaxPoint{64};
+			GraphicsApi m_Api{GraphicsApi::OpenGl};
+			GraphicsApi m_PendingApi{m_Api};
+			RenderType m_Pipeline{RenderType::Deferred};
+			RenderType m_PendingPipeline{m_Pipeline};
+			float m_DirShadowCascadeCorrection{.75f};
 	};
 
 
-	inline auto Settings::ShaderCacheLocation() noexcept -> const auto&
+	constexpr auto Settings::ShaderCacheLocation() noexcept -> const auto&
 	{
-		return s_CacheLoc;
+		return m_CacheLoc;
 	}
 
 
-	inline auto Settings::RenderingPipeline() noexcept
+	constexpr auto Settings::RenderingPipeline() const noexcept
 	{
-		return s_Pipeline;
+		return m_Pipeline;
 	}
 
 
-	inline auto Settings::RenderingApi() noexcept
+	constexpr auto Settings::RenderingApi() const noexcept
 	{
-		return s_Api;
+		return m_Api;
 	}
 
 
-	inline auto Settings::DirShadowRes() -> const auto&
+	constexpr auto Settings::DirShadowRes() -> const auto&
 	{
-		return s_DirShadowRes;
+		return m_DirShadowRes;
 	}
 
 
-	inline auto Settings::SpotLightShadowMapResolution() noexcept
+	constexpr auto Settings::SpotLightShadowMapResolution() const noexcept
 	{
-		return s_SpotShadowRes;
+		return m_SpotShadowRes;
 	}
 
 
-	inline auto Settings::PointLightShadowMapResolution() noexcept
+	constexpr auto Settings::PointLightShadowMapResolution() const noexcept
 	{
-		return s_PointShadowRes;
+		return m_PointShadowRes;
 	}
 
 
-	inline auto Settings::MaxSpotLightCount() noexcept
+	constexpr auto Settings::MaxSpotLightCount() const noexcept
 	{
-		return s_NumMaxSpot;
+		return m_NumMaxSpot;
 	}
 
 
-	inline auto Settings::MaxPointLightCount() noexcept
+	constexpr auto Settings::MaxPointLightCount() const noexcept
 	{
-		return s_NumMaxPoint;
+		return m_NumMaxPoint;
 	}
 
 
-	inline auto Settings::DirLightShadowCascadeCorrection() noexcept
+	constexpr auto Settings::DirLightShadowCascadeCorrection() const noexcept
 	{
-		return s_DirShadowCascadeCorrection;
+		return m_DirShadowCascadeCorrection;
 	}
 
 
-	inline auto Settings::ShaderCacheLocation(std::filesystem::path path) noexcept
+	constexpr auto Settings::ShaderCacheLocation(std::filesystem::path path) noexcept
 	{
-		s_CacheLoc = std::move(path);
+		m_CacheLoc = std::move(path);
 	}
 
 
-	inline auto Settings::RenderingPipeline(const RenderType type) noexcept
+	constexpr auto Settings::RenderingPipeline(const RenderType type) noexcept
 	{
-		s_PendingPipeline = type;
+		m_PendingPipeline = type;
 	}
 
 
-	inline auto Settings::RenderingApi(const GraphicsApi newApi) noexcept
+	constexpr auto Settings::RenderingApi(const GraphicsApi newApi) noexcept
 	{
-		s_PendingApi = newApi;
+		m_PendingApi = newApi;
 	}
 
 
-	inline auto Settings::PointLightShadowMapResolution(const std::size_t newRes) noexcept
+	constexpr auto Settings::PointLightShadowMapResolution(const std::size_t newRes) noexcept
 	{
-		s_PointShadowRes = newRes;
+		m_PointShadowRes = newRes;
 	}
 
 
-	inline auto Settings::MaxSpotLightCount(const std::size_t newCount) noexcept
+	constexpr auto Settings::MaxSpotLightCount(const std::size_t newCount) noexcept
 	{
-		s_NumMaxSpot = newCount;
+		m_NumMaxSpot = newCount;
 	}
 
 
-	inline auto Settings::MaxPointLightCount(const std::size_t newCount) noexcept
+	constexpr auto Settings::MaxPointLightCount(const std::size_t newCount) noexcept
 	{
-		s_NumMaxPoint = newCount;
+		m_NumMaxPoint = newCount;
 	}
 
 
-	inline auto Settings::DirLightShadowCascadeCorrection(const float newCor) noexcept
+	constexpr auto Settings::DirLightShadowCascadeCorrection(const float newCor) noexcept
 	{
-		s_DirShadowCascadeCorrection = newCor;
+		m_DirShadowCascadeCorrection = newCor;
 	}
 }

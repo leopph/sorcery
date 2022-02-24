@@ -19,7 +19,7 @@ namespace leopph::internal
 		glNamedFramebufferReadBuffer(m_Framebuffer, GL_NONE);
 		glNamedFramebufferDrawBuffer(m_Framebuffer, GL_NONE);
 
-		InitShadowMaps(Settings::DirShadowRes());
+		InitShadowMaps(Settings::Instance().DirShadowRes());
 	}
 
 
@@ -34,7 +34,7 @@ namespace leopph::internal
 	{
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_Framebuffer);
 		glNamedFramebufferTexture(m_Framebuffer, GL_DEPTH_ATTACHMENT, m_ShadowMaps.at(cascadeIndex), 0);
-		const auto res{static_cast<GLsizei>(Settings::DirShadowRes()[cascadeIndex])};
+		const auto res{static_cast<GLsizei>(Settings::Instance().DirShadowRes()[cascadeIndex])};
 		glViewport(0, 0, res, res);
 
 		glClearNamedFramebufferfv(m_Framebuffer, GL_DEPTH, 0, &CLEAR_DEPTH);
@@ -112,8 +112,9 @@ namespace leopph::internal
 	{
 		const auto nearClip{cam.NearClipPlane()};
 		const auto farClip{cam.FarClipPlane()};
-		const auto numCascades{Settings::DirShadowCascadeCount()};
-		const auto lambda{Settings::DirLightShadowCascadeCorrection()};
+		const auto& settings{Settings::Instance()};
+		const auto numCascades{settings.DirShadowCascadeCount()};
+		const auto lambda{settings.DirLightShadowCascadeCorrection()};
 		const auto clipRatio{farClip / nearClip};
 
 		// On bound borders the far plane is multiplied by this value to avoid precision problems.
