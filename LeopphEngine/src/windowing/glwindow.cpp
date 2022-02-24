@@ -44,8 +44,8 @@ namespace leopph::internal
 		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 		const auto& settings{Settings::Instance()};
-		m_Width = settings.WindowWidth();
-		m_Height = settings.WindowHeight();
+		m_Width = static_cast<int>(settings.WindowWidth());
+		m_Height = static_cast<int>(settings.WindowHeight());
 		m_Vsync = settings.Vsync();
 		m_RenderMult = settings.RenderMultiplier();
 		m_Fullscreen = settings.Fullscreen();

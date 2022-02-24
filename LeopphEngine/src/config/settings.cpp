@@ -8,11 +8,25 @@
 
 #include <fstream>
 #include <json.hpp>
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+#include <Psapi.h>
 
 
 namespace leopph
 {
-	std::filesystem::path Settings::s_FilePath{"settings.json"};
+	std::filesystem::path Settings::s_FilePath{[]
+	{
+		constexpr auto bufSz{100u};
+		constexpr auto defChar{'\0'};
+#ifdef UNICODE
+		std::wstring s(bufSz, defChar);
+#else
+		std::string s(bufSz, defChar);
+#endif
+		s.resize(GetModuleFileNameEx(GetCurrentProcess(), nullptr, s.data(), static_cast<DWORD>(s.size())));
+		return std::filesystem::path(s).parent_path() / "settings.json";
+	}()};
 
 
 	Settings::Settings()
