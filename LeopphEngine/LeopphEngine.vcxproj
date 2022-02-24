@@ -84,7 +84,7 @@
       <PreprocessorDefinitions>SPDLOG_COMPILED_LIB;ENGINE_BUILD;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)vendor\spdlog\include;$(ProjectDir)vendor\stb_image;$(ProjectDir)vendor\glfw\include;$(ProjectDir)vendor\glad\include;$(ProjectDir)vendor\physx\physx\include;$(ProjectDir)vendor\physx\pxshared\include;$(ProjectDir)vendor\assimp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)vendor\nlohmann_json;$(ProjectDir)vendor\spdlog\include;$(ProjectDir)vendor\stb_image;$(ProjectDir)vendor\glfw\include;$(ProjectDir)vendor\glad\include;$(ProjectDir)vendor\physx\physx\include;$(ProjectDir)vendor\physx\pxshared\include;$(ProjectDir)vendor\assimp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -111,7 +111,7 @@
       <PreprocessorDefinitions>SPDLOG_COMPILED_LIB;ENGINE_BUILD;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)vendor\spdlog\include;$(ProjectDir)vendor\stb_image;$(ProjectDir)vendor\glfw\include;$(ProjectDir)vendor\glad\include;$(ProjectDir)vendor\physx\physx\include;$(ProjectDir)vendor\physx\pxshared\include;$(ProjectDir)vendor\assimp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)vendor\nlohmann_json;$(ProjectDir)vendor\spdlog\include;$(ProjectDir)vendor\stb_image;$(ProjectDir)vendor\glfw\include;$(ProjectDir)vendor\glad\include;$(ProjectDir)vendor\physx\physx\include;$(ProjectDir)vendor\physx\pxshared\include;$(ProjectDir)vendor\assimp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -142,7 +142,7 @@
       <PreprocessorDefinitions>SPDLOG_COMPILED_LIB;ENGINE_BUILD;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)vendor\spdlog\include;$(ProjectDir)vendor\stb_image;$(ProjectDir)vendor\glfw\include;$(ProjectDir)vendor\glad\include;$(ProjectDir)vendor\physx\physx\include;$(ProjectDir)vendor\physx\pxshared\include;$(ProjectDir)vendor\assimp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)vendor\nlohmann_json;$(ProjectDir)vendor\spdlog\include;$(ProjectDir)vendor\stb_image;$(ProjectDir)vendor\glfw\include;$(ProjectDir)vendor\glad\include;$(ProjectDir)vendor\physx\physx\include;$(ProjectDir)vendor\physx\pxshared\include;$(ProjectDir)vendor\assimp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>

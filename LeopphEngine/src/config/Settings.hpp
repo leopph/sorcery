@@ -1,6 +1,8 @@
 #pragma once
 
 #include "../api/LeopphApi.hpp"
+#include "../events/FrameEndEvent.hpp"
+#include "../events/handling/EventReceiver.hpp"
 
 #include <cstddef>
 #include <filesystem>
@@ -13,7 +15,7 @@ namespace leopph
 {
 	// The Settings class provides access LeopphEngine-related configurations.
 	// You can safely change these at runtime, though some may require an application restart.
-	class Settings
+	class Settings : public EventReceiver<internal::FrameEndedEvent>
 	{
 		public:
 			// Enum for the different supported graphics APIs.
@@ -29,6 +31,16 @@ namespace leopph
 				Forward, Deferred
 			};
 
+
+			Settings();
+
+			Settings(const Settings& other) = delete;
+			auto operator=(const Settings& other) -> Settings& = delete;
+
+			Settings(Settings&& other) noexcept = delete;
+			auto operator=(Settings&& other) noexcept -> Settings& = delete;
+
+			~Settings() noexcept override = default;
 
 			[[nodiscard]] static auto Instance() -> Settings&;
 
@@ -124,6 +136,10 @@ namespace leopph
 			LEOPPHAPI auto SpotLightShadowMapResolution(std::size_t newRes) -> void;
 
 		private:
+			auto Serialize() const -> void;
+			auto Deserialize() -> void;
+			auto OnEventReceived(EventParamType) -> void override;
+
 			std::filesystem::path m_CacheLoc;
 			std::vector<std::size_t> m_DirShadowRes{4096, 2048, 1024};
 			std::size_t m_SpotShadowRes{2048};
@@ -135,6 +151,25 @@ namespace leopph
 			RenderType m_Pipeline{RenderType::Deferred};
 			RenderType m_PendingPipeline{m_Pipeline};
 			float m_DirShadowCascadeCorrection{.75f};
+			static std::filesystem::path s_FilePath;
+
+			// When a value changes this is set to true
+			// Serialization will happen at the end of the frame
+			bool m_Serialize{false};
+			constexpr static const char* JSON_SHADER_LOC = "shaderCacheLoc";
+			constexpr static const char* JSON_DIR_SHADOW_RES = "dirShadowRes";
+			constexpr static const char* JSON_SPOT_SHADOW_RES = "spotShadowRes";
+			constexpr static const char* JSON_POINT_SHADOW_RES = "pointShadowRes";
+			constexpr static const char* JSON_MAX_SPOT = "numMaxSpot";
+			constexpr static const char* JSON_MAX_POINT = "numMaxPoint";
+			constexpr static const char* JSON_API = "api";
+			constexpr static const char* JSON_PIPE = "pipeline";
+			constexpr static const char* JSON_DIR_CORRECT = "dirShadowCascadeCorrection";
+			constexpr static const char* JSON_VSYNC = "vsync";
+		constexpr static const char* JSON_RES_W = "resW";
+		constexpr static const char* JSON_RES_H = "resH";
+		constexpr static const char* JSON_RES_MULT = "resMult";
+		constexpr static const char* JSON_FULLSCREEN = "fullscreen";
 	};
 
 
