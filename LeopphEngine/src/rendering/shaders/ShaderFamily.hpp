@@ -7,6 +7,7 @@
 #include "../../util/hash/StringHash.hpp"
 #include "../../util/less/StringLess.hpp"
 
+#include <cstddef>
 #include <map>
 #include <string>
 #include <string_view>
@@ -62,6 +63,12 @@ namespace leopph::internal
 			[[nodiscard]] auto BuildSrcString(std::string_view src) const -> std::string;
 			// Create the permutation key from the currently set flags
 			[[nodiscard]] auto BuildPermString() const -> std::string;
+			// Sets the current buffer bindings in the passed shader
+			auto SetBufferBinding(ShaderProgram& shader) -> void;
+			// Builds the shader using the current flags, sets its buffer bindings, stores it, then returns it
+			auto BuildFromSources(std::string permStr) -> ShaderProgram&;
+			// Returns a list of the hashes of the shader sources in Vertex->Geom->Fragment order
+			[[nodiscard]] auto SourceHashes() const -> const std::vector<std::size_t>&;
 
 			std::unordered_map<std::string, int, StringHash, StringEqual> m_Bindings;
 			std::unordered_map<ShaderType, std::string> m_Sources;
@@ -70,5 +77,10 @@ namespace leopph::internal
 			std::map<std::string, std::string, StringLess> m_CurrentFlags;
 			// The permutations with key being the in format {name1:value1;name2:value2}.
 			std::unordered_map<std::string, ShaderProgram> m_Permutations;
+
+			// Cache for the hashes of the source strings
+			mutable std::vector<std::size_t> m_SrcHashCache;
+			mutable bool m_SrcHashCacheRdy{false};
+			constexpr static const char* CACHE_PREFIX{"shad_"};
 	};
 }

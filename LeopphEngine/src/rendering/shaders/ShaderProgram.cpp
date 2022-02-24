@@ -2,8 +2,12 @@
 
 #include "../../util/logger.h"
 #include "../../util/interface/OpenGLAdapter.hpp"
+#include "../opengl/OpenGl.hpp"
 
 #include <glad/glad.h>
+
+#include <stdexcept>
+#include <vector>
 
 
 namespace leopph::internal
@@ -57,6 +61,30 @@ namespace leopph::internal
 		{
 			glDeleteShader(shaderName);
 		});
+	}
+
+	ShaderProgram::ShaderProgram(const std::span<const unsigned char> binary) :
+		m_ProgramName{glCreateProgram()}
+	{
+		// Try all the formats, return after a successful link
+		for (const auto format : GlShaderBinaryFormats())
+		{
+			// use .data() because elemenets weren't pushed back into the vector
+			// so it sees itself as empty
+			glProgramBinary(m_ProgramName, format, binary.data(), binary.size_bytes());
+
+			// glProgramBinary sets GL_LINK_STATUS to GL_TRUE on successful upload
+			GLint success;
+			glGetProgramiv(m_ProgramName, GL_LINK_STATUS, &success);
+			if (success == GL_TRUE)
+			{
+				return;
+			}
+		}
+
+		// We failed the upload, clean up and throw
+		glDeleteProgram(m_ProgramName);
+		throw std::runtime_error{"Couldn't upload shader binary data."};
 	}
 
 	ShaderProgram::~ShaderProgram() noexcept
@@ -126,6 +154,22 @@ namespace leopph::internal
 
 	auto ShaderProgram::SetBufferBinding(const std::string_view bufName, const int bindingIndex) -> void
 	{ }
+
+
+	auto ShaderProgram::Binary() const -> std::vector<unsigned char>
+	{
+		const auto binSz{[this]
+		{
+			GLint ret;
+			glGetProgramiv(m_ProgramName, GL_PROGRAM_BINARY_LENGTH, &ret);
+			return ret;
+		}()};
+		std::vector<unsigned char> binary(binSz);
+		GLenum format;
+		glGetProgramBinary(m_ProgramName, binary.size(), nullptr, &format, binary.data());
+		return binary;
+	}
+
 
 	auto ShaderProgram::CompilationStatus(const unsigned name) -> std::pair<bool, std::optional<std::string>>
 	{

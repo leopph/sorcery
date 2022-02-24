@@ -3,7 +3,7 @@
   <ItemGroup>
     <ClCompile Include="src\components\Behavior.cpp" />
     <ClCompile Include="src\components\Camera.cpp" />
-    <ClCompile Include="src\rendering\opengl\InitGl.cpp" />
+    <ClCompile Include="src\rendering\opengl\OpenGl.cpp" />
     <ClCompile Include="src\math\LeopphMath.cpp" />
     <ClCompile Include="src\rendering\geometry\GlMesh.cpp" />
     <ClCompile Include="src\entity\Entity.cpp" />
@@ -66,7 +66,7 @@
     <ClInclude Include="src\components\Camera.hpp" />
     <ClInclude Include="src\components\lighting\DirLight.hpp" />
     <ClInclude Include="src\entry\Entry.hpp" />
-    <ClInclude Include="src\rendering\opengl\InitGl.hpp" />
+    <ClInclude Include="src\rendering\opengl\OpenGl.hpp" />
     <ClInclude Include="src\input\Input.hpp" />
     <ClInclude Include="src\data\DataManager.hpp" />
     <ClInclude Include="src\api\LeopphApi.hpp" />

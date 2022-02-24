@@ -9,7 +9,7 @@
 #include "../data/DataManager.hpp"
 #include "../events/FrameEndEvent.hpp"
 #include "../events/handling/EventManager.hpp"
-#include "../rendering/opengl/InitGl.hpp"
+#include "../rendering/opengl/OpenGl.hpp"
 #include "../rendering/renderers/Renderer.hpp"
 #include "../timing/timer.h"
 #include "../util/logger.h"

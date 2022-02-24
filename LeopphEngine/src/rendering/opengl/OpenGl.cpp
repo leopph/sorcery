@@ -1,4 +1,4 @@
-#include "InitGl.hpp"
+#include "OpenGl.hpp"
 
 #include "../../util/logger.h"
 
@@ -6,7 +6,6 @@
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
-#include <iostream>
 #include <string>
 
 
@@ -115,5 +114,22 @@ namespace leopph::internal
 		}
 
 		return ret;
+	}
+
+
+	auto GlShaderBinaryFormats() -> std::vector<int>
+	{
+		// Get the number of formats
+		const auto numBinForms{[]
+		{
+			GLint ret;
+			glGetIntegerv(GL_NUM_PROGRAM_BINARY_FORMATS, &ret);
+			return ret;
+		}()};
+
+		// Get the list of formats
+		std::vector<GLint> formats(numBinForms);
+		glGetIntegerv(GL_PROGRAM_BINARY_FORMATS, formats.data());
+		return formats;
 	}
 }

@@ -234,7 +234,7 @@
     <ClInclude Include="src\util\interface\OpenGLAdapter.hpp" />
     <ClInclude Include="src\util\less\StringLess.hpp" />
     <ClInclude Include="src\util\logger.h" />
-    <ClInclude Include="src\rendering\opengl\InitGl.hpp" />
+    <ClInclude Include="src\rendering\opengl\OpenGl.hpp" />
     <ClInclude Include="src\input\Input.hpp" />
     <ClInclude Include="src\data\DataManager.hpp" />
     <ClInclude Include="src\api\LeopphApi.hpp" />
@@ -284,7 +284,7 @@
     <ClCompile Include="src\rendering\GeometryBuffer.cpp" />
     <ClCompile Include="src\rendering\geometry\MeshDataGroup.cpp" />
     <ClCompile Include="src\rendering\renderers\DeferredRenderer.cpp" />
-    <ClCompile Include="src\rendering\opengl\InitGl.cpp" />
+    <ClCompile Include="src\rendering\opengl\OpenGl.cpp" />
     <ClCompile Include="src\rendering\renderers\Renderer.cpp" />
     <ClCompile Include="src\rendering\RenderBuffer.cpp" />
     <ClCompile Include="src\rendering\shaders\ShaderProgram.cpp" />

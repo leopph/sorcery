@@ -6,6 +6,7 @@
 #include "../../util/equal/StringEqual.hpp"
 #include "../../util/hash/StringHash.hpp"
 
+#include <cstddef>
 #include <optional>
 #include <span>
 #include <string>
@@ -21,6 +22,7 @@ namespace leopph::internal
 	{
 		public:
 			explicit ShaderProgram(const std::vector<ShaderStageInfo>& stageInfo);
+			explicit ShaderProgram(std::span<const unsigned char> binary);
 
 			ShaderProgram(const ShaderProgram& other) = delete;
 			auto operator=(const ShaderProgram& other) -> ShaderProgram& = delete;
@@ -45,6 +47,9 @@ namespace leopph::internal
 			auto SetUniform(std::string_view name, std::span<const Matrix4> values) -> void;
 
 			auto SetBufferBinding(std::string_view bufName, int bindingIndex) -> void;
+
+			// Queries the binary representation of the linked program
+			[[nodiscard]] auto Binary() const -> std::vector<unsigned char>;
 
 		private:
 			[[nodiscard]] static auto CompilationStatus(unsigned name) -> std::pair<bool, std::optional<std::string>>;
