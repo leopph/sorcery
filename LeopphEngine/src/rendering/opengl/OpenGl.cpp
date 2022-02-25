@@ -1,6 +1,9 @@
 #include "OpenGl.hpp"
 
 #include "../../util/logger.h"
+#include "../../util/containers/Bimap.hpp"
+#include "../../util/equal/ShaderTypeEqual.hpp"
+#include "../../util/hash/ShaderTypeHash.hpp"
 
 #include <glad/glad.h>
 #define GLFW_INCLUDE_NONE
@@ -9,13 +12,25 @@
 #include <string>
 
 
-namespace leopph::internal
+namespace leopph::internal::opengl
 {
 	namespace
 	{
-		#pragma warning (disable: 4100)
-		auto MessageCallback(GLenum src, GLenum type, GLuint id, GLenum severity, GLsizei length,
-		                     const GLchar* msg, const void* userParam) -> void
+		#ifdef _DEBUG
+		const Bimap<int, ShaderType, ShaderTypeHash, ShaderTypeEqual, true> s_ShaderTypes
+			#else
+		const Bimap<int, ShaderType, ShaderTypeHash, ShaderTypeEqual> s_ShaderTypes
+			#endif
+			{
+				{GL_VERTEX_SHADER, ShaderType::Vertex},
+				{GL_GEOMETRY_SHADER, ShaderType::Geometry},
+				{GL_FRAGMENT_SHADER, ShaderType::Fragment},
+				{GL_COMPUTE_SHADER, ShaderType::Compute}
+			};
+
+
+		auto MessageCallback(const GLenum src, const GLenum type, const GLuint, const GLenum severity, const GLsizei,
+		                     const GLchar* const msg, const void* const) -> void
 		{
 			std::string source;
 			switch (src)
@@ -43,6 +58,9 @@ namespace leopph::internal
 				case GL_DEBUG_SOURCE_OTHER:
 					source = "OTHER";
 					break;
+
+				default:
+					source = "UNKNOWN";
 			}
 
 			std::string msgSeverity;
@@ -62,13 +80,16 @@ namespace leopph::internal
 
 				case GL_DEBUG_SEVERITY_NOTIFICATION:
 					return;
+
+				default:
+					break;
 			}
 
 			switch (type)
 			{
 				case GL_DEBUG_TYPE_ERROR:
 				{
-					auto logMsg{"OpenGL error from [" + source + "] with severity [" + msgSeverity + "]: " + msg};
+					const auto logMsg{"OpenGL error from [" + source + "] with severity [" + msgSeverity + "]: " + msg};
 					Logger::Instance().Error(logMsg);
 					return;
 				}
@@ -78,7 +99,7 @@ namespace leopph::internal
 				case GL_DEBUG_TYPE_PORTABILITY:
 				case GL_DEBUG_TYPE_PERFORMANCE:
 				{
-					auto logMsg{"OpenGL warning from [" + source + "] with severity [" + msgSeverity + "]: " + msg};
+					const auto logMsg{"OpenGL warning from [" + source + "] with severity [" + msgSeverity + "]: " + msg};
 					Logger::Instance().Warning(logMsg);
 					return;
 				}
@@ -87,15 +108,16 @@ namespace leopph::internal
 				case GL_DEBUG_TYPE_PUSH_GROUP:
 				case GL_DEBUG_TYPE_POP_GROUP:
 				case GL_DEBUG_TYPE_OTHER:
-					return;
+				default:
+					break;
 			}
 		}
 	}
-	#pragma warning(default: 4100)
 
-	auto InitGL() -> bool
+
+	auto Init() -> bool
 	{
-		auto ret = gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress));
+		const auto ret = gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress));
 
 		if (ret)
 		{
@@ -104,32 +126,46 @@ namespace leopph::internal
 			glGetIntegerv(GL_MINOR_VERSION, &minor);
 			Logger::Instance().Debug("Using OpenGL " + std::to_string(major) + "." + std::to_string(minor) + ".");
 			Logger::Instance().Debug(std::string{"Using renderer ["} + reinterpret_cast<const char*>(glGetString(GL_RENDERER)) + "].");
-		}
 
-		if (Logger::Instance().CurrentLevel() == Logger::Level::DEBUG && ret)
-		{
-			glEnable(GL_DEBUG_OUTPUT);
-			glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-			glDebugMessageCallback(MessageCallback, nullptr);
+			if (Logger::Instance().CurrentLevel() == Logger::Level::DEBUG)
+			{
+				glEnable(GL_DEBUG_OUTPUT);
+				glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+				glDebugMessageCallback(MessageCallback, nullptr);
+			}
 		}
 
 		return ret;
 	}
 
 
-	auto GlShaderBinaryFormats() -> std::vector<int>
+	auto ShaderBinaryFormats() -> std::vector<int>
 	{
 		// Get the number of formats
-		const auto numBinForms{[]
-		{
-			GLint ret;
-			glGetIntegerv(GL_NUM_PROGRAM_BINARY_FORMATS, &ret);
-			return ret;
-		}()};
+		const auto numBinForms{
+			[]
+			{
+				GLint ret;
+				glGetIntegerv(GL_NUM_PROGRAM_BINARY_FORMATS, &ret);
+				return ret;
+			}()
+		};
 
 		// Get the list of formats
 		std::vector<GLint> formats(numBinForms);
 		glGetIntegerv(GL_PROGRAM_BINARY_FORMATS, formats.data());
 		return formats;
+	}
+
+
+	auto TranslateShaderType(const ShaderType type) -> int
+	{
+		return s_ShaderTypes.At(type);
+	}
+
+
+	auto TranslateShaderType(const int type) -> ShaderType
+	{
+		return s_ShaderTypes.At(type);
 	}
 }

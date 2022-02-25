@@ -231,7 +231,6 @@
     <ClInclude Include="src\util\hash\PathedHash.hpp" />
     <ClInclude Include="src\util\hash\ShaderTypeHash.hpp" />
     <ClInclude Include="src\util\hash\StringHash.hpp" />
-    <ClInclude Include="src\util\interface\OpenGLAdapter.hpp" />
     <ClInclude Include="src\util\less\StringLess.hpp" />
     <ClInclude Include="src\util\logger.h" />
     <ClInclude Include="src\rendering\opengl\OpenGl.hpp" />
@@ -300,7 +299,6 @@
     <ClCompile Include="src\util\hash\PathHash.cpp" />
     <ClCompile Include="src\util\hash\ShaderTypeHash.cpp" />
     <ClCompile Include="src\util\hash\StringHash.cpp" />
-    <ClCompile Include="src\util\interface\OpenGLAdapter.cpp" />
     <ClCompile Include="src\util\less\StringLess.cpp" />
     <ClCompile Include="src\util\logger.cpp" />
     <ClCompile Include="src\windowing\Window.cpp" />

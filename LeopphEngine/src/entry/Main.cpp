@@ -27,7 +27,7 @@ namespace leopph::internal
 
 		auto& window{WindowBase::Get()};
 
-		if (!InitGL())
+		if (!opengl::Init())
 		{
 			WindowBase::Destroy();
 			Logger::Instance().Critical("OpenGL could not be initialized.");

@@ -1,7 +1,6 @@
 #include "ShaderProgram.hpp"
 
 #include "../../util/logger.h"
-#include "../../util/interface/OpenGLAdapter.hpp"
 #include "../opengl/OpenGl.hpp"
 
 #include <glad/glad.h>
@@ -19,7 +18,7 @@ namespace leopph::internal
 
 		std::ranges::for_each(stageInfo, [&](const auto& info)
 		{
-			const auto shaderName{glCreateShader(OpenGLAdapter::OpenGLShaderType(info.Type))};
+			const auto shaderName{glCreateShader(opengl::TranslateShaderType(info.Type))};
 			glShaderSource(shaderName, 1, std::array{info.Src.data()}.data(), nullptr);
 			glCompileShader(shaderName);
 
@@ -67,7 +66,7 @@ namespace leopph::internal
 		m_ProgramName{glCreateProgram()}
 	{
 		// Try all the formats, return after a successful link
-		for (const auto format : GlShaderBinaryFormats())
+		for (const auto format : opengl::ShaderBinaryFormats())
 		{
 			// use .data() because elemenets weren't pushed back into the vector
 			// so it sees itself as empty
