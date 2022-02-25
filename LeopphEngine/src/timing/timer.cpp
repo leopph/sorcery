@@ -1,5 +1,7 @@
 #include "timer.h"
 
+#include "../util/logger.h"
+
 
 namespace leopph::internal
 {
@@ -10,6 +12,7 @@ namespace leopph::internal
 	auto Timer::Init() -> void
 	{
 		s_LastFrameCompletionTime = Clock::now();
+		Logger::Instance().Debug("Timer initialized.");
 	}
 
 	auto Timer::OnFrameComplete() -> void

@@ -3,7 +3,7 @@
 #include "../components/Camera.hpp"
 #include "../config/Settings.hpp"
 #include "../math/LeopphMath.hpp"
-#include "../windowing/WindowBase.hpp"
+#include "../windowing/WindowImpl.hpp"
 
 #include <algorithm>
 #include <array>

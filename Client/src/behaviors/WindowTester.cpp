@@ -6,7 +6,8 @@ using leopph::Window;
 
 
 WindowTester::WindowTester(leopph::Entity* const entity) :
-	Behavior{entity}
+	Behavior{entity},
+	m_Window{Window::Instance()}
 {}
 
 
@@ -14,60 +15,60 @@ void WindowTester::OnFrameUpdate()
 {
 	if (Input::GetKeyDown(KeyCode::F))
 	{
-		Window::FullScreen(!Window::FullScreen());
+		m_Window->Fullscreen(!m_Window->Fullscreen());
 	}
 
 	if (Input::GetKeyDown(KeyCode::V))
 	{
-		Window::Vsync(!Window::Vsync());
+		m_Window->Vsync(!m_Window->Vsync());
 	}
 
 	if (Input::GetKeyDown(KeyCode::One))
 	{
-		Window::Width(1920);
-		Window::Height(1080);
+		m_Window->Width(1920);
+		m_Window->Height(1080);
 	}
 
 	if (Input::GetKeyDown(KeyCode::Two))
 	{
-		Window::Width(1600);
-		Window::Height(900);
+		m_Window->Width(1600);
+		m_Window->Height(900);
 	}
 
 	if (Input::GetKeyDown(KeyCode::Three))
 	{
-		Window::Width(1280);
-		Window::Height(720);
+		m_Window->Width(1280);
+		m_Window->Height(720);
 	}
 
 	if (Input::GetKeyDown(KeyCode::Four))
 	{
-		Window::Width(1024);
-		Window::Height(768);
+		m_Window->Width(1024);
+		m_Window->Height(768);
 	}
 
 	if (Input::GetKeyDown(KeyCode::Five))
 	{
-		Window::Width(800);
-		Window::Height(600);
+		m_Window->Width(800);
+		m_Window->Height(600);
 	}
 
 	if (Input::GetKeyDown(KeyCode::Six))
 	{
-		Window::Width(640);
-		Window::Height(480);
+		m_Window->Width(640);
+		m_Window->Height(480);
 	}
 
 	if (Input::GetKeyDown(KeyCode::Q))
 	{
-		if (Window::RenderMultiplier() > 0.1f)
+		if (m_Window->RenderMultiplier() > 0.1f)
 		{
-			Window::RenderMultiplier(Window::RenderMultiplier() - 0.1f);
+			m_Window->RenderMultiplier(m_Window->RenderMultiplier() - 0.1f);
 		}
 	}
 
 	if (Input::GetKeyDown(KeyCode::E))
 	{
-		Window::RenderMultiplier(Window::RenderMultiplier() + 0.1f);
+		m_Window->RenderMultiplier(m_Window->RenderMultiplier() + 0.1f);
 	}
 }

@@ -39,7 +39,7 @@ namespace leopph::internal
 			// Returns a collection of cascade far bounds in NDC.
 			[[nodiscard]] static auto CascadeFarBoundsNdc(const Matrix4& camProjMat, std::span<const CascadedShadowMap::CascadeBounds> cascadeBounds) -> std::span<const float>;
 
-			Renderer() = default;
+			Renderer();
 
 			Renderer(const Renderer& other) = default;
 			auto operator=(const Renderer& other) -> Renderer& = default;

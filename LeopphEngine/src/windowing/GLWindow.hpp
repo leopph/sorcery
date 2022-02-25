@@ -2,7 +2,7 @@
 
 #define GLFW_INCLUDE_NONE
 
-#include "WindowBase.hpp"
+#include "WindowImpl.hpp"
 #include "../input/KeyCode.hpp"
 #include "../input/KeyState.hpp"
 #include "../misc/Color.hpp"
@@ -15,10 +15,10 @@
 
 namespace leopph::internal
 {
-	class GlWindow final : public WindowBase
+	class GlWindow final : public WindowImpl
 	{
 		public:
-			GlWindow(int width, int height, const std::string& title, bool fullscreen);
+			GlWindow();
 
 			~GlWindow() override;
 
@@ -69,7 +69,7 @@ namespace leopph::internal
 			auto InitKeys() -> void override;
 			auto OnEventReceived(EventParamType event) -> void override;
 
-			static auto FramebufferSizeCallback(GLFWwindow*, int width, int height) -> void;
+			static auto FramebufferSizeCallback(GLFWwindow* window, int width, int height) -> void;
 			static auto KeyCallback(GLFWwindow*, int key, int, int action, int) -> void;
 			static auto MouseCallback(GLFWwindow*, double x, double y) -> void;
 

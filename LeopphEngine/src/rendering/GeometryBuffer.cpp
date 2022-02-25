@@ -1,6 +1,6 @@
 #include "GeometryBuffer.hpp"
 
-#include "../windowing/WindowBase.hpp"
+#include "../windowing/Window.hpp"
 
 
 namespace leopph::internal
@@ -11,9 +11,9 @@ namespace leopph::internal
 		m_Res{
 			[]
 			{
-				const auto& window{WindowBase::Get()};
-				const Vector2 displayRes{window.Width(), window.Height()};
-				const auto renderRes{displayRes * window.RenderMultiplier()};
+				const auto* window{Window::Instance()};
+				const Vector2 displayRes{window->Width(), window->Height()};
+				const auto renderRes{displayRes * window->RenderMultiplier()};
 				return ResType{renderRes[0], renderRes[1]};
 			}()
 		}

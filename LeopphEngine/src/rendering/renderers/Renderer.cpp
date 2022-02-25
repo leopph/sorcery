@@ -103,6 +103,12 @@ namespace leopph::internal
 	}
 
 
+	Renderer::Renderer()
+	{
+		Logger::Instance().Debug("Renderer created.");
+	}
+
+
 	auto Renderer::CompareLightsByDistToCam(const Light* left, const Light* right) -> bool
 	{
 		const auto& camPosition{Camera::Active()->Entity()->Transform()->Position()};

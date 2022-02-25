@@ -1,74 +1,31 @@
 #include "Window.hpp"
 
-#include "WindowBase.hpp"
-
-#include <utility>
-
 
 namespace leopph
 {
-	auto Window::Width() -> unsigned
+	auto Window::Instance() -> Window*
 	{
-		return internal::WindowBase::Get().Width();
+		return s_Instance;
 	}
 
-	auto Window::Width(const unsigned newWidth) -> void
+
+	auto Window::AspectRatio() const -> float
 	{
-		internal::WindowBase::Get().Width(newWidth);
+		return static_cast<float>(Width()) / static_cast<float>(Height());
 	}
 
-	auto Window::Height() -> unsigned
+
+	Window::Window()
 	{
-		return internal::WindowBase::Get().Height();
+		s_Instance = this;
 	}
 
-	auto Window::Height(const unsigned newHeight) -> void
+
+	Window::~Window()
 	{
-		internal::WindowBase::Get().Height(newHeight);
+		s_Instance = nullptr;
 	}
 
-	auto Window::AspectRatio() -> float
-	{
-		return internal::WindowBase::Get().AspectRatio();
-	}
 
-	auto Window::FullScreen() -> bool
-	{
-		return internal::WindowBase::Get().Fullscreen();
-	}
-
-	auto Window::FullScreen(const bool newValue) -> void
-	{
-		internal::WindowBase::Get().Fullscreen(newValue);
-	}
-
-	auto Window::Vsync() -> bool
-	{
-		return internal::WindowBase::Get().Vsync();
-	}
-
-	auto Window::Vsync(const bool newValue) -> void
-	{
-		internal::WindowBase::Get().Vsync(newValue);
-	}
-
-	auto Window::Title() -> std::string_view
-	{
-		return internal::WindowBase::Get().Title();
-	}
-
-	auto Window::Title(std::string newTitle) -> void
-	{
-		internal::WindowBase::Get().Title(std::move(newTitle));
-	}
-
-	auto Window::RenderMultiplier() -> float
-	{
-		return internal::WindowBase::Get().RenderMultiplier();
-	}
-
-	auto Window::RenderMultiplier(const float newMult) -> void
-	{
-		internal::WindowBase::Get().RenderMultiplier(newMult);
-	}
+	Window* Window::s_Instance{nullptr};
 }

@@ -17,7 +17,7 @@
     <ClCompile Include="src\components\Component.cpp" />
     <ClCompile Include="vendor\stb_image\stb_image.cpp" />
     <ClCompile Include="src\components\rendering\Model.cpp" />
-    <ClCompile Include="src\windowing\WindowBase.cpp" />
+    <ClCompile Include="src\windowing\WindowImpl.cpp" />
     <ClCompile Include="src\entry\Main.cpp" />
     <ClCompile Include="src\timing\timer.cpp" />
     <ClCompile Include="src\config\Settings.cpp" />
@@ -84,7 +84,7 @@
     <ClInclude Include="include\Leopph.hpp" />
     <ClInclude Include="src\components\Component.hpp" />
     <ClInclude Include="src\components\rendering\Model.hpp" />
-    <ClInclude Include="src\windowing\WindowBase.hpp" />
+    <ClInclude Include="src\windowing\WindowImpl.hpp" />
     <ClInclude Include="src\config\Settings.hpp" />
     <ClInclude Include="src\input\KeyCode.hpp" />
     <ClInclude Include="src\input\KeyState.hpp" />

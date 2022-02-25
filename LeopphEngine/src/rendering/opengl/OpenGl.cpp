@@ -125,7 +125,7 @@ namespace leopph::internal::opengl
 			glGetIntegerv(GL_MAJOR_VERSION, &major);
 			glGetIntegerv(GL_MINOR_VERSION, &minor);
 			Logger::Instance().Debug("Using OpenGL " + std::to_string(major) + "." + std::to_string(minor) + ".");
-			Logger::Instance().Debug(std::string{"Using renderer ["} + reinterpret_cast<const char*>(glGetString(GL_RENDERER)) + "].");
+			Logger::Instance().Debug(std::string{"Using device ["} + reinterpret_cast<const char*>(glGetString(GL_RENDERER)) + "].");
 
 			if (Logger::Instance().CurrentLevel() == Logger::Level::DEBUG)
 			{
@@ -133,6 +133,10 @@ namespace leopph::internal::opengl
 				glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 				glDebugMessageCallback(MessageCallback, nullptr);
 			}
+		}
+		else
+		{
+			Logger::Instance().Critical("OpenGL could not be initialized.");
 		}
 
 		return ret;

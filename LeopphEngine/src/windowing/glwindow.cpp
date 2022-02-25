@@ -18,13 +18,9 @@
 
 namespace leopph::internal
 {
-	GlWindow::GlWindow(const int width, const int height, const std::string& title, const bool fullscreen) :
-		WindowBase{},
-		m_Width{width},
-		m_Height{height},
-		m_Fullscreen{fullscreen},
+	GlWindow::GlWindow() :
+		WindowImpl{},
 		m_Vsync{false},
-		m_Title{title},
 		m_ClrColor{},
 		m_RenderMult{1.f}
 	{
@@ -51,7 +47,7 @@ namespace leopph::internal
 		m_Fullscreen = settings.Fullscreen();
 
 		const auto monitor{m_Fullscreen ? glfwGetPrimaryMonitor() : nullptr};
-		m_Window = glfwCreateWindow(m_Width, m_Height, title.data(), monitor, nullptr);
+		m_Window = glfwCreateWindow(m_Width, m_Height, "GlWindow Title", monitor, nullptr);
 
 		if (m_Window == nullptr)
 		{
@@ -66,6 +62,7 @@ namespace leopph::internal
 		glfwSetCursorPosCallback(m_Window, MouseCallback);
 		glfwSetCursorPos(m_Window, 0, 0);
 		glfwSwapInterval(m_Vsync);
+		glfwSetWindowUserPointer(m_Window, this);
 	}
 
 
@@ -237,15 +234,15 @@ namespace leopph::internal
 	}
 
 
-	auto GlWindow::FramebufferSizeCallback(GLFWwindow*, const int width, const int height) -> void
+	auto GlWindow::FramebufferSizeCallback(GLFWwindow* const window, const int width, const int height) -> void
 	{
 		glViewport(0, 0, width, height);
 
-		auto& windowInstance{static_cast<GlWindow&>(Get())};
-		windowInstance.m_Width = width;
-		windowInstance.m_Height = height;
+		const auto instance = static_cast<GlWindow*>(glfwGetWindowUserPointer(window));
+		instance->m_Width = width;
+		instance->m_Height = height;
 
-		EventManager::Instance().Send<WindowEvent>(Vector2{width, height}, windowInstance.RenderMultiplier(), windowInstance.m_Vsync, windowInstance.m_Fullscreen);
+		EventManager::Instance().Send<WindowEvent>(Vector2{width, height}, instance->RenderMultiplier(), instance->m_Vsync, instance->m_Fullscreen);
 	}
 
 

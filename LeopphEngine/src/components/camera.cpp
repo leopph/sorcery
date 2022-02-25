@@ -4,7 +4,7 @@
 #include "../events/WindowEvent.hpp"
 #include "../math/LeopphMath.hpp"
 #include "../util/logger.h"
-#include "../windowing/WindowBase.hpp"
+#include "../windowing/WindowImpl.hpp"
 
 #include <stdexcept>
 #include <utility>
@@ -33,15 +33,15 @@ namespace leopph
 
 		if (std::holds_alternative<Color>(m_Background))
 		{
-			internal::WindowBase::Get().ClearColor(static_cast<Vector4>(static_cast<Vector3>(std::get<Color>(m_Background))));
+			static_cast<internal::WindowImpl*>(Window::Instance())->ClearColor(static_cast<Vector4>(static_cast<Vector3>(std::get<Color>(m_Background))));
 		}
 	}
 
 
 	Camera::Camera(leopph::Entity* const entity) :
 		Component{entity},
-		m_AspectRatio{internal::WindowBase::Get().AspectRatio()},
-		m_Background{Color{static_cast<Vector3>(internal::WindowBase::Get().ClearColor())}}
+		m_AspectRatio{Window::Instance()->AspectRatio()},
+		m_Background{Color{static_cast<Vector3>(static_cast<internal::WindowImpl*>(Window::Instance())->ClearColor())}}
 	{
 		if (s_Active == nullptr)
 		{

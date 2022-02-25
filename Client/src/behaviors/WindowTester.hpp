@@ -9,4 +9,7 @@ class WindowTester : public leopph::Behavior
 		WindowTester(leopph::Entity* entity);
 
 		void OnFrameUpdate() override;
+
+	private:
+		leopph::Window* m_Window;
 };

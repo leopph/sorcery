@@ -1,6 +1,6 @@
 #include "RenderBuffer.hpp"
 
-#include "../windowing/WindowBase.hpp"
+#include "../windowing/WindowImpl.hpp"
 
 
 namespace leopph::internal
@@ -14,9 +14,9 @@ namespace leopph::internal
 		m_Res{
 			[]
 			{
-				const auto& window{WindowBase::Get()};
-				const Vector2 displayRes{window.Width(), window.Height()};
-				const auto renderRes{displayRes * window.RenderMultiplier()};
+				const auto& window{Window::Instance()};
+				const Vector2 displayRes{window->Width(), window->Height()};
+				const auto renderRes{displayRes * window->RenderMultiplier()};
 				return ResType{renderRes[0], renderRes[1]};
 			}()
 		}
@@ -54,7 +54,7 @@ namespace leopph::internal
 	auto RenderBuffer::BindForWritingAndClearColor() const -> void
 	{
 		BindForWriting();
-		glClearNamedFramebufferfv(m_Framebuffer, GL_COLOR, 0, WindowBase::Get().ClearColor().Data().data());
+		glClearNamedFramebufferfv(m_Framebuffer, GL_COLOR, 0, static_cast<WindowImpl*>(Window::Instance())->ClearColor().Data().data());
 	}
 
 
@@ -77,8 +77,8 @@ namespace leopph::internal
 
 	auto RenderBuffer::CopyColorToDefaultFramebuffer() const -> void
 	{
-		const auto& window{WindowBase::Get()};
-		glBlitNamedFramebuffer(m_Framebuffer, 0, 0, 0, m_Res[0], m_Res[1], 0, 0, static_cast<GLsizei>(window.Width()), static_cast<GLsizei>(window.Height()), GL_COLOR_BUFFER_BIT, GL_LINEAR);
+		const auto& window{Window::Instance()};
+		glBlitNamedFramebuffer(m_Framebuffer, 0, 0, 0, m_Res[0], m_Res[1], 0, 0, static_cast<GLsizei>(window->Width()), static_cast<GLsizei>(window->Height()), GL_COLOR_BUFFER_BIT, GL_LINEAR);
 	}
 
 

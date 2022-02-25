@@ -1,5 +1,7 @@
 #include "DataManager.hpp"
 
+#include "../util/logger.h"
+
 
 namespace leopph::internal
 {
@@ -14,6 +16,7 @@ namespace leopph::internal
 	{
 		m_EntitiesAndComponents.clear();
 		// All containers should be empty at this point.
+		Logger::Instance().Debug("DataManager cleared.");
 	}
 
 

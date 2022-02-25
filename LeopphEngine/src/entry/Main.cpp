@@ -13,7 +13,7 @@
 #include "../rendering/renderers/Renderer.hpp"
 #include "../timing/timer.h"
 #include "../util/logger.h"
-#include "../windowing/WindowBase.hpp"
+#include "../windowing/WindowImpl.hpp"
 
 
 namespace leopph::internal
@@ -25,49 +25,39 @@ namespace leopph::internal
 		Logger::Instance().CurrentLevel(Logger::Level::DEBUG);
 		#endif
 
-		auto& window{WindowBase::Get()};
+		const auto window{WindowImpl::Create()};
 
 		if (!opengl::Init())
 		{
-			WindowBase::Destroy();
-			Logger::Instance().Critical("OpenGL could not be initialized.");
 			return -1;
 		}
 
-		Logger::Instance().Debug("OpenGL initialized.");
-
 		{
 			const auto renderer{Renderer::Create()};
-			Logger::Instance().Debug("Renderer initialized.");
 
 			initFunc();
 			Logger::Instance().Debug("App initialized.");
 
 			Timer::Init();
-			Logger::Instance().Debug("Timer initialized.");
 
-			while (!window.ShouldClose())
+			while (!window->ShouldClose())
 			{
-				window.PollEvents();
+				window->PollEvents();
 
 				for (const auto& behavior : DataManager::Instance().Behaviors())
 				{
 					behavior->OnFrameUpdate();
 				}
 
-				window.Clear();
+				window->Clear();
 				renderer->Render();
 				Timer::OnFrameComplete();
-				window.SwapBuffers();
+				window->SwapBuffers();
 				EventManager::Instance().Send<FrameEndedEvent>();
 			}
 		}
 
 		DataManager::Instance().Clear();
-		Logger::Instance().Debug("Application data cleared.");
-
-		WindowBase::Destroy();
-
 		return 0;
 	}
 }

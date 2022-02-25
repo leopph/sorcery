@@ -253,7 +253,7 @@
     <ClInclude Include="src\util\hash\PathHash.hpp" />
     <ClInclude Include="src\windowing\GlWindow.hpp" />
     <ClInclude Include="src\windowing\Window.hpp" />
-    <ClInclude Include="src\windowing\WindowBase.hpp" />
+    <ClInclude Include="src\windowing\WindowImpl.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\components\Behavior.cpp" />
@@ -302,7 +302,7 @@
     <ClCompile Include="src\util\less\StringLess.cpp" />
     <ClCompile Include="src\util\logger.cpp" />
     <ClCompile Include="src\windowing\Window.cpp" />
-    <ClCompile Include="src\windowing\WindowBase.cpp" />
+    <ClCompile Include="src\windowing\WindowImpl.cpp" />
     <ClCompile Include="src\input\Input.cpp" />
     <ClCompile Include="src\math\LeopphMath.cpp" />
     <ClCompile Include="src\rendering\geometry\GlMesh.cpp" />
