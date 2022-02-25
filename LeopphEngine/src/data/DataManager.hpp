@@ -252,7 +252,7 @@ namespace leopph::internal
 
 	[[nodiscard]] auto DataManager::FindEntityInternalCommon(auto* const self, const std::string& name) -> decltype(auto)
 	{
-		const auto it{
+		auto it{
 			std::ranges::lower_bound(self->m_EntitiesAndComponents, name, [](const auto& elemName, const auto& value)
 			                         {
 				                         return elemName < value;
