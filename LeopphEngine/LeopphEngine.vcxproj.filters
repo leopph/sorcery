@@ -59,6 +59,8 @@
     <ClCompile Include="src\rendering\geometry\MeshDataGroup.cpp" />
     <ClCompile Include="src\components\rendering\RenderComponent.cpp" />
     <ClCompile Include="src\util\less\StringLess.cpp" />
+    <ClCompile Include="src\scene\SceneManager.cpp" />
+    <ClCompile Include="src\scene\Scene.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\Behavior.hpp" />
@@ -149,6 +151,8 @@
     <ClInclude Include="src\util\concepts\Pointer.hpp" />
     <ClInclude Include="src\util\hash\IdHash.hpp" />
     <ClInclude Include="src\util\less\StringLess.hpp" />
+    <ClInclude Include="src\scene\Scene.hpp" />
+    <ClInclude Include="src\scene\SceneManager.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\cpp.hint" />
