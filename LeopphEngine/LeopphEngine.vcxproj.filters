@@ -61,6 +61,7 @@
     <ClCompile Include="src\util\less\StringLess.cpp" />
     <ClCompile Include="src\scene\SceneManager.cpp" />
     <ClCompile Include="src\scene\Scene.cpp" />
+    <ClCompile Include="src\threading\JobSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\Behavior.hpp" />
@@ -153,6 +154,8 @@
     <ClInclude Include="src\util\less\StringLess.hpp" />
     <ClInclude Include="src\scene\Scene.hpp" />
     <ClInclude Include="src\scene\SceneManager.hpp" />
+    <ClInclude Include="src\util\containers\ArrayQueue.hpp" />
+    <ClInclude Include="src\threading\JobSystem.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\cpp.hint" />

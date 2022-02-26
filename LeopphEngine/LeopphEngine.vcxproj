@@ -222,7 +222,9 @@
     <ClInclude Include="src\util\concepts\Idable.hpp" />
     <ClInclude Include="src\util\concepts\Pathed.hpp" />
     <ClInclude Include="src\util\concepts\Pointer.hpp" />
+    <ClInclude Include="src\util\containers\ArrayQueue.hpp" />
     <ClInclude Include="src\util\containers\Bimap.hpp" />
+    <ClInclude Include="src\threading\JobSystem.hpp" />
     <ClInclude Include="src\util\equal\IdEqual.hpp" />
     <ClInclude Include="src\util\equal\PointerEqual.hpp" />
     <ClInclude Include="src\util\equal\PathedEqual.hpp" />
@@ -297,6 +299,7 @@
     <ClCompile Include="src\rendering\UniformBuffer.cpp" />
     <ClCompile Include="src\scene\Scene.cpp" />
     <ClCompile Include="src\scene\SceneManager.cpp" />
+    <ClCompile Include="src\threading\JobSystem.cpp" />
     <ClCompile Include="src\timing\timer.cpp" />
     <ClCompile Include="src\util\equal\ShaderTypeEqual.cpp" />
     <ClCompile Include="src\util\equal\StringEqual.cpp" />
