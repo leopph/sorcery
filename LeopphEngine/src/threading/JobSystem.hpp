@@ -1,11 +1,13 @@
 #pragma once
 
+#include "Job.hpp"
 #include "../util/containers/ArrayQueue.hpp"
 
 #include <condition_variable>
-#include <functional>
+#include <future>
 #include <memory>
 #include <mutex>
+#include <queue>
 #include <thread>
 
 
@@ -14,11 +16,9 @@ namespace leopph::internal
 	class JobSystem
 	{
 		public:
-			using Job = std::function<void()>;
-
 			[[nodiscard]] static auto Create() -> std::unique_ptr<JobSystem>;
 
-			auto Execute(Job job) -> void;
+			auto Execute(Job job) -> Job::FutureType;
 
 			JobSystem(const JobSystem& other) = delete;
 			auto operator=(const JobSystem& other) -> JobSystem& = delete;
@@ -31,9 +31,9 @@ namespace leopph::internal
 		private:
 			JobSystem();
 
-			static auto ThreadFunc(ArrayQueue<Job>& q, std::mutex& m, std::condition_variable& cv, const std::atomic_bool& exit) -> void;
+			static auto ThreadFunc(std::queue<Job>& q, std::mutex& m, std::condition_variable& cv, const std::atomic_bool& exit) -> void;
 
-			ArrayQueue<Job> m_Queue;
+			std::queue<Job> m_Queue;
 			std::mutex m_Mutex;
 			std::condition_variable m_Cv;
 			std::atomic_bool m_Exit{false};

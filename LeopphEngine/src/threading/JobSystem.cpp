@@ -35,17 +35,20 @@ namespace leopph::internal
 	}
 
 
-	auto JobSystem::Execute(Job job) -> void
+	auto JobSystem::Execute(Job job) -> Job::FutureType
 	{
+		Job::FutureType ret;
 		{
 			std::unique_lock lk{m_Mutex};
-			m_Queue.Push(std::move(job));
+			ret = job.Future();
+			m_Queue.push(std::move(job));
 		}
 		m_Cv.notify_one();
+		return ret;
 	}
 
 
-	auto JobSystem::ThreadFunc(ArrayQueue<Job>& q, std::mutex& m, std::condition_variable& cv, const std::atomic_bool& exit) -> void
+	auto JobSystem::ThreadFunc(std::queue<Job>& q, std::mutex& m, std::condition_variable& cv, const std::atomic_bool& exit) -> void
 	{
 		Job job;
 
@@ -55,7 +58,7 @@ namespace leopph::internal
 				std::unique_lock lk{m};
 				cv.wait(lk, [&]
 				{
-					return !q.Empty() || exit;
+					return !q.empty() || exit;
 				});
 
 				if (exit)
@@ -63,7 +66,8 @@ namespace leopph::internal
 					break;
 				}
 
-				job = {q.Pop()};
+				job = std::move(q.front());
+				q.pop();
 			}
 			job();
 		}
@@ -72,11 +76,11 @@ namespace leopph::internal
 
 	const std::size_t JobSystem::NUM_THREADS
 	{
-		[]()
+		[]
 		{
-			SYSTEM_INFO sys_info;
-			GetSystemInfo(&sys_info);
-			return sys_info.dwNumberOfProcessors - 1;
+			SYSTEM_INFO sysInfo;
+			GetSystemInfo(&sysInfo);
+			return sysInfo.dwNumberOfProcessors - 1;
 		}()
 	};
 }

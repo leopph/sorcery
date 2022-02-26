@@ -56,7 +56,8 @@ namespace leopph::internal
 		Logger::Instance().Warning("The forward rendering pipeline is currently not feature complete. It is recommended to use the deferred pipeline.");
 	}
 
-	auto ForwardRenderer::Render() -> void
+
+	auto ForwardRenderer::Render(const std::unique_ptr<JobSystem>& jobSystem) -> void
 	{
 		/* We don't render if there is no camera to use */
 		if (Camera::Active() == nullptr)
@@ -64,18 +65,51 @@ namespace leopph::internal
 			return;
 		}
 
-		const auto& renderables{CollectRenderables()};
+		static std::vector<RenderableData> renderables;
+		static std::vector<const SpotLight*> spotLights;
+		static std::vector<const PointLight*> pointLights;
+
+		const auto fRenderables{
+			jobSystem->Execute(Job{
+				                   [&]
+				                   {
+					                   renderables.clear();
+					                   CollectRenderables(renderables);
+				                   }
+			                   })
+		};
+		const auto fSpotLights{
+			jobSystem->Execute(Job{
+				                   [&]
+				                   {
+					                   spotLights.clear();
+					                   CollectSpotLights(spotLights);
+				                   }
+			                   })
+		};
+		const auto fPointLights{
+			jobSystem->Execute(Job{
+				                   [&]
+				                   {
+					                   pointLights.clear();
+					                   CollectPointLights(pointLights);
+				                   }
+			                   })
+		};
 
 		const auto camViewMat{Camera::Active()->ViewMatrix()};
 		const auto camProjMat{Camera::Active()->ProjectionMatrix()};
 
 		const auto& dirLight{DataManager::Instance().DirectionalLight()};
-		const auto& spotLights{CollectSpotLights()};
-		const auto& pointLights{CollectPointLights()};
+
+		fRenderables.wait();
+		fSpotLights.wait();
+		fPointLights.wait();
 
 		RenderShadedObjects(camViewMat, camProjMat, renderables, dirLight, spotLights, pointLights);
 		RenderSkybox(camViewMat, camProjMat);
 	}
+
 
 	auto ForwardRenderer::RenderShadedObjects(const Matrix4& camViewMat, const Matrix4& camProjMat, const std::vector<RenderableData>& renderables, const DirectionalLight* dirLight, const std::vector<const SpotLight*>& spotLights, const std::vector<const PointLight*>& pointLights) -> void
 	{
@@ -178,6 +212,7 @@ namespace leopph::internal
 			renderable->DrawWithMaterial(objectShader, 0);
 		}
 	}
+
 
 	auto ForwardRenderer::RenderSkybox(const Matrix4& camViewMat, const Matrix4& camProjMat) -> void
 	{

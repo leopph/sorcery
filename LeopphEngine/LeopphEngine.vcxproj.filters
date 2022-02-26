@@ -62,6 +62,7 @@
     <ClCompile Include="src\scene\SceneManager.cpp" />
     <ClCompile Include="src\scene\Scene.cpp" />
     <ClCompile Include="src\threading\JobSystem.cpp" />
+    <ClCompile Include="src\threading\Job.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\Behavior.hpp" />
@@ -156,6 +157,7 @@
     <ClInclude Include="src\scene\SceneManager.hpp" />
     <ClInclude Include="src\util\containers\ArrayQueue.hpp" />
     <ClInclude Include="src\threading\JobSystem.hpp" />
+    <ClInclude Include="src\threading\Job.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\cpp.hint" />

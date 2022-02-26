@@ -59,7 +59,7 @@ namespace leopph::internal
 	}
 
 
-	auto DeferredRenderer::Render() -> void
+	auto DeferredRenderer::Render(const std::unique_ptr<JobSystem>& jobSystem) -> void
 	{
 		/* We don't render if there is no camera to use */
 		if (Camera::Active() == nullptr)
@@ -67,12 +67,48 @@ namespace leopph::internal
 			return;
 		}
 
-		const auto& renderables{CollectRenderables()};
+		static std::vector<RenderableData> renderables;
+		static std::vector<const SpotLight*> spotLights;
+		static std::vector<const PointLight*> pointLights;
+
+		auto fRenderables{
+			jobSystem->Execute(Job{
+				                   [&]
+				                   {
+					                   renderables.clear();
+					                   CollectRenderables(renderables);
+				                   }
+			                   })
+		};
+		auto fSpotLights{
+			jobSystem->Execute(Job{
+				                   [&]
+				                   {
+					                   spotLights.clear();
+					                   CollectSpotLights(spotLights);
+				                   }
+			                   })
+		};
+		auto fPointLights{
+			jobSystem->Execute(Job{
+				                   [&]
+				                   {
+					                   pointLights.clear();
+					                   CollectPointLights(pointLights);
+				                   }
+			                   })
+		};
+
 		const auto camViewMat{Camera::Active()->ViewMatrix()};
 		const auto camProjMat{Camera::Active()->ProjectionMatrix()};
 
+		fRenderables.get();
 		RenderGeometry(camViewMat, camProjMat, renderables);
-		RenderLights(camViewMat, camProjMat, renderables);
+
+		fSpotLights.get();
+		fPointLights.get();
+		RenderLights(camViewMat, camProjMat, renderables, spotLights, pointLights);
+
 		RenderSkybox(camViewMat, camProjMat);
 		m_RenderBuffer.CopyColorToDefaultFramebuffer();
 	}
@@ -97,7 +133,7 @@ namespace leopph::internal
 	}
 
 
-	auto DeferredRenderer::RenderLights(const Matrix4& camViewMat, const Matrix4& camProjMat, const std::span<const RenderableData> renderables) -> void
+	auto DeferredRenderer::RenderLights(const Matrix4& camViewMat, const Matrix4& camProjMat, const std::span<const RenderableData> renderables, const std::span<const SpotLight*> spotLights, const std::span<const PointLight*> pointLights) -> void
 	{
 		glStencilFunc(GL_EQUAL, STENCIL_REF, STENCIL_AND_MASK);
 		glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
@@ -105,8 +141,6 @@ namespace leopph::internal
 		m_GBuffer.CopyStencilData(m_RenderBuffer.FramebufferName());
 
 		const auto dirLight{DataManager::Instance().DirectionalLight()};
-		const auto& spotLights{CollectSpotLights()};
-		const auto& pointLights{CollectPointLights()};
 		const auto [dirShadow, spotShadows, pointShadows]{CountShadows(dirLight, spotLights, pointLights)};
 
 		m_LightShader.Clear();

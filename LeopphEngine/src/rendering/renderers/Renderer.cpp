@@ -32,9 +32,8 @@ namespace leopph::internal
 	}
 
 
-	auto Renderer::CollectRenderables() -> const std::vector<Renderer::RenderableData>&
+	auto Renderer::CollectRenderables(std::vector<Renderer::RenderableData>& renderables) -> void
 	{
-		m_CurFrameRenderables.clear();
 		for (const auto& [renderable, instances] : DataManager::Instance().MeshGroupsAndInstances())
 		{
 			static std::vector<std::pair<Matrix4, Matrix4>> instMats;
@@ -50,41 +49,38 @@ namespace leopph::internal
 				}
 				else
 				{
-					m_CurFrameRenderables.emplace_back(renderable.get(), std::vector{std::make_pair(modelMat.Transposed(), normalMat.Transposed())}, instance->CastsShadow());
+					renderables.emplace_back(renderable.get(), std::vector{std::make_pair(modelMat.Transposed(), normalMat.Transposed())}, instance->CastsShadow());
 				}
 			}
 			if (!instMats.empty())
 			{
-				m_CurFrameRenderables.emplace_back(renderable.get(), instMats, instShadow);
+				renderables.emplace_back(renderable.get(), instMats, instShadow);
 			}
 		}
-		return m_CurFrameRenderables;
 	}
 
 
-	auto Renderer::CollectSpotLights() -> const std::vector<const SpotLight*>&
+	auto Renderer::CollectSpotLights(std::vector<const SpotLight*>& spotLights) -> void
 	{
-		m_CurFrameSpotLights = DataManager::Instance().SpotLights();
-		std::ranges::sort(m_CurFrameSpotLights, CompareLightsByDistToCam);
+		spotLights = DataManager::Instance().SpotLights();
+		std::ranges::sort(spotLights, CompareLightsByDistToCam);
 		if (const auto limit{Settings::Instance().MaxSpotLightCount()};
-			m_CurFrameSpotLights.size() > limit)
+			spotLights.size() > limit)
 		{
-			m_CurFrameSpotLights.resize(limit);
+			spotLights.resize(limit);
 		}
-		return m_CurFrameSpotLights;
 	}
 
 
-	auto Renderer::CollectPointLights() -> const std::vector<const PointLight*>&
+	auto Renderer::CollectPointLights(std::vector<const PointLight*>& pointLights) -> void
 	{
-		m_CurFramePointLights = DataManager::Instance().PointLights();
-		std::ranges::sort(m_CurFramePointLights, CompareLightsByDistToCam);
+		pointLights = DataManager::Instance().PointLights();
+		std::ranges::sort(pointLights, CompareLightsByDistToCam);
 		if (const auto limit{Settings::Instance().MaxPointLightCount()};
-			m_CurFramePointLights.size() > limit)
+			pointLights.size() > limit)
 		{
-			m_CurFramePointLights.resize(limit);
+			pointLights.resize(limit);
 		}
-		return m_CurFramePointLights;
 	}
 
 

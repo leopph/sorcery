@@ -27,14 +27,18 @@ namespace leopph::internal
 		public:
 			DeferredRenderer();
 
-			auto Render() -> void override;
+			auto Render(const std::unique_ptr<JobSystem>& jobSystem) -> void override;
 
 		private:
 			// Fill the GeometryBuffer with geometry data.
 			auto RenderGeometry(const Matrix4& camViewMat, const Matrix4& camProjMat, const std::vector<RenderableData>& renderables) -> void;
 
 			// Draw all lights in the RenderBuffer.
-			auto RenderLights(const Matrix4& camViewMat, const Matrix4& camProjMat, std::span<const RenderableData> renderables) -> void;
+			auto RenderLights(const Matrix4& camViewMat,
+			                  const Matrix4& camProjMat,
+			                  std::span<const RenderableData> renderables,
+			                  std::span<const SpotLight*> spotLights,
+			                  std::span<const PointLight*> pointLights) -> void;
 
 			// Draw skybox in the empty parts of the RenderBuffer.
 			auto RenderSkybox(const Matrix4& camViewMat, const Matrix4& camProjMat) -> void;
