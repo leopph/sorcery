@@ -219,6 +219,7 @@
     <ClInclude Include="src\scene\Scene.hpp" />
     <ClInclude Include="src\scene\SceneManager.hpp" />
     <ClInclude Include="src\threading\Job.hpp" />
+    <ClInclude Include="src\threading\SpinLock.hpp" />
     <ClInclude Include="src\timing\timer.h" />
     <ClInclude Include="src\util\concepts\Idable.hpp" />
     <ClInclude Include="src\util\concepts\Pathed.hpp" />
@@ -302,6 +303,7 @@
     <ClCompile Include="src\scene\SceneManager.cpp" />
     <ClCompile Include="src\threading\Job.cpp" />
     <ClCompile Include="src\threading\JobSystem.cpp" />
+    <ClCompile Include="src\threading\SpinLock.cpp" />
     <ClCompile Include="src\timing\timer.cpp" />
     <ClCompile Include="src\util\equal\ShaderTypeEqual.cpp" />
     <ClCompile Include="src\util\equal\StringEqual.cpp" />

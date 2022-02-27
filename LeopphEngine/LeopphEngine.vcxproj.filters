@@ -63,6 +63,7 @@
     <ClCompile Include="src\scene\Scene.cpp" />
     <ClCompile Include="src\threading\JobSystem.cpp" />
     <ClCompile Include="src\threading\Job.cpp" />
+    <ClCompile Include="src\threading\SpinLock.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\Behavior.hpp" />
@@ -158,6 +159,7 @@
     <ClInclude Include="src\util\containers\ArrayQueue.hpp" />
     <ClInclude Include="src\threading\JobSystem.hpp" />
     <ClInclude Include="src\threading\Job.hpp" />
+    <ClInclude Include="src\threading\SpinLock.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\cpp.hint" />
