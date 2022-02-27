@@ -13,7 +13,7 @@
 #include "../../math/Matrix.hpp"
 #include "../shaders/ShaderFamily.hpp"
 
-#include <glad/glad.h>
+#include <glad/gl.h>
 
 #include <cstddef>
 #include <memory>

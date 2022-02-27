@@ -5,7 +5,7 @@
 #include "../../util/equal/ShaderTypeEqual.hpp"
 #include "../../util/hash/ShaderTypeHash.hpp"
 
-#include <glad/glad.h>
+#include <glad/gl.h>
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
@@ -117,7 +117,7 @@ namespace leopph::internal::opengl
 
 	auto Init() -> bool
 	{
-		const auto ret = gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress));
+		const auto ret = gladLoadGL(glfwGetProcAddress);
 
 		if (ret)
 		{

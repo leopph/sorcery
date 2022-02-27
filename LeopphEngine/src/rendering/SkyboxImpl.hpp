@@ -2,7 +2,7 @@
 
 #include "shaders/ShaderProgram.hpp"
 
-#include <glad/glad.h>
+#include <glad/gl.h>
 
 #include <array>
 #include <filesystem>

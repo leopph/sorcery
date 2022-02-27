@@ -1,6 +1,6 @@
 #include "UniformBuffer.hpp"
 
-#include <glad/glad.h>
+#include <glad/gl.h>
 
 
 namespace leopph::internal

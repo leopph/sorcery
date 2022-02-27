@@ -3,7 +3,7 @@
 #include "../../util/logger.h"
 #include "../opengl/OpenGl.hpp"
 
-#include <glad/glad.h>
+#include <glad/gl.h>
 
 #include <stdexcept>
 #include <vector>

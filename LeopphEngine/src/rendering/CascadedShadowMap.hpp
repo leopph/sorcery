@@ -6,7 +6,7 @@
 #include "../math/Matrix.hpp"
 #include "shaders/ShaderProgram.hpp"
 
-#include <glad/glad.h>
+#include <glad/gl.h>
 
 #include <cstddef>
 #include <span>

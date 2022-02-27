@@ -12,7 +12,7 @@
 #include "../../math/Vector.hpp"
 #include "../../util/logger.h"
 
-#include <glad/glad.h>
+#include <glad/gl.h>
 
 #include <cstddef>
 #include <string>

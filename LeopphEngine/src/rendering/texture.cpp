@@ -3,7 +3,7 @@
 #include "../data/DataManager.hpp"
 #include "../util/logger.h"
 
-#include <glad/glad.h>
+#include <glad/gl.h>
 
 #include <stb_image.h>
 #include <utility>

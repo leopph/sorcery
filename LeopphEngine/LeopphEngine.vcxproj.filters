@@ -64,6 +64,7 @@
     <ClCompile Include="src\threading\JobSystem.cpp" />
     <ClCompile Include="src\threading\Job.cpp" />
     <ClCompile Include="src\threading\SpinLock.cpp" />
+    <ClCompile Include="vendor\glad2\src\gl.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\Behavior.hpp" />
