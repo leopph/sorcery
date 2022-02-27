@@ -65,6 +65,7 @@
     <ClCompile Include="src\threading\Job.cpp" />
     <ClCompile Include="src\threading\SpinLock.cpp" />
     <ClCompile Include="vendor\glad2\src\gl.c" />
+    <ClCompile Include="src\threading\Worker.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\Behavior.hpp" />
@@ -161,6 +162,7 @@
     <ClInclude Include="src\threading\JobSystem.hpp" />
     <ClInclude Include="src\threading\Job.hpp" />
     <ClInclude Include="src\threading\SpinLock.hpp" />
+    <ClInclude Include="src\threading\Worker.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\cpp.hint" />

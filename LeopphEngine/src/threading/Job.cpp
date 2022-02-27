@@ -8,8 +8,9 @@
 
 namespace leopph::internal
 {
-	Job::Job(JobFunc func) :
+	Job::Job(JobFunc func, const Label label) :
 		m_Id{GenId()},
+		m_Label{label},
 		m_Func{std::move(func)}
 	{ }
 
@@ -30,7 +31,7 @@ namespace leopph::internal
 
 	auto Job::Future() -> Job::FutureType
 	{
-		return m_Promise.get_future();	
+		return m_Promise.get_future();
 	}
 
 
