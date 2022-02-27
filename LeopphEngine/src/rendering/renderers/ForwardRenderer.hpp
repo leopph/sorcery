@@ -13,7 +13,7 @@ namespace leopph::internal
 	{
 		public:
 			ForwardRenderer();
-			auto Render(const std::unique_ptr<JobSystem>& jobSystem) -> void override;
+			auto Render() -> void override;
 
 		private:
 			auto RenderShadedObjects(const Matrix4& camViewMat, const Matrix4& camProjMat, const std::vector<RenderableData>& renderables, const DirectionalLight* dirLight, const std::vector<const SpotLight*>& spotLights, const std::vector<const PointLight*>& pointLights) -> void;

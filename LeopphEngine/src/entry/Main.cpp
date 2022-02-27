@@ -11,7 +11,6 @@
 #include "../events/handling/EventManager.hpp"
 #include "../rendering/opengl/OpenGl.hpp"
 #include "../rendering/renderers/Renderer.hpp"
-#include "../threading/JobSystem.hpp"
 #include "../timing/timer.h"
 #include "../util/logger.h"
 #include "../windowing/WindowImpl.hpp"
@@ -34,7 +33,6 @@ namespace leopph::internal
 		}
 
 		{
-			const auto jobSystem{JobSystem::Create()};
 			const auto renderer{Renderer::Create()};
 
 			initFunc();
@@ -52,7 +50,7 @@ namespace leopph::internal
 				}
 
 				window->Clear();
-				renderer->Render(jobSystem);
+				renderer->Render();
 				Timer::OnFrameComplete();
 				window->SwapBuffers();
 				EventManager::Instance().Send<FrameEndedEvent>();

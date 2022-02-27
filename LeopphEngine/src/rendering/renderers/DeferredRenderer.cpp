@@ -59,7 +59,7 @@ namespace leopph::internal
 	}
 
 
-	auto DeferredRenderer::Render(const std::unique_ptr<JobSystem>& jobSystem) -> void
+	auto DeferredRenderer::Render() -> void
 	{
 		/* We don't render if there is no camera to use */
 		if (Camera::Active() == nullptr)
@@ -71,44 +71,18 @@ namespace leopph::internal
 		static std::vector<const SpotLight*> spotLights;
 		static std::vector<const PointLight*> pointLights;
 
-		auto fRenderables{
-			jobSystem->Execute(Job{
-				                   [&]
-				                   {
-					                   renderables.clear();
-					                   CollectRenderables(renderables);
-				                   }
-			                   })
-		};
-		auto fSpotLights{
-			jobSystem->Execute(Job{
-				                   [&]
-				                   {
-					                   spotLights.clear();
-					                   CollectSpotLights(spotLights);
-				                   }
-			                   })
-		};
-		auto fPointLights{
-			jobSystem->Execute(Job{
-				                   [&]
-				                   {
-					                   pointLights.clear();
-					                   CollectPointLights(pointLights);
-				                   }
-			                   })
-		};
+		renderables.clear();
+		CollectRenderables(renderables);
+		spotLights.clear();
+		CollectSpotLights(spotLights);
+		pointLights.clear();
+		CollectPointLights(pointLights);
 
 		const auto camViewMat{Camera::Active()->ViewMatrix()};
 		const auto camProjMat{Camera::Active()->ProjectionMatrix()};
 
-		fRenderables.get();
 		RenderGeometry(camViewMat, camProjMat, renderables);
-
-		fSpotLights.get();
-		fPointLights.get();
 		RenderLights(camViewMat, camProjMat, renderables, spotLights, pointLights);
-
 		RenderSkybox(camViewMat, camProjMat);
 		m_RenderBuffer.CopyColorToDefaultFramebuffer();
 	}

@@ -4,7 +4,6 @@
 #include "../../components/lighting/PointLight.hpp"
 #include "../../components/lighting/SpotLight.hpp"
 #include "../../math/Matrix.hpp"
-#include "../../threading/JobSystem.hpp"
 #include "../geometry/GlMeshGroup.hpp"
 
 #include <span>
@@ -18,7 +17,7 @@ namespace leopph::internal
 		public:
 			static auto Create() -> std::unique_ptr<Renderer>;
 
-			virtual auto Render(const std::unique_ptr<JobSystem>& jobSystem) -> void = 0;
+			virtual auto Render() -> void = 0;
 
 			virtual ~Renderer() = default;
 

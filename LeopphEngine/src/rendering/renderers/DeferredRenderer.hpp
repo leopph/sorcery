@@ -27,7 +27,7 @@ namespace leopph::internal
 		public:
 			DeferredRenderer();
 
-			auto Render(const std::unique_ptr<JobSystem>& jobSystem) -> void override;
+			auto Render() -> void override;
 
 		private:
 			// Fill the GeometryBuffer with geometry data.
