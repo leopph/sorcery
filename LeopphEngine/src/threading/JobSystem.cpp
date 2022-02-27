@@ -12,7 +12,7 @@ namespace leopph::internal
 		m_Threads.reserve(NUM_THREADS);
 		for (auto i = 0ull; i < NUM_THREADS; ++i)
 		{
-			m_Threads.emplace_back(ThreadFunc, std::ref(m_Queue), std::ref(m_Mutex), std::ref(m_Cv), std::ref(m_Exit));
+			m_Threads.emplace_back(ThreadFunc, std::ref(m_Queue), std::ref(m_Lock), std::ref(m_Exit));
 		}
 	}
 
@@ -20,7 +20,6 @@ namespace leopph::internal
 	JobSystem::~JobSystem()
 	{
 		m_Exit = true;
-		m_Cv.notify_all();
 
 		for (auto& thread : m_Threads)
 		{
@@ -37,38 +36,36 @@ namespace leopph::internal
 
 	auto JobSystem::Execute(Job job) -> Job::FutureType
 	{
-		Job::FutureType ret;
-		{
-			std::unique_lock lk{m_Mutex};
-			ret = job.Future();
-			m_Queue.push(std::move(job));
-		}
-		m_Cv.notify_one();
+		auto ret{job.Future()};
+		m_Lock.Lock();
+		m_Queue.Push(std::move(job));
+		m_Lock.Unlock();
 		return ret;
 	}
 
 
-	auto JobSystem::ThreadFunc(std::queue<Job>& q, std::mutex& m, std::condition_variable& cv, const std::atomic_bool& exit) -> void
+	auto JobSystem::ThreadFunc(std::add_lvalue_reference_t<decltype(m_Queue)> q,
+	                           std::add_lvalue_reference_t<decltype(m_Lock)> lock,
+	                           const std::atomic_bool& exit) -> void
 	{
-		Job job;
-
 		while (true)
 		{
+			lock.Lock();
+
+			if (exit)
 			{
-				std::unique_lock lk{m};
-				cv.wait(lk, [&]
-				{
-					return !q.empty() || exit;
-				});
-
-				if (exit)
-				{
-					break;
-				}
-
-				job = std::move(q.front());
-				q.pop();
+				lock.Unlock();
+				return;
 			}
+
+			if (q.Empty())
+			{
+				lock.Unlock();
+				continue;
+			}
+
+			auto job{q.Pop()};
+			lock.Unlock();
 			job();
 		}
 	}

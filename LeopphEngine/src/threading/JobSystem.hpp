@@ -1,14 +1,15 @@
 #pragma once
 
 #include "Job.hpp"
+#include "SpinLock.hpp"
 #include "../util/containers/ArrayQueue.hpp"
 
-#include <condition_variable>
-#include <future>
+#include <atomic>
+#include <cstddef>
 #include <memory>
-#include <mutex>
-#include <queue>
 #include <thread>
+#include <type_traits>
+#include <vector>
 
 
 namespace leopph::internal
@@ -29,17 +30,18 @@ namespace leopph::internal
 			~JobSystem();
 
 		private:
-			JobSystem();
+			// One less than the number of hardware threads to account for the main thread.
+			const static std::size_t NUM_THREADS;
 
-			static auto ThreadFunc(std::queue<Job>& q, std::mutex& m, std::condition_variable& cv, const std::atomic_bool& exit) -> void;
-
-			std::queue<Job> m_Queue;
-			std::mutex m_Mutex;
-			std::condition_variable m_Cv;
+			ArrayQueue<Job> m_Queue;
+			SpinLock m_Lock;
 			std::atomic_bool m_Exit{false};
 			std::vector<std::thread> m_Threads;
 
-			// One less than the number of hardware threads to account for the main thread.
-			const static std::size_t NUM_THREADS;
+			JobSystem();
+
+			static auto ThreadFunc(std::add_lvalue_reference_t<decltype(m_Queue)> q,
+			                       std::add_lvalue_reference_t<decltype(m_Lock)> lock,
+			                       const std::atomic_bool& exit) -> void;
 	};
 }
