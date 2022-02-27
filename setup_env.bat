@@ -5,8 +5,6 @@ cd LeopphEngine\vendor\physx
 call :PhysX
 cd ../assimp
 call :Assimp
-cd ../glad
-call :GLAD
 cd ../glfw
 call :GLFW
 cd ../spdlog
@@ -17,12 +15,6 @@ exit /B 0
 cmake -DASSIMP_BUILD_ALL_EXPORTERS_BY_DEFAULT=0 -DASSIMP_BUILD_ASSIMP_TOOLS=0 -DASSIMP_BUILD_TESTS=0 -DASSIMP_INJECT_DEBUG_POSTFIX=0 -DCMAKE_CONFIGURATION_TYPES="Debug;Release" -DLIBRARY_SUFFIX="" .
 start "Building Assimp Debug" "%msbuild%" Assimp.sln /p:Configuration=Debug
 start "Building Assimp Release" "%msbuild%" Assimp.sln /p:Configuration=Release
-exit /B 0
-
-:GLAD
-cmake -DCMAKE_CONFIGURATION_TYPES="Debug;Release" -DGLAD_PROFILE="core" .
-start "Building GLAD Debug" "%msbuild%" GLAD.sln /p:Configuration=Debug
-start "Building GLAD Release" "%msbuild%" GLAD.sln /p:Configuration=Release
 exit /B 0
 
 :GLFW
