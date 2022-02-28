@@ -11,7 +11,7 @@ namespace leopph
 	struct Material
 	{
 		Color DiffuseColor{250, 255, 255};
-		Color SpecularColor{127, 127, 127};
+		Color SpecularColor{0, 0, 0};
 
 		std::shared_ptr<Texture> DiffuseMap;
 		std::shared_ptr<Texture> SpecularMap;
