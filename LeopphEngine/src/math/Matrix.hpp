@@ -5,8 +5,10 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <concepts>
 #include <cstddef>
+#include <limits>
 
 
 namespace leopph
@@ -114,6 +116,9 @@ namespace leopph
 			private:
 				// Helper function to get const and non-const references to elements depending on context.
 				[[nodiscard]] constexpr static auto GetElementCommon(auto* self, std::size_t index) -> decltype(auto);
+				// For integers this is equal to elem == 0.
+				// For others it is equal to abs(elem) < epsilon.
+				[[nodiscard]] constexpr static auto IsZero(const T& elem) -> bool;
 
 				std::array<Vector<T, M>, N> m_Data{};
 		};
@@ -360,12 +365,12 @@ namespace leopph
 			for (std::size_t i = 0; i < N; i++)
 			{
 				// Try to correct zero element in main diagonal
-				if (left[i][i] == static_cast<T>(0))
+				if (IsZero(left[i][i]))
 				{
 					// Find a non-zero element below the tested one and swap rows with it
 					for (auto j = i + 1; j < N; j++)
 					{
-						if (left[j][i] != 0)
+						if (!IsZero(left[j][i]))
 						{
 							// Swap rows in left
 							auto tmp{left[j]};
@@ -384,7 +389,7 @@ namespace leopph
 				// If the main diagonal element is non-zero
 				// 1. Normalize the row so that the element is 1
 				// 2. Reduce all rows below so that its elements under are zero
-				if (left[i][i] != static_cast<T>(0))
+				if (!IsZero(left[i][i]))
 				{
 					const auto div{left[i][i]};
 					left[i] /= div;
@@ -405,7 +410,7 @@ namespace leopph
 			{
 				for (auto j = i + 1; j < N; j++)
 				{
-					if (left[i][j] != 0)
+					if (!IsZero(left[i][j]))
 					{
 						// We subtract the jth row from the ith one
 						// Because it is guaranteed to have 0s before the main diagonal
@@ -467,6 +472,21 @@ namespace leopph
 		constexpr auto Matrix<T, N, M>::GetElementCommon(auto* const self, const std::size_t index) -> decltype(auto)
 		{
 			return self->m_Data[index];
+		}
+
+
+		template<class T, std::size_t N, std::size_t M>
+			requires (N > 1 && M > 1)
+		constexpr auto Matrix<T, N, M>::IsZero(const T& elem) -> bool
+		{
+			if constexpr (std::numeric_limits<T>::is_integer)
+			{
+				return elem == static_cast<T>(0);
+			}
+			else
+			{
+				return std::abs(elem) < std::numeric_limits<T>::epsilon();
+			}
 		}
 
 
