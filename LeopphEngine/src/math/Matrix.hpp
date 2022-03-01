@@ -353,40 +353,70 @@ namespace leopph
 		constexpr auto Matrix<T, N, M>::Inverse() const noexcept -> Matrix<T, N, M>
 			requires (N == M)
 		{
-			Matrix<T, N, M> copyOfThis{*this};
-			Matrix<T, N, M> inverse{Matrix<T, N, M>::Identity()};
+			Matrix<T, N, M> left{*this};
+			Matrix<T, N, M> right{Matrix<T, N, M>::Identity()};
+
+			// Iterate over the main diagonal/submatrices
 			for (std::size_t i = 0; i < N; i++)
 			{
-				if (copyOfThis[i][i] == static_cast<T>(0))
+				// Try to correct zero element in main diagonal
+				if (left[i][i] == static_cast<T>(0))
 				{
-					for (auto j{i + 1}; j < N; ++j)
+					// Find a non-zero element below the tested one and swap rows with it
+					for (auto j = i + 1; j < N; j++)
 					{
-						if (copyOfThis[j][i] != 0)
+						if (left[j][i] != 0)
 						{
-							auto tmp{copyOfThis[j]};
-							copyOfThis[j] = copyOfThis[i];
-							copyOfThis[i] = tmp;
-							tmp = inverse[j];
-							inverse[j] = inverse[i];
-							inverse[i] = tmp;
+							// Swap rows in left
+							auto tmp{left[j]};
+							left[j] = left[i];
+							left[i] = tmp;
+
+							// Swap rows in right
+							tmp = right[j];
+							right[j] = right[i];
+							right[i] = tmp;
 							break;
 						}
 					}
 				}
-				const auto pivot{copyOfThis[i][i]};
-				copyOfThis[i] /= pivot;
-				inverse[i] /= pivot;
-				for (std::size_t j{0}; j < N; ++j)
+
+				// If the main diagonal element is non-zero
+				// 1. Normalize the row so that the element is 1
+				// 2. Reduce all rows below so that its elements under are zero
+				if (left[i][i] != static_cast<T>(0))
 				{
-					if (i != j)
+					const auto div{left[i][i]};
+					left[i] /= div;
+					right[i] /= div;
+
+					for (auto j = i + 1; j < N; j++)
 					{
-						const auto mult{copyOfThis[j][i]};
-						copyOfThis[j] -= mult * copyOfThis[i];
-						inverse[j] -= mult * inverse[i];
+						const auto mult{left[j][i] / left[i][i]}; // Theoretically left[i][i] is 1 by now but for the sake of float accuracy we do the division
+						left[j] -= mult * left[i];
+						right[j] -= mult * right[i];
 					}
 				}
 			}
-			return inverse;
+
+			// Left is in reduced echelon form
+			// Now eliminate the remaining non-zeros outside the main diagonal
+			for (std::size_t i = 0; i < N; i++)
+			{
+				for (auto j = i + 1; j < N; j++)
+				{
+					if (left[i][j] != 0)
+					{
+						// We subtract the jth row from the ith one
+						// Because it is guaranteed to have 0s before the main diagonal
+						// And thus it won't mess up the element in the ith row before the jth element
+						const auto mult{left[i][j] / left[j][j]}; // left[j][j] is theoretically 1 but for the sake of float accuracy we do the division
+						left[i] -= mult * left[j];
+						right[i] -= mult * right[j];
+					}
+				}
+			}
+			return right;
 		}
 
 
