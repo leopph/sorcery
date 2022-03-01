@@ -136,7 +136,8 @@ namespace leopph
 
 	auto Camera::ViewMatrix() const -> Matrix4
 	{
-		return (static_cast<Matrix4>(Entity()->Transform()->Rotation()) * Matrix4::Translate(Entity()->Transform()->Position())).Inverse();
+		// inv(T) * inv(R)
+		return Matrix4::Translate(-Entity()->Transform()->Position()) * Matrix4{Entity()->Transform()->Rotation()}.Transposed();
 	}
 
 
