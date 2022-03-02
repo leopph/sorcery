@@ -8,7 +8,6 @@
 #include <cmath>
 #include <concepts>
 #include <cstddef>
-#include <limits>
 
 
 namespace leopph
@@ -603,7 +602,9 @@ namespace leopph
 				{
 					for (size_t k = 0; k < M; k++)
 					{
-						ret[i][j] += left[i][k] * right[k][j];
+						{
+							ret[i][j] += left[i][k] * right[k][j];
+						}
 					}
 				}
 			}
