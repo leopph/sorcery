@@ -116,9 +116,6 @@ namespace leopph
 			private:
 				// Helper function to get const and non-const references to elements depending on context.
 				[[nodiscard]] constexpr static auto GetElementCommon(auto* self, std::size_t index) -> decltype(auto);
-				// For integers this is equal to elem == 0.
-				// For others it is equal to abs(elem) < epsilon.
-				[[nodiscard]] constexpr static auto IsZero(const T& elem) -> bool;
 
 				std::array<Vector<T, M>, N> m_Data{};
 		};
@@ -364,43 +361,43 @@ namespace leopph
 			// Iterate over the main diagonal/submatrices
 			for (std::size_t i = 0; i < N; i++)
 			{
-				// Try to correct zero element in main diagonal
-				if (IsZero(left[i][i]))
-				{
-					// Find a non-zero element below the tested one and swap rows with it
-					for (auto j = i + 1; j < N; j++)
-					{
-						if (!IsZero(left[j][i]))
-						{
-							// Swap rows in left
-							auto tmp{left[j]};
-							left[j] = left[i];
-							left[i] = tmp;
+				// Index of the row with the largest absolute value element in the ith column
+				auto pivotInd{i};
 
-							// Swap rows in right
-							tmp = right[j];
-							right[j] = right[i];
-							right[i] = tmp;
-							break;
-						}
+				// Find index of the row with the largest absolute value element
+				for (auto j = pivotInd + 1; j < N; j++)
+				{
+					if (std::abs(left[j][i]) > std::abs(left[pivotInd][i]))
+					{
+						pivotInd = j;
 					}
 				}
+
+				// Swap pivot row with the ith
+				auto tmp{left[i]};
+				left[i] = left[pivotInd];
+				left[pivotInd] = tmp;
+
+				tmp = right[i];
+				right[i] = right[pivotInd];
+				right[pivotInd] = tmp;
 
 				// If the main diagonal element is non-zero
 				// 1. Normalize the row so that the element is 1
 				// 2. Reduce all rows below so that its elements under are zero
-				if (!IsZero(left[i][i]))
-				{
-					const auto div{left[i][i]};
-					left[i] /= div;
-					right[i] /= div;
+				// If the main diagonal element is zero, this will produce NAN, but that's fine
+				// Because then zero is the number with the highest absolute value in the column
+				// So all other elements are also zero in the column
+				// The matrix is singular and we return garbage
+				const auto div{left[i][i]};
+				left[i] /= div;
+				right[i] /= div;
 
-					for (auto j = i + 1; j < N; j++)
-					{
-						const auto mult{left[j][i] / left[i][i]}; // Theoretically left[i][i] is 1 by now but for the sake of float accuracy we do the division
-						left[j] -= mult * left[i];
-						right[j] -= mult * right[i];
-					}
+				for (auto j = i + 1; j < N; j++)
+				{
+					const auto mult{left[j][i]}; // Theoretically left[i][i] is 1 so the multiplier is the element itself
+					left[j] -= mult * left[i];
+					right[j] -= mult * right[i];
 				}
 			}
 
@@ -410,15 +407,12 @@ namespace leopph
 			{
 				for (auto j = i + 1; j < N; j++)
 				{
-					if (!IsZero(left[i][j]))
-					{
-						// We subtract the jth row from the ith one
-						// Because it is guaranteed to have 0s before the main diagonal
-						// And thus it won't mess up the element in the ith row before the jth element
-						const auto mult{left[i][j] / left[j][j]}; // left[j][j] is theoretically 1 but for the sake of float accuracy we do the division
-						left[i] -= mult * left[j];
-						right[i] -= mult * right[j];
-					}
+					// We subtract the jth row from the ith one
+					// Because it is guaranteed to have 0s before the main diagonal
+					// And thus it won't mess up the element in the ith row before the jth element
+					const auto mult{left[i][j]}; // left[j][j] is 1 so the multiplier is the element itself
+					left[i] -= mult * left[j];
+					right[i] -= mult * right[j];
 				}
 			}
 			return right;
@@ -472,21 +466,6 @@ namespace leopph
 		constexpr auto Matrix<T, N, M>::GetElementCommon(auto* const self, const std::size_t index) -> decltype(auto)
 		{
 			return self->m_Data[index];
-		}
-
-
-		template<class T, std::size_t N, std::size_t M>
-			requires (N > 1 && M > 1)
-		constexpr auto Matrix<T, N, M>::IsZero(const T& elem) -> bool
-		{
-			if constexpr (std::numeric_limits<T>::is_integer)
-			{
-				return elem == static_cast<T>(0);
-			}
-			else
-			{
-				return std::abs(elem) < std::numeric_limits<T>::epsilon();
-			}
 		}
 
 
@@ -620,11 +599,11 @@ namespace leopph
 			Matrix<T, N, P> ret;
 			for (size_t i = 0; i < N; i++)
 			{
-				for (size_t k = 0; k < P; k++)
+				for (size_t j = 0; j < P; j++)
 				{
-					for (size_t j = 0; j < M; j++)
+					for (size_t k = 0; k < M; k++)
 					{
-						ret[i][k] += left[i][j] * right[j][k];
+						ret[i][j] += left[i][k] * right[k][j];
 					}
 				}
 			}
