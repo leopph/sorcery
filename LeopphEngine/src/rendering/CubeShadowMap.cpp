@@ -55,8 +55,8 @@ namespace leopph::internal
 
 	auto CubeShadowMap::Init() -> void
 	{
-		glCreateTextures(GL_TEXTURE_2D, 1, &m_DepthBuffer);
-		glTextureStorage2D(m_DepthBuffer, 1, GL_DEPTH_COMPONENT32, m_Res, m_Res);
+		glCreateRenderbuffers(1, &m_DepthBuffer);
+		glNamedRenderbufferStorage(m_DepthBuffer, GL_DEPTH_COMPONENT24, m_Res, m_Res);
 
 		glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &m_Cubemap);
 		glTextureStorage2D(m_Cubemap, 1, GL_R32F, m_Res, m_Res);
@@ -67,13 +67,13 @@ namespace leopph::internal
 		glTextureParameteri(m_Cubemap, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glTextureParameteri(m_Cubemap, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
-		glNamedFramebufferTexture(m_Framebuffer, GL_DEPTH_ATTACHMENT, m_DepthBuffer, 0);
+		glNamedFramebufferRenderbuffer(m_Framebuffer, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_DepthBuffer);
 	}
 
 
 	auto CubeShadowMap::Deinit() const -> void
 	{
 		glDeleteTextures(1, &m_Cubemap);
-		glDeleteTextures(1, &m_DepthBuffer);
+		glDeleteRenderbuffers(1, &m_DepthBuffer);
 	}
 }
