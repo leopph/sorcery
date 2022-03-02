@@ -6,6 +6,7 @@
 
 #include <glad/gl.h>
 
+#include <limits>
 #include <string_view>
 
 
@@ -24,23 +25,30 @@ namespace leopph::internal
 
 			~CubeShadowMap() noexcept override;
 
-			// Binds the cubemap as render target and sets its value to the default.
-			auto BindForWritingAndClear() const -> void;
+			// Binds the passed face of the cubemap as render target.
+			// Clears the face and depth buffer.
+			auto BindForWritingAndClear(GLint face) const -> void;
 
 			// Binds the cubemap to the passed texture unit, sets the passed uniform, and returns the next available texture unit.
 			[[nodiscard]] auto BindForReading(ShaderProgram& shader, std::string_view uniformName, GLuint texUnit) const -> GLuint;
 
 		private:
-			// Initializes the cubemap to the current resolution.
-			auto InitCubemap() -> void;
-			// Destroys the cubemap.
-			auto DeinitCubemap() const -> void;
+			auto Init() -> void;
+			auto Deinit() const -> void;
 			auto OnEventReceived(EventParamType event) -> void override;
 
 			GLuint m_Framebuffer;
 			GLuint m_Cubemap;
+			GLuint m_DepthBuffer;
 			GLsizei m_Res;
 
 			constexpr static GLfloat CLEAR_DEPTH{1};
+			constexpr static GLfloat CLEAR_COLOR[4]
+			{
+				std::numeric_limits<GLfloat>::max(),
+				std::numeric_limits<GLfloat>::max(),
+				std::numeric_limits<GLfloat>::max(),
+				std::numeric_limits<GLfloat>::max()
+			};
 	};
 }

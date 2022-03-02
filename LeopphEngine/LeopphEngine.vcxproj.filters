@@ -174,7 +174,6 @@
     <CustomBuild Include="src\rendering\shaders\glsl\deferred\LightPassVert.vert" />
     <CustomBuild Include="src\rendering\shaders\glsl\deferred\GeometryPassFrag.frag" />
     <CustomBuild Include="src\rendering\shaders\glsl\shadows\CubeShadowMapFrag.frag" />
-    <CustomBuild Include="src\rendering\shaders\glsl\shadows\CubeShadowMapGeom.geom" />
     <CustomBuild Include="src\rendering\shaders\glsl\deferred\GeometryPassVert.vert" />
     <CustomBuild Include="src\rendering\shaders\glsl\shadows\CubeShadowMapVert.vert" />
     <CustomBuild Include="src\rendering\shaders\glsl\forward\ObjectVert.vert" />

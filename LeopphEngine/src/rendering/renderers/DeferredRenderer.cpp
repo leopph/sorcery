@@ -23,7 +23,6 @@ namespace leopph::internal
 		m_CubeShadowShader{
 			{
 				{ShaderFamily::CubeShadowMapVertSrc, ShaderType::Vertex},
-				{ShaderFamily::CubeShadowMapGeomSrc, ShaderType::Geometry},
 				{ShaderFamily::CubeShadowMapFragSrc, ShaderType::Fragment}
 			}
 		},
@@ -306,18 +305,20 @@ namespace leopph::internal
 					return lightTransMat * cubeFaceMat * shadowProjMat;
 				});
 
-				shadowShader.SetUniform("u_ViewProjMats", shadowViewProjMats);
 				shadowShader.SetUniform("u_LightPos", pointLights[i]->Entity()->Transform()->Position());
-				shadowShader.SetUniform("u_FarPlane", pointLights[i]->Range());
 
-				m_PointShadowMaps[shadowInd]->BindForWritingAndClear();
-
-				for (const auto& [renderable, instances, castsShadow] : renderables)
+				for (auto face = 0; face < 6; face++)
 				{
-					if (castsShadow)
+					m_PointShadowMaps[shadowInd]->BindForWritingAndClear(face);
+					shadowShader.SetUniform("u_ViewProjMat", shadowViewProjMats[face]);
+
+					for (const auto& [renderable, instances, castsShadow] : renderables)
 					{
-						renderable->SetInstanceData(instances);
-						renderable->DrawWithoutMaterial();
+						if (castsShadow)
+						{
+							renderable->SetInstanceData(instances);
+							renderable->DrawWithoutMaterial();
+						}
 					}
 				}
 

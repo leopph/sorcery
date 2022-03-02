@@ -193,13 +193,13 @@ uniform PointLight u_PointLightsNoShadow[NUM_POINTLIGHTS - NUM_POINTLIGHT_SHADOW
 #endif
 #if NUM_POINTLIGHT_SHADOWS > 0
 uniform PointLight u_PointLightsShadow[NUM_POINTLIGHT_SHADOWS];
-uniform samplerCubeShadow u_PointShadowMaps[NUM_POINTLIGHT_SHADOWS];
+uniform samplerCube u_PointShadowMaps[NUM_POINTLIGHT_SHADOWS];
 
 float CalcPointShadow(uint shadowIndex, vec3 fragPos, vec3 fragNormal, vec3 lightPos, float lightRange)
 {
 	vec3 dirToFrag = fragPos - lightPos;
 	float bias = max(MAX_SHADOW_BIAS * (1.0 - dot(fragNormal, normalize(-dirToFrag))), MIN_SHADOW_BIAS);
-	return texture(u_PointShadowMaps[shadowIndex], vec4(dirToFrag, (length(dirToFrag) / lightRange) - bias));
+	return texture(u_PointShadowMaps[shadowIndex], dirToFrag).r > length(dirToFrag) - bias ? 1 : 0;
 }
 #endif
 #endif

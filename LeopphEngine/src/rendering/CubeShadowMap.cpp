@@ -8,28 +8,31 @@ namespace leopph::internal
 	CubeShadowMap::CubeShadowMap() :
 		m_Framebuffer{},
 		m_Cubemap{},
+		m_DepthBuffer{},
 		m_Res{static_cast<GLsizei>(Settings::Instance().PointLightShadowMapResolution())}
 	{
 		glCreateFramebuffers(1, &m_Framebuffer);
 		glNamedFramebufferReadBuffer(m_Framebuffer, GL_NONE);
-		glNamedFramebufferDrawBuffer(m_Framebuffer, GL_NONE);
+		glNamedFramebufferDrawBuffer(m_Framebuffer, GL_COLOR_ATTACHMENT0);
 
-		InitCubemap();
+		Init();
 	}
 
 
 	CubeShadowMap::~CubeShadowMap() noexcept
 	{
-		DeinitCubemap();
+		Deinit();
 		glDeleteFramebuffers(1, &m_Framebuffer);
 	}
 
 
-	auto CubeShadowMap::BindForWritingAndClear() const -> void
+	auto CubeShadowMap::BindForWritingAndClear(const GLint face) const -> void
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, m_Framebuffer);
 		glViewport(0, 0, m_Res, m_Res);
 
+		glNamedFramebufferTextureLayer(m_Framebuffer, GL_COLOR_ATTACHMENT0, m_Cubemap, 0, face);
+		glClearNamedFramebufferfv(m_Framebuffer, GL_COLOR, 0, CLEAR_COLOR);
 		glClearNamedFramebufferfv(m_Framebuffer, GL_DEPTH, 0, &CLEAR_DEPTH);
 	}
 
@@ -45,30 +48,32 @@ namespace leopph::internal
 	auto CubeShadowMap::OnEventReceived(EventParamType event) -> void
 	{
 		m_Res = static_cast<GLsizei>(event.Resolution);
-		DeinitCubemap();
-		InitCubemap();
+		Deinit();
+		Init();
 	}
 
 
-	auto CubeShadowMap::InitCubemap() -> void
+	auto CubeShadowMap::Init() -> void
 	{
+		glCreateTextures(GL_TEXTURE_2D, 1, &m_DepthBuffer);
+		glTextureStorage2D(m_DepthBuffer, 1, GL_DEPTH_COMPONENT32, m_Res, m_Res);
+
 		glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &m_Cubemap);
-		glTextureStorage2D(m_Cubemap, 1, GL_DEPTH_COMPONENT24, m_Res, m_Res);
+		glTextureStorage2D(m_Cubemap, 1, GL_R32F, m_Res, m_Res);
 
 		glTextureParameteri(m_Cubemap, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTextureParameteri(m_Cubemap, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTextureParameteri(m_Cubemap, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTextureParameteri(m_Cubemap, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glTextureParameteri(m_Cubemap, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-		glTextureParameteri(m_Cubemap, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
-		glTextureParameteri(m_Cubemap, GL_TEXTURE_COMPARE_FUNC, GL_LESS);
 
-		glNamedFramebufferTexture(m_Framebuffer, GL_DEPTH_ATTACHMENT, m_Cubemap, 0);
+		glNamedFramebufferTexture(m_Framebuffer, GL_DEPTH_ATTACHMENT, m_DepthBuffer, 0);
 	}
 
 
-	auto CubeShadowMap::DeinitCubemap() const -> void
+	auto CubeShadowMap::Deinit() const -> void
 	{
 		glDeleteTextures(1, &m_Cubemap);
+		glDeleteTextures(1, &m_DepthBuffer);
 	}
 }

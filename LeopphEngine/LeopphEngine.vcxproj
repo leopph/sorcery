@@ -349,9 +349,6 @@
     <CustomBuild Include="src\rendering\shaders\glsl\shadows\CubeShadowMapFrag.frag">
       <FileType>Document</FileType>
     </CustomBuild>
-    <CustomBuild Include="src\rendering\shaders\glsl\shadows\CubeShadowMapGeom.geom">
-      <FileType>Document</FileType>
-    </CustomBuild>
     <CustomBuild Include="src\rendering\shaders\glsl\deferred\GeometryPassVert.vert">
       <FileType>Document</FileType>
     </CustomBuild>
