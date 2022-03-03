@@ -15,14 +15,6 @@ namespace leopph::internal
 	class RenderComponent : public Component
 	{
 		public:
-			RenderComponent(const RenderComponent& other) = delete;
-			auto operator=(const RenderComponent& other) -> RenderComponent& = delete;
-
-			RenderComponent(RenderComponent&& other) = delete;
-			auto operator=(RenderComponent&& other) -> RenderComponent& = delete;
-
-			~RenderComponent() noexcept override;
-
 			// Get whether the rendered object occludes light from other objects.
 			// This only works if the Light used also has this property set to true.
 			// When instancing is turned on if any of the instances have this property set to true, all instances will cast shadow regardless of what is set on them.
@@ -47,11 +39,19 @@ namespace leopph::internal
 
 			// Activate the RenderComponent.
 			// Only active RenderComponents are rendered.
-			auto Activate() -> void override;
+			LEOPPHAPI auto Activate() -> void override;
 
 			// Deactivate the RenderComponent.
 			// Only active RenderComponents are rendered.
-			auto Deactivate() -> void override;
+			LEOPPHAPI auto Deactivate() -> void override;
+
+			RenderComponent(const RenderComponent& other) = delete;
+			auto operator=(const RenderComponent& other) -> RenderComponent& = delete;
+
+			RenderComponent(RenderComponent&& other) = delete;
+			auto operator=(RenderComponent&& other) -> RenderComponent& = delete;
+
+			~RenderComponent() noexcept override;
 
 		protected:
 			RenderComponent(leopph::Entity* entity, std::shared_ptr<const MeshDataGroup> meshDataGroup);

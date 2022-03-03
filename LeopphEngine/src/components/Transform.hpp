@@ -143,9 +143,9 @@ namespace leopph
 			LEOPPHAPI auto Matrices() const -> const std::pair<Matrix4, Matrix4>&;
 
 			// Transforms cannot be activated, nor deactivated.
-			auto Activate() -> void override;
+			LEOPPHAPI auto Activate() -> void override;
 			// Transforms cannot be activated, nor deactivated.
-			auto Deactivate() -> void override;
+			LEOPPHAPI auto Deactivate() -> void override;
 
 			LEOPPHAPI explicit Transform(leopph::Entity* entity, const Vector3& pos = Vector3{}, const Quaternion& rot = Quaternion{}, const Vector3& scale = Vector3{1, 1, 1});
 

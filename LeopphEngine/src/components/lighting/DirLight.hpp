@@ -24,10 +24,10 @@ namespace leopph
 			// This value is used as an offset on the shadow cascades' bounding boxes
 			// to extend shadowing to occluders not visible to the active Camera.
 			// The input will be clamped to the range [0, inf).
-			auto ShadowExtension(float newRange);
+			LEOPPHAPI auto ShadowExtension(float newRange) -> void;
 
-			auto Activate() -> void override;
-			auto Deactivate() -> void override;
+			LEOPPHAPI auto Activate() -> void override;
+			LEOPPHAPI auto Deactivate() -> void override;
 
 			LEOPPHAPI explicit DirectionalLight(leopph::Entity* entity);
 

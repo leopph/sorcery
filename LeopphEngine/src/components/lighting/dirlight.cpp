@@ -54,7 +54,7 @@ namespace leopph
 	}
 
 
-	auto DirectionalLight::ShadowExtension(const float newRange)
+	auto DirectionalLight::ShadowExtension(const float newRange) -> void
 	{
 		m_ShadowRange = math::Clamp(newRange, 0, math::Abs(newRange));
 	}
