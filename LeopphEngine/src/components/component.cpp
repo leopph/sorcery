@@ -14,6 +14,7 @@ namespace leopph
 
 		auto& dataManager{internal::DataManager::Instance()};
 		dataManager.RegisterActiveComponentForEntity(dataManager.UnregisterInactiveComponentFromEntity(this));
+		m_IsActive = true;
 	}
 
 
@@ -26,6 +27,7 @@ namespace leopph
 
 		auto& dataManager{internal::DataManager::Instance()};
 		dataManager.RegisterInactiveComponentForEntity(dataManager.UnregisterActiveComponentFromEntity(this));
+		m_IsActive = false;
 	}
 
 
