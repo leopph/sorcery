@@ -24,13 +24,10 @@
     <ClCompile Include="src\behaviors\CameraController.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\behaviors\Rotate.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\behaviors\WindowTester.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\behaviors\ShadowSetter.cpp">
+    <ClCompile Include="src\behaviors\Exiter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -41,13 +38,10 @@
     <ClInclude Include="src\behaviors\CameraController.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\behaviors\Rotate.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\behaviors\WindowTester.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\behaviors\ShadowSetter.hpp">
+    <ClInclude Include="src\behaviors\Exiter.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
