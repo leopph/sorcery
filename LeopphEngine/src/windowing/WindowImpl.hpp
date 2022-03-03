@@ -19,6 +19,7 @@ namespace leopph::internal
 			virtual auto SwapBuffers() -> void = 0;
 			virtual auto ClearColor(const Vector4& color) -> void = 0;
 			virtual auto Clear() -> void = 0;
+			virtual auto ShouldClose(bool val) -> void = 0;
 			[[nodiscard]] virtual auto ShouldClose() -> bool = 0;
 			[[nodiscard]] virtual auto ClearColor() const -> const Vector4& = 0;
 

@@ -54,9 +54,12 @@ namespace leopph::internal
 			auto RenderMultiplier() const -> float override;
 			auto RenderMultiplier(float newMult) -> void override;
 
+			[[nodiscard]]
+			auto ShouldClose() -> bool override;
+			auto ShouldClose(bool val) -> void override;
+
 			auto PollEvents() -> void override;
 			auto SwapBuffers() -> void override;
-			auto ShouldClose() -> bool override;
 			auto Clear() -> void override;
 
 			GlWindow(const GlWindow& other) = delete;

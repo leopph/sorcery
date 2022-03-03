@@ -233,6 +233,7 @@
     <ClInclude Include="src\util\equal\PathedEqual.hpp" />
     <ClInclude Include="src\util\equal\ShaderTypeEqual.hpp" />
     <ClInclude Include="src\util\equal\StringEqual.hpp" />
+    <ClInclude Include="src\util\Exit.hpp" />
     <ClInclude Include="src\util\hash\IdHash.hpp" />
     <ClInclude Include="src\util\hash\PointerHash.hpp" />
     <ClInclude Include="src\util\hash\PathedHash.hpp" />
@@ -309,6 +310,7 @@
     <ClCompile Include="src\timing\timer.cpp" />
     <ClCompile Include="src\util\equal\ShaderTypeEqual.cpp" />
     <ClCompile Include="src\util\equal\StringEqual.cpp" />
+    <ClCompile Include="src\util\Exit.cpp" />
     <ClCompile Include="src\util\hash\PathHash.cpp" />
     <ClCompile Include="src\util\hash\ShaderTypeHash.cpp" />
     <ClCompile Include="src\util\hash\StringHash.cpp" />

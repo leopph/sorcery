@@ -208,6 +208,12 @@ namespace leopph::internal
 	}
 
 
+	auto GlWindow::ShouldClose(const bool val) -> void
+	{
+		glfwSetWindowShouldClose(m_Window, val);
+	}
+
+
 	auto GlWindow::Clear() -> void
 	{
 		glClearNamedFramebufferfv(0, GL_COLOR, 0, m_ClrColor.Data().data());

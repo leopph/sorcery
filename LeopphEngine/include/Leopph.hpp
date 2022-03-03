@@ -28,6 +28,7 @@ See individual headers for more information.
 #include "../src/misc/Color.hpp"
 #include "../src/rendering/Skybox.hpp"
 #include "../src/timing/leopphtime.h"
+#include "../src/util/Exit.hpp"
 #include "../src/windowing/Window.hpp"
 
 /*-----------------------------------------------------
