@@ -4,7 +4,7 @@
 #include "../../math/Vector.hpp"
 
 
-namespace leopph::internal
+namespace leopph
 {
 	// Base class for all lights.
 	class Light : public Component
@@ -42,7 +42,6 @@ namespace leopph::internal
 
 		private:
 			bool m_CastsShadow{false};
-			float m_Range{100.f};
 			Vector3 m_Diffuse{1.f, 1.f, 1.f};
 			Vector3 m_Specular{1.f, 1.f, 1.f};
 	};
