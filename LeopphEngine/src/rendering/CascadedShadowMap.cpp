@@ -60,7 +60,7 @@ namespace leopph::internal
 
 	auto CascadedShadowMap::CascadeMatrix(const CascadeBounds cascadeBounds, const Matrix4& cameraInverseMatrix, const Matrix4& lightViewMatrix, const float bBoxNearOffset) const -> Matrix4
 	{
-		const auto& camera{*Camera::Active()};
+		const auto& camera{*Camera::Current()};
 
 		// Calculate the cascade's vertices in camera view space.
 

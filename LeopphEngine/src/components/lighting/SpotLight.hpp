@@ -22,6 +22,9 @@ namespace leopph
 			// Set the angle in degrees at which the light is completely cut.
 			constexpr auto OuterAngle(float degrees) noexcept;
 
+			auto Activate() -> void override;
+			auto Deactivate() -> void override;
+
 			LEOPPHAPI explicit SpotLight(leopph::Entity* entity);
 
 			SpotLight(const SpotLight&) = delete;

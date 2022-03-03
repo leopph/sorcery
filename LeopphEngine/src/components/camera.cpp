@@ -12,12 +12,15 @@
 
 namespace leopph
 {
-	Camera* Camera::s_Active;
+	Camera* Camera::s_Current;
 
 
-	auto Camera::Activate() -> void
+	auto Camera::MakeCurrent() -> void
 	{
-		s_Active = this;
+		if (IsActive())
+		{
+			s_Current = this;
+		}
 	}
 
 
@@ -38,23 +41,39 @@ namespace leopph
 	}
 
 
+	auto Camera::Deactivate() -> void
+	{
+		if (!IsActive())
+		{
+			return;
+		}
+
+		Component::Deactivate();
+
+		if (s_Current == this)
+		{
+			s_Current = nullptr;
+		}
+	}
+
+
 	Camera::Camera(leopph::Entity* const entity) :
 		Component{entity},
 		m_AspectRatio{Window::Instance()->AspectRatio()},
 		m_Background{Color{static_cast<Vector3>(static_cast<internal::WindowImpl*>(Window::Instance())->ClearColor())}}
 	{
-		if (s_Active == nullptr)
+		if (s_Current == nullptr)
 		{
-			Activate();
+			MakeCurrent();
 		}
 	}
 
 
 	Camera::~Camera()
 	{
-		if (s_Active == this)
+		if (s_Current == this)
 		{
-			s_Active = nullptr;
+			s_Current = nullptr;
 		}
 	}
 
@@ -75,9 +94,9 @@ namespace leopph
 	}
 
 
-	auto Camera::Active() -> Camera*
+	auto Camera::Current() -> Camera*
 	{
-		return s_Active;
+		return s_Current;
 	}
 
 

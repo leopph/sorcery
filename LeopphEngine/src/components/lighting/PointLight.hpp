@@ -12,6 +12,9 @@ namespace leopph
 		public:
 			LEOPPHAPI explicit PointLight(leopph::Entity* entity);
 
+			auto Activate() -> void override;
+			auto Deactivate() -> void override;
+
 			PointLight(const PointLight&) = delete;
 			auto operator=(const PointLight&) -> void = delete;
 

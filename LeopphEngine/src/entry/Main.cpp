@@ -44,7 +44,7 @@ namespace leopph::internal
 			{
 				window->PollEvents();
 
-				for (const auto& behavior : DataManager::Instance().Behaviors())
+				for (const auto& behavior : DataManager::Instance().ActiveBehaviors())
 				{
 					behavior->OnFrameUpdate();
 				}

@@ -12,8 +12,15 @@ namespace leopph
 	{
 		public:
 			// This function is called on all Behaviors every frame.
-			virtual auto OnFrameUpdate() -> void
-			{}
+			virtual auto OnFrameUpdate() -> void;
+
+			// Activate the Behavior.
+			// OnFrameUpdate is only called on active Behaviors.
+			LEOPPHAPI auto Activate() -> void override;
+
+			// Deactive the Behavior.
+			// OnFrameUpdate is only called on active Behaviors.
+			LEOPPHAPI auto Deactivate() -> void override;
 
 			LEOPPHAPI ~Behavior() override;
 
@@ -26,4 +33,8 @@ namespace leopph
 			Behavior(Behavior&& other) = default;
 			auto operator=(Behavior&& other) -> Behavior& = default;
 	};
+
+
+	inline auto Behavior::OnFrameUpdate() -> void
+	{}
 }

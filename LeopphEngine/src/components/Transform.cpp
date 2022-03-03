@@ -235,6 +235,14 @@ namespace leopph
 	}
 
 
+	auto Transform::Activate() -> void
+	{ }
+
+
+	auto Transform::Deactivate() -> void
+	{ }
+
+
 	auto Transform::CalculateLocalAxes() -> void
 	{
 		m_Forward = m_WorldRotation.Rotate(Vector3::Forward());

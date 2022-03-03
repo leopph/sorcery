@@ -61,7 +61,7 @@ namespace leopph::internal
 	auto DeferredRenderer::Render() -> void
 	{
 		/* We don't render if there is no camera to use */
-		if (Camera::Active() == nullptr)
+		if (Camera::Current() == nullptr)
 		{
 			return;
 		}
@@ -77,8 +77,8 @@ namespace leopph::internal
 		pointLights.clear();
 		CollectPointLights(pointLights);
 
-		const auto camViewMat{Camera::Active()->ViewMatrix()};
-		const auto camProjMat{Camera::Active()->ProjectionMatrix()};
+		const auto camViewMat{Camera::Current()->ViewMatrix()};
+		const auto camProjMat{Camera::Current()->ProjectionMatrix()};
 
 		RenderGeometry(camViewMat, camProjMat, renderables);
 		RenderLights(camViewMat, camProjMat, renderables, spotLights, pointLights);
@@ -144,7 +144,7 @@ namespace leopph::internal
 		SetSpotData(spotLights, lightShader);
 		SetPointData(pointLights, lightShader);
 
-		lightShader.SetUniform("u_CamPos", Camera::Active()->Entity()->Transform()->Position());
+		lightShader.SetUniform("u_CamPos", Camera::Current()->Entity()->Transform()->Position());
 		lightShader.SetUniform("u_CamViewProjInv", (camViewMat * camProjMat).Inverse());
 
 		lightShader.Use();
@@ -154,7 +154,7 @@ namespace leopph::internal
 
 	auto DeferredRenderer::RenderSkybox(const Matrix4& camViewMat, const Matrix4& camProjMat) -> void
 	{
-		if (const auto& background{Camera::Active()->Background()}; std::holds_alternative<Skybox>(background))
+		if (const auto& background{Camera::Current()->Background()}; std::holds_alternative<Skybox>(background))
 		{
 			glStencilFunc(GL_NOTEQUAL, STENCIL_REF, STENCIL_AND_MASK);
 
@@ -186,7 +186,7 @@ namespace leopph::internal
 		cascadeMats.clear();
 
 		const auto lightViewMat{Matrix4::LookAt(Vector3{0}, dirLight->Direction(), Vector3::Up())};
-		const auto cascadeBounds{m_DirShadowMap.CalculateCascadeBounds(*Camera::Active())};
+		const auto cascadeBounds{m_DirShadowMap.CalculateCascadeBounds(*Camera::Current())};
 		const auto numCascades{cascadeBounds.size()};
 
 		for (std::size_t i = 0; i < numCascades; ++i)

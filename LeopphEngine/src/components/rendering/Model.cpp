@@ -15,7 +15,7 @@ namespace leopph
 
 	auto Model::GetMeshData(const std::filesystem::path& path) const -> std::shared_ptr<internal::MeshDataGroup>
 	{
-		if (const auto p{internal::DataManager::Instance().FindMeshDataGroup(path.generic_string())};
+		if (auto p{internal::DataManager::Instance().FindMeshDataGroup(path.generic_string())};
 			p != nullptr)
 		{
 			return p;

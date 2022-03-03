@@ -34,12 +34,12 @@ namespace leopph::internal
 
 	auto Renderer::CollectRenderables(std::vector<Renderer::RenderableData>& renderables) -> void
 	{
-		for (const auto& [renderable, instances] : DataManager::Instance().MeshGroupsAndInstances())
+		for (const auto& [renderable, activeInstances, inactiveInstances] : DataManager::Instance().MeshGroupsAndInstances())
 		{
 			static std::vector<std::pair<Matrix4, Matrix4>> instMats;
 			instMats.clear();
 			auto instShadow{false};
-			for (const auto& instance : instances)
+			for (const auto& instance : activeInstances)
 			{
 				const auto& [modelMat, normalMat]{instance->Entity()->Transform()->Matrices()};
 				if (instance->Instanced())
@@ -62,7 +62,7 @@ namespace leopph::internal
 
 	auto Renderer::CollectSpotLights(std::vector<const SpotLight*>& spotLights) -> void
 	{
-		spotLights = DataManager::Instance().SpotLights();
+		spotLights = DataManager::Instance().ActiveSpotLights();
 		std::ranges::sort(spotLights, CompareLightsByDistToCam);
 		if (const auto limit{Settings::Instance().MaxSpotLightCount()};
 			spotLights.size() > limit)
@@ -74,7 +74,7 @@ namespace leopph::internal
 
 	auto Renderer::CollectPointLights(std::vector<const PointLight*>& pointLights) -> void
 	{
-		pointLights = DataManager::Instance().PointLights();
+		pointLights = DataManager::Instance().ActivePointLights();
 		std::ranges::sort(pointLights, CompareLightsByDistToCam);
 		if (const auto limit{Settings::Instance().MaxPointLightCount()};
 			pointLights.size() > limit)
@@ -107,7 +107,7 @@ namespace leopph::internal
 
 	auto Renderer::CompareLightsByDistToCam(const Light* left, const Light* right) -> bool
 	{
-		const auto& camPosition{Camera::Active()->Entity()->Transform()->Position()};
+		const auto& camPosition{Camera::Current()->Entity()->Transform()->Position()};
 		const auto& leftDistance{Vector3::Distance(camPosition, left->Entity()->Transform()->Position())};
 		const auto& rightDistance{Vector3::Distance(camPosition, right->Entity()->Transform()->Position())};
 		if (std::abs(leftDistance - rightDistance) < std::numeric_limits<float>::epsilon())

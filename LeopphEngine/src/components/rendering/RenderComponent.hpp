@@ -45,6 +45,14 @@ namespace leopph::internal
 			// The default value is false.
 			constexpr auto Instanced(bool value) noexcept;
 
+			// Activate the RenderComponent.
+			// Only active RenderComponents are rendered.
+			auto Activate() -> void override;
+
+			// Deactivate the RenderComponent.
+			// Only active RenderComponents are rendered.
+			auto Deactivate() -> void override;
+
 		protected:
 			RenderComponent(leopph::Entity* entity, std::shared_ptr<const MeshDataGroup> meshDataGroup);
 

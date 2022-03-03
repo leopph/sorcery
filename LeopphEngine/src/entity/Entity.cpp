@@ -41,7 +41,7 @@ namespace leopph
 
 	auto Entity::RegisterComponent(std::unique_ptr<Component>&& component) const -> void
 	{
-		internal::DataManager::Instance().RegisterComponentForEntity(std::move(component));
+		internal::DataManager::Instance().RegisterActiveComponentForEntity(std::move(component));
 	}
 
 
@@ -59,7 +59,15 @@ namespace leopph
 			internal::Logger::Instance().Error(msg);
 			return;
 		}
-		internal::DataManager::Instance().UnregisterComponentFromEntity(component);
+
+		if (component->IsActive())
+		{
+			internal::DataManager::Instance().UnregisterActiveComponentFromEntity(component);
+		}
+		else
+		{
+			internal::DataManager::Instance().UnregisterInactiveComponentFromEntity(component);
+		}
 	}
 
 

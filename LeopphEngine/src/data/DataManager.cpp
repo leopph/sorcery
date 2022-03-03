@@ -22,15 +22,27 @@ namespace leopph::internal
 
 	// BEHAVIORS
 
-	auto DataManager::RegisterBehavior(Behavior* behavior) -> void
+	auto DataManager::RegisterActiveBehavior(Behavior* behavior) -> void
 	{
-		m_Behaviors.push_back(behavior);
+		m_ActiveBehaviors.push_back(behavior);
 	}
 
 
-	auto DataManager::UnregisterBehavior(const Behavior* behavior) -> void
+	auto DataManager::RegisterInactiveBehavior(Behavior* behavior) -> void
 	{
-		std::erase(m_Behaviors, behavior);
+		m_InactiveBehaviors.push_back(behavior);
+	}
+
+
+	auto DataManager::UnregisterActiveBehavior(const Behavior* behavior) -> void
+	{
+		std::erase(m_ActiveBehaviors, behavior);
+	}
+
+
+	auto DataManager::UnregisterInactiveBehavior(const Behavior* behavior) -> void
+	{
+		std::erase(m_InactiveBehaviors, behavior);
 	}
 
 
@@ -72,24 +84,33 @@ namespace leopph::internal
 	}
 
 
-	auto DataManager::RegisterComponentForEntity(std::unique_ptr<Component>&& component) -> void
+	auto DataManager::RegisterActiveComponentForEntity(std::unique_ptr<Component>&& component) -> void
 	{
-		FindEntityInternal(component->Entity()->Name())->Components.emplace_back(std::move(component));
+		FindEntityInternal(component->Entity()->Name())->ActiveComponents.emplace_back(std::move(component));
 	}
 
 
-	auto DataManager::UnregisterComponentFromEntity(const Component* component) -> void
+	auto DataManager::RegisterInactiveComponentForEntity(std::unique_ptr<Component>&& component) -> void
 	{
-		std::erase_if(FindEntityInternal(component->Entity()->Name())->Components, [&](const auto& elem)
-		{
-			return elem.get() == component;
-		});
+		FindEntityInternal(component->Entity()->Name())->InactiveComponents.emplace_back(std::move(component));
+	}
+
+
+	auto DataManager::UnregisterActiveComponentFromEntity(const Component* component) -> std::unique_ptr<Component>
+	{
+		return EraseComponentInternal(FindEntityInternal(component->Entity()->Name())->ActiveComponents, component);
+	}
+
+
+	auto DataManager::UnregisterInactiveComponentFromEntity(const Component* component) -> std::unique_ptr<Component>
+	{
+		return EraseComponentInternal(FindEntityInternal(component->Entity()->Name())->InactiveComponents, component);
 	}
 
 
 	auto DataManager::ComponentsOfEntity(const Entity* entity) const -> const std::vector<std::unique_ptr<Component>>&
 	{
-		return FindEntityInternal(entity->Name())->Components;
+		return FindEntityInternal(entity->Name())->ActiveComponents;
 	}
 
 
@@ -104,29 +125,53 @@ namespace leopph::internal
 
 	// SPOTLIGHTS
 
-	auto DataManager::RegisterSpotLight(const SpotLight* const spotLight) -> void
+	auto DataManager::RegisterActiveSpotLight(const SpotLight* const spotLight) -> void
 	{
-		m_SpotLights.push_back(spotLight);
+		m_ActiveSpotLights.push_back(spotLight);
 	}
 
 
-	auto DataManager::UnregisterSpotLight(const SpotLight* spotLight) -> void
+	auto DataManager::RegisterInactiveSpotLight(const SpotLight* spotLight) -> void
 	{
-		std::erase(m_SpotLights, spotLight);
+		m_InactiveSpotLights.push_back(spotLight);
+	}
+
+
+	auto DataManager::UnregisterActiveSpotLight(const SpotLight* spotLight) -> void
+	{
+		std::erase(m_ActiveSpotLights, spotLight);
+	}
+
+
+	auto DataManager::UnregisterInactiveSpotLight(const SpotLight* spotLight) -> void
+	{
+		std::erase(m_InactiveSpotLights, spotLight);
 	}
 
 
 	// POINTLIGHTS
 
-	auto DataManager::RegisterPointLight(const PointLight* pointLight) -> void
+	auto DataManager::RegisterActivePointLight(const PointLight* pointLight) -> void
 	{
-		m_PointLights.push_back(pointLight);
+		m_ActivePointLights.push_back(pointLight);
 	}
 
 
-	auto DataManager::UnregisterPointLight(const PointLight* pointLight) -> void
+	auto DataManager::RegisterInactivePointLight(const PointLight* pointLight) -> void
 	{
-		std::erase(m_PointLights, pointLight);
+		m_InactivePointLights.push_back(pointLight);
+	}
+
+
+	auto DataManager::UnregisterActivePointLight(const PointLight* pointLight) -> void
+	{
+		std::erase(m_ActivePointLights, pointLight);
+	}
+
+
+	auto DataManager::UnregisterInactivePointLight(const PointLight* pointLight) -> void
+	{
+		std::erase(m_InactivePointLights, pointLight);
 	}
 
 
@@ -281,21 +326,68 @@ namespace leopph::internal
 	}
 
 
-	auto DataManager::RegisterInstanceForMeshGroup(const GlMeshGroup* const meshGroup, const RenderComponent* const instance) -> void
+	auto DataManager::RegisterActiveInstanceForMeshGroup(const GlMeshGroup* const meshGroup, const RenderComponent* const instance) -> void
 	{
-		FindMeshGroupInternal(meshGroup)->Instances.push_back(instance);
+		FindMeshGroupInternal(meshGroup)->ActiveInstances.push_back(instance);
 	}
 
 
-	auto DataManager::UnregisterInstanceFromMeshGroup(const GlMeshGroup* const meshGroup, const RenderComponent* const instance) -> void
+	auto DataManager::RegisterInactiveInstanceForMeshGroup(const GlMeshGroup* meshGroup, const RenderComponent* instance) -> void
 	{
-		std::erase(FindMeshGroupInternal(meshGroup)->Instances, instance);
+		FindMeshGroupInternal(meshGroup)->InactiveInstances.push_back(instance);
+	}
+
+
+	auto DataManager::UnregisterActiveInstanceFromMeshGroup(const GlMeshGroup* const meshGroup, const RenderComponent* const instance) -> void
+	{
+		std::erase(FindMeshGroupInternal(meshGroup)->ActiveInstances, instance);
+	}
+
+
+	auto DataManager::UnregisterInactiveInstanceFromMeshGroup(const GlMeshGroup* meshGroup, const RenderComponent* instance) -> void
+	{
+		std::erase(FindMeshGroupInternal(meshGroup)->InactiveInstances, instance);
+	}
+
+
+	auto DataManager::UnregisterActiveDirLight(const leopph::DirectionalLight* dirLight) -> void
+	{
+		std::erase(m_ActiveDirLights, dirLight);
+	}
+
+
+	auto DataManager::RegisterInactiveDirLight(const leopph::DirectionalLight* dirLight) -> void
+	{
+		m_InactiveDirLights.push_back(dirLight);
+	}
+
+
+	auto DataManager::RegisterActiveDirLight(const leopph::DirectionalLight* dirLight) -> void
+	{
+		m_ActiveDirLights.push_back(dirLight);
+	}
+
+
+	auto DataManager::UnregisterInactiveDirLight(const leopph::DirectionalLight* dirLight) -> void
+	{
+		std::erase(m_InactiveDirLights, dirLight);
+	}
+
+
+	auto DataManager::DirectionalLight() const -> const leopph::DirectionalLight*
+	{
+		if (m_ActiveDirLights.empty())
+		{
+			return nullptr;
+		}
+		return m_ActiveDirLights.front();
 	}
 
 
 	auto DataManager::MeshGroupInstanceCount(const GlMeshGroup* const meshGroup) const -> std::size_t
 	{
-		return FindMeshGroupInternal(meshGroup)->Instances.size();
+		const auto it{FindMeshGroupInternal(meshGroup)};
+		return it->ActiveInstances.size() + it->InactiveInstances.size();
 	}
 
 
@@ -308,5 +400,20 @@ namespace leopph::internal
 	auto DataManager::FindMeshGroupInternal(const GlMeshGroup* const meshGroup) const -> decltype(m_Renderables)::const_iterator
 	{
 		return FindMeshGroupInternalCommon(this, meshGroup);
+	}
+
+
+	auto DataManager::EraseComponentInternal(std::vector<std::unique_ptr<Component>>& components, const Component* component) -> std::unique_ptr<Component>
+	{
+		for (auto it = components.begin(); it != components.end(); ++it)
+		{
+			if (it->get() == component)
+			{
+				auto ret{std::move(*it)};
+				components.erase(it);
+				return ret;
+			}
+		}
+		return nullptr;
 	}
 }

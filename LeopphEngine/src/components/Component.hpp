@@ -16,6 +16,19 @@ namespace leopph
 			// The Entity the Component is attached to.
 			[[nodiscard]] constexpr auto Entity() const noexcept;
 
+			// Returns whether the Component is active.
+			// Active Components take part in internal calculations.
+			// Inactive Components do not.
+			[[nodiscard]] constexpr auto IsActive() const noexcept;
+
+			// Make the Component active.
+			// Active Components take part in internal calculations.
+			LEOPPHAPI virtual auto Activate() -> void;
+
+			// Make the Component inactive.
+			// Inactive Components do not take part in internal calculations.
+			LEOPPHAPI virtual auto Deactivate() -> void;
+
 			LEOPPHAPI virtual ~Component() = default;
 
 		protected:
@@ -29,6 +42,7 @@ namespace leopph
 
 		private:
 			leopph::Entity* m_Entity;
+			bool m_IsActive{true};
 	};
 
 
@@ -37,4 +51,9 @@ namespace leopph
 		return m_Entity;
 	}
 
+
+	constexpr auto Component::IsActive() const noexcept
+	{
+		return m_IsActive;
+	}
 }

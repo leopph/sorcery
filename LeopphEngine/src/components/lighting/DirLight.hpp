@@ -26,6 +26,9 @@ namespace leopph
 			// The input will be clamped to the range [0, inf).
 			auto ShadowExtension(float newRange);
 
+			auto Activate() -> void override;
+			auto Deactivate() -> void override;
+
 			LEOPPHAPI explicit DirectionalLight(leopph::Entity* entity);
 
 			DirectionalLight(const DirectionalLight&) = delete;

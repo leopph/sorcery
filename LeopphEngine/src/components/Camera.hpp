@@ -17,8 +17,8 @@ namespace leopph
 	class Camera final : public Component, public EventReceiver<internal::WindowEvent>
 	{
 		public:
-			// The currently active camera that is used to render the scene.
-			LEOPPHAPI static auto Active() -> Camera*;
+			// The current camera that is used to render the scene.
+			LEOPPHAPI static auto Current() -> Camera*;
 
 			// Set the near clip plane distance.
 			// The near clip plane is the plane closest to the Camera, where rendering begins.
@@ -65,10 +65,11 @@ namespace leopph
 			// Used during rendering.
 			LEOPPHAPI auto ProjectionMatrix() const -> Matrix4;
 
-			// Set this Camera as the currently active one.
-			// The active Camera will be used to render scene.
-			// If no Camera instance exists, a newly created one will automatically be activated.
-			LEOPPHAPI auto Activate() -> void;
+			// Set this Camera to be the current one.
+			// The current Camera is used to render scene.
+			// If no Camera instance exists, a newly created one will automatically be made current.
+			// Only active Cameras can be made current.
+			LEOPPHAPI auto MakeCurrent() -> void;
 
 			// Get the Camera's background.
 			// The Camera's background determines the visuals that the Camera "sees" where no Objects have been drawn to.
@@ -77,6 +78,10 @@ namespace leopph
 			// Set the Camera's background.
 			// The Camera's background determines the visuals that the Camera "sees" where no Objects have been drawn to.
 			LEOPPHAPI auto Background(std::variant<Color, Skybox> background) -> void;
+
+			// Deactivate the Camera.
+			// If it was the current one, it will be set to nullptr.
+			auto Deactivate() -> void override;
 
 			LEOPPHAPI explicit Camera(leopph::Entity* entity);
 
@@ -99,7 +104,7 @@ namespace leopph
 			[[nodiscard]] auto ConvertFov(float fov, FovConversionDirection conversion) const -> float;
 			auto OnEventReceived(EventParamType event) -> void override;
 
-			static Camera* s_Active;
+			static Camera* s_Current;
 
 			float m_AspectRatio;
 			float m_HorizontalFovDegrees{100.f};

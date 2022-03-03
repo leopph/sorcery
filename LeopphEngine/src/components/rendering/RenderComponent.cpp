@@ -6,11 +6,39 @@
 
 namespace leopph::internal
 {
+	auto RenderComponent::Activate() -> void
+	{
+		if (IsActive())
+		{
+			return;
+		}
+
+		Component::Activate();
+		auto& dataManager{internal::DataManager::Instance()};
+		dataManager.UnregisterInactiveInstanceFromMeshGroup(m_Renderable, this);
+		dataManager.RegisterActiveInstanceForMeshGroup(m_Renderable, this);
+	}
+
+
+	auto RenderComponent::Deactivate() -> void
+	{
+		if (!IsActive())
+		{
+			return;
+		}
+
+		Component::Deactivate();
+		auto& dataManager{internal::DataManager::Instance()};
+		dataManager.UnregisterActiveInstanceFromMeshGroup(m_Renderable, this);
+		dataManager.RegisterInactiveInstanceForMeshGroup(m_Renderable, this);
+	}
+
+
 	RenderComponent::RenderComponent(leopph::Entity* const entity, std::shared_ptr<const MeshDataGroup> meshDataGroup) :
 		Component{entity},
 		m_Renderable{DataManager::Instance().CreateOrGetMeshGroup(std::move(meshDataGroup))}
 	{
-		DataManager::Instance().RegisterInstanceForMeshGroup(m_Renderable, this);
+		DataManager::Instance().RegisterActiveInstanceForMeshGroup(m_Renderable, this);
 	}
 
 
@@ -22,7 +50,14 @@ namespace leopph::internal
 		}
 		else
 		{
-			DataManager::Instance().UnregisterInstanceFromMeshGroup(m_Renderable, this);
+			if (IsActive())
+			{
+				DataManager::Instance().UnregisterActiveInstanceFromMeshGroup(m_Renderable, this);
+			}
+			else
+			{
+				DataManager::Instance().UnregisterInactiveInstanceFromMeshGroup(m_Renderable, this);
+			}
 		}
 	}
 }

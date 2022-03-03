@@ -60,7 +60,7 @@ namespace leopph::internal
 	auto ForwardRenderer::Render() -> void
 	{
 		/* We don't render if there is no camera to use */
-		if (Camera::Active() == nullptr)
+		if (Camera::Current() == nullptr)
 		{
 			return;
 		}
@@ -78,8 +78,8 @@ namespace leopph::internal
 
 		const auto& dirLight{DataManager::Instance().DirectionalLight()};
 
-		const auto camViewMat{Camera::Active()->ViewMatrix()};
-		const auto camProjMat{Camera::Active()->ProjectionMatrix()};
+		const auto camViewMat{Camera::Current()->ViewMatrix()};
+		const auto camProjMat{Camera::Current()->ProjectionMatrix()};
 
 		RenderShadedObjects(camViewMat, camProjMat, renderables, dirLight, spotLights, pointLights);
 		RenderSkybox(camViewMat, camProjMat);
@@ -99,7 +99,7 @@ namespace leopph::internal
 		auto texCount{1};
 
 		objectShader.SetUniform("u_ViewProjMat", camViewMat * camProjMat);
-		objectShader.SetUniform("u_CamPos", Camera::Active()->Entity()->Transform()->Position());
+		objectShader.SetUniform("u_CamPos", Camera::Current()->Entity()->Transform()->Position());
 
 		/* Set up ambient light data */
 		objectShader.SetUniform("u_AmbientLight", AmbientLight::Instance().Intensity());
@@ -119,7 +119,7 @@ namespace leopph::internal
 				const auto cameraInverseMatrix{camViewMat.Inverse()};
 				const auto lightViewMatrix{Matrix4::LookAt(Vector3{0}, dirLight->Direction(), Vector3::Up())};
 
-				const auto cascadeBounds{m_DirLightShadowMap.CalculateCascadeBounds(*Camera::Active())};
+				const auto cascadeBounds{m_DirLightShadowMap.CalculateCascadeBounds(*Camera::Current())};
 				const auto numCascades{cascadeBounds.size()};
 
 				for (std::size_t i = 0; i < numCascades; ++i)
@@ -191,7 +191,7 @@ namespace leopph::internal
 
 	auto ForwardRenderer::RenderSkybox(const Matrix4& camViewMat, const Matrix4& camProjMat) -> void
 	{
-		if (const auto& background{Camera::Active()->Background()}; std::holds_alternative<Skybox>(background))
+		if (const auto& background{Camera::Current()->Background()}; std::holds_alternative<Skybox>(background))
 		{
 			auto& skyboxShader{m_SkyboxShader.GetPermutation()};
 			skyboxShader.SetUniform("u_ViewProjMat", static_cast<Matrix4>(static_cast<Matrix3>(camViewMat)) * camProjMat);
