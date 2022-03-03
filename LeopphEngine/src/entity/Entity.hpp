@@ -54,6 +54,14 @@ namespace leopph
 			// The component is detached and destroyed.
 			LEOPPHAPI auto RemoveComponent(const Component* component) const -> void;
 
+			// Activates all inactive Components attached to the Entity.
+			// Equivalent to calling Activate() on all attached inactive Components.
+			LEOPPHAPI auto ActivateAllComponents() const -> void;
+
+			// Deactivates all active Components attached to the Entity.
+			// Equivalent to calling Deactivate() on all attached active Components.
+			LEOPPHAPI auto DeactiveAllComponents() const -> void;
+
 			Entity(const Entity&) = delete;
 			auto operator=(const Entity&) -> void = delete;
 

@@ -76,9 +76,12 @@ namespace leopph::internal
 			// Returns a pointer to the stored Entity with the passed name, or nullptr.
 			[[nodiscard]] auto FindEntity(const std::string& name) -> Entity*;
 
-			// Returns a collection of the Components that are attached to the Entity pointed to by the passed pointer.
-			// The function does NOT check whether the Entity is registered or not.
-			[[nodiscard]] auto ComponentsOfEntity(const Entity* entity) const -> const std::vector<std::unique_ptr<Component>>&;
+			// Returns a collection of active Components that are attached to the Entity pointed to by the passed pointer.
+			// Does NOT check whether the Entity is registered or not.
+			[[nodiscard]] auto ActiveComponentsOfEntity(const Entity* entity) const -> const std::vector<std::unique_ptr<Component>>&;
+			// Returns a collection of inactive Components that are attached to the Entity pointed to by the passed pointer.
+			// Does NOT check whether the Entity is registered or not.
+			[[nodiscard]] auto InactiveComponentsOfEntity(const Entity* entity) const -> const std::vector<std::unique_ptr<Component>>&;
 
 			// Adds the Component to the collection of active Components for the Component's Entity.
 			// Does NOT check for duplicates or whether the Entity is registered.

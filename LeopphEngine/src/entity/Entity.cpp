@@ -71,6 +71,24 @@ namespace leopph
 	}
 
 
+	auto Entity::DeactiveAllComponents() const -> void
+	{
+		for (auto& component : internal::DataManager::Instance().ActiveComponentsOfEntity(this))
+		{
+			component->Deactivate();
+		}
+	}
+
+
+	auto Entity::ActivateAllComponents() const -> void
+	{
+		for (auto& component : internal::DataManager::Instance().InactiveComponentsOfEntity(this))
+		{
+			component->Activate();
+		}
+	}
+
+
 	auto Entity::Transform() const -> leopph::Transform*
 	{
 		if (!m_TransformCache)
@@ -83,7 +101,7 @@ namespace leopph
 
 	auto Entity::Components() const -> const std::vector<std::unique_ptr<Component>>&
 	{
-		return internal::DataManager::Instance().ComponentsOfEntity(this);
+		return internal::DataManager::Instance().ActiveComponentsOfEntity(this);
 	}
 
 

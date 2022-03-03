@@ -108,9 +108,15 @@ namespace leopph::internal
 	}
 
 
-	auto DataManager::ComponentsOfEntity(const Entity* entity) const -> const std::vector<std::unique_ptr<Component>>&
+	auto DataManager::ActiveComponentsOfEntity(const Entity* entity) const -> const std::vector<std::unique_ptr<Component>>&
 	{
 		return FindEntityInternal(entity->Name())->ActiveComponents;
+	}
+
+
+	auto DataManager::InactiveComponentsOfEntity(const Entity* entity) const -> const std::vector<std::unique_ptr<Component>>&
+	{
+		return FindEntityInternal(entity->Name())->InactiveComponents;
 	}
 
 
