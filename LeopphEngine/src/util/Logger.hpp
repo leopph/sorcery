@@ -10,13 +10,14 @@ namespace leopph::internal
 		public:
 			enum class Level
 			{
-				DEBUG, RELEASE
+				Debug, Release
 			};
 
 
 			static auto Instance() -> Logger&;
 
 			auto CurrentLevel(Level level) -> void;
+			[[nodiscard]]
 			auto CurrentLevel() const -> Level;
 
 			auto Debug(std::string_view msg) const -> void;
@@ -24,7 +25,14 @@ namespace leopph::internal
 			auto Error(std::string_view msg) const -> void;
 			auto Warning(std::string_view msg) const -> void;
 
+			Logger(const Logger& other) = delete;
+			auto operator=(const Logger& other) -> Logger& = delete;
+
+			Logger(Logger&& other) noexcept = delete;
+			auto operator=(Logger&& other) noexcept -> Logger& = delete;
+
 		private:
 			Logger();
+			~Logger() = default;
 	};
 }

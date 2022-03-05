@@ -241,7 +241,7 @@
     <ClInclude Include="src\util\hash\ShaderTypeHash.hpp" />
     <ClInclude Include="src\util\hash\StringHash.hpp" />
     <ClInclude Include="src\util\less\StringLess.hpp" />
-    <ClInclude Include="src\util\logger.h" />
+    <ClInclude Include="src\util\Logger.hpp" />
     <ClInclude Include="src\rendering\opengl\OpenGl.hpp" />
     <ClInclude Include="src\input\Input.hpp" />
     <ClInclude Include="src\data\DataManager.hpp" />
@@ -317,7 +317,7 @@
     <ClCompile Include="src\util\hash\ShaderTypeHash.cpp" />
     <ClCompile Include="src\util\hash\StringHash.cpp" />
     <ClCompile Include="src\util\less\StringLess.cpp" />
-    <ClCompile Include="src\util\logger.cpp" />
+    <ClCompile Include="src\util\Logger.cpp" />
     <ClCompile Include="src\windowing\Window.cpp" />
     <ClCompile Include="src\windowing\WindowImpl.cpp" />
     <ClCompile Include="src\input\Input.cpp" />

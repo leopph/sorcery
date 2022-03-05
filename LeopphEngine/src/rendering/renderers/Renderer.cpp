@@ -2,7 +2,7 @@
 
 #include "OpenGlRenderer.hpp"
 #include "../../config/Settings.hpp"
-#include "../../util/logger.h"
+#include "../../util/Logger.hpp"
 
 #include <stdexcept>
 

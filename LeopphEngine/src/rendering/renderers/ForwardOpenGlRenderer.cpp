@@ -10,7 +10,7 @@
 #include "../../math/LeopphMath.hpp"
 #include "../../math/Matrix.hpp"
 #include "../../math/Vector.hpp"
-#include "../../util/logger.h"
+#include "../../util/Logger.hpp"
 
 #include <glad/gl.h>
 

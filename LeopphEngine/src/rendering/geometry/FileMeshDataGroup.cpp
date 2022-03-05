@@ -1,7 +1,7 @@
 #include "FileMeshDataGroup.hpp"
 
 #include "../../data/DataManager.hpp"
-#include "../../util/logger.h"
+#include "../../util/Logger.hpp"
 
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>

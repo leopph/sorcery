@@ -1,7 +1,7 @@
 #include "Texture.hpp"
 
 #include "../data/DataManager.hpp"
-#include "../util/logger.h"
+#include "../util/Logger.hpp"
 
 #include <glad/gl.h>
 

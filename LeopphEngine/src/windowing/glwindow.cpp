@@ -6,7 +6,7 @@
 #include "../events/WindowEvent.hpp"
 #include "../events/handling/EventManager.hpp"
 #include "../input/Input.hpp"
-#include "../util/logger.h"
+#include "../util/Logger.hpp"
 
 #include <glad/gl.h>
 

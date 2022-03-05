@@ -1,7 +1,7 @@
 #include "Entity.hpp"
 
 #include "../data/DataManager.hpp"
-#include "../util/logger.h"
+#include "../util/Logger.hpp"
 
 
 namespace leopph

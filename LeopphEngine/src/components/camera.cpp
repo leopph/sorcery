@@ -3,7 +3,7 @@
 #include "../entity/Entity.hpp"
 #include "../events/WindowEvent.hpp"
 #include "../math/LeopphMath.hpp"
-#include "../util/logger.h"
+#include "../util/Logger.hpp"
 #include "../windowing/WindowImpl.hpp"
 
 #include <stdexcept>

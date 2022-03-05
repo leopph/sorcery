@@ -1,6 +1,6 @@
 #include "OpenGl.hpp"
 
-#include "../../util/logger.h"
+#include "../../util/Logger.hpp"
 #include "../../util/containers/Bimap.hpp"
 #include "../../util/equal/ShaderTypeEqual.hpp"
 #include "../../util/hash/ShaderTypeHash.hpp"
@@ -131,7 +131,7 @@ namespace leopph::internal::opengl
 		Logger::Instance().Debug("Using OpenGL " + std::to_string(major) + "." + std::to_string(minor) + ".");
 		Logger::Instance().Debug(std::string{"Using "} + reinterpret_cast<const char*>(glGetString(GL_RENDERER)) + ".");
 
-		if (Logger::Instance().CurrentLevel() == Logger::Level::DEBUG)
+		if (Logger::Instance().CurrentLevel() == Logger::Level::Debug)
 		{
 			glEnable(GL_DEBUG_OUTPUT);
 			glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);

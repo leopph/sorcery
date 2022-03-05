@@ -3,7 +3,7 @@
 #include "../events/DirShadowResChangeEvent.hpp"
 #include "../events/SpotShadowResolutionEvent.hpp"
 #include "../events/handling/EventManager.hpp"
-#include "../util/logger.h"
+#include "../util/Logger.hpp"
 #include "../windowing/WindowImpl.hpp"
 
 #include <fstream>

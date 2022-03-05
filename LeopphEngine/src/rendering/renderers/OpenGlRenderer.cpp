@@ -5,7 +5,7 @@
 #include "../../components/Camera.hpp"
 #include "../../config/Settings.hpp"
 #include "../../data/DataManager.hpp"
-#include "../../util/logger.h"
+#include "../../util/Logger.hpp"
 #include "../opengl/OpenGl.hpp"
 
 #include <algorithm>

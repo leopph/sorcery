@@ -21,7 +21,7 @@
     <ClCompile Include="src\entry\Main.cpp" />
     <ClCompile Include="src\timing\TimeImpl.cpp" />
     <ClCompile Include="src\config\Settings.cpp" />
-    <ClCompile Include="src\util\logger.cpp" />
+    <ClCompile Include="src\util\Logger.cpp" />
     <ClCompile Include="src\misc\Color.cpp" />
     <ClCompile Include="src\components\lighting\AmbientLight.cpp" />
     <ClCompile Include="src\components\Transform.cpp" />
@@ -101,7 +101,7 @@
     <ClInclude Include="src\entry\Main.hpp" />
     <ClInclude Include="src\entry\Init.hpp" />
     <ClInclude Include="src\timing\TimeImpl.hpp" />
-    <ClInclude Include="src\util\logger.h" />
+    <ClInclude Include="src\util\Logger.hpp" />
     <ClInclude Include="src\rendering\geometry\Material.hpp" />
     <ClInclude Include="src\misc\Color.hpp" />
     <ClInclude Include="src\util\hash\PathHash.hpp" />

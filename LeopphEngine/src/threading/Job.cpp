@@ -1,6 +1,6 @@
 #include "Job.hpp"
 
-#include "../util/logger.h"
+#include "../util/Logger.hpp"
 
 #include <atomic>
 #include <utility>

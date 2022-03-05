@@ -1,4 +1,4 @@
-#include "logger.h"
+#include "Logger.hpp"
 
 #include <spdlog/spdlog.h>
 
@@ -9,7 +9,7 @@ namespace leopph::internal
 {
 	Logger::Logger()
 	{
-		CurrentLevel(Level::RELEASE);
+		CurrentLevel(Level::Release);
 	}
 
 	auto Logger::Instance() -> Logger&
@@ -22,11 +22,11 @@ namespace leopph::internal
 	{
 		switch (level)
 		{
-			case Level::DEBUG:
+			case Level::Debug:
 				spdlog::set_level(spdlog::level::debug);
 				break;
 
-			case Level::RELEASE:
+			case Level::Release:
 				spdlog::set_level(spdlog::level::warn);
 		}
 	}
@@ -36,10 +36,10 @@ namespace leopph::internal
 		switch (spdlog::get_level())
 		{
 			case spdlog::level::debug:
-				return Level::DEBUG;
+				return Level::Debug;
 
 			case spdlog::level::warn:
-				return Level::RELEASE;
+				return Level::Release;
 
 			default:
 				const auto errMsg{"Internal error: Unknown log level found."};

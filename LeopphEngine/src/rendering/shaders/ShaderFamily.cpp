@@ -1,7 +1,7 @@
 #include "ShaderFamily.hpp"
 
 #include "../../config/Settings.hpp"
-#include "../../util/logger.h"
+#include "../../util/Logger.hpp"
 
 #include <algorithm>
 #include <cstddef>
