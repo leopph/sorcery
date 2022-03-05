@@ -27,7 +27,7 @@ See individual headers for more information.
 #include "../src/math/Vector.hpp"
 #include "../src/misc/Color.hpp"
 #include "../src/rendering/Skybox.hpp"
-#include "../src/timing/leopphtime.h"
+#include "../src/timing/Time.hpp"
 #include "../src/util/Exit.hpp"
 #include "../src/windowing/Window.hpp"
 

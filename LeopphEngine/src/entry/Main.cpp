@@ -14,7 +14,6 @@
 #include "../events/FrameEndEvent.hpp"
 #include "../events/handling/EventManager.hpp"
 #include "../rendering/renderers/Renderer.hpp"
-#include "../timing/timer.h"
 #include "../util/logger.h"
 #include "../windowing/WindowImpl.hpp"
 
@@ -34,8 +33,6 @@ namespace leopph::internal
 		initFunc();
 		Logger::Instance().Debug("App initialized.");
 
-		Timer::Init();
-
 		while (!window->ShouldClose())
 		{
 			window->PollEvents();
@@ -47,7 +44,6 @@ namespace leopph::internal
 
 			window->Clear();
 			renderer->Render();
-			Timer::OnFrameComplete();
 			window->SwapBuffers();
 			EventManager::Instance().Send<FrameEndedEvent>();
 		}

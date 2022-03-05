@@ -222,7 +222,7 @@
     <ClInclude Include="src\threading\Job.hpp" />
     <ClInclude Include="src\threading\SpinLock.hpp" />
     <ClInclude Include="src\threading\Worker.hpp" />
-    <ClInclude Include="src\timing\timer.h" />
+    <ClInclude Include="src\timing\TimeImpl.hpp" />
     <ClInclude Include="src\util\concepts\Idable.hpp" />
     <ClInclude Include="src\util\concepts\Pathed.hpp" />
     <ClInclude Include="src\util\concepts\Pointer.hpp" />
@@ -256,7 +256,7 @@
     <ClInclude Include="src\math\Quaternion.hpp" />
     <ClInclude Include="src\rendering\renderers\ForwardOpenGlRenderer.hpp" />
     <ClInclude Include="src\config\Settings.hpp" />
-    <ClInclude Include="src\timing\leopphtime.h" />
+    <ClInclude Include="src\timing\Time.hpp" />
     <ClInclude Include="src\math\Vector.hpp" />
     <ClInclude Include="src\rendering\geometry\Vertex.hpp" />
     <ClInclude Include="src\util\hash\PathHash.hpp" />
@@ -309,7 +309,7 @@
     <ClCompile Include="src\threading\JobSystem.cpp" />
     <ClCompile Include="src\threading\SpinLock.cpp" />
     <ClCompile Include="src\threading\Worker.cpp" />
-    <ClCompile Include="src\timing\timer.cpp" />
+    <ClCompile Include="src\timing\TimeImpl.cpp" />
     <ClCompile Include="src\util\equal\ShaderTypeEqual.cpp" />
     <ClCompile Include="src\util\equal\StringEqual.cpp" />
     <ClCompile Include="src\util\Exit.cpp" />
@@ -328,7 +328,7 @@
     <ClCompile Include="src\components\lighting\PointLight.cpp" />
     <ClCompile Include="src\math\Quaternion.cpp" />
     <ClCompile Include="src\rendering\renderers\ForwardOpenGlRenderer.cpp" />
-    <ClCompile Include="src\timing\leopphtime.cpp" />
+    <ClCompile Include="src\timing\Time.cpp" />
     <ClCompile Include="src\windowing\GlWindow.cpp" />
     <ClCompile Include="vendor\glad2\src\gl.c" />
     <ClCompile Include="vendor\stb_image\stb_image.cpp" />

@@ -7,7 +7,7 @@
     <ClCompile Include="src\math\LeopphMath.cpp" />
     <ClCompile Include="src\rendering\geometry\GlMesh.cpp" />
     <ClCompile Include="src\entity\Entity.cpp" />
-    <ClCompile Include="src\timing\leopphtime.cpp" />
+    <ClCompile Include="src\timing\Time.cpp" />
     <ClCompile Include="src\windowing\GlWindow.cpp" />
     <ClCompile Include="src\components\lighting\PointLight.cpp" />
     <ClCompile Include="src\rendering\renderers\ForwardOpenGlRenderer.cpp" />
@@ -19,7 +19,7 @@
     <ClCompile Include="src\components\rendering\Model.cpp" />
     <ClCompile Include="src\windowing\WindowImpl.cpp" />
     <ClCompile Include="src\entry\Main.cpp" />
-    <ClCompile Include="src\timing\timer.cpp" />
+    <ClCompile Include="src\timing\TimeImpl.cpp" />
     <ClCompile Include="src\config\Settings.cpp" />
     <ClCompile Include="src\util\logger.cpp" />
     <ClCompile Include="src\misc\Color.cpp" />
@@ -86,7 +86,7 @@
     <ClInclude Include="src\components\lighting\PointLight.hpp" />
     <ClInclude Include="src\math\Quaternion.hpp" />
     <ClInclude Include="src\rendering\renderers\ForwardOpenGlRenderer.hpp" />
-    <ClInclude Include="src\timing\leopphtime.h" />
+    <ClInclude Include="src\timing\Time.hpp" />
     <ClInclude Include="src\math\Vector.hpp" />
     <ClInclude Include="src\rendering\geometry\Vertex.hpp" />
     <ClInclude Include="src\windowing\GlWindow.hpp" />
@@ -100,7 +100,7 @@
     <ClInclude Include="src\input\CursorState.hpp" />
     <ClInclude Include="src\entry\Main.hpp" />
     <ClInclude Include="src\entry\Init.hpp" />
-    <ClInclude Include="src\timing\timer.h" />
+    <ClInclude Include="src\timing\TimeImpl.hpp" />
     <ClInclude Include="src\util\logger.h" />
     <ClInclude Include="src\rendering\geometry\Material.hpp" />
     <ClInclude Include="src\misc\Color.hpp" />
