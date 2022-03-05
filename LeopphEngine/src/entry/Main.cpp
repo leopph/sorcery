@@ -1,7 +1,11 @@
 #ifdef _DEBUG
+// Order here is important:
+// 1. define
+// 2. stdlib
+// 3. crtdbg
 #define _CRTDBG_MAP_ALLOC
-#include <crtdbg.h>
 #include <stdlib.h>
+#include <crtdbg.h>
 #endif
 
 #include "Main.hpp"
@@ -9,7 +13,6 @@
 #include "../data/DataManager.hpp"
 #include "../events/FrameEndEvent.hpp"
 #include "../events/handling/EventManager.hpp"
-#include "../rendering/opengl/OpenGl.hpp"
 #include "../rendering/renderers/Renderer.hpp"
 #include "../timing/timer.h"
 #include "../util/logger.h"
@@ -26,35 +29,27 @@ namespace leopph::internal
 		#endif
 
 		const auto window{WindowImpl::Create()};
+		const auto renderer{Renderer::Create()};
 
-		if (!opengl::Init())
+		initFunc();
+		Logger::Instance().Debug("App initialized.");
+
+		Timer::Init();
+
+		while (!window->ShouldClose())
 		{
-			return -1;
-		}
+			window->PollEvents();
 
-		{
-			const auto renderer{Renderer::Create()};
-
-			initFunc();
-			Logger::Instance().Debug("App initialized.");
-
-			Timer::Init();
-
-			while (!window->ShouldClose())
+			for (const auto& behavior : DataManager::Instance().ActiveBehaviors())
 			{
-				window->PollEvents();
-
-				for (const auto& behavior : DataManager::Instance().ActiveBehaviors())
-				{
-					behavior->OnFrameUpdate();
-				}
-
-				window->Clear();
-				renderer->Render();
-				Timer::OnFrameComplete();
-				window->SwapBuffers();
-				EventManager::Instance().Send<FrameEndedEvent>();
+				behavior->OnFrameUpdate();
 			}
+
+			window->Clear();
+			renderer->Render();
+			Timer::OnFrameComplete();
+			window->SwapBuffers();
+			EventManager::Instance().Send<FrameEndedEvent>();
 		}
 
 		DataManager::Instance().Clear();

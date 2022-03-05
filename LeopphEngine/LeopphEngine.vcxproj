@@ -203,10 +203,11 @@
     <ClInclude Include="src\rendering\geometry\MeshDataGroup.hpp" />
     <ClInclude Include="src\rendering\geometry\GlMeshGroup.hpp" />
     <ClInclude Include="src\rendering\GeometryBuffer.hpp" />
-    <ClInclude Include="src\rendering\renderers\DeferredRenderer.hpp" />
+    <ClInclude Include="src\rendering\renderers\DeferredOpenGlRenderer.hpp" />
     <ClInclude Include="src\rendering\geometry\Material.hpp" />
-    <ClInclude Include="src\rendering\renderers\Renderer.hpp" />
+    <ClInclude Include="src\rendering\renderers\OpenGlRenderer.hpp" />
     <ClInclude Include="src\rendering\RenderBuffer.hpp" />
+    <ClInclude Include="src\rendering\renderers\Renderer.hpp" />
     <ClInclude Include="src\rendering\shaders\ShaderProgram.hpp" />
     <ClInclude Include="src\rendering\shaders\ShaderFamily.hpp" />
     <ClInclude Include="src\rendering\shaders\ShaderStageInfo.hpp" />
@@ -253,7 +254,7 @@
     <ClInclude Include="src\entity\Entity.hpp" />
     <ClInclude Include="src\components\lighting\PointLight.hpp" />
     <ClInclude Include="src\math\Quaternion.hpp" />
-    <ClInclude Include="src\rendering\renderers\ForwardRenderer.hpp" />
+    <ClInclude Include="src\rendering\renderers\ForwardOpenGlRenderer.hpp" />
     <ClInclude Include="src\config\Settings.hpp" />
     <ClInclude Include="src\timing\leopphtime.h" />
     <ClInclude Include="src\math\Vector.hpp" />
@@ -290,10 +291,11 @@
     <ClCompile Include="src\rendering\geometry\GlMeshGroup.cpp" />
     <ClCompile Include="src\rendering\GeometryBuffer.cpp" />
     <ClCompile Include="src\rendering\geometry\MeshDataGroup.cpp" />
-    <ClCompile Include="src\rendering\renderers\DeferredRenderer.cpp" />
+    <ClCompile Include="src\rendering\renderers\DeferredOpenGlRenderer.cpp" />
     <ClCompile Include="src\rendering\opengl\OpenGl.cpp" />
-    <ClCompile Include="src\rendering\renderers\Renderer.cpp" />
+    <ClCompile Include="src\rendering\renderers\OpenGlRenderer.cpp" />
     <ClCompile Include="src\rendering\RenderBuffer.cpp" />
+    <ClCompile Include="src\rendering\renderers\Renderer.cpp" />
     <ClCompile Include="src\rendering\shaders\ShaderProgram.cpp" />
     <ClCompile Include="src\rendering\shaders\ShaderFamily.cpp" />
     <ClCompile Include="src\rendering\Skybox.cpp" />
@@ -325,7 +327,7 @@
     <ClCompile Include="src\entity\Entity.cpp" />
     <ClCompile Include="src\components\lighting\PointLight.cpp" />
     <ClCompile Include="src\math\Quaternion.cpp" />
-    <ClCompile Include="src\rendering\renderers\ForwardRenderer.cpp" />
+    <ClCompile Include="src\rendering\renderers\ForwardOpenGlRenderer.cpp" />
     <ClCompile Include="src\timing\leopphtime.cpp" />
     <ClCompile Include="src\windowing\GlWindow.cpp" />
     <ClCompile Include="vendor\glad2\src\gl.c" />

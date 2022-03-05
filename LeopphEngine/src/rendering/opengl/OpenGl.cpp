@@ -9,6 +9,7 @@
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
+#include <stdexcept>
 #include <string>
 
 
@@ -115,31 +116,27 @@ namespace leopph::internal::opengl
 	}
 
 
-	auto Init() -> bool
+	auto Init() -> void
 	{
-		const auto ret = gladLoadGL(glfwGetProcAddress);
-
-		if (ret)
+		if (const auto success{gladLoadGL(glfwGetProcAddress)}; !success)
 		{
-			int major, minor;
-			glGetIntegerv(GL_MAJOR_VERSION, &major);
-			glGetIntegerv(GL_MINOR_VERSION, &minor);
-			Logger::Instance().Debug("Using OpenGL " + std::to_string(major) + "." + std::to_string(minor) + ".");
-			Logger::Instance().Debug(std::string{"Using device ["} + reinterpret_cast<const char*>(glGetString(GL_RENDERER)) + "].");
-
-			if (Logger::Instance().CurrentLevel() == Logger::Level::DEBUG)
-			{
-				glEnable(GL_DEBUG_OUTPUT);
-				glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-				glDebugMessageCallback(MessageCallback, nullptr);
-			}
-		}
-		else
-		{
-			Logger::Instance().Critical("OpenGL could not be initialized.");
+			const auto errMsg{"Failed to initialize OpenGL."};
+			Logger::Instance().Critical(errMsg);
+			throw std::runtime_error{errMsg};
 		}
 
-		return ret;
+		int major, minor;
+		glGetIntegerv(GL_MAJOR_VERSION, &major);
+		glGetIntegerv(GL_MINOR_VERSION, &minor);
+		Logger::Instance().Debug("Using OpenGL " + std::to_string(major) + "." + std::to_string(minor) + ".");
+		Logger::Instance().Debug(std::string{"Using "} + reinterpret_cast<const char*>(glGetString(GL_RENDERER)) + ".");
+
+		if (Logger::Instance().CurrentLevel() == Logger::Level::DEBUG)
+		{
+			glEnable(GL_DEBUG_OUTPUT);
+			glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+			glDebugMessageCallback(MessageCallback, nullptr);
+		}
 	}
 
 

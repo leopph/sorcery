@@ -10,7 +10,7 @@
     <ClCompile Include="src\timing\leopphtime.cpp" />
     <ClCompile Include="src\windowing\GlWindow.cpp" />
     <ClCompile Include="src\components\lighting\PointLight.cpp" />
-    <ClCompile Include="src\rendering\renderers\ForwardRenderer.cpp" />
+    <ClCompile Include="src\rendering\renderers\ForwardOpenGlRenderer.cpp" />
     <ClCompile Include="src\input\Input.cpp" />
     <ClCompile Include="src\components\lighting\DirLight.cpp" />
     <ClCompile Include="src\math\Quaternion.cpp" />
@@ -27,7 +27,7 @@
     <ClCompile Include="src\components\Transform.cpp" />
     <ClCompile Include="src\util\hash\PathHash.cpp" />
     <ClCompile Include="src\components\lighting\SpotLight.cpp" />
-    <ClCompile Include="src\rendering\renderers\DeferredRenderer.cpp" />
+    <ClCompile Include="src\rendering\renderers\DeferredOpenGlRenderer.cpp" />
     <ClCompile Include="src\rendering\GeometryBuffer.cpp" />
     <ClCompile Include="src\events\Event.cpp" />
     <ClCompile Include="src\events\WindowEvent.cpp" />
@@ -35,7 +35,7 @@
     <ClCompile Include="src\events\KeyEvent.cpp" />
     <ClCompile Include="src\events\MouseEvent.cpp" />
     <ClCompile Include="src\rendering\geometry\GlMeshGroup.cpp" />
-    <ClCompile Include="src\rendering\renderers\Renderer.cpp" />
+    <ClCompile Include="src\rendering\renderers\OpenGlRenderer.cpp" />
     <ClCompile Include="src\rendering\Texture.cpp" />
     <ClCompile Include="src\rendering\SkyboxImpl.cpp" />
     <ClCompile Include="src\rendering\Skybox.cpp" />
@@ -67,6 +67,7 @@
     <ClCompile Include="vendor\glad2\src\gl.c" />
     <ClCompile Include="src\threading\Worker.cpp" />
     <ClCompile Include="src\util\Exit.cpp" />
+    <ClCompile Include="src\rendering\renderers\Renderer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\Behavior.hpp" />
@@ -84,7 +85,7 @@
     <ClInclude Include="src\entity\Entity.hpp" />
     <ClInclude Include="src\components\lighting\PointLight.hpp" />
     <ClInclude Include="src\math\Quaternion.hpp" />
-    <ClInclude Include="src\rendering\renderers\ForwardRenderer.hpp" />
+    <ClInclude Include="src\rendering\renderers\ForwardOpenGlRenderer.hpp" />
     <ClInclude Include="src\timing\leopphtime.h" />
     <ClInclude Include="src\math\Vector.hpp" />
     <ClInclude Include="src\rendering\geometry\Vertex.hpp" />
@@ -108,7 +109,7 @@
     <ClInclude Include="src\components\Transform.hpp" />
     <ClInclude Include="src\components\lighting\SpotLight.hpp" />
     <ClInclude Include="src\components\lighting\AttenuatedLight.hpp" />
-    <ClInclude Include="src\rendering\renderers\DeferredRenderer.hpp" />
+    <ClInclude Include="src\rendering\renderers\DeferredOpenGlRenderer.hpp" />
     <ClInclude Include="src\rendering\GeometryBuffer.hpp" />
     <ClInclude Include="src\events\Event.hpp" />
     <ClInclude Include="src\events\handling\EventManager.hpp" />
@@ -120,7 +121,7 @@
     <ClInclude Include="src\events\MouseEvent.hpp" />
     <ClInclude Include="src\events\FrameEndEvent.hpp" />
     <ClInclude Include="src\rendering\geometry\GlMeshGroup.hpp" />
-    <ClInclude Include="src\rendering\renderers\Renderer.hpp" />
+    <ClInclude Include="src\rendering\renderers\OpenGlRenderer.hpp" />
     <ClInclude Include="src\rendering\Texture.hpp" />
     <ClInclude Include="src\rendering\SkyboxImpl.hpp" />
     <ClInclude Include="src\data\Proxy.hpp" />
@@ -165,6 +166,7 @@
     <ClInclude Include="src\threading\SpinLock.hpp" />
     <ClInclude Include="src\threading\Worker.hpp" />
     <ClInclude Include="src\util\Exit.hpp" />
+    <ClInclude Include="src\rendering\renderers\Renderer.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\cpp.hint" />

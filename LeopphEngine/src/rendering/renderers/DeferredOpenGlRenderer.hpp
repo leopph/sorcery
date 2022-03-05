@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Renderer.hpp"
+#include "OpenGlRenderer.hpp"
 #include "../CascadedShadowMap.hpp"
 #include "../CubeShadowMap.hpp"
 #include "../GeometryBuffer.hpp"
@@ -22,10 +22,10 @@
 
 namespace leopph::internal
 {
-	class DeferredRenderer final : public Renderer
+	class DeferredOpenGlRenderer final : public OpenGlRenderer
 	{
 		public:
-			DeferredRenderer();
+			DeferredOpenGlRenderer();
 
 			auto Render() -> void override;
 
@@ -51,6 +51,7 @@ namespace leopph::internal
 			                                      ShaderProgram& lightShader,
 			                                      ShaderProgram& shadowShader,
 			                                      GLuint nextTexUnit) const -> GLuint;
+
 			// Draws into the first N shadow maps, binds them to the light shader with the necessary data, and returns the next usable texture unit.
 			[[nodiscard]] auto RenderSpotShadowMaps(std::span<const SpotLight* const> spotLights,
 			                                        std::span<const RenderableData> renderables,
@@ -58,6 +59,7 @@ namespace leopph::internal
 			                                        ShaderProgram& shadowShader,
 			                                        std::size_t numShadows,
 			                                        GLuint nextTexUnit) -> GLuint;
+
 			// Draws into the first N shadow maps, binds them to the light shader with the necessary data, and returns the next usable texture unit.
 			[[nodiscard]] auto RenderPointShadowMaps(std::span<const PointLight* const> pointLights,
 			                                         std::span<const RenderableData> renderables,

@@ -9,7 +9,7 @@ namespace leopph::internal::opengl
 {
 	// Initializes the OpenGL functions
 	// Sets callbacks
-	auto Init() -> bool;
+	auto Init() -> void;
 
 	// Returns a list of supported binary formats
 	auto ShaderBinaryFormats() -> std::vector<int>;

@@ -4,6 +4,8 @@
 #include "../config/Settings.hpp"
 #include "../util/logger.h"
 
+#include <stdexcept>
+
 
 namespace leopph::internal
 {
@@ -17,8 +19,14 @@ namespace leopph::internal
 				 ret = std::make_unique<GlWindow>();
 		}
 
+		if (!ret)
+		{
+			const auto errMsg{"Failed to create window: the selected graphics API is not supported."};
+			Logger::Instance().Critical(errMsg);
+			throw std::runtime_error{errMsg};
+		}
+
 		ret->InitKeys();
-		Logger::Instance().Debug("Window created.");
 		return ret;
 	}
 }

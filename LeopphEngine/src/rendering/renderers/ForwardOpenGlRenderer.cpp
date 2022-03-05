@@ -1,4 +1,4 @@
-#include "ForwardRenderer.hpp"
+#include "ForwardOpenGlRenderer.hpp"
 
 #include "../../components/Camera.hpp"
 #include "../../components/lighting/AmbientLight.hpp"
@@ -21,7 +21,7 @@
 
 namespace leopph::internal
 {
-	ForwardRenderer::ForwardRenderer() :
+	ForwardOpenGlRenderer::ForwardOpenGlRenderer() :
 		m_ObjectShader
 		{
 			{
@@ -57,7 +57,7 @@ namespace leopph::internal
 	}
 
 
-	auto ForwardRenderer::Render() -> void
+	auto ForwardOpenGlRenderer::Render() -> void
 	{
 		/* We don't render if there is no camera to use */
 		if (Camera::Current() == nullptr)
@@ -86,7 +86,7 @@ namespace leopph::internal
 	}
 
 
-	auto ForwardRenderer::RenderShadedObjects(const Matrix4& camViewMat, const Matrix4& camProjMat, const std::vector<RenderableData>& renderables, const DirectionalLight* dirLight, const std::vector<const SpotLight*>& spotLights, const std::vector<const PointLight*>& pointLights) -> void
+	auto ForwardOpenGlRenderer::RenderShadedObjects(const Matrix4& camViewMat, const Matrix4& camProjMat, const std::vector<RenderableData>& renderables, const DirectionalLight* dirLight, const std::vector<const SpotLight*>& spotLights, const std::vector<const PointLight*>& pointLights) -> void
 	{
 		m_ObjectShader.Clear();
 		m_ObjectShader["EXISTS_DIRLIGHT"] = std::to_string(dirLight != nullptr);
@@ -189,7 +189,7 @@ namespace leopph::internal
 	}
 
 
-	auto ForwardRenderer::RenderSkybox(const Matrix4& camViewMat, const Matrix4& camProjMat) -> void
+	auto ForwardOpenGlRenderer::RenderSkybox(const Matrix4& camViewMat, const Matrix4& camProjMat) -> void
 	{
 		if (const auto& background{Camera::Current()->Background()}; std::holds_alternative<Skybox>(background))
 		{

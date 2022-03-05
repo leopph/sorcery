@@ -27,7 +27,7 @@ namespace leopph::internal
 		if (!glfwInit())
 		{
 			const auto erroMsg{"Failed to initialize GLFW."};
-			Logger::Instance().Error(erroMsg);
+			Logger::Instance().Critical(erroMsg);
 			throw std::runtime_error{erroMsg};
 		}
 
@@ -51,8 +51,8 @@ namespace leopph::internal
 
 		if (m_Window == nullptr)
 		{
-			const auto errMsg{"Failed to create window."};
-			Logger::Instance().Error(errMsg);
+			const auto errMsg{"Failed to create GLFW window."};
+			Logger::Instance().Critical(errMsg);
 			throw std::runtime_error{errMsg};
 		}
 
