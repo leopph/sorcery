@@ -2,6 +2,7 @@
 	path = LeopphEngine/vendor/glfw
 	url = https://github.com/glfw/glfw.git
 	branch = 3.3-stable
+	ignore = dirty
 [submodule "physx"]
 	path = LeopphEngine/vendor/physx
 	url = https://github.com/NVIDIAGameWorks/PhysX.git
