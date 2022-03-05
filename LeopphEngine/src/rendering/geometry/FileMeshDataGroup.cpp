@@ -159,8 +159,6 @@ namespace leopph::internal
 			aiString location;
 			material->GetTexture(type, 0, &location);
 
-			Logger::Instance().Debug("Loading texture on path [" + (m_Path.parent_path() / location.C_Str()).string() + "].");
-
 			const auto texPath{m_Path.parent_path() / location.C_Str()};
 
 			if (auto p{DataManager::Instance().FindTexture(texPath)};
