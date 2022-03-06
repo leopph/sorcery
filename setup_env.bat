@@ -1,6 +1,7 @@
 set msbuild=C:\Program Files\Microsoft Visual Studio\2022\Community\Msbuild\Current\Bin\MSBuild.exe
 
-git submodule update --init --remote
+git submodule update --init --remote LeopphEngine/vendor/glfw
+git submodule update --init LeopphEngine/vendor/physx
 cd LeopphEngine\vendor\physx
 call :PhysX
 cd ../assimp
@@ -25,8 +26,8 @@ exit /B 0
 
 :PhysX
 cd physx
-call generate_projects.bat "vc16win64"
-cd compiler/vc16win64
+call generate_projects.bat "vc17win64"
+cd compiler/vc17win64
 start "Building PhysX Checked" "%msbuild%" PhysXSDK.sln /p:Configuration=checked
 start "Building PhysX Profile" "%msbuild%" PhysXSDK.sln /p:Configuration=profile
 start "Building PhysX Release" "%msbuild%" PhysXSDK.sln /p:Configuration=release
