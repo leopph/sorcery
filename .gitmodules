@@ -7,3 +7,4 @@
 	path = LeopphEngine/vendor/physx
 	url = https://github.com/leopph/PhysX.git
 	ignore = dirty
+	branch = VC17
