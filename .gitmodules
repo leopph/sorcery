@@ -1,10 +1,9 @@
 [submodule "glfw"]
 	path = LeopphEngine/vendor/glfw
 	url = https://github.com/glfw/glfw.git
-	branch = 3.3-stable
+	branch = latest
 	ignore = dirty
 [submodule "physx"]
 	path = LeopphEngine/vendor/physx
 	url = https://github.com/NVIDIAGameWorks/PhysX.git
-	branch = 4.1
 	ignore = dirty
