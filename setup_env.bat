@@ -1,7 +1,6 @@
 set msbuild=C:\Program Files\Microsoft Visual Studio\2022\Community\Msbuild\Current\Bin\MSBuild.exe
 
-git submodule update --init --remote LeopphEngine/vendor/glfw
-git submodule update --init LeopphEngine/vendor/physx
+git submodule update --init --remote
 cd LeopphEngine\vendor\physx
 call :PhysX
 cd ../assimp
