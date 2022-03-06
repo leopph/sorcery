@@ -51,10 +51,29 @@ These are the planned features and their current states:
 I'm trying to place as much info into header/module files as I can. For now, developers can use these to get more info on specific behaviors. I will eventually create standalone documentation about all the different APIs LeopphEngine provides.
 
 ## Support and Usage
-Currently only Windows is supported.  
-To get started, pull all the submodules and build them. Then compile LeopphEngine using the provided VS solution.
-You should now include **Leopph.hpp** from **LeopphEngine/include** in your project, link against **leopph.lib**, and copy **leopph.dll** (both found in **LeopphEngine/*<target_config>***) to your output directory, and everything should work!  
-*Disclaimer: LeopphEngine uses Microsoft's WIP C++ 20 implementation. It is recommended that you use the latest Visual Studio release and set your project language version to C++ 20 to make sure your compiler has the necessary features.*
+### Runtime Requirements
+- At least Windows 10 19041
+- MSVC 14.30 compatible linker
+### Build requirements
+- At least Windows 10 19041
+- CMake
+- Visual Studio 2022 with ATL and Windows SDK 22000 configured
+### Building
+After pulling the repo, run the **setup_env.bat** file from the root folder.  
+It will
+- Pull all submodules and choose the appropriate commits/branches
+- Configure all dependency projects in *LeopphEngine/vendor* using CMake
+- Build all of the necessary configurations for all dependencies using MSBuild
+
+After the above just build the solution file in the root directory.  
+*Note: currently automatic building only works if MSVC/VS/MSBuild are installed in their default directories. If you've installed them elsewhere, you can change the location path in the setup script, or build the dependencies manually.*  
+### Consumption
+To use LeopphEngine in your application:
+- Include **Leopph.hpp** from **LeopphEngine/include**
+- Either
+  - Link against **leopph.lib**, and copy **leopph.dll** (both found in **LeopphEngine/*<target_config>***) to your output directory, or
+  - Load **leopph.dll** manually through the Windows API
+- Make **assimp.dll** available to your app, found in **LeopphEngine/vendor/assimp/bin/*<target_config>***
 
 ## Branches and Releases
 Development of LeopphEngine takes place on two branches.  
