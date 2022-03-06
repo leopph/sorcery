@@ -16,7 +16,7 @@ FrameRateAnalyzer::FrameRateAnalyzer(leopph::Entity* const entity, const float p
 
 auto FrameRateAnalyzer::OnFrameUpdate() -> void
 {
-	const auto delta{leopph::Time::DeltaTime()};
+	const auto delta{leopph::time::DeltaTime()};
 	m_DeltaTime += delta;
 
 	if (m_DeltaTime >= m_PollInterval)

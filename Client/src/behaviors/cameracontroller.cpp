@@ -11,12 +11,12 @@ CameraController::CameraController(leopph::Entity* const entity) :
 
 void CameraController::OnFrameUpdate()
 {
-	if (leopph::Camera::Active == nullptr)
+	if (leopph::Camera::Current() == nullptr)
 	{
 		return;
 	}
 
-	auto& camTransform = *leopph::Camera::Active()->Entity()->Transform();
+	auto& camTransform = *leopph::Camera::Current()->Entity()->Transform();
 
 	leopph::Vector3 movementVector;
 
@@ -57,7 +57,7 @@ void CameraController::OnFrameUpdate()
 		movementVector *= RUN_MULT;
 	}
 
-	camTransform.Translate(movementVector * m_Speed * leopph::Time::DeltaTime(), leopph::Space::World);
+	camTransform.Translate(movementVector * m_Speed * leopph::time::DeltaTime(), leopph::Space::World);
 
 	const auto [posX, posY] = leopph::Input::GetMousePosition();
 	const auto diffX = posX - m_LastX;
