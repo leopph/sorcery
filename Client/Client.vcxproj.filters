@@ -30,6 +30,12 @@
     <ClCompile Include="src\behaviors\Exiter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\behaviors\ComponentSwitch.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\behaviors\Flicker.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\behaviors\FrameRateAnalyzer.hpp">
@@ -42,6 +48,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\behaviors\Exiter.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\behaviors\ComponentSwitch.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\behaviors\Flicker.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

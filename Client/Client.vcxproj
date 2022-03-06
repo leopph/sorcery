@@ -140,7 +140,9 @@ ASAN_SYMBOLIZER_PATH=$(VC_ExecutablePath_x64)</LocalDebuggerEnvironment>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\behaviors\CameraController.cpp" />
+    <ClCompile Include="src\behaviors\ComponentSwitch.cpp" />
     <ClCompile Include="src\behaviors\Exiter.cpp" />
+    <ClCompile Include="src\behaviors\Flicker.cpp" />
     <ClCompile Include="src\behaviors\FrameRateAnalyzer.cpp" />
     <ClCompile Include="src\behaviors\WindowTester.cpp" />
     <ClCompile Include="src\start.cpp" />
@@ -153,7 +155,9 @@ ASAN_SYMBOLIZER_PATH=$(VC_ExecutablePath_x64)</LocalDebuggerEnvironment>
   <ItemGroup>
     <ClInclude Include="src\behaviors\CameraController.hpp" />
     <ClInclude Include="src\behaviors\Exiter.hpp" />
+    <ClInclude Include="src\behaviors\Flicker.hpp" />
     <ClInclude Include="src\behaviors\FrameRateAnalyzer.hpp" />
+    <ClInclude Include="src\behaviors\ComponentSwitch.hpp" />
     <ClInclude Include="src\behaviors\WindowTester.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

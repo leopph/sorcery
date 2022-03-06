@@ -2,7 +2,9 @@
 
 #include "Leopph.hpp"
 #include "behaviors/CameraController.hpp"
+#include "behaviors/ComponentSwitch.hpp"
 #include "behaviors/Exiter.hpp"
+#include "behaviors/Flicker.hpp"
 #include "behaviors/FrameRateAnalyzer.hpp"
 #include "behaviors/WindowTester.hpp"
 
@@ -17,12 +19,10 @@ auto leopph::Init() -> void
 	playerEntity->Transform()->Rotate(Vector3::Up(), 90);
 
 	const auto camera{playerEntity->CreateComponent<Camera>()};
-	camera->Background(Skybox{"skybox/megasun/left.hdr", "skybox/megasun/right.hdr", "skybox/megasun/top.hdr","skybox/megasun/bottom.hdr","skybox/megasun/front.hdr","skybox/megasun/back.hdr"});
+	camera->Background(Skybox{"skybox/megasun/left.hdr", "skybox/megasun/right.hdr", "skybox/megasun/top.hdr", "skybox/megasun/bottom.hdr", "skybox/megasun/front.hdr", "skybox/megasun/back.hdr"});
 
 	camera->NearClipPlane(0.3f);
 	camera->FarClipPlane(1000);
-
-	playerEntity->CreateComponent<CameraController>();
 
 	AmbientLight::Instance().Intensity(Vector3{0.05, 0.05, 0.05});
 
@@ -58,8 +58,11 @@ auto leopph::Init() -> void
 	pLight->Linear(0.2f);
 	pLight->Quadratic(0.07f);
 	pLight->CastsShadow(true);
-	
+
+	playerEntity->CreateComponent<CameraController>();
 	Entity::CreateEntity("fpscounter")->CreateComponent<FrameRateAnalyzer>(0.5f, 60);
 	Entity::CreateEntity("windowstester")->CreateComponent<WindowTester>();
 	Entity::CreateEntity("exiter")->CreateComponent<Exiter>();
+	Entity::CreateEntity("componentswitch")->CreateComponent<ComponentSwitch>(std::vector<Component*>{churchModel});
+	Entity::CreateEntity("flicker")->CreateComponent<demo::Flicker>(pLight, 1.2f, 0.05f);
 }
