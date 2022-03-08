@@ -1,5 +1,6 @@
 #pragma once
 
+#include "PoeloBase.hpp"
 #include "../components/Behavior.hpp"
 #include "../components/Component.hpp"
 #include "../components/lighting/DirLight.hpp"
@@ -14,10 +15,12 @@
 #include "../rendering/geometry/MeshDataGroup.hpp"
 #include "../util/equal/PathedEqual.hpp"
 #include "../util/hash/PathedHash.hpp"
+#include "../util/less/PoeloBaseLess.hpp"
 
 #include <algorithm>
 #include <filesystem>
 #include <memory>
+#include <set>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -31,6 +34,12 @@ namespace leopph::internal
 	{
 		public:
 			[[nodiscard]] static auto Instance() -> DataManager&;
+
+			// Takes ownership of the PoeloBase instance.
+			auto Store(std::unique_ptr<PoeloBase> poelo) -> void;
+			// Destroys the passed PoeloBase instance if found.
+			// Returns whether deletion took place.
+			auto Destroy(const PoeloBase* poelo) -> bool;
 
 			// Destroys everything.
 			auto Clear() -> void;
@@ -65,13 +74,13 @@ namespace leopph::internal
 			// The function does NOT check whether the passed SkyboxImpl instance is registered or not.
 			auto UnregisterSkyboxHandle(const SkyboxImpl* skybox, Skybox* handle) -> void;
 
-			// Takes ownership of the Entity object and stores it.
-			// The function does NOT check if the Entity is already pointed to by a stored unique_ptr.
-			auto StoreEntity(std::unique_ptr<Entity> entity) -> void;
+			// Non-owningly registers an Entity instance.
+			// The function does NOT check if the Entity instance is already registered.
+			auto RegisterEntity(Entity* entity) -> void;
 
-			// Removes and destroys all unique_ptrs that point to the same Entity as the passed pointer.
-			// Removes and destroys the associated Components.
-			auto DestroyEntity(const Entity* entity) -> void;
+			// Unregisters the passed Entity instance.
+			// Removes and destroys the attached Components.
+			auto UnregisterEntity(const Entity* entity) -> void;
 
 			// Returns a pointer to the stored Entity with the passed name, or nullptr.
 			[[nodiscard]] auto FindEntity(const std::string& name) -> Entity*;
@@ -195,7 +204,7 @@ namespace leopph::internal
 			struct EntityAndComponents
 			{
 				// Owning pointer to Entity
-				std::unique_ptr<Entity> Entity;
+				Entity* Entity;
 				// Owning pointers to active Components
 				std::vector<std::unique_ptr<Component>> ActiveComponents;
 				// Owning pointers to inactive Components
@@ -212,6 +221,10 @@ namespace leopph::internal
 				// Non-owning pointers to inactive instances
 				std::vector<const RenderComponent*> InactiveInstances;
 			};
+
+
+			// All engine-owned objects.
+			std::set<std::unique_ptr<PoeloBase>, PoeloBaseLess> m_Poelos;
 
 
 			// Non-owning pointers to all MeshDataGroup instances.

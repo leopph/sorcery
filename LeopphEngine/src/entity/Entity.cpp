@@ -13,17 +13,16 @@ namespace leopph
 			name = GenerateUnusedName(name);
 			internal::Logger::Instance().Warning("Name collision detected. Entity is being renamed to " + name + ".");
 		}
-		std::unique_ptr<Entity> entity{new Entity{std::move(name)}};
-		const auto ret{entity.get()};
-		internal::DataManager::Instance().StoreEntity(std::move(entity));
-		ret->RegisterComponent(std::make_unique<leopph::Transform>(ret));
-		return ret;
+		const auto entity{new Entity{name}};
+		TakeOwnership(entity);
+		entity->RegisterComponent(std::make_unique<leopph::Transform>(entity));
+		return entity;
 	}
 
 
 	auto Entity::DestroyEntity(const Entity* const entity) -> void
 	{
-		internal::DataManager::Instance().DestroyEntity(entity);
+		Destroy(entity);
 	}
 
 
@@ -36,7 +35,15 @@ namespace leopph
 	Entity::Entity(std::string name) :
 		m_Name{std::move(name)},
 		m_TransformCache{nullptr}
-	{}
+	{
+		internal::DataManager::Instance().RegisterEntity(this);
+	}
+
+
+	Entity::~Entity()
+	{
+		internal::DataManager::Instance().UnregisterEntity(this);
+	}
 
 
 	auto Entity::RegisterComponent(std::unique_ptr<Component>&& component) const -> void

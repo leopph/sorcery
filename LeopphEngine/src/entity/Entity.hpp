@@ -3,6 +3,7 @@
 #include "../api/LeopphApi.hpp"
 #include "../components/Component.hpp"
 #include "../components/Transform.hpp"
+#include "../data/Poelo.hpp"
 
 #include <concepts>
 #include <memory>
@@ -16,7 +17,7 @@ namespace leopph
 	// Entities form the basis of the object hierarchy.
 	// They have spatial properties through an unremovable Transform component.
 	// They can also be decorated with custom Components.
-	class Entity final
+	class Entity final : internal::Poelo<Entity>
 	{
 		public:
 			// Creates a new Entity instance and returns a pointer to it.
@@ -68,7 +69,7 @@ namespace leopph
 			Entity(Entity&&) = delete;
 			auto operator=(Entity&&) -> void = delete;
 
-			constexpr ~Entity() noexcept = default;
+			~Entity() override;
 
 		private:
 			// Generate a name that is not used by any registered Entity at the time of calling.

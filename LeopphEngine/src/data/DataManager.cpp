@@ -12,9 +12,26 @@ namespace leopph::internal
 	}
 
 
+	auto DataManager::Store(std::unique_ptr<PoeloBase> poelo) -> void
+	{
+		m_Poelos.insert(std::move(poelo));
+	}
+
+
+	auto DataManager::Destroy(const PoeloBase* poelo) -> bool
+	{
+		if (const auto it{m_Poelos.find(poelo)}; it != m_Poelos.end())
+		{
+			m_Poelos.erase(it);
+			return true;
+		}
+		return false;
+	}
+
+
 	auto DataManager::Clear() -> void
 	{
-		m_EntitiesAndComponents.clear();
+		m_Poelos.clear();
 		// All containers should be empty at this point.
 		Logger::Instance().Debug("DataManager cleared.");
 	}
@@ -48,18 +65,18 @@ namespace leopph::internal
 
 	// ENTITIES
 
-	auto DataManager::StoreEntity(std::unique_ptr<Entity> entity) -> void
+	auto DataManager::RegisterEntity(Entity* const entity) -> void
 	{
-		m_EntitiesAndComponents.emplace_back(std::move(entity));
+		m_EntitiesAndComponents.emplace_back(entity);
 		SortEntities();
 	}
 
 
-	auto DataManager::DestroyEntity(const Entity* entity) -> void
+	auto DataManager::UnregisterEntity(const Entity* const entity) -> void
 	{
 		std::erase_if(m_EntitiesAndComponents, [&](const auto& elem)
 		{
-			return elem.Entity.get() == entity;
+			return elem.Entity == entity;
 		});
 		SortEntities();
 	}
@@ -80,7 +97,7 @@ namespace leopph::internal
 	auto DataManager::FindEntity(const std::string& name) -> Entity*
 	{
 		const auto it = FindEntityInternal(name);
-		return it != m_EntitiesAndComponents.end() ? it->Entity.get() : nullptr;
+		return it != m_EntitiesAndComponents.end() ? it->Entity : nullptr;
 	}
 
 
