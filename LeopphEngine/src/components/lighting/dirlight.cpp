@@ -45,11 +45,11 @@ namespace leopph
 	{
 		if (IsActive())
 		{
-			internal::DataManager::Instance().UnregisterActiveDirLight(nullptr);
+			internal::DataManager::Instance().UnregisterActiveDirLight(this);
 		}
 		else
 		{
-			internal::DataManager::Instance().UnregisterInactiveDirLight(nullptr);
+			internal::DataManager::Instance().UnregisterInactiveDirLight(this);
 		}
 	}
 
