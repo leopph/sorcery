@@ -3,8 +3,7 @@
 
 namespace demo
 {
-	Flicker::Flicker(leopph::Entity* entity, leopph::Light* light, const float on, const float out) :
-		Behavior{entity},
+	Flicker::Flicker(leopph::Light* light, const float on, const float out) :
 		m_Light{light},
 		m_OutTime{out},
 		m_OnTime{on}

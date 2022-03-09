@@ -29,7 +29,7 @@ namespace leopph
 			LEOPPHAPI auto Activate() -> void override;
 			LEOPPHAPI auto Deactivate() -> void override;
 
-			LEOPPHAPI explicit DirectionalLight(leopph::Entity* entity);
+			LEOPPHAPI DirectionalLight();
 
 			DirectionalLight(const DirectionalLight&) = delete;
 			auto operator=(const DirectionalLight&) -> void = delete;

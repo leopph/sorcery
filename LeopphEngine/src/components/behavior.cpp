@@ -5,13 +5,6 @@
 
 namespace leopph
 {
-	Behavior::Behavior(leopph::Entity* const entity) :
-		Component{entity}
-	{
-		internal::DataManager::Instance().RegisterActiveBehavior(this);
-	}
-
-
 	auto Behavior::Activate() -> void
 	{
 		if (IsActive())
@@ -42,8 +35,25 @@ namespace leopph
 	}
 
 
-	Behavior::~Behavior()
+	auto Behavior::Attach(leopph::Entity* entity) -> void
 	{
+		Component::Attach(entity);
+
+		if (IsActive())
+		{
+			internal::DataManager::Instance().RegisterActiveBehavior(this);
+		}
+		else
+		{
+			internal::DataManager::Instance().RegisterInactiveBehavior(this);
+		}
+	}
+
+
+	auto Behavior::Detach() -> void
+	{
+		Component::Detach();
+
 		if (IsActive())
 		{
 			internal::DataManager::Instance().UnregisterActiveBehavior(this);
@@ -52,5 +62,11 @@ namespace leopph
 		{
 			internal::DataManager::Instance().UnregisterInactiveBehavior(this);
 		}
+	}
+
+
+	Behavior::~Behavior()
+	{
+		Behavior::Detach();
 	}
 }

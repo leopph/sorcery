@@ -3,29 +3,11 @@
 #include "../data/DataManager.hpp"
 #include "../util/Logger.hpp"
 
+#include <cstddef>
+
 
 namespace leopph
 {
-	auto Entity::CreateEntity(std::string name) -> Entity*
-	{
-		if (!NameIsUnused(name))
-		{
-			name = GenerateUnusedName(name);
-			internal::Logger::Instance().Warning("Name collision detected. Entity is being renamed to " + name + ".");
-		}
-		const auto entity{new Entity{name}};
-		TakeOwnership(entity);
-		entity->RegisterComponent(std::make_unique<leopph::Transform>(entity));
-		return entity;
-	}
-
-
-	auto Entity::DestroyEntity(const Entity* const entity) -> void
-	{
-		Destroy(entity);
-	}
-
-
 	auto Entity::FindEntity(const std::string& name) -> Entity*
 	{
 		return internal::DataManager::Instance().FindEntity(name);
@@ -33,54 +15,74 @@ namespace leopph
 
 
 	Entity::Entity(std::string name) :
-		m_Name{std::move(name)},
-		m_TransformCache{nullptr}
+		m_Name{
+			[&]
+			{
+				if (!NameIsUnused(name))
+				{
+					name = GenerateUnusedName(name);
+					internal::Logger::Instance().Warning("Name collision detected. Entity is being renamed to " + name + ".");
+				}
+
+				return name;
+			}()
+		}
 	{
-		internal::DataManager::Instance().RegisterEntity(this);
+		auto& dataManager{internal::DataManager::Instance()};
+		dataManager.RegisterEntity(this);
+		m_Transform->Attach(this);
 	}
 
 
 	Entity::~Entity()
 	{
-		internal::DataManager::Instance().UnregisterEntity(this);
+		auto& dataManager{internal::DataManager::Instance()};
+
+		Destroy(m_Transform); // Transform is a special case because it cannot be detached.
+
+		for (const auto component : dataManager.ComponentsOfEntity(this, true))
+		{
+			component->Detach();
+		}
+
+		for (const auto component : dataManager.ComponentsOfEntity(this, false))
+		{
+			component->Detach();
+		}
+
+		dataManager.UnregisterEntity(this);
 	}
 
 
-	auto Entity::RegisterComponent(std::unique_ptr<Component>&& component) const -> void
+	auto Entity::AttachComponent(Component* const component) -> void
 	{
-		internal::DataManager::Instance().RegisterActiveComponentForEntity(std::move(component));
+		component->Attach(this);
 	}
 
 
-	auto Entity::RemoveComponent(const Component* component) const -> void
+	auto Entity::DetachComponent(Component* const component) const -> void
 	{
+		const auto& logger{internal::Logger::Instance()};
+
+		if (!component)
+		{
+			logger.Warning("Ignoring attempt to remove nullptr component from Entity [" + m_Name + "].");
+			return;
+		}
+
 		if (component->Entity() != this)
 		{
-			const auto msg{"Error while trying to remove Component at address [" + std::to_string(reinterpret_cast<unsigned long long>(component)) + "] from Entity [" + m_Name + "]. The Component's owning Entity is different from this."};
-			internal::Logger::Instance().Error(msg);
-			return;
-		}
-		if (component == Transform())
-		{
-			const auto msg{"Transform component cannot be removed from Entity."};
-			internal::Logger::Instance().Error(msg);
+			internal::Logger::Instance().Error("Ignoring attempt to remove component at [" + std::to_string(reinterpret_cast<std::size_t>(component)) + "] from Entity [" + m_Name + "], because the component is not owned by the Entity.");
 			return;
 		}
 
-		if (component->IsActive())
-		{
-			internal::DataManager::Instance().UnregisterActiveComponentFromEntity(component);
-		}
-		else
-		{
-			internal::DataManager::Instance().UnregisterInactiveComponentFromEntity(component);
-		}
+		component->Detach();
 	}
 
 
 	auto Entity::DeactiveAllComponents() const -> void
 	{
-		for (auto& component : internal::DataManager::Instance().ActiveComponentsOfEntity(this))
+		for (auto& component : internal::DataManager::Instance().ComponentsOfEntity(this, true))
 		{
 			component->Deactivate();
 		}
@@ -89,26 +91,16 @@ namespace leopph
 
 	auto Entity::ActivateAllComponents() const -> void
 	{
-		for (auto& component : internal::DataManager::Instance().InactiveComponentsOfEntity(this))
+		for (auto& component : internal::DataManager::Instance().ComponentsOfEntity(this, false))
 		{
 			component->Activate();
 		}
 	}
 
 
-	auto Entity::Transform() const -> leopph::Transform*
+	auto Entity::Components() const -> std::span<Component* const>
 	{
-		if (!m_TransformCache)
-		{
-			m_TransformCache = GetComponent<leopph::Transform>();
-		}
-		return m_TransformCache;
-	}
-
-
-	auto Entity::Components() const -> const std::vector<std::unique_ptr<Component>>&
-	{
-		return internal::DataManager::Instance().ActiveComponentsOfEntity(this);
+		return internal::DataManager::Instance().ComponentsOfEntity(this, true);
 	}
 
 

@@ -3,16 +3,19 @@
 #include "DataManager.hpp"
 
 
-namespace leopph::internal
+namespace leopph
 {
-	auto Poelo::TakeOwnership(Poelo* poelo) -> void
+	namespace internal
 	{
-		DataManager::Instance().Store(std::unique_ptr<Poelo>{poelo});
+		Poelo::Poelo()
+		{
+			DataManager::Instance().Store(std::unique_ptr<Poelo>{this});
+		}
 	}
 
 
-	auto Poelo::Destroy(const Poelo* poelo) -> void
+	auto leopph::Destroy(const internal::Poelo* poelo) -> void
 	{
-		DataManager::Instance().Destroy(poelo);
+		internal::DataManager::Instance().Destroy(poelo);
 	}
 }

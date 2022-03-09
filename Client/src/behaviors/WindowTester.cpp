@@ -5,13 +5,12 @@ using leopph::KeyCode;
 using leopph::Window;
 
 
-WindowTester::WindowTester(leopph::Entity* const entity) :
-	Behavior{entity},
+WindowTester::WindowTester() :
 	m_Window{Window::Instance()}
 {}
 
 
-void WindowTester::OnFrameUpdate()
+auto WindowTester::OnFrameUpdate() -> void
 {
 	if (Input::GetKeyDown(KeyCode::F))
 	{

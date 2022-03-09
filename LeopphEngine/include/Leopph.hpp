@@ -15,6 +15,7 @@ See individual headers for more information.
 #include "../src/components/rendering/Model.hpp"
 #include "../src/components/rendering/Model.hpp"
 #include "../src/config/Settings.hpp"
+#include "../src/data/Poelo.hpp"
 #include "../src/entity/Entity.hpp"
 #include "../src/events/Event.hpp"
 #include "../src/events/handling/EventManager.hpp"

@@ -35,11 +35,11 @@ namespace leopph
 	}
 
 
-	SpotLight::SpotLight(leopph::Entity* const entity) :
-		AttenuatedLight{entity}
+	SpotLight::SpotLight()
 	{
 		internal::DataManager::Instance().RegisterActiveSpotLight(this);
 	}
+
 
 	SpotLight::~SpotLight()
 	{

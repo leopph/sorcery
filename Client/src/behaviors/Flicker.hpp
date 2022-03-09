@@ -8,7 +8,7 @@ namespace demo
 	class Flicker final : public leopph::Behavior
 	{
 		public:
-			Flicker(leopph::Entity* entity, leopph::Light* light, float on, float out);
+			Flicker(leopph::Light* light, float on, float out);
 
 			auto OnFrameUpdate() -> void override;
 

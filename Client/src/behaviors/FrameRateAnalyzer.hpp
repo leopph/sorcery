@@ -9,7 +9,7 @@
 class FrameRateAnalyzer final : public leopph::Behavior
 {
 	public:
-		explicit FrameRateAnalyzer(leopph::Entity* entity, float pollInterval, unsigned maxDataSets);
+		explicit FrameRateAnalyzer(float pollInterval, unsigned maxDataSets);
 		auto OnFrameUpdate() -> void override;
 
 	private:

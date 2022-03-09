@@ -25,7 +25,7 @@ namespace leopph
 			LEOPPHAPI auto Activate() -> void override;
 			LEOPPHAPI auto Deactivate() -> void override;
 
-			LEOPPHAPI explicit SpotLight(leopph::Entity* entity);
+			LEOPPHAPI SpotLight();
 
 			SpotLight(const SpotLight&) = delete;
 			auto operator=(const SpotLight&) -> void = delete;

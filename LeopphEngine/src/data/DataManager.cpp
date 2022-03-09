@@ -31,7 +31,11 @@ namespace leopph::internal
 
 	auto DataManager::Clear() -> void
 	{
-		m_Poelos.clear();
+		// Since some Poelo destructors might invoke other Poelo deletions, its safer to destruct one by one, than to clear.
+		while (m_Poelos.begin() != m_Poelos.end())
+		{
+			m_Poelos.erase(m_Poelos.begin());
+		}
 		// All containers should be empty at this point.
 		Logger::Instance().Debug("DataManager cleared.");
 	}
@@ -101,39 +105,26 @@ namespace leopph::internal
 	}
 
 
-	auto DataManager::RegisterActiveComponentForEntity(std::unique_ptr<Component>&& component) -> void
+	auto DataManager::RegisterComponentForEntity(const Entity* const entity, Component* const component, const bool active) -> void
 	{
-		FindEntityInternal(component->Entity()->Name())->ActiveComponents.emplace_back(std::move(component));
+		const auto it{FindEntityInternal(entity->Name())};
+		auto& components{active ? it->ActiveComponents : it->InactiveComponents};
+		components.push_back(component);
 	}
 
 
-	auto DataManager::RegisterInactiveComponentForEntity(std::unique_ptr<Component>&& component) -> void
+	auto DataManager::UnregisterComponentFromEntity(const Entity* const entity, Component* const component, const bool active) -> void
 	{
-		FindEntityInternal(component->Entity()->Name())->InactiveComponents.emplace_back(std::move(component));
+		const auto it{FindEntityInternal(entity->Name())};
+		auto& components{active ? it->ActiveComponents : it->InactiveComponents};
+		std::erase(components, component);
 	}
 
 
-	auto DataManager::UnregisterActiveComponentFromEntity(const Component* component) -> std::unique_ptr<Component>
+	auto DataManager::ComponentsOfEntity(const Entity* const entity, const bool active) const -> std::span<Component* const>
 	{
-		return EraseComponentInternal(FindEntityInternal(component->Entity()->Name())->ActiveComponents, component);
-	}
-
-
-	auto DataManager::UnregisterInactiveComponentFromEntity(const Component* component) -> std::unique_ptr<Component>
-	{
-		return EraseComponentInternal(FindEntityInternal(component->Entity()->Name())->InactiveComponents, component);
-	}
-
-
-	auto DataManager::ActiveComponentsOfEntity(const Entity* entity) const -> const std::vector<std::unique_ptr<Component>>&
-	{
-		return FindEntityInternal(entity->Name())->ActiveComponents;
-	}
-
-
-	auto DataManager::InactiveComponentsOfEntity(const Entity* entity) const -> const std::vector<std::unique_ptr<Component>>&
-	{
-		return FindEntityInternal(entity->Name())->InactiveComponents;
+		const auto it{FindEntityInternal(entity->Name())};
+		return active ? it->ActiveComponents : it->InactiveComponents;
 	}
 
 

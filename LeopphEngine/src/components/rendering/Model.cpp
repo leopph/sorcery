@@ -8,10 +8,11 @@
 
 namespace leopph
 {
-	Model::Model(leopph::Entity* const entity, std::filesystem::path path) :
-		RenderComponent{entity, GetMeshData(path)},
+	Model::Model(std::filesystem::path path) :
+		RenderComponent{GetMeshData(path)},
 		m_Path{std::move(path)}
 	{}
+
 
 	auto Model::GetMeshData(const std::filesystem::path& path) const -> std::shared_ptr<internal::MeshDataGroup>
 	{

@@ -6,7 +6,7 @@
 class CameraController final : public leopph::Behavior
 {
 	public:
-		explicit CameraController(leopph::Entity* entity);
+		explicit CameraController();
 		auto OnFrameUpdate() -> void override;
 
 	private:

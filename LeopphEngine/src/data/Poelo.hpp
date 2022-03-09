@@ -1,28 +1,34 @@
 #pragma once
 
-namespace leopph::internal
+#include "../api/LeopphApi.hpp"
+
+namespace leopph
 {
-	// Program Or Explicit Lifetime Object.
-	// Base class for objects owned by LeopphEngine whose lifetime is the lifetime of the program, unless explicitly deleted.
-	class Poelo
+	namespace internal
 	{
-		public:
-			Poelo(const Poelo& other) = delete;
-			auto operator=(const Poelo& other) -> Poelo& = delete;
+		// Program Or Explicit Lifetime Object.
+		// Base class for objects owned by LeopphEngine whose lifetime is the lifetime of the program, unless explicitly deleted.
+		// For this reason, Poelos must NEVER be created using automatic storage duration.
+		class Poelo
+		{
+			public:
+				Poelo(const Poelo& other) = delete;
+				auto operator=(const Poelo& other) -> Poelo& = delete;
 
-			Poelo(Poelo&& other) noexcept = delete;
-			auto operator=(Poelo&& other) noexcept -> Poelo& = delete;
+				Poelo(Poelo&& other) noexcept = delete;
+				auto operator=(Poelo&& other) noexcept -> Poelo& = delete;
 
-			virtual ~Poelo() = default;
+				virtual ~Poelo() = default;
 
-		protected:
-			// Pass an instance pointer to give its ownership to the engine.
-			// This should usually be called in factory functions.
-			static auto TakeOwnership(Poelo* poelo) -> void;
-			// Pass an instance pointer to call the destructor on the instance and free its memory.
-			// This should usually be called in deleter functions.
-			static auto Destroy(const Poelo* poelo) -> void;
+			protected:
+				// Poelos on creation give ownership of themselves to the engine.
+				// Do NOT instantiate them using automatic storage duration.
+				LEOPPHAPI Poelo();
+		};
+	}
 
-			Poelo() = default;
-	};
+
+	// Explicitly destroys the Poelo object.
+	LEOPPHAPI
+	auto Destroy(const internal::Poelo* poelo) -> void;
 }

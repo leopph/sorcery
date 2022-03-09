@@ -2,14 +2,16 @@
 
 #include "../data/DataManager.hpp"
 #include "../entity/Entity.hpp"
+#include "../util/Logger.hpp"
 
 #include <algorithm>
+#include <cstddef>
+#include <string>
 
 
 namespace leopph
 {
-	Transform::Transform(leopph::Entity* const entity, const Vector3& pos, const Quaternion& rot, const Vector3& scale) :
-		Component{entity},
+	Transform::Transform(const Vector3& pos, const Quaternion& rot, const Vector3& scale) :
 		m_WorldPosition{pos},
 		m_WorldRotation{rot},
 		m_WorldScale{scale},
@@ -170,14 +172,15 @@ namespace leopph
 	}
 
 
-	auto Transform::Parent(const leopph::Entity& parent) -> void
-	{
-		Parent(parent.Transform());
-	}
-
-
 	auto Transform::Parent(Transform* const parent) -> void
 	{
+		// If we're given a valid pointer to an unattached transform
+		if (parent != nullptr && !parent->IsAttached())
+		{
+			internal::Logger::Instance().Warning("Ignoring attempt to parent Transform on Entity [" + Entity()->Name() + "] to an unattached Transform.");
+			return;
+		}
+
 		if (m_Parent != nullptr)
 		{
 			std::erase(m_Parent->m_Children, this);
@@ -192,12 +195,6 @@ namespace leopph
 		CalculateWorldPosition();
 		CalculateWorldRotation();
 		CalculateWorldScale();
-	}
-
-
-	auto Transform::Parent(Transform& parent) -> void
-	{
-		Parent(&parent);
 	}
 
 
@@ -236,11 +233,50 @@ namespace leopph
 
 
 	auto Transform::Activate() -> void
-	{ }
+	{
+		internal::Logger::Instance().Warning("Ignoring attempt to activate Transform at " + std::to_string(reinterpret_cast<std::size_t>(this)) + ".");
+	}
 
 
 	auto Transform::Deactivate() -> void
-	{ }
+	{
+		internal::Logger::Instance().Warning("Ignoring attempt to deactivate Transform at " + std::to_string(reinterpret_cast<std::size_t>(this)) + ".");
+	}
+
+
+	auto Transform::Attach(leopph::Entity* entity) -> void
+	{
+		const auto& logger{internal::Logger::Instance()};
+
+		if (IsAttached())
+		{
+			logger.Warning("Ignoring attempt to reattach Transform on Entity [" + entity->Name() + "].");
+			return;
+		}
+
+		if (!entity)
+		{
+			logger.Warning("Ignoring attempt to attach Transform to nullptr Entity.");
+			return;
+		}
+		
+		if (entity->Transform() != this)
+		{
+			logger.Warning("Ignoring attempt to attach a second Transform to Entity [" + entity->Name() + "].");
+			return;
+		}
+
+		Component::Attach(entity);
+	}
+
+
+	auto Transform::Detach() -> void
+	{
+		if (IsAttached())
+		{
+			internal::Logger::Instance().Warning("Ignoring attempt to detach Transform on Entity [" + Entity()->Name() + "].");
+		}
+	}
 
 
 	auto Transform::CalculateLocalAxes() -> void

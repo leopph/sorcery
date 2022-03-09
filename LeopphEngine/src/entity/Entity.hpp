@@ -7,9 +7,9 @@
 
 #include <concepts>
 #include <memory>
+#include <span>
 #include <string>
 #include <utility>
-#include <vector>
 
 
 namespace leopph
@@ -20,48 +20,50 @@ namespace leopph
 	class Entity final : internal::Poelo
 	{
 		public:
-			// Creates a new Entity instance and returns a pointer to it.
-			// If the passed name is already in use, LeopphEngine generates an undefined sequence of characters and appends it to the desired name.
-			LEOPPHAPI static auto CreateEntity(std::string name = GenerateUnusedName()) -> Entity*;
-
-			// Destroys the passed in Entity.
-			// This also destroys attached Components.
-			// Leftover pointers to either of them will be dangling.
-			LEOPPHAPI static auto DestroyEntity(const Entity* entity) -> void;
-
-			// Returns a pointer to the Entity that's name is equal to the given string.
-			// Returns NULL if no such Entity exists.
-			LEOPPHAPI static auto FindEntity(const std::string& name) -> Entity*;
+			// Returns a pointer to the Entity with the passed name, or nullptr if not found.
+			LEOPPHAPI static
+			auto FindEntity(const std::string& name) -> Entity*;
 
 			// The Entity's name is a unique identifier.
-			constexpr auto Name() const noexcept -> auto&;
+			constexpr
+			auto Name() const noexcept -> auto&;
 
 			// The Entity's Transform describes its spatial properties.
-			LEOPPHAPI auto Transform() const -> Transform*;
+			[[nodiscard]] constexpr
+			auto Transform() const noexcept;
 
-			// Look for a Component of type T that is attached to the Entity.
-			// If there is none, NULL is returned.
-			// Otherwise, a pointer to the first matching Component is returned.
+			// Returns the first active Component of type T attached to the Entity the engine finds, or nullptr.
 			// There are no guarantees of the order of Components attached to the Entity.
 			template<std::derived_from<Component> T>
 			auto GetComponent() const -> T*;
 
-			// Attach a newly constructed Component of type T to the Entity.
-			// Returns a non-owning pointer the Component.
-			template<std::derived_from<Component> T, class... Args>
-			auto CreateComponent(Args&&... args);
+			// Attach an already existing Component to the Entity.
+			// Equivalent to calling component->Attach(this).
+			LEOPPHAPI
+			auto AttachComponent(Component* component) -> void;
 
-			// Remove the given Component from the Entity.
-			// The component is detached and destroyed.
-			LEOPPHAPI auto RemoveComponent(const Component* component) const -> void;
+			// Attach a newly constructed Component of type T to the Entity.
+			// Returns a pointer the Component.
+			// If the Component could not be attached, it will still be kept alive and returned unattached.
+			template<std::derived_from<Component> T, class... Args>
+			auto CreateAndAttachComponent(Args&&... args);
+
+			// Detach the given Component from the Entity.
+			LEOPPHAPI
+			auto DetachComponent(Component* component) const -> void;
 
 			// Activates all inactive Components attached to the Entity.
 			// Equivalent to calling Activate() on all attached inactive Components.
-			LEOPPHAPI auto ActivateAllComponents() const -> void;
+			LEOPPHAPI
+			auto ActivateAllComponents() const -> void;
 
 			// Deactivates all active Components attached to the Entity.
 			// Equivalent to calling Deactivate() on all attached active Components.
-			LEOPPHAPI auto DeactiveAllComponents() const -> void;
+			LEOPPHAPI
+			auto DeactiveAllComponents() const -> void;
+
+			LEOPPHAPI explicit
+			Entity(std::string name = GenerateUnusedName());
 
 			Entity(const Entity&) = delete;
 			auto operator=(const Entity&) -> void = delete;
@@ -69,24 +71,25 @@ namespace leopph
 			Entity(Entity&&) = delete;
 			auto operator=(Entity&&) -> void = delete;
 
+			// Detaches all Components, then unregisters.
 			~Entity() override;
 
 		private:
 			// Generate a name that is not used by any registered Entity at the time of calling.
 			// The function uses the passed prefix and appends arbitrary characters to its end.
-			LEOPPHAPI static auto GenerateUnusedName(const std::string& namePrefix = "Entity#") -> std::string;
-			static auto NameIsUnused(const std::string& name) -> bool;
+			LEOPPHAPI static
+			auto GenerateUnusedName(const std::string& namePrefix = "Entity#") -> std::string;
 
-			explicit Entity(std::string name);
+			static
+			auto NameIsUnused(const std::string& name) -> bool;
 
-			// Registers the passed Component in DataManager.
-			LEOPPHAPI auto RegisterComponent(std::unique_ptr<Component>&& component) const -> void;
-
-			// Returns a collection of Components attached to the Entity.
-			[[nodiscard]] LEOPPHAPI auto Components() const -> const std::vector<std::unique_ptr<Component>>&;
+			// The active Components attached to the Entity.
+			[[nodiscard]] LEOPPHAPI
+			auto Components() const -> std::span<Component* const>;
 
 			std::string m_Name;
-			mutable leopph::Transform* m_TransformCache;
+			// This has to be attached after registering the Entity.
+			leopph::Transform* m_Transform{new leopph::Transform{}};
 	};
 
 
@@ -96,13 +99,18 @@ namespace leopph
 	}
 
 
-	template<std::derived_from<Component> T, class... Args>
-	auto Entity::CreateComponent(Args&&... args)
+	constexpr auto Entity::Transform() const noexcept
 	{
-		auto component{std::make_unique<T>(this, std::forward<Args>(args)...)};
-		auto ret{component.get()};
-		RegisterComponent(std::move(component));
-		return ret;
+		return m_Transform;
+	}
+
+
+	template<std::derived_from<Component> T, class... Args>
+	auto Entity::CreateAndAttachComponent(Args&&... args)
+	{
+		const auto component{new T{std::forward<Args>(args)...}};
+		AttachComponent(component);
+		return component;
 	}
 
 
@@ -111,7 +119,7 @@ namespace leopph
 	{
 		for (const auto& component : Components())
 		{
-			if (const auto ret = dynamic_cast<T*>(component.get());
+			if (const auto ret = dynamic_cast<T*>(component);
 				ret != nullptr)
 			{
 				return ret;
@@ -123,5 +131,5 @@ namespace leopph
 
 	// Transforms cannot be explicitly created.
 	template<>
-	auto Entity::CreateComponent<Transform>() = delete;
+	auto Entity::CreateAndAttachComponent<Transform>() = delete;
 }

@@ -3,8 +3,7 @@
 #include <tuple>
 
 
-CameraController::CameraController(leopph::Entity* const entity) :
-	Behavior{entity}
+CameraController::CameraController()
 {
 	std::tie(m_LastX, m_LastY) = leopph::Input::GetMousePosition();
 }

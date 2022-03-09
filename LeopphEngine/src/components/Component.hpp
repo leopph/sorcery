@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../api/LeopphApi.hpp"
+#include "../data/Poelo.hpp"
 
 
 namespace leopph
@@ -10,38 +11,60 @@ namespace leopph
 	// Components are objects that are attached to Entities to provide additional functionality.
 	// They serve as a form of decoration to Entities and define their properties.
 	// Subclass this to provide your own properties to Entities.
-	class Component
+	class Component : public internal::Poelo
 	{
 		public:
-			// The Entity the Component is attached to.
-			[[nodiscard]] constexpr auto Entity() const noexcept;
+			// The Entity the Component is attached to, or nullptr if not attached.
+			[[nodiscard]] constexpr
+			auto Entity() const noexcept;
 
 			// Returns whether the Component is active.
-			// Active Components take part in internal calculations.
-			// Inactive Components do not.
-			[[nodiscard]] constexpr auto IsActive() const noexcept;
+			// Only attached active Components take part in internal calculations.
+			[[nodiscard]] constexpr
+			auto IsActive() const noexcept;
 
 			// Make the Component active.
-			// Active Components take part in internal calculations.
-			LEOPPHAPI virtual auto Activate() -> void;
+			// Only attached active Components take part in internal calculations.
+			LEOPPHAPI virtual
+			auto Activate() -> void;
 
 			// Make the Component inactive.
-			// Inactive Components do not take part in internal calculations.
-			LEOPPHAPI virtual auto Deactivate() -> void;
+			// Only attached active Components take part in internal calculations.
+			LEOPPHAPI virtual
+			auto Deactivate() -> void;
 
-			LEOPPHAPI virtual ~Component() = default;
+			// Attach the Component to the Entity.
+			// If the Component is already attached to an Entity, it first detaches itself.
+			// If the Component is already attached to the passed Entity, or the Entity is nullptr, the call is ignored.
+			// Only attached active Components take part in internal calculations.
+			LEOPPHAPI virtual
+			auto Attach(leopph::Entity* entity) -> void;
+
+			// Detach the Component from its Entity.
+			// If the Component is not attached, the function call is silently ignored.
+			// Only attached active Components take part in internal calculations.
+			LEOPPHAPI virtual
+			auto Detach() -> void;
+
+			// Returns whether the Component is attached to an Entity.
+			// Functionally equivalent to Entity() != nullptr.
+			// Only attached active Components take part in internal calculations.
+			[[nodiscard]] LEOPPHAPI
+			auto IsAttached() const -> bool;
+
+			Component(const Component& other) = delete;
+			auto operator=(const Component& other) -> Component& = delete;
+
+			Component(Component&& other) noexcept = delete;
+			auto operator=(Component&& other) noexcept -> Component& = delete;
+
+			LEOPPHAPI ~Component() override;
 
 		protected:
-			LEOPPHAPI explicit Component(leopph::Entity* entity);
-
-			Component(const Component& other) = default;
-			auto operator=(const Component& other) -> Component& = default;
-
-			Component(Component&& other) noexcept = default;
-			auto operator=(Component&& other) noexcept -> Component& = default;
+			Component() = default;
 
 		private:
-			leopph::Entity* m_Entity;
+			leopph::Entity* m_Entity{nullptr};
 			bool m_IsActive{true};
 	};
 

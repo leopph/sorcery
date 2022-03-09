@@ -3,8 +3,7 @@
 #include <utility>
 
 
-ComponentSwitch::ComponentSwitch(leopph::Entity* entity, std::vector<Component*> components) :
-	Behavior{entity},
+ComponentSwitch::ComponentSwitch(std::vector<Component*> components) :
 	m_Components{std::move(components)}
 {}
 

@@ -34,8 +34,7 @@ namespace leopph
 	}
 
 
-	DirectionalLight::DirectionalLight(leopph::Entity* const entity) :
-		Light{entity}
+	DirectionalLight::DirectionalLight()
 	{
 		internal::DataManager::Instance().RegisterActiveDirLight(this);
 	}

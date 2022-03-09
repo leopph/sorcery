@@ -8,7 +8,7 @@
 class ComponentSwitch final : public leopph::Behavior
 {
 	public:
-		ComponentSwitch(leopph::Entity* entity, std::vector<Component*> components);
+		explicit ComponentSwitch(std::vector<Component*> components);
 
 		auto OnFrameUpdate() -> void override;
 

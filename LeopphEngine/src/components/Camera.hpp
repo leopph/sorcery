@@ -83,7 +83,7 @@ namespace leopph
 			// If it was the current one, it will be set to nullptr.
 			LEOPPHAPI auto Deactivate() -> void override;
 
-			LEOPPHAPI explicit Camera(leopph::Entity* entity);
+			LEOPPHAPI Camera();
 
 			Camera(const Camera&) = delete;
 			auto operator=(const Camera&) -> void = delete;

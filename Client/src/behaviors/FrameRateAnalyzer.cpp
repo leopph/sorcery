@@ -6,8 +6,7 @@
 #include <numeric>
 
 
-FrameRateAnalyzer::FrameRateAnalyzer(leopph::Entity* const entity, const float pollInterval, const unsigned maxDataSets) :
-	Behavior{entity},
+FrameRateAnalyzer::FrameRateAnalyzer(const float pollInterval, const unsigned maxDataSets) :
 	m_MaxNumDataSets{maxDataSets},
 	m_PollInterval{pollInterval},
 	m_DeltaTime{0}

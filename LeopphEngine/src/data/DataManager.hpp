@@ -21,6 +21,7 @@
 #include <filesystem>
 #include <memory>
 #include <set>
+#include <span>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -85,28 +86,15 @@ namespace leopph::internal
 			// Returns a pointer to the stored Entity with the passed name, or nullptr.
 			[[nodiscard]] auto FindEntity(const std::string& name) -> Entity*;
 
-			// Returns a collection of active Components that are attached to the Entity pointed to by the passed pointer.
-			// Does NOT check whether the Entity is registered or not.
-			[[nodiscard]] auto ActiveComponentsOfEntity(const Entity* entity) const -> const std::vector<std::unique_ptr<Component>>&;
-			// Returns a collection of inactive Components that are attached to the Entity pointed to by the passed pointer.
-			// Does NOT check whether the Entity is registered or not.
-			[[nodiscard]] auto InactiveComponentsOfEntity(const Entity* entity) const -> const std::vector<std::unique_ptr<Component>>&;
+			// Adds the Component to the Entity's collection of active/inactive Components depending on the value of active.
+			auto RegisterComponentForEntity(const Entity* entity, Component* component, bool active) -> void;
 
-			// Adds the Component to the collection of active Components for the Component's Entity.
-			// Does NOT check for duplicates or whether the Entity is registered.
-			auto RegisterActiveComponentForEntity(std::unique_ptr<Component>&& component) -> void;
-			// Adds the Component to the collection of inactive Components for the Component's Entity.
-			// Does NOT check for duplicates or whether the Entity is registered.
-			auto RegisterInactiveComponentForEntity(std::unique_ptr<Component>&& component) -> void;
+			// Removes the Component from the Entity's collection of active/inactive Components depending on the value of active.
+			auto UnregisterComponentFromEntity(const Entity* entity, Component* component, bool active) -> void;
 
-			// Removes the passed component from the its Entity's collection of active Components.
-			// Returns the Component, or null if not found.
-			// Does NOT check whether the Entity is registered.
-			auto UnregisterActiveComponentFromEntity(const Component* component) -> std::unique_ptr<Component>;
-			// Removes the passed component from the its Entity's collection of inactive Components.
-			// Returns the Component, or null if not found.
-			// Does NOT check whether the Entity is registered.
-			auto UnregisterInactiveComponentFromEntity(const Component* component) -> std::unique_ptr<Component>;
+			[[nodiscard]]
+			// Returns the Entity's collection of active/inactive Components depending on the value of active.
+			auto ComponentsOfEntity(const Entity* entity, bool active) const -> std::span<Component* const>;
 
 			// Stores the passed pointer in the collection of active Behaviors.
 			// The function does NOT check for duplicates.
@@ -206,9 +194,9 @@ namespace leopph::internal
 				// Owning pointer to Entity
 				Entity* Entity;
 				// Owning pointers to active Components
-				std::vector<std::unique_ptr<Component>> ActiveComponents;
+				std::vector<Component*> ActiveComponents;
 				// Owning pointers to inactive Components
-				std::vector<std::unique_ptr<Component>> InactiveComponents;
+				std::vector<Component*> InactiveComponents;
 			};
 
 

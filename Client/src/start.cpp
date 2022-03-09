@@ -15,10 +15,11 @@ auto leopph::Init() -> void
 
 	Input::CursorMode(CursorState::Disabled);
 
-	const auto playerEntity = Entity::CreateEntity("player");
+	const auto playerEntity = new Entity{"player"};
 	playerEntity->Transform()->Rotate(Vector3::Up(), 90);
 
-	const auto camera{playerEntity->CreateComponent<Camera>()};
+	const auto camera{playerEntity->CreateAndAttachComponent<Camera>()};
+
 	camera->Background(Skybox{"skybox/megasun/left.hdr", "skybox/megasun/right.hdr", "skybox/megasun/top.hdr", "skybox/megasun/bottom.hdr", "skybox/megasun/front.hdr", "skybox/megasun/back.hdr"});
 
 	camera->NearClipPlane(0.3f);
@@ -26,43 +27,43 @@ auto leopph::Init() -> void
 
 	AmbientLight::Instance().Intensity(Vector3{0.05, 0.05, 0.05});
 
-	const auto dirLightEntity = Entity::CreateEntity("dirlight");
+	const auto dirLightEntity = new Entity{"dirlight"};
 	dirLightEntity->Transform()->Rotate(Vector3::Up(), 135, Space::World);
 	dirLightEntity->Transform()->Rotate(Vector3::Right(), 45, Space::Local);
-	const auto dirLight = dirLightEntity->CreateComponent<DirectionalLight>();
+	const auto dirLight = dirLightEntity->CreateAndAttachComponent<DirectionalLight>();
 	dirLight->Diffuse(Vector3{0.07, 0.07, 0.07});
 	dirLight->CastsShadow(true);
 
-	const auto group = Entity::CreateEntity();
+	const auto group = new Entity{};
 	group->Transform()->Translate(0, -3, 0);
 
-	const auto church = Entity::CreateEntity("church");
+	const auto church = new Entity{"church"};
 	church->Transform()->Parent(group);
 	church->Transform()->Rotate(Vector3::Right(), 90);
-	const auto churchModel = church->CreateComponent<Model>("models/church/ChristchurchGreyfriarsRuinGarden03.obj");
+	const auto churchModel = church->CreateAndAttachComponent<Model>("models/church/ChristchurchGreyfriarsRuinGarden03.obj");
 	churchModel->CastsShadow(true);
 
-	const auto lamp = Entity::CreateEntity("lamp");
+	const auto lamp = new Entity{"lamp"};
 	lamp->Transform()->Parent(group);
 	lamp->Transform()->Translate(0, 1.75, 0);
 	lamp->Transform()->Rescale(0.01f, 0.01f, 0.01f);
-	const auto lampModel = lamp->CreateComponent<Model>("models/lamp/scene.gltf");
+	const auto lampModel = lamp->CreateAndAttachComponent<Model>("models/lamp/scene.gltf");
 	lampModel->CastsShadow(true);
 
-	const auto pLightEntity = Entity::CreateEntity("plight");
+	const auto pLightEntity = new Entity{"plight"};
 	pLightEntity->Transform()->Parent(lamp);
 	pLightEntity->Transform()->Translate(-0.5, 3.25, -0.5, Space::Local);
-	const auto pLight = pLightEntity->CreateComponent<PointLight>();
+	const auto pLight = pLightEntity->CreateAndAttachComponent<PointLight>();
 	pLight->Range(30);
 	pLight->Constant(0.5f);
 	pLight->Linear(0.2f);
 	pLight->Quadratic(0.07f);
 	pLight->CastsShadow(true);
 
-	playerEntity->CreateComponent<CameraController>();
-	Entity::CreateEntity("fpscounter")->CreateComponent<FrameRateAnalyzer>(0.5f, 60);
-	Entity::CreateEntity("windowstester")->CreateComponent<WindowTester>();
-	Entity::CreateEntity("exiter")->CreateComponent<Exiter>();
-	Entity::CreateEntity("componentswitch")->CreateComponent<ComponentSwitch>(std::vector<Component*>{churchModel});
-	Entity::CreateEntity("flicker")->CreateComponent<demo::Flicker>(pLight, 1.2f, 0.05f);
+	playerEntity->CreateAndAttachComponent<CameraController>();
+	(new Entity{"fpscounter"})->CreateAndAttachComponent<FrameRateAnalyzer>(0.5f, 60u);
+	(new Entity{"windowstester"})->CreateAndAttachComponent<WindowTester>();
+	(new Entity{"exiter"})->CreateAndAttachComponent<Exiter>();
+	(new Entity{"componentswitch"})->CreateAndAttachComponent<ComponentSwitch>(std::vector<Component*>{churchModel});
+	(new Entity{"flicker"})->CreateAndAttachComponent<demo::Flicker>(pLight, 1.2f, 0.05f);
 }

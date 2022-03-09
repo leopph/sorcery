@@ -34,8 +34,7 @@ namespace leopph::internal
 	}
 
 
-	RenderComponent::RenderComponent(leopph::Entity* const entity, std::shared_ptr<const MeshDataGroup> meshDataGroup) :
-		Component{entity},
+	RenderComponent::RenderComponent(std::shared_ptr<const MeshDataGroup> meshDataGroup) :
 		m_Renderable{DataManager::Instance().CreateOrGetMeshGroup(std::move(meshDataGroup))}
 	{
 		DataManager::Instance().RegisterActiveInstanceForMeshGroup(m_Renderable, this);

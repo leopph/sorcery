@@ -13,7 +13,7 @@ namespace leopph
 	{
 		public:
 			// Load a Model from a file on disk.
-			LEOPPHAPI Model(leopph::Entity* entity, std::filesystem::path path);
+			LEOPPHAPI explicit Model(std::filesystem::path path);
 
 			Model(const Model& other) = delete;
 			auto operator=(const Model& other) -> Model& = delete;
@@ -37,5 +37,4 @@ namespace leopph
 	{
 		return m_Path;
 	}
-
 }
