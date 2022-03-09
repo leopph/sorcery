@@ -12,13 +12,13 @@ namespace leopph::internal
 	}
 
 
-	auto DataManager::Store(std::unique_ptr<PoeloBase> poelo) -> void
+	auto DataManager::Store(std::unique_ptr<Poelo> poelo) -> void
 	{
 		m_Poelos.insert(std::move(poelo));
 	}
 
 
-	auto DataManager::Destroy(const PoeloBase* poelo) -> bool
+	auto DataManager::Destroy(const Poelo* poelo) -> bool
 	{
 		if (const auto it{m_Poelos.find(poelo)}; it != m_Poelos.end())
 		{

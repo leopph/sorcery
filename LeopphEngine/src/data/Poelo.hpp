@@ -1,14 +1,10 @@
 #pragma once
 
-#include "PoeloBase.hpp"
-
-
 namespace leopph::internal
 {
 	// Program Or Explicit Lifetime Object.
 	// Base class for objects owned by LeopphEngine whose lifetime is the lifetime of the program, unless explicitly deleted.
-	template<typename T>
-	class Poelo : PoeloBase
+	class Poelo
 	{
 		public:
 			Poelo(const Poelo& other) = delete;
@@ -17,7 +13,7 @@ namespace leopph::internal
 			Poelo(Poelo&& other) noexcept = delete;
 			auto operator=(Poelo&& other) noexcept -> Poelo& = delete;
 
-			~Poelo() override = default;
+			virtual ~Poelo() = default;
 
 		protected:
 			// Pass an instance pointer to give its ownership to the engine.
@@ -29,18 +25,4 @@ namespace leopph::internal
 
 			Poelo() = default;
 	};
-
-
-	template<typename T>
-	auto Poelo<T>::TakeOwnership(Poelo<T>* poelo) -> void
-	{
-		Store(std::unique_ptr<PoeloBase>{poelo});
-	}
-
-
-	template<typename T>
-	auto Poelo<T>::Destroy(const Poelo* poelo) -> void
-	{
-		PoeloBase::Destroy(poelo);
-	}
 }

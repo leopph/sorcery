@@ -1,6 +1,6 @@
 #pragma once
 
-#include "PoeloBase.hpp"
+#include "Poelo.hpp"
 #include "../components/Behavior.hpp"
 #include "../components/Component.hpp"
 #include "../components/lighting/DirLight.hpp"
@@ -15,7 +15,7 @@
 #include "../rendering/geometry/MeshDataGroup.hpp"
 #include "../util/equal/PathedEqual.hpp"
 #include "../util/hash/PathedHash.hpp"
-#include "../util/less/PoeloBaseLess.hpp"
+#include "../util/less/PoeloLess.hpp"
 
 #include <algorithm>
 #include <filesystem>
@@ -35,11 +35,11 @@ namespace leopph::internal
 		public:
 			[[nodiscard]] static auto Instance() -> DataManager&;
 
-			// Takes ownership of the PoeloBase instance.
-			auto Store(std::unique_ptr<PoeloBase> poelo) -> void;
-			// Destroys the passed PoeloBase instance if found.
+			// Takes ownership of the Poelo instance.
+			auto Store(std::unique_ptr<Poelo> poelo) -> void;
+			// Destroys the passed Poelo instance if found.
 			// Returns whether deletion took place.
-			auto Destroy(const PoeloBase* poelo) -> bool;
+			auto Destroy(const Poelo* poelo) -> bool;
 
 			// Destroys everything.
 			auto Clear() -> void;
@@ -224,7 +224,7 @@ namespace leopph::internal
 
 
 			// All engine-owned objects.
-			std::set<std::unique_ptr<PoeloBase>, PoeloBaseLess> m_Poelos;
+			std::set<std::unique_ptr<Poelo>, PoeloLess> m_Poelos;
 
 
 			// Non-owning pointers to all MeshDataGroup instances.

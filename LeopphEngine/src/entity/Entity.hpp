@@ -17,7 +17,7 @@ namespace leopph
 	// Entities form the basis of the object hierarchy.
 	// They have spatial properties through an unremovable Transform component.
 	// They can also be decorated with custom Components.
-	class Entity final : internal::Poelo<Entity>
+	class Entity final : internal::Poelo
 	{
 		public:
 			// Creates a new Entity instance and returns a pointer to it.

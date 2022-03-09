@@ -176,7 +176,6 @@
     <ClInclude Include="src\components\lighting\SpotLight.hpp" />
     <ClInclude Include="src\components\rendering\RenderComponent.hpp" />
     <ClInclude Include="src\data\Poelo.hpp" />
-    <ClInclude Include="src\data\PoeloBase.hpp" />
     <ClInclude Include="src\entry\Init.hpp" />
     <ClInclude Include="src\entry\Entry.hpp" />
     <ClInclude Include="src\entry\Main.hpp" />
@@ -241,7 +240,7 @@
     <ClInclude Include="src\util\hash\PathedHash.hpp" />
     <ClInclude Include="src\util\hash\ShaderTypeHash.hpp" />
     <ClInclude Include="src\util\hash\StringHash.hpp" />
-    <ClInclude Include="src\util\less\PoeloBaseLess.hpp" />
+    <ClInclude Include="src\util\less\PoeloLess.hpp" />
     <ClInclude Include="src\util\less\StringLess.hpp" />
     <ClInclude Include="src\util\Logger.hpp" />
     <ClInclude Include="src\rendering\opengl\OpenGl.hpp" />
@@ -276,7 +275,7 @@
     <ClCompile Include="src\components\rendering\RenderComponent.cpp" />
     <ClCompile Include="src\config\Settings.cpp" />
     <ClCompile Include="src\data\DataManager.cpp" />
-    <ClCompile Include="src\data\PoeloBase.cpp" />
+    <ClCompile Include="src\data\Poelo.cpp" />
     <ClCompile Include="src\entry\Main.cpp" />
     <ClCompile Include="src\components\Transform.cpp" />
     <ClCompile Include="src\events\DirShadowResChangeEvent.cpp" />
@@ -319,7 +318,7 @@
     <ClCompile Include="src\util\hash\PathHash.cpp" />
     <ClCompile Include="src\util\hash\ShaderTypeHash.cpp" />
     <ClCompile Include="src\util\hash\StringHash.cpp" />
-    <ClCompile Include="src\util\less\PoeloBaseLess.cpp" />
+    <ClCompile Include="src\util\less\PoeloLess.cpp" />
     <ClCompile Include="src\util\less\StringLess.cpp" />
     <ClCompile Include="src\util\Logger.cpp" />
     <ClCompile Include="src\windowing\Window.cpp" />

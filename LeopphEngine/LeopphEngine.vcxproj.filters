@@ -68,8 +68,8 @@
     <ClCompile Include="src\threading\Worker.cpp" />
     <ClCompile Include="src\util\Exit.cpp" />
     <ClCompile Include="src\rendering\renderers\Renderer.cpp" />
-    <ClCompile Include="src\util\less\PoeloBaseLess.cpp" />
-    <ClCompile Include="src\data\PoeloBase.cpp" />
+    <ClCompile Include="src\util\less\PoeloLess.cpp" />
+    <ClCompile Include="src\data\Poelo.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\Behavior.hpp" />
@@ -169,8 +169,7 @@
     <ClInclude Include="src\util\Exit.hpp" />
     <ClInclude Include="src\rendering\renderers\Renderer.hpp" />
     <ClInclude Include="src\data\Poelo.hpp" />
-    <ClInclude Include="src\util\less\PoeloBaseLess.hpp" />
-    <ClInclude Include="src\data\PoeloBase.hpp" />
+    <ClInclude Include="src\util\less\PoeloLess.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\cpp.hint" />
