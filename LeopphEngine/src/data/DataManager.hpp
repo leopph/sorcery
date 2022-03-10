@@ -214,7 +214,6 @@ namespace leopph::internal
 			// All engine-owned objects.
 			std::set<std::unique_ptr<Poelo>, PoeloLess> m_Poelos;
 
-
 			// Non-owning pointers to all MeshDataGroup instances.
 			std::vector<MeshDataGroup*> m_MeshData;
 
@@ -267,10 +266,6 @@ namespace leopph::internal
 			[[nodiscard]] auto FindMeshGroupInternal(const GlMeshGroup* meshGroup) const -> decltype(m_Renderables)::const_iterator;
 			// Helper function to get const and non-const iterators depending on context.
 			[[nodiscard]] static auto FindMeshGroupInternalCommon(auto* self, const GlMeshGroup* meshGroup) -> decltype(auto);
-
-			// Find, erases, and returns the specified component from the passed vector.
-			// Returns nullptr if not found.
-			[[nodiscard]] static auto EraseComponentInternal(std::vector<std::unique_ptr<Component>>& components, const Component* component) -> std::unique_ptr<Component>;
 	};
 
 

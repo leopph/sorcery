@@ -54,7 +54,7 @@ namespace leopph::internal
 			~RenderComponent() noexcept override;
 
 		protected:
-			RenderComponent(std::shared_ptr<const MeshDataGroup> meshDataGroup);
+			explicit RenderComponent(std::shared_ptr<const MeshDataGroup> meshDataGroup);
 
 		private:
 			bool m_CastsShadow{false};

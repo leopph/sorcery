@@ -25,7 +25,7 @@ namespace leopph
 			auto FindEntity(const std::string& name) -> Entity*;
 
 			// The Entity's name is a unique identifier.
-			constexpr
+			[[nodiscard]] constexpr
 			auto Name() const noexcept -> auto&;
 
 			// The Entity's Transform describes its spatial properties.

@@ -415,19 +415,4 @@ namespace leopph::internal
 	{
 		return FindMeshGroupInternalCommon(this, meshGroup);
 	}
-
-
-	auto DataManager::EraseComponentInternal(std::vector<std::unique_ptr<Component>>& components, const Component* component) -> std::unique_ptr<Component>
-	{
-		for (auto it = components.begin(); it != components.end(); ++it)
-		{
-			if (it->get() == component)
-			{
-				auto ret{std::move(*it)};
-				components.erase(it);
-				return ret;
-			}
-		}
-		return nullptr;
-	}
 }
