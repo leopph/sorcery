@@ -16,6 +16,8 @@ namespace leopph::internal
 		m_IndexBuffer{},
 		m_Cubemap{}
 	{
+		stbi_set_flip_vertically_on_load(false);
+
 		auto allFilePathStrings{m_AllPaths.string()};
 		for (std::size_t separatorPos, faceIndex{0}; (separatorPos = allFilePathStrings.find(PATH_SEPARATOR)) != std::string::npos; allFilePathStrings.erase(0, separatorPos + PATH_SEPARATOR.length()), ++faceIndex)
 		{
@@ -57,7 +59,7 @@ namespace leopph::internal
 		// Setup vertex array
 		glCreateVertexArrays(1, &m_VertexArray);
 		glVertexArrayVertexBuffer(m_VertexArray, 0, m_VertexBuffer, 0, 3 * sizeof(decltype(CUBE_VERTICES)::value_type));
-		glVertexArrayElementBuffer(m_VertexArray,m_IndexBuffer);
+		glVertexArrayElementBuffer(m_VertexArray, m_IndexBuffer);
 
 		// Position attribute
 		glVertexArrayAttribFormat(m_VertexArray, 0, 3, GL_FLOAT, GL_FALSE, 0);
@@ -89,16 +91,16 @@ namespace leopph::internal
 	auto SkyboxImpl::BuildAllPaths(const std::filesystem::path& left, const std::filesystem::path& right, const std::filesystem::path& top, const std::filesystem::path& bottom, const std::filesystem::path& front, const std::filesystem::path& back) -> std::filesystem::path
 	{
 		return right.string()
-		           .append(PATH_SEPARATOR)
-		           .append(left.string())
-		           .append(PATH_SEPARATOR)
-		           .append(top.string())
-		           .append(PATH_SEPARATOR)
-		           .append(bottom.string())
-		           .append(PATH_SEPARATOR)
-		           .append(front.string())
-		           .append(PATH_SEPARATOR)
-		           .append(back.string());
+		            .append(PATH_SEPARATOR)
+		            .append(left.string())
+		            .append(PATH_SEPARATOR)
+		            .append(top.string())
+		            .append(PATH_SEPARATOR)
+		            .append(bottom.string())
+		            .append(PATH_SEPARATOR)
+		            .append(front.string())
+		            .append(PATH_SEPARATOR)
+		            .append(back.string());
 	}
 
 
