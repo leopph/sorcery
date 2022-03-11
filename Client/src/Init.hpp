@@ -1,13 +1,12 @@
 #pragma once
 
-#include <Leopph.hpp>
-#include <vector>
+#include "SceneSwitcher.hpp"
 
 
 namespace demo
 {
 	// Fills the passed vector with created entities
-	auto InitChurchScene(std::vector<leopph::Entity*>& createdEntities) -> void;
+	auto InitChurchScene(SceneSwitcher::Scene scene) -> void;
 	// Fills the passed vector with created entities
-	auto InitCometScene(std::vector<leopph::Entity*>& createdEntities) -> void;
+	auto InitCometScene(SceneSwitcher::Scene scene) -> void;
 }

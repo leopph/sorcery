@@ -3,7 +3,7 @@
 
 namespace demo
 {
-	void InitCometScene(std::vector<leopph::Entity*>& createdEntities)
+	void InitCometScene(const SceneSwitcher::Scene scene)
 	{
 		
 	}

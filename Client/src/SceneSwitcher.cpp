@@ -6,16 +6,26 @@
 
 namespace demo
 {
-	auto SceneSwitcher::RegisterScene(std::vector<leopph::Entity*> entities) -> std::size_t
+	auto SceneSwitcher::Scene::Add(leopph::Entity* const entity) const -> void
 	{
-		std::size_t id;
-		do
-		{
-			id = GenerateId();
-		}
-		while (m_Scenes.contains(id));
-		m_Scenes[id] = std::move(entities);
-		return id;
+		m_Pointer->second.push_back(entity);
+	}
+
+
+	auto SceneSwitcher::Scene::Id() const -> IdType
+	{
+		return m_Pointer->first;
+	}
+
+
+	SceneSwitcher::Scene::Scene(PointerType pointer) :
+		m_Pointer{pointer}
+	{}
+
+
+	auto SceneSwitcher::CreateScene() -> Scene
+	{
+		return Scene{&*m_Scenes.emplace(GenerateId(), SceneDataType{}).first};
 	}
 
 
@@ -44,9 +54,26 @@ namespace demo
 	}
 
 
-	auto SceneSwitcher::GenerateId() noexcept -> std::size_t
+	auto SceneSwitcher::ActivateScene(const Scene scene) -> void
 	{
-		static std::size_t nextId{0};
+		ActivateScene(scene.Id());
+	}
+
+
+	auto SceneSwitcher::ActiveScene() -> std::optional<SceneSwitcher::Scene>
+	{
+		if (!m_Active)
+		{
+			return {};
+		}
+
+		return Scene{&*m_Scenes.find(*m_Active)};
+	}
+
+
+	auto SceneSwitcher::GenerateId() noexcept -> SceneSwitcher::IdType
+	{
+		static IdType nextId{0};
 		return nextId++;
 	}
 }

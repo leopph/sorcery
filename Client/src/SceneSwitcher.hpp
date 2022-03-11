@@ -11,21 +11,50 @@ namespace demo
 {
 	class SceneSwitcher
 	{
+		private:
+			using IdType = std::size_t;
+			using SceneDataType = std::vector<leopph::Entity*>;
+
+			std::optional<IdType> m_Active;
+			std::unordered_map<IdType, SceneDataType> m_Scenes;
+
+			[[nodiscard]] static
+			auto GenerateId() noexcept -> IdType;
+
 		public:
-			// Registers the given entities as a scene.
-			// Returns the id given to the scene.
+			class Scene
+			{
+				friend class SceneSwitcher;
+
+				public:
+					auto Add(leopph::Entity* entity) const -> void;
+					[[nodiscard]]
+					auto Id() const -> IdType;
+
+				private:
+					using PointerType = decltype(m_Scenes)::value_type*;
+
+					explicit Scene(PointerType pointer);
+
+					PointerType m_Pointer;
+			};
+
+
+			// Create a Scene.
+			// The returned object is a proxy to internally stored data.
 			[[nodiscard]]
-			auto RegisterScene(std::vector<leopph::Entity*> entities) -> std::size_t;
+			auto CreateScene() -> Scene;
 
 			// Deactivates all components in the active scene if any,
 			// then activates all components in the scene with the passed id.
 			auto ActivateScene(std::size_t id) -> void;
+			// Deactivates all components in the active scene if any,
+			// then activates all components in the scene with the passed id.
+			auto ActivateScene(Scene scene) -> void;
 
-		private:
-			[[nodiscard]] static
-			auto GenerateId() noexcept -> std::size_t;
-
-			std::optional<std::size_t> m_Active;
-			std::unordered_map<std::size_t, std::vector<leopph::Entity*>> m_Scenes;
+			// Returns a Scene object representing the currently active scene.
+			// Returns an empty optional if no scene is active.
+			[[nodiscard]]
+			auto ActiveScene() -> std::optional<Scene>;
 	};
 }

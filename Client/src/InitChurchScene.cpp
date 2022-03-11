@@ -16,7 +16,7 @@ using leopph::Skybox;
 
 namespace demo
 {
-	auto InitChurchScene(std::vector<Entity*>& createdEntities) -> void
+	auto InitChurchScene(const SceneSwitcher::Scene scene) -> void
 	{
 		// Locate existing Entities
 		const auto player = Entity::FindEntity(PLAYER_ENTITY_NAME);
@@ -31,11 +31,11 @@ namespace demo
 
 		// Add new Entities to scene vector
 
-		createdEntities.push_back(group);
-		createdEntities.push_back(dirLightEntity);
-		createdEntities.push_back(church);
-		createdEntities.push_back(lamp);
-		createdEntities.push_back(pLightEntity);
+		scene.Add(group);
+		scene.Add(dirLightEntity);
+		scene.Add(church);
+		scene.Add(lamp);
+		scene.Add(pLightEntity);
 
 		// Set parental relations
 

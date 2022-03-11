@@ -3,13 +3,13 @@
 #include "Init.hpp"
 
 #include "Constants.hpp"
+#include "Registry.hpp"
 #include "SceneSwitcher.hpp"
 #include "behaviors/CameraController.hpp"
 #include "behaviors/Exiter.hpp"
 #include "behaviors/FrameRateAnalyzer.hpp"
 #include "behaviors/WindowTester.hpp"
 
-#include <algorithm>
 #include <Leopph.hpp>
 
 
@@ -28,14 +28,12 @@ auto leopph::Init() -> void
 	utilEnt->CreateAndAttachComponent<Exiter>();
 	utilEnt->CreateAndAttachComponent<WindowTester>();
 
-	std::vector<Entity*> churchScene;
-	std::vector<Entity*> cometScene;
+	demo::SceneSwitcher sceneSwitcher;
+	const auto churchScene = sceneSwitcher.CreateScene();
+	const auto cometScene = sceneSwitcher.CreateScene();
 
 	demo::InitChurchScene(churchScene);
 	demo::InitCometScene(cometScene);
 
-	demo::SceneSwitcher sceneSwitcher;
-	const auto churchId = sceneSwitcher.RegisterScene(churchScene);
-	const auto cometId = sceneSwitcher.RegisterScene(cometScene);
-	sceneSwitcher.ActivateScene(churchId);
+	sceneSwitcher.ActivateScene(churchScene);
 }
