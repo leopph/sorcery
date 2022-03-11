@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\start.cpp">
+    <ClCompile Include="src\Init.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\behaviors\FrameRateAnalyzer.cpp">
@@ -36,6 +36,15 @@
     <ClCompile Include="src\behaviors\Flicker.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\InitCometScene.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\InitChurchScene.cpp">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\SceneSwitcher.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\behaviors\FrameRateAnalyzer.hpp">
@@ -54,6 +63,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\behaviors\Flicker.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Init.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Constants.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\SceneSwitcher.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

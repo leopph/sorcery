@@ -145,7 +145,9 @@ ASAN_SYMBOLIZER_PATH=$(VC_ExecutablePath_x64)</LocalDebuggerEnvironment>
     <ClCompile Include="src\behaviors\Flicker.cpp" />
     <ClCompile Include="src\behaviors\FrameRateAnalyzer.cpp" />
     <ClCompile Include="src\behaviors\WindowTester.cpp" />
-    <ClCompile Include="src\start.cpp" />
+    <ClCompile Include="src\Init.cpp" />
+    <ClCompile Include="src\InitCometScene.cpp" />
+    <ClCompile Include="src\SceneSwitcher.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\LeopphEngine\LeopphEngine.vcxproj">
@@ -159,6 +161,10 @@ ASAN_SYMBOLIZER_PATH=$(VC_ExecutablePath_x64)</LocalDebuggerEnvironment>
     <ClInclude Include="src\behaviors\FrameRateAnalyzer.hpp" />
     <ClInclude Include="src\behaviors\ComponentSwitch.hpp" />
     <ClInclude Include="src\behaviors\WindowTester.hpp" />
+    <ClInclude Include="src\Constants.hpp" />
+    <ClInclude Include="src\Init.hpp" />
+    <ClCompile Include="src\InitChurchScene.cpp" />
+    <ClInclude Include="src\SceneSwitcher.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
