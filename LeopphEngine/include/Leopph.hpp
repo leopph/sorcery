@@ -12,6 +12,7 @@ See individual headers for more information.
 #include "../src/components/lighting/DirLight.hpp"
 #include "../src/components/lighting/PointLight.hpp"
 #include "../src/components/lighting/SpotLight.hpp"
+#include "../src/components/rendering/Cube.hpp"
 #include "../src/components/rendering/Model.hpp"
 #include "../src/components/rendering/Model.hpp"
 #include "../src/config/Settings.hpp"

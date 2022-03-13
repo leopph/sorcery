@@ -70,6 +70,7 @@
     <ClCompile Include="src\rendering\renderers\Renderer.cpp" />
     <ClCompile Include="src\util\less\PoeloLess.cpp" />
     <ClCompile Include="src\data\Poelo.cpp" />
+    <ClCompile Include="src\components\rendering\Cube.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\Behavior.hpp" />
@@ -170,6 +171,7 @@
     <ClInclude Include="src\rendering\renderers\Renderer.hpp" />
     <ClInclude Include="src\data\Poelo.hpp" />
     <ClInclude Include="src\util\less\PoeloLess.hpp" />
+    <ClInclude Include="src\components\rendering\Cube.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\cpp.hint" />
