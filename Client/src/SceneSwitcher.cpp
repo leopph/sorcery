@@ -6,7 +6,7 @@
 
 namespace demo
 {
-	auto SceneSwitcher::Scene::Add(leopph::Entity* const entity) const -> void
+	auto SceneSwitcher::Scene::Add(leopph::Entity* const entity) -> void
 	{
 		m_Pointer->second.push_back(entity);
 	}

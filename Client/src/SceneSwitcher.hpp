@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <Leopph.hpp>
+#include <Leopph.hpp>
 #include <optional>
 #include <unordered_map>
 #include <vector>
@@ -9,7 +10,7 @@
 
 namespace demo
 {
-	class SceneSwitcher
+	class SceneSwitcher : public leopph::Component
 	{
 		private:
 			using IdType = std::size_t;
@@ -27,7 +28,7 @@ namespace demo
 				friend class SceneSwitcher;
 
 				public:
-					auto Add(leopph::Entity* entity) const -> void;
+					auto Add(leopph::Entity* entity) -> void;
 					[[nodiscard]]
 					auto Id() const -> IdType;
 

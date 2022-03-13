@@ -48,9 +48,6 @@
     <ClCompile Include="src\TeleportGate.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Registry.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\behaviors\FrameRateAnalyzer.hpp">
@@ -81,9 +78,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\TeleportGate.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Registry.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -3,8 +3,8 @@
 #include "Init.hpp"
 
 #include "Constants.hpp"
-#include "Registry.hpp"
 #include "SceneSwitcher.hpp"
+#include "TeleportGate.hpp"
 #include "behaviors/CameraController.hpp"
 #include "behaviors/Exiter.hpp"
 #include "behaviors/FrameRateAnalyzer.hpp"
@@ -28,12 +28,17 @@ auto leopph::Init() -> void
 	utilEnt->CreateAndAttachComponent<Exiter>();
 	utilEnt->CreateAndAttachComponent<WindowTester>();
 
-	demo::SceneSwitcher sceneSwitcher;
-	const auto churchScene = sceneSwitcher.CreateScene();
-	const auto cometScene = sceneSwitcher.CreateScene();
+	const auto sceneSwitcherEnt = new Entity{demo::SCENE_SWITCHER_ENTITY_NAME};
+	const auto sceneSwitcher = sceneSwitcherEnt->CreateAndAttachComponent<demo::SceneSwitcher>();
 
-	demo::InitChurchScene(churchScene);
+	const auto teleport = new Entity{demo::TELEPORT_ENTITY_NAME};
+	teleport->CreateAndAttachComponent<demo::TeleportGate>(player, sceneSwitcher);
+
+	const auto churchScene = sceneSwitcher->CreateScene();
+	const auto cometScene = sceneSwitcher->CreateScene();
+
+	demo::InitChurchScene(churchScene, cometScene);
 	demo::InitCometScene(cometScene);
 
-	sceneSwitcher.ActivateScene(churchScene);
+	sceneSwitcher->ActivateScene(churchScene);
 }

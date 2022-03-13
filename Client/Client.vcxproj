@@ -147,7 +147,6 @@ ASAN_SYMBOLIZER_PATH=$(VC_ExecutablePath_x64)</LocalDebuggerEnvironment>
     <ClCompile Include="src\behaviors\WindowTester.cpp" />
     <ClCompile Include="src\Init.cpp" />
     <ClCompile Include="src\InitCometScene.cpp" />
-    <ClCompile Include="src\Registry.cpp" />
     <ClCompile Include="src\SceneSwitcher.cpp" />
     <ClCompile Include="src\TeleportGate.cpp" />
   </ItemGroup>
@@ -166,7 +165,6 @@ ASAN_SYMBOLIZER_PATH=$(VC_ExecutablePath_x64)</LocalDebuggerEnvironment>
     <ClInclude Include="src\Constants.hpp" />
     <ClInclude Include="src\Init.hpp" />
     <ClCompile Include="src\InitChurchScene.cpp" />
-    <ClInclude Include="src\Registry.hpp" />
     <ClInclude Include="src\SceneSwitcher.hpp" />
     <ClInclude Include="src\TeleportGate.hpp" />
   </ItemGroup>
