@@ -3,6 +3,8 @@
 #include "../data/DataManager.hpp"
 #include "../util/Logger.hpp"
 
+#include <algorithm>
+#include <array>
 #include <cstddef>
 
 
@@ -40,15 +42,15 @@ namespace leopph
 
 		Destroy(m_Transform); // Transform is a special case because it cannot be detached.
 
-		for (const auto component : dataManager.ComponentsOfEntity(this, true))
+		std::ranges::for_each(std::array{true, false}, [this, &dataManager](const auto active)
 		{
-			component->Detach();
-		}
-
-		for (const auto component : dataManager.ComponentsOfEntity(this, false))
-		{
-			component->Detach();
-		}
+			auto components = dataManager.ComponentsOfEntity(this, active);
+			// Detach erases itself from the component collection, so we iterate backwards to not cause element relocation
+			std::for_each(components.rbegin(), components.rend(), [](const auto component)
+			{
+				component->Detach();
+			});
+		});
 
 		dataManager.UnregisterEntity(this);
 	}
