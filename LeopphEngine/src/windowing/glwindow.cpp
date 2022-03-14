@@ -116,6 +116,9 @@ namespace leopph::internal
 		if (m_Fullscreen)
 		{
 			glfwSetWindowMonitor(m_Window, glfwGetPrimaryMonitor(), 0, 0, m_Width, m_Height, GLFW_DONT_CARE);
+			// The requested resolution might not be available in fullscreen mode
+			// so we query for the actual resolution we got.
+			glfwGetFramebufferSize(m_Window, &m_Width, &m_Height);
 		}
 		else
 		{
