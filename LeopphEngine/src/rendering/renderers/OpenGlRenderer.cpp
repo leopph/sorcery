@@ -20,11 +20,11 @@ namespace leopph::internal
 {
 	auto OpenGlRenderer::Create() -> std::unique_ptr<OpenGlRenderer>
 	{
-		switch (Settings::Instance().RenderingPipeline())
+		switch (Settings::Instance().GetGraphicsPipeline())
 		{
-			case Settings::RenderType::Forward:
+			case Settings::GraphicsPipeline::Forward:
 				return std::make_unique<ForwardOpenGlRenderer>();
-			case Settings::RenderType::Deferred:
+			case Settings::GraphicsPipeline::Deferred:
 				return std::make_unique<DeferredOpenGlRenderer>();
 		}
 

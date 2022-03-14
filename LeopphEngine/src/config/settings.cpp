@@ -1,6 +1,7 @@
 #include "Settings.hpp"
 
 #include "../events/DirShadowResChangeEvent.hpp"
+#include "../events/PointShadowResolutionEvent.hpp"
 #include "../events/SpotShadowResolutionEvent.hpp"
 #include "../events/handling/EventManager.hpp"
 #include "../util/Logger.hpp"
@@ -57,7 +58,31 @@ namespace leopph
 
 	auto Settings::CacheShaders() const -> bool
 	{
-		return !m_CacheLoc.empty();
+		return !m_ShaderCache.empty();
+	}
+
+
+	auto Settings::DirShadowResolution(std::span<const std::size_t> cascades) -> void
+	{
+		m_DirLightSettings.Res.assign(cascades.begin(), cascades.end());
+		m_Serialize = true;
+		EventManager::Instance().Send<internal::DirShadowResChangeEvent>(m_DirLightSettings.Res);
+	}
+
+
+	auto Settings::SpotShadowResolution(const std::size_t newRes) -> void
+	{
+		m_SpotLightSettings.Res = newRes;
+		m_Serialize = true;
+		EventManager::Instance().Send<internal::SpotShadowResolutionEvent>(m_SpotLightSettings.Res);
+	}
+
+
+	auto Settings::PointShadowResolution(const std::size_t newRes) noexcept -> void
+	{
+		m_PointLightSettings.Res = newRes;
+		m_Serialize = true;
+		EventManager::Instance().Send<internal::PointShadowResolutionEvent>(m_PointLightSettings.Res);
 	}
 
 
@@ -89,20 +114,6 @@ namespace leopph
 	}
 
 
-	auto Settings::Fullscreen() const noexcept -> bool
-	{
-		return m_WindowSettingsCache.Fullscreen;
-	}
-
-
-	auto Settings::Fullscreen(const bool newVal) noexcept -> void
-	{
-		m_WindowSettingsCache.Fullscreen = newVal;
-		Window::Instance()->Fullscreen(newVal);
-		m_Serialize = true;
-	}
-
-
 	auto Settings::RenderMultiplier() const noexcept -> float
 	{
 		return m_WindowSettingsCache.RenderMultiplier;
@@ -113,6 +124,20 @@ namespace leopph
 	{
 		m_WindowSettingsCache.RenderMultiplier = newMult;
 		Window::Instance()->RenderMultiplier(newMult);
+		m_Serialize = true;
+	}
+
+
+	auto Settings::Fullscreen() const noexcept -> bool
+	{
+		return m_WindowSettingsCache.Fullscreen;
+	}
+
+
+	auto Settings::Fullscreen(const bool newVal) noexcept -> void
+	{
+		m_WindowSettingsCache.Fullscreen = newVal;
+		Window::Instance()->Fullscreen(newVal);
 		m_Serialize = true;
 	}
 
@@ -131,43 +156,23 @@ namespace leopph
 	}
 
 
-	auto Settings::DirShadowRes(std::span<const std::size_t> cascades) -> void
-	{
-		m_DirShadowRes.assign(cascades.begin(), cascades.end());
-		EventManager::Instance().Send<internal::DirShadowResChangeEvent>(m_DirShadowRes);
-	}
-
-
-	auto Settings::DirShadowCascadeCount() const -> std::size_t
-	{
-		return m_DirShadowRes.size();
-	}
-
-
-	auto Settings::SpotLightShadowMapResolution(const std::size_t newRes) -> void
-	{
-		m_SpotShadowRes = newRes;
-		EventManager::Instance().Send<internal::SpotShadowResolutionEvent>(m_SpotShadowRes);
-	}
-
-
 	auto Settings::Serialize() const -> void
 	{
 		nlohmann::json json;
 
 		// Serialize common global settings
-		json[JSON_SHADER_LOC] = m_CacheLoc.string();
-		for (auto i = 0u; i < m_DirShadowRes.size(); i++)
+		json[JSON_SHADER_LOC] = m_ShaderCache.string();
+		json[JSON_API] = m_RenderingSettings.PendingApi;
+		json[JSON_PIPE] = m_RenderingSettings.PendingPipe;
+		for (auto i = 0u; i < m_DirLightSettings.Res.size(); i++)
 		{
-			json[JSON_DIR_SHADOW_RES][i] = m_DirShadowRes[i];
+			json[JSON_DIR_SHADOW_RES][i] = m_DirLightSettings.Res[i];
 		}
-		json[JSON_SPOT_SHADOW_RES] = m_SpotShadowRes;
-		json[JSON_POINT_SHADOW_RES] = m_PointShadowRes;
-		json[JSON_MAX_SPOT] = m_NumMaxSpot;
-		json[JSON_MAX_POINT] = m_NumMaxPoint;
-		json[JSON_API] = m_PendingApi;
-		json[JSON_PIPE] = m_PendingPipeline;
-		json[JSON_DIR_CORRECT] = m_DirShadowCascadeCorrection;
+		json[JSON_DIR_CORRECT] = m_DirLightSettings.Corr;
+		json[JSON_SPOT_SHADOW_RES] = m_SpotLightSettings.Res;
+		json[JSON_MAX_SPOT] = m_SpotLightSettings.MaxNum;
+		json[JSON_POINT_SHADOW_RES] = m_PointLightSettings.Res;
+		json[JSON_MAX_POINT] = m_PointLightSettings.MaxNum;
 
 		// Serialize window settings
 		json[JSON_RES_W] = m_WindowSettingsCache.Width;
@@ -197,21 +202,21 @@ namespace leopph
 			};
 
 			// Parse common global settings
-			m_CacheLoc = std::filesystem::path{json[JSON_SHADER_LOC].get<std::string>()};
-			m_DirShadowRes.clear();
+			m_ShaderCache = std::filesystem::path{json[JSON_SHADER_LOC].get<std::string>()};
+			m_RenderingSettings.Api = json[JSON_API];
+			m_RenderingSettings.PendingApi = m_RenderingSettings.Api;
+			m_RenderingSettings.Pipe = json[JSON_PIPE];
+			m_RenderingSettings.PendingPipe = m_RenderingSettings.Pipe;
+			m_DirLightSettings.Res.clear();
 			for (const auto& res : json[JSON_DIR_SHADOW_RES])
 			{
-				m_DirShadowRes.push_back(res);
+				m_DirLightSettings.Res.push_back(res);
 			}
-			m_SpotShadowRes = json[JSON_SPOT_SHADOW_RES];
-			m_PointShadowRes = json[JSON_POINT_SHADOW_RES];
-			m_NumMaxSpot = json[JSON_MAX_SPOT];
-			m_NumMaxPoint = json[JSON_MAX_POINT];
-			m_Api = json[JSON_API];
-			m_PendingApi = m_Api;
-			m_Pipeline = json[JSON_PIPE];
-			m_PendingPipeline = m_Pipeline;
-			m_DirShadowCascadeCorrection = json[JSON_DIR_CORRECT];
+			m_DirLightSettings.Corr = json[JSON_DIR_CORRECT];
+			m_SpotLightSettings.Res = json[JSON_SPOT_SHADOW_RES];
+			m_SpotLightSettings.MaxNum = json[JSON_MAX_SPOT];
+			m_PointLightSettings.Res = json[JSON_POINT_SHADOW_RES];
+			m_PointLightSettings.MaxNum = json[JSON_MAX_POINT];
 
 			// Parse window settings
 			m_WindowSettingsCache = WindowSettings

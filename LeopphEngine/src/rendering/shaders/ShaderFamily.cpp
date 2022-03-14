@@ -54,7 +54,7 @@ namespace leopph::internal
 		// Not found
 
 		// If caching
-		if (const auto cacheLoc{Settings::Instance().ShaderCacheLocation()};
+		if (const auto cacheLoc{Settings::Instance().ShaderCachePath()};
 			!cacheLoc.empty())
 		{
 			const auto permHash{decltype(m_Permutations)::hasher()(permStr)};

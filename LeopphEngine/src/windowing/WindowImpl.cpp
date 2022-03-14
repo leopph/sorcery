@@ -13,7 +13,7 @@ namespace leopph::internal
 	{
 		std::unique_ptr<WindowImpl> ret;
 
-		switch (Settings::Instance().RenderingApi())
+		switch (Settings::Instance().GetGraphicsApi())
 		{
 			case Settings::GraphicsApi::OpenGl:
 				 ret = std::make_unique<GlWindow>();

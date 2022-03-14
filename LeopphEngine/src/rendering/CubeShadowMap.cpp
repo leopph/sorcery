@@ -9,7 +9,7 @@ namespace leopph::internal
 		m_Framebuffer{},
 		m_Cubemap{},
 		m_DepthBuffer{},
-		m_Res{static_cast<GLsizei>(Settings::Instance().PointLightShadowMapResolution())}
+		m_Res{static_cast<GLsizei>(Settings::Instance().PointShadowResolution())}
 	{
 		glCreateFramebuffers(1, &m_Framebuffer);
 		glNamedFramebufferReadBuffer(m_Framebuffer, GL_NONE);
