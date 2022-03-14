@@ -1,14 +1,39 @@
 #include "GLFWAdapter.hpp"
 
+#include "../containers/Bimap.hpp"
+
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
+#include <functional>
 #include <unordered_map>
 
 
 namespace leopph::internal::glfw
 {
-	static const std::unordered_map<int, KeyCode> s_KeyCodes
+	static Bimap<int,
+	             CursorState,
+	             decltype([](const auto elem)
+	             {
+		             return std::hash<int>{}(static_cast<int>(elem));
+	             }),
+	             decltype([](const auto left, const auto right)
+	             {
+		             return left == right;
+	             }),
+	             #ifdef _DEBUG
+	             true>
+	             #else
+	             false>
+	#endif
+	s_CursorStates
+	{
+		{GLFW_CURSOR_NORMAL, CursorState::Shown},
+		{GLFW_CURSOR_HIDDEN, CursorState::Hidden},
+		{GLFW_CURSOR_DISABLED, CursorState::Disabled}
+	};
+
+	static std::unordered_map<int, KeyCode> s_KeyCodes
 	{
 		{GLFW_KEY_0, KeyCode::Zero},
 		{GLFW_KEY_1, KeyCode::One},
@@ -133,6 +158,18 @@ namespace leopph::internal::glfw
 	};
 
 
+	auto GetAbstractCursorState(const int glfwCursorState) -> CursorState
+	{
+		return s_CursorStates.At(glfwCursorState);
+	}
+
+
+	auto GetGlfwCursorState(const CursorState abstractCursorState) -> int
+	{
+		return s_CursorStates.At(abstractCursorState);
+	}
+
+
 	auto GetAbstractKeyCode(const int glfwKey) -> KeyCode
 	{
 		return s_KeyCodes.at(glfwKey);
@@ -143,5 +180,4 @@ namespace leopph::internal::glfw
 	{
 		return s_KeyStates.at(glfwKeyState);
 	}
-
 }

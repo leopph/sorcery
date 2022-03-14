@@ -12,7 +12,6 @@
 #include <glad/gl.h>
 
 #include <array>
-#include <map>
 #include <stdexcept>
 #include <utility>
 
@@ -21,9 +20,13 @@ namespace leopph::internal
 {
 	GlWindow::GlWindow() :
 		WindowImpl{},
-		m_Vsync{false},
+		m_Width{static_cast<int>(Settings::Instance().WindowWidth())},
+		m_Height{static_cast<int>(Settings::Instance().WindowHeight())},
+		m_Fullscreen{Settings::Instance().Fullscreen()},
+		m_Vsync{Settings::Instance().Vsync()},
 		m_ClrColor{},
-		m_RenderMult{1.f}
+		m_RenderMult{Settings::Instance().RenderMultiplier()}
+
 	{
 		if (!glfwInit())
 		{
@@ -40,17 +43,10 @@ namespace leopph::internal
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
 		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-		const auto& settings{Settings::Instance()};
-		m_Width = static_cast<int>(settings.WindowWidth());
-		m_Height = static_cast<int>(settings.WindowHeight());
-		m_Vsync = settings.Vsync();
-		m_RenderMult = settings.RenderMultiplier();
-		m_Fullscreen = settings.Fullscreen();
-
 		const auto monitor{m_Fullscreen ? glfwGetPrimaryMonitor() : nullptr};
 		m_Window = glfwCreateWindow(m_Width, m_Height, "GlWindow Title", monitor, nullptr);
 
-		if (m_Window == nullptr)
+		if (!m_Window)
 		{
 			const auto errMsg{"Failed to create GLFW window."};
 			Logger::Instance().Critical(errMsg);
@@ -62,6 +58,9 @@ namespace leopph::internal
 		glfwSetFramebufferSizeCallback(m_Window, FramebufferSizeCallback);
 		glfwSetKeyCallback(m_Window, KeyCallback);
 		glfwSetCursorPosCallback(m_Window, MouseCallback);
+
+		glfwSetWindowAttrib(m_Window, GLFW_RESIZABLE, GLFW_FALSE);
+		glfwSetWindowAttrib(m_Window, GLFW_AUTO_ICONIFY, GLFW_FALSE);
 
 		glfwSetCursorPos(m_Window, 0, 0);
 		glfwSwapInterval(m_Vsync);
@@ -156,27 +155,13 @@ namespace leopph::internal
 
 	auto GlWindow::CursorMode() const -> CursorState
 	{
-		static const std::map<decltype(GLFW_CURSOR_NORMAL), CursorState> cursorStates
-		{
-			{GLFW_CURSOR_NORMAL, CursorState::Shown},
-			{GLFW_CURSOR_HIDDEN, CursorState::Hidden},
-			{GLFW_CURSOR_DISABLED, CursorState::Disabled}
-		};
-
-		return cursorStates.at(glfwGetInputMode(this->m_Window, GLFW_CURSOR));
+		return glfw::GetAbstractCursorState(glfwGetInputMode(m_Window, GLFW_CURSOR));
 	}
 
 
 	auto GlWindow::CursorMode(const CursorState newState) -> void
 	{
-		static const std::map<CursorState, decltype(GLFW_CURSOR_NORMAL)> cursorStates
-		{
-			{CursorState::Shown, GLFW_CURSOR_NORMAL},
-			{CursorState::Hidden, GLFW_CURSOR_HIDDEN},
-			{CursorState::Disabled, GLFW_CURSOR_DISABLED}
-		};
-
-		glfwSetInputMode(this->m_Window, GLFW_CURSOR, cursorStates.at(newState));
+		glfwSetInputMode(m_Window, GLFW_CURSOR, glfw::GetGlfwCursorState(newState));
 	}
 
 
