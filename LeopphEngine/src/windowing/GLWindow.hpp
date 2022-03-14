@@ -64,9 +64,9 @@ namespace leopph::internal
 			auto operator=(GlWindow&& other) -> GlWindow& = delete;
 
 		private:
-			auto OnEventReceived(EventParamType event) -> void override;
+			auto SendWindowEvent() const -> void;
 
-			static auto FramebufferSizeCallback(GLFWwindow* window, int width, int height) -> void;
+			static auto FramebufferSizeCallback(GLFWwindow*, int width, int height) -> void;
 			static auto KeyCallback(GLFWwindow*, int key, int, int action, int) -> void;
 			static auto MouseCallback(GLFWwindow*, double x, double y) -> void;
 

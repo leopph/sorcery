@@ -1,8 +1,6 @@
 #pragma once
 
 #include "Window.hpp"
-#include "../events/WindowEvent.hpp"
-#include "../events/handling/EventReceiver.hpp"
 #include "../math/Vector.hpp"
 
 #include <memory>
@@ -10,7 +8,7 @@
 
 namespace leopph::internal
 {
-	class WindowImpl : public Window, public EventReceiver<WindowEvent>
+	class WindowImpl : public Window
 	{
 		public:
 			static auto Create() -> std::unique_ptr<WindowImpl>;

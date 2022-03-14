@@ -9,9 +9,9 @@ namespace leopph::internal
 	class WindowEvent final : public Event
 	{
 		public:
-			explicit WindowEvent(const Vector2& newScreenRes, float newResMult, bool vsync, bool fullscreen);
+			explicit WindowEvent(const Vector<unsigned, 2>& newScreenRes, float newResMult, bool vsync, bool fullscreen);
 
-			const Vector2 Resolution;
+			const Vector<unsigned, 2> Resolution;
 			const float RenderMultiplier;
 			const bool Vsync;
 			const bool Fullscreen;

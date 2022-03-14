@@ -168,6 +168,6 @@ namespace leopph
 
 	auto Camera::OnEventReceived(EventParamType event) -> void
 	{
-		m_AspectRatio = event.Resolution[0] / event.Resolution[1];
+		m_AspectRatio = static_cast<float>(event.Resolution[0]) / event.Resolution[1];
 	}
 }

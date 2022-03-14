@@ -42,13 +42,32 @@ namespace leopph
 			[[nodiscard]] constexpr
 			auto ShaderCacheLocation() noexcept -> const auto&;
 
+			// Set where on the disk shaders are cached after compilation.
+			// Setting this property to an empty path turns shader caching off and setting a valid value turns it on.
+			inline
+			auto ShaderCacheLocation(std::filesystem::path path) noexcept;
+
+			// Get whether shaders are cached after compilation, or recompiled during each run.
+			[[nodiscard]] LEOPPHAPI
+			auto CacheShaders() const -> bool;
+
 			// Get the currently used rendering technique.
 			[[nodiscard]] constexpr
 			auto RenderingPipeline() const noexcept;
 
+			// Set the currently used rendering technique.
+			// Your application must be restarted before the new value takes effect.
+			constexpr
+			auto RenderingPipeline(RenderType type) noexcept;
+
 			// Get the currently used rendering API.
 			[[nodiscard]] constexpr
 			auto RenderingApi() const noexcept;
+
+			// Set the currently used graphics API.
+			// Your application must be restarted before the new value takes effect.
+			constexpr
+			auto RenderingApi(GraphicsApi newApi) noexcept;
 
 			// Get the resolution of the shadow maps used by DirectionalLights.
 			// Resolutions are returned in the order of the cascades that use them.
@@ -57,79 +76,41 @@ namespace leopph
 			[[nodiscard]] constexpr
 			auto DirShadowRes() -> const auto&;
 
-			// Get the resolution of the shadows cast by SpotLights.
-			// Higher values produce sharper shadows but require more VRAM.
-			[[nodiscard]] constexpr
-			auto SpotLightShadowMapResolution() const noexcept;
-
-			// Get the resolution of the shadows cast by PointLights.
-			// Higher values produce sharper shadows but require more VRAM.
-			[[nodiscard]] constexpr auto PointLightShadowMapResolution() const noexcept;
-
-			// Get the maximum number of SpotLights that will used in lighting calculations.
-			// If there are more SpotLights in the scene than this number, LeopphEngine uses the ones closest to the active Camera.
-			// Higher values mean more detailed lighting but can significantly reduce performance.
-			[[nodiscard]] constexpr auto MaxSpotLightCount() const noexcept;
-
-			// Get the maximum number of PointLights that will used in lighting calculations.
-			// If there are more PointLights in the scene than this number, LeopphEngine uses the ones closest to the active Camera.
-			// Higher values mean more detailed lighting but can significantly reduce performance.
-			[[nodiscard]] constexpr
-			auto MaxPointLightCount() const noexcept;
+			// Set the resolution of the shadow maps used by DirectionalLights.
+			// Resolutions are accepted in the order of the cascades that use them.
+			// More values mean more cascade splits.
+			// Higher values produce better quality shadows but increase VRAM and computation costs.
+			LEOPPHAPI
+			auto DirShadowRes(std::span<const std::size_t> cascades) -> void;
 
 			// Get the correction factor when calculating shadow cascade bounds for DirectionalLights.
 			[[nodiscard]] constexpr
 			auto DirLightShadowCascadeCorrection() const noexcept;
 
-			// Get the width of the current window. This is the same as Window::Width.
-			[[nodiscard]] constexpr
-			auto WindowWidth() const noexcept;
-
-			// Get the height of the current window. This is the same as Window::Height.
-			[[nodiscard]] constexpr
-			auto WindowHeight() const noexcept;
-
-			// Get whether the current window has exclusive access to the monitor. This is the same as Window::Fullscreen.
-			[[nodiscard]] constexpr
-			auto Fullscreen() const noexcept;
-
-			// Get the current render multiplier. This is the same as Window::RenderMultiplier.
-			[[nodiscard]] constexpr
-			auto RenderMultiplier() const noexcept;
-
-			// Get whether shaders are cached after compilation, or recompiled during each run.
-			[[nodiscard]] LEOPPHAPI
-			auto CacheShaders() const -> bool;
-
-			// Get whether Vsync is turned on.
-			// This is exactly the same value as what Window::Vsync returns.
-			[[nodiscard]] LEOPPHAPI
-			auto Vsync() const -> bool;
+			// Set the correction factor when calculating shadow cascade bounds for DirectionalLights.
+			constexpr
+			auto DirLightShadowCascadeCorrection(float newCor) noexcept;
 
 			// Get the current number of shadow cascades DirectionalLights use.
 			// This is the same as the size of the container set and returned by Settings::DirShadowRes.
 			[[nodiscard]] LEOPPHAPI
 			auto DirShadowCascadeCount() const -> std::size_t;
 
-			// Set where on the disk shaders are cached after compilation.
-			// Setting this property to an empty path turns shader caching off and setting a valid value turns it on.
-			inline
-			auto ShaderCacheLocation(std::filesystem::path path) noexcept;
-
-			// Set the currently used rendering technique.
-			// Your application must be restarted before the new value takes effect.
-			constexpr
-			auto RenderingPipeline(RenderType type) noexcept;
-
-			// Set the currently used graphics API.
-			// Your application must be restarted before the new value takes effect.
-			constexpr
-			auto RenderingApi(GraphicsApi newApi) noexcept;
-
-			// Set the resolution of the shadows cast by PointLights.
+			// Get the resolution of the shadows cast by SpotLights.
 			// Higher values produce sharper shadows but require more VRAM.
-			constexpr
-			auto PointLightShadowMapResolution(std::size_t newRes) noexcept;
+			[[nodiscard]] constexpr
+			auto SpotLightShadowMapResolution() const noexcept;
+
+			// Set the resolution of the shadows cast by SpotLights.
+			// Higher values produce sharper shadows but require more VRAM.
+			LEOPPHAPI
+			auto SpotLightShadowMapResolution(std::size_t newRes) -> void;
+
+			// Get the maximum number of SpotLights that will used in lighting calculations.
+			// If there are more SpotLights in the scene than this number, LeopphEngine uses the ones closest to the active Camera.
+			// Higher values mean more detailed lighting but can significantly reduce performance.
+			[[nodiscard]] constexpr
+			auto MaxSpotLightCount() const noexcept;
 
 			// Set the maximum number of SpotLights that will used in lighting calculations.
 			// If there are more SpotLights in the scene than this number, LeopphEngine uses the ones closest to the active Camera.
@@ -137,45 +118,69 @@ namespace leopph
 			constexpr
 			auto MaxSpotLightCount(std::size_t newCount) noexcept;
 
+			// Get the resolution of the shadows cast by PointLights.
+			// Higher values produce sharper shadows but require more VRAM.
+			[[nodiscard]] constexpr
+			auto PointLightShadowMapResolution() const noexcept;
+
+			// Set the resolution of the shadows cast by PointLights.
+			// Higher values produce sharper shadows but require more VRAM.
+			constexpr
+			auto PointLightShadowMapResolution(std::size_t newRes) noexcept;
+
+			// Get the maximum number of PointLights that will used in lighting calculations.
+			// If there are more PointLights in the scene than this number, LeopphEngine uses the ones closest to the active Camera.
+			// Higher values mean more detailed lighting but can significantly reduce performance.
+			[[nodiscard]] constexpr
+			auto MaxPointLightCount() const noexcept;
+
 			// Set the maximum number of PointLights that will used in lighting calculations.
 			// If there are more PointLights in the scene than this number, LeopphEngine uses the ones closest to the active Camera.
 			// Higher values mean more detailed lighting but can significantly reduce performance.
 			constexpr
 			auto MaxPointLightCount(std::size_t newCount) noexcept;
 
-			// Set the correction factor when calculating shadow cascade bounds for DirectionalLights.
-			constexpr
-			auto DirLightShadowCascadeCorrection(float newCor) noexcept;
+			// Get the width of the current window. This is the same as Window::Width.
+			[[nodiscard]] LEOPPHAPI
+			auto WindowWidth() const noexcept -> unsigned;
 
 			// Set the width of the current window. This is the same as Window::Width.
 			LEOPPHAPI
-			auto WindowWidth(float newWidth) noexcept -> void;
+			auto WindowWidth(unsigned newWidth) noexcept -> void;
+
+			// Get the height of the current window. This is the same as Window::Height.
+			[[nodiscard]] LEOPPHAPI
+			auto WindowHeight() const noexcept -> unsigned;
 
 			// Set the height of the current window. This is the same as Window::Height.
 			LEOPPHAPI
-			auto WindowHeight(float newHeight) noexcept -> void;
+			auto WindowHeight(unsigned newHeight) noexcept -> void;
+
+			// Get whether the current window has exclusive access to the monitor. This is the same as Window::Fullscreen.
+			[[nodiscard]] LEOPPHAPI
+			auto Fullscreen() const noexcept -> bool;
 
 			// Set whether the window should have exclusive access to the monitor. This is the same as Window::Fullscreen.
 			LEOPPHAPI
 			auto Fullscreen(bool newVal) noexcept -> void;
 
+			// Get the current render multiplier. This is the same as Window::RenderMultiplier.
+			[[nodiscard]] LEOPPHAPI
+			auto RenderMultiplier() const noexcept -> float;
+
 			// Set the render multiplier. This is the same as Window::RenderMultiplier.
 			LEOPPHAPI
 			auto RenderMultiplier(float newMult) noexcept -> void;
 
+			// Get whether Vsync is turned on.
+			// This is exactly the same value as what Window::Vsync returns.
+			[[nodiscard]] LEOPPHAPI
+			auto Vsync() const -> bool;
+
 			// Set whether Vsync is turned on.
 			// This has exactly the same effect as using Window::Vsync.
-			LEOPPHAPI auto Vsync(bool value) -> void;
-
-			// Set the resolution of the shadow maps used by DirectionalLights.
-			// Resolutions are accepted in the order of the cascades that use them.
-			// More values mean more cascade splits.
-			// Higher values produce better quality shadows but increase VRAM and computation costs.
-			LEOPPHAPI auto DirShadowRes(std::span<const std::size_t> cascades) -> void;
-
-			// Set the resolution of the shadows cast by SpotLights.
-			// Higher values produce sharper shadows but require more VRAM.
-			LEOPPHAPI auto SpotLightShadowMapResolution(std::size_t newRes) -> void;
+			LEOPPHAPI
+			auto Vsync(bool newVal) -> void;
 
 			Settings(const Settings& other) = delete;
 			auto operator=(const Settings& other) -> Settings& = delete;
@@ -189,8 +194,22 @@ namespace leopph
 			Settings();
 			auto Serialize() const -> void;
 			auto Deserialize() -> void;
+			// If serialization needs to happen, we do it at the end of frame.
 			auto OnEventReceived(EventReceiver<internal::FrameEndedEvent>::EventParamType) -> void override;
+			// Updates local window settings cache when serializable window configuration changes happen.
 			auto OnEventReceived(EventReceiver<internal::WindowEvent>::EventParamType event) -> void override;
+
+			// Cache to store serializable window configs.
+			// Needs to be kept in sync with Window::Instance!
+			struct WindowSettings
+			{
+				unsigned Width{960};
+				unsigned Height{540};
+				float RenderMultiplier{1};
+				bool Fullscreen{false};
+				bool Vsync{false};
+			} m_WindowSettingsCache;
+
 
 			std::filesystem::path m_CacheLoc;
 			std::vector<std::size_t> m_DirShadowRes{4096, 2048, 1024};
@@ -204,10 +223,6 @@ namespace leopph
 			RenderType m_PendingPipeline{m_Pipeline};
 			float m_DirShadowCascadeCorrection{.75f};
 			static std::filesystem::path s_FilePath;
-			bool m_Vsync{false};
-			Vector2 m_WindowRes{960, 540};
-			float m_RenderMult{1};
-			bool m_Fullscreen{false};
 
 			// When a value changes this is set to true
 			// Serialization will happen at the end of the frame
@@ -224,7 +239,7 @@ namespace leopph
 			constexpr static const char* JSON_VSYNC = "vsync";
 			constexpr static const char* JSON_RES_W = "resW";
 			constexpr static const char* JSON_RES_H = "resH";
-			constexpr static const char* JSON_RES_MULT = "resMult";
+			constexpr static const char* JSON_REND_MULT = "resMult";
 			constexpr static const char* JSON_FULLSCREEN = "fullscreen";
 	};
 
@@ -280,30 +295,6 @@ namespace leopph
 	constexpr auto Settings::DirLightShadowCascadeCorrection() const noexcept
 	{
 		return m_DirShadowCascadeCorrection;
-	}
-
-
-	constexpr auto Settings::WindowWidth() const noexcept
-	{
-		return m_WindowRes[0];
-	}
-
-
-	constexpr auto Settings::WindowHeight() const noexcept
-	{
-		return m_WindowRes[1];
-	}
-
-
-	constexpr auto Settings::Fullscreen() const noexcept
-	{
-		return m_Fullscreen;
-	}
-
-
-	constexpr auto Settings::RenderMultiplier() const noexcept
-	{
-		return m_RenderMult;
 	}
 
 

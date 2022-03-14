@@ -60,7 +60,7 @@ namespace leopph::internal
 		glfwSetCursorPosCallback(m_Window, MouseCallback);
 
 		glfwSetWindowAttrib(m_Window, GLFW_RESIZABLE, GLFW_FALSE);
-		glfwSetWindowAttrib(m_Window, GLFW_AUTO_ICONIFY, GLFW_FALSE);
+		glfwSetWindowAttrib(m_Window, GLFW_AUTO_ICONIFY, GLFW_TRUE);
 
 		glfwSetCursorPos(m_Window, 0, 0);
 		glfwSwapInterval(m_Vsync);
@@ -85,6 +85,7 @@ namespace leopph::internal
 	{
 		m_Width = static_cast<int>(newWidth);
 		glfwSetWindowSize(m_Window, m_Width, m_Height);
+		SendWindowEvent();
 	}
 
 
@@ -98,6 +99,7 @@ namespace leopph::internal
 	{
 		m_Height = static_cast<int>(newHeight);
 		glfwSetWindowSize(m_Window, m_Width, m_Height);
+		SendWindowEvent();
 	}
 
 
@@ -110,8 +112,18 @@ namespace leopph::internal
 	auto GlWindow::Fullscreen(const bool newValue) -> void
 	{
 		m_Fullscreen = newValue;
-		const auto monitor{newValue ? glfwGetPrimaryMonitor() : nullptr};
-		glfwSetWindowMonitor(m_Window, monitor, 0, 0, m_Width, m_Height, GLFW_DONT_CARE);
+
+		if (m_Fullscreen)
+		{
+			glfwSetWindowMonitor(m_Window, glfwGetPrimaryMonitor(), 0, 0, m_Width, m_Height, GLFW_DONT_CARE);
+		}
+		else
+		{
+			glfwSetWindowMonitor(m_Window, nullptr, 0, 0, m_Width, m_Height, GLFW_DONT_CARE);
+			const auto vidMode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+			glfwSetWindowPos(m_Window, static_cast<int>(static_cast<float>(vidMode->width - m_Width) / 2.f), static_cast<int>(static_cast<float>(vidMode->height - m_Height) / 2.f));
+		}
+		SendWindowEvent();
 	}
 
 
@@ -124,7 +136,8 @@ namespace leopph::internal
 	auto GlWindow::Vsync(const bool newValue) -> void
 	{
 		m_Vsync = newValue;
-		glfwSwapInterval(m_Vsync ? 1 : 0);
+		glfwSwapInterval(m_Vsync);
+		SendWindowEvent();
 	}
 
 
@@ -174,7 +187,7 @@ namespace leopph::internal
 	auto GlWindow::RenderMultiplier(const float newMult) -> void
 	{
 		m_RenderMult = newMult;
-		EventManager::Instance().Send<WindowEvent>(Vector2{m_Width, m_Height}, m_RenderMult, m_Vsync, m_Fullscreen);
+		SendWindowEvent();
 	}
 
 
@@ -209,25 +222,15 @@ namespace leopph::internal
 	}
 
 
-	auto GlWindow::OnEventReceived(EventParamType event) -> void
+	auto GlWindow::SendWindowEvent() const -> void
 	{
-		m_Fullscreen = event.Fullscreen;
-		m_Vsync = event.Vsync;
-		m_RenderMult = event.RenderMultiplier;
-		m_Width = static_cast<int>(event.Resolution[0]);
-		m_Height = static_cast<int>(event.Resolution[1]);
+		EventManager::Instance().Send<WindowEvent>(Vector<unsigned, 2>{m_Width, m_Height}, m_RenderMult, m_Vsync, m_Fullscreen);
 	}
 
 
-	auto GlWindow::FramebufferSizeCallback(GLFWwindow* const window, const int width, const int height) -> void
+	auto GlWindow::FramebufferSizeCallback(GLFWwindow* const, const int width, const int height) -> void
 	{
 		glViewport(0, 0, width, height);
-
-		const auto instance = static_cast<GlWindow*>(glfwGetWindowUserPointer(window));
-		instance->m_Width = width;
-		instance->m_Height = height;
-
-		EventManager::Instance().Send<WindowEvent>(Vector2{width, height}, instance->RenderMultiplier(), instance->m_Vsync, instance->m_Fullscreen);
 	}
 
 
