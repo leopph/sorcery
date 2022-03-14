@@ -5,7 +5,6 @@
 #include "WindowImpl.hpp"
 #include "../input/KeyCode.hpp"
 #include "../input/KeyState.hpp"
-#include "../misc/Color.hpp"
 
 #include <GLFW/glfw3.h>
 
@@ -69,15 +68,11 @@ namespace leopph::internal
 			auto operator=(GlWindow&& other) -> GlWindow& = delete;
 
 		private:
-			auto InitKeys() -> void override;
 			auto OnEventReceived(EventParamType event) -> void override;
 
 			static auto FramebufferSizeCallback(GLFWwindow* window, int width, int height) -> void;
 			static auto KeyCallback(GLFWwindow*, int key, int, int action, int) -> void;
 			static auto MouseCallback(GLFWwindow*, double x, double y) -> void;
-
-			const static std::unordered_map<int, KeyState> s_KeyStates;
-			const static std::unordered_map<int, KeyCode> s_KeyCodes;
 
 			GLFWwindow* m_Window;
 			int m_Width;

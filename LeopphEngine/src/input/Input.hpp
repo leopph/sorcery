@@ -9,7 +9,7 @@
 #include "../events/MouseEvent.hpp"
 #include "../events/handling/EventReceiverHandle.hpp"
 
-#include <map>
+#include <unordered_map>
 #include <utility>
 
 
@@ -41,11 +41,16 @@ namespace leopph
 			LEOPPHAPI static auto CursorMode(CursorState newState) -> void;
 
 		private:
-			static std::map<KeyCode, KeyState> s_KeyStates;
-			static std::pair<float, float> s_MousePos;
+			// Returns the keystate mapped to the keycode.
+			// Inserts KeyState::Released if not found.
+			// Use this to read key states.
+			[[nodiscard]] static
+			auto InternalGetKeyState(KeyCode keyCode) noexcept -> KeyState;
 
-			static EventReceiverHandle<internal::KeyEvent> keyEventReceiver;
-			static EventReceiverHandle<internal::MouseEvent> mouseEventReceiver;
-			static EventReceiverHandle<internal::FrameEndedEvent> frameBeginsEventReceiver;
+			static EventReceiverHandle<internal::KeyEvent> s_KeyEventReceiver;
+			static EventReceiverHandle<internal::MouseEvent> s_MouseEventReceiver;
+			static EventReceiverHandle<internal::FrameEndedEvent> s_FrameBeginsEventReceiver;
+			static std::unordered_map<KeyCode, KeyState> s_KeyStates;
+			static std::pair<float, float> s_MousePos;
 	};
 }

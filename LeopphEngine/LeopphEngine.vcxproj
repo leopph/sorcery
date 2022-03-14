@@ -224,6 +224,7 @@
     <ClInclude Include="src\threading\SpinLock.hpp" />
     <ClInclude Include="src\threading\Worker.hpp" />
     <ClInclude Include="src\timing\TimeImpl.hpp" />
+    <ClInclude Include="src\util\api_adapters\GLFWAdapter.hpp" />
     <ClInclude Include="src\util\concepts\Idable.hpp" />
     <ClInclude Include="src\util\concepts\Pathed.hpp" />
     <ClInclude Include="src\util\concepts\Pointer.hpp" />
@@ -314,6 +315,7 @@
     <ClCompile Include="src\threading\SpinLock.cpp" />
     <ClCompile Include="src\threading\Worker.cpp" />
     <ClCompile Include="src\timing\TimeImpl.cpp" />
+    <ClCompile Include="src\util\api_adapters\GLFWAdapter.cpp" />
     <ClCompile Include="src\util\equal\ShaderTypeEqual.cpp" />
     <ClCompile Include="src\util\equal\StringEqual.cpp" />
     <ClCompile Include="src\util\Exit.cpp" />

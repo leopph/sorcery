@@ -26,7 +26,6 @@ namespace leopph::internal
 			throw std::runtime_error{errMsg};
 		}
 
-		ret->InitKeys();
 		return ret;
 	}
 }
