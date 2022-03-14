@@ -136,7 +136,7 @@ namespace leopph::internal
 	}
 
 
-	auto CascadedShadowMap::OnEventReceived(const DirShadowResChangeEvent& event) -> void
+	auto CascadedShadowMap::OnEventReceived(const DirShadowEvent& event) -> void
 	{
 		DeinitShadowMaps();
 		InitShadowMaps(event.Resolutions);

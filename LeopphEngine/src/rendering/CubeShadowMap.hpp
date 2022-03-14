@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../events/PointShadowResolutionEvent.hpp"
+#include "../events/PointShadowEvent.hpp"
 #include "../events/handling/EventReceiver.hpp"
 #include "../rendering/shaders/ShaderProgram.hpp"
 
@@ -12,7 +12,7 @@
 
 namespace leopph::internal
 {
-	class CubeShadowMap final : EventReceiver<PointShadowResolutionEvent>
+	class CubeShadowMap final : EventReceiver<PointShadowEvent>
 	{
 		public:
 			CubeShadowMap();

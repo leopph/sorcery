@@ -7,11 +7,11 @@
 
 namespace leopph::internal
 {
+	// An event representing a key status change.
 	struct KeyEvent final : Event
 	{
-		const KeyCode keyCode;
-		const KeyState keyState;
-
 		KeyEvent(KeyCode keyCode, KeyState keyState);
+		KeyCode KeyCode;
+		KeyState KeyState;
 	};
 }

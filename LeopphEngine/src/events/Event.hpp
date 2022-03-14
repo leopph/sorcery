@@ -7,15 +7,15 @@ namespace leopph
 	class Event
 	{
 		public:
-			virtual ~Event() = 0;
-
-		protected:
-			Event() = default;
-
 			Event(const Event& other) = default;
 			auto operator=(const Event& other) -> Event& = default;
 
 			Event(Event&& other) noexcept = default;
 			auto operator=(Event&& other) noexcept -> Event& = default;
+
+			virtual ~Event() = 0;
+
+		protected:
+			Event() = default;
 	};
 }

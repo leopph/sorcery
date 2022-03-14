@@ -4,7 +4,7 @@
 #include "KeyCode.hpp"
 #include "KeyState.hpp"
 #include "../api/LeopphApi.hpp"
-#include "../events/FrameEndEvent.hpp"
+#include "../events/FrameCompleteEvent.hpp"
 #include "../events/KeyEvent.hpp"
 #include "../events/MouseEvent.hpp"
 #include "../events/handling/EventReceiverHandle.hpp"
@@ -49,7 +49,7 @@ namespace leopph
 
 			static EventReceiverHandle<internal::KeyEvent> s_KeyEventReceiver;
 			static EventReceiverHandle<internal::MouseEvent> s_MouseEventReceiver;
-			static EventReceiverHandle<internal::FrameEndedEvent> s_FrameBeginsEventReceiver;
+			static EventReceiverHandle<internal::FrameCompleteEvent> s_FrameBeginsEventReceiver;
 			static std::unordered_map<KeyCode, KeyState> s_KeyStates;
 			static std::pair<float, float> s_MousePos;
 	};

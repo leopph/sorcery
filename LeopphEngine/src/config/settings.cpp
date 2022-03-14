@@ -1,8 +1,8 @@
 #include "Settings.hpp"
 
-#include "../events/DirShadowResChangeEvent.hpp"
-#include "../events/PointShadowResolutionEvent.hpp"
-#include "../events/SpotShadowResolutionEvent.hpp"
+#include "../events/DirShadowEvent.hpp"
+#include "../events/PointShadowEvent.hpp"
+#include "../events/SpotShadowEvent.hpp"
 #include "../events/handling/EventManager.hpp"
 #include "../util/Logger.hpp"
 #include "../windowing/WindowImpl.hpp"
@@ -66,7 +66,7 @@ namespace leopph
 	{
 		m_DirLightSettings.Res.assign(cascades.begin(), cascades.end());
 		m_Serialize = true;
-		EventManager::Instance().Send<internal::DirShadowResChangeEvent>(m_DirLightSettings.Res);
+		EventManager::Instance().Send<internal::DirShadowEvent>(m_DirLightSettings.Res);
 	}
 
 
@@ -74,7 +74,7 @@ namespace leopph
 	{
 		m_SpotLightSettings.Res = newRes;
 		m_Serialize = true;
-		EventManager::Instance().Send<internal::SpotShadowResolutionEvent>(m_SpotLightSettings.Res);
+		EventManager::Instance().Send<internal::SpotShadowEvent>(m_SpotLightSettings.Res);
 	}
 
 
@@ -82,7 +82,7 @@ namespace leopph
 	{
 		m_PointLightSettings.Res = newRes;
 		m_Serialize = true;
-		EventManager::Instance().Send<internal::PointShadowResolutionEvent>(m_PointLightSettings.Res);
+		EventManager::Instance().Send<internal::PointShadowEvent>(m_PointLightSettings.Res);
 	}
 
 
@@ -238,7 +238,7 @@ namespace leopph
 	}
 
 
-	auto Settings::OnEventReceived(EventReceiver<internal::FrameEndedEvent>::EventParamType) -> void
+	auto Settings::OnEventReceived(EventReceiver<internal::FrameCompleteEvent>::EventParamType) -> void
 	{
 		if (m_Serialize)
 		{
@@ -252,8 +252,8 @@ namespace leopph
 	{
 		m_WindowSettingsCache = WindowSettings
 		{
-			.Width = event.Resolution[0],
-			.Height = event.Resolution[1],
+			.Width = event.Width,
+			.Height = event.Height,
 			.RenderMultiplier = event.RenderMultiplier,
 			.Fullscreen = event.Fullscreen,
 			.Vsync = event.Vsync

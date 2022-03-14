@@ -1,19 +1,18 @@
 #pragma once
 
 #include "Event.hpp"
-#include "../math/Vector.hpp"
 
 
 namespace leopph::internal
 {
-	class WindowEvent final : public Event
+	// An Event representing a change in window configuration.
+	struct WindowEvent final : Event
 	{
-		public:
-			explicit WindowEvent(const Vector<unsigned, 2>& newScreenRes, float newResMult, bool vsync, bool fullscreen);
-
-			const Vector<unsigned, 2> Resolution;
-			const float RenderMultiplier;
-			const bool Vsync;
-			const bool Fullscreen;
+		WindowEvent(unsigned width, unsigned height, float renderMult, bool fullscreen, bool vsync);
+		unsigned Width;
+		unsigned Height;
+		float RenderMultiplier;
+		bool Fullscreen;
+		bool Vsync;
 	};
 }

@@ -12,7 +12,7 @@
 #include "Main.hpp"
 
 #include "../data/DataManager.hpp"
-#include "../events/FrameEndEvent.hpp"
+#include "../events/FrameCompleteEvent.hpp"
 #include "../events/handling/EventManager.hpp"
 #include "../rendering/renderers/Renderer.hpp"
 #include "../windowing/WindowImpl.hpp"
@@ -44,7 +44,7 @@ namespace leopph::internal
 			window->Clear();
 			renderer->Render();
 			window->SwapBuffers();
-			EventManager::Instance().Send<FrameEndedEvent>();
+			EventManager::Instance().Send<FrameCompleteEvent>();
 		}
 
 		DataManager::Instance().Clear();

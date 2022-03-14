@@ -63,19 +63,19 @@ namespace leopph
 	EventReceiverHandle<internal::KeyEvent> Input::s_KeyEventReceiver{
 		[](const internal::KeyEvent& event)
 		{
-			s_KeyStates[event.keyCode] = event.keyState;
+			s_KeyStates[event.KeyCode] = event.KeyState;
 		}
 	};
 
 	EventReceiverHandle<internal::MouseEvent> Input::s_MouseEventReceiver{
 		[](const internal::MouseEvent& event)
 		{
-			s_MousePos = {event.position[0], event.position[1]};
+			s_MousePos = {event.Position[0], event.Position[1]};
 		}
 	};
 
-	EventReceiverHandle<internal::FrameEndedEvent> Input::s_FrameBeginsEventReceiver{
-		[](const internal::FrameEndedEvent&)
+	EventReceiverHandle<internal::FrameCompleteEvent> Input::s_FrameBeginsEventReceiver{
+		[](const internal::FrameCompleteEvent&)
 		{
 			for (auto& [keyCode, keyState] : s_KeyStates)
 			{

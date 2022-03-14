@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../api/LeopphApi.hpp"
-#include "../events/FrameEndEvent.hpp"
+#include "../events/FrameCompleteEvent.hpp"
 #include "../events/WindowEvent.hpp"
 #include "../events/handling/EventReceiver.hpp"
 
@@ -16,7 +16,7 @@ namespace leopph
 {
 	// The Settings class provides access LeopphEngine-related configurations.
 	// You can safely change these at runtime, though some may require an application restart.
-	class Settings final : public EventReceiver<internal::FrameEndedEvent>, public EventReceiver<internal::WindowEvent>
+	class Settings final : public EventReceiver<internal::FrameCompleteEvent>, public EventReceiver<internal::WindowEvent>
 	{
 		public:
 			// Enum for the different supported graphics APIs.
@@ -194,7 +194,7 @@ namespace leopph
 			auto Serialize() const -> void;
 			auto Deserialize() -> void;
 			// If serialization needs to happen, we do it at the end of frame.
-			auto OnEventReceived(EventReceiver<internal::FrameEndedEvent>::EventParamType) -> void override;
+			auto OnEventReceived(EventReceiver<internal::FrameCompleteEvent>::EventParamType) -> void override;
 			// Updates local window settings cache when serializable window configuration changes happen.
 			auto OnEventReceived(EventReceiver<internal::WindowEvent>::EventParamType event) -> void override;
 

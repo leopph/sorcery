@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../events/SpotShadowResolutionEvent.hpp"
+#include "../events/SpotShadowEvent.hpp"
 #include "../events/handling/EventReceiver.hpp"
 #include "shaders/ShaderProgram.hpp"
 
@@ -11,7 +11,7 @@
 
 namespace leopph::internal
 {
-	class SpotShadowMap final : EventReceiver<SpotShadowResolutionEvent>
+	class SpotShadowMap final : EventReceiver<SpotShadowEvent>
 	{
 		public:
 			SpotShadowMap();

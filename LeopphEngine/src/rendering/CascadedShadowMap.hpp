@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../components/Camera.hpp"
-#include "../events/DirShadowResChangeEvent.hpp"
+#include "../events/DirShadowEvent.hpp"
 #include "../events/handling/EventReceiver.hpp"
 #include "../math/Matrix.hpp"
 #include "shaders/ShaderProgram.hpp"
@@ -16,7 +16,7 @@
 
 namespace leopph::internal
 {
-	class CascadedShadowMap final : public EventReceiver<DirShadowResChangeEvent>
+	class CascadedShadowMap final : public EventReceiver<DirShadowEvent>
 	{
 		public:
 			struct CascadeBounds;
@@ -44,7 +44,7 @@ namespace leopph::internal
 			[[nodiscard]] auto CalculateCascadeBounds(const Camera& cam) const -> std::span<CascadeBounds>;
 
 		private:
-			auto OnEventReceived(const DirShadowResChangeEvent& event) -> void override;
+			auto OnEventReceived(const DirShadowEvent& event) -> void override;
 			auto InitShadowMaps(std::span<const std::size_t> ress) -> void;
 			auto DeinitShadowMaps() const -> void;
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../events/FrameEndEvent.hpp"
+#include "../events/FrameCompleteEvent.hpp"
 #include "../events/handling/EventReceiver.hpp"
 
 #include <chrono>
@@ -9,7 +9,7 @@
 namespace leopph::internal
 {
 	// Internal-only class to measure time-related information around LeopphEngine.
-	class TimeImpl final : public EventReceiver<FrameEndedEvent>
+	class TimeImpl final : public EventReceiver<FrameCompleteEvent>
 	{
 		public:
 			[[nodiscard]] static auto Instance() -> TimeImpl&;

@@ -224,7 +224,7 @@ namespace leopph::internal
 
 	auto GlWindow::SendWindowEvent() const -> void
 	{
-		EventManager::Instance().Send<WindowEvent>(Vector<unsigned, 2>{m_Width, m_Height}, m_RenderMult, m_Vsync, m_Fullscreen);
+		EventManager::Instance().Send<WindowEvent>(static_cast<unsigned>(m_Width), static_cast<unsigned>(m_Height), m_RenderMult, m_Fullscreen, m_Vsync);
 	}
 
 

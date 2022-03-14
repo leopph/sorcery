@@ -84,8 +84,9 @@ namespace leopph::internal
 
 	auto RenderBuffer::OnEventReceived(EventParamType event) -> void
 	{
-		const auto renderRes{event.Resolution * event.RenderMultiplier};
-		m_Res = ResType{renderRes[0], renderRes[1]};
+		const auto width{static_cast<float>(event.Width) * event.RenderMultiplier};
+		const auto height{static_cast<float>(event.Height) * event.RenderMultiplier};
+		m_Res = ResType{width, height};
 		DeinitBuffers();
 		InitBuffers();
 	}

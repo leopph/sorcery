@@ -30,24 +30,18 @@
     <ClCompile Include="src\rendering\renderers\DeferredOpenGlRenderer.cpp" />
     <ClCompile Include="src\rendering\GeometryBuffer.cpp" />
     <ClCompile Include="src\events\Event.cpp" />
-    <ClCompile Include="src\events\WindowEvent.cpp" />
     <ClCompile Include="src\events\handling\EventManager.cpp" />
-    <ClCompile Include="src\events\KeyEvent.cpp" />
-    <ClCompile Include="src\events\MouseEvent.cpp" />
     <ClCompile Include="src\rendering\geometry\GlMeshGroup.cpp" />
     <ClCompile Include="src\rendering\renderers\OpenGlRenderer.cpp" />
     <ClCompile Include="src\rendering\Texture.cpp" />
     <ClCompile Include="src\rendering\SkyboxImpl.cpp" />
     <ClCompile Include="src\rendering\Skybox.cpp" />
     <ClCompile Include="src\rendering\CascadedShadowMap.cpp" />
-    <ClCompile Include="src\events\DirShadowResChangeEvent.cpp" />
-    <ClCompile Include="src\events\SpotShadowResolutionEvent.cpp" />
     <ClCompile Include="src\rendering\SpotShadowMap.cpp" />
     <ClCompile Include="src\util\hash\ShaderTypeHash.cpp" />
     <ClCompile Include="src\util\equal\ShaderTypeEqual.cpp" />
     <ClCompile Include="src\rendering\shaders\ShaderFamily.cpp" />
     <ClCompile Include="src\rendering\shaders\ShaderProgram.cpp" />
-    <ClCompile Include="src\events\PointShadowResolutionEvent.cpp" />
     <ClCompile Include="src\rendering\CubeShadowMap.cpp" />
     <ClCompile Include="src\windowing\Window.cpp" />
     <ClCompile Include="src\rendering\RenderBuffer.cpp" />
@@ -72,6 +66,12 @@
     <ClCompile Include="src\data\Poelo.cpp" />
     <ClCompile Include="src\components\rendering\Cube.cpp" />
     <ClCompile Include="src\util\api_adapters\GLFWAdapter.cpp" />
+    <ClCompile Include="src\events\DirShadowEvent.cpp" />
+    <ClCompile Include="src\events\KeyEvent.cpp" />
+    <ClCompile Include="src\events\MouseEvent.cpp" />
+    <ClCompile Include="src\events\PointShadowEvent.cpp" />
+    <ClCompile Include="src\events\SpotShadowEvent.cpp" />
+    <ClCompile Include="src\events\WindowEvent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\Behavior.hpp" />
@@ -123,16 +123,16 @@
     <ClInclude Include="src\events\handling\EventReceiverHandle.hpp" />
     <ClInclude Include="src\events\KeyEvent.hpp" />
     <ClInclude Include="src\events\MouseEvent.hpp" />
-    <ClInclude Include="src\events\FrameEndEvent.hpp" />
+    <ClInclude Include="src\events\FrameCompleteEvent.hpp" />
     <ClInclude Include="src\rendering\geometry\GlMeshGroup.hpp" />
     <ClInclude Include="src\rendering\renderers\OpenGlRenderer.hpp" />
     <ClInclude Include="src\rendering\Texture.hpp" />
     <ClInclude Include="src\rendering\SkyboxImpl.hpp" />
     <ClInclude Include="src\rendering\Skybox.hpp" />
-    <ClInclude Include="src\events\DirShadowResChangeEvent.hpp" />
+    <ClInclude Include="src\events\DirShadowEvent.hpp" />
     <ClInclude Include="src\rendering\CascadedShadowMap.hpp" />
     <ClInclude Include="src\rendering\SpotShadowMap.hpp" />
-    <ClInclude Include="src\events\SpotShadowResolutionEvent.hpp" />
+    <ClInclude Include="src\events\SpotShadowEvent.hpp" />
     <ClInclude Include="src\rendering\shaders\ShaderType.hpp" />
     <ClInclude Include="src\util\containers\Bimap.hpp" />
     <ClInclude Include="src\util\hash\ShaderTypeHash.hpp" />
@@ -141,7 +141,7 @@
     <ClInclude Include="src\rendering\shaders\ShaderProgram.hpp" />
     <ClInclude Include="src\rendering\shaders\ShaderStageInfo.hpp" />
     <ClInclude Include="src\rendering\CubeShadowMap.hpp" />
-    <ClInclude Include="src\events\PointShadowResolutionEvent.hpp" />
+    <ClInclude Include="src\events\PointShadowEvent.hpp" />
     <ClInclude Include="src\windowing\Window.hpp" />
     <ClInclude Include="src\rendering\RenderBuffer.hpp" />
     <ClInclude Include="src\util\hash\PathedHash.hpp" />
