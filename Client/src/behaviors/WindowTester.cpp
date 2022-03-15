@@ -6,7 +6,8 @@ using leopph::Window;
 
 
 WindowTester::WindowTester() :
-	m_Window{Window::Instance()}
+	m_Window{Window::Instance()},
+	m_DisplayModes{m_Window->GetSupportedDisplayModes()}
 {}
 
 
@@ -22,40 +23,34 @@ auto WindowTester::OnFrameUpdate() -> void
 		m_Window->Vsync(!m_Window->Vsync());
 	}
 
-	if (Input::GetKeyDown(KeyCode::One))
+	if (Input::GetKeyDown(KeyCode::One) && !m_DisplayModes.empty())
 	{
-		m_Window->Width(1920);
-		m_Window->Height(1080);
+		m_Window->Width(m_DisplayModes[0].Width);
+		m_Window->Height(m_DisplayModes[0].Height);
 	}
 
-	if (Input::GetKeyDown(KeyCode::Two))
+	if (Input::GetKeyDown(KeyCode::Two) && m_DisplayModes.size() > 1)
 	{
-		m_Window->Width(1600);
-		m_Window->Height(900);
+		m_Window->Width(m_DisplayModes[1].Width);
+		m_Window->Height(m_DisplayModes[1].Height);
 	}
 
-	if (Input::GetKeyDown(KeyCode::Three))
+	if (Input::GetKeyDown(KeyCode::Three) && m_DisplayModes.size() > 2)
 	{
-		m_Window->Width(1280);
-		m_Window->Height(720);
+		m_Window->Width(m_DisplayModes[2].Width);
+		m_Window->Height(m_DisplayModes[2].Height);
 	}
 
-	if (Input::GetKeyDown(KeyCode::Four))
+	if (Input::GetKeyDown(KeyCode::Four) && m_DisplayModes.size() > 3)
 	{
-		m_Window->Width(1024);
-		m_Window->Height(768);
+		m_Window->Width(m_DisplayModes[3].Width);
+		m_Window->Height(m_DisplayModes[3].Height);
 	}
 
-	if (Input::GetKeyDown(KeyCode::Five))
+	if (Input::GetKeyDown(KeyCode::Five) && m_DisplayModes.size() > 4)
 	{
-		m_Window->Width(800);
-		m_Window->Height(600);
-	}
-
-	if (Input::GetKeyDown(KeyCode::Six))
-	{
-		m_Window->Width(640);
-		m_Window->Height(480);
+		m_Window->Width(m_DisplayModes[4].Width);
+		m_Window->Height(m_DisplayModes[4].Height);
 	}
 
 	if (Input::GetKeyDown(KeyCode::Q))
