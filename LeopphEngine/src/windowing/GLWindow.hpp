@@ -53,6 +53,9 @@ namespace leopph::internal
 			auto ShouldClose() -> bool override;
 			auto ShouldClose(bool val) -> void override;
 
+			[[nodiscard]]
+			auto GetSupportedDisplayModes() const -> std::vector<DisplayMode> override;
+
 			auto PollEvents() -> void override;
 			auto SwapBuffers() -> void override;
 			auto Clear() -> void override;

@@ -218,6 +218,22 @@ namespace leopph::internal
 	}
 
 
+	auto GlWindow::GetSupportedDisplayModes() const -> std::vector<DisplayMode>
+	{
+		const auto currentMonitor = glfwGetWindowMonitor(m_Window);
+		int numVidModes;
+		const auto vidModes = glfwGetVideoModes(currentMonitor ? currentMonitor : glfwGetPrimaryMonitor(), &numVidModes);
+
+		std::vector<DisplayMode> ret;
+		// GLFW returns video modes in ascending order and we need them in descending.
+		for (auto i = numVidModes - 1; i >= 0; i--)
+		{
+			ret.emplace_back(vidModes[i].width, vidModes[i].height, vidModes[i].refreshRate);
+		}
+		return ret;
+	}
+
+
 	auto GlWindow::Clear() -> void
 	{
 		glClearNamedFramebufferfv(0, GL_COLOR, 0, m_ClrColor.Data().data());
