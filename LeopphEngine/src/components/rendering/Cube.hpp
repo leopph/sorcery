@@ -27,8 +27,6 @@ namespace leopph
 					CubeMeshDataGroup();
 
 				private:
-					std::vector<internal::Vertex> m_Vertices;
-					std::vector<unsigned> m_Indices;
 					static std::weak_ptr<Material> s_Material;
 			};
 	};
