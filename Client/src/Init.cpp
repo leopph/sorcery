@@ -2,13 +2,13 @@
 
 #include "Init.hpp"
 
+#include "CameraController.hpp"
 #include "Constants.hpp"
+#include "Exiter.hpp"
+#include "FrameRateAnalyzer.hpp"
 #include "SceneSwitcher.hpp"
 #include "TeleportGate.hpp"
-#include "behaviors/CameraController.hpp"
-#include "behaviors/Exiter.hpp"
-#include "behaviors/FrameRateAnalyzer.hpp"
-#include "behaviors/WindowTester.hpp"
+#include "WindowController.hpp"
 
 #include <Leopph.hpp>
 
@@ -26,7 +26,7 @@ auto leopph::Init() -> void
 	const auto utilEnt = new Entity{demo::UTILITY_ENTITY_NAME};
 	utilEnt->CreateAndAttachComponent<FrameRateAnalyzer>(0.5f, 60u);
 	utilEnt->CreateAndAttachComponent<Exiter>();
-	utilEnt->CreateAndAttachComponent<WindowTester>();
+	utilEnt->CreateAndAttachComponent<WindowController>();
 
 	const auto sceneSwitcherEnt = new Entity{demo::SCENE_SWITCHER_ENTITY_NAME};
 	const auto sceneSwitcher = sceneSwitcherEnt->CreateAndAttachComponent<demo::SceneSwitcher>();

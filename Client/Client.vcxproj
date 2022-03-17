@@ -139,12 +139,11 @@ ASAN_SYMBOLIZER_PATH=$(VC_ExecutablePath_x64)</LocalDebuggerEnvironment>
     <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\behaviors\CameraController.cpp" />
-    <ClCompile Include="src\behaviors\ComponentSwitch.cpp" />
-    <ClCompile Include="src\behaviors\Exiter.cpp" />
-    <ClCompile Include="src\behaviors\Flicker.cpp" />
-    <ClCompile Include="src\behaviors\FrameRateAnalyzer.cpp" />
-    <ClCompile Include="src\behaviors\WindowTester.cpp" />
+    <ClCompile Include="src\CameraController.cpp" />
+    <ClCompile Include="src\Exiter.cpp" />
+    <ClCompile Include="src\Flicker.cpp" />
+    <ClCompile Include="src\FrameRateAnalyzer.cpp" />
+    <ClCompile Include="src\WindowController.cpp" />
     <ClCompile Include="src\Init.cpp" />
     <ClCompile Include="src\InitCometScene.cpp" />
     <ClCompile Include="src\SceneSwitcher.cpp" />
@@ -156,12 +155,11 @@ ASAN_SYMBOLIZER_PATH=$(VC_ExecutablePath_x64)</LocalDebuggerEnvironment>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\behaviors\CameraController.hpp" />
-    <ClInclude Include="src\behaviors\Exiter.hpp" />
-    <ClInclude Include="src\behaviors\Flicker.hpp" />
-    <ClInclude Include="src\behaviors\FrameRateAnalyzer.hpp" />
-    <ClInclude Include="src\behaviors\ComponentSwitch.hpp" />
-    <ClInclude Include="src\behaviors\WindowTester.hpp" />
+    <ClInclude Include="src\CameraController.hpp" />
+    <ClInclude Include="src\Exiter.hpp" />
+    <ClInclude Include="src\Flicker.hpp" />
+    <ClInclude Include="src\FrameRateAnalyzer.hpp" />
+    <ClInclude Include="src\WindowController.hpp" />
     <ClInclude Include="src\Constants.hpp" />
     <ClInclude Include="src\Init.hpp" />
     <ClCompile Include="src\InitChurchScene.cpp" />

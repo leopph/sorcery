@@ -1,7 +1,7 @@
 #include "Constants.hpp"
+#include "Flicker.hpp"
 #include "Init.hpp"
 #include "TeleportGate.hpp"
-#include "behaviors/Flicker.hpp"
 
 #include <Leopph.hpp>
 

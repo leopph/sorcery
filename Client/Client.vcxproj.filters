@@ -18,22 +18,19 @@
     <ClCompile Include="src\Init.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\behaviors\FrameRateAnalyzer.cpp">
+    <ClCompile Include="src\FrameRateAnalyzer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\behaviors\CameraController.cpp">
+    <ClCompile Include="src\CameraController.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\behaviors\WindowTester.cpp">
+    <ClCompile Include="src\WindowController.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\behaviors\Exiter.cpp">
+    <ClCompile Include="src\Exiter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\behaviors\ComponentSwitch.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\behaviors\Flicker.cpp">
+    <ClCompile Include="src\Flicker.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\InitCometScene.cpp">
@@ -50,22 +47,19 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\behaviors\FrameRateAnalyzer.hpp">
+    <ClInclude Include="src\FrameRateAnalyzer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\behaviors\CameraController.hpp">
+    <ClInclude Include="src\CameraController.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\behaviors\WindowTester.hpp">
+    <ClInclude Include="src\WindowController.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\behaviors\Exiter.hpp">
+    <ClInclude Include="src\Exiter.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\behaviors\ComponentSwitch.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\behaviors\Flicker.hpp">
+    <ClInclude Include="src\Flicker.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Init.hpp">

@@ -1,17 +1,17 @@
-#include "WindowTester.hpp"
+#include "WindowController.hpp"
 
 using leopph::Input;
 using leopph::KeyCode;
 using leopph::Window;
 
 
-WindowTester::WindowTester() :
+WindowController::WindowController() :
 	m_Window{Window::Instance()},
 	m_DisplayModes{m_Window->GetSupportedDisplayModes()}
 {}
 
 
-auto WindowTester::OnFrameUpdate() -> void
+auto WindowController::OnFrameUpdate() -> void
 {
 	if (Input::GetKeyDown(KeyCode::F))
 	{

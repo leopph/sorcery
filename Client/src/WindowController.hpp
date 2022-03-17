@@ -5,10 +5,10 @@
 #include <vector>
 
 
-class WindowTester final : public leopph::Behavior
+class WindowController final : public leopph::Behavior
 {
 	public:
-		WindowTester();
+		WindowController();
 		auto OnFrameUpdate() -> void override;
 
 	private:
