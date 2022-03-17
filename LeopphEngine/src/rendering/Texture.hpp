@@ -22,11 +22,15 @@ namespace leopph
 			[[nodiscard]] constexpr auto Id() const;
 			[[nodiscard]] constexpr auto IsTransparent() const;
 			[[nodiscard]] constexpr auto Path() const -> auto&;
+			[[nodiscard]] constexpr auto Width() const noexcept;
+			[[nodiscard]] constexpr auto Height() const noexcept;
 
 		private:
 			unsigned m_TexName;
 			bool m_IsTransparent;
 			std::filesystem::path m_Path;
+			int m_Width;
+			int m_Height;
 	};
 
 
@@ -45,5 +49,17 @@ namespace leopph
 	constexpr auto Texture::Path() const -> auto&
 	{
 		return m_Path;
+	}
+
+
+	constexpr auto Texture::Width() const noexcept
+	{
+		return m_Width;
+	}
+
+
+	constexpr auto Texture::Height() const noexcept
+	{
+		return m_Height;
 	}
 }

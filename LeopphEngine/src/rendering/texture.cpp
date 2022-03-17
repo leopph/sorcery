@@ -14,19 +14,18 @@ namespace leopph
 	Texture::Texture(std::filesystem::path path) :
 		m_TexName{},
 		m_IsTransparent{},
-		m_Path{std::move(path)}
+		m_Path{std::move(path)},
+		m_Width{},
+		m_Height{}
 	{
+		internal::DataManager::Instance().RegisterTexture(this);
+
 		stbi_set_flip_vertically_on_load(true);
-
-		glCreateTextures(GL_TEXTURE_2D, 1, &m_TexName);
-
-		int width, height, channels;
-		const auto data{stbi_load(m_Path.string().c_str(), &width, &height, &channels, 0)};
+		int channels;
+		const auto data{stbi_load(m_Path.string().c_str(), &m_Width, &m_Height, &channels, 0)};
 
 		if (data == nullptr)
 		{
-			glDeleteTextures(1, &m_TexName);
-
 			const auto msg{"Texture on path [" + m_Path.string() + "] could not be loaded."};
 			internal::Logger::Instance().Error(msg);
 			return;
@@ -55,15 +54,14 @@ namespace leopph
 
 			default:
 				stbi_image_free(data);
-				glDeleteTextures(1, &m_TexName);
-
 				const auto errMsg{"Texture error: unknown color channel number: [" + std::to_string(channels) + "]."};
 				internal::Logger::Instance().Error(errMsg);
 				return;
 		}
 
-		glTextureStorage2D(m_TexName, 1, internalFormat, width, height);
-		glTextureSubImage2D(m_TexName, 0, 0, 0, width, height, colorFormat, GL_UNSIGNED_BYTE, data);
+		glCreateTextures(GL_TEXTURE_2D, 1, &m_TexName);
+		glTextureStorage2D(m_TexName, 1, internalFormat, m_Width, m_Height);
+		glTextureSubImage2D(m_TexName, 0, 0, 0, m_Width, m_Height, colorFormat, GL_UNSIGNED_BYTE, data);
 
 		glGenerateTextureMipmap(m_TexName);
 
@@ -71,8 +69,6 @@ namespace leopph
 		glTextureParameteri(m_TexName, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 		stbi_image_free(data);
-
-		internal::DataManager::Instance().RegisterTexture(this);
 	}
 
 
