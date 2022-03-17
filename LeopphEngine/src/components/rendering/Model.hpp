@@ -9,6 +9,7 @@
 
 namespace leopph
 {
+	// A graphic model parsed from a file on disk.
 	class Model final : public internal::RenderComponent
 	{
 		public:

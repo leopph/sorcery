@@ -10,6 +10,7 @@
 
 namespace leopph
 {
+	// A 2D image parsed from disk, displayed as a 2D sprite.
 	class ImageSprite final : public internal::RenderComponent
 	{
 		public:

@@ -9,6 +9,7 @@
 
 namespace leopph
 {
+	// A generic untextured 1x1 cube.
 	class Cube final : public internal::RenderComponent
 	{
 		public:
