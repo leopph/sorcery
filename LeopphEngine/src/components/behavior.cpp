@@ -14,9 +14,12 @@ namespace leopph
 
 		Component::Activate();
 
-		auto& dataManager{internal::DataManager::Instance()};
-		dataManager.UnregisterActiveBehavior(this);
-		dataManager.RegisterInactiveBehavior(this);
+		if (IsAttached())
+		{
+			auto& dataManager{internal::DataManager::Instance()};
+			dataManager.UnregisterBehavior(this, false);
+			dataManager.RegisterBehavior(this, true);
+		}
 	}
 
 
@@ -29,44 +32,49 @@ namespace leopph
 
 		Component::Deactivate();
 
-		auto& dataManager{internal::DataManager::Instance()};
-		dataManager.UnregisterInactiveBehavior(this);
-		dataManager.RegisterActiveBehavior(this);
+		if (IsAttached())
+		{
+			auto& dataManager{internal::DataManager::Instance()};
+			dataManager.UnregisterBehavior(this, true);
+			dataManager.RegisterBehavior(this, false);
+		}
 	}
 
 
 	auto Behavior::Attach(leopph::Entity* entity) -> void
 	{
+		if (IsAttached())
+		{
+			return;
+		}
+
 		Component::Attach(entity);
 
 		if (IsActive())
 		{
-			internal::DataManager::Instance().RegisterActiveBehavior(this);
-		}
-		else
-		{
-			internal::DataManager::Instance().RegisterInactiveBehavior(this);
+			internal::DataManager::Instance().RegisterBehavior(this, IsActive());
 		}
 	}
 
 
 	auto Behavior::Detach() -> void
 	{
+		if (!IsAttached())
+		{
+			return;
+		}
+
 		Component::Detach();
 
 		if (IsActive())
 		{
-			internal::DataManager::Instance().UnregisterActiveBehavior(this);
-		}
-		else
-		{
-			internal::DataManager::Instance().UnregisterInactiveBehavior(this);
+			internal::DataManager::Instance().UnregisterBehavior(this, IsActive());
 		}
 	}
 
 
 	Behavior::~Behavior()
 	{
-		Behavior::Detach();
+		Detach();
 	}
 }

@@ -10,10 +10,19 @@ namespace leopph
 	class PointLight final : public AttenuatedLight
 	{
 		public:
-			LEOPPHAPI PointLight();
+			LEOPPHAPI
+			auto Activate() -> void override;
 
-			LEOPPHAPI auto Activate() -> void override;
-			LEOPPHAPI auto Deactivate() -> void override;
+			LEOPPHAPI
+			auto Deactivate() -> void override;
+
+			LEOPPHAPI
+			auto Attach(leopph::Entity* entity) -> void override;
+
+			LEOPPHAPI
+			auto Detach() -> void override;
+
+			PointLight() = default;
 
 			PointLight(const PointLight&) = delete;
 			auto operator=(const PointLight&) -> void = delete;

@@ -12,19 +12,28 @@ namespace leopph
 	{
 		public:
 			// This function is called on all attached active Behaviors every frame.
-			virtual auto OnFrameUpdate() -> void;
+			virtual
+			auto OnFrameUpdate() -> void;
 
 			// Activate the Behavior.
-			// OnFrameUpdate is only called on attached active Behaviors.
-			LEOPPHAPI auto Activate() -> void override;
+			// OnFrameUpdate is only called on attached, active Behaviors.
+			LEOPPHAPI
+			auto Activate() -> void override;
 
 			// Deactive the Behavior.
-			// OnFrameUpdate is only called on attached active Behaviors.
-			LEOPPHAPI auto Deactivate() -> void override;
+			// OnFrameUpdate is only called on attached, active Behaviors.
+			LEOPPHAPI
+			auto Deactivate() -> void override;
 
-			LEOPPHAPI auto Attach(leopph::Entity* entity) -> void final;
+			// Attach the Behavior to the Entity.
+			// OnFrameUpdate is only called on attached, active Behaviors.
+			LEOPPHAPI
+			auto Attach(leopph::Entity* entity) -> void final;
 
-			LEOPPHAPI auto Detach() -> void final;
+			LEOPPHAPI
+			// Detach the Behavior from its Entity.
+			// OnFrameUpdate is only called on attached, active Behaviors.
+			auto Detach() -> void final;
 
 			Behavior(const Behavior& other) = delete;
 			auto operator=(const Behavior& other) -> Behavior& = delete;

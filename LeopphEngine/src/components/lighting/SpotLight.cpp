@@ -14,9 +14,12 @@ namespace leopph
 
 		AttenuatedLight::Activate();
 
-		auto& dataManager{internal::DataManager::Instance()};
-		dataManager.UnregisterInactiveSpotLight(this);
-		dataManager.RegisterActiveSpotLight(this);
+		if (IsAttached())
+		{
+			auto& dataManager{internal::DataManager::Instance()};
+			dataManager.UnregisterSpotLight(this, false);
+			dataManager.RegisterSpotLight(this, true);
+		}
 	}
 
 
@@ -29,27 +32,43 @@ namespace leopph
 
 		AttenuatedLight::Deactivate();
 
-		auto& dataManager{internal::DataManager::Instance()};
-		dataManager.UnregisterActiveSpotLight(this);
-		dataManager.RegisterInactiveSpotLight(this);
+		if (IsAttached())
+		{
+			auto& dataManager{internal::DataManager::Instance()};
+			dataManager.UnregisterSpotLight(this, true);
+			dataManager.RegisterSpotLight(this, false);
+		}
 	}
 
 
-	SpotLight::SpotLight()
+	auto SpotLight::Attach(leopph::Entity* entity) -> void
 	{
-		internal::DataManager::Instance().RegisterActiveSpotLight(this);
+		if (IsAttached())
+		{
+			return;
+		}
+
+		AttenuatedLight::Attach(entity);
+
+		internal::DataManager::Instance().RegisterSpotLight(this, IsActive());
+	}
+
+
+	auto SpotLight::Detach() -> void
+	{
+		if (!IsAttached())
+		{
+			return;
+		}
+
+		AttenuatedLight::Detach();
+
+		internal::DataManager::Instance().UnregisterSpotLight(this, IsActive());
 	}
 
 
 	SpotLight::~SpotLight()
 	{
-		if (IsActive())
-		{
-			internal::DataManager::Instance().UnregisterActiveSpotLight(this);
-		}
-		else
-		{
-			internal::DataManager::Instance().UnregisterInactiveSpotLight(this);
-		}
+		Detach();
 	}
 }

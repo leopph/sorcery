@@ -6,6 +6,12 @@
 
 namespace leopph
 {
+	auto DirectionalLight::ShadowExtension(const float newRange) -> void
+	{
+		m_ShadowRange = math::Clamp(newRange, 0, math::Abs(newRange));
+	}
+
+
 	auto DirectionalLight::Activate() -> void
 	{
 		if (IsActive())
@@ -14,9 +20,13 @@ namespace leopph
 		}
 
 		Light::Activate();
-		auto& dataManager{internal::DataManager::Instance()};
-		dataManager.UnregisterInactiveDirLight(this);
-		dataManager.RegisterActiveDirLight(this);
+
+		if (IsAttached())
+		{
+			auto& dataManager{internal::DataManager::Instance()};
+			dataManager.UnregisterDirLight(this, false);
+			dataManager.RegisterDirLight(this, true);
+		}
 	}
 
 
@@ -28,33 +38,44 @@ namespace leopph
 		}
 
 		Light::Deactivate();
-		auto& dataManager{internal::DataManager::Instance()};
-		dataManager.UnregisterActiveDirLight(this);
-		dataManager.RegisterInactiveDirLight(this);
+
+		if (IsAttached())
+		{
+			auto& dataManager{internal::DataManager::Instance()};
+			dataManager.UnregisterDirLight(this, true);
+			dataManager.RegisterDirLight(this, false);
+		}
 	}
 
 
-	DirectionalLight::DirectionalLight()
+	auto DirectionalLight::Attach(leopph::Entity* entity) -> void
 	{
-		internal::DataManager::Instance().RegisterActiveDirLight(this);
+		if (IsAttached())
+		{
+			return;
+		}
+
+		Light::Attach(entity);
+
+		internal::DataManager::Instance().RegisterDirLight(this, IsActive());
+	}
+
+
+	auto DirectionalLight::Detach() -> void
+	{
+		if (!IsAttached())
+		{
+			return;
+		}
+
+		Light::Detach();
+
+		internal::DataManager::Instance().UnregisterDirLight(this, IsActive());
 	}
 
 
 	DirectionalLight::~DirectionalLight()
 	{
-		if (IsActive())
-		{
-			internal::DataManager::Instance().UnregisterActiveDirLight(this);
-		}
-		else
-		{
-			internal::DataManager::Instance().UnregisterInactiveDirLight(this);
-		}
-	}
-
-
-	auto DirectionalLight::ShadowExtension(const float newRange) -> void
-	{
-		m_ShadowRange = math::Clamp(newRange, 0, math::Abs(newRange));
+		Detach();
 	}
 }

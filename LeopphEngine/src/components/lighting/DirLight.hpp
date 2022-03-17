@@ -14,22 +14,34 @@ namespace leopph
 		public:
 			// The direction where the DirectionalLight shines.
 			// This is exactly the same as the owning Entity's forward, or Z vector.
-			[[nodiscard]] constexpr auto Direction() const noexcept -> auto&;
+			[[nodiscard]] constexpr
+			auto Direction() const noexcept -> auto&;
 
 			// This value is used as an offset on the shadow cascades' bounding boxes
 			// to extend shadowing to occluders not visible to the active Camera.
 			// The returned value is always non-negative.
-			[[nodiscard]] constexpr auto ShadowExtension() const noexcept;
+			[[nodiscard]] constexpr
+			auto ShadowExtension() const noexcept;
 
 			// This value is used as an offset on the shadow cascades' bounding boxes
 			// to extend shadowing to occluders not visible to the active Camera.
 			// The input will be clamped to the range [0, inf).
-			LEOPPHAPI auto ShadowExtension(float newRange) -> void;
+			LEOPPHAPI
+			auto ShadowExtension(float newRange) -> void;
 
-			LEOPPHAPI auto Activate() -> void override;
-			LEOPPHAPI auto Deactivate() -> void override;
+			LEOPPHAPI
+			auto Activate() -> void override;
 
-			LEOPPHAPI DirectionalLight();
+			LEOPPHAPI
+			auto Deactivate() -> void override;
+
+			LEOPPHAPI
+			auto Attach(leopph::Entity* entity) -> void override;
+
+			LEOPPHAPI
+			auto Detach() -> void override;
+
+			DirectionalLight() = default;
 
 			DirectionalLight(const DirectionalLight&) = delete;
 			auto operator=(const DirectionalLight&) -> void = delete;

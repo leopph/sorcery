@@ -80,8 +80,13 @@ namespace leopph
 			LEOPPHAPI auto Background(std::variant<Color, Skybox> background) -> void;
 
 			// Deactivate the Camera.
-			// If it was the current one, it will be set to nullptr.
+			// If this was the current one, it will be set to nullptr.
 			LEOPPHAPI auto Deactivate() -> void override;
+
+			// Detach the Camera from its Entity.
+			// If this was the current one, it will be set to nullptr.
+			LEOPPHAPI
+			auto Detach() -> void override;
 
 			LEOPPHAPI Camera();
 

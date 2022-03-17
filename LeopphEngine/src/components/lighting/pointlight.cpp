@@ -5,12 +5,6 @@
 
 namespace leopph
 {
-	PointLight::PointLight()
-	{
-		internal::DataManager::Instance().RegisterActivePointLight(this);
-	}
-
-
 	auto PointLight::Activate() -> void
 	{
 		if (IsActive())
@@ -20,9 +14,12 @@ namespace leopph
 
 		AttenuatedLight::Activate();
 
-		auto& dataManager{internal::DataManager::Instance()};
-		dataManager.UnregisterInactivePointLight(this);
-		dataManager.RegisterActivePointLight(this);
+		if (IsAttached())
+		{
+			auto& dataManager{internal::DataManager::Instance()};
+			dataManager.UnregisterPointLight(this, false);
+			dataManager.RegisterPointLight(this, true);
+		}
 	}
 
 
@@ -35,21 +32,43 @@ namespace leopph
 
 		AttenuatedLight::Deactivate();
 
-		auto& dataManager{internal::DataManager::Instance()};
-		dataManager.UnregisterActivePointLight(this);
-		dataManager.RegisterInactivePointLight(this);
+		if (IsAttached())
+		{
+			auto& dataManager{internal::DataManager::Instance()};
+			dataManager.UnregisterPointLight(this, true);
+			dataManager.RegisterPointLight(this, false);
+		}
+	}
+
+
+	auto PointLight::Attach(leopph::Entity* entity) -> void
+	{
+		if (IsAttached())
+		{
+			return;
+		}
+
+		AttenuatedLight::Attach(entity);
+
+		internal::DataManager::Instance().RegisterPointLight(this, IsActive());
+	}
+
+
+	auto PointLight::Detach() -> void
+	{
+		if (!IsAttached())
+		{
+			return;
+		}
+
+		AttenuatedLight::Detach();
+
+		internal::DataManager::Instance().UnregisterPointLight(this, IsActive());
 	}
 
 
 	PointLight::~PointLight()
 	{
-		if (IsActive())
-		{
-			internal::DataManager::Instance().UnregisterActivePointLight(this);
-		}
-		else
-		{
-			internal::DataManager::Instance().UnregisterInactivePointLight(this);
-		}
+		Detach();
 	}
 }

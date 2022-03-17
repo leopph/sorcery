@@ -57,6 +57,22 @@ namespace leopph
 	}
 
 
+	auto Camera::Detach() -> void
+	{
+		if (!IsAttached())
+		{
+			return;
+		}
+
+		Component::Detach();
+
+		if (s_Current == this)
+		{
+			s_Current = nullptr;
+		}
+	}
+
+
 	Camera::Camera() :
 		m_AspectRatio{Window::Instance()->AspectRatio()},
 		m_Background{Color{static_cast<Vector3>(static_cast<internal::WindowImpl*>(Window::Instance())->ClearColor())}}

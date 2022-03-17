@@ -38,12 +38,20 @@ namespace leopph::internal
 			constexpr auto Instanced(bool value) noexcept;
 
 			// Activate the RenderComponent.
-			// Only active RenderComponents are rendered.
+			// Only active, attached RenderComponents are rendered.
 			LEOPPHAPI auto Activate() -> void override;
 
 			// Deactivate the RenderComponent.
-			// Only active RenderComponents are rendered.
+			// Only active, attached RenderComponents are rendered.
 			LEOPPHAPI auto Deactivate() -> void override;
+
+			// Attach the RenderComponent to the Entity.
+			// Only active, attached RenderComponents are rendered.
+			LEOPPHAPI auto Attach(leopph::Entity* entity) -> void override;
+
+			// Detach the RenderComponent from the Entity.
+			// Only active, attached RenderComponents are rendered.
+			LEOPPHAPI auto Detach() -> void override;
 
 			RenderComponent(const RenderComponent& other) = delete;
 			auto operator=(const RenderComponent& other) -> RenderComponent& = delete;
