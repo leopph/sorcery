@@ -175,6 +175,7 @@
     <ClInclude Include="src\components\lighting\DirLight.hpp" />
     <ClInclude Include="src\components\lighting\SpotLight.hpp" />
     <ClInclude Include="src\components\rendering\Cube.hpp" />
+    <ClInclude Include="src\components\rendering\ImageSprite.hpp" />
     <ClInclude Include="src\components\rendering\RenderComponent.hpp" />
     <ClInclude Include="src\data\Poelo.hpp" />
     <ClInclude Include="src\entry\Init.hpp" />
@@ -275,6 +276,7 @@
     <ClCompile Include="src\components\lighting\DirLight.cpp" />
     <ClCompile Include="src\components\lighting\SpotLight.cpp" />
     <ClCompile Include="src\components\rendering\Cube.cpp" />
+    <ClCompile Include="src\components\rendering\ImageSprite.cpp" />
     <ClCompile Include="src\components\rendering\RenderComponent.cpp" />
     <ClCompile Include="src\config\Settings.cpp" />
     <ClCompile Include="src\data\DataManager.cpp" />

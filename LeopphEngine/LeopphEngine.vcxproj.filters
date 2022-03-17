@@ -72,6 +72,7 @@
     <ClCompile Include="src\events\PointShadowEvent.cpp" />
     <ClCompile Include="src\events\SpotShadowEvent.cpp" />
     <ClCompile Include="src\events\WindowEvent.cpp" />
+    <ClCompile Include="src\components\rendering\ImageSprite.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\Behavior.hpp" />
@@ -174,6 +175,7 @@
     <ClInclude Include="src\util\less\PoeloLess.hpp" />
     <ClInclude Include="src\components\rendering\Cube.hpp" />
     <ClInclude Include="src\util\api_adapters\GLFWAdapter.hpp" />
+    <ClInclude Include="src\components\rendering\ImageSprite.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\cpp.hint" />
