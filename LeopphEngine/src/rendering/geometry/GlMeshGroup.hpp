@@ -15,18 +15,10 @@
 namespace leopph::internal
 {
 	// Holds together multiple GlMeshes that logically belong together (e.g. are part of the same model).
-	class GlMeshGroup final
+	class GlMeshGroup final : public std::enable_shared_from_this<GlMeshGroup>
 	{
 		public:
 			explicit GlMeshGroup(std::shared_ptr<const MeshDataGroup> meshDataGroup);
-
-			GlMeshGroup(const GlMeshGroup& other) = delete;
-			auto operator=(const GlMeshGroup& other) -> GlMeshGroup& = delete;
-
-			GlMeshGroup(GlMeshGroup&& other) noexcept = delete;
-			auto operator=(GlMeshGroup&& other) noexcept -> GlMeshGroup& = delete;
-
-			~GlMeshGroup() noexcept;
 
 			auto DrawWithMaterial(ShaderProgram& shader, GLuint nextFreeTextureUnit) const -> void;
 			auto DrawWithoutMaterial() const -> void;
@@ -36,6 +28,14 @@ namespace leopph::internal
 
 			[[nodiscard]]
 			auto MeshData() const -> const MeshDataGroup&;
+
+			GlMeshGroup(const GlMeshGroup& other) = delete;
+			auto operator=(const GlMeshGroup& other) -> GlMeshGroup& = delete;
+
+			GlMeshGroup(GlMeshGroup&& other) noexcept = delete;
+			auto operator=(GlMeshGroup&& other) noexcept -> GlMeshGroup& = delete;
+
+			~GlMeshGroup() noexcept;
 
 		private:
 			std::shared_ptr<const MeshDataGroup> m_MeshData;

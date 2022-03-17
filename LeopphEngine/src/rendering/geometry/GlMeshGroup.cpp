@@ -1,5 +1,7 @@
 #include "GlMeshGroup.hpp"
 
+#include "../../data/DataManager.hpp"
+
 #include <algorithm>
 #include <utility>
 
@@ -9,6 +11,8 @@ namespace leopph::internal
 	GlMeshGroup::GlMeshGroup(std::shared_ptr<const MeshDataGroup> meshDataGroup) :
 		m_MeshData{std::move(meshDataGroup)}
 	{
+		DataManager::Instance().RegisterGlMeshGroup(this);
+
 		glCreateBuffers(1, &m_InstBuf);
 		glNamedBufferData(m_InstBuf, 2 * sizeof(Matrix4), nullptr, GL_STATIC_DRAW);
 
@@ -21,6 +25,7 @@ namespace leopph::internal
 	GlMeshGroup::~GlMeshGroup() noexcept
 	{
 		glDeleteBuffers(1, &m_InstBuf);
+		DataManager::Instance().UnregisterGlMeshGroup(this);
 	}
 
 	auto GlMeshGroup::DrawWithMaterial(ShaderProgram& shader, const GLuint nextFreeTextureUnit) const -> void

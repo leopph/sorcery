@@ -67,7 +67,7 @@ namespace leopph::internal
 		private:
 			bool m_CastsShadow{false};
 			bool m_Instanced{false};
-			const GlMeshGroup* m_Renderable;
+			std::shared_ptr<GlMeshGroup> m_Renderable;
 	};
 
 

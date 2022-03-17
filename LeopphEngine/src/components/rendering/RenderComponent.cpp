@@ -18,8 +18,8 @@ namespace leopph::internal
 		if (IsAttached())
 		{
 			auto& dataManager{DataManager::Instance()};
-			dataManager.UnregisterInstanceFromMeshGroup(m_Renderable, this, false);
-			dataManager.RegisterInstanceForMeshGroup(m_Renderable, this, true);
+			dataManager.UnregisterInstanceFromMeshGroup(m_Renderable.get(), this, false);
+			dataManager.RegisterInstanceForMeshGroup(m_Renderable.get(), this, true);
 		}
 	}
 
@@ -36,8 +36,8 @@ namespace leopph::internal
 		if (IsAttached())
 		{
 			auto& dataManager{DataManager::Instance()};
-			dataManager.UnregisterInstanceFromMeshGroup(m_Renderable, this, true);
-			dataManager.RegisterInstanceForMeshGroup(m_Renderable, this, false);
+			dataManager.UnregisterInstanceFromMeshGroup(m_Renderable.get(), this, true);
+			dataManager.RegisterInstanceForMeshGroup(m_Renderable.get(), this, false);
 		}
 	}
 
@@ -54,8 +54,8 @@ namespace leopph::internal
 		if (IsActive())
 		{
 			auto& dataManager{DataManager::Instance()};
-			dataManager.UnregisterInstanceFromMeshGroup(m_Renderable, this, false);
-			dataManager.RegisterInstanceForMeshGroup(m_Renderable, this, true);
+			dataManager.UnregisterInstanceFromMeshGroup(m_Renderable.get(), this, false);
+			dataManager.RegisterInstanceForMeshGroup(m_Renderable.get(), this, true);
 		}
 	}
 
@@ -72,28 +72,26 @@ namespace leopph::internal
 		if (IsActive())
 		{
 			auto& dataManager{DataManager::Instance()};
-			dataManager.UnregisterInstanceFromMeshGroup(m_Renderable, this, true);
-			dataManager.RegisterInstanceForMeshGroup(m_Renderable, this, false);
+			dataManager.UnregisterInstanceFromMeshGroup(m_Renderable.get(), this, true);
+			dataManager.RegisterInstanceForMeshGroup(m_Renderable.get(), this, false);
 		}
 	}
 
 
 	RenderComponent::RenderComponent(std::shared_ptr<const MeshDataGroup> meshDataGroup) :
-		m_Renderable{DataManager::Instance().CreateOrGetMeshGroup(std::move(meshDataGroup))}
+		m_Renderable{DataManager::Instance().FindGlMeshGroup(meshDataGroup.get())}
 	{
-		DataManager::Instance().RegisterInstanceForMeshGroup(m_Renderable, this, false);
+		if (!m_Renderable)
+		{
+			m_Renderable = std::make_shared<GlMeshGroup>(std::move(meshDataGroup));
+		}
+
+		DataManager::Instance().RegisterInstanceForMeshGroup(m_Renderable.get(), this, false);
 	}
 
 
 	RenderComponent::~RenderComponent() noexcept
 	{
-		if (auto& dataManager{DataManager::Instance()}; dataManager.MeshGroupInstanceCount(m_Renderable) == 1ull)
-		{
-			dataManager.DestroyMeshGroup(m_Renderable);
-		}
-		else
-		{
-			dataManager.UnregisterInstanceFromMeshGroup(m_Renderable, this, IsAttached() && IsActive());
-		}
+		DataManager::Instance().UnregisterInstanceFromMeshGroup(m_Renderable.get(), this, IsAttached() && IsActive());
 	}
 }

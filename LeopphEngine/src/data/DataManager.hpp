@@ -129,14 +129,17 @@ namespace leopph::internal
 			[[nodiscard]]
 			auto FindMeshDataGroup(const std::string& id) -> std::shared_ptr<MeshDataGroup>;
 
-			// Returns a pointer to an already registered GlMeshGroup instance.
-			// If not present, creates a new one and returns a pointer to that.
-			[[nodiscard]]
-			auto CreateOrGetMeshGroup(std::shared_ptr<const MeshDataGroup>&& meshDataGroup) -> const GlMeshGroup*;
+			// Adds the GlMeshGroup to the collection of GlMeshGroups.
+			// Does NOT check for duplicates.
+			auto RegisterGlMeshGroup(GlMeshGroup* glMeshGroup) -> void;
 
-			// Unregisters all instances and destroys the MeshGroup.
-			// The function does NOT check whether the passed MeshGroup is registered or not.
-			auto DestroyMeshGroup(const GlMeshGroup* meshGroup) -> void;
+			// Removes the GlMeshGroup from the collection of GlMeshGroups.
+			// Removes duplicates.
+			auto UnregisterGlMeshGroup(const GlMeshGroup* glMeshGroup) -> void;
+
+			// Returns a shared_ptr to the GlMeshGroup using the MeshDataGroup, or nullptr if not found.
+			[[nodiscard]]
+			auto FindGlMeshGroup(const MeshDataGroup* meshDataGroup) -> std::shared_ptr<GlMeshGroup>;
 
 			// Adds the RenderComponent to the GlMeshGroups's collection of instances depending on the value of active.
 			// Does NOT check for duplicates.
@@ -191,7 +194,7 @@ namespace leopph::internal
 		private:
 			struct EntityAndComponents
 			{
-				// Owning pointer to Entity
+				// Non-owning pointer to Entity
 				Entity* Entity;
 				// Owning pointers to active Components
 				std::vector<Component*> ActiveComponents;
@@ -202,8 +205,8 @@ namespace leopph::internal
 
 			struct MeshGroupAndInstances
 			{
-				// Owning pointer to MeshGroup
-				std::unique_ptr<GlMeshGroup> MeshGroup;
+				// Non-owning pointer to MeshGroup
+				GlMeshGroup* MeshGroup;
 				// Non-owning pointers to active instances
 				std::vector<const RenderComponent*> ActiveInstances;
 				// Non-owning pointers to inactive instances
@@ -318,9 +321,9 @@ namespace leopph::internal
 
 	auto DataManager::FindMeshGroupInternalCommon(auto* const self, const GlMeshGroup* const meshGroup) -> decltype(auto)
 	{
-		return std::ranges::find_if(self->m_Renderables, [&](const auto& elem)
+		return std::ranges::find_if(self->m_Renderables, [meshGroup](const auto& elem)
 		{
-			return elem.MeshGroup.get() == meshGroup;
+			return elem.MeshGroup == meshGroup;
 		});
 	}
 }

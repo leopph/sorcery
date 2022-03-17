@@ -179,24 +179,33 @@ namespace leopph::internal
 	}
 
 
-	auto DataManager::CreateOrGetMeshGroup(std::shared_ptr<const MeshDataGroup>&& meshDataGroup) -> const GlMeshGroup*
+	auto DataManager::RegisterGlMeshGroup(GlMeshGroup* glMeshGroup) -> void
 	{
-		if (const auto it{
-			std::ranges::find_if(m_Renderables, [&](const auto& elem)
-			{
-				return elem.MeshGroup->MeshData() == *meshDataGroup;
-			})
-		}; it != m_Renderables.end())
-		{
-			return it->MeshGroup.get();
-		}
-		return m_Renderables.emplace_back(std::make_unique<GlMeshGroup>(std::move(meshDataGroup))).MeshGroup.get();
+		m_Renderables.push_back(MeshGroupAndInstances{.MeshGroup = glMeshGroup, .ActiveInstances = {}, .InactiveInstances = {}});
 	}
 
 
-	auto DataManager::DestroyMeshGroup(const GlMeshGroup* const meshGroup) -> void
+	auto DataManager::UnregisterGlMeshGroup(const GlMeshGroup* glMeshGroup) -> void
 	{
-		m_Renderables.erase(FindMeshGroupInternal(meshGroup));
+		std::erase_if(m_Renderables, [glMeshGroup](const auto& elem)
+		{
+			return elem.MeshGroup == glMeshGroup;
+		});
+	}
+
+
+	auto DataManager::FindGlMeshGroup(const MeshDataGroup* meshDataGroup) -> std::shared_ptr<GlMeshGroup>
+	{
+		if (const auto it = std::ranges::find_if(m_Renderables, [meshDataGroup](const auto& elem)
+		{
+			return elem.MeshGroup->MeshData().Id() == meshDataGroup->Id();
+		});
+			it != m_Renderables.end())
+		{
+			return it->MeshGroup->shared_from_this();
+		}
+
+		return nullptr;
 	}
 
 
