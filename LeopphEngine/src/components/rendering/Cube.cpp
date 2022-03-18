@@ -89,7 +89,7 @@ namespace leopph
 			s_Material = material = std::make_shared<Material>(Color{255, 255, 255}, Color{0, 0, 0}, nullptr, nullptr, 0.f, true);
 		}
 
-		Data().emplace_back(std::move(vertices), std::move(indices), std::move(material));
+		m_MeshData.emplace_back(std::move(vertices), std::move(indices), std::move(material));
 	}
 
 

@@ -50,7 +50,7 @@ namespace leopph
 
 		auto material = std::make_shared<Material>(Color{255, 255, 255}, Color{0, 0, 0}, std::move(texture), nullptr, 0.f, false);
 
-		Data().emplace_back(std::move(vertices), std::move(indices), std::move(material));
+		m_MeshData.emplace_back(std::move(vertices), std::move(indices), std::move(material));
 	}
 
 

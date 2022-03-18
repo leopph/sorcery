@@ -3,7 +3,9 @@
 #include "MeshData.hpp"
 
 #include <memory>
+#include <span>
 #include <string>
+#include <string_view>
 
 
 namespace leopph::internal
@@ -14,7 +16,7 @@ namespace leopph::internal
 	class MeshDataGroup : public std::enable_shared_from_this<MeshDataGroup>
 	{
 		public:
-			explicit MeshDataGroup(std::string id = GenerateId());
+			explicit MeshDataGroup(std::string id);
 
 			MeshDataGroup(const MeshDataGroup& other) = delete;
 			auto operator=(const MeshDataGroup& other) -> MeshDataGroup& = delete;
@@ -22,24 +24,39 @@ namespace leopph::internal
 			MeshDataGroup(MeshDataGroup&& other) noexcept = delete;
 			auto operator=(MeshDataGroup&& other) noexcept -> MeshDataGroup& = delete;
 
-			auto operator==(const MeshDataGroup& other) const -> bool;
+			[[nodiscard]] constexpr
+			auto operator<=>(const MeshDataGroup& other) const;
 
-			[[nodiscard]]
-			auto Id() const -> const std::string&;
+			[[nodiscard]] constexpr
+			auto Id() const -> std::string_view;
 
-			[[nodiscard]]
-			auto Data() const -> const std::vector<MeshData>&;
+			[[nodiscard]] constexpr
+			auto Data() const -> std::span<const MeshData>;
 
 			virtual ~MeshDataGroup() noexcept;
 
 		protected:
-			[[nodiscard]]
-			auto Data() -> std::vector<MeshData>&;
+			std::vector<MeshData> m_MeshData;
 
 		private:
 			std::string m_Id;
-			std::vector<MeshData> m_MeshData;
-
-			static auto GenerateId() noexcept -> std::string;
 	};
+
+
+	constexpr auto MeshDataGroup::operator<=>(const MeshDataGroup& other) const
+	{
+		return m_Id <=> other.m_Id;
+	}
+
+
+	constexpr auto MeshDataGroup::Id() const -> std::string_view
+	{
+		return m_Id;
+	}
+
+
+	constexpr auto MeshDataGroup::Data() const -> std::span<const MeshData>
+	{
+		return m_MeshData;
+	}
 }

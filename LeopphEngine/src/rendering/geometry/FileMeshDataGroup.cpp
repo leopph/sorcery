@@ -27,7 +27,7 @@ namespace leopph::internal
 			return;
 		}
 
-		Data() = ProcessNodes(scene);
+		m_MeshData = ProcessNodes(scene);
 	}
 
 

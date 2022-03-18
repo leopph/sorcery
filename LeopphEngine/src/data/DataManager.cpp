@@ -166,7 +166,7 @@ namespace leopph::internal
 				std::ranges::lower_bound(m_MeshData, id, [](const auto& elemId, const auto& value)
 				                         {
 					                         return elemId.compare(value) < 0;
-				                         }, [](const auto& elem) -> const auto&
+				                         }, [](const auto& elem)
 				                         {
 					                         return elem->Id();
 				                         })
@@ -312,9 +312,9 @@ namespace leopph::internal
 
 	auto DataManager::SortMeshData() -> void
 	{
-		std::ranges::sort(m_MeshData, [](const auto& left, const auto& right)
+		std::ranges::sort(m_MeshData, [](const auto* left, const auto* right)
 		{
-			return left->Id().compare(right->Id()) < 0;
+			return *left < *right;
 		});
 	}
 
