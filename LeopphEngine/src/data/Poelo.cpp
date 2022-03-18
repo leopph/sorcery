@@ -14,7 +14,7 @@ namespace leopph
 	}
 
 
-	auto leopph::Destroy(const internal::Poelo* poelo) -> void
+	auto Destroy(const internal::Poelo* poelo) -> void
 	{
 		internal::DataManager::Instance().Destroy(poelo);
 	}

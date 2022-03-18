@@ -15,7 +15,7 @@ namespace leopph::internal
 	auto DataManager::Clear() -> void
 	{
 		// Since some Poelo destructors might invoke other Poelo deletions, its safer to destruct one by one, than to clear.
-		while (m_Poelos.begin() != m_Poelos.end())
+		while (!m_Poelos.empty())
 		{
 			m_Poelos.erase(m_Poelos.begin());
 		}
@@ -32,12 +32,10 @@ namespace leopph::internal
 
 	auto DataManager::Destroy(const Poelo* poelo) -> bool
 	{
-		if (const auto it{m_Poelos.find(poelo)}; it != m_Poelos.end())
+		return std::erase_if(m_Poelos, [poelo](const std::unique_ptr<Poelo>& elem)
 		{
-			m_Poelos.erase(it);
-			return true;
-		}
-		return false;
+			return elem.get() == poelo;
+		});
 	}
 
 
@@ -50,11 +48,11 @@ namespace leopph::internal
 
 	auto DataManager::UnregisterEntity(const Entity* const entity) -> void
 	{
-		std::erase_if(m_EntitiesAndComponents, [&](const auto& elem)
+		// Keeps the relative order, remains sorted.
+		std::erase_if(m_EntitiesAndComponents, [entity](const EntityAndComponents& elem)
 		{
-			return elem.Entity == entity;
+			return *elem.Entity == *entity;
 		});
-		SortEntities();
 	}
 
 
@@ -68,16 +66,14 @@ namespace leopph::internal
 	auto DataManager::RegisterComponentForEntity(const Entity* const entity, Component* const component, const bool active) -> void
 	{
 		const auto it{FindEntityInternal(entity->Name())};
-		auto& components{active ? it->ActiveComponents : it->InactiveComponents};
-		components.push_back(component);
+		(active ? it->ActiveComponents : it->InactiveComponents).push_back(component);
 	}
 
 
 	auto DataManager::UnregisterComponentFromEntity(const Entity* const entity, Component* const component, const bool active) -> void
 	{
 		const auto it{FindEntityInternal(entity->Name())};
-		auto& components{active ? it->ActiveComponents : it->InactiveComponents};
-		std::erase(components, component);
+		std::erase(active ? it->ActiveComponents : it->InactiveComponents, component);
 	}
 
 
@@ -114,11 +110,7 @@ namespace leopph::internal
 
 	auto DataManager::DirectionalLight() const -> const leopph::DirectionalLight*
 	{
-		if (m_ActiveDirLights.empty())
-		{
-			return nullptr;
-		}
-		return m_ActiveDirLights.front();
+		return m_ActiveDirLights.empty() ? nullptr : m_ActiveDirLights.front();
 	}
 
 
@@ -155,8 +147,11 @@ namespace leopph::internal
 
 	auto DataManager::UnregisterMeshDataGroup(MeshDataGroup* const meshData) -> void
 	{
-		std::erase(m_MeshDataGroups, meshData);
-		SortMeshData();
+		// Keeps the relative order, remains sorted.
+		std::erase_if(m_MeshDataGroups, [meshData](const MeshDataGroup* elem)
+		{
+			return *elem == *meshData;
+		});
 	}
 
 
@@ -197,9 +192,9 @@ namespace leopph::internal
 	auto DataManager::FindGlMeshGroup(const MeshDataGroup* meshDataGroup) -> std::shared_ptr<GlMeshGroup>
 	{
 		if (const auto it = std::ranges::find(m_Renderables, *meshDataGroup, [](const MeshGroupAndInstances& elem) -> const MeshDataGroup&
-			{
-				return elem.MeshGroup->MeshData();
-			}); it != m_Renderables.end())
+		{
+			return elem.MeshGroup->MeshData();
+		}); it != m_Renderables.end())
 		{
 			return it->MeshGroup->shared_from_this();
 		}
@@ -273,26 +268,17 @@ namespace leopph::internal
 
 	auto DataManager::UnregisterTexture(Texture* const texture) -> void
 	{
+		// Keeps the relative order, remains sorted.
 		std::erase(m_Textures, texture);
-		SortTextures();
 	}
 
 
 	auto DataManager::FindTexture(const std::filesystem::path& path) -> std::shared_ptr<Texture>
 	{
-		if (const auto it{
-				std::ranges::lower_bound(m_Textures,
-				                         path,
-				                         [](const auto& elemPath, const auto& valPath)
-				                         {
-					                         return elemPath.compare(valPath);
-				                         },
-				                         [](const auto& texture) -> const auto&
-				                         {
-					                         return texture->Path();
-				                         })
-			};
-			it != m_Textures.end() && **it == path)
+		if (const auto it = std::lower_bound(m_Textures.begin(), m_Textures.end(), path, [](const Texture* tex, const std::filesystem::path& val)
+		{
+			return *tex < val;
+		}); it != m_Textures.end() && **it == path)
 		{
 			return (*it)->shared_from_this();
 		}
