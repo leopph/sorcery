@@ -1,7 +1,7 @@
 #include "RenderComponent.hpp"
 
 #include "../../data/DataManager.hpp"
-#include "../../rendering/geometry/MeshDataGroup.hpp"
+#include "../../rendering/geometry/MeshGroup.hpp"
 
 
 namespace leopph::internal
@@ -18,8 +18,8 @@ namespace leopph::internal
 		if (IsAttached())
 		{
 			auto& dataManager{DataManager::Instance()};
-			dataManager.UnregisterInstanceFromMeshGroup(m_Renderable.get(), this, false);
-			dataManager.RegisterInstanceForMeshGroup(m_Renderable.get(), this, true);
+			dataManager.UnregisterInstanceFromGlMeshGroup(m_Renderable.get(), this, false);
+			dataManager.RegisterInstanceForGlMeshGroup(m_Renderable.get(), this, true);
 		}
 	}
 
@@ -36,8 +36,8 @@ namespace leopph::internal
 		if (IsAttached())
 		{
 			auto& dataManager{DataManager::Instance()};
-			dataManager.UnregisterInstanceFromMeshGroup(m_Renderable.get(), this, true);
-			dataManager.RegisterInstanceForMeshGroup(m_Renderable.get(), this, false);
+			dataManager.UnregisterInstanceFromGlMeshGroup(m_Renderable.get(), this, true);
+			dataManager.RegisterInstanceForGlMeshGroup(m_Renderable.get(), this, false);
 		}
 	}
 
@@ -54,8 +54,8 @@ namespace leopph::internal
 		if (IsActive())
 		{
 			auto& dataManager{DataManager::Instance()};
-			dataManager.UnregisterInstanceFromMeshGroup(m_Renderable.get(), this, false);
-			dataManager.RegisterInstanceForMeshGroup(m_Renderable.get(), this, true);
+			dataManager.UnregisterInstanceFromGlMeshGroup(m_Renderable.get(), this, false);
+			dataManager.RegisterInstanceForGlMeshGroup(m_Renderable.get(), this, true);
 		}
 	}
 
@@ -72,13 +72,13 @@ namespace leopph::internal
 		if (IsActive())
 		{
 			auto& dataManager{DataManager::Instance()};
-			dataManager.UnregisterInstanceFromMeshGroup(m_Renderable.get(), this, true);
-			dataManager.RegisterInstanceForMeshGroup(m_Renderable.get(), this, false);
+			dataManager.UnregisterInstanceFromGlMeshGroup(m_Renderable.get(), this, true);
+			dataManager.RegisterInstanceForGlMeshGroup(m_Renderable.get(), this, false);
 		}
 	}
 
 
-	RenderComponent::RenderComponent(std::shared_ptr<const MeshDataGroup> meshDataGroup) :
+	RenderComponent::RenderComponent(std::shared_ptr<const MeshGroup> meshDataGroup) :
 		m_Renderable{DataManager::Instance().FindGlMeshGroup(meshDataGroup.get())}
 	{
 		if (!m_Renderable)
@@ -86,12 +86,12 @@ namespace leopph::internal
 			m_Renderable = std::make_shared<GlMeshGroup>(std::move(meshDataGroup));
 		}
 
-		DataManager::Instance().RegisterInstanceForMeshGroup(m_Renderable.get(), this, false);
+		DataManager::Instance().RegisterInstanceForGlMeshGroup(m_Renderable.get(), this, false);
 	}
 
 
 	RenderComponent::~RenderComponent() noexcept
 	{
-		DataManager::Instance().UnregisterInstanceFromMeshGroup(m_Renderable.get(), this, IsAttached() && IsActive());
+		DataManager::Instance().UnregisterInstanceFromGlMeshGroup(m_Renderable.get(), this, IsAttached() && IsActive());
 	}
 }

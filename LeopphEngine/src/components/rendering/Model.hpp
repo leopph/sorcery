@@ -30,7 +30,7 @@ namespace leopph
 		private:
 			std::filesystem::path m_Path;
 
-			[[nodiscard]] auto GetMeshData(const std::filesystem::path& path) const -> std::shared_ptr<internal::MeshDataGroup>;
+			[[nodiscard]] auto GetMeshGroup(const std::filesystem::path& path) const -> std::shared_ptr<internal::MeshGroup>;
 	};
 
 

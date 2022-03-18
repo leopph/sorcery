@@ -12,14 +12,13 @@
 #include "../rendering/SkyboxImpl.hpp"
 #include "../rendering/Texture.hpp"
 #include "../rendering/geometry/GlMeshGroup.hpp"
-#include "../rendering/geometry/MeshDataGroup.hpp"
+#include "../rendering/geometry/MeshGroup.hpp"
 #include "../util/equal/PathedEqual.hpp"
 #include "../util/hash/PathedHash.hpp"
 #include "../util/less/PoeloLess.hpp"
 
 #include <algorithm>
 #include <filesystem>
-#include <functional>
 #include <memory>
 #include <set>
 #include <span>
@@ -118,17 +117,17 @@ namespace leopph::internal
 			[[nodiscard]] constexpr
 			auto ActivePointLights() const noexcept -> auto&;
 
-			// Stores the passed pointer in the collection of MeshDataGroups.
+			// Stores the MeshGroup pointer in the collection of MeshGroups.
 			// The function does NOT check for duplicates.
-			auto RegisterMeshDataGroup(MeshDataGroup* meshData) -> void;
+			auto RegisterMeshGroup(MeshGroup* meshData) -> void;
 
-			// Removes all registered MeshDataGroup pointers the point to the same MeshDataGroup instance as the passed pointer.
-			auto UnregisterMeshDataGroup(MeshDataGroup* meshData) -> void;
+			// Removes all registered MeshGroup pointers the point to the same MeshGroup instance as the passed pointer.
+			auto UnregisterMeshGroup(MeshGroup* meshData) -> void;
 
-			// Returns a shared_ptr to an already existing registered MeshDataGroup instance whose ID is equal to the passed ID.
+			// Returns a shared_ptr to an already existing registered MeshGroup instance whose ID is equal to the passed ID.
 			// If not found, returns nullptr.
 			[[nodiscard]]
-			auto FindMeshDataGroup(const std::string& id) -> std::shared_ptr<MeshDataGroup>;
+			auto FindMeshGroup(const std::string& id) -> std::shared_ptr<MeshGroup>;
 
 			// Adds the GlMeshGroup to the collection of GlMeshGroups.
 			// Does NOT check for duplicates.
@@ -138,22 +137,22 @@ namespace leopph::internal
 			// Removes duplicates.
 			auto UnregisterGlMeshGroup(const GlMeshGroup* glMeshGroup) -> void;
 
-			// Returns a shared_ptr to the GlMeshGroup using the MeshDataGroup, or nullptr if not found.
+			// Returns a shared_ptr to the GlMeshGroup using the MeshGroup, or nullptr if not found.
 			[[nodiscard]]
-			auto FindGlMeshGroup(const MeshDataGroup* meshDataGroup) -> std::shared_ptr<GlMeshGroup>;
+			auto FindGlMeshGroup(const MeshGroup* meshDataGroup) -> std::shared_ptr<GlMeshGroup>;
 
 			// Adds the RenderComponent to the GlMeshGroups's collection of instances depending on the value of active.
 			// Does NOT check for duplicates.
-			auto RegisterInstanceForMeshGroup(const GlMeshGroup* meshGroup, const RenderComponent* instance, bool active) -> void;
+			auto RegisterInstanceForGlMeshGroup(const GlMeshGroup* meshGroup, const RenderComponent* instance, bool active) -> void;
 
 			// Removes the RenderComponent from the GlMeshGroup's collection of instances depending on the value of active.
 			// Removes duplicats.
-			auto UnregisterInstanceFromMeshGroup(const GlMeshGroup* meshGroup, const RenderComponent* instance, bool active) -> void;
+			auto UnregisterInstanceFromGlMeshGroup(const GlMeshGroup* meshGroup, const RenderComponent* instance, bool active) -> void;
 
 			// Returns the number of instances that are registered for the MeshGroup.
 			// The function does NOT check whether the passed MeshGroup is registered or not.
 			[[nodiscard]]
-			auto MeshGroupInstanceCount(const GlMeshGroup* meshGroup) const -> std::size_t;
+			auto GlMeshGroupInstanceCount(const GlMeshGroup* meshGroup) const -> std::size_t;
 
 			// Returns all registered GlMeshGroups and their active and inactive instances.
 			[[nodiscard]] constexpr
@@ -204,7 +203,7 @@ namespace leopph::internal
 			};
 
 
-			struct MeshGroupAndInstances
+			struct GlMeshGroupAndInstances
 			{
 				// Non-owning pointer to MeshGroup
 				GlMeshGroup* MeshGroup;
@@ -220,14 +219,14 @@ namespace leopph::internal
 			using TextureOrderFunc = std::ranges::less;
 
 			auto SortEntities() -> void;
-			auto SortMeshData() -> void;
+			auto SortMeshGroups() -> void;
 			auto SortTextures() -> void;
 
 			// All engine-owned objects.
 			std::set<std::unique_ptr<Poelo>, PoeloLess> m_Poelos;
 
-			// Non-owning pointers to all MeshDataGroup instances.
-			std::vector<MeshDataGroup*> m_MeshDataGroups;
+			// Non-owning pointers to all MeshGroup instances.
+			std::vector<MeshGroup*> m_MeshGroups;
 
 			// Non-owning pointers to all Texture instances.
 			std::vector<Texture*> m_Textures;
@@ -255,8 +254,8 @@ namespace leopph::internal
 			// SkyboxImpl instances and non-owning pointer to all the Skybox handles pointing to them.
 			std::unordered_map<SkyboxImpl, std::vector<Skybox*>, PathedHash<SkyboxImpl>, PathedEqual<SkyboxImpl>> m_Skyboxes;
 
-			// All MeshGroups and all of their registered instances
-			std::vector<MeshGroupAndInstances> m_Renderables;
+			// All GlMeshGroups and all of their registered instances
+			std::vector<GlMeshGroupAndInstances> m_GlMeshGroups;
 
 			// All Entities and all of their attached Components
 			std::vector<EntityAndComponents> m_EntitiesAndComponents;
@@ -271,10 +270,10 @@ namespace leopph::internal
 			[[nodiscard]] static auto FindEntityInternalCommon(auto* self, const std::string& name) -> decltype(auto);
 
 			// Returns a non-const iterator to the element or past-the-end.
-			[[nodiscard]] auto FindMeshGroupInternal(const GlMeshGroup* meshGroup) -> decltype(m_Renderables)::iterator;
+			[[nodiscard]] auto FindMeshGroupInternal(const GlMeshGroup* meshGroup) -> decltype(m_GlMeshGroups)::iterator;
 
 			// Returns a const iterator to the element or past-the-end.
-			[[nodiscard]] auto FindMeshGroupInternal(const GlMeshGroup* meshGroup) const -> decltype(m_Renderables)::const_iterator;
+			[[nodiscard]] auto FindMeshGroupInternal(const GlMeshGroup* meshGroup) const -> decltype(m_GlMeshGroups)::const_iterator;
 
 			// Helper function to get const and non-const iterators depending on context.
 			[[nodiscard]] static auto FindMeshGroupInternalCommon(auto* self, const GlMeshGroup* meshGroup) -> decltype(auto);
@@ -301,7 +300,7 @@ namespace leopph::internal
 
 	[[nodiscard]] constexpr auto DataManager::MeshGroupsAndInstances() const noexcept -> auto&
 	{
-		return m_Renderables;
+		return m_GlMeshGroups;
 	}
 
 
@@ -326,7 +325,7 @@ namespace leopph::internal
 
 	auto DataManager::FindMeshGroupInternalCommon(auto* const self, const GlMeshGroup* const meshGroup) -> decltype(auto)
 	{
-		return std::ranges::find(self->m_Renderables, meshGroup, [](const MeshGroupAndInstances& elem)
+		return std::ranges::find(self->m_GlMeshGroups, meshGroup, [](const GlMeshGroupAndInstances& elem)
 		{
 			return elem.MeshGroup;
 		});

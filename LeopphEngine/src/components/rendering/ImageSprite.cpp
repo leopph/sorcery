@@ -10,19 +10,19 @@ namespace leopph
 	{}
 
 
-	auto ImageSprite::GetMeshData(const std::filesystem::path& src, const unsigned ppi) -> std::shared_ptr<const internal::MeshDataGroup>
+	auto ImageSprite::GetMeshData(const std::filesystem::path& src, const unsigned ppi) -> std::shared_ptr<const internal::MeshGroup>
 	{
-		if (auto p{internal::DataManager::Instance().FindMeshDataGroup(MeshDataGroup::GetMeshId(src, ppi))}; p)
+		if (auto p{internal::DataManager::Instance().FindMeshGroup(SpriteMeshGroup::GetMeshId(src, ppi))}; p)
 		{
 			return p;
 		}
 
-		return std::make_shared<MeshDataGroup>(src, ppi);
+		return std::make_shared<SpriteMeshGroup>(src, ppi);
 	}
 
 
-	ImageSprite::MeshDataGroup::MeshDataGroup(const std::filesystem::path& src, const unsigned ppi) :
-		internal::MeshDataGroup{GetMeshId(src, ppi)}
+	ImageSprite::SpriteMeshGroup::SpriteMeshGroup(const std::filesystem::path& src, const unsigned ppi) :
+		MeshGroup{GetMeshId(src, ppi)}
 	{
 		auto texture{internal::DataManager::Instance().FindTexture(src)};
 		if (!texture)
@@ -54,7 +54,7 @@ namespace leopph
 	}
 
 
-	auto ImageSprite::MeshDataGroup::GetMeshId(const std::filesystem::path& src, const unsigned ppi) -> std::string
+	auto ImageSprite::SpriteMeshGroup::GetMeshId(const std::filesystem::path& src, const unsigned ppi) -> std::string
 	{
 		return src.generic_string() + "+ppi=" + std::to_string(ppi);
 	}

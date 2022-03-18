@@ -1,6 +1,6 @@
 #pragma once
 
-#include "MeshData.hpp"
+#include "Mesh.hpp"
 #include "../shaders/ShaderProgram.hpp"
 
 #include <glad/gl.h>
@@ -17,7 +17,7 @@ namespace leopph::internal
 	class GlMesh final
 	{
 		public:
-			GlMesh(const MeshData& meshData, GLuint instanceBuffer);
+			GlMesh(std::shared_ptr<const Mesh> meshData, GLuint instanceBuffer);
 
 			GlMesh(const GlMesh& other) = delete;
 			auto operator=(const GlMesh& other) -> GlMesh& = delete;
@@ -31,8 +31,7 @@ namespace leopph::internal
 			auto DrawWithoutMaterial(GLsizei instanceCount) const -> void;
 
 		private:
-			// Must not be null when in use!
-			std::shared_ptr<Material> m_Material;
+			std::shared_ptr<const Mesh> m_MeshData;
 			GLuint m_VertexArray{0};
 			std::array<GLuint, 2> m_Buffers{0, 0};
 			GLsizei m_NumIndices;

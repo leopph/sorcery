@@ -46,11 +46,11 @@
     <ClCompile Include="src\windowing\Window.cpp" />
     <ClCompile Include="src\rendering\RenderBuffer.cpp" />
     <ClCompile Include="src\data\DataManager.cpp" />
-    <ClCompile Include="src\rendering\geometry\FileMeshDataGroup.cpp" />
+    <ClCompile Include="src\rendering\geometry\FileMeshGroup.cpp" />
     <ClCompile Include="src\rendering\UniformBuffer.cpp" />
     <ClCompile Include="src\util\hash\StringHash.cpp" />
     <ClCompile Include="src\util\equal\StringEqual.cpp" />
-    <ClCompile Include="src\rendering\geometry\MeshDataGroup.cpp" />
+    <ClCompile Include="src\rendering\geometry\MeshGroup.cpp" />
     <ClCompile Include="src\components\rendering\RenderComponent.cpp" />
     <ClCompile Include="src\util\less\StringLess.cpp" />
     <ClCompile Include="src\scene\SceneManager.cpp" />
@@ -73,6 +73,7 @@
     <ClCompile Include="src\events\SpotShadowEvent.cpp" />
     <ClCompile Include="src\events\WindowEvent.cpp" />
     <ClCompile Include="src\components\rendering\ImageSprite.cpp" />
+    <ClCompile Include="src\rendering\geometry\Mesh.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\Behavior.hpp" />
@@ -148,9 +149,9 @@
     <ClInclude Include="src\util\hash\PathedHash.hpp" />
     <ClInclude Include="src\util\equal\PathedEqual.hpp" />
     <ClInclude Include="src\util\concepts\Pathed.hpp" />
-    <ClInclude Include="src\rendering\geometry\MeshData.hpp" />
-    <ClInclude Include="src\rendering\geometry\MeshDataGroup.hpp" />
-    <ClInclude Include="src\rendering\geometry\FileMeshDataGroup.hpp" />
+    <ClInclude Include="src\rendering\geometry\Mesh.hpp" />
+    <ClInclude Include="src\rendering\geometry\MeshGroup.hpp" />
+    <ClInclude Include="src\rendering\geometry\FileMeshGroup.hpp" />
     <ClInclude Include="src\components\rendering\RenderComponent.hpp" />
     <ClInclude Include="src\util\equal\PointerEqual.hpp" />
     <ClInclude Include="src\util\hash\PointerHash.hpp" />
@@ -176,6 +177,7 @@
     <ClInclude Include="src\components\rendering\Cube.hpp" />
     <ClInclude Include="src\util\api_adapters\GLFWAdapter.hpp" />
     <ClInclude Include="src\components\rendering\ImageSprite.hpp" />
+    <ClInclude Include="src\util\Sphere.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\cpp.hint" />

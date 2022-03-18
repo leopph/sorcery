@@ -2,7 +2,7 @@
 
 #include "RenderComponent.hpp"
 #include "../../api/LeopphApi.hpp"
-#include "../../rendering/geometry/MeshDataGroup.hpp"
+#include "../../rendering/geometry/MeshGroup.hpp"
 
 #include <filesystem>
 #include <string>
@@ -18,13 +18,13 @@ namespace leopph
 
 		private:
 			[[nodiscard]] static
-			auto GetMeshData(const std::filesystem::path& src, unsigned ppi) -> std::shared_ptr<const internal::MeshDataGroup>;
+			auto GetMeshData(const std::filesystem::path& src, unsigned ppi) -> std::shared_ptr<const internal::MeshGroup>;
 
 
-			class MeshDataGroup final : public internal::MeshDataGroup
+			class SpriteMeshGroup final : public internal::MeshGroup
 			{
 				public:
-					explicit MeshDataGroup(const std::filesystem::path& src, unsigned ppi);
+					explicit SpriteMeshGroup(const std::filesystem::path& src, unsigned ppi);
 
 					// Creates the used mesh id from the source path and ppi.
 					[[nodiscard]] static

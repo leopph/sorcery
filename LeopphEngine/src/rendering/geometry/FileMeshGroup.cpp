@@ -1,4 +1,4 @@
-#include "FileMeshDataGroup.hpp"
+#include "FileMeshGroup.hpp"
 
 #include "../../data/DataManager.hpp"
 #include "../../util/Logger.hpp"
@@ -14,8 +14,8 @@
 
 namespace leopph::internal
 {
-	FileMeshDataGroup::FileMeshDataGroup(std::filesystem::path path) :
-		MeshDataGroup{path.generic_string()},
+	FileMeshGroup::FileMeshGroup(std::filesystem::path path) :
+		MeshGroup{path.generic_string()},
 		m_Path{std::move(path)}
 	{
 		Assimp::Importer importer;
@@ -31,13 +31,13 @@ namespace leopph::internal
 	}
 
 
-	auto FileMeshDataGroup::Path() const -> const std::filesystem::path&
+	auto FileMeshGroup::Path() const -> const std::filesystem::path&
 	{
 		return m_Path;
 	}
 
 
-	auto FileMeshDataGroup::ProcessNodes(const aiScene* const scene) const -> std::vector<internal::MeshData>
+	auto FileMeshGroup::ProcessNodes(const aiScene* const scene) const -> std::vector<internal::Mesh>
 	{
 		struct NodeAndTransform
 		{
@@ -58,7 +58,7 @@ namespace leopph::internal
 		rootTrafo *= Matrix3{1, 1, -1};
 		nodes.emplace(scene->mRootNode, rootTrafo);
 
-		std::vector<internal::MeshData> ret;
+		std::vector<internal::Mesh> ret;
 
 		while (!nodes.empty())
 		{
@@ -89,7 +89,7 @@ namespace leopph::internal
 	}
 
 
-	auto FileMeshDataGroup::ProcessMesh(const aiMesh* const mesh, const aiScene* const scene, const Matrix3& trafo) const -> MeshData
+	auto FileMeshGroup::ProcessMesh(const aiMesh* const mesh, const aiScene* const scene, const Matrix3& trafo) const -> Mesh
 	{
 		std::vector<Vertex> vertices;
 		std::vector<unsigned> indices;
@@ -148,11 +148,11 @@ namespace leopph::internal
 			material->TwoSided = !twoSided;
 		}
 
-		return MeshData(vertices, indices, material);
+		return {vertices, indices, material};
 	}
 
 
-	auto FileMeshDataGroup::LoadTexture(const aiMaterial* const material, const aiTextureType type) const -> std::shared_ptr<Texture>
+	auto FileMeshGroup::LoadTexture(const aiMaterial* const material, const aiTextureType type) const -> std::shared_ptr<Texture>
 	{
 		if (material->GetTextureCount(type) > 0)
 		{

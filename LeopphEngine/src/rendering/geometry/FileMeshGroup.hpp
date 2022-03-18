@@ -1,6 +1,6 @@
 #pragma once
 
-#include "MeshDataGroup.hpp"
+#include "MeshGroup.hpp"
 #include "../Texture.hpp"
 #include "../../math/Matrix.hpp"
 
@@ -12,10 +12,10 @@
 
 namespace leopph::internal
 {
-	class FileMeshDataGroup final : public MeshDataGroup
+	class FileMeshGroup final : public MeshGroup
 	{
 		public:
-			explicit FileMeshDataGroup(std::filesystem::path path);
+			explicit FileMeshGroup(std::filesystem::path path);
 
 			[[nodiscard]]
 			auto Path() const -> const std::filesystem::path&;
@@ -23,8 +23,8 @@ namespace leopph::internal
 		private:
 			std::filesystem::path m_Path;
 
-			auto ProcessNodes(const aiScene* scene) const -> std::vector<MeshData>;
-			auto ProcessMesh(const aiMesh* mesh, const aiScene* scene, const Matrix3& trafo) const -> MeshData;
+			auto ProcessNodes(const aiScene* scene) const -> std::vector<Mesh>;
+			auto ProcessMesh(const aiMesh* mesh, const aiScene* scene, const Matrix3& trafo) const -> Mesh;
 			auto LoadTexture(const aiMaterial* material, aiTextureType type) const -> std::shared_ptr<Texture>;
 	};
 }

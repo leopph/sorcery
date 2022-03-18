@@ -138,27 +138,27 @@ namespace leopph::internal
 	}
 
 
-	auto DataManager::RegisterMeshDataGroup(MeshDataGroup* const meshData) -> void
+	auto DataManager::RegisterMeshGroup(MeshGroup* const meshData) -> void
 	{
-		m_MeshDataGroups.push_back(meshData);
-		SortMeshData();
+		m_MeshGroups.push_back(meshData);
+		SortMeshGroups();
 	}
 
 
-	auto DataManager::UnregisterMeshDataGroup(MeshDataGroup* const meshData) -> void
+	auto DataManager::UnregisterMeshGroup(MeshGroup* const meshData) -> void
 	{
 		// Keeps the relative order, remains sorted.
-		std::erase_if(m_MeshDataGroups, [meshData](const MeshDataGroup* elem)
+		std::erase_if(m_MeshGroups, [meshData](const MeshGroup* elem)
 		{
 			return *elem == *meshData;
 		});
 	}
 
 
-	auto DataManager::FindMeshDataGroup(const std::string& id) -> std::shared_ptr<MeshDataGroup>
+	auto DataManager::FindMeshGroup(const std::string& id) -> std::shared_ptr<MeshGroup>
 	{
 		if (const auto it{
-				std::ranges::lower_bound(m_MeshDataGroups, id, [](const auto& elemId, const auto& value)
+				std::ranges::lower_bound(m_MeshGroups, id, [](const auto& elemId, const auto& value)
 				                         {
 					                         return elemId.compare(value) < 0;
 				                         }, [](const auto& elem)
@@ -166,7 +166,7 @@ namespace leopph::internal
 					                         return elem->Id();
 				                         })
 			};
-			it != m_MeshDataGroups.end() && (*it)->Id() == id)
+			it != m_MeshGroups.end() && (*it)->Id() == id)
 		{
 			return (*it)->shared_from_this();
 		}
@@ -176,25 +176,25 @@ namespace leopph::internal
 
 	auto DataManager::RegisterGlMeshGroup(GlMeshGroup* glMeshGroup) -> void
 	{
-		m_Renderables.push_back(MeshGroupAndInstances{.MeshGroup = glMeshGroup, .ActiveInstances = {}, .InactiveInstances = {}});
+		m_GlMeshGroups.push_back(GlMeshGroupAndInstances{.MeshGroup = glMeshGroup, .ActiveInstances = {}, .InactiveInstances = {}});
 	}
 
 
 	auto DataManager::UnregisterGlMeshGroup(const GlMeshGroup* glMeshGroup) -> void
 	{
-		std::erase_if(m_Renderables, [glMeshGroup](const auto& elem)
+		std::erase_if(m_GlMeshGroups, [glMeshGroup](const auto& elem)
 		{
 			return elem.MeshGroup == glMeshGroup;
 		});
 	}
 
 
-	auto DataManager::FindGlMeshGroup(const MeshDataGroup* meshDataGroup) -> std::shared_ptr<GlMeshGroup>
+	auto DataManager::FindGlMeshGroup(const MeshGroup* meshDataGroup) -> std::shared_ptr<GlMeshGroup>
 	{
-		if (const auto it = std::ranges::find(m_Renderables, *meshDataGroup, [](const MeshGroupAndInstances& elem) -> const MeshDataGroup&
+		if (const auto it = std::ranges::find(m_GlMeshGroups, *meshDataGroup, [](const GlMeshGroupAndInstances& elem) -> const MeshGroup&
 		{
 			return elem.MeshGroup->MeshData();
-		}); it != m_Renderables.end())
+		}); it != m_GlMeshGroups.end())
 		{
 			return it->MeshGroup->shared_from_this();
 		}
@@ -203,21 +203,21 @@ namespace leopph::internal
 	}
 
 
-	auto DataManager::RegisterInstanceForMeshGroup(const GlMeshGroup* meshGroup, const RenderComponent* instance, const bool active) -> void
+	auto DataManager::RegisterInstanceForGlMeshGroup(const GlMeshGroup* meshGroup, const RenderComponent* instance, const bool active) -> void
 	{
 		const auto it{FindMeshGroupInternal(meshGroup)};
 		(active ? it->ActiveInstances : it->InactiveInstances).push_back(instance);
 	}
 
 
-	auto DataManager::UnregisterInstanceFromMeshGroup(const GlMeshGroup* meshGroup, const RenderComponent* instance, const bool active) -> void
+	auto DataManager::UnregisterInstanceFromGlMeshGroup(const GlMeshGroup* meshGroup, const RenderComponent* instance, const bool active) -> void
 	{
 		const auto it{FindMeshGroupInternal(meshGroup)};
 		std::erase(active ? it->ActiveInstances : it->InactiveInstances, instance);
 	}
 
 
-	auto DataManager::MeshGroupInstanceCount(const GlMeshGroup* const meshGroup) const -> std::size_t
+	auto DataManager::GlMeshGroupInstanceCount(const GlMeshGroup* const meshGroup) const -> std::size_t
 	{
 		const auto it{FindMeshGroupInternal(meshGroup)};
 		return it->ActiveInstances.size() + it->InactiveInstances.size();
@@ -295,9 +295,9 @@ namespace leopph::internal
 	}
 
 
-	auto DataManager::SortMeshData() -> void
+	auto DataManager::SortMeshGroups() -> void
 	{
-		std::ranges::sort(m_MeshDataGroups, MeshDataOrderFunc{}, [](const auto* p) -> const auto&
+		std::ranges::sort(m_MeshGroups, MeshDataOrderFunc{}, [](const auto* p) -> const auto&
 		{
 			return *p;
 		});
@@ -325,13 +325,13 @@ namespace leopph::internal
 	}
 
 
-	auto DataManager::FindMeshGroupInternal(const GlMeshGroup* const meshGroup) -> decltype(m_Renderables)::iterator
+	auto DataManager::FindMeshGroupInternal(const GlMeshGroup* const meshGroup) -> decltype(m_GlMeshGroups)::iterator
 	{
 		return FindMeshGroupInternalCommon(this, meshGroup);
 	}
 
 
-	auto DataManager::FindMeshGroupInternal(const GlMeshGroup* const meshGroup) const -> decltype(m_Renderables)::const_iterator
+	auto DataManager::FindMeshGroupInternal(const GlMeshGroup* const meshGroup) const -> decltype(m_GlMeshGroups)::const_iterator
 	{
 		return FindMeshGroupInternalCommon(this, meshGroup);
 	}

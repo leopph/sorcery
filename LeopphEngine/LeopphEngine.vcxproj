@@ -200,9 +200,9 @@
     <ClInclude Include="src\misc\Color.hpp" />
     <ClInclude Include="src\rendering\CascadedShadowMap.hpp" />
     <ClInclude Include="src\rendering\CubeShadowMap.hpp" />
-    <ClInclude Include="src\rendering\geometry\FileMeshDataGroup.hpp" />
-    <ClInclude Include="src\rendering\geometry\MeshData.hpp" />
-    <ClInclude Include="src\rendering\geometry\MeshDataGroup.hpp" />
+    <ClInclude Include="src\rendering\geometry\FileMeshGroup.hpp" />
+    <ClInclude Include="src\rendering\geometry\Mesh.hpp" />
+    <ClInclude Include="src\rendering\geometry\MeshGroup.hpp" />
     <ClInclude Include="src\rendering\geometry\GlMeshGroup.hpp" />
     <ClInclude Include="src\rendering\GeometryBuffer.hpp" />
     <ClInclude Include="src\rendering\renderers\DeferredOpenGlRenderer.hpp" />
@@ -264,6 +264,7 @@
     <ClInclude Include="src\math\Vector.hpp" />
     <ClInclude Include="src\rendering\geometry\Vertex.hpp" />
     <ClInclude Include="src\util\hash\PathHash.hpp" />
+    <ClInclude Include="src\util\Sphere.hpp" />
     <ClInclude Include="src\windowing\GlWindow.hpp" />
     <ClInclude Include="src\windowing\Window.hpp" />
     <ClInclude Include="src\windowing\WindowImpl.hpp" />
@@ -294,10 +295,11 @@
     <ClCompile Include="src\misc\Color.cpp" />
     <ClCompile Include="src\rendering\CascadedShadowMap.cpp" />
     <ClCompile Include="src\rendering\CubeShadowMap.cpp" />
-    <ClCompile Include="src\rendering\geometry\FileMeshDataGroup.cpp" />
+    <ClCompile Include="src\rendering\geometry\FileMeshGroup.cpp" />
     <ClCompile Include="src\rendering\geometry\GlMeshGroup.cpp" />
     <ClCompile Include="src\rendering\GeometryBuffer.cpp" />
-    <ClCompile Include="src\rendering\geometry\MeshDataGroup.cpp" />
+    <ClCompile Include="src\rendering\geometry\Mesh.cpp" />
+    <ClCompile Include="src\rendering\geometry\MeshGroup.cpp" />
     <ClCompile Include="src\rendering\renderers\DeferredOpenGlRenderer.cpp" />
     <ClCompile Include="src\rendering\opengl\OpenGl.cpp" />
     <ClCompile Include="src\rendering\renderers\OpenGlRenderer.cpp" />

@@ -2,7 +2,7 @@
 
 #include "RenderComponent.hpp"
 #include "../../api/LeopphApi.hpp"
-#include "../../rendering/geometry/MeshDataGroup.hpp"
+#include "../../rendering/geometry/MeshGroup.hpp"
 
 #include <string>
 
@@ -17,15 +17,15 @@ namespace leopph
 
 		private:
 			[[nodiscard]] static
-			auto GetMeshData() -> std::shared_ptr<const internal::MeshDataGroup>;
+			auto GetMeshData() -> std::shared_ptr<const internal::MeshGroup>;
 
 			const static std::string s_MeshDataId;
 
 
-			class CubeMeshDataGroup final : public internal::MeshDataGroup
+			class CubeMeshGroup final : public internal::MeshGroup
 			{
 				public:
-					CubeMeshDataGroup();
+					CubeMeshGroup();
 
 				private:
 					static std::weak_ptr<Material> s_Material;

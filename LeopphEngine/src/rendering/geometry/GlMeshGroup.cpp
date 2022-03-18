@@ -8,25 +8,27 @@
 
 namespace leopph::internal
 {
-	GlMeshGroup::GlMeshGroup(std::shared_ptr<const MeshDataGroup> meshDataGroup) :
-		m_MeshData{std::move(meshDataGroup)}
+	GlMeshGroup::GlMeshGroup(std::shared_ptr<const MeshGroup> meshDataGroup) :
+		m_MeshDataGroup{std::move(meshDataGroup)}
 	{
 		DataManager::Instance().RegisterGlMeshGroup(this);
 
 		glCreateBuffers(1, &m_InstBuf);
 		glNamedBufferData(m_InstBuf, 2 * sizeof(Matrix4), nullptr, GL_STATIC_DRAW);
 
-		std::ranges::for_each(m_MeshData->Data(), [&](const auto& meshData)
+		std::ranges::for_each(m_MeshDataGroup->Data(), [&](const internal::Mesh& meshData)
 		{
-			m_Meshes.emplace_back(std::make_unique<GlMesh>(meshData, m_InstBuf));
+			m_Meshes.emplace_back(std::make_unique<GlMesh>(std::shared_ptr<const internal::Mesh>{m_MeshDataGroup, &meshData}, m_InstBuf));
 		});
 	}
+
 
 	GlMeshGroup::~GlMeshGroup() noexcept
 	{
 		glDeleteBuffers(1, &m_InstBuf);
 		DataManager::Instance().UnregisterGlMeshGroup(this);
 	}
+
 
 	auto GlMeshGroup::DrawWithMaterial(ShaderProgram& shader, const GLuint nextFreeTextureUnit) const -> void
 	{
@@ -36,6 +38,7 @@ namespace leopph::internal
 		}
 	}
 
+
 	auto GlMeshGroup::DrawWithoutMaterial() const -> void
 	{
 		for (const auto& mesh : m_Meshes)
@@ -43,6 +46,7 @@ namespace leopph::internal
 			mesh->DrawWithoutMaterial(m_InstCount);
 		}
 	}
+
 
 	auto GlMeshGroup::SetInstanceData(const std::vector<std::pair<Matrix4, Matrix4>>& instMats) const -> void
 	{
@@ -64,8 +68,9 @@ namespace leopph::internal
 		}
 	}
 
-	auto GlMeshGroup::MeshData() const -> const MeshDataGroup&
+
+	auto GlMeshGroup::MeshData() const -> const MeshGroup&
 	{
-		return *m_MeshData;
+		return *m_MeshDataGroup;
 	}
 }

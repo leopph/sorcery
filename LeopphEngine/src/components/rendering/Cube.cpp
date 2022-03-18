@@ -16,19 +16,19 @@ namespace leopph
 	{}
 
 
-	auto Cube::GetMeshData() -> std::shared_ptr<const internal::MeshDataGroup>
+	auto Cube::GetMeshData() -> std::shared_ptr<const internal::MeshGroup>
 	{
-		if (auto p{internal::DataManager::Instance().FindMeshDataGroup(s_MeshDataId)}; p != nullptr)
+		if (auto p{internal::DataManager::Instance().FindMeshGroup(s_MeshDataId)}; p != nullptr)
 		{
 			return p;
 		}
 
-		return std::make_shared<CubeMeshDataGroup>();
+		return std::make_shared<CubeMeshGroup>();
 	}
 
 
-	Cube::CubeMeshDataGroup::CubeMeshDataGroup() :
-		MeshDataGroup{s_MeshDataId}
+	Cube::CubeMeshGroup::CubeMeshGroup() :
+		MeshGroup{s_MeshDataId}
 	{
 		std::vector<Vertex> vertices{
 			// Back face
@@ -101,5 +101,5 @@ namespace leopph
 		}()
 	};
 
-	std::weak_ptr<Material> Cube::CubeMeshDataGroup::s_Material;
+	std::weak_ptr<Material> Cube::CubeMeshGroup::s_Material;
 }

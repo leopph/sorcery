@@ -1,7 +1,7 @@
 #pragma once
 
 #include "GlMesh.hpp"
-#include "MeshDataGroup.hpp"
+#include "MeshGroup.hpp"
 #include "../../math/Matrix.hpp"
 #include "../shaders/ShaderProgram.hpp"
 
@@ -18,7 +18,7 @@ namespace leopph::internal
 	class GlMeshGroup final : public std::enable_shared_from_this<GlMeshGroup>
 	{
 		public:
-			explicit GlMeshGroup(std::shared_ptr<const MeshDataGroup> meshDataGroup);
+			explicit GlMeshGroup(std::shared_ptr<const MeshGroup> meshDataGroup);
 
 			auto DrawWithMaterial(ShaderProgram& shader, GLuint nextFreeTextureUnit) const -> void;
 			auto DrawWithoutMaterial() const -> void;
@@ -27,7 +27,7 @@ namespace leopph::internal
 			auto SetInstanceData(const std::vector<std::pair<Matrix4, Matrix4>>& instMats) const -> void;
 
 			[[nodiscard]]
-			auto MeshData() const -> const MeshDataGroup&;
+			auto MeshData() const -> const MeshGroup&;
 
 			GlMeshGroup(const GlMeshGroup& other) = delete;
 			auto operator=(const GlMeshGroup& other) -> GlMeshGroup& = delete;
@@ -38,7 +38,7 @@ namespace leopph::internal
 			~GlMeshGroup() noexcept;
 
 		private:
-			std::shared_ptr<const MeshDataGroup> m_MeshData;
+			std::shared_ptr<const MeshGroup> m_MeshDataGroup;
 			std::vector<std::unique_ptr<GlMesh>> m_Meshes;
 			GLuint m_InstBuf{0};
 			mutable GLsizeiptr m_InstBufSz{1};
