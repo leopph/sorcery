@@ -19,6 +19,7 @@
 
 #include <algorithm>
 #include <filesystem>
+#include <functional>
 #include <memory>
 #include <set>
 #include <span>
@@ -214,6 +215,10 @@ namespace leopph::internal
 			};
 
 
+			using EntityOrderFunc = std::ranges::less;
+			using MeshDataOrderFunc = std::ranges::less;
+			using TextureOrderFunc = std::ranges::less;
+
 			auto SortEntities() -> void;
 			auto SortMeshData() -> void;
 			auto SortTextures() -> void;
@@ -222,7 +227,7 @@ namespace leopph::internal
 			std::set<std::unique_ptr<Poelo>, PoeloLess> m_Poelos;
 
 			// Non-owning pointers to all MeshDataGroup instances.
-			std::vector<MeshDataGroup*> m_MeshData;
+			std::vector<MeshDataGroup*> m_MeshDataGroups;
 
 			// Non-owning pointers to all Texture instances.
 			std::vector<Texture*> m_Textures;
@@ -311,7 +316,7 @@ namespace leopph::internal
 				                         return elem.Entity->Name();
 			                         })
 		};
-		if (it != self->m_EntitiesAndComponents.end() && it->Entity->Name() == name)
+		if (it != self->m_EntitiesAndComponents.end() && *it->Entity == name)
 		{
 			return it;
 		}
@@ -321,9 +326,9 @@ namespace leopph::internal
 
 	auto DataManager::FindMeshGroupInternalCommon(auto* const self, const GlMeshGroup* const meshGroup) -> decltype(auto)
 	{
-		return std::ranges::find_if(self->m_Renderables, [meshGroup](const auto& elem)
+		return std::ranges::find(self->m_Renderables, meshGroup, [](const MeshGroupAndInstances& elem)
 		{
-			return elem.MeshGroup == meshGroup;
+			return elem.MeshGroup;
 		});
 	}
 }

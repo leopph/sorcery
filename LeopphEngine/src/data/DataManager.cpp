@@ -148,14 +148,14 @@ namespace leopph::internal
 
 	auto DataManager::RegisterMeshDataGroup(MeshDataGroup* const meshData) -> void
 	{
-		m_MeshData.push_back(meshData);
+		m_MeshDataGroups.push_back(meshData);
 		SortMeshData();
 	}
 
 
 	auto DataManager::UnregisterMeshDataGroup(MeshDataGroup* const meshData) -> void
 	{
-		std::erase(m_MeshData, meshData);
+		std::erase(m_MeshDataGroups, meshData);
 		SortMeshData();
 	}
 
@@ -163,7 +163,7 @@ namespace leopph::internal
 	auto DataManager::FindMeshDataGroup(const std::string& id) -> std::shared_ptr<MeshDataGroup>
 	{
 		if (const auto it{
-				std::ranges::lower_bound(m_MeshData, id, [](const auto& elemId, const auto& value)
+				std::ranges::lower_bound(m_MeshDataGroups, id, [](const auto& elemId, const auto& value)
 				                         {
 					                         return elemId.compare(value) < 0;
 				                         }, [](const auto& elem)
@@ -171,7 +171,7 @@ namespace leopph::internal
 					                         return elem->Id();
 				                         })
 			};
-			it != m_MeshData.end() && (*it)->Id() == id)
+			it != m_MeshDataGroups.end() && (*it)->Id() == id)
 		{
 			return (*it)->shared_from_this();
 		}
@@ -196,11 +196,10 @@ namespace leopph::internal
 
 	auto DataManager::FindGlMeshGroup(const MeshDataGroup* meshDataGroup) -> std::shared_ptr<GlMeshGroup>
 	{
-		if (const auto it = std::ranges::find_if(m_Renderables, [meshDataGroup](const auto& elem)
-		{
-			return elem.MeshGroup->MeshData().Id() == meshDataGroup->Id();
-		});
-			it != m_Renderables.end())
+		if (const auto it = std::ranges::find(m_Renderables, *meshDataGroup, [](const MeshGroupAndInstances& elem) -> const MeshDataGroup&
+			{
+				return elem.MeshGroup->MeshData();
+			}); it != m_Renderables.end())
 		{
 			return it->MeshGroup->shared_from_this();
 		}
@@ -293,7 +292,7 @@ namespace leopph::internal
 					                         return texture->Path();
 				                         })
 			};
-			it != m_Textures.end() && (*it)->Path() == path)
+			it != m_Textures.end() && **it == path)
 		{
 			return (*it)->shared_from_this();
 		}
@@ -303,27 +302,27 @@ namespace leopph::internal
 
 	auto DataManager::SortEntities() -> void
 	{
-		std::ranges::sort(m_EntitiesAndComponents, [](const auto& left, const auto& right)
+		std::ranges::sort(m_EntitiesAndComponents, EntityOrderFunc{}, [](const auto& elem) -> const auto&
 		{
-			return left.Entity->Name() < right.Entity->Name();
+			return *elem.Entity;
 		});
 	}
 
 
 	auto DataManager::SortMeshData() -> void
 	{
-		std::ranges::sort(m_MeshData, [](const auto* left, const auto* right)
+		std::ranges::sort(m_MeshDataGroups, MeshDataOrderFunc{}, [](const auto* p) -> const auto&
 		{
-			return *left < *right;
+			return *p;
 		});
 	}
 
 
 	auto DataManager::SortTextures() -> void
 	{
-		std::ranges::sort(m_Textures, [](const auto& left, const auto& right)
+		std::ranges::sort(m_Textures, TextureOrderFunc{}, [](const auto* p) -> const auto&
 		{
-			return left->Path().compare(right->Path());
+			return *p;
 		});
 	}
 

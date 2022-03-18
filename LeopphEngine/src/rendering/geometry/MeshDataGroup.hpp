@@ -24,8 +24,13 @@ namespace leopph::internal
 			MeshDataGroup(MeshDataGroup&& other) noexcept = delete;
 			auto operator=(MeshDataGroup&& other) noexcept -> MeshDataGroup& = delete;
 
+			// Provides ordering based on id.
 			[[nodiscard]] constexpr
 			auto operator<=>(const MeshDataGroup& other) const;
+
+			// Equality based on id.
+			[[nodiscard]] constexpr
+			auto operator==(const MeshDataGroup& other) const -> bool;
 
 			[[nodiscard]] constexpr
 			auto Id() const -> std::string_view;
@@ -46,6 +51,12 @@ namespace leopph::internal
 	constexpr auto MeshDataGroup::operator<=>(const MeshDataGroup& other) const
 	{
 		return m_Id <=> other.m_Id;
+	}
+
+
+	constexpr auto MeshDataGroup::operator==(const MeshDataGroup& other) const -> bool
+	{
+		return m_Id == other.m_Id;
 	}
 
 

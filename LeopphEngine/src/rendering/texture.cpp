@@ -72,7 +72,7 @@ namespace leopph
 	}
 
 
-	Texture::~Texture()
+	Texture::~Texture() noexcept
 	{
 		glDeleteTextures(1, &m_TexName);
 		internal::DataManager::Instance().UnregisterTexture(this);

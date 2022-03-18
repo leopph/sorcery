@@ -74,6 +74,14 @@ namespace leopph
 			// Detaches all Components, then unregisters.
 			~Entity() override;
 
+			// Provides ordering based on name.
+			[[nodiscard]] constexpr
+			auto operator<=>(const Entity& other) const;
+
+			// Equality based on names.
+			[[nodiscard]] constexpr
+			auto operator==(const Entity& other) const -> bool;
+
 		private:
 			// Generate a name that is not used by any registered Entity at the time of calling.
 			// The function uses the passed prefix and appends arbitrary characters to its end.
@@ -105,6 +113,18 @@ namespace leopph
 	}
 
 
+	constexpr auto Entity::operator<=>(const Entity& other) const
+	{
+		return m_Name <=> other.m_Name;
+	}
+
+
+	constexpr auto Entity::operator==(const Entity& other) const -> bool
+	{
+		return m_Name == other.m_Name;
+	}
+
+
 	template<std::derived_from<Component> T, class... Args>
 	auto Entity::CreateAndAttachComponent(Args&&... args)
 	{
@@ -132,4 +152,36 @@ namespace leopph
 	// Transforms cannot be explicitly created.
 	template<>
 	auto Entity::CreateAndAttachComponent<Transform>() = delete;
+
+
+	// Provides ordering with strings.
+	[[nodiscard]] inline
+	auto operator<=>(const Entity& entity, const std::string_view name)
+	{
+		return entity.Name() <=> name;
+	}
+
+
+	// Provides ordering with strings.
+	[[nodiscard]] inline
+	auto operator<=>(const std::string_view name, const Entity& entity)
+	{
+		return name <=> entity.Name();
+	}
+
+
+	// Provides equality with strings.
+	[[nodiscard]] inline
+	auto operator==(const Entity& entity, const std::string_view name) -> bool
+	{
+		return entity.Name() == name;
+	}
+
+
+	// Provides equality with strings.
+	[[nodiscard]] inline
+	auto operator==(const std::string_view name, const Entity& entity) -> bool
+	{
+		return name == entity.Name();
+	}
 }
