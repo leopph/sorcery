@@ -74,8 +74,11 @@ namespace leopph::internal
 		auto const camViewMat{Camera::Current()->ViewMatrix()};
 		auto const camProjMat{Camera::Current()->ProjectionMatrix()};
 
+		m_RenderBuffer.Clear();
+		m_RenderBuffer.BindForWriting();
 		RenderShadedObjects(camViewMat, camProjMat, renderables, dirLight, spotLights, pointLights);
 		RenderSkybox(camViewMat, camProjMat);
+		m_RenderBuffer.CopyColorToDefaultFramebuffer();
 	}
 
 

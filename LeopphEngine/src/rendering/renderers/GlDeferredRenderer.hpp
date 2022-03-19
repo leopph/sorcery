@@ -4,9 +4,9 @@
 #include "../CascadedShadowMap.hpp"
 #include "../CubeShadowMap.hpp"
 #include "../GeometryBuffer.hpp"
-#include "../RenderBuffer.hpp"
+#include "../ScreenQuad.hpp"
+#include "../ScreenRenderBuffer.hpp"
 #include "../SpotShadowMap.hpp"
-#include "../../components/lighting/AmbientLight.hpp"
 #include "../../components/lighting/DirLight.hpp"
 #include "../../components/lighting/PointLight.hpp"
 #include "../../components/lighting/SpotLight.hpp"
@@ -33,14 +33,14 @@ namespace leopph::internal
 			// Fill the GeometryBuffer with geometry data.
 			auto RenderGeometry(Matrix4 const& camViewMat, Matrix4 const& camProjMat, std::vector<RenderableData> const& renderables) -> void;
 
-			// Draw all lights in the RenderBuffer.
+			// Draw all lights in the ScreenRenderBuffer.
 			auto RenderLights(Matrix4 const& camViewMat,
 			                  Matrix4 const& camProjMat,
 			                  std::span<RenderableData const> renderables,
 			                  std::span<SpotLight const*> spotLights,
 			                  std::span<PointLight const*> pointLights) -> void;
 
-			// Draw skybox in the empty parts of the RenderBuffer.
+			// Draw skybox in the empty parts of the ScreenRenderBuffer.
 			auto RenderSkybox(Matrix4 const& camViewMat, Matrix4 const& camProjMat) -> void;
 
 			// Draws into the dirlight shadow map, binds it to light shader with the necessary data, and returns the next usable texture unit.
@@ -68,14 +68,10 @@ namespace leopph::internal
 			                                         std::size_t numShadows,
 			                                         GLuint nextTexUnit) -> GLuint;
 
-
-
-
-
-			
-
 			GeometryBuffer m_GBuffer;
-			RenderBuffer m_RenderBuffer;
+
+			ScreenRenderBuffer m_ScreenRenderBuffer;
+			ScreenQuad m_ScreenQuad;
 
 			ShaderFamily m_ShadowShader;
 			ShaderFamily m_CubeShadowShader;

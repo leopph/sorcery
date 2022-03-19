@@ -44,16 +44,11 @@ namespace leopph::internal
 			}
 		}
 	{
-		glEnable(GL_DEPTH_TEST);
+		glEnable(GL_STENCIL_TEST);
 		glDepthFunc(GL_LESS);
-
-		glEnable(GL_CULL_FACE);
 		glFrontFace(GL_CCW);
 		glCullFace(GL_BACK);
-
 		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-
-		glEnable(GL_STENCIL_TEST);
 	}
 
 
@@ -82,7 +77,7 @@ namespace leopph::internal
 		RenderGeometry(camViewMat, camProjMat, renderables);
 		RenderLights(camViewMat, camProjMat, renderables, spotLights, pointLights);
 		RenderSkybox(camViewMat, camProjMat);
-		m_RenderBuffer.CopyColorToDefaultFramebuffer();
+		m_ScreenRenderBuffer.CopyColorToDefaultFramebuffer();
 	}
 
 
@@ -90,6 +85,8 @@ namespace leopph::internal
 	{
 		glStencilFunc(GL_ALWAYS, STENCIL_REF, STENCIL_AND_MASK);
 		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+
+		glEnable(GL_DEPTH_TEST);
 
 		m_GBuffer.BindForWritingAndClear();
 
@@ -107,11 +104,6 @@ namespace leopph::internal
 
 	auto GlDeferredRenderer::RenderLights(Matrix4 const& camViewMat, Matrix4 const& camProjMat, std::span<RenderableData const> const renderables, std::span<SpotLight const*> const spotLights, std::span<PointLight const*> const pointLights) -> void
 	{
-		glStencilFunc(GL_EQUAL, STENCIL_REF, STENCIL_AND_MASK);
-		glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
-
-		m_GBuffer.CopyStencilData(m_RenderBuffer.FramebufferName());
-
 		auto const dirLight{DataManager::Instance().DirectionalLight()};
 		auto const [dirShadow, spotShadows, pointShadows]{CountShadows(dirLight, spotLights, pointLights)};
 
@@ -147,7 +139,16 @@ namespace leopph::internal
 		lightShader.SetUniform("u_CamViewProjInv", (camViewMat * camProjMat).Inverse());
 
 		lightShader.Use();
-		m_RenderBuffer.DrawScreenQuad();
+
+		glStencilFunc(GL_EQUAL, STENCIL_REF, STENCIL_AND_MASK);
+		glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+
+		glDisable(GL_DEPTH_TEST);
+
+		m_ScreenRenderBuffer.Clear();
+		m_GBuffer.CopyStencilData(m_ScreenRenderBuffer.FramebufferName());
+		m_ScreenRenderBuffer.BindForWriting();
+		m_ScreenQuad.Draw();
 	}
 
 
@@ -157,7 +158,7 @@ namespace leopph::internal
 		{
 			glStencilFunc(GL_NOTEQUAL, STENCIL_REF, STENCIL_AND_MASK);
 
-			m_RenderBuffer.BindForWriting();
+			m_ScreenRenderBuffer.BindForWriting();
 
 			auto& skyboxShader{m_SkyboxShader.GetPermutation()};
 			skyboxShader.SetUniform("u_ViewProjMat", static_cast<Matrix4>(static_cast<Matrix3>(camViewMat)) * camProjMat);

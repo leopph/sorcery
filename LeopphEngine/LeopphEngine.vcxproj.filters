@@ -44,7 +44,7 @@
     <ClCompile Include="src\rendering\shaders\ShaderProgram.cpp" />
     <ClCompile Include="src\rendering\CubeShadowMap.cpp" />
     <ClCompile Include="src\windowing\Window.cpp" />
-    <ClCompile Include="src\rendering\RenderBuffer.cpp" />
+    <ClCompile Include="src\rendering\ScreenRenderBuffer.cpp" />
     <ClCompile Include="src\data\DataManager.cpp" />
     <ClCompile Include="src\rendering\geometry\ModelParser.cpp" />
     <ClCompile Include="src\rendering\UniformBuffer.cpp" />
@@ -73,6 +73,12 @@
     <ClCompile Include="src\events\WindowEvent.cpp" />
     <ClCompile Include="src\components\rendering\ImageSprite.cpp" />
     <ClCompile Include="src\rendering\geometry\Mesh.cpp" />
+    <ClCompile Include="src\rendering\opengl\GlTexture2D.cpp" />
+    <ClCompile Include="src\rendering\opengl\GlFramebuffer.cpp" />
+    <ClCompile Include="src\rendering\opengl\GlBuffer.cpp" />
+    <ClCompile Include="src\rendering\opengl\GlVertexArray.cpp" />
+    <ClCompile Include="src\rendering\opengl\GlRenderbuffer.cpp" />
+    <ClCompile Include="src\rendering\ScreenQuad.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\Behavior.hpp" />
@@ -144,7 +150,7 @@
     <ClInclude Include="src\rendering\CubeShadowMap.hpp" />
     <ClInclude Include="src\events\PointShadowEvent.hpp" />
     <ClInclude Include="src\windowing\Window.hpp" />
-    <ClInclude Include="src\rendering\RenderBuffer.hpp" />
+    <ClInclude Include="src\rendering\ScreenRenderBuffer.hpp" />
     <ClInclude Include="src\util\hash\PathedHash.hpp" />
     <ClInclude Include="src\util\equal\PathedEqual.hpp" />
     <ClInclude Include="src\util\concepts\Pathed.hpp" />
@@ -177,6 +183,12 @@
     <ClInclude Include="src\components\rendering\ImageSprite.hpp" />
     <ClInclude Include="src\util\Sphere.hpp" />
     <ClInclude Include="src\rendering\geometry\MeshGroup.hpp" />
+    <ClInclude Include="src\rendering\opengl\GlTexture2D.hpp" />
+    <ClInclude Include="src\rendering\opengl\GlFramebuffer.hpp" />
+    <ClInclude Include="src\rendering\opengl\GlBuffer.hpp" />
+    <ClInclude Include="src\rendering\opengl\GlVertexArray.hpp" />
+    <ClInclude Include="src\rendering\opengl\GlRenderbuffer.hpp" />
+    <ClInclude Include="src\rendering\ScreenQuad.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\cpp.hint" />
