@@ -17,19 +17,19 @@ using leopph::Skybox;
 
 namespace demo
 {
-	auto InitChurchScene(SceneSwitcher::Scene thisScene, const SceneSwitcher::Scene nextScene) -> void
+	auto InitChurchScene(SceneSwitcher::Scene thisScene, SceneSwitcher::Scene const nextScene) -> void
 	{
 		// Locate existing Entities
-		const auto player = Entity::FindEntity(PLAYER_ENTITY_NAME);
+		auto const player = Entity::FindEntity(PLAYER_ENTITY_NAME);
 
 		// Create new Entities
 
-		const auto group = new Entity{};
-		const auto dirLightEntity = new Entity{"dirlight"};
-		const auto pLightEntity = new Entity{"plight"};
-		const auto church = new Entity{"church"};
-		const auto lamp = new Entity{"lamp"};
-		const auto teleportPoint = new Entity{"churchSceneTpPoint"};
+		auto const group = new Entity{};
+		auto const dirLightEntity = new Entity{"dirlight"};
+		auto const pLightEntity = new Entity{"plight"};
+		auto const church = new Entity{"church"};
+		auto const lamp = new Entity{"lamp"};
+		auto const teleportPoint = new Entity{"churchSceneTpPoint"};
 
 		// Add new Entities to scene vector
 
@@ -64,15 +64,15 @@ namespace demo
 
 		// Find existing components
 
-		const auto camera = player->GetComponent<leopph::Camera>();
-		const auto teleport = Entity::FindEntity(demo::TELEPORT_ENTITY_NAME)->GetComponent<TeleportGate>();
+		auto const camera = player->GetComponent<leopph::Camera>();
+		auto const teleport = Entity::FindEntity(demo::TELEPORT_ENTITY_NAME)->GetComponent<TeleportGate>();
 
 		// Create new Components
 
-		const auto dirLight = dirLightEntity->CreateAndAttachComponent<DirectionalLight>();
-		const auto pLight = pLightEntity->CreateAndAttachComponent<PointLight>();
-		const auto churchModel = church->CreateAndAttachComponent<Model>("models/church/ChristchurchGreyfriarsRuinGarden03.obj");
-		const auto lampModel = lamp->CreateAndAttachComponent<Model>("models/lamp/scene.gltf");
+		auto const dirLight = dirLightEntity->CreateAndAttachComponent<DirectionalLight>();
+		auto const pLight = pLightEntity->CreateAndAttachComponent<PointLight>();
+		auto const churchModel = church->CreateAndAttachComponent<Model>("models/church/ChristchurchGreyfriarsRuinGarden03.obj");
+		auto const lampModel = lamp->CreateAndAttachComponent<Model>("models/lamp/scene.gltf");
 		pLightEntity->CreateAndAttachComponent<demo::Flicker>(pLight, 1.2f, 0.05f);
 
 		// Set up components
@@ -81,14 +81,14 @@ namespace demo
 		camera->NearClipPlane(0.3f);
 		camera->FarClipPlane(100);
 		dirLight->Diffuse(Vector3{0.1, 0.1, 0.1});
-		dirLight->CastsShadow(true);
+		dirLight->CastsShadow(false);
 		churchModel->CastsShadow(true);
 		lampModel->CastsShadow(true);
 		pLight->Range(30);
 		pLight->Constant(0.5f);
 		pLight->Linear(0.2f);
 		pLight->Quadratic(0.07f);
-		pLight->CastsShadow(true);
+		pLight->CastsShadow(false);
 		teleport->AddPortPoint(TeleportGate::PortPoint{teleportPoint->Transform(), 1.f, nextScene});
 
 		// Etc

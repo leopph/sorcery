@@ -31,57 +31,48 @@ namespace leopph::internal
 
 		private:
 			// Fill the GeometryBuffer with geometry data.
-			auto RenderGeometry(const Matrix4& camViewMat, const Matrix4& camProjMat, const std::vector<RenderableData>& renderables) -> void;
+			auto RenderGeometry(Matrix4 const& camViewMat, Matrix4 const& camProjMat, std::vector<RenderableData> const& renderables) -> void;
 
 			// Draw all lights in the RenderBuffer.
-			auto RenderLights(const Matrix4& camViewMat,
-			                  const Matrix4& camProjMat,
-			                  std::span<const RenderableData> renderables,
-			                  std::span<const SpotLight*> spotLights,
-			                  std::span<const PointLight*> pointLights) -> void;
+			auto RenderLights(Matrix4 const& camViewMat,
+			                  Matrix4 const& camProjMat,
+			                  std::span<RenderableData const> renderables,
+			                  std::span<SpotLight const*> spotLights,
+			                  std::span<PointLight const*> pointLights) -> void;
 
 			// Draw skybox in the empty parts of the RenderBuffer.
-			auto RenderSkybox(const Matrix4& camViewMat, const Matrix4& camProjMat) -> void;
+			auto RenderSkybox(Matrix4 const& camViewMat, Matrix4 const& camProjMat) -> void;
 
 			// Draws into the dirlight shadow map, binds it to light shader with the necessary data, and returns the next usable texture unit.
-			[[nodiscard]] auto RenderDirShadowMap(const DirectionalLight* dirLight,
-			                                      const Matrix4& camViewInvMat,
-			                                      const Matrix4& camProjMat,
-			                                      std::span<const RenderableData> renderables,
+			[[nodiscard]] auto RenderDirShadowMap(DirectionalLight const* dirLight,
+			                                      Matrix4 const& camViewInvMat,
+			                                      Matrix4 const& camProjMat,
+			                                      std::span<RenderableData const> renderables,
 			                                      ShaderProgram& lightShader,
 			                                      ShaderProgram& shadowShader,
 			                                      GLuint nextTexUnit) const -> GLuint;
 
 			// Draws into the first N shadow maps, binds them to the light shader with the necessary data, and returns the next usable texture unit.
-			[[nodiscard]] auto RenderSpotShadowMaps(std::span<const SpotLight* const> spotLights,
-			                                        std::span<const RenderableData> renderables,
+			[[nodiscard]] auto RenderSpotShadowMaps(std::span<SpotLight const* const> spotLights,
+			                                        std::span<RenderableData const> renderables,
 			                                        ShaderProgram& lightShader,
 			                                        ShaderProgram& shadowShader,
 			                                        std::size_t numShadows,
 			                                        GLuint nextTexUnit) -> GLuint;
 
 			// Draws into the first N shadow maps, binds them to the light shader with the necessary data, and returns the next usable texture unit.
-			[[nodiscard]] auto RenderPointShadowMaps(std::span<const PointLight* const> pointLights,
-			                                         std::span<const RenderableData> renderables,
+			[[nodiscard]] auto RenderPointShadowMaps(std::span<PointLight const* const> pointLights,
+			                                         std::span<RenderableData const> renderables,
 			                                         ShaderProgram& lightShader,
 			                                         ShaderProgram& shadowShader,
 			                                         std::size_t numShadows,
 			                                         GLuint nextTexUnit) -> GLuint;
 
 
-			struct ShadowCount
-			{
-				bool Directional{false};
-				std::size_t Spot{0};
-				std::size_t Point{0};
-			};
 
 
-			static auto SetAmbientData(const AmbientLight& light, ShaderProgram& lightShader) -> void;
-			static auto SetDirectionalData(const DirectionalLight* dirLight, ShaderProgram& lightShader) -> void;
-			static auto SetSpotData(std::span<const SpotLight* const> spotLights, ShaderProgram& lightShader) -> void;
-			static auto SetPointData(std::span<const PointLight* const> pointLights, ShaderProgram& lightShader) -> void;
-			static auto CountShadows(const DirectionalLight* dirLight, std::span<const SpotLight* const> spotLights, std::span<const PointLight* const> pointLights) -> ShadowCount;
+
+			
 
 			GeometryBuffer m_GBuffer;
 			RenderBuffer m_RenderBuffer;

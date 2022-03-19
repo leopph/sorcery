@@ -1,24 +1,69 @@
 #version 410 core
 
-#define ALPHA_THRESHOLD 0.01
 #define MIN_SHADOW_BIAS 0.0001
-#define MAX_SHADOW_BIAS 0.001
+#define MAX_SHADOW_BIAS 0.01
 
-#if EXISTS_DIRLIGHT
-#if DIRLIGHT_SHADOW
-#define MAX_DIR_LIGHT_CASCADE_COUNT 3
-#endif
-#endif
+// General variables used in all cases
 
-#if EXISTS_SPOTLIGHT
-#define MAX_SPOT_LIGHT_COUNT 64
-#endif
+layout (location = 0) in vec3 in_FragPos;
+layout (location = 1) in vec3 in_Normal;
+layout (location = 2) in vec2 in_TexCoords;
 
-#if EXISTS_POINTLIGHT
-#define MAX_POINT_LIGHT_COUNT 64
-#endif
+layout (location = 0) out vec4 out_FragColor;
+
+struct Material
+{
+	vec3 diffuseColor;
+	vec3 specularColor;
+
+	float gloss;
+
+	sampler2D diffuseMap;
+	sampler2D specularMap;
+
+	bool hasDiffuseMap;
+	bool hasSpecularMap;
+};
+
+uniform Material u_Material;
+uniform vec3 u_AmbientLight;
+uniform vec3 u_CamPos;
 
 
+struct Fragment
+{
+	vec3 pos;
+	vec3 normal;
+	vec3 diff;
+	vec3 spec;
+	float gloss;
+};
+
+
+// General functions
+
+float CalcAtten(float constant, float linear, float quadratic, float dist)
+{
+	return 1.0 / (constant + linear * dist + quadratic * pow(dist, 2));
+}
+
+vec3 CalcBlinnPhong(Fragment frag, vec3 dirToLight, vec3 lightDiff, vec3 lightSpec)
+{
+	float diffuseDot = max(dot(dirToLight, frag.normal), 0);
+	vec3 light = frag.diff * diffuseDot * lightDiff;
+
+	if (diffuseDot > 0)
+	{
+		vec3 halfway = normalize(dirToLight + normalize(u_CamPos - frag.pos));
+		light += frag.spec * pow(max(dot(frag.normal, halfway), 0), 4 * frag.gloss) * lightSpec;
+	}
+
+	return light;
+}
+
+
+// Only when there is a DirectionalLight
+#if DIRLIGHT
 struct DirLight
 {
 	vec3 direction;
@@ -27,7 +72,33 @@ struct DirLight
 	vec3 specularColor;
 };
 
+uniform DirLight u_DirLight;
 
+#if DIRLIGHT_SHADOW
+layout (location = 3) in float in_FragPosNdcZ;
+uniform mat4 u_CascadeMatrices[NUM_CASCADES];
+uniform float u_CascadeBoundsNdc[NUM_CASCADES];
+uniform sampler2DShadow u_DirShadowMaps[NUM_CASCADES];
+
+float CalcDirShadow(vec3 fragPos, float fragPosNdcZ, vec3 fragNormal)
+{
+	for (int i = 0; i < NUM_CASCADES; ++i)
+	{
+		if (fragPosNdcZ < u_CascadeBoundsNdc[i])
+		{
+			vec3 fragPosLightNorm = vec3(vec4(fragPos, 1) * u_CascadeMatrices[i]) * 0.5 + 0.5;
+			float bias = max(MAX_SHADOW_BIAS * (1.0 - dot(fragNormal, -u_DirLight.direction)), MIN_SHADOW_BIAS);
+			return texture(u_DirShadowMaps[i], vec3(fragPosLightNorm.xy, fragPosLightNorm.z - bias));
+		}
+	}
+	return 1.0;
+}
+#endif
+#endif
+
+
+// Only when there are SpotLights
+#if NUM_SPOTLIGHTS > 0
 struct SpotLight
 {
 	vec3 position;
@@ -39,12 +110,70 @@ struct SpotLight
 	float constant;
 	float linear;
 	float quadratic;
+	float range;
 	
 	float innerAngleCosine;
 	float outerAngleCosine;
 };
 
+vec3 CalcSpotLightEffect(Fragment frag, SpotLight spotLight)
+{
+	vec3 dirToLight = spotLight.position - frag.pos;
+	float dist = length(dirToLight);
 
+	if (dist > spotLight.range)
+	{
+		return vec3(0);
+	}
+
+	dirToLight = normalize(dirToLight);
+
+	/* Let theta be the angle between
+	 * the direction vector pointing from the fragment to the light
+	 * and the reverse of the light's direction vector. */
+	float thetaCosine = dot(dirToLight, -spotLight.direction);
+
+	/* Let epsilon be the difference between
+	 * the cosines of the light's cutoff angles. */
+	float epsilon = spotLight.innerAngleCosine - spotLight.outerAngleCosine;
+
+	/* Determine if the frag is
+	 * inside the inner angle, or
+	 * between the inner and outer angles, or
+	 * outside the outer angle. */
+	float intensity = clamp((thetaCosine - spotLight.outerAngleCosine) / epsilon, 0.0, 1.0);
+
+	if (intensity == 0)
+	{
+		return vec3(0);
+	}
+
+	vec3 spotLightEffect = CalcBlinnPhong(frag, dirToLight, spotLight.diffuseColor, spotLight.specularColor);
+	spotLightEffect *= CalcAtten(spotLight.constant, spotLight.linear, spotLight.quadratic, dist);
+	return spotLightEffect;
+}
+
+#if NUM_SPOTLIGHTS > NUM_SPOTLIGHT_SHADOWS
+uniform SpotLight u_SpotLightsNoShadow[NUM_SPOTLIGHTS - NUM_SPOTLIGHT_SHADOWS];
+#endif
+#if NUM_SPOTLIGHT_SHADOWS > 0
+uniform SpotLight u_SpotLightsShadow[NUM_SPOTLIGHT_SHADOWS];
+uniform sampler2DShadow u_SpotShadowMaps[NUM_SPOTLIGHT_SHADOWS];
+uniform mat4 u_SpotShadowMats[NUM_SPOTLIGHT_SHADOWS];
+
+float CalcSpotShadow(int shadowIndex, vec3 dirToLight, vec3 fragPos, vec3 fragNormal)
+{
+	vec4 fragPosLightSpace = vec4(fragPos, 1) * u_SpotShadowMats[shadowIndex];
+	vec3 normalizedPos = (fragPosLightSpace.xyz / fragPosLightSpace.w) * 0.5 + 0.5;
+	float bias = max(MAX_SHADOW_BIAS * (1.0 - dot(fragNormal, dirToLight)), MIN_SHADOW_BIAS);
+	return texture(u_SpotShadowMaps[shadowIndex], vec3(normalizedPos.xy, normalizedPos.z - bias));
+}
+#endif
+#endif
+
+
+// Only if there are PointLights
+#if NUM_POINTLIGHTS > 0
 struct PointLight
 {
 	vec3 position;
@@ -55,227 +184,108 @@ struct PointLight
 	float constant;
 	float linear;
 	float quadratic;
+	float range;
 };
 
-
-struct Material
+vec3 CalcPointLightEffect(Fragment frag, PointLight pointLight)
 {
-	vec3 ambientColor;
-	vec3 diffuseColor;
-	vec3 specularColor;
+	vec3 dirToLight = pointLight.position - frag.pos;
+	float dist = length(dirToLight);
 
-	float shininess;
-
-	sampler2D ambientMap;
-	sampler2D diffuseMap;
-	sampler2D specularMap;
-
-	int hasAmbientMap;
-	int hasDiffuseMap;
-	int hasSpecularMap;
-};
-
-
-layout (location = 0) in vec3 in_FragPos;
-layout (location = 1) in vec3 in_Normal;
-layout (location = 2) in vec2 in_TexCoords;
-
-layout (location = 0) out vec4 out_FragColor;
-
-uniform Material u_Material;
-uniform vec3 u_AmbientLight;
-uniform vec3 u_CamPos;
-
-#if EXISTS_DIRLIGHT
-uniform DirLight u_DirLight;
-#if DIRLIGHT_SHADOW
-layout (location = 3) in float in_ClipPosZ;
-uniform sampler2DShadow u_DirLightShadowMaps[MAX_DIR_LIGHT_CASCADE_COUNT];
-uniform mat4 u_DirLightClipMatrices[MAX_DIR_LIGHT_CASCADE_COUNT];
-uniform float u_DirLightCascadeFarBounds[MAX_DIR_LIGHT_CASCADE_COUNT];
-uniform uint u_DirLightCascadeCount;
-#endif
-#endif
-
-#if EXISTS_SPOTLIGHT
-uniform SpotLight u_SpotLights[MAX_SPOT_LIGHT_COUNT];
-uniform int u_SpotLightCount;
-#endif
-
-#if EXISTS_POINTLIGHT
-uniform PointLight u_PointLights[MAX_POINT_LIGHT_COUNT];
-uniform int u_PointLightCount;
-#endif
-
-
-#if EXISTS_DIRLIGHT
-#if DIRLIGHT_SHADOW
-float CalculateDirLightShadow(vec3 fragNormal)
-{
-	uint cascadeIndex = 0;
-    for (int i = 0; i < u_DirLightCascadeCount; i++)
-    {
-        if (in_ClipPosZ < u_DirLightCascadeFarBounds[i])
-        {
-            cascadeIndex = i;
-            break;
-        }
-    }
-    vec4 fragPosDirLightSpace = vec4(in_FragPos, 1) * u_DirLightClipMatrices[cascadeIndex];
-    vec3 normalizedPos = fragPosDirLightSpace.xyz * 0.5 + 0.5;
-	float bias = max(MAX_SHADOW_BIAS * (1.0 - dot(fragNormal, -u_DirLight.direction)), MIN_SHADOW_BIAS);
-	return texture(u_DirLightShadowMaps[cascadeIndex], vec3(normalizedPos.xy, normalizedPos.z - bias));
-}
-#endif
-#endif
-
-
-float CalculateAttenuation(float constant, float linear, float quadratic, float dist)
-{
-	return 1.0 / (constant + linear * dist + quadratic * pow(dist, 2));
-}
-
-
-vec3 CalculateLightEffect(vec3 direction, vec3 normal, vec3 matDiff, vec3 matSpec, vec3 lightDiff, vec3 lightSpec)
-{
-	float diffuseDot = max(dot(direction, normal), 0);
-	vec3 diffuse = matDiff * diffuseDot * lightDiff;
-
-	if (diffuseDot > 0)
+	if (dist > pointLight.range)
 	{
-		// Blinn-Phong
-		vec3 halfway = normalize(direction + normalize(u_CamPos - in_FragPos));
-		vec3 specular = matSpec * pow(max(dot(normal, halfway), 0), 4 * u_Material.shininess) * lightSpec;
-		return diffuse + specular;
-
-		// Phong
-		/*vec3 reflection = normalize(2 * diffuseDot * normal - direction);
-		vec3 specular = matSpec * pow(max(dot(reflection, normalize(-inFragPos)), 0), material.shininess) * lightSpec;
-		return diffuse + specular;*/
+		return vec3(0);
 	}
 
-	return diffuse;
+	dirToLight = normalize(dirToLight);
+
+	vec3 pointLightEffect = CalcBlinnPhong(frag, dirToLight, pointLight.diffuseColor, pointLight.specularColor);
+	pointLightEffect *= CalcAtten(pointLight.constant, pointLight.linear, pointLight.quadratic, dist);
+	return pointLightEffect;
 }
 
+#if NUM_POINTLIGHTS > NUM_POINTLIGHT_SHADOWS
+uniform PointLight u_PointLightsNoShadow[NUM_POINTLIGHTS - NUM_POINTLIGHT_SHADOWS];
+#endif
+#if NUM_POINTLIGHT_SHADOWS > 0
+uniform PointLight u_PointLightsShadow[NUM_POINTLIGHT_SHADOWS];
+uniform samplerCube u_PointShadowMaps[NUM_POINTLIGHT_SHADOWS];
 
-#if EXISTS_DIRLIGHT
-vec3 CalculateDirLight(DirLight dirLight, vec3 surfaceNormal, vec3 materialDiffuseColor, vec3 materialSpecularColor)
+float CalcPointShadow(uint shadowIndex, vec3 fragPos, vec3 fragNormal, vec3 lightPos, float lightRange)
 {
-	vec3 directionToLight = -dirLight.direction;
-	vec3 light = CalculateLightEffect(directionToLight, surfaceNormal, materialDiffuseColor, materialSpecularColor, dirLight.diffuseColor, dirLight.specularColor);
-	return light;
+	vec3 dirToFrag = fragPos - lightPos;
+	float bias = max(MAX_SHADOW_BIAS * (1.0 - dot(fragNormal, normalize(-dirToFrag))), MIN_SHADOW_BIAS);
+	return texture(u_PointShadowMaps[shadowIndex], dirToFrag).r > length(dirToFrag) - bias ? 1 : 0;
 }
+#endif
 #endif
 
 
-#if EXISTS_SPOTLIGHT
-vec3 CalculateSpotLight(SpotLight spotLight, vec3 surfaceNormal, vec3 materialDiffuseColor, vec3 materialSpecularColor)
-{
-	vec3 posDiff = spotLight.position - in_FragPos;
-	float dist = length(posDiff);
-	vec3 directionToLight = normalize(posDiff);
-	float thetaCosine = dot(directionToLight, -spotLight.direction);
-	float epsilon = spotLight.innerAngleCosine - spotLight.outerAngleCosine;
 
-	float intensity = clamp((thetaCosine - spotLight.outerAngleCosine) / epsilon, 0.0, 1.0);
-
-	if (intensity > 0)
-	{
-		float attenuation = CalculateAttenuation(spotLight.constant, spotLight.linear, spotLight.quadratic, dist);
-		vec3 light = CalculateLightEffect(directionToLight, surfaceNormal, materialDiffuseColor, materialSpecularColor, spotLight.diffuseColor, spotLight.specularColor);
-		return intensity * attenuation * light;
-	}
-
-	return vec3(0);
-}
-#endif
-
-
-#if EXISTS_POINTLIGHT
-vec3 CalculatePointLight(PointLight pointLight, vec3 surfaceNormal, vec3 materialDiffuseColor, vec3 materialSpecularColor)
-{
-	vec3 posDiff = pointLight.position - in_FragPos;
-	float dist = length(posDiff);
-	vec3 directionToLight = normalize(posDiff);
-
-	float attenuation = CalculateAttenuation(pointLight.constant, pointLight.linear, pointLight.quadratic, dist);
-	vec3 light = CalculateLightEffect(directionToLight, surfaceNormal, materialDiffuseColor, materialSpecularColor, pointLight.diffuseColor, pointLight.specularColor);
-	return attenuation * light;
-}
-#endif
 
 
 void main()
 {
-	/* Calculate ambient RGB */
-	vec3 ambientColor = u_Material.ambientColor;
-	vec4 ambientMapColor = vec4(0, 0, 0, 1);
-	if (u_Material.hasAmbientMap != 0)
+	Fragment frag;
+	frag.pos = in_FragPos;
+	frag.normal = normalize(in_Normal);
+	frag.diff = u_Material.diffuseColor;
+	frag.spec = u_Material.specularColor;
+	frag.gloss = u_Material.gloss;
+
+	if (u_Material.hasDiffuseMap)
 	{
-		ambientMapColor = texture(u_Material.ambientMap, in_TexCoords);
-
-		if (ambientMapColor.a < ALPHA_THRESHOLD)
-			discard;
-
-		ambientColor *= ambientMapColor.rgb;
+		frag.diff *= texture(u_Material.diffuseMap, in_TexCoords).rgb;
 	}
 
-	/* Calculate diffuse RGB */
-	vec3 diffuseColor = u_Material.diffuseColor;
-	vec4 diffuseMapColor = vec4(0, 0, 0, 1);
-	if (u_Material.hasDiffuseMap != 0)
+	if (u_Material.hasSpecularMap)
 	{
-		diffuseMapColor = texture(u_Material.diffuseMap, in_TexCoords);
-
-		if (diffuseMapColor.a < ALPHA_THRESHOLD)
-			discard;
-
-		diffuseColor *= diffuseMapColor.rgb;
+		frag.spec *= texture(u_Material.specularMap, in_TexCoords).rgb;
 	}
 
-	/* Calculate specular RGB */
-	vec3 specularColor = u_Material.specularColor;
-	vec4 specularMapColor = vec4(0, 0, 0, 1);
-	if (u_Material.hasSpecularMap != 0)
+	// Add ambient effect
+	vec3 colorSum = frag.diff * u_AmbientLight;
+
+	// Add directional effects
+	#if DIRLIGHT
+	vec3 dirLightEffect = CalcBlinnPhong(frag, -u_DirLight.direction, u_DirLight.diffuseColor, u_DirLight.specularColor);
+	#if DIRLIGHT_SHADOW
+	dirLightEffect *= CalcDirShadow(frag.pos, in_FragPosNdcZ, frag.normal);
+	#endif
+	colorSum += dirLightEffect;
+	#endif
+
+	// Add spot effects
+	#if NUM_SPOTLIGHTS > NUM_SPOTLIGHT_SHADOWS
+	for (int i = 0; i < NUM_SPOTLIGHTS - NUM_SPOTLIGHT_SHADOWS; ++i)
 	{
-		specularMapColor = texture(u_Material.specularMap, in_TexCoords);
-
-		if (specularMapColor.a < ALPHA_THRESHOLD)
-			discard;
-
-		specularColor *= specularMapColor.rgb;
+		colorSum += CalcSpotLightEffect(frag, u_SpotLightsNoShadow[i]);
 	}
-
-	vec3 normal = normalize(in_Normal);
-
-	/* Base color is ambient */
-	vec3 colorSum = ambientColor;
-
-	/* Process and add diffuse and specular colors */
-	#if EXISTS_DIRLIGHT
+	#endif
+	#if NUM_SPOTLIGHT_SHADOWS > 0
+	for (int i = 0; i < NUM_SPOTLIGHT_SHADOWS; ++i)
 	{
-		vec3 light = CalculateDirLight(u_DirLight, normal, diffuseColor, specularColor);
-		#if DIRLIGHT_SHADOW
-		light *= CalculateDirLightShadow(normal);
-		#endif
-		colorSum += light;
+		vec3 spotLightEffect = CalcSpotLightEffect(frag, u_SpotLightsShadow[i]);
+		spotLightEffect *= CalcSpotShadow(i, normalize(u_SpotLightsShadow[i].position - frag.pos), frag.pos, frag.normal);
+		colorSum += spotLightEffect;
 	}
 	#endif
 
-	#if EXISTS_SPOTLIGHT
-	for (int i = 0; i < u_SpotLightCount; i++)
+	// Add point effects
+	#if NUM_POINTLIGHTS > NUM_POINTLIGHT_SHADOWS
+	for (int i = 0; i < NUM_POINTLIGHTS - NUM_POINTLIGHT_SHADOWS; ++i)
 	{
-		colorSum += CalculateSpotLight(u_SpotLights[i], normal, diffuseColor, specularColor);
+		colorSum += CalcPointLightEffect(frag, u_PointLightsNoShadow[i]);
+	}
+	#endif
+	#if NUM_POINTLIGHT_SHADOWS > 0
+	for (int i = 0; i < NUM_POINTLIGHT_SHADOWS; ++i)
+	{
+		vec3 pointLightEffect = CalcPointLightEffect(frag, u_PointLightsShadow[i]);
+		pointLightEffect *= CalcPointShadow(i, frag.pos, frag.normal, u_PointLightsShadow[i].position, u_PointLightsShadow[i].range);
+		colorSum += pointLightEffect;
 	}
 	#endif
 
-	#if EXISTS_POINTLIGHT
-	for (int i = 0; i < u_PointLightCount; i++)
-	{
-		colorSum += CalculatePointLight(u_PointLights[i], normal, diffuseColor, specularColor);
-	}
-	#endif
-
-	/* Combie fragment RGB color with the smallest of the maps' alpha values for transparency */
-	out_FragColor = vec4(colorSum, min(min(ambientMapColor.a, diffuseMapColor.a), specularMapColor.a));
+	out_FragColor = vec4(colorSum, 1);
 }

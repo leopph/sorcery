@@ -9,7 +9,6 @@
 
 #include <algorithm>
 #include <array>
-#include <numeric>
 
 
 namespace leopph::internal
@@ -67,8 +66,8 @@ namespace leopph::internal
 		}
 
 		static std::vector<RenderableData> renderables;
-		static std::vector<const SpotLight*> spotLights;
-		static std::vector<const PointLight*> pointLights;
+		static std::vector<SpotLight const*> spotLights;
+		static std::vector<PointLight const*> pointLights;
 
 		renderables.clear();
 		CollectRenderables(renderables);
@@ -77,8 +76,8 @@ namespace leopph::internal
 		pointLights.clear();
 		CollectPointLights(pointLights);
 
-		const auto camViewMat{Camera::Current()->ViewMatrix()};
-		const auto camProjMat{Camera::Current()->ProjectionMatrix()};
+		auto const camViewMat{Camera::Current()->ViewMatrix()};
+		auto const camProjMat{Camera::Current()->ProjectionMatrix()};
 
 		RenderGeometry(camViewMat, camProjMat, renderables);
 		RenderLights(camViewMat, camProjMat, renderables, spotLights, pointLights);
@@ -87,7 +86,7 @@ namespace leopph::internal
 	}
 
 
-	auto GlDeferredRenderer::RenderGeometry(const Matrix4& camViewMat, const Matrix4& camProjMat, const std::vector<RenderableData>& renderables) -> void
+	auto GlDeferredRenderer::RenderGeometry(Matrix4 const& camViewMat, Matrix4 const& camProjMat, std::vector<RenderableData> const& renderables) -> void
 	{
 		glStencilFunc(GL_ALWAYS, STENCIL_REF, STENCIL_AND_MASK);
 		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
@@ -98,7 +97,7 @@ namespace leopph::internal
 		shader.SetUniform("u_ViewProjMat", camViewMat * camProjMat);
 		shader.Use();
 
-		for (const auto& [renderable, instances, castsShadow] : renderables)
+		for (auto const& [renderable, instances, castsShadow] : renderables)
 		{
 			renderable->SetInstanceData(instances);
 			renderable->DrawWithMaterial(shader, 0, false);
@@ -106,15 +105,15 @@ namespace leopph::internal
 	}
 
 
-	auto GlDeferredRenderer::RenderLights(const Matrix4& camViewMat, const Matrix4& camProjMat, const std::span<const RenderableData> renderables, const std::span<const SpotLight*> spotLights, const std::span<const PointLight*> pointLights) -> void
+	auto GlDeferredRenderer::RenderLights(Matrix4 const& camViewMat, Matrix4 const& camProjMat, std::span<RenderableData const> const renderables, std::span<SpotLight const*> const spotLights, std::span<PointLight const*> const pointLights) -> void
 	{
 		glStencilFunc(GL_EQUAL, STENCIL_REF, STENCIL_AND_MASK);
 		glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 
 		m_GBuffer.CopyStencilData(m_RenderBuffer.FramebufferName());
 
-		const auto dirLight{DataManager::Instance().DirectionalLight()};
-		const auto [dirShadow, spotShadows, pointShadows]{CountShadows(dirLight, spotLights, pointLights)};
+		auto const dirLight{DataManager::Instance().DirectionalLight()};
+		auto const [dirShadow, spotShadows, pointShadows]{CountShadows(dirLight, spotLights, pointLights)};
 
 		m_LightShader.Clear();
 		m_LightShader["DIRLIGHT"] = std::to_string(dirLight != nullptr);
@@ -152,9 +151,9 @@ namespace leopph::internal
 	}
 
 
-	auto GlDeferredRenderer::RenderSkybox(const Matrix4& camViewMat, const Matrix4& camProjMat) -> void
+	auto GlDeferredRenderer::RenderSkybox(Matrix4 const& camViewMat, Matrix4 const& camProjMat) -> void
 	{
-		if (const auto& background{Camera::Current()->Background()}; std::holds_alternative<Skybox>(background))
+		if (auto const& background{Camera::Current()->Background()}; std::holds_alternative<Skybox>(background))
 		{
 			glStencilFunc(GL_NOTEQUAL, STENCIL_REF, STENCIL_AND_MASK);
 
@@ -169,13 +168,13 @@ namespace leopph::internal
 	}
 
 
-	auto GlDeferredRenderer::RenderDirShadowMap(const DirectionalLight* dirLight,
-	                                          const Matrix4& camViewInvMat,
-	                                          const Matrix4& camProjMat,
-	                                          const std::span<const RenderableData> renderables,
-	                                          ShaderProgram& lightShader,
-	                                          ShaderProgram& shadowShader,
-	                                          const GLuint nextTexUnit) const -> GLuint
+	auto GlDeferredRenderer::RenderDirShadowMap(DirectionalLight const* dirLight,
+	                                            Matrix4 const& camViewInvMat,
+	                                            Matrix4 const& camProjMat,
+	                                            std::span<RenderableData const> const renderables,
+	                                            ShaderProgram& lightShader,
+	                                            ShaderProgram& shadowShader,
+	                                            GLuint const nextTexUnit) const -> GLuint
 	{
 		if (!dirLight || !dirLight->CastsShadow())
 		{
@@ -185,20 +184,20 @@ namespace leopph::internal
 		static std::vector<Matrix4> cascadeMats;
 		cascadeMats.clear();
 
-		const auto lightViewMat{Matrix4::LookAt(Vector3{0}, dirLight->Direction(), Vector3::Up())};
-		const auto cascadeBounds{m_DirShadowMap.CalculateCascadeBounds(*Camera::Current())};
-		const auto numCascades{cascadeBounds.size()};
+		auto const lightViewMat{Matrix4::LookAt(Vector3{0}, dirLight->Direction(), Vector3::Up())};
+		auto const cascadeBounds{m_DirShadowMap.CalculateCascadeBounds(*Camera::Current())};
+		auto const numCascades{cascadeBounds.size()};
 
 		for (std::size_t i = 0; i < numCascades; ++i)
 		{
-			const auto cascadeMat{m_DirShadowMap.CascadeMatrix(cascadeBounds[i], camViewInvMat, lightViewMat, dirLight->ShadowExtension())};
+			auto const cascadeMat{m_DirShadowMap.CascadeMatrix(cascadeBounds[i], camViewInvMat, lightViewMat, dirLight->ShadowExtension())};
 			cascadeMats.push_back(cascadeMat);
 
 			shadowShader.SetUniform("u_ViewProjMat", cascadeMat);
 
 			m_DirShadowMap.BindForWritingAndClear(i);
 
-			for (const auto& [renderable, instances, castsShadow] : renderables)
+			for (auto const& [renderable, instances, castsShadow] : renderables)
 			{
 				if (castsShadow)
 				{
@@ -214,12 +213,12 @@ namespace leopph::internal
 	}
 
 
-	auto GlDeferredRenderer::RenderSpotShadowMaps(const std::span<const SpotLight* const> spotLights,
-	                                            const std::span<const RenderableData> renderables,
-	                                            ShaderProgram& lightShader,
-	                                            ShaderProgram& shadowShader,
-	                                            const std::size_t numShadows,
-	                                            GLuint nextTexUnit) -> GLuint
+	auto GlDeferredRenderer::RenderSpotShadowMaps(std::span<SpotLight const* const> const spotLights,
+	                                              std::span<RenderableData const> const renderables,
+	                                              ShaderProgram& lightShader,
+	                                              ShaderProgram& shadowShader,
+	                                              std::size_t const numShadows,
+	                                              GLuint nextTexUnit) -> GLuint
 	{
 		// Not really great in terms of allocations but will do for now
 		while (m_SpotShadowMaps.size() < numShadows)
@@ -236,15 +235,15 @@ namespace leopph::internal
 		{
 			if (spotLights[i]->CastsShadow())
 			{
-				const auto lightViewMat{Matrix4::LookAt(spotLights[i]->Entity()->Transform()->Position(), spotLights[i]->Entity()->Transform()->Position() + spotLights[i]->Entity()->Transform()->Forward(), Vector3::Up())};
-				const auto lightProjMat{Matrix4::Perspective(math::ToRadians(spotLights[i]->OuterAngle() * 2), 1.f, 0.1f, spotLights[i]->Range())};
-				const auto lightViewProjMat{lightViewMat * lightProjMat};
+				auto const lightViewMat{Matrix4::LookAt(spotLights[i]->Entity()->Transform()->Position(), spotLights[i]->Entity()->Transform()->Position() + spotLights[i]->Entity()->Transform()->Forward(), Vector3::Up())};
+				auto const lightProjMat{Matrix4::Perspective(math::ToRadians(spotLights[i]->OuterAngle() * 2), 1.f, 0.1f, spotLights[i]->Range())};
+				auto const lightViewProjMat{lightViewMat * lightProjMat};
 
 				shadowShader.SetUniform("u_ViewProjMat", lightViewProjMat);
 
 				m_SpotShadowMaps[shadowInd]->BindForWritingAndClear();
 
-				for (const auto& [renderable, instances, castsShadow] : renderables)
+				for (auto const& [renderable, instances, castsShadow] : renderables)
 				{
 					if (castsShadow)
 					{
@@ -263,12 +262,12 @@ namespace leopph::internal
 	}
 
 
-	auto GlDeferredRenderer::RenderPointShadowMaps(const std::span<const PointLight* const> pointLights,
-	                                             const std::span<const RenderableData> renderables,
-	                                             ShaderProgram& lightShader,
-	                                             ShaderProgram& shadowShader,
-	                                             const std::size_t numShadows,
-	                                             GLuint nextTexUnit) -> GLuint
+	auto GlDeferredRenderer::RenderPointShadowMaps(std::span<PointLight const* const> const pointLights,
+	                                               std::span<RenderableData const> const renderables,
+	                                               ShaderProgram& lightShader,
+	                                               ShaderProgram& shadowShader,
+	                                               std::size_t const numShadows,
+	                                               GLuint nextTexUnit) -> GLuint
 	{
 		// Not really great in terms of allocations but will do for now
 		while (m_PointShadowMaps.size() < numShadows)
@@ -287,8 +286,8 @@ namespace leopph::internal
 			{
 				std::array<Matrix4, 6> shadowViewProjMats;
 
-				const auto shadowProjMat{Matrix4::Perspective(math::ToRadians(90), 1, 0.01f, pointLights[i]->Range())};
-				const auto lightTransMat{Matrix4::Translate(-pointLights[i]->Entity()->Transform()->Position())};
+				auto const shadowProjMat{Matrix4::Perspective(math::ToRadians(90), 1, 0.01f, pointLights[i]->Range())};
+				auto const lightTransMat{Matrix4::Translate(-pointLights[i]->Entity()->Transform()->Position())};
 
 				static constexpr std::array cubeFaceMats
 				{
@@ -300,7 +299,7 @@ namespace leopph::internal
 					Matrix4{-1, 0, 0, 0, 0, -1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1} // -Z
 				};
 
-				std::ranges::transform(cubeFaceMats, shadowViewProjMats.begin(), [&](const auto& cubeFaceMat)
+				std::ranges::transform(cubeFaceMats, shadowViewProjMats.begin(), [&](auto const& cubeFaceMat)
 				{
 					return lightTransMat * cubeFaceMat * shadowProjMat;
 				});
@@ -312,7 +311,7 @@ namespace leopph::internal
 					m_PointShadowMaps[shadowInd]->BindForWritingAndClear(face);
 					shadowShader.SetUniform("u_ViewProjMat", shadowViewProjMats[face]);
 
-					for (const auto& [renderable, instances, castsShadow] : renderables)
+					for (auto const& [renderable, instances, castsShadow] : renderables)
 					{
 						if (castsShadow)
 						{
@@ -328,126 +327,5 @@ namespace leopph::internal
 		}
 
 		return nextTexUnit;
-	}
-
-
-	auto GlDeferredRenderer::SetAmbientData(const AmbientLight& light, ShaderProgram& lightShader) -> void
-	{
-		lightShader.SetUniform("u_AmbientLight", light.Intensity());
-	}
-
-
-	auto GlDeferredRenderer::SetDirectionalData(const DirectionalLight* dirLight, ShaderProgram& lightShader) -> void
-	{
-		if (!dirLight)
-		{
-			return;
-		}
-
-		lightShader.SetUniform("u_DirLight.direction", dirLight->Direction());
-		lightShader.SetUniform("u_DirLight.diffuseColor", dirLight->Diffuse());
-		lightShader.SetUniform("u_DirLight.specularColor", dirLight->Specular());
-	}
-
-
-	auto GlDeferredRenderer::SetSpotData(const std::span<const SpotLight* const> spotLights, ShaderProgram& lightShader) -> void
-	{
-		constexpr auto shadowArrayName{"u_SpotLightsShadow["};
-		constexpr auto noShadowArrayName{"u_SpotLightsNoShadow["};
-
-		auto noShadowInd{0ull};
-		auto shadowInd{0ull};
-
-		for (const auto spotLight : spotLights)
-		{
-			const auto arrayPrefix{
-				[&]() -> std::string
-				{
-					if (spotLight->CastsShadow())
-					{
-						auto ret{shadowArrayName + std::to_string(shadowInd) + "]."};
-						++shadowInd;
-						return ret;
-					}
-					auto ret{noShadowArrayName + std::to_string(noShadowInd) + "]."};
-					++noShadowInd;
-					return ret;
-				}()
-			};
-
-			lightShader.SetUniform(arrayPrefix + "position", spotLight->Entity()->Transform()->Position());
-			lightShader.SetUniform(arrayPrefix + "direction", spotLight->Entity()->Transform()->Forward());
-			lightShader.SetUniform(arrayPrefix + "diffuseColor", spotLight->Diffuse());
-			lightShader.SetUniform(arrayPrefix + "specularColor", spotLight->Specular());
-			lightShader.SetUniform(arrayPrefix + "constant", spotLight->Constant());
-			lightShader.SetUniform(arrayPrefix + "linear", spotLight->Linear());
-			lightShader.SetUniform(arrayPrefix + "quadratic", spotLight->Quadratic());
-			lightShader.SetUniform(arrayPrefix + "range", spotLight->Range());
-			lightShader.SetUniform(arrayPrefix + "innerAngleCosine", math::Cos(math::ToRadians(spotLight->InnerAngle())));
-			lightShader.SetUniform(arrayPrefix + "outerAngleCosine", math::Cos(math::ToRadians(spotLight->OuterAngle())));
-		}
-	}
-
-
-	auto GlDeferredRenderer::SetPointData(const std::span<const PointLight* const> pointLights, ShaderProgram& lightShader) -> void
-	{
-		constexpr auto shadowArrayName{"u_PointLightsShadow["};
-		constexpr auto noShadowArrayName{"u_PointLightsNoShadow["};
-
-		auto noShadowInd{0ull};
-		auto shadowInd{0ull};
-
-		for (const auto pointLight : pointLights)
-		{
-			const auto arrayPrefix{
-				[&]() -> std::string
-				{
-					if (pointLight->CastsShadow())
-					{
-						auto ret{shadowArrayName + std::to_string(shadowInd) + "]."};
-						++shadowInd;
-						return ret;
-					}
-					auto ret{noShadowArrayName + std::to_string(noShadowInd) + "]."};
-					++noShadowInd;
-					return ret;
-				}()
-			};
-
-			lightShader.SetUniform(arrayPrefix + "position", pointLight->Entity()->Transform()->Position());
-			lightShader.SetUniform(arrayPrefix + "diffuseColor", pointLight->Diffuse());
-			lightShader.SetUniform(arrayPrefix + "specularColor", pointLight->Specular());
-			lightShader.SetUniform(arrayPrefix + "constant", pointLight->Constant());
-			lightShader.SetUniform(arrayPrefix + "linear", pointLight->Linear());
-			lightShader.SetUniform(arrayPrefix + "quadratic", pointLight->Quadratic());
-			lightShader.SetUniform(arrayPrefix + "range", pointLight->Range());
-		}
-	}
-
-
-	auto GlDeferredRenderer::CountShadows(const DirectionalLight* const dirLight, const std::span<const SpotLight* const> spotLights, const std::span<const PointLight* const> pointLights) -> ShadowCount
-	{
-		const auto dirShadow{dirLight != nullptr && dirLight->CastsShadow()};
-		const auto spotShadows{
-			std::accumulate(spotLights.begin(), spotLights.end(), 0ull, [](const auto sum, const auto elem)
-			{
-				if (elem->CastsShadow())
-				{
-					return sum + 1;
-				}
-				return sum;
-			})
-		};
-		const auto pointShadows{
-			std::accumulate(pointLights.begin(), pointLights.end(), 0ull, [](const auto sum, const auto elem)
-			{
-				if (elem->CastsShadow())
-				{
-					return sum + 1;
-				}
-				return sum;
-			})
-		};
-		return {dirShadow, spotShadows, pointShadows};
 	}
 }

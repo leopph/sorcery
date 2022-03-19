@@ -112,6 +112,127 @@ namespace leopph::internal
 	}
 
 
+	auto GlRenderer::SetAmbientData(AmbientLight const& light, ShaderProgram& lightShader) -> void
+	{
+		lightShader.SetUniform("u_AmbientLight", light.Intensity());
+	}
+
+
+	auto GlRenderer::SetDirectionalData(DirectionalLight const* dirLight, ShaderProgram& shader) -> void
+	{
+		if (!dirLight)
+		{
+			return;
+		}
+
+		shader.SetUniform("u_DirLight.direction", dirLight->Direction());
+		shader.SetUniform("u_DirLight.diffuseColor", dirLight->Diffuse());
+		shader.SetUniform("u_DirLight.specularColor", dirLight->Specular());
+	}
+
+
+	auto GlRenderer::SetSpotData(std::span<SpotLight const* const> const spotLights, ShaderProgram& shader) -> void
+	{
+		constexpr auto shadowArrayName{"u_SpotLightsShadow["};
+		constexpr auto noShadowArrayName{"u_SpotLightsNoShadow["};
+
+		auto noShadowInd{0ull};
+		auto shadowInd{0ull};
+
+		for (auto const spotLight : spotLights)
+		{
+			auto const arrayPrefix{
+				[&]() -> std::string
+				{
+					if (spotLight->CastsShadow())
+					{
+						auto ret{shadowArrayName + std::to_string(shadowInd) + "]."};
+						++shadowInd;
+						return ret;
+					}
+					auto ret{noShadowArrayName + std::to_string(noShadowInd) + "]."};
+					++noShadowInd;
+					return ret;
+				}()
+			};
+
+			shader.SetUniform(arrayPrefix + "position", spotLight->Entity()->Transform()->Position());
+			shader.SetUniform(arrayPrefix + "direction", spotLight->Entity()->Transform()->Forward());
+			shader.SetUniform(arrayPrefix + "diffuseColor", spotLight->Diffuse());
+			shader.SetUniform(arrayPrefix + "specularColor", spotLight->Specular());
+			shader.SetUniform(arrayPrefix + "constant", spotLight->Constant());
+			shader.SetUniform(arrayPrefix + "linear", spotLight->Linear());
+			shader.SetUniform(arrayPrefix + "quadratic", spotLight->Quadratic());
+			shader.SetUniform(arrayPrefix + "range", spotLight->Range());
+			shader.SetUniform(arrayPrefix + "innerAngleCosine", math::Cos(math::ToRadians(spotLight->InnerAngle())));
+			shader.SetUniform(arrayPrefix + "outerAngleCosine", math::Cos(math::ToRadians(spotLight->OuterAngle())));
+		}
+	}
+
+
+	auto GlRenderer::SetPointData(std::span<PointLight const* const> const pointLights, ShaderProgram& shader) -> void
+	{
+		constexpr auto shadowArrayName{"u_PointLightsShadow["};
+		constexpr auto noShadowArrayName{"u_PointLightsNoShadow["};
+
+		auto noShadowInd{0ull};
+		auto shadowInd{0ull};
+
+		for (auto const pointLight : pointLights)
+		{
+			auto const arrayPrefix{
+				[&]() -> std::string
+				{
+					if (pointLight->CastsShadow())
+					{
+						auto ret{shadowArrayName + std::to_string(shadowInd) + "]."};
+						++shadowInd;
+						return ret;
+					}
+					auto ret{noShadowArrayName + std::to_string(noShadowInd) + "]."};
+					++noShadowInd;
+					return ret;
+				}()
+			};
+
+			shader.SetUniform(arrayPrefix + "position", pointLight->Entity()->Transform()->Position());
+			shader.SetUniform(arrayPrefix + "diffuseColor", pointLight->Diffuse());
+			shader.SetUniform(arrayPrefix + "specularColor", pointLight->Specular());
+			shader.SetUniform(arrayPrefix + "constant", pointLight->Constant());
+			shader.SetUniform(arrayPrefix + "linear", pointLight->Linear());
+			shader.SetUniform(arrayPrefix + "quadratic", pointLight->Quadratic());
+			shader.SetUniform(arrayPrefix + "range", pointLight->Range());
+		}
+	}
+
+
+	auto GlRenderer::CountShadows(DirectionalLight const* const dirLight, std::span<SpotLight const* const> const spotLights, std::span<PointLight const* const> const pointLights) -> ShadowCount
+	{
+		auto const dirShadow{dirLight != nullptr && dirLight->CastsShadow()};
+		auto const spotShadows{
+			std::accumulate(spotLights.begin(), spotLights.end(), 0ull, [](auto const sum, auto const elem)
+			{
+				if (elem->CastsShadow())
+				{
+					return sum + 1;
+				}
+				return sum;
+			})
+		};
+		auto const pointShadows{
+			std::accumulate(pointLights.begin(), pointLights.end(), 0ull, [](auto const sum, auto const elem)
+			{
+				if (elem->CastsShadow())
+				{
+					return sum + 1;
+				}
+				return sum;
+			})
+		};
+		return {dirShadow, spotShadows, pointShadows};
+	}
+
+
 	auto GlRenderer::CompareLightsByDistToCam(Light const* left, Light const* right) -> bool
 	{
 		auto const& camPosition{Camera::Current()->Entity()->Transform()->Position()};

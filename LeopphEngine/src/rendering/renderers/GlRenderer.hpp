@@ -2,6 +2,8 @@
 
 #include "Renderer.hpp"
 #include "../CascadedShadowMap.hpp"
+#include "../../components/lighting/AmbientLight.hpp"
+#include "../../components/lighting/DirLight.hpp"
 #include "../../components/lighting/PointLight.hpp"
 #include "../../components/lighting/SpotLight.hpp"
 #include "../../math/Matrix.hpp"
@@ -19,8 +21,12 @@ namespace leopph::internal
 			// Constructs an OpenGL renderer for the selected rendering pipeline.
 			static auto Create() -> std::unique_ptr<GlRenderer>;
 
-			GlRenderer(const GlRenderer& other) = delete;
-			auto operator=(const GlRenderer& other) -> GlRenderer& = delete;
+		protected:
+			GlRenderer();
+
+		public:
+			GlRenderer(GlRenderer const& other) = delete;
+			auto operator=(GlRenderer const& other) -> GlRenderer& = delete;
 
 			GlRenderer(GlRenderer&& other) noexcept = delete;
 			auto operator=(GlRenderer&& other) noexcept -> GlRenderer& = delete;
@@ -28,9 +34,6 @@ namespace leopph::internal
 			~GlRenderer() override = default;
 
 		protected:
-			GlRenderer();
-
-
 			struct RenderableData
 			{
 				GlMeshGroup* Renderable;
@@ -40,16 +43,30 @@ namespace leopph::internal
 			};
 
 
+			struct ShadowCount
+			{
+				bool Directional{false};
+				std::size_t Spot{0};
+				std::size_t Point{0};
+			};
+
+
 			static auto CollectRenderables(std::vector<RenderableData>& renderables) -> void;
 			// Places the first MAX_SPOT_LIGHT_COUNT SpotLights based on distance to the active Camera into the passed vector.
-			static auto CollectSpotLights(std::vector<const SpotLight*>& spotLights) -> void;
+			static auto CollectSpotLights(std::vector<SpotLight const*>& spotLights) -> void;
 			// Places the first MAX_POINT_LIGHT_COUNT PointLights based on distance to the active Camera into the passed vector.
-			static auto CollectPointLights(std::vector<const PointLight*>& pointLights) -> void;
+			static auto CollectPointLights(std::vector<PointLight const*>& pointLights) -> void;
 			// Returns a collection of cascade far bounds in NDC.
-			[[nodiscard]] static auto CascadeFarBoundsNdc(const Matrix4& camProjMat, std::span<const CascadedShadowMap::CascadeBounds> cascadeBounds) -> std::span<const float>;
+			[[nodiscard]] static auto CascadeFarBoundsNdc(Matrix4 const& camProjMat, std::span<CascadedShadowMap::CascadeBounds const> cascadeBounds) -> std::span<float const>;
+
+			static auto SetAmbientData(AmbientLight const& light, ShaderProgram& lightShader) -> void;
+			static auto SetDirectionalData(DirectionalLight const* dirLight, ShaderProgram& shader) -> void;
+			static auto SetSpotData(std::span<SpotLight const* const> spotLights, ShaderProgram& shader) -> void;
+			static auto SetPointData(std::span<PointLight const* const> pointLights, ShaderProgram& shader) -> void;
+			static auto CountShadows(DirectionalLight const* dirLight, std::span<SpotLight const* const> spotLights, std::span<PointLight const* const> pointLights) -> ShadowCount;
 
 		private:
 			// Returns true if left is closer to the camera then right.
-			static auto CompareLightsByDistToCam(const Light* left, const Light* right) -> bool;
+			static auto CompareLightsByDistToCam(Light const* left, Light const* right) -> bool;
 	};
 }

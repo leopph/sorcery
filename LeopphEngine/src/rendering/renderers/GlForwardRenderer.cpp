@@ -1,20 +1,13 @@
 #include "GlForwardRenderer.hpp"
 
 #include "../../components/Camera.hpp"
-#include "../../components/lighting/AmbientLight.hpp"
-#include "../../components/lighting/DirLight.hpp"
-#include "../../components/lighting/Light.hpp"
-#include "../../components/lighting/PointLight.hpp"
 #include "../../config/Settings.hpp"
 #include "../../data/DataManager.hpp"
-#include "../../math/LeopphMath.hpp"
 #include "../../math/Matrix.hpp"
-#include "../../math/Vector.hpp"
 #include "../../util/Logger.hpp"
 
 #include <glad/gl.h>
 
-#include <cstddef>
 #include <string>
 #include <utility>
 
@@ -45,7 +38,7 @@ namespace leopph::internal
 		}
 	{
 		glEnable(GL_DEPTH_TEST);
-		glDepthFunc(GL_LESS);
+		glDepthFunc(GL_LEQUAL);
 
 		glEnable(GL_CULL_FACE);
 		glFrontFace(GL_CCW);
@@ -66,8 +59,8 @@ namespace leopph::internal
 		}
 
 		static std::vector<RenderableData> renderables;
-		static std::vector<const SpotLight*> spotLights;
-		static std::vector<const PointLight*> pointLights;
+		static std::vector<SpotLight const*> spotLights;
+		static std::vector<PointLight const*> pointLights;
 
 		renderables.clear();
 		CollectRenderables(renderables);
@@ -76,112 +69,39 @@ namespace leopph::internal
 		pointLights.clear();
 		CollectPointLights(pointLights);
 
-		const auto& dirLight{DataManager::Instance().DirectionalLight()};
+		auto const& dirLight{DataManager::Instance().DirectionalLight()};
 
-		const auto camViewMat{Camera::Current()->ViewMatrix()};
-		const auto camProjMat{Camera::Current()->ProjectionMatrix()};
+		auto const camViewMat{Camera::Current()->ViewMatrix()};
+		auto const camProjMat{Camera::Current()->ProjectionMatrix()};
 
 		RenderShadedObjects(camViewMat, camProjMat, renderables, dirLight, spotLights, pointLights);
 		RenderSkybox(camViewMat, camProjMat);
 	}
 
 
-	auto GlForwardRenderer::RenderShadedObjects(const Matrix4& camViewMat, const Matrix4& camProjMat, const std::vector<RenderableData>& renderables, const DirectionalLight* dirLight, const std::vector<const SpotLight*>& spotLights, const std::vector<const PointLight*>& pointLights) -> void
+	auto GlForwardRenderer::RenderShadedObjects(Matrix4 const& camViewMat, Matrix4 const& camProjMat, std::vector<RenderableData> const& renderables, DirectionalLight const* dirLight, std::vector<SpotLight const*> const& spotLights, std::vector<PointLight const*> const& pointLights) -> void
 	{
 		m_ObjectShader.Clear();
-		m_ObjectShader["EXISTS_DIRLIGHT"] = std::to_string(dirLight != nullptr);
-		m_ObjectShader["DIRLIGHT_SHADOW"] = std::to_string(dirLight != nullptr && dirLight->CastsShadow());
-		m_ObjectShader["EXISTS_SPOTLIGHT"] = std::to_string(!spotLights.empty());
-		m_ObjectShader["EXISTS_POINTLIGHT"] = std::to_string(!pointLights.empty());
-		auto& objectShader{m_ObjectShader.GetPermutation()};
-		auto& nonInstShadowShader{m_ShadowShader.GetPermutation()};
+		m_ObjectShader["DIRLIGHT"] = std::to_string(dirLight != nullptr);
+		//m_ObjectShader["DIRLIGHT_SHADOW"] = std::to_string(dirLight != nullptr && dirLight->CastsShadow());
+		m_ObjectShader["DIRLIGHT_SHADOW"] = std::to_string(false);
+		m_ObjectShader["NUM_SPOTLIGHTS"] = std::to_string(spotLights.size());
+		m_ObjectShader["NUM_SPOTLIGHT_SHADOWS"] = std::to_string(0);
+		m_ObjectShader["NUM_POINTLIGHTS"] = std::to_string(pointLights.size());
+		m_ObjectShader["NUM_POINTLIGHT_SHADOWS"] = std::to_string(0);
 
-		auto texCount{1};
+		auto& objectShader{m_ObjectShader.GetPermutation()};
 
 		objectShader.SetUniform("u_ViewProjMat", camViewMat * camProjMat);
 		objectShader.SetUniform("u_CamPos", Camera::Current()->Entity()->Transform()->Position());
 
-		/* Set up ambient light data */
-		objectShader.SetUniform("u_AmbientLight", AmbientLight::Instance().Intensity());
-
-		/* Set up DirLight data */
-		if (dirLight != nullptr)
-		{
-			objectShader.SetUniform("u_DirLight.direction", dirLight->Direction());
-			objectShader.SetUniform("u_DirLight.diffuseColor", dirLight->Diffuse());
-			objectShader.SetUniform("u_DirLight.specularColor", dirLight->Specular());
-
-			if (dirLight->CastsShadow())
-			{
-				static std::vector<Matrix4> dirLightMatrices;
-				dirLightMatrices.clear();
-
-				const auto cameraInverseMatrix{camViewMat.Inverse()};
-				const auto lightViewMatrix{Matrix4::LookAt(Vector3{0}, dirLight->Direction(), Vector3::Up())};
-
-				const auto cascadeBounds{m_DirLightShadowMap.CalculateCascadeBounds(*Camera::Current())};
-				const auto numCascades{cascadeBounds.size()};
-
-				for (std::size_t i = 0; i < numCascades; ++i)
-				{
-					const auto lightWorldToClip{m_DirLightShadowMap.CascadeMatrix(cascadeBounds[i], cameraInverseMatrix, lightViewMatrix, dirLight->ShadowExtension())};
-					dirLightMatrices.push_back(lightWorldToClip);
-
-					nonInstShadowShader.SetUniform("u_ViewProjMat", lightWorldToClip);
-
-					m_DirLightShadowMap.BindForWritingAndClear(i);
-
-					nonInstShadowShader.Use();
-					for (const auto& [renderable, instances, castsShadow] : renderables)
-					{
-						if (castsShadow)
-						{
-							renderable->SetInstanceData(instances);
-							renderable->DrawWithoutMaterial(false);
-						}
-					}
-				}
-
-				objectShader.SetUniform("u_DirLightCascadeCount", static_cast<unsigned>(numCascades));
-				objectShader.SetUniform("u_DirLightClipMatrices", dirLightMatrices);
-				objectShader.SetUniform("u_DirLightCascadeFarBounds", CascadeFarBoundsNdc(camProjMat, cascadeBounds));
-				static_cast<void>(m_DirLightShadowMap.BindForReading(objectShader, "u_DirLightShadowMaps", texCount));
-			}
-		}
-
-		/* Set up PointLight data */
-		objectShader.SetUniform("u_PointLightCount", static_cast<int>(pointLights.size()));
-		for (std::size_t i = 0; i < pointLights.size(); i++)
-		{
-			const auto& pointLight = pointLights[i];
-
-			objectShader.SetUniform("u_PointLights[" + std::to_string(i) + "].position", pointLight->Entity()->Transform()->Position());
-			objectShader.SetUniform("u_PointLights[" + std::to_string(i) + "].diffuseColor", pointLight->Diffuse());
-			objectShader.SetUniform("u_PointLights[" + std::to_string(i) + "].specularColor", pointLight->Specular());
-			objectShader.SetUniform("u_PointLights[" + std::to_string(i) + "].constant", pointLight->Constant());
-			objectShader.SetUniform("u_PointLights[" + std::to_string(i) + "].linear", pointLight->Linear());
-			objectShader.SetUniform("u_PointLights[" + std::to_string(i) + "].quadratic", pointLight->Quadratic());
-		}
-
-		/* Set up SpotLight data */
-		objectShader.SetUniform("u_SpotLightCount", static_cast<int>(spotLights.size()));
-		for (std::size_t i = 0; i < spotLights.size(); i++)
-		{
-			const auto& spotLight{spotLights[i]};
-
-			objectShader.SetUniform("u_SpotLights[" + std::to_string(i) + "].position", spotLight->Entity()->Transform()->Position());
-			objectShader.SetUniform("u_SpotLights[" + std::to_string(i) + "].direction", spotLight->Entity()->Transform()->Forward());
-			objectShader.SetUniform("u_SpotLights[" + std::to_string(i) + "].diffuseColor", spotLight->Diffuse());
-			objectShader.SetUniform("u_SpotLights[" + std::to_string(i) + "].specularColor", spotLight->Specular());
-			objectShader.SetUniform("u_SpotLights[" + std::to_string(i) + "].constant", spotLight->Constant());
-			objectShader.SetUniform("u_SpotLights[" + std::to_string(i) + "].linear", spotLight->Linear());
-			objectShader.SetUniform("u_SpotLights[" + std::to_string(i) + "].quadratic", spotLight->Quadratic());
-			objectShader.SetUniform("u_SpotLights[" + std::to_string(i) + "].innerAngleCosine", math::Cos(math::ToRadians(spotLight->InnerAngle())));
-			objectShader.SetUniform("u_SpotLights[" + std::to_string(i) + "].outerAngleCosine", math::Cos(math::ToRadians(spotLight->OuterAngle())));
-		}
+		SetAmbientData(AmbientLight::Instance(), objectShader);
+		SetDirectionalData(dirLight, objectShader);
+		SetSpotData(spotLights, objectShader);
+		SetPointData(pointLights, objectShader);
 
 		objectShader.Use();
-		for (const auto& [renderable, instances, castsShadow] : renderables)
+		for (auto const& [renderable, instances, castsShadow] : renderables)
 		{
 			renderable->SetInstanceData(instances);
 			renderable->DrawWithMaterial(objectShader, 0, false);
@@ -189,9 +109,9 @@ namespace leopph::internal
 	}
 
 
-	auto GlForwardRenderer::RenderSkybox(const Matrix4& camViewMat, const Matrix4& camProjMat) -> void
+	auto GlForwardRenderer::RenderSkybox(Matrix4 const& camViewMat, Matrix4 const& camProjMat) -> void
 	{
-		if (const auto& background{Camera::Current()->Background()}; std::holds_alternative<Skybox>(background))
+		if (auto const& background{Camera::Current()->Background()}; std::holds_alternative<Skybox>(background))
 		{
 			auto& skyboxShader{m_SkyboxShader.GetPermutation()};
 			skyboxShader.SetUniform("u_ViewProjMat", static_cast<Matrix4>(static_cast<Matrix3>(camViewMat)) * camProjMat);
