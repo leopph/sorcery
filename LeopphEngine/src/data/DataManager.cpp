@@ -30,9 +30,9 @@ namespace leopph::internal
 	}
 
 
-	auto DataManager::Destroy(const Poelo* poelo) -> bool
+	auto DataManager::Destroy(Poelo const* poelo) -> bool
 	{
-		return std::erase_if(m_Poelos, [poelo](const std::unique_ptr<Poelo>& elem)
+		return std::erase_if(m_Poelos, [poelo](std::unique_ptr<Poelo> const& elem)
 		{
 			return elem.get() == poelo;
 		});
@@ -46,187 +46,166 @@ namespace leopph::internal
 	}
 
 
-	auto DataManager::UnregisterEntity(const Entity* const entity) -> void
+	auto DataManager::UnregisterEntity(Entity const* const entity) -> void
 	{
 		// Keeps the relative order, remains sorted.
-		std::erase_if(m_EntitiesAndComponents, [entity](const EntityAndComponents& elem)
+		std::erase_if(m_EntitiesAndComponents, [entity](EntityAndComponents const& elem)
 		{
 			return *elem.Entity == *entity;
 		});
 	}
 
 
-	auto DataManager::FindEntity(const std::string& name) -> Entity*
+	auto DataManager::FindEntity(std::string const& name) -> Entity*
 	{
-		const auto it = FindEntityInternal(name);
+		auto const it = GetEntityIterator(name);
 		return it != m_EntitiesAndComponents.end() ? it->Entity : nullptr;
 	}
 
 
-	auto DataManager::RegisterComponentForEntity(const Entity* const entity, Component* const component, const bool active) -> void
+	auto DataManager::RegisterComponentForEntity(Entity const* const entity, Component* const component, bool const active) -> void
 	{
-		const auto it{FindEntityInternal(entity->Name())};
+		auto const it{GetEntityIterator(entity->Name())};
 		(active ? it->ActiveComponents : it->InactiveComponents).push_back(component);
 	}
 
 
-	auto DataManager::UnregisterComponentFromEntity(const Entity* const entity, Component* const component, const bool active) -> void
+	auto DataManager::UnregisterComponentFromEntity(Entity const* const entity, Component* const component, bool const active) -> void
 	{
-		const auto it{FindEntityInternal(entity->Name())};
+		auto const it{GetEntityIterator(entity->Name())};
 		std::erase(active ? it->ActiveComponents : it->InactiveComponents, component);
 	}
 
 
-	auto DataManager::ComponentsOfEntity(const Entity* const entity, const bool active) const -> std::span<Component* const>
+	auto DataManager::ComponentsOfEntity(Entity const* const entity, bool const active) const -> std::span<Component* const>
 	{
-		const auto it{FindEntityInternal(entity->Name())};
+		auto const it{GetEntityIterator(entity->Name())};
 		return active ? it->ActiveComponents : it->InactiveComponents;
 	}
 
 
-	auto DataManager::RegisterBehavior(Behavior* behavior, const bool active) -> void
+	auto DataManager::RegisterBehavior(Behavior* behavior, bool const active) -> void
 	{
 		(active ? m_ActiveBehaviors : m_InactiveBehaviors).push_back(behavior);
 	}
 
 
-	auto DataManager::UnregisterBehavior(const Behavior* behavior, const bool active) -> void
+	auto DataManager::UnregisterBehavior(Behavior const* behavior, bool const active) -> void
 	{
 		std::erase(active ? m_ActiveBehaviors : m_InactiveBehaviors, behavior);
 	}
 
 
-	auto DataManager::RegisterDirLight(const leopph::DirectionalLight* dirLight, const bool active) -> void
+	auto DataManager::RegisterDirLight(leopph::DirectionalLight const* dirLight, bool const active) -> void
 	{
 		(active ? m_ActiveDirLights : m_InactiveDirLights).push_back(dirLight);
 	}
 
 
-	auto DataManager::UnregisterDirLight(const leopph::DirectionalLight* dirLight, const bool active) -> void
+	auto DataManager::UnregisterDirLight(leopph::DirectionalLight const* dirLight, bool const active) -> void
 	{
 		std::erase(active ? m_ActiveDirLights : m_InactiveDirLights, dirLight);
 	}
 
 
-	auto DataManager::DirectionalLight() const -> const leopph::DirectionalLight*
+	auto DataManager::DirectionalLight() const -> leopph::DirectionalLight const*
 	{
 		return m_ActiveDirLights.empty() ? nullptr : m_ActiveDirLights.front();
 	}
 
 
-	auto DataManager::RegisterSpotLight(const SpotLight* spotLight, const bool active) -> void
+	auto DataManager::RegisterSpotLight(SpotLight const* spotLight, bool const active) -> void
 	{
 		(active ? m_ActiveSpotLights : m_InactiveSpotLights).push_back(spotLight);
 	}
 
 
-	auto DataManager::UnregisterSpotLight(const SpotLight* spotLight, const bool active) -> void
+	auto DataManager::UnregisterSpotLight(SpotLight const* spotLight, bool const active) -> void
 	{
 		std::erase(active ? m_ActiveSpotLights : m_InactiveSpotLights, spotLight);
 	}
 
 
-	auto DataManager::RegisterPointLight(const PointLight* pointLight, const bool active) -> void
+	auto DataManager::RegisterPointLight(PointLight const* pointLight, bool const active) -> void
 	{
 		(active ? m_ActivePointLights : m_InactivePointLights).push_back(pointLight);
 	}
 
 
-	auto DataManager::UnregisterPointLight(const PointLight* pointLight, const bool active) -> void
+	auto DataManager::UnregisterPointLight(PointLight const* pointLight, bool const active) -> void
 	{
 		std::erase(active ? m_ActivePointLights : m_InactivePointLights, pointLight);
 	}
 
 
-	auto DataManager::RegisterMeshGroup(MeshGroup* const meshData) -> void
+	auto DataManager::RegisterMeshGroup(std::shared_ptr<MeshGroup const> const& meshGroup) -> void
 	{
-		m_MeshGroups.push_back(meshData);
-		SortMeshGroups();
+		m_MeshGroups.insert_or_assign(meshGroup->Id, meshGroup);
 	}
 
 
-	auto DataManager::UnregisterMeshGroup(MeshGroup* const meshData) -> void
+	auto DataManager::FindMeshGroup(std::string const& id) -> std::shared_ptr<MeshGroup const>
 	{
-		// Keeps the relative order, remains sorted.
-		std::erase_if(m_MeshGroups, [meshData](const MeshGroup* elem)
+		if (auto const it = m_MeshGroups.find(id); it != m_MeshGroups.end())
 		{
-			return *elem == *meshData;
-		});
-	}
+			if (auto ret = it->second.lock())
+			{
+				return ret;
+			}
 
-
-	auto DataManager::FindMeshGroup(const std::string& id) -> std::shared_ptr<MeshGroup>
-	{
-		if (const auto it{
-				std::ranges::lower_bound(m_MeshGroups, id, [](const auto& elemId, const auto& value)
-				                         {
-					                         return elemId.compare(value) < 0;
-				                         }, [](const auto& elem)
-				                         {
-					                         return elem->Id();
-				                         })
-			};
-			it != m_MeshGroups.end() && (*it)->Id() == id)
-		{
-			return (*it)->shared_from_this();
-		}
-		return nullptr;
-	}
-
-
-	auto DataManager::RegisterGlMeshGroup(GlMeshGroup* glMeshGroup) -> void
-	{
-		m_GlMeshGroups.push_back(GlMeshGroupAndInstances{.MeshGroup = glMeshGroup, .ActiveInstances = {}, .InactiveInstances = {}});
-	}
-
-
-	auto DataManager::UnregisterGlMeshGroup(const GlMeshGroup* glMeshGroup) -> void
-	{
-		std::erase_if(m_GlMeshGroups, [glMeshGroup](const auto& elem)
-		{
-			return elem.MeshGroup == glMeshGroup;
-		});
-	}
-
-
-	auto DataManager::FindGlMeshGroup(const MeshGroup* meshDataGroup) -> std::shared_ptr<GlMeshGroup>
-	{
-		if (const auto it = std::ranges::find(m_GlMeshGroups, *meshDataGroup, [](const GlMeshGroupAndInstances& elem) -> const MeshGroup&
-		{
-			return elem.MeshGroup->MeshData();
-		}); it != m_GlMeshGroups.end())
-		{
-			return it->MeshGroup->shared_from_this();
+			m_MeshGroups.erase(it);
 		}
 
 		return nullptr;
 	}
 
 
-	auto DataManager::RegisterInstanceForGlMeshGroup(const GlMeshGroup* meshGroup, const RenderComponent* instance, const bool active) -> void
+	auto DataManager::RegisterGlMeshGroup(std::shared_ptr<GlMeshGroup> const& glMeshGroup) -> void
 	{
-		const auto it{FindMeshGroupInternal(meshGroup)};
-		(active ? it->ActiveInstances : it->InactiveInstances).push_back(instance);
+		m_Renderables.insert_or_assign(glMeshGroup->MeshGroup()->Id, RenderableAndInstances{.MeshGroup = glMeshGroup, .ActiveInstances = {}, .InactiveInstances = {}});
 	}
 
 
-	auto DataManager::UnregisterInstanceFromGlMeshGroup(const GlMeshGroup* meshGroup, const RenderComponent* instance, const bool active) -> void
+	auto DataManager::FindGlMeshGroup(std::string const& meshGroupId) -> std::shared_ptr<GlMeshGroup>
 	{
-		const auto it{FindMeshGroupInternal(meshGroup)};
-		std::erase(active ? it->ActiveInstances : it->InactiveInstances, instance);
+		if (auto const it = m_Renderables.find(meshGroupId); it != m_Renderables.end())
+		{
+			if (auto ret = it->second.MeshGroup.lock())
+			{
+				return ret;
+			}
+
+			m_Renderables.erase(it);
+		}
+
+		return nullptr;
 	}
 
 
-	auto DataManager::GlMeshGroupInstanceCount(const GlMeshGroup* const meshGroup) const -> std::size_t
+	auto DataManager::RegisterInstanceForGlMeshGroup(std::string const& meshGroupId, RenderComponent const* instance, bool const active) -> void
 	{
-		const auto it{FindMeshGroupInternal(meshGroup)};
-		return it->ActiveInstances.size() + it->InactiveInstances.size();
+		auto& [glMeshGroup, activeInstances, inactiveInstances] = m_Renderables.at(meshGroupId);
+		(active ? activeInstances : inactiveInstances).push_back(instance);
+	}
+
+
+	auto DataManager::UnregisterInstanceFromGlMeshGroup(std::string const& meshGroupId, RenderComponent const* instance, bool const active) -> void
+	{
+		auto& [glMeshGroup, activeInstances, inactiveInstances] = m_Renderables.at(meshGroupId);
+		std::erase(active ? activeInstances : inactiveInstances, instance);
+	}
+
+
+	auto DataManager::GlMeshGroupInstanceCount(std::string const& meshId) const -> std::size_t
+	{
+		auto& [glMeshGroup, activeInstances, inactiveInstances] = m_Renderables.at(meshId);
+		return activeInstances.size() + inactiveInstances.size();
 	}
 
 
 	auto DataManager::CreateOrGetSkyboxImpl(std::filesystem::path allPaths) -> SkyboxImpl*
 	{
-		if (const auto it{m_Skyboxes.find(allPaths)};
+		if (auto const it{m_Skyboxes.find(allPaths)};
 			it != m_Skyboxes.end())
 		{
 			return &const_cast<SkyboxImpl&>(it->first);
@@ -235,25 +214,25 @@ namespace leopph::internal
 	}
 
 
-	auto DataManager::DestroySkyboxImpl(const SkyboxImpl* const skybox) -> void
+	auto DataManager::DestroySkyboxImpl(SkyboxImpl const* const skybox) -> void
 	{
 		m_Skyboxes.erase(*skybox);
 	}
 
 
-	auto DataManager::RegisterSkyboxHandle(const SkyboxImpl* const skybox, Skybox* const handle) -> void
+	auto DataManager::RegisterSkyboxHandle(SkyboxImpl const* const skybox, Skybox* const handle) -> void
 	{
 		m_Skyboxes.at(*skybox).push_back(handle);
 	}
 
 
-	auto DataManager::UnregisterSkyboxHandle(const SkyboxImpl* const skybox, Skybox* const handle) -> void
+	auto DataManager::UnregisterSkyboxHandle(SkyboxImpl const* const skybox, Skybox* const handle) -> void
 	{
 		std::erase(m_Skyboxes.at(*skybox), handle);
 	}
 
 
-	auto DataManager::SkyboxHandleCount(const SkyboxImpl* const skybox) const -> std::size_t
+	auto DataManager::SkyboxHandleCount(SkyboxImpl const* const skybox) const -> std::size_t
 	{
 		return m_Skyboxes.at(*skybox).size();
 	}
@@ -273,9 +252,9 @@ namespace leopph::internal
 	}
 
 
-	auto DataManager::FindTexture(const std::filesystem::path& path) -> std::shared_ptr<Texture>
+	auto DataManager::FindTexture(std::filesystem::path const& path) -> std::shared_ptr<Texture>
 	{
-		if (const auto it = std::lower_bound(m_Textures.begin(), m_Textures.end(), path, [](const Texture* tex, const std::filesystem::path& val)
+		if (auto const it = std::lower_bound(m_Textures.begin(), m_Textures.end(), path, [](Texture const* tex, std::filesystem::path const& val)
 		{
 			return *tex < val;
 		}); it != m_Textures.end() && **it == path)
@@ -288,51 +267,30 @@ namespace leopph::internal
 
 	auto DataManager::SortEntities() -> void
 	{
-		std::ranges::sort(m_EntitiesAndComponents, EntityOrderFunc{}, [](const auto& elem) -> const auto&
+		std::ranges::sort(m_EntitiesAndComponents, EntityOrderFunc{}, [](auto const& elem) -> auto const&
 		{
 			return *elem.Entity;
 		});
 	}
 
 
-	auto DataManager::SortMeshGroups() -> void
-	{
-		std::ranges::sort(m_MeshGroups, MeshDataOrderFunc{}, [](const auto* p) -> const auto&
-		{
-			return *p;
-		});
-	}
-
-
 	auto DataManager::SortTextures() -> void
 	{
-		std::ranges::sort(m_Textures, TextureOrderFunc{}, [](const auto* p) -> const auto&
+		std::ranges::sort(m_Textures, TextureOrderFunc{}, [](auto const* p) -> auto const&
 		{
 			return *p;
 		});
 	}
 
 
-	auto DataManager::FindEntityInternal(const std::string& name) -> decltype(m_EntitiesAndComponents)::iterator
+	auto DataManager::GetEntityIterator(std::string const& name) -> decltype(m_EntitiesAndComponents)::iterator
 	{
-		return FindEntityInternalCommon(this, name);
+		return GetEntityIteratorCommon(this, name);
 	}
 
 
-	auto DataManager::FindEntityInternal(const std::string& name) const -> decltype(m_EntitiesAndComponents)::const_iterator
+	auto DataManager::GetEntityIterator(std::string const& name) const -> decltype(m_EntitiesAndComponents)::const_iterator
 	{
-		return FindEntityInternalCommon(this, name);
-	}
-
-
-	auto DataManager::FindMeshGroupInternal(const GlMeshGroup* const meshGroup) -> decltype(m_GlMeshGroups)::iterator
-	{
-		return FindMeshGroupInternalCommon(this, meshGroup);
-	}
-
-
-	auto DataManager::FindMeshGroupInternal(const GlMeshGroup* const meshGroup) const -> decltype(m_GlMeshGroups)::const_iterator
-	{
-		return FindMeshGroupInternalCommon(this, meshGroup);
+		return GetEntityIteratorCommon(this, name);
 	}
 }

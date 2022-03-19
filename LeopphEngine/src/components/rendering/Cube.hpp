@@ -17,18 +17,9 @@ namespace leopph
 
 		private:
 			[[nodiscard]] static
-			auto GetMeshData() -> std::shared_ptr<const internal::MeshGroup>;
+			auto GetMeshGroup() -> std::shared_ptr<internal::MeshGroup const>;
 
-			const static std::string s_MeshDataId;
-
-
-			class CubeMeshGroup final : public internal::MeshGroup
-			{
-				public:
-					CubeMeshGroup();
-
-				private:
-					static std::weak_ptr<Material> s_Material;
-			};
+			static std::string const s_MeshId;
+			static std::weak_ptr<Material> s_Material;
 	};
 }

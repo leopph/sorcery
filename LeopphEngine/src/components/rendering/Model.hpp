@@ -2,6 +2,7 @@
 
 #include "RenderComponent.hpp"
 #include "../../api/LeopphApi.hpp"
+#include "../../rendering/geometry/MeshGroup.hpp"
 
 #include <filesystem>
 #include <memory>
@@ -16,8 +17,8 @@ namespace leopph
 			// Load a Model from a file on disk.
 			LEOPPHAPI explicit Model(std::filesystem::path path);
 
-			Model(const Model& other) = delete;
-			auto operator=(const Model& other) -> Model& = delete;
+			Model(Model const& other) = delete;
+			auto operator=(Model const& other) -> Model& = delete;
 
 			Model(Model&& other) = delete;
 			auto operator=(Model&& other) -> Model& = delete;
@@ -28,9 +29,9 @@ namespace leopph
 			[[nodiscard]] constexpr auto Path() const noexcept -> auto&;
 
 		private:
-			std::filesystem::path m_Path;
+			[[nodiscard]] auto GetMeshGroup(std::filesystem::path const& path) const -> std::shared_ptr<internal::MeshGroup const>;
 
-			[[nodiscard]] auto GetMeshGroup(const std::filesystem::path& path) const -> std::shared_ptr<internal::MeshGroup>;
+			std::filesystem::path m_Path;
 	};
 
 

@@ -1,4 +1,4 @@
-#include "DeferredOpenGlRenderer.hpp"
+#include "GlDeferredRenderer.hpp"
 
 #include "../../components/Camera.hpp"
 #include "../../components/lighting/AmbientLight.hpp"
@@ -14,7 +14,7 @@
 
 namespace leopph::internal
 {
-	DeferredOpenGlRenderer::DeferredOpenGlRenderer() :
+	GlDeferredRenderer::GlDeferredRenderer() :
 		m_ShadowShader{
 			{
 				{ShaderFamily::ShadowMapVertSrc, ShaderType::Vertex}
@@ -58,7 +58,7 @@ namespace leopph::internal
 	}
 
 
-	auto DeferredOpenGlRenderer::Render() -> void
+	auto GlDeferredRenderer::Render() -> void
 	{
 		/* We don't render if there is no camera to use */
 		if (Camera::Current() == nullptr)
@@ -87,7 +87,7 @@ namespace leopph::internal
 	}
 
 
-	auto DeferredOpenGlRenderer::RenderGeometry(const Matrix4& camViewMat, const Matrix4& camProjMat, const std::vector<RenderableData>& renderables) -> void
+	auto GlDeferredRenderer::RenderGeometry(const Matrix4& camViewMat, const Matrix4& camProjMat, const std::vector<RenderableData>& renderables) -> void
 	{
 		glStencilFunc(GL_ALWAYS, STENCIL_REF, STENCIL_AND_MASK);
 		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
@@ -101,12 +101,12 @@ namespace leopph::internal
 		for (const auto& [renderable, instances, castsShadow] : renderables)
 		{
 			renderable->SetInstanceData(instances);
-			renderable->DrawWithMaterial(shader, 0);
+			renderable->DrawWithMaterial(shader, 0, false);
 		}
 	}
 
 
-	auto DeferredOpenGlRenderer::RenderLights(const Matrix4& camViewMat, const Matrix4& camProjMat, const std::span<const RenderableData> renderables, const std::span<const SpotLight*> spotLights, const std::span<const PointLight*> pointLights) -> void
+	auto GlDeferredRenderer::RenderLights(const Matrix4& camViewMat, const Matrix4& camProjMat, const std::span<const RenderableData> renderables, const std::span<const SpotLight*> spotLights, const std::span<const PointLight*> pointLights) -> void
 	{
 		glStencilFunc(GL_EQUAL, STENCIL_REF, STENCIL_AND_MASK);
 		glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
@@ -152,7 +152,7 @@ namespace leopph::internal
 	}
 
 
-	auto DeferredOpenGlRenderer::RenderSkybox(const Matrix4& camViewMat, const Matrix4& camProjMat) -> void
+	auto GlDeferredRenderer::RenderSkybox(const Matrix4& camViewMat, const Matrix4& camProjMat) -> void
 	{
 		if (const auto& background{Camera::Current()->Background()}; std::holds_alternative<Skybox>(background))
 		{
@@ -169,7 +169,7 @@ namespace leopph::internal
 	}
 
 
-	auto DeferredOpenGlRenderer::RenderDirShadowMap(const DirectionalLight* dirLight,
+	auto GlDeferredRenderer::RenderDirShadowMap(const DirectionalLight* dirLight,
 	                                          const Matrix4& camViewInvMat,
 	                                          const Matrix4& camProjMat,
 	                                          const std::span<const RenderableData> renderables,
@@ -203,7 +203,7 @@ namespace leopph::internal
 				if (castsShadow)
 				{
 					renderable->SetInstanceData(instances);
-					renderable->DrawWithoutMaterial();
+					renderable->DrawWithoutMaterial(false);
 				}
 			}
 		}
@@ -214,7 +214,7 @@ namespace leopph::internal
 	}
 
 
-	auto DeferredOpenGlRenderer::RenderSpotShadowMaps(const std::span<const SpotLight* const> spotLights,
+	auto GlDeferredRenderer::RenderSpotShadowMaps(const std::span<const SpotLight* const> spotLights,
 	                                            const std::span<const RenderableData> renderables,
 	                                            ShaderProgram& lightShader,
 	                                            ShaderProgram& shadowShader,
@@ -249,7 +249,7 @@ namespace leopph::internal
 					if (castsShadow)
 					{
 						renderable->SetInstanceData(instances);
-						renderable->DrawWithoutMaterial();
+						renderable->DrawWithoutMaterial(false);
 					}
 				}
 
@@ -263,7 +263,7 @@ namespace leopph::internal
 	}
 
 
-	auto DeferredOpenGlRenderer::RenderPointShadowMaps(const std::span<const PointLight* const> pointLights,
+	auto GlDeferredRenderer::RenderPointShadowMaps(const std::span<const PointLight* const> pointLights,
 	                                             const std::span<const RenderableData> renderables,
 	                                             ShaderProgram& lightShader,
 	                                             ShaderProgram& shadowShader,
@@ -317,7 +317,7 @@ namespace leopph::internal
 						if (castsShadow)
 						{
 							renderable->SetInstanceData(instances);
-							renderable->DrawWithoutMaterial();
+							renderable->DrawWithoutMaterial(false);
 						}
 					}
 				}
@@ -331,13 +331,13 @@ namespace leopph::internal
 	}
 
 
-	auto DeferredOpenGlRenderer::SetAmbientData(const AmbientLight& light, ShaderProgram& lightShader) -> void
+	auto GlDeferredRenderer::SetAmbientData(const AmbientLight& light, ShaderProgram& lightShader) -> void
 	{
 		lightShader.SetUniform("u_AmbientLight", light.Intensity());
 	}
 
 
-	auto DeferredOpenGlRenderer::SetDirectionalData(const DirectionalLight* dirLight, ShaderProgram& lightShader) -> void
+	auto GlDeferredRenderer::SetDirectionalData(const DirectionalLight* dirLight, ShaderProgram& lightShader) -> void
 	{
 		if (!dirLight)
 		{
@@ -350,7 +350,7 @@ namespace leopph::internal
 	}
 
 
-	auto DeferredOpenGlRenderer::SetSpotData(const std::span<const SpotLight* const> spotLights, ShaderProgram& lightShader) -> void
+	auto GlDeferredRenderer::SetSpotData(const std::span<const SpotLight* const> spotLights, ShaderProgram& lightShader) -> void
 	{
 		constexpr auto shadowArrayName{"u_SpotLightsShadow["};
 		constexpr auto noShadowArrayName{"u_SpotLightsNoShadow["};
@@ -389,7 +389,7 @@ namespace leopph::internal
 	}
 
 
-	auto DeferredOpenGlRenderer::SetPointData(const std::span<const PointLight* const> pointLights, ShaderProgram& lightShader) -> void
+	auto GlDeferredRenderer::SetPointData(const std::span<const PointLight* const> pointLights, ShaderProgram& lightShader) -> void
 	{
 		constexpr auto shadowArrayName{"u_PointLightsShadow["};
 		constexpr auto noShadowArrayName{"u_PointLightsNoShadow["};
@@ -425,7 +425,7 @@ namespace leopph::internal
 	}
 
 
-	auto DeferredOpenGlRenderer::CountShadows(const DirectionalLight* const dirLight, const std::span<const SpotLight* const> spotLights, const std::span<const PointLight* const> pointLights) -> ShadowCount
+	auto GlDeferredRenderer::CountShadows(const DirectionalLight* const dirLight, const std::span<const SpotLight* const> spotLights, const std::span<const PointLight* const> pointLights) -> ShadowCount
 	{
 		const auto dirShadow{dirLight != nullptr && dirLight->CastsShadow()};
 		const auto spotShadows{

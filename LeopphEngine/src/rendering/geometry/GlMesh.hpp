@@ -5,10 +5,6 @@
 
 #include <glad/gl.h>
 
-#include <array>
-#include <cstddef>
-#include <memory>
-
 
 namespace leopph::internal
 {
@@ -17,26 +13,34 @@ namespace leopph::internal
 	class GlMesh final
 	{
 		public:
-			GlMesh(std::shared_ptr<const Mesh> meshData, GLuint instanceBuffer);
+			// mesh must not be null and instanceBuffer must be a valid buffer object.
+			GlMesh(Mesh const* mesh, GLuint instanceBuffer);
 
-			GlMesh(const GlMesh& other) = delete;
-			auto operator=(const GlMesh& other) -> GlMesh& = delete;
+			auto DrawWithMaterial(ShaderProgram& shader, GLuint nextFreeTextureUnit, GLsizei instanceCount) const -> void;
+			auto DrawWithoutMaterial(GLsizei instanceCount) const -> void;
+
+			// Not null.
+			[[nodiscard]]
+			auto Mesh() const -> Mesh const*;
+
+			// Shall not be null.
+			auto Mesh(internal::Mesh const* mesh) -> void;
+
+			GlMesh(GlMesh const& other) = delete;
+			auto operator=(GlMesh const& other) -> GlMesh& = delete;
 
 			GlMesh(GlMesh&& other) noexcept = delete;
 			auto operator=(GlMesh&& other) noexcept -> GlMesh& = delete;
 
 			~GlMesh() noexcept;
 
-			auto DrawWithMaterial(ShaderProgram& shader, GLuint nextFreeTextureUnit, GLsizei instanceCount) const -> void;
-			auto DrawWithoutMaterial(GLsizei instanceCount) const -> void;
-
 		private:
-			std::shared_ptr<const Mesh> m_MeshData;
-			GLuint m_VertexArray{0};
-			std::array<GLuint, 2> m_Buffers{0, 0};
-			GLsizei m_NumIndices;
+			// Recreates and configures the vertex and index buffers using the current Mesh.
+			auto SetupBuffers() -> void;
 
-			constexpr static std::size_t VERTEX_BUFFER{0};
-			constexpr static std::size_t INDEX_BUFFER{1};
+			GLuint m_VertexArray{};
+			GLuint m_VertexBuffer{};
+			GLuint m_IndexBuffer{};
+			internal::Mesh const* m_Mesh;
 	};
 }

@@ -1,7 +1,6 @@
 #include "RenderComponent.hpp"
 
 #include "../../data/DataManager.hpp"
-#include "../../rendering/geometry/MeshGroup.hpp"
 
 
 namespace leopph::internal
@@ -18,8 +17,8 @@ namespace leopph::internal
 		if (IsAttached())
 		{
 			auto& dataManager{DataManager::Instance()};
-			dataManager.UnregisterInstanceFromGlMeshGroup(m_Renderable.get(), this, false);
-			dataManager.RegisterInstanceForGlMeshGroup(m_Renderable.get(), this, true);
+			dataManager.UnregisterInstanceFromGlMeshGroup(m_Renderable->MeshGroup()->Id, this, false);
+			dataManager.RegisterInstanceForGlMeshGroup(m_Renderable->MeshGroup()->Id, this, true);
 		}
 	}
 
@@ -36,8 +35,8 @@ namespace leopph::internal
 		if (IsAttached())
 		{
 			auto& dataManager{DataManager::Instance()};
-			dataManager.UnregisterInstanceFromGlMeshGroup(m_Renderable.get(), this, true);
-			dataManager.RegisterInstanceForGlMeshGroup(m_Renderable.get(), this, false);
+			dataManager.UnregisterInstanceFromGlMeshGroup(m_Renderable->MeshGroup()->Id, this, true);
+			dataManager.RegisterInstanceForGlMeshGroup(m_Renderable->MeshGroup()->Id, this, false);
 		}
 	}
 
@@ -54,8 +53,8 @@ namespace leopph::internal
 		if (IsActive())
 		{
 			auto& dataManager{DataManager::Instance()};
-			dataManager.UnregisterInstanceFromGlMeshGroup(m_Renderable.get(), this, false);
-			dataManager.RegisterInstanceForGlMeshGroup(m_Renderable.get(), this, true);
+			dataManager.UnregisterInstanceFromGlMeshGroup(m_Renderable->MeshGroup()->Id, this, false);
+			dataManager.RegisterInstanceForGlMeshGroup(m_Renderable->MeshGroup()->Id, this, true);
 		}
 	}
 
@@ -72,26 +71,22 @@ namespace leopph::internal
 		if (IsActive())
 		{
 			auto& dataManager{DataManager::Instance()};
-			dataManager.UnregisterInstanceFromGlMeshGroup(m_Renderable.get(), this, true);
-			dataManager.RegisterInstanceForGlMeshGroup(m_Renderable.get(), this, false);
+			dataManager.UnregisterInstanceFromGlMeshGroup(m_Renderable->MeshGroup()->Id, this, true);
+			dataManager.RegisterInstanceForGlMeshGroup(m_Renderable->MeshGroup()->Id, this, false);
 		}
 	}
 
 
-	RenderComponent::RenderComponent(std::shared_ptr<const MeshGroup> meshDataGroup) :
-		m_Renderable{DataManager::Instance().FindGlMeshGroup(meshDataGroup.get())}
+	RenderComponent::RenderComponent(std::shared_ptr<MeshGroup const>&& meshGroup) :
+		m_Renderable{GlMeshGroup::CreateOrGet(std::move(meshGroup))}
 	{
-		if (!m_Renderable)
-		{
-			m_Renderable = std::make_shared<GlMeshGroup>(std::move(meshDataGroup));
-		}
 
-		DataManager::Instance().RegisterInstanceForGlMeshGroup(m_Renderable.get(), this, false);
+		DataManager::Instance().RegisterInstanceForGlMeshGroup(m_Renderable->MeshGroup()->Id, this, false);
 	}
 
 
 	RenderComponent::~RenderComponent() noexcept
 	{
-		DataManager::Instance().UnregisterInstanceFromGlMeshGroup(m_Renderable.get(), this, IsAttached() && IsActive());
+		DataManager::Instance().UnregisterInstanceFromGlMeshGroup(m_Renderable->MeshGroup()->Id, this, IsAttached() && IsActive());
 	}
 }

@@ -14,21 +14,14 @@ namespace leopph
 	class ImageSprite final : public internal::RenderComponent
 	{
 		public:
-			LEOPPHAPI explicit ImageSprite(const std::filesystem::path& src, unsigned ppi = 1);
+			LEOPPHAPI explicit ImageSprite(std::filesystem::path const& src, unsigned ppi = 1);
 
 		private:
 			[[nodiscard]] static
-			auto GetMeshData(const std::filesystem::path& src, unsigned ppi) -> std::shared_ptr<const internal::MeshGroup>;
+			auto GetMeshGroup(std::filesystem::path const& src, unsigned ppi) -> std::shared_ptr<internal::MeshGroup const>;
 
-
-			class SpriteMeshGroup final : public internal::MeshGroup
-			{
-				public:
-					explicit SpriteMeshGroup(const std::filesystem::path& src, unsigned ppi);
-
-					// Creates the used mesh id from the source path and ppi.
-					[[nodiscard]] static
-					auto GetMeshId(const std::filesystem::path& src, unsigned ppi) -> std::string;
-			};
+			// Creates the used mesh id from the source path and ppi.
+			[[nodiscard]] static
+			auto GetMeshId(std::filesystem::path const& src, unsigned ppi) -> std::string;
 	};
 }

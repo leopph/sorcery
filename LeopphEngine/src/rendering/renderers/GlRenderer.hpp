@@ -13,27 +13,27 @@
 
 namespace leopph::internal
 {
-	class OpenGlRenderer : public Renderer
+	class GlRenderer : public Renderer
 	{
 		public:
 			// Constructs an OpenGL renderer for the selected rendering pipeline.
-			static auto Create() -> std::unique_ptr<OpenGlRenderer>;
+			static auto Create() -> std::unique_ptr<GlRenderer>;
 
-			OpenGlRenderer(const OpenGlRenderer& other) = delete;
-			auto operator=(const OpenGlRenderer& other) -> OpenGlRenderer& = delete;
+			GlRenderer(const GlRenderer& other) = delete;
+			auto operator=(const GlRenderer& other) -> GlRenderer& = delete;
 
-			OpenGlRenderer(OpenGlRenderer&& other) noexcept = delete;
-			auto operator=(OpenGlRenderer&& other) noexcept -> OpenGlRenderer& = delete;
+			GlRenderer(GlRenderer&& other) noexcept = delete;
+			auto operator=(GlRenderer&& other) noexcept -> GlRenderer& = delete;
 
-			~OpenGlRenderer() override = default;
+			~GlRenderer() override = default;
 
 		protected:
-			OpenGlRenderer();
+			GlRenderer();
 
 
 			struct RenderableData
 			{
-				const GlMeshGroup* Renderable;
+				GlMeshGroup* Renderable;
 				// Matrices are in the format of the rendering API.
 				std::vector<std::pair<Matrix4, Matrix4>> Instances;
 				bool CastsShadow;

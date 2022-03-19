@@ -50,12 +50,12 @@ namespace demo
 
 		// Set Transforms
 		player->Transform()->Rotate(Vector3::Up(), 90);
-		group->Transform()->Rotate(Vector3::Up(), 90, Space::World);
-		dirLightEntity->Transform()->Rotate(Vector3::Up(), 45, Space::World);
+		group->Transform()->Rotate(Vector3::Up(), 90);
+		dirLightEntity->Transform()->Rotate(Vector3::Up(), 45);
 		dirLightEntity->Transform()->Rotate(Vector3::Right(), 30, Space::Local);
 		church->Transform()->Translate(0, -3, 0, Space::World);
-		church->Transform()->Rotate(Vector3::Right(), 90, Space::Local);
-		church->Transform()->Rotate(Vector3::Up(), -90, Space::World);
+		church->Transform()->Rotate(Vector3::Right(), 90);
+		church->Transform()->Rotate(Vector3::Up(), -90);
 		lamp->Transform()->Translate(0, -1.25, 0);
 		lamp->Transform()->Rotate(Vector3::Up(), -90);
 		lamp->Transform()->Rescale(0.01f, 0.01f, 0.01f);
@@ -72,20 +72,6 @@ namespace demo
 		const auto dirLight = dirLightEntity->CreateAndAttachComponent<DirectionalLight>();
 		const auto pLight = pLightEntity->CreateAndAttachComponent<PointLight>();
 		const auto churchModel = church->CreateAndAttachComponent<Model>("models/church/ChristchurchGreyfriarsRuinGarden03.obj");
-		church->CreateAndAttachComponent<Model>("models/church/ChristchurchGreyfriarsRuinGarden03.obj");
-		church->CreateAndAttachComponent<Model>("models/church/ChristchurchGreyfriarsRuinGarden03.obj");
-		church->CreateAndAttachComponent<Model>("models/church/ChristchurchGreyfriarsRuinGarden03.obj");
-		church->CreateAndAttachComponent<Model>("models/church/ChristchurchGreyfriarsRuinGarden03.obj");
-		church->CreateAndAttachComponent<Model>("models/church/ChristchurchGreyfriarsRuinGarden03.obj");
-		church->CreateAndAttachComponent<Model>("models/church/ChristchurchGreyfriarsRuinGarden03.obj");
-		church->CreateAndAttachComponent<Model>("models/church/ChristchurchGreyfriarsRuinGarden03.obj");
-		church->CreateAndAttachComponent<Model>("models/church/ChristchurchGreyfriarsRuinGarden03.obj");
-		church->CreateAndAttachComponent<Model>("models/church/ChristchurchGreyfriarsRuinGarden03.obj");
-		church->CreateAndAttachComponent<Model>("models/church/ChristchurchGreyfriarsRuinGarden03.obj");
-		church->CreateAndAttachComponent<Model>("models/church/ChristchurchGreyfriarsRuinGarden03.obj");
-		church->CreateAndAttachComponent<Model>("models/church/ChristchurchGreyfriarsRuinGarden03.obj");
-		church->CreateAndAttachComponent<Model>("models/church/ChristchurchGreyfriarsRuinGarden03.obj");
-		church->CreateAndAttachComponent<Model>("models/church/ChristchurchGreyfriarsRuinGarden03.obj");
 		const auto lampModel = lamp->CreateAndAttachComponent<Model>("models/lamp/scene.gltf");
 		pLightEntity->CreateAndAttachComponent<demo::Flicker>(pLight, 1.2f, 0.05f);
 

@@ -1,4 +1,4 @@
-#include "ForwardOpenGlRenderer.hpp"
+#include "GlForwardRenderer.hpp"
 
 #include "../../components/Camera.hpp"
 #include "../../components/lighting/AmbientLight.hpp"
@@ -21,7 +21,7 @@
 
 namespace leopph::internal
 {
-	ForwardOpenGlRenderer::ForwardOpenGlRenderer() :
+	GlForwardRenderer::GlForwardRenderer() :
 		m_ObjectShader
 		{
 			{
@@ -57,7 +57,7 @@ namespace leopph::internal
 	}
 
 
-	auto ForwardOpenGlRenderer::Render() -> void
+	auto GlForwardRenderer::Render() -> void
 	{
 		/* We don't render if there is no camera to use */
 		if (Camera::Current() == nullptr)
@@ -86,7 +86,7 @@ namespace leopph::internal
 	}
 
 
-	auto ForwardOpenGlRenderer::RenderShadedObjects(const Matrix4& camViewMat, const Matrix4& camProjMat, const std::vector<RenderableData>& renderables, const DirectionalLight* dirLight, const std::vector<const SpotLight*>& spotLights, const std::vector<const PointLight*>& pointLights) -> void
+	auto GlForwardRenderer::RenderShadedObjects(const Matrix4& camViewMat, const Matrix4& camProjMat, const std::vector<RenderableData>& renderables, const DirectionalLight* dirLight, const std::vector<const SpotLight*>& spotLights, const std::vector<const PointLight*>& pointLights) -> void
 	{
 		m_ObjectShader.Clear();
 		m_ObjectShader["EXISTS_DIRLIGHT"] = std::to_string(dirLight != nullptr);
@@ -137,7 +137,7 @@ namespace leopph::internal
 						if (castsShadow)
 						{
 							renderable->SetInstanceData(instances);
-							renderable->DrawWithoutMaterial();
+							renderable->DrawWithoutMaterial(false);
 						}
 					}
 				}
@@ -184,12 +184,12 @@ namespace leopph::internal
 		for (const auto& [renderable, instances, castsShadow] : renderables)
 		{
 			renderable->SetInstanceData(instances);
-			renderable->DrawWithMaterial(objectShader, 0);
+			renderable->DrawWithMaterial(objectShader, 0, false);
 		}
 	}
 
 
-	auto ForwardOpenGlRenderer::RenderSkybox(const Matrix4& camViewMat, const Matrix4& camProjMat) -> void
+	auto GlForwardRenderer::RenderSkybox(const Matrix4& camViewMat, const Matrix4& camProjMat) -> void
 	{
 		if (const auto& background{Camera::Current()->Background()}; std::holds_alternative<Skybox>(background))
 		{

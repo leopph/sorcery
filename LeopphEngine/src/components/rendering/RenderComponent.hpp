@@ -1,13 +1,13 @@
 #pragma once
 
 #include "../Component.hpp"
+#include "../../rendering/geometry/MeshGroup.hpp"
 
 #include <memory>
 
 
 namespace leopph::internal
 {
-	class MeshGroup;
 	class GlMeshGroup;
 
 
@@ -53,8 +53,8 @@ namespace leopph::internal
 			// Only active, attached RenderComponents are rendered.
 			LEOPPHAPI auto Detach() -> void override;
 
-			RenderComponent(const RenderComponent& other) = delete;
-			auto operator=(const RenderComponent& other) -> RenderComponent& = delete;
+			RenderComponent(RenderComponent const& other) = delete;
+			auto operator=(RenderComponent const& other) -> RenderComponent& = delete;
 
 			RenderComponent(RenderComponent&& other) = delete;
 			auto operator=(RenderComponent&& other) -> RenderComponent& = delete;
@@ -62,7 +62,7 @@ namespace leopph::internal
 			~RenderComponent() noexcept override;
 
 		protected:
-			explicit RenderComponent(std::shared_ptr<const MeshGroup> meshDataGroup);
+			explicit RenderComponent(std::shared_ptr<MeshGroup const>&& meshGroup);
 
 		private:
 			bool m_CastsShadow{false};
@@ -77,7 +77,7 @@ namespace leopph::internal
 	}
 
 
-	constexpr auto RenderComponent::CastsShadow(const bool value) noexcept
+	constexpr auto RenderComponent::CastsShadow(bool const value) noexcept
 	{
 		m_CastsShadow = value;
 	}
@@ -89,7 +89,7 @@ namespace leopph::internal
 	}
 
 
-	constexpr auto RenderComponent::Instanced(const bool value) noexcept
+	constexpr auto RenderComponent::Instanced(bool const value) noexcept
 	{
 		m_Instanced = value;
 	}

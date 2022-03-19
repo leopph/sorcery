@@ -1,6 +1,6 @@
 #include "Renderer.hpp"
 
-#include "OpenGlRenderer.hpp"
+#include "GlRenderer.hpp"
 #include "../../config/Settings.hpp"
 #include "../../util/Logger.hpp"
 
@@ -14,7 +14,7 @@ namespace leopph::internal
 		switch (Settings::GraphicsApi())
 		{
 			case Settings::GraphicsApi::OpenGl:
-				return OpenGlRenderer::Create();
+				return GlRenderer::Create();
 		}
 
 		const auto errMsg{"Failed to create renderer: the selected graphics API is not supported."};

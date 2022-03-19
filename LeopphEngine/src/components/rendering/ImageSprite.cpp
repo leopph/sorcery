@@ -5,35 +5,31 @@
 
 namespace leopph
 {
-	ImageSprite::ImageSprite(const std::filesystem::path& src, const unsigned ppi) :
-		RenderComponent{GetMeshData(src, ppi)}
+	ImageSprite::ImageSprite(std::filesystem::path const& src, unsigned const ppi) :
+		RenderComponent{GetMeshGroup(src, ppi)}
 	{}
 
 
-	auto ImageSprite::GetMeshData(const std::filesystem::path& src, const unsigned ppi) -> std::shared_ptr<const internal::MeshGroup>
+	auto ImageSprite::GetMeshGroup(std::filesystem::path const& src, unsigned const ppi) -> std::shared_ptr<internal::MeshGroup const>
 	{
-		if (auto p{internal::DataManager::Instance().FindMeshGroup(SpriteMeshGroup::GetMeshId(src, ppi))}; p)
+		auto& dataManager = internal::DataManager::Instance();
+		auto const meshId{GetMeshId(src, ppi)};
+
+		if (auto meshGroup = dataManager.FindMeshGroup(meshId))
 		{
-			return p;
-		}
+			return meshGroup;
+		}		
 
-		return std::make_shared<SpriteMeshGroup>(src, ppi);
-	}
-
-
-	ImageSprite::SpriteMeshGroup::SpriteMeshGroup(const std::filesystem::path& src, const unsigned ppi) :
-		MeshGroup{GetMeshId(src, ppi)}
-	{
-		auto texture{internal::DataManager::Instance().FindTexture(src)};
+		auto texture= dataManager.FindTexture(src);
 		if (!texture)
 		{
 			texture = std::make_shared<Texture>(src);
 		}
 
 		// The width of the required rectangle.
-		const auto rectW = static_cast<float>(texture->Width()) / static_cast<float>(ppi);
+		auto const rectW = static_cast<float>(texture->Width()) / static_cast<float>(ppi);
 		// The height of the required rectangle.
-		const auto rectH = static_cast<float>(texture->Height()) / static_cast<float>(ppi);
+		auto const rectH = static_cast<float>(texture->Height()) / static_cast<float>(ppi);
 
 		std::vector vertices
 		{
@@ -50,11 +46,15 @@ namespace leopph
 
 		auto material = std::make_shared<Material>(Color{255, 255, 255}, Color{0, 0, 0}, std::move(texture), nullptr, 0.f, false);
 
-		m_MeshData.emplace_back(std::move(vertices), std::move(indices), std::move(material));
+		auto meshes = std::make_shared<std::vector<internal::Mesh>>();
+		meshes->emplace_back(std::move(vertices), std::move(indices), std::move(material));
+		auto meshGroup = std::make_shared<internal::MeshGroup>(meshId, std::move(meshes));
+		dataManager.RegisterMeshGroup(meshGroup);
+		return meshGroup;
 	}
 
 
-	auto ImageSprite::SpriteMeshGroup::GetMeshId(const std::filesystem::path& src, const unsigned ppi) -> std::string
+	auto ImageSprite::GetMeshId(std::filesystem::path const& src, unsigned const ppi) -> std::string
 	{
 		return src.generic_string() + "+ppi=" + std::to_string(ppi);
 	}

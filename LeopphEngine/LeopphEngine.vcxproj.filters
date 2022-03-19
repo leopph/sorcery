@@ -10,7 +10,7 @@
     <ClCompile Include="src\timing\Time.cpp" />
     <ClCompile Include="src\windowing\GlWindow.cpp" />
     <ClCompile Include="src\components\lighting\PointLight.cpp" />
-    <ClCompile Include="src\rendering\renderers\ForwardOpenGlRenderer.cpp" />
+    <ClCompile Include="src\rendering\renderers\GlForwardRenderer.cpp" />
     <ClCompile Include="src\input\Input.cpp" />
     <ClCompile Include="src\components\lighting\DirLight.cpp" />
     <ClCompile Include="src\math\Quaternion.cpp" />
@@ -27,12 +27,12 @@
     <ClCompile Include="src\components\Transform.cpp" />
     <ClCompile Include="src\util\hash\PathHash.cpp" />
     <ClCompile Include="src\components\lighting\SpotLight.cpp" />
-    <ClCompile Include="src\rendering\renderers\DeferredOpenGlRenderer.cpp" />
+    <ClCompile Include="src\rendering\renderers\GlDeferredRenderer.cpp" />
     <ClCompile Include="src\rendering\GeometryBuffer.cpp" />
     <ClCompile Include="src\events\Event.cpp" />
     <ClCompile Include="src\events\handling\EventManager.cpp" />
     <ClCompile Include="src\rendering\geometry\GlMeshGroup.cpp" />
-    <ClCompile Include="src\rendering\renderers\OpenGlRenderer.cpp" />
+    <ClCompile Include="src\rendering\renderers\GlRenderer.cpp" />
     <ClCompile Include="src\rendering\Texture.cpp" />
     <ClCompile Include="src\rendering\SkyboxImpl.cpp" />
     <ClCompile Include="src\rendering\Skybox.cpp" />
@@ -46,11 +46,10 @@
     <ClCompile Include="src\windowing\Window.cpp" />
     <ClCompile Include="src\rendering\RenderBuffer.cpp" />
     <ClCompile Include="src\data\DataManager.cpp" />
-    <ClCompile Include="src\rendering\geometry\FileMeshGroup.cpp" />
+    <ClCompile Include="src\rendering\geometry\ModelParser.cpp" />
     <ClCompile Include="src\rendering\UniformBuffer.cpp" />
     <ClCompile Include="src\util\hash\StringHash.cpp" />
     <ClCompile Include="src\util\equal\StringEqual.cpp" />
-    <ClCompile Include="src\rendering\geometry\MeshGroup.cpp" />
     <ClCompile Include="src\components\rendering\RenderComponent.cpp" />
     <ClCompile Include="src\util\less\StringLess.cpp" />
     <ClCompile Include="src\scene\SceneManager.cpp" />
@@ -91,7 +90,7 @@
     <ClInclude Include="src\entity\Entity.hpp" />
     <ClInclude Include="src\components\lighting\PointLight.hpp" />
     <ClInclude Include="src\math\Quaternion.hpp" />
-    <ClInclude Include="src\rendering\renderers\ForwardOpenGlRenderer.hpp" />
+    <ClInclude Include="src\rendering\renderers\GlForwardRenderer.hpp" />
     <ClInclude Include="src\timing\Time.hpp" />
     <ClInclude Include="src\math\Vector.hpp" />
     <ClInclude Include="src\rendering\geometry\Vertex.hpp" />
@@ -115,7 +114,7 @@
     <ClInclude Include="src\components\Transform.hpp" />
     <ClInclude Include="src\components\lighting\SpotLight.hpp" />
     <ClInclude Include="src\components\lighting\AttenuatedLight.hpp" />
-    <ClInclude Include="src\rendering\renderers\DeferredOpenGlRenderer.hpp" />
+    <ClInclude Include="src\rendering\renderers\GlDeferredRenderer.hpp" />
     <ClInclude Include="src\rendering\GeometryBuffer.hpp" />
     <ClInclude Include="src\events\Event.hpp" />
     <ClInclude Include="src\events\handling\EventManager.hpp" />
@@ -127,7 +126,7 @@
     <ClInclude Include="src\events\MouseEvent.hpp" />
     <ClInclude Include="src\events\FrameCompleteEvent.hpp" />
     <ClInclude Include="src\rendering\geometry\GlMeshGroup.hpp" />
-    <ClInclude Include="src\rendering\renderers\OpenGlRenderer.hpp" />
+    <ClInclude Include="src\rendering\renderers\GlRenderer.hpp" />
     <ClInclude Include="src\rendering\Texture.hpp" />
     <ClInclude Include="src\rendering\SkyboxImpl.hpp" />
     <ClInclude Include="src\rendering\Skybox.hpp" />
@@ -150,8 +149,7 @@
     <ClInclude Include="src\util\equal\PathedEqual.hpp" />
     <ClInclude Include="src\util\concepts\Pathed.hpp" />
     <ClInclude Include="src\rendering\geometry\Mesh.hpp" />
-    <ClInclude Include="src\rendering\geometry\MeshGroup.hpp" />
-    <ClInclude Include="src\rendering\geometry\FileMeshGroup.hpp" />
+    <ClInclude Include="src\rendering\geometry\ModelParser.hpp" />
     <ClInclude Include="src\components\rendering\RenderComponent.hpp" />
     <ClInclude Include="src\util\equal\PointerEqual.hpp" />
     <ClInclude Include="src\util\hash\PointerHash.hpp" />
@@ -178,6 +176,7 @@
     <ClInclude Include="src\util\api_adapters\GLFWAdapter.hpp" />
     <ClInclude Include="src\components\rendering\ImageSprite.hpp" />
     <ClInclude Include="src\util\Sphere.hpp" />
+    <ClInclude Include="src\rendering\geometry\MeshGroup.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\cpp.hint" />

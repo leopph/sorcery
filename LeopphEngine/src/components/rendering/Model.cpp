@@ -1,7 +1,7 @@
 #include "Model.hpp"
 
 #include "../../data/DataManager.hpp"
-#include "../../rendering/geometry/FileMeshGroup.hpp"
+#include "../../rendering/geometry/ModelParser.hpp"
 
 #include <utility>
 
@@ -14,13 +14,17 @@ namespace leopph
 	{}
 
 
-	auto Model::GetMeshGroup(const std::filesystem::path& path) const -> std::shared_ptr<internal::MeshGroup>
+	auto Model::GetMeshGroup(std::filesystem::path const& path) const -> std::shared_ptr<internal::MeshGroup const>
 	{
-		if (auto p{internal::DataManager::Instance().FindMeshGroup(path.generic_string())};
-			p != nullptr)
+		auto const meshId = path.generic_string();
+
+		if (auto meshGroup = internal::DataManager::Instance().FindMeshGroup(meshId))
 		{
-			return p;
+			return meshGroup;
 		}
-		return std::make_shared<internal::FileMeshGroup>(path.generic_string());
+
+		auto meshGroup = std::make_shared<internal::MeshGroup const>(meshId, std::make_shared<std::vector<internal::Mesh>>(internal::ModelParser{}(path)));
+		internal::DataManager::Instance().RegisterMeshGroup(meshGroup);
+		return meshGroup;
 	}
 }

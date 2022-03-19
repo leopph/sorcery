@@ -1,6 +1,6 @@
 #pragma once
 
-#include "OpenGlRenderer.hpp"
+#include "GlRenderer.hpp"
 #include "../CascadedShadowMap.hpp"
 #include "../CubeShadowMap.hpp"
 #include "../GeometryBuffer.hpp"
@@ -22,10 +22,10 @@
 
 namespace leopph::internal
 {
-	class DeferredOpenGlRenderer final : public OpenGlRenderer
+	class GlDeferredRenderer final : public GlRenderer
 	{
 		public:
-			DeferredOpenGlRenderer();
+			GlDeferredRenderer();
 
 			auto Render() -> void override;
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "OpenGlRenderer.hpp"
+#include "GlRenderer.hpp"
 #include "../CascadedShadowMap.hpp"
 #include "../../components/lighting/DirLight.hpp"
 #include "../../components/lighting/PointLight.hpp"
@@ -11,10 +11,10 @@
 
 namespace leopph::internal
 {
-	class ForwardOpenGlRenderer final : public OpenGlRenderer
+	class GlForwardRenderer final : public GlRenderer
 	{
 		public:
-			ForwardOpenGlRenderer();
+			GlForwardRenderer();
 
 			auto Render() -> void override;
 

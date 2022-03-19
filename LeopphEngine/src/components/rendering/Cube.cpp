@@ -12,24 +12,19 @@ using leopph::internal::Vertex;
 namespace leopph
 {
 	Cube::Cube() :
-		RenderComponent{GetMeshData()}
+		RenderComponent{GetMeshGroup()}
 	{}
 
 
-	auto Cube::GetMeshData() -> std::shared_ptr<const internal::MeshGroup>
+	auto Cube::GetMeshGroup() -> std::shared_ptr<internal::MeshGroup const>
 	{
-		if (auto p{internal::DataManager::Instance().FindMeshGroup(s_MeshDataId)}; p != nullptr)
+		auto& dataManager =  internal::DataManager::Instance();
+
+		if (auto p = dataManager.FindMeshGroup(s_MeshId))
 		{
 			return p;
 		}
 
-		return std::make_shared<CubeMeshGroup>();
-	}
-
-
-	Cube::CubeMeshGroup::CubeMeshGroup() :
-		MeshGroup{s_MeshDataId}
-	{
 		std::vector<Vertex> vertices{
 			// Back face
 			Vertex{Vector3{-0.5f, -0.5f, -0.5f}, Vector3{0, 0, -1}, Vector2{}}, // back bottom left
@@ -89,17 +84,21 @@ namespace leopph
 			s_Material = material = std::make_shared<Material>(Color{255, 255, 255}, Color{0, 0, 0}, nullptr, nullptr, 0.f, true);
 		}
 
-		m_MeshData.emplace_back(std::move(vertices), std::move(indices), std::move(material));
+		auto meshes = std::make_shared<std::vector<internal::Mesh>>();
+		meshes->emplace_back(std::move(vertices), std::move(indices), std::move(material));
+		auto meshGroup = std::make_shared<internal::MeshGroup>(s_MeshId, std::move(meshes));
+		dataManager.RegisterMeshGroup(meshGroup);
+		return meshGroup;
 	}
 
 
-	const std::string Cube::s_MeshDataId{
+	std::string const Cube::s_MeshId{
 		[]
 		{
-			const auto srcLoc{std::source_location::current()};
+			auto const srcLoc{std::source_location::current()};
 			return std::string{srcLoc.file_name()}.append(std::to_string(srcLoc.line())).append(std::to_string(srcLoc.column())).append("CubeMeshDataId");
 		}()
 	};
 
-	std::weak_ptr<Material> Cube::CubeMeshGroup::s_Material;
+	std::weak_ptr<Material> Cube::s_Material;
 }
