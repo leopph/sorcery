@@ -47,9 +47,21 @@ namespace leopph::internal
 	}
 
 
-	auto ScreenRenderBuffer::FramebufferName() const noexcept -> GLuint
+	auto ScreenRenderBuffer::Framebuffer() const noexcept -> GlFramebuffer const&
 	{
 		return m_Framebuffer;
+	}
+
+
+	auto ScreenRenderBuffer::ColorBuffer() const noexcept -> GlRenderbuffer const&
+	{
+		return m_ColorBuffer;
+	}
+
+
+	auto ScreenRenderBuffer::DepthStencilBuffer() const noexcept -> GlRenderbuffer const&
+	{
+		return m_DepthStencilBuffer;
 	}
 
 
@@ -64,7 +76,7 @@ namespace leopph::internal
 	auto ScreenRenderBuffer::InitBuffers() noexcept -> void
 	{
 		m_ColorBuffer = GlRenderbuffer{};
-		glNamedRenderbufferStorage(m_ColorBuffer, GL_RGB8, m_Width, m_Height);
+		glNamedRenderbufferStorage(m_ColorBuffer, GL_RGBA8, m_Width, m_Height);
 
 		m_DepthStencilBuffer = GlRenderbuffer{};
 		glNamedRenderbufferStorage(m_DepthStencilBuffer, GL_DEPTH24_STENCIL8, m_Width, m_Height);

@@ -94,7 +94,5 @@ namespace demo
 		// Etc
 
 		AmbientLight::Instance().Intensity(Vector3{0});
-
-		(new Entity{})->CreateAndAttachComponent<leopph::Cube>();
 	}
 }

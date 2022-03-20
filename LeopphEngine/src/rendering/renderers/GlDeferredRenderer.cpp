@@ -146,7 +146,7 @@ namespace leopph::internal
 		glDisable(GL_DEPTH_TEST);
 
 		m_ScreenRenderBuffer.Clear();
-		m_GBuffer.CopyStencilData(m_ScreenRenderBuffer.FramebufferName());
+		m_GBuffer.CopyStencilData(m_ScreenRenderBuffer.Framebuffer());
 		m_ScreenRenderBuffer.BindForWriting();
 		m_ScreenQuad.Draw();
 	}

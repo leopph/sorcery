@@ -21,10 +21,10 @@ namespace leopph::internal
 	class ShaderFamily
 	{
 		public:
-			explicit ShaderFamily(const std::vector<ShaderStageInfo>& stages);
+			explicit ShaderFamily(std::vector<ShaderStageInfo> const& stages);
 
-			ShaderFamily(const ShaderFamily& other) = default;
-			auto operator=(const ShaderFamily& other) -> ShaderFamily& = default;
+			ShaderFamily(ShaderFamily const& other) = default;
+			auto operator=(ShaderFamily const& other) -> ShaderFamily& = default;
 
 			ShaderFamily(ShaderFamily&& other) = delete;
 			auto operator=(ShaderFamily&& other) -> ShaderFamily& = delete;
@@ -41,21 +41,24 @@ namespace leopph::internal
 
 			[[nodiscard]] auto operator[](std::string_view key) -> std::string&;
 
-			static const std::string ObjectVertSrc;
-			static const std::string ObjectFragSrc;
+			static std::string const ObjectVertSrc;
+			static std::string const ObjectFragSrc;
 
-			static const std::string SkyboxVertSrc;
-			static const std::string SkyboxFragSrc;
+			static std::string const SkyboxVertSrc;
+			static std::string const SkyboxFragSrc;
 
-			static const std::string ShadowMapVertSrc;
-			static const std::string CubeShadowMapVertSrc;
-			static const std::string CubeShadowMapFragSrc;
+			static std::string const ShadowMapVertSrc;
+			static std::string const CubeShadowMapVertSrc;
+			static std::string const CubeShadowMapFragSrc;
 
-			static const std::string GeometryPassVertSrc;
-			static const std::string GeometryPassFragSrc;
+			static std::string const GeometryPassVertSrc;
+			static std::string const GeometryPassFragSrc;
 
-			static const std::string LightPassVertSrc;
-			static const std::string LightPassFragSrc;
+			static std::string const LightPassVertSrc;
+			static std::string const LightPassFragSrc;
+
+			static std::string const TranspCompositeVertSrc;
+			static std::string const TranspCompositeFragSrc;
 
 		private:
 			// Create a source that has the currently set flags inserted.
@@ -67,7 +70,7 @@ namespace leopph::internal
 			// Builds the shader using the current flags, sets its buffer bindings, stores it, then returns it
 			auto BuildFromSources(std::string permStr) -> ShaderProgram&;
 			// Returns a list of the hashes of the shader sources in Vertex->Geom->Fragment order
-			[[nodiscard]] auto SourceHashes() const -> const std::vector<std::size_t>&;
+			[[nodiscard]] auto SourceHashes() const -> std::vector<std::size_t> const&;
 
 			std::unordered_map<std::string, int, StringHash, StringEqual> m_Bindings;
 			std::unordered_map<ShaderType, std::string> m_Sources;
@@ -80,6 +83,6 @@ namespace leopph::internal
 			// Cache for the hashes of the source strings
 			mutable std::vector<std::size_t> m_SrcHashCache;
 			mutable bool m_SrcHashCacheRdy{false};
-			constexpr static const char* CACHE_PREFIX{"shad_"};
+			constexpr static char const* CACHE_PREFIX{"shad_"};
 	};
 }

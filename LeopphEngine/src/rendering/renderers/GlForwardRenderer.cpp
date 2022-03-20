@@ -35,12 +35,18 @@ namespace leopph::internal
 				{ShaderFamily::SkyboxVertSrc, ShaderType::Vertex},
 				{ShaderFamily::SkyboxFragSrc, ShaderType::Fragment}
 			}
-		}
+		},
+		m_TranspCompositeShader
+		{
+			{
+				{ShaderFamily::TranspCompositeVertSrc, ShaderType::Vertex},
+				{ShaderFamily::TranspCompositeFragSrc, ShaderType::Fragment}
+			}
+		},
+		m_TransparencyBuffer{&m_RenderBuffer.DepthStencilBuffer()}
 	{
-		glEnable(GL_DEPTH_TEST);
 		glDepthFunc(GL_LEQUAL);
-
-		glEnable(GL_CULL_FACE);
+		
 		glFrontFace(GL_CCW);
 		glCullFace(GL_BACK);
 
@@ -74,15 +80,22 @@ namespace leopph::internal
 		auto const camViewMat{Camera::Current()->ViewMatrix()};
 		auto const camProjMat{Camera::Current()->ProjectionMatrix()};
 
+
+		glDisable(GL_BLEND);
+		glEnable(GL_DEPTH_TEST);
+		glDepthMask(GL_TRUE);
+
 		m_RenderBuffer.Clear();
 		m_RenderBuffer.BindForWriting();
-		RenderShadedObjects(camViewMat, camProjMat, renderables, dirLight, spotLights, pointLights);
+		RenderOpaque(camViewMat, camProjMat, renderables, dirLight, spotLights, pointLights);
 		RenderSkybox(camViewMat, camProjMat);
+		RenderTransparent(camViewMat, camProjMat, renderables, dirLight, spotLights, pointLights);
+		Compose();
 		m_RenderBuffer.CopyColorToDefaultFramebuffer();
 	}
 
 
-	auto GlForwardRenderer::RenderShadedObjects(Matrix4 const& camViewMat, Matrix4 const& camProjMat, std::vector<RenderableData> const& renderables, DirectionalLight const* dirLight, std::vector<SpotLight const*> const& spotLights, std::vector<PointLight const*> const& pointLights) -> void
+	auto GlForwardRenderer::RenderOpaque(Matrix4 const& camViewMat, Matrix4 const& camProjMat, std::vector<RenderableData> const& renderables, DirectionalLight const* dirLight, std::vector<SpotLight const*> const& spotLights, std::vector<PointLight const*> const& pointLights) -> void
 	{
 		m_ObjectShader.Clear();
 		m_ObjectShader["DIRLIGHT"] = std::to_string(dirLight != nullptr);
@@ -92,23 +105,70 @@ namespace leopph::internal
 		m_ObjectShader["NUM_SPOTLIGHT_SHADOWS"] = std::to_string(0);
 		m_ObjectShader["NUM_POINTLIGHTS"] = std::to_string(pointLights.size());
 		m_ObjectShader["NUM_POINTLIGHT_SHADOWS"] = std::to_string(0);
+		m_ObjectShader["TRANSPARENT"] = std::to_string(false);
 
-		auto& objectShader{m_ObjectShader.GetPermutation()};
+		auto& shader{m_ObjectShader.GetPermutation()};
 
-		objectShader.SetUniform("u_ViewProjMat", camViewMat * camProjMat);
-		objectShader.SetUniform("u_CamPos", Camera::Current()->Entity()->Transform()->Position());
+		shader.SetUniform("u_ViewProjMat", camViewMat * camProjMat);
+		shader.SetUniform("u_CamPos", Camera::Current()->Entity()->Transform()->Position());
 
-		SetAmbientData(AmbientLight::Instance(), objectShader);
-		SetDirectionalData(dirLight, objectShader);
-		SetSpotData(spotLights, objectShader);
-		SetPointData(pointLights, objectShader);
+		SetAmbientData(AmbientLight::Instance(), shader);
+		SetDirectionalData(dirLight, shader);
+		SetSpotData(spotLights, shader);
+		SetPointData(pointLights, shader);
 
-		objectShader.Use();
+		shader.Use();
+
 		for (auto const& [renderable, instances, castsShadow] : renderables)
 		{
 			renderable->SetInstanceData(instances);
-			renderable->DrawWithMaterial(objectShader, 0, false);
+			renderable->DrawWithMaterial(shader, 0, false);
 		}
+	}
+
+
+	auto GlForwardRenderer::RenderTransparent(Matrix4 const& camViewMat, Matrix4 const& camProjMat, std::vector<RenderableData> const& renderables, DirectionalLight const* dirLight, std::vector<SpotLight const*> const& spotLights, std::vector<PointLight const*> const& pointLights) -> void
+	{
+		m_ObjectShader["TRANSPARENT"] = std::to_string(true);
+		auto& transpObjectShader{m_ObjectShader.GetPermutation()};
+
+		transpObjectShader.SetUniform("u_ViewProjMat", camViewMat * camProjMat);
+		transpObjectShader.SetUniform("u_CamPos", Camera::Current()->Entity()->Transform()->Position());
+
+		SetAmbientData(AmbientLight::Instance(), transpObjectShader);
+		SetDirectionalData(dirLight, transpObjectShader);
+		SetSpotData(spotLights, transpObjectShader);
+		SetPointData(pointLights, transpObjectShader);
+
+		transpObjectShader.Use();
+		m_TransparencyBuffer.Clear();
+		m_TransparencyBuffer.BindForWriting();
+
+		glDepthMask(GL_FALSE);
+		glEnable(GL_BLEND);
+		glBlendFunci(0, GL_ONE, GL_ONE);
+		glBlendFunci(1, GL_ZERO, GL_ONE_MINUS_SRC_COLOR);
+
+		for (auto const& [renderable, instances, castsShadow] : renderables)
+		{
+			renderable->SetInstanceData(instances);
+			renderable->DrawWithMaterial(transpObjectShader, 0, true);
+		}
+	}
+
+
+	auto GlForwardRenderer::Compose() -> void
+	{
+		auto& compositeShader{m_TranspCompositeShader.GetPermutation()};
+		compositeShader.Use();
+
+		m_TransparencyBuffer.BindForReading(compositeShader, 0);
+		m_RenderBuffer.BindForWriting();
+		
+		glDisable(GL_DEPTH_TEST);
+		glBlendFunc(GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA);
+
+		m_ScreenQuad.Draw();
 	}
 
 

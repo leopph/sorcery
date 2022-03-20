@@ -3,13 +3,16 @@
 #define MIN_SHADOW_BIAS 0.0001
 #define MAX_SHADOW_BIAS 0.01
 
-// General variables used in all cases
-
 layout (location = 0) in vec3 in_FragPos;
 layout (location = 1) in vec3 in_Normal;
 layout (location = 2) in vec2 in_TexCoords;
 
+#if TRANSPARENT
+layout (location = 0) out vec4 out_Accum;
+layout (location = 1) out float out_Reveal;
+#else
 layout (location = 0) out vec4 out_FragColor;
+#endif
 
 struct Material
 {
@@ -232,10 +235,13 @@ void main()
 	frag.diff = u_Material.diffuseColor;
 	frag.spec = u_Material.specularColor;
 	frag.gloss = u_Material.gloss;
+	float alpha = 1;
 
 	if (u_Material.hasDiffuseMap)
 	{
-		frag.diff *= texture(u_Material.diffuseMap, in_TexCoords).rgb;
+		vec4 diffTexColor = texture(u_Material.diffuseMap, in_TexCoords);
+		frag.diff *= diffTexColor.rgb;
+		alpha = diffTexColor.a;
 	}
 
 	if (u_Material.hasSpecularMap)
@@ -287,5 +293,11 @@ void main()
 	}
 	#endif
 
+	#if TRANSPARENT
+	float weight = max(min(1.0, max(max(colorSum.r, colorSum.g), colorSum.b) * alpha), alpha) * clamp(0.03 / (1e-5 + pow(frag.pos.z / 200, 4.0)), 1e-2, 3e3);
+	out_Accum = vec4(colorSum.rgb * alpha, alpha) * weight;
+	out_Reveal = alpha;
+	#else
 	out_FragColor = vec4(colorSum, 1);
+	#endif
 }

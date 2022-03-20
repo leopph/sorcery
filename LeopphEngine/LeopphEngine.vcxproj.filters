@@ -79,6 +79,7 @@
     <ClCompile Include="src\rendering\opengl\GlVertexArray.cpp" />
     <ClCompile Include="src\rendering\opengl\GlRenderbuffer.cpp" />
     <ClCompile Include="src\rendering\ScreenQuad.cpp" />
+    <ClCompile Include="src\rendering\TransparencyBuffer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\Behavior.hpp" />
@@ -189,6 +190,7 @@
     <ClInclude Include="src\rendering\opengl\GlVertexArray.hpp" />
     <ClInclude Include="src\rendering\opengl\GlRenderbuffer.hpp" />
     <ClInclude Include="src\rendering\ScreenQuad.hpp" />
+    <ClInclude Include="src\rendering\TransparencyBuffer.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\cpp.hint" />
@@ -205,5 +207,7 @@
     <CustomBuild Include="src\rendering\shaders\glsl\forward\ObjectVert.vert" />
     <CustomBuild Include="src\rendering\shaders\glsl\shadows\ShadowMapVert.vert" />
     <CustomBuild Include="src\rendering\shaders\glsl\deferred\LightPassFrag.frag" />
+    <CustomBuild Include="src\rendering\shaders\glsl\forward\TranspCompositeVert.vert" />
+    <CustomBuild Include="src\rendering\shaders\glsl\forward\TranspCompositeFrag.frag" />
   </ItemGroup>
 </Project>

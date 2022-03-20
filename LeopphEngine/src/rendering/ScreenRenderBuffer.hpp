@@ -10,7 +10,7 @@
 
 namespace leopph::internal
 {
-	// A screen sized set of color, depth, and stencil buffers.
+	// A set of color, depth, and stencil buffers the size of the window scaled by the render multiplier.
 	class ScreenRenderBuffer final : public EventReceiver<WindowEvent>
 	{
 		public:
@@ -34,7 +34,13 @@ namespace leopph::internal
 			auto CopyColorToDefaultFramebuffer() const -> void;
 
 			[[nodiscard]]
-			auto FramebufferName() const noexcept -> GLuint;
+			auto Framebuffer() const noexcept -> GlFramebuffer const&;
+
+			[[nodiscard]]
+			auto ColorBuffer() const noexcept -> GlRenderbuffer const&;
+
+			[[nodiscard]]
+			auto DepthStencilBuffer() const noexcept -> GlRenderbuffer const&;
 
 		private:
 			// Initializes the buffers to the current resolution.

@@ -224,6 +224,7 @@
     <ClInclude Include="src\rendering\SkyboxImpl.hpp" />
     <ClInclude Include="src\rendering\SpotShadowMap.hpp" />
     <ClInclude Include="src\rendering\Texture.hpp" />
+    <ClInclude Include="src\rendering\TransparencyBuffer.hpp" />
     <ClInclude Include="src\rendering\UniformBuffer.hpp" />
     <ClInclude Include="src\scene\Scene.hpp" />
     <ClInclude Include="src\scene\SceneManager.hpp" />
@@ -322,6 +323,7 @@
     <ClCompile Include="src\rendering\SkyboxImpl.cpp" />
     <ClCompile Include="src\rendering\SpotShadowMap.cpp" />
     <ClCompile Include="src\rendering\Texture.cpp" />
+    <ClCompile Include="src\rendering\TransparencyBuffer.cpp" />
     <ClCompile Include="src\rendering\UniformBuffer.cpp" />
     <ClCompile Include="src\scene\Scene.cpp" />
     <ClCompile Include="src\scene\SceneManager.cpp" />
@@ -388,6 +390,12 @@
       <FileType>Document</FileType>
     </CustomBuild>
     <CustomBuild Include="src\rendering\shaders\glsl\deferred\LightPassFrag.frag">
+      <FileType>Document</FileType>
+    </CustomBuild>
+    <CustomBuild Include="src\rendering\shaders\glsl\forward\TranspCompositeVert.vert">
+      <FileType>Document</FileType>
+    </CustomBuild>
+    <CustomBuild Include="src\rendering\shaders\glsl\forward\TranspCompositeFrag.frag">
       <FileType>Document</FileType>
     </CustomBuild>
   </ItemGroup>

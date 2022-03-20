@@ -2,7 +2,9 @@
 
 #include "GlRenderer.hpp"
 #include "../CascadedShadowMap.hpp"
+#include "../ScreenQuad.hpp"
 #include "../ScreenRenderBuffer.hpp"
+#include "../TransparencyBuffer.hpp"
 #include "../../components/lighting/DirLight.hpp"
 #include "../../components/lighting/PointLight.hpp"
 #include "../../components/lighting/SpotLight.hpp"
@@ -20,12 +22,21 @@ namespace leopph::internal
 			auto Render() -> void override;
 
 		private:
-			auto RenderShadedObjects(Matrix4 const& camViewMat,
+			auto RenderOpaque(Matrix4 const& camViewMat,
 			                         Matrix4 const& camProjMat,
 			                         std::vector<RenderableData> const& renderables,
 			                         DirectionalLight const* dirLight,
 			                         std::vector<SpotLight const*> const& spotLights,
 			                         std::vector<PointLight const*> const& pointLights) -> void;
+
+			auto RenderTransparent(Matrix4 const& camViewMat,
+			                         Matrix4 const& camProjMat,
+			                         std::vector<RenderableData> const& renderables,
+			                         DirectionalLight const* dirLight,
+			                         std::vector<SpotLight const*> const& spotLights,
+			                         std::vector<PointLight const*> const& pointLights) -> void;
+
+			auto Compose() -> void;
 
 			auto RenderSkybox(Matrix4 const& camViewMat,
 			                  Matrix4 const& camProjMat) -> void;
@@ -33,9 +44,12 @@ namespace leopph::internal
 			ShaderFamily m_ObjectShader;
 			ShaderFamily m_ShadowShader;
 			ShaderFamily m_SkyboxShader;
+			ShaderFamily m_TranspCompositeShader;
 
 			CascadedShadowMap m_DirLightShadowMap;
 
 			ScreenRenderBuffer m_RenderBuffer;
+			TransparencyBuffer m_TransparencyBuffer;
+			ScreenQuad m_ScreenQuad;
 	};
 }
