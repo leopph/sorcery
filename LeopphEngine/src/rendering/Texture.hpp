@@ -52,6 +52,9 @@ namespace leopph
 
 		private:
 			[[nodiscard]] static
+			auto CheckSemiTransparency(std::span<unsigned char const> data) -> bool;
+
+			[[nodiscard]] static
 			auto CheckFullTransparency(std::span<unsigned char const> data) -> bool;
 
 			unsigned m_TexName;
