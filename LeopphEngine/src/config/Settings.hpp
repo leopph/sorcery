@@ -228,14 +228,14 @@ namespace leopph
 
 			struct SpotLightSettings
 			{
-				std::size_t Res{1024};
+				std::size_t Res{2048};
 				std::size_t MaxNum{16};
 			} m_SpotLightSettings;
 
 
 			struct PointLightSettings
 			{
-				std::size_t Res{2048};
+				std::size_t Res{1024};
 				std::size_t MaxNum{16};
 			} m_PointLightSettings;
 
