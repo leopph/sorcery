@@ -78,11 +78,9 @@ namespace leopph
 
 	// Provides equality with paths.
 	[[nodiscard]]
-	auto operator==(Texture const& tex, std::filesystem::path const& path) -> bool
-	;
+	auto operator==(Texture const& tex, std::filesystem::path const& path) -> bool;
 
 	// Provides equality with paths.
 	[[nodiscard]]
-	auto operator==(std::filesystem::path const& path, Texture const& tex) -> bool
-	;
+	auto operator==(std::filesystem::path const& path, Texture const& tex) -> bool;
 }

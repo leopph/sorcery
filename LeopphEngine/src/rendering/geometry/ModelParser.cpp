@@ -17,7 +17,7 @@ namespace leopph::internal
 	auto ModelParser::operator()(std::filesystem::path const& path) const -> std::vector<Mesh>
 	{
 		static Assimp::Importer importer;
-		auto const scene{importer.ReadFile(path.string(), aiProcess_JoinIdenticalVertices | aiProcess_Triangulate | aiProcess_GenNormals)};
+		auto const scene{importer.ReadFile(path.string(), aiProcess_JoinIdenticalVertices | aiProcess_Triangulate | aiProcess_SortByPType | aiProcess_GenUVCoords | aiProcess_GenNormals)};
 
 		if (scene == nullptr || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || scene->mRootNode == nullptr)
 		{
@@ -42,8 +42,10 @@ namespace leopph::internal
 
 			for (std::size_t i = 0; i < node->mNumMeshes; ++i)
 			{
-				auto const mesh = scene->mMeshes[node->mMeshes[i]]; 
-				ret.emplace_back(ProcessVertices(mesh, trafo), ProcessIndices(mesh), ProcessMaterial(scene, mesh, path));
+				if (auto const mesh = scene->mMeshes[node->mMeshes[i]]; mesh->mPrimitiveTypes - aiPrimitiveType_TRIANGLE == 0)
+				{
+					ret.emplace_back(ProcessVertices(mesh, trafo), ProcessIndices(mesh), ProcessMaterial(scene, mesh, path));
+				}
 			}
 
 			for (std::size_t i = 0; i < node->mNumChildren; ++i)
@@ -69,7 +71,7 @@ namespace leopph::internal
 
 			vertex.Position = Vector3{Vector4{mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z, 1} * trafo};
 			vertex.Normal = Vector3{mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z};
-			vertex.Normal = Vector3{Vector4{vertex.Normal, 1} * trafo};
+			vertex.Normal = Vector3{Vector4{vertex.Normal, 0} * trafo};
 			vertex.TexCoord = Vector2{0.0f, 0.0f};
 
 			for (std::size_t j = 0; j < AI_MAX_NUMBER_OF_TEXTURECOORDS; j++)
