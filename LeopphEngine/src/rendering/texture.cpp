@@ -13,10 +13,10 @@
 namespace leopph
 {
 	Texture::Texture(std::filesystem::path path) :
-		m_TexName{},
+		m_Texture{},
+		m_Path{std::move(path)},
 		m_SemiTransparent{},
 		m_Transparent{},
-		m_Path{std::move(path)},
 		m_Width{},
 		m_Height{}
 	{
@@ -81,14 +81,14 @@ namespace leopph
 			}
 		}
 
-		glCreateTextures(GL_TEXTURE_2D, 1, &m_TexName);
-		glTextureStorage2D(m_TexName, 1, internalFormat, m_Width, m_Height);
-		glTextureSubImage2D(m_TexName, 0, 0, 0, m_Width, m_Height, colorFormat, GL_UNSIGNED_BYTE, data);
+		glCreateTextures(GL_TEXTURE_2D, 1, &m_Texture);
+		glTextureStorage2D(m_Texture, 1, internalFormat, m_Width, m_Height);
+		glTextureSubImage2D(m_Texture, 0, 0, 0, m_Width, m_Height, colorFormat, GL_UNSIGNED_BYTE, data);
 
-		glGenerateTextureMipmap(m_TexName);
+		glGenerateTextureMipmap(m_Texture);
 
-		glTextureParameteri(m_TexName, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-		glTextureParameteri(m_TexName, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTextureParameteri(m_Texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		glTextureParameteri(m_Texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 		stbi_image_free(data);
 	}
@@ -96,14 +96,56 @@ namespace leopph
 
 	Texture::~Texture() noexcept
 	{
-		glDeleteTextures(1, &m_TexName);
+		glDeleteTextures(1, &m_Texture);
 		internal::DataManager::Instance().UnregisterTexture(this);
+	}
+
+
+	auto Texture::operator<=>(Texture const& other) const -> std::strong_ordering
+	{
+		return m_Path <=> other.m_Path;
+	}
+
+
+	auto Texture::operator==(Texture const& other) const -> bool
+	{
+		return m_Path == other.m_Path;
+	}
+
+
+	auto Texture::IsSemiTransparent() const -> bool
+	{
+		return m_SemiTransparent;
 	}
 
 
 	auto Texture::IsTransparent() const -> bool
 	{
 		return m_Transparent;
+	}
+
+
+	auto Texture::TextureName() const -> GLuint
+	{
+		return m_Texture;
+	}
+
+
+	auto Texture::Path() const -> std::filesystem::path const&
+	{
+		return m_Path;
+	}
+
+
+	auto Texture::Width() const noexcept -> int
+	{
+		return m_Width;
+	}
+
+
+	auto Texture::Height() const noexcept -> int
+	{
+		return m_Height;
 	}
 
 
@@ -132,5 +174,29 @@ namespace leopph
 		}
 
 		return true;
+	}
+
+
+	auto operator<=>(std::filesystem::path const& path, Texture const& tex) -> std::strong_ordering
+	{
+		return path <=> tex.Path();
+	}
+
+
+	auto operator<=>(Texture const& tex, std::filesystem::path const& path) -> std::strong_ordering
+	{
+		return tex.Path() <=> path;
+	}
+
+
+	auto operator==(Texture const& tex, std::filesystem::path const& path) -> bool
+	{
+		return tex.Path() == path;
+	}
+
+
+	auto operator==(std::filesystem::path const& path, Texture const& tex) -> bool
+	{
+		return path == tex.Path();
 	}
 }

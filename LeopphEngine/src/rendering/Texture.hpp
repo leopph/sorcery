@@ -21,34 +21,36 @@ namespace leopph
 			~Texture() noexcept;
 
 			// Provides ordering based on path.
-			[[nodiscard]] inline
-			auto operator<=>(Texture const& other) const;
+			[[nodiscard]]
+			auto operator<=>(Texture const& other) const -> std::strong_ordering;
 
 			// Equality based on path.
-			[[nodiscard]] inline
+			[[nodiscard]]
 			auto operator==(Texture const& other) const -> bool;
-
-			[[nodiscard]] constexpr
-			auto Id() const;
 
 			// A Texture is semi-transparent if it contains pixels
 			// with an alpha value less than 1.
-			[[nodiscard]] constexpr
-			auto IsSemiTransparent() const;
+			[[nodiscard]]
+			auto IsSemiTransparent() const -> bool;
 
 			// A Texture is transparent if all of its pixels have
 			// an alpha values less than 1.
 			[[nodiscard]]
 			auto IsTransparent() const -> bool;
 
-			[[nodiscard]] constexpr
-			auto Path() const -> auto&;
+			// The name of the underlying OpenGL texture.
+			[[nodiscard]]
+			auto TextureName() const -> unsigned;
 
-			[[nodiscard]] constexpr
-			auto Width() const noexcept;
+			// The source file path.
+			[[nodiscard]]
+			auto Path() const -> std::filesystem::path const&;
 
-			[[nodiscard]] constexpr
-			auto Height() const noexcept;
+			[[nodiscard]]
+			auto Width() const noexcept -> int;
+
+			[[nodiscard]]
+			auto Height() const noexcept -> int;
 
 		private:
 			[[nodiscard]] static
@@ -57,85 +59,30 @@ namespace leopph
 			[[nodiscard]] static
 			auto CheckFullTransparency(std::span<unsigned char const> data) -> bool;
 
-			unsigned m_TexName;
+			unsigned m_Texture;
+			std::filesystem::path m_Path;
 			bool m_SemiTransparent;
 			bool m_Transparent;
-			std::filesystem::path m_Path;
 			int m_Width;
 			int m_Height;
 	};
 
 
-	inline auto Texture::operator<=>(Texture const& other) const
-	{
-		return m_Path <=> other.m_Path;
-	}
-
-
-	inline auto Texture::operator==(Texture const& other) const -> bool
-	{
-		return m_Path == other.m_Path;
-	}
-
-
-	constexpr auto Texture::Id() const
-	{
-		return m_TexName;
-	}
-
-
-	constexpr auto Texture::IsSemiTransparent() const
-	{
-		return m_SemiTransparent;
-	}
-
-
-	constexpr auto Texture::Path() const -> auto&
-	{
-		return m_Path;
-	}
-
-
-	constexpr auto Texture::Width() const noexcept
-	{
-		return m_Width;
-	}
-
-
-	constexpr auto Texture::Height() const noexcept
-	{
-		return m_Height;
-	}
-
+	// Provides ordering with paths.
+	[[nodiscard]]
+	auto operator<=>(Texture const& tex, std::filesystem::path const& path) -> std::strong_ordering;
 
 	// Provides ordering with paths.
-	[[nodiscard]] inline
-	auto operator<=>(Texture const& tex, std::filesystem::path const& path)
-	{
-		return tex.Path() <=> path;
-	}
-
-
-	// Provides ordering with paths.
-	[[nodiscard]] inline
-	auto operator<=>(std::filesystem::path const& path, Texture const& tex)
-	{
-		return path <=> tex.Path();
-	}
-
+	[[nodiscard]]
+	auto operator<=>(std::filesystem::path const& path, Texture const& tex) -> std::strong_ordering;
 
 	// Provides equality with paths.
-	[[nodiscard]] inline
+	[[nodiscard]]
 	auto operator==(Texture const& tex, std::filesystem::path const& path) -> bool
-	{
-		return tex.Path() == path;
-	}
-
+	;
 
 	// Provides equality with paths.
-	[[nodiscard]] inline
+	[[nodiscard]]
 	auto operator==(std::filesystem::path const& path, Texture const& tex) -> bool
-	{
-		return path == tex.Path();
-	}
+	;
 }

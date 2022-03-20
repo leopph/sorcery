@@ -88,7 +88,7 @@ namespace leopph::internal
 		{
 			shader.SetUniform("u_Material.hasDiffuseMap", true);
 			shader.SetUniform("u_Material.diffuseMap", static_cast<GLint>(nextFreeTextureUnit)); /* cast to GLint because only glUniform1i[v] may be used to set sampler uniforms (wtf?) */
-			glBindTextureUnit(nextFreeTextureUnit, m_Mesh->Material()->DiffuseMap->Id());
+			glBindTextureUnit(nextFreeTextureUnit, m_Mesh->Material()->DiffuseMap->TextureName());
 			++nextFreeTextureUnit;
 		}
 		else
@@ -100,7 +100,7 @@ namespace leopph::internal
 		{
 			shader.SetUniform("u_Material.hasSpecularMap", true);
 			shader.SetUniform("u_Material.specularMap", static_cast<GLint>(nextFreeTextureUnit)); /* cast to GLint because only glUniform1i[v] may be used to set sampler uniforms (wtf?) */
-			glBindTextureUnit(nextFreeTextureUnit, m_Mesh->Material()->SpecularMap->Id());
+			glBindTextureUnit(nextFreeTextureUnit, m_Mesh->Material()->SpecularMap->TextureName());
 		}
 		else
 		{
