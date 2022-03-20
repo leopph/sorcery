@@ -4,7 +4,7 @@
 #include "../events/handling/EventReceiver.hpp"
 #include "opengl/GlFramebuffer.hpp"
 #include "opengl/GlRenderbuffer.hpp"
-#include "opengl/GlTexture2D.hpp"
+#include "opengl/GlTexture.hpp"
 #include "shaders/ShaderProgram.hpp"
 
 
@@ -41,8 +41,8 @@ namespace leopph::internal
 			auto OnEventReceived(EventParamType event) -> void override;
 
 			GlFramebuffer m_Framebuffer;
-			GlTexture2D m_AccumBuffer;
-			GlTexture2D m_RevealBuffer;
+			GlTexture<GlTextureType::T2D> m_AccumBuffer;
+			GlTexture<GlTextureType::T2D> m_RevealBuffer;
 			GlRenderbuffer const* m_DepthBuffer;
 			int m_Width;
 			int m_Height;

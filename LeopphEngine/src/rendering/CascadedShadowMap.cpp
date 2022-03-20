@@ -12,44 +12,47 @@
 
 namespace leopph::internal
 {
-	CascadedShadowMap::CascadedShadowMap() :
-		m_Framebuffer{}
+	CascadedShadowMap::CascadedShadowMap()
 	{
-		glCreateFramebuffers(1, &m_Framebuffer);
 		glNamedFramebufferReadBuffer(m_Framebuffer, GL_NONE);
 		glNamedFramebufferDrawBuffer(m_Framebuffer, GL_NONE);
 
-		InitShadowMaps(Settings::Instance().DirShadowResolution());
+		ConfigCascades(Settings::Instance().DirShadowResolution());
 	}
 
 
-	CascadedShadowMap::~CascadedShadowMap() noexcept
+	auto CascadedShadowMap::Clear() const -> void
 	{
-		DeinitShadowMaps();
-		glDeleteFramebuffers(1, &m_Framebuffer);
+		GLfloat constexpr clear{1};
+		glClearNamedFramebufferfv(m_Framebuffer, GL_DEPTH, 0, &clear);
 	}
 
 
-	auto CascadedShadowMap::BindForWritingAndClear(const std::size_t cascadeIndex) const -> void
+	auto CascadedShadowMap::BindForWriting(std::size_t cascadeIndex) const -> void
 	{
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_Framebuffer);
-		glNamedFramebufferTexture(m_Framebuffer, GL_DEPTH_ATTACHMENT, m_ShadowMaps.at(cascadeIndex), 0);
-		const auto res{static_cast<GLsizei>(Settings::Instance().DirShadowResolution()[cascadeIndex])};
+		auto const& [res, shadowMap] = m_Cascades.at(cascadeIndex);
+		glNamedFramebufferTexture(m_Framebuffer, GL_DEPTH_ATTACHMENT, shadowMap, 0);
 		glViewport(0, 0, res, res);
-
-		glClearNamedFramebufferfv(m_Framebuffer, GL_DEPTH, 0, &CLEAR_DEPTH);
 	}
 
 
-	auto CascadedShadowMap::BindForReading(ShaderProgram& shader, const std::string_view uniformName, GLuint texUnit) const -> GLuint
+	auto CascadedShadowMap::BindForWritingAndClear(std::size_t const cascadeIndex) const -> void
+	{
+		BindForWriting(cascadeIndex);
+		Clear();
+	}
+
+
+	auto CascadedShadowMap::BindForReading(ShaderProgram& shader, std::string_view const uniformName, GLuint texUnit) const -> GLuint
 	{
 		static std::vector<int> texUnits;
 		texUnits.clear();
 
-		for (const auto texture : m_ShadowMaps)
+		for (auto const& [res, shadowMap] : m_Cascades)
 		{
-			glBindTextureUnit(texUnit, texture);
-			texUnits.push_back(static_cast<GLint>(texUnit)); /* cast to GLint because only glUniform1i[v] may be used to set sampler uniforms (wtf?) */
+			glBindTextureUnit(texUnit, shadowMap);
+			texUnits.push_back(static_cast<GLint>(texUnit)); // cast to GLint because only glUniform1i[v] may be used to set sampler uniforms (wtf?)
 			++texUnit;
 		}
 
@@ -58,22 +61,22 @@ namespace leopph::internal
 	}
 
 
-	auto CascadedShadowMap::CascadeMatrix(const CascadeBounds cascadeBounds, const Matrix4& cameraInverseMatrix, const Matrix4& lightViewMatrix, const float bBoxNearOffset) const -> Matrix4
+	auto CascadedShadowMap::CascadeMatrix(CascadeBounds const cascadeBounds, Matrix4 const& cameraInverseMatrix, Matrix4 const& lightViewMatrix, float const bBoxNearOffset) const -> Matrix4
 	{
-		const auto& camera{*Camera::Current()};
+		auto const& camera{*Camera::Current()};
 
 		// Calculate the cascade's vertices in camera view space.
 
-		const auto tanHalfHorizFov{math::Tan(math::ToRadians(camera.Fov(Camera::FovDirection::Horizontal)) / 2.0f)};
-		const auto tanHalfVertFov{math::Tan(math::ToRadians(camera.Fov(Camera::FovDirection::Vertical)) / 2.0f)};
+		auto const tanHalfHorizFov{math::Tan(math::ToRadians(camera.Fov(Camera::FovDirection::Horizontal)) / 2.0f)};
+		auto const tanHalfVertFov{math::Tan(math::ToRadians(camera.Fov(Camera::FovDirection::Vertical)) / 2.0f)};
 
-		const auto xn{cascadeBounds.Near * tanHalfHorizFov};
-		const auto xf{cascadeBounds.Far * tanHalfHorizFov};
-		const auto yn{cascadeBounds.Near * tanHalfVertFov};
-		const auto yf{cascadeBounds.Far * tanHalfVertFov};
+		auto const xn{cascadeBounds.Near * tanHalfHorizFov};
+		auto const xf{cascadeBounds.Far * tanHalfHorizFov};
+		auto const yn{cascadeBounds.Near * tanHalfVertFov};
+		auto const yf{cascadeBounds.Far * tanHalfVertFov};
 
 		// The cascade vertices in camera view space.
-		const std::array cascadeVertsCam
+		std::array const cascadeVertsCam
 		{
 			Vector4{-xn, -yn, cascadeBounds.Near, 1.f},
 			Vector4{xn, -yn, cascadeBounds.Near, 1.f},
@@ -91,31 +94,31 @@ namespace leopph::internal
 		Vector3 bBoxMaxLight{std::numeric_limits<float>::min()};
 
 		// Transform from camera view space to light view space
-		const auto camToLightMat{cameraInverseMatrix * lightViewMatrix};
+		auto const camToLightMat{cameraInverseMatrix * lightViewMatrix};
 
 		// Calculate the bounding box min and max points by transforming the vertices to light space.
-		std::ranges::for_each(cascadeVertsCam, [&](const auto& vertex)
+		std::ranges::for_each(cascadeVertsCam, [&](auto const& vertex)
 		{
-			const auto vertLight{vertex * camToLightMat};
+			auto const vertLight{vertex * camToLightMat};
 			bBoxMinLight = Vector3{std::min(bBoxMinLight[0], vertLight[0]), std::min(bBoxMinLight[1], vertLight[1]), std::min(bBoxMinLight[2], vertLight[2])};
 			bBoxMaxLight = Vector3{std::max(bBoxMaxLight[0], vertLight[0]), std::max(bBoxMaxLight[1], vertLight[1]), std::max(bBoxMaxLight[2], vertLight[2])};
 		});
 
 		// The projection matrix that uses the calculated min/max values of the bounding box. Essentially THE bounding box + the near clip offset of the DirectionalLight.
-		const auto lightProjMat{Matrix4::Ortographic(bBoxMinLight[0], bBoxMaxLight[0], bBoxMaxLight[1], bBoxMinLight[1], bBoxMinLight[2] - bBoxNearOffset, bBoxMaxLight[2])};
+		auto const lightProjMat{Matrix4::Ortographic(bBoxMinLight[0], bBoxMaxLight[0], bBoxMaxLight[1], bBoxMinLight[1], bBoxMinLight[2] - bBoxNearOffset, bBoxMaxLight[2])};
 
 		return lightViewMatrix * lightProjMat;
 	}
 
 
-	auto CascadedShadowMap::CalculateCascadeBounds(const Camera& cam) const -> std::span<CascadeBounds>
+	auto CascadedShadowMap::CalculateCascadeBounds(Camera const& cam) -> std::span<CascadeBounds>
 	{
-		const auto nearClip{cam.NearClipPlane()};
-		const auto farClip{cam.FarClipPlane()};
-		const auto& settings{Settings::Instance()};
-		const auto numCascades{settings.DirShadowCascadeCount()};
-		const auto lambda{settings.DirShadowCascadeCorrection()};
-		const auto clipRatio{farClip / nearClip};
+		auto const nearClip{cam.NearClipPlane()};
+		auto const farClip{cam.FarClipPlane()};
+		auto const& settings{Settings::Instance()};
+		auto const numCascades{settings.DirShadowCascadeCount()};
+		auto const lambda{settings.DirShadowCascadeCorrection()};
+		auto const clipRatio{farClip / nearClip};
 
 		// On bound borders the far plane is multiplied by this value to avoid precision problems.
 		constexpr auto nearFarMult{1.005f};
@@ -126,7 +129,7 @@ namespace leopph::internal
 		bounds[0].Near = nearClip;
 		for (auto i{1ull}; i < numCascades; ++i)
 		{
-			const auto indRatio{static_cast<float>(i) / static_cast<float>(numCascades)};
+			auto const indRatio{static_cast<float>(i) / static_cast<float>(numCascades)};
 			bounds[i].Near = lambda * nearClip * math::Pow(clipRatio, indRatio) + (1 - lambda) * (nearClip + indRatio * (farClip - nearClip));
 			bounds[i - 1].Far = bounds[i].Near * nearFarMult;
 		}
@@ -136,35 +139,27 @@ namespace leopph::internal
 	}
 
 
-	auto CascadedShadowMap::OnEventReceived(const DirShadowEvent& event) -> void
+	auto CascadedShadowMap::OnEventReceived(DirShadowEvent const& event) -> void
 	{
-		DeinitShadowMaps();
-		InitShadowMaps(event.Resolutions);
+		ConfigCascades(event.Resolutions);
 	}
 
 
-	auto CascadedShadowMap::InitShadowMaps(const std::span<const std::size_t> ress) -> void
+	auto CascadedShadowMap::ConfigCascades(std::span<std::size_t const> const resolutions) -> void
 	{
-		m_ShadowMaps.resize(ress.size());
-		glCreateTextures(GL_TEXTURE_2D, static_cast<GLsizei>(ress.size()), m_ShadowMaps.data());
+		m_Cascades.clear();
+		m_Cascades.reserve(resolutions.size());
 
-		for (std::size_t i = 0; i < ress.size(); i++)
+		for (auto const res : resolutions)
 		{
-			glTextureStorage2D(m_ShadowMaps[i], 1, GL_DEPTH_COMPONENT24, static_cast<GLsizei>(ress[i]), static_cast<GLsizei>(ress[i]));
-			glTextureParameteri(m_ShadowMaps[i], GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			glTextureParameteri(m_ShadowMaps[i], GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-			glTextureParameteri(m_ShadowMaps[i], GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-			glTextureParameteri(m_ShadowMaps[i], GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-			glTextureParameteri(m_ShadowMaps[i], GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
-			glTextureParameteri(m_ShadowMaps[i], GL_TEXTURE_COMPARE_FUNC, GL_LESS);
+			auto& [resolution, shadowMap] = m_Cascades.emplace_back(res);
+			glTextureStorage2D(shadowMap, 1, GL_DEPTH_COMPONENT32, static_cast<GLsizei>(res), static_cast<GLsizei>(res));
+			glTextureParameteri(shadowMap, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTextureParameteri(shadowMap, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTextureParameteri(shadowMap, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			glTextureParameteri(shadowMap, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			glTextureParameteri(shadowMap, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+			glTextureParameteri(shadowMap, GL_TEXTURE_COMPARE_FUNC, GL_LESS);
 		}
-
-		glNamedFramebufferTexture(m_Framebuffer, GL_DEPTH_ATTACHMENT, m_ShadowMaps.front(), 0);
-	}
-
-
-	auto CascadedShadowMap::DeinitShadowMaps() const -> void
-	{
-		glDeleteTextures(static_cast<GLsizei>(m_ShadowMaps.size()), m_ShadowMaps.data());
 	}
 }

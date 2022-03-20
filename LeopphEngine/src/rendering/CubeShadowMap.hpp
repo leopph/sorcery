@@ -3,8 +3,7 @@
 #include "../events/PointShadowEvent.hpp"
 #include "../events/handling/EventReceiver.hpp"
 #include "../rendering/shaders/ShaderProgram.hpp"
-
-#include <glad/gl.h>
+#include "opengl/GlFramebuffer.hpp"
 
 #include <limits>
 #include <string_view>
@@ -17,8 +16,8 @@ namespace leopph::internal
 		public:
 			CubeShadowMap();
 
-			CubeShadowMap(const CubeShadowMap& other) = delete;
-			auto operator=(const CubeShadowMap& other) -> CubeShadowMap& = delete;
+			CubeShadowMap(CubeShadowMap const& other) = delete;
+			auto operator=(CubeShadowMap const& other) -> CubeShadowMap& = delete;
 
 			CubeShadowMap(CubeShadowMap&& other) = delete;
 			auto operator=(CubeShadowMap&& other) -> CubeShadowMap& = delete;

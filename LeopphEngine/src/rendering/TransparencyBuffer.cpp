@@ -55,10 +55,10 @@ namespace leopph::internal
 
 	auto TransparencyBuffer::ConfigBuffers() -> void
 	{
-		m_AccumBuffer = GlTexture2D{};
+		m_AccumBuffer = {};
 		glTextureStorage2D(m_AccumBuffer, 1, GL_RGBA16F, m_Width, m_Height);
 
-		m_RevealBuffer = GlTexture2D{};
+		m_RevealBuffer = {};
 		glTextureStorage2D(m_RevealBuffer, 1, GL_R8, m_Width, m_Height);
 
 		glNamedFramebufferTexture(m_Framebuffer, GL_COLOR_ATTACHMENT0, m_AccumBuffer, 0);
