@@ -4,8 +4,9 @@
 #include "../events/handling/EventReceiver.hpp"
 #include "../rendering/shaders/ShaderProgram.hpp"
 #include "opengl/GlFramebuffer.hpp"
+#include "opengl/GlRenderbuffer.hpp"
+#include "opengl/GlTexture.hpp"
 
-#include <limits>
 #include <string_view>
 
 
@@ -22,32 +23,32 @@ namespace leopph::internal
 			CubeShadowMap(CubeShadowMap&& other) = delete;
 			auto operator=(CubeShadowMap&& other) -> CubeShadowMap& = delete;
 
-			~CubeShadowMap() noexcept override;
+			~CubeShadowMap() noexcept override = default;
+
+			// Clear the depth buffer and the currently bound face of the cube map.
+			auto Clear() const noexcept -> void;
+
+			// Binds the passed face of the cube map for writing.
+			auto BindForWriting(GLint face) const noexcept -> void;
 
 			// Binds the passed face of the cubemap as render target.
 			// Clears the face and depth buffer.
 			auto BindForWritingAndClear(GLint face) const -> void;
 
 			// Binds the cubemap to the passed texture unit, sets the passed uniform, and returns the next available texture unit.
-			[[nodiscard]] auto BindForReading(ShaderProgram& shader, std::string_view uniformName, GLuint texUnit) const -> GLuint;
+			[[nodiscard]]
+			auto BindForReading(ShaderProgram& shader, std::string_view uniformName, GLuint texUnit) const -> GLuint;
 
 		private:
-			auto Init() -> void;
-			auto Deinit() const -> void;
+			// Reconfigures the cube map to the current resolution.
+			auto ConfigCubeMap() -> void;
+
+			// Configures the cube map to the new resolution.
 			auto OnEventReceived(EventParamType event) -> void override;
 
-			GLuint m_Framebuffer;
-			GLuint m_Cubemap;
-			GLuint m_DepthBuffer;
+			GlFramebuffer m_Framebuffer;
+			GlTexture<GlTextureType::CubeMap> m_Cubemap;
+			GlRenderbuffer m_DepthBuffer;
 			GLsizei m_Res;
-
-			constexpr static GLfloat CLEAR_DEPTH{1};
-			constexpr static GLfloat CLEAR_COLOR[4]
-			{
-				std::numeric_limits<GLfloat>::max(),
-				std::numeric_limits<GLfloat>::max(),
-				std::numeric_limits<GLfloat>::max(),
-				std::numeric_limits<GLfloat>::max()
-			};
 	};
 }

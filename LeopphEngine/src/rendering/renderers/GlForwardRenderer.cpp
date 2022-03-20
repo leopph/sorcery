@@ -25,7 +25,7 @@ namespace leopph::internal
 		m_ShadowShader
 		{
 			{
-				{ShaderFamily::ShadowMapVertSrc, ShaderType::Vertex}
+				{ShaderFamily::DepthShadowVertSrc, ShaderType::Vertex}
 			}
 		},
 

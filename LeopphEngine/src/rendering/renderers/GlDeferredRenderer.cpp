@@ -16,13 +16,13 @@ namespace leopph::internal
 	GlDeferredRenderer::GlDeferredRenderer() :
 		m_ShadowShader{
 			{
-				{ShaderFamily::ShadowMapVertSrc, ShaderType::Vertex}
+				{ShaderFamily::DepthShadowVertSrc, ShaderType::Vertex}
 			}
 		},
 		m_CubeShadowShader{
 			{
-				{ShaderFamily::CubeShadowMapVertSrc, ShaderType::Vertex},
-				{ShaderFamily::CubeShadowMapFragSrc, ShaderType::Fragment}
+				{ShaderFamily::LinearShadowVertSrc, ShaderType::Vertex},
+				{ShaderFamily::LinearShadowFragSrc, ShaderType::Fragment}
 			}
 		},
 		m_GeometryShader{

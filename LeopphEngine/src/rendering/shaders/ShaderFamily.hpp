@@ -47,9 +47,10 @@ namespace leopph::internal
 			static std::string const SkyboxVertSrc;
 			static std::string const SkyboxFragSrc;
 
-			static std::string const ShadowMapVertSrc;
-			static std::string const CubeShadowMapVertSrc;
-			static std::string const CubeShadowMapFragSrc;
+			static std::string const DepthShadowVertSrc;
+
+			static std::string const LinearShadowVertSrc;
+			static std::string const LinearShadowFragSrc;
 
 			static std::string const GeometryPassVertSrc;
 			static std::string const GeometryPassFragSrc;

@@ -6,38 +6,40 @@
 namespace leopph::internal
 {
 	SpotShadowMap::SpotShadowMap() :
-		m_Framebuffer{},
-		m_ShadowMap{},
 		m_Res{static_cast<GLsizei>(Settings::Instance().SpotShadowResolution())}
 	{
-		glCreateFramebuffers(1, &m_Framebuffer);
 		glNamedFramebufferReadBuffer(m_Framebuffer, GL_NONE);
 		glNamedFramebufferDrawBuffer(m_Framebuffer, GL_NONE);
 
-		InitShadowMap();
+		ConfigureShadowMap();
 	}
 
 
-	SpotShadowMap::~SpotShadowMap() noexcept
+	auto SpotShadowMap::Clear() const noexcept -> void
 	{
-		DeinitShadowMap();
-		glDeleteFramebuffers(1, &m_Framebuffer);
+		static GLfloat constexpr clear{1};
+		glClearNamedFramebufferfv(m_Framebuffer, GL_DEPTH, 0, &clear);
+	}
+
+
+	auto SpotShadowMap::BindForWriting() const noexcept -> void
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, m_Framebuffer);
+		glViewport(0, 0, m_Res, m_Res);
 	}
 
 
 	auto SpotShadowMap::BindForWritingAndClear() const -> void
 	{
-		glBindFramebuffer(GL_FRAMEBUFFER, m_Framebuffer);
-		glViewport(0, 0, m_Res, m_Res);
-
-		glClearNamedFramebufferfv(m_Framebuffer, GL_DEPTH, 0, &CLEAR_DEPTH);
+		BindForWriting();
+		Clear();
 	}
 
 
-	auto SpotShadowMap::BindForReading(ShaderProgram& shader, const std::string_view uniformName, const GLuint texUnit) const -> GLuint
+	auto SpotShadowMap::BindForReading(ShaderProgram& shader, std::string_view const uniformName, GLuint const texUnit) const -> GLuint
 	{
 		glBindTextureUnit(texUnit, m_ShadowMap);
-		shader.SetUniform(uniformName, static_cast<GLint>(texUnit)); /* cast to GLint because only glUniform1i[v] may be used to set sampler uniforms (wtf?) */
+		shader.SetUniform(uniformName, static_cast<GLint>(texUnit)); // cast to GLint because only glUniform1i[v] may be used to set sampler uniforms (wtf?)
 		return texUnit + 1;
 	}
 
@@ -45,15 +47,13 @@ namespace leopph::internal
 	auto SpotShadowMap::OnEventReceived(EventParamType event) -> void
 	{
 		m_Res = static_cast<GLsizei>(event.Resolution);
-		DeinitShadowMap();
-		InitShadowMap();
+		ConfigureShadowMap();
 	}
 
 
-	auto SpotShadowMap::InitShadowMap() -> void
+	auto SpotShadowMap::ConfigureShadowMap() -> void
 	{
-		glCreateTextures(GL_TEXTURE_2D, 1, &m_ShadowMap);
-
+		m_ShadowMap = {};
 		glTextureStorage2D(m_ShadowMap, 1, GL_DEPTH_COMPONENT24, m_Res, m_Res);
 		glTextureParameteri(m_ShadowMap, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTextureParameteri(m_ShadowMap, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -61,13 +61,6 @@ namespace leopph::internal
 		glTextureParameteri(m_ShadowMap, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glTextureParameteri(m_ShadowMap, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
 		glTextureParameteri(m_ShadowMap, GL_TEXTURE_COMPARE_FUNC, GL_LESS);
-
 		glNamedFramebufferTexture(m_Framebuffer, GL_DEPTH_ATTACHMENT, m_ShadowMap, 0);
-	}
-
-
-	auto SpotShadowMap::DeinitShadowMap() const -> void
-	{
-		glDeleteTextures(1, &m_ShadowMap);
 	}
 }

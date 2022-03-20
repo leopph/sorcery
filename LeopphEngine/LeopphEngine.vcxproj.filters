@@ -200,11 +200,11 @@
     <CustomBuild Include="src\rendering\shaders\glsl\forward\ObjectFrag.frag" />
     <CustomBuild Include="src\rendering\shaders\glsl\deferred\LightPassVert.vert" />
     <CustomBuild Include="src\rendering\shaders\glsl\deferred\GeometryPassFrag.frag" />
-    <CustomBuild Include="src\rendering\shaders\glsl\shadows\CubeShadowMapFrag.frag" />
+    <CustomBuild Include="src\rendering\shaders\glsl\shadows\LinearShadowFrag.frag" />
     <CustomBuild Include="src\rendering\shaders\glsl\deferred\GeometryPassVert.vert" />
-    <CustomBuild Include="src\rendering\shaders\glsl\shadows\CubeShadowMapVert.vert" />
+    <CustomBuild Include="src\rendering\shaders\glsl\shadows\LinearShadowVert.vert" />
     <CustomBuild Include="src\rendering\shaders\glsl\forward\ObjectVert.vert" />
-    <CustomBuild Include="src\rendering\shaders\glsl\shadows\ShadowMapVert.vert" />
+    <CustomBuild Include="src\rendering\shaders\glsl\shadows\DepthShadowVert.vert" />
     <CustomBuild Include="src\rendering\shaders\glsl\deferred\LightPassFrag.frag" />
     <CustomBuild Include="src\rendering\shaders\glsl\forward\TranspCompositeVert.vert" />
     <CustomBuild Include="src\rendering\shaders\glsl\forward\TranspCompositeFrag.frag" />

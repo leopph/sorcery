@@ -23,7 +23,7 @@ namespace leopph::internal
 
 	auto CascadedShadowMap::Clear() const -> void
 	{
-		GLfloat constexpr clear{1};
+		static GLfloat constexpr clear{1};
 		glClearNamedFramebufferfv(m_Framebuffer, GL_DEPTH, 0, &clear);
 	}
 
