@@ -46,9 +46,20 @@ namespace leopph::internal
 		{
 			static std::vector<std::pair<Matrix4, Matrix4>> instanceMatrices;
 
+			GlMeshGroup* glMeshGroup{nullptr};
+
+			if (auto const test = groupAndInstances.MeshGroup.lock()) // if this is a dangling pointer we just skip it
+			{
+				glMeshGroup = test.get();
+			}
+			else
+			{
+				continue;
+			}
+
 			instanceMatrices.clear();
+			glMeshGroup->SortMeshes();
 			auto castsShadow = false;
-			auto const glMeshGroup = groupAndInstances.MeshGroup.lock().get();
 
 			for (auto const& instance : groupAndInstances.ActiveInstances)
 			{

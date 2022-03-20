@@ -5,6 +5,7 @@
 
 #include <glad/gl.h>
 
+#include <cstddef>
 #include <stb_image.h>
 #include <utility>
 
@@ -13,7 +14,8 @@ namespace leopph
 {
 	Texture::Texture(std::filesystem::path path) :
 		m_TexName{},
-		m_IsTransparent{},
+		m_SemiTransparent{},
+		m_Transparent{},
 		m_Path{std::move(path)},
 		m_Width{},
 		m_Height{}
@@ -22,11 +24,11 @@ namespace leopph
 
 		stbi_set_flip_vertically_on_load(true);
 		int channels;
-		const auto data{stbi_load(m_Path.string().c_str(), &m_Width, &m_Height, &channels, 0)};
+		auto const data{stbi_load(m_Path.string().c_str(), &m_Width, &m_Height, &channels, 0)};
 
 		if (data == nullptr)
 		{
-			const auto msg{"Texture on path [" + m_Path.string() + "] could not be loaded."};
+			auto const msg{"Texture on path [" + m_Path.string() + "] could not be loaded."};
 			internal::Logger::Instance().Error(msg);
 			return;
 		}
@@ -49,12 +51,13 @@ namespace leopph
 			case 4:
 				colorFormat = GL_RGBA;
 				internalFormat = GL_RGBA8;
-				m_IsTransparent = true;
+				m_SemiTransparent = true;
+				m_Transparent = CheckFullTransparency(std::span{data, static_cast<std::size_t>(m_Width * m_Height * 4)});
 				break;
 
 			default:
 				stbi_image_free(data);
-				const auto errMsg{"Texture error: unknown color channel number: [" + std::to_string(channels) + "]."};
+				auto const errMsg{"Texture error: unknown color channel number: [" + std::to_string(channels) + "]."};
 				internal::Logger::Instance().Error(errMsg);
 				return;
 		}
@@ -76,5 +79,25 @@ namespace leopph
 	{
 		glDeleteTextures(1, &m_TexName);
 		internal::DataManager::Instance().UnregisterTexture(this);
+	}
+
+
+	auto Texture::IsTransparent() const -> bool
+	{
+		return m_Transparent;
+	}
+
+
+	auto Texture::CheckFullTransparency(std::span<unsigned char const> data) -> bool
+	{
+		for (std::size_t i = 0; i < data.size(); i += 4)
+		{
+			if (data[i] == 255)
+			{
+				return false;
+			}
+		}
+
+		return true;
 	}
 }

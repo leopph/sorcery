@@ -242,6 +242,15 @@ void main()
 		vec4 diffTexColor = texture(u_Material.diffuseMap, in_TexCoords);
 		frag.diff *= diffTexColor.rgb;
 		alpha = diffTexColor.a;
+
+		#if TRANSPARENT
+		if (alpha == 1)
+		#else
+		if (alpha != 1)
+		#endif
+		{
+			discard;
+		}
 	}
 
 	if (u_Material.hasSpecularMap)

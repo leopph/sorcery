@@ -39,7 +39,11 @@ namespace leopph::internal
 			auto SortMeshes() -> void;
 
 		private:
-			// Determines whether a Mesh is transparent
+			// Determines whether a Mesh is semi-transparent.
+			[[nodiscard]] static
+			auto IsSemiTransparent(Mesh const& mesh) -> bool;
+
+			// Determines if a Mesh is transparent.
 			[[nodiscard]] static
 			auto IsTransparent(Mesh const& mesh) -> bool;
 
@@ -53,7 +57,12 @@ namespace leopph::internal
 			~GlMeshGroup() noexcept;
 
 		private:
+			// Only rendered as part of opaque pass.
 			std::vector<std::unique_ptr<GlMesh>> m_OpaqueMeshes;
+			// Rendered during the opaque as well as the transparent pass.
+			// Shader's job to handle this.
+			std::vector<std::unique_ptr<GlMesh>> m_SemiTransparentMeshes;
+			// Only rendered as part of the transparent pass.
 			std::vector<std::unique_ptr<GlMesh>> m_TransparentMeshes;
 			std::shared_ptr<internal::MeshGroup const> m_MeshGroup;
 			GLuint m_InstanceBuffer{0};
