@@ -43,16 +43,16 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <LocalDebuggerEnvironment>PATH=%PATH%;$(SolutionDir)out\LeopphEngine\$(Configuration)_$(Platform);$(SolutionDir)LeopphEngine\vendor\assimp\bin\Debug\</LocalDebuggerEnvironment>
+    <LocalDebuggerEnvironment>PATH=%PATH%;$(SolutionDir)out\LeopphEngine\$(Configuration)_$(Platform)\</LocalDebuggerEnvironment>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Asan|x64'" Label="Configuration">
-    <LocalDebuggerEnvironment>PATH=%PATH%;$(VC_ExecutablePath_x64);$(SolutionDir)out\LeopphEngine\$(Configuration)_$(Platform)\;$(SolutionDir)LeopphEngine\vendor\assimp\bin\Debug\
+    <LocalDebuggerEnvironment>PATH=%PATH%;$(VC_ExecutablePath_x64);$(SolutionDir)out\LeopphEngine\$(Configuration)_$(Platform)\
 ASAN_SYMBOLIZER_PATH=$(VC_ExecutablePath_x64)</LocalDebuggerEnvironment>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <LocalDebuggerEnvironment>PATH=%PATH%;$(SolutionDir)out\LeopphEngine\$(Configuration)_$(Platform)\;$(SolutionDir)LeopphEngine\vendor\assimp\bin\Release\</LocalDebuggerEnvironment>
+    <LocalDebuggerEnvironment>PATH=%PATH%;$(SolutionDir)out\LeopphEngine\$(Configuration)_$(Platform)\</LocalDebuggerEnvironment>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <ImportGroup Label="ExtensionSettings">
