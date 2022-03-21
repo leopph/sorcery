@@ -1,8 +1,8 @@
 set msbuild=C:\Program Files\Microsoft Visual Studio\2022\Community\Msbuild\Current\Bin\MSBuild.exe
 
-git submodule update --init --remote
+git submodule update --init --remote LeopphEngine/vendor/glfw
 cd LeopphEngine\vendor\physx
-call :PhysX
+:: call :PhysX
 cd ../assimp
 call :Assimp
 cd ../glfw
@@ -12,7 +12,7 @@ call :Spdlog
 exit /B 0
 
 :Assimp
-cmake -DASSIMP_BUILD_ALL_EXPORTERS_BY_DEFAULT=0 -DASSIMP_BUILD_ASSIMP_TOOLS=0 -DASSIMP_BUILD_TESTS=0 -DASSIMP_INJECT_DEBUG_POSTFIX=0 -DCMAKE_CONFIGURATION_TYPES="Debug;Release" -DLIBRARY_SUFFIX="" .
+cmake -DBUILD_SHARED_LIBS=0 -DASSIMP_NO_EXPORT=1 -DASSIMP_BUILD_ZLIB=1 -DASSIMP_BUILD_ASSIMP_TOOLS=0 -DASSIMP_BUILD_TESTS=0 -DASSIMP_INJECT_DEBUG_POSTFIX=0 -DCMAKE_CONFIGURATION_TYPES="Debug;Release" -DLIBRARY_SUFFIX="" .
 start "Building Assimp Debug" "%msbuild%" Assimp.sln /p:Configuration=Debug
 start "Building Assimp Release" "%msbuild%" Assimp.sln /p:Configuration=Release
 exit /B 0
