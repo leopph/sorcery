@@ -73,7 +73,6 @@ To use LeopphEngine in your application:
 - Either
   - Link against **leopph.lib**, and copy **leopph.dll** (both found in **LeopphEngine/*<target_config>***) to your output directory, or
   - Load **leopph.dll** manually through the Windows API
-- Make **assimp.dll** available to your app, found in **LeopphEngine/vendor/assimp/bin/*<target_config>***
 
 ## Branches and Releases
 Development of LeopphEngine takes place on two branches.  
