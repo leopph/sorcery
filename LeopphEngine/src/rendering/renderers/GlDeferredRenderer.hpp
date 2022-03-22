@@ -7,7 +7,6 @@
 #include "../ScreenQuad.hpp"
 #include "../ScreenRenderBuffer.hpp"
 #include "../SpotShadowMap.hpp"
-#include "../TransparencyBuffer.hpp"
 #include "../../components/lighting/DirLight.hpp"
 #include "../../components/lighting/PointLight.hpp"
 #include "../../components/lighting/SpotLight.hpp"
@@ -73,7 +72,6 @@ namespace leopph::internal
 
 			ScreenRenderBuffer m_ScreenRenderBuffer;
 			ScreenQuad m_ScreenQuad;
-			TransparencyBuffer m_TransparencyBuffer{&m_ScreenRenderBuffer.DepthStencilBuffer()};
 
 			ShaderFamily m_ShadowShader;
 			ShaderFamily m_CubeShadowShader;

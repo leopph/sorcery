@@ -12,12 +12,12 @@ namespace leopph::internal
 {
 	// A window res * render multiplier sized render target containing an
 	// accumulation and a revealage  buffer for transparent rendering.
-	// It also takes an external readonly depth buffer.
+	// It also takes an external readonly opaque buffer and depth buffer.
 	class TransparencyBuffer final : public EventReceiver<WindowEvent>
 	{
 		public:
-			// depthBuffer shall not be nullptr.
-			explicit TransparencyBuffer(GlRenderbuffer const* depthBuffer);
+			// opaqueBuffer and depthBuffer shall not be nullptr.
+			explicit TransparencyBuffer(GlRenderbuffer const* opaqueBuffer, GlRenderbuffer const* depthBuffer);
 
 			TransparencyBuffer(TransparencyBuffer const& other) = delete;
 			auto operator=(TransparencyBuffer const& other) -> TransparencyBuffer& = delete;
@@ -43,6 +43,7 @@ namespace leopph::internal
 			GlFramebuffer m_Framebuffer;
 			GlTexture<GlTextureType::T2D> m_AccumBuffer;
 			GlTexture<GlTextureType::T2D> m_RevealBuffer;
+			GlRenderbuffer const* m_OpaqueBuffer;
 			GlRenderbuffer const* m_DepthBuffer;
 			int m_Width;
 			int m_Height;

@@ -83,11 +83,12 @@ namespace leopph::internal
 		shader.SetUniform("u_Material.diffuseColor", static_cast<Vector3>(m_Mesh->Material()->DiffuseColor));
 		shader.SetUniform("u_Material.specularColor", static_cast<Vector3>(m_Mesh->Material()->SpecularColor));
 		shader.SetUniform("u_Material.gloss", m_Mesh->Material()->Gloss);
+		shader.SetUniform("u_Material.opacity", m_Mesh->Material()->Opacity);
 
 		if (m_Mesh->Material()->DiffuseMap != nullptr)
 		{
 			shader.SetUniform("u_Material.hasDiffuseMap", true);
-			shader.SetUniform("u_Material.diffuseMap", static_cast<GLint>(nextFreeTextureUnit)); /* cast to GLint because only glUniform1i[v] may be used to set sampler uniforms (wtf?) */
+			shader.SetUniform("u_Material.diffuseMap", static_cast<GLint>(nextFreeTextureUnit)); // cast to GLint because only glUniform1i[v] may be used to set sampler uniforms (wtf?)
 			glBindTextureUnit(nextFreeTextureUnit, m_Mesh->Material()->DiffuseMap->TextureName());
 			++nextFreeTextureUnit;
 		}
@@ -99,12 +100,25 @@ namespace leopph::internal
 		if (m_Mesh->Material()->SpecularMap != nullptr)
 		{
 			shader.SetUniform("u_Material.hasSpecularMap", true);
-			shader.SetUniform("u_Material.specularMap", static_cast<GLint>(nextFreeTextureUnit)); /* cast to GLint because only glUniform1i[v] may be used to set sampler uniforms (wtf?) */
+			shader.SetUniform("u_Material.specularMap", static_cast<GLint>(nextFreeTextureUnit)); // cast to GLint because only glUniform1i[v] may be used to set sampler uniforms (wtf?)
 			glBindTextureUnit(nextFreeTextureUnit, m_Mesh->Material()->SpecularMap->TextureName());
+			++nextFreeTextureUnit;
 		}
 		else
 		{
 			shader.SetUniform("u_Material.hasSpecularMap", false);
+		}
+
+		if (m_Mesh->Material()->OpacityMap)
+		{
+			shader.SetUniform("u_Material.hasOpacityMap", true);
+			shader.SetUniform("u_Material.opacityMap", static_cast<GLint>(nextFreeTextureUnit)); // cast to GLint because only glUniform1i[v] may be used to set sampler uniforms (wtf?)
+			glBindTextureUnit(nextFreeTextureUnit, m_Mesh->Material()->OpacityMap->TextureName());
+			++nextFreeTextureUnit;
+		}
+		else
+		{
+			shader.SetUniform("u_Material.hasOpacityMap", false);
 		}
 
 		DrawWithoutMaterial(instanceCount);

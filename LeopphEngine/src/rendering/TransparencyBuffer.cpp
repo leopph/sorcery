@@ -5,7 +5,8 @@
 
 namespace leopph::internal
 {
-	TransparencyBuffer::TransparencyBuffer(GlRenderbuffer const* depthBuffer) :
+	TransparencyBuffer::TransparencyBuffer(GlRenderbuffer const* opaqueBuffer, GlRenderbuffer const* depthBuffer) :
+		m_OpaqueBuffer{opaqueBuffer},
 		m_DepthBuffer{depthBuffer},
 		m_Width{
 			[]
@@ -22,7 +23,6 @@ namespace leopph::internal
 			}()
 		}
 	{
-		glNamedFramebufferRenderbuffer(m_Framebuffer, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, *m_DepthBuffer);
 		ConfigBuffers();
 	}
 
@@ -31,14 +31,16 @@ namespace leopph::internal
 	{
 		GLfloat constexpr zero4[]{0, 0, 0, 0};
 		GLfloat constexpr one4[]{1, 1, 1, 1};
-		glClearNamedFramebufferfv(m_Framebuffer, GL_COLOR, 0, zero4);
-		glClearNamedFramebufferfv(m_Framebuffer, GL_COLOR, 1, one4);
+		glClearNamedFramebufferfv(m_Framebuffer, GL_COLOR, 1, zero4);
+		glClearNamedFramebufferfv(m_Framebuffer, GL_COLOR, 2, one4);
 	}
 
 
 	auto TransparencyBuffer::BindForWriting() const -> void
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, m_Framebuffer);
+		glNamedFramebufferRenderbuffer(m_Framebuffer, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, *m_OpaqueBuffer);
+		glNamedFramebufferRenderbuffer(m_Framebuffer, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, *m_DepthBuffer);
 		glViewport(0, 0, m_Width, m_Height);
 	}
 
@@ -61,11 +63,11 @@ namespace leopph::internal
 		m_RevealBuffer = {};
 		glTextureStorage2D(m_RevealBuffer, 1, GL_R8, m_Width, m_Height);
 
-		glNamedFramebufferTexture(m_Framebuffer, GL_COLOR_ATTACHMENT0, m_AccumBuffer, 0);
-		glNamedFramebufferTexture(m_Framebuffer, GL_COLOR_ATTACHMENT1, m_RevealBuffer, 0);
+		glNamedFramebufferTexture(m_Framebuffer, GL_COLOR_ATTACHMENT1, m_AccumBuffer, 0);
+		glNamedFramebufferTexture(m_Framebuffer, GL_COLOR_ATTACHMENT2, m_RevealBuffer, 0);
 
-		GLenum constexpr bufTargets[]{GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
-		glNamedFramebufferDrawBuffers(m_Framebuffer, 2, bufTargets);
+		GLenum constexpr bufTargets[]{GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};
+		glNamedFramebufferDrawBuffers(m_Framebuffer, 3, bufTargets);
 	}
 
 
