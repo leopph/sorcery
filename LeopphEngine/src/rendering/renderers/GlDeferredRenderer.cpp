@@ -6,6 +6,7 @@
 #include "../../data/DataManager.hpp"
 #include "../../math/LeopphMath.hpp"
 #include "../../math/Matrix.hpp"
+#include "../../windowing/Window.hpp"
 
 #include <algorithm>
 #include <array>
@@ -57,7 +58,7 @@ namespace leopph::internal
 			}
 		}
 	{
-		glDepthFunc(GL_LESS);
+		glDepthFunc(GL_LEQUAL);
 		glFrontFace(GL_CCW);
 		glCullFace(GL_BACK);
 		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
@@ -90,7 +91,9 @@ namespace leopph::internal
 		RenderLights(camViewMat, camProjMat, renderables, spotLights, pointLights);
 		RenderSkybox(camViewMat, camProjMat);
 		RenderTransparent(camViewMat, camProjMat, renderables, DataManager::Instance().DirectionalLight(), spotLights, pointLights);
-		m_RenderBuffer.CopyColorToDefaultFramebuffer();
+
+		auto const window = Window::Instance();
+		glBlitNamedFramebuffer(m_RenderBuffer.Framebuffer(), 0, 0, 0, m_RenderBuffer.Width(), m_RenderBuffer.Height(), 0, 0, window->Width(), window->Height(), GL_COLOR_BUFFER_BIT, GL_LINEAR);
 	}
 
 
@@ -102,7 +105,7 @@ namespace leopph::internal
 		glDepthMask(GL_TRUE);
 
 		glEnable(GL_STENCIL_TEST);
-		glStencilFunc(GL_ALWAYS, STENCIL_REF, STENCIL_AND_MASK);
+		glStencilFunc(GL_ALWAYS, STENCIL_DRAW_TAG, 1);
 		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
 		m_GBuffer.Clear();
@@ -158,14 +161,19 @@ namespace leopph::internal
 
 		lightShader.Use();
 
-		glStencilFunc(GL_EQUAL, STENCIL_REF, STENCIL_AND_MASK);
-		glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+		m_RenderBuffer.Clear();
+		m_RenderBuffer.BindForWriting();
+
+		glDisable(GL_BLEND);
 
 		glDisable(GL_DEPTH_TEST);
 
-		m_RenderBuffer.Clear();
-		m_GBuffer.CopyStencilData(m_RenderBuffer.Framebuffer());
-		m_RenderBuffer.BindForWriting();
+		glEnable(GL_STENCIL_TEST);
+		glStencilFunc(GL_EQUAL, STENCIL_DRAW_TAG, 1);
+		glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+
+		glBlitNamedFramebuffer(m_GBuffer.Framebuffer(), m_RenderBuffer.Framebuffer(), 0, 0, m_GBuffer.Width(), m_GBuffer.Height(), 0, 0, m_RenderBuffer.Width(), m_RenderBuffer.Height(), GL_STENCIL_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+
 		m_ScreenQuad.Draw();
 	}
 
@@ -174,7 +182,12 @@ namespace leopph::internal
 	{
 		if (auto const& background{Camera::Current()->Background()}; std::holds_alternative<Skybox>(background))
 		{
-			glStencilFunc(GL_NOTEQUAL, STENCIL_REF, STENCIL_AND_MASK);
+			glDisable(GL_BLEND);
+
+			glEnable(GL_DEPTH_TEST);
+			glDepthMask(GL_FALSE);
+
+			glDisable(GL_STENCIL_TEST);
 
 			m_RenderBuffer.BindForWriting();
 
@@ -206,6 +219,13 @@ namespace leopph::internal
 		auto const lightViewMat{Matrix4::LookAt(Vector3{0}, dirLight->Direction(), Vector3::Up())};
 		auto const cascadeBounds{CascadedShadowMap::CalculateCascadeBounds(*Camera::Current())};
 		auto const numCascades{cascadeBounds.size()};
+
+		glDisable(GL_BLEND);
+
+		glEnable(GL_DEPTH_TEST);
+		glDepthMask(GL_TRUE);
+
+		glDisable(GL_STENCIL_TEST);
 
 		for (std::size_t i = 0; i < numCascades; ++i)
 		{
@@ -249,6 +269,13 @@ namespace leopph::internal
 		{
 			m_SpotShadowMaps.resize(numShadows);
 		}
+
+		glDisable(GL_BLEND);
+
+		glEnable(GL_DEPTH_TEST);
+		glDepthMask(GL_TRUE);
+
+		glDisable(GL_STENCIL_TEST);
 
 		for (auto i{0ull}, shadowInd{0ull}; i < spotLights.size(); ++i)
 		{
@@ -298,6 +325,13 @@ namespace leopph::internal
 		{
 			m_PointShadowMaps.resize(numShadows);
 		}
+
+		glDisable(GL_BLEND);
+
+		glEnable(GL_DEPTH_TEST);
+		glDepthMask(GL_TRUE);
+
+		glDisable(GL_STENCIL_TEST);
 
 		for (auto i{0ull}, shadowInd{0ull}; i < pointLights.size(); ++i)
 		{
@@ -377,10 +411,14 @@ namespace leopph::internal
 		m_TransparencyBuffer.Clear();
 		m_TransparencyBuffer.BindForWriting();
 
-		glDepthMask(GL_FALSE);
 		glEnable(GL_BLEND);
 		glBlendFunci(0, GL_ONE, GL_ONE);
 		glBlendFunci(1, GL_ZERO, GL_ONE_MINUS_SRC_COLOR);
+
+		glEnable(GL_DEPTH_TEST);
+		glDepthMask(GL_FALSE);
+
+		glDisable(GL_STENCIL_TEST);
 
 		for (auto const& [renderable, instances, castsShadow] : renderables)
 		{
@@ -394,8 +432,9 @@ namespace leopph::internal
 		m_TransparencyBuffer.BindForReading(compositeShader, 0);
 		m_RenderBuffer.BindForWriting();
 
-		glDisable(GL_DEPTH_TEST);
 		glBlendFunc(GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA);
+
+		glDisable(GL_DEPTH_TEST);
 
 		m_ScreenQuad.Draw();
 	}

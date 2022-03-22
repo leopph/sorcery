@@ -5,7 +5,7 @@
 #include "../CubeShadowMap.hpp"
 #include "../GeometryBuffer.hpp"
 #include "../ScreenQuad.hpp"
-#include "../ScreenRenderBuffer.hpp"
+#include "../RenderBuffer.hpp"
 #include "../SpotShadowMap.hpp"
 #include "../TransparencyBuffer.hpp"
 #include "../../components/lighting/DirLight.hpp"
@@ -34,14 +34,14 @@ namespace leopph::internal
 			// Fill the GeometryBuffer with geometry data.
 			auto RenderGeometry(Matrix4 const& camViewMat, Matrix4 const& camProjMat, std::vector<RenderableData> const& renderables) -> void;
 
-			// Draw all lights in the ScreenRenderBuffer.
+			// Draw all lights in the RenderBuffer.
 			auto RenderLights(Matrix4 const& camViewMat,
 			                  Matrix4 const& camProjMat,
 			                  std::span<RenderableData const> renderables,
 			                  std::span<SpotLight const*> spotLights,
 			                  std::span<PointLight const*> pointLights) -> void;
 
-			// Draw skybox in the empty parts of the ScreenRenderBuffer.
+			// Draw skybox in the empty parts of the RenderBuffer.
 			auto RenderSkybox(Matrix4 const& camViewMat, Matrix4 const& camProjMat) -> void;
 
 			// Draws into the dirlight shadow map, binds it to light shader with the necessary data, and returns the next usable texture unit.
@@ -79,7 +79,7 @@ namespace leopph::internal
 
 			GeometryBuffer m_GBuffer;
 
-			ScreenRenderBuffer m_RenderBuffer;
+			RenderBuffer m_RenderBuffer;
 			ScreenQuad m_ScreenQuad;
 			TransparencyBuffer m_TransparencyBuffer;
 
@@ -97,7 +97,6 @@ namespace leopph::internal
 			std::vector<std::unique_ptr<SpotShadowMap>> m_SpotShadowMaps;
 			std::vector<std::unique_ptr<CubeShadowMap>> m_PointShadowMaps;
 
-			static constexpr int STENCIL_REF{0};
-			static constexpr int STENCIL_AND_MASK{1};
+			static constexpr int STENCIL_DRAW_TAG{0};
 	};
 }

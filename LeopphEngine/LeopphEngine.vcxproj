@@ -214,7 +214,7 @@
     <ClInclude Include="src\rendering\geometry\Material.hpp" />
     <ClInclude Include="src\rendering\opengl\GlRenderbuffer.hpp" />
     <ClInclude Include="src\rendering\renderers\GlRenderer.hpp" />
-    <ClInclude Include="src\rendering\ScreenRenderBuffer.hpp" />
+    <ClInclude Include="src\rendering\RenderBuffer.hpp" />
     <ClInclude Include="src\rendering\renderers\Renderer.hpp" />
     <ClInclude Include="src\rendering\ScreenQuad.hpp" />
     <ClInclude Include="src\rendering\shaders\ShaderProgram.hpp" />
@@ -308,7 +308,7 @@
     <ClCompile Include="src\rendering\renderers\GlDeferredRenderer.cpp" />
     <ClCompile Include="src\rendering\opengl\OpenGl.cpp" />
     <ClCompile Include="src\rendering\renderers\GlRenderer.cpp" />
-    <ClCompile Include="src\rendering\ScreenRenderBuffer.cpp" />
+    <ClCompile Include="src\rendering\RenderBuffer.cpp" />
     <ClCompile Include="src\rendering\renderers\Renderer.cpp" />
     <ClCompile Include="src\rendering\ScreenQuad.cpp" />
     <ClCompile Include="src\rendering\shaders\ShaderProgram.cpp" />

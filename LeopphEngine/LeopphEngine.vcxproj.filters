@@ -43,7 +43,7 @@
     <ClCompile Include="src\rendering\shaders\ShaderProgram.cpp" />
     <ClCompile Include="src\rendering\CubeShadowMap.cpp" />
     <ClCompile Include="src\windowing\Window.cpp" />
-    <ClCompile Include="src\rendering\ScreenRenderBuffer.cpp" />
+    <ClCompile Include="src\rendering\RenderBuffer.cpp" />
     <ClCompile Include="src\data\DataManager.cpp" />
     <ClCompile Include="src\rendering\geometry\ModelParser.cpp" />
     <ClCompile Include="src\rendering\UniformBuffer.cpp" />
@@ -149,7 +149,7 @@
     <ClInclude Include="src\rendering\CubeShadowMap.hpp" />
     <ClInclude Include="src\events\PointShadowEvent.hpp" />
     <ClInclude Include="src\windowing\Window.hpp" />
-    <ClInclude Include="src\rendering\ScreenRenderBuffer.hpp" />
+    <ClInclude Include="src\rendering\RenderBuffer.hpp" />
     <ClInclude Include="src\util\hash\PathedHash.hpp" />
     <ClInclude Include="src\util\equal\PathedEqual.hpp" />
     <ClInclude Include="src\util\concepts\Pathed.hpp" />

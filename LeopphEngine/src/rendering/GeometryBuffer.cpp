@@ -43,6 +43,18 @@ namespace leopph::internal
 	}
 
 
+	auto GeometryBuffer::Width() const noexcept -> int
+	{
+		return m_Width;
+	}
+
+
+	auto GeometryBuffer::Height() const noexcept -> int
+	{
+		return m_Height;
+	}
+
+
 	auto GeometryBuffer::Clear() const -> void
 	{
 		static GLfloat constexpr clearColor[]{0, 0, 0, 1};
@@ -70,12 +82,6 @@ namespace leopph::internal
 		shader.SetUniform("u_DepthTex", static_cast<int>(texUnit + 1)); // cast to int because only glUniform1i[v] may be used to set sampler uniforms (wtf?)
 
 		return texUnit + 2;
-	}
-
-
-	auto GeometryBuffer::CopyStencilData(GLuint const bufferName) const -> void
-	{
-		glBlitNamedFramebuffer(m_Framebuffer, bufferName, 0, 0, m_Width, m_Height, 0, 0, m_Width, m_Height, GL_STENCIL_BUFFER_BIT, GL_NEAREST);
 	}
 
 

@@ -33,6 +33,12 @@ namespace leopph::internal
 			[[nodiscard]]
 			auto DepthStencilTexture() const noexcept -> GlTexture<GlTextureType::T2D> const&;
 
+			[[nodiscard]]
+			auto Width() const noexcept -> int;
+
+			[[nodiscard]]
+			auto Height() const noexcept -> int;
+
 			// Clears all buffers.
 			auto Clear() const -> void;
 
@@ -42,8 +48,6 @@ namespace leopph::internal
 			// Bind all textures and returns the next available texture unit after binding.
 			[[nodiscard]]
 			auto BindForReading(ShaderProgram& shader, GLuint texUnit) const -> GLuint;
-
-			auto CopyStencilData(GLuint bufferName) const -> void;
 
 		private:
 			// Configures the buffers for the current resolution.

@@ -5,6 +5,7 @@
 #include "../../data/DataManager.hpp"
 #include "../../math/Matrix.hpp"
 #include "../../util/Logger.hpp"
+#include "../../windowing/Window.hpp"
 
 #include <glad/gl.h>
 
@@ -46,10 +47,8 @@ namespace leopph::internal
 		m_TransparencyBuffer{&m_RenderBuffer.DepthStencilBuffer()}
 	{
 		glDepthFunc(GL_LEQUAL);
-		
 		glFrontFace(GL_CCW);
 		glCullFace(GL_BACK);
-
 		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
 		Logger::Instance().Warning("The forward rendering pipeline is currently not feature complete. It is recommended to use the deferred pipeline.");
@@ -80,7 +79,6 @@ namespace leopph::internal
 		auto const camViewMat{Camera::Current()->ViewMatrix()};
 		auto const camProjMat{Camera::Current()->ProjectionMatrix()};
 
-
 		glDisable(GL_BLEND);
 		glEnable(GL_DEPTH_TEST);
 		glDepthMask(GL_TRUE);
@@ -91,7 +89,9 @@ namespace leopph::internal
 		RenderSkybox(camViewMat, camProjMat);
 		RenderTransparent(camViewMat, camProjMat, renderables, dirLight, spotLights, pointLights);
 		Compose();
-		m_RenderBuffer.CopyColorToDefaultFramebuffer();
+
+		auto const window = Window::Instance();
+		glBlitNamedFramebuffer(m_RenderBuffer.Framebuffer(), 0, 0, 0, m_RenderBuffer.Width(), m_RenderBuffer.Height(), 0, 0, window->Width(), window->Height(), GL_COLOR_BUFFER_BIT, GL_LINEAR);
 	}
 
 
@@ -164,7 +164,7 @@ namespace leopph::internal
 
 		m_TransparencyBuffer.BindForReading(compositeShader, 0);
 		m_RenderBuffer.BindForWriting();
-		
+
 		glDisable(GL_DEPTH_TEST);
 		glBlendFunc(GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA);
 

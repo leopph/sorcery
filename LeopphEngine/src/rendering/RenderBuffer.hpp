@@ -11,27 +11,24 @@
 namespace leopph::internal
 {
 	// A set of color, depth, and stencil buffers the size of the window scaled by the render multiplier.
-	class ScreenRenderBuffer final : public EventReceiver<WindowEvent>
+	class RenderBuffer final : public EventReceiver<WindowEvent>
 	{
 		public:
-			ScreenRenderBuffer();
+			RenderBuffer();
 
-			ScreenRenderBuffer(ScreenRenderBuffer const& other) = delete;
-			auto operator=(ScreenRenderBuffer const& other) -> ScreenRenderBuffer& = delete;
+			RenderBuffer(RenderBuffer const& other) = delete;
+			auto operator=(RenderBuffer const& other) -> RenderBuffer& = delete;
 
-			ScreenRenderBuffer(ScreenRenderBuffer&& other) = delete;
-			auto operator=(ScreenRenderBuffer&& other) -> ScreenRenderBuffer& = delete;
+			RenderBuffer(RenderBuffer&& other) = delete;
+			auto operator=(RenderBuffer&& other) -> RenderBuffer& = delete;
 
-			~ScreenRenderBuffer() noexcept override = default;
+			~RenderBuffer() noexcept override = default;
 
 			// Clears the color, depth, and stencil buffers.
 			auto Clear() const -> void;
 
 			// Binds the buffers for writing.
 			auto BindForWriting() const -> void;
-
-			// Copies the contents of the color buffer to the default framebuffer.
-			auto CopyColorToDefaultFramebuffer() const -> void;
 
 			[[nodiscard]]
 			auto Framebuffer() const noexcept -> GlFramebuffer const&;
@@ -41,6 +38,12 @@ namespace leopph::internal
 
 			[[nodiscard]]
 			auto DepthStencilBuffer() const noexcept -> GlRenderbuffer const&;
+
+			[[nodiscard]]
+			auto Width() const noexcept -> int;
+
+			[[nodiscard]]
+			auto Height() const noexcept -> int;
 
 		private:
 			// Initializes the buffers to the current resolution.

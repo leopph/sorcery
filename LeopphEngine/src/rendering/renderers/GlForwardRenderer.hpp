@@ -3,7 +3,7 @@
 #include "GlRenderer.hpp"
 #include "../CascadedShadowMap.hpp"
 #include "../ScreenQuad.hpp"
-#include "../ScreenRenderBuffer.hpp"
+#include "../RenderBuffer.hpp"
 #include "../TransparencyBuffer.hpp"
 #include "../../components/lighting/DirLight.hpp"
 #include "../../components/lighting/PointLight.hpp"
@@ -48,7 +48,7 @@ namespace leopph::internal
 
 			CascadedShadowMap m_DirLightShadowMap;
 
-			ScreenRenderBuffer m_RenderBuffer;
+			RenderBuffer m_RenderBuffer;
 			TransparencyBuffer m_TransparencyBuffer;
 			ScreenQuad m_ScreenQuad;
 	};
