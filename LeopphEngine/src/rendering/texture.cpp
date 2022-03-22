@@ -1,11 +1,9 @@
 #include "Texture.hpp"
 
-#include "../data/DataManager.hpp"
 #include "../util/Logger.hpp"
 
 #include <glad/gl.h>
 
-#include <cstddef>
 #include <string>
 
 
@@ -13,13 +11,10 @@ namespace leopph
 {
 	Texture::Texture(Image const& img) :
 		m_Texture{},
-		m_SemiTransparent{},
-		m_Transparent{},
 		m_Width{img.Width()},
 		m_Height{img.Height()}
 	{
-		GLenum colorFormat;
-		GLenum internalFormat;
+		GLenum colorFormat, internalFormat;
 
 		switch (img.Channels())
 		{
@@ -39,20 +34,8 @@ namespace leopph
 
 			case 4:
 			{
-				m_SemiTransparent = CheckSemiTransparency(img.Data());
-
-				if (m_SemiTransparent)
-				{
-					m_Transparent = CheckFullTransparency(img.Data());
-					colorFormat = GL_RGBA;
-					internalFormat = GL_RGBA8;
-				}
-				else
-				{
-					m_Transparent = false;
-					colorFormat = GL_RGB;
-					internalFormat = GL_RGB8;
-				}
+				colorFormat = GL_RGBA;
+				internalFormat = GL_RGBA8;
 				break;
 			}
 
@@ -78,7 +61,7 @@ namespace leopph
 	}
 
 
-	auto Texture::TextureName() const -> GLuint
+	auto Texture::TextureName() const noexcept -> GLuint
 	{
 		return m_Texture;
 	}
@@ -93,45 +76,5 @@ namespace leopph
 	auto Texture::Height() const noexcept -> int
 	{
 		return m_Height;
-	}
-
-
-	auto Texture::IsSemiTransparent() const -> bool
-	{
-		return m_SemiTransparent;
-	}
-
-
-	auto Texture::IsTransparent() const -> bool
-	{
-		return m_Transparent;
-	}
-
-
-	auto Texture::CheckSemiTransparency(std::span<unsigned char const> const data) -> bool
-	{
-		for (std::size_t i = 3; i < data.size(); i += 4)
-		{
-			if (data[i] != 255)
-			{
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-
-	auto Texture::CheckFullTransparency(std::span<unsigned char const> const data) -> bool
-	{
-		for (std::size_t i = 3; i < data.size(); i += 4)
-		{
-			if (data[i] == 255)
-			{
-				return false;
-			}
-		}
-
-		return true;
 	}
 }

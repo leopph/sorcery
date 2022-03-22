@@ -31,7 +31,7 @@ namespace leopph::internal
 
 		for (auto const& mesh : *m_MeshGroup->Meshes)
 		{
-			(IsSemiTransparent(mesh) ? (IsTransparent(mesh) ? m_TransparentMeshes : m_SemiTransparentMeshes) : m_OpaqueMeshes).emplace_back(std::make_unique<GlMesh>(&mesh, m_InstanceBuffer));
+			(IsTransparent(mesh.Material()) ? m_TransparentMeshes : m_OpaqueMeshes).emplace_back(std::make_unique<GlMesh>(&mesh, m_InstanceBuffer));
 		}
 	}
 
@@ -42,22 +42,12 @@ namespace leopph::internal
 		{
 			mesh->DrawWithMaterial(shader, nextFreeTextureUnit, m_NumInstances);
 		}
-
-		for (auto const& mesh : m_SemiTransparentMeshes)
-		{
-			mesh->DrawWithMaterial(shader, nextFreeTextureUnit, m_NumInstances);
-		}
 	}
 
 
 	auto GlMeshGroup::DrawWithoutMaterial(bool const transparent) const -> void
 	{
 		for (auto const& mesh : transparent ? m_TransparentMeshes : m_OpaqueMeshes)
-		{
-			mesh->DrawWithoutMaterial(m_NumInstances);
-		}
-
-		for (auto const& mesh : m_SemiTransparentMeshes)
 		{
 			mesh->DrawWithoutMaterial(m_NumInstances);
 		}
@@ -86,12 +76,12 @@ namespace leopph::internal
 
 	auto GlMeshGroup::SortMeshes() -> void
 	{
-		// Move the not opaque meshes out.
+		// Move the transparent meshes out.
 		std::ranges::for_each(m_OpaqueMeshes, [this](std::unique_ptr<GlMesh>& glMesh)
 		{
-			if (IsSemiTransparent(*glMesh->Mesh()))
+			if (IsTransparent(glMesh->Mesh()->Material()))
 			{
-				(IsTransparent(*glMesh->Mesh()) ? m_TransparentMeshes : m_OpaqueMeshes).emplace_back(std::move(glMesh));
+				m_OpaqueMeshes.emplace_back(std::move(glMesh));
 			}
 		});
 
@@ -101,31 +91,12 @@ namespace leopph::internal
 			return !glMesh;
 		});
 
-		// Move the opaque and fully transparent meshes out.
-		std::ranges::for_each(m_SemiTransparentMeshes, [this](std::unique_ptr<GlMesh>& glMesh)
-		{
-			if (!IsSemiTransparent(*glMesh->Mesh()))
-			{
-				m_OpaqueMeshes.emplace_back(std::move(glMesh));
-			}
-			else if (IsTransparent(*glMesh->Mesh()))
-			{
-				m_TransparentMeshes.emplace_back(std::move(glMesh));
-			}
-		});
-
-		// Erase the moved-from meshes.
-		std::erase_if(m_SemiTransparentMeshes, [](std::unique_ptr<GlMesh> const& glMesh)
-		{
-			return !glMesh;
-		});
-
-		// Move the not transparent meshes out.
+		// Move the opaque meshes out.
 		std::ranges::for_each(m_TransparentMeshes, [this](std::unique_ptr<GlMesh>& glMesh)
 		{
-			if (!IsTransparent(*glMesh->Mesh()))
+			if (!IsTransparent(glMesh->Mesh()->Material()))
 			{
-				(IsSemiTransparent(*glMesh->Mesh()) ? m_SemiTransparentMeshes : m_OpaqueMeshes).emplace_back(std::move(glMesh));
+				m_OpaqueMeshes.emplace_back(std::move(glMesh));
 			}
 		});
 
@@ -137,22 +108,14 @@ namespace leopph::internal
 	}
 
 
+	auto GlMeshGroup::IsTransparent(std::shared_ptr<Material const> const& mat) -> bool
+	{
+		return mat->OpacityMap || mat->Opacity < 1.f;
+	}
+
+
 	GlMeshGroup::~GlMeshGroup() noexcept
 	{
 		glDeleteBuffers(1, &m_InstanceBuffer);
-	}
-
-
-	auto GlMeshGroup::IsSemiTransparent(Mesh const& mesh) -> bool
-	{
-		return mesh.Material()->DiffuseMap && mesh.Material()->DiffuseMap->IsSemiTransparent() ||
-			mesh.Material()->SpecularMap && mesh.Material()->SpecularMap->IsSemiTransparent();
-	}
-
-
-	auto GlMeshGroup::IsTransparent(Mesh const& mesh) -> bool
-	{
-		return mesh.Material()->DiffuseMap && mesh.Material()->DiffuseMap->IsTransparent() ||
-			mesh.Material()->SpecularMap && mesh.Material()->SpecularMap->IsTransparent();
 	}
 }

@@ -2,8 +2,6 @@
 
 #include "Image.hpp"
 
-#include <span>
-
 
 namespace leopph
 {
@@ -22,7 +20,7 @@ namespace leopph
 
 			// The name of the underlying OpenGL texture.
 			[[nodiscard]]
-			auto TextureName() const -> unsigned;
+			auto TextureName() const noexcept -> unsigned;
 
 			[[nodiscard]]
 			auto Width() const noexcept -> int;
@@ -30,26 +28,8 @@ namespace leopph
 			[[nodiscard]]
 			auto Height() const noexcept -> int;
 
-			// A Texture is semi-transparent if it contains pixels
-			// with an alpha value less than 1.
-			[[nodiscard]]
-			auto IsSemiTransparent() const -> bool;
-
-			// A Texture is transparent if all of its pixels have
-			// an alpha values less than 1.
-			[[nodiscard]]
-			auto IsTransparent() const -> bool;
-
 		private:
-			[[nodiscard]] static
-			auto CheckSemiTransparency(std::span<unsigned char const> data) -> bool;
-
-			[[nodiscard]] static
-			auto CheckFullTransparency(std::span<unsigned char const> data) -> bool;
-
 			unsigned m_Texture;
-			bool m_SemiTransparent;
-			bool m_Transparent;
 			int m_Width;
 			int m_Height;
 	};
