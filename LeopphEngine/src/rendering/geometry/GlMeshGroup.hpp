@@ -39,9 +39,11 @@ namespace leopph::internal
 			auto SortMeshes() -> void;
 
 		private:
-			// Determines if a Material is transparent.
 			[[nodiscard]] static
-			auto IsTransparent(std::shared_ptr<Material const> const& mat) -> bool;
+			auto FullyTransparent(std::shared_ptr<Material const> const& mat) -> bool;
+
+			[[nodiscard]] static
+			auto MaybeTransparent(std::shared_ptr<Material const> const& mat) -> bool;
 
 		public:
 			GlMeshGroup(GlMeshGroup const& other) = delete;
@@ -54,7 +56,8 @@ namespace leopph::internal
 
 		private:
 			std::vector<std::unique_ptr<GlMesh>> m_OpaqueMeshes;
-			std::vector<std::unique_ptr<GlMesh>> m_TransparentMeshes;
+			std::vector<std::unique_ptr<GlMesh>> m_MaybeTransparentMeshes;
+			std::vector<std::unique_ptr<GlMesh>> m_FullyTransparentMeshes;
 			std::shared_ptr<internal::MeshGroup const> m_MeshGroup;
 			GLuint m_InstanceBuffer{0};
 			int m_NumInstances{0};

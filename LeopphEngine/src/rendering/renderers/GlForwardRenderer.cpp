@@ -123,7 +123,6 @@ namespace leopph::internal
 		{
 			renderable->SetInstanceData(instances);
 			renderable->DrawWithMaterial(shader, 0, false);
-			renderable->DrawWithMaterial(shader, 0, true);
 		}
 	}
 
