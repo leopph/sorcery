@@ -6,12 +6,15 @@ struct Material
 	vec3 specularColor;
 
 	float gloss;
+    float opacity;
 
 	sampler2D diffuseMap;
 	sampler2D specularMap;
+    sampler2D opacityMap;
 
 	bool hasDiffuseMap;
 	bool hasSpecularMap;
+    bool hasOpacityMap;
 };
 
 
@@ -25,6 +28,12 @@ uniform Material u_Material;
 
 void main()
 {
+    // We only render opaque surfaces
+    if (u_Material.opacity < 1 || texture(u_Material.opacityMap, in_TexCoords).r < 1)
+    {
+        discard;
+    }
+
     // Encode normal
     vec3 normal = normalize(in_Normal);
     vec2 comprNorm = normal.xy * (1.0 / (abs(normal.x) + abs(normal.y) + abs(normal.z)));

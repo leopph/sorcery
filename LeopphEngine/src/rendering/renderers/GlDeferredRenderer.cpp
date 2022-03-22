@@ -14,6 +14,7 @@
 namespace leopph::internal
 {
 	GlDeferredRenderer::GlDeferredRenderer() :
+		m_TransparencyBuffer{&m_RenderBuffer.DepthStencilBuffer()},
 		m_ShadowShader{
 			{
 				{ShaderFamily::DepthShadowVertSrc, ShaderType::Vertex}
@@ -41,6 +42,18 @@ namespace leopph::internal
 			{
 				{ShaderFamily::SkyboxVertSrc, ShaderType::Vertex},
 				{ShaderFamily::SkyboxFragSrc, ShaderType::Fragment}
+			}
+		},
+		m_ForwardShader{
+			{
+				{ShaderFamily::ObjectVertSrc, ShaderType::Vertex},
+				{ShaderFamily::ObjectFragSrc, ShaderType::Fragment}
+			}
+		},
+		m_CompositeShader{
+			{
+				{ShaderFamily::TranspCompositeVertSrc, ShaderType::Vertex},
+				{ShaderFamily::TranspCompositeFragSrc, ShaderType::Fragment}
 			}
 		}
 	{
@@ -77,7 +90,8 @@ namespace leopph::internal
 		RenderGeometry(camViewMat, camProjMat, renderables);
 		RenderLights(camViewMat, camProjMat, renderables, spotLights, pointLights);
 		RenderSkybox(camViewMat, camProjMat);
-		m_ScreenRenderBuffer.CopyColorToDefaultFramebuffer();
+		RenderTransparent(camViewMat, camProjMat, renderables, DataManager::Instance().DirectionalLight(), spotLights, pointLights);
+		m_RenderBuffer.CopyColorToDefaultFramebuffer();
 	}
 
 
@@ -86,7 +100,9 @@ namespace leopph::internal
 		glStencilFunc(GL_ALWAYS, STENCIL_REF, STENCIL_AND_MASK);
 		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
+		glDisable(GL_BLEND);
 		glEnable(GL_DEPTH_TEST);
+		glDepthMask(GL_TRUE);
 
 		m_GBuffer.BindForWritingAndClear();
 
@@ -145,9 +161,9 @@ namespace leopph::internal
 
 		glDisable(GL_DEPTH_TEST);
 
-		m_ScreenRenderBuffer.Clear();
-		m_GBuffer.CopyStencilData(m_ScreenRenderBuffer.Framebuffer());
-		m_ScreenRenderBuffer.BindForWriting();
+		m_RenderBuffer.Clear();
+		m_GBuffer.CopyStencilData(m_RenderBuffer.Framebuffer());
+		m_RenderBuffer.BindForWriting();
 		m_ScreenQuad.Draw();
 	}
 
@@ -158,7 +174,7 @@ namespace leopph::internal
 		{
 			glStencilFunc(GL_NOTEQUAL, STENCIL_REF, STENCIL_AND_MASK);
 
-			m_ScreenRenderBuffer.BindForWriting();
+			m_RenderBuffer.BindForWriting();
 
 			auto& skyboxShader{m_SkyboxShader.GetPermutation()};
 			skyboxShader.SetUniform("u_ViewProjMat", static_cast<Matrix4>(static_cast<Matrix3>(camViewMat)) * camProjMat);
@@ -186,7 +202,7 @@ namespace leopph::internal
 		cascadeMats.clear();
 
 		auto const lightViewMat{Matrix4::LookAt(Vector3{0}, dirLight->Direction(), Vector3::Up())};
-		auto const cascadeBounds{m_DirShadowMap.CalculateCascadeBounds(*Camera::Current())};
+		auto const cascadeBounds{CascadedShadowMap::CalculateCascadeBounds(*Camera::Current())};
 		auto const numCascades{cascadeBounds.size()};
 
 		for (std::size_t i = 0; i < numCascades; ++i)
@@ -328,5 +344,57 @@ namespace leopph::internal
 		}
 
 		return nextTexUnit;
+	}
+
+
+	auto GlDeferredRenderer::RenderTransparent(Matrix4 const& camViewMat, Matrix4 const& camProjMat, std::vector<RenderableData> const& renderables, DirectionalLight const* dirLight, std::vector<SpotLight const*> const& spotLights, std::vector<PointLight const*> const& pointLights) -> void
+	{
+		auto const [dirShadow, spotShadows, pointShadows]{CountShadows(dirLight, spotLights, pointLights)};
+
+		m_ForwardShader.Clear();
+		m_ForwardShader["DIRLIGHT"] = std::to_string(dirLight != nullptr);
+		m_ForwardShader["DIRLIGHT_SHADOW"] = std::to_string(dirShadow);
+		m_ForwardShader["NUM_SPOTLIGHTS"] = std::to_string(spotLights.size());
+		m_ForwardShader["NUM_SPOTLIGHT_SHADOWS"] = std::to_string(spotShadows);
+		m_ForwardShader["NUM_POINTLIGHTS"] = std::to_string(pointLights.size());
+		m_ForwardShader["NUM_POINTLIGHT_SHADOWS"] = std::to_string(pointShadows);
+		m_ForwardShader["TRANSPARENT"] = std::to_string(true);
+
+		auto& forwardShader{m_ForwardShader.GetPermutation()};
+
+		forwardShader.SetUniform("u_ViewProjMat", camViewMat * camProjMat);
+		forwardShader.SetUniform("u_CamPos", Camera::Current()->Entity()->Transform()->Position());
+
+		SetAmbientData(AmbientLight::Instance(), forwardShader);
+		SetDirectionalData(dirLight, forwardShader);
+		SetSpotData(spotLights, forwardShader);
+		SetPointData(pointLights, forwardShader);
+
+		forwardShader.Use();
+
+		m_TransparencyBuffer.Clear();
+		m_TransparencyBuffer.BindForWriting();
+
+		glDepthMask(GL_FALSE);
+		glEnable(GL_BLEND);
+		glBlendFunci(0, GL_ONE, GL_ONE);
+		glBlendFunci(1, GL_ZERO, GL_ONE_MINUS_SRC_COLOR);
+
+		for (auto const& [renderable, instances, castsShadow] : renderables)
+		{
+			renderable->SetInstanceData(instances);
+			renderable->DrawWithMaterial(forwardShader, 0, true);
+		}
+
+		auto& compositeShader{m_CompositeShader.GetPermutation()};
+		compositeShader.Use();
+
+		m_TransparencyBuffer.BindForReading(compositeShader, 0);
+		m_RenderBuffer.BindForWriting();
+
+		glDisable(GL_DEPTH_TEST);
+		glBlendFunc(GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA);
+
+		m_ScreenQuad.Draw();
 	}
 }

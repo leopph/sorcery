@@ -7,6 +7,7 @@
 #include "../ScreenQuad.hpp"
 #include "../ScreenRenderBuffer.hpp"
 #include "../SpotShadowMap.hpp"
+#include "../TransparencyBuffer.hpp"
 #include "../../components/lighting/DirLight.hpp"
 #include "../../components/lighting/PointLight.hpp"
 #include "../../components/lighting/SpotLight.hpp"
@@ -68,10 +69,19 @@ namespace leopph::internal
 			                                         std::size_t numShadows,
 			                                         GLuint nextTexUnit) -> GLuint;
 
+			// Transparent forward pass.
+			auto RenderTransparent(Matrix4 const& camViewMat,
+			                       Matrix4 const& camProjMat,
+			                       std::vector<RenderableData> const& renderables,
+			                       DirectionalLight const* dirLight,
+			                       std::vector<SpotLight const*> const& spotLights,
+			                       std::vector<PointLight const*> const& pointLights) -> void;
+
 			GeometryBuffer m_GBuffer;
 
-			ScreenRenderBuffer m_ScreenRenderBuffer;
+			ScreenRenderBuffer m_RenderBuffer;
 			ScreenQuad m_ScreenQuad;
+			TransparencyBuffer m_TransparencyBuffer;
 
 			ShaderFamily m_ShadowShader;
 			ShaderFamily m_CubeShadowShader;
@@ -79,6 +89,9 @@ namespace leopph::internal
 			ShaderFamily m_GeometryShader;
 			ShaderFamily m_LightShader;
 			ShaderFamily m_SkyboxShader;
+
+			ShaderFamily m_ForwardShader;
+			ShaderFamily m_CompositeShader;
 
 			CascadedShadowMap m_DirShadowMap;
 			std::vector<std::unique_ptr<SpotShadowMap>> m_SpotShadowMaps;
