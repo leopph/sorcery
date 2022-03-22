@@ -29,7 +29,7 @@ uniform Material u_Material;
 void main()
 {
     // We only render opaque surfaces
-    if (u_Material.opacity < 1 || texture(u_Material.opacityMap, in_TexCoords).r < 1)
+    if (u_Material.opacity < 1 || (u_Material.hasOpacityMap && texture(u_Material.opacityMap, in_TexCoords).r < 1))
     {
         discard;
     }
