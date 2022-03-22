@@ -23,7 +23,7 @@ namespace leopph
 			return meshGroup;
 		}
 
-		auto meshGroup = std::make_shared<internal::MeshGroup const>(meshId, std::make_shared<std::vector<internal::Mesh>>(internal::ModelParser{}(path)));
+		auto meshGroup = std::make_shared<internal::MeshGroup const>(meshId, std::make_shared<std::vector<internal::Mesh>>(internal::ModelParser{}.Parse(path)));
 		internal::DataManager::Instance().RegisterMeshGroup(meshGroup);
 		return meshGroup;
 	}

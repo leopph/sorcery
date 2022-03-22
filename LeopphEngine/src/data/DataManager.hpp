@@ -10,7 +10,6 @@
 #include "../entity/Entity.hpp"
 #include "../rendering/Skybox.hpp"
 #include "../rendering/SkyboxImpl.hpp"
-#include "../rendering/Texture.hpp"
 #include "../rendering/geometry/GlMeshGroup.hpp"
 #include "../rendering/geometry/MeshGroup.hpp"
 #include "../util/equal/PathedEqual.hpp"
@@ -171,17 +170,6 @@ namespace leopph::internal
 			[[nodiscard]]
 			auto SkyboxHandleCount(SkyboxImpl const* skybox) const -> std::size_t;
 
-			// Stores a non-owning pointer to the texture instance.
-			// The function does NOT check for duplicates.
-			auto RegisterTexture(Texture* texture) -> void;
-
-			// Removes all pointers that have that point to the same address as the passed pointer from the registry.
-			auto UnregisterTexture(Texture* texture) -> void;
-
-			// Returns a shared_ptr to the Texture that was loaded from the passed path, or, if not found, nullptr.
-			[[nodiscard]]
-			auto FindTexture(std::filesystem::path const& path) -> std::shared_ptr<Texture>;
-
 		private:
 			struct EntityAndComponents
 			{
@@ -205,19 +193,14 @@ namespace leopph::internal
 
 
 			using EntityOrderFunc = std::ranges::less;
-			using TextureOrderFunc = std::ranges::less;
 
 			auto SortEntities() -> void;
-			auto SortTextures() -> void;
 
 			// All engine-owned objects.
 			std::set<std::unique_ptr<Poelo>, PoeloLess> m_Poelos;
 
 			// Registered MeshGroups with unique IDs.
 			std::unordered_map<std::string, std::weak_ptr<MeshGroup const>> m_MeshGroups;
-
-			// Non-owning pointers to all Texture instances.
-			std::vector<Texture*> m_Textures;
 
 			// Non-owning pointers to the active DirectionalLights.
 			std::vector<leopph::DirectionalLight const*> m_ActiveDirLights;

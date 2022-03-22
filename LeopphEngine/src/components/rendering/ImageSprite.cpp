@@ -18,13 +18,9 @@ namespace leopph
 		if (auto meshGroup = dataManager.FindMeshGroup(meshId))
 		{
 			return meshGroup;
-		}		
-
-		auto texture= dataManager.FindTexture(src);
-		if (!texture)
-		{
-			texture = std::make_shared<Texture>(src);
 		}
+
+		auto texture = std::make_shared<Texture>(Image{}); // TODO
 
 		// The width of the required rectangle.
 		auto const rectW = static_cast<float>(texture->Width()) / static_cast<float>(ppi);
@@ -44,7 +40,7 @@ namespace leopph
 			0, 1, 3, 1, 2, 3
 		};
 
-		auto material = std::make_shared<Material>(Color{255, 255, 255}, Color{0, 0, 0}, std::move(texture), nullptr, 0.f, false);
+		auto material = std::make_shared<Material>(Color{255, 255, 255}, Color{0, 0, 0}, std::move(texture), nullptr, nullptr, 0.f, 1.f, false);
 
 		auto meshes = std::make_shared<std::vector<internal::Mesh>>();
 		meshes->emplace_back(std::move(vertices), std::move(indices), std::move(material));

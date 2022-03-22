@@ -15,8 +15,10 @@ namespace leopph
 
 		std::shared_ptr<Texture> DiffuseMap;
 		std::shared_ptr<Texture> SpecularMap;
+		std::shared_ptr<Texture> OpacityMap;
 
-		float Gloss{32};
+		float Gloss{0};
+		float Opacity{1};
 
 		bool TwoSided{false};
 	};

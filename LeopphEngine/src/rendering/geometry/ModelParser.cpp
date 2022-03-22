@@ -1,40 +1,46 @@
 #include "ModelParser.hpp"
 
-#include "../../data/DataManager.hpp"
+#include "../Texture.hpp"
 #include "../../util/Logger.hpp"
 
-#include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
 
-#include <memory>
 #include <queue>
 #include <utility>
 
 
 namespace leopph::internal
 {
-	auto ModelParser::operator()(std::filesystem::path const& path) const -> std::vector<Mesh>
+	auto ModelParser::Parse(std::filesystem::path path) -> std::vector<Mesh>
 	{
-		static Assimp::Importer importer;
-		auto const scene{importer.ReadFile(path.string(), aiProcess_JoinIdenticalVertices | aiProcess_Triangulate | aiProcess_SortByPType | aiProcess_GenUVCoords | aiProcess_GenNormals)};
+		m_Path = std::move(path);
 
-		if (scene == nullptr || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || scene->mRootNode == nullptr)
+		auto const* scene = m_Importer.ReadFile(m_Path.string(), aiProcess_JoinIdenticalVertices | aiProcess_Triangulate | aiProcess_SortByPType | aiProcess_GenUVCoords | aiProcess_GenNormals);
+
+		if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
 		{
-			Logger::Instance().Error(importer.GetErrorString());
+			Logger::Instance().Error(m_Importer.GetErrorString());
 			return {};
 		}
 
-		return ProcessNodes(scene, path);
+		m_Materials.clear();
+
+		for (auto i = 0; i < scene->mNumMaterials; i++)
+		{
+			m_Materials.push_back(ProcessMaterial(scene->mMaterials[i]));
+		}
+
+		return ProcessNodes();
 	}
 
 
-	auto ModelParser::ProcessNodes(aiScene const* const scene, std::filesystem::path const& path) -> std::vector<Mesh>
+	auto ModelParser::ProcessNodes() -> std::vector<Mesh>
 	{
 		std::queue<std::pair<aiNode*, Matrix4>> queue;
 		std::vector<Mesh> ret;
 
-		queue.emplace(scene->mRootNode, ConvertTrafo(scene->mRootNode->mTransformation) * Matrix4{1, 1, -1, 1});
+		queue.emplace(m_Importer.GetScene()->mRootNode, ConvertTrafo(m_Importer.GetScene()->mRootNode->mTransformation) * Matrix4{1, 1, -1, 1});
 
 		while (!queue.empty())
 		{
@@ -42,9 +48,9 @@ namespace leopph::internal
 
 			for (std::size_t i = 0; i < node->mNumMeshes; ++i)
 			{
-				if (auto const mesh = scene->mMeshes[node->mMeshes[i]]; mesh->mPrimitiveTypes - aiPrimitiveType_TRIANGLE == 0)
+				if (auto const mesh = m_Importer.GetScene()->mMeshes[node->mMeshes[i]]; mesh->mPrimitiveTypes - aiPrimitiveType_TRIANGLE == 0)
 				{
-					ret.emplace_back(ProcessVertices(mesh, trafo), ProcessIndices(mesh), ProcessMaterial(scene, mesh, path));
+					ret.emplace_back(ProcessVertices(mesh, trafo), ProcessIndices(mesh), m_Materials[mesh->mMaterialIndex]);
 				}
 			}
 
@@ -106,56 +112,81 @@ namespace leopph::internal
 	}
 
 
-	auto ModelParser::ProcessMaterial(aiScene const* scene, aiMesh const* mesh, std::filesystem::path const& path) -> std::shared_ptr<Material>
+	auto ModelParser::ProcessMaterial(aiMaterial const* assimpMat) const -> std::shared_ptr<Material>
 	{
-		auto material{std::make_shared<Material>()};
-		auto const assimpMaterial{scene->mMaterials[mesh->mMaterialIndex]};
+		auto leopphMat{std::make_shared<Material>()};
 
-		material->DiffuseMap = LoadTexture(assimpMaterial, aiTextureType_DIFFUSE, path);
-		material->SpecularMap = LoadTexture(assimpMaterial, aiTextureType_SPECULAR, path);
-
-		if (aiColor3D parsedDiffuseColor; assimpMaterial->Get(AI_MATKEY_COLOR_DIFFUSE, parsedDiffuseColor) == aiReturn_SUCCESS)
+		if (float opacity; assimpMat->Get(AI_MATKEY_OPACITY, opacity) == aiReturn_SUCCESS)
 		{
-			material->DiffuseColor = Color{Vector3{parsedDiffuseColor.r, parsedDiffuseColor.g, parsedDiffuseColor.b}};
+			leopphMat->Opacity = opacity;
 		}
 
-		if (aiColor3D parsedSpecularColor; assimpMaterial->Get(AI_MATKEY_COLOR_SPECULAR, parsedSpecularColor) == aiReturn_SUCCESS)
+		if (aiString texPath; assimpMat->GetTexture(aiTextureType_OPACITY, 0, &texPath) == aiReturn_SUCCESS)
 		{
-			material->SpecularColor = Color{Vector3{parsedSpecularColor.r, parsedSpecularColor.g, parsedSpecularColor.b}};
+			if (auto const img{LoadTextureImage(texPath)}; !img.Empty())
+			{
+				leopphMat->OpacityMap = std::make_shared<Texture>(img);
+			}
 		}
 
-		if (ai_real parsedGloss; assimpMaterial->Get(AI_MATKEY_SHININESS, parsedGloss) == aiReturn_SUCCESS)
+		if (aiString texPath; assimpMat->GetTexture(aiTextureType_DIFFUSE, 0, &texPath) == aiReturn_SUCCESS)
 		{
-			material->Gloss = parsedGloss;
+			if (auto img{LoadTextureImage(texPath)}; !img.Empty())
+			{
+				// If the diffuse map has an alpha channel, and we couldn't parse an opacity map
+				// We assume that the transparency comes from the diffuse alpha, so we steal it
+				// And create an opacity map from that.
+				if (img.Channels() == 4 && !leopphMat->OpacityMap)
+				{
+					auto alphaChan = img.ExtractChannel(3);
+					leopphMat->OpacityMap = std::make_shared<Texture>(alphaChan);
+				}
+
+				leopphMat->DiffuseMap = std::make_shared<Texture>(img);
+			}
 		}
 
-		if (int twoSided; assimpMaterial->Get(AI_MATKEY_TWOSIDED, twoSided) == aiReturn_SUCCESS)
+		if (aiString texPath; assimpMat->GetTexture(aiTextureType_SPECULAR, 0, &texPath) == aiReturn_SUCCESS)
 		{
-			material->TwoSided = !twoSided;
+			if (auto img{LoadTextureImage(texPath)}; !img.Empty())
+			{
+				leopphMat->SpecularMap = std::make_shared<Texture>(img);
+			}
 		}
 
-		return material;
+		if (aiColor3D diffClr; assimpMat->Get(AI_MATKEY_COLOR_DIFFUSE, diffClr) == aiReturn_SUCCESS)
+		{
+			leopphMat->DiffuseColor = Color{Vector3{diffClr.r, diffClr.g, diffClr.b}};
+		}
+
+		if (aiColor3D specClr; assimpMat->Get(AI_MATKEY_COLOR_SPECULAR, specClr) == aiReturn_SUCCESS)
+		{
+			leopphMat->SpecularColor = Color{Vector3{specClr.r, specClr.g, specClr.b}};
+		}
+
+		if (ai_real gloss; assimpMat->Get(AI_MATKEY_SHININESS, gloss) == aiReturn_SUCCESS)
+		{
+			leopphMat->Gloss = gloss;
+		}
+
+		if (int twoSided; assimpMat->Get(AI_MATKEY_TWOSIDED, twoSided) == aiReturn_SUCCESS)
+		{
+			leopphMat->TwoSided = !twoSided;
+		}
+
+		return leopphMat;
 	}
 
 
-	auto ModelParser::LoadTexture(aiMaterial const* const material, aiTextureType const type, std::filesystem::path const& path) -> std::shared_ptr<Texture>
+	auto ModelParser::LoadTextureImage(aiString const& texPath) const -> Image
 	{
-		if (material->GetTextureCount(type) > 0)
+		if (auto const* texture = m_Importer.GetScene()->GetEmbeddedTexture(texPath.C_Str()))
 		{
-			aiString location;
-			material->GetTexture(type, 0, &location);
-
-			auto const texPath{path.parent_path() / location.C_Str()};
-
-			if (auto p{DataManager::Instance().FindTexture(texPath)};
-				p != nullptr)
-			{
-				return p;
-			}
-
-			return std::make_shared<Texture>(texPath);
+			Logger::Instance().Warning("Found embedded texture. Embedded textures are currently not supported.");
+			return {};
 		}
-		return {};
+
+		return Image{m_Path.parent_path() / texPath.C_Str(), true};
 	}
 
 

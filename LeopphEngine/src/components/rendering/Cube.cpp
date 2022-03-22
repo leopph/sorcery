@@ -81,7 +81,7 @@ namespace leopph
 		auto material = s_Material.lock();
 		if (!material)
 		{
-			s_Material = material = std::make_shared<Material>(Color{255, 255, 255}, Color{0, 0, 0}, nullptr, nullptr, 0.f, true);
+			s_Material = material = std::make_shared<Material>(Color{255, 255, 255}, Color{0, 0, 0}, nullptr, nullptr, nullptr, 0.f, 1.f, true);
 		}
 
 		auto meshes = std::make_shared<std::vector<internal::Mesh>>();

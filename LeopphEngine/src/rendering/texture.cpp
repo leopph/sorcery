@@ -6,37 +6,22 @@
 #include <glad/gl.h>
 
 #include <cstddef>
-#include <stb_image.h>
-#include <utility>
+#include <string>
 
 
 namespace leopph
 {
-	Texture::Texture(std::filesystem::path path) :
+	Texture::Texture(Image const& img) :
 		m_Texture{},
-		m_Path{std::move(path)},
 		m_SemiTransparent{},
 		m_Transparent{},
-		m_Width{},
-		m_Height{}
+		m_Width{img.Width()},
+		m_Height{img.Height()}
 	{
-		internal::DataManager::Instance().RegisterTexture(this);
-
-		stbi_set_flip_vertically_on_load(true);
-		int channels;
-		auto const data{stbi_load(m_Path.string().c_str(), &m_Width, &m_Height, &channels, 0)};
-
-		if (data == nullptr)
-		{
-			auto const msg{"Failed to load texture at " + m_Path.string() + "."};
-			internal::Logger::Instance().Error(msg);
-			return;
-		}
-
 		GLenum colorFormat;
 		GLenum internalFormat;
 
-		switch (channels)
+		switch (img.Channels())
 		{
 			case 1:
 			{
@@ -54,12 +39,11 @@ namespace leopph
 
 			case 4:
 			{
-				std::span const dataSpan{data, static_cast<std::size_t>(m_Width * m_Height * 4)};
-				m_SemiTransparent = CheckSemiTransparency(dataSpan);
+				m_SemiTransparent = CheckSemiTransparency(img.Data());
 
 				if (m_SemiTransparent)
 				{
-					m_Transparent = CheckFullTransparency(dataSpan);
+					m_Transparent = CheckFullTransparency(img.Data());
 					colorFormat = GL_RGBA;
 					internalFormat = GL_RGBA8;
 				}
@@ -73,67 +57,30 @@ namespace leopph
 			}
 
 			default:
-			{
-				auto const errMsg{"Unhandled number of color channels in texture at " + m_Path.string() + ": " + std::to_string(channels) + "."};
-				internal::Logger::Instance().Error(errMsg);
-				stbi_image_free(data);
+				internal::Logger::Instance().Error("Invalid image channel count \"" + std::to_string(img.Channels()) + "\" while loading texture.");
 				return;
-			}
 		}
 
 		glCreateTextures(GL_TEXTURE_2D, 1, &m_Texture);
 		glTextureStorage2D(m_Texture, 1, internalFormat, m_Width, m_Height);
-		glTextureSubImage2D(m_Texture, 0, 0, 0, m_Width, m_Height, colorFormat, GL_UNSIGNED_BYTE, data);
+		glTextureSubImage2D(m_Texture, 0, 0, 0, m_Width, m_Height, colorFormat, GL_UNSIGNED_BYTE, img.Data().data());
 
 		glGenerateTextureMipmap(m_Texture);
 
 		glTextureParameteri(m_Texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 		glTextureParameteri(m_Texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-		stbi_image_free(data);
 	}
 
 
 	Texture::~Texture() noexcept
 	{
 		glDeleteTextures(1, &m_Texture);
-		internal::DataManager::Instance().UnregisterTexture(this);
-	}
-
-
-	auto Texture::operator<=>(Texture const& other) const -> std::strong_ordering
-	{
-		return m_Path <=> other.m_Path;
-	}
-
-
-	auto Texture::operator==(Texture const& other) const -> bool
-	{
-		return m_Path == other.m_Path;
-	}
-
-
-	auto Texture::IsSemiTransparent() const -> bool
-	{
-		return m_SemiTransparent;
-	}
-
-
-	auto Texture::IsTransparent() const -> bool
-	{
-		return m_Transparent;
 	}
 
 
 	auto Texture::TextureName() const -> GLuint
 	{
 		return m_Texture;
-	}
-
-
-	auto Texture::Path() const -> std::filesystem::path const&
-	{
-		return m_Path;
 	}
 
 
@@ -146,6 +93,18 @@ namespace leopph
 	auto Texture::Height() const noexcept -> int
 	{
 		return m_Height;
+	}
+
+
+	auto Texture::IsSemiTransparent() const -> bool
+	{
+		return m_SemiTransparent;
+	}
+
+
+	auto Texture::IsTransparent() const -> bool
+	{
+		return m_Transparent;
 	}
 
 
@@ -174,29 +133,5 @@ namespace leopph
 		}
 
 		return true;
-	}
-
-
-	auto operator<=>(std::filesystem::path const& path, Texture const& tex) -> std::strong_ordering
-	{
-		return path <=> tex.Path();
-	}
-
-
-	auto operator<=>(Texture const& tex, std::filesystem::path const& path) -> std::strong_ordering
-	{
-		return tex.Path() <=> path;
-	}
-
-
-	auto operator==(Texture const& tex, std::filesystem::path const& path) -> bool
-	{
-		return tex.Path() == path;
-	}
-
-
-	auto operator==(std::filesystem::path const& path, Texture const& tex) -> bool
-	{
-		return path == tex.Path();
 	}
 }

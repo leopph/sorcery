@@ -238,47 +238,11 @@ namespace leopph::internal
 	}
 
 
-	auto DataManager::RegisterTexture(Texture* const texture) -> void
-	{
-		m_Textures.push_back(texture);
-		SortTextures();
-	}
-
-
-	auto DataManager::UnregisterTexture(Texture* const texture) -> void
-	{
-		// Keeps the relative order, remains sorted.
-		std::erase(m_Textures, texture);
-	}
-
-
-	auto DataManager::FindTexture(std::filesystem::path const& path) -> std::shared_ptr<Texture>
-	{
-		if (auto const it = std::lower_bound(m_Textures.begin(), m_Textures.end(), path, [](Texture const* tex, std::filesystem::path const& val)
-		{
-			return *tex < val;
-		}); it != m_Textures.end() && **it == path)
-		{
-			return (*it)->shared_from_this();
-		}
-		return nullptr;
-	}
-
-
 	auto DataManager::SortEntities() -> void
 	{
 		std::ranges::sort(m_EntitiesAndComponents, EntityOrderFunc{}, [](auto const& elem) -> auto const&
 		{
 			return *elem.Entity;
-		});
-	}
-
-
-	auto DataManager::SortTextures() -> void
-	{
-		std::ranges::sort(m_Textures, TextureOrderFunc{}, [](auto const* p) -> auto const&
-		{
-			return *p;
 		});
 	}
 

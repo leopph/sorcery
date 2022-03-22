@@ -1,16 +1,16 @@
 #pragma once
 
-#include <filesystem>
-#include <memory>
+#include "Image.hpp"
+
 #include <span>
 
 
 namespace leopph
 {
-	class Texture : public std::enable_shared_from_this<Texture>
+	class Texture
 	{
 		public:
-			explicit Texture(std::filesystem::path path);
+			explicit Texture(Image const& img);
 
 			Texture(Texture const& other) = delete;
 			auto operator=(Texture const& other) -> Texture& = delete;
@@ -20,13 +20,15 @@ namespace leopph
 
 			~Texture() noexcept;
 
-			// Provides ordering based on path.
+			// The name of the underlying OpenGL texture.
 			[[nodiscard]]
-			auto operator<=>(Texture const& other) const -> std::strong_ordering;
+			auto TextureName() const -> unsigned;
 
-			// Equality based on path.
 			[[nodiscard]]
-			auto operator==(Texture const& other) const -> bool;
+			auto Width() const noexcept -> int;
+
+			[[nodiscard]]
+			auto Height() const noexcept -> int;
 
 			// A Texture is semi-transparent if it contains pixels
 			// with an alpha value less than 1.
@@ -38,20 +40,6 @@ namespace leopph
 			[[nodiscard]]
 			auto IsTransparent() const -> bool;
 
-			// The name of the underlying OpenGL texture.
-			[[nodiscard]]
-			auto TextureName() const -> unsigned;
-
-			// The source file path.
-			[[nodiscard]]
-			auto Path() const -> std::filesystem::path const&;
-
-			[[nodiscard]]
-			auto Width() const noexcept -> int;
-
-			[[nodiscard]]
-			auto Height() const noexcept -> int;
-
 		private:
 			[[nodiscard]] static
 			auto CheckSemiTransparency(std::span<unsigned char const> data) -> bool;
@@ -60,27 +48,9 @@ namespace leopph
 			auto CheckFullTransparency(std::span<unsigned char const> data) -> bool;
 
 			unsigned m_Texture;
-			std::filesystem::path m_Path;
 			bool m_SemiTransparent;
 			bool m_Transparent;
 			int m_Width;
 			int m_Height;
 	};
-
-
-	// Provides ordering with paths.
-	[[nodiscard]]
-	auto operator<=>(Texture const& tex, std::filesystem::path const& path) -> std::strong_ordering;
-
-	// Provides ordering with paths.
-	[[nodiscard]]
-	auto operator<=>(std::filesystem::path const& path, Texture const& tex) -> std::strong_ordering;
-
-	// Provides equality with paths.
-	[[nodiscard]]
-	auto operator==(Texture const& tex, std::filesystem::path const& path) -> bool;
-
-	// Provides equality with paths.
-	[[nodiscard]]
-	auto operator==(std::filesystem::path const& path, Texture const& tex) -> bool;
 }
