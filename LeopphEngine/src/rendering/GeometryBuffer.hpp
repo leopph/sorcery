@@ -2,12 +2,11 @@
 
 #include "../events/WindowEvent.hpp"
 #include "../events/handling/EventReceiver.hpp"
-#include "../math/Vector.hpp"
+#include "opengl/GlFramebuffer.hpp"
+#include "opengl/GlTexture.hpp"
 #include "shaders/ShaderProgram.hpp"
 
 #include <glad/gl.h>
-
-#include <array>
 
 
 namespace leopph::internal
@@ -17,43 +16,46 @@ namespace leopph::internal
 		public:
 			GeometryBuffer();
 
-			GeometryBuffer(const GeometryBuffer&) = delete;
+			GeometryBuffer(GeometryBuffer const&) = delete;
 			GeometryBuffer(GeometryBuffer&&) = delete;
 
-			auto operator=(const GeometryBuffer&) -> GeometryBuffer& = delete;
+			auto operator=(GeometryBuffer const&) -> GeometryBuffer& = delete;
 			auto operator=(GeometryBuffer&&) -> GeometryBuffer& = delete;
 
-			~GeometryBuffer() noexcept override;
+			~GeometryBuffer() noexcept override = default;
 
-			// Binds the gbuffer as MRT render target and sets its values to the defaults.
-			auto BindForWritingAndClear() const -> void;
+			[[nodiscard]]
+			auto Framebuffer() const noexcept -> GlFramebuffer const&;
+
+			[[nodiscard]]
+			auto NormalColorGlossTexture() const noexcept -> GlTexture<GlTextureType::T2D> const&;
+
+			[[nodiscard]]
+			auto DepthStencilTexture() const noexcept -> GlTexture<GlTextureType::T2D> const&;
+
+			// Clears all buffers.
+			auto Clear() const -> void;
+
+			// Binds the buffers for writing.
+			auto BindForWriting() const -> void;
 
 			// Bind all textures and returns the next available texture unit after binding.
-			[[nodiscard]] auto BindForReading(ShaderProgram& shader, GLuint texUnit) const -> GLuint;
+			[[nodiscard]]
+			auto BindForReading(ShaderProgram& shader, GLuint texUnit) const -> GLuint;
 
 			auto CopyStencilData(GLuint bufferName) const -> void;
 
 		private:
-			using ResType = Vector<GLsizei, 2>;
+			// Configures the buffers for the current resolution.
+			auto ConfigBuffers() noexcept -> void;
 
-			auto InitBuffers() noexcept -> void;
-			auto DeinitBuffers() const noexcept -> void;
+			// Reconfigures the buffers to the new resolution.
 			auto OnEventReceived(EventParamType event) -> void override;
 
-			std::array<GLuint, 2> m_Textures;
-			GLuint m_FrameBuffer;
-			ResType m_Res;
-			
-			static constexpr GLfloat CLEAR_COLOR[]{0, 0, 0, 1};
-			static constexpr GLfloat CLEAR_DEPTH{1};
-			static constexpr GLuint CLEAR_STENCIL{1};
-			
-			static constexpr unsigned NORM_COLOR_GLOSS_TEX{0};
-			static constexpr unsigned DEPTH_STENCIL_TEX{1};
-
-			static constexpr std::array SHADER_UNIFORM_NAMES
-			{
-				"u_NormColorGlossTex", "u_DepthTex"
-			};
+			GlFramebuffer m_Framebuffer;
+			GlTexture<GlTextureType::T2D> m_NormClrGlossTexture;
+			GlTexture<GlTextureType::T2D> m_DepthStencilTexture;
+			int m_Width;
+			int m_Height;
 	};
 }

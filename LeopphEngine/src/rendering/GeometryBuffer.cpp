@@ -6,88 +6,100 @@
 namespace leopph::internal
 {
 	GeometryBuffer::GeometryBuffer() :
-		m_Textures{},
-		m_FrameBuffer{},
-		m_Res{
+		m_Width{
 			[]
 			{
-				const auto* window{Window::Instance()};
-				const Vector2 displayRes{window->Width(), window->Height()};
-				const auto renderRes{displayRes * window->RenderMultiplier()};
-				return ResType{renderRes[0], renderRes[1]};
+				auto const* window{Window::Instance()};
+				return static_cast<int>(window->Width() * window->RenderMultiplier());
+			}()
+		},
+		m_Height{
+			[]
+			{
+				auto const* window{Window::Instance()};
+				return static_cast<int>(window->Height() * window->RenderMultiplier());
 			}()
 		}
 	{
-		glCreateFramebuffers(1, &m_FrameBuffer);
-		InitBuffers();
+		ConfigBuffers();
 	}
 
 
-	GeometryBuffer::~GeometryBuffer() noexcept
+	auto GeometryBuffer::Framebuffer() const noexcept -> GlFramebuffer const&
 	{
-		DeinitBuffers();
-		glDeleteFramebuffers(1, &m_FrameBuffer);
+		return m_Framebuffer;
 	}
 
 
-	auto GeometryBuffer::BindForWritingAndClear() const -> void
+	auto GeometryBuffer::NormalColorGlossTexture() const noexcept -> GlTexture<GlTextureType::T2D> const&
 	{
-		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_FrameBuffer);
-		glViewport(0, 0, m_Res[0], m_Res[1]);
-
-		glClearColor(CLEAR_COLOR[0], CLEAR_COLOR[1], CLEAR_COLOR[2], CLEAR_COLOR[3]);
-		glClearDepthf(CLEAR_DEPTH);
-		glClearStencil(CLEAR_STENCIL);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+		return m_NormClrGlossTexture;
 	}
 
 
-	auto GeometryBuffer::BindForReading(ShaderProgram& shader, const GLuint texUnit) const -> GLuint
+	auto GeometryBuffer::DepthStencilTexture() const noexcept -> GlTexture<GlTextureType::T2D> const&
 	{
-		for (auto i{0u}; i < m_Textures.size(); ++i)
-		{
-			glBindTextureUnit(texUnit + i, m_Textures[i]);
-			shader.SetUniform(SHADER_UNIFORM_NAMES[i], static_cast<int>(texUnit + i) /* cast to int because only glUniform1i[v] may be used to set sampler uniforms (wtf?) */);
-		}
-
-		return texUnit + static_cast<decltype(texUnit)>(m_Textures.size());
+		return m_DepthStencilTexture;
 	}
 
 
-	auto GeometryBuffer::CopyStencilData(const GLuint bufferName) const -> void
+	auto GeometryBuffer::Clear() const -> void
 	{
-		glBlitNamedFramebuffer(m_FrameBuffer, bufferName, 0, 0, static_cast<GLint>(m_Res[0]), static_cast<GLint>(m_Res[1]), 0, 0, static_cast<GLint>(m_Res[0]), static_cast<GLint>(m_Res[1]), GL_STENCIL_BUFFER_BIT, GL_NEAREST);
+		static GLfloat constexpr clearColor[]{0, 0, 0, 1};
+		static GLfloat constexpr clearDepth{1};
+		static auto constexpr clearStencil{1};
+
+		glClearNamedFramebufferfv(m_Framebuffer, GL_COLOR, 0, clearColor);
+		glClearNamedFramebufferfi(m_Framebuffer, GL_DEPTH_STENCIL, 0, clearDepth, clearStencil);
+	}
+
+
+	auto GeometryBuffer::BindForWriting() const -> void
+	{
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_Framebuffer);
+		glViewport(0, 0, m_Width, m_Height);
+	}
+
+
+	auto GeometryBuffer::BindForReading(ShaderProgram& shader, GLuint const texUnit) const -> GLuint
+	{
+		glBindTextureUnit(texUnit, m_NormClrGlossTexture);
+		shader.SetUniform("u_NormColorGlossTex", static_cast<int>(texUnit)); // cast to int because only glUniform1i[v] may be used to set sampler uniforms (wtf?)
+
+		glBindTextureUnit(texUnit + 1, m_DepthStencilTexture);
+		shader.SetUniform("u_DepthTex", static_cast<int>(texUnit + 1)); // cast to int because only glUniform1i[v] may be used to set sampler uniforms (wtf?)
+
+		return texUnit + 2;
+	}
+
+
+	auto GeometryBuffer::CopyStencilData(GLuint const bufferName) const -> void
+	{
+		glBlitNamedFramebuffer(m_Framebuffer, bufferName, 0, 0, m_Width, m_Height, 0, 0, m_Width, m_Height, GL_STENCIL_BUFFER_BIT, GL_NEAREST);
 	}
 
 
 	auto GeometryBuffer::OnEventReceived(EventParamType event) -> void
 	{
-		const auto width{static_cast<float>(event.Width) * event.RenderMultiplier};
-		const auto height{static_cast<float>(event.Height) * event.RenderMultiplier};
-		m_Res = ResType{width, height};
-		InitBuffers();
+		m_Width = event.Width * event.RenderMultiplier;
+		m_Height = event.Height * event.RenderMultiplier;
+		ConfigBuffers();
 	}
 
 
-	auto GeometryBuffer::InitBuffers() noexcept -> void
+	auto GeometryBuffer::ConfigBuffers() noexcept -> void
 	{
-		glCreateTextures(GL_TEXTURE_2D, static_cast<GLsizei>(m_Textures.size()), m_Textures.data());
+		m_NormClrGlossTexture = {};
+		glTextureStorage2D(m_NormClrGlossTexture, 1, GL_RGB32UI, m_Width, m_Height);
+		glTextureParameteri(m_NormClrGlossTexture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTextureParameteri(m_NormClrGlossTexture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-		glTextureStorage2D(m_Textures[NORM_COLOR_GLOSS_TEX], 1, GL_RGB32UI, m_Res[0], m_Res[1]);
-		glTextureParameteri(m_Textures[NORM_COLOR_GLOSS_TEX], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTextureParameteri(m_Textures[NORM_COLOR_GLOSS_TEX], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		m_DepthStencilTexture = {};
+		glTextureStorage2D(m_DepthStencilTexture, 1, GL_DEPTH24_STENCIL8, m_Width, m_Height);
 
-		glTextureStorage2D(m_Textures[DEPTH_STENCIL_TEX], 1, GL_DEPTH24_STENCIL8, m_Res[0], m_Res[1]);
-		
-		glNamedFramebufferTexture(m_FrameBuffer, GL_COLOR_ATTACHMENT0, m_Textures[NORM_COLOR_GLOSS_TEX], 0);
-		glNamedFramebufferTexture(m_FrameBuffer, GL_DEPTH_STENCIL_ATTACHMENT, m_Textures[DEPTH_STENCIL_TEX], 0);
-		
-		glNamedFramebufferDrawBuffer(m_FrameBuffer, GL_COLOR_ATTACHMENT0);
-	}
+		glNamedFramebufferTexture(m_Framebuffer, GL_COLOR_ATTACHMENT0, m_NormClrGlossTexture, 0);
+		glNamedFramebufferTexture(m_Framebuffer, GL_DEPTH_STENCIL_ATTACHMENT, m_DepthStencilTexture, 0);
 
-
-	auto GeometryBuffer::DeinitBuffers() const noexcept -> void
-	{
-		glDeleteTextures(static_cast<GLsizei>(m_Textures.size()), m_Textures.data());
+		glNamedFramebufferDrawBuffer(m_Framebuffer, GL_COLOR_ATTACHMENT0);
 	}
 }

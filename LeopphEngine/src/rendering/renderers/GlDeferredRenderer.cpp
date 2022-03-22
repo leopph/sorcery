@@ -57,7 +57,6 @@ namespace leopph::internal
 			}
 		}
 	{
-		glEnable(GL_STENCIL_TEST);
 		glDepthFunc(GL_LESS);
 		glFrontFace(GL_CCW);
 		glCullFace(GL_BACK);
@@ -97,14 +96,17 @@ namespace leopph::internal
 
 	auto GlDeferredRenderer::RenderGeometry(Matrix4 const& camViewMat, Matrix4 const& camProjMat, std::vector<RenderableData> const& renderables) -> void
 	{
-		glStencilFunc(GL_ALWAYS, STENCIL_REF, STENCIL_AND_MASK);
-		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-
 		glDisable(GL_BLEND);
+
 		glEnable(GL_DEPTH_TEST);
 		glDepthMask(GL_TRUE);
 
-		m_GBuffer.BindForWritingAndClear();
+		glEnable(GL_STENCIL_TEST);
+		glStencilFunc(GL_ALWAYS, STENCIL_REF, STENCIL_AND_MASK);
+		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+
+		m_GBuffer.Clear();
+		m_GBuffer.BindForWriting();
 
 		auto& shader{m_GeometryShader.GetPermutation()};
 		shader.SetUniform("u_ViewProjMat", camViewMat * camProjMat);
