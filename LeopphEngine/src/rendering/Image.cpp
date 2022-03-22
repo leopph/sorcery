@@ -28,6 +28,8 @@ namespace leopph
 		}
 
 		m_Bytes.assign(data, data + m_Width * m_Height * m_Channels);
+
+		stbi_image_free(data);
 	}
 
 
