@@ -3,6 +3,8 @@
 #include "../util/Logger.hpp"
 
 #include <stb_image.h>
+#include <stdexcept>
+#include <string>
 #include <utility>
 
 
@@ -17,10 +19,30 @@ namespace leopph
 
 		if (!data)
 		{
-			internal::Logger::Instance().Error("Failed to load image at " + pathStr + ".");
+			internal::Logger::Instance().Error("Failed to load image at " + pathStr + ". Reverting to default image.");
+			m_Path.clear();
+			m_Width = 0;
+			m_Height = 0;
+			m_Channels = 0;
+			return;
 		}
 
-		m_Bytes.assign(data, data + m_Width * m_Height * m_Channels * 8);
+		m_Bytes.assign(data, data + m_Width * m_Height * m_Channels);
+	}
+
+
+	Image::Image(int const width, int const height, int const channels, std::span<unsigned char> bytes)
+	{
+		if (bytes.size() != width * height * channels)
+		{
+			internal::Logger::Instance().Error("Inconsistent arguments detected. The number of bytes passed is not equal to the given image parameters. Expected byte count was " + std::to_string(width * height * channels) + " but " + std::to_string(bytes.size()) + " was given. Reverting to default image.");
+			return;
+		}
+
+		m_Width = width;
+		m_Height = height;
+		m_Channels = channels;
+		m_Bytes.assign(bytes.begin(), bytes.end());
 	}
 
 
@@ -77,14 +99,61 @@ namespace leopph
 	}
 
 
+	auto Image::ExtractChannel(int const channel) -> Image
+	{
+		if (channel < 0)
+		{
+			throw std::invalid_argument{"Invalid channel index \"" + std::to_string(channel) + "\". Channel index may not be negative."};
+		}
+
+		if (channel >= m_Channels)
+		{
+			throw std::invalid_argument{"Invalid channel index \"" + std::to_string(channel) + "\". Number of channels in image: " + std::to_string(m_Channels) + "."};
+		}
+
+		Image img;
+		img.m_Width = m_Width;
+		img.m_Height = m_Height;
+		img.m_Channels = 1;
+		img.m_Bytes.reserve(m_Width * m_Height);
+
+		decltype(m_Bytes) newBytes;
+
+		//for (auto i = 0; i < m_Bytes.size(); i += m_Channels - 1)
+		for (auto i = 0; i < m_Bytes.size(); i += m_Channels)
+		{
+			img.m_Bytes.push_back(m_Bytes[i + channel]);
+
+			 for (auto j = 0; j < m_Channels; j++)
+			{
+				if (j != channel)
+				{
+					newBytes.push_back(m_Bytes[i + j]);
+				}
+			}
+		}
+
+		m_Bytes = newBytes;
+		m_Channels -= 1;
+
+		return img;
+	}
+
+
 	auto Image::operator[](std::size_t const rowIndex) const -> unsigned char const*
 	{
-		return m_Bytes.data() + rowIndex * m_Width * m_Channels * 8;
+		return m_Bytes.data() + rowIndex * m_Width * m_Channels;
 	}
-}
 
 
-auto std::hash<leopph::Image>::operator()(leopph::Image const& img) const noexcept -> std::size_t
-{
-	return hash_value(img.Path());
+	auto Image::Empty() const noexcept -> bool
+	{
+		return m_Path.empty() || m_Width == 0 || m_Height == 0 || m_Channels == 0 && m_Bytes.empty();
+	}
+
+
+	auto Image::Data() const noexcept -> std::span<unsigned char const>
+	{
+		return m_Bytes;
+	}
 }

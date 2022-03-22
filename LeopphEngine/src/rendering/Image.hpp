@@ -2,7 +2,7 @@
 
 #include <cstddef>
 #include <filesystem>
-#include <functional>
+#include <span>
 #include <vector>
 
 
@@ -13,6 +13,12 @@ namespace leopph
 		public:
 			// Parse image from file
 			explicit Image(std::filesystem::path src, bool flipVertically = false);
+
+			// Create image by raw data.
+			Image(int width, int height, int channels, std::span<unsigned char> bytes);
+
+			// Construct and empty image.
+			Image() = default;
 
 			Image(Image const& other) = default;
 			auto operator=(Image const& other) -> Image& = default;
@@ -34,9 +40,22 @@ namespace leopph
 			[[nodiscard]]
 			auto Channels() const noexcept -> int;
 
+			// Moves the specified channel out of the Image into a new one.
+			// Channel is a zero based index.
+			[[nodiscard]]
+			auto ExtractChannel(int channel) -> Image;
+
 			// Returns a row.
 			[[nodiscard]]
 			auto operator[](std::size_t rowIndex) const -> unsigned char const*;
+
+			// Returns whether any data is held.
+			[[nodiscard]]
+			auto Empty() const noexcept -> bool;
+
+			// Returns the stored bytes.
+			[[nodiscard]]
+			auto Data() const noexcept -> std::span<unsigned char const>;
 
 		private:
 			std::filesystem::path m_Path;
@@ -46,10 +65,3 @@ namespace leopph
 			std::vector<unsigned char> m_Bytes;
 	};
 }
-
-
-template<>
-struct std::hash<leopph::Image>
-{
-	auto operator()(leopph::Image const& img) const noexcept -> std::size_t;
-};
