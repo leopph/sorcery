@@ -7,11 +7,12 @@ layout (location = 0) in vec3 in_FragPos;
 layout (location = 1) in vec3 in_Normal;
 layout (location = 2) in vec2 in_TexCoords;
 
-layout (location = 0) out vec4 out_FragColor;
 
 #if TRANSPARENT
-layout (location = 1) out vec4 out_Accum;
-layout (location = 2) out float out_Reveal;
+layout (location = 0) out vec4 out_Accum;
+layout (location = 1) out float out_Reveal;
+#else
+layout (location = 0) out vec4 out_FragColor;
 #endif
 
 struct Material
@@ -238,6 +239,7 @@ void main()
 	frag.diff = u_Material.diffuseColor;
 	frag.spec = u_Material.specularColor;
 	frag.gloss = u_Material.gloss;
+	float alpha = u_Material.opacity;
 
 	if (u_Material.hasDiffuseMap)
 	{
@@ -248,11 +250,19 @@ void main()
 	{
 		frag.spec *= texture(u_Material.specularMap, in_TexCoords).rgb;
 	}
-
-	float alpha = u_Material.opacity;
+	
 	if (u_Material.hasOpacityMap)
 	{
 		alpha *= texture(u_Material.opacityMap, in_TexCoords).r;
+	}
+
+	#if TRANSPARENT
+	if (alpha >= 1)
+	#else
+	if (alpha < 1)
+	#endif
+	{
+		discard;
 	}
 
 	// Add ambient effect
@@ -300,16 +310,9 @@ void main()
 	#endif
 
 	#if TRANSPARENT
-	if (alpha >= 1)
-	{
-		out_FragColor = vec4(colorSum, 1);
-		return;
-	}
-
 	float weight = max(min(1.0, max(max(colorSum.r, colorSum.g), colorSum.b) * alpha), alpha) * clamp(0.03 / (1e-5 + pow(frag.pos.z / 200, 4.0)), 1e-2, 3e3);
 	out_Accum = vec4(colorSum.rgb * alpha, alpha) * weight;
 	out_Reveal = alpha;
-
 	#else
 	out_FragColor = vec4(colorSum, 1);
 	#endif

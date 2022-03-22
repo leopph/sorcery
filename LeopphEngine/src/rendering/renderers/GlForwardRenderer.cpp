@@ -43,7 +43,7 @@ namespace leopph::internal
 				{ShaderFamily::TranspCompositeFragSrc, ShaderType::Fragment}
 			}
 		},
-		m_TransparencyBuffer{&m_RenderBuffer.ColorBuffer(), &m_RenderBuffer.DepthStencilBuffer()}
+		m_TransparencyBuffer{&m_RenderBuffer.DepthStencilBuffer()}
 	{
 		glDepthFunc(GL_LEQUAL);
 		
@@ -123,6 +123,7 @@ namespace leopph::internal
 		{
 			renderable->SetInstanceData(instances);
 			renderable->DrawWithMaterial(shader, 0, false);
+			renderable->DrawWithMaterial(shader, 0, true);
 		}
 	}
 
