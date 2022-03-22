@@ -205,6 +205,7 @@
     <ClInclude Include="src\rendering\geometry\Mesh.hpp" />
     <ClInclude Include="src\rendering\geometry\GlMeshGroup.hpp" />
     <ClInclude Include="src\rendering\GeometryBuffer.hpp" />
+    <ClInclude Include="src\rendering\Image.hpp" />
     <ClInclude Include="src\rendering\opengl\GlBuffer.hpp" />
     <ClInclude Include="src\rendering\opengl\GlFramebuffer.hpp" />
     <ClInclude Include="src\rendering\opengl\GlTexture.hpp" />
@@ -233,20 +234,14 @@
     <ClInclude Include="src\threading\Worker.hpp" />
     <ClInclude Include="src\timing\TimeImpl.hpp" />
     <ClInclude Include="src\util\api_adapters\GLFWAdapter.hpp" />
-    <ClInclude Include="src\util\concepts\Idable.hpp" />
     <ClInclude Include="src\util\concepts\Pathed.hpp" />
-    <ClInclude Include="src\util\concepts\Pointer.hpp" />
     <ClInclude Include="src\util\containers\ArrayQueue.hpp" />
     <ClInclude Include="src\util\containers\Bimap.hpp" />
     <ClInclude Include="src\threading\JobSystem.hpp" />
-    <ClInclude Include="src\util\equal\IdEqual.hpp" />
-    <ClInclude Include="src\util\equal\PointerEqual.hpp" />
     <ClInclude Include="src\util\equal\PathedEqual.hpp" />
     <ClInclude Include="src\util\equal\ShaderTypeEqual.hpp" />
     <ClInclude Include="src\util\equal\StringEqual.hpp" />
     <ClInclude Include="src\util\Exit.hpp" />
-    <ClInclude Include="src\util\hash\IdHash.hpp" />
-    <ClInclude Include="src\util\hash\PointerHash.hpp" />
     <ClInclude Include="src\util\hash\PathedHash.hpp" />
     <ClInclude Include="src\util\hash\ShaderTypeHash.hpp" />
     <ClInclude Include="src\util\hash\StringHash.hpp" />
@@ -270,7 +265,6 @@
     <ClInclude Include="src\timing\Time.hpp" />
     <ClInclude Include="src\math\Vector.hpp" />
     <ClInclude Include="src\rendering\geometry\Vertex.hpp" />
-    <ClInclude Include="src\util\hash\PathHash.hpp" />
     <ClInclude Include="src\util\Sphere.hpp" />
     <ClInclude Include="src\windowing\GlWindow.hpp" />
     <ClInclude Include="src\windowing\Window.hpp" />
@@ -306,6 +300,7 @@
     <ClCompile Include="src\rendering\geometry\GlMeshGroup.cpp" />
     <ClCompile Include="src\rendering\GeometryBuffer.cpp" />
     <ClCompile Include="src\rendering\geometry\Mesh.cpp" />
+    <ClCompile Include="src\rendering\Image.cpp" />
     <ClCompile Include="src\rendering\opengl\GlBuffer.cpp" />
     <ClCompile Include="src\rendering\opengl\GlFramebuffer.cpp" />
     <ClCompile Include="src\rendering\opengl\GlRenderbuffer.cpp" />
@@ -335,7 +330,6 @@
     <ClCompile Include="src\util\equal\ShaderTypeEqual.cpp" />
     <ClCompile Include="src\util\equal\StringEqual.cpp" />
     <ClCompile Include="src\util\Exit.cpp" />
-    <ClCompile Include="src\util\hash\PathHash.cpp" />
     <ClCompile Include="src\util\hash\ShaderTypeHash.cpp" />
     <ClCompile Include="src\util\hash\StringHash.cpp" />
     <ClCompile Include="src\util\less\PoeloLess.cpp" />

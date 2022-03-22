@@ -25,7 +25,6 @@
     <ClCompile Include="src\misc\Color.cpp" />
     <ClCompile Include="src\components\lighting\AmbientLight.cpp" />
     <ClCompile Include="src\components\Transform.cpp" />
-    <ClCompile Include="src\util\hash\PathHash.cpp" />
     <ClCompile Include="src\components\lighting\SpotLight.cpp" />
     <ClCompile Include="src\rendering\renderers\GlDeferredRenderer.cpp" />
     <ClCompile Include="src\rendering\GeometryBuffer.cpp" />
@@ -79,6 +78,7 @@
     <ClCompile Include="src\rendering\opengl\GlRenderbuffer.cpp" />
     <ClCompile Include="src\rendering\ScreenQuad.cpp" />
     <ClCompile Include="src\rendering\TransparencyBuffer.cpp" />
+    <ClCompile Include="src\rendering\Image.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\Behavior.hpp" />
@@ -115,7 +115,6 @@
     <ClInclude Include="src\util\Logger.hpp" />
     <ClInclude Include="src\rendering\geometry\Material.hpp" />
     <ClInclude Include="src\misc\Color.hpp" />
-    <ClInclude Include="src\util\hash\PathHash.hpp" />
     <ClInclude Include="src\components\lighting\AmbientLight.hpp" />
     <ClInclude Include="src\components\Transform.hpp" />
     <ClInclude Include="src\components\lighting\SpotLight.hpp" />
@@ -157,15 +156,9 @@
     <ClInclude Include="src\rendering\geometry\Mesh.hpp" />
     <ClInclude Include="src\rendering\geometry\ModelParser.hpp" />
     <ClInclude Include="src\components\rendering\RenderComponent.hpp" />
-    <ClInclude Include="src\util\equal\PointerEqual.hpp" />
-    <ClInclude Include="src\util\hash\PointerHash.hpp" />
     <ClInclude Include="src\rendering\UniformBuffer.hpp" />
     <ClInclude Include="src\util\hash\StringHash.hpp" />
     <ClInclude Include="src\util\equal\StringEqual.hpp" />
-    <ClInclude Include="src\util\equal\IdEqual.hpp" />
-    <ClInclude Include="src\util\concepts\Idable.hpp" />
-    <ClInclude Include="src\util\concepts\Pointer.hpp" />
-    <ClInclude Include="src\util\hash\IdHash.hpp" />
     <ClInclude Include="src\util\less\StringLess.hpp" />
     <ClInclude Include="src\scene\Scene.hpp" />
     <ClInclude Include="src\scene\SceneManager.hpp" />
@@ -190,6 +183,7 @@
     <ClInclude Include="src\rendering\ScreenQuad.hpp" />
     <ClInclude Include="src\rendering\TransparencyBuffer.hpp" />
     <ClInclude Include="src\rendering\opengl\GlTexture.hpp" />
+    <ClInclude Include="src\rendering\Image.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\cpp.hint" />
