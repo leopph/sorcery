@@ -12,6 +12,6 @@ namespace leopph::internal
 	struct MeshGroup
 	{
 		std::string Id; // Shall be unique.
-		std::vector<Mesh> Meshes; 	// Shall not be nullptr.
+		std::vector<Mesh> Meshes;
 	};
 }
