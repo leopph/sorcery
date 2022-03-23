@@ -18,7 +18,7 @@ namespace leopph
 
 	auto Cube::GetMeshGroup() -> std::shared_ptr<internal::MeshGroup const>
 	{
-		auto& dataManager =  internal::DataManager::Instance();
+		auto& dataManager = internal::DataManager::Instance();
 
 		if (auto p = dataManager.FindMeshGroup(s_MeshId))
 		{
@@ -84,9 +84,7 @@ namespace leopph
 			s_Material = material = std::make_shared<Material>(Color{255, 255, 255}, Color{0, 0, 0}, nullptr, nullptr, nullptr, 0.f, 1.f, true);
 		}
 
-		auto meshes = std::make_shared<std::vector<internal::Mesh>>();
-		meshes->emplace_back(std::move(vertices), std::move(indices), std::move(material));
-		auto meshGroup = std::make_shared<internal::MeshGroup>(s_MeshId, std::move(meshes));
+		auto meshGroup = std::make_shared<internal::MeshGroup>(s_MeshId, std::vector{internal::Mesh{std::move(vertices), std::move(indices), std::move(material)}});
 		dataManager.RegisterMeshGroup(meshGroup);
 		return meshGroup;
 	}

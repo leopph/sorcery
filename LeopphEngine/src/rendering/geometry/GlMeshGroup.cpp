@@ -29,7 +29,7 @@ namespace leopph::internal
 		glCreateBuffers(1, &m_InstanceBuffer);
 		glNamedBufferData(m_InstanceBuffer, 2 * sizeof(Matrix4), nullptr, GL_DYNAMIC_DRAW);
 
-		for (auto const& mesh : *m_MeshGroup->Meshes)
+		for (auto const& mesh : m_MeshGroup->Meshes)
 		{
 			(FullyTransparent(mesh.Material()) ? m_FullyTransparentMeshes : m_OpaqueMeshes).emplace_back(std::make_unique<GlMesh>(&mesh, m_InstanceBuffer));
 		}
