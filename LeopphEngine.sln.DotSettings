@@ -133,7 +133,7 @@
 	<s:Boolean x:Key="/Default/Environment/SettingsMigration/IsMigratorApplied/=JetBrains_002EReSharper_002EFeature_002EServices_002ECpp_002ECodeStyle_002EIncludesOrder_002ECppIncludeDirectiveSettingsMigration/@EntryIndexedValue">True</s:Boolean>
 	<s:Boolean x:Key="/Default/Environment/SettingsMigration/IsMigratorApplied/=JetBrains_002EReSharper_002EFeature_002EServices_002ECpp_002ECodeStyle_002ESettingsUpgrade_002EFunctionReturnStyleSettingsUpgrader/@EntryIndexedValue">True</s:Boolean>
 	<s:Boolean x:Key="/Default/Environment/TextControl/HighlightCurrentLine/@EntryValue">True</s:Boolean>
-	<s:Boolean x:Key="/Default/Environment/UpdatesManger/IsParticipateInEap/@EntryValue">True</s:Boolean>
+	<s:Boolean x:Key="/Default/Environment/UpdatesManger/IsParticipateInEap/@EntryValue">False</s:Boolean>
 	<s:String x:Key="/Default/Environment/UpdatesManger/LastUpdateCheck/@EntryValue">09/13/2021 11:04:17</s:String>
 	<s:String x:Key="/Default/Housekeeping/FeedbackReport/SelectedUserIdentificator/@EntryValue">anonymous</s:String>
 	<s:Boolean x:Key="/Default/Housekeeping/GlobalSettingsUpgraded/IsUpgraded/@EntryValue">True</s:Boolean>
