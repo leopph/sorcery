@@ -76,4 +76,28 @@ namespace leopph::math
 	{
 		return std::abs(value);
 	}
+
+
+	auto IsPowerOfTwo(unsigned const value) -> bool
+	{
+		return value != 0 && (value & (value -1)) == 0;
+	}
+
+
+	auto NextPowerOfTwo(unsigned const value) -> unsigned
+	{
+		if (IsPowerOfTwo(value))
+		{
+			return value;
+		}
+
+		unsigned ret{1};
+
+		while (ret < value)
+		{
+			ret <<= 1;
+		}
+
+		return ret;
+	}
 }

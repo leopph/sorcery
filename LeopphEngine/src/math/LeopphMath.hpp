@@ -32,5 +32,9 @@ namespace leopph
 		[[nodiscard]] LEOPPHAPI auto Clamp(float value, float min, float max) -> float;
 
 		[[nodiscard]] LEOPPHAPI auto Abs(float value) -> float;
+
+		[[nodiscard]] LEOPPHAPI auto IsPowerOfTwo(unsigned value) -> bool;
+
+		[[nodiscard]] LEOPPHAPI auto NextPowerOfTwo(unsigned value) -> unsigned;
 	};
 }
