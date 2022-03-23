@@ -19,7 +19,6 @@
     <Keyword>Win32Proj</Keyword>
     <ProjectGuid>{1422d73a-fe9c-4fc9-bc03-dc863c0d2b28}</ProjectGuid>
     <RootNamespace>ShaderParser</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.22000.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">

@@ -51,18 +51,16 @@ These are the planned features and their current states:
 I'm trying to place as much info into header/module files as I can. For now, developers can use these to get more info on specific behaviors. I will eventually create standalone documentation about all the different APIs LeopphEngine provides.
 
 ## Support and Usage
-### Runtime Requirements
-- At least Windows 10 19041
-- MSVC 14.30 compatible linker
 ### Build requirements
-- At least Windows 10 19041
+- Windows
+- MSVC
+- MSBuild
 - CMake
-- Visual Studio 2022 with ATL and Windows SDK 22000 configured
 ### Building
 After pulling the repo, run the **setup_env.bat** file from the root folder.  
 It will
 - Pull all submodules and choose the appropriate commits/branches
-- Configure all dependency projects in *LeopphEngine/vendor* using CMake
+- Configure all dependencies in *LeopphEngine/vendor* using CMake
 - Build all of the necessary configurations for all dependencies using MSBuild
 
 After the above just build the solution file in the root directory.  
