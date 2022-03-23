@@ -13,35 +13,41 @@ These are the planned features and their current states:
 🟣 Work In Progress: only some or non of the planned functionality is available for use yet  
 ❌ Planned: functionalities are in the planning phase, not usable feature
 - 🟣 Entity-Component Model and Scene Hierarchy
-  - ✅ Fundamental Entity-Component structure
-  - ✅ Basic engine-provided components
-  - ✅ API to make functionality extension possible
-  - ✅ Parent-child relation between Entities
-  - ❌ Abstraction for easy and fast scene changes
-- 🟣 OpenGL 3D Renderer
+  - ✅ Entity-Component structure
+  - ✅ Built-in components
+    - ✅ Full 3D Transform using position, orientation, and scale
+      - ✅ Parent-child relationships
+    - ✅ Camera system
+    - ✅ Lighting system
+    - ✅ RenderComponent system
+  - ✅ Functionality customization API
+  - ❌ Scene management API
+- 🟣 3D OpenGL Renderer
+  - 🟣 Forward rendering
+  - ✅ Deferred rendering
   - ✅ Blinn-Phong lighting model
-    - ✅ Ambient, directional, point-, and spotlights
-    - ✅ Diffuse and specular vertex colors
-    - ✅ Diffuse and specular maps
-  - 🟣 Forward rendering pipeline
-  - ✅ Deferred rendering pipeline
-  - ❌ Transparent object rendering
+    - ✅ Diffuse and specular material colors
+    - ✅ Diffuse and specular material maps
+    - ✅ Specular gloss
+  - ✅ Ambient, directional, point-, and spotlights
+  - ✅ Cascaded shadow mapping for directional lights
   - ✅ Shadow mapping for spot- and pointlights
-  - ✅ CSM for directional lights
-  - ✅ Instanced rendering capabilities
+  - ✅ Transparency rendering
+  - ✅ Instanced rendering
+  - ✅ Opacity mapping
   - ❌ Normal mapping
   - ❌ Parallax mapping
-  - ❌ SSAO
-  - ❌ SSR
+  - ❌ Screen Space Ambient Occlusion
+  - ❌ Screen Space Reflections
   - ❌ Gamma correction
   - ❌ Bloom
   - ❌ Skeletal animation system
 - 🟣 Resource Management System
-  - ✅ Resource caching for reuse and lower number of IO ops
-  - 🟣 Internal management of lifetimes and pointers of objects acting as resources
+  - 🟣 Caching and reuse for lower number of IO ops
+  - 🟣 Internal lifetime management for resources
 - ✅ Event System
 - ✅ Keyboard and Mouse Input Handling
-- ✅ Math library with special focus on linear algebra
+- ✅ Math library prioritizing linear algebra
 - ❌ Nvidia PhysX integration for physics simulations
 - ❌ Job system for efficient scaling across all CPU cores
 - ❌ UI System
