@@ -1,6 +1,19 @@
-set msbuild=C:\Program Files\Microsoft Visual Studio\2022\Community\Msbuild\Current\Bin\MSBuild.exe
+@echo off
+
+set vswhere=%programfiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe
+set msbuild=MSBuild
+
+if not exist "%vswhere%" (
+    echo Can't find vswhere at "%vswhere%".
+    exit
+)
+
+for /f "delims=" %%p in ('"%vswhere%" -property installationPath') do (
+    call "%%p"\Common7\Tools\VsMSBuildCmd.bat
+)
 
 git submodule update --init --remote LeopphEngine/vendor/glfw
+
 cd LeopphEngine\vendor\physx
 :: call :PhysX
 cd ../assimp

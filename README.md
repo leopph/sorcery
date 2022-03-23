@@ -66,7 +66,7 @@ It will
 - Build all of the necessary configurations for all dependencies using MSBuild
 
 After the above just build the solution file in the root directory.  
-*Note: currently automatic building only works if MSVC/VS/MSBuild are installed in their default directories. If you've installed them elsewhere, you can change the location path in the setup script, or build the dependencies manually.*  
+*Note: currently automatic building relies on the Visual Studio Installer being installed under its default directory. This can be changed using the variable declared at the top of the script.*
 ### Consumption
 To use LeopphEngine in your application:
 - Include **Leopph.hpp** from **LeopphEngine/include**
