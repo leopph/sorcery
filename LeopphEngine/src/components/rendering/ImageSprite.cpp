@@ -9,12 +9,12 @@
 
 namespace leopph
 {
-	ImageSprite::ImageSprite(std::filesystem::path const& src, unsigned const ppi) :
+	ImageSprite::ImageSprite(std::filesystem::path const& src, int const ppi) :
 		RenderComponent{GetMeshGroup(src, ppi)}
 	{}
 
 
-	auto ImageSprite::GetMeshGroup(std::filesystem::path const& src, unsigned const ppi) -> std::shared_ptr<internal::MeshGroup const>
+	auto ImageSprite::GetMeshGroup(std::filesystem::path const& src, int const ppi) -> std::shared_ptr<internal::MeshGroup const>
 	{
 		auto& dataManager = internal::DataManager::Instance();
 		auto const meshId{GetMeshId(src, ppi)};
@@ -156,7 +156,7 @@ namespace leopph
 	}
 
 
-	auto ImageSprite::GetMeshId(std::filesystem::path const& src, unsigned const ppi) -> std::string
+	auto ImageSprite::GetMeshId(std::filesystem::path const& src, int const ppi) -> std::string
 	{
 		return src.generic_string() + "+ppi=" + std::to_string(ppi);
 	}
