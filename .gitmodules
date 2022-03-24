@@ -6,9 +6,10 @@
 [submodule "physx"]
 	path = LeopphEngine/vendor/physx
 	url = https://github.com/leopph/PhysX.git
-	ignore = dirty
 	branch = VC17
+	ignore = dirty
 [submodule "gl3w"]
 	path = LeopphEngine/vendor/gl3w
 	url = https://github.com/leopph/gl3w.git
 	branch = dev
+	ignore = dirty
