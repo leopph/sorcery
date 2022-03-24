@@ -1,6 +1,6 @@
 #include "Quaternion.hpp"
 
-#include "LeopphMath.hpp"
+#include "Math.hpp"
 
 #include <cmath>
 

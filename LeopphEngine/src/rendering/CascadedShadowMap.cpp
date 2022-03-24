@@ -1,8 +1,7 @@
 #include "CascadedShadowMap.hpp"
 
-#include "../components/Camera.hpp"
 #include "../config/Settings.hpp"
-#include "../math/LeopphMath.hpp"
+#include "../math/Math.hpp"
 #include "../windowing/WindowImpl.hpp"
 
 #include <algorithm>
@@ -28,19 +27,12 @@ namespace leopph::internal
 	}
 
 
-	auto CascadedShadowMap::BindForWriting(std::size_t cascadeIndex) const -> void
+	auto CascadedShadowMap::BindForWriting(std::size_t const cascadeIndex) const -> void
 	{
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_Framebuffer);
 		auto const& [res, shadowMap] = m_Cascades.at(cascadeIndex);
 		glNamedFramebufferTexture(m_Framebuffer, GL_DEPTH_ATTACHMENT, shadowMap, 0);
 		glViewport(0, 0, res, res);
-	}
-
-
-	auto CascadedShadowMap::BindForWritingAndClear(std::size_t const cascadeIndex) const -> void
-	{
-		BindForWriting(cascadeIndex);
-		Clear();
 	}
 
 
@@ -61,64 +53,64 @@ namespace leopph::internal
 	}
 
 
-	auto CascadedShadowMap::CascadeMatrix(CascadeBounds const cascadeBounds, Matrix4 const& cameraInverseMatrix, Matrix4 const& lightViewMatrix, float const bBoxNearOffset) const -> Matrix4
+	auto CascadedShadowMap::CascadeMatrix(Frustum const& frustum, std::span<CascadeBounds const> cascadeBounds, Matrix4 const& worldTolightMat, Matrix4 const& camToLightMat, float const bBoxNearOffset) -> std::span<Matrix4>
 	{
-		auto const& camera{*Camera::Current()};
+		// Distance from the frustums near face to its far face.
+		auto const frustumDepth = frustum.FarBottomLeft[2] - frustum.NearBottomLeft[2];
 
-		// Calculate the cascade's vertices in camera view space.
+		static std::vector<Matrix4> matrices;
+		matrices.clear();
 
-		auto const tanHalfHorizFov{math::Tan(math::ToRadians(camera.Fov(Camera::FovDirection::Horizontal)) / 2.0f)};
-		auto const tanHalfVertFov{math::Tan(math::ToRadians(camera.Fov(Camera::FovDirection::Vertical)) / 2.0f)};
-
-		auto const xn{cascadeBounds.Near * tanHalfHorizFov};
-		auto const xf{cascadeBounds.Far * tanHalfHorizFov};
-		auto const yn{cascadeBounds.Near * tanHalfVertFov};
-		auto const yf{cascadeBounds.Far * tanHalfVertFov};
-
-		// The cascade vertices in camera view space.
-		std::array const cascadeVertsCam
+		for (auto const& [near, far] : cascadeBounds)
 		{
-			Vector4{-xn, -yn, cascadeBounds.Near, 1.f},
-			Vector4{xn, -yn, cascadeBounds.Near, 1.f},
-			Vector4{xn, yn, cascadeBounds.Near, 1.f},
-			Vector4{-xn, yn, cascadeBounds.Near, 1.f},
-			Vector4{-xf, -yf, cascadeBounds.Far, 1.f},
-			Vector4{xf, -yf, cascadeBounds.Far, 1.f},
-			Vector4{xf, yf, cascadeBounds.Far, 1.f},
-			Vector4{-xf, yf, cascadeBounds.Far, 1.f},
-		};
+			// The normalized distance of the cascades faces from the near frustum face.
 
-		// The light view space mininum point of the bounding box of the cascade
-		Vector3 bBoxMinLight{std::numeric_limits<float>::max()};
-		// The light view space maximum point of the bounding box of the cascade
-		Vector3 bBoxMaxLight{std::numeric_limits<float>::min()};
+			auto const cascadeNearDist = (near - frustum.NearBottomLeft[2]) / frustumDepth;
+			auto const cascadeFarDist = (far - frustum.NearBottomLeft[2]) / frustumDepth;
 
-		// Transform from camera view space to light view space
-		auto const camToLightMat{cameraInverseMatrix * lightViewMatrix};
+			// The cascade vertices in camera view space.
+			std::array const cascadeVertsCam
+			{
+				Vector4{math::Lerp(frustum.NearTopLeft, frustum.FarTopLeft, cascadeNearDist), 1.f},
+				Vector4{math::Lerp(frustum.NearBottomLeft, frustum.FarBottomLeft, cascadeNearDist), 1.f},
+				Vector4{math::Lerp(frustum.NearBottomRight, frustum.FarBottomRight, cascadeNearDist), 1.f},
+				Vector4{math::Lerp(frustum.NearTopRight, frustum.FarTopRight, cascadeNearDist), 1.f},
+				Vector4{math::Lerp(frustum.NearTopLeft, frustum.FarTopLeft, cascadeFarDist), 1.f},
+				Vector4{math::Lerp(frustum.NearBottomLeft, frustum.FarBottomLeft, cascadeFarDist), 1.f},
+				Vector4{math::Lerp(frustum.NearBottomRight, frustum.FarBottomRight, cascadeFarDist), 1.f},
+				Vector4{math::Lerp(frustum.NearTopRight, frustum.FarTopRight, cascadeFarDist), 1.f},
+			};
 
-		// Calculate the bounding box min and max points by transforming the vertices to light space.
-		std::ranges::for_each(cascadeVertsCam, [&](auto const& vertex)
-		{
-			auto const vertLight{vertex * camToLightMat};
-			bBoxMinLight = Vector3{std::min(bBoxMinLight[0], vertLight[0]), std::min(bBoxMinLight[1], vertLight[1]), std::min(bBoxMinLight[2], vertLight[2])};
-			bBoxMaxLight = Vector3{std::max(bBoxMaxLight[0], vertLight[0]), std::max(bBoxMaxLight[1], vertLight[1]), std::max(bBoxMaxLight[2], vertLight[2])};
-		});
+			// The light view space mininum point of the bounding box of the cascade
+			Vector3 bBoxMinLight{std::numeric_limits<float>::max()};
 
-		// The projection matrix that uses the calculated min/max values of the bounding box. Essentially THE bounding box + the near clip offset of the DirectionalLight.
-		auto const lightProjMat{Matrix4::Ortographic(bBoxMinLight[0], bBoxMaxLight[0], bBoxMaxLight[1], bBoxMinLight[1], bBoxMinLight[2] - bBoxNearOffset, bBoxMaxLight[2])};
+			// The light view space maximum point of the bounding box of the cascade
+			Vector3 bBoxMaxLight{std::numeric_limits<float>::min()};
 
-		return lightViewMatrix * lightProjMat;
+			// Calculate the bounding box min and max points by transforming the vertices to light space.
+			std::ranges::for_each(cascadeVertsCam, [&](auto const& vertex)
+			{
+				auto const vertLight = vertex * camToLightMat;
+				bBoxMinLight = Vector3{std::min(bBoxMinLight[0], vertLight[0]), std::min(bBoxMinLight[1], vertLight[1]), std::min(bBoxMinLight[2], vertLight[2])};
+				bBoxMaxLight = Vector3{std::max(bBoxMaxLight[0], vertLight[0]), std::max(bBoxMaxLight[1], vertLight[1]), std::max(bBoxMaxLight[2], vertLight[2])};
+			});
+
+			// The projection matrix that uses the calculated min/max values of the bounding box. Essentially THE bounding box + the near clip offset of the DirectionalLight.
+			auto const lightProjMat{Matrix4::Ortographic(bBoxMinLight[0], bBoxMaxLight[0], bBoxMaxLight[1], bBoxMinLight[1], bBoxMinLight[2] - bBoxNearOffset, bBoxMaxLight[2])};
+
+			matrices.push_back(worldTolightMat * lightProjMat);
+		}
+
+		return matrices;
 	}
 
 
-	auto CascadedShadowMap::CalculateCascadeBounds(Camera const& cam) -> std::span<CascadeBounds>
+	auto CascadedShadowMap::CalculateCascadeBounds(float const near, float const far) -> std::span<CascadeBounds>
 	{
-		auto const nearClip{cam.NearClipPlane()};
-		auto const farClip{cam.FarClipPlane()};
 		auto const& settings{Settings::Instance()};
 		auto const numCascades{settings.DirShadowCascadeCount()};
 		auto const lambda{settings.DirShadowCascadeCorrection()};
-		auto const clipRatio{farClip / nearClip};
+		auto const clipRatio{far / near};
 
 		// On bound borders the far plane is multiplied by this value to avoid precision problems.
 		constexpr auto nearFarMult{1.005f};
@@ -126,14 +118,14 @@ namespace leopph::internal
 		static std::vector<CascadeBounds> bounds;
 		bounds.resize(numCascades);
 
-		bounds[0].Near = nearClip;
+		bounds[0].Near = near;
 		for (auto i{1ull}; i < numCascades; ++i)
 		{
 			auto const indRatio{static_cast<float>(i) / static_cast<float>(numCascades)};
-			bounds[i].Near = lambda * nearClip * math::Pow(clipRatio, indRatio) + (1 - lambda) * (nearClip + indRatio * (farClip - nearClip));
+			bounds[i].Near = lambda * near * leopph::math::Pow(clipRatio, indRatio) + (1 - lambda) * (near + indRatio * (far - near));
 			bounds[i - 1].Far = bounds[i].Near * nearFarMult;
 		}
-		bounds[numCascades - 1].Far = farClip;
+		bounds[numCascades - 1].Far = far;
 
 		return bounds;
 	}

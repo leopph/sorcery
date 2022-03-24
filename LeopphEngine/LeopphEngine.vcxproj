@@ -173,6 +173,7 @@
     <ClInclude Include="src\components\lighting\AttenuatedLight.hpp" />
     <ClInclude Include="src\components\lighting\DirLight.hpp" />
     <ClInclude Include="src\components\lighting\SpotLight.hpp" />
+    <ClInclude Include="src\components\PerspectiveCamera.hpp" />
     <ClInclude Include="src\components\rendering\Cube.hpp" />
     <ClInclude Include="src\components\rendering\ImageSprite.hpp" />
     <ClInclude Include="src\components\rendering\RenderComponent.hpp" />
@@ -241,6 +242,7 @@
     <ClInclude Include="src\util\equal\ShaderTypeEqual.hpp" />
     <ClInclude Include="src\util\equal\StringEqual.hpp" />
     <ClInclude Include="src\util\Exit.hpp" />
+    <ClInclude Include="src\misc\Frustum.hpp" />
     <ClInclude Include="src\util\hash\PathedHash.hpp" />
     <ClInclude Include="src\util\hash\ShaderTypeHash.hpp" />
     <ClInclude Include="src\util\hash\StringHash.hpp" />
@@ -251,7 +253,7 @@
     <ClInclude Include="src\input\Input.hpp" />
     <ClInclude Include="src\data\DataManager.hpp" />
     <ClInclude Include="src\api\LeopphApi.hpp" />
-    <ClInclude Include="src\math\LeopphMath.hpp" />
+    <ClInclude Include="src\math\Math.hpp" />
     <ClInclude Include="src\components\lighting\Light.hpp" />
     <ClInclude Include="src\math\Matrix.hpp" />
     <ClInclude Include="src\rendering\geometry\GlMesh.hpp" />
@@ -264,7 +266,7 @@
     <ClInclude Include="src\timing\Time.hpp" />
     <ClInclude Include="src\math\Vector.hpp" />
     <ClInclude Include="src\rendering\geometry\Vertex.hpp" />
-    <ClInclude Include="src\util\Sphere.hpp" />
+    <ClInclude Include="src\misc\Sphere.hpp" />
     <ClInclude Include="src\windowing\GlWindow.hpp" />
     <ClInclude Include="src\windowing\Window.hpp" />
     <ClInclude Include="src\windowing\WindowImpl.hpp" />
@@ -276,6 +278,7 @@
     <ClCompile Include="src\components\lighting\AmbientLight.cpp" />
     <ClCompile Include="src\components\lighting\DirLight.cpp" />
     <ClCompile Include="src\components\lighting\SpotLight.cpp" />
+    <ClCompile Include="src\components\PerspectiveCamera.cpp" />
     <ClCompile Include="src\components\rendering\Cube.cpp" />
     <ClCompile Include="src\components\rendering\ImageSprite.cpp" />
     <ClCompile Include="src\components\rendering\RenderComponent.cpp" />
@@ -337,7 +340,7 @@
     <ClCompile Include="src\windowing\Window.cpp" />
     <ClCompile Include="src\windowing\WindowImpl.cpp" />
     <ClCompile Include="src\input\Input.cpp" />
-    <ClCompile Include="src\math\LeopphMath.cpp" />
+    <ClCompile Include="src\math\Math.cpp" />
     <ClCompile Include="src\rendering\geometry\GlMesh.cpp" />
     <ClCompile Include="src\components\rendering\Model.cpp" />
     <ClCompile Include="src\entity\Entity.cpp" />

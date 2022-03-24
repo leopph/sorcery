@@ -4,7 +4,7 @@
 #include "../../components/lighting/AmbientLight.hpp"
 #include "../../config/Settings.hpp"
 #include "../../data/DataManager.hpp"
-#include "../../math/LeopphMath.hpp"
+#include "../../math/Math.hpp"
 #include "../../math/Matrix.hpp"
 #include "../../windowing/Window.hpp"
 
@@ -213,12 +213,11 @@ namespace leopph::internal
 			return nextTexUnit;
 		}
 
-		static std::vector<Matrix4> cascadeMats;
-		cascadeMats.clear();
-
-		auto const lightViewMat{Matrix4::LookAt(Vector3{0}, dirLight->Direction(), Vector3::Up())};
-		auto const cascadeBounds{CascadedShadowMap::CalculateCascadeBounds(*Camera::Current())};
-		auto const numCascades{cascadeBounds.size()};
+		auto const camera = Camera::Current();
+		auto const lightViewMat = Matrix4::LookAt(Vector3{0}, dirLight->Direction(), Vector3::Up());
+		auto const cascadeBounds = CascadedShadowMap::CalculateCascadeBounds(camera->NearClipPlane(), camera->FarClipPlane());
+		auto const numCascades = cascadeBounds.size();
+		auto const cascadeMats = CascadedShadowMap::CascadeMatrix(camera->Frustum(), cascadeBounds, lightViewMat, camViewInvMat * lightViewMat,dirLight->ShadowExtension());
 
 		glDisable(GL_BLEND);
 
@@ -229,12 +228,10 @@ namespace leopph::internal
 
 		for (std::size_t i = 0; i < numCascades; ++i)
 		{
-			auto const cascadeMat{m_DirShadowMap.CascadeMatrix(cascadeBounds[i], camViewInvMat, lightViewMat, dirLight->ShadowExtension())};
-			cascadeMats.push_back(cascadeMat);
+			shadowShader.SetUniform("u_ViewProjMat", cascadeMats[i]);
 
-			shadowShader.SetUniform("u_ViewProjMat", cascadeMat);
-
-			m_DirShadowMap.BindForWritingAndClear(i);
+			m_DirShadowMap.BindForWriting(i);
+			m_DirShadowMap.Clear();
 
 			for (auto const& [renderable, instances, castsShadow] : renderables)
 			{

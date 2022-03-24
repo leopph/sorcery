@@ -1,7 +1,7 @@
 #include "ImageSprite.hpp"
 
 #include "../../data/DataManager.hpp"
-#include "../../math/LeopphMath.hpp"
+#include "../../math/Math.hpp"
 #include "../../util/Logger.hpp"
 
 #include <vector>

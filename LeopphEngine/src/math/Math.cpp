@@ -1,4 +1,4 @@
-#include "LeopphMath.hpp"
+#include "Math.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -12,67 +12,80 @@ namespace leopph::math
 		return ret;
 	}
 
-	auto ToRadians(const float degrees) -> float
+
+	auto ToRadians(float const degrees) -> float
 	{
 		return degrees * Pi() / 180.0f;
 	}
 
-	auto ToDegrees(const float radians) -> float
+
+	auto ToDegrees(float const radians) -> float
 	{
 		return radians * 180.0f / Pi();
 	}
 
-	auto Sin(const float radians) -> float
+
+	auto Sin(float const radians) -> float
 	{
 		return std::sinf(radians);
 	}
 
-	auto Asin(const float radians) -> float
+
+	auto Asin(float const radians) -> float
 	{
 		return std::asinf(radians);
 	}
 
-	auto Cos(const float radians) -> float
+
+	auto Cos(float const radians) -> float
 	{
 		return std::cosf(radians);
 	}
 
-	auto Acos(const float radians) -> float
+
+	auto Acos(float const radians) -> float
 	{
 		return std::acosf(radians);
 	}
 
-	auto Tan(const float radians) -> float
+
+	auto Tan(float const radians) -> float
 	{
 		return std::tanf(radians);
 	}
 
-	auto Atan(const float radians) -> float
+
+	auto Atan(float const radians) -> float
 	{
 		return std::atanf(radians);
 	}
 
-	auto Atan2(const float y, const float x) -> float
+
+	auto Atan2(float const y, float const x) -> float
 	{
 		return std::atan2(y, x);
 	}
 
-	auto Pow(const float base, const float exp) -> float
+
+	auto Pow(float const base, float const exp) -> float
 	{
 		return std::powf(base, exp);
 	}
 
-	auto Sqrt(const float value) -> float
+
+	auto Sqrt(float const value) -> float
 	{
 		return std::sqrtf(value);
 	}
 
-	auto Clamp(const float value, const float min, const float max) -> float
+
+	auto Clamp(float const value, float const min, float const max) -> float
 	{
 		return std::clamp(value, min, max);
 	}
 
-	auto Abs(const float value) -> float
+
+	auto Abs(float const value) -> float
 	{
 		return std::abs(value);
 	}
@@ -80,7 +93,7 @@ namespace leopph::math
 
 	auto IsPowerOfTwo(unsigned const value) -> bool
 	{
-		return value != 0 && (value & (value -1)) == 0;
+		return value != 0 && (value & (value - 1)) == 0;
 	}
 
 
@@ -99,5 +112,11 @@ namespace leopph::math
 		}
 
 		return ret;
+	}
+
+
+	auto Lerp(float const from, float const to, float const t) -> float
+	{
+		return (1 - t) * from + t * to;
 	}
 }

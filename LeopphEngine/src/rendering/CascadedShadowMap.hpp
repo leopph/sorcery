@@ -4,6 +4,7 @@
 #include "../events/DirShadowEvent.hpp"
 #include "../events/handling/EventReceiver.hpp"
 #include "../math/Matrix.hpp"
+#include "../misc/Frustum.hpp"
 #include "opengl/GlFramebuffer.hpp"
 #include "opengl/GlTexture.hpp"
 #include "shaders/ShaderProgram.hpp"
@@ -31,26 +32,23 @@ namespace leopph::internal
 
 			~CascadedShadowMap() noexcept override = default;
 
-			// Clears the currently bound cascade.
+			// Clears the currently bound cascade map.
 			auto Clear() const -> void;
 
 			// Binds the cascade for writing.
 			auto BindForWriting(std::size_t cascadeIndex) const -> void;
 
-			// Binds the the shadow map referred to by cascadeIndex as render target and set its value to the default.
-			auto BindForWritingAndClear(std::size_t cascadeIndex) const -> void;
-
 			// Binds the shadow maps to consecutive texture units starting at texUnit, sets the passed uniform, and returns the next available texture unit.
 			[[nodiscard]]
 			auto BindForReading(ShaderProgram& shader, std::string_view uniformName, GLuint texUnit) const -> GLuint;
 
-			// Returns a Matrix that defines the transformation that is used to render world space primitives to shadow maps.
-			[[nodiscard]]
-			auto CascadeMatrix(CascadeBounds cascadeBounds, Matrix4 const& cameraInverseMatrix, Matrix4 const& lightViewMatrix, float bBoxNearOffset) const -> Matrix4;
-
-			// Returns the bounds of the used shadow cascades in camera view space.
+			// Returns the the camera-to-clip matrix for all cascades.
 			[[nodiscard]] static
-			auto CalculateCascadeBounds(Camera const& cam) -> std::span<CascadeBounds>;
+			auto CascadeMatrix(Frustum const& frustum, std::span<CascadeBounds const> cascadeBounds, Matrix4 const& worldTolightMat, Matrix4 const& camToLightMat, float bBoxNearOffset) -> std::span<Matrix4>;
+
+			// Returns the Z bounds of the used shadow cascades in camera view space.
+			[[nodiscard]] static
+			auto CalculateCascadeBounds(float near, float far) -> std::span<CascadeBounds>;
 
 		private:
 			struct Cascade
@@ -58,6 +56,7 @@ namespace leopph::internal
 				std::size_t Resolution;
 				GlTexture<GlTextureType::T2D> ShadowMap;
 			};
+
 
 			auto ConfigCascades(std::span<std::size_t const> resolutions) -> void;
 
@@ -72,9 +71,9 @@ namespace leopph::internal
 	// Utility struct for storing info about shadow cascades
 	struct CascadedShadowMap::CascadeBounds
 	{
-		// The edge of the cascade closer to the camera.
+		// The distance of the cascade's near face from the camera.
 		float Near;
-		// The edge of the cascade farther from the camera.
+		// The distance of the cascade's far face from the camera.
 		float Far;
 	};
 }

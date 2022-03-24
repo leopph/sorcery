@@ -4,7 +4,7 @@
     <ClCompile Include="src\components\Behavior.cpp" />
     <ClCompile Include="src\components\Camera.cpp" />
     <ClCompile Include="src\rendering\opengl\OpenGl.cpp" />
-    <ClCompile Include="src\math\LeopphMath.cpp" />
+    <ClCompile Include="src\math\Math.cpp" />
     <ClCompile Include="src\rendering\geometry\GlMesh.cpp" />
     <ClCompile Include="src\entity\Entity.cpp" />
     <ClCompile Include="src\timing\Time.cpp" />
@@ -79,6 +79,7 @@
     <ClCompile Include="src\rendering\TransparencyBuffer.cpp" />
     <ClCompile Include="src\rendering\Image.cpp" />
     <ClCompile Include="vendor\gl3w\src\gl3w.c" />
+    <ClCompile Include="src\components\PerspectiveCamera.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\Behavior.hpp" />
@@ -89,7 +90,7 @@
     <ClInclude Include="src\input\Input.hpp" />
     <ClInclude Include="src\data\DataManager.hpp" />
     <ClInclude Include="src\api\LeopphApi.hpp" />
-    <ClInclude Include="src\math\LeopphMath.hpp" />
+    <ClInclude Include="src\math\Math.hpp" />
     <ClInclude Include="src\components\lighting\Light.hpp" />
     <ClInclude Include="src\math\Matrix.hpp" />
     <ClInclude Include="src\rendering\geometry\GlMesh.hpp" />
@@ -174,7 +175,7 @@
     <ClInclude Include="src\components\rendering\Cube.hpp" />
     <ClInclude Include="src\util\api_adapters\GLFWAdapter.hpp" />
     <ClInclude Include="src\components\rendering\ImageSprite.hpp" />
-    <ClInclude Include="src\util\Sphere.hpp" />
+    <ClInclude Include="src\misc\Sphere.hpp" />
     <ClInclude Include="src\rendering\geometry\MeshGroup.hpp" />
     <ClInclude Include="src\rendering\opengl\GlFramebuffer.hpp" />
     <ClInclude Include="src\rendering\opengl\GlBuffer.hpp" />
@@ -184,6 +185,8 @@
     <ClInclude Include="src\rendering\TransparencyBuffer.hpp" />
     <ClInclude Include="src\rendering\opengl\GlTexture.hpp" />
     <ClInclude Include="src\rendering\Image.hpp" />
+    <ClInclude Include="src\components\PerspectiveCamera.hpp" />
+    <ClInclude Include="src\misc\Frustum.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\cpp.hint" />

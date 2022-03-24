@@ -1,7 +1,7 @@
 #include "DirLight.hpp"
 
 #include "../../data/DataManager.hpp"
-#include "../../math/LeopphMath.hpp"
+#include "../../math/Math.hpp"
 
 
 namespace leopph
