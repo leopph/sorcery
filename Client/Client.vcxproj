@@ -138,10 +138,15 @@ ASAN_SYMBOLIZER_PATH=$(VC_ExecutablePath_x64)</LocalDebuggerEnvironment>
     <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\CameraController.cpp" />
+    <ClCompile Include="src\AnimatedSprite.cpp" />
+    <ClCompile Include="src\controllers\CharacterController2D.cpp" />
+    <ClCompile Include="src\controllers\FirstPersonCameraController.cpp" />
+    <ClCompile Include="src\controllers\SmoothFollow2DCameraController.cpp" />
     <ClCompile Include="src\Exiter.cpp" />
     <ClCompile Include="src\Flicker.cpp" />
+    <ClCompile Include="src\controllers\Follow2DCameraController.cpp" />
     <ClCompile Include="src\FrameRateAnalyzer.cpp" />
+    <ClCompile Include="src\InitSpriteScene.cpp" />
     <ClCompile Include="src\WindowController.cpp" />
     <ClCompile Include="src\Init.cpp" />
     <ClCompile Include="src\InitCometScene.cpp" />
@@ -154,9 +159,13 @@ ASAN_SYMBOLIZER_PATH=$(VC_ExecutablePath_x64)</LocalDebuggerEnvironment>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\CameraController.hpp" />
+    <ClInclude Include="src\AnimatedSprite.hpp" />
+    <ClInclude Include="src\controllers\CharacterController2D.hpp" />
+    <ClInclude Include="src\controllers\FirstPersonCameraController.hpp" />
+    <ClInclude Include="src\controllers\SmoothFollow2DCameraController.hpp" />
     <ClInclude Include="src\Exiter.hpp" />
     <ClInclude Include="src\Flicker.hpp" />
+    <ClInclude Include="src\controllers\Follow2DCameraController.hpp" />
     <ClInclude Include="src\FrameRateAnalyzer.hpp" />
     <ClInclude Include="src\WindowController.hpp" />
     <ClInclude Include="src\Constants.hpp" />

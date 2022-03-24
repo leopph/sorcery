@@ -2,13 +2,13 @@
 
 #include "Init.hpp"
 
-#include "CameraController.hpp"
 #include "Constants.hpp"
 #include "Exiter.hpp"
 #include "FrameRateAnalyzer.hpp"
 #include "SceneSwitcher.hpp"
 #include "TeleportGate.hpp"
 #include "WindowController.hpp"
+#include "controllers/FirstPersonCameraController.hpp"
 
 #include <Leopph.hpp>
 
@@ -19,26 +19,29 @@ auto leopph::Init() -> void
 
 	Input::CursorMode(CursorState::Disabled);
 
-	const auto player = new Entity{demo::PLAYER_ENTITY_NAME};
-	player->CreateAndAttachComponent<CameraController>();
-	player->CreateAndAttachComponent<Camera>();
+	auto const camEntity = new Entity{demo::CAM_ENTITY_NAME};
+	auto const perspectiveCamera = camEntity->CreateAndAttachComponent<PerspectiveCamera>();
+	camEntity->CreateAndAttachComponent<OrthographicCamera>();
+	camEntity->CreateAndAttachComponent<demo::FirstPersonCameraController>(perspectiveCamera, demo::CAM_3D_SPEED, demo::CAM_3D_SENS, demo::CAM_3D_RUN_MULT, demo::CAM_3D_WALK_MULT);
 
-	const auto utilEnt = new Entity{demo::UTILITY_ENTITY_NAME};
+	auto const utilEnt = new Entity{demo::UTILITY_ENTITY_NAME};
 	utilEnt->CreateAndAttachComponent<FrameRateAnalyzer>(0.5f, 60u);
 	utilEnt->CreateAndAttachComponent<Exiter>();
 	utilEnt->CreateAndAttachComponent<WindowController>();
 
-	const auto sceneSwitcherEnt = new Entity{demo::SCENE_SWITCHER_ENTITY_NAME};
-	const auto sceneSwitcher = sceneSwitcherEnt->CreateAndAttachComponent<demo::SceneSwitcher>();
+	auto const sceneSwitcherEnt = new Entity{demo::SCENE_SWITCHER_ENTITY_NAME};
+	auto const sceneSwitcher = sceneSwitcherEnt->CreateAndAttachComponent<demo::SceneSwitcher>();
 
-	const auto teleport = new Entity{demo::TELEPORT_ENTITY_NAME};
-	teleport->CreateAndAttachComponent<demo::TeleportGate>(player, sceneSwitcher);
+	auto const teleport = new Entity{demo::TELEPORT_ENTITY_NAME};
+	teleport->CreateAndAttachComponent<demo::TeleportGate>(camEntity, sceneSwitcher);
 
-	const auto churchScene = sceneSwitcher->CreateScene();
-	const auto cometScene = sceneSwitcher->CreateScene();
+	auto const churchScene = sceneSwitcher->CreateScene();
+	auto const cometScene = sceneSwitcher->CreateScene();
+	auto const spriteScene = sceneSwitcher->CreateScene();
 
-	demo::InitChurchScene(churchScene, cometScene);
-	demo::InitCometScene(cometScene);
+	//demo::InitChurchScene(churchScene, cometScene);
+	//demo::InitCometScene(cometScene);
+	demo::InitSpriteScene(spriteScene);
 
-	sceneSwitcher->ActivateScene(churchScene);
+	sceneSwitcher->ActivateScene(spriteScene);
 }

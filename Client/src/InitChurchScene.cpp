@@ -20,7 +20,7 @@ namespace demo
 	auto InitChurchScene(SceneSwitcher::Scene thisScene, SceneSwitcher::Scene const nextScene) -> void
 	{
 		// Locate existing Entities
-		auto const player = Entity::FindEntity(PLAYER_ENTITY_NAME);
+		auto const player = Entity::FindEntity(CAM_ENTITY_NAME);
 
 		// Create new Entities
 
@@ -69,30 +69,34 @@ namespace demo
 
 		// Create new Components
 
-		auto const dirLight = dirLightEntity->CreateAndAttachComponent<DirectionalLight>();
-		auto const pLight = pLightEntity->CreateAndAttachComponent<PointLight>();
+		//auto const dirLight = dirLightEntity->CreateAndAttachComponent<DirectionalLight>();
+		//auto const pLight = pLightEntity->CreateAndAttachComponent<PointLight>();
 		auto const churchModel = church->CreateAndAttachComponent<Model>("models/church/ChristchurchGreyfriarsRuinGarden03.obj");
 		auto const lampModel = lamp->CreateAndAttachComponent<Model>("models/lamp/scene.gltf");
-		pLightEntity->CreateAndAttachComponent<demo::Flicker>(pLight, 1.2f, 0.05f);
+		//pLightEntity->CreateAndAttachComponent<demo::Flicker>(pLight, 1.2f, 0.05f);
 
 		// Set up components
 
 		camera->Background(Skybox{"skybox/megasun/left.hdr", "skybox/megasun/right.hdr", "skybox/megasun/top.hdr", "skybox/megasun/bottom.hdr", "skybox/megasun/front.hdr", "skybox/megasun/back.hdr"});
 		camera->NearClipPlane(0.3f);
 		camera->FarClipPlane(100);
-		dirLight->Diffuse(Vector3{0.1, 0.1, 0.1});
-		dirLight->CastsShadow(false);
+		//dirLight->Diffuse(Vector3{0.1, 0.1, 0.1});
+		//dirLight->CastsShadow(true);
 		churchModel->CastsShadow(true);
 		lampModel->CastsShadow(true);
-		pLight->Range(30);
-		pLight->Constant(0.5f);
-		pLight->Linear(0.2f);
-		pLight->Quadratic(0.07f);
-		pLight->CastsShadow(false);
+		//pLight->Range(30);
+		//pLight->Constant(0.5f);
+		//pLight->Linear(0.2f);
+		//pLight->Quadratic(0.07f);
+		//pLight->CastsShadow(false);
 		teleport->AddPortPoint(TeleportGate::PortPoint{teleportPoint->Transform(), 1.f, nextScene});
 
 		// Etc
 
-		AmbientLight::Instance().Intensity(Vector3{0});
+		//AmbientLight::Instance().Intensity(Vector3{0});
+		AmbientLight::Instance().Intensity(Vector3{1});
+
+		auto const tmp = new Entity{};
+
 	}
 }
