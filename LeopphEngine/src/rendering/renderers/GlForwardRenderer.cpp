@@ -6,8 +6,7 @@
 #include "../../math/Matrix.hpp"
 #include "../../util/Logger.hpp"
 #include "../../windowing/Window.hpp"
-
-#include <GL/gl3w.h>
+#include "../opengl/OpenGl.hpp"
 
 #include <string>
 #include <utility>

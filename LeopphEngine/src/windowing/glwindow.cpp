@@ -6,10 +6,9 @@
 #include "../events/WindowEvent.hpp"
 #include "../events/handling/EventManager.hpp"
 #include "../input/Input.hpp"
+#include "../rendering/opengl/OpenGl.hpp"
 #include "../util/Logger.hpp"
 #include "../util/api_adapters/GLFWAdapter.hpp"
-
-#include <GL/gl3w.h>
 
 #include <array>
 #include <stdexcept>
@@ -30,7 +29,7 @@ namespace leopph::internal
 	{
 		if (!glfwInit())
 		{
-			const auto erroMsg{"Failed to initialize GLFW."};
+			auto const erroMsg{"Failed to initialize GLFW."};
 			Logger::Instance().Critical(erroMsg);
 			throw std::runtime_error{erroMsg};
 		}
@@ -43,12 +42,12 @@ namespace leopph::internal
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
 		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-		const auto monitor{m_Fullscreen ? glfwGetPrimaryMonitor() : nullptr};
+		auto const monitor{m_Fullscreen ? glfwGetPrimaryMonitor() : nullptr};
 		m_Window = glfwCreateWindow(m_Width, m_Height, "GlWindow Title", monitor, nullptr);
 
 		if (!m_Window)
 		{
-			const auto errMsg{"Failed to create GLFW window."};
+			auto const errMsg{"Failed to create GLFW window."};
 			Logger::Instance().Critical(errMsg);
 			throw std::runtime_error{errMsg};
 		}
@@ -81,7 +80,7 @@ namespace leopph::internal
 	}
 
 
-	auto GlWindow::Width(const unsigned newWidth) -> void
+	auto GlWindow::Width(unsigned const newWidth) -> void
 	{
 		m_Width = static_cast<int>(newWidth);
 		glfwSetWindowSize(m_Window, m_Width, m_Height);
@@ -95,7 +94,7 @@ namespace leopph::internal
 	}
 
 
-	auto GlWindow::Height(const unsigned newHeight) -> void
+	auto GlWindow::Height(unsigned const newHeight) -> void
 	{
 		m_Height = static_cast<int>(newHeight);
 		glfwSetWindowSize(m_Window, m_Width, m_Height);
@@ -109,7 +108,7 @@ namespace leopph::internal
 	}
 
 
-	auto GlWindow::Fullscreen(const bool newValue) -> void
+	auto GlWindow::Fullscreen(bool const newValue) -> void
 	{
 		m_Fullscreen = newValue;
 
@@ -123,7 +122,7 @@ namespace leopph::internal
 		else
 		{
 			glfwSetWindowMonitor(m_Window, nullptr, 0, 0, m_Width, m_Height, GLFW_DONT_CARE);
-			const auto vidMode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+			auto const vidMode = glfwGetVideoMode(glfwGetPrimaryMonitor());
 			glfwSetWindowPos(m_Window, static_cast<int>(static_cast<float>(vidMode->width - m_Width) / 2.f), static_cast<int>(static_cast<float>(vidMode->height - m_Height) / 2.f));
 		}
 		SendWindowEvent();
@@ -136,7 +135,7 @@ namespace leopph::internal
 	}
 
 
-	auto GlWindow::Vsync(const bool newValue) -> void
+	auto GlWindow::Vsync(bool const newValue) -> void
 	{
 		m_Vsync = newValue;
 		glfwSwapInterval(m_Vsync);
@@ -157,13 +156,13 @@ namespace leopph::internal
 	}
 
 
-	auto GlWindow::ClearColor() const -> const Vector4&
+	auto GlWindow::ClearColor() const -> Vector4 const&
 	{
 		return m_ClrColor;
 	}
 
 
-	auto GlWindow::ClearColor(const Vector4& color) -> void
+	auto GlWindow::ClearColor(Vector4 const& color) -> void
 	{
 		m_ClrColor = color;
 	}
@@ -175,7 +174,7 @@ namespace leopph::internal
 	}
 
 
-	auto GlWindow::CursorMode(const CursorState newState) -> void
+	auto GlWindow::CursorMode(CursorState const newState) -> void
 	{
 		glfwSetInputMode(m_Window, GLFW_CURSOR, glfw::GetGlfwCursorState(newState));
 	}
@@ -187,7 +186,7 @@ namespace leopph::internal
 	}
 
 
-	auto GlWindow::RenderMultiplier(const float newMult) -> void
+	auto GlWindow::RenderMultiplier(float const newMult) -> void
 	{
 		m_RenderMult = newMult;
 		SendWindowEvent();
@@ -212,7 +211,7 @@ namespace leopph::internal
 	}
 
 
-	auto GlWindow::ShouldClose(const bool val) -> void
+	auto GlWindow::ShouldClose(bool const val) -> void
 	{
 		glfwSetWindowShouldClose(m_Window, val);
 	}
@@ -220,9 +219,9 @@ namespace leopph::internal
 
 	auto GlWindow::GetSupportedDisplayModes() const -> std::vector<DisplayMode>
 	{
-		const auto currentMonitor = glfwGetWindowMonitor(m_Window);
+		auto const currentMonitor = glfwGetWindowMonitor(m_Window);
 		int numVidModes;
-		const auto vidModes = glfwGetVideoModes(currentMonitor ? currentMonitor : glfwGetPrimaryMonitor(), &numVidModes);
+		auto const vidModes = glfwGetVideoModes(currentMonitor ? currentMonitor : glfwGetPrimaryMonitor(), &numVidModes);
 
 		std::vector<DisplayMode> ret(numVidModes);
 		// GLFW returns video modes in ascending order and we need them in descending.
@@ -247,28 +246,28 @@ namespace leopph::internal
 	}
 
 
-	auto GlWindow::FramebufferSizeCallback(GLFWwindow* const, const int width, const int height) -> void
+	auto GlWindow::FramebufferSizeCallback(GLFWwindow* const, int const width, int const height) -> void
 	{
 		glViewport(0, 0, width, height);
 	}
 
 
-	auto GlWindow::KeyCallback(GLFWwindow*, const int key, int, const int action, int) -> void
+	auto GlWindow::KeyCallback(GLFWwindow*, int const key, int, int const action, int) -> void
 	{
 		try
 		{
-			const auto keyCode = glfw::GetAbstractKeyCode(key);
-			const auto keyState = glfw::GetAbstractKeyState(action);
+			auto const keyCode = glfw::GetAbstractKeyCode(key);
+			auto const keyState = glfw::GetAbstractKeyState(action);
 			EventManager::Instance().Send<KeyEvent>(keyCode, keyState);
 		}
-		catch (const std::out_of_range&)
+		catch (std::out_of_range const&)
 		{
 			Logger::Instance().Warning("Invalid key input detected.");
 		}
 	}
 
 
-	auto GlWindow::MouseCallback(GLFWwindow*, const double x, const double y) -> void
+	auto GlWindow::MouseCallback(GLFWwindow*, double const x, double const y) -> void
 	{
 		EventManager::Instance().Send<MouseEvent>(Vector2{x, y});
 	}

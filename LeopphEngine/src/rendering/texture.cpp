@@ -1,8 +1,7 @@
 #include "Texture.hpp"
 
 #include "../util/Logger.hpp"
-
-#include <GL/gl3w.h>
+#include "opengl/OpenGl.hpp"
 
 #include <string>
 

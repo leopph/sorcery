@@ -3,9 +3,8 @@
 #include "GlMesh.hpp"
 #include "../../math/Matrix.hpp"
 #include "../geometry/MeshGroup.hpp"
+#include "../opengl/OpenGl.hpp"
 #include "../shaders/ShaderProgram.hpp"
-
-#include <GL/gl3w.h>
 
 #include <memory>
 #include <utility>

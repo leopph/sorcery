@@ -4,17 +4,16 @@
 #include "../CascadedShadowMap.hpp"
 #include "../CubeShadowMap.hpp"
 #include "../GeometryBuffer.hpp"
-#include "../ScreenQuad.hpp"
 #include "../RenderBuffer.hpp"
+#include "../ScreenQuad.hpp"
 #include "../SpotShadowMap.hpp"
 #include "../TransparencyBuffer.hpp"
 #include "../../components/lighting/DirLight.hpp"
 #include "../../components/lighting/PointLight.hpp"
 #include "../../components/lighting/SpotLight.hpp"
 #include "../../math/Matrix.hpp"
+#include "../opengl/OpenGl.hpp"
 #include "../shaders/ShaderFamily.hpp"
-
-#include <GL/gl3w.h>
 
 #include <cstddef>
 #include <memory>

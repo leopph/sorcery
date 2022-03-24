@@ -1,8 +1,7 @@
 #pragma once
 
+#include "opengl/OpenGl.hpp"
 #include "shaders/ShaderProgram.hpp"
-
-#include <GL/gl3w.h>
 
 #include <array>
 #include <filesystem>
@@ -17,8 +16,8 @@ namespace leopph::internal
 			// Param is in the format that BuildAllPaths generates.
 			explicit SkyboxImpl(std::filesystem::path allFilePaths);
 
-			SkyboxImpl(const SkyboxImpl& other) = delete;
-			auto operator=(const SkyboxImpl& other) -> SkyboxImpl& = delete;
+			SkyboxImpl(SkyboxImpl const& other) = delete;
+			auto operator=(SkyboxImpl const& other) -> SkyboxImpl& = delete;
 
 			SkyboxImpl(SkyboxImpl&& other) = delete;
 			auto operator=(SkyboxImpl&& other) -> SkyboxImpl = delete;
@@ -37,9 +36,9 @@ namespace leopph::internal
 			[[nodiscard]] constexpr auto Path() const noexcept -> auto&;
 
 			// Encode all paths into one path.
-			[[nodiscard]] static auto BuildAllPaths(const std::filesystem::path& left, const std::filesystem::path& right,
-			                                        const std::filesystem::path& top, const std::filesystem::path& bottom,
-			                                        const std::filesystem::path& front, const std::filesystem::path& back) -> std::filesystem::path;
+			[[nodiscard]] static auto BuildAllPaths(std::filesystem::path const& left, std::filesystem::path const& right,
+			                                        std::filesystem::path const& top, std::filesystem::path const& bottom,
+			                                        std::filesystem::path const& front, std::filesystem::path const& back) -> std::filesystem::path;
 
 		private:
 			std::filesystem::path m_AllPaths;
@@ -96,8 +95,8 @@ namespace leopph::internal
 				int Channels{0};
 
 				ImageData() = default;
-				ImageData(const ImageData& other) = default;
-				auto operator=(const ImageData& other) -> ImageData& = default;
+				ImageData(ImageData const& other) = default;
+				auto operator=(ImageData const& other) -> ImageData& = default;
 				ImageData(ImageData&& other) noexcept = default;
 				auto operator=(ImageData&& other) noexcept -> ImageData& = default;
 				~ImageData() noexcept;

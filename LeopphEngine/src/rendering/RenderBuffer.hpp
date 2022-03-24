@@ -4,8 +4,7 @@
 #include "../events/handling/EventReceiver.hpp"
 #include "opengl/GlFramebuffer.hpp"
 #include "opengl/GlRenderbuffer.hpp"
-
-#include <GL/gl3w.h>
+#include "opengl/OpenGl.hpp"
 
 
 namespace leopph::internal

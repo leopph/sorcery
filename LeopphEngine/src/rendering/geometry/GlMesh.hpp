@@ -1,9 +1,8 @@
 #pragma once
 
 #include "Mesh.hpp"
+#include "../opengl/OpenGl.hpp"
 #include "../shaders/ShaderProgram.hpp"
-
-#include <GL/gl3w.h>
 
 
 namespace leopph::internal

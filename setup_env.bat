@@ -12,8 +12,8 @@ for /f "delims=" %%p in ('"%vswhere%" -property installationPath') do (
     call "%%p"\Common7\Tools\VsMSBuildCmd.bat
 )
 
-git submodule update --init --remote LeopphEngine/vendor/glfw
 git submodule update --init --remote LeopphEngine/vendor/gl3w
+git submodule update --init --remote LeopphEngine/vendor/glfw
 
 cd LeopphEngine\vendor\physx
 :: call :PhysX

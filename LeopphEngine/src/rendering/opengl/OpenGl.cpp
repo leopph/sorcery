@@ -5,8 +5,6 @@
 #include "../../util/equal/ShaderTypeEqual.hpp"
 #include "../../util/hash/ShaderTypeHash.hpp"
 
-#include <GL/gl3w.h>
-
 #include <stdexcept>
 #include <string>
 
@@ -15,21 +13,26 @@ namespace leopph::internal::opengl
 {
 	namespace
 	{
-		#ifdef _DEBUG
-		const Bimap<int, ShaderType, ShaderTypeHash, ShaderTypeEqual, true> s_ShaderTypes
-			#else
-		const Bimap<int, ShaderType, ShaderTypeHash, ShaderTypeEqual> s_ShaderTypes
-			#endif
-			{
-				{GL_VERTEX_SHADER, ShaderType::Vertex},
-				{GL_GEOMETRY_SHADER, ShaderType::Geometry},
-				{GL_FRAGMENT_SHADER, ShaderType::Fragment},
-				{GL_COMPUTE_SHADER, ShaderType::Compute}
-			};
+		Bimap<decltype(GL_VERTEX_SHADER),
+		      ShaderType,
+		      ShaderTypeHash,
+		      ShaderTypeEqual,
+		      #ifdef _DEBUG
+		      true
+		      #else
+		      false
+		      #endif
+		> const s_ShaderTypes
+		{
+			{GL_VERTEX_SHADER, ShaderType::Vertex},
+			{GL_GEOMETRY_SHADER, ShaderType::Geometry},
+			{GL_FRAGMENT_SHADER, ShaderType::Fragment},
+			{GL_COMPUTE_SHADER, ShaderType::Compute}
+		};
 
 
-		auto MessageCallback(const GLenum src, const GLenum type, const GLuint, const GLenum severity, const GLsizei,
-		                     const GLchar* const msg, const void* const) -> void
+		auto MessageCallback(GLenum const src, GLenum const type, GLuint const, GLenum const severity, GLsizei const,
+		                     GLchar const* const msg, void const* const) -> void
 		{
 			std::string source;
 			switch (src)
@@ -88,7 +91,7 @@ namespace leopph::internal::opengl
 			{
 				case GL_DEBUG_TYPE_ERROR:
 				{
-					const auto logMsg{"OpenGL error from [" + source + "] with severity [" + msgSeverity + "]: " + msg};
+					auto const logMsg{"OpenGL error from [" + source + "] with severity [" + msgSeverity + "]: " + msg};
 					Logger::Instance().Error(logMsg);
 					return;
 				}
@@ -98,7 +101,7 @@ namespace leopph::internal::opengl
 				case GL_DEBUG_TYPE_PORTABILITY:
 				case GL_DEBUG_TYPE_PERFORMANCE:
 				{
-					const auto logMsg{"OpenGL warning from [" + source + "] with severity [" + msgSeverity + "]: " + msg};
+					auto const logMsg{"OpenGL warning from [" + source + "] with severity [" + msgSeverity + "]: " + msg};
 					Logger::Instance().Warning(logMsg);
 					return;
 				}
@@ -116,9 +119,9 @@ namespace leopph::internal::opengl
 
 	auto Init() -> void
 	{
-		if (const auto errCode = gl3wInit(); errCode)
+		if (auto const errCode = gl3wInit(); errCode)
 		{
-			const auto errMsg{"Failed to initialize OpenGL."};
+			auto const errMsg{"Failed to initialize OpenGL."};
 			Logger::Instance().Critical(errMsg);
 			throw std::runtime_error{errMsg};
 		}
@@ -127,7 +130,7 @@ namespace leopph::internal::opengl
 		glGetIntegerv(GL_MAJOR_VERSION, &major);
 		glGetIntegerv(GL_MINOR_VERSION, &minor);
 		Logger::Instance().Debug("Using OpenGL " + std::to_string(major) + "." + std::to_string(minor) + ".");
-		Logger::Instance().Debug(std::string{"Using "} + reinterpret_cast<const char*>(glGetString(GL_RENDERER)) + ".");
+		Logger::Instance().Debug(std::string{"Using "} + reinterpret_cast<char const*>(glGetString(GL_RENDERER)) + ".");
 
 		if (Logger::Instance().CurrentLevel() == Logger::Level::Debug)
 		{
@@ -138,10 +141,10 @@ namespace leopph::internal::opengl
 	}
 
 
-	auto ShaderBinaryFormats() -> std::vector<int>
+	auto ShaderBinaryFormats() -> std::vector<GLint>
 	{
 		// Get the number of formats
-		const auto numBinForms{
+		auto const numBinForms{
 			[]
 			{
 				GLint ret;
@@ -157,13 +160,13 @@ namespace leopph::internal::opengl
 	}
 
 
-	auto TranslateShaderType(const ShaderType type) -> int
+	auto TranslateShaderType(ShaderType const type) -> decltype(GL_VERTEX_SHADER)
 	{
 		return s_ShaderTypes.At(type);
 	}
 
 
-	auto TranslateShaderType(const int type) -> ShaderType
+	auto TranslateShaderType(decltype(GL_VERTEX_SHADER) const type) -> ShaderType
 	{
 		return s_ShaderTypes.At(type);
 	}

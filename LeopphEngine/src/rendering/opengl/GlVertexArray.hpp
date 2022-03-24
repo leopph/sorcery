@@ -1,6 +1,6 @@
 #pragma once
 
-#include <GL/gl3w.h>
+#include "OpenGl.hpp"
 
 #include <type_traits>
 
