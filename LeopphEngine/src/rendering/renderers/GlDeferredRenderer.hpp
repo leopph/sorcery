@@ -14,7 +14,7 @@
 #include "../../math/Matrix.hpp"
 #include "../shaders/ShaderFamily.hpp"
 
-#include <glad/gl.h>
+#include <GL/gl3w.h>
 
 #include <cstddef>
 #include <memory>

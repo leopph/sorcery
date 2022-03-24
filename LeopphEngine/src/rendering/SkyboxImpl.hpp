@@ -2,7 +2,7 @@
 
 #include "shaders/ShaderProgram.hpp"
 
-#include <glad/gl.h>
+#include <GL/gl3w.h>
 
 #include <array>
 #include <filesystem>

@@ -5,9 +5,7 @@
 #include "../../util/equal/ShaderTypeEqual.hpp"
 #include "../../util/hash/ShaderTypeHash.hpp"
 
-#include <glad/gl.h>
-#define GLFW_INCLUDE_NONE
-#include <GLFW/glfw3.h>
+#include <GL/gl3w.h>
 
 #include <stdexcept>
 #include <string>
@@ -118,7 +116,7 @@ namespace leopph::internal::opengl
 
 	auto Init() -> void
 	{
-		if (const auto success{gladLoadGL(glfwGetProcAddress)}; !success)
+		if (const auto errCode = gl3wInit(); errCode)
 		{
 			const auto errMsg{"Failed to initialize OpenGL."};
 			Logger::Instance().Critical(errMsg);

@@ -7,7 +7,7 @@
 #include "../../util/Logger.hpp"
 #include "../../windowing/Window.hpp"
 
-#include <glad/gl.h>
+#include <GL/gl3w.h>
 
 #include <string>
 #include <utility>

@@ -9,7 +9,7 @@
 #include "../util/Logger.hpp"
 #include "../util/api_adapters/GLFWAdapter.hpp"
 
-#include <glad/gl.h>
+#include <GL/gl3w.h>
 
 #include <array>
 #include <stdexcept>

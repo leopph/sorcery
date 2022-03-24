@@ -5,7 +5,7 @@
 #include "../geometry/MeshGroup.hpp"
 #include "../shaders/ShaderProgram.hpp"
 
-#include <glad/gl.h>
+#include <GL/gl3w.h>
 
 #include <memory>
 #include <utility>

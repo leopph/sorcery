@@ -83,7 +83,7 @@
       <PreprocessorDefinitions>SPDLOG_COMPILED_LIB;ENGINE_BUILD;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)\vendor\assimp\include;$(ProjectDir)vendor\nlohmann_json;$(ProjectDir)vendor\spdlog\include;$(ProjectDir)vendor\stb_image;$(ProjectDir)vendor\glfw\include;$(ProjectDir)vendor\glad2\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\vendor\assimp\include;$(ProjectDir)vendor\gl3w\include;$(ProjectDir)vendor\glfw\include;$(ProjectDir)vendor\nlohmann_json;$(ProjectDir)vendor\spdlog\include;$(ProjectDir)vendor\stb_image;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -110,7 +110,7 @@
       <PreprocessorDefinitions>SPDLOG_COMPILED_LIB;ENGINE_BUILD;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)\vendor\assimp\include;$(ProjectDir)vendor\nlohmann_json;$(ProjectDir)vendor\spdlog\include;$(ProjectDir)vendor\stb_image;$(ProjectDir)vendor\glfw\include;$(ProjectDir)vendor\glad2\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\vendor\assimp\include;$(ProjectDir)vendor\gl3w\include;$(ProjectDir)vendor\glfw\include;$(ProjectDir)vendor\nlohmann_json;$(ProjectDir)vendor\spdlog\include;$(ProjectDir)vendor\stb_image;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -141,7 +141,7 @@
       <PreprocessorDefinitions>SPDLOG_COMPILED_LIB;ENGINE_BUILD;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)\vendor\assimp\include;$(ProjectDir)vendor\nlohmann_json;$(ProjectDir)vendor\spdlog\include;$(ProjectDir)vendor\stb_image;$(ProjectDir)vendor\glfw\include;$(ProjectDir)vendor\glad2\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\vendor\assimp\include;$(ProjectDir)vendor\gl3w\include;$(ProjectDir)vendor\glfw\include;$(ProjectDir)vendor\nlohmann_json;$(ProjectDir)vendor\spdlog\include;$(ProjectDir)vendor\stb_image;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -346,7 +346,7 @@
     <ClCompile Include="src\rendering\renderers\GlForwardRenderer.cpp" />
     <ClCompile Include="src\timing\Time.cpp" />
     <ClCompile Include="src\windowing\GlWindow.cpp" />
-    <ClCompile Include="vendor\glad2\src\gl.c" />
+    <ClCompile Include="vendor\gl3w\src\gl3w.c" />
     <ClCompile Include="vendor\stb_image\stb_image.cpp" />
   </ItemGroup>
   <ItemGroup>

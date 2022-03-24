@@ -13,11 +13,14 @@ for /f "delims=" %%p in ('"%vswhere%" -property installationPath') do (
 )
 
 git submodule update --init --remote LeopphEngine/vendor/glfw
+git submodule update --init --remote LeopphEngine/vendor/gl3w
 
 cd LeopphEngine\vendor\physx
 :: call :PhysX
 cd ../assimp
 call :Assimp
+cd ../gl3w
+call :Gl3w
 cd ../glfw
 call :GLFW
 cd ../spdlog
@@ -34,6 +37,12 @@ exit /B 0
 cmake -DCMAKE_CONFIGURATION_TYPES="Debug;Release" -DGLFW_BUILD_DOCS=0 -DGLFW_BUILD_EXAMPLES=0 -DGLFW_BUILD_TESTS=0 -DGLFW_USE_HYBRID_HPG=1 .
 start "Building GLFW Debug" "%msbuild%" GLFW.sln /p:Configuration=Debug
 start "Building GLFW Release" "%msbuild%" GLFW.sln /p:Configuration=Release
+exit /B 0
+
+:Gl3w
+cmake -DCMAKE_CONFIGURATION_TYPES="Debug;Release" .
+start "Building Gl3w Debug" "%msbuild%" gl3w.sln /p:Configuration=Debug
+start "Building Gl3w Release" "%msbuild%" gl3w.sln /p:Configuration=Release
 exit /B 0
 
 :PhysX

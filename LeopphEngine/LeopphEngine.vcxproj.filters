@@ -56,7 +56,6 @@
     <ClCompile Include="src\threading\JobSystem.cpp" />
     <ClCompile Include="src\threading\Job.cpp" />
     <ClCompile Include="src\threading\SpinLock.cpp" />
-    <ClCompile Include="vendor\glad2\src\gl.c" />
     <ClCompile Include="src\threading\Worker.cpp" />
     <ClCompile Include="src\util\Exit.cpp" />
     <ClCompile Include="src\rendering\renderers\Renderer.cpp" />
@@ -79,6 +78,7 @@
     <ClCompile Include="src\rendering\ScreenQuad.cpp" />
     <ClCompile Include="src\rendering\TransparencyBuffer.cpp" />
     <ClCompile Include="src\rendering\Image.cpp" />
+    <ClCompile Include="vendor\gl3w\src\gl3w.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\Behavior.hpp" />

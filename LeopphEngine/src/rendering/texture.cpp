@@ -2,7 +2,7 @@
 
 #include "../util/Logger.hpp"
 
-#include <glad/gl.h>
+#include <GL/gl3w.h>
 
 #include <string>
 

@@ -8,3 +8,7 @@
 	url = https://github.com/leopph/PhysX.git
 	ignore = dirty
 	branch = VC17
+[submodule "gl3w"]
+	path = LeopphEngine/vendor/gl3w
+	url = https://github.com/leopph/gl3w.git
+	branch = dev

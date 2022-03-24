@@ -5,7 +5,7 @@
 #include "opengl/GlFramebuffer.hpp"
 #include "opengl/GlRenderbuffer.hpp"
 
-#include <glad/gl.h>
+#include <GL/gl3w.h>
 
 
 namespace leopph::internal

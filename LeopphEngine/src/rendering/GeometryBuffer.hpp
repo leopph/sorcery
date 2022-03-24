@@ -6,7 +6,7 @@
 #include "opengl/GlTexture.hpp"
 #include "shaders/ShaderProgram.hpp"
 
-#include <glad/gl.h>
+#include <GL/gl3w.h>
 
 
 namespace leopph::internal
