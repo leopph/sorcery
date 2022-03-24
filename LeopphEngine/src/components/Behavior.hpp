@@ -28,12 +28,12 @@ namespace leopph
 			// Attach the Behavior to the Entity.
 			// OnFrameUpdate is only called on attached, active Behaviors.
 			LEOPPHAPI
-			auto Attach(leopph::Entity* entity) -> void final;
+			auto Attach(leopph::Entity* entity) -> void;
 
 			LEOPPHAPI
 			// Detach the Behavior from its Entity.
 			// OnFrameUpdate is only called on attached, active Behaviors.
-			auto Detach() -> void final;
+			auto Detach() -> void;
 
 			Behavior(const Behavior& other) = delete;
 			auto operator=(const Behavior& other) -> Behavior& = delete;
