@@ -62,6 +62,10 @@ I'm trying to place as much info into header/module files as I can. For now, dev
 - MSVC
 - MSBuild
 - CMake
+- Python 2.7 or newer
+### Runtime requirements
+- Windows
+- OpenGL 4.5 compatible GPU
 ### Building
 After pulling the repo, run the **setup_env.bat** file from the root folder.  
 It will
