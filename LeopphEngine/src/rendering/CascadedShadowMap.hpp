@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../components/Camera.hpp"
 #include "../events/DirShadowEvent.hpp"
 #include "../events/handling/EventReceiver.hpp"
 #include "../math/Matrix.hpp"

@@ -80,6 +80,7 @@
     <ClCompile Include="src\rendering\Image.cpp" />
     <ClCompile Include="vendor\gl3w\src\gl3w.c" />
     <ClCompile Include="src\components\PerspectiveCamera.cpp" />
+    <ClCompile Include="src\components\OrthographicCamera.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\Behavior.hpp" />
@@ -187,6 +188,7 @@
     <ClInclude Include="src\rendering\Image.hpp" />
     <ClInclude Include="src\components\PerspectiveCamera.hpp" />
     <ClInclude Include="src\misc\Frustum.hpp" />
+    <ClInclude Include="src\components\OrthographicCamera.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\cpp.hint" />
