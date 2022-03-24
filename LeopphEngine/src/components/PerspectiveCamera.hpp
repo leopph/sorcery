@@ -9,30 +9,23 @@ namespace leopph
 	class PerspectiveCamera final : public Camera
 	{
 		public:
-			// When adjusting FOV, this is used to specify which direction
-			// the FOV value should be interpreted in for non-symmetric viewing volumes.
-			enum class FovDirection
-			{
-				Horizontal,
-				Vertical
-			};
+			// Get the current field of view of the Camera in degrees.
+			// side specifies whether the value should be interpreted horizontally or vertically.
+			[[nodiscard]] LEOPPHAPI
+			auto Fov(Side side = Side::Horizontal) const noexcept -> float;
 
-
-			PerspectiveCamera() = default;
-
-			// Set the current FOV value of the Camera in degrees.
-			// For non-symmetric viewing volumes, direction specifies the interpretation.
-			LEOPPHAPI auto Fov(float degrees, FovDirection direction) -> void;
-
-			// Get the current FOV value of the Camera in degrees.
-			// For non-symmetric viewing volumes, direction specifies the interpretation.
-			LEOPPHAPI auto Fov(FovDirection direction) const -> float;
+			// Set the current field of view of the Camera in degrees.
+			// side specifies whether the value is interpreted horizontally or vertically.
+			LEOPPHAPI
+			auto Fov(float degrees, Side side = Side::Horizontal) noexcept -> void;
 
 			[[nodiscard]] LEOPPHAPI
 			auto ProjectionMatrix() const -> Matrix4 override;
 
 			[[nodiscard]] LEOPPHAPI
 			auto Frustum() const -> leopph::Frustum override;
+
+			PerspectiveCamera() = default;
 
 			PerspectiveCamera(PerspectiveCamera const& other) = delete;
 			auto operator=(PerspectiveCamera const& other) -> PerspectiveCamera& = delete;
@@ -43,7 +36,7 @@ namespace leopph
 			~PerspectiveCamera() override = default;
 
 		private:
-			enum class FovConversionDirection
+			enum class Conversion
 			{
 				VerticalToHorizontal,
 				HorizontalToVertical
@@ -51,7 +44,7 @@ namespace leopph
 
 
 			[[nodiscard]]
-			auto ConvertFov(float fov, FovConversionDirection conversion) const -> float;
+			auto ConvertFov(float fov, Conversion conversion) const -> float;
 
 			float m_HorizontalFovDegrees{100.f};
 	};

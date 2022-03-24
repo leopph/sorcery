@@ -18,6 +18,14 @@ namespace leopph
 	class Camera : public Component, public EventReceiver<internal::WindowEvent>
 	{
 		public:
+			// Used for specifying parameters that affect the shape of the camera.
+			enum class Side
+			{
+				Vertical,
+				Horizontal
+			};
+
+
 			// The current camera that is used to render the scene.
 			[[nodiscard]] LEOPPHAPI static
 			auto Current() -> Camera*;
@@ -103,7 +111,6 @@ namespace leopph
 			auto AspectRatio() const -> float;
 
 		private:
-			// TODO this doesn't link without LEOPPHAPI, check out why
 			LEOPPHAPI
 			auto OnEventReceived(EventParamType event) -> void override;
 
