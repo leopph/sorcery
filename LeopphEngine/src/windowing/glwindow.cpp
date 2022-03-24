@@ -47,7 +47,10 @@ namespace leopph::internal
 
 		if (!m_Window)
 		{
-			auto const errMsg{"Failed to create GLFW window."};
+			std::string errMsg{"Failed to create GLFW window. "};
+			char const* glfwErrMsg;
+			glfwGetError(&glfwErrMsg);
+			errMsg.append(glfwErrMsg);
 			Logger::Instance().Critical(errMsg);
 			throw std::runtime_error{errMsg};
 		}
