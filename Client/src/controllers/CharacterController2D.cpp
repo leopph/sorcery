@@ -43,6 +43,8 @@ namespace demo
 			posDelta += Vector3::Right();
 		}
 
+		posDelta.Normalize();
+
 		if (Input::GetKey(KeyCode::LeftShift))
 		{
 			posDelta *= m_RunMult;

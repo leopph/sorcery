@@ -8,7 +8,7 @@ namespace demo
 	class SmoothFollow2DCameraController final : public leopph::Behavior
 	{
 		public:
-			SmoothFollow2DCameraController(leopph::ComponentPtr<leopph::Camera const> const& camera, leopph::ComponentPtr<leopph::Transform> target, leopph::Vector2 targetOffsetFromCenter, float followSpeed);
+			SmoothFollow2DCameraController(leopph::ComponentPtr<leopph::Camera const> const& camera, leopph::ComponentPtr<leopph::Transform> target, leopph::Vector2 targetOffsetFromCenter, float followSpeed = 1);
 
 			auto OnFrameUpdate() -> void override;
 

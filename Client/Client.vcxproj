@@ -139,6 +139,7 @@ ASAN_SYMBOLIZER_PATH=$(VC_ExecutablePath_x64)</LocalDebuggerEnvironment>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\AnimatedSprite.cpp" />
+    <ClCompile Include="src\Parallaxer.cpp" />
     <ClCompile Include="src\controllers\CharacterController2D.cpp" />
     <ClCompile Include="src\controllers\FirstPersonCameraController.cpp" />
     <ClCompile Include="src\controllers\SmoothFollow2DCameraController.cpp" />
@@ -160,6 +161,7 @@ ASAN_SYMBOLIZER_PATH=$(VC_ExecutablePath_x64)</LocalDebuggerEnvironment>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\AnimatedSprite.hpp" />
+    <ClInclude Include="src\Parallaxer.hpp" />
     <ClInclude Include="src\controllers\CharacterController2D.hpp" />
     <ClInclude Include="src\controllers\FirstPersonCameraController.hpp" />
     <ClInclude Include="src\controllers\SmoothFollow2DCameraController.hpp" />

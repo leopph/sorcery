@@ -13,11 +13,18 @@ namespace demo
 		m_CamTransform{camera->Entity()->Transform()},
 		m_Offset{targetOffsetFromCenter},
 		m_Speed{followSpeed}
-	{ }
+	{
+		UpdateIndex(std::numeric_limits<decltype(UpdateIndex())>::max());
+	}
 
 
 	auto SmoothFollow2DCameraController::OnFrameUpdate() -> void
 	{
+		if (!m_Target || !m_Target->IsAttached() || !m_CamTransform || !m_CamTransform->IsAttached())
+		{
+			return;
+		}
+
 		auto static constexpr epsilon = 0.1f;
 
 		if (Vector2 camPos{m_CamTransform->Position()}, targetPos{m_Target->Position()}; Vector2::Distance(camPos, targetPos - m_Offset) > epsilon)
