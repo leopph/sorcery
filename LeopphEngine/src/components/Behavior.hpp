@@ -13,7 +13,21 @@ namespace leopph
 		public:
 			// This function is called on all attached active Behaviors every frame.
 			virtual
-			auto OnFrameUpdate() -> void;
+			auto OnFrameUpdate() -> void = 0;
+
+			// Get the Update Index of the Behavior.
+			// The update index defines the order of OnFrameUpdate calls on Behaviors.
+			// Behaviors with the a lower Update Index are updated before the ones with a higher index.
+			// Behaviors with the same index have an undefined order between them.
+			[[nodiscard]] LEOPPHAPI
+			auto UpdateIndex() const noexcept -> int;
+
+			// Set the Update Index of the Behavior.
+			// The update index defines the order of OnFrameUpdate calls on Behaviors.
+			// Behaviors with the a lower Update Index are updated before the ones with a higher index.
+			// Behaviors with the same index have an undefined order between them.
+			LEOPPHAPI
+			auto UpdateIndex(int index) -> void;
 
 			// Activate the Behavior.
 			// OnFrameUpdate is only called on attached, active Behaviors.
@@ -28,15 +42,15 @@ namespace leopph
 			// Attach the Behavior to the Entity.
 			// OnFrameUpdate is only called on attached, active Behaviors.
 			LEOPPHAPI
-			auto Attach(leopph::Entity* entity) -> void;
+			auto Attach(leopph::Entity* entity) -> void override;
 
 			LEOPPHAPI
 			// Detach the Behavior from its Entity.
 			// OnFrameUpdate is only called on attached, active Behaviors.
-			auto Detach() -> void;
+			auto Detach() -> void override;
 
-			Behavior(const Behavior& other) = delete;
-			auto operator=(const Behavior& other) -> Behavior& = delete;
+			Behavior(Behavior const& other) = delete;
+			auto operator=(Behavior const& other) -> Behavior& = delete;
 
 			Behavior(Behavior&& other) noexcept = delete;
 			auto operator=(Behavior&& other) noexcept -> Behavior& = delete;
@@ -45,9 +59,8 @@ namespace leopph
 
 		protected:
 			Behavior() = default;
+
+		private:
+			int m_UpdateIndex{0};
 	};
-
-
-	inline auto Behavior::OnFrameUpdate() -> void
-	{}
 }

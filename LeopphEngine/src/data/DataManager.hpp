@@ -191,8 +191,10 @@ namespace leopph::internal
 
 
 			using EntityOrderFunc = std::ranges::less;
+			using BehaviorOrderFunc = std::ranges::less;
 
 			auto SortEntities() -> void;
+			auto SortActiveBehaviors() -> void;
 
 			// All engine-owned objects.
 			std::set<std::unique_ptr<Poelo>, PoeloLess> m_Poelos;

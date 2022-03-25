@@ -96,6 +96,11 @@ namespace leopph::internal
 	auto DataManager::RegisterBehavior(Behavior* behavior, bool const active) -> void
 	{
 		(active ? m_ActiveBehaviors : m_InactiveBehaviors).push_back(behavior);
+
+		if (active)
+		{
+			SortActiveBehaviors();
+		}
 	}
 
 
@@ -252,6 +257,15 @@ namespace leopph::internal
 		std::ranges::sort(m_EntitiesAndComponents, EntityOrderFunc{}, [](auto const& elem) -> auto const&
 		{
 			return *elem.Entity;
+		});
+	}
+
+
+	auto DataManager::SortActiveBehaviors() -> void
+	{
+		std::ranges::sort(m_ActiveBehaviors, BehaviorOrderFunc{}, [](auto const* behavior)
+		{
+			return behavior->UpdateIndex();
 		});
 	}
 

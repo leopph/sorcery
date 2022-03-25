@@ -5,6 +5,26 @@
 
 namespace leopph
 {
+	auto Behavior::UpdateIndex() const noexcept -> int
+	{
+		return m_UpdateIndex;
+	}
+
+
+	auto Behavior::UpdateIndex(int const index) -> void
+	{
+		m_UpdateIndex = index;
+
+		// If we're actively updated we reregister ourselves to trigger a sort based on the new index.
+		if (IsAttached() && IsActive())
+		{
+			auto& dataManager{internal::DataManager::Instance()};
+			dataManager.UnregisterBehavior(this, true);
+			dataManager.RegisterBehavior(this, true);
+		}
+	}
+
+
 	auto Behavior::Activate() -> void
 	{
 		if (IsActive())
