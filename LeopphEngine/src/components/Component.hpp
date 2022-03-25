@@ -74,6 +74,12 @@ namespace leopph
 	template<std::derived_from<Component> T = Component>
 	using ComponentPtr = std::shared_ptr<T>;
 
+	template<std::derived_from<Component> T, typename... Args>
+	constexpr auto CreateComponent(Args&&... args) -> ComponentPtr<T>
+	{
+		return std::make_shared<T>(std::forward<Args>(args)...);
+	}
+
 
 	constexpr auto Component::Entity() const noexcept
 	{

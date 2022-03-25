@@ -35,7 +35,7 @@ namespace leopph
 			// Returns the first active Component of type T attached to the Entity the engine finds, or nullptr.
 			// There are no guarantees of the order of Components attached to the Entity.
 			template<std::derived_from<Component> T>
-			auto GetComponent() const -> std::shared_ptr<T>;
+			auto GetComponent() const -> ComponentPtr<T>;
 
 			// Attach an already existing Component to the Entity.
 			// Equivalent to calling component->Attach(this).
@@ -96,7 +96,7 @@ namespace leopph
 
 			std::string m_Name;
 			// This has to be attached after registering the Entity.
-			std::shared_ptr<leopph::Transform> m_Transform{std::make_shared<leopph::Transform>()};
+			ComponentPtr<leopph::Transform> m_Transform{CreateComponent<leopph::Transform>()};
 	};
 
 
@@ -127,14 +127,14 @@ namespace leopph
 	template<std::derived_from<Component> T, class... Args>
 	auto Entity::CreateAndAttachComponent(Args&&... args)
 	{
-		auto component{std::make_shared<T>(std::forward<Args>(args)...)};
+		auto component{CreateComponent<T>(std::forward<Args>(args)...)};
 		AttachComponent(component);
 		return component;
 	}
 
 
 	template<std::derived_from<Component> T>
-	auto Entity::GetComponent() const -> std::shared_ptr<T>
+	auto Entity::GetComponent() const -> ComponentPtr<T>
 	{
 		for (auto const& component : Components())
 		{
