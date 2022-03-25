@@ -1,9 +1,12 @@
 #include "AnimatedSprite.hpp"
 
+using leopph::ImageSprite;
+using leopph::ComponentPtr;
+
 
 namespace demo
 {
-	AnimatedSprite::AnimatedSprite(std::span<std::shared_ptr<leopph::ImageSprite>> sprites, AnimationMode const animMode, float const speed) :
+	AnimatedSprite::AnimatedSprite(std::span<ComponentPtr<ImageSprite>> sprites, AnimationMode const animMode, float const speed) :
 		m_Sprites{sprites.begin(), sprites.end()},
 		m_AnimMode{animMode},
 		m_Speed{speed}
@@ -47,7 +50,7 @@ namespace demo
 	{
 		Behavior::Attach(entity);
 
-		for (auto const sprite : m_Sprites)
+		for (auto const& sprite : m_Sprites)
 		{
 			sprite->Attach(Entity());
 			sprite->Deactivate();
@@ -61,7 +64,7 @@ namespace demo
 	{
 		Behavior::Detach();
 
-		for (auto const sprite : m_Sprites)
+		for (auto const& sprite : m_Sprites)
 		{
 			sprite->Detach();
 		}

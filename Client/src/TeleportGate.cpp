@@ -5,7 +5,7 @@
 
 namespace demo
 {
-	TeleportGate::TeleportGate(leopph::Entity* player, std::shared_ptr<SceneSwitcher> sceneSwitcher) :
+	TeleportGate::TeleportGate(leopph::Entity* player, leopph::ComponentPtr<SceneSwitcher> sceneSwitcher) :
 		m_Player{player},
 		m_SceneSwitcher{std::move(sceneSwitcher)}
 	{}
@@ -13,7 +13,7 @@ namespace demo
 
 	auto TeleportGate::OnFrameUpdate() -> void
 	{
-		std::ranges::for_each(m_PortPoints, [this](const auto& portPoint)
+		std::ranges::for_each(m_PortPoints, [this](auto const& portPoint)
 		{
 			if (leopph::Vector3::Distance(m_Player->Transform()->Position(), portPoint.ActivationPoint->Position()) < portPoint.Distance)
 			{
@@ -23,7 +23,7 @@ namespace demo
 	}
 
 
-	auto TeleportGate::AddPortPoint(const TeleportGate::PortPoint& portPoint) -> void
+	auto TeleportGate::AddPortPoint(PortPoint const& portPoint) -> void
 	{
 		m_PortPoints.push_back(portPoint);
 	}

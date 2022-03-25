@@ -22,7 +22,7 @@ auto leopph::Init() -> void
 	auto const camEntity = new Entity{demo::CAM_ENTITY_NAME};
 	auto const perspectiveCamera = camEntity->CreateAndAttachComponent<PerspectiveCamera>();
 	camEntity->CreateAndAttachComponent<OrthographicCamera>();
-	camEntity->CreateAndAttachComponent<demo::FirstPersonCameraController>(perspectiveCamera.get(), demo::CAM_3D_SPEED, demo::CAM_3D_SENS, demo::CAM_3D_RUN_MULT, demo::CAM_3D_WALK_MULT);
+	camEntity->CreateAndAttachComponent<demo::FirstPersonCameraController>(perspectiveCamera, demo::CAM_3D_SPEED, demo::CAM_3D_SENS, demo::CAM_3D_RUN_MULT, demo::CAM_3D_WALK_MULT);
 
 	auto const utilEnt = new Entity{demo::UTILITY_ENTITY_NAME};
 	utilEnt->CreateAndAttachComponent<FrameRateAnalyzer>(0.5f, 60u);

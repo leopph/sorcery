@@ -41,7 +41,7 @@ namespace demo
 		for (auto i = 0; i < sprites.size(); i++)
 		{
 			auto static constexpr ppi = 1024;
-			sprites[i] = std::make_shared<ImageSprite>(spritePathPrefix + std::to_string(i) + spritePathExt, ppi);
+			sprites[i] = leopph::CreateComponent<ImageSprite>(spritePathPrefix + std::to_string(i) + spritePathExt, ppi);
 		}
 
 		auto const demon = new Entity;
@@ -49,7 +49,7 @@ namespace demo
 		demon->CreateAndAttachComponent<CharacterController2D>(demon->Transform(), CHAR_2D_SPEED, CHAR_2D_RUN_MULT, CHAR_2D_WALK_MULT);
 		demon->CreateAndAttachComponent<AnimatedSprite>(sprites, AnimatedSprite::AnimationMode::Bounce, 2.f);
 
-		camEntity->CreateAndAttachComponent<SmoothFollow2DCameraController>(cam.get(), demon->Transform(), Vector2{0}, 4.f);
+		camEntity->CreateAndAttachComponent<SmoothFollow2DCameraController>(cam, demon->Transform(), Vector2{0}, 4.f);
 
 		auto const background = new Entity;
 		background->Transform()->Position(Vector3{0, 0, 2});

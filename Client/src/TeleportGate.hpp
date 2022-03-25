@@ -14,7 +14,7 @@ namespace demo
 			struct PortPoint
 			{
 				// The Transform's position is the center of activation
-				std::shared_ptr<leopph::Transform> ActivationPoint;
+				leopph::ComponentPtr<leopph::Transform> ActivationPoint;
 				// The distance the player has to be from the ActivationPoint
 				// to trigger a scene change
 				float Distance;
@@ -23,13 +23,13 @@ namespace demo
 			};
 
 
-			explicit TeleportGate(leopph::Entity* player, std::shared_ptr<SceneSwitcher> sceneSwitcher);
+			explicit TeleportGate(leopph::Entity* player, leopph::ComponentPtr<SceneSwitcher> sceneSwitcher);
 			auto OnFrameUpdate() -> void override;
-			auto AddPortPoint(const PortPoint& portPoint) -> void;
+			auto AddPortPoint(PortPoint const& portPoint) -> void;
 
 		private:
 			leopph::Entity* m_Player;
-			std::shared_ptr<SceneSwitcher> m_SceneSwitcher{nullptr};
+			leopph::ComponentPtr<SceneSwitcher> m_SceneSwitcher{nullptr};
 			std::vector<PortPoint> m_PortPoints;
 	};
 }

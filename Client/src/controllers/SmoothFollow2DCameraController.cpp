@@ -1,11 +1,14 @@
 #include "SmoothFollow2DCameraController.hpp"
 
 using leopph::Vector2;
+using leopph::ComponentPtr;
+using leopph::Transform;
+using leopph::Camera;
 
 
 namespace demo
 {
-	SmoothFollow2DCameraController::SmoothFollow2DCameraController(leopph::Camera const* camera, std::shared_ptr<leopph::Transform> target, Vector2 const targetOffsetFromCenter, float const followSpeed) :
+	SmoothFollow2DCameraController::SmoothFollow2DCameraController(ComponentPtr<Camera const> const& camera, ComponentPtr<Transform> target, Vector2 const targetOffsetFromCenter, float const followSpeed) :
 		m_Target{std::move(target)},
 		m_CamTransform{camera->Entity()->Transform()},
 		m_Offset{targetOffsetFromCenter},

@@ -5,11 +5,13 @@ using leopph::KeyCode;
 using leopph::Vector3;
 using leopph::time::DeltaTime;
 using leopph::Space;
+using leopph::ComponentPtr;
+using leopph::Transform;
 
 
 namespace demo
 {
-	CharacterController2D::CharacterController2D(std::shared_ptr<leopph::Transform> target, float const speed, float const runMult, float const walkMult) :
+	CharacterController2D::CharacterController2D(ComponentPtr<Transform> target, float const speed, float const runMult, float const walkMult) :
 		m_Target{std::move(target)},
 		m_Speed{speed},
 		m_RunMult{runMult},

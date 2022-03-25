@@ -1,14 +1,19 @@
 #include "FirstPersonCameraController.hpp"
 
+using leopph::Camera;
+using leopph::ComponentPtr;
+using leopph::Input;
+using leopph::KeyCode;
+
 
 namespace demo
 {
-	FirstPersonCameraController::FirstPersonCameraController(leopph::Camera const* camera, float const speed, float const sens, float const runMult, float const walkMult) :
-		FirstPersonCameraController{camera, speed, sens, runMult, walkMult, leopph::Input::GetMousePosition()}
+	FirstPersonCameraController::FirstPersonCameraController(ComponentPtr<Camera const> const& camera, float const speed, float const sens, float const runMult, float const walkMult) :
+		FirstPersonCameraController{camera, speed, sens, runMult, walkMult, Input::GetMousePosition()}
 	{ }
 
 
-	FirstPersonCameraController::FirstPersonCameraController(leopph::Camera const* camera, float const speed, float const sens, float const runMult, float const walkMult, std::tuple<float, float> const& mousePos) :
+	FirstPersonCameraController::FirstPersonCameraController(ComponentPtr<Camera const> const& camera, float const speed, float const sens, float const runMult, float const walkMult, std::tuple<float, float> const& mousePos) :
 		m_CamTransform{camera->Entity()->Transform()},
 		m_Speed{speed},
 		m_Sens{sens},
@@ -23,51 +28,51 @@ namespace demo
 	{
 		leopph::Vector3 movementVector;
 
-		if (leopph::Input::GetKey(leopph::KeyCode::W))
+		if (Input::GetKey(KeyCode::W))
 		{
 			movementVector += m_CamTransform->Forward();
 		}
 
-		if (leopph::Input::GetKey(leopph::KeyCode::S))
+		if (Input::GetKey(KeyCode::S))
 		{
 			movementVector -= m_CamTransform->Forward();
 		}
 
-		if (leopph::Input::GetKey(leopph::KeyCode::D))
+		if (Input::GetKey(KeyCode::D))
 		{
 			movementVector += m_CamTransform->Right();
 		}
 
-		if (leopph::Input::GetKey(leopph::KeyCode::A))
+		if (Input::GetKey(KeyCode::A))
 		{
 			movementVector -= m_CamTransform->Right();
 		}
 
-		if (leopph::Input::GetKey(leopph::KeyCode::Space))
+		if (Input::GetKey(KeyCode::Space))
 		{
 			movementVector += leopph::Vector3::Up();
 		}
 
-		if (leopph::Input::GetKey(leopph::KeyCode::LeftControl))
+		if (Input::GetKey(KeyCode::LeftControl))
 		{
 			movementVector += leopph::Vector3::Down();
 		}
 
 		movementVector.Normalize();
 
-		if (leopph::Input::GetKey(leopph::KeyCode::LeftShift))
+		if (Input::GetKey(KeyCode::LeftShift))
 		{
 			movementVector *= m_RunMult;
 		}
 
-		if (leopph::Input::GetKey(leopph::KeyCode::LeftAlt))
+		if (Input::GetKey(KeyCode::LeftAlt))
 		{
 			movementVector *= m_WalkMult;
 		}
 
 		m_CamTransform->Translate(movementVector * m_Speed * leopph::time::DeltaTime(), leopph::Space::World);
 
-		auto const [posX, posY] = leopph::Input::GetMousePosition();
+		auto const [posX, posY] = Input::GetMousePosition();
 		auto const diffX = posX - m_LastX;
 		auto const diffY = posY - m_LastY;
 

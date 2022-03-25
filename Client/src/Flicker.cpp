@@ -3,8 +3,8 @@
 
 namespace demo
 {
-	Flicker::Flicker(leopph::Light* light, const float on, const float out) :
-		m_Light{light},
+	Flicker::Flicker(leopph::ComponentPtr<leopph::Light> light, float const on, float const out) :
+		m_Light{std::move(light)},
 		m_OutTime{out},
 		m_OnTime{on}
 	{}
