@@ -56,13 +56,13 @@ namespace leopph
 	}
 
 
-	auto Entity::AttachComponent(std::shared_ptr<Component> const& component) -> void
+	auto Entity::AttachComponent(ComponentPtr<> const& component) -> void
 	{
 		component->Attach(this);
 	}
 
 
-	auto Entity::DetachComponent(std::shared_ptr<Component> const& component) const -> void
+	auto Entity::DetachComponent(ComponentPtr<> const& component) const -> void
 	{
 		const auto& logger{internal::Logger::Instance()};
 
@@ -100,7 +100,7 @@ namespace leopph
 	}
 
 
-	auto Entity::Components() const -> std::span<std::shared_ptr<Component> const>
+	auto Entity::Components() const -> std::span<ComponentPtr<> const>
 	{
 		return internal::DataManager::Instance().ComponentsOfEntity(this, true);
 	}

@@ -59,15 +59,15 @@ namespace leopph::internal
 			auto FindEntity(std::string const& name) -> Entity*;
 
 			// Adds the Component to the Entity's collection of active/inactive Components depending on the value of active.
-			auto RegisterComponentForEntity(Entity const* entity, std::shared_ptr<Component> component, bool active) -> void;
+			auto RegisterComponentForEntity(Entity const* entity, ComponentPtr<> component, bool active) -> void;
 
 			// Removes the Component from the Entity's collection of active/inactive Components depending on the value of active.
 			// Returns the removed pointer.
-			auto UnregisterComponentFromEntity(Entity const* entity, Component const* component, bool active) -> std::shared_ptr<Component>;
+			auto UnregisterComponentFromEntity(Entity const* entity, Component const* component, bool active) -> ComponentPtr<>;
 
 			// Returns the Entity's collection of active/inactive Components depending on the value of active.
 			[[nodiscard]]
-			auto ComponentsOfEntity(Entity const* entity, bool active) const -> std::span<std::shared_ptr<Component> const>;
+			auto ComponentsOfEntity(Entity const* entity, bool active) const -> std::span<ComponentPtr<> const>;
 
 			// Adds the Behavior to the collection of Behaviors depending on the value of active.
 			// Does NOT check for duplicates.
@@ -175,8 +175,8 @@ namespace leopph::internal
 			struct EntityEntry
 			{
 				Entity* Entity; // Non-owning pointer to Entity
-				std::vector<std::shared_ptr<Component>> ActiveComponents;
-				std::vector<std::shared_ptr<Component>> InactiveComponents;
+				std::vector<ComponentPtr<>> ActiveComponents;
+				std::vector<ComponentPtr<>> InactiveComponents;
 			};
 
 

@@ -2,6 +2,7 @@
 
 #include "../api/LeopphApi.hpp"
 
+#include <concepts>
 #include <memory>
 
 
@@ -53,8 +54,8 @@ namespace leopph
 			[[nodiscard]] LEOPPHAPI
 			auto IsAttached() const -> bool;
 
-			Component(const Component& other) = delete;
-			auto operator=(const Component& other) -> Component& = delete;
+			Component(Component const& other) = delete;
+			auto operator=(Component const& other) -> Component& = delete;
 
 			Component(Component&& other) noexcept = delete;
 			auto operator=(Component&& other) noexcept -> Component& = delete;
@@ -68,6 +69,10 @@ namespace leopph
 			leopph::Entity* m_Entity{nullptr};
 			bool m_IsActive{true};
 	};
+
+	// Reference counted pointer to a Component with ownership.
+	template<std::derived_from<Component> T = Component>
+	using ComponentPtr = std::shared_ptr<T>;
 
 
 	constexpr auto Component::Entity() const noexcept

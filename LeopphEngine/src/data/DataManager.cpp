@@ -65,14 +65,14 @@ namespace leopph::internal
 	}
 
 
-	auto DataManager::RegisterComponentForEntity(Entity const* const entity, std::shared_ptr<Component> component, bool const active) -> void
+	auto DataManager::RegisterComponentForEntity(Entity const* const entity, ComponentPtr<> component, bool const active) -> void
 	{
 		auto const it{GetEntityIterator(entity->Name())};
 		(active ? it->ActiveComponents : it->InactiveComponents).push_back(std::move(component));
 	}
 
 
-	auto DataManager::UnregisterComponentFromEntity(Entity const* const entity, Component const* component, bool const active) -> std::shared_ptr<Component>
+	auto DataManager::UnregisterComponentFromEntity(Entity const* const entity, Component const* component, bool const active) -> ComponentPtr<>
 	{
 		auto const entryIt = GetEntityIterator(entity->Name());
 		auto& components = active ? entryIt->ActiveComponents : entryIt->InactiveComponents; // no bounds checking here
@@ -86,7 +86,7 @@ namespace leopph::internal
 	}
 
 
-	auto DataManager::ComponentsOfEntity(Entity const* const entity, bool const active) const -> std::span<std::shared_ptr<Component> const>
+	auto DataManager::ComponentsOfEntity(Entity const* const entity, bool const active) const -> std::span<ComponentPtr<> const>
 	{
 		auto const it{GetEntityIterator(entity->Name())};
 		return active ? it->ActiveComponents : it->InactiveComponents;

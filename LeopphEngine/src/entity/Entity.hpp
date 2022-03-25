@@ -40,7 +40,7 @@ namespace leopph
 			// Attach an already existing Component to the Entity.
 			// Equivalent to calling component->Attach(this).
 			LEOPPHAPI
-			auto AttachComponent(std::shared_ptr<Component> const& component) -> void;
+			auto AttachComponent(ComponentPtr<> const& component) -> void;
 
 			// Attach a newly constructed Component of type T to the Entity.
 			// Returns a pointer the Component.
@@ -50,7 +50,7 @@ namespace leopph
 
 			// Detach the given Component from the Entity.
 			LEOPPHAPI
-			auto DetachComponent(std::shared_ptr<Component> const& component) const -> void;
+			auto DetachComponent(ComponentPtr<> const& component) const -> void;
 
 			// Activates all inactive Components attached to the Entity.
 			// Equivalent to calling Activate() on all attached inactive Components.
@@ -92,7 +92,7 @@ namespace leopph
 
 			// The active Components attached to the Entity.
 			[[nodiscard]] LEOPPHAPI
-			auto Components() const -> std::span<std::shared_ptr<Component> const>;
+			auto Components() const -> std::span<ComponentPtr<> const>;
 
 			std::string m_Name;
 			// This has to be attached after registering the Entity.
