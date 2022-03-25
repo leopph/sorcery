@@ -3,15 +3,11 @@
 namespace leopph
 {
 	// All supported key states.
-	enum class KeyState
+	enum class KeyState : int
 	{
-		// A key is Down if it was pressed down during this frame.
-		Down,
-		// A key is Held if it has been pressed down since an earlier frame.
-		Held,
-		// A key is Up if it was let go during this frame.
-		Up,
-		// A key is Released in its natural state.
-		Released,
+		Down = 1, // The key was pressed down during this frame.
+		Held = 2, // The key has been pressed down since an earlier frame.
+		Up = 3, // The key was let go during this frame.
+		Released = 0, // The key is in its natural state.
 	};
 }
