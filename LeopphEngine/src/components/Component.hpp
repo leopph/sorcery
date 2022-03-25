@@ -1,7 +1,8 @@
 #pragma once
 
 #include "../api/LeopphApi.hpp"
-#include "../data/Poelo.hpp"
+
+#include <memory>
 
 
 namespace leopph
@@ -11,7 +12,7 @@ namespace leopph
 	// Components are objects that are attached to Entities to provide additional functionality.
 	// They serve as a form of decoration to Entities and define their properties.
 	// Subclass this to provide your own properties to Entities.
-	class Component : public internal::Poelo
+	class Component : public std::enable_shared_from_this<Component>
 	{
 		public:
 			// The Entity the Component is attached to, or nullptr if not attached.
@@ -58,7 +59,7 @@ namespace leopph
 			Component(Component&& other) noexcept = delete;
 			auto operator=(Component&& other) noexcept -> Component& = delete;
 
-			LEOPPHAPI ~Component() override;
+			LEOPPHAPI virtual ~Component();
 
 		protected:
 			Component() = default;

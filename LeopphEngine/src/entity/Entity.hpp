@@ -22,7 +22,7 @@ namespace leopph
 		public:
 			// Returns a pointer to the Entity with the passed name, or nullptr if not found.
 			LEOPPHAPI static
-			auto FindEntity(const std::string& name) -> Entity*;
+			auto Find(std::string const& name) -> Entity*;
 
 			// The Entity's name is a unique identifier.
 			[[nodiscard]] constexpr
@@ -30,17 +30,17 @@ namespace leopph
 
 			// The Entity's Transform describes its spatial properties.
 			[[nodiscard]] constexpr
-			auto Transform() const noexcept;
+			auto Transform() const noexcept -> auto const&;
 
 			// Returns the first active Component of type T attached to the Entity the engine finds, or nullptr.
 			// There are no guarantees of the order of Components attached to the Entity.
 			template<std::derived_from<Component> T>
-			auto GetComponent() const -> T*;
+			auto GetComponent() const -> std::shared_ptr<T>;
 
 			// Attach an already existing Component to the Entity.
 			// Equivalent to calling component->Attach(this).
 			LEOPPHAPI
-			auto AttachComponent(Component* component) -> void;
+			auto AttachComponent(std::shared_ptr<Component> const& component) -> void;
 
 			// Attach a newly constructed Component of type T to the Entity.
 			// Returns a pointer the Component.
@@ -50,7 +50,7 @@ namespace leopph
 
 			// Detach the given Component from the Entity.
 			LEOPPHAPI
-			auto DetachComponent(Component* component) const -> void;
+			auto DetachComponent(std::shared_ptr<Component> const& component) const -> void;
 
 			// Activates all inactive Components attached to the Entity.
 			// Equivalent to calling Activate() on all attached inactive Components.
@@ -62,11 +62,10 @@ namespace leopph
 			LEOPPHAPI
 			auto DeactiveAllComponents() const -> void;
 
-			LEOPPHAPI explicit
-			Entity(std::string name = GenerateUnusedName());
+			LEOPPHAPI explicit Entity(std::string name = GenerateUnusedName());
 
-			Entity(const Entity&) = delete;
-			auto operator=(const Entity&) -> void = delete;
+			Entity(Entity const&) = delete;
+			auto operator=(Entity const&) -> void = delete;
 
 			Entity(Entity&&) = delete;
 			auto operator=(Entity&&) -> void = delete;
@@ -76,28 +75,28 @@ namespace leopph
 
 			// Provides ordering based on name.
 			[[nodiscard]] constexpr
-			auto operator<=>(const Entity& other) const;
+			auto operator<=>(Entity const& other) const;
 
 			// Equality based on names.
 			[[nodiscard]] constexpr
-			auto operator==(const Entity& other) const -> bool;
+			auto operator==(Entity const& other) const -> bool;
 
 		private:
 			// Generate a name that is not used by any registered Entity at the time of calling.
 			// The function uses the passed prefix and appends arbitrary characters to its end.
 			LEOPPHAPI static
-			auto GenerateUnusedName(const std::string& namePrefix = "Entity#") -> std::string;
+			auto GenerateUnusedName(std::string const& namePrefix = "Entity#") -> std::string;
 
 			static
-			auto NameIsUnused(const std::string& name) -> bool;
+			auto NameIsUnused(std::string const& name) -> bool;
 
 			// The active Components attached to the Entity.
 			[[nodiscard]] LEOPPHAPI
-			auto Components() const -> std::span<Component* const>;
+			auto Components() const -> std::span<std::shared_ptr<Component> const>;
 
 			std::string m_Name;
 			// This has to be attached after registering the Entity.
-			leopph::Transform* m_Transform{new leopph::Transform{}};
+			std::shared_ptr<leopph::Transform> m_Transform{std::make_shared<leopph::Transform>()};
 	};
 
 
@@ -107,19 +106,19 @@ namespace leopph
 	}
 
 
-	constexpr auto Entity::Transform() const noexcept
+	constexpr auto Entity::Transform() const noexcept -> auto const&
 	{
 		return m_Transform;
 	}
 
 
-	constexpr auto Entity::operator<=>(const Entity& other) const
+	constexpr auto Entity::operator<=>(Entity const& other) const
 	{
 		return m_Name <=> other.m_Name;
 	}
 
 
-	constexpr auto Entity::operator==(const Entity& other) const -> bool
+	constexpr auto Entity::operator==(Entity const& other) const -> bool
 	{
 		return m_Name == other.m_Name;
 	}
@@ -128,19 +127,18 @@ namespace leopph
 	template<std::derived_from<Component> T, class... Args>
 	auto Entity::CreateAndAttachComponent(Args&&... args)
 	{
-		const auto component{new T{std::forward<Args>(args)...}};
+		auto component{std::make_shared<T>(std::forward<Args>(args)...)};
 		AttachComponent(component);
 		return component;
 	}
 
 
 	template<std::derived_from<Component> T>
-	auto Entity::GetComponent() const -> T*
+	auto Entity::GetComponent() const -> std::shared_ptr<T>
 	{
-		for (const auto& component : Components())
+		for (auto const& component : Components())
 		{
-			if (const auto ret = dynamic_cast<T*>(component);
-				ret != nullptr)
+			if (auto ret = std::dynamic_pointer_cast<T>(component))
 			{
 				return ret;
 			}
@@ -153,10 +151,9 @@ namespace leopph
 	template<>
 	auto Entity::CreateAndAttachComponent<Transform>() = delete;
 
-
 	// Provides ordering with strings.
 	[[nodiscard]] inline
-	auto operator<=>(const Entity& entity, const std::string_view name)
+	auto operator<=>(Entity const& entity, std::string_view const name)
 	{
 		return entity.Name() <=> name;
 	}
@@ -164,7 +161,7 @@ namespace leopph
 
 	// Provides ordering with strings.
 	[[nodiscard]] inline
-	auto operator<=>(const std::string_view name, const Entity& entity)
+	auto operator<=>(std::string_view const name, Entity const& entity)
 	{
 		return name <=> entity.Name();
 	}
@@ -172,7 +169,7 @@ namespace leopph
 
 	// Provides equality with strings.
 	[[nodiscard]] inline
-	auto operator==(const Entity& entity, const std::string_view name) -> bool
+	auto operator==(Entity const& entity, std::string_view const name) -> bool
 	{
 		return entity.Name() == name;
 	}
@@ -180,7 +177,7 @@ namespace leopph
 
 	// Provides equality with strings.
 	[[nodiscard]] inline
-	auto operator==(const std::string_view name, const Entity& entity) -> bool
+	auto operator==(std::string_view const name, Entity const& entity) -> bool
 	{
 		return name == entity.Name();
 	}

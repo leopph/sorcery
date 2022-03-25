@@ -59,7 +59,7 @@ namespace leopph::internal
 			RenderComponent(RenderComponent&& other) = delete;
 			auto operator=(RenderComponent&& other) -> RenderComponent& = delete;
 
-			~RenderComponent() noexcept override;
+			LEOPPHAPI ~RenderComponent() noexcept override;
 
 		protected:
 			explicit RenderComponent(std::shared_ptr<MeshGroup const>&& meshGroup);

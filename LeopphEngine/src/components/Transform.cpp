@@ -198,6 +198,12 @@ namespace leopph
 	}
 
 
+	auto Transform::Parent(std::shared_ptr<Transform> const& parent) -> void
+	{
+		return Parent(parent.get());
+	}
+
+
 	auto Transform::Parent(const std::nullptr_t null) -> void
 	{
 		Parent(static_cast<Transform*>(null));
@@ -260,7 +266,7 @@ namespace leopph
 			return;
 		}
 		
-		if (entity->Transform() != this)
+		if (entity->Transform().get() != this)
 		{
 			logger.Warning("Ignoring attempt to attach a second Transform to Entity [" + entity->Name() + "].");
 			return;

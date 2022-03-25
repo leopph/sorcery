@@ -18,8 +18,8 @@ namespace leopph
 		if (IsAttached())
 		{
 			auto& dataManager{internal::DataManager::Instance()};
-			dataManager.UnregisterComponentFromEntity(m_Entity, this, false);
-			dataManager.RegisterComponentForEntity(m_Entity, this, true);
+			auto p = dataManager.UnregisterComponentFromEntity(m_Entity, this, false);
+			dataManager.RegisterComponentForEntity(m_Entity, std::move(p), true);
 		}
 	}
 
@@ -36,15 +36,15 @@ namespace leopph
 		if (IsAttached())
 		{
 			auto& dataManager{internal::DataManager::Instance()};
-			dataManager.UnregisterComponentFromEntity(m_Entity, this, true);
-			dataManager.RegisterComponentForEntity(m_Entity, this, false);
+			auto p = dataManager.UnregisterComponentFromEntity(m_Entity, this, true);
+			dataManager.RegisterComponentForEntity(m_Entity, std::move(p), false);
 		}
 	}
 
 
 	auto Component::Attach(leopph::Entity* entity) -> void
 	{
-		const auto& logger{internal::Logger::Instance()};
+		auto const& logger{internal::Logger::Instance()};
 
 		if (!entity)
 		{
@@ -63,8 +63,18 @@ namespace leopph
 			Detach();
 		}
 
+		try
+		{
+			internal::DataManager::Instance().RegisterComponentForEntity(entity, shared_from_this(), IsActive());
+		}
+		catch (std::bad_weak_ptr const&)
+		{
+			auto const errMsg{"Failed to attach Component because it is not a shared object."};
+			logger.Critical(errMsg);
+			throw std::runtime_error{errMsg};
+		}
+
 		m_Entity = entity;
-		internal::DataManager::Instance().RegisterComponentForEntity(m_Entity, this, IsActive());
 	}
 
 

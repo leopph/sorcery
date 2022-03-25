@@ -10,7 +10,7 @@
 
 namespace leopph
 {
-	auto Entity::FindEntity(const std::string& name) -> Entity*
+	auto Entity::Find(const std::string& name) -> Entity*
 	{
 		return internal::DataManager::Instance().FindEntity(name);
 	}
@@ -40,7 +40,7 @@ namespace leopph
 	{
 		auto& dataManager{internal::DataManager::Instance()};
 
-		Destroy(m_Transform); // Transform is a special case because it cannot be detached.
+		m_Transform->Component::Detach(); // Transform is a special case because it cannot be detached.
 
 		std::ranges::for_each(std::array{true, false}, [this, &dataManager](const auto active)
 		{
@@ -56,13 +56,13 @@ namespace leopph
 	}
 
 
-	auto Entity::AttachComponent(Component* const component) -> void
+	auto Entity::AttachComponent(std::shared_ptr<Component> const& component) -> void
 	{
 		component->Attach(this);
 	}
 
 
-	auto Entity::DetachComponent(Component* const component) const -> void
+	auto Entity::DetachComponent(std::shared_ptr<Component> const& component) const -> void
 	{
 		const auto& logger{internal::Logger::Instance()};
 
@@ -74,7 +74,7 @@ namespace leopph
 
 		if (component->Entity() != this)
 		{
-			internal::Logger::Instance().Error("Ignoring attempt to remove component at [" + std::to_string(reinterpret_cast<std::size_t>(component)) + "] from Entity [" + m_Name + "], because the component is not owned by the Entity.");
+			internal::Logger::Instance().Error("Ignoring attempt to remove component at [" + std::to_string(reinterpret_cast<std::size_t>(component.get())) + "] from Entity [" + m_Name + "], because the component is not owned by the Entity.");
 			return;
 		}
 
@@ -100,7 +100,7 @@ namespace leopph
 	}
 
 
-	auto Entity::Components() const -> std::span<Component* const>
+	auto Entity::Components() const -> std::span<std::shared_ptr<Component> const>
 	{
 		return internal::DataManager::Instance().ComponentsOfEntity(this, true);
 	}

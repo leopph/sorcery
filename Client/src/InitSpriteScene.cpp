@@ -26,7 +26,7 @@ namespace demo
 	{
 		AmbientLight::Instance().Intensity(Vector3{1});
 
-		auto const camEntity = Entity::FindEntity(CAM_ENTITY_NAME);
+		auto const camEntity = Entity::Find(CAM_ENTITY_NAME);
 		camEntity->Transform()->Position(Vector3{0});
 		camEntity->GetComponent<PerspectiveCamera>()->Deactivate();
 		camEntity->GetComponent<FirstPersonCameraController>()->Deactivate();
@@ -35,13 +35,13 @@ namespace demo
 		cam->MakeCurrent();
 		cam->Size(5);
 
-		std::array<ImageSprite*, 4> sprites;
+		std::array<std::shared_ptr<ImageSprite>, 4> sprites;
 		std::string static const spritePathPrefix{"sprites/demon/demon"};
 		std::string static const spritePathExt{".png"};
 		for (auto i = 0; i < sprites.size(); i++)
 		{
 			auto static constexpr ppi = 1024;
-			sprites[i] = new ImageSprite{spritePathPrefix + std::to_string(i) + spritePathExt, ppi};
+			sprites[i] = std::make_shared<ImageSprite>(spritePathPrefix + std::to_string(i) + spritePathExt, ppi);
 		}
 
 		auto const demon = new Entity;
@@ -49,7 +49,7 @@ namespace demo
 		demon->CreateAndAttachComponent<CharacterController2D>(demon->Transform(), CHAR_2D_SPEED, CHAR_2D_RUN_MULT, CHAR_2D_WALK_MULT);
 		demon->CreateAndAttachComponent<AnimatedSprite>(sprites, AnimatedSprite::AnimationMode::Bounce, 2.f);
 
-		camEntity->CreateAndAttachComponent<SmoothFollow2DCameraController>(cam, demon->Transform(), Vector2{0}, 4.f);
+		camEntity->CreateAndAttachComponent<SmoothFollow2DCameraController>(cam.get(), demon->Transform(), Vector2{0}, 4.f);
 
 		auto const background = new Entity;
 		background->Transform()->Position(Vector3{0, 0, 2});

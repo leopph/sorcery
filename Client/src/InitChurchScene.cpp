@@ -20,7 +20,7 @@ namespace demo
 	auto InitChurchScene(SceneSwitcher::Scene thisScene, SceneSwitcher::Scene const nextScene) -> void
 	{
 		// Locate existing Entities
-		auto const player = Entity::FindEntity(CAM_ENTITY_NAME);
+		auto const player = Entity::Find(CAM_ENTITY_NAME);
 
 		// Create new Entities
 
@@ -65,7 +65,7 @@ namespace demo
 		// Find existing components
 
 		auto const camera = player->GetComponent<leopph::Camera>();
-		auto const teleport = Entity::FindEntity(demo::TELEPORT_ENTITY_NAME)->GetComponent<TeleportGate>();
+		auto const teleport = Entity::Find(demo::TELEPORT_ENTITY_NAME)->GetComponent<TeleportGate>();
 
 		// Create new Components
 
@@ -95,8 +95,5 @@ namespace demo
 
 		//AmbientLight::Instance().Intensity(Vector3{0});
 		AmbientLight::Instance().Intensity(Vector3{1});
-
-		auto const tmp = new Entity{};
-
 	}
 }

@@ -3,9 +3,9 @@
 
 namespace demo
 {
-	Follow2DCameraController::Follow2DCameraController(leopph::Camera const* camera, leopph::Transform* target, leopph::Vector2 targetOffsetFromCenter) :
+	Follow2DCameraController::Follow2DCameraController(leopph::Camera const* camera, std::shared_ptr<leopph::Transform> target, leopph::Vector2 targetOffsetFromCenter) :
 		m_CamTransform{camera->Entity()->Transform()},
-		m_Target{target},
+		m_Target{std::move(target)},
 		m_Offset{targetOffsetFromCenter}
 	{ }
 

@@ -19,7 +19,7 @@ namespace demo
 			auto OnFrameUpdate() -> void override;
 
 		private:
-			leopph::Transform* m_CamTransform;
+			std::shared_ptr<leopph::Transform> m_CamTransform;
 			float m_Speed;
 			float m_Sens;
 			float m_RunMult;

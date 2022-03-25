@@ -5,9 +5,9 @@
 
 namespace demo
 {
-	TeleportGate::TeleportGate(leopph::Entity* player, SceneSwitcher* sceneSwitcher) :
+	TeleportGate::TeleportGate(leopph::Entity* player, std::shared_ptr<SceneSwitcher> sceneSwitcher) :
 		m_Player{player},
-		m_SceneSwitcher{sceneSwitcher}
+		m_SceneSwitcher{std::move(sceneSwitcher)}
 	{}
 
 

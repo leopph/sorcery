@@ -2,6 +2,8 @@
 
 #include "../util/Logger.hpp"
 
+#include <algorithm>
+
 
 namespace leopph::internal
 {
@@ -49,7 +51,7 @@ namespace leopph::internal
 	auto DataManager::UnregisterEntity(Entity const* const entity) -> void
 	{
 		// Keeps the relative order, remains sorted.
-		std::erase_if(m_EntitiesAndComponents, [entity](EntityAndComponents const& elem)
+		std::erase_if(m_EntitiesAndComponents, [entity](EntityEntry const& elem)
 		{
 			return *elem.Entity == *entity;
 		});
@@ -63,21 +65,28 @@ namespace leopph::internal
 	}
 
 
-	auto DataManager::RegisterComponentForEntity(Entity const* const entity, Component* const component, bool const active) -> void
+	auto DataManager::RegisterComponentForEntity(Entity const* const entity, std::shared_ptr<Component> component, bool const active) -> void
 	{
 		auto const it{GetEntityIterator(entity->Name())};
-		(active ? it->ActiveComponents : it->InactiveComponents).push_back(component);
+		(active ? it->ActiveComponents : it->InactiveComponents).push_back(std::move(component));
 	}
 
 
-	auto DataManager::UnregisterComponentFromEntity(Entity const* const entity, Component* const component, bool const active) -> void
+	auto DataManager::UnregisterComponentFromEntity(Entity const* const entity, Component const* component, bool const active) -> std::shared_ptr<Component>
 	{
-		auto const it{GetEntityIterator(entity->Name())};
-		std::erase(active ? it->ActiveComponents : it->InactiveComponents, component);
+		auto const entryIt = GetEntityIterator(entity->Name());
+		auto& components = active ? entryIt->ActiveComponents : entryIt->InactiveComponents; // no bounds checking here
+		auto const compIt = std::ranges::find(components, component, [](auto const& elem) -> auto const*
+		{
+			return elem.get();
+		});
+		auto ret{std::move(*compIt)}; // no bounds checking here either
+		components.erase(compIt); // no bounds checking
+		return ret;
 	}
 
 
-	auto DataManager::ComponentsOfEntity(Entity const* const entity, bool const active) const -> std::span<Component* const>
+	auto DataManager::ComponentsOfEntity(Entity const* const entity, bool const active) const -> std::span<std::shared_ptr<Component> const>
 	{
 		auto const it{GetEntityIterator(entity->Name())};
 		return active ? it->ActiveComponents : it->InactiveComponents;

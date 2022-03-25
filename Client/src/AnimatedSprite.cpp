@@ -3,7 +3,7 @@
 
 namespace demo
 {
-	AnimatedSprite::AnimatedSprite(std::span<leopph::ImageSprite*> sprites, AnimationMode const animMode, float const speed) :
+	AnimatedSprite::AnimatedSprite(std::span<std::shared_ptr<leopph::ImageSprite>> sprites, AnimationMode const animMode, float const speed) :
 		m_Sprites{sprites.begin(), sprites.end()},
 		m_AnimMode{animMode},
 		m_Speed{speed}

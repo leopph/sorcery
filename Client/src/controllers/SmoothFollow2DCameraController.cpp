@@ -5,8 +5,8 @@ using leopph::Vector2;
 
 namespace demo
 {
-	SmoothFollow2DCameraController::SmoothFollow2DCameraController(leopph::Camera const* camera, leopph::Transform* target, Vector2 const targetOffsetFromCenter, float const followSpeed) :
-		m_Target{target},
+	SmoothFollow2DCameraController::SmoothFollow2DCameraController(leopph::Camera const* camera, std::shared_ptr<leopph::Transform> target, Vector2 const targetOffsetFromCenter, float const followSpeed) :
+		m_Target{std::move(target)},
 		m_CamTransform{camera->Entity()->Transform()},
 		m_Offset{targetOffsetFromCenter},
 		m_Speed{followSpeed}

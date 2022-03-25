@@ -17,7 +17,7 @@ namespace demo
 			};
 
 
-			AnimatedSprite(std::span<leopph::ImageSprite*> sprites, AnimationMode animMode, float speed);
+			AnimatedSprite(std::span<std::shared_ptr<leopph::ImageSprite>> sprites, AnimationMode animMode, float speed);
 
 			auto OnFrameUpdate() -> void override;
 
@@ -25,7 +25,7 @@ namespace demo
 			auto Detach() -> void override;
 
 		private:
-			std::vector<leopph::ImageSprite*> m_Sprites;
+			std::vector<std::shared_ptr<leopph::ImageSprite>> m_Sprites;
 			AnimationMode m_AnimMode;
 			float m_Speed;
 			float m_TimeDelta{0};

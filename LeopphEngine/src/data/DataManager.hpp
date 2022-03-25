@@ -59,14 +59,15 @@ namespace leopph::internal
 			auto FindEntity(std::string const& name) -> Entity*;
 
 			// Adds the Component to the Entity's collection of active/inactive Components depending on the value of active.
-			auto RegisterComponentForEntity(Entity const* entity, Component* component, bool active) -> void;
+			auto RegisterComponentForEntity(Entity const* entity, std::shared_ptr<Component> component, bool active) -> void;
 
 			// Removes the Component from the Entity's collection of active/inactive Components depending on the value of active.
-			auto UnregisterComponentFromEntity(Entity const* entity, Component* component, bool active) -> void;
+			// Returns the removed pointer.
+			auto UnregisterComponentFromEntity(Entity const* entity, Component const* component, bool active) -> std::shared_ptr<Component>;
 
 			// Returns the Entity's collection of active/inactive Components depending on the value of active.
 			[[nodiscard]]
-			auto ComponentsOfEntity(Entity const* entity, bool active) const -> std::span<Component* const>;
+			auto ComponentsOfEntity(Entity const* entity, bool active) const -> std::span<std::shared_ptr<Component> const>;
 
 			// Adds the Behavior to the collection of Behaviors depending on the value of active.
 			// Does NOT check for duplicates.
@@ -171,14 +172,11 @@ namespace leopph::internal
 			auto SkyboxHandleCount(SkyboxImpl const* skybox) const -> std::size_t;
 
 		private:
-			struct EntityAndComponents
+			struct EntityEntry
 			{
-				// Non-owning pointer to Entity
-				Entity* Entity;
-				// Owning pointers to active Components
-				std::vector<Component*> ActiveComponents;
-				// Owning pointers to inactive Components
-				std::vector<Component*> InactiveComponents;
+				Entity* Entity; // Non-owning pointer to Entity
+				std::vector<std::shared_ptr<Component>> ActiveComponents;
+				std::vector<std::shared_ptr<Component>> InactiveComponents;
 			};
 
 
@@ -229,7 +227,7 @@ namespace leopph::internal
 			std::unordered_map<std::string, RenderableAndInstances> m_Renderables;
 
 			// All Entities and all of their attached Components
-			std::vector<EntityAndComponents> m_EntitiesAndComponents;
+			std::vector<EntityEntry> m_EntitiesAndComponents;
 
 			// Returns a non-const iterator to the element or past-the-end.
 			[[nodiscard]]
