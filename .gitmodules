@@ -10,6 +10,5 @@
 	ignore = dirty
 [submodule "gl3w"]
 	path = LeopphEngine/vendor/gl3w
-	url = https://github.com/leopph/gl3w.git
-	branch = dev
+	url = https://github.com/skaslev/gl3w.git
 	ignore = dirty
