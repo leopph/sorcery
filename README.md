@@ -60,6 +60,7 @@ I'm trying to place as much info into header/module files as I can. For now, dev
 ### Build requirements
 - Windows
 - MSBuild
+- MSVC v143 toolset
 - CMake
 - Python 2.7 or newer
 ### Runtime requirements
