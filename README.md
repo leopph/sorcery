@@ -59,7 +59,6 @@ I'm trying to place as much info into header/module files as I can. For now, dev
 ## Support and Usage
 ### Build requirements
 - Windows
-- MSVC
 - MSBuild
 - CMake
 - Python 2.7 or newer
@@ -67,14 +66,9 @@ I'm trying to place as much info into header/module files as I can. For now, dev
 - Windows
 - OpenGL 4.5 compatible GPU
 ### Building
-After pulling the repo, run the **setup_env.bat** file from the root folder.  
-It will
-- Pull all submodules and choose the appropriate commits/branches
-- Configure all dependencies in *LeopphEngine/vendor* using CMake
-- Build all of the necessary configurations for all dependencies using MSBuild
-
-After the above just build the solution file in the root directory.  
-*Note: currently automatic building relies on the Visual Studio Installer being installed under its default directory. This can be changed using the variable declared at the top of the script.*
+- Run **setup.bat** from the root directory
+  - This pulls all submodules, then configures and builds all dependencies under *LeopphEngine/vendor*
+- Build the solution in the root directory.  
 ### Consumption
 To use LeopphEngine in your application:
 - Include **Leopph.hpp** from **LeopphEngine/include**
