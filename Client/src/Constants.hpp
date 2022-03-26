@@ -13,7 +13,7 @@ namespace demo
 	constexpr auto CAM_3D_SENS = 0.1f;
 	constexpr auto CAM_3D_RUN_MULT = 5.0f;
 	constexpr auto CAM_3D_WALK_MULT = 0.2f;
-	constexpr auto CHAR_2D_SPEED = 2.0f;
+	constexpr auto CHAR_2D_SPEED = 3.0f;
 	constexpr auto CHAR_2D_RUN_MULT = 5.0f;
 	constexpr auto CHAR_2D_WALK_MULT = 0.2f;
 }

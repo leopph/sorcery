@@ -13,9 +13,7 @@ namespace demo
 		m_CamTransform{camera->Entity()->Transform()},
 		m_Offset{targetOffsetFromCenter},
 		m_Speed{followSpeed}
-	{
-		UpdateIndex(std::numeric_limits<decltype(UpdateIndex())>::max());
-	}
+	{ }
 
 
 	auto SmoothFollow2DCameraController::OnFrameUpdate() -> void

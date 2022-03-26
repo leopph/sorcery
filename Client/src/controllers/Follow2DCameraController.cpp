@@ -1,7 +1,5 @@
 #include "Follow2DCameraController.hpp"
 
-#include <limits>
-
 using leopph::Camera;
 using leopph::Transform;
 using leopph::Vector2;
@@ -14,9 +12,7 @@ namespace demo
 		m_CamTransform{camera->Entity()->Transform()},
 		m_Target{std::move(target)},
 		m_Offset{targetOffsetFromCenter}
-	{
-		UpdateIndex(std::numeric_limits<decltype(UpdateIndex())>::max());
-	}
+	{ }
 
 
 	auto Follow2DCameraController::OnFrameUpdate() -> void

@@ -12,8 +12,8 @@ namespace demo
 		public:
 			struct Layer
 			{
-				// Normalized to [-1, 1]
-				float Depth;
+				// The layer will be moved with SpeedMult * the camera's speed
+				float SpeedMult;
 				leopph::ComponentPtr<leopph::Transform> Transform;
 			};
 

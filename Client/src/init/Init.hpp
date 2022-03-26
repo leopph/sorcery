@@ -1,6 +1,6 @@
 #pragma once
 
-#include "SceneSwitcher.hpp"
+#include "../SceneSwitcher.hpp"
 
 
 namespace demo
