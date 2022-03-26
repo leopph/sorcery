@@ -7,7 +7,21 @@ using leopph::Window;
 
 WindowController::WindowController() :
 	m_Window{Window::Instance()},
-	m_DisplayModes{m_Window->GetSupportedDisplayModes()}
+	m_DisplayModes
+	{
+		[this]
+		{
+			std::vector<Window::DisplayMode> displayModes;
+			for (auto const& displayMode : m_Window->GetSupportedDisplayModes())
+			{
+				if (displayModes.empty() || displayModes.back().Width != displayMode.Width || displayModes.back().Height != displayMode.Height)
+				{
+					displayModes.push_back(displayMode);
+				}
+			}
+			return displayModes;
+		}()
+	}
 {}
 
 
