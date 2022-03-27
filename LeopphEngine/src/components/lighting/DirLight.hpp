@@ -14,14 +14,14 @@ namespace leopph
 		public:
 			// The direction where the DirectionalLight shines.
 			// This is exactly the same as the owning Entity's forward, or Z vector.
-			[[nodiscard]] constexpr
-			auto Direction() const noexcept -> auto&;
+			[[nodiscard]] LEOPPHAPI
+			auto Direction() const noexcept -> Vector3 const&;
 
 			// This value is used as an offset on the shadow cascades' bounding boxes
 			// to extend shadowing to occluders not visible to the active Camera.
 			// The returned value is always non-negative.
-			[[nodiscard]] constexpr
-			auto ShadowExtension() const noexcept;
+			[[nodiscard]] LEOPPHAPI
+			auto ShadowExtension() const noexcept -> float;
 
 			// This value is used as an offset on the shadow cascades' bounding boxes
 			// to extend shadowing to occluders not visible to the active Camera.
@@ -30,40 +30,25 @@ namespace leopph
 			auto ShadowExtension(float newRange) -> void;
 
 			LEOPPHAPI
-			auto Activate() -> void override;
+			auto Owner(Entity* entity) -> void override;
+			using Light::Owner;
 
 			LEOPPHAPI
-			auto Deactivate() -> void override;
-
-			LEOPPHAPI
-			auto Attach(leopph::Entity* entity) -> void override;
-
-			LEOPPHAPI
-			auto Detach() -> void override;
+			auto Active(bool active) -> void override;
+			using Light::Active;
 
 			DirectionalLight() = default;
 
-			DirectionalLight(const DirectionalLight&) = delete;
-			auto operator=(const DirectionalLight&) -> void = delete;
+			DirectionalLight(DirectionalLight const& other) = default;
+			LEOPPHAPI
+			auto operator=(DirectionalLight const& other) -> DirectionalLight&;
 
-			DirectionalLight(DirectionalLight&&) = delete;
-			auto operator=(DirectionalLight&&) -> void = delete;
+			DirectionalLight(DirectionalLight&& other) = delete;
+			auto operator=(DirectionalLight&& other) -> void = delete;
 
 			LEOPPHAPI ~DirectionalLight() override;
 
 		private:
 			float m_ShadowRange{50.f};
 	};
-
-
-	constexpr auto DirectionalLight::Direction() const noexcept -> auto&
-	{
-		return Entity()->Transform()->Forward();
-	}
-
-
-	constexpr auto DirectionalLight::ShadowExtension() const noexcept
-	{
-		return m_ShadowRange;
-	}
 }

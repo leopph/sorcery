@@ -64,7 +64,7 @@ namespace demo
 
 		// Find existing components
 
-		auto const camera = player->GetComponent<leopph::Camera>();
+		auto const camera = player->GetComponent<leopph::PerspectiveCamera>();
 		auto const teleport = Entity::Find(demo::TELEPORT_ENTITY_NAME)->GetComponent<TeleportGate>();
 
 		// Create new Components

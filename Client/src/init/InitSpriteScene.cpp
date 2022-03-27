@@ -82,7 +82,7 @@ namespace demo
 			{0.8f, purpleMountains->Transform()},
 			{0.7f, forest->Transform()}
 		};
-		auto const parallaxer = (new Entity{})->CreateAndAttachComponent<Parallaxer>(cam, layers);
-		parallaxer->UpdateIndex(2);
+		//auto const parallaxer = (new Entity{})->CreateAndAttachComponent<Parallaxer>(cam, layers);
+		//parallaxer->UpdateIndex(2);
 	}
 }

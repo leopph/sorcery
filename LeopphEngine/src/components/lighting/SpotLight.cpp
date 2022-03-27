@@ -5,70 +5,95 @@
 
 namespace leopph
 {
-	auto SpotLight::Activate() -> void
+	auto SpotLight::InnerAngle() const noexcept -> float
 	{
-		if (IsActive())
+		return m_InnerAngle;
+	}
+
+
+	auto SpotLight::InnerAngle(float const degrees) noexcept -> void
+	{
+		m_InnerAngle = degrees;
+	}
+
+
+	auto SpotLight::OuterAngle() const noexcept -> float
+	{
+		return m_OuterAngle;
+	}
+
+
+	auto SpotLight::OuterAngle(float const degrees) noexcept -> void
+	{
+		m_OuterAngle = degrees;
+	}
+
+
+	auto SpotLight::Owner(Entity* entity) -> void
+	{
+		auto& dataManager = internal::DataManager::Instance();
+
+		if (InUse())
 		{
-			return;
+			dataManager.RegisterActiveSpotLight(this);
 		}
 
-		AttenuatedLight::Activate();
+		AttenuatedLight::Owner(entity);
 
-		if (IsAttached())
+		if (InUse())
 		{
-			auto& dataManager{internal::DataManager::Instance()};
-			dataManager.UnregisterSpotLight(this, false);
-			dataManager.RegisterSpotLight(this, true);
+			dataManager.UnregisterActiveSpotLight(this);
 		}
 	}
 
 
-	auto SpotLight::Deactivate() -> void
+	auto SpotLight::Active(bool active) -> void
 	{
-		if (!IsActive())
+		auto& dataManager = internal::DataManager::Instance();
+
+		if (InUse())
 		{
-			return;
+			dataManager.RegisterActiveSpotLight(this);
 		}
 
-		AttenuatedLight::Deactivate();
+		AttenuatedLight::Active(active);
 
-		if (IsAttached())
+		if (InUse())
 		{
-			auto& dataManager{internal::DataManager::Instance()};
-			dataManager.UnregisterSpotLight(this, true);
-			dataManager.RegisterSpotLight(this, false);
+			dataManager.UnregisterActiveSpotLight(this);
 		}
 	}
 
 
-	auto SpotLight::Attach(leopph::Entity* entity) -> void
+	auto SpotLight::operator=(SpotLight const& other) -> SpotLight&
 	{
-		if (IsAttached())
+		if (this == &other)
 		{
-			return;
+			return *this;
 		}
 
-		AttenuatedLight::Attach(entity);
+		auto& dataManager = internal::DataManager::Instance();
 
-		internal::DataManager::Instance().RegisterSpotLight(this, IsActive());
-	}
-
-
-	auto SpotLight::Detach() -> void
-	{
-		if (!IsAttached())
+		if (InUse())
 		{
-			return;
+			dataManager.UnregisterActiveSpotLight(this);
 		}
 
-		AttenuatedLight::Detach();
+		AttenuatedLight::operator=(other);
+		m_InnerAngle = other.m_InnerAngle;
+		m_OuterAngle = other.m_OuterAngle;
 
-		internal::DataManager::Instance().UnregisterSpotLight(this, IsActive());
+		if (InUse())
+		{
+			dataManager.RegisterActiveSpotLight(this);
+		}
+
+		return *this;
 	}
 
 
 	SpotLight::~SpotLight()
 	{
-		Detach();
+		internal::DataManager::Instance().UnregisterActiveSpotLight(this);
 	}
 }

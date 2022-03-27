@@ -26,8 +26,8 @@ namespace leopph
 
 			OrthographicCamera() = default;
 
-			OrthographicCamera(OrthographicCamera const& other) = delete;
-			auto operator=(OrthographicCamera const& other) -> OrthographicCamera& = delete;
+			OrthographicCamera(OrthographicCamera const& other) = default;
+			auto operator=(OrthographicCamera const& other) -> OrthographicCamera& = default;
 
 			OrthographicCamera(OrthographicCamera&& other) noexcept = delete;
 			auto operator=(OrthographicCamera&& other) noexcept -> OrthographicCamera& = delete;

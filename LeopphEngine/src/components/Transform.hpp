@@ -142,7 +142,7 @@ namespace leopph
 
 			// Set the Transform's parent using pointer-to-entity.
 			LEOPPHAPI
-			auto Parent(leopph::Entity const* parent) -> void;
+			auto Parent(Entity const* parent) -> void;
 
 			// Set the Transform's parent using pointer-to-transform.
 			// Parenting to an unattached Transform is ignored.
@@ -169,30 +169,29 @@ namespace leopph
 			LEOPPHAPI
 			auto Matrices() const -> std::pair<Matrix4, Matrix4> const&;
 
-		private:
-			// Transforms cannot be activated, nor deactivated.
+			// A Transform's owner cannot be changed after attaching.
 			LEOPPHAPI
-			auto Activate() -> void override;
+			auto Owner(Entity* entity) -> void override;
+			using Component::Owner;
 
-			// Transforms cannot be activated, nor deactivated.
+			// Transforms cannot be activated or deactivated.
 			LEOPPHAPI
-			auto Deactivate() -> void override;
+			auto Active(bool active) -> void override;
+			using Component::Active;
 
-		public:
-			// Transforms can only be attached once and to Entities without a Transform.
-			auto Attach(leopph::Entity* entity) -> void override;
-
-		private:
-			// Transform cannot be detached.
-			auto Detach() -> void override;
-
-		public:
 			LEOPPHAPI explicit Transform(Vector3 const& pos = Vector3{},
 			                             Quaternion const& rot = Quaternion{},
 			                             Vector3 const& scale = Vector3{1, 1, 1});
 
-			Transform(Transform const&) = delete;
-			auto operator=(Transform const&) -> void = delete;
+			// Creates a new Transform that has the same local properties.
+			// Doesn't copy parents or children.
+			LEOPPHAPI
+			Transform(Transform const& other);
+
+			// Copies the other's local properties.
+			// Doesn't copy parents or children.
+			LEOPPHAPI
+			auto operator=(Transform const& other) -> Transform&;
 
 			Transform(Transform&&) = delete;
 			auto operator=(Transform&&) -> void = delete;
@@ -214,10 +213,10 @@ namespace leopph
 			Vector3 m_Right;
 			Vector3 m_Up;
 
-			Transform* m_Parent;
+			Transform* m_Parent{nullptr};
 			std::vector<Transform*> m_Children;
 
-			mutable bool m_Changed;
+			mutable bool m_Changed{true};
 
 			// First is model, second is normal.
 			mutable std::pair<Matrix4, Matrix4> m_Matrices;

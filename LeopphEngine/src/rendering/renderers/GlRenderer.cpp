@@ -42,13 +42,13 @@ namespace leopph::internal
 
 	auto GlRenderer::CollectRenderables(std::vector<RenderableData>& renderables) -> void
 	{
-		for (auto const& [meshId, groupAndInstances] : DataManager::Instance().MeshGroupsAndInstances())
+		for (auto const& [meshId, groupAndInstances] : DataManager::Instance().MeshGroupsAndActiveInstances())
 		{
 			static std::vector<std::pair<Matrix4, Matrix4>> instanceMatrices;
 
 			GlMeshGroup* glMeshGroup{nullptr};
 
-			if (auto const test = groupAndInstances.MeshGroup.lock()) // if this is a dangling pointer we just skip it
+			if (auto const test = groupAndInstances.RenderObject.lock()) // if this is a dangling pointer we just skip it
 			{
 				glMeshGroup = test.get();
 			}
@@ -61,9 +61,9 @@ namespace leopph::internal
 			glMeshGroup->SortMeshes();
 			auto castsShadow = false;
 
-			for (auto const& instance : groupAndInstances.ActiveInstances)
+			for (auto const& instance : groupAndInstances.ActiveRenderComponents)
 			{
-				auto const& [modelMat, normalMat]{instance->Entity()->Transform()->Matrices()};
+				auto const& [modelMat, normalMat]{instance->Owner()->Transform()->Matrices()};
 
 				if (instance->Instanced())
 				{
@@ -167,8 +167,8 @@ namespace leopph::internal
 				}()
 			};
 
-			shader.SetUniform(arrayPrefix + "position", spotLight->Entity()->Transform()->Position());
-			shader.SetUniform(arrayPrefix + "direction", spotLight->Entity()->Transform()->Forward());
+			shader.SetUniform(arrayPrefix + "position", spotLight->Owner()->Transform()->Position());
+			shader.SetUniform(arrayPrefix + "direction", spotLight->Owner()->Transform()->Forward());
 			shader.SetUniform(arrayPrefix + "diffuseColor", spotLight->Diffuse());
 			shader.SetUniform(arrayPrefix + "specularColor", spotLight->Specular());
 			shader.SetUniform(arrayPrefix + "constant", spotLight->Constant());
@@ -206,7 +206,7 @@ namespace leopph::internal
 				}()
 			};
 
-			shader.SetUniform(arrayPrefix + "position", pointLight->Entity()->Transform()->Position());
+			shader.SetUniform(arrayPrefix + "position", pointLight->Owner()->Transform()->Position());
 			shader.SetUniform(arrayPrefix + "diffuseColor", pointLight->Diffuse());
 			shader.SetUniform(arrayPrefix + "specularColor", pointLight->Specular());
 			shader.SetUniform(arrayPrefix + "constant", pointLight->Constant());
@@ -246,9 +246,9 @@ namespace leopph::internal
 
 	auto GlRenderer::CompareLightsByDistToCam(Light const* left, Light const* right) -> bool
 	{
-		auto const& camPosition{Camera::Current()->Entity()->Transform()->Position()};
-		auto const& leftDistance{Vector3::Distance(camPosition, left->Entity()->Transform()->Position())};
-		auto const& rightDistance{Vector3::Distance(camPosition, right->Entity()->Transform()->Position())};
+		auto const& camPosition{Camera::Current()->Owner()->Transform()->Position()};
+		auto const& leftDistance{Vector3::Distance(camPosition, left->Owner()->Transform()->Position())};
+		auto const& rightDistance{Vector3::Distance(camPosition, right->Owner()->Transform()->Position())};
 		if (std::abs(leftDistance - rightDistance) < std::numeric_limits<float>::epsilon())
 		{
 			return leftDistance < rightDistance;

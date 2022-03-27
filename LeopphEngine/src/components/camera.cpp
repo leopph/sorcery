@@ -17,7 +17,7 @@ namespace leopph
 
 	auto Camera::MakeCurrent() -> void
 	{
-		if (IsActive())
+		if (Active())
 		{
 			s_Current = this;
 		}
@@ -68,36 +68,26 @@ namespace leopph
 	auto Camera::ViewMatrix() const -> Matrix4
 	{
 		// inv(T) * inv(R)
-		return Matrix4::Translate(-Entity()->Transform()->Position()) * Matrix4{Entity()->Transform()->Rotation()}.Transposed();
+		return Matrix4::Translate(-Owner()->Transform()->Position()) * Matrix4{Owner()->Transform()->Rotation()}.Transposed();
 	}
 
 
-	auto Camera::Deactivate() -> void
+	auto Camera::Owner(Entity* entity) -> void
 	{
-		if (!IsActive())
-		{
-			return;
-		}
+		Component::Owner(entity);
 
-		Component::Deactivate();
-
-		if (s_Current == this)
+		if (!InUse() && s_Current == this)
 		{
 			s_Current = nullptr;
 		}
 	}
 
 
-	auto Camera::Detach() -> void
+	auto Camera::Active(bool const active) -> void
 	{
-		if (!IsAttached())
-		{
-			return;
-		}
+		Component::Active(active);
 
-		Component::Detach();
-
-		if (s_Current == this)
+		if (!InUse() && s_Current == this)
 		{
 			s_Current = nullptr;
 		}

@@ -27,8 +27,8 @@ namespace leopph
 
 			PerspectiveCamera() = default;
 
-			PerspectiveCamera(PerspectiveCamera const& other) = delete;
-			auto operator=(PerspectiveCamera const& other) -> PerspectiveCamera& = delete;
+			PerspectiveCamera(PerspectiveCamera const& other) = default;
+			auto operator=(PerspectiveCamera const& other) -> PerspectiveCamera& = default;
 
 			PerspectiveCamera(PerspectiveCamera&& other) noexcept = delete;
 			auto operator=(PerspectiveCamera&& other) noexcept -> PerspectiveCamera& = delete;

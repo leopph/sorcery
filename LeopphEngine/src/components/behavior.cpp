@@ -15,86 +15,77 @@ namespace leopph
 	{
 		m_UpdateIndex = index;
 
-		// If we're actively updated we reregister ourselves to trigger a sort based on the new index.
-		if (IsAttached() && IsActive())
+		if (InUse())
 		{
-			auto& dataManager{internal::DataManager::Instance()};
-			dataManager.UnregisterBehavior(this, true);
-			dataManager.RegisterBehavior(this, true);
+			internal::DataManager::Instance().SortActiveBehaviors();
 		}
 	}
 
 
-	auto Behavior::Activate() -> void
+	auto Behavior::Owner(Entity* entity) -> void
 	{
-		if (IsActive())
+		auto& dataManager = internal::DataManager::Instance();
+
+		if (InUse())
 		{
-			return;
+			dataManager.UnregisterActiveBehavior(this);
 		}
 
-		Component::Activate();
+		Component::Owner(entity);
 
-		if (IsAttached())
+		if (InUse())
 		{
-			auto& dataManager{internal::DataManager::Instance()};
-			dataManager.UnregisterBehavior(this, false);
-			dataManager.RegisterBehavior(this, true);
+			dataManager.RegisterActiveBehavior(this);
 		}
 	}
 
 
-	auto Behavior::Deactivate() -> void
+	auto Behavior::Active(bool const active) -> void
 	{
-		if (!IsActive())
+		auto& dataManager = internal::DataManager::Instance();
+
+		if (InUse())
 		{
-			return;
+			dataManager.UnregisterActiveBehavior(this);
 		}
 
-		Component::Deactivate();
+		Component::Active(active);
 
-		if (IsAttached())
+		if (InUse())
 		{
-			auto& dataManager{internal::DataManager::Instance()};
-			dataManager.UnregisterBehavior(this, true);
-			dataManager.RegisterBehavior(this, false);
-		}
-	}
-
-
-	auto Behavior::Attach(leopph::Entity* entity) -> void
-	{
-		if (IsAttached())
-		{
-			return;
-		}
-
-		Component::Attach(entity);
-
-		if (IsActive())
-		{
-			internal::DataManager::Instance().RegisterBehavior(this, IsActive());
-		}
-	}
-
-
-	auto Behavior::Detach() -> void
-	{
-		if (!IsAttached())
-		{
-			return;
-		}
-
-		Component::Detach();
-
-		if (IsActive())
-		{
-			internal::DataManager::Instance().UnregisterBehavior(this, IsActive());
+			dataManager.RegisterActiveBehavior(this);
 		}
 	}
 
 
 	Behavior::~Behavior()
 	{
-		Detach();
+		internal::DataManager::Instance().UnregisterActiveBehavior(this);
+	}
+
+
+	auto Behavior::operator=(Behavior const& other) -> Behavior&
+	{
+		if (this == &other)
+		{
+			return *this;
+		}
+
+		auto& dataManager = internal::DataManager::Instance();
+
+		if (InUse())
+		{
+			dataManager.UnregisterActiveBehavior(this);
+		}
+
+		Component::operator=(other);
+		UpdateIndex(other.m_UpdateIndex);
+
+		if (InUse())
+		{
+			dataManager.RegisterActiveBehavior(this);
+		}
+
+		return *this;
 	}
 }

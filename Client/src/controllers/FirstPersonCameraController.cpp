@@ -14,7 +14,7 @@ namespace demo
 
 
 	FirstPersonCameraController::FirstPersonCameraController(ComponentPtr<Camera const> const& camera, float const speed, float const sens, float const runMult, float const walkMult, std::tuple<float, float> const& mousePos) :
-		m_CamTransform{camera->Entity()->Transform()},
+		m_CamTransform{camera->Owner()->Transform()},
 		m_Speed{speed},
 		m_Sens{sens},
 		m_RunMult{runMult},

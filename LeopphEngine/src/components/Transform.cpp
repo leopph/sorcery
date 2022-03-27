@@ -1,6 +1,5 @@
 #include "Transform.hpp"
 
-#include "../data/DataManager.hpp"
 #include "../entity/Entity.hpp"
 #include "../util/Logger.hpp"
 
@@ -11,7 +10,7 @@
 
 namespace leopph
 {
-	Transform::Transform(const Vector3& pos, const Quaternion& rot, const Vector3& scale) :
+	Transform::Transform(Vector3 const& pos, Quaternion const& rot, Vector3 const& scale) :
 		m_WorldPosition{pos},
 		m_WorldRotation{rot},
 		m_WorldScale{scale},
@@ -20,11 +19,45 @@ namespace leopph
 		m_LocalScale{scale},
 		m_Forward{Vector3::Forward()},
 		m_Right{Vector3::Right()},
-		m_Up{Vector3::Up()},
-		m_Parent{nullptr},
-		m_Changed{true}
+		m_Up{Vector3::Up()}
 	{
 		CalculateLocalAxes();
+	}
+
+
+	Transform::Transform(Transform const& other) :
+		Component{other},
+		m_WorldPosition{other.m_LocalPosition},
+		m_WorldRotation{other.m_LocalRotation},
+		m_WorldScale{other.m_LocalScale},
+		m_LocalPosition{other.m_LocalPosition},
+		m_LocalRotation{other.m_LocalRotation},
+		m_LocalScale{other.m_LocalScale}
+	{
+		CalculateLocalAxes();
+	}
+
+
+	auto Transform::operator=(Transform const& other) -> Transform&
+	{
+		if (this == &other)
+		{
+			return *this;
+		}
+
+		Component::operator=(other);
+
+		m_LocalPosition = other.m_LocalPosition;
+		m_LocalRotation = other.m_LocalRotation;
+		m_LocalScale = other.m_LocalScale;
+		m_Changed = true;
+
+		CalculateWorldPosition();
+		CalculateWorldRotation();
+		CalculateWorldScale();
+		CalculateLocalAxes();
+
+		return *this;
 	}
 
 
@@ -35,7 +68,7 @@ namespace leopph
 			std::erase(m_Parent->m_Children, this);
 		}
 
-		std::ranges::for_each(m_Children, [](const auto& child)
+		std::ranges::for_each(m_Children, [](auto const& child)
 		{
 			// Can't call parent setter, because that would remove child from this's m_Children, and the loop would crash.
 			child->m_Parent = nullptr;
@@ -46,7 +79,7 @@ namespace leopph
 	}
 
 
-	auto Transform::Position(const Vector3& newPos) -> void
+	auto Transform::Position(Vector3 const& newPos) -> void
 	{
 		if (m_Parent != nullptr)
 		{
@@ -60,14 +93,14 @@ namespace leopph
 	}
 
 
-	auto Transform::LocalPosition(const Vector3& newPos) -> void
+	auto Transform::LocalPosition(Vector3 const& newPos) -> void
 	{
 		m_LocalPosition = newPos;
 		CalculateWorldPosition();
 	}
 
 
-	auto Transform::Rotation(const Quaternion& newRot) -> void
+	auto Transform::Rotation(Quaternion const& newRot) -> void
 	{
 		if (m_Parent != nullptr)
 		{
@@ -81,14 +114,14 @@ namespace leopph
 	}
 
 
-	auto Transform::LocalRotation(const Quaternion& newRot) -> void
+	auto Transform::LocalRotation(Quaternion const& newRot) -> void
 	{
 		m_LocalRotation = newRot;
 		CalculateWorldRotation();
 	}
 
 
-	auto Transform::Scale(const Vector3& newScale) -> void
+	auto Transform::Scale(Vector3 const& newScale) -> void
 	{
 		if (m_Parent != nullptr)
 		{
@@ -102,14 +135,14 @@ namespace leopph
 	}
 
 
-	auto Transform::LocalScale(const Vector3& newScale) -> void
+	auto Transform::LocalScale(Vector3 const& newScale) -> void
 	{
 		m_LocalScale = newScale;
 		CalculateWorldScale();
 	}
 
 
-	auto Transform::Translate(const Vector3& vector, const Space base) -> void
+	auto Transform::Translate(Vector3 const& vector, Space const base) -> void
 	{
 		if (base == Space::World)
 		{
@@ -122,13 +155,13 @@ namespace leopph
 	}
 
 
-	auto Transform::Translate(const float x, const float y, const float z, const Space base) -> void
+	auto Transform::Translate(float const x, float const y, float const z, Space const base) -> void
 	{
 		Translate(Vector3{x, y, z}, base);
 	}
 
 
-	auto Transform::Rotate(const Quaternion& rotation, const Space base) -> void
+	auto Transform::Rotate(Quaternion const& rotation, Space const base) -> void
 	{
 		if (base == Space::World)
 		{
@@ -141,13 +174,13 @@ namespace leopph
 	}
 
 
-	auto Transform::Rotate(const Vector3& axis, float amountDegrees, const Space base) -> void
+	auto Transform::Rotate(Vector3 const& axis, float amountDegrees, Space const base) -> void
 	{
 		Rotate(Quaternion{axis, amountDegrees}, base);
 	}
 
 
-	auto Transform::Rescale(const Vector3& scaling, const Space base) -> void
+	auto Transform::Rescale(Vector3 const& scaling, Space const base) -> void
 	{
 		if (base == Space::World)
 		{
@@ -160,13 +193,13 @@ namespace leopph
 	}
 
 
-	auto Transform::Rescale(const float x, const float y, const float z, const Space base) -> void
+	auto Transform::Rescale(float const x, float const y, float const z, Space const base) -> void
 	{
 		Rescale(Vector3{x, y, z}, base);
 	}
 
 
-	auto Transform::Parent(const leopph::Entity* const parent) -> void
+	auto Transform::Parent(leopph::Entity const* const parent) -> void
 	{
 		Parent(parent->Transform());
 	}
@@ -175,9 +208,9 @@ namespace leopph
 	auto Transform::Parent(Transform* const parent) -> void
 	{
 		// If we're given a valid pointer to an unattached transform
-		if (parent != nullptr && !parent->IsAttached())
+		if (parent != nullptr && !parent->Attached())
 		{
-			internal::Logger::Instance().Warning("Ignoring attempt to parent Transform on Entity [" + Entity()->Name() + "] to an unattached Transform.");
+			internal::Logger::Instance().Warning("Ignoring attempt to parent Transform on Entity [" + Component::Owner()->Name() + "] to an unattached Transform.");
 			return;
 		}
 
@@ -204,13 +237,13 @@ namespace leopph
 	}
 
 
-	auto Transform::Parent(const std::nullptr_t null) -> void
+	auto Transform::Parent(std::nullptr_t const null) -> void
 	{
 		Parent(static_cast<Transform*>(null));
 	}
 
 
-	auto Transform::Matrices() const -> const std::pair<Matrix4, Matrix4>&
+	auto Transform::Matrices() const -> std::pair<Matrix4, Matrix4> const&
 	{
 		if (!m_Changed)
 		{
@@ -223,7 +256,7 @@ namespace leopph
 		modelMatrix[2] = Vector4{m_Forward * m_WorldScale[2], 0};
 		modelMatrix[3] = Vector4{m_WorldPosition};
 
-		const auto worldScaleRecip{1.f / m_WorldScale};
+		auto const worldScaleRecip{1.f / m_WorldScale};
 
 		Matrix4 normalMatrix;
 		normalMatrix[0] = Vector4{m_Right * worldScaleRecip[0], -m_WorldPosition[0]};
@@ -238,50 +271,40 @@ namespace leopph
 	}
 
 
-	auto Transform::Activate() -> void
+	auto Transform::Owner(Entity* entity) -> void
 	{
-		internal::Logger::Instance().Warning("Ignoring attempt to activate Transform at " + std::to_string(reinterpret_cast<std::size_t>(this)) + ".");
-	}
+		auto const& logger{internal::Logger::Instance()};
 
-
-	auto Transform::Deactivate() -> void
-	{
-		internal::Logger::Instance().Warning("Ignoring attempt to deactivate Transform at " + std::to_string(reinterpret_cast<std::size_t>(this)) + ".");
-	}
-
-
-	auto Transform::Attach(leopph::Entity* entity) -> void
-	{
-		const auto& logger{internal::Logger::Instance()};
-
-		if (IsAttached())
+		if (Attached())
 		{
-			logger.Warning("Ignoring attempt to reattach Transform on Entity [" + entity->Name() + "].");
+			auto const errMsg = entity
+				                    ? Component::Owner() == entity
+					                      ? "Ignoring attempt to reattach Transform on Entity \"" + entity->Name() + "\"."
+					                      : "Ignoring attempt to change owner of Transform on Entity \"" + Component::Owner()->Name() + "\" to \"" + entity->Name() + "\"."
+				                    : "Ignoring attempt to detach Transform on Entity \"" + Component::Owner()->Name() + "\".";
+			logger.Warning(errMsg);
 			return;
 		}
 
 		if (!entity)
 		{
-			logger.Warning("Ignoring attempt to attach Transform to nullptr Entity.");
-			return;
-		}
-		
-		if (entity->Transform().get() != this)
-		{
-			logger.Warning("Ignoring attempt to attach a second Transform to Entity [" + entity->Name() + "].");
+			logger.Warning("Ignoring attempt to detach unattached Transform.");
 			return;
 		}
 
-		Component::Attach(entity);
+		if (entity->Transform()->Attached())
+		{
+			logger.Warning("Ignoring attempt to attach a second Transform to Entity \"" + entity->Name() + "\".");
+			return;
+		}
+
+		Component::Owner(entity);
 	}
 
 
-	auto Transform::Detach() -> void
+	auto Transform::Active(bool const active) -> void
 	{
-		if (IsAttached())
-		{
-			internal::Logger::Instance().Warning("Ignoring attempt to detach Transform on Entity [" + Entity()->Name() + "].");
-		}
+		internal::Logger::Instance().Warning((std::string{"Ignoring attempt to "} += active ? "activate" : "deactivate") += " Transform. Transforms cannot be activated or deactivated.");
 	}
 
 

@@ -46,13 +46,13 @@ namespace demo
 	}
 
 
-	auto AnimatedSprite::Attach(leopph::Entity* entity) -> void
+	auto AnimatedSprite::OnAttach() -> void
 	{
-		Behavior::Attach(entity);
+		Behavior::OnAttach();
 
 		for (auto const& sprite : m_Sprites)
 		{
-			sprite->Attach(Entity());
+			sprite->Attach(Owner());
 			sprite->Deactivate();
 		}
 
@@ -60,9 +60,9 @@ namespace demo
 	}
 
 
-	auto AnimatedSprite::Detach() -> void
+	auto AnimatedSprite::OnDetach() -> void
 	{
-		Behavior::Detach();
+		Behavior::OnDetach();
 
 		for (auto const& sprite : m_Sprites)
 		{

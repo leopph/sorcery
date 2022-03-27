@@ -59,59 +59,63 @@ namespace leopph::internal
 			auto FindEntity(std::string const& name) -> Entity*;
 
 			// Adds the Component to the Entity's collection of active/inactive Components depending on the value of active.
-			auto RegisterComponentForEntity(Entity const* entity, ComponentPtr<> component, bool active) -> void;
+			auto RegisterComponent(Entity const* entity, ComponentPtr<> component, bool active) -> void;
 
 			// Removes the Component from the Entity's collection of active/inactive Components depending on the value of active.
 			// Returns the removed pointer.
-			auto UnregisterComponentFromEntity(Entity const* entity, Component const* component, bool active) -> ComponentPtr<>;
+			auto UnregisterComponent(Entity const* entity, Component const* component, bool active) -> ComponentPtr<>;
 
 			// Returns the Entity's collection of active/inactive Components depending on the value of active.
 			[[nodiscard]]
 			auto ComponentsOfEntity(Entity const* entity, bool active) const -> std::span<ComponentPtr<> const>;
 
-			// Adds the Behavior to the collection of Behaviors depending on the value of active.
+			// Adds the Behavior to the collection of active Behaviors.
 			// Does NOT check for duplicates.
-			auto RegisterBehavior(Behavior* behavior, bool active) -> void;
+			auto RegisterActiveBehavior(Behavior* behavior) -> void;
 
-			// Removes the Behavior from the collection of Behaviors depending on the value of active.
+			// Removes the Behavior from the collection of active Behaviors.
 			// Removes duplicates.
-			auto UnregisterBehavior(Behavior const* behavior, bool active) -> void;
+			// Not registered behaviors are ignored.
+			auto UnregisterActiveBehavior(Behavior const* behavior) -> void;
 
 			// Returns the registered, currently active Behaviors.
 			[[nodiscard]] constexpr
 			auto ActiveBehaviors() const noexcept -> auto&;
 
-			// Adds the DirLight to the collection of DirLights depending on the value of active.
+			// Adds the DirLight to the collection of active DirLights.
 			// Does NOT check for duplicates.
-			auto RegisterDirLight(DirectionalLight const* dirLight, bool active) -> void;
+			auto RegisterActiveDirLight(DirectionalLight const* dirLight) -> void;
 
-			// Removes the DirLight from the collection of DirLights depending on the value of active.
+			// Removes the DirLight from the collection of active DirLights.
 			// Remove duplicates.
-			auto UnregisterDirLight(DirectionalLight const* dirLight, bool active) -> void;
+			// Not registered DirLights are ignored.
+			auto UnregisterActiveDirLight(DirectionalLight const* dirLight) -> void;
 
 			// Returns the last created active DirectionalLight, or nullptr if none.
 			[[nodiscard]]
 			auto DirectionalLight() const -> DirectionalLight const*;
 
-			// Adds the SpotLight to the collection of SpotLights depending on the value of active.
+			// Adds the SpotLight to the collection of active SpotLights.
 			// Does NOT check for duplicates.
-			auto RegisterSpotLight(SpotLight const* spotLight, bool active) -> void;
+			auto RegisterActiveSpotLight(SpotLight const* spotLight) -> void;
 
-			// Removes the SpotLight from the collection of SpotLights depending on the value of active.
+			// Removes the SpotLight from the collection of active SpotLights.
 			// Removes duplicates.
-			auto UnregisterSpotLight(SpotLight const* spotLight, bool active) -> void;
+			// Not registered SpotLights are ignored.
+			auto UnregisterActiveSpotLight(SpotLight const* spotLight) -> void;
 
 			// Returns the registered, currently active SpotLights.
 			[[nodiscard]] constexpr
 			auto ActiveSpotLights() const noexcept -> auto&;
 
-			// Adds the PointLight to the collection of PointLights depending on the value of active.
+			// Adds the PointLight to the collection of active PointLights.
 			// Does NOT check for duplicates.
-			auto RegisterPointLight(PointLight const* pointLight, bool active) -> void;
+			auto RegisterActivePointLight(PointLight const* pointLight) -> void;
 
-			// Removes the PointLight from the collection of PointLights depending on the value of active.
+			// Removes the PointLight from the collection of active PointLights.
 			// Removes duplicates.
-			auto UnregisterPointLight(PointLight const* pointLight, bool active) -> void;
+			// Not registered PointLights are ignored.
+			auto UnregisterActivePointLight(PointLight const* pointLight) -> void;
 
 			// Returns the registered, currently active PointLights.
 			[[nodiscard]] constexpr
@@ -132,22 +136,23 @@ namespace leopph::internal
 			[[nodiscard]]
 			auto FindGlMeshGroup(std::string const& meshGroupId) -> std::shared_ptr<GlMeshGroup>;
 
-			// Adds the RenderComponent to the GlMeshGroups's collection of instances depending on the value of active.
+			// Adds the RenderComponent to the GlMeshGroups's collection of active RenderComponents.
 			// Does NOT check for duplicates.
-			auto RegisterInstanceForGlMeshGroup(std::string const& meshGroupId, RenderComponent const* instance, bool active) -> void;
+			auto RegisterActiveRenderComponent(std::string const& meshGroupId, RenderComponent const* instance) -> void;
 
-			// Removes the RenderComponent from the GlMeshGroup's collection of instances depending on the value of active.
-			// Removes duplicats.
-			auto UnregisterInstanceFromGlMeshGroup(std::string const& meshGroupId, RenderComponent const* instance, bool active) -> void;
+			// Removes the RenderComponent from the GlMeshGroup's collection of active RenderComponents.
+			// Removes duplicates.
+			// Not registered RenderComponents are ignored.
+			auto UnregisterActiveRenderComponent(std::string const& meshGroupId, RenderComponent const* instance) -> void;
 
-			// Returns the number of instances that are registered for the MeshGroup.
+			// Returns the number of active RenderComponents that are registered for the MeshGroup with the passed id.
 			// The function does NOT check whether the passed MeshGroup is registered or not.
 			[[nodiscard]]
-			auto GlMeshGroupInstanceCount(std::string const& meshId) const -> std::size_t;
+			auto RenderComponentCount(std::string const& meshId) const -> std::size_t;
 
-			// Returns all registered GlMeshGroups and their active and inactive instances.
+			// Returns all registered GlMeshGroups and their active instances.
 			[[nodiscard]] constexpr
-			auto MeshGroupsAndInstances() const noexcept -> auto&;
+			auto MeshGroupsAndActiveInstances() const noexcept -> auto&;
 
 			// If present, returns a pointer to the SkyboxImpl that was loaded from the passed path.
 			// If not found, creates a new instance and returns a pointer to that.
@@ -174,19 +179,16 @@ namespace leopph::internal
 		private:
 			struct EntityEntry
 			{
-				Entity* Entity; // Non-owning pointer to Entity
+				Entity* Entity;
 				std::vector<ComponentPtr<>> ActiveComponents;
 				std::vector<ComponentPtr<>> InactiveComponents;
 			};
 
 
-			struct RenderableAndInstances
+			struct RenderingEntry
 			{
-				std::weak_ptr<GlMeshGroup> MeshGroup;
-				// Non-owning pointers to active instances
-				std::vector<RenderComponent const*> ActiveInstances;
-				// Non-owning pointers to inactive instances
-				std::vector<RenderComponent const*> InactiveInstances;
+				std::weak_ptr<GlMeshGroup> RenderObject;
+				std::vector<RenderComponent const*> ActiveRenderComponents;
 			};
 
 
@@ -194,42 +196,37 @@ namespace leopph::internal
 			using BehaviorOrderFunc = std::ranges::less;
 
 			auto SortEntities() -> void;
+
+		public:
 			auto SortActiveBehaviors() -> void;
 
+		private:
 			// All engine-owned objects.
 			std::set<std::unique_ptr<Poelo>, PoeloLess> m_Poelos;
 
-			// Registered MeshGroups with unique IDs.
-			std::unordered_map<std::string, std::weak_ptr<MeshGroup const>> m_MeshGroups;
-
-			// Non-owning pointers to the active DirectionalLights.
-			std::vector<leopph::DirectionalLight const*> m_ActiveDirLights;
-			// Non-owning pointers to the inactive DirectionalLights.
-			std::vector<leopph::DirectionalLight const*> m_InactiveDirLights;
-
-			// Non-owning pointers to all active SpotLights.
-			std::vector<SpotLight const*> m_ActiveSpotLights;
-			// Non-owning pointers to all inactive SpotLights.
-			std::vector<SpotLight const*> m_InactiveSpotLights;
-
-			// Non-owning pointers to all active PointLights.
-			std::vector<PointLight const*> m_ActivePointLights;
-			// Non-owning pointers to all inactive PointLights.
-			std::vector<PointLight const*> m_InactivePointLights;
+			// All Entities and all of their attached Components
+			std::vector<EntityEntry> m_EntitiesAndComponents;
 
 			// Non-owning pointers to active Behaviors.
 			std::vector<Behavior*> m_ActiveBehaviors;
-			// Non-owning pointers to inactive Behaviors.
-			std::vector<Behavior*> m_InactiveBehaviors;
+
+			// Non-owning pointers to the active DirectionalLights.
+			std::vector<leopph::DirectionalLight const*> m_ActiveDirLights;
+
+			// Non-owning pointers to all active SpotLights.
+			std::vector<SpotLight const*> m_ActiveSpotLights;
+
+			// Non-owning pointers to all active PointLights.
+			std::vector<PointLight const*> m_ActivePointLights;
+
+			// Registered MeshGroups with unique IDs.
+			std::unordered_map<std::string, std::weak_ptr<MeshGroup const>> m_MeshGroups;
 
 			// SkyboxImpl instances and non-owning pointer to all the Skybox handles pointing to them.
 			std::unordered_map<SkyboxImpl, std::vector<Skybox*>, PathedHash<SkyboxImpl>, PathedEqual<SkyboxImpl>> m_Skyboxes;
 
 			// Registered OpenGlMeshGroups and their instances with their Mesh IDs.
-			std::unordered_map<std::string, RenderableAndInstances> m_Renderables;
-
-			// All Entities and all of their attached Components
-			std::vector<EntityEntry> m_EntitiesAndComponents;
+			std::unordered_map<std::string, RenderingEntry> m_Renderables;
 
 			// Returns a non-const iterator to the element or past-the-end.
 			[[nodiscard]]
@@ -263,7 +260,7 @@ namespace leopph::internal
 	}
 
 
-	[[nodiscard]] constexpr auto DataManager::MeshGroupsAndInstances() const noexcept -> auto&
+	[[nodiscard]] constexpr auto DataManager::MeshGroupsAndActiveInstances() const noexcept -> auto&
 	{
 		return m_Renderables;
 	}

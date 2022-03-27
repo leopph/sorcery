@@ -12,29 +12,35 @@ namespace leopph
 		public:
 			// Get the current diffuse intensity and color.
 			// This value is in the [0; 1] range per component.
-			[[nodiscard]] constexpr auto Diffuse() const noexcept -> auto&;
+			[[nodiscard]] constexpr
+			auto Diffuse() const noexcept -> auto&;
 
 			// Get the current specular highlight intensity and color.
 			// This value is in the [0; 1] range per component.
-			[[nodiscard]] constexpr auto Specular() const -> auto&;
+			[[nodiscard]] constexpr
+			auto Specular() const -> auto&;
 
 			// Get whether the Light's effect can be occluded by objects.
 			// This only works if objects have this property set to true.
 			// This value is false by default.
-			[[nodiscard]] constexpr auto CastsShadow() const noexcept;
+			[[nodiscard]] constexpr
+			auto CastsShadow() const noexcept;
 
 			// Set the current diffuse intensity and color.
 			// This value must be in the [0; 1] range per component.
-			constexpr auto Diffuse(const Vector3& value);
+			constexpr
+			auto Diffuse(Vector3 const& value);
 
 			// Set the current specular highlight intensity and color.
 			// This value must be in the [0; 1] range per component.
-			constexpr auto Specular(const Vector3& value) noexcept;
+			constexpr
+			auto Specular(Vector3 const& value) noexcept;
 
 			// Set whether the Light's effect can be occluded by objects.
 			// This only works if objects have this property set to true.
 			// This value is false by default.
-			constexpr auto CastsShadow(bool value) noexcept;
+			constexpr
+			auto CastsShadow(bool value) noexcept;
 
 		protected:
 			using Component::Component;
@@ -65,19 +71,19 @@ namespace leopph
 	}
 
 
-	constexpr auto Light::Diffuse(const Vector3& value)
+	constexpr auto Light::Diffuse(Vector3 const& value)
 	{
 		m_Diffuse = value;
 	}
 
 
-	constexpr auto Light::Specular(const Vector3& value) noexcept
+	constexpr auto Light::Specular(Vector3 const& value) noexcept
 	{
 		m_Specular = value;
 	}
 
 
-	constexpr auto Light::CastsShadow(const bool value) noexcept
+	constexpr auto Light::CastsShadow(bool const value) noexcept
 	{
 		m_CastsShadow = value;
 	}

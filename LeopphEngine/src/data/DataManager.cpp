@@ -65,14 +65,14 @@ namespace leopph::internal
 	}
 
 
-	auto DataManager::RegisterComponentForEntity(Entity const* const entity, ComponentPtr<> component, bool const active) -> void
+	auto DataManager::RegisterComponent(Entity const* const entity, ComponentPtr<> component, bool const active) -> void
 	{
 		auto const it{GetEntityIterator(entity->Name())};
 		(active ? it->ActiveComponents : it->InactiveComponents).push_back(std::move(component));
 	}
 
 
-	auto DataManager::UnregisterComponentFromEntity(Entity const* const entity, Component const* component, bool const active) -> ComponentPtr<>
+	auto DataManager::UnregisterComponent(Entity const* const entity, Component const* component, bool const active) -> ComponentPtr<>
 	{
 		auto const entryIt = GetEntityIterator(entity->Name());
 		auto& components = active ? entryIt->ActiveComponents : entryIt->InactiveComponents; // no bounds checking here
@@ -93,32 +93,28 @@ namespace leopph::internal
 	}
 
 
-	auto DataManager::RegisterBehavior(Behavior* behavior, bool const active) -> void
+	auto DataManager::RegisterActiveBehavior(Behavior* behavior) -> void
 	{
-		(active ? m_ActiveBehaviors : m_InactiveBehaviors).push_back(behavior);
-
-		if (active)
-		{
-			SortActiveBehaviors();
-		}
+		m_ActiveBehaviors.push_back(behavior);
+		SortActiveBehaviors();
 	}
 
 
-	auto DataManager::UnregisterBehavior(Behavior const* behavior, bool const active) -> void
+	auto DataManager::UnregisterActiveBehavior(Behavior const* behavior) -> void
 	{
-		std::erase(active ? m_ActiveBehaviors : m_InactiveBehaviors, behavior);
+		std::erase(m_ActiveBehaviors, behavior);
 	}
 
 
-	auto DataManager::RegisterDirLight(leopph::DirectionalLight const* dirLight, bool const active) -> void
+	auto DataManager::RegisterActiveDirLight(leopph::DirectionalLight const* dirLight) -> void
 	{
-		(active ? m_ActiveDirLights : m_InactiveDirLights).push_back(dirLight);
+		m_ActiveDirLights.push_back(dirLight);
 	}
 
 
-	auto DataManager::UnregisterDirLight(leopph::DirectionalLight const* dirLight, bool const active) -> void
+	auto DataManager::UnregisterActiveDirLight(leopph::DirectionalLight const* dirLight) -> void
 	{
-		std::erase(active ? m_ActiveDirLights : m_InactiveDirLights, dirLight);
+		std::erase(m_ActiveDirLights, dirLight);
 	}
 
 
@@ -128,27 +124,27 @@ namespace leopph::internal
 	}
 
 
-	auto DataManager::RegisterSpotLight(SpotLight const* spotLight, bool const active) -> void
+	auto DataManager::RegisterActiveSpotLight(SpotLight const* spotLight) -> void
 	{
-		(active ? m_ActiveSpotLights : m_InactiveSpotLights).push_back(spotLight);
+		m_ActiveSpotLights.push_back(spotLight);
 	}
 
 
-	auto DataManager::UnregisterSpotLight(SpotLight const* spotLight, bool const active) -> void
+	auto DataManager::UnregisterActiveSpotLight(SpotLight const* spotLight) -> void
 	{
-		std::erase(active ? m_ActiveSpotLights : m_InactiveSpotLights, spotLight);
+		std::erase(m_ActiveSpotLights, spotLight);
 	}
 
 
-	auto DataManager::RegisterPointLight(PointLight const* pointLight, bool const active) -> void
+	auto DataManager::RegisterActivePointLight(PointLight const* pointLight) -> void
 	{
-		(active ? m_ActivePointLights : m_InactivePointLights).push_back(pointLight);
+		m_ActivePointLights.push_back(pointLight);
 	}
 
 
-	auto DataManager::UnregisterPointLight(PointLight const* pointLight, bool const active) -> void
+	auto DataManager::UnregisterActivePointLight(PointLight const* pointLight) -> void
 	{
-		std::erase(active ? m_ActivePointLights : m_InactivePointLights, pointLight);
+		std::erase(m_ActivePointLights, pointLight);
 	}
 
 
@@ -176,7 +172,7 @@ namespace leopph::internal
 
 	auto DataManager::RegisterGlMeshGroup(std::shared_ptr<GlMeshGroup> const& glMeshGroup) -> void
 	{
-		m_Renderables.insert_or_assign(glMeshGroup->MeshGroup()->Id, RenderableAndInstances{.MeshGroup = glMeshGroup, .ActiveInstances = {}, .InactiveInstances = {}});
+		m_Renderables.insert_or_assign(glMeshGroup->MeshGroup()->Id, RenderingEntry{.RenderObject = glMeshGroup, .ActiveRenderComponents = {}});
 	}
 
 
@@ -184,7 +180,7 @@ namespace leopph::internal
 	{
 		if (auto const it = m_Renderables.find(meshGroupId); it != m_Renderables.end())
 		{
-			if (auto ret = it->second.MeshGroup.lock())
+			if (auto ret = it->second.RenderObject.lock())
 			{
 				return ret;
 			}
@@ -196,24 +192,21 @@ namespace leopph::internal
 	}
 
 
-	auto DataManager::RegisterInstanceForGlMeshGroup(std::string const& meshGroupId, RenderComponent const* instance, bool const active) -> void
+	auto DataManager::RegisterActiveRenderComponent(std::string const& meshGroupId, RenderComponent const* instance) -> void
 	{
-		auto& [glMeshGroup, activeInstances, inactiveInstances] = m_Renderables.at(meshGroupId);
-		(active ? activeInstances : inactiveInstances).push_back(instance);
+		m_Renderables.at(meshGroupId).ActiveRenderComponents.push_back(instance);
 	}
 
 
-	auto DataManager::UnregisterInstanceFromGlMeshGroup(std::string const& meshGroupId, RenderComponent const* instance, bool const active) -> void
+	auto DataManager::UnregisterActiveRenderComponent(std::string const& meshGroupId, RenderComponent const* instance) -> void
 	{
-		auto& [glMeshGroup, activeInstances, inactiveInstances] = m_Renderables.at(meshGroupId);
-		std::erase(active ? activeInstances : inactiveInstances, instance);
+		std::erase(m_Renderables.at(meshGroupId).ActiveRenderComponents, instance);
 	}
 
 
-	auto DataManager::GlMeshGroupInstanceCount(std::string const& meshId) const -> std::size_t
+	auto DataManager::RenderComponentCount(std::string const& meshId) const -> std::size_t
 	{
-		auto& [glMeshGroup, activeInstances, inactiveInstances] = m_Renderables.at(meshId);
-		return activeInstances.size() + inactiveInstances.size();
+		return m_Renderables.at(meshId).ActiveRenderComponents.size();
 	}
 
 

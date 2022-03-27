@@ -109,7 +109,7 @@ namespace leopph::internal
 		auto& shader{m_ObjectShader.GetPermutation()};
 
 		shader.SetUniform("u_ViewProjMat", camViewMat * camProjMat);
-		shader.SetUniform("u_CamPos", Camera::Current()->Entity()->Transform()->Position());
+		shader.SetUniform("u_CamPos", Camera::Current()->Owner()->Transform()->Position());
 
 		SetAmbientData(AmbientLight::Instance(), shader);
 		SetDirectionalData(dirLight, shader);
@@ -132,7 +132,7 @@ namespace leopph::internal
 		auto& transpObjectShader{m_ObjectShader.GetPermutation()};
 
 		transpObjectShader.SetUniform("u_ViewProjMat", camViewMat * camProjMat);
-		transpObjectShader.SetUniform("u_CamPos", Camera::Current()->Entity()->Transform()->Position());
+		transpObjectShader.SetUniform("u_CamPos", Camera::Current()->Owner()->Transform()->Position());
 
 		SetAmbientData(AmbientLight::Instance(), transpObjectShader);
 		SetDirectionalData(dirLight, transpObjectShader);

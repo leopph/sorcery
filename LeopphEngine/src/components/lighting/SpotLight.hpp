@@ -11,40 +11,37 @@ namespace leopph
 	{
 		public:
 			// Get the angle in degrees at which the light starts to fade out.
-			[[nodiscard]] constexpr
-			auto InnerAngle() const noexcept;
+			[[nodiscard]] LEOPPHAPI
+			auto InnerAngle() const noexcept -> float;
 
 			// Set the angle in degrees at which the light starts to fade out.
-			constexpr
-			auto InnerAngle(float degrees) noexcept;
+			LEOPPHAPI
+			auto InnerAngle(float degrees) noexcept -> void;
 
 			// Get the angle in degrees at which the light is completely cut.
-			[[nodiscard]] constexpr
-			auto OuterAngle() const noexcept;
+			[[nodiscard]] LEOPPHAPI
+			auto OuterAngle() const noexcept -> float;
 
 			// Set the angle in degrees at which the light is completely cut.
-			constexpr
-			auto OuterAngle(float degrees) noexcept;
+			LEOPPHAPI
+			auto OuterAngle(float degrees) noexcept -> void;
 
 			LEOPPHAPI
-			auto Activate() -> void override;
+			auto Owner(Entity* entity) -> void override;
+			using AttenuatedLight::Owner;
 
 			LEOPPHAPI
-			auto Deactivate() -> void override;
-
-			LEOPPHAPI
-			auto Attach(leopph::Entity* entity) -> void override;
-
-			LEOPPHAPI
-			auto Detach() -> void override;
+			auto Active(bool active) -> void override;
+			using AttenuatedLight::Active;
 
 			SpotLight() = default;
 
-			SpotLight(const SpotLight&) = delete;
-			auto operator=(const SpotLight&) -> void = delete;
+			SpotLight(SpotLight const& other) = default;
+			LEOPPHAPI
+			auto operator=(SpotLight const& other) -> SpotLight&;
 
-			SpotLight(SpotLight&&) = delete;
-			auto operator=(SpotLight&&) -> void = delete;
+			SpotLight(SpotLight&& other) = delete;
+			auto operator=(SpotLight&& other) -> void = delete;
 
 			LEOPPHAPI ~SpotLight() override;
 
@@ -52,28 +49,4 @@ namespace leopph
 			float m_InnerAngle{30.f};
 			float m_OuterAngle{30.f};
 	};
-
-
-	constexpr auto SpotLight::InnerAngle() const noexcept
-	{
-		return m_InnerAngle;
-	}
-
-
-	constexpr auto SpotLight::InnerAngle(const float degrees) noexcept
-	{
-		m_InnerAngle = degrees;
-	}
-
-
-	constexpr auto SpotLight::OuterAngle() const noexcept
-	{
-		return m_OuterAngle;
-	}
-
-
-	constexpr auto SpotLight::OuterAngle(const float degrees) noexcept
-	{
-		m_OuterAngle = degrees;
-	}
 }

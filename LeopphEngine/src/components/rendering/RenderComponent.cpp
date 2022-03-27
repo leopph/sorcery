@@ -5,88 +5,102 @@
 
 namespace leopph::internal
 {
-	auto RenderComponent::Activate() -> void
+	auto RenderComponent::CastsShadow() const noexcept -> bool
 	{
-		if (IsActive())
+		return m_CastsShadow;
+	}
+
+
+	auto RenderComponent::CastsShadow(bool const value) noexcept -> void
+	{
+		m_CastsShadow = value;
+	}
+
+
+	auto RenderComponent::Instanced() const noexcept -> bool
+	{
+		return m_Instanced;
+	}
+
+
+	auto RenderComponent::Instanced(bool const value) noexcept -> void
+	{
+		m_Instanced = value;
+	}
+
+
+	auto RenderComponent::Owner(Entity* entity) -> void
+	{
+		auto& dataManager = DataManager::Instance();
+
+		if (InUse())
 		{
-			return;
+			dataManager.UnregisterActiveRenderComponent(m_Renderable->MeshGroup()->Id, this);
 		}
 
-		Component::Activate();
+		Component::Owner(entity);
 
-		if (IsAttached())
+		if (InUse())
 		{
-			auto& dataManager{DataManager::Instance()};
-			dataManager.UnregisterInstanceFromGlMeshGroup(m_Renderable->MeshGroup()->Id, this, false);
-			dataManager.RegisterInstanceForGlMeshGroup(m_Renderable->MeshGroup()->Id, this, true);
+			dataManager.RegisterActiveRenderComponent(m_Renderable->MeshGroup()->Id, this);
 		}
 	}
 
 
-	auto RenderComponent::Deactivate() -> void
+	auto RenderComponent::Active(bool const active) -> void
 	{
-		if (!IsActive())
+		auto& dataManager = DataManager::Instance();
+
+		if (InUse())
 		{
-			return;
+			dataManager.UnregisterActiveRenderComponent(m_Renderable->MeshGroup()->Id, this);
 		}
 
-		Component::Deactivate();
+		Component::Active(active);
 
-		if (IsAttached())
+		if (InUse())
 		{
-			auto& dataManager{DataManager::Instance()};
-			dataManager.UnregisterInstanceFromGlMeshGroup(m_Renderable->MeshGroup()->Id, this, true);
-			dataManager.RegisterInstanceForGlMeshGroup(m_Renderable->MeshGroup()->Id, this, false);
+			dataManager.RegisterActiveRenderComponent(m_Renderable->MeshGroup()->Id, this);
 		}
 	}
 
 
-	auto RenderComponent::Attach(leopph::Entity* entity) -> void
+	auto RenderComponent::operator=(RenderComponent const& other) -> RenderComponent&
 	{
-		if (IsAttached())
+		if (this == &other)
 		{
-			return;
+			return *this;
 		}
 
-		Component::Attach(entity);
+		auto& dataManager = DataManager::Instance();
 
-		if (IsActive())
+		if (InUse())
 		{
-			auto& dataManager{DataManager::Instance()};
-			dataManager.UnregisterInstanceFromGlMeshGroup(m_Renderable->MeshGroup()->Id, this, false);
-			dataManager.RegisterInstanceForGlMeshGroup(m_Renderable->MeshGroup()->Id, this, true);
-		}
-	}
-
-
-	auto RenderComponent::Detach() -> void
-	{
-		if (!IsAttached())
-		{
-			return;
+			dataManager.UnregisterActiveRenderComponent(m_Renderable->MeshGroup()->Id, this);
 		}
 
-		Component::Detach();
+		m_CastsShadow = other.m_CastsShadow;
+		m_Instanced = other.m_Instanced;
+		m_Renderable = other.m_Renderable;
 
-		if (IsActive())
+		if (InUse())
 		{
-			auto& dataManager{DataManager::Instance()};
-			dataManager.UnregisterInstanceFromGlMeshGroup(m_Renderable->MeshGroup()->Id, this, true);
-			dataManager.RegisterInstanceForGlMeshGroup(m_Renderable->MeshGroup()->Id, this, false);
+			dataManager.RegisterActiveRenderComponent(m_Renderable->MeshGroup()->Id, this);
 		}
+
+		return *this;
 	}
 
 
 	RenderComponent::RenderComponent(std::shared_ptr<MeshGroup const>&& meshGroup) :
 		m_Renderable{GlMeshGroup::CreateOrGet(std::move(meshGroup))}
 	{
-
-		DataManager::Instance().RegisterInstanceForGlMeshGroup(m_Renderable->MeshGroup()->Id, this, false);
+		DataManager::Instance().RegisterActiveRenderComponent(m_Renderable->MeshGroup()->Id, this);
 	}
 
 
 	RenderComponent::~RenderComponent() noexcept
 	{
-		DataManager::Instance().UnregisterInstanceFromGlMeshGroup(m_Renderable->MeshGroup()->Id, this, IsAttached() && IsActive());
+		DataManager::Instance().UnregisterActiveRenderComponent(m_Renderable->MeshGroup()->Id, this);
 	}
 }

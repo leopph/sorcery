@@ -6,98 +6,129 @@
 
 namespace leopph
 {
-	auto Component::Activate() -> void
+	auto Component::Owner() const noexcept -> Entity*
 	{
-		if (m_IsActive)
-		{
-			return;
-		}
-
-		m_IsActive = true;
-
-		if (IsAttached())
-		{
-			auto& dataManager{internal::DataManager::Instance()};
-			auto p = dataManager.UnregisterComponentFromEntity(m_Entity, this, false);
-			dataManager.RegisterComponentForEntity(m_Entity, std::move(p), true);
-		}
+		return m_Owner;
 	}
 
 
-	auto Component::Deactivate() -> void
+	auto Component::Owner(Entity* entity) -> void
 	{
-		if (!m_IsActive)
+		auto& dataManager = internal::DataManager::Instance();
+
+		if (!m_Owner && entity)
 		{
-			return;
-		}
-
-		m_IsActive = false;
-
-		if (IsAttached())
-		{
-			auto& dataManager{internal::DataManager::Instance()};
-			auto p = dataManager.UnregisterComponentFromEntity(m_Entity, this, true);
-			dataManager.RegisterComponentForEntity(m_Entity, std::move(p), false);
-		}
-	}
-
-
-	auto Component::Attach(leopph::Entity* entity) -> void
-	{
-		auto const& logger{internal::Logger::Instance()};
-
-		if (!entity)
-		{
-			logger.Warning("Ignoring attempt to attach Component to nullptr.");
-			return;
-		}
-
-		if (IsAttached())
-		{
-			if (m_Entity == entity)
+			try
 			{
-				logger.Warning("Ignoring attempt to reattach Component to Entity [" + entity->Name() + "].");
-				return;
+				dataManager.RegisterComponent(entity, shared_from_this(), Active());
+				auto const oldOwner = m_Owner;
+				m_Owner = entity;
+				OnOwnerChange(oldOwner);
+				OnAttach();
 			}
-
-			Detach();
+			catch (std::bad_weak_ptr const&)
+			{
+				auto const errMsg{"Failed to attach Component because it is not a shared object."};
+				internal::Logger::Instance().Critical(errMsg);
+				throw std::runtime_error{errMsg};
+			}
 		}
-
-		try
+		else if (m_Owner && !entity)
 		{
-			internal::DataManager::Instance().RegisterComponentForEntity(entity, shared_from_this(), IsActive());
+			auto const self = dataManager.UnregisterComponent(m_Owner, this, Active()); // self might be the last pointer to this
+			auto const oldOwner = m_Owner;
+			m_Owner = entity;
+			OnOwnerChange(oldOwner);
+			OnDetach();
 		}
-		catch (std::bad_weak_ptr const&)
+		else if (m_Owner && entity)
 		{
-			auto const errMsg{"Failed to attach Component because it is not a shared object."};
-			logger.Critical(errMsg);
-			throw std::runtime_error{errMsg};
+			auto self = dataManager.UnregisterComponent(m_Owner, this, Active());
+			dataManager.RegisterComponent(entity, std::move(self), Active());
+			auto const oldOwner = m_Owner;
+			m_Owner = entity;
+			OnOwnerChange(oldOwner);
 		}
+	}
 
-		m_Entity = entity;
+
+	auto Component::Attach(Entity* entity) -> void
+	{
+		Owner(entity);
 	}
 
 
 	auto Component::Detach() -> void
 	{
-		if (!IsAttached())
+		Owner(nullptr);
+	}
+
+
+	auto Component::Attached() const -> bool
+	{
+		return Owner() != nullptr;
+	}
+
+
+	auto Component::Active() const noexcept -> bool
+	{
+		return m_Active;
+	}
+
+
+	auto Component::Active(bool const active) -> void
+	{
+		if (m_Active != active)
 		{
-			return;
+			if (Attached())
+			{
+				auto& dataManager = internal::DataManager::Instance();
+				auto self = dataManager.UnregisterComponent(m_Owner, this, m_Active);
+				dataManager.RegisterComponent(m_Owner, std::move(self), active);
+			}
+			m_Active = active;
+			m_Active ? OnActivate() : OnDeactivate();
+		}
+	}
+
+
+	auto Component::Activate() -> void
+	{
+		Active(true);
+	}
+
+
+	auto Component::Deactivate() -> void
+	{
+		Active(false);
+	}
+
+
+	auto Component::InUse() const noexcept -> bool
+	{
+		return Owner() && Active();
+	}
+
+
+	Component::Component(Component const& other) :
+		std::enable_shared_from_this<Component>{other},
+		m_Active{other.m_Active}
+	{}
+
+
+	auto Component::operator=(Component const& other) -> Component&
+	{
+		if (this == &other)
+		{
+			return *this;
 		}
 
-		internal::DataManager::Instance().UnregisterComponentFromEntity(m_Entity, this, IsActive());
-		m_Entity = nullptr;
+		Active(other.Active());
+		Owner(other.Owner());
+
+		return *this;
 	}
 
 
-	auto Component::IsAttached() const -> bool
-	{
-		return m_Entity != nullptr;
-	}
-
-
-	Component::~Component()
-	{
-		Component::Detach();
-	}
+	Component::~Component() = default;
 }

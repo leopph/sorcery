@@ -14,7 +14,7 @@ namespace demo
 	{
 		m_Time += leopph::time::DeltaTime();
 
-		if (m_Light->IsActive())
+		if (m_Light->Active())
 		{
 			if (m_Time >= m_OnTime)
 			{

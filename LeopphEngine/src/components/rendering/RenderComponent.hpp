@@ -19,42 +19,39 @@ namespace leopph::internal
 			// This only works if the Light used also has this property set to true.
 			// When instancing is turned on if any of the instances have this property set to true, all instances will cast shadow regardless of what is set on them.
 			// This value is false by default.
-			[[nodiscard]] constexpr auto CastsShadow() const noexcept;
+			[[nodiscard]] LEOPPHAPI
+			auto CastsShadow() const noexcept -> bool;
 
 			// Set whether the rendered object occludes light from other objects.
 			// This only works if the Light used also has this property set to true.
 			// When instancing is turned on if any of the instances have this property set to true, all instances will cast shadow regardless of what is set on them.
 			// This value is false by default.
-			constexpr auto CastsShadow(bool value) noexcept;
+			LEOPPHAPI
+			auto CastsShadow(bool value) noexcept -> void;
 
 			// Get whether the object is rendered together with other objects that use the same data source.
 			// This speeds up rendering but limits the amount of customization that can be applied e.g. shadow casting.
 			// The default value is false.
-			[[nodiscard]] constexpr auto Instanced() const noexcept;
+			[[nodiscard]] LEOPPHAPI
+			auto Instanced() const noexcept -> bool;
 
 			// Set whether the object is rendered together with other objects that use the same data source.
 			// This speeds up rendering but limits the amount of customization that can be applied e.g. shadow casting.
 			// The default value is false.
-			constexpr auto Instanced(bool value) noexcept;
+			LEOPPHAPI
+			auto Instanced(bool value) noexcept -> void;
 
-			// Activate the RenderComponent.
-			// Only active, attached RenderComponents are rendered.
-			LEOPPHAPI auto Activate() -> void override;
+			LEOPPHAPI
+			auto Owner(Entity* entity) -> void final;
+			using Component::Owner;
 
-			// Deactivate the RenderComponent.
-			// Only active, attached RenderComponents are rendered.
-			LEOPPHAPI auto Deactivate() -> void override;
+			LEOPPHAPI
+			auto Active(bool active) -> void final;
+			using Component::Active;
 
-			// Attach the RenderComponent to the Entity.
-			// Only active, attached RenderComponents are rendered.
-			LEOPPHAPI auto Attach(leopph::Entity* entity) -> void override;
-
-			// Detach the RenderComponent from the Entity.
-			// Only active, attached RenderComponents are rendered.
-			LEOPPHAPI auto Detach() -> void override;
-
-			RenderComponent(RenderComponent const& other) = delete;
-			auto operator=(RenderComponent const& other) -> RenderComponent& = delete;
+			RenderComponent(RenderComponent const& other) = default;
+			LEOPPHAPI
+			auto operator=(RenderComponent const& other) -> RenderComponent&;
 
 			RenderComponent(RenderComponent&& other) = delete;
 			auto operator=(RenderComponent&& other) -> RenderComponent& = delete;
@@ -69,28 +66,4 @@ namespace leopph::internal
 			bool m_Instanced{false};
 			std::shared_ptr<GlMeshGroup> m_Renderable;
 	};
-
-
-	constexpr auto RenderComponent::CastsShadow() const noexcept
-	{
-		return m_CastsShadow;
-	}
-
-
-	constexpr auto RenderComponent::CastsShadow(bool const value) noexcept
-	{
-		m_CastsShadow = value;
-	}
-
-
-	constexpr auto RenderComponent::Instanced() const noexcept
-	{
-		return m_Instanced;
-	}
-
-
-	constexpr auto RenderComponent::Instanced(bool const value) noexcept
-	{
-		m_Instanced = value;
-	}
 }

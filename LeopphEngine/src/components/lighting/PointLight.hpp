@@ -11,24 +11,21 @@ namespace leopph
 	{
 		public:
 			LEOPPHAPI
-			auto Activate() -> void override;
+			auto Owner(Entity* entity) -> void override;
+			using AttenuatedLight::Owner;
 
 			LEOPPHAPI
-			auto Deactivate() -> void override;
-
-			LEOPPHAPI
-			auto Attach(leopph::Entity* entity) -> void override;
-
-			LEOPPHAPI
-			auto Detach() -> void override;
+			auto Active(bool active) -> void override;
+			using AttenuatedLight::Active;
 
 			PointLight() = default;
 
-			PointLight(const PointLight&) = delete;
-			auto operator=(const PointLight&) -> void = delete;
+			PointLight(PointLight const& other) = default;
+			LEOPPHAPI
+			auto operator=(PointLight const& other) -> PointLight&;
 
-			PointLight(PointLight&&) = delete;
-			auto operator=(PointLight&&) -> void = delete;
+			PointLight(PointLight&& other) = delete;
+			auto operator=(PointLight&& other) -> void = delete;
 
 			LEOPPHAPI ~PointLight() override;
 	};

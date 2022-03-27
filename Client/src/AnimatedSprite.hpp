@@ -21,8 +21,8 @@ namespace demo
 
 			auto OnFrameUpdate() -> void override;
 
-			auto Attach(leopph::Entity* entity) -> void override;
-			auto Detach() -> void override;
+			auto OnAttach() -> void override;
+			auto OnDetach() -> void override;
 
 		private:
 			std::vector<leopph::ComponentPtr<leopph::ImageSprite>> m_Sprites;

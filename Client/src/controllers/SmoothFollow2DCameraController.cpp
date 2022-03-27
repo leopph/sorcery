@@ -10,7 +10,7 @@ namespace demo
 {
 	SmoothFollow2DCameraController::SmoothFollow2DCameraController(ComponentPtr<Camera const> const& camera, ComponentPtr<Transform> target, Vector2 const targetOffsetFromCenter, float const followSpeed) :
 		m_Target{std::move(target)},
-		m_CamTransform{camera->Entity()->Transform()},
+		m_CamTransform{camera->Owner()->Transform()},
 		m_Offset{targetOffsetFromCenter},
 		m_Speed{followSpeed}
 	{ }
@@ -18,7 +18,7 @@ namespace demo
 
 	auto SmoothFollow2DCameraController::OnFrameUpdate() -> void
 	{
-		if (!m_Target || !m_Target->IsAttached() || !m_CamTransform || !m_CamTransform->IsAttached())
+		if (!m_Target || !m_Target->Attached() || !m_CamTransform || !m_CamTransform->Attached())
 		{
 			return;
 		}

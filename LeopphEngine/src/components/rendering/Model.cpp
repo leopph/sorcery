@@ -14,6 +14,12 @@ namespace leopph
 	{}
 
 
+	auto Model::Path() const noexcept -> std::filesystem::path const&
+	{
+		return m_Path;
+	}
+
+
 	auto Model::GetMeshGroup(std::filesystem::path const& path) const -> std::shared_ptr<internal::MeshGroup const>
 	{
 		auto const meshId = path.generic_string();

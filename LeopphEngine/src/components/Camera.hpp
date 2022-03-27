@@ -86,18 +86,15 @@ namespace leopph
 			[[nodiscard]] virtual
 			auto Frustum() const -> Frustum = 0;
 
-			// Deactivate the Camera.
-			// If this was the current one, it will be set to nullptr.
+			// Detaching the current Camera will set it to nullptr.
 			LEOPPHAPI
-			auto Deactivate() -> void override;
+			auto Owner(Entity* entity) -> void final;
+			using Component::Owner;
 
-			// Detach the Camera from its Entity.
-			// If this was the current one, it will be set to nullptr.
 			LEOPPHAPI
-			auto Detach() -> void override;
-
-			Camera(Camera const&) = delete;
-			auto operator=(Camera const&) -> void = delete;
+			// Deactivating the current Camera will set it to nullptr.
+			auto Active(bool active) -> void final;
+			using Component::Active;
 
 			Camera(Camera&&) = delete;
 			auto operator=(Camera&&) -> void = delete;
@@ -106,6 +103,9 @@ namespace leopph
 
 		protected:
 			LEOPPHAPI Camera();
+
+			Camera(Camera const&) = default;
+			auto operator=(Camera const&) -> Camera& = default;
 
 			[[nodiscard]]
 			auto AspectRatio() const -> float;

@@ -10,32 +10,40 @@ namespace leopph
 	{
 		public:
 			// Get the attenuations constanst value.
-			[[nodiscard]] constexpr auto Constant() const noexcept;
+			[[nodiscard]] constexpr
+			auto Constant() const noexcept;
 
 			// Get the attenuation's linear value.
 			// This scales linearly with distance.
-			[[nodiscard]] constexpr auto Linear() const noexcept;
+			[[nodiscard]] constexpr
+			auto Linear() const noexcept;
 
 			// Get the attenuation's quadratic value.
 			// This scales quadratically with distance.
-			[[nodiscard]] constexpr auto Quadratic() const noexcept;
+			[[nodiscard]] constexpr
+			auto Quadratic() const noexcept;
 
 			// Get the distance where the light effect fully cuts off.
-			[[nodiscard]] constexpr auto Range() const noexcept;
+			[[nodiscard]] constexpr
+			auto Range() const noexcept;
 
 			// Set the attenuation's constanst value.
-			constexpr auto Constant(float value) noexcept;
+			constexpr
+			auto Constant(float value) noexcept;
 
 			// Set the attenuation's linear value.
 			// This scales linearly with distance.
-			constexpr auto Linear(float value) noexcept;
+			constexpr
+			auto Linear(float value) noexcept;
 
 			// Set the attenuation's quadratic value.
 			// This scales quadratically with distance.
-			constexpr auto Quadratic(float value) noexcept;
+			constexpr
+			auto Quadratic(float value) noexcept;
 
 			// Set the distance where the light effect fully cuts off.
-			constexpr auto Range(float value) noexcept;
+			constexpr
+			auto Range(float value) noexcept;
 
 		protected:
 			using Light::Light;
@@ -55,7 +63,7 @@ namespace leopph
 	}
 
 
-	constexpr auto AttenuatedLight::Constant(const float value) noexcept
+	constexpr auto AttenuatedLight::Constant(float const value) noexcept
 	{
 		m_Constant = value;
 	}
@@ -67,7 +75,7 @@ namespace leopph
 	}
 
 
-	constexpr auto AttenuatedLight::Linear(const float value) noexcept
+	constexpr auto AttenuatedLight::Linear(float const value) noexcept
 	{
 		m_Linear = value;
 	}
@@ -79,7 +87,7 @@ namespace leopph
 	}
 
 
-	constexpr auto AttenuatedLight::Quadratic(const float value) noexcept
+	constexpr auto AttenuatedLight::Quadratic(float const value) noexcept
 	{
 		m_Quadratic = value;
 	}
@@ -91,7 +99,7 @@ namespace leopph
 	}
 
 
-	constexpr auto AttenuatedLight::Range(const float value) noexcept
+	constexpr auto AttenuatedLight::Range(float const value) noexcept
 	{
 		m_Range = value;
 	}

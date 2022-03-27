@@ -10,7 +10,7 @@
 
 namespace leopph
 {
-	auto Entity::Find(const std::string& name) -> Entity*
+	auto Entity::Find(std::string const& name) -> Entity*
 	{
 		return internal::DataManager::Instance().FindEntity(name);
 	}
@@ -42,11 +42,11 @@ namespace leopph
 
 		m_Transform->Component::Detach(); // Transform is a special case because it cannot be detached.
 
-		std::ranges::for_each(std::array{true, false}, [this, &dataManager](const auto active)
+		std::ranges::for_each(std::array{true, false}, [this, &dataManager](auto const active)
 		{
 			auto components = dataManager.ComponentsOfEntity(this, active);
 			// Detach erases itself from the component collection, so we iterate backwards to not cause element relocation
-			std::for_each(components.rbegin(), components.rend(), [](const auto component)
+			std::for_each(components.rbegin(), components.rend(), [](auto const component)
 			{
 				component->Detach();
 			});
@@ -64,7 +64,7 @@ namespace leopph
 
 	auto Entity::DetachComponent(ComponentPtr<> const& component) const -> void
 	{
-		const auto& logger{internal::Logger::Instance()};
+		auto const& logger{internal::Logger::Instance()};
 
 		if (!component)
 		{
@@ -72,7 +72,7 @@ namespace leopph
 			return;
 		}
 
-		if (component->Entity() != this)
+		if (component->Owner() != this)
 		{
 			internal::Logger::Instance().Error("Ignoring attempt to remove component at [" + std::to_string(reinterpret_cast<std::size_t>(component.get())) + "] from Entity [" + m_Name + "], because the component is not owned by the Entity.");
 			return;
@@ -106,7 +106,7 @@ namespace leopph
 	}
 
 
-	auto Entity::GenerateUnusedName(const std::string& namePrefix) -> std::string
+	auto Entity::GenerateUnusedName(std::string const& namePrefix) -> std::string
 	{
 		static std::size_t entityCounter{0};
 		auto newName{namePrefix + std::to_string(entityCounter)};
@@ -120,7 +120,7 @@ namespace leopph
 	}
 
 
-	auto Entity::NameIsUnused(const std::string& name) -> bool
+	auto Entity::NameIsUnused(std::string const& name) -> bool
 	{
 		return !internal::DataManager::Instance().FindEntity(name);
 	}

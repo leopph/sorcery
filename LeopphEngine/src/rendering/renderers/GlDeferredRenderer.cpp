@@ -156,7 +156,7 @@ namespace leopph::internal
 		SetSpotData(spotLights, lightShader);
 		SetPointData(pointLights, lightShader);
 
-		lightShader.SetUniform("u_CamPos", Camera::Current()->Entity()->Transform()->Position());
+		lightShader.SetUniform("u_CamPos", Camera::Current()->Owner()->Transform()->Position());
 		lightShader.SetUniform("u_CamViewProjInv", (camViewMat * camProjMat).Inverse());
 
 		lightShader.Use();
@@ -278,7 +278,7 @@ namespace leopph::internal
 		{
 			if (spotLights[i]->CastsShadow())
 			{
-				auto const lightViewMat{Matrix4::LookAt(spotLights[i]->Entity()->Transform()->Position(), spotLights[i]->Entity()->Transform()->Position() + spotLights[i]->Entity()->Transform()->Forward(), Vector3::Up())};
+				auto const lightViewMat{Matrix4::LookAt(spotLights[i]->Owner()->Transform()->Position(), spotLights[i]->Owner()->Transform()->Position() + spotLights[i]->Owner()->Transform()->Forward(), Vector3::Up())};
 				auto const lightProjMat{Matrix4::Perspective(math::ToRadians(spotLights[i]->OuterAngle() * 2), 1.f, 0.1f, spotLights[i]->Range())};
 				auto const lightViewProjMat{lightViewMat * lightProjMat};
 
@@ -337,7 +337,7 @@ namespace leopph::internal
 				std::array<Matrix4, 6> shadowViewProjMats;
 
 				auto const shadowProjMat{Matrix4::Perspective(math::ToRadians(90), 1, 0.01f, pointLights[i]->Range())};
-				auto const lightTransMat{Matrix4::Translate(-pointLights[i]->Entity()->Transform()->Position())};
+				auto const lightTransMat{Matrix4::Translate(-pointLights[i]->Owner()->Transform()->Position())};
 
 				static constexpr std::array cubeFaceMats
 				{
@@ -354,7 +354,7 @@ namespace leopph::internal
 					return lightTransMat * cubeFaceMat * shadowProjMat;
 				});
 
-				shadowShader.SetUniform("u_LightPos", pointLights[i]->Entity()->Transform()->Position());
+				shadowShader.SetUniform("u_LightPos", pointLights[i]->Owner()->Transform()->Position());
 
 				for (auto face = 0; face < 6; face++)
 				{
@@ -396,7 +396,7 @@ namespace leopph::internal
 		auto& forwardShader{m_ForwardShader.GetPermutation()};
 
 		forwardShader.SetUniform("u_ViewProjMat", camViewMat * camProjMat);
-		forwardShader.SetUniform("u_CamPos", Camera::Current()->Entity()->Transform()->Position());
+		forwardShader.SetUniform("u_CamPos", Camera::Current()->Owner()->Transform()->Position());
 
 		SetAmbientData(AmbientLight::Instance(), forwardShader);
 		SetDirectionalData(dirLight, forwardShader);

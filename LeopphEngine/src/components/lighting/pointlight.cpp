@@ -5,70 +5,69 @@
 
 namespace leopph
 {
-	auto PointLight::Activate() -> void
+	auto PointLight::Owner(Entity* entity) -> void
 	{
-		if (IsActive())
+		auto& dataManager = internal::DataManager::Instance();
+
+		if (InUse())
 		{
-			return;
+			dataManager.UnregisterActivePointLight(this);
 		}
 
-		AttenuatedLight::Activate();
+		AttenuatedLight::Owner(entity);
 
-		if (IsAttached())
+		if (InUse())
 		{
-			auto& dataManager{internal::DataManager::Instance()};
-			dataManager.UnregisterPointLight(this, false);
-			dataManager.RegisterPointLight(this, true);
+			dataManager.RegisterActivePointLight(this);
 		}
 	}
 
 
-	auto PointLight::Deactivate() -> void
+	auto PointLight::Active(bool const active) -> void
 	{
-		if (!IsActive())
+		auto& dataManager = internal::DataManager::Instance();
+
+		if (InUse())
 		{
-			return;
+			dataManager.UnregisterActivePointLight(this);
 		}
 
-		AttenuatedLight::Deactivate();
+		AttenuatedLight::Active(active);
 
-		if (IsAttached())
+		if (InUse())
 		{
-			auto& dataManager{internal::DataManager::Instance()};
-			dataManager.UnregisterPointLight(this, true);
-			dataManager.RegisterPointLight(this, false);
+			dataManager.RegisterActivePointLight(this);
 		}
 	}
 
 
-	auto PointLight::Attach(leopph::Entity* entity) -> void
+	auto PointLight::operator=(PointLight const& other) -> PointLight&
 	{
-		if (IsAttached())
+		if (this == &other)
 		{
-			return;
+			return *this;
 		}
 
-		AttenuatedLight::Attach(entity);
+		auto& dataManager = internal::DataManager::Instance();
 
-		internal::DataManager::Instance().RegisterPointLight(this, IsActive());
-	}
-
-
-	auto PointLight::Detach() -> void
-	{
-		if (!IsAttached())
+		if (InUse())
 		{
-			return;
+			dataManager.UnregisterActivePointLight(this);
 		}
 
-		AttenuatedLight::Detach();
+		AttenuatedLight::operator=(other);
 
-		internal::DataManager::Instance().UnregisterPointLight(this, IsActive());
+		if (InUse())
+		{
+			dataManager.RegisterActivePointLight(this);
+		}
+
+		return *this;
 	}
 
 
 	PointLight::~PointLight()
 	{
-		Detach();
+		internal::DataManager::Instance().UnregisterActivePointLight(this);
 	}
 }
