@@ -16,39 +16,39 @@ namespace leopph
 	{
 		if (!m_Material)
 		{
-			const auto errMsg{"Trying to set null Material in Mesh."};
+			auto const errMsg{"Trying to set null Material in Mesh."};
 			Logger::Instance().Error(errMsg);
 			throw std::invalid_argument{errMsg};
 		}
 	}
 
 
-	auto internal::Mesh::Vertices() const -> std::span<const Vertex>
+	auto internal::Mesh::Vertices() const -> std::span<Vertex const>
 	{
 		return m_Vertices;
 	}
 
 
-	auto internal::Mesh::Vertices(std::span<Vertex> vertices) -> void
+	auto internal::Mesh::Vertices(std::vector<Vertex> vertices) -> void
 	{
-		m_Vertices.assign(vertices.begin(), vertices.end());
+		m_Vertices = std::move(vertices);
 		m_BoundingSphere = CalculateBoundingSphere();
 	}
 
 
-	auto internal::Mesh::Indices() const -> std::span<const unsigned>
+	auto internal::Mesh::Indices() const -> std::span<unsigned const>
 	{
 		return m_Indices;
 	}
 
 
-	auto internal::Mesh::Indices(std::span<unsigned> indices) -> void
+	auto internal::Mesh::Indices(std::vector<unsigned> indices) -> void
 	{
-		m_Indices.assign(indices.begin(), indices.end());
+		m_Indices = std::move(indices);
 	}
 
 
-	auto internal::Mesh::Material() const -> const std::shared_ptr<leopph::Material>&
+	auto internal::Mesh::Material() const -> std::shared_ptr<leopph::Material> const&
 	{
 		return m_Material;
 	}
@@ -66,7 +66,7 @@ namespace leopph
 	}
 
 
-	auto internal::Mesh::BoundingSphere() const -> const Sphere&
+	auto internal::Mesh::BoundingSphere() const -> Sphere const&
 	{
 		return m_BoundingSphere;
 	}
@@ -82,7 +82,7 @@ namespace leopph
 		return Sphere
 		{
 			.Origin = Vector3{},
-			.Radius = std::ranges::max(m_Vertices, std::ranges::less{}, [](const Vertex& vertex)
+			.Radius = std::ranges::max(m_Vertices, std::ranges::less{}, [](Vertex const& vertex)
 			{
 				return vertex.Position.Length();
 			}).Position.Length()

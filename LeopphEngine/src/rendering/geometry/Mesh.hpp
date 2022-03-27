@@ -25,7 +25,7 @@ namespace leopph::internal
 
 			// Set the vertex data required for rendering.
 			// No primitives will be drawn if empty.
-			auto Vertices(std::span<Vertex> vertices) -> void;
+			auto Vertices(std::vector<Vertex> vertices) -> void;
 
 			// Get the vertex indices used for rendering.
 			// No primitives will be drawn if empty.
@@ -34,7 +34,7 @@ namespace leopph::internal
 
 			// Set the vertex indices used for rendering.
 			// No primitives will be drawn if empty.
-			auto Indices(std::span<unsigned> indices) -> void;
+			auto Indices(std::vector<unsigned> indices) -> void;
 
 			// Get the material that is used to define the visual appearance of the primitives in the Mesh.
 			// If no unique customization is required, Materials can be shared between different Mesh objects to achieve a form of instancing.
