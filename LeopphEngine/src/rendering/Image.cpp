@@ -15,9 +15,9 @@ namespace leopph
 	{
 		stbi_set_flip_vertically_on_load(flipVertically);
 		auto const pathStr{m_Path.string()};
-		auto const data = stbi_load(pathStr.c_str(), &m_Width, &m_Height, &m_Channels, 0);
+		m_Bytes.reset(stbi_load(pathStr.c_str(), &m_Width, &m_Height, &m_Channels, 0));
 
-		if (!data)
+		if (!m_Bytes)
 		{
 			internal::Logger::Instance().Error("Failed to load image at " + pathStr + ". Reverting to default image.");
 			m_Path.clear();
@@ -26,10 +26,6 @@ namespace leopph
 			m_Channels = 0;
 			return;
 		}
-
-		m_Bytes.assign(data, data + m_Width * m_Height * m_Channels);
-
-		stbi_image_free(data);
 	}
 
 
@@ -37,17 +33,32 @@ namespace leopph
 		m_Width{width},
 		m_Height{height},
 		m_Channels{channels},
-		m_Bytes{std::move(bytes)}
+		m_Bytes{std::make_unique_for_overwrite<unsigned char[]>(bytes.size())}
 	{
-		if (m_Bytes.size() != m_Width * m_Height * m_Channels)
-		{
-			internal::Logger::Instance().Error("Inconsistent arguments detected. The number of bytes passed is not equal to the given image parameters. Expected byte count was " + std::to_string(m_Width * m_Height * m_Channels) + " but " + std::to_string(m_Bytes.size()) + " was given. Reverting to default image.");
-			m_Width = 0;
-			m_Height = 0;
-			m_Channels = 0;
-			m_Bytes.clear();
-			return;
-		}
+		std::ranges::copy(bytes, m_Bytes.get());
+	}
+
+
+	Image::Image(Image const& other) :
+		m_Path(other.m_Path),
+		m_Width(other.m_Width),
+		m_Height(other.m_Height),
+		m_Channels(other.m_Channels),
+		m_Bytes{std::make_unique_for_overwrite<unsigned char[]>(m_Width * m_Height * m_Channels)}
+	{
+		std::ranges::copy(other.m_Bytes.get(), other.m_Bytes.get() + m_Width * m_Height * m_Channels, m_Bytes.get());
+	}
+
+
+	auto Image::operator=(Image const& other) -> Image&
+	{
+		m_Path = other.m_Path;
+		m_Width = other.m_Width;
+		m_Height = other.m_Height;
+		m_Channels = other.m_Channels;
+		m_Bytes = std::make_unique_for_overwrite<unsigned char[]>(m_Width * m_Height * m_Channels);
+		std::ranges::copy(other.m_Bytes.get(), other.m_Bytes.get() + m_Width * m_Height * m_Channels, m_Bytes.get());
+		return *this;
 	}
 
 
@@ -120,25 +131,25 @@ namespace leopph
 		img.m_Width = m_Width;
 		img.m_Height = m_Height;
 		img.m_Channels = 1;
-		img.m_Bytes.reserve(m_Width * m_Height);
+		img.m_Bytes = std::make_unique_for_overwrite<unsigned char[]>(m_Width * m_Height);
 
-		decltype(m_Bytes) newBytes;
+		auto newBytes = std::make_unique_for_overwrite<unsigned char[]>(m_Width * m_Height * m_Channels - 1);
 
-		//for (auto i = 0; i < m_Bytes.size(); i += m_Channels - 1)
-		for (auto i = 0; i < m_Bytes.size(); i += m_Channels)
+		for (auto pixel = 0, extract = 0, remaining = 0; pixel < m_Width * m_Height * m_Channels; pixel += m_Channels, extract++)
 		{
-			img.m_Bytes.push_back(m_Bytes[i + channel]);
+			img.m_Bytes[extract] = m_Bytes[pixel + channel];
 
-			for (auto j = 0; j < m_Channels; j++)
+			for (auto chanOffset = 0; chanOffset < m_Channels; chanOffset++)
 			{
-				if (j != channel)
+				if (chanOffset != channel)
 				{
-					newBytes.push_back(m_Bytes[i + j]);
+					newBytes[remaining] = m_Bytes[pixel + chanOffset];
+					remaining++;
 				}
 			}
 		}
 
-		m_Bytes = newBytes;
+		m_Bytes = std::move(newBytes);
 		m_Channels -= 1;
 
 		return img;
@@ -147,18 +158,18 @@ namespace leopph
 
 	auto Image::operator[](std::size_t const rowIndex) const -> unsigned char const*
 	{
-		return m_Bytes.data() + rowIndex * m_Width * m_Channels;
+		return m_Bytes.get() + rowIndex * m_Width * m_Channels;
 	}
 
 
 	auto Image::Empty() const noexcept -> bool
 	{
-		return m_Path.empty() || m_Width == 0 || m_Height == 0 || m_Channels == 0 && m_Bytes.empty();
+		return m_Path.empty() || m_Width == 0 || m_Height == 0 || m_Channels == 0 || !m_Bytes;
 	}
 
 
 	auto Image::Data() const noexcept -> std::span<unsigned char const>
 	{
-		return m_Bytes;
+		return std::span{m_Bytes.get(), static_cast<std::size_t>(m_Width * m_Height * m_Channels)};
 	}
 }

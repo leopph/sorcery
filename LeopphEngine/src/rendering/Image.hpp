@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <filesystem>
+#include <memory>
 #include <span>
 #include <vector>
 
@@ -20,8 +21,8 @@ namespace leopph
 			// Construct and empty image.
 			Image() = default;
 
-			Image(Image const& other) = default;
-			auto operator=(Image const& other) -> Image& = default;
+			Image(Image const& other);
+			auto operator=(Image const& other) -> Image&;
 
 			Image(Image&& other) noexcept;
 			auto operator=(Image&& other) noexcept -> Image&;
@@ -62,6 +63,6 @@ namespace leopph
 			int m_Width{0};
 			int m_Height{0};
 			int m_Channels{0};
-			std::vector<unsigned char> m_Bytes;
+			std::unique_ptr<unsigned char[]> m_Bytes;
 	};
 }
