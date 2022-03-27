@@ -8,9 +8,9 @@
 
 namespace leopph
 {
-	internal::Mesh::Mesh(std::span<const Vertex> vertices, std::span<const unsigned> indices, std::shared_ptr<leopph::Material> material) :
-		m_Vertices{vertices.begin(), vertices.end()},
-		m_Indices{indices.begin(), indices.end()},
+	internal::Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned> indices, std::shared_ptr<leopph::Material> material) :
+		m_Vertices{std::move(vertices)},
+		m_Indices{std::move(indices)},
 		m_Material{std::move(material)},
 		m_BoundingSphere{CalculateBoundingSphere()}
 	{

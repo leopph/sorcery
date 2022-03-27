@@ -16,12 +16,12 @@ namespace leopph::internal
 	class Mesh
 	{
 		public:
-			Mesh(std::span<const Vertex> vertices, std::span<const unsigned> indices, std::shared_ptr<Material> material);
+			Mesh(std::vector<Vertex> vertices, std::vector<unsigned> indices, std::shared_ptr<Material> material);
 
 			// Get the vertex data required for rendering.
 			// No primitives will be drawn if empty.
 			[[nodiscard]]
-			auto Vertices() const -> std::span<const Vertex>;
+			auto Vertices() const -> std::span<Vertex const>;
 
 			// Set the vertex data required for rendering.
 			// No primitives will be drawn if empty.
@@ -30,7 +30,7 @@ namespace leopph::internal
 			// Get the vertex indices used for rendering.
 			// No primitives will be drawn if empty.
 			[[nodiscard]]
-			auto Indices() const -> std::span<const unsigned>;
+			auto Indices() const -> std::span<unsigned const>;
 
 			// Set the vertex indices used for rendering.
 			// No primitives will be drawn if empty.
@@ -40,7 +40,7 @@ namespace leopph::internal
 			// If no unique customization is required, Materials can be shared between different Mesh objects to achieve a form of instancing.
 			// The returned pointer is never null.
 			[[nodiscard]]
-			auto Material() const -> const std::shared_ptr<Material>&;
+			auto Material() const -> std::shared_ptr<Material> const&;
 
 			// Set the material that is used to define the visual appearance of the primitives in the Mesh.
 			// If no unique customization is required, Materials can be shared between different Mesh objects to achieve a form of instancing.
@@ -51,7 +51,7 @@ namespace leopph::internal
 			// This is updated if only if the vertices change.
 			// Changing the indices does not affect the bounding sphere.
 			[[nodiscard]]
-			auto BoundingSphere() const -> const Sphere&;
+			auto BoundingSphere() const -> Sphere const&;
 
 		private:
 			// Returns the bounding sphere based on the current vertices.
