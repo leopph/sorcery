@@ -15,7 +15,7 @@ namespace leopph
 			explicit Image(std::filesystem::path src, bool flipVertically = false);
 
 			// Create image by raw data.
-			Image(int width, int height, int channels, std::span<unsigned char> bytes);
+			Image(int width, int height, int channels, std::vector<unsigned char> bytes);
 
 			// Construct and empty image.
 			Image() = default;

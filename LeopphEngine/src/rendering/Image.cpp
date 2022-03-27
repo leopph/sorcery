@@ -33,18 +33,21 @@ namespace leopph
 	}
 
 
-	Image::Image(int const width, int const height, int const channels, std::span<unsigned char> bytes)
+	Image::Image(int const width, int const height, int const channels, std::vector<unsigned char> bytes) :
+		m_Width{width},
+		m_Height{height},
+		m_Channels{channels},
+		m_Bytes{std::move(bytes)}
 	{
-		if (bytes.size() != width * height * channels)
+		if (m_Bytes.size() != m_Width * m_Height * m_Channels)
 		{
-			internal::Logger::Instance().Error("Inconsistent arguments detected. The number of bytes passed is not equal to the given image parameters. Expected byte count was " + std::to_string(width * height * channels) + " but " + std::to_string(bytes.size()) + " was given. Reverting to default image.");
+			internal::Logger::Instance().Error("Inconsistent arguments detected. The number of bytes passed is not equal to the given image parameters. Expected byte count was " + std::to_string(m_Width * m_Height * m_Channels) + " but " + std::to_string(m_Bytes.size()) + " was given. Reverting to default image.");
+			m_Width = 0;
+			m_Height = 0;
+			m_Channels = 0;
+			m_Bytes.clear();
 			return;
 		}
-
-		m_Width = width;
-		m_Height = height;
-		m_Channels = channels;
-		m_Bytes.assign(bytes.begin(), bytes.end());
 	}
 
 
@@ -126,7 +129,7 @@ namespace leopph
 		{
 			img.m_Bytes.push_back(m_Bytes[i + channel]);
 
-			 for (auto j = 0; j < m_Channels; j++)
+			for (auto j = 0; j < m_Channels; j++)
 			{
 				if (j != channel)
 				{

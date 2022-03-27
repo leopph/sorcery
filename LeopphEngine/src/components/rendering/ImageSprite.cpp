@@ -112,8 +112,8 @@ namespace leopph
 				}
 			}
 
-			baseTexture = std::make_shared<Texture>(Image{static_cast<int>(newDim), static_cast<int>(newDim), 3, baseColorBytes});
-			opacityTexture = std::make_shared<Texture>(Image{static_cast<int>(newDim), static_cast<int>(newDim), 1, opacityBytes});
+			baseTexture = std::make_shared<Texture>(Image{static_cast<int>(newDim), static_cast<int>(newDim), 3, std::move(baseColorBytes)});
+			opacityTexture = std::make_shared<Texture>(Image{static_cast<int>(newDim), static_cast<int>(newDim), 1, std::move(opacityBytes)});
 		}
 		else
 		{
@@ -125,7 +125,7 @@ namespace leopph
 			else
 			{
 				std::vector<unsigned char> alphaBytes(img.Width() * img.Height(), 255);
-				opacityTexture = std::make_shared<Texture>(Image{img.Width(), img.Height(), 1, alphaBytes});
+				opacityTexture = std::make_shared<Texture>(Image{img.Width(), img.Height(), 1, std::move(alphaBytes)});
 			}
 			baseTexture = std::make_shared<Texture>(img);
 		}
