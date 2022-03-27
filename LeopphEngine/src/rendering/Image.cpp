@@ -29,14 +29,12 @@ namespace leopph
 	}
 
 
-	Image::Image(int const width, int const height, int const channels, std::vector<unsigned char> bytes) :
+	Image::Image(int const width, int const height, int const channels, std::unique_ptr<unsigned char[]> bytes) :
 		m_Width{width},
 		m_Height{height},
 		m_Channels{channels},
-		m_Bytes{std::make_unique_for_overwrite<unsigned char[]>(bytes.size())}
-	{
-		std::ranges::copy(bytes, m_Bytes.get());
-	}
+		m_Bytes{std::move(bytes)}
+	{ }
 
 
 	Image::Image(Image const& other) :

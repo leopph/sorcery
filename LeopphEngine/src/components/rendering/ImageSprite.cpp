@@ -4,6 +4,8 @@
 #include "../../math/Math.hpp"
 #include "../../util/Logger.hpp"
 
+#include <algorithm>
+#include <memory>
 #include <vector>
 
 
@@ -46,8 +48,8 @@ namespace leopph
 			auto const startIndHoriz{static_cast<unsigned>(static_cast<float>(newDim - img.Width()) / 2.f)};
 			auto const startIndVert{static_cast<unsigned>(static_cast<float>(newDim - img.Height()) / 2.f)};
 
-			std::vector<unsigned char> baseColorBytes(newDim * newDim * 3, 0);
-			std::vector<unsigned char> opacityBytes(newDim * newDim, 0);
+			auto baseColorBytes = std::make_unique<unsigned char[]>(newDim * newDim * 3);
+			auto opacityBytes = std::make_unique<unsigned char[]>(newDim * newDim);
 
 			switch (img.Channels())
 			{
@@ -124,7 +126,8 @@ namespace leopph
 			}
 			else
 			{
-				std::vector<unsigned char> alphaBytes(img.Width() * img.Height(), 255);
+				auto alphaBytes = std::make_unique_for_overwrite<unsigned char[]>(img.Width() * img.Height());
+				std::ranges::fill(alphaBytes.get(), alphaBytes.get() + img.Width() * img.Height(), static_cast<unsigned char>(255));
 				opacityTexture = std::make_shared<Texture>(Image{img.Width(), img.Height(), 1, std::move(alphaBytes)});
 			}
 			baseTexture = std::make_shared<Texture>(img);
