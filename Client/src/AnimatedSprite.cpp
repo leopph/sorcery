@@ -13,6 +13,27 @@ namespace demo
 	{ }
 
 
+	AnimatedSprite::AnimatedSprite(AnimatedSprite const& other) :
+		Behavior{other},
+		m_Sprites{
+			[&other]
+			{
+				std::vector<ComponentPtr<ImageSprite>> ret;
+				for (auto const& spritePtr : other.m_Sprites)
+				{
+					ret.push_back(leopph::CreateComponent<ImageSprite>(*spritePtr));
+				}
+				return ret;
+			}()
+		},
+		m_AnimMode{other.m_AnimMode},
+		m_Speed{other.m_Speed},
+		m_TimeDelta{other.m_TimeDelta},
+		m_FrameInd{other.m_FrameInd},
+		m_IndGradient{other.m_IndGradient}
+	{ }
+
+
 	auto AnimatedSprite::OnFrameUpdate() -> void
 	{
 		m_TimeDelta += leopph::time::DeltaTime();

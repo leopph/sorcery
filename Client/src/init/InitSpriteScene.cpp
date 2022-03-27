@@ -49,7 +49,10 @@ namespace demo
 
 		auto const demon = new Entity;
 		demon->CreateAndAttachComponent<CharacterController2D>(demon->Transform(), CHAR_2D_SPEED, CHAR_2D_RUN_MULT, CHAR_2D_WALK_MULT);
-		demon->CreateAndAttachComponent<AnimatedSprite>(demonSprites, AnimatedSprite::AnimationMode::Bounce, 2.f);
+		auto const animSprite = demon->CreateAndAttachComponent<AnimatedSprite>(demonSprites, AnimatedSprite::AnimationMode::Bounce, 2.f);
+
+		auto const demon1 = new Entity;
+		auto const animSpriteCopy = demon1->CreateAndAttachComponent<AnimatedSprite>(*animSprite);
 
 		auto const followCam = camEntity->CreateAndAttachComponent<Follow2DCameraController>(cam, demon->Transform(), Vector2{0});
 		followCam->UpdateIndex(1);
