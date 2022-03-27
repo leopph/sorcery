@@ -137,7 +137,7 @@ namespace leopph::internal
 		}
 
 		glBindVertexArray(m_VertexArray);
-		glDrawElementsInstanced(GL_TRIANGLES, m_Mesh->Indices().size(), GL_UNSIGNED_INT, nullptr, instanceCount);
+		glDrawElementsInstanced(GL_TRIANGLES, static_cast<GLsizei>(m_Mesh->Indices().size()), GL_UNSIGNED_INT, nullptr, instanceCount);
 	}
 
 

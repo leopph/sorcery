@@ -32,7 +32,7 @@ namespace leopph::internal
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_Framebuffer);
 		auto const& [res, shadowMap] = m_Cascades.at(cascadeIndex);
 		glNamedFramebufferTexture(m_Framebuffer, GL_DEPTH_ATTACHMENT, shadowMap, 0);
-		glViewport(0, 0, res, res);
+		glViewport(0, 0, static_cast<GLsizei>(res), static_cast<GLsizei>(res));
 	}
 
 

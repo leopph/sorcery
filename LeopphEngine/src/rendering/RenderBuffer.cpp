@@ -72,8 +72,8 @@ namespace leopph::internal
 
 	auto RenderBuffer::OnEventReceived(EventParamType event) -> void
 	{
-		m_Width = static_cast<float>(event.Width) * event.RenderMultiplier;
-		m_Height = static_cast<float>(event.Height) * event.RenderMultiplier;
+		m_Width = static_cast<int>(event.Width * event.RenderMultiplier);
+		m_Height = static_cast<int>(event.Height * event.RenderMultiplier);
 		InitBuffers();
 	}
 

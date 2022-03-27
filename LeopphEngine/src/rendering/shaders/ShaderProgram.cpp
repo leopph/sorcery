@@ -69,7 +69,7 @@ namespace leopph::internal
 		{
 			// use .data() because elemenets weren't pushed back into the vector
 			// so it sees itself as empty
-			glProgramBinary(m_ProgramName, format, binary.data(), binary.size_bytes());
+			glProgramBinary(m_ProgramName, format, binary.data(), static_cast<GLsizei>(binary.size_bytes()));
 
 			// glProgramBinary sets GL_LINK_STATUS to GL_TRUE on successful upload
 			GLint success;
@@ -165,7 +165,9 @@ namespace leopph::internal
 
 
 	auto ShaderProgram::SetBufferBinding(std::string_view const bufName, int const bindingIndex) -> void
-	{ }
+	{
+		// TODO
+	}
 
 
 	auto ShaderProgram::Binary() const -> std::vector<unsigned char>
@@ -180,7 +182,7 @@ namespace leopph::internal
 		};
 		std::vector<unsigned char> binary(binSz);
 		GLenum format;
-		glGetProgramBinary(m_ProgramName, binary.size(), nullptr, &format, binary.data());
+		glGetProgramBinary(m_ProgramName, static_cast<GLsizei>(binary.size()), nullptr, &format, binary.data());
 		return binary;
 	}
 

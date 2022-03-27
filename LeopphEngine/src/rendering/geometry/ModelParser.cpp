@@ -26,7 +26,7 @@ namespace leopph::internal
 
 		m_Materials.clear();
 
-		for (auto i = 0; i < scene->mNumMaterials; i++)
+		for (unsigned i = 0; i < scene->mNumMaterials; i++)
 		{
 			m_Materials.push_back(ProcessMaterial(scene->mMaterials[i]));
 		}

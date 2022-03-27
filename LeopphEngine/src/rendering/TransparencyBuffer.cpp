@@ -71,8 +71,8 @@ namespace leopph::internal
 
 	auto TransparencyBuffer::OnEventReceived(EventParamType event) -> void
 	{
-		m_Width = event.Width * event.RenderMultiplier;
-		m_Height = event.Height * event.RenderMultiplier;
+		m_Width = static_cast<int>(event.Width * event.RenderMultiplier);
+		m_Height = static_cast<int>(event.Height * event.RenderMultiplier);
 		ConfigBuffers();
 	}
 }
