@@ -1,5 +1,4 @@
 #include "Init.hpp"
-#include "../Constants.hpp"
 #include "../Flicker.hpp"
 #include "../controllers/FirstPersonCameraController.hpp"
 
@@ -31,7 +30,7 @@ namespace demo
 		camera->NearClipPlane(0.3f);
 		camera->FarClipPlane(100);
 
-		player->CreateAndAttachComponent<demo::FirstPersonCameraController>(camera, CAM_3D_SPEED, CAM_3D_SENS, CAM_3D_RUN_MULT, CAM_3D_WALK_MULT);
+		player->CreateAndAttachComponent<demo::FirstPersonCameraController>(camera, 2.0f, 0.1f, 5.0f, 0.2f);
 
 		auto const dirLightEntity = new Entity{"dirlight"};
 		dirLightEntity->Transform()->Parent(group);

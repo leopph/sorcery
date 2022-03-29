@@ -1,12 +1,9 @@
 #include "Init.hpp"
 #include "../AnimatedSprite.hpp"
-#include "../Constants.hpp"
 #include "../Parallaxer.hpp"
 #include "../Tiler.hpp"
 #include "../controllers/CharacterController2D.hpp"
-#include "../controllers/FirstPersonCameraController.hpp"
 #include "../controllers/Follow2DCameraController.hpp"
-#include "../controllers/SmoothFollow2DCameraController.hpp"
 
 #include <Leopph.hpp>
 #include <string>
@@ -48,7 +45,7 @@ namespace demo
 
 		auto const demon = new Entity;
 		scene.Add(demon);
-		demon->CreateAndAttachComponent<CharacterController2D>(demon->Transform(), CHAR_2D_SPEED, CHAR_2D_RUN_MULT, CHAR_2D_WALK_MULT);
+		demon->CreateAndAttachComponent<CharacterController2D>(demon->Transform(), 3.0f, 5.0f, 0.2f);
 		auto const animSprite = demon->CreateAndAttachComponent<AnimatedSprite>(demonSprites, AnimatedSprite::AnimationMode::Bounce, 2.f);
 
 		auto const followCam = camEntity->CreateAndAttachComponent<Follow2DCameraController>(cam, demon->Transform(), Vector2{0});

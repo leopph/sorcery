@@ -48,9 +48,6 @@
     <ClCompile Include="src\init\InitSpriteScene.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\controllers\SmoothFollow2DCameraController.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\AnimatedSprite.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -80,9 +77,6 @@
     <ClInclude Include="src\init\Init.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Constants.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\SceneSwitcher.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -90,9 +84,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\controllers\CharacterController2D.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\controllers\SmoothFollow2DCameraController.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\AnimatedSprite.hpp">

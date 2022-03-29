@@ -2,7 +2,6 @@
 
 #include "Init.hpp"
 
-#include "../Constants.hpp"
 #include "../Exiter.hpp"
 #include "../FrameRateAnalyzer.hpp"
 #include "../SceneSwitcher.hpp"
@@ -13,17 +12,16 @@
 
 auto leopph::Init() -> void
 {
-	Window::Instance()->Title(demo::WINDOW_TITLE);
+	Window::Instance()->Title("LeopphEngine Demo");
 
 	Input::CursorMode(CursorState::Disabled);
 
-	auto const utilEnt = new Entity{demo::UTILITY_ENTITY_NAME};
+	auto const utilEnt = new Entity;
 	utilEnt->CreateAndAttachComponent<FrameRateAnalyzer>(0.5f, 60u);
 	utilEnt->CreateAndAttachComponent<Exiter>();
 	utilEnt->CreateAndAttachComponent<WindowController>();
 
-	auto const sceneSwitcherEnt = new Entity{demo::SCENE_SWITCHER_ENTITY_NAME};
-	auto const sceneSwitcher = sceneSwitcherEnt->CreateAndAttachComponent<demo::SceneSwitcher>();
+	auto const sceneSwitcher = utilEnt->CreateAndAttachComponent<demo::SceneSwitcher>();
 
 	auto& churchScene = sceneSwitcher->CreateOrGetScene(leopph::KeyCode::F1);
 	auto& spriteScene = sceneSwitcher->CreateOrGetScene(leopph::KeyCode::F2);
@@ -33,5 +31,4 @@ auto leopph::Init() -> void
 
 	churchScene.Deactivate();
 	spriteScene.Activate();
-	
 }
