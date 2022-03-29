@@ -65,8 +65,15 @@ namespace leopph
 
 			LEOPPHAPI explicit Entity(std::string name = "Entity");
 
-			Entity(Entity const& other);
-			auto operator=(Entity const& other) -> void = delete;
+			// Copies all of other's Components and attaches them.
+			// Name generation is the as if trying to create a new component with the same name as other's.
+			LEOPPHAPI Entity(Entity const& other);
+
+			// Detaches all existing components.
+			// Copies all Components from other and attaches them.
+			// Name generation is the as if trying to create a new component with the same name as other's.
+			LEOPPHAPI
+			auto operator=(Entity const& other) -> Entity&;
 
 			Entity(Entity&& other) = delete;
 			auto operator=(Entity&& other) -> void = delete;

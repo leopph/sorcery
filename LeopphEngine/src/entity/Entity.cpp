@@ -106,6 +106,39 @@ namespace leopph
 	}
 
 
+	auto Entity::operator=(Entity const& other) -> Entity&
+	{
+		auto& dataManager = internal::DataManager::Instance();
+
+		m_Transform->Component::Owner(nullptr);
+
+		std::ranges::for_each(std::array{true, false}, [this, &dataManager](auto const active)
+		{
+			auto components = dataManager.ComponentsOfEntity(this, active);
+			// Detach erases itself from the component collection, so we iterate backwards to not cause element relocation
+			std::for_each(components.rbegin(), components.rend(), [](auto const component)
+			{
+				component->Detach();
+			});
+		});
+
+		dataManager.UnregisterEntity(this);
+
+		m_Name = GenerateUnusedName(other.m_Name);
+
+		dataManager.RegisterEntity(this);
+
+		std::ranges::for_each(other.Components(), [this](auto const& component)
+		{
+			component->Clone()->Attach(this);
+		});
+
+		m_Transform = GetComponent<leopph::Transform>();
+
+		return *this;
+	}
+
+
 	Entity::~Entity()
 	{
 		auto& dataManager{internal::DataManager::Instance()};
