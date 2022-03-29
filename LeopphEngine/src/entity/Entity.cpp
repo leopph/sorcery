@@ -56,18 +56,24 @@ namespace leopph
 
 	auto Entity::ActivateAllComponents() const -> void
 	{
-		for (auto& component : internal::DataManager::Instance().ComponentsOfEntity(this, false))
+		std::span<ComponentPtr<> const> components;
+
+		// Elements are removed from the container on activation so we have to recall for each component.
+		while (!(components = internal::DataManager::Instance().ComponentsOfEntity(this, false)).empty())
 		{
-			component->Activate();
+			components[0]->Activate();
 		}
 	}
 
 
 	auto Entity::DeactiveAllComponents() const -> void
 	{
-		for (auto& component : internal::DataManager::Instance().ComponentsOfEntity(this, true))
+		std::span<ComponentPtr<> const> components;
+
+		// Elements are removed from the container on deactivation so we have to recall for each component.
+		while (!(components = internal::DataManager::Instance().ComponentsOfEntity(this, true)).empty())
 		{
-			component->Deactivate();
+			components[0]->Deactivate();
 		}
 	}
 
