@@ -130,5 +130,11 @@ namespace leopph
 	}
 
 
+	auto Component::Clone() const -> ComponentPtr<>
+	{
+		throw std::logic_error{"Unimplemented Clone member function called."};
+	}
+
+
 	Component::~Component() = default;
 }

@@ -30,6 +30,9 @@ namespace leopph
 			PerspectiveCamera(PerspectiveCamera const& other) = default;
 			auto operator=(PerspectiveCamera const& other) -> PerspectiveCamera& = default;
 
+			[[nodiscard]] LEOPPHAPI
+			auto Clone() const -> ComponentPtr<> override;
+
 			PerspectiveCamera(PerspectiveCamera&& other) noexcept = delete;
 			auto operator=(PerspectiveCamera&& other) noexcept -> PerspectiveCamera& = delete;
 

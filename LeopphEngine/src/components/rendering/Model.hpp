@@ -17,6 +17,9 @@ namespace leopph
 			// Load a Model from a file on disk.
 			LEOPPHAPI explicit Model(std::filesystem::path path);
 
+			[[nodiscard]] LEOPPHAPI
+			auto Clone() const -> ComponentPtr<> override;
+
 			// File path of the loaded Model.
 			[[nodiscard]] LEOPPHAPI
 			auto Path() const noexcept -> std::filesystem::path const&;

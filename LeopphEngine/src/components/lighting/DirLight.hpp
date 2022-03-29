@@ -2,7 +2,6 @@
 
 #include "Light.hpp"
 #include "../../api/LeopphApi.hpp"
-#include "../../entity/Entity.hpp"
 
 
 namespace leopph
@@ -40,8 +39,12 @@ namespace leopph
 			DirectionalLight() = default;
 
 			DirectionalLight(DirectionalLight const& other) = default;
+
 			LEOPPHAPI
 			auto operator=(DirectionalLight const& other) -> DirectionalLight&;
+
+			[[nodiscard]] LEOPPHAPI
+			auto Clone() const -> ComponentPtr<> override;
 
 			DirectionalLight(DirectionalLight&& other) = delete;
 			auto operator=(DirectionalLight&& other) -> void = delete;

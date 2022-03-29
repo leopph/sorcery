@@ -21,8 +21,12 @@ namespace leopph
 			PointLight() = default;
 
 			PointLight(PointLight const& other) = default;
+
 			LEOPPHAPI
 			auto operator=(PointLight const& other) -> PointLight&;
+
+			[[nodiscard]] LEOPPHAPI
+			auto Clone() const -> ComponentPtr<> override;
 
 			PointLight(PointLight&& other) = delete;
 			auto operator=(PointLight&& other) -> void = delete;

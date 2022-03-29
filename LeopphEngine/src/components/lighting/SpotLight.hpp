@@ -37,8 +37,12 @@ namespace leopph
 			SpotLight() = default;
 
 			SpotLight(SpotLight const& other) = default;
+
 			LEOPPHAPI
 			auto operator=(SpotLight const& other) -> SpotLight&;
+
+			[[nodiscard]] LEOPPHAPI
+			auto Clone() const -> ComponentPtr<> override;
 
 			SpotLight(SpotLight&& other) = delete;
 			auto operator=(SpotLight&& other) -> void = delete;

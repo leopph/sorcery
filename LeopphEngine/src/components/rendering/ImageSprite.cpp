@@ -16,6 +16,12 @@ namespace leopph
 	{}
 
 
+	auto ImageSprite::Clone() const -> ComponentPtr<>
+	{
+		return CreateComponent<ImageSprite>(*this);
+	}
+
+
 	auto ImageSprite::GetMeshGroup(std::filesystem::path const& src, int const ppi) -> std::shared_ptr<internal::MeshGroup const>
 	{
 		auto& dataManager = internal::DataManager::Instance();

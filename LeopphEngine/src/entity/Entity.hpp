@@ -25,16 +25,17 @@ namespace leopph
 			auto Find(std::string const& name) -> Entity*;
 
 			// The Entity's name is a unique identifier.
-			[[nodiscard]] constexpr
-			auto Name() const noexcept -> auto&;
+			[[nodiscard]] LEOPPHAPI
+			auto Name() const noexcept -> std::string const&;
 
 			// The Entity's Transform describes its spatial properties.
-			[[nodiscard]] constexpr
-			auto Transform() const noexcept -> auto const&;
+			[[nodiscard]] LEOPPHAPI
+			auto Transform() const noexcept -> ComponentPtr<Transform> const&;
 
 			// Returns the first active Component of type T attached to the Entity the engine finds, or nullptr.
 			// There are no guarantees of the order of Components attached to the Entity.
 			template<std::derived_from<Component> T>
+			[[nodiscard]]
 			auto GetComponent() const -> ComponentPtr<T>;
 
 			// Attach an already existing Component to the Entity.
@@ -62,66 +63,40 @@ namespace leopph
 			LEOPPHAPI
 			auto DeactiveAllComponents() const -> void;
 
-			LEOPPHAPI explicit Entity(std::string name = GenerateUnusedName());
+			LEOPPHAPI explicit Entity(std::string name = "Entity");
 
-			Entity(Entity const&) = delete;
-			auto operator=(Entity const&) -> void = delete;
+			Entity(Entity const& other);
+			auto operator=(Entity const& other) -> void = delete;
 
-			Entity(Entity&&) = delete;
-			auto operator=(Entity&&) -> void = delete;
+			Entity(Entity&& other) = delete;
+			auto operator=(Entity&& other) -> void = delete;
 
 			// Detaches all Components, then unregisters.
 			~Entity() override;
 
 			// Provides ordering based on name.
-			[[nodiscard]] constexpr
-			auto operator<=>(Entity const& other) const;
+			[[nodiscard]] LEOPPHAPI
+			auto operator<=>(Entity const& other) const noexcept -> std::strong_ordering;
 
 			// Equality based on names.
-			[[nodiscard]] constexpr
-			auto operator==(Entity const& other) const -> bool;
+			[[nodiscard]] LEOPPHAPI
+			auto operator==(Entity const& other) const noexcept -> bool;
 
 		private:
-			// Generate a name that is not used by any registered Entity at the time of calling.
-			// The function uses the passed prefix and appends arbitrary characters to its end.
-			LEOPPHAPI static
-			auto GenerateUnusedName(std::string const& namePrefix = "Entity#") -> std::string;
-
-			static
+			[[nodiscard]] static
 			auto NameIsUnused(std::string const& name) -> bool;
+
+			[[nodiscard]] static
+			auto GenerateUnusedName(std::string const& original) -> std::string;
 
 			// The active Components attached to the Entity.
 			[[nodiscard]] LEOPPHAPI
 			auto Components() const -> std::span<ComponentPtr<> const>;
 
 			std::string m_Name;
-			// This has to be attached after registering the Entity.
-			ComponentPtr<leopph::Transform> m_Transform{CreateComponent<leopph::Transform>()};
+			// This has to be created in constructor and attached after registering the Entity.
+			ComponentPtr<leopph::Transform> m_Transform;
 	};
-
-
-	constexpr auto Entity::Name() const noexcept -> auto&
-	{
-		return m_Name;
-	}
-
-
-	constexpr auto Entity::Transform() const noexcept -> auto const&
-	{
-		return m_Transform;
-	}
-
-
-	constexpr auto Entity::operator<=>(Entity const& other) const
-	{
-		return m_Name <=> other.m_Name;
-	}
-
-
-	constexpr auto Entity::operator==(Entity const& other) const -> bool
-	{
-		return m_Name == other.m_Name;
-	}
 
 
 	template<std::derived_from<Component> T, class... Args>

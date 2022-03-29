@@ -72,6 +72,12 @@ namespace leopph
 	}
 
 
+	auto PerspectiveCamera::Clone() const -> ComponentPtr<>
+	{
+		return CreateComponent<PerspectiveCamera>(*this);
+	}
+
+
 	auto PerspectiveCamera::ConvertFov(float const fov, Conversion const conversion) const -> float
 	{
 		if (conversion == Conversion::VerticalToHorizontal)

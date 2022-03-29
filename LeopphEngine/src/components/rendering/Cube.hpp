@@ -15,6 +15,9 @@ namespace leopph
 		public:
 			LEOPPHAPI Cube();
 
+			[[nodiscard]] LEOPPHAPI
+			auto Clone() const -> ComponentPtr<> override;
+
 		private:
 			[[nodiscard]] static
 			auto GetMeshGroup() -> std::shared_ptr<internal::MeshGroup const>;

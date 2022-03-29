@@ -92,6 +92,12 @@ namespace leopph
 	}
 
 
+	auto SpotLight::Clone() const -> ComponentPtr<>
+	{
+		return CreateComponent<SpotLight>(*this);
+	}
+
+
 	SpotLight::~SpotLight()
 	{
 		internal::DataManager::Instance().UnregisterActiveSpotLight(this);

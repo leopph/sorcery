@@ -66,6 +66,12 @@ namespace leopph
 	}
 
 
+	auto PointLight::Clone() const -> ComponentPtr<>
+	{
+		return CreateComponent<PointLight>(*this);
+	}
+
+
 	PointLight::~PointLight()
 	{
 		internal::DataManager::Instance().UnregisterActivePointLight(this);

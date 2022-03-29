@@ -14,6 +14,12 @@ namespace leopph
 	{}
 
 
+	auto Model::Clone() const -> ComponentPtr<>
+	{
+		return CreateComponent<Model>(*this);
+	}
+
+
 	auto Model::Path() const noexcept -> std::filesystem::path const&
 	{
 		return m_Path;

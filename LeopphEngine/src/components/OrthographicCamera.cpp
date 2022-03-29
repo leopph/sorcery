@@ -67,4 +67,10 @@ namespace leopph
 			.FarTopRight = {x, y, FarClipPlane()}
 		};
 	}
+
+
+	auto OrthographicCamera::Clone() const -> ComponentPtr<>
+	{
+		return CreateComponent<OrthographicCamera>(*this);
+	}
 }

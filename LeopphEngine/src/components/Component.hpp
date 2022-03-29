@@ -91,6 +91,14 @@ namespace leopph
 			LEOPPHAPI inline virtual
 			auto OnDeactivate() -> void;
 
+			// Returns a new Component that is a dynamic copy of this Component.
+			// This can be used to get an unsliced copy when the exact type is unknown.
+			// Throws std::logic_error unless correctly overloaded.
+			// A fair implementation is calling CreateComponent<MyComponentType>(*this), assuming a correct copy constructor is defined.
+			// Built-in Components use this exact implementation.
+			[[nodiscard]] LEOPPHAPI virtual
+			auto Clone() const -> ComponentPtr<>;
+
 			Component(Component&&) = delete;
 			auto operator=(Component&&) -> Component& = delete;
 
@@ -100,8 +108,7 @@ namespace leopph
 			Component() = default;
 
 			// The new Component will have the same active state but will be unattached.
-			LEOPPHAPI
-			Component(Component const& other);
+			LEOPPHAPI Component(Component const& other);
 
 			// Attaches itself to the the Component's Entity and takes its active state.
 			LEOPPHAPI

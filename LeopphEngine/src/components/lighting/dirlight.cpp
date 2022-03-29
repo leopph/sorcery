@@ -86,6 +86,12 @@ namespace leopph
 	}
 
 
+	auto DirectionalLight::Clone() const -> ComponentPtr<>
+	{
+		return CreateComponent<DirectionalLight>(*this);
+	}
+
+
 	DirectionalLight::~DirectionalLight()
 	{
 		internal::DataManager::Instance().UnregisterActiveDirLight(this);

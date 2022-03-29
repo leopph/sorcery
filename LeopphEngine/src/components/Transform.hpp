@@ -193,6 +193,9 @@ namespace leopph
 			LEOPPHAPI
 			auto operator=(Transform const& other) -> Transform&;
 
+			[[nodiscard]] LEOPPHAPI
+			auto Clone() const -> ComponentPtr<> override;
+
 			Transform(Transform&&) = delete;
 			auto operator=(Transform&&) -> void = delete;
 

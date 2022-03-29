@@ -16,6 +16,12 @@ namespace leopph
 	{}
 
 
+	auto Cube::Clone() const -> ComponentPtr<>
+	{
+		return CreateComponent<Cube>(*this);
+	}
+
+
 	auto Cube::GetMeshGroup() -> std::shared_ptr<internal::MeshGroup const>
 	{
 		auto& dataManager = internal::DataManager::Instance();

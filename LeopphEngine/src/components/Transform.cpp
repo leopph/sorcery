@@ -61,6 +61,12 @@ namespace leopph
 	}
 
 
+	auto Transform::Clone() const -> ComponentPtr<>
+	{
+		return CreateComponent<Transform>(*this);
+	}
+
+
 	Transform::~Transform()
 	{
 		if (m_Parent != nullptr)

@@ -18,6 +18,9 @@ namespace leopph
 			// PPI must be positive.
 			LEOPPHAPI explicit ImageSprite(std::filesystem::path const& src, int ppi = 1);
 
+			[[nodiscard]] LEOPPHAPI
+			auto Clone() const -> ComponentPtr<> override;
+
 		private:
 			[[nodiscard]] static
 			auto GetMeshGroup(std::filesystem::path const& src, int ppi) -> std::shared_ptr<internal::MeshGroup const>;

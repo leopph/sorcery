@@ -29,6 +29,9 @@ namespace leopph
 			OrthographicCamera(OrthographicCamera const& other) = default;
 			auto operator=(OrthographicCamera const& other) -> OrthographicCamera& = default;
 
+			[[nodiscard]] LEOPPHAPI
+			auto Clone() const -> ComponentPtr<> override;
+
 			OrthographicCamera(OrthographicCamera&& other) noexcept = delete;
 			auto operator=(OrthographicCamera&& other) noexcept -> OrthographicCamera& = delete;
 
