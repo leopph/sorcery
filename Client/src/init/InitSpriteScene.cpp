@@ -24,14 +24,12 @@ using leopph::Vector3;
 
 namespace demo
 {
-	auto InitSpriteScene(SceneSwitcher::Scene scene) -> void
+	auto InitSpriteScene(SceneSwitcher::Scene& scene) -> void
 	{
-		AmbientLight::Instance().Intensity(Vector3{1});
-
-		auto const camEntity = Entity::Find(CAM_ENTITY_NAME);
+		auto const camEntity = new Entity;
+		scene.Add(camEntity);
 		camEntity->Transform()->Position(Vector3{0});
-		camEntity->GetComponent<PerspectiveCamera>()->Deactivate();
-		camEntity->GetComponent<FirstPersonCameraController>()->Deactivate();
+
 		auto const cam = camEntity->CreateAndAttachComponent<OrthographicCamera>();
 		cam->Activate();
 		cam->MakeCurrent();
@@ -49,6 +47,7 @@ namespace demo
 		}
 
 		auto const demon = new Entity;
+		scene.Add(demon);
 		demon->CreateAndAttachComponent<CharacterController2D>(demon->Transform(), CHAR_2D_SPEED, CHAR_2D_RUN_MULT, CHAR_2D_WALK_MULT);
 		auto const animSprite = demon->CreateAndAttachComponent<AnimatedSprite>(demonSprites, AnimatedSprite::AnimationMode::Bounce, 2.f);
 
@@ -56,6 +55,7 @@ namespace demo
 		followCam->UpdateIndex(1);
 
 		auto const backgroundLayer = new Entity;
+		scene.Add(backgroundLayer);
 		backgroundLayer->Transform()->Position(Vector3{0, 0, 10});
 
 		auto const background = new Entity;
@@ -63,10 +63,12 @@ namespace demo
 		background->CreateAndAttachComponent<ImageSprite>("sprites/world/ColorFlowBackground.png", 100);
 
 		auto const sun = new Entity;
+		sun->Transform()->Parent(backgroundLayer);
 		sun->Transform()->Position(Vector3{-1.93, 2.63, 9.5});
 		sun->CreateAndAttachComponent<ImageSprite>("sprites/World/Sun.png", 512);
 
 		auto const farLayer = new Entity;
+		scene.Add(farLayer);
 		farLayer->Transform()->Position(Vector3{0, 1.5, 9});
 
 		auto const pinkMountains = new Entity;
@@ -75,6 +77,7 @@ namespace demo
 		pinkMSprite->Instanced(true);
 
 		auto const midLayer = new Entity;
+		scene.Add(midLayer);
 		midLayer->Transform()->Position(Vector3{0, 0.9, 8});
 
 		auto const purpleMountains = new Entity;
@@ -83,6 +86,7 @@ namespace demo
 		purpMSprite->Instanced(true);
 
 		auto const nearLayer = new Entity;
+		scene.Add(nearLayer);
 		nearLayer->Transform()->Position(Vector3{0, -1.92, 7});
 
 		auto const forest = new Entity;
@@ -91,6 +95,7 @@ namespace demo
 		forestSprite->Instanced(true);
 
 		auto const groundLayer = new Entity;
+		scene.Add(groundLayer);
 		groundLayer->Transform()->Position(Vector3{0, -4, 6});
 
 		auto const ground = new Entity;
@@ -100,7 +105,6 @@ namespace demo
 		std::vector<Parallaxer::Layer> parallaxLayers
 		{
 			{1, backgroundLayer->Transform()},
-			{1, sun->Transform()},
 			{0.9f, farLayer->Transform()},
 			{0.8f, midLayer->Transform()},
 			{0.7f, nearLayer->Transform()},
@@ -108,6 +112,7 @@ namespace demo
 		};
 		auto const parallaxer = (new Entity{})->CreateAndAttachComponent<Parallaxer>(cam, parallaxLayers);
 		parallaxer->UpdateIndex(3);
+		scene.Add(parallaxer->Owner());
 
 		std::vector<Tiler::Layer> tileLayers
 		{
@@ -118,5 +123,13 @@ namespace demo
 		};
 		auto const tiler = (new Entity)->CreateAndAttachComponent<Tiler>(tileLayers);
 		tiler->UpdateIndex(2);
+		scene.Add(tiler->Owner());
+
+		scene.SetActivationCallback([cam, demon]
+		{
+			cam->MakeCurrent();
+			demon->Transform()->LocalPosition(Vector3{0});
+			AmbientLight::Instance().Intensity(Vector3{1});
+		});
 	}
 }

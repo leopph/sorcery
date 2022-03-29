@@ -152,9 +152,7 @@ ASAN_SYMBOLIZER_PATH=$(VC_ExecutablePath_x64)</LocalDebuggerEnvironment>
     <ClCompile Include="src\Tiler.cpp" />
     <ClCompile Include="src\WindowController.cpp" />
     <ClCompile Include="src\init\Init.cpp" />
-    <ClCompile Include="src\init\InitCometScene.cpp" />
     <ClCompile Include="src\SceneSwitcher.cpp" />
-    <ClCompile Include="src\TeleportGate.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\LeopphEngine\LeopphEngine.vcxproj">
@@ -177,7 +175,6 @@ ASAN_SYMBOLIZER_PATH=$(VC_ExecutablePath_x64)</LocalDebuggerEnvironment>
     <ClInclude Include="src\init\Init.hpp" />
     <ClCompile Include="src\init\InitChurchScene.cpp" />
     <ClInclude Include="src\SceneSwitcher.hpp" />
-    <ClInclude Include="src\TeleportGate.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

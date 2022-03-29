@@ -6,9 +6,9 @@
 namespace demo
 {
 	// Fills the passed vector with created entities
-	auto InitChurchScene(SceneSwitcher::Scene thisScene, SceneSwitcher::Scene nextScene) -> void;
+	auto InitChurchScene(SceneSwitcher::Scene& scene) -> void;
 	// Fills the passed vector with created entities
-	auto InitCometScene(SceneSwitcher::Scene scene) -> void;
+	auto InitCometScene(SceneSwitcher::Scene& scene) -> void;
 	// Fills the passed vector with created entities
-	auto InitSpriteScene(SceneSwitcher::Scene scene) -> void;
+	auto InitSpriteScene(SceneSwitcher::Scene& scene) -> void;
 }

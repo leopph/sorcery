@@ -33,16 +33,10 @@
     <ClCompile Include="src\Flicker.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\init\InitCometScene.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\init\InitChurchScene.cpp">
       <Filter>Header Files</Filter>
     </ClCompile>
     <ClCompile Include="src\SceneSwitcher.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\TeleportGate.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\controllers\Follow2DCameraController.cpp">
@@ -90,9 +84,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\SceneSwitcher.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\TeleportGate.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\controllers\Follow2DCameraController.hpp">

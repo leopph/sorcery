@@ -1,79 +1,95 @@
 #include "SceneSwitcher.hpp"
 
 #include <algorithm>
-#include <utility>
+#include <queue>
 
 
 namespace demo
 {
-	auto SceneSwitcher::Scene::Add(leopph::Entity* const entity) -> void
+	auto SceneSwitcher::Scene::Add(leopph::Entity* entity) -> void
 	{
-		m_Pointer->second.push_back(entity);
+		m_Entities.push_back(entity);
 	}
 
 
-	auto SceneSwitcher::Scene::Id() const -> IdType
+	auto SceneSwitcher::Scene::Activate() const -> void
 	{
-		return m_Pointer->first;
-	}
+		std::queue<leopph::Entity*> q;
 
-
-	SceneSwitcher::Scene::Scene(PointerType pointer) :
-		m_Pointer{pointer}
-	{}
-
-
-	auto SceneSwitcher::CreateScene() -> Scene
-	{
-		return Scene{&*m_Scenes.emplace(GenerateId(), SceneDataType{}).first};
-	}
-
-
-	auto SceneSwitcher::ActivateScene(const std::size_t id) -> void
-	{
-		decltype(m_Scenes)::iterator it;
-
-		if (it = m_Scenes.find(id); it == m_Scenes.end())
+		std::ranges::for_each(m_Entities, [&q](auto* entity)
 		{
-			return;
-		}
+			q.push(entity);
+		});
 
-		if (m_Active)
+		while (!q.empty())
 		{
-			std::ranges::for_each(m_Scenes[*m_Active], [](const auto ent)
+			auto const* entity = q.front();
+			q.pop();
+
+			for (auto const* child : entity->Transform()->Children())
 			{
-				ent->DeactiveAllComponents();
-			});
+				q.push(child->Owner());
+			}
+
+			entity->ActivateAllComponents();
 		}
 
-		m_Active = id;
-		std::ranges::for_each(it->second, [](const auto ent)
+		if (m_ActivationCallback)
 		{
-			ent->ActivateAllComponents();
+			m_ActivationCallback();
+		}
+	}
+
+
+	auto SceneSwitcher::Scene::Deactivate() const -> void
+	{
+		std::queue<leopph::Entity*> q;
+
+		std::ranges::for_each(m_Entities, [&q](auto* entity)
+		{
+			q.push(entity);
+		});
+
+		while (!q.empty())
+		{
+			auto const* entity = q.front();
+			q.pop();
+
+			for (auto const* child : entity->Transform()->Children())
+			{
+				q.push(child->Owner());
+			}
+
+			entity->DeactiveAllComponents();
+		}
+	}
+
+
+	auto SceneSwitcher::Scene::SetActivationCallback(std::function<void()> callback) -> void
+	{
+		m_ActivationCallback = std::move(callback);
+	}
+
+
+	auto SceneSwitcher::OnFrameUpdate() -> void
+	{
+		std::ranges::for_each(m_Scenes, [this](auto& pair)
+		{
+			if (leopph::Input::GetKeyDown(pair.first))
+			{
+				std::ranges::for_each(m_Scenes, [](auto& pair2)
+				{
+					pair2.second.Deactivate();
+				});
+
+				pair.second.Activate();
+			}
 		});
 	}
 
 
-	auto SceneSwitcher::ActivateScene(const Scene scene) -> void
+	auto SceneSwitcher::CreateOrGetScene(leopph::KeyCode const key) -> Scene&
 	{
-		ActivateScene(scene.Id());
-	}
-
-
-	auto SceneSwitcher::ActiveScene() -> std::optional<SceneSwitcher::Scene>
-	{
-		if (!m_Active)
-		{
-			return {};
-		}
-
-		return Scene{&*m_Scenes.find(*m_Active)};
-	}
-
-
-	auto SceneSwitcher::GenerateId() noexcept -> SceneSwitcher::IdType
-	{
-		static IdType nextId{0};
-		return nextId++;
+		return m_Scenes[key];
 	}
 }
