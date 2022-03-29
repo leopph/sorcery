@@ -40,7 +40,7 @@ namespace leopph
 	{
 		auto& dataManager{internal::DataManager::Instance()};
 
-		m_Transform->Component::Detach(); // Transform is a special case because it cannot be detached.
+		m_Transform->Component::Owner(nullptr); // Transform is a special case because it cannot be detached.
 
 		std::ranges::for_each(std::array{true, false}, [this, &dataManager](auto const active)
 		{
