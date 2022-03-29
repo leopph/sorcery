@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <array>
 #include <cstddef>
+#include <iterator>
 
 
 namespace leopph
@@ -56,9 +57,10 @@ namespace leopph
 
 	auto Entity::ActivateAllComponents() const -> void
 	{
-		auto const components = internal::DataManager::Instance().ComponentsOfEntity(this, false);
 		// we copy the pointers because the underlying collection will change through activations
-		std::vector<ComponentPtr<>> componentsCopy{components.begin(), components.end()};
+		std::vector<ComponentPtr<>> componentsCopy;
+		std::ranges::copy(internal::DataManager::Instance().ComponentsOfEntity(this, false), std::back_inserter(componentsCopy));
+
 		std::ranges::for_each(componentsCopy, [](auto const& comp)
 		{
 			comp->Activate();
@@ -68,9 +70,10 @@ namespace leopph
 
 	auto Entity::DeactiveAllComponents() const -> void
 	{
-		auto const components = internal::DataManager::Instance().ComponentsOfEntity(this, true);
 		// we copy the pointers because the underlying collection will change through deactivations
-		std::vector<ComponentPtr<>> componentsCopy{components.begin(), components.end()};
+		std::vector<ComponentPtr<>> componentsCopy;
+		std::ranges::copy(internal::DataManager::Instance().ComponentsOfEntity(this, true), std::back_inserter(componentsCopy));
+
 		std::ranges::for_each(componentsCopy, [this](auto const& comp)
 		{
 			if (comp != m_Transform) // Transform cannot be deactivated.
@@ -128,9 +131,10 @@ namespace leopph
 
 		std::ranges::for_each(std::array{true, false}, [this, &dataManager](auto const active)
 		{
-			auto components = dataManager.ComponentsOfEntity(this, active);
 			// Copy the pointers becuase the underlying data structure will change throught the detaches
-			std::vector<ComponentPtr<>> componentsCopy{components.begin(), components.end()};
+			std::vector<ComponentPtr<>> componentsCopy;
+			std::ranges::copy(dataManager.ComponentsOfEntity(this, active), std::back_inserter(componentsCopy));
+
 			std::ranges::for_each(componentsCopy, [](auto const& component)
 			{
 				component->Detach();
@@ -162,9 +166,10 @@ namespace leopph
 
 		std::ranges::for_each(std::array{true, false}, [this, &dataManager](auto const active)
 		{
-			auto components = dataManager.ComponentsOfEntity(this, active);
 			// Copy the pointers becuase the underlying data structure will change throught the detaches
-			std::vector<ComponentPtr<>> componentsCopy{components.begin(), components.end()};
+			std::vector<ComponentPtr<>> componentsCopy;
+			std::ranges::copy(dataManager.ComponentsOfEntity(this, active), std::back_inserter(componentsCopy));
+
 			std::ranges::for_each(componentsCopy, [](auto const& component)
 			{
 				component->Detach();
