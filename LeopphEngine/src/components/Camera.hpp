@@ -86,6 +86,11 @@ namespace leopph
 			[[nodiscard]] virtual
 			auto Frustum() const -> Frustum = 0;
 
+			// Transforms the passed vector (interpreted as a point) to viewport space.
+			// Viewport space ranges from [0, 1] on both axes. Values outside of that are not visible.
+			[[nodiscard]] LEOPPHAPI
+			auto TransformToViewport(Vector3 const& vector) const noexcept -> Vector2;
+
 			// Detaching the current Camera will set it to nullptr.
 			LEOPPHAPI
 			auto Owner(Entity* entity) -> void final;

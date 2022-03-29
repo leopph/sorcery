@@ -72,6 +72,18 @@ namespace leopph
 	}
 
 
+	auto Camera::TransformToViewport(Vector3 const& vector) const noexcept -> Vector2
+	{
+		Vector4 homoPos{vector, 1};
+		homoPos *= ViewMatrix() * ProjectionMatrix();
+		Vector2 ret{homoPos};
+		ret /= homoPos[3];
+		ret *= 0.5f;
+		ret += Vector2{0.5f};
+		return ret;
+	}
+
+
 	auto Camera::Owner(Entity* entity) -> void
 	{
 		Component::Owner(entity);
