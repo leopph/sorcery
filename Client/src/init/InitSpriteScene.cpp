@@ -35,7 +35,7 @@ namespace demo
 		auto const cam = camEntity->CreateAndAttachComponent<OrthographicCamera>();
 		cam->Activate();
 		cam->MakeCurrent();
-		cam->Size(5, leopph::Camera::Side::Vertical);
+		cam->Size(10, leopph::Camera::Side::Vertical);
 		cam->NearClipPlane(0);
 		cam->FarClipPlane(10);
 
@@ -44,7 +44,7 @@ namespace demo
 		std::string static const spritePathExt{".png"};
 		for (auto i = 0; i < demonSprites.size(); i++)
 		{
-			auto static constexpr ppi = 1024;
+			auto static constexpr ppi = 512;
 			demonSprites[i] = leopph::CreateComponent<ImageSprite>(spritePathPrefix + std::to_string(i) += spritePathExt, ppi);
 		}
 
@@ -60,35 +60,42 @@ namespace demo
 
 		auto const background = new Entity;
 		background->Transform()->Parent(backgroundLayer);
-		background->CreateAndAttachComponent<ImageSprite>("sprites/world/ColorFlowBackground.png", 600);
+		background->CreateAndAttachComponent<ImageSprite>("sprites/world/ColorFlowBackground.png", 100);
 
 		auto const sun = new Entity;
-		sun->Transform()->Position(Vector3{-3, 1.8, 9.5});
-		sun->CreateAndAttachComponent<ImageSprite>("sprites/World/Sun.png", 1024);
+		sun->Transform()->Position(Vector3{-1.93, 2.63, 9.5});
+		sun->CreateAndAttachComponent<ImageSprite>("sprites/World/Sun.png", 512);
 
 		auto const farLayer = new Entity;
-		farLayer->Transform()->Position(Vector3{0, 1, 9});
+		farLayer->Transform()->Position(Vector3{0, 1.5, 9});
 
 		auto const pinkMountains = new Entity;
 		pinkMountains->Transform()->Parent(farLayer);
-		auto const pinkMSprite = pinkMountains->CreateAndAttachComponent<ImageSprite>("sprites/world/PinkMountains.png", 700);
+		auto const pinkMSprite = pinkMountains->CreateAndAttachComponent<ImageSprite>("sprites/world/PinkMountains.png", 384);
 		pinkMSprite->Instanced(true);
 
 		auto const midLayer = new Entity;
-		midLayer->Transform()->Position(Vector3{0, 0.5, 8});
+		midLayer->Transform()->Position(Vector3{0, 0.9, 8});
 
 		auto const purpleMountains = new Entity;
 		purpleMountains->Transform()->Parent(midLayer);
-		auto const purpMSprite = purpleMountains->CreateAndAttachComponent<ImageSprite>("sprites/world/PurpleMountains2.png", 225);
+		auto const purpMSprite = purpleMountains->CreateAndAttachComponent<ImageSprite>("sprites/world/PurpleMountains2.png", 100);
 		purpMSprite->Instanced(true);
 
 		auto const nearLayer = new Entity;
-		nearLayer->Transform()->Position(Vector3{0, -0.75, 7});
+		nearLayer->Transform()->Position(Vector3{0, -1.92, 7});
 
 		auto const forest = new Entity;
 		forest->Transform()->Parent(nearLayer);
-		auto const forestSprite = forest->CreateAndAttachComponent<ImageSprite>("sprites/world/BackgroundForest1.png", 614);
+		auto const forestSprite = forest->CreateAndAttachComponent<ImageSprite>("sprites/world/BackgroundForest1.png", 256);
 		forestSprite->Instanced(true);
+
+		auto const groundLayer = new Entity;
+		groundLayer->Transform()->Position(Vector3{0, -4, 6});
+
+		auto const ground = new Entity;
+		ground->Transform()->Parent(groundLayer);
+		auto const groundSprite = ground->CreateAndAttachComponent<ImageSprite>("sprites/world/Ground1.png", 512);
 
 		std::vector<Parallaxer::Layer> parallaxLayers
 		{
@@ -96,7 +103,8 @@ namespace demo
 			{1, sun->Transform()},
 			{0.9f, farLayer->Transform()},
 			{0.8f, midLayer->Transform()},
-			{0.7f, nearLayer->Transform()}
+			{0.7f, nearLayer->Transform()},
+			{0.f, groundLayer->Transform()}
 		};
 		auto const parallaxer = (new Entity{})->CreateAndAttachComponent<Parallaxer>(cam, parallaxLayers);
 		parallaxer->UpdateIndex(3);
@@ -105,7 +113,8 @@ namespace demo
 		{
 			{pinkMountains, pinkMountains, pinkMountains},
 			{purpleMountains, purpleMountains, purpleMountains},
-			{forest, forest, forest}
+			{forest, forest, forest},
+			{ground, ground, ground}
 		};
 		auto const tiler = (new Entity)->CreateAndAttachComponent<Tiler>(tileLayers);
 		tiler->UpdateIndex(2);

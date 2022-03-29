@@ -10,7 +10,7 @@
 
 namespace demo
 {
-	class SceneSwitcher : public leopph::Component
+	class SceneSwitcher final : public leopph::Component
 	{
 		private:
 			using IdType = std::size_t;
