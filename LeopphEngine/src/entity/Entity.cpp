@@ -56,25 +56,28 @@ namespace leopph
 
 	auto Entity::ActivateAllComponents() const -> void
 	{
-		std::span<ComponentPtr<> const> components;
-
-		// Elements are removed from the container on activation so we have to recall for each component.
-		while (!(components = internal::DataManager::Instance().ComponentsOfEntity(this, false)).empty())
+		auto const components = internal::DataManager::Instance().ComponentsOfEntity(this, false);
+		// we copy the pointers because the underlying collection will change through activations
+		std::vector<ComponentPtr<>> componentsCopy{components.begin(), components.end()};
+		std::ranges::for_each(componentsCopy, [](auto const& comp)
 		{
-			components[0]->Activate();
-		}
+			comp->Activate();
+		});
 	}
 
 
 	auto Entity::DeactiveAllComponents() const -> void
 	{
-		std::span<ComponentPtr<> const> components;
-
-		// Elements are removed from the container on deactivation so we have to recall for each component.
-		while (!(components = internal::DataManager::Instance().ComponentsOfEntity(this, true)).empty())
+		auto const components = internal::DataManager::Instance().ComponentsOfEntity(this, true);
+		// we copy the pointers because the underlying collection will change through deactivations
+		std::vector<ComponentPtr<>> componentsCopy{components.begin(), components.end()};
+		std::ranges::for_each(componentsCopy, [this](auto const& comp)
 		{
-			components[0]->Deactivate();
-		}
+			if (comp != m_Transform) // Transform cannot be deactivated.
+			{
+				comp->Deactivate();
+			}
+		});
 	}
 
 
@@ -114,6 +117,11 @@ namespace leopph
 
 	auto Entity::operator=(Entity const& other) -> Entity&
 	{
+		if (this == &other)
+		{
+			return *this;
+		}
+
 		auto& dataManager = internal::DataManager::Instance();
 
 		m_Transform->Component::Owner(nullptr);
@@ -121,8 +129,9 @@ namespace leopph
 		std::ranges::for_each(std::array{true, false}, [this, &dataManager](auto const active)
 		{
 			auto components = dataManager.ComponentsOfEntity(this, active);
-			// Detach erases itself from the component collection, so we iterate backwards to not cause element relocation
-			std::for_each(components.rbegin(), components.rend(), [](auto const component)
+			// Copy the pointers becuase the underlying data structure will change throught the detaches
+			std::vector<ComponentPtr<>> componentsCopy{components.begin(), components.end()};
+			std::ranges::for_each(componentsCopy, [](auto const& component)
 			{
 				component->Detach();
 			});
@@ -154,8 +163,9 @@ namespace leopph
 		std::ranges::for_each(std::array{true, false}, [this, &dataManager](auto const active)
 		{
 			auto components = dataManager.ComponentsOfEntity(this, active);
-			// Detach erases itself from the component collection, so we iterate backwards to not cause element relocation
-			std::for_each(components.rbegin(), components.rend(), [](auto const component)
+			// Copy the pointers becuase the underlying data structure will change throught the detaches
+			std::vector<ComponentPtr<>> componentsCopy{components.begin(), components.end()};
+			std::ranges::for_each(componentsCopy, [](auto const& component)
 			{
 				component->Detach();
 			});
