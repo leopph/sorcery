@@ -63,7 +63,7 @@ namespace demo
 		background->CreateAndAttachComponent<ImageSprite>("sprites/world/ColorFlowBackground.png", 600);
 
 		auto const sun = new Entity;
-		sun->Transform()->Position(Vector3{0, 0, 9.5});
+		sun->Transform()->Position(Vector3{-3, 1.8, 9.5});
 		sun->CreateAndAttachComponent<ImageSprite>("sprites/World/Sun.png", 1024);
 
 		auto const farLayer = new Entity;
@@ -71,21 +71,24 @@ namespace demo
 
 		auto const pinkMountains = new Entity;
 		pinkMountains->Transform()->Parent(farLayer);
-		pinkMountains->CreateAndAttachComponent<ImageSprite>("sprites/world/PinkMountains.png", 700);
+		auto const pinkMSprite = pinkMountains->CreateAndAttachComponent<ImageSprite>("sprites/world/PinkMountains.png", 700);
+		pinkMSprite->Instanced(true);
 
 		auto const midLayer = new Entity;
 		midLayer->Transform()->Position(Vector3{0, 0.5, 8});
 
 		auto const purpleMountains = new Entity;
 		purpleMountains->Transform()->Parent(midLayer);
-		purpleMountains->CreateAndAttachComponent<ImageSprite>("sprites/world/PurpleMountains2.png", 225);
+		auto const purpMSprite = purpleMountains->CreateAndAttachComponent<ImageSprite>("sprites/world/PurpleMountains2.png", 225);
+		purpMSprite->Instanced(true);
 
 		auto const nearLayer = new Entity;
 		nearLayer->Transform()->Position(Vector3{0, -0.75, 7});
 
 		auto const forest = new Entity;
 		forest->Transform()->Parent(nearLayer);
-		forest->CreateAndAttachComponent<ImageSprite>("sprites/world/BackgroundForest1.png", 614);
+		auto const forestSprite = forest->CreateAndAttachComponent<ImageSprite>("sprites/world/BackgroundForest1.png", 614);
+		forestSprite->Instanced(true);
 
 		std::vector<Parallaxer::Layer> parallaxLayers
 		{
@@ -104,7 +107,7 @@ namespace demo
 			{purpleMountains, purpleMountains, purpleMountains},
 			{forest, forest, forest}
 		};
-		//auto const tiler = (new Entity)->CreateAndAttachComponent<Tiler>(tileLayers);
-		//tiler->UpdateIndex(2);
+		auto const tiler = (new Entity)->CreateAndAttachComponent<Tiler>(tileLayers);
+		tiler->UpdateIndex(2);
 	}
 }

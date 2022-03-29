@@ -20,6 +20,7 @@ namespace demo
 		auto const cam = Camera::Current();
 		std::ranges::for_each(m_Layers, [cam](auto& layer)
 		{
+			auto const extentX = layer.Prototype->GetComponent<ImageSprite>()->Extents()[0];
 			auto leftSpawn = cam->TransformToViewport(layer.LeftEdge->Transform()->Position())[0] > 0;
 			auto rightSpawn = cam->TransformToViewport(layer.RightEdge->Transform()->Position())[0] < 1;
 
@@ -27,9 +28,8 @@ namespace demo
 			{
 				if (leftSpawn)
 				{
-					auto const leftExtentX = layer.LeftEdge->GetComponent<ImageSprite>()->Extents()[0];
 					auto spawnPos = layer.LeftEdge->Transform()->Position();
-					spawnPos[0] -= layer.LeftEdge->Transform()->Position()[0] - 2 * leftExtentX, 0, 0;
+					spawnPos[0] -= 2 * extentX;
 
 					auto const newLeftEdge = new Entity{*layer.LeftEdge};
 					newLeftEdge->Transform()->Position(spawnPos);
@@ -40,9 +40,8 @@ namespace demo
 
 				if (rightSpawn)
 				{
-					auto const rightExtentX = layer.RightEdge->GetComponent<ImageSprite>()->Extents()[0];
 					auto spawnPos = layer.RightEdge->Transform()->Position();
-					spawnPos[0] -= layer.RightEdge->Transform()->Position()[0] + 2 * rightExtentX, 0, 0;
+					spawnPos[0] += 2 * extentX;
 
 					auto const newRightEdge = new Entity{*layer.RightEdge};
 					newRightEdge->Transform()->Position(spawnPos);
