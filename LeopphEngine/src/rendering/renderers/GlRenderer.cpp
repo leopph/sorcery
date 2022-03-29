@@ -42,26 +42,15 @@ namespace leopph::internal
 
 	auto GlRenderer::CollectRenderables(std::vector<RenderableData>& renderables) -> void
 	{
-		for (auto const& [meshId, groupAndInstances] : DataManager::Instance().MeshGroupsAndActiveInstances())
+		for (auto const& [glMeshGroup, activeComponents] : DataManager::Instance().MeshGroupsAndActiveInstances())
 		{
 			static std::vector<std::pair<Matrix4, Matrix4>> instanceMatrices;
-
-			GlMeshGroup* glMeshGroup{nullptr};
-
-			if (auto const test = groupAndInstances.RenderObject.lock()) // if this is a dangling pointer we just skip it
-			{
-				glMeshGroup = test.get();
-			}
-			else
-			{
-				continue;
-			}
 
 			instanceMatrices.clear();
 			glMeshGroup->SortMeshes();
 			auto castsShadow = false;
 
-			for (auto const& instance : groupAndInstances.ActiveRenderComponents)
+			for (auto const& instance : activeComponents)
 			{
 				auto const& [modelMat, normalMat]{instance->Owner()->Transform()->Matrices()};
 

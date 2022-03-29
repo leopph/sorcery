@@ -27,14 +27,11 @@ namespace leopph
 
 	Transform::Transform(Transform const& other) :
 		Component{other},
-		m_WorldPosition{other.m_LocalPosition},
-		m_WorldRotation{other.m_LocalRotation},
-		m_WorldScale{other.m_LocalScale},
 		m_LocalPosition{other.m_LocalPosition},
 		m_LocalRotation{other.m_LocalRotation},
 		m_LocalScale{other.m_LocalScale}
 	{
-		CalculateLocalAxes();
+		Parent(other.m_Parent);
 	}
 
 
@@ -52,10 +49,7 @@ namespace leopph
 		m_LocalScale = other.m_LocalScale;
 		m_Changed = true;
 
-		CalculateWorldPosition();
-		CalculateWorldRotation();
-		CalculateWorldScale();
-		CalculateLocalAxes();
+		Parent(other.m_Parent);
 
 		return *this;
 	}
@@ -298,7 +292,7 @@ namespace leopph
 			return;
 		}
 
-		if (entity->Transform()->Attached())
+		if (entity->Transform() && entity->Transform()->Attached())
 		{
 			logger.Warning("Ignoring attempt to attach a second Transform to Entity \"" + entity->Name() + "\".");
 			return;

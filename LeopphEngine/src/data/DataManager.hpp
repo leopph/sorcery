@@ -121,34 +121,24 @@ namespace leopph::internal
 			[[nodiscard]] constexpr
 			auto ActivePointLights() const noexcept -> auto&;
 
-			// Stores the MeshGroup based on its Id.
-			// The id MUST be unique.
-			auto RegisterMeshGroup(std::shared_ptr<MeshGroup const> const& meshGroup) -> void;
+			// Duplicates are ignored.
+			auto RegisterGlMeshGroup(GlMeshGroup* glMeshGroup) -> void;
 
-			// Finds a registered MeshGroup with the id.
-			// Returns nullptr if not found.
-			auto FindMeshGroup(std::string const& id) -> std::shared_ptr<MeshGroup const>;
-
-			// Stores the GlMeshGroup based on its MeshGroup's unique id.
-			auto RegisterGlMeshGroup(std::shared_ptr<GlMeshGroup> const& glMeshGroup) -> void;
-
-			// Finds the registered GlMeshGroup that uses the MeshGroup with the id.
-			[[nodiscard]]
-			auto FindGlMeshGroup(std::string const& meshGroupId) -> std::shared_ptr<GlMeshGroup>;
+			// Also unregisters the associated active RenderComponents.
+			auto UnregisterGlMeshGroup(GlMeshGroup* glMeshGroup) -> void;
 
 			// Adds the RenderComponent to the GlMeshGroups's collection of active RenderComponents.
 			// Does NOT check for duplicates.
-			auto RegisterActiveRenderComponent(std::string const& meshGroupId, RenderComponent const* instance) -> void;
+			auto RegisterActiveRenderComponent(std::shared_ptr<GlMeshGroup> const& glMeshGroup, RenderComponent* renderComponent) -> void;
 
 			// Removes the RenderComponent from the GlMeshGroup's collection of active RenderComponents.
 			// Removes duplicates.
 			// Not registered RenderComponents are ignored.
-			auto UnregisterActiveRenderComponent(std::string const& meshGroupId, RenderComponent const* instance) -> void;
+			auto UnregisterActiveRenderComponent(std::shared_ptr<GlMeshGroup> const& glMeshGroup, RenderComponent const* renderComponent) -> void;
 
-			// Returns the number of active RenderComponents that are registered for the MeshGroup with the passed id.
-			// The function does NOT check whether the passed MeshGroup is registered or not.
+			// Returns the number of active RenderComponents that are registered for the GlMeshGroup.
 			[[nodiscard]]
-			auto RenderComponentCount(std::string const& meshId) const -> std::size_t;
+			auto RenderComponentCount(GlMeshGroup* glMeshGroup) const -> std::size_t;
 
 			// Returns all registered GlMeshGroups and their active instances.
 			[[nodiscard]] constexpr
@@ -185,13 +175,6 @@ namespace leopph::internal
 			};
 
 
-			struct RenderingEntry
-			{
-				std::weak_ptr<GlMeshGroup> RenderObject;
-				std::vector<RenderComponent const*> ActiveRenderComponents;
-			};
-
-
 			using EntityOrderFunc = std::ranges::less;
 			using BehaviorOrderFunc = std::ranges::less;
 
@@ -219,14 +202,11 @@ namespace leopph::internal
 			// Non-owning pointers to all active PointLights.
 			std::vector<PointLight const*> m_ActivePointLights;
 
-			// Registered MeshGroups with unique IDs.
-			std::unordered_map<std::string, std::weak_ptr<MeshGroup const>> m_MeshGroups;
-
 			// SkyboxImpl instances and non-owning pointer to all the Skybox handles pointing to them.
 			std::unordered_map<SkyboxImpl, std::vector<Skybox*>, PathedHash<SkyboxImpl>, PathedEqual<SkyboxImpl>> m_Skyboxes;
 
-			// Registered OpenGlMeshGroups and their instances with their Mesh IDs.
-			std::unordered_map<std::string, RenderingEntry> m_Renderables;
+			// Registered GlMeshGroups and their associated active RenderComponents.
+			std::unordered_map<GlMeshGroup*, std::vector<RenderComponent*>> m_Renderables;
 
 			// Returns a non-const iterator to the element or past-the-end.
 			[[nodiscard]]

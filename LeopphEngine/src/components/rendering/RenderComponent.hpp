@@ -49,7 +49,8 @@ namespace leopph::internal
 			auto Active(bool active) -> void final;
 			using Component::Active;
 
-			RenderComponent(RenderComponent const& other) = default;
+			LEOPPHAPI RenderComponent(RenderComponent const& other);
+
 			LEOPPHAPI
 			auto operator=(RenderComponent const& other) -> RenderComponent&;
 
@@ -59,7 +60,9 @@ namespace leopph::internal
 			LEOPPHAPI ~RenderComponent() noexcept override;
 
 		protected:
-			explicit RenderComponent(std::shared_ptr<MeshGroup const>&& meshGroup);
+			RenderComponent() = default;
+
+			auto SwapRenderable(MeshGroup meshGroup) -> void;
 
 		private:
 			bool m_CastsShadow{false};

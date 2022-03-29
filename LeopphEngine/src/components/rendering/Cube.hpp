@@ -4,8 +4,6 @@
 #include "../../api/LeopphApi.hpp"
 #include "../../rendering/geometry/MeshGroup.hpp"
 
-#include <string>
-
 
 namespace leopph
 {
@@ -20,9 +18,7 @@ namespace leopph
 
 		private:
 			[[nodiscard]] static
-			auto GetMeshGroup() -> std::shared_ptr<internal::MeshGroup const>;
-
-			static std::string const s_MeshId;
+			auto CreateMeshGroup() -> MeshGroup;
 			static std::weak_ptr<Material> s_Material;
 	};
 }

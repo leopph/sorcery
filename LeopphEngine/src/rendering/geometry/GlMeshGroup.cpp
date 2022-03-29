@@ -8,31 +8,13 @@
 
 namespace leopph::internal
 {
-	auto GlMeshGroup::CreateOrGet(std::shared_ptr<internal::MeshGroup const>&& meshGroup) -> std::shared_ptr<GlMeshGroup>
-	{
-		auto& dataManager = DataManager::Instance();
-		auto ret = dataManager.FindGlMeshGroup(meshGroup->Id);
-
-		if (!ret)
-		{
-			ret = std::shared_ptr<GlMeshGroup>{new GlMeshGroup{std::move(meshGroup)}};
-			dataManager.RegisterGlMeshGroup(ret);
-		}
-
-		return ret;
-	}
-
-
-	GlMeshGroup::GlMeshGroup(std::shared_ptr<internal::MeshGroup const>&& meshGroup) :
+	GlMeshGroup::GlMeshGroup(leopph::MeshGroup meshGroup) :
 		m_MeshGroup{std::move(meshGroup)}
 	{
-		glCreateBuffers(1, &m_InstanceBuffer);
-		glNamedBufferData(m_InstanceBuffer, 2 * sizeof(Matrix4), nullptr, GL_DYNAMIC_DRAW);
+		DataManager::Instance().RegisterGlMeshGroup(this);
 
-		for (auto const& mesh : m_MeshGroup->Meshes)
-		{
-			(FullyTransparent(mesh.Material()) ? m_FullyTransparentMeshes : m_OpaqueMeshes).emplace_back(std::make_unique<GlMesh>(&mesh, m_InstanceBuffer));
-		}
+		glNamedBufferData(m_InstanceBuffer, 2 * sizeof(Matrix4), nullptr, GL_DYNAMIC_DRAW);
+		UpdateMeshData();
 	}
 
 
@@ -78,9 +60,29 @@ namespace leopph::internal
 	}
 
 
-	auto GlMeshGroup::MeshGroup() const -> std::shared_ptr<internal::MeshGroup const> const&
+	auto GlMeshGroup::MeshGroup() const -> leopph::MeshGroup const&
 	{
 		return m_MeshGroup;
+	}
+
+
+	auto GlMeshGroup::MeshGroup(leopph::MeshGroup meshGroup) -> void
+	{
+		m_MeshGroup = std::move(meshGroup);
+		UpdateMeshData();
+	}
+
+
+	auto GlMeshGroup::UpdateMeshData() -> void
+	{
+		m_OpaqueMeshes.clear();
+		m_MaybeTransparentMeshes.clear();
+		m_FullyTransparentMeshes.clear();
+
+		for (auto const& mesh : m_MeshGroup.Meshes())
+		{
+			(FullyTransparent(mesh.Material()) ? m_FullyTransparentMeshes : m_OpaqueMeshes).emplace_back(std::make_unique<GlMesh>(mesh, m_InstanceBuffer));
+		}
 	}
 
 
@@ -88,16 +90,16 @@ namespace leopph::internal
 	{
 		std::ranges::for_each(m_OpaqueMeshes, [this](std::unique_ptr<GlMesh>& glMesh)
 		{
-			if (FullyTransparent(glMesh->Mesh()->Material()))
+			if (FullyTransparent(glMesh->Material()))
 			{
 				m_FullyTransparentMeshes.emplace_back(std::move(glMesh));
 			}
-			else if (MaybeTransparent(glMesh->Mesh()->Material()))
+			else if (MaybeTransparent(glMesh->Material()))
 			{
 				m_MaybeTransparentMeshes.emplace_back(std::move(glMesh));
 			}
 		});
-		
+
 		std::erase_if(m_OpaqueMeshes, [](std::unique_ptr<GlMesh> const& glMesh)
 		{
 			return !glMesh;
@@ -105,25 +107,25 @@ namespace leopph::internal
 
 		std::ranges::for_each(m_MaybeTransparentMeshes, [this](std::unique_ptr<GlMesh>& glMesh)
 		{
-			if (!MaybeTransparent(glMesh->Mesh()->Material()))
+			if (!MaybeTransparent(glMesh->Material()))
 			{
-				(FullyTransparent(glMesh->Mesh()->Material()) ? m_FullyTransparentMeshes : m_OpaqueMeshes).emplace_back(std::move(glMesh));
+				(FullyTransparent(glMesh->Material()) ? m_FullyTransparentMeshes : m_OpaqueMeshes).emplace_back(std::move(glMesh));
 			}
 		});
-		
+
 		std::erase_if(m_MaybeTransparentMeshes, [](std::unique_ptr<GlMesh> const& glMesh)
 		{
 			return !glMesh;
 		});
-		
+
 		std::ranges::for_each(m_FullyTransparentMeshes, [this](std::unique_ptr<GlMesh>& glMesh)
 		{
-			if (!FullyTransparent(glMesh->Mesh()->Material()))
+			if (!FullyTransparent(glMesh->Material()))
 			{
-				(MaybeTransparent(glMesh->Mesh()->Material()) ? m_MaybeTransparentMeshes : m_OpaqueMeshes).emplace_back(std::move(glMesh));
+				(MaybeTransparent(glMesh->Material()) ? m_MaybeTransparentMeshes : m_OpaqueMeshes).emplace_back(std::move(glMesh));
 			}
 		});
-		
+
 		std::erase_if(m_FullyTransparentMeshes, [](std::unique_ptr<GlMesh> const& glMesh)
 		{
 			return !glMesh;
@@ -145,6 +147,6 @@ namespace leopph::internal
 
 	GlMeshGroup::~GlMeshGroup() noexcept
 	{
-		glDeleteBuffers(1, &m_InstanceBuffer);
+		DataManager::Instance().UnregisterGlMeshGroup(this);
 	}
 }

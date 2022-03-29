@@ -6,14 +6,13 @@
 #include <source_location>
 #include <utility>
 
-using leopph::internal::Vertex;
-
 
 namespace leopph
 {
-	Cube::Cube() :
-		RenderComponent{GetMeshGroup()}
-	{}
+	Cube::Cube()
+	{
+		SwapRenderable(CreateMeshGroup());
+	}
 
 
 	auto Cube::Clone() const -> ComponentPtr<>
@@ -22,16 +21,9 @@ namespace leopph
 	}
 
 
-	auto Cube::GetMeshGroup() -> std::shared_ptr<internal::MeshGroup const>
+	auto Cube::CreateMeshGroup() -> MeshGroup
 	{
-		auto& dataManager = internal::DataManager::Instance();
-
-		if (auto p = dataManager.FindMeshGroup(s_MeshId))
-		{
-			return p;
-		}
-
-		std::vector<Vertex> vertices{
+		std::vector vertices{
 			// Back face
 			Vertex{Vector3{-0.5f, -0.5f, -0.5f}, Vector3{0, 0, -1}, Vector2{}}, // back bottom left
 			Vertex{Vector3{-0.5f, 0.5f, -0.5f}, Vector3{0, 0, -1}, Vector2{}}, // back top left
@@ -90,19 +82,9 @@ namespace leopph
 			s_Material = material = std::make_shared<Material>(Color{255, 255, 255}, Color{0, 0, 0}, nullptr, nullptr, nullptr, 0.f, 1.f, true);
 		}
 
-		auto meshGroup = std::make_shared<internal::MeshGroup>(s_MeshId, std::vector{internal::Mesh{std::move(vertices), std::move(indices), std::move(material)}});
-		dataManager.RegisterMeshGroup(meshGroup);
-		return meshGroup;
+		return MeshGroup{std::vector{Mesh{std::move(vertices), std::move(indices), std::move(material)}}};
 	}
 
-
-	std::string const Cube::s_MeshId{
-		[]
-		{
-			auto const srcLoc{std::source_location::current()};
-			return std::string{srcLoc.file_name()}.append(std::to_string(srcLoc.line())).append(std::to_string(srcLoc.column())).append("CubeMeshDataId");
-		}()
-	};
 
 	std::weak_ptr<Material> Cube::s_Material;
 }

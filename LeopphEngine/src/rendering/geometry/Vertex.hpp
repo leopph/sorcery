@@ -3,7 +3,7 @@
 #include "../../math/Vector.hpp"
 
 
-namespace leopph::internal
+namespace leopph
 {
 	struct Vertex
 	{

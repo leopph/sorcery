@@ -148,65 +148,33 @@ namespace leopph::internal
 	}
 
 
-	auto DataManager::RegisterMeshGroup(std::shared_ptr<MeshGroup const> const& meshGroup) -> void
+	auto DataManager::RegisterGlMeshGroup(GlMeshGroup* glMeshGroup) -> void
 	{
-		m_MeshGroups.insert_or_assign(meshGroup->Id, meshGroup);
+		m_Renderables.try_emplace(glMeshGroup, std::vector<RenderComponent*>{});
 	}
 
 
-	auto DataManager::FindMeshGroup(std::string const& id) -> std::shared_ptr<MeshGroup const>
+	auto DataManager::UnregisterGlMeshGroup(GlMeshGroup* glMeshGroup) -> void
 	{
-		if (auto const it = m_MeshGroups.find(id); it != m_MeshGroups.end())
-		{
-			if (auto ret = it->second.lock())
-			{
-				return ret;
-			}
-
-			m_MeshGroups.erase(it);
-		}
-
-		return nullptr;
+		m_Renderables.erase(glMeshGroup);
 	}
 
 
-	auto DataManager::RegisterGlMeshGroup(std::shared_ptr<GlMeshGroup> const& glMeshGroup) -> void
+	auto DataManager::RegisterActiveRenderComponent(std::shared_ptr<GlMeshGroup> const& glMeshGroup, RenderComponent* renderComponent) -> void
 	{
-		m_Renderables.insert_or_assign(glMeshGroup->MeshGroup()->Id, RenderingEntry{.RenderObject = glMeshGroup, .ActiveRenderComponents = {}});
+		m_Renderables.at(glMeshGroup.get()).push_back(renderComponent);
 	}
 
 
-	auto DataManager::FindGlMeshGroup(std::string const& meshGroupId) -> std::shared_ptr<GlMeshGroup>
+	auto DataManager::UnregisterActiveRenderComponent(std::shared_ptr<GlMeshGroup> const& glMeshGroup, RenderComponent const* renderComponent) -> void
 	{
-		if (auto const it = m_Renderables.find(meshGroupId); it != m_Renderables.end())
-		{
-			if (auto ret = it->second.RenderObject.lock())
-			{
-				return ret;
-			}
-
-			m_Renderables.erase(it);
-		}
-
-		return nullptr;
+		std::erase(m_Renderables.at(glMeshGroup.get()), renderComponent);
 	}
 
 
-	auto DataManager::RegisterActiveRenderComponent(std::string const& meshGroupId, RenderComponent const* instance) -> void
+	auto DataManager::RenderComponentCount(GlMeshGroup* glMeshGroup) const -> std::size_t
 	{
-		m_Renderables.at(meshGroupId).ActiveRenderComponents.push_back(instance);
-	}
-
-
-	auto DataManager::UnregisterActiveRenderComponent(std::string const& meshGroupId, RenderComponent const* instance) -> void
-	{
-		std::erase(m_Renderables.at(meshGroupId).ActiveRenderComponents, instance);
-	}
-
-
-	auto DataManager::RenderComponentCount(std::string const& meshId) const -> std::size_t
-	{
-		return m_Renderables.at(meshId).ActiveRenderComponents.size();
+		return m_Renderables.at(glMeshGroup).size();
 	}
 
 

@@ -1,6 +1,5 @@
 #include "ImageSprite.hpp"
 
-#include "../../data/DataManager.hpp"
 #include "../../math/Math.hpp"
 #include "../../util/Logger.hpp"
 
@@ -12,8 +11,12 @@
 namespace leopph
 {
 	ImageSprite::ImageSprite(std::filesystem::path const& src, int const ppi) :
-		RenderComponent{GetMeshGroup(src, ppi)}
-	{}
+		m_Path{src}
+	{
+		Image img{src, true};
+		m_Extents = Vector2{img.Width() / 2.f / ppi, img.Height() / 2.f / ppi};
+		SwapRenderable(CreateMeshGroup(img, ppi));
+	}
 
 
 	auto ImageSprite::Clone() const -> ComponentPtr<>
@@ -22,27 +25,26 @@ namespace leopph
 	}
 
 
-	auto ImageSprite::GetMeshGroup(std::filesystem::path const& src, int const ppi) -> std::shared_ptr<internal::MeshGroup const>
+	auto ImageSprite::Path() const noexcept -> std::filesystem::path const&
 	{
-		auto& dataManager = internal::DataManager::Instance();
-		auto const meshId{GetMeshId(src, ppi)};
+		return m_Path;
+	}
 
-		// Try to find in cache.
-		if (auto meshGroup = dataManager.FindMeshGroup(meshId))
-		{
-			return meshGroup;
-		}
 
-		// Build from zero
+	auto ImageSprite::Extents() const noexcept -> Vector2 const&
+	{
+		return m_Extents;
+	}
 
-		Image img{src, true};
 
+	auto ImageSprite::CreateMeshGroup(Image& img, int const ppi) -> MeshGroup
+	{
 		if (img.Empty())
 		{
-			auto ret = std::make_shared<internal::MeshGroup>(meshId);
-			dataManager.RegisterMeshGroup(ret);
-			return ret;
+			return {};
 		}
+
+		m_Extents = Vector2{img.Width() / 2.f / ppi, img.Height() / 2.f / ppi};
 
 		std::shared_ptr<Texture> baseTexture;
 		std::shared_ptr<Texture> opacityTexture;
@@ -114,9 +116,7 @@ namespace leopph
 				default:
 				{
 					internal::Logger::Instance().Error("Failed to create sprite from image with " + std::to_string(img.Channels()) + " channels.");
-					auto ret = std::make_shared<internal::MeshGroup>(meshId);
-					dataManager.RegisterMeshGroup(ret);
-					return ret;
+					return {};
 				}
 			}
 
@@ -146,10 +146,10 @@ namespace leopph
 
 		std::vector vertices
 		{
-			internal::Vertex{Vector3{-rectW / 2, rectH / 2, 0}, Vector3::Backward(), Vector2{0, 1}}, // top left
-			internal::Vertex{Vector3{-rectW / 2, -rectH / 2, 0}, Vector3::Backward(), Vector2{0, 0}}, // bottom left
-			internal::Vertex{Vector3{rectW / 2, -rectH / 2, 0}, Vector3::Backward(), Vector2{1, 0}}, // bottom right
-			internal::Vertex{Vector3{rectW / 2, rectH / 2, 0}, Vector3::Backward(), Vector2{1, 1}} // top right
+			Vertex{Vector3{-rectW / 2, rectH / 2, 0}, Vector3::Backward(), Vector2{0, 1}}, // top left
+			Vertex{Vector3{-rectW / 2, -rectH / 2, 0}, Vector3::Backward(), Vector2{0, 0}}, // bottom left
+			Vertex{Vector3{rectW / 2, -rectH / 2, 0}, Vector3::Backward(), Vector2{1, 0}}, // bottom right
+			Vertex{Vector3{rectW / 2, rectH / 2, 0}, Vector3::Backward(), Vector2{1, 1}} // top right
 		};
 
 		std::vector<unsigned> indices
@@ -158,15 +158,7 @@ namespace leopph
 		};
 
 		auto material = std::make_shared<Material>(Color{255, 255, 255}, Color{0, 0, 0}, std::move(baseTexture), nullptr, opacityTexture, 0.f, 1.f, false);
-
-		auto meshGroup = std::make_shared<internal::MeshGroup>(meshId, std::vector{internal::Mesh{std::move(vertices), std::move(indices), std::move(material)}});
-		dataManager.RegisterMeshGroup(meshGroup);
-		return meshGroup;
-	}
-
-
-	auto ImageSprite::GetMeshId(std::filesystem::path const& src, int const ppi) -> std::string
-	{
-		return src.generic_string() + "+ppi=" + std::to_string(ppi);
+		
+		return MeshGroup{std::vector{Mesh{std::move(vertices), std::move(indices), std::move(material)}}};
 	}
 }

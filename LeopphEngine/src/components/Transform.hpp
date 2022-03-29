@@ -184,12 +184,12 @@ namespace leopph
 			                             Vector3 const& scale = Vector3{1, 1, 1});
 
 			// Creates a new Transform that has the same local properties.
-			// Doesn't copy parents or children.
+			// Takes the parent but doesn't copy children.
 			LEOPPHAPI
 			Transform(Transform const& other);
 
 			// Copies the other's local properties.
-			// Doesn't copy parents or children.
+			// Takes the parent but doesn't copy children.
 			LEOPPHAPI
 			auto operator=(Transform const& other) -> Transform&;
 

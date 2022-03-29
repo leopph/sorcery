@@ -3,36 +3,42 @@
 #include "GlMesh.hpp"
 #include "../../math/Matrix.hpp"
 #include "../geometry/MeshGroup.hpp"
+#include "../opengl/GlBuffer.hpp"
 #include "../opengl/OpenGl.hpp"
 #include "../shaders/ShaderProgram.hpp"
 
 #include <memory>
-#include <utility>
 #include <vector>
 
 
 namespace leopph::internal
 {
-	// Holds together multiple OpenGlMeshes that logically belong together (e.g. are part of the same model).
+	// Covers and renders a MeshGroup using multiple OpenGlMeshes.
 	class GlMeshGroup
 	{
 		public:
-			// Returns the GlMeshGroup that uses the passed MeshGroup, or creates a new if there is none.
-			[[nodiscard]] static
-			auto CreateOrGet(std::shared_ptr<MeshGroup const>&& meshGroup) -> std::shared_ptr<GlMeshGroup>;
+			explicit GlMeshGroup(MeshGroup meshGroup);
 
-		private:
-			explicit GlMeshGroup(std::shared_ptr<MeshGroup const>&& meshGroup);
-
-		public:
 			auto DrawWithMaterial(ShaderProgram& shader, GLuint nextFreeTextureUnit, bool transparent) const -> void;
+
 			auto DrawWithoutMaterial(bool transparent) const -> void;
 
 			// Loads the passed matrices into the instance buffer. Matrices must be in column major storage.
 			auto SetInstanceData(std::vector<std::pair<Matrix4, Matrix4>> const& instMats) -> void;
 
+			// Returns the MeshGroup that the GlMeshGroup currently mirrors.
+			// If the MeshGroup changed after the construction of this object, the internal render buffers may not contain up to date data.
+			// Use UpdateMeshData to reparse.
 			[[nodiscard]]
-			auto MeshGroup() const -> std::shared_ptr<MeshGroup const> const&;
+			auto MeshGroup() const -> MeshGroup const&;
+
+			// Sets the MeshGroup that the GlMeshGroup renders.
+			// This automatically updates the internal render buffers which is an expensive operation.
+			auto MeshGroup(leopph::MeshGroup meshGroup) -> void;
+
+			// Reparses the data in the MeshGroup and recreates the internal representation of the Meshes.
+			// This is an expensive operation.
+			auto UpdateMeshData() -> void;
 
 			// Separates transparent and opaque meshes.
 			auto SortMeshes() -> void;
@@ -57,8 +63,8 @@ namespace leopph::internal
 			std::vector<std::unique_ptr<GlMesh>> m_OpaqueMeshes;
 			std::vector<std::unique_ptr<GlMesh>> m_MaybeTransparentMeshes;
 			std::vector<std::unique_ptr<GlMesh>> m_FullyTransparentMeshes;
-			std::shared_ptr<internal::MeshGroup const> m_MeshGroup;
-			GLuint m_InstanceBuffer{0};
-			int m_NumInstances{0};
+			leopph::MeshGroup m_MeshGroup;
+			GlBuffer m_InstanceBuffer;
+			GLsizei m_NumInstances{0};
 	};
 }

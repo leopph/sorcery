@@ -81,6 +81,7 @@
     <ClCompile Include="vendor\gl3w\src\gl3w.c" />
     <ClCompile Include="src\components\PerspectiveCamera.cpp" />
     <ClCompile Include="src\components\OrthographicCamera.cpp" />
+    <ClCompile Include="src\rendering\geometry\MeshGroup.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\components\Behavior.hpp" />

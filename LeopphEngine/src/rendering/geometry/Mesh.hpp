@@ -9,7 +9,7 @@
 #include <vector>
 
 
-namespace leopph::internal
+namespace leopph
 {
 	// Represents a loaded set of vertices, indices, and materials.
 	// It can be used to create renderable objects.

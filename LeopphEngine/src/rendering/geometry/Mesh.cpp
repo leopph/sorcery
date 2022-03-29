@@ -8,7 +8,7 @@
 
 namespace leopph
 {
-	internal::Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned> indices, std::shared_ptr<leopph::Material> material) :
+	Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned> indices, std::shared_ptr<leopph::Material> material) :
 		m_Vertices{std::move(vertices)},
 		m_Indices{std::move(indices)},
 		m_Material{std::move(material)},
@@ -17,48 +17,48 @@ namespace leopph
 		if (!m_Material)
 		{
 			auto const errMsg{"Trying to set null Material in Mesh."};
-			Logger::Instance().Error(errMsg);
+			internal::Logger::Instance().Error(errMsg);
 			throw std::invalid_argument{errMsg};
 		}
 	}
 
 
-	auto internal::Mesh::Vertices() const -> std::span<Vertex const>
+	auto Mesh::Vertices() const -> std::span<Vertex const>
 	{
 		return m_Vertices;
 	}
 
 
-	auto internal::Mesh::Vertices(std::vector<Vertex> vertices) -> void
+	auto Mesh::Vertices(std::vector<Vertex> vertices) -> void
 	{
 		m_Vertices = std::move(vertices);
 		m_BoundingSphere = CalculateBoundingSphere();
 	}
 
 
-	auto internal::Mesh::Indices() const -> std::span<unsigned const>
+	auto Mesh::Indices() const -> std::span<unsigned const>
 	{
 		return m_Indices;
 	}
 
 
-	auto internal::Mesh::Indices(std::vector<unsigned> indices) -> void
+	auto Mesh::Indices(std::vector<unsigned> indices) -> void
 	{
 		m_Indices = std::move(indices);
 	}
 
 
-	auto internal::Mesh::Material() const -> std::shared_ptr<leopph::Material> const&
+	auto Mesh::Material() const -> std::shared_ptr<leopph::Material> const&
 	{
 		return m_Material;
 	}
 
 
-	auto internal::Mesh::Material(std::shared_ptr<leopph::Material> material) -> void
+	auto Mesh::Material(std::shared_ptr<leopph::Material> material) -> void
 	{
 		if (!material)
 		{
-			Logger::Instance().Warning("Ignoring attempt to set null Material in Mesh.");
+			internal::Logger::Instance().Warning("Ignoring attempt to set null Material in Mesh.");
 			return;
 		}
 
@@ -66,13 +66,13 @@ namespace leopph
 	}
 
 
-	auto internal::Mesh::BoundingSphere() const -> Sphere const&
+	auto Mesh::BoundingSphere() const -> Sphere const&
 	{
 		return m_BoundingSphere;
 	}
 
 
-	auto internal::Mesh::CalculateBoundingSphere() const noexcept -> Sphere
+	auto Mesh::CalculateBoundingSphere() const noexcept -> Sphere
 	{
 		if (m_Vertices.empty())
 		{
