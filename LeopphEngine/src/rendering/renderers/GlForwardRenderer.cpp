@@ -98,12 +98,11 @@ namespace leopph::internal
 	{
 		m_ObjectShader.Clear();
 		m_ObjectShader["DIRLIGHT"] = std::to_string(dirLight != nullptr);
-		//m_ObjectShader["DIRLIGHT_SHADOW"] = std::to_string(dirLight != nullptr && dirLight->CastsShadow());
-		m_ObjectShader["DIRLIGHT_SHADOW"] = std::to_string(false);
+		m_ObjectShader["DIRLIGHT_SHADOW"] = std::to_string(false); // temporary
 		m_ObjectShader["NUM_SPOTLIGHTS"] = std::to_string(spotLights.size());
-		m_ObjectShader["NUM_SPOTLIGHT_SHADOWS"] = std::to_string(0);
+		m_ObjectShader["NUM_SPOTLIGHT_SHADOWS"] = std::to_string(0); // temporary
 		m_ObjectShader["NUM_POINTLIGHTS"] = std::to_string(pointLights.size());
-		m_ObjectShader["NUM_POINTLIGHT_SHADOWS"] = std::to_string(0);
+		m_ObjectShader["NUM_POINTLIGHT_SHADOWS"] = std::to_string(0); // temporary
 		m_ObjectShader["TRANSPARENT"] = std::to_string(false);
 
 		auto& shader{m_ObjectShader.GetPermutation()};
@@ -113,8 +112,8 @@ namespace leopph::internal
 
 		SetAmbientData(AmbientLight::Instance(), shader);
 		SetDirectionalData(dirLight, shader);
-		SetSpotData(spotLights, shader);
-		SetPointData(pointLights, shader);
+		SetSpotDataIgnoreShadow(spotLights, shader); // temporary
+		SetPointDataIgnoreShadow(pointLights, shader); // temporary
 
 		shader.Use();
 
@@ -128,6 +127,13 @@ namespace leopph::internal
 
 	auto GlForwardRenderer::RenderTransparent(Matrix4 const& camViewMat, Matrix4 const& camProjMat, std::vector<RenderableData> const& renderables, DirectionalLight const* dirLight, std::vector<SpotLight const*> const& spotLights, std::vector<PointLight const*> const& pointLights) -> void
 	{
+		m_ObjectShader.Clear();
+		m_ObjectShader["DIRLIGHT"] = std::to_string(dirLight != nullptr);
+		m_ObjectShader["DIRLIGHT_SHADOW"] = std::to_string(false);
+		m_ObjectShader["NUM_SPOTLIGHTS"] = std::to_string(spotLights.size());
+		m_ObjectShader["NUM_SPOTLIGHT_SHADOWS"] = std::to_string(0);
+		m_ObjectShader["NUM_POINTLIGHTS"] = std::to_string(pointLights.size());
+		m_ObjectShader["NUM_POINTLIGHT_SHADOWS"] = std::to_string(0);
 		m_ObjectShader["TRANSPARENT"] = std::to_string(true);
 		auto& transpObjectShader{m_ObjectShader.GetPermutation()};
 
@@ -136,8 +142,8 @@ namespace leopph::internal
 
 		SetAmbientData(AmbientLight::Instance(), transpObjectShader);
 		SetDirectionalData(dirLight, transpObjectShader);
-		SetSpotData(spotLights, transpObjectShader);
-		SetPointData(pointLights, transpObjectShader);
+		SetSpotDataIgnoreShadow(spotLights, transpObjectShader);
+		SetPointDataIgnoreShadow(pointLights, transpObjectShader);
 
 		transpObjectShader.Use();
 		m_TransparencyBuffer.Clear();
