@@ -32,7 +32,7 @@ namespace leopph::internal
 
 				std::vector<spdlog::sink_ptr> sinks;
 				sinks.push_back(std::make_shared<spdlog::sinks::stdout_color_sink_st>());
-				sinks.push_back(std::make_shared<spdlog::sinks::basic_file_sink_st>(logFilePath.string()));
+				sinks.push_back(std::make_shared<spdlog::sinks::basic_file_sink_st>(logFilePath.string(), DMCOLLATE_TRUE));
 				return std::make_shared<spdlog::logger>("LeopphLogger", std::begin(sinks), std::end(sinks));
 			}()
 		}
