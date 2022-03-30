@@ -8,6 +8,7 @@
 #include "../shaders/ShaderProgram.hpp"
 
 #include <memory>
+#include <span>
 #include <vector>
 
 
@@ -24,7 +25,7 @@ namespace leopph::internal
 			auto DrawWithoutMaterial(bool transparent) const -> void;
 
 			// Loads the passed matrices into the instance buffer. Matrices must be in column major storage.
-			auto SetInstanceData(std::vector<std::pair<Matrix4, Matrix4>> const& instMats) -> void;
+			auto SetInstanceData(std::span<std::pair<Matrix4, Matrix4> const> instMats) -> void;
 
 			// Returns the MeshGroup that the GlMeshGroup currently mirrors.
 			// If the MeshGroup changed after the construction of this object, the internal render buffers may not contain up to date data.
@@ -65,6 +66,7 @@ namespace leopph::internal
 			std::vector<std::unique_ptr<GlMesh>> m_FullyTransparentMeshes;
 			leopph::MeshGroup m_MeshGroup;
 			GlBuffer m_InstanceBuffer;
+			GLsizei m_InstanceBufferSize{1};
 			GLsizei m_NumInstances{0};
 	};
 }

@@ -46,17 +46,23 @@ namespace leopph::internal
 	}
 
 
-	auto GlMeshGroup::SetInstanceData(std::vector<std::pair<Matrix4, Matrix4>> const& instMats) -> void
+	auto GlMeshGroup::SetInstanceData(std::span<std::pair<Matrix4, Matrix4> const> const instMats) -> void
 	{
-		if (static_cast<int>(instMats.size()) != m_NumInstances)
+		m_NumInstances = static_cast<GLsizei>(instMats.size());
+
+		// If there are more instances than we what we have space for we reallocate the buffer
+		if (m_NumInstances > m_InstanceBufferSize)
 		{
-			m_NumInstances = static_cast<int>(instMats.size());
-			glNamedBufferData(m_InstanceBuffer, static_cast<GLsizei>(m_NumInstances * sizeof(std::remove_reference_t<decltype(instMats)>::value_type)), instMats.data(), GL_DYNAMIC_DRAW);
+			do
+			{
+				m_InstanceBufferSize *= 2;
+			}
+			while (m_NumInstances > m_InstanceBufferSize);
+
+			glNamedBufferData(m_InstanceBuffer, static_cast<GLsizei>(m_InstanceBufferSize * sizeof(std::remove_reference_t<decltype(instMats)>::value_type)), nullptr, GL_DYNAMIC_DRAW);
 		}
-		else
-		{
-			glNamedBufferSubData(m_InstanceBuffer, 0, static_cast<GLsizei>(m_NumInstances * sizeof(std::remove_reference_t<decltype(instMats)>::value_type)), instMats.data());
-		}
+
+		glNamedBufferSubData(m_InstanceBuffer, 0, static_cast<GLsizei>(m_NumInstances * sizeof(std::remove_reference_t<decltype(instMats)>::value_type)), instMats.data());
 	}
 
 
