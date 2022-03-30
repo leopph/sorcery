@@ -98,6 +98,7 @@ namespace demo
 		auto const ground = new Entity;
 		ground->Transform()->Parent(groundLayer);
 		auto const groundSprite = ground->CreateAndAttachComponent<ImageSprite>("sprites/world/Ground1.png", 512);
+		groundSprite->Instanced(true);
 
 		std::vector<Parallaxer::Layer> parallaxLayers
 		{
