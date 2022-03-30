@@ -6,7 +6,6 @@
 #define _CRTDBG_MAP_ALLOC
 #include <stdlib.h>
 #include <crtdbg.h>
-#include "../util/Logger.hpp"
 #endif
 
 #include "Main.hpp"
@@ -15,6 +14,7 @@
 #include "../events/FrameCompleteEvent.hpp"
 #include "../events/handling/EventManager.hpp"
 #include "../rendering/renderers/Renderer.hpp"
+#include "../util/Logger.hpp"
 #include "../windowing/WindowImpl.hpp"
 
 
@@ -24,11 +24,13 @@ namespace leopph::internal
 	{
 		#ifdef _DEBUG
 		_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-		Logger::Instance().CurrentLevel(Logger::Level::Debug);
+		Logger::Instance().CurrentLevel(Logger::Level::Trace);
+		#else
+		Logger::Instance().CurrentLevel(Logger::Level::Info);
 		#endif
 
-		const auto window{WindowImpl::Create()};
-		const auto renderer{Renderer::Create()};
+		auto const window{WindowImpl::Create()};
+		auto const renderer{Renderer::Create()};
 
 		initFunc();
 
@@ -36,7 +38,7 @@ namespace leopph::internal
 		{
 			window->PollEvents();
 
-			for (const auto& behavior : DataManager::Instance().ActiveBehaviors())
+			for (auto const& behavior : DataManager::Instance().ActiveBehaviors())
 			{
 				behavior->OnFrameUpdate();
 			}

@@ -1,5 +1,10 @@
 #pragma once
 
+#include "../util/containers/Bimap.hpp"
+
+#include <spdlog/spdlog.h>
+
+#include <memory>
 #include <string_view>
 
 
@@ -10,23 +15,31 @@ namespace leopph::internal
 		public:
 			enum class Level
 			{
-				Debug, Release
+				Trace, Debug, Info, Warning, Error, Critical
 			};
 
 
 			static auto Instance() -> Logger&;
 
 			auto CurrentLevel(Level level) -> void;
+
 			[[nodiscard]]
 			auto CurrentLevel() const -> Level;
 
+			auto Trace(std::string_view msg) const -> void;
+
 			auto Debug(std::string_view msg) const -> void;
+
 			auto Critical(std::string_view msg) const -> void;
+
 			auto Error(std::string_view msg) const -> void;
+
 			auto Warning(std::string_view msg) const -> void;
 
-			Logger(const Logger& other) = delete;
-			auto operator=(const Logger& other) -> Logger& = delete;
+			auto Info(std::string_view msg) const -> void;
+
+			Logger(Logger const& other) = delete;
+			auto operator=(Logger const& other) -> Logger& = delete;
 
 			Logger(Logger&& other) noexcept = delete;
 			auto operator=(Logger&& other) noexcept -> Logger& = delete;
@@ -34,5 +47,15 @@ namespace leopph::internal
 		private:
 			Logger();
 			~Logger() = default;
+
+			std::shared_ptr<spdlog::logger> m_Logger;
+
+			static Bimap<spdlog::level::level_enum, Level,
+			             #ifdef _DEBUG
+			             true
+			             #else
+			             false
+			             #endif
+			> m_TranslateMap;
 	};
 }

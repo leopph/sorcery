@@ -2,8 +2,6 @@
 
 #include "../../util/Logger.hpp"
 #include "../../util/containers/Bimap.hpp"
-#include "../../util/equal/ShaderTypeEqual.hpp"
-#include "../../util/hash/ShaderTypeHash.hpp"
 
 #include <stdexcept>
 #include <string>
@@ -13,16 +11,13 @@ namespace leopph::internal::opengl
 {
 	namespace
 	{
-		Bimap<decltype(GL_VERTEX_SHADER),
-		      ShaderType,
-		      ShaderTypeHash,
-		      ShaderTypeEqual,
+		Bimap<decltype(GL_VERTEX_SHADER), ShaderType,
 		      #ifdef _DEBUG
 		      true
 		      #else
 		      false
 		      #endif
-		> const s_ShaderTypes
+		> const g_ShaderTypes
 		{
 			{GL_VERTEX_SHADER, ShaderType::Vertex},
 			{GL_GEOMETRY_SHADER, ShaderType::Geometry},
@@ -162,12 +157,12 @@ namespace leopph::internal::opengl
 
 	auto TranslateShaderType(ShaderType const type) -> decltype(GL_VERTEX_SHADER)
 	{
-		return s_ShaderTypes.At(type);
+		return g_ShaderTypes.At(type);
 	}
 
 
 	auto TranslateShaderType(decltype(GL_VERTEX_SHADER) const type) -> ShaderType
 	{
-		return s_ShaderTypes.At(type);
+		return g_ShaderTypes.At(type);
 	}
 }

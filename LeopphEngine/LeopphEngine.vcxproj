@@ -241,12 +241,10 @@
     <ClInclude Include="src\util\containers\Bimap.hpp" />
     <ClInclude Include="src\threading\JobSystem.hpp" />
     <ClInclude Include="src\util\equal\PathedEqual.hpp" />
-    <ClInclude Include="src\util\equal\ShaderTypeEqual.hpp" />
     <ClInclude Include="src\util\equal\StringEqual.hpp" />
     <ClInclude Include="src\util\Exit.hpp" />
     <ClInclude Include="src\misc\Frustum.hpp" />
     <ClInclude Include="src\util\hash\PathedHash.hpp" />
-    <ClInclude Include="src\util\hash\ShaderTypeHash.hpp" />
     <ClInclude Include="src\util\hash\StringHash.hpp" />
     <ClInclude Include="src\util\less\PoeloLess.hpp" />
     <ClInclude Include="src\util\less\StringLess.hpp" />
@@ -333,10 +331,8 @@
     <ClCompile Include="src\threading\Worker.cpp" />
     <ClCompile Include="src\timing\TimeImpl.cpp" />
     <ClCompile Include="src\util\api_adapters\GLFWAdapter.cpp" />
-    <ClCompile Include="src\util\equal\ShaderTypeEqual.cpp" />
     <ClCompile Include="src\util\equal\StringEqual.cpp" />
     <ClCompile Include="src\util\Exit.cpp" />
-    <ClCompile Include="src\util\hash\ShaderTypeHash.cpp" />
     <ClCompile Include="src\util\hash\StringHash.cpp" />
     <ClCompile Include="src\util\less\PoeloLess.cpp" />
     <ClCompile Include="src\util\less\StringLess.cpp" />

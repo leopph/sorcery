@@ -37,8 +37,6 @@
     <ClCompile Include="src\rendering\Skybox.cpp" />
     <ClCompile Include="src\rendering\CascadedShadowMap.cpp" />
     <ClCompile Include="src\rendering\SpotShadowMap.cpp" />
-    <ClCompile Include="src\util\hash\ShaderTypeHash.cpp" />
-    <ClCompile Include="src\util\equal\ShaderTypeEqual.cpp" />
     <ClCompile Include="src\rendering\shaders\ShaderFamily.cpp" />
     <ClCompile Include="src\rendering\shaders\ShaderProgram.cpp" />
     <ClCompile Include="src\rendering\CubeShadowMap.cpp" />
@@ -144,8 +142,6 @@
     <ClInclude Include="src\events\SpotShadowEvent.hpp" />
     <ClInclude Include="src\rendering\shaders\ShaderType.hpp" />
     <ClInclude Include="src\util\containers\Bimap.hpp" />
-    <ClInclude Include="src\util\hash\ShaderTypeHash.hpp" />
-    <ClInclude Include="src\util\equal\ShaderTypeEqual.hpp" />
     <ClInclude Include="src\rendering\shaders\ShaderFamily.hpp" />
     <ClInclude Include="src\rendering\shaders\ShaderProgram.hpp" />
     <ClInclude Include="src\rendering\shaders\ShaderStageInfo.hpp" />
@@ -154,7 +150,6 @@
     <ClInclude Include="src\windowing\Window.hpp" />
     <ClInclude Include="src\rendering\RenderBuffer.hpp" />
     <ClInclude Include="src\util\hash\PathedHash.hpp" />
-    <ClInclude Include="src\util\equal\PathedEqual.hpp" />
     <ClInclude Include="src\util\concepts\Pathed.hpp" />
     <ClInclude Include="src\rendering\geometry\Mesh.hpp" />
     <ClInclude Include="src\rendering\geometry\ModelParser.hpp" />
@@ -190,6 +185,7 @@
     <ClInclude Include="src\components\PerspectiveCamera.hpp" />
     <ClInclude Include="src\misc\Frustum.hpp" />
     <ClInclude Include="src\components\OrthographicCamera.hpp" />
+    <ClInclude Include="src\util\equal\PathedEqual.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\cpp.hint" />

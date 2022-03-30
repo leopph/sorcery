@@ -11,29 +11,20 @@
 
 namespace leopph::internal::glfw
 {
-	static Bimap<int,
-	             CursorState,
-	             decltype([](const auto elem)
-	             {
-		             return std::hash<int>{}(static_cast<int>(elem));
-	             }),
-	             decltype([](const auto left, const auto right)
-	             {
-		             return left == right;
-	             }),
+	static Bimap<int, CursorState,
 	             #ifdef _DEBUG
-	             true>
+	             true
 	             #else
-	             false>
-	#endif
-	s_CursorStates
+	             false
+	             #endif
+	> g_CursorStates
 	{
 		{GLFW_CURSOR_NORMAL, CursorState::Shown},
 		{GLFW_CURSOR_HIDDEN, CursorState::Hidden},
 		{GLFW_CURSOR_DISABLED, CursorState::Disabled}
 	};
 
-	static std::unordered_map<int, KeyCode> s_KeyCodes
+	static std::unordered_map<int, KeyCode> g_KeyCodes
 	{
 		{GLFW_KEY_0, KeyCode::Zero},
 		{GLFW_KEY_1, KeyCode::One},
@@ -150,7 +141,7 @@ namespace leopph::internal::glfw
 		{GLFW_MOUSE_BUTTON_8, KeyCode::Mouse8}
 	};
 
-	const std::unordered_map<int, KeyState> s_KeyStates
+	static std::unordered_map<int, KeyState> const g_KeyStates
 	{
 		{GLFW_PRESS, KeyState::Down},
 		{GLFW_REPEAT, KeyState::Held},
@@ -158,26 +149,26 @@ namespace leopph::internal::glfw
 	};
 
 
-	auto GetAbstractCursorState(const int glfwCursorState) -> CursorState
+	auto GetAbstractCursorState(int const glfwCursorState) -> CursorState
 	{
-		return s_CursorStates.At(glfwCursorState);
+		return g_CursorStates.At(glfwCursorState);
 	}
 
 
-	auto GetGlfwCursorState(const CursorState abstractCursorState) -> int
+	auto GetGlfwCursorState(CursorState const abstractCursorState) -> int
 	{
-		return s_CursorStates.At(abstractCursorState);
+		return g_CursorStates.At(abstractCursorState);
 	}
 
 
-	auto GetAbstractKeyCode(const int glfwKey) -> KeyCode
+	auto GetAbstractKeyCode(int const glfwKey) -> KeyCode
 	{
-		return s_KeyCodes.at(glfwKey);
+		return g_KeyCodes.at(glfwKey);
 	}
 
 
-	auto GetAbstractKeyState(const int glfwKeyState) -> KeyState
+	auto GetAbstractKeyState(int const glfwKeyState) -> KeyState
 	{
-		return s_KeyStates.at(glfwKeyState);
+		return g_KeyStates.at(glfwKeyState);
 	}
 }

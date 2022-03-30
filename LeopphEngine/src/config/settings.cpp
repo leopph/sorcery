@@ -10,10 +10,12 @@
 #include <exception>
 #include <fstream>
 #include <json.hpp>
+
+// ReSharper disable All
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #include <Psapi.h>
-
+// ReSharper restore All
 
 namespace leopph
 {
@@ -62,7 +64,7 @@ namespace leopph
 	}
 
 
-	auto Settings::DirShadowResolution(std::span<const std::size_t> cascades) -> void
+	auto Settings::DirShadowResolution(std::span<std::size_t const> cascades) -> void
 	{
 		m_DirLightSettings.Res.assign(cascades.begin(), cascades.end());
 		m_Serialize = true;
@@ -70,7 +72,7 @@ namespace leopph
 	}
 
 
-	auto Settings::SpotShadowResolution(const std::size_t newRes) -> void
+	auto Settings::SpotShadowResolution(std::size_t const newRes) -> void
 	{
 		m_SpotLightSettings.Res = newRes;
 		m_Serialize = true;
@@ -78,7 +80,7 @@ namespace leopph
 	}
 
 
-	auto Settings::PointShadowResolution(const std::size_t newRes) noexcept -> void
+	auto Settings::PointShadowResolution(std::size_t const newRes) noexcept -> void
 	{
 		m_PointLightSettings.Res = newRes;
 		m_Serialize = true;
@@ -92,7 +94,7 @@ namespace leopph
 	}
 
 
-	auto Settings::WindowWidth(const unsigned newWidth) noexcept -> void
+	auto Settings::WindowWidth(unsigned const newWidth) noexcept -> void
 	{
 		m_WindowSettingsCache.Width = newWidth;
 		Window::Instance()->Width(newWidth);
@@ -106,7 +108,7 @@ namespace leopph
 	}
 
 
-	auto Settings::WindowHeight(const unsigned newHeight) noexcept -> void
+	auto Settings::WindowHeight(unsigned const newHeight) noexcept -> void
 	{
 		m_WindowSettingsCache.Height = newHeight;
 		Window::Instance()->Height(newHeight);
@@ -120,7 +122,7 @@ namespace leopph
 	}
 
 
-	auto Settings::RenderMultiplier(const float newMult) noexcept -> void
+	auto Settings::RenderMultiplier(float const newMult) noexcept -> void
 	{
 		m_WindowSettingsCache.RenderMultiplier = newMult;
 		Window::Instance()->RenderMultiplier(newMult);
@@ -134,7 +136,7 @@ namespace leopph
 	}
 
 
-	auto Settings::Fullscreen(const bool newVal) noexcept -> void
+	auto Settings::Fullscreen(bool const newVal) noexcept -> void
 	{
 		m_WindowSettingsCache.Fullscreen = newVal;
 		Window::Instance()->Fullscreen(newVal);
@@ -148,7 +150,7 @@ namespace leopph
 	}
 
 
-	LEOPPHAPI auto Settings::Vsync(const bool newVal) -> void
+	LEOPPHAPI auto Settings::Vsync(bool const newVal) -> void
 	{
 		m_WindowSettingsCache.Vsync = newVal;
 		Window::Instance()->Vsync(newVal);
@@ -191,7 +193,7 @@ namespace leopph
 	{
 		try
 		{
-			const auto json{
+			auto const json{
 				[&]
 				{
 					std::ifstream input{s_FilePath};
@@ -208,7 +210,7 @@ namespace leopph
 			m_RenderingSettings.Pipe = json[JSON_PIPE];
 			m_RenderingSettings.PendingPipe = m_RenderingSettings.Pipe;
 			m_DirLightSettings.Res.clear();
-			for (const auto& res : json[JSON_DIR_SHADOW_RES])
+			for (auto const& res : json[JSON_DIR_SHADOW_RES])
 			{
 				m_DirLightSettings.Res.push_back(res);
 			}
