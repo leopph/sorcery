@@ -62,7 +62,9 @@ namespace leopph::internal
 			static auto SetAmbientData(AmbientLight const& light, ShaderProgram& lightShader) -> void;
 			static auto SetDirectionalData(DirectionalLight const* dirLight, ShaderProgram& shader) -> void;
 			static auto SetSpotData(std::span<SpotLight const* const> spotLights, ShaderProgram& shader) -> void;
+			static auto SetSpotDataIgnoreShadow(std::span<SpotLight const* const> spotLights, ShaderProgram& shader) -> void;
 			static auto SetPointData(std::span<PointLight const* const> pointLights, ShaderProgram& shader) -> void;
+			static auto SetPointDataIgnoreShadow(std::span<PointLight const* const> pointLights, ShaderProgram& shader) -> void;
 			static auto CountShadows(DirectionalLight const* dirLight, std::span<SpotLight const* const> spotLights, std::span<PointLight const* const> pointLights) -> ShadowCount;
 
 		private:

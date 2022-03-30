@@ -382,15 +382,13 @@ namespace leopph::internal
 
 	auto GlDeferredRenderer::RenderTransparent(Matrix4 const& camViewMat, Matrix4 const& camProjMat, std::vector<RenderableData> const& renderables, DirectionalLight const* dirLight, std::vector<SpotLight const*> const& spotLights, std::vector<PointLight const*> const& pointLights) -> void
 	{
-		auto const [dirShadow, spotShadows, pointShadows]{CountShadows(dirLight, spotLights, pointLights)};
-
 		m_ForwardShader.Clear();
 		m_ForwardShader["DIRLIGHT"] = std::to_string(dirLight != nullptr);
-		m_ForwardShader["DIRLIGHT_SHADOW"] = std::to_string(dirShadow);
+		m_ForwardShader["DIRLIGHT_SHADOW"] = std::to_string(false);
 		m_ForwardShader["NUM_SPOTLIGHTS"] = std::to_string(spotLights.size());
-		m_ForwardShader["NUM_SPOTLIGHT_SHADOWS"] = std::to_string(spotShadows);
+		m_ForwardShader["NUM_SPOTLIGHT_SHADOWS"] = std::to_string(0);
 		m_ForwardShader["NUM_POINTLIGHTS"] = std::to_string(pointLights.size());
-		m_ForwardShader["NUM_POINTLIGHT_SHADOWS"] = std::to_string(pointShadows);
+		m_ForwardShader["NUM_POINTLIGHT_SHADOWS"] = std::to_string(0);
 		m_ForwardShader["TRANSPARENT"] = std::to_string(true);
 
 		auto& forwardShader{m_ForwardShader.GetPermutation()};
@@ -400,8 +398,8 @@ namespace leopph::internal
 
 		SetAmbientData(AmbientLight::Instance(), forwardShader);
 		SetDirectionalData(dirLight, forwardShader);
-		SetSpotData(spotLights, forwardShader);
-		SetPointData(pointLights, forwardShader);
+		SetSpotDataIgnoreShadow(spotLights, forwardShader);
+		SetPointDataIgnoreShadow(pointLights, forwardShader);
 
 		forwardShader.Use();
 

@@ -170,6 +170,24 @@ namespace leopph::internal
 	}
 
 
+	auto GlRenderer::SetSpotDataIgnoreShadow(std::span<SpotLight const* const> spotLights, ShaderProgram& shader) -> void
+	{
+		for (auto i = 0; i < spotLights.size(); i++)
+		{
+			shader.SetUniform("u_SpotLightsNoShadow[" + std::to_string(i) + "].position", spotLights[i]->Owner()->Transform()->Position());
+			shader.SetUniform("u_SpotLightsNoShadow[" + std::to_string(i) + "].direction", spotLights[i]->Owner()->Transform()->Forward());
+			shader.SetUniform("u_SpotLightsNoShadow[" + std::to_string(i) + "].diffuseColor", spotLights[i]->Diffuse());
+			shader.SetUniform("u_SpotLightsNoShadow[" + std::to_string(i) + "].specularColor", spotLights[i]->Specular());
+			shader.SetUniform("u_SpotLightsNoShadow[" + std::to_string(i) + "].constant", spotLights[i]->Constant());
+			shader.SetUniform("u_SpotLightsNoShadow[" + std::to_string(i) + "].linear", spotLights[i]->Linear());
+			shader.SetUniform("u_SpotLightsNoShadow[" + std::to_string(i) + "].quadratic", spotLights[i]->Quadratic());
+			shader.SetUniform("u_SpotLightsNoShadow[" + std::to_string(i) + "].range", spotLights[i]->Range());
+			shader.SetUniform("u_SpotLightsNoShadow[" + std::to_string(i) + "]innerAngleCosine", math::Cos(math::ToRadians(spotLights[i]->InnerAngle())));
+			shader.SetUniform("u_SpotLightsNoShadow[" + std::to_string(i) + "]outerAngleCosine", math::Cos(math::ToRadians(spotLights[i]->OuterAngle())));
+		}
+	}
+
+
 	auto GlRenderer::SetPointData(std::span<PointLight const* const> const pointLights, ShaderProgram& shader) -> void
 	{
 		constexpr auto shadowArrayName{"u_PointLightsShadow["};
@@ -202,6 +220,21 @@ namespace leopph::internal
 			shader.SetUniform(arrayPrefix + "linear", pointLight->Linear());
 			shader.SetUniform(arrayPrefix + "quadratic", pointLight->Quadratic());
 			shader.SetUniform(arrayPrefix + "range", pointLight->Range());
+		}
+	}
+
+
+	auto GlRenderer::SetPointDataIgnoreShadow(std::span<PointLight const* const> pointLights, ShaderProgram& shader) -> void
+	{
+		for (auto i = 0; i < pointLights.size(); i++)
+		{
+			shader.SetUniform("u_PointLightsNoShadow[" + std::to_string(i) + "].position", pointLights[i]->Owner()->Transform()->Position());
+			shader.SetUniform("u_PointLightsNoShadow[" + std::to_string(i) + "].diffuseColor", pointLights[i]->Diffuse());
+			shader.SetUniform("u_PointLightsNoShadow[" + std::to_string(i) + "].specularColor", pointLights[i]->Specular());
+			shader.SetUniform("u_PointLightsNoShadow[" + std::to_string(i) + "].constant", pointLights[i]->Constant());
+			shader.SetUniform("u_PointLightsNoShadow[" + std::to_string(i) + "].linear", pointLights[i]->Linear());
+			shader.SetUniform("u_PointLightsNoShadow[" + std::to_string(i) + "].quadratic", pointLights[i]->Quadratic());
+			shader.SetUniform("u_PointLightsNoShadow[" + std::to_string(i) + "].range", pointLights[i]->Range());
 		}
 	}
 
