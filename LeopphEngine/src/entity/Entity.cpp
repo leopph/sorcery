@@ -200,11 +200,11 @@ namespace leopph
 
 	auto Entity::GenerateUnusedName(std::string const& original) -> std::string
 	{
-		auto newName = original + "0";
+		auto newName = original + '0';
 
 		for (std::size_t i = 1; !NameIsUnused(newName); i++)
 		{
-			newName.replace(newName.size() - 1, 1, std::to_string(i));
+			newName = original + std::to_string(i);
 		}
 
 		return newName;
