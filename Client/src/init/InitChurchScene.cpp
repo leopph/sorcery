@@ -59,7 +59,7 @@ namespace demo
 		pLight->Constant(0.5f);
 		pLight->Linear(0.2f);
 		pLight->Quadratic(0.07f);
-		pLight->CastsShadow(false);
+		pLight->CastsShadow(true);
 
 		pLightEntity->CreateAndAttachComponent<demo::Flicker>(pLight, 1.2f, 0.05f);
 
