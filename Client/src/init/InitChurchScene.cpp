@@ -61,7 +61,7 @@ namespace demo
 		pLight->Quadratic(0.07f);
 		pLight->CastsShadow(true);
 
-		pLightEntity->CreateAndAttachComponent<demo::Flicker>(pLight, 1.2f, 0.05f);
+		pLightEntity->CreateAndAttachComponent<Flicker>(pLight, 0.75f, 3.5f, 0.05f, 0.6f);
 
 		auto const church = new Entity{"church"};
 		church->Transform()->Parent(group);
