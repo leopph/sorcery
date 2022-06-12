@@ -15,6 +15,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Client", "Client\Client.vcx
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ShaderParser", "ShaderParser\ShaderParser.vcxproj", "{1422D73A-FE9C-4FC9-BC03-DC863C0D2B28}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LeoppverterLib", "LeoppverterLib\LeoppverterLib.vcxproj", "{23E4C965-BA88-472D-97F9-C9A2C07FC076}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug_Asan|x64 = Debug_Asan|x64
@@ -55,6 +57,18 @@ Global
 		{1422D73A-FE9C-4FC9-BC03-DC863C0D2B28}.Release|x64.ActiveCfg = Release|x64
 		{1422D73A-FE9C-4FC9-BC03-DC863C0D2B28}.Release|x64.Build.0 = Release|x64
 		{1422D73A-FE9C-4FC9-BC03-DC863C0D2B28}.Release|x86.ActiveCfg = Release|x64
+		{23E4C965-BA88-472D-97F9-C9A2C07FC076}.Debug_Asan|x64.ActiveCfg = Debug|x64
+		{23E4C965-BA88-472D-97F9-C9A2C07FC076}.Debug_Asan|x64.Build.0 = Debug|x64
+		{23E4C965-BA88-472D-97F9-C9A2C07FC076}.Debug_Asan|x86.ActiveCfg = Debug|Win32
+		{23E4C965-BA88-472D-97F9-C9A2C07FC076}.Debug_Asan|x86.Build.0 = Debug|Win32
+		{23E4C965-BA88-472D-97F9-C9A2C07FC076}.Debug|x64.ActiveCfg = Debug|x64
+		{23E4C965-BA88-472D-97F9-C9A2C07FC076}.Debug|x64.Build.0 = Debug|x64
+		{23E4C965-BA88-472D-97F9-C9A2C07FC076}.Debug|x86.ActiveCfg = Debug|Win32
+		{23E4C965-BA88-472D-97F9-C9A2C07FC076}.Debug|x86.Build.0 = Debug|Win32
+		{23E4C965-BA88-472D-97F9-C9A2C07FC076}.Release|x64.ActiveCfg = Release|x64
+		{23E4C965-BA88-472D-97F9-C9A2C07FC076}.Release|x64.Build.0 = Release|x64
+		{23E4C965-BA88-472D-97F9-C9A2C07FC076}.Release|x86.ActiveCfg = Release|Win32
+		{23E4C965-BA88-472D-97F9-C9A2C07FC076}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
