@@ -4,4 +4,5 @@ int
 out
 LeopphEngine/vendor/assimp
 LeopphEngine/vendor/spdlog
-LeopphverterLib/vendor/assimp
+LeopphverterLib/vendor/
+LeoppUtils/vendor
