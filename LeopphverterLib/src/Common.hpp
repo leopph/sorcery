@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../../LeopphEngine/src/math/Vector.hpp"
+
 #include <cstddef>
 #include <string>
 #include <vector>
@@ -9,8 +11,8 @@ namespace leopph::convert
 {
 	struct Material
 	{
-		float DiffuseClor[3]{1, 1, 1};
-		float SpecularColor[3]{0, 0, 0};
+		Vector3 DiffuseClor{};
+		Vector3 SpecularColor{};
 		float Gloss{0};
 		float Opacity{1};
 		bool TwoSided{false};
@@ -19,12 +21,14 @@ namespace leopph::convert
 		std::string OpacityMap;
 	};
 
+
 	struct Vertex
 	{
-		float Position[3]{0, 0, 0};
-		float Normal[3]{1, 0, 0};
-		float TexCoord[2]{0, 0};
+		Vector3 Position{};
+		Vector3 Normal{1, 0, 0};
+		Vector2 TexCoord{};
 	};
+
 
 	struct Mesh
 	{
@@ -32,6 +36,7 @@ namespace leopph::convert
 		std::vector<unsigned> Indices;
 		std::size_t Material;
 	};
+
 
 	struct Object
 	{
