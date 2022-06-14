@@ -72,28 +72,28 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>$(SolutionDir)out\$(Configuration)_$(Platform)\</OutDir>
-    <IntDir>$(SolutionDir)int\$(ProjectName)\$(Configuration)_$(Platform)\</IntDir>
+    <OutDir>$(SolutionDir)Engine\bin\$(Configuration)_$(Platform)\</OutDir>
+    <IntDir>$(SolutionDir)Engine\int\$(ProjectName)\$(Configuration)_$(Platform)\</IntDir>
     <TargetName>leopphverter</TargetName>
-    <LibraryPath>$(ProjectDir)vendor\assimp\lib\$(Configuration)\;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
+    <LibraryPath>$(SolutionDir)Engine\bin\$(Configuration)_$(Platform)\;$(SolutionDir)Engine\deps\vendor\assimp\contrib\zlib\$(Configuration)\;$(SolutionDir)Engine\deps\vendor\assimp\lib\$(Configuration)\;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>$(SolutionDir)out\$(Configuration)_$(Platform)\</OutDir>
-    <IntDir>$(SolutionDir)int\$(ProjectName)\$(Configuration)_$(Platform)\</IntDir>
+    <OutDir>$(SolutionDir)Engine\bin\$(Configuration)_$(Platform)\</OutDir>
+    <IntDir>$(SolutionDir)Engine\int\$(ProjectName)\$(Configuration)_$(Platform)\</IntDir>
     <TargetName>leopphverter</TargetName>
-    <LibraryPath>$(ProjectDir)vendor\assimp\contrib\zlib\$(Configuration)\;$(ProjectDir)vendor\assimp\lib\$(Configuration)\;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
+    <LibraryPath>$(SolutionDir)Engine\bin\$(Configuration)_$(Platform)\;$(SolutionDir)Engine\deps\vendor\assimp\contrib\zlib\$(Configuration)\;$(SolutionDir)Engine\deps\vendor\assimp\lib\$(Configuration)\;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>$(SolutionDir)out\$(Configuration)_$(Platform)\</OutDir>
-    <IntDir>$(SolutionDir)int\$(ProjectName)\$(Configuration)_$(Platform)\</IntDir>
+    <OutDir>$(SolutionDir)Engine\bin\$(Configuration)_$(Platform)\</OutDir>
+    <IntDir>$(SolutionDir)Engine\int\$(ProjectName)\$(Configuration)_$(Platform)\</IntDir>
     <TargetName>leopphverter</TargetName>
-    <LibraryPath>$(ProjectDir)vendor\assimp\lib\$(Configuration)\;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
+    <LibraryPath>$(SolutionDir)Engine\bin\$(Configuration)_$(Platform)\;$(SolutionDir)Engine\deps\vendor\assimp\contrib\zlib\$(Configuration)\;$(SolutionDir)Engine\deps\vendor\assimp\lib\$(Configuration)\;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>$(SolutionDir)out\$(Configuration)_$(Platform)\</OutDir>
-    <IntDir>$(SolutionDir)int\$(ProjectName)\$(Configuration)_$(Platform)\</IntDir>
+    <OutDir>$(SolutionDir)Engine\bin\$(Configuration)_$(Platform)\</OutDir>
+    <IntDir>$(SolutionDir)Engine\int\$(ProjectName)\$(Configuration)_$(Platform)\</IntDir>
     <TargetName>leopphverter</TargetName>
-    <LibraryPath>$(ProjectDir)vendor\assimp\contrib\zlib\$(Configuration)\;$(ProjectDir)vendor\assimp\lib\$(Configuration)\;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
+    <LibraryPath>$(SolutionDir)Engine\bin\$(Configuration)_$(Platform)\;$(SolutionDir)Engine\deps\vendor\assimp\contrib\zlib\$(Configuration)\;$(SolutionDir)Engine\deps\vendor\assimp\lib\$(Configuration)\;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -107,7 +107,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>zlibstaticd.lib;assimp.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>leopphutils.lib;zlibstaticd.lib;assimp.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -126,7 +126,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>zlibstatic.lib;assimp.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>leopphutils.lib;zlibstatic.lib;assimp.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -141,7 +141,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>zlibstaticd.lib;assimp.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>leopphutils.lib;zlibstaticd.lib;assimp.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -160,7 +160,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>zlibstatic.lib;assimp.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>leopphutils.lib;zlibstatic.lib;assimp.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

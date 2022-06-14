@@ -1,10 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
-    <ProjectConfiguration Include="Debug_Asan|x64">
-      <Configuration>Debug_Asan</Configuration>
-      <Platform>x64</Platform>
-    </ProjectConfiguration>
     <ProjectConfiguration Include="Debug|x64">
       <Configuration>Debug</Configuration>
       <Platform>x64</Platform>
@@ -28,13 +24,6 @@
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Asan|x64'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
-    <CharacterSet>Unicode</CharacterSet>
-    <EnableASAN>true</EnableASAN>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
@@ -50,32 +39,22 @@
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Asan|x64'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>$(SolutionDir)out\$(Configuration)_$(Platform)\</OutDir>
-    <IntDir>$(SolutionDir)int\$(ProjectName)\$(Configuration)_$(Platform)\</IntDir>
+    <OutDir>$(SolutionDir)Engine\bin\$(Configuration)_$(Platform)\</OutDir>
+    <IntDir>$(SolutionDir)Engine\int\$(ProjectName)\$(Configuration)_$(Platform)\</IntDir>
     <TargetName>leopph</TargetName>
-    <LibraryPath>$(ProjectDir)\vendor\assimp\lib\$(Configuration)\;$(ProjectDir)\vendor\assimp\contrib\zlib\$(Configuration)\;$(ProjectDir)vendor\glfw\src\$(Configuration)\;$(ProjectDir)vendor\spdlog\$(Configuration)\;$(LibraryPath)</LibraryPath>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Asan|x64'">
-    <LinkIncremental>false</LinkIncremental>
-    <OutDir>$(SolutionDir)out\$(Configuration)_$(Platform)\</OutDir>
-    <IntDir>$(SolutionDir)int\$(ProjectName)\$(Configuration)_$(Platform)\</IntDir>
-    <TargetName>leopph</TargetName>
-    <LibraryPath>$(ProjectDir)vendor\assimp\lib\Debug\;$(ProjectDir)\vendor\assimp\contrib\zlib\Debug\;$(ProjectDir)vendor\glfw\src\Debug\;$(ProjectDir)vendor\spdlog\Debug\;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)Engine\bin\;$(SolutionDir)Engine\deps\vendor\glfw\src\$(Configuration)\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>$(SolutionDir)out\$(Configuration)_$(Platform)\</OutDir>
-    <IntDir>$(SolutionDir)int\$(ProjectName)\$(Configuration)_$(Platform)\</IntDir>
+    <OutDir>$(SolutionDir)Engine\bin\$(Configuration)_$(Platform)\</OutDir>
+    <IntDir>$(SolutionDir)Engine\int\$(ProjectName)\$(Configuration)_$(Platform)\</IntDir>
     <TargetName>leopph</TargetName>
-    <LibraryPath>$(ProjectDir)\vendor\assimp\lib\$(Configuration)\;$(ProjectDir)\vendor\assimp\contrib\zlib\$(Configuration)\;$(ProjectDir)vendor\glfw\src\$(Configuration)\;$(ProjectDir)vendor\spdlog\$(Configuration)\;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)Engine\bin\;$(SolutionDir)Engine\deps\vendor\glfw\src\$(Configuration)\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -89,37 +68,8 @@
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>assimp.lib;zlibstaticd.lib;glfw3.lib;spdlogd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>leopphutils.lib;leopphverter.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-    </Link>
-    <PostBuildEvent />
-    <PreBuildEvent />
-    <PreLinkEvent />
-    <CustomBuildStep />
-    <CustomBuild>
-      <Command>$(SolutionDir)out\ShaderParser\$(Configuration)_$(Platform)\ShaderParser.exe %(Fullpath) $(IntDir)%(Filename).cpp leopph::internal::ShaderFamily::%(Filename)Src $(ProjectDir)src\rendering\shaders\ShaderFamily.hpp</Command>
-      <Message>Transpiling %(Filename)%(Extension)...</Message>
-      <Outputs>$(IntDir)%(Filename).cpp</Outputs>
-      <AdditionalInputs>$(ProjectDir)src\rendering\shaders\ShaderFamily.hpp</AdditionalInputs>
-      <OutputItemType>ClCompile</OutputItemType>
-    </CustomBuild>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Asan|x64'">
-    <ClCompile>
-      <WarningLevel>Level4</WarningLevel>
-      <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>SPDLOG_COMPILED_LIB;ENGINE_BUILD;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)\vendor\assimp\include;$(ProjectDir)vendor\gl3w\include;$(ProjectDir)vendor\glfw\include;$(ProjectDir)vendor\nlohmann_json;$(ProjectDir)vendor\spdlog\include;$(ProjectDir)vendor\stb_image;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-    </ClCompile>
-    <Link>
-      <SubSystem>Console</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>assimp.lib;zlibstaticd.lib;glfw3.lib;spdlogd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent />
     <PreBuildEvent />
@@ -150,7 +100,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>assimp.lib;zlibstatic.lib;glfw3.lib;spdlog.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>leopphutils.lib;leopphverter.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
     </Link>
     <PostBuildEvent />
