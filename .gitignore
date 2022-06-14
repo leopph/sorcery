@@ -1,8 +1,5 @@
 .vs
 *.user
-int
-out
-LeopphEngine/vendor/assimp
-LeopphEngine/vendor/spdlog
-LeopphverterLib/vendor/
-LeoppUtils/vendor
+Engine/bin
+Engine/int
+Engine/deps/vendor

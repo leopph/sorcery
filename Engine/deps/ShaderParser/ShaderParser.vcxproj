@@ -17,8 +17,8 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{ff07732f-0f49-4b4d-9444-0b6c503ae511}</ProjectGuid>
-    <RootNamespace>Client</RootNamespace>
+    <ProjectGuid>{1422d73a-fe9c-4fc9-bc03-dc863c0d2b28}</ProjectGuid>
+    <RootNamespace>ShaderParser</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -42,19 +42,6 @@
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <LocalDebuggerEnvironment>PATH=%PATH%;$(SolutionDir)out\LeopphEngine\$(Configuration)_$(Platform)\</LocalDebuggerEnvironment>
-    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Asan|x64'" Label="Configuration">
-    <LocalDebuggerEnvironment>PATH=%PATH%;$(VC_ExecutablePath_x64);$(SolutionDir)out\LeopphEngine\$(Configuration)_$(Platform)\
-ASAN_SYMBOLIZER_PATH=$(VC_ExecutablePath_x64)</LocalDebuggerEnvironment>
-    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <LocalDebuggerEnvironment>PATH=%PATH%;$(SolutionDir)out\LeopphEngine\$(Configuration)_$(Platform)\</LocalDebuggerEnvironment>
-    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
-  </PropertyGroup>
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
   <ImportGroup Label="Shared">
@@ -70,53 +57,47 @@ ASAN_SYMBOLIZER_PATH=$(VC_ExecutablePath_x64)</LocalDebuggerEnvironment>
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>$(SolutionDir)out\$(Configuration)_$(Platform)\</OutDir>
+    <LinkIncremental>true</LinkIncremental>
     <IntDir>$(SolutionDir)int\$(ProjectName)\$(Configuration)_$(Platform)\</IntDir>
-    <TargetName>demo</TargetName>
+    <OutDir>$(SolutionDir)out\$(Configuration)_$(Platform)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Asan|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>$(SolutionDir)out\$(Configuration)_$(Platform)\</OutDir>
     <IntDir>$(SolutionDir)int\$(ProjectName)\$(Configuration)_$(Platform)\</IntDir>
-    <TargetName>demo</TargetName>
+    <OutDir>$(SolutionDir)out\$(Configuration)_$(Platform)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>$(SolutionDir)out\$(Configuration)_$(Platform)\</OutDir>
     <IntDir>$(SolutionDir)int\$(ProjectName)\$(Configuration)_$(Platform)\</IntDir>
-    <TargetName>demo</TargetName>
+    <OutDir>$(SolutionDir)out\$(Configuration)_$(Platform)\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <WarningLevel>Level4</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <AdditionalIncludeDirectories>$(SolutionDir)LeopphEngine\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
-    <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Asan|x64'">
     <ClCompile>
       <WarningLevel>Level4</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <AdditionalIncludeDirectories>$(SolutionDir)LeopphEngine\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
-    <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -124,11 +105,10 @@ ASAN_SYMBOLIZER_PATH=$(VC_ExecutablePath_x64)</LocalDebuggerEnvironment>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <AdditionalIncludeDirectories>$(SolutionDir)LeopphEngine\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -136,42 +116,13 @@ ASAN_SYMBOLIZER_PATH=$(VC_ExecutablePath_x64)</LocalDebuggerEnvironment>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
-    <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\AnimatedSprite.cpp" />
-    <ClCompile Include="src\Parallaxer.cpp" />
-    <ClCompile Include="src\controllers\CharacterController2D.cpp" />
-    <ClCompile Include="src\controllers\FirstPersonCameraController.cpp" />
-    <ClCompile Include="src\Exiter.cpp" />
-    <ClCompile Include="src\Flicker.cpp" />
-    <ClCompile Include="src\controllers\Follow2DCameraController.cpp" />
-    <ClCompile Include="src\FrameRateAnalyzer.cpp" />
-    <ClCompile Include="src\init\InitSpriteScene.cpp" />
-    <ClCompile Include="src\Tiler.cpp" />
-    <ClCompile Include="src\WindowController.cpp" />
-    <ClCompile Include="src\init\Init.cpp" />
-    <ClCompile Include="src\SceneSwitcher.cpp" />
+    <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\parse_file.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\LeopphEngine\LeopphEngine.vcxproj">
-      <Project>{03803a6b-9f79-4245-936d-059a695aa449}</Project>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="src\AnimatedSprite.hpp" />
-    <ClInclude Include="src\Parallaxer.hpp" />
-    <ClInclude Include="src\controllers\CharacterController2D.hpp" />
-    <ClInclude Include="src\controllers\FirstPersonCameraController.hpp" />
-    <ClInclude Include="src\Exiter.hpp" />
-    <ClInclude Include="src\Flicker.hpp" />
-    <ClInclude Include="src\controllers\Follow2DCameraController.hpp" />
-    <ClInclude Include="src\FrameRateAnalyzer.hpp" />
-    <ClInclude Include="src\Tiler.hpp" />
-    <ClInclude Include="src\WindowController.hpp" />
-    <ClInclude Include="src\init\Init.hpp" />
-    <ClCompile Include="src\init\InitChurchScene.cpp" />
-    <ClInclude Include="src\SceneSwitcher.hpp" />
+    <ClInclude Include="src\parse_file.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

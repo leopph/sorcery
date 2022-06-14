@@ -11,22 +11,23 @@
 ::for /f "delims=" %%p in ('"%vswhere%" -property installationPath') do (
 ::    call "%%p"\Common7\Tools\VsMSBuildCmd.bat
 ::)
+
 set CONFIG_DEBUG=Debug
 set CONFIG_RELEASE=Release
 set CMAKE_BUILD_CONFIG=cmake --build . --config
 
-git submodule update --init --remote LeopphEngine/vendor/gl3w
-git submodule update --init --remote LeopphEngine/vendor/glfw
+git submodule update --init Engine/deps/vendor/gl3w
+git submodule update --init Engine/deps/vendor/glfw
 
-cd LeopphEngine\vendor\physx
+cd Engine\deps\vendor\physx
 :: call :PhysX
-cd ../assimp
+cd ..\assimp
 call :Assimp
-cd ../gl3w
+cd ..\gl3w
 call :Gl3w
-cd ../glfw
+cd ..\glfw
 call :GLFW
-cd ../spdlog
+cd ..\spdlog
 call :Spdlog
 exit /B 0
 

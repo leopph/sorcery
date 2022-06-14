@@ -1,14 +1,7 @@
 [submodule "glfw"]
-	path = LeopphEngine/vendor/glfw
+	path = Engine/deps/vendor/glfw
 	url = https://github.com/glfw/glfw.git
 	branch = latest
-	ignore = dirty
-[submodule "physx"]
-	path = LeopphEngine/vendor/physx
-	url = https://github.com/leopph/PhysX.git
-	branch = VC17
-	ignore = dirty
 [submodule "gl3w"]
-	path = LeopphEngine/vendor/gl3w
+	path = Engine/deps/vendor/gl3w
 	url = https://github.com/skaslev/gl3w.git
-	ignore = dirty
