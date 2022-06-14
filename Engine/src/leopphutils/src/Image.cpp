@@ -1,6 +1,6 @@
 #include "Image.hpp"
 
-#include "../util/Logger.hpp"
+#include "Logger.hpp"
 
 #include <stb_image.h>
 #include <stdexcept>

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../LeopphEngine/src/math/Vector.hpp"
+#include "Vector.hpp"
 
 #include <cstddef>
 #include <string>

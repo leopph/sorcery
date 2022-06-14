@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../api/LeopphApi.hpp"
-#include "../math/Vector.hpp"
+#include "LeopphApi.hpp"
+#include "Vector.hpp"
 
 
 namespace leopph

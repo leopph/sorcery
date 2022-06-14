@@ -1,7 +1,6 @@
-#include "Import.hpp"
-
-#include "../Common.hpp"
-#include "../../../LeopphEngine/src/math/Matrix.hpp"
+#include "LeopphverterCommon.hpp"
+#include "LeopphverterImport.hpp"
+#include "Matrix.hpp"
 
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>

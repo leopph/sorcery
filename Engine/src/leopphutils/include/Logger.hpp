@@ -1,11 +1,19 @@
 #pragma once
 
-#include "../util/containers/Bimap.hpp"
-
-#include <spdlog/spdlog.h>
+#include "Bimap.hpp"
 
 #include <memory>
 #include <string_view>
+
+namespace spdlog
+{
+	class logger;
+
+	namespace level
+	{
+		enum level_enum : int;
+	}
+}
 
 
 namespace leopph::internal

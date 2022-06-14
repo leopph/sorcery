@@ -19,8 +19,9 @@ set CMAKE_BUILD_CONFIG=cmake --build . --config
 git submodule update --init Engine/deps/vendor/gl3w
 git submodule update --init Engine/deps/vendor/glfw
 
-cd Engine\deps\vendor\physx
-:: call :PhysX
+::cd Engine\deps\vendor\physx
+:: :: call :PhysX
+cd Engine\deps\vendor\assimp
 cd ..\assimp
 call :Assimp
 cd ..\gl3w

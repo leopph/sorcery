@@ -101,7 +101,7 @@
       <PreprocessorDefinitions>SPDLOG_COMPILED_LIB;ENGINE_BUILD;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)vendor\spdlog\include\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Engine\deps\vendor\stb_image\;$(SolutionDir)Engine\deps\vendor\spdlog\include\;$(SolutionDir)Engine\src\leopphutils\include\;$(SolutionDir)Engine\include\</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -118,7 +118,7 @@
       <PreprocessorDefinitions>SPDLOG_COMPILED_LIB;ENGINE_BUILD;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)vendor\spdlog\include\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Engine\deps\vendor\stb_image\;$(SolutionDir)Engine\deps\vendor\spdlog\include\;$(SolutionDir)Engine\src\leopphutils\include\;$(SolutionDir)Engine\include\</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -130,12 +130,13 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level4</WarningLevel>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>SPDLOG_COMPILED_LIB;ENGINE_BUILD;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)vendor\spdlog\include\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Engine\deps\vendor\stb_image\;$(SolutionDir)Engine\deps\vendor\spdlog\include\;$(SolutionDir)Engine\src\leopphutils\include\;$(SolutionDir)Engine\include\</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -145,14 +146,15 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level4</WarningLevel>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>SPDLOG_COMPILED_LIB;ENGINE_BUILD;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)vendor\spdlog\include\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Engine\deps\vendor\stb_image\;$(SolutionDir)Engine\deps\vendor\spdlog\include\;$(SolutionDir)Engine\src\leopphutils\include\;$(SolutionDir)Engine\include\</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -163,20 +165,24 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="include\LeopphUtils.hpp" />
-    <ClInclude Include="src\api\LeopphApi.hpp" />
-    <ClInclude Include="src\containers\ArrayQueue.hpp" />
-    <ClInclude Include="src\containers\Bimap.hpp" />
-    <ClInclude Include="src\logging\Logger.hpp" />
-    <ClInclude Include="src\math\Math.hpp" />
-    <ClInclude Include="src\math\Matrix.hpp" />
-    <ClInclude Include="src\math\Quaternion.hpp" />
-    <ClInclude Include="src\math\Vector.hpp" />
+    <ClInclude Include="..\..\src\leopphutils\include\ArrayQueue.hpp" />
+    <ClInclude Include="..\..\src\leopphutils\include\Bimap.hpp" />
+    <ClInclude Include="..\..\src\leopphutils\include\Color.hpp" />
+    <ClInclude Include="..\..\src\leopphutils\include\Image.hpp" />
+    <ClInclude Include="..\..\src\leopphutils\include\LeopphApi.hpp" />
+    <ClInclude Include="..\..\src\leopphutils\include\Logger.hpp" />
+    <ClInclude Include="..\..\src\leopphutils\include\Math.hpp" />
+    <ClInclude Include="..\..\src\leopphutils\include\Matrix.hpp" />
+    <ClInclude Include="..\..\src\leopphutils\include\Quaternion.hpp" />
+    <ClInclude Include="..\..\src\leopphutils\include\Vector.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\logging\Logger.cpp" />
-    <ClCompile Include="src\math\Math.cpp" />
-    <ClCompile Include="src\math\Quaternion.cpp" />
+    <ClCompile Include="..\..\deps\vendor\stb_image\stb_image.cpp" />
+    <ClCompile Include="..\..\src\leopphutils\src\Color.cpp" />
+    <ClCompile Include="..\..\src\leopphutils\src\Image.cpp" />
+    <ClCompile Include="..\..\src\leopphutils\src\Logger.cpp" />
+    <ClCompile Include="..\..\src\leopphutils\src\Math.cpp" />
+    <ClCompile Include="..\..\src\leopphutils\src\Quaternion.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

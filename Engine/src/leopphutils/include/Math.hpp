@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../api/LeopphApi.hpp"
+#include "LeopphApi.hpp"
 
 
 namespace leopph

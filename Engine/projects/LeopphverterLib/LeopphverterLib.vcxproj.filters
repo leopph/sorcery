@@ -15,18 +15,15 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\Leopphverter.hpp">
+    <ClInclude Include="..\..\src\leopphverterlib\include\LeopphverterCommon.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\import\Import.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Common.hpp">
+    <ClInclude Include="..\..\src\leopphverterlib\include\LeopphverterImport.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\import\Import.cpp">
+    <ClCompile Include="..\..\src\leopphverterlib\src\Import.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

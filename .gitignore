@@ -3,3 +3,5 @@
 Engine/bin
 Engine/int
 Engine/deps/vendor
+Client/bin
+Client/int

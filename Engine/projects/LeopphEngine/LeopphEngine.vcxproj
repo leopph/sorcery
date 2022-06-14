@@ -63,7 +63,7 @@
       <PreprocessorDefinitions>SPDLOG_COMPILED_LIB;ENGINE_BUILD;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)\vendor\assimp\include;$(ProjectDir)vendor\gl3w\include;$(ProjectDir)vendor\glfw\include;$(ProjectDir)vendor\nlohmann_json;$(ProjectDir)vendor\spdlog\include;$(ProjectDir)vendor\stb_image;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Engine\deps\vendor\gl3w\include;$(SolutionDir)Engine\deps\vendor\glfw\include;$(SolutionDir)Engine\deps\vendor\nlohmann_json;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -92,7 +92,7 @@
       <PreprocessorDefinitions>SPDLOG_COMPILED_LIB;ENGINE_BUILD;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)\vendor\assimp\include;$(ProjectDir)vendor\gl3w\include;$(ProjectDir)vendor\glfw\include;$(ProjectDir)vendor\nlohmann_json;$(ProjectDir)vendor\spdlog\include;$(ProjectDir)vendor\stb_image;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Engine\deps\vendor\gl3w\include;$(SolutionDir)Engine\deps\vendor\glfw\include;$(SolutionDir)Engine\deps\vendor\nlohmann_json;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>

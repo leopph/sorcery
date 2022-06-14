@@ -1,8 +1,8 @@
 #pragma once
 
+#include "LeopphApi.hpp"
 #include "Matrix.hpp"
 #include "Vector.hpp"
-#include "../api/LeopphApi.hpp"
 
 #include <ostream>
 
@@ -19,10 +19,10 @@ namespace leopph
 			// Create a Quaternion that rotates 'angleDegrees' amount around the 'axis' axis.
 			// 'Axis' does not need to be a unit vector.
 			// The Quaternion will have a norm of 1.
-			LEOPPHAPI explicit Quaternion(const Vector3& axis, float angleDegrees);
+			LEOPPHAPI explicit Quaternion(Vector3 const& axis, float angleDegrees);
 
-			constexpr Quaternion(const Quaternion& other) = default;
-			constexpr auto operator=(const Quaternion& other) -> Quaternion& = default;
+			constexpr Quaternion(Quaternion const& other) = default;
+			constexpr auto operator=(Quaternion const& other) -> Quaternion& = default;
 
 			constexpr Quaternion(Quaternion&& other) = default;
 			constexpr auto operator=(Quaternion&& other) -> Quaternion& = default;
@@ -82,7 +82,7 @@ namespace leopph
 			// It is assumed that this Quaternion has a norm of 1. If not so, it must be normalized beforehand.
 			// Quaternions other than unit ones will produce invalid values.
 			template<class T>
-			[[nodiscard]] constexpr auto Rotate(const internal::Vector<T, 3>& vec) const noexcept;
+			[[nodiscard]] constexpr auto Rotate(internal::Vector<T, 3> const& vec) const noexcept;
 
 		private:
 			float m_W;
@@ -94,7 +94,7 @@ namespace leopph
 
 	// Definitions
 
-	constexpr leopph::Quaternion::Quaternion(const float w, const float x, const float y, const float z) :
+	constexpr leopph::Quaternion::Quaternion(float const w, float const x, float const y, float const z) :
 		m_W{w},
 		m_X{x},
 		m_Y{y},
@@ -126,25 +126,25 @@ namespace leopph
 	}
 
 
-	constexpr auto Quaternion::W(const float w) noexcept
+	constexpr auto Quaternion::W(float const w) noexcept
 	{
 		m_W = w;
 	}
 
 
-	constexpr auto Quaternion::X(const float x) noexcept
+	constexpr auto Quaternion::X(float const x) noexcept
 	{
 		m_X = x;
 	}
 
 
-	constexpr auto Quaternion::Y(const float y) noexcept
+	constexpr auto Quaternion::Y(float const y) noexcept
 	{
 		m_Y = y;
 	}
 
 
-	constexpr auto Quaternion::Z(const float z) noexcept
+	constexpr auto Quaternion::Z(float const z) noexcept
 	{
 		m_Z = z;
 	}
@@ -157,15 +157,15 @@ namespace leopph
 
 
 	template<class T>
-	constexpr auto Quaternion::Rotate(const internal::Vector<T, 3>& vec) const noexcept
+	constexpr auto Quaternion::Rotate(internal::Vector<T, 3> const& vec) const noexcept
 	{
-		const auto retQuat{*this * Quaternion{0, vec[0], vec[1], vec[2]} * Conjugate()};
+		auto const retQuat{*this * Quaternion{0, vec[0], vec[1], vec[2]} * Conjugate()};
 		return internal::Vector<T, 3>{retQuat.m_X, retQuat.m_Y, retQuat.m_Z};
 	}
 
 
 	// Returns the Hamilton product of the input Quaternions.
-	[[nodiscard]] constexpr auto operator*(const Quaternion& left, const Quaternion& right) noexcept
+	[[nodiscard]] constexpr auto operator*(Quaternion const& left, Quaternion const& right) noexcept
 	{
 		return Quaternion
 		{
@@ -179,11 +179,12 @@ namespace leopph
 
 	// Sets the left operand to the Hamilton product of the input Quaternions.
 	// Returns a reference to the left operand.
-	constexpr auto operator*=(Quaternion& left, const Quaternion& right) noexcept -> auto&
+	constexpr auto operator*=(Quaternion& left, Quaternion const& right) noexcept -> auto&
 	{
 		return left = left * right;
 	}
 
+
 	// Prints the input Quaternion on the specified output stream.
-	LEOPPHAPI auto operator<<(std::ostream& os, const Quaternion& q) -> std::ostream&;
+	LEOPPHAPI auto operator<<(std::ostream& os, Quaternion const& q) -> std::ostream&;
 }
