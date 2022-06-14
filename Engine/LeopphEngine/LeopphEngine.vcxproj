@@ -1,0 +1,334 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\deps\vendor\gl3w\src\gl3w.c" />
+    <ClCompile Include="src\components\behavior.cpp" />
+    <ClCompile Include="src\components\camera.cpp" />
+    <ClCompile Include="src\components\component.cpp" />
+    <ClCompile Include="src\components\lighting\ambientlight.cpp" />
+    <ClCompile Include="src\components\lighting\dirlight.cpp" />
+    <ClCompile Include="src\components\lighting\pointlight.cpp" />
+    <ClCompile Include="src\components\lighting\SpotLight.cpp" />
+    <ClCompile Include="src\components\OrthographicCamera.cpp" />
+    <ClCompile Include="src\components\PerspectiveCamera.cpp" />
+    <ClCompile Include="src\components\rendering\Cube.cpp" />
+    <ClCompile Include="src\components\rendering\ImageSprite.cpp" />
+    <ClCompile Include="src\components\rendering\Model.cpp" />
+    <ClCompile Include="src\components\rendering\RenderComponent.cpp" />
+    <ClCompile Include="src\components\Transform.cpp" />
+    <ClCompile Include="src\config\settings.cpp" />
+    <ClCompile Include="src\data\DataManager.cpp" />
+    <ClCompile Include="src\data\Poelo.cpp" />
+    <ClCompile Include="src\entity\Entity.cpp" />
+    <ClCompile Include="src\entry\Main.cpp" />
+    <ClCompile Include="src\events\DirShadowEvent.cpp" />
+    <ClCompile Include="src\events\Event.cpp" />
+    <ClCompile Include="src\events\handling\EventManager.cpp" />
+    <ClCompile Include="src\events\KeyEvent.cpp" />
+    <ClCompile Include="src\events\MouseEvent.cpp" />
+    <ClCompile Include="src\events\PointShadowEvent.cpp" />
+    <ClCompile Include="src\events\SpotShadowEvent.cpp" />
+    <ClCompile Include="src\events\WindowEvent.cpp" />
+    <ClCompile Include="src\input\input.cpp" />
+    <ClCompile Include="src\rendering\CascadedShadowMap.cpp" />
+    <ClCompile Include="src\rendering\CubeShadowMap.cpp" />
+    <ClCompile Include="src\rendering\GeometryBuffer.cpp" />
+    <ClCompile Include="src\rendering\geometry\GlMesh.cpp" />
+    <ClCompile Include="src\rendering\geometry\GlMeshGroup.cpp" />
+    <ClCompile Include="src\rendering\geometry\Mesh.cpp" />
+    <ClCompile Include="src\rendering\geometry\MeshGroup.cpp" />
+    <ClCompile Include="src\rendering\geometry\ModelParser.cpp" />
+    <ClCompile Include="src\rendering\opengl\GlBuffer.cpp" />
+    <ClCompile Include="src\rendering\opengl\GlFramebuffer.cpp" />
+    <ClCompile Include="src\rendering\opengl\GlRenderbuffer.cpp" />
+    <ClCompile Include="src\rendering\opengl\GlVertexArray.cpp" />
+    <ClCompile Include="src\rendering\opengl\OpenGl.cpp" />
+    <ClCompile Include="src\rendering\RenderBuffer.cpp" />
+    <ClCompile Include="src\rendering\renderers\GlDeferredRenderer.cpp" />
+    <ClCompile Include="src\rendering\renderers\GlForwardRenderer.cpp" />
+    <ClCompile Include="src\rendering\renderers\GlRenderer.cpp" />
+    <ClCompile Include="src\rendering\renderers\Renderer.cpp" />
+    <ClCompile Include="src\rendering\ScreenQuad.cpp" />
+    <ClCompile Include="src\rendering\shaders\ShaderFamily.cpp" />
+    <ClCompile Include="src\rendering\shaders\ShaderProgram.cpp" />
+    <ClCompile Include="src\rendering\Skybox.cpp" />
+    <ClCompile Include="src\rendering\SkyboxImpl.cpp" />
+    <ClCompile Include="src\rendering\SpotShadowMap.cpp" />
+    <ClCompile Include="src\rendering\texture.cpp" />
+    <ClCompile Include="src\rendering\TransparencyBuffer.cpp" />
+    <ClCompile Include="src\rendering\UniformBuffer.cpp" />
+    <ClCompile Include="src\scene\Scene.cpp" />
+    <ClCompile Include="src\scene\SceneManager.cpp" />
+    <ClCompile Include="src\threading\Job.cpp" />
+    <ClCompile Include="src\threading\JobSystem.cpp" />
+    <ClCompile Include="src\threading\SpinLock.cpp" />
+    <ClCompile Include="src\threading\Worker.cpp" />
+    <ClCompile Include="src\timing\Time.cpp" />
+    <ClCompile Include="src\timing\TimeImpl.cpp" />
+    <ClCompile Include="src\util\api_adapters\GLFWAdapter.cpp" />
+    <ClCompile Include="src\util\equal\StringEqual.cpp" />
+    <ClCompile Include="src\util\Exit.cpp" />
+    <ClCompile Include="src\util\hash\StringHash.cpp" />
+    <ClCompile Include="src\util\less\PoeloLess.cpp" />
+    <ClCompile Include="src\util\less\StringLess.cpp" />
+    <ClCompile Include="src\windowing\glwindow.cpp" />
+    <ClCompile Include="src\windowing\window.cpp" />
+    <ClCompile Include="src\windowing\WindowImpl.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\components\Behavior.hpp" />
+    <ClInclude Include="src\components\Camera.hpp" />
+    <ClInclude Include="src\components\Component.hpp" />
+    <ClInclude Include="src\components\lighting\AmbientLight.hpp" />
+    <ClInclude Include="src\components\lighting\AttenuatedLight.hpp" />
+    <ClInclude Include="src\components\lighting\DirLight.hpp" />
+    <ClInclude Include="src\components\lighting\Light.hpp" />
+    <ClInclude Include="src\components\lighting\PointLight.hpp" />
+    <ClInclude Include="src\components\lighting\SpotLight.hpp" />
+    <ClInclude Include="src\components\OrthographicCamera.hpp" />
+    <ClInclude Include="src\components\PerspectiveCamera.hpp" />
+    <ClInclude Include="src\components\rendering\Cube.hpp" />
+    <ClInclude Include="src\components\rendering\ImageSprite.hpp" />
+    <ClInclude Include="src\components\rendering\Model.hpp" />
+    <ClInclude Include="src\components\rendering\RenderComponent.hpp" />
+    <ClInclude Include="src\components\Transform.hpp" />
+    <ClInclude Include="src\config\Settings.hpp" />
+    <ClInclude Include="src\data\DataManager.hpp" />
+    <ClInclude Include="src\data\Poelo.hpp" />
+    <ClInclude Include="src\entity\Entity.hpp" />
+    <ClInclude Include="src\entry\Entry.hpp" />
+    <ClInclude Include="src\entry\Init.hpp" />
+    <ClInclude Include="src\entry\Main.hpp" />
+    <ClInclude Include="src\events\DirShadowEvent.hpp" />
+    <ClInclude Include="src\events\Event.hpp" />
+    <ClInclude Include="src\events\FrameCompleteEvent.hpp" />
+    <ClInclude Include="src\events\handling\EventManager.hpp" />
+    <ClInclude Include="src\events\handling\EventReceiver.hpp" />
+    <ClInclude Include="src\events\handling\EventReceiverBase.hpp" />
+    <ClInclude Include="src\events\handling\EventReceiverHandle.hpp" />
+    <ClInclude Include="src\events\KeyEvent.hpp" />
+    <ClInclude Include="src\events\MouseEvent.hpp" />
+    <ClInclude Include="src\events\PointShadowEvent.hpp" />
+    <ClInclude Include="src\events\SpotShadowEvent.hpp" />
+    <ClInclude Include="src\events\WindowEvent.hpp" />
+    <ClInclude Include="src\input\CursorState.hpp" />
+    <ClInclude Include="src\input\Input.hpp" />
+    <ClInclude Include="src\input\KeyCode.hpp" />
+    <ClInclude Include="src\input\KeyState.hpp" />
+    <ClInclude Include="src\misc\Frustum.hpp" />
+    <ClInclude Include="src\misc\Sphere.hpp" />
+    <ClInclude Include="src\rendering\CascadedShadowMap.hpp" />
+    <ClInclude Include="src\rendering\CubeShadowMap.hpp" />
+    <ClInclude Include="src\rendering\GeometryBuffer.hpp" />
+    <ClInclude Include="src\rendering\geometry\GlMesh.hpp" />
+    <ClInclude Include="src\rendering\geometry\GlMeshGroup.hpp" />
+    <ClInclude Include="src\rendering\geometry\Material.hpp" />
+    <ClInclude Include="src\rendering\geometry\Mesh.hpp" />
+    <ClInclude Include="src\rendering\geometry\MeshGroup.hpp" />
+    <ClInclude Include="src\rendering\geometry\ModelParser.hpp" />
+    <ClInclude Include="src\rendering\geometry\Vertex.hpp" />
+    <ClInclude Include="src\rendering\opengl\GlBuffer.hpp" />
+    <ClInclude Include="src\rendering\opengl\GlFramebuffer.hpp" />
+    <ClInclude Include="src\rendering\opengl\GlRenderbuffer.hpp" />
+    <ClInclude Include="src\rendering\opengl\GlTexture.hpp" />
+    <ClInclude Include="src\rendering\opengl\GlVertexArray.hpp" />
+    <ClInclude Include="src\rendering\opengl\OpenGl.hpp" />
+    <ClInclude Include="src\rendering\RenderBuffer.hpp" />
+    <ClInclude Include="src\rendering\renderers\GlDeferredRenderer.hpp" />
+    <ClInclude Include="src\rendering\renderers\GlForwardRenderer.hpp" />
+    <ClInclude Include="src\rendering\renderers\GlRenderer.hpp" />
+    <ClInclude Include="src\rendering\renderers\Renderer.hpp" />
+    <ClInclude Include="src\rendering\ScreenQuad.hpp" />
+    <ClInclude Include="src\rendering\shaders\ShaderFamily.hpp" />
+    <ClInclude Include="src\rendering\shaders\ShaderProgram.hpp" />
+    <ClInclude Include="src\rendering\shaders\ShaderStageInfo.hpp" />
+    <ClInclude Include="src\rendering\shaders\ShaderType.hpp" />
+    <ClInclude Include="src\rendering\Skybox.hpp" />
+    <ClInclude Include="src\rendering\SkyboxImpl.hpp" />
+    <ClInclude Include="src\rendering\SpotShadowMap.hpp" />
+    <ClInclude Include="src\rendering\Texture.hpp" />
+    <ClInclude Include="src\rendering\TransparencyBuffer.hpp" />
+    <ClInclude Include="src\rendering\UniformBuffer.hpp" />
+    <ClInclude Include="src\scene\Scene.hpp" />
+    <ClInclude Include="src\scene\SceneManager.hpp" />
+    <ClInclude Include="src\threading\Job.hpp" />
+    <ClInclude Include="src\threading\JobSystem.hpp" />
+    <ClInclude Include="src\threading\SpinLock.hpp" />
+    <ClInclude Include="src\threading\Worker.hpp" />
+    <ClInclude Include="src\timing\Time.hpp" />
+    <ClInclude Include="src\timing\TimeImpl.hpp" />
+    <ClInclude Include="src\util\api_adapters\GLFWAdapter.hpp" />
+    <ClInclude Include="src\util\concepts\Pathed.hpp" />
+    <ClInclude Include="src\util\equal\PathedEqual.hpp" />
+    <ClInclude Include="src\util\equal\StringEqual.hpp" />
+    <ClInclude Include="src\util\Exit.hpp" />
+    <ClInclude Include="src\util\hash\PathedHash.hpp" />
+    <ClInclude Include="src\util\hash\StringHash.hpp" />
+    <ClInclude Include="src\util\less\PoeloLess.hpp" />
+    <ClInclude Include="src\util\less\StringLess.hpp" />
+    <ClInclude Include="src\windowing\GLWindow.hpp" />
+    <ClInclude Include="src\windowing\Window.hpp" />
+    <ClInclude Include="src\windowing\WindowImpl.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="src\rendering\shaders\glsl\SkyboxFrag.frag">
+      <FileType>Document</FileType>
+    </CustomBuild>
+    <CustomBuild Include="src\rendering\shaders\glsl\SkyboxVert.vert">
+      <FileType>Document</FileType>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="src\rendering\shaders\glsl\deferred\GeometryPassFrag.frag">
+      <FileType>Document</FileType>
+    </CustomBuild>
+    <CustomBuild Include="src\rendering\shaders\glsl\deferred\GeometryPassVert.vert">
+      <FileType>Document</FileType>
+    </CustomBuild>
+    <CustomBuild Include="src\rendering\shaders\glsl\deferred\LightPassFrag.frag">
+      <FileType>Document</FileType>
+    </CustomBuild>
+    <CustomBuild Include="src\rendering\shaders\glsl\deferred\LightPassVert.vert">
+      <FileType>Document</FileType>
+    </CustomBuild>
+    <CustomBuild Include="src\rendering\shaders\glsl\forward\ObjectFrag.frag">
+      <FileType>Document</FileType>
+    </CustomBuild>
+    <CustomBuild Include="src\rendering\shaders\glsl\forward\ObjectVert.vert">
+      <FileType>Document</FileType>
+    </CustomBuild>
+    <CustomBuild Include="src\rendering\shaders\glsl\forward\TranspCompositeFrag.frag">
+      <FileType>Document</FileType>
+    </CustomBuild>
+    <CustomBuild Include="src\rendering\shaders\glsl\forward\TranspCompositeVert.vert">
+      <FileType>Document</FileType>
+    </CustomBuild>
+    <CustomBuild Include="src\rendering\shaders\glsl\shadows\DepthShadowVert.vert">
+      <FileType>Document</FileType>
+    </CustomBuild>
+    <CustomBuild Include="src\rendering\shaders\glsl\shadows\LinearShadowFrag.frag">
+      <FileType>Document</FileType>
+    </CustomBuild>
+    <CustomBuild Include="src\rendering\shaders\glsl\shadows\LinearShadowVert.vert">
+      <FileType>Document</FileType>
+    </CustomBuild>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>16.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{03803a6b-9f79-4245-936d-059a695aa449}</ProjectGuid>
+    <RootNamespace>LeopphEngine</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutDir>$(SolutionDir)Engine\bin\$(Configuration)_$(Platform)\</OutDir>
+    <IntDir>$(SolutionDir)Engine\int\$(ProjectName)\$(Configuration)_$(Platform)\</IntDir>
+    <TargetName>leopph</TargetName>
+    <LibraryPath>$(SolutionDir)Engine\bin\$(Configuration)_$(Platform)\;$(SolutionDir)Engine\deps\vendor\glfw\src\$(Configuration)\;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(SolutionDir)Engine\bin\$(Configuration)_$(Platform)\</OutDir>
+    <IntDir>$(SolutionDir)Engine\int\$(ProjectName)\$(Configuration)_$(Platform)\</IntDir>
+    <TargetName>leopph</TargetName>
+    <LibraryPath>$(SolutionDir)Engine\bin\$(Configuration)_$(Platform)\;$(SolutionDir)Engine\deps\vendor\glfw\src\$(Configuration)\;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level4</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>SPDLOG_COMPILED_LIB;ENGINE_BUILD;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(SolutionDir)Engine\LeopphverterLib\include\;$(SolutionDir)Engine\LeopphUtils\include\;$(SolutionDir)Engine\include\;$(SolutionDir)Engine\deps\vendor\gl3w\include;$(SolutionDir)Engine\deps\vendor\glfw\include;$(SolutionDir)Engine\deps\vendor\nlohmann_json;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>leopphutils.lib;leopphverter.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <PostBuildEvent />
+    <PreBuildEvent />
+    <PreLinkEvent />
+    <CustomBuildStep />
+    <CustomBuild>
+      <Command>$(SolutionDir)Engine\deps\ShaderParser\bin\$(Configuration)_$(Platform)\ShaderParser.exe %(Fullpath) $(IntDir)%(Filename).cpp leopph::internal::ShaderFamily::%(Filename)Src $(ProjectDir)src\rendering\shaders\ShaderFamily.hpp</Command>
+      <Message>Transpiling %(Filename)%(Extension)...</Message>
+      <Outputs>$(IntDir)%(Filename).cpp</Outputs>
+      <AdditionalInputs>$(ProjectDir)src\rendering\shaders\ShaderFamily.hpp</AdditionalInputs>
+      <OutputItemType>ClCompile</OutputItemType>
+    </CustomBuild>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level4</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>SPDLOG_COMPILED_LIB;ENGINE_BUILD;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(SolutionDir)Engine\LeopphverterLib\include\;$(SolutionDir)Engine\LeopphUtils\include\;$(SolutionDir)Engine\include\;$(SolutionDir)Engine\deps\vendor\gl3w\include;$(SolutionDir)Engine\deps\vendor\glfw\include;$(SolutionDir)Engine\deps\vendor\nlohmann_json;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>leopphutils.lib;leopphverter.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+    </Link>
+    <PostBuildEvent />
+    <PreBuildEvent />
+    <PreLinkEvent />
+    <CustomBuildStep />
+    <CustomBuild>
+      <Command>$(SolutionDir)Engine\deps\ShaderParser\bin\$(Configuration)_$(Platform)\ShaderParser.exe %(Fullpath) $(IntDir)%(Filename).cpp leopph::internal::ShaderFamily::%(Filename)Src $(ProjectDir)src\rendering\shaders\ShaderFamily.hpp</Command>
+      <Message>Transpiling %(Filename)%(Extension)...</Message>
+      <Outputs>$(IntDir)%(Filename).cpp</Outputs>
+      <AdditionalInputs>$(ProjectDir)src\rendering\shaders\ShaderFamily.hpp</AdditionalInputs>
+      <OutputItemType>ClCompile</OutputItemType>
+    </CustomBuild>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
