@@ -1,6 +1,7 @@
 #pragma once
 
-#include "Vector.hpp"
+#include "Color.hpp"
+#include "Vertex.hpp"
 
 #include <cstddef>
 #include <string>
@@ -11,22 +12,14 @@ namespace leopph::convert
 {
 	struct Material
 	{
-		Vector3 DiffuseClor{};
-		Vector3 SpecularColor{};
+		Color DiffuseColor{255, 255, 255};
+		Color SpecularColor{0, 0, 0};
 		float Gloss{0};
 		float Opacity{1};
 		bool TwoSided{false};
 		std::string DiffuseMap;
 		std::string SpecularMap;
 		std::string OpacityMap;
-	};
-
-
-	struct Vertex
-	{
-		Vector3 Position{};
-		Vector3 Normal{1, 0, 0};
-		Vector2 TexCoord{};
 	};
 
 

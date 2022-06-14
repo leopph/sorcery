@@ -17,15 +17,13 @@ namespace leopph::convert
 	{
 		auto Convert(aiMatrix4x4 const& aiMat) -> Matrix4
 		{
-			Matrix4 ret;
-			for (auto i = 0; i < 4; i++)
+			return Matrix4
 			{
-				for (auto j = 0; j < 4; j++)
-				{
-					ret[i][j] = aiMat[i][j];
-				}
-			}
-			return ret;
+				aiMat.a1, aiMat.a2, aiMat.a3, aiMat.a4,
+				aiMat.b1, aiMat.b2, aiMat.b3, aiMat.b4,
+				aiMat.c1, aiMat.c2, aiMat.c3, aiMat.c4,
+				aiMat.d1, aiMat.d2, aiMat.d3, aiMat.d4
+			}.Transpose();
 		}
 
 
@@ -35,9 +33,57 @@ namespace leopph::convert
 		}
 
 
+		auto Convert(aiColor3D const& aiCol) -> Color
+		{
+			return Color{static_cast<unsigned char>(aiCol.r * 255), static_cast<unsigned char>(aiCol.g * 255), static_cast<unsigned char>(aiCol.b * 255)};
+		}
+
+
 		auto ProcessMaterial(aiMaterial const* aiMat) -> Material
 		{
-			return Material{}; // TODO
+			Material mat;
+
+			if (float opacity; aiMat->Get(AI_MATKEY_OPACITY, opacity) == aiReturn_SUCCESS)
+			{
+				mat.Opacity = opacity;
+			}
+
+			if (aiString texPath; aiMat->GetTexture(aiTextureType_OPACITY, 0, &texPath) == aiReturn_SUCCESS)
+			{
+				mat.OpacityMap = texPath.C_Str();
+			}
+
+			if (aiString texPath; aiMat->GetTexture(aiTextureType_DIFFUSE, 0, &texPath) == aiReturn_SUCCESS)
+			{
+				mat.DiffuseMap = texPath.C_Str();
+			}
+
+			if (aiString texPath; aiMat->GetTexture(aiTextureType_SPECULAR, 0, &texPath) == aiReturn_SUCCESS)
+			{
+				mat.SpecularMap = texPath.C_Str();
+			}
+
+			if (aiColor3D diffClr; aiMat->Get(AI_MATKEY_COLOR_DIFFUSE, diffClr) == aiReturn_SUCCESS)
+			{
+				mat.DiffuseColor = Convert(diffClr);
+			}
+
+			if (aiColor3D specClr; aiMat->Get(AI_MATKEY_COLOR_SPECULAR, specClr) == aiReturn_SUCCESS)
+			{
+				mat.SpecularColor = Convert(specClr);
+			}
+
+			if (ai_real gloss; aiMat->Get(AI_MATKEY_SHININESS, gloss) == aiReturn_SUCCESS)
+			{
+				mat.Gloss = gloss;
+			}
+
+			if (int twoSided; aiMat->Get(AI_MATKEY_TWOSIDED, twoSided) == aiReturn_SUCCESS)
+			{
+				mat.TwoSided = !twoSided;
+			}
+
+			return mat;
 		}
 
 

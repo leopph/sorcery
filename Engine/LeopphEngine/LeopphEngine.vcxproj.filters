@@ -33,7 +33,6 @@
     <ClCompile Include="src\rendering\geometry\GlMeshGroup.cpp" />
     <ClCompile Include="src\rendering\geometry\Mesh.cpp" />
     <ClCompile Include="src\rendering\geometry\MeshGroup.cpp" />
-    <ClCompile Include="src\rendering\geometry\ModelParser.cpp" />
     <ClCompile Include="src\rendering\opengl\GlBuffer.cpp" />
     <ClCompile Include="src\rendering\opengl\GlFramebuffer.cpp" />
     <ClCompile Include="src\rendering\opengl\GlRenderbuffer.cpp" />
@@ -82,7 +81,6 @@
     <ClInclude Include="src\event\SpotShadowEvent.hpp" />
     <ClInclude Include="src\rendering\geometry\GlMesh.hpp" />
     <ClInclude Include="src\rendering\geometry\GlMeshGroup.hpp" />
-    <ClInclude Include="src\rendering\geometry\ModelParser.hpp" />
     <ClInclude Include="src\rendering\opengl\GlBuffer.hpp" />
     <ClInclude Include="src\rendering\opengl\GlFramebuffer.hpp" />
     <ClInclude Include="src\rendering\opengl\GlRenderbuffer.hpp" />
@@ -130,15 +128,13 @@
     <CustomBuild Include="src\rendering\shaders\glsl\deferred\GeometryPassFrag.frag" />
     <CustomBuild Include="src\rendering\shaders\glsl\forward\ObjectFrag.frag" />
     <CustomBuild Include="src\rendering\shaders\glsl\shadows\LinearShadowVert.vert" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="src\rendering\shaders\glsl\deferred\GeometryPassVert.vert" />
-    <None Include="src\rendering\shaders\glsl\deferred\LightPassFrag.frag" />
-    <None Include="src\rendering\shaders\glsl\deferred\LightPassVert.vert" />
-    <None Include="src\rendering\shaders\glsl\forward\ObjectVert.vert" />
-    <None Include="src\rendering\shaders\glsl\forward\TranspCompositeFrag.frag" />
-    <None Include="src\rendering\shaders\glsl\forward\TranspCompositeVert.vert" />
-    <None Include="src\rendering\shaders\glsl\shadows\DepthShadowVert.vert" />
-    <None Include="src\rendering\shaders\glsl\shadows\LinearShadowFrag.frag" />
+    <CustomBuild Include="src\rendering\shaders\glsl\deferred\GeometryPassVert.vert" />
+    <CustomBuild Include="src\rendering\shaders\glsl\deferred\LightPassFrag.frag" />
+    <CustomBuild Include="src\rendering\shaders\glsl\deferred\LightPassVert.vert" />
+    <CustomBuild Include="src\rendering\shaders\glsl\forward\ObjectVert.vert" />
+    <CustomBuild Include="src\rendering\shaders\glsl\forward\TranspCompositeFrag.frag" />
+    <CustomBuild Include="src\rendering\shaders\glsl\forward\TranspCompositeVert.vert" />
+    <CustomBuild Include="src\rendering\shaders\glsl\shadows\DepthShadowVert.vert" />
+    <CustomBuild Include="src\rendering\shaders\glsl\shadows\LinearShadowFrag.frag" />
   </ItemGroup>
 </Project>

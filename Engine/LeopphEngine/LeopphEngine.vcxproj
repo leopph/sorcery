@@ -47,7 +47,6 @@
     <ClCompile Include="src\rendering\geometry\GlMeshGroup.cpp" />
     <ClCompile Include="src\rendering\geometry\Mesh.cpp" />
     <ClCompile Include="src\rendering\geometry\MeshGroup.cpp" />
-    <ClCompile Include="src\rendering\geometry\ModelParser.cpp" />
     <ClCompile Include="src\rendering\opengl\GlBuffer.cpp" />
     <ClCompile Include="src\rendering\opengl\GlFramebuffer.cpp" />
     <ClCompile Include="src\rendering\opengl\GlRenderbuffer.cpp" />
@@ -95,7 +94,6 @@
     <ClInclude Include="src\rendering\GeometryBuffer.hpp" />
     <ClInclude Include="src\rendering\geometry\GlMesh.hpp" />
     <ClInclude Include="src\rendering\geometry\GlMeshGroup.hpp" />
-    <ClInclude Include="src\rendering\geometry\ModelParser.hpp" />
     <ClInclude Include="src\rendering\opengl\GlBuffer.hpp" />
     <ClInclude Include="src\rendering\opengl\GlFramebuffer.hpp" />
     <ClInclude Include="src\rendering\opengl\GlRenderbuffer.hpp" />

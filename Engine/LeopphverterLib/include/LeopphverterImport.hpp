@@ -1,5 +1,6 @@
 #pragma once
 
+#include "LeopphApi.hpp"
 #include "LeopphverterCommon.hpp"
 
 #include <filesystem>
@@ -7,5 +8,5 @@
 
 namespace leopph::convert
 {
-	auto Import(std::filesystem::path const& path) -> Object;
+	LEOPPHAPI auto Import(std::filesystem::path const& path) -> Object;
 }
