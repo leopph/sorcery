@@ -1,6 +1,6 @@
 #include "SpotShadowMap.hpp"
 
-#include "../config/Settings.hpp"
+#include "Settings.hpp"
 
 
 namespace leopph::internal

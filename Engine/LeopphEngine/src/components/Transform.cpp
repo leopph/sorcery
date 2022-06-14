@@ -1,7 +1,7 @@
 #include "Transform.hpp"
 
+#include "Entity.hpp"
 #include "Logger.hpp"
-#include "../entity/Entity.hpp"
 
 #include <algorithm>
 #include <cstddef>

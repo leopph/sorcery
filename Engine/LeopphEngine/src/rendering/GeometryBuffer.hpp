@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../events/WindowEvent.hpp"
-#include "../events/handling/EventReceiver.hpp"
+#include "EventReceiver.hpp"
+#include "WindowEvent.hpp"
 #include "opengl/GlFramebuffer.hpp"
 #include "opengl/GlTexture.hpp"
 #include "opengl/OpenGl.hpp"

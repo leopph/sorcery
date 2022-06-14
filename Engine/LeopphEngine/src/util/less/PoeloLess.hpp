@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../data/Poelo.hpp"
+#include "Poelo.hpp"
 
 #include <memory>
 

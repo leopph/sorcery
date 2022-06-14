@@ -1,7 +1,7 @@
 #include "CascadedShadowMap.hpp"
 
-#include "../config/Settings.hpp"
 #include "Math.hpp"
+#include "Settings.hpp"
 #include "../windowing/WindowImpl.hpp"
 
 #include <algorithm>

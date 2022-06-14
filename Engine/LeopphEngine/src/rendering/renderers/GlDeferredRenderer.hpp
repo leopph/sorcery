@@ -1,6 +1,10 @@
 #pragma once
 
+#include "DirLight.hpp"
 #include "GlRenderer.hpp"
+#include "Matrix.hpp"
+#include "PointLight.hpp"
+#include "SpotLight.hpp"
 #include "../CascadedShadowMap.hpp"
 #include "../CubeShadowMap.hpp"
 #include "../GeometryBuffer.hpp"
@@ -8,10 +12,6 @@
 #include "../ScreenQuad.hpp"
 #include "../SpotShadowMap.hpp"
 #include "../TransparencyBuffer.hpp"
-#include "../../components/lighting/DirLight.hpp"
-#include "../../components/lighting/PointLight.hpp"
-#include "../../components/lighting/SpotLight.hpp"
-#include "Matrix.hpp"
 #include "../opengl/OpenGl.hpp"
 #include "../shaders/ShaderFamily.hpp"
 

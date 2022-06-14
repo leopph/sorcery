@@ -29,14 +29,7 @@
   <ItemGroup>
     <ClInclude Include="include\ArrayQueue.hpp" />
     <ClInclude Include="include\Bimap.hpp" />
-    <ClInclude Include="include\Color.hpp" />
-    <ClInclude Include="include\Image.hpp" />
-    <ClInclude Include="include\LeopphApi.hpp" />
     <ClInclude Include="include\Logger.hpp" />
-    <ClInclude Include="include\Math.hpp" />
-    <ClInclude Include="include\Matrix.hpp" />
-    <ClInclude Include="include\Quaternion.hpp" />
-    <ClInclude Include="include\Vector.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

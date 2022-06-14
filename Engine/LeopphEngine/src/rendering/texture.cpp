@@ -1,6 +1,5 @@
-#include "Texture.hpp"
-
 #include "Logger.hpp"
+#include "Texture.hpp"
 #include "opengl/OpenGl.hpp"
 
 #include <string>

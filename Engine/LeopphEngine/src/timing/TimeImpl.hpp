@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../events/FrameCompleteEvent.hpp"
-#include "../events/handling/EventReceiver.hpp"
+#include "EventReceiver.hpp"
+#include "FrameCompleteEvent.hpp"
 
 #include <chrono>
 
@@ -17,8 +17,8 @@ namespace leopph::internal
 			[[nodiscard]] auto DeltaTime() const -> float;
 			[[nodiscard]] auto FullTime() const -> float;
 
-			TimeImpl(const TimeImpl& other) = delete;
-			auto operator=(const TimeImpl& other) -> TimeImpl& = delete;
+			TimeImpl(TimeImpl const& other) = delete;
+			auto operator=(TimeImpl const& other) -> TimeImpl& = delete;
 
 			TimeImpl(TimeImpl&& other) noexcept = delete;
 			auto operator=(TimeImpl&& other) noexcept -> TimeImpl& = delete;

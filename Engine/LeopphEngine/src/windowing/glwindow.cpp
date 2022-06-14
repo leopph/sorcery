@@ -1,13 +1,13 @@
 #include "GlWindow.hpp"
 
-#include "../config/Settings.hpp"
-#include "../events/KeyEvent.hpp"
-#include "../events/MouseEvent.hpp"
-#include "../events/WindowEvent.hpp"
-#include "../events/handling/EventManager.hpp"
-#include "../input/Input.hpp"
-#include "../rendering/opengl/OpenGl.hpp"
+#include "EventManager.hpp"
+#include "Input.hpp"
+#include "KeyEvent.hpp"
 #include "Logger.hpp"
+#include "MouseEvent.hpp"
+#include "Settings.hpp"
+#include "WindowEvent.hpp"
+#include "../rendering/opengl/OpenGl.hpp"
 #include "../util/api_adapters/GLFWAdapter.hpp"
 
 #include <array>

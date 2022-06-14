@@ -1,6 +1,6 @@
 #include "GeometryBuffer.hpp"
 
-#include "../windowing/Window.hpp"
+#include "Window.hpp"
 
 
 namespace leopph::internal

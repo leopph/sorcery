@@ -1,12 +1,12 @@
 #include "GlDeferredRenderer.hpp"
 
-#include "../../components/Camera.hpp"
-#include "../../components/lighting/AmbientLight.hpp"
-#include "../../config/Settings.hpp"
-#include "../../data/DataManager.hpp"
+#include "AmbientLight.hpp"
+#include "Camera.hpp"
 #include "Math.hpp"
 #include "Matrix.hpp"
-#include "../../windowing/Window.hpp"
+#include "Settings.hpp"
+#include "Window.hpp"
+#include "../../data/DataManager.hpp"
 
 #include <algorithm>
 #include <array>
@@ -217,7 +217,7 @@ namespace leopph::internal
 		auto const lightViewMat = Matrix4::LookAt(Vector3{0}, dirLight->Direction(), Vector3::Up());
 		auto const cascadeBounds = CascadedShadowMap::CalculateCascadeBounds(camera->NearClipPlane(), camera->FarClipPlane());
 		auto const numCascades = cascadeBounds.size();
-		auto const cascadeMats = CascadedShadowMap::CascadeMatrix(camera->Frustum(), cascadeBounds, lightViewMat, camViewInvMat * lightViewMat,dirLight->ShadowExtension());
+		auto const cascadeMats = CascadedShadowMap::CascadeMatrix(camera->Frustum(), cascadeBounds, lightViewMat, camViewInvMat * lightViewMat, dirLight->ShadowExtension());
 
 		glDisable(GL_BLEND);
 

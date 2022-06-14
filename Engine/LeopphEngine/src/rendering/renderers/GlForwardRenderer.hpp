@@ -1,14 +1,14 @@
 #pragma once
 
+#include "DirLight.hpp"
 #include "GlRenderer.hpp"
-#include "../CascadedShadowMap.hpp"
-#include "../ScreenQuad.hpp"
-#include "../RenderBuffer.hpp"
-#include "../TransparencyBuffer.hpp"
-#include "../../components/lighting/DirLight.hpp"
-#include "../../components/lighting/PointLight.hpp"
-#include "../../components/lighting/SpotLight.hpp"
 #include "Matrix.hpp"
+#include "PointLight.hpp"
+#include "SpotLight.hpp"
+#include "../CascadedShadowMap.hpp"
+#include "../RenderBuffer.hpp"
+#include "../ScreenQuad.hpp"
+#include "../TransparencyBuffer.hpp"
 #include "../shaders/ShaderFamily.hpp"
 
 
@@ -23,18 +23,18 @@ namespace leopph::internal
 
 		private:
 			auto RenderOpaque(Matrix4 const& camViewMat,
-			                         Matrix4 const& camProjMat,
-			                         std::vector<RenderableData> const& renderables,
-			                         DirectionalLight const* dirLight,
-			                         std::vector<SpotLight const*> const& spotLights,
-			                         std::vector<PointLight const*> const& pointLights) -> void;
+			                  Matrix4 const& camProjMat,
+			                  std::vector<RenderableData> const& renderables,
+			                  DirectionalLight const* dirLight,
+			                  std::vector<SpotLight const*> const& spotLights,
+			                  std::vector<PointLight const*> const& pointLights) -> void;
 
 			auto RenderTransparent(Matrix4 const& camViewMat,
-			                         Matrix4 const& camProjMat,
-			                         std::vector<RenderableData> const& renderables,
-			                         DirectionalLight const* dirLight,
-			                         std::vector<SpotLight const*> const& spotLights,
-			                         std::vector<PointLight const*> const& pointLights) -> void;
+			                       Matrix4 const& camProjMat,
+			                       std::vector<RenderableData> const& renderables,
+			                       DirectionalLight const* dirLight,
+			                       std::vector<SpotLight const*> const& spotLights,
+			                       std::vector<PointLight const*> const& pointLights) -> void;
 
 			auto Compose() -> void;
 

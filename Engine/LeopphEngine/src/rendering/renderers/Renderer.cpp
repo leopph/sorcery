@@ -1,8 +1,8 @@
 #include "Renderer.hpp"
 
 #include "GlRenderer.hpp"
-#include "../../config/Settings.hpp"
 #include "Logger.hpp"
+#include "Settings.hpp"
 
 #include <stdexcept>
 
@@ -17,7 +17,7 @@ namespace leopph::internal
 				return GlRenderer::Create();
 		}
 
-		const auto errMsg{"Failed to create renderer: the selected graphics API is not supported."};
+		auto const errMsg{"Failed to create renderer: the selected graphics API is not supported."};
 		Logger::Instance().Critical(errMsg);
 		throw std::domain_error{errMsg};
 	}

@@ -1,9 +1,9 @@
 #pragma once
 
-#include "../events/DirShadowEvent.hpp"
-#include "../events/handling/EventReceiver.hpp"
+#include "EventReceiver.hpp"
+#include "Frustum.hpp"
 #include "Matrix.hpp"
-#include "../misc/Frustum.hpp"
+#include "../event/DirShadowEvent.hpp"
 #include "opengl/GlFramebuffer.hpp"
 #include "opengl/GlTexture.hpp"
 #include "shaders/ShaderProgram.hpp"

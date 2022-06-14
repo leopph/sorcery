@@ -1,12 +1,12 @@
 #pragma once
 
-#include "Renderer.hpp"
-#include "../CascadedShadowMap.hpp"
-#include "../../components/lighting/AmbientLight.hpp"
-#include "../../components/lighting/DirLight.hpp"
-#include "../../components/lighting/PointLight.hpp"
-#include "../../components/lighting/SpotLight.hpp"
+#include "AmbientLight.hpp"
+#include "DirLight.hpp"
 #include "Matrix.hpp"
+#include "PointLight.hpp"
+#include "Renderer.hpp"
+#include "SpotLight.hpp"
+#include "../CascadedShadowMap.hpp"
 #include "../geometry/GlMeshGroup.hpp"
 
 #include <span>

@@ -1,6 +1,6 @@
 #include "CubeShadowMap.hpp"
 
-#include "../config/Settings.hpp"
+#include "Settings.hpp"
 
 #include <limits>
 

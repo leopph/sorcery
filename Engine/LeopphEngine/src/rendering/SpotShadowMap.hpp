@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../events/SpotShadowEvent.hpp"
-#include "../events/handling/EventReceiver.hpp"
+#include "EventReceiver.hpp"
+#include "../event/SpotShadowEvent.hpp"
 #include "opengl/GlFramebuffer.hpp"
 #include "opengl/GlTexture.hpp"
 #include "shaders/ShaderProgram.hpp"

@@ -1,7 +1,7 @@
 #include "ShaderFamily.hpp"
 
-#include "../../config/Settings.hpp"
 #include "Logger.hpp"
+#include "Settings.hpp"
 
 #include <algorithm>
 #include <cstddef>
@@ -13,18 +13,18 @@
 
 namespace leopph::internal
 {
-	ShaderFamily::ShaderFamily(const std::vector<ShaderStageInfo>& stages)
+	ShaderFamily::ShaderFamily(std::vector<ShaderStageInfo> const& stages)
 	{
-		std::ranges::transform(stages, std::inserter(m_Sources, m_Sources.begin()), [](const auto& stageInfo)
+		std::ranges::transform(stages, std::inserter(m_Sources, m_Sources.begin()), [](auto const& stageInfo)
 		{
 			return std::make_pair(stageInfo.Type, stageInfo.Src);
 		});
 	}
 
 
-	auto ShaderFamily::SetBufferBinding(const std::string_view bufName, const int bindingIndex) -> void
+	auto ShaderFamily::SetBufferBinding(std::string_view const bufName, int const bindingIndex) -> void
 	{
-		if (const auto it{m_Bindings.find(bufName)};
+		if (auto const it{m_Bindings.find(bufName)};
 			it != m_Bindings.end())
 		{
 			it->second = bindingIndex;
@@ -46,7 +46,7 @@ namespace leopph::internal
 		auto permStr{BuildPermString()};
 
 		// Look up existing permutation
-		if (const auto it{m_Permutations.find(permStr)}; it != m_Permutations.end())
+		if (auto const it{m_Permutations.find(permStr)}; it != m_Permutations.end())
 		{
 			return it->second;
 		}
@@ -54,26 +54,28 @@ namespace leopph::internal
 		// Not found
 
 		// If caching
-		if (const auto cacheLoc{Settings::Instance().ShaderCachePath()};
+		if (auto const cacheLoc{Settings::Instance().ShaderCachePath()};
 			!cacheLoc.empty())
 		{
-			const auto permHash{decltype(m_Permutations)::hasher()(permStr)};
-			const auto cachePath{[&, this]
-			{
-				std::filesystem::path p{CACHE_PREFIX + std::to_string(permHash)};
-				for (const auto hash : SourceHashes())
+			auto const permHash{decltype(m_Permutations)::hasher()(permStr)};
+			auto const cachePath{
+				[&, this]
 				{
-					p += "_" + std::to_string(hash); 
-				}
-				return cacheLoc / p;
-			}()};
+					std::filesystem::path p{CACHE_PREFIX + std::to_string(permHash)};
+					for (auto const hash : SourceHashes())
+					{
+						p += "_" + std::to_string(hash);
+					}
+					return cacheLoc / p;
+				}()
+			};
 
 			// Try parsing cache
 			if (std::filesystem::exists(cachePath))
 			{
 				std::ifstream input(cachePath, std::ios::binary);
 				std::vector<unsigned char> binary{std::istreambuf_iterator(input), {}};
-				const auto [it, inserted]{m_Permutations.emplace(permStr, binary)};
+				auto const [it, inserted]{m_Permutations.emplace(permStr, binary)};
 				if (inserted)
 				{
 					Logger::Instance().Debug("Shader parsed from " + cachePath.string() + ".");
@@ -84,14 +86,14 @@ namespace leopph::internal
 
 			// Build and cache it
 			auto& shader{BuildFromSources(std::move(permStr))};
-			const auto binary{shader.Binary()};
+			auto const binary{shader.Binary()};
 			std::ofstream output(cachePath, std::ios::binary);
 			std::ranges::copy(binary, std::ostreambuf_iterator(output));
 			Logger::Instance().Debug("Shader cached to " + cachePath.string() + ".");
 			return shader;
 		}
 
-		return BuildFromSources(std::move(permStr));		
+		return BuildFromSources(std::move(permStr));
 	}
 
 
@@ -101,9 +103,9 @@ namespace leopph::internal
 	}
 
 
-	auto ShaderFamily::operator[](const std::string_view key) -> std::string&
+	auto ShaderFamily::operator[](std::string_view const key) -> std::string&
 	{
-		if (const auto it{m_CurrentFlags.find(key)}; it != m_CurrentFlags.end())
+		if (auto const it{m_CurrentFlags.find(key)}; it != m_CurrentFlags.end())
 		{
 			return it->second;
 		}
@@ -111,10 +113,10 @@ namespace leopph::internal
 	}
 
 
-	auto ShaderFamily::BuildSrcString(const std::string_view src) const -> std::string
+	auto ShaderFamily::BuildSrcString(std::string_view const src) const -> std::string
 	{
 		std::string ret{src};
-		for (const auto& [name, value] : m_CurrentFlags)
+		for (auto const& [name, value] : m_CurrentFlags)
 		{
 			ret.insert(ret.find_first_of('\n') + 1, std::string{"#define "}.append(name).append(1, ' ').append(value).append(1, '\n'));
 		}
@@ -125,7 +127,7 @@ namespace leopph::internal
 	auto ShaderFamily::BuildPermString() const -> std::string
 	{
 		std::string ret{"{"};
-		for (const auto& [name, value] : m_CurrentFlags)
+		for (auto const& [name, value] : m_CurrentFlags)
 		{
 			ret.append(name).append(1, ':').append(value).append(1, ';');
 		}
@@ -136,7 +138,7 @@ namespace leopph::internal
 
 	auto ShaderFamily::SetBufferBinding(ShaderProgram& shader) -> void
 	{
-		for (const auto& [bufName, binding] : m_Bindings)
+		for (auto const& [bufName, binding] : m_Bindings)
 		{
 			shader.SetBufferBinding(bufName, binding);
 		}
@@ -149,7 +151,7 @@ namespace leopph::internal
 		stageInfos.reserve(m_Sources.size());
 
 		// Create new permutation
-		for (const auto& [type, src] : m_Sources)
+		for (auto const& [type, src] : m_Sources)
 		{
 			stageInfos.emplace_back(BuildSrcString(src), type);
 		}
@@ -163,7 +165,7 @@ namespace leopph::internal
 	}
 
 
-	auto ShaderFamily::SourceHashes() const -> const std::vector<std::size_t>&
+	auto ShaderFamily::SourceHashes() const -> std::vector<std::size_t> const&
 	{
 		if (m_SrcHashCacheRdy)
 		{
@@ -172,13 +174,13 @@ namespace leopph::internal
 
 		std::vector<ShaderType> types;
 		types.reserve(m_Sources.size());
-		for (const auto& [type, src] : m_Sources)
+		for (auto const& [type, src] : m_Sources)
 		{
 			types.push_back(type);
 		}
 		std::ranges::sort(types);
-		
-		for (constexpr std::hash<std::string> hasher; const auto type : types)
+
+		for (constexpr std::hash<std::string> hasher; auto const type : types)
 		{
 			m_SrcHashCache.push_back(hasher(m_Sources.at(type)));
 		}

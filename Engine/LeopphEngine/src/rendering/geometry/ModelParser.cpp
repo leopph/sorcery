@@ -1,7 +1,7 @@
 #include "ModelParser.hpp"
 
-#include "../Texture.hpp"
 #include "Logger.hpp"
+#include "Texture.hpp"
 
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>

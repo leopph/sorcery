@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../../input/CursorState.hpp"
-#include "../../input/KeyCode.hpp"
-#include "../../input/KeyState.hpp"
+#include "CursorState.hpp"
+#include "KeyCode.hpp"
+#include "KeyState.hpp"
 
 
 namespace leopph::internal::glfw

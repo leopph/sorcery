@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Mesh.hpp"
 #include "Image.hpp"
 #include "Matrix.hpp"
+#include "Mesh.hpp"
 
 #include <assimp/Importer.hpp>
 #include <assimp/material.h>
