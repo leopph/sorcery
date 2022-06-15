@@ -1,5 +1,6 @@
 #include "LeopphverterCommon.hpp"
 #include "LeopphverterImport.hpp"
+#include "Logger.hpp"
 #include "Matrix.hpp"
 
 #include <assimp/Importer.hpp>
@@ -8,6 +9,7 @@
 
 #include <iostream>
 #include <queue>
+#include <string>
 #include <utility>
 
 
@@ -131,6 +133,37 @@ namespace leopph::convert
 
 			return indices;
 		}
+
+
+		auto LogPrimitiveError(aiMesh const* const mesh, std::filesystem::path const& path) -> void
+		{
+			std::string msg{"Ignoring mesh without triangles in model at path ["};
+			msg += path.string();
+			msg += "]. Primitives are";
+
+			if (mesh->mPrimitiveTypes & aiPrimitiveType_POINT)
+			{
+				msg += " [points]";
+			}
+
+			if (mesh->mPrimitiveTypes & aiPrimitiveType_LINE)
+			{
+				msg += " [lines]";
+			}
+
+			if (mesh->mPrimitiveTypes & aiPrimitiveType_POLYGON)
+			{
+				msg += " [N>3 polygons]";
+			}
+
+			if (mesh->mPrimitiveTypes & aiPrimitiveType_NGONEncodingFlag)
+			{
+				msg += "[NGON encoded]";
+			}
+
+			msg += ".";
+			internal::Logger::Instance().Debug(msg);
+		}
 	}
 
 
@@ -165,6 +198,10 @@ namespace leopph::convert
 				if (auto const mesh = scene->mMeshes[node->mMeshes[i]]; mesh->mPrimitiveTypes - aiPrimitiveType_TRIANGLE == 0)
 				{
 					object.Meshes.emplace_back(ProcessVertices(mesh, trafo), ProcessIndices(mesh), mesh->mMaterialIndex);
+				}
+				else
+				{
+					LogPrimitiveError(mesh, path);
 				}
 			}
 
