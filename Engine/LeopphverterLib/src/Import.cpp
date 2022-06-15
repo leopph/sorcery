@@ -156,11 +156,6 @@ namespace leopph::convert
 				msg += " [N>3 polygons]";
 			}
 
-			if (mesh->mPrimitiveTypes & aiPrimitiveType_NGONEncodingFlag)
-			{
-				msg += "[NGON encoded]";
-			}
-
 			msg += ".";
 			internal::Logger::Instance().Debug(msg);
 		}
@@ -170,7 +165,12 @@ namespace leopph::convert
 	auto Import(std::filesystem::path const& path) -> Object
 	{
 		Assimp::Importer importer;
-		auto const* scene = importer.ReadFile(path.string(), aiProcess_JoinIdenticalVertices | aiProcess_Triangulate | aiProcess_SortByPType | aiProcess_GenUVCoords | aiProcess_GenNormals);
+		auto const* scene = importer.ReadFile(path.string(),
+		                                      aiProcess_JoinIdenticalVertices |
+		                                      aiProcess_Triangulate |
+		                                      aiProcess_SortByPType |
+		                                      aiProcess_GenUVCoords |
+		                                      aiProcess_GenNormals);
 
 		if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
 		{
@@ -195,8 +195,16 @@ namespace leopph::convert
 
 			for (std::size_t i = 0; i < node->mNumMeshes; ++i)
 			{
-				if (auto const mesh = scene->mMeshes[node->mMeshes[i]]; mesh->mPrimitiveTypes - aiPrimitiveType_TRIANGLE == 0)
+				// aiProcess_SortByPType will separate mixed-primitive meshes, so every mesh in theory should be clean and only contain one kind of primitive.
+				// Testing for one type only is therefore safe, but triangle meshes have to be checked for NGON encoding too.
+				if (auto const* const mesh = scene->mMeshes[node->mMeshes[i]]; mesh->mPrimitiveTypes & aiPrimitiveType_TRIANGLE)
 				{
+					if (mesh->mPrimitiveTypes & aiPrimitiveType_NGONEncodingFlag)
+					{
+						internal::Logger::Instance().Debug("Found NGON encoded mesh in model at path [" + path.string() + "].");
+						// TODO currently ignoring NGON property
+					}
+
 					object.Meshes.emplace_back(ProcessVertices(mesh, trafo), ProcessIndices(mesh), mesh->mMaterialIndex);
 				}
 				else
