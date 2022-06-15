@@ -1,10 +1,11 @@
 #pragma once
 
 #include "Color.hpp"
+#include "Image.hpp"
 #include "Vertex.hpp"
 
 #include <cstddef>
-#include <string>
+#include <optional>
 #include <vector>
 
 
@@ -17,9 +18,9 @@ namespace leopph::convert
 		float Gloss{0};
 		float Opacity{1};
 		bool TwoSided{false};
-		std::string DiffuseMap;
-		std::string SpecularMap;
-		std::string OpacityMap;
+		std::optional<std::size_t> DiffuseMap;
+		std::optional<std::size_t> SpecularMap;
+		std::optional<std::size_t> OpacityMap;
 	};
 
 
@@ -35,5 +36,6 @@ namespace leopph::convert
 	{
 		std::vector<Mesh> Meshes;
 		std::vector<Material> Materials;
+		std::vector<Image> Textures;
 	};
 }

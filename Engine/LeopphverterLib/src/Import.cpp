@@ -1,15 +1,19 @@
+#include "Image.hpp"
 #include "LeopphverterCommon.hpp"
 #include "LeopphverterImport.hpp"
 #include "Logger.hpp"
-#include "Matrix.hpp"
+#include "TypeConversion.hpp"
 
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
 
 #include <iostream>
+#include <optional>
 #include <queue>
+#include <span>
 #include <string>
+#include <unordered_map>
 #include <utility>
 
 
@@ -17,75 +21,79 @@ namespace leopph::convert
 {
 	namespace
 	{
-		auto Convert(aiMatrix4x4 const& aiMat) -> Matrix4
+		// Returns the index of the texture image corresponding to the target texture type in the passed material.
+		// If the texture is not yet loaded, it gets loaded and stored in the vector along with its source path and index in the map.
+		// Returns an empty optional if the texture could not be found or loaded.
+		auto GetTexture(aiMaterial const* const mat, aiTextureType const texType, std::vector<Image>& textures, std::unordered_map<std::string, std::size_t>& idToInd, std::filesystem::path const& rootPath) -> std::optional<std::size_t>
 		{
-			return Matrix4
+			if (aiString texPath; mat->GetTexture(texType, 0, &texPath) == aiReturn_SUCCESS)
 			{
-				aiMat.a1, aiMat.a2, aiMat.a3, aiMat.a4,
-				aiMat.b1, aiMat.b2, aiMat.b3, aiMat.b4,
-				aiMat.c1, aiMat.c2, aiMat.c3, aiMat.c4,
-				aiMat.d1, aiMat.d2, aiMat.d3, aiMat.d4
-			};
+				if (idToInd.contains(texPath.C_Str()))
+				{
+					return idToInd[texPath.C_Str()];
+				}
+
+				textures.emplace_back(rootPath / texPath.C_Str(), true);
+				return idToInd[texPath.C_Str()] = textures.size() - 1;
+			}
+
+			return {};
 		}
 
 
-		auto Convert(aiVector3D const& aiVec) -> Vector3
+		auto ProcessMaterials(std::span<aiMaterial* const> const aiMats, std::filesystem::path const& rootPath) -> std::pair<std::vector<Material>, std::vector<Image>>
 		{
-			return Vector3{aiVec.x, aiVec.y, aiVec.z};
-		}
+			std::unordered_map<std::string, std::size_t> idToInd;
+			std::vector<Image> textures;
+			std::vector<Material> materials;
 
-
-		auto Convert(aiColor3D const& aiCol) -> Color
-		{
-			return Color{static_cast<unsigned char>(aiCol.r * 255), static_cast<unsigned char>(aiCol.g * 255), static_cast<unsigned char>(aiCol.b * 255)};
-		}
-
-
-		auto ProcessMaterial(aiMaterial const* aiMat) -> Material
-		{
-			Material mat;
-
-			if (float opacity; aiMat->Get(AI_MATKEY_OPACITY, opacity) == aiReturn_SUCCESS)
+			for (auto const* const aiMat : aiMats)
 			{
-				mat.Opacity = opacity;
+				Material mat;
+
+				if (float opacity; aiMat->Get(AI_MATKEY_OPACITY, opacity) == aiReturn_SUCCESS)
+				{
+					mat.Opacity = opacity;
+				}
+
+				if (aiColor3D diffClr; aiMat->Get(AI_MATKEY_COLOR_DIFFUSE, diffClr) == aiReturn_SUCCESS)
+				{
+					mat.DiffuseColor = Convert(diffClr);
+				}
+
+				if (aiColor3D specClr; aiMat->Get(AI_MATKEY_COLOR_SPECULAR, specClr) == aiReturn_SUCCESS)
+				{
+					mat.SpecularColor = Convert(specClr);
+				}
+
+				if (ai_real gloss; aiMat->Get(AI_MATKEY_SHININESS, gloss) == aiReturn_SUCCESS)
+				{
+					mat.Gloss = gloss;
+				}
+
+				if (int twoSided; aiMat->Get(AI_MATKEY_TWOSIDED, twoSided) == aiReturn_SUCCESS)
+				{
+					mat.TwoSided = !twoSided;
+				}
+
+				mat.DiffuseMap = GetTexture(aiMat, aiTextureType_DIFFUSE, textures, idToInd, rootPath);
+				mat.SpecularMap = GetTexture(aiMat, aiTextureType_SPECULAR, textures, idToInd, rootPath);
+				mat.OpacityMap = GetTexture(aiMat, aiTextureType_OPACITY, textures, idToInd, rootPath);
+
+				// If the diffuse map has an alpha channel, and we couldn't parse an opacity map
+				// We assume that the transparency comes from the diffuse alpha, so we steal it
+				// And create an opacity map from that.
+				if (!mat.OpacityMap.has_value() && mat.DiffuseMap.has_value() && textures[mat.DiffuseMap.value()].Channels() == 4)
+				{
+					auto& tex = textures[mat.DiffuseMap.value()];
+					textures.push_back(tex.ExtractChannel(3));
+					mat.OpacityMap = textures.size() - 1;
+				}
+
+				materials.push_back(mat);
 			}
 
-			if (aiString texPath; aiMat->GetTexture(aiTextureType_OPACITY, 0, &texPath) == aiReturn_SUCCESS)
-			{
-				mat.OpacityMap = texPath.C_Str();
-			}
-
-			if (aiString texPath; aiMat->GetTexture(aiTextureType_DIFFUSE, 0, &texPath) == aiReturn_SUCCESS)
-			{
-				mat.DiffuseMap = texPath.C_Str();
-			}
-
-			if (aiString texPath; aiMat->GetTexture(aiTextureType_SPECULAR, 0, &texPath) == aiReturn_SUCCESS)
-			{
-				mat.SpecularMap = texPath.C_Str();
-			}
-
-			if (aiColor3D diffClr; aiMat->Get(AI_MATKEY_COLOR_DIFFUSE, diffClr) == aiReturn_SUCCESS)
-			{
-				mat.DiffuseColor = Convert(diffClr);
-			}
-
-			if (aiColor3D specClr; aiMat->Get(AI_MATKEY_COLOR_SPECULAR, specClr) == aiReturn_SUCCESS)
-			{
-				mat.SpecularColor = Convert(specClr);
-			}
-
-			if (ai_real gloss; aiMat->Get(AI_MATKEY_SHININESS, gloss) == aiReturn_SUCCESS)
-			{
-				mat.Gloss = gloss;
-			}
-
-			if (int twoSided; aiMat->Get(AI_MATKEY_TWOSIDED, twoSided) == aiReturn_SUCCESS)
-			{
-				mat.TwoSided = !twoSided;
-			}
-
-			return mat;
+			return {std::move(materials), std::move(textures)};
 		}
 
 
@@ -181,13 +189,12 @@ namespace leopph::convert
 
 		Object object;
 
-		for (unsigned i = 0; i < scene->mNumMaterials; i++)
-		{
-			object.Materials.push_back(ProcessMaterial(scene->mMaterials[i]));
-		}
+		auto [materials, textures] = ProcessMaterials(std::span{scene->mMaterials, scene->mNumMaterials}, path.parent_path());
+
+		object.Materials = std::move(materials);
+		object.Textures = std::move(textures);
 
 		std::queue<std::pair<aiNode const*, Matrix4>> queue;
-
 		queue.emplace(scene->mRootNode, Convert(scene->mRootNode->mTransformation));
 
 		while (!queue.empty())

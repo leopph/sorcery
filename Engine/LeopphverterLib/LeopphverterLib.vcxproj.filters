@@ -21,9 +21,21 @@
     <ClInclude Include="include\LeopphverterImport.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\TypeConversion.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\LeopphverterExport.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Import.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\TypeConversion.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Export.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

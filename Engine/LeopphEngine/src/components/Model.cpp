@@ -12,7 +12,7 @@ namespace leopph
 {
 	namespace
 	{
-		auto ConvertMaterial(convert::Material const& convMat, std::filesystem::path const& rootPath) -> std::shared_ptr<Material>
+		auto ConvertMaterial(convert::Material const& convMat, std::span<std::shared_ptr<Texture> const> const textures) -> std::shared_ptr<Material>
 		{
 			auto mat = std::make_shared<Material>();
 
@@ -22,37 +22,19 @@ namespace leopph
 			mat->TwoSided = convMat.TwoSided;
 			mat->Opacity = convMat.Opacity;
 
-			if (!convMat.OpacityMap.empty())
+			if (convMat.DiffuseMap.has_value())
 			{
-				if (Image const img{rootPath / convMat.OpacityMap, true}; !img.Empty())
-				{
-					mat->OpacityMap = std::make_shared<Texture>(img);
-				}
+				mat->DiffuseMap = textures[convMat.DiffuseMap.value()];
 			}
 
-			if (!convMat.DiffuseMap.empty())
+			if (convMat.SpecularMap.has_value())
 			{
-				if (Image img{rootPath / convMat.DiffuseMap, true}; !img.Empty())
-				{
-					// If the diffuse map has an alpha channel, and we couldn't parse an opacity map
-					// We assume that the transparency comes from the diffuse alpha, so we steal it
-					// And create an opacity map from that.
-					if (img.Channels() == 4 && !mat->OpacityMap)
-					{
-						auto alphaChan = img.ExtractChannel(3);
-						mat->OpacityMap = std::make_shared<Texture>(alphaChan);
-					}
-
-					mat->DiffuseMap = std::make_shared<Texture>(img);
-				}
+				mat->SpecularMap = textures[convMat.SpecularMap.value()];
 			}
 
-			if (!convMat.SpecularMap.empty())
+			if (convMat.OpacityMap.has_value())
 			{
-				if (Image const img{rootPath / convMat.SpecularMap, true}; !img.Empty())
-				{
-					mat->SpecularMap = std::make_shared<Texture>(img);
-				}
+				mat->OpacityMap = textures[convMat.OpacityMap.value()];
 			}
 
 			return mat;
@@ -61,14 +43,22 @@ namespace leopph
 
 		auto Parse(std::filesystem::path const& path) -> std::vector<Mesh>
 		{
-			auto const& [convMeshes, convMats] = convert::Import(path);
+			auto const& [convMeshes, convMats, convTexs] = convert::Import(path);
+
+			std::vector<std::shared_ptr<Texture>> textures;
+			textures.reserve(convTexs.size());
+
+			for (auto const& convTex : convTexs)
+			{
+				textures.push_back(std::make_shared<Texture>(convTex));
+			}
 
 			std::vector<std::shared_ptr<Material>> mats;
 			mats.reserve(convMats.size());
 
 			for (auto const& convMat : convMats)
 			{
-				mats.push_back(ConvertMaterial(convMat, path.parent_path()));
+				mats.push_back(ConvertMaterial(convMat, textures));
 			}
 
 			std::vector<Mesh> meshes;

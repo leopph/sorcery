@@ -21,9 +21,13 @@
   <ItemGroup>
     <ClInclude Include="include\LeopphverterCommon.hpp" />
     <ClInclude Include="include\LeopphverterImport.hpp" />
+    <ClInclude Include="src\LeopphverterExport.hpp" />
+    <ClInclude Include="src\TypeConversion.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\Export.cpp" />
     <ClCompile Include="src\Import.cpp" />
+    <ClCompile Include="src\TypeConversion.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
@@ -94,13 +98,13 @@
     <OutDir>$(SolutionDir)Engine\bin\$(Configuration)_$(Platform)\</OutDir>
     <IntDir>$(SolutionDir)Engine\int\$(ProjectName)\$(Configuration)_$(Platform)\</IntDir>
     <TargetName>leopphverter</TargetName>
-    <LibraryPath>$(SolutionDir)Engine\bin\$(Configuration)_$(Platform)\;$(SolutionDir)Engine\deps\vendor\assimp\contrib\zlib\$(Configuration)\;$(SolutionDir)Engine\deps\vendor\assimp\lib\$(Configuration)\;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
+    <LibraryPath>$(SolutionDir)Engine\bin\$(Configuration)_$(Platform)\;$(SolutionDir)Engine\deps\vendor\assimp\lib\$(Configuration)\;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)Engine\bin\$(Configuration)_$(Platform)\</OutDir>
     <IntDir>$(SolutionDir)Engine\int\$(ProjectName)\$(Configuration)_$(Platform)\</IntDir>
     <TargetName>leopphverter</TargetName>
-    <LibraryPath>$(SolutionDir)Engine\bin\$(Configuration)_$(Platform)\;$(SolutionDir)Engine\deps\vendor\assimp\contrib\zlib\$(Configuration)\;$(SolutionDir)Engine\deps\vendor\assimp\lib\$(Configuration)\;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
+    <LibraryPath>$(SolutionDir)Engine\deps\vendor\zlib\$(Configuration)\;$(SolutionDir)Engine\bin\$(Configuration)_$(Platform)\;$(SolutionDir)Engine\deps\vendor\assimp\lib\$(Configuration)\;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -143,7 +147,7 @@
       <PreprocessorDefinitions>ENGINE_BUILD;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)Engine\LeopphUtils\include\;$(SolutionDir)Engine\deps\vendor\assimp\include\;$(SolutionDir)Engine\include\;$(ProjectDir)include\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Engine\deps\vendor\zlib\;$(SolutionDir)Engine\LeopphUtils\include\;$(SolutionDir)Engine\deps\vendor\assimp\include\;$(SolutionDir)Engine\include\;$(ProjectDir)include\</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -161,7 +165,7 @@
       <PreprocessorDefinitions>ENGINE_BUILD;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)Engine\LeopphUtils\include\;$(SolutionDir)Engine\deps\vendor\assimp\include\;$(SolutionDir)Engine\include\;$(ProjectDir)include\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Engine\deps\vendor\zlib\;$(SolutionDir)Engine\LeopphUtils\include\;$(SolutionDir)Engine\deps\vendor\assimp\include\;$(SolutionDir)Engine\include\;$(ProjectDir)include\</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
