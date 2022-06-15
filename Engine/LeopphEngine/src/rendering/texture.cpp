@@ -44,6 +44,8 @@ namespace leopph
 
 		glCreateTextures(GL_TEXTURE_2D, 1, &m_Texture);
 		glTextureStorage2D(m_Texture, 1, internalFormat, m_Width, m_Height);
+
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 1); // This is a permanent change because of the tightly packed image data. Unnecessary to set it every time.
 		glTextureSubImage2D(m_Texture, 0, 0, 0, m_Width, m_Height, colorFormat, GL_UNSIGNED_BYTE, img.Data().data());
 
 		glGenerateTextureMipmap(m_Texture);
