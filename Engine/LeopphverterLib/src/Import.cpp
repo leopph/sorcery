@@ -25,7 +25,7 @@ namespace leopph::convert
 				aiMat.b1, aiMat.b2, aiMat.b3, aiMat.b4,
 				aiMat.c1, aiMat.c2, aiMat.c3, aiMat.c4,
 				aiMat.d1, aiMat.d2, aiMat.d3, aiMat.d4
-			}.Transpose();
+			};
 		}
 
 
@@ -167,6 +167,7 @@ namespace leopph::convert
 		Assimp::Importer importer;
 		auto const* scene = importer.ReadFile(path.string(),
 		                                      aiProcess_JoinIdenticalVertices |
+		                                      aiProcess_MakeLeftHanded |
 		                                      aiProcess_Triangulate |
 		                                      aiProcess_SortByPType |
 		                                      aiProcess_GenUVCoords |
@@ -187,7 +188,7 @@ namespace leopph::convert
 
 		std::queue<std::pair<aiNode const*, Matrix4>> queue;
 
-		queue.emplace(scene->mRootNode, Convert(scene->mRootNode->mTransformation) * Matrix4{1, 1, -1, 1});
+		queue.emplace(scene->mRootNode, Convert(scene->mRootNode->mTransformation));
 
 		while (!queue.empty())
 		{
@@ -215,7 +216,7 @@ namespace leopph::convert
 
 			for (std::size_t i = 0; i < node->mNumChildren; ++i)
 			{
-				queue.emplace(node->mChildren[i], trafo * Convert(node->mChildren[i]->mTransformation));
+				queue.emplace(node->mChildren[i], Convert(node->mChildren[i]->mTransformation) * trafo);
 			}
 
 			queue.pop();
