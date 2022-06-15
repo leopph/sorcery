@@ -29,7 +29,7 @@ namespace leopph::internal
 	auto TransparencyBuffer::Clear() const -> void
 	{
 		GLfloat constexpr zero4[]{0, 0, 0, 0};
-		GLfloat constexpr one4[]{1, 1, 1, 1};
+		GLfloat constexpr one4[]{1, 0, 0, 0};
 		glClearNamedFramebufferfv(m_Framebuffer, GL_COLOR, 0, zero4);
 		glClearNamedFramebufferfv(m_Framebuffer, GL_COLOR, 1, one4);
 	}
