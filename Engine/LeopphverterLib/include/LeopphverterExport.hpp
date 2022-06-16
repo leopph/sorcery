@@ -2,6 +2,8 @@
 
 #include "LeopphApi.hpp"
 #include "LeopphverterCommon.hpp"
+//tmp
+#include "../src/Serialization.hpp"
 
 #include <bit>
 #include <vector>

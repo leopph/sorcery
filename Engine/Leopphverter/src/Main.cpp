@@ -1,10 +1,17 @@
 #include "LeopphverterExport.hpp"
+#include "LeopphverterImport.hpp"
 
 #include <fstream>
 
-int main()
+auto static constexpr FILE_PATH = R"#(C:\Users\leven\Desktop\test.leopph3d)#";
+
+
+auto main() -> int
 {
-	auto const bytes = Export(leopph::convert::Object{});
-	std::ofstream out{R"#(C:\Users\leven\Desktop\test.bin)#", std::ios::binary | std::ios::out};
-	out.write(reinterpret_cast<char const*>(bytes.data()), sizeof(decltype(bytes)::value_type) * bytes.size());
+	leopph::convert::Import(FILE_PATH);
+
+	/*auto bytes = Export(leopph::convert::Object{});
+	leopph::convert::Serialize("viharos egy geci", bytes, std::endian::little);
+	std::ofstream out{FILE_PATH, std::ios::binary | std::ios::out};
+	out.write(reinterpret_cast<char const*>(bytes.data()), sizeof(decltype(bytes)::value_type) * bytes.size());*/
 }

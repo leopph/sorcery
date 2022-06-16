@@ -35,10 +35,13 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <LocalDebuggerEnvironment>PATH=%PATH%;$(SolutionDir)Engine\bin\$(Configuration)_$(Platform)\</LocalDebuggerEnvironment>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+    <VCToolsVersion />
+    <PreferredToolArchitecture />
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <LocalDebuggerEnvironment>PATH=%PATH%;$(SolutionDir)Engine\bin\$(Configuration)_$(Platform)\</LocalDebuggerEnvironment>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+    <VCToolsVersion />
   </PropertyGroup>
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
