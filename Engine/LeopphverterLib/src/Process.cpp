@@ -175,7 +175,6 @@ namespace leopph::convert
 		Assimp::Importer importer;
 		auto const* scene = importer.ReadFile(path.string(),
 		                                      aiProcess_JoinIdenticalVertices |
-		                                      aiProcess_MakeLeftHanded |
 		                                      aiProcess_Triangulate |
 		                                      aiProcess_SortByPType |
 		                                      aiProcess_GenUVCoords |
@@ -195,7 +194,7 @@ namespace leopph::convert
 		object.Textures = std::move(textures);
 
 		std::queue<std::pair<aiNode const*, Matrix4>> queue;
-		queue.emplace(scene->mRootNode, Convert(scene->mRootNode->mTransformation));
+		queue.emplace(scene->mRootNode, Convert(scene->mRootNode->mTransformation) * Matrix4{1, 1, -1, 1});
 
 		while (!queue.empty())
 		{

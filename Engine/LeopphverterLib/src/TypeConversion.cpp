@@ -3,14 +3,15 @@
 
 namespace leopph::convert
 {
+	// Transposes the matrix
 	auto Convert(aiMatrix4x4 const& aiMat) -> Matrix4
 	{
 		return Matrix4
 		{
-			aiMat.a1, aiMat.a2, aiMat.a3, aiMat.a4,
-			aiMat.b1, aiMat.b2, aiMat.b3, aiMat.b4,
-			aiMat.c1, aiMat.c2, aiMat.c3, aiMat.c4,
-			aiMat.d1, aiMat.d2, aiMat.d3, aiMat.d4
+			aiMat.a1, aiMat.b1, aiMat.c1, aiMat.d1,
+			aiMat.a2, aiMat.b2, aiMat.c2, aiMat.d2,
+			aiMat.a3, aiMat.b3, aiMat.c3, aiMat.d3,
+			aiMat.a4, aiMat.b4, aiMat.c4, aiMat.d4
 		};
 	}
 
