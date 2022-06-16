@@ -36,6 +36,9 @@
     <ClInclude Include="src\Parse.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\Deserialization.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Import.cpp">
@@ -56,5 +59,11 @@
     <ClCompile Include="src\Parse.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\Deserialization.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="src\leopph3d_spec.txt" />
   </ItemGroup>
 </Project>

@@ -14,18 +14,23 @@
     <ClInclude Include="include\LeopphverterCommon.hpp" />
     <ClInclude Include="include\LeopphverterImport.hpp" />
     <ClInclude Include="include\LeopphverterExport.hpp" />
+    <ClInclude Include="src\Deserialization.hpp" />
     <ClInclude Include="src\Parse.hpp" />
     <ClInclude Include="src\Process.hpp" />
     <ClInclude Include="src\Serialization.hpp" />
     <ClInclude Include="src\TypeConversion.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\Deserialization.cpp" />
     <ClCompile Include="src\Export.cpp" />
     <ClCompile Include="src\Import.cpp" />
     <ClCompile Include="src\Parse.cpp" />
     <ClCompile Include="src\Process.cpp" />
     <ClCompile Include="src\Serialization.cpp" />
     <ClCompile Include="src\TypeConversion.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="src\leopph3d_spec.txt" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

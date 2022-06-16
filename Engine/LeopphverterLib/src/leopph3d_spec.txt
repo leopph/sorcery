@@ -1,0 +1,20 @@
+FILE
+
+    HEADER
+        SIGN            U32
+        END             U1
+        VER             U7
+
+    NUM_IMG             U64
+
+    IMAGE[NUM_IMGS]
+        ID
+            LNGTH       U64
+            DATA[LNGTH]
+        WIDTH           U32
+        HEIGHT          U32
+        CHAN            U8
+        DATA[W * H * C]
+
+    
+    
