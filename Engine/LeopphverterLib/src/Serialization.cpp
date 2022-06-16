@@ -72,7 +72,7 @@ namespace leopph::convert
 		{
 			auto const width = img.Width();
 			auto const height = img.Height();
-			auto const chans = img.Channels();
+			auto const chans = static_cast<uint8_t>(img.Channels());
 			auto const* const p = reinterpret_cast<uint8_t const*>(img.Data().data());
 			SerializeNative(width, oBuf);
 			SerializeNative(height, oBuf);

@@ -53,10 +53,17 @@ namespace leopph::convert
 		// the version number. its MSB is used to indicate if the file is little endian
 		bytes.push_back(0x01 | (endianness == std::endian::big ? 0 : 0x80));
 
+		// number of images
+		Serialize(object.Textures.size(), bytes, endianness);
+
+		// write images
 		for (std::size_t i = 0; i < object.Textures.size(); i++)
 		{
-			//bytes.push_back()
-			//bytes.insert(std::end(bytes), std::begi)
+			std::string const static texIdPrefix{"tex"};
+			// id of image
+			Serialize(texIdPrefix + std::to_string(i), bytes, endianness);
+			// image data
+			Serialize(object.Textures[i], bytes, endianness);
 		}
 
 		return bytes;
