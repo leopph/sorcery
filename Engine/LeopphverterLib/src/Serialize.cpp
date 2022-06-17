@@ -1,111 +1,98 @@
 #include "Serialize.hpp"
 
+#include "Types.hpp"
+
 
 namespace leopph::convert
 {
 	namespace
 	{
-		auto SerializeNative(std::int8_t const i, std::vector<uint8_t>& oBuf) -> void
+		auto SerializeNative(i16 const i, std::vector<u8>& oBuf) -> void
 		{
-			oBuf.push_back(*reinterpret_cast<std::uint8_t const*>(&i));
-		}
-
-
-		auto SerializeNative(std::uint8_t const u, std::vector<uint8_t>& oBuf) -> void
-		{
-			oBuf.push_back(u);
-		}
-
-
-		auto SerializeNative(std::int16_t const i, std::vector<uint8_t>& oBuf) -> void
-		{
-			auto const* const p = reinterpret_cast<uint8_t const*>(&i);
+			auto const* const p = reinterpret_cast<u8 const*>(&i);
 			oBuf.insert(std::end(oBuf), p, p + 2);
 		}
 
 
-		auto SerializeNative(std::uint16_t const u, std::vector<uint8_t>& oBuf) -> void
+		auto SerializeNative(u16 const u, std::vector<u8>& oBuf) -> void
 		{
-			auto const* const p = reinterpret_cast<uint8_t const*>(&u);
+			auto const* const p = reinterpret_cast<u8 const*>(&u);
 			oBuf.insert(std::end(oBuf), p, p + 2);
 		}
 
 
-		auto SerializeNative(std::int32_t const i, std::vector<uint8_t>& oBuf) -> void
+		auto SerializeNative(i32 const i, std::vector<u8>& oBuf) -> void
 		{
-			auto const* const p = reinterpret_cast<uint8_t const*>(&i);
+			auto const* const p = reinterpret_cast<u8 const*>(&i);
 			oBuf.insert(std::end(oBuf), p, p + 4);
 		}
 
 
-		auto SerializeNative(std::uint32_t const u, std::vector<uint8_t>& oBuf) -> void
+		auto SerializeNative(u32 const u, std::vector<u8>& oBuf) -> void
 		{
-			auto const* const p = reinterpret_cast<uint8_t const*>(&u);
+			auto const* const p = reinterpret_cast<u8 const*>(&u);
 			oBuf.insert(std::end(oBuf), p, p + 4);
 		}
 
 
-		auto SerializeNative(std::int64_t const i, std::vector<uint8_t>& oBuf) -> void
+		auto SerializeNative(f32 const f, std::vector<u8>& oBuf) -> void
 		{
-			auto const* const p = reinterpret_cast<uint8_t const*>(&i);
-			oBuf.insert(std::end(oBuf), p, p + 8);
-		}
-
-
-		auto SerializeNative(std::uint64_t const u, std::vector<uint8_t>& oBuf) -> void
-		{
-			auto const* const p = reinterpret_cast<uint8_t const*>(&u);
-			oBuf.insert(std::end(oBuf), p, p + 8);
-		}
-
-
-		auto SerializeNative(float const f, std::vector<std::uint8_t>& oBuf) -> void
-		{
-			static_assert(sizeof(float) == 4); // temporary check, find better solution
-			auto const* const p = reinterpret_cast<std::uint8_t const*>(&f);
+			auto const* const p = reinterpret_cast<u8 const*>(&f);
 			oBuf.insert(std::end(oBuf), p, p + 4);
 		}
 
 
-		auto SerializeNative(double const d, std::vector<std::uint8_t>& oBuf) -> void
+		auto SerializeNative(i64 const i, std::vector<u8>& oBuf) -> void
 		{
-			static_assert(sizeof(double) == 8); // temporary check, find better solution
-			auto const* const p = reinterpret_cast<std::uint8_t const*>(&d);
+			auto const* const p = reinterpret_cast<u8 const*>(&i);
 			oBuf.insert(std::end(oBuf), p, p + 8);
 		}
 
 
-		auto SerializeNative(std::string_view const str, std::vector<uint8_t>& oBuf) -> void
+		auto SerializeNative(u64 const u, std::vector<u8>& oBuf) -> void
+		{
+			auto const* const p = reinterpret_cast<u8 const*>(&u);
+			oBuf.insert(std::end(oBuf), p, p + 8);
+		}
+
+
+		auto SerializeNative(f64 const f, std::vector<u8>& oBuf) -> void
+		{
+			auto const* const p = reinterpret_cast<u8 const*>(&f);
+			oBuf.insert(std::end(oBuf), p, p + 8);
+		}
+
+
+		auto SerializeNative(std::string_view const str, std::vector<u8>& oBuf) -> void
 		{
 			auto const sz = str.size();
-			auto const* const p = reinterpret_cast<uint8_t const*>(str.data());
+			auto const* const p = reinterpret_cast<u8 const*>(str.data());
 			SerializeNative(sz, oBuf);
 			oBuf.insert(std::end(oBuf), p, p + sz);
 		}
 
 
-		auto SerializeNative(Image const& img, std::vector<uint8_t>& oBuf) -> void
+		auto SerializeNative(Image const& img, std::vector<u8>& oBuf) -> void
 		{
 			auto const width = img.Width();
 			auto const height = img.Height();
-			auto const chans = static_cast<uint8_t>(img.Channels());
-			auto const* const p = reinterpret_cast<uint8_t const*>(img.Data().data());
+			auto const chans = static_cast<u8>(img.Channels());
+			auto const* const p = reinterpret_cast<u8 const*>(img.Data().data());
 			SerializeNative(width, oBuf);
 			SerializeNative(height, oBuf);
-			SerializeNative(chans, oBuf);
+			oBuf.push_back(chans);
 			oBuf.insert(std::end(oBuf), p, p + width * height * chans);
 		}
 
 
-		auto SerializeNative(Color const& color, std::vector<std::uint8_t>& oBuf) -> void
+		auto SerializeNative(Color const& color, std::vector<u8>& oBuf) -> void
 		{
-			SerializeNative(color.Red, oBuf);
-			SerializeNative(color.Green, oBuf);
-			SerializeNative(color.Blue, oBuf);
+			auto const* const p = reinterpret_cast<u8 const*>(&color);
+			oBuf.insert(std::end(oBuf), p, p + 3);
 		}
 
 
-		auto SerializeNative(Material const& mat, std::vector<std::uint8_t>& oBuf) -> void
+		auto SerializeNative(Material const& mat, std::vector<u8>& oBuf) -> void
 		{
 			SerializeNative(mat.DiffuseColor, oBuf);
 			SerializeNative(mat.SpecularColor, oBuf);
@@ -113,9 +100,10 @@ namespace leopph::convert
 			SerializeNative(mat.Opacity, oBuf);
 
 			static_assert(sizeof(bool) == 1); // temporary check, find better solution
-			SerializeNative(static_cast<std::uint8_t>(mat.TwoSided), oBuf);
+			oBuf.push_back(static_cast<u8>(mat.TwoSided));
 
-			std::uint8_t flags{0};
+			u8 flags{0};
+
 			if (mat.DiffuseMap.has_value())
 			{
 				flags |= 0x80;
@@ -131,51 +119,58 @@ namespace leopph::convert
 				flags |= 0x20;
 			}
 
-			SerializeNative(flags, oBuf);
+			oBuf.push_back(flags);
 			SerializeNative(mat.DiffuseMap.value_or(0), oBuf);
 			SerializeNative(mat.SpecularMap.value_or(0), oBuf);
 			SerializeNative(mat.OpacityMap.value_or(0), oBuf);
 		}
 
 
-		auto SerializeNative(Vector2 const& vec, std::vector<uint8_t>& oBuf) -> void
+		auto SerializeNative(Vector2 const& vec, std::vector<u8>& oBuf) -> void
 		{
 			SerializeNative(vec[0], oBuf);
 			SerializeNative(vec[1], oBuf);
 		}
 
-		auto SerializeNative(Vector3 const& vec, std::vector<uint8_t>& oBuf) -> void
+
+		auto SerializeNative(Vector3 const& vec, std::vector<u8>& oBuf) -> void
 		{
 			SerializeNative(vec[0], oBuf);
 			SerializeNative(vec[1], oBuf);
 			SerializeNative(vec[2], oBuf);
 		}
-		
-		auto SerializeNative(Vertex const& vert, std::vector<uint8_t>& oBuf) -> void
+
+
+		auto SerializeNative(Vertex const& vert, std::vector<u8>& oBuf) -> void
 		{
 			SerializeNative(vert.Position, oBuf);
 			SerializeNative(vert.Normal, oBuf);
 			SerializeNative(vert.TexCoord, oBuf);
 		}
-		
-		auto SerializeNative(Mesh const& mesh, std::vector<uint8_t>& oBuf) -> void
+
+
+		auto SerializeNative(Mesh const& mesh, std::vector<u8>& oBuf) -> void
 		{
 			SerializeNative(mesh.Vertices.size(), oBuf);
+
 			for (auto const& vert : mesh.Vertices)
 			{
 				SerializeNative(vert, oBuf);
 			}
+
 			SerializeNative(mesh.Indices.size(), oBuf);
+
 			for (auto const ind : mesh.Indices)
 			{
 				SerializeNative(ind, oBuf);
 			}
+
 			SerializeNative(mesh.Material, oBuf);
 		}
 	}
 
 
-	auto Serialize(std::int8_t const i, std::vector<uint8_t>& oBuf, std::endian const endianness) -> void
+	auto Serialize(i16 const i, std::vector<u8>& oBuf, std::endian const endianness) -> void
 	{
 		if (endianness == std::endian::native)
 		{
@@ -184,7 +179,7 @@ namespace leopph::convert
 	}
 
 
-	auto Serialize(std::uint8_t const u, std::vector<uint8_t>& oBuf, std::endian const endianness) -> void
+	auto Serialize(u16 const u, std::vector<u8>& oBuf, std::endian const endianness) -> void
 	{
 		if (endianness == std::endian::native)
 		{
@@ -193,7 +188,7 @@ namespace leopph::convert
 	}
 
 
-	auto Serialize(std::int16_t const i, std::vector<uint8_t>& oBuf, std::endian const endianness) -> void
+	auto Serialize(i32 const i, std::vector<u8>& oBuf, std::endian const endianness) -> void
 	{
 		if (endianness == std::endian::native)
 		{
@@ -202,7 +197,7 @@ namespace leopph::convert
 	}
 
 
-	auto Serialize(std::uint16_t const u, std::vector<uint8_t>& oBuf, std::endian const endianness) -> void
+	auto Serialize(u32 const u, std::vector<u8>& oBuf, std::endian const endianness) -> void
 	{
 		if (endianness == std::endian::native)
 		{
@@ -211,43 +206,7 @@ namespace leopph::convert
 	}
 
 
-	auto Serialize(std::int32_t const i, std::vector<uint8_t>& oBuf, std::endian const endianness) -> void
-	{
-		if (endianness == std::endian::native)
-		{
-			SerializeNative(i, oBuf);
-		}
-	}
-
-
-	auto Serialize(std::uint32_t const u, std::vector<uint8_t>& oBuf, std::endian const endianness) -> void
-	{
-		if (endianness == std::endian::native)
-		{
-			SerializeNative(u, oBuf);
-		}
-	}
-
-
-	auto Serialize(std::int64_t const i, std::vector<uint8_t>& oBuf, std::endian const endianness) -> void
-	{
-		if (endianness == std::endian::native)
-		{
-			SerializeNative(i, oBuf);
-		}
-	}
-
-
-	auto Serialize(std::uint64_t const u, std::vector<uint8_t>& oBuf, std::endian const endianness) -> void
-	{
-		if (endianness == std::endian::native)
-		{
-			SerializeNative(u, oBuf);
-		}
-	}
-
-
-	auto Serialize(float const f, std::vector<uint8_t>& oBuf, std::endian const endianness) -> void
+	auto Serialize(f32 const f, std::vector<u8>& oBuf, std::endian const endianness) -> void
 	{
 		if (endianness == std::endian::native)
 		{
@@ -256,16 +215,34 @@ namespace leopph::convert
 	}
 
 
-	auto Serialize(double const d, std::vector<uint8_t>& oBuf, std::endian const endianness) -> void
+	auto Serialize(i64 const i, std::vector<u8>& oBuf, std::endian const endianness) -> void
 	{
 		if (endianness == std::endian::native)
 		{
-			SerializeNative(d, oBuf);
+			SerializeNative(i, oBuf);
 		}
 	}
 
 
-	auto Serialize(std::string_view const str, std::vector<uint8_t>& oBuf, std::endian const endianness) -> void
+	auto Serialize(u64 const u, std::vector<u8>& oBuf, std::endian const endianness) -> void
+	{
+		if (endianness == std::endian::native)
+		{
+			SerializeNative(u, oBuf);
+		}
+	}
+
+
+	auto Serialize(f64 const f, std::vector<u8>& oBuf, std::endian const endianness) -> void
+	{
+		if (endianness == std::endian::native)
+		{
+			SerializeNative(f, oBuf);
+		}
+	}
+
+
+	auto Serialize(std::string_view const str, std::vector<u8>& oBuf, std::endian const endianness) -> void
 	{
 		if (endianness == std::endian::native)
 		{
@@ -274,7 +251,7 @@ namespace leopph::convert
 	}
 
 
-	auto Serialize(Image const& img, std::vector<uint8_t>& oBuf, std::endian const endianness) -> void
+	auto Serialize(Image const& img, std::vector<u8>& oBuf, std::endian const endianness) -> void
 	{
 		if (endianness == std::endian::native)
 		{
@@ -283,7 +260,7 @@ namespace leopph::convert
 	}
 
 
-	auto Serialize(Color const& color, std::vector<uint8_t>& oBuf, std::endian const endianness) -> void
+	auto Serialize(Color const& color, std::vector<u8>& oBuf, std::endian const endianness) -> void
 	{
 		if (endianness == std::endian::native)
 		{
@@ -292,7 +269,7 @@ namespace leopph::convert
 	}
 
 
-	auto Serialize(Material const& mat, std::vector<uint8_t>& oBuf, std::endian const endianness) -> void
+	auto Serialize(Material const& mat, std::vector<u8>& oBuf, std::endian const endianness) -> void
 	{
 		if (endianness == std::endian::native)
 		{
@@ -301,7 +278,7 @@ namespace leopph::convert
 	}
 
 
-	auto Serialize(Vector2 const& vec, std::vector<uint8_t>& oBuf, std::endian const endianness) -> void
+	auto Serialize(Vector2 const& vec, std::vector<u8>& oBuf, std::endian const endianness) -> void
 	{
 		if (endianness == std::endian::native)
 		{
@@ -310,7 +287,7 @@ namespace leopph::convert
 	}
 
 
-	auto Serialize(Vector3 const& vec, std::vector<uint8_t>& oBuf, std::endian const endianness) -> void
+	auto Serialize(Vector3 const& vec, std::vector<u8>& oBuf, std::endian const endianness) -> void
 	{
 		if (endianness == std::endian::native)
 		{
@@ -319,7 +296,7 @@ namespace leopph::convert
 	}
 
 
-	auto Serialize(Vertex const& vert, std::vector<uint8_t>& oBuf, std::endian const endianness) -> void
+	auto Serialize(Vertex const& vert, std::vector<u8>& oBuf, std::endian const endianness) -> void
 	{
 		if (endianness == std::endian::native)
 		{
@@ -328,7 +305,7 @@ namespace leopph::convert
 	}
 
 
-	auto Serialize(Mesh const& mesh, std::vector<uint8_t>& oBuf, std::endian const endianness) -> void
+	auto Serialize(Mesh const& mesh, std::vector<u8>& oBuf, std::endian const endianness) -> void
 	{
 		if (endianness == std::endian::native)
 		{

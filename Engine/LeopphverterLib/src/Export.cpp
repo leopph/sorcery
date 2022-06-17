@@ -1,5 +1,6 @@
 #include "LeopphverterExport.hpp"
 #include "Logger.hpp"
+#include "Serialize.hpp"
 
 #include <bit>
 #include <cstdint>
@@ -7,20 +8,6 @@
 #include <string>
 #include <type_traits>
 #include <zlib.h>
-
-// temporary assertions, will be later resolved with platform-based fixed-size types and macros
-static_assert(sizeof(char) == 1);
-static_assert(sizeof(unsigned char) == 1);
-static_assert(sizeof(short) == 2);
-static_assert(sizeof(unsigned short) == 2);
-static_assert(sizeof(int) == 4);
-static_assert(sizeof(unsigned) == 4);
-static_assert(sizeof(long) == 4);
-static_assert(sizeof(unsigned long) == 4);
-static_assert(sizeof(long long) == 8);
-static_assert(sizeof(unsigned long long) == 8);
-static_assert(std::is_same_v<std::size_t, unsigned long long>);
-static_assert(std::endian::native == std::endian::little || std::endian::native == std::endian::big);
 
 
 namespace leopph::convert

@@ -2,9 +2,9 @@
 
 #include "Color.hpp"
 #include "Image.hpp"
+#include "Types.hpp"
 #include "Vertex.hpp"
 
-#include <cstddef>
 #include <optional>
 #include <vector>
 
@@ -15,12 +15,12 @@ namespace leopph::convert
 	{
 		Color DiffuseColor{255, 255, 255};
 		Color SpecularColor{0, 0, 0};
-		float Gloss{0};
-		float Opacity{1};
+		f32 Gloss{0};
+		f32 Opacity{1};
 		bool TwoSided{false};
-		std::optional<std::size_t> DiffuseMap;
-		std::optional<std::size_t> SpecularMap;
-		std::optional<std::size_t> OpacityMap;
+		std::optional<u64> DiffuseMap;
+		std::optional<u64> SpecularMap;
+		std::optional<u64> OpacityMap;
 	};
 
 
@@ -28,7 +28,7 @@ namespace leopph::convert
 	{
 		std::vector<Vertex> Vertices;
 		std::vector<unsigned> Indices;
-		std::size_t Material;
+		u64 Material;
 	};
 
 

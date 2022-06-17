@@ -12,10 +12,6 @@
 
 namespace leopph::convert
 {
-	namespace
-	{ }
-
-
 	auto ParseLeopph3D(std::filesystem::path const& path) -> std::optional<Object>
 	{
 		try
@@ -32,7 +28,7 @@ namespace leopph::convert
 				return {};
 			}
 
-			std::vector<std::uint8_t> buffer(5);
+			std::vector<u8> buffer(5);
 
 			// read header
 			in.read(reinterpret_cast<char*>(buffer.data()), 5);
@@ -50,7 +46,7 @@ namespace leopph::convert
 			buffer.clear();
 
 			// stream rest of the file in
-			std::copy(std::istream_iterator<std::uint8_t>{in}, std::istream_iterator<std::uint8_t>{}, std::back_inserter(buffer));
+			std::copy(std::istream_iterator<u8>{in}, std::istream_iterator<u8>{}, std::back_inserter(buffer));
 
 			auto const& bytes = buffer;
 			auto it = std::begin(bytes);
@@ -64,7 +60,7 @@ namespace leopph::convert
 			imgs.reserve(numImgs);
 
 			// parse image data
-			for (std::uint64_t i = 0; i < numImgs; i++)
+			for (u64 i = 0; i < numImgs; i++)
 			{
 				imgs.push_back(DeserializeImage(it, endianness));
 			}
@@ -78,7 +74,7 @@ namespace leopph::convert
 			mats.reserve(numMats);
 
 			// parse material data
-			for (std::uint64_t i = 0; i < numMats; i++)
+			for (u64 i = 0; i < numMats; i++)
 			{
 				mats.push_back(DeserializeMaterial(it, endianness));
 			}
@@ -92,7 +88,7 @@ namespace leopph::convert
 			meshes.reserve(numMeshes);
 
 			// parse mesh data
-			for (std::uint64_t i = 0; i < numMeshes; i++)
+			for (u64 i = 0; i < numMeshes; i++)
 			{
 				meshes.push_back(DeserializeMesh(it, endianness));
 			}

@@ -10,12 +10,11 @@
 
 namespace leopph::convert
 {
-	auto DeserializeI32(std::span<std::uint8_t const> bytes, std::endian endianness) -> std::int32_t;
-	auto DeserializeU32(std::span<std::uint8_t const> bytes, std::endian endianness) -> std::uint32_t;
+	auto DeserializeI32(std::span<u8 const> bytes, std::endian endianness) -> i32;
+	auto DeserializeU32(std::span<u8 const> bytes, std::endian endianness) -> u32;
+	auto DeserializeF32(std::span<u8 const> bytes, std::endian endianness) -> f32;
 
-	auto DeserializeU64(std::span<std::uint8_t const> bytes, std::endian endianness) -> std::uint64_t;
-
-	auto DeserializeF32(std::span<std::uint8_t const> bytes, std::endian endianness) -> float;
+	auto DeserializeU64(std::span<u8 const> bytes, std::endian endianness) -> u64;
 
 	template<std::contiguous_iterator It>
 	auto DeserializeVec2(It& it, std::endian endianness) -> Vector2;
@@ -142,7 +141,7 @@ namespace leopph::convert
 
 		mesh.Vertices.reserve(numVertices);
 
-		for (std::uint64_t i = 0; i < numVertices; i++)
+		for (u64 i = 0; i < numVertices; i++)
 		{
 			mesh.Vertices.push_back(DeserializeVertex(it, endianness));
 		}
@@ -152,7 +151,7 @@ namespace leopph::convert
 
 		mesh.Indices.reserve(numIndices);
 
-		for (std::uint64_t i = 0; i < numIndices; i++)
+		for (u64 i = 0; i < numIndices; i++)
 		{
 			mesh.Indices.push_back(DeserializeU32({it, it + 4}, endianness));
 			it += 4;

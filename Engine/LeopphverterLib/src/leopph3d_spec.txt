@@ -16,8 +16,8 @@ IMAGE
 MATERIAL
     diffuseColor    :U8[3]
     specularColor   :U8[3]
-    gloss           :FLOAT32
-    opacity         :FLOAT32
+    gloss           :f3232
+    opacity         :f3232
     twoSided        :U8
     diffuseMapFlag  :U8:MSB1
     specularMapFlag :U8:MSB2
@@ -28,9 +28,9 @@ MATERIAL
     opacityMap      :U64
 
 VERTEX
-    position        :FLOAT32[3]
-    normal          :FLOAT32[3]
-    texcoords       :FLOAT32[2]
+    position        :f3232[3]
+    normal          :f3232[3]
+    texcoords       :f3232[2]
 
 MESH
     numVertices     :U64

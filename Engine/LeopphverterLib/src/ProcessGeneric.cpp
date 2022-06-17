@@ -51,7 +51,7 @@ namespace leopph::convert
 			{
 				Material mat;
 
-				if (float opacity; aiMat->Get(AI_MATKEY_OPACITY, opacity) == aiReturn_SUCCESS)
+				if (f32 opacity; aiMat->Get(AI_MATKEY_OPACITY, opacity) == aiReturn_SUCCESS)
 				{
 					mat.Opacity = opacity;
 				}
