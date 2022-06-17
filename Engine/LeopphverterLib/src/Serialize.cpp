@@ -1,6 +1,6 @@
 #include "Serialize.hpp"
 
-#include "Types.hpp"
+#include <zlib.h>
 
 
 namespace leopph::convert
@@ -75,13 +75,19 @@ namespace leopph::convert
 		auto SerializeNative(Image const& img, std::vector<u8>& oBuf) -> void
 		{
 			auto const width = img.Width();
-			auto const height = img.Height();
-			auto const chans = static_cast<u8>(img.Channels());
-			auto const* const p = reinterpret_cast<u8 const*>(img.Data().data());
 			SerializeNative(width, oBuf);
+
+			auto const height = img.Height();
 			SerializeNative(height, oBuf);
+
+			auto const chans = static_cast<u8>(img.Channels());
 			oBuf.push_back(chans);
-			oBuf.insert(std::end(oBuf), p, p + width * height * chans);
+			
+			auto comprBufSz = compressBound(width * height * chans);
+			auto const comprBuf = std::make_unique_for_overwrite<u8[]>(comprBufSz);
+			compress2(comprBuf.get(), &comprBufSz, reinterpret_cast<u8 const*>(img.Data().data()), width * height * chans, 9);
+			SerializeNative(static_cast<u64>(comprBufSz), oBuf);
+			oBuf.insert(std::end(oBuf), comprBuf.get(), comprBuf.get() + comprBufSz);
 		}
 
 

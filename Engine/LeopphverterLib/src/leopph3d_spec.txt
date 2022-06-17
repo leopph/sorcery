@@ -11,13 +11,14 @@ IMAGE
     width           :I32
     height          :I32
     channels        :U8
-    data            :U8[width * height * channels]
+    dataLength      :U64
+    data            :U8[dataLength]
 
 MATERIAL
     diffuseColor    :U8[3]
     specularColor   :U8[3]
-    gloss           :f3232
-    opacity         :f3232
+    gloss           :F32
+    opacity         :F32
     twoSided        :U8
     diffuseMapFlag  :U8:MSB1
     specularMapFlag :U8:MSB2
@@ -28,9 +29,9 @@ MATERIAL
     opacityMap      :U64
 
 VERTEX
-    position        :f3232[3]
-    normal          :f3232[3]
-    texcoords       :f3232[2]
+    position        :F32[3]
+    normal          :F32[3]
+    texcoords       :F32[2]
 
 MESH
     numVertices     :U64

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "LeopphverterTypes.hpp"
+#include "zlib.h"
 
 #include <bit>
 #include <cstdint>
@@ -87,10 +88,17 @@ namespace leopph::convert
 		auto const chans = *(it + 8);
 		it += 9;
 
-		auto const imgSz = width * height * chans;
+		auto const comprDataSz = DeserializeU64({it, 8}, endianness);
+		it += 8;
+
+		auto comprData = std::make_unique<u8[]>(comprDataSz);
+		std::copy_n(it, comprDataSz, comprData.get());
+		it += comprDataSz;
+
+		auto imgSz = static_cast<u64>(width * height * chans);
 		auto imgData = std::make_unique<unsigned char[]>(imgSz);
-		std::copy_n(it, imgSz, imgData.get());
-		it += imgSz;
+		uncompress(imgData.get(), reinterpret_cast<uLongf*>(&imgSz), comprData.get(), static_cast<uLong>(comprDataSz));
+			
 		return Image{width, height, chans, std::move(imgData)};
 	}
 

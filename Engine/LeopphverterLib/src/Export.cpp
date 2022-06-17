@@ -5,9 +5,6 @@
 #include <bit>
 #include <cstdint>
 #include <stdexcept>
-#include <string>
-#include <type_traits>
-#include <zlib.h>
 
 
 namespace leopph::convert
