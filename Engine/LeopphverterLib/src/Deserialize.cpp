@@ -1,3 +1,5 @@
+#include "Deserialize.hpp"
+
 #include "Logger.hpp"
 
 #include <cstdint>
@@ -48,6 +50,16 @@ namespace leopph::convert
 		if (endianness == std::endian::native)
 		{
 			return DeserializeNative<std::uint64_t>(bytes)[0];
+		}
+	}
+
+
+	auto DeserializeF32(std::span<std::uint8_t const, 4> const bytes, std::endian const endianness) -> float
+	{
+		if (endianness == std::endian::native)
+		{
+			static_assert(sizeof(float) == 4); // temporary check, find better solution
+			return DeserializeNative<float>(bytes)[0];
 		}
 	}
 }

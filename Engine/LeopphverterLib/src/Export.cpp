@@ -2,6 +2,7 @@
 #include "Logger.hpp"
 
 #include <bit>
+#include <cstdint>
 #include <stdexcept>
 #include <string>
 #include <type_traits>
@@ -24,15 +25,6 @@ static_assert(std::endian::native == std::endian::little || std::endian::native 
 
 namespace leopph::convert
 {
-	namespace
-	{
-		constexpr auto SystemBigEndian() -> bool
-		{
-			return std::endian::native == std::endian::big; // does not take mixed endianness into account
-		}
-	}
-
-
 	auto Export(Object const& object, std::endian const endianness) -> std::vector<unsigned char>
 	{
 		if (endianness != std::endian::little && endianness != std::endian::big)
@@ -57,27 +49,20 @@ namespace leopph::convert
 		Serialize(object.Textures.size(), bytes, endianness);
 
 		// write images
-		for (std::size_t i = 0; i < object.Textures.size(); i++)
+		for (auto const& texture : object.Textures)
 		{
-			std::string const static texIdPrefix{"tex"};
-			// id of image
-			Serialize(texIdPrefix + std::to_string(i), bytes, endianness);
 			// image data
-			Serialize(object.Textures[i], bytes, endianness);
+			Serialize(texture, bytes, endianness);
 		}
 
 		// number of materials
 		Serialize(object.Materials.size(), bytes, endianness);
 
-		for (std::size_t i = 0; i < object.Materials.size(); i++)
+		for (auto const& material : object.Materials)
 		{
-			std::string const static matIdPrefix{"mat"};
-			// id of the material
-			Serialize(matIdPrefix + std::to_string(i), bytes, endianness);
 			// material data
-			Serialize(object.Materials[i], bytes, endianness);
+			Serialize(material, bytes, endianness);
 		}
-
 
 		return bytes;
 	}

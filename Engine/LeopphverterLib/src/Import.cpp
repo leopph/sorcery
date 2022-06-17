@@ -1,7 +1,7 @@
-#include "LeopphverterTypes.hpp"
 #include "LeopphverterImport.hpp"
-#include "Parse.hpp"
-#include "Process.hpp"
+#include "LeopphverterTypes.hpp"
+#include "ParseLeopph3D.hpp"
+#include "ProcessGeneric.hpp"
 
 
 namespace leopph::convert

@@ -27,16 +27,16 @@
     <ClInclude Include="include\LeopphverterExport.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Serialization.hpp">
+    <ClInclude Include="src\Serialize.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Process.hpp">
+    <ClInclude Include="src\ProcessGeneric.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Parse.hpp">
+    <ClInclude Include="src\ParseLeopph3D.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Deserialization.hpp">
+    <ClInclude Include="src\Deserialize.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -50,16 +50,16 @@
     <ClCompile Include="src\Export.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Serialization.cpp">
+    <ClCompile Include="src\Serialize.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Process.cpp">
+    <ClCompile Include="src\ProcessGeneric.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Parse.cpp">
+    <ClCompile Include="src\ParseLeopph3D.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Deserialization.cpp">
+    <ClCompile Include="src\Deserialize.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -1,4 +1,4 @@
-#include "Serialization.hpp"
+#include "Serialize.hpp"
 
 
 namespace leopph::convert
@@ -115,33 +115,26 @@ namespace leopph::convert
 			static_assert(sizeof(bool) == 1); // temporary check, find better solution
 			SerializeNative(static_cast<std::uint8_t>(mat.TwoSided), oBuf);
 
-			static const std::string texIdPrefix{"tex"}; // double defined, TODO
+			std::uint8_t flags{0};
 			if (mat.DiffuseMap.has_value())
 			{
-				SerializeNative(texIdPrefix + std::to_string(mat.DiffuseMap.value()), oBuf);
-			}
-			else
-			{
-				SerializeNative(std::string{}, oBuf);
+				flags |= 0x80;
 			}
 
 			if (mat.SpecularMap.has_value())
 			{
-				SerializeNative(texIdPrefix + std::to_string(mat.SpecularMap.value()), oBuf);
-			}
-			else
-			{
-				SerializeNative(std::string{}, oBuf);
+				flags |= 0x40;
 			}
 
 			if (mat.OpacityMap.has_value())
 			{
-				SerializeNative(texIdPrefix + std::to_string(mat.OpacityMap.value()), oBuf);
+				flags |= 0x20;
 			}
-			else
-			{
-				SerializeNative(std::string{}, oBuf);
-			}
+
+			SerializeNative(flags, oBuf);
+			SerializeNative(mat.DiffuseMap.value_or(0), oBuf);
+			SerializeNative(mat.SpecularMap.value_or(0), oBuf);
+			SerializeNative(mat.OpacityMap.value_or(0), oBuf);
 		}
 	}
 

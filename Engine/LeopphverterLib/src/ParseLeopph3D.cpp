@@ -1,6 +1,6 @@
-#include "Parse.hpp"
+#include "ParseLeopph3D.hpp"
 
-#include "Deserialization.hpp"
+#include "Deserialize.hpp"
 #include "Image.hpp"
 #include "Logger.hpp"
 
@@ -8,7 +8,6 @@
 #include <cstddef>
 #include <fstream>
 #include <memory>
-#include <unordered_map>
 #include <vector>
 
 
@@ -52,17 +51,11 @@ namespace leopph::convert
 		auto const numImgs = DeserializeU64(std::span<std::uint8_t const, 8>{it, 8}, endianness);
 		it += 8;
 
-		std::unordered_map<std::string, Image> imgs;
+		std::vector<Image> imgs;
 		imgs.reserve(14);
 
 		for (std::uint64_t i = 0; i < numImgs; i++)
 		{
-			auto const strLngth = DeserializeU64(std::span<std::uint8_t const, 8>{it, 8}, endianness);
-			it += 8;
-
-			std::string imgId{it, it + strLngth};
-			it += strLngth;
-
 			auto const width = DeserializeI32(std::span<std::uint8_t const, 4>{it, 4}, endianness);
 			auto const height = DeserializeI32(std::span<std::uint8_t const, 4>{it + 4, 4}, endianness);
 			auto const chans = *(it + 8);
@@ -71,9 +64,50 @@ namespace leopph::convert
 			auto const imgSz = width * height * chans;
 			auto imgData = std::make_unique<unsigned char[]>(imgSz);
 			std::copy_n(it, imgSz, imgData.get());
-			imgs[imgId] = Image{width, height, chans, std::move(imgData)};
+			imgs.emplace_back(width, height, chans, std::move(imgData));
 
 			it += imgSz;
+		}
+
+		auto const numMats = DeserializeU64(std::span<std::uint8_t const, 8>{it, 8}, endianness);
+		it += 8;
+
+		std::vector<Material> mats;
+		mats.reserve(numMats);
+
+		for (std::uint64_t i = 0; i < numMats; i++)
+		{
+			Color diffuseColor{*it, *(it + 1), *(it + 2)};
+			Color specularColor{*(it + 3), *(it + 4), *(it + 5)};
+			it += 6;
+
+			auto gloss = DeserializeF32(std::span<std::uint8_t const, 4>{it, 4}, endianness);
+			auto opacity = DeserializeF32(std::span<std::uint8_t const, 4>{it + 4, 4}, endianness);
+			auto twoSided = static_cast<bool>(*(it + 8));
+			auto texFlags = *(it + 9);
+			it += 10;
+
+			std::optional<std::size_t> diffuseMap;
+			std::optional<std::size_t> specularMap;
+			std::optional<std::size_t> opacityMap;
+
+			if (texFlags & 0x80)
+			{
+				diffuseMap = DeserializeU64(std::span<std::uint8_t const, 8>{it, 8}, endianness);
+			}
+
+			if (texFlags & 0x40)
+			{
+				specularMap = DeserializeU64(std::span<std::uint8_t const, 8>{it + 8, 8}, endianness);
+			}
+
+			if (texFlags & 0x20)
+			{
+				opacityMap = DeserializeU64(std::span<std::uint8_t const, 8>{it + 16, 8}, endianness);
+			}
+
+			it += 24;
+			mats.emplace_back(diffuseColor, specularColor, gloss, opacity, twoSided, diffuseMap, specularMap, opacityMap);
 		}
 
 		internal::Logger::Instance().Info(std::to_string(it == std::end(bytes)));

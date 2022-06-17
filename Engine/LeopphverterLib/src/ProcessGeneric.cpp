@@ -1,4 +1,4 @@
-#include "Process.hpp"
+#include "ProcessGeneric.hpp"
 
 #include "Image.hpp"
 #include "Logger.hpp"
