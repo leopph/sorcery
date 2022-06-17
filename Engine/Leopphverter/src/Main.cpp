@@ -14,5 +14,5 @@ auto main() -> int
 	std::ofstream out{DST_FILE_PATH, std::ios::binary | std::ios::out};
 	out.setf(std::ios_base::unitbuf);
 	out.write(reinterpret_cast<char const*>(bytes.data()), sizeof(decltype(bytes)::value_type) * bytes.size());
-	auto const parsedModel = leopph::convert::Import(DST_FILE_PATH);
+	//auto const parsedModel = leopph::convert::Import(DST_FILE_PATH);
 }
