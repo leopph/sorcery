@@ -1,4 +1,4 @@
-#include "LeopphverterCommon.hpp"
+#include "LeopphverterTypes.hpp"
 #include "LeopphverterImport.hpp"
 #include "Parse.hpp"
 #include "Process.hpp"

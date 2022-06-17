@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\LeopphverterCommon.hpp">
+    <ClInclude Include="include\LeopphverterTypes.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\LeopphverterImport.hpp">

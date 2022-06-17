@@ -1,7 +1,7 @@
 #pragma once
 
 #include "LeopphApi.hpp"
-#include "LeopphverterCommon.hpp"
+#include "LeopphverterTypes.hpp"
 //tmp
 #include "../src/Serialization.hpp"
 

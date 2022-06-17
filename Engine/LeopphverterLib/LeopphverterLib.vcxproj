@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\LeopphverterCommon.hpp" />
+    <ClInclude Include="include\LeopphverterTypes.hpp" />
     <ClInclude Include="include\LeopphverterImport.hpp" />
     <ClInclude Include="include\LeopphverterExport.hpp" />
     <ClInclude Include="src\Deserialization.hpp" />

@@ -59,6 +59,22 @@ namespace leopph::convert
 		}
 
 
+		auto SerializeNative(float const f, std::vector<std::uint8_t>& oBuf) -> void
+		{
+			static_assert(sizeof(float) == 4); // temporary check, find better solution
+			auto const* const p = reinterpret_cast<std::uint8_t const*>(&f);
+			oBuf.insert(std::end(oBuf), p, p + 4);
+		}
+
+
+		auto SerializeNative(double const d, std::vector<std::uint8_t>& oBuf) -> void
+		{
+			static_assert(sizeof(double) == 8); // temporary check, find better solution
+			auto const* const p = reinterpret_cast<std::uint8_t const*>(&d);
+			oBuf.insert(std::end(oBuf), p, p + 8);
+		}
+
+
 		auto SerializeNative(std::string_view const str, std::vector<uint8_t>& oBuf) -> void
 		{
 			auto const sz = str.size();
@@ -78,6 +94,54 @@ namespace leopph::convert
 			SerializeNative(height, oBuf);
 			SerializeNative(chans, oBuf);
 			oBuf.insert(std::end(oBuf), p, p + width * height * chans);
+		}
+
+
+		auto SerializeNative(Color const& color, std::vector<std::uint8_t>& oBuf) -> void
+		{
+			SerializeNative(color.Red, oBuf);
+			SerializeNative(color.Green, oBuf);
+			SerializeNative(color.Blue, oBuf);
+		}
+
+
+		auto SerializeNative(Material const& mat, std::vector<std::uint8_t>& oBuf) -> void
+		{
+			SerializeNative(mat.DiffuseColor, oBuf);
+			SerializeNative(mat.SpecularColor, oBuf);
+			SerializeNative(mat.Gloss, oBuf);
+			SerializeNative(mat.Opacity, oBuf);
+
+			static_assert(sizeof(bool) == 1); // temporary check, find better solution
+			SerializeNative(static_cast<std::uint8_t>(mat.TwoSided), oBuf);
+
+			static const std::string texIdPrefix{"tex"}; // double defined, TODO
+			if (mat.DiffuseMap.has_value())
+			{
+				SerializeNative(texIdPrefix + std::to_string(mat.DiffuseMap.value()), oBuf);
+			}
+			else
+			{
+				SerializeNative(std::string{}, oBuf);
+			}
+
+			if (mat.SpecularMap.has_value())
+			{
+				SerializeNative(texIdPrefix + std::to_string(mat.SpecularMap.value()), oBuf);
+			}
+			else
+			{
+				SerializeNative(std::string{}, oBuf);
+			}
+
+			if (mat.OpacityMap.has_value())
+			{
+				SerializeNative(texIdPrefix + std::to_string(mat.OpacityMap.value()), oBuf);
+			}
+			else
+			{
+				SerializeNative(std::string{}, oBuf);
+			}
 		}
 	}
 
@@ -154,6 +218,24 @@ namespace leopph::convert
 	}
 
 
+	auto Serialize(float const f, std::vector<uint8_t>& oBuf, std::endian const endianness) -> void
+	{
+		if (endianness == std::endian::native)
+		{
+			SerializeNative(f, oBuf);
+		}
+	}
+
+
+	auto Serialize(double const d, std::vector<uint8_t>& oBuf, std::endian const endianness) -> void
+	{
+		if (endianness == std::endian::native)
+		{
+			SerializeNative(d, oBuf);
+		}
+	}
+
+
 	auto Serialize(std::string_view const str, std::vector<uint8_t>& oBuf, std::endian const endianness) -> void
 	{
 		if (endianness == std::endian::native)
@@ -168,6 +250,24 @@ namespace leopph::convert
 		if (endianness == std::endian::native)
 		{
 			SerializeNative(img, oBuf);
+		}
+	}
+
+
+	auto Serialize(Color const& color, std::vector<uint8_t>& oBuf, std::endian const endianness) -> void
+	{
+		if (endianness == std::endian::native)
+		{
+			SerializeNative(color, oBuf);
+		}
+	}
+
+
+	auto Serialize(Material const& mat, std::vector<uint8_t>& oBuf, std::endian const endianness) -> void
+	{
+		if (endianness == std::endian::native)
+		{
+			SerializeNative(mat, oBuf);
 		}
 	}
 }

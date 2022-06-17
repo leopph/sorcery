@@ -66,6 +66,19 @@ namespace leopph::convert
 			Serialize(object.Textures[i], bytes, endianness);
 		}
 
+		// number of materials
+		Serialize(object.Materials.size(), bytes, endianness);
+
+		for (std::size_t i = 0; i < object.Materials.size(); i++)
+		{
+			std::string const static matIdPrefix{"mat"};
+			// id of the material
+			Serialize(matIdPrefix + std::to_string(i), bytes, endianness);
+			// material data
+			Serialize(object.Materials[i], bytes, endianness);
+		}
+
+
 		return bytes;
 	}
 }

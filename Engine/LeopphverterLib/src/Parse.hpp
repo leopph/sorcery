@@ -1,6 +1,6 @@
 #pragma once
 
-#include "LeopphverterCommon.hpp"
+#include "LeopphverterTypes.hpp"
 
 #include <filesystem>
 #include <optional>
