@@ -30,14 +30,14 @@ MATERIAL
 VERTEX
     position        :FLOAT32[3]
     normal          :FLOAT32[3]
-    texcoords       :FLOAT32[3]
+    texcoords       :FLOAT32[2]
 
 MESH
     numVertices     :U64
     vertices        :VERTEX[numVertices]
     numIndices      :U64
     indices         :U32[numIndices]
-    material        :STRING
+    material        :U64
     
 FILE
     header          :HEADER

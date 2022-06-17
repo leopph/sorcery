@@ -136,6 +136,42 @@ namespace leopph::convert
 			SerializeNative(mat.SpecularMap.value_or(0), oBuf);
 			SerializeNative(mat.OpacityMap.value_or(0), oBuf);
 		}
+
+
+		auto SerializeNative(Vector2 const& vec, std::vector<uint8_t>& oBuf) -> void
+		{
+			SerializeNative(vec[0], oBuf);
+			SerializeNative(vec[1], oBuf);
+		}
+
+		auto SerializeNative(Vector3 const& vec, std::vector<uint8_t>& oBuf) -> void
+		{
+			SerializeNative(vec[0], oBuf);
+			SerializeNative(vec[1], oBuf);
+			SerializeNative(vec[2], oBuf);
+		}
+		
+		auto SerializeNative(Vertex const& vert, std::vector<uint8_t>& oBuf) -> void
+		{
+			SerializeNative(vert.Position, oBuf);
+			SerializeNative(vert.Normal, oBuf);
+			SerializeNative(vert.TexCoord, oBuf);
+		}
+		
+		auto SerializeNative(Mesh const& mesh, std::vector<uint8_t>& oBuf) -> void
+		{
+			SerializeNative(mesh.Vertices.size(), oBuf);
+			for (auto const& vert : mesh.Vertices)
+			{
+				SerializeNative(vert, oBuf);
+			}
+			SerializeNative(mesh.Indices.size(), oBuf);
+			for (auto const ind : mesh.Indices)
+			{
+				SerializeNative(ind, oBuf);
+			}
+			SerializeNative(mesh.Material, oBuf);
+		}
 	}
 
 
@@ -261,6 +297,42 @@ namespace leopph::convert
 		if (endianness == std::endian::native)
 		{
 			SerializeNative(mat, oBuf);
+		}
+	}
+
+
+	auto Serialize(Vector2 const& vec, std::vector<uint8_t>& oBuf, std::endian const endianness) -> void
+	{
+		if (endianness == std::endian::native)
+		{
+			SerializeNative(vec, oBuf);
+		}
+	}
+
+
+	auto Serialize(Vector3 const& vec, std::vector<uint8_t>& oBuf, std::endian const endianness) -> void
+	{
+		if (endianness == std::endian::native)
+		{
+			SerializeNative(vec, oBuf);
+		}
+	}
+
+
+	auto Serialize(Vertex const& vert, std::vector<uint8_t>& oBuf, std::endian const endianness) -> void
+	{
+		if (endianness == std::endian::native)
+		{
+			SerializeNative(vert, oBuf);
+		}
+	}
+
+
+	auto Serialize(Mesh const& mesh, std::vector<uint8_t>& oBuf, std::endian const endianness) -> void
+	{
+		if (endianness == std::endian::native)
+		{
+			SerializeNative(mesh, oBuf);
 		}
 	}
 }

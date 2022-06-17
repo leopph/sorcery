@@ -34,8 +34,8 @@ namespace leopph::convert
 
 	struct Object
 	{
-		std::vector<Mesh> Meshes;
-		std::vector<Material> Materials;
 		std::vector<Image> Textures;
+		std::vector<Material> Materials;
+		std::vector<Mesh> Meshes;
 	};
 }

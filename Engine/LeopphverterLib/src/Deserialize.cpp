@@ -62,4 +62,35 @@ namespace leopph::convert
 			return DeserializeNative<float>(bytes)[0];
 		}
 	}
+
+
+	auto DeserializeVec2(std::span<std::uint8_t const, sizeof(Vector2)> const bytes, std::endian const endianness) -> Vector2
+	{
+		if (endianness == std::endian::native)
+		{
+			auto const elems = DeserializeNative<float>(bytes);
+			return Vector2{elems[0], elems[1]};
+		}
+	}
+
+
+	auto DeserializeVec3(std::span<std::uint8_t const, sizeof(Vector3)> const bytes, std::endian const endianness) -> Vector3
+	{
+		if (endianness == std::endian::native)
+		{
+			auto const elems = DeserializeNative<float>(bytes);
+			return Vector3{elems[0], elems[1], elems[2]};
+		}
+	}
+
+
+	auto DeserializeVertex(std::span<std::uint8_t const, sizeof(Vertex)> bytes, std::endian const endianness) -> Vertex
+	{
+		return Vertex
+		{
+			DeserializeVec3(std::span<std::uint8_t const, sizeof(Vector3)>{std::begin(bytes), sizeof(Vector3)}, endianness),
+			DeserializeVec3(std::span<std::uint8_t const, sizeof(Vector3)>{std::begin(bytes) + sizeof(Vector3), sizeof(Vector3)}, endianness),
+			DeserializeVec2(std::span<std::uint8_t const, sizeof(Vector2)>{std::begin(bytes) + 2 * sizeof(Vector3), sizeof(Vector2)}, endianness),
+		};
+	}
 }

@@ -64,6 +64,15 @@ namespace leopph::convert
 			Serialize(material, bytes, endianness);
 		}
 
+		// number of meshes
+		Serialize(object.Meshes.size(), bytes, endianness);
+
+		for (auto const& mesh : object.Meshes)
+		{
+			// mesh data
+			Serialize(mesh, bytes, endianness);
+		}
+
 		return bytes;
 	}
 }

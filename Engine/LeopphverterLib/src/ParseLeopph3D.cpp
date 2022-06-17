@@ -77,41 +77,25 @@ namespace leopph::convert
 
 		for (std::uint64_t i = 0; i < numMats; i++)
 		{
-			Color diffuseColor{*it, *(it + 1), *(it + 2)};
-			Color specularColor{*(it + 3), *(it + 4), *(it + 5)};
-			it += 6;
-
-			auto gloss = DeserializeF32(std::span<std::uint8_t const, 4>{it, 4}, endianness);
-			auto opacity = DeserializeF32(std::span<std::uint8_t const, 4>{it + 4, 4}, endianness);
-			auto twoSided = static_cast<bool>(*(it + 8));
-			auto texFlags = *(it + 9);
-			it += 10;
-
-			std::optional<std::size_t> diffuseMap;
-			std::optional<std::size_t> specularMap;
-			std::optional<std::size_t> opacityMap;
-
-			if (texFlags & 0x80)
-			{
-				diffuseMap = DeserializeU64(std::span<std::uint8_t const, 8>{it, 8}, endianness);
-			}
-
-			if (texFlags & 0x40)
-			{
-				specularMap = DeserializeU64(std::span<std::uint8_t const, 8>{it + 8, 8}, endianness);
-			}
-
-			if (texFlags & 0x20)
-			{
-				opacityMap = DeserializeU64(std::span<std::uint8_t const, 8>{it + 16, 8}, endianness);
-			}
-
-			it += 24;
-			mats.emplace_back(diffuseColor, specularColor, gloss, opacity, twoSided, diffuseMap, specularMap, opacityMap);
+			mats.push_back(DeserializeMaterial(it, endianness));
 		}
 
-		internal::Logger::Instance().Info(std::to_string(it == std::end(bytes)));
+		auto const numMeshes = DeserializeU64(std::span<std::uint8_t const, 8>{it, 8}, endianness);
+		it += 8;
 
-		return {};
+		std::vector<Mesh> meshes;
+		meshes.reserve(numMeshes);
+
+		for (std::uint64_t i = 0; i < numMeshes; i++)
+		{
+			meshes.push_back(DeserializeMesh(it, endianness));
+		}
+
+		return Object
+		{
+			.Textures = std::move(imgs),
+			.Materials = std::move(mats),
+			.Meshes = std::move(meshes)
+		};
 	}
 }

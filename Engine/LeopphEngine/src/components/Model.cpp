@@ -43,7 +43,7 @@ namespace leopph
 
 		auto Parse(std::filesystem::path const& path) -> std::vector<Mesh>
 		{
-			auto const& [convMeshes, convMats, convTexs] = convert::Import(path);
+			auto const& [convTexs, convMats, convMeshes] = convert::Import(path);
 
 			std::vector<std::shared_ptr<Texture>> textures;
 			textures.reserve(convTexs.size());
