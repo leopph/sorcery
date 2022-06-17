@@ -1,29 +1,31 @@
 HEADER
-    signature       :U32
-    endianness      :U1
-    version         :U7
+    signature       :U8[4]
+    endianness      :U8:MSB1
+    version         :U8:LSB7
 
 STRING
     length          :U64
     data            :U8[length]
 
 IMAGE
-    id              :STRING
     width           :I32
     height          :I32
     channels        :U8
     data            :U8[width * height * channels]
 
 MATERIAL
-    id              :STRING
     diffuseColor    :U8[3]
     specularColor   :U8[3]
     gloss           :FLOAT32
     opacity         :FLOAT32
-    twoSided        :FLOAT32
-    diffuseMap      :STRING
-    specularMap     :STRING
-    opacityMap      :STRING
+    twoSided        :U8
+    diffuseMapFlag  :U8:MSB1
+    specularMapFlag :U8:MSB2
+    opacityMapFlag  :U8:MSB3
+    $UNUSED$        :U8:LSB5
+    diffuseMap      :U64
+    specularMap     :U64
+    opacityMap      :U64
 
 VERTEX
     position        :FLOAT32[3]
