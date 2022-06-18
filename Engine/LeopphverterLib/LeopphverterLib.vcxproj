@@ -20,6 +20,7 @@
     <ClInclude Include="src\ProcessGeneric.hpp" />
     <ClInclude Include="src\Serialize.hpp" />
     <ClInclude Include="src\TypeConversion.hpp" />
+    <ClInclude Include="src\Util.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Compress.cpp" />

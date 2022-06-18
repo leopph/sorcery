@@ -2,18 +2,15 @@
 
 #include "Image.hpp"
 #include "LeopphverterTypes.hpp"
+#include "Util.hpp"
 
 #include <bit>
 #include <string_view>
-#include <type_traits>
 #include <vector>
 
 
 namespace leopph::convert
 {
-	template<class T>
-	concept Scalar = std::is_scalar_v<T>;
-
 	template<Scalar T>
 		requires(sizeof(T) == 1)
 	auto Serialize(T s, std::vector<u8>& oBuf) -> void;

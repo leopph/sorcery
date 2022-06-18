@@ -1,7 +1,9 @@
 #pragma once
 
 #include "LeopphverterTypes.hpp"
+#include "Util.hpp"
 
+#include <array>
 #include <bit>
 #include <cstdint>
 #include <iterator>
@@ -10,6 +12,12 @@
 
 namespace leopph::convert
 {
+	template<Scalar T, std::contiguous_iterator It> requires(sizeof(T) == 1)
+	auto Deserialize(It& it) -> T;
+
+	template<Scalar T, std::contiguous_iterator It> requires(sizeof(T) > 1)
+	auto Deserialize(It& it, std::endian endianness) -> T;
+
 	auto DeserializeI32(std::span<u8 const> bytes, std::endian endianness) -> i32;
 	auto DeserializeU32(std::span<u8 const> bytes, std::endian endianness) -> u32;
 	auto DeserializeF32(std::span<u8 const> bytes, std::endian endianness) -> f32;
@@ -29,6 +37,34 @@ namespace leopph::convert
 
 	template<std::contiguous_iterator It>
 	auto DeserializeMesh(It& it, std::endian endianness) -> Mesh;
+
+
+	template<Scalar T, std::contiguous_iterator It>
+		requires (sizeof(T) == 1)
+	auto Deserialize(It& it) -> T
+	{
+		auto const ret =  *reinterpret_cast<T const*>(&*it);
+		it += 1;
+		return ret;
+	}
+
+
+	template<Scalar T, std::contiguous_iterator It> requires(sizeof(T) > 1)
+	auto Deserialize(It& it, std::endian const endianness) -> T
+	{
+		auto static constexpr typeSz = sizeof(T);
+		auto const* const p = reinterpret_cast<u8 const*>(&*it);
+		it += typeSz;
+
+		if (endianness == std::endian::native)
+		{
+			return *reinterpret_cast<T const*>(p);
+		}
+
+		std::array<u8, typeSz> tmpBytes;
+		std::copy_n(std::reverse_iterator{p + typeSz}, typeSz, tmpBytes.data());
+		return *reinterpret_cast<T const*>(tmpBytes.data());
+	}
 
 
 	template<std::contiguous_iterator It>
@@ -91,7 +127,7 @@ namespace leopph::convert
 		auto imgData = std::make_unique<unsigned char[]>(imgSz);
 		std::copy_n(it, width * height * chans, imgData.get());
 		it += imgSz;
-			
+
 		return Image{width, height, chans, std::move(imgData)};
 	}
 
