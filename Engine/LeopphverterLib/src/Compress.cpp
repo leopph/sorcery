@@ -72,10 +72,10 @@ namespace leopph::convert::compress
 	}
 
 
-	auto Uncompress(std::span<u8> in, u64 const unCompressedSize, std::vector<u8>& out) -> Error
+	auto Uncompress(std::span<u8> in, u64 const uncompressedSize, std::vector<u8>& out) -> Error
 	{
 		// Make sure the vector has enough space
-		out.resize(out.size() + unCompressedSize);
+		out.resize(out.size() + uncompressedSize);
 
 		z_stream stream;
 		stream.zalloc = Z_NULL;
@@ -83,8 +83,8 @@ namespace leopph::convert::compress
 		stream.opaque = Z_NULL;
 		stream.avail_in = static_cast<uInt>(in.size_bytes());
 		stream.next_in = in.data();
-		stream.avail_out = static_cast<uInt>(unCompressedSize);
-		stream.next_out = &out[out.size() - unCompressedSize];
+		stream.avail_out = static_cast<uInt>(uncompressedSize);
+		stream.next_out = &out[out.size() - uncompressedSize];
 
 		inflateInit(&stream);
 		auto const inflateRet = inflate(&stream, Z_FINISH);
