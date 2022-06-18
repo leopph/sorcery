@@ -5,21 +5,22 @@
 
 #include <bit>
 #include <string_view>
+#include <type_traits>
 #include <vector>
 
 
 namespace leopph::convert
 {
-	auto Serialize(i16 i, std::vector<u8>& oBuf, std::endian endianness) -> void;
-	auto Serialize(u16 u, std::vector<u8>& oBuf, std::endian endianness) -> void;
+	template<class T>
+	concept Scalar = std::is_scalar_v<T>;
 
-	auto Serialize(i32 i, std::vector<u8>& oBuf, std::endian endianness) -> void;
-	auto Serialize(u32 u, std::vector<u8>& oBuf, std::endian endianness) -> void;
-	auto Serialize(f32 f, std::vector<u8>& oBuf, std::endian endianness) -> void;
+	template<Scalar T>
+		requires(sizeof(T) == 1)
+	auto Serialize(T s, std::vector<u8>& oBuf) -> void;
 
-	auto Serialize(i64 i, std::vector<u8>& oBuf, std::endian endianness) -> void;
-	auto Serialize(u64 u, std::vector<u8>& oBuf, std::endian endianness) -> void;
-	auto Serialize(f64 f, std::vector<u8>& oBuf, std::endian endianness) -> void;
+	template<Scalar T>
+		requires(sizeof(T) > 1)
+	auto Serialize(T s, std::vector<u8>& oBuf, std::endian endianness) -> void;
 
 	auto Serialize(std::string_view str, std::vector<u8>& oBuf, std::endian endianness) -> void;
 
@@ -29,10 +30,53 @@ namespace leopph::convert
 
 	auto Serialize(Material const& mat, std::vector<u8>& oBuf, std::endian endianness) -> void;
 
-	auto Serialize(Vector2 const& vec, std::vector<u8>& oBuf, std::endian endianness) -> void;
-	auto Serialize(Vector3 const& vec, std::vector<u8>& oBuf, std::endian endianness) -> void;
+	template<class T, u64 N>
+	auto Serialize(internal::Vector<T, N> const& vec, std::vector<u8>& oBuf, std::endian endianness) -> void;
 
 	auto Serialize(Vertex const& vert, std::vector<u8>& oBuf, std::endian endianness) -> void;
 
 	auto Serialize(Mesh const& mesh, std::vector<u8>& oBuf, std::endian endianness) -> void;
+
+
+	template<Scalar T>
+		requires(sizeof(T) == 1)
+	auto Serialize(T const s, std::vector<u8>& oBuf) -> void
+	{
+		oBuf.push_back(*reinterpret_cast<u8 const*>(&s));
+	}
+
+
+	template<Scalar T>
+		requires(sizeof(T) > 1)
+	auto Serialize(T const s, std::vector<u8>& oBuf, std::endian const endianness) -> void
+	{
+		auto const* const begin = reinterpret_cast<u8 const*>(&s);
+		auto const sz = sizeof(T);
+		auto const inserter = std::back_inserter(oBuf);
+
+		if (endianness == std::endian::native)
+		{
+			std::copy_n(begin, sz, inserter);
+			return;
+		}
+
+		std::copy_n(std::reverse_iterator{begin + sz}, sz, inserter);
+	}
+
+
+	template<class T, u64 N>
+	auto Serialize(internal::Vector<T, N> const& vec, std::vector<u8>& oBuf, std::endian endianness) -> void
+	{
+		for (u64 i = 0; i < N; i++)
+		{
+			if constexpr (sizeof(T) == 1 && Scalar<T>)
+			{
+				Serialize(vec[i], oBuf);
+			}
+			else
+			{
+				Serialize(vec[i], oBuf, endianness);
+			}
+		}
+	}
 }
