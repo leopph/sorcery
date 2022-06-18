@@ -13,6 +13,12 @@
 
 namespace leopph::convert
 {
+	namespace
+	{
+		constexpr u64 HEADER_SZ = 13;
+	}
+
+
 	auto ParseLeopph3D(std::filesystem::path const& path) -> std::optional<Object>
 	{
 		try
@@ -29,10 +35,10 @@ namespace leopph::convert
 				return {};
 			}
 
-			std::vector<u8> buffer(13);
+			std::vector<u8> buffer(HEADER_SZ);
 
 			// read header
-			in.read(reinterpret_cast<char*>(buffer.data()), 13);
+			in.read(reinterpret_cast<char*>(buffer.data()), HEADER_SZ);
 
 			// failed to read header
 			if (in.eof() || in.fail() ||
@@ -51,14 +57,18 @@ namespace leopph::convert
 			// parse content size
 			auto const contentSize = DeserializeU64({std::begin(buffer) + 5, std::end(buffer)}, endianness);
 
-			buffer.clear();
+			// get the size of the compressed contents
+			in.seekg(0, std::ios_base::end);
+			auto const comprSz = static_cast<u64>(in.tellg()) - HEADER_SZ;
 
-			// stream rest of the file in
-			std::copy(std::istream_iterator<u8>{in}, std::istream_iterator<u8>{}, std::back_inserter(buffer));
+			// read rest of the file
+			buffer.resize(comprSz);
+			in.seekg(HEADER_SZ, std::ios_base::beg);
+			in.read(reinterpret_cast<char*>(buffer.data()), comprSz);
 
-			// uncompress data
 			std::vector<u8> uncompressed;
 
+			// uncompress data
 			if (compress::Uncompress({std::begin(buffer), std::end(buffer)}, contentSize, uncompressed) != compress::Error::None)
 			{
 				internal::Logger::Instance().Error("Couldn't parse leopph3d file at " + path.string() + " because the contents failed to uncompress.");
