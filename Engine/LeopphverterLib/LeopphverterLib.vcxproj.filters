@@ -65,9 +65,6 @@
     <ClCompile Include="src\ParseLeopph3D.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Deserialize.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\Compress.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

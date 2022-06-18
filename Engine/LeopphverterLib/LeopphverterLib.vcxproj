@@ -24,7 +24,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Compress.cpp" />
-    <ClCompile Include="src\Deserialize.cpp" />
     <ClCompile Include="src\Export.cpp" />
     <ClCompile Include="src\Import.cpp" />
     <ClCompile Include="src\ParseLeopph3D.cpp" />

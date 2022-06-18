@@ -55,7 +55,7 @@ namespace leopph::convert
 			auto const endianness = buffer[4] & 0x80 ? std::endian::little : std::endian::big;
 
 			// parse content size
-			auto const contentSize = DeserializeU64({std::begin(buffer) + 5, std::end(buffer)}, endianness);
+			auto const contentSize = Deserialize<u64>(std::begin(buffer) + 5, endianness);
 
 			// get the size of the compressed contents
 			in.seekg(0, std::ios_base::end);
@@ -78,8 +78,7 @@ namespace leopph::convert
 			auto it = std::cbegin(uncompressed);
 
 			// number of images
-			auto const numImgs = DeserializeU64({it, 8}, endianness);
-			it += 8;
+			auto const numImgs = Deserialize<u64>(it, endianness);
 
 			// all images
 			std::vector<Image> imgs;
@@ -92,8 +91,7 @@ namespace leopph::convert
 			}
 
 			// number of materials
-			auto const numMats = DeserializeU64({it, 8}, endianness);
-			it += 8;
+			auto const numMats = Deserialize<u64>(it, endianness);
 
 			// all materials
 			std::vector<Material> mats;
@@ -106,8 +104,7 @@ namespace leopph::convert
 			}
 
 			// number of meshes
-			auto const numMeshes = DeserializeU64({it, 8}, endianness);
-			it += 8;
+			auto const numMeshes = Deserialize<u64>(it, endianness);
 
 			// all meshes
 			std::vector<Mesh> meshes;

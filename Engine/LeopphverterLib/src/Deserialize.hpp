@@ -5,27 +5,30 @@
 
 #include <array>
 #include <bit>
-#include <cstdint>
 #include <iterator>
-#include <span>
 
 
 namespace leopph::convert
 {
-	template<Scalar T, std::contiguous_iterator It> requires(sizeof(T) == 1)
+	template<Scalar T, std::contiguous_iterator It>
+		requires(sizeof(T) == 1)
+	auto Deserialize(It const& it) -> T;
+
+	template<Scalar T, std::contiguous_iterator It>
+		requires(sizeof(T) == 1)
 	auto Deserialize(It& it) -> T;
 
-	template<Scalar T, std::contiguous_iterator It> requires(sizeof(T) > 1)
+	template<Scalar T, std::contiguous_iterator It>
+		requires(sizeof(T) > 1)
+	auto Deserialize(It const& it, std::endian endianness) -> T;
+
+	template<Scalar T, std::contiguous_iterator It>
+		requires(sizeof(T) > 1)
 	auto Deserialize(It& it, std::endian endianness) -> T;
-
-	auto DeserializeI32(std::span<u8 const> bytes, std::endian endianness) -> i32;
-	auto DeserializeU32(std::span<u8 const> bytes, std::endian endianness) -> u32;
-	auto DeserializeF32(std::span<u8 const> bytes, std::endian endianness) -> f32;
-
-	auto DeserializeU64(std::span<u8 const> bytes, std::endian endianness) -> u64;
 
 	template<std::contiguous_iterator It>
 	auto DeserializeVec2(It& it, std::endian endianness) -> Vector2;
+
 	template<std::contiguous_iterator It>
 	auto DeserializeVec3(It& it, std::endian endianness) -> Vector3;
 
@@ -41,20 +44,28 @@ namespace leopph::convert
 
 	template<Scalar T, std::contiguous_iterator It>
 		requires (sizeof(T) == 1)
+	auto Deserialize(It const& it) -> T
+	{
+		return *reinterpret_cast<T const*>(&*it);
+	}
+
+
+	template<Scalar T, std::contiguous_iterator It>
+		requires (sizeof(T) == 1)
 	auto Deserialize(It& it) -> T
 	{
-		auto const ret =  *reinterpret_cast<T const*>(&*it);
+		auto const ret = Deserialize<T>(const_cast<It const&>(it));
 		it += 1;
 		return ret;
 	}
 
 
-	template<Scalar T, std::contiguous_iterator It> requires(sizeof(T) > 1)
-	auto Deserialize(It& it, std::endian const endianness) -> T
+	template<Scalar T, std::contiguous_iterator It>
+		requires (sizeof(T) > 1)
+	auto Deserialize(It const& it, std::endian const endianness) -> T
 	{
 		auto static constexpr typeSz = sizeof(T);
 		auto const* const p = reinterpret_cast<u8 const*>(&*it);
-		it += typeSz;
 
 		if (endianness == std::endian::native)
 		{
@@ -67,30 +78,36 @@ namespace leopph::convert
 	}
 
 
+	template<Scalar T, std::contiguous_iterator It>
+		requires(sizeof(T) > 1)
+	auto Deserialize(It& it, std::endian const endianness) -> T
+	{
+		auto const ret = Deserialize<T>(const_cast<It const&>(it), endianness);
+		it += sizeof(T);
+		return ret;
+	}
+
+
 	template<std::contiguous_iterator It>
 	auto DeserializeVec2(It& it, std::endian endianness) -> Vector2
 	{
-		Vector2 const ret
+		return Vector2
 		{
-			DeserializeF32({it, 4}, endianness),
-			DeserializeF32({it + 4, 4}, endianness)
+			Deserialize<f32>(it, endianness),
+			Deserialize<f32>(it, endianness)
 		};
-		it += 8;
-		return ret;
 	}
 
 
 	template<std::contiguous_iterator It>
 	auto DeserializeVec3(It& it, std::endian endianness) -> Vector3
 	{
-		Vector3 const ret
+		return Vector3
 		{
-			DeserializeF32({it, 4}, endianness),
-			DeserializeF32({it + 4, 4}, endianness),
-			DeserializeF32({it + 8, 4}, endianness)
+			Deserialize<f32>(it, endianness),
+			Deserialize<f32>(it, endianness),
+			Deserialize<f32>(it, endianness)
 		};
-		it += 12;
-		return ret;
 	}
 
 
@@ -109,19 +126,21 @@ namespace leopph::convert
 	template<std::contiguous_iterator It>
 	auto DeserializeColor(It& it) -> Color
 	{
-		Color const ret{*it, *(it + 1), *(it + 2)};
-		it += 3;
-		return ret;
+		return Color
+		{
+			Deserialize<u8>(it),
+			Deserialize<u8>(it),
+			Deserialize<u8>(it)
+		};
 	}
 
 
 	template<std::contiguous_iterator It>
 	auto DeserializeImage(It& it, std::endian const endianness) -> Image
 	{
-		auto const width = DeserializeI32({it, 4}, endianness);
-		auto const height = DeserializeI32({it + 4, 4}, endianness);
-		auto const chans = *(it + 8);
-		it += 9;
+		auto const width = Deserialize<i32>(it, endianness);
+		auto const height = Deserialize<i32>(it, endianness);
+		auto const chans = Deserialize<u8>(it);
 
 		auto imgSz = static_cast<u64>(width * height * chans);
 		auto imgData = std::make_unique<unsigned char[]>(imgSz);
@@ -138,32 +157,42 @@ namespace leopph::convert
 		auto const diffuseColor{DeserializeColor(it)};
 		auto const specularColor{DeserializeColor(it)};
 
-		auto const gloss = DeserializeF32({it, 4}, endianness);
-		auto const opacity = DeserializeF32({it + 4, 4}, endianness);
-		auto const twoSided = static_cast<bool>(*(it + 8));
-		auto const texFlags = *(it + 9);
-		it += 10;
+		auto const gloss = Deserialize<f32>(it, endianness);
+		auto const opacity = Deserialize<f32>(it, endianness);
+		auto const twoSided = static_cast<bool>(Deserialize<u8>(it));
+		auto const texFlags = Deserialize<u8>(it);
 
-		std::optional<std::size_t> diffuseMap;
-		std::optional<std::size_t> specularMap;
-		std::optional<std::size_t> opacityMap;
+		std::optional<u64> diffuseMap;
+		std::optional<u64> specularMap;
+		std::optional<u64> opacityMap;
 
 		if (texFlags & 0x80)
 		{
-			diffuseMap = DeserializeU64({it, 8}, endianness);
+			diffuseMap = Deserialize<u64>(it, endianness);
+		}
+		else
+		{
+			it += 8;
 		}
 
 		if (texFlags & 0x40)
 		{
-			specularMap = DeserializeU64({it + 8, 8}, endianness);
+			specularMap = Deserialize<u64>(it, endianness);
+		}
+		else
+		{
+			it += 8;
 		}
 
 		if (texFlags & 0x20)
 		{
-			opacityMap = DeserializeU64({it + 16, 8}, endianness);
+			opacityMap = Deserialize<u64>(it, endianness);
+		}
+		else
+		{
+			it += 8;
 		}
 
-		it += 24;
 		return Material{diffuseColor, specularColor, gloss, opacity, twoSided, diffuseMap, specularMap, opacityMap};
 	}
 
@@ -171,8 +200,7 @@ namespace leopph::convert
 	template<std::contiguous_iterator It>
 	auto DeserializeMesh(It& it, std::endian const endianness) -> Mesh
 	{
-		auto const numVertices = DeserializeU64({it, 8}, endianness);
-		it += 8;
+		auto const numVertices = Deserialize<u64>(it, endianness);
 
 		Mesh mesh;
 
@@ -183,19 +211,16 @@ namespace leopph::convert
 			mesh.Vertices.push_back(DeserializeVertex(it, endianness));
 		}
 
-		auto const numIndices = DeserializeU64({it, 8}, endianness);
-		it += 8;
+		auto const numIndices = Deserialize<u64>(it, endianness);
 
 		mesh.Indices.reserve(numIndices);
 
 		for (u64 i = 0; i < numIndices; i++)
 		{
-			mesh.Indices.push_back(DeserializeU32({it, it + 4}, endianness));
-			it += 4;
+			mesh.Indices.push_back(Deserialize<u32>(it, endianness));
 		}
 
-		mesh.Material = DeserializeU64({it, it + 8}, endianness);
-		it += 8;
+		mesh.Material = Deserialize<u64>(it, endianness);
 
 		return mesh;
 	}
