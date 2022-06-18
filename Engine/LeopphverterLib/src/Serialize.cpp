@@ -29,7 +29,7 @@ namespace leopph::convert
 	}
 
 
-	auto Serialize(Color const& color, std::vector<u8>& oBuf, std::endian const endianness) -> void
+	auto Serialize(Color const& color, std::vector<u8>& oBuf) -> void
 	{
 		Serialize(color.Red, oBuf);
 		Serialize(color.Green, oBuf);
@@ -39,8 +39,8 @@ namespace leopph::convert
 
 	auto Serialize(Material const& mat, std::vector<u8>& oBuf, std::endian const endianness) -> void
 	{
-		Serialize(mat.DiffuseColor, oBuf, endianness);
-		Serialize(mat.SpecularColor, oBuf, endianness);
+		Serialize(mat.DiffuseColor, oBuf);
+		Serialize(mat.SpecularColor, oBuf);
 		Serialize(mat.Gloss, oBuf, endianness);
 		Serialize(mat.Opacity, oBuf, endianness);
 
@@ -48,27 +48,32 @@ namespace leopph::convert
 		Serialize(static_cast<u8>(mat.TwoSided), oBuf);
 
 		u8 flags{0};
+		std::vector<u64> textures;
 
 		if (mat.DiffuseMap.has_value())
 		{
 			flags |= 0x80;
+			textures.push_back(mat.DiffuseMap.value());
 		}
 
 		if (mat.SpecularMap.has_value())
 		{
 			flags |= 0x40;
+			textures.push_back(mat.SpecularMap.value());
 		}
 
 		if (mat.OpacityMap.has_value())
 		{
 			flags |= 0x20;
+			textures.push_back(mat.OpacityMap.value());
 		}
 
 		Serialize(flags, oBuf);
 
-		Serialize(mat.DiffuseMap.value_or(0), oBuf, endianness);
-		Serialize(mat.SpecularMap.value_or(0), oBuf, endianness);
-		Serialize(mat.OpacityMap.value_or(0), oBuf, endianness);
+		for (auto const tex : textures)
+		{
+			Serialize(tex, oBuf, endianness);
+		}
 	}
 
 

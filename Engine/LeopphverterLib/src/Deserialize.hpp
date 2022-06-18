@@ -170,27 +170,15 @@ namespace leopph::convert
 		{
 			diffuseMap = Deserialize<u64>(it, endianness);
 		}
-		else
-		{
-			it += 8;
-		}
 
 		if (texFlags & 0x40)
 		{
 			specularMap = Deserialize<u64>(it, endianness);
 		}
-		else
-		{
-			it += 8;
-		}
 
 		if (texFlags & 0x20)
 		{
 			opacityMap = Deserialize<u64>(it, endianness);
-		}
-		else
-		{
-			it += 8;
 		}
 
 		return Material{diffuseColor, specularColor, gloss, opacity, twoSided, diffuseMap, specularMap, opacityMap};

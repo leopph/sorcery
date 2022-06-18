@@ -18,9 +18,9 @@ MATERIAL
     specularMapFlag :U8:MSB2
     opacityMapFlag  :U8:MSB3
     $UNUSED$        :U8:LSB5
-    diffuseMap      :U64
-    specularMap     :U64
-    opacityMap      :U64
+    diffuseMap      :U64?
+    specularMap     :U64?
+    opacityMap      :U64?
 
 VERTEX
     position        :F32[3]
