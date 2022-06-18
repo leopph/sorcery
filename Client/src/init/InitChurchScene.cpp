@@ -48,6 +48,7 @@ namespace demo
 		lamp->Transform()->Rescale(0.01f, 0.01f, 0.01f);
 
 		auto const lampModel = lamp->CreateAndAttachComponent<Model>("models/lamp/scene.gltf");
+		//auto const lampModel = lamp->CreateAndAttachComponent<Model>("models/lamp/lamp.leopph3d");
 		lampModel->CastsShadow(true);
 
 		auto const pLightEntity = new Entity{"plight"};
@@ -70,6 +71,7 @@ namespace demo
 		church->Transform()->Rotate(Vector3::Up(), -90);
 
 		auto const churchModel = church->CreateAndAttachComponent<Model>("models/church/ChristchurchGreyfriarsRuinGarden03.obj");
+		//auto const churchModel = church->CreateAndAttachComponent<Model>("models/church/church.leopph3d");
 		churchModel->CastsShadow(true);
 
 		scene.SetActivationCallback([camera, player]()

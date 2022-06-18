@@ -1,5 +1,6 @@
 #include "ParseLeopph3D.hpp"
 
+#include "Compress.hpp"
 #include "Deserialize.hpp"
 #include "Image.hpp"
 #include "Logger.hpp"
@@ -28,13 +29,17 @@ namespace leopph::convert
 				return {};
 			}
 
-			std::vector<u8> buffer(5);
+			std::vector<u8> buffer(13);
 
 			// read header
-			in.read(reinterpret_cast<char*>(buffer.data()), 5);
+			in.read(reinterpret_cast<char*>(buffer.data()), 13);
 
 			// failed to read header
-			if (in.eof() || in.fail())
+			if (in.eof() || in.fail() ||
+				buffer[0] != 'x' ||
+				buffer[1] != 'd' ||
+				buffer[2] != '6' ||
+				buffer[3] != '9')
 			{
 				internal::Logger::Instance().Error("Can't parse leopph3d file at " + path.string() + " because the file is not in valid leopph3d format.");
 				return {};
@@ -43,13 +48,24 @@ namespace leopph::convert
 			// parse endianness
 			auto const endianness = buffer[4] & 0x80 ? std::endian::little : std::endian::big;
 
+			// parse content size
+			auto const contentSize = DeserializeU64({std::begin(buffer) + 5, std::end(buffer)}, endianness);
+
 			buffer.clear();
 
 			// stream rest of the file in
 			std::copy(std::istream_iterator<u8>{in}, std::istream_iterator<u8>{}, std::back_inserter(buffer));
 
-			auto const& bytes = buffer;
-			auto it = std::begin(bytes);
+			// uncompress data
+			std::vector<u8> uncompressed;
+
+			if (compress::Uncompress({std::begin(buffer), std::end(buffer)}, contentSize, uncompressed) != compress::Error::None)
+			{
+				internal::Logger::Instance().Error("Couldn't parse leopph3d file at " + path.string() + " because the contents failed to uncompress.");
+				return {};
+			}
+
+			auto it = std::cbegin(uncompressed);
 
 			// number of images
 			auto const numImgs = DeserializeU64({it, 8}, endianness);

@@ -4,7 +4,6 @@
 #include "LeopphverterTypes.hpp"
 
 #include <bit>
-#include <cstdint>
 #include <string_view>
 #include <vector>
 

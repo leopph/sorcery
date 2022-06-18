@@ -14,6 +14,7 @@
     <ClInclude Include="include\LeopphverterTypes.hpp" />
     <ClInclude Include="include\LeopphverterImport.hpp" />
     <ClInclude Include="include\LeopphverterExport.hpp" />
+    <ClInclude Include="src\Compress.hpp" />
     <ClInclude Include="src\Deserialize.hpp" />
     <ClInclude Include="src\ParseLeopph3D.hpp" />
     <ClInclude Include="src\ProcessGeneric.hpp" />
@@ -21,6 +22,7 @@
     <ClInclude Include="src\TypeConversion.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\Compress.cpp" />
     <ClCompile Include="src\Deserialize.cpp" />
     <ClCompile Include="src\Export.cpp" />
     <ClCompile Include="src\Import.cpp" />

@@ -1,9 +1,10 @@
+#include "Compress.hpp"
 #include "LeopphverterExport.hpp"
 #include "Logger.hpp"
 #include "Serialize.hpp"
 
 #include <bit>
-#include <cstdint>
+#include <iterator>
 #include <stdexcept>
 
 
@@ -18,7 +19,7 @@ namespace leopph::convert
 			throw std::logic_error{msg};
 		}
 
-		std::vector<unsigned char> bytes;
+		std::vector<u8> bytes;
 
 		// signature bytes
 		bytes.push_back('x');
@@ -29,34 +30,60 @@ namespace leopph::convert
 		// the version number. its MSB is used to indicate if the file is little endian
 		bytes.push_back(0x01 | (endianness == std::endian::big ? 0 : 0x80));
 
+		std::vector<u8> toCompress;
+
 		// number of images
-		Serialize(object.Textures.size(), bytes, endianness);
+		Serialize(object.Textures.size(), toCompress, endianness);
 
 		// write images
 		for (auto const& texture : object.Textures)
 		{
 			// image data
-			Serialize(texture, bytes, endianness);
+			Serialize(texture, toCompress, endianness);
 		}
 
 		// number of materials
-		Serialize(object.Materials.size(), bytes, endianness);
+		Serialize(object.Materials.size(), toCompress, endianness);
 
 		for (auto const& material : object.Materials)
 		{
 			// material data
-			Serialize(material, bytes, endianness);
+			Serialize(material, toCompress, endianness);
 		}
 
 		// number of meshes
-		Serialize(object.Meshes.size(), bytes, endianness);
+		Serialize(object.Meshes.size(), toCompress, endianness);
 
 		for (auto const& mesh : object.Meshes)
 		{
 			// mesh data
-			Serialize(mesh, bytes, endianness);
+			Serialize(mesh, toCompress, endianness);
 		}
 
-		return bytes;
+		switch (std::vector<u8> compressed; compress::Compress(toCompress, compressed))
+		{
+			case compress::Error::None:
+			{
+				// uncompressed data size
+				Serialize(toCompress.size(), bytes, endianness);
+
+				// compressed data
+				std::ranges::copy(compressed, std::back_inserter(bytes));
+
+				return bytes;
+			}
+
+			case compress::Error::Inconsistency:
+			{
+				internal::Logger::Instance().Error("An inconsistency error occurred while compressing leopph3d contents.");
+				return {};
+			}
+
+			case compress::Error::Unknown:
+			{
+				internal::Logger::Instance().Error("An unknown error occurred while compressing leopph3d contents.");
+				return {};
+			}
+		}
 	}
 }
