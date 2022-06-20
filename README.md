@@ -1,60 +1,117 @@
 # ⚙ LeopphEngine ⚙
 
 ## About the project
-LeopphEngine (pronounced "lœff") is a C++ game engine. It's my CS BSc thesis, so its development is slow, and its features are limited, but always expanding. It's name, as stupid as it may sound, is derived from my last name. No, I couldn't come up with anything better. Yes, seriously.
+LeopphEngine (pronounced "lœff") is my C++ game engine. I originally started building it as my CS BSc thesis with a limited feature set, and now I'm planning to improve it, add more features, and eventually use it as my MSc thesis and future reference work. The name, as stupid as it may sound, comes from my last name. No, I couldn't come up with anything better. Yes, seriously.
 
 ## Ideology
-LeopphEngine builds around the idea of ease of use. Its API is designed so that is resembles higher-level managed language APIs so that common functionality is easily accessible to everyone. Most of the functions and objects the library provides take care of lifetimes and pointer correctness, so developers can focus on the big picture rather than trying to debug a leak or a crash. This is all done in a way that doesn't trade in very much performance, so that software built around LeopphEngine can still harness close to all of the running machine's power.  
-For those who like to play with lower-level stuff and are not afraid to dirty their hands, LeopphEngine provides a yet handful, but ever-growing set of APIs that allow more control and faster execution, but provide less or even no management and safety.
+Originally LeopphEngine was supposed to build around the idea of ease of use with an API that was designed in a way that resembles higher-level languages, like managed object lifetimes and implicit pointer correctness while keeping performance relatively high. This is starting to fall somewhat apart now, as I'm digging deeper and deeper into the guts of performance-oriented programming and engine design. I'm still aiming to maintain a beginner-friendly subset of the API, with the focus being on fast development, but most new features I add these days are more geared towards fine tuning and customizability, which inherently adds some complexity. We'll see what turns out of this big mess.
 
 ## Features
-These are the planned features and their current states:  
-✅ Implemented: all planned functionality is available for use  
-🟣 Work In Progress: only some or non of the planned functionality is available for use yet  
-❌ Planned: functionalities are in the planning phase, not usable feature
-- 🟣 Entity-Component Model and Scene Hierarchy
-  - ✅ Entity-Component structure
-  - ✅ Built-in components
-    - ✅ Full 3D Transform using position, orientation, and scale
-      - ✅ Parent-child relationships
-    - ✅ Camera system
-    - ✅ Lighting system
-    - ✅ RenderComponent system
-  - ✅ Functionality customization API
-  - ❌ Scene management API
-- 🟣 3D OpenGL Renderer
-  - 🟣 Forward rendering
-  - ✅ Deferred rendering
+This list provides an overview of the capabalities and development goals of LeopphEngine.
+
+| Symbol | Feature State | Detailed Meaning |
+| --- | --- | --- |
+| ✅ | Implemented | All planned functionality is available for use. Mainline development is complete, but improvements may be delivered at any time, as well as feature extensions. This does not mean that the feature is stable and never changes. |
+| 🟣 | Work In Progress | The planned feature is in active development. Some or most of the functionality may not yet be available for use. The specification, implementation, and feature goals can get significant changes from one version to the next. |
+| ❌ | Planned | The feature is in planning phase. Mainline development has not yet started. The feature idea might be greatly altered before any part of it gets implemented. |
+
+### General API
+- Entity-Component system
+  - ✅ fundamental entity structure
+    - ✅ parental relationships and hierarchy
+    - ✅ component access API
+    - ✅ node based 3D position, orientation, and scale
+  - ✅ component extension API
+  - ✅ built-in components
+    - ✅ rendering components
+    - ✅ camera components
+    - ✅ light components
+- Scene management API
+  - ❌ centralized scene manager
+  - ❌ scene descriptor files
+  - ❌ background scene loading
+  - ❌ fast scene switching
+- Math library targeted at game development
+  - ✅ vectors
+  - ✅ matrices
+  - ✅ quaternions
+  - ✅ several miscellaneous linear algebraic operations
+
+### Graphical elements
+- OpenGL renderer
   - ✅ Blinn-Phong lighting model
-    - ✅ Diffuse and specular material colors
-    - ✅ Diffuse and specular material maps
-    - ✅ Specular gloss
-  - ✅ Ambient, directional, point-, and spotlights
-  - ✅ Cascaded shadow mapping for directional lights
-  - ✅ Shadow mapping for spot- and pointlights
-  - ✅ Transparency rendering
-  - ✅ Instanced rendering
-  - ✅ Opacity mapping
-  - ❌ Normal mapping
-  - ❌ Parallax mapping
-  - ❌ Screen Space Ambient Occlusion
-  - ❌ Screen Space Reflections
-  - ❌ Gamma correction
-  - ❌ Bloom
-  - ❌ Skeletal animation system
-- 🟣 Resource Management System
-  - 🟣 Caching and reuse for lower number of IO ops
-  - 🟣 Internal lifetime management for resources
-- ✅ Event System
-- ✅ Keyboard and Mouse Input Handling
-- ✅ Math library prioritizing linear algebra
-- ❌ Nvidia PhysX integration for physics simulations
-- ❌ Job system for efficient scaling across all CPU cores
-- ❌ UI System
-- ❌ Sound System
+  - 🟣 material system
+    - ✅ diffuse and specular colors
+    - ✅ diffuse, specular, and opacity mapping
+    - ✅ transparency
+    - ❌ normal mapping
+    - ❌ parallax mapping
+    - ❌ customizable material properties
+  - ✅ lighting system
+    - ✅ ambient, directional, point-, and spotlights
+    - ✅ cascaded shadow mapping for directional lights (CSM)
+    - ✅ shadow mapping for spot- and pointlights
+  - 🟣 forward rendering pipeline
+  - ✅ deferred rendering pipeline
+  - ✅ instanced rendering
+  - ❌ dynamic batching based on materials
+  - ❌ screen space ambient occlusion (SSAO)
+  - ❌ screen space reflections (SSR)
+  - ❌ gamma correction
+  - ❌ bloom
+  - ❌ skeletal animation system
+  - ❌ custom shaders
+- Vulkan renderer
+  - ❌ new renderer using the Vulkan API with all features of the OpenGL renderer
+- Custom model format and conversion toolset
+  - ✅ leopph3d file format for optimal 3D model storage
+  - ✅ Leopphverter conversion tool from many different formats
+- Integrated graphical interface API
+  - ❌ Dear ImGui integration
+
+### Physics simulation
+- Full 3D physics system
+  - ❌ Nvidia PhysX integration
+
+### Input management
+- Centralized input handling
+  - ✅ frame-based keyboard key state querying
+  - ✅ cursor position queries
+  - ❌ controller support
+
+### Multithreading
+- Load-balancing job system
+  - 🟣 basic task system and execution
+  - ❌ scaling to an arbitrary number of CPU cores
+  - ❌ work stealing
+  - ❌ jobification of other engine systems
+
+### Sound
+- Spatial audio system
+  - ❌ no concrete plans yet
+
+### Utility
+- Resource and memory management system
+  - 🟣 data caching and reuse
+  - 🟣 full internal lifetime and memory management
+- Event system
+  - ✅ centralized observer pattern
+  - ✅ custom event type creation
+  - ✅ inheritance based event handlers
+  - ✅ composition based event handlers
+
+### Development
+- Code structure
+  - 🟣 fully modular architecture with major feature groups and systems in separate libraries
+- Consumer integration
+  - ❌ moving from headers to C++20 modules where applicable
+- Platform support
+  - ❌ support for Linux and macOS on x86-64
+  - ❌ moving from MSBuild to CMake
+
 
 ## Documentation
-I'm trying to place as much info into header/module files as I can. For now, developers can use these to get more info on specific behaviors. I will eventually create standalone documentation about all the different APIs LeopphEngine provides.
+Currently there is no standalone documentation or tutorial on how to use LeopphEngine. The API headers contain helpful information to get a better picture of the concepts in comment form. Functions and types are annotated with their most important properties.
 
 ## Support and Usage
 ### Build requirements
@@ -68,14 +125,13 @@ I'm trying to place as much info into header/module files as I can. For now, dev
 - OpenGL 4.5 compatible GPU
 ### Building
 - Run **setup.bat** from the root directory
-  - This pulls all submodules, then configures and builds all dependencies under *LeopphEngine/vendor*
-- Build the solution in the root directory.  
+  - This pulls all submodules, then configures and builds all dependencies under *Engine/deps/vendor*
+- Build the solution in the root directory  
 ### Consumption
 To use LeopphEngine in your application:
-- Include **Leopph.hpp** from **LeopphEngine/include**
-- Either
-  - Link against **leopph.lib**, and copy **leopph.dll** (both found in **LeopphEngine/*<target_config>***) to your output directory, or
-  - Load **leopph.dll** manually through the Windows API
+- Add **Engine/include** to your compiler's include path
+- Link against the necessary libraries under **Engine/bin/*<target_config>***
+LeopphEngine is highly modular. Depending on the feature set you use, you can leave some libraries out of the linking process to save time. You can also pick and choose from the vast number of headers available to reduce your compilation times, or just include the combined **Leopph.hpp** header to get all the features.
 
 ## Branches and Releases
 Development of LeopphEngine takes place on two branches.  
