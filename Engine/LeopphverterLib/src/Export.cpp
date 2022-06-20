@@ -76,14 +76,14 @@ namespace leopph::convert
 			case compress::Error::Inconsistency:
 			{
 				internal::Logger::Instance().Error("An inconsistency error occurred while compressing leopph3d contents.");
-				return {};
 			}
 
 			case compress::Error::Unknown:
 			{
 				internal::Logger::Instance().Error("An unknown error occurred while compressing leopph3d contents.");
-				return {};
 			}
 		}
+
+		return {};
 	}
 }

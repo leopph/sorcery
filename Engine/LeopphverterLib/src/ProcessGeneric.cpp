@@ -170,7 +170,7 @@ namespace leopph::convert
 	}
 
 
-	auto ProcessGenericModel(std::filesystem::path const& path) -> Object
+	auto ProcessGenericModel(std::filesystem::path const& path) -> std::optional<Object>
 	{
 		Assimp::Importer importer;
 		auto const* scene = importer.ReadFile(path.string(),

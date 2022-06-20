@@ -6,16 +6,11 @@
 
 namespace leopph::convert
 {
-	auto Import(std::filesystem::path const& path) -> Object
+	auto Import(std::filesystem::path const& path) -> std::optional<Object>
 	{
 		if (path.extension() == ".leopph3d")
 		{
-			if (auto obj = ParseLeopph3D(path); obj.has_value())
-			{
-				return obj.value();
-			}
-
-			return {};
+			return ParseLeopph3D(path);
 		}
 
 		return ProcessGenericModel(path);

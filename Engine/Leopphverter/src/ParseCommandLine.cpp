@@ -1,0 +1,71 @@
+#include "Common.hpp"
+#include "Leopphverter.hpp"
+#include "Logger.hpp"
+#include "Types.hpp"
+
+#include <cstdlib>
+
+
+namespace leopph::convert::driver
+{
+	auto ParseCommandLine(int const argc, char const** argv, std::vector<std::filesystem::path>& filesToConvert, std::vector<std::string_view>& outputFileNames) -> int
+	{
+		// 0: Reading input filenames or option keys
+		// 1: Reading a semicolon separated list of output filenames
+		u8 currentParseMode{0};
+
+		for (auto i = 1; i < argc; i++)
+		{
+			switch (currentParseMode)
+			{
+				// Reading input filenames or options keys
+				case 0:
+				{
+					// The str is an option key
+					if (argv[i][0] == '-')
+					{
+						switch (argv[i][1])
+						{
+							// output key
+							case 'o':
+							{
+								currentParseMode = 1;
+								break;
+							}
+
+							default:
+							{
+								using std::literals::string_literals::operator ""s;
+								internal::Logger::Instance().Error("Unknown option: "s + argv[i]);
+								return EXIT_FAILURE;
+							}
+						}
+					}
+					// The str is a filename
+					else
+					{
+						filesToConvert.emplace_back(argv[i]);
+					}
+					break;
+				}
+
+				// Reading output filenames
+				case 1:
+				{
+					std::ranges::copy(SplitString(argv[i], OUT_FILENAME_SEP), std::back_inserter(outputFileNames));
+					currentParseMode = 0;
+					break;
+				}
+
+				default:
+				{
+					internal::Logger::Instance().Debug("Parse mode was invalid.");
+					internal::Logger::Instance().Error("Internal error.");
+					return EXIT_FAILURE;
+				}
+			}
+		}
+
+		return EXIT_SUCCESS;
+	}
+}
