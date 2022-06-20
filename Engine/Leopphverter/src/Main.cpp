@@ -14,13 +14,11 @@ auto main(int const argc, char const** const argv) -> int
 	std::cout << leopph::convert::driver::BuildHeader() << '\n';
 
 	std::vector<std::filesystem::path> filesToConvert;
-	std::vector<std::string_view> outputFileNames;
+	std::vector<std::string> outputFileNames;
 
 	// We got command line arguments, we're parsing
 	if (argc > 1)
 	{
-		std::cout << "Using command line arguments.\n";
-
 		if (auto const res = leopph::convert::driver::ParseCommandLine(argc, argv, filesToConvert, outputFileNames); res != EXIT_SUCCESS)
 		{
 			return res;
@@ -28,7 +26,9 @@ auto main(int const argc, char const** const argv) -> int
 	}
 	// We instead ask for files through the command line
 	else
-	{ }
+	{
+		leopph::convert::driver::ParseInteractive(filesToConvert, outputFileNames);
+	}
 
 	for (leopph::u64 i = 0; i < filesToConvert.size(); i++)
 	{
@@ -44,7 +44,7 @@ auto main(int const argc, char const** const argv) -> int
 
 		auto const outputName = [i, &filesToConvert, &outputFileNames]() -> std::string
 		{
-			if (i < outputFileNames.size())
+			if (i < outputFileNames.size() && !outputFileNames[i].empty())
 			{
 				filesToConvert[i].replace_filename(outputFileNames[i]);
 			}

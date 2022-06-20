@@ -106,6 +106,7 @@
     <ClCompile Include="src\BuildHeader.cpp" />
     <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\ParseCommandLine.cpp" />
+    <ClCompile Include="src\ParseInteractive.cpp" />
     <ClCompile Include="src\SplitString.cpp" />
   </ItemGroup>
   <ItemGroup>

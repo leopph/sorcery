@@ -4,12 +4,15 @@
 #include "Types.hpp"
 
 #include <cstdlib>
+#include <iostream>
 
 
 namespace leopph::convert::driver
 {
-	auto ParseCommandLine(int const argc, char const** argv, std::vector<std::filesystem::path>& filesToConvert, std::vector<std::string_view>& outputFileNames) -> int
+	auto ParseCommandLine(int const argc, char const** argv, std::vector<std::filesystem::path>& filesToConvert, std::vector<std::string>& outputFileNames) -> int
 	{
+		std::cout << "Using command line arguments.\n\n";
+
 		// 0: Reading input filenames or option keys
 		// 1: Reading a semicolon separated list of output filenames
 		u8 currentParseMode{0};
@@ -52,7 +55,8 @@ namespace leopph::convert::driver
 				// Reading output filenames
 				case 1:
 				{
-					std::ranges::copy(SplitString(argv[i], OUT_FILENAME_SEP), std::back_inserter(outputFileNames));
+					auto const split = SplitString(argv[i], OUT_FILENAME_SEP);
+					outputFileNames.insert(std::end(outputFileNames), std::begin(split), std::end(split));
 					currentParseMode = 0;
 					break;
 				}
