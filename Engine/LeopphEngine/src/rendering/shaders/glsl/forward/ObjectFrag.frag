@@ -56,16 +56,30 @@ float CalcAtten(float constant, float linear, float quadratic, float dist)
 
 vec3 CalcBlinnPhong(Fragment frag, vec3 dirToLight, vec3 lightDiff, vec3 lightSpec)
 {
-	float diffuseDot = max(dot(dirToLight, frag.normal), 0);
-	vec3 light = frag.diff * diffuseDot * lightDiff;
+	float diffuse = max(dot(dirToLight, frag.normal), 0);
+	vec3 diffEffect = frag.diff * lightDiff * diffuse;
 
-	if (diffuseDot > 0)
+	if (diffuse <= 0)
 	{
-		vec3 halfway = normalize(dirToLight + normalize(u_CamPos - frag.pos));
-		light += frag.spec * pow(max(dot(frag.normal, halfway), 0), 4 * frag.gloss) * lightSpec;
+		return diffEffect;
 	}
+		
+	vec3 dirToCam =  normalize(u_CamPos - frag.pos);
+	vec3 halfway = normalize(dirToLight + dirToCam);
+	float specAngle = max(dot(frag.normal, halfway), 0);
 
-	return light;
+	// 0^0 is UB, thus it may produce nan or 0 but we have to make sure
+	// transparent objects stay lit from the back too
+	#if TRANSPARENT
+	if (specAngle <= 0 && frag.gloss == 0)
+	{
+		return diffEffect;
+	}
+	#endif
+
+	float specular = pow(specAngle, 4 * frag.gloss);
+	vec3 specEffect = frag.spec * lightSpec * specular;
+	return diffEffect + specEffect;
 }
 
 
