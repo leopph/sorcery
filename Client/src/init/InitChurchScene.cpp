@@ -27,7 +27,7 @@ namespace demo
 
 		auto const camera = player->CreateAndAttachComponent<leopph::PerspectiveCamera>();
 		camera->Background(Skybox{"skybox/megasun/left.hdr", "skybox/megasun/right.hdr", "skybox/megasun/top.hdr", "skybox/megasun/bottom.hdr", "skybox/megasun/front.hdr", "skybox/megasun/back.hdr"});
-		camera->NearClipPlane(0.3f);
+		camera->NearClipPlane(0.1f);
 		camera->FarClipPlane(100);
 
 		player->CreateAndAttachComponent<demo::FirstPersonCameraController>(camera, 2.0f, 0.1f, 5.0f, 0.2f);
@@ -46,9 +46,8 @@ namespace demo
 		lamp->Transform()->Translate(0, -1.25, 0);
 		lamp->Transform()->Rotate(Vector3::Up(), -90);
 		lamp->Transform()->Rescale(0.01f, 0.01f, 0.01f);
-
-		auto const lampModel = lamp->CreateAndAttachComponent<Model>("models/lamp/scene.gltf");
-		//auto const lampModel = lamp->CreateAndAttachComponent<Model>("models/lamp/lamp.leopph3d");
+		
+		auto const lampModel = lamp->CreateAndAttachComponent<Model>("models/lamp/lamp.leopph3d");
 		lampModel->CastsShadow(true);
 
 		auto const pLightEntity = new Entity{"plight"};
@@ -69,9 +68,8 @@ namespace demo
 		church->Transform()->Translate(0, -3, 0, Space::World);
 		church->Transform()->Rotate(Vector3::Right(), 90);
 		church->Transform()->Rotate(Vector3::Up(), -90);
-
-		auto const churchModel = church->CreateAndAttachComponent<Model>("models/church/ChristchurchGreyfriarsRuinGarden03.obj");
-		//auto const churchModel = church->CreateAndAttachComponent<Model>("models/church/church.leopph3d");
+		
+		auto const churchModel = church->CreateAndAttachComponent<Model>("models/church/church.leopph3d");
 		churchModel->CastsShadow(true);
 
 		scene.SetActivationCallback([camera, player]()
