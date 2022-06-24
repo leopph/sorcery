@@ -17,11 +17,13 @@
     <ClCompile Include="src\Logger.cpp" />
     <ClCompile Include="src\Math.cpp" />
     <ClCompile Include="src\Quaternion.cpp" />
+    <ClCompile Include="src\Random.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\ArrayQueue.hpp" />
     <ClInclude Include="include\Bimap.hpp" />
     <ClInclude Include="include\Logger.hpp" />
+    <ClInclude Include="include\Random.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
