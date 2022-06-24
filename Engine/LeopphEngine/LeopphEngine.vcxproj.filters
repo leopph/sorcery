@@ -57,10 +57,8 @@
     <ClCompile Include="src\rendering\UniformBuffer.cpp" />
     <ClCompile Include="src\scene\Scene.cpp" />
     <ClCompile Include="src\scene\SceneManager.cpp" />
-    <ClCompile Include="src\threading\Job.cpp" />
     <ClCompile Include="src\threading\JobSystem.cpp" />
     <ClCompile Include="src\threading\SpinLock.cpp" />
-    <ClCompile Include="src\threading\Worker.cpp" />
     <ClCompile Include="src\timing\Time.cpp" />
     <ClCompile Include="src\timing\TimeImpl.cpp" />
     <ClCompile Include="src\util\api_adapters\GLFWAdapter.cpp" />
@@ -109,7 +107,6 @@
     <ClInclude Include="src\threading\Job.hpp" />
     <ClInclude Include="src\threading\JobSystem.hpp" />
     <ClInclude Include="src\threading\SpinLock.hpp" />
-    <ClInclude Include="src\threading\Worker.hpp" />
     <ClInclude Include="src\timing\TimeImpl.hpp" />
     <ClInclude Include="src\util\api_adapters\GLFWAdapter.hpp" />
     <ClInclude Include="src\util\concepts\Pathed.hpp" />

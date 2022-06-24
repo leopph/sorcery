@@ -8,8 +8,8 @@
 
 // ReSharper disable All
 #define _CRTDBG_MAP_ALLOC
-#include <stdlib.h>
 #include <crtdbg.h>
+#include <stdlib.h>
 // ReSharper restore All
 #endif
 
@@ -18,6 +18,7 @@
 #include "Logger.hpp"
 #include "data/DataManager.hpp"
 #include "rendering/renderers/Renderer.hpp"
+#include "threading/JobSystem.hpp"
 #include "windowing/WindowImpl.hpp"
 
 
@@ -51,6 +52,8 @@ namespace leopph::internal
 			window->SwapBuffers();
 			EventManager::Instance().Send<FrameCompleteEvent>();
 		}
+
+		ShutDownWorkers();
 
 		DataManager::Instance().Clear();
 		return 0;
