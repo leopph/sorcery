@@ -1,4 +1,7 @@
+#pragma once
+
 #include <cstdint>
+
 
 namespace leopph
 {
@@ -15,6 +18,8 @@ namespace leopph
 #if defined(_MSC_FULL_VER) && defined(_M_X64)
     using f32 = float;
     using f64 = double;
+
+    constexpr auto CACHE_LINE_SIZE = 64;
 #else
     #error "Only Windows x86-64 is supported."
 #endif
