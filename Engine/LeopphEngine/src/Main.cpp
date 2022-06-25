@@ -38,6 +38,9 @@ namespace leopph::internal
 
 		initFunc();
 
+		//mt::InitJobSystem();
+		//mt::WorkerFunc();
+
 		while (!window->ShouldClose())
 		{
 			window->PollEvents();
@@ -53,7 +56,7 @@ namespace leopph::internal
 			EventManager::Instance().Send<FrameCompleteEvent>();
 		}
 
-		ShutDownWorkers();
+		//mt::ShutDownJobSystem();
 
 		DataManager::Instance().Clear();
 		return 0;

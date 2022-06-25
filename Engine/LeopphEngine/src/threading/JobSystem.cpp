@@ -14,41 +14,34 @@
 #include <vector>
 
 
-namespace leopph::internal
+namespace leopph::internal::mt
 {
-	/*
-	 * Internal functions
-	 */
+	// Internal function declarations ################################################
 
-	// Return a new job that is considered empty
-	[[nodiscard]] static auto AllocateJob() -> std::shared_ptr<Job>;
+	namespace
+	{
+		// Return a new job that is considered empty
+		[[nodiscard]] auto AllocateJob() -> std::shared_ptr<Job>;
 
-	// Global index counter
-	[[nodiscard]] static auto GenerateThreadIndex() -> i32;
+		// Try to get a job from the thread-local queue or steal one
+		[[nodiscard]] auto GetJob() -> std::shared_ptr<Job>;
 
-	// Try to get a job from the thread-local queue or steal one
-	[[nodiscard]] static auto GetJob() -> std::shared_ptr<Job>;
+		// Run the job and mark it completed
+		auto Execute(std::shared_ptr<Job> job) -> void;
 
-	// Return the job queue associated with the calling thread
-	[[nodiscard]] auto GetWorkerThreadQueue() -> WorkStealingQueue<std::shared_ptr<Job>>&;
+		// Windows.h bullshit
+		#undef Yield
+		// Yield the calling thread's time slice
+		auto Yield() -> void;
+	}
 
-	// Run the job and mark it completed
-	static auto Execute(std::shared_ptr<Job> job) -> void;
 
-	// Worker loop
-	static auto WorkerFunc() -> void;
 
-	// Windows.h bullshit
-	#undef Yield
-	// Yield the calling thread's time slice
-	static auto Yield() -> void;
+	// Data definitions ##############################################################
 
-	/*
-	 * Internal data
-	 */
 
-	// The number of HW threads
-	static u8 const NUM_THREADS
+
+	u8 const NUM_THREADS
 	{
 		[]
 		{
@@ -58,44 +51,47 @@ namespace leopph::internal
 		}()
 	};
 
-	static u8 const NUM_WORKERS{static_cast<u8>(NUM_THREADS - 1)};
 
-	// NUM_WORKERS number of job queues
-	std::vector<WorkStealingQueue<std::shared_ptr<Job>>> g_WorkerQueues{/*NUM_WORKERS*/ NUM_THREADS};
-
-	// Fast global random generator
-	XorShift128 g_Random
+	namespace
 	{
-		[]
+		// Fast global random generator
+		XorShift128 g_Random
 		{
-			std::random_device rd{};
-			return std::array{rd(), rd(), rd(), rd()};
-		}()
-	};
-
-	// NUM_WORKERS number of threads
-	std::vector g_Workers
-	{
-		[]
-		{
-			std::vector<std::thread> threads;
-			for (u8 i = 0; i < NUM_WORKERS; i++)
+			[]
 			{
-				threads.emplace_back(&WorkerFunc);
-			}
-			return threads;
-		}()
-	};
+				std::random_device rd{};
+				return std::array{rd(), rd(), rd(), rd()};
+			}()
+		};
 
-	// Per-thread index starting from 0
-	thread_local i32 const THREAD_INDEX = GenerateThreadIndex();
+		// Number of additional worker threads along the main thread
+		u8 const NUM_WORKERS{static_cast<u8>(NUM_THREADS - 1)};
 
-	// Sync worker threads to close on exit
-	std::atomic_flag g_ShouldClose;
+		// NUM_THREADS number of job queues.
+		// WorkStealingQueue cannot be copied or moved so
+		// the only way to store them is store keep a constant number of them at all times.
+		std::vector<WorkStealingQueue<std::shared_ptr<Job>>> g_WorkerQueues{NUM_THREADS};
 
-	/*
-	 * API implementations
-	 */
+		// NUM_WORKERS number of threads.
+		// Init fills it and ShutDown clears it.
+		std::vector<std::thread> g_Workers;
+
+		// ShutDown must reset this to 1.
+		// The main thread always takes 0.
+		std::atomic<u8> g_NextWorkerIndex = 0;
+
+		// Per-thread index starting from 0 for the main thread.
+		thread_local u8 const THREAD_INDEX = g_NextWorkerIndex++;
+
+		// Syncs worker threads to close on exit.
+		std::atomic_flag g_ShouldClose;
+	}
+
+
+
+	// Public function implementations ##################################################
+
+
 
 	auto CreateJob(Job::JobFunc const jobFunc) -> std::shared_ptr<Job>
 	{
@@ -107,8 +103,7 @@ namespace leopph::internal
 
 	auto Run(std::shared_ptr<Job> job) -> void
 	{
-		auto& queue = GetWorkerThreadQueue();
-		queue.push(std::move(job));
+		g_WorkerQueues[THREAD_INDEX].push(std::move(job));
 	}
 
 
@@ -124,7 +119,23 @@ namespace leopph::internal
 	}
 
 
-	auto ShutDownWorkers() -> void
+	auto InitJobSystem() -> void
+	{
+		g_ShouldClose.clear();
+
+		// We make sure no other threads have swayed the counter.
+		g_NextWorkerIndex = 1;
+
+		g_Workers.reserve(NUM_WORKERS);
+
+		for (u8 i = 0; i < NUM_WORKERS; i++)
+		{
+			g_Workers.emplace_back(&WorkerFunc);
+		}
+	}
+
+
+	auto ShutDownJobSystem() -> void
 	{
 		g_ShouldClose.test_and_set();
 
@@ -132,73 +143,21 @@ namespace leopph::internal
 		{
 			worker.join();
 		}
-	}
 
+		g_Workers.clear();
 
-	/*
-	 * Internal implementations
-	 */
+		// Reset index generation to 1.
+		// Main thread keeps 0, so we reset to 1.
+		g_NextWorkerIndex = 1;
 
-	auto AllocateJob() -> std::shared_ptr<Job>
-	{
-		return std::make_shared_for_overwrite<Job>();
-	}
-
-
-	auto GetJob() -> std::shared_ptr<Job>
-	{
-		auto& queue = GetWorkerThreadQueue();
-		auto const job = queue.pop();
-
-		if (!job || !*job)
+		// Empty all queues.
+		for (auto& queue : g_WorkerQueues)
 		{
-			auto const index = g_Random() % NUM_WORKERS;
-			auto& stealQueue = g_WorkerQueues[index];
-
-			if (&queue == &stealQueue)
+			while (!queue.empty())
 			{
-				Yield();
-				return nullptr;
+				queue.pop();
 			}
-
-			auto const stolenJob = stealQueue.steal();
-
-			if (!stolenJob || !*stolenJob)
-			{
-				Yield();
-				return nullptr;
-			}
-
-			return *stolenJob;
 		}
-
-		return *job;
-	}
-
-
-	auto GetWorkerThreadQueue() -> WorkStealingQueue<std::shared_ptr<Job>>&
-	{
-		return g_WorkerQueues[THREAD_INDEX];
-	}
-
-
-	auto GenerateThreadIndex() -> i32
-	{
-		static std::atomic<i32> index = 0;
-		return index++;
-	}
-
-
-	auto Yield() -> void
-	{
-		_mm_pause();
-	}
-
-
-	auto Execute(std::shared_ptr<Job> job) -> void
-	{
-		job->Func(job->Data);
-		job->Completed = true;
 	}
 
 
@@ -210,6 +169,64 @@ namespace leopph::internal
 			{
 				Execute(job);
 			}
+		}
+	}
+
+
+
+	// Internal function implementations ##########################################
+
+
+
+	namespace
+	{
+		auto AllocateJob() -> std::shared_ptr<Job>
+		{
+			return std::make_shared_for_overwrite<Job>();
+		}
+
+
+		auto GetJob() -> std::shared_ptr<Job>
+		{
+			auto& queue = g_WorkerQueues[THREAD_INDEX];
+			auto const job = queue.pop();
+
+			if (!job || !*job)
+			{
+				auto const index = g_Random() % NUM_WORKERS;
+				auto& stealQueue = g_WorkerQueues[index];
+
+				if (&queue == &stealQueue)
+				{
+					Yield();
+					return nullptr;
+				}
+
+				auto const stolenJob = stealQueue.steal();
+
+				if (!stolenJob || !*stolenJob)
+				{
+					Yield();
+					return nullptr;
+				}
+
+				return *stolenJob;
+			}
+
+			return *job;
+		}
+
+
+		auto Yield() -> void
+		{
+			_mm_pause();
+		}
+
+
+		auto Execute(std::shared_ptr<Job> job) -> void
+		{
+			job->Func(job->Data);
+			job->Completed = true;
 		}
 	}
 }
