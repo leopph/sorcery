@@ -5,11 +5,11 @@
 #include "Matrix.hpp"
 #include "PointLight.hpp"
 #include "SpotLight.hpp"
-#include "../CascadedShadowMap.hpp"
-#include "../RenderBuffer.hpp"
-#include "../ScreenQuad.hpp"
-#include "../TransparencyBuffer.hpp"
-#include "../shaders/ShaderFamily.hpp"
+#include "rendering/CascadedShadowMap.hpp"
+#include "rendering/RenderBuffer.hpp"
+#include "rendering/ScreenQuad.hpp"
+#include "rendering/TransparencyBuffer.hpp"
+#include "rendering/shaders/ShaderFamily.hpp"
 
 
 namespace leopph::internal

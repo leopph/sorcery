@@ -1,10 +1,10 @@
 #pragma once
 
 #include "Mesh.hpp"
-#include "../opengl/GlBuffer.hpp"
-#include "../opengl/GlVertexArray.hpp"
-#include "../opengl/OpenGl.hpp"
-#include "../shaders/ShaderProgram.hpp"
+#include "opengl/GlBuffer.hpp"
+#include "opengl/GlVertexArray.hpp"
+#include "opengl/OpenGl.hpp"
+#include "shaders/ShaderProgram.hpp"
 
 
 namespace leopph::internal

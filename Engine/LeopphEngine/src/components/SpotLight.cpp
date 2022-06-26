@@ -1,6 +1,6 @@
 #include "SpotLight.hpp"
 
-#include "../data/DataManager.hpp"
+#include "DataManager.hpp"
 
 
 namespace leopph

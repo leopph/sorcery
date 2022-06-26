@@ -3,9 +3,9 @@
 #include "GlMesh.hpp"
 #include "Matrix.hpp"
 #include "MeshGroup.hpp"
-#include "../opengl/GlBuffer.hpp"
-#include "../opengl/OpenGl.hpp"
-#include "../shaders/ShaderProgram.hpp"
+#include "opengl/GlBuffer.hpp"
+#include "opengl/OpenGl.hpp"
+#include "shaders/ShaderProgram.hpp"
 
 #include <memory>
 #include <span>

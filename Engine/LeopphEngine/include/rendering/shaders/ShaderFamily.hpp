@@ -3,9 +3,9 @@
 #include "ShaderProgram.hpp"
 #include "ShaderStageInfo.hpp"
 #include "ShaderType.hpp"
-#include "../../util/equal/StringEqual.hpp"
-#include "../../util/hash/StringHash.hpp"
-#include "../../util/less/StringLess.hpp"
+#include "util/equal/StringEqual.hpp"
+#include "util/hash/StringHash.hpp"
+#include "util/less/StringLess.hpp"
 
 #include <cstddef>
 #include <map>

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../rendering/shaders/ShaderType.hpp"
+#include "rendering/shaders/ShaderType.hpp"
 
 #define NOMINMAX // gl3w.h includes glcorearb.h which includes windows.h
 #include <GL/gl3w.h>

@@ -1,5 +1,5 @@
+#include "DataManager.hpp"
 #include "PointLight.hpp"
-#include "../data/DataManager.hpp"
 
 
 namespace leopph

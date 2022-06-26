@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../concepts/Pathed.hpp"
+#include "util/concepts/Pathed.hpp"
 
 #include <cstddef>
 

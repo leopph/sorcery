@@ -9,11 +9,11 @@
 #include "RenderComponent.hpp"
 #include "Skybox.hpp"
 #include "SpotLight.hpp"
-#include "../rendering/SkyboxImpl.hpp"
-#include "../rendering/geometry/GlMeshGroup.hpp"
-#include "../util/equal/PathedEqual.hpp"
-#include "../util/hash/PathedHash.hpp"
-#include "../util/less/PoeloLess.hpp"
+#include "rendering/SkyboxImpl.hpp"
+#include "rendering/GlMeshGroup.hpp"
+#include "util/equal/PathedEqual.hpp"
+#include "util/hash/PathedHash.hpp"
+#include "util/less/PoeloLess.hpp"
 
 #include <algorithm>
 #include <filesystem>

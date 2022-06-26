@@ -6,8 +6,8 @@
 #include "PointLight.hpp"
 #include "Renderer.hpp"
 #include "SpotLight.hpp"
-#include "../CascadedShadowMap.hpp"
-#include "../geometry/GlMeshGroup.hpp"
+#include "rendering/CascadedShadowMap.hpp"
+#include "rendering/GlMeshGroup.hpp"
 
 #include <span>
 #include <vector>

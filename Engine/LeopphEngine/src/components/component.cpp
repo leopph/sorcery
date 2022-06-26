@@ -1,6 +1,6 @@
 #include "Component.hpp"
+#include "DataManager.hpp"
 #include "Logger.hpp"
-#include "../data/DataManager.hpp"
 
 
 namespace leopph

@@ -1,6 +1,6 @@
-#include "TransparencyBuffer.hpp"
+#include "rendering/TransparencyBuffer.hpp"
 
-#include "../windowing/WindowImpl.hpp"
+#include "windowing/WindowImpl.hpp"
 
 
 namespace leopph::internal

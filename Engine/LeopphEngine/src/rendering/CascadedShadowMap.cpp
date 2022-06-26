@@ -1,8 +1,8 @@
-#include "CascadedShadowMap.hpp"
+#include "rendering/CascadedShadowMap.hpp"
 
 #include "Math.hpp"
 #include "Settings.hpp"
-#include "../windowing/WindowImpl.hpp"
+#include "windowing/WindowImpl.hpp"
 
 #include <algorithm>
 #include <array>

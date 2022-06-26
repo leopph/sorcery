@@ -1,10 +1,10 @@
 #pragma once
 
-#include "ShaderStageInfo.hpp"
 #include "Matrix.hpp"
+#include "ShaderStageInfo.hpp"
 #include "Vector.hpp"
-#include "../../util/equal/StringEqual.hpp"
-#include "../../util/hash/StringHash.hpp"
+#include "util/equal/StringEqual.hpp"
+#include "util/hash/StringHash.hpp"
 
 #include <cstddef>
 #include <optional>
@@ -21,11 +21,11 @@ namespace leopph::internal
 	class ShaderProgram
 	{
 		public:
-			explicit ShaderProgram(const std::vector<ShaderStageInfo>& stageInfo);
-			explicit ShaderProgram(std::span<const unsigned char> binary);
+			explicit ShaderProgram(std::vector<ShaderStageInfo> const& stageInfo);
+			explicit ShaderProgram(std::span<unsigned char const> binary);
 
-			ShaderProgram(const ShaderProgram& other) = delete;
-			auto operator=(const ShaderProgram& other) -> ShaderProgram& = delete;
+			ShaderProgram(ShaderProgram const& other) = delete;
+			auto operator=(ShaderProgram const& other) -> ShaderProgram& = delete;
 
 			ShaderProgram(ShaderProgram&& other) = delete;
 			auto operator=(ShaderProgram&& other) -> ShaderProgram& = delete;
@@ -38,13 +38,13 @@ namespace leopph::internal
 			auto SetUniform(std::string_view name, int value) -> void;
 			auto SetUniform(std::string_view name, unsigned value) -> void;
 			auto SetUniform(std::string_view name, float value) -> void;
-			auto SetUniform(std::string_view name, const Vector3& value) -> void;
-			auto SetUniform(std::string_view name, const Matrix4& value) -> void;
-			auto SetUniform(std::string_view name, std::span<const int> values) -> void;
-			auto SetUniform(std::string_view name, std::span<const unsigned> values) -> void;
-			auto SetUniform(std::string_view name, std::span<const float> values) -> void;
-			auto SetUniform(std::string_view name, std::span<const Vector3> values) -> void;
-			auto SetUniform(std::string_view name, std::span<const Matrix4> values) -> void;
+			auto SetUniform(std::string_view name, Vector3 const& value) -> void;
+			auto SetUniform(std::string_view name, Matrix4 const& value) -> void;
+			auto SetUniform(std::string_view name, std::span<int const> values) -> void;
+			auto SetUniform(std::string_view name, std::span<unsigned const> values) -> void;
+			auto SetUniform(std::string_view name, std::span<float const> values) -> void;
+			auto SetUniform(std::string_view name, std::span<Vector3 const> values) -> void;
+			auto SetUniform(std::string_view name, std::span<Matrix4 const> values) -> void;
 
 			auto SetBufferBinding(std::string_view bufName, int bindingIndex) -> void;
 

@@ -1,7 +1,7 @@
 #include "Camera.hpp"
 #include "Entity.hpp"
 #include "WindowEvent.hpp"
-#include "../windowing/WindowImpl.hpp"
+#include "windowing/WindowImpl.hpp"
 
 #include <utility>
 

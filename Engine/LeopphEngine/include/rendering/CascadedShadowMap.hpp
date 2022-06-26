@@ -3,7 +3,7 @@
 #include "EventReceiver.hpp"
 #include "Frustum.hpp"
 #include "Matrix.hpp"
-#include "../event/DirShadowEvent.hpp"
+#include "events/DirShadowEvent.hpp"
 #include "opengl/GlFramebuffer.hpp"
 #include "opengl/GlTexture.hpp"
 #include "shaders/ShaderProgram.hpp"

@@ -1,6 +1,6 @@
+#include "DataManager.hpp"
 #include "DirLight.hpp"
 #include "Math.hpp"
-#include "../data/DataManager.hpp"
 
 
 namespace leopph

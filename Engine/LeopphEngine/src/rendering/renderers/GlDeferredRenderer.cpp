@@ -1,12 +1,12 @@
-#include "GlDeferredRenderer.hpp"
+#include "rendering/renderers/GlDeferredRenderer.hpp"
 
 #include "AmbientLight.hpp"
 #include "Camera.hpp"
+#include "DataManager.hpp"
 #include "Math.hpp"
 #include "Matrix.hpp"
 #include "Settings.hpp"
 #include "Window.hpp"
-#include "../../data/DataManager.hpp"
 
 #include <algorithm>
 #include <array>

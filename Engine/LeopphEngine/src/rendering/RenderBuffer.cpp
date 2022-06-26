@@ -1,6 +1,6 @@
-#include "RenderBuffer.hpp"
+#include "rendering/RenderBuffer.hpp"
 
-#include "../windowing/WindowImpl.hpp"
+#include "windowing/WindowImpl.hpp"
 
 
 namespace leopph::internal

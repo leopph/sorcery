@@ -1,21 +1,21 @@
 #include "Skybox.hpp"
 
-#include "SkyboxImpl.hpp"
-#include "../data/DataManager.hpp"
+#include "DataManager.hpp"
+#include "rendering/SkyboxImpl.hpp"
 
 
 namespace leopph
 {
-	Skybox::Skybox(const std::filesystem::path& left, const std::filesystem::path& right,
-	               const std::filesystem::path& top, const std::filesystem::path& bottom,
-	               const std::filesystem::path& front, const std::filesystem::path& back) :
+	Skybox::Skybox(std::filesystem::path const& left, std::filesystem::path const& right,
+	               std::filesystem::path const& top, std::filesystem::path const& bottom,
+	               std::filesystem::path const& front, std::filesystem::path const& back) :
 		m_Impl{internal::DataManager::Instance().CreateOrGetSkyboxImpl(internal::SkyboxImpl::BuildAllPaths(left, right, top, bottom, front, back))}
 	{
 		internal::DataManager::Instance().RegisterSkyboxHandle(m_Impl, this);
 	}
 
 
-	Skybox::Skybox(const Skybox& other) :
+	Skybox::Skybox(Skybox const& other) :
 		m_Impl{other.m_Impl}
 	{
 		internal::DataManager::Instance().RegisterSkyboxHandle(m_Impl, this);
@@ -33,7 +33,7 @@ namespace leopph
 	}
 
 
-	auto Skybox::operator=(const Skybox& other) -> Skybox&
+	auto Skybox::operator=(Skybox const& other) -> Skybox&
 	{
 		if (this == &other)
 		{
@@ -54,43 +54,43 @@ namespace leopph
 	}
 
 
-	auto Skybox::RightPath() const -> const std::filesystem::path&
+	auto Skybox::RightPath() const -> std::filesystem::path const&
 	{
 		return m_Impl->RightPath();
 	}
 
 
-	auto Skybox::LeftPath() const -> const std::filesystem::path&
+	auto Skybox::LeftPath() const -> std::filesystem::path const&
 	{
 		return m_Impl->LeftPath();
 	}
 
 
-	auto Skybox::TopPath() const -> const std::filesystem::path&
+	auto Skybox::TopPath() const -> std::filesystem::path const&
 	{
 		return m_Impl->TopPath();
 	}
 
 
-	auto Skybox::BottomPath() const -> const std::filesystem::path&
+	auto Skybox::BottomPath() const -> std::filesystem::path const&
 	{
 		return m_Impl->BottomPath();
 	}
 
 
-	auto Skybox::FrontPath() const -> const std::filesystem::path&
+	auto Skybox::FrontPath() const -> std::filesystem::path const&
 	{
 		return m_Impl->FrontPath();
 	}
 
 
-	auto Skybox::BackPath() const -> const std::filesystem::path&
+	auto Skybox::BackPath() const -> std::filesystem::path const&
 	{
 		return m_Impl->BackPath();
 	}
 
 
-	auto Skybox::AllPaths() const -> const std::filesystem::path&
+	auto Skybox::AllPaths() const -> std::filesystem::path const&
 	{
 		return m_Impl->Path();
 	}

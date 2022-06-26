@@ -1,6 +1,6 @@
-#include "GlMeshGroup.hpp"
+#include "rendering/GlMeshGroup.hpp"
 
-#include "../../data/DataManager.hpp"
+#include "DataManager.hpp"
 
 #include <algorithm>
 #include <utility>

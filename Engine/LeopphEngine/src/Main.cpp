@@ -13,10 +13,10 @@
 // ReSharper restore All
 #endif
 
+#include "DataManager.hpp"
 #include "EventManager.hpp"
 #include "FrameCompleteEvent.hpp"
 #include "Logger.hpp"
-#include "data/DataManager.hpp"
 #include "rendering/renderers/Renderer.hpp"
 #include "threading/JobSystem.hpp"
 #include "windowing/WindowImpl.hpp"

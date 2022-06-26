@@ -1,12 +1,12 @@
-#include "GlRenderer.hpp"
+#include "rendering/renderers/GlRenderer.hpp"
 
 #include "Camera.hpp"
-#include "GlDeferredRenderer.hpp"
-#include "GlForwardRenderer.hpp"
+#include "DataManager.hpp"
 #include "Logger.hpp"
 #include "Settings.hpp"
-#include "../../data/DataManager.hpp"
-#include "../opengl/OpenGl.hpp"
+#include "rendering/opengl/OpenGl.hpp"
+#include "rendering/renderers/GlDeferredRenderer.hpp"
+#include "rendering/renderers/GlForwardRenderer.hpp"
 
 #include <algorithm>
 #include <cmath>

@@ -1,11 +1,11 @@
 #pragma once
 
 #include "EventReceiver.hpp"
-#include "../event/PointShadowEvent.hpp"
-#include "../rendering/shaders/ShaderProgram.hpp"
+#include "events/PointShadowEvent.hpp"
 #include "opengl/GlFramebuffer.hpp"
 #include "opengl/GlRenderbuffer.hpp"
 #include "opengl/GlTexture.hpp"
+#include "rendering/shaders/ShaderProgram.hpp"
 
 #include <string_view>
 

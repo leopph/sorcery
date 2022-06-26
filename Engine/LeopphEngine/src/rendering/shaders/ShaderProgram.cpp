@@ -1,7 +1,7 @@
-#include "ShaderProgram.hpp"
+#include "rendering/shaders/ShaderProgram.hpp"
 
 #include "Logger.hpp"
-#include "../opengl/OpenGl.hpp"
+#include "rendering/opengl/OpenGl.hpp"
 
 #include <stdexcept>
 #include <vector>

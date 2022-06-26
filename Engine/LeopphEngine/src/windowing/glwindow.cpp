@@ -1,4 +1,4 @@
-#include "GlWindow.hpp"
+#include "windowing/GlWindow.hpp"
 
 #include "EventManager.hpp"
 #include "Input.hpp"
@@ -7,8 +7,8 @@
 #include "MouseEvent.hpp"
 #include "Settings.hpp"
 #include "WindowEvent.hpp"
-#include "../rendering/opengl/OpenGl.hpp"
-#include "../util/api_adapters/GLFWAdapter.hpp"
+#include "rendering/opengl/OpenGl.hpp"
+#include "util/api_adapters/GLFWAdapter.hpp"
 
 #include <array>
 #include <stdexcept>
