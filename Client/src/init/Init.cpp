@@ -12,7 +12,7 @@
 
 auto leopph::Init() -> void
 {
-	Window::Instance()->Title("LeopphEngine Demo");
+	GetWindow()->Title("LeopphEngine Demo");
 
 	Input::CursorMode(CursorState::Disabled);
 

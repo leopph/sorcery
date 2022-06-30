@@ -1,4 +1,4 @@
-#include "GlFramebuffer.hpp"
+#include "rendering/opengl/GlFramebuffer.hpp"
 
 
 namespace leopph::internal

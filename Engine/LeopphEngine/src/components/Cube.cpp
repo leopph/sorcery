@@ -11,7 +11,7 @@ namespace leopph
 {
 	Cube::Cube()
 	{
-		SwapRenderable(CreateMeshGroup());
+		Init(CreateMeshGroup());
 	}
 
 

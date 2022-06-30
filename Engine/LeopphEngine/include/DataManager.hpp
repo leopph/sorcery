@@ -6,13 +6,7 @@
 #include "Entity.hpp"
 #include "Poelo.hpp"
 #include "PointLight.hpp"
-#include "RenderComponent.hpp"
-#include "Skybox.hpp"
 #include "SpotLight.hpp"
-#include "rendering/SkyboxImpl.hpp"
-#include "rendering/GlMeshGroup.hpp"
-#include "util/equal/PathedEqual.hpp"
-#include "util/hash/PathedHash.hpp"
 #include "util/less/PoeloLess.hpp"
 
 #include <algorithm>
@@ -21,7 +15,6 @@
 #include <set>
 #include <span>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 
@@ -32,11 +25,15 @@ namespace leopph::internal
 	class DataManager final
 	{
 		public:
-			[[nodiscard]] static
-			auto Instance() -> DataManager&;
+			DataManager() = default;
 
-			// Destroys everything.
-			auto Clear() -> void;
+			DataManager(DataManager const& other) = delete;
+			auto operator=(DataManager const& other) -> void = delete;
+
+			DataManager(DataManager&& other) = delete;
+			auto operator=(DataManager&& other) -> void = delete;
+
+			~DataManager();
 
 			// Takes ownership of the Poelo instance.
 			auto Store(std::unique_ptr<Poelo> poelo) -> void;
@@ -54,8 +51,7 @@ namespace leopph::internal
 			auto UnregisterEntity(Entity const* entity) -> void;
 
 			// Returns a pointer to the stored Entity with the passed name, or nullptr.
-			[[nodiscard]]
-			auto FindEntity(std::string const& name) -> Entity*;
+			[[nodiscard]] auto FindEntity(std::string const& name) -> Entity*;
 
 			// Adds the Component to the Entity's collection of active/inactive Components depending on the value of active.
 			auto RegisterComponent(Entity const* entity, ComponentPtr<> component, bool active) -> void;
@@ -78,8 +74,7 @@ namespace leopph::internal
 			auto UnregisterActiveBehavior(Behavior const* behavior) -> void;
 
 			// Returns the registered, currently active Behaviors.
-			[[nodiscard]] constexpr
-			auto ActiveBehaviors() const noexcept -> auto&;
+			[[nodiscard]] auto ActiveBehaviors() const noexcept -> std::span<Behavior* const>;
 
 			// Adds the DirLight to the collection of active DirLights.
 			// Does NOT check for duplicates.
@@ -91,8 +86,7 @@ namespace leopph::internal
 			auto UnregisterActiveDirLight(DirectionalLight const* dirLight) -> void;
 
 			// Returns the last created active DirectionalLight, or nullptr if none.
-			[[nodiscard]]
-			auto DirectionalLight() const -> DirectionalLight const*;
+			[[nodiscard]] auto DirectionalLight() const -> DirectionalLight const*;
 
 			// Adds the SpotLight to the collection of active SpotLights.
 			// Does NOT check for duplicates.
@@ -104,8 +98,7 @@ namespace leopph::internal
 			auto UnregisterActiveSpotLight(SpotLight const* spotLight) -> void;
 
 			// Returns the registered, currently active SpotLights.
-			[[nodiscard]] constexpr
-			auto ActiveSpotLights() const noexcept -> auto&;
+			[[nodiscard]] auto ActiveSpotLights() const noexcept -> std::span<SpotLight const* const>;
 
 			// Adds the PointLight to the collection of active PointLights.
 			// Does NOT check for duplicates.
@@ -117,53 +110,7 @@ namespace leopph::internal
 			auto UnregisterActivePointLight(PointLight const* pointLight) -> void;
 
 			// Returns the registered, currently active PointLights.
-			[[nodiscard]] constexpr
-			auto ActivePointLights() const noexcept -> auto&;
-
-			// Duplicates are ignored.
-			auto RegisterGlMeshGroup(GlMeshGroup* glMeshGroup) -> void;
-
-			// Also unregisters the associated active RenderComponents.
-			auto UnregisterGlMeshGroup(GlMeshGroup* glMeshGroup) -> void;
-
-			// Adds the RenderComponent to the GlMeshGroups's collection of active RenderComponents.
-			// Does NOT check for duplicates.
-			auto RegisterActiveRenderComponent(std::shared_ptr<GlMeshGroup> const& glMeshGroup, RenderComponent* renderComponent) -> void;
-
-			// Removes the RenderComponent from the GlMeshGroup's collection of active RenderComponents.
-			// Removes duplicates.
-			// Not registered RenderComponents are ignored.
-			auto UnregisterActiveRenderComponent(std::shared_ptr<GlMeshGroup> const& glMeshGroup, RenderComponent const* renderComponent) -> void;
-
-			// Returns the number of active RenderComponents that are registered for the GlMeshGroup.
-			[[nodiscard]]
-			auto RenderComponentCount(GlMeshGroup* glMeshGroup) const -> std::size_t;
-
-			// Returns all registered GlMeshGroups and their active instances.
-			[[nodiscard]] constexpr
-			auto MeshGroupsAndActiveInstances() const noexcept -> auto&;
-
-			// If present, returns a pointer to the SkyboxImpl that was loaded from the passed path.
-			// If not found, creates a new instance and returns a pointer to that.
-			[[nodiscard]]
-			auto CreateOrGetSkyboxImpl(std::filesystem::path allPaths) -> SkyboxImpl*;
-
-			// Unregisters all Skybox handles and destroys the impl instance.
-			// The function does NOT check whether the passed pointer points to a stored instance or not.
-			auto DestroySkyboxImpl(SkyboxImpl const* skybox) -> void;
-
-			// Stores the handle pointer for the passed SkyboxImpl instance.
-			// The function does NOT check for duplicates or if the passed impl instance is even registered.
-			auto RegisterSkyboxHandle(SkyboxImpl const* skybox, Skybox* handle) -> void;
-
-			// Removes all handle pointers from the passed SkyboxImpl instance that point to the same handle as the passed pointer.
-			// The function does NOT check whether the passed SkyboxImpl instance is registered or not.
-			auto UnregisterSkyboxHandle(SkyboxImpl const* skybox, Skybox* handle) -> void;
-
-			// Returns the number of Skybox instances pointing to the SkyboxImpl instance pointed to by the passed pointer.
-			// The function does NOT check whether the instance is actually registered or not.
-			[[nodiscard]]
-			auto SkyboxHandleCount(SkyboxImpl const* skybox) const -> std::size_t;
+			[[nodiscard]] auto ActivePointLights() const noexcept -> std::span<PointLight const* const>;
 
 		private:
 			struct EntityEntry
@@ -201,12 +148,6 @@ namespace leopph::internal
 			// Non-owning pointers to all active PointLights.
 			std::vector<PointLight const*> m_ActivePointLights;
 
-			// SkyboxImpl instances and non-owning pointer to all the Skybox handles pointing to them.
-			std::unordered_map<SkyboxImpl, std::vector<Skybox*>, PathedHash<SkyboxImpl>, PathedEqual<SkyboxImpl>> m_Skyboxes;
-
-			// Registered GlMeshGroups and their associated active RenderComponents.
-			std::unordered_map<GlMeshGroup*, std::vector<RenderComponent*>> m_Renderables;
-
 			// Returns a non-const iterator to the element or past-the-end.
 			[[nodiscard]]
 			auto GetEntityIterator(std::string const& name) -> decltype(m_EntitiesAndComponents)::iterator;
@@ -219,30 +160,6 @@ namespace leopph::internal
 			[[nodiscard]] static
 			auto GetEntityIteratorCommon(auto* self, std::string const& name) -> decltype(auto);
 	};
-
-
-	[[nodiscard]] constexpr auto DataManager::ActiveBehaviors() const noexcept -> auto&
-	{
-		return m_ActiveBehaviors;
-	}
-
-
-	[[nodiscard]] constexpr auto DataManager::ActiveSpotLights() const noexcept -> auto&
-	{
-		return m_ActiveSpotLights;
-	}
-
-
-	[[nodiscard]] constexpr auto DataManager::ActivePointLights() const noexcept -> auto&
-	{
-		return m_ActivePointLights;
-	}
-
-
-	[[nodiscard]] constexpr auto DataManager::MeshGroupsAndActiveInstances() const noexcept -> auto&
-	{
-		return m_Renderables;
-	}
 
 
 	[[nodiscard]] auto DataManager::GetEntityIteratorCommon(auto* const self, std::string const& name) -> decltype(auto)

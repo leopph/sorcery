@@ -3,6 +3,7 @@
 #include "GlMesh.hpp"
 #include "Matrix.hpp"
 #include "MeshGroup.hpp"
+#include "RenderObject.hpp"
 #include "opengl/GlBuffer.hpp"
 #include "opengl/OpenGl.hpp"
 #include "shaders/ShaderProgram.hpp"
@@ -15,7 +16,7 @@
 namespace leopph::internal
 {
 	// Covers and renders a MeshGroup using multiple OpenGlMeshes.
-	class GlMeshGroup
+	class GlMeshGroup : public RenderObject
 	{
 		public:
 			explicit GlMeshGroup(MeshGroup meshGroup);
@@ -58,7 +59,7 @@ namespace leopph::internal
 			GlMeshGroup(GlMeshGroup&& other) noexcept = delete;
 			auto operator=(GlMeshGroup&& other) noexcept -> GlMeshGroup& = delete;
 
-			~GlMeshGroup() noexcept;
+			~GlMeshGroup() noexcept override = default;
 
 		private:
 			std::vector<std::unique_ptr<GlMesh>> m_OpaqueMeshes;

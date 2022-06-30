@@ -1,6 +1,7 @@
 #include "Poelo.hpp"
 
 #include "DataManager.hpp"
+#include "InternalContext.hpp"
 
 
 namespace leopph
@@ -9,13 +10,13 @@ namespace leopph
 	{
 		Poelo::Poelo()
 		{
-			DataManager::Instance().Store(std::unique_ptr<Poelo>{this});
+			GetDataManager()->Store(std::unique_ptr<Poelo>{this});
 		}
 	}
 
 
-	auto Destroy(const internal::Poelo* poelo) -> void
+	auto Destroy(internal::Poelo const* poelo) -> void
 	{
-		internal::DataManager::Instance().Destroy(poelo);
+		internal::GetDataManager()->Destroy(poelo);
 	}
 }

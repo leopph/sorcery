@@ -2,8 +2,9 @@
 
 #include "Camera.hpp"
 #include "DataManager.hpp"
+#include "InternalContext.hpp"
 #include "Logger.hpp"
-#include "Settings.hpp"
+#include "SettingsImpl.hpp"
 #include "rendering/opengl/OpenGl.hpp"
 #include "rendering/renderers/GlDeferredRenderer.hpp"
 #include "rendering/renderers/GlForwardRenderer.hpp"
@@ -11,7 +12,6 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
-#include <memory>
 #include <stdexcept>
 #include <utility>
 
@@ -20,7 +20,7 @@ namespace leopph::internal
 {
 	auto GlRenderer::Create() -> std::unique_ptr<GlRenderer>
 	{
-		switch (Settings::Instance().GetGraphicsPipeline())
+		switch (GetSettingsImpl()->GetGraphicsPipeline())
 		{
 			case Settings::GraphicsPipeline::Forward:
 				return std::make_unique<GlForwardRenderer>();
@@ -34,65 +34,120 @@ namespace leopph::internal
 	}
 
 
+	auto GlRenderer::CreateRenderObject(MeshGroup const& meshGroup) -> RenderObject*
+	{
+		auto glMeshGroup = std::make_unique<GlMeshGroup>(meshGroup);
+		auto* const ret = glMeshGroup.get();
+		m_RenderObjects.push_back(std::move(glMeshGroup));
+		return ret;
+	}
+
+
+	auto GlRenderer::DeleteRenderObject(RenderObject* renderObject) -> void
+	{
+		std::erase_if(m_RenderObjects, [renderObject](auto const& elem)
+		{
+			return elem.get() == renderObject;
+		});
+	}
+
+
+	auto GlRenderer::CreateOrGetSkyboxImpl(std::filesystem::path allPaths) -> SkyboxImpl*
+	{
+		for (auto const& skyboxImpl : m_SkyboxImpls)
+		{
+			if (skyboxImpl->AllPaths() == allPaths)
+			{
+				return skyboxImpl.get();
+			}
+		}
+
+		m_SkyboxImpls.emplace_back(std::make_unique<SkyboxImpl>(std::move(allPaths)));
+		return m_SkyboxImpls.back().get();
+	}
+
+
+	auto GlRenderer::DestroySkyboxImpl(SkyboxImpl const* skyboxImpl) -> void
+	{
+		std::erase_if(m_SkyboxImpls, [skyboxImpl](auto const& elem)
+		{
+			return elem.get() == skyboxImpl;
+		});
+	}
+
+
 	GlRenderer::GlRenderer()
 	{
 		opengl::Init();
 	}
 
 
-	auto GlRenderer::CollectRenderables(std::vector<RenderableData>& renderables) -> void
+	auto GlRenderer::ExtractAndProcessInstanceData(std::vector<RenderNode>& out) -> void
 	{
-		for (auto const& [glMeshGroup, activeComponents] : DataManager::Instance().MeshGroupsAndActiveInstances())
+		m_NonInstancedMatrixCache.clear();
+		m_InstancedMatrixCache.clear();
+
+		for (auto const& glMeshGroup : m_RenderObjects)
 		{
-			static std::vector<std::pair<Matrix4, Matrix4>> instanceMatrices;
-
-			instanceMatrices.clear();
 			glMeshGroup->SortMeshes();
-			auto castsShadow = false;
+			auto instancedShadow = false;
 
-			for (auto const& instance : activeComponents)
+			for (auto const renderNodes = glMeshGroup->ExtractRenderInstanceData(); auto const& [worldTransform, normalTransform, isInstanced, castsShadow] : renderNodes)
 			{
-				auto const& [modelMat, normalMat]{instance->Owner()->Transform()->Matrices()};
+				// Transpose matrices because they go into an OpenGL buffer.
+				auto const worldTrafoTransp = worldTransform.Transposed();
+				auto const normTrafoTransp = normalTransform.Transposed();
 
-				if (instance->Instanced())
+				if (isInstanced)
 				{
-					instanceMatrices.emplace_back(modelMat.Transposed(), normalMat.Transposed());
-					castsShadow = castsShadow || instance->CastsShadow();
+					// Accumulate instanced matrices
+					m_InstancedMatrixCache[glMeshGroup.get()].emplace_back(worldTrafoTransp, normTrafoTransp);
+					instancedShadow = instancedShadow || castsShadow;
 				}
 				else
 				{
-					renderables.emplace_back(glMeshGroup, std::vector{std::make_pair(modelMat.Transposed(), normalMat.Transposed())}, instance->CastsShadow());
+					// output a node for a non-instanced render
+					m_NonInstancedMatrixCache.push_back(std::make_pair(worldTrafoTransp, normTrafoTransp));
+					RenderNode renderInstanceData;
+					renderInstanceData.RenderObject = glMeshGroup.get();
+					renderInstanceData.Instances = std::span{std::begin(m_NonInstancedMatrixCache) + m_NonInstancedMatrixCache.size() - 1, 1};
+					renderInstanceData.CastsShadow = castsShadow;
+					out.push_back(renderInstanceData);
 				}
 			}
 
-			if (!instanceMatrices.empty())
-			{
-				renderables.emplace_back(glMeshGroup, instanceMatrices, castsShadow);
-			}
+			// output a single node for an instanced render
+			RenderNode renderInstanceData;
+			renderInstanceData.RenderObject = glMeshGroup.get();
+			renderInstanceData.Instances = m_InstancedMatrixCache[glMeshGroup.get()];
+			renderInstanceData.CastsShadow = instancedShadow;
+			out.push_back(renderInstanceData);
 		}
 	}
 
 
-	auto GlRenderer::CollectSpotLights(std::vector<SpotLight const*>& spotLights) -> void
+	auto GlRenderer::ExtractSpotLightsCurrentCamera(std::vector<SpotLight const*>& out) -> void
 	{
-		spotLights = DataManager::Instance().ActiveSpotLights();
-		std::ranges::sort(spotLights, CompareLightsByDistToCam);
-		if (auto const limit{Settings::Instance().MaxSpotLightCount()};
-			spotLights.size() > limit)
+		auto const spotLights = GetDataManager()->ActiveSpotLights();
+		out.assign(std::begin(spotLights), std::end(spotLights));
+		std::ranges::sort(out, CompareLightsByDistToCurrentCam);
+
+		if (auto const szLimit{GetSettingsImpl()->MaxSpotLightCount()}; out.size() > szLimit)
 		{
-			spotLights.resize(limit);
+			out.resize(szLimit);
 		}
 	}
 
 
-	auto GlRenderer::CollectPointLights(std::vector<PointLight const*>& pointLights) -> void
+	auto GlRenderer::ExtractPointLightsCurrentCamera(std::vector<PointLight const*>& out) -> void
 	{
-		pointLights = DataManager::Instance().ActivePointLights();
-		std::ranges::sort(pointLights, CompareLightsByDistToCam);
-		if (auto const limit{Settings::Instance().MaxPointLightCount()};
-			pointLights.size() > limit)
+		auto const pointLights = GetDataManager()->ActivePointLights();
+		out.assign(std::begin(pointLights), std::end(pointLights));
+		std::ranges::sort(out, CompareLightsByDistToCurrentCam);
+
+		if (auto const limit{GetSettingsImpl()->MaxPointLightCount()}; out.size() > limit)
 		{
-			pointLights.resize(limit);
+			out.resize(limit);
 		}
 	}
 
@@ -266,7 +321,7 @@ namespace leopph::internal
 	}
 
 
-	auto GlRenderer::CompareLightsByDistToCam(Light const* left, Light const* right) -> bool
+	auto GlRenderer::CompareLightsByDistToCurrentCam(Light const* left, Light const* right) -> bool
 	{
 		auto const& camPosition{Camera::Current()->Owner()->Transform()->Position()};
 		auto const& leftDistance{Vector3::Distance(camPosition, left->Owner()->Transform()->Position())};

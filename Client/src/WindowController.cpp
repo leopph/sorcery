@@ -1,12 +1,14 @@
 #include "WindowController.hpp"
 
+#include "Context.hpp"
+
 using leopph::Input;
 using leopph::KeyCode;
 using leopph::Window;
 
 
 WindowController::WindowController() :
-	m_Window{Window::Instance()},
+	m_Window{leopph::GetWindow()},
 	m_DisplayModes
 	{
 		[this]

@@ -1,6 +1,6 @@
 #include "Time.hpp"
 
-#include "TimeImpl.hpp"
+#include "timing/TimeImpl.hpp"
 
 
 namespace leopph::time

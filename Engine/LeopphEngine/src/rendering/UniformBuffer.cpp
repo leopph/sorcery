@@ -1,6 +1,6 @@
-#include "UniformBuffer.hpp"
+#include "rendering/UniformBuffer.hpp"
 
-#include "opengl/OpenGl.hpp"
+#include "rendering/opengl/OpenGl.hpp"
 
 
 namespace leopph::internal

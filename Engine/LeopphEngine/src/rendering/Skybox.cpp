@@ -1,7 +1,8 @@
 #include "Skybox.hpp"
 
-#include "DataManager.hpp"
+#include "InternalContext.hpp"
 #include "rendering/SkyboxImpl.hpp"
+#include "rendering/renderers/GlRenderer.hpp"
 
 
 namespace leopph
@@ -9,27 +10,16 @@ namespace leopph
 	Skybox::Skybox(std::filesystem::path const& left, std::filesystem::path const& right,
 	               std::filesystem::path const& top, std::filesystem::path const& bottom,
 	               std::filesystem::path const& front, std::filesystem::path const& back) :
-		m_Impl{internal::DataManager::Instance().CreateOrGetSkyboxImpl(internal::SkyboxImpl::BuildAllPaths(left, right, top, bottom, front, back))}
+		m_Impl{static_cast<internal::GlRenderer*>(internal::GetRenderer())->CreateOrGetSkyboxImpl(internal::SkyboxImpl::BuildAllPaths(left, right, top, bottom, front, back))}
 	{
-		internal::DataManager::Instance().RegisterSkyboxHandle(m_Impl, this);
+		m_Impl->RegisterHandle(this);
 	}
 
 
 	Skybox::Skybox(Skybox const& other) :
 		m_Impl{other.m_Impl}
 	{
-		internal::DataManager::Instance().RegisterSkyboxHandle(m_Impl, this);
-	}
-
-
-	Skybox::Skybox(Skybox&& other) noexcept :
-		Skybox{other}
-	{}
-
-
-	Skybox::~Skybox()
-	{
-		Deinit();
+		m_Impl->RegisterHandle(this);
 	}
 
 
@@ -42,15 +32,37 @@ namespace leopph
 
 		Deinit();
 		m_Impl = other.m_Impl;
-		internal::DataManager::Instance().RegisterSkyboxHandle(m_Impl, this);
+		m_Impl->RegisterHandle(this);
+
 		return *this;
+	}
+
+
+	Skybox::Skybox(Skybox&& other) noexcept :
+		m_Impl{other.m_Impl}
+	{
+		m_Impl->RegisterHandle(this);
 	}
 
 
 	auto Skybox::operator=(Skybox&& other) noexcept -> Skybox&
 	{
-		operator=(other);
+		if (this == &other)
+		{
+			return *this;
+		}
+
+		Deinit();
+		m_Impl = other.m_Impl;
+		m_Impl->RegisterHandle(this);
+
 		return *this;
+	}
+
+
+	Skybox::~Skybox()
+	{
+		Deinit();
 	}
 
 
@@ -92,19 +104,18 @@ namespace leopph
 
 	auto Skybox::AllPaths() const -> std::filesystem::path const&
 	{
-		return m_Impl->Path();
+		return m_Impl->AllPaths();
 	}
 
 
-	auto Skybox::Deinit() -> void
+	auto Skybox::Deinit() const -> void
 	{
-		if (internal::DataManager::Instance().SkyboxHandleCount(m_Impl) == 1ull)
+		m_Impl->UnregisterHandle(this);
+
+		// If we were the last handle referring the impl, it is our job to delete it.
+		if (m_Impl->NumHandles() == 0)
 		{
-			internal::DataManager::Instance().DestroySkyboxImpl(m_Impl);
-		}
-		else
-		{
-			internal::DataManager::Instance().UnregisterSkyboxHandle(m_Impl, this);
+			static_cast<internal::GlRenderer*>(internal::GetRenderer())->DestroySkyboxImpl(m_Impl);
 		}
 	}
 }

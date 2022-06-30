@@ -1,8 +1,8 @@
 #include "rendering/CascadedShadowMap.hpp"
 
+#include "InternalContext.hpp"
 #include "Math.hpp"
-#include "Settings.hpp"
-#include "windowing/WindowImpl.hpp"
+#include "SettingsImpl.hpp"
 
 #include <algorithm>
 #include <array>
@@ -16,7 +16,7 @@ namespace leopph::internal
 		glNamedFramebufferReadBuffer(m_Framebuffer, GL_NONE);
 		glNamedFramebufferDrawBuffer(m_Framebuffer, GL_NONE);
 
-		ConfigCascades(Settings::Instance().DirShadowResolution());
+		ConfigCascades(GetSettingsImpl()->DirShadowResolution());
 	}
 
 
@@ -107,9 +107,9 @@ namespace leopph::internal
 
 	auto CascadedShadowMap::CalculateCascadeBounds(float const near, float const far) -> std::span<CascadeBounds>
 	{
-		auto const& settings{Settings::Instance()};
-		auto const numCascades{settings.DirShadowCascadeCount()};
-		auto const lambda{settings.DirShadowCascadeCorrection()};
+		auto const* const settings = GetSettingsImpl();
+		auto const numCascades = settings->DirShadowCascadeCount();
+		auto const lambda = settings->DirShadowCascadeCorrection();
 		auto const clipRatio{far / near};
 
 		// On bound borders the far plane is multiplied by this value to avoid precision problems.

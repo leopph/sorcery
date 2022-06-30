@@ -2,44 +2,41 @@
 
 #include "Logger.hpp"
 
+#include <utility>
+
 
 namespace leopph
 {
-	MeshGroup::MeshGroup() :
-		m_Meshes{std::make_shared<std::vector<Mesh>>()}
+	MeshGroup::MeshGroup(std::span<Mesh const> meshes) :
+		m_Meshes{std::begin(meshes), std::end(meshes)}
 	{}
 
 
 	MeshGroup::MeshGroup(std::vector<Mesh> meshes) :
-		m_Meshes{std::make_shared<std::vector<Mesh>>(std::move(meshes))}
-	{}
-
-
-	MeshGroup::MeshGroup(std::shared_ptr<std::vector<Mesh>> meshes) :
 		m_Meshes{std::move(meshes)}
-	{
-		if (!m_Meshes)
-		{
-			internal::Logger::Instance().Warning("Ignoring nullptr during MeshGroup construction. Reverting to default construction.");
-			m_Meshes = std::make_shared<std::vector<Mesh>>();
-		}
-	}
+	{}
 
 
 	auto MeshGroup::Meshes() const noexcept -> std::span<Mesh const>
 	{
-		return GetMeshesCommon(this);
+		return m_Meshes;
 	}
 
 
-	auto MeshGroup::Meshes() noexcept -> std::vector<Mesh>&
+	auto MeshGroup::AddMesh(Mesh mesh) -> void
 	{
-		return GetMeshesCommon(this);
+		m_Meshes.push_back(std::move(mesh));
 	}
 
 
-	auto MeshGroup::UseCount() const noexcept -> std::size_t
+	auto MeshGroup::RemoveMesh(u64 const index) -> void
 	{
-		return m_Meshes.use_count();
+		if (index >= m_Meshes.size())
+		{
+			internal::Logger::Instance().Error("Ignoring attempt to remove Mesh from MeshGroup at index " + std::to_string(index) + ". MeshGroup size is " + std::to_string(m_Meshes.size()) + '.');
+			return;
+		}
+
+		m_Meshes.erase(std::cbegin(m_Meshes) + index);
 	}
 }

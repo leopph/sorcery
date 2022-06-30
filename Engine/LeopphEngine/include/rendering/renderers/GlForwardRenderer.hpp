@@ -24,14 +24,14 @@ namespace leopph::internal
 		private:
 			auto RenderOpaque(Matrix4 const& camViewMat,
 			                  Matrix4 const& camProjMat,
-			                  std::vector<RenderableData> const& renderables,
+			                  std::vector<RenderNode> const& renderNodes,
 			                  DirectionalLight const* dirLight,
 			                  std::vector<SpotLight const*> const& spotLights,
 			                  std::vector<PointLight const*> const& pointLights) -> void;
 
 			auto RenderTransparent(Matrix4 const& camViewMat,
 			                       Matrix4 const& camProjMat,
-			                       std::vector<RenderableData> const& renderables,
+			                       std::vector<RenderNode> const& renderNodes,
 			                       DirectionalLight const* dirLight,
 			                       std::vector<SpotLight const*> const& spotLights,
 			                       std::vector<PointLight const*> const& pointLights) -> void;

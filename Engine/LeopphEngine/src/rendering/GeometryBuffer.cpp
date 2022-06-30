@@ -1,6 +1,7 @@
-#include "GeometryBuffer.hpp"
+#include "rendering/GeometryBuffer.hpp"
 
-#include "Window.hpp"
+#include "InternalContext.hpp"
+#include "windowing/WindowImpl.hpp"
 
 
 namespace leopph::internal
@@ -9,14 +10,14 @@ namespace leopph::internal
 		m_Width{
 			[]
 			{
-				auto const* window{Window::Instance()};
+				auto const* const window = GetWindowImpl();
 				return static_cast<int>(window->Width() * window->RenderMultiplier());
 			}()
 		},
 		m_Height{
 			[]
 			{
-				auto const* window{Window::Instance()};
+				auto const* const window = GetWindowImpl();
 				return static_cast<int>(window->Height() * window->RenderMultiplier());
 			}()
 		}

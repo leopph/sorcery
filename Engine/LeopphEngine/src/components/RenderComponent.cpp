@@ -1,6 +1,8 @@
 #include "RenderComponent.hpp"
 
-#include "DataManager.hpp"
+#include "InternalContext.hpp"
+#include "rendering/RenderObject.hpp"
+#include "rendering/renderers/Renderer.hpp"
 
 
 namespace leopph::internal
@@ -29,104 +31,85 @@ namespace leopph::internal
 	}
 
 
-	auto RenderComponent::Owner(Entity* entity) -> void
+	auto RenderComponent::Init(MeshGroup const& meshGroup) noexcept -> void
 	{
-		auto& dataManager = DataManager::Instance();
-
-		if (m_Renderable && InUse())
-		{
-			dataManager.UnregisterActiveRenderComponent(m_Renderable, this);
-		}
-
-		Component::Owner(entity);
-
-		if (m_Renderable && InUse())
-		{
-			dataManager.RegisterActiveRenderComponent(m_Renderable, this);
-		}
+		m_RenderObject = GetRenderer()->CreateRenderObject(meshGroup);
+		m_RenderObject->RegisterRenderComponent(this);
 	}
 
 
-	auto RenderComponent::Active(bool const active) -> void
-	{
-		auto& dataManager = DataManager::Instance();
-
-		if (m_Renderable && InUse())
-		{
-			dataManager.UnregisterActiveRenderComponent(m_Renderable, this);
-		}
-
-		Component::Active(active);
-
-		if (m_Renderable && InUse())
-		{
-			dataManager.RegisterActiveRenderComponent(m_Renderable, this);
-		}
-	}
-
-
-	RenderComponent::RenderComponent(RenderComponent const& other) :
+	RenderComponent::RenderComponent(RenderComponent const& other) noexcept :
+		Component{other},
 		m_CastsShadow{other.m_CastsShadow},
 		m_Instanced{other.m_Instanced},
-		m_Renderable{other.m_Renderable}
+		m_RenderObject{other.m_RenderObject}
 	{
-		if (m_Renderable && InUse())
-		{
-			DataManager::Instance().RegisterActiveRenderComponent(m_Renderable, this);
-		}
+		m_RenderObject->RegisterRenderComponent(this);
 	}
 
 
-	auto RenderComponent::operator=(RenderComponent const& other) -> RenderComponent&
+	auto RenderComponent::operator=(RenderComponent const& other) noexcept -> RenderComponent&
 	{
 		if (this == &other)
 		{
 			return *this;
 		}
 
-		auto& dataManager = DataManager::Instance();
-
-		if (m_Renderable && InUse())
-		{
-			dataManager.UnregisterActiveRenderComponent(m_Renderable, this);
-		}
+		m_RenderObject->UnregisterRenderComponent(this);
 
 		m_CastsShadow = other.m_CastsShadow;
 		m_Instanced = other.m_Instanced;
-		m_Renderable = other.m_Renderable;
+		m_RenderObject = other.m_RenderObject;
 
-		if (m_Renderable && InUse())
-		{
-			dataManager.RegisterActiveRenderComponent(m_Renderable, this);
-		}
+		m_RenderObject->RegisterRenderComponent(this);
 
 		return *this;
 	}
 
 
-	auto RenderComponent::SwapRenderable(MeshGroup meshGroup) -> void
+	RenderComponent::RenderComponent(RenderComponent&& other) noexcept :
+		Component{other},
+		m_CastsShadow{other.m_CastsShadow},
+		m_Instanced{other.m_Instanced},
+		m_RenderObject{other.m_RenderObject}
 	{
-		auto& dataManager = DataManager::Instance();
-
-		if (m_Renderable && InUse())
-		{
-			dataManager.UnregisterActiveRenderComponent(m_Renderable, this);
-		}
-
-		m_Renderable = std::make_shared<GlMeshGroup>(std::move(meshGroup));
-
-		if (m_Renderable && InUse())
-		{
-			dataManager.RegisterActiveRenderComponent(m_Renderable, this);
-		}
+		m_RenderObject->RegisterRenderComponent(this);
 	}
 
 
-	RenderComponent::~RenderComponent() noexcept
+	auto RenderComponent::operator=(RenderComponent&& other) noexcept -> RenderComponent&
 	{
-		if (m_Renderable)
+		if (this == &other)
 		{
-			DataManager::Instance().UnregisterActiveRenderComponent(m_Renderable, this);
+			return *this;
+		}
+
+		m_RenderObject->UnregisterRenderComponent(this);
+
+		// If we are the last component referring to the RenderObject, it is our job to delete it.
+		if (m_RenderObject->NumRenderComponents() == 0)
+		{
+			GetRenderer()->DeleteRenderObject(m_RenderObject);
+		}
+
+		m_CastsShadow = other.m_CastsShadow;
+		m_Instanced = other.m_Instanced;
+		m_RenderObject = other.m_RenderObject;
+
+		m_RenderObject->RegisterRenderComponent(this);
+
+		return *this;
+	}
+
+
+	RenderComponent::~RenderComponent()
+	{
+		m_RenderObject->UnregisterRenderComponent(this);
+
+		// If we are the last component referring to the RenderObject, it is our job to delete it.
+		if (m_RenderObject->NumRenderComponents() == 0)
+		{
+			GetRenderer()->DeleteRenderObject(m_RenderObject);
 		}
 	}
 }

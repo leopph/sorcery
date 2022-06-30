@@ -1,5 +1,6 @@
 #include "rendering/TransparencyBuffer.hpp"
 
+#include "InternalContext.hpp"
 #include "windowing/WindowImpl.hpp"
 
 
@@ -10,14 +11,14 @@ namespace leopph::internal
 		m_Width{
 			[]
 			{
-				auto const& window{static_cast<WindowImpl*>(Window::Instance())};
+				auto const& window = GetWindowImpl();
 				return static_cast<int>(window->Width() * window->RenderMultiplier());
 			}()
 		},
 		m_Height{
 			[]
 			{
-				auto const& window{static_cast<WindowImpl*>(Window::Instance())};
+				auto const& window = GetWindowImpl();
 				return static_cast<int>(window->Height() * window->RenderMultiplier());
 			}()
 		}

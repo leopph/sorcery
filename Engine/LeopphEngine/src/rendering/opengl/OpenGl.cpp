@@ -1,7 +1,7 @@
-#include "OpenGl.hpp"
+#include "rendering/opengl/OpenGl.hpp"
 
-#include "Logger.hpp"
 #include "Bimap.hpp"
+#include "Logger.hpp"
 
 #include <stdexcept>
 #include <string>

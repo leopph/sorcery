@@ -1,7 +1,8 @@
 #include "Entity.hpp"
 
+#include "DataManager.hpp"
+#include "InternalContext.hpp"
 #include "Logger.hpp"
-#include "data/DataManager.hpp"
 
 #include <algorithm>
 #include <array>
@@ -13,7 +14,7 @@ namespace leopph
 {
 	auto Entity::Find(std::string const& name) -> Entity*
 	{
-		return internal::DataManager::Instance().FindEntity(name);
+		return internal::GetDataManager()->FindEntity(name);
 	}
 
 
@@ -59,7 +60,7 @@ namespace leopph
 	{
 		// we copy the pointers because the underlying collection will change through activations
 		std::vector<ComponentPtr<>> componentsCopy;
-		std::ranges::copy(internal::DataManager::Instance().ComponentsOfEntity(this, false), std::back_inserter(componentsCopy));
+		std::ranges::copy(internal::GetDataManager()->ComponentsOfEntity(this, false), std::back_inserter(componentsCopy));
 
 		std::ranges::for_each(componentsCopy, [](auto const& comp)
 		{
@@ -72,7 +73,7 @@ namespace leopph
 	{
 		// we copy the pointers because the underlying collection will change through deactivations
 		std::vector<ComponentPtr<>> componentsCopy;
-		std::ranges::copy(internal::DataManager::Instance().ComponentsOfEntity(this, true), std::back_inserter(componentsCopy));
+		std::ranges::copy(internal::GetDataManager()->ComponentsOfEntity(this, true), std::back_inserter(componentsCopy));
 
 		std::ranges::for_each(componentsCopy, [this](auto const& comp)
 		{
@@ -99,7 +100,7 @@ namespace leopph
 		},
 		m_Transform{CreateComponent<leopph::Transform>()}
 	{
-		internal::DataManager::Instance().RegisterEntity(this);
+		internal::GetDataManager()->RegisterEntity(this);
 		m_Transform->Attach(this);
 	}
 
@@ -107,7 +108,7 @@ namespace leopph
 	Entity::Entity(Entity const& other) :
 		m_Name{GenerateUnusedName(other.m_Name)}
 	{
-		internal::DataManager::Instance().RegisterEntity(this);
+		internal::GetDataManager()->RegisterEntity(this);
 
 		for (auto const& component : other.Components())
 		{
@@ -125,7 +126,7 @@ namespace leopph
 			return *this;
 		}
 
-		auto& dataManager = internal::DataManager::Instance();
+		auto* const dataManager = internal::GetDataManager();
 
 		m_Transform->Component::Owner(nullptr);
 
@@ -133,7 +134,7 @@ namespace leopph
 		{
 			// Copy the pointers becuase the underlying data structure will change throught the detaches
 			std::vector<ComponentPtr<>> componentsCopy;
-			std::ranges::copy(dataManager.ComponentsOfEntity(this, active), std::back_inserter(componentsCopy));
+			std::ranges::copy(dataManager->ComponentsOfEntity(this, active), std::back_inserter(componentsCopy));
 
 			std::ranges::for_each(componentsCopy, [](auto const& component)
 			{
@@ -141,11 +142,11 @@ namespace leopph
 			});
 		});
 
-		dataManager.UnregisterEntity(this);
+		dataManager->UnregisterEntity(this);
 
 		m_Name = GenerateUnusedName(other.m_Name);
 
-		dataManager.RegisterEntity(this);
+		dataManager->RegisterEntity(this);
 
 		std::ranges::for_each(other.Components(), [this](auto const& component)
 		{
@@ -160,7 +161,7 @@ namespace leopph
 
 	Entity::~Entity()
 	{
-		auto& dataManager{internal::DataManager::Instance()};
+		auto* const dataManager = internal::GetDataManager();
 
 		m_Transform->Component::Owner(nullptr); // Transform is a special case because it cannot be detached.
 
@@ -168,7 +169,7 @@ namespace leopph
 		{
 			// Copy the pointers becuase the underlying data structure will change throught the detaches
 			std::vector<ComponentPtr<>> componentsCopy;
-			std::ranges::copy(dataManager.ComponentsOfEntity(this, active), std::back_inserter(componentsCopy));
+			std::ranges::copy(dataManager->ComponentsOfEntity(this, active), std::back_inserter(componentsCopy));
 
 			std::ranges::for_each(componentsCopy, [](auto const& component)
 			{
@@ -176,7 +177,7 @@ namespace leopph
 			});
 		});
 
-		dataManager.UnregisterEntity(this);
+		dataManager->UnregisterEntity(this);
 	}
 
 
@@ -194,7 +195,7 @@ namespace leopph
 
 	auto Entity::Components() const -> std::span<ComponentPtr<> const>
 	{
-		return internal::DataManager::Instance().ComponentsOfEntity(this, true);
+		return internal::GetDataManager()->ComponentsOfEntity(this, true);
 	}
 
 
@@ -213,6 +214,6 @@ namespace leopph
 
 	auto Entity::NameIsUnused(std::string const& name) -> bool
 	{
-		return !internal::DataManager::Instance().FindEntity(name);
+		return !internal::GetDataManager()->FindEntity(name);
 	}
 }

@@ -11,8 +11,6 @@ namespace leopph::internal
 	GlMeshGroup::GlMeshGroup(leopph::MeshGroup meshGroup) :
 		m_MeshGroup{std::move(meshGroup)}
 	{
-		DataManager::Instance().RegisterGlMeshGroup(this);
-
 		glNamedBufferData(m_InstanceBuffer, 2 * sizeof(Matrix4), nullptr, GL_DYNAMIC_DRAW);
 		UpdateMeshData();
 	}
@@ -148,11 +146,5 @@ namespace leopph::internal
 	auto GlMeshGroup::MaybeTransparent(std::shared_ptr<Material const> const& mat) -> bool
 	{
 		return mat->OpacityMap != nullptr;
-	}
-
-
-	GlMeshGroup::~GlMeshGroup() noexcept
-	{
-		DataManager::Instance().UnregisterGlMeshGroup(this);
 	}
 }

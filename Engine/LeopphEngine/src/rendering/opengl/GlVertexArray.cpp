@@ -1,4 +1,4 @@
-#include "GlVertexArray.hpp"
+#include "rendering/opengl/GlVertexArray.hpp"
 
 
 namespace leopph::internal

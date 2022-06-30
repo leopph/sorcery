@@ -14,22 +14,18 @@ namespace leopph
 	{
 		public:
 			// PPI must be positive.
-			LEOPPHAPI explicit ImageSprite(std::filesystem::path const& src, int ppi = 1);
+			explicit LEOPPHAPI ImageSprite(std::filesystem::path const& src, int ppi = 1);
 
-			[[nodiscard]] LEOPPHAPI
-			auto Clone() const -> ComponentPtr<> override;
+			[[nodiscard]] auto LEOPPHAPI Clone() const -> ComponentPtr<> override;
 
-			[[nodiscard]] LEOPPHAPI
-			auto Path() const noexcept -> std::filesystem::path const&;
+			[[nodiscard]] auto LEOPPHAPI Path() const noexcept -> std::filesystem::path const&;
 
 			// Get the extents of the ImageSprite.
 			// This is half the size of the ImageSprite.
-			[[nodiscard]] LEOPPHAPI
-			auto Extents() const noexcept -> Vector2 const&;
+			[[nodiscard]] auto LEOPPHAPI Extents() const noexcept -> Vector2 const&;
 
 		private:
-			[[nodiscard]]
-			auto CreateMeshGroup(Image& img, int ppi) -> MeshGroup;
+			[[nodiscard]] static auto CreateMeshGroup(Image& img, int ppi) -> MeshGroup;
 
 			std::filesystem::path m_Path;
 			Vector2 m_Extents;

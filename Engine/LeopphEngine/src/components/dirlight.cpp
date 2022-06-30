@@ -1,5 +1,7 @@
-#include "DataManager.hpp"
 #include "DirLight.hpp"
+
+#include "DataManager.hpp"
+#include "InternalContext.hpp"
 #include "Math.hpp"
 
 
@@ -25,36 +27,36 @@ namespace leopph
 
 	auto DirectionalLight::Owner(Entity* entity) -> void
 	{
-		auto& dataManager = internal::DataManager::Instance();
+		auto* const dataManager = internal::GetDataManager();
 
 		if (InUse())
 		{
-			dataManager.UnregisterActiveDirLight(this);
+			dataManager->UnregisterActiveDirLight(this);
 		}
 
 		Light::Owner(entity);
 
 		if (InUse())
 		{
-			dataManager.RegisterActiveDirLight(this);
+			dataManager->RegisterActiveDirLight(this);
 		}
 	}
 
 
 	auto DirectionalLight::Active(bool const active) -> void
 	{
-		auto& dataManager = internal::DataManager::Instance();
+		auto* const dataManager = internal::GetDataManager();
 
 		if (InUse())
 		{
-			dataManager.UnregisterActiveDirLight(this);
+			dataManager->UnregisterActiveDirLight(this);
 		}
 
 		Light::Active(active);
 
 		if (InUse())
 		{
-			dataManager.RegisterActiveDirLight(this);
+			dataManager->RegisterActiveDirLight(this);
 		}
 	}
 
@@ -66,11 +68,11 @@ namespace leopph
 			return *this;
 		}
 
-		auto& dataManager = internal::DataManager::Instance();
+		auto* const dataManager = internal::GetDataManager();
 
 		if (InUse())
 		{
-			dataManager.UnregisterActiveDirLight(this);
+			dataManager->UnregisterActiveDirLight(this);
 		}
 
 		Light::operator=(other);
@@ -78,7 +80,7 @@ namespace leopph
 
 		if (InUse())
 		{
-			dataManager.RegisterActiveDirLight(this);
+			dataManager->RegisterActiveDirLight(this);
 		}
 
 		return *this;
@@ -93,6 +95,6 @@ namespace leopph
 
 	DirectionalLight::~DirectionalLight()
 	{
-		internal::DataManager::Instance().UnregisterActiveDirLight(this);
+		internal::GetDataManager()->UnregisterActiveDirLight(this);
 	}
 }

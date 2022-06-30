@@ -1,6 +1,7 @@
 #include "SpotLight.hpp"
 
 #include "DataManager.hpp"
+#include "InternalContext.hpp"
 
 
 namespace leopph
@@ -31,36 +32,36 @@ namespace leopph
 
 	auto SpotLight::Owner(Entity* entity) -> void
 	{
-		auto& dataManager = internal::DataManager::Instance();
+		auto* const dataManager = internal::GetDataManager();
 
 		if (InUse())
 		{
-			dataManager.RegisterActiveSpotLight(this);
+			dataManager->RegisterActiveSpotLight(this);
 		}
 
 		AttenuatedLight::Owner(entity);
 
 		if (InUse())
 		{
-			dataManager.UnregisterActiveSpotLight(this);
+			dataManager->UnregisterActiveSpotLight(this);
 		}
 	}
 
 
 	auto SpotLight::Active(bool active) -> void
 	{
-		auto& dataManager = internal::DataManager::Instance();
+		auto* const dataManager = internal::GetDataManager();
 
 		if (InUse())
 		{
-			dataManager.RegisterActiveSpotLight(this);
+			dataManager->RegisterActiveSpotLight(this);
 		}
 
 		AttenuatedLight::Active(active);
 
 		if (InUse())
 		{
-			dataManager.UnregisterActiveSpotLight(this);
+			dataManager->UnregisterActiveSpotLight(this);
 		}
 	}
 
@@ -72,11 +73,11 @@ namespace leopph
 			return *this;
 		}
 
-		auto& dataManager = internal::DataManager::Instance();
+		auto* const dataManager = internal::GetDataManager();
 
 		if (InUse())
 		{
-			dataManager.UnregisterActiveSpotLight(this);
+			dataManager->UnregisterActiveSpotLight(this);
 		}
 
 		AttenuatedLight::operator=(other);
@@ -85,7 +86,7 @@ namespace leopph
 
 		if (InUse())
 		{
-			dataManager.RegisterActiveSpotLight(this);
+			dataManager->RegisterActiveSpotLight(this);
 		}
 
 		return *this;
@@ -100,6 +101,6 @@ namespace leopph
 
 	SpotLight::~SpotLight()
 	{
-		internal::DataManager::Instance().UnregisterActiveSpotLight(this);
+		internal::GetDataManager()->UnregisterActiveSpotLight(this);
 	}
 }

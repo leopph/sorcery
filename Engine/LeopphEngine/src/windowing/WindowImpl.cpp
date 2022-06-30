@@ -1,8 +1,9 @@
-#include "WindowImpl.hpp"
+#include "windowing/WindowImpl.hpp"
 
-#include "GlWindow.hpp"
+#include "InternalContext.hpp"
 #include "Logger.hpp"
-#include "Settings.hpp"
+#include "SettingsImpl.hpp"
+#include "windowing/GlWindow.hpp"
 
 #include <stdexcept>
 
@@ -13,7 +14,7 @@ namespace leopph::internal
 	{
 		std::unique_ptr<WindowImpl> ret;
 
-		switch (Settings::Instance().GetGraphicsApi())
+		switch (GetSettingsImpl()->GetGraphicsApi())
 		{
 			case Settings::GraphicsApi::OpenGl:
 				ret = std::make_unique<GlWindow>();

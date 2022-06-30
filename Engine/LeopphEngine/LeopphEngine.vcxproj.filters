@@ -2,16 +2,16 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="src\AmbientLight.cpp" />
-    <ClCompile Include="src\components\dirlight.cpp" />
-    <ClCompile Include="src\components\pointlight.cpp" />
+    <ClCompile Include="src\components\DirLight.cpp" />
+    <ClCompile Include="src\components\PointLight.cpp" />
     <ClCompile Include="src\components\SpotLight.cpp" />
     <ClCompile Include="src\components\Cube.cpp" />
     <ClCompile Include="src\components\ImageSprite.cpp" />
     <ClCompile Include="src\components\Model.cpp" />
     <ClCompile Include="src\components\RenderComponent.cpp" />
-    <ClCompile Include="src\components\behavior.cpp" />
-    <ClCompile Include="src\components\camera.cpp" />
-    <ClCompile Include="src\components\component.cpp" />
+    <ClCompile Include="src\components\Behavior.cpp" />
+    <ClCompile Include="src\components\Camera.cpp" />
+    <ClCompile Include="src\components\Component.cpp" />
     <ClCompile Include="src\components\OrthographicCamera.cpp" />
     <ClCompile Include="src\components\PerspectiveCamera.cpp" />
     <ClCompile Include="src\components\Transform.cpp" />
@@ -30,7 +30,6 @@
     <ClCompile Include="src\event\WindowEvent.cpp" />
     <ClCompile Include="src\Input.cpp" />
     <ClCompile Include="src\rendering\geometry\GlMesh.cpp" />
-    <ClCompile Include="src\rendering\geometry\GlMeshGroup.cpp" />
     <ClCompile Include="src\rendering\geometry\Mesh.cpp" />
     <ClCompile Include="src\rendering\geometry\MeshGroup.cpp" />
     <ClCompile Include="src\rendering\opengl\GlBuffer.cpp" />
@@ -71,6 +70,10 @@
     <ClCompile Include="src\windowing\Window.cpp" />
     <ClCompile Include="src\windowing\WindowImpl.cpp" />
     <ClCompile Include="..\deps\vendor\gl3w\src\gl3w.c" />
+    <ClCompile Include="src\Context.cpp" />
+    <ClCompile Include="src\SettingsImpl.cpp" />
+    <ClCompile Include="src\rendering\geometry\GlMeshGroup.cpp" />
+    <ClCompile Include="src\rendering\RenderObject.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\DataManager.hpp" />
@@ -78,7 +81,6 @@
     <ClInclude Include="include\events\PointShadowEvent.hpp" />
     <ClInclude Include="include\events\SpotShadowEvent.hpp" />
     <ClInclude Include="include\rendering\GlMesh.hpp" />
-    <ClInclude Include="include\rendering\GlMeshGroup.hpp" />
     <ClInclude Include="include\rendering\opengl\GlBuffer.hpp" />
     <ClInclude Include="include\rendering\opengl\GlFramebuffer.hpp" />
     <ClInclude Include="include\rendering\opengl\GlRenderbuffer.hpp" />
@@ -109,15 +111,17 @@
     <ClInclude Include="include\threading\SpinLock.hpp" />
     <ClInclude Include="include\timing\TimeImpl.hpp" />
     <ClInclude Include="include\util\api_adapters\GLFWAdapter.hpp" />
-    <ClInclude Include="include\util\concepts\Pathed.hpp" />
-    <ClInclude Include="include\util\equal\PathedEqual.hpp" />
     <ClInclude Include="include\util\equal\StringEqual.hpp" />
-    <ClInclude Include="include\util\hash\PathedHash.hpp" />
     <ClInclude Include="include\util\hash\StringHash.hpp" />
     <ClInclude Include="include\util\less\PoeloLess.hpp" />
     <ClInclude Include="include\util\less\StringLess.hpp" />
     <ClInclude Include="include\windowing\GlWindow.hpp" />
     <ClInclude Include="include\windowing\WindowImpl.hpp" />
+    <ClInclude Include="include\InternalContext.hpp" />
+    <ClInclude Include="include\rendering\StaticRenderObject.hpp" />
+    <ClInclude Include="include\rendering\GlMeshGroup.hpp" />
+    <ClInclude Include="include\rendering\RenderObject.hpp" />
+    <ClInclude Include="include\SettingsImpl.hpp" />
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="src\rendering\shaders\glsl\SkyboxVert.vert" />

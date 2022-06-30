@@ -84,7 +84,7 @@ namespace leopph
 	Model::Model(std::filesystem::path path) :
 		m_Path{std::move(path)}
 	{
-		SwapRenderable(MeshGroup{Parse(m_Path)});
+		Init(MeshGroup{Parse(m_Path)});
 	}
 
 

@@ -12,12 +12,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\deps\vendor\gl3w\src\gl3w.c" />
-    <ClCompile Include="src\components\behavior.cpp" />
-    <ClCompile Include="src\components\camera.cpp" />
-    <ClCompile Include="src\components\component.cpp" />
+    <ClInclude Include="include\SettingsImpl.hpp" />
+    <ClCompile Include="src\components\Behavior.cpp" />
+    <ClCompile Include="src\components\Camera.cpp" />
+    <ClCompile Include="src\components\Component.cpp" />
     <ClCompile Include="src\AmbientLight.cpp" />
-    <ClCompile Include="src\components\dirlight.cpp" />
-    <ClCompile Include="src\components\pointlight.cpp" />
+    <ClCompile Include="src\components\DirLight.cpp" />
+    <ClCompile Include="src\components\PointLight.cpp" />
     <ClCompile Include="src\components\SpotLight.cpp" />
     <ClCompile Include="src\components\OrthographicCamera.cpp" />
     <ClCompile Include="src\components\PerspectiveCamera.cpp" />
@@ -26,6 +27,9 @@
     <ClCompile Include="src\components\Model.cpp" />
     <ClCompile Include="src\components\RenderComponent.cpp" />
     <ClCompile Include="src\components\Transform.cpp" />
+    <ClCompile Include="src\Context.cpp" />
+    <ClCompile Include="src\rendering\geometry\GlMeshGroup.cpp" />
+    <ClCompile Include="src\rendering\RenderObject.cpp" />
     <ClCompile Include="src\Settings.cpp" />
     <ClCompile Include="src\data\DataManager.cpp" />
     <ClCompile Include="src\data\Poelo.cpp" />
@@ -44,7 +48,6 @@
     <ClCompile Include="src\rendering\CubeShadowMap.cpp" />
     <ClCompile Include="src\rendering\GeometryBuffer.cpp" />
     <ClCompile Include="src\rendering\geometry\GlMesh.cpp" />
-    <ClCompile Include="src\rendering\geometry\GlMeshGroup.cpp" />
     <ClCompile Include="src\rendering\geometry\Mesh.cpp" />
     <ClCompile Include="src\rendering\geometry\MeshGroup.cpp" />
     <ClCompile Include="src\rendering\opengl\GlBuffer.cpp" />
@@ -68,6 +71,7 @@
     <ClCompile Include="src\rendering\UniformBuffer.cpp" />
     <ClCompile Include="src\scene\Scene.cpp" />
     <ClCompile Include="src\scene\SceneManager.cpp" />
+    <ClCompile Include="src\SettingsImpl.cpp" />
     <ClCompile Include="src\threading\JobSystem.cpp" />
     <ClCompile Include="src\threading\SpinLock.cpp" />
     <ClCompile Include="src\timing\Time.cpp" />
@@ -83,6 +87,7 @@
     <ClCompile Include="src\windowing\WindowImpl.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\InternalContext.hpp" />
     <ClInclude Include="include\DataManager.hpp" />
     <ClInclude Include="include\events\DirShadowEvent.hpp" />
     <ClInclude Include="include\events\PointShadowEvent.hpp" />
@@ -103,6 +108,7 @@
     <ClInclude Include="include\rendering\renderers\GlForwardRenderer.hpp" />
     <ClInclude Include="include\rendering\renderers\GlRenderer.hpp" />
     <ClInclude Include="include\rendering\renderers\Renderer.hpp" />
+    <ClInclude Include="include\rendering\RenderObject.hpp" />
     <ClInclude Include="include\rendering\ScreenQuad.hpp" />
     <ClInclude Include="include\rendering\shaders\ShaderFamily.hpp" />
     <ClInclude Include="include\rendering\shaders\ShaderProgram.hpp" />
@@ -110,6 +116,7 @@
     <ClInclude Include="include\rendering\shaders\ShaderType.hpp" />
     <ClInclude Include="include\rendering\SkyboxImpl.hpp" />
     <ClInclude Include="include\rendering\SpotShadowMap.hpp" />
+    <ClInclude Include="include\rendering\StaticRenderObject.hpp" />
     <ClInclude Include="include\rendering\TransparencyBuffer.hpp" />
     <ClInclude Include="include\rendering\UniformBuffer.hpp" />
     <ClInclude Include="src\scene\Scene.hpp" />
@@ -119,10 +126,7 @@
     <ClInclude Include="include\threading\SpinLock.hpp" />
     <ClInclude Include="include\timing\TimeImpl.hpp" />
     <ClInclude Include="include\util\api_adapters\GLFWAdapter.hpp" />
-    <ClInclude Include="include\util\concepts\Pathed.hpp" />
-    <ClInclude Include="include\util\equal\PathedEqual.hpp" />
     <ClInclude Include="include\util\equal\StringEqual.hpp" />
-    <ClInclude Include="include\util\hash\PathedHash.hpp" />
     <ClInclude Include="include\util\hash\StringHash.hpp" />
     <ClInclude Include="include\util\less\PoeloLess.hpp" />
     <ClInclude Include="include\util\less\StringLess.hpp" />

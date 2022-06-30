@@ -1,4 +1,4 @@
-#include "StringEqual.hpp"
+#include "util/equal/StringEqual.hpp"
 
 
 namespace leopph::internal

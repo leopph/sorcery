@@ -2,10 +2,11 @@
 
 #include "EventManager.hpp"
 #include "Input.hpp"
+#include "InternalContext.hpp"
 #include "KeyEvent.hpp"
 #include "Logger.hpp"
 #include "MouseEvent.hpp"
-#include "Settings.hpp"
+#include "SettingsImpl.hpp"
 #include "WindowEvent.hpp"
 #include "rendering/opengl/OpenGl.hpp"
 #include "util/api_adapters/GLFWAdapter.hpp"
@@ -19,12 +20,12 @@ namespace leopph::internal
 {
 	GlWindow::GlWindow() :
 		WindowImpl{},
-		m_Width{static_cast<int>(Settings::Instance().WindowWidth())},
-		m_Height{static_cast<int>(Settings::Instance().WindowHeight())},
-		m_Fullscreen{Settings::Instance().Fullscreen()},
-		m_Vsync{Settings::Instance().Vsync()},
+		m_Width{static_cast<int>(GetSettingsImpl()->WindowWidth())},
+		m_Height{static_cast<int>(GetSettingsImpl()->WindowHeight())},
+		m_Fullscreen{GetSettingsImpl()->Fullscreen()},
+		m_Vsync{GetSettingsImpl()->Vsync()},
 		m_ClrColor{},
-		m_RenderMult{Settings::Instance().RenderMultiplier()}
+		m_RenderMult{GetSettingsImpl()->RenderMultiplier()}
 
 	{
 		if (!glfwInit())

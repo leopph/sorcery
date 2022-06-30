@@ -1,8 +1,8 @@
-#include "Renderer.hpp"
+#include "rendering/renderers/Renderer.hpp"
 
-#include "GlRenderer.hpp"
 #include "Logger.hpp"
 #include "Settings.hpp"
+#include "rendering/renderers/GlRenderer.hpp"
 
 #include <stdexcept>
 

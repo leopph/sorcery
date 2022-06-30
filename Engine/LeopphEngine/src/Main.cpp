@@ -16,9 +16,10 @@
 #include "DataManager.hpp"
 #include "EventManager.hpp"
 #include "FrameCompleteEvent.hpp"
+#include "InternalContext.hpp"
 #include "Logger.hpp"
+#include "SettingsImpl.hpp"
 #include "rendering/renderers/Renderer.hpp"
-#include "threading/JobSystem.hpp"
 #include "windowing/WindowImpl.hpp"
 
 
@@ -33,19 +34,25 @@ namespace leopph::internal
 		Logger::Instance().CurrentLevel(Logger::Level::Info);
 		#endif
 
-		auto const window{WindowImpl::Create()};
-		auto const renderer{Renderer::Create()};
+		auto const settings = std::make_unique<SettingsImpl>();
+		SetSettingsImpl(settings.get());
+
+		auto const window = WindowImpl::Create();
+		SetWindowImpl(window.get());
+
+		auto const renderer = Renderer::Create();
+		SetRenderer(renderer.get());
+
+		auto const dataManager = std::make_unique<DataManager>();
+		SetDataManager(dataManager.get());
 
 		initFunc();
-
-		//mt::InitJobSystem();
-		//mt::WorkerFunc();
 
 		while (!window->ShouldClose())
 		{
 			window->PollEvents();
 
-			for (auto const& behavior : DataManager::Instance().ActiveBehaviors())
+			for (auto const& behavior : dataManager->ActiveBehaviors())
 			{
 				behavior->OnFrameUpdate();
 			}
@@ -56,9 +63,6 @@ namespace leopph::internal
 			EventManager::Instance().Send<FrameCompleteEvent>();
 		}
 
-		//mt::ShutDownJobSystem();
-
-		DataManager::Instance().Clear();
 		return 0;
 	}
 }

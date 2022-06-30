@@ -1,4 +1,4 @@
-#include "GlBuffer.hpp"
+#include "rendering/opengl/GlBuffer.hpp"
 
 
 namespace leopph::internal

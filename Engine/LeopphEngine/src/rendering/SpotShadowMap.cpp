@@ -1,12 +1,13 @@
-#include "SpotShadowMap.hpp"
+#include "rendering/SpotShadowMap.hpp"
 
-#include "Settings.hpp"
+#include "InternalContext.hpp"
+#include "SettingsImpl.hpp"
 
 
 namespace leopph::internal
 {
 	SpotShadowMap::SpotShadowMap() :
-		m_Res{static_cast<GLsizei>(Settings::Instance().SpotShadowResolution())}
+		m_Res{static_cast<GLsizei>(GetSettingsImpl()->SpotShadowResolution())}
 	{
 		glNamedFramebufferReadBuffer(m_Framebuffer, GL_NONE);
 		glNamedFramebufferDrawBuffer(m_Framebuffer, GL_NONE);

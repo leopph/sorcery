@@ -1,15 +1,11 @@
 #include "Settings.hpp"
 
 #include "EventManager.hpp"
-#include "Logger.hpp"
-#include "event/DirShadowEvent.hpp"
-#include "event/PointShadowEvent.hpp"
-#include "event/SpotShadowEvent.hpp"
+#include "InternalContext.hpp"
+#include "events/DirShadowEvent.hpp"
+#include "events/PointShadowEvent.hpp"
+#include "events/SpotShadowEvent.hpp"
 #include "windowing/WindowImpl.hpp"
-
-#include <exception>
-#include <fstream>
-#include <json.hpp>
 
 // ReSharper disable All
 #define WIN32_LEAN_AND_MEAN
@@ -17,51 +13,66 @@
 #include <Psapi.h>
 // ReSharper restore All
 
+
 namespace leopph
 {
-	std::filesystem::path Settings::s_FilePath{
-		[]
-		{
-			constexpr auto bufSz{100u};
-			constexpr auto defChar{'\0'};
-			#ifdef UNICODE
-			std::wstring s(bufSz, defChar);
-			#else
-		std::string s(bufSz, defChar);
-			#endif
-			s.resize(GetModuleFileNameEx(GetCurrentProcess(), nullptr, s.data(), static_cast<DWORD>(s.size())));
-			return std::filesystem::path(s).parent_path() / "settings.json";
-		}()
-	};
-
-
-	Settings::Settings()
+	auto Settings::ShaderCachePath() noexcept -> std::filesystem::path const&
 	{
-		if (std::filesystem::exists(s_FilePath))
-		{
-			// If we already have a stored configuration, we parse that one
-			Deserialize();
-		}
-		else
-		{
-			// Otherwise we defer serialization to the end of the first frame
-			// so that we know for sure that all to-be-serialized objects exist and are initialized.
-			m_Serialize = true;
-		}
+		return m_ShaderCache;
 	}
 
 
-	auto Settings::Instance() -> Settings&
+
+	auto Settings::ShaderCachePath(std::filesystem::path path) noexcept -> void
 	{
-		static Settings instance;
-		return instance;
+		m_ShaderCache = std::move(path);
+		m_Serialize = true;
 	}
+
 
 
 	auto Settings::CacheShaders() const -> bool
 	{
 		return !m_ShaderCache.empty();
 	}
+
+
+
+	auto Settings::GetGraphicsApi() const noexcept -> GraphicsApi
+	{
+		return m_RenderingSettings.Api;
+	}
+
+
+
+	auto Settings::SetGraphicsApi(GraphicsApi const newApi) noexcept -> void
+	{
+		m_RenderingSettings.PendingApi = newApi;
+		m_Serialize = true;
+	}
+
+
+
+	auto Settings::GetGraphicsPipeline() const noexcept -> GraphicsPipeline
+	{
+		return m_RenderingSettings.Pipe;
+	}
+
+
+
+	auto Settings::SetGraphicsPipeline(GraphicsPipeline const pipeline) noexcept -> void
+	{
+		m_RenderingSettings.PendingPipe = pipeline;
+		m_Serialize = true;
+	}
+
+
+
+	auto Settings::DirShadowResolution() -> std::span<u64 const>
+	{
+		return m_DirLightSettings.Res;
+	}
+
 
 
 	auto Settings::DirShadowResolution(std::span<std::size_t const> cascades) -> void
@@ -72,7 +83,37 @@ namespace leopph
 	}
 
 
-	auto Settings::SpotShadowResolution(std::size_t const newRes) -> void
+
+	auto Settings::DirShadowCascadeCorrection() const noexcept -> f32
+	{
+		return m_DirLightSettings.Corr;
+	}
+
+
+
+	auto Settings::DirShadowCascadeCorrection(f32 const newCor) noexcept -> void
+	{
+		m_DirLightSettings.Corr = newCor;
+		m_Serialize = true;
+	}
+
+
+
+	auto Settings::DirShadowCascadeCount() const noexcept -> u64
+	{
+		return m_DirLightSettings.Res.size();
+	}
+
+
+
+	auto Settings::SpotShadowResolution() const noexcept -> u64
+	{
+		return m_SpotLightSettings.Res;
+	}
+
+
+
+	auto Settings::SpotShadowResolution(u64 const newRes) -> void
 	{
 		m_SpotLightSettings.Res = newRes;
 		m_Serialize = true;
@@ -80,7 +121,30 @@ namespace leopph
 	}
 
 
-	auto Settings::PointShadowResolution(std::size_t const newRes) noexcept -> void
+
+	auto Settings::MaxSpotLightCount() const noexcept -> u64
+	{
+		return m_SpotLightSettings.MaxNum;
+	}
+
+
+
+	auto Settings::MaxSpotLightCount(u64 const newCount) noexcept -> void
+	{
+		m_SpotLightSettings.MaxNum = newCount;
+		m_Serialize = true;
+	}
+
+
+
+	auto Settings::PointShadowResolution() const noexcept -> u64
+	{
+		return m_PointLightSettings.Res;
+	}
+
+
+
+	auto Settings::PointShadowResolution(u64 const newRes) noexcept -> void
 	{
 		m_PointLightSettings.Res = newRes;
 		m_Serialize = true;
@@ -88,46 +152,68 @@ namespace leopph
 	}
 
 
-	auto Settings::WindowWidth() const noexcept -> unsigned
+
+	auto Settings::MaxPointLightCount() const noexcept -> u64
+	{
+		return m_PointLightSettings.MaxNum;
+	}
+
+
+
+	auto Settings::MaxPointLightCount(u64 const newCount) noexcept
+	{
+		m_PointLightSettings.MaxNum = newCount;
+		m_Serialize = true;
+	}
+
+
+
+	auto Settings::WindowWidth() const noexcept -> u32
 	{
 		return m_WindowSettingsCache.Width;
 	}
 
 
-	auto Settings::WindowWidth(unsigned const newWidth) noexcept -> void
+
+	auto Settings::WindowWidth(u32 const newWidth) noexcept -> void
 	{
 		m_WindowSettingsCache.Width = newWidth;
-		Window::Instance()->Width(newWidth);
+		internal::GetWindowImpl()->Width(newWidth);
 		m_Serialize = true;
 	}
 
 
-	auto Settings::WindowHeight() const noexcept -> unsigned
+
+	auto Settings::WindowHeight() const noexcept -> u32
 	{
 		return m_WindowSettingsCache.Height;
 	}
 
 
-	auto Settings::WindowHeight(unsigned const newHeight) noexcept -> void
+
+	auto Settings::WindowHeight(u32 const newHeight) noexcept -> void
 	{
 		m_WindowSettingsCache.Height = newHeight;
-		Window::Instance()->Height(newHeight);
+		internal::GetWindowImpl()->Height(newHeight);
 		m_Serialize = true;
 	}
 
 
-	auto Settings::RenderMultiplier() const noexcept -> float
+
+	auto Settings::RenderMultiplier() const noexcept -> f32
 	{
 		return m_WindowSettingsCache.RenderMultiplier;
 	}
 
 
-	auto Settings::RenderMultiplier(float const newMult) noexcept -> void
+
+	auto Settings::RenderMultiplier(f32 const newMult) noexcept -> void
 	{
 		m_WindowSettingsCache.RenderMultiplier = newMult;
-		Window::Instance()->RenderMultiplier(newMult);
+		internal::GetWindowImpl()->RenderMultiplier(newMult);
 		m_Serialize = true;
 	}
+
 
 
 	auto Settings::Fullscreen() const noexcept -> bool
@@ -136,12 +222,14 @@ namespace leopph
 	}
 
 
+
 	auto Settings::Fullscreen(bool const newVal) noexcept -> void
 	{
 		m_WindowSettingsCache.Fullscreen = newVal;
-		Window::Instance()->Fullscreen(newVal);
+		internal::GetWindowImpl()->Fullscreen(newVal);
 		m_Serialize = true;
 	}
+
 
 
 	auto Settings::Vsync() const -> bool
@@ -150,117 +238,29 @@ namespace leopph
 	}
 
 
-	LEOPPHAPI auto Settings::Vsync(bool const newVal) -> void
+
+	auto Settings::Vsync(bool const newVal) -> void
 	{
 		m_WindowSettingsCache.Vsync = newVal;
-		Window::Instance()->Vsync(newVal);
+		internal::GetWindowImpl()->Vsync(newVal);
 		m_Serialize = true;
 	}
 
 
-	auto Settings::Serialize() const -> void
+
+	std::filesystem::path Settings::s_FilePath
 	{
-		nlohmann::json json;
-
-		// Serialize common global settings
-		json[JSON_SHADER_LOC] = m_ShaderCache.string();
-		json[JSON_API] = m_RenderingSettings.PendingApi;
-		json[JSON_PIPE] = m_RenderingSettings.PendingPipe;
-		for (auto i = 0u; i < m_DirLightSettings.Res.size(); i++)
+		[]
 		{
-			json[JSON_DIR_SHADOW_RES][i] = m_DirLightSettings.Res[i];
-		}
-		json[JSON_DIR_CORRECT] = m_DirLightSettings.Corr;
-		json[JSON_SPOT_SHADOW_RES] = m_SpotLightSettings.Res;
-		json[JSON_MAX_SPOT] = m_SpotLightSettings.MaxNum;
-		json[JSON_POINT_SHADOW_RES] = m_PointLightSettings.Res;
-		json[JSON_MAX_POINT] = m_PointLightSettings.MaxNum;
-
-		// Serialize window settings
-		json[JSON_RES_W] = m_WindowSettingsCache.Width;
-		json[JSON_RES_H] = m_WindowSettingsCache.Height;
-		json[JSON_REND_MULT] = m_WindowSettingsCache.RenderMultiplier;
-		json[JSON_FULLSCREEN] = m_WindowSettingsCache.Fullscreen;
-		json[JSON_VSYNC] = m_WindowSettingsCache.Vsync;
-
-		std::ofstream output{s_FilePath};
-		output << json.dump(1);
-		internal::Logger::Instance().Debug("Settings serialized to " + s_FilePath.string() + ".");
-	}
-
-
-	auto Settings::Deserialize() -> void
-	{
-		try
-		{
-			auto const json{
-				[&]
-				{
-					std::ifstream input{s_FilePath};
-					nlohmann::json ret;
-					input >> ret;
-					return ret;
-				}()
-			};
-
-			// Parse common global settings
-			m_ShaderCache = std::filesystem::path{json[JSON_SHADER_LOC].get<std::string>()};
-			m_RenderingSettings.Api = json[JSON_API];
-			m_RenderingSettings.PendingApi = m_RenderingSettings.Api;
-			m_RenderingSettings.Pipe = json[JSON_PIPE];
-			m_RenderingSettings.PendingPipe = m_RenderingSettings.Pipe;
-			m_DirLightSettings.Res.clear();
-			for (auto const& res : json[JSON_DIR_SHADOW_RES])
-			{
-				m_DirLightSettings.Res.push_back(res);
-			}
-			m_DirLightSettings.Corr = json[JSON_DIR_CORRECT];
-			m_SpotLightSettings.Res = json[JSON_SPOT_SHADOW_RES];
-			m_SpotLightSettings.MaxNum = json[JSON_MAX_SPOT];
-			m_PointLightSettings.Res = json[JSON_POINT_SHADOW_RES];
-			m_PointLightSettings.MaxNum = json[JSON_MAX_POINT];
-
-			// Parse window settings
-			m_WindowSettingsCache = WindowSettings
-			{
-				.Width = json[JSON_RES_W],
-				.Height = json[JSON_RES_H],
-				.RenderMultiplier = json[JSON_REND_MULT],
-				.Fullscreen = json[JSON_FULLSCREEN],
-				.Vsync = json[JSON_VSYNC]
-			};
-
-			internal::Logger::Instance().Debug("Settings deserialized from " + s_FilePath.string() + ".");
-		}
-		catch (std::exception&)
-		{
-			internal::Logger::Instance().Debug("Failed to deserialize from " + s_FilePath.string() + ". Reverting to defaults and overwriting config file.");
-			m_Serialize = true;
-		}
-	}
-
-
-	auto Settings::OnEventReceived(EventReceiver<internal::FrameCompleteEvent>::EventParamType) -> void
-	{
-		if (m_Serialize)
-		{
-			Serialize();
-			m_Serialize = false;
-		}
-	}
-
-
-	auto Settings::OnEventReceived(EventReceiver<internal::WindowEvent>::EventParamType event) -> void
-	{
-		m_WindowSettingsCache = WindowSettings
-		{
-			.Width = event.Width,
-			.Height = event.Height,
-			.RenderMultiplier = event.RenderMultiplier,
-			.Fullscreen = event.Fullscreen,
-			.Vsync = event.Vsync
-		};
-
-		m_Serialize = true;
-	}
+			constexpr auto bufSz{100u};
+			constexpr auto defChar{'\0'};
+			#ifdef UNICODE
+			std::wstring s(bufSz, defChar);
+			#else
+			std::string s(bufSz, defChar);
+			#endif
+			s.resize(GetModuleFileNameEx(GetCurrentProcess(), nullptr, s.data(), static_cast<DWORD>(s.size())));
+			return std::filesystem::path(s).parent_path() / "settings.json";
+		}()
+	};
 }

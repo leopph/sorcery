@@ -31,12 +31,12 @@ namespace leopph::internal
 
 		private:
 			// Fill the GeometryBuffer with geometry data.
-			auto RenderGeometry(Matrix4 const& camViewMat, Matrix4 const& camProjMat, std::vector<RenderableData> const& renderables) -> void;
+			auto RenderGeometry(Matrix4 const& camViewMat, Matrix4 const& camProjMat, std::vector<RenderNode> const& renderables) -> void;
 
 			// Draw all lights in the RenderBuffer.
 			auto RenderLights(Matrix4 const& camViewMat,
 			                  Matrix4 const& camProjMat,
-			                  std::span<RenderableData const> renderables,
+			                  std::span<RenderNode const> renderNodes,
 			                  std::span<SpotLight const*> spotLights,
 			                  std::span<PointLight const*> pointLights) -> void;
 
@@ -47,14 +47,14 @@ namespace leopph::internal
 			[[nodiscard]] auto RenderDirShadowMap(DirectionalLight const* dirLight,
 			                                      Matrix4 const& camViewInvMat,
 			                                      Matrix4 const& camProjMat,
-			                                      std::span<RenderableData const> renderables,
+			                                      std::span<RenderNode const> renderNodes,
 			                                      ShaderProgram& lightShader,
 			                                      ShaderProgram& shadowShader,
 			                                      GLuint nextTexUnit) const -> GLuint;
 
 			// Draws into the first N shadow maps, binds them to the light shader with the necessary data, and returns the next usable texture unit.
 			[[nodiscard]] auto RenderSpotShadowMaps(std::span<SpotLight const* const> spotLights,
-			                                        std::span<RenderableData const> renderables,
+			                                        std::span<RenderNode const> renderNodes,
 			                                        ShaderProgram& lightShader,
 			                                        ShaderProgram& shadowShader,
 			                                        std::size_t numShadows,
@@ -62,7 +62,7 @@ namespace leopph::internal
 
 			// Draws into the first N shadow maps, binds them to the light shader with the necessary data, and returns the next usable texture unit.
 			[[nodiscard]] auto RenderPointShadowMaps(std::span<PointLight const* const> pointLights,
-			                                         std::span<RenderableData const> renderables,
+			                                         std::span<RenderNode const> renderNodes,
 			                                         ShaderProgram& lightShader,
 			                                         ShaderProgram& shadowShader,
 			                                         std::size_t numShadows,
@@ -71,7 +71,7 @@ namespace leopph::internal
 			// Transparent forward pass.
 			auto RenderTransparent(Matrix4 const& camViewMat,
 			                       Matrix4 const& camProjMat,
-			                       std::vector<RenderableData> const& renderables,
+			                       std::vector<RenderNode> const& renderNodes,
 			                       DirectionalLight const* dirLight,
 			                       std::vector<SpotLight const*> const& spotLights,
 			                       std::vector<PointLight const*> const& pointLights) -> void;

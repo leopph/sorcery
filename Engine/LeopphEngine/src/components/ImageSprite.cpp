@@ -15,7 +15,7 @@ namespace leopph
 	{
 		Image img{src, true};
 		m_Extents = Vector2{img.Width() / 2.f / ppi, img.Height() / 2.f / ppi};
-		SwapRenderable(CreateMeshGroup(img, ppi));
+		Init(CreateMeshGroup(img, ppi));
 	}
 
 
@@ -43,8 +43,6 @@ namespace leopph
 		{
 			return {};
 		}
-
-		m_Extents = Vector2{img.Width() / 2.f / ppi, img.Height() / 2.f / ppi};
 
 		std::shared_ptr<Texture> baseTexture;
 		std::shared_ptr<Texture> opacityTexture;

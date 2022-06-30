@@ -2,11 +2,11 @@
 
 #include "Camera.hpp"
 #include "DataManager.hpp"
+#include "InternalContext.hpp"
 #include "Logger.hpp"
 #include "Matrix.hpp"
-#include "Settings.hpp"
-#include "Window.hpp"
 #include "rendering/opengl/OpenGl.hpp"
+#include "windowing/WindowImpl.hpp"
 
 #include <string>
 #include <utility>
@@ -62,21 +62,21 @@ namespace leopph::internal
 			return;
 		}
 
-		static std::vector<RenderableData> renderables;
+		static std::vector<RenderNode> renderNodes;
 		static std::vector<SpotLight const*> spotLights;
 		static std::vector<PointLight const*> pointLights;
 
-		renderables.clear();
-		CollectRenderables(renderables);
+		renderNodes.clear();
+		ExtractAndProcessInstanceData(renderNodes);
 		spotLights.clear();
-		CollectSpotLights(spotLights);
+		ExtractSpotLightsCurrentCamera(spotLights);
 		pointLights.clear();
-		CollectPointLights(pointLights);
+		ExtractPointLightsCurrentCamera(pointLights);
 
-		auto const& dirLight{DataManager::Instance().DirectionalLight()};
+		auto const* const dirLight = GetDataManager()->DirectionalLight();
 
-		auto const camViewMat{Camera::Current()->ViewMatrix()};
-		auto const camProjMat{Camera::Current()->ProjectionMatrix()};
+		auto const currCamViewMat = Camera::Current()->ViewMatrix();
+		auto const currCamProjMat = Camera::Current()->ProjectionMatrix();
 
 		glDisable(GL_BLEND);
 		glEnable(GL_DEPTH_TEST);
@@ -84,17 +84,17 @@ namespace leopph::internal
 
 		m_RenderBuffer.Clear();
 		m_RenderBuffer.BindForWriting();
-		RenderOpaque(camViewMat, camProjMat, renderables, dirLight, spotLights, pointLights);
-		RenderSkybox(camViewMat, camProjMat);
-		RenderTransparent(camViewMat, camProjMat, renderables, dirLight, spotLights, pointLights);
+		RenderOpaque(currCamViewMat, currCamProjMat, renderNodes, dirLight, spotLights, pointLights);
+		RenderSkybox(currCamViewMat, currCamProjMat);
+		RenderTransparent(currCamViewMat, currCamProjMat, renderNodes, dirLight, spotLights, pointLights);
 		Compose();
 
-		auto const window = Window::Instance();
+		auto const window = GetWindowImpl();
 		glBlitNamedFramebuffer(m_RenderBuffer.Framebuffer(), 0, 0, 0, m_RenderBuffer.Width(), m_RenderBuffer.Height(), 0, 0, window->Width(), window->Height(), GL_COLOR_BUFFER_BIT, GL_LINEAR);
 	}
 
 
-	auto GlForwardRenderer::RenderOpaque(Matrix4 const& camViewMat, Matrix4 const& camProjMat, std::vector<RenderableData> const& renderables, DirectionalLight const* dirLight, std::vector<SpotLight const*> const& spotLights, std::vector<PointLight const*> const& pointLights) -> void
+	auto GlForwardRenderer::RenderOpaque(Matrix4 const& camViewMat, Matrix4 const& camProjMat, std::vector<RenderNode> const& renderNodes, DirectionalLight const* dirLight, std::vector<SpotLight const*> const& spotLights, std::vector<PointLight const*> const& pointLights) -> void
 	{
 		m_ObjectShader.Clear();
 		m_ObjectShader["DIRLIGHT"] = std::to_string(dirLight != nullptr);
@@ -117,7 +117,7 @@ namespace leopph::internal
 
 		shader.Use();
 
-		for (auto const& [renderable, instances, castsShadow] : renderables)
+		for (auto const& [renderable, instances, castsShadow] : renderNodes)
 		{
 			renderable->SetInstanceData(instances);
 			renderable->DrawWithMaterial(shader, 0, false);
@@ -125,7 +125,7 @@ namespace leopph::internal
 	}
 
 
-	auto GlForwardRenderer::RenderTransparent(Matrix4 const& camViewMat, Matrix4 const& camProjMat, std::vector<RenderableData> const& renderables, DirectionalLight const* dirLight, std::vector<SpotLight const*> const& spotLights, std::vector<PointLight const*> const& pointLights) -> void
+	auto GlForwardRenderer::RenderTransparent(Matrix4 const& camViewMat, Matrix4 const& camProjMat, std::vector<RenderNode> const& renderNodes, DirectionalLight const* dirLight, std::vector<SpotLight const*> const& spotLights, std::vector<PointLight const*> const& pointLights) -> void
 	{
 		m_ObjectShader.Clear();
 		m_ObjectShader["DIRLIGHT"] = std::to_string(dirLight != nullptr);
@@ -154,7 +154,7 @@ namespace leopph::internal
 		glBlendFunci(0, GL_ONE, GL_ONE);
 		glBlendFunci(1, GL_ZERO, GL_ONE_MINUS_SRC_COLOR);
 
-		for (auto const& [renderable, instances, castsShadow] : renderables)
+		for (auto const& [renderable, instances, castsShadow] : renderNodes)
 		{
 			renderable->SetInstanceData(instances);
 			renderable->DrawWithMaterial(transpObjectShader, 0, true);
@@ -185,7 +185,7 @@ namespace leopph::internal
 			skyboxShader.SetUniform("u_ViewProjMat", static_cast<Matrix4>(static_cast<Matrix3>(camViewMat)) * camProjMat);
 			skyboxShader.Use();
 
-			DataManager::Instance().CreateOrGetSkyboxImpl(std::get<Skybox>(background).AllPaths())->Draw(skyboxShader);
+			static_cast<GlRenderer*>(GetRenderer())->CreateOrGetSkyboxImpl(std::get<Skybox>(background).AllPaths())->Draw(skyboxShader);
 		}
 	}
 }

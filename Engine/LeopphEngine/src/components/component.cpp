@@ -1,5 +1,7 @@
 #include "Component.hpp"
+
 #include "DataManager.hpp"
+#include "InternalContext.hpp"
 #include "Logger.hpp"
 
 
@@ -13,13 +15,13 @@ namespace leopph
 
 	auto Component::Owner(Entity* entity) -> void
 	{
-		auto& dataManager = internal::DataManager::Instance();
+		auto* const dataManager = internal::GetDataManager();
 
 		if (!m_Owner && entity)
 		{
 			try
 			{
-				dataManager.RegisterComponent(entity, shared_from_this(), Active());
+				dataManager->RegisterComponent(entity, shared_from_this(), Active());
 				auto const oldOwner = m_Owner;
 				m_Owner = entity;
 				OnOwnerChange(oldOwner);
@@ -34,7 +36,7 @@ namespace leopph
 		}
 		else if (m_Owner && !entity)
 		{
-			auto const self = dataManager.UnregisterComponent(m_Owner, this, Active()); // self might be the last pointer to this
+			auto const self = dataManager->UnregisterComponent(m_Owner, this, Active()); // self might be the last pointer to this
 			auto const oldOwner = m_Owner;
 			m_Owner = entity;
 			OnOwnerChange(oldOwner);
@@ -42,8 +44,8 @@ namespace leopph
 		}
 		else if (m_Owner && entity)
 		{
-			auto self = dataManager.UnregisterComponent(m_Owner, this, Active());
-			dataManager.RegisterComponent(entity, std::move(self), Active());
+			auto self = dataManager->UnregisterComponent(m_Owner, this, Active());
+			dataManager->RegisterComponent(entity, std::move(self), Active());
 			auto const oldOwner = m_Owner;
 			m_Owner = entity;
 			OnOwnerChange(oldOwner);
@@ -81,9 +83,9 @@ namespace leopph
 		{
 			if (Attached())
 			{
-				auto& dataManager = internal::DataManager::Instance();
-				auto self = dataManager.UnregisterComponent(m_Owner, this, m_Active);
-				dataManager.RegisterComponent(m_Owner, std::move(self), active);
+				auto* const dataManager = internal::GetDataManager();
+				auto self = dataManager->UnregisterComponent(m_Owner, this, m_Active);
+				dataManager->RegisterComponent(m_Owner, std::move(self), active);
 			}
 			m_Active = active;
 			m_Active ? OnActivate() : OnDeactivate();

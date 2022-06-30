@@ -18,28 +18,26 @@ namespace leopph
 	{
 		public:
 			// The 6 faces must be passed in the defined order.
-			LEOPPHAPI explicit Skybox(const std::filesystem::path& left, const std::filesystem::path& right,
-			                          const std::filesystem::path& top, const std::filesystem::path& bottom,
-			                          const std::filesystem::path& front, const std::filesystem::path& back);
+			explicit LEOPPHAPI Skybox(const std::filesystem::path& left, const std::filesystem::path& right, const std::filesystem::path& top, const std::filesystem::path& bottom, const std::filesystem::path& front, const std::filesystem::path& back);
 
 			LEOPPHAPI Skybox(const Skybox& other);
-			LEOPPHAPI auto operator=(const Skybox& other) -> Skybox&;
+			auto LEOPPHAPI operator=(const Skybox& other) -> Skybox&;
 
 			LEOPPHAPI Skybox(Skybox&& other) noexcept;
-			LEOPPHAPI auto operator=(Skybox&& other) noexcept -> Skybox&;
+			auto LEOPPHAPI operator=(Skybox&& other) noexcept -> Skybox&;
 
 			LEOPPHAPI ~Skybox();
 
-			LEOPPHAPI auto RightPath() const -> const std::filesystem::path&;
-			LEOPPHAPI auto LeftPath() const -> const std::filesystem::path&;
-			LEOPPHAPI auto TopPath() const -> const std::filesystem::path&;
-			LEOPPHAPI auto BottomPath() const -> const std::filesystem::path&;
-			LEOPPHAPI auto FrontPath() const -> const std::filesystem::path&;
-			LEOPPHAPI auto BackPath() const -> const std::filesystem::path&;
-			LEOPPHAPI auto AllPaths() const -> const std::filesystem::path&;
+			auto LEOPPHAPI RightPath() const -> const std::filesystem::path&;
+			auto LEOPPHAPI LeftPath() const -> const std::filesystem::path&;
+			auto LEOPPHAPI TopPath() const -> const std::filesystem::path&;
+			auto LEOPPHAPI BottomPath() const -> const std::filesystem::path&;
+			auto LEOPPHAPI FrontPath() const -> const std::filesystem::path&;
+			auto LEOPPHAPI BackPath() const -> const std::filesystem::path&;
+			auto LEOPPHAPI AllPaths() const -> const std::filesystem::path&;
 
 		private:
-			auto Deinit() -> void;
+			auto Deinit() const -> void;
 
 			internal::SkyboxImpl* m_Impl;
 	};

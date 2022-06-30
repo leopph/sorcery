@@ -1,12 +1,13 @@
 #include "Exit.hpp"
 
+#include "InternalContext.hpp"
 #include "windowing/WindowImpl.hpp"
+
 
 namespace leopph
 {
 	auto Exit() -> void
 	{
-		static_cast<internal::WindowImpl*>(Window::Instance())->ShouldClose(true);
+		internal::GetWindowImpl()->ShouldClose(true);
 	}
-
 }

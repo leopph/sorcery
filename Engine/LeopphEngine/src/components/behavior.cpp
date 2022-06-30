@@ -1,5 +1,7 @@
 #include "Behavior.hpp"
+
 #include "DataManager.hpp"
+#include "InternalContext.hpp"
 
 
 namespace leopph
@@ -16,50 +18,50 @@ namespace leopph
 
 		if (InUse())
 		{
-			internal::DataManager::Instance().SortActiveBehaviors();
+			internal::GetDataManager()->SortActiveBehaviors();
 		}
 	}
 
 
 	auto Behavior::Owner(Entity* entity) -> void
 	{
-		auto& dataManager = internal::DataManager::Instance();
+		auto* const dataManager = internal::GetDataManager();
 
 		if (InUse())
 		{
-			dataManager.UnregisterActiveBehavior(this);
+			dataManager->UnregisterActiveBehavior(this);
 		}
 
 		Component::Owner(entity);
 
 		if (InUse())
 		{
-			dataManager.RegisterActiveBehavior(this);
+			dataManager->RegisterActiveBehavior(this);
 		}
 	}
 
 
 	auto Behavior::Active(bool const active) -> void
 	{
-		auto& dataManager = internal::DataManager::Instance();
+		auto* const dataManager = internal::GetDataManager();
 
 		if (InUse())
 		{
-			dataManager.UnregisterActiveBehavior(this);
+			dataManager->UnregisterActiveBehavior(this);
 		}
 
 		Component::Active(active);
 
 		if (InUse())
 		{
-			dataManager.RegisterActiveBehavior(this);
+			dataManager->RegisterActiveBehavior(this);
 		}
 	}
 
 
 	Behavior::~Behavior()
 	{
-		internal::DataManager::Instance().UnregisterActiveBehavior(this);
+		internal::GetDataManager()->UnregisterActiveBehavior(this);
 	}
 
 
@@ -70,11 +72,11 @@ namespace leopph
 			return *this;
 		}
 
-		auto& dataManager = internal::DataManager::Instance();
+		auto* const dataManager = internal::GetDataManager();
 
 		if (InUse())
 		{
-			dataManager.UnregisterActiveBehavior(this);
+			dataManager->UnregisterActiveBehavior(this);
 		}
 
 		Component::operator=(other);
@@ -82,7 +84,7 @@ namespace leopph
 
 		if (InUse())
 		{
-			dataManager.RegisterActiveBehavior(this);
+			dataManager->RegisterActiveBehavior(this);
 		}
 
 		return *this;

@@ -1,5 +1,6 @@
 #include "rendering/RenderBuffer.hpp"
 
+#include "InternalContext.hpp"
 #include "windowing/WindowImpl.hpp"
 
 
@@ -9,14 +10,14 @@ namespace leopph::internal
 		m_Width{
 			[]
 			{
-				auto const& window{Window::Instance()};
+				auto const& window = GetWindowImpl();
 				return static_cast<int>(window->Width() * window->RenderMultiplier());
 			}()
 		},
 		m_Height{
 			[]
 			{
-				auto const& window{Window::Instance()};
+				auto const& window = GetWindowImpl();
 				return static_cast<int>(window->Height() * window->RenderMultiplier());
 			}
 			()
@@ -28,7 +29,7 @@ namespace leopph::internal
 
 	auto RenderBuffer::Clear() const -> void
 	{
-		glClearNamedFramebufferfv(m_Framebuffer, GL_COLOR, 0, static_cast<WindowImpl*>(Window::Instance())->ClearColor().Data().data());
+		glClearNamedFramebufferfv(m_Framebuffer, GL_COLOR, 0, GetWindowImpl()->ClearColor().Data().data());
 		glClearNamedFramebufferfi(m_Framebuffer, GL_DEPTH_STENCIL, 0, CLEAR_DEPTH, CLEAR_STENCIL);
 	}
 

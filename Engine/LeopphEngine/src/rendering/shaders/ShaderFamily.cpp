@@ -1,7 +1,8 @@
-#include "ShaderFamily.hpp"
+#include "rendering/shaders/ShaderFamily.hpp"
 
+#include "InternalContext.hpp"
 #include "Logger.hpp"
-#include "Settings.hpp"
+#include "SettingsImpl.hpp"
 
 #include <algorithm>
 #include <cstddef>
@@ -54,8 +55,7 @@ namespace leopph::internal
 		// Not found
 
 		// If caching
-		if (auto const cacheLoc{Settings::Instance().ShaderCachePath()};
-			!cacheLoc.empty())
+		if (auto const& cacheLoc = GetSettingsImpl()->ShaderCachePath(); !cacheLoc.empty())
 		{
 			auto const permHash{decltype(m_Permutations)::hasher()(permStr)};
 			auto const cachePath{

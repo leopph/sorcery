@@ -2,7 +2,9 @@
 
 #include "Mesh.hpp"
 #include "LeopphApi.hpp"
+#include "Types.hpp"
 
+#include <span>
 #include <type_traits>
 #include <vector>
 
@@ -14,30 +16,27 @@ namespace leopph
 	{
 		public:
 			// Construct an empty MeshGroup.
-			MeshGroup();
+			MeshGroup() = default;
 
-			// Takes Meshes from the passed vector.
-			explicit MeshGroup(std::vector<Mesh> meshes);
+			// Copy meshes from the passed container.
+			explicit LEOPPHAPI MeshGroup(std::span<Mesh const> meshes);
 
-			// Wraps the passed pointer.
-			// Passing nullptr is ignored and default construction will take place.
-			explicit MeshGroup(std::shared_ptr<std::vector<Mesh>> meshes);
+			// Move meshes from the passed vector.
+			explicit LEOPPHAPI MeshGroup(std::vector<Mesh> meshes);
 
-			[[nodiscard]] LEOPPHAPI
-			auto Meshes() const noexcept -> std::span<Mesh const>;
+			// Return the currently stored meshes.
+			[[nodiscard]] LEOPPHAPI auto Meshes() const noexcept -> std::span<Mesh const>;
 
-			[[nodiscard]] LEOPPHAPI
-			auto Meshes() noexcept -> std::vector<Mesh>&;
+			// Append a new Mesh instance to the MeshGroup.
+			LEOPPHAPI auto AddMesh(Mesh mesh) -> void;
 
-			// Returns how many times this set of Meshes is used.
-			[[nodiscard]] LEOPPHAPI
-			auto UseCount() const noexcept -> std::size_t;
+			// Remove the Mesh from the specified index.
+			// The operation is silently ignored for invalid indices.
+			// All meshes following the deleted one will have their indices reduced by one.
+			LEOPPHAPI auto RemoveMesh(u64 index) -> void;
 
 		private:
-			[[nodiscard]] static
-			auto GetMeshesCommon(auto* self) noexcept -> auto&;
-
-			std::shared_ptr<std::vector<Mesh>> m_Meshes;
+			std::vector<Mesh> m_Meshes;
 	};
 
 
@@ -47,10 +46,4 @@ namespace leopph
 	static_assert(std::is_move_constructible_v<MeshGroup>);
 	static_assert(std::is_move_assignable_v<MeshGroup>);
 	static_assert(std::is_nothrow_destructible_v<MeshGroup>);
-
-
-	auto MeshGroup::GetMeshesCommon(auto* const self) noexcept -> auto&
-	{
-		return *self->m_Meshes;
-	}
 }

@@ -17,8 +17,7 @@ namespace leopph
 			auto Clone() const -> ComponentPtr<> override;
 
 		private:
-			[[nodiscard]] static
-			auto CreateMeshGroup() -> MeshGroup;
+			[[nodiscard]] static auto CreateMeshGroup() -> MeshGroup;
 			static std::weak_ptr<Material> s_Material;
 	};
 }

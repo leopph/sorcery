@@ -1,4 +1,4 @@
-#include "GLFWAdapter.hpp"
+#include "util/api_adapters/GLFWAdapter.hpp"
 
 #include "Bimap.hpp"
 

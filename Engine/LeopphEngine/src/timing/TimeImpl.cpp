@@ -1,4 +1,4 @@
-#include "TimeImpl.hpp"
+#include "timing/TimeImpl.hpp"
 
 
 namespace leopph::internal
@@ -23,7 +23,7 @@ namespace leopph::internal
 
 	auto TimeImpl::OnEventReceived(EventParamType) -> void
 	{
-		const auto currentTime{Clock::now()};
+		auto const currentTime{Clock::now()};
 		m_LastFrameDeltaTime = currentTime - m_LastFrameCompletionTime;
 		m_LastFrameCompletionTime = currentTime;
 		m_FullTime += m_LastFrameDeltaTime;

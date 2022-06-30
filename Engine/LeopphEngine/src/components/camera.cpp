@@ -1,5 +1,7 @@
 #include "Camera.hpp"
+
 #include "Entity.hpp"
+#include "InternalContext.hpp"
 #include "WindowEvent.hpp"
 #include "windowing/WindowImpl.hpp"
 
@@ -59,7 +61,7 @@ namespace leopph
 
 		if (std::holds_alternative<Color>(m_Background))
 		{
-			static_cast<internal::WindowImpl*>(Window::Instance())->ClearColor(static_cast<Vector4>(static_cast<Vector3>(std::get<Color>(m_Background))));
+			internal::GetWindowImpl()->ClearColor(static_cast<Vector4>(static_cast<Vector3>(std::get<Color>(m_Background))));
 		}
 	}
 
@@ -115,8 +117,8 @@ namespace leopph
 
 
 	Camera::Camera() :
-		m_AspectRatio{Window::Instance()->AspectRatio()},
-		m_Background{Color{static_cast<Vector3>(static_cast<internal::WindowImpl*>(Window::Instance())->ClearColor())}}
+		m_AspectRatio{internal::GetWindowImpl()->AspectRatio()},
+		m_Background{Color{static_cast<Vector3>(internal::GetWindowImpl()->ClearColor())}}
 	{
 		if (s_Current == nullptr)
 		{

@@ -1,6 +1,7 @@
-#include "CubeShadowMap.hpp"
+#include "rendering/CubeShadowMap.hpp"
 
-#include "Settings.hpp"
+#include "InternalContext.hpp"
+#include "SettingsImpl.hpp"
 
 #include <limits>
 
@@ -8,7 +9,7 @@
 namespace leopph::internal
 {
 	CubeShadowMap::CubeShadowMap() :
-		m_Res{static_cast<GLsizei>(Settings::Instance().PointShadowResolution())}
+		m_Res{static_cast<GLsizei>(GetSettingsImpl()->PointShadowResolution())}
 	{
 		glNamedFramebufferReadBuffer(m_Framebuffer, GL_NONE);
 		glNamedFramebufferDrawBuffer(m_Framebuffer, GL_COLOR_ATTACHMENT0);
