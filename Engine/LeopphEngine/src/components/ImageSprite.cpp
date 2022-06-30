@@ -44,8 +44,8 @@ namespace leopph
 			return {};
 		}
 
-		std::shared_ptr<Texture> baseTexture;
-		std::shared_ptr<Texture> opacityTexture;
+		std::shared_ptr<GlTexture> baseTexture;
+		std::shared_ptr<GlTexture> opacityTexture;
 
 		// If either side of the image is not power of two sized, we create a transparent bounding image and copy the image into its middle.
 		if (!math::IsPowerOfTwo(img.Width()) || !math::IsPowerOfTwo(img.Height()))
@@ -118,23 +118,23 @@ namespace leopph
 				}
 			}
 
-			baseTexture = std::make_shared<Texture>(Image{static_cast<int>(newDim), static_cast<int>(newDim), 3, std::move(baseColorBytes)});
-			opacityTexture = std::make_shared<Texture>(Image{static_cast<int>(newDim), static_cast<int>(newDim), 1, std::move(opacityBytes)});
+			baseTexture = std::make_shared<GlTexture>(Image{static_cast<int>(newDim), static_cast<int>(newDim), 3, std::move(baseColorBytes)});
+			opacityTexture = std::make_shared<GlTexture>(Image{static_cast<int>(newDim), static_cast<int>(newDim), 1, std::move(opacityBytes)});
 		}
 		else
 		{
 			if (img.Channels() == 4)
 			{
 				auto const opacityImg{img.ExtractChannel(3)};
-				opacityTexture = std::make_shared<Texture>(opacityImg);
+				opacityTexture = std::make_shared<GlTexture>(opacityImg);
 			}
 			else
 			{
 				auto alphaBytes = std::make_unique_for_overwrite<unsigned char[]>(img.Width() * img.Height());
 				std::ranges::fill(alphaBytes.get(), alphaBytes.get() + img.Width() * img.Height(), static_cast<unsigned char>(255));
-				opacityTexture = std::make_shared<Texture>(Image{img.Width(), img.Height(), 1, std::move(alphaBytes)});
+				opacityTexture = std::make_shared<GlTexture>(Image{img.Width(), img.Height(), 1, std::move(alphaBytes)});
 			}
-			baseTexture = std::make_shared<Texture>(img);
+			baseTexture = std::make_shared<GlTexture>(img);
 		}
 
 		// The width of the required rectangle.

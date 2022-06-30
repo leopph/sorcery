@@ -46,8 +46,6 @@ namespace leopph::internal
 			auto SetUniform(std::string_view name, std::span<Vector3 const> values) -> void;
 			auto SetUniform(std::string_view name, std::span<Matrix4 const> values) -> void;
 
-			auto SetBufferBinding(std::string_view bufName, int bindingIndex) -> void;
-
 			// Queries the binary representation of the linked program
 			[[nodiscard]] auto Binary() const -> std::vector<unsigned char>;
 

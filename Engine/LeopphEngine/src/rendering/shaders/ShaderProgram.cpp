@@ -1,7 +1,7 @@
 #include "rendering/shaders/ShaderProgram.hpp"
 
 #include "Logger.hpp"
-#include "rendering/opengl/OpenGl.hpp"
+#include "rendering/gl/GlCore.hpp"
 
 #include <stdexcept>
 #include <vector>
@@ -161,12 +161,6 @@ namespace leopph::internal
 	auto ShaderProgram::SetUniform(std::string_view const name, std::span<Matrix4 const> const values) -> void
 	{
 		glProgramUniformMatrix4fv(m_ProgramName, GetUniformLocation(name), static_cast<GLsizei>(values.size()), GL_TRUE, reinterpret_cast<GLfloat const*>(values.data()));
-	}
-
-
-	auto ShaderProgram::SetBufferBinding(std::string_view const bufName, int const bindingIndex) -> void
-	{
-		// TODO
 	}
 
 

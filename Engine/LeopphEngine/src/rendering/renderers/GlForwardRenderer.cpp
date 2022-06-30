@@ -5,7 +5,7 @@
 #include "InternalContext.hpp"
 #include "Logger.hpp"
 #include "Matrix.hpp"
-#include "rendering/opengl/OpenGl.hpp"
+#include "rendering/gl/GlCore.hpp"
 #include "windowing/WindowImpl.hpp"
 
 #include <string>

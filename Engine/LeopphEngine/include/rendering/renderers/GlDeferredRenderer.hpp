@@ -5,14 +5,14 @@
 #include "Matrix.hpp"
 #include "PointLight.hpp"
 #include "SpotLight.hpp"
-#include "rendering/CascadedShadowMap.hpp"
-#include "rendering/CubeShadowMap.hpp"
-#include "rendering/GeometryBuffer.hpp"
-#include "rendering/RenderBuffer.hpp"
-#include "rendering/ScreenQuad.hpp"
-#include "rendering/SpotShadowMap.hpp"
-#include "rendering/TransparencyBuffer.hpp"
-#include "rendering/opengl/OpenGl.hpp"
+#include "rendering/gl/GlCascadedShadowMap.hpp"
+#include "rendering/gl/GlCore.hpp"
+#include "rendering/gl/GlCubeShadowMap.hpp"
+#include "rendering/gl/GlGeometryBuffer.hpp"
+#include "rendering/gl/GlRenderBuffer.hpp"
+#include "rendering/gl/GlScreenQuad.hpp"
+#include "rendering/gl/GlSpotShadowMap.hpp"
+#include "rendering/gl/GlTransparencyBuffer.hpp"
 #include "rendering/shaders/ShaderFamily.hpp"
 
 #include <cstddef>
@@ -30,17 +30,17 @@ namespace leopph::internal
 			auto Render() -> void override;
 
 		private:
-			// Fill the GeometryBuffer with geometry data.
+			// Fill the GlGeometryBuffer with geometry data.
 			auto RenderGeometry(Matrix4 const& camViewMat, Matrix4 const& camProjMat, std::vector<RenderNode> const& renderables) -> void;
 
-			// Draw all lights in the RenderBuffer.
+			// Draw all lights in the GlRenderBuffer.
 			auto RenderLights(Matrix4 const& camViewMat,
 			                  Matrix4 const& camProjMat,
 			                  std::span<RenderNode const> renderNodes,
 			                  std::span<SpotLight const*> spotLights,
 			                  std::span<PointLight const*> pointLights) -> void;
 
-			// Draw skybox in the empty parts of the RenderBuffer.
+			// Draw skybox in the empty parts of the GlRenderBuffer.
 			auto RenderSkybox(Matrix4 const& camViewMat, Matrix4 const& camProjMat) -> void;
 
 			// Draws into the dirlight shadow map, binds it to light shader with the necessary data, and returns the next usable texture unit.
@@ -76,11 +76,11 @@ namespace leopph::internal
 			                       std::vector<SpotLight const*> const& spotLights,
 			                       std::vector<PointLight const*> const& pointLights) -> void;
 
-			GeometryBuffer m_GBuffer;
+			GlGeometryBuffer m_GBuffer;
 
-			RenderBuffer m_RenderBuffer;
-			ScreenQuad m_ScreenQuad;
-			TransparencyBuffer m_TransparencyBuffer;
+			GlRenderBuffer m_RenderBuffer;
+			GlScreenQuad m_ScreenQuad;
+			GlTransparencyBuffer m_TransparencyBuffer;
 
 			ShaderFamily m_ShadowShader;
 			ShaderFamily m_CubeShadowShader;
@@ -92,9 +92,9 @@ namespace leopph::internal
 			ShaderFamily m_ForwardShader;
 			ShaderFamily m_CompositeShader;
 
-			CascadedShadowMap m_DirShadowMap;
-			std::vector<std::unique_ptr<SpotShadowMap>> m_SpotShadowMaps;
-			std::vector<std::unique_ptr<CubeShadowMap>> m_PointShadowMaps;
+			GlCascadedShadowMap m_DirShadowMap;
+			std::vector<std::unique_ptr<GlSpotShadowMap>> m_SpotShadowMaps;
+			std::vector<std::unique_ptr<GlCubeShadowMap>> m_PointShadowMaps;
 
 			static constexpr int STENCIL_DRAW_TAG{0};
 	};

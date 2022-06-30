@@ -23,24 +23,6 @@ namespace leopph::internal
 	}
 
 
-	auto ShaderFamily::SetBufferBinding(std::string_view const bufName, int const bindingIndex) -> void
-	{
-		if (auto const it{m_Bindings.find(bufName)};
-			it != m_Bindings.end())
-		{
-			it->second = bindingIndex;
-		}
-		else
-		{
-			m_Bindings.emplace(bufName, bindingIndex);
-		}
-		for (auto& [bitmap, shaderProgram] : m_Permutations)
-		{
-			shaderProgram.SetBufferBinding(bufName, bindingIndex);
-		}
-	}
-
-
 	auto ShaderFamily::GetPermutation() -> ShaderProgram&
 	{
 		// Get the permutation id string
@@ -79,7 +61,6 @@ namespace leopph::internal
 				if (inserted)
 				{
 					Logger::Instance().Debug("Shader parsed from " + cachePath.string() + ".");
-					SetBufferBinding(it->second);
 					return it->second;
 				}
 			}
@@ -136,15 +117,6 @@ namespace leopph::internal
 	}
 
 
-	auto ShaderFamily::SetBufferBinding(ShaderProgram& shader) -> void
-	{
-		for (auto const& [bufName, binding] : m_Bindings)
-		{
-			shader.SetBufferBinding(bufName, binding);
-		}
-	}
-
-
 	auto ShaderFamily::BuildFromSources(std::string permStr) -> ShaderProgram&
 	{
 		std::vector<ShaderStageInfo> stageInfos;
@@ -156,12 +128,7 @@ namespace leopph::internal
 			stageInfos.emplace_back(BuildSrcString(src), type);
 		}
 
-		auto& shaderProgram{m_Permutations.emplace(std::move(permStr), stageInfos).first->second};
-
-		// Set up bindings for it
-		SetBufferBinding(shaderProgram);
-
-		return shaderProgram;
+		return m_Permutations.emplace(std::move(permStr), stageInfos).first->second;
 	}
 
 

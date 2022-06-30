@@ -2,7 +2,7 @@
 
 #include "Image.hpp"
 #include "LeopphverterImport.hpp"
-#include "Texture.hpp"
+#include "GlTexture.hpp"
 
 #include <utility>
 #include <vector>
@@ -12,7 +12,7 @@ namespace leopph
 {
 	namespace
 	{
-		auto ConvertMaterial(convert::Material const& convMat, std::span<std::shared_ptr<Texture> const> const textures) -> std::shared_ptr<Material>
+		auto ConvertMaterial(convert::Material const& convMat, std::span<std::shared_ptr<GlTexture> const> const textures) -> std::shared_ptr<Material>
 		{
 			auto mat = std::make_shared<Material>();
 
@@ -52,12 +52,12 @@ namespace leopph
 
 			auto const& [convTexs, convMats, convMeshes] = imported.value();
 
-			std::vector<std::shared_ptr<Texture>> textures;
+			std::vector<std::shared_ptr<GlTexture>> textures;
 			textures.reserve(convTexs.size());
 
 			for (auto const& convTex : convTexs)
 			{
-				textures.push_back(std::make_shared<Texture>(convTex));
+				textures.push_back(std::make_shared<GlTexture>(convTex));
 			}
 
 			std::vector<std::shared_ptr<Material>> mats;

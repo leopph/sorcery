@@ -5,10 +5,10 @@
 #include "Matrix.hpp"
 #include "PointLight.hpp"
 #include "SpotLight.hpp"
-#include "rendering/CascadedShadowMap.hpp"
-#include "rendering/RenderBuffer.hpp"
-#include "rendering/ScreenQuad.hpp"
-#include "rendering/TransparencyBuffer.hpp"
+#include "rendering/gl/GlCascadedShadowMap.hpp"
+#include "rendering/gl/GlRenderBuffer.hpp"
+#include "rendering/gl/GlScreenQuad.hpp"
+#include "rendering/gl/GlTransparencyBuffer.hpp"
 #include "rendering/shaders/ShaderFamily.hpp"
 
 
@@ -46,10 +46,10 @@ namespace leopph::internal
 			ShaderFamily m_SkyboxShader;
 			ShaderFamily m_TranspCompositeShader;
 
-			CascadedShadowMap m_DirLightShadowMap;
+			GlCascadedShadowMap m_DirLightShadowMap;
 
-			RenderBuffer m_RenderBuffer;
-			TransparencyBuffer m_TransparencyBuffer;
-			ScreenQuad m_ScreenQuad;
+			GlRenderBuffer m_RenderBuffer;
+			GlTransparencyBuffer m_TransparencyBuffer;
+			GlScreenQuad m_ScreenQuad;
 	};
 }

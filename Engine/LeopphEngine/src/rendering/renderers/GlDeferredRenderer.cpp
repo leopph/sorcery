@@ -216,9 +216,9 @@ namespace leopph::internal
 
 		auto const camera = Camera::Current();
 		auto const lightViewMat = Matrix4::LookAt(Vector3{0}, dirLight->Direction(), Vector3::Up());
-		auto const cascadeBounds = CascadedShadowMap::CalculateCascadeBounds(camera->NearClipPlane(), camera->FarClipPlane());
+		auto const cascadeBounds = GlCascadedShadowMap::CalculateCascadeBounds(camera->NearClipPlane(), camera->FarClipPlane());
 		auto const numCascades = cascadeBounds.size();
-		auto const cascadeMats = CascadedShadowMap::CascadeMatrix(camera->Frustum(), cascadeBounds, lightViewMat, camViewInvMat * lightViewMat, dirLight->ShadowExtension());
+		auto const cascadeMats = GlCascadedShadowMap::CascadeMatrix(camera->Frustum(), cascadeBounds, lightViewMat, camViewInvMat * lightViewMat, dirLight->ShadowExtension());
 
 		glDisable(GL_BLEND);
 
@@ -260,7 +260,7 @@ namespace leopph::internal
 		// Not really great in terms of allocations but will do for now
 		while (m_SpotShadowMaps.size() < numShadows)
 		{
-			m_SpotShadowMaps.push_back(std::make_unique<SpotShadowMap>());
+			m_SpotShadowMaps.push_back(std::make_unique<GlSpotShadowMap>());
 		}
 
 		if (numShadows * 2 < m_SpotShadowMaps.size())
@@ -316,7 +316,7 @@ namespace leopph::internal
 		// Not really great in terms of allocations but will do for now
 		while (m_PointShadowMaps.size() < numShadows)
 		{
-			m_PointShadowMaps.push_back(std::make_unique<CubeShadowMap>());
+			m_PointShadowMaps.push_back(std::make_unique<GlCubeShadowMap>());
 		}
 
 		if (numShadows * 2 < m_PointShadowMaps.size())

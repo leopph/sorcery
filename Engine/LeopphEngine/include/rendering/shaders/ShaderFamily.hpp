@@ -64,12 +64,13 @@ namespace leopph::internal
 		private:
 			// Create a source that has the currently set flags inserted.
 			[[nodiscard]] auto BuildSrcString(std::string_view src) const -> std::string;
+
 			// Create the permutation key from the currently set flags
 			[[nodiscard]] auto BuildPermString() const -> std::string;
-			// Sets the current buffer bindings in the passed shader
-			auto SetBufferBinding(ShaderProgram& shader) -> void;
+			
 			// Builds the shader using the current flags, sets its buffer bindings, stores it, then returns it
 			auto BuildFromSources(std::string permStr) -> ShaderProgram&;
+
 			// Returns a list of the hashes of the shader sources in Vertex->Geom->Fragment order
 			[[nodiscard]] auto SourceHashes() const -> std::vector<std::size_t> const&;
 

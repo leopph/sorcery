@@ -5,7 +5,7 @@
 #include "InternalContext.hpp"
 #include "Logger.hpp"
 #include "SettingsImpl.hpp"
-#include "rendering/opengl/OpenGl.hpp"
+#include "rendering/gl/GlCore.hpp"
 #include "rendering/renderers/GlDeferredRenderer.hpp"
 #include "rendering/renderers/GlForwardRenderer.hpp"
 
@@ -52,7 +52,7 @@ namespace leopph::internal
 	}
 
 
-	auto GlRenderer::CreateOrGetSkyboxImpl(std::filesystem::path allPaths) -> SkyboxImpl*
+	auto GlRenderer::CreateOrGetSkyboxImpl(std::filesystem::path allPaths) -> GlSkyboxImpl*
 	{
 		for (auto const& skyboxImpl : m_SkyboxImpls)
 		{
@@ -62,12 +62,12 @@ namespace leopph::internal
 			}
 		}
 
-		m_SkyboxImpls.emplace_back(std::make_unique<SkyboxImpl>(std::move(allPaths)));
+		m_SkyboxImpls.emplace_back(std::make_unique<GlSkyboxImpl>(std::move(allPaths)));
 		return m_SkyboxImpls.back().get();
 	}
 
 
-	auto GlRenderer::DestroySkyboxImpl(SkyboxImpl const* skyboxImpl) -> void
+	auto GlRenderer::DestroySkyboxImpl(GlSkyboxImpl const* skyboxImpl) -> void
 	{
 		std::erase_if(m_SkyboxImpls, [skyboxImpl](auto const& elem)
 		{
@@ -152,7 +152,7 @@ namespace leopph::internal
 	}
 
 
-	auto GlRenderer::CascadeFarBoundsNdc(Matrix4 const& camProjMat, std::span<CascadedShadowMap::CascadeBounds const> const cascadeBounds) -> std::span<float const>
+	auto GlRenderer::CascadeFarBoundsNdc(Matrix4 const& camProjMat, std::span<GlCascadedShadowMap::CascadeBounds const> const cascadeBounds) -> std::span<float const>
 	{
 		static std::vector<float> farBounds;
 		farBounds.clear();

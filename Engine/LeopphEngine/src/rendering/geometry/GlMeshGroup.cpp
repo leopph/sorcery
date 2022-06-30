@@ -1,4 +1,4 @@
-#include "rendering/GlMeshGroup.hpp"
+#include "rendering/gl/GlMeshGroup.hpp"
 
 #include "DataManager.hpp"
 

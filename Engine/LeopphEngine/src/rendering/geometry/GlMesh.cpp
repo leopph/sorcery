@@ -1,4 +1,4 @@
-#include "rendering/GlMesh.hpp"
+#include "rendering/gl/GlMesh.hpp"
 
 #include "Matrix.hpp"
 #include "Vector.hpp"

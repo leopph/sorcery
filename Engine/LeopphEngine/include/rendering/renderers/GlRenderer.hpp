@@ -6,9 +6,9 @@
 #include "PointLight.hpp"
 #include "Renderer.hpp"
 #include "SpotLight.hpp"
-#include "rendering/CascadedShadowMap.hpp"
-#include "rendering/GlMeshGroup.hpp"
-#include "rendering/SkyboxImpl.hpp"
+#include "rendering/gl/GlCascadedShadowMap.hpp"
+#include "rendering/gl/GlMeshGroup.hpp"
+#include "rendering/gl/GlSkyboxImpl.hpp"
 
 #include <filesystem>
 #include <memory>
@@ -28,8 +28,8 @@ namespace leopph::internal
 			[[nodiscard]] auto CreateRenderObject(MeshGroup const& meshGroup) -> RenderObject* override;
 			auto DeleteRenderObject(RenderObject* renderObject) -> void override;
 
-			[[nodiscard]] auto CreateOrGetSkyboxImpl(std::filesystem::path allPaths) -> SkyboxImpl*;
-			auto DestroySkyboxImpl(SkyboxImpl const* skyboxImpl) -> void;
+			[[nodiscard]] auto CreateOrGetSkyboxImpl(std::filesystem::path allPaths) -> GlSkyboxImpl*;
+			auto DestroySkyboxImpl(GlSkyboxImpl const* skyboxImpl) -> void;
 
 			GlRenderer(GlRenderer const& other) = delete;
 			auto operator=(GlRenderer const& other) -> void = delete;
@@ -69,7 +69,7 @@ namespace leopph::internal
 			static auto ExtractPointLightsCurrentCamera(std::vector<PointLight const*>& out) -> void;
 
 			// Returns a collection of cascade far bounds in NDC.
-			[[nodiscard]] static auto CascadeFarBoundsNdc(Matrix4 const& camProjMat, std::span<CascadedShadowMap::CascadeBounds const> cascadeBounds) -> std::span<float const>;
+			[[nodiscard]] static auto CascadeFarBoundsNdc(Matrix4 const& camProjMat, std::span<GlCascadedShadowMap::CascadeBounds const> cascadeBounds) -> std::span<float const>;
 
 			static auto SetAmbientData(AmbientLight const& light, ShaderProgram& lightShader) -> void;
 			static auto SetDirectionalData(DirectionalLight const* dirLight, ShaderProgram& shader) -> void;
@@ -91,6 +91,6 @@ namespace leopph::internal
 
 			std::vector<std::unique_ptr<GlMeshGroup>> m_RenderObjects;
 
-			std::vector<std::unique_ptr<SkyboxImpl>> m_SkyboxImpls;
+			std::vector<std::unique_ptr<GlSkyboxImpl>> m_SkyboxImpls;
 	};
 }

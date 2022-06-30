@@ -8,7 +8,7 @@
 #include "MouseEvent.hpp"
 #include "SettingsImpl.hpp"
 #include "WindowEvent.hpp"
-#include "rendering/opengl/OpenGl.hpp"
+#include "rendering/gl/GlCore.hpp"
 #include "util/api_adapters/GLFWAdapter.hpp"
 
 #include <array>
