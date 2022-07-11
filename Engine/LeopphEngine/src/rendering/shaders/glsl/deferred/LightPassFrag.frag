@@ -5,9 +5,8 @@
 
 // General variables used in all cases
 
-layout (location = 0) in vec2 in_TexCoords;
-
-layout (location = 0) out vec4 out_FragColor;
+layout(pixel_center_integer) in vec4 gl_FragCoord;
+layout(location = 0) out vec4 out_FragColor;
 
 uniform usampler2D u_NormColorGlossTex;
 uniform sampler2D u_DepthTex;
@@ -211,12 +210,12 @@ void main()
 	Fragment frag;
 
 	// Reconstruct pos from depth
-	vec4 fragPosNdc = vec4(in_TexCoords * 2 - 1, texture(u_DepthTex, in_TexCoords).r * 2 - 1, 1);
+	vec4 fragPosNdc = vec4(gl_FragCoord.xy / textureSize(u_DepthTex, 0).xy * 2 - 1, texelFetch(u_DepthTex, ivec2(gl_FragCoord.xy), 0).r * 2 - 1, 1);
 	vec4 fragPosWorld = fragPosNdc * u_CamViewProjInv;
 	fragPosWorld /= fragPosWorld.w;
 	frag.pos = fragPosWorld.xyz;
 
-	uvec3 packedNormColorGloss = texture(u_NormColorGlossTex, in_TexCoords).xyz;
+	uvec3 packedNormColorGloss = texelFetch(u_NormColorGlossTex, ivec2(gl_FragCoord.xy), 0).rgb;
 
 	// Decode normal
 	vec2 comprNorm = unpackSnorm2x16(packedNormColorGloss.x);

@@ -10,7 +10,6 @@
 #include "rendering/gl/GlCubeShadowMap.hpp"
 #include "rendering/gl/GlMeshGroup.hpp"
 #include "rendering/gl/GlRenderBuffer.hpp"
-#include "rendering/gl/GlScreenQuad.hpp"
 #include "rendering/gl/GlSkyboxImpl.hpp"
 #include "rendering/gl/GlSpotShadowMap.hpp"
 #include "rendering/gl/GlTransparencyBuffer.hpp"
@@ -30,8 +29,6 @@ namespace leopph::internal
 		protected:
 			struct RenderNode;
 			struct ShadowCount;
-
-			GlRenderer() = default;
 
 		public:
 			// Initializes OpenGL and constructs a renderer for the selected rendering pipeline.
@@ -67,6 +64,18 @@ namespace leopph::internal
 			auto ApplyGammaCorrection() -> void;
 			auto Present() const -> void;
 
+
+		private:
+			auto CreateScreenQuad() -> void;
+		protected:
+			auto DrawScreenQuad() const -> void;
+		private:
+			auto DeleteScreenQuad() const -> void;
+
+
+		protected:
+			GlRenderer();
+
 		public:
 			GlRenderer(GlRenderer const& other) = delete;
 			auto operator=(GlRenderer const& other) -> void = delete;
@@ -74,11 +83,9 @@ namespace leopph::internal
 			GlRenderer(GlRenderer&& other) = delete;
 			auto operator=(GlRenderer&& other) -> void = delete;
 
-			~GlRenderer() noexcept override = default;
+			~GlRenderer() noexcept override;
 
 		protected:
-			GlScreenQuad m_ScreenQuad;
-
 			GlRenderBuffer m_RenderBuffer;
 			GlRenderBuffer m_GammaCorrectedBuffer;
 			GlTransparencyBuffer m_TransparencyBuffer{&m_RenderBuffer.DepthStencilBuffer()};
@@ -110,7 +117,7 @@ namespace leopph::internal
 			ShaderFamily m_GammaCorrectShader
 			{
 				{
-					{ShaderFamily::GammaCorrectVertSrc, ShaderType::Vertex},
+					{ShaderFamily::Pos2DPassthroughVertSrc, ShaderType::Vertex},
 					{ShaderFamily::GammaCorrectFragSrc, ShaderType::Fragment}
 				}
 			};
@@ -128,6 +135,9 @@ namespace leopph::internal
 			std::vector<std::unique_ptr<GlMeshGroup>> m_RenderObjects;
 
 			std::vector<std::unique_ptr<GlSkyboxImpl>> m_SkyboxImpls;
+
+			GLuint m_ScreenQuadVao{};
+			GLuint m_ScreenQuadVbo{};
 	};
 
 

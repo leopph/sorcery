@@ -55,13 +55,12 @@ namespace leopph::internal
 			static std::string const GeometryPassVertSrc;
 			static std::string const GeometryPassFragSrc;
 
-			static std::string const LightPassVertSrc;
+			static std::string const Pos2DPassthroughVertSrc;
+			
 			static std::string const LightPassFragSrc;
-
-			static std::string const TranspCompositeVertSrc;
+			
 			static std::string const TranspCompositeFragSrc;
-
-			static std::string const GammaCorrectVertSrc;
+			
 			static std::string const GammaCorrectFragSrc;
 
 		private:

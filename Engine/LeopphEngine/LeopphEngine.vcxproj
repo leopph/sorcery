@@ -12,6 +12,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\deps\vendor\gl3w\src\gl3w.c" />
+    <ClInclude Include="include\ScreenQuad.hpp" />
     <ClInclude Include="include\SettingsImpl.hpp" />
     <ClCompile Include="src\components\Behavior.cpp" />
     <ClCompile Include="src\components\Camera.cpp" />
@@ -30,6 +31,7 @@
     <ClCompile Include="src\Context.cpp" />
     <ClCompile Include="src\rendering\gl\GlMeshGroup.cpp" />
     <ClCompile Include="src\rendering\RenderObject.cpp" />
+    <ClCompile Include="src\rendering\ScreenQuad.cpp" />
     <ClCompile Include="src\Settings.cpp" />
     <ClCompile Include="src\data\DataManager.cpp" />
     <ClCompile Include="src\data\Poelo.cpp" />
@@ -60,7 +62,6 @@
     <ClCompile Include="src\rendering\renderers\GlForwardRenderer.cpp" />
     <ClCompile Include="src\rendering\renderers\GlRenderer.cpp" />
     <ClCompile Include="src\rendering\renderers\Renderer.cpp" />
-    <ClCompile Include="src\rendering\gl\GlScreenQuad.cpp" />
     <ClCompile Include="src\rendering\shaders\ShaderFamily.cpp" />
     <ClCompile Include="src\rendering\shaders\ShaderProgram.cpp" />
     <ClCompile Include="src\components\Skybox.cpp" />
@@ -108,7 +109,6 @@
     <ClInclude Include="include\rendering\renderers\GlRenderer.hpp" />
     <ClInclude Include="include\rendering\renderers\Renderer.hpp" />
     <ClInclude Include="include\rendering\RenderObject.hpp" />
-    <ClInclude Include="include\rendering\gl\GlScreenQuad.hpp" />
     <ClInclude Include="include\rendering\shaders\ShaderFamily.hpp" />
     <ClInclude Include="include\rendering\shaders\ShaderProgram.hpp" />
     <ClInclude Include="include\rendering\shaders\ShaderStageInfo.hpp" />
@@ -148,9 +148,6 @@
     <CustomBuild Include="src\rendering\shaders\glsl\deferred\LightPassFrag.frag">
       <FileType>Document</FileType>
     </CustomBuild>
-    <CustomBuild Include="src\rendering\shaders\glsl\deferred\LightPassVert.vert">
-      <FileType>Document</FileType>
-    </CustomBuild>
     <CustomBuild Include="src\rendering\shaders\glsl\forward\ObjectFrag.frag">
       <FileType>Document</FileType>
     </CustomBuild>
@@ -158,9 +155,6 @@
       <FileType>Document</FileType>
     </CustomBuild>
     <CustomBuild Include="src\rendering\shaders\glsl\forward\TranspCompositeFrag.frag">
-      <FileType>Document</FileType>
-    </CustomBuild>
-    <CustomBuild Include="src\rendering\shaders\glsl\forward\TranspCompositeVert.vert">
       <FileType>Document</FileType>
     </CustomBuild>
     <CustomBuild Include="src\rendering\shaders\glsl\shadows\DepthShadowVert.vert">
@@ -177,7 +171,9 @@
     <CustomBuild Include="src\rendering\shaders\glsl\postprocess\GammaCorrectFrag.frag">
       <FileType>Document</FileType>
     </CustomBuild>
-    <CustomBuild Include="src\rendering\shaders\glsl\postprocess\GammaCorrectVert.vert">
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="src\rendering\shaders\glsl\Pos2DPassthroughVert.vert">
       <FileType>Document</FileType>
     </CustomBuild>
   </ItemGroup>

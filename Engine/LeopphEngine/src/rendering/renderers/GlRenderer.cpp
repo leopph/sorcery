@@ -4,6 +4,7 @@
 #include "DataManager.hpp"
 #include "InternalContext.hpp"
 #include "Logger.hpp"
+#include "ScreenQuad.hpp"
 #include "SettingsImpl.hpp"
 #include "rendering/gl/GlCore.hpp"
 #include "rendering/renderers/GlDeferredRenderer.hpp"
@@ -331,8 +332,8 @@ namespace leopph::internal
 
 		glDisable(GL_DEPTH_TEST);
 		glDisable(GL_BLEND);
-		
-		m_ScreenQuad.Draw();
+
+		DrawScreenQuad();
 	}
 
 
@@ -340,6 +341,48 @@ namespace leopph::internal
 	{
 		auto const* const window = GetWindowImpl();
 		glBlitNamedFramebuffer(m_GammaCorrectedBuffer.Framebuffer(), 0, 0, 0, m_GammaCorrectedBuffer.Width(), m_GammaCorrectedBuffer.Height(), 0, 0, static_cast<GLint>(window->Width()), static_cast<GLint>(window->Height()), GL_COLOR_BUFFER_BIT, GL_LINEAR);
+	}
+
+
+	auto GlRenderer::CreateScreenQuad() -> void
+	{
+		using VertPosElemtType = decltype(g_ScreenQuadVertices)::value_type;
+
+		glCreateBuffers(1, &m_ScreenQuadVbo);
+		glNamedBufferStorage(m_ScreenQuadVbo, sizeof(VertPosElemtType) * g_ScreenQuadVertices.size(), g_ScreenQuadVertices.data(), 0);
+
+		glCreateVertexArrays(1, &m_ScreenQuadVao);
+		glVertexArrayVertexBuffer(m_ScreenQuadVao, 0, m_ScreenQuadVbo, 0, 2 * sizeof(VertPosElemtType));
+
+		glVertexArrayAttribBinding(m_ScreenQuadVao, 0, 0);
+		glVertexArrayAttribFormat(m_ScreenQuadVao, 0, 2, GL_FLOAT, GL_FALSE, 0);
+		glEnableVertexArrayAttrib(m_ScreenQuadVao, 0);
+	}
+
+
+	auto GlRenderer::DrawScreenQuad() const -> void
+	{
+		glBindVertexArray(m_ScreenQuadVao);
+		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	}
+
+
+	auto GlRenderer::DeleteScreenQuad() const -> void
+	{
+		glDeleteVertexArrays(1, &m_ScreenQuadVao);
+		glDeleteBuffers(1, &m_ScreenQuadVbo);
+	}
+
+
+	GlRenderer::GlRenderer()
+	{
+		CreateScreenQuad();
+	}
+
+
+	GlRenderer::~GlRenderer() noexcept
+	{
+		DeleteScreenQuad();
 	}
 
 

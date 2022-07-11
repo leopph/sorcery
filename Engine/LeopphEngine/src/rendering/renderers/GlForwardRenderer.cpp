@@ -24,7 +24,7 @@ namespace leopph::internal
 		m_TranspCompositeShader
 		{
 			{
-				{ShaderFamily::TranspCompositeVertSrc, ShaderType::Vertex},
+				{ShaderFamily::Pos2DPassthroughVertSrc, ShaderType::Vertex},
 				{ShaderFamily::TranspCompositeFragSrc, ShaderType::Fragment}
 			}
 		}
@@ -156,7 +156,7 @@ namespace leopph::internal
 		glDisable(GL_DEPTH_TEST);
 		glBlendFunc(GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA);
 
-		m_ScreenQuad.Draw();
+		DrawScreenQuad();
 	}
 
 

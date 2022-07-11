@@ -47,7 +47,6 @@
     <ClCompile Include="src\rendering\gl\GlCubeShadowMap.cpp" />
     <ClCompile Include="src\rendering\gl\GlGeometryBuffer.cpp" />
     <ClCompile Include="src\rendering\gl\GlRenderBuffer.cpp" />
-    <ClCompile Include="src\rendering\gl\GlScreenQuad.cpp" />
     <ClCompile Include="src\components\Skybox.cpp" />
     <ClCompile Include="src\rendering\gl\GlSkyboxImpl.cpp" />
     <ClCompile Include="src\rendering\gl\GlSpotShadowMap.cpp" />
@@ -73,6 +72,7 @@
     <ClCompile Include="src\SettingsImpl.cpp" />
     <ClCompile Include="src\rendering\gl\GlMeshGroup.cpp" />
     <ClCompile Include="src\rendering\RenderObject.cpp" />
+    <ClCompile Include="src\rendering\ScreenQuad.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\DataManager.hpp" />
@@ -98,7 +98,6 @@
     <ClInclude Include="include\rendering\gl\GlCubeShadowMap.hpp" />
     <ClInclude Include="include\rendering\gl\GlGeometryBuffer.hpp" />
     <ClInclude Include="include\rendering\gl\GlRenderBuffer.hpp" />
-    <ClInclude Include="include\rendering\gl\GlScreenQuad.hpp" />
     <ClInclude Include="include\rendering\gl\GlSkyboxImpl.hpp" />
     <ClInclude Include="include\rendering\gl\GlSpotShadowMap.hpp" />
     <ClInclude Include="include\rendering\gl\GlTransparencyBuffer.hpp" />
@@ -119,6 +118,7 @@
     <ClInclude Include="include\rendering\gl\GlMeshGroup.hpp" />
     <ClInclude Include="include\rendering\RenderObject.hpp" />
     <ClInclude Include="include\SettingsImpl.hpp" />
+    <ClInclude Include="include\ScreenQuad.hpp" />
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="src\rendering\shaders\glsl\SkyboxVert.vert" />
@@ -128,13 +128,11 @@
     <CustomBuild Include="src\rendering\shaders\glsl\shadows\LinearShadowVert.vert" />
     <CustomBuild Include="src\rendering\shaders\glsl\deferred\GeometryPassVert.vert" />
     <CustomBuild Include="src\rendering\shaders\glsl\deferred\LightPassFrag.frag" />
-    <CustomBuild Include="src\rendering\shaders\glsl\deferred\LightPassVert.vert" />
     <CustomBuild Include="src\rendering\shaders\glsl\forward\ObjectVert.vert" />
     <CustomBuild Include="src\rendering\shaders\glsl\forward\TranspCompositeFrag.frag" />
-    <CustomBuild Include="src\rendering\shaders\glsl\forward\TranspCompositeVert.vert" />
     <CustomBuild Include="src\rendering\shaders\glsl\shadows\DepthShadowVert.vert" />
     <CustomBuild Include="src\rendering\shaders\glsl\shadows\LinearShadowFrag.frag" />
     <CustomBuild Include="src\rendering\shaders\glsl\postprocess\GammaCorrectFrag.frag" />
-    <CustomBuild Include="src\rendering\shaders\glsl\postprocess\GammaCorrectVert.vert" />
+    <CustomBuild Include="src\rendering\shaders\glsl\Pos2DPassthroughVert.vert" />
   </ItemGroup>
 </Project>

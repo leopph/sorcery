@@ -23,7 +23,7 @@ namespace leopph::internal
 		},
 		m_LightShader{
 			{
-				{ShaderFamily::LightPassVertSrc, ShaderType::Vertex},
+				{ShaderFamily::Pos2DPassthroughVertSrc, ShaderType::Vertex},
 				{ShaderFamily::LightPassFragSrc, ShaderType::Fragment}
 			}
 		},
@@ -35,7 +35,7 @@ namespace leopph::internal
 		},
 		m_CompositeShader{
 			{
-				{ShaderFamily::TranspCompositeVertSrc, ShaderType::Vertex},
+				{ShaderFamily::Pos2DPassthroughVertSrc, ShaderType::Vertex},
 				{ShaderFamily::TranspCompositeFragSrc, ShaderType::Fragment}
 			}
 		}
@@ -155,7 +155,7 @@ namespace leopph::internal
 
 		glBlitNamedFramebuffer(m_GBuffer.Framebuffer(), m_RenderBuffer.Framebuffer(), 0, 0, m_GBuffer.Width(), m_GBuffer.Height(), 0, 0, m_RenderBuffer.Width(), m_RenderBuffer.Height(), GL_STENCIL_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST);
 
-		m_ScreenQuad.Draw();
+		DrawScreenQuad();
 	}
 
 
@@ -412,6 +412,6 @@ namespace leopph::internal
 
 		glDisable(GL_DEPTH_TEST);
 
-		m_ScreenQuad.Draw();
+		DrawScreenQuad();
 	}
 }
