@@ -2,7 +2,6 @@
 
 #include "Logger.hpp"
 
-#include <exception>
 #include <fstream>
 #include <json.hpp>
 
@@ -13,13 +12,20 @@ namespace leopph::internal
 	{
 		if (exists(s_FilePath))
 		{
-			// If we already have a stored configuration, we parse that one
-			Deserialize();
+			try
+			{
+				Deserialize();
+				Logger::Instance().Debug("Settings successfully parsed from " + s_FilePath.generic_string() + ".");
+			}
+			catch (...)
+			{
+				Logger::Instance().Debug("Failed to parse settings from " + s_FilePath.generic_string() + ". Reverting to defaults.");
+				m_Serialize = true;
+			}
 		}
 		else
 		{
-			// Otherwise we defer serialization to the end of the first frame
-			// so that we know for sure that all to-be-serialized objects exist and are initialized.
+			// Deferred serialization to that to-be-serialized objects surely exist and are initialized.
 			m_Serialize = true;
 		}
 	}
@@ -29,19 +35,21 @@ namespace leopph::internal
 	auto SettingsImpl::Serialize() const -> void
 	{
 		nlohmann::json json;
-
-		// Serialize common global settings
+		
 		json[JSON_SHADER_LOC] = m_ShaderCache.string();
 		json[JSON_API] = m_RenderingSettings.PendingApi;
 		json[JSON_PIPE] = m_RenderingSettings.PendingPipe;
 		json[JSON_GAMMA] = m_RenderingSettings.Gamma;
+
+		json[JSON_DIR_CORRECT] = m_DirLightSettings.Corr;
 		for (auto i = 0u; i < m_DirLightSettings.Res.size(); i++)
 		{
 			json[JSON_DIR_SHADOW_RES][i] = m_DirLightSettings.Res[i];
 		}
-		json[JSON_DIR_CORRECT] = m_DirLightSettings.Corr;
+
 		json[JSON_SPOT_SHADOW_RES] = m_SpotLightSettings.Res;
 		json[JSON_MAX_SPOT] = m_SpotLightSettings.MaxNum;
+
 		json[JSON_POINT_SHADOW_RES] = m_PointLightSettings.Res;
 		json[JSON_MAX_POINT] = m_PointLightSettings.MaxNum;
 
@@ -54,60 +62,51 @@ namespace leopph::internal
 
 		std::ofstream output{s_FilePath};
 		output << json.dump(1);
-		Logger::Instance().Debug("Settings serialized to " + s_FilePath.string() + ".");
 	}
 
 
 
 	auto SettingsImpl::Deserialize() -> void
 	{
-		try
-		{
-			auto const json{
-				[&]
-				{
-					std::ifstream input{s_FilePath};
-					nlohmann::json ret;
-					input >> ret;
-					return ret;
-				}()
-			};
-
-			// Parse common global settings
-			m_ShaderCache = std::filesystem::path{json[JSON_SHADER_LOC].get<std::string>()};
-			m_RenderingSettings.Api = json[JSON_API];
-			m_RenderingSettings.PendingApi = m_RenderingSettings.Api;
-			m_RenderingSettings.Pipe = json[JSON_PIPE];
-			m_RenderingSettings.PendingPipe = m_RenderingSettings.Pipe;
-			m_RenderingSettings.Gamma = json[JSON_GAMMA];
-			m_DirLightSettings.Res.clear();
-			for (auto const& res : json[JSON_DIR_SHADOW_RES])
+		auto const json{
+			[&]
 			{
-				m_DirLightSettings.Res.push_back(res);
-			}
-			m_DirLightSettings.Corr = json[JSON_DIR_CORRECT];
-			m_SpotLightSettings.Res = json[JSON_SPOT_SHADOW_RES];
-			m_SpotLightSettings.MaxNum = json[JSON_MAX_SPOT];
-			m_PointLightSettings.Res = json[JSON_POINT_SHADOW_RES];
-			m_PointLightSettings.MaxNum = json[JSON_MAX_POINT];
+				std::ifstream input{s_FilePath};
+				nlohmann::json ret;
+				input >> ret;
+				return ret;
+			}()
+		};
 
-			// Parse window settings
-			m_WindowSettingsCache = WindowSettings
-			{
-				.Width = json[JSON_RES_W],
-				.Height = json[JSON_RES_H],
-				.RenderMultiplier = json[JSON_REND_MULT],
-				.Fullscreen = json[JSON_FULLSCREEN],
-				.Vsync = json[JSON_VSYNC]
-			};
+		m_ShaderCache = std::filesystem::path{json.at(JSON_SHADER_LOC).get<std::string>()};
 
-			Logger::Instance().Debug("Settings deserialized from " + s_FilePath.string() + ".");
-		}
-		catch (std::exception&)
+		m_RenderingSettings.Api = json.at(JSON_API);
+		m_RenderingSettings.Pipe = json.at(JSON_PIPE);
+		m_RenderingSettings.Gamma = json.at(JSON_GAMMA);
+		m_RenderingSettings.PendingApi = m_RenderingSettings.Api;
+		m_RenderingSettings.PendingPipe = m_RenderingSettings.Pipe;
+
+		m_DirLightSettings.Res.clear();
+		m_DirLightSettings.Corr = json.at(JSON_DIR_CORRECT);
+		for (auto const& res : json.at(JSON_DIR_SHADOW_RES))
 		{
-			Logger::Instance().Debug("Failed to deserialize from " + s_FilePath.string() + ". Reverting to defaults and overwriting config file.");
-			m_Serialize = true;
+			m_DirLightSettings.Res.push_back(res);
 		}
+
+		m_SpotLightSettings.Res = json.at(JSON_SPOT_SHADOW_RES);
+		m_SpotLightSettings.MaxNum = json.at(JSON_MAX_SPOT);
+
+		m_PointLightSettings.Res = json.at(JSON_POINT_SHADOW_RES);
+		m_PointLightSettings.MaxNum = json.at(JSON_MAX_POINT);
+
+		m_WindowSettingsCache = WindowSettings
+		{
+			.Width = json.at(JSON_RES_W),
+			.Height = json.at(JSON_RES_H),
+			.RenderMultiplier = json.at(JSON_REND_MULT),
+			.Fullscreen = json.at(JSON_FULLSCREEN),
+			.Vsync = json.at(JSON_VSYNC)
+		};
 	}
 
 
@@ -117,6 +116,7 @@ namespace leopph::internal
 		if (m_Serialize)
 		{
 			Serialize();
+			Logger::Instance().Debug("Settings serialized to " + s_FilePath.string() + ".");
 			m_Serialize = false;
 		}
 	}
