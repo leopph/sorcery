@@ -5,10 +5,16 @@
 
 namespace leopph
 {
+	enum class ColorSpace
+	{
+		linearRGB,
+		sRGB
+	};
+
 	class GlTexture
 	{
 		public:
-			explicit GlTexture(Image const& img);
+			explicit GlTexture(Image const& img, ColorSpace colorSpace = ColorSpace::linearRGB);
 
 			GlTexture(GlTexture const& other) = delete;
 			auto operator=(GlTexture const& other) -> GlTexture& = delete;

@@ -28,7 +28,7 @@
     <ClCompile Include="src\components\RenderComponent.cpp" />
     <ClCompile Include="src\components\Transform.cpp" />
     <ClCompile Include="src\Context.cpp" />
-    <ClCompile Include="src\rendering\geometry\GlMeshGroup.cpp" />
+    <ClCompile Include="src\rendering\gl\GlMeshGroup.cpp" />
     <ClCompile Include="src\rendering\RenderObject.cpp" />
     <ClCompile Include="src\Settings.cpp" />
     <ClCompile Include="src\data\DataManager.cpp" />
@@ -47,7 +47,7 @@
     <ClCompile Include="src\rendering\gl\GlCascadedShadowMap.cpp" />
     <ClCompile Include="src\rendering\gl\GlCubeShadowMap.cpp" />
     <ClCompile Include="src\rendering\gl\GlGeometryBuffer.cpp" />
-    <ClCompile Include="src\rendering\geometry\GlMesh.cpp" />
+    <ClCompile Include="src\rendering\gl\GlMesh.cpp" />
     <ClCompile Include="src\rendering\geometry\Mesh.cpp" />
     <ClCompile Include="src\rendering\geometry\MeshGroup.cpp" />
     <ClCompile Include="src\rendering\gl\GlBuffer.cpp" />

@@ -1,8 +1,8 @@
 #include "Model.hpp"
 
+#include "GlTexture.hpp"
 #include "Image.hpp"
 #include "LeopphverterImport.hpp"
-#include "GlTexture.hpp"
 
 #include <utility>
 #include <vector>

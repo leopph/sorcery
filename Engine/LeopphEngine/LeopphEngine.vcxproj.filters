@@ -29,7 +29,7 @@
     <ClCompile Include="src\event\SpotShadowEvent.cpp" />
     <ClCompile Include="src\event\WindowEvent.cpp" />
     <ClCompile Include="src\Input.cpp" />
-    <ClCompile Include="src\rendering\geometry\GlMesh.cpp" />
+    <ClCompile Include="src\rendering\gl\GlMesh.cpp" />
     <ClCompile Include="src\rendering\geometry\Mesh.cpp" />
     <ClCompile Include="src\rendering\geometry\MeshGroup.cpp" />
     <ClCompile Include="src\rendering\gl\GlBuffer.cpp" />
@@ -71,7 +71,7 @@
     <ClCompile Include="..\deps\vendor\gl3w\src\gl3w.c" />
     <ClCompile Include="src\Context.cpp" />
     <ClCompile Include="src\SettingsImpl.cpp" />
-    <ClCompile Include="src\rendering\geometry\GlMeshGroup.cpp" />
+    <ClCompile Include="src\rendering\gl\GlMeshGroup.cpp" />
     <ClCompile Include="src\rendering\RenderObject.cpp" />
   </ItemGroup>
   <ItemGroup>
