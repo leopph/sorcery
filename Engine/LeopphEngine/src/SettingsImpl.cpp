@@ -34,6 +34,7 @@ namespace leopph::internal
 		json[JSON_SHADER_LOC] = m_ShaderCache.string();
 		json[JSON_API] = m_RenderingSettings.PendingApi;
 		json[JSON_PIPE] = m_RenderingSettings.PendingPipe;
+		json[JSON_GAMMA] = m_RenderingSettings.Gamma;
 		for (auto i = 0u; i < m_DirLightSettings.Res.size(); i++)
 		{
 			json[JSON_DIR_SHADOW_RES][i] = m_DirLightSettings.Res[i];
@@ -78,6 +79,7 @@ namespace leopph::internal
 			m_RenderingSettings.PendingApi = m_RenderingSettings.Api;
 			m_RenderingSettings.Pipe = json[JSON_PIPE];
 			m_RenderingSettings.PendingPipe = m_RenderingSettings.Pipe;
+			m_RenderingSettings.Gamma = json[JSON_GAMMA];
 			m_DirLightSettings.Res.clear();
 			for (auto const& res : json[JSON_DIR_SHADOW_RES])
 			{
@@ -151,4 +153,5 @@ namespace leopph::internal
 	char const* const SettingsImpl::JSON_RES_H{"resH"};
 	char const* const SettingsImpl::JSON_REND_MULT{"resMult"};
 	char const* const SettingsImpl::JSON_FULLSCREEN{"fullscreen"};
+	char const* const SettingsImpl::JSON_GAMMA{"gamma"};
 }

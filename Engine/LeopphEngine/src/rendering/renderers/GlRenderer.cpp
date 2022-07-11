@@ -325,7 +325,7 @@ namespace leopph::internal
 		glBindTextureUnit(0, m_RenderBuffer.ColorBuffer());
 
 		auto& shader = m_GammaCorrectShader.GetPermutation();
-		shader.SetUniform("u_GammaInverse", 1.f / 2.2f);
+		shader.SetUniform("u_GammaInverse", 1.f / GetSettingsImpl()->Gamma());
 		shader.SetUniform("u_Image", 0);
 		shader.Use();
 

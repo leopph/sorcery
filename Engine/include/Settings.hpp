@@ -176,6 +176,14 @@ namespace leopph
 			auto LEOPPHAPI Vsync(bool newVal) -> void;
 
 
+			// Get the gamma correction value.
+			auto LEOPPHAPI Gamma() const -> f32;
+
+
+			// Set the gamma correction value.
+			auto LEOPPHAPI Gamma(f32 newVal) -> void;
+
+
 			Settings(Settings const& other) = delete;
 			auto operator=(Settings const& other) -> Settings& = delete;
 
@@ -207,6 +215,7 @@ namespace leopph
 				GraphicsApi PendingApi{Api};
 				GraphicsPipeline Pipe{GraphicsPipeline::Deferred};
 				GraphicsPipeline PendingPipe{Pipe};
+				f32 Gamma{2.2f};
 			} m_RenderingSettings;
 
 

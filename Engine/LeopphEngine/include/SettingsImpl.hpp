@@ -45,5 +45,6 @@ namespace leopph::internal
 			static char const* const JSON_RES_H;
 			static char const* const JSON_REND_MULT;
 			static char const* const JSON_FULLSCREEN;
+			static char const* const JSON_GAMMA;
 	};
 }

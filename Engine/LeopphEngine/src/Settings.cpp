@@ -248,6 +248,20 @@ namespace leopph
 
 
 
+	auto Settings::Gamma() const -> f32
+	{
+		return m_RenderingSettings.Gamma;
+	}
+
+
+
+	auto Settings::Gamma(f32 const newVal) -> void
+	{
+		m_RenderingSettings.Gamma = newVal;
+	}
+
+
+
 	std::filesystem::path Settings::s_FilePath
 	{
 		[]
