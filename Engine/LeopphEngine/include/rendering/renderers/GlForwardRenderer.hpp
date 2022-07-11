@@ -5,10 +5,6 @@
 #include "Matrix.hpp"
 #include "PointLight.hpp"
 #include "SpotLight.hpp"
-#include "rendering/gl/GlCascadedShadowMap.hpp"
-#include "rendering/gl/GlRenderBuffer.hpp"
-#include "rendering/gl/GlScreenQuad.hpp"
-#include "rendering/gl/GlTransparencyBuffer.hpp"
 #include "rendering/shaders/ShaderFamily.hpp"
 
 
@@ -42,14 +38,6 @@ namespace leopph::internal
 			                  Matrix4 const& camProjMat) -> void;
 
 			ShaderFamily m_ObjectShader;
-			ShaderFamily m_ShadowShader;
-			ShaderFamily m_SkyboxShader;
 			ShaderFamily m_TranspCompositeShader;
-
-			GlCascadedShadowMap m_DirLightShadowMap;
-
-			GlRenderBuffer m_RenderBuffer;
-			GlTransparencyBuffer m_TransparencyBuffer;
-			GlScreenQuad m_ScreenQuad;
 	};
 }

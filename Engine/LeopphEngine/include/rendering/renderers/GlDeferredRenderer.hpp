@@ -5,18 +5,12 @@
 #include "Matrix.hpp"
 #include "PointLight.hpp"
 #include "SpotLight.hpp"
-#include "rendering/gl/GlCascadedShadowMap.hpp"
 #include "rendering/gl/GlCore.hpp"
-#include "rendering/gl/GlCubeShadowMap.hpp"
 #include "rendering/gl/GlGeometryBuffer.hpp"
-#include "rendering/gl/GlRenderBuffer.hpp"
-#include "rendering/gl/GlScreenQuad.hpp"
-#include "rendering/gl/GlSpotShadowMap.hpp"
-#include "rendering/gl/GlTransparencyBuffer.hpp"
 #include "rendering/shaders/ShaderFamily.hpp"
 
 #include <cstddef>
-#include <memory>
+#include <span>
 #include <vector>
 
 
@@ -78,23 +72,11 @@ namespace leopph::internal
 
 			GlGeometryBuffer m_GBuffer;
 
-			GlRenderBuffer m_RenderBuffer;
-			GlScreenQuad m_ScreenQuad;
-			GlTransparencyBuffer m_TransparencyBuffer;
-
-			ShaderFamily m_ShadowShader;
-			ShaderFamily m_CubeShadowShader;
-
 			ShaderFamily m_GeometryShader;
 			ShaderFamily m_LightShader;
-			ShaderFamily m_SkyboxShader;
 
 			ShaderFamily m_ForwardShader;
 			ShaderFamily m_CompositeShader;
-
-			GlCascadedShadowMap m_DirShadowMap;
-			std::vector<std::unique_ptr<GlSpotShadowMap>> m_SpotShadowMaps;
-			std::vector<std::unique_ptr<GlCubeShadowMap>> m_PointShadowMaps;
 
 			static constexpr int STENCIL_DRAW_TAG{0};
 	};

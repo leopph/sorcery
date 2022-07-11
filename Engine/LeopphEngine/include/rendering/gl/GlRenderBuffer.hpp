@@ -4,6 +4,7 @@
 #include "GlCore.hpp"
 #include "GlFramebufferObject.hpp"
 #include "GlRenderbufferObject.hpp"
+#include "GlTextureObject.hpp"
 #include "WindowEvent.hpp"
 
 
@@ -33,7 +34,7 @@ namespace leopph::internal
 			auto Framebuffer() const noexcept -> GlFramebufferObject const&;
 
 			[[nodiscard]]
-			auto ColorBuffer() const noexcept -> GlRenderbufferObject const&;
+			auto ColorBuffer() const noexcept -> GlTextureObject<GlTextureType::T2D> const&;
 
 			[[nodiscard]]
 			auto DepthStencilBuffer() const noexcept -> GlRenderbufferObject const&;
@@ -52,7 +53,7 @@ namespace leopph::internal
 			auto OnEventReceived(EventParamType event) -> void override;
 
 			GlFramebufferObject m_Framebuffer;
-			GlRenderbufferObject m_ColorBuffer;
+			GlTextureObject<GlTextureType::T2D> m_ColorBuffer;
 			GlRenderbufferObject m_DepthStencilBuffer;
 			int m_Width;
 			int m_Height;

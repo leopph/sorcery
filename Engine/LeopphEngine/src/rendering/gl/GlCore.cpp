@@ -114,7 +114,7 @@ namespace leopph::internal::opengl
 
 	auto Init() -> void
 	{
-		if (auto const errCode = gl3wInit(); errCode)
+		if (gl3wInit())
 		{
 			auto const errMsg{"Failed to initialize OpenGL."};
 			Logger::Instance().Critical(errMsg);

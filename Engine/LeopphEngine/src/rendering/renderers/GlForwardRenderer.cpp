@@ -6,7 +6,6 @@
 #include "Logger.hpp"
 #include "Matrix.hpp"
 #include "rendering/gl/GlCore.hpp"
-#include "windowing/WindowImpl.hpp"
 
 #include <string>
 #include <utility>
@@ -22,28 +21,13 @@ namespace leopph::internal
 				{ShaderFamily::ObjectFragSrc, ShaderType::Fragment}
 			}
 		},
-		m_ShadowShader
-		{
-			{
-				{ShaderFamily::DepthShadowVertSrc, ShaderType::Vertex}
-			}
-		},
-
-		m_SkyboxShader
-		{
-			{
-				{ShaderFamily::SkyboxVertSrc, ShaderType::Vertex},
-				{ShaderFamily::SkyboxFragSrc, ShaderType::Fragment}
-			}
-		},
 		m_TranspCompositeShader
 		{
 			{
 				{ShaderFamily::TranspCompositeVertSrc, ShaderType::Vertex},
 				{ShaderFamily::TranspCompositeFragSrc, ShaderType::Fragment}
 			}
-		},
-		m_TransparencyBuffer{&m_RenderBuffer.DepthStencilBuffer()}
+		}
 	{
 		glDepthFunc(GL_LEQUAL);
 		glFrontFace(GL_CCW);
@@ -88,9 +72,8 @@ namespace leopph::internal
 		RenderSkybox(currCamViewMat, currCamProjMat);
 		RenderTransparent(currCamViewMat, currCamProjMat, renderNodes, dirLight, spotLights, pointLights);
 		Compose();
-
-		auto const window = GetWindowImpl();
-		glBlitNamedFramebuffer(m_RenderBuffer.Framebuffer(), 0, 0, 0, m_RenderBuffer.Width(), m_RenderBuffer.Height(), 0, 0, window->Width(), window->Height(), GL_COLOR_BUFFER_BIT, GL_LINEAR);
+		ApplyGammaCorrection();
+		Present();
 	}
 
 

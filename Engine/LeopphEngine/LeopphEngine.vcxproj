@@ -173,6 +173,14 @@
       <FileType>Document</FileType>
     </CustomBuild>
   </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="src\rendering\shaders\glsl\postprocess\GammaCorrectFrag.frag">
+      <FileType>Document</FileType>
+    </CustomBuild>
+    <CustomBuild Include="src\rendering\shaders\glsl\postprocess\GammaCorrectVert.vert">
+      <FileType>Document</FileType>
+    </CustomBuild>
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>

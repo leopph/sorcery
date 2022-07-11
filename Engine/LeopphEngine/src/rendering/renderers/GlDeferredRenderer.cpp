@@ -7,7 +7,6 @@
 #include "Math.hpp"
 #include "Matrix.hpp"
 #include "SettingsImpl.hpp"
-#include "windowing/WindowImpl.hpp"
 
 #include <algorithm>
 #include <array>
@@ -16,18 +15,6 @@
 namespace leopph::internal
 {
 	GlDeferredRenderer::GlDeferredRenderer() :
-		m_TransparencyBuffer{&m_RenderBuffer.DepthStencilBuffer()},
-		m_ShadowShader{
-			{
-				{ShaderFamily::DepthShadowVertSrc, ShaderType::Vertex}
-			}
-		},
-		m_CubeShadowShader{
-			{
-				{ShaderFamily::LinearShadowVertSrc, ShaderType::Vertex},
-				{ShaderFamily::LinearShadowFragSrc, ShaderType::Fragment}
-			}
-		},
 		m_GeometryShader{
 			{
 				{ShaderFamily::GeometryPassVertSrc, ShaderType::Vertex},
@@ -38,12 +25,6 @@ namespace leopph::internal
 			{
 				{ShaderFamily::LightPassVertSrc, ShaderType::Vertex},
 				{ShaderFamily::LightPassFragSrc, ShaderType::Fragment}
-			}
-		},
-		m_SkyboxShader{
-			{
-				{ShaderFamily::SkyboxVertSrc, ShaderType::Vertex},
-				{ShaderFamily::SkyboxFragSrc, ShaderType::Fragment}
 			}
 		},
 		m_ForwardShader{
@@ -92,9 +73,8 @@ namespace leopph::internal
 		RenderLights(currCamViewMat, currCamProjMat, renderNodes, spotLights, pointLights);
 		RenderSkybox(currCamViewMat, currCamProjMat);
 		RenderTransparent(currCamViewMat, currCamProjMat, renderNodes, GetDataManager()->DirectionalLight(), spotLights, pointLights);
-
-		auto const* const window = GetWindowImpl();
-		glBlitNamedFramebuffer(m_RenderBuffer.Framebuffer(), 0, 0, 0, m_RenderBuffer.Width(), m_RenderBuffer.Height(), 0, 0, window->Width(), window->Height(), GL_COLOR_BUFFER_BIT, GL_LINEAR);
+		ApplyGammaCorrection();
+		Present();
 	}
 
 

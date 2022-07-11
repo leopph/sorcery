@@ -8,6 +8,7 @@
 #include "rendering/gl/GlCore.hpp"
 #include "rendering/renderers/GlDeferredRenderer.hpp"
 #include "rendering/renderers/GlForwardRenderer.hpp"
+#include "windowing/WindowImpl.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -20,6 +21,8 @@ namespace leopph::internal
 {
 	auto GlRenderer::Create() -> std::unique_ptr<GlRenderer>
 	{
+		opengl::Init();
+
 		switch (GetSettingsImpl()->GetGraphicsPipeline())
 		{
 			case Settings::GraphicsPipeline::Forward:
@@ -28,7 +31,7 @@ namespace leopph::internal
 				return std::make_unique<GlDeferredRenderer>();
 		}
 
-		auto const errMsg{"The selected rendering pipeline is not supported for the current graphics API."};
+		auto const errMsg = "The selected rendering pipeline is not supported for the current graphics API.";
 		Logger::Instance().Critical(errMsg);
 		throw std::domain_error{errMsg};
 	}
@@ -73,12 +76,6 @@ namespace leopph::internal
 		{
 			return elem.get() == skyboxImpl;
 		});
-	}
-
-
-	GlRenderer::GlRenderer()
-	{
-		opengl::Init();
 	}
 
 
@@ -318,6 +315,31 @@ namespace leopph::internal
 			})
 		};
 		return {dirShadow, spotShadows, pointShadows};
+	}
+
+
+	auto GlRenderer::ApplyGammaCorrection() -> void
+	{
+		m_GammaCorrectedBuffer.Clear();
+		m_GammaCorrectedBuffer.BindForWriting();
+		glBindTextureUnit(0, m_RenderBuffer.ColorBuffer());
+
+		auto& shader = m_GammaCorrectShader.GetPermutation();
+		shader.SetUniform("u_GammaInverse", 1.f / 2.2f);
+		shader.SetUniform("u_Image", 0);
+		shader.Use();
+
+		glDisable(GL_DEPTH_TEST);
+		glDisable(GL_BLEND);
+		
+		m_ScreenQuad.Draw();
+	}
+
+
+	auto GlRenderer::Present() const -> void
+	{
+		auto const* const window = GetWindowImpl();
+		glBlitNamedFramebuffer(m_GammaCorrectedBuffer.Framebuffer(), 0, 0, 0, m_GammaCorrectedBuffer.Width(), m_GammaCorrectedBuffer.Height(), 0, 0, static_cast<GLint>(window->Width()), static_cast<GLint>(window->Height()), GL_COLOR_BUFFER_BIT, GL_LINEAR);
 	}
 
 

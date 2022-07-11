@@ -61,6 +61,9 @@ namespace leopph::internal
 			static std::string const TranspCompositeVertSrc;
 			static std::string const TranspCompositeFragSrc;
 
+			static std::string const GammaCorrectVertSrc;
+			static std::string const GammaCorrectFragSrc;
+
 		private:
 			// Create a source that has the currently set flags inserted.
 			[[nodiscard]] auto BuildSrcString(std::string_view src) const -> std::string;

@@ -47,7 +47,7 @@ namespace leopph::internal
 	}
 
 
-	auto GlRenderBuffer::ColorBuffer() const noexcept -> GlRenderbufferObject const&
+	auto GlRenderBuffer::ColorBuffer() const noexcept -> GlTextureObject<GlTextureType::T2D> const&
 	{
 		return m_ColorBuffer;
 	}
@@ -81,13 +81,13 @@ namespace leopph::internal
 
 	auto GlRenderBuffer::InitBuffers() noexcept -> void
 	{
-		m_ColorBuffer = GlRenderbufferObject{};
-		glNamedRenderbufferStorage(m_ColorBuffer, GL_RGBA8, m_Width, m_Height);
+		m_ColorBuffer = {};
+		glTextureStorage2D(m_ColorBuffer, 1, GL_RGBA8, m_Width, m_Height);
 
 		m_DepthStencilBuffer = GlRenderbufferObject{};
 		glNamedRenderbufferStorage(m_DepthStencilBuffer, GL_DEPTH24_STENCIL8, m_Width, m_Height);
 
-		glNamedFramebufferRenderbuffer(m_Framebuffer, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, m_ColorBuffer);
+		glNamedFramebufferTexture(m_Framebuffer, GL_COLOR_ATTACHMENT0, m_ColorBuffer, 0);
 		glNamedFramebufferRenderbuffer(m_Framebuffer, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_DepthStencilBuffer);
 
 		glNamedFramebufferDrawBuffer(m_Framebuffer, GL_COLOR_ATTACHMENT0);

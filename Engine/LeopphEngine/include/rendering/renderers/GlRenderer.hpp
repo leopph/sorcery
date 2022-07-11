@@ -7,8 +7,14 @@
 #include "Renderer.hpp"
 #include "SpotLight.hpp"
 #include "rendering/gl/GlCascadedShadowMap.hpp"
+#include "rendering/gl/GlCubeShadowMap.hpp"
 #include "rendering/gl/GlMeshGroup.hpp"
+#include "rendering/gl/GlRenderBuffer.hpp"
+#include "rendering/gl/GlScreenQuad.hpp"
 #include "rendering/gl/GlSkyboxImpl.hpp"
+#include "rendering/gl/GlSpotShadowMap.hpp"
+#include "rendering/gl/GlTransparencyBuffer.hpp"
+#include "rendering/shaders/ShaderFamily.hpp"
 
 #include <filesystem>
 #include <memory>
@@ -21,8 +27,14 @@ namespace leopph::internal
 {
 	class GlRenderer : public Renderer
 	{
+		protected:
+			struct RenderNode;
+			struct ShadowCount;
+
+			GlRenderer() = default;
+
 		public:
-			// Constructs an OpenGL renderer for the selected rendering pipeline.
+			// Initializes OpenGL and constructs a renderer for the selected rendering pipeline.
 			static auto Create() -> std::unique_ptr<GlRenderer>;
 
 			[[nodiscard]] auto CreateRenderObject(MeshGroup const& meshGroup) -> RenderObject* override;
@@ -31,34 +43,7 @@ namespace leopph::internal
 			[[nodiscard]] auto CreateOrGetSkyboxImpl(std::filesystem::path allPaths) -> GlSkyboxImpl*;
 			auto DestroySkyboxImpl(GlSkyboxImpl const* skyboxImpl) -> void;
 
-			GlRenderer(GlRenderer const& other) = delete;
-			auto operator=(GlRenderer const& other) -> void = delete;
-
-			GlRenderer(GlRenderer&& other) = delete;
-			auto operator=(GlRenderer&& other) -> void = delete;
-
-			~GlRenderer() noexcept override = default;
-
 		protected:
-			GlRenderer();
-
-
-			struct RenderNode
-			{
-				GlMeshGroup* RenderObject;
-				std::span<std::pair<Matrix4, Matrix4> const> Instances; // matrices are in OpenGL buffer format.
-				bool CastsShadow;
-			};
-
-
-			struct ShadowCount
-			{
-				bool Directional{false};
-				std::size_t Spot{0};
-				std::size_t Point{0};
-			};
-
-
 			// Extract game data per RenderObject per RenderComponent, process them, and output into RenderNodes.
 			auto ExtractAndProcessInstanceData(std::vector<RenderNode>& out) -> void;
 
@@ -79,6 +64,57 @@ namespace leopph::internal
 			static auto SetPointDataIgnoreShadow(std::span<PointLight const* const> pointLights, ShaderProgram& shader) -> void;
 			static auto CountShadows(DirectionalLight const* dirLight, std::span<SpotLight const* const> spotLights, std::span<PointLight const* const> pointLights) -> ShadowCount;
 
+			auto ApplyGammaCorrection() -> void;
+			auto Present() const -> void;
+
+		public:
+			GlRenderer(GlRenderer const& other) = delete;
+			auto operator=(GlRenderer const& other) -> void = delete;
+
+			GlRenderer(GlRenderer&& other) = delete;
+			auto operator=(GlRenderer&& other) -> void = delete;
+
+			~GlRenderer() noexcept override = default;
+
+		protected:
+			GlScreenQuad m_ScreenQuad;
+
+			GlRenderBuffer m_RenderBuffer;
+			GlRenderBuffer m_GammaCorrectedBuffer;
+			GlTransparencyBuffer m_TransparencyBuffer{&m_RenderBuffer.DepthStencilBuffer()};
+
+			GlCascadedShadowMap m_DirShadowMap;
+			std::vector<std::unique_ptr<GlSpotShadowMap>> m_SpotShadowMaps;
+			std::vector<std::unique_ptr<GlCubeShadowMap>> m_PointShadowMaps;
+
+			ShaderFamily m_ShadowShader
+			{
+				{
+					{ShaderFamily::DepthShadowVertSrc, ShaderType::Vertex}
+				}
+			};
+			ShaderFamily m_CubeShadowShader
+			{
+				{
+					{ShaderFamily::LinearShadowVertSrc, ShaderType::Vertex},
+					{ShaderFamily::LinearShadowFragSrc, ShaderType::Fragment}
+				}
+			};
+			ShaderFamily m_SkyboxShader
+			{
+				{
+					{ShaderFamily::SkyboxVertSrc, ShaderType::Vertex},
+					{ShaderFamily::SkyboxFragSrc, ShaderType::Fragment}
+				}
+			};
+			ShaderFamily m_GammaCorrectShader
+			{
+				{
+					{ShaderFamily::GammaCorrectVertSrc, ShaderType::Vertex},
+					{ShaderFamily::GammaCorrectFragSrc, ShaderType::Fragment}
+				}
+			};
+
 		private:
 			// Returns true if left is closer to the current camera then right.
 			static auto CompareLightsByDistToCurrentCam(Light const* left, Light const* right) -> bool;
@@ -92,5 +128,21 @@ namespace leopph::internal
 			std::vector<std::unique_ptr<GlMeshGroup>> m_RenderObjects;
 
 			std::vector<std::unique_ptr<GlSkyboxImpl>> m_SkyboxImpls;
+	};
+
+
+	struct GlRenderer::RenderNode
+	{
+		GlMeshGroup* RenderObject;
+		std::span<std::pair<Matrix4, Matrix4> const> Instances; // matrices are in OpenGL buffer format.
+		bool CastsShadow;
+	};
+
+
+	struct GlRenderer::ShadowCount
+	{
+		bool Directional{false};
+		std::size_t Spot{0};
+		std::size_t Point{0};
 	};
 }

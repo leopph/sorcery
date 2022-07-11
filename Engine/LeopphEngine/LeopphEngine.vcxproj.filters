@@ -134,5 +134,7 @@
     <CustomBuild Include="src\rendering\shaders\glsl\forward\TranspCompositeVert.vert" />
     <CustomBuild Include="src\rendering\shaders\glsl\shadows\DepthShadowVert.vert" />
     <CustomBuild Include="src\rendering\shaders\glsl\shadows\LinearShadowFrag.frag" />
+    <CustomBuild Include="src\rendering\shaders\glsl\postprocess\GammaCorrectFrag.frag" />
+    <CustomBuild Include="src\rendering\shaders\glsl\postprocess\GammaCorrectVert.vert" />
   </ItemGroup>
 </Project>
