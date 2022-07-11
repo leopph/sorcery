@@ -1,20 +1,20 @@
 #pragma once
 
 #include "Image.hpp"
+#include "LeopphApi.hpp"
+#include "Types.hpp"
 
 
 namespace leopph
 {
-	enum class ColorSpace
-	{
-		linearRGB,
-		sRGB
-	};
-
 	class GlTexture
 	{
 		public:
-			explicit GlTexture(Image const& img, ColorSpace colorSpace = ColorSpace::linearRGB);
+			explicit LEOPPHAPI GlTexture(Image const& img);
+			
+			[[nodiscard]] auto LEOPPHAPI TextureName() const noexcept -> u32;
+			[[nodiscard]] auto LEOPPHAPI Width() const noexcept -> u32;
+			[[nodiscard]] auto LEOPPHAPI Height() const noexcept -> u32;
 
 			GlTexture(GlTexture const& other) = delete;
 			auto operator=(GlTexture const& other) -> GlTexture& = delete;
@@ -24,19 +24,9 @@ namespace leopph
 
 			~GlTexture() noexcept;
 
-			// The name of the underlying OpenGL texture.
-			[[nodiscard]]
-			auto TextureName() const noexcept -> unsigned;
-
-			[[nodiscard]]
-			auto Width() const noexcept -> int;
-
-			[[nodiscard]]
-			auto Height() const noexcept -> int;
-
 		private:
-			unsigned m_Texture;
-			int m_Width;
-			int m_Height;
+			u32 m_Texture;
+			u32 m_Width;
+			u32 m_Height;
 	};
 }

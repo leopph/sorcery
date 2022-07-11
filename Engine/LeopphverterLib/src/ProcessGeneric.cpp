@@ -21,6 +21,16 @@ namespace leopph::convert
 {
 	namespace
 	{
+		// Maps texture types to an encoding to be used during interpretation
+		std::unordered_map<aiTextureType, ColorEncoding> const g_TexTypeToEncoding
+		{
+			{aiTextureType_DIFFUSE, ColorEncoding::SRGB},
+			{aiTextureType_SPECULAR, ColorEncoding::Linear},
+			{aiTextureType_OPACITY, ColorEncoding::SRGB}
+		};
+
+
+
 		// Returns the index of the texture image corresponding to the target texture type in the passed material.
 		// If the texture is not yet loaded, it gets loaded and stored in the vector along with its source path and index in the map.
 		// Returns an empty optional if the texture could not be found or loaded.
@@ -33,12 +43,13 @@ namespace leopph::convert
 					return idToInd[texPath.C_Str()];
 				}
 
-				textures.emplace_back(rootPath / texPath.C_Str(), true);
+				textures.emplace_back(rootPath / texPath.C_Str(), g_TexTypeToEncoding.at(texType), ImageOrientation::FlipVertical);
 				return idToInd[texPath.C_Str()] = textures.size() - 1;
 			}
 
 			return {};
 		}
+
 
 
 		auto ProcessMaterials(std::span<aiMaterial* const> const aiMats, std::filesystem::path const& rootPath) -> std::pair<std::vector<Material>, std::vector<Image>>
@@ -97,6 +108,7 @@ namespace leopph::convert
 		}
 
 
+
 		auto ProcessVertices(aiMesh const* mesh, Matrix4 const& trafo) -> std::vector<Vertex>
 		{
 			std::vector<Vertex> vertices;
@@ -127,6 +139,7 @@ namespace leopph::convert
 		}
 
 
+
 		auto ProcessIndices(aiMesh const* mesh) -> std::vector<unsigned>
 		{
 			std::vector<unsigned> indices;
@@ -141,6 +154,7 @@ namespace leopph::convert
 
 			return indices;
 		}
+
 
 
 		auto LogPrimitiveError(aiMesh const* const mesh, std::filesystem::path const& path) -> void
@@ -168,6 +182,7 @@ namespace leopph::convert
 			internal::Logger::Instance().Debug(msg);
 		}
 	}
+
 
 
 	auto ProcessGenericModel(std::filesystem::path const& path) -> std::optional<Object>

@@ -42,12 +42,14 @@ namespace leopph::convert
 	auto DeserializeMesh(It& it, std::endian endianness) -> Mesh;
 
 
+
 	template<Scalar T, std::contiguous_iterator It>
 		requires (sizeof(T) == 1)
 	auto Deserialize(It const& it) -> T
 	{
 		return *reinterpret_cast<T const*>(&*it);
 	}
+
 
 
 	template<Scalar T, std::contiguous_iterator It>
@@ -58,6 +60,7 @@ namespace leopph::convert
 		it += 1;
 		return ret;
 	}
+
 
 
 	template<Scalar T, std::contiguous_iterator It>
@@ -78,6 +81,7 @@ namespace leopph::convert
 	}
 
 
+
 	template<Scalar T, std::contiguous_iterator It>
 		requires(sizeof(T) > 1)
 	auto Deserialize(It& it, std::endian const endianness) -> T
@@ -86,6 +90,7 @@ namespace leopph::convert
 		it += sizeof(T);
 		return ret;
 	}
+
 
 
 	template<std::contiguous_iterator It>
@@ -97,6 +102,7 @@ namespace leopph::convert
 			Deserialize<f32>(it, endianness)
 		};
 	}
+
 
 
 	template<std::contiguous_iterator It>
@@ -111,6 +117,7 @@ namespace leopph::convert
 	}
 
 
+
 	template<std::contiguous_iterator It>
 	auto DeserializeVertex(It& it, std::endian const endianness) -> Vertex
 	{
@@ -121,6 +128,7 @@ namespace leopph::convert
 			.TexCoord = DeserializeVec2(it, endianness)
 		};
 	}
+
 
 
 	template<std::contiguous_iterator It>
@@ -135,20 +143,23 @@ namespace leopph::convert
 	}
 
 
+
 	template<std::contiguous_iterator It>
 	auto DeserializeImage(It& it, std::endian const endianness) -> Image
 	{
-		auto const width = Deserialize<i32>(it, endianness);
-		auto const height = Deserialize<i32>(it, endianness);
+		auto const width = Deserialize<u32>(it, endianness);
+		auto const height = Deserialize<u32>(it, endianness);
 		auto const chans = Deserialize<u8>(it);
+		auto const encoding = Deserialize<u8>(it);
 
-		auto imgSz = static_cast<u64>(width * height * chans);
+		auto imgSz = static_cast<u64>(width) * height * chans;
 		auto imgData = std::make_unique<unsigned char[]>(imgSz);
 		std::copy_n(it, width * height * chans, imgData.get());
 		it += imgSz;
 
-		return Image{width, height, chans, std::move(imgData)};
+		return Image{width, height, chans, std::move(imgData), static_cast<ColorEncoding>(encoding)};
 	}
+
 
 
 	template<std::contiguous_iterator It>
@@ -183,6 +194,7 @@ namespace leopph::convert
 
 		return Material{diffuseColor, specularColor, gloss, opacity, twoSided, diffuseMap, specularMap, opacityMap};
 	}
+
 
 
 	template<std::contiguous_iterator It>

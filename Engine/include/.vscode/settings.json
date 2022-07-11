@@ -1,7 +1,0 @@
-{
-    "files.associations": {
-        "*.pl": "prolog",
-        "*.S": "asm-intel-x86-generic",
-        "vector": "cpp"
-    }
-}

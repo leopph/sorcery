@@ -8,7 +8,7 @@
 
 namespace leopph
 {
-	GlTexture::GlTexture(Image const& img, ColorSpace const colorSpace) :
+	GlTexture::GlTexture(Image const& img) :
 		m_Texture{},
 		m_Width{img.Width()},
 		m_Height{img.Height()}
@@ -28,7 +28,7 @@ namespace leopph
 			{
 				colorFormat = GL_RGB;
 
-				if (colorSpace == ColorSpace::sRGB)
+				if (img.Encoding() == ColorEncoding::SRGB)
 				{
 					internalFormat = GL_SRGB8;
 				}
@@ -43,7 +43,7 @@ namespace leopph
 			{
 				colorFormat = GL_RGBA;
 
-				if (colorSpace == ColorSpace::sRGB)
+				if (img.Encoding() == ColorEncoding::SRGB)
 				{
 					internalFormat = GL_SRGB8_ALPHA8;
 				}
@@ -78,19 +78,19 @@ namespace leopph
 	}
 
 
-	auto GlTexture::TextureName() const noexcept -> GLuint
+	auto GlTexture::TextureName() const noexcept -> u32
 	{
 		return m_Texture;
 	}
 
 
-	auto GlTexture::Width() const noexcept -> int
+	auto GlTexture::Width() const noexcept -> u32
 	{
 		return m_Width;
 	}
 
 
-	auto GlTexture::Height() const noexcept -> int
+	auto GlTexture::Height() const noexcept -> u32
 	{
 		return m_Height;
 	}

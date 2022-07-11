@@ -13,7 +13,7 @@ namespace leopph
 	ImageSprite::ImageSprite(std::filesystem::path const& src, int const ppi) :
 		m_Path{src}
 	{
-		Image img{src, true};
+		Image img{src, ColorEncoding::SRGB, ImageOrientation::FlipVertical};
 		m_Extents = Vector2{img.Width() / 2.f / ppi, img.Height() / 2.f / ppi};
 		Init(CreateMeshGroup(img, ppi));
 	}
@@ -118,8 +118,8 @@ namespace leopph
 				}
 			}
 
-			baseTexture = std::make_shared<GlTexture>(Image{static_cast<int>(newDim), static_cast<int>(newDim), 3, std::move(baseColorBytes)});
-			opacityTexture = std::make_shared<GlTexture>(Image{static_cast<int>(newDim), static_cast<int>(newDim), 1, std::move(opacityBytes)});
+			baseTexture = std::make_shared<GlTexture>(Image{newDim, newDim, 3, std::move(baseColorBytes)});
+			opacityTexture = std::make_shared<GlTexture>(Image{newDim, newDim, 1, std::move(opacityBytes)});
 		}
 		else
 		{

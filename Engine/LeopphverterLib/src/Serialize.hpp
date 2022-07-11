@@ -23,8 +23,6 @@ namespace leopph::convert
 
 	auto Serialize(Image const& img, std::vector<u8>& oBuf, std::endian endianness) -> void;
 
-	auto Serialize(Color const& color, std::vector<u8>& oBuf, std::endian endianness) -> void;
-
 	auto Serialize(Material const& mat, std::vector<u8>& oBuf, std::endian endianness) -> void;
 
 	template<class T, u64 N>
@@ -35,12 +33,14 @@ namespace leopph::convert
 	auto Serialize(Mesh const& mesh, std::vector<u8>& oBuf, std::endian endianness) -> void;
 
 
+
 	template<Scalar T>
 		requires(sizeof(T) == 1)
 	auto Serialize(T const s, std::vector<u8>& oBuf) -> void
 	{
 		oBuf.push_back(*reinterpret_cast<u8 const*>(&s));
 	}
+
 
 
 	template<Scalar T>
@@ -59,6 +59,7 @@ namespace leopph::convert
 
 		std::copy_n(std::reverse_iterator{begin + sz}, sz, inserter);
 	}
+
 
 
 	template<class T, u64 N>

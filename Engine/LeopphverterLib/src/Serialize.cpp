@@ -14,19 +14,24 @@ namespace leopph::convert
 	}
 
 
+
 	auto Serialize(Image const& img, std::vector<u8>& oBuf, std::endian const endianness) -> void
 	{
-		auto const width = static_cast<i32>(img.Width());
+		auto const width = img.Width();
 		Serialize(width, oBuf, endianness);
 
-		auto const height = static_cast<i32>(img.Height());
+		auto const height = img.Height();
 		Serialize(height, oBuf, endianness);
 
-		auto const chans = static_cast<u8>(img.Channels());
+		auto const chans = img.Channels();
 		Serialize(chans, oBuf);
+
+		auto const encoding = img.Encoding();
+		Serialize(encoding, oBuf);
 
 		std::copy_n(img.Data().data(), width * height * chans, std::back_inserter(oBuf));
 	}
+
 
 
 	auto Serialize(Color const& color, std::vector<u8>& oBuf) -> void
@@ -35,6 +40,7 @@ namespace leopph::convert
 		Serialize(color.Green, oBuf);
 		Serialize(color.Blue, oBuf);
 	}
+
 
 
 	auto Serialize(Material const& mat, std::vector<u8>& oBuf, std::endian const endianness) -> void
@@ -77,12 +83,14 @@ namespace leopph::convert
 	}
 
 
+
 	auto Serialize(Vertex const& vert, std::vector<u8>& oBuf, std::endian const endianness) -> void
 	{
 		Serialize(vert.Position, oBuf, endianness);
 		Serialize(vert.Normal, oBuf, endianness);
 		Serialize(vert.TexCoord, oBuf, endianness);
 	}
+
 
 
 	auto Serialize(Mesh const& mesh, std::vector<u8>& oBuf, std::endian const endianness) -> void
