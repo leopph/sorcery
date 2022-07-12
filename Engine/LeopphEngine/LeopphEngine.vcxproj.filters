@@ -21,12 +21,12 @@
     <ClCompile Include="src\Entity.cpp" />
     <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\event\EventManager.cpp" />
-    <ClCompile Include="src\event\DirShadowEvent.cpp" />
+    <ClCompile Include="src\event\DirShadowResEvent.cpp" />
     <ClCompile Include="src\event\Event.cpp" />
     <ClCompile Include="src\event\KeyEvent.cpp" />
     <ClCompile Include="src\event\MouseEvent.cpp" />
-    <ClCompile Include="src\event\PointShadowEvent.cpp" />
-    <ClCompile Include="src\event\SpotShadowEvent.cpp" />
+    <ClCompile Include="src\event\PointShadowResEvent.cpp" />
+    <ClCompile Include="src\event\SpotShadowResEvent.cpp" />
     <ClCompile Include="src\event\WindowEvent.cpp" />
     <ClCompile Include="src\Input.cpp" />
     <ClCompile Include="src\rendering\gl\GlMesh.cpp" />
@@ -76,9 +76,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\DataManager.hpp" />
-    <ClInclude Include="include\events\DirShadowEvent.hpp" />
-    <ClInclude Include="include\events\PointShadowEvent.hpp" />
-    <ClInclude Include="include\events\SpotShadowEvent.hpp" />
+    <ClInclude Include="include\events\DirShadowResEvent.hpp" />
+    <ClInclude Include="include\events\PointShadowResEvent.hpp" />
+    <ClInclude Include="include\events\SpotShadowResEvent.hpp" />
     <ClInclude Include="include\rendering\gl\GlMesh.hpp" />
     <ClInclude Include="include\rendering\gl\GlBufferObject.hpp" />
     <ClInclude Include="include\rendering\gl\GlFramebufferObject.hpp" />
@@ -119,6 +119,7 @@
     <ClInclude Include="include\rendering\RenderObject.hpp" />
     <ClInclude Include="include\SettingsImpl.hpp" />
     <ClInclude Include="include\ScreenQuad.hpp" />
+    <ClInclude Include="include\rendering\Extent.hpp" />
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="src\rendering\shaders\glsl\SkyboxVert.vert" />

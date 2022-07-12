@@ -5,7 +5,7 @@
 #include "GlFramebufferObject.hpp"
 #include "GlTextureObject.hpp"
 #include "Matrix.hpp"
-#include "events/DirShadowEvent.hpp"
+#include "events/DirShadowResEvent.hpp"
 #include "rendering/shaders/ShaderProgram.hpp"
 
 #include <cstddef>
@@ -16,7 +16,7 @@
 
 namespace leopph::internal
 {
-	class GlCascadedShadowMap final : public EventReceiver<DirShadowEvent>
+	class GlCascadedShadowMap final : public EventReceiver<DirShadowResEvent>
 	{
 		public:
 			struct CascadeBounds;
@@ -60,7 +60,7 @@ namespace leopph::internal
 			auto ConfigCascades(std::span<std::size_t const> resolutions) -> void;
 
 			// Updates the cascades based on the new resolutions.
-			auto OnEventReceived(DirShadowEvent const& event) -> void override;
+			auto OnEventReceived(DirShadowResEvent const& event) -> void override;
 
 			GlFramebufferObject m_Framebuffer;
 			std::vector<Cascade> m_Cascades;

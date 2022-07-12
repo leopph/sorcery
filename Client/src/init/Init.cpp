@@ -27,7 +27,7 @@ auto leopph::Init() -> void
 	auto& spriteScene = sceneSwitcher->CreateOrGetScene(leopph::KeyCode::F2);
 
 	demo::InitChurchScene(churchScene);
-	demo::InitSpriteScene(spriteScene);
+	//demo::InitSpriteScene(spriteScene);
 
 	churchScene.Activate();
 	spriteScene.Deactivate();

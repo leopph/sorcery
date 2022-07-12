@@ -131,7 +131,7 @@ namespace leopph::internal
 	}
 
 
-	auto GlCascadedShadowMap::OnEventReceived(DirShadowEvent const& event) -> void
+	auto GlCascadedShadowMap::OnEventReceived(DirShadowResEvent const& event) -> void
 	{
 		ConfigCascades(event.Resolutions);
 	}

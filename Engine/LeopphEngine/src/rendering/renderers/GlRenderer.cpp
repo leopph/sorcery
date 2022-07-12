@@ -1,6 +1,5 @@
 #include "rendering/renderers/GlRenderer.hpp"
 
-#include "Camera.hpp"
 #include "DataManager.hpp"
 #include "InternalContext.hpp"
 #include "Logger.hpp"
@@ -12,6 +11,7 @@
 #include "windowing/WindowImpl.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <limits>
 #include <stdexcept>
@@ -38,6 +38,7 @@ namespace leopph::internal
 	}
 
 
+
 	auto GlRenderer::CreateRenderObject(MeshGroup const& meshGroup) -> RenderObject*
 	{
 		auto glMeshGroup = std::make_unique<GlMeshGroup>(meshGroup);
@@ -47,6 +48,7 @@ namespace leopph::internal
 	}
 
 
+
 	auto GlRenderer::DeleteRenderObject(RenderObject* renderObject) -> void
 	{
 		std::erase_if(m_RenderObjects, [renderObject](auto const& elem)
@@ -54,6 +56,7 @@ namespace leopph::internal
 			return elem.get() == renderObject;
 		});
 	}
+
 
 
 	auto GlRenderer::CreateOrGetSkyboxImpl(std::filesystem::path allPaths) -> GlSkyboxImpl*
@@ -71,6 +74,7 @@ namespace leopph::internal
 	}
 
 
+
 	auto GlRenderer::DestroySkyboxImpl(GlSkyboxImpl const* skyboxImpl) -> void
 	{
 		std::erase_if(m_SkyboxImpls, [skyboxImpl](auto const& elem)
@@ -78,6 +82,7 @@ namespace leopph::internal
 			return elem.get() == skyboxImpl;
 		});
 	}
+
 
 
 	auto GlRenderer::ExtractAndProcessInstanceData(std::vector<RenderNode>& out) -> void
@@ -124,31 +129,6 @@ namespace leopph::internal
 	}
 
 
-	auto GlRenderer::ExtractSpotLightsCurrentCamera(std::vector<SpotLight const*>& out) -> void
-	{
-		auto const spotLights = GetDataManager()->ActiveSpotLights();
-		out.assign(std::begin(spotLights), std::end(spotLights));
-		std::ranges::sort(out, CompareLightsByDistToCurrentCam);
-
-		if (auto const szLimit{GetSettingsImpl()->MaxSpotLightCount()}; out.size() > szLimit)
-		{
-			out.resize(szLimit);
-		}
-	}
-
-
-	auto GlRenderer::ExtractPointLightsCurrentCamera(std::vector<PointLight const*>& out) -> void
-	{
-		auto const pointLights = GetDataManager()->ActivePointLights();
-		out.assign(std::begin(pointLights), std::end(pointLights));
-		std::ranges::sort(out, CompareLightsByDistToCurrentCam);
-
-		if (auto const limit{GetSettingsImpl()->MaxPointLightCount()}; out.size() > limit)
-		{
-			out.resize(limit);
-		}
-	}
-
 
 	auto GlRenderer::CascadeFarBoundsNdc(Matrix4 const& camProjMat, std::span<GlCascadedShadowMap::CascadeBounds const> const cascadeBounds) -> std::span<float const>
 	{
@@ -165,10 +145,12 @@ namespace leopph::internal
 	}
 
 
+
 	auto GlRenderer::SetAmbientData(AmbientLight const& light, ShaderProgram& lightShader) -> void
 	{
 		lightShader.SetUniform("u_AmbientLight", light.Intensity());
 	}
+
 
 
 	auto GlRenderer::SetDirectionalData(DirectionalLight const* dirLight, ShaderProgram& shader) -> void
@@ -182,6 +164,7 @@ namespace leopph::internal
 		shader.SetUniform("u_DirLight.diffuseColor", dirLight->Diffuse());
 		shader.SetUniform("u_DirLight.specularColor", dirLight->Specular());
 	}
+
 
 
 	auto GlRenderer::SetSpotData(std::span<SpotLight const* const> const spotLights, ShaderProgram& shader) -> void
@@ -223,6 +206,7 @@ namespace leopph::internal
 	}
 
 
+
 	auto GlRenderer::SetSpotDataIgnoreShadow(std::span<SpotLight const* const> spotLights, ShaderProgram& shader) -> void
 	{
 		for (auto i = 0; i < spotLights.size(); i++)
@@ -239,6 +223,7 @@ namespace leopph::internal
 			shader.SetUniform("u_SpotLightsNoShadow[" + std::to_string(i) + "]outerAngleCosine", math::Cos(math::ToRadians(spotLights[i]->OuterAngle())));
 		}
 	}
+
 
 
 	auto GlRenderer::SetPointData(std::span<PointLight const* const> const pointLights, ShaderProgram& shader) -> void
@@ -277,6 +262,7 @@ namespace leopph::internal
 	}
 
 
+
 	auto GlRenderer::SetPointDataIgnoreShadow(std::span<PointLight const* const> pointLights, ShaderProgram& shader) -> void
 	{
 		for (auto i = 0; i < pointLights.size(); i++)
@@ -290,6 +276,7 @@ namespace leopph::internal
 			shader.SetUniform("u_PointLightsNoShadow[" + std::to_string(i) + "].range", pointLights[i]->Range());
 		}
 	}
+
 
 
 	auto GlRenderer::CountShadows(DirectionalLight const* const dirLight, std::span<SpotLight const* const> const spotLights, std::span<PointLight const* const> const pointLights) -> ShadowCount
@@ -319,29 +306,22 @@ namespace leopph::internal
 	}
 
 
-	auto GlRenderer::ApplyGammaCorrection() -> void
+	auto GlRenderer::DrawDirShadowMaps() -> void
 	{
-		m_GammaCorrectedBuffer.Clear();
-		m_GammaCorrectedBuffer.BindForWriting();
-		glBindTextureUnit(0, m_RenderBuffer.ColorBuffer());
-
-		auto& shader = m_GammaCorrectShader.GetPermutation();
-		shader.SetUniform("u_GammaInverse", 1.f / GetSettingsImpl()->Gamma());
-		shader.SetUniform("u_Image", 0);
-		shader.Use();
-
-		glDisable(GL_DEPTH_TEST);
 		glDisable(GL_BLEND);
+		glEnable(GL_DEPTH_TEST);
+		glDepthFunc(GL_LEQUAL);
+		glDepthMask(GL_TRUE);
+		glDisable(GL_STENCIL_TEST);
 
-		DrawScreenQuad();
+		auto const dirLight = *GetDirLight();
+		auto const camera = *GetMainCamera();
+		auto const lightViewMat = Matrix4::LookAt(Vector3{0}, dirLight->Direction(), Vector3::Up());
+		auto const cascadeBounds = GlCascadedShadowMap::CalculateCascadeBounds(camera->NearClipPlane(), camera->FarClipPlane());
+		auto const numCascades = cascadeBounds.size();
+		auto const cascadeMats = GlCascadedShadowMap::CascadeMatrix(camera->Frustum(), cascadeBounds, lightViewMat, camViewInvMat * lightViewMat, dirLight->ShadowExtension());
 	}
 
-
-	auto GlRenderer::Present() const -> void
-	{
-		auto const* const window = GetWindowImpl();
-		glBlitNamedFramebuffer(m_GammaCorrectedBuffer.Framebuffer(), 0, 0, 0, m_GammaCorrectedBuffer.Width(), m_GammaCorrectedBuffer.Height(), 0, 0, static_cast<GLint>(window->Width()), static_cast<GLint>(window->Height()), GL_COLOR_BUFFER_BIT, GL_LINEAR);
-	}
 
 
 	auto GlRenderer::CreateScreenQuad() -> void
@@ -360,11 +340,13 @@ namespace leopph::internal
 	}
 
 
+
 	auto GlRenderer::DrawScreenQuad() const -> void
 	{
 		glBindVertexArray(m_ScreenQuadVao);
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	}
+
 
 
 	auto GlRenderer::DeleteScreenQuad() const -> void
@@ -374,27 +356,245 @@ namespace leopph::internal
 	}
 
 
+
+	auto GlRenderer::CreateRenderTargets(GLsizei const renderWidth, GLsizei const renderHeight) -> void
+	{
+		// 2 for transparency, 2 for post process ping-pong
+		auto constexpr numColorAttachments = 4;
+
+		m_CommonColorAttachments.resize(numColorAttachments);
+		glCreateTextures(GL_TEXTURE_2D, numColorAttachments, m_CommonColorAttachments.data());
+
+		auto constexpr numRgbAttachments = 2;
+		static_assert(numRgbAttachments <= numColorAttachments);
+
+		for (auto i = 0; i < numRgbAttachments; i++)
+		{
+			glTextureStorage2D(m_CommonColorAttachments[i], 1, GL_RGB8, renderWidth, renderHeight);
+		}
+
+		// Transparency accumulator
+		glTextureStorage2D(m_CommonColorAttachments[numColorAttachments], 1, GL_RGBA16F, renderWidth, renderHeight);
+		// Transparency revealage
+		glTextureStorage2D(m_CommonColorAttachments[numColorAttachments + 1], 1, GL_R8, renderWidth, renderHeight);
+
+		// Potentially shared between framebuffers
+		auto constexpr numDepthStencilAttachments = 1;
+
+		m_CommonDepthStencilAttachments.resize(numDepthStencilAttachments);
+		glCreateTextures(GL_TEXTURE_2D, numDepthStencilAttachments, m_CommonDepthStencilAttachments.data());
+
+		for (auto i = 0; i < numDepthStencilAttachments; i++)
+		{
+			glTextureStorage2D(m_CommonDepthStencilAttachments[i], 1, GL_DEPTH24_STENCIL8, renderWidth, renderHeight);
+		}
+
+		// 1 for transparency MRT, 2 for post process ping-pong
+		auto constexpr numFramebuffers = 3;
+
+		m_CommonFramebuffers.resize(numFramebuffers);
+		glCreateFramebuffers(numFramebuffers, m_CommonFramebuffers.data());
+
+		// Transparency MRT
+		std::array<GLenum, 2> const transpDrawBufs{GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
+		glNamedFramebufferDrawBuffers(m_CommonFramebuffers[0], transpDrawBufs.size(), transpDrawBufs.data());
+		glNamedFramebufferTexture(m_CommonFramebuffers[0], GL_COLOR_ATTACHMENT0, m_CommonColorAttachments[2], 0);
+		glNamedFramebufferTexture(m_CommonFramebuffers[0], GL_COLOR_ATTACHMENT1, m_CommonColorAttachments[3], 0);
+		glNamedFramebufferTexture(m_CommonFramebuffers[0], GL_DEPTH_STENCIL_ATTACHMENT, m_CommonDepthStencilAttachments[0], 0);
+
+		// Ping-pong buffers
+		for (auto frameBuf = 1, tex = 0; frameBuf < numFramebuffers && tex < 2; frameBuf++, tex++)
+		{
+			glNamedFramebufferDrawBuffer(m_CommonFramebuffers[frameBuf], GL_COLOR_ATTACHMENT0);
+			glNamedFramebufferTexture(m_CommonFramebuffers[frameBuf], GL_COLOR_ATTACHMENT0, tex, 0);
+		}
+	}
+
+
+
+	auto GlRenderer::DeleteRenderTargets() const -> void
+	{
+		glDeleteFramebuffers(static_cast<GLsizei>(m_CommonFramebuffers.size()), m_CommonFramebuffers.data());
+		glDeleteTextures(static_cast<GLsizei>(m_CommonColorAttachments.size()), m_CommonColorAttachments.data());
+		glDeleteTextures(static_cast<GLsizei>(m_CommonDepthStencilAttachments.size()), m_CommonDepthStencilAttachments.data());
+	}
+
+
+
+	auto GlRenderer::CreateDirShadowMaps(std::span<u16 const> const resolutions) -> void
+	{
+		m_DirShadowMapFramebuffers.resize(resolutions.size());
+		glCreateFramebuffers(static_cast<GLsizei>(m_DirShadowMapFramebuffers.size()), m_DirShadowMapFramebuffers.data());
+
+		m_DirShadowMapDepthAttachments.resize(resolutions.size());
+		glCreateTextures(GL_TEXTURE_2D, static_cast<GLsizei>(m_DirShadowMapDepthAttachments.size()), m_DirShadowMapDepthAttachments.data());
+
+		for (u64 i = 0; i < resolutions.size(); i++)
+		{
+			glTextureStorage2D(m_DirShadowMapDepthAttachments[i], 1, GL_DEPTH_COMPONENT32F, resolutions[i], resolutions[i]);
+
+			glTextureParameteri(m_DirShadowMapDepthAttachments[i], GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+			glTextureParameteri(m_DirShadowMapDepthAttachments[i], GL_TEXTURE_COMPARE_FUNC, GL_LESS);
+
+			glNamedFramebufferTexture(m_DirShadowMapFramebuffers[i], GL_COLOR_ATTACHMENT0, m_DirShadowMapDepthAttachments[i], 0);
+			glNamedFramebufferDrawBuffer(m_DirShadowMapFramebuffers[i], GL_COLOR_ATTACHMENT0);
+		}
+	}
+
+
+
+	auto GlRenderer::DeleteDirShadowMaps() const -> void
+	{
+		glDeleteFramebuffers(static_cast<GLsizei>(m_DirShadowMapFramebuffers.size()), m_DirShadowMapFramebuffers.data());
+		glDeleteTextures(static_cast<GLsizei>(m_DirShadowMapDepthAttachments.size()), m_DirShadowMapDepthAttachments.data());
+	}
+
+
+	auto GlRenderer::CreateAppendSpotShadowMaps(u16 const resolution, u8 const count) -> void
+	{
+		auto const oldNumMaps = static_cast<u8>(m_SpotShadowMapFramebuffers.size());
+
+		m_SpotShadowMapFramebuffers.resize(oldNumMaps + count);
+		glCreateFramebuffers(static_cast<GLsizei>(count), m_SpotShadowMapFramebuffers.data() + oldNumMaps);
+
+		m_SpotShadowMapDepthAttachments.resize(oldNumMaps + count);
+		glCreateTextures(GL_TEXTURE_2D, static_cast<GLsizei>(count), m_SpotShadowMapDepthAttachments.data() + oldNumMaps);
+
+		for (u64 i = oldNumMaps; i < m_SpotShadowMapDepthAttachments.size(); i++)
+		{
+			glTextureStorage2D(m_SpotShadowMapDepthAttachments[i], 1, GL_DEPTH_COMPONENT32F, static_cast<GLsizei>(resolution), static_cast<GLsizei>(resolution));
+			glTextureParameteri(m_SpotShadowMapDepthAttachments[i], GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+			glTextureParameteri(m_SpotShadowMapDepthAttachments[i], GL_TEXTURE_COMPARE_FUNC, GL_LESS);
+
+			glNamedFramebufferTexture(m_SpotShadowMapFramebuffers[i], GL_COLOR_ATTACHMENT0, m_SpotShadowMapDepthAttachments[i], 0);
+			glNamedFramebufferDrawBuffer(m_SpotShadowMapFramebuffers[i], GL_COLOR_ATTACHMENT0);
+		}
+	}
+
+
+
+	auto GlRenderer::DeleteSpotShadowMaps() const -> void
+	{
+		glDeleteFramebuffers(static_cast<GLsizei>(m_SpotShadowMapFramebuffers.size()), m_SpotShadowMapFramebuffers.data());
+		glDeleteTextures(static_cast<GLsizei>(m_SpotShadowMapDepthAttachments.size()), m_SpotShadowMapDepthAttachments.data());
+	}
+
+
+	auto GlRenderer::CreateAppendPointShadowMaps(u16 const resolution, u8 const count) -> void
+	{
+		auto const oldNumMaps = static_cast<u8>(m_PointShadowMapFramebuffers.size());
+
+		m_PointShadowMapFramebuffers.resize(oldNumMaps + count * 6);
+		glCreateFramebuffers(static_cast<GLsizei>(count), m_PointShadowMapFramebuffers.data() + oldNumMaps);
+
+		m_PointShadowMapColorAttachments.resize(oldNumMaps + count);
+		glCreateTextures(GL_TEXTURE_2D, static_cast<GLsizei>(count), m_PointShadowMapColorAttachments.data() + oldNumMaps);
+
+		m_PointShadowMapDepthAttachments.resize(oldNumMaps + count);
+		glCreateTextures(GL_TEXTURE_2D, static_cast<GLsizei>(count), m_PointShadowMapDepthAttachments.data() + oldNumMaps);
+
+		for (u64 i = oldNumMaps; i < m_PointShadowMapColorAttachments.size(); i++)
+		{
+			glTextureStorage2D(m_PointShadowMapColorAttachments[i], 1, GL_R32F, static_cast<GLsizei>(resolution), static_cast<GLsizei>(resolution));
+			glTextureStorage2D(m_PointShadowMapDepthAttachments[i], 1, GL_DEPTH_COMPONENT32F, static_cast<GLsizei>(resolution), static_cast<GLsizei>(resolution));
+
+			for (auto j = 0; j < 6; j++)
+			{
+				auto const bufInd = i * 6 + j;
+				glNamedFramebufferTextureLayer(m_PointShadowMapFramebuffers[bufInd], GL_COLOR_ATTACHMENT0, m_PointShadowMapColorAttachments[i], 0, j);
+				glNamedFramebufferTexture(m_PointShadowMapFramebuffers[bufInd], GL_DEPTH_ATTACHMENT, m_PointShadowMapDepthAttachments[i], 0);
+
+				glNamedFramebufferDrawBuffer(m_PointShadowMapFramebuffers[bufInd], GL_COLOR_ATTACHMENT0);
+			}
+		}
+	}
+
+
+
+	auto GlRenderer::DeletePointShadowMaps() const -> void
+	{
+		glDeleteFramebuffers(static_cast<GLsizei>(m_PointShadowMapFramebuffers.size()), m_PointShadowMapFramebuffers.data());
+		glDeleteTextures(static_cast<GLsizei>(m_PointShadowMapColorAttachments.size()), m_PointShadowMapColorAttachments.data());
+		glDeleteTextures(static_cast<GLsizei>(m_PointShadowMapDepthAttachments.size()), m_PointShadowMapDepthAttachments.data());
+	}
+
+
+
+	auto GlRenderer::OnRenderResChange(Extent2D const renderRes) -> void
+	{
+		DeleteRenderTargets();
+		CreateRenderTargets(static_cast<GLsizei>(renderRes.Width), static_cast<GLsizei>(renderRes.Height));
+	}
+
+
+
+	auto GlRenderer::OnDirShadowResChange(std::span<u16 const> const resolutions) -> void
+	{
+		DeleteDirShadowMaps();
+		CreateDirShadowMaps(resolutions);
+	}
+
+
+
+	auto GlRenderer::OnSpotShadowResChange(u16 const resolution) -> void
+	{
+		auto const numMaps = static_cast<u8>(m_SpotShadowMapFramebuffers.size());
+		DeleteSpotShadowMaps();
+		m_SpotShadowMapFramebuffers.clear();
+		m_SpotShadowMapDepthAttachments.clear();
+		CreateAppendSpotShadowMaps(resolution, numMaps);
+	}
+
+
+
+	auto GlRenderer::OnPointShadowResChange(u16 const resolution) -> void
+	{
+		auto const numMaps = static_cast<u8>(m_PointShadowMapFramebuffers.size());
+		DeletePointShadowMaps();
+		m_PointShadowMapFramebuffers.clear();
+		m_PointShadowMapColorAttachments.clear();
+		m_PointShadowMapDepthAttachments.clear();
+		CreateAppendPointShadowMaps(resolution, numMaps);
+	}
+
+
+
+	auto GlRenderer::OnDetermineShadowMapCountRequirements(u8 const spot, u8 const point) -> void
+	{
+		if (m_SpotShadowMapFramebuffers.size() < spot)
+		{
+			auto const deficit = static_cast<u8>(spot - m_SpotShadowMapFramebuffers.size());
+			CreateAppendSpotShadowMaps(GetSpotShadowRes(), deficit);
+		}
+
+		if (m_PointShadowMapFramebuffers.size() < point)
+		{
+			auto const deficit = static_cast<u8>(point - m_PointShadowMapFramebuffers.size());
+			CreateAppendPointShadowMaps(GetPointShadowRes(), deficit);
+		}
+	}
+
+
+
 	GlRenderer::GlRenderer()
 	{
+		glDepthFunc(GL_LEQUAL);
+		glFrontFace(GL_CCW);
+		glCullFace(GL_BACK);
+		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+
 		CreateScreenQuad();
+
+		auto const& [renderWidth, renderHeight] = GetRenderRes();
+		CreateRenderTargets(static_cast<GLsizei>(renderWidth), static_cast<GLsizei>(renderHeight));
+		CreateDirShadowMaps(GetDirShadowRes());
 	}
+
 
 
 	GlRenderer::~GlRenderer() noexcept
 	{
 		DeleteScreenQuad();
-	}
-
-
-	auto GlRenderer::CompareLightsByDistToCurrentCam(Light const* left, Light const* right) -> bool
-	{
-		auto const& camPosition{Camera::Current()->Owner()->Transform()->Position()};
-		auto const& leftDistance{Vector3::Distance(camPosition, left->Owner()->Transform()->Position())};
-		auto const& rightDistance{Vector3::Distance(camPosition, right->Owner()->Transform()->Position())};
-		if (std::abs(leftDistance - rightDistance) < std::numeric_limits<float>::epsilon())
-		{
-			return leftDistance < rightDistance;
-		}
-		return left < right;
+		DeleteRenderTargets();
 	}
 }

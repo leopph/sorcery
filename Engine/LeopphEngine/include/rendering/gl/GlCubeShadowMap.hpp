@@ -4,7 +4,7 @@
 #include "GlFramebufferObject.hpp"
 #include "GlRenderbufferObject.hpp"
 #include "GlTextureObject.hpp"
-#include "events/PointShadowEvent.hpp"
+#include "events/PointShadowResEvent.hpp"
 #include "rendering/shaders/ShaderProgram.hpp"
 
 #include <string_view>
@@ -12,7 +12,7 @@
 
 namespace leopph::internal
 {
-	class GlCubeShadowMap final : EventReceiver<PointShadowEvent>
+	class GlCubeShadowMap final : EventReceiver<PointShadowResEvent>
 	{
 		public:
 			GlCubeShadowMap();

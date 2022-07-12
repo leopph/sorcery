@@ -2,9 +2,9 @@
 
 #include "EventManager.hpp"
 #include "InternalContext.hpp"
-#include "events/DirShadowEvent.hpp"
-#include "events/PointShadowEvent.hpp"
-#include "events/SpotShadowEvent.hpp"
+#include "events/DirShadowResEvent.hpp"
+#include "events/PointShadowResEvent.hpp"
+#include "events/SpotShadowResEvent.hpp"
 #include "windowing/WindowImpl.hpp"
 
 // ReSharper disable All
@@ -68,18 +68,25 @@ namespace leopph
 
 
 
-	auto Settings::DirShadowResolution() -> std::span<u64 const>
+	auto Settings::DirShadowResolution() -> std::span<u16 const>
 	{
 		return m_DirLightSettings.Res;
 	}
 
 
 
-	auto Settings::DirShadowResolution(std::span<std::size_t const> cascades) -> void
+	auto Settings::DirShadowResolution(std::span<u16 const> cascades) -> void
 	{
+		// Windows.h bullshit
+		#undef max
+
+		if (auto constexpr maxCascades = std::numeric_limits<u8>::max(); cascades.size() > maxCascades)
+		{
+			cascades = cascades.subspan(0, maxCascades);
+		}
 		m_DirLightSettings.Res.assign(cascades.begin(), cascades.end());
 		m_Serialize = true;
-		EventManager::Instance().Send<internal::DirShadowEvent>(m_DirLightSettings.Res);
+		EventManager::Instance().Send<internal::DirShadowResEvent>();
 	}
 
 
@@ -99,37 +106,37 @@ namespace leopph
 
 
 
-	auto Settings::DirShadowCascadeCount() const noexcept -> u64
+	auto Settings::DirShadowCascadeCount() const noexcept -> u8
 	{
-		return m_DirLightSettings.Res.size();
+		return static_cast<u8>(m_DirLightSettings.Res.size());
 	}
 
 
 
-	auto Settings::SpotShadowResolution() const noexcept -> u64
+	auto Settings::SpotShadowResolution() const noexcept -> u16
 	{
 		return m_SpotLightSettings.Res;
 	}
 
 
 
-	auto Settings::SpotShadowResolution(u64 const newRes) -> void
+	auto Settings::SpotShadowResolution(u16 const newRes) -> void
 	{
 		m_SpotLightSettings.Res = newRes;
 		m_Serialize = true;
-		EventManager::Instance().Send<internal::SpotShadowEvent>(m_SpotLightSettings.Res);
+		EventManager::Instance().Send<internal::SpotShadowResEvent>();
 	}
 
 
 
-	auto Settings::MaxSpotLightCount() const noexcept -> u64
+	auto Settings::MaxSpotLightCount() const noexcept -> u8
 	{
 		return m_SpotLightSettings.MaxNum;
 	}
 
 
 
-	auto Settings::MaxSpotLightCount(u64 const newCount) noexcept -> void
+	auto Settings::MaxSpotLightCount(u8 const newCount) noexcept -> void
 	{
 		m_SpotLightSettings.MaxNum = newCount;
 		m_Serialize = true;
@@ -137,30 +144,30 @@ namespace leopph
 
 
 
-	auto Settings::PointShadowResolution() const noexcept -> u64
+	auto Settings::PointShadowResolution() const noexcept -> u16
 	{
 		return m_PointLightSettings.Res;
 	}
 
 
 
-	auto Settings::PointShadowResolution(u64 const newRes) noexcept -> void
+	auto Settings::PointShadowResolution(u16 const newRes) noexcept -> void
 	{
 		m_PointLightSettings.Res = newRes;
 		m_Serialize = true;
-		EventManager::Instance().Send<internal::PointShadowEvent>(m_PointLightSettings.Res);
+		EventManager::Instance().Send<internal::PointShadowResEvent>();
 	}
 
 
 
-	auto Settings::MaxPointLightCount() const noexcept -> u64
+	auto Settings::MaxPointLightCount() const noexcept -> u8
 	{
 		return m_PointLightSettings.MaxNum;
 	}
 
 
 
-	auto Settings::MaxPointLightCount(u64 const newCount) noexcept
+	auto Settings::MaxPointLightCount(u8 const newCount) noexcept
 	{
 		m_PointLightSettings.MaxNum = newCount;
 		m_Serialize = true;

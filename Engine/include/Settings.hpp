@@ -63,18 +63,19 @@ namespace leopph
 			auto LEOPPHAPI SetGraphicsPipeline(GraphicsPipeline pipeline) noexcept -> void;
 
 
-			// Get the resolution of the shadow maps used by DirectionalLights.
-			// Resolutions are returned in the order of the cascades that use them.
-			// More values mean more cascade splits.
+			// Get the resolution of the shadow cascade maps used by DirectionalLights.
+			// They are returned in order from the closest cascade to the farthest.
+			// More values mean more cascades.
 			// Higher values produce better quality shadows but increase VRAM and computation costs.
-			[[nodiscard]] auto LEOPPHAPI DirShadowResolution() -> std::span<u64 const>;
+			[[nodiscard]] auto LEOPPHAPI DirShadowResolution() -> std::span<u16 const>;
 
 
-			// Set the resolution of the shadow maps used by DirectionalLights.
-			// Resolutions are accepted in the order of the cascades that use them.
-			// More values mean more cascade splits.
+			// Set the resolution of the shadow cascade maps used by DirectionalLights.
+			// They are accepted in order from the closest cascade to the farthest.
+			// More values mean more cascades.
 			// Higher values produce better quality shadows but increase VRAM and computation costs.
-			auto LEOPPHAPI DirShadowResolution(std::span<u64 const> cascades) -> void;
+			// The number of resolutions accepted is capped.
+			auto LEOPPHAPI DirShadowResolution(std::span<u16 const> cascades) -> void;
 
 
 			// Get the correction factor when calculating shadow cascade bounds for DirectionalLights.
@@ -85,53 +86,53 @@ namespace leopph
 			auto LEOPPHAPI DirShadowCascadeCorrection(f32 newCor) noexcept -> void;
 
 
-			// Get the current number of shadow cascades DirectionalLights use.
-			// This is the same as the size of the container set and returned by Settings::DirShadowResolution.
-			[[nodiscard]] auto LEOPPHAPI DirShadowCascadeCount() const noexcept -> u64;
+			// Get the number of shadow cascade maps used by DirectionalLights.
+			// This is the same as the size of the container returned by Settings::DirShadowResolution.
+			[[nodiscard]] auto LEOPPHAPI DirShadowCascadeCount() const noexcept -> u8;
 
 
 			// Get the resolution of the shadow maps used by SpotLights.
 			// Higher values produce sharper shadows but require more VRAM.
-			[[nodiscard]] auto LEOPPHAPI SpotShadowResolution() const noexcept -> u64;
+			[[nodiscard]] auto LEOPPHAPI SpotShadowResolution() const noexcept -> u16;
 
 
 			// Set the resolution of the shadow maps used by SpotLights.
 			// Higher values produce sharper shadows but require more VRAM.
-			auto LEOPPHAPI SpotShadowResolution(u64 newRes) -> void;
+			auto LEOPPHAPI SpotShadowResolution(u16 newRes) -> void;
 
 
 			// Get the maximum number of SpotLights that will be used in lighting calculations.
 			// If there are more SpotLights in the scene than this number, LeopphEngine uses the ones closest to the active Camera.
 			// Higher values mean more detailed lighting but can significantly reduce performance.
-			[[nodiscard]] auto LEOPPHAPI MaxSpotLightCount() const noexcept -> u64;
+			[[nodiscard]] auto LEOPPHAPI MaxSpotLightCount() const noexcept -> u8;
 
 
 			// Set the maximum number of SpotLights that will be used in lighting calculations.
 			// If there are more SpotLights in the scene than this number, LeopphEngine uses the ones closest to the active Camera.
 			// Higher values mean more detailed lighting but can significantly reduce performance.
-			auto LEOPPHAPI MaxSpotLightCount(u64 newCount) noexcept -> void;
+			auto LEOPPHAPI MaxSpotLightCount(u8 newCount) noexcept -> void;
 
 
 			// Get the resolution of the shadow maps used by PointLights.
 			// Higher values produce sharper shadows but require more VRAM.
-			[[nodiscard]] auto LEOPPHAPI PointShadowResolution() const noexcept -> u64;
+			[[nodiscard]] auto LEOPPHAPI PointShadowResolution() const noexcept -> u16;
 
 
 			// Set the resolution of the shadow map used by PointLights.
 			// Higher values produce sharper shadows but require more VRAM.
-			auto LEOPPHAPI PointShadowResolution(u64 newRes) noexcept -> void;
+			auto LEOPPHAPI PointShadowResolution(u16 newRes) noexcept -> void;
 
 
 			// Get the maximum number of PointLights that will be used in lighting calculations.
 			// If there are more PointLights in the scene than this number, LeopphEngine uses the ones closest to the active Camera.
 			// Higher values mean more detailed lighting but can significantly reduce performance.
-			[[nodiscard]] auto LEOPPHAPI MaxPointLightCount() const noexcept -> u64;
+			[[nodiscard]] auto LEOPPHAPI MaxPointLightCount() const noexcept -> u8;
 
 
 			// Set the maximum number of PointLights that will be used in lighting calculations.
 			// If there are more PointLights in the scene than this number, LeopphEngine uses the ones closest to the active Camera.
 			// Higher values mean more detailed lighting but can significantly reduce performance.
-			auto LEOPPHAPI MaxPointLightCount(u64 newCount) noexcept;
+			auto LEOPPHAPI MaxPointLightCount(u8 newCount) noexcept;
 
 
 			// Get the width of the current window. This is the same as Window::Width.
@@ -222,7 +223,7 @@ namespace leopph
 
 			struct DirLightSettings
 			{
-				std::vector<u64> Res{4096, 2048, 1024};
+				std::vector<u16> Res{4096, 2048, 1024};
 				f32 Corr{.75f};
 			} m_DirLightSettings;
 
@@ -230,16 +231,16 @@ namespace leopph
 
 			struct SpotLightSettings
 			{
-				u64 Res{2048};
-				u64 MaxNum{16};
+				u16 Res{2048};
+				u8 MaxNum{8};
 			} m_SpotLightSettings;
 
 
 
 			struct PointLightSettings
 			{
-				u64 Res{1024};
-				u64 MaxNum{16};
+				u16 Res{1024};
+				u8 MaxNum{8};
 			} m_PointLightSettings;
 
 

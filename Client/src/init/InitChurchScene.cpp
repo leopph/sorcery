@@ -52,7 +52,7 @@ namespace demo
 
 		auto const pLightEntity = new Entity{"plight"};
 		pLightEntity->Transform()->Parent(lamp);
-		pLightEntity->Transform()->Translate(-0.5, 3.25, -0.5, Space::Local);
+		pLightEntity->Transform()->Translate(-0.7f, 3.7f, 0,  Space::Local);
 
 		auto const pLight = pLightEntity->CreateAndAttachComponent<PointLight>();
 		pLight->Range(30);
@@ -60,6 +60,10 @@ namespace demo
 		pLight->Linear(0.2f);
 		pLight->Quadratic(0.07f);
 		pLight->CastsShadow(true);
+
+		pLightEntity->Transform()->Scale(Vector3{0.1f});
+		auto const cube = pLightEntity->CreateAndAttachComponent<leopph::Cube>();
+
 
 		pLightEntity->CreateAndAttachComponent<Flicker>(pLight, 0.75f, 3.5f, 0.05f, 0.6f);
 
@@ -75,7 +79,7 @@ namespace demo
 		scene.SetActivationCallback([camera, player]()
 		{
 			camera->MakeCurrent();
-			player->Transform()->LocalPosition(Vector3{0});
+			player->Transform()->LocalPosition(Vector3{1, 1, -5});
 			player->Transform()->LocalRotation(leopph::Quaternion{});
 			AmbientLight::Instance().Intensity(Vector3{0});
 		});

@@ -10,93 +10,92 @@
 
 #include <algorithm>
 #include <array>
+#include <utility>
 
 
 namespace leopph::internal
 {
-	GlDeferredRenderer::GlDeferredRenderer() :
-		m_GeometryShader{
-			{
-				{ShaderFamily::GeometryPassVertSrc, ShaderType::Vertex},
-				{ShaderFamily::GeometryPassFragSrc, ShaderType::Fragment}
-			}
-		},
-		m_LightShader{
-			{
-				{ShaderFamily::Pos2DPassthroughVertSrc, ShaderType::Vertex},
-				{ShaderFamily::LightPassFragSrc, ShaderType::Fragment}
-			}
-		},
-		m_ForwardShader{
-			{
-				{ShaderFamily::ObjectVertSrc, ShaderType::Vertex},
-				{ShaderFamily::ObjectFragSrc, ShaderType::Fragment}
-			}
-		},
-		m_CompositeShader{
-			{
-				{ShaderFamily::Pos2DPassthroughVertSrc, ShaderType::Vertex},
-				{ShaderFamily::TranspCompositeFragSrc, ShaderType::Fragment}
-			}
-		}
+	GlDeferredRenderer::GlDeferredRenderer()
 	{
-		glDepthFunc(GL_LEQUAL);
-		glFrontFace(GL_CCW);
-		glCullFace(GL_BACK);
-		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+		auto const [renderWidth, renderHeight] = [this]() -> std::pair<GLsizei, GLsizei>
+		{
+			auto const& [width, height] = GetRenderRes();
+			return {static_cast<GLsizei>(width), static_cast<GLsizei>(height)};
+		}();
+
+		CreateGbuffer(renderWidth, renderHeight);
 	}
 
 
 	auto GlDeferredRenderer::Render() -> void
 	{
-		/* We don't render if there is no camera to use */
-		if (Camera::Current() == nullptr)
+		auto const* const mainCamera = Camera::Current();
+
+		if (!mainCamera)
 		{
 			return;
 		}
 
-		static std::vector<RenderNode> renderNodes;
-		static std::vector<SpotLight const*> spotLights;
-		static std::vector<PointLight const*> pointLights;
+		auto const mainCameraPos = mainCamera->Owner()->Transform()->Position();
+		auto const mainCamViewMat = mainCamera->ViewMatrix();
+		auto const mainCamProjMat = mainCamera->ProjectionMatrix();
+		auto const& [renderWidth, renderHeight] = GetRenderRes();
 
+		static std::vector<RenderNode> renderNodes;
 		renderNodes.clear();
 		ExtractAndProcessInstanceData(renderNodes);
-		spotLights.clear();
-		ExtractSpotLightsCurrentCamera(spotLights);
-		pointLights.clear();
-		ExtractPointLightsCurrentCamera(pointLights);
 
-		auto const currCamViewMat = Camera::Current()->ViewMatrix();
-		auto const currCamProjMat = Camera::Current()->ProjectionMatrix();
+		auto const* const dirLight = GetDataManager()->DirectionalLight();
 
-		RenderGeometry(currCamViewMat, currCamProjMat, renderNodes);
-		RenderLights(currCamViewMat, currCamProjMat, renderNodes, spotLights, pointLights);
-		RenderSkybox(currCamViewMat, currCamProjMat);
-		RenderTransparent(currCamViewMat, currCamProjMat, renderNodes, GetDataManager()->DirectionalLight(), spotLights, pointLights);
+		static std::vector<SpotLight const*> spotLights;
+		auto const numMaxSpotLights = GetSettingsImpl()->MaxSpotLightCount();
+		auto const activeSpotLights = GetDataManager()->ActiveSpotLights();
+		spotLights.assign(std::begin(activeSpotLights), std::end(activeSpotLights));
+		SelectNearestLights<SpotLight>(spotLights, mainCameraPos, numMaxSpotLights);
+		SeparateCastingLights<SpotLight>(spotLights);
+
+		static std::vector<PointLight const*> pointLights;
+		auto const numMaxPointLights = GetSettingsImpl()->MaxPointLightCount();
+		auto const activePointLights = GetDataManager()->ActivePointLights();
+		pointLights.assign(std::begin(activePointLights), std::end(activePointLights));
+		SelectNearestLights<PointLight>(pointLights, mainCameraPos, numMaxPointLights);
+		SeparateCastingLights<PointLight>(pointLights);
+
+		GeometryPass(renderNodes, mainCamViewMat, renderWidth, renderHeight);
+		RenderLights(mainCamViewMat, mainCamProjMat, renderNodes, spotLights, pointLights);
+		RenderSkybox(mainCamViewMat, mainCamProjMat);
+		RenderTransparent(mainCamViewMat, mainCamProjMat, renderNodes, GetDataManager()->DirectionalLight
+(), spotLights, pointLights);
 		ApplyGammaCorrection();
 		Present();
 	}
 
 
-	auto GlDeferredRenderer::RenderGeometry(Matrix4 const& camViewMat, Matrix4 const& camProjMat, std::vector<RenderNode> const& renderables) -> void
+	auto GlDeferredRenderer::GeometryPass(std::vector<RenderNode> const& renderNodes, Matrix4 const& viewProjMat, GLsizei const renderWidth, GLsizei const renderHeight) -> void
 	{
 		glDisable(GL_BLEND);
-
 		glEnable(GL_DEPTH_TEST);
 		glDepthMask(GL_TRUE);
-
+		glDepthFunc(GL_LEQUAL);
 		glEnable(GL_STENCIL_TEST);
-		glStencilFunc(GL_ALWAYS, STENCIL_DRAW_TAG, 1);
+		glStencilFunc(GL_ALWAYS, 1, 1);
 		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+		glViewport(0, 0, renderWidth, renderHeight);
 
-		m_GBuffer.Clear();
-		m_GBuffer.BindForWriting();
+		GLuint constexpr clearColor[]{0, 0, 0};
+		glClearNamedFramebufferuiv(m_GbufferFramebuffer, GL_COLOR, 0, clearColor);
 
-		auto& shader{m_GeometryShader.GetPermutation()};
-		shader.SetUniform("u_ViewProjMat", camViewMat * camProjMat);
+		GLfloat constexpr clearDepth{1};
+		auto constexpr clearStencil{0};
+		glClearNamedFramebufferfi(m_GbufferFramebuffer, GL_DEPTH_STENCIL, 0, clearDepth, clearStencil);
+
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_GbufferFramebuffer);
+
+		auto& shader = m_GeometryShader.GetPermutation();
+		shader.SetUniform("u_ViewProjMat", viewProjMat);
 		shader.Use();
 
-		for (auto const& [renderable, instances, castsShadow] : renderables)
+		for (auto const& [renderable, instances, castsShadow] : renderNodes)
 		{
 			renderable->SetInstanceData(instances);
 			renderable->DrawWithMaterial(shader, 0, false);
@@ -363,16 +362,16 @@ namespace leopph::internal
 
 	auto GlDeferredRenderer::RenderTransparent(Matrix4 const& camViewMat, Matrix4 const& camProjMat, std::vector<RenderNode> const& renderNodes, DirectionalLight const* dirLight, std::vector<SpotLight const*> const& spotLights, std::vector<PointLight const*> const& pointLights) -> void
 	{
-		m_ForwardShader.Clear();
-		m_ForwardShader["DIRLIGHT"] = std::to_string(dirLight != nullptr);
-		m_ForwardShader["DIRLIGHT_SHADOW"] = std::to_string(false);
-		m_ForwardShader["NUM_SPOTLIGHTS"] = std::to_string(spotLights.size());
-		m_ForwardShader["NUM_SPOTLIGHT_SHADOWS"] = std::to_string(0);
-		m_ForwardShader["NUM_POINTLIGHTS"] = std::to_string(pointLights.size());
-		m_ForwardShader["NUM_POINTLIGHT_SHADOWS"] = std::to_string(0);
-		m_ForwardShader["TRANSPARENT"] = std::to_string(true);
+		m_ForwardObjectShader.Clear();
+		m_ForwardObjectShader["DIRLIGHT"] = std::to_string(dirLight != nullptr);
+		m_ForwardObjectShader["DIRLIGHT_SHADOW"] = std::to_string(false);
+		m_ForwardObjectShader["NUM_SPOTLIGHTS"] = std::to_string(spotLights.size());
+		m_ForwardObjectShader["NUM_SPOTLIGHT_SHADOWS"] = std::to_string(0);
+		m_ForwardObjectShader["NUM_POINTLIGHTS"] = std::to_string(pointLights.size());
+		m_ForwardObjectShader["NUM_POINTLIGHT_SHADOWS"] = std::to_string(0);
+		m_ForwardObjectShader["TRANSPARENT"] = std::to_string(true);
 
-		auto& forwardShader{m_ForwardShader.GetPermutation()};
+		auto& forwardShader{m_ForwardObjectShader.GetPermutation()};
 
 		forwardShader.SetUniform("u_ViewProjMat", camViewMat * camProjMat);
 		forwardShader.SetUniform("u_CamPos", Camera::Current()->Owner()->Transform()->Position());
@@ -402,7 +401,7 @@ namespace leopph::internal
 			renderable->DrawWithMaterial(forwardShader, 0, true);
 		}
 
-		auto& compositeShader{m_CompositeShader.GetPermutation()};
+		auto& compositeShader{m_TranspCompositeShader.GetPermutation()};
 		compositeShader.Use();
 
 		m_TransparencyBuffer.BindForReading(compositeShader, 0);
@@ -413,5 +412,36 @@ namespace leopph::internal
 		glDisable(GL_DEPTH_TEST);
 
 		DrawScreenQuad();
+	}
+
+
+	auto GlDeferredRenderer::CreateGbuffer(GLsizei const renderWidth, GLsizei const renderHeight) -> void
+	{
+		m_GbufferColorAttachments.resize(1);
+		glCreateTextures(GL_TEXTURE_2D, static_cast<GLsizei>(m_GbufferColorAttachments.size()), m_GbufferColorAttachments.data());
+
+		glTextureStorage2D(m_GbufferColorAttachments[0], 1, GL_RGB32UI, renderWidth, renderHeight);
+
+		glCreateFramebuffers(1, &m_GbufferFramebuffer);
+		glNamedFramebufferDrawBuffer(m_GbufferFramebuffer, GL_COLOR_ATTACHMENT0);
+
+		glNamedFramebufferTexture(m_GbufferFramebuffer, GL_COLOR_ATTACHMENT0, m_GbufferColorAttachments[0], 0);
+		glNamedFramebufferTexture(m_GbufferFramebuffer, GL_DEPTH_STENCIL_ATTACHMENT, m_CommonDepthStencilAttachments[0], 0);
+	}
+
+
+	auto GlDeferredRenderer::DeleteGbuffer() const -> void
+	{
+		glDeleteFramebuffers(1, &m_GbufferFramebuffer);
+		glDeleteTextures(static_cast<GLsizei>(m_GbufferColorAttachments.size()), m_GbufferColorAttachments.data());
+	}
+
+
+	auto GlDeferredRenderer::OnRenderResChange(Extent2D const renderRes) -> void
+	{
+		GlRenderer::OnRenderResChange(renderRes);
+		DeleteGbuffer();
+		auto const& [renderWidth, renderHeight] = GetRenderRes();
+		CreateGbuffer(static_cast<GLsizei>(renderWidth), static_cast<GLsizei>(renderHeight));
 	}
 }

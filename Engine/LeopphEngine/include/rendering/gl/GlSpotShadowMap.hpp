@@ -3,7 +3,7 @@
 #include "EventReceiver.hpp"
 #include "GlFramebufferObject.hpp"
 #include "GlTextureObject.hpp"
-#include "events/SpotShadowEvent.hpp"
+#include "events/SpotShadowResEvent.hpp"
 #include "rendering/shaders/ShaderProgram.hpp"
 
 #include <string_view>
@@ -11,7 +11,7 @@
 
 namespace leopph::internal
 {
-	class GlSpotShadowMap final : EventReceiver<SpotShadowEvent>
+	class GlSpotShadowMap final : EventReceiver<SpotShadowResEvent>
 	{
 		public:
 			GlSpotShadowMap();

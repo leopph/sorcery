@@ -25,7 +25,7 @@ namespace leopph::internal
 
 		private:
 			// Fill the GlGeometryBuffer with geometry data.
-			auto RenderGeometry(Matrix4 const& camViewMat, Matrix4 const& camProjMat, std::vector<RenderNode> const& renderables) -> void;
+			auto GeometryPass(std::vector<RenderNode> const& renderNodes, Matrix4 const& viewProjMat, GLsizei renderWidth, GLsizei renderHeight) -> void;
 
 			// Draw all lights in the GlRenderBuffer.
 			auto RenderLights(Matrix4 const& camViewMat,
@@ -70,14 +70,28 @@ namespace leopph::internal
 			                       std::vector<SpotLight const*> const& spotLights,
 			                       std::vector<PointLight const*> const& pointLights) -> void;
 
+			auto CreateGbuffer(GLsizei renderWidth, GLsizei renderHeight) -> void;
+			auto DeleteGbuffer() const -> void;
+
+			auto OnRenderResChange(Extent2D renderRes) -> void override;
+
+			GLuint m_GbufferFramebuffer;
+			std::vector<GLuint> m_GbufferColorAttachments;
+
 			GlGeometryBuffer m_GBuffer;
 
-			ShaderFamily m_GeometryShader;
-			ShaderFamily m_LightShader;
+			ShaderFamily m_GeometryShader{
+				{
+					{ShaderFamily::GeometryPassVertSrc, ShaderType::Vertex},
+					{ShaderFamily::GeometryPassFragSrc, ShaderType::Fragment}
+				}
+			};
 
-			ShaderFamily m_ForwardShader;
-			ShaderFamily m_CompositeShader;
-
-			static constexpr int STENCIL_DRAW_TAG{0};
+			ShaderFamily m_LightShader{
+				{
+					{ShaderFamily::Pos2DPassthroughVertSrc, ShaderType::Vertex},
+					{ShaderFamily::LightPassFragSrc, ShaderType::Fragment}
+				}
+			};
 	};
 }

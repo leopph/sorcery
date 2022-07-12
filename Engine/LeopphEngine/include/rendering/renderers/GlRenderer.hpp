@@ -9,10 +9,7 @@
 #include "rendering/gl/GlCascadedShadowMap.hpp"
 #include "rendering/gl/GlCubeShadowMap.hpp"
 #include "rendering/gl/GlMeshGroup.hpp"
-#include "rendering/gl/GlRenderBuffer.hpp"
 #include "rendering/gl/GlSkyboxImpl.hpp"
-#include "rendering/gl/GlSpotShadowMap.hpp"
-#include "rendering/gl/GlTransparencyBuffer.hpp"
 #include "rendering/shaders/ShaderFamily.hpp"
 
 #include <filesystem>
@@ -35,45 +32,108 @@ namespace leopph::internal
 			static auto Create() -> std::unique_ptr<GlRenderer>;
 
 			[[nodiscard]] auto CreateRenderObject(MeshGroup const& meshGroup) -> RenderObject* override;
+
 			auto DeleteRenderObject(RenderObject* renderObject) -> void override;
 
 			[[nodiscard]] auto CreateOrGetSkyboxImpl(std::filesystem::path allPaths) -> GlSkyboxImpl*;
+
 			auto DestroySkyboxImpl(GlSkyboxImpl const* skyboxImpl) -> void;
 
 		protected:
 			// Extract game data per RenderObject per RenderComponent, process them, and output into RenderNodes.
 			auto ExtractAndProcessInstanceData(std::vector<RenderNode>& out) -> void;
 
-			// Fills out with at most Settings::MaxSpotLights number of SpotLight instances based on distance from the current Camera.
-			static auto ExtractSpotLightsCurrentCamera(std::vector<SpotLight const*>& out) -> void;
-
-			// Fills out with at most Settings::MaxSpotLights number of SpotLight instances based on distance from the current Camera.
-			static auto ExtractPointLightsCurrentCamera(std::vector<PointLight const*>& out) -> void;
-
 			// Returns a collection of cascade far bounds in NDC.
 			[[nodiscard]] static auto CascadeFarBoundsNdc(Matrix4 const& camProjMat, std::span<GlCascadedShadowMap::CascadeBounds const> cascadeBounds) -> std::span<float const>;
 
 			static auto SetAmbientData(AmbientLight const& light, ShaderProgram& lightShader) -> void;
+
 			static auto SetDirectionalData(DirectionalLight const* dirLight, ShaderProgram& shader) -> void;
+
 			static auto SetSpotData(std::span<SpotLight const* const> spotLights, ShaderProgram& shader) -> void;
+
 			static auto SetSpotDataIgnoreShadow(std::span<SpotLight const* const> spotLights, ShaderProgram& shader) -> void;
+
 			static auto SetPointData(std::span<PointLight const* const> pointLights, ShaderProgram& shader) -> void;
+
 			static auto SetPointDataIgnoreShadow(std::span<PointLight const* const> pointLights, ShaderProgram& shader) -> void;
+
 			static auto CountShadows(DirectionalLight const* dirLight, std::span<SpotLight const* const> spotLights, std::span<PointLight const* const> pointLights) -> ShadowCount;
 
-			auto ApplyGammaCorrection() -> void;
-			auto Present() const -> void;
 
+			/* #######################
+			 * COMMON RENDER FUNCTIONS
+			 * ####################### */
+
+			auto DrawDirShadowMaps() -> void;
+
+
+			/* ##########################
+			 * COMMON RESOURCE MANAGEMENT
+			 * ########################## */
 
 		private:
+			// Creates a VAO and VBO filled with the vertices for a fullscreen quad
 			auto CreateScreenQuad() -> void;
-		protected:
-			auto DrawScreenQuad() const -> void;
-		private:
+
+			// Destroys the VAO and VBO of the fullscreen quad
 			auto DeleteScreenQuad() const -> void;
 
+		protected:
+			// Issues a draw call with the fullscreen quad's VAO bound
+			auto DrawScreenQuad() const -> void;
+
+		private:
+			// Creates the common render targets with the given render sizes
+			auto CreateRenderTargets(GLsizei renderWidth, GLsizei renderHeight) -> void;
+
+			// Deletes the common render targets
+			auto DeleteRenderTargets() const -> void;
+
+			// Creates the shadow cascade maps with the given resolutions
+			auto CreateDirShadowMaps(std::span<u16 const> resolutions) -> void;
+
+			// Deletes the shadow cascade maps
+			auto DeleteDirShadowMaps() const -> void;
+
+			// Creates count new spot shadow maps with the given resolution and appends them to the existing ones
+			auto CreateAppendSpotShadowMaps(u16 resolution, u8 count) -> void;
+
+			// Deletes the spot shadow maps
+			auto DeleteSpotShadowMaps() const -> void;
+
+			// Creates count new point shadow maps with the given resolution and appends them to the existing ones
+			auto CreateAppendPointShadowMaps(u16 resolution, u8 count) -> void;
+
+			// Deletes the point shadow maps
+			auto DeletePointShadowMaps() const -> void;
+
+
+			/* ##################
+			 * RESOURCE CALLBACKS
+			 * ################## */
 
 		protected:
+			// Recreates common render targets
+			auto OnRenderResChange(Extent2D renderRes) -> void override;
+
+			// Recreates shadow cascade maps
+			auto OnDirShadowResChange(std::span<u16 const> resolutions) -> void override;
+
+			// Recreates spot shadow maps
+			auto OnSpotShadowResChange(u16 resolution) -> void override;
+
+			// Recreates point shadow maps
+			auto OnPointShadowResChange(u16 resolution) -> void override;
+
+			// Creates additional spot and point shadow maps if needed
+			auto OnDetermineShadowMapCountRequirements(u8 spot, u8 point) -> void override;
+
+
+			/* ############
+			 * RULE OF FIVE
+			 * ############ */
+
 			GlRenderer();
 
 		public:
@@ -85,21 +145,19 @@ namespace leopph::internal
 
 			~GlRenderer() noexcept override;
 
+
+			/* ############
+			 * DATA MEMBERS
+			 * ############ */
+
 		protected:
-			GlRenderBuffer m_RenderBuffer;
-			GlRenderBuffer m_GammaCorrectedBuffer;
-			GlTransparencyBuffer m_TransparencyBuffer{&m_RenderBuffer.DepthStencilBuffer()};
-
-			GlCascadedShadowMap m_DirShadowMap;
-			std::vector<std::unique_ptr<GlSpotShadowMap>> m_SpotShadowMaps;
-			std::vector<std::unique_ptr<GlCubeShadowMap>> m_PointShadowMaps;
-
 			ShaderFamily m_ShadowShader
 			{
 				{
 					{ShaderFamily::DepthShadowVertSrc, ShaderType::Vertex}
 				}
 			};
+
 			ShaderFamily m_CubeShadowShader
 			{
 				{
@@ -107,6 +165,7 @@ namespace leopph::internal
 					{ShaderFamily::LinearShadowFragSrc, ShaderType::Fragment}
 				}
 			};
+
 			ShaderFamily m_SkyboxShader
 			{
 				{
@@ -114,6 +173,7 @@ namespace leopph::internal
 					{ShaderFamily::SkyboxFragSrc, ShaderType::Fragment}
 				}
 			};
+
 			ShaderFamily m_GammaCorrectShader
 			{
 				{
@@ -122,10 +182,23 @@ namespace leopph::internal
 				}
 			};
 
-		private:
-			// Returns true if left is closer to the current camera then right.
-			static auto CompareLightsByDistToCurrentCam(Light const* left, Light const* right) -> bool;
+			ShaderFamily m_ForwardObjectShader
+			{
+				{
+					{ShaderFamily::ObjectVertSrc, ShaderType::Vertex},
+					{ShaderFamily::ObjectFragSrc, ShaderType::Fragment}
+				}
+			};
 
+			ShaderFamily m_TranspCompositeShader
+			{
+				{
+					{ShaderFamily::Pos2DPassthroughVertSrc, ShaderType::Vertex},
+					{ShaderFamily::TranspCompositeFragSrc, ShaderType::Fragment}
+				}
+			};
+
+		private:
 			// Per RenderObject arrays of matrices used. Instanced RenderNodes refer to them.
 			std::unordered_map<GlMeshGroup*, std::vector<std::pair<Matrix4, Matrix4>>> m_InstancedMatrixCache;
 
@@ -138,7 +211,23 @@ namespace leopph::internal
 
 			GLuint m_ScreenQuadVao{};
 			GLuint m_ScreenQuadVbo{};
+
+		protected:
+			std::vector<GLuint> m_CommonFramebuffers;
+			std::vector<GLuint> m_CommonColorAttachments;
+			std::vector<GLuint> m_CommonDepthStencilAttachments;
+
+			std::vector<GLuint> m_DirShadowMapFramebuffers;
+			std::vector<GLuint> m_DirShadowMapDepthAttachments;
+
+			std::vector<GLuint> m_SpotShadowMapFramebuffers;
+			std::vector<GLuint> m_SpotShadowMapDepthAttachments;
+
+			std::vector<GLuint> m_PointShadowMapFramebuffers;
+			std::vector<GLuint> m_PointShadowMapColorAttachments;
+			std::vector<GLuint> m_PointShadowMapDepthAttachments;
 	};
+
 
 
 	struct GlRenderer::RenderNode
@@ -147,6 +236,7 @@ namespace leopph::internal
 		std::span<std::pair<Matrix4, Matrix4> const> Instances; // matrices are in OpenGL buffer format.
 		bool CastsShadow;
 	};
+
 
 
 	struct GlRenderer::ShadowCount
