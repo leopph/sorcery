@@ -6,7 +6,6 @@
 #include "PointLight.hpp"
 #include "Renderer.hpp"
 #include "SpotLight.hpp"
-#include "rendering/gl/GlCascadedShadowMap.hpp"
 #include "rendering/gl/GlCubeShadowMap.hpp"
 #include "rendering/gl/GlMeshGroup.hpp"
 #include "rendering/gl/GlSkyboxImpl.hpp"
@@ -43,8 +42,7 @@ namespace leopph::internal
 			// Extract game data per RenderObject per RenderComponent, process them, and output into RenderNodes.
 			auto ExtractAndProcessInstanceData(std::vector<RenderNode>& out) -> void;
 
-			// Returns a collection of cascade far bounds in NDC.
-			[[nodiscard]] static auto CascadeFarBoundsNdc(Matrix4 const& camProjMat, std::span<GlCascadedShadowMap::CascadeBounds const> cascadeBounds) -> std::span<float const>;
+			
 
 			static auto SetAmbientData(AmbientLight const& light, ShaderProgram& lightShader) -> void;
 
@@ -66,6 +64,13 @@ namespace leopph::internal
 			 * ####################### */
 
 			auto DrawDirShadowMaps() -> void;
+
+
+			/* ########################
+			 * RENDER UTILITY FUNCTIONS
+			 * ######################## */
+
+			auto CascadeBoundToNdc(std::span<ShadowCascade const> cascades, std::vector<std::pair<f32, f32>>& out) const -> void;
 
 
 			/* ##########################

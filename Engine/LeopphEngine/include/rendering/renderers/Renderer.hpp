@@ -35,6 +35,9 @@ namespace leopph::internal
 			};
 
 
+			struct ShadowCascade;
+
+
 		public:
 			// Returns a renderer based on the currently set graphics api
 			static auto Create() -> std::unique_ptr<Renderer>;
@@ -178,6 +181,13 @@ namespace leopph::internal
 			virtual auto OnDetermineShadowMapCountRequirements(u8 spot, u8 point) -> void = 0;
 
 
+			/* ########################
+			 * RENDER UTILITY FUNCTIONS
+			 * ######################## */
+
+			auto CalculateShadowCascades(std::vector<ShadowCascade>& out) -> void;
+
+
 			/* ############
 			 * RULE OF FIVE
 			 * ############ */
@@ -220,12 +230,21 @@ namespace leopph::internal
 
 
 
+	struct Renderer::ShadowCascade
+	{
+		f32 Near;
+		f32 Far;
+		Matrix4 WorldToClip;
+	};
+
+
+
 	template<std::derived_from<Light> LightType>
 	auto Renderer::SelectNearestLights(std::vector<LightType const*>& lights, Vector3 const& position, u8 const count) -> void
 	{
 		std::ranges::sort(lights, [&position](LightType const* const left, LightType const* const right) -> bool
 		{
-			return Vector3::Distance(position, left->Owner()->Transform().Position()) < Vector3::Distance(position, right->Owner()->Transform().Position());
+			return Vector3::Distance(position, left->Owner()->Transform()->Position()) < Vector3::Distance(position, right->Owner()->Transform()->Position());
 		});
 
 		if (lights.size() > count)
@@ -239,12 +258,12 @@ namespace leopph::internal
 	template<std::derived_from<Light> LightType>
 	auto Renderer::SeparateCastingLights(std::span<LightType const*> lights, std::span<LightType const* const>& outCasting, std::span<LightType const* const>& outNonCasting) -> void
 	{
-		auto const itToNoCast = std::ranges::partition(lights, [](LightType const* const light)
+		auto const itToNoCast = std::partition(std::begin(lights), std::end(lights), [](LightType const* const light)
 		{
 			return light->CastsShadow();
 		});
-
-		outCasting = std::span{std::begin(lights), itToNoCast};
-		outNonCasting = std::span{itToNoCast, std::end(lights)};
+		
+		outCasting = {std::begin(lights), itToNoCast};
+		outNonCasting = {itToNoCast, std::end(lights)};
 	}
 }

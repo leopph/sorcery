@@ -38,18 +38,12 @@
     <ClCompile Include="src\data\Poelo.cpp" />
     <ClCompile Include="src\Entity.cpp" />
     <ClCompile Include="src\Main.cpp" />
-    <ClCompile Include="src\event\DirShadowResEvent.cpp" />
     <ClCompile Include="src\event\Event.cpp" />
     <ClCompile Include="src\event\EventManager.cpp" />
     <ClCompile Include="src\event\KeyEvent.cpp" />
     <ClCompile Include="src\event\MouseEvent.cpp" />
-    <ClCompile Include="src\event\PointShadowResEvent.cpp" />
-    <ClCompile Include="src\event\SpotShadowResEvent.cpp" />
     <ClCompile Include="src\event\WindowEvent.cpp" />
     <ClCompile Include="src\Input.cpp" />
-    <ClCompile Include="src\rendering\gl\GlCascadedShadowMap.cpp" />
-    <ClCompile Include="src\rendering\gl\GlCubeShadowMap.cpp" />
-    <ClCompile Include="src\rendering\gl\GlGeometryBuffer.cpp" />
     <ClCompile Include="src\rendering\gl\GlMesh.cpp" />
     <ClCompile Include="src\rendering\geometry\Mesh.cpp" />
     <ClCompile Include="src\rendering\geometry\MeshGroup.cpp" />
@@ -67,7 +61,6 @@
     <ClCompile Include="src\rendering\shaders\ShaderProgram.cpp" />
     <ClCompile Include="src\components\Skybox.cpp" />
     <ClCompile Include="src\rendering\gl\GlSkyboxImpl.cpp" />
-    <ClCompile Include="src\rendering\gl\GlSpotShadowMap.cpp" />
     <ClCompile Include="src\rendering\gl\GlTexture.cpp" />
     <ClCompile Include="src\rendering\gl\GlTransparencyBuffer.cpp" />
     <ClCompile Include="src\scene\Scene.cpp" />

@@ -1,4 +1,4 @@
-#version 330 core
+#version 420 core
 
 layout (location = 0) in vec3 in_Pos;
 layout (location = 3) in mat4 in_ModelMat;

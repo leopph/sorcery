@@ -1,4 +1,4 @@
-#include "rendering/renderers/GlForwardRenderer.hpp"
+/*#include "rendering/renderers/GlForwardRenderer.hpp"
 
 #include "Camera.hpp"
 #include "DataManager.hpp"
@@ -40,7 +40,7 @@ namespace leopph::internal
 
 	auto GlForwardRenderer::Render() -> void
 	{
-		/* We don't render if there is no camera to use */
+		// We don't render if there is no camera to use
 		if (Camera::Current() == nullptr)
 		{
 			return;
@@ -172,3 +172,4 @@ namespace leopph::internal
 		}
 	}
 }
+*/

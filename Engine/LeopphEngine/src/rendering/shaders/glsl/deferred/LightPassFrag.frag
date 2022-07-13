@@ -1,19 +1,10 @@
 #version 420 core
 
-#define MIN_SHADOW_BIAS 0.0001
-#define MAX_SHADOW_BIAS 0.01
 
-// General variables used in all cases
+//! #define POINTLIGHT
+//! #define SHADOW
+//! #define NUM_CASCADES 1
 
-layout(pixel_center_integer) in vec4 gl_FragCoord;
-layout(location = 0) out vec4 out_FragColor;
-
-uniform usampler2D u_NormColorGlossTex;
-uniform sampler2D u_DepthTex;
-
-uniform vec3 u_CamPos;
-uniform vec3 u_AmbientLight;
-uniform mat4 u_CamViewProjInv;
 
 struct Fragment
 {
@@ -24,12 +15,108 @@ struct Fragment
 	float gloss;
 };
 
-// General functions
 
-float CalcAtten(float constant, float linear, float quadratic, float dist)
+#ifdef DIRLIGHT
+struct DirLight
 {
-	return 1.0 / (constant + linear * dist + quadratic * pow(dist, 2));
-}
+	vec3 direction;
+	vec3 diffuseColor;
+	vec3 specularColor;
+};
+#endif
+
+
+#ifdef SPOTLIGHT
+struct SpotLight
+{
+	vec3 position;
+	vec3 direction;
+	vec3 diffuseColor;
+	vec3 specularColor;
+	float constant;
+	float linear;
+	float quadratic;
+	float range;
+	float innerAngleCosine;
+	float outerAngleCosine;
+};
+#endif
+
+
+#ifdef POINTLIGHT
+struct PointLight
+{
+	vec3 position;
+	vec3 diffuseColor;
+	vec3 specularColor;
+	float constant;
+	float linear;
+	float quadratic;
+	float range;
+};
+#endif
+
+
+#if defined DIRLIGHT && defined SHADOW
+struct ShadowCascade
+{
+	mat4 worldToClipMat;
+	float nearZ;
+	float farZ;
+};
+#endif
+
+
+
+layout(pixel_center_integer) in vec4 gl_FragCoord;
+layout(location = 0) out vec3 out_FragColor;
+
+
+uniform usampler2D u_NormColorGlossTex;
+uniform sampler2D u_DepthTex;
+
+
+layout(binding = 0) uniform Commons
+{
+	layout(row_major) mat4 u_CamViewProjInv;
+	vec3 u_CamPos;
+};
+
+
+#ifdef AMBIENTLIGHT
+uniform vec3 u_Light;
+
+#elif defined DIRLIGHT
+uniform DirLight u_Light;
+
+#elif defined SPOTLIGHT
+uniform SpotLight u_Light;
+
+#elif defined POINTLIGHT
+uniform PointLight u_Light;
+
+#endif
+
+
+#ifdef SHADOW
+#define MIN_SHADOW_BIAS 0.0001
+#define MAX_SHADOW_BIAS 0.01
+
+#ifdef DIRLIGHT
+uniform ShadowCascade u_ShadowCascades[NUM_CASCADES];
+uniform sampler2DShadow u_ShadowMaps[NUM_CASCADES];
+
+#elif defined SPOTLIGHT
+uniform mat4 u_ShadowWorldToClipMat;
+uniform sampler2DShadow u_ShadowMap;
+
+#elif defined POINTLIGHT
+uniform samplerCube u_ShadowMap;
+
+#endif
+#endif
+
+
 
 vec3 CalcBlinnPhong(Fragment frag, vec3 dirToLight, vec3 lightDiff, vec3 lightSpec)
 {
@@ -46,59 +133,42 @@ vec3 CalcBlinnPhong(Fragment frag, vec3 dirToLight, vec3 lightDiff, vec3 lightSp
 }
 
 
-// Only when there is a DirectionalLight
-#if DIRLIGHT
-struct DirLight
+
+float CalcAtten(float constant, float linear, float quadratic, float dist)
 {
-	vec3 direction;
-	
-	vec3 diffuseColor;
-	vec3 specularColor;
-};
+	return 1.0 / (constant + linear * dist + quadratic * pow(dist, 2));
+}
 
-uniform DirLight u_DirLight;
 
-#if DIRLIGHT_SHADOW
-uniform mat4 u_CascadeMatrices[NUM_CASCADES];
-uniform float u_CascadeBoundsNdc[NUM_CASCADES];
-uniform sampler2DShadow u_DirShadowMaps[NUM_CASCADES];
 
+#ifdef SHADOW
+float ShadowBias(vec3 dirToLight, vec3 fragNormal)
+{
+	return max(MAX_SHADOW_BIAS * (1.0 - dot(fragNormal, dirToLight)), MIN_SHADOW_BIAS);
+}
+#endif
+
+
+
+#if defined DIRLIGHT && defined SHADOW
 float CalcDirShadow(vec3 fragPos, float fragPosNdcZ, vec3 fragNormal)
 {
 	for (int i = 0; i < NUM_CASCADES; ++i)
 	{
-		if (fragPosNdcZ < u_CascadeBoundsNdc[i])
+		if (fragPosNdcZ < u_ShadowCascades[i].farZ)
 		{
-			vec3 fragPosLightNorm = vec3(vec4(fragPos, 1) * u_CascadeMatrices[i]) * 0.5 + 0.5;
-			float bias = max(MAX_SHADOW_BIAS * (1.0 - dot(fragNormal, -u_DirLight.direction)), MIN_SHADOW_BIAS);
-			return texture(u_DirShadowMaps[i], vec3(fragPosLightNorm.xy, fragPosLightNorm.z - bias));
+			vec3 fragPosLightNorm = vec3(vec4(fragPos, 1) * u_ShadowCascades[i].worldToClipMat) * 0.5 + 0.5;
+			float bias = ShadowBias(-u_Light.direction, fragNormal);
+			return texture(u_ShadowMaps[i], vec3(fragPosLightNorm.xy, fragPosLightNorm.z - bias));
 		}
 	}
 	return 1.0;
 }
 #endif
-#endif
 
 
-// Only when there are SpotLights
-#if NUM_SPOTLIGHTS > 0
-struct SpotLight
-{
-	vec3 position;
-	vec3 direction;
 
-	vec3 diffuseColor;
-	vec3 specularColor;
-
-	float constant;
-	float linear;
-	float quadratic;
-	float range;
-	
-	float innerAngleCosine;
-	float outerAngleCosine;
-};
-
+#ifdef SPOTLIGHT
 vec3 CalcSpotLightEffect(Fragment frag, SpotLight spotLight)
 {
 	vec3 dirToLight = spotLight.position - frag.pos;
@@ -136,40 +206,22 @@ vec3 CalcSpotLightEffect(Fragment frag, SpotLight spotLight)
 	return spotLightEffect;
 }
 
-#if NUM_SPOTLIGHTS > NUM_SPOTLIGHT_SHADOWS
-uniform SpotLight u_SpotLightsNoShadow[NUM_SPOTLIGHTS - NUM_SPOTLIGHT_SHADOWS];
-#endif
-#if NUM_SPOTLIGHT_SHADOWS > 0
-uniform SpotLight u_SpotLightsShadow[NUM_SPOTLIGHT_SHADOWS];
-uniform sampler2DShadow u_SpotShadowMaps[NUM_SPOTLIGHT_SHADOWS];
-uniform mat4 u_SpotShadowMats[NUM_SPOTLIGHT_SHADOWS];
 
-float CalcSpotShadow(int shadowIndex, vec3 dirToLight, vec3 fragPos, vec3 fragNormal)
+
+#ifdef SHADOW
+float CalcSpotShadow(vec3 dirToLight, vec3 fragPos, vec3 fragNormal)
 {
-	vec4 fragPosLightSpace = vec4(fragPos, 1) * u_SpotShadowMats[shadowIndex];
+	vec4 fragPosLightSpace = vec4(fragPos, 1) * u_ShadowWorldToClipMat;
 	vec3 normalizedPos = (fragPosLightSpace.xyz / fragPosLightSpace.w) * 0.5 + 0.5;
-	float bias = max(MAX_SHADOW_BIAS * (1.0 - dot(fragNormal, dirToLight)), MIN_SHADOW_BIAS);
-	return texture(u_SpotShadowMaps[shadowIndex], vec3(normalizedPos.xy, normalizedPos.z - bias));
+	float bias = ShadowBias(dirToLight, fragNormal);
+	return texture(u_ShadowMap, vec3(normalizedPos.xy, normalizedPos.z - bias));
 }
 #endif
 #endif
 
 
-// Only if there are PointLights
-#if NUM_POINTLIGHTS > 0
-struct PointLight
-{
-	vec3 position;
 
-	vec3 diffuseColor;
-	vec3 specularColor;
-
-	float constant;
-	float linear;
-	float quadratic;
-	float range;
-};
-
+#ifdef POINTLIGHT
 vec3 CalcPointLightEffect(Fragment frag, PointLight pointLight)
 {
 	vec3 dirToLight = pointLight.position - frag.pos;
@@ -187,21 +239,18 @@ vec3 CalcPointLightEffect(Fragment frag, PointLight pointLight)
 	return pointLightEffect;
 }
 
-#if NUM_POINTLIGHTS > NUM_POINTLIGHT_SHADOWS
-uniform PointLight u_PointLightsNoShadow[NUM_POINTLIGHTS - NUM_POINTLIGHT_SHADOWS];
-#endif
-#if NUM_POINTLIGHT_SHADOWS > 0
-uniform PointLight u_PointLightsShadow[NUM_POINTLIGHT_SHADOWS];
-uniform samplerCube u_PointShadowMaps[NUM_POINTLIGHT_SHADOWS];
 
-float CalcPointShadow(uint shadowIndex, vec3 fragPos, vec3 fragNormal, vec3 lightPos, float lightRange)
+
+#ifdef SHADOW
+float CalcPointShadow(vec3 fragPos, vec3 fragNormal, vec3 lightPos, float lightRange)
 {
 	vec3 dirToFrag = fragPos - lightPos;
-	float bias = max(MAX_SHADOW_BIAS * (1.0 - dot(fragNormal, normalize(-dirToFrag))), MIN_SHADOW_BIAS);
-	return texture(u_PointShadowMaps[shadowIndex], dirToFrag).r > length(dirToFrag) - bias ? 1 : 0;
+	float bias = ShadowBias(normalize(-dirToFrag), fragNormal);
+	return texture(u_ShadowMap, dirToFrag).r > length(dirToFrag) - bias ? 1 : 0;
 }
 #endif
 #endif
+
 
 
 void main()
@@ -230,52 +279,33 @@ void main()
 	frag.spec.gb = unpackUnorm4x8(packedNormColorGloss.z).xy;
 	frag.gloss = unpackHalf2x16(packedNormColorGloss.z).y;
 
-	// Accumulate light effects in this
-	vec3 colorSum = vec3(0);
+	vec3 color;
 
-	// Add ambient effect
-	colorSum += frag.diff * u_AmbientLight;
+	#if defined AMBIENTLIGHT
+	color = u_Light * frag.diff;
 
-	// Add directional effects
-	#if DIRLIGHT
-	vec3 dirLightEffect = CalcBlinnPhong(frag, -u_DirLight.direction, u_DirLight.diffuseColor, u_DirLight.specularColor);
-	#if DIRLIGHT_SHADOW
-	dirLightEffect *= CalcDirShadow(frag.pos, fragPosNdc.z, frag.normal);
-	#endif
-	colorSum += dirLightEffect;
+	#elif defined DIRLIGHT
+	color = CalcBlinnPhong(frag, -u_Light.direction, u_Light.diffuseColor, u_Light.specularColor);
+
+	#if defined SHADOW
+	color *= CalcDirShadow(frag.pos, fragPosNdc.z, frag.normal);
 	#endif
 
-	// Add spot effects
-	#if NUM_SPOTLIGHTS > NUM_SPOTLIGHT_SHADOWS
-	for (int i = 0; i < NUM_SPOTLIGHTS - NUM_SPOTLIGHT_SHADOWS; ++i)
-	{
-		colorSum += CalcSpotLightEffect(frag, u_SpotLightsNoShadow[i]);
-	}
-	#endif
-	#if NUM_SPOTLIGHT_SHADOWS > 0
-	for (int i = 0; i < NUM_SPOTLIGHT_SHADOWS; ++i)
-	{
-		vec3 spotLightEffect = CalcSpotLightEffect(frag, u_SpotLightsShadow[i]);
-		spotLightEffect *= CalcSpotShadow(i, normalize(u_SpotLightsShadow[i].position - frag.pos), frag.pos, frag.normal);
-		colorSum += spotLightEffect;
-	}
+	#elif defined SPOTLIGHT
+	color = CalcSpotLightEffect(frag, u_Light);
+
+	#if defined SHADOW
+	color *= CalcSpotShadow(normalize(u_Light.position - frag.pos), frag.pos, frag.normal);
 	#endif
 
-	// Add point effects
-	#if NUM_POINTLIGHTS > NUM_POINTLIGHT_SHADOWS
-	for (int i = 0; i < NUM_POINTLIGHTS - NUM_POINTLIGHT_SHADOWS; ++i)
-	{
-		colorSum += CalcPointLightEffect(frag, u_PointLightsNoShadow[i]);
-	}
-	#endif
-	#if NUM_POINTLIGHT_SHADOWS > 0
-	for (int i = 0; i < NUM_POINTLIGHT_SHADOWS; ++i)
-	{
-		vec3 pointLightEffect = CalcPointLightEffect(frag, u_PointLightsShadow[i]);
-		pointLightEffect *= CalcPointShadow(i, frag.pos, frag.normal, u_PointLightsShadow[i].position, u_PointLightsShadow[i].range);
-		colorSum += pointLightEffect;
-	}
+	#elif defined POINTLIGHT
+	color = CalcPointLightEffect(frag, u_Light);
+
+	#if defined SHADOW
+	color *= CalcPointShadow(frag.pos, frag.normal, u_Light.position, u_Light.range);
 	#endif
 
-	out_FragColor = vec4(colorSum, 1);
+	#endif
+
+	out_FragColor = color;
 }

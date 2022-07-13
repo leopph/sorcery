@@ -2,11 +2,9 @@
 
 #include "AmbientLight.hpp"
 #include "Camera.hpp"
-#include "DataManager.hpp"
-#include "InternalContext.hpp"
+#include "Entity.hpp"
 #include "Math.hpp"
 #include "Matrix.hpp"
-#include "SettingsImpl.hpp"
 
 #include <algorithm>
 #include <array>
@@ -15,256 +13,45 @@
 
 namespace leopph::internal
 {
-	GlDeferredRenderer::GlDeferredRenderer()
-	{
-		auto const [renderWidth, renderHeight] = [this]() -> std::pair<GLsizei, GLsizei>
-		{
-			auto const& [width, height] = GetRenderRes();
-			return {static_cast<GLsizei>(width), static_cast<GLsizei>(height)};
-		}();
-
-		CreateGbuffer(renderWidth, renderHeight);
-	}
-
-
 	auto GlDeferredRenderer::Render() -> void
 	{
-		auto const* const mainCamera = Camera::Current();
+		Renderer::Render();
 
-		if (!mainCamera)
+		if (!GetMainCamera())
 		{
 			return;
 		}
-
-		auto const mainCameraPos = mainCamera->Owner()->Transform()->Position();
-		auto const mainCamViewMat = mainCamera->ViewMatrix();
-		auto const mainCamProjMat = mainCamera->ProjectionMatrix();
-		auto const& [renderWidth, renderHeight] = GetRenderRes();
 
 		static std::vector<RenderNode> renderNodes;
 		renderNodes.clear();
 		ExtractAndProcessInstanceData(renderNodes);
 
-		auto const* const dirLight = GetDataManager()->DirectionalLight();
 
-		static std::vector<SpotLight const*> spotLights;
-		auto const numMaxSpotLights = GetSettingsImpl()->MaxSpotLightCount();
-		auto const activeSpotLights = GetDataManager()->ActiveSpotLights();
-		spotLights.assign(std::begin(activeSpotLights), std::end(activeSpotLights));
-		SelectNearestLights<SpotLight>(spotLights, mainCameraPos, numMaxSpotLights);
-		SeparateCastingLights<SpotLight>(spotLights);
-
-		static std::vector<PointLight const*> pointLights;
-		auto const numMaxPointLights = GetSettingsImpl()->MaxPointLightCount();
-		auto const activePointLights = GetDataManager()->ActivePointLights();
-		pointLights.assign(std::begin(activePointLights), std::end(activePointLights));
-		SelectNearestLights<PointLight>(pointLights, mainCameraPos, numMaxPointLights);
-		SeparateCastingLights<PointLight>(pointLights);
-
-		GeometryPass(renderNodes, mainCamViewMat, renderWidth, renderHeight);
-		RenderLights(mainCamViewMat, mainCamProjMat, renderNodes, spotLights, pointLights);
-		RenderSkybox(mainCamViewMat, mainCamProjMat);
-		RenderTransparent(mainCamViewMat, mainCamProjMat, renderNodes, GetDataManager()->DirectionalLight
-(), spotLights, pointLights);
-		ApplyGammaCorrection();
-		Present();
-	}
-
-
-	auto GlDeferredRenderer::GeometryPass(std::vector<RenderNode> const& renderNodes, Matrix4 const& viewProjMat, GLsizei const renderWidth, GLsizei const renderHeight) -> void
-	{
+		// SET PIPELINE STATE FOR SHADOW PASSES
 		glDisable(GL_BLEND);
 		glEnable(GL_DEPTH_TEST);
-		glDepthMask(GL_TRUE);
 		glDepthFunc(GL_LEQUAL);
-		glEnable(GL_STENCIL_TEST);
-		glStencilFunc(GL_ALWAYS, 1, 1);
-		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-		glViewport(0, 0, renderWidth, renderHeight);
-
-		GLuint constexpr clearColor[]{0, 0, 0};
-		glClearNamedFramebufferuiv(m_GbufferFramebuffer, GL_COLOR, 0, clearColor);
-
-		GLfloat constexpr clearDepth{1};
-		auto constexpr clearStencil{0};
-		glClearNamedFramebufferfi(m_GbufferFramebuffer, GL_DEPTH_STENCIL, 0, clearDepth, clearStencil);
-
-		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_GbufferFramebuffer);
-
-		auto& shader = m_GeometryShader.GetPermutation();
-		shader.SetUniform("u_ViewProjMat", viewProjMat);
-		shader.Use();
-
-		for (auto const& [renderable, instances, castsShadow] : renderNodes)
-		{
-			renderable->SetInstanceData(instances);
-			renderable->DrawWithMaterial(shader, 0, false);
-		}
-	}
-
-
-	auto GlDeferredRenderer::RenderLights(Matrix4 const& camViewMat, Matrix4 const& camProjMat, std::span<RenderNode const> const renderNodes, std::span<SpotLight const*> const spotLights, std::span<PointLight const*> const pointLights) -> void
-	{
-		auto const* const dirLight = GetDataManager()->DirectionalLight();
-		auto const [dirShadow, spotShadows, pointShadows] = CountShadows(dirLight, spotLights, pointLights);
-
-		m_LightShader.Clear();
-		m_LightShader["DIRLIGHT"] = std::to_string(dirLight != nullptr);
-		m_LightShader["DIRLIGHT_SHADOW"] = std::to_string(dirShadow);
-		m_LightShader["NUM_CASCADES"] = std::to_string(GetSettingsImpl()->DirShadowCascadeCount());
-		m_LightShader["NUM_SPOTLIGHTS"] = std::to_string(spotLights.size());
-		m_LightShader["NUM_SPOTLIGHT_SHADOWS"] = std::to_string(spotShadows);
-		m_LightShader["NUM_POINTLIGHTS"] = std::to_string(pointLights.size());
-		m_LightShader["NUM_POINTLIGHT_SHADOWS"] = std::to_string(pointShadows);
-		auto& lightShader{m_LightShader.GetPermutation()};
-		auto& shadowShader{m_ShadowShader.GetPermutation()};
-		auto& cubeShadowShader{m_CubeShadowShader.GetPermutation()};
-
-		GLuint nextTexUnit{0};
-		shadowShader.Use();
-
-		nextTexUnit = RenderDirShadowMap(dirLight, camViewMat.Inverse(), camProjMat, renderNodes, lightShader, shadowShader, nextTexUnit);
-		nextTexUnit = RenderSpotShadowMaps(spotLights, renderNodes, lightShader, shadowShader, spotShadows, nextTexUnit);
-
-		cubeShadowShader.Use();
-		nextTexUnit = RenderPointShadowMaps(pointLights, renderNodes, lightShader, cubeShadowShader, pointShadows, nextTexUnit);
-
-		static_cast<void>(m_GBuffer.BindForReading(lightShader, nextTexUnit));
-
-		SetAmbientData(AmbientLight::Instance(), lightShader);
-		SetDirectionalData(dirLight, lightShader);
-		SetSpotData(spotLights, lightShader);
-		SetPointData(pointLights, lightShader);
-
-		lightShader.SetUniform("u_CamPos", Camera::Current()->Owner()->Transform()->Position());
-		lightShader.SetUniform("u_CamViewProjInv", (camViewMat * camProjMat).Inverse());
-
-		lightShader.Use();
-
-		m_RenderBuffer.Clear();
-		m_RenderBuffer.BindForWriting();
-
-		glDisable(GL_BLEND);
-
-		glDisable(GL_DEPTH_TEST);
-
-		glEnable(GL_STENCIL_TEST);
-		glStencilFunc(GL_EQUAL, STENCIL_DRAW_TAG, 1);
-		glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
-
-		glBlitNamedFramebuffer(m_GBuffer.Framebuffer(), m_RenderBuffer.Framebuffer(), 0, 0, m_GBuffer.Width(), m_GBuffer.Height(), 0, 0, m_RenderBuffer.Width(), m_RenderBuffer.Height(), GL_STENCIL_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST);
-
-		DrawScreenQuad();
-	}
-
-
-	auto GlDeferredRenderer::RenderSkybox(Matrix4 const& camViewMat, Matrix4 const& camProjMat) -> void
-	{
-		if (auto const& background{Camera::Current()->Background()}; std::holds_alternative<Skybox>(background))
-		{
-			glDisable(GL_BLEND);
-
-			glEnable(GL_DEPTH_TEST);
-			glDepthMask(GL_FALSE);
-
-			glDisable(GL_STENCIL_TEST);
-
-			m_RenderBuffer.BindForWriting();
-
-			auto& skyboxShader{m_SkyboxShader.GetPermutation()};
-			skyboxShader.SetUniform("u_ViewProjMat", static_cast<Matrix4>(static_cast<Matrix3>(camViewMat)) * camProjMat);
-			skyboxShader.Use();
-
-			static_cast<GlRenderer*>(GetRenderer())->CreateOrGetSkyboxImpl(std::get<Skybox>(background).AllPaths())->Draw(skyboxShader);
-		}
-	}
-
-
-	auto GlDeferredRenderer::RenderDirShadowMap(DirectionalLight const* dirLight,
-	                                            Matrix4 const& camViewInvMat,
-	                                            Matrix4 const& camProjMat,
-	                                            std::span<RenderNode const> const renderNodes,
-	                                            ShaderProgram& lightShader,
-	                                            ShaderProgram& shadowShader,
-	                                            GLuint const nextTexUnit) const -> GLuint
-	{
-		if (!dirLight || !dirLight->CastsShadow())
-		{
-			return nextTexUnit;
-		}
-
-		auto const camera = Camera::Current();
-		auto const lightViewMat = Matrix4::LookAt(Vector3{0}, dirLight->Direction(), Vector3::Up());
-		auto const cascadeBounds = GlCascadedShadowMap::CalculateCascadeBounds(camera->NearClipPlane(), camera->FarClipPlane());
-		auto const numCascades = cascadeBounds.size();
-		auto const cascadeMats = GlCascadedShadowMap::CascadeMatrix(camera->Frustum(), cascadeBounds, lightViewMat, camViewInvMat * lightViewMat, dirLight->ShadowExtension());
-
-		glDisable(GL_BLEND);
-
-		glEnable(GL_DEPTH_TEST);
 		glDepthMask(GL_TRUE);
-
 		glDisable(GL_STENCIL_TEST);
 
-		for (std::size_t i = 0; i < numCascades; ++i)
+		static std::vector<ShadowCascade> shadowCascades;
+
+		// DRAW DIR SHADOW MAPS
+		if (GetDirLight() && (*GetDirLight())->CastsShadow())
 		{
-			shadowShader.SetUniform("u_ViewProjMat", cascadeMats[i]);
+			CalculateShadowCascades(shadowCascades);
+			m_ShadowShader.Clear();
+			auto& shadowShader = m_ShadowShader.GetPermutation();
+			shadowShader.Use();
 
-			m_DirShadowMap.BindForWriting(i);
-			m_DirShadowMap.Clear();
-
-			for (auto const& [renderable, instances, castsShadow] : renderNodes)
+			for (u8 i = 0; i < GetDirShadowRes().size(); i++)
 			{
-				if (castsShadow)
-				{
-					renderable->SetInstanceData(instances);
-					renderable->DrawWithoutMaterial(false);
-				}
-			}
-		}
+				GLfloat clearDepth = 1;
+				glClearNamedFramebufferfv(m_DirShadowMapFramebuffers[i], GL_DEPTH, 0, &clearDepth);
+				glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_DirShadowMapFramebuffers[i]);
+				glViewport(0, 0, GetDirShadowRes()[i], GetDirShadowRes()[i]);
 
-		lightShader.SetUniform("u_CascadeMatrices", cascadeMats);
-		lightShader.SetUniform("u_CascadeBoundsNdc", CascadeFarBoundsNdc(camProjMat, cascadeBounds));
-		return m_DirShadowMap.BindForReading(lightShader, "u_DirShadowMaps", nextTexUnit);
-	}
-
-
-	auto GlDeferredRenderer::RenderSpotShadowMaps(std::span<SpotLight const* const> const spotLights,
-	                                              std::span<RenderNode const> const renderNodes,
-	                                              ShaderProgram& lightShader,
-	                                              ShaderProgram& shadowShader,
-	                                              std::size_t const numShadows,
-	                                              GLuint nextTexUnit) -> GLuint
-	{
-		// Not really great in terms of allocations but will do for now
-		while (m_SpotShadowMaps.size() < numShadows)
-		{
-			m_SpotShadowMaps.push_back(std::make_unique<GlSpotShadowMap>());
-		}
-
-		if (numShadows * 2 < m_SpotShadowMaps.size())
-		{
-			m_SpotShadowMaps.resize(numShadows);
-		}
-
-		glDisable(GL_BLEND);
-
-		glEnable(GL_DEPTH_TEST);
-		glDepthMask(GL_TRUE);
-
-		glDisable(GL_STENCIL_TEST);
-
-		for (auto i{0ull}, shadowInd{0ull}; i < spotLights.size(); ++i)
-		{
-			if (spotLights[i]->CastsShadow())
-			{
-				auto const lightViewMat{Matrix4::LookAt(spotLights[i]->Owner()->Transform()->Position(), spotLights[i]->Owner()->Transform()->Position() + spotLights[i]->Owner()->Transform()->Forward(), Vector3::Up())};
-				auto const lightProjMat{Matrix4::Perspective(math::ToRadians(spotLights[i]->OuterAngle() * 2), 1.f, 0.1f, spotLights[i]->Range())};
-				auto const lightViewProjMat{lightViewMat * lightProjMat};
-
-				shadowShader.SetUniform("u_ViewProjMat", lightViewProjMat);
-
-				m_SpotShadowMaps[shadowInd]->BindForWritingAndClear();
+				shadowShader.SetUniform("u_ViewProjMat", shadowCascades[i].WorldToClip);
 
 				for (auto const& [renderable, instances, castsShadow] : renderNodes)
 				{
@@ -274,52 +61,61 @@ namespace leopph::internal
 						renderable->DrawWithoutMaterial(false);
 					}
 				}
-
-				lightShader.SetUniform("u_SpotShadowMats[" + std::to_string(shadowInd) + "]", lightViewProjMat);
-				nextTexUnit = m_SpotShadowMaps[shadowInd]->BindForReading(lightShader, "u_SpotShadowMaps[" + std::to_string(shadowInd) + "]", nextTexUnit);
-				++shadowInd;
 			}
 		}
 
-		return nextTexUnit;
-	}
+		static std::vector<Matrix4> spotShadowMats;
 
-
-	auto GlDeferredRenderer::RenderPointShadowMaps(std::span<PointLight const* const> const pointLights,
-	                                               std::span<RenderNode const> const renderNodes,
-	                                               ShaderProgram& lightShader,
-	                                               ShaderProgram& shadowShader,
-	                                               std::size_t const numShadows,
-	                                               GLuint nextTexUnit) -> GLuint
-	{
-		// Not really great in terms of allocations but will do for now
-		while (m_PointShadowMaps.size() < numShadows)
+		// DRAW SPOT SHADOW MAPS
+		if (!GetCastingSpotLights().empty())
 		{
-			m_PointShadowMaps.push_back(std::make_unique<GlCubeShadowMap>());
-		}
+			spotShadowMats.clear();
 
-		if (numShadows * 2 < m_PointShadowMaps.size())
-		{
-			m_PointShadowMaps.resize(numShadows);
-		}
+			m_ShadowShader.Clear();
+			auto& shadowShader = m_ShadowShader.GetPermutation();
+			shadowShader.Use();
 
-		glDisable(GL_BLEND);
+			auto const spotLights = GetCastingSpotLights();
 
-		glEnable(GL_DEPTH_TEST);
-		glDepthMask(GL_TRUE);
-
-		glDisable(GL_STENCIL_TEST);
-
-		for (auto i{0ull}, shadowInd{0ull}; i < pointLights.size(); ++i)
-		{
-			if (pointLights[i]->CastsShadow())
+			for (auto i = 0; i < spotLights.size(); i++)
 			{
-				std::array<Matrix4, 6> shadowViewProjMats;
+				auto const& pos = spotLights[i]->Owner()->Transform()->Position();
+				auto const viewMat = Matrix4::LookAt(pos, pos + spotLights[i]->Owner()->Transform()->Forward(), Vector3::Up());
+				auto constexpr shadowNearClip = 0.1f;
+				auto const projMat = Matrix4::Perspective(math::ToRadians(spotLights[i]->OuterAngle() * 2), 1.f, shadowNearClip, spotLights[i]->Range());
+				auto const viewProjMat = viewMat * projMat;
 
-				auto const shadowProjMat{Matrix4::Perspective(math::ToRadians(90), 1, 0.01f, pointLights[i]->Range())};
-				auto const lightTransMat{Matrix4::Translate(-pointLights[i]->Owner()->Transform()->Position())};
+				shadowShader.SetUniform("u_ViewProjMat", viewProjMat);
+				spotShadowMats.push_back(viewProjMat);
 
-				static constexpr std::array cubeFaceMats
+				GLfloat constexpr clearDepth = 1;
+				glClearNamedFramebufferfv(m_SpotShadowMapFramebuffers[i], GL_DEPTH, 0, &clearDepth);
+				glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_SpotShadowMapFramebuffers[i]);
+				glViewport(0, 0, GetSpotShadowRes(), GetSpotShadowRes());
+
+				for (auto const& [renderable, instances, castsShadow] : renderNodes)
+				{
+					if (castsShadow)
+					{
+						renderable->SetInstanceData(instances);
+						renderable->DrawWithoutMaterial(false);
+					}
+				}
+			}
+		}
+
+		// DRAW POINT SHADOW MAPS
+		if (!GetCastingPointLights().empty())
+		{
+			auto const pointLights = GetCastingPointLights();
+
+			m_CubeShadowShader.Clear();
+			auto& shadowShader = m_CubeShadowShader.GetPermutation();
+			shadowShader.Use();
+
+			for (auto i = 0; i < pointLights.size(); i++)
+			{
+				constexpr std::array cubeFaceViewMats
 				{
 					Matrix4{0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 1}, // +X
 					Matrix4{0, 0, -1, 0, 0, -1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1}, // -X
@@ -329,17 +125,34 @@ namespace leopph::internal
 					Matrix4{-1, 0, 0, 0, 0, -1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1} // -Z
 				};
 
-				std::ranges::transform(cubeFaceMats, shadowViewProjMats.begin(), [&](auto const& cubeFaceMat)
+				auto const translation = Matrix4::Translate(-pointLights[i]->Owner()->Transform()->Position());
+				auto const projMat = Matrix4::Perspective(math::ToRadians(90), 1, 0.01f, pointLights[i]->Range());
+
+				std::array<Matrix4, 6> viewProjMats;
+				std::ranges::transform(cubeFaceViewMats, viewProjMats.begin(), [&](auto const& cubeFaceMat)
 				{
-					return lightTransMat * cubeFaceMat * shadowProjMat;
+					return translation * cubeFaceMat * projMat;
 				});
 
 				shadowShader.SetUniform("u_LightPos", pointLights[i]->Owner()->Transform()->Position());
 
 				for (auto face = 0; face < 6; face++)
 				{
-					m_PointShadowMaps[shadowInd]->BindForWritingAndClear(face);
-					shadowShader.SetUniform("u_ViewProjMat", shadowViewProjMats[face]);
+					GLfloat constexpr clearColor[]
+					{
+						std::numeric_limits<GLfloat>::max(),
+						std::numeric_limits<GLfloat>::max(),
+						std::numeric_limits<GLfloat>::max(),
+						std::numeric_limits<GLfloat>::max()
+					};
+					GLfloat constexpr clearDepth{1};
+
+					glClearNamedFramebufferfv(m_PointShadowMapFramebuffers[i * 6 + face], GL_COLOR, 0, clearColor);
+					glClearNamedFramebufferfv(m_PointShadowMapFramebuffers[i * 6 + face], GL_DEPTH, 0, &clearDepth);
+					glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_PointShadowMapFramebuffers[i * 6 + face]);
+					glViewport(0, 0, GetPointShadowRes(), GetPointShadowRes());
+
+					shadowShader.SetUniform("u_ViewProjMat", viewProjMats[face]);
 
 					for (auto const& [renderable, instances, castsShadow] : renderNodes)
 					{
@@ -350,17 +163,259 @@ namespace leopph::internal
 						}
 					}
 				}
-
-				nextTexUnit = m_PointShadowMaps[shadowInd]->BindForReading(lightShader, "u_PointShadowMaps[" + std::to_string(shadowInd) + "]", nextTexUnit);
-				++shadowInd;
 			}
 		}
 
-		return nextTexUnit;
+		// SET PIPELINE STATE FOR GEOMETRY PASS
+		glDisable(GL_BLEND);
+		glEnable(GL_DEPTH_TEST);
+		glDepthMask(GL_TRUE);
+		glDepthFunc(GL_LEQUAL);
+		glEnable(GL_STENCIL_TEST);
+		glStencilFunc(GL_ALWAYS, 1, 1);
+		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+		glViewport(0, 0, GetRenderRes().Width, GetRenderRes().Height);
+
+		// GEOMETRY PASS
+
+		auto const camViewMat = (*GetMainCamera())->ViewMatrix();
+		auto const camProjMat = (*GetMainCamera())->ProjectionMatrix();
+		auto const camViewProjMat = camViewMat * camProjMat;
+
+		auto& gShader = m_GeometryShader.GetPermutation();
+		gShader.SetUniform("u_ViewProjMat", camViewProjMat);
+		gShader.Use();
+
+		GLuint constexpr gClearColor[]{0, 0, 0};
+		GLfloat constexpr clearDepth{1};
+		auto constexpr clearStencil{0};
+		glClearNamedFramebufferuiv(m_GbufferFramebuffer, GL_COLOR, 0, gClearColor);
+		glClearNamedFramebufferfi(m_GbufferFramebuffer, GL_DEPTH_STENCIL, 0, clearDepth, clearStencil);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_GbufferFramebuffer);
+
+		for (auto const& [renderable, instances, castsShadow] : renderNodes)
+		{
+			renderable->SetInstanceData(instances);
+			renderable->DrawWithMaterial(gShader, 0, false);
+		}
+
+
+		// SET PIPELINE STATE FOR LIGHTING PASS
+		glDisable(GL_BLEND);
+		glDisable(GL_DEPTH_TEST);
+		glEnable(GL_STENCIL_TEST);
+		glStencilFunc(GL_EQUAL, 1, 1);
+		glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+		glViewport(0, 0, GetRenderRes().Width, GetRenderRes().Height);
+
+		// LIGHT PASS
+		GLfloat constexpr lClearColor[]{0, 0, 0};
+		glClearNamedFramebufferfv(m_CommonFramebuffers[1], GL_COLOR, 0, lClearColor);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_CommonFramebuffers[1]);
+
+		auto* const ubo = glMapNamedBuffer(m_Ubos[0], GL_WRITE_ONLY);
+		*static_cast<Matrix4*>(ubo) = camViewProjMat.Inverse();
+		*reinterpret_cast<Vector3*>(static_cast<u8*>(ubo) + sizeof(Matrix4)) = (*GetMainCamera())->Owner()->Transform()->Position();
+		glUnmapNamedBuffer(m_Ubos[0]);
+
+		// AMBIENT LIGHT
+		m_LightShader.Clear();
+		m_LightShader["AMBIENTLIGHT"] = "";
+		auto& ambShader = m_LightShader.GetPermutation();
+		ambShader.SetUniform("u_Light", AmbientLight::Instance().Intensity());
+		ambShader.SetUniform("u_NormColorGlossTex", 0);
+		ambShader.SetUniform("u_DepthTex", 1);
+		ambShader.Use();
+
+		glBindTextureUnit(0, m_GbufferColorAttachments[0]);
+		glBindTextureUnit(1, m_CommonDepthStencilAttachments[0]);
+		DrawScreenQuad();
+
+		// DIRECTIONAL LIGHT
+		if (GetDirLight())
+		{
+			auto const* const dirLight = *GetDirLight();
+
+			m_LightShader.Clear();
+			m_LightShader["DIRLIGHT"] = "";
+
+			if (dirLight->CastsShadow())
+			{
+				m_LightShader["SHADOW"] = "";
+				m_LightShader["NUM_CASCADES"] = std::to_string(shadowCascades.size());
+			}
+
+			auto& shader = m_LightShader.GetPermutation();
+			shader.Use();
+			shader.SetUniform("u_Light.direction", dirLight->Direction());
+			shader.SetUniform("u_Light.diffuseColor", dirLight->Diffuse());
+			shader.SetUniform("u_Light.specularColor", dirLight->Specular());
+			shader.SetUniform("u_NormColorGloss", 0);
+			shader.SetUniform("u_DepthTex", 1);
+			glBindTextureUnit(0, m_GbufferColorAttachments[0]);
+			glBindTextureUnit(1, m_CommonDepthStencilAttachments[0]);
+
+			if (dirLight->CastsShadow())
+			{
+				for (auto i = 0; i < shadowCascades.size(); i++)
+				{
+					shader.SetUniform("u_ShadowCascades[" + std::to_string(i) + "].worldToClipMat", shadowCascades[i].WorldToClip);
+					shader.SetUniform("u_ShadowCascades[" + std::to_string(i) + "].nearZ", shadowCascades[i].Near);
+					shader.SetUniform("u_ShadowCascades[" + std::to_string(i) + "].farZ", shadowCascades[i].Far);
+					shader.SetUniform("u_ShadowMaps[" + std::to_string(i) + "]", i + 1);
+					glBindTextureUnit(i + 1, m_DirShadowMapDepthAttachments[i]);
+				}
+			}
+
+			DrawScreenQuad();
+		}
+
+		// CASTING SPOTLIGHTS
+		if (!GetCastingSpotLights().empty())
+		{
+			auto const spotLights = GetCastingSpotLights();
+
+			m_LightShader.Clear();
+			m_LightShader["SPOTLIGHT"] = "";
+			m_LightShader["SHADOW"] = "";
+			auto& shader = m_LightShader.GetPermutation();
+			shader.Use();
+			shader.SetUniform("u_NormColorGloss", 0);
+			shader.SetUniform("u_DepthTex", 1);
+			glBindTextureUnit(0, m_GbufferColorAttachments[0]);
+			glBindTextureUnit(1, m_CommonDepthStencilAttachments[0]);
+
+			for (auto i = 0; i < spotLights.size(); i++)
+			{
+				shader.SetUniform("u_Light.position", spotLights[i]->Owner()->Transform()->Position());
+				shader.SetUniform("u_Light.direction", spotLights[i]->Owner()->Transform()->Forward());
+				shader.SetUniform("u_Light.diffuseColor", spotLights[i]->Diffuse());
+				shader.SetUniform("u_Light.specularColor", spotLights[i]->Specular());
+				shader.SetUniform("u_Light.constant", spotLights[i]->Constant());
+				shader.SetUniform("u_Light.linear", spotLights[i]->Linear());
+				shader.SetUniform("u_Light.quadratic", spotLights[i]->Quadratic());
+				shader.SetUniform("u_Light.range", spotLights[i]->Range());
+				shader.SetUniform("u_Light.innerAngleCosine", math::Cos(math::ToRadians(spotLights[i]->InnerAngle())));
+				shader.SetUniform("u_Light.outerAngleCosine", math::Cos(math::ToRadians(spotLights[i]->OuterAngle())));
+				shader.SetUniform("u_ShadowWorldToClip", spotShadowMats[i]);
+				shader.SetUniform("u_ShadowMap", 2);
+				glBindTextureUnit(2, m_SpotShadowMapDepthAttachments[i]);
+				DrawScreenQuad();
+			}
+		}
+
+		// NON-CASTING SPOTLIGHTS
+		if (!GetNonCastingSpotLights().empty())
+		{
+			m_LightShader.Clear();
+			m_LightShader["SPOTLIGHT"] = "";
+			auto& shader = m_LightShader.GetPermutation();
+			shader.Use();
+			shader.SetUniform("u_NormColorGloss", 0);
+			shader.SetUniform("u_DepthTex", 1);
+			glBindTextureUnit(0, m_GbufferColorAttachments[0]);
+			glBindTextureUnit(1, m_CommonDepthStencilAttachments[0]);
+
+			for (auto const* const spotLight : GetNonCastingSpotLights())
+			{
+				shader.SetUniform("u_Light.position", spotLight->Owner()->Transform()->Position());
+				shader.SetUniform("u_Light.direction", spotLight->Owner()->Transform()->Forward());
+				shader.SetUniform("u_Light.diffuseColor", spotLight->Diffuse());
+				shader.SetUniform("u_Light.specularColor", spotLight->Specular());
+				shader.SetUniform("u_Light.constant", spotLight->Constant());
+				shader.SetUniform("u_Light.linear", spotLight->Linear());
+				shader.SetUniform("u_Light.quadratic", spotLight->Quadratic());
+				shader.SetUniform("u_Light.range", spotLight->Range());
+				shader.SetUniform("u_Light.innerAngleCosine", math::Cos(math::ToRadians(spotLight->InnerAngle())));
+				shader.SetUniform("u_Light.outerAngleCosine", math::Cos(math::ToRadians(spotLight->OuterAngle())));
+				DrawScreenQuad();
+			}
+		}
+
+		// CASTING POINTLIGHTS
+		if (!GetCastingPointLights().empty())
+		{
+			auto const pointLights = GetCastingPointLights();
+
+			m_LightShader.Clear();
+			m_LightShader["POINTLIGHT"] = "";
+			m_LightShader["SHADOW"] = "";
+			auto& shader = m_LightShader.GetPermutation();
+			shader.Use();
+			shader.SetUniform("u_NormColorGloss", 0);
+			shader.SetUniform("u_DepthTex", 1);
+			glBindTextureUnit(0, m_GbufferColorAttachments[0]);
+			glBindTextureUnit(1, m_CommonDepthStencilAttachments[0]);
+
+			for (auto i = 0; i < pointLights.size(); i++)
+			{
+				shader.SetUniform("u_Light.position", pointLights[i]->Owner()->Transform()->Position());
+				shader.SetUniform("u_Light.diffuseColor", pointLights[i]->Diffuse());
+				shader.SetUniform("u_Light.specularColor", pointLights[i]->Specular());
+				shader.SetUniform("u_Light.constant", pointLights[i]->Constant());
+				shader.SetUniform("u_Light.linear", pointLights[i]->Linear());
+				shader.SetUniform("u_Light.quadratic", pointLights[i]->Quadratic());
+				shader.SetUniform("u_Light.range", pointLights[i]->Range());
+				shader.SetUniform("u_ShadowMap", 2);
+				glBindTextureUnit(2, m_PointShadowMapColorAttachments[i]);
+				DrawScreenQuad();
+			}
+		}
+
+		// NON-CASTING POINTLIGHTS
+		if (!GetNonCastingPointLights().empty())
+		{
+			auto const pointLights = GetNonCastingPointLights();
+
+			m_LightShader.Clear();
+			m_LightShader["POINTLIGHT"] = "";
+			auto& shader = m_LightShader.GetPermutation();
+			shader.Use();
+			shader.SetUniform("u_NormColorGloss", 0);
+			shader.SetUniform("u_DepthTex", 1);
+			glBindTextureUnit(0, m_GbufferColorAttachments[0]);
+			glBindTextureUnit(1, m_CommonDepthStencilAttachments[0]);
+
+			for (auto const* const pointLight : pointLights)
+			{
+				shader.SetUniform("u_Light.position", pointLight->Owner()->Transform()->Position());
+				shader.SetUniform("u_Light.diffuseColor", pointLight->Diffuse());
+				shader.SetUniform("u_Light.specularColor", pointLight->Specular());
+				shader.SetUniform("u_Light.constant", pointLight->Constant());
+				shader.SetUniform("u_Light.linear", pointLight->Linear());
+				shader.SetUniform("u_Light.quadratic", pointLight->Quadratic());
+				shader.SetUniform("u_Light.range", pointLight->Range());
+				DrawScreenQuad();
+			}
+		}
+
+		// SKYBOX PASS
+		if (auto const& background = (*GetMainCamera())->Background(); std::holds_alternative<Skybox>(background))
+		{
+			// SET PIPELINE STATE
+			glDisable(GL_BLEND);
+			glDisable(GL_DEPTH_TEST);
+			glEnable(GL_STENCIL_TEST);
+			glStencilFunc(GL_EQUAL, 0, 1);
+			glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+			glViewport(0, 0, GetRenderRes().Width, GetRenderRes().Height);
+			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_CommonFramebuffers[1]);
+
+			m_SkyboxShader.Clear();
+			auto& shader = m_SkyboxShader.GetPermutation();
+			shader.Use();
+			shader.SetUniform("u_ViewProjMat", static_cast<Matrix4>(static_cast<Matrix3>(camViewMat)) * camProjMat);
+			CreateOrGetSkyboxImpl(std::get<Skybox>(background).AllPaths())->Draw(shader);
+		}
+
+
+		// TRANSPARENT PASS
+		// TODO
 	}
 
 
-	auto GlDeferredRenderer::RenderTransparent(Matrix4 const& camViewMat, Matrix4 const& camProjMat, std::vector<RenderNode> const& renderNodes, DirectionalLight const* dirLight, std::vector<SpotLight const*> const& spotLights, std::vector<PointLight const*> const& pointLights) -> void
+
+	/*auto GlDeferredRenderer::RenderTransparent(Matrix4 const& camViewMat, Matrix4 const& camProjMat, std::vector<RenderNode> const& renderNodes, DirectionalLight const* dirLight, std::vector<SpotLight const*> const& spotLights, std::vector<PointLight const*> const& pointLights) -> void
 	{
 		m_ForwardObjectShader.Clear();
 		m_ForwardObjectShader["DIRLIGHT"] = std::to_string(dirLight != nullptr);
@@ -412,7 +467,7 @@ namespace leopph::internal
 		glDisable(GL_DEPTH_TEST);
 
 		DrawScreenQuad();
-	}
+	}*/
 
 
 	auto GlDeferredRenderer::CreateGbuffer(GLsizei const renderWidth, GLsizei const renderHeight) -> void
@@ -437,11 +492,48 @@ namespace leopph::internal
 	}
 
 
+	auto GlDeferredRenderer::CreateUbos() -> void
+	{
+		glCreateBuffers(static_cast<GLsizei>(m_Ubos.size()), m_Ubos.data());
+
+		auto constexpr uboSz0 = sizeof(Matrix4) + sizeof(Vector4);
+		glNamedBufferStorage(m_Ubos[0], uboSz0, nullptr, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT);
+		glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_Ubos[0]);
+	}
+
+
+	auto GlDeferredRenderer::DeleteUbos() const -> void
+	{
+		glDeleteBuffers(static_cast<GLsizei>(m_Ubos.size()), m_Ubos.data());
+	}
+
+
 	auto GlDeferredRenderer::OnRenderResChange(Extent2D const renderRes) -> void
 	{
 		GlRenderer::OnRenderResChange(renderRes);
 		DeleteGbuffer();
 		auto const& [renderWidth, renderHeight] = GetRenderRes();
 		CreateGbuffer(static_cast<GLsizei>(renderWidth), static_cast<GLsizei>(renderHeight));
+	}
+
+
+
+	GlDeferredRenderer::GlDeferredRenderer()
+	{
+		auto const [renderWidth, renderHeight] = [this]() -> std::pair<GLsizei, GLsizei>
+		{
+			auto const& [width, height] = GetRenderRes();
+			return {static_cast<GLsizei>(width), static_cast<GLsizei>(height)};
+		}();
+
+		CreateGbuffer(renderWidth, renderHeight);
+		CreateUbos();
+	}
+
+
+	GlDeferredRenderer::~GlDeferredRenderer()
+	{
+		DeleteUbos();
+		DeleteGbuffer();
 	}
 }

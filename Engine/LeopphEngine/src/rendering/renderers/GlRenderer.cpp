@@ -26,8 +26,8 @@ namespace leopph::internal
 
 		switch (GetSettingsImpl()->GetGraphicsPipeline())
 		{
-			case Settings::GraphicsPipeline::Forward:
-				return std::make_unique<GlForwardRenderer>();
+			/*case Settings::GraphicsPipeline::Forward:
+				return std::make_unique<GlForwardRenderer>();*/
 			case Settings::GraphicsPipeline::Deferred:
 				return std::make_unique<GlDeferredRenderer>();
 		}
@@ -126,22 +126,6 @@ namespace leopph::internal
 			renderInstanceData.CastsShadow = instancedShadow;
 			out.push_back(renderInstanceData);
 		}
-	}
-
-
-
-	auto GlRenderer::CascadeFarBoundsNdc(Matrix4 const& camProjMat, std::span<GlCascadedShadowMap::CascadeBounds const> const cascadeBounds) -> std::span<float const>
-	{
-		static std::vector<float> farBounds;
-		farBounds.clear();
-
-		// Essentially we calculate (0, 0, bounds.Far, 1) * camProjMat, do a perspective divide, and take the Z component.
-		std::ranges::transform(cascadeBounds, std::back_inserter(farBounds), [&](auto const& bounds)
-		{
-			return (bounds.Far * camProjMat[2][2] + camProjMat[3][2]) / bounds.Far; // This relies heavily on the projection matrix being row-major and projecting from a LH base to NDC.
-		});
-
-		return farBounds;
 	}
 
 
@@ -313,13 +297,23 @@ namespace leopph::internal
 		glDepthFunc(GL_LEQUAL);
 		glDepthMask(GL_TRUE);
 		glDisable(GL_STENCIL_TEST);
+	}
 
-		auto const dirLight = *GetDirLight();
-		auto const camera = *GetMainCamera();
-		auto const lightViewMat = Matrix4::LookAt(Vector3{0}, dirLight->Direction(), Vector3::Up());
-		auto const cascadeBounds = GlCascadedShadowMap::CalculateCascadeBounds(camera->NearClipPlane(), camera->FarClipPlane());
-		auto const numCascades = cascadeBounds.size();
-		auto const cascadeMats = GlCascadedShadowMap::CascadeMatrix(camera->Frustum(), cascadeBounds, lightViewMat, camViewInvMat * lightViewMat, dirLight->ShadowExtension());
+
+
+	auto GlRenderer::CascadeBoundToNdc(std::span<ShadowCascade const> const cascades, std::vector<std::pair<f32, f32>>& out) const -> void
+	{
+		out.resize(cascades.size());
+		auto const camProjMat = (*GetMainCamera())->ProjectionMatrix();
+
+		for (auto i = 0; i < cascades.size(); i++)
+		{
+			// This relies heavily on the projection matrix being row-major and projecting from a LH base to NDC.
+
+			auto const near = (cascades[i].Near * camProjMat[2][2] + camProjMat[3][2]) / cascades[i].Near;
+			auto const far = (cascades[i].Far * camProjMat[2][2] + camProjMat[3][2]) / cascades[i].Far;
+			out[i] = {near, far};
+		}
 	}
 
 
@@ -374,9 +368,9 @@ namespace leopph::internal
 		}
 
 		// Transparency accumulator
-		glTextureStorage2D(m_CommonColorAttachments[numColorAttachments], 1, GL_RGBA16F, renderWidth, renderHeight);
+		glTextureStorage2D(m_CommonColorAttachments[numRgbAttachments], 1, GL_RGBA16F, renderWidth, renderHeight);
 		// Transparency revealage
-		glTextureStorage2D(m_CommonColorAttachments[numColorAttachments + 1], 1, GL_R8, renderWidth, renderHeight);
+		glTextureStorage2D(m_CommonColorAttachments[numRgbAttachments + 1], 1, GL_R8, renderWidth, renderHeight);
 
 		// Potentially shared between framebuffers
 		auto constexpr numDepthStencilAttachments = 1;
@@ -406,7 +400,7 @@ namespace leopph::internal
 		for (auto frameBuf = 1, tex = 0; frameBuf < numFramebuffers && tex < 2; frameBuf++, tex++)
 		{
 			glNamedFramebufferDrawBuffer(m_CommonFramebuffers[frameBuf], GL_COLOR_ATTACHMENT0);
-			glNamedFramebufferTexture(m_CommonFramebuffers[frameBuf], GL_COLOR_ATTACHMENT0, tex, 0);
+			glNamedFramebufferTexture(m_CommonFramebuffers[frameBuf], GL_COLOR_ATTACHMENT0, m_CommonColorAttachments[tex], 0);
 		}
 	}
 
@@ -436,8 +430,7 @@ namespace leopph::internal
 			glTextureParameteri(m_DirShadowMapDepthAttachments[i], GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
 			glTextureParameteri(m_DirShadowMapDepthAttachments[i], GL_TEXTURE_COMPARE_FUNC, GL_LESS);
 
-			glNamedFramebufferTexture(m_DirShadowMapFramebuffers[i], GL_COLOR_ATTACHMENT0, m_DirShadowMapDepthAttachments[i], 0);
-			glNamedFramebufferDrawBuffer(m_DirShadowMapFramebuffers[i], GL_COLOR_ATTACHMENT0);
+			glNamedFramebufferTexture(m_DirShadowMapFramebuffers[i], GL_DEPTH_ATTACHMENT, m_DirShadowMapDepthAttachments[i], 0);
 		}
 	}
 
@@ -466,8 +459,7 @@ namespace leopph::internal
 			glTextureParameteri(m_SpotShadowMapDepthAttachments[i], GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
 			glTextureParameteri(m_SpotShadowMapDepthAttachments[i], GL_TEXTURE_COMPARE_FUNC, GL_LESS);
 
-			glNamedFramebufferTexture(m_SpotShadowMapFramebuffers[i], GL_COLOR_ATTACHMENT0, m_SpotShadowMapDepthAttachments[i], 0);
-			glNamedFramebufferDrawBuffer(m_SpotShadowMapFramebuffers[i], GL_COLOR_ATTACHMENT0);
+			glNamedFramebufferTexture(m_SpotShadowMapFramebuffers[i], GL_DEPTH_ATTACHMENT, m_SpotShadowMapDepthAttachments[i], 0);
 		}
 	}
 
@@ -485,10 +477,10 @@ namespace leopph::internal
 		auto const oldNumMaps = static_cast<u8>(m_PointShadowMapFramebuffers.size());
 
 		m_PointShadowMapFramebuffers.resize(oldNumMaps + count * 6);
-		glCreateFramebuffers(static_cast<GLsizei>(count), m_PointShadowMapFramebuffers.data() + oldNumMaps);
+		glCreateFramebuffers(static_cast<GLsizei>(count * 6), m_PointShadowMapFramebuffers.data() + oldNumMaps);
 
 		m_PointShadowMapColorAttachments.resize(oldNumMaps + count);
-		glCreateTextures(GL_TEXTURE_2D, static_cast<GLsizei>(count), m_PointShadowMapColorAttachments.data() + oldNumMaps);
+		glCreateTextures(GL_TEXTURE_CUBE_MAP, static_cast<GLsizei>(count), m_PointShadowMapColorAttachments.data() + oldNumMaps);
 
 		m_PointShadowMapDepthAttachments.resize(oldNumMaps + count);
 		glCreateTextures(GL_TEXTURE_2D, static_cast<GLsizei>(count), m_PointShadowMapDepthAttachments.data() + oldNumMaps);
