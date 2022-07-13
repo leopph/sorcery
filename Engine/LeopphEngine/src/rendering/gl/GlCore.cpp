@@ -127,12 +127,11 @@ namespace leopph::internal::opengl
 		Logger::Instance().Debug("Using OpenGL " + std::to_string(major) + "." + std::to_string(minor) + ".");
 		Logger::Instance().Debug(std::string{"Using "} + reinterpret_cast<char const*>(glGetString(GL_RENDERER)) + ".");
 
-		if (Logger::Instance().CurrentLevel() == Logger::Level::Debug)
-		{
-			glEnable(GL_DEBUG_OUTPUT);
-			glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-			glDebugMessageCallback(MessageCallback, nullptr);
-		}
+		#ifndef NDEBUG
+		glEnable(GL_DEBUG_OUTPUT);
+		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+		glDebugMessageCallback(MessageCallback, nullptr);
+		#endif
 	}
 
 
