@@ -28,7 +28,7 @@ namespace leopph::internal
 
 		for (std::size_t i = 0; i < 6; i++)
 		{
-			faces[i] = Image{m_Paths[i]};
+			faces[i] = Image{m_Paths[i], ColorEncoding::SRGB};
 			if (faces[i].Empty())
 			{
 				auto const errMsg{"Skybox face [" + m_Paths[i].string() + "] could not be loaded."};
@@ -37,7 +37,7 @@ namespace leopph::internal
 		}
 
 		glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &m_Cubemap);
-		glTextureStorage2D(m_Cubemap, 1, GL_RGB8, faces.front().Width(), faces.front().Height());
+		glTextureStorage2D(m_Cubemap, 1, GL_SRGB8, faces.front().Width(), faces.front().Height());
 		for (std::size_t i = 0; i < 6; i++)
 		{
 			glTextureSubImage3D(m_Cubemap, 0, 0, 0, static_cast<GLint>(i), faces[i].Width(), faces[i].Height(), 1, GL_RGB, GL_UNSIGNED_BYTE, faces[i].Data().data());
