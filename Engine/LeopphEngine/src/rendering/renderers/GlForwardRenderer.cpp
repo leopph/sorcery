@@ -44,14 +44,14 @@ namespace leopph::internal
 			return ret;
 		}();
 
-		if (m_PerFrameUbo.size < uboDataSize)
+		if (m_PerFrameUbos[m_PerFrameUboInd].size < uboDataSize)
 		{
-			glNamedBufferData(m_PerFrameUbo.name, uboDataSize, nullptr, GL_DYNAMIC_DRAW);
-			m_PerFrameUbo.size = uboDataSize;
+			DeleteUbo(m_PerFrameUboInd);
+			CreateUbo(m_PerFrameUboInd, uboDataSize);
 		}
 
 		// WRITE DATA TO UBO
-		auto* const uboData = static_cast<u8*>(glMapNamedBufferRange(m_PerFrameUbo.name, 0, uboDataSize, GL_MAP_WRITE_BIT));
+		auto* const uboData = m_PerFrameUbos[m_PerFrameUboInd].mapping;
 
 		UboGenericData genericData;
 		genericData.viewProjMat = camViewProjMat;
@@ -95,9 +95,9 @@ namespace leopph::internal
 			*reinterpret_cast<UboPointData*>(uboData + offset) = pointData;
 			offset += sizeof pointData;
 		}
-
-		glUnmapNamedBuffer(m_PerFrameUbo.name);
-		glBindBufferRange(GL_UNIFORM_BUFFER, 0, m_PerFrameUbo.name, 0, uboDataSize);
+		
+		glBindBufferRange(GL_UNIFORM_BUFFER, 0, m_PerFrameUbos[m_PerFrameUboInd].name, 0, uboDataSize);
+		m_PerFrameUboInd = (m_PerFrameUboInd + 1) % m_PerFrameUbos.size();
 
 
 		// SET PIPELINE STATE FOR OPAQUE PASS
@@ -217,20 +217,48 @@ namespace leopph::internal
 	}
 
 
+	void GlForwardRenderer::CreateUbo(u64 const index, u64 const size)
+	{
+		glCreateBuffers(1, &m_PerFrameUbos[index].name);
+		glNamedBufferStorage(m_PerFrameUbos[index].name, size, nullptr, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
+		m_PerFrameUbos[index].mapping = static_cast<u8*>(glMapNamedBufferRange(m_PerFrameUbos[index].name, 0, size, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT));
+		m_PerFrameUbos[index].size = size;
+
+#ifndef NDEBUG
+		if (!m_PerFrameUbos[index].mapping)
+		{
+			auto const errMsg = "Failed to map UBO[" + std::to_string(index) + "].";
+			Logger::Instance().Critical(errMsg);
+			throw std::runtime_error{errMsg};
+		}
+#endif
+	}
+
+
+	void GlForwardRenderer::DeleteUbo(u64 const index) const
+	{
+		glUnmapNamedBuffer(m_PerFrameUbos[index].name);
+		glDeleteBuffers(1, &m_PerFrameUbos[index].name);
+	}
+
+
 
 	GlForwardRenderer::GlForwardRenderer()
 	{
 		static_assert(sizeof(UboDirData) == 48);
 		static_assert(sizeof(UboSpotData) == 80);
 		static_assert(sizeof(UboPointData) == 48);
+
 		Logger::Instance().Warning("The forward rendering pipeline is currently not feature complete. It is recommended to use the deferred pipeline.");
-		glCreateBuffers(1, &m_PerFrameUbo.name);
 	}
 
 
 
 	GlForwardRenderer::~GlForwardRenderer()
 	{
-		glDeleteBuffers(1, &m_PerFrameUbo.name);
+		for (auto i = 0; i < m_PerFrameUbos.size(); i++)
+		{
+			DeleteUbo(i);
+		}
 	}
 }

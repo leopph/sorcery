@@ -7,10 +7,11 @@ namespace leopph::internal
 {
 	class GlForwardRenderer final : public GlRenderer
 	{
-		struct Buffer
+		struct MappedBuffer
 		{
 			GLuint name;
 			u64 size;
+			u8* mapping;
 		};
 
 
@@ -23,7 +24,12 @@ namespace leopph::internal
 		public:
 			auto Render() -> void override;
 
+		private:
+			void CreateUbo(u64 index, u64 size);
+			void DeleteUbo(u64 index) const;
 
+
+		public:
 			/* ############
 			 * RULE OF FIVE
 			 * ############ */
@@ -44,7 +50,8 @@ namespace leopph::internal
 			 * DATA MEMBERS
 			 * ############ */
 
-			Buffer m_PerFrameUbo{0, 0};
+			std::array<MappedBuffer,3> m_PerFrameUbos{};
+			u64 m_PerFrameUboInd{0};
 	};
 
 
