@@ -1,6 +1,5 @@
 #include "rendering/renderers/GlForwardRenderer.hpp"
 
-#include "AmbientLight.hpp"
 #include "Camera.hpp"
 #include "Entity.hpp"
 #include "Logger.hpp"
@@ -12,16 +11,9 @@
 
 namespace leopph::internal
 {
-	GlForwardRenderer::GlForwardRenderer()
-	{
-		Logger::Instance().Warning("The forward rendering pipeline is currently not feature complete. It is recommended to use the deferred pipeline.");
-	}
-
-
-
 	auto GlForwardRenderer::Render() -> void
 	{
-		Renderer::Render();
+		GlRenderer::Render();
 
 		if (!GetMainCamera())
 		{
@@ -31,6 +23,81 @@ namespace leopph::internal
 		static std::vector<RenderNode> renderNodes;
 		renderNodes.clear();
 		ExtractAndProcessInstanceData(renderNodes);
+
+		auto const camViewMat = (*GetMainCamera())->ViewMatrix();
+		auto const camProjMat = (*GetMainCamera())->ProjectionMatrix();
+		auto const camViewProjMat = camViewMat * camProjMat;
+
+
+		// RESIZE PER FRAME UBO IF NEEDED
+		auto const uboDataSize = [this]
+		{
+			u64 ret = sizeof(UboGenericData);
+			if (GetDirLight())
+			{
+				ret += sizeof(UboDirData);
+			}
+			ret += GetCastingSpotLights().size() * sizeof(UboSpotData);
+			ret += GetNonCastingSpotLights().size() * sizeof(UboSpotData);
+			ret += GetCastingPointLights().size() * sizeof(UboPointData);
+			ret += GetNonCastingPointLights().size() * sizeof(UboPointData);
+			return ret;
+		}();
+
+		if (m_PerFrameUbo.size < uboDataSize)
+		{
+			glNamedBufferData(m_PerFrameUbo.name, uboDataSize, nullptr, GL_DYNAMIC_DRAW);
+			m_PerFrameUbo.size = uboDataSize;
+		}
+
+		// WRITE DATA TO UBO
+		auto* const uboData = static_cast<u8*>(glMapNamedBufferRange(m_PerFrameUbo.name, 0, uboDataSize, GL_MAP_WRITE_BIT));
+
+		UboGenericData genericData;
+		genericData.viewProjMat = camViewProjMat;
+		genericData.ambientLight = GetAmbLight();
+		genericData.cameraPosition = (*GetMainCamera())->Owner()->Transform()->Position();
+		*reinterpret_cast<UboGenericData*>(uboData) = genericData;
+		u64 offset = sizeof genericData;
+
+		if (GetDirLight())
+		{
+			auto const* const dirLight = *GetDirLight();
+			UboDirData dirData;
+			dirData.direction = dirLight->Direction();
+			dirData.diffuse = dirLight->Diffuse();
+			dirData.specular = dirLight->Specular();
+			*reinterpret_cast<UboDirData*>(uboData + offset) = dirData;
+			offset += sizeof dirData;
+		}
+
+		for (auto const* const spotLight : std::ranges::join_view{std::array{GetCastingSpotLights(), GetNonCastingSpotLights()}})
+		{
+			UboSpotData spotData;
+			spotData.position = spotLight->Owner()->Transform()->Position();
+			spotData.direction = spotLight->Owner()->Transform()->Forward();
+			spotData.diffuse = spotLight->Diffuse();
+			spotData.specular = spotLight->Specular();
+			spotData.range = spotLight->Range();
+			spotData.innerCos = math::Cos(math::ToRadians(spotLight->InnerAngle()));
+			spotData.outerCos = math::Cos(math::ToRadians(spotLight->OuterAngle()));
+			*reinterpret_cast<UboSpotData*>(uboData + offset) = spotData;
+			offset += sizeof spotData;
+		}
+
+		for (auto const* const pointLight : std::ranges::join_view{std::array{GetCastingPointLights(), GetNonCastingPointLights()}})
+		{
+			UboPointData pointData;
+			pointData.position = pointLight->Owner()->Transform()->Position();
+			pointData.diffuse = pointLight->Diffuse();
+			pointData.specular = pointLight->Specular();
+			pointData.range = pointLight->Range();
+			*reinterpret_cast<UboPointData*>(uboData + offset) = pointData;
+			offset += sizeof pointData;
+		}
+
+		glUnmapNamedBuffer(m_PerFrameUbo.name);
+		glBindBufferRange(GL_UNIFORM_BUFFER, 0, m_PerFrameUbo.name, 0, uboDataSize);
 
 
 		// SET PIPELINE STATE FOR OPAQUE PASS
@@ -60,51 +127,11 @@ namespace leopph::internal
 
 		auto& opaqueShader = m_ForwardObjectShader.GetPermutation();
 		opaqueShader.Use();
-		opaqueShader.SetUniform("u_ViewProjMat", (*GetMainCamera())->ViewMatrix() * (*GetMainCamera())->ProjectionMatrix());
-		opaqueShader.SetUniform("u_CamPos", (*GetMainCamera())->Owner()->Transform()->Position());
-		opaqueShader.SetUniform("u_AmbientLight", AmbientLight::Instance().Intensity());
-
-		if (GetDirLight())
-		{
-			auto const* const dirLight = *GetDirLight();
-			opaqueShader.SetUniform("u_DirLight.direction", dirLight->Direction());
-			opaqueShader.SetUniform("u_DirLight.diffuseColor", dirLight->Diffuse());
-			opaqueShader.SetUniform("u_DirLight.specularColor", dirLight->Specular());
-		}
-
-		for (auto i = 0; auto const* const spotLight : std::ranges::join_view{std::array{GetCastingSpotLights(), GetNonCastingSpotLights()}})
-		{
-			auto const indStr = std::to_string(i);
-			opaqueShader.SetUniform("u_SpotLights[" + indStr + "].position", spotLight->Owner()->Transform()->Position());
-			opaqueShader.SetUniform("u_SpotLights[" + indStr + "].direction", spotLight->Owner()->Transform()->Forward());
-			opaqueShader.SetUniform("u_SpotLights[" + indStr + "].diffuseColor", spotLight->Diffuse());
-			opaqueShader.SetUniform("u_SpotLights[" + indStr + "].specularColor", spotLight->Specular());
-			opaqueShader.SetUniform("u_SpotLights[" + indStr + "].constant", spotLight->Constant());
-			opaqueShader.SetUniform("u_SpotLights[" + indStr + "].linear", spotLight->Linear());
-			opaqueShader.SetUniform("u_SpotLights[" + indStr + "].quadratic", spotLight->Quadratic());
-			opaqueShader.SetUniform("u_SpotLights[" + indStr + "].range", spotLight->Range());
-			opaqueShader.SetUniform("u_SpotLights[" + indStr + "].innerAngleCosine", math::Cos(math::ToRadians(spotLight->InnerAngle())));
-			opaqueShader.SetUniform("u_SpotLights[" + indStr + "].outerAngleCosine", math::Cos(math::ToRadians(spotLight->OuterAngle())));
-			i++;
-		}
-
-		for (auto i = 0; auto const* const pointLight : std::ranges::join_view{std::array{GetCastingPointLights(), GetNonCastingPointLights()}})
-		{
-			auto const indStr = std::to_string(i);
-			opaqueShader.SetUniform("u_PointLights[" + indStr + "].position", pointLight->Owner()->Transform()->Position());
-			opaqueShader.SetUniform("u_PointLights[" + indStr + "].diffuseColor", pointLight->Diffuse());
-			opaqueShader.SetUniform("u_PointLights[" + indStr + "].specularColor", pointLight->Specular());
-			opaqueShader.SetUniform("u_PointLights[" + indStr + "].constant", pointLight->Constant());
-			opaqueShader.SetUniform("u_PointLights[" + indStr + "].linear", pointLight->Linear());
-			opaqueShader.SetUniform("u_PointLights[" + indStr + "].quadratic", pointLight->Quadratic());
-			opaqueShader.SetUniform("u_PointLights[" + indStr + "].range", pointLight->Range());
-			i++;
-		}
 
 		for (auto const& [renderable, instances, castsShadow] : renderNodes)
 		{
 			renderable->SetInstanceData(instances);
-			renderable->DrawWithMaterial(opaqueShader, 0, true);
+			renderable->DrawWithMaterial(opaqueShader, 0, false);
 		}
 
 
@@ -112,34 +139,72 @@ namespace leopph::internal
 		if (auto const& background = (*GetMainCamera())->Background(); std::holds_alternative<Skybox>(background))
 		{
 			// SET PIPELINE STATE
-			glDisable(GL_BLEND);
-			glDisable(GL_DEPTH_TEST);
-			glEnable(GL_STENCIL_TEST);
-			glStencilFunc(GL_EQUAL, 0, 1);
-			glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
-			glViewport(0, 0, GetRenderRes().Width, GetRenderRes().Height);
-			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_PingPongBuffers[0].framebuffer);
+			glDepthMask(GL_FALSE);
 
 			m_SkyboxShader.Clear();
 			auto& shader = m_SkyboxShader.GetPermutation();
 			shader.Use();
-			shader.SetUniform("u_ViewProjMat", static_cast<Matrix4>(static_cast<Matrix3>((*GetMainCamera())->ViewMatrix())) * (*GetMainCamera())->ProjectionMatrix());
+
+			shader.SetUniform("u_ViewProjMat", static_cast<Matrix4>(static_cast<Matrix3>(camViewMat)) * camProjMat);
+
 			CreateOrGetSkyboxImpl(std::get<Skybox>(background).AllPaths())->Draw(shader);
 		}
 
 
+		// SET TRANSPARENT PASS PIPELINE STATE
+		glEnable(GL_BLEND);
+		glBlendFunci(0, GL_ONE, GL_ONE);
+		glBlendFunci(1, GL_ZERO, GL_ONE_MINUS_SRC_COLOR);
+		glDepthMask(GL_FALSE);
+
+
+		// TRANSPARENT PASS
+
+		GLfloat constexpr clearAccum[]{0, 0, 0, 0};
+		GLfloat constexpr clearReveal{1};
+		glClearNamedFramebufferfv(m_TransparencyBuffer.framebuffer, GL_COLOR, 0, clearAccum);
+		glClearNamedFramebufferfv(m_TransparencyBuffer.framebuffer, GL_COLOR, 1, &clearReveal);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_TransparencyBuffer.framebuffer);
+
+		m_ForwardObjectShader["TRANSPARENT"] = "";
+		auto& transpShader = m_ForwardObjectShader.GetPermutation();
+		transpShader.Use();
+
+		for (auto const& [renderable, instances, castsShadow] : renderNodes)
+		{
+			renderable->SetInstanceData(instances);
+			renderable->DrawWithMaterial(transpShader, 0, true);
+		}
+
+
+		// SET COMPOSITE PASS PIPELINE STATE
+		glBlendFunc(GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA);
+		glDisable(GL_DEPTH_TEST);
+
+
+		// COMPOSITE PASS
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_PingPongBuffers[0].framebuffer);
+
+		glBindTextureUnit(0, m_TransparencyBuffer.accumAttachment);
+		glBindTextureUnit(1, m_TransparencyBuffer.revealAttachment);
+
+		m_TranspCompositeShader.Clear();
+		auto const& compShader = m_TranspCompositeShader.GetPermutation();
+		compShader.Use();
+
+		DrawScreenQuad();
+
+
 		// SET GAMMA PASS PIPELINE STATE
 		glDisable(GL_BLEND);
-		glDisable(GL_DEPTH_TEST);
-		glDisable(GL_STENCIL_TEST);
-		glViewport(0, 0, GetRenderRes().Width, GetRenderRes().Height);
 
 
 		// GAMMA CORRECTION PASS
 		m_GammaCorrectShader.Clear();
 		auto& gammaShader = m_GammaCorrectShader.GetPermutation();
-		gammaShader.SetUniform("u_GammaInverse", 1.f / GetGamma());
 		gammaShader.Use();
+
+		gammaShader.SetUniform("u_GammaInverse", 1.f / GetGamma());
 
 		glBindTextureUnit(0, m_PingPongBuffers[0].colorAttachment);
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_PingPongBuffers[1].framebuffer);
@@ -149,5 +214,23 @@ namespace leopph::internal
 
 		// COPY TO DEFAULT FRAMEBUFFER
 		glBlitNamedFramebuffer(m_PingPongBuffers[1].framebuffer, 0, 0, 0, GetRenderRes().Width, GetRenderRes().Height, 0, 0, GetRenderRes().Width, GetRenderRes().Height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+	}
+
+
+
+	GlForwardRenderer::GlForwardRenderer()
+	{
+		static_assert(sizeof(UboDirData) == 48);
+		static_assert(sizeof(UboSpotData) == 80);
+		static_assert(sizeof(UboPointData) == 48);
+		Logger::Instance().Warning("The forward rendering pipeline is currently not feature complete. It is recommended to use the deferred pipeline.");
+		glCreateBuffers(1, &m_PerFrameUbo.name);
+	}
+
+
+
+	GlForwardRenderer::~GlForwardRenderer()
+	{
+		glDeleteBuffers(1, &m_PerFrameUbo.name);
 	}
 }

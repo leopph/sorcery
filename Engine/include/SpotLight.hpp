@@ -1,6 +1,7 @@
 #pragma once
 
 #include "AttenuatedLight.hpp"
+#include "Types.hpp"
 
 
 namespace leopph
@@ -11,38 +12,33 @@ namespace leopph
 	{
 		public:
 			// Get the angle in degrees at which the light starts to fade out.
-			[[nodiscard]] LEOPPHAPI
-			auto InnerAngle() const noexcept -> float;
+			[[nodiscard]] auto LEOPPHAPI InnerAngle() const noexcept -> f32;
 
 			// Set the angle in degrees at which the light starts to fade out.
-			LEOPPHAPI
-			auto InnerAngle(float degrees) noexcept -> void;
+			auto LEOPPHAPI InnerAngle(f32 degrees) noexcept -> void;
+
 
 			// Get the angle in degrees at which the light is completely cut.
-			[[nodiscard]] LEOPPHAPI
-			auto OuterAngle() const noexcept -> float;
+			[[nodiscard]] auto LEOPPHAPI OuterAngle() const noexcept -> f32;
 
 			// Set the angle in degrees at which the light is completely cut.
-			LEOPPHAPI
-			auto OuterAngle(float degrees) noexcept -> void;
+			auto LEOPPHAPI OuterAngle(f32 degrees) noexcept -> void;
 
-			LEOPPHAPI
-			auto Owner(Entity* entity) -> void override;
+			
+			auto LEOPPHAPI Owner(Entity* entity) -> void override;
 			using AttenuatedLight::Owner;
 
-			LEOPPHAPI
-			auto Active(bool active) -> void override;
+			
+			auto LEOPPHAPI Active(bool active) -> void override;
 			using AttenuatedLight::Active;
+
+
+			[[nodiscard]] auto LEOPPHAPI Clone() const -> ComponentPtr<> override;
 
 			SpotLight() = default;
 
 			SpotLight(SpotLight const& other) = default;
-
-			LEOPPHAPI
-			auto operator=(SpotLight const& other) -> SpotLight&;
-
-			[[nodiscard]] LEOPPHAPI
-			auto Clone() const -> ComponentPtr<> override;
+			auto LEOPPHAPI operator=(SpotLight const& other) -> SpotLight&;
 
 			SpotLight(SpotLight&& other) = delete;
 			auto operator=(SpotLight&& other) -> void = delete;

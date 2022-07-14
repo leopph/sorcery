@@ -73,6 +73,8 @@ namespace leopph::internal
 
 			[[nodiscard]] auto GetGamma() const -> f32;
 
+			[[nodiscard]] auto GetAmbLight() const -> Vector3 const&;
+
 			[[nodiscard]] auto GetDirLight() const -> std::optional<DirectionalLight const*> const&;
 
 			[[nodiscard]] auto GetCastingSpotLights() const -> std::span<SpotLight const* const>;
@@ -218,6 +220,7 @@ namespace leopph::internal
 			u8 m_NumMaxSpot;
 			u8 m_NumMaxPoint;
 			f32 m_Gamma;
+			Vector3 m_AmbLight;
 			std::optional<DirectionalLight const*> m_DirLight;
 			std::vector<SpotLight const*> m_SpotLights;
 			std::vector<PointLight const*> m_PointLights;

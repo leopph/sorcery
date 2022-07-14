@@ -13,16 +13,19 @@ namespace leopph
 	}
 
 
-	auto DirectionalLight::ShadowExtension() const noexcept -> float
+
+	auto DirectionalLight::ShadowExtension() const noexcept -> f32
 	{
 		return m_ShadowRange;
 	}
 
 
-	auto DirectionalLight::ShadowExtension(float const newRange) -> void
+
+	auto DirectionalLight::ShadowExtension(f32 const newRange) -> void
 	{
 		m_ShadowRange = math::Clamp(newRange, 0, math::Abs(newRange));
 	}
+
 
 
 	auto DirectionalLight::Owner(Entity* entity) -> void
@@ -61,6 +64,14 @@ namespace leopph
 	}
 
 
+
+	auto DirectionalLight::Clone() const -> ComponentPtr<>
+	{
+		return CreateComponent<DirectionalLight>(*this);
+	}
+
+
+
 	auto DirectionalLight::operator=(DirectionalLight const& other) -> DirectionalLight&
 	{
 		if (this == &other)
@@ -86,11 +97,6 @@ namespace leopph
 		return *this;
 	}
 
-
-	auto DirectionalLight::Clone() const -> ComponentPtr<>
-	{
-		return CreateComponent<DirectionalLight>(*this);
-	}
 
 
 	DirectionalLight::~DirectionalLight()

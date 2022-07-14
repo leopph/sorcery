@@ -66,6 +66,8 @@
     <ClCompile Include="src\rendering\gl\GlMeshGroup.cpp" />
     <ClCompile Include="src\rendering\RenderObject.cpp" />
     <ClCompile Include="src\rendering\ScreenQuad.cpp" />
+    <ClCompile Include="src\components\Light.cpp" />
+    <ClCompile Include="src\components\AttenuatedLight.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\DataManager.hpp" />

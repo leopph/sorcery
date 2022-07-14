@@ -288,9 +288,6 @@ namespace leopph::internal
 				shader.SetUniform("u_Light.direction", spotLights[i]->Owner()->Transform()->Forward());
 				shader.SetUniform("u_Light.diffuseColor", spotLights[i]->Diffuse());
 				shader.SetUniform("u_Light.specularColor", spotLights[i]->Specular());
-				shader.SetUniform("u_Light.constant", spotLights[i]->Constant());
-				shader.SetUniform("u_Light.linear", spotLights[i]->Linear());
-				shader.SetUniform("u_Light.quadratic", spotLights[i]->Quadratic());
 				shader.SetUniform("u_Light.range", spotLights[i]->Range());
 				shader.SetUniform("u_Light.innerAngleCosine", math::Cos(math::ToRadians(spotLights[i]->InnerAngle())));
 				shader.SetUniform("u_Light.outerAngleCosine", math::Cos(math::ToRadians(spotLights[i]->OuterAngle())));
@@ -314,9 +311,6 @@ namespace leopph::internal
 				shader.SetUniform("u_Light.direction", spotLight->Owner()->Transform()->Forward());
 				shader.SetUniform("u_Light.diffuseColor", spotLight->Diffuse());
 				shader.SetUniform("u_Light.specularColor", spotLight->Specular());
-				shader.SetUniform("u_Light.constant", spotLight->Constant());
-				shader.SetUniform("u_Light.linear", spotLight->Linear());
-				shader.SetUniform("u_Light.quadratic", spotLight->Quadratic());
 				shader.SetUniform("u_Light.range", spotLight->Range());
 				shader.SetUniform("u_Light.innerAngleCosine", math::Cos(math::ToRadians(spotLight->InnerAngle())));
 				shader.SetUniform("u_Light.outerAngleCosine", math::Cos(math::ToRadians(spotLight->OuterAngle())));
@@ -340,9 +334,6 @@ namespace leopph::internal
 				shader.SetUniform("u_Light.position", pointLights[i]->Owner()->Transform()->Position());
 				shader.SetUniform("u_Light.diffuseColor", pointLights[i]->Diffuse());
 				shader.SetUniform("u_Light.specularColor", pointLights[i]->Specular());
-				shader.SetUniform("u_Light.constant", pointLights[i]->Constant());
-				shader.SetUniform("u_Light.linear", pointLights[i]->Linear());
-				shader.SetUniform("u_Light.quadratic", pointLights[i]->Quadratic());
 				shader.SetUniform("u_Light.range", pointLights[i]->Range());
 				glBindTextureUnit(2, m_PointShadowMapColorAttachments[i]);
 				DrawScreenQuad();
@@ -364,9 +355,6 @@ namespace leopph::internal
 				shader.SetUniform("u_Light.position", pointLight->Owner()->Transform()->Position());
 				shader.SetUniform("u_Light.diffuseColor", pointLight->Diffuse());
 				shader.SetUniform("u_Light.specularColor", pointLight->Specular());
-				shader.SetUniform("u_Light.constant", pointLight->Constant());
-				shader.SetUniform("u_Light.linear", pointLight->Linear());
-				shader.SetUniform("u_Light.quadratic", pointLight->Quadratic());
 				shader.SetUniform("u_Light.range", pointLight->Range());
 				DrawScreenQuad();
 			}
@@ -441,9 +429,6 @@ namespace leopph::internal
 			transpShader.SetUniform("u_SpotLights[" + indStr + "].direction", spotLight->Owner()->Transform()->Forward());
 			transpShader.SetUniform("u_SpotLights[" + indStr + "].diffuseColor", spotLight->Diffuse());
 			transpShader.SetUniform("u_SpotLights[" + indStr + "].specularColor", spotLight->Specular());
-			transpShader.SetUniform("u_SpotLights[" + indStr + "].constant", spotLight->Constant());
-			transpShader.SetUniform("u_SpotLights[" + indStr + "].linear", spotLight->Linear());
-			transpShader.SetUniform("u_SpotLights[" + indStr + "].quadratic", spotLight->Quadratic());
 			transpShader.SetUniform("u_SpotLights[" + indStr + "].range", spotLight->Range());
 			transpShader.SetUniform("u_SpotLights[" + indStr + "].innerAngleCosine", math::Cos(math::ToRadians(spotLight->InnerAngle())));
 			transpShader.SetUniform("u_SpotLights[" + indStr + "].outerAngleCosine", math::Cos(math::ToRadians(spotLight->OuterAngle())));
@@ -456,9 +441,6 @@ namespace leopph::internal
 			transpShader.SetUniform("u_PointLights[" + indStr + "].position", pointLight->Owner()->Transform()->Position());
 			transpShader.SetUniform("u_PointLights[" + indStr + "].diffuseColor", pointLight->Diffuse());
 			transpShader.SetUniform("u_PointLights[" + indStr + "].specularColor", pointLight->Specular());
-			transpShader.SetUniform("u_PointLights[" + indStr + "].constant", pointLight->Constant());
-			transpShader.SetUniform("u_PointLights[" + indStr + "].linear", pointLight->Linear());
-			transpShader.SetUniform("u_PointLights[" + indStr + "].quadratic", pointLight->Quadratic());
 			transpShader.SetUniform("u_PointLights[" + indStr + "].range", pointLight->Range());
 			i++;
 		}

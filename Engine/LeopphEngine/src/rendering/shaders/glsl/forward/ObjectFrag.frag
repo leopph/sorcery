@@ -1,4 +1,4 @@
-#version 410 core
+#version 420 core
 
 
 //! #define DIRLIGHT
@@ -49,12 +49,9 @@ struct SpotLight
 	vec3 direction;
 	vec3 diffuseColor;
 	vec3 specularColor;
-	float constant;
-	float linear;
-	float quadratic;
 	float range;
-	float innerAngleCosine;
-	float outerAngleCosine;
+	float innerCos;
+	float outerCos;
 };
 #endif
 
@@ -65,9 +62,6 @@ struct PointLight
 	vec3 position;
 	vec3 diffuseColor;
 	vec3 specularColor;
-	float constant;
-	float linear;
-	float quadratic;
 	float range;
 };
 #endif
@@ -88,21 +82,26 @@ layout (location = 0) out vec3 out_FragColor;
 
 
 uniform Material u_Material;
-uniform vec3 u_AmbientLight;
-uniform vec3 u_CamPos;
 
 
-#ifdef DIRLIGHT
-uniform DirLight u_DirLight;
-#endif
+layout(std140, binding = 0) uniform PerFrameConstants
+{
+	layout(row_major) mat4 u_ViewProjMat;
+	vec3 u_AmbLight;
+	vec3 u_CamPos;
 
-#if NUM_SPOT > 0
-uniform SpotLight u_SpotLights[NUM_SPOT];
-#endif
+	#ifdef DIRLIGHT
+	DirLight u_DirLight;
+	#endif
 
-#if NUM_POINT > 0
-uniform PointLight u_PointLights[NUM_POINT];
-#endif
+	#if NUM_SPOT > 0
+	SpotLight u_SpotLights[NUM_SPOT];
+	#endif
+
+	#if NUM_POINT > 0
+	PointLight u_PointLights[NUM_POINT];
+	#endif
+};
 
 
 
@@ -136,9 +135,9 @@ vec3 CalcBlinnPhong(Fragment frag, vec3 dirToLight, vec3 lightDiff, vec3 lightSp
 
 
 
-float CalcAtten(float constant, float linear, float quadratic, float dist)
+float CalcAtten(float dist, float range)
 {
-	return 1.0 / (constant + linear * dist + quadratic * pow(dist, 2));
+	return clamp(1 - pow(dist, 2) / pow(range, 2), 0, 1);
 }
 
 
@@ -147,29 +146,17 @@ float CalcAtten(float constant, float linear, float quadratic, float dist)
 vec3 CalcSpotLightEffect(Fragment frag, SpotLight spotLight)
 {
 	vec3 dirToLight = spotLight.position - frag.pos;
-	float dist = length(dirToLight);
+	float lightFragDist = length(dirToLight);
 
-	if (dist > spotLight.range)
+	if (lightFragDist > spotLight.range)
 	{
 		return vec3(0);
 	}
 
 	dirToLight = normalize(dirToLight);
-
-	/* Let theta be the angle between
-	 * the direction vector pointing from the fragment to the light
-	 * and the reverse of the light's direction vector. */
-	float thetaCosine = dot(dirToLight, -spotLight.direction);
-
-	/* Let epsilon be the difference between
-	 * the cosines of the light's cutoff angles. */
-	float epsilon = spotLight.innerAngleCosine - spotLight.outerAngleCosine;
-
-	/* Determine if the frag is
-	 * inside the inner angle, or
-	 * between the inner and outer angles, or
-	 * outside the outer angle. */
-	float intensity = clamp((thetaCosine - spotLight.outerAngleCosine) / epsilon, 0.0, 1.0);
+	float lightFragAngleCos = dot(dirToLight, -spotLight.direction);
+	float cutOffCosDiff = spotLight.innerCos - spotLight.outerCos;
+	float intensity = clamp((lightFragAngleCos - spotLight.outerCos) / cutOffCosDiff, 0, 1);
 
 	if (intensity == 0)
 	{
@@ -177,7 +164,8 @@ vec3 CalcSpotLightEffect(Fragment frag, SpotLight spotLight)
 	}
 
 	vec3 spotLightEffect = CalcBlinnPhong(frag, dirToLight, spotLight.diffuseColor, spotLight.specularColor);
-	spotLightEffect *= CalcAtten(spotLight.constant, spotLight.linear, spotLight.quadratic, dist);
+	spotLightEffect *= intensity;
+	spotLightEffect *= CalcAtten(lightFragDist, spotLight.range);
 	return spotLightEffect;
 }
 #endif
@@ -198,7 +186,7 @@ vec3 CalcPointLightEffect(Fragment frag, PointLight pointLight)
 	dirToLight = normalize(dirToLight);
 
 	vec3 pointLightEffect = CalcBlinnPhong(frag, dirToLight, pointLight.diffuseColor, pointLight.specularColor);
-	pointLightEffect *= CalcAtten(pointLight.constant, pointLight.linear, pointLight.quadratic, dist);
+	pointLightEffect *= CalcAtten(dist, pointLight.range);
 	return pointLightEffect;
 }
 #endif
@@ -239,7 +227,7 @@ void main()
 		discard;
 	}
 
-	vec3 colorSum = frag.diff * u_AmbientLight;
+	vec3 colorSum = frag.diff * u_AmbLight;
 
 	#ifdef DIRLIGHT
 	colorSum += CalcBlinnPhong(frag, -u_DirLight.direction, u_DirLight.diffuseColor, u_DirLight.specularColor);

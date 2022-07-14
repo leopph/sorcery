@@ -1,5 +1,6 @@
 #include "rendering/renderers/Renderer.hpp"
 
+#include "AmbientLight.hpp"
 #include "InternalContext.hpp"
 #include "Logger.hpp"
 #include "SettingsImpl.hpp"
@@ -105,6 +106,13 @@ namespace leopph::internal
 
 
 
+	auto Renderer::GetAmbLight() const -> Vector3 const&
+	{
+		return m_AmbLight;
+	}
+
+
+
 	auto Renderer::GetDirLight() const -> std::optional<DirectionalLight const*> const&
 	{
 		return m_DirLight;
@@ -114,7 +122,7 @@ namespace leopph::internal
 
 	auto Renderer::GetCastingSpotLights() const -> std::span<SpotLight const* const>
 	{
-		return m_CastingSpotLights;;
+		return m_CastingSpotLights;
 	}
 
 
@@ -222,6 +230,8 @@ namespace leopph::internal
 
 	auto Renderer::ExtractLights() -> void
 	{
+		m_AmbLight = AmbientLight::Instance().Intensity();
+
 		if (auto const* const dirLight = GetDataManager()->DirectionalLight())
 		{
 			m_DirLight = dirLight;

@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="DebugFastImport|x64">
+      <Configuration>DebugFastImport</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Debug|x64">
       <Configuration>Debug</Configuration>
       <Platform>x64</Platform>
@@ -15,11 +19,13 @@
     <ClInclude Include="include\rendering\Extent.hpp" />
     <ClInclude Include="include\ScreenQuad.hpp" />
     <ClInclude Include="include\SettingsImpl.hpp" />
+    <ClCompile Include="src\components\AttenuatedLight.cpp" />
     <ClCompile Include="src\components\Behavior.cpp" />
     <ClCompile Include="src\components\Camera.cpp" />
     <ClCompile Include="src\components\Component.cpp" />
     <ClCompile Include="src\AmbientLight.cpp" />
     <ClCompile Include="src\components\DirLight.cpp" />
+    <ClCompile Include="src\components\Light.cpp" />
     <ClCompile Include="src\components\PointLight.cpp" />
     <ClCompile Include="src\components\SpotLight.cpp" />
     <ClCompile Include="src\components\OrthographicCamera.cpp" />
@@ -185,6 +191,12 @@
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugFastImport|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
@@ -200,6 +212,9 @@
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='DebugFastImport|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
@@ -208,14 +223,17 @@
     <OutDir>$(SolutionDir)Engine\bin\$(Configuration)_$(Platform)\</OutDir>
     <IntDir>$(SolutionDir)Engine\int\$(ProjectName)\$(Configuration)_$(Platform)\</IntDir>
     <TargetName>leopph</TargetName>
-    <LibraryPath>$(SolutionDir)Engine\bin\$(Configuration)_$(Platform)\;$(SolutionDir)Engine\deps\vendor\glfw\src\$(Configuration)\;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugFastImport|x64'">
+    <OutDir>$(SolutionDir)Engine\bin\$(Configuration)_$(Platform)\</OutDir>
+    <IntDir>$(SolutionDir)Engine\int\$(ProjectName)\$(Configuration)_$(Platform)\</IntDir>
+    <TargetName>leopph</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)Engine\bin\$(Configuration)_$(Platform)\</OutDir>
     <IntDir>$(SolutionDir)Engine\int\$(ProjectName)\$(Configuration)_$(Platform)\</IntDir>
     <TargetName>leopph</TargetName>
-    <LibraryPath>$(SolutionDir)Engine\bin\$(Configuration)_$(Platform)\;$(SolutionDir)Engine\deps\vendor\glfw\src\$(Configuration)\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -231,6 +249,35 @@
       <SubSystem>Console</SubSystem>
       <AdditionalDependencies>leopphutils.lib;leopphverterlib.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(SolutionDir)Engine\bin\$(Configuration)_$(Platform)\;$(SolutionDir)Engine\deps\vendor\glfw\src\$(Configuration)\;</AdditionalLibraryDirectories>
+    </Link>
+    <PostBuildEvent />
+    <PreBuildEvent />
+    <PreLinkEvent />
+    <CustomBuildStep />
+    <CustomBuild>
+      <Command>$(SolutionDir)Engine\deps\ShaderParser\bin\$(Configuration)_$(Platform)\ShaderParser.exe %(Fullpath) $(IntDir)%(Filename).cpp leopph::internal::ShaderFamily::%(Filename)Src rendering/shaders/ShaderFamily.hpp</Command>
+      <Message>Transpiling %(Filename)%(Extension)...</Message>
+      <Outputs>$(IntDir)%(Filename).cpp</Outputs>
+      <AdditionalInputs>$(ProjectDir)include\rendering\shaders\ShaderFamily.hpp</AdditionalInputs>
+      <OutputItemType>ClCompile</OutputItemType>
+    </CustomBuild>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DebugFastImport|x64'">
+    <ClCompile>
+      <WarningLevel>Level4</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>SPDLOG_COMPILED_LIB;ENGINE_BUILD;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(ProjectDir)include\;$(SolutionDir)Engine\LeopphverterLib\include\;$(SolutionDir)Engine\LeopphUtils\include\;$(SolutionDir)Engine\include\;$(SolutionDir)Engine\deps\vendor\gl3w\include\;$(SolutionDir)Engine\deps\vendor\glfw\include\;$(SolutionDir)Engine\deps\vendor\nlohmann_json\;$(SolutionDir)Engine\deps\vendor\taskflow_wsq\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>leopphutils.lib;leopphverterlib.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(SolutionDir)Engine\bin\$(Configuration)_$(Platform)\;$(SolutionDir)Engine\deps\vendor\glfw\src\$(Configuration)\;</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent />
     <PreBuildEvent />
@@ -263,6 +310,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>leopphutils.lib;leopphverterlib.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+      <AdditionalLibraryDirectories>$(SolutionDir)Engine\bin\$(Configuration)_$(Platform)\;$(SolutionDir)Engine\deps\vendor\glfw\src\$(Configuration)\;</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent />
     <PreBuildEvent />

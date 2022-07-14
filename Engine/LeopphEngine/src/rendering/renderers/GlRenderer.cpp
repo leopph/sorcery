@@ -1,6 +1,5 @@
 #include "rendering/renderers/GlRenderer.hpp"
 
-#include "DataManager.hpp"
 #include "InternalContext.hpp"
 #include "Logger.hpp"
 #include "ScreenQuad.hpp"
@@ -13,7 +12,6 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
-#include <limits>
 #include <stdexcept>
 #include <utility>
 

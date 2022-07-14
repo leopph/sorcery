@@ -12,10 +12,12 @@ namespace leopph
 	}
 
 
+
 	auto SpotLight::InnerAngle(float const degrees) noexcept -> void
 	{
 		m_InnerAngle = degrees;
 	}
+
 
 
 	auto SpotLight::OuterAngle() const noexcept -> float
@@ -24,10 +26,12 @@ namespace leopph
 	}
 
 
+
 	auto SpotLight::OuterAngle(float const degrees) noexcept -> void
 	{
 		m_OuterAngle = degrees;
 	}
+
 
 
 	auto SpotLight::Owner(Entity* entity) -> void
@@ -36,34 +40,43 @@ namespace leopph
 
 		if (InUse())
 		{
-			dataManager->RegisterActiveSpotLight(this);
+			dataManager->UnregisterActiveSpotLight(this);
 		}
 
 		AttenuatedLight::Owner(entity);
 
 		if (InUse())
 		{
-			dataManager->UnregisterActiveSpotLight(this);
+			dataManager->RegisterActiveSpotLight(this);
 		}
 	}
 
 
-	auto SpotLight::Active(bool active) -> void
+
+	auto SpotLight::Active(bool const active) -> void
 	{
 		auto* const dataManager = internal::GetDataManager();
 
 		if (InUse())
 		{
-			dataManager->RegisterActiveSpotLight(this);
+			dataManager->UnregisterActiveSpotLight(this);
 		}
 
 		AttenuatedLight::Active(active);
 
 		if (InUse())
 		{
-			dataManager->UnregisterActiveSpotLight(this);
+			dataManager->RegisterActiveSpotLight(this);
 		}
 	}
+
+
+
+	auto SpotLight::Clone() const -> ComponentPtr<>
+	{
+		return CreateComponent<SpotLight>(*this);
+	}
+
 
 
 	auto SpotLight::operator=(SpotLight const& other) -> SpotLight&
@@ -92,11 +105,6 @@ namespace leopph
 		return *this;
 	}
 
-
-	auto SpotLight::Clone() const -> ComponentPtr<>
-	{
-		return CreateComponent<SpotLight>(*this);
-	}
 
 
 	SpotLight::~SpotLight()

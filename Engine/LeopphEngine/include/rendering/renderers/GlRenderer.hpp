@@ -54,13 +54,6 @@ namespace leopph::internal
 			auto ExtractAndProcessInstanceData(std::vector<RenderNode>& out) -> void;
 
 
-			/* #######################
-			 * COMMON RENDER FUNCTIONS
-			 * ####################### */
-
-			auto DrawDirShadowMaps() -> void;
-
-
 			/* ########################
 			 * RENDER UTILITY FUNCTIONS
 			 * ######################## */

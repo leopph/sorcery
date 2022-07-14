@@ -31,6 +31,12 @@ namespace demo
 		camera->FarClipPlane(100);
 
 		player->CreateAndAttachComponent<demo::FirstPersonCameraController>(camera, 2.0f, 0.1f, 5.0f, 0.2f);
+		auto const sLight = player->CreateAndAttachComponent<leopph::SpotLight>();
+		sLight->Diffuse(Vector3{1});
+		sLight->Specular(sLight->Diffuse());
+		sLight->InnerAngle(25);
+		sLight->OuterAngle(35);
+		sLight->Range(5);
 
 		auto const dirLightEntity = new Entity{"dirlight"};
 		dirLightEntity->Transform()->Parent(group);
@@ -38,7 +44,8 @@ namespace demo
 		dirLightEntity->Transform()->Rotate(Vector3::Right(), 30, Space::Local);
 
 		auto const dirLight = dirLightEntity->CreateAndAttachComponent<DirectionalLight>();
-		dirLight->Diffuse(Vector3{0.1, 0.1, 0.1});
+		dirLight->Diffuse(Vector3{.06f});
+		dirLight->Specular(dirLight->Diffuse());
 		dirLight->CastsShadow(true);
 
 		auto const lamp = new Entity{"lamp"};
@@ -55,15 +62,10 @@ namespace demo
 		pLightEntity->Transform()->Translate(-0.7f, 3.7f, 0,  Space::Local);
 
 		auto const pLight = pLightEntity->CreateAndAttachComponent<PointLight>();
-		pLight->Range(30);
-		pLight->Constant(0.5f);
-		pLight->Linear(0.2f);
-		pLight->Quadratic(0.07f);
+		pLight->Diffuse(Vector3{1});
+		pLight->Specular(pLight->Diffuse());
+		pLight->Range(7);
 		pLight->CastsShadow(true);
-
-		pLightEntity->Transform()->Scale(Vector3{0.1f});
-		auto const cube = pLightEntity->CreateAndAttachComponent<leopph::Cube>();
-
 
 		pLightEntity->CreateAndAttachComponent<Flicker>(pLight, 0.75f, 3.5f, 0.05f, 0.6f);
 
@@ -81,7 +83,7 @@ namespace demo
 			camera->MakeCurrent();
 			player->Transform()->LocalPosition(Vector3{1, 1, -5});
 			player->Transform()->LocalRotation(leopph::Quaternion{});
-			AmbientLight::Instance().Intensity(Vector3{0});
+			AmbientLight::Instance().Intensity(Vector3{0.01f});
 		});
 	}
 }
