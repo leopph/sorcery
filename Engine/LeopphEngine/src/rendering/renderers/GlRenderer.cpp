@@ -26,8 +26,8 @@ namespace leopph::internal
 
 		switch (GetSettingsImpl()->GetGraphicsPipeline())
 		{
-			/*case Settings::GraphicsPipeline::Forward:
-				return std::make_unique<GlForwardRenderer>();*/
+			case Settings::GraphicsPipeline::Forward:
+				return std::make_unique<GlForwardRenderer>();
 			case Settings::GraphicsPipeline::Deferred:
 				return std::make_unique<GlDeferredRenderer>();
 		}
@@ -130,177 +130,6 @@ namespace leopph::internal
 
 
 
-	auto GlRenderer::SetAmbientData(AmbientLight const& light, ShaderProgram& lightShader) -> void
-	{
-		lightShader.SetUniform("u_AmbientLight", light.Intensity());
-	}
-
-
-
-	auto GlRenderer::SetDirectionalData(DirectionalLight const* dirLight, ShaderProgram& shader) -> void
-	{
-		if (!dirLight)
-		{
-			return;
-		}
-
-		shader.SetUniform("u_DirLight.direction", dirLight->Direction());
-		shader.SetUniform("u_DirLight.diffuseColor", dirLight->Diffuse());
-		shader.SetUniform("u_DirLight.specularColor", dirLight->Specular());
-	}
-
-
-
-	auto GlRenderer::SetSpotData(std::span<SpotLight const* const> const spotLights, ShaderProgram& shader) -> void
-	{
-		constexpr auto shadowArrayName{"u_SpotLightsShadow["};
-		constexpr auto noShadowArrayName{"u_SpotLightsNoShadow["};
-
-		auto noShadowInd{0ull};
-		auto shadowInd{0ull};
-
-		for (auto const spotLight : spotLights)
-		{
-			auto const arrayPrefix{
-				[&]() -> std::string
-				{
-					if (spotLight->CastsShadow())
-					{
-						auto ret{shadowArrayName + std::to_string(shadowInd) + "]."};
-						++shadowInd;
-						return ret;
-					}
-					auto ret{noShadowArrayName + std::to_string(noShadowInd) + "]."};
-					++noShadowInd;
-					return ret;
-				}()
-			};
-
-			shader.SetUniform(arrayPrefix + "position", spotLight->Owner()->Transform()->Position());
-			shader.SetUniform(arrayPrefix + "direction", spotLight->Owner()->Transform()->Forward());
-			shader.SetUniform(arrayPrefix + "diffuseColor", spotLight->Diffuse());
-			shader.SetUniform(arrayPrefix + "specularColor", spotLight->Specular());
-			shader.SetUniform(arrayPrefix + "constant", spotLight->Constant());
-			shader.SetUniform(arrayPrefix + "linear", spotLight->Linear());
-			shader.SetUniform(arrayPrefix + "quadratic", spotLight->Quadratic());
-			shader.SetUniform(arrayPrefix + "range", spotLight->Range());
-			shader.SetUniform(arrayPrefix + "innerAngleCosine", math::Cos(math::ToRadians(spotLight->InnerAngle())));
-			shader.SetUniform(arrayPrefix + "outerAngleCosine", math::Cos(math::ToRadians(spotLight->OuterAngle())));
-		}
-	}
-
-
-
-	auto GlRenderer::SetSpotDataIgnoreShadow(std::span<SpotLight const* const> spotLights, ShaderProgram& shader) -> void
-	{
-		for (auto i = 0; i < spotLights.size(); i++)
-		{
-			shader.SetUniform("u_SpotLightsNoShadow[" + std::to_string(i) + "].position", spotLights[i]->Owner()->Transform()->Position());
-			shader.SetUniform("u_SpotLightsNoShadow[" + std::to_string(i) + "].direction", spotLights[i]->Owner()->Transform()->Forward());
-			shader.SetUniform("u_SpotLightsNoShadow[" + std::to_string(i) + "].diffuseColor", spotLights[i]->Diffuse());
-			shader.SetUniform("u_SpotLightsNoShadow[" + std::to_string(i) + "].specularColor", spotLights[i]->Specular());
-			shader.SetUniform("u_SpotLightsNoShadow[" + std::to_string(i) + "].constant", spotLights[i]->Constant());
-			shader.SetUniform("u_SpotLightsNoShadow[" + std::to_string(i) + "].linear", spotLights[i]->Linear());
-			shader.SetUniform("u_SpotLightsNoShadow[" + std::to_string(i) + "].quadratic", spotLights[i]->Quadratic());
-			shader.SetUniform("u_SpotLightsNoShadow[" + std::to_string(i) + "].range", spotLights[i]->Range());
-			shader.SetUniform("u_SpotLightsNoShadow[" + std::to_string(i) + "]innerAngleCosine", math::Cos(math::ToRadians(spotLights[i]->InnerAngle())));
-			shader.SetUniform("u_SpotLightsNoShadow[" + std::to_string(i) + "]outerAngleCosine", math::Cos(math::ToRadians(spotLights[i]->OuterAngle())));
-		}
-	}
-
-
-
-	auto GlRenderer::SetPointData(std::span<PointLight const* const> const pointLights, ShaderProgram& shader) -> void
-	{
-		constexpr auto shadowArrayName{"u_PointLightsShadow["};
-		constexpr auto noShadowArrayName{"u_PointLightsNoShadow["};
-
-		auto noShadowInd{0ull};
-		auto shadowInd{0ull};
-
-		for (auto const pointLight : pointLights)
-		{
-			auto const arrayPrefix{
-				[&]() -> std::string
-				{
-					if (pointLight->CastsShadow())
-					{
-						auto ret{shadowArrayName + std::to_string(shadowInd) + "]."};
-						++shadowInd;
-						return ret;
-					}
-					auto ret{noShadowArrayName + std::to_string(noShadowInd) + "]."};
-					++noShadowInd;
-					return ret;
-				}()
-			};
-
-			shader.SetUniform(arrayPrefix + "position", pointLight->Owner()->Transform()->Position());
-			shader.SetUniform(arrayPrefix + "diffuseColor", pointLight->Diffuse());
-			shader.SetUniform(arrayPrefix + "specularColor", pointLight->Specular());
-			shader.SetUniform(arrayPrefix + "constant", pointLight->Constant());
-			shader.SetUniform(arrayPrefix + "linear", pointLight->Linear());
-			shader.SetUniform(arrayPrefix + "quadratic", pointLight->Quadratic());
-			shader.SetUniform(arrayPrefix + "range", pointLight->Range());
-		}
-	}
-
-
-
-	auto GlRenderer::SetPointDataIgnoreShadow(std::span<PointLight const* const> pointLights, ShaderProgram& shader) -> void
-	{
-		for (auto i = 0; i < pointLights.size(); i++)
-		{
-			shader.SetUniform("u_PointLightsNoShadow[" + std::to_string(i) + "].position", pointLights[i]->Owner()->Transform()->Position());
-			shader.SetUniform("u_PointLightsNoShadow[" + std::to_string(i) + "].diffuseColor", pointLights[i]->Diffuse());
-			shader.SetUniform("u_PointLightsNoShadow[" + std::to_string(i) + "].specularColor", pointLights[i]->Specular());
-			shader.SetUniform("u_PointLightsNoShadow[" + std::to_string(i) + "].constant", pointLights[i]->Constant());
-			shader.SetUniform("u_PointLightsNoShadow[" + std::to_string(i) + "].linear", pointLights[i]->Linear());
-			shader.SetUniform("u_PointLightsNoShadow[" + std::to_string(i) + "].quadratic", pointLights[i]->Quadratic());
-			shader.SetUniform("u_PointLightsNoShadow[" + std::to_string(i) + "].range", pointLights[i]->Range());
-		}
-	}
-
-
-
-	auto GlRenderer::CountShadows(DirectionalLight const* const dirLight, std::span<SpotLight const* const> const spotLights, std::span<PointLight const* const> const pointLights) -> ShadowCount
-	{
-		auto const dirShadow{dirLight != nullptr && dirLight->CastsShadow()};
-		auto const spotShadows{
-			std::accumulate(spotLights.begin(), spotLights.end(), 0ull, [](auto const sum, auto const elem)
-			{
-				if (elem->CastsShadow())
-				{
-					return sum + 1;
-				}
-				return sum;
-			})
-		};
-		auto const pointShadows{
-			std::accumulate(pointLights.begin(), pointLights.end(), 0ull, [](auto const sum, auto const elem)
-			{
-				if (elem->CastsShadow())
-				{
-					return sum + 1;
-				}
-				return sum;
-			})
-		};
-		return {dirShadow, spotShadows, pointShadows};
-	}
-
-
-	auto GlRenderer::DrawDirShadowMaps() -> void
-	{
-		glDisable(GL_BLEND);
-		glEnable(GL_DEPTH_TEST);
-		glDepthFunc(GL_LEQUAL);
-		glDepthMask(GL_TRUE);
-		glDisable(GL_STENCIL_TEST);
-	}
-
-
-
 	auto GlRenderer::CascadeBoundToNdc(std::span<ShadowCascade const> const cascades, std::vector<std::pair<f32, f32>>& out) const -> void
 	{
 		out.resize(cascades.size());
@@ -353,64 +182,54 @@ namespace leopph::internal
 
 	auto GlRenderer::CreateRenderTargets(GLsizei const renderWidth, GLsizei const renderHeight) -> void
 	{
-		// 2 for transparency, 2 for post process ping-pong
-		auto constexpr numColorAttachments = 4;
-
-		m_CommonColorAttachments.resize(numColorAttachments);
-		glCreateTextures(GL_TEXTURE_2D, numColorAttachments, m_CommonColorAttachments.data());
-
-		auto constexpr numRgbAttachments = 2;
-		static_assert(numRgbAttachments <= numColorAttachments);
-
-		for (auto i = 0; i < numRgbAttachments; i++)
-		{
-			glTextureStorage2D(m_CommonColorAttachments[i], 1, GL_RGB8, renderWidth, renderHeight);
-		}
-
-		// Transparency accumulator
-		glTextureStorage2D(m_CommonColorAttachments[numRgbAttachments], 1, GL_RGBA16F, renderWidth, renderHeight);
-		// Transparency revealage
-		glTextureStorage2D(m_CommonColorAttachments[numRgbAttachments + 1], 1, GL_R8, renderWidth, renderHeight);
-
-		// Potentially shared between framebuffers
-		auto constexpr numDepthStencilAttachments = 1;
-
-		m_CommonDepthStencilAttachments.resize(numDepthStencilAttachments);
-		glCreateTextures(GL_TEXTURE_2D, numDepthStencilAttachments, m_CommonDepthStencilAttachments.data());
-
-		for (auto i = 0; i < numDepthStencilAttachments; i++)
-		{
-			glTextureStorage2D(m_CommonDepthStencilAttachments[i], 1, GL_DEPTH24_STENCIL8, renderWidth, renderHeight);
-		}
-
-		// 1 for transparency MRT, 2 for post process ping-pong
-		auto constexpr numFramebuffers = 3;
-
-		m_CommonFramebuffers.resize(numFramebuffers);
-		glCreateFramebuffers(numFramebuffers, m_CommonFramebuffers.data());
-
-		// Transparency MRT
-		std::array<GLenum, 2> const transpDrawBufs{GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
-		glNamedFramebufferDrawBuffers(m_CommonFramebuffers[0], transpDrawBufs.size(), transpDrawBufs.data());
-		glNamedFramebufferTexture(m_CommonFramebuffers[0], GL_COLOR_ATTACHMENT0, m_CommonColorAttachments[2], 0);
-		glNamedFramebufferTexture(m_CommonFramebuffers[0], GL_COLOR_ATTACHMENT1, m_CommonColorAttachments[3], 0);
-		glNamedFramebufferTexture(m_CommonFramebuffers[0], GL_DEPTH_STENCIL_ATTACHMENT, m_CommonDepthStencilAttachments[0], 0);
+		// Shared depth-stencil buffer
+		glCreateTextures(GL_TEXTURE_2D, 1, &m_SharedDepthStencilBuffer);
+		glTextureStorage2D(m_SharedDepthStencilBuffer, 1, GL_DEPTH24_STENCIL8, renderWidth, renderHeight);
 
 		// Ping-pong buffers
-		for (auto frameBuf = 1, tex = 0; frameBuf < numFramebuffers && tex < 2; frameBuf++, tex++)
+		for (auto& [framebuffer, colorAttachment] : m_PingPongBuffers)
 		{
-			glNamedFramebufferDrawBuffer(m_CommonFramebuffers[frameBuf], GL_COLOR_ATTACHMENT0);
-			glNamedFramebufferTexture(m_CommonFramebuffers[frameBuf], GL_COLOR_ATTACHMENT0, m_CommonColorAttachments[tex], 0);
+			glCreateTextures(GL_TEXTURE_2D, 1, &colorAttachment);
+			glTextureStorage2D(colorAttachment, 1, GL_RGB8, renderWidth, renderHeight);
+
+			glCreateFramebuffers(1, &framebuffer);
+			glNamedFramebufferTexture(framebuffer, GL_COLOR_ATTACHMENT0, colorAttachment, 0);
+			glNamedFramebufferTexture(framebuffer, GL_DEPTH_STENCIL_ATTACHMENT, m_SharedDepthStencilBuffer, 0);
+			glNamedFramebufferDrawBuffer(framebuffer, GL_COLOR_ATTACHMENT0);
 		}
+
+		// Transparency buffer
+		glCreateTextures(GL_TEXTURE_2D, 1, &m_TransparencyBuffer.accumAttachment);
+		glTextureStorage2D(m_TransparencyBuffer.accumAttachment, 1, GL_RGBA16F, renderWidth, renderHeight);
+
+		glCreateTextures(GL_TEXTURE_2D, 1, &m_TransparencyBuffer.revealAttachment);
+		glTextureStorage2D(m_TransparencyBuffer.revealAttachment, 1, GL_R8, renderWidth, renderHeight);
+
+		glCreateFramebuffers(1, &m_TransparencyBuffer.framebuffer);
+		glNamedFramebufferTexture(m_TransparencyBuffer.framebuffer, GL_COLOR_ATTACHMENT0, m_TransparencyBuffer.accumAttachment, 0);
+		glNamedFramebufferTexture(m_TransparencyBuffer.framebuffer, GL_COLOR_ATTACHMENT1, m_TransparencyBuffer.revealAttachment, 0);
+		glNamedFramebufferTexture(m_TransparencyBuffer.framebuffer, GL_DEPTH_STENCIL_ATTACHMENT, m_SharedDepthStencilBuffer, 0);
+		glNamedFramebufferDrawBuffers(m_TransparencyBuffer.framebuffer, 2, std::array<GLenum, 2>{GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1}.data());
 	}
 
 
 
 	auto GlRenderer::DeleteRenderTargets() const -> void
 	{
-		glDeleteFramebuffers(static_cast<GLsizei>(m_CommonFramebuffers.size()), m_CommonFramebuffers.data());
-		glDeleteTextures(static_cast<GLsizei>(m_CommonColorAttachments.size()), m_CommonColorAttachments.data());
-		glDeleteTextures(static_cast<GLsizei>(m_CommonDepthStencilAttachments.size()), m_CommonDepthStencilAttachments.data());
+		// Transparency buffer
+		glDeleteFramebuffers(1, &m_TransparencyBuffer.framebuffer);
+		glDeleteTextures(1, &m_TransparencyBuffer.revealAttachment);
+		glDeleteTextures(1, &m_TransparencyBuffer.accumAttachment);
+
+		// Ping-pong buffers
+		for (auto const& [framebuffer, colorAttachment] : m_PingPongBuffers)
+		{
+			glDeleteFramebuffers(1, &framebuffer);
+			glDeleteTextures(1, &colorAttachment);
+		}
+
+		// Shared depth-stencil buffer
+		glDeleteTextures(1, &m_SharedDepthStencilBuffer);
 	}
 
 

@@ -1,175 +1,153 @@
-/*#include "rendering/renderers/GlForwardRenderer.hpp"
+#include "rendering/renderers/GlForwardRenderer.hpp"
 
+#include "AmbientLight.hpp"
 #include "Camera.hpp"
-#include "DataManager.hpp"
-#include "InternalContext.hpp"
+#include "Entity.hpp"
 #include "Logger.hpp"
-#include "Matrix.hpp"
-#include "rendering/gl/GlCore.hpp"
 
+#include <ranges>
 #include <string>
 #include <utility>
 
 
 namespace leopph::internal
 {
-	GlForwardRenderer::GlForwardRenderer() :
-		m_ObjectShader
-		{
-			{
-				{ShaderFamily::ObjectVertSrc, ShaderType::Vertex},
-				{ShaderFamily::ObjectFragSrc, ShaderType::Fragment}
-			}
-		},
-		m_TranspCompositeShader
-		{
-			{
-				{ShaderFamily::Pos2DPassthroughVertSrc, ShaderType::Vertex},
-				{ShaderFamily::TranspCompositeFragSrc, ShaderType::Fragment}
-			}
-		}
+	GlForwardRenderer::GlForwardRenderer()
 	{
-		glDepthFunc(GL_LEQUAL);
-		glFrontFace(GL_CCW);
-		glCullFace(GL_BACK);
-		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-
 		Logger::Instance().Warning("The forward rendering pipeline is currently not feature complete. It is recommended to use the deferred pipeline.");
 	}
 
 
+
 	auto GlForwardRenderer::Render() -> void
 	{
-		// We don't render if there is no camera to use
-		if (Camera::Current() == nullptr)
+		Renderer::Render();
+
+		if (!GetMainCamera())
 		{
 			return;
 		}
 
 		static std::vector<RenderNode> renderNodes;
-		static std::vector<SpotLight const*> spotLights;
-		static std::vector<PointLight const*> pointLights;
-
 		renderNodes.clear();
 		ExtractAndProcessInstanceData(renderNodes);
-		spotLights.clear();
-		ExtractSpotLightsCurrentCamera(spotLights);
-		pointLights.clear();
-		ExtractPointLightsCurrentCamera(pointLights);
 
-		auto const* const dirLight = GetDataManager()->DirectionalLight();
 
-		auto const currCamViewMat = Camera::Current()->ViewMatrix();
-		auto const currCamProjMat = Camera::Current()->ProjectionMatrix();
-
+		// SET PIPELINE STATE FOR OPAQUE PASS
 		glDisable(GL_BLEND);
 		glEnable(GL_DEPTH_TEST);
+		glDepthFunc(GL_LEQUAL);
 		glDepthMask(GL_TRUE);
-
-		m_RenderBuffer.Clear();
-		m_RenderBuffer.BindForWriting();
-		RenderOpaque(currCamViewMat, currCamProjMat, renderNodes, dirLight, spotLights, pointLights);
-		RenderSkybox(currCamViewMat, currCamProjMat);
-		RenderTransparent(currCamViewMat, currCamProjMat, renderNodes, dirLight, spotLights, pointLights);
-		Compose();
-		ApplyGammaCorrection();
-		Present();
-	}
+		glDisable(GL_STENCIL_TEST);
+		glViewport(0, 0, GetRenderRes().Width, GetRenderRes().Height);
 
 
-	auto GlForwardRenderer::RenderOpaque(Matrix4 const& camViewMat, Matrix4 const& camProjMat, std::vector<RenderNode> const& renderNodes, DirectionalLight const* dirLight, std::vector<SpotLight const*> const& spotLights, std::vector<PointLight const*> const& pointLights) -> void
-	{
-		m_ObjectShader.Clear();
-		m_ObjectShader["DIRLIGHT"] = std::to_string(dirLight != nullptr);
-		m_ObjectShader["DIRLIGHT_SHADOW"] = std::to_string(false); // temporary
-		m_ObjectShader["NUM_SPOTLIGHTS"] = std::to_string(spotLights.size());
-		m_ObjectShader["NUM_SPOTLIGHT_SHADOWS"] = std::to_string(0); // temporary
-		m_ObjectShader["NUM_POINTLIGHTS"] = std::to_string(pointLights.size());
-		m_ObjectShader["NUM_POINTLIGHT_SHADOWS"] = std::to_string(0); // temporary
-		m_ObjectShader["TRANSPARENT"] = std::to_string(false);
+		// OPAQUE PASS
 
-		auto& shader{m_ObjectShader.GetPermutation()};
+		GLfloat constexpr clearColor[]{0, 0, 0, 1};
+		GLfloat constexpr clearDepth{1};
+		glClearNamedFramebufferfv(m_PingPongBuffers[0].framebuffer, GL_COLOR, 0, clearColor);
+		glClearNamedFramebufferfv(m_PingPongBuffers[0].framebuffer, GL_DEPTH, 0, &clearDepth);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_PingPongBuffers[0].framebuffer);
 
-		shader.SetUniform("u_ViewProjMat", camViewMat * camProjMat);
-		shader.SetUniform("u_CamPos", Camera::Current()->Owner()->Transform()->Position());
+		m_ForwardObjectShader.Clear();
+		if (GetDirLight())
+		{
+			m_ForwardObjectShader["DIRLIGHT"] = "";
+		}
+		m_ForwardObjectShader["NUM_SPOT"] = std::to_string(GetCastingSpotLights().size() + GetNonCastingSpotLights().size());
+		m_ForwardObjectShader["NUM_POINT"] = std::to_string(GetCastingPointLights().size() + GetNonCastingPointLights().size());
 
-		SetAmbientData(AmbientLight::Instance(), shader);
-		SetDirectionalData(dirLight, shader);
-		SetSpotDataIgnoreShadow(spotLights, shader); // temporary
-		SetPointDataIgnoreShadow(pointLights, shader); // temporary
+		auto& opaqueShader = m_ForwardObjectShader.GetPermutation();
+		opaqueShader.Use();
+		opaqueShader.SetUniform("u_ViewProjMat", (*GetMainCamera())->ViewMatrix() * (*GetMainCamera())->ProjectionMatrix());
+		opaqueShader.SetUniform("u_CamPos", (*GetMainCamera())->Owner()->Transform()->Position());
+		opaqueShader.SetUniform("u_AmbientLight", AmbientLight::Instance().Intensity());
 
-		shader.Use();
+		if (GetDirLight())
+		{
+			auto const* const dirLight = *GetDirLight();
+			opaqueShader.SetUniform("u_DirLight.direction", dirLight->Direction());
+			opaqueShader.SetUniform("u_DirLight.diffuseColor", dirLight->Diffuse());
+			opaqueShader.SetUniform("u_DirLight.specularColor", dirLight->Specular());
+		}
+
+		for (auto i = 0; auto const* const spotLight : std::ranges::join_view{std::array{GetCastingSpotLights(), GetNonCastingSpotLights()}})
+		{
+			auto const indStr = std::to_string(i);
+			opaqueShader.SetUniform("u_SpotLights[" + indStr + "].position", spotLight->Owner()->Transform()->Position());
+			opaqueShader.SetUniform("u_SpotLights[" + indStr + "].direction", spotLight->Owner()->Transform()->Forward());
+			opaqueShader.SetUniform("u_SpotLights[" + indStr + "].diffuseColor", spotLight->Diffuse());
+			opaqueShader.SetUniform("u_SpotLights[" + indStr + "].specularColor", spotLight->Specular());
+			opaqueShader.SetUniform("u_SpotLights[" + indStr + "].constant", spotLight->Constant());
+			opaqueShader.SetUniform("u_SpotLights[" + indStr + "].linear", spotLight->Linear());
+			opaqueShader.SetUniform("u_SpotLights[" + indStr + "].quadratic", spotLight->Quadratic());
+			opaqueShader.SetUniform("u_SpotLights[" + indStr + "].range", spotLight->Range());
+			opaqueShader.SetUniform("u_SpotLights[" + indStr + "].innerAngleCosine", math::Cos(math::ToRadians(spotLight->InnerAngle())));
+			opaqueShader.SetUniform("u_SpotLights[" + indStr + "].outerAngleCosine", math::Cos(math::ToRadians(spotLight->OuterAngle())));
+			i++;
+		}
+
+		for (auto i = 0; auto const* const pointLight : std::ranges::join_view{std::array{GetCastingPointLights(), GetNonCastingPointLights()}})
+		{
+			auto const indStr = std::to_string(i);
+			opaqueShader.SetUniform("u_PointLights[" + indStr + "].position", pointLight->Owner()->Transform()->Position());
+			opaqueShader.SetUniform("u_PointLights[" + indStr + "].diffuseColor", pointLight->Diffuse());
+			opaqueShader.SetUniform("u_PointLights[" + indStr + "].specularColor", pointLight->Specular());
+			opaqueShader.SetUniform("u_PointLights[" + indStr + "].constant", pointLight->Constant());
+			opaqueShader.SetUniform("u_PointLights[" + indStr + "].linear", pointLight->Linear());
+			opaqueShader.SetUniform("u_PointLights[" + indStr + "].quadratic", pointLight->Quadratic());
+			opaqueShader.SetUniform("u_PointLights[" + indStr + "].range", pointLight->Range());
+			i++;
+		}
 
 		for (auto const& [renderable, instances, castsShadow] : renderNodes)
 		{
 			renderable->SetInstanceData(instances);
-			renderable->DrawWithMaterial(shader, 0, false);
+			renderable->DrawWithMaterial(opaqueShader, 0, true);
 		}
-	}
 
 
-	auto GlForwardRenderer::RenderTransparent(Matrix4 const& camViewMat, Matrix4 const& camProjMat, std::vector<RenderNode> const& renderNodes, DirectionalLight const* dirLight, std::vector<SpotLight const*> const& spotLights, std::vector<PointLight const*> const& pointLights) -> void
-	{
-		m_ObjectShader.Clear();
-		m_ObjectShader["DIRLIGHT"] = std::to_string(dirLight != nullptr);
-		m_ObjectShader["DIRLIGHT_SHADOW"] = std::to_string(false);
-		m_ObjectShader["NUM_SPOTLIGHTS"] = std::to_string(spotLights.size());
-		m_ObjectShader["NUM_SPOTLIGHT_SHADOWS"] = std::to_string(0);
-		m_ObjectShader["NUM_POINTLIGHTS"] = std::to_string(pointLights.size());
-		m_ObjectShader["NUM_POINTLIGHT_SHADOWS"] = std::to_string(0);
-		m_ObjectShader["TRANSPARENT"] = std::to_string(true);
-		auto& transpObjectShader{m_ObjectShader.GetPermutation()};
-
-		transpObjectShader.SetUniform("u_ViewProjMat", camViewMat * camProjMat);
-		transpObjectShader.SetUniform("u_CamPos", Camera::Current()->Owner()->Transform()->Position());
-
-		SetAmbientData(AmbientLight::Instance(), transpObjectShader);
-		SetDirectionalData(dirLight, transpObjectShader);
-		SetSpotDataIgnoreShadow(spotLights, transpObjectShader);
-		SetPointDataIgnoreShadow(pointLights, transpObjectShader);
-
-		transpObjectShader.Use();
-		m_TransparencyBuffer.Clear();
-		m_TransparencyBuffer.BindForWriting();
-
-		glDepthMask(GL_FALSE);
-		glEnable(GL_BLEND);
-		glBlendFunci(0, GL_ONE, GL_ONE);
-		glBlendFunci(1, GL_ZERO, GL_ONE_MINUS_SRC_COLOR);
-
-		for (auto const& [renderable, instances, castsShadow] : renderNodes)
+		// SKYBOX PASS
+		if (auto const& background = (*GetMainCamera())->Background(); std::holds_alternative<Skybox>(background))
 		{
-			renderable->SetInstanceData(instances);
-			renderable->DrawWithMaterial(transpObjectShader, 0, true);
+			// SET PIPELINE STATE
+			glDisable(GL_BLEND);
+			glDisable(GL_DEPTH_TEST);
+			glEnable(GL_STENCIL_TEST);
+			glStencilFunc(GL_EQUAL, 0, 1);
+			glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+			glViewport(0, 0, GetRenderRes().Width, GetRenderRes().Height);
+			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_PingPongBuffers[0].framebuffer);
+
+			m_SkyboxShader.Clear();
+			auto& shader = m_SkyboxShader.GetPermutation();
+			shader.Use();
+			shader.SetUniform("u_ViewProjMat", static_cast<Matrix4>(static_cast<Matrix3>((*GetMainCamera())->ViewMatrix())) * (*GetMainCamera())->ProjectionMatrix());
+			CreateOrGetSkyboxImpl(std::get<Skybox>(background).AllPaths())->Draw(shader);
 		}
-	}
 
 
-	auto GlForwardRenderer::Compose() -> void
-	{
-		auto& compositeShader{m_TranspCompositeShader.GetPermutation()};
-		compositeShader.Use();
-
-		m_TransparencyBuffer.BindForReading(compositeShader, 0);
-		m_RenderBuffer.BindForWriting();
-
+		// SET GAMMA PASS PIPELINE STATE
+		glDisable(GL_BLEND);
 		glDisable(GL_DEPTH_TEST);
-		glBlendFunc(GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA);
+		glDisable(GL_STENCIL_TEST);
+		glViewport(0, 0, GetRenderRes().Width, GetRenderRes().Height);
+
+
+		// GAMMA CORRECTION PASS
+		m_GammaCorrectShader.Clear();
+		auto& gammaShader = m_GammaCorrectShader.GetPermutation();
+		gammaShader.SetUniform("u_GammaInverse", 1.f / GetGamma());
+		gammaShader.Use();
+
+		glBindTextureUnit(0, m_PingPongBuffers[0].colorAttachment);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_PingPongBuffers[1].framebuffer);
 
 		DrawScreenQuad();
-	}
 
 
-	auto GlForwardRenderer::RenderSkybox(Matrix4 const& camViewMat, Matrix4 const& camProjMat) -> void
-	{
-		if (auto const& background{Camera::Current()->Background()}; std::holds_alternative<Skybox>(background))
-		{
-			auto& skyboxShader{m_SkyboxShader.GetPermutation()};
-			skyboxShader.SetUniform("u_ViewProjMat", static_cast<Matrix4>(static_cast<Matrix3>(camViewMat)) * camProjMat);
-			skyboxShader.Use();
-
-			static_cast<GlRenderer*>(GetRenderer())->CreateOrGetSkyboxImpl(std::get<Skybox>(background).AllPaths())->Draw(skyboxShader);
-		}
+		// COPY TO DEFAULT FRAMEBUFFER
+		glBlitNamedFramebuffer(m_PingPongBuffers[1].framebuffer, 0, 0, 0, GetRenderRes().Width, GetRenderRes().Height, 0, 0, GetRenderRes().Width, GetRenderRes().Height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
 	}
 }
-*/

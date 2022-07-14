@@ -1,9 +1,9 @@
-#version 410 core
+#version 420 core
 
-layout (location = 0) out vec4 out_FragColor;
+layout(location = 0) out vec4 out_FragColor;
 
-uniform sampler2D u_AccumTex;
-uniform sampler2D u_RevealTex;
+layout(binding = 0) uniform sampler2D u_AccumTex;
+layout(binding = 1) uniform sampler2D u_RevealTex;
 
 
 void main()

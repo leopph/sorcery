@@ -1,9 +1,9 @@
 #version 420 core
 
 
-//! #define POINTLIGHT
+//! #define DIRLIGHT
 //! #define SHADOW
-//! #define NUM_CASCADES 1
+//! #define NUM_CASCADES 3
 
 
 struct Fragment
@@ -72,11 +72,11 @@ layout(pixel_center_integer) in vec4 gl_FragCoord;
 layout(location = 0) out vec3 out_FragColor;
 
 
-uniform usampler2D u_NormColorGlossTex;
-uniform sampler2D u_DepthTex;
+layout(binding = 0) uniform usampler2D u_NormColorGlossTex;
+layout(binding = 1) uniform sampler2D u_DepthTex;
 
 
-layout(binding = 0) uniform Commons
+layout(std140, binding = 0) uniform Commons
 {
 	layout(row_major) mat4 u_CamViewProjInv;
 	vec3 u_CamPos;
@@ -104,14 +104,14 @@ uniform PointLight u_Light;
 
 #ifdef DIRLIGHT
 uniform ShadowCascade u_ShadowCascades[NUM_CASCADES];
-uniform sampler2DShadow u_ShadowMaps[NUM_CASCADES];
+layout(binding = 2) uniform sampler2DShadow u_ShadowMaps[NUM_CASCADES];
 
 #elif defined SPOTLIGHT
 uniform mat4 u_ShadowWorldToClipMat;
-uniform sampler2DShadow u_ShadowMap;
+layout(binding = 2) uniform sampler2DShadow u_ShadowMap;
 
 #elif defined POINTLIGHT
-uniform samplerCube u_ShadowMap;
+layout(binding = 2) uniform samplerCube u_ShadowMap;
 
 #endif
 #endif

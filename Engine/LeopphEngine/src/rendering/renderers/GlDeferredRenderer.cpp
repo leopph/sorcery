@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <array>
+#include <ranges>
 #include <utility>
 
 
@@ -166,6 +167,7 @@ namespace leopph::internal
 			}
 		}
 
+
 		// SET PIPELINE STATE FOR GEOMETRY PASS
 		glDisable(GL_BLEND);
 		glEnable(GL_DEPTH_TEST);
@@ -189,9 +191,9 @@ namespace leopph::internal
 		GLuint constexpr gClearColor[]{0, 0, 0};
 		GLfloat constexpr clearDepth{1};
 		auto constexpr clearStencil{0};
-		glClearNamedFramebufferuiv(m_GbufferFramebuffer, GL_COLOR, 0, gClearColor);
-		glClearNamedFramebufferfi(m_GbufferFramebuffer, GL_DEPTH_STENCIL, 0, clearDepth, clearStencil);
-		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_GbufferFramebuffer);
+		glClearNamedFramebufferuiv(m_Gbuffer.framebuffer, GL_COLOR, 0, gClearColor);
+		glClearNamedFramebufferfi(m_Gbuffer.framebuffer, GL_DEPTH_STENCIL, 0, clearDepth, clearStencil);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_Gbuffer.framebuffer);
 
 		for (auto const& [renderable, instances, castsShadow] : renderNodes)
 		{
@@ -201,7 +203,9 @@ namespace leopph::internal
 
 
 		// SET PIPELINE STATE FOR LIGHTING PASS
-		glDisable(GL_BLEND);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_ONE, GL_ONE);
+		glBlendEquation(GL_FUNC_ADD);
 		glDisable(GL_DEPTH_TEST);
 		glEnable(GL_STENCIL_TEST);
 		glStencilFunc(GL_EQUAL, 1, 1);
@@ -209,26 +213,25 @@ namespace leopph::internal
 		glViewport(0, 0, GetRenderRes().Width, GetRenderRes().Height);
 
 		// LIGHT PASS
-		GLfloat constexpr lClearColor[]{0, 0, 0};
-		glClearNamedFramebufferfv(m_CommonFramebuffers[1], GL_COLOR, 0, lClearColor);
-		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_CommonFramebuffers[1]);
+		GLfloat constexpr lClearColor[]{0, 0, 0, 1};
+		glClearNamedFramebufferfv(m_PingPongBuffers[0].framebuffer, GL_COLOR, 0, lClearColor);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_PingPongBuffers[0].framebuffer);
 
 		auto* const ubo = glMapNamedBuffer(m_Ubos[0], GL_WRITE_ONLY);
 		*static_cast<Matrix4*>(ubo) = camViewProjMat.Inverse();
 		*reinterpret_cast<Vector3*>(static_cast<u8*>(ubo) + sizeof(Matrix4)) = (*GetMainCamera())->Owner()->Transform()->Position();
 		glUnmapNamedBuffer(m_Ubos[0]);
 
+		glBindTextureUnit(0, m_Gbuffer.colorAttachment);
+		glBindTextureUnit(1, m_SharedDepthStencilBuffer);
+
 		// AMBIENT LIGHT
 		m_LightShader.Clear();
 		m_LightShader["AMBIENTLIGHT"] = "";
 		auto& ambShader = m_LightShader.GetPermutation();
 		ambShader.SetUniform("u_Light", AmbientLight::Instance().Intensity());
-		ambShader.SetUniform("u_NormColorGlossTex", 0);
-		ambShader.SetUniform("u_DepthTex", 1);
 		ambShader.Use();
 
-		glBindTextureUnit(0, m_GbufferColorAttachments[0]);
-		glBindTextureUnit(1, m_CommonDepthStencilAttachments[0]);
 		DrawScreenQuad();
 
 		// DIRECTIONAL LIGHT
@@ -250,20 +253,18 @@ namespace leopph::internal
 			shader.SetUniform("u_Light.direction", dirLight->Direction());
 			shader.SetUniform("u_Light.diffuseColor", dirLight->Diffuse());
 			shader.SetUniform("u_Light.specularColor", dirLight->Specular());
-			shader.SetUniform("u_NormColorGloss", 0);
-			shader.SetUniform("u_DepthTex", 1);
-			glBindTextureUnit(0, m_GbufferColorAttachments[0]);
-			glBindTextureUnit(1, m_CommonDepthStencilAttachments[0]);
 
 			if (dirLight->CastsShadow())
 			{
+				static std::vector<std::pair<f32, f32>> cascadeBoundsNdc;
+				CascadeBoundToNdc(shadowCascades, cascadeBoundsNdc);
+
 				for (auto i = 0; i < shadowCascades.size(); i++)
 				{
 					shader.SetUniform("u_ShadowCascades[" + std::to_string(i) + "].worldToClipMat", shadowCascades[i].WorldToClip);
-					shader.SetUniform("u_ShadowCascades[" + std::to_string(i) + "].nearZ", shadowCascades[i].Near);
-					shader.SetUniform("u_ShadowCascades[" + std::to_string(i) + "].farZ", shadowCascades[i].Far);
-					shader.SetUniform("u_ShadowMaps[" + std::to_string(i) + "]", i + 1);
-					glBindTextureUnit(i + 1, m_DirShadowMapDepthAttachments[i]);
+					shader.SetUniform("u_ShadowCascades[" + std::to_string(i) + "].nearZ", cascadeBoundsNdc[i].first);
+					shader.SetUniform("u_ShadowCascades[" + std::to_string(i) + "].farZ", cascadeBoundsNdc[i].second);
+					glBindTextureUnit(2 + i, m_DirShadowMapDepthAttachments[i]);
 				}
 			}
 
@@ -280,10 +281,6 @@ namespace leopph::internal
 			m_LightShader["SHADOW"] = "";
 			auto& shader = m_LightShader.GetPermutation();
 			shader.Use();
-			shader.SetUniform("u_NormColorGloss", 0);
-			shader.SetUniform("u_DepthTex", 1);
-			glBindTextureUnit(0, m_GbufferColorAttachments[0]);
-			glBindTextureUnit(1, m_CommonDepthStencilAttachments[0]);
 
 			for (auto i = 0; i < spotLights.size(); i++)
 			{
@@ -298,7 +295,6 @@ namespace leopph::internal
 				shader.SetUniform("u_Light.innerAngleCosine", math::Cos(math::ToRadians(spotLights[i]->InnerAngle())));
 				shader.SetUniform("u_Light.outerAngleCosine", math::Cos(math::ToRadians(spotLights[i]->OuterAngle())));
 				shader.SetUniform("u_ShadowWorldToClip", spotShadowMats[i]);
-				shader.SetUniform("u_ShadowMap", 2);
 				glBindTextureUnit(2, m_SpotShadowMapDepthAttachments[i]);
 				DrawScreenQuad();
 			}
@@ -311,10 +307,6 @@ namespace leopph::internal
 			m_LightShader["SPOTLIGHT"] = "";
 			auto& shader = m_LightShader.GetPermutation();
 			shader.Use();
-			shader.SetUniform("u_NormColorGloss", 0);
-			shader.SetUniform("u_DepthTex", 1);
-			glBindTextureUnit(0, m_GbufferColorAttachments[0]);
-			glBindTextureUnit(1, m_CommonDepthStencilAttachments[0]);
 
 			for (auto const* const spotLight : GetNonCastingSpotLights())
 			{
@@ -342,10 +334,6 @@ namespace leopph::internal
 			m_LightShader["SHADOW"] = "";
 			auto& shader = m_LightShader.GetPermutation();
 			shader.Use();
-			shader.SetUniform("u_NormColorGloss", 0);
-			shader.SetUniform("u_DepthTex", 1);
-			glBindTextureUnit(0, m_GbufferColorAttachments[0]);
-			glBindTextureUnit(1, m_CommonDepthStencilAttachments[0]);
 
 			for (auto i = 0; i < pointLights.size(); i++)
 			{
@@ -356,7 +344,6 @@ namespace leopph::internal
 				shader.SetUniform("u_Light.linear", pointLights[i]->Linear());
 				shader.SetUniform("u_Light.quadratic", pointLights[i]->Quadratic());
 				shader.SetUniform("u_Light.range", pointLights[i]->Range());
-				shader.SetUniform("u_ShadowMap", 2);
 				glBindTextureUnit(2, m_PointShadowMapColorAttachments[i]);
 				DrawScreenQuad();
 			}
@@ -371,10 +358,6 @@ namespace leopph::internal
 			m_LightShader["POINTLIGHT"] = "";
 			auto& shader = m_LightShader.GetPermutation();
 			shader.Use();
-			shader.SetUniform("u_NormColorGloss", 0);
-			shader.SetUniform("u_DepthTex", 1);
-			glBindTextureUnit(0, m_GbufferColorAttachments[0]);
-			glBindTextureUnit(1, m_CommonDepthStencilAttachments[0]);
 
 			for (auto const* const pointLight : pointLights)
 			{
@@ -389,6 +372,7 @@ namespace leopph::internal
 			}
 		}
 
+
 		// SKYBOX PASS
 		if (auto const& background = (*GetMainCamera())->Background(); std::holds_alternative<Skybox>(background))
 		{
@@ -399,7 +383,7 @@ namespace leopph::internal
 			glStencilFunc(GL_EQUAL, 0, 1);
 			glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 			glViewport(0, 0, GetRenderRes().Width, GetRenderRes().Height);
-			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_CommonFramebuffers[1]);
+			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_PingPongBuffers[0].framebuffer);
 
 			m_SkyboxShader.Clear();
 			auto& shader = m_SkyboxShader.GetPermutation();
@@ -409,87 +393,145 @@ namespace leopph::internal
 		}
 
 
-		// TRANSPARENT PASS
-		// TODO
-	}
-
-
-
-	/*auto GlDeferredRenderer::RenderTransparent(Matrix4 const& camViewMat, Matrix4 const& camProjMat, std::vector<RenderNode> const& renderNodes, DirectionalLight const* dirLight, std::vector<SpotLight const*> const& spotLights, std::vector<PointLight const*> const& pointLights) -> void
-	{
-		m_ForwardObjectShader.Clear();
-		m_ForwardObjectShader["DIRLIGHT"] = std::to_string(dirLight != nullptr);
-		m_ForwardObjectShader["DIRLIGHT_SHADOW"] = std::to_string(false);
-		m_ForwardObjectShader["NUM_SPOTLIGHTS"] = std::to_string(spotLights.size());
-		m_ForwardObjectShader["NUM_SPOTLIGHT_SHADOWS"] = std::to_string(0);
-		m_ForwardObjectShader["NUM_POINTLIGHTS"] = std::to_string(pointLights.size());
-		m_ForwardObjectShader["NUM_POINTLIGHT_SHADOWS"] = std::to_string(0);
-		m_ForwardObjectShader["TRANSPARENT"] = std::to_string(true);
-
-		auto& forwardShader{m_ForwardObjectShader.GetPermutation()};
-
-		forwardShader.SetUniform("u_ViewProjMat", camViewMat * camProjMat);
-		forwardShader.SetUniform("u_CamPos", Camera::Current()->Owner()->Transform()->Position());
-
-		SetAmbientData(AmbientLight::Instance(), forwardShader);
-		SetDirectionalData(dirLight, forwardShader);
-		SetSpotDataIgnoreShadow(spotLights, forwardShader);
-		SetPointDataIgnoreShadow(pointLights, forwardShader);
-
-		forwardShader.Use();
-
-		m_TransparencyBuffer.Clear();
-		m_TransparencyBuffer.BindForWriting();
-
+		// SET TRANSPARENT PASS PIPELINE STATE
 		glEnable(GL_BLEND);
 		glBlendFunci(0, GL_ONE, GL_ONE);
 		glBlendFunci(1, GL_ZERO, GL_ONE_MINUS_SRC_COLOR);
-
 		glEnable(GL_DEPTH_TEST);
 		glDepthMask(GL_FALSE);
-
+		glDepthFunc(GL_LEQUAL);
 		glDisable(GL_STENCIL_TEST);
+		glViewport(0, 0, GetRenderRes().Width, GetRenderRes().Height);
+
+		// TRANSPARENT PASS
+		GLfloat constexpr accumClear[]{0, 0, 0, 0};
+		GLfloat constexpr revealClear{1};
+		glClearNamedFramebufferfv(m_TransparencyBuffer.framebuffer, GL_COLOR, 0, accumClear);
+		glClearNamedFramebufferfv(m_TransparencyBuffer.framebuffer, GL_COLOR, 0, &revealClear);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_TransparencyBuffer.framebuffer);
+
+		m_ForwardObjectShader.Clear();
+		if (GetDirLight())
+		{
+			m_ForwardObjectShader["DIRLIGHT"] = "";
+		}
+
+		m_ForwardObjectShader["NUM_SPOT"] = std::to_string(GetCastingSpotLights().size() + GetNonCastingSpotLights().size());
+		m_ForwardObjectShader["NUM_POINT"] = std::to_string(GetCastingPointLights().size() + GetNonCastingPointLights().size());
+		m_ForwardObjectShader["TRANSPARENT"] = "";
+
+		auto& transpShader = m_ForwardObjectShader.GetPermutation();
+		transpShader.Use();
+		transpShader.SetUniform("u_ViewProjMat", camViewProjMat);
+		transpShader.SetUniform("u_CamPos", (*GetMainCamera())->Owner()->Transform()->Position());
+		transpShader.SetUniform("u_AmbientLight", AmbientLight::Instance().Intensity());
+
+		if (GetDirLight())
+		{
+			auto const* const dirLight = *GetDirLight();
+			transpShader.SetUniform("u_DirLight.direction", dirLight->Direction());
+			transpShader.SetUniform("u_DirLight.diffuseColor", dirLight->Diffuse());
+			transpShader.SetUniform("u_DirLight.specularColor", dirLight->Specular());
+		}
+
+		for (auto i = 0; auto const* const spotLight : std::ranges::join_view{std::array{GetCastingSpotLights(), GetNonCastingSpotLights()}})
+		{
+			auto const indStr = std::to_string(i);
+			transpShader.SetUniform("u_SpotLights[" + indStr + "].position", spotLight->Owner()->Transform()->Position());
+			transpShader.SetUniform("u_SpotLights[" + indStr + "].direction", spotLight->Owner()->Transform()->Forward());
+			transpShader.SetUniform("u_SpotLights[" + indStr + "].diffuseColor", spotLight->Diffuse());
+			transpShader.SetUniform("u_SpotLights[" + indStr + "].specularColor", spotLight->Specular());
+			transpShader.SetUniform("u_SpotLights[" + indStr + "].constant", spotLight->Constant());
+			transpShader.SetUniform("u_SpotLights[" + indStr + "].linear", spotLight->Linear());
+			transpShader.SetUniform("u_SpotLights[" + indStr + "].quadratic", spotLight->Quadratic());
+			transpShader.SetUniform("u_SpotLights[" + indStr + "].range", spotLight->Range());
+			transpShader.SetUniform("u_SpotLights[" + indStr + "].innerAngleCosine", math::Cos(math::ToRadians(spotLight->InnerAngle())));
+			transpShader.SetUniform("u_SpotLights[" + indStr + "].outerAngleCosine", math::Cos(math::ToRadians(spotLight->OuterAngle())));
+			i++;
+		}
+
+		for (auto i = 0; auto const* const pointLight : std::ranges::join_view{std::array{GetCastingPointLights(), GetNonCastingPointLights()}})
+		{
+			auto const indStr = std::to_string(i);
+			transpShader.SetUniform("u_PointLights[" + indStr + "].position", pointLight->Owner()->Transform()->Position());
+			transpShader.SetUniform("u_PointLights[" + indStr + "].diffuseColor", pointLight->Diffuse());
+			transpShader.SetUniform("u_PointLights[" + indStr + "].specularColor", pointLight->Specular());
+			transpShader.SetUniform("u_PointLights[" + indStr + "].constant", pointLight->Constant());
+			transpShader.SetUniform("u_PointLights[" + indStr + "].linear", pointLight->Linear());
+			transpShader.SetUniform("u_PointLights[" + indStr + "].quadratic", pointLight->Quadratic());
+			transpShader.SetUniform("u_PointLights[" + indStr + "].range", pointLight->Range());
+			i++;
+		}
 
 		for (auto const& [renderable, instances, castsShadow] : renderNodes)
 		{
 			renderable->SetInstanceData(instances);
-			renderable->DrawWithMaterial(forwardShader, 0, true);
+			renderable->DrawWithMaterial(transpShader, 0, true);
 		}
 
-		auto& compositeShader{m_TranspCompositeShader.GetPermutation()};
-		compositeShader.Use();
 
-		m_TransparencyBuffer.BindForReading(compositeShader, 0);
-		m_RenderBuffer.BindForWriting();
-
+		// SET PIPELINE STATE FOR COMPOSITE PASS
+		glEnable(GL_BLEND);
 		glBlendFunc(GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA);
-
 		glDisable(GL_DEPTH_TEST);
+		glDisable(GL_STENCIL_TEST);
+		glViewport(0, 0, GetRenderRes().Width, GetRenderRes().Height);
+
+		// COMPOSITE PASS
+		m_TranspCompositeShader.Clear();
+		auto& compShader = m_TranspCompositeShader.GetPermutation();
+		compShader.Use();
+
+		glBindTextureUnit(0, m_TransparencyBuffer.accumAttachment);
+		glBindTextureUnit(1, m_TransparencyBuffer.revealAttachment);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_PingPongBuffers[0].framebuffer);
 
 		DrawScreenQuad();
-	}*/
+
+
+		// SET GAMMA PASS PIPELINE STATE
+		glDisable(GL_BLEND);
+		glDisable(GL_DEPTH_TEST);
+		glDisable(GL_STENCIL_TEST);
+		glViewport(0, 0, GetRenderRes().Width, GetRenderRes().Height);
+
+		// GAMMA CORRECTION PASS
+		m_GammaCorrectShader.Clear();
+		auto& gammaShader = m_GammaCorrectShader.GetPermutation();
+		gammaShader.SetUniform("u_GammaInverse", 1.f / GetGamma());
+		gammaShader.Use();
+
+		glBindTextureUnit(0, m_PingPongBuffers[0].colorAttachment);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_PingPongBuffers[1].framebuffer);
+
+		DrawScreenQuad();
+
+
+		// COPY TO DEFAULT FRAMEBUFFER
+		glBlitNamedFramebuffer(m_PingPongBuffers[1].framebuffer, 0, 0, 0, GetRenderRes().Width, GetRenderRes().Height, 0, 0, GetRenderRes().Width, GetRenderRes().Height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+	}
+
 
 
 	auto GlDeferredRenderer::CreateGbuffer(GLsizei const renderWidth, GLsizei const renderHeight) -> void
 	{
-		m_GbufferColorAttachments.resize(1);
-		glCreateTextures(GL_TEXTURE_2D, static_cast<GLsizei>(m_GbufferColorAttachments.size()), m_GbufferColorAttachments.data());
+		glCreateTextures(GL_TEXTURE_2D, 1, &m_Gbuffer.colorAttachment);
+		glTextureStorage2D(m_Gbuffer.colorAttachment, 1, GL_RGB32UI, renderWidth, renderHeight);
 
-		glTextureStorage2D(m_GbufferColorAttachments[0], 1, GL_RGB32UI, renderWidth, renderHeight);
-
-		glCreateFramebuffers(1, &m_GbufferFramebuffer);
-		glNamedFramebufferDrawBuffer(m_GbufferFramebuffer, GL_COLOR_ATTACHMENT0);
-
-		glNamedFramebufferTexture(m_GbufferFramebuffer, GL_COLOR_ATTACHMENT0, m_GbufferColorAttachments[0], 0);
-		glNamedFramebufferTexture(m_GbufferFramebuffer, GL_DEPTH_STENCIL_ATTACHMENT, m_CommonDepthStencilAttachments[0], 0);
+		glCreateFramebuffers(1, &m_Gbuffer.framebuffer);
+		glNamedFramebufferTexture(m_Gbuffer.framebuffer, GL_COLOR_ATTACHMENT0, m_Gbuffer.colorAttachment, 0);
+		glNamedFramebufferTexture(m_Gbuffer.framebuffer, GL_DEPTH_STENCIL_ATTACHMENT, m_SharedDepthStencilBuffer, 0);
+		glNamedFramebufferDrawBuffer(m_Gbuffer.framebuffer, GL_COLOR_ATTACHMENT0);
 	}
+
 
 
 	auto GlDeferredRenderer::DeleteGbuffer() const -> void
 	{
-		glDeleteFramebuffers(1, &m_GbufferFramebuffer);
-		glDeleteTextures(static_cast<GLsizei>(m_GbufferColorAttachments.size()), m_GbufferColorAttachments.data());
+		glDeleteFramebuffers(1, &m_Gbuffer.colorAttachment);
+		glDeleteTextures(1, &m_Gbuffer.colorAttachment);
 	}
+
 
 
 	auto GlDeferredRenderer::CreateUbos() -> void
@@ -502,10 +544,12 @@ namespace leopph::internal
 	}
 
 
+
 	auto GlDeferredRenderer::DeleteUbos() const -> void
 	{
 		glDeleteBuffers(static_cast<GLsizei>(m_Ubos.size()), m_Ubos.data());
 	}
+
 
 
 	auto GlDeferredRenderer::OnRenderResChange(Extent2D const renderRes) -> void
@@ -529,6 +573,7 @@ namespace leopph::internal
 		CreateGbuffer(renderWidth, renderHeight);
 		CreateUbos();
 	}
+
 
 
 	GlDeferredRenderer::~GlDeferredRenderer()

@@ -1,12 +1,8 @@
 #pragma once
 
-#include "AmbientLight.hpp"
-#include "DirLight.hpp"
 #include "Matrix.hpp"
-#include "PointLight.hpp"
 #include "Renderer.hpp"
-#include "SpotLight.hpp"
-#include "rendering/gl/GlCubeShadowMap.hpp"
+#include "rendering/gl/GlCore.hpp"
 #include "rendering/gl/GlMeshGroup.hpp"
 #include "rendering/gl/GlSkyboxImpl.hpp"
 #include "rendering/shaders/ShaderFamily.hpp"
@@ -26,6 +22,21 @@ namespace leopph::internal
 			struct RenderNode;
 			struct ShadowCount;
 
+
+			struct PingPongBuffer
+			{
+				GLuint framebuffer;
+				GLuint colorAttachment;
+			};
+
+			struct TransparencyBuffer
+			{
+				GLuint framebuffer;
+				GLuint accumAttachment;
+				GLuint revealAttachment;
+			};
+
+
 		public:
 			// Initializes OpenGL and constructs a renderer for the selected rendering pipeline.
 			static auto Create() -> std::unique_ptr<GlRenderer>;
@@ -42,22 +53,6 @@ namespace leopph::internal
 			// Extract game data per RenderObject per RenderComponent, process them, and output into RenderNodes.
 			auto ExtractAndProcessInstanceData(std::vector<RenderNode>& out) -> void;
 
-			
-
-			static auto SetAmbientData(AmbientLight const& light, ShaderProgram& lightShader) -> void;
-
-			static auto SetDirectionalData(DirectionalLight const* dirLight, ShaderProgram& shader) -> void;
-
-			static auto SetSpotData(std::span<SpotLight const* const> spotLights, ShaderProgram& shader) -> void;
-
-			static auto SetSpotDataIgnoreShadow(std::span<SpotLight const* const> spotLights, ShaderProgram& shader) -> void;
-
-			static auto SetPointData(std::span<PointLight const* const> pointLights, ShaderProgram& shader) -> void;
-
-			static auto SetPointDataIgnoreShadow(std::span<PointLight const* const> pointLights, ShaderProgram& shader) -> void;
-
-			static auto CountShadows(DirectionalLight const* dirLight, std::span<SpotLight const* const> spotLights, std::span<PointLight const* const> pointLights) -> ShadowCount;
-
 
 			/* #######################
 			 * COMMON RENDER FUNCTIONS
@@ -70,6 +65,9 @@ namespace leopph::internal
 			 * RENDER UTILITY FUNCTIONS
 			 * ######################## */
 
+			// Transform the near and far distances of the passed cascades to NDC space.
+			// The first values are the near bounds, the second ones are the far bounds.
+			// After the call out will contain the same number of elements as cascades.
 			auto CascadeBoundToNdc(std::span<ShadowCascade const> cascades, std::vector<std::pair<f32, f32>>& out) const -> void;
 
 
@@ -218,9 +216,9 @@ namespace leopph::internal
 			GLuint m_ScreenQuadVbo{};
 
 		protected:
-			std::vector<GLuint> m_CommonFramebuffers;
-			std::vector<GLuint> m_CommonColorAttachments;
-			std::vector<GLuint> m_CommonDepthStencilAttachments;
+			std::array<PingPongBuffer, 2> m_PingPongBuffers;
+			TransparencyBuffer m_TransparencyBuffer;
+			GLuint m_SharedDepthStencilBuffer;
 
 			std::vector<GLuint> m_DirShadowMapFramebuffers;
 			std::vector<GLuint> m_DirShadowMapDepthAttachments;

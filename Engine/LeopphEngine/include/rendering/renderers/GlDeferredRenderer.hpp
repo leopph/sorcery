@@ -17,18 +17,18 @@ namespace leopph::internal
 {
 	class GlDeferredRenderer final : public GlRenderer
 	{
+		private:
+			struct Gbuffer
+			{
+				GLuint framebuffer;
+				GLuint colorAttachment;
+			};
+
+
 		public:
 			auto Render() -> void override;
 
 		private:
-			// Transparent forward pass.
-			auto RenderTransparent(Matrix4 const& camViewMat,
-			                       Matrix4 const& camProjMat,
-			                       std::vector<RenderNode> const& renderNodes,
-			                       DirectionalLight const* dirLight,
-			                       std::vector<SpotLight const*> const& spotLights,
-			                       std::vector<PointLight const*> const& pointLights) -> void;
-
 			auto CreateGbuffer(GLsizei renderWidth, GLsizei renderHeight) -> void;
 			auto DeleteGbuffer() const -> void;
 
@@ -51,8 +51,7 @@ namespace leopph::internal
 			 * DATA MEMBERS
 			 * ############ */
 
-			GLuint m_GbufferFramebuffer;
-			std::vector<GLuint> m_GbufferColorAttachments;
+			Gbuffer m_Gbuffer;
 
 			std::array<GLuint, 3> m_Ubos;
 

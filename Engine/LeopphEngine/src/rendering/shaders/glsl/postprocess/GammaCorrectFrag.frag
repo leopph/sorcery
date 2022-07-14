@@ -1,10 +1,10 @@
-#version 330 core
+#version 420 core
 
 layout(pixel_center_integer) in vec4 gl_FragCoord;
 layout(location = 0) out vec4 out_FragColor;
 
 uniform float u_GammaInverse;
-uniform sampler2D u_Image;
+layout(binding = 0) uniform sampler2D u_Image;
 
 
 void main()

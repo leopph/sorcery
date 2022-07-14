@@ -1,40 +1,10 @@
 #version 410 core
 
-#define MIN_SHADOW_BIAS 0.0001
-#define MAX_SHADOW_BIAS 0.01
 
-layout (location = 0) in vec3 in_FragPos;
-layout (location = 1) in vec3 in_Normal;
-layout (location = 2) in vec2 in_TexCoords;
-
-
-#if TRANSPARENT
-layout (location = 0) out vec4 out_Accum;
-layout (location = 1) out float out_Reveal;
-#else
-layout (location = 0) out vec4 out_FragColor;
-#endif
-
-struct Material
-{
-	vec3 diffuseColor;
-	vec3 specularColor;
-
-	float gloss;
-	float opacity;
-
-	sampler2D diffuseMap;
-	sampler2D specularMap;
-	sampler2D opacityMap;
-
-	bool hasDiffuseMap;
-	bool hasSpecularMap;
-	bool hasOpacityMap;
-};
-
-uniform Material u_Material;
-uniform vec3 u_AmbientLight;
-uniform vec3 u_CamPos;
+//! #define DIRLIGHT
+//! #define NUM_SPOT 3
+//! #define NUM_POINT 3
+//! #define TRANSPARENT
 
 
 struct Fragment
@@ -47,12 +17,94 @@ struct Fragment
 };
 
 
-// General functions
-
-float CalcAtten(float constant, float linear, float quadratic, float dist)
+struct Material
 {
-	return 1.0 / (constant + linear * dist + quadratic * pow(dist, 2));
-}
+	vec3 diffuseColor;
+	vec3 specularColor;
+	float gloss;
+	float opacity;
+	sampler2D diffuseMap;
+	sampler2D specularMap;
+	sampler2D opacityMap;
+	bool hasDiffuseMap;
+	bool hasSpecularMap;
+	bool hasOpacityMap;
+};
+
+
+#ifdef DIRLIGHT
+struct DirLight
+{
+	vec3 direction;
+	vec3 diffuseColor;
+	vec3 specularColor;
+};
+#endif
+
+
+#if NUM_SPOT > 0
+struct SpotLight
+{
+	vec3 position;
+	vec3 direction;
+	vec3 diffuseColor;
+	vec3 specularColor;
+	float constant;
+	float linear;
+	float quadratic;
+	float range;
+	float innerAngleCosine;
+	float outerAngleCosine;
+};
+#endif
+
+
+#if NUM_POINT > 0
+struct PointLight
+{
+	vec3 position;
+	vec3 diffuseColor;
+	vec3 specularColor;
+	float constant;
+	float linear;
+	float quadratic;
+	float range;
+};
+#endif
+
+
+
+layout (location = 0) in vec3 in_FragPos;
+layout (location = 1) in vec3 in_Normal;
+layout (location = 2) in vec2 in_TexCoords;
+
+
+#ifdef TRANSPARENT
+layout (location = 0) out vec4 out_Accum;
+layout (location = 1) out float out_Reveal;
+#else
+layout (location = 0) out vec3 out_FragColor;
+#endif
+
+
+uniform Material u_Material;
+uniform vec3 u_AmbientLight;
+uniform vec3 u_CamPos;
+
+
+#ifdef DIRLIGHT
+uniform DirLight u_DirLight;
+#endif
+
+#if NUM_SPOT > 0
+uniform SpotLight u_SpotLights[NUM_SPOT];
+#endif
+
+#if NUM_POINT > 0
+uniform PointLight u_PointLights[NUM_POINT];
+#endif
+
+
 
 vec3 CalcBlinnPhong(Fragment frag, vec3 dirToLight, vec3 lightDiff, vec3 lightSpec)
 {
@@ -70,7 +122,7 @@ vec3 CalcBlinnPhong(Fragment frag, vec3 dirToLight, vec3 lightDiff, vec3 lightSp
 
 	// 0^0 is UB, thus it may produce nan or 0 but we have to make sure
 	// transparent objects stay lit from the back too
-	#if TRANSPARENT
+	#ifdef TRANSPARENT
 	if (specAngle <= 0 && frag.gloss == 0)
 	{
 		return diffEffect;
@@ -83,60 +135,15 @@ vec3 CalcBlinnPhong(Fragment frag, vec3 dirToLight, vec3 lightDiff, vec3 lightSp
 }
 
 
-// Only when there is a DirectionalLight
-#if DIRLIGHT
-struct DirLight
+
+float CalcAtten(float constant, float linear, float quadratic, float dist)
 {
-	vec3 direction;
-	
-	vec3 diffuseColor;
-	vec3 specularColor;
-};
-
-uniform DirLight u_DirLight;
-
-#if DIRLIGHT_SHADOW
-layout (location = 3) in float in_FragPosNdcZ;
-uniform mat4 u_CascadeMatrices[NUM_CASCADES];
-uniform float u_CascadeBoundsNdc[NUM_CASCADES];
-uniform sampler2DShadow u_DirShadowMaps[NUM_CASCADES];
-
-float CalcDirShadow(vec3 fragPos, float fragPosNdcZ, vec3 fragNormal)
-{
-	for (int i = 0; i < NUM_CASCADES; ++i)
-	{
-		if (fragPosNdcZ < u_CascadeBoundsNdc[i])
-		{
-			vec3 fragPosLightNorm = vec3(vec4(fragPos, 1) * u_CascadeMatrices[i]) * 0.5 + 0.5;
-			float bias = max(MAX_SHADOW_BIAS * (1.0 - dot(fragNormal, -u_DirLight.direction)), MIN_SHADOW_BIAS);
-			return texture(u_DirShadowMaps[i], vec3(fragPosLightNorm.xy, fragPosLightNorm.z - bias));
-		}
-	}
-	return 1.0;
+	return 1.0 / (constant + linear * dist + quadratic * pow(dist, 2));
 }
-#endif
-#endif
 
 
-// Only when there are SpotLights
-#if NUM_SPOTLIGHTS > 0
-struct SpotLight
-{
-	vec3 position;
-	vec3 direction;
 
-	vec3 diffuseColor;
-	vec3 specularColor;
-
-	float constant;
-	float linear;
-	float quadratic;
-	float range;
-	
-	float innerAngleCosine;
-	float outerAngleCosine;
-};
-
+#if NUM_SPOT > 0
 vec3 CalcSpotLightEffect(Fragment frag, SpotLight spotLight)
 {
 	vec3 dirToLight = spotLight.position - frag.pos;
@@ -173,41 +180,11 @@ vec3 CalcSpotLightEffect(Fragment frag, SpotLight spotLight)
 	spotLightEffect *= CalcAtten(spotLight.constant, spotLight.linear, spotLight.quadratic, dist);
 	return spotLightEffect;
 }
-
-#if NUM_SPOTLIGHTS > NUM_SPOTLIGHT_SHADOWS
-uniform SpotLight u_SpotLightsNoShadow[NUM_SPOTLIGHTS - NUM_SPOTLIGHT_SHADOWS];
-#endif
-#if NUM_SPOTLIGHT_SHADOWS > 0
-uniform SpotLight u_SpotLightsShadow[NUM_SPOTLIGHT_SHADOWS];
-uniform sampler2DShadow u_SpotShadowMaps[NUM_SPOTLIGHT_SHADOWS];
-uniform mat4 u_SpotShadowMats[NUM_SPOTLIGHT_SHADOWS];
-
-float CalcSpotShadow(int shadowIndex, vec3 dirToLight, vec3 fragPos, vec3 fragNormal)
-{
-	vec4 fragPosLightSpace = vec4(fragPos, 1) * u_SpotShadowMats[shadowIndex];
-	vec3 normalizedPos = (fragPosLightSpace.xyz / fragPosLightSpace.w) * 0.5 + 0.5;
-	float bias = max(MAX_SHADOW_BIAS * (1.0 - dot(fragNormal, dirToLight)), MIN_SHADOW_BIAS);
-	return texture(u_SpotShadowMaps[shadowIndex], vec3(normalizedPos.xy, normalizedPos.z - bias));
-}
-#endif
 #endif
 
 
-// Only if there are PointLights
-#if NUM_POINTLIGHTS > 0
-struct PointLight
-{
-	vec3 position;
 
-	vec3 diffuseColor;
-	vec3 specularColor;
-
-	float constant;
-	float linear;
-	float quadratic;
-	float range;
-};
-
+#if NUM_POINT > 0
 vec3 CalcPointLightEffect(Fragment frag, PointLight pointLight)
 {
 	vec3 dirToLight = pointLight.position - frag.pos;
@@ -224,24 +201,7 @@ vec3 CalcPointLightEffect(Fragment frag, PointLight pointLight)
 	pointLightEffect *= CalcAtten(pointLight.constant, pointLight.linear, pointLight.quadratic, dist);
 	return pointLightEffect;
 }
-
-#if NUM_POINTLIGHTS > NUM_POINTLIGHT_SHADOWS
-uniform PointLight u_PointLightsNoShadow[NUM_POINTLIGHTS - NUM_POINTLIGHT_SHADOWS];
 #endif
-#if NUM_POINTLIGHT_SHADOWS > 0
-uniform PointLight u_PointLightsShadow[NUM_POINTLIGHT_SHADOWS];
-uniform samplerCube u_PointShadowMaps[NUM_POINTLIGHT_SHADOWS];
-
-float CalcPointShadow(uint shadowIndex, vec3 fragPos, vec3 fragNormal, vec3 lightPos, float lightRange)
-{
-	vec3 dirToFrag = fragPos - lightPos;
-	float bias = max(MAX_SHADOW_BIAS * (1.0 - dot(fragNormal, normalize(-dirToFrag))), MIN_SHADOW_BIAS);
-	return texture(u_PointShadowMaps[shadowIndex], dirToFrag).r > length(dirToFrag) - bias ? 1 : 0;
-}
-#endif
-#endif
-
-
 
 
 
@@ -270,7 +230,7 @@ void main()
 		alpha *= texture(u_Material.opacityMap, in_TexCoords).r;
 	}
 
-	#if TRANSPARENT
+	#ifdef TRANSPARENT
 	if (alpha >= 1)
 	#else
 	if (alpha < 1)
@@ -279,55 +239,31 @@ void main()
 		discard;
 	}
 
-	// Add ambient effect
 	vec3 colorSum = frag.diff * u_AmbientLight;
 
-	// Add directional effects
-	#if DIRLIGHT
-	vec3 dirLightEffect = CalcBlinnPhong(frag, -u_DirLight.direction, u_DirLight.diffuseColor, u_DirLight.specularColor);
-	#if DIRLIGHT_SHADOW
-	dirLightEffect *= CalcDirShadow(frag.pos, in_FragPosNdcZ, frag.normal);
-	#endif
-	colorSum += dirLightEffect;
+	#ifdef DIRLIGHT
+	colorSum += CalcBlinnPhong(frag, -u_DirLight.direction, u_DirLight.diffuseColor, u_DirLight.specularColor);
 	#endif
 
-	// Add spot effects
-	#if NUM_SPOTLIGHTS > NUM_SPOTLIGHT_SHADOWS
-	for (int i = 0; i < NUM_SPOTLIGHTS - NUM_SPOTLIGHT_SHADOWS; ++i)
+	#if NUM_SPOT > 0
+	for (int i = 0; i < NUM_SPOT; i++)
 	{
-		colorSum += CalcSpotLightEffect(frag, u_SpotLightsNoShadow[i]);
-	}
-	#endif
-	#if NUM_SPOTLIGHT_SHADOWS > 0
-	for (int i = 0; i < NUM_SPOTLIGHT_SHADOWS; ++i)
-	{
-		vec3 spotLightEffect = CalcSpotLightEffect(frag, u_SpotLightsShadow[i]);
-		spotLightEffect *= CalcSpotShadow(i, normalize(u_SpotLightsShadow[i].position - frag.pos), frag.pos, frag.normal);
-		colorSum += spotLightEffect;
+		colorSum += CalcSpotLightEffect(frag, u_SpotLights[i]);
 	}
 	#endif
 
-	// Add point effects
-	#if NUM_POINTLIGHTS > NUM_POINTLIGHT_SHADOWS
-	for (int i = 0; i < NUM_POINTLIGHTS - NUM_POINTLIGHT_SHADOWS; ++i)
+	#if NUM_POINT > 0
+	for (int i = 0; i < NUM_POINT; i++)
 	{
-		colorSum += CalcPointLightEffect(frag, u_PointLightsNoShadow[i]);
-	}
-	#endif
-	#if NUM_POINTLIGHT_SHADOWS > 0
-	for (int i = 0; i < NUM_POINTLIGHT_SHADOWS; ++i)
-	{
-		vec3 pointLightEffect = CalcPointLightEffect(frag, u_PointLightsShadow[i]);
-		pointLightEffect *= CalcPointShadow(i, frag.pos, frag.normal, u_PointLightsShadow[i].position, u_PointLightsShadow[i].range);
-		colorSum += pointLightEffect;
+		colorSum += CalcPointLightEffect(frag, u_PointLights[i]);
 	}
 	#endif
 
-	#if TRANSPARENT
+	#ifdef TRANSPARENT
 	float weight = max(min(1.0, max(max(colorSum.r, colorSum.g), colorSum.b) * alpha), alpha) * clamp(0.03 / (1e-5 + pow(frag.pos.z / 200, 4.0)), 1e-2, 3e3);
-	out_Accum = vec4(colorSum.rgb * alpha, alpha) * weight;
+	out_Accum = vec4(colorSum * alpha, alpha) * weight;
 	out_Reveal = alpha;
 	#else
-	out_FragColor = vec4(colorSum, 1);
+	out_FragColor = colorSum;
 	#endif
 }
