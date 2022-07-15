@@ -6,6 +6,7 @@
 #include "rendering/gl/GlMeshGroup.hpp"
 #include "rendering/gl/GlSkyboxImpl.hpp"
 #include "rendering/shaders/ShaderFamily.hpp"
+#include "rendering/shaders/ShaderSources.hpp"
 
 #include <filesystem>
 #include <memory>
@@ -28,6 +29,7 @@ namespace leopph::internal
 				GLuint framebuffer;
 				GLuint colorAttachment;
 			};
+
 
 			struct TransparencyBuffer
 			{
@@ -150,47 +152,47 @@ namespace leopph::internal
 			ShaderFamily m_ShadowShader
 			{
 				{
-					{ShaderFamily::DepthShadowVertSrc, ShaderType::Vertex}
+					{shadersources::COMPOSITE_FRAG, ShaderType::Vertex}
 				}
 			};
 
 			ShaderFamily m_CubeShadowShader
 			{
 				{
-					{ShaderFamily::LinearShadowVertSrc, ShaderType::Vertex},
-					{ShaderFamily::LinearShadowFragSrc, ShaderType::Fragment}
+					{shadersources::COMPOSITE_FRAG, ShaderType::Vertex},
+					{shadersources::COMPOSITE_FRAG, ShaderType::Fragment}
 				}
 			};
 
 			ShaderFamily m_SkyboxShader
 			{
 				{
-					{ShaderFamily::SkyboxVertSrc, ShaderType::Vertex},
-					{ShaderFamily::SkyboxFragSrc, ShaderType::Fragment}
+					{shadersources::COMPOSITE_FRAG, ShaderType::Vertex},
+					{shadersources::COMPOSITE_FRAG, ShaderType::Fragment}
 				}
 			};
 
 			ShaderFamily m_GammaCorrectShader
 			{
 				{
-					{ShaderFamily::Pos2DPassthroughVertSrc, ShaderType::Vertex},
-					{ShaderFamily::GammaCorrectFragSrc, ShaderType::Fragment}
+					{shadersources::COMPOSITE_FRAG, ShaderType::Vertex},
+					{shadersources::COMPOSITE_FRAG, ShaderType::Fragment}
 				}
 			};
 
 			ShaderFamily m_ForwardObjectShader
 			{
 				{
-					{ShaderFamily::ObjectVertSrc, ShaderType::Vertex},
-					{ShaderFamily::ObjectFragSrc, ShaderType::Fragment}
+					{shadersources::COMPOSITE_FRAG, ShaderType::Vertex},
+					{shadersources::COMPOSITE_FRAG, ShaderType::Fragment}
 				}
 			};
 
 			ShaderFamily m_TranspCompositeShader
 			{
 				{
-					{ShaderFamily::Pos2DPassthroughVertSrc, ShaderType::Vertex},
-					{ShaderFamily::TranspCompositeFragSrc, ShaderType::Fragment}
+					{shadersources::COMPOSITE_FRAG, ShaderType::Vertex},
+					{shadersources::COMPOSITE_FRAG, ShaderType::Fragment}
 				}
 			};
 

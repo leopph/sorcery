@@ -117,18 +117,19 @@
     <ClInclude Include="include\rendering\Extent.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="src\rendering\shaders\glsl\SkyboxVert.vert" />
-    <CustomBuild Include="src\rendering\shaders\glsl\SkyboxFrag.frag" />
-    <CustomBuild Include="src\rendering\shaders\glsl\deferred\GeometryPassFrag.frag" />
-    <CustomBuild Include="src\rendering\shaders\glsl\forward\ObjectFrag.frag" />
-    <CustomBuild Include="src\rendering\shaders\glsl\shadows\LinearShadowVert.vert" />
-    <CustomBuild Include="src\rendering\shaders\glsl\deferred\GeometryPassVert.vert" />
-    <CustomBuild Include="src\rendering\shaders\glsl\deferred\LightPassFrag.frag" />
-    <CustomBuild Include="src\rendering\shaders\glsl\forward\ObjectVert.vert" />
-    <CustomBuild Include="src\rendering\shaders\glsl\forward\TranspCompositeFrag.frag" />
-    <CustomBuild Include="src\rendering\shaders\glsl\shadows\DepthShadowVert.vert" />
-    <CustomBuild Include="src\rendering\shaders\glsl\shadows\LinearShadowFrag.frag" />
-    <CustomBuild Include="src\rendering\shaders\glsl\postprocess\GammaCorrectFrag.frag" />
-    <CustomBuild Include="src\rendering\shaders\glsl\Pos2DPassthroughVert.vert" />
+    <None Include="src\rendering\shaders\glsl\Lighting.glsl" />
+    <None Include="src\rendering\shaders\glsl\Gamma.frag" />
+    <None Include="src\rendering\shaders\glsl\GPass.frag" />
+    <None Include="src\rendering\shaders\glsl\GPass.vert" />
+    <None Include="src\rendering\shaders\glsl\LightPass.frag" />
+    <None Include="src\rendering\shaders\glsl\LinShadow.frag" />
+    <None Include="src\rendering\shaders\glsl\LinShadow.vert" />
+    <None Include="src\rendering\shaders\glsl\Forward.frag" />
+    <None Include="src\rendering\shaders\glsl\Forward.vert" />
+    <None Include="src\rendering\shaders\glsl\Pos2DPassthrough.vert" />
+    <None Include="src\rendering\shaders\glsl\Skybox.frag" />
+    <None Include="src\rendering\shaders\glsl\Skybox.vert" />
+    <None Include="src\rendering\shaders\glsl\Composite.frag" />
+    <None Include="src\rendering\shaders\glsl\DepthShadow.vert" />
   </ItemGroup>
 </Project>

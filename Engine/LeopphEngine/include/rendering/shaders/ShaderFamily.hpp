@@ -41,28 +41,6 @@ namespace leopph::internal
 
 			[[nodiscard]] auto operator[](std::string_view key) -> std::string&;
 
-			static std::string const ObjectVertSrc;
-			static std::string const ObjectFragSrc;
-
-			static std::string const SkyboxVertSrc;
-			static std::string const SkyboxFragSrc;
-
-			static std::string const DepthShadowVertSrc;
-
-			static std::string const LinearShadowVertSrc;
-			static std::string const LinearShadowFragSrc;
-
-			static std::string const GeometryPassVertSrc;
-			static std::string const GeometryPassFragSrc;
-
-			static std::string const Pos2DPassthroughVertSrc;
-			
-			static std::string const LightPassFragSrc;
-			
-			static std::string const TranspCompositeFragSrc;
-			
-			static std::string const GammaCorrectFragSrc;
-
 		private:
 			// Create a source that has the currently set flags inserted.
 			[[nodiscard]] auto BuildSrcString(std::string_view src) const -> std::string;

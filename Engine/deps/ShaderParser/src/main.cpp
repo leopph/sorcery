@@ -1,61 +1,146 @@
-#include <cstdlib>
-#include <cstring>
-#include <iostream>
+#include <cctype>
+#include <exception>
+#include <filesystem>
 #include <fstream>
-#include <string>
+#include <iostream>
+#include <sstream>
+#include <string_view>
+#include <unordered_set>
 
-#include "parse_file.h"
 
-namespace parser
+
+std::string_view constexpr VARIABLE_DECLARATION_TYPE = "extern std::string const";
+std::string_view constexpr VARIABLE_DEFINITION_TYPE = "std::string const";
+std::string_view constexpr HEADER_DIRECTIVES = "#pragma once\n\n#include <string_view>";
+std::string_view constexpr INCLUDE_DIRECTIVE = "#include";
+std::string_view constexpr NAMESPACE_BEGIN = "namespace leopph::internal::shadersources\n{";
+std::string_view constexpr NAMESPACE_END = "}";
+
+
+
+auto GenerateVarNameFromFilename(std::filesystem::path const& filename) -> std::string;
+auto FileSupported(std::filesystem::path const& filename) -> bool;
+auto GenerateStringFromFileContents(std::filesystem::path const& path) -> std::string;
+auto WriteFiles(std::filesystem::path const& headerPath, std::ostringstream const& headerStream, std::filesystem::path const& tuPath, std::ostringstream const& tuStream) -> void;
+
+
+
+// argv[1] = source folder
+// argv[2] = out header path
+// argv[3] = out tu path
+// argv[4] = generated include directory in tu
+auto main(int const argc, char const* const* const argv) -> int
 {
-	const std::string stringIncludeLine{ "#include <string>\n" };
-	const std::string declType{ "const std::string " };
-	const std::string stringOpening{ "{ R\"#fileContents#(" };
-	const std::string stringEnding{ ")#fileContents#\" };" };
+	if (argc != 5)
+	{
+		std::cerr << "Invalid number of command-line arguments: " << argc << ".\n";
+		return -1;
+	}
+
+	try
+	{
+		auto const tuIncludePath = [argv]
+		{
+			std::ostringstream ret;
+			ret << argv[4] << '/' << std::filesystem::path{argv[2]}.filename().string();
+			return ret.str();
+		}();
+
+		std::ostringstream headerContents;
+		std::ostringstream tuContents;
+
+		headerContents << HEADER_DIRECTIVES << "\n\n" << NAMESPACE_BEGIN << '\n';
+		tuContents << INCLUDE_DIRECTIVE << " \"" << tuIncludePath << "\"\n\n" << NAMESPACE_BEGIN << '\n';
+
+		for (auto const& entry : std::filesystem::recursive_directory_iterator{argv[1]})
+		{
+			if (entry.is_regular_file() && FileSupported(entry.path().filename()))
+			{
+				auto const varName = GenerateVarNameFromFilename(entry.path().filename().string());
+				headerContents << '\t' << VARIABLE_DECLARATION_TYPE << ' ' << varName << ";\n";
+				tuContents << '\t' << VARIABLE_DEFINITION_TYPE << ' ' << varName << '{' << GenerateStringFromFileContents(entry.path()) << "};\n";
+			}
+		}
+
+		headerContents << NAMESPACE_END;
+		tuContents << NAMESPACE_END;
+		WriteFiles(argv[2], headerContents, argv[3], tuContents);
+	}
+	catch (std::exception const& exception)
+	{
+		std::cerr << "An error occured while processing: " << exception.what() << '\n';
+		return -1;
+	}
 }
 
-/*--------------------------
-First param: source file
-Second param: target file
-Third param: variable's name
-Fourth param [optional]: dependency header
---------------------------*/
 
-int main(int argc, char** argv)
+
+auto GenerateVarNameFromFilename(std::filesystem::path const& filename) -> std::string
 {
-	if (argc < 4)
+	auto varName = filename.stem().string();
+
+	varName[0] = std::toupper(varName[0]);
+
+	for (auto i = 1; i < varName.size(); i++)
 	{
-		std::cerr << "Invalid argument number: " << argc << "." << std::endl;
-		return EXIT_FAILURE;
+		if (std::isupper(varName[i]))
+		{
+			varName.insert(i, "_");
+			i++;
+		}
+		else
+		{
+			varName[i] = std::toupper(varName[i]);
+		}
 	}
 
-	std::string sourceCode{ parser::ParseFile(argv[1]) };
+	auto ext = filename.extension().string().substr(1);
 
-	if (sourceCode.empty())
+	for (auto& c : ext)
 	{
-		std::cerr << "Invalid input file: \"" << argv[1] << "\"." << std::endl;
-		return EXIT_FAILURE;
+		c = std::toupper(c);
 	}
 
-	std::ofstream outPut{ argv[2] };
+	varName.push_back('_');
+	varName.append(ext);
+	return varName;
+}
 
-	if (argc > 4)
+
+
+auto FileSupported(std::filesystem::path const& filename) -> bool
+{
+	std::unordered_set<std::string> const supportedExts
 	{
-		std::string depIncludeLine{ "#include \"" };
-		depIncludeLine.append(argv[4]);
-		depIncludeLine.append("\"\n");
-
-		outPut.write(depIncludeLine.data(), depIncludeLine.length());
+		".glsl", ".vert", ".frag"
 	};
+	return supportedExts.contains(filename.extension().string());
+}
 
-	outPut.write(parser::stringIncludeLine.data(), parser::stringIncludeLine.length());
-	outPut.write(parser::declType.data(), parser::declType.length());
-	outPut.write(argv[3], std::strlen(argv[3]));
-	outPut.write(parser::stringOpening.data(), parser::stringOpening.length());
-	outPut.write(sourceCode.data(), sourceCode.length());
-	outPut.write(parser::stringEnding.data(), parser::stringEnding.length());
 
-	outPut.close();
 
-	return EXIT_SUCCESS;
+auto GenerateStringFromFileContents(std::filesystem::path const& path) -> std::string
+{
+	std::ifstream in{path};
+	in.unsetf(std::ifstream::skipws);
+
+	in.seekg(0, decltype(in)::end);
+	auto const size = in.tellg();
+	in.seekg(0);
+
+	std::string buffer(file_size(path), ' ');
+	in.read(buffer.data(), size);
+	buffer.insert(0, "R\"(");
+	buffer.append(")\"");
+	return buffer;
+}
+
+
+auto WriteFiles(std::filesystem::path const& headerPath, std::ostringstream const& headerStream, std::filesystem::path const& tuPath, std::ostringstream const& tuStream) -> void
+{
+	std::ofstream out{headerPath};
+	out << headerStream.view();
+	out.close();
+	out.open(tuPath);
+	out << tuStream.view();
 }

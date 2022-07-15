@@ -1,10 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
-    <ProjectConfiguration Include="DebugFastImport|x64">
-      <Configuration>DebugFastImport</Configuration>
-      <Platform>x64</Platform>
-    </ProjectConfiguration>
     <ProjectConfiguration Include="Debug|x64">
       <Configuration>Debug</Configuration>
       <Platform>x64</Platform>
@@ -131,51 +127,54 @@
     <ClInclude Include="include\windowing\WindowImpl.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="src\rendering\shaders\glsl\SkyboxFrag.frag">
+    <None Include="src\rendering\shaders\glsl\Skybox.frag">
       <FileType>Document</FileType>
-    </CustomBuild>
-    <CustomBuild Include="src\rendering\shaders\glsl\SkyboxVert.vert">
+    </None>
+    <None Include="src\rendering\shaders\glsl\Skybox.vert">
       <FileType>Document</FileType>
-    </CustomBuild>
+    </None>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="src\rendering\shaders\glsl\deferred\GeometryPassFrag.frag">
+    <None Include="src\rendering\shaders\glsl\GPass.frag">
       <FileType>Document</FileType>
-    </CustomBuild>
-    <CustomBuild Include="src\rendering\shaders\glsl\deferred\GeometryPassVert.vert">
+    </None>
+    <None Include="src\rendering\shaders\glsl\GPass.vert">
       <FileType>Document</FileType>
-    </CustomBuild>
-    <CustomBuild Include="src\rendering\shaders\glsl\deferred\LightPassFrag.frag">
+    </None>
+    <None Include="src\rendering\shaders\glsl\LightPass.frag">
       <FileType>Document</FileType>
-    </CustomBuild>
-    <CustomBuild Include="src\rendering\shaders\glsl\forward\ObjectFrag.frag">
+    </None>
+    <None Include="src\rendering\shaders\glsl\Forward.frag">
       <FileType>Document</FileType>
-    </CustomBuild>
-    <CustomBuild Include="src\rendering\shaders\glsl\forward\ObjectVert.vert">
+    </None>
+    <None Include="src\rendering\shaders\glsl\Forward.vert">
       <FileType>Document</FileType>
-    </CustomBuild>
-    <CustomBuild Include="src\rendering\shaders\glsl\forward\TranspCompositeFrag.frag">
+    </None>
+    <None Include="src\rendering\shaders\glsl\Composite.frag">
       <FileType>Document</FileType>
-    </CustomBuild>
-    <CustomBuild Include="src\rendering\shaders\glsl\shadows\DepthShadowVert.vert">
+    </None>
+    <None Include="src\rendering\shaders\glsl\DepthShadow.vert">
       <FileType>Document</FileType>
-    </CustomBuild>
-    <CustomBuild Include="src\rendering\shaders\glsl\shadows\LinearShadowFrag.frag">
+    </None>
+    <None Include="src\rendering\shaders\glsl\LinShadow.frag">
       <FileType>Document</FileType>
-    </CustomBuild>
-    <CustomBuild Include="src\rendering\shaders\glsl\shadows\LinearShadowVert.vert">
+    </None>
+    <None Include="src\rendering\shaders\glsl\LinShadow.vert">
       <FileType>Document</FileType>
-    </CustomBuild>
+    </None>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="src\rendering\shaders\glsl\postprocess\GammaCorrectFrag.frag">
+    <None Include="src\rendering\shaders\glsl\Gamma.frag">
       <FileType>Document</FileType>
-    </CustomBuild>
+    </None>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="src\rendering\shaders\glsl\Pos2DPassthroughVert.vert">
+    <None Include="src\rendering\shaders\glsl\Pos2DPassthrough.vert">
       <FileType>Document</FileType>
-    </CustomBuild>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\rendering\shaders\glsl\Lighting.glsl" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
@@ -186,12 +185,6 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
-    <CharacterSet>Unicode</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugFastImport|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
@@ -212,9 +205,6 @@
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='DebugFastImport|x64'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
@@ -223,17 +213,20 @@
     <OutDir>$(SolutionDir)Engine\bin\$(Configuration)_$(Platform)\</OutDir>
     <IntDir>$(SolutionDir)Engine\int\$(ProjectName)\$(Configuration)_$(Platform)\</IntDir>
     <TargetName>leopph</TargetName>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugFastImport|x64'">
-    <OutDir>$(SolutionDir)Engine\bin\$(Configuration)_$(Platform)\</OutDir>
-    <IntDir>$(SolutionDir)Engine\int\$(ProjectName)\$(Configuration)_$(Platform)\</IntDir>
-    <TargetName>leopph</TargetName>
+    <CustomBuildAfterTargets>
+    </CustomBuildAfterTargets>
+    <CustomBuildBeforeTargets>
+    </CustomBuildBeforeTargets>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)Engine\bin\$(Configuration)_$(Platform)\</OutDir>
     <IntDir>$(SolutionDir)Engine\int\$(ProjectName)\$(Configuration)_$(Platform)\</IntDir>
     <TargetName>leopph</TargetName>
+    <CustomBuildAfterTargets>
+    </CustomBuildAfterTargets>
+    <CustomBuildBeforeTargets>
+    </CustomBuildBeforeTargets>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -255,41 +248,9 @@
     <PreBuildEvent />
     <PreLinkEvent />
     <CustomBuildStep />
-    <CustomBuild>
-      <Command>$(SolutionDir)Engine\deps\ShaderParser\bin\$(Configuration)_$(Platform)\ShaderParser.exe %(Fullpath) $(IntDir)%(Filename).cpp leopph::internal::ShaderFamily::%(Filename)Src rendering/shaders/ShaderFamily.hpp</Command>
-      <Message>Transpiling %(Filename)%(Extension)...</Message>
-      <Outputs>$(IntDir)%(Filename).cpp</Outputs>
-      <AdditionalInputs>$(ProjectDir)include\rendering\shaders\ShaderFamily.hpp</AdditionalInputs>
-      <OutputItemType>ClCompile</OutputItemType>
-    </CustomBuild>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DebugFastImport|x64'">
-    <ClCompile>
-      <WarningLevel>Level4</WarningLevel>
-      <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>SPDLOG_COMPILED_LIB;ENGINE_BUILD;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)include\;$(SolutionDir)Engine\LeopphverterLib\include\;$(SolutionDir)Engine\LeopphUtils\include\;$(SolutionDir)Engine\include\;$(SolutionDir)Engine\deps\vendor\gl3w\include\;$(SolutionDir)Engine\deps\vendor\glfw\include\;$(SolutionDir)Engine\deps\vendor\nlohmann_json\;$(SolutionDir)Engine\deps\vendor\taskflow_wsq\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
-    </ClCompile>
-    <Link>
-      <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>leopphutils.lib;leopphverterlib.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)Engine\bin\$(Configuration)_$(Platform)\;$(SolutionDir)Engine\deps\vendor\glfw\src\$(Configuration)\;</AdditionalLibraryDirectories>
-    </Link>
-    <PostBuildEvent />
-    <PreBuildEvent />
-    <PreLinkEvent />
+    <CustomBuild />
     <CustomBuildStep />
-    <CustomBuild>
-      <Command>$(SolutionDir)Engine\deps\ShaderParser\bin\$(Configuration)_$(Platform)\ShaderParser.exe %(Fullpath) $(IntDir)%(Filename).cpp leopph::internal::ShaderFamily::%(Filename)Src rendering/shaders/ShaderFamily.hpp</Command>
-      <Message>Transpiling %(Filename)%(Extension)...</Message>
-      <Outputs>$(IntDir)%(Filename).cpp</Outputs>
-      <AdditionalInputs>$(ProjectDir)include\rendering\shaders\ShaderFamily.hpp</AdditionalInputs>
-      <OutputItemType>ClCompile</OutputItemType>
-    </CustomBuild>
+    <CustomBuildStep />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -316,13 +277,9 @@
     <PreBuildEvent />
     <PreLinkEvent />
     <CustomBuildStep />
-    <CustomBuild>
-      <Command>$(SolutionDir)Engine\deps\ShaderParser\bin\$(Configuration)_$(Platform)\ShaderParser.exe %(Fullpath) $(IntDir)%(Filename).cpp leopph::internal::ShaderFamily::%(Filename)Src rendering/shaders/ShaderFamily.hpp</Command>
-      <Message>Transpiling %(Filename)%(Extension)...</Message>
-      <Outputs>$(IntDir)%(Filename).cpp</Outputs>
-      <AdditionalInputs>$(ProjectDir)include\rendering\shaders\ShaderFamily.hpp</AdditionalInputs>
-      <OutputItemType>ClCompile</OutputItemType>
-    </CustomBuild>
+    <CustomBuild />
+    <CustomBuildStep />
+    <CustomBuildStep />
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

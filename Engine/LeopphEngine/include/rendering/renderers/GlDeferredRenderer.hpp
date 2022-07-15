@@ -57,15 +57,15 @@ namespace leopph::internal
 
 			ShaderFamily m_GeometryShader{
 				{
-					{ShaderFamily::GeometryPassVertSrc, ShaderType::Vertex},
-					{ShaderFamily::GeometryPassFragSrc, ShaderType::Fragment}
+					{shadersources::COMPOSITE_FRAG, ShaderType::Vertex},
+					{shadersources::COMPOSITE_FRAG, ShaderType::Fragment}
 				}
 			};
 
 			ShaderFamily m_LightShader{
 				{
-					{ShaderFamily::Pos2DPassthroughVertSrc, ShaderType::Vertex},
-					{ShaderFamily::LightPassFragSrc, ShaderType::Fragment}
+					{shadersources::COMPOSITE_FRAG, ShaderType::Vertex},
+					{shadersources::COMPOSITE_FRAG, ShaderType::Fragment}
 				}
 			};
 	};
