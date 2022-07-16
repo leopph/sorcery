@@ -68,7 +68,8 @@
     <ClCompile Include="src\rendering\ScreenQuad.cpp" />
     <ClCompile Include="src\components\Light.cpp" />
     <ClCompile Include="src\components\AttenuatedLight.cpp" />
-    <ClCompile Include="src\rendering\shaders\Preprocessor.cpp" />
+    <ClCompile Include="src\rendering\ShaderProcessor.cpp" />
+    <ClCompile Include="src\Util.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\DataManager.hpp" />
@@ -116,6 +117,8 @@
     <ClInclude Include="include\SettingsImpl.hpp" />
     <ClInclude Include="include\ScreenQuad.hpp" />
     <ClInclude Include="include\rendering\Extent.hpp" />
+    <ClInclude Include="include\rendering\ShaderProcessor.hpp" />
+    <ClInclude Include="include\Util.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\rendering\shaders\glsl\Lighting.glsl" />
