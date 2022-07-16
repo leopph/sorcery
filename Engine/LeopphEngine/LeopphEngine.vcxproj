@@ -35,6 +35,7 @@
     <ClCompile Include="src\rendering\gl\GlMeshGroup.cpp" />
     <ClCompile Include="src\rendering\RenderObject.cpp" />
     <ClCompile Include="src\rendering\ScreenQuad.cpp" />
+    <ClCompile Include="src\rendering\shaders\Preprocessor.cpp" />
     <ClCompile Include="src\Settings.cpp" />
     <ClCompile Include="src\data\DataManager.cpp" />
     <ClCompile Include="src\data\Poelo.cpp" />

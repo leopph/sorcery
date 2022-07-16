@@ -68,6 +68,7 @@
     <ClCompile Include="src\rendering\ScreenQuad.cpp" />
     <ClCompile Include="src\components\Light.cpp" />
     <ClCompile Include="src\components\AttenuatedLight.cpp" />
+    <ClCompile Include="src\rendering\shaders\Preprocessor.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\DataManager.hpp" />
