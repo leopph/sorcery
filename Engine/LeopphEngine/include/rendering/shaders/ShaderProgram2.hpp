@@ -12,7 +12,7 @@
 #include <unordered_map>
 
 
-namespace leopph::internal
+namespace leopph
 {
 	class ShaderProgram2
 	{
@@ -35,6 +35,10 @@ namespace leopph::internal
 
 			[[nodiscard]] auto Binary() const -> ShaderProgramCachedBinaryOutputInfo;
 
+			auto Use() const -> void;
+
+			[[nodiscard]] auto InternalHandle() const -> u32;
+
 		private:
 			auto QueryUniformLocations() -> void;
 
@@ -52,6 +56,6 @@ namespace leopph::internal
 			u32 m_VertexShader{0};
 			u32 m_GeometryShader{0};
 			u32 m_FragmentShader{0};
-			std::unordered_map<std::string, i32, StringHash, StringEqual> m_UniformLocations;
+			std::unordered_map<std::string, i32, internal::StringHash, internal::StringEqual> m_UniformLocations;
 	};
 }

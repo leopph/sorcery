@@ -1,6 +1,7 @@
 #pragma once
 
 #include "LeopphApi.hpp"
+#include "Types.hpp"
 
 
 namespace leopph
@@ -9,55 +10,36 @@ namespace leopph
 	// You can also use other implementations, but prefer these to ensure best performance and compatibility.
 	namespace math
 	{
-		[[nodiscard]] LEOPPHAPI
-		auto Pi() -> float;
+		[[nodiscard]] auto LEOPPHAPI Pi() -> f32;
 
-		[[nodiscard]] LEOPPHAPI
-		auto ToRadians(float degrees) -> float;
+		[[nodiscard]] auto LEOPPHAPI ToRadians(f32 degrees) -> f32;
+		[[nodiscard]] auto LEOPPHAPI ToDegrees(f32 radians) -> f32;
 
-		[[nodiscard]] LEOPPHAPI
-		auto ToDegrees(float radians) -> float;
+		[[nodiscard]] auto LEOPPHAPI Sin(f32 radians) -> f32;
+		[[nodiscard]] auto LEOPPHAPI Asin(f32 radians) -> f32;
 
-		[[nodiscard]] LEOPPHAPI
-		auto Sin(float radians) -> float;
+		[[nodiscard]] auto LEOPPHAPI Cos(f32 radians) -> f32;
+		[[nodiscard]] auto LEOPPHAPI Acos(f32 radians) -> f32;
 
-		[[nodiscard]] LEOPPHAPI
-		auto Asin(float radians) -> float;
+		[[nodiscard]] auto LEOPPHAPI Tan(f32 radians) -> f32;
+		[[nodiscard]] auto LEOPPHAPI Atan(f32 radians) -> f32;
+		[[nodiscard]] auto LEOPPHAPI Atan2(f32 y, f32 x) -> f32;
 
-		[[nodiscard]] LEOPPHAPI
-		auto Cos(float radians) -> float;
+		[[nodiscard]] auto LEOPPHAPI Pow(f32 base, f32 exp) -> f32;
+		[[nodiscard]] auto LEOPPHAPI Sqrt(f32 value) -> f32;
 
-		[[nodiscard]] LEOPPHAPI
-		auto Acos(float radians) -> float;
+		[[nodiscard]] auto LEOPPHAPI Log(f32 value) -> f32;
+		[[nodiscard]] auto LEOPPHAPI Log2(f32 value) -> f32;
 
-		[[nodiscard]] LEOPPHAPI
-		auto Tan(float radians) -> float;
+		[[nodiscard]] auto LEOPPHAPI Clamp(f32 value, f32 min, f32 max) -> f32;
 
-		[[nodiscard]] LEOPPHAPI
-		auto Atan(float radians) -> float;
+		[[nodiscard]] auto LEOPPHAPI Abs(f32 value) -> f32;
 
-		[[nodiscard]] LEOPPHAPI
-		auto Atan2(float y, float x) -> float;
+		[[nodiscard]] auto LEOPPHAPI IsPowerOfTwo(u32 value) -> bool;
+		[[nodiscard]] auto LEOPPHAPI NextPowerOfTwo(u32 value) -> u32;
 
-		[[nodiscard]] LEOPPHAPI
-		auto Pow(float base, float exp) -> float;
+		[[nodiscard]] auto LEOPPHAPI Lerp(f32 from, f32 to, f32 t) -> f32;
 
-		[[nodiscard]] LEOPPHAPI
-		auto Sqrt(float value) -> float;
-
-		[[nodiscard]] LEOPPHAPI
-		auto Clamp(float value, float min, float max) -> float;
-
-		[[nodiscard]] LEOPPHAPI
-		auto Abs(float value) -> float;
-
-		[[nodiscard]] LEOPPHAPI
-		auto IsPowerOfTwo(unsigned value) -> bool;
-
-		[[nodiscard]] LEOPPHAPI
-		auto NextPowerOfTwo(unsigned value) -> unsigned;
-
-		[[nodiscard]] LEOPPHAPI
-		auto Lerp(float from, float to, float t) -> float;
+		[[nodiscard]] auto LEOPPHAPI BinaryDigitCount(u32 number) -> u8;
 	}
 }

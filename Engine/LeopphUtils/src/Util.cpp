@@ -34,4 +34,33 @@ namespace leopph
 		}
 		while (end != decltype(str)::npos);
 	}
+
+	auto SplitWords(std::string_view const view, std::vector<std::string_view>& out) -> void
+	{
+		auto localView = view;
+
+		while (true)
+		{
+			auto constexpr whiteSpaceChars = "\t\n\v\f\r ";
+			auto const numWhiteSpace = localView.find_first_not_of(whiteSpaceChars);
+
+			if (numWhiteSpace == std::string_view::npos)
+			{
+				return;
+			}
+
+			localView.remove_prefix(numWhiteSpace);
+
+			auto const numUsefulChars = localView.find_first_of(whiteSpaceChars);
+
+			if (numUsefulChars == std::string_view::npos)
+			{
+				out.emplace_back(view);
+				return;
+			}
+
+			out.emplace_back(localView.substr(0, numUsefulChars));
+			localView.remove_prefix(numUsefulChars);
+		}
+	}
 }

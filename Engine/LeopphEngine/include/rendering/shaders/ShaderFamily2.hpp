@@ -3,5 +3,8 @@
 
 namespace leopph::internal
 {
-
+	class ShaderFamily2
+	{
+		
+	};
 }

@@ -2,7 +2,7 @@
 
 #include "rendering/gl/GlCore.hpp"
 
-namespace leopph::internal
+namespace leopph
 {
 	ShaderProgram2::ShaderProgram2(ShaderProgramSourceInfo const& sourceInfo) :
 		m_Program{glCreateProgram()}
@@ -141,6 +141,16 @@ namespace leopph::internal
 
 		glGetProgramBinary(m_Program, binaryLength, nullptr, &info.format, info.binary.data());
 		return info;
+	}
+
+	auto ShaderProgram2::Use() const -> void
+	{
+		glUseProgram(m_Program);
+	}
+
+	auto ShaderProgram2::InternalHandle() const -> u32
+	{
+		return m_Program;
 	}
 
 	auto ShaderProgram2::QueryUniformLocations() -> void

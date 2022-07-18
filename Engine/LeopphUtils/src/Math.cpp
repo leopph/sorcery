@@ -6,105 +6,115 @@
 
 namespace leopph::math
 {
-	auto Pi() -> float
+	auto Pi() -> f32
 	{
 		static auto ret{2 * std::acosf(0)};
 		return ret;
 	}
 
 
-	auto ToRadians(float const degrees) -> float
+	auto ToRadians(f32 const degrees) -> f32
 	{
 		return degrees * Pi() / 180.0f;
 	}
 
 
-	auto ToDegrees(float const radians) -> float
+	auto ToDegrees(f32 const radians) -> f32
 	{
 		return radians * 180.0f / Pi();
 	}
 
 
-	auto Sin(float const radians) -> float
+	auto Sin(f32 const radians) -> f32
 	{
 		return std::sinf(radians);
 	}
 
 
-	auto Asin(float const radians) -> float
+	auto Asin(f32 const radians) -> f32
 	{
 		return std::asinf(radians);
 	}
 
 
-	auto Cos(float const radians) -> float
+	auto Cos(f32 const radians) -> f32
 	{
 		return std::cosf(radians);
 	}
 
 
-	auto Acos(float const radians) -> float
+	auto Acos(f32 const radians) -> f32
 	{
 		return std::acosf(radians);
 	}
 
 
-	auto Tan(float const radians) -> float
+	auto Tan(f32 const radians) -> f32
 	{
 		return std::tanf(radians);
 	}
 
 
-	auto Atan(float const radians) -> float
+	auto Atan(f32 const radians) -> f32
 	{
 		return std::atanf(radians);
 	}
 
 
-	auto Atan2(float const y, float const x) -> float
+	auto Atan2(f32 const y, f32 const x) -> f32
 	{
 		return std::atan2(y, x);
 	}
 
 
-	auto Pow(float const base, float const exp) -> float
+	auto Pow(f32 const base, f32 const exp) -> f32
 	{
 		return std::powf(base, exp);
 	}
 
 
-	auto Sqrt(float const value) -> float
+	auto Sqrt(f32 const value) -> f32
 	{
 		return std::sqrtf(value);
 	}
 
+	auto Log(f32 const value) -> f32
+	{
+		return std::log(value);
+	}
 
-	auto Clamp(float const value, float const min, float const max) -> float
+	auto Log2(f32 const value) -> f32
+	{
+		return std::log2(value);
+	}
+
+
+	auto Clamp(f32 const value, f32 const min, f32 const max) -> f32
 	{
 		return std::clamp(value, min, max);
 	}
 
 
-	auto Abs(float const value) -> float
+	auto Abs(f32 const value) -> f32
 	{
 		return std::abs(value);
 	}
 
 
-	auto IsPowerOfTwo(unsigned const value) -> bool
+	auto IsPowerOfTwo(u32 const value) -> bool
 	{
 		return value != 0 && (value & (value - 1)) == 0;
 	}
 
 
-	auto NextPowerOfTwo(unsigned const value) -> unsigned
+	auto NextPowerOfTwo(u32 const value) -> u32
 	{
 		if (IsPowerOfTwo(value))
 		{
 			return value;
 		}
 
-		unsigned ret{1};
+		u32 ret{1};
 
 		while (ret < value)
 		{
@@ -115,8 +125,14 @@ namespace leopph::math
 	}
 
 
-	auto Lerp(float const from, float const to, float const t) -> float
+	auto Lerp(f32 const from, f32 const to, f32 const t) -> f32
 	{
 		return (1 - t) * from + t * to;
 	}
+
+	auto BinaryDigitCount(u32 const number) -> u8
+	{
+		return static_cast<u8>(Log2(number)) + 1;
+	}
+
 }
