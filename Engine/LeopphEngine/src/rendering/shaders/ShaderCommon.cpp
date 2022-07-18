@@ -1,11 +1,9 @@
-#include "rendering/ShaderProcessor.hpp"
+#include "rendering/shaders/ShaderCommon.hpp"
 
 #include "Logger.hpp"
 #include "Util.hpp"
 
 #include <sstream>
-#include <string_view>
-#include <vector>
 
 namespace leopph::internal
 {

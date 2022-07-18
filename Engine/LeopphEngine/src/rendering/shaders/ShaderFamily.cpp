@@ -14,7 +14,7 @@
 
 namespace leopph::internal
 {
-	ShaderFamily::ShaderFamily(std::vector<ShaderStageInfo> const& stages)
+	ShaderFamily::ShaderFamily(std::vector<ShaderStageCreateInfo> const& stages)
 	{
 		std::ranges::transform(stages, std::inserter(m_Sources, m_Sources.begin()), [](auto const& stageInfo)
 		{
@@ -119,7 +119,7 @@ namespace leopph::internal
 
 	auto ShaderFamily::BuildFromSources(std::string permStr) -> ShaderProgram&
 	{
-		std::vector<ShaderStageInfo> stageInfos;
+		std::vector<ShaderStageCreateInfo> stageInfos;
 		stageInfos.reserve(m_Sources.size());
 
 		// Create new permutation

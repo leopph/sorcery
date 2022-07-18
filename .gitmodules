@@ -3,7 +3,3 @@
 	url = https://github.com/glfw/glfw.git
 	branch = latest
 	ignore = dirty
-[submodule "gl3w"]
-	path = Engine/deps/vendor/gl3w
-	url = https://github.com/skaslev/gl3w.git
-	ignore = dirty

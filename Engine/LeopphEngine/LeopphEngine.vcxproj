@@ -11,11 +11,13 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\deps\vendor\gl3w\src\gl3w.c" />
     <ClInclude Include="include\rendering\Extent.hpp" />
-    <ClInclude Include="include\rendering\ShaderProcessor.hpp" />
+    <ClInclude Include="include\rendering\shaders\ShaderCommon.hpp" />
+    <ClInclude Include="include\rendering\shaders\ShaderFamily2.hpp" />
+    <ClInclude Include="include\rendering\shaders\ShaderProgram2.hpp" />
     <ClInclude Include="include\ScreenQuad.hpp" />
     <ClInclude Include="include\SettingsImpl.hpp" />
+    <ClCompile Include="..\deps\vendor\glad\src\gl.c" />
     <ClCompile Include="src\components\AttenuatedLight.cpp" />
     <ClCompile Include="src\components\Behavior.cpp" />
     <ClCompile Include="src\components\Camera.cpp" />
@@ -36,7 +38,8 @@
     <ClCompile Include="src\rendering\gl\GlMeshGroup.cpp" />
     <ClCompile Include="src\rendering\RenderObject.cpp" />
     <ClCompile Include="src\rendering\ScreenQuad.cpp" />
-    <ClCompile Include="src\rendering\ShaderProcessor.cpp" />
+    <ClCompile Include="src\rendering\shaders\ShaderCommon.cpp" />
+    <ClCompile Include="src\rendering\shaders\ShaderProgram2.cpp" />
     <ClCompile Include="src\Settings.cpp" />
     <ClCompile Include="src\data\DataManager.cpp" />
     <ClCompile Include="src\data\Poelo.cpp" />
@@ -110,8 +113,6 @@
     <ClInclude Include="include\rendering\RenderObject.hpp" />
     <ClInclude Include="include\rendering\shaders\ShaderFamily.hpp" />
     <ClInclude Include="include\rendering\shaders\ShaderProgram.hpp" />
-    <ClInclude Include="include\rendering\shaders\ShaderStageInfo.hpp" />
-    <ClInclude Include="include\rendering\shaders\ShaderType.hpp" />
     <ClInclude Include="include\rendering\gl\GlSkyboxImpl.hpp" />
     <ClInclude Include="include\rendering\gl\GlSpotShadowMap.hpp" />
     <ClInclude Include="include\rendering\gl\GlTransparencyBuffer.hpp" />
@@ -239,7 +240,7 @@
       <PreprocessorDefinitions>SPDLOG_COMPILED_LIB;ENGINE_BUILD;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)include\;$(SolutionDir)Engine\LeopphverterLib\include\;$(SolutionDir)Engine\LeopphUtils\include\;$(SolutionDir)Engine\include\;$(SolutionDir)Engine\deps\vendor\gl3w\include\;$(SolutionDir)Engine\deps\vendor\glfw\include\;$(SolutionDir)Engine\deps\vendor\nlohmann_json\;$(SolutionDir)Engine\deps\vendor\taskflow_wsq\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include\;$(SolutionDir)Engine\LeopphverterLib\include\;$(SolutionDir)Engine\LeopphUtils\include\;$(SolutionDir)Engine\include\;$(SolutionDir)Engine\deps\vendor\glad\include\;$(SolutionDir)Engine\deps\vendor\glfw\include\;$(SolutionDir)Engine\deps\vendor\nlohmann_json\;$(SolutionDir)Engine\deps\vendor\taskflow_wsq\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -265,7 +266,7 @@
       <PreprocessorDefinitions>SPDLOG_COMPILED_LIB;ENGINE_BUILD;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)include\;$(SolutionDir)Engine\LeopphverterLib\include\;$(SolutionDir)Engine\LeopphUtils\include\;$(SolutionDir)Engine\include\;$(SolutionDir)Engine\deps\vendor\gl3w\include\;$(SolutionDir)Engine\deps\vendor\glfw\include\;$(SolutionDir)Engine\deps\vendor\nlohmann_json\;$(SolutionDir)Engine\deps\vendor\taskflow_wsq\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include\;$(SolutionDir)Engine\LeopphverterLib\include\;$(SolutionDir)Engine\LeopphUtils\include\;$(SolutionDir)Engine\include\;$(SolutionDir)Engine\deps\vendor\glad\include\;$(SolutionDir)Engine\deps\vendor\glfw\include\;$(SolutionDir)Engine\deps\vendor\nlohmann_json\;$(SolutionDir)Engine\deps\vendor\taskflow_wsq\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>

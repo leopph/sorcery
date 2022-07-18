@@ -24,8 +24,6 @@ git submodule update --init Engine/deps/vendor/glfw
 cd Engine\deps\vendor\assimp
 cd ..\assimp
 call :Assimp
-cd ..\gl3w
-call :Gl3w
 cd ..\glfw
 call :GLFW
 cd ..\spdlog
@@ -42,12 +40,6 @@ exit /B 0
 
 :GLFW
 cmake -DCMAKE_CONFIGURATION_TYPES="%CONFIG_DEBUG%;%CONFIG_RELEASE%" -DGLFW_BUILD_DOCS=0 -DGLFW_BUILD_EXAMPLES=0 -DGLFW_BUILD_TESTS=0 -DGLFW_USE_HYBRID_HPG=1 .
-%CMAKE_BUILD_CONFIG% %CONFIG_DEBUG%
-%CMAKE_BUILD_CONFIG% %CONFIG_RELEASE%
-exit /B 0
-
-:Gl3w
-cmake -DCMAKE_CONFIGURATION_TYPES="%CONFIG_DEBUG%;%CONFIG_RELEASE%" .
 %CMAKE_BUILD_CONFIG% %CONFIG_DEBUG%
 %CMAKE_BUILD_CONFIG% %CONFIG_RELEASE%
 exit /B 0

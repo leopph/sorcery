@@ -6,7 +6,6 @@
 #include "rendering/gl/GlMeshGroup.hpp"
 #include "rendering/gl/GlSkyboxImpl.hpp"
 #include "rendering/shaders/ShaderFamily.hpp"
-#include "rendering/shaders/ShaderSources.hpp"
 
 #include <filesystem>
 #include <memory>

@@ -1,8 +1,7 @@
 #pragma once
 
 #include "ShaderProgram.hpp"
-#include "ShaderStageInfo.hpp"
-#include "ShaderType.hpp"
+#include "Types.hpp"
 #include "util/equal/StringEqual.hpp"
 #include "util/hash/StringHash.hpp"
 #include "util/less/StringLess.hpp"
@@ -17,11 +16,10 @@
 
 namespace leopph::internal
 {
-	// A set of shaders with different flags set using the same source code.
 	class ShaderFamily
 	{
 		public:
-			explicit ShaderFamily(std::vector<ShaderStageInfo> const& stages);
+			explicit ShaderFamily(std::vector<ShaderStageCreateInfo> const& stages);
 
 			ShaderFamily(ShaderFamily const& other) = default;
 			auto operator=(ShaderFamily const& other) -> ShaderFamily& = default;
@@ -47,7 +45,7 @@ namespace leopph::internal
 
 			// Create the permutation key from the currently set flags
 			[[nodiscard]] auto BuildPermString() const -> std::string;
-			
+
 			// Builds the shader using the current flags, sets its buffer bindings, stores it, then returns it
 			auto BuildFromSources(std::string permStr) -> ShaderProgram&;
 
