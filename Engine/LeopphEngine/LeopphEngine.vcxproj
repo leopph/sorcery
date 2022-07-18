@@ -77,7 +77,6 @@
     <ClCompile Include="src\threading\SpinLock.cpp" />
     <ClCompile Include="src\timing\Time.cpp" />
     <ClCompile Include="src\timing\TimeImpl.cpp" />
-    <ClCompile Include="src\Util.cpp" />
     <ClCompile Include="src\util\api_adapters\GLFWAdapter.cpp" />
     <ClCompile Include="src\util\equal\StringEqual.cpp" />
     <ClCompile Include="src\Exit.cpp" />
@@ -116,7 +115,6 @@
     <ClInclude Include="include\rendering\gl\GlSkyboxImpl.hpp" />
     <ClInclude Include="include\rendering\gl\GlSpotShadowMap.hpp" />
     <ClInclude Include="include\rendering\gl\GlTransparencyBuffer.hpp" />
-    <ClInclude Include="include\Util.hpp" />
     <ClInclude Include="src\scene\Scene.hpp" />
     <ClInclude Include="src\scene\SceneManager.hpp" />
     <ClInclude Include="include\threading\Job.hpp" />

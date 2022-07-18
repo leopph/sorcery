@@ -68,7 +68,6 @@
     <ClCompile Include="src\components\Light.cpp" />
     <ClCompile Include="src\components\AttenuatedLight.cpp" />
     <ClCompile Include="src\rendering\shaders\ShaderCommon.cpp" />
-    <ClCompile Include="src\Util.cpp" />
     <ClCompile Include="src\rendering\shaders\ShaderProgram2.cpp" />
     <ClCompile Include="..\deps\vendor\glad\src\gl.c" />
   </ItemGroup>
@@ -116,7 +115,6 @@
     <ClInclude Include="include\SettingsImpl.hpp" />
     <ClInclude Include="include\ScreenQuad.hpp" />
     <ClInclude Include="include\rendering\Extent.hpp" />
-    <ClInclude Include="include\Util.hpp" />
     <ClInclude Include="include\rendering\shaders\ShaderCommon.hpp" />
     <ClInclude Include="include\rendering\shaders\ShaderProgram2.hpp" />
     <ClInclude Include="include\rendering\shaders\ShaderFamily2.hpp" />
