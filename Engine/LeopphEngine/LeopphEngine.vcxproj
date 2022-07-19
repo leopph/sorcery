@@ -12,6 +12,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\rendering\Extent.hpp" />
+    <ClInclude Include="include\rendering\RenderSettings.hpp" />
     <ClInclude Include="include\rendering\shaders\ShaderCommon.hpp" />
     <ClInclude Include="include\rendering\shaders\ShaderFamily2.hpp" />
     <ClInclude Include="include\rendering\shaders\ShaderProcessing.hpp" />

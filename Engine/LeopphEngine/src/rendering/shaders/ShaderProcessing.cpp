@@ -2,10 +2,11 @@
 
 #include "Logger.hpp"
 #include "Util.hpp"
+#include "rendering/RenderSettings.hpp"
 
+#include <iterator>
 #include <regex>
 #include <stdexcept>
-#include <iterator>
 
 namespace leopph
 {
@@ -123,5 +124,36 @@ namespace leopph
 		}
 
 		return programSourceInfo;
+	}
+
+	auto InsertBuiltInShaderLines(ShaderProgramSourceInfo& sourceInfo) -> void
+	{
+		std::vector<std::string> builtInLines;
+		builtInLines.emplace_back("#version 450 core\n");
+		builtInLines.emplace_back("#pragma option name=DIR_SHADOW\n");
+		builtInLines.push_back(std::string{"#pragma option name=NUM_DIR_CASCADES min="}.append(std::to_string(rendersettings::numShadowCascades)).append(" max=").append(std::to_string(rendersettings::numShadowCascades)).append(1, '\n'));
+		builtInLines.push_back(std::string{"#pragma option name=NUM_SPOT min=0 max="}.append(std::to_string(rendersettings::numMaxSpot)).append(1, '\n'));
+		builtInLines.push_back(std::string{"#pragma option name=NUM_SPOT_SHADOW min=0 max="}.append(std::to_string(rendersettings::numMaxSpotShadow)).append(1, '\n'));
+		builtInLines.push_back(std::string{"#pragma option name=NUM_POINT min=0 max="}.append(std::to_string(rendersettings::numMaxPoint)).append(1, '\n'));
+		builtInLines.push_back(std::string{"#pragma option name=NUM_POINT_SHADOW min=0 max="}.append(std::to_string(rendersettings::numMaxPointShadow)).append(1, '\n'));
+
+		if (!sourceInfo.vertex)
+		{
+			auto const errMsg = "Error adding built-in shader lines: vertex shader source was missing. Vertex shaders are not optional.";
+			internal::Logger::Instance().Error(errMsg);
+			throw std::invalid_argument{errMsg};
+		}
+
+		sourceInfo.vertex->insert(std::begin(*sourceInfo.vertex), std::begin(builtInLines), std::end(builtInLines));
+
+		if (sourceInfo.geometry)
+		{
+			sourceInfo.geometry->insert(std::begin(*sourceInfo.geometry), std::begin(builtInLines), std::end(builtInLines));
+		}
+
+		if (sourceInfo.fragment)
+		{
+			sourceInfo.fragment->insert(std::begin(*sourceInfo.fragment), std::begin(builtInLines), std::end(builtInLines));
+		}
 	}
 }

@@ -116,6 +116,7 @@
     <ClInclude Include="include\rendering\shaders\ShaderProgram2.hpp" />
     <ClInclude Include="include\rendering\shaders\ShaderFamily2.hpp" />
     <ClInclude Include="include\rendering\shaders\ShaderProcessing.hpp" />
+    <ClInclude Include="include\rendering\RenderSettings.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\rendering\shaders\glsl\Lighting.glsl" />
