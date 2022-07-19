@@ -14,9 +14,8 @@
     <ClInclude Include="include\rendering\Extent.hpp" />
     <ClInclude Include="include\rendering\RenderSettings.hpp" />
     <ClInclude Include="include\rendering\shaders\ShaderCommon.hpp" />
-    <ClInclude Include="include\rendering\shaders\ShaderFamily2.hpp" />
+    <ClInclude Include="include\rendering\shaders\ShaderFamily.hpp" />
     <ClInclude Include="include\rendering\shaders\ShaderProcessing.hpp" />
-    <ClInclude Include="include\rendering\shaders\ShaderProgram2.hpp" />
     <ClInclude Include="include\ScreenQuad.hpp" />
     <ClInclude Include="include\SettingsImpl.hpp" />
     <ClCompile Include="..\deps\vendor\glad\src\gl.c" />
@@ -40,9 +39,8 @@
     <ClCompile Include="src\rendering\gl\GlMeshGroup.cpp" />
     <ClCompile Include="src\rendering\RenderObject.cpp" />
     <ClCompile Include="src\rendering\ScreenQuad.cpp" />
-    <ClCompile Include="src\rendering\shaders\ShaderFamily2.cpp" />
+    <ClCompile Include="src\rendering\shaders\ShaderFamily.cpp" />
     <ClCompile Include="src\rendering\shaders\ShaderProcessing.cpp" />
-    <ClCompile Include="src\rendering\shaders\ShaderProgram2.cpp" />
     <ClCompile Include="src\Settings.cpp" />
     <ClCompile Include="src\data\DataManager.cpp" />
     <ClCompile Include="src\data\Poelo.cpp" />
@@ -67,8 +65,6 @@
     <ClCompile Include="src\rendering\renderers\GlForwardRenderer.cpp" />
     <ClCompile Include="src\rendering\renderers\GlRenderer.cpp" />
     <ClCompile Include="src\rendering\renderers\Renderer.cpp" />
-    <ClCompile Include="src\rendering\shaders\ShaderFamily.cpp" />
-    <ClCompile Include="src\rendering\shaders\ShaderProgram.cpp" />
     <ClCompile Include="src\components\Skybox.cpp" />
     <ClCompile Include="src\rendering\gl\GlSkyboxImpl.cpp" />
     <ClCompile Include="src\rendering\gl\GlTexture.cpp" />
@@ -111,8 +107,6 @@
     <ClInclude Include="include\rendering\renderers\GlRenderer.hpp" />
     <ClInclude Include="include\rendering\renderers\Renderer.hpp" />
     <ClInclude Include="include\rendering\RenderObject.hpp" />
-    <ClInclude Include="include\rendering\shaders\ShaderFamily.hpp" />
-    <ClInclude Include="include\rendering\shaders\ShaderProgram.hpp" />
     <ClInclude Include="include\rendering\gl\GlSkyboxImpl.hpp" />
     <ClInclude Include="include\rendering\gl\GlSpotShadowMap.hpp" />
     <ClInclude Include="include\rendering\gl\GlTransparencyBuffer.hpp" />

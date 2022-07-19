@@ -1,157 +1,190 @@
 #include "rendering/shaders/ShaderFamily.hpp"
 
-#include "InternalContext.hpp"
 #include "Logger.hpp"
-#include "SettingsImpl.hpp"
+#include "Math.hpp"
+#include "Util.hpp"
+#include "rendering/shaders/ShaderProcessing.hpp"
 
-#include <algorithm>
-#include <cstddef>
-#include <fstream>
-#include <functional>
 #include <iterator>
-#include <utility>
+#include <optional>
+#include <ranges>
+#include <regex>
+#include <sstream>
+#include <stdexcept>
 
-
-namespace leopph::internal
+namespace leopph
 {
-	ShaderFamily::ShaderFamily(std::vector<ShaderStageCreateInfo> const& stages)
+	ShaderFamily::ShaderFamily(ShaderProgramSourceInfo const& sourceInfo) :
+		m_VertexSource{sourceInfo.vertex},
+		m_GeometrySource{sourceInfo.geometry},
+		m_FragmentSource{sourceInfo.fragment}
 	{
-		std::ranges::transform(stages, std::inserter(m_Sources, m_Sources.begin()), [](auto const& stageInfo)
+		auto bitsRequired = ExtractOptions(m_VertexSource, m_Options);
+
+		if (m_GeometrySource)
 		{
-			return std::make_pair(stageInfo.Type, stageInfo.Src);
-		});
-	}
-
-
-	auto ShaderFamily::GetPermutation() -> ShaderProgram&
-	{
-		// Get the permutation id string
-		auto permStr{BuildPermString()};
-
-		// Look up existing permutation
-		if (auto const it{m_Permutations.find(permStr)}; it != m_Permutations.end())
-		{
-			return it->second;
+			bitsRequired = ExtractOptions(*m_GeometrySource, m_Options);
 		}
 
-		// Not found
-
-		// If caching
-		if (auto const& cacheLoc = GetSettingsImpl()->ShaderCachePath(); !cacheLoc.empty())
+		if (m_FragmentSource)
 		{
-			auto const permHash{decltype(m_Permutations)::hasher()(permStr)};
-			auto const cachePath{
-				[&, this]
-				{
-					std::filesystem::path p{CACHE_PREFIX + std::to_string(permHash)};
-					for (auto const hash : SourceHashes())
-					{
-						p += "_" + std::to_string(hash);
-					}
-					return cacheLoc / p;
-				}()
-			};
+			bitsRequired = ExtractOptions(*m_FragmentSource, m_Options);
+		}
 
-			// Try parsing cache
-			if (std::filesystem::exists(cachePath))
+		std::vector<std::vector<bool>> permutationBits;
+		permutationBits.emplace_back(bitsRequired, false);
+
+		std::vector<std::vector<bool>> tmpBuffer;
+
+		for (auto const& [min, max, id] : m_Options | std::views::values)
+		{
+			tmpBuffer.clear();
+
+			for (auto const& bitset : permutationBits)
 			{
-				std::ifstream input(cachePath, std::ios::binary);
-				std::vector<unsigned char> binary{std::istreambuf_iterator(input), {}};
-				auto const [it, inserted]{m_Permutations.emplace(permStr, binary)};
-				if (inserted)
+				auto const range = max - min;
+
+				for (u32 i = 1; i <= range; i++)
 				{
-					Logger::Instance().Debug("Shader parsed from " + cachePath.string() + ".");
-					return it->second;
+					auto newBitset = bitset;
+					auto const digits = math::BinaryDigitCount(i);
+
+					for (u8 j = 0; j < digits; j++)
+					{
+						newBitset[id + j] = static_cast<bool>(i & (0x00000001 << j));
+						// TODO this only generates the permutations bitsets without the defines. we need to associate the defines with the bitsets
+					}
+
+					tmpBuffer.emplace_back(std::move(newBitset));
 				}
 			}
 
-			// Build and cache it
-			auto& shader{BuildFromSources(std::move(permStr))};
-			auto const binary{shader.Binary()};
-			std::ofstream output(cachePath, std::ios::binary);
-			std::ranges::copy(binary, std::ostreambuf_iterator(output));
-			Logger::Instance().Debug("Shader cached to " + cachePath.string() + ".");
-			return shader;
+			permutationBits.insert(std::end(permutationBits), std::make_move_iterator(std::begin(tmpBuffer)), std::make_move_iterator(std::end(tmpBuffer)));
 		}
-
-		return BuildFromSources(std::move(permStr));
 	}
 
-
-	auto ShaderFamily::Clear() -> void
+	auto ShaderFamily::Option(std::string_view const name, u32 const value) -> void
 	{
-		m_CurrentFlags.clear();
+		auto const& option = m_Options.find(name)->second;
+
+		#ifndef NDEBUG
+		if (option.min > value || option.max < value)
+		{
+			auto const errMsg = "Value [" + std::to_string(value) + "] was out of range for shader option [" + std::string{name} + "].";
+			internal::Logger::Instance().Error(errMsg);
+			throw std::runtime_error{errMsg};
+		}
+		#endif
+
+		auto const digits = math::BinaryDigitCount(value);
+
+		for (auto i = 0; i < digits; i++)
+		{
+			m_OptionBits[option.id + i] = static_cast<bool>(value & (0x00000001 << i));
+		}
 	}
 
-
-	auto ShaderFamily::operator[](std::string_view const key) -> std::string&
+	auto ShaderFamily::ExtractOptions(std::vector<std::string>& sourceLines, std::unordered_map<std::string, ShaderOption, StringHash, StringEqual>& out) -> u32
 	{
-		if (auto const it{m_CurrentFlags.find(key)}; it != m_CurrentFlags.end())
+		std::regex const static validFullOptionRegex{R"delim(^\s*#\s*pragma\s+option\s+name\s*=\s*[A-Za-z][\S]*\s+min\s*=\s*\d+\s+max\s*=\s*\d+\s*$)delim"};
+		std::regex const static validShortOptionRegex{R"delim(^\s*#\s*pragma\s+option\s+name\s*=\s*[A-Za-z][\S]*\s*$)delim"};
+		std::regex const static nameAssignment{R"delim(=\s*[A-Za-z][\S]*)delim"};
+		std::regex const static numberAssignment{R"delim(=\s*\d+)delim"};
+		std::regex const static nameIdentifier{R"delim([A-Za-z][\S]*)delim"};
+		std::regex const static number{R"delim(\d+)delim"};
+
+		u32 nextFreeId{0};
+
+		std::vector<std::string> lines;
+		SplitLines(sourceLines, lines);
+
+		std::ostringstream outStream;
+
+		for (auto& line : lines)
 		{
-			return it->second;
+			if (std::regex_match(line, validFullOptionRegex))
+			{
+				std::regex_iterator nameAssignmentMatch{std::begin(line), std::end(line), nameAssignment};
+				auto const assignmentStr = nameAssignmentMatch->str();
+				std::regex_iterator nameMatch{std::begin(assignmentStr), std::end(assignmentStr), nameIdentifier};
+				auto const name = nameMatch->str();
+
+				std::regex_iterator numberAssignmentMatch{std::begin(line), std::end(line), numberAssignment};
+				auto const minAssignmentStr = numberAssignmentMatch->str();
+				std::regex_iterator minMatch{std::begin(minAssignmentStr), std::end(minAssignmentStr), number};
+				u32 const min = std::stoi(minMatch->str());
+
+				++numberAssignmentMatch;
+				auto const maxAssignmentStr = numberAssignmentMatch->str();
+				std::regex_iterator maxMatch{std::begin(maxAssignmentStr), std::end(maxAssignmentStr), number};
+				u32 const max = std::stoi(maxMatch->str());
+
+				ShaderOption option
+				{
+					.min = min,
+					.max = max,
+					.id = nextFreeId
+				};
+
+				if (out.contains(name))
+				{
+					if (out[name].min != option.min && out[name].max != option.max)
+					{
+						auto const errMsg = "Duplicate shader option [" + name + "] found while parsing options.";
+						internal::Logger::Instance().Error(errMsg);
+						throw std::runtime_error{errMsg};
+					}
+				}
+				else
+				{
+					out[name] = option;
+					nextFreeId += math::BinaryDigitCount(max - min);
+				}
+			}
+			else if (std::regex_match(line, validShortOptionRegex))
+			{
+				std::regex_iterator nameAssignmentMatch{std::begin(line), std::end(line), nameAssignment};
+				auto const assignmentStr = nameAssignmentMatch->str();
+				std::regex_iterator nameMatch{std::begin(assignmentStr), std::end(assignmentStr), nameIdentifier};
+				auto const name = nameMatch->str();
+
+				ShaderOption option
+				{
+					.min = 0,
+					.max = 1,
+					.id = nextFreeId
+				};
+
+				if (out.contains(name))
+				{
+					if (out[name].min != option.min && out[name].max != option.max)
+					{
+						auto const errMsg = "Duplicate shader option [" + name + "] found while parsing options.";
+						internal::Logger::Instance().Error(errMsg);
+						throw std::runtime_error{errMsg};
+					}
+				}
+				else
+				{
+					out[name] = option;
+					nextFreeId += 1;
+				}
+			}
+			else
+			{
+				outStream << line << '\n';
+			}
 		}
-		return m_CurrentFlags.emplace(std::string{key}, "").first->second;
+
+		sourceLines = outStream.str();
+		return nextFreeId;
 	}
 
-
-	auto ShaderFamily::BuildSrcString(std::string_view const src) const -> std::string
+	auto MakeShaderFamily(std::filesystem::path vertexShaderPath, std::filesystem::path geometryShaderPath, std::filesystem::path fragmentShaderPath) -> ShaderFamily
 	{
-		std::string ret{src};
-		for (auto const& [name, value] : m_CurrentFlags)
-		{
-			ret.insert(ret.find_first_of('\n') + 1, std::string{"#define "}.append(name).append(1, ' ').append(value).append(1, '\n'));
-		}
-		return ret;
-	}
-
-
-	auto ShaderFamily::BuildPermString() const -> std::string
-	{
-		std::string ret{"{"};
-		for (auto const& [name, value] : m_CurrentFlags)
-		{
-			ret.append(name).append(1, ':').append(value).append(1, ';');
-		}
-		ret.replace(ret.length() - 1, 1, "");
-		return ret;
-	}
-
-
-	auto ShaderFamily::BuildFromSources(std::string permStr) -> ShaderProgram&
-	{
-		std::vector<ShaderStageCreateInfo> stageInfos;
-		stageInfos.reserve(m_Sources.size());
-
-		// Create new permutation
-		for (auto const& [type, src] : m_Sources)
-		{
-			stageInfos.emplace_back(BuildSrcString(src), type);
-		}
-
-		return m_Permutations.emplace(std::move(permStr), stageInfos).first->second;
-	}
-
-
-	auto ShaderFamily::SourceHashes() const -> std::vector<std::size_t> const&
-	{
-		if (m_SrcHashCacheRdy)
-		{
-			return m_SrcHashCache;
-		}
-
-		std::vector<ShaderType> types;
-		types.reserve(m_Sources.size());
-		for (auto const& [type, src] : m_Sources)
-		{
-			types.push_back(type);
-		}
-		std::ranges::sort(types);
-
-		for (constexpr std::hash<std::string> hasher; auto const type : types)
-		{
-			m_SrcHashCache.push_back(hasher(m_Sources.at(type)));
-		}
-		m_SrcHashCacheRdy = true;
-		return m_SrcHashCache;
+		auto fileInfo = ReadShaderFiles(std::move(vertexShaderPath), std::move(geometryShaderPath), std::move(fragmentShaderPath));
+		auto sourceInfo = ProcessShaderIncludes(std::move(fileInfo));
+		InsertBuiltInShaderLines(sourceInfo);
+		return ShaderFamily{sourceInfo};
 	}
 }

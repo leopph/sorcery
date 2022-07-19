@@ -7,15 +7,13 @@ namespace leopph
 	ShaderProgram2::ShaderProgram2(ShaderProgramSourceInfo const& sourceInfo) :
 		m_Program{glCreateProgram()}
 	{
-		if (sourceInfo.vertex)
-		{
 			m_VertexShader = glCreateShader(GL_VERTEX_SHADER);
-			auto const src = sourceInfo.vertex->data();
+			auto const src = sourceInfo.vertex.data();
 			GLint const lngth = sourceInfo.vertex->length();
 			glShaderSource(m_VertexShader, 1, &src, &lngth);
 			glCompileShader(m_VertexShader);
 			glAttachShader(m_Program, m_VertexShader);
-		}
+		
 
 		if (sourceInfo.geometry)
 		{

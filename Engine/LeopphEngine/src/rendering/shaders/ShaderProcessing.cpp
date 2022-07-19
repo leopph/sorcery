@@ -54,15 +54,8 @@ namespace leopph
 
 		ShaderProgramSourceInfo programSourceInfo;
 
-		if (!sourceFileInfo.vertexInfo)
-		{
-			auto const errMsg = "Error processing shader includes: vertex shader info was missing. Vertex shaders are not optional.";
-			internal::Logger::Instance().Error(errMsg);
-			throw std::invalid_argument{errMsg};
-		}
-
 		std::vector<ShaderStageSourceFileInfo*> stageInfos;
-		stageInfos.push_back(&*sourceFileInfo.vertexInfo);
+		stageInfos.push_back(&sourceFileInfo.vertexInfo);
 
 		if (sourceFileInfo.geometryInfo)
 		{
@@ -137,14 +130,7 @@ namespace leopph
 		builtInLines.push_back(std::string{"#pragma option name=NUM_POINT min=0 max="}.append(std::to_string(rendersettings::numMaxPoint)).append(1, '\n'));
 		builtInLines.push_back(std::string{"#pragma option name=NUM_POINT_SHADOW min=0 max="}.append(std::to_string(rendersettings::numMaxPointShadow)).append(1, '\n'));
 
-		if (!sourceInfo.vertex)
-		{
-			auto const errMsg = "Error adding built-in shader lines: vertex shader source was missing. Vertex shaders are not optional.";
-			internal::Logger::Instance().Error(errMsg);
-			throw std::invalid_argument{errMsg};
-		}
-
-		sourceInfo.vertex->insert(std::begin(*sourceInfo.vertex), std::begin(builtInLines), std::end(builtInLines));
+		sourceInfo.vertex.insert(std::begin(sourceInfo.vertex), std::begin(builtInLines), std::end(builtInLines));
 
 		if (sourceInfo.geometry)
 		{

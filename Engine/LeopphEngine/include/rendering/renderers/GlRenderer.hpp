@@ -148,52 +148,12 @@ namespace leopph::internal
 			 * ############ */
 
 		protected:
-			ShaderFamily m_ShadowShader
-			{
-				{
-					{shadersources::COMPOSITE_FRAG, ShaderType::Vertex}
-				}
-			};
-
-			ShaderFamily m_CubeShadowShader
-			{
-				{
-					{shadersources::COMPOSITE_FRAG, ShaderType::Vertex},
-					{shadersources::COMPOSITE_FRAG, ShaderType::Fragment}
-				}
-			};
-
-			ShaderFamily m_SkyboxShader
-			{
-				{
-					{shadersources::COMPOSITE_FRAG, ShaderType::Vertex},
-					{shadersources::COMPOSITE_FRAG, ShaderType::Fragment}
-				}
-			};
-
-			ShaderFamily m_GammaCorrectShader
-			{
-				{
-					{shadersources::COMPOSITE_FRAG, ShaderType::Vertex},
-					{shadersources::COMPOSITE_FRAG, ShaderType::Fragment}
-				}
-			};
-
-			ShaderFamily m_ForwardObjectShader
-			{
-				{
-					{shadersources::COMPOSITE_FRAG, ShaderType::Vertex},
-					{shadersources::COMPOSITE_FRAG, ShaderType::Fragment}
-				}
-			};
-
-			ShaderFamily m_TranspCompositeShader
-			{
-				{
-					{shadersources::COMPOSITE_FRAG, ShaderType::Vertex},
-					{shadersources::COMPOSITE_FRAG, ShaderType::Fragment}
-				}
-			};
+			ShaderFamily m_ShadowShader{MakeShaderFamily("C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/DepthShadow.vert")};
+			ShaderFamily m_CubeShadowShader{MakeShaderFamily("C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/LinShadow.vert", {}, "C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/LinShadow.frag")};
+			ShaderFamily m_SkyboxShader{MakeShaderFamily("C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/Skybox.vert", {}, "C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/Skybox.frag")};
+			ShaderFamily m_GammaCorrectShader{MakeShaderFamily("C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/Pos2DPassthrough.vert", {}, "C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/Gamma.frag")};
+			ShaderFamily m_ForwardObjectShader{MakeShaderFamily("C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/Forward.vert", {}, "C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/Forward.frag")};
+			ShaderFamily m_TranspCompositeShader{MakeShaderFamily("C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/Pos2DPassthrough.vert", {}, "C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/Composite.frag")};
 
 		private:
 			// Per RenderObject arrays of matrices used. Instanced RenderNodes refer to them.

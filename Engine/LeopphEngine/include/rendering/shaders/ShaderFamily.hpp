@@ -1,68 +1,51 @@
 #pragma once
 
-#include "ShaderProgram.hpp"
+#include "Equal.hpp"
+#include "Hash.hpp"
+#include "ShaderCommon.hpp"
 #include "Types.hpp"
-#include "util/equal/StringEqual.hpp"
-#include "util/hash/StringHash.hpp"
-#include "util/less/StringLess.hpp"
 
-#include <cstddef>
-#include <map>
 #include <string>
-#include <string_view>
 #include <unordered_map>
 #include <vector>
 
-
-namespace leopph::internal
+namespace leopph
 {
 	class ShaderFamily
 	{
+		struct Permutation
+		{
+			u32 program;
+			u32 vertex;
+			u32 geometry;
+			u32 fragment;
+			std::unordered_map<std::string, i32, StringHash, StringEqual> uniformLocations;
+		};
+
+		struct ShaderOption
+		{
+			u32 min;
+			u32 max;
+			u32 id;
+		};
+
 		public:
-			explicit ShaderFamily(std::vector<ShaderStageCreateInfo> const& stages);
+			explicit ShaderFamily(ShaderProgramSourceInfo const& sourceInfo);
 
-			ShaderFamily(ShaderFamily const& other) = default;
-			auto operator=(ShaderFamily const& other) -> ShaderFamily& = default;
-
-			ShaderFamily(ShaderFamily&& other) = delete;
-			auto operator=(ShaderFamily&& other) -> ShaderFamily& = delete;
-
-			~ShaderFamily() noexcept = default;
-
-			auto SetBufferBinding(std::string_view bufName, int bindingIndex) -> void;
-
-			// Uses the currently set flags to look up or generate a permutation.
-			[[nodiscard]] auto GetPermutation() -> ShaderProgram&;
-
-			// Cleans all currently set flags.
-			auto Clear() -> void;
-
-			[[nodiscard]] auto operator[](std::string_view key) -> std::string&;
+			auto Option(std::string_view name, u32 value) -> void;
 
 		private:
-			// Create a source that has the currently set flags inserted.
-			[[nodiscard]] auto BuildSrcString(std::string_view src) const -> std::string;
+			// Extracts all shader options from the source file and insert them into out, removes the option specifiers from lines, then returns the number of bits required to store all flags.
+			static auto ExtractOptions(std::vector<std::string>& sourceLines, std::unordered_map<std::string, ShaderOption, StringHash, StringEqual>& out) -> u32;
 
-			// Create the permutation key from the currently set flags
-			[[nodiscard]] auto BuildPermString() const -> std::string;
-
-			// Builds the shader using the current flags, sets its buffer bindings, stores it, then returns it
-			auto BuildFromSources(std::string permStr) -> ShaderProgram&;
-
-			// Returns a list of the hashes of the shader sources in Vertex->Geom->Fragment order
-			[[nodiscard]] auto SourceHashes() const -> std::vector<std::size_t> const&;
-
-			std::unordered_map<std::string, int, StringHash, StringEqual> m_Bindings;
-			std::unordered_map<ShaderType, std::string> m_Sources;
-
-			// The flags currently set by a consumer. This will be used to generate a permutation.
-			std::map<std::string, std::string, StringLess> m_CurrentFlags;
-			// The permutations with key being the in format {name1:value1;name2:value2}.
-			std::unordered_map<std::string, ShaderProgram> m_Permutations;
-
-			// Cache for the hashes of the source strings
-			mutable std::vector<std::size_t> m_SrcHashCache;
-			mutable bool m_SrcHashCacheRdy{false};
-			constexpr static char const* CACHE_PREFIX{"shad_"};
+			std::unordered_map<std::string, ShaderOption, StringHash, StringEqual> m_Options;
+			std::unordered_map<std::vector<bool>, Permutation> m_Permutations;
+			std::vector<bool> m_OptionBits;
+			std::vector<std::string> m_VertexSource;
+			std::optional<std::vector<std::string>> m_GeometrySource;
+			std::optional<std::vector<std::string>> m_FragmentSource;
 	};
+
+
+	[[nodiscard]] auto MakeShaderFamily(std::filesystem::path vertexShaderPath, std::filesystem::path geometryShaderPath = {}, std::filesystem::path fragmentShaderPath = {}) -> ShaderFamily;
 }

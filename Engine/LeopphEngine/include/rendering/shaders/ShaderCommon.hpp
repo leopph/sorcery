@@ -14,14 +14,14 @@ namespace leopph
 
 	struct ShaderProgramSourceFileInfo
 	{
-		std::optional<ShaderStageSourceFileInfo> vertexInfo;
+		ShaderStageSourceFileInfo vertexInfo;
 		std::optional<ShaderStageSourceFileInfo> geometryInfo;
 		std::optional<ShaderStageSourceFileInfo> fragmentInfo;
 	};
 
 	struct ShaderProgramSourceInfo
 	{
-		std::optional<std::vector<std::string>> vertex;
+		std::vector<std::string> vertex;
 		std::optional<std::vector<std::string>> geometry;
 		std::optional<std::vector<std::string>> fragment;
 	};

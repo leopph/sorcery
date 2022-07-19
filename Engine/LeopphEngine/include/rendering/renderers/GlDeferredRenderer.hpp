@@ -1,28 +1,21 @@
 #pragma once
 
-#include "DirLight.hpp"
 #include "GlRenderer.hpp"
-#include "Matrix.hpp"
-#include "PointLight.hpp"
-#include "SpotLight.hpp"
 #include "rendering/gl/GlCore.hpp"
-#include "rendering/gl/GlGeometryBuffer.hpp"
 #include "rendering/shaders/ShaderFamily.hpp"
 
 #include <array>
-#include <vector>
 
 
 namespace leopph::internal
 {
 	class GlDeferredRenderer final : public GlRenderer
 	{
-		private:
-			struct Gbuffer
-			{
-				GLuint framebuffer;
-				GLuint colorAttachment;
-			};
+		struct Gbuffer
+		{
+			GLuint framebuffer;
+			GLuint colorAttachment;
+		};
 
 
 		public:
@@ -55,18 +48,7 @@ namespace leopph::internal
 
 			std::array<GLuint, 3> m_Ubos;
 
-			ShaderFamily m_GeometryShader{
-				{
-					{shadersources::COMPOSITE_FRAG, ShaderType::Vertex},
-					{shadersources::COMPOSITE_FRAG, ShaderType::Fragment}
-				}
-			};
-
-			ShaderFamily m_LightShader{
-				{
-					{shadersources::COMPOSITE_FRAG, ShaderType::Vertex},
-					{shadersources::COMPOSITE_FRAG, ShaderType::Fragment}
-				}
-			};
+			ShaderFamily m_GeometryShader{MakeShaderFamily("C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/GPass.vert", {}, "C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/GPass.frag")};
+			ShaderFamily m_LightShader{MakeShaderFamily("C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/Pos2DPassthrough.vert", {}, "C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/LightPass.frag")};
 	};
 }
