@@ -4,6 +4,4 @@ Client/bin
 Client/int
 Engine/bin
 Engine/int
-Engine/deps/ShaderParser/bin
-Engine/deps/ShaderParser/int
 Engine/deps/vendor

@@ -132,7 +132,7 @@ namespace leopph::math
 
 	auto BinaryDigitCount(u32 const number) -> u8
 	{
-		return static_cast<u8>(Log2(number)) + 1;
+		return static_cast<u8>(Log2(static_cast<f32>(number))) + 1;
 	}
 
 }

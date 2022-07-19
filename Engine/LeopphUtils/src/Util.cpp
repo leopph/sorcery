@@ -15,6 +15,19 @@ namespace leopph
 		return s_stream.str();
 	}
 
+	auto ReadFileLines(std::filesystem::path const& path, std::vector<std::string>& out) -> std::vector<std::string>&
+	{
+		std::ifstream in{path};
+		std::string line;
+
+		while (std::getline(in, line))
+		{
+			out.emplace_back(line);
+		}
+
+		return out;
+	}
+
 	auto WriteFile(std::filesystem::path const& path, std::string_view const contents) -> void
 	{
 		std::ofstream out{path};

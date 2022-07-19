@@ -52,8 +52,6 @@
     <ClCompile Include="src\timing\Time.cpp" />
     <ClCompile Include="src\timing\TimeImpl.cpp" />
     <ClCompile Include="src\util\api_adapters\GLFWAdapter.cpp" />
-    <ClCompile Include="src\util\equal\StringEqual.cpp" />
-    <ClCompile Include="src\util\hash\StringHash.cpp" />
     <ClCompile Include="src\util\less\PoeloLess.cpp" />
     <ClCompile Include="src\util\less\StringLess.cpp" />
     <ClCompile Include="src\Exit.cpp" />
@@ -67,9 +65,10 @@
     <ClCompile Include="src\rendering\ScreenQuad.cpp" />
     <ClCompile Include="src\components\Light.cpp" />
     <ClCompile Include="src\components\AttenuatedLight.cpp" />
-    <ClCompile Include="src\rendering\shaders\ShaderCommon.cpp" />
     <ClCompile Include="src\rendering\shaders\ShaderProgram2.cpp" />
     <ClCompile Include="..\deps\vendor\glad\src\gl.c" />
+    <ClCompile Include="src\rendering\shaders\ShaderFamily2.cpp" />
+    <ClCompile Include="src\rendering\shaders\ShaderProcessing.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\DataManager.hpp" />
@@ -103,8 +102,6 @@
     <ClInclude Include="include\threading\SpinLock.hpp" />
     <ClInclude Include="include\timing\TimeImpl.hpp" />
     <ClInclude Include="include\util\api_adapters\GLFWAdapter.hpp" />
-    <ClInclude Include="include\util\equal\StringEqual.hpp" />
-    <ClInclude Include="include\util\hash\StringHash.hpp" />
     <ClInclude Include="include\util\less\PoeloLess.hpp" />
     <ClInclude Include="include\util\less\StringLess.hpp" />
     <ClInclude Include="include\windowing\GlWindow.hpp" />
@@ -118,6 +115,7 @@
     <ClInclude Include="include\rendering\shaders\ShaderCommon.hpp" />
     <ClInclude Include="include\rendering\shaders\ShaderProgram2.hpp" />
     <ClInclude Include="include\rendering\shaders\ShaderFamily2.hpp" />
+    <ClInclude Include="include\rendering\shaders\ShaderProcessing.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\rendering\shaders\glsl\Lighting.glsl" />

@@ -1,15 +1,70 @@
-#include "rendering/shaders/ShaderCommon.hpp"
+#include "rendering/shaders/ShaderFamily2.hpp"
 
 #include "Logger.hpp"
 #include "Math.hpp"
 #include "Util.hpp"
 
+#include <optional>
 #include <regex>
 #include <sstream>
+#include <stdexcept>
 
 namespace leopph
 {
-	auto ResolveShaderIncludes(ShaderStageSourceFileInfo const& fileInfo) -> std::string
+	ShaderFamily2::ShaderFamily2(ShaderProgramSourceInfo const& sourceInfo) :
+		m_VertexSource{sourceInfo.vertex},
+		m_GeometrySource{sourceInfo.geometry},
+		m_FragmentSource{sourceInfo.fragment}
+	{
+		if (m_VertexSource)
+		{
+			m_VertexSource->insert(0, s_BuiltInShaderText);
+			m_OptionBits.resize(m_OptionBits.size() + ExtractOptions(*m_VertexSource, m_Options));
+		}
+
+		if (m_GeometrySource)
+		{
+			m_GeometrySource->insert(0, s_BuiltInShaderText);
+			m_OptionBits.resize(m_OptionBits.size() + ExtractOptions(*m_GeometrySource, m_Options));
+		}
+
+		if (m_FragmentSource)
+		{
+			m_FragmentSource->insert(0, s_BuiltInShaderText);
+			m_OptionBits.resize(m_OptionBits.size() + ExtractOptions(*m_FragmentSource, m_Options));
+		}
+
+		std::vector<std::vector<bool>> permutationBits;
+
+		for (auto const& [name, option] : m_Options)
+		{ }
+	}
+
+	ShaderFamily2::ShaderFamily2(ShaderProgramSourceFileInfo const& fileInfo)
+	{ }
+
+	auto ShaderFamily2::Option(std::string_view const name, u32 const value) -> void
+	{
+		auto const& option = m_Options.find(name)->second;
+
+		#ifndef NDEBUG
+		if (option.min > value || option.max < value)
+		{
+			auto const errMsg = "Value [" + std::to_string(value) + "] was out of range for shader option [" + std::string{name} + "].";
+			internal::Logger::Instance().Error(errMsg);
+			throw std::runtime_error{errMsg};
+		}
+		#endif
+
+		auto const digits = math::BinaryDigitCount(value);
+
+		for (auto i = 0; i < digits; i++)
+		{
+			m_OptionBits[option.id + i] = static_cast<bool>(value & (0x00000001 << i));
+		}
+	}
+
+	auto ShaderFamily2::ResolveIncludes(ShaderStageSourceFileInfo const& fileInfo) -> std::string
 	{
 		auto changed = true;
 		auto processedSrc = fileInfo.source;
@@ -117,8 +172,7 @@ namespace leopph
 		return processedSrc;
 	}
 
-
-	auto ExtractShaderOptions(std::string& source, std::unordered_map<std::string, ShaderOption>& out) -> u32
+	auto ShaderFamily2::ExtractOptions(std::string& source, std::unordered_map<std::string, ShaderOption, StringHash, StringEqual>& out) -> u32
 	{
 		std::regex const static validFullOptionRegex{R"delim(^\s*#\s*pragma\s+option\s+name\s*=\s*[A-Za-z][\S]*\s+min\s*=\s*\d+\s+max\s*=\s*\d+\s*$)delim"};
 		std::regex const static validShortOptionRegex{R"delim(^\s*#\s*pragma\s+option\s+name\s*=\s*[A-Za-z][\S]*\s*$)delim"};
@@ -153,14 +207,27 @@ namespace leopph
 				std::regex_iterator maxMatch{std::begin(maxAssignmentStr), std::end(maxAssignmentStr), number};
 				u32 const max = std::stoi(maxMatch->str());
 
-				ShaderOption option;
-				option.id = nextFreeId;
-				option.min = min;
-				option.max = max;
+				ShaderOption option
+				{
+					.min = min,
+					.max = max,
+					.id = nextFreeId
+				};
 
-				out[name] = option;
-
-				nextFreeId += math::BinaryDigitCount(max - min);
+				if (out.contains(name))
+				{
+					if (out[name].min != option.min && out[name].max != option.max)
+					{
+						auto const errMsg = "Duplicate shader option [" + name + "] found while parsing options.";
+						internal::Logger::Instance().Error(errMsg);
+						throw std::runtime_error{errMsg};
+					}
+				}
+				else
+				{
+					out[name] = option;
+					nextFreeId += math::BinaryDigitCount(max - min);
+				}
 			}
 			else if (std::regex_match(line, validShortOptionRegex))
 			{
@@ -169,14 +236,27 @@ namespace leopph
 				std::regex_iterator nameMatch{std::begin(assignmentStr), std::end(assignmentStr), nameIdentifier};
 				auto const name = nameMatch->str();
 
-				ShaderOption option;
-				option.id = nextFreeId;
-				option.min = 0;
-				option.max = 1;
+				ShaderOption option
+				{
+					.min = 0,
+					.max = 1,
+					.id = nextFreeId
+				};
 
-				out[name] = option;
-
-				nextFreeId += 1;
+				if (out.contains(name))
+				{
+					if (out[name].min != option.min && out[name].max != option.max)
+					{
+						auto const errMsg = "Duplicate shader option [" + name + "] found while parsing options.";
+						internal::Logger::Instance().Error(errMsg);
+						throw std::runtime_error{errMsg};
+					}
+				}
+				else
+				{
+					out[name] = option;
+					nextFreeId += 1;
+				}
 			}
 			else
 			{
