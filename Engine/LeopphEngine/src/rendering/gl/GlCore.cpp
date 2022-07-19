@@ -1,33 +1,19 @@
+#define GLFW_INCLUDE_NONE
+
 #include "rendering/gl/GlCore.hpp"
 
-#include "Bimap.hpp"
 #include "Logger.hpp"
+
+#include <GLFW/glfw3.h>
 
 #include <stdexcept>
 #include <string>
-
 
 namespace leopph::internal::opengl
 {
 	namespace
 	{
-		Bimap<decltype(GL_VERTEX_SHADER), ShaderType,
-		      #ifdef _DEBUG
-		      true
-		      #else
-		      false
-		      #endif
-		> const g_ShaderTypes
-		{
-			{GL_VERTEX_SHADER, ShaderType::Vertex},
-			{GL_GEOMETRY_SHADER, ShaderType::Geometry},
-			{GL_FRAGMENT_SHADER, ShaderType::Fragment},
-			{GL_COMPUTE_SHADER, ShaderType::Compute}
-		};
-
-
-		auto MessageCallback(GLenum const src, GLenum const type, GLuint const, GLenum const severity, GLsizei const,
-		                     GLchar const* const msg, void const* const) -> void
+		auto MessageCallback(GLenum const src, GLenum const type, GLuint const, GLenum const severity, GLsizei const, GLchar const* const msg, void const* const) -> void
 		{
 			std::string source;
 			switch (src)
@@ -111,57 +97,26 @@ namespace leopph::internal::opengl
 		}
 	}
 
-
 	auto Init() -> void
 	{
-		if (gl3wInit())
+		if (gladLoadGL(glfwGetProcAddress) == 0)
 		{
-			auto const errMsg{"Failed to initialize OpenGL."};
+			auto const errMsg = "Failed to initialize OpenGL context.";
 			Logger::Instance().Critical(errMsg);
 			throw std::runtime_error{errMsg};
 		}
 
+		#ifndef NDEBUG
 		int major, minor;
 		glGetIntegerv(GL_MAJOR_VERSION, &major);
 		glGetIntegerv(GL_MINOR_VERSION, &minor);
-		Logger::Instance().Debug("Using OpenGL " + std::to_string(major) + "." + std::to_string(minor) + ".");
-		Logger::Instance().Debug(std::string{"Using "} + reinterpret_cast<char const*>(glGetString(GL_RENDERER)) + ".");
 
-		#ifndef NDEBUG
+		Logger::Instance().Debug("OpenGL " + std::to_string(major) + "." + std::to_string(minor));
+		Logger::Instance().Debug(std::string{reinterpret_cast<char const*>(glGetString(GL_VENDOR))} + reinterpret_cast<char const*>(glGetString(GL_RENDERER)));
+
 		glEnable(GL_DEBUG_OUTPUT);
 		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 		glDebugMessageCallback(MessageCallback, nullptr);
 		#endif
-	}
-
-
-	auto ShaderBinaryFormats() -> std::vector<GLint>
-	{
-		// Get the number of formats
-		auto const numBinForms{
-			[]
-			{
-				GLint ret;
-				glGetIntegerv(GL_NUM_PROGRAM_BINARY_FORMATS, &ret);
-				return ret;
-			}()
-		};
-
-		// Get the list of formats
-		std::vector<GLint> formats(numBinForms);
-		glGetIntegerv(GL_PROGRAM_BINARY_FORMATS, formats.data());
-		return formats;
-	}
-
-
-	auto TranslateShaderType(ShaderType const type) -> decltype(GL_VERTEX_SHADER)
-	{
-		return g_ShaderTypes.At(type);
-	}
-
-
-	auto TranslateShaderType(decltype(GL_VERTEX_SHADER) const type) -> ShaderType
-	{
-		return g_ShaderTypes.At(type);
 	}
 }
