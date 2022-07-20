@@ -1,15 +1,16 @@
 //? #version 450 core
 
-#pragma option name=DIRLIGHT							//! #define DIRLIGHT 1
-#pragma option name=NUM_DIR_SHADOW_CASCADES min=0 max=3	//! #define NUM_DIR_SHADOW_CASCADES 3
-#pragma option name=NUM_SPOT				min=0 max=8	//! #define NUM_SPOT 8
-#pragma option name=NUM_SPOT_SHADOW			min=0 max=8	//! #define NUM_SPOT_SHADOW 7
-#pragma option name=NUM_PONT				min=0 max=8	//! #define NUM_POINT 8
-#pragma option name=NUM_PONT_SHADOW			min=0 max=8	//! #define NUM_POINT_SHADOW 7
+#pragma option name=DIRLIGHT_NO_SHADOW						//! #define DIRLIGHT_NO_SHADOW 0
+#pragma option name=NUM_DIRLIGHT_SHADOW_CASCADE	min=0 max=3	//! #define NUM_DIRLIGHT_SHADOW_CASCADE 3
+#pragma option name=NUM_SPOT_NO_SHADOW			min=0 max=8	//! #define NUM_SPOT_NO_SHADOW 8
+#pragma option name=NUM_SPOT_SHADOW				min=0 max=8	//! #define NUM_SPOT_SHADOW 7
+#pragma option name=NUM_POINT_NO_SHADOW			min=0 max=8	//! #define NUM_POINT_NO_SHADOW 8
+#pragma option name=NUM_POINT_SHADOW			min=0 max=8	//! #define NUM_POINT_SHADOW 7
 
 // Helper defines for number of specific light types
-#define NUM_SPOT_NO_SHADOW NUM_SPOT - NUM_SPOT_SHADOW
-#define NUM_POINT_NO_SHADOW NUM_POINT - NUM_POINT_SHADOW
+#define NUM_SPOT NUM_SPOT_NO_SHADOW + NUM_SPOT_SHADOW
+#define NUM_POINT NUM_POINT_NO_SHADOW + NUM_POINT_SHADOW 
+#define DIRLIGHT DIRLIGHT_NO_SHADOW || NUM_DIRLIGHT_SHADOW_CASCADE
 
 #include "Material.glsl"
 
@@ -67,7 +68,7 @@ struct PointLight
 
 
 
-#if NUM_DIR_SHADOW_CASCADES
+#if NUM_DIRLIGHT_SHADOW_CASCADE
 struct DirShadowCascade
 {
 	mat4 worldToClipMat;
@@ -174,7 +175,7 @@ vec3 PointLightEffect(Fragment frag, PointLight pointLight, vec3 camPos)
 
 
 
-#if NUM_DIR_SHADOW_CASCADES || NUM_SPOT_SHADOW || NUM_POINT_SHADOW
+#if NUM_DIRLIGHT_SHADOW_CASCADE || NUM_SPOT_SHADOW || NUM_POINT_SHADOW
 float ShadowBias(vec3 dirToLight, vec3 fragNormal)
 {
 	return max(MAX_SHADOW_BIAS * (1.0 - dot(fragNormal, dirToLight)), MIN_SHADOW_BIAS);
@@ -183,10 +184,10 @@ float ShadowBias(vec3 dirToLight, vec3 fragNormal)
 
 
 
-#if NUM_DIR_SHADOW_CASCADES
-float DirShadow(Fragment frag, DirLight light, float fragPosNdcZ, DirShadowCascade cascades[NUM_DIR_SHADOW_CASCADES], sampler2DShadow shadowMaps[NUM_DIR_SHADOW_CASCADES])
+#if NUM_DIRLIGHT_SHADOW_CASCADE
+float DirShadow(Fragment frag, DirLight light, float fragPosNdcZ, DirShadowCascade cascades[NUM_DIRLIGHT_SHADOW_CASCADE], sampler2DShadow shadowMaps[NUM_DIRLIGHT_SHADOW_CASCADE])
 {
-	for (int i = 0; i < NUM_DIR_SHADOW_CASCADES; i++)
+	for (int i = 0; i < NUM_DIRLIGHT_SHADOW_CASCADE; i++)
 	{
 		if (fragPosNdcZ < cascades[i].farZ)
 		{
@@ -225,9 +226,9 @@ float PointShadow(Fragment frag, PointLight light, samplerCube shadowMap)
 
 
 
-#if NUM_DIR_SHADOW_CASCADES
-uniform DirShadowCascade u_DirShadowCascades[NUM_DIR_SHADOW_CASCADES];
-uniform sampler2DShadow u_DirShadowMaps[NUM_DIR_SHADOW_CASCADES];
+#if NUM_DIRLIGHT_SHADOW_CASCADE
+uniform DirShadowCascade u_DirShadowCascades[NUM_DIRLIGHT_SHADOW_CASCADE];
+uniform sampler2DShadow u_DirShadowMaps[NUM_DIRLIGHT_SHADOW_CASCADE];
 #endif
 
 

@@ -8,7 +8,7 @@ layout (location = 0) in vec3 in_FragPos;
 layout (location = 1) in vec3 in_Normal;
 layout (location = 2) in vec2 in_TexCoords;
 
-#if NUM_DIR_SHADOW_CASCADES
+#if NUM_DIRLIGHT_SHADOW_CASCADE
 layout (location = 3) in float in_FragPosNdcZ;
 #endif
 
@@ -61,7 +61,7 @@ void main()
 	#if DIRLIGHT
 	vec3 dirEffect = DirLightEffect(frag, u_DirLight, u_CamPos);
 
-	#if NUM_DIR_SHADOW_CASCADES
+	#if NUM_DIRLIGHT_SHADOW_CASCADE
 	dirEffect *= DirShadow(frag, u_DirLight, in_FragPosNdcZ, u_DirShadowCascades, u_DirShadowMaps);
 	#endif
 

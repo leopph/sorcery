@@ -13,7 +13,7 @@ layout (location = 0) out vec3 out_FragPos;
 layout (location = 1) out vec3 out_Normal;
 layout (location = 2) out vec2 out_TexCoords;
 
-#if NUM_DIR_SHADOW_CASCADES
+#if NUM_DIRLIGHT_SHADOW_CASCADE
 layout (location = 3) out float out_FragPosNdcZ;
 #endif
 
