@@ -1,7 +1,20 @@
-//? #version 330 core
+//? #version 450 core
+
+#pragma option name=DIRLIGHT							//! #define DIRLIGHT 1
+#pragma option name=NUM_DIR_SHADOW_CASCADES min=0 max=3	//! #define NUM_DIR_SHADOW_CASCADES 3
+#pragma option name=NUM_SPOT				min=0 max=8	//! #define NUM_SPOT 8
+#pragma option name=NUM_SPOT_SHADOW			min=0 max=8	//! #define NUM_SPOT_SHADOW 7
+#pragma option name=NUM_PONT				min=0 max=8	//! #define NUM_POINT 8
+#pragma option name=NUM_PONT_SHADOW			min=0 max=8	//! #define NUM_POINT_SHADOW 7
+
+// Helper defines for number of specific light types
+#define NUM_SPOT_NO_SHADOW NUM_SPOT - NUM_SPOT_SHADOW
+#define NUM_POINT_NO_SHADOW NUM_POINT - NUM_POINT_SHADOW
+
+#include "Material.glsl"
+
 #define MIN_SHADOW_BIAS 0.0001
 #define MAX_SHADOW_BIAS 0.01
-//! #define NUM_CASCADES 3
 
 
 
@@ -16,31 +29,18 @@ struct Fragment
 
 
 
-struct Material
-{
-	vec3 diffuseColor;
-	vec3 specularColor;
-	float gloss;
-	float opacity;
-	sampler2D diffuseMap;
-	sampler2D specularMap;
-	sampler2D opacityMap;
-	bool hasDiffuseMap;
-	bool hasSpecularMap;
-	bool hasOpacityMap;
-};
-
-
-
+#if DIRLIGHT
 struct DirLight
 {
 	vec3 direction;
 	vec3 diffuseColor;
 	vec3 specularColor;
 };
+#endif
 
 
 
+#if NUM_SPOT
 struct SpotLight
 {
 	vec3 position;
@@ -51,9 +51,11 @@ struct SpotLight
 	float innerCos;
 	float outerCos;
 };
+#endif
 
 
 
+#if NUM_POINT
 struct PointLight
 {
 	vec3 position;
@@ -61,15 +63,18 @@ struct PointLight
 	vec3 specularColor;
 	float range;
 };
+#endif
 
 
 
+#if NUM_DIR_SHADOW_CASCADES
 struct DirShadowCascade
 {
 	mat4 worldToClipMat;
 	float nearZ;
 	float farZ;
 };
+#endif
 
 
 
@@ -109,13 +114,16 @@ float CalcAtten(float dist, float range)
 
 
 
+#if DIRLIGHT
 vec3 DirLightEffect(Fragment frag, DirLight dirLight, vec3 camPos)
 {
 	return BlinnPhongEffect(frag, -dirLight.direction, dirLight.diffuseColor, dirLight.specularColor, camPos);
 }
+#endif
 
 
 
+#if NUM_SPOT
 vec3 SpotLightEffect(Fragment frag, SpotLight spotLight, vec3 camPos)
 {
 	vec3 dirToLight = spotLight.position - frag.pos;
@@ -141,9 +149,11 @@ vec3 SpotLightEffect(Fragment frag, SpotLight spotLight, vec3 camPos)
 	effect *= CalcAtten(lightFragDist, spotLight.range);
 	return effect;
 }
+#endif
 
 
 
+#if NUM_POINT
 vec3 PointLightEffect(Fragment frag, PointLight pointLight, vec3 camPos)
 {
 	vec3 dirToLight = pointLight.position - frag.pos;
@@ -160,19 +170,23 @@ vec3 PointLightEffect(Fragment frag, PointLight pointLight, vec3 camPos)
 	effect *= CalcAtten(dist, pointLight.range);
 	return effect;
 }
+#endif
 
 
 
+#if NUM_DIR_SHADOW_CASCADES || NUM_SPOT_SHADOW || NUM_POINT_SHADOW
 float ShadowBias(vec3 dirToLight, vec3 fragNormal)
 {
 	return max(MAX_SHADOW_BIAS * (1.0 - dot(fragNormal, dirToLight)), MIN_SHADOW_BIAS);
 }
+#endif
 
 
 
-float DirShadow(Fragment frag, DirLight light, float fragZNdc, DirShadowCascade[NUM_CASCADES] cascades, sampler2DShadow shadowMaps[NUM_CASCADES])
+#if NUM_DIR_SHADOW_CASCADES
+float DirShadow(Fragment frag, DirLight light, float fragZNdc, DirShadowCascade[NUM_DIR_SHADOW_CASCADES] cascades, sampler2DShadow shadowMaps[NUM_DIR_SHADOW_CASCADES])
 {
-	for (int i = 0; i < NUM_CASCADES; ++i)
+	for (int i = 0; i < NUM_DIR_SHADOW_CASCADES; i++)
 	{
 		if (fragZNdc < cascades[i].farZ)
 		{
@@ -183,9 +197,11 @@ float DirShadow(Fragment frag, DirLight light, float fragZNdc, DirShadowCascade[
 	}
 	return 1.0;
 }
+#endif
 
 
 
+#if NUM_SPOT_SHADOW
 float SpotShadow(Fragment frag, SpotLight light, mat4 lightWordToClip, sampler2DShadow shadowMap)
 {
 	vec4 fragPosLightSpace = vec4(frag.pos, 1) * lightWordToClip;
@@ -194,12 +210,35 @@ float SpotShadow(Fragment frag, SpotLight light, mat4 lightWordToClip, sampler2D
 	float bias = ShadowBias(dirToLight, frag.normal);
 	return texture(shadowMap, vec3(normalizedPos.xy, normalizedPos.z - bias));
 }
+#endif
 
 
 
+#if NUM_POINT_SHADOW
 float PointShadow(Fragment frag, PointLight light, samplerCube shadowMap)
 {
 	vec3 dirToFrag = frag.pos - light.position;
 	float bias = ShadowBias(normalize(-dirToFrag), frag.normal);
 	return texture(shadowMap, dirToFrag).r > length(dirToFrag) - bias ? 1 : 0;
 }
+#endif
+
+
+
+#if NUM_DIR_SHADOW_CASCADES
+uniform DirShadowCascade u_DirShadowCascades[NUM_DIR_SHADOW_CASCADES];
+uniform sampler2DShadow u_DirShadowMaps[NUM_DIR_SHADOW_CASCADES];
+#endif
+
+
+
+#if NUM_SPOT_SHADOW
+uniform mat4 u_SpotShadowWorldToClipMats[NUM_SPOT_SHADOW];
+uniform sampler2DShadow u_SpotShadowMaps[NUM_SPOT_SHADOW];
+#endif
+
+
+
+#if NUM_POINT_SHADOW
+uniform samplerCube u_PointShadowMaps[NUM_POINT_SHADOW];
+#endif

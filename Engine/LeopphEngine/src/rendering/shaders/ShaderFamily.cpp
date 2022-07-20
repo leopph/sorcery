@@ -19,18 +19,29 @@ namespace leopph
 		m_GeometrySource{sourceInfo.geometry},
 		m_FragmentSource{sourceInfo.fragment}
 	{
+		auto const AddNewLineChars = [](std::vector<std::string>& lines)
+		{
+			for (auto& line: lines)
+			{
+				line.push_back('\n');
+			}
+		};
+
 		// Extract options from sources and accumulate the required number of bits
 
 		auto bitsRequired = ExtractOptions(m_VertexSource, m_Options);
+		AddNewLineChars(m_VertexSource);
 
 		if (m_GeometrySource)
 		{
-			bitsRequired = ExtractOptions(*m_GeometrySource, m_Options);
+			bitsRequired += ExtractOptions(*m_GeometrySource, m_Options);
+			AddNewLineChars(*m_GeometrySource);
 		}
 
 		if (m_FragmentSource)
 		{
-			bitsRequired = ExtractOptions(*m_FragmentSource, m_Options);
+			bitsRequired += ExtractOptions(*m_FragmentSource, m_Options);
+			AddNewLineChars(*m_FragmentSource);
 		}
 
 		// Default initalize a default permutation bitset with everything set to false
@@ -116,14 +127,14 @@ namespace leopph
 
 		for (auto& permInstance : permutationInstances)
 		{
-			auto const* const versionSpecifier = "#version 460 core";
+			auto const* const versionSpecifier = "#version 460 core\n";
 
 			defines.clear();
 
 			// Generate the define string for each option
 			for (auto const& [name, value] : permInstance.optInstances)
 			{
-				defines.push_back(std::string{"#define "}.append(name).append(1, ' ').append(std::to_string(value)));
+				defines.push_back(std::string{"#define "}.append(name).append(1, ' ').append(std::to_string(value)).append(1, '\n'));
 			}
 
 			linePtrs.clear();
@@ -151,9 +162,33 @@ namespace leopph
 				linePtrs.push_back(line.data());
 			}
 
+			auto const CompileShader = [](GLuint const shader, std::vector<char const*> const& lines) -> std::optional<std::string>
+			{
+				glShaderSource(shader, lines.size(), lines.data(), nullptr);
+				glCompileShader(shader);
+
+				GLint result;
+				glGetShaderiv(shader, GL_COMPILE_STATUS, &result);
+
+				if (result == GL_TRUE)
+				{
+					return std::nullopt;
+				}
+
+				glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &result);
+				std::string infoLog(result, ' ');
+				glGetShaderInfoLog(shader, result, nullptr, infoLog.data());
+				return infoLog;
+			};
+
 			perm.vertex = glCreateShader(GL_VERTEX_SHADER);
 			glShaderSource(perm.vertex, linePtrs.size(), linePtrs.data(), nullptr);
-			glCompileShader(perm.vertex);
+
+			if (auto const info = CompileShader(perm.vertex, linePtrs))
+			{
+				internal::Logger::Instance().Error(std::string{"Error compiling vertex shader: "}.append(*info));
+			}
+			
 			glAttachShader(perm.program, perm.vertex);
 
 			if (m_GeometrySource)
@@ -191,6 +226,17 @@ namespace leopph
 			}
 
 			glLinkProgram(perm.program);
+
+			GLint glResult;
+			glGetProgramiv(perm.program, GL_LINK_STATUS, &glResult);
+
+			if (!glResult)
+			{
+				glGetProgramiv(perm.program, GL_INFO_LOG_LENGTH, &glResult);
+				std::string infoLog(glResult, ' ');
+				glGetProgramInfoLog(perm.program, glResult, nullptr, infoLog.data());
+				internal::Logger::Instance().Error(std::string{"Error linking shader: "}.append(infoLog));
+			}
 
 			// Query uniform locations
 
@@ -393,7 +439,6 @@ namespace leopph
 	{
 		auto fileInfo = ReadShaderFiles(std::move(vertexShaderPath), std::move(geometryShaderPath), std::move(fragmentShaderPath));
 		auto sourceInfo = ProcessShaderIncludes(std::move(fileInfo));
-		InsertBuiltInShaderOptions(sourceInfo);
 		return ShaderFamily{sourceInfo};
 	}
 }

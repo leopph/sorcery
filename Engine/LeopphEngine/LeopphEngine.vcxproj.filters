@@ -114,5 +114,8 @@
     <None Include="src\rendering\shaders\glsl\Skybox.vert" />
     <None Include="src\rendering\shaders\glsl\Composite.frag" />
     <None Include="src\rendering\shaders\glsl\DepthShadow.vert" />
+    <None Include="src\rendering\shaders\glsl\Material.glsl" />
+    <None Include="src\rendering\shaders\glsl\LightingBuffer.glsl" />
+    <None Include="src\rendering\shaders\glsl\TransformBuffer.glsl" />
   </ItemGroup>
 </Project>

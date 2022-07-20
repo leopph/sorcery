@@ -110,12 +110,15 @@
     <ClInclude Include="include\windowing\WindowImpl.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="src\rendering\shaders\glsl\Material.glsl" />
+    <None Include="src\rendering\shaders\glsl\LightingBuffer.glsl" />
     <None Include="src\rendering\shaders\glsl\Skybox.frag">
       <FileType>Document</FileType>
     </None>
     <None Include="src\rendering\shaders\glsl\Skybox.vert">
       <FileType>Document</FileType>
     </None>
+    <None Include="src\rendering\shaders\glsl\TransformBuffer.glsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\rendering\shaders\glsl\GPass.frag">

@@ -1,10 +1,10 @@
-#version 420 core
+//! #version 450 core
+
+#include "TransformBuffer.glsl"
 
 layout (location = 0) in vec3 in_Pos;
 layout (location = 3) in mat4 in_ModelMat;
 layout (location = 0) out vec3 out_FragPos;
-
-uniform mat4 u_ViewProjMat;
 
 
 void main()

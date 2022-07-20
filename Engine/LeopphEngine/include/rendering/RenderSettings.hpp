@@ -6,8 +6,8 @@
 
 namespace leopph::rendersettings
 {
-	u8 constexpr numShadowCascades{3};
-	std::array<u16, numShadowCascades> constexpr dirShadowResolutions{4096, 2048, 1024};
+	u8 constexpr numMaxShadowCascades{3};
+	std::array<u16, numMaxShadowCascades> constexpr dirShadowResolutions{4096, 2048, 1024};
 	f32 constexpr dirShadowCorrection{.75f};
 
 	u16 constexpr numMaxSpot{8};

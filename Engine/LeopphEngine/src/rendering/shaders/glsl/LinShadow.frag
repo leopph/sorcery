@@ -1,4 +1,4 @@
-#version 420 core
+//! #version 450 core
 
 layout (location = 0) in vec3 in_FragPos;
 layout (location = 0) out float out_Dist;

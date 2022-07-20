@@ -1,49 +1,25 @@
-#version 420 core
+//! #version 420 core
 
+#pragma option name=TRANSPARENT //! #define TRANSPARENT 1
 
-//! #define DIRLIGHT
-//! #define NUM_SPOT 3
-//! #define NUM_POINT 3
-//! #define TRANSPARENT
-
-#include "Lighting.glsl"
-
+#include "LightingBuffer.glsl"
 
 layout (location = 0) in vec3 in_FragPos;
 layout (location = 1) in vec3 in_Normal;
 layout (location = 2) in vec2 in_TexCoords;
 
+#if NUM_DIR_SHADOW_CASCADES
+layout (location = 3) in float in_FragPosNdcZ;
+#endif
 
-#ifdef TRANSPARENT
+#if TRANSPARENT
 layout (location = 0) out vec4 out_Accum;
 layout (location = 1) out float out_Reveal;
 #else
 layout (location = 0) out vec3 out_FragColor;
 #endif
 
-
 uniform Material u_Material;
-
-
-layout(std140, binding = 0) uniform PerFrameConstants
-{
-	layout(row_major) mat4 u_ViewProjMat;
-	vec3 u_AmbLight;
-	vec3 u_CamPos;
-
-	#ifdef DIRLIGHT
-	DirLight u_DirLight;
-	#endif
-
-	#if NUM_SPOT > 0
-	SpotLight u_SpotLights[NUM_SPOT];
-	#endif
-
-	#if NUM_POINT > 0
-	PointLight u_PointLights[NUM_POINT];
-	#endif
-};
-
 
 
 void main()
@@ -71,7 +47,7 @@ void main()
 		alpha *= texture(u_Material.opacityMap, in_TexCoords).r;
 	}
 
-	#ifdef TRANSPARENT
+	#if TRANSPARENT
 	if (alpha >= 1)
 	#else
 	if (alpha < 1)
@@ -80,29 +56,54 @@ void main()
 		discard;
 	}
 
-	vec3 colorSum = frag.diff * u_AmbLight;
+		vec3 color = u_AmbientLight * frag.diff;
 
-	#ifdef DIRLIGHT
-	colorSum += DirLightEffect(frag, u_DirLight, u_CamPos);
+	#if DIRLIGHT
+	vec3 dirEffect = DirLightEffect(frag, u_DirLight, u_CamPos);
+
+	#if NUM_DIR_SHADOW_CASCADES
+	dirEffect *= DirShadow(frag, u_DirLight, in_FragPosNdcZ, u_DirShadowCascades, u_DirShadowMaps);
 	#endif
 
-	#if NUM_SPOT > 0
-	for (int i = 0; i < NUM_SPOT; i++)
+	color += dirEffect;
+	#endif
+
+
+	#if NUM_SPOT_NO_SHADOW
+	for (int i = 0; i < NUM_SPOT_SHADOW; i++)
 	{
-		colorSum += SpotLightEffect(frag, u_SpotLights[i], u_CamPos);
+		color += SpotLightEffect(frag, u_NonCastingSpotLights[i], u_CamPos);
 	}
 	#endif
 
-	#if NUM_POINT > 0
-	for (int i = 0; i < NUM_POINT; i++)
+	#if NUM_SPOT_SHADOW
+	for (int i = 0; i < NUM_SPOT_SHADOW; i++)
 	{
-		colorSum += PointLightEffect(frag, u_PointLights[i], u_CamPos);
+		vec3 spotEffect = SpotLightEffect(frag, u_CastingSpotLights[i], u_CamPos);
+		spotEffect *= SpotShadow(frag, u_CastingSpotLights[i], u_SpotShadowWorldToClipMats[i], u_SpotShadowMaps[i]);
+		color += spotEffect;
 	}
 	#endif
 
-	#ifdef TRANSPARENT
-	float weight = max(min(1.0, max(max(colorSum.r, colorSum.g), colorSum.b) * alpha), alpha) * clamp(0.03 / (1e-5 + pow(frag.pos.z / 200, 4.0)), 1e-2, 3e3);
-	out_Accum = vec4(colorSum * alpha, alpha) * weight;
+	#if NUM_POINT_NO_SHADOW
+	for (int i = 0; i < NUM_POINT_NO_SHADOW; i++)
+	{
+		color += PointLightEffect(frag, u_NonCastingPointLights[i], u_CamPos);
+	}
+	#endif
+
+	#if NUM_POINT_SHADOW
+	for (int i = 0; i < NUM_POINT_SHADOW; i++)
+	{
+		vec3 pointEffect = PointLightEffect(frag, u_CastingPointLights[i], u_CamPos);
+		pointEffect *= PointShadow(frag, u_CastingPointLights[i], u_PointShadowMaps[i]);
+		color += pointEffect;
+	}
+	#endif
+
+	#if TRANSPARENT
+	float weight = max(min(1.0, max(max(color.r, color.g), color.b) * alpha), alpha) * clamp(0.03 / (1e-5 + pow(frag.pos.z / 200, 4.0)), 1e-2, 3e3);
+	out_Accum = vec4(color * alpha, alpha) * weight;
 	out_Reveal = alpha;
 	#else
 	out_FragColor = colorSum;

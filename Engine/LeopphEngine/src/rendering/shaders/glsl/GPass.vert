@@ -1,4 +1,6 @@
-#version 430 core
+//! #version 450 core
+
+#include "TransformBuffer.glsl"
 
 layout (location = 0) in vec3 in_Pos;
 layout (location = 1) in vec3 in_Normal;
@@ -8,8 +10,6 @@ layout (location = 7) in mat4 in_NormalMat;
 
 layout (location = 0) out vec3 out_Normal;
 layout (location = 1) out vec2 out_TexCoords;
-
-uniform mat4 u_ViewProjMat;
 
 
 void main()

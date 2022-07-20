@@ -6,6 +6,7 @@
 
 #include <iterator>
 #include <regex>
+#include <set>
 #include <stdexcept>
 
 namespace leopph
@@ -52,8 +53,6 @@ namespace leopph
 		std::regex const static fileNameInQuotesRegex{R"delim("\S+")delim"};
 		std::regex const static fileNameInBracketsRegex{R"delim(<\S+>)delim"};
 
-		ShaderProgramSourceInfo programSourceInfo;
-
 		std::vector<ShaderStageSourceFileInfo*> stageInfos;
 		stageInfos.push_back(&sourceFileInfo.vertexInfo);
 
@@ -67,10 +66,14 @@ namespace leopph
 			stageInfos.push_back(&*sourceFileInfo.fragmentInfo);
 		}
 
-		std::vector<std::string> includedLines;
+		std::vector<std::string> includeBuffer;
 
 		for (auto* const stageInfo : stageInfos)
 		{
+			// Paths of files we already included in this stage's source.
+			// We don't include them more than once.
+			std::set<std::filesystem::path> includedFilePaths;
+
 			bool doAnotherPass;
 
 			do
@@ -79,18 +82,18 @@ namespace leopph
 
 				for (auto lineIt = std::begin(stageInfo->fileContents); lineIt != std::end(stageInfo->fileContents); ++lineIt)
 				{
-					if (auto& line = *lineIt; std::regex_search(line, includeLineRegex))
+					if (std::regex_search(*lineIt, includeLineRegex))
 					{
 						std::string includeFileName;
 
-						if (std::regex_match(line, includeLineQuoteRegex))
+						if (std::regex_match(*lineIt, includeLineQuoteRegex))
 						{
-							std::regex_iterator regIt{std::begin(line), std::end(line), fileNameInQuotesRegex};
+							std::regex_iterator regIt{std::begin(*lineIt), std::end(*lineIt), fileNameInQuotesRegex};
 							includeFileName = regIt->str().substr(regIt->length() - 2);
 						}
-						else if (std::regex_match(line, includeLineBracketRegex))
+						else if (std::regex_match(*lineIt, includeLineBracketRegex))
 						{
-							std::regex_iterator regIt{std::begin(line), std::end(line), fileNameInBracketsRegex};
+							std::regex_iterator regIt{std::begin(*lineIt), std::end(*lineIt), fileNameInBracketsRegex};
 							includeFileName = regIt->str().substr(regIt->length() - 2);
 						}
 						else
@@ -102,11 +105,24 @@ namespace leopph
 
 						auto const includePath = absolute(stageInfo->absolutePath.parent_path() / includeFileName).make_preferred();
 
-						includedLines.clear();
-						ReadFileLines(includePath, includedLines);
+						lineIt->clear();
 
-						stageInfo->fileContents.erase(lineIt);
-						stageInfo->fileContents.insert(lineIt, std::make_move_iterator(std::begin(includedLines)), std::make_move_iterator(std::end(includedLines))); // TODO this goes out of range
+						if (includedFilePaths.contains(includePath))
+						{
+							continue;
+						}
+
+						includeBuffer.clear();
+						ReadFileLines(includePath, includeBuffer);
+
+						if (includeBuffer.empty())
+						{
+							continue;
+						}
+
+						lineIt->clear();
+						
+						stageInfo->fileContents.insert(lineIt, std::make_move_iterator(std::begin(includeBuffer)), std::make_move_iterator(std::end(includeBuffer)));
 
 						doAnotherPass = true;
 						break;
@@ -116,30 +132,19 @@ namespace leopph
 			while (doAnotherPass);
 		}
 
+		ShaderProgramSourceInfo programSourceInfo;
+		programSourceInfo.vertex = std::move(sourceFileInfo.vertexInfo.fileContents);
+
+		if (sourceFileInfo.geometryInfo)
+		{
+			programSourceInfo.geometry = std::move(sourceFileInfo.geometryInfo->fileContents);
+		}
+
+		if (sourceFileInfo.fragmentInfo)
+		{
+			programSourceInfo.fragment = std::move(sourceFileInfo.fragmentInfo->fileContents);
+		}
+
 		return programSourceInfo;
-	}
-
-	auto InsertBuiltInShaderOptions(ShaderProgramSourceInfo& sourceInfo) -> void
-	{
-		std::vector<std::string> options;
-		options.emplace_back("#pragma option name=DIRLIGHT\n");
-		options.emplace_back("#pragma option name=DIR_SHADOW\n");
-		options.push_back(std::string{"#pragma option name=NUM_DIR_CASCADES min="}.append(std::to_string(rendersettings::numShadowCascades)).append(" max=").append(std::to_string(rendersettings::numShadowCascades)).append(1, '\n'));
-		options.push_back(std::string{"#pragma option name=NUM_SPOT min=0 max="}.append(std::to_string(rendersettings::numMaxSpot)).append(1, '\n'));
-		options.push_back(std::string{"#pragma option name=NUM_SPOT_SHADOW min=0 max="}.append(std::to_string(rendersettings::numMaxSpotShadow)).append(1, '\n'));
-		options.push_back(std::string{"#pragma option name=NUM_POINT min=0 max="}.append(std::to_string(rendersettings::numMaxPoint)).append(1, '\n'));
-		options.push_back(std::string{"#pragma option name=NUM_POINT_SHADOW min=0 max="}.append(std::to_string(rendersettings::numMaxPointShadow)).append(1, '\n'));
-
-		sourceInfo.vertex.insert(std::begin(sourceInfo.vertex), std::begin(options), std::end(options));
-
-		if (sourceInfo.geometry)
-		{
-			sourceInfo.geometry->insert(std::begin(*sourceInfo.geometry), std::begin(options), std::end(options));
-		}
-
-		if (sourceInfo.fragment)
-		{
-			sourceInfo.fragment->insert(std::begin(*sourceInfo.fragment), std::begin(options), std::end(options));
-		}
 	}
 }

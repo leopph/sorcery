@@ -1,13 +1,7 @@
-#version 420 core
+//! #version 450 core
 
-#include "Lighting.glsl"
-
-//! #define DIRLIGHT
-//! #define SPOTLIGHT
-//! #define POINTLIGHT
-//! #define SHADOW
-//! #define NUM_CASCADES 3
-
+#include "LightingBuffer.glsl"
+#include "TransformBuffer.glsl"
 
 
 layout(pixel_center_integer) in vec4 gl_FragCoord;
@@ -18,51 +12,6 @@ layout(binding = 0) uniform usampler2D u_NormColorGlossTex;
 layout(binding = 1) uniform sampler2D u_DepthTex;
 
 
-layout(std140, binding = 0) uniform Commons
-{
-	layout(row_major) mat4 u_CamViewProjInv;
-	vec3 u_CamPos;
-};
-
-
-#ifdef AMBIENTLIGHT
-uniform vec3 u_AmbLight;
-#endif
-
-#ifdef DIRLIGHT
-uniform DirLight u_DirLight;
-#endif
-
-#ifdef SPOTLIGHT
-uniform SpotLight u_SpotLight;
-#endif
-
-#ifdef POINTLIGHT
-uniform PointLight u_PointLight;
-#endif
-
-
-#ifdef SHADOW
-
-#ifdef DIRLIGHT
-uniform DirShadowCascade u_DirShadowCascades[NUM_CASCADES];
-layout(binding = 2) uniform sampler2DShadow u_DirShadowMaps[NUM_CASCADES];
-#endif
-
-#ifdef SPOTLIGHT
-uniform mat4 u_SpotShadowWorldToClipMat;
-layout(binding = 2) uniform sampler2DShadow u_SpotShadowMap;
-#endif
-
-#ifdef POINTLIGHT
-layout(binding = 2) uniform samplerCube u_PointShadowMap;
-#endif
-
-#endif
-
-
-
-
 void main()
 {	
 	// Parse gbuffer contents
@@ -70,7 +19,7 @@ void main()
 
 	// Reconstruct pos from depth
 	vec4 fragPosNdc = vec4(gl_FragCoord.xy / textureSize(u_DepthTex, 0).xy * 2 - 1, texelFetch(u_DepthTex, ivec2(gl_FragCoord.xy), 0).r * 2 - 1, 1);
-	vec4 fragPosWorld = fragPosNdc * u_CamViewProjInv;
+	vec4 fragPosWorld = fragPosNdc * u_ViewProjMatInv;
 	fragPosWorld /= fragPosWorld.w;
 	frag.pos = fragPosWorld.xyz;
 
@@ -89,37 +38,49 @@ void main()
 	frag.spec.gb = unpackUnorm4x8(packedNormColorGloss.z).xy;
 	frag.gloss = unpackHalf2x16(packedNormColorGloss.z).y;
 
-	vec3 color;
+	vec3 color = u_AmbientLight * frag.diff;
 
-	#ifdef AMBIENTLIGHT
-	color = u_Light * frag.diff;
+	#if DIRLIGHT
+	vec3 dirEffect = DirLightEffect(frag, u_DirLight, u_CamPos);
+
+	#if NUM_DIR_SHADOW_CASCADES
+	dirEffect *= DirShadow(frag, u_DirLight, fragPosNdc.z, u_DirShadowCascades, u_DirShadowMaps);
 	#endif
 
-	#ifdef DIRLIGHT
-	color = DirLightEffect(frag, u_DirLight, u_CamPos);
-
-	#ifdef SHADOW
-	color *= DirShadow(frag, u_DirLight, fragPosNdc.z, u_DirShadowCascades, u_DirShadowMaps);
+	color += dirEffect;
 	#endif
 
+
+	#if NUM_SPOT_NO_SHADOW
+	for (int i = 0; i < NUM_SPOT_SHADOW; i++)
+	{
+		color += SpotLightEffect(frag, u_NonCastingSpotLights[i], u_CamPos);
+	}
 	#endif
 
-	#ifdef SPOTLIGHT
-	color = SpotLightEffect(frag, u_SpotLight, u_CamPos);
-
-	#ifdef SHADOW
-	color *= SpotShadow(frag, u_SpotLight, u_SpotShadowWorldToClipMat, u_SpotShadowMap);
+	#if NUM_SPOT_SHADOW
+	for (int i = 0; i < NUM_SPOT_SHADOW; i++)
+	{
+		vec3 spotEffect = SpotLightEffect(frag, u_CastingSpotLights[i], u_CamPos);
+		spotEffect *= SpotShadow(frag, u_CastingSpotLights[i], u_SpotShadowWorldToClipMats[i], u_SpotShadowMaps[i]);
+		color += spotEffect;
+	}
 	#endif
 
+	#if NUM_POINT_NO_SHADOW
+	for (int i = 0; i < NUM_POINT_NO_SHADOW; i++)
+	{
+		color += PointLightEffect(frag, u_NonCastingPointLights[i], u_CamPos);
+	}
 	#endif
 
-	#ifdef POINTLIGHT
-	color = PointLightEffect(frag, u_PointLight, u_CamPos);
-
-	#ifdef SHADOW
-	color *= PointShadow(frag, u_PointLight, u_PointShadowMap);
-	#endif
-
+	#if NUM_POINT_SHADOW
+	for (int i = 0; i < NUM_POINT_SHADOW; i++)
+	{
+		vec3 pointEffect = PointLightEffect(frag, u_CastingPointLights[i], u_CamPos);
+		pointEffect *= PointShadow(frag, u_CastingPointLights[i], u_PointShadowMaps[i]);
+		color += pointEffect;
+	}
 	#endif
 
 	out_FragColor = color;
