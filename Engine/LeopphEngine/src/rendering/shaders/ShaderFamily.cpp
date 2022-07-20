@@ -6,11 +6,13 @@
 #include "rendering/gl/GlCore.hpp"
 #include "rendering/shaders/ShaderProcessing.hpp"
 
+#include <format>
 #include <iterator>
 #include <optional>
 #include <ranges>
 #include <regex>
 #include <stdexcept>
+
 
 namespace leopph
 {
@@ -21,7 +23,7 @@ namespace leopph
 	{
 		auto const AddNewLineChars = [](std::vector<std::string>& lines)
 		{
-			for (auto& line: lines)
+			for (auto& line : lines)
 			{
 				line.push_back('\n');
 			}
@@ -182,13 +184,12 @@ namespace leopph
 			};
 
 			perm.vertex = glCreateShader(GL_VERTEX_SHADER);
-			glShaderSource(perm.vertex, linePtrs.size(), linePtrs.data(), nullptr);
 
 			if (auto const info = CompileShader(perm.vertex, linePtrs))
 			{
-				internal::Logger::Instance().Error(std::string{"Error compiling vertex shader: "}.append(*info));
+				internal::Logger::Instance().Error(std::format("Error compiling vertex shader: {}.", *info));
 			}
-			
+
 			glAttachShader(perm.program, perm.vertex);
 
 			if (m_GeometrySource)
@@ -203,8 +204,12 @@ namespace leopph
 				}
 
 				perm.geometry = glCreateShader(GL_GEOMETRY_SHADER);
-				glShaderSource(perm.geometry, linePtrs.size(), linePtrs.data(), nullptr);
-				glCompileShader(perm.geometry);
+
+				if (auto const info = CompileShader(perm.geometry, linePtrs))
+				{
+					internal::Logger::Instance().Error(std::format("Error compiling geometry shader: {}.", *info));
+				}
+
 				glAttachShader(perm.program, perm.geometry);
 			}
 
@@ -220,8 +225,12 @@ namespace leopph
 				}
 
 				perm.fragment = glCreateShader(GL_FRAGMENT_SHADER);
-				glShaderSource(perm.fragment, linePtrs.size(), linePtrs.data(), nullptr);
-				glCompileShader(perm.fragment);
+
+				if (auto const info = CompileShader(perm.fragment, linePtrs))
+				{
+					internal::Logger::Instance().Error(std::format("Error compiling fragment shader: {}.", *info));
+				}
+
 				glAttachShader(perm.program, perm.fragment);
 			}
 
@@ -235,7 +244,7 @@ namespace leopph
 				glGetProgramiv(perm.program, GL_INFO_LOG_LENGTH, &glResult);
 				std::string infoLog(glResult, ' ');
 				glGetProgramInfoLog(perm.program, glResult, nullptr, infoLog.data());
-				internal::Logger::Instance().Error(std::string{"Error linking shader: "}.append(infoLog));
+				internal::Logger::Instance().Error(std::format("Error linking shader program: {}.", infoLog));
 			}
 
 			// Query uniform locations
@@ -263,9 +272,21 @@ namespace leopph
 		}
 	}
 
+
+
 	auto ShaderFamily::Option(std::string_view const name, u32 const value) -> void
 	{
-		auto const& [min, max, id] = m_Options.find(name)->second;
+		auto const it = m_Options.find(name);
+
+		if (it == std::end(m_Options))
+		{
+			#ifndef NDEBUG
+			internal::Logger::Instance().Trace(std::format("Ignoring attempt to set shader option [{}]: the option was not specified in the shader.", name));
+			#endif
+			return;
+		}
+
+		auto const& [min, max, id] = it->second;
 
 		#ifndef NDEBUG
 		if (min > value || max < value)
@@ -285,70 +306,217 @@ namespace leopph
 		}
 	}
 
+
+
 	auto ShaderFamily::Uniform(std::string_view const name, bool const value) const -> void
 	{
-		glProgramUniform1i(m_Permutations.find(m_OptionBits)->second.program, m_Permutations.find(m_OptionBits)->second.uniformLocations.find(name)->second, static_cast<GLint>(value));
+		auto const& permutation = m_Permutations.find(m_OptionBits)->second;
+		auto const uniformIt = permutation.uniformLocations.find(name);
+
+		#ifndef NDEBUG
+		if (uniformIt == std::end(permutation.uniformLocations))
+		{
+			LogInvalidUniformAccess(name);
+			return;
+		}
+		#endif
+
+		glProgramUniform1i(permutation.program, uniformIt->second, static_cast<GLint>(value));
 	}
+
+
 
 	auto ShaderFamily::Uniform(std::string_view const name, i32 const value) const -> void
 	{
-		glProgramUniform1i(m_Permutations.find(m_OptionBits)->second.program, m_Permutations.find(m_OptionBits)->second.uniformLocations.find(name)->second, value);
+		auto const& permutation = m_Permutations.find(m_OptionBits)->second;
+		auto const uniformIt = permutation.uniformLocations.find(name);
+
+		#ifndef NDEBUG
+		if (uniformIt == std::end(permutation.uniformLocations))
+		{
+			LogInvalidUniformAccess(name);
+			return;
+		}
+		#endif
+
+		glProgramUniform1i(permutation.program, uniformIt->second, value);
 	}
+
+
 
 	auto ShaderFamily::Uniform(std::string_view const name, u32 const value) const -> void
 	{
-		glProgramUniform1ui(m_Permutations.find(m_OptionBits)->second.program, m_Permutations.find(m_OptionBits)->second.uniformLocations.find(name)->second, value);
+		auto const& permutation = m_Permutations.find(m_OptionBits)->second;
+		auto const uniformIt = permutation.uniformLocations.find(name);
+
+		#ifndef NDEBUG
+		if (uniformIt == std::end(permutation.uniformLocations))
+		{
+			LogInvalidUniformAccess(name);
+			return;
+		}
+		#endif
+
+		glProgramUniform1ui(permutation.program, uniformIt->second, value);
 	}
+
+
 
 	auto ShaderFamily::Uniform(std::string_view const name, f32 const value) const -> void
 	{
-		glProgramUniform1f(m_Permutations.find(m_OptionBits)->second.program, m_Permutations.find(m_OptionBits)->second.uniformLocations.find(name)->second, value);
+		auto const& permutation = m_Permutations.find(m_OptionBits)->second;
+		auto const uniformIt = permutation.uniformLocations.find(name);
+
+		#ifndef NDEBUG
+		if (uniformIt == std::end(permutation.uniformLocations))
+		{
+			LogInvalidUniformAccess(name);
+			return;
+		}
+		#endif
+
+		glProgramUniform1f(permutation.program, uniformIt->second, value);
 	}
+
+
 
 	auto ShaderFamily::Uniform(std::string_view const name, Vector3 const& value) const -> void
 	{
-		glProgramUniform3fv(m_Permutations.find(m_OptionBits)->second.program, m_Permutations.find(m_OptionBits)->second.uniformLocations.find(name)->second, 1, value.Data().data());
+		auto const& permutation = m_Permutations.find(m_OptionBits)->second;
+		auto const uniformIt = permutation.uniformLocations.find(name);
+
+		#ifndef NDEBUG
+		if (uniformIt == std::end(permutation.uniformLocations))
+		{
+			LogInvalidUniformAccess(name);
+			return;
+		}
+		#endif
+
+		glProgramUniform3fv(permutation.program, uniformIt->second, 1, value.Data().data());
 	}
+
+
 
 	auto ShaderFamily::Uniform(std::string_view const name, Matrix4 const& value) const -> void
 	{
-		glProgramUniformMatrix4fv(m_Permutations.find(m_OptionBits)->second.program, m_Permutations.find(m_OptionBits)->second.uniformLocations.find(name)->second, 1, GL_TRUE, value.Data()[0].Data().data());
+		auto const& permutation = m_Permutations.find(m_OptionBits)->second;
+		auto const uniformIt = permutation.uniformLocations.find(name);
+
+		#ifndef NDEBUG
+		if (uniformIt == std::end(permutation.uniformLocations))
+		{
+			LogInvalidUniformAccess(name);
+			return;
+		}
+		#endif
+
+		glProgramUniformMatrix4fv(permutation.program, uniformIt->second, 1, GL_TRUE, value.Data()[0].Data().data());
 	}
+
+
 
 	auto ShaderFamily::Uniform(std::string_view const name, std::span<i32 const> const values) const -> void
 	{
-		glProgramUniform1iv(m_Permutations.find(m_OptionBits)->second.program, m_Permutations.find(m_OptionBits)->second.uniformLocations.find(name)->second, values.size(), values.data());
+		auto const& permutation = m_Permutations.find(m_OptionBits)->second;
+		auto const uniformIt = permutation.uniformLocations.find(name);
+
+		#ifndef NDEBUG
+		if (uniformIt == std::end(permutation.uniformLocations))
+		{
+			LogInvalidUniformAccess(name);
+			return;
+		}
+		#endif
+
+		glProgramUniform1iv(permutation.program, uniformIt->second, values.size(), values.data());
 	}
+
+
 
 	auto ShaderFamily::Uniform(std::string_view const name, std::span<u32 const> const values) const -> void
 	{
-		glProgramUniform1uiv(m_Permutations.find(m_OptionBits)->second.program, m_Permutations.find(m_OptionBits)->second.uniformLocations.find(name)->second, values.size(), values.data());
+		auto const& permutation = m_Permutations.find(m_OptionBits)->second;
+		auto const uniformIt = permutation.uniformLocations.find(name);
+
+		#ifndef NDEBUG
+		if (uniformIt == std::end(permutation.uniformLocations))
+		{
+			LogInvalidUniformAccess(name);
+			return;
+		}
+		#endif
+
+		glProgramUniform1uiv(permutation.program, uniformIt->second, values.size(), values.data());
 	}
+
+
 
 	auto ShaderFamily::Uniform(std::string_view const name, std::span<f32 const> const values) const -> void
 	{
-		glProgramUniform1fv(m_Permutations.find(m_OptionBits)->second.program, m_Permutations.find(m_OptionBits)->second.uniformLocations.find(name)->second, values.size(), values.data());
+		auto const& permutation = m_Permutations.find(m_OptionBits)->second;
+		auto const uniformIt = permutation.uniformLocations.find(name);
+
+		#ifndef NDEBUG
+		if (uniformIt == std::end(permutation.uniformLocations))
+		{
+			LogInvalidUniformAccess(name);
+			return;
+		}
+		#endif
+
+		glProgramUniform1fv(permutation.program, uniformIt->second, values.size(), values.data());
 	}
+
+
 
 	auto ShaderFamily::Uniform(std::string_view const name, std::span<Vector3 const> const values) const -> void
 	{
-		glProgramUniform3fv(m_Permutations.find(m_OptionBits)->second.program, m_Permutations.find(m_OptionBits)->second.uniformLocations.find(name)->second, values.size(), values.data()->Data().data());
+		auto const& permutation = m_Permutations.find(m_OptionBits)->second;
+		auto const uniformIt = permutation.uniformLocations.find(name);
+
+		#ifndef NDEBUG
+		if (uniformIt == std::end(permutation.uniformLocations))
+		{
+			LogInvalidUniformAccess(name);
+			return;
+		}
+		#endif
+
+		glProgramUniform3fv(permutation.program, uniformIt->second, values.size(), values.data()->Data().data());
 	}
+
+
 
 	auto ShaderFamily::Uniform(std::string_view const name, std::span<Matrix4 const> const values) const -> void
 	{
-		glProgramUniformMatrix4fv(m_Permutations.find(m_OptionBits)->second.program, m_Permutations.find(m_OptionBits)->second.uniformLocations.find(name)->second, values.size(), GL_TRUE, values.data()->Data().data()->Data().data());
+		auto const& permutation = m_Permutations.find(m_OptionBits)->second;
+		auto const uniformIt = permutation.uniformLocations.find(name);
+
+		#ifndef NDEBUG
+		if (uniformIt == std::end(permutation.uniformLocations))
+		{
+			LogInvalidUniformAccess(name);
+			return;
+		}
+		#endif
+
+		glProgramUniformMatrix4fv(permutation.program, uniformIt->second, values.size(), GL_TRUE, values.data()->Data().data()->Data().data());
 	}
+
+
 
 	auto ShaderFamily::UseCurrentPermutation() const -> void
 	{
 		glUseProgram(m_Permutations.find(m_OptionBits)->second.program);
 	}
 
+
+
 	auto ShaderFamily::ExtractOptions(std::vector<std::string>& sourceLines, std::unordered_map<std::string, ShaderOption, StringHash, StringEqual>& out) -> u32
 	{
-		std::regex const static validFullOptionRegex{R"delim(^\s*#\s*pragma\s+option\s+name\s*=\s*[A-Za-z][\S]*\s+min\s*=\s*\d+\s+max\s*=\s*\d+\s*$)delim"};
-		std::regex const static validShortOptionRegex{R"delim(^\s*#\s*pragma\s+option\s+name\s*=\s*[A-Za-z][\S]*\s*$)delim"};
+		std::regex const static validFullOptionRegex{R"delim(^\s*#\s*pragma\s+option\s+name\s*=\s*[A-Za-z][\S]*\s+min\s*=\s*\d+\s+max\s*=\s*\d+\s*)delim"};
+		std::regex const static validShortOptionRegex{R"delim(^\s*#\s*pragma\s+option\s+name\s*=\s*[A-Za-z][\S]*\s*)delim"};
 		std::regex const static nameAssignment{R"delim(=\s*[A-Za-z][\S]*)delim"};
 		std::regex const static numberAssignment{R"delim(=\s*\d+)delim"};
 		std::regex const static nameIdentifier{R"delim([A-Za-z][\S]*)delim"};
@@ -358,7 +526,7 @@ namespace leopph
 
 		for (auto& line : sourceLines)
 		{
-			if (std::regex_match(line, validFullOptionRegex))
+			if (std::regex_search(line, validFullOptionRegex))
 			{
 				std::regex_iterator nameAssignmentMatch{std::begin(line), std::end(line), nameAssignment};
 				auto const assignmentStr = nameAssignmentMatch->str();
@@ -399,7 +567,7 @@ namespace leopph
 
 				line.clear();
 			}
-			else if (std::regex_match(line, validShortOptionRegex))
+			else if (std::regex_search(line, validShortOptionRegex))
 			{
 				std::regex_iterator nameAssignmentMatch{std::begin(line), std::end(line), nameAssignment};
 				auto const assignmentStr = nameAssignmentMatch->str();
@@ -434,6 +602,15 @@ namespace leopph
 
 		return nextFreeId;
 	}
+
+
+
+	auto ShaderFamily::LogInvalidUniformAccess(std::string_view const name) -> void
+	{
+		internal::Logger::Instance().Trace(std::format("Ignoring attempt to set shader uniform [{}]: the uniform does not exist in the current permutation.", name));
+	}
+
+
 
 	auto MakeShaderFamily(std::filesystem::path vertexShaderPath, std::filesystem::path geometryShaderPath, std::filesystem::path fragmentShaderPath) -> ShaderFamily
 	{

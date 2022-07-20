@@ -86,15 +86,19 @@ namespace leopph
 					{
 						std::string includeFileName;
 
+						auto const GetFileNameFromLine = [](std::string_view const line, std::regex const& nameRegex) -> std::string
+						{
+							std::regex_iterator const regIt{std::begin(line), std::end(line), nameRegex};
+							return regIt->str().substr(1, regIt->length() - 2);
+						};
+
 						if (std::regex_match(*lineIt, includeLineQuoteRegex))
 						{
-							std::regex_iterator regIt{std::begin(*lineIt), std::end(*lineIt), fileNameInQuotesRegex};
-							includeFileName = regIt->str().substr(regIt->length() - 2);
+							includeFileName = GetFileNameFromLine(*lineIt, fileNameInQuotesRegex);
 						}
 						else if (std::regex_match(*lineIt, includeLineBracketRegex))
 						{
-							std::regex_iterator regIt{std::begin(*lineIt), std::end(*lineIt), fileNameInBracketsRegex};
-							includeFileName = regIt->str().substr(regIt->length() - 2);
+							includeFileName = GetFileNameFromLine(*lineIt, fileNameInBracketsRegex);
 						}
 						else
 						{
@@ -121,7 +125,7 @@ namespace leopph
 						}
 
 						lineIt->clear();
-						
+
 						stageInfo->fileContents.insert(lineIt, std::make_move_iterator(std::begin(includeBuffer)), std::make_move_iterator(std::end(includeBuffer)));
 
 						doAnotherPass = true;

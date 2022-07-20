@@ -53,7 +53,10 @@ namespace leopph
 
 		private:
 			// Extracts all shader options from the source file and insert them into out, removes the option specifiers from lines, then returns the number of bits required to store the extracted flags that were not already in out.
-			static auto ExtractOptions(std::vector<std::string>& sourceLines, std::unordered_map<std::string, ShaderOption, StringHash, StringEqual>& out) -> u32;
+			[[nodiscard]] static auto ExtractOptions(std::vector<std::string>& sourceLines, std::unordered_map<std::string, ShaderOption, StringHash, StringEqual>& out) -> u32;
+
+			// Logs a message related to accessing a non-existent uniform.
+			static auto LogInvalidUniformAccess(std::string_view name) -> void;
 
 			std::unordered_map<std::string, ShaderOption, StringHash, StringEqual> m_Options;
 			std::unordered_map<std::vector<bool>, Permutation> m_Permutations;

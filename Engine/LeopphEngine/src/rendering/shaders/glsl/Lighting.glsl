@@ -184,11 +184,11 @@ float ShadowBias(vec3 dirToLight, vec3 fragNormal)
 
 
 #if NUM_DIR_SHADOW_CASCADES
-float DirShadow(Fragment frag, DirLight light, float fragZNdc, DirShadowCascade[NUM_DIR_SHADOW_CASCADES] cascades, sampler2DShadow shadowMaps[NUM_DIR_SHADOW_CASCADES])
+float DirShadow(Fragment frag, DirLight light, float fragPosNdcZ, DirShadowCascade cascades[NUM_DIR_SHADOW_CASCADES], sampler2DShadow shadowMaps[NUM_DIR_SHADOW_CASCADES])
 {
 	for (int i = 0; i < NUM_DIR_SHADOW_CASCADES; i++)
 	{
-		if (fragZNdc < cascades[i].farZ)
+		if (fragPosNdcZ < cascades[i].farZ)
 		{
 			vec3 fragPosLightNorm = vec3(vec4(frag.pos, 1) * cascades[i].worldToClipMat) * 0.5 + 0.5;
 			float bias = ShadowBias(-light.direction, frag.normal);

@@ -106,6 +106,6 @@ void main()
 	out_Accum = vec4(color * alpha, alpha) * weight;
 	out_Reveal = alpha;
 	#else
-	out_FragColor = colorSum;
+	out_FragColor = color;
 	#endif
 }
