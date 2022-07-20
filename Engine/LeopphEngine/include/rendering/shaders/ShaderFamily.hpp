@@ -18,24 +18,24 @@ namespace leopph
 	{
 		struct Permutation
 		{
-			u32 program;
-			u32 vertex;
-			u32 geometry;
-			u32 fragment;
+			u32 program{0};
+			u32 vertex{0};
+			u32 geometry{0};
+			u32 fragment{0};
 			std::unordered_map<std::string, i32, StringHash, StringEqual> uniformLocations;
 		};
 
-		struct ShaderOption
+		struct ShaderOptionInstanceInfo
 		{
-			u32 min;
-			u32 max;
-			u32 id;
+			u8 index;
+			u8 min;
+			u8 max;
 		};
 
 		public:
-			explicit ShaderFamily(ShaderProgramSourceInfo const& sourceInfo);
+			explicit ShaderFamily(ShaderProgramSourceInfo sourceInfo, std::vector<ShaderOptionInfo> options);
 
-			auto Option(std::string_view name, u32 value) -> void;
+			auto Option(std::string_view name, u8 value) -> void;
 
 			auto Uniform(std::string_view name, bool value) const -> void;
 			auto Uniform(std::string_view name, i32 value) const -> void;
@@ -52,18 +52,12 @@ namespace leopph
 			auto UseCurrentPermutation() const -> void;
 
 		private:
-			// Extracts all shader options from the source file and insert them into out, removes the option specifiers from lines, then returns the number of bits required to store the extracted flags that were not already in out.
-			[[nodiscard]] static auto ExtractOptions(std::vector<std::string>& sourceLines, std::unordered_map<std::string, ShaderOption, StringHash, StringEqual>& out) -> u32;
-
 			// Logs a message related to accessing a non-existent uniform.
 			static auto LogInvalidUniformAccess(std::string_view name) -> void;
 
-			std::unordered_map<std::string, ShaderOption, StringHash, StringEqual> m_Options;
-			std::unordered_map<std::vector<bool>, Permutation> m_Permutations;
-			std::vector<bool> m_OptionBits;
-			std::vector<std::string> m_VertexSource;
-			std::optional<std::vector<std::string>> m_GeometrySource;
-			std::optional<std::vector<std::string>> m_FragmentSource;
+			std::unordered_map<std::string, ShaderOptionInstanceInfo, StringHash, StringEqual> m_OptionsByName;
+			std::unordered_map<u32, Permutation> m_PermutationsByBits;
+			u32 m_CurrentPermutationBits;
 	};
 
 

@@ -16,10 +16,7 @@
 
 namespace leopph
 {
-	ShaderFamily::ShaderFamily(ShaderProgramSourceInfo const& sourceInfo) :
-		m_VertexSource{sourceInfo.vertex},
-		m_GeometrySource{sourceInfo.geometry},
-		m_FragmentSource{sourceInfo.fragment}
+	ShaderFamily::ShaderFamily(ShaderProgramSourceInfo sourceInfo, std::vector<ShaderOptionInfo> options)
 	{
 		auto const AddNewLineChars = [](std::vector<std::string>& lines)
 		{
@@ -29,25 +26,17 @@ namespace leopph
 			}
 		};
 
-		// Extract options from sources and accumulate the required number of bits
+		AddNewLineChars(sourceInfo.vertex);
 
-		auto bitsRequired = ExtractOptions(m_VertexSource, m_Options);
-		AddNewLineChars(m_VertexSource);
-
-		if (m_GeometrySource)
+		if (sourceInfo.geometry)
 		{
-			bitsRequired += ExtractOptions(*m_GeometrySource, m_Options);
-			AddNewLineChars(*m_GeometrySource);
+			AddNewLineChars(*sourceInfo.geometry);
 		}
 
-		if (m_FragmentSource)
+		if (sourceInfo.fragment)
 		{
-			bitsRequired += ExtractOptions(*m_FragmentSource, m_Options);
-			AddNewLineChars(*m_FragmentSource);
+			AddNewLineChars(*sourceInfo.fragment);
 		}
-
-		// Default initalize a default permutation bitset with everything set to false
-		m_OptionBits.resize(bitsRequired, false);
 
 		// A concrete state of an option
 		struct OptionInstance
@@ -69,19 +58,19 @@ namespace leopph
 		// Generate option instances for the default (all 0 bits) permutation
 
 		std::vector<OptionInstance> defaultOptInstances;
-		for (auto const& [name, option] : m_Options)
+		for (auto const& [name, option] : m_OptionsByName)
 		{
 			defaultOptInstances.emplace_back(name, option.min);
 		}
 
 		// Insert the default instance into the accumulator buffer
-		permutationInstances.emplace_back(m_OptionBits, defaultOptInstances);
+		permutationInstances.emplace_back(m_CurrentPermutationBits, defaultOptInstances);
 
 		// Permutate the already created instances
 
 		std::vector<PermutationInstance> tmpBuffer;
 
-		for (auto const& [name, option] : m_Options)
+		for (auto const& [name, option] : m_OptionsByName)
 		{
 			// Find the option instance id
 
@@ -112,7 +101,7 @@ namespace leopph
 					auto const digits = math::BinaryDigitCount(value);
 					for (u8 j = 0; j < digits; j++)
 					{
-						newInfo.bitset[option.id + j] = static_cast<bool>(value & (0x00000001 << j));
+						newInfo.bitset[option.index + j] = static_cast<bool>(value & (0x00000001 << j));
 					}
 
 					tmpBuffer.emplace_back(std::move(newInfo));
@@ -280,17 +269,17 @@ namespace leopph
 			}
 
 			// Store permutation
-			m_Permutations.emplace(std::move(permInstance.bitset), std::move(perm));
+			m_PermutationsByBits.emplace(std::move(permInstance.bitset), std::move(perm));
 		}
 	}
 
 
 
-	auto ShaderFamily::Option(std::string_view const name, u32 const value) -> void
+	auto ShaderFamily::Option(std::string_view const name, u8 value) -> void
 	{
-		auto const it = m_Options.find(name);
+		auto const it = m_OptionsByName.find(name);
 
-		if (it == std::end(m_Options))
+		if (it == std::end(m_OptionsByName))
 		{
 			#ifndef NDEBUG
 			internal::Logger::Instance().Trace(std::format("Ignoring attempt to set shader option [{}]: the option was not specified in the shader.", name));
@@ -298,31 +287,36 @@ namespace leopph
 			return;
 		}
 
-		auto const& [min, max, id] = it->second;
+		auto const& option = it->second;
 
 		#ifndef NDEBUG
-		if (min > value || max < value)
+		if (option.min > value || option.max < value)
 		{
-			auto const errMsg = "Value [" + std::to_string(value) + "] was out of range for shader option [" + std::string{name} + "].";
+			auto const errMsg = std::format("Error setting shader option value: value [{}] was out of range for option [{}].", value, name);
 			internal::Logger::Instance().Error(errMsg);
 			throw std::runtime_error{errMsg};
 		}
 		#endif
 
-		auto const normValue = value - min;
-		auto const digits = math::BinaryDigitCount(normValue);
+		auto const normValue = value - option.min;
+		auto const range = option.max - option.min + 1;
+		auto const numBits = math::BinaryDigitCount(range);
 
-		for (auto i = 0; i < digits; i++)
+		u32 mask{0};
+
+		for (u8 i = 0; i < numBits; i++)
 		{
-			m_OptionBits[id + i] = static_cast<bool>(normValue & (0x00000001 << i));
+			mask |= 1 << (i + option.index);
 		}
+
+		m_CurrentPermutationBits = (m_CurrentPermutationBits & (~mask)) | (normValue << option.index);
 	}
 
 
 
 	auto ShaderFamily::Uniform(std::string_view const name, bool const value) const -> void
 	{
-		auto const& permutation = m_Permutations.find(m_OptionBits)->second;
+		auto const& permutation = m_PermutationsByBits.find(m_CurrentPermutationBits)->second;
 		auto const uniformIt = permutation.uniformLocations.find(name);
 
 		#ifndef NDEBUG
@@ -340,7 +334,7 @@ namespace leopph
 
 	auto ShaderFamily::Uniform(std::string_view const name, i32 const value) const -> void
 	{
-		auto const& permutation = m_Permutations.find(m_OptionBits)->second;
+		auto const& permutation = m_PermutationsByBits.find(m_CurrentPermutationBits)->second;
 		auto const uniformIt = permutation.uniformLocations.find(name);
 
 		#ifndef NDEBUG
@@ -358,7 +352,7 @@ namespace leopph
 
 	auto ShaderFamily::Uniform(std::string_view const name, u32 const value) const -> void
 	{
-		auto const& permutation = m_Permutations.find(m_OptionBits)->second;
+		auto const& permutation = m_PermutationsByBits.find(m_CurrentPermutationBits)->second;
 		auto const uniformIt = permutation.uniformLocations.find(name);
 
 		#ifndef NDEBUG
@@ -376,7 +370,7 @@ namespace leopph
 
 	auto ShaderFamily::Uniform(std::string_view const name, f32 const value) const -> void
 	{
-		auto const& permutation = m_Permutations.find(m_OptionBits)->second;
+		auto const& permutation = m_PermutationsByBits.find(m_CurrentPermutationBits)->second;
 		auto const uniformIt = permutation.uniformLocations.find(name);
 
 		#ifndef NDEBUG
@@ -394,7 +388,7 @@ namespace leopph
 
 	auto ShaderFamily::Uniform(std::string_view const name, Vector3 const& value) const -> void
 	{
-		auto const& permutation = m_Permutations.find(m_OptionBits)->second;
+		auto const& permutation = m_PermutationsByBits.find(m_CurrentPermutationBits)->second;
 		auto const uniformIt = permutation.uniformLocations.find(name);
 
 		#ifndef NDEBUG
@@ -412,7 +406,7 @@ namespace leopph
 
 	auto ShaderFamily::Uniform(std::string_view const name, Matrix4 const& value) const -> void
 	{
-		auto const& permutation = m_Permutations.find(m_OptionBits)->second;
+		auto const& permutation = m_PermutationsByBits.find(m_CurrentPermutationBits)->second;
 		auto const uniformIt = permutation.uniformLocations.find(name);
 
 		#ifndef NDEBUG
@@ -430,7 +424,7 @@ namespace leopph
 
 	auto ShaderFamily::Uniform(std::string_view const name, std::span<i32 const> const values) const -> void
 	{
-		auto const& permutation = m_Permutations.find(m_OptionBits)->second;
+		auto const& permutation = m_PermutationsByBits.find(m_CurrentPermutationBits)->second;
 		auto const uniformIt = permutation.uniformLocations.find(name);
 
 		#ifndef NDEBUG
@@ -448,7 +442,7 @@ namespace leopph
 
 	auto ShaderFamily::Uniform(std::string_view const name, std::span<u32 const> const values) const -> void
 	{
-		auto const& permutation = m_Permutations.find(m_OptionBits)->second;
+		auto const& permutation = m_PermutationsByBits.find(m_CurrentPermutationBits)->second;
 		auto const uniformIt = permutation.uniformLocations.find(name);
 
 		#ifndef NDEBUG
@@ -466,7 +460,7 @@ namespace leopph
 
 	auto ShaderFamily::Uniform(std::string_view const name, std::span<f32 const> const values) const -> void
 	{
-		auto const& permutation = m_Permutations.find(m_OptionBits)->second;
+		auto const& permutation = m_PermutationsByBits.find(m_CurrentPermutationBits)->second;
 		auto const uniformIt = permutation.uniformLocations.find(name);
 
 		#ifndef NDEBUG
@@ -484,7 +478,7 @@ namespace leopph
 
 	auto ShaderFamily::Uniform(std::string_view const name, std::span<Vector3 const> const values) const -> void
 	{
-		auto const& permutation = m_Permutations.find(m_OptionBits)->second;
+		auto const& permutation = m_PermutationsByBits.find(m_CurrentPermutationBits)->second;
 		auto const uniformIt = permutation.uniformLocations.find(name);
 
 		#ifndef NDEBUG
@@ -502,7 +496,7 @@ namespace leopph
 
 	auto ShaderFamily::Uniform(std::string_view const name, std::span<Matrix4 const> const values) const -> void
 	{
-		auto const& permutation = m_Permutations.find(m_OptionBits)->second;
+		auto const& permutation = m_PermutationsByBits.find(m_CurrentPermutationBits)->second;
 		auto const uniformIt = permutation.uniformLocations.find(name);
 
 		#ifndef NDEBUG
@@ -520,99 +514,7 @@ namespace leopph
 
 	auto ShaderFamily::UseCurrentPermutation() const -> void
 	{
-		glUseProgram(m_Permutations.find(m_OptionBits)->second.program);
-	}
-
-
-
-	auto ShaderFamily::ExtractOptions(std::vector<std::string>& sourceLines, std::unordered_map<std::string, ShaderOption, StringHash, StringEqual>& out) -> u32
-	{
-		std::regex const static validFullOptionRegex{R"delim(^\s*#\s*pragma\s+option\s+name\s*=\s*[A-Za-z][\S]*\s+min\s*=\s*\d+\s+max\s*=\s*\d+\s*)delim"};
-		std::regex const static validShortOptionRegex{R"delim(^\s*#\s*pragma\s+option\s+name\s*=\s*[A-Za-z][\S]*\s*)delim"};
-		std::regex const static nameAssignment{R"delim(=\s*[A-Za-z][\S]*)delim"};
-		std::regex const static numberAssignment{R"delim(=\s*\d+)delim"};
-		std::regex const static nameIdentifier{R"delim([A-Za-z][\S]*)delim"};
-		std::regex const static number{R"delim(\d+)delim"};
-
-		u32 nextFreeId{0};
-
-		for (auto& line : sourceLines)
-		{
-			if (std::regex_search(line, validFullOptionRegex))
-			{
-				std::regex_iterator nameAssignmentMatch{std::begin(line), std::end(line), nameAssignment};
-				auto const assignmentStr = nameAssignmentMatch->str();
-				std::regex_iterator nameMatch{std::begin(assignmentStr), std::end(assignmentStr), nameIdentifier};
-				auto const name = nameMatch->str();
-
-				std::regex_iterator numberAssignmentMatch{std::begin(line), std::end(line), numberAssignment};
-				auto const minAssignmentStr = numberAssignmentMatch->str();
-				std::regex_iterator minMatch{std::begin(minAssignmentStr), std::end(minAssignmentStr), number};
-				u32 const min = std::stoi(minMatch->str());
-
-				++numberAssignmentMatch;
-				auto const maxAssignmentStr = numberAssignmentMatch->str();
-				std::regex_iterator maxMatch{std::begin(maxAssignmentStr), std::end(maxAssignmentStr), number};
-				u32 const max = std::stoi(maxMatch->str());
-
-				ShaderOption option
-				{
-					.min = min,
-					.max = max,
-					.id = nextFreeId
-				};
-
-				if (out.contains(name))
-				{
-					if (out[name].min != option.min && out[name].max != option.max)
-					{
-						auto const errMsg = "Duplicate shader option [" + name + "] found while parsing options.";
-						internal::Logger::Instance().Error(errMsg);
-						throw std::runtime_error{errMsg};
-					}
-				}
-				else
-				{
-					out[name] = option;
-					nextFreeId += math::BinaryDigitCount(max - min);
-				}
-
-				line.clear();
-			}
-			else if (std::regex_search(line, validShortOptionRegex))
-			{
-				std::regex_iterator nameAssignmentMatch{std::begin(line), std::end(line), nameAssignment};
-				auto const assignmentStr = nameAssignmentMatch->str();
-				std::regex_iterator nameMatch{std::begin(assignmentStr), std::end(assignmentStr), nameIdentifier};
-				auto const name = nameMatch->str();
-
-				ShaderOption option
-				{
-					.min = 0,
-					.max = 1,
-					.id = nextFreeId
-				};
-
-				if (out.contains(name))
-				{
-					if (out[name].min != option.min && out[name].max != option.max)
-					{
-						auto const errMsg = "Duplicate shader option [" + name + "] found while parsing options.";
-						internal::Logger::Instance().Error(errMsg);
-						throw std::runtime_error{errMsg};
-					}
-				}
-				else
-				{
-					out[name] = option;
-					nextFreeId += 1;
-				}
-
-				line.clear();
-			}
-		}
-
-		return nextFreeId;
+		glUseProgram(m_PermutationsByBits.find(m_CurrentPermutationBits)->second.program);
 	}
 
 
@@ -628,6 +530,6 @@ namespace leopph
 	{
 		auto fileInfo = ReadShaderFiles(std::move(vertexShaderPath), std::move(geometryShaderPath), std::move(fragmentShaderPath));
 		auto sourceInfo = ProcessShaderIncludes(std::move(fileInfo));
-		return ShaderFamily{sourceInfo};
+		return ShaderFamily{std::move(sourceInfo)};
 	}
 }
