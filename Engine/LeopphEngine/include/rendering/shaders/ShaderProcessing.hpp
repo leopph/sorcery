@@ -10,5 +10,5 @@ namespace leopph
 
 	[[nodiscard]] auto ProcessShaderIncludes(ShaderProgramSourceFileInfo sourceFileInfo) -> ShaderProgramSourceInfo;
 
-	auto InsertBuiltInShaderLines(ShaderProgramSourceInfo& sourceInfo) -> void;
+	auto InsertBuiltInShaderOptions(ShaderProgramSourceInfo& sourceInfo) -> void;
 }

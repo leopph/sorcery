@@ -119,27 +119,26 @@ namespace leopph
 		return programSourceInfo;
 	}
 
-	auto InsertBuiltInShaderLines(ShaderProgramSourceInfo& sourceInfo) -> void
+	auto InsertBuiltInShaderOptions(ShaderProgramSourceInfo& sourceInfo) -> void
 	{
-		std::vector<std::string> builtInLines;
-		builtInLines.emplace_back("#version 450 core\n");
-		builtInLines.emplace_back("#pragma option name=DIR_SHADOW\n");
-		builtInLines.push_back(std::string{"#pragma option name=NUM_DIR_CASCADES min="}.append(std::to_string(rendersettings::numShadowCascades)).append(" max=").append(std::to_string(rendersettings::numShadowCascades)).append(1, '\n'));
-		builtInLines.push_back(std::string{"#pragma option name=NUM_SPOT min=0 max="}.append(std::to_string(rendersettings::numMaxSpot)).append(1, '\n'));
-		builtInLines.push_back(std::string{"#pragma option name=NUM_SPOT_SHADOW min=0 max="}.append(std::to_string(rendersettings::numMaxSpotShadow)).append(1, '\n'));
-		builtInLines.push_back(std::string{"#pragma option name=NUM_POINT min=0 max="}.append(std::to_string(rendersettings::numMaxPoint)).append(1, '\n'));
-		builtInLines.push_back(std::string{"#pragma option name=NUM_POINT_SHADOW min=0 max="}.append(std::to_string(rendersettings::numMaxPointShadow)).append(1, '\n'));
+		std::vector<std::string> options;
+		options.emplace_back("#pragma option name=DIR_SHADOW\n");
+		options.push_back(std::string{"#pragma option name=NUM_DIR_CASCADES min="}.append(std::to_string(rendersettings::numShadowCascades)).append(" max=").append(std::to_string(rendersettings::numShadowCascades)).append(1, '\n'));
+		options.push_back(std::string{"#pragma option name=NUM_SPOT min=0 max="}.append(std::to_string(rendersettings::numMaxSpot)).append(1, '\n'));
+		options.push_back(std::string{"#pragma option name=NUM_SPOT_SHADOW min=0 max="}.append(std::to_string(rendersettings::numMaxSpotShadow)).append(1, '\n'));
+		options.push_back(std::string{"#pragma option name=NUM_POINT min=0 max="}.append(std::to_string(rendersettings::numMaxPoint)).append(1, '\n'));
+		options.push_back(std::string{"#pragma option name=NUM_POINT_SHADOW min=0 max="}.append(std::to_string(rendersettings::numMaxPointShadow)).append(1, '\n'));
 
-		sourceInfo.vertex.insert(std::begin(sourceInfo.vertex), std::begin(builtInLines), std::end(builtInLines));
+		sourceInfo.vertex.insert(std::begin(sourceInfo.vertex), std::begin(options), std::end(options));
 
 		if (sourceInfo.geometry)
 		{
-			sourceInfo.geometry->insert(std::begin(*sourceInfo.geometry), std::begin(builtInLines), std::end(builtInLines));
+			sourceInfo.geometry->insert(std::begin(*sourceInfo.geometry), std::begin(options), std::end(options));
 		}
 
 		if (sourceInfo.fragment)
 		{
-			sourceInfo.fragment->insert(std::begin(*sourceInfo.fragment), std::begin(builtInLines), std::end(builtInLines));
+			sourceInfo.fragment->insert(std::begin(*sourceInfo.fragment), std::begin(options), std::end(options));
 		}
 	}
 }
