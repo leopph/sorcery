@@ -6,7 +6,7 @@
 #include "Matrix.hpp"
 #include "MeshGroup.hpp"
 #include "rendering/RenderObject.hpp"
-#include "rendering/shaders/ShaderProgram.hpp"
+#include "rendering/shaders/ShaderFamily.hpp"
 
 #include <memory>
 #include <span>
@@ -21,7 +21,7 @@ namespace leopph::internal
 		public:
 			explicit GlMeshGroup(MeshGroup meshGroup);
 
-			auto DrawWithMaterial(ShaderProgram& shader, GLuint nextFreeTextureUnit, bool transparent) const -> void;
+			auto DrawWithMaterial(ShaderFamily const& shader, GLuint nextFreeTextureUnit, bool transparent) const -> void;
 
 			auto DrawWithoutMaterial(bool transparent) const -> void;
 

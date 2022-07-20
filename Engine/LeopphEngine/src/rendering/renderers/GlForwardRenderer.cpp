@@ -32,7 +32,7 @@ namespace leopph::internal
 		// RESIZE PER FRAME UBO IF NEEDED
 		auto const uboDataSize = [this]
 		{
-			u64 ret = sizeof(UboGenericData);
+			auto ret = sizeof(UboGenericData);
 			if (GetDirLight())
 			{
 				ret += sizeof(UboDirData);
@@ -58,7 +58,7 @@ namespace leopph::internal
 		genericData.ambientLight = GetAmbLight();
 		genericData.cameraPosition = (*GetMainCamera())->Owner()->Transform()->Position();
 		*reinterpret_cast<UboGenericData*>(uboData) = genericData;
-		u64 offset = sizeof genericData;
+		auto offset = sizeof genericData;
 
 		if (GetDirLight())
 		{
@@ -95,7 +95,7 @@ namespace leopph::internal
 			*reinterpret_cast<UboPointData*>(uboData + offset) = pointData;
 			offset += sizeof pointData;
 		}
-		
+
 		glBindBufferRange(GL_UNIFORM_BUFFER, 0, m_PerFrameUbos[m_PerFrameUboInd].name, 0, uboDataSize);
 		m_PerFrameUboInd = (m_PerFrameUboInd + 1) % m_PerFrameUbos.size();
 
@@ -117,21 +117,19 @@ namespace leopph::internal
 		glClearNamedFramebufferfv(m_PingPongBuffers[0].framebuffer, GL_DEPTH, 0, &clearDepth);
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_PingPongBuffers[0].framebuffer);
 
-		m_ForwardObjectShader.Clear();
 		if (GetDirLight())
 		{
-			m_ForwardObjectShader["DIRLIGHT"] = "";
+			m_ForwardObjectShader.Option("DIRLIGHT", true);
 		}
-		m_ForwardObjectShader["NUM_SPOT"] = std::to_string(GetCastingSpotLights().size() + GetNonCastingSpotLights().size());
-		m_ForwardObjectShader["NUM_POINT"] = std::to_string(GetCastingPointLights().size() + GetNonCastingPointLights().size());
-
-		auto& opaqueShader = m_ForwardObjectShader.GetPermutation();
-		opaqueShader.Use();
+		m_ForwardObjectShader.Option("NUM_SPOT", GetCastingSpotLights().size() + GetNonCastingSpotLights().size());
+		m_ForwardObjectShader.Option("NUM_POINT", GetCastingPointLights().size() + GetNonCastingPointLights().size());
+		m_ForwardObjectShader.Option("TRANSPARENT", false);
+		m_ForwardObjectShader.UseCurrentPermutation();
 
 		for (auto const& [renderable, instances, castsShadow] : renderNodes)
 		{
 			renderable->SetInstanceData(instances);
-			renderable->DrawWithMaterial(opaqueShader, 0, false);
+			renderable->DrawWithMaterial(m_ForwardObjectShader, 0, false);
 		}
 
 
@@ -141,13 +139,11 @@ namespace leopph::internal
 			// SET PIPELINE STATE
 			glDepthMask(GL_FALSE);
 
-			m_SkyboxShader.Clear();
-			auto& shader = m_SkyboxShader.GetPermutation();
-			shader.Use();
+			m_SkyboxShader.UseCurrentPermutation();
 
-			shader.SetUniform("u_ViewProjMat", static_cast<Matrix4>(static_cast<Matrix3>(camViewMat)) * camProjMat);
+			m_SkyboxShader.Uniform("u_ViewProjMat", static_cast<Matrix4>(static_cast<Matrix3>(camViewMat)) * camProjMat);
 
-			CreateOrGetSkyboxImpl(std::get<Skybox>(background).AllPaths())->Draw(shader);
+			CreateOrGetSkyboxImpl(std::get<Skybox>(background).AllPaths())->Draw(m_SkyboxShader);
 		}
 
 
@@ -166,14 +162,13 @@ namespace leopph::internal
 		glClearNamedFramebufferfv(m_TransparencyBuffer.framebuffer, GL_COLOR, 1, &clearReveal);
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_TransparencyBuffer.framebuffer);
 
-		m_ForwardObjectShader["TRANSPARENT"] = "";
-		auto& transpShader = m_ForwardObjectShader.GetPermutation();
-		transpShader.Use();
+		m_ForwardObjectShader.Option("TRANSPARENT", true);
+		m_ForwardObjectShader.UseCurrentPermutation();
 
 		for (auto const& [renderable, instances, castsShadow] : renderNodes)
 		{
 			renderable->SetInstanceData(instances);
-			renderable->DrawWithMaterial(transpShader, 0, true);
+			renderable->DrawWithMaterial(m_ForwardObjectShader, 0, true);
 		}
 
 
@@ -188,10 +183,7 @@ namespace leopph::internal
 		glBindTextureUnit(0, m_TransparencyBuffer.accumAttachment);
 		glBindTextureUnit(1, m_TransparencyBuffer.revealAttachment);
 
-		m_TranspCompositeShader.Clear();
-		auto const& compShader = m_TranspCompositeShader.GetPermutation();
-		compShader.Use();
-
+		m_TranspCompositeShader.UseCurrentPermutation();
 		DrawScreenQuad();
 
 
@@ -200,11 +192,9 @@ namespace leopph::internal
 
 
 		// GAMMA CORRECTION PASS
-		m_GammaCorrectShader.Clear();
-		auto& gammaShader = m_GammaCorrectShader.GetPermutation();
-		gammaShader.Use();
+		m_GammaCorrectShader.UseCurrentPermutation();
 
-		gammaShader.SetUniform("u_GammaInverse", 1.f / GetGamma());
+		m_GammaCorrectShader.Uniform("u_GammaInverse", 1.f / GetGamma());
 
 		glBindTextureUnit(0, m_PingPongBuffers[0].colorAttachment);
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_PingPongBuffers[1].framebuffer);
@@ -217,25 +207,25 @@ namespace leopph::internal
 	}
 
 
-	void GlForwardRenderer::CreateUbo(u64 const index, u64 const size)
+	auto GlForwardRenderer::CreateUbo(u64 const index, u64 const size) -> void
 	{
 		glCreateBuffers(1, &m_PerFrameUbos[index].name);
 		glNamedBufferStorage(m_PerFrameUbos[index].name, size, nullptr, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
 		m_PerFrameUbos[index].mapping = static_cast<u8*>(glMapNamedBufferRange(m_PerFrameUbos[index].name, 0, size, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT));
 		m_PerFrameUbos[index].size = size;
 
-#ifndef NDEBUG
+		#ifndef NDEBUG
 		if (!m_PerFrameUbos[index].mapping)
 		{
 			auto const errMsg = "Failed to map UBO[" + std::to_string(index) + "].";
 			Logger::Instance().Critical(errMsg);
 			throw std::runtime_error{errMsg};
 		}
-#endif
+		#endif
 	}
 
 
-	void GlForwardRenderer::DeleteUbo(u64 const index) const
+	auto GlForwardRenderer::DeleteUbo(u64 const index) const -> void
 	{
 		glUnmapNamedBuffer(m_PerFrameUbos[index].name);
 		glDeleteBuffers(1, &m_PerFrameUbos[index].name);

@@ -4,7 +4,7 @@
 #include "GlCore.hpp"
 #include "GlVertexArrayObject.hpp"
 #include "Mesh.hpp"
-#include "rendering/shaders/ShaderProgram.hpp"
+#include "rendering/shaders/ShaderFamily.hpp"
 
 
 namespace leopph::internal
@@ -16,7 +16,7 @@ namespace leopph::internal
 			// instanceBuffer must be a valid buffer object.
 			GlMesh(Mesh const& mesh, GLuint instanceBuffer);
 
-			auto DrawWithMaterial(ShaderProgram& shader, GLuint nextFreeTextureUnit, GLsizei instanceCount) const -> void;
+			auto DrawWithMaterial(ShaderFamily const& shader, GLuint nextFreeTextureUnit, GLsizei instanceCount) const -> void;
 
 			auto DrawWithoutMaterial(GLsizei instanceCount) const -> void;
 

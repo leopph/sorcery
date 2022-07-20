@@ -29,20 +29,14 @@
     <ClCompile Include="src\rendering\gl\GlMesh.cpp" />
     <ClCompile Include="src\rendering\geometry\Mesh.cpp" />
     <ClCompile Include="src\rendering\geometry\MeshGroup.cpp" />
-    <ClCompile Include="src\rendering\gl\GlBuffer.cpp" />
-    <ClCompile Include="src\rendering\gl\GlFramebufferObject.cpp" />
-    <ClCompile Include="src\rendering\gl\GlRenderbufferObject.cpp" />
-    <ClCompile Include="src\rendering\gl\GlVertexArrayObject.cpp" />
     <ClCompile Include="src\rendering\gl\GlCore.cpp" />
     <ClCompile Include="src\rendering\renderers\GlDeferredRenderer.cpp" />
     <ClCompile Include="src\rendering\renderers\GlForwardRenderer.cpp" />
     <ClCompile Include="src\rendering\renderers\GlRenderer.cpp" />
     <ClCompile Include="src\rendering\renderers\Renderer.cpp" />
-    <ClCompile Include="src\rendering\gl\GlRenderBuffer.cpp" />
     <ClCompile Include="src\components\Skybox.cpp" />
     <ClCompile Include="src\rendering\gl\GlSkyboxImpl.cpp" />
     <ClCompile Include="src\rendering\gl\GlTexture.cpp" />
-    <ClCompile Include="src\rendering\gl\GlTransparencyBuffer.cpp" />
     <ClCompile Include="src\scene\Scene.cpp" />
     <ClCompile Include="src\scene\SceneManager.cpp" />
     <ClCompile Include="src\threading\JobSystem.cpp" />
@@ -66,6 +60,8 @@
     <ClCompile Include="..\deps\vendor\glad\src\gl.c" />
     <ClCompile Include="src\rendering\shaders\ShaderFamily.cpp" />
     <ClCompile Include="src\rendering\shaders\ShaderProcessing.cpp" />
+    <ClCompile Include="src\rendering\gl\GlBufferObject.cpp" />
+    <ClCompile Include="src\rendering\gl\GlVertexArrayObject.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\DataManager.hpp" />
@@ -73,23 +69,11 @@
     <ClInclude Include="include\events\PointShadowResEvent.hpp" />
     <ClInclude Include="include\events\SpotShadowResEvent.hpp" />
     <ClInclude Include="include\rendering\gl\GlMesh.hpp" />
-    <ClInclude Include="include\rendering\gl\GlBufferObject.hpp" />
-    <ClInclude Include="include\rendering\gl\GlFramebufferObject.hpp" />
-    <ClInclude Include="include\rendering\gl\GlRenderbufferObject.hpp" />
-    <ClInclude Include="include\rendering\gl\GlTextureObject.hpp" />
-    <ClInclude Include="include\rendering\gl\GlVertexArrayObject.hpp" />
     <ClInclude Include="include\rendering\gl\GlCore.hpp" />
     <ClInclude Include="include\rendering\renderers\GlDeferredRenderer.hpp" />
     <ClInclude Include="include\rendering\renderers\GlForwardRenderer.hpp" />
     <ClInclude Include="include\rendering\renderers\GlRenderer.hpp" />
     <ClInclude Include="include\rendering\renderers\Renderer.hpp" />
-    <ClInclude Include="include\rendering\gl\GlCascadedShadowMap.hpp" />
-    <ClInclude Include="include\rendering\gl\GlCubeShadowMap.hpp" />
-    <ClInclude Include="include\rendering\gl\GlGeometryBuffer.hpp" />
-    <ClInclude Include="include\rendering\gl\GlRenderBuffer.hpp" />
-    <ClInclude Include="include\rendering\gl\GlSkyboxImpl.hpp" />
-    <ClInclude Include="include\rendering\gl\GlSpotShadowMap.hpp" />
-    <ClInclude Include="include\rendering\gl\GlTransparencyBuffer.hpp" />
     <ClInclude Include="src\scene\Scene.hpp" />
     <ClInclude Include="src\scene\SceneManager.hpp" />
     <ClInclude Include="include\threading\Job.hpp" />
@@ -111,6 +95,9 @@
     <ClInclude Include="include\rendering\shaders\ShaderFamily.hpp" />
     <ClInclude Include="include\rendering\shaders\ShaderProcessing.hpp" />
     <ClInclude Include="include\rendering\RenderSettings.hpp" />
+    <ClInclude Include="include\rendering\gl\GlSkyboxImpl.hpp" />
+    <ClInclude Include="include\rendering\gl\GlBufferObject.hpp" />
+    <ClInclude Include="include\rendering\gl\GlVertexArrayObject.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\rendering\shaders\glsl\Lighting.glsl" />

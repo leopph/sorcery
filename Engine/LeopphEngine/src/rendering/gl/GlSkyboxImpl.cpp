@@ -75,10 +75,10 @@ namespace leopph::internal
 	}
 
 
-	auto GlSkyboxImpl::Draw(ShaderProgram& shader) const -> void
+	auto GlSkyboxImpl::Draw(ShaderFamily const& shader) const -> void
 	{
 		glBindTextureUnit(0, m_Cubemap);
-		shader.SetUniform("u_CubeMap", 0);
+		shader.Uniform("u_CubeMap", 0);
 
 		glDisable(GL_CULL_FACE);
 		glBindVertexArray(m_VertexArray);

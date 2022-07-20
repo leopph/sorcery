@@ -3,7 +3,7 @@
 #include "GlCore.hpp"
 #include "Skybox.hpp"
 #include "Types.hpp"
-#include "rendering/shaders/ShaderProgram.hpp"
+#include "rendering/shaders/ShaderFamily.hpp"
 
 #include <array>
 #include <filesystem>
@@ -19,7 +19,7 @@ namespace leopph::internal
 			// Param is in the format that BuildAllPaths generates.
 			explicit GlSkyboxImpl(std::filesystem::path allFilePaths);
 
-			auto Draw(ShaderProgram& shader) const -> void;
+			auto Draw(ShaderFamily const& shader) const -> void;
 
 			[[nodiscard]] auto LeftPath() const noexcept -> std::filesystem::path const&;
 			[[nodiscard]] auto RightPath() const noexcept -> std::filesystem::path const&;

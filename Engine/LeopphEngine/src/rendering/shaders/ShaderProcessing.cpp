@@ -106,7 +106,7 @@ namespace leopph
 						ReadFileLines(includePath, includedLines);
 
 						stageInfo->fileContents.erase(lineIt);
-						stageInfo->fileContents.insert(lineIt, std::make_move_iterator(std::begin(includedLines)), std::make_move_iterator(std::end(includedLines)));
+						stageInfo->fileContents.insert(lineIt, std::make_move_iterator(std::begin(includedLines)), std::make_move_iterator(std::end(includedLines))); // TODO this goes out of range
 
 						doAnotherPass = true;
 						break;
@@ -122,6 +122,7 @@ namespace leopph
 	auto InsertBuiltInShaderOptions(ShaderProgramSourceInfo& sourceInfo) -> void
 	{
 		std::vector<std::string> options;
+		options.emplace_back("#pragma option name=DIRLIGHT\n");
 		options.emplace_back("#pragma option name=DIR_SHADOW\n");
 		options.push_back(std::string{"#pragma option name=NUM_DIR_CASCADES min="}.append(std::to_string(rendersettings::numShadowCascades)).append(" max=").append(std::to_string(rendersettings::numShadowCascades)).append(1, '\n'));
 		options.push_back(std::string{"#pragma option name=NUM_SPOT min=0 max="}.append(std::to_string(rendersettings::numMaxSpot)).append(1, '\n'));

@@ -12,6 +12,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\rendering\Extent.hpp" />
+    <ClInclude Include="include\rendering\gl\GlBufferObject.hpp" />
+    <ClInclude Include="include\rendering\gl\GlSkyboxImpl.hpp" />
+    <ClInclude Include="include\rendering\gl\GlVertexArrayObject.hpp" />
     <ClInclude Include="include\rendering\RenderSettings.hpp" />
     <ClInclude Include="include\rendering\shaders\ShaderCommon.hpp" />
     <ClInclude Include="include\rendering\shaders\ShaderFamily.hpp" />
@@ -36,7 +39,9 @@
     <ClCompile Include="src\components\RenderComponent.cpp" />
     <ClCompile Include="src\components\Transform.cpp" />
     <ClCompile Include="src\Context.cpp" />
+    <ClCompile Include="src\rendering\gl\GlBufferObject.cpp" />
     <ClCompile Include="src\rendering\gl\GlMeshGroup.cpp" />
+    <ClCompile Include="src\rendering\gl\GlVertexArrayObject.cpp" />
     <ClCompile Include="src\rendering\RenderObject.cpp" />
     <ClCompile Include="src\rendering\ScreenQuad.cpp" />
     <ClCompile Include="src\rendering\shaders\ShaderFamily.cpp" />
@@ -55,12 +60,7 @@
     <ClCompile Include="src\rendering\gl\GlMesh.cpp" />
     <ClCompile Include="src\rendering\geometry\Mesh.cpp" />
     <ClCompile Include="src\rendering\geometry\MeshGroup.cpp" />
-    <ClCompile Include="src\rendering\gl\GlBuffer.cpp" />
-    <ClCompile Include="src\rendering\gl\GlFramebufferObject.cpp" />
-    <ClCompile Include="src\rendering\gl\GlRenderbufferObject.cpp" />
-    <ClCompile Include="src\rendering\gl\GlVertexArrayObject.cpp" />
     <ClCompile Include="src\rendering\gl\GlCore.cpp" />
-    <ClCompile Include="src\rendering\gl\GlRenderBuffer.cpp" />
     <ClCompile Include="src\rendering\renderers\GlDeferredRenderer.cpp" />
     <ClCompile Include="src\rendering\renderers\GlForwardRenderer.cpp" />
     <ClCompile Include="src\rendering\renderers\GlRenderer.cpp" />
@@ -68,7 +68,6 @@
     <ClCompile Include="src\components\Skybox.cpp" />
     <ClCompile Include="src\rendering\gl\GlSkyboxImpl.cpp" />
     <ClCompile Include="src\rendering\gl\GlTexture.cpp" />
-    <ClCompile Include="src\rendering\gl\GlTransparencyBuffer.cpp" />
     <ClCompile Include="src\scene\Scene.cpp" />
     <ClCompile Include="src\scene\SceneManager.cpp" />
     <ClCompile Include="src\SettingsImpl.cpp" />
@@ -90,26 +89,14 @@
     <ClInclude Include="include\events\DirShadowResEvent.hpp" />
     <ClInclude Include="include\events\PointShadowResEvent.hpp" />
     <ClInclude Include="include\events\SpotShadowResEvent.hpp" />
-    <ClInclude Include="include\rendering\gl\GlCascadedShadowMap.hpp" />
-    <ClInclude Include="include\rendering\gl\GlCubeShadowMap.hpp" />
-    <ClInclude Include="include\rendering\gl\GlGeometryBuffer.hpp" />
     <ClInclude Include="include\rendering\gl\GlMesh.hpp" />
     <ClInclude Include="include\rendering\gl\GlMeshGroup.hpp" />
-    <ClInclude Include="include\rendering\gl\GlBufferObject.hpp" />
-    <ClInclude Include="include\rendering\gl\GlFramebufferObject.hpp" />
-    <ClInclude Include="include\rendering\gl\GlRenderbufferObject.hpp" />
-    <ClInclude Include="include\rendering\gl\GlTextureObject.hpp" />
-    <ClInclude Include="include\rendering\gl\GlVertexArrayObject.hpp" />
     <ClInclude Include="include\rendering\gl\GlCore.hpp" />
-    <ClInclude Include="include\rendering\gl\GlRenderBuffer.hpp" />
     <ClInclude Include="include\rendering\renderers\GlDeferredRenderer.hpp" />
     <ClInclude Include="include\rendering\renderers\GlForwardRenderer.hpp" />
     <ClInclude Include="include\rendering\renderers\GlRenderer.hpp" />
     <ClInclude Include="include\rendering\renderers\Renderer.hpp" />
     <ClInclude Include="include\rendering\RenderObject.hpp" />
-    <ClInclude Include="include\rendering\gl\GlSkyboxImpl.hpp" />
-    <ClInclude Include="include\rendering\gl\GlSpotShadowMap.hpp" />
-    <ClInclude Include="include\rendering\gl\GlTransparencyBuffer.hpp" />
     <ClInclude Include="src\scene\Scene.hpp" />
     <ClInclude Include="src\scene\SceneManager.hpp" />
     <ClInclude Include="include\threading\Job.hpp" />

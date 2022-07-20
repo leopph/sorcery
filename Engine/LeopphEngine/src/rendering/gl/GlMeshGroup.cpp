@@ -16,7 +16,7 @@ namespace leopph::internal
 	}
 
 
-	auto GlMeshGroup::DrawWithMaterial(ShaderProgram& shader, GLuint const nextFreeTextureUnit, bool const transparent) const -> void
+	auto GlMeshGroup::DrawWithMaterial(ShaderFamily const& shader, GLuint const nextFreeTextureUnit, bool const transparent) const -> void
 	{
 		for (auto const& mesh : transparent ? m_FullyTransparentMeshes : m_OpaqueMeshes)
 		{
