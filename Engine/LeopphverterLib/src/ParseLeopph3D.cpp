@@ -6,6 +6,7 @@
 #include "Logger.hpp"
 
 #include <bit>
+#include <format>
 #include <fstream>
 #include <memory>
 #include <vector>
@@ -74,6 +75,11 @@ namespace leopph::convert
 				internal::Logger::Instance().Error("Couldn't parse leopph3d file at " + path.string() + " because the contents failed to uncompress.");
 				return {};
 			}
+
+			#ifndef NDEBUG
+			internal::Logger::Instance().CurrentLevel(internal::Logger::Level::Debug);
+			internal::Logger::Instance().Debug(std::format("Parsing leopph3d file at {}.", path.string()));
+			#endif
 
 			auto it = std::cbegin(uncompressed);
 

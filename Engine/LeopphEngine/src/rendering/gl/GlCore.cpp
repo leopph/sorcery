@@ -8,6 +8,7 @@
 
 #include <stdexcept>
 #include <string>
+#include <format>
 
 namespace leopph::internal::opengl
 {
@@ -112,7 +113,7 @@ namespace leopph::internal::opengl
 		glGetIntegerv(GL_MINOR_VERSION, &minor);
 
 		Logger::Instance().Debug("OpenGL " + std::to_string(major) + "." + std::to_string(minor));
-		Logger::Instance().Debug(std::string{reinterpret_cast<char const*>(glGetString(GL_VENDOR))} + reinterpret_cast<char const*>(glGetString(GL_RENDERER)));
+		Logger::Instance().Debug(std::format("{} {}", reinterpret_cast<char const*>(glGetString(GL_VENDOR)), reinterpret_cast<char const*>(glGetString(GL_RENDERER))));
 
 		glEnable(GL_DEBUG_OUTPUT);
 		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
