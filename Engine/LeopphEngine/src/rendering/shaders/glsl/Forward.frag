@@ -1,4 +1,4 @@
-//! #version 420 core
+//! #version 450 core
 
 #pragma option name=TRANSPARENT //! #define TRANSPARENT 1
 

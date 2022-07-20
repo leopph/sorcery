@@ -26,7 +26,7 @@ void main()
     out_TexCoords = in_TexCoords;
     gl_Position = fragPosWorldSpace * u_ViewProjMat;
 
-    #if NUM_DIR_SHADOW_CASCADES
+    #if NUM_DIRLIGHT_SHADOW_CASCADE
     out_FragPosNdcZ = gl_Position.z / gl_Position.w;
     #endif
 }

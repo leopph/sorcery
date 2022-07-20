@@ -164,11 +164,14 @@ namespace leopph
 				linePtrs.push_back(line.data());
 			}
 
-			auto const CompileShader = [](GLuint const shader, std::vector<char const*> const& lines) -> std::optional<std::string>
+			auto const CompileShader = [](GLuint const shader, std::vector<char const*> const& lines) -> void
 			{
 				glShaderSource(shader, lines.size(), lines.data(), nullptr);
 				glCompileShader(shader);
+			};
 
+			auto const CheckCompileError = [](GLuint const shader) -> std::optional<std::string>
+			{
 				GLint result;
 				glGetShaderiv(shader, GL_COMPILE_STATUS, &result);
 
@@ -184,11 +187,14 @@ namespace leopph
 			};
 
 			perm.vertex = glCreateShader(GL_VERTEX_SHADER);
+			CompileShader(perm.vertex, linePtrs);
 
-			if (auto const info = CompileShader(perm.vertex, linePtrs))
+			#ifndef NDEBUG
+			if (auto const info = CheckCompileError(perm.vertex))
 			{
 				internal::Logger::Instance().Error(std::format("Error compiling vertex shader: {}.", *info));
 			}
+			#endif
 
 			glAttachShader(perm.program, perm.vertex);
 
@@ -204,11 +210,14 @@ namespace leopph
 				}
 
 				perm.geometry = glCreateShader(GL_GEOMETRY_SHADER);
+				CompileShader(perm.geometry, linePtrs);
 
-				if (auto const info = CompileShader(perm.geometry, linePtrs))
+				#ifndef NDEBUG
+				if (auto const info = CheckCompileError(perm.geometry))
 				{
 					internal::Logger::Instance().Error(std::format("Error compiling geometry shader: {}.", *info));
 				}
+				#endif
 
 				glAttachShader(perm.program, perm.geometry);
 			}
@@ -225,11 +234,14 @@ namespace leopph
 				}
 
 				perm.fragment = glCreateShader(GL_FRAGMENT_SHADER);
+				CompileShader(perm.fragment, linePtrs);
 
-				if (auto const info = CompileShader(perm.fragment, linePtrs))
+				#ifndef NDEBUG
+				if (auto const info = CheckCompileError(perm.fragment))
 				{
 					internal::Logger::Instance().Error(std::format("Error compiling fragment shader: {}.", *info));
 				}
+				#endif
 
 				glAttachShader(perm.program, perm.fragment);
 			}
