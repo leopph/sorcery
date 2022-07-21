@@ -17,11 +17,11 @@ auto leopph::Init() -> void
 	Input::CursorMode(CursorState::Disabled);
 
 	auto const utilEnt = new Entity;
-	utilEnt->CreateAndAttachComponent<FrameRateAnalyzer>(0.5f, 60u);
-	utilEnt->CreateAndAttachComponent<Exiter>();
-	utilEnt->CreateAndAttachComponent<WindowController>();
+	utilEnt->create_and_attach_component<FrameRateAnalyzer>(0.5f, 60u);
+	utilEnt->create_and_attach_component<Exiter>();
+	utilEnt->create_and_attach_component<WindowController>();
 
-	auto const sceneSwitcher = utilEnt->CreateAndAttachComponent<demo::SceneSwitcher>();
+	auto const sceneSwitcher = utilEnt->create_and_attach_component<demo::SceneSwitcher>();
 
 	auto& churchScene = sceneSwitcher->CreateOrGetScene(leopph::KeyCode::F1);
 	auto& spriteScene = sceneSwitcher->CreateOrGetScene(leopph::KeyCode::F2);

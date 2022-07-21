@@ -1,342 +1,346 @@
 #include "Transform.hpp"
 
 #include "Entity.hpp"
-#include "Logger.hpp"
-
-#include <algorithm>
-#include <cstddef>
-#include <string>
 
 
 namespace leopph
 {
-	Transform::Transform(Vector3 const& pos, Quaternion const& rot, Vector3 const& scale) :
-		m_WorldPosition{pos},
-		m_WorldRotation{rot},
-		m_WorldScale{scale},
-		m_LocalPosition{pos},
-		m_LocalRotation{rot},
-		m_LocalScale{scale},
-		m_Forward{Vector3::Forward()},
-		m_Right{Vector3::Right()},
-		m_Up{Vector3::Up()}
+	Vector3 const& Transform::get_position() const
 	{
-		CalculateLocalAxes();
+		return mWorldPosition;
 	}
 
 
-	Transform::Transform(Transform const& other) :
-		Component{other},
-		m_LocalPosition{other.m_LocalPosition},
-		m_LocalRotation{other.m_LocalRotation},
-		m_LocalScale{other.m_LocalScale}
+	void Transform::set_position(Vector3 const& newPos)
 	{
-		Parent(other.m_Parent);
-	}
-
-
-	auto Transform::operator=(Transform const& other) -> Transform&
-	{
-		if (this == &other)
+		if (mParent != nullptr)
 		{
-			return *this;
+			mLocalPosition = mParent->mWorldRotation.Conjugate().Rotate(newPos) - mParent->mWorldPosition;
+		}
+		else
+		{
+			mLocalPosition = newPos;
+		}
+		calculate_world_position();
+	}
+
+
+	Vector3 const& Transform::get_local_position() const
+	{
+		return mLocalPosition;
+	}
+
+
+
+	void Transform::set_local_position(Vector3 const& newPos)
+	{
+		mLocalPosition = newPos;
+		calculate_world_position();
+	}
+
+
+	Quaternion const& Transform::get_rotation() const
+	{
+		return mWorldRotation;
+	}
+
+
+	void Transform::set_rotation(Quaternion const& newRot)
+	{
+		if (mParent != nullptr)
+		{
+			mLocalRotation = mParent->mWorldRotation.Conjugate() * newRot;
+		}
+		else
+		{
+			mLocalRotation = newRot;
+		}
+		calculate_world_rotation();
+	}
+
+
+	Quaternion const& Transform::get_local_rotation() const
+	{
+		return mLocalRotation;
+	}
+
+
+	void Transform::set_local_rotation(Quaternion const& newRot)
+	{
+		mLocalRotation = newRot;
+		calculate_world_rotation();
+	}
+
+
+	Vector3 const& Transform::get_scale() const
+	{
+		return mWorldScale;
+	}
+
+
+	void Transform::set_scale(Vector3 const& newScale)
+	{
+		if (mParent != nullptr)
+		{
+			mLocalScale = newScale / mParent->mWorldScale;
+		}
+		else
+		{
+			mLocalScale = newScale;
+		}
+		calculate_world_scale();
+	}
+
+
+	Vector3 const& Transform::get_local_scale() const
+	{
+		return mLocalScale;
+	}
+
+
+	void Transform::set_local_scale(Vector3 const& newScale)
+	{
+		mLocalScale = newScale;
+		calculate_world_scale();
+	}
+
+
+	void Transform::translate(Vector3 const& vector, Space const base)
+	{
+		if (base == Space::World)
+		{
+			set_position(mWorldPosition + vector);
+		}
+		else if (base == Space::Local)
+		{
+			set_local_position(mLocalPosition + (vector * static_cast<Matrix3>(static_cast<Matrix4>(mLocalRotation))));
+		}
+	}
+
+
+	void Transform::translate(f32 const x, f32 const y, f32 const z, Space const base)
+	{
+		translate(Vector3{x, y, z}, base);
+	}
+
+
+	void Transform::rotate(Quaternion const& rotation, Space const base)
+	{
+		if (base == Space::World)
+		{
+			set_local_rotation(rotation * mLocalRotation);
+		}
+		else if (base == Space::Local)
+		{
+			set_local_rotation(mLocalRotation * rotation);
+		}
+	}
+
+
+	void Transform::rotate(Vector3 const& axis, f32 const amountDegrees, Space const base)
+	{
+		rotate(Quaternion{axis, amountDegrees}, base);
+	}
+
+
+	void Transform::rescale(Vector3 const& scaling, Space const base)
+	{
+		if (base == Space::World)
+		{
+			set_scale(mWorldScale * scaling);
+		}
+		else if (base == Space::Local)
+		{
+			set_local_scale(mLocalScale * scaling);
+		}
+	}
+
+
+	void Transform::rescale(f32 const x, f32 const y, f32 const z, Space const base)
+	{
+		rescale(Vector3{x, y, z}, base);
+	}
+
+
+	Vector3 const& Transform::get_forward_axis() const
+	{
+		return mForward;
+	}
+
+
+	Vector3 const& Transform::get_right_axis() const
+	{
+		return mRight;
+	}
+
+
+	Vector3 const& Transform::get_up_axis() const
+	{
+		return mUp;
+	}
+
+
+	Transform* Transform::get_parent() const
+	{
+		return mParent;
+	}
+
+
+	void Transform::set_parent(Entity* const parent)
+	{
+		if (parent)
+		{
+			set_parent(parent->get_transform());
+		}
+		else
+		{
+			unparent();
+		}
+	}
+
+
+	void Transform::set_parent(Transform* parent)
+	{
+		if (parent)
+		{
+			set_parent(*parent);
+		}
+		else
+		{
+			unparent();
+		}
+	}
+
+
+	void Transform::set_parent(Transform& parent)
+	{
+		unparent();
+
+		mParent = &parent;
+		mParent->mChildren.push_back(this);
+
+		calculate_world_position();
+		calculate_world_rotation();
+		calculate_world_scale();
+	}
+
+
+	void Transform::unparent()
+	{
+		if (mParent != nullptr)
+		{
+			std::erase(mParent->mChildren, this);
+			mParent = nullptr;
+		}
+	}
+
+
+
+	std::span<Transform* const> Transform::get_children() const
+	{
+		return mChildren;
+	}
+
+
+
+	Transform::TransformationMatrices Transform::get_matrices()
+	{
+		if (!mChanged)
+		{
+			return mMatrices;
 		}
 
-		Component::operator=(other);
+		Matrix4 modelMatrix;
+		modelMatrix[0] = Vector4{mRight * mWorldScale[0], 0};
+		modelMatrix[1] = Vector4{mUp * mWorldScale[1], 0};
+		modelMatrix[2] = Vector4{mForward * mWorldScale[2], 0};
+		modelMatrix[3] = Vector4{mWorldPosition};
 
-		m_LocalPosition = other.m_LocalPosition;
-		m_LocalRotation = other.m_LocalRotation;
-		m_LocalScale = other.m_LocalScale;
-		m_Changed = true;
+		auto const worldScaleRecip{1.f / mWorldScale};
 
-		Parent(other.m_Parent);
+		Matrix4 normalMatrix;
+		normalMatrix[0] = Vector4{mRight * worldScaleRecip[0], -mWorldPosition[0]};
+		normalMatrix[1] = Vector4{mUp * worldScaleRecip[1], -mWorldPosition[1]};
+		normalMatrix[2] = Vector4{mForward * worldScaleRecip[2], -mWorldPosition[2]};
+		normalMatrix[3][3] = 1;
 
-		return *this;
+		mMatrices = {modelMatrix, normalMatrix};
+		mChanged = false;
+
+		return mMatrices;
 	}
 
 
-	auto Transform::Clone() const -> ComponentPtr<>
+
+	Entity* Transform::get_entity() const
 	{
-		return CreateComponent<Transform>(*this);
+		return mEntity;
 	}
+
+
+
+	void Transform::calculate_local_axes()
+	{
+		mForward = mWorldRotation.Rotate(Vector3::Forward());
+		mRight = mWorldRotation.Rotate(Vector3::Right());
+		mUp = mWorldRotation.Rotate(Vector3::Up());
+	}
+
+
+	void Transform::calculate_world_position()
+	{
+		mWorldPosition = mParent != nullptr ? mParent->mWorldRotation.Rotate(mParent->mWorldPosition + mLocalPosition) : mLocalPosition;
+		mChanged = true;
+
+		for (auto* const child : mChildren)
+		{
+			child->calculate_world_position();
+		}
+	}
+
+
+	void Transform::calculate_world_rotation()
+	{
+		mWorldRotation = mParent != nullptr ? mParent->mWorldRotation * mLocalRotation : mLocalRotation;
+		calculate_local_axes();
+		mChanged = true;
+
+		for (auto* const child : mChildren)
+		{
+			child->calculate_world_rotation();
+		}
+	}
+
+
+	void Transform::calculate_world_scale()
+	{
+		mWorldScale = mParent != nullptr ? mParent->mWorldScale * mLocalScale : mLocalScale;
+		mChanged = true;
+
+		for (auto* const child : mChildren)
+		{
+			child->calculate_world_scale();
+		}
+	}
+
+
+
+	Transform::Transform(Entity* entity) :
+		mEntity{entity}
+	{ }
 
 
 	Transform::~Transform()
 	{
-		if (m_Parent != nullptr)
+		unparent();
+
+		for (auto* const child : mChildren)
 		{
-			std::erase(m_Parent->m_Children, this);
+			// Can't call parent setter, because that would remove child from this's mChildren, and the loop would crash.
+			child->mParent = nullptr;
+			child->calculate_world_position();
+			child->calculate_world_rotation();
+			child->calculate_world_scale();
 		}
-
-		std::ranges::for_each(m_Children, [](auto const& child)
-		{
-			// Can't call parent setter, because that would remove child from this's m_Children, and the loop would crash.
-			child->m_Parent = nullptr;
-			child->CalculateWorldPosition();
-			child->CalculateWorldRotation();
-			child->CalculateWorldScale();
-		});
-	}
-
-
-	auto Transform::Position(Vector3 const& newPos) -> void
-	{
-		if (m_Parent != nullptr)
-		{
-			m_LocalPosition = m_Parent->m_WorldRotation.Conjugate().Rotate(newPos) - m_Parent->m_WorldPosition;
-		}
-		else
-		{
-			m_LocalPosition = newPos;
-		}
-		CalculateWorldPosition();
-	}
-
-
-	auto Transform::LocalPosition(Vector3 const& newPos) -> void
-	{
-		m_LocalPosition = newPos;
-		CalculateWorldPosition();
-	}
-
-
-	auto Transform::Rotation(Quaternion const& newRot) -> void
-	{
-		if (m_Parent != nullptr)
-		{
-			m_LocalRotation = m_Parent->m_WorldRotation.Conjugate() * newRot;
-		}
-		else
-		{
-			m_LocalRotation = newRot;
-		}
-		CalculateWorldRotation();
-	}
-
-
-	auto Transform::LocalRotation(Quaternion const& newRot) -> void
-	{
-		m_LocalRotation = newRot;
-		CalculateWorldRotation();
-	}
-
-
-	auto Transform::Scale(Vector3 const& newScale) -> void
-	{
-		if (m_Parent != nullptr)
-		{
-			m_LocalScale = newScale / m_Parent->m_WorldScale;
-		}
-		else
-		{
-			m_LocalScale = newScale;
-		}
-		CalculateWorldScale();
-	}
-
-
-	auto Transform::LocalScale(Vector3 const& newScale) -> void
-	{
-		m_LocalScale = newScale;
-		CalculateWorldScale();
-	}
-
-
-	auto Transform::Translate(Vector3 const& vector, Space const base) -> void
-	{
-		if (base == Space::World)
-		{
-			Position(m_WorldPosition + vector);
-		}
-		else if (base == Space::Local)
-		{
-			LocalPosition(m_LocalPosition + (vector * static_cast<Matrix3>(static_cast<Matrix4>(m_LocalRotation))));
-		}
-	}
-
-
-	auto Transform::Translate(float const x, float const y, float const z, Space const base) -> void
-	{
-		Translate(Vector3{x, y, z}, base);
-	}
-
-
-	auto Transform::Rotate(Quaternion const& rotation, Space const base) -> void
-	{
-		if (base == Space::World)
-		{
-			LocalRotation(rotation * m_LocalRotation);
-		}
-		else if (base == Space::Local)
-		{
-			LocalRotation(m_LocalRotation * rotation);
-		}
-	}
-
-
-	auto Transform::Rotate(Vector3 const& axis, float amountDegrees, Space const base) -> void
-	{
-		Rotate(Quaternion{axis, amountDegrees}, base);
-	}
-
-
-	auto Transform::Rescale(Vector3 const& scaling, Space const base) -> void
-	{
-		if (base == Space::World)
-		{
-			Scale(m_WorldScale * scaling);
-		}
-		else if (base == Space::Local)
-		{
-			LocalScale(m_LocalScale * scaling);
-		}
-	}
-
-
-	auto Transform::Rescale(float const x, float const y, float const z, Space const base) -> void
-	{
-		Rescale(Vector3{x, y, z}, base);
-	}
-
-
-	auto Transform::Parent(leopph::Entity const* const parent) -> void
-	{
-		Parent(parent->Transform());
-	}
-
-
-	auto Transform::Parent(Transform* const parent) -> void
-	{
-		// If we're given a valid pointer to an unattached transform
-		if (parent != nullptr && !parent->Attached())
-		{
-			internal::Logger::Instance().Warning("Ignoring attempt to parent Transform on Entity [" + Component::Owner()->Name() + "] to an unattached Transform.");
-			return;
-		}
-
-		if (m_Parent != nullptr)
-		{
-			std::erase(m_Parent->m_Children, this);
-		}
-
-		m_Parent = parent;
-		if (parent != nullptr)
-		{
-			parent->m_Children.push_back(this);
-		}
-
-		CalculateWorldPosition();
-		CalculateWorldRotation();
-		CalculateWorldScale();
-	}
-
-
-	auto Transform::Parent(std::shared_ptr<Transform> const& parent) -> void
-	{
-		return Parent(parent.get());
-	}
-
-
-	auto Transform::Parent(std::nullptr_t const null) -> void
-	{
-		Parent(static_cast<Transform*>(null));
-	}
-
-
-	auto Transform::Matrices() const -> std::pair<Matrix4, Matrix4> const&
-	{
-		if (!m_Changed)
-		{
-			return m_Matrices;
-		}
-
-		Matrix4 modelMatrix;
-		modelMatrix[0] = Vector4{m_Right * m_WorldScale[0], 0};
-		modelMatrix[1] = Vector4{m_Up * m_WorldScale[1], 0};
-		modelMatrix[2] = Vector4{m_Forward * m_WorldScale[2], 0};
-		modelMatrix[3] = Vector4{m_WorldPosition};
-
-		auto const worldScaleRecip{1.f / m_WorldScale};
-
-		Matrix4 normalMatrix;
-		normalMatrix[0] = Vector4{m_Right * worldScaleRecip[0], -m_WorldPosition[0]};
-		normalMatrix[1] = Vector4{m_Up * worldScaleRecip[1], -m_WorldPosition[1]};
-		normalMatrix[2] = Vector4{m_Forward * worldScaleRecip[2], -m_WorldPosition[2]};
-		normalMatrix[3][3] = 1;
-
-		m_Matrices = std::make_pair(modelMatrix, normalMatrix);
-		m_Changed = false;
-
-		return m_Matrices;
-	}
-
-
-	auto Transform::Owner(Entity* entity) -> void
-	{
-		auto const& logger{internal::Logger::Instance()};
-
-		if (Attached())
-		{
-			auto const errMsg = entity
-				                    ? Component::Owner() == entity
-					                      ? "Ignoring attempt to reattach Transform on Entity \"" + entity->Name() + "\"."
-					                      : "Ignoring attempt to change owner of Transform on Entity \"" + Component::Owner()->Name() + "\" to \"" + entity->Name() + "\"."
-				                    : "Ignoring attempt to detach Transform on Entity \"" + Component::Owner()->Name() + "\".";
-			logger.Warning(errMsg);
-			return;
-		}
-
-		if (!entity)
-		{
-			logger.Warning("Ignoring attempt to detach unattached Transform.");
-			return;
-		}
-
-		if (entity->Transform() && entity->Transform()->Attached())
-		{
-			logger.Warning("Ignoring attempt to attach a second Transform to Entity \"" + entity->Name() + "\".");
-			return;
-		}
-
-		Component::Owner(entity);
-	}
-
-
-	auto Transform::Active(bool const active) -> void
-	{
-		internal::Logger::Instance().Warning((std::string{"Ignoring attempt to "} += active ? "activate" : "deactivate") += " Transform. Transforms cannot be activated or deactivated.");
-	}
-
-
-	auto Transform::CalculateLocalAxes() -> void
-	{
-		m_Forward = m_WorldRotation.Rotate(Vector3::Forward());
-		m_Right = m_WorldRotation.Rotate(Vector3::Right());
-		m_Up = m_WorldRotation.Rotate(Vector3::Up());
-	}
-
-
-	auto Transform::CalculateWorldPosition() -> void
-	{
-		m_WorldPosition = m_Parent != nullptr ? m_Parent->m_WorldRotation.Rotate(m_Parent->m_WorldPosition + m_LocalPosition) : m_LocalPosition;
-		m_Changed = true;
-		std::ranges::for_each(m_Children, &Transform::CalculateWorldPosition);
-	}
-
-
-	auto Transform::CalculateWorldRotation() -> void
-	{
-		m_WorldRotation = m_Parent != nullptr ? m_Parent->m_WorldRotation * m_LocalRotation : m_LocalRotation;
-		CalculateLocalAxes();
-		m_Changed = true;
-		std::ranges::for_each(m_Children, &Transform::CalculateWorldRotation);
-	}
-
-
-	auto Transform::CalculateWorldScale() -> void
-	{
-		m_WorldScale = m_Parent != nullptr ? m_Parent->m_WorldScale * m_LocalScale : m_LocalScale;
-		m_Changed = true;
-		std::ranges::for_each(m_Children, &Transform::CalculateWorldScale);
 	}
 }

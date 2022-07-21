@@ -69,7 +69,7 @@ namespace leopph
 	auto Camera::ViewMatrix() const -> Matrix4
 	{
 		// inv(T) * inv(R)
-		return Matrix4::Translate(-Owner()->Transform()->Position()) * Matrix4{Owner()->Transform()->Rotation()}.Transposed();
+		return Matrix4::Translate(-Owner()->get_transform().get_position()) * Matrix4{Owner()->get_transform().get_rotation()}.Transposed();
 	}
 
 

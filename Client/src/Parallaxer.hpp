@@ -14,7 +14,7 @@ namespace demo
 			{
 				// The layer will be moved with SpeedMult * the camera's speed
 				float SpeedMult;
-				leopph::ComponentPtr<leopph::Transform> Transform;
+				leopph::Transform* Transform;
 			};
 
 

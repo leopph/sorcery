@@ -20,34 +20,34 @@ namespace demo
 		auto const cam = Camera::Current();
 		std::ranges::for_each(m_Layers, [cam](auto& layer)
 		{
-			auto const extentX = layer.Prototype->GetComponent<ImageSprite>()->Extents()[0];
-			auto leftSpawn = cam->TransformToViewport(layer.LeftEdge->Transform()->Position())[0] > 0;
-			auto rightSpawn = cam->TransformToViewport(layer.RightEdge->Transform()->Position())[0] < 1;
+			auto const extentX = layer.Prototype->get_component<ImageSprite>()->Extents()[0];
+			auto leftSpawn = cam->TransformToViewport(layer.LeftEdge->get_transform().get_position())[0] > 0;
+			auto rightSpawn = cam->TransformToViewport(layer.RightEdge->get_transform().get_position())[0] < 1;
 
 			while (leftSpawn || rightSpawn)
 			{
 				if (leftSpawn)
 				{
-					auto spawnPos = layer.LeftEdge->Transform()->Position();
+					auto spawnPos = layer.LeftEdge->get_transform().get_position();
 					spawnPos[0] -= 2 * extentX;
 
 					auto const newLeftEdge = new Entity{*layer.LeftEdge};
-					newLeftEdge->Transform()->Position(spawnPos);
+					newLeftEdge->get_transform().set_position(spawnPos);
 
 					layer.LeftEdge = newLeftEdge;
-					leftSpawn = cam->TransformToViewport(newLeftEdge->Transform()->Position())[0] > 0;
+					leftSpawn = cam->TransformToViewport(newLeftEdge->get_transform().get_position())[0] > 0;
 				}
 
 				if (rightSpawn)
 				{
-					auto spawnPos = layer.RightEdge->Transform()->Position();
+					auto spawnPos = layer.RightEdge->get_transform().get_position();
 					spawnPos[0] += 2 * extentX;
 
 					auto const newRightEdge = new Entity{*layer.RightEdge};
-					newRightEdge->Transform()->Position(spawnPos);
+					newRightEdge->get_transform().set_position(spawnPos);
 
 					layer.RightEdge = newRightEdge;
-					rightSpawn = cam->TransformToViewport(newRightEdge->Transform()->Position())[0] < 1;
+					rightSpawn = cam->TransformToViewport(newRightEdge->get_transform().get_position())[0] < 1;
 				}
 			}
 		});

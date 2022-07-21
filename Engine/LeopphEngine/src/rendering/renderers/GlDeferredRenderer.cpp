@@ -76,8 +76,8 @@ namespace leopph::internal
 
 			for (auto i = 0; i < spotLights.size(); i++)
 			{
-				auto const& pos = spotLights[i]->Owner()->Transform()->Position();
-				auto const viewMat = Matrix4::LookAt(pos, pos + spotLights[i]->Owner()->Transform()->Forward(), Vector3::Up());
+				auto const& pos = spotLights[i]->Owner()->get_transform().get_position();
+				auto const viewMat = Matrix4::LookAt(pos, pos + spotLights[i]->Owner()->get_transform().get_forward_axis(), Vector3::Up());
 				auto constexpr shadowNearClip = 0.1f;
 				auto const projMat = Matrix4::Perspective(math::ToRadians(spotLights[i]->OuterAngle() * 2), 1.f, shadowNearClip, spotLights[i]->Range());
 				auto const viewProjMat = viewMat * projMat;
@@ -119,7 +119,7 @@ namespace leopph::internal
 					Matrix4{-1, 0, 0, 0, 0, -1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1} // -Z
 				};
 
-				auto const translation = Matrix4::Translate(-pointLights[i]->Owner()->Transform()->Position());
+				auto const translation = Matrix4::Translate(-pointLights[i]->Owner()->get_transform().get_position());
 				auto const projMat = Matrix4::Perspective(math::ToRadians(90), 1, 0.01f, pointLights[i]->Range());
 
 				std::array<Matrix4, 6> viewProjMats;
@@ -128,7 +128,7 @@ namespace leopph::internal
 					return translation * cubeFaceMat * projMat;
 				});
 
-				m_CubeShadowShader.SetUniform("u_LightPos", pointLights[i]->Owner()->Transform()->Position());
+				m_CubeShadowShader.SetUniform("u_LightPos", pointLights[i]->Owner()->get_transform().get_position());
 
 				for (auto face = 0; face < 6; face++)
 				{
@@ -211,7 +211,7 @@ namespace leopph::internal
 
 		auto* const ubo = glMapNamedBuffer(m_Ubos[0], GL_WRITE_ONLY);
 		*static_cast<Matrix4*>(ubo) = camViewProjMat.Inverse();
-		*reinterpret_cast<Vector3*>(static_cast<u8*>(ubo) + sizeof(Matrix4)) = (*GetMainCamera())->Owner()->Transform()->Position();
+		*reinterpret_cast<Vector3*>(static_cast<u8*>(ubo) + sizeof(Matrix4)) = (*GetMainCamera())->Owner()->get_transform().get_position();
 		glUnmapNamedBuffer(m_Ubos[0]);
 
 		glBindTextureUnit(0, m_Gbuffer.colorAttachment);
@@ -276,8 +276,8 @@ namespace leopph::internal
 
 			for (auto i = 0; i < spotLights.size(); i++)
 			{
-				shader.SetUniform("u_Light.position", spotLights[i]->Owner()->Transform()->Position());
-				shader.SetUniform("u_Light.direction", spotLights[i]->Owner()->Transform()->Forward());
+				shader.SetUniform("u_Light.position", spotLights[i]->Owner()->Transform().Position());
+				shader.SetUniform("u_Light.direction", spotLights[i]->Owner()->Transform().get_forward_axis());
 				shader.SetUniform("u_Light.diffuseColor", spotLights[i]->Diffuse());
 				shader.SetUniform("u_Light.specularColor", spotLights[i]->Specular());
 				shader.SetUniform("u_Light.range", spotLights[i]->Range());
@@ -299,8 +299,8 @@ namespace leopph::internal
 
 			for (auto const* const spotLight : GetNonCastingSpotLights())
 			{
-				shader.SetUniform("u_Light.position", spotLight->Owner()->Transform()->Position());
-				shader.SetUniform("u_Light.direction", spotLight->Owner()->Transform()->Forward());
+				shader.SetUniform("u_Light.position", spotLight->Owner()->Transform().Position());
+				shader.SetUniform("u_Light.direction", spotLight->Owner()->Transform().get_forward_axis());
 				shader.SetUniform("u_Light.diffuseColor", spotLight->Diffuse());
 				shader.SetUniform("u_Light.specularColor", spotLight->Specular());
 				shader.SetUniform("u_Light.range", spotLight->Range());
@@ -323,7 +323,7 @@ namespace leopph::internal
 
 			for (auto i = 0; i < pointLights.size(); i++)
 			{
-				shader.SetUniform("u_Light.position", pointLights[i]->Owner()->Transform()->Position());
+				shader.SetUniform("u_Light.position", pointLights[i]->Owner()->Transform().Position());
 				shader.SetUniform("u_Light.diffuseColor", pointLights[i]->Diffuse());
 				shader.SetUniform("u_Light.specularColor", pointLights[i]->Specular());
 				shader.SetUniform("u_Light.range", pointLights[i]->Range());
@@ -344,7 +344,7 @@ namespace leopph::internal
 
 			for (auto const* const pointLight : pointLights)
 			{
-				shader.SetUniform("u_Light.position", pointLight->Owner()->Transform()->Position());
+				shader.SetUniform("u_Light.position", pointLight->Owner()->Transform().Position());
 				shader.SetUniform("u_Light.diffuseColor", pointLight->Diffuse());
 				shader.SetUniform("u_Light.specularColor", pointLight->Specular());
 				shader.SetUniform("u_Light.range", pointLight->Range());
@@ -403,7 +403,7 @@ namespace leopph::internal
 		auto& transpShader = m_ForwardObjectShader.GetPermutation();
 		transpShader.Use();
 		transpShader.SetUniform("u_ViewProjMat", camViewProjMat);
-		transpShader.SetUniform("u_CamPos", (*GetMainCamera())->Owner()->Transform()->Position());
+		transpShader.SetUniform("u_CamPos", (*GetMainCamera())->Owner()->Transform().Position());
 		transpShader.SetUniform("u_AmbientLight", AmbientLight::Instance().Intensity());
 
 		if (GetDirLight())
@@ -417,8 +417,8 @@ namespace leopph::internal
 		for (auto i = 0; auto const* const spotLight : std::ranges::join_view{std::array{GetCastingSpotLights(), GetNonCastingSpotLights()}})
 		{
 			auto const indStr = std::to_string(i);
-			transpShader.SetUniform("u_SpotLights[" + indStr + "].position", spotLight->Owner()->Transform()->Position());
-			transpShader.SetUniform("u_SpotLights[" + indStr + "].direction", spotLight->Owner()->Transform()->Forward());
+			transpShader.SetUniform("u_SpotLights[" + indStr + "].position", spotLight->Owner()->Transform().Position());
+			transpShader.SetUniform("u_SpotLights[" + indStr + "].direction", spotLight->Owner()->Transform().get_forward_axis());
 			transpShader.SetUniform("u_SpotLights[" + indStr + "].diffuseColor", spotLight->Diffuse());
 			transpShader.SetUniform("u_SpotLights[" + indStr + "].specularColor", spotLight->Specular());
 			transpShader.SetUniform("u_SpotLights[" + indStr + "].range", spotLight->Range());
@@ -430,7 +430,7 @@ namespace leopph::internal
 		for (auto i = 0; auto const* const pointLight : std::ranges::join_view{std::array{GetCastingPointLights(), GetNonCastingPointLights()}})
 		{
 			auto const indStr = std::to_string(i);
-			transpShader.SetUniform("u_PointLights[" + indStr + "].position", pointLight->Owner()->Transform()->Position());
+			transpShader.SetUniform("u_PointLights[" + indStr + "].position", pointLight->Owner()->Transform().Position());
 			transpShader.SetUniform("u_PointLights[" + indStr + "].diffuseColor", pointLight->Diffuse());
 			transpShader.SetUniform("u_PointLights[" + indStr + "].specularColor", pointLight->Specular());
 			transpShader.SetUniform("u_PointLights[" + indStr + "].range", pointLight->Range());

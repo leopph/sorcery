@@ -247,7 +247,7 @@ namespace leopph::internal
 	{
 		std::ranges::sort(lights, [&position](LightType const* const left, LightType const* const right) -> bool
 		{
-			return Vector3::Distance(position, left->Owner()->Transform()->Position()) < Vector3::Distance(position, right->Owner()->Transform()->Position());
+			return Vector3::Distance(position, left->Owner()->get_transform().get_position()) < Vector3::Distance(position, right->Owner()->get_transform().get_position());
 		});
 
 		if (lights.size() > count)

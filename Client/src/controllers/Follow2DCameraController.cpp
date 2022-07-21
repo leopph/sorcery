@@ -8,16 +8,16 @@ using leopph::ComponentPtr;
 
 namespace demo
 {
-	Follow2DCameraController::Follow2DCameraController(ComponentPtr<Camera const> const& camera, ComponentPtr<Transform> target, Vector2 targetOffsetFromCenter) :
-		m_CamTransform{camera->Owner()->Transform()},
-		m_Target{std::move(target)},
+	Follow2DCameraController::Follow2DCameraController(ComponentPtr<Camera const> const& camera, Transform& target, Vector2 targetOffsetFromCenter) :
+		m_CamTransform{&camera->Owner()->get_transform()},
+		m_Target{&target},
 		m_Offset{targetOffsetFromCenter}
 	{ }
 
 
 	auto Follow2DCameraController::OnFrameUpdate() -> void
 	{
-		Vector2 const targetPosXy{m_Target->Position()[0], m_Target->Position()[1]};
-		m_CamTransform->Position(leopph::Vector3{targetPosXy - m_Offset, m_CamTransform->Position()[2]});
+		Vector2 const targetPosXy{m_Target->get_position()[0], m_Target->get_position()[1]};
+		m_CamTransform->set_position(leopph::Vector3{targetPosXy - m_Offset, m_CamTransform->get_position()[2]});
 	}
 }

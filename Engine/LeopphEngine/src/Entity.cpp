@@ -3,52 +3,58 @@
 #include "DataManager.hpp"
 #include "InternalContext.hpp"
 #include "Logger.hpp"
+#include "Types.hpp"
 
 #include <algorithm>
-#include <array>
-#include <cstddef>
+#include <format>
 #include <iterator>
 
 
 namespace leopph
 {
-	auto Entity::Find(std::string const& name) -> Entity*
+	Entity* Entity::find(std::string const& name)
 	{
 		return internal::GetDataManager()->FindEntity(name);
 	}
 
 
-	auto Entity::Name() const noexcept -> std::string const&
+	std::string const& Entity::get_name() const noexcept
 	{
-		return m_Name;
+		return mName;
 	}
 
 
-	auto Entity::Transform() const noexcept -> ComponentPtr<leopph::Transform> const&
+	Transform const& Entity::get_transform() const noexcept
 	{
-		return m_Transform;
+		return mTransform;
 	}
 
 
-	auto Entity::AttachComponent(ComponentPtr<> const& component) -> void
+	Transform& Entity::get_transform() noexcept
+	{
+		return mTransform;
+	}
+
+
+	void Entity::attach_component(ComponentPtr<> const& component)
 	{
 		component->Attach(this);
 	}
 
 
-	auto Entity::DetachComponent(ComponentPtr<> const& component) const -> void
+	void Entity::detach_component(ComponentPtr<> const& component) const
 	{
-		auto const& logger{internal::Logger::Instance()};
+		auto const& logger = internal::Logger::Instance();
 
 		if (!component)
 		{
-			logger.Warning("Ignoring attempt to remove nullptr component from Entity [" + m_Name + "].");
+			logger.Warning(std::format("Ignoring attempt to remove nullptr component from Entity [{}].", mName));
 			return;
 		}
 
 		if (component->Owner() != this)
 		{
-			internal::Logger::Instance().Error("Ignoring attempt to remove component at [" + std::to_string(reinterpret_cast<std::size_t>(component.get())) + "] from Entity [" + m_Name + "], because the component is not owned by the Entity.");
+			logger.Error(std::format("Ignoring attempt to remove component at [{}] from Entity [{}]: the component is not owned by this Entity.", static_cast<void const*>(component.get()), mName));
 			return;
 		}
 
@@ -56,106 +62,83 @@ namespace leopph
 	}
 
 
-	auto Entity::ActivateAllComponents() const -> void
+	void Entity::activate_all_components() const
 	{
 		// we copy the pointers because the underlying collection will change through activations
-		std::vector<ComponentPtr<>> componentsCopy;
-		std::ranges::copy(internal::GetDataManager()->ComponentsOfEntity(this, false), std::back_inserter(componentsCopy));
+		std::vector<ComponentPtr<>> inactiveComponents;
+		std::ranges::copy(get_components(false), std::back_inserter(inactiveComponents));
 
-		std::ranges::for_each(componentsCopy, [](auto const& comp)
+		for (auto const& component : inactiveComponents)
 		{
-			comp->Activate();
-		});
+			component->Activate();
+		}
 	}
 
 
-	auto Entity::DeactiveAllComponents() const -> void
+	void Entity::deactive_all_components() const
 	{
 		// we copy the pointers because the underlying collection will change through deactivations
-		std::vector<ComponentPtr<>> componentsCopy;
-		std::ranges::copy(internal::GetDataManager()->ComponentsOfEntity(this, true), std::back_inserter(componentsCopy));
+		std::vector<ComponentPtr<>> activeComponents;
+		std::ranges::copy(get_components(true), std::back_inserter(activeComponents));
 
-		std::ranges::for_each(componentsCopy, [this](auto const& comp)
+		for (auto const& component : activeComponents)
 		{
-			if (comp != m_Transform) // Transform cannot be deactivated.
-			{
-				comp->Deactivate();
-			}
-		});
+			component->Deactivate();
+		}
 	}
 
 
-	Entity::Entity(std::string name) :
-		m_Name{
-			[&name]
-			{
-				if (!NameIsUnused(name))
-				{
-					name = GenerateUnusedName(name);
-					internal::Logger::Instance().Warning("Name collision detected. Entity is being renamed to " + name + ".");
-				}
-
-				return name;
-			}()
-		},
-		m_Transform{CreateComponent<leopph::Transform>()}
+	std::span<ComponentPtr<> const> Entity::get_components(bool const active) const
 	{
+		return internal::GetDataManager()->ComponentsOfEntity(this, active);
+	}
+
+
+	Entity::Entity()
+	{
+		for (i64 i = 2; internal::GetDataManager()->FindEntity(mName); i++)
+		{
+			mName = std::format("{} ({})", DEFAULT_NAME, i);
+		}
+
 		internal::GetDataManager()->RegisterEntity(this);
-		m_Transform->Attach(this);
+	}
+
+
+	Entity::Entity(std::string_view const name) :
+		mName{name}
+	{
+		for (i64 i = 2; internal::GetDataManager()->FindEntity(mName); i++)
+		{
+			mName = std::format("{} ({})", name, i);
+		}
+
+		internal::GetDataManager()->RegisterEntity(this);
 	}
 
 
 	Entity::Entity(Entity const& other) :
-		m_Name{GenerateUnusedName(other.m_Name)}
+		mName{other.mName}
 	{
+		for (i64 i = 2; internal::GetDataManager()->FindEntity(mName); i++)
+		{
+			mName = std::format("{} ({})", other.mName, i);
+		}
+
+		mTransform.set_parent(other.mTransform.get_parent());
+		mTransform.set_position(other.get_transform().get_position());
+		mTransform.set_rotation(other.get_transform().get_rotation());
+		mTransform.set_scale(other.get_transform().get_scale());
+
 		internal::GetDataManager()->RegisterEntity(this);
 
-		for (auto const& component : other.Components())
+		for (auto const active : {true, false})
 		{
-			component->Clone()->Attach(this);
-		}
-
-		m_Transform = GetComponent<leopph::Transform>();
-	}
-
-
-	auto Entity::operator=(Entity const& other) -> Entity&
-	{
-		if (this == &other)
-		{
-			return *this;
-		}
-
-		auto* const dataManager = internal::GetDataManager();
-
-		m_Transform->Component::Owner(nullptr);
-
-		std::ranges::for_each(std::array{true, false}, [this, &dataManager](auto const active)
-		{
-			// Copy the pointers becuase the underlying data structure will change throught the detaches
-			std::vector<ComponentPtr<>> componentsCopy;
-			std::ranges::copy(dataManager->ComponentsOfEntity(this, active), std::back_inserter(componentsCopy));
-
-			std::ranges::for_each(componentsCopy, [](auto const& component)
+			for (auto const& component : other.get_components(active))
 			{
-				component->Detach();
-			});
-		});
-
-		dataManager->UnregisterEntity(this);
-
-		m_Name = GenerateUnusedName(other.m_Name);
-
-		dataManager->RegisterEntity(this);
-
-		std::ranges::for_each(other.Components(), [this](auto const& component)
-		{
-			component->Clone()->Attach(this);
-		});
-
-		m_Transform = GetComponent<leopph::Transform>();
-
-		return *this;
+				component->Clone()->Attach(this);
+			}
+		}
 	}
 
 
@@ -163,57 +146,57 @@ namespace leopph
 	{
 		auto* const dataManager = internal::GetDataManager();
 
-		m_Transform->Component::Owner(nullptr); // Transform is a special case because it cannot be detached.
-
-		std::ranges::for_each(std::array{true, false}, [this, &dataManager](auto const active)
+		for (auto const active : {true, false})
 		{
-			// Copy the pointers becuase the underlying data structure will change throught the detaches
-			std::vector<ComponentPtr<>> componentsCopy;
-			std::ranges::copy(dataManager->ComponentsOfEntity(this, active), std::back_inserter(componentsCopy));
+			// Copy the pointers becuase the underlying data structure will change throughout the detaches
+			std::vector<ComponentPtr<>> components;
+			std::ranges::copy(get_components(active), std::back_inserter(components));
 
-			std::ranges::for_each(componentsCopy, [](auto const& component)
+			for (auto const& component : components)
 			{
 				component->Detach();
-			});
-		});
+			}
+		}
 
 		dataManager->UnregisterEntity(this);
 	}
 
 
-	auto Entity::operator<=>(Entity const& other) const noexcept -> std::strong_ordering
+	char const* const Entity::DEFAULT_NAME{"entity"};
+
+
+	std::strong_ordering operator<=>(Entity const& left, Entity const& right)
 	{
-		return m_Name <=> other.m_Name;
+		return left.get_name() <=> right.get_name();
 	}
 
 
-	auto Entity::operator==(Entity const& other) const noexcept -> bool
+	std::strong_ordering operator<=>(std::string_view const name, Entity const& entity)
 	{
-		return m_Name == other.m_Name;
+		return name <=> entity.get_name();
 	}
 
 
-	auto Entity::Components() const -> std::span<ComponentPtr<> const>
+	std::strong_ordering operator<=>(Entity const& entity, std::string_view const name)
 	{
-		return internal::GetDataManager()->ComponentsOfEntity(this, true);
+		return entity.get_name() <=> name;
 	}
 
 
-	auto Entity::GenerateUnusedName(std::string const& original) -> std::string
+	bool operator==(Entity const& left, Entity const& right)
 	{
-		auto newName = original + '0';
-
-		for (std::size_t i = 1; !NameIsUnused(newName); i++)
-		{
-			newName = original + std::to_string(i);
-		}
-
-		return newName;
+		return left.get_name() == right.get_name();
 	}
 
 
-	auto Entity::NameIsUnused(std::string const& name) -> bool
+	bool operator==(Entity const& entity, std::string_view const name)
 	{
-		return !internal::GetDataManager()->FindEntity(name);
+		return entity.get_name() == name;
+	}
+
+
+	bool operator==(std::string_view const name, Entity const& entity)
+	{
+		return name == entity.get_name();
 	}
 }

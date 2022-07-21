@@ -11,8 +11,8 @@ using leopph::Transform;
 
 namespace demo
 {
-	CharacterController2D::CharacterController2D(ComponentPtr<Transform> target, float const speed, float const runMult, float const walkMult) :
-		m_Target{std::move(target)},
+	CharacterController2D::CharacterController2D(Transform& target, float const speed, float const runMult, float const walkMult) :
+		m_Target{&target},
 		m_Speed{speed},
 		m_RunMult{runMult},
 		m_WalkMult{walkMult}
@@ -55,6 +55,6 @@ namespace demo
 			posDelta *= m_WalkMult;
 		}
 
-		m_Target->Translate(posDelta * m_Speed * DeltaTime(), Space::World);
+		m_Target->translate(posDelta * m_Speed * DeltaTime(), Space::World);
 	}
 }

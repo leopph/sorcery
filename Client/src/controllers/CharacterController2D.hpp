@@ -8,12 +8,12 @@ namespace demo
 	class CharacterController2D final : public leopph::Behavior
 	{
 		public:
-			CharacterController2D(leopph::ComponentPtr<leopph::Transform> target, float speed, float runMult, float walkMult);
+			CharacterController2D(leopph::Transform& target, float speed, float runMult, float walkMult);
 
 			auto OnFrameUpdate() -> void override;
 
 		private:
-			leopph::ComponentPtr<leopph::Transform> m_Target;
+			leopph::Transform* m_Target;
 			float m_Speed;
 			float m_RunMult;
 			float m_WalkMult;

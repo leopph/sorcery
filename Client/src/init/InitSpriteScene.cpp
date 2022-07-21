@@ -25,9 +25,9 @@ namespace demo
 	{
 		auto const camEntity = new Entity;
 		scene.Add(camEntity);
-		camEntity->Transform()->Position(Vector3{0});
+		camEntity->get_transform().set_position(Vector3{0});
 
-		auto const cam = camEntity->CreateAndAttachComponent<OrthographicCamera>();
+		auto const cam = camEntity->create_and_attach_component<OrthographicCamera>();
 		cam->Activate();
 		cam->MakeCurrent();
 		cam->Size(10, leopph::Camera::Side::Vertical);
@@ -45,70 +45,70 @@ namespace demo
 
 		auto const demon = new Entity;
 		scene.Add(demon);
-		demon->CreateAndAttachComponent<CharacterController2D>(demon->Transform(), 3.0f, 5.0f, 0.2f);
-		auto const animSprite = demon->CreateAndAttachComponent<AnimatedSprite>(demonSprites, AnimatedSprite::AnimationMode::Bounce, 2.f);
+		demon->create_and_attach_component<CharacterController2D>(demon->get_transform(), 3.0f, 5.0f, 0.2f);
+		auto const animSprite = demon->create_and_attach_component<AnimatedSprite>(demonSprites, AnimatedSprite::AnimationMode::Bounce, 2.f);
 
-		auto const followCam = camEntity->CreateAndAttachComponent<Follow2DCameraController>(cam, demon->Transform(), Vector2{0});
+		auto const followCam = camEntity->create_and_attach_component<Follow2DCameraController>(cam, demon->get_transform(), Vector2{0});
 		followCam->UpdateIndex(1);
 
 		auto const backgroundLayer = new Entity;
 		scene.Add(backgroundLayer);
-		backgroundLayer->Transform()->Position(Vector3{0, 0, 10});
+		backgroundLayer->get_transform().set_position(Vector3{0, 0, 10});
 
 		auto const background = new Entity;
-		background->Transform()->Parent(backgroundLayer);
-		background->CreateAndAttachComponent<ImageSprite>("sprites/world/ColorFlowBackground.png", 100);
+		background->get_transform().set_parent(backgroundLayer);
+		background->create_and_attach_component<ImageSprite>("sprites/world/ColorFlowBackground.png", 100);
 
 		auto const sun = new Entity;
-		sun->Transform()->Parent(backgroundLayer);
-		sun->Transform()->Position(Vector3{-1.93, 2.63, 9.5});
-		sun->CreateAndAttachComponent<ImageSprite>("sprites/World/Sun.png", 512);
+		sun->get_transform().set_parent(backgroundLayer);
+		sun->get_transform().set_position(Vector3{-1.93, 2.63, 9.5});
+		sun->create_and_attach_component<ImageSprite>("sprites/World/Sun.png", 512);
 
 		auto const farLayer = new Entity;
 		scene.Add(farLayer);
-		farLayer->Transform()->Position(Vector3{0, 1.5, 9});
+		farLayer->get_transform().set_position(Vector3{0, 1.5, 9});
 
 		auto const pinkMountains = new Entity;
-		pinkMountains->Transform()->Parent(farLayer);
-		auto const pinkMSprite = pinkMountains->CreateAndAttachComponent<ImageSprite>("sprites/world/PinkMountains.png", 384);
+		pinkMountains->get_transform().set_parent(farLayer);
+		auto const pinkMSprite = pinkMountains->create_and_attach_component<ImageSprite>("sprites/world/PinkMountains.png", 384);
 		pinkMSprite->Instanced(true);
 
 		auto const midLayer = new Entity;
 		scene.Add(midLayer);
-		midLayer->Transform()->Position(Vector3{0, 0.9, 8});
+		midLayer->get_transform().set_position(Vector3{0, 0.9, 8});
 
 		auto const purpleMountains = new Entity;
-		purpleMountains->Transform()->Parent(midLayer);
-		auto const purpMSprite = purpleMountains->CreateAndAttachComponent<ImageSprite>("sprites/world/PurpleMountains2.png", 100);
+		purpleMountains->get_transform().set_parent(midLayer);
+		auto const purpMSprite = purpleMountains->create_and_attach_component<ImageSprite>("sprites/world/PurpleMountains2.png", 100);
 		purpMSprite->Instanced(true);
 
 		auto const nearLayer = new Entity;
 		scene.Add(nearLayer);
-		nearLayer->Transform()->Position(Vector3{0, -1.92, 7});
+		nearLayer->get_transform().set_position(Vector3{0, -1.92, 7});
 
 		auto const forest = new Entity;
-		forest->Transform()->Parent(nearLayer);
-		auto const forestSprite = forest->CreateAndAttachComponent<ImageSprite>("sprites/world/BackgroundForest1.png", 256);
+		forest->get_transform().set_parent(nearLayer);
+		auto const forestSprite = forest->create_and_attach_component<ImageSprite>("sprites/world/BackgroundForest1.png", 256);
 		forestSprite->Instanced(true);
 
 		auto const groundLayer = new Entity;
 		scene.Add(groundLayer);
-		groundLayer->Transform()->Position(Vector3{0, -4, 6});
+		groundLayer->get_transform().set_position(Vector3{0, -4, 6});
 
 		auto const ground = new Entity;
-		ground->Transform()->Parent(groundLayer);
-		auto const groundSprite = ground->CreateAndAttachComponent<ImageSprite>("sprites/world/Ground1.png", 512);
+		ground->get_transform().set_parent(groundLayer);
+		auto const groundSprite = ground->create_and_attach_component<ImageSprite>("sprites/world/Ground1.png", 512);
 		groundSprite->Instanced(true);
 
 		std::vector<Parallaxer::Layer> parallaxLayers
 		{
-			{1, backgroundLayer->Transform()},
-			{0.9f, farLayer->Transform()},
-			{0.8f, midLayer->Transform()},
-			{0.7f, nearLayer->Transform()},
-			{0.f, groundLayer->Transform()}
+			{1, &backgroundLayer->get_transform()},
+			{0.9f, &farLayer->get_transform()},
+			{0.8f, &midLayer->get_transform()},
+			{0.7f, &nearLayer->get_transform()},
+			{0.f, &groundLayer->get_transform()}
 		};
-		auto const parallaxer = (new Entity{})->CreateAndAttachComponent<Parallaxer>(cam, parallaxLayers);
+		auto const parallaxer = (new Entity{})->create_and_attach_component<Parallaxer>(cam, parallaxLayers);
 		parallaxer->UpdateIndex(3);
 		scene.Add(parallaxer->Owner());
 
@@ -119,14 +119,14 @@ namespace demo
 			{forest, forest, forest},
 			{ground, ground, ground}
 		};
-		auto const tiler = (new Entity)->CreateAndAttachComponent<Tiler>(tileLayers);
+		auto const tiler = (new Entity)->create_and_attach_component<Tiler>(tileLayers);
 		tiler->UpdateIndex(2);
 		scene.Add(tiler->Owner());
 
 		scene.SetActivationCallback([cam, demon]
 		{
 			cam->MakeCurrent();
-			demon->Transform()->LocalPosition(Vector3{0});
+			demon->get_transform().set_local_position(Vector3{0});
 			AmbientLight::Instance().Intensity(Vector3{1});
 		});
 	}

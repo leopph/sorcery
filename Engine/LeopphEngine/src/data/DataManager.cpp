@@ -60,14 +60,14 @@ namespace leopph::internal
 
 	auto DataManager::RegisterComponent(Entity const* const entity, ComponentPtr<> component, bool const active) -> void
 	{
-		auto const it{GetEntityIterator(entity->Name())};
+		auto const it{GetEntityIterator(entity->get_name())};
 		(active ? it->ActiveComponents : it->InactiveComponents).push_back(std::move(component));
 	}
 
 
 	auto DataManager::UnregisterComponent(Entity const* const entity, Component const* component, bool const active) -> ComponentPtr<>
 	{
-		auto const entryIt = GetEntityIterator(entity->Name());
+		auto const entryIt = GetEntityIterator(entity->get_name());
 		auto& components = active ? entryIt->ActiveComponents : entryIt->InactiveComponents; // no bounds checking here
 		auto const compIt = std::ranges::find(components, component, [](auto const& elem) -> auto const*
 		{
@@ -81,7 +81,7 @@ namespace leopph::internal
 
 	auto DataManager::ComponentsOfEntity(Entity const* const entity, bool const active) const -> std::span<ComponentPtr<> const>
 	{
-		auto const it{GetEntityIterator(entity->Name())};
+		auto const it{GetEntityIterator(entity->get_name())};
 		return active ? it->ActiveComponents : it->InactiveComponents;
 	}
 

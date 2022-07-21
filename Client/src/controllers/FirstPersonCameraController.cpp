@@ -14,7 +14,7 @@ namespace demo
 
 
 	FirstPersonCameraController::FirstPersonCameraController(ComponentPtr<Camera const> const& camera, float const speed, float const sens, float const runMult, float const walkMult, std::tuple<float, float> const& mousePos) :
-		m_CamTransform{camera->Owner()->Transform()},
+		m_CamTransform{&camera->Owner()->get_transform()},
 		m_Speed{speed},
 		m_Sens{sens},
 		m_RunMult{runMult},
@@ -30,22 +30,22 @@ namespace demo
 
 		if (Input::GetKey(KeyCode::W))
 		{
-			movementVector += m_CamTransform->Forward();
+			movementVector += m_CamTransform->get_forward_axis();
 		}
 
 		if (Input::GetKey(KeyCode::S))
 		{
-			movementVector -= m_CamTransform->Forward();
+			movementVector -= m_CamTransform->get_forward_axis();
 		}
 
 		if (Input::GetKey(KeyCode::D))
 		{
-			movementVector += m_CamTransform->Right();
+			movementVector += m_CamTransform->get_right_axis();
 		}
 
 		if (Input::GetKey(KeyCode::A))
 		{
-			movementVector -= m_CamTransform->Right();
+			movementVector -= m_CamTransform->get_right_axis();
 		}
 
 		if (Input::GetKey(KeyCode::Space))
@@ -70,20 +70,20 @@ namespace demo
 			movementVector *= m_WalkMult;
 		}
 
-		m_CamTransform->Translate(movementVector * m_Speed * leopph::time::DeltaTime(), leopph::Space::World);
+		m_CamTransform->translate(movementVector * m_Speed * leopph::time::DeltaTime(), leopph::Space::World);
 
 		auto const [posX, posY] = Input::GetMousePosition();
 		auto const diffX = posX - m_LastX;
 		auto const diffY = posY - m_LastY;
 
 		short coefficient = 1;
-		if (leopph::Vector3::Dot(m_CamTransform->Up(), leopph::Vector3::Up()) < 0)
+		if (leopph::Vector3::Dot(m_CamTransform->get_up_axis(), leopph::Vector3::Up()) < 0)
 		{
 			coefficient = -1;
 		}
 
-		m_CamTransform->Rotate(coefficient * leopph::Vector3::Up(), diffX * m_Sens, leopph::Space::World);
-		m_CamTransform->Rotate(leopph::Vector3::Right(), diffY * m_Sens, leopph::Space::Local);
+		m_CamTransform->rotate(coefficient * leopph::Vector3::Up(), diffX * m_Sens, leopph::Space::World);
+		m_CamTransform->rotate(leopph::Vector3::Right(), diffY * m_Sens, leopph::Space::Local);
 
 		m_LastX = posX;
 		m_LastY = posY;

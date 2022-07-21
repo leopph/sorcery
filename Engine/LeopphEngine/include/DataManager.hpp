@@ -170,7 +170,7 @@ namespace leopph::internal
 				                         return elemName < value;
 			                         }, [](auto const& elem) -> auto const&
 			                         {
-				                         return elem.Entity->Name();
+				                         return elem.Entity->get_name();
 			                         })
 		};
 		if (it != self->m_EntitiesAndComponents.end() && *it->Entity == name)

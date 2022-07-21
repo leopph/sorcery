@@ -32,7 +32,7 @@ namespace leopph::internal
 			if (comp->InUse())
 			{
 				RenderInstanceData instanceData;
-				auto const& [world, normal] = comp->Owner()->Transform()->Matrices();
+				auto const& [world, normal] = comp->Owner()->get_transform().get_matrices();
 				instanceData.WorldTransform = world;
 				instanceData.NormalTransform = normal;
 				instanceData.CastsShadow = comp->CastsShadow();

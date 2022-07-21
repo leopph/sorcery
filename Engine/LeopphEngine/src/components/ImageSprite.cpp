@@ -63,9 +63,9 @@ namespace leopph
 				// We fill the alpha channel width 255 where we store the image in the bounding image.
 				case 1:
 				{
-					for (auto i = 0; i < img.Height(); i++)
+					for (u32 i = 0; i < img.Height(); i++)
 					{
-						for (auto j = 0; j < img.Width(); j++)
+						for (u32 j = 0; j < img.Width(); j++)
 						{
 							for (auto k = 0; k < 3; k++)
 							{
@@ -80,9 +80,9 @@ namespace leopph
 				// We fill the alpha channel width 255 where we store the image in the bounding image.
 				case 3:
 				{
-					for (auto i = 0; i < img.Height(); i++)
+					for (u32 i = 0; i < img.Height(); i++)
 					{
-						for (auto j = 0; j < img.Width(); j++)
+						for (u32 j = 0; j < img.Width(); j++)
 						{
 							for (auto k = 0; k < 3; k++)
 							{
@@ -97,9 +97,9 @@ namespace leopph
 				// We put the alpha values in the opacity image.
 				case 4:
 				{
-					for (auto i = 0; i < img.Height(); i++)
+					for (u32 i = 0; i < img.Height(); i++)
 					{
-						for (auto j = 0; j < img.Width(); j++)
+						for (u32 j = 0; j < img.Width(); j++)
 						{
 							for (auto k = 0; k < 3; k++)
 							{

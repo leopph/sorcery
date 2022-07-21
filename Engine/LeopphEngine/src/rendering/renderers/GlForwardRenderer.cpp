@@ -67,7 +67,7 @@ namespace leopph::internal
 		auto* const lightingUbo = m_LightingUbos[m_PerFrameUboInd].mapping;
 
 		UboGenericData genericData;
-		genericData.cameraPosition = (*GetMainCamera())->Owner()->Transform()->Position();
+		genericData.cameraPosition = (*GetMainCamera())->Owner()->get_transform().get_position();
 		genericData.ambientLight = GetAmbLight();
 		*reinterpret_cast<UboGenericData*>(lightingUbo) = genericData;
 		auto offset = sizeof genericData;
@@ -88,8 +88,8 @@ namespace leopph::internal
 			for (auto const* const spotLight : spotLights)
 			{
 				UboSpotData spotData;
-				spotData.position = spotLight->Owner()->Transform()->Position();
-				spotData.direction = spotLight->Owner()->Transform()->Forward();
+				spotData.position = spotLight->Owner()->get_transform().get_position();
+				spotData.direction = spotLight->Owner()->get_transform().get_forward_axis();
 				spotData.diffuse = spotLight->Diffuse();
 				spotData.specular = spotLight->Specular();
 				spotData.range = spotLight->Range();
@@ -105,7 +105,7 @@ namespace leopph::internal
 			for (auto const* const pointLight : pointLights)
 			{
 				UboPointData pointData;
-				pointData.position = pointLight->Owner()->Transform()->Position();
+				pointData.position = pointLight->Owner()->get_transform().get_position();
 				pointData.diffuse = pointLight->Diffuse();
 				pointData.specular = pointLight->Specular();
 				pointData.range = pointLight->Range();

@@ -9,7 +9,7 @@ namespace leopph
 {
 	auto DirectionalLight::Direction() const noexcept -> Vector3 const&
 	{
-		return Component::Owner()->Transform()->Forward();
+		return Component::Owner()->get_transform().get_forward_axis();
 	}
 
 

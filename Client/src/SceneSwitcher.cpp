@@ -6,13 +6,13 @@
 
 namespace demo
 {
-	auto SceneSwitcher::Scene::Add(leopph::Entity* entity) -> void
+	void SceneSwitcher::Scene::Add(leopph::Entity* entity)
 	{
 		m_Entities.push_back(entity);
 	}
 
 
-	auto SceneSwitcher::Scene::Activate() const -> void
+	void SceneSwitcher::Scene::Activate() const
 	{
 		std::queue<leopph::Entity*> q;
 
@@ -26,12 +26,12 @@ namespace demo
 			auto const* entity = q.front();
 			q.pop();
 
-			for (auto const* child : entity->Transform()->Children())
+			for (auto const* child : entity->get_transform().get_children())
 			{
-				q.push(child->Owner());
+				q.push(child->get_entity());
 			}
 
-			entity->ActivateAllComponents();
+			entity->activate_all_components();
 		}
 
 		if (m_ActivationCallback)
@@ -41,7 +41,7 @@ namespace demo
 	}
 
 
-	auto SceneSwitcher::Scene::Deactivate() const -> void
+	void SceneSwitcher::Scene::Deactivate() const
 	{
 		std::queue<leopph::Entity*> q;
 
@@ -55,23 +55,23 @@ namespace demo
 			auto const* entity = q.front();
 			q.pop();
 
-			for (auto const* child : entity->Transform()->Children())
+			for (auto const* child : entity->get_transform().get_children())
 			{
-				q.push(child->Owner());
+				q.push(child->get_entity());
 			}
 
-			entity->DeactiveAllComponents();
+			entity->deactive_all_components();
 		}
 	}
 
 
-	auto SceneSwitcher::Scene::SetActivationCallback(std::function<void()> callback) -> void
+	void SceneSwitcher::Scene::SetActivationCallback(std::function<void()> callback)
 	{
 		m_ActivationCallback = std::move(callback);
 	}
 
 
-	auto SceneSwitcher::OnFrameUpdate() -> void
+	void SceneSwitcher::OnFrameUpdate()
 	{
 		std::ranges::for_each(m_Scenes, [this](auto& pair)
 		{
@@ -88,7 +88,7 @@ namespace demo
 	}
 
 
-	auto SceneSwitcher::CreateOrGetScene(leopph::KeyCode const key) -> Scene&
+	SceneSwitcher::Scene& SceneSwitcher::CreateOrGetScene(leopph::KeyCode const key)
 	{
 		return m_Scenes[key];
 	}

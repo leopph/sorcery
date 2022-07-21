@@ -40,8 +40,8 @@ namespace leopph::internal
 		ExtractAllConfig();
 		ExtractLights();
 
-		SelectNearestLights<SpotLight>(m_SpotLights, (*m_MainCamera)->Owner()->Transform()->Position(), m_NumMaxSpot);
-		SelectNearestLights<PointLight>(m_PointLights, (*m_MainCamera)->Owner()->Transform()->Position(), m_NumMaxPoint);
+		SelectNearestLights<SpotLight>(m_SpotLights, (*m_MainCamera)->Owner()->get_transform().get_position(), m_NumMaxSpot);
+		SelectNearestLights<PointLight>(m_PointLights, (*m_MainCamera)->Owner()->get_transform().get_position(), m_NumMaxPoint);
 		SeparateCastingLights<SpotLight>(m_SpotLights, m_CastingSpotLights, m_NonCastingSpotLights);
 		SeparateCastingLights<PointLight>(m_PointLights, m_CastingPointLights, m_NonCastingPointLights);
 
