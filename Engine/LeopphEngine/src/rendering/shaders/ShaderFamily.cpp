@@ -6,17 +6,22 @@
 #include "rendering/gl/GlCore.hpp"
 #include "rendering/shaders/ShaderProcessing.hpp"
 
+#include <algorithm>
 #include <format>
+#include <functional>
 #include <iterator>
+#include <limits>
 #include <optional>
 #include <ranges>
-#include <regex>
 #include <stdexcept>
+#include <Util.hpp>
 
 
 namespace leopph
 {
-	ShaderFamily::ShaderFamily(ShaderProgramSourceInfo sourceInfo, std::vector<ShaderOptionInfo> options)
+	ShaderFamily::ShaderFamily(ShaderProgramSourceInfo sourceInfo) :
+		m_CurrentPermutationBits{0},
+		m_SourceInfo{std::move(sourceInfo)}
 	{
 		auto const AddNewLineChars = [](std::vector<std::string>& lines)
 		{
@@ -26,16 +31,16 @@ namespace leopph
 			}
 		};
 
-		AddNewLineChars(sourceInfo.vertex);
+		AddNewLineChars(m_SourceInfo.vertex);
 
-		if (sourceInfo.geometry)
+		if (m_SourceInfo.geometry)
 		{
-			AddNewLineChars(*sourceInfo.geometry);
+			AddNewLineChars(*m_SourceInfo.geometry);
 		}
 
-		if (sourceInfo.fragment)
+		if (m_SourceInfo.fragment)
 		{
-			AddNewLineChars(*sourceInfo.fragment);
+			AddNewLineChars(*m_SourceInfo.fragment);
 		}
 
 		// A concrete state of an option
@@ -58,7 +63,7 @@ namespace leopph
 		// Generate option instances for the default (all 0 bits) permutation
 
 		std::vector<OptionInstance> defaultOptInstances;
-		for (auto const& [name, option] : m_OptionsByName)
+		/*for (auto const& [name, option] : m_OptionsByName)
 		{
 			defaultOptInstances.emplace_back(name, option.min);
 		}
@@ -101,7 +106,7 @@ namespace leopph
 					auto const digits = math::BinaryDigitCount(value);
 					for (u8 j = 0; j < digits; j++)
 					{
-						newInfo.bitset[option.index + j] = static_cast<bool>(value & (0x00000001 << j));
+						newInfo.bitset[option.shift + j] = static_cast<bool>(value & (0x00000001 << j));
 					}
 
 					tmpBuffer.emplace_back(std::move(newInfo));
@@ -250,44 +255,42 @@ namespace leopph
 
 			// Query uniform locations
 
-			GLint numUniforms;
-			glGetProgramInterfaceiv(perm.program, GL_UNIFORM, GL_ACTIVE_RESOURCES, &numUniforms);
-
-			GLint maxUniformNameLength;
-			glGetProgramInterfaceiv(perm.program, GL_UNIFORM, GL_MAX_NAME_LENGTH, &maxUniformNameLength);
-
-			std::string uniformName(maxUniformNameLength, 0);
-
-			for (auto i = 0; i < numUniforms; i++)
-			{
-				GLenum constexpr props[]{GL_LOCATION};
-				GLint uniformLocation;
-				glGetProgramResourceiv(perm.program, GL_UNIFORM, i, 1, props, 0, nullptr, &uniformLocation);
-				GLsizei uniformNameLength;
-				glGetProgramResourceName(perm.program, GL_UNIFORM, i, maxUniformNameLength, &uniformNameLength, uniformName.data());
-				perm.uniformLocations[uniformName.substr(0, uniformNameLength)] = uniformLocation;
-			}
+			QueryUniformLocations(perm);
 
 			// Store permutation
-			m_PermutationsByBits.emplace(std::move(permInstance.bitset), std::move(perm));
-		}
+			m_PermutationByBits.emplace(std::move(permInstance.bitset), std::move(perm));
+		}*/
 	}
 
 
 
-	auto ShaderFamily::Option(std::string_view const name, u8 value) -> void
+	auto ShaderFamily::SelectPermutation(PermutationBitset const bitset) -> void
 	{
-		auto const it = m_OptionsByName.find(name);
-
-		if (it == std::end(m_OptionsByName))
+		if (!m_PermutationByBits.contains(bitset))
 		{
-			#ifndef NDEBUG
+			if (!CompilePermutation(bitset))
+			{
+				internal::Logger::Instance().Error("Error while selecting permutation: the permutation was not ready, but an error occured while compiling it.");
+				return;
+			}
+		}
+
+		m_CurrentPermutationBits = bitset;
+	}
+
+
+
+	auto ShaderFamily::SetOption(std::string_view const name, u8 value) -> void
+	{
+		auto const it = m_OptionIndexByName.find(name);
+
+		if (it == std::end(m_OptionIndexByName))
+		{
 			internal::Logger::Instance().Trace(std::format("Ignoring attempt to set shader option [{}]: the option was not specified in the shader.", name));
-			#endif
 			return;
 		}
 
-		auto const& option = it->second;
+		auto const& option = m_InstanceOptions[it->second];
 
 		#ifndef NDEBUG
 		if (option.min > value || option.max < value)
@@ -299,24 +302,70 @@ namespace leopph
 		#endif
 
 		auto const normValue = value - option.min;
-		auto const range = option.max - option.min + 1;
-		auto const numBits = math::BinaryDigitCount(range);
-
-		u32 mask{0};
-
-		for (u8 i = 0; i < numBits; i++)
-		{
-			mask |= 1 << (i + option.index);
-		}
-
-		m_CurrentPermutationBits = (m_CurrentPermutationBits & (~mask)) | (normValue << option.index);
+		m_CurrentPermutationBits = (m_CurrentPermutationBits & (~option.mask)) | (normValue << option.shift);
 	}
 
 
 
-	auto ShaderFamily::Uniform(std::string_view const name, bool const value) const -> void
+	auto ShaderFamily::AddGlobalOption(std::string_view const name, u8 const min, u8 const max) -> bool
 	{
-		auto const& permutation = m_PermutationsByBits.find(m_CurrentPermutationBits)->second;
+		auto const maxValueNorm = max - min + 1;
+		auto const numBits = math::BinaryDigitCount(maxValueNorm);
+
+		if (auto const nextShift = NextFreeGlobalShift(numBits))
+		{
+			PermutationBitset const mask = ((1 << numBits) - 1) << *nextShift;
+			s_GlobalOptions.emplace_back(std::string{name}, mask, *nextShift, min, max);
+
+			return true;
+		}
+
+		return false;
+	}
+
+
+
+	auto ShaderFamily::NextFreeGlobalShift(u8 const requiredBits) -> std::optional<u8>
+	{
+		auto nextShift = std::numeric_limits<PermutationBitset>::digits;
+
+		for (auto const& option : s_GlobalOptions)
+		{
+			nextShift = std::min<decltype(nextShift)>(nextShift, option.shift);
+		}
+
+		if (nextShift - requiredBits >= 0)
+		{
+			return ClampCast<u8>(nextShift);
+		}
+
+		return std::nullopt;
+	}
+
+
+
+	auto ShaderFamily::NextFreeInstanceShift(u8 const requiredBits) const -> std::optional<u8>
+	{
+		auto nextShift{0};
+
+		for (auto const& option : m_InstanceOptions)
+		{
+			nextShift = std::max(option.shift + - math::BinaryDigitCount(option.max - option.min + 1), nextShift);
+		}
+
+		if (nextShift + requiredBits < std::numeric_limits<PermutationBitset>::digits)
+		{
+			return ClampCast<u8>(nextShift);
+		}
+
+		return std::nullopt;
+	}
+
+
+
+	auto ShaderFamily::SetUniform(std::string_view const name, bool const value) const -> void
+	{
+		auto const& permutation = m_PermutationByBits.find(m_CurrentPermutationBits)->second;
 		auto const uniformIt = permutation.uniformLocations.find(name);
 
 		#ifndef NDEBUG
@@ -332,9 +381,9 @@ namespace leopph
 
 
 
-	auto ShaderFamily::Uniform(std::string_view const name, i32 const value) const -> void
+	auto ShaderFamily::SetUniform(std::string_view const name, i32 const value) const -> void
 	{
-		auto const& permutation = m_PermutationsByBits.find(m_CurrentPermutationBits)->second;
+		auto const& permutation = m_PermutationByBits.find(m_CurrentPermutationBits)->second;
 		auto const uniformIt = permutation.uniformLocations.find(name);
 
 		#ifndef NDEBUG
@@ -350,9 +399,9 @@ namespace leopph
 
 
 
-	auto ShaderFamily::Uniform(std::string_view const name, u32 const value) const -> void
+	auto ShaderFamily::SetUniform(std::string_view const name, u32 const value) const -> void
 	{
-		auto const& permutation = m_PermutationsByBits.find(m_CurrentPermutationBits)->second;
+		auto const& permutation = m_PermutationByBits.find(m_CurrentPermutationBits)->second;
 		auto const uniformIt = permutation.uniformLocations.find(name);
 
 		#ifndef NDEBUG
@@ -368,9 +417,9 @@ namespace leopph
 
 
 
-	auto ShaderFamily::Uniform(std::string_view const name, f32 const value) const -> void
+	auto ShaderFamily::SetUniform(std::string_view const name, f32 const value) const -> void
 	{
-		auto const& permutation = m_PermutationsByBits.find(m_CurrentPermutationBits)->second;
+		auto const& permutation = m_PermutationByBits.find(m_CurrentPermutationBits)->second;
 		auto const uniformIt = permutation.uniformLocations.find(name);
 
 		#ifndef NDEBUG
@@ -386,9 +435,9 @@ namespace leopph
 
 
 
-	auto ShaderFamily::Uniform(std::string_view const name, Vector3 const& value) const -> void
+	auto ShaderFamily::SetUniform(std::string_view const name, Vector3 const& value) const -> void
 	{
-		auto const& permutation = m_PermutationsByBits.find(m_CurrentPermutationBits)->second;
+		auto const& permutation = m_PermutationByBits.find(m_CurrentPermutationBits)->second;
 		auto const uniformIt = permutation.uniformLocations.find(name);
 
 		#ifndef NDEBUG
@@ -404,9 +453,9 @@ namespace leopph
 
 
 
-	auto ShaderFamily::Uniform(std::string_view const name, Matrix4 const& value) const -> void
+	auto ShaderFamily::SetUniform(std::string_view const name, Matrix4 const& value) const -> void
 	{
-		auto const& permutation = m_PermutationsByBits.find(m_CurrentPermutationBits)->second;
+		auto const& permutation = m_PermutationByBits.find(m_CurrentPermutationBits)->second;
 		auto const uniformIt = permutation.uniformLocations.find(name);
 
 		#ifndef NDEBUG
@@ -422,9 +471,9 @@ namespace leopph
 
 
 
-	auto ShaderFamily::Uniform(std::string_view const name, std::span<i32 const> const values) const -> void
+	auto ShaderFamily::SetUniform(std::string_view const name, std::span<i32 const> const values) const -> void
 	{
-		auto const& permutation = m_PermutationsByBits.find(m_CurrentPermutationBits)->second;
+		auto const& permutation = m_PermutationByBits.find(m_CurrentPermutationBits)->second;
 		auto const uniformIt = permutation.uniformLocations.find(name);
 
 		#ifndef NDEBUG
@@ -435,14 +484,14 @@ namespace leopph
 		}
 		#endif
 
-		glProgramUniform1iv(permutation.program, uniformIt->second, values.size(), values.data());
+		glProgramUniform1iv(permutation.program, uniformIt->second, ClampCast<GLsizei>(values.size()), values.data());
 	}
 
 
 
-	auto ShaderFamily::Uniform(std::string_view const name, std::span<u32 const> const values) const -> void
+	auto ShaderFamily::SetUniform(std::string_view const name, std::span<u32 const> const values) const -> void
 	{
-		auto const& permutation = m_PermutationsByBits.find(m_CurrentPermutationBits)->second;
+		auto const& permutation = m_PermutationByBits.find(m_CurrentPermutationBits)->second;
 		auto const uniformIt = permutation.uniformLocations.find(name);
 
 		#ifndef NDEBUG
@@ -453,14 +502,14 @@ namespace leopph
 		}
 		#endif
 
-		glProgramUniform1uiv(permutation.program, uniformIt->second, values.size(), values.data());
+		glProgramUniform1uiv(permutation.program, uniformIt->second, ClampCast<GLsizei>(values.size()), values.data());
 	}
 
 
 
-	auto ShaderFamily::Uniform(std::string_view const name, std::span<f32 const> const values) const -> void
+	auto ShaderFamily::SetUniform(std::string_view const name, std::span<f32 const> const values) const -> void
 	{
-		auto const& permutation = m_PermutationsByBits.find(m_CurrentPermutationBits)->second;
+		auto const& permutation = m_PermutationByBits.find(m_CurrentPermutationBits)->second;
 		auto const uniformIt = permutation.uniformLocations.find(name);
 
 		#ifndef NDEBUG
@@ -471,14 +520,14 @@ namespace leopph
 		}
 		#endif
 
-		glProgramUniform1fv(permutation.program, uniformIt->second, values.size(), values.data());
+		glProgramUniform1fv(permutation.program, uniformIt->second, ClampCast<GLsizei>(values.size()), values.data());
 	}
 
 
 
-	auto ShaderFamily::Uniform(std::string_view const name, std::span<Vector3 const> const values) const -> void
+	auto ShaderFamily::SetUniform(std::string_view const name, std::span<Vector3 const> const values) const -> void
 	{
-		auto const& permutation = m_PermutationsByBits.find(m_CurrentPermutationBits)->second;
+		auto const& permutation = m_PermutationByBits.find(m_CurrentPermutationBits)->second;
 		auto const uniformIt = permutation.uniformLocations.find(name);
 
 		#ifndef NDEBUG
@@ -489,14 +538,14 @@ namespace leopph
 		}
 		#endif
 
-		glProgramUniform3fv(permutation.program, uniformIt->second, values.size(), values.data()->Data().data());
+		glProgramUniform3fv(permutation.program, uniformIt->second, ClampCast<GLsizei>(values.size()), values.data()->Data().data());
 	}
 
 
 
-	auto ShaderFamily::Uniform(std::string_view const name, std::span<Matrix4 const> const values) const -> void
+	auto ShaderFamily::SetUniform(std::string_view const name, std::span<Matrix4 const> const values) const -> void
 	{
-		auto const& permutation = m_PermutationsByBits.find(m_CurrentPermutationBits)->second;
+		auto const& permutation = m_PermutationByBits.find(m_CurrentPermutationBits)->second;
 		auto const uniformIt = permutation.uniformLocations.find(name);
 
 		#ifndef NDEBUG
@@ -507,14 +556,14 @@ namespace leopph
 		}
 		#endif
 
-		glProgramUniformMatrix4fv(permutation.program, uniformIt->second, values.size(), GL_TRUE, values.data()->Data().data()->Data().data());
+		glProgramUniformMatrix4fv(permutation.program, uniformIt->second, ClampCast<GLsizei>(values.size()), GL_TRUE, values.data()->Data().data()->Data().data());
 	}
 
 
 
 	auto ShaderFamily::UseCurrentPermutation() const -> void
 	{
-		glUseProgram(m_PermutationsByBits.find(m_CurrentPermutationBits)->second.program);
+		glUseProgram(m_PermutationByBits.find(m_CurrentPermutationBits)->second.program);
 	}
 
 
@@ -522,6 +571,204 @@ namespace leopph
 	auto ShaderFamily::LogInvalidUniformAccess(std::string_view const name) -> void
 	{
 		internal::Logger::Instance().Trace(std::format("Ignoring attempt to set shader uniform [{}]: the uniform does not exist in the current permutation.", name));
+	}
+
+
+
+	auto ShaderFamily::CompilePermutation(PermutationBitset const bitset) -> bool
+	{
+		u32 usedLocalBits{0};
+
+		for (auto const& instanceOption : m_InstanceOptions)
+		{
+			usedLocalBits = ClampCast<u32>(std::max<i64>(usedLocalBits, math::BinaryDigitCount(instanceOption.max - instanceOption.min + 1) + instanceOption.shift));
+		}
+
+		u32 usedGlobalBits{0};
+
+		for (auto const& globalOption : s_GlobalOptions)
+		{
+			usedGlobalBits = std::min<u32>(usedGlobalBits, globalOption.shift);
+		}
+
+		if (usedLocalBits + usedGlobalBits > std::numeric_limits<PermutationBitset>::digits)
+		{
+			internal::Logger::Instance().Error("Error while compiling shader permutation: too many options in total.");
+			return false;
+		}
+
+		std::vector<std::string> optionDefines;
+
+		for (auto const& options : {std::cref(m_InstanceOptions), std::cref(s_GlobalOptions)})
+		{
+			for (auto const& option : options.get())
+			{
+				auto const optionValue = (option.max & bitset) + option.min;
+
+				if (optionValue > option.max)
+				{
+					internal::Logger::Instance().Error(std::format("Error while compiling shader permutation: value [{}] for option [{}] is higher than its maximum [{}].", optionValue, option.name, option.max));
+					return false;
+				}
+
+				optionDefines.push_back(std::format("#define {} {}\n", option.name, optionValue));
+			}
+		}
+
+		auto sourceInfo = m_SourceInfo;
+		std::string versionLine = "#version 450 core\n";
+
+		auto const program = glCreateProgram();
+
+		if (sourceInfo.fragment)
+		{
+			sourceInfo.fragment->insert(std::begin(*sourceInfo.fragment), std::begin(optionDefines), std::end(optionDefines));
+			sourceInfo.fragment->insert(std::begin(*sourceInfo.fragment), versionLine);
+
+			auto const fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+
+			if (auto const infoLog = CompileShader(fragmentShader, *sourceInfo.fragment))
+			{
+				internal::Logger::Instance().Error(std::format("Error while compiling permutation: fragment shader failed to compile, reason: {}.", *infoLog));
+				glDeleteShader(fragmentShader);
+				glDeleteProgram(program);
+				return false;
+			}
+
+			glAttachShader(program, fragmentShader);
+			glDeleteShader(fragmentShader);
+		}
+
+		if (sourceInfo.geometry)
+		{
+			sourceInfo.geometry->insert(std::begin(*sourceInfo.geometry), std::begin(optionDefines), std::end(optionDefines));
+			sourceInfo.geometry->insert(std::begin(*sourceInfo.geometry), versionLine);
+
+			auto const geometryShader = glCreateShader(GL_GEOMETRY_SHADER);
+
+			if (auto const infoLog = CompileShader(geometryShader, *sourceInfo.geometry))
+			{
+				internal::Logger::Instance().Error(std::format("Error while compiling permutation: geometry shader failed to compile, reason: {}.", *infoLog));
+				glDeleteShader(geometryShader);
+				glDeleteProgram(program);
+				return false;
+			}
+
+			glAttachShader(program, geometryShader);
+			glDeleteShader(geometryShader);
+		}
+
+		sourceInfo.vertex.insert(std::begin(sourceInfo.vertex), std::make_move_iterator(std::begin(optionDefines)), std::make_move_iterator(std::end(optionDefines)));
+		sourceInfo.vertex.insert(std::begin(sourceInfo.vertex), std::move(versionLine));
+
+		auto const vertexShader = glCreateShader(GL_VERTEX_SHADER);
+
+		if (auto const infoLog = CompileShader(vertexShader, sourceInfo.vertex))
+		{
+			internal::Logger::Instance().Error(std::format("Error while compiling permutation: vertex shader failed to compile, reason: {}.", *infoLog));
+			glDeleteShader(vertexShader);
+			glDeleteProgram(program);
+			return false;
+		}
+
+		glAttachShader(program, vertexShader);
+		glDeleteShader(vertexShader);
+
+		if (auto const infoLog = LinkProgram(program))
+		{
+			internal::Logger::Instance().Error(std::format("Error while compiling permutation: program failed to link, reason: {}.", *infoLog));
+			glDeleteProgram(program);
+			return false;
+		}
+
+		auto& perm = m_PermutationByBits.emplace(bitset, program).first->second;
+		QueryUniformLocations(perm);
+
+		return true;
+	}
+
+
+
+	auto ShaderFamily::CompileShader(u32 const shader, std::span<std::string const> const lines) -> std::optional<std::string>
+	{
+		std::vector<char const*> linePtrs;
+		linePtrs.reserve(lines.size());
+
+		for (auto const& line : lines)
+		{
+			linePtrs.push_back(line.data());
+		}
+
+		glShaderSource(shader, ClampCast<GLsizei>(linePtrs.size()), linePtrs.data(), nullptr);
+		glCompileShader(shader);
+
+		GLint result;
+		glGetShaderiv(shader, GL_COMPILE_STATUS, &result);
+
+		if (result == GL_TRUE)
+		{
+			return std::nullopt;
+		}
+
+		glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &result);
+		std::string infoLog(result, ' ');
+
+		glGetShaderInfoLog(shader, result, nullptr, infoLog.data());
+		return std::move(infoLog);
+	}
+
+
+
+	auto ShaderFamily::LinkProgram(u32 const program) -> std::optional<std::string>
+	{
+		glLinkProgram(program);
+
+		GLint result;
+		glGetProgramiv(program, GL_LINK_STATUS, &result);
+
+		if (result == GL_TRUE)
+		{
+			return std::nullopt;
+		}
+
+		glGetProgramiv(program, GL_INFO_LOG_LENGTH, &result);
+		std::string infoLog(result, ' ');
+
+		glGetProgramInfoLog(program, result, nullptr, infoLog.data());
+		return std::move(infoLog);
+	}
+
+
+
+	auto ShaderFamily::QueryUniformLocations(Permutation& perm) -> void
+	{
+		GLint numUniforms;
+		glGetProgramInterfaceiv(perm.program, GL_UNIFORM, GL_ACTIVE_RESOURCES, &numUniforms);
+
+		GLint maxUniformNameLength;
+		glGetProgramInterfaceiv(perm.program, GL_UNIFORM, GL_MAX_NAME_LENGTH, &maxUniformNameLength);
+
+		std::string uniformName(maxUniformNameLength, 0);
+
+		for (auto i = 0; i < numUniforms; i++)
+		{
+			GLenum constexpr props[]{GL_LOCATION};
+			GLint uniformLocation;
+			glGetProgramResourceiv(perm.program, GL_UNIFORM, i, 1, props, 0, nullptr, &uniformLocation);
+			GLsizei uniformNameLength;
+			glGetProgramResourceName(perm.program, GL_UNIFORM, i, maxUniformNameLength, &uniformNameLength, uniformName.data());
+			perm.uniformLocations[uniformName.substr(0, uniformNameLength)] = uniformLocation;
+		}
+	}
+
+
+
+	ShaderFamily::~ShaderFamily()
+	{
+		for (auto const& permutation : m_PermutationByBits | std::views::values)
+		{
+			glDeleteProgram(permutation.program);
+		}
 	}
 
 

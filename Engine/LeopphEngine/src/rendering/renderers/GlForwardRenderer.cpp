@@ -119,11 +119,11 @@ namespace leopph::internal
 
 		if (GetDirLight())
 		{
-			m_ForwardObjectShader.Option("DIRLIGHT", true);
+			m_ForwardObjectShader.SetOption("DIRLIGHT", true);
 		}
-		m_ForwardObjectShader.Option("NUM_SPOT", GetCastingSpotLights().size() + GetNonCastingSpotLights().size());
-		m_ForwardObjectShader.Option("NUM_POINT", GetCastingPointLights().size() + GetNonCastingPointLights().size());
-		m_ForwardObjectShader.Option("TRANSPARENT", false);
+		m_ForwardObjectShader.SetOption("NUM_SPOT", GetCastingSpotLights().size() + GetNonCastingSpotLights().size());
+		m_ForwardObjectShader.SetOption("NUM_POINT", GetCastingPointLights().size() + GetNonCastingPointLights().size());
+		m_ForwardObjectShader.SetOption("TRANSPARENT", false);
 		m_ForwardObjectShader.UseCurrentPermutation();
 
 		for (auto const& [renderable, instances, castsShadow] : renderNodes)
@@ -141,7 +141,7 @@ namespace leopph::internal
 
 			m_SkyboxShader.UseCurrentPermutation();
 
-			m_SkyboxShader.Uniform("u_ViewProjMat", static_cast<Matrix4>(static_cast<Matrix3>(camViewMat)) * camProjMat);
+			m_SkyboxShader.SetUniform("u_ViewProjMat", static_cast<Matrix4>(static_cast<Matrix3>(camViewMat)) * camProjMat);
 
 			CreateOrGetSkyboxImpl(std::get<Skybox>(background).AllPaths())->Draw(m_SkyboxShader);
 		}
@@ -162,7 +162,7 @@ namespace leopph::internal
 		glClearNamedFramebufferfv(m_TransparencyBuffer.framebuffer, GL_COLOR, 1, &clearReveal);
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_TransparencyBuffer.framebuffer);
 
-		m_ForwardObjectShader.Option("TRANSPARENT", true);
+		m_ForwardObjectShader.SetOption("TRANSPARENT", true);
 		m_ForwardObjectShader.UseCurrentPermutation();
 
 		for (auto const& [renderable, instances, castsShadow] : renderNodes)
@@ -194,7 +194,7 @@ namespace leopph::internal
 		// GAMMA CORRECTION PASS
 		m_GammaCorrectShader.UseCurrentPermutation();
 
-		m_GammaCorrectShader.Uniform("u_GammaInverse", 1.f / GetGamma());
+		m_GammaCorrectShader.SetUniform("u_GammaInverse", 1.f / GetGamma());
 
 		glBindTextureUnit(0, m_PingPongBuffers[0].colorAttachment);
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_PingPongBuffers[1].framebuffer);

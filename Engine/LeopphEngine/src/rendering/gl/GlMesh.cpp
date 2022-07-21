@@ -83,44 +83,44 @@ namespace leopph::internal
 
 	auto GlMesh::DrawWithMaterial(ShaderFamily const& shader, GLuint nextFreeTextureUnit, GLsizei const instanceCount) const -> void
 	{
-		shader.Uniform("u_Material.diffuseColor", static_cast<Vector3>(m_Material->DiffuseColor));
-		shader.Uniform("u_Material.specularColor", static_cast<Vector3>(m_Material->SpecularColor));
-		shader.Uniform("u_Material.gloss", m_Material->Gloss);
-		shader.Uniform("u_Material.opacity", m_Material->Opacity);
+		shader.SetUniform("u_Material.diffuseColor", static_cast<Vector3>(m_Material->DiffuseColor));
+		shader.SetUniform("u_Material.specularColor", static_cast<Vector3>(m_Material->SpecularColor));
+		shader.SetUniform("u_Material.gloss", m_Material->Gloss);
+		shader.SetUniform("u_Material.opacity", m_Material->Opacity);
 
 		if (m_Material->DiffuseMap != nullptr)
 		{
-			shader.Uniform("u_Material.hasDiffuseMap", true);
-			shader.Uniform("u_Material.diffuseMap", static_cast<GLint>(nextFreeTextureUnit)); // cast to GLint because only glUniform1i[v] may be used to set sampler uniforms (wtf?)
+			shader.SetUniform("u_Material.hasDiffuseMap", true);
+			shader.SetUniform("u_Material.diffuseMap", static_cast<GLint>(nextFreeTextureUnit)); // cast to GLint because only glUniform1i[v] may be used to set sampler uniforms (wtf?)
 			glBindTextureUnit(nextFreeTextureUnit, m_Material->DiffuseMap->TextureName());
 			++nextFreeTextureUnit;
 		}
 		else
 		{
-			shader.Uniform("u_Material.hasDiffuseMap", false);
+			shader.SetUniform("u_Material.hasDiffuseMap", false);
 		}
 
 		if (m_Material->SpecularMap != nullptr)
 		{
-			shader.Uniform("u_Material.hasSpecularMap", true);
-			shader.Uniform("u_Material.specularMap", static_cast<GLint>(nextFreeTextureUnit)); // cast to GLint because only glUniform1i[v] may be used to set sampler uniforms (wtf?)
+			shader.SetUniform("u_Material.hasSpecularMap", true);
+			shader.SetUniform("u_Material.specularMap", static_cast<GLint>(nextFreeTextureUnit)); // cast to GLint because only glUniform1i[v] may be used to set sampler uniforms (wtf?)
 			glBindTextureUnit(nextFreeTextureUnit, m_Material->SpecularMap->TextureName());
 			++nextFreeTextureUnit;
 		}
 		else
 		{
-			shader.Uniform("u_Material.hasSpecularMap", false);
+			shader.SetUniform("u_Material.hasSpecularMap", false);
 		}
 
 		if (m_Material->OpacityMap)
 		{
-			shader.Uniform("u_Material.hasOpacityMap", true);
-			shader.Uniform("u_Material.opacityMap", static_cast<GLint>(nextFreeTextureUnit)); // cast to GLint because only glUniform1i[v] may be used to set sampler uniforms (wtf?)
+			shader.SetUniform("u_Material.hasOpacityMap", true);
+			shader.SetUniform("u_Material.opacityMap", static_cast<GLint>(nextFreeTextureUnit)); // cast to GLint because only glUniform1i[v] may be used to set sampler uniforms (wtf?)
 			glBindTextureUnit(nextFreeTextureUnit, m_Material->OpacityMap->TextureName());
 		}
 		else
 		{
-			shader.Uniform("u_Material.hasOpacityMap", false);
+			shader.SetUniform("u_Material.hasOpacityMap", false);
 		}
 
 		DrawWithoutMaterial(instanceCount);
