@@ -56,7 +56,7 @@ void main()
 		discard;
 	}
 
-		vec3 color = u_AmbientLight * frag.diff;
+	vec3 color = u_AmbientLight * frag.diff;
 
 	#if DIRLIGHT
 	vec3 dirEffect = DirLightEffect(frag, u_DirLight, u_CamPos);
@@ -68,9 +68,8 @@ void main()
 	color += dirEffect;
 	#endif
 
-
 	#if NUM_SPOT_NO_SHADOW
-	for (int i = 0; i < NUM_SPOT_SHADOW; i++)
+	for (int i = 0; i < NUM_SPOT_NO_SHADOW; i++)
 	{
 		color += SpotLightEffect(frag, u_NonCastingSpotLights[i], u_CamPos);
 	}
