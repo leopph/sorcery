@@ -46,7 +46,7 @@ namespace demo
 		auto const dirLight = dirLightEntity->CreateAndAttachComponent<DirectionalLight>();
 		dirLight->Diffuse(Vector3{.06f});
 		dirLight->Specular(dirLight->Diffuse());
-		dirLight->CastsShadow(true);
+		dirLight->CastsShadow(false);
 
 		auto const lamp = new Entity{"lamp"};
 		lamp->Transform()->Parent(group);
@@ -65,7 +65,7 @@ namespace demo
 		pLight->Diffuse(Vector3{1});
 		pLight->Specular(pLight->Diffuse());
 		pLight->Range(7);
-		pLight->CastsShadow(true);
+		pLight->CastsShadow(false);
 
 		pLightEntity->CreateAndAttachComponent<Flicker>(pLight, 0.75f, 3.5f, 0.05f, 0.6f);
 

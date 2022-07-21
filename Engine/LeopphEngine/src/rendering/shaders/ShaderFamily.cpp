@@ -7,6 +7,7 @@
 #include "rendering/shaders/ShaderProcessing.hpp"
 
 #include <algorithm>
+#include <array>
 #include <format>
 #include <functional>
 #include <iterator>
@@ -403,7 +404,7 @@ namespace leopph
 
 		auto const& permutation = **permOpt;
 		auto const uniformIt = permutation.uniformLocations.find(name);
-		
+
 		if (uniformIt == std::end(permutation.uniformLocations))
 		{
 			LogInvalidUniformAccess(name);
@@ -427,7 +428,7 @@ namespace leopph
 
 		auto const& permutation = **permOpt;
 		auto const uniformIt = permutation.uniformLocations.find(name);
-		
+
 		if (uniformIt == std::end(permutation.uniformLocations))
 		{
 			LogInvalidUniformAccess(name);
@@ -451,7 +452,7 @@ namespace leopph
 
 		auto const& permutation = **permOpt;
 		auto const uniformIt = permutation.uniformLocations.find(name);
-		
+
 		if (uniformIt == std::end(permutation.uniformLocations))
 		{
 			LogInvalidUniformAccess(name);
@@ -475,7 +476,7 @@ namespace leopph
 
 		auto const& permutation = **permOpt;
 		auto const uniformIt = permutation.uniformLocations.find(name);
-		
+
 		if (uniformIt == std::end(permutation.uniformLocations))
 		{
 			LogInvalidUniformAccess(name);
@@ -499,7 +500,7 @@ namespace leopph
 
 		auto const& permutation = **permOpt;
 		auto const uniformIt = permutation.uniformLocations.find(name);
-		
+
 		if (uniformIt == std::end(permutation.uniformLocations))
 		{
 			LogInvalidUniformAccess(name);
@@ -523,7 +524,7 @@ namespace leopph
 
 		auto const& permutation = **permOpt;
 		auto const uniformIt = permutation.uniformLocations.find(name);
-		
+
 		if (uniformIt == std::end(permutation.uniformLocations))
 		{
 			LogInvalidUniformAccess(name);
@@ -547,7 +548,7 @@ namespace leopph
 
 		auto const& permutation = **permOpt;
 		auto const uniformIt = permutation.uniformLocations.find(name);
-		
+
 		if (uniformIt == std::end(permutation.uniformLocations))
 		{
 			LogInvalidUniformAccess(name);
@@ -571,7 +572,7 @@ namespace leopph
 
 		auto const& permutation = **permOpt;
 		auto const uniformIt = permutation.uniformLocations.find(name);
-		
+
 		if (uniformIt == std::end(permutation.uniformLocations))
 		{
 			LogInvalidUniformAccess(name);
@@ -595,7 +596,7 @@ namespace leopph
 
 		auto const& permutation = **permOpt;
 		auto const uniformIt = permutation.uniformLocations.find(name);
-		
+
 		if (uniformIt == std::end(permutation.uniformLocations))
 		{
 			LogInvalidUniformAccess(name);
@@ -619,7 +620,7 @@ namespace leopph
 
 		auto const& permutation = **permOpt;
 		auto const uniformIt = permutation.uniformLocations.find(name);
-		
+
 		if (uniformIt == std::end(permutation.uniformLocations))
 		{
 			LogInvalidUniformAccess(name);
@@ -961,10 +962,13 @@ namespace leopph
 
 		for (auto i = 0; i < numUniforms; i++)
 		{
-			GLenum constexpr props[]{GL_LOCATION};
-
 			GLint uniformLocation;
-			glGetProgramResourceiv(perm.program, GL_UNIFORM, i, 1, props, 0, nullptr, &uniformLocation);
+			glGetProgramResourceiv(perm.program, GL_UNIFORM, i, 1, std::array<GLenum, 1>{GL_LOCATION}.data(), 1, nullptr, &uniformLocation);
+
+			if (uniformLocation == -1)
+			{
+				continue;
+			}
 
 			GLsizei uniformNameLength;
 			glGetProgramResourceName(perm.program, GL_UNIFORM, i, maxUniformNameLength, &uniformNameLength, uniformName.data());

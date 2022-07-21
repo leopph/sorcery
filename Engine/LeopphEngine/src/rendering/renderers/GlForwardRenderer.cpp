@@ -151,10 +151,10 @@ namespace leopph::internal
 			}
 		}
 
-		ShaderFamily::SetGlobalOption("NUM_SPOT_NO_SHADOW", GetNonCastingSpotLights().size());
-		ShaderFamily::SetGlobalOption("NUM_SPOT_SHADOW", GetCastingSpotLights().size());
-		ShaderFamily::SetGlobalOption("NUM_POINT_NO_SHADOW", GetNonCastingPointLights().size());
-		ShaderFamily::SetGlobalOption("NUM_POINT_SHADOW", GetCastingPointLights().size());
+		ShaderFamily::SetGlobalOption("NUM_SPOT_NO_SHADOW", ClampCast<u8>(GetNonCastingSpotLights().size()));
+		ShaderFamily::SetGlobalOption("NUM_SPOT_SHADOW", ClampCast<u8>(GetCastingSpotLights().size()));
+		ShaderFamily::SetGlobalOption("NUM_POINT_NO_SHADOW", ClampCast<u8>(GetNonCastingPointLights().size()));
+		ShaderFamily::SetGlobalOption("NUM_POINT_SHADOW", ClampCast<u8>(GetCastingPointLights().size()));
 		ShaderFamily::SetGlobalOption("TRANSPARENT", false);
 		m_ForwardObjectShader.UseCurrentPermutation();
 
