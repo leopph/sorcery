@@ -13,16 +13,18 @@
 #include <limits>
 #include <optional>
 #include <ranges>
-#include <stdexcept>
+#include <regex>
 #include <Util.hpp>
 
 
 namespace leopph
 {
 	ShaderFamily::ShaderFamily(ShaderProgramSourceInfo sourceInfo) :
-		m_CurrentPermutationBits{0},
+		m_CurrentPermutationBitset{0},
 		m_SourceInfo{std::move(sourceInfo)}
 	{
+		ExtractInstanceOptions();
+
 		auto const AddNewLineChars = [](std::vector<std::string>& lines)
 		{
 			for (auto& line : lines)
@@ -30,7 +32,7 @@ namespace leopph
 				line.push_back('\n');
 			}
 		};
-
+		
 		AddNewLineChars(m_SourceInfo.vertex);
 
 		if (m_SourceInfo.geometry)
@@ -43,7 +45,7 @@ namespace leopph
 			AddNewLineChars(*m_SourceInfo.fragment);
 		}
 
-		// A concrete state of an option
+		/*// A concrete state of an option
 		struct OptionInstance
 		{
 			std::string_view name;
@@ -63,13 +65,13 @@ namespace leopph
 		// Generate option instances for the default (all 0 bits) permutation
 
 		std::vector<OptionInstance> defaultOptInstances;
-		/*for (auto const& [name, option] : m_OptionsByName)
+		for (auto const& [name, option] : m_OptionsByName)
 		{
 			defaultOptInstances.emplace_back(name, option.min);
 		}
 
 		// Insert the default instance into the accumulator buffer
-		permutationInstances.emplace_back(m_CurrentPermutationBits, defaultOptInstances);
+		permutationInstances.emplace_back(m_CurrentPermutationBitset, defaultOptInstances);
 
 		// Permutate the already created instances
 
@@ -258,36 +260,37 @@ namespace leopph
 			QueryUniformLocations(perm);
 
 			// Store permutation
-			m_PermutationByBits.emplace(std::move(permInstance.bitset), std::move(perm));
+			m_PermutationByBitset.emplace(std::move(permInstance.bitset), std::move(perm));
 		}*/
 	}
 
 
 
-	auto ShaderFamily::SelectPermutation(PermutationBitset const bitset) -> void
+	auto ShaderFamily::SelectPermutation(PermutationBitset const bitset) -> bool
 	{
-		if (!m_PermutationByBits.contains(bitset))
+		if (!m_PermutationByBitset.contains(bitset))
 		{
 			if (!CompilePermutation(bitset))
 			{
 				internal::Logger::Instance().Error("Error while selecting permutation: the permutation was not ready, but an error occured while compiling it.");
-				return;
+				return false;
 			}
 		}
 
-		m_CurrentPermutationBits = bitset;
+		m_CurrentPermutationBitset = bitset;
+		return true;
 	}
 
 
 
-	auto ShaderFamily::SetOption(std::string_view const name, u8 value) -> void
+	auto ShaderFamily::SetOption(std::string_view const name, u8 value) -> bool
 	{
 		auto const it = m_OptionIndexByName.find(name);
 
 		if (it == std::end(m_OptionIndexByName))
 		{
 			internal::Logger::Instance().Trace(std::format("Ignoring attempt to set shader option [{}]: the option was not specified in the shader.", name));
-			return;
+			return false;
 		}
 
 		auto const& option = m_InstanceOptions[it->second];
@@ -297,12 +300,13 @@ namespace leopph
 		{
 			auto const errMsg = std::format("Error setting shader option value: value [{}] was out of range for option [{}].", value, name);
 			internal::Logger::Instance().Error(errMsg);
-			throw std::runtime_error{errMsg};
+			return false;
 		}
 		#endif
 
 		auto const normValue = value - option.min;
-		m_CurrentPermutationBits = (m_CurrentPermutationBits & (~option.mask)) | (normValue << option.shift);
+		m_CurrentPermutationBitset = (m_CurrentPermutationBitset & (~option.mask)) | (normValue << option.shift);
+		return true;
 	}
 
 
@@ -363,207 +367,450 @@ namespace leopph
 
 
 
-	auto ShaderFamily::SetUniform(std::string_view const name, bool const value) const -> void
+	auto ShaderFamily::SetUniform(std::string_view const name, bool const value) -> bool
 	{
-		auto const& permutation = m_PermutationByBits.find(m_CurrentPermutationBits)->second;
+		auto permIt = m_PermutationByBitset.find(m_CurrentPermutationBitset);
+
+		if (permIt == std::end(m_PermutationByBitset))
+		{
+			if (!CompilePermutation(m_CurrentPermutationBitset))
+			{
+				LogMissingPermutation();
+				return false;
+			}
+
+			permIt = m_PermutationByBitset.find(m_CurrentPermutationBitset);
+		}
+
+		auto const& permutation = permIt->second;
 		auto const uniformIt = permutation.uniformLocations.find(name);
 
 		#ifndef NDEBUG
 		if (uniformIt == std::end(permutation.uniformLocations))
 		{
 			LogInvalidUniformAccess(name);
-			return;
+			return false;
 		}
 		#endif
 
 		glProgramUniform1i(permutation.program, uniformIt->second, static_cast<GLint>(value));
+		return true;
 	}
 
 
 
-	auto ShaderFamily::SetUniform(std::string_view const name, i32 const value) const -> void
+	auto ShaderFamily::SetUniform(std::string_view const name, i32 const value) -> bool
 	{
-		auto const& permutation = m_PermutationByBits.find(m_CurrentPermutationBits)->second;
+		auto permIt = m_PermutationByBitset.find(m_CurrentPermutationBitset);
+
+		if (permIt == std::end(m_PermutationByBitset))
+		{
+			if (!CompilePermutation(m_CurrentPermutationBitset))
+			{
+				LogMissingPermutation();
+				return false;
+			}
+
+			permIt = m_PermutationByBitset.find(m_CurrentPermutationBitset);
+		}
+
+		auto const& permutation = permIt->second;
 		auto const uniformIt = permutation.uniformLocations.find(name);
 
 		#ifndef NDEBUG
 		if (uniformIt == std::end(permutation.uniformLocations))
 		{
 			LogInvalidUniformAccess(name);
-			return;
+			return false;
 		}
 		#endif
 
 		glProgramUniform1i(permutation.program, uniformIt->second, value);
+		return true;
 	}
 
 
 
-	auto ShaderFamily::SetUniform(std::string_view const name, u32 const value) const -> void
+	auto ShaderFamily::SetUniform(std::string_view const name, u32 const value) -> bool
 	{
-		auto const& permutation = m_PermutationByBits.find(m_CurrentPermutationBits)->second;
+		auto permIt = m_PermutationByBitset.find(m_CurrentPermutationBitset);
+
+		if (permIt == std::end(m_PermutationByBitset))
+		{
+			if (!CompilePermutation(m_CurrentPermutationBitset))
+			{
+				LogMissingPermutation();
+				return false;
+			}
+
+			permIt = m_PermutationByBitset.find(m_CurrentPermutationBitset);
+		}
+
+		auto const& permutation = permIt->second;
 		auto const uniformIt = permutation.uniformLocations.find(name);
 
 		#ifndef NDEBUG
 		if (uniformIt == std::end(permutation.uniformLocations))
 		{
 			LogInvalidUniformAccess(name);
-			return;
+			return false;
 		}
 		#endif
 
 		glProgramUniform1ui(permutation.program, uniformIt->second, value);
+		return true;
 	}
 
 
 
-	auto ShaderFamily::SetUniform(std::string_view const name, f32 const value) const -> void
+	auto ShaderFamily::SetUniform(std::string_view const name, f32 const value) -> bool
 	{
-		auto const& permutation = m_PermutationByBits.find(m_CurrentPermutationBits)->second;
+		auto permIt = m_PermutationByBitset.find(m_CurrentPermutationBitset);
+
+		if (permIt == std::end(m_PermutationByBitset))
+		{
+			if (!CompilePermutation(m_CurrentPermutationBitset))
+			{
+				LogMissingPermutation();
+				return false;
+			}
+
+			permIt = m_PermutationByBitset.find(m_CurrentPermutationBitset);
+		}
+
+		auto const& permutation = permIt->second;
 		auto const uniformIt = permutation.uniformLocations.find(name);
 
 		#ifndef NDEBUG
 		if (uniformIt == std::end(permutation.uniformLocations))
 		{
 			LogInvalidUniformAccess(name);
-			return;
+			return false;
 		}
 		#endif
 
 		glProgramUniform1f(permutation.program, uniformIt->second, value);
+		return true;
 	}
 
 
 
-	auto ShaderFamily::SetUniform(std::string_view const name, Vector3 const& value) const -> void
+	auto ShaderFamily::SetUniform(std::string_view const name, Vector3 const& value) -> bool
 	{
-		auto const& permutation = m_PermutationByBits.find(m_CurrentPermutationBits)->second;
+		auto permIt = m_PermutationByBitset.find(m_CurrentPermutationBitset);
+
+		if (permIt == std::end(m_PermutationByBitset))
+		{
+			if (!CompilePermutation(m_CurrentPermutationBitset))
+			{
+				LogMissingPermutation();
+				return false;
+			}
+
+			permIt = m_PermutationByBitset.find(m_CurrentPermutationBitset);
+		}
+
+		auto const& permutation = permIt->second;
 		auto const uniformIt = permutation.uniformLocations.find(name);
 
 		#ifndef NDEBUG
 		if (uniformIt == std::end(permutation.uniformLocations))
 		{
 			LogInvalidUniformAccess(name);
-			return;
+			return false;
 		}
 		#endif
 
 		glProgramUniform3fv(permutation.program, uniformIt->second, 1, value.Data().data());
+		return true;
 	}
 
 
 
-	auto ShaderFamily::SetUniform(std::string_view const name, Matrix4 const& value) const -> void
+	auto ShaderFamily::SetUniform(std::string_view const name, Matrix4 const& value) -> bool
 	{
-		auto const& permutation = m_PermutationByBits.find(m_CurrentPermutationBits)->second;
+		auto permIt = m_PermutationByBitset.find(m_CurrentPermutationBitset);
+
+		if (permIt == std::end(m_PermutationByBitset))
+		{
+			if (!CompilePermutation(m_CurrentPermutationBitset))
+			{
+				LogMissingPermutation();
+				return false;
+			}
+
+			permIt = m_PermutationByBitset.find(m_CurrentPermutationBitset);
+		}
+
+		auto const& permutation = permIt->second;
 		auto const uniformIt = permutation.uniformLocations.find(name);
 
 		#ifndef NDEBUG
 		if (uniformIt == std::end(permutation.uniformLocations))
 		{
 			LogInvalidUniformAccess(name);
-			return;
+			return false;
 		}
 		#endif
 
 		glProgramUniformMatrix4fv(permutation.program, uniformIt->second, 1, GL_TRUE, value.Data()[0].Data().data());
+		return true;
 	}
 
 
 
-	auto ShaderFamily::SetUniform(std::string_view const name, std::span<i32 const> const values) const -> void
+	auto ShaderFamily::SetUniform(std::string_view const name, std::span<i32 const> const values) -> bool
 	{
-		auto const& permutation = m_PermutationByBits.find(m_CurrentPermutationBits)->second;
+		auto permIt = m_PermutationByBitset.find(m_CurrentPermutationBitset);
+
+		if (permIt == std::end(m_PermutationByBitset))
+		{
+			if (!CompilePermutation(m_CurrentPermutationBitset))
+			{
+				LogMissingPermutation();
+				return false;
+			}
+
+			permIt = m_PermutationByBitset.find(m_CurrentPermutationBitset);
+		}
+
+		auto const& permutation = permIt->second;
 		auto const uniformIt = permutation.uniformLocations.find(name);
 
 		#ifndef NDEBUG
 		if (uniformIt == std::end(permutation.uniformLocations))
 		{
 			LogInvalidUniformAccess(name);
-			return;
+			return false;
 		}
 		#endif
 
 		glProgramUniform1iv(permutation.program, uniformIt->second, ClampCast<GLsizei>(values.size()), values.data());
+		return true;
 	}
 
 
 
-	auto ShaderFamily::SetUniform(std::string_view const name, std::span<u32 const> const values) const -> void
+	auto ShaderFamily::SetUniform(std::string_view const name, std::span<u32 const> const values) -> bool
 	{
-		auto const& permutation = m_PermutationByBits.find(m_CurrentPermutationBits)->second;
+		auto permIt = m_PermutationByBitset.find(m_CurrentPermutationBitset);
+
+		if (permIt == std::end(m_PermutationByBitset))
+		{
+			if (!CompilePermutation(m_CurrentPermutationBitset))
+			{
+				LogMissingPermutation();
+				return false;
+			}
+
+			permIt = m_PermutationByBitset.find(m_CurrentPermutationBitset);
+		}
+
+		auto const& permutation = permIt->second;
 		auto const uniformIt = permutation.uniformLocations.find(name);
 
 		#ifndef NDEBUG
 		if (uniformIt == std::end(permutation.uniformLocations))
 		{
 			LogInvalidUniformAccess(name);
-			return;
+			return false;
 		}
 		#endif
 
 		glProgramUniform1uiv(permutation.program, uniformIt->second, ClampCast<GLsizei>(values.size()), values.data());
+		return true;
 	}
 
 
 
-	auto ShaderFamily::SetUniform(std::string_view const name, std::span<f32 const> const values) const -> void
+	auto ShaderFamily::SetUniform(std::string_view const name, std::span<f32 const> const values) -> bool
 	{
-		auto const& permutation = m_PermutationByBits.find(m_CurrentPermutationBits)->second;
+		auto permIt = m_PermutationByBitset.find(m_CurrentPermutationBitset);
+
+		if (permIt == std::end(m_PermutationByBitset))
+		{
+			if (!CompilePermutation(m_CurrentPermutationBitset))
+			{
+				LogMissingPermutation();
+				return false;
+			}
+
+			permIt = m_PermutationByBitset.find(m_CurrentPermutationBitset);
+		}
+
+		auto const& permutation = permIt->second;
 		auto const uniformIt = permutation.uniformLocations.find(name);
 
 		#ifndef NDEBUG
 		if (uniformIt == std::end(permutation.uniformLocations))
 		{
 			LogInvalidUniformAccess(name);
-			return;
+			return false;
 		}
 		#endif
 
 		glProgramUniform1fv(permutation.program, uniformIt->second, ClampCast<GLsizei>(values.size()), values.data());
+		return true;
 	}
 
 
 
-	auto ShaderFamily::SetUniform(std::string_view const name, std::span<Vector3 const> const values) const -> void
+	auto ShaderFamily::SetUniform(std::string_view const name, std::span<Vector3 const> const values) -> bool
 	{
-		auto const& permutation = m_PermutationByBits.find(m_CurrentPermutationBits)->second;
+		auto permIt = m_PermutationByBitset.find(m_CurrentPermutationBitset);
+
+		if (permIt == std::end(m_PermutationByBitset))
+		{
+			if (!CompilePermutation(m_CurrentPermutationBitset))
+			{
+				LogMissingPermutation();
+				return false;
+			}
+
+			permIt = m_PermutationByBitset.find(m_CurrentPermutationBitset);
+		}
+
+		auto const& permutation = permIt->second;
 		auto const uniformIt = permutation.uniformLocations.find(name);
 
 		#ifndef NDEBUG
 		if (uniformIt == std::end(permutation.uniformLocations))
 		{
 			LogInvalidUniformAccess(name);
-			return;
+			return false;
 		}
 		#endif
 
 		glProgramUniform3fv(permutation.program, uniformIt->second, ClampCast<GLsizei>(values.size()), values.data()->Data().data());
+		return true;
 	}
 
 
 
-	auto ShaderFamily::SetUniform(std::string_view const name, std::span<Matrix4 const> const values) const -> void
+	auto ShaderFamily::SetUniform(std::string_view const name, std::span<Matrix4 const> const values) -> bool
 	{
-		auto const& permutation = m_PermutationByBits.find(m_CurrentPermutationBits)->second;
+		auto permIt = m_PermutationByBitset.find(m_CurrentPermutationBitset);
+
+		if (permIt == std::end(m_PermutationByBitset))
+		{
+			if (!CompilePermutation(m_CurrentPermutationBitset))
+			{
+				LogMissingPermutation();
+				return false;
+			}
+
+			permIt = m_PermutationByBitset.find(m_CurrentPermutationBitset);
+		}
+
+		auto const& permutation = permIt->second;
 		auto const uniformIt = permutation.uniformLocations.find(name);
 
 		#ifndef NDEBUG
 		if (uniformIt == std::end(permutation.uniformLocations))
 		{
 			LogInvalidUniformAccess(name);
-			return;
+			return false;
 		}
 		#endif
 
 		glProgramUniformMatrix4fv(permutation.program, uniformIt->second, ClampCast<GLsizei>(values.size()), GL_TRUE, values.data()->Data().data()->Data().data());
+		return true;
 	}
 
 
 
 	auto ShaderFamily::UseCurrentPermutation() const -> void
 	{
-		glUseProgram(m_PermutationByBits.find(m_CurrentPermutationBits)->second.program);
+		glUseProgram(m_PermutationByBitset.find(m_CurrentPermutationBitset)->second.program);
+	}
+
+
+
+	auto ShaderFamily::LogMissingPermutation() -> void
+	{
+		internal::Logger::Instance().Error("Error accessing shader permutation: the shader permutation does not exist.");
+	}
+
+
+
+	auto ShaderFamily::ExtractInstanceOptions() -> void
+	{
+		std::regex const static validFullOptionRegex{R"delim(^\s*#\s*pragma\s+option\s+name\s*=\s*[A-Za-z][\S]*\s+min\s*=\s*\d+\s+max\s*=\s*\d+\s*)delim"};
+		std::regex const static validShortOptionRegex{R"delim(^\s*#\s*pragma\s+option\s+name\s*=\s*[A-Za-z][\S]*\s*)delim"};
+		std::regex const static nameAssignment{R"delim(=\s*[A-Za-z][\S]*)delim"};
+		std::regex const static numberAssignment{R"delim(=\s*\d+)delim"};
+		std::regex const static nameIdentifier{R"delim([A-Za-z][\S]*)delim"};
+		std::regex const static number{R"delim(\d+)delim"};
+
+		auto const ExtractFrom = [this](std::vector<std::string>& lines) -> void
+		{
+			for (auto& line : lines)
+			{
+				if (std::regex_search(line, validFullOptionRegex))
+				{
+					std::regex_iterator nameAssignmentMatch{std::begin(line), std::end(line), nameAssignment};
+					auto const assignmentStr = nameAssignmentMatch->str();
+					std::regex_iterator nameMatch{std::begin(assignmentStr), std::end(assignmentStr), nameIdentifier};
+
+					std::regex_iterator numberAssignmentMatch{std::begin(line), std::end(line), numberAssignment};
+					auto const minAssignmentStr = numberAssignmentMatch->str();
+					std::regex_iterator minMatch{std::begin(minAssignmentStr), std::end(minAssignmentStr), number};
+
+					++numberAssignmentMatch;
+					auto const maxAssignmentStr = numberAssignmentMatch->str();
+					std::regex_iterator maxMatch{std::begin(maxAssignmentStr), std::end(maxAssignmentStr), number};
+
+					// Temporary mask and shift, will calculate it after eliminating duplicates.
+					m_InstanceOptions.emplace_back(nameMatch->str(), static_cast<u8>(0), static_cast<u8>(0), ClampCast<u8>(std::stoi(minMatch->str())), ClampCast<u8>(std::stoi(maxMatch->str())));
+					line.clear();
+				}
+				else if (std::regex_search(line, validShortOptionRegex))
+				{
+					std::regex_iterator nameAssignmentMatch{std::begin(line), std::end(line), nameAssignment};
+					auto const assignmentStr = nameAssignmentMatch->str();
+					std::regex_iterator nameMatch{std::begin(assignmentStr), std::end(assignmentStr), nameIdentifier};
+
+					// Temporary mask and shift, will calculate it after eliminating duplicates.
+					m_InstanceOptions.emplace_back(nameMatch->str(), static_cast<u8>(0u), static_cast<u8>(0u), static_cast<u8>(0u), static_cast<u8>(1u));
+					line.clear();
+				}
+			}
+		};
+
+		ExtractFrom(m_SourceInfo.vertex);
+
+		if (m_SourceInfo.geometry)
+		{
+			ExtractFrom(*m_SourceInfo.geometry);
+		}
+
+		if (m_SourceInfo.fragment)
+		{
+			ExtractFrom(*m_SourceInfo.fragment);
+		}
+
+		for (std::size_t i = 0; i < m_InstanceOptions.size(); i++)
+		{
+			for (auto j = i + 1; j < m_InstanceOptions.size();)
+			{
+				if (m_InstanceOptions[i].name == m_InstanceOptions[j].name)
+				{
+					if (m_InstanceOptions[i].min != m_InstanceOptions[j].min || m_InstanceOptions[i].max != m_InstanceOptions[j].max)
+					{
+						internal::Logger::Instance().Warning(std::format("Ignoring shader option [{}] while extracting because it was already specified with a different value set.", m_InstanceOptions[i].name));
+					}
+
+					m_InstanceOptions.erase(std::begin(m_InstanceOptions) + j);
+				}
+				else
+				{
+					j++;
+				}
+			}
+		}
+
+		// TODO assign mask and shift value to instance options
+
 	}
 
 
@@ -681,7 +928,7 @@ namespace leopph
 			return false;
 		}
 
-		auto& perm = m_PermutationByBits.emplace(bitset, program).first->second;
+		auto& perm = m_PermutationByBitset.emplace(bitset, program).first->second;
 		QueryUniformLocations(perm);
 
 		return true;
@@ -765,11 +1012,15 @@ namespace leopph
 
 	ShaderFamily::~ShaderFamily()
 	{
-		for (auto const& permutation : m_PermutationByBits | std::views::values)
+		for (auto const& permutation : m_PermutationByBitset | std::views::values)
 		{
 			glDeleteProgram(permutation.program);
 		}
 	}
+
+
+
+	std::vector<ShaderFamily::ShaderOptionInfo> ShaderFamily::s_GlobalOptions;
 
 
 

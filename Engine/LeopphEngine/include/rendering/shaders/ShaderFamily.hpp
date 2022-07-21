@@ -13,6 +13,8 @@
 #include <unordered_map>
 #include <vector>
 
+
+
 namespace leopph
 {
 	class ShaderFamily
@@ -25,7 +27,7 @@ namespace leopph
 
 		using PermutationBitset = u32;
 
-		struct ShaderOptionInstanceInfo
+		struct ShaderOptionInfo
 		{
 			std::string name;
 			PermutationBitset mask;
@@ -37,9 +39,9 @@ namespace leopph
 		public:
 			explicit ShaderFamily(ShaderProgramSourceInfo sourceInfo);
 
-			auto SelectPermutation(PermutationBitset bitset) -> void;
+			auto SelectPermutation(PermutationBitset bitset) -> bool;
 
-			auto SetOption(std::string_view name, u8 value) -> void;
+			auto SetOption(std::string_view name, u8 value) -> bool;
 			static auto AddGlobalOption(std::string_view name, u8 min, u8 max) -> bool;
 
 		private:
@@ -54,17 +56,17 @@ namespace leopph
 			[[nodiscard]] auto NextFreeInstanceShift(u8 requiredBits) const -> std::optional<u8>;
 
 		public:
-			auto SetUniform(std::string_view name, bool value) const -> void;
-			auto SetUniform(std::string_view name, i32 value) const -> void;
-			auto SetUniform(std::string_view name, u32 value) const -> void;
-			auto SetUniform(std::string_view name, f32 value) const -> void;
-			auto SetUniform(std::string_view name, Vector3 const& value) const -> void;
-			auto SetUniform(std::string_view name, Matrix4 const& value) const -> void;
-			auto SetUniform(std::string_view name, std::span<i32 const> values) const -> void;
-			auto SetUniform(std::string_view name, std::span<u32 const> values) const -> void;
-			auto SetUniform(std::string_view name, std::span<f32 const> values) const -> void;
-			auto SetUniform(std::string_view name, std::span<Vector3 const> values) const -> void;
-			auto SetUniform(std::string_view name, std::span<Matrix4 const> values) const -> void;
+			auto SetUniform(std::string_view name, bool value) -> bool;
+			auto SetUniform(std::string_view name, i32 value) -> bool;
+			auto SetUniform(std::string_view name, u32 value) -> bool;
+			auto SetUniform(std::string_view name, f32 value) -> bool;
+			auto SetUniform(std::string_view name, Vector3 const& value) -> bool;
+			auto SetUniform(std::string_view name, Matrix4 const& value) -> bool;
+			auto SetUniform(std::string_view name, std::span<i32 const> values) -> bool;
+			auto SetUniform(std::string_view name, std::span<u32 const> values) -> bool;
+			auto SetUniform(std::string_view name, std::span<f32 const> values) -> bool;
+			auto SetUniform(std::string_view name, std::span<Vector3 const> values) -> bool;
+			auto SetUniform(std::string_view name, std::span<Matrix4 const> values) -> bool;
 
 		private:
 			// Logs a message related to accessing a non-existent uniform.
@@ -74,10 +76,13 @@ namespace leopph
 			auto UseCurrentPermutation() const -> void;
 
 		private:
-			[[nodiscard]] auto CompilePermutation(PermutationBitset bitset) -> bool;
+			static auto LogMissingPermutation() -> void;
 
-			static auto CompileShader(u32 shader, std::span<std::string const> lines) -> std::optional<std::string>;
-			static auto LinkProgram(u32 program) -> std::optional<std::string>;
+			auto ExtractInstanceOptions() -> void;
+
+			[[nodiscard]] auto CompilePermutation(PermutationBitset bitset) -> bool;
+			[[nodiscard]] static auto CompileShader(u32 shader, std::span<std::string const> lines) -> std::optional<std::string>;
+			[[nodiscard]] static auto LinkProgram(u32 program) -> std::optional<std::string>;
 
 			// Queries the uniform locations from the permutation's program and fills its cache with the values.
 			static auto QueryUniformLocations(Permutation& perm) -> void;
@@ -92,14 +97,15 @@ namespace leopph
 			~ShaderFamily();
 
 		private:
-			static std::vector<ShaderOptionInstanceInfo> s_GlobalOptions;
+			static std::vector<ShaderOptionInfo> s_GlobalOptions;
 
-			std::vector<ShaderOptionInstanceInfo> m_InstanceOptions;
+			std::vector<ShaderOptionInfo> m_InstanceOptions;
 			std::unordered_map<std::string, std::size_t, StringHash, StringEqual> m_OptionIndexByName;
-			std::unordered_map<PermutationBitset, Permutation> m_PermutationByBits;
-			PermutationBitset m_CurrentPermutationBits;
+			std::unordered_map<PermutationBitset, Permutation> m_PermutationByBitset;
+			PermutationBitset m_CurrentPermutationBitset;
 			ShaderProgramSourceInfo m_SourceInfo;
 	};
+
 
 
 	[[nodiscard]] auto MakeShaderFamily(std::filesystem::path vertexShaderPath, std::filesystem::path geometryShaderPath = {}, std::filesystem::path fragmentShaderPath = {}) -> ShaderFamily;

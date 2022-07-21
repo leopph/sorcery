@@ -81,7 +81,7 @@ namespace leopph::internal
 	}
 
 
-	auto GlMesh::DrawWithMaterial(ShaderFamily const& shader, GLuint nextFreeTextureUnit, GLsizei const instanceCount) const -> void
+	auto GlMesh::DrawWithMaterial(ShaderFamily& shader, GLuint nextFreeTextureUnit, GLsizei const instanceCount) const -> void
 	{
 		shader.SetUniform("u_Material.diffuseColor", static_cast<Vector3>(m_Material->DiffuseColor));
 		shader.SetUniform("u_Material.specularColor", static_cast<Vector3>(m_Material->SpecularColor));

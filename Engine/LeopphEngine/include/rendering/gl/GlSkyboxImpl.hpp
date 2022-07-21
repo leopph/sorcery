@@ -19,7 +19,7 @@ namespace leopph::internal
 			// Param is in the format that BuildAllPaths generates.
 			explicit GlSkyboxImpl(std::filesystem::path allFilePaths);
 
-			auto Draw(ShaderFamily const& shader) const -> void;
+			auto Draw(ShaderFamily& shader) const -> void;
 
 			[[nodiscard]] auto LeftPath() const noexcept -> std::filesystem::path const&;
 			[[nodiscard]] auto RightPath() const noexcept -> std::filesystem::path const&;

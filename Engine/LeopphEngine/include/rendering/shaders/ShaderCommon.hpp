@@ -27,11 +27,4 @@ namespace leopph
 		std::optional<std::vector<std::string>> geometry;
 		std::optional<std::vector<std::string>> fragment;
 	};
-
-	struct ShaderOptionInfo
-	{
-		std::string name;
-		u8 minValue;
-		u8 maxValue;
-	};
 }

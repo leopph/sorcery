@@ -16,7 +16,7 @@ namespace leopph::internal
 			// instanceBuffer must be a valid buffer object.
 			GlMesh(Mesh const& mesh, GLuint instanceBuffer);
 
-			auto DrawWithMaterial(ShaderFamily const& shader, GLuint nextFreeTextureUnit, GLsizei instanceCount) const -> void;
+			auto DrawWithMaterial(ShaderFamily& shader, GLuint nextFreeTextureUnit, GLsizei instanceCount) const -> void;
 
 			auto DrawWithoutMaterial(GLsizei instanceCount) const -> void;
 

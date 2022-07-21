@@ -21,7 +21,7 @@ namespace leopph::internal
 		public:
 			explicit GlMeshGroup(MeshGroup meshGroup);
 
-			auto DrawWithMaterial(ShaderFamily const& shader, GLuint nextFreeTextureUnit, bool transparent) const -> void;
+			auto DrawWithMaterial(ShaderFamily& shader, GLuint nextFreeTextureUnit, bool transparent) const -> void;
 
 			auto DrawWithoutMaterial(bool transparent) const -> void;
 

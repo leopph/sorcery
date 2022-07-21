@@ -75,7 +75,7 @@ namespace leopph::internal
 	}
 
 
-	auto GlSkyboxImpl::Draw(ShaderFamily const& shader) const -> void
+	auto GlSkyboxImpl::Draw(ShaderFamily& shader) const -> void
 	{
 		glBindTextureUnit(0, m_Cubemap);
 		shader.SetUniform("u_CubeMap", 0);
