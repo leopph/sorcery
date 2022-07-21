@@ -1,6 +1,6 @@
 //! #version 450 core
 
-#pragma option name=TRANSPARENT //! #define TRANSPARENT 1
+//! #define TRANSPARENT 1
 
 #include "LightingBuffer.glsl"
 

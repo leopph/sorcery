@@ -25,8 +25,8 @@ namespace leopph::internal
 			auto Render() -> void override;
 
 		private:
-			void CreateUbo(u64 index, u64 size);
-			void DeleteUbo(u64 index) const;
+			static auto CreateUbo(MappedBuffer& ubo, u64 size) -> void;
+			static auto DeleteUbo(MappedBuffer const& ubo) -> void;
 
 
 		public:
@@ -50,7 +50,9 @@ namespace leopph::internal
 			 * DATA MEMBERS
 			 * ############ */
 
-			std::array<MappedBuffer,3> m_PerFrameUbos{};
+			auto static constexpr TRANSFORM_UBO_SIZE = 6 * sizeof(Matrix4);
+			std::array<MappedBuffer, 3> m_TransformUbos{};
+			std::array<MappedBuffer, 3> m_LightingUbos{};
 			u64 m_PerFrameUboInd{0};
 	};
 
@@ -58,9 +60,8 @@ namespace leopph::internal
 
 	struct GlForwardRenderer::UboGenericData
 	{
-		Matrix4 viewProjMat;
+		Vector3 cameraPosition;
 		alignas(16) Vector3 ambientLight;
-		alignas(16) Vector3 cameraPosition;
 	};
 
 

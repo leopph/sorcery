@@ -41,7 +41,9 @@ namespace leopph
 
 			auto SelectPermutation(PermutationBitset bitset) -> bool;
 
-			auto SetOption(std::string_view name, u8 value) -> bool;
+			auto SetInstanceOption(std::string_view name, u8 value) -> bool;
+
+			static auto SetGlobalOption(std::string_view name, u8 value) -> bool;
 			static auto AddGlobalOption(std::string_view name, u8 min, u8 max) -> bool;
 
 		private:
@@ -73,9 +75,10 @@ namespace leopph
 			static auto LogInvalidUniformAccess(std::string_view name) -> void;
 
 		public:
-			auto UseCurrentPermutation() const -> void;
+			auto UseCurrentPermutation() -> bool;
 
 		private:
+			auto GetCurrentPermutation() -> std::optional<Permutation*>;
 			static auto LogMissingPermutation() -> void;
 
 			auto ExtractInstanceOptions() -> void;
@@ -97,12 +100,17 @@ namespace leopph
 			~ShaderFamily();
 
 		private:
+			static std::vector<ShaderFamily*> s_Instances;
+
 			static std::vector<ShaderOptionInfo> s_GlobalOptions;
+			static std::unordered_map<std::string, std::size_t, StringHash, StringEqual> s_GlobalOptionIndexByName;
 
 			std::vector<ShaderOptionInfo> m_InstanceOptions;
-			std::unordered_map<std::string, std::size_t, StringHash, StringEqual> m_OptionIndexByName;
+			std::unordered_map<std::string, std::size_t, StringHash, StringEqual> m_InstanceOptionIndexByName;
+
 			std::unordered_map<PermutationBitset, Permutation> m_PermutationByBitset;
 			PermutationBitset m_CurrentPermutationBitset;
+
 			ShaderProgramSourceInfo m_SourceInfo;
 	};
 

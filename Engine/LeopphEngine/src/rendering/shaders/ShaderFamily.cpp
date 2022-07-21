@@ -14,7 +14,6 @@
 #include <optional>
 #include <ranges>
 #include <regex>
-#include <Util.hpp>
 
 
 namespace leopph
@@ -32,7 +31,7 @@ namespace leopph
 				line.push_back('\n');
 			}
 		};
-		
+
 		AddNewLineChars(m_SourceInfo.vertex);
 
 		if (m_SourceInfo.geometry)
@@ -44,6 +43,8 @@ namespace leopph
 		{
 			AddNewLineChars(*m_SourceInfo.fragment);
 		}
+
+		s_Instances.push_back(this);
 
 		/*// A concrete state of an option
 		struct OptionInstance
@@ -283,13 +284,13 @@ namespace leopph
 
 
 
-	auto ShaderFamily::SetOption(std::string_view const name, u8 value) -> bool
+	auto ShaderFamily::SetInstanceOption(std::string_view const name, u8 value) -> bool
 	{
-		auto const it = m_OptionIndexByName.find(name);
+		auto const it = m_InstanceOptionIndexByName.find(name);
 
-		if (it == std::end(m_OptionIndexByName))
+		if (it == std::end(m_InstanceOptionIndexByName))
 		{
-			internal::Logger::Instance().Trace(std::format("Ignoring attempt to set shader option [{}]: the option was not specified in the shader.", name));
+			internal::Logger::Instance().Trace(std::format("Ignoring attempt to set instance shader option [{}]: the option was not specified in the shader.", name));
 			return false;
 		}
 
@@ -298,14 +299,47 @@ namespace leopph
 		#ifndef NDEBUG
 		if (option.min > value || option.max < value)
 		{
-			auto const errMsg = std::format("Error setting shader option value: value [{}] was out of range for option [{}].", value, name);
-			internal::Logger::Instance().Error(errMsg);
+			internal::Logger::Instance().Error(std::format("Error setting instance shader option value: value [{}] was out of range for option [{}].", value, name));
 			return false;
 		}
 		#endif
 
 		auto const normValue = value - option.min;
 		m_CurrentPermutationBitset = (m_CurrentPermutationBitset & (~option.mask)) | (normValue << option.shift);
+		return true;
+	}
+
+
+
+	auto ShaderFamily::SetGlobalOption(std::string_view const name, u8 const value) -> bool
+	{
+		auto const it = s_GlobalOptionIndexByName.find(name);
+
+		if (it == std::end(s_GlobalOptionIndexByName))
+		{
+			internal::Logger::Instance().Trace(std::format("Ignoring attempt to set global shader option [{}]: the option does not exist.", name));
+			return false;
+		}
+
+		auto const& option = s_GlobalOptions[it->second];
+
+		#ifndef NDEBUG
+		if (option.min > value || option.max < value)
+		{
+			internal::Logger::Instance().Error(std::format("Error setting global shader option value: value [{}] was out of range for option [{}].", value, name));
+			return false;
+		}
+		#endif
+
+		auto const normValue = value - option.min;
+		auto const shiftedNormValue = normValue << option.shift;
+		auto const negMask = ~option.mask;
+
+		for (auto* const shaderFamily : s_Instances)
+		{
+			shaderFamily->m_CurrentPermutationBitset = (shaderFamily->m_CurrentPermutationBitset & negMask) | shiftedNormValue;
+		}
+
 		return true;
 	}
 
@@ -320,6 +354,7 @@ namespace leopph
 		{
 			PermutationBitset const mask = ((1 << numBits) - 1) << *nextShift;
 			s_GlobalOptions.emplace_back(std::string{name}, mask, *nextShift, min, max);
+			s_GlobalOptionIndexByName[std::string{name}] = s_GlobalOptions.size() - 1;
 
 			return true;
 		}
@@ -369,20 +404,14 @@ namespace leopph
 
 	auto ShaderFamily::SetUniform(std::string_view const name, bool const value) -> bool
 	{
-		auto permIt = m_PermutationByBitset.find(m_CurrentPermutationBitset);
+		auto const permOpt = GetCurrentPermutation();
 
-		if (permIt == std::end(m_PermutationByBitset))
+		if (!permOpt)
 		{
-			if (!CompilePermutation(m_CurrentPermutationBitset))
-			{
-				LogMissingPermutation();
-				return false;
-			}
-
-			permIt = m_PermutationByBitset.find(m_CurrentPermutationBitset);
+			return false;
 		}
 
-		auto const& permutation = permIt->second;
+		auto const& permutation = **permOpt;
 		auto const uniformIt = permutation.uniformLocations.find(name);
 
 		#ifndef NDEBUG
@@ -401,20 +430,14 @@ namespace leopph
 
 	auto ShaderFamily::SetUniform(std::string_view const name, i32 const value) -> bool
 	{
-		auto permIt = m_PermutationByBitset.find(m_CurrentPermutationBitset);
+		auto const permOpt = GetCurrentPermutation();
 
-		if (permIt == std::end(m_PermutationByBitset))
+		if (!permOpt)
 		{
-			if (!CompilePermutation(m_CurrentPermutationBitset))
-			{
-				LogMissingPermutation();
-				return false;
-			}
-
-			permIt = m_PermutationByBitset.find(m_CurrentPermutationBitset);
+			return false;
 		}
 
-		auto const& permutation = permIt->second;
+		auto const& permutation = **permOpt;
 		auto const uniformIt = permutation.uniformLocations.find(name);
 
 		#ifndef NDEBUG
@@ -433,20 +456,14 @@ namespace leopph
 
 	auto ShaderFamily::SetUniform(std::string_view const name, u32 const value) -> bool
 	{
-		auto permIt = m_PermutationByBitset.find(m_CurrentPermutationBitset);
+		auto const permOpt = GetCurrentPermutation();
 
-		if (permIt == std::end(m_PermutationByBitset))
+		if (!permOpt)
 		{
-			if (!CompilePermutation(m_CurrentPermutationBitset))
-			{
-				LogMissingPermutation();
-				return false;
-			}
-
-			permIt = m_PermutationByBitset.find(m_CurrentPermutationBitset);
+			return false;
 		}
 
-		auto const& permutation = permIt->second;
+		auto const& permutation = **permOpt;
 		auto const uniformIt = permutation.uniformLocations.find(name);
 
 		#ifndef NDEBUG
@@ -465,20 +482,14 @@ namespace leopph
 
 	auto ShaderFamily::SetUniform(std::string_view const name, f32 const value) -> bool
 	{
-		auto permIt = m_PermutationByBitset.find(m_CurrentPermutationBitset);
+		auto const permOpt = GetCurrentPermutation();
 
-		if (permIt == std::end(m_PermutationByBitset))
+		if (!permOpt)
 		{
-			if (!CompilePermutation(m_CurrentPermutationBitset))
-			{
-				LogMissingPermutation();
-				return false;
-			}
-
-			permIt = m_PermutationByBitset.find(m_CurrentPermutationBitset);
+			return false;
 		}
 
-		auto const& permutation = permIt->second;
+		auto const& permutation = **permOpt;
 		auto const uniformIt = permutation.uniformLocations.find(name);
 
 		#ifndef NDEBUG
@@ -497,20 +508,14 @@ namespace leopph
 
 	auto ShaderFamily::SetUniform(std::string_view const name, Vector3 const& value) -> bool
 	{
-		auto permIt = m_PermutationByBitset.find(m_CurrentPermutationBitset);
+		auto const permOpt = GetCurrentPermutation();
 
-		if (permIt == std::end(m_PermutationByBitset))
+		if (!permOpt)
 		{
-			if (!CompilePermutation(m_CurrentPermutationBitset))
-			{
-				LogMissingPermutation();
-				return false;
-			}
-
-			permIt = m_PermutationByBitset.find(m_CurrentPermutationBitset);
+			return false;
 		}
 
-		auto const& permutation = permIt->second;
+		auto const& permutation = **permOpt;
 		auto const uniformIt = permutation.uniformLocations.find(name);
 
 		#ifndef NDEBUG
@@ -529,20 +534,14 @@ namespace leopph
 
 	auto ShaderFamily::SetUniform(std::string_view const name, Matrix4 const& value) -> bool
 	{
-		auto permIt = m_PermutationByBitset.find(m_CurrentPermutationBitset);
+		auto const permOpt = GetCurrentPermutation();
 
-		if (permIt == std::end(m_PermutationByBitset))
+		if (!permOpt)
 		{
-			if (!CompilePermutation(m_CurrentPermutationBitset))
-			{
-				LogMissingPermutation();
-				return false;
-			}
-
-			permIt = m_PermutationByBitset.find(m_CurrentPermutationBitset);
+			return false;
 		}
 
-		auto const& permutation = permIt->second;
+		auto const& permutation = **permOpt;
 		auto const uniformIt = permutation.uniformLocations.find(name);
 
 		#ifndef NDEBUG
@@ -561,20 +560,14 @@ namespace leopph
 
 	auto ShaderFamily::SetUniform(std::string_view const name, std::span<i32 const> const values) -> bool
 	{
-		auto permIt = m_PermutationByBitset.find(m_CurrentPermutationBitset);
+		auto const permOpt = GetCurrentPermutation();
 
-		if (permIt == std::end(m_PermutationByBitset))
+		if (!permOpt)
 		{
-			if (!CompilePermutation(m_CurrentPermutationBitset))
-			{
-				LogMissingPermutation();
-				return false;
-			}
-
-			permIt = m_PermutationByBitset.find(m_CurrentPermutationBitset);
+			return false;
 		}
 
-		auto const& permutation = permIt->second;
+		auto const& permutation = **permOpt;
 		auto const uniformIt = permutation.uniformLocations.find(name);
 
 		#ifndef NDEBUG
@@ -593,20 +586,14 @@ namespace leopph
 
 	auto ShaderFamily::SetUniform(std::string_view const name, std::span<u32 const> const values) -> bool
 	{
-		auto permIt = m_PermutationByBitset.find(m_CurrentPermutationBitset);
+		auto const permOpt = GetCurrentPermutation();
 
-		if (permIt == std::end(m_PermutationByBitset))
+		if (!permOpt)
 		{
-			if (!CompilePermutation(m_CurrentPermutationBitset))
-			{
-				LogMissingPermutation();
-				return false;
-			}
-
-			permIt = m_PermutationByBitset.find(m_CurrentPermutationBitset);
+			return false;
 		}
 
-		auto const& permutation = permIt->second;
+		auto const& permutation = **permOpt;
 		auto const uniformIt = permutation.uniformLocations.find(name);
 
 		#ifndef NDEBUG
@@ -625,20 +612,14 @@ namespace leopph
 
 	auto ShaderFamily::SetUniform(std::string_view const name, std::span<f32 const> const values) -> bool
 	{
-		auto permIt = m_PermutationByBitset.find(m_CurrentPermutationBitset);
+		auto const permOpt = GetCurrentPermutation();
 
-		if (permIt == std::end(m_PermutationByBitset))
+		if (!permOpt)
 		{
-			if (!CompilePermutation(m_CurrentPermutationBitset))
-			{
-				LogMissingPermutation();
-				return false;
-			}
-
-			permIt = m_PermutationByBitset.find(m_CurrentPermutationBitset);
+			return false;
 		}
 
-		auto const& permutation = permIt->second;
+		auto const& permutation = **permOpt;
 		auto const uniformIt = permutation.uniformLocations.find(name);
 
 		#ifndef NDEBUG
@@ -657,20 +638,14 @@ namespace leopph
 
 	auto ShaderFamily::SetUniform(std::string_view const name, std::span<Vector3 const> const values) -> bool
 	{
-		auto permIt = m_PermutationByBitset.find(m_CurrentPermutationBitset);
+		auto const permOpt = GetCurrentPermutation();
 
-		if (permIt == std::end(m_PermutationByBitset))
+		if (!permOpt)
 		{
-			if (!CompilePermutation(m_CurrentPermutationBitset))
-			{
-				LogMissingPermutation();
-				return false;
-			}
-
-			permIt = m_PermutationByBitset.find(m_CurrentPermutationBitset);
+			return false;
 		}
 
-		auto const& permutation = permIt->second;
+		auto const& permutation = **permOpt;
 		auto const uniformIt = permutation.uniformLocations.find(name);
 
 		#ifndef NDEBUG
@@ -689,20 +664,14 @@ namespace leopph
 
 	auto ShaderFamily::SetUniform(std::string_view const name, std::span<Matrix4 const> const values) -> bool
 	{
-		auto permIt = m_PermutationByBitset.find(m_CurrentPermutationBitset);
+		auto const permOpt = GetCurrentPermutation();
 
-		if (permIt == std::end(m_PermutationByBitset))
+		if (!permOpt)
 		{
-			if (!CompilePermutation(m_CurrentPermutationBitset))
-			{
-				LogMissingPermutation();
-				return false;
-			}
-
-			permIt = m_PermutationByBitset.find(m_CurrentPermutationBitset);
+			return false;
 		}
 
-		auto const& permutation = permIt->second;
+		auto const& permutation = **permOpt;
 		auto const uniformIt = permutation.uniformLocations.find(name);
 
 		#ifndef NDEBUG
@@ -719,9 +688,37 @@ namespace leopph
 
 
 
-	auto ShaderFamily::UseCurrentPermutation() const -> void
+	auto ShaderFamily::UseCurrentPermutation() -> bool
 	{
-		glUseProgram(m_PermutationByBitset.find(m_CurrentPermutationBitset)->second.program);
+		auto const permOpt = GetCurrentPermutation();
+
+		if (!permOpt)
+		{
+			return false;
+		}
+
+		glUseProgram((*permOpt)->program);
+		return true;
+	}
+
+
+
+	auto ShaderFamily::GetCurrentPermutation() -> std::optional<Permutation*>
+	{
+		auto permIt = m_PermutationByBitset.find(m_CurrentPermutationBitset);
+
+		if (permIt == std::end(m_PermutationByBitset))
+		{
+			if (!CompilePermutation(m_CurrentPermutationBitset))
+			{
+				LogMissingPermutation();
+				return std::nullopt;
+			}
+
+			permIt = m_PermutationByBitset.find(m_CurrentPermutationBitset);
+		}
+
+		return &permIt->second;
 	}
 
 
@@ -809,8 +806,15 @@ namespace leopph
 			}
 		}
 
-		// TODO assign mask and shift value to instance options
+		u8 nextShift{0};
 
+		for (auto& option : m_InstanceOptions)
+		{
+			auto const bitsRequired = math::BinaryDigitCount(option.max - option.min + 1);
+			option.mask = ((1 << bitsRequired) - 1) << nextShift;
+			option.shift = nextShift;
+			nextShift += bitsRequired;
+		}
 	}
 
 
@@ -1000,10 +1004,13 @@ namespace leopph
 		for (auto i = 0; i < numUniforms; i++)
 		{
 			GLenum constexpr props[]{GL_LOCATION};
+
 			GLint uniformLocation;
 			glGetProgramResourceiv(perm.program, GL_UNIFORM, i, 1, props, 0, nullptr, &uniformLocation);
+
 			GLsizei uniformNameLength;
 			glGetProgramResourceName(perm.program, GL_UNIFORM, i, maxUniformNameLength, &uniformNameLength, uniformName.data());
+
 			perm.uniformLocations[uniformName.substr(0, uniformNameLength)] = uniformLocation;
 		}
 	}
@@ -1012,6 +1019,8 @@ namespace leopph
 
 	ShaderFamily::~ShaderFamily()
 	{
+		std::erase(s_Instances, this);
+
 		for (auto const& permutation : m_PermutationByBitset | std::views::values)
 		{
 			glDeleteProgram(permutation.program);
@@ -1020,7 +1029,9 @@ namespace leopph
 
 
 
+	std::vector<ShaderFamily*> ShaderFamily::s_Instances;
 	std::vector<ShaderFamily::ShaderOptionInfo> ShaderFamily::s_GlobalOptions;
+	std::unordered_map<std::string, std::size_t, StringHash, StringEqual> ShaderFamily::s_GlobalOptionIndexByName;
 
 
 

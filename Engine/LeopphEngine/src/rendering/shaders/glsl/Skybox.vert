@@ -1,10 +1,9 @@
 //! #version 450 core
 
-#include "TransformBuffer.glsl"
-
 layout (location = 0) in vec3 in_Pos;
 layout (location = 0) out vec3 out_TexCoords;
 
+uniform mat4 u_ViewProjMat;
 
 void main()
 {

@@ -1,11 +1,11 @@
 //? #version 450 core
 
-#pragma option name=DIRLIGHT_NO_SHADOW						//! #define DIRLIGHT_NO_SHADOW 0
-#pragma option name=NUM_DIRLIGHT_SHADOW_CASCADE	min=0 max=3	//! #define NUM_DIRLIGHT_SHADOW_CASCADE 3
-#pragma option name=NUM_SPOT_NO_SHADOW			min=0 max=8	//! #define NUM_SPOT_NO_SHADOW 8
-#pragma option name=NUM_SPOT_SHADOW				min=0 max=8	//! #define NUM_SPOT_SHADOW 7
-#pragma option name=NUM_POINT_NO_SHADOW			min=0 max=8	//! #define NUM_POINT_NO_SHADOW 8
-#pragma option name=NUM_POINT_SHADOW			min=0 max=8	//! #define NUM_POINT_SHADOW 7
+//! #define DIRLIGHT_NO_SHADOW 0
+//! #define NUM_DIRLIGHT_SHADOW_CASCADE 3
+//! #define NUM_SPOT_NO_SHADOW 8
+//! #define NUM_SPOT_SHADOW 7
+//! #define NUM_POINT_NO_SHADOW 8
+//! #define NUM_POINT_SHADOW 7
 
 // Helper defines for number of specific light types
 #define NUM_SPOT NUM_SPOT_NO_SHADOW + NUM_SPOT_SHADOW

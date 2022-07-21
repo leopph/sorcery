@@ -3,9 +3,8 @@
 #include "Camera.hpp"
 #include "Entity.hpp"
 #include "Logger.hpp"
+#include "Util.hpp"
 
-#include <ranges>
-#include <string>
 #include <utility>
 
 
@@ -25,12 +24,15 @@ namespace leopph::internal
 		ExtractAndProcessInstanceData(renderNodes);
 
 		auto const camViewMat = (*GetMainCamera())->ViewMatrix();
+		auto const camViewMatInv = camViewMat.Inverse();
 		auto const camProjMat = (*GetMainCamera())->ProjectionMatrix();
+		auto const camProjMatInv = camProjMat.Inverse();
 		auto const camViewProjMat = camViewMat * camProjMat;
+		auto const camViewProjMatInv = camViewProjMat.Inverse();
 
 
-		// RESIZE PER FRAME UBO IF NEEDED
-		auto const uboDataSize = [this]
+		// Resize lighting UBO if the light configuration changed since the previous frame
+		auto const lightingUboDataSize = [this]
 		{
 			auto ret = sizeof(UboGenericData);
 			if (GetDirLight())
@@ -44,20 +46,30 @@ namespace leopph::internal
 			return ret;
 		}();
 
-		if (m_PerFrameUbos[m_PerFrameUboInd].size < uboDataSize)
+		if (m_LightingUbos[m_PerFrameUboInd].size < lightingUboDataSize)
 		{
-			DeleteUbo(m_PerFrameUboInd);
-			CreateUbo(m_PerFrameUboInd, uboDataSize);
+			DeleteUbo(m_LightingUbos[m_PerFrameUboInd]);
+			CreateUbo(m_LightingUbos[m_PerFrameUboInd], lightingUboDataSize);
 		}
 
-		// WRITE DATA TO UBO
-		auto* const uboData = m_PerFrameUbos[m_PerFrameUboInd].mapping;
+
+		// Write transformations to transformation UBO
+		auto* const transformUbo = reinterpret_cast<Matrix4*>(m_TransformUbos[m_PerFrameUboInd].mapping);
+		transformUbo[0] = camViewMat;
+		transformUbo[1] = camViewMatInv;
+		transformUbo[2] = camProjMat;
+		transformUbo[3] = camProjMatInv;
+		transformUbo[4] = camViewProjMat;
+		transformUbo[5] = camViewProjMatInv;
+
+
+		// WRITE DATA TO LIGHTING UBO
+		auto* const lightingUbo = m_LightingUbos[m_PerFrameUboInd].mapping;
 
 		UboGenericData genericData;
-		genericData.viewProjMat = camViewProjMat;
-		genericData.ambientLight = GetAmbLight();
 		genericData.cameraPosition = (*GetMainCamera())->Owner()->Transform()->Position();
-		*reinterpret_cast<UboGenericData*>(uboData) = genericData;
+		genericData.ambientLight = GetAmbLight();
+		*reinterpret_cast<UboGenericData*>(lightingUbo) = genericData;
 		auto offset = sizeof genericData;
 
 		if (GetDirLight())
@@ -67,37 +79,45 @@ namespace leopph::internal
 			dirData.direction = dirLight->Direction();
 			dirData.diffuse = dirLight->Diffuse();
 			dirData.specular = dirLight->Specular();
-			*reinterpret_cast<UboDirData*>(uboData + offset) = dirData;
+			*reinterpret_cast<UboDirData*>(lightingUbo + offset) = dirData;
 			offset += sizeof dirData;
 		}
 
-		for (auto const* const spotLight : std::ranges::join_view{std::array{GetCastingSpotLights(), GetNonCastingSpotLights()}})
+		for (auto const& spotLights : {GetNonCastingSpotLights(), GetCastingSpotLights()})
 		{
-			UboSpotData spotData;
-			spotData.position = spotLight->Owner()->Transform()->Position();
-			spotData.direction = spotLight->Owner()->Transform()->Forward();
-			spotData.diffuse = spotLight->Diffuse();
-			spotData.specular = spotLight->Specular();
-			spotData.range = spotLight->Range();
-			spotData.innerCos = math::Cos(math::ToRadians(spotLight->InnerAngle()));
-			spotData.outerCos = math::Cos(math::ToRadians(spotLight->OuterAngle()));
-			*reinterpret_cast<UboSpotData*>(uboData + offset) = spotData;
-			offset += sizeof spotData;
+			for (auto const* const spotLight : spotLights)
+			{
+				UboSpotData spotData;
+				spotData.position = spotLight->Owner()->Transform()->Position();
+				spotData.direction = spotLight->Owner()->Transform()->Forward();
+				spotData.diffuse = spotLight->Diffuse();
+				spotData.specular = spotLight->Specular();
+				spotData.range = spotLight->Range();
+				spotData.innerCos = math::Cos(math::ToRadians(spotLight->InnerAngle()));
+				spotData.outerCos = math::Cos(math::ToRadians(spotLight->OuterAngle()));
+				*reinterpret_cast<UboSpotData*>(lightingUbo + offset) = spotData;
+				offset += sizeof spotData;
+			}
 		}
 
-		for (auto const* const pointLight : std::ranges::join_view{std::array{GetCastingPointLights(), GetNonCastingPointLights()}})
+		for (auto const& pointLights : {GetNonCastingPointLights(), GetCastingPointLights()})
 		{
-			UboPointData pointData;
-			pointData.position = pointLight->Owner()->Transform()->Position();
-			pointData.diffuse = pointLight->Diffuse();
-			pointData.specular = pointLight->Specular();
-			pointData.range = pointLight->Range();
-			*reinterpret_cast<UboPointData*>(uboData + offset) = pointData;
-			offset += sizeof pointData;
+			for (auto const* const pointLight : pointLights)
+			{
+				UboPointData pointData;
+				pointData.position = pointLight->Owner()->Transform()->Position();
+				pointData.diffuse = pointLight->Diffuse();
+				pointData.specular = pointLight->Specular();
+				pointData.range = pointLight->Range();
+				*reinterpret_cast<UboPointData*>(lightingUbo + offset) = pointData;
+				offset += sizeof pointData;
+			}
 		}
 
-		glBindBufferRange(GL_UNIFORM_BUFFER, 0, m_PerFrameUbos[m_PerFrameUboInd].name, 0, uboDataSize);
-		m_PerFrameUboInd = (m_PerFrameUboInd + 1) % m_PerFrameUbos.size();
+		// BIND UBOS
+		glBindBufferRange(GL_UNIFORM_BUFFER, 0, m_TransformUbos[m_PerFrameUboInd].name, 0, TRANSFORM_UBO_SIZE);
+		glBindBufferRange(GL_UNIFORM_BUFFER, 1, m_LightingUbos[m_PerFrameUboInd].name, 0, ClampCast<GLsizei>(lightingUboDataSize));
+		m_PerFrameUboInd = (m_PerFrameUboInd + 1) % m_LightingUbos.size();
 
 
 		// SET PIPELINE STATE FOR OPAQUE PASS
@@ -117,13 +137,23 @@ namespace leopph::internal
 		glClearNamedFramebufferfv(m_PingPongBuffers[0].framebuffer, GL_DEPTH, 0, &clearDepth);
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_PingPongBuffers[0].framebuffer);
 
-		if (GetDirLight())
+		if (auto const dirLight = GetDirLight())
 		{
-			m_ForwardObjectShader.SetOption("DIRLIGHT", true);
+			if ((*dirLight)->CastsShadow())
+			{
+				ShaderFamily::SetGlobalOption("NUM_DIRLIGHT_SHADOW_CASCADE", 3);
+			}
+			else
+			{
+				ShaderFamily::SetGlobalOption("DIRLIGHT_NO_SHADOW", true);
+			}
 		}
-		m_ForwardObjectShader.SetOption("NUM_SPOT", GetCastingSpotLights().size() + GetNonCastingSpotLights().size());
-		m_ForwardObjectShader.SetOption("NUM_POINT", GetCastingPointLights().size() + GetNonCastingPointLights().size());
-		m_ForwardObjectShader.SetOption("TRANSPARENT", false);
+
+		ShaderFamily::SetGlobalOption("NUM_SPOT_NO_SHADOW", GetNonCastingSpotLights().size());
+		ShaderFamily::SetGlobalOption("NUM_SPOT_SHADOW", GetCastingSpotLights().size());
+		ShaderFamily::SetGlobalOption("NUM_POINT_NO_SHADOW", GetNonCastingPointLights().size());
+		ShaderFamily::SetGlobalOption("NUM_POINT_SHADOW", GetCastingPointLights().size());
+		ShaderFamily::SetGlobalOption("TRANSPARENT", false);
 		m_ForwardObjectShader.UseCurrentPermutation();
 
 		for (auto const& [renderable, instances, castsShadow] : renderNodes)
@@ -162,7 +192,7 @@ namespace leopph::internal
 		glClearNamedFramebufferfv(m_TransparencyBuffer.framebuffer, GL_COLOR, 1, &clearReveal);
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_TransparencyBuffer.framebuffer);
 
-		m_ForwardObjectShader.SetOption("TRANSPARENT", true);
+		ShaderFamily::SetGlobalOption("TRANSPARENT", true);
 		m_ForwardObjectShader.UseCurrentPermutation();
 
 		for (auto const& [renderable, instances, castsShadow] : renderNodes)
@@ -207,17 +237,17 @@ namespace leopph::internal
 	}
 
 
-	auto GlForwardRenderer::CreateUbo(u64 const index, u64 const size) -> void
+	auto GlForwardRenderer::CreateUbo(MappedBuffer& ubo, u64 const size) -> void
 	{
-		glCreateBuffers(1, &m_PerFrameUbos[index].name);
-		glNamedBufferStorage(m_PerFrameUbos[index].name, size, nullptr, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
-		m_PerFrameUbos[index].mapping = static_cast<u8*>(glMapNamedBufferRange(m_PerFrameUbos[index].name, 0, size, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT));
-		m_PerFrameUbos[index].size = size;
+		glCreateBuffers(1, &ubo.name);
+		glNamedBufferStorage(ubo.name, size, nullptr, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
+		ubo.mapping = static_cast<u8*>(glMapNamedBufferRange(ubo.name, 0, size, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT));
+		ubo.size = size;
 
 		#ifndef NDEBUG
-		if (!m_PerFrameUbos[index].mapping)
+		if (!ubo.mapping)
 		{
-			auto const errMsg = "Failed to map UBO[" + std::to_string(index) + "].";
+			auto const errMsg = "Failed to map UBO.";
 			Logger::Instance().Critical(errMsg);
 			throw std::runtime_error{errMsg};
 		}
@@ -225,10 +255,10 @@ namespace leopph::internal
 	}
 
 
-	auto GlForwardRenderer::DeleteUbo(u64 const index) const -> void
+	auto GlForwardRenderer::DeleteUbo(MappedBuffer const& ubo) -> void
 	{
-		glUnmapNamedBuffer(m_PerFrameUbos[index].name);
-		glDeleteBuffers(1, &m_PerFrameUbos[index].name);
+		glUnmapNamedBuffer(ubo.name);
+		glDeleteBuffers(1, &ubo.name);
 	}
 
 
@@ -239,6 +269,13 @@ namespace leopph::internal
 		static_assert(sizeof(UboSpotData) == 80);
 		static_assert(sizeof(UboPointData) == 48);
 
+		// Create transformation ubos
+
+		for (auto& ubo : m_TransformUbos)
+		{
+			CreateUbo(ubo, TRANSFORM_UBO_SIZE);
+		}
+
 		Logger::Instance().Warning("The forward rendering pipeline is currently not feature complete. It is recommended to use the deferred pipeline.");
 	}
 
@@ -246,9 +283,12 @@ namespace leopph::internal
 
 	GlForwardRenderer::~GlForwardRenderer()
 	{
-		for (auto i = 0; i < m_PerFrameUbos.size(); i++)
+		for (auto const& ubos : {std::cref(m_TransformUbos), std::cref(m_LightingUbos)})
 		{
-			DeleteUbo(i);
+			for (auto const& ubo : ubos.get())
+			{
+				DeleteUbo(ubo);
+			}
 		}
 	}
 }
