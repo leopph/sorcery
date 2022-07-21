@@ -32,21 +32,27 @@ namespace leopph
 			std::string name;
 			PermutationBitset mask;
 			u8 shift; // left shift
+			u8 numBits;
 			u8 min; // not normalized
 			u8 max; // not normalized
+			u8 currentValue; // always set to min on construction
 		};
 
 		public:
 			explicit ShaderFamily(ShaderProgramSourceInfo sourceInfo);
 
-			auto SelectPermutation(PermutationBitset bitset) -> bool;
-
+			static auto SetGlobalOption(std::string_view name, u8 value) -> bool;
 			auto SetInstanceOption(std::string_view name, u8 value) -> bool;
 
-			static auto SetGlobalOption(std::string_view name, u8 value) -> bool;
 			static auto AddGlobalOption(std::string_view name, u8 min, u8 max) -> bool;
 
 		private:
+			// Sets the global option bits in the current permutation bitset.
+			auto ApplyGlobalOptions() -> void;
+
+			// Sets the instance option bits in the current permutation bitset.
+			auto ApplyInstanceOptions() -> void;
+
 			// Returns the next shift value that can be used to create a new global option that requires the passed amount of bits.
 			// The returned value represents a left shift.
 			// Returns nullopt if the required amount of bits could not be shifted into storage without overwriting existing values.
@@ -79,11 +85,10 @@ namespace leopph
 
 		private:
 			auto GetCurrentPermutation() -> std::optional<Permutation*>;
-			static auto LogMissingPermutation() -> void;
 
 			auto ExtractInstanceOptions() -> void;
 
-			[[nodiscard]] auto CompilePermutation(PermutationBitset bitset) -> bool;
+			[[nodiscard]] auto CompileCurrentPermutation() -> bool;
 			[[nodiscard]] static auto CompileShader(u32 shader, std::span<std::string const> lines) -> std::optional<std::string>;
 			[[nodiscard]] static auto LinkProgram(u32 program) -> std::optional<std::string>;
 

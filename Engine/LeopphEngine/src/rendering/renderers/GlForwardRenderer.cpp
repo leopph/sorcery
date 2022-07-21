@@ -141,11 +141,13 @@ namespace leopph::internal
 		{
 			if ((*dirLight)->CastsShadow())
 			{
+				ShaderFamily::SetGlobalOption("DIRLIGHT_NO_SHADOW", false);
 				ShaderFamily::SetGlobalOption("NUM_DIRLIGHT_SHADOW_CASCADE", 3);
 			}
 			else
 			{
 				ShaderFamily::SetGlobalOption("DIRLIGHT_NO_SHADOW", true);
+				ShaderFamily::SetGlobalOption("NUM_DIRLIGHT_SHADOW_CASCADE", 0);
 			}
 		}
 

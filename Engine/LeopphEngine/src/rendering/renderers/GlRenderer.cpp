@@ -386,12 +386,13 @@ namespace leopph::internal
 
 	GlRenderer::GlRenderer()
 	{
-		ShaderFamily::AddGlobalOption("DIRLIGHT_NO_SHADOW", 0, 1);
+		ShaderFamily::AddGlobalOption("DIRLIGHT_NO_SHADOW", false, true);
 		ShaderFamily::AddGlobalOption("NUM_DIRLIGHT_SHADOW_CASCADE", 0, 3);
 		ShaderFamily::AddGlobalOption("NUM_SPOT_NO_SHADOW", 0, 8);
 		ShaderFamily::AddGlobalOption("NUM_SPOT_SHADOW", 0, 8);
 		ShaderFamily::AddGlobalOption("NUM_POINT_NO_SHADOW", 0, 8);
 		ShaderFamily::AddGlobalOption("NUM_POINT_SHADOW", 0, 8);
+		ShaderFamily::AddGlobalOption("TRANSPARENT", false, true);
 
 		glDepthFunc(GL_LEQUAL);
 		glFrontFace(GL_CCW);

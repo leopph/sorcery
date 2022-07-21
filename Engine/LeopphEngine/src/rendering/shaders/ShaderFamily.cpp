@@ -267,18 +267,25 @@ namespace leopph
 
 
 
-	auto ShaderFamily::SelectPermutation(PermutationBitset const bitset) -> bool
+	auto ShaderFamily::SetGlobalOption(std::string_view const name, u8 const value) -> bool
 	{
-		if (!m_PermutationByBitset.contains(bitset))
+		auto const it = s_GlobalOptionIndexByName.find(name);
+
+		if (it == std::end(s_GlobalOptionIndexByName))
 		{
-			if (!CompilePermutation(bitset))
-			{
-				internal::Logger::Instance().Error("Error while selecting permutation: the permutation was not ready, but an error occured while compiling it.");
-				return false;
-			}
+			internal::Logger::Instance().Debug(std::format("Ignoring attempt to set global shader option [{}]: the option does not exist.", name));
+			return false;
 		}
 
-		m_CurrentPermutationBitset = bitset;
+		auto& option = s_GlobalOptions[it->second];
+
+		if (option.min > value || option.max < value)
+		{
+			internal::Logger::Instance().Error(std::format("Error setting global shader option value: value [{}] was out of range for option [{}].", value, name));
+			return false;
+		}
+
+		option.currentValue = value;
 		return true;
 	}
 
@@ -290,56 +297,19 @@ namespace leopph
 
 		if (it == std::end(m_InstanceOptionIndexByName))
 		{
-			internal::Logger::Instance().Trace(std::format("Ignoring attempt to set instance shader option [{}]: the option was not specified in the shader.", name));
+			internal::Logger::Instance().Debug(std::format("Ignoring attempt to set instance shader option [{}]: the option was not specified in the shader.", name));
 			return false;
 		}
 
-		auto const& option = m_InstanceOptions[it->second];
+		auto& option = m_InstanceOptions[it->second];
 
-		#ifndef NDEBUG
 		if (option.min > value || option.max < value)
 		{
 			internal::Logger::Instance().Error(std::format("Error setting instance shader option value: value [{}] was out of range for option [{}].", value, name));
 			return false;
 		}
-		#endif
 
-		auto const normValue = value - option.min;
-		m_CurrentPermutationBitset = (m_CurrentPermutationBitset & (~option.mask)) | (normValue << option.shift);
-		return true;
-	}
-
-
-
-	auto ShaderFamily::SetGlobalOption(std::string_view const name, u8 const value) -> bool
-	{
-		auto const it = s_GlobalOptionIndexByName.find(name);
-
-		if (it == std::end(s_GlobalOptionIndexByName))
-		{
-			internal::Logger::Instance().Trace(std::format("Ignoring attempt to set global shader option [{}]: the option does not exist.", name));
-			return false;
-		}
-
-		auto const& option = s_GlobalOptions[it->second];
-
-		#ifndef NDEBUG
-		if (option.min > value || option.max < value)
-		{
-			internal::Logger::Instance().Error(std::format("Error setting global shader option value: value [{}] was out of range for option [{}].", value, name));
-			return false;
-		}
-		#endif
-
-		auto const normValue = value - option.min;
-		auto const shiftedNormValue = normValue << option.shift;
-		auto const negMask = ~option.mask;
-
-		for (auto* const shaderFamily : s_Instances)
-		{
-			shaderFamily->m_CurrentPermutationBitset = (shaderFamily->m_CurrentPermutationBitset & negMask) | shiftedNormValue;
-		}
-
+		option.currentValue = value;
 		return true;
 	}
 
@@ -347,19 +317,39 @@ namespace leopph
 
 	auto ShaderFamily::AddGlobalOption(std::string_view const name, u8 const min, u8 const max) -> bool
 	{
-		auto const maxValueNorm = max - min + 1;
-		auto const numBits = math::BinaryDigitCount(maxValueNorm);
+		auto const maxValueNorm = max - min;
+		auto const requiredBits = math::BinaryDigitCount(maxValueNorm);
 
-		if (auto const nextShift = NextFreeGlobalShift(numBits))
+		if (auto const nextShift = NextFreeGlobalShift(requiredBits))
 		{
-			PermutationBitset const mask = ((1 << numBits) - 1) << *nextShift;
-			s_GlobalOptions.emplace_back(std::string{name}, mask, *nextShift, min, max);
+			PermutationBitset const mask = ((1 << requiredBits) - 1) << *nextShift;
+			s_GlobalOptions.emplace_back(std::string{name}, mask, *nextShift, requiredBits, min, max, min);
 			s_GlobalOptionIndexByName[std::string{name}] = s_GlobalOptions.size() - 1;
 
 			return true;
 		}
 
 		return false;
+	}
+
+
+
+	auto ShaderFamily::ApplyGlobalOptions() -> void
+	{
+		for (auto const& option : s_GlobalOptions)
+		{
+			m_CurrentPermutationBitset = (m_CurrentPermutationBitset & ~option.mask) | ((option.currentValue - option.min) << option.shift);
+		}
+	}
+
+
+
+	auto ShaderFamily::ApplyInstanceOptions() -> void
+	{
+		for (auto const& option : m_InstanceOptions)
+		{
+			m_CurrentPermutationBitset = (m_CurrentPermutationBitset & ~option.mask) | ((option.currentValue - option.min) << option.shift);
+		}
 	}
 
 
@@ -375,7 +365,7 @@ namespace leopph
 
 		if (nextShift - requiredBits >= 0)
 		{
-			return ClampCast<u8>(nextShift);
+			return ClampCast<u8>(nextShift - requiredBits);
 		}
 
 		return std::nullopt;
@@ -389,7 +379,7 @@ namespace leopph
 
 		for (auto const& option : m_InstanceOptions)
 		{
-			nextShift = std::max(option.shift + - math::BinaryDigitCount(option.max - option.min + 1), nextShift);
+			nextShift = std::max(option.shift + - option.numBits, nextShift);
 		}
 
 		if (nextShift + requiredBits < std::numeric_limits<PermutationBitset>::digits)
@@ -413,14 +403,12 @@ namespace leopph
 
 		auto const& permutation = **permOpt;
 		auto const uniformIt = permutation.uniformLocations.find(name);
-
-		#ifndef NDEBUG
+		
 		if (uniformIt == std::end(permutation.uniformLocations))
 		{
 			LogInvalidUniformAccess(name);
 			return false;
 		}
-		#endif
 
 		glProgramUniform1i(permutation.program, uniformIt->second, static_cast<GLint>(value));
 		return true;
@@ -439,14 +427,12 @@ namespace leopph
 
 		auto const& permutation = **permOpt;
 		auto const uniformIt = permutation.uniformLocations.find(name);
-
-		#ifndef NDEBUG
+		
 		if (uniformIt == std::end(permutation.uniformLocations))
 		{
 			LogInvalidUniformAccess(name);
 			return false;
 		}
-		#endif
 
 		glProgramUniform1i(permutation.program, uniformIt->second, value);
 		return true;
@@ -465,14 +451,12 @@ namespace leopph
 
 		auto const& permutation = **permOpt;
 		auto const uniformIt = permutation.uniformLocations.find(name);
-
-		#ifndef NDEBUG
+		
 		if (uniformIt == std::end(permutation.uniformLocations))
 		{
 			LogInvalidUniformAccess(name);
 			return false;
 		}
-		#endif
 
 		glProgramUniform1ui(permutation.program, uniformIt->second, value);
 		return true;
@@ -491,14 +475,12 @@ namespace leopph
 
 		auto const& permutation = **permOpt;
 		auto const uniformIt = permutation.uniformLocations.find(name);
-
-		#ifndef NDEBUG
+		
 		if (uniformIt == std::end(permutation.uniformLocations))
 		{
 			LogInvalidUniformAccess(name);
 			return false;
 		}
-		#endif
 
 		glProgramUniform1f(permutation.program, uniformIt->second, value);
 		return true;
@@ -517,14 +499,12 @@ namespace leopph
 
 		auto const& permutation = **permOpt;
 		auto const uniformIt = permutation.uniformLocations.find(name);
-
-		#ifndef NDEBUG
+		
 		if (uniformIt == std::end(permutation.uniformLocations))
 		{
 			LogInvalidUniformAccess(name);
 			return false;
 		}
-		#endif
 
 		glProgramUniform3fv(permutation.program, uniformIt->second, 1, value.Data().data());
 		return true;
@@ -543,14 +523,12 @@ namespace leopph
 
 		auto const& permutation = **permOpt;
 		auto const uniformIt = permutation.uniformLocations.find(name);
-
-		#ifndef NDEBUG
+		
 		if (uniformIt == std::end(permutation.uniformLocations))
 		{
 			LogInvalidUniformAccess(name);
 			return false;
 		}
-		#endif
 
 		glProgramUniformMatrix4fv(permutation.program, uniformIt->second, 1, GL_TRUE, value.Data()[0].Data().data());
 		return true;
@@ -569,14 +547,12 @@ namespace leopph
 
 		auto const& permutation = **permOpt;
 		auto const uniformIt = permutation.uniformLocations.find(name);
-
-		#ifndef NDEBUG
+		
 		if (uniformIt == std::end(permutation.uniformLocations))
 		{
 			LogInvalidUniformAccess(name);
 			return false;
 		}
-		#endif
 
 		glProgramUniform1iv(permutation.program, uniformIt->second, ClampCast<GLsizei>(values.size()), values.data());
 		return true;
@@ -595,14 +571,12 @@ namespace leopph
 
 		auto const& permutation = **permOpt;
 		auto const uniformIt = permutation.uniformLocations.find(name);
-
-		#ifndef NDEBUG
+		
 		if (uniformIt == std::end(permutation.uniformLocations))
 		{
 			LogInvalidUniformAccess(name);
 			return false;
 		}
-		#endif
 
 		glProgramUniform1uiv(permutation.program, uniformIt->second, ClampCast<GLsizei>(values.size()), values.data());
 		return true;
@@ -621,14 +595,12 @@ namespace leopph
 
 		auto const& permutation = **permOpt;
 		auto const uniformIt = permutation.uniformLocations.find(name);
-
-		#ifndef NDEBUG
+		
 		if (uniformIt == std::end(permutation.uniformLocations))
 		{
 			LogInvalidUniformAccess(name);
 			return false;
 		}
-		#endif
 
 		glProgramUniform1fv(permutation.program, uniformIt->second, ClampCast<GLsizei>(values.size()), values.data());
 		return true;
@@ -647,14 +619,12 @@ namespace leopph
 
 		auto const& permutation = **permOpt;
 		auto const uniformIt = permutation.uniformLocations.find(name);
-
-		#ifndef NDEBUG
+		
 		if (uniformIt == std::end(permutation.uniformLocations))
 		{
 			LogInvalidUniformAccess(name);
 			return false;
 		}
-		#endif
 
 		glProgramUniform3fv(permutation.program, uniformIt->second, ClampCast<GLsizei>(values.size()), values.data()->Data().data());
 		return true;
@@ -674,13 +644,11 @@ namespace leopph
 		auto const& permutation = **permOpt;
 		auto const uniformIt = permutation.uniformLocations.find(name);
 
-		#ifndef NDEBUG
 		if (uniformIt == std::end(permutation.uniformLocations))
 		{
 			LogInvalidUniformAccess(name);
 			return false;
 		}
-		#endif
 
 		glProgramUniformMatrix4fv(permutation.program, uniformIt->second, ClampCast<GLsizei>(values.size()), GL_TRUE, values.data()->Data().data()->Data().data());
 		return true;
@@ -705,13 +673,16 @@ namespace leopph
 
 	auto ShaderFamily::GetCurrentPermutation() -> std::optional<Permutation*>
 	{
+		ApplyGlobalOptions();
+		ApplyInstanceOptions();
+
 		auto permIt = m_PermutationByBitset.find(m_CurrentPermutationBitset);
 
 		if (permIt == std::end(m_PermutationByBitset))
 		{
-			if (!CompilePermutation(m_CurrentPermutationBitset))
+			if (!CompileCurrentPermutation())
 			{
-				LogMissingPermutation();
+				internal::Logger::Instance().Error("Error accessing shader permutation: the shader permutation does not exist.");
 				return std::nullopt;
 			}
 
@@ -719,13 +690,6 @@ namespace leopph
 		}
 
 		return &permIt->second;
-	}
-
-
-
-	auto ShaderFamily::LogMissingPermutation() -> void
-	{
-		internal::Logger::Instance().Error("Error accessing shader permutation: the shader permutation does not exist.");
 	}
 
 
@@ -757,8 +721,11 @@ namespace leopph
 					auto const maxAssignmentStr = numberAssignmentMatch->str();
 					std::regex_iterator maxMatch{std::begin(maxAssignmentStr), std::end(maxAssignmentStr), number};
 
+					auto const min = ClampCast<u8>(std::stoi(minMatch->str()));
+					auto const max = ClampCast<u8>(std::stoi(maxMatch->str()));
+
 					// Temporary mask and shift, will calculate it after eliminating duplicates.
-					m_InstanceOptions.emplace_back(nameMatch->str(), static_cast<u8>(0), static_cast<u8>(0), ClampCast<u8>(std::stoi(minMatch->str())), ClampCast<u8>(std::stoi(maxMatch->str())));
+					m_InstanceOptions.emplace_back(nameMatch->str(), static_cast<u8>(0), static_cast<u8>(0), math::BinaryDigitCount(max - min), min, max, min);
 					line.clear();
 				}
 				else if (std::regex_search(line, validShortOptionRegex))
@@ -768,7 +735,7 @@ namespace leopph
 					std::regex_iterator nameMatch{std::begin(assignmentStr), std::end(assignmentStr), nameIdentifier};
 
 					// Temporary mask and shift, will calculate it after eliminating duplicates.
-					m_InstanceOptions.emplace_back(nameMatch->str(), static_cast<u8>(0u), static_cast<u8>(0u), static_cast<u8>(0u), static_cast<u8>(1u));
+					m_InstanceOptions.emplace_back(nameMatch->str(), static_cast<u8>(0), static_cast<u8>(0), static_cast<u8>(1), static_cast<u8>(0), static_cast<u8>(1), static_cast<u8>(0));
 					line.clear();
 				}
 			}
@@ -810,10 +777,9 @@ namespace leopph
 
 		for (auto& option : m_InstanceOptions)
 		{
-			auto const bitsRequired = math::BinaryDigitCount(option.max - option.min + 1);
-			option.mask = ((1 << bitsRequired) - 1) << nextShift;
+			option.mask = ((1 << option.numBits) - 1) << nextShift;
 			option.shift = nextShift;
-			nextShift += bitsRequired;
+			nextShift += option.numBits;
 		}
 	}
 
@@ -821,18 +787,18 @@ namespace leopph
 
 	auto ShaderFamily::LogInvalidUniformAccess(std::string_view const name) -> void
 	{
-		internal::Logger::Instance().Trace(std::format("Ignoring attempt to set shader uniform [{}]: the uniform does not exist in the current permutation.", name));
+		internal::Logger::Instance().Debug(std::format("Ignoring attempt to set shader uniform [{}]: the uniform does not exist in the current permutation.", name));
 	}
 
 
 
-	auto ShaderFamily::CompilePermutation(PermutationBitset const bitset) -> bool
+	auto ShaderFamily::CompileCurrentPermutation() -> bool
 	{
 		u32 usedLocalBits{0};
 
 		for (auto const& instanceOption : m_InstanceOptions)
 		{
-			usedLocalBits = ClampCast<u32>(std::max<i64>(usedLocalBits, math::BinaryDigitCount(instanceOption.max - instanceOption.min + 1) + instanceOption.shift));
+			usedLocalBits = ClampCast<u32>(std::max<i64>(usedLocalBits, instanceOption.numBits + instanceOption.shift));
 		}
 
 		u32 usedGlobalBits{0};
@@ -854,15 +820,7 @@ namespace leopph
 		{
 			for (auto const& option : options.get())
 			{
-				auto const optionValue = (option.max & bitset) + option.min;
-
-				if (optionValue > option.max)
-				{
-					internal::Logger::Instance().Error(std::format("Error while compiling shader permutation: value [{}] for option [{}] is higher than its maximum [{}].", optionValue, option.name, option.max));
-					return false;
-				}
-
-				optionDefines.push_back(std::format("#define {} {}\n", option.name, optionValue));
+				optionDefines.push_back(std::format("#define {} {}\n", option.name, option.currentValue));
 			}
 		}
 
@@ -932,7 +890,7 @@ namespace leopph
 			return false;
 		}
 
-		auto& perm = m_PermutationByBitset.emplace(bitset, program).first->second;
+		auto& perm = m_PermutationByBitset.emplace(m_CurrentPermutationBitset, program).first->second;
 		QueryUniformLocations(perm);
 
 		return true;
