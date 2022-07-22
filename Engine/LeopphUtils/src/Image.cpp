@@ -59,7 +59,7 @@ namespace leopph
 
 
 
-	auto Image::operator=(Image const& other) -> Image&
+	Image& Image::operator=(Image const& other)
 	{
 		m_Width = other.m_Width;
 		m_Height = other.m_Height;
@@ -86,7 +86,7 @@ namespace leopph
 
 
 
-	auto Image::operator=(Image&& other) noexcept -> Image&
+	Image& Image::operator=(Image&& other) noexcept
 	{
 		m_Width = other.m_Width;
 		m_Height = other.m_Height;
@@ -103,35 +103,35 @@ namespace leopph
 
 
 
-	auto Image::Width() const noexcept -> u32
+	u32 Image::Width() const noexcept
 	{
 		return m_Width;
 	}
 
 
 
-	auto Image::Height() const noexcept -> u32
+	u32 Image::Height() const noexcept
 	{
 		return m_Height;
 	}
 
 
 
-	auto Image::Channels() const noexcept -> u8
+	u8 Image::Channels() const noexcept
 	{
 		return m_Channels;
 	}
 
 
 
-	auto Image::Encoding() const noexcept -> ColorEncoding
+	ColorEncoding Image::Encoding() const noexcept
 	{
 		return m_Encoding;
 	}
 
 
 
-	auto Image::ExtractChannel(u8 const channel) -> Image
+	Image Image::ExtractChannel(u8 const channel)
 	{
 		// Skip bounds check in release builds.
 		#ifndef NDEBUG
@@ -171,7 +171,7 @@ namespace leopph
 
 
 
-	auto Image::Empty() const noexcept -> bool
+	bool Image::Empty() const noexcept
 	{
 		return m_Width == 0
 			// Skip consistency check in release builds.
@@ -183,14 +183,14 @@ namespace leopph
 
 
 
-	auto Image::operator[](u64 const rowIndex) const -> std::span<u8 const>
+	std::span<u8 const> Image::operator[](u64 const rowIndex) const
 	{
 		return {m_Bytes.get() + rowIndex * m_Width * m_Channels, static_cast<std::span<u8 const>::size_type>(m_Width * m_Channels)};
 	}
 
 
 
-	auto Image::Data() const noexcept -> std::span<u8 const>
+	std::span<u8 const> Image::Data() const noexcept
 	{
 		return {m_Bytes.get(), static_cast<std::span<u8 const>::size_type>(m_Width * m_Height * m_Channels)};
 	}

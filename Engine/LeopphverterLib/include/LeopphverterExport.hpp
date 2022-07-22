@@ -9,5 +9,5 @@
 
 namespace leopph::convert
 {
-	LEOPPHAPI auto Export(Object const& object, std::endian endianness = std::endian::native) -> std::vector<unsigned char>;
+	LEOPPHAPI std::vector<unsigned char> Export(Object const& object, std::endian endianness = std::endian::native);
 }

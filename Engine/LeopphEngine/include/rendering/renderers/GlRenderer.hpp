@@ -40,19 +40,19 @@ namespace leopph::internal
 
 		public:
 			// Initializes OpenGL and constructs a renderer for the selected rendering pipeline.
-			static auto Create() -> std::unique_ptr<GlRenderer>;
+			static std::unique_ptr<GlRenderer> Create();
 
-			[[nodiscard]] auto CreateRenderObject(MeshGroup const& meshGroup) -> RenderObject* override;
+			[[nodiscard]] RenderObject* CreateRenderObject(MeshGroup const& meshGroup) override;
 
-			auto DeleteRenderObject(RenderObject* renderObject) -> void override;
+			void DeleteRenderObject(RenderObject* renderObject) override;
 
-			[[nodiscard]] auto CreateOrGetSkyboxImpl(std::filesystem::path allPaths) -> GlSkyboxImpl*;
+			[[nodiscard]] GlSkyboxImpl* CreateOrGetSkyboxImpl(std::filesystem::path allPaths);
 
-			auto DestroySkyboxImpl(GlSkyboxImpl const* skyboxImpl) -> void;
+			void DestroySkyboxImpl(GlSkyboxImpl const* skyboxImpl);
 
 		protected:
 			// Extract game data per RenderObject per RenderComponent, process them, and output into RenderNodes.
-			auto ExtractAndProcessInstanceData(std::vector<RenderNode>& out) -> void;
+			void ExtractAndProcessInstanceData(std::vector<RenderNode>& out);
 
 
 			/* ########################
@@ -62,7 +62,7 @@ namespace leopph::internal
 			// Transform the near and far distances of the passed cascades to NDC space.
 			// The first values are the near bounds, the second ones are the far bounds.
 			// After the call out will contain the same number of elements as cascades.
-			auto CascadeBoundToNdc(std::span<ShadowCascade const> cascades, std::vector<std::pair<f32, f32>>& out) const -> void;
+			void CascadeBoundToNdc(std::span<ShadowCascade const> cascades, std::vector<std::pair<f32, f32>>& out) const;
 
 
 			/* ##########################
@@ -71,39 +71,39 @@ namespace leopph::internal
 
 		private:
 			// Creates a VAO and VBO filled with the vertices for a fullscreen quad
-			auto CreateScreenQuad() -> void;
+			void CreateScreenQuad();
 
 			// Destroys the VAO and VBO of the fullscreen quad
-			auto DeleteScreenQuad() const -> void;
+			void DeleteScreenQuad() const;
 
 		protected:
 			// Issues a draw call with the fullscreen quad's VAO bound
-			auto DrawScreenQuad() const -> void;
+			void DrawScreenQuad() const;
 
 		private:
 			// Creates the common render targets with the given render sizes
-			auto CreateRenderTargets(GLsizei renderWidth, GLsizei renderHeight) -> void;
+			void CreateRenderTargets(GLsizei renderWidth, GLsizei renderHeight);
 
 			// Deletes the common render targets
-			auto DeleteRenderTargets() const -> void;
+			void DeleteRenderTargets() const;
 
 			// Creates the shadow cascade maps with the given resolutions
-			auto CreateDirShadowMaps(std::span<u16 const> resolutions) -> void;
+			void CreateDirShadowMaps(std::span<u16 const> resolutions);
 
 			// Deletes the shadow cascade maps
-			auto DeleteDirShadowMaps() const -> void;
+			void DeleteDirShadowMaps() const;
 
 			// Creates count new spot shadow maps with the given resolution and appends them to the existing ones
-			auto CreateAppendSpotShadowMaps(u16 resolution, u8 count) -> void;
+			void CreateAppendSpotShadowMaps(u16 resolution, u8 count);
 
 			// Deletes the spot shadow maps
-			auto DeleteSpotShadowMaps() const -> void;
+			void DeleteSpotShadowMaps() const;
 
 			// Creates count new point shadow maps with the given resolution and appends them to the existing ones
-			auto CreateAppendPointShadowMaps(u16 resolution, u8 count) -> void;
+			void CreateAppendPointShadowMaps(u16 resolution, u8 count);
 
 			// Deletes the point shadow maps
-			auto DeletePointShadowMaps() const -> void;
+			void DeletePointShadowMaps() const;
 
 
 			/* ##################
@@ -112,19 +112,19 @@ namespace leopph::internal
 
 		protected:
 			// Recreates common render targets
-			auto OnRenderResChange(Extent2D renderRes) -> void override;
+			void OnRenderResChange(Extent2D renderRes) override;
 
 			// Recreates shadow cascade maps
-			auto OnDirShadowResChange(std::span<u16 const> resolutions) -> void override;
+			void OnDirShadowResChange(std::span<u16 const> resolutions) override;
 
 			// Recreates spot shadow maps
-			auto OnSpotShadowResChange(u16 resolution) -> void override;
+			void OnSpotShadowResChange(u16 resolution) override;
 
 			// Recreates point shadow maps
-			auto OnPointShadowResChange(u16 resolution) -> void override;
+			void OnPointShadowResChange(u16 resolution) override;
 
 			// Creates additional spot and point shadow maps if needed
-			auto OnDetermineShadowMapCountRequirements(u8 spot, u8 point) -> void override;
+			void OnDetermineShadowMapCountRequirements(u8 spot, u8 point) override;
 
 
 			/* ############
@@ -135,10 +135,10 @@ namespace leopph::internal
 
 		public:
 			GlRenderer(GlRenderer const& other) = delete;
-			auto operator=(GlRenderer const& other) -> void = delete;
+			void operator=(GlRenderer const& other) = delete;
 
 			GlRenderer(GlRenderer&& other) = delete;
-			auto operator=(GlRenderer&& other) -> void = delete;
+			void operator=(GlRenderer&& other) = delete;
 
 			~GlRenderer() noexcept override;
 

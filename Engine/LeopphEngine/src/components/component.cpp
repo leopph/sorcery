@@ -7,13 +7,13 @@
 
 namespace leopph
 {
-	auto Component::Owner() const noexcept -> Entity*
+	Entity* Component::Owner() const noexcept
 	{
 		return m_Owner;
 	}
 
 
-	auto Component::Owner(Entity* entity) -> void
+	void Component::Owner(Entity* entity)
 	{
 		auto* const dataManager = internal::GetDataManager();
 
@@ -53,31 +53,31 @@ namespace leopph
 	}
 
 
-	auto Component::Attach(Entity* entity) -> void
+	void Component::Attach(Entity* entity)
 	{
 		Owner(entity);
 	}
 
 
-	auto Component::Detach() -> void
+	void Component::Detach()
 	{
 		Owner(nullptr);
 	}
 
 
-	auto Component::Attached() const -> bool
+	bool Component::Attached() const
 	{
 		return Owner() != nullptr;
 	}
 
 
-	auto Component::Active() const noexcept -> bool
+	bool Component::Active() const noexcept
 	{
 		return m_Active;
 	}
 
 
-	auto Component::Active(bool const active) -> void
+	void Component::Active(bool const active)
 	{
 		if (m_Active != active)
 		{
@@ -93,19 +93,19 @@ namespace leopph
 	}
 
 
-	auto Component::Activate() -> void
+	void Component::Activate()
 	{
 		Active(true);
 	}
 
 
-	auto Component::Deactivate() -> void
+	void Component::Deactivate()
 	{
 		Active(false);
 	}
 
 
-	auto Component::InUse() const noexcept -> bool
+	bool Component::InUse() const noexcept
 	{
 		return Owner() && Active();
 	}
@@ -117,7 +117,7 @@ namespace leopph
 	{}
 
 
-	auto Component::operator=(Component const& other) -> Component&
+	Component& Component::operator=(Component const& other)
 	{
 		if (this == &other)
 		{
@@ -131,7 +131,7 @@ namespace leopph
 	}
 
 
-	auto Component::Clone() const -> ComponentPtr<>
+	ComponentPtr<> Component::Clone() const
 	{
 		throw std::logic_error{"Unimplemented Clone member function called."};
 	}

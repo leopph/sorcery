@@ -21,7 +21,7 @@ using leopph::Vector3;
 
 namespace demo
 {
-	auto InitSpriteScene(SceneSwitcher::Scene& scene) -> void
+	void InitSpriteScene(SceneSwitcher::Scene& scene)
 	{
 		auto const camEntity = new Entity;
 		scene.Add(camEntity);

@@ -6,13 +6,13 @@
 
 namespace leopph
 {
-	auto Behavior::UpdateIndex() const noexcept -> int
+	int Behavior::UpdateIndex() const noexcept
 	{
 		return m_UpdateIndex;
 	}
 
 
-	auto Behavior::UpdateIndex(int const index) -> void
+	void Behavior::UpdateIndex(int const index)
 	{
 		m_UpdateIndex = index;
 
@@ -23,7 +23,7 @@ namespace leopph
 	}
 
 
-	auto Behavior::Owner(Entity* entity) -> void
+	void Behavior::Owner(Entity* entity)
 	{
 		auto* const dataManager = internal::GetDataManager();
 
@@ -41,7 +41,7 @@ namespace leopph
 	}
 
 
-	auto Behavior::Active(bool const active) -> void
+	void Behavior::Active(bool const active)
 	{
 		auto* const dataManager = internal::GetDataManager();
 
@@ -65,7 +65,7 @@ namespace leopph
 	}
 
 
-	auto Behavior::operator=(Behavior const& other) -> Behavior&
+	Behavior& Behavior::operator=(Behavior const& other)
 	{
 		if (this == &other)
 		{

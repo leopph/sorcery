@@ -149,25 +149,25 @@ namespace leopph::internal::glfw
 	};
 
 
-	auto GetAbstractCursorState(int const glfwCursorState) -> CursorState
+	CursorState GetAbstractCursorState(int const glfwCursorState)
 	{
 		return g_CursorStates.At(glfwCursorState);
 	}
 
 
-	auto GetGlfwCursorState(CursorState const abstractCursorState) -> int
+	int GetGlfwCursorState(CursorState const abstractCursorState)
 	{
 		return g_CursorStates.At(abstractCursorState);
 	}
 
 
-	auto GetAbstractKeyCode(int const glfwKey) -> KeyCode
+	KeyCode GetAbstractKeyCode(int const glfwKey)
 	{
 		return g_KeyCodes.at(glfwKey);
 	}
 
 
-	auto GetAbstractKeyState(int const glfwKeyState) -> KeyState
+	KeyState GetAbstractKeyState(int const glfwKeyState)
 	{
 		return g_KeyStates.at(glfwKeyState);
 	}

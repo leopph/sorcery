@@ -3,13 +3,13 @@
 
 namespace leopph
 {
-	auto AttenuatedLight::Range() const noexcept -> f32
+	f32 AttenuatedLight::Range() const noexcept
 	{
 		return m_Range;
 	}
 
 
-	auto AttenuatedLight::Range(f32 const value) noexcept -> void
+	void AttenuatedLight::Range(f32 const value) noexcept
 	{
 		m_Range = value;
 	}

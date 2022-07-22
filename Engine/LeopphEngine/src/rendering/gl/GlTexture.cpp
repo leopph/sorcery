@@ -78,19 +78,19 @@ namespace leopph
 	}
 
 
-	auto GlTexture::TextureName() const noexcept -> u32
+	u32 GlTexture::TextureName() const noexcept
 	{
 		return m_Texture;
 	}
 
 
-	auto GlTexture::Width() const noexcept -> u32
+	u32 GlTexture::Width() const noexcept
 	{
 		return m_Width;
 	}
 
 
-	auto GlTexture::Height() const noexcept -> u32
+	u32 GlTexture::Height() const noexcept
 	{
 		return m_Height;
 	}

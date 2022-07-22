@@ -5,7 +5,7 @@
 
 namespace leopph::convert::driver
 {
-	auto ParseInteractive(std::vector<std::filesystem::path>& filesToConvert, std::vector<std::string>& outputFileNames) -> void
+	void ParseInteractive(std::vector<std::filesystem::path>& filesToConvert, std::vector<std::string>& outputFileNames)
 	{
 		std::cout << "Interactive mode. Enter $DONE$ any time to start processing the input data.\n";
 		std::cout << "To keep the original file names, leave the corresponding prompt empty.\n\n";

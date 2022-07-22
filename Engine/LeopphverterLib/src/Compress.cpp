@@ -15,14 +15,14 @@ namespace leopph::convert::compress
 	}
 
 
-	auto Compress(std::span<u8> in, std::vector<u8>& out) -> Error
+	Error Compress(std::span<u8> in, std::vector<u8>& out)
 	{
 		auto const tmpBuf = std::make_unique_for_overwrite<u8[]>(TMP_BUF_SZ);
 
 		z_stream stream;
-		stream.zalloc = Z_NULL;
-		stream.zfree = Z_NULL;
-		stream.opaque = Z_NULL;
+		stream.zalloc = nullptr;
+		stream.zfree = nullptr;
+		stream.opaque = nullptr;
 		stream.avail_in = static_cast<uInt>(in.size_bytes());
 		stream.next_in = in.data();
 		stream.avail_out = TMP_BUF_SZ;
@@ -72,15 +72,15 @@ namespace leopph::convert::compress
 	}
 
 
-	auto Uncompress(std::span<u8> in, u64 const uncompressedSize, std::vector<u8>& out) -> Error
+	Error Uncompress(std::span<u8> in, u64 const uncompressedSize, std::vector<u8>& out)
 	{
 		// Make sure the vector has enough space
 		out.resize(out.size() + uncompressedSize);
 
 		z_stream stream;
-		stream.zalloc = Z_NULL;
-		stream.zfree = Z_NULL;
-		stream.opaque = Z_NULL;
+		stream.zalloc = nullptr;
+		stream.zfree = nullptr;
+		stream.opaque = nullptr;
 		stream.avail_in = static_cast<uInt>(in.size_bytes());
 		stream.next_in = in.data();
 		stream.avail_out = static_cast<uInt>(uncompressedSize);

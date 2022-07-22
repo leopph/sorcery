@@ -13,21 +13,21 @@ namespace leopph
 	{
 		public:
 			// Get the AmbientLight instance.
-			LEOPPHAPI static auto Instance() -> AmbientLight&;
+			LEOPPHAPI static AmbientLight& Instance();
 
 			// Get the current color values the AmbientLight uses to light objects.
 			// Component values are in the [0; 1] range.
-			[[nodiscard]] constexpr auto Intensity() const noexcept -> const auto&;
+			[[nodiscard]] constexpr const auto& Intensity() const noexcept;
 
 			// Set the color values the AmbientLight uses to light objects.
 			// Component values must be in the [0; 1] range.
-			constexpr auto Intensity(const Vector3& newInt) noexcept;
+			constexpr auto Intensity(Vector3 const& newInt) noexcept;
 
-			AmbientLight(const AmbientLight& other) = delete;
-			auto operator=(const AmbientLight& other) -> AmbientLight& = delete;
+			AmbientLight(AmbientLight const& other) = delete;
+			AmbientLight& operator=(AmbientLight const& other) = delete;
 
 			AmbientLight(AmbientLight&& other) = delete;
-			auto operator=(AmbientLight&& other) -> AmbientLight& = delete;
+			AmbientLight& operator=(AmbientLight&& other) = delete;
 
 			~AmbientLight() = default;
 
@@ -38,15 +38,14 @@ namespace leopph
 	};
 
 
-	constexpr auto AmbientLight::Intensity() const noexcept -> const auto&
+	constexpr const auto& AmbientLight::Intensity() const noexcept
 	{
 		return m_Intensity;
 	}
 
 
-	constexpr auto AmbientLight::Intensity(const Vector3& newInt) noexcept
+	constexpr auto AmbientLight::Intensity(Vector3 const& newInt) noexcept
 	{
 		m_Intensity = newInt;
 	}
-
 }

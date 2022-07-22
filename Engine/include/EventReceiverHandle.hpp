@@ -1,7 +1,7 @@
 #pragma once
 
-#include "EventReceiver.hpp"
 #include "Event.hpp"
+#include "EventReceiver.hpp"
 
 #include <concepts>
 #include <functional>
@@ -20,18 +20,6 @@ namespace leopph
 
 			explicit EventReceiverHandle(std::function<HandlerType> callback);
 
-			EventReceiverHandle(const EventReceiverHandle& other) = default;
-			auto operator=(const EventReceiverHandle& other) -> EventReceiverHandle& = default;
-
-			EventReceiverHandle(EventReceiverHandle&& other) noexcept;
-			auto operator=(EventReceiverHandle&& other) noexcept -> EventReceiverHandle&;
-
-			constexpr ~EventReceiverHandle() noexcept = default;
-
-			// Handlers are equal if they refer to the same internally stored receiver.
-			// Duplicated handlers are equal, but handler referring to identical but separately registered receivers are not.
-			auto operator==(const EventReceiverHandle& other) const -> bool = default;
-
 		private:
 			class InternalReceiver;
 			// Pointer to the actual receiver object.
@@ -48,16 +36,16 @@ namespace leopph
 		public:
 			explicit InternalReceiver(std::function<HandlerType> callback);
 
-			InternalReceiver(const InternalReceiver& other) = delete;
-			auto operator=(const InternalReceiver& other) -> InternalReceiver& = delete;
+			InternalReceiver(InternalReceiver const& other) = delete;
+			InternalReceiver& operator=(InternalReceiver const& other) = delete;
 
 			InternalReceiver(InternalReceiver&& other) noexcept = delete;
-			auto operator=(InternalReceiver&& other) noexcept -> InternalReceiver& = delete;
+			InternalReceiver& operator=(InternalReceiver&& other) noexcept = delete;
 
 			~InternalReceiver() override = default;
 
 		private:
-			auto OnEventReceived(typename EventReceiver<EventType>::EventParamType event) -> void override;
+			void OnEventReceived(typename EventReceiver<EventType>::EventParamType event) override;
 
 			std::function<HandlerType> m_Callback;
 	};
@@ -70,27 +58,13 @@ namespace leopph
 
 
 	template<std::derived_from<Event> EventType>
-	EventReceiverHandle<EventType>::EventReceiverHandle(EventReceiverHandle&& other) noexcept :
-		EventReceiverHandle{other}
-	{}
-
-
-	template<std::derived_from<Event> EventType>
-	auto EventReceiverHandle<EventType>::operator=(EventReceiverHandle&& other) noexcept -> EventReceiverHandle&
-	{
-		*this = other;
-		return *this;
-	}
-
-
-	template<std::derived_from<Event> EventType>
 	EventReceiverHandle<EventType>::InternalReceiver::InternalReceiver(std::function<HandlerType> callback) :
 		m_Callback{std::move(callback)}
 	{}
 
 
 	template<std::derived_from<Event> EventType>
-	auto EventReceiverHandle<EventType>::InternalReceiver::OnEventReceived(typename EventReceiver<EventType>::EventParamType event) -> void
+	void EventReceiverHandle<EventType>::InternalReceiver::OnEventReceived(typename EventReceiver<EventType>::EventParamType event)
 	{
 		m_Callback(event);
 	}

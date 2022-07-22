@@ -14,9 +14,9 @@ namespace leopph
 		public:
 			using is_transparent = void;
 
-			auto LEOPPHAPI operator()(std::string const& str) const -> std::size_t;
-			auto LEOPPHAPI operator()(std::string_view sv) const -> std::size_t;
-			auto LEOPPHAPI operator()(char const* s) const -> std::size_t;
+			LEOPPHAPI std::size_t operator()(std::string const& str) const;
+			LEOPPHAPI std::size_t operator()(std::string_view sv) const;
+			LEOPPHAPI std::size_t operator()(char const* s) const;
 
 		private:
 			std::hash<std::string_view> m_Hash;

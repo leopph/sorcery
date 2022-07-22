@@ -10,7 +10,7 @@
 
 namespace leopph::convert
 {
-	auto Export(Object const& object, std::endian const endianness) -> std::vector<unsigned char>
+	std::vector<unsigned char> Export(Object const& object, std::endian const endianness)
 	{
 		if (endianness != std::endian::little && endianness != std::endian::big)
 		{

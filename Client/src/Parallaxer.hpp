@@ -20,7 +20,7 @@ namespace demo
 
 			explicit Parallaxer(leopph::ComponentPtr<leopph::Camera> camera, std::span<Layer> layers = {});
 
-			auto OnFrameUpdate() -> void override;
+			void OnFrameUpdate() override;
 
 		private:
 			std::vector<Layer> m_Layers;

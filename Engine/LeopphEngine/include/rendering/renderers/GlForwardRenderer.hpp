@@ -22,11 +22,11 @@ namespace leopph::internal
 
 
 		public:
-			auto Render() -> void override;
+			void Render() override;
 
 		private:
-			static auto CreateUbo(MappedBuffer& ubo, u64 size) -> void;
-			static auto DeleteUbo(MappedBuffer const& ubo) -> void;
+			static void CreateUbo(MappedBuffer& ubo, u64 size);
+			static void DeleteUbo(MappedBuffer const& ubo);
 
 
 		public:
@@ -37,10 +37,10 @@ namespace leopph::internal
 			GlForwardRenderer();
 
 			GlForwardRenderer(GlForwardRenderer const& other) = delete;
-			auto operator=(GlForwardRenderer const& other) -> void = delete;
+			void operator=(GlForwardRenderer const& other) = delete;
 
 			GlForwardRenderer(GlForwardRenderer&& other) = delete;
-			auto operator=(GlForwardRenderer&& other) -> void = delete;
+			void operator=(GlForwardRenderer&& other) = delete;
 
 			~GlForwardRenderer() override;
 

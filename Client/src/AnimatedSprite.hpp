@@ -20,10 +20,10 @@ namespace demo
 			AnimatedSprite(std::span<leopph::ComponentPtr<leopph::ImageSprite>> sprites, AnimationMode animMode, float speed);
 			AnimatedSprite(AnimatedSprite const& other);
 
-			auto OnFrameUpdate() -> void override;
+			void OnFrameUpdate() override;
 
-			auto OnAttach() -> void override;
-			auto OnDetach() -> void override;
+			void OnAttach() override;
+			void OnDetach() override;
 
 		private:
 			std::vector<leopph::ComponentPtr<leopph::ImageSprite>> m_Sprites;

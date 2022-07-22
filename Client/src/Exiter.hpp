@@ -6,5 +6,5 @@
 class Exiter final : public leopph::Behavior
 {
 	public:
-		auto OnFrameUpdate() -> void override;
+		void OnFrameUpdate() override;
 };

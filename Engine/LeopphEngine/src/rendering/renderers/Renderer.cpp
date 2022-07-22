@@ -13,7 +13,7 @@
 
 namespace leopph::internal
 {
-	auto Renderer::Create() -> std::unique_ptr<Renderer>
+	std::unique_ptr<Renderer> Renderer::Create()
 	{
 		switch (GetSettingsImpl()->GetGraphicsApi())
 		{
@@ -28,7 +28,7 @@ namespace leopph::internal
 
 
 
-	auto Renderer::Render() -> void
+	void Renderer::Render()
 	{
 		ExtractMainCamera();
 
@@ -50,112 +50,112 @@ namespace leopph::internal
 
 
 
-	auto Renderer::GetRenderRes() const -> Extent2D const&
+	Extent2D const& Renderer::GetRenderRes() const
 	{
 		return m_RenderRes;
 	}
 
 
 
-	auto Renderer::GetDirShadowRes() const -> std::span<u16 const>
+	std::span<u16 const> Renderer::GetDirShadowRes() const
 	{
 		return m_DirShadowRes;
 	}
 
 
 
-	auto Renderer::GetDirCorrection() const -> f32
+	f32 Renderer::GetDirCorrection() const
 	{
 		return m_DirCorr;
 	}
 
 
 
-	auto Renderer::GetSpotShadowRes() const -> u16
+	u16 Renderer::GetSpotShadowRes() const
 	{
 		return m_SpotShadowRes;
 	}
 
 
 
-	auto Renderer::GetNumMaxSpotLights() const -> u8
+	u8 Renderer::GetNumMaxSpotLights() const
 	{
 		return m_NumMaxSpot;
 	}
 
 
 
-	auto Renderer::GetPointShadowRes() const -> u16
+	u16 Renderer::GetPointShadowRes() const
 	{
 		return m_PointShadowRes;
 	}
 
 
 
-	auto Renderer::GetNumMaxPointLights() const -> u8
+	u8 Renderer::GetNumMaxPointLights() const
 	{
 		return m_NumMaxPoint;
 	}
 
 
 
-	auto Renderer::GetGamma() const -> f32
+	f32 Renderer::GetGamma() const
 	{
 		return m_Gamma;
 	}
 
 
 
-	auto Renderer::GetAmbLight() const -> Vector3 const&
+	Vector3 const& Renderer::GetAmbLight() const
 	{
 		return m_AmbLight;
 	}
 
 
 
-	auto Renderer::GetDirLight() const -> std::optional<DirectionalLight const*> const&
+	std::optional<DirectionalLight const*> const& Renderer::GetDirLight() const
 	{
 		return m_DirLight;
 	}
 
 
 
-	auto Renderer::GetCastingSpotLights() const -> std::span<SpotLight const* const>
+	std::span<SpotLight const* const> Renderer::GetCastingSpotLights() const
 	{
 		return m_CastingSpotLights;
 	}
 
 
 
-	auto Renderer::GetNonCastingSpotLights() const -> std::span<SpotLight const* const>
+	std::span<SpotLight const* const> Renderer::GetNonCastingSpotLights() const
 	{
 		return m_NonCastingSpotLights;
 	}
 
 
 
-	auto Renderer::GetCastingPointLights() const -> std::span<PointLight const* const>
+	std::span<PointLight const* const> Renderer::GetCastingPointLights() const
 	{
 		return m_CastingPointLights;
 	}
 
 
 
-	auto Renderer::GetNonCastingPointLights() const -> std::span<PointLight const* const>
+	std::span<PointLight const* const> Renderer::GetNonCastingPointLights() const
 	{
 		return m_NonCastingPointLights;
 	}
 
 
 
-	auto Renderer::GetMainCamera() const -> std::optional<Camera const*> const&
+	std::optional<Camera const*> const& Renderer::GetMainCamera() const
 	{
 		return m_MainCamera;
 	}
 
 
 
-	auto Renderer::ExtractRenderRes() -> void
+	void Renderer::ExtractRenderRes()
 	{
 		auto const mul = GetWindowImpl()->RenderMultiplier();
 		m_RenderRes.Width = static_cast<u32>(static_cast<f32>(GetWindowImpl()->Width()) / mul);
@@ -164,7 +164,7 @@ namespace leopph::internal
 
 
 
-	auto Renderer::ExtractDirShadowRes() -> void
+	void Renderer::ExtractDirShadowRes()
 	{
 		auto const res = GetSettingsImpl()->DirShadowResolution();
 		m_DirShadowRes.assign(std::begin(res), std::end(res));
@@ -172,49 +172,49 @@ namespace leopph::internal
 
 
 
-	auto Renderer::ExtractSpotShadowRes() -> void
+	void Renderer::ExtractSpotShadowRes()
 	{
 		m_SpotShadowRes = GetSettingsImpl()->SpotShadowResolution();
 	}
 
 
 
-	auto Renderer::ExtractPointShadowRes() -> void
+	void Renderer::ExtractPointShadowRes()
 	{
 		m_PointShadowRes = GetSettingsImpl()->PointShadowResolution();
 	}
 
 
 
-	auto Renderer::ExtractDirCorrection() -> void
+	void Renderer::ExtractDirCorrection()
 	{
 		m_DirCorr = GetSettingsImpl()->DirShadowCascadeCorrection();
 	}
 
 
 
-	auto Renderer::ExtractNumMaxSpotLights() -> void
+	void Renderer::ExtractNumMaxSpotLights()
 	{
 		m_NumMaxSpot = GetSettingsImpl()->MaxSpotLightCount();
 	}
 
 
 
-	auto Renderer::ExtractNumMaxPointLights() -> void
+	void Renderer::ExtractNumMaxPointLights()
 	{
 		m_NumMaxPoint = GetSettingsImpl()->MaxPointLightCount();
 	}
 
 
 
-	auto Renderer::ExtractGamma() -> void
+	void Renderer::ExtractGamma()
 	{
 		m_Gamma = GetSettingsImpl()->Gamma();
 	}
 
 
 
-	auto Renderer::ExtractAllConfig() -> void
+	void Renderer::ExtractAllConfig()
 	{
 		ExtractRenderRes();
 		ExtractDirShadowRes();
@@ -228,7 +228,7 @@ namespace leopph::internal
 
 
 
-	auto Renderer::ExtractLights() -> void
+	void Renderer::ExtractLights()
 	{
 		m_AmbLight = AmbientLight::Instance().Intensity();
 
@@ -250,7 +250,7 @@ namespace leopph::internal
 
 
 
-	auto Renderer::ExtractMainCamera() -> void
+	void Renderer::ExtractMainCamera()
 	{
 		if (auto const* const cam = Camera::Current())
 		{
@@ -264,7 +264,7 @@ namespace leopph::internal
 
 
 
-	auto Renderer::UpdateDependantResources() -> void
+	void Renderer::UpdateDependantResources()
 	{
 		if (m_ResUpdateFlags.RenderRes)
 		{
@@ -296,35 +296,35 @@ namespace leopph::internal
 
 
 
-	auto Renderer::OnEventReceived(EventReceiver<WindowEvent>::EventParamType) -> void
+	void Renderer::OnEventReceived(EventReceiver<WindowEvent>::EventParamType)
 	{
 		m_ResUpdateFlags.RenderRes = true;
 	}
 
 
 
-	auto Renderer::OnEventReceived(EventReceiver<DirShadowResEvent>::EventParamType) -> void
+	void Renderer::OnEventReceived(EventReceiver<DirShadowResEvent>::EventParamType)
 	{
 		m_ResUpdateFlags.DirShadowRes = true;
 	}
 
 
 
-	auto Renderer::OnEventReceived(EventReceiver<SpotShadowResEvent>::EventParamType) -> void
+	void Renderer::OnEventReceived(EventReceiver<SpotShadowResEvent>::EventParamType)
 	{
 		m_ResUpdateFlags.SpotShadowRes = true;
 	}
 
 
 
-	auto Renderer::OnEventReceived(EventReceiver<PointShadowResEvent>::EventParamType) -> void
+	void Renderer::OnEventReceived(EventReceiver<PointShadowResEvent>::EventParamType)
 	{
 		m_ResUpdateFlags.PointShadowRes = true;
 	}
 
 
 
-	auto Renderer::CalculateShadowCascades(std::vector<ShadowCascade>& out) -> void
+	void Renderer::CalculateShadowCascades(std::vector<ShadowCascade>& out)
 	{
 		auto const frust = (*m_MainCamera)->Frustum();
 		auto const& frustNearZ = frust.NearBottomLeft[2];

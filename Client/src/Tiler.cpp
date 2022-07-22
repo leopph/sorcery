@@ -15,12 +15,12 @@ namespace demo
 	{ }
 
 
-	auto Tiler::OnFrameUpdate() -> void
+	void Tiler::OnFrameUpdate()
 	{
 		auto const cam = Camera::Current();
 		std::ranges::for_each(m_Layers, [cam](auto& layer)
 		{
-			auto const extentX = layer.Prototype->get_component<ImageSprite>()->Extents()[0];
+			auto const extentX = layer.Prototype->template get_component<ImageSprite>()->Extents()[0];
 			auto leftSpawn = cam->TransformToViewport(layer.LeftEdge->get_transform().get_position())[0] > 0;
 			auto rightSpawn = cam->TransformToViewport(layer.RightEdge->get_transform().get_position())[0] < 1;
 

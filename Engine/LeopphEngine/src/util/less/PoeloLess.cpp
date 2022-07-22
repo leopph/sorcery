@@ -3,19 +3,19 @@
 
 namespace leopph::internal
 {
-	auto PoeloLess::operator()(const std::unique_ptr<Poelo>& left, const std::unique_ptr<Poelo>& right) const -> bool
+	bool PoeloLess::operator()(std::unique_ptr<Poelo> const& left, std::unique_ptr<Poelo> const& right) const
 	{
 		return left < right;
 	}
 
 
-	auto PoeloLess::operator()(const std::unique_ptr<Poelo>& left, const Poelo* right) const -> bool
+	bool PoeloLess::operator()(std::unique_ptr<Poelo> const& left, Poelo const* right) const
 	{
 		return left.get() < right;
 	}
 
 
-	auto PoeloLess::operator()(const Poelo* left, const std::unique_ptr<Poelo>& right) const -> bool
+	bool PoeloLess::operator()(Poelo const* left, std::unique_ptr<Poelo> const& right) const
 	{
 		return left < right.get();
 	}

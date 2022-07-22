@@ -10,30 +10,25 @@ namespace leopph
 		public:
 			// Get the size of the camera in engine units.
 			// side specifies whether the value should be interpreted horizontally or vertically.
-			[[nodiscard]] LEOPPHAPI
-			auto Size(Side side = Side::Horizontal) const noexcept -> float;
+			[[nodiscard]] LEOPPHAPI float Size(Side side = Side::Horizontal) const noexcept;
 
 			// Set the size of the camera in engine units.
 			// side specifies whether the value is interpreted horizontally or vertically.
-			LEOPPHAPI
-			auto Size(float size, Side side = Side::Horizontal) noexcept -> void;
+			LEOPPHAPI void Size(float size, Side side = Side::Horizontal) noexcept;
 
-			[[nodiscard]] LEOPPHAPI
-			auto ProjectionMatrix() const -> Matrix4 override;
+			[[nodiscard]] LEOPPHAPI Matrix4 ProjectionMatrix() const override;
 
-			[[nodiscard]] LEOPPHAPI
-			auto Frustum() const -> leopph::Frustum override;
+			[[nodiscard]] LEOPPHAPI leopph::Frustum Frustum() const override;
 
 			OrthographicCamera() = default;
 
 			OrthographicCamera(OrthographicCamera const& other) = default;
-			auto operator=(OrthographicCamera const& other) -> OrthographicCamera& = default;
+			OrthographicCamera& operator=(OrthographicCamera const& other) = default;
 
-			[[nodiscard]] LEOPPHAPI
-			auto Clone() const -> ComponentPtr<> override;
+			[[nodiscard]] LEOPPHAPI ComponentPtr<> Clone() const override;
 
 			OrthographicCamera(OrthographicCamera&& other) noexcept = delete;
-			auto operator=(OrthographicCamera&& other) noexcept -> OrthographicCamera& = delete;
+			OrthographicCamera& operator=(OrthographicCamera&& other) noexcept = delete;
 
 			~OrthographicCamera() override = default;
 

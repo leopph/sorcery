@@ -4,7 +4,7 @@
 
 // Entry point for LeopphEngine.
 // This must be included exactly once in your application.
-auto main() -> int
+int main()
 {
 	return leopph::internal::Main(leopph::Init);
 }

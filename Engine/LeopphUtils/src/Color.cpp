@@ -5,7 +5,7 @@
 
 namespace leopph
 {
-	Color::Color(const Vector3& vec) noexcept :
+	Color::Color(Vector3 const& vec) noexcept :
 		Red{static_cast<unsigned char>(std::clamp(vec[0], 0.f, 1.f) * 255)},
 		Green{static_cast<unsigned char>(std::clamp(vec[1], 0.f, 1.f) * 255)},
 		Blue{static_cast<unsigned char>(std::clamp(vec[2], 0.f, 1.f) * 255)}

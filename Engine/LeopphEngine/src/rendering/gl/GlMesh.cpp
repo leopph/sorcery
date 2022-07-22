@@ -81,7 +81,7 @@ namespace leopph::internal
 	}
 
 
-	auto GlMesh::DrawWithMaterial(ShaderFamily& shader, GLuint nextFreeTextureUnit, GLsizei const instanceCount) const -> void
+	void GlMesh::DrawWithMaterial(ShaderFamily& shader, GLuint nextFreeTextureUnit, GLsizei const instanceCount) const
 	{
 		shader.SetUniform("u_Material.diffuseColor", static_cast<Vector3>(m_Material->DiffuseColor));
 		shader.SetUniform("u_Material.specularColor", static_cast<Vector3>(m_Material->SpecularColor));
@@ -127,7 +127,7 @@ namespace leopph::internal
 	}
 
 
-	auto GlMesh::DrawWithoutMaterial(GLsizei const instanceCount) const -> void
+	void GlMesh::DrawWithoutMaterial(GLsizei const instanceCount) const
 	{
 		if (m_Material->TwoSided)
 		{
@@ -143,7 +143,7 @@ namespace leopph::internal
 	}
 
 
-	auto GlMesh::Material() const noexcept -> std::shared_ptr<leopph::Material const> const&
+	std::shared_ptr<leopph::Material const> const& GlMesh::Material() const noexcept
 	{
 		return m_Material;
 	}

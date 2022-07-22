@@ -28,89 +28,89 @@ namespace leopph::internal
 			DataManager() = default;
 
 			DataManager(DataManager const& other) = delete;
-			auto operator=(DataManager const& other) -> void = delete;
+			void operator=(DataManager const& other) = delete;
 
 			DataManager(DataManager&& other) = delete;
-			auto operator=(DataManager&& other) -> void = delete;
+			void operator=(DataManager&& other) = delete;
 
 			~DataManager();
 
 			// Takes ownership of the Poelo instance.
-			auto Store(std::unique_ptr<Poelo> poelo) -> void;
+			void Store(std::unique_ptr<Poelo> poelo);
 
 			// Destroys the passed Poelo instance if found.
 			// Returns whether deletion took place.
-			auto Destroy(Poelo const* poelo) -> bool;
+			bool Destroy(Poelo const* poelo);
 
 			// Non-owningly registers an Entity instance.
 			// The function does NOT check if the Entity instance is already registered.
-			auto RegisterEntity(Entity* entity) -> void;
+			void RegisterEntity(Entity* entity);
 
 			// Unregisters the passed Entity instance.
 			// Removes and destroys the attached Components.
-			auto UnregisterEntity(Entity const* entity) -> void;
+			void UnregisterEntity(Entity const* entity);
 
 			// Returns a pointer to the stored Entity with the passed name, or nullptr.
-			[[nodiscard]] auto FindEntity(std::string const& name) -> Entity*;
+			[[nodiscard]] Entity* FindEntity(std::string const& name);
 
 			// Adds the Component to the Entity's collection of active/inactive Components depending on the value of active.
-			auto RegisterComponent(Entity const* entity, ComponentPtr<> component, bool active) -> void;
+			void RegisterComponent(Entity const* entity, ComponentPtr<> component, bool active);
 
 			// Removes the Component from the Entity's collection of active/inactive Components depending on the value of active.
 			// Returns the removed pointer.
-			auto UnregisterComponent(Entity const* entity, Component const* component, bool active) -> ComponentPtr<>;
+			ComponentPtr<> UnregisterComponent(Entity const* entity, Component const* component, bool active);
 
 			// Returns the Entity's collection of active/inactive Components depending on the value of active.
 			[[nodiscard]]
-			auto ComponentsOfEntity(Entity const* entity, bool active) const -> std::span<ComponentPtr<> const>;
+			std::span<ComponentPtr<> const> ComponentsOfEntity(Entity const* entity, bool active) const;
 
 			// Adds the Behavior to the collection of active Behaviors.
 			// Does NOT check for duplicates.
-			auto RegisterActiveBehavior(Behavior* behavior) -> void;
+			void RegisterActiveBehavior(Behavior* behavior);
 
 			// Removes the Behavior from the collection of active Behaviors.
 			// Removes duplicates.
 			// Not registered behaviors are ignored.
-			auto UnregisterActiveBehavior(Behavior const* behavior) -> void;
+			void UnregisterActiveBehavior(Behavior const* behavior);
 
 			// Returns the registered, currently active Behaviors.
-			[[nodiscard]] auto ActiveBehaviors() const noexcept -> std::span<Behavior* const>;
+			[[nodiscard]] std::span<Behavior* const> ActiveBehaviors() const noexcept;
 
 			// Adds the DirLight to the collection of active DirLights.
 			// Does NOT check for duplicates.
-			auto RegisterActiveDirLight(DirectionalLight const* dirLight) -> void;
+			void RegisterActiveDirLight(DirectionalLight const* dirLight);
 
 			// Removes the DirLight from the collection of active DirLights.
 			// Remove duplicates.
 			// Not registered DirLights are ignored.
-			auto UnregisterActiveDirLight(DirectionalLight const* dirLight) -> void;
+			void UnregisterActiveDirLight(DirectionalLight const* dirLight);
 
 			// Returns the last created active DirectionalLight, or nullptr if none.
-			[[nodiscard]] auto DirectionalLight() const -> DirectionalLight const*;
+			[[nodiscard]] DirectionalLight const* DirectionalLight() const;
 
 			// Adds the SpotLight to the collection of active SpotLights.
 			// Does NOT check for duplicates.
-			auto RegisterActiveSpotLight(SpotLight const* spotLight) -> void;
+			void RegisterActiveSpotLight(SpotLight const* spotLight);
 
 			// Removes the SpotLight from the collection of active SpotLights.
 			// Removes duplicates.
 			// Not registered SpotLights are ignored.
-			auto UnregisterActiveSpotLight(SpotLight const* spotLight) -> void;
+			void UnregisterActiveSpotLight(SpotLight const* spotLight);
 
 			// Returns the registered, currently active SpotLights.
-			[[nodiscard]] auto ActiveSpotLights() const noexcept -> std::span<SpotLight const* const>;
+			[[nodiscard]] std::span<SpotLight const* const> ActiveSpotLights() const noexcept;
 
 			// Adds the PointLight to the collection of active PointLights.
 			// Does NOT check for duplicates.
-			auto RegisterActivePointLight(PointLight const* pointLight) -> void;
+			void RegisterActivePointLight(PointLight const* pointLight);
 
 			// Removes the PointLight from the collection of active PointLights.
 			// Removes duplicates.
 			// Not registered PointLights are ignored.
-			auto UnregisterActivePointLight(PointLight const* pointLight) -> void;
+			void UnregisterActivePointLight(PointLight const* pointLight);
 
 			// Returns the registered, currently active PointLights.
-			[[nodiscard]] auto ActivePointLights() const noexcept -> std::span<PointLight const* const>;
+			[[nodiscard]] std::span<PointLight const* const> ActivePointLights() const noexcept;
 
 		private:
 			struct EntityEntry
@@ -124,10 +124,10 @@ namespace leopph::internal
 			using EntityOrderFunc = std::ranges::less;
 			using BehaviorOrderFunc = std::ranges::less;
 
-			auto SortEntities() -> void;
+			void SortEntities();
 
 		public:
-			auto SortActiveBehaviors() -> void;
+			void SortActiveBehaviors();
 
 		private:
 			// All engine-owned objects.
@@ -150,19 +150,18 @@ namespace leopph::internal
 
 			// Returns a non-const iterator to the element or past-the-end.
 			[[nodiscard]]
-			auto GetEntityIterator(std::string const& name) -> decltype(m_EntitiesAndComponents)::iterator;
+			decltype(m_EntitiesAndComponents)::iterator GetEntityIterator(std::string const& name);
 
 			// Returns a const iterator to the element or past-the-end.
 			[[nodiscard]]
-			auto GetEntityIterator(std::string const& name) const -> decltype(m_EntitiesAndComponents)::const_iterator;
+			decltype(m_EntitiesAndComponents)::const_iterator GetEntityIterator(std::string const& name) const;
 
 			// Helper function to get const and non-const iterators depending on context.
-			[[nodiscard]] static
-			auto GetEntityIteratorCommon(auto* self, std::string const& name) -> decltype(auto);
+			[[nodiscard]] static decltype(auto) GetEntityIteratorCommon(auto* self, std::string const& name);
 	};
 
 
-	[[nodiscard]] auto DataManager::GetEntityIteratorCommon(auto* const self, std::string const& name) -> decltype(auto)
+	[[nodiscard]] decltype(auto) DataManager::GetEntityIteratorCommon(auto* const self, std::string const& name)
 	{
 		auto it{
 			std::ranges::lower_bound(self->m_EntitiesAndComponents, name, [](auto const& elemName, auto const& value)

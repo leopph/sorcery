@@ -23,38 +23,38 @@ namespace leopph
 	}
 
 
-	auto Mesh::Vertices() const -> std::span<Vertex const>
+	std::span<Vertex const> Mesh::Vertices() const
 	{
 		return m_Vertices;
 	}
 
 
-	auto Mesh::Vertices(std::vector<Vertex> vertices) -> void
+	void Mesh::Vertices(std::vector<Vertex> vertices)
 	{
 		m_Vertices = std::move(vertices);
 		m_BoundingSphere = CalculateBoundingSphere();
 	}
 
 
-	auto Mesh::Indices() const -> std::span<unsigned const>
+	std::span<unsigned const> Mesh::Indices() const
 	{
 		return m_Indices;
 	}
 
 
-	auto Mesh::Indices(std::vector<unsigned> indices) -> void
+	void Mesh::Indices(std::vector<unsigned> indices)
 	{
 		m_Indices = std::move(indices);
 	}
 
 
-	auto Mesh::Material() const -> std::shared_ptr<leopph::Material> const&
+	std::shared_ptr<leopph::Material> const& Mesh::Material() const
 	{
 		return m_Material;
 	}
 
 
-	auto Mesh::Material(std::shared_ptr<leopph::Material> material) -> void
+	void Mesh::Material(std::shared_ptr<leopph::Material> material)
 	{
 		if (!material)
 		{
@@ -66,13 +66,13 @@ namespace leopph
 	}
 
 
-	auto Mesh::BoundingSphere() const -> Sphere const&
+	Sphere const& Mesh::BoundingSphere() const
 	{
 		return m_BoundingSphere;
 	}
 
 
-	auto Mesh::CalculateBoundingSphere() const noexcept -> Sphere
+	Sphere Mesh::CalculateBoundingSphere() const noexcept
 	{
 		if (m_Vertices.empty())
 		{

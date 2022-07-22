@@ -48,64 +48,64 @@ namespace leopph
 				constexpr explicit Matrix(Matrix<T, N + 1, M + 1> const& other);
 
 				constexpr Matrix(Matrix<T, N, M> const& other) = default;
-				constexpr auto operator=(Matrix const& other) -> Matrix<T, N, M>& = default;
+				constexpr Matrix<T, N, M>& operator=(Matrix const& other) = default;
 
 				constexpr Matrix(Matrix<T, N, M>&& other) = default;
-				constexpr auto operator=(Matrix&& other) -> Matrix<T, N, M>& = default;
+				constexpr Matrix<T, N, M>& operator=(Matrix&& other) = default;
 
 				constexpr ~Matrix() = default;
 
 				// Indetity matrix.
-				constexpr static auto Identity() noexcept -> Matrix<T, N, M>
+				constexpr static Matrix<T, N, M> Identity() noexcept
 					requires(N == M);
 
 				// View matrix for rendering that is calculated based on current Position, target Position, and the world's vertical axis.
-				static auto LookAt(Vector<T, 3> const& position, Vector<T, 3> const& target, Vector<T, 3> const& worldUp) noexcept -> Matrix<T, 4, 4>
+				static Matrix<T, 4, 4> LookAt(Vector<T, 3> const& position, Vector<T, 3> const& target, Vector<T, 3> const& worldUp) noexcept
 					requires(N == 4 && M == 4);
 
 				// Perspective proection matrix for rendering that is calculated based on the left, right, top, and bottom coordinates of the view frustum as well as near and far clip planes.
-				constexpr static auto Perspective(T const& left, T const& right, T const& top, T const& bottom, T const& nearClipPlane, T const& farClipPlane) noexcept -> Matrix<T, 4, 4>
+				constexpr static Matrix<T, 4, 4> Perspective(T const& left, T const& right, T const& top, T const& bottom, T const& nearClipPlane, T const& farClipPlane) noexcept
 					requires (N == 4 && M == 4);
 
 				// Perspective projection matrix for rendering that is calculated based on FOV, aspect ratio, and the near and far clip planes.
-				static auto Perspective(T const& fov, T const& aspectRatio, T const& nearClipPlane, T const& farClipPlane) noexcept -> Matrix<T, 4, 4>
+				static Matrix<T, 4, 4> Perspective(T const& fov, T const& aspectRatio, T const& nearClipPlane, T const& farClipPlane) noexcept
 					requires (N == 4 && M == 4);
 
 				// Orthographgic projection matrix for rendering that is calculated based on the left, right, top, and bottom coordinates of the view frustum.
-				constexpr static auto Ortographic(T const& left, T const& right, T const& top, T const& bottom, T const& nearClipPlane, T const& farClipPlane) noexcept -> Matrix<T, 4, 4>;
+				constexpr static Matrix<T, 4, 4> Ortographic(T const& left, T const& right, T const& top, T const& bottom, T const& nearClipPlane, T const& farClipPlane) noexcept;
 
 				// Translation matrix.
-				constexpr static auto Translate(Vector<T, 3> const& vector) noexcept -> Matrix<T, 4, 4>
+				constexpr static Matrix<T, 4, 4> Translate(Vector<T, 3> const& vector) noexcept
 					requires (N == 4 && M == 4);
 
 				// Scaling matrix.
-				constexpr static auto Scale(Vector<T, 3> const& vector) noexcept -> Matrix<T, 4, 4>
+				constexpr static Matrix<T, 4, 4> Scale(Vector<T, 3> const& vector) noexcept
 					requires (N == 4 && M == 4);
 
 				// Returns a reference to the internal data structure.
 				// It is not adviced to call this function.
-				[[nodiscard]] constexpr auto Data() const noexcept -> auto&;
+				[[nodiscard]] constexpr auto& Data() const noexcept;
 
 				// Returns the Nth row of the Matrix as a const reference to an M dimensional Vector.
-				constexpr auto operator[](size_t index) const -> auto&;
+				constexpr auto& operator[](size_t index) const;
 				// Returns the Nth row of the Matrix as a non-const reference to an M dimensional Vector.
-				constexpr auto operator[](size_t index) -> auto&;
+				constexpr auto& operator[](size_t index);
 
 				// Determinant of the Matrix.
-				[[nodiscard]] constexpr auto Det() const noexcept -> T
+				[[nodiscard]] constexpr T Det() const noexcept
 					requires(N == M);
 
 				// Returns a new Matrix that is the transposed of this Matrix.
-				[[nodiscard]] constexpr auto Transposed() const noexcept -> Matrix<T, M, N>;
+				[[nodiscard]] constexpr Matrix<T, M, N> Transposed() const noexcept;
 
 				// In-place transpose.
 				// Returns a reference to this Matrix.
-				constexpr auto Transpose() noexcept -> Matrix<T, N, M>&
+				constexpr Matrix<T, N, M>& Transpose() noexcept
 					requires(N == M);
 
 				// Returns a new Matrix that is the inverse of this Matrix.
 				// The function does not check whether the inverse exists or not. Make sure to only call this if it does.
-				[[nodiscard]] constexpr auto Inverse() const noexcept -> Matrix<T, N, M>
+				[[nodiscard]] constexpr Matrix<T, N, M> Inverse() const noexcept
 					requires(N == M);
 
 				// Returns a new Matrix that has one more rows and colums than this.
@@ -114,7 +114,7 @@ namespace leopph
 
 			private:
 				// Helper function to get const and non-const references to elements depending on context.
-				[[nodiscard]] constexpr static auto GetElementCommon(auto* self, std::size_t index) -> decltype(auto);
+				[[nodiscard]] constexpr static decltype(auto) GetElementCommon(auto* self, std::size_t index);
 
 				std::array<Vector<T, M>, N> m_Data{};
 		};
@@ -165,7 +165,7 @@ namespace leopph
 
 		template<class T, std::size_t N, std::size_t M>
 			requires (N > 1 && M > 1)
-		constexpr auto Matrix<T, N, M>::Identity() noexcept -> Matrix<T, N, M>
+		constexpr Matrix<T, N, M> Matrix<T, N, M>::Identity() noexcept
 			requires (N == M)
 		{
 			return Matrix<T, N, M>{1};
@@ -174,7 +174,7 @@ namespace leopph
 
 		template<class T, std::size_t N, std::size_t M>
 			requires (N > 1 && M > 1)
-		auto Matrix<T, N, M>::LookAt(Vector<T, 3> const& position, Vector<T, 3> const& target, Vector<T, 3> const& worldUp) noexcept -> Matrix<T, 4, 4>
+		Matrix<T, 4, 4> Matrix<T, N, M>::LookAt(Vector<T, 3> const& position, Vector<T, 3> const& target, Vector<T, 3> const& worldUp) noexcept
 			requires (N == 4 && M == 4)
 		{
 			Vector<T, 3> z{(target - position).Normalized()};
@@ -192,7 +192,7 @@ namespace leopph
 
 		template<class T, std::size_t N, std::size_t M>
 			requires (N > 1 && M > 1)
-		constexpr auto Matrix<T, N, M>::Perspective(T const& left, T const& right, T const& top, T const& bottom, T const& nearClipPlane, T const& farClipPlane) noexcept -> Matrix<T, 4, 4>
+		constexpr Matrix<T, 4, 4> Matrix<T, N, M>::Perspective(T const& left, T const& right, T const& top, T const& bottom, T const& nearClipPlane, T const& farClipPlane) noexcept
 			requires (N == 4 && M == 4)
 		{
 			Matrix<T, 4, 4> ret;
@@ -209,7 +209,7 @@ namespace leopph
 
 		template<class T, std::size_t N, std::size_t M>
 			requires (N > 1 && M > 1)
-		auto Matrix<T, N, M>::Perspective(T const& fov, T const& aspectRatio, T const& nearClipPlane, T const& farClipPlane) noexcept -> Matrix<T, 4, 4>
+		Matrix<T, 4, 4> Matrix<T, N, M>::Perspective(T const& fov, T const& aspectRatio, T const& nearClipPlane, T const& farClipPlane) noexcept
 			requires (N == 4 && M == 4)
 		{
 			T tanHalfFov{static_cast<T>(math::Tan(fov / static_cast<T>(2)))};
@@ -223,7 +223,7 @@ namespace leopph
 
 		template<class T, std::size_t N, std::size_t M>
 			requires (N > 1 && M > 1)
-		constexpr auto Matrix<T, N, M>::Ortographic(T const& left, T const& right, T const& top, T const& bottom, T const& nearClipPlane, T const& farClipPlane) noexcept -> Matrix<T, 4, 4>
+		constexpr Matrix<T, 4, 4> Matrix<T, N, M>::Ortographic(T const& left, T const& right, T const& top, T const& bottom, T const& nearClipPlane, T const& farClipPlane) noexcept
 		{
 			Matrix<T, 4, 4> ret;
 			ret[0][0] = static_cast<T>(static_cast<T>(2) / (right - left));
@@ -239,7 +239,7 @@ namespace leopph
 
 		template<class T, std::size_t N, std::size_t M>
 			requires (N > 1 && M > 1)
-		constexpr auto Matrix<T, N, M>::Translate(Vector<T, 3> const& vector) noexcept -> Matrix<T, 4, 4>
+		constexpr Matrix<T, 4, 4> Matrix<T, N, M>::Translate(Vector<T, 3> const& vector) noexcept
 			requires (N == 4 && M == 4)
 		{
 			Matrix<T, 4, 4> ret = Identity();
@@ -253,7 +253,7 @@ namespace leopph
 
 		template<class T, std::size_t N, std::size_t M>
 			requires (N > 1 && M > 1)
-		constexpr auto Matrix<T, N, M>::Scale(Vector<T, 3> const& vector) noexcept -> Matrix<T, 4, 4>
+		constexpr Matrix<T, 4, 4> Matrix<T, N, M>::Scale(Vector<T, 3> const& vector) noexcept
 			requires (N == 4 && M == 4)
 		{
 			Matrix<T, 4, 4> ret = Identity();
@@ -267,7 +267,7 @@ namespace leopph
 
 		template<class T, std::size_t N, std::size_t M>
 			requires (N > 1 && M > 1)
-		constexpr auto Matrix<T, N, M>::Data() const noexcept -> auto&
+		constexpr auto& Matrix<T, N, M>::Data() const noexcept
 		{
 			return m_Data;
 		}
@@ -275,7 +275,7 @@ namespace leopph
 
 		template<class T, std::size_t N, std::size_t M>
 			requires (N > 1 && M > 1)
-		constexpr auto Matrix<T, N, M>::operator[](size_t index) const -> auto&
+		constexpr auto& Matrix<T, N, M>::operator[](size_t index) const
 		{
 			return GetElementCommon(this, index);
 		}
@@ -283,7 +283,7 @@ namespace leopph
 
 		template<class T, std::size_t N, std::size_t M>
 			requires (N > 1 && M > 1)
-		constexpr auto Matrix<T, N, M>::operator[](size_t const index) -> auto&
+		constexpr auto& Matrix<T, N, M>::operator[](size_t const index)
 		{
 			return GetElementCommon(this, index);
 		}
@@ -291,7 +291,7 @@ namespace leopph
 
 		template<class T, std::size_t N, std::size_t M>
 			requires (N > 1 && M > 1)
-		constexpr auto Matrix<T, N, M>::Det() const noexcept -> T
+		constexpr T Matrix<T, N, M>::Det() const noexcept
 			requires (N == M)
 		{
 			Matrix<T, N, M> tmp{*this};
@@ -317,7 +317,7 @@ namespace leopph
 
 		template<class T, std::size_t N, std::size_t M>
 			requires (N > 1 && M > 1)
-		constexpr auto Matrix<T, N, M>::Transposed() const noexcept -> Matrix<T, M, N>
+		constexpr Matrix<T, M, N> Matrix<T, N, M>::Transposed() const noexcept
 		{
 			Matrix<T, M, N> ret;
 			for (size_t i = 0; i < N; i++)
@@ -333,7 +333,7 @@ namespace leopph
 
 		template<class T, std::size_t N, std::size_t M>
 			requires (N > 1 && M > 1)
-		constexpr auto Matrix<T, N, M>::Transpose() noexcept -> Matrix<T, N, M>&
+		constexpr Matrix<T, N, M>& Matrix<T, N, M>::Transpose() noexcept
 			requires (N == M)
 		{
 			for (std::size_t i = 0; i < N; i++)
@@ -351,7 +351,7 @@ namespace leopph
 
 		template<class T, std::size_t N, std::size_t M>
 			requires (N > 1 && M > 1)
-		constexpr auto Matrix<T, N, M>::Inverse() const noexcept -> Matrix<T, N, M>
+		constexpr Matrix<T, N, M> Matrix<T, N, M>::Inverse() const noexcept
 			requires (N == M)
 		{
 			Matrix<T, N, M> left{*this};
@@ -462,7 +462,7 @@ namespace leopph
 
 		template<class T, std::size_t N, std::size_t M>
 			requires (N > 1 && M > 1)
-		constexpr auto Matrix<T, N, M>::GetElementCommon(auto* const self, std::size_t const index) -> decltype(auto)
+		constexpr decltype(auto) Matrix<T, N, M>::GetElementCommon(auto* const self, std::size_t const index)
 		{
 			return self->m_Data[index];
 		}
@@ -471,7 +471,7 @@ namespace leopph
 		// Non-member operators
 
 		template<class T, std::size_t N, std::size_t M>
-		constexpr auto operator<<(std::ostream& stream, Matrix<T, N, M> const& matrix) -> std::ostream&
+		constexpr std::ostream& operator<<(std::ostream& stream, Matrix<T, N, M> const& matrix)
 		{
 			for (size_t i = 0; i < N; i++)
 			{
@@ -493,7 +493,7 @@ namespace leopph
 
 
 		template<class T, std::size_t N, std::size_t M>
-		constexpr auto operator+(Matrix<T, N, M> const& left, Matrix<T, N, M> const& right) noexcept -> Matrix<T, N, M>
+		constexpr Matrix<T, N, M> operator+(Matrix<T, N, M> const& left, Matrix<T, N, M> const& right) noexcept
 		{
 			Matrix<T, N, M> ret;
 			for (std::size_t i = 0; i < N; i++)
@@ -505,7 +505,7 @@ namespace leopph
 
 
 		template<class T, std::size_t N, std::size_t M>
-		constexpr auto operator+=(Matrix<T, N, M>& left, Matrix<T, N, M> const& right) noexcept -> Matrix<T, N, M>&
+		constexpr Matrix<T, N, M>& operator+=(Matrix<T, N, M>& left, Matrix<T, N, M> const& right) noexcept
 		{
 			for (std::size_t i = 0; i < N; i++)
 			{
@@ -516,7 +516,7 @@ namespace leopph
 
 
 		template<class T, std::size_t N, std::size_t M>
-		constexpr auto operator-(Matrix<T, N, M> const& left, Matrix<T, N, M> const& right) noexcept -> Matrix<T, N, M>
+		constexpr Matrix<T, N, M> operator-(Matrix<T, N, M> const& left, Matrix<T, N, M> const& right) noexcept
 		{
 			Matrix<T, N, M> ret;
 			for (std::size_t i = 0; i < N; i++)
@@ -528,7 +528,7 @@ namespace leopph
 
 
 		template<class T, std::size_t N, std::size_t M>
-		constexpr auto operator-=(Matrix<T, N, M>& left, Matrix<T, N, M> const& right) noexcept -> Matrix<T, N, M>&
+		constexpr Matrix<T, N, M>& operator-=(Matrix<T, N, M>& left, Matrix<T, N, M> const& right) noexcept
 		{
 			for (std::size_t i = 0; i < N; i++)
 			{
@@ -539,7 +539,7 @@ namespace leopph
 
 
 		template<class T, std::size_t N, std::size_t M, std::convertible_to<T> T1>
-		constexpr auto operator*(Matrix<T, N, M> const& left, T1 const& right) noexcept -> Matrix<T, N, M>
+		constexpr Matrix<T, N, M> operator*(Matrix<T, N, M> const& left, T1 const& right) noexcept
 		{
 			Matrix<T, N, M> ret;
 			for (std::size_t i = 0; i < N; i++)
@@ -551,7 +551,7 @@ namespace leopph
 
 
 		template<class T, std::size_t N, std::size_t M, std::convertible_to<T> T1>
-		constexpr auto operator*(T1 const& left, Matrix<T, N, M> const& right) noexcept -> Matrix<T, N, M>
+		constexpr Matrix<T, N, M> operator*(T1 const& left, Matrix<T, N, M> const& right) noexcept
 		{
 			Matrix<T, N, M> ret;
 			for (std::size_t i = 0; i < N; i++)
@@ -563,7 +563,7 @@ namespace leopph
 
 
 		template<class T, std::size_t N, std::size_t M>
-		constexpr auto operator*(Matrix<T, N, M> const& left, Vector<T, M> const& right) noexcept -> Vector<T, N>
+		constexpr Vector<T, N> operator*(Matrix<T, N, M> const& left, Vector<T, M> const& right) noexcept
 		{
 			Vector<T, N> ret;
 			for (size_t i = 0; i < N; i++)
@@ -578,7 +578,7 @@ namespace leopph
 
 
 		template<class T, std::size_t N, std::size_t M>
-		constexpr auto operator*(Vector<T, N> const& left, Matrix<T, N, M> const& right) noexcept -> Vector<T, M>
+		constexpr Vector<T, M> operator*(Vector<T, N> const& left, Matrix<T, N, M> const& right) noexcept
 		{
 			Vector<T, M> ret;
 			for (size_t j = 0; j < M; j++)
@@ -593,7 +593,7 @@ namespace leopph
 
 
 		template<class T, std::size_t N, std::size_t M, std::size_t P>
-		constexpr auto operator*(Matrix<T, N, M> const& left, Matrix<T, M, P> const& right) noexcept -> Matrix<T, N, P>
+		constexpr Matrix<T, N, P> operator*(Matrix<T, N, M> const& left, Matrix<T, M, P> const& right) noexcept
 		{
 			Matrix<T, N, P> ret;
 			for (size_t i = 0; i < N; i++)
@@ -611,7 +611,7 @@ namespace leopph
 
 
 		template<class T, std::size_t N, std::size_t M, std::convertible_to<T> T1>
-		constexpr auto operator*=(Matrix<T, N, M>& left, T1 const& right) noexcept -> Matrix<T, N, M>&
+		constexpr Matrix<T, N, M>& operator*=(Matrix<T, N, M>& left, T1 const& right) noexcept
 		{
 			for (std::size_t i = 0; i < N; i++)
 			{
@@ -622,14 +622,14 @@ namespace leopph
 
 
 		template<class T, std::size_t N>
-		constexpr auto operator*=(Vector<T, N>& left, Matrix<T, N, N> const& right) noexcept -> Vector<T, N>&
+		constexpr Vector<T, N>& operator*=(Vector<T, N>& left, Matrix<T, N, N> const& right) noexcept
 		{
 			return left = left * right;
 		}
 
 
 		template<class T, std::size_t N, std::size_t M>
-		constexpr auto operator*=(Matrix<T, N, M>& left, Matrix<T, M, M> const& right) noexcept -> Matrix<T, N, M>&
+		constexpr Matrix<T, N, M>& operator*=(Matrix<T, N, M>& left, Matrix<T, M, M> const& right) noexcept
 		{
 			return left = left * right;
 		}

@@ -10,7 +10,7 @@
 
 namespace leopph::internal
 {
-	auto GlForwardRenderer::Render() -> void
+	void GlForwardRenderer::Render()
 	{
 		GlRenderer::Render();
 
@@ -239,7 +239,7 @@ namespace leopph::internal
 	}
 
 
-	auto GlForwardRenderer::CreateUbo(MappedBuffer& ubo, u64 const size) -> void
+	void GlForwardRenderer::CreateUbo(MappedBuffer& ubo, u64 const size)
 	{
 		glCreateBuffers(1, &ubo.name);
 		glNamedBufferStorage(ubo.name, size, nullptr, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
@@ -257,7 +257,7 @@ namespace leopph::internal
 	}
 
 
-	auto GlForwardRenderer::DeleteUbo(MappedBuffer const& ubo) -> void
+	void GlForwardRenderer::DeleteUbo(MappedBuffer const& ubo)
 	{
 		glUnmapNamedBuffer(ubo.name);
 		glDeleteBuffers(1, &ubo.name);

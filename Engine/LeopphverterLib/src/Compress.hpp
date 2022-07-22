@@ -14,6 +14,6 @@ namespace leopph::convert::compress
 	};
 
 
-	auto Compress(std::span<u8> in, std::vector<u8>& out) -> Error;
-	auto Uncompress(std::span<u8> in, u64 uncompressedSize, std::vector<u8>& out) -> Error;
+	Error Compress(std::span<u8> in, std::vector<u8>& out);
+	Error Uncompress(std::span<u8> in, u64 uncompressedSize, std::vector<u8>& out);
 }

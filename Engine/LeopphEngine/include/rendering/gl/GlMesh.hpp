@@ -16,19 +16,19 @@ namespace leopph::internal
 			// instanceBuffer must be a valid buffer object.
 			GlMesh(Mesh const& mesh, GLuint instanceBuffer);
 
-			auto DrawWithMaterial(ShaderFamily& shader, GLuint nextFreeTextureUnit, GLsizei instanceCount) const -> void;
+			void DrawWithMaterial(ShaderFamily& shader, GLuint nextFreeTextureUnit, GLsizei instanceCount) const;
 
-			auto DrawWithoutMaterial(GLsizei instanceCount) const -> void;
+			void DrawWithoutMaterial(GLsizei instanceCount) const;
 
 			// Returns the Material used for rendering.
 			[[nodiscard]]
-			auto Material() const noexcept -> std::shared_ptr<Material const> const&;
+			std::shared_ptr<Material const> const& Material() const noexcept;
 
 			GlMesh(GlMesh const& other) = delete;
-			auto operator=(GlMesh const& other) -> GlMesh& = delete;
+			GlMesh& operator=(GlMesh const& other) = delete;
 
 			GlMesh(GlMesh&& other) noexcept = delete;
-			auto operator=(GlMesh&& other) noexcept -> GlMesh& = delete;
+			GlMesh& operator=(GlMesh&& other) noexcept = delete;
 
 			~GlMesh() noexcept = default;
 

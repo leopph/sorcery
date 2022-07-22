@@ -3,37 +3,37 @@
 
 namespace leopph
 {
-	auto Light::Diffuse() const noexcept -> Vector3 const&
+	Vector3 const& Light::Diffuse() const noexcept
 	{
 		return m_Diffuse;
 	}
 
 
-	auto Light::Diffuse(Vector3 const& value) noexcept -> void
+	void Light::Diffuse(Vector3 const& value) noexcept
 	{
 		m_Diffuse = value;
 	}
 
 
-	auto Light::Specular() const noexcept -> Vector3 const&
+	Vector3 const& Light::Specular() const noexcept
 	{
 		return m_Specular;
 	}
 
 
-	auto Light::Specular(Vector3 const& value) noexcept -> void
+	void Light::Specular(Vector3 const& value) noexcept
 	{
 		m_Specular = value;
 	}
 
 
-	auto Light::CastsShadow() const noexcept -> bool
+	bool Light::CastsShadow() const noexcept
 	{
 		return m_CastsShadow;
 	}
 
 
-	auto Light::CastsShadow(bool const value) noexcept -> void
+	void Light::CastsShadow(bool const value) noexcept
 	{
 		m_CastsShadow = value;
 	}

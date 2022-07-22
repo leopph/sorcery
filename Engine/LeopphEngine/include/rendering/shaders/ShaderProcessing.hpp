@@ -4,9 +4,10 @@
 
 #include <filesystem>
 
+
 namespace leopph
 {
-	[[nodiscard]] auto ReadShaderFiles(std::filesystem::path vertexShaderPath, std::filesystem::path geometryShaderPath = {}, std::filesystem::path fragmentShaderPath = {}) -> ShaderProgramSourceFileInfo;
+	[[nodiscard]] ShaderProgramSourceFileInfo ReadShaderFiles(std::filesystem::path vertexShaderPath, std::filesystem::path geometryShaderPath = {}, std::filesystem::path fragmentShaderPath = {});
 
-	[[nodiscard]] auto ProcessShaderIncludes(ShaderProgramSourceFileInfo sourceFileInfo) -> ShaderProgramSourceInfo;
+	[[nodiscard]] ShaderProgramSourceInfo ProcessShaderIncludes(ShaderProgramSourceFileInfo sourceFileInfo);
 }

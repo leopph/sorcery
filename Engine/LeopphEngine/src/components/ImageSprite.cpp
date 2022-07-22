@@ -19,25 +19,25 @@ namespace leopph
 	}
 
 
-	auto ImageSprite::Clone() const -> ComponentPtr<>
+	ComponentPtr<> ImageSprite::Clone() const
 	{
 		return CreateComponent<ImageSprite>(*this);
 	}
 
 
-	auto ImageSprite::Path() const noexcept -> std::filesystem::path const&
+	std::filesystem::path const& ImageSprite::Path() const noexcept
 	{
 		return m_Path;
 	}
 
 
-	auto ImageSprite::Extents() const noexcept -> Vector2 const&
+	Vector2 const& ImageSprite::Extents() const noexcept
 	{
 		return m_Extents;
 	}
 
 
-	auto ImageSprite::CreateMeshGroup(Image& img, int const ppi) -> MeshGroup
+	MeshGroup ImageSprite::CreateMeshGroup(Image& img, int const ppi)
 	{
 		if (img.Empty())
 		{

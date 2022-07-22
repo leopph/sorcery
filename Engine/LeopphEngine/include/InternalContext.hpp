@@ -8,13 +8,13 @@ namespace leopph::internal
 	class DataManager;
 	class Renderer;
 
-	auto GetWindowImpl() -> WindowImpl*;
-	auto GetSettingsImpl() -> SettingsImpl*;
-	auto GetDataManager() -> DataManager*;
-	auto GetRenderer() -> Renderer*;
+	WindowImpl* GetWindowImpl();
+	SettingsImpl* GetSettingsImpl();
+	DataManager* GetDataManager();
+	Renderer* GetRenderer();
 
-	auto SetWindowImpl(WindowImpl* window) -> void;
-	auto SetSettingsImpl(SettingsImpl* settings) -> void;
-	auto SetRenderer(Renderer* renderer) -> void;
-	auto SetDataManager(DataManager* dataManager) -> void;
+	void SetWindowImpl(WindowImpl* window);
+	void SetSettingsImpl(SettingsImpl* settings);
+	void SetRenderer(Renderer* renderer);
+	void SetDataManager(DataManager* dataManager);
 }

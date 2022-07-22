@@ -16,10 +16,10 @@ namespace demo
 			class Scene
 			{
 				public:
-					auto Add(leopph::Entity* entity) -> void;
-					auto Activate() const -> void;
-					auto Deactivate() const -> void;
-					auto SetActivationCallback(std::function<void()> callback) -> void;
+					void Add(leopph::Entity* entity);
+					void Activate() const;
+					void Deactivate() const;
+					void SetActivationCallback(std::function<void()> callback);
 
 				private:
 					std::function<void()> m_ActivationCallback;
@@ -27,10 +27,10 @@ namespace demo
 			};
 
 
-			auto OnFrameUpdate() -> void override;
+			void OnFrameUpdate() override;
 
 			[[nodiscard]]
-			auto CreateOrGetScene(leopph::KeyCode key) -> Scene&;
+			Scene& CreateOrGetScene(leopph::KeyCode key);
 
 		private:
 			std::unordered_map<leopph::KeyCode, Scene> m_Scenes;

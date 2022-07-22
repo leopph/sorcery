@@ -1,8 +1,8 @@
 #pragma once
 
 #include "LeopphApi.hpp"
-#include "RenderComponent.hpp"
 #include "MeshGroup.hpp"
+#include "RenderComponent.hpp"
 
 
 namespace leopph
@@ -13,11 +13,10 @@ namespace leopph
 		public:
 			LEOPPHAPI Cube();
 
-			[[nodiscard]] LEOPPHAPI
-			auto Clone() const -> ComponentPtr<> override;
+			[[nodiscard]] LEOPPHAPI ComponentPtr<> Clone() const override;
 
 		private:
-			[[nodiscard]] static auto CreateMeshGroup() -> MeshGroup;
+			[[nodiscard]] static MeshGroup CreateMeshGroup();
 			static std::weak_ptr<Material> s_Material;
 	};
 }

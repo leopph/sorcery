@@ -6,7 +6,7 @@
 
 namespace leopph::convert::driver
 {
-	auto BuildHeader() -> std::string
+	std::string BuildHeader()
 	{
 		using std::literals::string_literals::operator ""s;
 		using std::literals::string_view_literals::operator ""sv;

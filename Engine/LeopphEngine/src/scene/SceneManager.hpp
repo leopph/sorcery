@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Scene.hpp"
 #include "LeopphApi.hpp"
+#include "Scene.hpp"
 
 #include <memory>
 #include <string_view>
@@ -13,48 +13,48 @@ namespace leopph
 	class SceneManager
 	{
 		public:
-			[[nodiscard]] LEOPPHAPI static auto Instance() -> SceneManager&;
+			[[nodiscard]] LEOPPHAPI static SceneManager& Instance();
 
-			auto AddScene(std::unique_ptr<Scene> scene) -> void;
+			void AddScene(std::unique_ptr<Scene> scene);
 
 			// Deletes the specified scene instance.
 			// Nullptr is silently ignored.
 			// If it is the last scene instance, it will not be deleted.
 			// Returns whether deletion took place.
 			// If the active scene is deleted, the new active scene will be the one with the lowest id.
-			LEOPPHAPI auto DeleteScene(const Scene* scene) -> bool;
+			LEOPPHAPI bool DeleteScene(Scene const* scene);
 
 			// Deletes the scene with the specified id.
 			// Unused ids are silently ignored.
 			// If there is only one scene instance, it will not be deleted.
 			// Returns whether deletion took place.
 			// If the active scene is deleted, the new active scene will be the one with the lowest id.
-			LEOPPHAPI auto DeleteScene(std::size_t id) -> bool;
+			LEOPPHAPI bool DeleteScene(std::size_t id);
 
 			// Deletes the scene that was created with the specified name.
 			// Unused names are silently ignored.
 			// If there is only one scene instance, it will not be deleted.
 			// Returns whether deletion took place.
 			// If the active scene is deleted, the new active scene will be the one with the lowest id.
-			LEOPPHAPI auto DeleteScene(std::string_view name) -> bool;
+			LEOPPHAPI bool DeleteScene(std::string_view name);
 
 			// Returns a pointer to the scene with the specified id,
 			// Or nullptr if not found.
-			[[nodiscard]] LEOPPHAPI auto FindScene(std::size_t id) const -> Scene*;
+			[[nodiscard]] LEOPPHAPI Scene* FindScene(std::size_t id) const;
 
 			// Returns a pointer to the scene that was created with the specified name,
 			// Or nullptr if not found.
-			[[nodiscard]] LEOPPHAPI auto FindScene(std::string_view name) const -> Scene*;
+			[[nodiscard]] LEOPPHAPI Scene* FindScene(std::string_view name) const;
 
 			// Returns the currently active scene.
 			// There is always one active scene.
-			[[nodiscard]] LEOPPHAPI auto CurrentScene() const -> Scene&;
+			[[nodiscard]] LEOPPHAPI Scene& CurrentScene() const;
 
-			SceneManager(const SceneManager& other) = delete;
-			auto operator=(const SceneManager& other) -> SceneManager& = delete;
+			SceneManager(SceneManager const& other) = delete;
+			SceneManager& operator=(SceneManager const& other) = delete;
 
 			SceneManager(SceneManager&& other) noexcept = delete;
-			auto operator=(SceneManager&& other) noexcept -> SceneManager& = delete;
+			SceneManager& operator=(SceneManager&& other) noexcept = delete;
 
 		private:
 			SceneManager() = default;
@@ -65,7 +65,7 @@ namespace leopph
 			[[nodiscard]] constexpr static auto GetSceneIterator(auto self, std::size_t id);
 
 			// Sorts the scenes in ascending order based on id.
-			auto SortScenes() -> void;
+			void SortScenes();
 
 			Scene* m_Current{new Scene{0}};
 			std::vector<std::unique_ptr<Scene>> m_Scenes{
@@ -79,9 +79,9 @@ namespace leopph
 	};
 
 
-	constexpr auto SceneManager::GetSceneIterator(auto self, const std::size_t id)
+	constexpr auto SceneManager::GetSceneIterator(auto self, std::size_t const id)
 	{
-		return std::lower_bound(self->m_Scenes.begin(), self->m_Scenes.end(), id, [](const std::unique_ptr<Scene>& scene, const std::size_t targetId)
+		return std::lower_bound(self->m_Scenes.begin(), self->m_Scenes.end(), id, [](std::unique_ptr<Scene> const& scene, std::size_t const targetId)
 		{
 			return scene->Id() < targetId;
 		});

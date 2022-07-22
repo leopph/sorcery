@@ -17,19 +17,19 @@ namespace leopph
 	{}
 
 
-	auto MeshGroup::Meshes() const noexcept -> std::span<Mesh const>
+	std::span<Mesh const> MeshGroup::Meshes() const noexcept
 	{
 		return m_Meshes;
 	}
 
 
-	auto MeshGroup::AddMesh(Mesh mesh) -> void
+	void MeshGroup::AddMesh(Mesh mesh)
 	{
 		m_Meshes.push_back(std::move(mesh));
 	}
 
 
-	auto MeshGroup::RemoveMesh(u64 const index) -> void
+	void MeshGroup::RemoveMesh(u64 const index)
 	{
 		if (index >= m_Meshes.size())
 		{

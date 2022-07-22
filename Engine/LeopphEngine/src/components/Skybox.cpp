@@ -23,7 +23,7 @@ namespace leopph
 	}
 
 
-	auto Skybox::operator=(Skybox const& other) -> Skybox&
+	Skybox& Skybox::operator=(Skybox const& other)
 	{
 		if (this == &other)
 		{
@@ -45,7 +45,7 @@ namespace leopph
 	}
 
 
-	auto Skybox::operator=(Skybox&& other) noexcept -> Skybox&
+	Skybox& Skybox::operator=(Skybox&& other) noexcept
 	{
 		if (this == &other)
 		{
@@ -66,49 +66,49 @@ namespace leopph
 	}
 
 
-	auto Skybox::RightPath() const -> std::filesystem::path const&
+	std::filesystem::path const& Skybox::RightPath() const
 	{
 		return m_Impl->RightPath();
 	}
 
 
-	auto Skybox::LeftPath() const -> std::filesystem::path const&
+	std::filesystem::path const& Skybox::LeftPath() const
 	{
 		return m_Impl->LeftPath();
 	}
 
 
-	auto Skybox::TopPath() const -> std::filesystem::path const&
+	std::filesystem::path const& Skybox::TopPath() const
 	{
 		return m_Impl->TopPath();
 	}
 
 
-	auto Skybox::BottomPath() const -> std::filesystem::path const&
+	std::filesystem::path const& Skybox::BottomPath() const
 	{
 		return m_Impl->BottomPath();
 	}
 
 
-	auto Skybox::FrontPath() const -> std::filesystem::path const&
+	std::filesystem::path const& Skybox::FrontPath() const
 	{
 		return m_Impl->FrontPath();
 	}
 
 
-	auto Skybox::BackPath() const -> std::filesystem::path const&
+	std::filesystem::path const& Skybox::BackPath() const
 	{
 		return m_Impl->BackPath();
 	}
 
 
-	auto Skybox::AllPaths() const -> std::filesystem::path const&
+	std::filesystem::path const& Skybox::AllPaths() const
 	{
 		return m_Impl->AllPaths();
 	}
 
 
-	auto Skybox::Deinit() const -> void
+	void Skybox::Deinit() const
 	{
 		m_Impl->UnregisterHandle(this);
 

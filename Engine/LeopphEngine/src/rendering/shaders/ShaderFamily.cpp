@@ -268,7 +268,7 @@ namespace leopph
 
 
 
-	auto ShaderFamily::SetGlobalOption(std::string_view const name, u8 const value) -> bool
+	bool ShaderFamily::SetGlobalOption(std::string_view const name, u8 const value)
 	{
 		auto const it = s_GlobalOptionIndexByName.find(name);
 
@@ -292,7 +292,7 @@ namespace leopph
 
 
 
-	auto ShaderFamily::SetInstanceOption(std::string_view const name, u8 value) -> bool
+	bool ShaderFamily::SetInstanceOption(std::string_view const name, u8 value)
 	{
 		auto const it = m_InstanceOptionIndexByName.find(name);
 
@@ -316,7 +316,7 @@ namespace leopph
 
 
 
-	auto ShaderFamily::AddGlobalOption(std::string_view const name, u8 const min, u8 const max) -> bool
+	bool ShaderFamily::AddGlobalOption(std::string_view const name, u8 const min, u8 const max)
 	{
 		auto const maxValueNorm = max - min;
 		auto const requiredBits = math::BinaryDigitCount(maxValueNorm);
@@ -335,7 +335,7 @@ namespace leopph
 
 
 
-	auto ShaderFamily::ApplyGlobalOptions() -> void
+	void ShaderFamily::ApplyGlobalOptions()
 	{
 		for (auto const& option : s_GlobalOptions)
 		{
@@ -345,7 +345,7 @@ namespace leopph
 
 
 
-	auto ShaderFamily::ApplyInstanceOptions() -> void
+	void ShaderFamily::ApplyInstanceOptions()
 	{
 		for (auto const& option : m_InstanceOptions)
 		{
@@ -355,7 +355,7 @@ namespace leopph
 
 
 
-	auto ShaderFamily::NextFreeGlobalShift(u8 const requiredBits) -> std::optional<u8>
+	std::optional<u8> ShaderFamily::NextFreeGlobalShift(u8 const requiredBits)
 	{
 		auto nextShift = std::numeric_limits<PermutationBitset>::digits;
 
@@ -374,7 +374,7 @@ namespace leopph
 
 
 
-	auto ShaderFamily::NextFreeInstanceShift(u8 const requiredBits) const -> std::optional<u8>
+	std::optional<u8> ShaderFamily::NextFreeInstanceShift(u8 const requiredBits) const
 	{
 		auto nextShift{0};
 
@@ -393,7 +393,7 @@ namespace leopph
 
 
 
-	auto ShaderFamily::SetUniform(std::string_view const name, bool const value) -> bool
+	bool ShaderFamily::SetUniform(std::string_view const name, bool const value)
 	{
 		auto const permOpt = GetCurrentPermutation();
 
@@ -417,7 +417,7 @@ namespace leopph
 
 
 
-	auto ShaderFamily::SetUniform(std::string_view const name, i32 const value) -> bool
+	bool ShaderFamily::SetUniform(std::string_view const name, i32 const value)
 	{
 		auto const permOpt = GetCurrentPermutation();
 
@@ -441,7 +441,7 @@ namespace leopph
 
 
 
-	auto ShaderFamily::SetUniform(std::string_view const name, u32 const value) -> bool
+	bool ShaderFamily::SetUniform(std::string_view const name, u32 const value)
 	{
 		auto const permOpt = GetCurrentPermutation();
 
@@ -465,7 +465,7 @@ namespace leopph
 
 
 
-	auto ShaderFamily::SetUniform(std::string_view const name, f32 const value) -> bool
+	bool ShaderFamily::SetUniform(std::string_view const name, f32 const value)
 	{
 		auto const permOpt = GetCurrentPermutation();
 
@@ -489,7 +489,7 @@ namespace leopph
 
 
 
-	auto ShaderFamily::SetUniform(std::string_view const name, Vector3 const& value) -> bool
+	bool ShaderFamily::SetUniform(std::string_view const name, Vector3 const& value)
 	{
 		auto const permOpt = GetCurrentPermutation();
 
@@ -513,7 +513,7 @@ namespace leopph
 
 
 
-	auto ShaderFamily::SetUniform(std::string_view const name, Matrix4 const& value) -> bool
+	bool ShaderFamily::SetUniform(std::string_view const name, Matrix4 const& value)
 	{
 		auto const permOpt = GetCurrentPermutation();
 
@@ -537,7 +537,7 @@ namespace leopph
 
 
 
-	auto ShaderFamily::SetUniform(std::string_view const name, std::span<i32 const> const values) -> bool
+	bool ShaderFamily::SetUniform(std::string_view const name, std::span<i32 const> const values)
 	{
 		auto const permOpt = GetCurrentPermutation();
 
@@ -561,7 +561,7 @@ namespace leopph
 
 
 
-	auto ShaderFamily::SetUniform(std::string_view const name, std::span<u32 const> const values) -> bool
+	bool ShaderFamily::SetUniform(std::string_view const name, std::span<u32 const> const values)
 	{
 		auto const permOpt = GetCurrentPermutation();
 
@@ -585,7 +585,7 @@ namespace leopph
 
 
 
-	auto ShaderFamily::SetUniform(std::string_view const name, std::span<f32 const> const values) -> bool
+	bool ShaderFamily::SetUniform(std::string_view const name, std::span<f32 const> const values)
 	{
 		auto const permOpt = GetCurrentPermutation();
 
@@ -609,7 +609,7 @@ namespace leopph
 
 
 
-	auto ShaderFamily::SetUniform(std::string_view const name, std::span<Vector3 const> const values) -> bool
+	bool ShaderFamily::SetUniform(std::string_view const name, std::span<Vector3 const> const values)
 	{
 		auto const permOpt = GetCurrentPermutation();
 
@@ -633,7 +633,7 @@ namespace leopph
 
 
 
-	auto ShaderFamily::SetUniform(std::string_view const name, std::span<Matrix4 const> const values) -> bool
+	bool ShaderFamily::SetUniform(std::string_view const name, std::span<Matrix4 const> const values)
 	{
 		auto const permOpt = GetCurrentPermutation();
 
@@ -657,7 +657,7 @@ namespace leopph
 
 
 
-	auto ShaderFamily::UseCurrentPermutation() -> bool
+	bool ShaderFamily::UseCurrentPermutation()
 	{
 		auto const permOpt = GetCurrentPermutation();
 
@@ -672,7 +672,7 @@ namespace leopph
 
 
 
-	auto ShaderFamily::GetCurrentPermutation() -> std::optional<Permutation*>
+	std::optional<ShaderFamily::Permutation*> ShaderFamily::GetCurrentPermutation()
 	{
 		ApplyGlobalOptions();
 		ApplyInstanceOptions();
@@ -695,7 +695,7 @@ namespace leopph
 
 
 
-	auto ShaderFamily::ExtractInstanceOptions() -> void
+	void ShaderFamily::ExtractInstanceOptions()
 	{
 		std::regex const static validFullOptionRegex{R"delim(^\s*#\s*pragma\s+option\s+name\s*=\s*[A-Za-z][\S]*\s+min\s*=\s*\d+\s+max\s*=\s*\d+\s*)delim"};
 		std::regex const static validShortOptionRegex{R"delim(^\s*#\s*pragma\s+option\s+name\s*=\s*[A-Za-z][\S]*\s*)delim"};
@@ -786,14 +786,14 @@ namespace leopph
 
 
 
-	auto ShaderFamily::LogInvalidUniformAccess(std::string_view const name) -> void
+	void ShaderFamily::LogInvalidUniformAccess(std::string_view const name)
 	{
 		internal::Logger::Instance().Debug(std::format("Ignoring attempt to set shader uniform [{}]: the uniform does not exist in the current permutation.", name));
 	}
 
 
 
-	auto ShaderFamily::CompileCurrentPermutation() -> bool
+	bool ShaderFamily::CompileCurrentPermutation()
 	{
 		u32 usedLocalBits{0};
 
@@ -899,7 +899,7 @@ namespace leopph
 
 
 
-	auto ShaderFamily::CompileShader(u32 const shader, std::span<std::string const> const lines) -> std::optional<std::string>
+	std::optional<std::string> ShaderFamily::CompileShader(u32 const shader, std::span<std::string const> const lines)
 	{
 		std::vector<char const*> linePtrs;
 		linePtrs.reserve(lines.size());
@@ -929,7 +929,7 @@ namespace leopph
 
 
 
-	auto ShaderFamily::LinkProgram(u32 const program) -> std::optional<std::string>
+	std::optional<std::string> ShaderFamily::LinkProgram(u32 const program)
 	{
 		glLinkProgram(program);
 
@@ -950,7 +950,7 @@ namespace leopph
 
 
 
-	auto ShaderFamily::QueryUniformLocations(Permutation& perm) -> void
+	void ShaderFamily::QueryUniformLocations(Permutation& perm)
 	{
 		GLint numUniforms;
 		glGetProgramInterfaceiv(perm.program, GL_UNIFORM, GL_ACTIVE_RESOURCES, &numUniforms);
@@ -997,7 +997,7 @@ namespace leopph
 
 
 
-	auto MakeShaderFamily(std::filesystem::path vertexShaderPath, std::filesystem::path geometryShaderPath, std::filesystem::path fragmentShaderPath) -> ShaderFamily
+	ShaderFamily MakeShaderFamily(std::filesystem::path vertexShaderPath, std::filesystem::path geometryShaderPath, std::filesystem::path fragmentShaderPath)
 	{
 		auto fileInfo = ReadShaderFiles(std::move(vertexShaderPath), std::move(geometryShaderPath), std::move(fragmentShaderPath));
 		auto sourceInfo = ProcessShaderIncludes(std::move(fileInfo));

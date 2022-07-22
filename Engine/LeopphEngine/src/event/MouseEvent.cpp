@@ -3,7 +3,7 @@
 
 namespace leopph::internal
 {
-	MouseEvent::MouseEvent(const Vector2 pos) :
+	MouseEvent::MouseEvent(Vector2 const pos) :
 		Position{pos}
 	{}
 }

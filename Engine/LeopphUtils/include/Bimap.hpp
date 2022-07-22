@@ -66,10 +66,10 @@ namespace leopph::internal
 			}
 
 
-			auto operator=(Bimap const& other) -> Bimap& = default;
+			Bimap& operator=(Bimap const& other) = default;
 
 
-			auto operator=(Bimap&& other) noexcept -> Bimap&
+			Bimap& operator=(Bimap&& other) noexcept
 			{
 				m_T1ToT2 = std::move(other.m_T1ToT2);
 				m_T2ToT1 = std::move(other.m_T1ToT2);
@@ -255,60 +255,60 @@ namespace leopph::internal
 			}
 
 
-			[[nodiscard]] auto operator[](T1 const& o1) const -> auto const&
+			[[nodiscard]] auto const& operator[](T1 const& o1) const
 			{
 				auto const& elem{*m_T1.find(o1)};
 				return m_T1ToT2[const_cast<T1*>(&elem)];
 			}
 
 
-			[[nodiscard]] auto operator[](T1 const& o1) -> auto&
+			[[nodiscard]] auto& operator[](T1 const& o1)
 			{
 				return const_cast<T2&>(const_cast<Bimap const*>(this)->operator[](o1));
 			}
 
 
-			[[nodiscard]] auto operator[](T2 const& o2) const -> auto const&
+			[[nodiscard]] auto const& operator[](T2 const& o2) const
 			{
 				auto const& elem{*m_T2.find(o2)};
 				return m_T2ToT1[const_cast<T2*>(&elem)];
 			}
 
 
-			[[nodiscard]] auto operator[](T2 const& o2) -> auto&
+			[[nodiscard]] auto& operator[](T2 const& o2)
 			{
 				return const_cast<T1&>(const_cast<Bimap const*>(this)->operator[](o2));
 			}
 
 
-			[[nodiscard]] auto At(T1 const& o1) const -> auto const&
+			[[nodiscard]] auto const& At(T1 const& o1) const
 			{
 				auto const& elem{*m_T1.find(o1)};
 				return *m_T1ToT2.at(const_cast<T1*>(&elem));
 			}
 
 
-			[[nodiscard]] auto At(T1 const& o1) -> auto&
+			[[nodiscard]] auto& At(T1 const& o1)
 			{
 				return const_cast<T2&>(const_cast<Bimap const*>(this)->At(o1));
 			}
 
 
-			[[nodiscard]] auto At(T2 const& o2) const -> auto const&
+			[[nodiscard]] auto const& At(T2 const& o2) const
 			{
 				auto const& elem{*m_T2.find(o2)};
 				return *m_T2ToT1.at(const_cast<T2*>(&elem));
 			}
 
 
-			[[nodiscard]] auto At(T2 const& o2) -> auto&
+			[[nodiscard]] auto& At(T2 const& o2)
 			{
 				return const_cast<T1&>(const_cast<Bimap const*>(this)->At(o2));
 			}
 
 
 		private:
-			auto InsertPointers(T1 const& left, T2 const& right) -> void
+			void InsertPointers(T1 const& left, T2 const& right)
 			{
 				auto const leftPtr{const_cast<T1*>(&left)};
 				auto const rightPtr{const_cast<T2*>(&right)};
@@ -317,7 +317,7 @@ namespace leopph::internal
 			}
 
 
-			auto Erase(T1 const& o1, T2 const& o2) -> void
+			void Erase(T1 const& o1, T2 const& o2)
 			{
 				m_T1ToT2.erase(const_cast<T1*>(&o1));
 				m_T2ToT1.erase(const_cast<T2*>(&o2));

@@ -41,14 +41,14 @@ namespace leopph::internal
 	}
 
 
-	auto Logger::Instance() -> Logger&
+	Logger& Logger::Instance()
 	{
 		static Logger instance;
 		return instance;
 	}
 
 
-	auto Logger::CurrentLevel(Level const level) -> void
+	void Logger::CurrentLevel(Level const level)
 	{
 		try
 		{
@@ -63,7 +63,7 @@ namespace leopph::internal
 	}
 
 
-	auto Logger::CurrentLevel() const -> Level
+	Logger::Level Logger::CurrentLevel() const
 	{
 		try
 		{
@@ -78,37 +78,37 @@ namespace leopph::internal
 	}
 
 
-	auto Logger::Trace(std::string_view const msg) const -> void
+	void Logger::Trace(std::string_view const msg) const
 	{
 		m_Logger->trace(msg);
 	}
 
 
-	auto Logger::Debug(std::string_view const msg) const -> void
+	void Logger::Debug(std::string_view const msg) const
 	{
 		m_Logger->debug(msg);
 	}
 
 
-	auto Logger::Critical(std::string_view const msg) const -> void
+	void Logger::Critical(std::string_view const msg) const
 	{
 		m_Logger->critical(msg);
 	}
 
 
-	auto Logger::Error(std::string_view const msg) const -> void
+	void Logger::Error(std::string_view const msg) const
 	{
 		m_Logger->error(msg);
 	}
 
 
-	auto Logger::Warning(std::string_view const msg) const -> void
+	void Logger::Warning(std::string_view const msg) const
 	{
 		m_Logger->warn(msg);
 	}
 
 
-	auto Logger::Info(std::string_view const msg) const -> void
+	void Logger::Info(std::string_view const msg) const
 	{
 		m_Logger->info(msg);
 	}

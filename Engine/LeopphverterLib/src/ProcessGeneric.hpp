@@ -8,5 +8,5 @@
 
 namespace leopph::convert
 {
-	auto ProcessGenericModel(std::filesystem::path const& path) -> std::optional<Object>;
+	std::optional<Object> ProcessGenericModel(std::filesystem::path const& path);
 }

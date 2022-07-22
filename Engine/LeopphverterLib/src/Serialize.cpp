@@ -5,9 +5,9 @@
 
 namespace leopph::convert
 {
-	auto Serialize(std::string_view const str, std::vector<u8>& oBuf, std::endian const endianness) -> void
+	void Serialize(std::string_view const str, std::vector<u8>& oBuf, std::endian const endianness)
 	{
-		auto const sz = static_cast<u64>(str.size());
+		auto const sz = str.size();
 		Serialize(sz, oBuf, endianness);
 
 		std::copy_n(reinterpret_cast<u8 const*>(str.data()), sz, std::back_inserter(oBuf));
@@ -15,7 +15,7 @@ namespace leopph::convert
 
 
 
-	auto Serialize(Image const& img, std::vector<u8>& oBuf, std::endian const endianness) -> void
+	void Serialize(Image const& img, std::vector<u8>& oBuf, std::endian const endianness)
 	{
 		auto const width = img.Width();
 		Serialize(width, oBuf, endianness);
@@ -34,7 +34,7 @@ namespace leopph::convert
 
 
 
-	auto Serialize(Color const& color, std::vector<u8>& oBuf) -> void
+	void Serialize(Color const& color, std::vector<u8>& oBuf)
 	{
 		Serialize(color.Red, oBuf);
 		Serialize(color.Green, oBuf);
@@ -43,7 +43,7 @@ namespace leopph::convert
 
 
 
-	auto Serialize(Material const& mat, std::vector<u8>& oBuf, std::endian const endianness) -> void
+	void Serialize(Material const& mat, std::vector<u8>& oBuf, std::endian const endianness)
 	{
 		Serialize(mat.DiffuseColor, oBuf);
 		Serialize(mat.SpecularColor, oBuf);
@@ -84,7 +84,7 @@ namespace leopph::convert
 
 
 
-	auto Serialize(Vertex const& vert, std::vector<u8>& oBuf, std::endian const endianness) -> void
+	void Serialize(Vertex const& vert, std::vector<u8>& oBuf, std::endian const endianness)
 	{
 		Serialize(vert.Position, oBuf, endianness);
 		Serialize(vert.Normal, oBuf, endianness);
@@ -93,22 +93,22 @@ namespace leopph::convert
 
 
 
-	auto Serialize(Mesh const& mesh, std::vector<u8>& oBuf, std::endian const endianness) -> void
+	void Serialize(Mesh const& mesh, std::vector<u8>& oBuf, std::endian const endianness)
 	{
-		Serialize(static_cast<u64>(mesh.Vertices.size()), oBuf, endianness);
+		Serialize(mesh.Vertices.size(), oBuf, endianness);
 
 		for (auto const& vert : mesh.Vertices)
 		{
 			Serialize(vert, oBuf, endianness);
 		}
 
-		Serialize(static_cast<u64>(mesh.Indices.size()), oBuf, endianness);
+		Serialize(mesh.Indices.size(), oBuf, endianness);
 
 		for (auto const ind : mesh.Indices)
 		{
 			Serialize(ind, oBuf, endianness);
 		}
 
-		Serialize(static_cast<u64>(mesh.Material), oBuf, endianness);
+		Serialize(mesh.Material, oBuf, endianness);
 	}
 }

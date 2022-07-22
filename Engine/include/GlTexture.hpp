@@ -11,16 +11,16 @@ namespace leopph
 	{
 		public:
 			explicit LEOPPHAPI GlTexture(Image const& img);
-			
-			[[nodiscard]] auto LEOPPHAPI TextureName() const noexcept -> u32;
-			[[nodiscard]] auto LEOPPHAPI Width() const noexcept -> u32;
-			[[nodiscard]] auto LEOPPHAPI Height() const noexcept -> u32;
+
+			[[nodiscard]] LEOPPHAPI u32 TextureName() const noexcept;
+			[[nodiscard]] LEOPPHAPI u32 Width() const noexcept;
+			[[nodiscard]] LEOPPHAPI u32 Height() const noexcept;
 
 			GlTexture(GlTexture const& other) = delete;
-			auto operator=(GlTexture const& other) -> GlTexture& = delete;
+			GlTexture& operator=(GlTexture const& other) = delete;
 
 			GlTexture(GlTexture&& other) = delete;
-			auto operator=(GlTexture&& other) -> GlTexture& = delete;
+			GlTexture& operator=(GlTexture&& other) = delete;
 
 			~GlTexture() noexcept;
 

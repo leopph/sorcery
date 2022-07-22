@@ -19,14 +19,14 @@ namespace leopph
 		// Components must be in [0, 1].
 		// Values outside [0, 1] will be clamped.
 		// They are interpreted as RGB values and are mapped to [0, 255].
-		LEOPPHAPI explicit Color(const Vector3& vec) noexcept;
+		LEOPPHAPI explicit Color(Vector3 const& vec) noexcept;
 
 		// Components are in RGB order and mapped to [0, 1].
 		LEOPPHAPI explicit operator Vector3() const;
 	};
 
 
-	constexpr Color::Color(const unsigned char red, const unsigned char green, const unsigned char blue) noexcept :
+	constexpr Color::Color(unsigned char const red, unsigned char const green, unsigned char const blue) noexcept :
 		Red{red},
 		Green{green},
 		Blue{blue}

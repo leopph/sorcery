@@ -10,7 +10,7 @@
 #include <Leopph.hpp>
 
 
-auto leopph::Init() -> void
+void leopph::Init()
 {
 	GetWindow()->Title("LeopphEngine Demo");
 
@@ -23,10 +23,10 @@ auto leopph::Init() -> void
 
 	auto const sceneSwitcher = utilEnt->create_and_attach_component<demo::SceneSwitcher>();
 
-	auto& churchScene = sceneSwitcher->CreateOrGetScene(leopph::KeyCode::F1);
-	auto& spriteScene = sceneSwitcher->CreateOrGetScene(leopph::KeyCode::F2);
+	auto& churchScene = sceneSwitcher->CreateOrGetScene(KeyCode::F1);
+	auto& spriteScene = sceneSwitcher->CreateOrGetScene(KeyCode::F2);
 
-	demo::InitChurchScene(churchScene);
+	InitChurchScene(churchScene);
 	//demo::InitSpriteScene(spriteScene);
 
 	churchScene.Activate();

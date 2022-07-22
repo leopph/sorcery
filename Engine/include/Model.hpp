@@ -14,12 +14,10 @@ namespace leopph
 		public:
 			LEOPPHAPI explicit Model(std::filesystem::path path);
 
-			[[nodiscard]] LEOPPHAPI
-			auto Clone() const -> ComponentPtr<> override;
+			[[nodiscard]] LEOPPHAPI ComponentPtr<> Clone() const override;
 
 			// File path of the loaded Model.
-			[[nodiscard]] LEOPPHAPI
-			auto Path() const noexcept -> std::filesystem::path const&;
+			[[nodiscard]] LEOPPHAPI std::filesystem::path const& Path() const noexcept;
 
 		private:
 			std::filesystem::path m_Path;

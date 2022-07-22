@@ -6,35 +6,35 @@
 
 namespace leopph
 {
-	auto SpotLight::InnerAngle() const noexcept -> float
+	float SpotLight::InnerAngle() const noexcept
 	{
 		return m_InnerAngle;
 	}
 
 
 
-	auto SpotLight::InnerAngle(float const degrees) noexcept -> void
+	void SpotLight::InnerAngle(float const degrees) noexcept
 	{
 		m_InnerAngle = degrees;
 	}
 
 
 
-	auto SpotLight::OuterAngle() const noexcept -> float
+	float SpotLight::OuterAngle() const noexcept
 	{
 		return m_OuterAngle;
 	}
 
 
 
-	auto SpotLight::OuterAngle(float const degrees) noexcept -> void
+	void SpotLight::OuterAngle(float const degrees) noexcept
 	{
 		m_OuterAngle = degrees;
 	}
 
 
 
-	auto SpotLight::Owner(Entity* entity) -> void
+	void SpotLight::Owner(Entity* entity)
 	{
 		auto* const dataManager = internal::GetDataManager();
 
@@ -53,7 +53,7 @@ namespace leopph
 
 
 
-	auto SpotLight::Active(bool const active) -> void
+	void SpotLight::Active(bool const active)
 	{
 		auto* const dataManager = internal::GetDataManager();
 
@@ -72,14 +72,14 @@ namespace leopph
 
 
 
-	auto SpotLight::Clone() const -> ComponentPtr<>
+	ComponentPtr<> SpotLight::Clone() const
 	{
 		return CreateComponent<SpotLight>(*this);
 	}
 
 
 
-	auto SpotLight::operator=(SpotLight const& other) -> SpotLight&
+	SpotLight& SpotLight::operator=(SpotLight const& other)
 	{
 		if (this == &other)
 		{

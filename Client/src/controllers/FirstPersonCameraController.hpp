@@ -16,7 +16,7 @@ namespace demo
 			explicit FirstPersonCameraController(leopph::ComponentPtr<leopph::Camera const> const& camera, float speed, float sens, float runMult, float walkMult, std::tuple<float, float> const& mousePos);
 
 		public:
-			auto OnFrameUpdate() -> void override;
+			void OnFrameUpdate() override;
 
 		private:
 			leopph::Transform* m_CamTransform;

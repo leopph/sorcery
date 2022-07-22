@@ -2,9 +2,10 @@
 
 #include <glad/gl.h>
 
+
 namespace leopph::internal::opengl
 {
 	// Initializes the OpenGL functions
 	// Sets callbacks
-	auto Init() -> void;
+	void Init();
 }

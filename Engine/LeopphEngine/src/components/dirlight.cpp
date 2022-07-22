@@ -7,28 +7,28 @@
 
 namespace leopph
 {
-	auto DirectionalLight::Direction() const noexcept -> Vector3 const&
+	Vector3 const& DirectionalLight::Direction() const noexcept
 	{
 		return Component::Owner()->get_transform().get_forward_axis();
 	}
 
 
 
-	auto DirectionalLight::ShadowExtension() const noexcept -> f32
+	f32 DirectionalLight::ShadowExtension() const noexcept
 	{
 		return m_ShadowRange;
 	}
 
 
 
-	auto DirectionalLight::ShadowExtension(f32 const newRange) -> void
+	void DirectionalLight::ShadowExtension(f32 const newRange)
 	{
 		m_ShadowRange = math::Clamp(newRange, 0, math::Abs(newRange));
 	}
 
 
 
-	auto DirectionalLight::Owner(Entity* entity) -> void
+	void DirectionalLight::Owner(Entity* entity)
 	{
 		auto* const dataManager = internal::GetDataManager();
 
@@ -46,7 +46,7 @@ namespace leopph
 	}
 
 
-	auto DirectionalLight::Active(bool const active) -> void
+	void DirectionalLight::Active(bool const active)
 	{
 		auto* const dataManager = internal::GetDataManager();
 
@@ -65,14 +65,14 @@ namespace leopph
 
 
 
-	auto DirectionalLight::Clone() const -> ComponentPtr<>
+	ComponentPtr<> DirectionalLight::Clone() const
 	{
 		return CreateComponent<DirectionalLight>(*this);
 	}
 
 
 
-	auto DirectionalLight::operator=(DirectionalLight const& other) -> DirectionalLight&
+	DirectionalLight& DirectionalLight::operator=(DirectionalLight const& other)
 	{
 		if (this == &other)
 		{

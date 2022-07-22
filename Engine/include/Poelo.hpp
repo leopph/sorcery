@@ -2,6 +2,7 @@
 
 #include "LeopphApi.hpp"
 
+
 namespace leopph
 {
 	namespace internal
@@ -12,11 +13,11 @@ namespace leopph
 		class Poelo
 		{
 			public:
-				Poelo(const Poelo& other) = delete;
-				auto operator=(const Poelo& other) -> Poelo& = delete;
+				Poelo(Poelo const& other) = delete;
+				Poelo& operator=(Poelo const& other) = delete;
 
 				Poelo(Poelo&& other) noexcept = delete;
-				auto operator=(Poelo&& other) noexcept -> Poelo& = delete;
+				Poelo& operator=(Poelo&& other) noexcept = delete;
 
 				virtual ~Poelo() = default;
 
@@ -29,6 +30,5 @@ namespace leopph
 
 
 	// Explicitly destroys the Poelo object.
-	LEOPPHAPI
-	auto Destroy(const internal::Poelo* poelo) -> void;
+	LEOPPHAPI void Destroy(internal::Poelo const* poelo);
 }

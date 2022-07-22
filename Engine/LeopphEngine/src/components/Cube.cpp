@@ -15,13 +15,13 @@ namespace leopph
 	}
 
 
-	auto Cube::Clone() const -> ComponentPtr<>
+	ComponentPtr<> Cube::Clone() const
 	{
 		return CreateComponent<Cube>(*this);
 	}
 
 
-	auto Cube::CreateMeshGroup() -> MeshGroup
+	MeshGroup Cube::CreateMeshGroup()
 	{
 		std::vector vertices{
 			// Back face

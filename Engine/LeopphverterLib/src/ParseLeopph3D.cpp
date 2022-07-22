@@ -20,7 +20,7 @@ namespace leopph::convert
 	}
 
 
-	auto ParseLeopph3D(std::filesystem::path const& path) -> std::optional<Object>
+	std::optional<Object> ParseLeopph3D(std::filesystem::path const& path)
 	{
 		try
 		{

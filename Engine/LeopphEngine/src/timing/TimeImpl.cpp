@@ -3,25 +3,25 @@
 
 namespace leopph::internal
 {
-	auto TimeImpl::Instance() -> TimeImpl&
+	TimeImpl& TimeImpl::Instance()
 	{
 		return s_Instance;
 	}
 
 
-	auto TimeImpl::DeltaTime() const -> float
+	float TimeImpl::DeltaTime() const
 	{
 		return m_LastFrameDeltaTime.count();
 	}
 
 
-	auto TimeImpl::FullTime() const -> float
+	float TimeImpl::FullTime() const
 	{
 		return m_FullTime.count();
 	}
 
 
-	auto TimeImpl::OnEventReceived(EventParamType) -> void
+	void TimeImpl::OnEventReceived(EventParamType)
 	{
 		auto const currentTime{Clock::now()};
 		m_LastFrameDeltaTime = currentTime - m_LastFrameCompletionTime;

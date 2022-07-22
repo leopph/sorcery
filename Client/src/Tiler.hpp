@@ -20,7 +20,7 @@ namespace demo
 
 			explicit Tiler(std::span<Layer const> layers);
 
-			auto OnFrameUpdate() -> void override;
+			void OnFrameUpdate() override;
 
 		private:
 			std::vector<Layer> m_Layers;

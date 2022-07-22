@@ -32,10 +32,10 @@ namespace leopph::internal
 
 
 
-	auto SettingsImpl::Serialize() const -> void
+	void SettingsImpl::Serialize() const
 	{
 		nlohmann::json json;
-		
+
 		json[JSON_SHADER_LOC] = m_ShaderCache.string();
 		json[JSON_API] = m_RenderingSettings.PendingApi;
 		json[JSON_PIPE] = m_RenderingSettings.PendingPipe;
@@ -66,7 +66,7 @@ namespace leopph::internal
 
 
 
-	auto SettingsImpl::Deserialize() -> void
+	void SettingsImpl::Deserialize()
 	{
 		auto const json{
 			[&]
@@ -111,7 +111,7 @@ namespace leopph::internal
 
 
 
-	auto SettingsImpl::OnEventReceived(EventReceiver<FrameCompleteEvent>::EventParamType) -> void
+	void SettingsImpl::OnEventReceived(EventReceiver<FrameCompleteEvent>::EventParamType)
 	{
 		if (m_Serialize)
 		{
@@ -123,7 +123,7 @@ namespace leopph::internal
 
 
 
-	auto SettingsImpl::OnEventReceived(EventReceiver<WindowEvent>::EventParamType event) -> void
+	void SettingsImpl::OnEventReceived(EventReceiver<WindowEvent>::EventParamType event)
 	{
 		m_WindowSettingsCache = WindowSettings
 		{

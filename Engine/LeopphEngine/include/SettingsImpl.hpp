@@ -14,22 +14,22 @@ namespace leopph::internal
 			SettingsImpl();
 
 			SettingsImpl(SettingsImpl const& other) = delete;
-			auto operator=(SettingsImpl const& other) -> void = delete;
+			void operator=(SettingsImpl const& other) = delete;
 
 			SettingsImpl(SettingsImpl&& other) = delete;
-			auto operator=(SettingsImpl&& other) -> void = delete;
+			void operator=(SettingsImpl&& other) = delete;
 
 			~SettingsImpl() noexcept override = default;
 
 		private:
-			auto Serialize() const -> void;
-			auto Deserialize() -> void;
+			void Serialize() const;
+			void Deserialize();
 
 			// If serialization needs to happen, we do it at the end of frame.
-			auto OnEventReceived(EventReceiver<FrameCompleteEvent>::EventParamType) -> void override;
+			void OnEventReceived(EventReceiver<FrameCompleteEvent>::EventParamType) override;
 
 			// Updates local window settings cache when serializable window configuration changes happen.
-			auto OnEventReceived(EventReceiver<WindowEvent>::EventParamType event) -> void override;
+			void OnEventReceived(EventReceiver<WindowEvent>::EventParamType event) override;
 
 			static char const* const JSON_SHADER_LOC;
 			static char const* const JSON_DIR_SHADOW_RES;

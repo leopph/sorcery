@@ -4,6 +4,7 @@
 
 #include <array>
 
+
 namespace leopph::rendersettings
 {
 	u8 constexpr numMaxShadowCascades{3};

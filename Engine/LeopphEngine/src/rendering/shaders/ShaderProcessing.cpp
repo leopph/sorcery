@@ -14,7 +14,7 @@
 
 namespace leopph
 {
-	auto ReadShaderFiles(std::filesystem::path vertexShaderPath, std::filesystem::path geometryShaderPath, std::filesystem::path fragmentShaderPath) -> ShaderProgramSourceFileInfo
+	ShaderProgramSourceFileInfo ReadShaderFiles(std::filesystem::path vertexShaderPath, std::filesystem::path geometryShaderPath, std::filesystem::path fragmentShaderPath)
 	{
 		if (vertexShaderPath.empty())
 		{
@@ -50,7 +50,7 @@ namespace leopph
 
 
 
-	auto ProcessShaderIncludes(ShaderProgramSourceFileInfo sourceFileInfo) -> ShaderProgramSourceInfo
+	ShaderProgramSourceInfo ProcessShaderIncludes(ShaderProgramSourceFileInfo sourceFileInfo)
 	{
 		std::regex const static includeLineRegex{R"delim(^\s*#\s*include\s*)delim"};
 		std::regex const static includeLineQuoteRegex{R"delim(^\s*#\s*include\s*"\S+"\s*$)delim"};

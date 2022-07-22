@@ -10,7 +10,7 @@ class FrameRateAnalyzer final : public leopph::Behavior
 {
 	public:
 		explicit FrameRateAnalyzer(float pollInterval, unsigned maxDataSets);
-		auto OnFrameUpdate() -> void override;
+		void OnFrameUpdate() override;
 
 	private:
 		struct FrameData
@@ -27,7 +27,7 @@ class FrameRateAnalyzer final : public leopph::Behavior
 		float m_PollInterval;
 		float m_DeltaTime;
 
-		constexpr static const char* DATA_SEPARATOR{"################"};
-		constexpr static const char* FPS_POSTFIX{" FPS, "};
-		constexpr static const char* FRAMETIME_POSTFIX{" ms"};
+		constexpr static char const* DATA_SEPARATOR{"################"};
+		constexpr static char const* FPS_POSTFIX{" FPS, "};
+		constexpr static char const* FRAMETIME_POSTFIX{" ms"};
 };

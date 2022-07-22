@@ -19,13 +19,13 @@ namespace leopph::internal
 	}
 
 
-	auto DataManager::Store(std::unique_ptr<Poelo> poelo) -> void
+	void DataManager::Store(std::unique_ptr<Poelo> poelo)
 	{
 		m_Poelos.insert(std::move(poelo));
 	}
 
 
-	auto DataManager::Destroy(Poelo const* poelo) -> bool
+	bool DataManager::Destroy(Poelo const* poelo)
 	{
 		return std::erase_if(m_Poelos, [poelo](std::unique_ptr<Poelo> const& elem)
 		{
@@ -34,14 +34,14 @@ namespace leopph::internal
 	}
 
 
-	auto DataManager::RegisterEntity(Entity* const entity) -> void
+	void DataManager::RegisterEntity(Entity* const entity)
 	{
 		m_EntitiesAndComponents.emplace_back(entity);
 		SortEntities();
 	}
 
 
-	auto DataManager::UnregisterEntity(Entity const* const entity) -> void
+	void DataManager::UnregisterEntity(Entity const* const entity)
 	{
 		// Keeps the relative order, remains sorted.
 		std::erase_if(m_EntitiesAndComponents, [entity](EntityEntry const& elem)
@@ -51,21 +51,21 @@ namespace leopph::internal
 	}
 
 
-	auto DataManager::FindEntity(std::string const& name) -> Entity*
+	Entity* DataManager::FindEntity(std::string const& name)
 	{
 		auto const it = GetEntityIterator(name);
 		return it != m_EntitiesAndComponents.end() ? it->Entity : nullptr;
 	}
 
 
-	auto DataManager::RegisterComponent(Entity const* const entity, ComponentPtr<> component, bool const active) -> void
+	void DataManager::RegisterComponent(Entity const* const entity, ComponentPtr<> component, bool const active)
 	{
 		auto const it{GetEntityIterator(entity->get_name())};
 		(active ? it->ActiveComponents : it->InactiveComponents).push_back(std::move(component));
 	}
 
 
-	auto DataManager::UnregisterComponent(Entity const* const entity, Component const* component, bool const active) -> ComponentPtr<>
+	ComponentPtr<> DataManager::UnregisterComponent(Entity const* const entity, Component const* component, bool const active)
 	{
 		auto const entryIt = GetEntityIterator(entity->get_name());
 		auto& components = active ? entryIt->ActiveComponents : entryIt->InactiveComponents; // no bounds checking here
@@ -79,87 +79,87 @@ namespace leopph::internal
 	}
 
 
-	auto DataManager::ComponentsOfEntity(Entity const* const entity, bool const active) const -> std::span<ComponentPtr<> const>
+	std::span<ComponentPtr<> const> DataManager::ComponentsOfEntity(Entity const* const entity, bool const active) const
 	{
 		auto const it{GetEntityIterator(entity->get_name())};
 		return active ? it->ActiveComponents : it->InactiveComponents;
 	}
 
 
-	auto DataManager::RegisterActiveBehavior(Behavior* behavior) -> void
+	void DataManager::RegisterActiveBehavior(Behavior* behavior)
 	{
 		m_ActiveBehaviors.push_back(behavior);
 		SortActiveBehaviors();
 	}
 
 
-	auto DataManager::UnregisterActiveBehavior(Behavior const* behavior) -> void
+	void DataManager::UnregisterActiveBehavior(Behavior const* behavior)
 	{
 		std::erase(m_ActiveBehaviors, behavior);
 	}
 
 
-	auto DataManager::ActiveBehaviors() const noexcept -> std::span<Behavior* const>
+	std::span<Behavior* const> DataManager::ActiveBehaviors() const noexcept
 	{
 		return m_ActiveBehaviors;
 	}
 
 
-	auto DataManager::RegisterActiveDirLight(leopph::DirectionalLight const* dirLight) -> void
+	void DataManager::RegisterActiveDirLight(leopph::DirectionalLight const* dirLight)
 	{
 		m_ActiveDirLights.push_back(dirLight);
 	}
 
 
-	auto DataManager::UnregisterActiveDirLight(leopph::DirectionalLight const* dirLight) -> void
+	void DataManager::UnregisterActiveDirLight(leopph::DirectionalLight const* dirLight)
 	{
 		std::erase(m_ActiveDirLights, dirLight);
 	}
 
 
-	auto DataManager::DirectionalLight() const -> leopph::DirectionalLight const*
+	leopph::DirectionalLight const* DataManager::DirectionalLight() const
 	{
 		return m_ActiveDirLights.empty() ? nullptr : m_ActiveDirLights.front();
 	}
 
 
-	auto DataManager::RegisterActiveSpotLight(SpotLight const* spotLight) -> void
+	void DataManager::RegisterActiveSpotLight(SpotLight const* spotLight)
 	{
 		m_ActiveSpotLights.push_back(spotLight);
 	}
 
 
-	auto DataManager::UnregisterActiveSpotLight(SpotLight const* spotLight) -> void
+	void DataManager::UnregisterActiveSpotLight(SpotLight const* spotLight)
 	{
 		std::erase(m_ActiveSpotLights, spotLight);
 	}
 
 
-	auto DataManager::ActiveSpotLights() const noexcept -> std::span<SpotLight const* const>
+	std::span<SpotLight const* const> DataManager::ActiveSpotLights() const noexcept
 	{
 		return m_ActiveSpotLights;
 	}
 
 
-	auto DataManager::RegisterActivePointLight(PointLight const* pointLight) -> void
+	void DataManager::RegisterActivePointLight(PointLight const* pointLight)
 	{
 		m_ActivePointLights.push_back(pointLight);
 	}
 
 
-	auto DataManager::UnregisterActivePointLight(PointLight const* pointLight) -> void
+	void DataManager::UnregisterActivePointLight(PointLight const* pointLight)
 	{
 		std::erase(m_ActivePointLights, pointLight);
 	}
 
 
-	auto DataManager::ActivePointLights() const noexcept -> std::span<PointLight const* const>
+	std::span<PointLight const* const> DataManager::ActivePointLights() const noexcept
 	{
 		return m_ActivePointLights;
 	}
 
 
-	auto DataManager::SortEntities() -> void
+	void DataManager::SortEntities()
 	{
 		std::ranges::sort(m_EntitiesAndComponents, EntityOrderFunc{}, [](auto const& elem) -> auto const&
 		{
@@ -168,7 +168,7 @@ namespace leopph::internal
 	}
 
 
-	auto DataManager::SortActiveBehaviors() -> void
+	void DataManager::SortActiveBehaviors()
 	{
 		std::ranges::sort(m_ActiveBehaviors, BehaviorOrderFunc{}, [](auto const* behavior)
 		{
@@ -177,13 +177,13 @@ namespace leopph::internal
 	}
 
 
-	auto DataManager::GetEntityIterator(std::string const& name) -> decltype(m_EntitiesAndComponents)::iterator
+	decltype(DataManager::m_EntitiesAndComponents)::iterator DataManager::GetEntityIterator(std::string const& name)
 	{
 		return GetEntityIteratorCommon(this, name);
 	}
 
 
-	auto DataManager::GetEntityIterator(std::string const& name) const -> decltype(m_EntitiesAndComponents)::const_iterator
+	decltype(DataManager::m_EntitiesAndComponents)::const_iterator DataManager::GetEntityIterator(std::string const& name) const
 	{
 		return GetEntityIteratorCommon(this, name);
 	}

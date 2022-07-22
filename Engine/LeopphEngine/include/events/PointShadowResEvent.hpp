@@ -6,5 +6,6 @@
 namespace leopph::internal
 {
 	// An Event representing a change in PointLight shadow map resolution.
-	struct PointShadowResEvent final : Event{};
+	struct PointShadowResEvent final : Event
+	{};
 }

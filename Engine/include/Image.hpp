@@ -40,29 +40,29 @@ namespace leopph
 			// Size and channel values are not checked for consistency against the byte stream.
 			LEOPPHAPI Image(u32 width, u32 height, u8 channels, std::unique_ptr<u8[]> bytes, ColorEncoding colorEncoding = ColorEncoding::Linear);
 
-			[[nodiscard]] auto LEOPPHAPI Width() const noexcept -> u32;
-			[[nodiscard]] auto LEOPPHAPI Height() const noexcept -> u32;
-			[[nodiscard]] auto LEOPPHAPI Channels() const noexcept -> u8;
-			[[nodiscard]] auto LEOPPHAPI Encoding() const noexcept -> ColorEncoding;
+			[[nodiscard]] LEOPPHAPI u32 Width() const noexcept;
+			[[nodiscard]] LEOPPHAPI u32 Height() const noexcept;
+			[[nodiscard]] LEOPPHAPI u8 Channels() const noexcept;
+			[[nodiscard]] LEOPPHAPI ColorEncoding Encoding() const noexcept;
 
 			// Remove the specified color channel from the image and return it as a new, single channel image.
 			// Invalidates internal data pointers.
-			[[nodiscard]] auto LEOPPHAPI ExtractChannel(u8 channel) -> Image;
+			[[nodiscard]] LEOPPHAPI Image ExtractChannel(u8 channel);
 
 			// Return whether any data is held, that is if width, height or channels is 0, or bytes is nullptr.
-			[[nodiscard]] auto LEOPPHAPI Empty() const noexcept -> bool;
+			[[nodiscard]] LEOPPHAPI bool Empty() const noexcept;
 
 			// Return width * channels number of bytes that forms a row of the image.
-			[[nodiscard]] auto LEOPPHAPI operator[](u64 rowIndex) const -> std::span<u8 const>;
+			[[nodiscard]] LEOPPHAPI std::span<u8 const> operator[](u64 rowIndex) const;
 
 			// Returns the stored bytes.
-			[[nodiscard]] auto LEOPPHAPI Data() const noexcept -> std::span<u8 const>;
+			[[nodiscard]] LEOPPHAPI std::span<u8 const> Data() const noexcept;
 
 			LEOPPHAPI Image(Image const& other);
-			auto LEOPPHAPI operator=(Image const& other) -> Image&;
+			LEOPPHAPI Image& operator=(Image const& other);
 
 			LEOPPHAPI Image(Image&& other) noexcept;
-			auto LEOPPHAPI operator=(Image&& other) noexcept -> Image&;
+			LEOPPHAPI Image& operator=(Image&& other) noexcept;
 
 			~Image() noexcept = default;
 

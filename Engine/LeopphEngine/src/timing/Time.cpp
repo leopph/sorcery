@@ -5,13 +5,13 @@
 
 namespace leopph::time
 {
-	auto DeltaTime() -> float
+	float DeltaTime()
 	{
 		return internal::TimeImpl::Instance().DeltaTime();
 	}
 
 
-	auto FullTime() -> float
+	float FullTime()
 	{
 		return internal::TimeImpl::Instance().FullTime();
 	}

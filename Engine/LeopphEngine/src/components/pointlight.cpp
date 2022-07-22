@@ -6,7 +6,7 @@
 
 namespace leopph
 {
-	auto PointLight::Owner(Entity* entity) -> void
+	void PointLight::Owner(Entity* entity)
 	{
 		auto* const dataManager = internal::GetDataManager();
 
@@ -24,7 +24,7 @@ namespace leopph
 	}
 
 
-	auto PointLight::Active(bool const active) -> void
+	void PointLight::Active(bool const active)
 	{
 		auto* const dataManager = internal::GetDataManager();
 
@@ -42,7 +42,7 @@ namespace leopph
 	}
 
 
-	auto PointLight::operator=(PointLight const& other) -> PointLight&
+	PointLight& PointLight::operator=(PointLight const& other)
 	{
 		if (this == &other)
 		{
@@ -67,7 +67,7 @@ namespace leopph
 	}
 
 
-	auto PointLight::Clone() const -> ComponentPtr<>
+	ComponentPtr<> PointLight::Clone() const
 	{
 		return CreateComponent<PointLight>(*this);
 	}

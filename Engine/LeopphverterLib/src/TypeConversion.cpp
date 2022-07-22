@@ -4,7 +4,7 @@
 namespace leopph::convert
 {
 	// Transposes the matrix
-	auto Convert(aiMatrix4x4 const& aiMat) -> Matrix4
+	Matrix4 Convert(aiMatrix4x4 const& aiMat)
 	{
 		return Matrix4
 		{
@@ -16,13 +16,13 @@ namespace leopph::convert
 	}
 
 
-	auto Convert(aiVector3D const& aiVec) -> Vector3
+	Vector3 Convert(aiVector3D const& aiVec)
 	{
 		return Vector3{aiVec.x, aiVec.y, aiVec.z};
 	}
 
 
-	auto Convert(aiColor3D const& aiCol) -> Color
+	Color Convert(aiColor3D const& aiCol)
 	{
 		return Color{static_cast<unsigned char>(aiCol.r * 255), static_cast<unsigned char>(aiCol.g * 255), static_cast<unsigned char>(aiCol.b * 255)};
 	}

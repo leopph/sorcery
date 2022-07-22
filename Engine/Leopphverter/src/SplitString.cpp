@@ -4,11 +4,11 @@
 
 namespace leopph::convert::driver
 {
-	auto SplitString(std::string_view const str, char const sep) -> std::vector<std::string_view>
+	std::vector<std::string_view> SplitString(std::string_view const str, char const sep)
 	{
 		std::vector<std::string_view> ret;
-		leopph::u64 base = 0;
-		for (leopph::u64 i = 0; i < str.size(); i++)
+		u64 base = 0;
+		for (u64 i = 0; i < str.size(); i++)
 		{
 			if (str[i] == sep)
 			{

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Mesh.hpp"
 #include "LeopphApi.hpp"
+#include "Mesh.hpp"
 #include "Types.hpp"
 
 #include <span>
@@ -25,15 +25,15 @@ namespace leopph
 			explicit LEOPPHAPI MeshGroup(std::vector<Mesh> meshes);
 
 			// Return the currently stored meshes.
-			[[nodiscard]] LEOPPHAPI auto Meshes() const noexcept -> std::span<Mesh const>;
+			[[nodiscard]] LEOPPHAPI std::span<Mesh const> Meshes() const noexcept;
 
 			// Append a new Mesh instance to the MeshGroup.
-			LEOPPHAPI auto AddMesh(Mesh mesh) -> void;
+			LEOPPHAPI void AddMesh(Mesh mesh);
 
 			// Remove the Mesh from the specified index.
 			// The operation is silently ignored for invalid indices.
 			// All meshes following the deleted one will have their indices reduced by one.
-			LEOPPHAPI auto RemoveMesh(u64 index) -> void;
+			LEOPPHAPI void RemoveMesh(u64 index);
 
 		private:
 			std::vector<Mesh> m_Meshes;

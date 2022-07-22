@@ -8,28 +8,28 @@
 
 namespace leopph
 {
-	auto Scene::CreateScene(const std::size_t id) -> Scene*
+	Scene* Scene::CreateScene(std::size_t const id)
 	{
 		std::unique_ptr<Scene> scene{new Scene{id}};
-		const auto ret{scene.get()};
+		auto const ret{scene.get()};
 		SceneManager::Instance().AddScene(std::move(scene));
 		return ret;
 	}
 
 
-	auto Scene::CreateScene(const std::string_view name) -> Scene*
+	Scene* Scene::CreateScene(std::string_view const name)
 	{
 		return CreateScene(NameToId(name));
 	}
 
 
-	auto Scene::NameToId(const std::string_view name) -> std::size_t
+	std::size_t Scene::NameToId(std::string_view const name)
 	{
 		return std::hash<std::string_view>{}(name);
 	}
 
 
-	Scene::Scene(const std::size_t id) :
+	Scene::Scene(std::size_t const id) :
 		m_Id{id}
 	{}
 }

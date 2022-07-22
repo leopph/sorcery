@@ -34,7 +34,7 @@ namespace leopph::convert
 		// Returns the index of the texture image corresponding to the target texture type in the passed material.
 		// If the texture is not yet loaded, it gets loaded and stored in the vector along with its source path and index in the map.
 		// Returns an empty optional if the texture could not be found or loaded.
-		auto GetTexture(aiMaterial const* const mat, aiTextureType const texType, std::vector<Image>& textures, std::unordered_map<std::string, std::size_t>& idToInd, std::filesystem::path const& rootPath) -> std::optional<std::size_t>
+		std::optional<std::size_t> GetTexture(aiMaterial const* const mat, aiTextureType const texType, std::vector<Image>& textures, std::unordered_map<std::string, std::size_t>& idToInd, std::filesystem::path const& rootPath)
 		{
 			if (aiString texPath; mat->GetTexture(texType, 0, &texPath) == aiReturn_SUCCESS)
 			{
@@ -52,7 +52,7 @@ namespace leopph::convert
 
 
 
-		auto ProcessMaterials(std::span<aiMaterial* const> const aiMats, std::filesystem::path const& rootPath) -> std::pair<std::vector<Material>, std::vector<Image>>
+		std::pair<std::vector<Material>, std::vector<Image>> ProcessMaterials(std::span<aiMaterial* const> const aiMats, std::filesystem::path const& rootPath)
 		{
 			std::unordered_map<std::string, std::size_t> idToInd;
 			std::vector<Image> textures;
@@ -109,7 +109,7 @@ namespace leopph::convert
 
 
 
-		auto ProcessVertices(aiMesh const* mesh, Matrix4 const& trafo) -> std::vector<Vertex>
+		std::vector<Vertex> ProcessVertices(aiMesh const* mesh, Matrix4 const& trafo)
 		{
 			std::vector<Vertex> vertices;
 
@@ -140,7 +140,7 @@ namespace leopph::convert
 
 
 
-		auto ProcessIndices(aiMesh const* mesh) -> std::vector<unsigned>
+		std::vector<unsigned> ProcessIndices(aiMesh const* mesh)
 		{
 			std::vector<unsigned> indices;
 
@@ -157,7 +157,7 @@ namespace leopph::convert
 
 
 
-		auto LogPrimitiveError(aiMesh const* const mesh, std::filesystem::path const& path) -> void
+		void LogPrimitiveError(aiMesh const* const mesh, std::filesystem::path const& path)
 		{
 			std::string msg{"Ignoring mesh without triangles in model at path ["};
 			msg += path.string();
@@ -185,7 +185,7 @@ namespace leopph::convert
 
 
 
-	auto ProcessGenericModel(std::filesystem::path const& path) -> std::optional<Object>
+	std::optional<Object> ProcessGenericModel(std::filesystem::path const& path)
 	{
 		Assimp::Importer importer;
 		auto const* scene = importer.ReadFile(path.string(),

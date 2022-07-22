@@ -33,41 +33,41 @@ namespace leopph
 
 			// Get where on the disk shaders are cached after compilation.
 			// An empty location is returned if shader caching is turned off.
-			[[nodiscard]] auto LEOPPHAPI ShaderCachePath() noexcept -> std::filesystem::path const&;
+			[[nodiscard]] LEOPPHAPI std::filesystem::path const& ShaderCachePath() noexcept;
 
 
 			// Set where on the disk shaders are cached after compilation.
 			// Setting this property to an empty path turns shader caching off and setting a valid value turns it on.
-			auto LEOPPHAPI ShaderCachePath(std::filesystem::path path) noexcept -> void;
+			LEOPPHAPI void ShaderCachePath(std::filesystem::path path) noexcept;
 
 
 			// Get whether shaders are cached after compilation, or recompiled during each run.
-			[[nodiscard]] auto LEOPPHAPI CacheShaders() const -> bool;
+			[[nodiscard]] LEOPPHAPI bool CacheShaders() const;
 
 
 			// Get the currently used graphics API.
-			[[nodiscard]] auto LEOPPHAPI GetGraphicsApi() const noexcept -> GraphicsApi;
+			[[nodiscard]] LEOPPHAPI GraphicsApi GetGraphicsApi() const noexcept;
 
 
 			// Set the currently used graphics API.
 			// Your application must be restarted before the new value takes effect.
-			auto LEOPPHAPI SetGraphicsApi(GraphicsApi newApi) noexcept -> void;
+			LEOPPHAPI void SetGraphicsApi(GraphicsApi newApi) noexcept;
 
 
 			// Get the currently used graphics pipeline.
-			[[nodiscard]] auto LEOPPHAPI GetGraphicsPipeline() const noexcept -> GraphicsPipeline;
+			[[nodiscard]] LEOPPHAPI GraphicsPipeline GetGraphicsPipeline() const noexcept;
 
 
 			// Set the currently used graphics pipeline.
 			// Your application must be restarted before the new value takes effect.
-			auto LEOPPHAPI SetGraphicsPipeline(GraphicsPipeline pipeline) noexcept -> void;
+			LEOPPHAPI void SetGraphicsPipeline(GraphicsPipeline pipeline) noexcept;
 
 
 			// Get the resolution of the shadow cascade maps used by DirectionalLights.
 			// They are returned in order from the closest cascade to the farthest.
 			// More values mean more cascades.
 			// Higher values produce better quality shadows but increase VRAM and computation costs.
-			[[nodiscard]] auto LEOPPHAPI DirShadowResolution() -> std::span<u16 const>;
+			[[nodiscard]] LEOPPHAPI std::span<u16 const> DirShadowResolution();
 
 
 			// Set the resolution of the shadow cascade maps used by DirectionalLights.
@@ -75,58 +75,58 @@ namespace leopph
 			// More values mean more cascades.
 			// Higher values produce better quality shadows but increase VRAM and computation costs.
 			// The number of resolutions accepted is capped.
-			auto LEOPPHAPI DirShadowResolution(std::span<u16 const> cascades) -> void;
+			LEOPPHAPI void DirShadowResolution(std::span<u16 const> cascades);
 
 
 			// Get the correction factor when calculating shadow cascade bounds for DirectionalLights.
-			[[nodiscard]] auto LEOPPHAPI DirShadowCascadeCorrection() const noexcept -> f32;
+			[[nodiscard]] LEOPPHAPI f32 DirShadowCascadeCorrection() const noexcept;
 
 
 			// Set the correction factor when calculating shadow cascade bounds for DirectionalLights.
-			auto LEOPPHAPI DirShadowCascadeCorrection(f32 newCor) noexcept -> void;
+			LEOPPHAPI void DirShadowCascadeCorrection(f32 newCor) noexcept;
 
 
 			// Get the number of shadow cascade maps used by DirectionalLights.
 			// This is the same as the size of the container returned by Settings::DirShadowResolution.
-			[[nodiscard]] auto LEOPPHAPI DirShadowCascadeCount() const noexcept -> u8;
+			[[nodiscard]] LEOPPHAPI u8 DirShadowCascadeCount() const noexcept;
 
 
 			// Get the resolution of the shadow maps used by SpotLights.
 			// Higher values produce sharper shadows but require more VRAM.
-			[[nodiscard]] auto LEOPPHAPI SpotShadowResolution() const noexcept -> u16;
+			[[nodiscard]] LEOPPHAPI u16 SpotShadowResolution() const noexcept;
 
 
 			// Set the resolution of the shadow maps used by SpotLights.
 			// Higher values produce sharper shadows but require more VRAM.
-			auto LEOPPHAPI SpotShadowResolution(u16 newRes) -> void;
+			LEOPPHAPI void SpotShadowResolution(u16 newRes);
 
 
 			// Get the maximum number of SpotLights that will be used in lighting calculations.
 			// If there are more SpotLights in the scene than this number, LeopphEngine uses the ones closest to the active Camera.
 			// Higher values mean more detailed lighting but can significantly reduce performance.
-			[[nodiscard]] auto LEOPPHAPI MaxSpotLightCount() const noexcept -> u8;
+			[[nodiscard]] LEOPPHAPI u8 MaxSpotLightCount() const noexcept;
 
 
 			// Set the maximum number of SpotLights that will be used in lighting calculations.
 			// If there are more SpotLights in the scene than this number, LeopphEngine uses the ones closest to the active Camera.
 			// Higher values mean more detailed lighting but can significantly reduce performance.
-			auto LEOPPHAPI MaxSpotLightCount(u8 newCount) noexcept -> void;
+			LEOPPHAPI void MaxSpotLightCount(u8 newCount) noexcept;
 
 
 			// Get the resolution of the shadow maps used by PointLights.
 			// Higher values produce sharper shadows but require more VRAM.
-			[[nodiscard]] auto LEOPPHAPI PointShadowResolution() const noexcept -> u16;
+			[[nodiscard]] LEOPPHAPI u16 PointShadowResolution() const noexcept;
 
 
 			// Set the resolution of the shadow map used by PointLights.
 			// Higher values produce sharper shadows but require more VRAM.
-			auto LEOPPHAPI PointShadowResolution(u16 newRes) noexcept -> void;
+			LEOPPHAPI void PointShadowResolution(u16 newRes) noexcept;
 
 
 			// Get the maximum number of PointLights that will be used in lighting calculations.
 			// If there are more PointLights in the scene than this number, LeopphEngine uses the ones closest to the active Camera.
 			// Higher values mean more detailed lighting but can significantly reduce performance.
-			[[nodiscard]] auto LEOPPHAPI MaxPointLightCount() const noexcept -> u8;
+			[[nodiscard]] LEOPPHAPI u8 MaxPointLightCount() const noexcept;
 
 
 			// Set the maximum number of PointLights that will be used in lighting calculations.
@@ -136,60 +136,60 @@ namespace leopph
 
 
 			// Get the width of the current window. This is the same as Window::Width.
-			[[nodiscard]] auto LEOPPHAPI WindowWidth() const noexcept -> u32;
+			[[nodiscard]] LEOPPHAPI u32 WindowWidth() const noexcept;
 
 
 			// Set the width of the current window. This is the same as Window::Width.
-			auto LEOPPHAPI WindowWidth(u32 newWidth) noexcept -> void;
+			LEOPPHAPI void WindowWidth(u32 newWidth) noexcept;
 
 
 			// Get the height of the current window. This is the same as Window::Height.
-			[[nodiscard]] auto LEOPPHAPI WindowHeight() const noexcept -> u32;
+			[[nodiscard]] LEOPPHAPI u32 WindowHeight() const noexcept;
 
 
 			// Set the height of the current window. This is the same as Window::Height.
-			auto LEOPPHAPI WindowHeight(u32 newHeight) noexcept -> void;
+			LEOPPHAPI void WindowHeight(u32 newHeight) noexcept;
 
 
 			// Get the current render multiplier. This is the same as Window::RenderMultiplier.
-			[[nodiscard]] auto LEOPPHAPI RenderMultiplier() const noexcept -> f32;
+			[[nodiscard]] LEOPPHAPI f32 RenderMultiplier() const noexcept;
 
 
 			// Set the render multiplier. This is the same as Window::RenderMultiplier.
-			auto LEOPPHAPI RenderMultiplier(f32 newMult) noexcept -> void;
+			LEOPPHAPI void RenderMultiplier(f32 newMult) noexcept;
 
 
 			// Get whether the current window has exclusive access to the monitor. This is the same as Window::Fullscreen.
-			[[nodiscard]] auto LEOPPHAPI Fullscreen() const noexcept -> bool;
+			[[nodiscard]] LEOPPHAPI bool Fullscreen() const noexcept;
 
 
 			// Set whether the window should have exclusive access to the monitor. This is the same as Window::Fullscreen.
-			auto LEOPPHAPI Fullscreen(bool newVal) noexcept -> void;
+			LEOPPHAPI void Fullscreen(bool newVal) noexcept;
 
 
 			// Get whether Vsync is turned on.
 			// This is exactly the same value as what Window::Vsync returns.
-			[[nodiscard]] auto LEOPPHAPI Vsync() const -> bool;
+			[[nodiscard]] LEOPPHAPI bool Vsync() const;
 
 
 			// Set whether Vsync is turned on.
 			// This has exactly the same effect as using Window::Vsync.
-			auto LEOPPHAPI Vsync(bool newVal) -> void;
+			LEOPPHAPI void Vsync(bool newVal);
 
 
 			// Get the gamma correction value.
-			auto LEOPPHAPI Gamma() const -> f32;
+			LEOPPHAPI f32 Gamma() const;
 
 
 			// Set the gamma correction value.
-			auto LEOPPHAPI Gamma(f32 newVal) -> void;
+			LEOPPHAPI void Gamma(f32 newVal);
 
 
 			Settings(Settings const& other) = delete;
-			auto operator=(Settings const& other) -> Settings& = delete;
+			Settings& operator=(Settings const& other) = delete;
 
 			Settings(Settings&& other) noexcept = delete;
-			auto operator=(Settings&& other) noexcept -> Settings& = delete;
+			Settings& operator=(Settings&& other) noexcept = delete;
 
 
 		protected:

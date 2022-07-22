@@ -16,7 +16,7 @@ namespace leopph::internal
 	}
 
 
-	auto GlMeshGroup::DrawWithMaterial(ShaderFamily& shader, GLuint const nextFreeTextureUnit, bool const transparent) const -> void
+	void GlMeshGroup::DrawWithMaterial(ShaderFamily& shader, GLuint const nextFreeTextureUnit, bool const transparent) const
 	{
 		for (auto const& mesh : transparent ? m_FullyTransparentMeshes : m_OpaqueMeshes)
 		{
@@ -30,7 +30,7 @@ namespace leopph::internal
 	}
 
 
-	auto GlMeshGroup::DrawWithoutMaterial(bool const transparent) const -> void
+	void GlMeshGroup::DrawWithoutMaterial(bool const transparent) const
 	{
 		for (auto const& mesh : transparent ? m_FullyTransparentMeshes : m_OpaqueMeshes)
 		{
@@ -44,7 +44,7 @@ namespace leopph::internal
 	}
 
 
-	auto GlMeshGroup::SetInstanceData(std::span<std::pair<Matrix4, Matrix4> const> const instMats) -> void
+	void GlMeshGroup::SetInstanceData(std::span<std::pair<Matrix4, Matrix4> const> const instMats)
 	{
 		m_NumInstances = static_cast<GLsizei>(instMats.size());
 
@@ -64,20 +64,20 @@ namespace leopph::internal
 	}
 
 
-	auto GlMeshGroup::MeshGroup() const -> leopph::MeshGroup const&
+	leopph::MeshGroup const& GlMeshGroup::MeshGroup() const
 	{
 		return m_MeshGroup;
 	}
 
 
-	auto GlMeshGroup::MeshGroup(leopph::MeshGroup meshGroup) -> void
+	void GlMeshGroup::MeshGroup(leopph::MeshGroup meshGroup)
 	{
 		m_MeshGroup = std::move(meshGroup);
 		UpdateMeshData();
 	}
 
 
-	auto GlMeshGroup::UpdateMeshData() -> void
+	void GlMeshGroup::UpdateMeshData()
 	{
 		m_OpaqueMeshes.clear();
 		m_MaybeTransparentMeshes.clear();
@@ -90,7 +90,7 @@ namespace leopph::internal
 	}
 
 
-	auto GlMeshGroup::SortMeshes() -> void
+	void GlMeshGroup::SortMeshes()
 	{
 		std::ranges::for_each(m_OpaqueMeshes, [this](std::unique_ptr<GlMesh>& glMesh)
 		{
@@ -137,13 +137,13 @@ namespace leopph::internal
 	}
 
 
-	auto GlMeshGroup::FullyTransparent(std::shared_ptr<Material const> const& mat) -> bool
+	bool GlMeshGroup::FullyTransparent(std::shared_ptr<Material const> const& mat)
 	{
 		return mat->Opacity < 1.f;
 	}
 
 
-	auto GlMeshGroup::MaybeTransparent(std::shared_ptr<Material const> const& mat) -> bool
+	bool GlMeshGroup::MaybeTransparent(std::shared_ptr<Material const> const& mat)
 	{
 		return mat->OpacityMap != nullptr;
 	}

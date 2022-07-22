@@ -17,7 +17,7 @@ namespace leopph
 			// At least one element must be non-zero
 			explicit LEOPPHAPI XorShift128(std::array<u32, 4> seeds);
 
-			[[nodiscard]] LEOPPHAPI auto operator()() -> u32;
+			[[nodiscard]] LEOPPHAPI u32 operator()();
 
 		private:
 			std::array<u32, 4> m_State;

@@ -3,9 +3,10 @@
 #include <fstream>
 #include <sstream>
 
+
 namespace leopph
 {
-	auto ReadFile(std::filesystem::path const& path) -> std::string
+	std::string ReadFile(std::filesystem::path const& path)
 	{
 		std::ifstream in{path};
 		in.unsetf(decltype(in)::skipws);
@@ -15,7 +16,8 @@ namespace leopph
 		return s_stream.str();
 	}
 
-	auto ReadFileLines(std::filesystem::path const& path, std::vector<std::string>& out) -> std::vector<std::string>&
+
+	std::vector<std::string>& ReadFileLines(std::filesystem::path const& path, std::vector<std::string>& out)
 	{
 		std::ifstream in{path};
 		std::string line;
@@ -28,13 +30,15 @@ namespace leopph
 		return out;
 	}
 
-	auto WriteFile(std::filesystem::path const& path, std::string_view const contents) -> void
+
+	void WriteFile(std::filesystem::path const& path, std::string_view const contents)
 	{
 		std::ofstream out{path};
 		out << contents;
 	}
 
-	auto SplitLines(std::string_view const str, std::vector<std::string>& out) -> void
+
+	void SplitLines(std::string_view const str, std::vector<std::string>& out)
 	{
 		auto view = str;
 		std::size_t end;
@@ -48,7 +52,8 @@ namespace leopph
 		while (end != decltype(str)::npos);
 	}
 
-	auto SplitWords(std::string_view const view, std::vector<std::string_view>& out) -> void
+
+	void SplitWords(std::string_view const view, std::vector<std::string_view>& out)
 	{
 		auto localView = view;
 

@@ -10,17 +10,17 @@ namespace leopph::internal
 	{
 		public:
 			// Internal function called by EventManager to dispatch virtual calls to the appropriate handler.
-			virtual auto Handle(const Event& event) const -> void = 0;
+			virtual void Handle(Event const& event) const = 0;
 
 			constexpr virtual ~EventReceiverBase() = default;
 
 		protected:
 			EventReceiverBase() = default;
 
-			EventReceiverBase(const EventReceiverBase& other) = default;
-			auto operator=(const EventReceiverBase& other) -> EventReceiverBase& = default;
+			EventReceiverBase(EventReceiverBase const& other) = default;
+			EventReceiverBase& operator=(EventReceiverBase const& other) = default;
 
 			EventReceiverBase(EventReceiverBase&& other) noexcept = default;
-			auto operator=(EventReceiverBase&& other) noexcept -> EventReceiverBase& = default;
+			EventReceiverBase& operator=(EventReceiverBase&& other) noexcept = default;
 	};
 }

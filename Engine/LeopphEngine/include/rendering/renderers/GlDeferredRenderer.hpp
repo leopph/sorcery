@@ -19,16 +19,16 @@ namespace leopph::internal
 
 
 		public:
-			auto Render() -> void override;
+			void Render() override;
 
 		private:
-			auto CreateGbuffer(GLsizei renderWidth, GLsizei renderHeight) -> void;
-			auto DeleteGbuffer() const -> void;
+			void CreateGbuffer(GLsizei renderWidth, GLsizei renderHeight);
+			void DeleteGbuffer() const;
 
-			auto CreateUbos() -> void;
-			auto DeleteUbos() const -> void;
+			void CreateUbos();
+			void DeleteUbos() const;
 
-			auto OnRenderResChange(Extent2D renderRes) -> void override;
+			void OnRenderResChange(Extent2D renderRes) override;
 
 		public:
 			/* ############

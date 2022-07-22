@@ -1,7 +1,7 @@
 #pragma once
 
-#include "LeopphApi.hpp"
 #include "CursorState.hpp"
+#include "LeopphApi.hpp"
 
 #include <string>
 #include <string_view>
@@ -14,51 +14,51 @@ namespace leopph
 	{
 		public:
 			// Get the width of the window.
-			[[nodiscard]] virtual auto Width() const -> unsigned = 0;
+			[[nodiscard]] virtual unsigned Width() const = 0;
 
 			// Set the width of the window.
-			virtual auto Width(unsigned newWidth) -> void = 0;
+			virtual void Width(unsigned newWidth) = 0;
 
 			// Get the height of the window.
-			[[nodiscard]] virtual auto Height() const -> unsigned = 0;
+			[[nodiscard]] virtual unsigned Height() const = 0;
 
 			// Set the height of the window.
-			virtual auto Height(unsigned newHeight) -> void = 0;
+			virtual void Height(unsigned newHeight) = 0;
 
 			// Get the aspect ratio (w/h) of the window.
-			[[nodiscard]] auto LEOPPHAPI AspectRatio() const -> float;
+			[[nodiscard]] LEOPPHAPI float AspectRatio() const;
 
 			// Get whether the window has exclusive access to the display.
-			[[nodiscard]] virtual auto Fullscreen() const -> bool = 0;
+			[[nodiscard]] virtual bool Fullscreen() const = 0;
 
 			// Set whether the window has exclusive access to the display.
-			auto virtual Fullscreen(bool newValue) -> void = 0;
+			virtual void Fullscreen(bool newValue) = 0;
 
 			// Get whether the window is vertically synced.
-			[[nodiscard]] virtual auto Vsync() const -> bool = 0;
+			[[nodiscard]] virtual bool Vsync() const = 0;
 
 			// Set whether the window should be vertically synced.
-			virtual auto  Vsync(bool newValue) -> void = 0;
+			virtual void Vsync(bool newValue) = 0;
 
 			// Get the title of the window.
-			[[nodiscard]] virtual auto  Title() const -> std::string_view = 0;
+			[[nodiscard]] virtual std::string_view Title() const = 0;
 
 			// Set the title of the window.
-			auto virtual Title(std::string newTitle) -> void = 0;
+			virtual void Title(std::string newTitle) = 0;
 
 			// Get the current cursor state of the window.
-			[[nodiscard]] virtual auto CursorMode() const -> CursorState = 0;
+			[[nodiscard]] virtual CursorState CursorMode() const = 0;
 
 			// Set the cursor state of the window.
-			virtual auto CursorMode(CursorState newState) -> void = 0;
+			virtual void CursorMode(CursorState newState) = 0;
 
 			// Get the current render multiplier of the window.
 			// Rendering operations use the resolution {width, height} * mult.
-			[[nodiscard]] virtual auto RenderMultiplier() const -> float = 0;
+			[[nodiscard]] virtual float RenderMultiplier() const = 0;
 
 			// Set the render multipler of the window.
 			// Rendering operations will use the resolution {width, height} * mult.
-			virtual auto RenderMultiplier(float newMult) -> void = 0;
+			virtual void RenderMultiplier(float newMult) = 0;
 
 
 			// Represents an acceptable configuration for a display.
@@ -72,13 +72,13 @@ namespace leopph
 
 			// Returns all display modes the current or the primary monitor supports.
 			// They are sorted in descending order.
-			[[nodiscard]] virtual auto GetSupportedDisplayModes() const -> std::vector<DisplayMode> = 0;
+			[[nodiscard]] virtual std::vector<DisplayMode> GetSupportedDisplayModes() const = 0;
 
-			Window(const Window& other) = delete;
-			auto operator=(const Window& other) -> void = delete;
+			Window(Window const& other) = delete;
+			void operator=(Window const& other) = delete;
 
 			Window(Window&& other) = delete;
-			auto operator=(Window&& other) -> void = delete;
+			void operator=(Window&& other) = delete;
 
 		protected:
 			Window() = default;

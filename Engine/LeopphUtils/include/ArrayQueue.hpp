@@ -14,17 +14,17 @@ namespace leopph::internal
 		public:
 			// Returns a reference to the next element about to be popped.
 			// Calling on an empty ArrayQueue results in undefined behavior.
-			[[nodiscard]] auto Peek() const -> const T&;
+			[[nodiscard]] const T& Peek() const;
 
 			// Add a new element to the queue's end.
-			auto Push(T val) -> void;
+			void Push(T val);
 
 			// Removes the next element from the queue and returns it.
 			// Calling on an empty ArrayQueue results in undefined behavior.
-			auto Pop() -> T;
+			T Pop();
 
 			// Returns whether the ArrayQueue contains any elements.
-			[[nodiscard]] auto Empty() const -> bool;
+			[[nodiscard]] bool Empty() const;
 
 		private:
 			std::vector<T> m_Vec;
@@ -34,14 +34,14 @@ namespace leopph::internal
 
 
 	template<class T>
-	auto ArrayQueue<T>::Peek() const -> const T&
+	const T& ArrayQueue<T>::Peek() const
 	{
 		return m_Vec[m_Head];
 	}
 
 
 	template<class T>
-	auto ArrayQueue<T>::Push(T val) -> void
+	void ArrayQueue<T>::Push(T val)
 	{
 		if (m_Vec.empty())
 		{
@@ -79,11 +79,11 @@ namespace leopph::internal
 		// Move elements and reallocate
 
 		// The number of elements spanning from head to the end of the buffer
-		const auto numHeadElems{m_Vec.capacity() - m_Head};
+		auto const numHeadElems{m_Vec.capacity() - m_Head};
 		for (auto i = 0ull; i < numHeadElems; ++i)
 		{
 			// The currently moved element's index
-			const auto curMovId{m_Head + i};
+			auto const curMovId{m_Head + i};
 			auto movElem{std::move(m_Vec[curMovId])};
 			for (auto j = curMovId; j > i; --j)
 			{
@@ -101,7 +101,7 @@ namespace leopph::internal
 
 
 	template<class T>
-	auto ArrayQueue<T>::Pop() -> T
+	T ArrayQueue<T>::Pop()
 	{
 		T ret{std::move(m_Vec[m_Head])};
 
@@ -124,7 +124,7 @@ namespace leopph::internal
 
 
 	template<class T>
-	auto ArrayQueue<T>::Empty() const -> bool
+	bool ArrayQueue<T>::Empty() const
 	{
 		return m_Head == m_Tail;
 	}

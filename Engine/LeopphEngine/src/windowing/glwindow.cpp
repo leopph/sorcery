@@ -78,13 +78,13 @@ namespace leopph::internal
 	}
 
 
-	auto GlWindow::Width() const -> unsigned
+	unsigned GlWindow::Width() const
 	{
 		return static_cast<int>(m_Width);
 	}
 
 
-	auto GlWindow::Width(unsigned const newWidth) -> void
+	void GlWindow::Width(unsigned const newWidth)
 	{
 		m_Width = static_cast<int>(newWidth);
 		glfwSetWindowSize(m_Window, m_Width, m_Height);
@@ -92,13 +92,13 @@ namespace leopph::internal
 	}
 
 
-	auto GlWindow::Height() const -> unsigned
+	unsigned GlWindow::Height() const
 	{
 		return static_cast<int>(m_Height);
 	}
 
 
-	auto GlWindow::Height(unsigned const newHeight) -> void
+	void GlWindow::Height(unsigned const newHeight)
 	{
 		m_Height = static_cast<int>(newHeight);
 		glfwSetWindowSize(m_Window, m_Width, m_Height);
@@ -106,13 +106,13 @@ namespace leopph::internal
 	}
 
 
-	auto GlWindow::Fullscreen() const -> bool
+	bool GlWindow::Fullscreen() const
 	{
 		return m_Fullscreen;
 	}
 
 
-	auto GlWindow::Fullscreen(bool const newValue) -> void
+	void GlWindow::Fullscreen(bool const newValue)
 	{
 		m_Fullscreen = newValue;
 
@@ -133,13 +133,13 @@ namespace leopph::internal
 	}
 
 
-	auto GlWindow::Vsync() const -> bool
+	bool GlWindow::Vsync() const
 	{
 		return m_Vsync;
 	}
 
 
-	auto GlWindow::Vsync(bool const newValue) -> void
+	void GlWindow::Vsync(bool const newValue)
 	{
 		m_Vsync = newValue;
 		glfwSwapInterval(m_Vsync);
@@ -147,81 +147,81 @@ namespace leopph::internal
 	}
 
 
-	auto GlWindow::Title() const -> std::string_view
+	std::string_view GlWindow::Title() const
 	{
 		return m_Title;
 	}
 
 
-	auto GlWindow::Title(std::string newTitle) -> void
+	void GlWindow::Title(std::string newTitle)
 	{
 		m_Title = std::move(newTitle);
 		glfwSetWindowTitle(m_Window, m_Title.c_str());
 	}
 
 
-	auto GlWindow::ClearColor() const -> Vector4 const&
+	Vector4 const& GlWindow::ClearColor() const
 	{
 		return m_ClrColor;
 	}
 
 
-	auto GlWindow::ClearColor(Vector4 const& color) -> void
+	void GlWindow::ClearColor(Vector4 const& color)
 	{
 		m_ClrColor = color;
 	}
 
 
-	auto GlWindow::CursorMode() const -> CursorState
+	CursorState GlWindow::CursorMode() const
 	{
 		return glfw::GetAbstractCursorState(glfwGetInputMode(m_Window, GLFW_CURSOR));
 	}
 
 
-	auto GlWindow::CursorMode(CursorState const newState) -> void
+	void GlWindow::CursorMode(CursorState const newState)
 	{
 		glfwSetInputMode(m_Window, GLFW_CURSOR, glfw::GetGlfwCursorState(newState));
 	}
 
 
-	auto GlWindow::RenderMultiplier() const -> float
+	float GlWindow::RenderMultiplier() const
 	{
 		return m_RenderMult;
 	}
 
 
-	auto GlWindow::RenderMultiplier(float const newMult) -> void
+	void GlWindow::RenderMultiplier(float const newMult)
 	{
 		m_RenderMult = newMult;
 		SendWindowEvent();
 	}
 
 
-	auto GlWindow::PollEvents() -> void
+	void GlWindow::PollEvents()
 	{
 		glfwPollEvents();
 	}
 
 
-	auto GlWindow::SwapBuffers() -> void
+	void GlWindow::SwapBuffers()
 	{
 		glfwSwapBuffers(m_Window);
 	}
 
 
-	auto GlWindow::ShouldClose() -> bool
+	bool GlWindow::ShouldClose()
 	{
 		return glfwWindowShouldClose(m_Window);
 	}
 
 
-	auto GlWindow::ShouldClose(bool const val) -> void
+	void GlWindow::ShouldClose(bool const val)
 	{
 		glfwSetWindowShouldClose(m_Window, val);
 	}
 
 
-	auto GlWindow::GetSupportedDisplayModes() const -> std::vector<DisplayMode>
+	std::vector<GlWindow::DisplayMode> GlWindow::GetSupportedDisplayModes() const
 	{
 		auto const currentMonitor = glfwGetWindowMonitor(m_Window);
 		int numVidModes;
@@ -238,26 +238,26 @@ namespace leopph::internal
 	}
 
 
-	auto GlWindow::Clear() -> void
+	void GlWindow::Clear()
 	{
 		glClearNamedFramebufferfv(0, GL_COLOR, 0, m_ClrColor.Data().data());
 		glClearNamedFramebufferfv(0, GL_DEPTH, 0, std::array{1.f}.data());
 	}
 
 
-	auto GlWindow::SendWindowEvent() const -> void
+	void GlWindow::SendWindowEvent() const
 	{
 		EventManager::Instance().Send<WindowEvent>(static_cast<unsigned>(m_Width), static_cast<unsigned>(m_Height), m_RenderMult, m_Fullscreen, m_Vsync);
 	}
 
 
-	auto GlWindow::FramebufferSizeCallback(GLFWwindow* const, int const width, int const height) -> void
+	void GlWindow::FramebufferSizeCallback(GLFWwindow* const, int const width, int const height)
 	{
 		glViewport(0, 0, width, height);
 	}
 
 
-	auto GlWindow::KeyCallback(GLFWwindow*, int const key, int, int const action, int) -> void
+	void GlWindow::KeyCallback(GLFWwindow*, int const key, int, int const action, int)
 	{
 		try
 		{
@@ -272,7 +272,7 @@ namespace leopph::internal
 	}
 
 
-	auto GlWindow::MouseCallback(GLFWwindow*, double const x, double const y) -> void
+	void GlWindow::MouseCallback(GLFWwindow*, double const x, double const y)
 	{
 		EventManager::Instance().Send<MouseEvent>(Vector2{x, y});
 	}

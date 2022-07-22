@@ -3,18 +3,20 @@
 
 namespace leopph
 {
-	auto EventManager::Instance() -> EventManager&
+	EventManager& EventManager::Instance()
 	{
 		static EventManager instance;
 		return instance;
 	}
 
-	auto EventManager::InternalRegister(const std::type_index& typeIndex, const internal::EventReceiverBase* receiver) -> void
+
+	void EventManager::InternalRegister(std::type_index const& typeIndex, internal::EventReceiverBase const* receiver)
 	{
 		m_Handlers[typeIndex].push_back(receiver);
 	}
 
-	auto EventManager::InternalUregister(const std::type_index& typeIndex, const internal::EventReceiverBase* receiver) -> void
+
+	void EventManager::InternalUregister(std::type_index const& typeIndex, internal::EventReceiverBase const* receiver)
 	{
 		auto& handlers{m_Handlers[typeIndex]};
 		for (auto it{handlers.begin()}; it != handlers.end(); ++it)

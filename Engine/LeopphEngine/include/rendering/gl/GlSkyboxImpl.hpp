@@ -19,30 +19,30 @@ namespace leopph::internal
 			// Param is in the format that BuildAllPaths generates.
 			explicit GlSkyboxImpl(std::filesystem::path allFilePaths);
 
-			auto Draw(ShaderFamily& shader) const -> void;
+			void Draw(ShaderFamily& shader) const;
 
-			[[nodiscard]] auto LeftPath() const noexcept -> std::filesystem::path const&;
-			[[nodiscard]] auto RightPath() const noexcept -> std::filesystem::path const&;
-			[[nodiscard]] auto TopPath() const noexcept -> std::filesystem::path const&;
-			[[nodiscard]] auto BottomPath() const noexcept -> std::filesystem::path const&;
-			[[nodiscard]] auto FrontPath() const noexcept -> std::filesystem::path const&;
-			[[nodiscard]] auto BackPath() const noexcept -> std::filesystem::path const&;
+			[[nodiscard]] std::filesystem::path const& LeftPath() const noexcept;
+			[[nodiscard]] std::filesystem::path const& RightPath() const noexcept;
+			[[nodiscard]] std::filesystem::path const& TopPath() const noexcept;
+			[[nodiscard]] std::filesystem::path const& BottomPath() const noexcept;
+			[[nodiscard]] std::filesystem::path const& FrontPath() const noexcept;
+			[[nodiscard]] std::filesystem::path const& BackPath() const noexcept;
 
 			// All paths encoded in the format of BuildAllPaths.
-			[[nodiscard]] auto AllPaths() const noexcept -> std::filesystem::path const&;
+			[[nodiscard]] std::filesystem::path const& AllPaths() const noexcept;
 
 			// Encode all paths into one path.
-			[[nodiscard]] static auto BuildAllPaths(std::filesystem::path const& left, std::filesystem::path const& right, std::filesystem::path const& top, std::filesystem::path const& bottom, std::filesystem::path const& front, std::filesystem::path const& back) -> std::filesystem::path;
+			[[nodiscard]] static std::filesystem::path BuildAllPaths(std::filesystem::path const& left, std::filesystem::path const& right, std::filesystem::path const& top, std::filesystem::path const& bottom, std::filesystem::path const& front, std::filesystem::path const& back);
 
-			auto RegisterHandle(Skybox const* handle) -> void;
-			auto UnregisterHandle(Skybox const* handle) -> void;
-			auto NumHandles() const -> u64;
+			void RegisterHandle(Skybox const* handle);
+			void UnregisterHandle(Skybox const* handle);
+			u64 NumHandles() const;
 
 			GlSkyboxImpl(GlSkyboxImpl const& other) = delete;
-			auto operator=(GlSkyboxImpl const& other) -> void = delete;
+			void operator=(GlSkyboxImpl const& other) = delete;
 
 			GlSkyboxImpl(GlSkyboxImpl&& other) = delete;
-			auto operator=(GlSkyboxImpl&& other) -> void = delete;
+			void operator=(GlSkyboxImpl&& other) = delete;
 
 			~GlSkyboxImpl() noexcept;
 

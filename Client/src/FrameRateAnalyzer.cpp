@@ -6,21 +6,21 @@
 #include <numeric>
 
 
-FrameRateAnalyzer::FrameRateAnalyzer(const float pollInterval, const unsigned maxDataSets) :
+FrameRateAnalyzer::FrameRateAnalyzer(float const pollInterval, unsigned const maxDataSets) :
 	m_MaxNumDataSets{maxDataSets},
 	m_PollInterval{pollInterval},
 	m_DeltaTime{0}
 {}
 
 
-auto FrameRateAnalyzer::OnFrameUpdate() -> void
+void FrameRateAnalyzer::OnFrameUpdate()
 {
-	const auto delta{leopph::time::DeltaTime()};
+	auto const delta{leopph::time::DeltaTime()};
 	m_DeltaTime += delta;
 
 	if (m_DeltaTime >= m_PollInterval)
 	{
-		const FrameData curFrameData{.RatePerSec = 1.f / delta, .TimeInMs = delta * 1000};
+		FrameData const curFrameData{.RatePerSec = 1.f / delta, .TimeInMs = delta * 1000};
 
 		if (curFrameData.RatePerSec > m_Max.RatePerSec)
 		{
@@ -39,12 +39,12 @@ auto FrameRateAnalyzer::OnFrameUpdate() -> void
 
 		m_LastNData.push_back(curFrameData);
 
-		const auto avgFps = std::accumulate(m_LastNData.begin(), m_LastNData.end(), 0.f, [](const auto sum, const auto elem)
+		auto const avgFps = std::accumulate(m_LastNData.begin(), m_LastNData.end(), 0.f, [](auto const sum, auto const elem)
 		{
 			return sum + elem.RatePerSec;
 		}) / static_cast<float>(m_LastNData.size());
 
-		const auto avgFrameTime{1000.f / avgFps};
+		auto const avgFrameTime{1000.f / avgFps};
 
 		std::cout << std::fixed << std::setprecision(2)
 			<< DATA_SEPARATOR << std::endl

@@ -7,31 +7,31 @@
 
 namespace leopph::internal
 {
-	auto RenderComponent::CastsShadow() const noexcept -> bool
+	bool RenderComponent::CastsShadow() const noexcept
 	{
 		return m_CastsShadow;
 	}
 
 
-	auto RenderComponent::CastsShadow(bool const value) noexcept -> void
+	void RenderComponent::CastsShadow(bool const value) noexcept
 	{
 		m_CastsShadow = value;
 	}
 
 
-	auto RenderComponent::Instanced() const noexcept -> bool
+	bool RenderComponent::Instanced() const noexcept
 	{
 		return m_Instanced;
 	}
 
 
-	auto RenderComponent::Instanced(bool const value) noexcept -> void
+	void RenderComponent::Instanced(bool const value) noexcept
 	{
 		m_Instanced = value;
 	}
 
 
-	auto RenderComponent::Init(MeshGroup const& meshGroup) noexcept -> void
+	void RenderComponent::Init(MeshGroup const& meshGroup) noexcept
 	{
 		m_RenderObject = GetRenderer()->CreateRenderObject(meshGroup);
 		m_RenderObject->RegisterRenderComponent(this);
@@ -48,7 +48,7 @@ namespace leopph::internal
 	}
 
 
-	auto RenderComponent::operator=(RenderComponent const& other) noexcept -> RenderComponent&
+	RenderComponent& RenderComponent::operator=(RenderComponent const& other) noexcept
 	{
 		if (this == &other)
 		{
@@ -77,7 +77,7 @@ namespace leopph::internal
 	}
 
 
-	auto RenderComponent::operator=(RenderComponent&& other) noexcept -> RenderComponent&
+	RenderComponent& RenderComponent::operator=(RenderComponent&& other) noexcept
 	{
 		if (this == &other)
 		{

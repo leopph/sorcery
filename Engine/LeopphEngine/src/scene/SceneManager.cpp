@@ -6,21 +6,21 @@
 
 namespace leopph
 {
-	auto SceneManager::Instance() -> SceneManager&
+	SceneManager& SceneManager::Instance()
 	{
 		static SceneManager instance;
 		return instance;
 	}
 
 
-	auto SceneManager::AddScene(std::unique_ptr<Scene> scene) -> void
+	void SceneManager::AddScene(std::unique_ptr<Scene> scene)
 	{
 		m_Scenes.emplace_back(std::move(scene));
 		SortScenes();
 	}
 
 
-	auto SceneManager::DeleteScene(const Scene* scene) -> bool
+	bool SceneManager::DeleteScene(Scene const* scene)
 	{
 		if (scene == nullptr)
 		{
@@ -31,7 +31,7 @@ namespace leopph
 	}
 
 
-	auto SceneManager::DeleteScene(const std::size_t id) -> bool
+	bool SceneManager::DeleteScene(std::size_t const id)
 	{
 		// Always preserve one scene
 		if (m_Scenes.size() <= 1)
@@ -40,10 +40,10 @@ namespace leopph
 		}
 
 		// Find the scene with the id
-		if (const auto it{GetSceneIterator(this, id)};
+		if (auto const it{GetSceneIterator(this, id)};
 			it != m_Scenes.end() && it->get()->Id() == id)
 		{
-			const auto curId{m_Current->Id()};
+			auto const curId{m_Current->Id()};
 			m_Scenes.erase(it);
 			SortScenes();
 
@@ -61,15 +61,15 @@ namespace leopph
 	}
 
 
-	auto SceneManager::DeleteScene(std::string_view name) -> bool
+	bool SceneManager::DeleteScene(std::string_view name)
 	{
 		return DeleteScene(Scene::NameToId(name));
 	}
 
 
-	auto SceneManager::FindScene(const std::size_t id) const -> Scene*
+	Scene* SceneManager::FindScene(std::size_t const id) const
 	{
-		if (const auto it{GetSceneIterator(this, id)};
+		if (auto const it{GetSceneIterator(this, id)};
 			it != m_Scenes.end() && it->get()->Id() == id)
 		{
 			return it->get();
@@ -79,21 +79,21 @@ namespace leopph
 	}
 
 
-	auto SceneManager::FindScene(const std::string_view name) const -> Scene*
+	Scene* SceneManager::FindScene(std::string_view const name) const
 	{
 		return FindScene(Scene::NameToId(name));
 	}
 
 
-	auto SceneManager::CurrentScene() const -> Scene&
+	Scene& SceneManager::CurrentScene() const
 	{
 		return *m_Current;
 	}
 
 
-	auto SceneManager::SortScenes() -> void
+	void SceneManager::SortScenes()
 	{
-		std::ranges::sort(m_Scenes, [](const auto& left, const auto& right)
+		std::ranges::sort(m_Scenes, [](auto const& left, auto const& right)
 		{
 			return left->Id() < right->Id();
 		});

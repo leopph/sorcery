@@ -9,7 +9,7 @@
 
 namespace leopph::convert::driver
 {
-	auto ParseCommandLine(int const argc, char const** argv, std::vector<std::filesystem::path>& filesToConvert, std::vector<std::string>& outputFileNames) -> int
+	int ParseCommandLine(int const argc, char const** argv, std::vector<std::filesystem::path>& filesToConvert, std::vector<std::string>& outputFileNames)
 	{
 		std::cout << "Using command line arguments.\n\n";
 

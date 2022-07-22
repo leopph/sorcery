@@ -13,30 +13,30 @@ namespace leopph::convert
 {
 	template<Scalar T>
 		requires(sizeof(T) == 1)
-	auto Serialize(T s, std::vector<u8>& oBuf) -> void;
+	void Serialize(T s, std::vector<u8>& oBuf);
 
 	template<Scalar T>
 		requires(sizeof(T) > 1)
-	auto Serialize(T s, std::vector<u8>& oBuf, std::endian endianness) -> void;
+	void Serialize(T s, std::vector<u8>& oBuf, std::endian endianness);
 
-	auto Serialize(std::string_view str, std::vector<u8>& oBuf, std::endian endianness) -> void;
+	void Serialize(std::string_view str, std::vector<u8>& oBuf, std::endian endianness);
 
-	auto Serialize(Image const& img, std::vector<u8>& oBuf, std::endian endianness) -> void;
+	void Serialize(Image const& img, std::vector<u8>& oBuf, std::endian endianness);
 
-	auto Serialize(Material const& mat, std::vector<u8>& oBuf, std::endian endianness) -> void;
+	void Serialize(Material const& mat, std::vector<u8>& oBuf, std::endian endianness);
 
 	template<class T, u64 N>
-	auto Serialize(internal::Vector<T, N> const& vec, std::vector<u8>& oBuf, std::endian endianness) -> void;
+	void Serialize(internal::Vector<T, N> const& vec, std::vector<u8>& oBuf, std::endian endianness);
 
-	auto Serialize(Vertex const& vert, std::vector<u8>& oBuf, std::endian endianness) -> void;
+	void Serialize(Vertex const& vert, std::vector<u8>& oBuf, std::endian endianness);
 
-	auto Serialize(Mesh const& mesh, std::vector<u8>& oBuf, std::endian endianness) -> void;
+	void Serialize(Mesh const& mesh, std::vector<u8>& oBuf, std::endian endianness);
 
 
 
 	template<Scalar T>
 		requires(sizeof(T) == 1)
-	auto Serialize(T const s, std::vector<u8>& oBuf) -> void
+	void Serialize(T const s, std::vector<u8>& oBuf)
 	{
 		oBuf.push_back(*reinterpret_cast<u8 const*>(&s));
 	}
@@ -45,7 +45,7 @@ namespace leopph::convert
 
 	template<Scalar T>
 		requires(sizeof(T) > 1)
-	auto Serialize(T const s, std::vector<u8>& oBuf, std::endian const endianness) -> void
+	void Serialize(T const s, std::vector<u8>& oBuf, std::endian const endianness)
 	{
 		auto const* const begin = reinterpret_cast<u8 const*>(&s);
 		auto const sz = sizeof(T);
@@ -63,7 +63,7 @@ namespace leopph::convert
 
 
 	template<class T, u64 N>
-	auto Serialize(internal::Vector<T, N> const& vec, std::vector<u8>& oBuf, std::endian endianness) -> void
+	void Serialize(internal::Vector<T, N> const& vec, std::vector<u8>& oBuf, std::endian endianness)
 	{
 		for (u64 i = 0; i < N; i++)
 		{

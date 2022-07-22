@@ -22,7 +22,7 @@ namespace leopph::internal
 	}
 
 
-	auto GlVertexArrayObject::operator=(GlVertexArrayObject&& other) noexcept -> GlVertexArrayObject&
+	GlVertexArrayObject& GlVertexArrayObject::operator=(GlVertexArrayObject&& other) noexcept
 	{
 		glDeleteVertexArrays(1, &m_Name);
 		m_Name = other.m_Name;
@@ -43,7 +43,7 @@ namespace leopph::internal
 	}
 
 
-	auto GlVertexArrayObject::Name() const noexcept -> GLuint
+	GLuint GlVertexArrayObject::Name() const noexcept
 	{
 		return m_Name;
 	}

@@ -12,7 +12,7 @@ namespace leopph
 {
 	namespace
 	{
-		auto ConvertMaterial(convert::Material const& convMat, std::span<std::shared_ptr<GlTexture> const> const textures) -> std::shared_ptr<Material>
+		std::shared_ptr<Material> ConvertMaterial(convert::Material const& convMat, std::span<std::shared_ptr<GlTexture> const> const textures)
 		{
 			auto mat = std::make_shared<Material>();
 
@@ -41,7 +41,7 @@ namespace leopph
 		}
 
 
-		auto Parse(std::filesystem::path const& path) -> std::vector<Mesh>
+		std::vector<Mesh> Parse(std::filesystem::path const& path)
 		{
 			auto const imported = convert::Import(path);
 
@@ -88,13 +88,13 @@ namespace leopph
 	}
 
 
-	auto Model::Clone() const -> ComponentPtr<>
+	ComponentPtr<> Model::Clone() const
 	{
 		return CreateComponent<Model>(*this);
 	}
 
 
-	auto Model::Path() const noexcept -> std::filesystem::path const&
+	std::filesystem::path const& Model::Path() const noexcept
 	{
 		return m_Path;
 	}

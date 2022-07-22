@@ -6,9 +6,11 @@
 #include <memory>
 #include <string_view>
 
+
 namespace spdlog
 {
 	class logger;
+
 
 	namespace level
 	{
@@ -29,37 +31,29 @@ namespace leopph::internal
 
 
 			LEOPPHAPI
-			static auto Instance() -> Logger&;
+			static Logger& Instance();
 
-			LEOPPHAPI
-			auto CurrentLevel(Level level) -> void;
+			LEOPPHAPI void CurrentLevel(Level level);
 
-			[[nodiscard]] LEOPPHAPI
-			auto CurrentLevel() const -> Level;
+			[[nodiscard]] LEOPPHAPI Level CurrentLevel() const;
 
-			LEOPPHAPI
-			auto Trace(std::string_view msg) const -> void;
+			LEOPPHAPI void Trace(std::string_view msg) const;
 
-			LEOPPHAPI
-			auto Debug(std::string_view msg) const -> void;
+			LEOPPHAPI void Debug(std::string_view msg) const;
 
-			LEOPPHAPI
-			auto Critical(std::string_view msg) const -> void;
+			LEOPPHAPI void Critical(std::string_view msg) const;
 
-			LEOPPHAPI
-			auto Error(std::string_view msg) const -> void;
+			LEOPPHAPI void Error(std::string_view msg) const;
 
-			LEOPPHAPI
-			auto Warning(std::string_view msg) const -> void;
+			LEOPPHAPI void Warning(std::string_view msg) const;
 
-			LEOPPHAPI
-			auto Info(std::string_view msg) const -> void;
+			LEOPPHAPI void Info(std::string_view msg) const;
 
 			Logger(Logger const& other) = delete;
-			auto operator=(Logger const& other) -> Logger& = delete;
+			Logger& operator=(Logger const& other) = delete;
 
 			Logger(Logger&& other) noexcept = delete;
-			auto operator=(Logger&& other) noexcept -> Logger& = delete;
+			Logger& operator=(Logger&& other) noexcept = delete;
 
 		private:
 			Logger();

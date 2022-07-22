@@ -7,7 +7,7 @@
 
 namespace leopph
 {
-	auto OrthographicCamera::Size(Side const side) const noexcept -> float
+	float OrthographicCamera::Size(Side const side) const noexcept
 	{
 		if (side == Side::Horizontal)
 		{
@@ -24,7 +24,7 @@ namespace leopph
 	}
 
 
-	auto OrthographicCamera::Size(float const size, Side const side) noexcept -> void
+	void OrthographicCamera::Size(float const size, Side const side) noexcept
 	{
 		if (side == Side::Horizontal)
 		{
@@ -41,7 +41,7 @@ namespace leopph
 	}
 
 
-	auto OrthographicCamera::ProjectionMatrix() const -> Matrix4
+	Matrix4 OrthographicCamera::ProjectionMatrix() const
 	{
 		auto static constexpr half = 1.f / 2.f;
 		auto const x = m_HorizontalSize * half;
@@ -50,7 +50,7 @@ namespace leopph
 	}
 
 
-	auto OrthographicCamera::Frustum() const -> leopph::Frustum
+	leopph::Frustum OrthographicCamera::Frustum() const
 	{
 		auto static constexpr half = 1.f / 2.f;
 		auto const x = m_HorizontalSize * half;
@@ -69,7 +69,7 @@ namespace leopph
 	}
 
 
-	auto OrthographicCamera::Clone() const -> ComponentPtr<>
+	ComponentPtr<> OrthographicCamera::Clone() const
 	{
 		return CreateComponent<OrthographicCamera>(*this);
 	}

@@ -10,6 +10,6 @@ namespace leopph::internal
 	struct MouseEvent final : Event
 	{
 		explicit MouseEvent(Vector2 pos);
-		const Vector2 Position;
+		Vector2 const Position;
 	};
 }

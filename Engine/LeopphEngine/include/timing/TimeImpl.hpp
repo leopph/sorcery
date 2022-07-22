@@ -12,23 +12,23 @@ namespace leopph::internal
 	class TimeImpl final : public EventReceiver<FrameCompleteEvent>
 	{
 		public:
-			[[nodiscard]] static auto Instance() -> TimeImpl&;
+			[[nodiscard]] static TimeImpl& Instance();
 
-			[[nodiscard]] auto DeltaTime() const -> float;
-			[[nodiscard]] auto FullTime() const -> float;
+			[[nodiscard]] float DeltaTime() const;
+			[[nodiscard]] float FullTime() const;
 
 			TimeImpl(TimeImpl const& other) = delete;
-			auto operator=(TimeImpl const& other) -> TimeImpl& = delete;
+			TimeImpl& operator=(TimeImpl const& other) = delete;
 
 			TimeImpl(TimeImpl&& other) noexcept = delete;
-			auto operator=(TimeImpl&& other) noexcept -> TimeImpl& = delete;
+			TimeImpl& operator=(TimeImpl&& other) noexcept = delete;
 
 		private:
 			TimeImpl() = default;
 			~TimeImpl() override = default;
 
 			// Updates the timing information on frame completion.
-			auto OnEventReceived(EventParamType) -> void override;
+			void OnEventReceived(EventParamType) override;
 
 			using Clock = std::chrono::high_resolution_clock;
 			using Seconds = std::chrono::duration<float>;

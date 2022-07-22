@@ -16,7 +16,7 @@ namespace leopph
 	using ComponentPtr = std::shared_ptr<T>;
 
 	template<std::derived_from<Component> T, typename... Args>
-	constexpr auto CreateComponent(Args&&... args) -> ComponentPtr<T>;
+	constexpr ComponentPtr<T> CreateComponent(Args&&... args);
 
 	// Special objects used that add custom properties to Entities.
 	// Components are attached to Entities to achieve this decoration.
@@ -27,80 +27,64 @@ namespace leopph
 	{
 		public:
 			// Get the owner of the Component or nullptr if none.
-			[[nodiscard]] LEOPPHAPI
-			auto Owner() const noexcept -> Entity*;
+			[[nodiscard]] LEOPPHAPI Entity* Owner() const noexcept;
 
 			// Set the owner of the Component.
 			// Passing nullptr will leave the Component unattached.
 			// If the Component already has an owner, it will detach itself first.
-			LEOPPHAPI virtual
-			auto Owner(Entity* entity) -> void;
+			LEOPPHAPI virtual void Owner(Entity* entity);
 
 			// Same as calling Owner with a non-null pointer.
 			// Hence, nullptr must not be passed.
-			LEOPPHAPI
-			auto Attach(Entity* entity) -> void;
+			LEOPPHAPI void Attach(Entity* entity);
 
 			// Same as calling Owner with nullptr.
-			LEOPPHAPI
-			auto Detach() -> void;
+			LEOPPHAPI void Detach();
 
 			// Returns whether the Component has an owner.
 			// Same as Owner() != nullptr.
-			[[nodiscard]] LEOPPHAPI
-			auto Attached() const -> bool;
+			[[nodiscard]] LEOPPHAPI bool Attached() const;
 
 			// Get whether the Component is active.
-			[[nodiscard]] LEOPPHAPI
-			auto Active() const noexcept -> bool;
+			[[nodiscard]] LEOPPHAPI bool Active() const noexcept;
 
 			// Set whether the Component is active.
-			LEOPPHAPI virtual
-			auto Active(bool active) -> void;
+			LEOPPHAPI virtual void Active(bool active);
 
 			// Same as calling Active(true).
-			LEOPPHAPI
-			auto Activate() -> void;
+			LEOPPHAPI void Activate();
 
 			// Same as calling Active(false);
-			LEOPPHAPI
-			auto Deactivate() -> void;
+			LEOPPHAPI void Deactivate();
 
 			// Returns whether the Component takes part in internal calculations.
 			// Same as Owner() && Active().
-			[[nodiscard]] LEOPPHAPI
-			auto InUse() const noexcept -> bool;
+			[[nodiscard]] LEOPPHAPI bool InUse() const noexcept;
 
 			// Gets called after the Component changed owner.
-			LEOPPHAPI inline virtual
-			auto OnOwnerChange(Entity* oldOwner) -> void;
+			LEOPPHAPI inline virtual void OnOwnerChange(Entity* oldOwner);
 
 			// Gets called after the Component was attached.
-			LEOPPHAPI inline virtual
-			auto OnAttach() -> void;
+			LEOPPHAPI inline virtual void OnAttach();
 
 			// Gets called after the Component was detached.
-			LEOPPHAPI inline virtual
-			auto OnDetach() -> void;
+			LEOPPHAPI inline virtual void OnDetach();
 
 			// Gets called when the Component was activated.
-			LEOPPHAPI inline virtual
-			auto OnActivate() -> void;
+			LEOPPHAPI inline virtual void OnActivate();
 
 			// Gets called when the Component was deactivated.
-			LEOPPHAPI inline virtual
-			auto OnDeactivate() -> void;
+			LEOPPHAPI inline virtual void OnDeactivate();
 
 			// Returns a new Component that is a dynamic copy of this Component.
 			// This can be used to get an unsliced copy when the exact type is unknown.
 			// Throws std::logic_error unless correctly overloaded.
 			// A fair implementation is calling CreateComponent<MyComponentType>(*this), assuming a correct copy constructor is defined.
 			// Built-in Components use this exact implementation.
-			[[nodiscard]] LEOPPHAPI virtual
-			auto Clone() const -> ComponentPtr<>;
+			[[nodiscard]] LEOPPHAPI virtual ComponentPtr<> Clone() const;
 
 			Component(Component&&) = delete;
-			auto operator=(Component&&) -> Component& = delete;
+			Component& operator=(Component&&) = delete;
 
 			LEOPPHAPI virtual ~Component() = 0;
 
@@ -111,8 +95,7 @@ namespace leopph
 			LEOPPHAPI Component(Component const& other);
 
 			// Attaches itself to the the Component's Entity and takes its active state.
-			LEOPPHAPI
-			auto operator=(Component const& other) -> Component&;
+			LEOPPHAPI Component& operator=(Component const& other);
 
 		private:
 			Entity* m_Owner{nullptr};
@@ -121,28 +104,28 @@ namespace leopph
 
 
 	template<std::derived_from<Component> T, typename... Args>
-	constexpr auto CreateComponent(Args&&... args) -> ComponentPtr<T>
+	constexpr ComponentPtr<T> CreateComponent(Args&&... args)
 	{
 		return std::make_shared<T>(std::forward<Args>(args)...);
 	}
 
 
-	inline auto Component::OnOwnerChange(Entity*) -> void
+	inline void Component::OnOwnerChange(Entity*)
 	{ }
 
 
-	inline auto Component::OnAttach() -> void
+	inline void Component::OnAttach()
 	{ }
 
 
-	inline auto Component::OnDetach() -> void
+	inline void Component::OnDetach()
 	{ }
 
 
-	inline auto Component::OnActivate() -> void
+	inline void Component::OnActivate()
 	{ }
 
 
-	inline auto Component::OnDeactivate() -> void
+	inline void Component::OnDeactivate()
 	{ }
 }

@@ -16,14 +16,14 @@
 
 namespace leopph
 {
-	auto Settings::ShaderCachePath() noexcept -> std::filesystem::path const&
+	std::filesystem::path const& Settings::ShaderCachePath() noexcept
 	{
 		return m_ShaderCache;
 	}
 
 
 
-	auto Settings::ShaderCachePath(std::filesystem::path path) noexcept -> void
+	void Settings::ShaderCachePath(std::filesystem::path path) noexcept
 	{
 		m_ShaderCache = std::move(path);
 		m_Serialize = true;
@@ -31,21 +31,21 @@ namespace leopph
 
 
 
-	auto Settings::CacheShaders() const -> bool
+	bool Settings::CacheShaders() const
 	{
 		return !m_ShaderCache.empty();
 	}
 
 
 
-	auto Settings::GetGraphicsApi() const noexcept -> GraphicsApi
+	Settings::GraphicsApi Settings::GetGraphicsApi() const noexcept
 	{
 		return m_RenderingSettings.Api;
 	}
 
 
 
-	auto Settings::SetGraphicsApi(GraphicsApi const newApi) noexcept -> void
+	void Settings::SetGraphicsApi(GraphicsApi const newApi) noexcept
 	{
 		m_RenderingSettings.PendingApi = newApi;
 		m_Serialize = true;
@@ -53,14 +53,14 @@ namespace leopph
 
 
 
-	auto Settings::GetGraphicsPipeline() const noexcept -> GraphicsPipeline
+	Settings::GraphicsPipeline Settings::GetGraphicsPipeline() const noexcept
 	{
 		return m_RenderingSettings.Pipe;
 	}
 
 
 
-	auto Settings::SetGraphicsPipeline(GraphicsPipeline const pipeline) noexcept -> void
+	void Settings::SetGraphicsPipeline(GraphicsPipeline const pipeline) noexcept
 	{
 		m_RenderingSettings.PendingPipe = pipeline;
 		m_Serialize = true;
@@ -68,14 +68,14 @@ namespace leopph
 
 
 
-	auto Settings::DirShadowResolution() -> std::span<u16 const>
+	std::span<u16 const> Settings::DirShadowResolution()
 	{
 		return m_DirLightSettings.Res;
 	}
 
 
 
-	auto Settings::DirShadowResolution(std::span<u16 const> cascades) -> void
+	void Settings::DirShadowResolution(std::span<u16 const> cascades)
 	{
 		// Windows.h bullshit
 		#undef max
@@ -91,14 +91,14 @@ namespace leopph
 
 
 
-	auto Settings::DirShadowCascadeCorrection() const noexcept -> f32
+	f32 Settings::DirShadowCascadeCorrection() const noexcept
 	{
 		return m_DirLightSettings.Corr;
 	}
 
 
 
-	auto Settings::DirShadowCascadeCorrection(f32 const newCor) noexcept -> void
+	void Settings::DirShadowCascadeCorrection(f32 const newCor) noexcept
 	{
 		m_DirLightSettings.Corr = newCor;
 		m_Serialize = true;
@@ -106,21 +106,21 @@ namespace leopph
 
 
 
-	auto Settings::DirShadowCascadeCount() const noexcept -> u8
+	u8 Settings::DirShadowCascadeCount() const noexcept
 	{
 		return static_cast<u8>(m_DirLightSettings.Res.size());
 	}
 
 
 
-	auto Settings::SpotShadowResolution() const noexcept -> u16
+	u16 Settings::SpotShadowResolution() const noexcept
 	{
 		return m_SpotLightSettings.Res;
 	}
 
 
 
-	auto Settings::SpotShadowResolution(u16 const newRes) -> void
+	void Settings::SpotShadowResolution(u16 const newRes)
 	{
 		m_SpotLightSettings.Res = newRes;
 		m_Serialize = true;
@@ -129,14 +129,14 @@ namespace leopph
 
 
 
-	auto Settings::MaxSpotLightCount() const noexcept -> u8
+	u8 Settings::MaxSpotLightCount() const noexcept
 	{
 		return m_SpotLightSettings.MaxNum;
 	}
 
 
 
-	auto Settings::MaxSpotLightCount(u8 const newCount) noexcept -> void
+	void Settings::MaxSpotLightCount(u8 const newCount) noexcept
 	{
 		m_SpotLightSettings.MaxNum = newCount;
 		m_Serialize = true;
@@ -144,14 +144,14 @@ namespace leopph
 
 
 
-	auto Settings::PointShadowResolution() const noexcept -> u16
+	u16 Settings::PointShadowResolution() const noexcept
 	{
 		return m_PointLightSettings.Res;
 	}
 
 
 
-	auto Settings::PointShadowResolution(u16 const newRes) noexcept -> void
+	void Settings::PointShadowResolution(u16 const newRes) noexcept
 	{
 		m_PointLightSettings.Res = newRes;
 		m_Serialize = true;
@@ -160,7 +160,7 @@ namespace leopph
 
 
 
-	auto Settings::MaxPointLightCount() const noexcept -> u8
+	u8 Settings::MaxPointLightCount() const noexcept
 	{
 		return m_PointLightSettings.MaxNum;
 	}
@@ -175,14 +175,14 @@ namespace leopph
 
 
 
-	auto Settings::WindowWidth() const noexcept -> u32
+	u32 Settings::WindowWidth() const noexcept
 	{
 		return m_WindowSettingsCache.Width;
 	}
 
 
 
-	auto Settings::WindowWidth(u32 const newWidth) noexcept -> void
+	void Settings::WindowWidth(u32 const newWidth) noexcept
 	{
 		m_WindowSettingsCache.Width = newWidth;
 		internal::GetWindowImpl()->Width(newWidth);
@@ -191,14 +191,14 @@ namespace leopph
 
 
 
-	auto Settings::WindowHeight() const noexcept -> u32
+	u32 Settings::WindowHeight() const noexcept
 	{
 		return m_WindowSettingsCache.Height;
 	}
 
 
 
-	auto Settings::WindowHeight(u32 const newHeight) noexcept -> void
+	void Settings::WindowHeight(u32 const newHeight) noexcept
 	{
 		m_WindowSettingsCache.Height = newHeight;
 		internal::GetWindowImpl()->Height(newHeight);
@@ -207,14 +207,14 @@ namespace leopph
 
 
 
-	auto Settings::RenderMultiplier() const noexcept -> f32
+	f32 Settings::RenderMultiplier() const noexcept
 	{
 		return m_WindowSettingsCache.RenderMultiplier;
 	}
 
 
 
-	auto Settings::RenderMultiplier(f32 const newMult) noexcept -> void
+	void Settings::RenderMultiplier(f32 const newMult) noexcept
 	{
 		m_WindowSettingsCache.RenderMultiplier = newMult;
 		internal::GetWindowImpl()->RenderMultiplier(newMult);
@@ -223,14 +223,14 @@ namespace leopph
 
 
 
-	auto Settings::Fullscreen() const noexcept -> bool
+	bool Settings::Fullscreen() const noexcept
 	{
 		return m_WindowSettingsCache.Fullscreen;
 	}
 
 
 
-	auto Settings::Fullscreen(bool const newVal) noexcept -> void
+	void Settings::Fullscreen(bool const newVal) noexcept
 	{
 		m_WindowSettingsCache.Fullscreen = newVal;
 		internal::GetWindowImpl()->Fullscreen(newVal);
@@ -239,14 +239,14 @@ namespace leopph
 
 
 
-	auto Settings::Vsync() const -> bool
+	bool Settings::Vsync() const
 	{
 		return m_WindowSettingsCache.Vsync;
 	}
 
 
 
-	auto Settings::Vsync(bool const newVal) -> void
+	void Settings::Vsync(bool const newVal)
 	{
 		m_WindowSettingsCache.Vsync = newVal;
 		internal::GetWindowImpl()->Vsync(newVal);
@@ -255,14 +255,14 @@ namespace leopph
 
 
 
-	auto Settings::Gamma() const -> f32
+	f32 Settings::Gamma() const
 	{
 		return m_RenderingSettings.Gamma;
 	}
 
 
 
-	auto Settings::Gamma(f32 const newVal) -> void
+	void Settings::Gamma(f32 const newVal)
 	{
 		m_RenderingSettings.Gamma = newVal;
 	}

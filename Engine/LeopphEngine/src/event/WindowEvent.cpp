@@ -3,7 +3,7 @@
 
 namespace leopph::internal
 {
-	WindowEvent::WindowEvent(const unsigned width, const unsigned height, const float renderMult, const bool fullscreen, const bool vsync) :
+	WindowEvent::WindowEvent(unsigned const width, unsigned const height, float const renderMult, bool const fullscreen, bool const vsync) :
 		Width{width},
 		Height{height},
 		RenderMultiplier{renderMult},

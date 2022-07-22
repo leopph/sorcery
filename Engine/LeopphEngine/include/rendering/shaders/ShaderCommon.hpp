@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 
+
 namespace leopph
 {
 	struct ShaderStageSourceFileInfo
@@ -14,12 +15,14 @@ namespace leopph
 		std::vector<std::string> fileContents;
 	};
 
+
 	struct ShaderProgramSourceFileInfo
 	{
 		ShaderStageSourceFileInfo vertexInfo;
 		std::optional<ShaderStageSourceFileInfo> geometryInfo;
 		std::optional<ShaderStageSourceFileInfo> fragmentInfo;
 	};
+
 
 	struct ShaderProgramSourceInfo
 	{

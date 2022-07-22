@@ -75,7 +75,7 @@ namespace leopph::internal
 	}
 
 
-	auto GlSkyboxImpl::Draw(ShaderFamily& shader) const -> void
+	void GlSkyboxImpl::Draw(ShaderFamily& shader) const
 	{
 		glBindTextureUnit(0, m_Cubemap);
 		shader.SetUniform("u_CubeMap", 0);
@@ -86,49 +86,49 @@ namespace leopph::internal
 	}
 
 
-	auto GlSkyboxImpl::LeftPath() const noexcept -> std::filesystem::path const&
+	std::filesystem::path const& GlSkyboxImpl::LeftPath() const noexcept
 	{
 		return m_Paths[LEFT_PATH_IND];
 	}
 
 
-	auto GlSkyboxImpl::RightPath() const noexcept -> std::filesystem::path const&
+	std::filesystem::path const& GlSkyboxImpl::RightPath() const noexcept
 	{
 		return m_Paths[RIGHT_PATH_IND];
 	}
 
 
-	auto GlSkyboxImpl::TopPath() const noexcept -> std::filesystem::path const&
+	std::filesystem::path const& GlSkyboxImpl::TopPath() const noexcept
 	{
 		return m_Paths[TOP_PATH_IND];
 	}
 
 
-	auto GlSkyboxImpl::BottomPath() const noexcept -> std::filesystem::path const&
+	std::filesystem::path const& GlSkyboxImpl::BottomPath() const noexcept
 	{
 		return m_Paths[BOT_PATH_IND];
 	}
 
 
-	auto GlSkyboxImpl::FrontPath() const noexcept -> std::filesystem::path const&
+	std::filesystem::path const& GlSkyboxImpl::FrontPath() const noexcept
 	{
 		return m_Paths[FRONT_PATH_IND];
 	}
 
 
-	auto GlSkyboxImpl::BackPath() const noexcept -> std::filesystem::path const&
+	std::filesystem::path const& GlSkyboxImpl::BackPath() const noexcept
 	{
 		return m_Paths[BACK_PATH_IND];
 	}
 
 
-	auto GlSkyboxImpl::AllPaths() const noexcept -> std::filesystem::path const&
+	std::filesystem::path const& GlSkyboxImpl::AllPaths() const noexcept
 	{
 		return m_AllPaths;
 	}
 
 
-	auto GlSkyboxImpl::BuildAllPaths(std::filesystem::path const& left, std::filesystem::path const& right, std::filesystem::path const& top, std::filesystem::path const& bottom, std::filesystem::path const& front, std::filesystem::path const& back) -> std::filesystem::path
+	std::filesystem::path GlSkyboxImpl::BuildAllPaths(std::filesystem::path const& left, std::filesystem::path const& right, std::filesystem::path const& top, std::filesystem::path const& bottom, std::filesystem::path const& front, std::filesystem::path const& back)
 	{
 		return right.string()
 		            .append(PATH_SEPARATOR)
@@ -144,21 +144,21 @@ namespace leopph::internal
 	}
 
 
-	auto GlSkyboxImpl::RegisterHandle(Skybox const* const handle) -> void
+	void GlSkyboxImpl::RegisterHandle(Skybox const* const handle)
 	{
 		m_Handles.push_back(handle);
 	}
 
 
-	auto GlSkyboxImpl::UnregisterHandle(Skybox const* const handle) -> void
+	void GlSkyboxImpl::UnregisterHandle(Skybox const* const handle)
 	{
 		std::erase(m_Handles, handle);
 	}
 
 
-	auto GlSkyboxImpl::NumHandles() const -> u64
+	u64 GlSkyboxImpl::NumHandles() const
 	{
-		return static_cast<u64>(m_Handles.size());
+		return m_Handles.size();
 	}
 
 

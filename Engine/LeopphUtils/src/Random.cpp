@@ -13,7 +13,7 @@ namespace leopph
 	{ }
 
 
-	auto XorShift128::operator()() -> u32
+	u32 XorShift128::operator()()
 	{
 		auto t = m_State[3];
 		auto s = m_State[0];

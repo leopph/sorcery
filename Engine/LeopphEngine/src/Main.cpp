@@ -25,7 +25,7 @@
 
 namespace leopph::internal
 {
-	auto Main(decltype(Init) initFunc) -> int
+	int Main(decltype(Init) initFunc)
 	{
 		#ifdef _DEBUG
 		_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);

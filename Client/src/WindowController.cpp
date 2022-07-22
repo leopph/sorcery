@@ -27,7 +27,7 @@ WindowController::WindowController() :
 {}
 
 
-auto WindowController::OnFrameUpdate() -> void
+void WindowController::OnFrameUpdate()
 {
 	if (Input::GetKeyDown(KeyCode::F))
 	{

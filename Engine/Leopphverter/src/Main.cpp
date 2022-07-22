@@ -9,7 +9,7 @@
 #include <vector>
 
 
-auto main(int const argc, char const** const argv) -> int
+int main(int const argc, char const** const argv)
 {
 	std::cout << leopph::convert::driver::BuildHeader() << '\n';
 

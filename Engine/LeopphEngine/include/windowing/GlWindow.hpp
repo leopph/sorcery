@@ -18,60 +18,60 @@ namespace leopph::internal
 			~GlWindow() override;
 
 			[[nodiscard]]
-			auto Width() const -> unsigned override;
-			auto Width(unsigned newWidth) -> void override;
+			unsigned Width() const override;
+			void Width(unsigned newWidth) override;
 
 			[[nodiscard]]
-			auto Height() const -> unsigned override;
-			auto Height(unsigned newHeight) -> void override;
+			unsigned Height() const override;
+			void Height(unsigned newHeight) override;
 
 			[[nodiscard]]
-			auto Fullscreen() const -> bool override;
-			auto Fullscreen(bool newValue) -> void override;
+			bool Fullscreen() const override;
+			void Fullscreen(bool newValue) override;
 
 			[[nodiscard]]
-			auto Vsync() const -> bool override;
-			auto Vsync(bool newValue) -> void override;
+			bool Vsync() const override;
+			void Vsync(bool newValue) override;
 
 			[[nodiscard]]
-			auto Title() const -> std::string_view override;
-			auto Title(std::string newTitle) -> void override;
+			std::string_view Title() const override;
+			void Title(std::string newTitle) override;
 
 			[[nodiscard]]
-			auto ClearColor() const -> const Vector4& override;
-			auto ClearColor(const Vector4& color) -> void override;
+			const Vector4& ClearColor() const override;
+			void ClearColor(Vector4 const& color) override;
 
 			[[nodiscard]]
-			auto CursorMode() const -> CursorState override;
-			auto CursorMode(CursorState newState) -> void override;
+			CursorState CursorMode() const override;
+			void CursorMode(CursorState newState) override;
 
 			[[nodiscard]]
-			auto RenderMultiplier() const -> float override;
-			auto RenderMultiplier(float newMult) -> void override;
+			float RenderMultiplier() const override;
+			void RenderMultiplier(float newMult) override;
 
 			[[nodiscard]]
-			auto ShouldClose() -> bool override;
-			auto ShouldClose(bool val) -> void override;
+			bool ShouldClose() override;
+			void ShouldClose(bool val) override;
 
 			[[nodiscard]]
-			auto GetSupportedDisplayModes() const -> std::vector<DisplayMode> override;
+			std::vector<DisplayMode> GetSupportedDisplayModes() const override;
 
-			auto PollEvents() -> void override;
-			auto SwapBuffers() -> void override;
-			auto Clear() -> void override;
+			void PollEvents() override;
+			void SwapBuffers() override;
+			void Clear() override;
 
-			GlWindow(const GlWindow& other) = delete;
+			GlWindow(GlWindow const& other) = delete;
 			GlWindow(GlWindow&& other) = delete;
 
-			auto operator=(const GlWindow& other) -> GlWindow& = delete;
-			auto operator=(GlWindow&& other) -> GlWindow& = delete;
+			GlWindow& operator=(GlWindow const& other) = delete;
+			GlWindow& operator=(GlWindow&& other) = delete;
 
 		private:
-			auto SendWindowEvent() const -> void;
+			void SendWindowEvent() const;
 
-			static auto FramebufferSizeCallback(GLFWwindow*, int width, int height) -> void;
-			static auto KeyCallback(GLFWwindow*, int key, int, int action, int) -> void;
-			static auto MouseCallback(GLFWwindow*, double x, double y) -> void;
+			static void FramebufferSizeCallback(GLFWwindow*, int width, int height);
+			static void KeyCallback(GLFWwindow*, int key, int, int action, int);
+			static void MouseCallback(GLFWwindow*, double x, double y);
 
 			GLFWwindow* m_Window;
 			int m_Width;

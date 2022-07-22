@@ -6,15 +6,16 @@
 
 #include <GLFW/glfw3.h>
 
+#include <format>
 #include <stdexcept>
 #include <string>
-#include <format>
+
 
 namespace leopph::internal::opengl
 {
 	namespace
 	{
-		auto MessageCallback(GLenum const src, GLenum const type, GLuint const, GLenum const severity, GLsizei const, GLchar const* const msg, void const* const) -> void
+		void MessageCallback(GLenum const src, GLenum const type, GLuint const, GLenum const severity, GLsizei const, GLchar const* const msg, void const* const)
 		{
 			std::string source;
 			switch (src)
@@ -98,7 +99,8 @@ namespace leopph::internal::opengl
 		}
 	}
 
-	auto Init() -> void
+
+	void Init()
 	{
 		if (gladLoadGL(glfwGetProcAddress) == 0)
 		{

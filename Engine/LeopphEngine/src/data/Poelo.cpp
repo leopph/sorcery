@@ -15,7 +15,7 @@ namespace leopph
 	}
 
 
-	auto Destroy(internal::Poelo const* poelo) -> void
+	void Destroy(internal::Poelo const* poelo)
 	{
 		internal::GetDataManager()->Destroy(poelo);
 	}

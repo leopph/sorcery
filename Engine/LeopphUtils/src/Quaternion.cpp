@@ -7,10 +7,10 @@
 
 namespace leopph
 {
-	Quaternion::Quaternion(const Vector3& axis, const float angleDegrees)
+	Quaternion::Quaternion(Vector3 const& axis, float const angleDegrees)
 	{
 		auto normalizedAxis{axis.Normalized()};
-		const auto angleHalfRadians = math::ToRadians(angleDegrees) / 2.0f;
+		auto const angleHalfRadians = math::ToRadians(angleDegrees) / 2.0f;
 		m_W = math::Cos(angleHalfRadians);
 		normalizedAxis *= math::Sin(angleHalfRadians);
 		m_X = normalizedAxis[0];
@@ -19,7 +19,7 @@ namespace leopph
 	}
 
 
-	auto Quaternion::EulerAngles() const -> Vector3
+	Vector3 Quaternion::EulerAngles() const
 	{
 		// ???
 		auto secondComponent{2 * (m_W * m_Y - m_Z * m_X)};
@@ -40,22 +40,22 @@ namespace leopph
 	}
 
 
-	auto Quaternion::Norm() const -> float
+	float Quaternion::Norm() const
 	{
 		return math::Sqrt(math::Pow(m_W, 2) + math::Pow(m_X, 2) + math::Pow(m_Y, 2) + math::Pow(m_Z, 2));
 	}
 
 
-	auto Quaternion::Normalized() const -> Quaternion
+	Quaternion Quaternion::Normalized() const
 	{
-		const auto norm{Norm()};
+		auto const norm{Norm()};
 		return Quaternion{m_W / norm, m_X / norm, m_Y / norm, m_Z / norm};
 	}
 
 
-	auto Quaternion::Normalize() -> Quaternion&
+	Quaternion& Quaternion::Normalize()
 	{
-		const auto norm{Norm()};
+		auto const norm{Norm()};
 		m_W /= norm;
 		m_X /= norm;
 		m_Y /= norm;
@@ -64,7 +64,7 @@ namespace leopph
 	}
 
 
-	auto Quaternion::ConjugateInPlace() -> Quaternion&
+	Quaternion& Quaternion::ConjugateInPlace()
 	{
 		m_X = -m_X;
 		m_Y = -m_Y;
@@ -73,16 +73,16 @@ namespace leopph
 	}
 
 
-	auto Quaternion::Inverse() const -> Quaternion
+	Quaternion Quaternion::Inverse() const
 	{
-		const auto normSquared{math::Pow(m_W, 2) + math::Pow(m_X, 2) + math::Pow(m_Y, 2) + math::Pow(m_Z, 2)};
+		auto const normSquared{math::Pow(m_W, 2) + math::Pow(m_X, 2) + math::Pow(m_Y, 2) + math::Pow(m_Z, 2)};
 		return Quaternion{m_W / normSquared, -m_X / normSquared, -m_Y / normSquared, -m_Z / normSquared};
 	}
 
 
-	auto Quaternion::Invert() -> Quaternion&
+	Quaternion& Quaternion::Invert()
 	{
-		const auto normSquared{math::Pow(m_W, 2) + math::Pow(m_X, 2) + math::Pow(m_Y, 2) + math::Pow(m_Z, 2)};
+		auto const normSquared{math::Pow(m_W, 2) + math::Pow(m_X, 2) + math::Pow(m_Y, 2) + math::Pow(m_Z, 2)};
 		m_W /= normSquared;
 		m_X = -m_X / normSquared;
 		m_Y = -m_Y / normSquared;
@@ -103,7 +103,7 @@ namespace leopph
 	}
 
 
-	auto operator<<(std::ostream& os, const Quaternion& q) -> std::ostream&
+	std::ostream& operator<<(std::ostream& os, Quaternion const& q)
 	{
 		os << "(" << q.W() << ", " << q.X() << ", " << q.Y() << ", " << q.Z() << ")";
 		return os;

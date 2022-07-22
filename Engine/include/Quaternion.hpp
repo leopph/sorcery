@@ -22,10 +22,10 @@ namespace leopph
 			LEOPPHAPI explicit Quaternion(Vector3 const& axis, float angleDegrees);
 
 			constexpr Quaternion(Quaternion const& other) = default;
-			constexpr auto operator=(Quaternion const& other) -> Quaternion& = default;
+			constexpr Quaternion& operator=(Quaternion const& other) = default;
 
 			constexpr Quaternion(Quaternion&& other) = default;
-			constexpr auto operator=(Quaternion&& other) -> Quaternion& = default;
+			constexpr Quaternion& operator=(Quaternion&& other) = default;
 
 			constexpr ~Quaternion() = default;
 
@@ -47,31 +47,31 @@ namespace leopph
 			// Set the Quaternion's coefficient of k.
 			constexpr auto Z(float z) noexcept;
 
-			[[nodiscard]] LEOPPHAPI auto EulerAngles() const -> Vector3;
+			[[nodiscard]] LEOPPHAPI Vector3 EulerAngles() const;
 
 			// Get the norm of the Quaternion.
-			[[nodiscard]] LEOPPHAPI auto Norm() const -> float;
+			[[nodiscard]] LEOPPHAPI float Norm() const;
 
 			// Return a Quaternion that represents the same orientation, but has a norm of 1.
-			[[nodiscard]] LEOPPHAPI auto Normalized() const -> Quaternion;
+			[[nodiscard]] LEOPPHAPI Quaternion Normalized() const;
 
 			// Modifies this Quaternion so that it represents the same orientation, but has a norm of 1.
 			// Returns a reference to this Quaternion.
-			LEOPPHAPI auto Normalize() -> Quaternion&;
+			LEOPPHAPI Quaternion& Normalize();
 
 			// Returns the conjugate element of this Quaternion.
 			[[nodiscard]] constexpr auto Conjugate() const noexcept;
 
 			// Changes this Quaternion to its conjugate element.
 			// Returns a reference to this Quaternion.
-			LEOPPHAPI auto ConjugateInPlace() -> Quaternion&;
+			LEOPPHAPI Quaternion& ConjugateInPlace();
 
 			// Returns the inverse of this Quaternion.
-			[[nodiscard]] LEOPPHAPI auto Inverse() const -> Quaternion;
+			[[nodiscard]] LEOPPHAPI Quaternion Inverse() const;
 
 			// Changes this Quaternion to its inverse.
 			// Returns a reference to this Quaternion.
-			LEOPPHAPI auto Invert() -> Quaternion&;
+			LEOPPHAPI Quaternion& Invert();
 
 			// Creates a 4x4 rotation matrix that represents the same rotation as this Quaternion.
 			// It is assumed that this Quaternion has a norm of 1. If not so, it must be normalized beforehand.
@@ -94,7 +94,7 @@ namespace leopph
 
 	// Definitions
 
-	constexpr leopph::Quaternion::Quaternion(float const w, float const x, float const y, float const z) :
+	constexpr Quaternion::Quaternion(float const w, float const x, float const y, float const z) :
 		m_W{w},
 		m_X{x},
 		m_Y{y},
@@ -179,12 +179,12 @@ namespace leopph
 
 	// Sets the left operand to the Hamilton product of the input Quaternions.
 	// Returns a reference to the left operand.
-	constexpr auto operator*=(Quaternion& left, Quaternion const& right) noexcept -> auto&
+	constexpr auto& operator*=(Quaternion& left, Quaternion const& right) noexcept
 	{
 		return left = left * right;
 	}
 
 
 	// Prints the input Quaternion on the specified output stream.
-	LEOPPHAPI auto operator<<(std::ostream& os, Quaternion const& q) -> std::ostream&;
+	LEOPPHAPI std::ostream& operator<<(std::ostream& os, Quaternion const& q);
 }

@@ -11,8 +11,8 @@ namespace leopph::internal
 	{
 		using is_transparent = void;
 
-		auto operator()(const std::unique_ptr<Poelo>& left, const std::unique_ptr<Poelo>& right) const -> bool;
-		auto operator()(const std::unique_ptr<Poelo>& left, const Poelo* right) const -> bool;
-		auto operator()(const Poelo* left, const std::unique_ptr<Poelo>& right) const -> bool;
+		bool operator()(std::unique_ptr<Poelo> const& left, std::unique_ptr<Poelo> const& right) const;
+		bool operator()(std::unique_ptr<Poelo> const& left, Poelo const* right) const;
+		bool operator()(Poelo const* left, std::unique_ptr<Poelo> const& right) const;
 	};
 }

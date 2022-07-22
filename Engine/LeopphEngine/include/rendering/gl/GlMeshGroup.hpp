@@ -21,43 +21,41 @@ namespace leopph::internal
 		public:
 			explicit GlMeshGroup(MeshGroup meshGroup);
 
-			auto DrawWithMaterial(ShaderFamily& shader, GLuint nextFreeTextureUnit, bool transparent) const -> void;
+			void DrawWithMaterial(ShaderFamily& shader, GLuint nextFreeTextureUnit, bool transparent) const;
 
-			auto DrawWithoutMaterial(bool transparent) const -> void;
+			void DrawWithoutMaterial(bool transparent) const;
 
 			// Loads the passed matrices into the instance buffer. Matrices must be in column major storage.
-			auto SetInstanceData(std::span<std::pair<Matrix4, Matrix4> const> instMats) -> void;
+			void SetInstanceData(std::span<std::pair<Matrix4, Matrix4> const> instMats);
 
 			// Returns the MeshGroup that the GlMeshGroup currently mirrors.
 			// If the MeshGroup changed after the construction of this object, the internal render buffers may not contain up to date data.
 			// Use UpdateMeshData to reparse.
 			[[nodiscard]]
-			auto MeshGroup() const -> MeshGroup const&;
+			MeshGroup const& MeshGroup() const;
 
 			// Sets the MeshGroup that the GlMeshGroup renders.
 			// This automatically updates the internal render buffers which is an expensive operation.
-			auto MeshGroup(leopph::MeshGroup meshGroup) -> void;
+			void MeshGroup(leopph::MeshGroup meshGroup);
 
 			// Reparses the data in the MeshGroup and recreates the internal representation of the Meshes.
 			// This is an expensive operation.
-			auto UpdateMeshData() -> void;
+			void UpdateMeshData();
 
 			// Separates transparent and opaque meshes.
-			auto SortMeshes() -> void;
+			void SortMeshes();
 
 		private:
-			[[nodiscard]] static
-			auto FullyTransparent(std::shared_ptr<Material const> const& mat) -> bool;
+			[[nodiscard]] static bool FullyTransparent(std::shared_ptr<Material const> const& mat);
 
-			[[nodiscard]] static
-			auto MaybeTransparent(std::shared_ptr<Material const> const& mat) -> bool;
+			[[nodiscard]] static bool MaybeTransparent(std::shared_ptr<Material const> const& mat);
 
 		public:
 			GlMeshGroup(GlMeshGroup const& other) = delete;
-			auto operator=(GlMeshGroup const& other) -> GlMeshGroup& = delete;
+			GlMeshGroup& operator=(GlMeshGroup const& other) = delete;
 
 			GlMeshGroup(GlMeshGroup&& other) noexcept = delete;
-			auto operator=(GlMeshGroup&& other) noexcept -> GlMeshGroup& = delete;
+			GlMeshGroup& operator=(GlMeshGroup&& other) noexcept = delete;
 
 			~GlMeshGroup() noexcept override = default;
 

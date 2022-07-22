@@ -34,7 +34,7 @@ namespace demo
 	{ }
 
 
-	auto AnimatedSprite::OnFrameUpdate() -> void
+	void AnimatedSprite::OnFrameUpdate()
 	{
 		m_TimeDelta += leopph::time::DeltaTime();
 
@@ -67,7 +67,7 @@ namespace demo
 	}
 
 
-	auto AnimatedSprite::OnAttach() -> void
+	void AnimatedSprite::OnAttach()
 	{
 		Behavior::OnAttach();
 
@@ -81,7 +81,7 @@ namespace demo
 	}
 
 
-	auto AnimatedSprite::OnDetach() -> void
+	void AnimatedSprite::OnDetach()
 	{
 		Behavior::OnDetach();
 

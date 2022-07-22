@@ -13,27 +13,22 @@ namespace leopph
 	{
 		public:
 			// This function is called on all attached active Behaviors every frame.
-			virtual
-			auto OnFrameUpdate() -> void = 0;
+			virtual void OnFrameUpdate() = 0;
 
 			// Get the Update Index of the Behavior.
-			[[nodiscard]] LEOPPHAPI
-			auto UpdateIndex() const noexcept -> int;
+			[[nodiscard]] LEOPPHAPI int UpdateIndex() const noexcept;
 
 			// Set the Update Index of the Behavior.
-			LEOPPHAPI
-			auto UpdateIndex(int index) -> void;
+			LEOPPHAPI void UpdateIndex(int index);
 
-			LEOPPHAPI
-			auto Owner(Entity* entity) -> void final;
+			LEOPPHAPI void Owner(Entity* entity) final;
 			using Component::Owner;
 
-			LEOPPHAPI
-			auto Active(bool active) -> void final;
+			LEOPPHAPI void Active(bool active) final;
 			using Component::Active;
 
 			Behavior(Behavior&& other) = delete;
-			auto operator=(Behavior&& other) -> Behavior& = delete;
+			Behavior& operator=(Behavior&& other) = delete;
 
 			LEOPPHAPI ~Behavior() override;
 
@@ -44,8 +39,7 @@ namespace leopph
 			Behavior(Behavior const& other) = default;
 
 			// Takes the other's update index.
-			LEOPPHAPI
-			auto operator=(Behavior const& other) -> Behavior&;
+			LEOPPHAPI Behavior& operator=(Behavior const& other);
 
 		private:
 			int m_UpdateIndex{0};

@@ -13,13 +13,13 @@ namespace leopph::internal
 			GlVertexArrayObject();
 
 			GlVertexArrayObject(GlVertexArrayObject const& other) = delete;
-			auto operator=(GlVertexArrayObject const& other) -> GlVertexArrayObject& = delete;
+			GlVertexArrayObject& operator=(GlVertexArrayObject const& other) = delete;
 
 			// Sets other to 0.
 			GlVertexArrayObject(GlVertexArrayObject&& other) noexcept;
 
 			// Sets other to 0.
-			auto operator=(GlVertexArrayObject&& other) noexcept -> GlVertexArrayObject&;
+			GlVertexArrayObject& operator=(GlVertexArrayObject&& other) noexcept;
 
 			~GlVertexArrayObject() noexcept;
 
@@ -28,7 +28,7 @@ namespace leopph::internal
 			operator GLuint() const noexcept;
 
 			[[nodiscard]]
-			auto Name() const noexcept -> GLuint;
+			GLuint Name() const noexcept;
 
 		private:
 			GLuint m_Name;

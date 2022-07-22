@@ -11,9 +11,9 @@ namespace leopph
 	class Scene
 	{
 		public:
-			[[nodiscard]] LEOPPHAPI static auto CreateScene(std::size_t id) -> Scene*;
-			[[nodiscard]] LEOPPHAPI static auto CreateScene(std::string_view name) -> Scene*;
-			[[nodiscard]] LEOPPHAPI static auto NameToId(std::string_view name) -> std::size_t;
+			[[nodiscard]] LEOPPHAPI static Scene* CreateScene(std::size_t id);
+			[[nodiscard]] LEOPPHAPI static Scene* CreateScene(std::string_view name);
+			[[nodiscard]] LEOPPHAPI static std::size_t NameToId(std::string_view name);
 
 			[[nodiscard]] constexpr auto Id() const noexcept;
 

@@ -1,8 +1,8 @@
 #pragma once
 
+#include "Event.hpp"
 #include "EventManager.hpp"
 #include "EventReceiverBase.hpp"
-#include "Event.hpp"
 
 #include <concepts>
 #include <type_traits>
@@ -23,26 +23,26 @@ namespace leopph
 			using EventType = std::remove_pointer_t<std::decay_t<std::remove_cvref_t<SpecEventType>>>;
 
 			// The parameter type used in the signature of handler function.
-			using EventParamType = const EventType&;
+			using EventParamType = EventType const&;
 
 			// Internally used function to dispatch calls to the handler.
-			auto Handle(const Event& event) const -> void override;
+			void Handle(Event const& event) const override;
 
 			~EventReceiver() override;
 
 		protected:
 			EventReceiver();
 
-			EventReceiver(const EventReceiver& other);
-			auto operator=(const EventReceiver& other) -> EventReceiver& = default;
+			EventReceiver(EventReceiver const& other);
+			EventReceiver& operator=(EventReceiver const& other) = default;
 
 			EventReceiver(EventReceiver&& other) noexcept;
-			auto operator=(EventReceiver&& other) noexcept -> EventReceiver& = default;
+			EventReceiver& operator=(EventReceiver&& other) noexcept = default;
 
 		private:
 			// The handler function that is invoked when an event is sent.
 			// Implement this to provide your event handling logic.
-			virtual auto OnEventReceived(EventParamType event) -> void = 0;
+			virtual void OnEventReceived(EventParamType event) = 0;
 	};
 
 
@@ -54,7 +54,7 @@ namespace leopph
 
 
 	template<std::derived_from<Event> SpecEventType>
-	EventReceiver<SpecEventType>::EventReceiver(const EventReceiver&) :
+	EventReceiver<SpecEventType>::EventReceiver(EventReceiver const&) :
 		EventReceiver{}
 	{}
 
@@ -73,7 +73,7 @@ namespace leopph
 
 
 	template<std::derived_from<Event> SpecEventType>
-	auto EventReceiver<SpecEventType>::Handle(const Event& event) const -> void
+	void EventReceiver<SpecEventType>::Handle(Event const& event) const
 	{
 		const_cast<EventReceiver*>(this)->OnEventReceived(static_cast<EventParamType>(event));
 	}

@@ -14,7 +14,7 @@ namespace demo
 	{ }
 
 
-	auto Flicker::OnFrameUpdate() -> void
+	void Flicker::OnFrameUpdate()
 	{
 		m_Time += DeltaTime();
 

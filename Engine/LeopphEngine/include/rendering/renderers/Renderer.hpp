@@ -40,16 +40,16 @@ namespace leopph::internal
 
 		public:
 			// Returns a renderer based on the currently set graphics api
-			static auto Create() -> std::unique_ptr<Renderer>;
+			static std::unique_ptr<Renderer> Create();
 
 			// Entry point for rendering a frame
-			virtual auto Render() -> void;
+			virtual void Render();
 
 			// Creates a new render object encompassing the mesh group
-			[[nodiscard]] virtual auto CreateRenderObject(MeshGroup const& meshGroup) -> RenderObject* = 0;
+			[[nodiscard]] virtual RenderObject* CreateRenderObject(MeshGroup const& meshGroup) = 0;
 
 			// Destroys the render object
-			virtual auto DeleteRenderObject(RenderObject* renderObject) -> void = 0;
+			virtual void DeleteRenderObject(RenderObject* renderObject) = 0;
 
 
 		protected:
@@ -57,35 +57,35 @@ namespace leopph::internal
 			 * FRAME STAETE QUERY FUNCTIONS
 			 * ############################ */
 
-			[[nodiscard]] auto GetRenderRes() const -> Extent2D const&;
+			[[nodiscard]] Extent2D const& GetRenderRes() const;
 
-			[[nodiscard]] auto GetDirShadowRes() const -> std::span<u16 const>;
+			[[nodiscard]] std::span<u16 const> GetDirShadowRes() const;
 
-			[[nodiscard]] auto GetDirCorrection() const -> f32;
+			[[nodiscard]] f32 GetDirCorrection() const;
 
-			[[nodiscard]] auto GetSpotShadowRes() const -> u16;
+			[[nodiscard]] u16 GetSpotShadowRes() const;
 
-			[[nodiscard]] auto GetNumMaxSpotLights() const -> u8;
+			[[nodiscard]] u8 GetNumMaxSpotLights() const;
 
-			[[nodiscard]] auto GetPointShadowRes() const -> u16;
+			[[nodiscard]] u16 GetPointShadowRes() const;
 
-			[[nodiscard]] auto GetNumMaxPointLights() const -> u8;
+			[[nodiscard]] u8 GetNumMaxPointLights() const;
 
-			[[nodiscard]] auto GetGamma() const -> f32;
+			[[nodiscard]] f32 GetGamma() const;
 
-			[[nodiscard]] auto GetAmbLight() const -> Vector3 const&;
+			[[nodiscard]] Vector3 const& GetAmbLight() const;
 
-			[[nodiscard]] auto GetDirLight() const -> std::optional<DirectionalLight const*> const&;
+			[[nodiscard]] std::optional<DirectionalLight const*> const& GetDirLight() const;
 
-			[[nodiscard]] auto GetCastingSpotLights() const -> std::span<SpotLight const* const>;
+			[[nodiscard]] std::span<SpotLight const* const> GetCastingSpotLights() const;
 
-			[[nodiscard]] auto GetNonCastingSpotLights() const -> std::span<SpotLight const* const>;
+			[[nodiscard]] std::span<SpotLight const* const> GetNonCastingSpotLights() const;
 
-			[[nodiscard]] auto GetCastingPointLights() const -> std::span<PointLight const* const>;
+			[[nodiscard]] std::span<PointLight const* const> GetCastingPointLights() const;
 
-			[[nodiscard]] auto GetNonCastingPointLights() const -> std::span<PointLight const* const>;
+			[[nodiscard]] std::span<PointLight const* const> GetNonCastingPointLights() const;
 
-			[[nodiscard]] auto GetMainCamera() const -> std::optional<Camera const*> const&;
+			[[nodiscard]] std::optional<Camera const*> const& GetMainCamera() const;
 
 
 		private:
@@ -94,37 +94,37 @@ namespace leopph::internal
 			 * ################# */
 
 			// Extract current render resolution from global config state
-			auto ExtractRenderRes() -> void;
+			void ExtractRenderRes();
 
 			// Extracts current dirlight shadow map sizes from global config state
-			auto ExtractDirShadowRes() -> void;
+			void ExtractDirShadowRes();
 
 			// Extract current spotlight shadow map size from global config state
-			auto ExtractSpotShadowRes() -> void;
+			void ExtractSpotShadowRes();
 
 			// Extract current pointlight shadow map size from global config state
-			auto ExtractPointShadowRes() -> void;
+			void ExtractPointShadowRes();
 
 			// Extract current dirlight shadow correction from global config state
-			auto ExtractDirCorrection() -> void;
+			void ExtractDirCorrection();
 
 			// Extract max number of spotlights from global config state
-			auto ExtractNumMaxSpotLights() -> void;
+			void ExtractNumMaxSpotLights();
 
 			// Extract max number of pointlights from global config state
-			auto ExtractNumMaxPointLights() -> void;
+			void ExtractNumMaxPointLights();
 
 			// Extract gamma from global config state
-			auto ExtractGamma() -> void;
+			void ExtractGamma();
 
 			// Extract all configuration related to rendering from global config state
-			auto ExtractAllConfig() -> void;
+			void ExtractAllConfig();
 
 			// Extract all active lights from global game state
-			auto ExtractLights() -> void;
+			void ExtractLights();
 
 			// Extract main camera from global game state
-			auto ExtractMainCamera() -> void;
+			void ExtractMainCamera();
 
 
 			/* ##########################
@@ -133,16 +133,16 @@ namespace leopph::internal
 
 			// Selects count lights from the vector based on distance from position.
 			template<std::derived_from<Light> LightType>
-			static auto SelectNearestLights(std::vector<LightType const*>& lights, Vector3 const& position, u8 count) -> void;
+			static void SelectNearestLights(std::vector<LightType const*>& lights, Vector3 const& position, u8 count);
 
 			// Partitions the span of lights over whether they cast shadow.
 			// Sets the output span objects to the respective partitions.
 			template<std::derived_from<Light> LighType>
-			static auto SeparateCastingLights(std::span<LighType const*> lights, std::span<LighType const* const>& outCasting, std::span<LighType const* const>& outNonCasting) -> void;
+			static void SeparateCastingLights(std::span<LighType const*> lights, std::span<LighType const* const>& outCasting, std::span<LighType const* const>& outNonCasting);
 
 
 			// This is called before every frame to make sure resources that need update are updated
-			auto UpdateDependantResources() -> void;
+			void UpdateDependantResources();
 
 
 			/* ##################################
@@ -150,16 +150,16 @@ namespace leopph::internal
 			 * ################################## */
 
 			// Set render resolution update flag for the next frame
-			auto OnEventReceived(EventReceiver<WindowEvent>::EventParamType) -> void final;
+			void OnEventReceived(EventReceiver<WindowEvent>::EventParamType) final;
 
 			// Set dir shadow map resolution update flag for the next frame
-			auto OnEventReceived(EventReceiver<DirShadowResEvent>::EventParamType) -> void final;
+			void OnEventReceived(EventReceiver<DirShadowResEvent>::EventParamType) final;
 
 			// Set spot shadow map resolution update flag for the next frame
-			auto OnEventReceived(EventReceiver<SpotShadowResEvent>::EventParamType) -> void final;
+			void OnEventReceived(EventReceiver<SpotShadowResEvent>::EventParamType) final;
 
 			// Set point shadow map resolution update flag for the next frame
-			auto OnEventReceived(EventReceiver<PointShadowResEvent>::EventParamType) -> void final;
+			void OnEventReceived(EventReceiver<PointShadowResEvent>::EventParamType) final;
 
 
 		protected:
@@ -168,26 +168,26 @@ namespace leopph::internal
 			 * ################## */
 
 			// Callback on render resolution change
-			virtual auto OnRenderResChange(Extent2D renderRes) -> void = 0;
+			virtual void OnRenderResChange(Extent2D renderRes) = 0;
 
 			// Callback on dir shadow map resolution change
-			virtual auto OnDirShadowResChange(std::span<u16 const> resolutions) -> void = 0;
+			virtual void OnDirShadowResChange(std::span<u16 const> resolutions) = 0;
 
 			// Callback on spot shadow map resolution change
-			virtual auto OnSpotShadowResChange(u16 resolution) -> void = 0;
+			virtual void OnSpotShadowResChange(u16 resolution) = 0;
 
 			// Callback on point shadow map resolution change
-			virtual auto OnPointShadowResChange(u16 resolution) -> void = 0;
+			virtual void OnPointShadowResChange(u16 resolution) = 0;
 
 			// Callback on determining shadow map count requirements
-			virtual auto OnDetermineShadowMapCountRequirements(u8 spot, u8 point) -> void = 0;
+			virtual void OnDetermineShadowMapCountRequirements(u8 spot, u8 point) = 0;
 
 
 			/* ########################
 			 * RENDER UTILITY FUNCTIONS
 			 * ######################## */
 
-			auto CalculateShadowCascades(std::vector<ShadowCascade>& out) -> void;
+			void CalculateShadowCascades(std::vector<ShadowCascade>& out);
 
 
 			/* ############
@@ -197,10 +197,10 @@ namespace leopph::internal
 			Renderer();
 
 			Renderer(Renderer const& other) = default;
-			auto operator=(Renderer const& other) -> Renderer& = default;
+			Renderer& operator=(Renderer const& other) = default;
 
 			Renderer(Renderer&& other) noexcept = default;
-			auto operator=(Renderer&& other) noexcept -> Renderer& = default;
+			Renderer& operator=(Renderer&& other) noexcept = default;
 
 		public:
 			~Renderer() noexcept override = default;
@@ -243,7 +243,7 @@ namespace leopph::internal
 
 
 	template<std::derived_from<Light> LightType>
-	auto Renderer::SelectNearestLights(std::vector<LightType const*>& lights, Vector3 const& position, u8 const count) -> void
+	void Renderer::SelectNearestLights(std::vector<LightType const*>& lights, Vector3 const& position, u8 const count)
 	{
 		std::ranges::sort(lights, [&position](LightType const* const left, LightType const* const right) -> bool
 		{
@@ -259,13 +259,13 @@ namespace leopph::internal
 
 
 	template<std::derived_from<Light> LightType>
-	auto Renderer::SeparateCastingLights(std::span<LightType const*> lights, std::span<LightType const* const>& outCasting, std::span<LightType const* const>& outNonCasting) -> void
+	void Renderer::SeparateCastingLights(std::span<LightType const*> lights, std::span<LightType const* const>& outCasting, std::span<LightType const* const>& outNonCasting)
 	{
 		auto const itToNoCast = std::partition(std::begin(lights), std::end(lights), [](LightType const* const light)
 		{
 			return light->CastsShadow();
 		});
-		
+
 		outCasting = {std::begin(lights), itToNoCast};
 		outNonCasting = {itToNoCast, std::end(lights)};
 	}

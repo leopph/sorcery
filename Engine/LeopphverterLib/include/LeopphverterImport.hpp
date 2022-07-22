@@ -9,5 +9,5 @@
 
 namespace leopph::convert
 {
-	LEOPPHAPI auto Import(std::filesystem::path const& path) -> std::optional<Object>;
+	LEOPPHAPI std::optional<Object> Import(std::filesystem::path const& path);
 }

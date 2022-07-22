@@ -10,7 +10,7 @@
 
 namespace leopph::internal
 {
-	auto WindowImpl::Create() -> std::unique_ptr<WindowImpl>
+	std::unique_ptr<WindowImpl> WindowImpl::Create()
 	{
 		std::unique_ptr<WindowImpl> ret;
 

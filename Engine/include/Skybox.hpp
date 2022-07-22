@@ -18,26 +18,26 @@ namespace leopph
 	{
 		public:
 			// The 6 faces must be passed in the defined order.
-			explicit LEOPPHAPI Skybox(const std::filesystem::path& left, const std::filesystem::path& right, const std::filesystem::path& top, const std::filesystem::path& bottom, const std::filesystem::path& front, const std::filesystem::path& back);
+			explicit LEOPPHAPI Skybox(std::filesystem::path const& left, std::filesystem::path const& right, std::filesystem::path const& top, std::filesystem::path const& bottom, std::filesystem::path const& front, std::filesystem::path const& back);
 
-			LEOPPHAPI Skybox(const Skybox& other);
-			auto LEOPPHAPI operator=(const Skybox& other) -> Skybox&;
+			LEOPPHAPI Skybox(Skybox const& other);
+			LEOPPHAPI Skybox& operator=(Skybox const& other);
 
 			LEOPPHAPI Skybox(Skybox&& other) noexcept;
-			auto LEOPPHAPI operator=(Skybox&& other) noexcept -> Skybox&;
+			LEOPPHAPI Skybox& operator=(Skybox&& other) noexcept;
 
 			LEOPPHAPI ~Skybox();
 
-			auto LEOPPHAPI RightPath() const -> const std::filesystem::path&;
-			auto LEOPPHAPI LeftPath() const -> const std::filesystem::path&;
-			auto LEOPPHAPI TopPath() const -> const std::filesystem::path&;
-			auto LEOPPHAPI BottomPath() const -> const std::filesystem::path&;
-			auto LEOPPHAPI FrontPath() const -> const std::filesystem::path&;
-			auto LEOPPHAPI BackPath() const -> const std::filesystem::path&;
-			auto LEOPPHAPI AllPaths() const -> const std::filesystem::path&;
+			LEOPPHAPI const std::filesystem::path& RightPath() const;
+			LEOPPHAPI const std::filesystem::path& LeftPath() const;
+			LEOPPHAPI const std::filesystem::path& TopPath() const;
+			LEOPPHAPI const std::filesystem::path& BottomPath() const;
+			LEOPPHAPI const std::filesystem::path& FrontPath() const;
+			LEOPPHAPI const std::filesystem::path& BackPath() const;
+			LEOPPHAPI const std::filesystem::path& AllPaths() const;
 
 		private:
-			auto Deinit() const -> void;
+			void Deinit() const;
 
 			internal::GlSkyboxImpl* m_Impl;
 	};

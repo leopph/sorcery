@@ -13,13 +13,13 @@ namespace leopph::internal
 			GlBufferObject();
 
 			GlBufferObject(GlBufferObject const& other) = delete;
-			auto operator=(GlBufferObject const& other) -> GlBufferObject& = delete;
+			GlBufferObject& operator=(GlBufferObject const& other) = delete;
 
 			// Sets other to 0.
 			GlBufferObject(GlBufferObject&& other) noexcept;
 
 			// Sets other to 0.
-			auto operator=(GlBufferObject&& other) noexcept -> GlBufferObject&;
+			GlBufferObject& operator=(GlBufferObject&& other) noexcept;
 
 			~GlBufferObject() noexcept;
 
@@ -28,7 +28,7 @@ namespace leopph::internal
 			operator GLuint() const noexcept;
 
 			[[nodiscard]]
-			auto Name() const noexcept -> GLuint;
+			GLuint Name() const noexcept;
 
 		private:
 			GLuint m_Name;

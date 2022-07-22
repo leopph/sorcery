@@ -22,7 +22,7 @@ namespace leopph::internal
 	}
 
 
-	auto GlBufferObject::operator=(GlBufferObject&& other) noexcept -> GlBufferObject&
+	GlBufferObject& GlBufferObject::operator=(GlBufferObject&& other) noexcept
 	{
 		glDeleteBuffers(1, &m_Name);
 		m_Name = other.m_Name;
@@ -43,7 +43,7 @@ namespace leopph::internal
 	}
 
 
-	auto GlBufferObject::Name() const noexcept -> GLuint
+	GLuint GlBufferObject::Name() const noexcept
 	{
 		return m_Name;
 	}

@@ -12,40 +12,40 @@ namespace leopph::convert
 {
 	template<Scalar T, std::contiguous_iterator It>
 		requires(sizeof(T) == 1)
-	auto Deserialize(It const& it) -> T;
+	T Deserialize(It const& it);
 
 	template<Scalar T, std::contiguous_iterator It>
 		requires(sizeof(T) == 1)
-	auto Deserialize(It& it) -> T;
+	T Deserialize(It& it);
 
 	template<Scalar T, std::contiguous_iterator It>
 		requires(sizeof(T) > 1)
-	auto Deserialize(It const& it, std::endian endianness) -> T;
+	T Deserialize(It const& it, std::endian endianness);
 
 	template<Scalar T, std::contiguous_iterator It>
 		requires(sizeof(T) > 1)
-	auto Deserialize(It& it, std::endian endianness) -> T;
+	T Deserialize(It& it, std::endian endianness);
 
 	template<std::contiguous_iterator It>
-	auto DeserializeVec2(It& it, std::endian endianness) -> Vector2;
+	Vector2 DeserializeVec2(It& it, std::endian endianness);
 
 	template<std::contiguous_iterator It>
-	auto DeserializeVec3(It& it, std::endian endianness) -> Vector3;
+	Vector3 DeserializeVec3(It& it, std::endian endianness);
 
 	template<std::contiguous_iterator It>
-	auto DeserializeVertex(It& it, std::endian endianness) -> Vertex;
+	Vertex DeserializeVertex(It& it, std::endian endianness);
 
 	template<std::contiguous_iterator It>
-	auto DeserializeMaterial(It& it, std::endian endianness) -> Material;
+	Material DeserializeMaterial(It& it, std::endian endianness);
 
 	template<std::contiguous_iterator It>
-	auto DeserializeMesh(It& it, std::endian endianness) -> Mesh;
+	Mesh DeserializeMesh(It& it, std::endian endianness);
 
 
 
 	template<Scalar T, std::contiguous_iterator It>
 		requires (sizeof(T) == 1)
-	auto Deserialize(It const& it) -> T
+	T Deserialize(It const& it)
 	{
 		return *reinterpret_cast<T const*>(&*it);
 	}
@@ -54,7 +54,7 @@ namespace leopph::convert
 
 	template<Scalar T, std::contiguous_iterator It>
 		requires (sizeof(T) == 1)
-	auto Deserialize(It& it) -> T
+	T Deserialize(It& it)
 	{
 		auto const ret = Deserialize<T>(const_cast<It const&>(it));
 		it += 1;
@@ -65,7 +65,7 @@ namespace leopph::convert
 
 	template<Scalar T, std::contiguous_iterator It>
 		requires (sizeof(T) > 1)
-	auto Deserialize(It const& it, std::endian const endianness) -> T
+	T Deserialize(It const& it, std::endian const endianness)
 	{
 		auto static constexpr typeSz = sizeof(T);
 		auto const* const p = reinterpret_cast<u8 const*>(&*it);
@@ -84,7 +84,7 @@ namespace leopph::convert
 
 	template<Scalar T, std::contiguous_iterator It>
 		requires(sizeof(T) > 1)
-	auto Deserialize(It& it, std::endian const endianness) -> T
+	T Deserialize(It& it, std::endian const endianness)
 	{
 		auto const ret = Deserialize<T>(const_cast<It const&>(it), endianness);
 		it += sizeof(T);
@@ -94,7 +94,7 @@ namespace leopph::convert
 
 
 	template<std::contiguous_iterator It>
-	auto DeserializeVec2(It& it, std::endian endianness) -> Vector2
+	Vector2 DeserializeVec2(It& it, std::endian endianness)
 	{
 		return Vector2
 		{
@@ -106,7 +106,7 @@ namespace leopph::convert
 
 
 	template<std::contiguous_iterator It>
-	auto DeserializeVec3(It& it, std::endian endianness) -> Vector3
+	Vector3 DeserializeVec3(It& it, std::endian endianness)
 	{
 		return Vector3
 		{
@@ -119,7 +119,7 @@ namespace leopph::convert
 
 
 	template<std::contiguous_iterator It>
-	auto DeserializeVertex(It& it, std::endian const endianness) -> Vertex
+	Vertex DeserializeVertex(It& it, std::endian const endianness)
 	{
 		return Vertex
 		{
@@ -132,7 +132,7 @@ namespace leopph::convert
 
 
 	template<std::contiguous_iterator It>
-	auto DeserializeColor(It& it) -> Color
+	Color DeserializeColor(It& it)
 	{
 		return Color
 		{
@@ -145,7 +145,7 @@ namespace leopph::convert
 
 
 	template<std::contiguous_iterator It>
-	auto DeserializeImage(It& it, std::endian const endianness) -> Image
+	Image DeserializeImage(It& it, std::endian const endianness)
 	{
 		auto const width = Deserialize<u32>(it, endianness);
 		auto const height = Deserialize<u32>(it, endianness);
@@ -163,7 +163,7 @@ namespace leopph::convert
 
 
 	template<std::contiguous_iterator It>
-	auto DeserializeMaterial(It& it, std::endian const endianness) -> Material
+	Material DeserializeMaterial(It& it, std::endian const endianness)
 	{
 		auto const diffuseColor{DeserializeColor(it)};
 		auto const specularColor{DeserializeColor(it)};
@@ -198,7 +198,7 @@ namespace leopph::convert
 
 
 	template<std::contiguous_iterator It>
-	auto DeserializeMesh(It& it, std::endian const endianness) -> Mesh
+	Mesh DeserializeMesh(It& it, std::endian const endianness)
 	{
 		auto const numVertices = Deserialize<u64>(it, endianness);
 

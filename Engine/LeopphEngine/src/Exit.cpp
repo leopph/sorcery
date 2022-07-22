@@ -6,7 +6,7 @@
 
 namespace leopph
 {
-	auto Exit() -> void
+	void Exit()
 	{
 		internal::GetWindowImpl()->ShouldClose(true);
 	}

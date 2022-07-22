@@ -1,18 +1,21 @@
 #include "Hash.hpp"
 
+
 namespace leopph
 {
-	auto StringHash::operator()(std::string const& str) const -> std::size_t
+	std::size_t StringHash::operator()(std::string const& str) const
 	{
 		return m_Hash(str);
 	}
 
-	auto StringHash::operator()(std::string_view const sv) const -> std::size_t
+
+	std::size_t StringHash::operator()(std::string_view const sv) const
 	{
 		return m_Hash(sv);
 	}
 
-	auto StringHash::operator()(char const* s) const -> std::size_t
+
+	std::size_t StringHash::operator()(char const* s) const
 	{
 		return m_Hash(s);
 	}

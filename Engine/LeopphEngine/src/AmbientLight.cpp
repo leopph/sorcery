@@ -1,7 +1,7 @@
 #include "AmbientLight.hpp"
 
 
-auto leopph::AmbientLight::Instance() -> leopph::AmbientLight&
+leopph::AmbientLight& leopph::AmbientLight::Instance()
 {
 	static AmbientLight instance;
 	return instance;

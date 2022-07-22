@@ -6,7 +6,7 @@
 
 namespace leopph::convert
 {
-	auto Import(std::filesystem::path const& path) -> std::optional<Object>
+	std::optional<Object> Import(std::filesystem::path const& path)
 	{
 		if (path.extension() == ".leopph3d")
 		{

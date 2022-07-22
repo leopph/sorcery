@@ -24,7 +24,7 @@ namespace demo
 	{ }
 
 
-	auto FirstPersonCameraController::OnFrameUpdate() -> void
+	void FirstPersonCameraController::OnFrameUpdate()
 	{
 		leopph::Vector3 movementVector;
 

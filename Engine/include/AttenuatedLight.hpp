@@ -11,10 +11,10 @@ namespace leopph
 	{
 		public:
 			// Get the distance where the light effect fully cuts off.
-			[[nodiscard]] auto LEOPPHAPI Range() const noexcept -> f32;
+			[[nodiscard]] LEOPPHAPI f32 Range() const noexcept;
 
 			// Set the distance where the light effect fully cuts off.
-			auto LEOPPHAPI Range(f32 value) noexcept -> void;
+			LEOPPHAPI void Range(f32 value) noexcept;
 
 		protected:
 			using Light::Light;

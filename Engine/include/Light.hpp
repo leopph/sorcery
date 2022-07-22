@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Vector.hpp"
 #include "Component.hpp"
+#include "Vector.hpp"
 
 
 namespace leopph
@@ -12,31 +12,31 @@ namespace leopph
 		public:
 			// Get the current diffuse intensity and color.
 			// This value is in the [0; 1] range per component.
-			[[nodiscard]] auto LEOPPHAPI Diffuse() const noexcept -> Vector3 const&;
+			[[nodiscard]] LEOPPHAPI Vector3 const& Diffuse() const noexcept;
 
 			// Set the current diffuse intensity and color.
 			// This value must be in the [0; 1] range per component.
-			auto LEOPPHAPI Diffuse(Vector3 const& value) noexcept -> void;
+			LEOPPHAPI void Diffuse(Vector3 const& value) noexcept;
 
 
 			// Get the current specular highlight intensity and color.
 			// This value is in the [0; 1] range per component.
-			[[nodiscard]] auto LEOPPHAPI Specular() const noexcept -> Vector3 const&;
+			[[nodiscard]] LEOPPHAPI Vector3 const& Specular() const noexcept;
 
 			// Set the current specular highlight intensity and color.
 			// This value must be in the [0; 1] range per component.
-			auto LEOPPHAPI Specular(Vector3 const& value) noexcept -> void;
+			LEOPPHAPI void Specular(Vector3 const& value) noexcept;
 
 
 			// Get whether the Light's effect can be occluded by objects.
 			// This only works if objects have this property set to true.
 			// This value is false by default.
-			[[nodiscard]] auto LEOPPHAPI CastsShadow() const noexcept -> bool;
+			[[nodiscard]] LEOPPHAPI bool CastsShadow() const noexcept;
 
 			// Set whether the Light's effect can be occluded by objects.
 			// This only works if objects have this property set to true.
 			// This value is false by default.
-			auto LEOPPHAPI CastsShadow(bool value) noexcept -> void;
+			LEOPPHAPI void CastsShadow(bool value) noexcept;
 
 		protected:
 			using Component::Component;

@@ -10,26 +10,22 @@ namespace leopph
 	class PointLight final : public AttenuatedLight
 	{
 		public:
-			LEOPPHAPI
-			auto Owner(Entity* entity) -> void override;
+			LEOPPHAPI void Owner(Entity* entity) override;
 			using AttenuatedLight::Owner;
 
-			LEOPPHAPI
-			auto Active(bool active) -> void override;
+			LEOPPHAPI void Active(bool active) override;
 			using AttenuatedLight::Active;
 
 			PointLight() = default;
 
 			PointLight(PointLight const& other) = default;
 
-			LEOPPHAPI
-			auto operator=(PointLight const& other) -> PointLight&;
+			LEOPPHAPI PointLight& operator=(PointLight const& other);
 
-			[[nodiscard]] LEOPPHAPI
-			auto Clone() const -> ComponentPtr<> override;
+			[[nodiscard]] LEOPPHAPI ComponentPtr<> Clone() const override;
 
 			PointLight(PointLight&& other) = delete;
-			auto operator=(PointLight&& other) -> void = delete;
+			void operator=(PointLight&& other) = delete;
 
 			LEOPPHAPI ~PointLight() override;
 	};

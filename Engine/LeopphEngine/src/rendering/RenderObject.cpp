@@ -5,25 +5,25 @@
 
 namespace leopph::internal
 {
-	auto RenderObject::RegisterRenderComponent(RenderComponent* const renderComponent) -> void
+	void RenderObject::RegisterRenderComponent(RenderComponent* const renderComponent)
 	{
 		m_Components.push_back(renderComponent);
 	}
 
 
-	auto RenderObject::UnregisterRenderComponent(RenderComponent* renderComponent) -> void
+	void RenderObject::UnregisterRenderComponent(RenderComponent* renderComponent)
 	{
 		std::erase(m_Components, renderComponent);
 	}
 
 
-	auto RenderObject::NumRenderComponents() const -> u64
+	u64 RenderObject::NumRenderComponents() const
 	{
-		return static_cast<u64>(m_Components.size());
+		return m_Components.size();
 	}
 
 
-	auto RenderObject::ExtractRenderInstanceData() -> std::span<RenderInstanceData const>
+	std::span<RenderObject::RenderInstanceData const> RenderObject::ExtractRenderInstanceData()
 	{
 		m_RenderInstancesCache.clear();
 
@@ -45,7 +45,7 @@ namespace leopph::internal
 	}
 
 
-	auto RenderObject::GetRenderInstanceData() const -> std::span<RenderInstanceData const>
+	std::span<RenderObject::RenderInstanceData const> RenderObject::GetRenderInstanceData() const
 	{
 		return m_RenderInstancesCache;
 	}

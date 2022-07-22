@@ -10,13 +10,13 @@
 
 namespace leopph
 {
-	auto Camera::Current() -> Camera*
+	Camera* Camera::Current()
 	{
 		return s_Current;
 	}
 
 
-	auto Camera::MakeCurrent() -> void
+	void Camera::MakeCurrent()
 	{
 		if (Active())
 		{
@@ -25,37 +25,37 @@ namespace leopph
 	}
 
 
-	auto Camera::NearClipPlane(float const newPlane) -> void
+	void Camera::NearClipPlane(float const newPlane)
 	{
 		m_NearClip = newPlane;
 	}
 
 
-	auto Camera::NearClipPlane() const -> float
+	float Camera::NearClipPlane() const
 	{
 		return m_NearClip;
 	}
 
 
-	auto Camera::FarClipPlane(float const newPlane) -> void
+	void Camera::FarClipPlane(float const newPlane)
 	{
 		m_FarClip = newPlane;
 	}
 
 
-	auto Camera::FarClipPlane() const -> float
+	float Camera::FarClipPlane() const
 	{
 		return m_FarClip;
 	}
 
 
-	auto Camera::Background() const -> std::variant<Color, Skybox> const&
+	std::variant<Color, Skybox> const& Camera::Background() const
 	{
 		return m_Background;
 	}
 
 
-	auto Camera::Background(std::variant<Color, Skybox> background) -> void
+	void Camera::Background(std::variant<Color, Skybox> background)
 	{
 		m_Background = std::move(background);
 
@@ -66,14 +66,14 @@ namespace leopph
 	}
 
 
-	auto Camera::ViewMatrix() const -> Matrix4
+	Matrix4 Camera::ViewMatrix() const
 	{
 		// inv(T) * inv(R)
 		return Matrix4::Translate(-Owner()->get_transform().get_position()) * Matrix4{Owner()->get_transform().get_rotation()}.Transposed();
 	}
 
 
-	auto Camera::TransformToViewport(Vector3 const& vector) const noexcept -> Vector2
+	Vector2 Camera::TransformToViewport(Vector3 const& vector) const noexcept
 	{
 		Vector4 homoPos{vector, 1};
 		homoPos *= ViewMatrix() * ProjectionMatrix();
@@ -85,7 +85,7 @@ namespace leopph
 	}
 
 
-	auto Camera::Owner(Entity* entity) -> void
+	void Camera::Owner(Entity* entity)
 	{
 		Component::Owner(entity);
 
@@ -96,7 +96,7 @@ namespace leopph
 	}
 
 
-	auto Camera::Active(bool const active) -> void
+	void Camera::Active(bool const active)
 	{
 		Component::Active(active);
 
@@ -127,13 +127,13 @@ namespace leopph
 	}
 
 
-	auto Camera::AspectRatio() const -> float
+	float Camera::AspectRatio() const
 	{
 		return m_AspectRatio;
 	}
 
 
-	auto Camera::OnEventReceived(EventParamType event) -> void
+	void Camera::OnEventReceived(EventParamType event)
 	{
 		m_AspectRatio = static_cast<float>(event.Width) / event.Height;
 	}

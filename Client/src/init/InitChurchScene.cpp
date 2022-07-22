@@ -16,7 +16,7 @@ using leopph::Skybox;
 
 namespace demo
 {
-	auto InitChurchScene(SceneSwitcher::Scene& scene) -> void
+	void InitChurchScene(SceneSwitcher::Scene& scene)
 	{
 		auto const group = new Entity{};
 		scene.Add(group);
@@ -30,7 +30,7 @@ namespace demo
 		camera->NearClipPlane(0.1f);
 		camera->FarClipPlane(100);
 
-		player->create_and_attach_component<demo::FirstPersonCameraController>(camera, 2.0f, 0.1f, 5.0f, 0.2f);
+		player->create_and_attach_component<FirstPersonCameraController>(camera, 2.0f, 0.1f, 5.0f, 0.2f);
 		auto const sLight = player->create_and_attach_component<leopph::SpotLight>();
 		sLight->Diffuse(Vector3{1});
 		sLight->Specular(sLight->Diffuse());
@@ -53,13 +53,13 @@ namespace demo
 		lamp->get_transform().translate(0, -1.25, 0);
 		lamp->get_transform().rotate(Vector3::Up(), -90);
 		lamp->get_transform().rescale(0.01f, 0.01f, 0.01f);
-		
+
 		auto const lampModel = lamp->create_and_attach_component<Model>("models/lamp/lamp.leopph3d");
 		lampModel->CastsShadow(true);
 
 		auto const pLightEntity = new Entity{"plight"};
 		pLightEntity->get_transform().set_parent(lamp);
-		pLightEntity->get_transform().translate(-0.7f, 3.7f, 0,  Space::Local);
+		pLightEntity->get_transform().translate(-0.7f, 3.7f, 0, Space::Local);
 
 		auto const pLight = pLightEntity->create_and_attach_component<PointLight>();
 		pLight->Diffuse(Vector3{1});
@@ -74,7 +74,7 @@ namespace demo
 		church->get_transform().translate(0, -3, 0, Space::World);
 		church->get_transform().rotate(Vector3::Right(), 90);
 		church->get_transform().rotate(Vector3::Up(), -90);
-		
+
 		auto const churchModel = church->create_and_attach_component<Model>("models/church/church.leopph3d");
 		churchModel->CastsShadow(true);
 

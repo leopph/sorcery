@@ -14,7 +14,7 @@
 
 namespace leopph::internal
 {
-	auto GlDeferredRenderer::Render() -> void
+	void GlDeferredRenderer::Render()
 	{
 		Renderer::Render();
 
@@ -69,7 +69,7 @@ namespace leopph::internal
 		if (!GetCastingSpotLights().empty())
 		{
 			spotShadowMats.clear();
-			
+
 			m_ShadowShader.UseCurrentPermutation();
 
 			auto const spotLights = GetCastingSpotLights();
@@ -487,7 +487,7 @@ namespace leopph::internal
 
 
 
-	auto GlDeferredRenderer::CreateGbuffer(GLsizei const renderWidth, GLsizei const renderHeight) -> void
+	void GlDeferredRenderer::CreateGbuffer(GLsizei const renderWidth, GLsizei const renderHeight)
 	{
 		glCreateTextures(GL_TEXTURE_2D, 1, &m_Gbuffer.colorAttachment);
 		glTextureStorage2D(m_Gbuffer.colorAttachment, 1, GL_RGB32UI, renderWidth, renderHeight);
@@ -500,7 +500,7 @@ namespace leopph::internal
 
 
 
-	auto GlDeferredRenderer::DeleteGbuffer() const -> void
+	void GlDeferredRenderer::DeleteGbuffer() const
 	{
 		glDeleteFramebuffers(1, &m_Gbuffer.colorAttachment);
 		glDeleteTextures(1, &m_Gbuffer.colorAttachment);
@@ -508,7 +508,7 @@ namespace leopph::internal
 
 
 
-	auto GlDeferredRenderer::CreateUbos() -> void
+	void GlDeferredRenderer::CreateUbos()
 	{
 		glCreateBuffers(static_cast<GLsizei>(m_Ubos.size()), m_Ubos.data());
 
@@ -519,14 +519,14 @@ namespace leopph::internal
 
 
 
-	auto GlDeferredRenderer::DeleteUbos() const -> void
+	void GlDeferredRenderer::DeleteUbos() const
 	{
 		glDeleteBuffers(static_cast<GLsizei>(m_Ubos.size()), m_Ubos.data());
 	}
 
 
 
-	auto GlDeferredRenderer::OnRenderResChange(Extent2D const renderRes) -> void
+	void GlDeferredRenderer::OnRenderResChange(Extent2D const renderRes)
 	{
 		GlRenderer::OnRenderResChange(renderRes);
 		DeleteGbuffer();

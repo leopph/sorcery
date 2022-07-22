@@ -6,44 +6,44 @@
 
 namespace leopph
 {
-	auto Input::GetKey(KeyCode const key) -> bool
+	bool Input::GetKey(KeyCode const key)
 	{
 		auto const state = InternalGetKeyState(key);
 		return state == KeyState::Down || state == KeyState::Held;
 	}
 
 
-	auto Input::GetKeyDown(KeyCode const key) -> bool
+	bool Input::GetKeyDown(KeyCode const key)
 	{
 		return InternalGetKeyState(key) == KeyState::Down;
 	}
 
 
-	auto Input::GetKeyUp(KeyCode const key) -> bool
+	bool Input::GetKeyUp(KeyCode const key)
 	{
 		return InternalGetKeyState(key) == KeyState::Up;
 	}
 
 
-	auto Input::GetMousePosition() -> std::pair<float, float> const&
+	std::pair<float, float> const& Input::GetMousePosition()
 	{
 		return s_MousePos;
 	}
 
 
-	auto Input::CursorMode() -> CursorState
+	CursorState Input::CursorMode()
 	{
 		return internal::GetWindowImpl()->CursorMode();
 	}
 
 
-	auto Input::CursorMode(CursorState const newState) -> void
+	void Input::CursorMode(CursorState const newState)
 	{
 		internal::GetWindowImpl()->CursorMode(newState);
 	}
 
 
-	auto Input::InternalGetKeyState(KeyCode const keyCode) noexcept -> KeyState
+	KeyState Input::InternalGetKeyState(KeyCode const keyCode) noexcept
 	{
 		// Here we use the fact that KeyState default initializes to 0, which is "Released".
 		// If we have no record of the key, we assume its released and zero-init the KeyState in the map.

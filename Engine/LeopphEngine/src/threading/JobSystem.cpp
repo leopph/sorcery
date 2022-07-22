@@ -21,18 +21,18 @@ namespace leopph::internal::mt
 	namespace
 	{
 		// Return a new job that is considered empty
-		[[nodiscard]] auto AllocateJob() -> std::shared_ptr<Job>;
+		[[nodiscard]] std::shared_ptr<Job> AllocateJob();
 
 		// Try to get a job from the thread-local queue or steal one
-		[[nodiscard]] auto GetJob() -> std::shared_ptr<Job>;
+		[[nodiscard]] std::shared_ptr<Job> GetJob();
 
 		// Run the job and mark it completed
-		auto Execute(std::shared_ptr<Job> job) -> void;
+		void Execute(std::shared_ptr<Job> job);
 
 		// Windows.h bullshit
 		#undef Yield
 		// Yield the calling thread's time slice
-		auto Yield() -> void;
+		void Yield();
 	}
 
 
@@ -93,7 +93,7 @@ namespace leopph::internal::mt
 
 
 
-	auto CreateJob(Job::JobFunc const jobFunc) -> std::shared_ptr<Job>
+	std::shared_ptr<Job> CreateJob(Job::JobFunc const jobFunc)
 	{
 		auto job = AllocateJob();
 		job->Func = jobFunc;
@@ -101,13 +101,13 @@ namespace leopph::internal::mt
 	}
 
 
-	auto Run(std::shared_ptr<Job> job) -> void
+	void Run(std::shared_ptr<Job> job)
 	{
 		g_WorkerQueues[THREAD_INDEX].push(std::move(job));
 	}
 
 
-	auto Wait(std::shared_ptr<Job> job) -> void
+	void Wait(std::shared_ptr<Job> job)
 	{
 		while (!job->Completed)
 		{
@@ -119,7 +119,7 @@ namespace leopph::internal::mt
 	}
 
 
-	auto InitJobSystem() -> void
+	void InitJobSystem()
 	{
 		g_ShouldClose.clear();
 
@@ -135,7 +135,7 @@ namespace leopph::internal::mt
 	}
 
 
-	auto ShutDownJobSystem() -> void
+	void ShutDownJobSystem()
 	{
 		g_ShouldClose.test_and_set();
 
@@ -161,7 +161,7 @@ namespace leopph::internal::mt
 	}
 
 
-	auto WorkerFunc() -> void
+	void WorkerFunc()
 	{
 		while (!g_ShouldClose.test())
 		{
@@ -180,13 +180,13 @@ namespace leopph::internal::mt
 
 	namespace
 	{
-		auto AllocateJob() -> std::shared_ptr<Job>
+		std::shared_ptr<Job> AllocateJob()
 		{
 			return std::make_shared_for_overwrite<Job>();
 		}
 
 
-		auto GetJob() -> std::shared_ptr<Job>
+		std::shared_ptr<Job> GetJob()
 		{
 			auto& queue = g_WorkerQueues[THREAD_INDEX];
 			auto const job = queue.pop();
@@ -217,13 +217,13 @@ namespace leopph::internal::mt
 		}
 
 
-		auto Yield() -> void
+		void Yield()
 		{
 			_mm_pause();
 		}
 
 
-		auto Execute(std::shared_ptr<Job> job) -> void
+		void Execute(std::shared_ptr<Job> job)
 		{
 			job->Func(job->Data);
 			job->Completed = true;

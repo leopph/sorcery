@@ -7,7 +7,7 @@
 
 namespace leopph
 {
-	auto PerspectiveCamera::Fov(Side const side) const noexcept -> float
+	float PerspectiveCamera::Fov(Side const side) const noexcept
 	{
 		if (side == Side::Horizontal)
 		{
@@ -24,7 +24,7 @@ namespace leopph
 	}
 
 
-	auto PerspectiveCamera::Fov(float const degrees, Side const side) noexcept -> void
+	void PerspectiveCamera::Fov(float const degrees, Side const side) noexcept
 	{
 		if (side == Side::Horizontal)
 		{
@@ -41,14 +41,14 @@ namespace leopph
 	}
 
 
-	auto PerspectiveCamera::ProjectionMatrix() const -> Matrix4
+	Matrix4 PerspectiveCamera::ProjectionMatrix() const
 	{
 		auto const fov{math::ToRadians(ConvertFov(m_HorizontalFovDegrees, Conversion::HorizontalToVertical))};
 		return Matrix4::Perspective(fov, AspectRatio(), NearClipPlane(), FarClipPlane());
 	}
 
 
-	auto PerspectiveCamera::Frustum() const -> leopph::Frustum
+	leopph::Frustum PerspectiveCamera::Frustum() const
 	{
 		auto const tanHalfHorizFov{math::Tan(math::ToRadians(Fov(Side::Horizontal)) / 2.0f)};
 		auto const tanHalfVertFov{math::Tan(math::ToRadians(Fov(Side::Vertical)) / 2.0f)};
@@ -72,13 +72,13 @@ namespace leopph
 	}
 
 
-	auto PerspectiveCamera::Clone() const -> ComponentPtr<>
+	ComponentPtr<> PerspectiveCamera::Clone() const
 	{
 		return CreateComponent<PerspectiveCamera>(*this);
 	}
 
 
-	auto PerspectiveCamera::ConvertFov(float const fov, Conversion const conversion) const -> float
+	float PerspectiveCamera::ConvertFov(float const fov, Conversion const conversion) const
 	{
 		if (conversion == Conversion::VerticalToHorizontal)
 		{
