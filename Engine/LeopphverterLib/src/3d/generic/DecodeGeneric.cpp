@@ -1,8 +1,8 @@
-#include "ProcessGeneric.hpp"
+#include "DecodeGeneric.hpp"
 
 #include "Image.hpp"
 #include "Logger.hpp"
-#include "TypeConversion.hpp"
+#include "Matrix.hpp"
 
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
@@ -22,7 +22,7 @@ namespace leopph::convert
 	namespace
 	{
 		// Maps texture types to an encoding to be used during interpretation
-		std::unordered_map<aiTextureType, ColorEncoding> const g_TexTypeToEncoding
+		std::unordered_map<aiTextureType, ColorEncoding> const gTexTypeToEncoding
 		{
 			{aiTextureType_DIFFUSE, ColorEncoding::SRGB},
 			{aiTextureType_SPECULAR, ColorEncoding::Linear},
@@ -30,11 +30,38 @@ namespace leopph::convert
 		};
 
 
+		// Transposes the matrix
+		Matrix4 convert(aiMatrix4x4 const& aiMat)
+		{
+			return Matrix4
+			{
+				aiMat.a1, aiMat.b1, aiMat.c1, aiMat.d1,
+				aiMat.a2, aiMat.b2, aiMat.c2, aiMat.d2,
+				aiMat.a3, aiMat.b3, aiMat.c3, aiMat.d3,
+				aiMat.a4, aiMat.b4, aiMat.c4, aiMat.d4
+			};
+		}
+
+
+
+		Vector3 convert(aiVector3D const& aiVec)
+		{
+			return Vector3{aiVec.x, aiVec.y, aiVec.z};
+		}
+
+
+
+		Color convert(aiColor3D const& aiCol)
+		{
+			return Color{static_cast<unsigned char>(aiCol.r * 255), static_cast<unsigned char>(aiCol.g * 255), static_cast<unsigned char>(aiCol.b * 255)};
+		}
+
+
 
 		// Returns the index of the texture image corresponding to the target texture type in the passed material.
 		// If the texture is not yet loaded, it gets loaded and stored in the vector along with its source path and index in the map.
 		// Returns an empty optional if the texture could not be found or loaded.
-		std::optional<std::size_t> GetTexture(aiMaterial const* const mat, aiTextureType const texType, std::vector<Image>& textures, std::unordered_map<std::string, std::size_t>& idToInd, std::filesystem::path const& rootPath)
+		std::optional<std::size_t> get_texture(aiMaterial const* const mat, aiTextureType const texType, std::vector<Image>& textures, std::unordered_map<std::string, std::size_t>& idToInd, std::filesystem::path const& rootPath)
 		{
 			if (aiString texPath; mat->GetTexture(texType, 0, &texPath) == aiReturn_SUCCESS)
 			{
@@ -43,7 +70,7 @@ namespace leopph::convert
 					return idToInd[texPath.C_Str()];
 				}
 
-				textures.emplace_back(rootPath / texPath.C_Str(), g_TexTypeToEncoding.at(texType), ImageOrientation::FlipVertical);
+				textures.emplace_back(rootPath / texPath.C_Str(), gTexTypeToEncoding.at(texType), ImageOrientation::FlipVertical);
 				return idToInd[texPath.C_Str()] = textures.size() - 1;
 			}
 
@@ -52,7 +79,7 @@ namespace leopph::convert
 
 
 
-		std::pair<std::vector<Material>, std::vector<Image>> ProcessMaterials(std::span<aiMaterial* const> const aiMats, std::filesystem::path const& rootPath)
+		std::pair<std::vector<Material>, std::vector<Image>> process_materials(std::span<aiMaterial* const> const aiMats, std::filesystem::path const& rootPath)
 		{
 			std::unordered_map<std::string, std::size_t> idToInd;
 			std::vector<Image> textures;
@@ -64,41 +91,41 @@ namespace leopph::convert
 
 				if (f32 opacity; aiMat->Get(AI_MATKEY_OPACITY, opacity) == aiReturn_SUCCESS)
 				{
-					mat.Opacity = opacity;
+					mat.opacity = opacity;
 				}
 
 				if (aiColor3D diffClr; aiMat->Get(AI_MATKEY_COLOR_DIFFUSE, diffClr) == aiReturn_SUCCESS)
 				{
-					mat.DiffuseColor = Convert(diffClr);
+					mat.diffuseColor = convert(diffClr);
 				}
 
 				if (aiColor3D specClr; aiMat->Get(AI_MATKEY_COLOR_SPECULAR, specClr) == aiReturn_SUCCESS)
 				{
-					mat.SpecularColor = Convert(specClr);
+					mat.specularColor = convert(specClr);
 				}
 
 				if (ai_real gloss; aiMat->Get(AI_MATKEY_SHININESS, gloss) == aiReturn_SUCCESS)
 				{
-					mat.Gloss = gloss;
+					mat.gloss = gloss;
 				}
 
 				if (int twoSided; aiMat->Get(AI_MATKEY_TWOSIDED, twoSided) == aiReturn_SUCCESS)
 				{
-					mat.TwoSided = !twoSided;
+					mat.twoSided = !twoSided;
 				}
 
-				mat.DiffuseMap = GetTexture(aiMat, aiTextureType_DIFFUSE, textures, idToInd, rootPath);
-				mat.SpecularMap = GetTexture(aiMat, aiTextureType_SPECULAR, textures, idToInd, rootPath);
-				mat.OpacityMap = GetTexture(aiMat, aiTextureType_OPACITY, textures, idToInd, rootPath);
+				mat.diffuseMap = get_texture(aiMat, aiTextureType_DIFFUSE, textures, idToInd, rootPath);
+				mat.specularMap = get_texture(aiMat, aiTextureType_SPECULAR, textures, idToInd, rootPath);
+				mat.opacityMap = get_texture(aiMat, aiTextureType_OPACITY, textures, idToInd, rootPath);
 
 				// If the diffuse map has an alpha channel, and we couldn't parse an opacity map
 				// We assume that the transparency comes from the diffuse alpha, so we steal it
 				// And create an opacity map from that.
-				if (!mat.OpacityMap.has_value() && mat.DiffuseMap.has_value() && textures[mat.DiffuseMap.value()].Channels() == 4)
+				if (!mat.opacityMap.has_value() && mat.diffuseMap.has_value() && textures[mat.diffuseMap.value()].Channels() == 4)
 				{
-					auto& tex = textures[mat.DiffuseMap.value()];
+					auto& tex = textures[mat.diffuseMap.value()];
 					textures.push_back(tex.ExtractChannel(3));
-					mat.OpacityMap = textures.size() - 1;
+					mat.opacityMap = textures.size() - 1;
 				}
 
 				materials.push_back(mat);
@@ -109,7 +136,7 @@ namespace leopph::convert
 
 
 
-		std::vector<Vertex> ProcessVertices(aiMesh const* mesh, Matrix4 const& trafo)
+		std::vector<Vertex> process_vertices(aiMesh const* mesh, Matrix4 const& trafo)
 		{
 			std::vector<Vertex> vertices;
 
@@ -117,15 +144,15 @@ namespace leopph::convert
 			{
 				Vertex vertex
 				{
-					.Position = Vector3{Vector4{Convert(mesh->mVertices[i]), 1} * trafo},
-					.Normal = Vector3{Vector4{Convert(mesh->mNormals[i]), 0} * trafo},
+					.Position = Vector3{Vector4{convert(mesh->mVertices[i]), 1} * trafo},
+					.Normal = Vector3{Vector4{convert(mesh->mNormals[i]), 0} * trafo},
 					.TexCoord = [mesh, i]
 					{
 						for (std::size_t j = 0; j < AI_MAX_NUMBER_OF_TEXTURECOORDS; j++)
 						{
 							if (mesh->HasTextureCoords(static_cast<unsigned>(j)))
 							{
-								return Vector2{Convert(mesh->mTextureCoords[j][i])};
+								return Vector2{convert(mesh->mTextureCoords[j][i])};
 							}
 						}
 						return Vector2{};
@@ -140,7 +167,7 @@ namespace leopph::convert
 
 
 
-		std::vector<unsigned> ProcessIndices(aiMesh const* mesh)
+		std::vector<unsigned> process_indices(aiMesh const* mesh)
 		{
 			std::vector<unsigned> indices;
 
@@ -157,7 +184,7 @@ namespace leopph::convert
 
 
 
-		void LogPrimitiveError(aiMesh const* const mesh, std::filesystem::path const& path)
+		void log_primitive_error(aiMesh const* const mesh, std::filesystem::path const& path)
 		{
 			std::string msg{"Ignoring mesh without triangles in model at path ["};
 			msg += path.string();
@@ -185,7 +212,7 @@ namespace leopph::convert
 
 
 
-	std::optional<Object> ProcessGenericModel(std::filesystem::path const& path)
+	std::optional<Object> decode_generic_3d_asset(std::filesystem::path const& path)
 	{
 		Assimp::Importer importer;
 		auto const* scene = importer.ReadFile(path.string(),
@@ -203,13 +230,13 @@ namespace leopph::convert
 
 		Object object;
 
-		auto [materials, textures] = ProcessMaterials(std::span{scene->mMaterials, scene->mNumMaterials}, path.parent_path());
+		auto [materials, textures] = process_materials(std::span{scene->mMaterials, scene->mNumMaterials}, path.parent_path());
 
-		object.Materials = std::move(materials);
-		object.Textures = std::move(textures);
+		object.materials = std::move(materials);
+		object.textures = std::move(textures);
 
 		std::queue<std::pair<aiNode const*, Matrix4>> queue;
-		queue.emplace(scene->mRootNode, Convert(scene->mRootNode->mTransformation) * Matrix4{1, 1, -1, 1});
+		queue.emplace(scene->mRootNode, convert(scene->mRootNode->mTransformation) * Matrix4{1, 1, -1, 1});
 
 		while (!queue.empty())
 		{
@@ -227,17 +254,17 @@ namespace leopph::convert
 						// TODO currently ignoring NGON property
 					}
 
-					object.Meshes.emplace_back(ProcessVertices(mesh, trafo), ProcessIndices(mesh), mesh->mMaterialIndex);
+					object.meshes.emplace_back(process_vertices(mesh, trafo), process_indices(mesh), mesh->mMaterialIndex);
 				}
 				else
 				{
-					LogPrimitiveError(mesh, path);
+					log_primitive_error(mesh, path);
 				}
 			}
 
 			for (std::size_t i = 0; i < node->mNumChildren; ++i)
 			{
-				queue.emplace(node->mChildren[i], Convert(node->mChildren[i]->mTransformation) * trafo);
+				queue.emplace(node->mChildren[i], convert(node->mChildren[i]->mTransformation) * trafo);
 			}
 
 			queue.pop();

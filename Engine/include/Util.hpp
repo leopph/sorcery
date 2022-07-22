@@ -16,14 +16,16 @@
 
 namespace leopph
 {
-	[[nodiscard]] LEOPPHAPI std::string ReadFile(std::filesystem::path const& path);
-	LEOPPHAPI std::vector<std::string>& ReadFileLines(std::filesystem::path const& path, std::vector<std::string>& out);
+	[[nodiscard]] LEOPPHAPI std::string read_file(std::filesystem::path const& path);
+	LEOPPHAPI std::vector<std::string>& read_file_lines(std::filesystem::path const& path, std::vector<std::string>& out);
 
-	LEOPPHAPI void WriteFile(std::filesystem::path const& path, std::string_view contents);
+	LEOPPHAPI void write_file(std::filesystem::path const& path, std::string_view contents);
 
 
-	LEOPPHAPI void SplitLines(std::string_view str, std::vector<std::string>& out);
-	LEOPPHAPI void SplitWords(std::string_view view, std::vector<std::string_view>& out);
+	LEOPPHAPI void split_lines(std::string_view str, std::vector<std::string>& out);
+	LEOPPHAPI void split_words(std::string_view view, std::vector<std::string_view>& out);
+	LEOPPHAPI void split_string_delim(std::string_view str, char sep, std::vector<std::string_view>& out);
+
 
 	template<std::integral To, std::integral From>
 	[[nodiscard]] To clamp_cast(From from);

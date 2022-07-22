@@ -23,10 +23,20 @@
     <ClCompile Include="src\Util.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\include\Color.hpp" />
+    <ClInclude Include="..\include\Image.hpp" />
+    <ClInclude Include="..\include\Math.hpp" />
+    <ClInclude Include="..\include\Matrix.hpp" />
+    <ClInclude Include="..\include\Quaternion.hpp" />
+    <ClInclude Include="..\include\Sphere.hpp" />
+    <ClInclude Include="..\include\Types.hpp" />
+    <ClInclude Include="..\include\Util.hpp" />
+    <ClInclude Include="..\include\Vector.hpp" />
     <ClInclude Include="include\ArrayQueue.hpp" />
     <ClInclude Include="include\Bimap.hpp" />
     <ClInclude Include="include\Equal.hpp" />
     <ClInclude Include="include\Hash.hpp" />
+    <ClInclude Include="include\LeopphCommon.hpp" />
     <ClInclude Include="include\Logger.hpp" />
     <ClInclude Include="include\Random.hpp" />
   </ItemGroup>
@@ -36,6 +46,7 @@
     <ProjectGuid>{6c46cc3c-26ff-4a24-a480-1639d8301117}</ProjectGuid>
     <RootNamespace>LeopphUtils</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>LeopphCommon</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
@@ -67,13 +78,13 @@
     <OutDir>$(SolutionDir)Engine\bin\$(Configuration)_$(Platform)\</OutDir>
     <IntDir>$(SolutionDir)Engine\int\$(ProjectName)\$(Configuration)_$(Platform)\</IntDir>
     <TargetName>leopphutils</TargetName>
-    <LibraryPath>$(SolutionDir)Engine\deps\vendor\spdlog\$(Configuration)\;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
+    <PublicIncludeDirectories>$(ProjectDir)include\</PublicIncludeDirectories>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)Engine\bin\$(Configuration)_$(Platform)\</OutDir>
     <IntDir>$(SolutionDir)Engine\int\$(ProjectName)\$(Configuration)_$(Platform)\</IntDir>
     <TargetName>leopphutils</TargetName>
-    <LibraryPath>$(SolutionDir)Engine\deps\vendor\spdlog\$(Configuration)\;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
+    <PublicIncludeDirectories>$(ProjectDir)include\</PublicIncludeDirectories>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -82,13 +93,14 @@
       <PreprocessorDefinitions>SPDLOG_COMPILED_LIB;ENGINE_BUILD;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)Engine\deps\vendor\stb_image\;$(SolutionDir)Engine\deps\vendor\spdlog\include\;$(ProjectDir)include\;$(SolutionDir)Engine\include\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Engine\include\;$(ProjectDir)include\;$(SolutionDir)Engine\deps\vendor\spdlog\include\;$(SolutionDir)Engine\deps\vendor\stb_image\</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>spdlogd.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)Engine\deps\vendor\spdlog\$(Configuration)\</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -100,7 +112,7 @@
       <PreprocessorDefinitions>SPDLOG_COMPILED_LIB;ENGINE_BUILD;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)Engine\deps\vendor\stb_image\;$(SolutionDir)Engine\deps\vendor\spdlog\include\;$(ProjectDir)include\;$(SolutionDir)Engine\include\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Engine\include\;$(ProjectDir)include\;$(SolutionDir)Engine\deps\vendor\spdlog\include\;$(SolutionDir)Engine\deps\vendor\stb_image\</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -109,6 +121,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>spdlog.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)Engine\deps\vendor\spdlog\$(Configuration)\</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

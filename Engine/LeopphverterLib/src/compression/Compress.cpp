@@ -15,7 +15,8 @@ namespace leopph::convert::compress
 	}
 
 
-	Error Compress(std::span<u8> in, std::vector<u8>& out)
+
+	Error compress(std::span<u8> in, std::vector<u8>& out)
 	{
 		auto const tmpBuf = std::make_unique_for_overwrite<u8[]>(TMP_BUF_SZ);
 
@@ -72,7 +73,8 @@ namespace leopph::convert::compress
 	}
 
 
-	Error Uncompress(std::span<u8> in, u64 const uncompressedSize, std::vector<u8>& out)
+
+	Error uncompress(std::span<u8> in, u64 const uncompressedSize, std::vector<u8>& out)
 	{
 		// Make sure the vector has enough space
 		out.resize(out.size() + uncompressedSize);

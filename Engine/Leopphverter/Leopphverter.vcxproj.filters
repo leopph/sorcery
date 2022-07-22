@@ -21,21 +21,15 @@
     <ClCompile Include="src\BuildHeader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\SplitString.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\ParseCommandLine.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\ParseInteractive.cpp">
+    <ClCompile Include="src\ParseInput.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\Common.hpp">
+    <ClInclude Include="src\BuildHeader.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Leopphverter.hpp">
+    <ClInclude Include="src\ParseInput.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

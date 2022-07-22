@@ -1,7 +1,7 @@
-#include "Compress.hpp"
-#include "LeopphverterExport.hpp"
+#include "Leopphverter.hpp"
 #include "Logger.hpp"
-#include "Serialize.hpp"
+#include "../../compression/Compress.hpp"
+#include "../../serialization/serialize.hpp"
 
 #include <bit>
 #include <iterator>
@@ -10,7 +10,7 @@
 
 namespace leopph::convert
 {
-	std::vector<unsigned char> Export(Object const& object, std::endian const endianness)
+	std::vector<unsigned char> encode_in_leopph3d(Object const& object, std::endian const endianness)
 	{
 		if (endianness != std::endian::little && endianness != std::endian::big)
 		{
@@ -33,39 +33,39 @@ namespace leopph::convert
 		std::vector<u8> toCompress;
 
 		// number of images
-		Serialize(object.Textures.size(), toCompress, endianness);
+		serialize(object.textures.size(), toCompress, endianness);
 
 		// write images
-		for (auto const& texture : object.Textures)
+		for (auto const& texture : object.textures)
 		{
 			// image data
-			Serialize(texture, toCompress, endianness);
+			serialize(texture, toCompress, endianness);
 		}
 
 		// number of materials
-		Serialize(object.Materials.size(), toCompress, endianness);
+		serialize(object.materials.size(), toCompress, endianness);
 
-		for (auto const& material : object.Materials)
+		for (auto const& material : object.materials)
 		{
 			// material data
-			Serialize(material, toCompress, endianness);
+			serialize(material, toCompress, endianness);
 		}
 
 		// number of meshes
-		Serialize(object.Meshes.size(), toCompress, endianness);
+		serialize(object.meshes.size(), toCompress, endianness);
 
-		for (auto const& mesh : object.Meshes)
+		for (auto const& mesh : object.meshes)
 		{
 			// mesh data
-			Serialize(mesh, toCompress, endianness);
+			serialize(mesh, toCompress, endianness);
 		}
 
-		switch (std::vector<u8> compressed; compress::Compress(toCompress, compressed))
+		switch (std::vector<u8> compressed; compress::compress(toCompress, compressed))
 		{
 			case compress::Error::None:
 			{
 				// uncompressed data size
-				Serialize(toCompress.size(), bytes, endianness);
+				serialize(toCompress.size(), bytes, endianness);
 
 				// compressed data
 				std::ranges::copy(compressed, std::back_inserter(bytes));

@@ -1,19 +1,23 @@
-#include "Common.hpp"
-#include "Leopphverter.hpp"
+#include "BuildHeader.hpp"
 
 #include <algorithm>
+#include <format>
 
 
 namespace leopph::convert::driver
 {
-	std::string BuildHeader()
+	namespace
 	{
-		using std::literals::string_literals::operator ""s;
-		using std::literals::string_view_literals::operator ""sv;
+		constexpr auto VERSION_NUMBER = "1.0";
+	}
 
-		auto constexpr vertBorder = "###"sv;
-		auto const title = "Leopphverter v"s + VERSION_NUMBER;
-		auto constexpr funny = "Converting random formats to leopph3d since 2022."sv;
+
+
+	std::string build_printed_header()
+	{
+		std::string_view constexpr vertBorder{"###"};
+		auto const title = std::format("Leopphverter v{}", VERSION_NUMBER);
+		std::string_view constexpr funny{"Converting random formats to leopph3d since 2022."};
 		auto const maxLineLngth = std::max<std::size_t>(title.size(), funny.size());
 
 		auto const titlePaddingLngth = (maxLineLngth - title.size()) / 2 + 1;

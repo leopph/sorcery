@@ -11,28 +11,28 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\LeopphverterTypes.hpp" />
-    <ClInclude Include="include\LeopphverterImport.hpp" />
-    <ClInclude Include="include\LeopphverterExport.hpp" />
-    <ClInclude Include="src\Compress.hpp" />
-    <ClInclude Include="src\Deserialize.hpp" />
-    <ClInclude Include="src\ParseLeopph3D.hpp" />
-    <ClInclude Include="src\ProcessGeneric.hpp" />
-    <ClInclude Include="src\Serialize.hpp" />
-    <ClInclude Include="src\TypeConversion.hpp" />
-    <ClInclude Include="src\Util.hpp" />
+    <ClInclude Include="include\Leopphverter.hpp" />
+    <ClInclude Include="src\compression\Compress.hpp" />
+    <ClInclude Include="src\serialization\Deserialize.hpp" />
+    <ClInclude Include="src\3d\leopph3d\DecodeLeopph3d.hpp" />
+    <ClInclude Include="src\3d\generic\DecodeGeneric.hpp" />
+    <ClInclude Include="src\serialization\Serialize.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\Compress.cpp" />
-    <ClCompile Include="src\Export.cpp" />
-    <ClCompile Include="src\Import.cpp" />
-    <ClCompile Include="src\ParseLeopph3D.cpp" />
-    <ClCompile Include="src\ProcessGeneric.cpp" />
-    <ClCompile Include="src\Serialize.cpp" />
-    <ClCompile Include="src\TypeConversion.cpp" />
+    <ClCompile Include="src\compression\Compress.cpp" />
+    <ClCompile Include="src\3d\leopph3d\EncodeLeopph3d.cpp" />
+    <ClCompile Include="src\Import3dAsset.cpp" />
+    <ClCompile Include="src\3d\leopph3d\DecodeLeopph3d.cpp" />
+    <ClCompile Include="src\3d\generic\DecodeGeneric.cpp" />
+    <ClCompile Include="src\serialization\Serialize.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="src\leopph3d_spec.txt" />
+    <Text Include="doc\leopph3d_spec.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\LeopphCommon\LeopphCommon.vcxproj">
+      <Project>{6c46cc3c-26ff-4a24-a480-1639d8301117}</Project>
+    </ProjectReference>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
@@ -72,13 +72,13 @@
     <OutDir>$(SolutionDir)Engine\bin\$(Configuration)_$(Platform)\</OutDir>
     <IntDir>$(SolutionDir)Engine\int\$(ProjectName)\$(Configuration)_$(Platform)\</IntDir>
     <TargetName>leopphverterlib</TargetName>
-    <LibraryPath>$(SolutionDir)Engine\deps\vendor\zlib\$(Configuration)\;$(SolutionDir)Engine\bin\$(Configuration)_$(Platform)\;$(SolutionDir)Engine\deps\vendor\assimp\lib\$(Configuration)\;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
+    <PublicIncludeDirectories>$(ProjectDir)include\</PublicIncludeDirectories>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)Engine\bin\$(Configuration)_$(Platform)\</OutDir>
     <IntDir>$(SolutionDir)Engine\int\$(ProjectName)\$(Configuration)_$(Platform)\</IntDir>
     <TargetName>leopphverterlib</TargetName>
-    <LibraryPath>$(SolutionDir)Engine\deps\vendor\zlib\$(Configuration)\;$(SolutionDir)Engine\bin\$(Configuration)_$(Platform)\;$(SolutionDir)Engine\deps\vendor\assimp\lib\$(Configuration)\;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
+    <PublicIncludeDirectories>$(ProjectDir)include\</PublicIncludeDirectories>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -87,13 +87,14 @@
       <PreprocessorDefinitions>ENGINE_BUILD;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)Engine\deps\vendor\zlib\;$(SolutionDir)Engine\LeopphUtils\include\;$(SolutionDir)Engine\deps\vendor\assimp\include\;$(SolutionDir)Engine\include\;$(ProjectDir)include\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Engine\include\;$(ProjectDir)include\;$(SolutionDir)Engine\deps\vendor\assimp\include\;$(SolutionDir)Engine\deps\vendor\zlib\</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>leopphutils.lib;zlibstaticd.lib;assimp.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>assimp.lib;zlibstaticd.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)Engine\deps\vendor\assimp\lib\$(Configuration)\;$(SolutionDir)Engine\deps\vendor\zlib\$(Configuration)\</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -105,7 +106,7 @@
       <PreprocessorDefinitions>ENGINE_BUILD;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)Engine\deps\vendor\zlib\;$(SolutionDir)Engine\LeopphUtils\include\;$(SolutionDir)Engine\deps\vendor\assimp\include\;$(SolutionDir)Engine\include\;$(ProjectDir)include\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Engine\include\;$(ProjectDir)include\;$(SolutionDir)Engine\deps\vendor\assimp\include\;$(SolutionDir)Engine\deps\vendor\zlib\</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -113,7 +114,8 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>leopphutils.lib;zlibstatic.lib;assimp.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>assimp.lib;zlibstatic.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)Engine\deps\vendor\assimp\lib\$(Configuration)\;$(SolutionDir)Engine\deps\vendor\zlib\$(Configuration)\</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

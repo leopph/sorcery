@@ -1,4 +1,4 @@
-#include "rendering/shaders/ShaderProcessing.hpp"
+#include "rendering/ShaderProcessing.hpp"
 
 #include "Logger.hpp"
 #include "Util.hpp"
@@ -28,20 +28,20 @@ namespace leopph
 		std::vector<std::string> fileLines;
 
 		vertexShaderPath = absolute(vertexShaderPath).make_preferred();
-		ReadFileLines(vertexShaderPath, fileLines);
+		read_file_lines(vertexShaderPath, fileLines);
 		programFileInfo.vertexInfo = {std::move(vertexShaderPath), std::move(fileLines)};
 
 		if (!geometryShaderPath.empty())
 		{
 			geometryShaderPath = absolute(geometryShaderPath).make_preferred();
-			ReadFileLines(geometryShaderPath, fileLines);
+			read_file_lines(geometryShaderPath, fileLines);
 			programFileInfo.geometryInfo = {std::move(geometryShaderPath), std::move(fileLines)};
 		}
 
 		if (!fragmentShaderPath.empty())
 		{
 			fragmentShaderPath = absolute(fragmentShaderPath).make_preferred();
-			ReadFileLines(fragmentShaderPath, fileLines);
+			read_file_lines(fragmentShaderPath, fileLines);
 			programFileInfo.fragmentInfo = {std::move(fragmentShaderPath), std::move(fileLines)};
 		}
 
@@ -122,7 +122,7 @@ namespace leopph
 						}
 
 						includeBuffer.clear();
-						ReadFileLines(includePath, includeBuffer);
+						read_file_lines(includePath, includeBuffer);
 
 						if (includeBuffer.empty())
 						{

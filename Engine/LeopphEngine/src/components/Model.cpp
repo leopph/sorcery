@@ -2,7 +2,7 @@
 
 #include "GlTexture.hpp"
 #include "Image.hpp"
-#include "LeopphverterImport.hpp"
+#include "Leopphverter.hpp"
 
 #include <utility>
 #include <vector>
@@ -12,38 +12,39 @@ namespace leopph
 {
 	namespace
 	{
-		std::shared_ptr<Material> ConvertMaterial(convert::Material const& convMat, std::span<std::shared_ptr<GlTexture> const> const textures)
+		std::shared_ptr<Material> convert_material(convert::Material const& convMat, std::span<std::shared_ptr<GlTexture> const> const textures)
 		{
 			auto mat = std::make_shared<Material>();
 
-			mat->DiffuseColor = convMat.DiffuseColor;
-			mat->SpecularColor = convMat.SpecularColor;
-			mat->Gloss = convMat.Gloss;
-			mat->TwoSided = convMat.TwoSided;
-			mat->Opacity = convMat.Opacity;
+			mat->DiffuseColor = convMat.diffuseColor;
+			mat->SpecularColor = convMat.specularColor;
+			mat->Gloss = convMat.gloss;
+			mat->TwoSided = convMat.twoSided;
+			mat->Opacity = convMat.opacity;
 
-			if (convMat.DiffuseMap.has_value())
+			if (convMat.diffuseMap)
 			{
-				mat->DiffuseMap = textures[convMat.DiffuseMap.value()];
+				mat->DiffuseMap = textures[*convMat.diffuseMap];
 			}
 
-			if (convMat.SpecularMap.has_value())
+			if (convMat.specularMap)
 			{
-				mat->SpecularMap = textures[convMat.SpecularMap.value()];
+				mat->SpecularMap = textures[*convMat.specularMap];
 			}
 
-			if (convMat.OpacityMap.has_value())
+			if (convMat.opacityMap)
 			{
-				mat->OpacityMap = textures[convMat.OpacityMap.value()];
+				mat->OpacityMap = textures[*convMat.opacityMap];
 			}
 
 			return mat;
 		}
 
 
-		std::vector<Mesh> Parse(std::filesystem::path const& path)
+
+		std::vector<Mesh> parse(std::filesystem::path const& path)
 		{
-			auto const imported = convert::Import(path);
+			auto const imported = convert::import_3d_asset(path);
 
 			if (!imported.has_value())
 			{
@@ -65,7 +66,7 @@ namespace leopph
 
 			for (auto const& convMat : convMats)
 			{
-				mats.push_back(ConvertMaterial(convMat, textures));
+				mats.push_back(convert_material(convMat, textures));
 			}
 
 			std::vector<Mesh> meshes;
@@ -81,17 +82,20 @@ namespace leopph
 	}
 
 
+
 	Model::Model(std::filesystem::path path) :
 		m_Path{std::move(path)}
 	{
-		Init(MeshGroup{Parse(m_Path)});
+		Init(MeshGroup{parse(m_Path)});
 	}
+
 
 
 	ComponentPtr<> Model::Clone() const
 	{
 		return CreateComponent<Model>(*this);
 	}
+
 
 
 	std::filesystem::path const& Model::Path() const noexcept

@@ -15,61 +15,46 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\LeopphverterTypes.hpp">
+    <ClInclude Include="src\serialization\Serialize.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\LeopphverterImport.hpp">
+    <ClInclude Include="src\3d\generic\DecodeGeneric.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\TypeConversion.hpp">
+    <ClInclude Include="src\3d\leopph3d\DecodeLeopph3d.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\LeopphverterExport.hpp">
+    <ClInclude Include="src\serialization\Deserialize.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Serialize.hpp">
+    <ClInclude Include="src\compression\Compress.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ProcessGeneric.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\ParseLeopph3D.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Deserialize.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Compress.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Util.hpp">
+    <ClInclude Include="include\Leopphverter.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\Import.cpp">
+    <ClCompile Include="src\Import3dAsset.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\TypeConversion.cpp">
+    <ClCompile Include="src\3d\leopph3d\EncodeLeopph3d.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Export.cpp">
+    <ClCompile Include="src\serialization\Serialize.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Serialize.cpp">
+    <ClCompile Include="src\3d\generic\DecodeGeneric.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ProcessGeneric.cpp">
+    <ClCompile Include="src\3d\leopph3d\DecodeLeopph3d.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ParseLeopph3D.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Compress.cpp">
+    <ClCompile Include="src\compression\Compress.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="src\leopph3d_spec.txt" />
+    <Text Include="doc\leopph3d_spec.txt" />
   </ItemGroup>
 </Project>

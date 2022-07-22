@@ -15,7 +15,6 @@
     <ClInclude Include="..\include\AttenuatedLight.hpp" />
     <ClInclude Include="..\include\Behavior.hpp" />
     <ClInclude Include="..\include\Camera.hpp" />
-    <ClInclude Include="..\include\Color.hpp" />
     <ClInclude Include="..\include\Component.hpp" />
     <ClInclude Include="..\include\Context.hpp" />
     <ClInclude Include="..\include\Cube.hpp" />
@@ -32,7 +31,6 @@
     <ClInclude Include="..\include\FrameCompleteEvent.hpp" />
     <ClInclude Include="..\include\Frustum.hpp" />
     <ClInclude Include="..\include\GlTexture.hpp" />
-    <ClInclude Include="..\include\Image.hpp" />
     <ClInclude Include="..\include\ImageSprite.hpp" />
     <ClInclude Include="..\include\Input.hpp" />
     <ClInclude Include="..\include\KeyCode.hpp" />
@@ -43,8 +41,6 @@
     <ClInclude Include="..\include\Light.hpp" />
     <ClInclude Include="..\include\Main.hpp" />
     <ClInclude Include="..\include\Material.hpp" />
-    <ClInclude Include="..\include\Math.hpp" />
-    <ClInclude Include="..\include\Matrix.hpp" />
     <ClInclude Include="..\include\Mesh.hpp" />
     <ClInclude Include="..\include\MeshGroup.hpp" />
     <ClInclude Include="..\include\Model.hpp" />
@@ -53,17 +49,12 @@
     <ClInclude Include="..\include\PerspectiveCamera.hpp" />
     <ClInclude Include="..\include\Poelo.hpp" />
     <ClInclude Include="..\include\PointLight.hpp" />
-    <ClInclude Include="..\include\Quaternion.hpp" />
     <ClInclude Include="..\include\RenderComponent.hpp" />
     <ClInclude Include="..\include\Settings.hpp" />
     <ClInclude Include="..\include\Skybox.hpp" />
-    <ClInclude Include="..\include\Sphere.hpp" />
     <ClInclude Include="..\include\SpotLight.hpp" />
     <ClInclude Include="..\include\Time.hpp" />
     <ClInclude Include="..\include\Transform.hpp" />
-    <ClInclude Include="..\include\Types.hpp" />
-    <ClInclude Include="..\include\Util.hpp" />
-    <ClInclude Include="..\include\Vector.hpp" />
     <ClInclude Include="..\include\Vertex.hpp" />
     <ClInclude Include="..\include\Window.hpp" />
     <ClInclude Include="..\include\WindowEvent.hpp" />
@@ -72,10 +63,10 @@
     <ClInclude Include="include\rendering\gl\GlSkyboxImpl.hpp" />
     <ClInclude Include="include\rendering\gl\GlVertexArrayObject.hpp" />
     <ClInclude Include="include\rendering\RenderSettings.hpp" />
-    <ClInclude Include="include\rendering\shaders\ShaderCommon.hpp" />
-    <ClInclude Include="include\rendering\shaders\ShaderFamily.hpp" />
-    <ClInclude Include="include\rendering\shaders\ShaderProcessing.hpp" />
-    <ClInclude Include="include\rendering\shaders\ShaderProgram.hpp" />
+    <ClInclude Include="include\rendering\ShaderCommon.hpp" />
+    <ClInclude Include="include\rendering\ShaderFamily.hpp" />
+    <ClInclude Include="include\rendering\ShaderProcessing.hpp" />
+    <ClInclude Include="include\rendering\ShaderProgram.hpp" />
     <ClInclude Include="include\ScreenQuad.hpp" />
     <ClInclude Include="include\SettingsImpl.hpp" />
     <ClCompile Include="..\deps\vendor\glad\src\gl.c" />
@@ -102,9 +93,9 @@
     <ClCompile Include="src\rendering\Material.cpp" />
     <ClCompile Include="src\rendering\RenderObject.cpp" />
     <ClCompile Include="src\rendering\ScreenQuad.cpp" />
-    <ClCompile Include="src\rendering\shaders\ShaderFamily.cpp" />
-    <ClCompile Include="src\rendering\shaders\ShaderProcessing.cpp" />
-    <ClCompile Include="src\rendering\shaders\ShaderProgram.cpp" />
+    <ClCompile Include="src\rendering\ShaderFamily.cpp" />
+    <ClCompile Include="src\rendering\ShaderProcessing.cpp" />
+    <ClCompile Include="src\rendering\ShaderProgram.cpp" />
     <ClCompile Include="src\Settings.cpp" />
     <ClCompile Include="src\data\DataManager.cpp" />
     <ClCompile Include="src\data\Poelo.cpp" />
@@ -221,6 +212,14 @@
   <ItemGroup>
     <None Include="src\rendering\shaders\glsl\Lighting.glsl" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\LeopphCommon\LeopphCommon.vcxproj">
+      <Project>{6c46cc3c-26ff-4a24-a480-1639d8301117}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\LeopphverterLib\LeopphverterLib.vcxproj">
+      <Project>{23e4c965-ba88-472d-97f9-c9a2c07fc076}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
@@ -280,14 +279,14 @@
       <PreprocessorDefinitions>SPDLOG_COMPILED_LIB;ENGINE_BUILD;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)Engine\include\;$(ProjectDir)include\;$(SolutionDir)Engine\deps\vendor\glad\include\;$(SolutionDir)Engine\deps\vendor\glfw\include\;$(SolutionDir)Engine\deps\vendor\gsl\;$(SolutionDir)Engine\deps\vendor\nlohmann_json\;$(SolutionDir)Engine\deps\vendor\taskflow_wsq\;$(SolutionDir)Engine\LeopphUtils\include\;$(SolutionDir)Engine\LeopphverterLib\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Engine\include\;$(ProjectDir)include\;$(SolutionDir)Engine\deps\vendor\glad\include\;$(SolutionDir)Engine\deps\vendor\glfw\include\;$(SolutionDir)Engine\deps\vendor\gsl\;$(SolutionDir)Engine\deps\vendor\nlohmann_json\;$(SolutionDir)Engine\deps\vendor\taskflow_wsq\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>leopphutils.lib;leopphverterlib.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)Engine\bin\$(Configuration)_$(Platform)\;$(SolutionDir)Engine\deps\vendor\glfw\src\$(Configuration)\;</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)Engine\deps\vendor\glfw\src\$(Configuration)\</AdditionalLibraryDirectories>
+      <AdditionalDependencies>glfw3.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent />
     <PreBuildEvent />
@@ -306,7 +305,7 @@
       <PreprocessorDefinitions>SPDLOG_COMPILED_LIB;ENGINE_BUILD;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)Engine\include\;$(ProjectDir)include\;$(SolutionDir)Engine\deps\vendor\glad\include\;$(SolutionDir)Engine\deps\vendor\glfw\include\;$(SolutionDir)Engine\deps\vendor\gsl\;$(SolutionDir)Engine\deps\vendor\nlohmann_json\;$(SolutionDir)Engine\deps\vendor\taskflow_wsq\;$(SolutionDir)Engine\LeopphUtils\include\;$(SolutionDir)Engine\LeopphverterLib\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Engine\include\;$(ProjectDir)include\;$(SolutionDir)Engine\deps\vendor\glad\include\;$(SolutionDir)Engine\deps\vendor\glfw\include\;$(SolutionDir)Engine\deps\vendor\gsl\;$(SolutionDir)Engine\deps\vendor\nlohmann_json\;$(SolutionDir)Engine\deps\vendor\taskflow_wsq\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -314,9 +313,9 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>leopphutils.lib;leopphverterlib.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
-      <AdditionalLibraryDirectories>$(SolutionDir)Engine\bin\$(Configuration)_$(Platform)\;$(SolutionDir)Engine\deps\vendor\glfw\src\$(Configuration)\;</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)Engine\deps\vendor\glfw\src\$(Configuration)\</AdditionalLibraryDirectories>
+      <AdditionalDependencies>glfw3.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent />
     <PreBuildEvent />

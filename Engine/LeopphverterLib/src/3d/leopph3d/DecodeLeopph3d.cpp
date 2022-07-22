@@ -1,9 +1,9 @@
-#include "ParseLeopph3D.hpp"
+#include "DecodeLeopph3d.hpp"
 
-#include "Compress.hpp"
-#include "Deserialize.hpp"
 #include "Image.hpp"
 #include "Logger.hpp"
+#include "../../compression/Compress.hpp"
+#include "../../serialization/Deserialize.hpp"
 
 #include <bit>
 #include <format>
@@ -20,7 +20,8 @@ namespace leopph::convert
 	}
 
 
-	std::optional<Object> ParseLeopph3D(std::filesystem::path const& path)
+
+	std::optional<Object> decode_leopph3d(std::filesystem::path const& path)
 	{
 		try
 		{
@@ -56,7 +57,7 @@ namespace leopph::convert
 			auto const endianness = buffer[4] & 0x80 ? std::endian::little : std::endian::big;
 
 			// parse content size
-			auto const contentSize = Deserialize<u64>(std::begin(buffer) + 5, endianness);
+			auto const contentSize = deserialize<u64>(std::begin(buffer) + 5, endianness);
 
 			// get the size of the compressed contents
 			in.seekg(0, std::ios_base::end);
@@ -70,7 +71,7 @@ namespace leopph::convert
 			std::vector<u8> uncompressed;
 
 			// uncompress data
-			if (compress::Uncompress({std::begin(buffer), std::end(buffer)}, contentSize, uncompressed) != compress::Error::None)
+			if (compress::uncompress({std::begin(buffer), std::end(buffer)}, contentSize, uncompressed) != compress::Error::None)
 			{
 				internal::Logger::Instance().Error("Couldn't parse leopph3d file at " + path.string() + " because the contents failed to uncompress.");
 				return {};
@@ -84,7 +85,7 @@ namespace leopph::convert
 			auto it = std::cbegin(uncompressed);
 
 			// number of images
-			auto const numImgs = Deserialize<u64>(it, endianness);
+			auto const numImgs = deserialize<u64>(it, endianness);
 
 			// all images
 			std::vector<Image> imgs;
@@ -93,11 +94,11 @@ namespace leopph::convert
 			// parse image data
 			for (u64 i = 0; i < numImgs; i++)
 			{
-				imgs.push_back(DeserializeImage(it, endianness));
+				imgs.push_back(deserialize_image(it, endianness));
 			}
 
 			// number of materials
-			auto const numMats = Deserialize<u64>(it, endianness);
+			auto const numMats = deserialize<u64>(it, endianness);
 
 			// all materials
 			std::vector<Material> mats;
@@ -106,11 +107,11 @@ namespace leopph::convert
 			// parse material data
 			for (u64 i = 0; i < numMats; i++)
 			{
-				mats.push_back(DeserializeMaterial(it, endianness));
+				mats.push_back(deserialize_material(it, endianness));
 			}
 
 			// number of meshes
-			auto const numMeshes = Deserialize<u64>(it, endianness);
+			auto const numMeshes = deserialize<u64>(it, endianness);
 
 			// all meshes
 			std::vector<Mesh> meshes;
@@ -119,14 +120,14 @@ namespace leopph::convert
 			// parse mesh data
 			for (u64 i = 0; i < numMeshes; i++)
 			{
-				meshes.push_back(DeserializeMesh(it, endianness));
+				meshes.push_back(deserialize_mesh(it, endianness));
 			}
 
 			return Object
 			{
-				.Textures = std::move(imgs),
-				.Materials = std::move(mats),
-				.Meshes = std::move(meshes)
+				.textures = std::move(imgs),
+				.materials = std::move(mats),
+				.meshes = std::move(meshes)
 			};
 		}
 		catch (...)

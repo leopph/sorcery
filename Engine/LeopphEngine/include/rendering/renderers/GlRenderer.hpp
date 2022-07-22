@@ -5,7 +5,7 @@
 #include "rendering/gl/GlCore.hpp"
 #include "rendering/gl/GlMeshGroup.hpp"
 #include "rendering/gl/GlSkyboxImpl.hpp"
-#include "rendering/shaders/ShaderFamily.hpp"
+#include "rendering/ShaderFamily.hpp"
 
 #include <filesystem>
 #include <memory>

@@ -6,7 +6,7 @@
 
 namespace leopph
 {
-	std::string ReadFile(std::filesystem::path const& path)
+	std::string read_file(std::filesystem::path const& path)
 	{
 		std::ifstream in{path};
 		in.unsetf(decltype(in)::skipws);
@@ -17,7 +17,8 @@ namespace leopph
 	}
 
 
-	std::vector<std::string>& ReadFileLines(std::filesystem::path const& path, std::vector<std::string>& out)
+
+	std::vector<std::string>& read_file_lines(std::filesystem::path const& path, std::vector<std::string>& out)
 	{
 		std::ifstream in{path};
 		std::string line;
@@ -31,14 +32,16 @@ namespace leopph
 	}
 
 
-	void WriteFile(std::filesystem::path const& path, std::string_view const contents)
+
+	void write_file(std::filesystem::path const& path, std::string_view const contents)
 	{
 		std::ofstream out{path};
 		out << contents;
 	}
 
 
-	void SplitLines(std::string_view const str, std::vector<std::string>& out)
+
+	void split_lines(std::string_view const str, std::vector<std::string>& out)
 	{
 		auto view = str;
 		std::size_t end;
@@ -53,7 +56,8 @@ namespace leopph
 	}
 
 
-	void SplitWords(std::string_view const view, std::vector<std::string_view>& out)
+
+	void split_words(std::string_view const view, std::vector<std::string_view>& out)
 	{
 		auto localView = view;
 
@@ -80,5 +84,23 @@ namespace leopph
 			out.emplace_back(localView.substr(0, numUsefulChars));
 			localView.remove_prefix(numUsefulChars);
 		}
+	}
+
+
+
+	void split_string_delim(std::string_view const str, char const sep, std::vector<std::string_view>& out)
+	{
+		std::size_t base = 0;
+
+		for (std::size_t i = 0; i < str.size(); i++)
+		{
+			if (str[i] == sep)
+			{
+				out.push_back(str.substr(base, i - base));
+				base = i + 1;
+			}
+		}
+
+		out.push_back(str.substr(base, str.size()));
 	}
 }

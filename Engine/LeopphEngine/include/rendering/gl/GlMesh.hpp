@@ -4,7 +4,7 @@
 #include "GlCore.hpp"
 #include "GlVertexArrayObject.hpp"
 #include "Mesh.hpp"
-#include "rendering/shaders/ShaderProgram.hpp"
+#include "rendering/ShaderProgram.hpp"
 
 #include <gsl/pointers>
 

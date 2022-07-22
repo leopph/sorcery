@@ -1,8 +1,8 @@
 #pragma once
 
 #include "GlRenderer.hpp"
+#include "rendering/ShaderFamily.hpp"
 #include "rendering/gl/GlCore.hpp"
-#include "rendering/shaders/ShaderFamily.hpp"
 
 #include <array>
 

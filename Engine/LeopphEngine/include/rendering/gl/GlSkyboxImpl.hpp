@@ -3,7 +3,7 @@
 #include "GlCore.hpp"
 #include "Skybox.hpp"
 #include "Types.hpp"
-#include "rendering/shaders/ShaderProgram.hpp"
+#include "rendering/ShaderProgram.hpp"
 
 #include <gsl/pointers>
 

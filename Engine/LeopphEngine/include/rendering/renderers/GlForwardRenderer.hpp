@@ -58,6 +58,8 @@ namespace leopph::internal
 
 
 
+	#pragma warning(push)
+	#pragma warning(disable: 4324)
 	struct GlForwardRenderer::UboGenericData
 	{
 		Vector3 cameraPosition;
@@ -95,4 +97,5 @@ namespace leopph::internal
 		alignas(16) Vector3 specular;
 		f32 range;
 	};
+	#pragma warning(pop)
 }

@@ -1,9 +1,9 @@
-#include "rendering/shaders/ShaderFamily.hpp"
+#include "rendering/ShaderFamily.hpp"
 
 #include "Logger.hpp"
 #include "Math.hpp"
 #include "Util.hpp"
-#include "rendering/shaders/ShaderProcessing.hpp"
+#include "rendering/ShaderProcessing.hpp"
 
 #include <algorithm>
 #include <format>

@@ -6,7 +6,7 @@
 #include "Matrix.hpp"
 #include "MeshGroup.hpp"
 #include "rendering/RenderObject.hpp"
-#include "rendering/shaders/ShaderFamily.hpp"
+#include "rendering/ShaderFamily.hpp"
 
 #include <gsl/pointers>
 

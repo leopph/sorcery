@@ -1,7 +1,8 @@
+#include "BuildHeader.hpp"
 #include "Leopphverter.hpp"
-#include "LeopphverterExport.hpp"
-#include "LeopphverterImport.hpp"
 #include "Logger.hpp"
+#include "ParseInput.hpp"
+#include "Types.hpp"
 
 #include <cstdlib>
 #include <fstream>
@@ -9,9 +10,10 @@
 #include <vector>
 
 
+
 int main(int const argc, char const** const argv)
 {
-	std::cout << leopph::convert::driver::BuildHeader() << '\n';
+	std::cout << leopph::convert::driver::build_printed_header() << '\n';
 
 	std::vector<std::filesystem::path> filesToConvert;
 	std::vector<std::string> outputFileNames;
@@ -19,7 +21,7 @@ int main(int const argc, char const** const argv)
 	// We got command line arguments, we're parsing
 	if (argc > 1)
 	{
-		if (auto const res = leopph::convert::driver::ParseCommandLine(argc, argv, filesToConvert, outputFileNames); res != EXIT_SUCCESS)
+		if (auto const res = leopph::convert::driver::parse_command_line(argc, argv, filesToConvert, outputFileNames); res != EXIT_SUCCESS)
 		{
 			return res;
 		}
@@ -27,12 +29,12 @@ int main(int const argc, char const** const argv)
 	// We instead ask for files through the command line
 	else
 	{
-		leopph::convert::driver::ParseInteractive(filesToConvert, outputFileNames);
+		leopph::convert::driver::parse_interactive(filesToConvert, outputFileNames);
 	}
 
 	for (leopph::u64 i = 0; i < filesToConvert.size(); i++)
 	{
-		auto const model = leopph::convert::Import(filesToConvert[i]);
+		auto const model = leopph::convert::import_3d_asset(filesToConvert[i]);
 
 		if (!model.has_value())
 		{
@@ -40,7 +42,7 @@ int main(int const argc, char const** const argv)
 			continue;
 		}
 
-		auto bytes = Export(model.value(), std::endian::native);
+		auto bytes = encode_in_leopph3d(model.value(), std::endian::native);
 
 		auto const outputName = [i, &filesToConvert, &outputFileNames]() -> std::string
 		{
