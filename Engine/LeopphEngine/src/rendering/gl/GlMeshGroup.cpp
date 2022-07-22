@@ -9,141 +9,150 @@
 namespace leopph::internal
 {
 	GlMeshGroup::GlMeshGroup(leopph::MeshGroup meshGroup) :
-		m_MeshGroup{std::move(meshGroup)}
+		mMeshGroup{std::move(meshGroup)}
 	{
-		glNamedBufferData(m_InstanceBuffer, 2 * sizeof(Matrix4), nullptr, GL_DYNAMIC_DRAW);
-		UpdateMeshData();
+		glNamedBufferData(mInstanceBuffer, 2 * sizeof(Matrix4), nullptr, GL_DYNAMIC_DRAW);
+		update_mesh_data();
 	}
 
 
-	void GlMeshGroup::DrawWithMaterial(ShaderFamily& shader, GLuint const nextFreeTextureUnit, bool const transparent) const
+
+	void GlMeshGroup::draw_with_material(gsl::not_null<ShaderProgram const*> shader, GLuint const nextFreeTextureUnit, bool const transparent) const
 	{
-		for (auto const& mesh : transparent ? m_FullyTransparentMeshes : m_OpaqueMeshes)
+		for (auto const& mesh : transparent ? mGuaranteedTransparentMeshes : mOpaqueMeshes)
 		{
-			mesh->DrawWithMaterial(shader, nextFreeTextureUnit, m_NumInstances);
+			mesh->draw_with_material(shader, nextFreeTextureUnit, mInstanceBufferSize);
 		}
 
-		for (auto const& mesh : m_MaybeTransparentMeshes)
+		for (auto const& mesh : mPotentiallyTransparentMeshes)
 		{
-			mesh->DrawWithMaterial(shader, nextFreeTextureUnit, m_NumInstances);
-		}
-	}
-
-
-	void GlMeshGroup::DrawWithoutMaterial(bool const transparent) const
-	{
-		for (auto const& mesh : transparent ? m_FullyTransparentMeshes : m_OpaqueMeshes)
-		{
-			mesh->DrawWithoutMaterial(m_NumInstances);
-		}
-
-		for (auto const& mesh : m_MaybeTransparentMeshes)
-		{
-			mesh->DrawWithoutMaterial(m_NumInstances);
+			mesh->draw_with_material(shader, nextFreeTextureUnit, mInstanceBufferSize);
 		}
 	}
 
 
-	void GlMeshGroup::SetInstanceData(std::span<std::pair<Matrix4, Matrix4> const> const instMats)
+
+	void GlMeshGroup::draw_without_material(bool const transparent) const
 	{
-		m_NumInstances = static_cast<GLsizei>(instMats.size());
+		for (auto const& mesh : transparent ? mGuaranteedTransparentMeshes : mOpaqueMeshes)
+		{
+			mesh->draw_without_material(mInstanceBufferSize);
+		}
+
+		for (auto const& mesh : mPotentiallyTransparentMeshes)
+		{
+			mesh->draw_without_material(mInstanceBufferSize);
+		}
+	}
+
+
+
+	void GlMeshGroup::set_instance_data(std::span<std::pair<Matrix4, Matrix4> const> const instMats)
+	{
+		mInstanceBufferSize = static_cast<GLsizei>(instMats.size());
 
 		// If there are more instances than we what we have space for we reallocate the buffer
-		if (m_NumInstances > m_InstanceBufferSize)
+		if (mInstanceBufferSize > mInstanceBufferCapacity)
 		{
 			do
 			{
-				m_InstanceBufferSize *= 2;
+				mInstanceBufferCapacity *= 2;
 			}
-			while (m_NumInstances > m_InstanceBufferSize);
+			while (mInstanceBufferSize > mInstanceBufferCapacity);
 
-			glNamedBufferData(m_InstanceBuffer, static_cast<GLsizei>(m_InstanceBufferSize * sizeof(std::remove_reference_t<decltype(instMats)>::value_type)), nullptr, GL_DYNAMIC_DRAW);
+			glNamedBufferData(mInstanceBuffer, static_cast<GLsizei>(mInstanceBufferCapacity * sizeof(std::remove_reference_t<decltype(instMats)>::value_type)), nullptr, GL_DYNAMIC_DRAW);
 		}
 
-		glNamedBufferSubData(m_InstanceBuffer, 0, static_cast<GLsizei>(m_NumInstances * sizeof(std::remove_reference_t<decltype(instMats)>::value_type)), instMats.data());
+		glNamedBufferSubData(mInstanceBuffer, 0, static_cast<GLsizei>(mInstanceBufferSize * sizeof(std::remove_reference_t<decltype(instMats)>::value_type)), instMats.data());
 	}
 
 
-	leopph::MeshGroup const& GlMeshGroup::MeshGroup() const
+
+	leopph::MeshGroup const& GlMeshGroup::get_mesh_group() const
 	{
-		return m_MeshGroup;
+		return mMeshGroup;
 	}
 
 
-	void GlMeshGroup::MeshGroup(leopph::MeshGroup meshGroup)
+
+	void GlMeshGroup::set_mesh_group(leopph::MeshGroup meshGroup)
 	{
-		m_MeshGroup = std::move(meshGroup);
-		UpdateMeshData();
+		mMeshGroup = std::move(meshGroup);
+		update_mesh_data();
 	}
 
 
-	void GlMeshGroup::UpdateMeshData()
-	{
-		m_OpaqueMeshes.clear();
-		m_MaybeTransparentMeshes.clear();
-		m_FullyTransparentMeshes.clear();
 
-		for (auto const& mesh : m_MeshGroup.Meshes())
+	void GlMeshGroup::update_mesh_data()
+	{
+		mOpaqueMeshes.clear();
+		mPotentiallyTransparentMeshes.clear();
+		mGuaranteedTransparentMeshes.clear();
+
+		for (auto const& mesh : mMeshGroup.Meshes())
 		{
-			(FullyTransparent(mesh.Material()) ? m_FullyTransparentMeshes : m_OpaqueMeshes).emplace_back(std::make_unique<GlMesh>(mesh, m_InstanceBuffer));
+			(is_guaranteed_transparent(mesh.Material()) ? mGuaranteedTransparentMeshes : mOpaqueMeshes).emplace_back(std::make_unique<GlMesh>(mesh, mInstanceBuffer));
 		}
 	}
 
 
-	void GlMeshGroup::SortMeshes()
+
+	void GlMeshGroup::sort_meshes()
 	{
-		std::ranges::for_each(m_OpaqueMeshes, [this](std::unique_ptr<GlMesh>& glMesh)
+		std::ranges::for_each(mOpaqueMeshes, [this](std::unique_ptr<GlMesh>& glMesh)
 		{
-			if (FullyTransparent(glMesh->Material()))
+			if (is_guaranteed_transparent(glMesh->get_material()))
 			{
-				m_FullyTransparentMeshes.emplace_back(std::move(glMesh));
+				mGuaranteedTransparentMeshes.emplace_back(std::move(glMesh));
 			}
-			else if (MaybeTransparent(glMesh->Material()))
+			else if (is_potentially_transparent(glMesh->get_material()))
 			{
-				m_MaybeTransparentMeshes.emplace_back(std::move(glMesh));
+				mPotentiallyTransparentMeshes.emplace_back(std::move(glMesh));
 			}
 		});
 
-		std::erase_if(m_OpaqueMeshes, [](std::unique_ptr<GlMesh> const& glMesh)
+		std::erase_if(mOpaqueMeshes, [](std::unique_ptr<GlMesh> const& glMesh)
 		{
 			return !glMesh;
 		});
 
-		std::ranges::for_each(m_MaybeTransparentMeshes, [this](std::unique_ptr<GlMesh>& glMesh)
+		std::ranges::for_each(mPotentiallyTransparentMeshes, [this](std::unique_ptr<GlMesh>& glMesh)
 		{
-			if (!MaybeTransparent(glMesh->Material()))
+			if (!is_potentially_transparent(glMesh->get_material()))
 			{
-				(FullyTransparent(glMesh->Material()) ? m_FullyTransparentMeshes : m_OpaqueMeshes).emplace_back(std::move(glMesh));
+				(is_guaranteed_transparent(glMesh->get_material()) ? mGuaranteedTransparentMeshes : mOpaqueMeshes).emplace_back(std::move(glMesh));
 			}
 		});
 
-		std::erase_if(m_MaybeTransparentMeshes, [](std::unique_ptr<GlMesh> const& glMesh)
+		std::erase_if(mPotentiallyTransparentMeshes, [](std::unique_ptr<GlMesh> const& glMesh)
 		{
 			return !glMesh;
 		});
 
-		std::ranges::for_each(m_FullyTransparentMeshes, [this](std::unique_ptr<GlMesh>& glMesh)
+		std::ranges::for_each(mGuaranteedTransparentMeshes, [this](std::unique_ptr<GlMesh>& glMesh)
 		{
-			if (!FullyTransparent(glMesh->Material()))
+			if (!is_guaranteed_transparent(glMesh->get_material()))
 			{
-				(MaybeTransparent(glMesh->Material()) ? m_MaybeTransparentMeshes : m_OpaqueMeshes).emplace_back(std::move(glMesh));
+				(is_potentially_transparent(glMesh->get_material()) ? mPotentiallyTransparentMeshes : mOpaqueMeshes).emplace_back(std::move(glMesh));
 			}
 		});
 
-		std::erase_if(m_FullyTransparentMeshes, [](std::unique_ptr<GlMesh> const& glMesh)
+		std::erase_if(mGuaranteedTransparentMeshes, [](std::unique_ptr<GlMesh> const& glMesh)
 		{
 			return !glMesh;
 		});
 	}
 
 
-	bool GlMeshGroup::FullyTransparent(std::shared_ptr<Material const> const& mat)
+
+	bool GlMeshGroup::is_guaranteed_transparent(std::shared_ptr<Material const> const& mat)
 	{
 		return mat->Opacity < 1.f;
 	}
 
 
-	bool GlMeshGroup::MaybeTransparent(std::shared_ptr<Material const> const& mat)
+
+	bool GlMeshGroup::is_potentially_transparent(std::shared_ptr<Material const> const& mat)
 	{
 		return mat->OpacityMap != nullptr;
 	}

@@ -10,125 +10,135 @@
 namespace leopph::internal
 {
 	GlSkyboxImpl::GlSkyboxImpl(std::filesystem::path allFilePaths) :
-		m_AllPaths{std::move(allFilePaths)},
-		m_VertexArray{},
-		m_VertexBuffer{},
-		m_IndexBuffer{},
-		m_Cubemap{}
+		mAllPaths{std::move(allFilePaths)},
+		mVao{},
+		mVbo{},
+		mIbo{},
+		mCubemap{}
 	{
-		auto allFilePathStrings{m_AllPaths.string()};
+		auto allFilePathStrings{mAllPaths.string()};
 		for (std::size_t separatorPos, faceIndex{0}; (separatorPos = allFilePathStrings.find(PATH_SEPARATOR)) != std::string::npos; allFilePathStrings.erase(0, separatorPos + PATH_SEPARATOR.length()), ++faceIndex)
 		{
-			m_Paths.at(faceIndex) = allFilePathStrings.substr(0, separatorPos);
+			mPaths.at(faceIndex) = allFilePathStrings.substr(0, separatorPos);
 		}
 
-		m_Paths.at(5) = std::filesystem::path{allFilePathStrings};
+		mPaths.at(5) = std::filesystem::path{allFilePathStrings};
 
 		std::array<Image, 6> faces;
 
 		for (std::size_t i = 0; i < 6; i++)
 		{
-			faces[i] = Image{m_Paths[i], ColorEncoding::SRGB};
+			faces[i] = Image{mPaths[i], ColorEncoding::SRGB};
 			if (faces[i].Empty())
 			{
-				auto const errMsg{"Skybox face [" + m_Paths[i].string() + "] could not be loaded."};
+				auto const errMsg{"Skybox face [" + mPaths[i].string() + "] could not be loaded."};
 				Logger::Instance().Error(errMsg);
 			}
 		}
 
-		glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &m_Cubemap);
-		glTextureStorage2D(m_Cubemap, 1, GL_SRGB8, faces.front().Width(), faces.front().Height());
+		glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &mCubemap);
+		glTextureStorage2D(mCubemap, 1, GL_SRGB8, faces.front().Width(), faces.front().Height());
 		for (std::size_t i = 0; i < 6; i++)
 		{
-			glTextureSubImage3D(m_Cubemap, 0, 0, 0, static_cast<GLint>(i), faces[i].Width(), faces[i].Height(), 1, GL_RGB, GL_UNSIGNED_BYTE, faces[i].Data().data());
+			glTextureSubImage3D(mCubemap, 0, 0, 0, static_cast<GLint>(i), faces[i].Width(), faces[i].Height(), 1, GL_RGB, GL_UNSIGNED_BYTE, faces[i].Data().data());
 		}
 
-		glTextureParameteri(m_Cubemap, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTextureParameteri(m_Cubemap, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTextureParameteri(mCubemap, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTextureParameteri(mCubemap, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 		// Setup vertex buffer
-		glCreateBuffers(1, &m_VertexBuffer);
-		glNamedBufferStorage(m_VertexBuffer, CUBE_VERTICES.size() * sizeof(decltype(CUBE_VERTICES)::value_type), CUBE_VERTICES.data(), 0);
+		glCreateBuffers(1, &mVbo);
+		glNamedBufferStorage(mVbo, CUBE_VERTICES.size() * sizeof(decltype(CUBE_VERTICES)::value_type), CUBE_VERTICES.data(), 0);
 
 		// Setup index buffer
-		glCreateBuffers(1, &m_IndexBuffer);
-		glNamedBufferStorage(m_IndexBuffer, CUBE_INDICES.size() * sizeof(decltype(CUBE_INDICES)::value_type), CUBE_INDICES.data(), 0);
+		glCreateBuffers(1, &mIbo);
+		glNamedBufferStorage(mIbo, CUBE_INDICES.size() * sizeof(decltype(CUBE_INDICES)::value_type), CUBE_INDICES.data(), 0);
 
 		// Setup vertex array
-		glCreateVertexArrays(1, &m_VertexArray);
-		glVertexArrayVertexBuffer(m_VertexArray, 0, m_VertexBuffer, 0, 3 * sizeof(decltype(CUBE_VERTICES)::value_type));
-		glVertexArrayElementBuffer(m_VertexArray, m_IndexBuffer);
+		glCreateVertexArrays(1, &mVao);
+		glVertexArrayVertexBuffer(mVao, 0, mVbo, 0, 3 * sizeof(decltype(CUBE_VERTICES)::value_type));
+		glVertexArrayElementBuffer(mVao, mIbo);
 
 		// Position attribute
-		glVertexArrayAttribFormat(m_VertexArray, 0, 3, GL_FLOAT, GL_FALSE, 0);
-		glVertexArrayAttribBinding(m_VertexArray, 0, 0);
-		glEnableVertexArrayAttrib(m_VertexArray, 0);
+		glVertexArrayAttribFormat(mVao, 0, 3, GL_FLOAT, GL_FALSE, 0);
+		glVertexArrayAttribBinding(mVao, 0, 0);
+		glEnableVertexArrayAttrib(mVao, 0);
 	}
 
 
-	GlSkyboxImpl::~GlSkyboxImpl() noexcept
+
+	GlSkyboxImpl::~GlSkyboxImpl()
 	{
-		glDeleteVertexArrays(1, &m_VertexArray);
-		glDeleteBuffers(1, &m_VertexBuffer);
-		glDeleteBuffers(1, &m_IndexBuffer);
-		glDeleteTextures(1, &m_Cubemap);
+		glDeleteVertexArrays(1, &mVao);
+		glDeleteBuffers(1, &mVbo);
+		glDeleteBuffers(1, &mIbo);
+		glDeleteTextures(1, &mCubemap);
 	}
 
 
-	void GlSkyboxImpl::Draw(ShaderFamily& shader) const
+
+	void GlSkyboxImpl::draw(gsl::not_null<ShaderProgram const*> const shader) const
 	{
-		glBindTextureUnit(0, m_Cubemap);
-		shader.SetUniform("u_CubeMap", 0);
+		glBindTextureUnit(0, mCubemap);
+		shader->set_uniform("u_CubeMap", 0);
 
 		glDisable(GL_CULL_FACE);
-		glBindVertexArray(m_VertexArray);
+		glBindVertexArray(mVao);
 		glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(CUBE_INDICES.size()), GL_UNSIGNED_INT, nullptr);
 	}
 
 
-	std::filesystem::path const& GlSkyboxImpl::LeftPath() const noexcept
+
+	std::filesystem::path const& GlSkyboxImpl::left_path() const
 	{
-		return m_Paths[LEFT_PATH_IND];
+		return mPaths[LEFT_PATH_IND];
 	}
 
 
-	std::filesystem::path const& GlSkyboxImpl::RightPath() const noexcept
+
+	std::filesystem::path const& GlSkyboxImpl::right_path() const
 	{
-		return m_Paths[RIGHT_PATH_IND];
+		return mPaths[RIGHT_PATH_IND];
 	}
 
 
-	std::filesystem::path const& GlSkyboxImpl::TopPath() const noexcept
+
+	std::filesystem::path const& GlSkyboxImpl::top_path() const
 	{
-		return m_Paths[TOP_PATH_IND];
+		return mPaths[TOP_PATH_IND];
 	}
 
 
-	std::filesystem::path const& GlSkyboxImpl::BottomPath() const noexcept
+
+	std::filesystem::path const& GlSkyboxImpl::bottom_path() const
 	{
-		return m_Paths[BOT_PATH_IND];
+		return mPaths[BOT_PATH_IND];
 	}
 
 
-	std::filesystem::path const& GlSkyboxImpl::FrontPath() const noexcept
+
+	std::filesystem::path const& GlSkyboxImpl::front_path() const
 	{
-		return m_Paths[FRONT_PATH_IND];
+		return mPaths[FRONT_PATH_IND];
 	}
 
 
-	std::filesystem::path const& GlSkyboxImpl::BackPath() const noexcept
+
+	std::filesystem::path const& GlSkyboxImpl::back_path() const
 	{
-		return m_Paths[BACK_PATH_IND];
+		return mPaths[BACK_PATH_IND];
 	}
 
 
-	std::filesystem::path const& GlSkyboxImpl::AllPaths() const noexcept
+
+	std::filesystem::path const& GlSkyboxImpl::AllPaths() const
 	{
-		return m_AllPaths;
+		return mAllPaths;
 	}
 
 
-	std::filesystem::path GlSkyboxImpl::BuildAllPaths(std::filesystem::path const& left, std::filesystem::path const& right, std::filesystem::path const& top, std::filesystem::path const& bottom, std::filesystem::path const& front, std::filesystem::path const& back)
+
+	std::filesystem::path GlSkyboxImpl::build_all_paths(std::filesystem::path const& left, std::filesystem::path const& right, std::filesystem::path const& top, std::filesystem::path const& bottom, std::filesystem::path const& front, std::filesystem::path const& back)
 	{
 		return right.string()
 		            .append(PATH_SEPARATOR)
@@ -144,22 +154,26 @@ namespace leopph::internal
 	}
 
 
-	void GlSkyboxImpl::RegisterHandle(Skybox const* const handle)
+
+	void GlSkyboxImpl::register_handle(Skybox const* const handle)
 	{
-		m_Handles.push_back(handle);
+		mHandles.push_back(handle);
 	}
 
 
-	void GlSkyboxImpl::UnregisterHandle(Skybox const* const handle)
+
+	void GlSkyboxImpl::unregister_handle(Skybox const* const handle)
 	{
-		std::erase(m_Handles, handle);
+		std::erase(mHandles, handle);
 	}
 
 
-	u64 GlSkyboxImpl::NumHandles() const
+
+	u64 GlSkyboxImpl::num_handles() const
 	{
-		return m_Handles.size();
+		return mHandles.size();
 	}
+
 
 
 	std::string GlSkyboxImpl::PATH_SEPARATOR{';'};

@@ -4,25 +4,27 @@
 #include "GlCore.hpp"
 #include "GlVertexArrayObject.hpp"
 #include "Mesh.hpp"
-#include "rendering/shaders/ShaderFamily.hpp"
+#include "rendering/shaders/ShaderProgram.hpp"
+
+#include <gsl/pointers>
 
 
 namespace leopph::internal
 {
-	// Covers and renders a Mesh.
 	class GlMesh final
 	{
 		public:
 			// instanceBuffer must be a valid buffer object.
 			GlMesh(Mesh const& mesh, GLuint instanceBuffer);
 
-			void DrawWithMaterial(ShaderFamily& shader, GLuint nextFreeTextureUnit, GLsizei instanceCount) const;
 
-			void DrawWithoutMaterial(GLsizei instanceCount) const;
+			void draw_with_material(gsl::not_null<ShaderProgram const*> shader, GLuint nextFreeTextureUnit, GLsizei instanceCount) const;
+			void draw_without_material(GLsizei instanceCount) const;
 
-			// Returns the Material used for rendering.
+
 			[[nodiscard]]
-			std::shared_ptr<Material const> const& Material() const noexcept;
+			std::shared_ptr<Material const> const& get_material() const noexcept;
+
 
 			GlMesh(GlMesh const& other) = delete;
 			GlMesh& operator=(GlMesh const& other) = delete;
@@ -32,11 +34,12 @@ namespace leopph::internal
 
 			~GlMesh() noexcept = default;
 
+
 		private:
-			GlVertexArrayObject m_VertexArray{};
-			GlBufferObject m_VertexBuffer{};
-			GlBufferObject m_IndexBuffer{};
-			GLsizei m_NumIndices;
-			std::shared_ptr<leopph::Material const> m_Material;
+			GlVertexArrayObject mVao{};
+			GlBufferObject mVbo{};
+			GlBufferObject mIbo{};
+			GLsizei mNumIndices;
+			std::shared_ptr<Material const> mMaterial;
 	};
 }

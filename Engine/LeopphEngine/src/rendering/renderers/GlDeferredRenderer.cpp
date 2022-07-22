@@ -16,7 +16,7 @@ namespace leopph::internal
 {
 	void GlDeferredRenderer::Render()
 	{
-		Renderer::Render();
+		/*Renderer::Render();
 
 		if (!GetMainCamera())
 		{
@@ -56,8 +56,8 @@ namespace leopph::internal
 				{
 					if (castsShadow)
 					{
-						renderable->SetInstanceData(instances);
-						renderable->DrawWithoutMaterial(false);
+						renderable->set_instance_data(instances);
+						renderable->draw_without_material(false);
 					}
 				}
 			}
@@ -94,8 +94,8 @@ namespace leopph::internal
 				{
 					if (castsShadow)
 					{
-						renderable->SetInstanceData(instances);
-						renderable->DrawWithoutMaterial(false);
+						renderable->set_instance_data(instances);
+						renderable->draw_without_material(false);
 					}
 				}
 			}
@@ -152,8 +152,8 @@ namespace leopph::internal
 					{
 						if (castsShadow)
 						{
-							renderable->SetInstanceData(instances);
-							renderable->DrawWithoutMaterial(false);
+							renderable->set_instance_data(instances);
+							renderable->draw_without_material(false);
 						}
 					}
 				}
@@ -189,8 +189,8 @@ namespace leopph::internal
 
 		for (auto const& [renderable, instances, castsShadow] : renderNodes)
 		{
-			renderable->SetInstanceData(instances);
-			renderable->DrawWithMaterial(m_GeometryShader, 0, false);
+			renderable->set_instance_data(instances);
+			renderable->draw_with_material(m_GeometryShader, 0, false);
 		}
 
 
@@ -439,7 +439,7 @@ namespace leopph::internal
 
 		for (auto const& [renderable, instances, castsShadow] : renderNodes)
 		{
-			renderable->SetInstanceData(instances);
+			renderable->set_instance_data(instances);
 			renderable->DrawWithMaterial(transpShader, 0, true);
 		}
 

@@ -3,6 +3,7 @@
 #include "Camera.hpp"
 #include "Entity.hpp"
 #include "Logger.hpp"
+#include "Logger.hpp"
 #include "Util.hpp"
 
 #include <utility>
@@ -31,7 +32,9 @@ namespace leopph::internal
 		auto const camViewProjMatInv = camViewProjMat.Inverse();
 
 
+
 		// Resize lighting UBO if the light configuration changed since the previous frame
+
 		auto const lightingUboDataSize = [this]
 		{
 			auto ret = sizeof(UboGenericData);
@@ -53,7 +56,9 @@ namespace leopph::internal
 		}
 
 
-		// Write transformations to transformation UBO
+
+		// Write matrices to transformation UBO
+
 		auto* const transformUbo = reinterpret_cast<Matrix4*>(m_TransformUbos[m_PerFrameUboInd].mapping);
 		transformUbo[0] = camViewMat;
 		transformUbo[1] = camViewMatInv;
@@ -63,7 +68,9 @@ namespace leopph::internal
 		transformUbo[5] = camViewProjMatInv;
 
 
-		// WRITE DATA TO LIGHTING UBO
+
+		// Write lighting info to lighting ubo
+
 		auto* const lightingUbo = m_LightingUbos[m_PerFrameUboInd].mapping;
 
 		UboGenericData genericData;
@@ -114,22 +121,24 @@ namespace leopph::internal
 			}
 		}
 
+
+
 		// BIND UBOS
 		glBindBufferRange(GL_UNIFORM_BUFFER, 0, m_TransformUbos[m_PerFrameUboInd].name, 0, TRANSFORM_UBO_SIZE);
-		glBindBufferRange(GL_UNIFORM_BUFFER, 1, m_LightingUbos[m_PerFrameUboInd].name, 0, ClampCast<GLsizei>(lightingUboDataSize));
+		glBindBufferRange(GL_UNIFORM_BUFFER, 1, m_LightingUbos[m_PerFrameUboInd].name, 0, clamp_cast<GLsizei>(lightingUboDataSize));
 		m_PerFrameUboInd = (m_PerFrameUboInd + 1) % m_LightingUbos.size();
 
 
-		// SET PIPELINE STATE FOR OPAQUE PASS
+
+		// OPAQUE PASS
+
+		// Set pipeline state
 		glDisable(GL_BLEND);
 		glEnable(GL_DEPTH_TEST);
 		glDepthFunc(GL_LEQUAL);
 		glDepthMask(GL_TRUE);
 		glDisable(GL_STENCIL_TEST);
 		glViewport(0, 0, GetRenderRes().Width, GetRenderRes().Height);
-
-
-		// OPAQUE PASS
 
 		GLfloat constexpr clearColor[]{0, 0, 0, 1};
 		GLfloat constexpr clearDepth{1};
@@ -141,52 +150,58 @@ namespace leopph::internal
 		{
 			if ((*dirLight)->CastsShadow())
 			{
-				ShaderFamily::SetGlobalOption("DIRLIGHT_NO_SHADOW", false);
-				ShaderFamily::SetGlobalOption("NUM_DIRLIGHT_SHADOW_CASCADE", 3);
+				ShaderFamily::set_global_option("DIRLIGHT_NO_SHADOW", false);
+				ShaderFamily::set_global_option("NUM_DIRLIGHT_SHADOW_CASCADE", 3);
 			}
 			else
 			{
-				ShaderFamily::SetGlobalOption("DIRLIGHT_NO_SHADOW", true);
-				ShaderFamily::SetGlobalOption("NUM_DIRLIGHT_SHADOW_CASCADE", 0);
+				ShaderFamily::set_global_option("DIRLIGHT_NO_SHADOW", true);
+				ShaderFamily::set_global_option("NUM_DIRLIGHT_SHADOW_CASCADE", 0);
 			}
 		}
 
-		ShaderFamily::SetGlobalOption("NUM_SPOT_NO_SHADOW", ClampCast<u8>(GetNonCastingSpotLights().size()));
-		ShaderFamily::SetGlobalOption("NUM_SPOT_SHADOW", ClampCast<u8>(GetCastingSpotLights().size()));
-		ShaderFamily::SetGlobalOption("NUM_POINT_NO_SHADOW", ClampCast<u8>(GetNonCastingPointLights().size()));
-		ShaderFamily::SetGlobalOption("NUM_POINT_SHADOW", ClampCast<u8>(GetCastingPointLights().size()));
-		ShaderFamily::SetGlobalOption("TRANSPARENT", false);
-		m_ForwardObjectShader.UseCurrentPermutation();
+		ShaderFamily::set_global_option("NUM_SPOT_NO_SHADOW", clamp_cast<u8>(GetNonCastingSpotLights().size()));
+		ShaderFamily::set_global_option("NUM_SPOT_SHADOW", clamp_cast<u8>(GetCastingSpotLights().size()));
+		ShaderFamily::set_global_option("NUM_POINT_NO_SHADOW", clamp_cast<u8>(GetNonCastingPointLights().size()));
+		ShaderFamily::set_global_option("NUM_POINT_SHADOW", clamp_cast<u8>(GetCastingPointLights().size()));
+		ShaderFamily::set_global_option("TRANSPARENT", false);
 
-		for (auto const& [renderable, instances, castsShadow] : renderNodes)
+		if (auto const* const shader = m_ForwardObjectShader.get_current_permutation())
 		{
-			renderable->SetInstanceData(instances);
-			renderable->DrawWithMaterial(m_ForwardObjectShader, 0, false);
+			shader->use();
+
+			for (auto const& [renderable, instances, castsShadow] : renderNodes)
+			{
+				renderable->set_instance_data(instances);
+				renderable->draw_with_material(shader, 0, false);
+			}
 		}
+
 
 
 		// SKYBOX PASS
 		if (auto const& background = (*GetMainCamera())->Background(); std::holds_alternative<Skybox>(background))
 		{
-			// SET PIPELINE STATE
+			// Set pipeline state
 			glDepthMask(GL_FALSE);
 
-			m_SkyboxShader.UseCurrentPermutation();
-
-			m_SkyboxShader.SetUniform("u_ViewProjMat", static_cast<Matrix4>(static_cast<Matrix3>(camViewMat)) * camProjMat);
-
-			CreateOrGetSkyboxImpl(std::get<Skybox>(background).AllPaths())->Draw(m_SkyboxShader);
+			if (auto const shader = m_SkyboxShader.get_current_permutation())
+			{
+				shader->use();
+				shader->set_uniform("u_ViewProjMat", static_cast<Matrix4>(static_cast<Matrix3>(camViewMat)) * camProjMat);
+				CreateOrGetSkyboxImpl(std::get<Skybox>(background).AllPaths())->draw(shader);
+			}
 		}
 
 
-		// SET TRANSPARENT PASS PIPELINE STATE
+
+		// TRANSPARENT PASS
+
+		// Set pipeline state
 		glEnable(GL_BLEND);
 		glBlendFunci(0, GL_ONE, GL_ONE);
 		glBlendFunci(1, GL_ZERO, GL_ONE_MINUS_SRC_COLOR);
 		glDepthMask(GL_FALSE);
-
-
-		// TRANSPARENT PASS
 
 		GLfloat constexpr clearAccum[]{0, 0, 0, 0};
 		GLfloat constexpr clearReveal{1};
@@ -194,49 +209,60 @@ namespace leopph::internal
 		glClearNamedFramebufferfv(m_TransparencyBuffer.framebuffer, GL_COLOR, 1, &clearReveal);
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_TransparencyBuffer.framebuffer);
 
-		ShaderFamily::SetGlobalOption("TRANSPARENT", true);
-		m_ForwardObjectShader.UseCurrentPermutation();
+		ShaderFamily::set_global_option("TRANSPARENT", true);
 
-		for (auto const& [renderable, instances, castsShadow] : renderNodes)
+		if (auto const* const shader = m_ForwardObjectShader.get_current_permutation())
 		{
-			renderable->SetInstanceData(instances);
-			renderable->DrawWithMaterial(m_ForwardObjectShader, 0, true);
+			shader->use();
+
+			for (auto const& [renderable, instances, castsShadow] : renderNodes)
+			{
+				renderable->set_instance_data(instances);
+				renderable->draw_with_material(shader, 0, true);
+			}
 		}
 
 
-		// SET COMPOSITE PASS PIPELINE STATE
+		// COMPOSITE PASS
+
+		// Set pipeline state
 		glBlendFunc(GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA);
 		glDisable(GL_DEPTH_TEST);
 
-
-		// COMPOSITE PASS
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_PingPongBuffers[0].framebuffer);
 
 		glBindTextureUnit(0, m_TransparencyBuffer.accumAttachment);
 		glBindTextureUnit(1, m_TransparencyBuffer.revealAttachment);
 
-		m_TranspCompositeShader.UseCurrentPermutation();
-		DrawScreenQuad();
+		if (auto const* const shader = m_TranspCompositeShader.get_current_permutation())
+		{
+			shader->use();
+			DrawScreenQuad();
+		}
 
-
-		// SET GAMMA PASS PIPELINE STATE
-		glDisable(GL_BLEND);
 
 
 		// GAMMA CORRECTION PASS
-		m_GammaCorrectShader.UseCurrentPermutation();
 
-		m_GammaCorrectShader.SetUniform("u_GammaInverse", 1.f / GetGamma());
+		// Set pipeline state
+		glDisable(GL_BLEND);
 
 		glBindTextureUnit(0, m_PingPongBuffers[0].colorAttachment);
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_PingPongBuffers[1].framebuffer);
 
-		DrawScreenQuad();
+		if (auto const* const shader = m_GammaCorrectShader.get_current_permutation())
+		{
+			shader->use();
+			shader->set_uniform("u_GammaInverse", 1.f / GetGamma());
+			DrawScreenQuad();
+		}
+
 
 
 		// COPY TO DEFAULT FRAMEBUFFER
 		glBlitNamedFramebuffer(m_PingPongBuffers[1].framebuffer, 0, 0, 0, GetRenderRes().Width, GetRenderRes().Height, 0, 0, GetRenderRes().Width, GetRenderRes().Height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
 	}
+
 
 
 	void GlForwardRenderer::CreateUbo(MappedBuffer& ubo, u64 const size)
@@ -255,6 +281,7 @@ namespace leopph::internal
 		}
 		#endif
 	}
+
 
 
 	void GlForwardRenderer::DeleteUbo(MappedBuffer const& ubo)

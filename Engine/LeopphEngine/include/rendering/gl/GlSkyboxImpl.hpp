@@ -3,7 +3,9 @@
 #include "GlCore.hpp"
 #include "Skybox.hpp"
 #include "Types.hpp"
-#include "rendering/shaders/ShaderFamily.hpp"
+#include "rendering/shaders/ShaderProgram.hpp"
+
+#include <gsl/pointers>
 
 #include <array>
 #include <filesystem>
@@ -16,27 +18,31 @@ namespace leopph::internal
 	class GlSkyboxImpl
 	{
 		public:
-			// Param is in the format that BuildAllPaths generates.
+			// Param is in the format that build_all_paths generates.
 			explicit GlSkyboxImpl(std::filesystem::path allFilePaths);
 
-			void Draw(ShaderFamily& shader) const;
 
-			[[nodiscard]] std::filesystem::path const& LeftPath() const noexcept;
-			[[nodiscard]] std::filesystem::path const& RightPath() const noexcept;
-			[[nodiscard]] std::filesystem::path const& TopPath() const noexcept;
-			[[nodiscard]] std::filesystem::path const& BottomPath() const noexcept;
-			[[nodiscard]] std::filesystem::path const& FrontPath() const noexcept;
-			[[nodiscard]] std::filesystem::path const& BackPath() const noexcept;
+			void draw(gsl::not_null<ShaderProgram const*> shader) const;
 
-			// All paths encoded in the format of BuildAllPaths.
-			[[nodiscard]] std::filesystem::path const& AllPaths() const noexcept;
+
+			[[nodiscard]] std::filesystem::path const& left_path() const;
+			[[nodiscard]] std::filesystem::path const& right_path() const;
+			[[nodiscard]] std::filesystem::path const& top_path() const;
+			[[nodiscard]] std::filesystem::path const& bottom_path() const;
+			[[nodiscard]] std::filesystem::path const& front_path() const;
+			[[nodiscard]] std::filesystem::path const& back_path() const;
+
+			// All paths encoded in the format of build_all_paths.
+			[[nodiscard]] std::filesystem::path const& AllPaths() const;
 
 			// Encode all paths into one path.
-			[[nodiscard]] static std::filesystem::path BuildAllPaths(std::filesystem::path const& left, std::filesystem::path const& right, std::filesystem::path const& top, std::filesystem::path const& bottom, std::filesystem::path const& front, std::filesystem::path const& back);
+			[[nodiscard]] static std::filesystem::path build_all_paths(std::filesystem::path const& left, std::filesystem::path const& right, std::filesystem::path const& top, std::filesystem::path const& bottom, std::filesystem::path const& front, std::filesystem::path const& back);
 
-			void RegisterHandle(Skybox const* handle);
-			void UnregisterHandle(Skybox const* handle);
-			u64 NumHandles() const;
+
+			void register_handle(Skybox const* handle);
+			void unregister_handle(Skybox const* handle);
+			u64 num_handles() const;
+
 
 			GlSkyboxImpl(GlSkyboxImpl const& other) = delete;
 			void operator=(GlSkyboxImpl const& other) = delete;
@@ -44,20 +50,19 @@ namespace leopph::internal
 			GlSkyboxImpl(GlSkyboxImpl&& other) = delete;
 			void operator=(GlSkyboxImpl&& other) = delete;
 
-			~GlSkyboxImpl() noexcept;
+			~GlSkyboxImpl();
+
 
 		private:
-			std::filesystem::path m_AllPaths;
-			std::array<std::filesystem::path, 6> m_Paths;
-			GLuint m_VertexArray;
-			GLuint m_VertexBuffer;
-			GLuint m_IndexBuffer;
-			GLuint m_Cubemap;
+			std::filesystem::path mAllPaths;
+			std::array<std::filesystem::path, 6> mPaths;
+			GLuint mVao;
+			GLuint mVbo;
+			GLuint mIbo;
+			GLuint mCubemap;
 
-			// List of all the Skybox handles referring this impl.
-			std::vector<Skybox const*> m_Handles;
+			std::vector<Skybox const*> mHandles;
 
-			// Used for encoding/decoding paths.
 			static std::string PATH_SEPARATOR;
 
 			static u32 const LEFT_PATH_IND;

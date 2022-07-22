@@ -8,6 +8,8 @@
 #include "rendering/RenderObject.hpp"
 #include "rendering/shaders/ShaderFamily.hpp"
 
+#include <gsl/pointers>
+
 #include <memory>
 #include <span>
 #include <vector>
@@ -15,40 +17,32 @@
 
 namespace leopph::internal
 {
-	// Covers and renders a MeshGroup using multiple OpenGlMeshes.
-	class GlMeshGroup : public RenderObject
+	class GlMeshGroup final : public RenderObject
 	{
 		public:
 			explicit GlMeshGroup(MeshGroup meshGroup);
 
-			void DrawWithMaterial(ShaderFamily& shader, GLuint nextFreeTextureUnit, bool transparent) const;
 
-			void DrawWithoutMaterial(bool transparent) const;
+			void draw_with_material(gsl::not_null<ShaderProgram const*> shader, GLuint nextFreeTextureUnit, bool transparent) const;
+			void draw_without_material(bool transparent) const;
 
-			// Loads the passed matrices into the instance buffer. Matrices must be in column major storage.
-			void SetInstanceData(std::span<std::pair<Matrix4, Matrix4> const> instMats);
 
-			// Returns the MeshGroup that the GlMeshGroup currently mirrors.
-			// If the MeshGroup changed after the construction of this object, the internal render buffers may not contain up to date data.
-			// Use UpdateMeshData to reparse.
-			[[nodiscard]]
-			MeshGroup const& MeshGroup() const;
+			// Matrices must be in column major storage.
+			void set_instance_data(std::span<std::pair<Matrix4, Matrix4> const> instMats);
 
-			// Sets the MeshGroup that the GlMeshGroup renders.
-			// This automatically updates the internal render buffers which is an expensive operation.
-			void MeshGroup(leopph::MeshGroup meshGroup);
 
-			// Reparses the data in the MeshGroup and recreates the internal representation of the Meshes.
-			// This is an expensive operation.
-			void UpdateMeshData();
+			[[nodiscard]] MeshGroup const& get_mesh_group() const;
+			void set_mesh_group(MeshGroup meshGroup);
+			void update_mesh_data();
 
-			// Separates transparent and opaque meshes.
-			void SortMeshes();
+
+			void sort_meshes();
+
 
 		private:
-			[[nodiscard]] static bool FullyTransparent(std::shared_ptr<Material const> const& mat);
+			[[nodiscard]] static bool is_guaranteed_transparent(std::shared_ptr<Material const> const& mat);
+			[[nodiscard]] static bool is_potentially_transparent(std::shared_ptr<Material const> const& mat);
 
-			[[nodiscard]] static bool MaybeTransparent(std::shared_ptr<Material const> const& mat);
 
 		public:
 			GlMeshGroup(GlMeshGroup const& other) = delete;
@@ -59,13 +53,14 @@ namespace leopph::internal
 
 			~GlMeshGroup() noexcept override = default;
 
+
 		private:
-			std::vector<std::unique_ptr<GlMesh>> m_OpaqueMeshes;
-			std::vector<std::unique_ptr<GlMesh>> m_MaybeTransparentMeshes;
-			std::vector<std::unique_ptr<GlMesh>> m_FullyTransparentMeshes;
-			leopph::MeshGroup m_MeshGroup;
-			GlBufferObject m_InstanceBuffer;
-			GLsizei m_InstanceBufferSize{1};
-			GLsizei m_NumInstances{0};
+			std::vector<std::unique_ptr<GlMesh>> mOpaqueMeshes;
+			std::vector<std::unique_ptr<GlMesh>> mPotentiallyTransparentMeshes;
+			std::vector<std::unique_ptr<GlMesh>> mGuaranteedTransparentMeshes;
+			MeshGroup mMeshGroup;
+			GlBufferObject mInstanceBuffer;
+			GLsizei mInstanceBufferCapacity{1};	// The maximum number of elements the buffer can hold
+			GLsizei mInstanceBufferSize{0};		// The number of elements in the buffer
 	};
 }

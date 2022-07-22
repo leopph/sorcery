@@ -62,6 +62,8 @@
     <ClCompile Include="src\rendering\shaders\ShaderProcessing.cpp" />
     <ClCompile Include="src\rendering\gl\GlBufferObject.cpp" />
     <ClCompile Include="src\rendering\gl\GlVertexArrayObject.cpp" />
+    <ClCompile Include="src\rendering\shaders\ShaderProgram.cpp" />
+    <ClCompile Include="src\rendering\Material.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\DataManager.hpp" />
@@ -154,6 +156,7 @@
     <ClInclude Include="..\include\Vertex.hpp" />
     <ClInclude Include="..\include\Window.hpp" />
     <ClInclude Include="..\include\WindowEvent.hpp" />
+    <ClInclude Include="include\rendering\shaders\ShaderProgram.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\rendering\shaders\glsl\Lighting.glsl" />

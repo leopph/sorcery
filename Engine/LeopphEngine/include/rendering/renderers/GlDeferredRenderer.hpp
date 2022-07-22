@@ -48,7 +48,7 @@ namespace leopph::internal
 
 			std::array<GLuint, 3> m_Ubos;
 
-			ShaderFamily m_GeometryShader{MakeShaderFamily("C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/GPass.vert", {}, "C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/GPass.frag")};
-			ShaderFamily m_LightShader{MakeShaderFamily("C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/Pos2DPassthrough.vert", {}, "C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/LightPass.frag")};
+			ShaderFamily m_GeometryShader{make_shader_family("C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/GPass.vert", {}, "C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/GPass.frag")};
+			ShaderFamily m_LightShader{make_shader_family("C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/Pos2DPassthrough.vert", {}, "C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/LightPass.frag")};
 	};
 }

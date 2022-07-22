@@ -89,7 +89,7 @@ namespace leopph::internal
 
 		for (auto const& glMeshGroup : m_RenderObjects)
 		{
-			glMeshGroup->SortMeshes();
+			glMeshGroup->sort_meshes();
 			auto instancedShadow = false;
 
 			for (auto const renderNodes = glMeshGroup->ExtractRenderInstanceData(); auto const& [worldTransform, normalTransform, isInstanced, castsShadow] : renderNodes)
@@ -386,13 +386,13 @@ namespace leopph::internal
 
 	GlRenderer::GlRenderer()
 	{
-		ShaderFamily::AddGlobalOption("DIRLIGHT_NO_SHADOW", false, true);
-		ShaderFamily::AddGlobalOption("NUM_DIRLIGHT_SHADOW_CASCADE", 0, 3);
-		ShaderFamily::AddGlobalOption("NUM_SPOT_NO_SHADOW", 0, 8);
-		ShaderFamily::AddGlobalOption("NUM_SPOT_SHADOW", 0, 8);
-		ShaderFamily::AddGlobalOption("NUM_POINT_NO_SHADOW", 0, 8);
-		ShaderFamily::AddGlobalOption("NUM_POINT_SHADOW", 0, 8);
-		ShaderFamily::AddGlobalOption("TRANSPARENT", false, true);
+		ShaderFamily::add_global_option("DIRLIGHT_NO_SHADOW", false, true);
+		ShaderFamily::add_global_option("NUM_DIRLIGHT_SHADOW_CASCADE", 0, 3);
+		ShaderFamily::add_global_option("NUM_SPOT_NO_SHADOW", 0, 8);
+		ShaderFamily::add_global_option("NUM_SPOT_SHADOW", 0, 8);
+		ShaderFamily::add_global_option("NUM_POINT_NO_SHADOW", 0, 8);
+		ShaderFamily::add_global_option("NUM_POINT_SHADOW", 0, 8);
+		ShaderFamily::add_global_option("TRANSPARENT", false, true);
 
 		glDepthFunc(GL_LEQUAL);
 		glFrontFace(GL_CCW);
