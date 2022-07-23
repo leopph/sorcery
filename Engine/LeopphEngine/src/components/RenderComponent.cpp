@@ -1,8 +1,8 @@
 #include "RenderComponent.hpp"
 
-#include "InternalContext.hpp"
-#include "rendering/RenderObject.hpp"
-#include "rendering/renderers/Renderer.hpp"
+#include "../InternalContext.hpp"
+#include "../rendering/Renderer.hpp"
+#include "../rendering/RenderObject.hpp"
 
 
 namespace leopph::internal
@@ -13,10 +13,12 @@ namespace leopph::internal
 	}
 
 
+
 	void RenderComponent::CastsShadow(bool const value) noexcept
 	{
 		m_CastsShadow = value;
 	}
+
 
 
 	bool RenderComponent::Instanced() const noexcept
@@ -25,10 +27,12 @@ namespace leopph::internal
 	}
 
 
+
 	void RenderComponent::Instanced(bool const value) noexcept
 	{
 		m_Instanced = value;
 	}
+
 
 
 	void RenderComponent::Init(MeshGroup const& meshGroup) noexcept
@@ -36,6 +40,7 @@ namespace leopph::internal
 		m_RenderObject = GetRenderer()->CreateRenderObject(meshGroup);
 		m_RenderObject->RegisterRenderComponent(this);
 	}
+
 
 
 	RenderComponent::RenderComponent(RenderComponent const& other) noexcept :
@@ -46,6 +51,7 @@ namespace leopph::internal
 	{
 		m_RenderObject->RegisterRenderComponent(this);
 	}
+
 
 
 	RenderComponent& RenderComponent::operator=(RenderComponent const& other) noexcept
@@ -67,6 +73,7 @@ namespace leopph::internal
 	}
 
 
+
 	RenderComponent::RenderComponent(RenderComponent&& other) noexcept :
 		Component{other},
 		m_CastsShadow{other.m_CastsShadow},
@@ -75,6 +82,7 @@ namespace leopph::internal
 	{
 		m_RenderObject->RegisterRenderComponent(this);
 	}
+
 
 
 	RenderComponent& RenderComponent::operator=(RenderComponent&& other) noexcept
@@ -100,6 +108,7 @@ namespace leopph::internal
 
 		return *this;
 	}
+
 
 
 	RenderComponent::~RenderComponent()

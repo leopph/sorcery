@@ -1,20 +1,35 @@
-#include "rendering/ShaderProgram.hpp"
+#include "ShaderProgram.hpp"
 
+#include "GlCore.hpp"
 #include "Logger.hpp"
 #include "Util.hpp"
-#include "rendering/gl/GlCore.hpp"
 
+#include <algorithm>
 #include <format>
+#include <iterator>
 
 
 namespace leopph
 {
-	ShaderProgram::ShaderProgram(ShaderProgramSourceInfo const& sourceInfo) :
+	ShaderProgram::ShaderProgram(std::span<std::string> const sourceLines) :
 		mProgram{glCreateProgram()}
 	{
+		// Collect pointers to the underlying strings and add the necessary lines
+
+		std::vector<char const*> linePtrs;
+		linePtrs.push_back(VERSION_LINE);
+		linePtrs.push_back(VERTEX_DEFINE_LINE);
+
+		std::ranges::transform(sourceLines, std::back_inserter(linePtrs), [](auto const& line)
+		{
+			return line.data();
+		});
+
+		// Compile vertex shader
+
 		auto const vertexShader = glCreateShader(GL_VERTEX_SHADER);
 
-		if (auto const infoLog = compile_shader(vertexShader, sourceInfo.vertex))
+		if (auto const infoLog = compile_shader(vertexShader, linePtrs))
 		{
 			internal::Logger::Instance().Error(std::format("Error while compiling shader: vertex shader failed to compile, reason: {}.", *infoLog));
 			glDeleteShader(vertexShader);
@@ -24,35 +39,37 @@ namespace leopph
 		glAttachShader(mProgram, vertexShader);
 		glDeleteShader(vertexShader);
 
-		if (sourceInfo.geometry)
+		// Compile geometry shader
+
+		linePtrs[1] = GEOMETRY_DEFINE_LINE;
+		auto const geometryShader = glCreateShader(GL_GEOMETRY_SHADER);
+
+		if (auto const infoLog = compile_shader(geometryShader, linePtrs))
 		{
-			auto const geometryShader = glCreateShader(GL_GEOMETRY_SHADER);
-
-			if (auto const infoLog = compile_shader(geometryShader, *sourceInfo.geometry))
-			{
-				internal::Logger::Instance().Error(std::format("Error while compiling shader: geometry shader failed to compile, reason: {}.", *infoLog));
-				glDeleteShader(geometryShader);
-				return;
-			}
-
-			glAttachShader(mProgram, geometryShader);
+			internal::Logger::Instance().Error(std::format("Error while compiling shader: geometry shader failed to compile, reason: {}.", *infoLog));
 			glDeleteShader(geometryShader);
+			return;
 		}
 
-		if (sourceInfo.fragment)
+		glAttachShader(mProgram, geometryShader);
+		glDeleteShader(geometryShader);
+
+		// Compile fragment shader
+
+		linePtrs[1] = FRAGMENT_DEFINE_LINE;
+		auto const fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+
+		if (auto const infoLog = compile_shader(fragmentShader, linePtrs))
 		{
-			auto const fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-
-			if (auto const infoLog = compile_shader(fragmentShader, *sourceInfo.fragment))
-			{
-				internal::Logger::Instance().Error(std::format("Error while compiling shader: fragment shader failed to compile, reason: {}.", *infoLog));
-				glDeleteShader(fragmentShader);
-				return;
-			}
-
-			glAttachShader(mProgram, fragmentShader);
+			internal::Logger::Instance().Error(std::format("Error while compiling shader: fragment shader failed to compile, reason: {}.", *infoLog));
 			glDeleteShader(fragmentShader);
+			return;
 		}
+
+		glAttachShader(mProgram, fragmentShader);
+		glDeleteShader(fragmentShader);
+
+		// Link program
 
 		if (auto const infoLog = link_program(mProgram))
 		{
@@ -61,6 +78,8 @@ namespace leopph
 			mProgram = 0;
 			return;
 		}
+
+		// Query uniforms
 
 		GLint numUniforms;
 		glGetProgramInterfaceiv(mProgram, GL_UNIFORM, GL_ACTIVE_RESOURCES, &numUniforms);
@@ -180,17 +199,9 @@ namespace leopph
 
 
 
-	std::optional<std::string> ShaderProgram::compile_shader(u32 const shader, std::span<std::string const> const lines)
+	std::optional<std::string> ShaderProgram::compile_shader(u32 const shader, std::span<char const* const> const lines)
 	{
-		std::vector<char const*> linePtrs;
-		linePtrs.reserve(lines.size());
-
-		for (auto const& line : lines)
-		{
-			linePtrs.push_back(line.data());
-		}
-
-		glShaderSource(shader, clamp_cast<GLsizei>(linePtrs.size()), linePtrs.data(), nullptr);
+		glShaderSource(shader, clamp_cast<GLsizei>(lines.size()), lines.data(), nullptr);
 		glCompileShader(shader);
 
 		GLint result;
@@ -235,4 +246,11 @@ namespace leopph
 	{
 		glDeleteProgram(mProgram);
 	}
+
+
+
+	char const* const ShaderProgram::VERSION_LINE{"#version 450 core\n"};
+	char const* const ShaderProgram::VERTEX_DEFINE_LINE{"#define VERTEX_SHADER 1\n"};
+	char const* const ShaderProgram::GEOMETRY_DEFINE_LINE{"#define GEOMETRY_SHADER 1\n"};
+	char const* const ShaderProgram::FRAGMENT_DEFINE_LINE{"#define FRAGMENT_SHADER 1\n"};
 }

@@ -1,4 +1,4 @@
-#include "threading/SpinLock.hpp"
+#include "SpinLock.hpp"
 
 #include <intrin.h>
 

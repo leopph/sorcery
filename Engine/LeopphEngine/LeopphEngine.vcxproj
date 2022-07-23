@@ -11,6 +11,67 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\AmbientLight.cpp" />
+    <ClCompile Include="src\components\AttenuatedLight.cpp" />
+    <ClCompile Include="src\components\Behavior.cpp" />
+    <ClCompile Include="src\components\Camera.cpp" />
+    <ClCompile Include="src\components\Component.cpp" />
+    <ClCompile Include="src\components\Cube.cpp" />
+    <ClCompile Include="src\components\DirLight.cpp" />
+    <ClCompile Include="src\components\ImageSprite.cpp" />
+    <ClCompile Include="src\components\Light.cpp" />
+    <ClCompile Include="src\components\Model.cpp" />
+    <ClCompile Include="src\components\OrthographicCamera.cpp" />
+    <ClCompile Include="src\components\PerspectiveCamera.cpp" />
+    <ClCompile Include="src\components\PointLight.cpp" />
+    <ClCompile Include="src\components\RenderComponent.cpp" />
+    <ClCompile Include="src\components\Skybox.cpp" />
+    <ClCompile Include="src\components\SpotLight.cpp" />
+    <ClCompile Include="src\components\Transform.cpp" />
+    <ClCompile Include="src\Context.cpp" />
+    <ClCompile Include="src\data\DataManager.cpp" />
+    <ClCompile Include="src\data\Poelo.cpp" />
+    <ClCompile Include="src\Entity.cpp" />
+    <ClCompile Include="src\events\Event.cpp" />
+    <ClCompile Include="src\events\EventManager.cpp" />
+    <ClCompile Include="src\events\KeyEvent.cpp" />
+    <ClCompile Include="src\events\MouseEvent.cpp" />
+    <ClCompile Include="src\events\WindowEvent.cpp" />
+    <ClCompile Include="src\Exit.cpp" />
+    <ClCompile Include="src\Input.cpp" />
+    <ClCompile Include="src\Main.cpp" />
+    <ClCompile Include="src\rendering\Mesh.cpp" />
+    <ClCompile Include="src\rendering\MeshGroup.cpp" />
+    <ClCompile Include="src\rendering\GlBufferObject.cpp" />
+    <ClCompile Include="src\rendering\GlCore.cpp" />
+    <ClCompile Include="src\rendering\GlMesh.cpp" />
+    <ClCompile Include="src\rendering\GlMeshGroup.cpp" />
+    <ClCompile Include="src\rendering\GlSkyboxImpl.cpp" />
+    <ClCompile Include="src\rendering\GlTexture.cpp" />
+    <ClCompile Include="src\rendering\GlVertexArrayObject.cpp" />
+    <ClCompile Include="src\rendering\Material.cpp" />
+    <ClCompile Include="src\rendering\GlDeferredRenderer.cpp" />
+    <ClCompile Include="src\rendering\GlForwardRenderer.cpp" />
+    <ClCompile Include="src\rendering\GlRenderer.cpp" />
+    <ClCompile Include="src\rendering\Renderer.cpp" />
+    <ClCompile Include="src\rendering\RenderObject.cpp" />
+    <ClCompile Include="src\rendering\ScreenQuad.cpp" />
+    <ClCompile Include="src\rendering\ShaderFamily.cpp" />
+    <ClCompile Include="src\rendering\ShaderProcessing.cpp" />
+    <ClCompile Include="src\rendering\ShaderProgram.cpp" />
+    <ClCompile Include="src\scene\Scene.cpp" />
+    <ClCompile Include="src\scene\SceneManager.cpp" />
+    <ClCompile Include="src\Settings.cpp" />
+    <ClCompile Include="src\SettingsImpl.cpp" />
+    <ClCompile Include="src\threading\JobSystem.cpp" />
+    <ClCompile Include="src\threading\SpinLock.cpp" />
+    <ClCompile Include="src\timing\Time.cpp" />
+    <ClCompile Include="src\timing\TimeImpl.cpp" />
+    <ClCompile Include="src\util\api_adapters\GLFWAdapter.cpp" />
+    <ClCompile Include="src\util\less\PoeloLess.cpp" />
+    <ClCompile Include="src\windowing\GlfwWindowImpl.cpp" />
+    <ClCompile Include="src\windowing\Window.cpp" />
+    <ClCompile Include="src\windowing\WindowImpl.cpp" />
     <ClInclude Include="..\include\AmbientLight.hpp" />
     <ClInclude Include="..\include\AttenuatedLight.hpp" />
     <ClInclude Include="..\include\Behavior.hpp" />
@@ -67,78 +128,34 @@
     <ClInclude Include="include\rendering\ShaderFamily.hpp" />
     <ClInclude Include="include\rendering\ShaderProcessing.hpp" />
     <ClInclude Include="include\rendering\ShaderProgram.hpp" />
-    <ClInclude Include="include\ScreenQuad.hpp" />
-    <ClInclude Include="include\SettingsImpl.hpp" />
+    <ClInclude Include="src\rendering\ScreenQuad.hpp" />
+    <ClInclude Include="src\SettingsImpl.hpp" />
     <ClCompile Include="..\deps\vendor\glad\src\gl.c" />
-    <ClCompile Include="src\components\AttenuatedLight.cpp" />
-    <ClCompile Include="src\components\Behavior.cpp" />
-    <ClCompile Include="src\components\Camera.cpp" />
-    <ClCompile Include="src\components\Component.cpp" />
-    <ClCompile Include="src\AmbientLight.cpp" />
-    <ClCompile Include="src\components\DirLight.cpp" />
-    <ClCompile Include="src\components\Light.cpp" />
-    <ClCompile Include="src\components\PointLight.cpp" />
-    <ClCompile Include="src\components\SpotLight.cpp" />
-    <ClCompile Include="src\components\OrthographicCamera.cpp" />
-    <ClCompile Include="src\components\PerspectiveCamera.cpp" />
-    <ClCompile Include="src\components\Cube.cpp" />
-    <ClCompile Include="src\components\ImageSprite.cpp" />
-    <ClCompile Include="src\components\Model.cpp" />
-    <ClCompile Include="src\components\RenderComponent.cpp" />
-    <ClCompile Include="src\components\Transform.cpp" />
-    <ClCompile Include="src\Context.cpp" />
-    <ClCompile Include="src\rendering\gl\GlBufferObject.cpp" />
-    <ClCompile Include="src\rendering\gl\GlMeshGroup.cpp" />
-    <ClCompile Include="src\rendering\gl\GlVertexArrayObject.cpp" />
-    <ClCompile Include="src\rendering\Material.cpp" />
-    <ClCompile Include="src\rendering\RenderObject.cpp" />
-    <ClCompile Include="src\rendering\ScreenQuad.cpp" />
-    <ClCompile Include="src\rendering\ShaderFamily.cpp" />
-    <ClCompile Include="src\rendering\ShaderProcessing.cpp" />
-    <ClCompile Include="src\rendering\ShaderProgram.cpp" />
-    <ClCompile Include="src\Settings.cpp" />
-    <ClCompile Include="src\data\DataManager.cpp" />
-    <ClCompile Include="src\data\Poelo.cpp" />
-    <ClCompile Include="src\Entity.cpp" />
-    <ClCompile Include="src\Main.cpp" />
-    <ClCompile Include="src\event\Event.cpp" />
-    <ClCompile Include="src\event\EventManager.cpp" />
-    <ClCompile Include="src\event\KeyEvent.cpp" />
-    <ClCompile Include="src\event\MouseEvent.cpp" />
-    <ClCompile Include="src\event\WindowEvent.cpp" />
-    <ClCompile Include="src\Input.cpp" />
-    <ClCompile Include="src\rendering\gl\GlMesh.cpp" />
-    <ClCompile Include="src\rendering\geometry\Mesh.cpp" />
-    <ClCompile Include="src\rendering\geometry\MeshGroup.cpp" />
-    <ClCompile Include="src\rendering\gl\GlCore.cpp" />
-    <ClCompile Include="src\rendering\renderers\GlDeferredRenderer.cpp" />
-    <ClCompile Include="src\rendering\renderers\GlForwardRenderer.cpp" />
-    <ClCompile Include="src\rendering\renderers\GlRenderer.cpp" />
-    <ClCompile Include="src\rendering\renderers\Renderer.cpp" />
-    <ClCompile Include="src\components\Skybox.cpp" />
-    <ClCompile Include="src\rendering\gl\GlSkyboxImpl.cpp" />
-    <ClCompile Include="src\rendering\gl\GlTexture.cpp" />
-    <ClCompile Include="src\scene\Scene.cpp" />
-    <ClCompile Include="src\scene\SceneManager.cpp" />
-    <ClCompile Include="src\SettingsImpl.cpp" />
-    <ClCompile Include="src\threading\JobSystem.cpp" />
-    <ClCompile Include="src\threading\SpinLock.cpp" />
-    <ClCompile Include="src\timing\Time.cpp" />
-    <ClCompile Include="src\timing\TimeImpl.cpp" />
-    <ClCompile Include="src\util\api_adapters\GLFWAdapter.cpp" />
-    <ClCompile Include="src\Exit.cpp" />
-    <ClCompile Include="src\util\less\PoeloLess.cpp" />
-    <ClCompile Include="src\util\less\StringLess.cpp" />
-    <ClCompile Include="src\windowing\GlWindow.cpp" />
-    <ClCompile Include="src\windowing\Window.cpp" />
-    <ClCompile Include="src\windowing\WindowImpl.cpp" />
+    <ClInclude Include="src\events\DirShadowResEvent.hpp" />
+    <ClInclude Include="src\events\PointShadowResEvent.hpp" />
+    <ClInclude Include="src\events\SpotShadowResEvent.hpp" />
+    <ClInclude Include="src\rendering\Extent.hpp" />
+    <ClInclude Include="src\rendering\GlBufferObject.hpp" />
+    <ClInclude Include="src\rendering\GlCore.hpp" />
+    <ClInclude Include="src\rendering\GlMesh.hpp" />
+    <ClInclude Include="src\rendering\GlMeshGroup.hpp" />
+    <ClInclude Include="src\rendering\GlSkyboxImpl.hpp" />
+    <ClInclude Include="src\rendering\GlVertexArrayObject.hpp" />
+    <ClInclude Include="src\rendering\GlDeferredRenderer.hpp" />
+    <ClInclude Include="src\rendering\GlForwardRenderer.hpp" />
+    <ClInclude Include="src\rendering\GlRenderer.hpp" />
+    <ClInclude Include="src\rendering\Renderer.hpp" />
+    <ClInclude Include="src\rendering\RenderObject.hpp" />
+    <ClInclude Include="src\rendering\RenderSettings.hpp" />
+    <ClInclude Include="src\rendering\ShaderFamily.hpp" />
+    <ClInclude Include="src\rendering\ShaderProcessing.hpp" />
+    <ClInclude Include="src\rendering\ShaderProgram.hpp" />
+    <ClInclude Include="src\scene\Scene.hpp" />
+    <ClInclude Include="src\scene\SceneManager.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\InternalContext.hpp" />
-    <ClInclude Include="include\DataManager.hpp" />
-    <ClInclude Include="include\events\DirShadowResEvent.hpp" />
-    <ClInclude Include="include\events\PointShadowResEvent.hpp" />
-    <ClInclude Include="include\events\SpotShadowResEvent.hpp" />
+    <ClInclude Include="src\InternalContext.hpp" />
+    <ClInclude Include="src\data\DataManager.hpp" />
     <ClInclude Include="include\rendering\gl\GlMesh.hpp" />
     <ClInclude Include="include\rendering\gl\GlMeshGroup.hpp" />
     <ClInclude Include="include\rendering\gl\GlCore.hpp" />
@@ -147,70 +164,14 @@
     <ClInclude Include="include\rendering\renderers\GlRenderer.hpp" />
     <ClInclude Include="include\rendering\renderers\Renderer.hpp" />
     <ClInclude Include="include\rendering\RenderObject.hpp" />
-    <ClInclude Include="src\scene\Scene.hpp" />
-    <ClInclude Include="src\scene\SceneManager.hpp" />
-    <ClInclude Include="include\threading\Job.hpp" />
-    <ClInclude Include="include\threading\JobSystem.hpp" />
-    <ClInclude Include="include\threading\SpinLock.hpp" />
-    <ClInclude Include="include\timing\TimeImpl.hpp" />
-    <ClInclude Include="include\util\api_adapters\GLFWAdapter.hpp" />
-    <ClInclude Include="include\util\less\PoeloLess.hpp" />
-    <ClInclude Include="include\util\less\StringLess.hpp" />
-    <ClInclude Include="include\windowing\GlWindow.hpp" />
-    <ClInclude Include="include\windowing\WindowImpl.hpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="src\rendering\shaders\glsl\Material.glsl" />
-    <None Include="src\rendering\shaders\glsl\LightingBuffer.glsl" />
-    <None Include="src\rendering\shaders\glsl\Skybox.frag">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="src\rendering\shaders\glsl\Skybox.vert">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="src\rendering\shaders\glsl\TransformBuffer.glsl" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="src\rendering\shaders\glsl\GPass.frag">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="src\rendering\shaders\glsl\GPass.vert">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="src\rendering\shaders\glsl\LightPass.frag">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="src\rendering\shaders\glsl\Forward.frag">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="src\rendering\shaders\glsl\Forward.vert">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="src\rendering\shaders\glsl\Composite.frag">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="src\rendering\shaders\glsl\DepthShadow.vert">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="src\rendering\shaders\glsl\LinShadow.frag">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="src\rendering\shaders\glsl\LinShadow.vert">
-      <FileType>Document</FileType>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="src\rendering\shaders\glsl\Gamma.frag">
-      <FileType>Document</FileType>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="src\rendering\shaders\glsl\Pos2DPassthrough.vert">
-      <FileType>Document</FileType>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="src\rendering\shaders\glsl\Lighting.glsl" />
+    <ClInclude Include="src\threading\Job.hpp" />
+    <ClInclude Include="src\threading\JobSystem.hpp" />
+    <ClInclude Include="src\threading\SpinLock.hpp" />
+    <ClInclude Include="src\timing\TimeImpl.hpp" />
+    <ClInclude Include="src\util\api_adapters\GLFWAdapter.hpp" />
+    <ClInclude Include="src\util\less\PoeloLess.hpp" />
+    <ClInclude Include="src\windowing\GlfwWindowImpl.hpp" />
+    <ClInclude Include="src\windowing\WindowImpl.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\LeopphCommon\LeopphCommon.vcxproj">
@@ -219,6 +180,33 @@
     <ProjectReference Include="..\LeopphverterLib\LeopphverterLib.vcxproj">
       <Project>{23e4c965-ba88-472d-97f9-c9a2c07fc076}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\rendering\shaders\glsl\DepthShadow.shader" />
+    <None Include="src\rendering\shaders\glsl\Forward.shader" />
+    <None Include="src\rendering\shaders\glsl\GammaCorrect.shader" />
+    <None Include="src\rendering\shaders\glsl\Gbuffer.shader" />
+    <None Include="src\rendering\shaders\glsl\include\CompositeFrag.glsl" />
+    <None Include="src\rendering\shaders\glsl\DeferredLighting.shader" />
+    <None Include="src\rendering\shaders\glsl\include\DepthVert.glsl" />
+    <None Include="src\rendering\shaders\glsl\include\ForwardFrag.glsl" />
+    <None Include="src\rendering\shaders\glsl\include\ForwardVert.glsl" />
+    <None Include="src\rendering\shaders\glsl\include\GammaFrag.glsl" />
+    <None Include="src\rendering\shaders\glsl\include\GbufferFrag.glsl" />
+    <None Include="src\rendering\shaders\glsl\include\GbufferVert.glsl" />
+    <None Include="src\rendering\shaders\glsl\include\Lighting.glsl" />
+    <None Include="src\rendering\shaders\glsl\include\LightingBuffer.glsl" />
+    <None Include="src\rendering\shaders\glsl\include\DeferredLightingFrag.glsl" />
+    <None Include="src\rendering\shaders\glsl\include\LinearShadowFrag.glsl" />
+    <None Include="src\rendering\shaders\glsl\include\LinearShadowVert.glsl" />
+    <None Include="src\rendering\shaders\glsl\include\Material.glsl" />
+    <None Include="src\rendering\shaders\glsl\include\Pos2dVert.glsl" />
+    <None Include="src\rendering\shaders\glsl\include\SkyboxFrag.glsl" />
+    <None Include="src\rendering\shaders\glsl\include\SkyboxVert.glsl" />
+    <None Include="src\rendering\shaders\glsl\include\TransformBuffer.glsl" />
+    <None Include="src\rendering\shaders\glsl\LinearShadow.shader" />
+    <None Include="src\rendering\shaders\glsl\Skybox.shader" />
+    <None Include="src\rendering\shaders\glsl\TransparencyComposite.shader" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
@@ -279,7 +267,7 @@
       <PreprocessorDefinitions>SPDLOG_COMPILED_LIB;ENGINE_BUILD;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)Engine\include\;$(ProjectDir)include\;$(SolutionDir)Engine\deps\vendor\glad\include\;$(SolutionDir)Engine\deps\vendor\glfw\include\;$(SolutionDir)Engine\deps\vendor\gsl\;$(SolutionDir)Engine\deps\vendor\nlohmann_json\;$(SolutionDir)Engine\deps\vendor\taskflow_wsq\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Engine\include\;$(SolutionDir)Engine\deps\vendor\glad\include\;$(SolutionDir)Engine\deps\vendor\glfw\include\;$(SolutionDir)Engine\deps\vendor\gsl\;$(SolutionDir)Engine\deps\vendor\nlohmann_json\;$(SolutionDir)Engine\deps\vendor\taskflow_wsq\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -305,7 +293,7 @@
       <PreprocessorDefinitions>SPDLOG_COMPILED_LIB;ENGINE_BUILD;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)Engine\include\;$(ProjectDir)include\;$(SolutionDir)Engine\deps\vendor\glad\include\;$(SolutionDir)Engine\deps\vendor\glfw\include\;$(SolutionDir)Engine\deps\vendor\gsl\;$(SolutionDir)Engine\deps\vendor\nlohmann_json\;$(SolutionDir)Engine\deps\vendor\taskflow_wsq\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Engine\include\;$(SolutionDir)Engine\deps\vendor\glad\include\;$(SolutionDir)Engine\deps\vendor\glfw\include\;$(SolutionDir)Engine\deps\vendor\gsl\;$(SolutionDir)Engine\deps\vendor\nlohmann_json\;$(SolutionDir)Engine\deps\vendor\taskflow_wsq\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>

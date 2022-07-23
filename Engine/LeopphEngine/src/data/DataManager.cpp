@@ -19,10 +19,12 @@ namespace leopph::internal
 	}
 
 
+
 	void DataManager::Store(std::unique_ptr<Poelo> poelo)
 	{
 		m_Poelos.insert(std::move(poelo));
 	}
+
 
 
 	bool DataManager::Destroy(Poelo const* poelo)
@@ -34,11 +36,13 @@ namespace leopph::internal
 	}
 
 
+
 	void DataManager::RegisterEntity(Entity* const entity)
 	{
 		m_EntitiesAndComponents.emplace_back(entity);
 		SortEntities();
 	}
+
 
 
 	void DataManager::UnregisterEntity(Entity const* const entity)
@@ -51,6 +55,7 @@ namespace leopph::internal
 	}
 
 
+
 	Entity* DataManager::FindEntity(std::string const& name)
 	{
 		auto const it = GetEntityIterator(name);
@@ -58,11 +63,13 @@ namespace leopph::internal
 	}
 
 
+
 	void DataManager::RegisterComponent(Entity const* const entity, ComponentPtr<> component, bool const active)
 	{
 		auto const it{GetEntityIterator(entity->get_name())};
 		(active ? it->ActiveComponents : it->InactiveComponents).push_back(std::move(component));
 	}
+
 
 
 	ComponentPtr<> DataManager::UnregisterComponent(Entity const* const entity, Component const* component, bool const active)
@@ -79,11 +86,13 @@ namespace leopph::internal
 	}
 
 
+
 	std::span<ComponentPtr<> const> DataManager::ComponentsOfEntity(Entity const* const entity, bool const active) const
 	{
 		auto const it{GetEntityIterator(entity->get_name())};
 		return active ? it->ActiveComponents : it->InactiveComponents;
 	}
+
 
 
 	void DataManager::RegisterActiveBehavior(Behavior* behavior)
@@ -93,10 +102,12 @@ namespace leopph::internal
 	}
 
 
+
 	void DataManager::UnregisterActiveBehavior(Behavior const* behavior)
 	{
 		std::erase(m_ActiveBehaviors, behavior);
 	}
+
 
 
 	std::span<Behavior* const> DataManager::ActiveBehaviors() const noexcept
@@ -105,10 +116,12 @@ namespace leopph::internal
 	}
 
 
+
 	void DataManager::RegisterActiveDirLight(leopph::DirectionalLight const* dirLight)
 	{
 		m_ActiveDirLights.push_back(dirLight);
 	}
+
 
 
 	void DataManager::UnregisterActiveDirLight(leopph::DirectionalLight const* dirLight)
@@ -117,10 +130,12 @@ namespace leopph::internal
 	}
 
 
+
 	leopph::DirectionalLight const* DataManager::DirectionalLight() const
 	{
 		return m_ActiveDirLights.empty() ? nullptr : m_ActiveDirLights.front();
 	}
+
 
 
 	void DataManager::RegisterActiveSpotLight(SpotLight const* spotLight)
@@ -129,10 +144,12 @@ namespace leopph::internal
 	}
 
 
+
 	void DataManager::UnregisterActiveSpotLight(SpotLight const* spotLight)
 	{
 		std::erase(m_ActiveSpotLights, spotLight);
 	}
+
 
 
 	std::span<SpotLight const* const> DataManager::ActiveSpotLights() const noexcept
@@ -141,10 +158,12 @@ namespace leopph::internal
 	}
 
 
+
 	void DataManager::RegisterActivePointLight(PointLight const* pointLight)
 	{
 		m_ActivePointLights.push_back(pointLight);
 	}
+
 
 
 	void DataManager::UnregisterActivePointLight(PointLight const* pointLight)
@@ -153,10 +172,12 @@ namespace leopph::internal
 	}
 
 
+
 	std::span<PointLight const* const> DataManager::ActivePointLights() const noexcept
 	{
 		return m_ActivePointLights;
 	}
+
 
 
 	void DataManager::SortEntities()
@@ -168,6 +189,7 @@ namespace leopph::internal
 	}
 
 
+
 	void DataManager::SortActiveBehaviors()
 	{
 		std::ranges::sort(m_ActiveBehaviors, BehaviorOrderFunc{}, [](auto const* behavior)
@@ -177,10 +199,12 @@ namespace leopph::internal
 	}
 
 
+
 	decltype(DataManager::m_EntitiesAndComponents)::iterator DataManager::GetEntityIterator(std::string const& name)
 	{
 		return GetEntityIteratorCommon(this, name);
 	}
+
 
 
 	decltype(DataManager::m_EntitiesAndComponents)::const_iterator DataManager::GetEntityIterator(std::string const& name) const

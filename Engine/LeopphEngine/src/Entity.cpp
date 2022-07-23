@@ -1,11 +1,10 @@
 #include "Entity.hpp"
 
-#include "DataManager.hpp"
 #include "InternalContext.hpp"
 #include "Logger.hpp"
 #include "Types.hpp"
+#include "data/DataManager.hpp"
 
-#include <algorithm>
 #include <format>
 #include <iterator>
 
@@ -18,10 +17,12 @@ namespace leopph
 	}
 
 
+
 	std::string const& Entity::get_name() const noexcept
 	{
 		return mName;
 	}
+
 
 
 	Transform const& Entity::get_transform() const noexcept
@@ -30,16 +31,19 @@ namespace leopph
 	}
 
 
+
 	Transform& Entity::get_transform() noexcept
 	{
 		return mTransform;
 	}
 
 
+
 	void Entity::attach_component(ComponentPtr<> const& component)
 	{
 		component->Attach(this);
 	}
+
 
 
 	void Entity::detach_component(ComponentPtr<> const& component) const
@@ -62,6 +66,7 @@ namespace leopph
 	}
 
 
+
 	void Entity::activate_all_components() const
 	{
 		// we copy the pointers because the underlying collection will change through activations
@@ -73,6 +78,7 @@ namespace leopph
 			component->Activate();
 		}
 	}
+
 
 
 	void Entity::deactive_all_components() const
@@ -88,10 +94,12 @@ namespace leopph
 	}
 
 
+
 	std::span<ComponentPtr<> const> Entity::get_components(bool const active) const
 	{
 		return internal::GetDataManager()->ComponentsOfEntity(this, active);
 	}
+
 
 
 	Entity::Entity()
@@ -105,6 +113,7 @@ namespace leopph
 	}
 
 
+
 	Entity::Entity(std::string_view const name) :
 		mName{name}
 	{
@@ -115,6 +124,7 @@ namespace leopph
 
 		internal::GetDataManager()->RegisterEntity(this);
 	}
+
 
 
 	Entity::Entity(Entity const& other) :
@@ -142,6 +152,7 @@ namespace leopph
 	}
 
 
+
 	Entity::~Entity()
 	{
 		auto* const dataManager = internal::GetDataManager();
@@ -162,7 +173,9 @@ namespace leopph
 	}
 
 
+
 	char const* const Entity::DEFAULT_NAME{"entity"};
+
 
 
 	std::strong_ordering operator<=>(Entity const& left, Entity const& right)
@@ -171,10 +184,12 @@ namespace leopph
 	}
 
 
+
 	std::strong_ordering operator<=>(std::string_view const name, Entity const& entity)
 	{
 		return name <=> entity.get_name();
 	}
+
 
 
 	std::strong_ordering operator<=>(Entity const& entity, std::string_view const name)
@@ -183,16 +198,19 @@ namespace leopph
 	}
 
 
+
 	bool operator==(Entity const& left, Entity const& right)
 	{
 		return left.get_name() == right.get_name();
 	}
 
 
+
 	bool operator==(Entity const& entity, std::string_view const name)
 	{
 		return entity.get_name() == name;
 	}
+
 
 
 	bool operator==(std::string_view const name, Entity const& entity)

@@ -1,9 +1,9 @@
 #include "Camera.hpp"
 
 #include "Entity.hpp"
-#include "InternalContext.hpp"
 #include "WindowEvent.hpp"
-#include "windowing/WindowImpl.hpp"
+#include "../InternalContext.hpp"
+#include "../windowing/WindowImpl.hpp"
 
 #include <utility>
 
@@ -16,6 +16,7 @@ namespace leopph
 	}
 
 
+
 	void Camera::MakeCurrent()
 	{
 		if (Active())
@@ -25,10 +26,12 @@ namespace leopph
 	}
 
 
+
 	void Camera::NearClipPlane(float const newPlane)
 	{
 		m_NearClip = newPlane;
 	}
+
 
 
 	float Camera::NearClipPlane() const
@@ -37,10 +40,12 @@ namespace leopph
 	}
 
 
+
 	void Camera::FarClipPlane(float const newPlane)
 	{
 		m_FarClip = newPlane;
 	}
+
 
 
 	float Camera::FarClipPlane() const
@@ -49,10 +54,12 @@ namespace leopph
 	}
 
 
+
 	std::variant<Color, Skybox> const& Camera::Background() const
 	{
 		return m_Background;
 	}
+
 
 
 	void Camera::Background(std::variant<Color, Skybox> background)
@@ -66,11 +73,13 @@ namespace leopph
 	}
 
 
+
 	Matrix4 Camera::ViewMatrix() const
 	{
 		// inv(T) * inv(R)
 		return Matrix4::Translate(-Owner()->get_transform().get_position()) * Matrix4{Owner()->get_transform().get_rotation()}.Transposed();
 	}
+
 
 
 	Vector2 Camera::TransformToViewport(Vector3 const& vector) const noexcept
@@ -85,6 +94,7 @@ namespace leopph
 	}
 
 
+
 	void Camera::Owner(Entity* entity)
 	{
 		Component::Owner(entity);
@@ -94,6 +104,7 @@ namespace leopph
 			s_Current = nullptr;
 		}
 	}
+
 
 
 	void Camera::Active(bool const active)
@@ -107,6 +118,7 @@ namespace leopph
 	}
 
 
+
 	Camera::~Camera()
 	{
 		if (s_Current == this)
@@ -114,6 +126,7 @@ namespace leopph
 			s_Current = nullptr;
 		}
 	}
+
 
 
 	Camera::Camera() :
@@ -127,16 +140,19 @@ namespace leopph
 	}
 
 
+
 	float Camera::AspectRatio() const
 	{
 		return m_AspectRatio;
 	}
 
 
+
 	void Camera::OnEventReceived(EventParamType event)
 	{
 		m_AspectRatio = static_cast<float>(event.Width) / event.Height;
 	}
+
 
 
 	Camera* Camera::s_Current;

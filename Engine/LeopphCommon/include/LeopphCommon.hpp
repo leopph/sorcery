@@ -2,7 +2,7 @@
 
 #include "ArrayQueue.hpp"
 #include "Bimap.hpp"
-#include "Equal.hpp"
+#include "Compare.hpp"
 #include "Hash.hpp"
 #include "Logger.hpp"
 #include "Random.hpp"

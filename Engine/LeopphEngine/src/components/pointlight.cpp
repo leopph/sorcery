@@ -1,7 +1,7 @@
 #include "PointLight.hpp"
 
-#include "DataManager.hpp"
-#include "InternalContext.hpp"
+#include "../InternalContext.hpp"
+#include "../data/DataManager.hpp"
 
 
 namespace leopph
@@ -24,6 +24,7 @@ namespace leopph
 	}
 
 
+
 	void PointLight::Active(bool const active)
 	{
 		auto* const dataManager = internal::GetDataManager();
@@ -40,6 +41,7 @@ namespace leopph
 			dataManager->RegisterActivePointLight(this);
 		}
 	}
+
 
 
 	PointLight& PointLight::operator=(PointLight const& other)
@@ -67,10 +69,12 @@ namespace leopph
 	}
 
 
+
 	ComponentPtr<> PointLight::Clone() const
 	{
 		return CreateComponent<PointLight>(*this);
 	}
+
 
 
 	PointLight::~PointLight()

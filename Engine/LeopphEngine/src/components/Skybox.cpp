@@ -1,8 +1,8 @@
 #include "Skybox.hpp"
 
-#include "InternalContext.hpp"
-#include "rendering/gl/GlSkyboxImpl.hpp"
-#include "rendering/renderers/GlRenderer.hpp"
+#include "../InternalContext.hpp"
+#include "../rendering/GlRenderer.hpp"
+#include "../rendering/GlSkyboxImpl.hpp"
 
 
 namespace leopph
@@ -16,11 +16,13 @@ namespace leopph
 	}
 
 
+
 	Skybox::Skybox(Skybox const& other) :
 		m_Impl{other.m_Impl}
 	{
 		m_Impl->register_handle(this);
 	}
+
 
 
 	Skybox& Skybox::operator=(Skybox const& other)
@@ -38,11 +40,13 @@ namespace leopph
 	}
 
 
+
 	Skybox::Skybox(Skybox&& other) noexcept :
 		m_Impl{other.m_Impl}
 	{
 		m_Impl->register_handle(this);
 	}
+
 
 
 	Skybox& Skybox::operator=(Skybox&& other) noexcept
@@ -60,10 +64,12 @@ namespace leopph
 	}
 
 
+
 	Skybox::~Skybox()
 	{
 		Deinit();
 	}
+
 
 
 	std::filesystem::path const& Skybox::RightPath() const
@@ -72,10 +78,12 @@ namespace leopph
 	}
 
 
+
 	std::filesystem::path const& Skybox::LeftPath() const
 	{
 		return m_Impl->left_path();
 	}
+
 
 
 	std::filesystem::path const& Skybox::TopPath() const
@@ -84,10 +92,12 @@ namespace leopph
 	}
 
 
+
 	std::filesystem::path const& Skybox::BottomPath() const
 	{
 		return m_Impl->bottom_path();
 	}
+
 
 
 	std::filesystem::path const& Skybox::FrontPath() const
@@ -96,16 +106,19 @@ namespace leopph
 	}
 
 
+
 	std::filesystem::path const& Skybox::BackPath() const
 	{
 		return m_Impl->back_path();
 	}
 
 
+
 	std::filesystem::path const& Skybox::AllPaths() const
 	{
 		return m_Impl->AllPaths();
 	}
+
 
 
 	void Skybox::Deinit() const

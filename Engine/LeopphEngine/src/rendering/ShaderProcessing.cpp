@@ -1,56 +1,40 @@
-#include "rendering/ShaderProcessing.hpp"
+#include "ShaderProcessing.hpp"
 
 #include "Logger.hpp"
+#include "RenderSettings.hpp"
 #include "Util.hpp"
-#include "rendering/RenderSettings.hpp"
 
-#include <format>
 #include <iterator>
 #include <regex>
-#include <set>
-#include <stdexcept>
 
 
 
 namespace leopph
 {
-	ShaderProgramSourceFileInfo ReadShaderFiles(std::filesystem::path vertexShaderPath, std::filesystem::path geometryShaderPath, std::filesystem::path fragmentShaderPath)
+	bool read_shader_files(std::filesystem::path const& filePath, ShaderProgramSourceFileInfo& out)
 	{
-		if (vertexShaderPath.empty())
+		if (filePath.empty())
 		{
-			auto const errMsg = "Error reading shader files: vertex shader path was empty. Vertex shaders are not optional.";
-			internal::Logger::Instance().Error(errMsg);
-			throw std::invalid_argument{errMsg};
+			internal::Logger::Instance().Error("Error reading shader file: shader path was empty.");
+			return false;
 		}
 
-		ShaderProgramSourceFileInfo programFileInfo;
-
-		std::vector<std::string> fileLines;
-
-		vertexShaderPath = absolute(vertexShaderPath).make_preferred();
-		read_file_lines(vertexShaderPath, fileLines);
-		programFileInfo.vertexInfo = {std::move(vertexShaderPath), std::move(fileLines)};
-
-		if (!geometryShaderPath.empty())
+		if (!exists(filePath))
 		{
-			geometryShaderPath = absolute(geometryShaderPath).make_preferred();
-			read_file_lines(geometryShaderPath, fileLines);
-			programFileInfo.geometryInfo = {std::move(geometryShaderPath), std::move(fileLines)};
+			internal::Logger::Instance().Error("Error reading shader file: the file does not exist.");
+			return false;
 		}
 
-		if (!fragmentShaderPath.empty())
-		{
-			fragmentShaderPath = absolute(fragmentShaderPath).make_preferred();
-			read_file_lines(fragmentShaderPath, fileLines);
-			programFileInfo.fragmentInfo = {std::move(fragmentShaderPath), std::move(fileLines)};
-		}
+		out.absolutePath = absolute(filePath).make_preferred();
+		out.lines.clear();
+		read_file_lines(out.absolutePath, out.lines);
 
-		return programFileInfo;
+		return true;
 	}
 
 
 
-	ShaderProgramSourceInfo ProcessShaderIncludes(ShaderProgramSourceFileInfo sourceFileInfo)
+	void process_shader_includes(ShaderProgramSourceFileInfo sourceFileInfo, ShaderProgramSourceLines& out)
 	{
 		std::regex const static includeLineRegex{R"delim(^\s*#\s*include\s*)delim"};
 		std::regex const static includeLineQuoteRegex{R"delim(^\s*#\s*include\s*"\S+"\s*$)delim"};
@@ -58,102 +42,60 @@ namespace leopph
 		std::regex const static fileNameInQuotesRegex{R"delim("\S+")delim"};
 		std::regex const static fileNameInBracketsRegex{R"delim(<\S+>)delim"};
 
-		std::vector<ShaderStageSourceFileInfo*> stageInfos;
-		stageInfos.push_back(&sourceFileInfo.vertexInfo);
+		std::vector<std::string> inclFileBuf;
 
-		if (sourceFileInfo.geometryInfo)
+		// Index based loop because we will potentially insert lines into the vector
+		for (std::size_t lineIndex{0}; lineIndex < sourceFileInfo.lines.size();)
 		{
-			stageInfos.push_back(&*sourceFileInfo.geometryInfo);
-		}
-
-		if (sourceFileInfo.fragmentInfo)
-		{
-			stageInfos.push_back(&*sourceFileInfo.fragmentInfo);
-		}
-
-		std::vector<std::string> includeBuffer;
-
-		for (auto* const stageInfo : stageInfos)
-		{
-			// Paths of files we already included in this stage's source.
-			// We don't include them more than once.
-			std::set<std::filesystem::path> includedFilePaths;
-
-			bool doAnotherPass;
-
-			do
+			// starts with #include
+			if (auto& line = sourceFileInfo.lines[lineIndex]; std::regex_search(line, includeLineRegex))
 			{
-				doAnotherPass = false;
+				std::string includeFileName;
 
-				for (auto lineIt = std::begin(stageInfo->fileContents); lineIt != std::end(stageInfo->fileContents); ++lineIt)
+				auto const getFileNameFromLine = [](std::string_view const line, std::regex const& nameRegex) -> std::string
 				{
-					if (std::regex_search(*lineIt, includeLineRegex))
-					{
-						std::string includeFileName;
+					std::regex_iterator const regIt{std::begin(line), std::end(line), nameRegex};
+					return regIt->str().substr(1, regIt->length() - 2);
+				};
 
-						auto const GetFileNameFromLine = [](std::string_view const line, std::regex const& nameRegex) -> std::string
-						{
-							std::regex_iterator const regIt{std::begin(line), std::end(line), nameRegex};
-							return regIt->str().substr(1, regIt->length() - 2);
-						};
-
-						if (std::regex_match(*lineIt, includeLineQuoteRegex))
-						{
-							includeFileName = GetFileNameFromLine(*lineIt, fileNameInQuotesRegex);
-						}
-						else if (std::regex_match(*lineIt, includeLineBracketRegex))
-						{
-							includeFileName = GetFileNameFromLine(*lineIt, fileNameInBracketsRegex);
-						}
-						else
-						{
-							auto const errMsg = "Error parsing shader includes: ill-formed file specifier was found.";
-							internal::Logger::Instance().Error(errMsg);
-							throw std::runtime_error{errMsg};
-						}
-
-						auto const includePath = absolute(stageInfo->absolutePath.parent_path() / includeFileName).make_preferred();
-
-						lineIt->clear();
-
-						if (includedFilePaths.contains(includePath))
-						{
-							continue;
-						}
-
-						includeBuffer.clear();
-						read_file_lines(includePath, includeBuffer);
-
-						if (includeBuffer.empty())
-						{
-							continue;
-						}
-
-						lineIt->clear();
-
-						stageInfo->fileContents.insert(lineIt, std::make_move_iterator(std::begin(includeBuffer)), std::make_move_iterator(std::end(includeBuffer)));
-
-						doAnotherPass = true;
-						break;
-					}
+				// #include "file"
+				if (std::regex_match(line, includeLineQuoteRegex))
+				{
+					includeFileName = getFileNameFromLine(line, fileNameInQuotesRegex);
 				}
+				// #include <file>
+				else if (std::regex_match(line, includeLineBracketRegex))
+				{
+					includeFileName = getFileNameFromLine(line, fileNameInBracketsRegex);
+				}
+				else
+				{
+					// We couldn't parse the include directive so we log the error, clear the erroneous line, and move on.
+					internal::Logger::Instance().Error("Error parsing shader includes: ill-formed file specifier was found.");
+					line.clear();
+					lineIndex++;
+					continue;
+				}
+
+				auto const includePath = absolute(sourceFileInfo.absolutePath.parent_path() / includeFileName).make_preferred();
+
+				inclFileBuf.clear();
+				read_file_lines(includePath, inclFileBuf);
+
+				// Clear include line
+				line.clear();
+
+				// Add included file lines at the include directive's position
+				sourceFileInfo.lines.insert(std::begin(sourceFileInfo.lines) + lineIndex, std::make_move_iterator(std::begin(inclFileBuf)), std::make_move_iterator(std::end(inclFileBuf)));
+
+				// We don't increment here because the current index points to the first line of the included file, which we are yet to examine
 			}
-			while (doAnotherPass);
+			else
+			{
+				lineIndex++;
+			}
 		}
 
-		ShaderProgramSourceInfo programSourceInfo;
-		programSourceInfo.vertex = std::move(sourceFileInfo.vertexInfo.fileContents);
-
-		if (sourceFileInfo.geometryInfo)
-		{
-			programSourceInfo.geometry = std::move(sourceFileInfo.geometryInfo->fileContents);
-		}
-
-		if (sourceFileInfo.fragmentInfo)
-		{
-			programSourceInfo.fragment = std::move(sourceFileInfo.fragmentInfo->fileContents);
-		}
-
-		return programSourceInfo;
+		out = std::move(sourceFileInfo.lines);
 	}
 }

@@ -1,6 +1,6 @@
 #include "Cube.hpp"
 
-#include "DataManager.hpp"
+#include "../data/DataManager.hpp"
 
 #include <memory>
 #include <source_location>

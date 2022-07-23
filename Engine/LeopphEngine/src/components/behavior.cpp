@@ -1,7 +1,7 @@
 #include "Behavior.hpp"
 
-#include "DataManager.hpp"
-#include "InternalContext.hpp"
+#include "../InternalContext.hpp"
+#include "../data/DataManager.hpp"
 
 
 namespace leopph
@@ -10,6 +10,7 @@ namespace leopph
 	{
 		return m_UpdateIndex;
 	}
+
 
 
 	void Behavior::UpdateIndex(int const index)
@@ -21,6 +22,7 @@ namespace leopph
 			internal::GetDataManager()->SortActiveBehaviors();
 		}
 	}
+
 
 
 	void Behavior::Owner(Entity* entity)
@@ -41,6 +43,7 @@ namespace leopph
 	}
 
 
+
 	void Behavior::Active(bool const active)
 	{
 		auto* const dataManager = internal::GetDataManager();
@@ -59,10 +62,12 @@ namespace leopph
 	}
 
 
+
 	Behavior::~Behavior()
 	{
 		internal::GetDataManager()->UnregisterActiveBehavior(this);
 	}
+
 
 
 	Behavior& Behavior::operator=(Behavior const& other)

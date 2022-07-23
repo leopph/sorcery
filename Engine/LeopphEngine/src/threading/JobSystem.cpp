@@ -1,4 +1,4 @@
-#include "threading/JobSystem.hpp"
+#include "JobSystem.hpp"
 
 #define WIN32_LEAN_AND_MEAN
 #include "Random.hpp"

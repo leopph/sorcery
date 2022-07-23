@@ -19,16 +19,19 @@ namespace leopph
 	}
 
 
+
 	Window* GetWindow()
 	{
 		return internal::g_WindowImpl;
 	}
 
 
+
 	Settings* GetSettings()
 	{
 		return internal::g_SettingsImpl;
 	}
+
 
 
 	namespace internal
@@ -39,10 +42,12 @@ namespace leopph
 		}
 
 
+
 		SettingsImpl* GetSettingsImpl()
 		{
 			return g_SettingsImpl;
 		}
+
 
 
 		DataManager* GetDataManager()
@@ -51,10 +56,12 @@ namespace leopph
 		}
 
 
+
 		Renderer* GetRenderer()
 		{
 			return g_Renderer;
 		}
+
 
 
 		void SetWindowImpl(WindowImpl* window)
@@ -63,16 +70,19 @@ namespace leopph
 		}
 
 
+
 		void SetSettingsImpl(SettingsImpl* settings)
 		{
 			g_SettingsImpl = settings;
 		}
 
 
+
 		void SetRenderer(Renderer* renderer)
 		{
 			g_Renderer = renderer;
 		}
+
 
 
 		void SetDataManager(DataManager* dataManager)

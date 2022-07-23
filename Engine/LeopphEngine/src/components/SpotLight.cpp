@@ -1,7 +1,7 @@
 #include "SpotLight.hpp"
 
-#include "DataManager.hpp"
-#include "InternalContext.hpp"
+#include "../InternalContext.hpp"
+#include "../data/DataManager.hpp"
 
 
 namespace leopph

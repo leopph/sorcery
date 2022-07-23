@@ -8,18 +8,18 @@
 
 // ReSharper disable All
 #define _CRTDBG_MAP_ALLOC
-#include <crtdbg.h>
 #include <stdlib.h>
+#include <crtdbg.h>
 // ReSharper restore All
 #endif
 
-#include "DataManager.hpp"
 #include "EventManager.hpp"
 #include "FrameCompleteEvent.hpp"
 #include "InternalContext.hpp"
 #include "Logger.hpp"
 #include "SettingsImpl.hpp"
-#include "rendering/renderers/Renderer.hpp"
+#include "data/DataManager.hpp"
+#include "rendering/Renderer.hpp"
 #include "windowing/WindowImpl.hpp"
 
 

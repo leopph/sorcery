@@ -1,9 +1,9 @@
-#include "rendering/ShaderFamily.hpp"
+#include "ShaderFamily.hpp"
 
 #include "Logger.hpp"
 #include "Math.hpp"
+#include "ShaderProcessing.hpp"
 #include "Util.hpp"
-#include "rendering/ShaderProcessing.hpp"
 
 #include <algorithm>
 #include <format>
@@ -13,37 +13,26 @@
 #include <optional>
 #include <ranges>
 #include <regex>
+#include <tuple>
 
 
 namespace leopph
 {
-	ShaderFamily::ShaderFamily(ShaderProgramSourceInfo sourceInfo) :
+	ShaderFamily::ShaderFamily(ShaderProgramSourceLines sourceLines) :
 		mCurrentPermutationBitset{0},
-		mSourceInfo{std::move(sourceInfo)}
+		mSourceLines{std::move(sourceLines)}
 	{
+		// Register ourselves
+		sInstances.push_back(this);
+
+		// Make sure there is a newline at the end of every line
+		for (auto& line : mSourceLines)
+		{
+			line.push_back('\n');
+		}
+
 		extract_instance_options();
 
-		auto const AddNewLineChars = [](std::vector<std::string>& lines)
-		{
-			for (auto& line : lines)
-			{
-				line.push_back('\n');
-			}
-		};
-
-		AddNewLineChars(mSourceInfo.vertex);
-
-		if (mSourceInfo.geometry)
-		{
-			AddNewLineChars(*mSourceInfo.geometry);
-		}
-
-		if (mSourceInfo.fragment)
-		{
-			AddNewLineChars(*mSourceInfo.fragment);
-		}
-
-		sInstances.push_back(this);
 
 		/*// A concrete state of an option
 		struct OptionInstance
@@ -94,174 +83,7 @@ namespace leopph
 
 			tmpBuffer.clear();
 
-			for (auto const& permInfo : permutationInstances)
-			{
-				auto const range = option.max - option.min;
-
-				// Go through all possible values of the option, generate the bitset and set the value corresponding to the bitset
-
-				for (u32 value = 1; value <= range; value++)
-				{
-					auto newInfo = permInfo;
-					newInfo.optInstances[permInstanceIndex].value = option.min + value;
-
-					auto const digits = math::BinaryDigitCount(value);
-					for (u8 j = 0; j < digits; j++)
-					{
-						newInfo.bitset[option.shift + j] = static_cast<bool>(value & (0x00000001 << j));
-					}
-
-					tmpBuffer.emplace_back(std::move(newInfo));
-				}
-			}
-
-			permutationInstances.insert(std::end(permutationInstances), std::make_move_iterator(std::begin(tmpBuffer)), std::make_move_iterator(std::end(tmpBuffer)));
-		}
-
-		// Build the shaders permutations
-
-		std::vector<std::string> defines;
-		std::vector<char const*> linePtrs;
-
-		for (auto& permInstance : permutationInstances)
-		{
-			auto const* const versionSpecifier = "#version 460 core\n";
-
-			defines.clear();
-
-			// Generate the define string for each option
-			for (auto const& [name, value] : permInstance.optInstances)
-			{
-				defines.push_back(std::string{"#define "}.append(name).append(1, ' ').append(std::to_string(value)).append(1, '\n'));
-			}
-
-			linePtrs.clear();
-
-			// Insert the glsl version specifier into the first line
-			linePtrs.push_back(versionSpecifier);
-
-			// Collect the C pointers to the define strings
-
-			for (auto const& defineLine : defines)
-			{
-				linePtrs.push_back(defineLine.data());
-			}
-
-			// Save the number of common lines for later
-			auto const numCommonLines = linePtrs.size();
-
-			Permutation perm;
-
-			perm.program = glCreateProgram();
-
-			// Add vertex shader lines
-			for (auto const& line : m_VertexSource)
-			{
-				linePtrs.push_back(line.data());
-			}
-
-			auto const CompileShader = [](GLuint const shader, std::vector<char const*> const& lines) -> void
-			{
-				glShaderSource(shader, lines.size(), lines.data(), nullptr);
-				glCompileShader(shader);
-			};
-
-			auto const CheckCompileError = [](GLuint const shader) -> std::optional<std::string>
-			{
-				GLint result;
-				glGetShaderiv(shader, GL_COMPILE_STATUS, &result);
-
-				if (result == GL_TRUE)
-				{
-					return std::nullopt;
-				}
-
-				glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &result);
-				std::string infoLog(result, ' ');
-				glGetShaderInfoLog(shader, result, nullptr, infoLog.data());
-				return infoLog;
-			};
-
-			perm.vertex = glCreateShader(GL_VERTEX_SHADER);
-			CompileShader(perm.vertex, linePtrs);
-
-			#ifndef NDEBUG
-			if (auto const info = CheckCompileError(perm.vertex))
-			{
-				internal::Logger::Instance().Error(std::format("Error compiling vertex shader: {}.", *info));
-			}
-			#endif
-
-			glAttachShader(perm.program, perm.vertex);
-
-			if (m_GeometrySource)
-			{
-				// Erase vertex shader lines, keep common lines
-				linePtrs.resize(numCommonLines);
-
-				// Add geometry shader lines
-				for (auto const& line : *m_GeometrySource)
-				{
-					linePtrs.push_back(line.data());
-				}
-
-				perm.geometry = glCreateShader(GL_GEOMETRY_SHADER);
-				CompileShader(perm.geometry, linePtrs);
-
-				#ifndef NDEBUG
-				if (auto const info = CheckCompileError(perm.geometry))
-				{
-					internal::Logger::Instance().Error(std::format("Error compiling geometry shader: {}.", *info));
-				}
-				#endif
-
-				glAttachShader(perm.program, perm.geometry);
-			}
-
-			if (m_FragmentSource)
-			{
-				// Erase vertex shader lines, keep common lines
-				linePtrs.resize(numCommonLines);
-
-				// Add fragment shader lines
-				for (auto const& line : *m_FragmentSource)
-				{
-					linePtrs.push_back(line.data());
-				}
-
-				perm.fragment = glCreateShader(GL_FRAGMENT_SHADER);
-				CompileShader(perm.fragment, linePtrs);
-
-				#ifndef NDEBUG
-				if (auto const info = CheckCompileError(perm.fragment))
-				{
-					internal::Logger::Instance().Error(std::format("Error compiling fragment shader: {}.", *info));
-				}
-				#endif
-
-				glAttachShader(perm.program, perm.fragment);
-			}
-
-			glLinkProgram(perm.program);
-
-			GLint glResult;
-			glGetProgramiv(perm.program, GL_LINK_STATUS, &glResult);
-
-			if (!glResult)
-			{
-				glGetProgramiv(perm.program, GL_INFO_LOG_LENGTH, &glResult);
-				std::string infoLog(glResult, ' ');
-				glGetProgramInfoLog(perm.program, glResult, nullptr, infoLog.data());
-				internal::Logger::Instance().Error(std::format("Error linking shader program: {}.", infoLog));
-			}
-
-			// Query uniform locations
-
-			QueryUniformLocations(perm);
-
-			// Store permutation
-			mPermutationByBitset.emplace(std::move(permInstance.bitset), std::move(perm));
-		}*/
+			for (auto const& permInfo : permutationInstances)*/
 	}
 
 
@@ -423,55 +245,44 @@ namespace leopph
 		std::regex const static nameIdentifier{R"delim([A-Za-z][\S]*)delim"};
 		std::regex const static number{R"delim(\d+)delim"};
 
-		auto const ExtractFrom = [this](std::vector<std::string>& lines) -> void
+		// Extract all found options
+
+		for (auto& line : mSourceLines)
 		{
-			for (auto& line : lines)
+			if (std::regex_search(line, validFullOptionRegex))
 			{
-				if (std::regex_search(line, validFullOptionRegex))
-				{
-					std::regex_iterator nameAssignmentMatch{std::begin(line), std::end(line), nameAssignment};
-					auto const assignmentStr = nameAssignmentMatch->str();
-					std::regex_iterator nameMatch{std::begin(assignmentStr), std::end(assignmentStr), nameIdentifier};
+				std::regex_iterator nameAssignmentMatch{std::begin(line), std::end(line), nameAssignment};
+				auto const assignmentStr = nameAssignmentMatch->str();
+				std::regex_iterator nameMatch{std::begin(assignmentStr), std::end(assignmentStr), nameIdentifier};
 
-					std::regex_iterator numberAssignmentMatch{std::begin(line), std::end(line), numberAssignment};
-					auto const minAssignmentStr = numberAssignmentMatch->str();
-					std::regex_iterator minMatch{std::begin(minAssignmentStr), std::end(minAssignmentStr), number};
+				std::regex_iterator numberAssignmentMatch{std::begin(line), std::end(line), numberAssignment};
+				auto const minAssignmentStr = numberAssignmentMatch->str();
+				std::regex_iterator minMatch{std::begin(minAssignmentStr), std::end(minAssignmentStr), number};
 
-					++numberAssignmentMatch;
-					auto const maxAssignmentStr = numberAssignmentMatch->str();
-					std::regex_iterator maxMatch{std::begin(maxAssignmentStr), std::end(maxAssignmentStr), number};
+				++numberAssignmentMatch;
+				auto const maxAssignmentStr = numberAssignmentMatch->str();
+				std::regex_iterator maxMatch{std::begin(maxAssignmentStr), std::end(maxAssignmentStr), number};
 
-					auto const min = clamp_cast<u8>(std::stoi(minMatch->str()));
-					auto const max = clamp_cast<u8>(std::stoi(maxMatch->str()));
+				auto const min = clamp_cast<u8>(std::stoi(minMatch->str()));
+				auto const max = clamp_cast<u8>(std::stoi(maxMatch->str()));
 
-					// Temporary mask and shift, will calculate it after eliminating duplicates.
-					mInstanceOptions.emplace_back(nameMatch->str(), static_cast<u8>(0), static_cast<u8>(0), math::BinaryDigitCount(max - min), min, max, min);
-					line.clear();
-				}
-				else if (std::regex_search(line, validShortOptionRegex))
-				{
-					std::regex_iterator nameAssignmentMatch{std::begin(line), std::end(line), nameAssignment};
-					auto const assignmentStr = nameAssignmentMatch->str();
-					std::regex_iterator nameMatch{std::begin(assignmentStr), std::end(assignmentStr), nameIdentifier};
-
-					// Temporary mask and shift, will calculate it after eliminating duplicates.
-					mInstanceOptions.emplace_back(nameMatch->str(), static_cast<u8>(0), static_cast<u8>(0), static_cast<u8>(1), static_cast<u8>(0), static_cast<u8>(1), static_cast<u8>(0));
-					line.clear();
-				}
+				// Temporary mask and shift, will calculate it after eliminating duplicates.
+				mInstanceOptions.emplace_back(nameMatch->str(), static_cast<u8>(0), static_cast<u8>(0), math::BinaryDigitCount(max - min), min, max, min);
+				line.clear();
 			}
-		};
+			else if (std::regex_search(line, validShortOptionRegex))
+			{
+				std::regex_iterator nameAssignmentMatch{std::begin(line), std::end(line), nameAssignment};
+				auto const assignmentStr = nameAssignmentMatch->str();
+				std::regex_iterator nameMatch{std::begin(assignmentStr), std::end(assignmentStr), nameIdentifier};
 
-		ExtractFrom(mSourceInfo.vertex);
-
-		if (mSourceInfo.geometry)
-		{
-			ExtractFrom(*mSourceInfo.geometry);
+				// Temporary mask and shift, will calculate it after eliminating duplicates.
+				mInstanceOptions.emplace_back(nameMatch->str(), static_cast<u8>(0), static_cast<u8>(0), static_cast<u8>(1), static_cast<u8>(0), static_cast<u8>(1), static_cast<u8>(0));
+				line.clear();
+			}
 		}
 
-		if (mSourceInfo.fragment)
-		{
-			ExtractFrom(*mSourceInfo.fragment);
-		}
+		// Deduplicate options
 
 		for (std::size_t i = 0; i < mInstanceOptions.size(); i++)
 		{
@@ -492,6 +303,8 @@ namespace leopph
 				}
 			}
 		}
+
+		// Calculate mask and shift for the options
 
 		u8 nextShift{0};
 
@@ -537,25 +350,7 @@ namespace leopph
 			}
 		}
 
-		auto sourceInfo = mSourceInfo;
-		std::string versionLine = "#version 450 core\n";
-
-		if (sourceInfo.fragment)
-		{
-			sourceInfo.fragment->insert(std::begin(*sourceInfo.fragment), std::begin(optionDefines), std::end(optionDefines));
-			sourceInfo.fragment->insert(std::begin(*sourceInfo.fragment), versionLine);
-		}
-
-		if (sourceInfo.geometry)
-		{
-			sourceInfo.geometry->insert(std::begin(*sourceInfo.geometry), std::begin(optionDefines), std::end(optionDefines));
-			sourceInfo.geometry->insert(std::begin(*sourceInfo.geometry), versionLine);
-		}
-
-		sourceInfo.vertex.insert(std::begin(sourceInfo.vertex), std::make_move_iterator(std::begin(optionDefines)), std::make_move_iterator(std::end(optionDefines)));
-		sourceInfo.vertex.insert(std::begin(sourceInfo.vertex), std::move(versionLine));
-
-		mPermutationByBitset.emplace(mCurrentPermutationBitset, sourceInfo);
+		mPermutationByBitset.emplace(mCurrentPermutationBitset, mSourceLines);
 
 		return true;
 	}
@@ -575,10 +370,15 @@ namespace leopph
 
 
 
-	ShaderFamily make_shader_family(std::filesystem::path vertexShaderPath, std::filesystem::path geometryShaderPath, std::filesystem::path fragmentShaderPath)
+	ShaderFamily make_shader_family(std::filesystem::path const& filePath)
 	{
-		auto fileInfo = ReadShaderFiles(std::move(vertexShaderPath), std::move(geometryShaderPath), std::move(fragmentShaderPath));
-		auto sourceInfo = ProcessShaderIncludes(std::move(fileInfo));
-		return ShaderFamily{std::move(sourceInfo)};
+		ShaderProgramSourceFileInfo sourceFileInfo;
+		// explicitly ignore error so that we can return a ShaderFamily instance, even if it is empty.
+		std::ignore = read_shader_files(filePath, sourceFileInfo);
+
+		ShaderProgramSourceLines sourceLines;
+		process_shader_includes(std::move(sourceFileInfo), sourceLines);
+
+		return ShaderFamily{std::move(sourceLines)};
 	}
 }

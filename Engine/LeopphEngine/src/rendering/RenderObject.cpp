@@ -1,4 +1,4 @@
-#include "rendering/RenderObject.hpp"
+#include "RenderObject.hpp"
 
 #include "Entity.hpp"
 
@@ -11,16 +11,19 @@ namespace leopph::internal
 	}
 
 
+
 	void RenderObject::UnregisterRenderComponent(RenderComponent* renderComponent)
 	{
 		std::erase(m_Components, renderComponent);
 	}
 
 
+
 	u64 RenderObject::NumRenderComponents() const
 	{
 		return m_Components.size();
 	}
+
 
 
 	std::span<RenderObject::RenderInstanceData const> RenderObject::ExtractRenderInstanceData()
@@ -43,6 +46,7 @@ namespace leopph::internal
 
 		return m_RenderInstancesCache;
 	}
+
 
 
 	std::span<RenderObject::RenderInstanceData const> RenderObject::GetRenderInstanceData() const

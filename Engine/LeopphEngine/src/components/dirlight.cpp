@@ -1,8 +1,8 @@
 #include "DirLight.hpp"
 
-#include "DataManager.hpp"
-#include "InternalContext.hpp"
 #include "Math.hpp"
+#include "../InternalContext.hpp"
+#include "../data/DataManager.hpp"
 
 
 namespace leopph
@@ -44,6 +44,7 @@ namespace leopph
 			dataManager->RegisterActiveDirLight(this);
 		}
 	}
+
 
 
 	void DirectionalLight::Active(bool const active)

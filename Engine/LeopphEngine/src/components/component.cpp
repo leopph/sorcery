@@ -1,8 +1,8 @@
 #include "Component.hpp"
 
-#include "DataManager.hpp"
-#include "InternalContext.hpp"
 #include "Logger.hpp"
+#include "../InternalContext.hpp"
+#include "../data/DataManager.hpp"
 
 
 namespace leopph
@@ -11,6 +11,7 @@ namespace leopph
 	{
 		return m_Owner;
 	}
+
 
 
 	void Component::Owner(Entity* entity)
@@ -53,10 +54,12 @@ namespace leopph
 	}
 
 
+
 	void Component::Attach(Entity* entity)
 	{
 		Owner(entity);
 	}
+
 
 
 	void Component::Detach()
@@ -65,16 +68,19 @@ namespace leopph
 	}
 
 
+
 	bool Component::Attached() const
 	{
 		return Owner() != nullptr;
 	}
 
 
+
 	bool Component::Active() const noexcept
 	{
 		return m_Active;
 	}
+
 
 
 	void Component::Active(bool const active)
@@ -93,10 +99,12 @@ namespace leopph
 	}
 
 
+
 	void Component::Activate()
 	{
 		Active(true);
 	}
+
 
 
 	void Component::Deactivate()
@@ -105,16 +113,19 @@ namespace leopph
 	}
 
 
+
 	bool Component::InUse() const noexcept
 	{
 		return Owner() && Active();
 	}
 
 
+
 	Component::Component(Component const& other) :
 		std::enable_shared_from_this<Component>{other},
 		m_Active{other.m_Active}
 	{}
+
 
 
 	Component& Component::operator=(Component const& other)
@@ -131,10 +142,12 @@ namespace leopph
 	}
 
 
+
 	ComponentPtr<> Component::Clone() const
 	{
 		throw std::logic_error{"Unimplemented Clone member function called."};
 	}
+
 
 
 	Component::~Component() = default;
