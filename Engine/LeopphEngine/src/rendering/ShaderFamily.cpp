@@ -340,17 +340,19 @@ namespace leopph
 			return false;
 		}
 
-		std::vector<std::string> optionDefines;
+		std::vector<std::string> sourceLines;
 
 		for (auto const& options : {std::cref(mInstanceOptions), std::cref(s_GlobalOptions)})
 		{
 			for (auto const& option : options.get())
 			{
-				optionDefines.push_back(std::format("#define {} {}\n", option.name, option.currentValue));
+				sourceLines.push_back(std::format("#define {} {}\n", option.name, option.currentValue));
 			}
 		}
 
-		mPermutationByBitset.emplace(mCurrentPermutationBitset, mSourceLines);
+		sourceLines.insert(std::end(sourceLines), std::begin(mSourceLines), std::end(mSourceLines));
+
+		mPermutationByBitset.emplace(mCurrentPermutationBitset, sourceLines);
 
 		return true;
 	}

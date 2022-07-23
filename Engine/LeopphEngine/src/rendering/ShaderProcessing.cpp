@@ -4,6 +4,7 @@
 #include "RenderSettings.hpp"
 #include "Util.hpp"
 
+#include <format>
 #include <iterator>
 #include <regex>
 
@@ -34,68 +35,81 @@ namespace leopph
 
 
 
-	void process_shader_includes(ShaderProgramSourceFileInfo sourceFileInfo, ShaderProgramSourceLines& out)
+	namespace
 	{
-		std::regex const static includeLineRegex{R"delim(^\s*#\s*include\s*)delim"};
-		std::regex const static includeLineQuoteRegex{R"delim(^\s*#\s*include\s*"\S+"\s*$)delim"};
-		std::regex const static includeLineBracketRegex{R"delim(^\s*#\s*include\s*<\S+>\s*$)delim"};
-		std::regex const static fileNameInQuotesRegex{R"delim("\S+")delim"};
-		std::regex const static fileNameInBracketsRegex{R"delim(<\S+>)delim"};
-
-		std::vector<std::string> inclFileBuf;
-
-		// Index based loop because we will potentially insert lines into the vector
-		for (std::size_t lineIndex{0}; lineIndex < sourceFileInfo.lines.size();)
+		void process_includes_recursive(std::filesystem::path const& absolutePath, std::vector<std::string>& lines)
 		{
-			// starts with #include
-			if (auto& line = sourceFileInfo.lines[lineIndex]; std::regex_search(line, includeLineRegex))
+			std::regex const static includeLineRegex{R"delim(^\s*#\s*include\s*)delim"};
+			std::regex const static includeLineQuoteRegex{R"delim(^\s*#\s*include\s*"\S+"\s*$)delim"};
+			std::regex const static includeLineBracketRegex{R"delim(^\s*#\s*include\s*<\S+>\s*$)delim"};
+			std::regex const static fileNameInQuotesRegex{R"delim("\S+")delim"};
+			std::regex const static fileNameInBracketsRegex{R"delim(<\S+>)delim"};
+
+			std::vector<std::string> inclFileBuf;
+
+			// Index based loop because we will potentially insert lines into the vector
+			for (std::size_t i{0}; i < lines.size(); i++)
 			{
-				std::string includeFileName;
-
-				auto const getFileNameFromLine = [](std::string_view const line, std::regex const& nameRegex) -> std::string
+				// starts with #include
+				if (std::regex_search(lines[i], includeLineRegex))
 				{
-					std::regex_iterator const regIt{std::begin(line), std::end(line), nameRegex};
-					return regIt->str().substr(1, regIt->length() - 2);
-				};
+					std::string includeFileName;
 
-				// #include "file"
-				if (std::regex_match(line, includeLineQuoteRegex))
-				{
-					includeFileName = getFileNameFromLine(line, fileNameInQuotesRegex);
+					auto const getFileNameFromLine = [i, &lines](std::regex const& nameRegex) -> std::string
+					{
+						std::regex_iterator const regIt{std::begin(lines[i]), std::end(lines[i]), nameRegex};
+						return regIt->str().substr(1, regIt->length() - 2);
+					};
+
+					// #include "file"
+					if (std::regex_match(lines[i], includeLineQuoteRegex))
+					{
+						includeFileName = getFileNameFromLine(fileNameInQuotesRegex);
+					}
+					// #include <file>
+					else if (std::regex_match(lines[i], includeLineBracketRegex))
+					{
+						includeFileName = getFileNameFromLine(fileNameInBracketsRegex);
+					}
+					else
+					{
+						// We couldn't parse the include directive so we log the error, clear the erroneous lines[i], and move on.
+						internal::Logger::Instance().Error("Error parsing shader includes: ill-formed file specifier was found.");
+						lines[i].clear();
+						i++;
+						continue;
+					}
+
+					auto const includePath = absolute(absolutePath.parent_path() / includeFileName).make_preferred();
+
+					inclFileBuf.clear();
+					read_file_lines(includePath, inclFileBuf);
+
+					if (inclFileBuf.empty())
+					{
+						// The the file to be included was either empty, or does not exist.
+						internal::Logger::Instance().Error(std::format("Error parsing shader includes: included file [{}] was empty or does not exist.", includePath.string()));
+					}
+
+					process_includes_recursive(includePath, inclFileBuf);
+
+					// Clear include lines[i]
+					lines[i].clear();
+
+					// Add included file lines at the include directive's position
+					lines.insert(std::begin(lines) + i, std::make_move_iterator(std::begin(inclFileBuf)), std::make_move_iterator(std::end(inclFileBuf)));
+
+					// We don't increment here because the current index points to the first lines[i] of the included file, which we are yet to examine
 				}
-				// #include <file>
-				else if (std::regex_match(line, includeLineBracketRegex))
-				{
-					includeFileName = getFileNameFromLine(line, fileNameInBracketsRegex);
-				}
-				else
-				{
-					// We couldn't parse the include directive so we log the error, clear the erroneous line, and move on.
-					internal::Logger::Instance().Error("Error parsing shader includes: ill-formed file specifier was found.");
-					line.clear();
-					lineIndex++;
-					continue;
-				}
-
-				auto const includePath = absolute(sourceFileInfo.absolutePath.parent_path() / includeFileName).make_preferred();
-
-				inclFileBuf.clear();
-				read_file_lines(includePath, inclFileBuf);
-
-				// Clear include line
-				line.clear();
-
-				// Add included file lines at the include directive's position
-				sourceFileInfo.lines.insert(std::begin(sourceFileInfo.lines) + lineIndex, std::make_move_iterator(std::begin(inclFileBuf)), std::make_move_iterator(std::end(inclFileBuf)));
-
-				// We don't increment here because the current index points to the first line of the included file, which we are yet to examine
-			}
-			else
-			{
-				lineIndex++;
 			}
 		}
+	}
 
+
+
+	void process_shader_includes(ShaderProgramSourceFileInfo sourceFileInfo, ShaderProgramSourceLines& out)
+	{
+		process_includes_recursive(sourceFileInfo.absolutePath, sourceFileInfo.lines);
 		out = std::move(sourceFileInfo.lines);
 	}
 }

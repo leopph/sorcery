@@ -68,6 +68,8 @@ namespace leopph
 		private:
 			static char const* const VERSION_LINE;
 			static char const* const VERTEX_DEFINE_LINE;
+			static char const* const TESS_CONTROL_DEFINE_LINE;
+			static char const* const TESS_EVALUATION_DEFINE_LINE;
 			static char const* const GEOMETRY_DEFINE_LINE;
 			static char const* const FRAGMENT_DEFINE_LINE;
 

@@ -39,6 +39,36 @@ namespace leopph
 		glAttachShader(mProgram, vertexShader);
 		glDeleteShader(vertexShader);
 
+		// Compile tessellation control shader
+
+		/*linePtrs[1] = TESS_CONTROL_DEFINE_LINE;
+		auto const tessCtrlShader = glCreateShader(GL_TESS_CONTROL_SHADER);
+
+		if (auto const infoLog = compile_shader(tessCtrlShader, linePtrs))
+		{
+			internal::Logger::Instance().Error(std::format("Error while compiling shader: tessellation control shader failed to compile, reason: {}.", *infoLog));
+			glDeleteShader(tessCtrlShader);
+			return;
+		}
+
+		glAttachShader(mProgram, tessCtrlShader);
+		glDeleteShader(tessCtrlShader);
+
+		// Compile tessellation evaluation shader
+
+		linePtrs[1] = TESS_EVALUATION_DEFINE_LINE;
+		auto const tessEvalShader = glCreateShader(GL_TESS_EVALUATION_SHADER);
+
+		if (auto const infoLog = compile_shader(tessEvalShader, linePtrs))
+		{
+			internal::Logger::Instance().Error(std::format("Error while compiling shader: tessellation evaluation shader failed to compile, reason: {}.", *infoLog));
+			glDeleteShader(tessEvalShader);
+			return;
+		}
+
+		glAttachShader(mProgram, tessEvalShader);
+		glDeleteShader(tessEvalShader);
+
 		// Compile geometry shader
 
 		linePtrs[1] = GEOMETRY_DEFINE_LINE;
@@ -52,7 +82,7 @@ namespace leopph
 		}
 
 		glAttachShader(mProgram, geometryShader);
-		glDeleteShader(geometryShader);
+		glDeleteShader(geometryShader);*/
 
 		// Compile fragment shader
 
@@ -251,6 +281,8 @@ namespace leopph
 
 	char const* const ShaderProgram::VERSION_LINE{"#version 450 core\n"};
 	char const* const ShaderProgram::VERTEX_DEFINE_LINE{"#define VERTEX_SHADER 1\n"};
+	char const* const ShaderProgram::TESS_CONTROL_DEFINE_LINE{"#define TESS_CONTROL_SHADER 1\n"};
+	char const* const ShaderProgram::TESS_EVALUATION_DEFINE_LINE{"#define TESS_EVALUATION_SHADER 1\n"};
 	char const* const ShaderProgram::GEOMETRY_DEFINE_LINE{"#define GEOMETRY_SHADER 1\n"};
 	char const* const ShaderProgram::FRAGMENT_DEFINE_LINE{"#define FRAGMENT_SHADER 1\n"};
 }
