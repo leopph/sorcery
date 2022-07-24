@@ -8,352 +8,258 @@
 #include "../data/DataManager.hpp"
 #include "../windowing/WindowImpl.hpp"
 
-#include <stdexcept>
-
 
 namespace leopph::internal
 {
-	std::unique_ptr<Renderer> Renderer::Create()
+	void Renderer::render()
 	{
-		switch (GetSettingsImpl()->GetGraphicsApi())
-		{
-			case Settings::GraphicsApi::OpenGl:
-				return GlRenderer::Create();
-		}
-
-		auto const errMsg{"Failed to create renderer: the selected graphics API is not supported."};
-		Logger::Instance().Critical(errMsg);
-		throw std::domain_error{errMsg};
-	}
-
-
-
-	void Renderer::Render()
-	{
-		ExtractMainCamera();
-
-		if (!m_MainCamera)
+		if (!extract())
 		{
 			return;
 		}
 
-		ExtractAllConfig();
-		ExtractLights();
+		prepare();
+		draw();
 
-		SelectNearestLights<SpotLight>(m_SpotLights, (*m_MainCamera)->Owner()->get_transform().get_position(), m_NumMaxSpot);
-		SelectNearestLights<PointLight>(m_PointLights, (*m_MainCamera)->Owner()->get_transform().get_position(), m_NumMaxPoint);
-		SeparateCastingLights<SpotLight>(m_SpotLights, m_CastingSpotLights, m_NonCastingSpotLights);
-		SeparateCastingLights<PointLight>(m_PointLights, m_CastingPointLights, m_NonCastingPointLights);
-
-		UpdateDependantResources();
-	}
-
-
-
-	Extent2D const& Renderer::GetRenderRes() const
-	{
-		return m_RenderRes;
-	}
-
-
-
-	std::span<u16 const> Renderer::GetDirShadowRes() const
-	{
-		return m_DirShadowRes;
-	}
-
-
-
-	f32 Renderer::GetDirCorrection() const
-	{
-		return m_DirCorr;
-	}
-
-
-
-	u16 Renderer::GetSpotShadowRes() const
-	{
-		return m_SpotShadowRes;
-	}
-
-
-
-	u8 Renderer::GetNumMaxSpotLights() const
-	{
-		return m_NumMaxSpot;
-	}
-
-
-
-	u16 Renderer::GetPointShadowRes() const
-	{
-		return m_PointShadowRes;
-	}
-
-
-
-	u8 Renderer::GetNumMaxPointLights() const
-	{
-		return m_NumMaxPoint;
-	}
-
-
-
-	f32 Renderer::GetGamma() const
-	{
-		return m_Gamma;
-	}
-
-
-
-	Vector3 const& Renderer::GetAmbLight() const
-	{
-		return m_AmbLight;
-	}
-
-
-
-	std::optional<DirectionalLight const*> const& Renderer::GetDirLight() const
-	{
-		return m_DirLight;
-	}
-
-
-
-	std::span<SpotLight const* const> Renderer::GetCastingSpotLights() const
-	{
-		return m_CastingSpotLights;
-	}
-
-
-
-	std::span<SpotLight const* const> Renderer::GetNonCastingSpotLights() const
-	{
-		return m_NonCastingSpotLights;
-	}
-
-
-
-	std::span<PointLight const* const> Renderer::GetCastingPointLights() const
-	{
-		return m_CastingPointLights;
-	}
-
-
-
-	std::span<PointLight const* const> Renderer::GetNonCastingPointLights() const
-	{
-		return m_NonCastingPointLights;
-	}
-
-
-
-	std::optional<Camera const*> const& Renderer::GetMainCamera() const
-	{
-		return m_MainCamera;
-	}
-
-
-
-	void Renderer::ExtractRenderRes()
-	{
-		auto const mul = GetWindowImpl()->RenderMultiplier();
-		m_RenderRes.Width = static_cast<u32>(static_cast<f32>(GetWindowImpl()->Width()) / mul);
-		m_RenderRes.Height = static_cast<u32>(static_cast<f32>(GetWindowImpl()->Height()) / mul);
-	}
-
-
-
-	void Renderer::ExtractDirShadowRes()
-	{
-		auto const res = GetSettingsImpl()->DirShadowResolution();
-		m_DirShadowRes.assign(std::begin(res), std::end(res));
-	}
-
-
-
-	void Renderer::ExtractSpotShadowRes()
-	{
-		m_SpotShadowRes = GetSettingsImpl()->SpotShadowResolution();
-	}
-
-
-
-	void Renderer::ExtractPointShadowRes()
-	{
-		m_PointShadowRes = GetSettingsImpl()->PointShadowResolution();
-	}
-
-
-
-	void Renderer::ExtractDirCorrection()
-	{
-		m_DirCorr = GetSettingsImpl()->DirShadowCascadeCorrection();
-	}
-
-
-
-	void Renderer::ExtractNumMaxSpotLights()
-	{
-		m_NumMaxSpot = GetSettingsImpl()->MaxSpotLightCount();
-	}
-
-
-
-	void Renderer::ExtractNumMaxPointLights()
-	{
-		m_NumMaxPoint = GetSettingsImpl()->MaxPointLightCount();
-	}
-
-
-
-	void Renderer::ExtractGamma()
-	{
-		m_Gamma = GetSettingsImpl()->Gamma();
-	}
-
-
-
-	void Renderer::ExtractAllConfig()
-	{
-		ExtractRenderRes();
-		ExtractDirShadowRes();
-		ExtractDirCorrection();
-		ExtractSpotShadowRes();
-		ExtractNumMaxSpotLights();
-		ExtractPointShadowRes();
-		ExtractNumMaxPointLights();
-		ExtractGamma();
-	}
-
-
-
-	void Renderer::ExtractLights()
-	{
-		m_AmbLight = AmbientLight::Instance().Intensity();
-
-		if (auto const* const dirLight = GetDataManager()->DirectionalLight())
+		if (!mMainCam)
 		{
-			m_DirLight = dirLight;
+			return;
 		}
-		else
-		{
-			m_DirLight.reset();
-		}
+
+		extract_all_config();
+		extract_all_lights();
+
+		select_nearest_lights<SpotLight>(mSpotLights, (*mMainCam)->Owner()->get_transform().get_position(), mNumMaxSpot);
+		select_nearest_lights<PointLight>(mPointLights, (*mMainCam)->Owner()->get_transform().get_position(), mNumMaxPoint);
+		separate_casting_lights<SpotLight>(mSpotLights, mCastingSpots, mNonCastingSpots);
+		separate_casting_lights<PointLight>(mPointLights, mCastingPoints, mNonCastingPoints);
+
+		update_dependant_resources();
+	}
+
+
+
+	void Renderer::extract_spot_shadow_res()
+	{
+		mSpotShadowRes = GetSettingsImpl()->SpotShadowResolution();
+	}
+
+
+
+	void Renderer::extract_point_shadow_res()
+	{
+		mPointShadowRes = GetSettingsImpl()->PointShadowResolution();
+	}
+
+
+
+	void Renderer::extract_num_max_spot_lights()
+	{
+		mNumMaxSpot = GetSettingsImpl()->MaxSpotLightCount();
+	}
+
+
+
+	void Renderer::extract_num_max_point_lights()
+	{
+		mNumMaxPoint = GetSettingsImpl()->MaxPointLightCount();
+	}
+
+
+
+	void Renderer::extract_all_config()
+	{
+		extract_spot_shadow_res();
+		extract_num_max_spot_lights();
+		extract_point_shadow_res();
+		extract_num_max_point_lights();
+	}
+
+
+
+	void Renderer::extract_all_lights()
+	{
+		mAmbLight = AmbientLight::Instance().Intensity();
 
 		auto const spotLights = GetDataManager()->ActiveSpotLights();
-		m_SpotLights.assign(std::begin(spotLights), std::end(spotLights));
+		mSpotLights.assign(std::begin(spotLights), std::end(spotLights));
 
 		auto const pointLights = GetDataManager()->ActivePointLights();
-		m_PointLights.assign(std::begin(pointLights), std::end(pointLights));
+		mPointLights.assign(std::begin(pointLights), std::end(pointLights));
 	}
 
 
 
-	void Renderer::ExtractMainCamera()
+	bool Renderer::extract()
 	{
-		if (auto const* const cam = Camera::Current())
+		// Extract main camera
+
+		auto const* const cam = Camera::Current();
+
+		// If there is no camera, abort extract and signal abort for the parent process too
+		if (!cam)
 		{
-			m_MainCamera = cam;
+			return false;
+		}
+
+		mCamData.pos = cam->Owner()->get_transform().get_position();
+		mCamData.transformData.viewMat = cam->ViewMatrix();
+		mCamData.transformData.viewMatInv = mCamData.transformData.viewMat.Inverse();
+		mCamData.transformData.projMat = cam->ProjectionMatrix();
+		mCamData.transformData.projMatInv = mCamData.transformData.projMat.Inverse();
+		mCamData.transformData.viewProjMat = mCamData.transformData.viewMat * mCamData.transformData.projMat;
+		mCamData.transformData.viewProjMatInv = mCamData.transformData.viewProjMat.Inverse();
+
+		// Extract screen data
+
+		auto const renderMult = GetWindowImpl()->RenderMultiplier();
+		mScreenData.width = static_cast<u32>(static_cast<f32>(GetWindowImpl()->Width()) / renderMult);
+		mScreenData.height = static_cast<u32>(static_cast<f32>(GetWindowImpl()->Height()) / renderMult);
+		mScreenData.gamma = GetSettingsImpl()->Gamma();
+
+		// Extract directional light data
+		if (auto const* const dirLight = GetDataManager()->DirectionalLight())
+		{
+			DirLightData dirLightData;
+			dirLightData.direction = dirLight->Direction();
+			dirLightData.diffuse = dirLight->Diffuse();
+			dirLightData.specular = dirLight->Specular();
+
+			if (dirLight->CastsShadow())
+			{
+				ShadowCascadeData cascadeData;
+				cascadeData.correction = GetSettingsImpl()->DirShadowCascadeCorrection();
+				cascadeData.nearClip = dirLight->ShadowExtension();
+				std::ranges::copy(GetSettingsImpl()->DirShadowResolution(), std::back_inserter(cascadeData.res));
+				dirLightData.cascades = std::move(cascadeData);
+			}
+
+			mDirData = std::move(dirLightData);
 		}
 		else
 		{
-			m_MainCamera.reset();
+			mDirData.reset();
 		}
+
+		extract_all_config();
+		extract_all_lights();
+
+		return true;
 	}
 
 
 
-	void Renderer::UpdateDependantResources()
+	void Renderer::prepare_all_lighting_data()
 	{
-		if (m_ResUpdateFlags.RenderRes)
-		{
-			ExtractRenderRes();
-			OnRenderResChange(GetRenderRes());
-			m_ResUpdateFlags.RenderRes = false;
-		}
+		select_nearest_lights<SpotLight>(mSpotLights, (*mMainCam)->Owner()->get_transform().get_position(), mNumMaxSpot);
+		select_nearest_lights<PointLight>(mPointLights, (*mMainCam)->Owner()->get_transform().get_position(), mNumMaxPoint);
 
-		if (m_ResUpdateFlags.DirShadowRes)
-		{
-			OnDirShadowResChange(GetSettingsImpl()->DirShadowResolution());
-			m_ResUpdateFlags.DirShadowRes = false;
-		}
-
-		if (m_ResUpdateFlags.SpotShadowRes)
-		{
-			OnSpotShadowResChange(GetSettingsImpl()->SpotShadowResolution());
-			m_ResUpdateFlags.SpotShadowRes = false;
-		}
-
-		if (m_ResUpdateFlags.PointShadowRes)
-		{
-			OnPointShadowResChange(GetSettingsImpl()->PointShadowResolution());
-			m_ResUpdateFlags.PointShadowRes = false;
-		}
-
-		OnDetermineShadowMapCountRequirements(static_cast<u8>(m_CastingSpotLights.size()), static_cast<u8>(m_CastingPointLights.size()));
+		separate_casting_lights<SpotLight>(mSpotLights, mCastingSpots, mNonCastingSpots);
+		separate_casting_lights<PointLight>(mPointLights, mCastingPoints, mNonCastingPoints);
 	}
+
+
+
+	void Renderer::update_dependant_resources()
+	{
+		if (mResUpdateFlags.renderRes)
+		{
+			extract_render_res();
+			on_render_res_change(mRenderRes);
+			mResUpdateFlags.renderRes = false;
+		}
+
+		if (mResUpdateFlags.dirShadowRes)
+		{
+			on_dir_shadow_res_change(GetSettingsImpl()->DirShadowResolution());
+			mResUpdateFlags.dirShadowRes = false;
+		}
+
+		if (mResUpdateFlags.spotShadowRes)
+		{
+			on_spot_shadow_res_change(GetSettingsImpl()->SpotShadowResolution());
+			mResUpdateFlags.spotShadowRes = false;
+		}
+
+		if (mResUpdateFlags.pointShadowRes)
+		{
+			on_point_shadow_res_change(GetSettingsImpl()->PointShadowResolution());
+			mResUpdateFlags.pointShadowRes = false;
+		}
+
+		on_determine_shadow_map_count_requirements(static_cast<u8>(mCastingSpots.size()), static_cast<u8>(mCastingPoints.size()));
+	}
+
+
+
+	void Renderer::forward_render()
+	{}
+
+
+
+	void Renderer::deferred_render()
+	{}
 
 
 
 	void Renderer::OnEventReceived(EventReceiver<WindowEvent>::EventParamType)
 	{
-		m_ResUpdateFlags.RenderRes = true;
+		mResUpdateFlags.renderRes = true;
 	}
 
 
 
 	void Renderer::OnEventReceived(EventReceiver<DirShadowResEvent>::EventParamType)
 	{
-		m_ResUpdateFlags.DirShadowRes = true;
+		mResUpdateFlags.dirShadowRes = true;
 	}
 
 
 
 	void Renderer::OnEventReceived(EventReceiver<SpotShadowResEvent>::EventParamType)
 	{
-		m_ResUpdateFlags.SpotShadowRes = true;
+		mResUpdateFlags.spotShadowRes = true;
 	}
 
 
 
 	void Renderer::OnEventReceived(EventReceiver<PointShadowResEvent>::EventParamType)
 	{
-		m_ResUpdateFlags.PointShadowRes = true;
+		mResUpdateFlags.pointShadowRes = true;
 	}
 
 
 
-	void Renderer::CalculateShadowCascades(std::vector<ShadowCascade>& out)
+	void Renderer::calculate_shadow_cascades(std::vector<ShadowCascade>& out)
 	{
-		auto const frust = (*m_MainCamera)->Frustum();
+		auto const frust = (*mMainCam)->Frustum();
 		auto const& frustNearZ = frust.NearBottomLeft[2];
 		auto const& frustFarZ = frust.FarBottomLeft[2];
 		auto const frustDepth = frustFarZ - frustNearZ;
-		auto const numCascades = static_cast<u8>(m_DirShadowRes.size());
-		auto const lightViewMat = Matrix4::LookAt(Vector3{0}, (*m_DirLight)->Direction(), Vector3::Up());
-		auto const camViewToLightViewMat = (*m_MainCamera)->ViewMatrix().Inverse() * lightViewMat;
+		auto const numCascades = static_cast<u8>(mDirShadowRes.size());
+		auto const lightViewMat = Matrix4::LookAt(Vector3{0}, (*mDirLight)->Direction(), Vector3::Up());
+		auto const camViewToLightViewMat = (*mMainCam)->ViewMatrix().Inverse() * lightViewMat;
 
 		out.resize(numCascades);
 
 		// Calculate the cascade near and far planes on the Z axis in main camera space
 
-		out[0].Near = frustNearZ;
+		out[0].near = frustNearZ;
 		for (auto i = 1; i < numCascades; i++)
 		{
-			out[i].Near = m_DirCorr * frustNearZ * math::Pow(frustFarZ / frustNearZ, static_cast<f32>(i) / static_cast<f32>(numCascades)) + (1 - m_DirCorr) * (frustNearZ + static_cast<f32>(i) / static_cast<f32>(numCascades) * (frustFarZ - frustNearZ));
+			out[i].near = mDirCorr * frustNearZ * math::Pow(frustFarZ / frustNearZ, static_cast<f32>(i) / static_cast<f32>(numCascades)) + (1 - mDirCorr) * (frustNearZ + static_cast<f32>(i) / static_cast<f32>(numCascades) * (frustFarZ - frustNearZ));
 			// On bound borders the far plane is multiplied by this value to avoid precision problems.
 			auto constexpr borderCorrection = 1.005f;
-			out[i - 1].Far = out[i].Near * borderCorrection;
+			out[i - 1].far = out[i].near * borderCorrection;
 		}
-		out[numCascades - 1].Far = frustFarZ;
+		out[numCascades - 1].far = frustFarZ;
 
 		for (auto& cascade : out)
 		{
 			// The normalized distance of the cascades faces from the near frustum face.
 
-			auto const cascadeNearDist = (cascade.Near - frustNearZ) / frustDepth;
-			auto const cascadeFarDist = (cascade.Far - frustNearZ) / frustDepth;
+			auto const cascadeNearDist = (cascade.near - frustNearZ) / frustDepth;
+			auto const cascadeFarDist = (cascade.far - frustNearZ) / frustDepth;
 
 			// The cascade vertices in camera view space.
 			std::array const cascadeVertsCam
@@ -383,9 +289,9 @@ namespace leopph::internal
 			});
 
 			// The projection matrix that uses the calculated min/max values of the bounding box. Essentially THE bounding box + the near clip offset of the DirectionalLight.
-			auto const lightProjMat{Matrix4::Ortographic(bBoxMinLight[0], bBoxMaxLight[0], bBoxMaxLight[1], bBoxMinLight[1], bBoxMinLight[2] - (*m_DirLight)->ShadowExtension(), bBoxMaxLight[2])};
+			auto const lightProjMat{Matrix4::Ortographic(bBoxMinLight[0], bBoxMaxLight[0], bBoxMaxLight[1], bBoxMinLight[1], bBoxMinLight[2] - (*mDirLight)->ShadowExtension(), bBoxMaxLight[2])};
 
-			cascade.WorldToClip = lightViewMat * lightProjMat;
+			cascade.wordToClip = lightViewMat * lightProjMat;
 		}
 	}
 
@@ -393,6 +299,6 @@ namespace leopph::internal
 
 	Renderer::Renderer()
 	{
-		ExtractAllConfig();
+		extract_all_config();
 	}
 }

@@ -34,7 +34,6 @@
     <ClCompile Include="src\rendering\GlSkyboxImpl.cpp" />
     <ClCompile Include="src\rendering\GlTexture.cpp" />
     <ClCompile Include="src\rendering\GlVertexArrayObject.cpp" />
-    <ClCompile Include="src\rendering\GlDeferredRenderer.cpp" />
     <ClCompile Include="src\rendering\GlForwardRenderer.cpp" />
     <ClCompile Include="src\rendering\GlRenderer.cpp" />
     <ClCompile Include="src\rendering\Renderer.cpp" />
@@ -150,11 +149,9 @@
     <ClInclude Include="src\rendering\GlMeshGroup.hpp" />
     <ClInclude Include="src\rendering\GlSkyboxImpl.hpp" />
     <ClInclude Include="src\rendering\GlVertexArrayObject.hpp" />
-    <ClInclude Include="src\rendering\GlDeferredRenderer.hpp" />
     <ClInclude Include="src\rendering\GlForwardRenderer.hpp" />
     <ClInclude Include="src\rendering\GlRenderer.hpp" />
     <ClInclude Include="src\rendering\Renderer.hpp" />
-    <ClInclude Include="src\rendering\Extent.hpp" />
     <ClInclude Include="src\rendering\RenderObject.hpp" />
     <ClInclude Include="src\rendering\RenderSettings.hpp" />
     <ClInclude Include="src\rendering\ShaderFamily.hpp" />
@@ -162,6 +159,7 @@
     <ClInclude Include="src\rendering\ShaderProgram.hpp" />
     <ClInclude Include="src\scene\Scene.hpp" />
     <ClInclude Include="src\scene\SceneManager.hpp" />
+    <ClInclude Include="..\include\RenderingPath.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\rendering\shaders\glsl\include\CompositeFrag.glsl" />

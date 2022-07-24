@@ -11,9 +11,9 @@
 
 namespace leopph::internal
 {
-	void GlForwardRenderer::Render()
+	void GlForwardRenderer::render()
 	{
-		GlRenderer::Render();
+		GlRenderer::render();
 
 		if (!GetMainCamera())
 		{
@@ -138,7 +138,7 @@ namespace leopph::internal
 		glDepthFunc(GL_LEQUAL);
 		glDepthMask(GL_TRUE);
 		glDisable(GL_STENCIL_TEST);
-		glViewport(0, 0, GetRenderRes().Width, GetRenderRes().Height);
+		glViewport(0, 0, get_render_res().Width, get_render_res().Height);
 
 		GLfloat constexpr clearColor[]{0, 0, 0, 1};
 		GLfloat constexpr clearDepth{1};
@@ -260,7 +260,7 @@ namespace leopph::internal
 
 
 		// COPY TO DEFAULT FRAMEBUFFER
-		glBlitNamedFramebuffer(m_PingPongBuffers[1].framebuffer, 0, 0, 0, GetRenderRes().Width, GetRenderRes().Height, 0, 0, GetRenderRes().Width, GetRenderRes().Height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+		glBlitNamedFramebuffer(m_PingPongBuffers[1].framebuffer, 0, 0, 0, get_render_res().Width, get_render_res().Height, 0, 0, get_render_res().Width, get_render_res().Height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
 	}
 
 

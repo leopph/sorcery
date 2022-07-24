@@ -50,7 +50,6 @@
     <ClCompile Include="src\rendering\GlTexture.cpp" />
     <ClCompile Include="src\rendering\GlVertexArrayObject.cpp" />
     <ClCompile Include="src\rendering\Material.cpp" />
-    <ClCompile Include="src\rendering\GlDeferredRenderer.cpp" />
     <ClCompile Include="src\rendering\GlForwardRenderer.cpp" />
     <ClCompile Include="src\rendering\GlRenderer.cpp" />
     <ClCompile Include="src\rendering\Renderer.cpp" />
@@ -111,6 +110,7 @@
     <ClInclude Include="..\include\Poelo.hpp" />
     <ClInclude Include="..\include\PointLight.hpp" />
     <ClInclude Include="..\include\RenderComponent.hpp" />
+    <ClInclude Include="..\include\RenderingPath.h" />
     <ClInclude Include="..\include\Settings.hpp" />
     <ClInclude Include="..\include\Skybox.hpp" />
     <ClInclude Include="..\include\SpotLight.hpp" />
@@ -134,14 +134,12 @@
     <ClInclude Include="src\events\DirShadowResEvent.hpp" />
     <ClInclude Include="src\events\PointShadowResEvent.hpp" />
     <ClInclude Include="src\events\SpotShadowResEvent.hpp" />
-    <ClInclude Include="src\rendering\Extent.hpp" />
     <ClInclude Include="src\rendering\GlBufferObject.hpp" />
     <ClInclude Include="src\rendering\GlCore.hpp" />
     <ClInclude Include="src\rendering\GlMesh.hpp" />
     <ClInclude Include="src\rendering\GlMeshGroup.hpp" />
     <ClInclude Include="src\rendering\GlSkyboxImpl.hpp" />
     <ClInclude Include="src\rendering\GlVertexArrayObject.hpp" />
-    <ClInclude Include="src\rendering\GlDeferredRenderer.hpp" />
     <ClInclude Include="src\rendering\GlForwardRenderer.hpp" />
     <ClInclude Include="src\rendering\GlRenderer.hpp" />
     <ClInclude Include="src\rendering\Renderer.hpp" />

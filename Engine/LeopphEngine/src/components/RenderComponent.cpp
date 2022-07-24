@@ -37,7 +37,7 @@ namespace leopph::internal
 
 	void RenderComponent::Init(MeshGroup const& meshGroup) noexcept
 	{
-		m_RenderObject = GetRenderer()->CreateRenderObject(meshGroup);
+		m_RenderObject = GetRenderer()->create_render_object(meshGroup);
 		m_RenderObject->RegisterRenderComponent(this);
 	}
 
@@ -97,7 +97,7 @@ namespace leopph::internal
 		// If we are the last component referring to the RenderObject, it is our job to delete it.
 		if (m_RenderObject->NumRenderComponents() == 0)
 		{
-			GetRenderer()->DeleteRenderObject(m_RenderObject);
+			GetRenderer()->delete_render_object(m_RenderObject);
 		}
 
 		m_CastsShadow = other.m_CastsShadow;
@@ -118,7 +118,7 @@ namespace leopph::internal
 		// If we are the last component referring to the RenderObject, it is our job to delete it.
 		if (m_RenderObject->NumRenderComponents() == 0)
 		{
-			GetRenderer()->DeleteRenderObject(m_RenderObject);
+			GetRenderer()->delete_render_object(m_RenderObject);
 		}
 	}
 }

@@ -42,9 +42,9 @@ namespace leopph::internal
 			// Initializes OpenGL and constructs a renderer for the selected rendering pipeline.
 			static std::unique_ptr<GlRenderer> Create();
 
-			[[nodiscard]] RenderObject* CreateRenderObject(MeshGroup const& meshGroup) override;
+			[[nodiscard]] RenderObject* create_render_object(MeshGroup const& meshGroup) override;
 
-			void DeleteRenderObject(RenderObject* renderObject) override;
+			void delete_render_object(RenderObject* renderObject) override;
 
 			[[nodiscard]] GlSkyboxImpl* CreateOrGetSkyboxImpl(std::filesystem::path allPaths);
 
@@ -112,19 +112,19 @@ namespace leopph::internal
 
 		protected:
 			// Recreates common render targets
-			void OnRenderResChange(Extent2D renderRes) override;
+			void on_render_res_change(Extent2D renderRes) override;
 
 			// Recreates shadow cascade maps
-			void OnDirShadowResChange(std::span<u16 const> resolutions) override;
+			void on_dir_shadow_res_change(std::span<u16 const> resolutions) override;
 
 			// Recreates spot shadow maps
-			void OnSpotShadowResChange(u16 resolution) override;
+			void on_spot_shadow_res_change(u16 resolution) override;
 
 			// Recreates point shadow maps
-			void OnPointShadowResChange(u16 resolution) override;
+			void on_point_shadow_res_change(u16 resolution) override;
 
 			// Creates additional spot and point shadow maps if needed
-			void OnDetermineShadowMapCountRequirements(u8 spot, u8 point) override;
+			void on_determine_shadow_map_count_requirements(u8 spot, u8 point) override;
 
 
 			/* ############

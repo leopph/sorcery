@@ -22,7 +22,7 @@ namespace leopph::internal
 
 
 		public:
-			void Render() override;
+			void render() override;
 
 		private:
 			static void CreateUbo(MappedBuffer& ubo, u64 size);

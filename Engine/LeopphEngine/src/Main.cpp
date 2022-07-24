@@ -58,7 +58,7 @@ namespace leopph::internal
 			}
 
 			window->Clear();
-			renderer->Render();
+			renderer->render();
 			window->SwapBuffers();
 			EventManager::Instance().Send<FrameCompleteEvent>();
 		}

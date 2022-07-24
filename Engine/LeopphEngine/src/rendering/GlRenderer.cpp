@@ -36,7 +36,7 @@ namespace leopph::internal
 
 
 
-	RenderObject* GlRenderer::CreateRenderObject(MeshGroup const& meshGroup)
+	RenderObject* GlRenderer::create_render_object(MeshGroup const& meshGroup)
 	{
 		auto glMeshGroup = std::make_unique<GlMeshGroup>(meshGroup);
 		auto* const ret = glMeshGroup.get();
@@ -46,7 +46,7 @@ namespace leopph::internal
 
 
 
-	void GlRenderer::DeleteRenderObject(RenderObject* renderObject)
+	void GlRenderer::delete_render_object(RenderObject* renderObject)
 	{
 		std::erase_if(m_RenderObjects, [renderObject](auto const& elem)
 		{
@@ -136,8 +136,8 @@ namespace leopph::internal
 		{
 			// This relies heavily on the projection matrix being row-major and projecting from a LH base to NDC.
 
-			auto const near = (cascades[i].Near * camProjMat[2][2] + camProjMat[3][2]) / cascades[i].Near;
-			auto const far = (cascades[i].Far * camProjMat[2][2] + camProjMat[3][2]) / cascades[i].Far;
+			auto const near = (cascades[i].near * camProjMat[2][2] + camProjMat[3][2]) / cascades[i].near;
+			auto const far = (cascades[i].far * camProjMat[2][2] + camProjMat[3][2]) / cascades[i].far;
 			out[i] = {near, far};
 		}
 	}
@@ -330,7 +330,7 @@ namespace leopph::internal
 
 
 
-	void GlRenderer::OnRenderResChange(Extent2D const renderRes)
+	void GlRenderer::on_render_res_change(Extent2D const renderRes)
 	{
 		DeleteRenderTargets();
 		CreateRenderTargets(static_cast<GLsizei>(renderRes.Width), static_cast<GLsizei>(renderRes.Height));
@@ -338,7 +338,7 @@ namespace leopph::internal
 
 
 
-	void GlRenderer::OnDirShadowResChange(std::span<u16 const> const resolutions)
+	void GlRenderer::on_dir_shadow_res_change(std::span<u16 const> const resolutions)
 	{
 		DeleteDirShadowMaps();
 		CreateDirShadowMaps(resolutions);
@@ -346,7 +346,7 @@ namespace leopph::internal
 
 
 
-	void GlRenderer::OnSpotShadowResChange(u16 const resolution)
+	void GlRenderer::on_spot_shadow_res_change(u16 const resolution)
 	{
 		auto const numMaps = static_cast<u8>(m_SpotShadowMapFramebuffers.size());
 		DeleteSpotShadowMaps();
@@ -357,7 +357,7 @@ namespace leopph::internal
 
 
 
-	void GlRenderer::OnPointShadowResChange(u16 const resolution)
+	void GlRenderer::on_point_shadow_res_change(u16 const resolution)
 	{
 		auto const numMaps = static_cast<u8>(m_PointShadowMapFramebuffers.size());
 		DeletePointShadowMaps();
@@ -369,7 +369,7 @@ namespace leopph::internal
 
 
 
-	void GlRenderer::OnDetermineShadowMapCountRequirements(u8 const spot, u8 const point)
+	void GlRenderer::on_determine_shadow_map_count_requirements(u8 const spot, u8 const point)
 	{
 		if (m_SpotShadowMapFramebuffers.size() < spot)
 		{
@@ -403,9 +403,9 @@ namespace leopph::internal
 
 		CreateScreenQuad();
 
-		auto const& [renderWidth, renderHeight] = GetRenderRes();
+		auto const& [renderWidth, renderHeight] = get_render_res();
 		CreateRenderTargets(static_cast<GLsizei>(renderWidth), static_cast<GLsizei>(renderHeight));
-		CreateDirShadowMaps(GetDirShadowRes());
+		CreateDirShadowMaps(get_dir_shadow_res());
 	}
 
 
