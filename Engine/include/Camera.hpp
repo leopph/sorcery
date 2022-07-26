@@ -5,6 +5,7 @@
 #include "EventReceiver.hpp"
 #include "Frustum.hpp"
 #include "Matrix.hpp"
+#include "RenderingPath.hpp"
 #include "Skybox.hpp"
 #include "WindowEvent.hpp"
 
@@ -78,6 +79,9 @@ namespace leopph
 			// Viewport space ranges from [0, 1] on both axes. Values outside of that are not visible.
 			[[nodiscard]] LEOPPHAPI Vector2 TransformToViewport(Vector3 const& vector) const noexcept;
 
+			[[nodiscard]] LEOPPHAPI RenderingPath get_rendering_path() const;
+			LEOPPHAPI void set_rendering_path(RenderingPath path);
+
 			// Detaching the current Camera will set it to nullptr.
 			LEOPPHAPI void Owner(Entity* entity) final;
 			using Component::Owner;
@@ -108,5 +112,6 @@ namespace leopph
 			float m_NearClip{0.1f};
 			float m_FarClip{100.f};
 			std::variant<Color, Skybox> m_Background;
+			RenderingPath mRenderingPath{RenderingPath::Forward};
 	};
 }

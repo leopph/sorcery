@@ -12,7 +12,6 @@ layout(binding = 0) uniform CameraBuffer
 	layout(row_major) mat4 projMatInv;
 	layout(row_major) mat4 viewProjMat;
 	layout(row_major) mat4 viewProjMatInv;
-
 	vec3 position;
 } u_CameraData;
 

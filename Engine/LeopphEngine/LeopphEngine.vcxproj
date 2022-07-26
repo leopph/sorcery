@@ -50,10 +50,9 @@
     <ClCompile Include="src\rendering\GlTexture.cpp" />
     <ClCompile Include="src\rendering\GlVertexArrayObject.cpp" />
     <ClCompile Include="src\rendering\Material.cpp" />
-    <ClCompile Include="src\rendering\GlForwardRenderer.cpp" />
-    <ClCompile Include="src\rendering\GlRenderer.cpp" />
     <ClCompile Include="src\rendering\Renderer.cpp" />
     <ClCompile Include="src\rendering\RenderObject.cpp" />
+    <ClCompile Include="src\rendering\RenderSettings.cpp" />
     <ClCompile Include="src\rendering\ScreenQuad.cpp" />
     <ClCompile Include="src\rendering\ShaderFamily.cpp" />
     <ClCompile Include="src\rendering\ShaderProcessing.cpp" />
@@ -111,6 +110,7 @@
     <ClInclude Include="..\include\PointLight.hpp" />
     <ClInclude Include="..\include\RenderComponent.hpp" />
     <ClInclude Include="..\include\RenderingPath.h" />
+    <ClInclude Include="..\include\RenderingPath.hpp" />
     <ClInclude Include="..\include\Settings.hpp" />
     <ClInclude Include="..\include\Skybox.hpp" />
     <ClInclude Include="..\include\SpotLight.hpp" />
@@ -140,8 +140,6 @@
     <ClInclude Include="src\rendering\GlMeshGroup.hpp" />
     <ClInclude Include="src\rendering\GlSkyboxImpl.hpp" />
     <ClInclude Include="src\rendering\GlVertexArrayObject.hpp" />
-    <ClInclude Include="src\rendering\GlForwardRenderer.hpp" />
-    <ClInclude Include="src\rendering\GlRenderer.hpp" />
     <ClInclude Include="src\rendering\Renderer.hpp" />
     <ClInclude Include="src\rendering\RenderObject.hpp" />
     <ClInclude Include="src\rendering\RenderSettings.hpp" />
@@ -202,7 +200,6 @@
     <None Include="src\rendering\shaders\glsl\include\Pos2dVert.glsl" />
     <None Include="src\rendering\shaders\glsl\include\SkyboxFrag.glsl" />
     <None Include="src\rendering\shaders\glsl\include\SkyboxVert.glsl" />
-    <None Include="src\rendering\shaders\glsl\include\TransformBuffer.glsl" />
     <None Include="src\rendering\shaders\glsl\LinearShadow.shader" />
     <None Include="src\rendering\shaders\glsl\Skybox.shader" />
     <None Include="src\rendering\shaders\glsl\TransparencyComposite.shader" />

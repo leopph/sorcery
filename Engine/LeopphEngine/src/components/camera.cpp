@@ -95,6 +95,20 @@ namespace leopph
 
 
 
+	RenderingPath Camera::get_rendering_path() const
+	{
+		return mRenderingPath;
+	}
+
+
+
+	void Camera::set_rendering_path(RenderingPath const path)
+	{
+		mRenderingPath = path;
+	}
+
+
+
 	void Camera::Owner(Entity* entity)
 	{
 		Component::Owner(entity);

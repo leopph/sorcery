@@ -2,20 +2,31 @@
 
 #include "Types.hpp"
 
-#include <array>
 
-
-namespace leopph::rendersettings
+namespace leopph
 {
-	u8 constexpr numMaxShadowCascades{3};
-	std::array<u16, numMaxShadowCascades> constexpr dirShadowResolutions{4096, 2048, 1024};
-	f32 constexpr dirShadowCorrection{.75f};
+	class RenderSettings
+	{
+		public:
+			[[nodiscard]] static u16 get_directional_light_shadow_map_size();
+			[[nodiscard]] static u16 get_punctual_lights_shadow_map_size();
+			[[nodiscard]] static u8 get_shadow_cascade_count();
+			[[nodiscard]] static u8 get_max_spot_light_count();
+			[[nodiscard]] static u8 get_max_point_light_count();
 
-	u16 constexpr numMaxSpot{8};
-	u16 constexpr numMaxSpotShadow{8};
-	u16 constexpr spotShadowResolution{2048};
 
-	u16 constexpr numMaxPoint{8};
-	u16 constexpr numMaxPointShadow{8};
-	u16 constexpr pointShadowResolution{1024};
+			RenderSettings() = delete;
+			RenderSettings(RenderSettings const&) = delete;
+			void operator=(RenderSettings const&) = delete;
+			RenderSettings(RenderSettings&&) = delete;
+			void operator=(RenderSettings&&) = delete;
+			~RenderSettings() = delete;
+
+		private:
+			static u16 mDirShadowMapSize;
+			static u16 mPuncShadowMapSize;
+			static u8 mNumShadowCascades;
+			static u8 mNumMaxSpotLights;
+			static u8 mNumMaxPointLights;
+	};
 }

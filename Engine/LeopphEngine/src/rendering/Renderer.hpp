@@ -1,114 +1,68 @@
 #pragma once
 
 #include "Camera.hpp"
-#include "DirLight.hpp"
 #include "EventReceiver.hpp"
 #include "Light.hpp"
 #include "MeshGroup.hpp"
-#include "PointLight.hpp"
+#include "RenderingPath.hpp"
 #include "RenderObject.hpp"
-#include "SpotLight.hpp"
 #include "Types.hpp"
 #include "WindowEvent.hpp"
-#include "../events/DirShadowResEvent.hpp"
-#include "../events/PointShadowResEvent.hpp"
-#include "../events/SpotShadowResEvent.hpp"
 
-#include <concepts>
-#include <memory>
-#include <optional>
 #include <vector>
 
 
 namespace leopph::internal
 {
-	class Renderer : public EventReceiver<WindowEvent>, public EventReceiver<DirShadowResEvent>, public EventReceiver<SpotShadowResEvent>, public EventReceiver<PointShadowResEvent>
+	class Renderer : public EventReceiver<WindowEvent>
 	{
 		struct ResourceUpdateFlags
 		{
 			bool renderRes : 1 = false;
-			bool dirShadowRes : 1 = false;
-			bool spotShadowRes : 1 = false;
-			bool pointShadowRes : 1 = false;
 		};
 
 
-		struct ShadowCascade
+		struct UboAmbientLight
 		{
-			f32 near;
-			f32 far;
-			Matrix4 wordToClip;
+			alignas(16) Vector3 intensity;
 		};
 
 
-		struct DirLightUboData
+		struct UboLight
 		{
-			Vector3 direction;
-			alignas(16) Vector3 diffuse;
-			alignas(16) Vector3 specular;
+			alignas(16) Vector3 color;
+			f32 intensity;
 		};
 
 
-		struct SpotLightUboData
+		struct UboDirLight
 		{
-			Vector3 position;
+			UboLight lightBase;
 			alignas(16) Vector3 direction;
-			alignas(16) Vector3 diffuse;
-			alignas(16) Vector3 specular;
+			u32 shadow;
+		};
+
+
+		struct UboSpotLight
+		{
+			UboLight lightBase;
+			alignas(16) Vector3 position;
 			f32 range;
+			alignas(16) Vector3 direction;
 			f32 innerCos;
 			f32 outerCos;
 		};
 
 
-		struct PointLightUboData
+		struct UboPointLight
 		{
-			Vector3 position;
-			alignas(16) Vector3 diffuse;
-			alignas(16) Vector3 specular;
-			f32 range;
-		};
-		#pragma warning(pop)
-
-
-		struct ShadowCascadeData
-		{
-			f32 nearClip;
-			f32 correction;
-			std::vector<u16> res;
-		};
-
-
-		struct DirLightData
-		{
-			Vector3 direction;
-			Vector3 diffuse;
-			Vector3 specular;
-			std::optional<ShadowCascadeData> cascades;
-		};
-
-
-		struct SpotLightData
-		{
-			Vector3 position;
-			Vector3 direction;
-			Vector3 diffuse;
-			Vector3 specular;
-			f32 range;
-			f32 innerCos;
-			f32 outerCos;
-		};
-
-
-		struct PointLightData
-		{
-			Vector3 diffuse;
-			Vector3 specular;
+			UboLight lightBase;
+			alignas(16) Vector3 position;
 			f32 range;
 		};
 
 
-		struct CameraTransformData
+		struct UboCameraData
 		{
 			Matrix4 viewMat;
 			Matrix4 viewMatInv;
@@ -116,22 +70,42 @@ namespace leopph::internal
 			Matrix4 projMatInv;
 			Matrix4 viewProjMat;
 			Matrix4 viewProjMatInv;
-		};
-
-
-		struct CameraData
-		{
-			Vector3 position;
-			Vector3 pos;
-			CameraTransformData transformData;
+			alignas(16) Vector3 position;
 		};
 
 
 		struct ScreenData
 		{
+			u32 renderWidth;
+			u32 renderHeight;
 			u32 width;
 			u32 height;
 			f32 gamma;
+		};
+
+
+		struct PingPongFramebuffer
+		{
+			u32 framebuffer;
+			u32 colorBuffer;
+			u32 depthStencilBuffer;
+			u32 width;
+			u32 height;
+		};
+
+
+		struct UniformBuffer
+		{
+			u32 name;
+			u32 size;
+			u8* mapping;
+		};
+
+
+		struct ScreenQuad
+		{
+			u32 vao;
+			u32 vbo;
 		};
 
 
@@ -139,62 +113,30 @@ namespace leopph::internal
 			// Entry point for rendering a frame
 			void render();
 
-			// Creates a new render object encompassing the mesh group
-			[[nodiscard]] virtual RenderObject* create_render_object(MeshGroup const& meshGroup) = 0;
+			[[nodiscard]] RenderObject* create_render_object(MeshGroup const& meshGroup);
+			void delete_render_object(RenderObject* renderObject);
 
-			// Destroys the render object
-			virtual void delete_render_object(RenderObject* renderObject) = 0;
+			[[nodiscard]] GlSkyboxImpl* create_or_get_skybox_impl(std::filesystem::path allPaths);
+			void destroy_skybox_impl(GlSkyboxImpl const* skyboxImpl);
 
 
 		private:
-			void extract_spot_shadow_res();
-			void extract_point_shadow_res();
-			void extract_num_max_spot_lights();
-			void extract_num_max_point_lights();
-			void extract_all_config();
-			void extract_all_lights();
-
-
 			// Extract all information from global game and config states
-			// Returns true if rendering should continue based on the observed state, false if it should abort.
+			// Returns true if rendering should continue based on the  observed state, false if it should abort.
 			[[nodiscard]] bool extract();
 			void prepare();
-			void draw();
+			void update_resources();
+			void submit_common_data() const;
+			void forward_render() const;
+			void deferred_render() const;
 
-
-			// Selects count lights from the vector based on distance from position.
-			template<std::derived_from<Light> LightType>
-			static void select_nearest_lights(std::vector<LightType const*>& lights, Vector3 const& position, u8 count);
-
-			// Partitions the span of lights over whether they cast shadow.
-			// Sets the output span objects to the respective partitions.
-			template<std::derived_from<Light> LighType>
-			static void separate_casting_lights(std::span<LighType const*> lights, std::span<LighType const* const>& outCasting, std::span<LighType const* const>& outNonCasting);
-
-			// Prepares all lighting data for later usage.
-			void prepare_all_lighting_data();
-
-
-			void update_dependant_resources();
-
-			void forward_render();
-			void deferred_render();
+			void draw_screen_quad() const;
 
 
 			void OnEventReceived(EventReceiver<WindowEvent>::EventParamType) override;
-			void OnEventReceived(EventReceiver<DirShadowResEvent>::EventParamType) override;
-			void OnEventReceived(EventReceiver<SpotShadowResEvent>::EventParamType) override;
-			void OnEventReceived(EventReceiver<PointShadowResEvent>::EventParamType) override;
 
 
-			virtual void on_render_res_change(Vector2U renderRes) = 0;
-			virtual void on_dir_shadow_res_change(std::span<u16 const> resolutions) = 0;
-			virtual void on_spot_shadow_res_change(u16 resolution) = 0;
-			virtual void on_point_shadow_res_change(u16 resolution) = 0;
-			virtual void on_determine_shadow_map_count_requirements(u8 spot, u8 point) = 0;
-
-
-			void calculate_shadow_cascades(std::vector<ShadowCascade>& out);
+			//void calculate_shadow_cascades(std::vector<ShadowCascade>& out);
 
 
 		public:
@@ -206,56 +148,34 @@ namespace leopph::internal
 			Renderer(Renderer&& other) noexcept = delete;
 			Renderer& operator=(Renderer&& other) noexcept = delete;
 
-			~Renderer() noexcept override = default;
+			~Renderer() noexcept override;
 
 
 		private:
-			CameraData mCamData;
+			UboCameraData mCamData;
 			ScreenData mScreenData;
-			std::optional<DirLightData> mDirData;
+
+			UboAmbientLight mAmbientLightData;
+			std::optional<UboDirLight> mDirLightData;
+			std::vector<UboSpotLight> mSpotLightData;
+			std::vector<UboPointLight> mPointLightData;
+
+			std::array<PingPongFramebuffer, 2> mPingPongBuffers{};
+
+			// How many actual buffer objects we create for each buffer.
+			// For example 3 means every uniform buffer is triple buffered.
+			u8 constexpr static NUM_UNIFORM_BUFFERS{3};
+
+			// Modulo ++ with NUM_UNIFORM_BUFFERS
+			u8 mUboIndex{0};
+
+			std::array<UniformBuffer, NUM_UNIFORM_BUFFERS> mCameraBuffers{};
+			std::array<UniformBuffer, NUM_UNIFORM_BUFFERS> mLightingBuffers{};
+
+			ScreenQuad mScreenQuad;
 
 
 			ResourceUpdateFlags mResUpdateFlags;
-			u16 mSpotShadowRes;
-			u16 mPointShadowRes;
-			Vector3 mAmbLight;
-			std::optional<Camera const*> mMainCam;
-
-			std::vector<SpotLight const*> mSpotLights;
-			std::vector<PointLight const*> mPointLights;
-			std::span<SpotLight const* const> mCastingSpots;
-			std::span<SpotLight const* const> mNonCastingSpots;
-			std::span<PointLight const* const> mCastingPoints;
-			std::span<PointLight const* const> mNonCastingPoints;
+			RenderingPath mRenderingPath;
 	};
-
-
-
-	template<std::derived_from<Light> LightType>
-	void Renderer::select_nearest_lights(std::vector<LightType const*>& lights, Vector3 const& position, u8 const count)
-	{
-		std::ranges::sort(lights, [&position](LightType const* const left, LightType const* const right) -> bool
-		{
-			return Vector3::Distance(position, left->Owner()->get_transform().get_position()) < Vector3::Distance(position, right->Owner()->get_transform().get_position());
-		});
-
-		if (lights.size() > count)
-		{
-			lights.resize(count);
-		}
-	}
-
-
-
-	template<std::derived_from<Light> LightType>
-	void Renderer::separate_casting_lights(std::span<LightType const*> lights, std::span<LightType const* const>& outCasting, std::span<LightType const* const>& outNonCasting)
-	{
-		auto const itToNoCast = std::partition(std::begin(lights), std::end(lights), [](LightType const* const light)
-		{
-			return light->is_casting_shadow();
-		});
-
-		outCasting = {std::begin(lights), itToNoCast};
-		outNonCasting = {itToNoCast, std::end(lights)};
-	}
 }

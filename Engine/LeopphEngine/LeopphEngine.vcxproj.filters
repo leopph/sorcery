@@ -34,8 +34,6 @@
     <ClCompile Include="src\rendering\GlSkyboxImpl.cpp" />
     <ClCompile Include="src\rendering\GlTexture.cpp" />
     <ClCompile Include="src\rendering\GlVertexArrayObject.cpp" />
-    <ClCompile Include="src\rendering\GlForwardRenderer.cpp" />
-    <ClCompile Include="src\rendering\GlRenderer.cpp" />
     <ClCompile Include="src\rendering\Renderer.cpp" />
     <ClCompile Include="src\rendering\Material.cpp" />
     <ClCompile Include="src\rendering\RenderObject.cpp" />
@@ -62,6 +60,7 @@
     <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\Settings.cpp" />
     <ClCompile Include="src\SettingsImpl.cpp" />
+    <ClCompile Include="src\rendering\RenderSettings.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\data\DataManager.hpp" />
@@ -149,8 +148,6 @@
     <ClInclude Include="src\rendering\GlMeshGroup.hpp" />
     <ClInclude Include="src\rendering\GlSkyboxImpl.hpp" />
     <ClInclude Include="src\rendering\GlVertexArrayObject.hpp" />
-    <ClInclude Include="src\rendering\GlForwardRenderer.hpp" />
-    <ClInclude Include="src\rendering\GlRenderer.hpp" />
     <ClInclude Include="src\rendering\Renderer.hpp" />
     <ClInclude Include="src\rendering\RenderObject.hpp" />
     <ClInclude Include="src\rendering\RenderSettings.hpp" />
@@ -160,6 +157,7 @@
     <ClInclude Include="src\scene\Scene.hpp" />
     <ClInclude Include="src\scene\SceneManager.hpp" />
     <ClInclude Include="..\include\RenderingPath.h" />
+    <ClInclude Include="..\include\RenderingPath.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\rendering\shaders\glsl\include\CompositeFrag.glsl" />
@@ -177,7 +175,6 @@
     <None Include="src\rendering\shaders\glsl\include\Pos2dVert.glsl" />
     <None Include="src\rendering\shaders\glsl\include\SkyboxFrag.glsl" />
     <None Include="src\rendering\shaders\glsl\include\SkyboxVert.glsl" />
-    <None Include="src\rendering\shaders\glsl\include\TransformBuffer.glsl" />
     <None Include="src\rendering\shaders\glsl\TransparencyComposite.shader" />
     <None Include="src\rendering\shaders\glsl\DeferredLighting.shader" />
     <None Include="src\rendering\shaders\glsl\DepthShadow.shader" />

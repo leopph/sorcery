@@ -1,12 +1,16 @@
 #include "Renderer.hpp"
 
 #include "AmbientLight.hpp"
-#include "GlRenderer.hpp"
-#include "Logger.hpp"
+#include "GlCore.hpp"
+#include "Math.hpp"
+#include "RenderSettings.hpp"
+#include "ScreenQuad.hpp"
 #include "../InternalContext.hpp"
 #include "../SettingsImpl.hpp"
 #include "../data/DataManager.hpp"
 #include "../windowing/WindowImpl.hpp"
+
+#include <algorithm>
 
 
 namespace leopph::internal
@@ -18,74 +22,20 @@ namespace leopph::internal
 			return;
 		}
 
+		// Increment multi-buffered ubo index
+		++mUboIndex;
+
 		prepare();
-		draw();
+		update_resources();
 
-		if (!mMainCam)
+		if (mRenderingPath == RenderingPath::Forward)
 		{
-			return;
+			forward_render();
 		}
-
-		extract_all_config();
-		extract_all_lights();
-
-		select_nearest_lights<SpotLight>(mSpotLights, (*mMainCam)->Owner()->get_transform().get_position(), mNumMaxSpot);
-		select_nearest_lights<PointLight>(mPointLights, (*mMainCam)->Owner()->get_transform().get_position(), mNumMaxPoint);
-		separate_casting_lights<SpotLight>(mSpotLights, mCastingSpots, mNonCastingSpots);
-		separate_casting_lights<PointLight>(mPointLights, mCastingPoints, mNonCastingPoints);
-
-		update_dependant_resources();
-	}
-
-
-
-	void Renderer::extract_spot_shadow_res()
-	{
-		mSpotShadowRes = GetSettingsImpl()->SpotShadowResolution();
-	}
-
-
-
-	void Renderer::extract_point_shadow_res()
-	{
-		mPointShadowRes = GetSettingsImpl()->PointShadowResolution();
-	}
-
-
-
-	void Renderer::extract_num_max_spot_lights()
-	{
-		mNumMaxSpot = GetSettingsImpl()->MaxSpotLightCount();
-	}
-
-
-
-	void Renderer::extract_num_max_point_lights()
-	{
-		mNumMaxPoint = GetSettingsImpl()->MaxPointLightCount();
-	}
-
-
-
-	void Renderer::extract_all_config()
-	{
-		extract_spot_shadow_res();
-		extract_num_max_spot_lights();
-		extract_point_shadow_res();
-		extract_num_max_point_lights();
-	}
-
-
-
-	void Renderer::extract_all_lights()
-	{
-		mAmbLight = AmbientLight::Instance().Intensity();
-
-		auto const spotLights = GetDataManager()->ActiveSpotLights();
-		mSpotLights.assign(std::begin(spotLights), std::end(spotLights));
-
-		auto const pointLights = GetDataManager()->ActivePointLights();
-		mPointLights.assign(std::begin(pointLights), std::end(pointLights));
+		else
+		{
+			deferred_render();
+		}
 	}
 
 
@@ -102,103 +52,219 @@ namespace leopph::internal
 			return false;
 		}
 
-		mCamData.pos = cam->Owner()->get_transform().get_position();
-		mCamData.transformData.viewMat = cam->ViewMatrix();
-		mCamData.transformData.viewMatInv = mCamData.transformData.viewMat.Inverse();
-		mCamData.transformData.projMat = cam->ProjectionMatrix();
-		mCamData.transformData.projMatInv = mCamData.transformData.projMat.Inverse();
-		mCamData.transformData.viewProjMat = mCamData.transformData.viewMat * mCamData.transformData.projMat;
-		mCamData.transformData.viewProjMatInv = mCamData.transformData.viewProjMat.Inverse();
+		mCamData.position = cam->Owner()->get_transform().get_position();
+		mCamData.viewMat = cam->ViewMatrix();
+		mCamData.projMat = cam->ProjectionMatrix();
+
+		mRenderingPath = cam->get_rendering_path();
+
 
 		// Extract screen data
 
 		auto const renderMult = GetWindowImpl()->RenderMultiplier();
-		mScreenData.width = static_cast<u32>(static_cast<f32>(GetWindowImpl()->Width()) / renderMult);
-		mScreenData.height = static_cast<u32>(static_cast<f32>(GetWindowImpl()->Height()) / renderMult);
+		auto const windowWidth = GetWindowImpl()->Width();
+		auto const windowHeight = GetWindowImpl()->Height();
+		mScreenData.renderWidth = static_cast<u32>(static_cast<f32>(windowWidth) / renderMult);
+		mScreenData.renderHeight = static_cast<u32>(static_cast<f32>(windowHeight) / renderMult);
+		mScreenData.width = windowWidth;
+		mScreenData.height = windowHeight;
 		mScreenData.gamma = GetSettingsImpl()->Gamma();
 
+
+		// Extract ambient light data
+
+		mAmbientLightData.intensity = AmbientLight::Instance().Intensity();
+
+
 		// Extract directional light data
+
 		if (auto const* const dirLight = GetDataManager()->DirectionalLight())
 		{
-			DirLightData dirLightData;
-			dirLightData.direction = dirLight->get_direction();
-			dirLightData.diffuse = dirLight->get_color();
-			dirLightData.specular = dirLight->Specular();
-
-			if (dirLight->is_casting_shadow())
-			{
-				ShadowCascadeData cascadeData;
-				cascadeData.correction = GetSettingsImpl()->DirShadowCascadeCorrection();
-				cascadeData.nearClip = dirLight->get_shadow_near_plane();
-				std::ranges::copy(GetSettingsImpl()->DirShadowResolution(), std::back_inserter(cascadeData.res));
-				dirLightData.cascades = std::move(cascadeData);
-			}
-
-			mDirData = std::move(dirLightData);
+			UboDirLight dirData;
+			dirData.direction = dirLight->get_direction();
+			dirData.lightBase.color = dirLight->get_color();
+			dirData.lightBase.intensity = dirLight->get_intensity();
+			dirData.shadow = false; // temporary
+			mDirLightData = dirData;
 		}
 		else
 		{
-			mDirData.reset();
+			mDirLightData.reset();
 		}
 
-		extract_all_config();
-		extract_all_lights();
+
+		// Extract SpotLights
+
+		mSpotLightData.clear();
+		for (auto const* const spotLight : GetDataManager()->ActiveSpotLights())
+		{
+			UboSpotLight uboSpot;
+			uboSpot.lightBase.color = spotLight->get_color();
+			uboSpot.lightBase.intensity = spotLight->get_intensity();
+			uboSpot.direction = spotLight->Owner()->get_transform().get_forward_axis();
+			uboSpot.position = spotLight->Owner()->get_transform().get_position();
+			uboSpot.range = spotLight->get_range();
+			uboSpot.innerCos = math::Cos(math::ToRadians(spotLight->get_inner_angle()));
+			uboSpot.outerCos = math::Cos(math::ToRadians(spotLight->get_outer_angle()));
+			mSpotLightData.push_back(uboSpot);
+		}
+
+		// Extract PointLights
+
+		mPointLightData.clear();
+		for (auto const* const pointLight : GetDataManager()->ActivePointLights())
+		{
+			UboPointLight uboPoint;
+			uboPoint.lightBase.color = pointLight->get_color();
+			uboPoint.lightBase.intensity = pointLight->get_intensity();
+			uboPoint.position = pointLight->Owner()->get_transform().get_position();
+			uboPoint.range = pointLight->get_range();
+			mPointLightData.push_back(uboPoint);
+		}
 
 		return true;
 	}
 
 
 
-	void Renderer::prepare_all_lighting_data()
+	void Renderer::update_resources()
 	{
-		select_nearest_lights<SpotLight>(mSpotLights, (*mMainCam)->Owner()->get_transform().get_position(), mNumMaxSpot);
-		select_nearest_lights<PointLight>(mPointLights, (*mMainCam)->Owner()->get_transform().get_position(), mNumMaxPoint);
+		// Update Ping-Pong buffers
 
-		separate_casting_lights<SpotLight>(mSpotLights, mCastingSpots, mNonCastingSpots);
-		separate_casting_lights<PointLight>(mPointLights, mCastingPoints, mNonCastingPoints);
+		for (auto& buf : mPingPongBuffers)
+		{
+			if (buf.width != mScreenData.renderWidth || buf.height != mScreenData.renderHeight)
+			{
+				glDeleteFramebuffers(1, &buf.framebuffer);
+				glDeleteBuffers(1, &buf.depthStencilBuffer);
+				glDeleteBuffers(1, &buf.colorBuffer);
+
+				buf.width = mScreenData.renderWidth;
+				buf.height = mScreenData.renderHeight;
+
+
+				glCreateTextures(GL_TEXTURE_2D, 1, &buf.colorBuffer);
+				glTextureStorage2D(buf.colorBuffer, 1, GL_RGBA8, buf.width, buf.height);
+
+				glCreateTextures(GL_TEXTURE_2D, 1, &buf.depthStencilBuffer);
+				glTextureStorage2D(buf.depthStencilBuffer, 1, GL_DEPTH24_STENCIL8, buf.width, buf.height);
+
+				glCreateFramebuffers(1, &buf.framebuffer);
+				glNamedFramebufferTexture(buf.framebuffer, GL_COLOR_ATTACHMENT0, buf.colorBuffer, 0);
+				glNamedFramebufferTexture(buf.framebuffer, GL_DEPTH_STENCIL_ATTACHMENT, buf.depthStencilBuffer, 0);
+				glNamedFramebufferDrawBuffer(buf.framebuffer, GL_COLOR_ATTACHMENT0);
+			}
+		}
 	}
 
 
 
-	void Renderer::update_dependant_resources()
+	void Renderer::prepare()
 	{
-		if (mResUpdateFlags.renderRes)
-		{
-			extract_render_res();
-			on_render_res_change(mRenderRes);
-			mResUpdateFlags.renderRes = false;
-		}
+		// Calculate additional camera matrices
+		mCamData.viewMatInv = mCamData.viewMat.Inverse();
+		mCamData.projMatInv = mCamData.projMat.Inverse();
+		mCamData.viewProjMat = mCamData.viewMat * mCamData.projMat;
+		mCamData.viewProjMatInv = mCamData.viewProjMat.Inverse();
 
-		if (mResUpdateFlags.dirShadowRes)
-		{
-			on_dir_shadow_res_change(GetSettingsImpl()->DirShadowResolution());
-			mResUpdateFlags.dirShadowRes = false;
-		}
+		// Sort punctual lights by distance to camera
 
-		if (mResUpdateFlags.spotShadowRes)
+		auto const distToCam = [this](auto const& lightData)
 		{
-			on_spot_shadow_res_change(GetSettingsImpl()->SpotShadowResolution());
-			mResUpdateFlags.spotShadowRes = false;
-		}
+			return Vector3::Distance(lightData.position, this->mCamData.position);
+		};
 
-		if (mResUpdateFlags.pointShadowRes)
-		{
-			on_point_shadow_res_change(GetSettingsImpl()->PointShadowResolution());
-			mResUpdateFlags.pointShadowRes = false;
-		}
+		std::ranges::sort(mSpotLightData, std::ranges::less{}, distToCam);
+		std::ranges::sort(mPointLightData, std::ranges::less{}, distToCam);
 
-		on_determine_shadow_map_count_requirements(static_cast<u8>(mCastingSpots.size()), static_cast<u8>(mCastingPoints.size()));
+		// Select first N of the lights
+		mSpotLightData.resize(RenderSettings::get_max_spot_light_count());
+		mPointLightData.resize(RenderSettings::get_max_point_light_count());
 	}
 
 
 
-	void Renderer::forward_render()
+	void Renderer::submit_common_data() const
+	{
+		// Fill camera ubo with data
+		*reinterpret_cast<UboCameraData*>(mCameraBuffers[mUboIndex].mapping) = mCamData;
+
+		// Bind camera ubo
+		glBindBufferRange(GL_UNIFORM_BUFFER, 0, mCameraBuffers[mUboIndex].name, 0, mCameraBuffers[mUboIndex].size);
+
+		// Fill lighting ubo with data
+
+		auto offset{0};
+
+		// ambient light
+		*reinterpret_cast<UboAmbientLight*>(mLightingBuffers[mUboIndex].mapping + offset) = mAmbientLightData;
+		offset += sizeof UboAmbientLight;
+
+		// is there a dirlight
+		*reinterpret_cast<u32*>(mLightingBuffers[mUboIndex].mapping + offset) = mDirLightData.has_value();
+		offset += sizeof u32;
+
+		// dirlight data
+		if (mDirLightData)
+		{
+			*reinterpret_cast<UboDirLight*>(mLightingBuffers[mUboIndex].mapping + offset) = *mDirLightData;
+		}
+		offset += sizeof(UboDirLight);
+
+		// spotlight data
+		for (auto const& spotData : mSpotLightData)
+		{
+			*reinterpret_cast<UboSpotLight*>(mLightingBuffers[mUboIndex].mapping + offset) =
+				spotData;
+			offset += sizeof UboSpotLight;
+		}
+
+		// pointlight data
+		for (auto const& pointData : mPointLightData)
+		{
+			*reinterpret_cast<UboPointLight*>(mLightingBuffers[mUboIndex].mapping + offset) =
+				pointData;
+			offset += sizeof UboPointLight;
+		}
+
+		glBindBufferRange(GL_UNIFORM_BUFFER, 1, mLightingBuffers[mUboIndex].name, 0, mLightingBuffers[mUboIndex].size);
+	}
+
+
+
+	void Renderer::forward_render() const
+	{
+		// Opaque pass
+		glDisable(GL_BLEND);
+		glEnable(GL_DEPTH_TEST);
+		glDepthFunc(GL_LEQUAL);
+		glDepthMask(GL_TRUE);
+		glDisable(GL_STENCIL_TEST);
+		glViewport(0, 0, mScreenData.renderWidth, mScreenData.renderHeight);
+
+		GLfloat constexpr clearColor[]{0, 0, 0, 1};
+		GLfloat constexpr clearDepth{1};
+		glClearNamedFramebufferfv(mPingPongBuffers[0].framebuffer, GL_COLOR, 0, clearColor);
+		glClearNamedFramebufferfv(mPingPongBuffers[0].framebuffer, GL_DEPTH, 0, &clearDepth);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, mPingPongBuffers[0].framebuffer);
+
+
+
+		glBlitNamedFramebuffer(mPingPongBuffers[1].framebuffer, 0, 0, 0, mScreenData.renderWidth, mScreenData.renderHeight, 0, 0, mScreenData.width, mScreenData.height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+	}
+
+
+
+	void Renderer::deferred_render() const
 	{}
 
 
 
-	void Renderer::deferred_render()
-	{}
+	void Renderer::draw_screen_quad() const
+	{
+		glBindVertexArray(mScreenQuad.vao);
+		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	}
 
 
 
@@ -209,28 +275,79 @@ namespace leopph::internal
 
 
 
-	void Renderer::OnEventReceived(EventReceiver<DirShadowResEvent>::EventParamType)
+	Renderer::Renderer()
 	{
-		mResUpdateFlags.dirShadowRes = true;
+		// Create uniform buffers
+
+		auto const camBufSz = 6 * sizeof Matrix4 + sizeof Vector3;
+
+		for (auto& camBuf : mCameraBuffers)
+		{
+			glCreateBuffers(1, &camBuf.name);
+			glNamedBufferStorage(camBuf.name, camBufSz, nullptr, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
+			camBuf.size = camBufSz;
+			camBuf.mapping = static_cast<u8*>(glMapNamedBufferRange(camBuf.name, 0, camBufSz, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT));
+		}
+
+		auto const lightBufSz = sizeof UboAmbientLight + sizeof UboDirLight + RenderSettings::get_max_spot_light_count() * sizeof UboSpotLight + RenderSettings::get_max_point_light_count() * sizeof UboPointLight;
+
+		for (auto& lightBuf : mLightingBuffers)
+		{
+			glCreateBuffers(1, &lightBuf.name);
+			glNamedBufferStorage(lightBuf.name, lightBufSz, nullptr, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
+			lightBuf.size = lightBufSz;
+			lightBuf.mapping = static_cast<u8*>(glMapNamedBufferRange(lightBuf.name, 0, lightBufSz, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT));
+		}
+
+		// Create screen quad
+		glCreateBuffers(1, &mScreenQuad.vbo);
+		glNamedBufferStorage(mScreenQuad.vbo, sizeof decltype(g_ScreenQuadVertices)::value_type, g_ScreenQuadVertices.data(), 0);
+
+		glCreateVertexArrays(1, &mScreenQuad.vao);
+		glVertexArrayVertexBuffer(mScreenQuad.vao, 0, mScreenQuad.vbo, 0, 2 * sizeof decltype(g_ScreenQuadVertices)::value_type);
+
+		glVertexArrayAttribBinding(mScreenQuad.vao, 0, 0);
+		glVertexArrayAttribFormat(mScreenQuad.vao, 0, 2, GL_FLOAT, GL_FALSE, 0);
+		glEnableVertexArrayAttrib(mScreenQuad.vao, 0);
+
+		glDepthFunc(GL_LEQUAL);
+		glFrontFace(GL_CCW);
+		glCullFace(GL_BACK);
+		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 	}
 
 
 
-	void Renderer::OnEventReceived(EventReceiver<SpotShadowResEvent>::EventParamType)
+	Renderer::~Renderer() noexcept
 	{
-		mResUpdateFlags.spotShadowRes = true;
+		// Delete uniform buffers
+
+		for (auto const& buffers : {mCameraBuffers, mLightingBuffers})
+		{
+			for (auto const& buffer : buffers)
+			{
+				glUnmapNamedBuffer(buffer.name);
+				glDeleteBuffers(1, &buffer.name);
+			}
+		}
+
+		// Delete ping-pong buffers
+
+		for (auto const& pingPongBuf : mPingPongBuffers)
+		{
+			glDeleteFramebuffers(1, &pingPongBuf.framebuffer);
+			glDeleteTextures(1, &pingPongBuf.colorBuffer);
+			glDeleteTextures(1, &pingPongBuf.depthStencilBuffer);
+		}
+
+		// Delete screen quad
+		glDeleteVertexArrays(1, &mScreenQuad.vao);
+		glDeleteBuffers(1, &mScreenQuad.vbo);
 	}
 
 
 
-	void Renderer::OnEventReceived(EventReceiver<PointShadowResEvent>::EventParamType)
-	{
-		mResUpdateFlags.pointShadowRes = true;
-	}
-
-
-
-	void Renderer::calculate_shadow_cascades(std::vector<ShadowCascade>& out)
+	/*void Renderer::calculate_shadow_cascades(std::vector<ShadowCascade>& out)
 	{
 		auto const frust = (*mMainCam)->Frustum();
 		auto const& frustNearZ = frust.NearBottomLeft[2];
@@ -293,12 +410,5 @@ namespace leopph::internal
 
 			cascade.wordToClip = lightViewMat * lightProjMat;
 		}
-	}
-
-
-
-	Renderer::Renderer()
-	{
-		extract_all_config();
-	}
+	}*/
 }
