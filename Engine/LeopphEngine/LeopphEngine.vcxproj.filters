@@ -170,7 +170,6 @@
     <None Include="src\rendering\shaders\glsl\include\GbufferFrag.glsl" />
     <None Include="src\rendering\shaders\glsl\include\GbufferVert.glsl" />
     <None Include="src\rendering\shaders\glsl\include\Lighting.glsl" />
-    <None Include="src\rendering\shaders\glsl\include\LightingBuffer.glsl" />
     <None Include="src\rendering\shaders\glsl\include\DeferredLightingFrag.glsl" />
     <None Include="src\rendering\shaders\glsl\include\LinearShadowFrag.glsl" />
     <None Include="src\rendering\shaders\glsl\include\LinearShadowVert.glsl" />
@@ -187,5 +186,7 @@
     <None Include="src\rendering\shaders\glsl\Gbuffer.shader" />
     <None Include="src\rendering\shaders\glsl\LinearShadow.shader" />
     <None Include="src\rendering\shaders\glsl\Skybox.shader" />
+    <None Include="src\rendering\shaders\glsl\include\BlinnPhong.glsl" />
+    <None Include="src\rendering\shaders\glsl\include\CameraData.glsl" />
   </ItemGroup>
 </Project>

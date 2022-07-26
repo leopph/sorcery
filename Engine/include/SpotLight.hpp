@@ -6,23 +6,14 @@
 
 namespace leopph
 {
-	// SpotLights are special Lights that shine in a cone.
-	// They have position, orientation, attenuation, and radius.
 	class SpotLight final : public AttenuatedLight
 	{
 		public:
-			// Get the angle in degrees at which the light starts to fade out.
-			[[nodiscard]] LEOPPHAPI f32 InnerAngle() const noexcept;
+			[[nodiscard]] LEOPPHAPI f32 get_inner_angle() const;
+			LEOPPHAPI void set_inner_angle(f32 degrees);
 
-			// Set the angle in degrees at which the light starts to fade out.
-			LEOPPHAPI void InnerAngle(f32 degrees) noexcept;
-
-
-			// Get the angle in degrees at which the light is completely cut.
-			[[nodiscard]] LEOPPHAPI f32 OuterAngle() const noexcept;
-
-			// Set the angle in degrees at which the light is completely cut.
-			LEOPPHAPI void OuterAngle(f32 degrees) noexcept;
+			[[nodiscard]] LEOPPHAPI f32 get_outer_angle() const;
+			LEOPPHAPI void set_outer_angle(f32 degrees);
 
 
 			LEOPPHAPI void Owner(Entity* entity) override;
@@ -35,6 +26,7 @@ namespace leopph
 
 			[[nodiscard]] LEOPPHAPI ComponentPtr<> Clone() const override;
 
+
 			SpotLight() = default;
 
 			SpotLight(SpotLight const& other) = default;
@@ -45,8 +37,9 @@ namespace leopph
 
 			LEOPPHAPI ~SpotLight() override;
 
+
 		private:
-			float m_InnerAngle{30.f};
-			float m_OuterAngle{30.f};
+			float mInnerAngle{30.f};
+			float mOuterAngle{30.f};
 	};
 }

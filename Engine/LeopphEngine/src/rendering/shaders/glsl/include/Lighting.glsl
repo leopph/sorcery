@@ -3,23 +3,14 @@
 #ifndef LIGHTING_GLSL
 #define LIGHTING_GLSL
 
-//! #define DIRLIGHT_NO_SHADOW 0
-//! #define NUM_DIRLIGHT_SHADOW_CASCADE 3
-//! #define NUM_SPOT_NO_SHADOW 8
-//! #define NUM_SPOT_SHADOW 7
-//! #define NUM_POINT_NO_SHADOW 8
-//! #define NUM_POINT_SHADOW 7
+// Keep in sync with C++ definitions
 
-// Helper defines for number of specific light types
-#define NUM_SPOT NUM_SPOT_NO_SHADOW + NUM_SPOT_SHADOW
-#define NUM_POINT NUM_POINT_NO_SHADOW + NUM_POINT_SHADOW 
-#define DIRLIGHT DIRLIGHT_NO_SHADOW || NUM_DIRLIGHT_SHADOW_CASCADE
-
-#include "Material.glsl"
+#define NUM_MAX_CASCADE 4
+#define NUM_MAX_SPOT 8
+#define NUM_MAX_POINT 8
 
 #define MIN_SHADOW_BIAS 0.0001
 #define MAX_SHADOW_BIAS 0.01
-
 
 
 struct Fragment
@@ -32,149 +23,111 @@ struct Fragment
 };
 
 
+struct Light
+{
+	vec3 color;
+	float intensity;
+};
 
-#if DIRLIGHT
+
 struct DirLight
 {
+	Light light;
 	vec3 direction;
-	vec3 diffuseColor;
-	vec3 specularColor;
+	bool shadow;
 };
-#endif
 
 
-
-#if NUM_SPOT
 struct SpotLight
 {
+	Light light;
 	vec3 position;
-	vec3 direction;
-	vec3 diffuseColor;
-	vec3 specularColor;
 	float range;
+	vec3 direction;
 	float innerCos;
 	float outerCos;
 };
-#endif
 
 
-
-#if NUM_POINT
 struct PointLight
 {
+	Light light;
 	vec3 position;
-	vec3 diffuseColor;
-	vec3 specularColor;
 	float range;
 };
-#endif
 
 
-
-#if NUM_DIRLIGHT_SHADOW_CASCADE
 struct DirShadowCascade
 {
 	mat4 worldToClipMat;
 	float nearZ;
 	float farZ;
 };
-#endif
 
 
 
-vec3 BlinnPhongEffect(Fragment frag, vec3 dirToLight, vec3 lightDiff, vec3 lightSpec, vec3 camPos)
+layout(std140, binding = 1) uniform LightingBuffer
 {
-	float diffuse = max(dot(dirToLight, frag.normal), 0);
-	vec3 diffEffect = frag.diff * lightDiff * diffuse;
+	vec3 ambient;
 
-	if (diffuse <= 0)
-	{
-		return diffEffect;
-	}
-		
-	vec3 dirToCam =  normalize(camPos - frag.pos);
-	vec3 halfway = normalize(dirToLight + dirToCam);
-	float specAngle = max(dot(frag.normal, halfway), 0);
+	bool existsDirLight;
+	DirLight dirLight;
 
-	// 0^0 is UB, thus it may produce nan or 0 but we have to make sure
-	// transparent objects stay lit from the back too
-	#ifdef TRANSPARENT
-	if (specAngle <= 0 && frag.gloss == 0)
-	{
-		return diffEffect;
-	}
-	#endif
+	SpotLight spotLights[NUM_MAX_SPOT];
+	uint numSpot;
 
-	float specular = pow(specAngle, 4 * frag.gloss);
-	vec3 specEffect = frag.spec * lightSpec * specular;
-	return diffEffect + specEffect;
-}
+	PointLight pointLights[NUM_MAX_POINT];
+	uint numPoint;
+} u_Lighting;
 
 
-float CalcAtten(float dist, float range)
+
+vec3 GetAmbientIntensity()
 {
-	return clamp(1 - pow(dist, 2) / pow(range, 2), 0, 1);
+	return u_Lighting.ambient;
 }
 
 
 
-#if DIRLIGHT
-vec3 DirLightEffect(Fragment frag, DirLight dirLight, vec3 camPos)
+bool ExistsDirLight()
 {
-	return BlinnPhongEffect(frag, -dirLight.direction, dirLight.diffuseColor, dirLight.specularColor, camPos);
+	return u_Lighting.existsDirLight;
 }
-#endif
 
 
 
-#if NUM_SPOT
-vec3 SpotLightEffect(Fragment frag, SpotLight spotLight, vec3 camPos)
+DirLight GetDirLight()
 {
-	vec3 dirToLight = spotLight.position - frag.pos;
-	float lightFragDist = length(dirToLight);
-
-	if (lightFragDist > spotLight.range)
-	{
-		return vec3(0);
-	}
-
-	dirToLight = normalize(dirToLight);
-	float lightFragAngleCos = dot(dirToLight, -spotLight.direction);
-	float cutOffCosDiff = spotLight.innerCos - spotLight.outerCos;
-	float intensity = clamp((lightFragAngleCos - spotLight.outerCos) / cutOffCosDiff, 0, 1);
-
-	if (intensity == 0)
-	{
-		return vec3(0);
-	}
-
-	vec3 effect = BlinnPhongEffect(frag, dirToLight, spotLight.diffuseColor, spotLight.specularColor, camPos);
-	effect *= intensity;
-	effect *= CalcAtten(lightFragDist, spotLight.range);
-	return effect;
+	return u_Lighting.dirLight;
 }
-#endif
 
 
 
-#if NUM_POINT
-vec3 PointLightEffect(Fragment frag, PointLight pointLight, vec3 camPos)
+uint GetNumSpotLights()
 {
-	vec3 dirToLight = pointLight.position - frag.pos;
-	float dist = length(dirToLight);
-
-	if (dist > pointLight.range)
-	{
-		return vec3(0);
-	}
-
-	dirToLight = normalize(dirToLight);
-
-	vec3 effect = BlinnPhongEffect(frag, dirToLight, pointLight.diffuseColor, pointLight.specularColor, camPos);
-	effect *= CalcAtten(dist, pointLight.range);
-	return effect;
+	return u_Lighting.numSpot;
 }
-#endif
+
+
+
+SpotLight GetSpotLight(uint index)
+{
+	return u_Lighting.spotLights[index];
+}
+
+
+
+uint GetNumPointLights()
+{
+	return u_Lighting.numPoint;
+}
+
+
+
+PointLight GetPointLight(uint index)
+{
+	return u_Lighting.pointLights[index];
+}
 
 
 

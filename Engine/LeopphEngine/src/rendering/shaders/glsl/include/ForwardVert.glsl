@@ -3,8 +3,7 @@
 #ifndef FORWARD_VERT_GLSL
 #define FORWARD_VERT_GLSL
 
-#include "TransformBuffer.glsl"
-#include "Lighting.glsl"
+#include "CameraData.glsl"
 
 layout (location = 0) in vec3 in_Pos;
 layout (location = 1) in vec3 in_Normal;
@@ -16,6 +15,7 @@ layout (location = 0) out vec3 out_FragPos;
 layout (location = 1) out vec3 out_Normal;
 layout (location = 2) out vec2 out_TexCoords;
 
+//! #define NUM_DIRLIGHT_SHADOW_CASCADE 1
 #if NUM_DIRLIGHT_SHADOW_CASCADE
 layout (location = 3) out float out_FragPosNdcZ;
 #endif
@@ -27,7 +27,7 @@ void main()
     out_Normal = in_Normal * mat3(in_NormalMat);
     out_FragPos = fragPosWorldSpace.xyz;
     out_TexCoords = in_TexCoords;
-    gl_Position = fragPosWorldSpace * u_ViewProjMat;
+    gl_Position = fragPosWorldSpace * GetCameraViewProjectionMatrix();
 
     #if NUM_DIRLIGHT_SHADOW_CASCADE
     out_FragPosNdcZ = gl_Position.z / gl_Position.w;

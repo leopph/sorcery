@@ -121,15 +121,15 @@ namespace leopph::internal
 		if (auto const* const dirLight = GetDataManager()->DirectionalLight())
 		{
 			DirLightData dirLightData;
-			dirLightData.direction = dirLight->Direction();
-			dirLightData.diffuse = dirLight->Diffuse();
+			dirLightData.direction = dirLight->get_direction();
+			dirLightData.diffuse = dirLight->get_color();
 			dirLightData.specular = dirLight->Specular();
 
-			if (dirLight->CastsShadow())
+			if (dirLight->is_casting_shadow())
 			{
 				ShadowCascadeData cascadeData;
 				cascadeData.correction = GetSettingsImpl()->DirShadowCascadeCorrection();
-				cascadeData.nearClip = dirLight->ShadowExtension();
+				cascadeData.nearClip = dirLight->get_shadow_near_plane();
 				std::ranges::copy(GetSettingsImpl()->DirShadowResolution(), std::back_inserter(cascadeData.res));
 				dirLightData.cascades = std::move(cascadeData);
 			}

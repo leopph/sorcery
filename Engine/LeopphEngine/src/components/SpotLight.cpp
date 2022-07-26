@@ -6,30 +6,30 @@
 
 namespace leopph
 {
-	float SpotLight::InnerAngle() const noexcept
+	float SpotLight::get_inner_angle() const
 	{
-		return m_InnerAngle;
+		return mInnerAngle;
 	}
 
 
 
-	void SpotLight::InnerAngle(float const degrees) noexcept
+	void SpotLight::set_inner_angle(f32 const degrees)
 	{
-		m_InnerAngle = degrees;
+		mInnerAngle = degrees;
 	}
 
 
 
-	float SpotLight::OuterAngle() const noexcept
+	float SpotLight::get_outer_angle() const
 	{
-		return m_OuterAngle;
+		return mOuterAngle;
 	}
 
 
 
-	void SpotLight::OuterAngle(float const degrees) noexcept
+	void SpotLight::set_outer_angle(f32 const degrees)
 	{
-		m_OuterAngle = degrees;
+		mOuterAngle = degrees;
 	}
 
 
@@ -94,8 +94,8 @@ namespace leopph
 		}
 
 		AttenuatedLight::operator=(other);
-		m_InnerAngle = other.m_InnerAngle;
-		m_OuterAngle = other.m_OuterAngle;
+		mInnerAngle = other.mInnerAngle;
+		mOuterAngle = other.mOuterAngle;
 
 		if (InUse())
 		{

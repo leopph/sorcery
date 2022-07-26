@@ -252,7 +252,7 @@ namespace leopph::internal
 	{
 		auto const itToNoCast = std::partition(std::begin(lights), std::end(lights), [](LightType const* const light)
 		{
-			return light->CastsShadow();
+			return light->is_casting_shadow();
 		});
 
 		outCasting = {std::begin(lights), itToNoCast};

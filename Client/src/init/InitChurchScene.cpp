@@ -32,11 +32,11 @@ namespace demo
 
 		player->create_and_attach_component<FirstPersonCameraController>(camera, 2.0f, 0.1f, 5.0f, 0.2f);
 		auto const sLight = player->create_and_attach_component<leopph::SpotLight>();
-		sLight->Diffuse(Vector3{1});
-		sLight->Specular(sLight->Diffuse());
-		sLight->InnerAngle(25);
-		sLight->OuterAngle(35);
-		sLight->Range(5);
+		sLight->set_color(Vector3{1});
+		sLight->Specular(sLight->get_color());
+		sLight->set_inner_angle(25);
+		sLight->set_outer_angle(35);
+		sLight->set_range(5);
 
 		auto const dirLightEntity = new Entity{"dirlight"};
 		dirLightEntity->get_transform().set_parent(group);
@@ -44,9 +44,9 @@ namespace demo
 		dirLightEntity->get_transform().rotate(Vector3::Right(), 30, Space::Local);
 
 		auto const dirLight = dirLightEntity->create_and_attach_component<DirectionalLight>();
-		dirLight->Diffuse(Vector3{.06f});
-		dirLight->Specular(dirLight->Diffuse());
-		dirLight->CastsShadow(false);
+		dirLight->set_color(Vector3{.06f});
+		dirLight->Specular(dirLight->get_color());
+		dirLight->set_casting_shadow(false);
 
 		auto const lamp = new Entity{"lamp"};
 		lamp->get_transform().set_parent(group);
@@ -62,10 +62,10 @@ namespace demo
 		pLightEntity->get_transform().translate(-0.7f, 3.7f, 0, Space::Local);
 
 		auto const pLight = pLightEntity->create_and_attach_component<PointLight>();
-		pLight->Diffuse(Vector3{1});
-		pLight->Specular(pLight->Diffuse());
-		pLight->Range(7);
-		pLight->CastsShadow(false);
+		pLight->set_color(Vector3{1});
+		pLight->Specular(pLight->get_color());
+		pLight->set_range(7);
+		pLight->set_casting_shadow(false);
 
 		pLightEntity->create_and_attach_component<Flicker>(pLight, 0.75f, 3.5f, 0.05f, 0.6f);
 

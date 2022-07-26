@@ -184,6 +184,8 @@
     <None Include="src\rendering\shaders\glsl\Forward.shader" />
     <None Include="src\rendering\shaders\glsl\GammaCorrect.shader" />
     <None Include="src\rendering\shaders\glsl\Gbuffer.shader" />
+    <None Include="src\rendering\shaders\glsl\include\BlinnPhong.glsl" />
+    <None Include="src\rendering\shaders\glsl\include\CameraData.glsl" />
     <None Include="src\rendering\shaders\glsl\include\CompositeFrag.glsl" />
     <None Include="src\rendering\shaders\glsl\DeferredLighting.shader" />
     <None Include="src\rendering\shaders\glsl\include\DepthVert.glsl" />
@@ -193,7 +195,6 @@
     <None Include="src\rendering\shaders\glsl\include\GbufferFrag.glsl" />
     <None Include="src\rendering\shaders\glsl\include\GbufferVert.glsl" />
     <None Include="src\rendering\shaders\glsl\include\Lighting.glsl" />
-    <None Include="src\rendering\shaders\glsl\include\LightingBuffer.glsl" />
     <None Include="src\rendering\shaders\glsl\include\DeferredLightingFrag.glsl" />
     <None Include="src\rendering\shaders\glsl\include\LinearShadowFrag.glsl" />
     <None Include="src\rendering\shaders\glsl\include\LinearShadowVert.glsl" />

@@ -6,45 +6,25 @@
 
 namespace leopph
 {
-	// Base class for all lights.
 	class Light : public Component
 	{
 		public:
-			// Get the current diffuse intensity and color.
-			// This value is in the [0; 1] range per component.
-			[[nodiscard]] LEOPPHAPI Vector3 const& Diffuse() const noexcept;
+			[[nodiscard]] LEOPPHAPI Vector3 const& get_color() const;
+			LEOPPHAPI void set_color(Vector3 const& newColor);
 
-			// Set the current diffuse intensity and color.
-			// This value must be in the [0; 1] range per component.
-			LEOPPHAPI void Diffuse(Vector3 const& value) noexcept;
+			[[nodiscard]] LEOPPHAPI f32 get_intensity() const;
+			LEOPPHAPI void set_intensity(f32 newIntensity);
 
-
-			// Get the current specular highlight intensity and color.
-			// This value is in the [0; 1] range per component.
-			[[nodiscard]] LEOPPHAPI Vector3 const& Specular() const noexcept;
-
-			// Set the current specular highlight intensity and color.
-			// This value must be in the [0; 1] range per component.
-			LEOPPHAPI void Specular(Vector3 const& value) noexcept;
-
-
-			// Get whether the Light's effect can be occluded by objects.
-			// This only works if objects have this property set to true.
-			// This value is false by default.
-			[[nodiscard]] LEOPPHAPI bool CastsShadow() const noexcept;
-
-			// Set whether the Light's effect can be occluded by objects.
-			// This only works if objects have this property set to true.
-			// This value is false by default.
-			LEOPPHAPI void CastsShadow(bool value) noexcept;
+			[[nodiscard]] LEOPPHAPI bool is_casting_shadow() const;
+			LEOPPHAPI void set_casting_shadow(bool newValue);
 
 		protected:
 			using Component::Component;
 			using Component::operator=;
 
 		private:
-			bool m_CastsShadow{false};
-			Vector3 m_Diffuse{1.f, 1.f, 1.f};
-			Vector3 m_Specular{1.f, 1.f, 1.f};
+			bool mCastsShadow{false};
+			Vector3 mColor{1.f};
+			f32 mIntensity{1.f};
 	};
 }

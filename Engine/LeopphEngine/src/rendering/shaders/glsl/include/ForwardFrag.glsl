@@ -5,7 +5,9 @@
 
 //! #define TRANSPARENT 1
 
-#include "LightingBuffer.glsl"
+#include "BlinnPhong.glsl"
+#include "Material.glsl"
+#include "CameraData.glsl"
 
 layout (location = 0) in vec3 in_FragPos;
 layout (location = 1) in vec3 in_Normal;
@@ -59,49 +61,30 @@ void main()
 		discard;
 	}
 
-	vec3 color = u_AmbientLight * frag.diff;
+	vec3 camPos = GetCameraPosition();
 
-	#if DIRLIGHT
-	vec3 dirEffect = DirLightEffect(frag, u_DirLight, u_CamPos);
+	vec3 color = GetAmbientIntensity() * frag.diff;
 
-	#if NUM_DIRLIGHT_SHADOW_CASCADE
-	dirEffect *= DirShadow(frag, u_DirLight, in_FragPosNdcZ, u_DirShadowCascades, u_DirShadowMaps);
-	#endif
-
-	color += dirEffect;
-	#endif
-
-	#if NUM_SPOT_NO_SHADOW
-	for (int i = 0; i < NUM_SPOT_NO_SHADOW; i++)
+	if (ExistsDirLight())
 	{
-		color += SpotLightEffect(frag, u_NonCastingSpotLights[i], u_CamPos);
+		DirLight dirLight = GetDirLight();
+		vec3 dirEffect = DirLightBlinnPhongEffect(frag, dirLight, camPos);
+		color += dirEffect;
 	}
-	#endif
 
-	#if NUM_SPOT_SHADOW
-	for (int i = 0; i < NUM_SPOT_SHADOW; i++)
+	uint numSpot = GetNumSpotLights();
+	for (uint i = 0; i < numSpot; i++)
 	{
-		vec3 spotEffect = SpotLightEffect(frag, u_CastingSpotLights[i], u_CamPos);
-		spotEffect *= SpotShadow(frag, u_CastingSpotLights[i], u_SpotShadowWorldToClipMats[i], u_SpotShadowMaps[i]);
+		vec3 spotEffect = SpotLightBlinnPhongEffect(frag, GetSpotLight(i), camPos);
 		color += spotEffect;
 	}
-	#endif
 
-	#if NUM_POINT_NO_SHADOW
-	for (int i = 0; i < NUM_POINT_NO_SHADOW; i++)
+	uint numPoint = GetNumPointLights();
+	for (uint i = 0; i < numPoint; i++)
 	{
-		color += PointLightEffect(frag, u_NonCastingPointLights[i], u_CamPos);
-	}
-	#endif
-
-	#if NUM_POINT_SHADOW
-	for (int i = 0; i < NUM_POINT_SHADOW; i++)
-	{
-		vec3 pointEffect = PointLightEffect(frag, u_CastingPointLights[i], u_CamPos);
-		pointEffect *= PointShadow(frag, u_CastingPointLights[i], u_PointShadowMaps[i]);
+		vec3 pointEffect = PointLightBlinnPhongEffect(frag, GetPointLight(i), camPos);
 		color += pointEffect;
 	}
-	#endif
 
 	#if TRANSPARENT
 	float weight = max(min(1.0, max(max(color.r, color.g), color.b) * alpha), alpha) * clamp(0.03 / (1e-5 + pow(frag.pos.z / 200, 4.0)), 1e-2, 3e3);

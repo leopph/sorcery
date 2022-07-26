@@ -1,40 +1,55 @@
 #include "Light.hpp"
 
+#include "Logger.hpp"
+
+#include <format>
+
 
 namespace leopph
 {
-	Vector3 const& Light::Diffuse() const noexcept
+	Vector3 const& Light::get_color() const
 	{
-		return m_Diffuse;
+		return mColor;
 	}
 
 
-	void Light::Diffuse(Vector3 const& value) noexcept
+
+	void Light::set_color(Vector3 const& newColor)
 	{
-		m_Diffuse = value;
+		mColor = newColor;
 	}
 
 
-	Vector3 const& Light::Specular() const noexcept
+
+	f32 Light::get_intensity() const
 	{
-		return m_Specular;
+		return mIntensity;
 	}
 
 
-	void Light::Specular(Vector3 const& value) noexcept
+
+	void Light::set_intensity(f32 const newIntensity)
 	{
-		m_Specular = value;
+		if (newIntensity <= 0)
+		{
+			internal::Logger::Instance().Warning(std::format("Ignoring attempt to set light intensity to {}. This value must be positive.", newIntensity));
+			return;
+		}
+
+		mIntensity = newIntensity;
 	}
 
 
-	bool Light::CastsShadow() const noexcept
+
+	bool Light::is_casting_shadow() const
 	{
-		return m_CastsShadow;
+		return mCastsShadow;
 	}
 
 
-	void Light::CastsShadow(bool const value) noexcept
+
+	void Light::set_casting_shadow(bool const newValue)
 	{
-		m_CastsShadow = value;
+		mCastsShadow = newValue;
 	}
 }

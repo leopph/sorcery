@@ -1,29 +1,28 @@
 #include "DirLight.hpp"
 
-#include "Math.hpp"
 #include "../InternalContext.hpp"
 #include "../data/DataManager.hpp"
 
 
 namespace leopph
 {
-	Vector3 const& DirectionalLight::Direction() const noexcept
+	Vector3 const& DirectionalLight::get_direction() const noexcept
 	{
 		return Component::Owner()->get_transform().get_forward_axis();
 	}
 
 
 
-	f32 DirectionalLight::ShadowExtension() const noexcept
+	f32 DirectionalLight::get_shadow_near_plane() const noexcept
 	{
-		return m_ShadowRange;
+		return mShadowNear;
 	}
 
 
 
-	void DirectionalLight::ShadowExtension(f32 const newRange)
+	void DirectionalLight::set_shadow_near_plane(f32 const newVal)
 	{
-		m_ShadowRange = math::Clamp(newRange, 0, math::Abs(newRange));
+		mShadowNear = newVal;
 	}
 
 
@@ -88,7 +87,7 @@ namespace leopph
 		}
 
 		Light::operator=(other);
-		m_ShadowRange = other.m_ShadowRange;
+		mShadowNear = other.mShadowNear;
 
 		if (InUse())
 		{
