@@ -11,6 +11,7 @@ namespace leopph
 	}
 
 
+
 	void Transform::set_position(Vector3 const& newPos)
 	{
 		if (mParent != nullptr)
@@ -21,8 +22,9 @@ namespace leopph
 		{
 			mLocalPosition = newPos;
 		}
-		calculate_world_position();
+		calculate_world_position_and_update_children();
 	}
+
 
 
 	Vector3 const& Transform::get_local_position() const
@@ -35,14 +37,16 @@ namespace leopph
 	void Transform::set_local_position(Vector3 const& newPos)
 	{
 		mLocalPosition = newPos;
-		calculate_world_position();
+		calculate_world_position_and_update_children();
 	}
+
 
 
 	Quaternion const& Transform::get_rotation() const
 	{
 		return mWorldRotation;
 	}
+
 
 
 	void Transform::set_rotation(Quaternion const& newRot)
@@ -55,8 +59,9 @@ namespace leopph
 		{
 			mLocalRotation = newRot;
 		}
-		calculate_world_rotation();
+		calculate_world_rotation_and_update_children();
 	}
+
 
 
 	Quaternion const& Transform::get_local_rotation() const
@@ -65,17 +70,20 @@ namespace leopph
 	}
 
 
+
 	void Transform::set_local_rotation(Quaternion const& newRot)
 	{
 		mLocalRotation = newRot;
-		calculate_world_rotation();
+		calculate_world_rotation_and_update_children();
 	}
+
 
 
 	Vector3 const& Transform::get_scale() const
 	{
 		return mWorldScale;
 	}
+
 
 
 	void Transform::set_scale(Vector3 const& newScale)
@@ -88,8 +96,9 @@ namespace leopph
 		{
 			mLocalScale = newScale;
 		}
-		calculate_world_scale();
+		calculate_world_scale_and_update_children();
 	}
+
 
 
 	Vector3 const& Transform::get_local_scale() const
@@ -98,11 +107,13 @@ namespace leopph
 	}
 
 
+
 	void Transform::set_local_scale(Vector3 const& newScale)
 	{
 		mLocalScale = newScale;
-		calculate_world_scale();
+		calculate_world_scale_and_update_children();
 	}
+
 
 
 	void Transform::translate(Vector3 const& vector, Space const base)
@@ -118,10 +129,12 @@ namespace leopph
 	}
 
 
+
 	void Transform::translate(f32 const x, f32 const y, f32 const z, Space const base)
 	{
 		translate(Vector3{x, y, z}, base);
 	}
+
 
 
 	void Transform::rotate(Quaternion const& rotation, Space const base)
@@ -137,10 +150,12 @@ namespace leopph
 	}
 
 
+
 	void Transform::rotate(Vector3 const& axis, f32 const amountDegrees, Space const base)
 	{
 		rotate(Quaternion{axis, amountDegrees}, base);
 	}
+
 
 
 	void Transform::rescale(Vector3 const& scaling, Space const base)
@@ -156,10 +171,12 @@ namespace leopph
 	}
 
 
+
 	void Transform::rescale(f32 const x, f32 const y, f32 const z, Space const base)
 	{
 		rescale(Vector3{x, y, z}, base);
 	}
+
 
 
 	Vector3 const& Transform::get_forward_axis() const
@@ -168,10 +185,12 @@ namespace leopph
 	}
 
 
+
 	Vector3 const& Transform::get_right_axis() const
 	{
 		return mRight;
 	}
+
 
 
 	Vector3 const& Transform::get_up_axis() const
@@ -180,10 +199,12 @@ namespace leopph
 	}
 
 
+
 	Transform* Transform::get_parent() const
 	{
 		return mParent;
 	}
+
 
 
 	void Transform::set_parent(Entity* const parent)
@@ -199,6 +220,7 @@ namespace leopph
 	}
 
 
+
 	void Transform::set_parent(Transform* parent)
 	{
 		if (parent)
@@ -212,6 +234,7 @@ namespace leopph
 	}
 
 
+
 	void Transform::set_parent(Transform& parent)
 	{
 		unparent();
@@ -219,10 +242,11 @@ namespace leopph
 		mParent = &parent;
 		mParent->mChildren.push_back(this);
 
-		calculate_world_position();
-		calculate_world_rotation();
-		calculate_world_scale();
+		calculate_world_position_and_update_children();
+		calculate_world_rotation_and_update_children();
+		calculate_world_scale_and_update_children();
 	}
+
 
 
 	void Transform::unparent()
@@ -243,31 +267,16 @@ namespace leopph
 
 
 
-	Transform::TransformationMatrices Transform::get_matrices()
+	Matrix4 Transform::get_model_matrix() const
 	{
-		if (!mChanged)
-		{
-			return mMatrices;
-		}
+		return mModelMat;
+	}
 
-		Matrix4 modelMatrix;
-		modelMatrix[0] = Vector4{mRight * mWorldScale[0], 0};
-		modelMatrix[1] = Vector4{mUp * mWorldScale[1], 0};
-		modelMatrix[2] = Vector4{mForward * mWorldScale[2], 0};
-		modelMatrix[3] = Vector4{mWorldPosition};
 
-		auto const worldScaleRecip{1.f / mWorldScale};
 
-		Matrix4 normalMatrix;
-		normalMatrix[0] = Vector4{mRight * worldScaleRecip[0], -mWorldPosition[0]};
-		normalMatrix[1] = Vector4{mUp * worldScaleRecip[1], -mWorldPosition[1]};
-		normalMatrix[2] = Vector4{mForward * worldScaleRecip[2], -mWorldPosition[2]};
-		normalMatrix[3][3] = 1;
-
-		mMatrices = {modelMatrix, normalMatrix};
-		mChanged = false;
-
-		return mMatrices;
+	Matrix4 Transform::get_normal_matrix() const
+	{
+		return mNormalMat;
 	}
 
 
@@ -279,48 +288,65 @@ namespace leopph
 
 
 
-	void Transform::calculate_local_axes()
+	void Transform::calculate_world_position_and_update_children()
 	{
+		mWorldPosition = mParent != nullptr ? mParent->mWorldRotation.Rotate(mParent->mWorldPosition + mLocalPosition) : mLocalPosition;
+
+		calculate_matrices();
+
+		for (auto* const child : mChildren)
+		{
+			child->calculate_world_position_and_update_children();
+		}
+	}
+
+
+
+	void Transform::calculate_world_rotation_and_update_children()
+	{
+		mWorldRotation = mParent != nullptr ? mParent->mWorldRotation * mLocalRotation : mLocalRotation;
+
 		mForward = mWorldRotation.Rotate(Vector3::Forward());
 		mRight = mWorldRotation.Rotate(Vector3::Right());
 		mUp = mWorldRotation.Rotate(Vector3::Up());
-	}
 
-
-	void Transform::calculate_world_position()
-	{
-		mWorldPosition = mParent != nullptr ? mParent->mWorldRotation.Rotate(mParent->mWorldPosition + mLocalPosition) : mLocalPosition;
-		mChanged = true;
+		calculate_matrices();
 
 		for (auto* const child : mChildren)
 		{
-			child->calculate_world_position();
+			child->calculate_world_rotation_and_update_children();
 		}
 	}
 
 
-	void Transform::calculate_world_rotation()
-	{
-		mWorldRotation = mParent != nullptr ? mParent->mWorldRotation * mLocalRotation : mLocalRotation;
-		calculate_local_axes();
-		mChanged = true;
 
-		for (auto* const child : mChildren)
-		{
-			child->calculate_world_rotation();
-		}
-	}
-
-
-	void Transform::calculate_world_scale()
+	void Transform::calculate_world_scale_and_update_children()
 	{
 		mWorldScale = mParent != nullptr ? mParent->mWorldScale * mLocalScale : mLocalScale;
-		mChanged = true;
+
+		calculate_matrices();
 
 		for (auto* const child : mChildren)
 		{
-			child->calculate_world_scale();
+			child->calculate_world_scale_and_update_children();
 		}
+	}
+
+
+
+	void Transform::calculate_matrices()
+	{
+		mModelMat[0] = Vector4{mRight * mWorldScale[0], 0};
+		mModelMat[1] = Vector4{mUp * mWorldScale[1], 0};
+		mModelMat[2] = Vector4{mForward * mWorldScale[2], 0};
+		mModelMat[3] = Vector4{mWorldPosition, 1};
+
+		auto const worldScaleRecip{1.f / mWorldScale};
+
+		mNormalMat[0] = Vector4{mRight * worldScaleRecip[0], -mWorldPosition[0]};
+		mNormalMat[1] = Vector4{mUp * worldScaleRecip[1], -mWorldPosition[1]};
+		mNormalMat[2] = Vector4{mForward * worldScaleRecip[2], -mWorldPosition[2]};
+		mNormalMat[3] = Vector4{0, 0, 0, 1};
 	}
 
 
@@ -328,6 +354,7 @@ namespace leopph
 	Transform::Transform(Entity* entity) :
 		mEntity{entity}
 	{ }
+
 
 
 	Transform::~Transform()
@@ -338,9 +365,9 @@ namespace leopph
 		{
 			// Can't call parent setter, because that would remove child from this's mChildren, and the loop would crash.
 			child->mParent = nullptr;
-			child->calculate_world_position();
-			child->calculate_world_rotation();
-			child->calculate_world_scale();
+			child->calculate_world_position_and_update_children();
+			child->calculate_world_rotation_and_update_children();
+			child->calculate_world_scale_and_update_children();
 		}
 	}
 }

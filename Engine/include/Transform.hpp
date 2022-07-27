@@ -24,13 +24,6 @@ namespace leopph
 	class Transform final
 	{
 		public:
-			struct TransformationMatrices
-			{
-				Matrix4 world;
-				Matrix4 normal;
-			};
-
-
 			[[nodiscard]] LEOPPHAPI Vector3 const& get_position() const;
 			LEOPPHAPI void set_position(Vector3 const& newPos);
 
@@ -82,17 +75,18 @@ namespace leopph
 			[[nodiscard]] LEOPPHAPI std::span<Transform* const> get_children() const;
 
 
-			LEOPPHAPI TransformationMatrices get_matrices();
+			LEOPPHAPI Matrix4 get_model_matrix() const;
+			LEOPPHAPI Matrix4 get_normal_matrix() const;
 
 
 			[[nodiscard]] LEOPPHAPI Entity* get_entity() const;
 
 
 		private:
-			void calculate_local_axes();
-			void calculate_world_position();
-			void calculate_world_rotation();
-			void calculate_world_scale();
+			void calculate_world_position_and_update_children();
+			void calculate_world_rotation_and_update_children();
+			void calculate_world_scale_and_update_children();
+			void calculate_matrices();
 
 
 		public:
@@ -125,7 +119,7 @@ namespace leopph
 
 			Entity* mEntity;
 
-			mutable bool mChanged{true};
-			TransformationMatrices mMatrices;
+			Matrix4 mModelMat;
+			Matrix4 mNormalMat;
 	};
 }
