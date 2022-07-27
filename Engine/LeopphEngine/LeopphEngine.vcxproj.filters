@@ -156,8 +156,8 @@
     <ClInclude Include="src\rendering\ShaderProgram.hpp" />
     <ClInclude Include="src\scene\Scene.hpp" />
     <ClInclude Include="src\scene\SceneManager.hpp" />
-    <ClInclude Include="..\include\RenderingPath.h" />
     <ClInclude Include="..\include\RenderingPath.hpp" />
+    <ClInclude Include="..\include\RenderPass.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\rendering\shaders\glsl\include\CompositeFrag.glsl" />

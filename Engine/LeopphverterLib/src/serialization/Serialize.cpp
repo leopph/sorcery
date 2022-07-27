@@ -36,9 +36,9 @@ namespace leopph::convert
 
 	void serialize(Color const& color, std::vector<u8>& oBuf)
 	{
-		serialize(color.Red, oBuf);
-		serialize(color.Green, oBuf);
-		serialize(color.Blue, oBuf);
+		serialize(color.red, oBuf);
+		serialize(color.green, oBuf);
+		serialize(color.blue, oBuf);
 	}
 
 

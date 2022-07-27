@@ -109,8 +109,8 @@
     <ClInclude Include="..\include\Poelo.hpp" />
     <ClInclude Include="..\include\PointLight.hpp" />
     <ClInclude Include="..\include\RenderComponent.hpp" />
-    <ClInclude Include="..\include\RenderingPath.h" />
     <ClInclude Include="..\include\RenderingPath.hpp" />
+    <ClInclude Include="..\include\RenderPass.hpp" />
     <ClInclude Include="..\include\Settings.hpp" />
     <ClInclude Include="..\include\Skybox.hpp" />
     <ClInclude Include="..\include\SpotLight.hpp" />
