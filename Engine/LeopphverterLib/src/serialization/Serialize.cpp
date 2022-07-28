@@ -39,6 +39,7 @@ namespace leopph::convert
 		serialize(color.red, oBuf);
 		serialize(color.green, oBuf);
 		serialize(color.blue, oBuf);
+		// TODO SERIALIZE ALPHA
 	}
 
 
@@ -86,9 +87,9 @@ namespace leopph::convert
 
 	void serialize(Vertex const& vert, std::vector<u8>& oBuf, std::endian const endianness)
 	{
-		serialize(vert.Position, oBuf, endianness);
-		serialize(vert.Normal, oBuf, endianness);
-		serialize(vert.TexCoord, oBuf, endianness);
+		serialize(vert.position, oBuf, endianness);
+		serialize(vert.normal, oBuf, endianness);
+		serialize(vert.uv, oBuf, endianness);
 	}
 
 

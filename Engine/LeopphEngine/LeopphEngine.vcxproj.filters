@@ -10,14 +10,14 @@
     <ClCompile Include="src\components\DirLight.cpp" />
     <ClCompile Include="src\components\ImageSprite.cpp" />
     <ClCompile Include="src\components\Light.cpp" />
-    <ClCompile Include="src\components\Model.cpp" />
+    <ClCompile Include="src\components\StaticModelComponent.cpp" />
     <ClCompile Include="src\components\OrthographicCamera.cpp" />
     <ClCompile Include="src\components\PerspectiveCamera.cpp" />
     <ClCompile Include="src\components\PointLight.cpp" />
-    <ClCompile Include="src\components\RenderComponent.cpp" />
-    <ClCompile Include="src\components\Skybox.cpp" />
+    <ClCompile Include="src\components\StaticMeshGroupComponent.cpp" />
+    <ClCompile Include="src\Skybox.cpp" />
     <ClCompile Include="src\components\SpotLight.cpp" />
-    <ClCompile Include="src\components\Transform.cpp" />
+    <ClCompile Include="src\scene\Transform.cpp" />
     <ClCompile Include="src\data\DataManager.cpp" />
     <ClCompile Include="src\data\Poelo.cpp" />
     <ClCompile Include="src\events\Event.cpp" />
@@ -25,18 +25,10 @@
     <ClCompile Include="src\events\KeyEvent.cpp" />
     <ClCompile Include="src\events\MouseEvent.cpp" />
     <ClCompile Include="src\events\WindowEvent.cpp" />
-    <ClCompile Include="src\rendering\Mesh.cpp" />
-    <ClCompile Include="src\rendering\MeshGroup.cpp" />
-    <ClCompile Include="src\rendering\GlBufferObject.cpp" />
     <ClCompile Include="src\rendering\GlCore.cpp" />
-    <ClCompile Include="src\rendering\GlMesh.cpp" />
-    <ClCompile Include="src\rendering\GlMeshGroup.cpp" />
-    <ClCompile Include="src\rendering\GlSkyboxImpl.cpp" />
-    <ClCompile Include="src\rendering\GlTexture.cpp" />
-    <ClCompile Include="src\rendering\GlVertexArrayObject.cpp" />
+    <ClCompile Include="src\rendering\SkyboxImpl.cpp" />
+    <ClCompile Include="src\rendering\Texture.cpp" />
     <ClCompile Include="src\rendering\Renderer.cpp" />
-    <ClCompile Include="src\rendering\Material.cpp" />
-    <ClCompile Include="src\rendering\RenderObject.cpp" />
     <ClCompile Include="src\rendering\ScreenQuad.cpp" />
     <ClCompile Include="src\rendering\ShaderFamily.cpp" />
     <ClCompile Include="src\rendering\ShaderProcessing.cpp" />
@@ -61,6 +53,7 @@
     <ClCompile Include="src\Settings.cpp" />
     <ClCompile Include="src\SettingsImpl.cpp" />
     <ClCompile Include="src\rendering\RenderSettings.cpp" />
+    <ClCompile Include="src\rendering\StaticMeshGroup.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\data\DataManager.hpp" />
@@ -111,7 +104,7 @@
     <ClInclude Include="..\include\Exit.hpp" />
     <ClInclude Include="..\include\FrameCompleteEvent.hpp" />
     <ClInclude Include="..\include\Frustum.hpp" />
-    <ClInclude Include="..\include\GlTexture.hpp" />
+    <ClInclude Include="..\include\Texture.hpp" />
     <ClInclude Include="..\include\ImageSprite.hpp" />
     <ClInclude Include="..\include\Input.hpp" />
     <ClInclude Include="..\include\KeyCode.hpp" />
@@ -122,15 +115,13 @@
     <ClInclude Include="..\include\Light.hpp" />
     <ClInclude Include="..\include\Main.hpp" />
     <ClInclude Include="..\include\Material.hpp" />
-    <ClInclude Include="..\include\Mesh.hpp" />
-    <ClInclude Include="..\include\MeshGroup.hpp" />
-    <ClInclude Include="..\include\Model.hpp" />
+    <ClInclude Include="..\include\StaticModelComponent.hpp" />
     <ClInclude Include="..\include\MouseEvent.hpp" />
     <ClInclude Include="..\include\OrthographicCamera.hpp" />
     <ClInclude Include="..\include\PerspectiveCamera.hpp" />
     <ClInclude Include="..\include\Poelo.hpp" />
     <ClInclude Include="..\include\PointLight.hpp" />
-    <ClInclude Include="..\include\RenderComponent.hpp" />
+    <ClInclude Include="..\include\StaticMeshGroupComponent.hpp" />
     <ClInclude Include="..\include\Settings.hpp" />
     <ClInclude Include="..\include\Skybox.hpp" />
     <ClInclude Include="..\include\SpotLight.hpp" />
@@ -142,14 +133,9 @@
     <ClInclude Include="src\events\DirShadowResEvent.hpp" />
     <ClInclude Include="src\events\PointShadowResEvent.hpp" />
     <ClInclude Include="src\events\SpotShadowResEvent.hpp" />
-    <ClInclude Include="src\rendering\GlBufferObject.hpp" />
     <ClInclude Include="src\rendering\GlCore.hpp" />
-    <ClInclude Include="src\rendering\GlMesh.hpp" />
-    <ClInclude Include="src\rendering\GlMeshGroup.hpp" />
-    <ClInclude Include="src\rendering\GlSkyboxImpl.hpp" />
-    <ClInclude Include="src\rendering\GlVertexArrayObject.hpp" />
+    <ClInclude Include="src\rendering\SkyboxImpl.hpp" />
     <ClInclude Include="src\rendering\Renderer.hpp" />
-    <ClInclude Include="src\rendering\RenderObject.hpp" />
     <ClInclude Include="src\rendering\RenderSettings.hpp" />
     <ClInclude Include="src\rendering\ShaderFamily.hpp" />
     <ClInclude Include="src\rendering\ShaderProcessing.hpp" />
@@ -158,6 +144,7 @@
     <ClInclude Include="src\scene\SceneManager.hpp" />
     <ClInclude Include="..\include\RenderingPath.hpp" />
     <ClInclude Include="..\include\RenderPass.hpp" />
+    <ClInclude Include="..\include\StaticMeshGroup.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\rendering\shaders\glsl\include\CompositeFrag.glsl" />

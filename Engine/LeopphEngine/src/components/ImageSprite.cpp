@@ -15,7 +15,7 @@ namespace leopph
 	{
 		Image img{src, ColorEncoding::SRGB, ImageOrientation::FlipVertical};
 		m_Extents = Vector2{img.Width() / 2.f / ppi, img.Height() / 2.f / ppi};
-		Init(CreateMeshGroup(img, ppi));
+		Init(create_data(img, ppi));
 	}
 
 
@@ -37,7 +37,7 @@ namespace leopph
 	}
 
 
-	MeshGroup ImageSprite::CreateMeshGroup(Image& img, int const ppi)
+	MeshData ImageSprite::create_data(Image& img, int const ppi)
 	{
 		if (img.Empty())
 		{
@@ -157,6 +157,6 @@ namespace leopph
 
 		auto material = std::make_shared<Material>(Color{255, 255, 255}, Color{0, 0, 0}, std::move(baseTexture), nullptr, opacityTexture, 0.f, 1.f, false);
 
-		return MeshGroup{std::vector{Mesh{std::move(vertices), std::move(indices), std::move(material)}}};
+		return MeshData{std::vector{Mesh{std::move(vertices), std::move(indices), std::move(material)}}};
 	}
 }

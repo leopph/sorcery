@@ -9,7 +9,7 @@ namespace leopph
 {
 	namespace internal
 	{
-		class GlSkyboxImpl;
+		class SkyboxImpl;
 	}
 
 
@@ -39,6 +39,6 @@ namespace leopph
 		private:
 			void Deinit() const;
 
-			internal::GlSkyboxImpl* m_Impl;
+			internal::SkyboxImpl* m_Impl;
 	};
 }

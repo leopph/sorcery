@@ -1,4 +1,4 @@
-#include "GlTexture.hpp"
+#include "Texture.hpp"
 
 #include "GlCore.hpp"
 #include "Logger.hpp"
@@ -8,7 +8,7 @@
 
 namespace leopph
 {
-	GlTexture::GlTexture(Image const& img) :
+	Texture::Texture(Image const& img) :
 		m_Texture{},
 		m_Width{img.Width()},
 		m_Height{img.Height()}
@@ -73,28 +73,28 @@ namespace leopph
 
 
 
-	GlTexture::~GlTexture() noexcept
+	Texture::~Texture() noexcept
 	{
 		glDeleteTextures(1, &m_Texture);
 	}
 
 
 
-	u32 GlTexture::TextureName() const noexcept
+	u32 Texture::TextureName() const noexcept
 	{
 		return m_Texture;
 	}
 
 
 
-	u32 GlTexture::Width() const noexcept
+	u32 Texture::Width() const noexcept
 	{
 		return m_Width;
 	}
 
 
 
-	u32 GlTexture::Height() const noexcept
+	u32 Texture::Height() const noexcept
 	{
 		return m_Height;
 	}

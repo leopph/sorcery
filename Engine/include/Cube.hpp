@@ -1,14 +1,13 @@
 #pragma once
 
 #include "LeopphApi.hpp"
-#include "MeshGroup.hpp"
-#include "RenderComponent.hpp"
+#include "StaticMeshGroupComponent.hpp"
 
 
 namespace leopph
 {
 	// A generic untextured 1x1 cube.
-	class Cube final : public internal::RenderComponent
+	class Cube final : public internal::StaticMeshGroupComponent
 	{
 		public:
 			LEOPPHAPI Cube();
@@ -16,7 +15,7 @@ namespace leopph
 			[[nodiscard]] LEOPPHAPI ComponentPtr<> Clone() const override;
 
 		private:
-			[[nodiscard]] static MeshGroup CreateMeshGroup();
+			[[nodiscard]] static std::shared_ptr<StaticMeshGroup> create_data();
 			static std::weak_ptr<Material> s_Material;
 	};
 }

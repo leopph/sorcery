@@ -1,6 +1,7 @@
 #include "Renderer.hpp"
 
 #include "AmbientLight.hpp"
+#include "Camera.hpp"
 #include "GlCore.hpp"
 #include "Math.hpp"
 #include "RenderSettings.hpp"
@@ -36,6 +37,46 @@ namespace leopph::internal
 		{
 			deferred_render();
 		}
+	}
+
+
+
+	void Renderer::register_static_mesh_group(StaticMeshGroupComponent const* component, StaticMeshGroup const* model)
+	{
+		mStaticModels[component] = model;
+	}
+
+
+
+	void Renderer::unregister_static_mesh_group(StaticMeshGroupComponent const* component)
+	{
+		mStaticModels.erase(component);
+	}
+
+
+
+	SkyboxImpl* Renderer::create_or_get_skybox_impl(std::filesystem::path allPaths)
+	{
+		for (auto const& skyboxImpl : mSkyboxes)
+		{
+			if (skyboxImpl->AllPaths() == allPaths)
+			{
+				return skyboxImpl.get();
+			}
+		}
+
+		mSkyboxes.emplace_back(std::make_unique<SkyboxImpl>(std::move(allPaths)));
+		return mSkyboxes.back().get();
+	}
+
+
+
+	void Renderer::destroy_skybox_impl(SkyboxImpl const* skyboxImpl)
+	{
+		std::erase_if(mSkyboxes, [skyboxImpl](auto const& elem)
+		{
+			return elem.get() == skyboxImpl;
+		});
 	}
 
 

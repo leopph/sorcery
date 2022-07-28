@@ -1,14 +1,16 @@
 #pragma once
 
-#include "Camera.hpp"
 #include "EventReceiver.hpp"
 #include "Light.hpp"
-#include "MeshGroup.hpp"
 #include "RenderingPath.hpp"
-#include "RenderObject.hpp"
+#include "ShaderFamily.hpp"
+#include "SkyboxImpl.hpp"
+#include "StaticMeshGroup.hpp"
+#include "StaticMeshGroupComponent.hpp"
 #include "Types.hpp"
 #include "WindowEvent.hpp"
 
+#include <unordered_map>
 #include <vector>
 
 
@@ -113,11 +115,11 @@ namespace leopph::internal
 			// Entry point for rendering a frame
 			void render();
 
-			[[nodiscard]] RenderObject* create_render_object(MeshGroup const& meshGroup);
-			void delete_render_object(RenderObject* renderObject);
+			void register_static_mesh_group(StaticMeshGroupComponent const* component, StaticMeshGroup const* model);
+			void unregister_static_mesh_group(StaticMeshGroupComponent const* component);
 
-			[[nodiscard]] GlSkyboxImpl* create_or_get_skybox_impl(std::filesystem::path allPaths);
-			void destroy_skybox_impl(GlSkyboxImpl const* skyboxImpl);
+			[[nodiscard]] SkyboxImpl* create_or_get_skybox_impl(std::filesystem::path allPaths);
+			void destroy_skybox_impl(SkyboxImpl const* skyboxImpl);
 
 
 		private:
@@ -177,5 +179,15 @@ namespace leopph::internal
 
 			ResourceUpdateFlags mResUpdateFlags;
 			RenderingPath mRenderingPath;
+
+			ShaderFamily mDepthShadowShaderFamily{make_shader_family("C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/DepthShadow.shader")};
+			ShaderFamily mLinearShadowShaderFamily{make_shader_family("C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/LinearShadow.shader")};
+			ShaderFamily mSkyboxShaderFamily{make_shader_family("C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/Skybox.shader")};
+			ShaderFamily mGammaCorrectShaderFamily{make_shader_family("C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/GammaCorrect.shader")};
+			ShaderFamily mForwardShaderFamily{make_shader_family("C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/Forward.shader")};
+			ShaderFamily mTransparencyCompositeShaderFamily{make_shader_family("C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/TransparencyComposite.shader")};
+
+			std::unordered_map<StaticMeshGroupComponent const*, StaticMeshGroup const*> mStaticModels;
+			std::vector<std::unique_ptr<SkyboxImpl>> mSkyboxes;
 	};
 }

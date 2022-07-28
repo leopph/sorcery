@@ -1,56 +1,26 @@
 #pragma once
 
 #include "Color.hpp"
-#include "GlTexture.hpp"
+#include "Texture.hpp"
 #include "Types.hpp"
-#include "Util.hpp"
 
 #include <memory>
 
 
 namespace leopph
 {
-	class Material
+	struct Material
 	{
-		public:
-			[[nodiscard]] bool is_transparent() const;
-			void set_transparent(bool transparent);
+		Color diffuseColor{250, 255, 255, 255};
+		Color specularColor{0, 0, 0, 255};
 
-		protected:
-			Material() = default;
+		std::shared_ptr<Texture> diffuseMap;
+		std::shared_ptr<Texture> specularMap;
+		std::shared_ptr<Texture> opacityMap;
 
-		private:
-			bool mIsTransparent{false};
-	};
+		f32 gloss{0};
+		f32 opacity{1};
 
-
-	class BuiltInMaterial : public Material
-	{
-		public:
-			[[nodiscard]] bool is_two_sided() const;
-			void set_two_sided(bool twoSided);
-
-			[[nodiscard]] f32 get_alpha_treshold() const;
-			void set_alpha_threshold(f32 threshold);
-
-		protected:
-			BuiltInMaterial() = default;
-
-		private:
-			bool mIsTwoSided{true};
-			f32 mAlphaThreshold{0.f};
-	};
-
-
-
-	class BlinnPhongMaterial : public BuiltInMaterial
-	{
-		public:
-			Color baseColor{};
-			Color SpecularColor{0, 0, 0, 0};
-			f32 Gloss{1};
-
-			std::shared_ptr<GlTexture> baseMap;
-			std::shared_ptr<GlTexture> SpecularMap;
+		bool twoSided{false};
 	};
 }

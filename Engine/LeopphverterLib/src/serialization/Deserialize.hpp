@@ -139,6 +139,7 @@ namespace leopph::convert
 			deserialize<u8>(it),
 			deserialize<u8>(it),
 			deserialize<u8>(it)
+			// TODO DESERIALIZE ALPHA
 		};
 	}
 
@@ -149,9 +150,9 @@ namespace leopph::convert
 	{
 		return Vertex
 		{
-			.Position = deserialize_vector3(it, endianness),
-			.Normal = deserialize_vector3(it, endianness),
-			.TexCoord = deserialize_vector2(it, endianness)
+			.position = deserialize_vector3(it, endianness),
+			.normal = deserialize_vector3(it, endianness),
+			.uv = deserialize_vector2(it, endianness)
 		};
 	}
 

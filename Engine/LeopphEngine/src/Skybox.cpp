@@ -1,8 +1,8 @@
 #include "Skybox.hpp"
 
-#include "../InternalContext.hpp"
-#include "../rendering/GlRenderer.hpp"
-#include "../rendering/GlSkyboxImpl.hpp"
+#include "InternalContext.hpp"
+#include "rendering/SkyboxImpl.hpp"
+#include "rendering/Renderer.hpp"
 
 
 namespace leopph
@@ -10,7 +10,7 @@ namespace leopph
 	Skybox::Skybox(std::filesystem::path const& left, std::filesystem::path const& right,
 	               std::filesystem::path const& top, std::filesystem::path const& bottom,
 	               std::filesystem::path const& front, std::filesystem::path const& back) :
-		m_Impl{static_cast<internal::GlRenderer*>(internal::GetRenderer())->CreateOrGetSkyboxImpl(internal::GlSkyboxImpl::build_all_paths(left, right, top, bottom, front, back))}
+		m_Impl{internal::GetRenderer()->create_or_get_skybox_impl(internal::SkyboxImpl::build_all_paths(left, right, top, bottom, front, back))}
 	{
 		m_Impl->register_handle(this);
 	}
@@ -128,7 +128,7 @@ namespace leopph
 		// If we were the last handle referring the impl, it is our job to delete it.
 		if (m_Impl->num_handles() == 0)
 		{
-			static_cast<internal::GlRenderer*>(internal::GetRenderer())->DestroySkyboxImpl(m_Impl);
+			internal::GetRenderer()->destroy_skybox_impl(m_Impl);
 		}
 	}
 }

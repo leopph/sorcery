@@ -15,11 +15,11 @@
 
 namespace leopph::internal
 {
-	class GlSkyboxImpl
+	class SkyboxImpl
 	{
 		public:
 			// Param is in the format that build_all_paths generates.
-			explicit GlSkyboxImpl(std::filesystem::path allFilePaths);
+			explicit SkyboxImpl(std::filesystem::path allFilePaths);
 
 
 			void draw(gsl::not_null<ShaderProgram const*> shader) const;
@@ -44,13 +44,13 @@ namespace leopph::internal
 			u64 num_handles() const;
 
 
-			GlSkyboxImpl(GlSkyboxImpl const& other) = delete;
-			void operator=(GlSkyboxImpl const& other) = delete;
+			SkyboxImpl(SkyboxImpl const& other) = delete;
+			void operator=(SkyboxImpl const& other) = delete;
 
-			GlSkyboxImpl(GlSkyboxImpl&& other) = delete;
-			void operator=(GlSkyboxImpl&& other) = delete;
+			SkyboxImpl(SkyboxImpl&& other) = delete;
+			void operator=(SkyboxImpl&& other) = delete;
 
-			~GlSkyboxImpl();
+			~SkyboxImpl();
 
 
 		private:

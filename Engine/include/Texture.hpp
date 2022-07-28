@@ -7,22 +7,22 @@
 
 namespace leopph
 {
-	class GlTexture
+	class Texture
 	{
 		public:
-			explicit LEOPPHAPI GlTexture(Image const& img);
+			explicit LEOPPHAPI Texture(Image const& img);
 
 			[[nodiscard]] LEOPPHAPI u32 TextureName() const noexcept;
 			[[nodiscard]] LEOPPHAPI u32 Width() const noexcept;
 			[[nodiscard]] LEOPPHAPI u32 Height() const noexcept;
 
-			GlTexture(GlTexture const& other) = delete;
-			GlTexture& operator=(GlTexture const& other) = delete;
+			Texture(Texture const& other) = delete;
+			Texture& operator=(Texture const& other) = delete;
 
-			GlTexture(GlTexture&& other) = delete;
-			GlTexture& operator=(GlTexture&& other) = delete;
+			Texture(Texture&& other) = delete;
+			Texture& operator=(Texture&& other) = delete;
 
-			~GlTexture() noexcept;
+			~Texture() noexcept;
 
 		private:
 			u32 m_Texture;

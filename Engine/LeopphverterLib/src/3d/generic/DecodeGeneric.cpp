@@ -144,9 +144,9 @@ namespace leopph::convert
 			{
 				Vertex vertex
 				{
-					.Position = Vector3{Vector4{convert(mesh->mVertices[i]), 1} * trafo},
-					.Normal = Vector3{Vector4{convert(mesh->mNormals[i]), 0} * trafo},
-					.TexCoord = [mesh, i]
+					.position = Vector3{Vector4{convert(mesh->mVertices[i]), 1} * trafo},
+					.normal = Vector3{Vector4{convert(mesh->mNormals[i]), 0} * trafo},
+					.uv = [mesh, i]
 					{
 						for (std::size_t j = 0; j < AI_MAX_NUMBER_OF_TEXTURECOORDS; j++)
 						{

@@ -9,9 +9,9 @@
 
 namespace leopph
 {
-	Cube::Cube()
+	Cube::Cube() :
+		StaticMeshGroupComponent{create_data()}
 	{
-		Init(CreateMeshGroup());
 	}
 
 
@@ -21,7 +21,7 @@ namespace leopph
 	}
 
 
-	MeshGroup Cube::CreateMeshGroup()
+	std::shared_ptr<StaticMeshGroup> Cube::create_data()
 	{
 		std::vector vertices{
 			// Back face
@@ -77,12 +77,18 @@ namespace leopph
 		};
 
 		auto material = s_Material.lock();
+
 		if (!material)
 		{
 			s_Material = material = std::make_shared<Material>(Color{255, 255, 255}, Color{0, 0, 0}, nullptr, nullptr, nullptr, 0.f, 1.f, true);
 		}
 
-		return MeshGroup{std::vector{Mesh{std::move(vertices), std::move(indices), std::move(material)}}};
+		auto mesh = std::make_unique<StaticMeshGroup::StaticMesh>(vertices, indices);
+		std::vector<std::unique_ptr<StaticMeshGroup::StaticMesh>> meshes;
+		meshes.emplace_back(std::move(mesh));
+		std::vector materials{material};
+
+		return std::make_shared<StaticMeshGroup>(std::move(meshes), std::move(materials));
 	}
 
 

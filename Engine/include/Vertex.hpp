@@ -7,8 +7,8 @@ namespace leopph
 {
 	struct Vertex
 	{
-		Vector3 Position{};
-		Vector3 Normal{};
-		Vector2 TexCoord{};
+		Vector3 position;
+		Vector3 normal;
+		Vector2 uv;
 	};
 }

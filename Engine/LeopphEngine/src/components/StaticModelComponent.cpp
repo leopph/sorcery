@@ -1,8 +1,8 @@
-#include "Model.hpp"
+#include "StaticModelComponent.hpp"
 
-#include "GlTexture.hpp"
 #include "Image.hpp"
 #include "Leopphverter.hpp"
+#include "Texture.hpp"
 
 #include <utility>
 #include <vector>
@@ -10,9 +10,9 @@
 
 namespace leopph
 {
-	namespace
+	/*namespace
 	{
-		std::shared_ptr<Material> convert_material(convert::Material const& convMat, std::span<std::shared_ptr<GlTexture> const> const textures)
+		std::shared_ptr<Material> convert_material(convert::Material const& convMat, std::span<std::shared_ptr<Texture> const> const textures)
 		{
 			auto mat = std::make_shared<Material>();
 
@@ -53,12 +53,12 @@ namespace leopph
 
 			auto const& [convTexs, convMats, convMeshes] = imported.value();
 
-			std::vector<std::shared_ptr<GlTexture>> textures;
+			std::vector<std::shared_ptr<Texture>> textures;
 			textures.reserve(convTexs.size());
 
 			for (auto const& convTex : convTexs)
 			{
-				textures.push_back(std::make_shared<GlTexture>(convTex));
+				textures.push_back(std::make_shared<Texture>(convTex));
 			}
 
 			std::vector<std::shared_ptr<Material>> mats;
@@ -83,23 +83,23 @@ namespace leopph
 
 
 
-	Model::Model(std::filesystem::path path) :
-		m_Path{std::move(path)}
+	StaticModelComponent::StaticModelComponent(std::filesystem::path path) :
+		mPath{std::move(path)}
 	{
-		Init(MeshGroup{parse(m_Path)});
+		Init(MeshData{parse(mPath)});
 	}
 
 
 
-	ComponentPtr<> Model::Clone() const
+	ComponentPtr<> StaticModelComponent::Clone() const
 	{
-		return CreateComponent<Model>(*this);
+		return CreateComponent<StaticModelComponent>(*this);
 	}
 
 
 
-	std::filesystem::path const& Model::Path() const noexcept
+	std::filesystem::path const& StaticModelComponent::path() const noexcept
 	{
-		return m_Path;
-	}
+		return mPath;
+	}*/
 }
