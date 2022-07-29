@@ -1,12 +1,11 @@
 #pragma once
 
 #include "EventReceiver.hpp"
-#include "Light.hpp"
 #include "RenderingPath.hpp"
 #include "ShaderFamily.hpp"
 #include "SkyboxImpl.hpp"
-#include "StaticMeshGroup.hpp"
-#include "StaticMeshGroupComponent.hpp"
+#include "StaticMesh.hpp"
+#include "StaticMeshComponent.hpp"
 #include "Types.hpp"
 #include "WindowEvent.hpp"
 
@@ -16,6 +15,8 @@
 
 namespace leopph::internal
 {
+	#pragma warning(push)
+	#pragma warning(disable: 4324)
 	class Renderer : public EventReceiver<WindowEvent>
 	{
 		struct ResourceUpdateFlags
@@ -111,12 +112,23 @@ namespace leopph::internal
 		};
 
 
+		struct RenderNode
+		{
+			u32 vao;
+			Material const* material;
+			bool isCastingShadow;
+			Matrix4 modelMat;
+			Matrix4 normalMat;
+		};
+
+
 		public:
 			// Entry point for rendering a frame
 			void render();
 
-			void register_static_mesh_group(StaticMeshGroupComponent const* component, StaticMeshGroup const* model);
-			void unregister_static_mesh_group(StaticMeshGroupComponent const* component);
+			// TODO system for creating, handing out, and deleting StaticMeshes 
+			void register_static_mesh(StaticMeshComponent const* component, StaticMesh const* mesh);
+			void unregister_static_mesh(StaticMeshComponent const* component);
 
 			[[nodiscard]] SkyboxImpl* create_or_get_skybox_impl(std::filesystem::path allPaths);
 			void destroy_skybox_impl(SkyboxImpl const* skyboxImpl);
@@ -133,6 +145,7 @@ namespace leopph::internal
 			void deferred_render() const;
 
 			void draw_screen_quad() const;
+			static void draw_static_mesh(u32 vao, u32 numIndices);
 
 
 			void OnEventReceived(EventReceiver<WindowEvent>::EventParamType) override;
@@ -162,14 +175,13 @@ namespace leopph::internal
 			std::vector<UboSpotLight> mSpotLightData;
 			std::vector<UboPointLight> mPointLightData;
 
+			std::vector<RenderNode> mRenderNodes;
+
 			std::array<PingPongFramebuffer, 2> mPingPongBuffers{};
 
 			// How many actual buffer objects we create for each buffer.
 			// For example 3 means every uniform buffer is triple buffered.
 			u8 constexpr static NUM_UNIFORM_BUFFERS{3};
-
-			// Modulo ++ with NUM_UNIFORM_BUFFERS
-			u8 mUboIndex{0};
 
 			std::array<UniformBuffer, NUM_UNIFORM_BUFFERS> mCameraBuffers{};
 			std::array<UniformBuffer, NUM_UNIFORM_BUFFERS> mLightingBuffers{};
@@ -187,7 +199,11 @@ namespace leopph::internal
 			ShaderFamily mForwardShaderFamily{make_shader_family("C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/Forward.shader")};
 			ShaderFamily mTransparencyCompositeShaderFamily{make_shader_family("C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/TransparencyComposite.shader")};
 
-			std::unordered_map<StaticMeshGroupComponent const*, StaticMeshGroup const*> mStaticModels;
+			std::unordered_map<StaticMesh const*>
+			std::unordered_map<StaticMeshComponent const*, StaticMesh const*> mStaticMeshes;
 			std::vector<std::unique_ptr<SkyboxImpl>> mSkyboxes;
+
+			u64 mFrameCount{0};
 	};
+	#pragma warning(pop)
 }

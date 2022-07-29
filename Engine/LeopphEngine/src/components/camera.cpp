@@ -68,7 +68,7 @@ namespace leopph
 
 		if (std::holds_alternative<Color>(m_Background))
 		{
-			internal::GetWindowImpl()->ClearColor(static_cast<Vector4>(static_cast<Vector3>(std::get<Color>(m_Background))));
+			internal::GetWindowImpl()->ClearColor(static_cast<Vector4>(std::get<Color>(m_Background)));
 		}
 	}
 
@@ -145,7 +145,7 @@ namespace leopph
 
 	Camera::Camera() :
 		m_AspectRatio{internal::GetWindowImpl()->AspectRatio()},
-		m_Background{Color{static_cast<Vector3>(internal::GetWindowImpl()->ClearColor())}}
+		m_Background{Color{internal::GetWindowImpl()->ClearColor()}}
 	{
 		if (s_Current == nullptr)
 		{

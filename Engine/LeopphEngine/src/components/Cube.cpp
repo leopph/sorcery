@@ -9,10 +9,11 @@
 
 namespace leopph
 {
-	Cube::Cube() :
-		StaticMeshGroupComponent{create_data()}
+	Cube::Cube()
 	{
+		init(create_data());
 	}
+
 
 
 	ComponentPtr<> Cube::Clone() const
@@ -21,7 +22,8 @@ namespace leopph
 	}
 
 
-	std::shared_ptr<StaticMeshGroup> Cube::create_data()
+
+	std::shared_ptr<StaticMesh> Cube::create_data()
 	{
 		std::vector vertices{
 			// Back face
@@ -76,21 +78,22 @@ namespace leopph
 			21, 20, 22, 22, 23, 21
 		};
 
-		auto material = s_Material.lock();
+		auto material = sMaterial.lock();
 
 		if (!material)
 		{
-			s_Material = material = std::make_shared<Material>(Color{255, 255, 255}, Color{0, 0, 0}, nullptr, nullptr, nullptr, 0.f, 1.f, true);
+			sMaterial = material = std::make_shared<Material>(Color{255, 255, 255}, Color{0, 0, 0}, nullptr, nullptr, nullptr, 0.f, 1.f, true);
 		}
 
-		auto mesh = std::make_unique<StaticMeshGroup::StaticMesh>(vertices, indices);
-		std::vector<std::unique_ptr<StaticMeshGroup::StaticMesh>> meshes;
+		auto mesh = std::make_unique<StaticMesh::SubMesh>(vertices, indices);
+		std::vector<std::unique_ptr<StaticMesh::SubMesh>> meshes;
 		meshes.emplace_back(std::move(mesh));
 		std::vector materials{material};
 
-		return std::make_shared<StaticMeshGroup>(std::move(meshes), std::move(materials));
+		return std::make_shared<StaticMesh>(std::move(meshes), std::move(materials));
 	}
 
 
-	std::weak_ptr<Material> Cube::s_Material;
+
+	std::weak_ptr<Material> Cube::sMaterial;
 }

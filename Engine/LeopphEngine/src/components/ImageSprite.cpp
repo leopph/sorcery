@@ -15,8 +15,9 @@ namespace leopph
 	{
 		Image img{src, ColorEncoding::SRGB, ImageOrientation::FlipVertical};
 		m_Extents = Vector2{img.Width() / 2.f / ppi, img.Height() / 2.f / ppi};
-		Init(create_data(img, ppi));
+		init(create_data(img, ppi));
 	}
+
 
 
 	ComponentPtr<> ImageSprite::Clone() const
@@ -25,10 +26,12 @@ namespace leopph
 	}
 
 
+
 	std::filesystem::path const& ImageSprite::Path() const noexcept
 	{
 		return m_Path;
 	}
+
 
 
 	Vector2 const& ImageSprite::Extents() const noexcept
@@ -37,15 +40,16 @@ namespace leopph
 	}
 
 
-	MeshData ImageSprite::create_data(Image& img, int const ppi)
+
+	std::shared_ptr<StaticMesh> ImageSprite::create_data(Image& img, int const ppi)
 	{
 		if (img.Empty())
 		{
 			return {};
 		}
 
-		std::shared_ptr<GlTexture> baseTexture;
-		std::shared_ptr<GlTexture> opacityTexture;
+		std::shared_ptr<Texture> baseTexture;
+		std::shared_ptr<Texture> opacityTexture;
 
 		// If either side of the image is not power of two sized, we create a transparent bounding image and copy the image into its middle.
 		if (!math::IsPowerOfTwo(img.Width()) || !math::IsPowerOfTwo(img.Height()))
@@ -118,23 +122,23 @@ namespace leopph
 				}
 			}
 
-			baseTexture = std::make_shared<GlTexture>(Image{newDim, newDim, 3, std::move(baseColorBytes)});
-			opacityTexture = std::make_shared<GlTexture>(Image{newDim, newDim, 1, std::move(opacityBytes)});
+			baseTexture = std::make_shared<Texture>(Image{newDim, newDim, 3, std::move(baseColorBytes)});
+			opacityTexture = std::make_shared<Texture>(Image{newDim, newDim, 1, std::move(opacityBytes)});
 		}
 		else
 		{
 			if (img.Channels() == 4)
 			{
 				auto const opacityImg{img.ExtractChannel(3)};
-				opacityTexture = std::make_shared<GlTexture>(opacityImg);
+				opacityTexture = std::make_shared<Texture>(opacityImg);
 			}
 			else
 			{
 				auto alphaBytes = std::make_unique_for_overwrite<unsigned char[]>(img.Width() * img.Height());
 				std::ranges::fill(alphaBytes.get(), alphaBytes.get() + img.Width() * img.Height(), static_cast<unsigned char>(255));
-				opacityTexture = std::make_shared<GlTexture>(Image{img.Width(), img.Height(), 1, std::move(alphaBytes)});
+				opacityTexture = std::make_shared<Texture>(Image{img.Width(), img.Height(), 1, std::move(alphaBytes)});
 			}
-			baseTexture = std::make_shared<GlTexture>(img);
+			baseTexture = std::make_shared<Texture>(img);
 		}
 
 		// The width of the required rectangle.
@@ -157,6 +161,10 @@ namespace leopph
 
 		auto material = std::make_shared<Material>(Color{255, 255, 255}, Color{0, 0, 0}, std::move(baseTexture), nullptr, opacityTexture, 0.f, 1.f, false);
 
-		return MeshData{std::vector{Mesh{std::move(vertices), std::move(indices), std::move(material)}}};
+		auto mesh = std::make_unique<StaticMesh::SubMesh>(vertices, indices);
+		std::vector<std::unique_ptr<StaticMesh::SubMesh>> meshes;
+		meshes.emplace_back(std::move(mesh));
+
+		return std::make_shared<StaticMesh>(std::move(meshes), std::vector{std::move(material)});
 	}
 }

@@ -24,10 +24,10 @@
     <ClCompile Include="src\components\OrthographicCamera.cpp" />
     <ClCompile Include="src\components\PerspectiveCamera.cpp" />
     <ClCompile Include="src\components\PointLight.cpp" />
-    <ClCompile Include="src\components\StaticMeshGroupComponent.cpp" />
+    <ClCompile Include="src\components\StaticMeshComponent.cpp" />
     <ClCompile Include="src\Skybox.cpp" />
     <ClCompile Include="src\components\SpotLight.cpp" />
-    <ClCompile Include="src\rendering\StaticMeshGroup.cpp" />
+    <ClCompile Include="src\rendering\StaticMesh.cpp" />
     <ClCompile Include="src\scene\Transform.cpp" />
     <ClCompile Include="src\Context.cpp" />
     <ClCompile Include="src\data\DataManager.cpp" />
@@ -82,7 +82,7 @@
     <ClInclude Include="..\include\Exit.hpp" />
     <ClInclude Include="..\include\FrameCompleteEvent.hpp" />
     <ClInclude Include="..\include\Frustum.hpp" />
-    <ClInclude Include="..\include\StaticMeshGroup.hpp" />
+    <ClInclude Include="..\include\StaticMesh.hpp" />
     <ClInclude Include="..\include\Texture.hpp" />
     <ClInclude Include="..\include\ImageSprite.hpp" />
     <ClInclude Include="..\include\Input.hpp" />
@@ -100,7 +100,7 @@
     <ClInclude Include="..\include\PerspectiveCamera.hpp" />
     <ClInclude Include="..\include\Poelo.hpp" />
     <ClInclude Include="..\include\PointLight.hpp" />
-    <ClInclude Include="..\include\StaticMeshGroupComponent.hpp" />
+    <ClInclude Include="..\include\StaticMeshComponent.hpp" />
     <ClInclude Include="..\include\RenderingPath.hpp" />
     <ClInclude Include="..\include\RenderPass.hpp" />
     <ClInclude Include="..\include\Settings.hpp" />

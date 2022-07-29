@@ -1,14 +1,14 @@
 #pragma once
 
 #include "LeopphApi.hpp"
-#include "StaticMeshGroupComponent.hpp"
+#include "StaticMeshComponent.hpp"
 
 #include <filesystem>
 
 
 namespace leopph
 {
-	class StaticModelComponent final : public internal::StaticMeshGroupComponent
+	class StaticModelComponent final : public internal::StaticMeshComponent
 	{
 		public:
 			LEOPPHAPI explicit StaticModelComponent(std::filesystem::path path);

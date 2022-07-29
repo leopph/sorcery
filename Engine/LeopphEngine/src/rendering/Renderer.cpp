@@ -23,9 +23,6 @@ namespace leopph::internal
 			return;
 		}
 
-		// Increment multi-buffered ubo index
-		++mUboIndex;
-
 		prepare();
 		update_resources();
 
@@ -37,20 +34,22 @@ namespace leopph::internal
 		{
 			deferred_render();
 		}
+
+		++mFrameCount;
 	}
 
 
 
-	void Renderer::register_static_mesh_group(StaticMeshGroupComponent const* component, StaticMeshGroup const* model)
+	void Renderer::register_static_mesh(StaticMeshComponent const* component, StaticMesh const* mesh)
 	{
-		mStaticModels[component] = model;
+		mStaticMeshes[component] = mesh;
 	}
 
 
 
-	void Renderer::unregister_static_mesh_group(StaticMeshGroupComponent const* component)
+	void Renderer::unregister_static_mesh(StaticMeshComponent const* component)
 	{
-		mStaticModels.erase(component);
+		mStaticMeshes.erase(component);
 	}
 
 
@@ -163,6 +162,21 @@ namespace leopph::internal
 			mPointLightData.push_back(uboPoint);
 		}
 
+		// Extract render nodes
+
+		mRenderNodes.clear();
+		for (auto const& [component, staticMeshGroup] : mStaticMeshes)
+		{
+			auto const& transform = component->Owner()->get_transform();
+			auto const meshes = staticMeshGroup->get_meshes();
+			auto const materials = staticMeshGroup->get_materials();
+
+			for (std::size_t i = 0; i < meshes.size() && i < materials.size(); i++)
+			{
+				mRenderNodes.emplace_back(meshes[i]->vao, materials[i].get(), component->is_casting_shadow(), transform.get_model_matrix(), transform.get_normal_matrix());
+			}
+		}
+
 		return true;
 	}
 
@@ -227,35 +241,37 @@ namespace leopph::internal
 
 	void Renderer::submit_common_data() const
 	{
+		auto const uboIndex = mFrameCount % NUM_UNIFORM_BUFFERS;
+
 		// Fill camera ubo with data
-		*reinterpret_cast<UboCameraData*>(mCameraBuffers[mUboIndex].mapping) = mCamData;
+		*reinterpret_cast<UboCameraData*>(mCameraBuffers[uboIndex].mapping) = mCamData;
 
 		// Bind camera ubo
-		glBindBufferRange(GL_UNIFORM_BUFFER, 0, mCameraBuffers[mUboIndex].name, 0, mCameraBuffers[mUboIndex].size);
+		glBindBufferRange(GL_UNIFORM_BUFFER, 0, mCameraBuffers[uboIndex].name, 0, mCameraBuffers[uboIndex].size);
 
 		// Fill lighting ubo with data
 
 		auto offset{0};
 
 		// ambient light
-		*reinterpret_cast<UboAmbientLight*>(mLightingBuffers[mUboIndex].mapping + offset) = mAmbientLightData;
+		*reinterpret_cast<UboAmbientLight*>(mLightingBuffers[uboIndex].mapping + offset) = mAmbientLightData;
 		offset += sizeof UboAmbientLight;
 
 		// is there a dirlight
-		*reinterpret_cast<u32*>(mLightingBuffers[mUboIndex].mapping + offset) = mDirLightData.has_value();
+		*reinterpret_cast<u32*>(mLightingBuffers[uboIndex].mapping + offset) = mDirLightData.has_value();
 		offset += sizeof u32;
 
 		// dirlight data
 		if (mDirLightData)
 		{
-			*reinterpret_cast<UboDirLight*>(mLightingBuffers[mUboIndex].mapping + offset) = *mDirLightData;
+			*reinterpret_cast<UboDirLight*>(mLightingBuffers[uboIndex].mapping + offset) = *mDirLightData;
 		}
 		offset += sizeof(UboDirLight);
 
 		// spotlight data
 		for (auto const& spotData : mSpotLightData)
 		{
-			*reinterpret_cast<UboSpotLight*>(mLightingBuffers[mUboIndex].mapping + offset) =
+			*reinterpret_cast<UboSpotLight*>(mLightingBuffers[uboIndex].mapping + offset) =
 				spotData;
 			offset += sizeof UboSpotLight;
 		}
@@ -263,12 +279,12 @@ namespace leopph::internal
 		// pointlight data
 		for (auto const& pointData : mPointLightData)
 		{
-			*reinterpret_cast<UboPointLight*>(mLightingBuffers[mUboIndex].mapping + offset) =
+			*reinterpret_cast<UboPointLight*>(mLightingBuffers[uboIndex].mapping + offset) =
 				pointData;
 			offset += sizeof UboPointLight;
 		}
 
-		glBindBufferRange(GL_UNIFORM_BUFFER, 1, mLightingBuffers[mUboIndex].name, 0, mLightingBuffers[mUboIndex].size);
+		glBindBufferRange(GL_UNIFORM_BUFFER, 1, mLightingBuffers[uboIndex].name, 0, mLightingBuffers[uboIndex].size);
 	}
 
 
@@ -291,6 +307,8 @@ namespace leopph::internal
 
 
 
+
+
 		glBlitNamedFramebuffer(mPingPongBuffers[1].framebuffer, 0, 0, 0, mScreenData.renderWidth, mScreenData.renderHeight, 0, 0, mScreenData.width, mScreenData.height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
 	}
 
@@ -305,6 +323,14 @@ namespace leopph::internal
 	{
 		glBindVertexArray(mScreenQuad.vao);
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	}
+
+
+
+	void Renderer::draw_static_mesh(u32 const vao, u32 const numIndices)
+	{
+		glBindVertexArray(vao);
+		glDrawElements(GL_TRIANGLES, numIndices, GL_UNSIGNED_INT, nullptr);
 	}
 
 
@@ -342,10 +368,10 @@ namespace leopph::internal
 
 		// Create screen quad
 		glCreateBuffers(1, &mScreenQuad.vbo);
-		glNamedBufferStorage(mScreenQuad.vbo, sizeof decltype(g_ScreenQuadVertices)::value_type, g_ScreenQuadVertices.data(), 0);
+		glNamedBufferStorage(mScreenQuad.vbo, sizeof(decltype(g_ScreenQuadVertices)::value_type), g_ScreenQuadVertices.data(), 0);
 
 		glCreateVertexArrays(1, &mScreenQuad.vao);
-		glVertexArrayVertexBuffer(mScreenQuad.vao, 0, mScreenQuad.vbo, 0, 2 * sizeof decltype(g_ScreenQuadVertices)::value_type);
+		glVertexArrayVertexBuffer(mScreenQuad.vao, 0, mScreenQuad.vbo, 0, 2 * sizeof(decltype(g_ScreenQuadVertices)::value_type));
 
 		glVertexArrayAttribBinding(mScreenQuad.vao, 0, 0);
 		glVertexArrayAttribFormat(mScreenQuad.vao, 0, 2, GL_FLOAT, GL_FALSE, 0);

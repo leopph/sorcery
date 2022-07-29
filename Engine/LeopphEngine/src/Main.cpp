@@ -40,7 +40,7 @@ namespace leopph::internal
 		auto const window = WindowImpl::Create();
 		SetWindowImpl(window.get());
 
-		auto const renderer = Renderer::Create();
+		auto const renderer = std::make_unique<Renderer>();
 		SetRenderer(renderer.get());
 
 		auto const dataManager = std::make_unique<DataManager>();

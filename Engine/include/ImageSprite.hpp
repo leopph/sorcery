@@ -1,7 +1,7 @@
 #pragma once
 
 #include "LeopphApi.hpp"
-#include "StaticMeshGroupComponent.hpp"
+#include "StaticMeshComponent.hpp"
 
 #include <filesystem>
 
@@ -9,7 +9,7 @@
 namespace leopph
 {
 	// A 2D image parsed from disk, displayed as a 2D sprite.
-	class ImageSprite final : public internal::StaticMeshGroupComponent
+	class ImageSprite final : public internal::StaticMeshComponent
 	{
 		public:
 			// PPI must be positive.
@@ -24,7 +24,7 @@ namespace leopph
 			[[nodiscard]] LEOPPHAPI Vector2 const& Extents() const noexcept;
 
 		private:
-			[[nodiscard]] static std::shared_ptr<StaticMeshGroup::StaticMesh> create_data(Image& img, int ppi);
+			[[nodiscard]] static std::shared_ptr<StaticMesh> create_data(Image& img, int ppi);
 
 			std::filesystem::path m_Path;
 			Vector2 m_Extents;
