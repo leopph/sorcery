@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Material.hpp"
+#include "Matrix.hpp"
 #include "Types.hpp"
 #include "Vertex.hpp"
 
@@ -19,6 +20,21 @@ namespace leopph
 				u32 first;
 				u32 count;
 			};
+
+
+			struct InstanceData
+			{
+				Matrix4 modelTransp;
+				Matrix4 normalTransp;
+			};
+
+
+			[[nodiscard]] u32 get_vao() const;
+
+			[[nodiscard]] InstanceData* get_instance_buffer(std::size_t index) const;
+			[[nodiscard]] u32 get_instance_buffer_count() const;
+			[[nodiscard]] u32 get_instance_buffer_size() const;
+			void resize_instance_buffers(u32 numElements);
 
 
 			[[nodiscard]] std::span<SubMesh const> get_sub_meshes() const;
@@ -40,8 +56,18 @@ namespace leopph
 			~StaticMesh();
 
 		private:
+			struct InstanceBuffer
+			{ 
+				u32 buffer;
+				InstanceData* mapping;
+			};
+
+			static constexpr u32 NUM_INSTANCE_BUFFERS = 3;
+
 			std::vector<SubMesh> mSubMeshes;
 			std::vector<std::shared_ptr<Material const>> mMaterials;
+			std::array<InstanceBuffer, NUM_INSTANCE_BUFFERS> mInstanceBufs;
+			u32 mInstanceBufSize;
 			u32 mVao;
 			u32 mVbo;
 			u32 mIbo;

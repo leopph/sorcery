@@ -1,9 +1,11 @@
 #pragma once
 
+#include "CubeMesh.hpp"
 #include "EventReceiver.hpp"
+#include "QuadMesh.hpp"
 #include "RenderingPath.hpp"
-#include "ShaderFamily.hpp"
-#include "SkyboxImpl.hpp"
+#include "Shader.hpp"
+#include "Skybox.hpp"
 #include "StaticMesh.hpp"
 #include "StaticMeshComponent.hpp"
 #include "Types.hpp"
@@ -105,20 +107,12 @@ namespace leopph::internal
 		};
 
 
-		struct ScreenQuad
-		{
-			u32 vao;
-			u32 vbo;
-		};
-
-
 		struct RenderNode
 		{
 			u32 vao;
 			Material const* material;
 			bool isCastingShadow;
-			Matrix4 modelMat;
-			Matrix4 normalMat;
+			std::vector<std::pair<Matrix4, Matrix4>> matrices;
 		};
 
 
@@ -130,8 +124,11 @@ namespace leopph::internal
 			void register_static_mesh(StaticMeshComponent const* component, StaticMesh const* mesh);
 			void unregister_static_mesh(StaticMeshComponent const* component);
 
-			[[nodiscard]] SkyboxImpl* create_or_get_skybox_impl(std::filesystem::path allPaths);
-			void destroy_skybox_impl(SkyboxImpl const* skyboxImpl);
+			u32 request_buffer();
+			void release_buffer(u32 buffer);
+
+			u32 request_vao();
+			void release_vao(u32 vao);
 
 
 		private:
@@ -146,6 +143,8 @@ namespace leopph::internal
 
 			void draw_screen_quad() const;
 			static void draw_static_mesh(u32 vao, u32 numIndices);
+
+			void clean_up_released_resources();
 
 
 			void OnEventReceived(EventReceiver<WindowEvent>::EventParamType) override;
@@ -163,7 +162,7 @@ namespace leopph::internal
 			Renderer(Renderer&& other) noexcept = delete;
 			Renderer& operator=(Renderer&& other) noexcept = delete;
 
-			~Renderer() noexcept override;
+			~Renderer() override;
 
 
 		private:
@@ -176,6 +175,7 @@ namespace leopph::internal
 			std::vector<UboPointLight> mPointLightData;
 
 			std::vector<RenderNode> mRenderNodes;
+			std::span<RenderNode const> mActiveRenderNodes;
 
 			std::array<PingPongFramebuffer, 2> mPingPongBuffers{};
 
@@ -186,22 +186,20 @@ namespace leopph::internal
 			std::array<UniformBuffer, NUM_UNIFORM_BUFFERS> mCameraBuffers{};
 			std::array<UniformBuffer, NUM_UNIFORM_BUFFERS> mLightingBuffers{};
 
-			ScreenQuad mScreenQuad;
-
-
 			ResourceUpdateFlags mResUpdateFlags;
 			RenderingPath mRenderingPath;
 
-			ShaderFamily mDepthShadowShaderFamily{make_shader_family("C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/DepthShadow.shader")};
-			ShaderFamily mLinearShadowShaderFamily{make_shader_family("C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/LinearShadow.shader")};
-			ShaderFamily mSkyboxShaderFamily{make_shader_family("C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/Skybox.shader")};
-			ShaderFamily mGammaCorrectShaderFamily{make_shader_family("C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/GammaCorrect.shader")};
-			ShaderFamily mForwardShaderFamily{make_shader_family("C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/Forward.shader")};
-			ShaderFamily mTransparencyCompositeShaderFamily{make_shader_family("C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/TransparencyComposite.shader")};
+			Shader mDepthShadowShaderFamily{"C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/DepthShadow.shader"};
+			Shader mLinearShadowShaderFamily{"C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/LinearShadow.shader"};
+			Shader mSkyboxShaderFamily{"C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/Skybox.shader"};
+			Shader mGammaCorrectShaderFamily{"C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/GammaCorrect.shader"};
+			Shader mForwardShaderFamily{"C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/Forward.shader"};
+			Shader mTransparencyCompositeShaderFamily{"C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/TransparencyComposite.shader"};
 
-			std::unordered_map<StaticMesh const*>
-			std::unordered_map<StaticMeshComponent const*, StaticMesh const*> mStaticMeshes;
-			std::vector<std::unique_ptr<SkyboxImpl>> mSkyboxes;
+			QuadMesh mQuadMesh;
+			CubeMesh mCubeMesh;
+
+			std::unordered_map<StaticMesh const*, std::vector<StaticMeshComponent const*>> mStaticMeshes;
 
 			u64 mFrameCount{0};
 	};

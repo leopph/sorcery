@@ -15,7 +15,7 @@
     <ClCompile Include="src\components\PerspectiveCamera.cpp" />
     <ClCompile Include="src\components\PointLight.cpp" />
     <ClCompile Include="src\components\StaticMeshComponent.cpp" />
-    <ClCompile Include="src\Skybox.cpp" />
+    <ClCompile Include="src\rendering\Skybox.cpp" />
     <ClCompile Include="src\components\SpotLight.cpp" />
     <ClCompile Include="src\scene\Transform.cpp" />
     <ClCompile Include="src\data\DataManager.cpp" />
@@ -26,13 +26,9 @@
     <ClCompile Include="src\events\MouseEvent.cpp" />
     <ClCompile Include="src\events\WindowEvent.cpp" />
     <ClCompile Include="src\rendering\GlCore.cpp" />
-    <ClCompile Include="src\rendering\SkyboxImpl.cpp" />
     <ClCompile Include="src\rendering\Texture.cpp" />
     <ClCompile Include="src\rendering\Renderer.cpp" />
-    <ClCompile Include="src\rendering\ScreenQuad.cpp" />
-    <ClCompile Include="src\rendering\ShaderFamily.cpp" />
-    <ClCompile Include="src\rendering\ShaderProcessing.cpp" />
-    <ClCompile Include="src\rendering\ShaderProgram.cpp" />
+    <ClCompile Include="src\rendering\Shader.cpp" />
     <ClCompile Include="src\scene\Scene.cpp" />
     <ClCompile Include="src\scene\SceneManager.cpp" />
     <ClCompile Include="src\threading\JobSystem.cpp" />
@@ -54,6 +50,8 @@
     <ClCompile Include="src\SettingsImpl.cpp" />
     <ClCompile Include="src\rendering\RenderSettings.cpp" />
     <ClCompile Include="src\rendering\StaticMesh.cpp" />
+    <ClCompile Include="src\rendering\CubeMesh.cpp" />
+    <ClCompile Include="src\rendering\QuadMesh.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\data\DataManager.hpp" />
@@ -75,7 +73,6 @@
     <ClInclude Include="include\rendering\gl\GlMeshGroup.hpp" />
     <ClInclude Include="include\rendering\RenderObject.hpp" />
     <ClInclude Include="src\SettingsImpl.hpp" />
-    <ClInclude Include="src\rendering\ScreenQuad.hpp" />
     <ClInclude Include="include\rendering\Extent.hpp" />
     <ClInclude Include="include\rendering\ShaderCommon.hpp" />
     <ClInclude Include="include\rendering\ShaderFamily.hpp" />
@@ -134,17 +131,16 @@
     <ClInclude Include="src\events\PointShadowResEvent.hpp" />
     <ClInclude Include="src\events\SpotShadowResEvent.hpp" />
     <ClInclude Include="src\rendering\GlCore.hpp" />
-    <ClInclude Include="src\rendering\SkyboxImpl.hpp" />
     <ClInclude Include="src\rendering\Renderer.hpp" />
     <ClInclude Include="src\rendering\RenderSettings.hpp" />
-    <ClInclude Include="src\rendering\ShaderFamily.hpp" />
-    <ClInclude Include="src\rendering\ShaderProcessing.hpp" />
-    <ClInclude Include="src\rendering\ShaderProgram.hpp" />
+    <ClInclude Include="src\rendering\Shader.hpp" />
     <ClInclude Include="src\scene\Scene.hpp" />
     <ClInclude Include="src\scene\SceneManager.hpp" />
     <ClInclude Include="..\include\RenderingPath.hpp" />
     <ClInclude Include="..\include\RenderPass.hpp" />
     <ClInclude Include="..\include\StaticMesh.hpp" />
+    <ClInclude Include="src\rendering\CubeMesh.hpp" />
+    <ClInclude Include="src\rendering\QuadMesh.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\rendering\shaders\glsl\include\CompositeFrag.glsl" />

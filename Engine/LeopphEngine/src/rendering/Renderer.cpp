@@ -18,6 +18,8 @@ namespace leopph::internal
 {
 	void Renderer::render()
 	{
+		clean_up_released_resources();
+
 		if (!extract())
 		{
 			return;
@@ -76,6 +78,42 @@ namespace leopph::internal
 		{
 			return elem.get() == skyboxImpl;
 		});
+	}
+
+
+
+	u32 Renderer::request_buffer()
+	{
+		u32 buf;
+		glCreateBuffers(1, &buf);
+		mActiveBuffers.push_back(buf);
+		return buf;
+	}
+
+
+
+	void Renderer::release_buffer(u32 const buffer)
+	{
+		std::erase(mActiveBuffers, buffer);
+		mBuffersToDelete.push_back(buffer);
+	}
+
+
+
+	u32 Renderer::request_vao()
+	{
+		u32 vao;
+		glCreateVertexArrays(1, &vao);
+		mActiveVaos.push_back(vao);
+		return vao;
+	}
+
+
+
+	void Renderer::release_vao(u32 const vao)
+	{
+		std::erase(mActiveVaos, vao);
+		mVaosToDelete.push_back(vao);
 	}
 
 
@@ -164,11 +202,25 @@ namespace leopph::internal
 
 		// Extract render nodes
 
-		mRenderNodes.clear();
-		for (auto const& [component, staticMeshGroup] : mStaticMeshes)
+		if (mRenderNodes.size() > mStaticMeshes.size())
 		{
+			mRenderNodes.resize(mStaticMeshes.size());
+		}
+
+		std::size_t renderNodeInd = 0;
+
+		for (auto const& [mesh, component] : mStaticMeshes)
+		{
+			auto const subMeshes = mesh->get_sub_meshes();
+			auto const materials = mesh->get_materials();
+
+			for (std::size_t subMeshInd = 0; subMeshInd < subMeshes.size(); subMeshInd++)
+			{
+				mRenderNodes[renderNodeInd].vao = mesh->get_vao();
+				mRenderNodes[renderNodeInd].isCastingShadow = 
+			}
 			auto const& transform = component->Owner()->get_transform();
-			auto const meshes = staticMeshGroup->get_meshes();
+			auto const meshes = mesh->get_meshes();
 			auto const materials = staticMeshGroup->get_materials();
 
 			for (std::size_t i = 0; i < meshes.size() && i < materials.size(); i++)
@@ -307,8 +359,6 @@ namespace leopph::internal
 
 
 
-
-
 		glBlitNamedFramebuffer(mPingPongBuffers[1].framebuffer, 0, 0, 0, mScreenData.renderWidth, mScreenData.renderHeight, 0, 0, mScreenData.width, mScreenData.height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
 	}
 
@@ -331,6 +381,17 @@ namespace leopph::internal
 	{
 		glBindVertexArray(vao);
 		glDrawElements(GL_TRIANGLES, numIndices, GL_UNSIGNED_INT, nullptr);
+	}
+
+
+
+	void Renderer::clean_up_released_resources()
+	{
+		glDeleteBuffers(mBuffersToDelete.size(), mBuffersToDelete.data());
+		mBuffersToDelete.clear();
+
+		glDeleteVertexArrays(mVaosToDelete.size(), mVaosToDelete.data());
+		mVaosToDelete.clear();
 	}
 
 
@@ -385,7 +446,7 @@ namespace leopph::internal
 
 
 
-	Renderer::~Renderer() noexcept
+	Renderer::~Renderer()
 	{
 		// Delete uniform buffers
 
