@@ -2,7 +2,7 @@
 
 #include "Image.hpp"
 #include "Leopphverter.hpp"
-#include "Texture.hpp"
+#include "Texture2D.hpp"
 
 #include <utility>
 #include <vector>
@@ -12,7 +12,7 @@ namespace leopph
 {
 	/*namespace
 	{
-		std::shared_ptr<Material> convert_material(convert::Material const& convMat, std::span<std::shared_ptr<Texture> const> const textures)
+		std::shared_ptr<Material> convert_material(convert::Material const& convMat, std::span<std::shared_ptr<Texture2D> const> const textures)
 		{
 			auto mat = std::make_shared<Material>();
 
@@ -53,12 +53,12 @@ namespace leopph
 
 			auto const& [convTexs, convMats, convMeshes] = imported.value();
 
-			std::vector<std::shared_ptr<Texture>> textures;
+			std::vector<std::shared_ptr<Texture2D>> textures;
 			textures.reserve(convTexs.size());
 
 			for (auto const& convTex : convTexs)
 			{
-				textures.push_back(std::make_shared<Texture>(convTex));
+				textures.push_back(std::make_shared<Texture2D>(convTex));
 			}
 
 			std::vector<std::shared_ptr<Material>> mats;

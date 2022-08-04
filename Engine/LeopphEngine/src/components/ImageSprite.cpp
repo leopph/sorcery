@@ -159,7 +159,7 @@ namespace leopph
 			0, 1, 3, 1, 2, 3
 		};
 
-		auto material = std::make_shared<Material>(Color{255, 255, 255}, Color{0, 0, 0}, std::move(baseTexture), nullptr, opacityTexture, 0.f, 1.f, false);
+		auto material = std::make_shared<StaticMaterial>(Color{255, 255, 255}, Color{0, 0, 0}, std::move(baseTexture), nullptr, opacityTexture, 0.f, 1.f, false);
 
 		auto mesh = std::make_unique<StaticMesh::SubMesh>(vertices, indices);
 		std::vector<std::unique_ptr<StaticMesh::SubMesh>> meshes;

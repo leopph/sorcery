@@ -26,7 +26,7 @@
     <ClCompile Include="src\events\MouseEvent.cpp" />
     <ClCompile Include="src\events\WindowEvent.cpp" />
     <ClCompile Include="src\rendering\GlCore.cpp" />
-    <ClCompile Include="src\rendering\Texture.cpp" />
+    <ClCompile Include="src\rendering\Texture2D.cpp" />
     <ClCompile Include="src\rendering\Renderer.cpp" />
     <ClCompile Include="src\rendering\Shader.cpp" />
     <ClCompile Include="src\scene\Scene.cpp" />
@@ -52,6 +52,8 @@
     <ClCompile Include="src\rendering\StaticMesh.cpp" />
     <ClCompile Include="src\rendering\CubeMesh.cpp" />
     <ClCompile Include="src\rendering\QuadMesh.cpp" />
+    <ClCompile Include="src\rendering\PersistentMappedBuffer.cpp" />
+    <ClCompile Include="src\rendering\StaticMaterial.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\data\DataManager.hpp" />
@@ -101,7 +103,7 @@
     <ClInclude Include="..\include\Exit.hpp" />
     <ClInclude Include="..\include\FrameCompleteEvent.hpp" />
     <ClInclude Include="..\include\Frustum.hpp" />
-    <ClInclude Include="..\include\Texture.hpp" />
+    <ClInclude Include="..\include\Texture2D.hpp" />
     <ClInclude Include="..\include\ImageSprite.hpp" />
     <ClInclude Include="..\include\Input.hpp" />
     <ClInclude Include="..\include\KeyCode.hpp" />
@@ -111,7 +113,6 @@
     <ClInclude Include="..\include\LeopphApi.hpp" />
     <ClInclude Include="..\include\Light.hpp" />
     <ClInclude Include="..\include\Main.hpp" />
-    <ClInclude Include="..\include\Material.hpp" />
     <ClInclude Include="..\include\StaticModelComponent.hpp" />
     <ClInclude Include="..\include\MouseEvent.hpp" />
     <ClInclude Include="..\include\OrthographicCamera.hpp" />
@@ -138,9 +139,13 @@
     <ClInclude Include="src\scene\SceneManager.hpp" />
     <ClInclude Include="..\include\RenderingPath.hpp" />
     <ClInclude Include="..\include\RenderPass.hpp" />
-    <ClInclude Include="..\include\StaticMesh.hpp" />
     <ClInclude Include="src\rendering\CubeMesh.hpp" />
     <ClInclude Include="src\rendering\QuadMesh.hpp" />
+    <ClInclude Include="src\rendering\PersistentMappedBuffer.hpp" />
+    <ClInclude Include="src\rendering\StaticMesh.hpp" />
+    <ClInclude Include="..\include\StaticMeshData.hpp" />
+    <ClInclude Include="..\include\MaterialData.hpp" />
+    <ClInclude Include="src\rendering\StaticMaterial.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\rendering\shaders\glsl\include\CompositeFrag.glsl" />

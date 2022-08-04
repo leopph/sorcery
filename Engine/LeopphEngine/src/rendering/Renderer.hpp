@@ -2,15 +2,19 @@
 
 #include "CubeMesh.hpp"
 #include "EventReceiver.hpp"
+#include "StaticMaterial.hpp"
+#include "PersistentMappedBuffer.h"
 #include "QuadMesh.hpp"
 #include "RenderingPath.hpp"
 #include "Shader.hpp"
 #include "Skybox.hpp"
 #include "StaticMesh.hpp"
 #include "StaticMeshComponent.hpp"
+#include "StaticMeshData.hpp"
 #include "Types.hpp"
 #include "WindowEvent.hpp"
 
+#include <memory>
 #include <unordered_map>
 #include <vector>
 
@@ -19,7 +23,7 @@ namespace leopph::internal
 {
 	#pragma warning(push)
 	#pragma warning(disable: 4324)
-	class Renderer : public EventReceiver<WindowEvent>
+	class Renderer final : public EventReceiver<WindowEvent>
 	{
 		struct ResourceUpdateFlags
 		{
@@ -110,9 +114,16 @@ namespace leopph::internal
 		struct RenderNode
 		{
 			u32 vao;
-			Material const* material;
+			StaticMaterial const* material;
 			bool isCastingShadow;
 			std::vector<std::pair<Matrix4, Matrix4>> matrices;
+		};
+
+
+		struct StaticMeshGroup
+		{
+			std::vector<std::unique_ptr<StaticMesh>> meshes;
+			std::vector<std::unique_ptr<PersistentMappedBuffer>> transformBuf;
 		};
 
 
@@ -120,15 +131,9 @@ namespace leopph::internal
 			// Entry point for rendering a frame
 			void render();
 
-			// TODO system for creating, handing out, and deleting StaticMeshes 
-			void register_static_mesh(StaticMeshComponent const* component, StaticMesh const* mesh);
-			void unregister_static_mesh(StaticMeshComponent const* component);
-
-			u32 request_buffer();
-			void release_buffer(u32 buffer);
-
-			u32 request_vao();
-			void release_vao(u32 vao);
+			u64 create_static_mesh(StaticMeshComponent const* component, std::span<StaticMeshData const> data);
+			void register_material(StaticMaterial const* material);
+			void unregister_material(StaticMaterial const* material);
 
 
 		private:
@@ -140,11 +145,6 @@ namespace leopph::internal
 			void submit_common_data() const;
 			void forward_render() const;
 			void deferred_render() const;
-
-			void draw_screen_quad() const;
-			static void draw_static_mesh(u32 vao, u32 numIndices);
-
-			void clean_up_released_resources();
 
 
 			void OnEventReceived(EventReceiver<WindowEvent>::EventParamType) override;
@@ -189,19 +189,20 @@ namespace leopph::internal
 			ResourceUpdateFlags mResUpdateFlags;
 			RenderingPath mRenderingPath;
 
-			Shader mDepthShadowShaderFamily{"C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/DepthShadow.shader"};
-			Shader mLinearShadowShaderFamily{"C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/LinearShadow.shader"};
-			Shader mSkyboxShaderFamily{"C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/Skybox.shader"};
-			Shader mGammaCorrectShaderFamily{"C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/GammaCorrect.shader"};
-			Shader mForwardShaderFamily{"C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/Forward.shader"};
-			Shader mTransparencyCompositeShaderFamily{"C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/TransparencyComposite.shader"};
+			Shader mDepthShadowShader{"C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/DepthShadow.shader"};
+			Shader mLinearShadowShader{"C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/LinearShadow.shader"};
+			Shader mSkyboxShader{"C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/Skybox.shader"};
+			Shader mForwardShader{"C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/Forward.shader"};
+			Shader mTransparencyCompositeShader{"C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/TransparencyComposite.shader"};
+			Shader mGammaCorrectShader{"C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/GammaCorrect.shader"};
 
 			QuadMesh mQuadMesh;
 			CubeMesh mCubeMesh;
 
-			std::unordered_map<StaticMesh const*, std::vector<StaticMeshComponent const*>> mStaticMeshes;
 
 			u64 mFrameCount{0};
+
+			std::unordered_map<StaticMaterial const*, PersistentMappedBuffer> mMaterialBuffers;
 	};
 	#pragma warning(pop)
 }

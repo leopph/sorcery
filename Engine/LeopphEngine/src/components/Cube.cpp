@@ -82,7 +82,7 @@ namespace leopph
 
 		if (!material)
 		{
-			sMaterial = material = std::make_shared<Material>(Color{255, 255, 255}, Color{0, 0, 0}, nullptr, nullptr, nullptr, 0.f, 1.f, true);
+			sMaterial = material = std::make_shared<StaticMaterial>(Color{255, 255, 255}, Color{0, 0, 0}, nullptr, nullptr, nullptr, 0.f, 1.f, true);
 		}
 
 		auto mesh = std::make_unique<StaticMesh::SubMesh>(vertices, indices);
@@ -95,5 +95,5 @@ namespace leopph
 
 
 
-	std::weak_ptr<Material> Cube::sMaterial;
+	std::weak_ptr<StaticMaterial> Cube::sMaterial;
 }

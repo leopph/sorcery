@@ -21,7 +21,7 @@ See individual headers for more information.
 #include "Image.hpp"
 #include "ImageSprite.hpp"
 #include "Input.hpp"
-#include "Material.hpp"
+#include "StaticMaterial.hpp"
 #include "Math.hpp"
 #include "Matrix.hpp"
 #include "Mesh.hpp"

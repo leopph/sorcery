@@ -1,19 +1,18 @@
 #include "StaticMesh.hpp"
 
 #include "GlCore.hpp"
-#include "Renderer.hpp"
-#include "../InternalContext.hpp"
 
 
 namespace leopph
 {
-	StaticMesh::StaticMesh() :
-		mVao{internal::GetRenderer()->request_vao()},
-		mVbo{internal::GetRenderer()->request_buffer()},
-		mIbo{internal::GetRenderer()->request_buffer()}
+	StaticMesh::StaticMesh(std::span<Vertex const> const vertices, std::span<u32 const> const indices) :
+		mNumIndices{indices.size()}
 	{
-		glNamedBufferData(mVbo, 1, nullptr, GL_STATIC_DRAW);
-		glNamedBufferStorage(mIbo, 1, nullptr, GL_STATIC_DRAW);
+		glCreateBuffers(1, &mVbo);
+		glNamedBufferStorage(mVbo, vertices.size_bytes(), vertices.data(), 0);
+
+		glCreateBuffers(1, &mIbo);
+		glNamedBufferStorage(mIbo, indices.size_bytes(), indices.data(), 0);
 
 		glVertexArrayVertexBuffer(mVao, 0, mVbo, 0, sizeof Vertex);
 		glVertexArrayElementBuffer(mVao, mIbo);
@@ -33,87 +32,18 @@ namespace leopph
 
 
 
-	u32 StaticMesh::get_vao() const
-	{
-		return mVao;
-	}
-
-
-
-	StaticMesh::InstanceData* StaticMesh::get_instance_buffer(std::size_t const index) const
-	{
-		return mInstanceBufs[index].mapping;
-	}
-
-
-
-	u32 StaticMesh::get_instance_buffer_count() const
-	{
-		return NUM_INSTANCE_BUFFERS;
-	}
-
-
-
-	u32 StaticMesh::get_instance_buffer_size() const
-	{
-		return mInstanceBufSize;
-	}
-
-
-
-	void StaticMesh::resize_instance_buffers(u32 const numElements)
-	{
-		mInstanceBufSize = numElements * sizeof InstanceData;
-
-		for (auto& [buffer, mapping] : mInstanceBufs)
-		{
-			glUnmapNamedBuffer(buffer);
-			glNamedBufferData(buffer, mInstanceBufSize, nullptr, GL_DYNAMIC_DRAW);
-			mapping = static_cast<InstanceData*>(glMapNamedBufferRange(buffer, 0, mInstanceBufSize, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT));
-		}
-	}
-
-
-
-	std::span<StaticMesh::SubMesh const> StaticMesh::get_sub_meshes() const
-	{
-		return mSubMeshes;
-	}
-
-
-
-	std::span<std::shared_ptr<Material const> const> StaticMesh::get_materials() const
-	{
-		return mMaterials;
-	}
-
-
-
-	void StaticMesh::set_materials(std::vector<std::shared_ptr<Material const>> materials)
-	{
-		mMaterials = std::move(materials);
-	}
-
-
-
-	void StaticMesh::set_vertices(std::span<Vertex const> const vertices)
-	{
-		glNamedBufferData(mVbo, vertices.size_bytes(), vertices.data(), GL_STATIC_DRAW);
-	}
-
-
-
-	void StaticMesh::set_indices(std::span<u32 const> const indices)
-	{
-		glNamedBufferData(mIbo, indices.size_bytes(), indices.data(), GL_STATIC_DRAW);
-	}
-
-
-
 	StaticMesh::~StaticMesh()
 	{
-		internal::GetRenderer()->release_vao(mVao);
-		internal::GetRenderer()->release_buffer(mIbo);
-		internal::GetRenderer()->release_buffer(mVbo);
+		glDeleteVertexArrays(1, &mVao);
+		glDeleteBuffers(1, &mIbo);
+		glDeleteBuffers(1, &mVbo);
+	}
+
+
+
+	void StaticMesh::draw() const
+	{
+		glBindVertexArray(mVao);
+		glDrawElements(GL_TRIANGLES, mNumIndices, GL_UNSIGNED_INT, nullptr);
 	}
 }

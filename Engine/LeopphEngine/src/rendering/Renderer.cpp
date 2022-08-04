@@ -5,7 +5,6 @@
 #include "GlCore.hpp"
 #include "Math.hpp"
 #include "RenderSettings.hpp"
-#include "ScreenQuad.hpp"
 #include "../InternalContext.hpp"
 #include "../SettingsImpl.hpp"
 #include "../data/DataManager.hpp"
@@ -18,8 +17,6 @@ namespace leopph::internal
 {
 	void Renderer::render()
 	{
-		clean_up_released_resources();
-
 		if (!extract())
 		{
 			return;
@@ -42,78 +39,17 @@ namespace leopph::internal
 
 
 
-	void Renderer::register_static_mesh(StaticMeshComponent const* component, StaticMesh const* mesh)
+	u64 Renderer::create_static_mesh(StaticMeshComponent const* component, std::span<StaticMeshData const> const data)
 	{
-		mStaticMeshes[component] = mesh;
-	}
+		static u64 id{1};
 
-
-
-	void Renderer::unregister_static_mesh(StaticMeshComponent const* component)
-	{
-		mStaticMeshes.erase(component);
-	}
-
-
-
-	SkyboxImpl* Renderer::create_or_get_skybox_impl(std::filesystem::path allPaths)
-	{
-		for (auto const& skyboxImpl : mSkyboxes)
+		for (auto const& [vertices, indices, material] : data)
 		{
-			if (skyboxImpl->AllPaths() == allPaths)
-			{
-				return skyboxImpl.get();
-			}
+			mIdToMeshGroup[id].meshes.emplace_back(new StaticMesh{vertices, indices});
+			mMaterialToMeshes[material.get()]
 		}
 
-		mSkyboxes.emplace_back(std::make_unique<SkyboxImpl>(std::move(allPaths)));
-		return mSkyboxes.back().get();
-	}
-
-
-
-	void Renderer::destroy_skybox_impl(SkyboxImpl const* skyboxImpl)
-	{
-		std::erase_if(mSkyboxes, [skyboxImpl](auto const& elem)
-		{
-			return elem.get() == skyboxImpl;
-		});
-	}
-
-
-
-	u32 Renderer::request_buffer()
-	{
-		u32 buf;
-		glCreateBuffers(1, &buf);
-		mActiveBuffers.push_back(buf);
-		return buf;
-	}
-
-
-
-	void Renderer::release_buffer(u32 const buffer)
-	{
-		std::erase(mActiveBuffers, buffer);
-		mBuffersToDelete.push_back(buffer);
-	}
-
-
-
-	u32 Renderer::request_vao()
-	{
-		u32 vao;
-		glCreateVertexArrays(1, &vao);
-		mActiveVaos.push_back(vao);
-		return vao;
-	}
-
-
-
-	void Renderer::release_vao(u32 const vao)
-	{
-		std::erase(mActiveVaos, vao);
-		mVaosToDelete.push_back(vao);
+		return id++;
 	}
 
 
@@ -202,7 +138,7 @@ namespace leopph::internal
 
 		// Extract render nodes
 
-		if (mRenderNodes.size() > mStaticMeshes.size())
+		/*if (mRenderNodes.size() > mStaticMeshes.size())
 		{
 			mRenderNodes.resize(mStaticMeshes.size());
 		}
@@ -229,7 +165,7 @@ namespace leopph::internal
 			}
 		}
 
-		return true;
+		return true;*/
 	}
 
 
@@ -369,33 +305,6 @@ namespace leopph::internal
 
 
 
-	void Renderer::draw_screen_quad() const
-	{
-		glBindVertexArray(mScreenQuad.vao);
-		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-	}
-
-
-
-	void Renderer::draw_static_mesh(u32 const vao, u32 const numIndices)
-	{
-		glBindVertexArray(vao);
-		glDrawElements(GL_TRIANGLES, numIndices, GL_UNSIGNED_INT, nullptr);
-	}
-
-
-
-	void Renderer::clean_up_released_resources()
-	{
-		glDeleteBuffers(mBuffersToDelete.size(), mBuffersToDelete.data());
-		mBuffersToDelete.clear();
-
-		glDeleteVertexArrays(mVaosToDelete.size(), mVaosToDelete.data());
-		mVaosToDelete.clear();
-	}
-
-
-
 	void Renderer::OnEventReceived(EventReceiver<WindowEvent>::EventParamType)
 	{
 		mResUpdateFlags.renderRes = true;
@@ -427,17 +336,6 @@ namespace leopph::internal
 			lightBuf.mapping = static_cast<u8*>(glMapNamedBufferRange(lightBuf.name, 0, lightBufSz, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT));
 		}
 
-		// Create screen quad
-		glCreateBuffers(1, &mScreenQuad.vbo);
-		glNamedBufferStorage(mScreenQuad.vbo, sizeof(decltype(g_ScreenQuadVertices)::value_type), g_ScreenQuadVertices.data(), 0);
-
-		glCreateVertexArrays(1, &mScreenQuad.vao);
-		glVertexArrayVertexBuffer(mScreenQuad.vao, 0, mScreenQuad.vbo, 0, 2 * sizeof(decltype(g_ScreenQuadVertices)::value_type));
-
-		glVertexArrayAttribBinding(mScreenQuad.vao, 0, 0);
-		glVertexArrayAttribFormat(mScreenQuad.vao, 0, 2, GL_FLOAT, GL_FALSE, 0);
-		glEnableVertexArrayAttrib(mScreenQuad.vao, 0);
-
 		glDepthFunc(GL_LEQUAL);
 		glFrontFace(GL_CCW);
 		glCullFace(GL_BACK);
@@ -467,10 +365,6 @@ namespace leopph::internal
 			glDeleteTextures(1, &pingPongBuf.colorBuffer);
 			glDeleteTextures(1, &pingPongBuf.depthStencilBuffer);
 		}
-
-		// Delete screen quad
-		glDeleteVertexArrays(1, &mScreenQuad.vao);
-		glDeleteBuffers(1, &mScreenQuad.vbo);
 	}
 
 

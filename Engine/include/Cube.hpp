@@ -16,6 +16,6 @@ namespace leopph
 
 		private:
 			[[nodiscard]] static std::shared_ptr<StaticMesh> create_data();
-			static std::weak_ptr<Material> sMaterial;
+			static std::weak_ptr<StaticMaterial> sMaterial;
 	};
 }

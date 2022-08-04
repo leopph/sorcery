@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Color.hpp"
-#include "Texture.hpp"
+#include "Image.hpp"
 #include "Types.hpp"
 
 #include <memory>
@@ -9,7 +9,7 @@
 
 namespace leopph
 {
-	struct Material
+	struct MaterialData
 	{
 		// RGB controls the diffuse color, A controls the opacity.
 		// For opaque surfaces, the opacity only takes part in alpha clipping,
@@ -23,10 +23,10 @@ namespace leopph
 		f32 gloss{0};
 
 		// RGB is multiplied with diffuseColor RGB, A is multiplied with the color alpha and used accordingly, if present.
-		std::shared_ptr<Texture> diffuseMap;
+		std::shared_ptr<Image> diffuseMap;
 
 		// RGB is multiplied with specularColor RGB, A is unused if present.
-		std::shared_ptr<Texture> specularMap;
+		std::shared_ptr<Image> specularMap;
 
 		// Discards pixels whose alpha values are under this value.
 		f32 alphaThreshold{1.f};
