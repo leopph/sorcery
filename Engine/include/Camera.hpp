@@ -7,18 +7,18 @@
 #include "Matrix.hpp"
 #include "RenderingPath.hpp"
 #include "Skybox.hpp"
+#include "Types.hpp"
 #include "WindowEvent.hpp"
 
+#include <memory>
 #include <variant>
 
 
 namespace leopph
 {
-	// Cameras are special Components that define the image that gets rendered.
 	class Camera : public Component, public EventReceiver<internal::WindowEvent>
 	{
 		public:
-			// Used for specifying parameters that affect the shape of the camera.
 			enum class Side
 			{
 				Vertical,
@@ -26,92 +26,58 @@ namespace leopph
 			};
 
 
-			// The current camera that is used to render the scene.
-			[[nodiscard]] LEOPPHAPI static Camera* Current();
 
-			// Set this Camera to be the current one.
-			// The current Camera is used to render scene.
-			// If no Camera instance exists, a newly created one will automatically be made current.
-			// Only active Cameras can be made current.
-			LEOPPHAPI void MakeCurrent();
+			[[nodiscard]] LEOPPHAPI f32 get_near_clip_plane() const;
+			LEOPPHAPI void set_near_clip_plane(f32 near);
 
-			// Set the near clip plane distance.
-			// The near clip plane is the plane closest to the Camera, where rendering begins.
-			// Objects closer to the Camera than this value will not be visible.
-			LEOPPHAPI void NearClipPlane(float newPlane);
 
-			// Get the near clip plane distance.
-			// The near clip plane is the plane closest to the Camera, where rendering begins.
-			// Objects closer to the Camera than this value will not be visible.
-			[[nodiscard]] LEOPPHAPI float NearClipPlane() const;
+			[[nodiscard]] LEOPPHAPI f32 get_far_clip_plane() const;
+			LEOPPHAPI void set_far_clip_plane(f32 far);
 
-			// Set the far clip plane distance.
-			// The far clip plane is the plane farthest from the Camera, where rendering ends.
-			// Objects farther from the Camera than this value will not be visible.
-			LEOPPHAPI void FarClipPlane(float newPlane);
 
-			// Get the far clip plane distance.
-			// The far clip plane is the plane farthest from the Camera, where rendering ends.
-			// Objects farther from the Camera than this value will not be visible.
-			[[nodiscard]] LEOPPHAPI float FarClipPlane() const;
+			[[nodiscard]] LEOPPHAPI std::variant<Color, std::shared_ptr<Skybox>> const& get_background() const;
+			LEOPPHAPI void set_background(std::variant<Color, std::shared_ptr<Skybox>> background);
 
-			// Get the Camera's background.
-			// The Camera's background determines the visuals that the Camera "sees" where no Objects have been drawn to.
-			[[nodiscard]] LEOPPHAPI std::variant<Color, Skybox> const& Background() const;
 
-			// Set the Camera's background.
-			// The Camera's background determines the visuals that the Camera "sees" where no Objects have been drawn to.
-			LEOPPHAPI void Background(std::variant<Color, Skybox> background);
+			[[nodiscard]] LEOPPHAPI Matrix4 build_view_matrix() const;
+			[[nodiscard]] virtual Matrix4 build_projection_matrix() const = 0;
 
-			// Matrix that translates world positions to Camera-space.
-			// Used during rendering.
-			[[nodiscard]] LEOPPHAPI Matrix4 ViewMatrix() const;
 
-			// Matrix that projects Camera-space coordinates to Clip-space.
-			// Used during rendering.
-			[[nodiscard]] virtual Matrix4 ProjectionMatrix() const = 0;
+			[[nodiscard]] virtual Frustum build_frustum() const = 0;
 
-			// The current frustum of the Camera in view space.
-			// Used for internal calculations.
-			[[nodiscard]] virtual Frustum Frustum() const = 0;
 
 			// Transforms the passed vector (interpreted as a point) to viewport space.
 			// Viewport space ranges from [0, 1] on both axes. Values outside of that are not visible.
-			[[nodiscard]] LEOPPHAPI Vector2 TransformToViewport(Vector3 const& vector) const noexcept;
+			[[nodiscard]] LEOPPHAPI Vector2 transform_to_viewport(Vector3 const& vector) const;
+
 
 			[[nodiscard]] LEOPPHAPI RenderingPath get_rendering_path() const;
 			LEOPPHAPI void set_rendering_path(RenderingPath path);
 
-			// Detaching the current Camera will set it to nullptr.
-			LEOPPHAPI void Owner(Entity* entity) final;
-			using Component::Owner;
 
-			LEOPPHAPI void Active(bool active) final;
-			using Component::Active;
+		protected:
+			[[nodiscard]] f32 get_aspect_ratio() const;
+
+			LEOPPHAPI Camera();
+
+
+		public:
+			Camera(Camera const&) = delete;
+			Camera& operator=(Camera const&) = delete;
 
 			Camera(Camera&&) = delete;
 			void operator=(Camera&&) = delete;
 
 			LEOPPHAPI ~Camera() override;
 
-		protected:
-			LEOPPHAPI Camera();
-
-			Camera(Camera const&) = default;
-			Camera& operator=(Camera const&) = default;
-
-			[[nodiscard]]
-			float AspectRatio() const;
 
 		private:
 			LEOPPHAPI void OnEventReceived(EventParamType event) override;
 
-			static Camera* s_Current;
-
-			float m_AspectRatio;
-			float m_NearClip{0.1f};
-			float m_FarClip{100.f};
-			std::variant<Color, Skybox> m_Background;
+			float mAspectRatio;
+			float mNear{0.1f};
+			float mFar{100.f};
+			std::variant<Color, std::shared_ptr<Skybox>> mBackground{Color{0, 0, 0, 255}};
 			RenderingPath mRenderingPath{RenderingPath::Forward};
 	};
 }

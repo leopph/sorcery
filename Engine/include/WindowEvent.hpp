@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Event.hpp"
+#include "Types.hpp"
 
 
 namespace leopph::internal
@@ -8,11 +9,11 @@ namespace leopph::internal
 	// An Event representing a change in window configuration.
 	struct WindowEvent final : Event
 	{
-		WindowEvent(unsigned width, unsigned height, float renderMult, bool fullscreen, bool vsync);
-		unsigned Width;
-		unsigned Height;
-		float RenderMultiplier;
-		bool Fullscreen;
-		bool Vsync;
+		WindowEvent(u32 width, u32 height, bool fullscreen, bool vsync);
+
+		u32 width;
+		u32 height;
+		bool fullscreen;
+		bool vsync;
 	};
 }

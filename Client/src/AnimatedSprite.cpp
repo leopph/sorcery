@@ -73,7 +73,7 @@ namespace demo
 
 		for (auto const& sprite : m_Sprites)
 		{
-			sprite->Attach(Owner());
+			sprite->Attach(get_owner());
 			sprite->Deactivate();
 		}
 

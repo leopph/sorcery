@@ -16,14 +16,14 @@
 
 namespace leopph
 {
-	std::filesystem::path const& Settings::ShaderCachePath() noexcept
+	std::filesystem::path const& Settings::get_shader_cache_path()
 	{
 		return m_ShaderCache;
 	}
 
 
 
-	void Settings::ShaderCachePath(std::filesystem::path path) noexcept
+	void Settings::set_shader_cache_path(std::filesystem::path path)
 	{
 		m_ShaderCache = std::move(path);
 		m_Serialize = true;
@@ -31,23 +31,23 @@ namespace leopph
 
 
 
-	bool Settings::CacheShaders() const
+	bool Settings::is_caching_shaders() const
 	{
 		return !m_ShaderCache.empty();
 	}
 
 
 
-	Settings::GraphicsApi Settings::GetGraphicsApi() const noexcept
+	Settings::GraphicsApi Settings::get_current_graphics_api() const
 	{
 		return m_RenderingSettings.Api;
 	}
 
 
 
-	void Settings::SetGraphicsApi(GraphicsApi const newApi) noexcept
+	void Settings::set_graphics_api(GraphicsApi const graphicsApi)
 	{
-		m_RenderingSettings.PendingApi = newApi;
+		m_RenderingSettings.PendingApi = graphicsApi;
 		m_Serialize = true;
 	}
 
@@ -185,7 +185,7 @@ namespace leopph
 	void Settings::WindowWidth(u32 const newWidth) noexcept
 	{
 		m_WindowSettingsCache.Width = newWidth;
-		internal::GetWindowImpl()->Width(newWidth);
+		internal::GetWindowImpl()->set_width(newWidth);
 		m_Serialize = true;
 	}
 
@@ -201,7 +201,7 @@ namespace leopph
 	void Settings::WindowHeight(u32 const newHeight) noexcept
 	{
 		m_WindowSettingsCache.Height = newHeight;
-		internal::GetWindowImpl()->Height(newHeight);
+		internal::GetWindowImpl()->set_height(newHeight);
 		m_Serialize = true;
 	}
 
@@ -217,7 +217,7 @@ namespace leopph
 	void Settings::RenderMultiplier(f32 const newMult) noexcept
 	{
 		m_WindowSettingsCache.RenderMultiplier = newMult;
-		internal::GetWindowImpl()->RenderMultiplier(newMult);
+		internal::GetWindowImpl()->set_render_multiplier(newMult);
 		m_Serialize = true;
 	}
 
@@ -233,7 +233,7 @@ namespace leopph
 	void Settings::Fullscreen(bool const newVal) noexcept
 	{
 		m_WindowSettingsCache.Fullscreen = newVal;
-		internal::GetWindowImpl()->Fullscreen(newVal);
+		internal::GetWindowImpl()->set_fullscreen(newVal);
 		m_Serialize = true;
 	}
 
@@ -249,7 +249,7 @@ namespace leopph
 	void Settings::Vsync(bool const newVal)
 	{
 		m_WindowSettingsCache.Vsync = newVal;
-		internal::GetWindowImpl()->Vsync(newVal);
+		internal::GetWindowImpl()->set_vsync(newVal);
 		m_Serialize = true;
 	}
 

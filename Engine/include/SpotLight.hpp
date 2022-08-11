@@ -16,21 +16,10 @@ namespace leopph
 			LEOPPHAPI void set_outer_angle(f32 degrees);
 
 
-			LEOPPHAPI void Owner(Entity* entity) override;
-			using AttenuatedLight::Owner;
+			LEOPPHAPI SpotLight();
 
-
-			LEOPPHAPI void Active(bool active) override;
-			using AttenuatedLight::Active;
-
-
-			[[nodiscard]] LEOPPHAPI ComponentPtr<> Clone() const override;
-
-
-			SpotLight() = default;
-
-			SpotLight(SpotLight const& other) = default;
-			LEOPPHAPI SpotLight& operator=(SpotLight const& other);
+			SpotLight(SpotLight const& other) = delete;
+			SpotLight& operator=(SpotLight const& other) = delete;
 
 			SpotLight(SpotLight&& other) = delete;
 			void operator=(SpotLight&& other) = delete;

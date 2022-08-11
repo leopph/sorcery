@@ -17,7 +17,7 @@
     <ClCompile Include="src\components\Camera.cpp" />
     <ClCompile Include="src\components\Component.cpp" />
     <ClCompile Include="src\components\Cube.cpp" />
-    <ClCompile Include="src\components\DirLight.cpp" />
+    <ClCompile Include="src\components\DirectionalLight.cpp" />
     <ClCompile Include="src\components\ImageSprite.cpp" />
     <ClCompile Include="src\components\Light.cpp" />
     <ClCompile Include="src\components\StaticModelComponent.cpp" />
@@ -25,6 +25,7 @@
     <ClCompile Include="src\components\PerspectiveCamera.cpp" />
     <ClCompile Include="src\components\PointLight.cpp" />
     <ClCompile Include="src\components\StaticMeshComponent.cpp" />
+    <ClCompile Include="src\events\WindowEvent.cpp" />
     <ClCompile Include="src\rendering\PersistentMappedBuffer.cpp" />
     <ClCompile Include="src\rendering\QuadMesh.cpp" />
     <ClCompile Include="src\rendering\Skybox.cpp" />
@@ -32,16 +33,14 @@
     <ClCompile Include="src\rendering\StaticMaterial.cpp" />
     <ClCompile Include="src\rendering\StaticMesh.cpp" />
     <ClCompile Include="src\rendering\CubeMesh.cpp" />
-    <ClCompile Include="src\scene\Transform.cpp" />
     <ClCompile Include="src\Context.cpp" />
     <ClCompile Include="src\data\DataManager.cpp" />
     <ClCompile Include="src\data\Poelo.cpp" />
-    <ClCompile Include="src\Entity.cpp" />
+    <ClCompile Include="src\scene\Entity.cpp" />
     <ClCompile Include="src\events\Event.cpp" />
     <ClCompile Include="src\events\EventManager.cpp" />
     <ClCompile Include="src\events\KeyEvent.cpp" />
     <ClCompile Include="src\events\MouseEvent.cpp" />
-    <ClCompile Include="src\events\WindowEvent.cpp" />
     <ClCompile Include="src\Exit.cpp" />
     <ClCompile Include="src\Input.cpp" />
     <ClCompile Include="src\Main.cpp" />
@@ -52,17 +51,13 @@
     <ClCompile Include="src\rendering\Shader.cpp" />
     <ClCompile Include="src\scene\Scene.cpp" />
     <ClCompile Include="src\scene\SceneManager.cpp" />
-    <ClCompile Include="src\Settings.cpp" />
-    <ClCompile Include="src\SettingsImpl.cpp" />
     <ClCompile Include="src\threading\JobSystem.cpp" />
     <ClCompile Include="src\threading\SpinLock.cpp" />
     <ClCompile Include="src\timing\Time.cpp" />
     <ClCompile Include="src\timing\TimeImpl.cpp" />
     <ClCompile Include="src\util\api_adapters\GLFWAdapter.cpp" />
     <ClCompile Include="src\util\less\PoeloLess.cpp" />
-    <ClCompile Include="src\windowing\GlfwWindowImpl.cpp" />
-    <ClCompile Include="src\windowing\Window.cpp" />
-    <ClCompile Include="src\windowing\WindowImpl.cpp" />
+    <ClCompile Include="src\Window.cpp" />
     <ClInclude Include="..\include\AmbientLight.hpp" />
     <ClInclude Include="..\include\AttenuatedLight.hpp" />
     <ClInclude Include="..\include\Behavior.hpp" />
@@ -71,7 +66,7 @@
     <ClInclude Include="..\include\Context.hpp" />
     <ClInclude Include="..\include\Cube.hpp" />
     <ClInclude Include="..\include\CursorState.hpp" />
-    <ClInclude Include="..\include\DirLight.hpp" />
+    <ClInclude Include="..\include\DirectionalLight.hpp" />
     <ClInclude Include="..\include\Entity.hpp" />
     <ClInclude Include="..\include\Entry.hpp" />
     <ClInclude Include="..\include\Event.hpp" />
@@ -103,11 +98,9 @@
     <ClInclude Include="..\include\StaticMeshComponent.hpp" />
     <ClInclude Include="..\include\RenderingPath.hpp" />
     <ClInclude Include="..\include\RenderPass.hpp" />
-    <ClInclude Include="..\include\Settings.hpp" />
     <ClInclude Include="..\include\Skybox.hpp" />
     <ClInclude Include="..\include\SpotLight.hpp" />
     <ClInclude Include="..\include\Time.hpp" />
-    <ClInclude Include="..\include\Transform.hpp" />
     <ClInclude Include="..\include\Vertex.hpp" />
     <ClInclude Include="..\include\Window.hpp" />
     <ClInclude Include="..\include\WindowEvent.hpp" />
@@ -125,7 +118,6 @@
     <ClInclude Include="src\rendering\CubeMesh.hpp" />
     <ClInclude Include="src\rendering\StaticMaterial.hpp" />
     <ClInclude Include="src\rendering\StaticMesh.hpp" />
-    <ClInclude Include="src\SettingsImpl.hpp" />
     <ClCompile Include="..\deps\vendor\glad\src\gl.c" />
     <ClInclude Include="src\events\DirShadowResEvent.hpp" />
     <ClInclude Include="src\events\PointShadowResEvent.hpp" />
@@ -138,7 +130,6 @@
     <ClInclude Include="src\scene\SceneManager.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\InternalContext.hpp" />
     <ClInclude Include="src\data\DataManager.hpp" />
     <ClInclude Include="include\rendering\gl\GlMesh.hpp" />
     <ClInclude Include="include\rendering\gl\GlMeshGroup.hpp" />
@@ -154,8 +145,6 @@
     <ClInclude Include="src\timing\TimeImpl.hpp" />
     <ClInclude Include="src\util\api_adapters\GLFWAdapter.hpp" />
     <ClInclude Include="src\util\less\PoeloLess.hpp" />
-    <ClInclude Include="src\windowing\GlfwWindowImpl.hpp" />
-    <ClInclude Include="src\windowing\WindowImpl.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\LeopphCommon\LeopphCommon.vcxproj">

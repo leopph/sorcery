@@ -2,95 +2,93 @@
 
 #include "Logger.hpp"
 
-#include <string>
+#include <format>
 
 
 namespace leopph
 {
-	float PerspectiveCamera::Fov(Side const side) const noexcept
+	f32 PerspectiveCamera::get_fov(Side const side) const
 	{
 		if (side == Side::Horizontal)
 		{
-			return m_HorizontalFovDegrees;
+			return mHorizFovDeg;
 		}
 
 		if (side == Side::Vertical)
 		{
-			return ConvertFov(m_HorizontalFovDegrees, Conversion::HorizontalToVertical);
+			return convert_fov(mHorizFovDeg, Conversion::HorizontalToVertical);
 		}
 
-		internal::Logger::Instance().Critical("Invalid side \"" + std::to_string(static_cast<int>(side)) + "\" while returning camera field of view. Returning 0.");
+		internal::Logger::Instance().Warning(std::format("Invalid side [{}] while querying camera field of view. Returning 0.", static_cast<int>(side)));
 		return 0;
 	}
 
 
-	void PerspectiveCamera::Fov(float const degrees, Side const side) noexcept
+
+	void PerspectiveCamera::set_fov(f32 const degrees, Side const side)
 	{
 		if (side == Side::Horizontal)
 		{
-			m_HorizontalFovDegrees = degrees;
+			mHorizFovDeg = degrees;
 		}
 		else if (side == Side::Vertical)
 		{
-			m_HorizontalFovDegrees = ConvertFov(degrees, Conversion::VerticalToHorizontal);
+			mHorizFovDeg = convert_fov(degrees, Conversion::VerticalToHorizontal);
 		}
 		else
 		{
-			internal::Logger::Instance().Error("Invalid side \"" + std::to_string(static_cast<int>(side)) + "\" while setting camera field of view. Ignoring.");
+			internal::Logger::Instance().Warning(std::format("Invalid side [{}] while setting camera field of view. Ignoring.", static_cast<int>(side)));
 		}
 	}
 
 
-	Matrix4 PerspectiveCamera::ProjectionMatrix() const
+
+	Matrix4 PerspectiveCamera::build_projection_matrix() const
 	{
-		auto const fov{math::ToRadians(ConvertFov(m_HorizontalFovDegrees, Conversion::HorizontalToVertical))};
-		return Matrix4::Perspective(fov, AspectRatio(), NearClipPlane(), FarClipPlane());
+		auto const fov{math::ToRadians(convert_fov(mHorizFovDeg, Conversion::HorizontalToVertical))};
+		return Matrix4::Perspective(fov, get_aspect_ratio(), get_near_clip_plane(), get_far_clip_plane());
 	}
 
 
-	leopph::Frustum PerspectiveCamera::Frustum() const
-	{
-		auto const tanHalfHorizFov{math::Tan(math::ToRadians(Fov(Side::Horizontal)) / 2.0f)};
-		auto const tanHalfVertFov{math::Tan(math::ToRadians(Fov(Side::Vertical)) / 2.0f)};
 
-		auto const xn = NearClipPlane() * tanHalfHorizFov;
-		auto const xf = FarClipPlane() * tanHalfHorizFov;
-		auto const yn = NearClipPlane() * tanHalfVertFov;
-		auto const yf = FarClipPlane() * tanHalfVertFov;
+	leopph::Frustum PerspectiveCamera::build_frustum() const
+	{
+		auto const tanHalfHorizFov{math::Tan(math::ToRadians(get_fov(Side::Horizontal)) / 2.0f)};
+		auto const tanHalfVertFov{math::Tan(math::ToRadians(get_fov(Side::Vertical)) / 2.0f)};
+
+		auto const xn = get_near_clip_plane() * tanHalfHorizFov;
+		auto const xf = get_far_clip_plane() * tanHalfHorizFov;
+		auto const yn = get_near_clip_plane() * tanHalfVertFov;
+		auto const yf = get_far_clip_plane() * tanHalfVertFov;
 
 		return leopph::Frustum
 		{
-			.NearTopLeft{-xn, yn, NearClipPlane()},
-			.NearBottomLeft{-xn, -yn, NearClipPlane()},
-			.NearBottomRight{xn, -yn, NearClipPlane()},
-			.NearTopRight{xn, yn, NearClipPlane()},
-			.FarTopLeft{-xf, yf, FarClipPlane()},
-			.FarBottomLeft{-xf, -yf, FarClipPlane()},
-			.FarBottomRight{xf, -yf, FarClipPlane()},
-			.FarTopRight{xf, yf, FarClipPlane()}
+			.NearTopLeft{-xn, yn, get_near_clip_plane()},
+			.NearBottomLeft{-xn, -yn, get_near_clip_plane()},
+			.NearBottomRight{xn, -yn, get_near_clip_plane()},
+			.NearTopRight{xn, yn, get_near_clip_plane()},
+			.FarTopLeft{-xf, yf, get_far_clip_plane()},
+			.FarBottomLeft{-xf, -yf, get_far_clip_plane()},
+			.FarBottomRight{xf, -yf, get_far_clip_plane()},
+			.FarTopRight{xf, yf, get_far_clip_plane()}
 		};
 	}
 
 
-	ComponentPtr<> PerspectiveCamera::Clone() const
-	{
-		return CreateComponent<PerspectiveCamera>(*this);
-	}
 
-
-	float PerspectiveCamera::ConvertFov(float const fov, Conversion const conversion) const
+	f32 PerspectiveCamera::convert_fov(f32 const fov, Conversion const conversion) const
 	{
 		if (conversion == Conversion::VerticalToHorizontal)
 		{
-			return math::ToDegrees(2.0f * math::Atan(math::Tan(math::ToRadians(fov) / 2.0f) * AspectRatio()));
+			return math::ToDegrees(2.0f * math::Atan(math::Tan(math::ToRadians(fov) / 2.0f) * get_aspect_ratio()));
 		}
 
 		if (conversion == Conversion::HorizontalToVertical)
 		{
-			return math::ToDegrees(2.0f * math::Atan(math::Tan(math::ToRadians(fov) / 2.0f) / AspectRatio()));
+			return math::ToDegrees(2.0f * math::Atan(math::Tan(math::ToRadians(fov) / 2.0f) / get_aspect_ratio()));
 		}
 
-		internal::Logger::Instance().Critical("Invalid direction \"" + std::to_string(static_cast<int>(conversion)) + "\" while converting camera field of view. Returning 0.");
+		internal::Logger::Instance().Warning(std::format("Invalid direction [{}] while converting camera field of view. Returning 0.", static_cast<int>(conversion)));
 		return 0;
 	}
 }

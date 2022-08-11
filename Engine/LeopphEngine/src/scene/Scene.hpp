@@ -1,33 +1,40 @@
 #pragma once
 
-#include "LeopphApi.hpp"
+#include "Entity.hpp"
 
-#include <cstddef>
-#include <string_view>
+#include <string>
+#include <vector>
 
 
 namespace leopph
 {
 	class Scene
 	{
-		public:
-			[[nodiscard]] LEOPPHAPI static Scene* CreateScene(std::size_t id);
-			[[nodiscard]] LEOPPHAPI static Scene* CreateScene(std::string_view name);
-			[[nodiscard]] LEOPPHAPI static std::size_t NameToId(std::string_view name);
+		friend class Entity;
+		friend class SceneManager;
 
-			[[nodiscard]] constexpr auto Id() const noexcept;
+		public:
+			[[nodiscard]] std::span<Entity* const> get_entities() const;
+
 
 		private:
-			explicit Scene(std::size_t id);
+			explicit Scene(std::string name);
 
-			std::size_t m_Id;
+		public:
+			Scene(Scene const& other) = delete;
+			Scene& operator=(Scene const& other) = delete;
 
-			friend class SceneManager;
+			Scene(Scene&& other) = delete;
+			Scene& operator=(Scene&& other) = delete;
+
+			~Scene() = default;
+
+
+		private:
+			void register_entity(Entity* entity);
+			void unregister_entity(Entity* entity);
+
+			std::vector<Entity*> mEntities;
+			std::string mName;
 	};
-
-
-	constexpr auto Scene::Id() const noexcept
-	{
-		return m_Id;
-	}
 }

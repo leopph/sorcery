@@ -1,91 +1,70 @@
 #include "Camera.hpp"
 
+#include "Context.hpp"
 #include "Entity.hpp"
+#include "Window.hpp"
 #include "WindowEvent.hpp"
-#include "../InternalContext.hpp"
-#include "../windowing/WindowImpl.hpp"
+#include "../rendering/Renderer.hpp"
 
 #include <utility>
 
 
 namespace leopph
 {
-	Camera* Camera::Current()
+	f32 Camera::get_near_clip_plane() const
 	{
-		return s_Current;
+		return mNear;
 	}
 
 
 
-	void Camera::MakeCurrent()
+	void Camera::set_near_clip_plane(f32 const near)
 	{
-		if (Active())
-		{
-			s_Current = this;
-		}
+		mNear = near;
 	}
 
 
 
-	void Camera::NearClipPlane(float const newPlane)
+	f32 Camera::get_far_clip_plane() const
 	{
-		m_NearClip = newPlane;
+		return mFar;
 	}
 
 
 
-	float Camera::NearClipPlane() const
+	void Camera::set_far_clip_plane(f32 const far)
 	{
-		return m_NearClip;
+		mFar = far;
 	}
 
 
 
-	void Camera::FarClipPlane(float const newPlane)
+	std::variant<Color, std::shared_ptr<Skybox>> const& Camera::get_background() const
 	{
-		m_FarClip = newPlane;
+		return mBackground;
 	}
 
 
 
-	float Camera::FarClipPlane() const
+	void Camera::set_background(std::variant<Color, std::shared_ptr<Skybox>> background)
 	{
-		return m_FarClip;
+		mBackground = std::move(background);
 	}
 
 
 
-	std::variant<Color, Skybox> const& Camera::Background() const
-	{
-		return m_Background;
-	}
-
-
-
-	void Camera::Background(std::variant<Color, Skybox> background)
-	{
-		m_Background = std::move(background);
-
-		if (std::holds_alternative<Color>(m_Background))
-		{
-			internal::GetWindowImpl()->ClearColor(static_cast<Vector4>(std::get<Color>(m_Background)));
-		}
-	}
-
-
-
-	Matrix4 Camera::ViewMatrix() const
+	Matrix4 Camera::build_view_matrix() const
 	{
 		// inv(T) * inv(R)
-		return Matrix4::Translate(-Owner()->get_transform().get_position()) * Matrix4{Owner()->get_transform().get_rotation()}.Transposed();
+		return Matrix4::Translate(-get_owner()->get_position()) * Matrix4{get_owner()->get_rotation()}.Transposed();
 	}
 
 
 
-	Vector2 Camera::TransformToViewport(Vector3 const& vector) const noexcept
+	Vector2 Camera::transform_to_viewport(Vector3 const& vector) const
 	{
 		Vector4 homoPos{vector, 1};
-		homoPos *= ViewMatrix() * ProjectionMatrix();
+		homoPos *= build_view_matrix() * build_projection_matrix();
 		Vector2 ret{homoPos};
 		ret /= homoPos[3];
 		ret *= 0.5f;
@@ -109,65 +88,30 @@ namespace leopph
 
 
 
-	void Camera::Owner(Entity* entity)
+	Camera::Camera() :
+		mAspectRatio{internal::GetWindowImpl()->get_aspect_ratio()}
 	{
-		Component::Owner(entity);
-
-		if (!InUse() && s_Current == this)
-		{
-			s_Current = nullptr;
-		}
-	}
-
-
-
-	void Camera::Active(bool const active)
-	{
-		Component::Active(active);
-
-		if (!InUse() && s_Current == this)
-		{
-			s_Current = nullptr;
-		}
+		internal::get_renderer()->register_camera(this);
 	}
 
 
 
 	Camera::~Camera()
 	{
-		if (s_Current == this)
-		{
-			s_Current = nullptr;
-		}
+		internal::get_renderer()->unregister_camera(this);
 	}
 
 
 
-	Camera::Camera() :
-		m_AspectRatio{internal::GetWindowImpl()->AspectRatio()},
-		m_Background{Color{internal::GetWindowImpl()->ClearColor()}}
+	f32 Camera::get_aspect_ratio() const
 	{
-		if (s_Current == nullptr)
-		{
-			MakeCurrent();
-		}
-	}
-
-
-
-	float Camera::AspectRatio() const
-	{
-		return m_AspectRatio;
+		return mAspectRatio;
 	}
 
 
 
 	void Camera::OnEventReceived(EventParamType event)
 	{
-		m_AspectRatio = static_cast<float>(event.Width) / event.Height;
+		mAspectRatio = static_cast<f32>(event.width) / event.height;
 	}
-
-
-
-	Camera* Camera::s_Current;
 }

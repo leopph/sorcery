@@ -1,13 +1,12 @@
 #include "WindowEvent.hpp"
 
 
-namespace leopph::internal
+namespace leopph
 {
-	WindowEvent::WindowEvent(unsigned const width, unsigned const height, float const renderMult, bool const fullscreen, bool const vsync) :
-		Width{width},
-		Height{height},
-		RenderMultiplier{renderMult},
-		Fullscreen{fullscreen},
-		Vsync{vsync}
-	{}
+	internal::WindowEvent::WindowEvent(u32 const width, u32 const height, bool const fullscreen, bool const vsync) :
+		width{width},
+		height{height},
+		fullscreen{fullscreen},
+		vsync{vsync}
+	{ }
 }

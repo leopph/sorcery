@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Camera.hpp"
+#include "Types.hpp"
 
 
 namespace leopph
@@ -9,29 +10,24 @@ namespace leopph
 	class PerspectiveCamera final : public Camera
 	{
 		public:
-			// Get the current field of view of the Camera in degrees.
-			// side specifies whether the value should be interpreted horizontally or vertically.
-			[[nodiscard]] LEOPPHAPI float Fov(Side side = Side::Horizontal) const noexcept;
+			[[nodiscard]] LEOPPHAPI f32 get_fov(Side side = Side::Horizontal) const;
+			LEOPPHAPI void set_fov(f32 degrees, Side side = Side::Horizontal);
 
-			// Set the current field of view of the Camera in degrees.
-			// side specifies whether the value is interpreted horizontally or vertically.
-			LEOPPHAPI void Fov(float degrees, Side side = Side::Horizontal) noexcept;
 
-			[[nodiscard]] LEOPPHAPI Matrix4 ProjectionMatrix() const override;
+			[[nodiscard]] LEOPPHAPI Matrix4 build_projection_matrix() const override;
+			[[nodiscard]] LEOPPHAPI leopph::Frustum build_frustum() const override;
 
-			[[nodiscard]] LEOPPHAPI leopph::Frustum Frustum() const override;
 
 			PerspectiveCamera() = default;
 
-			PerspectiveCamera(PerspectiveCamera const& other) = default;
-			PerspectiveCamera& operator=(PerspectiveCamera const& other) = default;
-
-			[[nodiscard]] LEOPPHAPI ComponentPtr<> Clone() const override;
+			PerspectiveCamera(PerspectiveCamera const& other) = delete;
+			PerspectiveCamera& operator=(PerspectiveCamera const& other) = delete;
 
 			PerspectiveCamera(PerspectiveCamera&& other) noexcept = delete;
 			PerspectiveCamera& operator=(PerspectiveCamera&& other) noexcept = delete;
 
 			~PerspectiveCamera() override = default;
+
 
 		private:
 			enum class Conversion
@@ -42,8 +38,8 @@ namespace leopph
 
 
 			[[nodiscard]]
-			float ConvertFov(float fov, Conversion conversion) const;
+			f32 convert_fov(f32 fov, Conversion conversion) const;
 
-			float m_HorizontalFovDegrees{100.f};
+			f32 mHorizFovDeg{100.f};
 	};
 }

@@ -1,35 +1,30 @@
 #include "Scene.hpp"
 
-#include "SceneManager.hpp"
-
-#include <functional>
-#include <memory>
-
 
 namespace leopph
 {
-	Scene* Scene::CreateScene(std::size_t const id)
+	Scene::Scene(std::string name) :
+		mName{std::move(name)}
+	{ }
+
+
+
+	std::span<Entity* const> Scene::get_entities() const
 	{
-		std::unique_ptr<Scene> scene{new Scene{id}};
-		auto const ret{scene.get()};
-		SceneManager::Instance().AddScene(std::move(scene));
-		return ret;
+		return mEntities;
 	}
 
 
-	Scene* Scene::CreateScene(std::string_view const name)
+
+	void Scene::register_entity(Entity* entity)
 	{
-		return CreateScene(NameToId(name));
+		mEntities.push_back(entity);
 	}
 
 
-	std::size_t Scene::NameToId(std::string_view const name)
+
+	void Scene::unregister_entity(Entity* entity)
 	{
-		return std::hash<std::string_view>{}(name);
+		std::erase(mEntities, entity);
 	}
-
-
-	Scene::Scene(std::size_t const id) :
-		m_Id{id}
-	{}
 }

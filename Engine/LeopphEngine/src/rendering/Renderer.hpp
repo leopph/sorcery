@@ -1,13 +1,16 @@
 #pragma once
 
+#include "Camera.hpp"
 #include "CubeMesh.hpp"
+#include "DirectionalLight.hpp"
 #include "EventReceiver.hpp"
-#include "StaticMaterial.hpp"
-#include "PersistentMappedBuffer.h"
+#include "PersistentMappedBuffer.hpp"
+#include "PointLight.hpp"
 #include "QuadMesh.hpp"
 #include "RenderingPath.hpp"
 #include "Shader.hpp"
-#include "Skybox.hpp"
+#include "SpotLight.hpp"
+#include "StaticMaterial.hpp"
 #include "StaticMesh.hpp"
 #include "StaticMeshComponent.hpp"
 #include "StaticMeshData.hpp"
@@ -132,8 +135,21 @@ namespace leopph::internal
 			void render();
 
 			u64 create_static_mesh(StaticMeshComponent const* component, std::span<StaticMeshData const> data);
+
 			void register_material(StaticMaterial const* material);
 			void unregister_material(StaticMaterial const* material);
+
+			void register_dir_light(DirectionalLight const* dirLight);
+			void unregister_dir_light(DirectionalLight const* dirLight);
+
+			void register_spot_light(SpotLight const* spotLight);
+			void unregister_spot_light(SpotLight const* spotLight);
+
+			void register_point_light(PointLight const* pointLight);
+			void unregister_point_light(PointLight const* pointLight);
+
+			void register_camera(Camera const* camera);
+			void unregister_camera(Camera const* camera);
 
 
 		private:
@@ -203,6 +219,12 @@ namespace leopph::internal
 			u64 mFrameCount{0};
 
 			std::unordered_map<StaticMaterial const*, PersistentMappedBuffer> mMaterialBuffers;
+
+			std::vector<DirectionalLight const*> mDirLights;
+			std::vector<SpotLight const*> mSpotLights;
+			std::vector<PointLight const*> mPointLights;
+
+			std::vector<Camera const*> mCameras;
 	};
 	#pragma warning(pop)
 }

@@ -25,7 +25,7 @@ namespace leopph
 
 
 
-	void Behavior::Owner(Entity* entity)
+	void Behavior::set_owner(Entity* entity)
 	{
 		auto* const dataManager = internal::GetDataManager();
 
@@ -34,7 +34,7 @@ namespace leopph
 			dataManager->UnregisterActiveBehavior(this);
 		}
 
-		Component::Owner(entity);
+		Component::set_owner(entity);
 
 		if (InUse())
 		{

@@ -2,102 +2,166 @@
 
 #include "Component.hpp"
 #include "LeopphApi.hpp"
-#include "Poelo.hpp"
-#include "Transform.hpp"
+#include "Matrix.hpp"
+#include "Quaternion.hpp"
+#include "Vector.hpp"
 
-#include <compare>
 #include <concepts>
 #include <memory>
 #include <span>
 #include <string>
+#include <string_view>
 #include <utility>
+#include <vector>
 
 
 namespace leopph
 {
-	class Entity final : internal::Poelo
+	class Scene;
+
+
+	enum class Space
+	{
+		World,
+		Local
+	};
+
+
+	class Entity
 	{
 		public:
-			LEOPPHAPI static Entity* find(std::string const& name);
-
-			[[nodiscard]] LEOPPHAPI std::string const& get_name() const noexcept;
-
-			[[nodiscard]] LEOPPHAPI Transform& get_transform() noexcept;
-			[[nodiscard]] LEOPPHAPI Transform const& get_transform() const noexcept;
+			[[nodiscard]] LEOPPHAPI std::string_view get_name() const;
+			LEOPPHAPI void set_name(std::string name);
 
 
-			template<std::derived_from<Component> T>
-			[[nodiscard]] ComponentPtr<T> get_component() const;
+			[[nodiscard]] LEOPPHAPI Vector3 const& get_position() const;
+			LEOPPHAPI void set_position(Vector3 const& newPos);
 
 
-			LEOPPHAPI void attach_component(ComponentPtr<> const& component);
-			LEOPPHAPI void detach_component(ComponentPtr<> const& component) const;
-
-			template<std::derived_from<Component> T, class... Args>
-			auto create_and_attach_component(Args&&... args);
+			[[nodiscard]] LEOPPHAPI Vector3 const& get_local_position() const;
+			LEOPPHAPI void set_local_position(Vector3 const& newPos);
 
 
-			LEOPPHAPI void activate_all_components() const;
-			LEOPPHAPI void deactive_all_components() const;
+			[[nodiscard]] LEOPPHAPI Quaternion const& get_rotation() const;
+			LEOPPHAPI void set_rotation(Quaternion const& newRot);
+
+
+			[[nodiscard]] LEOPPHAPI Quaternion const& get_local_rotation() const;
+			LEOPPHAPI void set_local_rotation(Quaternion const& newRot);
+
+
+			[[nodiscard]] LEOPPHAPI Vector3 const& get_scale() const;
+			LEOPPHAPI void set_scale(Vector3 const& newScale);
+
+
+			[[nodiscard]] LEOPPHAPI Vector3 const& get_local_scale() const;
+			LEOPPHAPI void set_local_scale(Vector3 const& newScale);
+
+
+			LEOPPHAPI void translate(Vector3 const& vector, Space base = Space::World);
+			LEOPPHAPI void translate(f32 x, f32 y, f32 z, Space base = Space::World);
+
+
+			LEOPPHAPI void rotate(Quaternion const& rotation, Space base = Space::World);
+			LEOPPHAPI void rotate(Vector3 const& axis, f32 amountDegrees, Space base = Space::World);
+
+
+			LEOPPHAPI void rescale(Vector3 const& scaling, Space base = Space::World);
+			LEOPPHAPI void rescale(f32 x, f32 y, f32 z, Space base = Space::World);
+
+
+			[[nodiscard]] LEOPPHAPI Vector3 const& get_forward_axis() const;
+			[[nodiscard]] LEOPPHAPI Vector3 const& get_right_axis() const;
+			[[nodiscard]] LEOPPHAPI Vector3 const& get_up_axis() const;
+
+
+			[[nodiscard]] LEOPPHAPI Entity* get_parent() const;
+			void LEOPPHAPI set_parent(Entity* parent);
+			void LEOPPHAPI unparent();
+
+
+			[[nodiscard]] LEOPPHAPI std::span<Entity* const> get_children() const;
+
+
+			LEOPPHAPI Matrix4 get_model_matrix() const;
+			LEOPPHAPI Matrix4 get_normal_matrix() const;
 
 
 		private:
-			[[nodiscard]] LEOPPHAPI std::span<ComponentPtr<> const> get_components(bool active) const;
+			void calculate_world_position_and_update_children();
+			void calculate_world_rotation_and_update_children();
+			void calculate_world_scale_and_update_children();
+			void calculate_matrices();
 
 
 		public:
-			LEOPPHAPI Entity();
-			LEOPPHAPI explicit Entity(std::string_view name);
+			template<std::derived_from<Component> T>
+			[[nodiscard]] T* get_component() const;
 
-			LEOPPHAPI Entity(Entity const& other);
+			template<std::derived_from<Component> T, class... Args>
+			T& attach_component(Args&&... args);
+
+			void remove_component(Component& component);
+
+
+			LEOPPHAPI Entity();
+
+			Entity(Entity const& other) = delete;
 			Entity& operator=(Entity const& other) = delete;
 
 			Entity(Entity&& other) = delete;
 			void operator=(Entity&& other) = delete;
 
-			~Entity() override;
+			LEOPPHAPI ~Entity();
+
 
 		private:
-			static char const* const DEFAULT_NAME;
+			Scene* mScene;
+			std::string mName{"Entity"};
+			std::vector<std::unique_ptr<Component>> mComponents;
 
-			std::string mName{DEFAULT_NAME};
-			Transform mTransform{this};
+			Vector3 mWorldPosition;
+			Quaternion mWorldRotation;
+			Vector3 mWorldScale{1};
+
+			Vector3 mLocalPosition;
+			Quaternion mLocalRotation;
+			Vector3 mLocalScale{1};
+
+			Vector3 mForward{Vector3::Forward()};
+			Vector3 mRight{Vector3::Right()};
+			Vector3 mUp{Vector3::Up()};
+
+			Entity* mParent{nullptr};
+			std::vector<Entity*> mChildren;
+
+			Matrix4 mModelMat;
+			Matrix4 mNormalMat;
 	};
-
-
-	[[nodiscard]] LEOPPHAPI std::strong_ordering operator<=>(Entity const& left, Entity const& right);
-	[[nodiscard]] LEOPPHAPI std::strong_ordering operator<=>(std::string_view name, Entity const& entity);
-	[[nodiscard]] LEOPPHAPI std::strong_ordering operator<=>(Entity const& entity, std::string_view name);
-
-
-	[[nodiscard]] LEOPPHAPI bool operator==(Entity const& left, Entity const& right);
-	[[nodiscard]] LEOPPHAPI bool operator==(Entity const& entity, std::string_view name);
-	[[nodiscard]] LEOPPHAPI bool operator==(std::string_view name, Entity const& entity);
 
 
 
 	template<std::derived_from<Component> T, class... Args>
-	auto Entity::create_and_attach_component(Args&&... args)
+	T& Entity::attach_component(Args&&... args)
 	{
-		auto component = CreateComponent<T>(std::forward<Args>(args)...);
-		attach_component(component);
-		return component;
+		mComponents.emplace_back(CreateComponent<T>(std::forward<Args>(args)...));
+		mComponents.back()->mOwner = this;
+		return *mComponents.back();
 	}
 
 
+
 	template<std::derived_from<Component> T>
-	ComponentPtr<T> Entity::get_component() const
+	T* Entity::get_component() const
 	{
-		for (auto const active : {true, false})
+		for (auto const& component : mComponents)
 		{
-			for (auto const& component : get_components(active))
+			if (auto ret = std::dynamic_pointer_cast<T>(component))
 			{
-				if (auto ret = std::dynamic_pointer_cast<T>(component))
-				{
-					return ret;
-				}
+				return ret;
 			}
 		}
+
 		return nullptr;
 	}
 }

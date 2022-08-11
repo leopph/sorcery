@@ -2,13 +2,11 @@
 
 #include "AmbientLight.hpp"
 #include "Camera.hpp"
+#include "Context.hpp"
 #include "GlCore.hpp"
 #include "Math.hpp"
 #include "RenderSettings.hpp"
-#include "../InternalContext.hpp"
-#include "../SettingsImpl.hpp"
-#include "../data/DataManager.hpp"
-#include "../windowing/WindowImpl.hpp"
+#include "Window.hpp"
 
 #include <algorithm>
 
@@ -45,11 +43,67 @@ namespace leopph::internal
 
 		for (auto const& [vertices, indices, material] : data)
 		{
-			mIdToMeshGroup[id].meshes.emplace_back(new StaticMesh{vertices, indices});
-			mMaterialToMeshes[material.get()]
+			//mIdToMeshGroup[id].meshes.emplace_back(new StaticMesh{vertices, indices});
+			//mMaterialToMeshes[material.get()]
 		}
 
 		return id++;
+	}
+
+
+
+	void Renderer::register_dir_light(DirectionalLight const* dirLight)
+	{
+		mDirLights.push_back(dirLight);
+	}
+
+
+
+	void Renderer::unregister_dir_light(DirectionalLight const* dirLight)
+	{
+		std::erase(mDirLights, dirLight);
+	}
+
+
+
+	void Renderer::register_spot_light(SpotLight const* spotLight)
+	{
+		mSpotLights.push_back(spotLight);
+	}
+
+
+
+	void Renderer::unregister_spot_light(SpotLight const* spotLight)
+	{
+		std::erase(mSpotLights, spotLight);
+	}
+
+
+
+	void Renderer::register_point_light(PointLight const* pointLight)
+	{
+		mPointLights.push_back(pointLight);
+	}
+
+
+
+	void Renderer::unregister_point_light(PointLight const* pointLight)
+	{
+		std::erase(mPointLights, pointLight);
+	}
+
+
+
+	void Renderer::register_camera(Camera const* camera)
+	{
+		mCameras.push_back(camera);
+	}
+
+
+
+	void Renderer::unregister_camera(Camera const* camera)
+	{
+		std::erase(mCameras, camera);
 	}
 
 
@@ -66,7 +120,7 @@ namespace leopph::internal
 			return false;
 		}
 
-		mCamData.position = cam->Owner()->get_transform().get_position();
+		mCamData.position = cam->get_owner()->get_position();
 		mCamData.viewMat = cam->ViewMatrix();
 		mCamData.projMat = cam->ProjectionMatrix();
 
@@ -75,9 +129,9 @@ namespace leopph::internal
 
 		// Extract screen data
 
-		auto const renderMult = GetWindowImpl()->RenderMultiplier();
-		auto const windowWidth = GetWindowImpl()->Width();
-		auto const windowHeight = GetWindowImpl()->Height();
+		auto const renderMult = GetWindowImpl()->get_render_multiplier();
+		auto const windowWidth = GetWindowImpl()->get_width();
+		auto const windowHeight = GetWindowImpl()->get_height();
 		mScreenData.renderWidth = static_cast<u32>(static_cast<f32>(windowWidth) / renderMult);
 		mScreenData.renderHeight = static_cast<u32>(static_cast<f32>(windowHeight) / renderMult);
 		mScreenData.width = windowWidth;
@@ -115,8 +169,8 @@ namespace leopph::internal
 			UboSpotLight uboSpot;
 			uboSpot.lightBase.color = spotLight->get_color();
 			uboSpot.lightBase.intensity = spotLight->get_intensity();
-			uboSpot.direction = spotLight->Owner()->get_transform().get_forward_axis();
-			uboSpot.position = spotLight->Owner()->get_transform().get_position();
+			uboSpot.direction = spotLight->get_owner()->get_transform().get_forward_axis();
+			uboSpot.position = spotLight->get_owner()->get_transform().get_position();
 			uboSpot.range = spotLight->get_range();
 			uboSpot.innerCos = math::Cos(math::ToRadians(spotLight->get_inner_angle()));
 			uboSpot.outerCos = math::Cos(math::ToRadians(spotLight->get_outer_angle()));
@@ -131,7 +185,7 @@ namespace leopph::internal
 			UboPointLight uboPoint;
 			uboPoint.lightBase.color = pointLight->get_color();
 			uboPoint.lightBase.intensity = pointLight->get_intensity();
-			uboPoint.position = pointLight->Owner()->get_transform().get_position();
+			uboPoint.position = pointLight->get_owner()->get_transform().get_position();
 			uboPoint.range = pointLight->get_range();
 			mPointLightData.push_back(uboPoint);
 		}

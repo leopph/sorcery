@@ -13,14 +13,14 @@
 // ReSharper restore All
 #endif
 
+#include "Context.hpp"
 #include "EventManager.hpp"
 #include "FrameCompleteEvent.hpp"
-#include "InternalContext.hpp"
 #include "Logger.hpp"
-#include "SettingsImpl.hpp"
-#include "data/DataManager.hpp"
+//#include "SettingsImpl.hpp"
+#include "Window.hpp"
+//#include "data/DataManager.hpp"
 #include "rendering/Renderer.hpp"
-#include "windowing/WindowImpl.hpp"
 
 
 namespace leopph::internal
@@ -34,32 +34,31 @@ namespace leopph::internal
 		Logger::Instance().CurrentLevel(Logger::Level::Info);
 		#endif
 
-		auto const settings = std::make_unique<SettingsImpl>();
-		SetSettingsImpl(settings.get());
+		//auto const settings = std::make_unique<SettingsImpl>();
+		//SetSettingsImpl(settings.get());
 
-		auto const window = WindowImpl::Create();
-		SetWindowImpl(window.get());
+		auto const window = std::make_unique<Window>();
+		set_window(window.get());
 
 		auto const renderer = std::make_unique<Renderer>();
-		SetRenderer(renderer.get());
+		set_renderer(renderer.get());
 
-		auto const dataManager = std::make_unique<DataManager>();
-		SetDataManager(dataManager.get());
+		//auto const dataManager = std::make_unique<DataManager>();
+		//(dataManager.get());
 
 		initFunc();
 
-		while (!window->ShouldClose())
+		while (!window->should_close())
 		{
-			window->PollEvents();
+			window->poll_events();
 
-			for (auto const& behavior : dataManager->ActiveBehaviors())
+			//for (auto const& behavior : dataManager->ActiveBehaviors())
 			{
-				behavior->OnFrameUpdate();
+				//behavior->OnFrameUpdate();
 			}
 
-			window->Clear();
 			renderer->render();
-			window->SwapBuffers();
+			window->swap_buffers();
 			EventManager::Instance().Send<FrameCompleteEvent>();
 		}
 

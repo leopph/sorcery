@@ -5,5 +5,5 @@
 
 namespace leopph
 {
-	LEOPPHAPI void Exit();
+	LEOPPHAPI void exit();
 }

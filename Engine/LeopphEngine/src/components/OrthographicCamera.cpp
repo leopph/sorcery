@@ -2,75 +2,72 @@
 
 #include "Logger.hpp"
 
-#include <string>
+#include <format>
 
 
 namespace leopph
 {
-	float OrthographicCamera::Size(Side const side) const noexcept
+	f32 OrthographicCamera::get_size(Side const side) const
 	{
 		if (side == Side::Horizontal)
 		{
-			return m_HorizontalSize;
+			return mHorizSize;
 		}
 
 		if (side == Side::Vertical)
 		{
-			return m_HorizontalSize / AspectRatio();
+			return mHorizSize / get_aspect_ratio();
 		}
 
-		internal::Logger::Instance().Critical("Invalid side \"" + std::to_string(static_cast<int>(side)) + "\" while returning camera size. Returning 0.");
+		internal::Logger::Instance().Warning(std::format("Invalid side [{}] while returning camera size. Returning 0.", static_cast<int>(side)));
 		return 0;
 	}
 
 
-	void OrthographicCamera::Size(float const size, Side const side) noexcept
+
+	void OrthographicCamera::size(f32 const size, Side const side)
 	{
 		if (side == Side::Horizontal)
 		{
-			m_HorizontalSize = size;
+			mHorizSize = size;
 		}
 		else if (side == Side::Vertical)
 		{
-			m_HorizontalSize = size * AspectRatio();
+			mHorizSize = size * get_aspect_ratio();
 		}
 		else
 		{
-			internal::Logger::Instance().Error("Invalid side \"" + std::to_string(static_cast<int>(side)) + "\" while setting camera size. Ignoring.");
+			internal::Logger::Instance().Warning(std::format("Invalid side [{}] while setting camera size. Ignoring.", static_cast<int>(side)));
 		}
 	}
 
 
-	Matrix4 OrthographicCamera::ProjectionMatrix() const
+
+	Matrix4 OrthographicCamera::build_projection_matrix() const
 	{
 		auto static constexpr half = 1.f / 2.f;
-		auto const x = m_HorizontalSize * half;
-		auto const y = m_HorizontalSize / AspectRatio() * half;
-		return Matrix4::Ortographic(-x, x, y, -y, NearClipPlane(), FarClipPlane());
+		auto const x = mHorizSize * half;
+		auto const y = mHorizSize / get_aspect_ratio() * half;
+		return Matrix4::Ortographic(-x, x, y, -y, get_near_clip_plane(), get_far_clip_plane());
 	}
 
 
-	leopph::Frustum OrthographicCamera::Frustum() const
+
+	leopph::Frustum OrthographicCamera::build_frustum() const
 	{
 		auto static constexpr half = 1.f / 2.f;
-		auto const x = m_HorizontalSize * half;
-		auto const y = m_HorizontalSize / AspectRatio() * half;
+		auto const x = mHorizSize * half;
+		auto const y = mHorizSize / get_aspect_ratio() * half;
 		return leopph::Frustum
 		{
-			.NearTopLeft{-x, y, NearClipPlane()},
-			.NearBottomLeft{-x, -y, NearClipPlane()},
-			.NearBottomRight{x, -y, NearClipPlane()},
-			.NearTopRight{x, y, NearClipPlane()},
-			.FarTopLeft{-x, y, FarClipPlane()},
-			.FarBottomLeft{-x, -y, FarClipPlane()},
-			.FarBottomRight = {x, -y, FarClipPlane()},
-			.FarTopRight = {x, y, FarClipPlane()}
+			.NearTopLeft{-x, y, get_near_clip_plane()},
+			.NearBottomLeft{-x, -y, get_near_clip_plane()},
+			.NearBottomRight{x, -y, get_near_clip_plane()},
+			.NearTopRight{x, y, get_near_clip_plane()},
+			.FarTopLeft{-x, y, get_far_clip_plane()},
+			.FarBottomLeft{-x, -y, get_far_clip_plane()},
+			.FarBottomRight = {x, -y, get_far_clip_plane()},
+			.FarTopRight = {x, y, get_far_clip_plane()}
 		};
-	}
-
-
-	ComponentPtr<> OrthographicCamera::Clone() const
-	{
-		return CreateComponent<OrthographicCamera>(*this);
 	}
 }

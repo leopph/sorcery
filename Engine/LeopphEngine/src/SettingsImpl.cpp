@@ -127,11 +127,11 @@ namespace leopph::internal
 	{
 		m_WindowSettingsCache = WindowSettings
 		{
-			.Width = event.Width,
-			.Height = event.Height,
+			.Width = event.width,
+			.Height = event.height,
 			.RenderMultiplier = event.RenderMultiplier,
-			.Fullscreen = event.Fullscreen,
-			.Vsync = event.Vsync
+			.Fullscreen = event.fullscreen,
+			.Vsync = event.vsync
 		};
 
 		m_Serialize = true;

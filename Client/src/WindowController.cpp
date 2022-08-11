@@ -8,15 +8,15 @@ using leopph::Window;
 
 
 WindowController::WindowController() :
-	m_Window{leopph::GetWindow()},
+	m_Window{leopph::get_window()},
 	m_DisplayModes
 	{
 		[this]
 		{
 			std::vector<Window::DisplayMode> displayModes;
-			for (auto const& displayMode : m_Window->GetSupportedDisplayModes())
+			for (auto const& displayMode : m_Window->get_supported_display_modes())
 			{
-				if (displayModes.empty() || displayModes.back().Width != displayMode.Width || displayModes.back().Height != displayMode.Height)
+				if (displayModes.empty() || displayModes.back().width != displayMode.width || displayModes.back().height != displayMode.height)
 				{
 					displayModes.push_back(displayMode);
 				}
@@ -31,54 +31,54 @@ void WindowController::OnFrameUpdate()
 {
 	if (Input::GetKeyDown(KeyCode::F))
 	{
-		m_Window->Fullscreen(!m_Window->Fullscreen());
+		m_Window->set_fullscreen(!m_Window->is_fullscreen());
 	}
 
 	if (Input::GetKeyDown(KeyCode::V))
 	{
-		m_Window->Vsync(!m_Window->Vsync());
+		m_Window->set_vsync(!m_Window->get_vsync());
 	}
 
 	if (Input::GetKeyDown(KeyCode::One) && !m_DisplayModes.empty())
 	{
-		m_Window->Width(m_DisplayModes[0].Width);
-		m_Window->Height(m_DisplayModes[0].Height);
+		m_Window->set_width(m_DisplayModes[0].width);
+		m_Window->set_height(m_DisplayModes[0].height);
 	}
 
 	if (Input::GetKeyDown(KeyCode::Two) && m_DisplayModes.size() > 1)
 	{
-		m_Window->Width(m_DisplayModes[1].Width);
-		m_Window->Height(m_DisplayModes[1].Height);
+		m_Window->set_width(m_DisplayModes[1].width);
+		m_Window->set_height(m_DisplayModes[1].height);
 	}
 
 	if (Input::GetKeyDown(KeyCode::Three) && m_DisplayModes.size() > 2)
 	{
-		m_Window->Width(m_DisplayModes[2].Width);
-		m_Window->Height(m_DisplayModes[2].Height);
+		m_Window->set_width(m_DisplayModes[2].width);
+		m_Window->set_height(m_DisplayModes[2].height);
 	}
 
 	if (Input::GetKeyDown(KeyCode::Four) && m_DisplayModes.size() > 3)
 	{
-		m_Window->Width(m_DisplayModes[3].Width);
-		m_Window->Height(m_DisplayModes[3].Height);
+		m_Window->set_width(m_DisplayModes[3].width);
+		m_Window->set_height(m_DisplayModes[3].height);
 	}
 
 	if (Input::GetKeyDown(KeyCode::Five) && m_DisplayModes.size() > 4)
 	{
-		m_Window->Width(m_DisplayModes[4].Width);
-		m_Window->Height(m_DisplayModes[4].Height);
+		m_Window->set_width(m_DisplayModes[4].width);
+		m_Window->set_height(m_DisplayModes[4].height);
 	}
 
 	if (Input::GetKeyDown(KeyCode::Q))
 	{
-		if (m_Window->RenderMultiplier() > 0.1f)
+		if (m_Window->get_render_multiplier() > 0.1f)
 		{
-			m_Window->RenderMultiplier(m_Window->RenderMultiplier() - 0.1f);
+			m_Window->set_render_multiplier(m_Window->get_render_multiplier() - 0.1f);
 		}
 	}
 
 	if (Input::GetKeyDown(KeyCode::E))
 	{
-		m_Window->RenderMultiplier(m_Window->RenderMultiplier() + 0.1f);
+		m_Window->set_render_multiplier(m_Window->get_render_multiplier() + 0.1f);
 	}
 }

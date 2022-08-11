@@ -1,13 +1,13 @@
 #include "Exit.hpp"
 
-#include "InternalContext.hpp"
-#include "windowing/WindowImpl.hpp"
+#include "Context.hpp"
+#include "Window.hpp"
 
 
 namespace leopph
 {
-	void Exit()
+	void exit()
 	{
-		internal::GetWindowImpl()->ShouldClose(true);
+		get_window()->set_should_close(true);
 	}
 }

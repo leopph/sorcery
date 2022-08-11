@@ -12,16 +12,16 @@
 
 void leopph::Init()
 {
-	GetWindow()->Title("LeopphEngine Demo");
+	get_window()->set_title("LeopphEngine Demo");
 
 	Input::CursorMode(CursorState::Disabled);
 
 	auto const utilEnt = new Entity;
-	utilEnt->create_and_attach_component<FrameRateAnalyzer>(0.5f, 60u);
-	utilEnt->create_and_attach_component<Exiter>();
-	utilEnt->create_and_attach_component<WindowController>();
+	utilEnt->attach_component<FrameRateAnalyzer>(0.5f, 60u);
+	utilEnt->attach_component<Exiter>();
+	utilEnt->attach_component<WindowController>();
 
-	auto const sceneSwitcher = utilEnt->create_and_attach_component<demo::SceneSwitcher>();
+	auto const sceneSwitcher = utilEnt->attach_component<demo::SceneSwitcher>();
 
 	auto& churchScene = sceneSwitcher->CreateOrGetScene(KeyCode::F1);
 	auto& spriteScene = sceneSwitcher->CreateOrGetScene(KeyCode::F2);

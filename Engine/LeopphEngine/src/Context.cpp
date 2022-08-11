@@ -1,93 +1,65 @@
 #include "Context.hpp"
 
-#include "InternalContext.hpp"
-#include "SettingsImpl.hpp"
-#include "windowing/WindowImpl.hpp"
-
 
 namespace leopph
 {
+	namespace
+	{
+		Window* gWindow;
+		SceneManager* gSceneManager;
+	}
+
+
 	namespace internal
 	{
 		namespace
 		{
-			WindowImpl* g_WindowImpl;
-			SettingsImpl* g_SettingsImpl;
-			DataManager* g_DataManager;
-			Renderer* g_Renderer;
+			Renderer* gRenderer;
 		}
 	}
 
 
 
-	Window* GetWindow()
+	Window* get_window()
 	{
-		return internal::g_WindowImpl;
+		return gWindow;
 	}
 
 
 
-	Settings* GetSettings()
+	SceneManager* get_scene_manager()
 	{
-		return internal::g_SettingsImpl;
+		return gSceneManager;
 	}
 
 
 
 	namespace internal
 	{
-		WindowImpl* GetWindowImpl()
+		Renderer* get_renderer()
 		{
-			return g_WindowImpl;
+			return gRenderer;
 		}
 
 
 
-		SettingsImpl* GetSettingsImpl()
+		void set_window(Window* const window)
 		{
-			return g_SettingsImpl;
+			gWindow = window;
 		}
 
 
 
-		DataManager* GetDataManager()
+		void set_scene_manager(SceneManager* const sceneManager)
 		{
-			return g_DataManager;
+			gSceneManager = sceneManager;
 		}
 
 
 
-		Renderer* GetRenderer()
+		void set_renderer(Renderer* const renderer)
 		{
-			return g_Renderer;
-		}
-
-
-
-		void SetWindowImpl(WindowImpl* window)
-		{
-			g_WindowImpl = window;
-		}
-
-
-
-		void SetSettingsImpl(SettingsImpl* settings)
-		{
-			g_SettingsImpl = settings;
-		}
-
-
-
-		void SetRenderer(Renderer* renderer)
-		{
-			g_Renderer = renderer;
-		}
-
-
-
-		void SetDataManager(DataManager* dataManager)
-		{
-			g_DataManager = dataManager;
+			gRenderer = renderer;
 		}
 	}
 }

@@ -21,7 +21,7 @@ namespace leopph
 			// Set the Update Index of the Behavior.
 			LEOPPHAPI void UpdateIndex(int index);
 
-			LEOPPHAPI void Owner(Entity* entity) final;
+			LEOPPHAPI void set_owner(Entity* entity) final;
 			using Component::Owner;
 
 			LEOPPHAPI void Active(bool active) final;

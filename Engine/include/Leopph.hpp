@@ -11,7 +11,7 @@ See individual headers for more information.
 #include "Component.hpp"
 #include "Context.hpp"
 #include "Cube.hpp"
-#include "DirLight.hpp"
+#include "DirectionalLight.hpp"
 #include "Entity.hpp"
 #include "Event.hpp"
 #include "EventManager.hpp"
