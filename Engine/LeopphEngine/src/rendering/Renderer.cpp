@@ -457,14 +457,14 @@ namespace leopph::internal
 			// The cascade vertices in camera view space.
 			std::array const cascadeVertsCam
 			{
-				Vector4{math::Lerp(frust.NearTopLeft, frust.FarTopLeft, cascadeNearDist), 1.f},
-				Vector4{math::Lerp(frust.NearBottomLeft, frust.FarBottomLeft, cascadeNearDist), 1.f},
-				Vector4{math::Lerp(frust.NearBottomRight, frust.FarBottomRight, cascadeNearDist), 1.f},
-				Vector4{math::Lerp(frust.NearTopRight, frust.FarTopRight, cascadeNearDist), 1.f},
-				Vector4{math::Lerp(frust.NearTopLeft, frust.FarTopLeft, cascadeFarDist), 1.f},
-				Vector4{math::Lerp(frust.NearBottomLeft, frust.FarBottomLeft, cascadeFarDist), 1.f},
-				Vector4{math::Lerp(frust.NearBottomRight, frust.FarBottomRight, cascadeFarDist), 1.f},
-				Vector4{math::Lerp(frust.NearTopRight, frust.FarTopRight, cascadeFarDist), 1.f},
+				Vector4{math::lerp(frust.NearTopLeft, frust.FarTopLeft, cascadeNearDist), 1.f},
+				Vector4{math::lerp(frust.NearBottomLeft, frust.FarBottomLeft, cascadeNearDist), 1.f},
+				Vector4{math::lerp(frust.NearBottomRight, frust.FarBottomRight, cascadeNearDist), 1.f},
+				Vector4{math::lerp(frust.NearTopRight, frust.FarTopRight, cascadeNearDist), 1.f},
+				Vector4{math::lerp(frust.NearTopLeft, frust.FarTopLeft, cascadeFarDist), 1.f},
+				Vector4{math::lerp(frust.NearBottomLeft, frust.FarBottomLeft, cascadeFarDist), 1.f},
+				Vector4{math::lerp(frust.NearBottomRight, frust.FarBottomRight, cascadeFarDist), 1.f},
+				Vector4{math::lerp(frust.NearTopRight, frust.FarTopRight, cascadeFarDist), 1.f},
 			};
 
 			// The light view space mininum point of the bounding box of the cascade

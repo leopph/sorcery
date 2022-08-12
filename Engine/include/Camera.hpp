@@ -3,6 +3,7 @@
 #include "Color.hpp"
 #include "Component.hpp"
 #include "EventReceiver.hpp"
+#include "Extent.hpp"
 #include "Frustum.hpp"
 #include "Matrix.hpp"
 #include "RenderingPath.hpp"
@@ -38,6 +39,15 @@ namespace leopph
 			[[nodiscard]] LEOPPHAPI std::variant<Color, std::shared_ptr<Skybox>> const& get_background() const;
 			LEOPPHAPI void set_background(std::variant<Color, std::shared_ptr<Skybox>> background);
 
+			// Viewport extents are normalized between 0 and 1.
+			[[nodiscard]] LEOPPHAPI Extent<f32> const& get_viewport() const;
+			LEOPPHAPI void set_viewport(Extent<f32> const& viewport);
+
+			[[nodiscard]] LEOPPHAPI Extent<u32> get_window_extents() const;
+			LEOPPHAPI void set_window_extents(Extent<u32> const& extent);
+
+			[[nodiscard]] LEOPPHAPI f32 get_aspect_ratio() const;
+
 
 			[[nodiscard]] LEOPPHAPI Matrix4 build_view_matrix() const;
 			[[nodiscard]] virtual Matrix4 build_projection_matrix() const = 0;
@@ -56,10 +66,7 @@ namespace leopph
 
 
 		protected:
-			[[nodiscard]] f32 get_aspect_ratio() const;
-
 			LEOPPHAPI Camera();
-
 
 		public:
 			Camera(Camera const&) = delete;
@@ -74,10 +81,12 @@ namespace leopph
 		private:
 			LEOPPHAPI void OnEventReceived(EventParamType event) override;
 
-			float mAspectRatio;
-			float mNear{0.1f};
-			float mFar{100.f};
 			std::variant<Color, std::shared_ptr<Skybox>> mBackground{Color{0, 0, 0, 255}};
 			RenderingPath mRenderingPath{RenderingPath::Forward};
+			f32 mNear{0.1f};
+			f32 mFar{100.f};
+			Extent<f32> mViewport{0, 0, 1, 1};
+			Extent<u32> mWindowExtent;
+			f32 mAspectRatio;
 	};
 }

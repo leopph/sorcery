@@ -80,7 +80,7 @@
     <ClInclude Include="..\include\Util.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\LeopphCommon.hpp">
+    <ClInclude Include="include\Common.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\include\Matrix.hpp">
@@ -93,6 +93,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\include\Vector.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\Extent.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

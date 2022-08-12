@@ -6,6 +6,7 @@
 #include "WindowEvent.hpp"
 #include "../rendering/Renderer.hpp"
 
+#include <algorithm>
 #include <utility>
 
 
@@ -53,6 +54,73 @@ namespace leopph
 
 
 
+	Extent<f32> const& Camera::get_viewport() const
+	{
+		return mViewport;
+	}
+
+
+
+	void Camera::set_viewport(Extent<f32> const& viewport)
+	{
+		mViewport = viewport;
+
+		auto const* const window = get_window();
+		auto const windowWidth = static_cast<f32>(window->get_width());
+		auto const windowHeight = static_cast<f32>(window->get_height());
+
+		mWindowExtent =
+		{
+			.offsetX = static_cast<u32>(mViewport.offsetX * windowWidth),
+			.offsetY = static_cast<u32>(mViewport.offsetY * windowHeight),
+			.width = static_cast<u32>(mViewport.width * windowWidth),
+			.height = static_cast<u32>(mViewport.height * windowHeight)
+		};
+
+		mAspectRatio = static_cast<f32>(mWindowExtent.width) / static_cast<f32>(mWindowExtent.height);
+	}
+
+
+
+	Extent<u32> Camera::get_window_extents() const
+	{
+		return mWindowExtent;
+	}
+
+
+
+	void Camera::set_window_extents(Extent<u32> const& extent)
+	{
+		auto const* const window = get_window();
+
+		mWindowExtent.offsetX = std::clamp<u32>(extent.offsetX, 0, window->get_width());
+		mWindowExtent.offsetY = std::clamp<u32>(extent.offsetY, 0, window->get_height());
+		mWindowExtent.width = mWindowExtent.offsetX + extent.width > window->get_width() ? 0 : extent.width;
+		mWindowExtent.height = mWindowExtent.offsetY + extent.height > window->get_height() ? 0 : extent.height;
+
+		auto const extentWidth = static_cast<f32>(mWindowExtent.width);
+		auto const extentHeight = static_cast<f32>(mWindowExtent.height);
+
+		mAspectRatio = extentWidth / extentHeight;
+
+		auto const windowWidth = static_cast<f32>(window->get_width());
+		auto const windowHeight = static_cast<f32>(window->get_height());
+
+		mViewport.offsetX = windowWidth / static_cast<f32>(mWindowExtent.offsetX);
+		mViewport.offsetY = windowHeight / static_cast<f32>(mWindowExtent.offsetY);
+		mViewport.width = windowWidth / extentWidth;
+		mViewport.height = windowHeight / extentHeight;
+	}
+
+
+
+	f32 Camera::get_aspect_ratio() const
+	{
+		return mAspectRatio;
+	}
+
+
+
 	Matrix4 Camera::build_view_matrix() const
 	{
 		// inv(T) * inv(R)
@@ -89,7 +157,24 @@ namespace leopph
 
 
 	Camera::Camera() :
-		mAspectRatio{internal::GetWindowImpl()->get_aspect_ratio()}
+		mWindowExtent
+		{
+			[this]
+			{
+				auto const* const window = get_window();
+				auto const windowWidth = static_cast<f32>(window->get_width());
+				auto const windowHeight = static_cast<f32>(window->get_height());
+
+				return Extent<u32>
+				{
+					.offsetX = static_cast<u32>(mViewport.offsetX * windowWidth),
+					.offsetY = static_cast<u32>(mViewport.offsetY * windowHeight),
+					.width = static_cast<u32>(mViewport.width * windowWidth),
+					.height = static_cast<u32>(mViewport.height * windowHeight)
+				};
+			}()
+		},
+		mAspectRatio{static_cast<f32>(mWindowExtent.width) / static_cast<f32>(mWindowExtent.height)}
 	{
 		internal::get_renderer()->register_camera(this);
 	}
@@ -103,15 +188,16 @@ namespace leopph
 
 
 
-	f32 Camera::get_aspect_ratio() const
-	{
-		return mAspectRatio;
-	}
-
-
-
 	void Camera::OnEventReceived(EventParamType event)
 	{
-		mAspectRatio = static_cast<f32>(event.width) / event.height;
+		mWindowExtent =
+		{
+			.offsetX = static_cast<u32>(mViewport.offsetX * static_cast<f32>(event.width)),
+			.offsetY = static_cast<u32>(mViewport.offsetY * static_cast<f32>(event.height)),
+			.width = static_cast<u32>(mViewport.width * static_cast<f32>(event.width)),
+			.height = static_cast<u32>(mViewport.height * static_cast<f32>(event.height))
+		};
+
+		mAspectRatio = static_cast<f32>(mWindowExtent.width) / static_cast<f32>(mWindowExtent.height);
 	}
 }

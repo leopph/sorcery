@@ -169,6 +169,20 @@ namespace leopph
 
 
 
+	void Window::wait_events()
+	{
+		glfwWaitEvents();
+	}
+
+
+
+	void Window::wait_events(f32 const timeout)
+	{
+		return glfwWaitEventsTimeout(timeout);
+	}
+
+
+
 	void Window::swap_buffers()
 	{
 		glfwSwapBuffers(mHandle);

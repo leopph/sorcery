@@ -24,6 +24,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\Color.hpp" />
+    <ClInclude Include="..\include\Extent.hpp" />
     <ClInclude Include="..\include\Image.hpp" />
     <ClInclude Include="..\include\Math.hpp" />
     <ClInclude Include="..\include\Matrix.hpp" />
@@ -36,7 +37,7 @@
     <ClInclude Include="include\Bimap.hpp" />
     <ClInclude Include="include\Compare.hpp" />
     <ClInclude Include="include\Hash.hpp" />
-    <ClInclude Include="include\LeopphCommon.hpp" />
+    <ClInclude Include="include\Common.hpp" />
     <ClInclude Include="include\Logger.hpp" />
     <ClInclude Include="include\Random.hpp" />
   </ItemGroup>

@@ -60,6 +60,8 @@ namespace leopph
 
 
 			void poll_events();
+			void wait_events();
+			void wait_events(f32 timeout);
 
 
 			void swap_buffers();
