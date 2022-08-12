@@ -1,9 +1,9 @@
-#include "DecodeLeopph3d.hpp"
+#include "ImportLeopph3d.hpp"
 
+#include "Compress.hpp"
 #include "Image.hpp"
 #include "Logger.hpp"
-#include "../../compression/Compress.hpp"
-#include "../../serialization/Deserialize.hpp"
+#include "../../../serialization/Deserialize.hpp"
 
 #include <bit>
 #include <format>
@@ -12,7 +12,7 @@
 #include <vector>
 
 
-namespace leopph::convert
+namespace leopph
 {
 	namespace
 	{
@@ -21,7 +21,7 @@ namespace leopph::convert
 
 
 
-	std::optional<Object> decode_leopph3d(std::filesystem::path const& path)
+	std::vector<StaticMeshData> import_static_leopph_3d(std::filesystem::path const& path)
 	{
 		try
 		{
@@ -101,7 +101,7 @@ namespace leopph::convert
 			auto const numMats = deserialize<u64>(it, endianness);
 
 			// all materials
-			std::vector<Material> mats;
+			std::vector<MaterialData> mats;
 			mats.reserve(numMats);
 
 			// parse material data
@@ -114,7 +114,7 @@ namespace leopph::convert
 			auto const numMeshes = deserialize<u64>(it, endianness);
 
 			// all meshes
-			std::vector<Mesh> meshes;
+			std::vector<MaterialData> meshes;
 			meshes.reserve(numMeshes);
 
 			// parse mesh data

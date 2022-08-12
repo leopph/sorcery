@@ -129,6 +129,14 @@ namespace leopph::internal
 			std::vector<std::unique_ptr<PersistentMappedBuffer>> transformBuf;
 		};
 
+		struct CameraData
+		{
+			Extent<u32> extent;
+			Vector3 position;
+			Matrix4 viewMatrix;
+			Matrix4 projectionMatrix;
+		};
+
 
 		public:
 			// Entry point for rendering a frame
@@ -153,6 +161,8 @@ namespace leopph::internal
 
 
 		private:
+			static void extract_camera_data(Camera const& camera, std::vector<CameraData>& out);
+
 			// Extract all information from global game and config states
 			// Returns true if rendering should continue based on the  observed state, false if it should abort.
 			[[nodiscard]] bool extract();
@@ -175,13 +185,15 @@ namespace leopph::internal
 			Renderer(Renderer const& other) = delete;
 			Renderer& operator=(Renderer const& other) = delete;
 
-			Renderer(Renderer&& other) noexcept = delete;
-			Renderer& operator=(Renderer&& other) noexcept = delete;
+			Renderer(Renderer&& other) = delete;
+			Renderer& operator=(Renderer&& other) = delete;
 
 			~Renderer() override;
 
 
 		private:
+			std::vector<CameraData> mCameraData;
+
 			UboCameraData mCamData;
 			ScreenData mScreenData;
 
@@ -218,12 +230,11 @@ namespace leopph::internal
 
 			u64 mFrameCount{0};
 
-			std::unordered_map<StaticMaterial const*, PersistentMappedBuffer> mMaterialBuffers;
+			std::unordered_map<StaticMaterial const*, PersistentMappedBuffer> mMaterialsToBuffers;
 
 			std::vector<DirectionalLight const*> mDirLights;
 			std::vector<SpotLight const*> mSpotLights;
 			std::vector<PointLight const*> mPointLights;
-
 			std::vector<Camera const*> mCameras;
 	};
 	#pragma warning(pop)

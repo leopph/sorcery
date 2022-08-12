@@ -53,12 +53,12 @@ namespace leopph
 
 
 
-	leopph::Frustum OrthographicCamera::build_frustum() const
+	Frustum OrthographicCamera::build_frustum() const
 	{
 		auto static constexpr half = 1.f / 2.f;
 		auto const x = mHorizSize * half;
 		auto const y = mHorizSize / get_aspect_ratio() * half;
-		return leopph::Frustum
+		return Frustum
 		{
 			.NearTopLeft{-x, y, get_near_clip_plane()},
 			.NearBottomLeft{-x, -y, get_near_clip_plane()},

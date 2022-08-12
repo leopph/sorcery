@@ -43,10 +43,17 @@ namespace leopph
 			[[nodiscard]] LEOPPHAPI Extent<f32> const& get_viewport() const;
 			LEOPPHAPI void set_viewport(Extent<f32> const& viewport);
 
+
 			[[nodiscard]] LEOPPHAPI Extent<u32> get_window_extents() const;
 			LEOPPHAPI void set_window_extents(Extent<u32> const& extent);
 
+
 			[[nodiscard]] LEOPPHAPI f32 get_aspect_ratio() const;
+
+
+			LEOPPHAPI void enable();
+			LEOPPHAPI void disable();
+			[[nodiscard]] bool is_enabled() const;
 
 
 			[[nodiscard]] LEOPPHAPI Matrix4 build_view_matrix() const;
@@ -88,5 +95,6 @@ namespace leopph
 			Extent<f32> mViewport{0, 0, 1, 1};
 			Extent<u32> mWindowExtent;
 			f32 mAspectRatio;
+			bool mEnabled{true};
 	};
 }

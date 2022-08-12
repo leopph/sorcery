@@ -1,6 +1,6 @@
 #pragma once
 
-#include "LeopphApi.hpp"
+/*#include "LeopphApi.hpp"
 #include "StaticMeshComponent.hpp"
 
 #include <filesystem>
@@ -15,8 +15,6 @@ namespace leopph
 			// PPI must be positive.
 			explicit LEOPPHAPI ImageSprite(std::filesystem::path const& src, int ppi = 1);
 
-			[[nodiscard]] LEOPPHAPI ComponentPtr<> Clone() const override;
-
 			[[nodiscard]] LEOPPHAPI std::filesystem::path const& Path() const noexcept;
 
 			// Get the extents of the ImageSprite.
@@ -30,3 +28,4 @@ namespace leopph
 			Vector2 m_Extents;
 	};
 }
+*/

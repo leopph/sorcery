@@ -45,6 +45,9 @@
     <ClCompile Include="src\Compare.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\Compress.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\ArrayQueue.hpp">
@@ -80,9 +83,6 @@
     <ClInclude Include="..\include\Util.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\Common.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\Matrix.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -96,6 +96,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\include\Extent.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Compress.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

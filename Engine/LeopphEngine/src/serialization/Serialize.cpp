@@ -3,7 +3,7 @@
 #include <iterator>
 
 
-namespace leopph::convert
+namespace leopph
 {
 	void serialize(std::string_view const str, std::vector<u8>& oBuf, std::endian const endianness)
 	{

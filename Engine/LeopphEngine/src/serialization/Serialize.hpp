@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Image.hpp"
-#include "Leopphverter.hpp"
 #include "Util.hpp"
 
 #include <bit>
@@ -9,7 +8,7 @@
 #include <vector>
 
 
-namespace leopph::convert
+namespace leopph
 {
 	template<typename T>
 		requires std::is_scalar_v<T> && (sizeof(T) == 1)

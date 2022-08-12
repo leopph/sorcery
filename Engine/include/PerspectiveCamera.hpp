@@ -15,7 +15,7 @@ namespace leopph
 
 
 			[[nodiscard]] LEOPPHAPI Matrix4 build_projection_matrix() const override;
-			[[nodiscard]] LEOPPHAPI leopph::Frustum build_frustum() const override;
+			[[nodiscard]] LEOPPHAPI Frustum build_frustum() const override;
 
 
 			PerspectiveCamera() = default;

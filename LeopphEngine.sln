@@ -10,19 +10,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Client", "Client\Client.vcx
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LeopphEngine", "Engine\LeopphEngine\LeopphEngine.vcxproj", "{03803A6B-9F79-4245-936D-059A695AA449}"
 	ProjectSection(ProjectDependencies) = postProject
-		{23E4C965-BA88-472D-97F9-C9A2C07FC076} = {23E4C965-BA88-472D-97F9-C9A2C07FC076}
-		{6C46CC3C-26FF-4A24-A480-1639D8301117} = {6C46CC3C-26FF-4A24-A480-1639D8301117}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LeopphverterLib", "Engine\LeopphverterLib\LeopphverterLib.vcxproj", "{23E4C965-BA88-472D-97F9-C9A2C07FC076}"
-	ProjectSection(ProjectDependencies) = postProject
 		{6C46CC3C-26FF-4A24-A480-1639D8301117} = {6C46CC3C-26FF-4A24-A480-1639D8301117}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Leopphverter", "Engine\Leopphverter\Leopphverter.vcxproj", "{2E94A80D-77F9-4E88-A15C-CF97D1D1879F}"
-	ProjectSection(ProjectDependencies) = postProject
-		{23E4C965-BA88-472D-97F9-C9A2C07FC076} = {23E4C965-BA88-472D-97F9-C9A2C07FC076}
-	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LeopphCommon", "Engine\LeopphCommon\LeopphCommon.vcxproj", "{6C46CC3C-26FF-4A24-A480-1639D8301117}"
 EndProject
@@ -40,10 +31,6 @@ Global
 		{03803A6B-9F79-4245-936D-059A695AA449}.Debug|x64.Build.0 = Debug|x64
 		{03803A6B-9F79-4245-936D-059A695AA449}.Release|x64.ActiveCfg = Release|x64
 		{03803A6B-9F79-4245-936D-059A695AA449}.Release|x64.Build.0 = Release|x64
-		{23E4C965-BA88-472D-97F9-C9A2C07FC076}.Debug|x64.ActiveCfg = Debug|x64
-		{23E4C965-BA88-472D-97F9-C9A2C07FC076}.Debug|x64.Build.0 = Debug|x64
-		{23E4C965-BA88-472D-97F9-C9A2C07FC076}.Release|x64.ActiveCfg = Release|x64
-		{23E4C965-BA88-472D-97F9-C9A2C07FC076}.Release|x64.Build.0 = Release|x64
 		{2E94A80D-77F9-4E88-A15C-CF97D1D1879F}.Debug|x64.ActiveCfg = Debug|x64
 		{2E94A80D-77F9-4E88-A15C-CF97D1D1879F}.Debug|x64.Build.0 = Debug|x64
 		{2E94A80D-77F9-4E88-A15C-CF97D1D1879F}.Release|x64.ActiveCfg = Release|x64

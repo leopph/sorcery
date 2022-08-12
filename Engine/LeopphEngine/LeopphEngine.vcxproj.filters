@@ -8,7 +8,6 @@
     <ClCompile Include="src\components\Component.cpp" />
     <ClCompile Include="src\components\Cube.cpp" />
     <ClCompile Include="src\components\DirectionalLight.cpp" />
-    <ClCompile Include="src\components\ImageSprite.cpp" />
     <ClCompile Include="src\components\Light.cpp" />
     <ClCompile Include="src\components\StaticModelComponent.cpp" />
     <ClCompile Include="src\components\OrthographicCamera.cpp" />
@@ -49,6 +48,11 @@
     <ClCompile Include="src\rendering\StaticMaterial.cpp" />
     <ClCompile Include="src\Window.cpp" />
     <ClCompile Include="src\events\WindowEvent.cpp" />
+    <ClCompile Include="src\serialization\Serialize.cpp" />
+    <ClCompile Include="src\assetmanagement\import\3d\ImportGeneric3d.cpp" />
+    <ClCompile Include="src\assetmanagement\import\3d\ImportLeopph3d.cpp" />
+    <ClCompile Include="src\assetmanagement\export\EncodeLeopph3d.cpp" />
+    <ClCompile Include="src\assetmanagement\import\Import.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\data\DataManager.hpp" />
@@ -104,7 +108,6 @@
     <ClInclude Include="..\include\LeopphApi.hpp" />
     <ClInclude Include="..\include\Light.hpp" />
     <ClInclude Include="..\include\Main.hpp" />
-    <ClInclude Include="..\include\StaticModelComponent.hpp" />
     <ClInclude Include="..\include\MouseEvent.hpp" />
     <ClInclude Include="..\include\OrthographicCamera.hpp" />
     <ClInclude Include="..\include\PerspectiveCamera.hpp" />
@@ -135,6 +138,12 @@
     <ClInclude Include="..\include\StaticMeshData.hpp" />
     <ClInclude Include="..\include\MaterialData.hpp" />
     <ClInclude Include="src\rendering\StaticMaterial.hpp" />
+    <ClInclude Include="..\include\AABB.hpp" />
+    <ClInclude Include="src\serialization\Deserialize.hpp" />
+    <ClInclude Include="src\serialization\Serialize.hpp" />
+    <ClInclude Include="src\assetmanagement\import\3d\ImportGeneric3d.hpp" />
+    <ClInclude Include="src\assetmanagement\import\3d\ImportLeopph3d.hpp" />
+    <ClInclude Include="src\assetmanagement\import\Import.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\rendering\shaders\glsl\include\CompositeFrag.glsl" />
@@ -162,5 +171,8 @@
     <None Include="src\rendering\shaders\glsl\Skybox.shader" />
     <None Include="src\rendering\shaders\glsl\include\BlinnPhong.glsl" />
     <None Include="src\rendering\shaders\glsl\include\CameraData.glsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="doc\leopph3d_spec.txt" />
   </ItemGroup>
 </Project>

@@ -7,6 +7,7 @@
 #include "Math.hpp"
 #include "RenderSettings.hpp"
 #include "Window.hpp"
+#include "../../../include/Entity.hpp"
 
 #include <algorithm>
 
@@ -15,6 +16,19 @@ namespace leopph::internal
 {
 	void Renderer::render()
 	{
+		mCameraData.clear();
+
+		for (auto const* const camera : mCameras)
+		{
+			extract_camera_data(*camera, mCameraData);
+		}
+
+		if (mCameraData.empty())
+		{
+			// TODO Render some default image?
+			return;
+		}
+
 		if (!extract())
 		{
 			return;
@@ -48,6 +62,20 @@ namespace leopph::internal
 		}
 
 		return id++;
+	}
+
+
+
+	void Renderer::register_material(StaticMaterial const* material)
+	{
+		mMaterialsToBuffers[material];
+	}
+
+
+
+	void Renderer::unregister_material(StaticMaterial const* material)
+	{
+		mMaterialsToBuffers.erase(material);
 	}
 
 
@@ -104,6 +132,13 @@ namespace leopph::internal
 	void Renderer::unregister_camera(Camera const* camera)
 	{
 		std::erase(mCameras, camera);
+	}
+
+
+
+	void Renderer::extract_camera_data(Camera const& camera, std::vector<CameraData>& out)
+	{
+		out.emplace_back(camera.get_window_extents(), camera.get_owner()->get_position(), camera.build_view_matrix(), camera.build_projection_matrix());
 	}
 
 

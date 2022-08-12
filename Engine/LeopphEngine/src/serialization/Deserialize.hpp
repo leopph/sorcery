@@ -11,7 +11,7 @@
 #include <type_traits>
 
 
-namespace leopph::convert
+namespace leopph
 {
 	template<typename T, std::contiguous_iterator It>
 		requires std::is_scalar_v<T> && (sizeof(T) == 1)

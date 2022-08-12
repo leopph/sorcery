@@ -111,9 +111,6 @@
     <ProjectReference Include="..\LeopphCommon\LeopphCommon.vcxproj">
       <Project>{6c46cc3c-26ff-4a24-a480-1639d8301117}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\LeopphverterLib\LeopphverterLib.vcxproj">
-      <Project>{23e4c965-ba88-472d-97f9-c9a2c07fc076}</Project>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

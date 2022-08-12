@@ -45,23 +45,23 @@ namespace leopph
 
 	Matrix4 PerspectiveCamera::build_projection_matrix() const
 	{
-		auto const fov{math::ToRadians(convert_fov(mHorizFovDeg, Conversion::HorizontalToVertical))};
+		auto const fov{to_radians(convert_fov(mHorizFovDeg, Conversion::HorizontalToVertical))};
 		return Matrix4::Perspective(fov, get_aspect_ratio(), get_near_clip_plane(), get_far_clip_plane());
 	}
 
 
 
-	leopph::Frustum PerspectiveCamera::build_frustum() const
+	Frustum PerspectiveCamera::build_frustum() const
 	{
-		auto const tanHalfHorizFov{math::Tan(math::ToRadians(get_fov(Side::Horizontal)) / 2.0f)};
-		auto const tanHalfVertFov{math::Tan(math::ToRadians(get_fov(Side::Vertical)) / 2.0f)};
+		auto const tanHalfHorizFov{std::tan(to_radians(get_fov(Side::Horizontal)) / 2.0f)};
+		auto const tanHalfVertFov{std::tan(to_radians(get_fov(Side::Vertical)) / 2.0f)};
 
 		auto const xn = get_near_clip_plane() * tanHalfHorizFov;
 		auto const xf = get_far_clip_plane() * tanHalfHorizFov;
 		auto const yn = get_near_clip_plane() * tanHalfVertFov;
 		auto const yf = get_far_clip_plane() * tanHalfVertFov;
 
-		return leopph::Frustum
+		return Frustum
 		{
 			.NearTopLeft{-xn, yn, get_near_clip_plane()},
 			.NearBottomLeft{-xn, -yn, get_near_clip_plane()},
@@ -80,12 +80,12 @@ namespace leopph
 	{
 		if (conversion == Conversion::VerticalToHorizontal)
 		{
-			return math::ToDegrees(2.0f * math::Atan(math::Tan(math::ToRadians(fov) / 2.0f) * get_aspect_ratio()));
+			return to_degrees(2.0f * std::atan(std::tan(to_radians(fov) / 2.0f) * get_aspect_ratio()));
 		}
 
 		if (conversion == Conversion::HorizontalToVertical)
 		{
-			return math::ToDegrees(2.0f * math::Atan(math::Tan(math::ToRadians(fov) / 2.0f) / get_aspect_ratio()));
+			return to_degrees(2.0f * std::atan(std::tan(to_radians(fov) / 2.0f) / get_aspect_ratio()));
 		}
 
 		internal::Logger::Instance().Warning(std::format("Invalid direction [{}] while converting camera field of view. Returning 0.", static_cast<int>(conversion)));

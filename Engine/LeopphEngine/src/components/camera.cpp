@@ -121,6 +121,35 @@ namespace leopph
 
 
 
+	void Camera::enable()
+	{
+		if (!mEnabled)
+		{
+			internal::get_renderer()->register_camera(this);
+			mEnabled = true;
+		}
+	}
+
+
+
+	void Camera::disable()
+	{
+		if (mEnabled)
+		{
+			internal::get_renderer()->unregister_camera(this);
+			mEnabled = false;
+		}
+	}
+
+
+
+	bool Camera::is_enabled() const
+	{
+		return mEnabled;
+	}
+
+
+
 	Matrix4 Camera::build_view_matrix() const
 	{
 		// inv(T) * inv(R)

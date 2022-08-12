@@ -1,4 +1,4 @@
-#include "DecodeGeneric.hpp"
+#include "ImportGeneric3d.hpp"
 
 #include "Image.hpp"
 #include "Logger.hpp"
@@ -17,7 +17,7 @@
 #include <utility>
 
 
-namespace leopph::convert
+namespace leopph
 {
 	namespace
 	{
@@ -212,7 +212,7 @@ namespace leopph::convert
 
 
 
-	std::optional<Object> decode_generic_3d_asset(std::filesystem::path const& path)
+	std::vector<StaticMeshData> import_generic_static_meshes(std::filesystem::path const& path)
 	{
 		Assimp::Importer importer;
 		auto const* scene = importer.ReadFile(path.string(),

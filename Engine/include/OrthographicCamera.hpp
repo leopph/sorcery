@@ -12,7 +12,7 @@ namespace leopph
 			LEOPPHAPI void size(f32 size, Side side = Side::Horizontal);
 
 			[[nodiscard]] LEOPPHAPI Matrix4 build_projection_matrix() const override;
-			[[nodiscard]] LEOPPHAPI leopph::Frustum build_frustum() const override;
+			[[nodiscard]] LEOPPHAPI Frustum build_frustum() const override;
 
 
 			OrthographicCamera() = default;
