@@ -34,7 +34,7 @@ namespace leopph
 	{
 		if (mParent != nullptr)
 		{
-			mLocalPosition = mParent->mWorldRotation.Conjugate().Rotate(newPos) - mParent->mWorldPosition;
+			mLocalPosition = mParent->mWorldRotation.conjugate().rotate(newPos) - mParent->mWorldPosition;
 		}
 		else
 		{
@@ -71,7 +71,7 @@ namespace leopph
 	{
 		if (mParent != nullptr)
 		{
-			mLocalRotation = mParent->mWorldRotation.Conjugate() * newRot;
+			mLocalRotation = mParent->mWorldRotation.conjugate() * newRot;
 		}
 		else
 		{
@@ -277,7 +277,7 @@ namespace leopph
 
 	void Entity::calculate_world_position_and_update_children()
 	{
-		mWorldPosition = mParent != nullptr ? mParent->mWorldRotation.Rotate(mParent->mWorldPosition + mLocalPosition) : mLocalPosition;
+		mWorldPosition = mParent != nullptr ? mParent->mWorldRotation.rotate(mParent->mWorldPosition + mLocalPosition) : mLocalPosition;
 
 		calculate_matrices();
 
@@ -293,9 +293,9 @@ namespace leopph
 	{
 		mWorldRotation = mParent != nullptr ? mParent->mWorldRotation * mLocalRotation : mLocalRotation;
 
-		mForward = mWorldRotation.Rotate(Vector3::Forward());
-		mRight = mWorldRotation.Rotate(Vector3::Right());
-		mUp = mWorldRotation.Rotate(Vector3::Up());
+		mForward = mWorldRotation.rotate(Vector3::forward());
+		mRight = mWorldRotation.rotate(Vector3::right());
+		mUp = mWorldRotation.rotate(Vector3::up());
 
 		calculate_matrices();
 

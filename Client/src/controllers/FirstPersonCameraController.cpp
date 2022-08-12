@@ -50,15 +50,15 @@ namespace demo
 
 		if (Input::GetKey(KeyCode::Space))
 		{
-			movementVector += leopph::Vector3::Up();
+			movementVector += leopph::Vector3::up();
 		}
 
 		if (Input::GetKey(KeyCode::LeftControl))
 		{
-			movementVector += leopph::Vector3::Down();
+			movementVector += leopph::Vector3::down();
 		}
 
-		movementVector.Normalize();
+		movementVector.normalize();
 
 		if (Input::GetKey(KeyCode::LeftShift))
 		{
@@ -77,13 +77,13 @@ namespace demo
 		auto const diffY = posY - m_LastY;
 
 		short coefficient = 1;
-		if (leopph::Vector3::Dot(m_CamTransform->get_up_axis(), leopph::Vector3::Up()) < 0)
+		if (leopph::Vector3::dot(m_CamTransform->get_up_axis(), leopph::Vector3::up()) < 0)
 		{
 			coefficient = -1;
 		}
 
-		m_CamTransform->rotate(coefficient * leopph::Vector3::Up(), diffX * m_Sens, leopph::Space::World);
-		m_CamTransform->rotate(leopph::Vector3::Right(), diffY * m_Sens, leopph::Space::Local);
+		m_CamTransform->rotate(coefficient * leopph::Vector3::up(), diffX * m_Sens, leopph::Space::World);
+		m_CamTransform->rotate(leopph::Vector3::right(), diffY * m_Sens, leopph::Space::Local);
 
 		m_LastX = posX;
 		m_LastY = posY;

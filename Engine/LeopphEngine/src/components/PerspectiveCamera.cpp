@@ -46,7 +46,7 @@ namespace leopph
 	Matrix4 PerspectiveCamera::build_projection_matrix() const
 	{
 		auto const fov{to_radians(convert_fov(mHorizFovDeg, Conversion::HorizontalToVertical))};
-		return Matrix4::Perspective(fov, get_aspect_ratio(), get_near_clip_plane(), get_far_clip_plane());
+		return Matrix4::perspective(fov, get_aspect_ratio(), get_near_clip_plane(), get_far_clip_plane());
 	}
 
 

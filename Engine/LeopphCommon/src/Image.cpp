@@ -10,8 +10,8 @@
 
 namespace leopph
 {
-	Image::Image(std::filesystem::path const& path, ColorEncoding const colorEncoding, ImageOrientation const imageOrientation) :
-		m_Encoding{colorEncoding}
+	Image::Image(std::filesystem::path const& path, ImageOrientation const imageOrientation, ColorEncoding const colorEncoding) :
+		mEncoding{colorEncoding}
 	{
 		stbi_set_flip_vertically_on_load(imageOrientation == ImageOrientation::FlipVertical);
 		auto const pathStr = path.string();
@@ -29,154 +29,161 @@ namespace leopph
 		}
 		#endif
 
-		m_Bytes.reset(data);
-		m_Width = static_cast<u32>(width);
-		m_Height = static_cast<u32>(height);
-		m_Channels = static_cast<u8>(channels);
+		mData.reset(data);
+		mWidth = static_cast<u32>(width);
+		mHeight = static_cast<u32>(height);
+		mNumChannels = static_cast<u8>(channels);
 	}
 
 
 
 	Image::Image(u32 const width, u32 const height, u8 const channels, std::unique_ptr<u8[]> bytes, ColorEncoding const colorEncoding) :
-		m_Width{width},
-		m_Height{height},
-		m_Channels{channels},
-		m_Encoding{colorEncoding},
-		m_Bytes{std::move(bytes)}
+		mWidth{width},
+		mHeight{height},
+		mNumChannels{channels},
+		mEncoding{colorEncoding},
+		mData{std::move(bytes)}
 	{ }
 
 
 
 	Image::Image(Image const& other) :
-		m_Width(other.m_Width),
-		m_Height(other.m_Height),
-		m_Channels(other.m_Channels),
-		m_Encoding{other.m_Encoding},
-		m_Bytes{std::make_unique_for_overwrite<u8[]>(static_cast<std::size_t>(m_Width) * m_Height * m_Channels)}
+		mWidth(other.mWidth),
+		mHeight(other.mHeight),
+		mNumChannels(other.mNumChannels),
+		mEncoding{other.mEncoding},
+		mData{std::make_unique_for_overwrite<u8[]>(static_cast<std::size_t>(mWidth) * mHeight * mNumChannels)}
 	{
-		std::ranges::copy(other.m_Bytes.get(), other.m_Bytes.get() + static_cast<std::size_t>(m_Width) * m_Height * m_Channels, m_Bytes.get());
+		std::ranges::copy(other.mData.get(), other.mData.get() + static_cast<std::size_t>(mWidth) * mHeight * mNumChannels, mData.get());
 	}
 
 
 
 	Image& Image::operator=(Image const& other)
 	{
-		m_Width = other.m_Width;
-		m_Height = other.m_Height;
-		m_Channels = other.m_Channels;
-		m_Encoding = other.m_Encoding;
-		m_Bytes = std::make_unique_for_overwrite<u8[]>(static_cast<std::size_t>(m_Width) * m_Height * m_Channels);
-		std::ranges::copy(other.m_Bytes.get(), other.m_Bytes.get() + static_cast<std::size_t>(m_Width * m_Height * m_Channels), m_Bytes.get());
+		mWidth = other.mWidth;
+		mHeight = other.mHeight;
+		mNumChannels = other.mNumChannels;
+		mEncoding = other.mEncoding;
+		mData = std::make_unique_for_overwrite<u8[]>(static_cast<std::size_t>(mWidth) * mHeight * mNumChannels);
+		std::ranges::copy(other.mData.get(), other.mData.get() + static_cast<std::size_t>(mWidth * mHeight * mNumChannels), mData.get());
 		return *this;
 	}
 
 
 
 	Image::Image(Image&& other) noexcept :
-		m_Width{other.m_Width},
-		m_Height{other.m_Height},
-		m_Channels{other.m_Channels},
-		m_Encoding{other.m_Encoding},
-		m_Bytes{std::move(other.m_Bytes)}
+		mWidth{other.mWidth},
+		mHeight{other.mHeight},
+		mNumChannels{other.mNumChannels},
+		mEncoding{other.mEncoding},
+		mData{std::move(other.mData)}
 	{
-		other.m_Width = 0;
-		other.m_Height = 0;
-		other.m_Channels = 0;
+		other.mWidth = 0;
+		other.mHeight = 0;
+		other.mNumChannels = 0;
 	}
 
 
 
 	Image& Image::operator=(Image&& other) noexcept
 	{
-		m_Width = other.m_Width;
-		m_Height = other.m_Height;
-		m_Channels = other.m_Channels;
-		m_Encoding = other.m_Encoding;
-		m_Bytes = std::move(other.m_Bytes);
+		mWidth = other.mWidth;
+		mHeight = other.mHeight;
+		mNumChannels = other.mNumChannels;
+		mEncoding = other.mEncoding;
+		mData = std::move(other.mData);
 
-		other.m_Width = 0;
-		other.m_Height = 0;
-		other.m_Channels = 0;
+		other.mWidth = 0;
+		other.mHeight = 0;
+		other.mNumChannels = 0;
 
 		return *this;
 	}
 
 
 
-	u32 Image::Width() const noexcept
+	u32 Image::get_width() const
 	{
-		return m_Width;
+		return mWidth;
 	}
 
 
 
-	u32 Image::Height() const noexcept
+	u32 Image::get_height() const
 	{
-		return m_Height;
+		return mHeight;
 	}
 
 
 
-	u8 Image::Channels() const noexcept
+	u8 Image::get_num_channels() const
 	{
-		return m_Channels;
+		return mNumChannels;
 	}
 
 
 
-	ColorEncoding Image::Encoding() const noexcept
+	ColorEncoding Image::get_encoding() const
 	{
-		return m_Encoding;
+		return mEncoding;
 	}
 
 
 
-	Image Image::ExtractChannel(u8 const channel)
+	void Image::set_encoding(ColorEncoding const encoding)
+	{
+		mEncoding = encoding;
+	}
+
+
+
+	Image Image::extract_channel(u8 const channel)
 	{
 		// Skip bounds check in release builds.
 		#ifndef NDEBUG
-		if (channel >= m_Channels)
+		if (channel >= mNumChannels)
 		{
-			throw std::invalid_argument{"Invalid channel index \"" + std::to_string(channel) + "\". Number of channels in image is " + std::to_string(m_Channels) + "."};
+			throw std::invalid_argument{"Invalid channel index \"" + std::to_string(channel) + "\". Number of channels in image is " + std::to_string(mNumChannels) + "."};
 		}
 		#endif
 
 		Image img;
-		img.m_Width = m_Width;
-		img.m_Height = m_Height;
-		img.m_Channels = 1;
-		img.m_Bytes = std::make_unique_for_overwrite<u8[]>(static_cast<std::size_t>(m_Width) * m_Height);
+		img.mWidth = mWidth;
+		img.mHeight = mHeight;
+		img.mNumChannels = 1;
+		img.mData = std::make_unique_for_overwrite<u8[]>(static_cast<std::size_t>(mWidth) * mHeight);
 
-		auto newBytes = std::make_unique_for_overwrite<u8[]>(static_cast<std::size_t>(m_Width) * m_Height * m_Channels - 1);
+		auto newBytes = std::make_unique_for_overwrite<u8[]>(static_cast<std::size_t>(mWidth) * mHeight * mNumChannels - 1);
 
-		for (u64 pixel = 0, extract = 0, remaining = 0; pixel < static_cast<u64>(m_Width) * m_Height * m_Channels; pixel += m_Channels, extract++)
+		for (u64 pixel = 0, extract = 0, remaining = 0; pixel < static_cast<u64>(mWidth) * mHeight * mNumChannels; pixel += mNumChannels, extract++)
 		{
-			img.m_Bytes[extract] = m_Bytes[pixel + channel];
+			img.mData[extract] = mData[pixel + channel];
 
-			for (auto chanOffset = 0; chanOffset < m_Channels; chanOffset++)
+			for (auto chanOffset = 0; chanOffset < mNumChannels; chanOffset++)
 			{
 				if (chanOffset != channel)
 				{
-					newBytes[remaining] = m_Bytes[pixel + chanOffset];
+					newBytes[remaining] = mData[pixel + chanOffset];
 					remaining++;
 				}
 			}
 		}
 
-		m_Bytes = std::move(newBytes);
-		m_Channels -= 1;
+		mData = std::move(newBytes);
+		mNumChannels -= 1;
 
 		return img;
 	}
 
 
 
-	bool Image::Empty() const noexcept
+	bool Image::is_empty() const
 	{
-		return m_Width == 0
+		return mWidth == 0
 			// Skip consistency check in release builds.
 			#ifndef NDEBUG
-			|| m_Height == 0 || m_Channels == 0 || !m_Bytes
+			|| mHeight == 0 || mNumChannels == 0 || !mData
 			#endif
 			;
 	}
@@ -185,13 +192,13 @@ namespace leopph
 
 	std::span<u8 const> Image::operator[](u64 const rowIndex) const
 	{
-		return {m_Bytes.get() + rowIndex * m_Width * m_Channels, static_cast<std::span<u8 const>::size_type>(m_Width * m_Channels)};
+		return {mData.get() + rowIndex * mWidth * mNumChannels, static_cast<std::span<u8 const>::size_type>(mWidth * mNumChannels)};
 	}
 
 
 
-	std::span<u8 const> Image::Data() const noexcept
+	std::span<u8 const> Image::get_data() const
 	{
-		return {m_Bytes.get(), static_cast<std::span<u8 const>::size_type>(m_Width * m_Height * m_Channels)};
+		return {mData.get(), static_cast<std::span<u8 const>::size_type>(mWidth * mHeight * mNumChannels)};
 	}
 }

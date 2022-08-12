@@ -82,8 +82,7 @@
     <ClInclude Include="..\include\Exit.hpp" />
     <ClInclude Include="..\include\FrameCompleteEvent.hpp" />
     <ClInclude Include="..\include\Frustum.hpp" />
-    <ClInclude Include="..\include\MaterialData.hpp" />
-    <ClInclude Include="..\include\StaticMeshData.hpp" />
+    <ClInclude Include="..\include\StaticModelData.hpp" />
     <ClInclude Include="..\include\Texture2D.hpp" />
     <ClInclude Include="..\include\ImageSprite.hpp" />
     <ClInclude Include="..\include\Input.hpp" />
@@ -99,7 +98,7 @@
     <ClInclude Include="..\include\PerspectiveCamera.hpp" />
     <ClInclude Include="..\include\Poelo.hpp" />
     <ClInclude Include="..\include\PointLight.hpp" />
-    <ClInclude Include="..\include\StaticMeshComponent.hpp" />
+    <ClInclude Include="..\include\StaticModelComponent.hpp" />
     <ClInclude Include="..\include\RenderingPath.hpp" />
     <ClInclude Include="..\include\RenderPass.hpp" />
     <ClInclude Include="..\include\Skybox.hpp" />

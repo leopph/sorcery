@@ -1,12 +1,11 @@
 #pragma once
 
-#include "StaticMeshData.hpp"
+#include "StaticModelData.hpp"
 
 #include <filesystem>
-#include <vector>
 
 
 namespace leopph
 {
-	std::vector<StaticMeshData> import_static_meshes(std::filesystem::path const& path);
+	StaticModelData import_static_meshes(std::filesystem::path const& path);
 }

@@ -128,9 +128,9 @@ namespace leopph
 			Quaternion mLocalRotation;
 			Vector3 mLocalScale{1};
 
-			Vector3 mForward{Vector3::Forward()};
-			Vector3 mRight{Vector3::Right()};
-			Vector3 mUp{Vector3::Up()};
+			Vector3 mForward{Vector3::forward()};
+			Vector3 mRight{Vector3::right()};
+			Vector3 mUp{Vector3::up()};
 
 			Entity* mParent{nullptr};
 			std::vector<Entity*> mChildren;

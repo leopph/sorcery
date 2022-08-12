@@ -1,4 +1,4 @@
-#include "StaticMeshComponent.hpp"
+#include "StaticModelComponent.hpp"
 
 #include "../InternalContext.hpp"
 #include "../rendering/Renderer.hpp"
@@ -8,21 +8,21 @@
 
 namespace leopph::internal
 {
-	bool StaticMeshComponent::is_casting_shadow() const
+	bool StaticModelComponent::is_casting_shadow() const
 	{
 		return mIsCastingShadow;
 	}
 
 
 
-	void StaticMeshComponent::set_casting_shadow(bool const value)
+	void StaticModelComponent::set_casting_shadow(bool const value)
 	{
 		mIsCastingShadow = value;
 	}
 
 
 
-	void StaticMeshComponent::init(std::shared_ptr<StaticMesh> staticMeshGroup)
+	void StaticModelComponent::init(std::shared_ptr<StaticMesh> staticMeshGroup)
 	{
 		mMesh = std::move(staticMeshGroup);
 		GetRenderer()->register_static_mesh(this, mMesh.get());
@@ -30,7 +30,7 @@ namespace leopph::internal
 
 
 
-	StaticMeshComponent::StaticMeshComponent(StaticMeshComponent const& other) :
+	StaticModelComponent::StaticModelComponent(StaticModelComponent const& other) :
 		mIsCastingShadow{other.mIsCastingShadow},
 		mMesh{other.mMesh}
 	{
@@ -39,7 +39,7 @@ namespace leopph::internal
 
 
 
-	StaticMeshComponent& StaticMeshComponent::operator=(StaticMeshComponent const& other)
+	StaticModelComponent& StaticModelComponent::operator=(StaticModelComponent const& other)
 	{
 		if (this == &other)
 		{
@@ -55,20 +55,20 @@ namespace leopph::internal
 
 
 
-	StaticMeshComponent::StaticMeshComponent(StaticMeshComponent&& other) noexcept :
-		StaticMeshComponent{other}
+	StaticModelComponent::StaticModelComponent(StaticModelComponent&& other) noexcept :
+		StaticModelComponent{other}
 	{}
 
 
 
-	StaticMeshComponent& StaticMeshComponent::operator=(StaticMeshComponent&& other) noexcept
+	StaticModelComponent& StaticModelComponent::operator=(StaticModelComponent&& other) noexcept
 	{
 		return *this = other;
 	}
 
 
 
-	StaticMeshComponent::~StaticMeshComponent()
+	StaticModelComponent::~StaticModelComponent()
 	{
 		GetRenderer()->unregister_static_mesh(this);
 	}

@@ -7,7 +7,7 @@
 
 namespace leopph
 {
-	StaticMaterial::StaticMaterial(MaterialData const& data) :
+	StaticMaterial::StaticMaterial(StaticMaterialData const& data) :
 		mBuffer
 		{
 			// Buffer layout: 

@@ -153,7 +153,7 @@ namespace leopph
 	Matrix4 Camera::build_view_matrix() const
 	{
 		// inv(T) * inv(R)
-		return Matrix4::Translate(-get_owner()->get_position()) * Matrix4{get_owner()->get_rotation()}.Transposed();
+		return Matrix4::translate(-get_owner()->get_position()) * Matrix4{get_owner()->get_rotation()}.transposed();
 	}
 
 

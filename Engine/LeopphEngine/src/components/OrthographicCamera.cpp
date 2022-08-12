@@ -48,7 +48,7 @@ namespace leopph
 		auto static constexpr half = 1.f / 2.f;
 		auto const x = mHorizSize * half;
 		auto const y = mHorizSize / get_aspect_ratio() * half;
-		return Matrix4::Ortographic(-x, x, y, -y, get_near_clip_plane(), get_far_clip_plane());
+		return Matrix4::orthographic(-x, x, y, -y, get_near_clip_plane(), get_far_clip_plane());
 	}
 
 

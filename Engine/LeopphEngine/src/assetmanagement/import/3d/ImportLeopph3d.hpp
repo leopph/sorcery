@@ -7,5 +7,5 @@
 
 namespace leopph
 {
-	std::vector<StaticMeshData> import_static_leopph_3d(std::filesystem::path const& path);
+	StaticModelData import_static_leopph_3d(std::filesystem::path const& path);
 }

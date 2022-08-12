@@ -1,7 +1,7 @@
 #pragma once
 
 /*#include "LeopphApi.hpp"
-#include "StaticMeshComponent.hpp"
+#include "StaticModelComponent.hpp"
 
 #include <filesystem>
 
@@ -9,7 +9,7 @@
 namespace leopph
 {
 	// A 2D image parsed from disk, displayed as a 2D sprite.
-	class ImageSprite final : public internal::StaticMeshComponent
+	class ImageSprite final : public internal::StaticModelComponent
 	{
 		public:
 			// PPI must be positive.

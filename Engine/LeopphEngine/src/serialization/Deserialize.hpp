@@ -1,5 +1,5 @@
 #pragma once
-
+/*
 #include "Leopphverter.hpp"
 #include "Types.hpp"
 #include "Vector.hpp"
@@ -239,3 +239,4 @@ namespace leopph
 		return mesh;
 	}
 }
+*/

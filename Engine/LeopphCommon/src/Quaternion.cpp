@@ -7,105 +7,206 @@
 
 namespace leopph
 {
-	Quaternion::Quaternion(Vector3 const& axis, float const angleDegrees)
+	f32 Quaternion::get_w() const
 	{
-		auto normalizedAxis{axis.Normalized()};
-		auto const angleHalfRadians = math::ToRadians(angleDegrees) / 2.0f;
-		m_W = math::Cos(angleHalfRadians);
-		normalizedAxis *= math::Sin(angleHalfRadians);
-		m_X = normalizedAxis[0];
-		m_Y = normalizedAxis[1];
-		m_Z = normalizedAxis[2];
+		return mW;
 	}
 
 
-	Vector3 Quaternion::EulerAngles() const
+
+	void Quaternion::set_w(f32 const w)
+	{
+		mW = w;
+	}
+
+
+
+	f32 Quaternion::get_x() const
+	{
+		return mX;
+	}
+
+
+
+	void Quaternion::set_x(f32 const x)
+	{
+		mX = x;
+	}
+
+
+
+	f32 Quaternion::get_y() const
+	{
+		return mY;
+	}
+
+
+
+	void Quaternion::set_y(f32 const y)
+	{
+		mY = y;
+	}
+
+
+
+	f32 Quaternion::get_z() const
+	{
+		return mZ;
+	}
+
+
+
+	void Quaternion::set_z(f32 const z)
+	{
+		mZ = z;
+	}
+
+
+
+	Vector3 Quaternion::to_euler_angles() const
 	{
 		// ???
-		auto secondComponent{2 * (m_W * m_Y - m_Z * m_X)};
-		if (math::Abs(secondComponent) > 1)
+		auto secondComponent{2 * (mW * mY - mZ * mX)};
+		if (std::abs(secondComponent) > 1)
 		{
-			secondComponent = std::copysign(math::Pi() / 2, secondComponent);
+			secondComponent = std::copysign(PI / 2, secondComponent);
 		}
 		else
 		{
-			secondComponent = math::Asin(secondComponent);
+			secondComponent = std::asin(secondComponent);
 		}
 		return Vector3
 		{
-			math::ToDegrees(math::Atan2(2 * (m_W * m_X + m_Y * m_Z), 1 - 2 * (math::Pow(m_X, 2) + math::Pow(m_Y, 2)))),
-			math::ToDegrees(secondComponent),
-			math::ToDegrees(math::Atan2(2 * (m_W * m_Z + m_X * m_Y), 1 - 2 * (math::Pow(m_Y, 2) + math::Pow(m_Z, 2))))
+			to_degrees(std::atan2(2 * (mW * mX + mY * mZ), 1 - 2 * (std::powf(mX, 2) + std::powf(mY, 2)))),
+			to_degrees(secondComponent),
+			to_degrees(std::atan2(2 * (mW * mZ + mX * mY), 1 - 2 * (std::powf(mY, 2) + std::powf(mZ, 2))))
 		};
 	}
 
 
-	float Quaternion::Norm() const
+
+	f32 Quaternion::get_norm() const
 	{
-		return math::Sqrt(math::Pow(m_W, 2) + math::Pow(m_X, 2) + math::Pow(m_Y, 2) + math::Pow(m_Z, 2));
+		return std::sqrt(std::powf(mW, 2) + std::powf(mX, 2) + std::powf(mY, 2) + std::powf(mZ, 2));
 	}
 
 
-	Quaternion Quaternion::Normalized() const
+
+	Quaternion Quaternion::normalized() const
 	{
-		auto const norm{Norm()};
-		return Quaternion{m_W / norm, m_X / norm, m_Y / norm, m_Z / norm};
+		auto const norm{get_norm()};
+		return Quaternion{mW / norm, mX / norm, mY / norm, mZ / norm};
 	}
 
 
-	Quaternion& Quaternion::Normalize()
+
+	Quaternion& Quaternion::normalize()
 	{
-		auto const norm{Norm()};
-		m_W /= norm;
-		m_X /= norm;
-		m_Y /= norm;
-		m_Z /= norm;
+		auto const norm{get_norm()};
+		mW /= norm;
+		mX /= norm;
+		mY /= norm;
+		mZ /= norm;
 		return *this;
 	}
 
 
-	Quaternion& Quaternion::ConjugateInPlace()
+
+	Quaternion Quaternion::conjugate() const
 	{
-		m_X = -m_X;
-		m_Y = -m_Y;
-		m_Z = -m_Z;
+		return Quaternion{mW, -mX, -mY, -mZ};
+	}
+
+
+
+	Quaternion& Quaternion::conjugate_in_place()
+	{
+		mX = -mX;
+		mY = -mY;
+		mZ = -mZ;
 		return *this;
 	}
 
 
-	Quaternion Quaternion::Inverse() const
+
+	Quaternion Quaternion::inverse() const
 	{
-		auto const normSquared{math::Pow(m_W, 2) + math::Pow(m_X, 2) + math::Pow(m_Y, 2) + math::Pow(m_Z, 2)};
-		return Quaternion{m_W / normSquared, -m_X / normSquared, -m_Y / normSquared, -m_Z / normSquared};
+		auto const normSquared{std::powf(mW, 2) + std::powf(mX, 2) + std::powf(mY, 2) + std::powf(mZ, 2)};
+		return Quaternion{mW / normSquared, -mX / normSquared, -mY / normSquared, -mZ / normSquared};
 	}
 
 
-	Quaternion& Quaternion::Invert()
+
+	Quaternion& Quaternion::invert()
 	{
-		auto const normSquared{math::Pow(m_W, 2) + math::Pow(m_X, 2) + math::Pow(m_Y, 2) + math::Pow(m_Z, 2)};
-		m_W /= normSquared;
-		m_X = -m_X / normSquared;
-		m_Y = -m_Y / normSquared;
-		m_Z = -m_Z / normSquared;
+		auto const normSquared{std::powf(mW, 2) + std::powf(mX, 2) + std::powf(mY, 2) + std::powf(mZ, 2)};
+		mW /= normSquared;
+		mX = -mX / normSquared;
+		mY = -mY / normSquared;
+		mZ = -mZ / normSquared;
 		return *this;
 	}
+
 
 
 	Quaternion::operator Matrix4() const
 	{
 		return Matrix4
 		{
-			1 - 2 * (math::Pow(m_Y, 2) + math::Pow(m_Z, 2)), 2 * (m_X * m_Y + m_Z * m_W), 2 * (m_X * m_Z - m_Y * m_W), 0,
-			2 * (m_X * m_Y - m_Z * m_W), 1 - 2 * (math::Pow(m_X, 2) + math::Pow(m_Z, 2)), 2 * (m_Y * m_Z + m_X * m_W), 0,
-			2 * (m_X * m_Z + m_Y * m_W), 2 * (m_Y * m_Z - m_X * m_W), 1 - 2 * (math::Pow(m_X, 2) + math::Pow(m_Y, 2)), 0,
+			1 - 2 * (std::powf(mY, 2) + std::powf(mZ, 2)), 2 * (mX * mY + mZ * mW), 2 * (mX * mZ - mY * mW), 0,
+			2 * (mX * mY - mZ * mW), 1 - 2 * (std::powf(mX, 2) + std::powf(mZ, 2)), 2 * (mY * mZ + mX * mW), 0,
+			2 * (mX * mZ + mY * mW), 2 * (mY * mZ - mX * mW), 1 - 2 * (std::powf(mX, 2) + std::powf(mY, 2)), 0,
 			0, 0, 0, 1
 		};
 	}
 
 
+
+	Quaternion::Quaternion(f32 const w, f32 const x, f32 const y, f32 const z) :
+		mW{w},
+		mX{x},
+		mY{y},
+		mZ{z}
+	{}
+
+
+
+	Quaternion::Quaternion(Vector3 const& axis, f32 const angleDegrees)
+	{
+		auto normalizedAxis{axis.normalized()};
+		auto const angleHalfRadians = to_radians(angleDegrees) / 2.0f;
+		mW = std::cos(angleHalfRadians);
+		normalizedAxis *= std::sin(angleHalfRadians);
+		mX = normalizedAxis[0];
+		mY = normalizedAxis[1];
+		mZ = normalizedAxis[2];
+	}
+
+
+
+	Quaternion operator*(Quaternion const& left, Quaternion const& right)
+	{
+		return Quaternion
+		{
+			left.get_w() * right.get_w() - left.get_x() * right.get_x() - left.get_y() * right.get_y() - left.get_z() * right.get_z(),
+			left.get_w() * right.get_x() + left.get_x() * right.get_w() + left.get_y() * right.get_z() - left.get_z() * right.get_y(),
+			left.get_w() * right.get_y() - left.get_x() * right.get_z() + left.get_y() * right.get_w() + left.get_z() * right.get_x(),
+			left.get_w() * right.get_z() + left.get_x() * right.get_y() - left.get_y() * right.get_x() + left.get_z() * right.get_w()
+		};
+	}
+
+
+
+	Quaternion& operator*=(Quaternion& left, Quaternion const& right)
+	{
+		return left = left * right;
+	}
+
+
+
 	std::ostream& operator<<(std::ostream& os, Quaternion const& q)
 	{
-		os << "(" << q.W() << ", " << q.X() << ", " << q.Y() << ", " << q.Z() << ")";
+		os << "(" << q.get_w() << ", " << q.get_x() << ", " << q.get_y() << ", " << q.get_y() << ")";
 		return os;
 	}
 }

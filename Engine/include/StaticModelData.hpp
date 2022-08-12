@@ -3,35 +3,53 @@
 #include "Color.hpp"
 #include "Image.hpp"
 #include "Types.hpp"
+#include "Vertex.hpp"
 
-#include <memory>
+#include <optional>
+#include <vector>
 
 
 namespace leopph
 {
-	struct MaterialData
+	struct StaticMaterialData
 	{
 		// RGB controls the diffuse color, A controls the opacity.
 		// For opaque surfaces, the opacity only takes part in alpha clipping,
 		// while for transparent ones, it also affects blending.
 		Color diffuseColor{255, 255, 255, 255};
 
+		// RGB is multiplied with diffuseColor RGB, A is multiplied with the color alpha and used accordingly, if present.
+		std::optional<std::size_t> diffuseMapIndex;
+
 		// RGB controls the color of the specular highlights, A is unused.
 		Color specularColor{0, 0, 0};
 
+		// RGB is multiplied with specularColor RGB, A is unused if present.
+		std::optional<std::size_t> specularMapIndex;
+
 		// Controls the spread of the specular highlight.
 		f32 gloss{0};
-
-		// RGB is multiplied with diffuseColor RGB, A is multiplied with the color alpha and used accordingly, if present.
-		std::shared_ptr<Image> diffuseMap;
-
-		// RGB is multiplied with specularColor RGB, A is unused if present.
-		std::shared_ptr<Image> specularMap;
 
 		// Discards pixels whose alpha values are under this value.
 		f32 alphaThreshold{1.f};
 
 		bool cullBackFace{true};
 		bool isTransparent{false};
+	};
+
+
+	struct StaticMeshData
+	{
+		std::vector<Vertex> vertices;
+		std::vector<u32> indices;
+		std::size_t materialIndex;
+	};
+
+
+	struct StaticModelData
+	{
+		std::vector<StaticMeshData> meshes;
+		std::vector<StaticMaterialData> materials;
+		std::vector<Image> textures;
 	};
 }

@@ -1,13 +1,13 @@
 #pragma once
 
 #include "LeopphApi.hpp"
-#include "StaticMeshComponent.hpp"
+#include "StaticModelComponent.hpp"
 
 
 namespace leopph
 {
 	// A generic untextured 1x1 cube.
-	class Cube final : public internal::StaticMeshComponent
+	class Cube final : public internal::StaticModelComponent
 	{
 		public:
 			LEOPPHAPI Cube();

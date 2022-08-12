@@ -1,6 +1,6 @@
 #pragma once
 
-#include "MaterialData.hpp"
+#include "StaticMaterialData.hpp"
 #include "PersistentMappedBuffer.hpp"
 #include "Texture2D.hpp"
 #include "Types.hpp"
@@ -14,7 +14,7 @@ namespace leopph
 	class StaticMaterial
 	{
 		public:
-			explicit StaticMaterial(MaterialData const& data);
+			explicit StaticMaterial(StaticMaterialData const& data);
 
 			StaticMaterial(StaticMaterial const& other) = delete;
 			StaticMaterial& operator=(StaticMaterial const& other) = delete;

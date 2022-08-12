@@ -1,6 +1,7 @@
 #pragma once
-
+/*
 #include "Image.hpp"
+#include "StaticModelData.hpp"
 #include "Util.hpp"
 
 #include <bit>
@@ -10,31 +11,28 @@
 
 namespace leopph
 {
-	template<typename T>
-		requires std::is_scalar_v<T> && (sizeof(T) == 1)
+	template<typename T> requires std::is_scalar_v<T> && (sizeof(T) == 1)
 	void serialize(T s, std::vector<u8>& oBuf);
 
-	template<typename T>
-		requires std::is_scalar_v<T> && (sizeof(T) > 1)
+	template<typename T> requires std::is_scalar_v<T> && (sizeof(T) > 1)
 	void serialize(T s, std::vector<u8>& oBuf, std::endian endianness);
 
 	void serialize(std::string_view str, std::vector<u8>& oBuf, std::endian endianness);
 
 	void serialize(Image const& img, std::vector<u8>& oBuf, std::endian endianness);
 
-	void serialize(Material const& mat, std::vector<u8>& oBuf, std::endian endianness);
+	void serialize(StaticMaterialData const& mat, std::vector<u8>& oBuf, std::endian endianness);
 
 	template<class T, u64 N>
-	void serialize(internal::Vector<T, N> const& vec, std::vector<u8>& oBuf, std::endian endianness);
+	void serialize(Vector<T, N> const& vec, std::vector<u8>& oBuf, std::endian endianness);
 
 	void serialize(Vertex const& vert, std::vector<u8>& oBuf, std::endian endianness);
 
-	void serialize(Mesh const& mesh, std::vector<u8>& oBuf, std::endian endianness);
+	void serialize(StaticMeshData const& mesh, std::vector<u8>& oBuf, std::endian endianness);
 
 
 
-	template<typename T>
-		requires std::is_scalar_v<T> && (sizeof(T) == 1)
+	template<typename T> requires std::is_scalar_v<T> && (sizeof(T) == 1)
 	void serialize(T const s, std::vector<u8>& oBuf)
 	{
 		oBuf.push_back(*reinterpret_cast<u8 const*>(&s));
@@ -42,8 +40,7 @@ namespace leopph
 
 
 
-	template<typename T>
-		requires std::is_scalar_v<T> && (sizeof(T) > 1)
+	template<typename T> requires std::is_scalar_v<T> && (sizeof(T) > 1)
 	void serialize(T const s, std::vector<u8>& oBuf, std::endian const endianness)
 	{
 		auto const* const begin = reinterpret_cast<u8 const*>(&s);
@@ -62,7 +59,7 @@ namespace leopph
 
 
 	template<class T, u64 N>
-	void serialize(internal::Vector<T, N> const& vec, std::vector<u8>& oBuf, std::endian endianness)
+	void serialize(Vector<T, N> const& vec, std::vector<u8>& oBuf, std::endian endianness)
 	{
 		for (u64 i = 0; i < N; i++)
 		{
@@ -77,3 +74,4 @@ namespace leopph
 		}
 	}
 }
+*/

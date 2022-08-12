@@ -9,12 +9,12 @@
 namespace leopph
 {
 	Texture2D::Texture2D(Image const& img) :
-		mWidth{img.Width()},
-		mHeight{img.Height()}
+		mWidth{img.get_width()},
+		mHeight{img.get_height()}
 	{
 		GLenum colorFormat, internalFormat;
 
-		switch (img.Channels())
+		switch (img.get_num_channels())
 		{
 			case 1:
 			{
@@ -27,7 +27,7 @@ namespace leopph
 			{
 				colorFormat = GL_RGB;
 
-				if (img.Encoding() == ColorEncoding::SRGB)
+				if (img.get_encoding() == ColorEncoding::sRGB)
 				{
 					internalFormat = GL_SRGB8;
 				}
@@ -42,7 +42,7 @@ namespace leopph
 			{
 				colorFormat = GL_RGBA;
 
-				if (img.Encoding() == ColorEncoding::SRGB)
+				if (img.get_encoding() == ColorEncoding::sRGB)
 				{
 					internalFormat = GL_SRGB8_ALPHA8;
 				}
@@ -54,7 +54,7 @@ namespace leopph
 			}
 
 			default:
-				internal::Logger::Instance().Error(std::format("Failed to create texture: input image channel count [{}] is not supported.", img.Channels()));
+				internal::Logger::Instance().Error(std::format("Failed to create texture: input image channel count [{}] is not supported.", img.get_num_channels()));
 				return;
 		}
 
@@ -62,7 +62,7 @@ namespace leopph
 		glTextureStorage2D(mTexture, 1, internalFormat, mWidth, mHeight);
 
 		glPixelStorei(GL_UNPACK_ALIGNMENT, 1); // This is a permanent change because of the tightly packed image data. Unnecessary to set it every time.
-		glTextureSubImage2D(mTexture, 0, 0, 0, mWidth, mHeight, colorFormat, GL_UNSIGNED_BYTE, img.Data().data());
+		glTextureSubImage2D(mTexture, 0, 0, 0, mWidth, mHeight, colorFormat, GL_UNSIGNED_BYTE, img.get_data().data());
 
 		glGenerateTextureMipmap(mTexture);
 

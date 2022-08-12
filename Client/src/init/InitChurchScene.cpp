@@ -20,7 +20,7 @@ namespace demo
 	{
 		auto const group = new Entity{};
 		scene.Add(group);
-		group->get_transform().rotate(Vector3::Up(), 90);
+		group->get_transform().rotate(Vector3::up(), 90);
 
 		auto const player = new Entity{};
 		player->get_transform().set_parent(group);
@@ -40,8 +40,8 @@ namespace demo
 
 		auto const dirLightEntity = new Entity{"dirlight"};
 		dirLightEntity->get_transform().set_parent(group);
-		dirLightEntity->get_transform().rotate(Vector3::Up(), 45);
-		dirLightEntity->get_transform().rotate(Vector3::Right(), 30, Space::Local);
+		dirLightEntity->get_transform().rotate(Vector3::up(), 45);
+		dirLightEntity->get_transform().rotate(Vector3::right(), 30, Space::Local);
 
 		auto const dirLight = dirLightEntity->attach_component<DirectionalLight>();
 		dirLight->set_color(Vector3{.06f});
@@ -51,7 +51,7 @@ namespace demo
 		auto const lamp = new Entity{"lamp"};
 		lamp->get_transform().set_parent(group);
 		lamp->get_transform().translate(0, -1.25, 0);
-		lamp->get_transform().rotate(Vector3::Up(), -90);
+		lamp->get_transform().rotate(Vector3::up(), -90);
 		lamp->get_transform().rescale(0.01f, 0.01f, 0.01f);
 
 		auto const lampModel = lamp->attach_component<StaticModelComponent>("models/lamp/lamp.leopph3d");
@@ -72,8 +72,8 @@ namespace demo
 		auto const church = new Entity{"church"};
 		church->get_transform().set_parent(group);
 		church->get_transform().translate(0, -3, 0, Space::World);
-		church->get_transform().rotate(Vector3::Right(), 90);
-		church->get_transform().rotate(Vector3::Up(), -90);
+		church->get_transform().rotate(Vector3::right(), 90);
+		church->get_transform().rotate(Vector3::up(), -90);
 
 		auto const churchModel = church->attach_component<StaticModelComponent>("models/church/church.leopph3d");
 		churchModel->set_casting_shadow(true);

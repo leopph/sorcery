@@ -12,8 +12,8 @@
 #include "SpotLight.hpp"
 #include "StaticMaterial.hpp"
 #include "StaticMesh.hpp"
-#include "StaticMeshComponent.hpp"
-#include "StaticMeshData.hpp"
+#include "StaticModelComponent.hpp"
+#include "StaticRenderData.hpp"
 #include "Types.hpp"
 #include "WindowEvent.hpp"
 
@@ -142,7 +142,7 @@ namespace leopph::internal
 			// Entry point for rendering a frame
 			void render();
 
-			u64 create_static_mesh(StaticMeshComponent const* component, std::span<StaticMeshData const> data);
+			u64 create_static_mesh(StaticModelComponent const* component, std::span<StaticModelData const> data);
 
 			void register_material(StaticMaterial const* material);
 			void unregister_material(StaticMaterial const* material);

@@ -21,7 +21,7 @@ namespace leopph
 
 
 
-	std::vector<StaticMeshData> import_static_leopph_3d(std::filesystem::path const& path)
+	StaticModelData import_static_leopph_3d(std::filesystem::path const& path)
 	{
 		try
 		{
@@ -33,7 +33,7 @@ namespace leopph
 			// failed to open file
 			if (!in.is_open())
 			{
-				internal::Logger::Instance().Error("Can't parse leopph3d file at " + path.string() + " because the file does not exist.");
+				internal::Logger::Instance().Error(std::format("Failed to parse leopph3d file at [{}]: the file does not exist.", path.string()));
 				return {};
 			}
 
@@ -49,7 +49,7 @@ namespace leopph
 				buffer[2] != '6' ||
 				buffer[3] != '9')
 			{
-				internal::Logger::Instance().Error("Can't parse leopph3d file at " + path.string() + " because the file is not in valid leopph3d format.");
+				internal::Logger::Instance().Error(std::format("Failed to parse leopph3d file at [{}]: the file is corrupted or invalid.", path.string()));
 				return {};
 			}
 
@@ -71,15 +71,15 @@ namespace leopph
 			std::vector<u8> uncompressed;
 
 			// uncompress data
-			if (compress::uncompress({std::begin(buffer), std::end(buffer)}, contentSize, uncompressed) != compress::Error::None)
+			if (uncompress({std::begin(buffer), std::end(buffer)}, contentSize, uncompressed) != CompressionError::None)
 			{
-				internal::Logger::Instance().Error("Couldn't parse leopph3d file at " + path.string() + " because the contents failed to uncompress.");
+				internal::Logger::Instance().Error(std::format("Failed to parse leopph3d file at [{}]: the file contents could not be uncompressed.", path.string()));
 				return {};
 			}
 
 			#ifndef NDEBUG
 			internal::Logger::Instance().CurrentLevel(internal::Logger::Level::Debug);
-			internal::Logger::Instance().Debug(std::format("Parsing leopph3d file at {}.", path.string()));
+			internal::Logger::Instance().Trace(std::format("Parsing leopph3d file at {}.", path.string()));
 			#endif
 
 			auto it = std::cbegin(uncompressed);
@@ -101,7 +101,7 @@ namespace leopph
 			auto const numMats = deserialize<u64>(it, endianness);
 
 			// all materials
-			std::vector<MaterialData> mats;
+			std::vector<StaticMaterialData> mats;
 			mats.reserve(numMats);
 
 			// parse material data
@@ -114,7 +114,7 @@ namespace leopph
 			auto const numMeshes = deserialize<u64>(it, endianness);
 
 			// all meshes
-			std::vector<MaterialData> meshes;
+			std::vector<StaticMeshData> meshes;
 			meshes.reserve(numMeshes);
 
 			// parse mesh data
@@ -123,16 +123,16 @@ namespace leopph
 				meshes.push_back(deserialize_mesh(it, endianness));
 			}
 
-			return Object
+			return StaticModelData
 			{
-				.textures = std::move(imgs),
+				.meshes = std::move(meshes),
 				.materials = std::move(mats),
-				.meshes = std::move(meshes)
+				.textures = std::move(imgs)
 			};
 		}
 		catch (...)
 		{
-			internal::Logger::Instance().Error("Couldn't parse leopph3d file at " + path.string() + ". The file may be corrupt.");
+			internal::Logger::Instance().Error(std::format("Failed to parse leopph3d file at [{}]: an unknown error occured while reading file contents.", path.string()));
 			return {};
 		}
 	}

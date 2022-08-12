@@ -113,7 +113,7 @@
     <ClInclude Include="..\include\PerspectiveCamera.hpp" />
     <ClInclude Include="..\include\Poelo.hpp" />
     <ClInclude Include="..\include\PointLight.hpp" />
-    <ClInclude Include="..\include\StaticMeshComponent.hpp" />
+    <ClInclude Include="..\include\StaticModelComponent.hpp" />
     <ClInclude Include="..\include\Skybox.hpp" />
     <ClInclude Include="..\include\SpotLight.hpp" />
     <ClInclude Include="..\include\Time.hpp" />
@@ -135,8 +135,7 @@
     <ClInclude Include="src\rendering\QuadMesh.hpp" />
     <ClInclude Include="src\rendering\PersistentMappedBuffer.hpp" />
     <ClInclude Include="src\rendering\StaticMesh.hpp" />
-    <ClInclude Include="..\include\StaticMeshData.hpp" />
-    <ClInclude Include="..\include\MaterialData.hpp" />
+    <ClInclude Include="..\include\StaticModelData.hpp" />
     <ClInclude Include="src\rendering\StaticMaterial.hpp" />
     <ClInclude Include="..\include\AABB.hpp" />
     <ClInclude Include="src\serialization\Deserialize.hpp" />

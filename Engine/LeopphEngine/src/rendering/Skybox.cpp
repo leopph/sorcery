@@ -15,15 +15,15 @@ namespace leopph
 
 		for (auto const& path : {left, right, top, bottom, front, back})
 		{
-			faces.emplace_back(path, ColorEncoding::SRGB);
+			faces.emplace_back(path, ColorEncoding::sRGB);
 		}
 
 		glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &mCubemapName);
-		glTextureStorage2D(mCubemapName, 1, GL_SRGB8, faces.front().Width(), faces.front().Height());
+		glTextureStorage2D(mCubemapName, 1, GL_SRGB8, faces.front().get_width(), faces.front().get_height());
 
 		for (std::size_t i = 0; i < 6; i++)
 		{
-			glTextureSubImage3D(mCubemapName, 0, 0, 0, static_cast<GLint>(i), faces[i].Width(), faces[i].Height(), 1, GL_RGB, GL_UNSIGNED_BYTE, faces[i].Data().data());
+			glTextureSubImage3D(mCubemapName, 0, 0, 0, static_cast<GLint>(i), faces[i].get_width(), faces[i].get_height(), 1, GL_RGB, GL_UNSIGNED_BYTE, faces[i].get_data().data());
 		}
 
 		mCubemapHandle = glGetTextureHandleARB(mCubemapName);

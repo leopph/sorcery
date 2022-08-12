@@ -8,7 +8,8 @@
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
 
-#include <iostream>
+#include <cstring>
+#include <format>
 #include <optional>
 #include <queue>
 #include <span>
@@ -21,15 +22,6 @@ namespace leopph
 {
 	namespace
 	{
-		// Maps texture types to an encoding to be used during interpretation
-		std::unordered_map<aiTextureType, ColorEncoding> const gTexTypeToEncoding
-		{
-			{aiTextureType_DIFFUSE, ColorEncoding::SRGB},
-			{aiTextureType_SPECULAR, ColorEncoding::Linear},
-			{aiTextureType_OPACITY, ColorEncoding::SRGB}
-		};
-
-
 		// Transposes the matrix
 		Matrix4 convert(aiMatrix4x4 const& aiMat)
 		{
@@ -53,50 +45,56 @@ namespace leopph
 
 		Color convert(aiColor3D const& aiCol)
 		{
-			return Color{static_cast<unsigned char>(aiCol.r * 255), static_cast<unsigned char>(aiCol.g * 255), static_cast<unsigned char>(aiCol.b * 255)};
+			return Color{static_cast<u8>(aiCol.r * 255), static_cast<u8>(aiCol.g * 255), static_cast<u8>(aiCol.b * 255)};
 		}
 
 
 
-		// Returns the index of the texture image corresponding to the target texture type in the passed material.
-		// If the texture is not yet loaded, it gets loaded and stored in the vector along with its source path and index in the map.
-		// Returns an empty optional if the texture could not be found or loaded.
-		std::optional<std::size_t> get_texture(aiMaterial const* const mat, aiTextureType const texType, std::vector<Image>& textures, std::unordered_map<std::string, std::size_t>& idToInd, std::filesystem::path const& rootPath)
+		Image load_texture(aiString const& texPath, std::filesystem::path const& rootPath, aiScene const* const scene)
 		{
-			if (aiString texPath; mat->GetTexture(texType, 0, &texPath) == aiReturn_SUCCESS)
+			// Texture is embedded
+			if (auto const* const embeddedTexture = scene->GetEmbeddedTexture(texPath.C_Str()); embeddedTexture)
 			{
-				if (idToInd.contains(texPath.C_Str()))
+				// Texture is not compressed
+				if (embeddedTexture->mHeight)
 				{
-					return idToInd[texPath.C_Str()];
+					auto const numBytes = embeddedTexture->mWidth * embeddedTexture->mHeight * 4;
+					auto imgData = std::make_unique_for_overwrite<u8[]>(numBytes);
+					std::memcpy(imgData.get(), embeddedTexture->pcData, numBytes);
+
+					return Image{embeddedTexture->mWidth, embeddedTexture->mHeight, 4, std::move(imgData)};
 				}
 
-				textures.emplace_back(rootPath / texPath.C_Str(), gTexTypeToEncoding.at(texType), ImageOrientation::FlipVertical);
-				return idToInd[texPath.C_Str()] = textures.size() - 1;
+				// Texture is compressed
+				internal::Logger::Instance().Error("Skipped loading embedded texture, becuase it was compressed. Compressed embedded textures are not yet supported.");
+				return Image{};
 			}
 
-			return {};
+			// Texture is in a separate file
+			return Image{rootPath / texPath.C_Str(), ImageOrientation::FlipVertical};
 		}
 
 
 
-		std::pair<std::vector<Material>, std::vector<Image>> process_materials(std::span<aiMaterial* const> const aiMats, std::filesystem::path const& rootPath)
+		std::pair<std::vector<StaticMaterialData>, std::vector<Image>> process_materials(std::filesystem::path const& rootPath, aiScene const* const scene)
 		{
-			std::unordered_map<std::string, std::size_t> idToInd;
+			std::unordered_map<std::string, std::size_t> texturePathToIndex;
 			std::vector<Image> textures;
-			std::vector<Material> materials;
+			std::vector<StaticMaterialData> materials;
 
-			for (auto const* const aiMat : aiMats)
+			for (unsigned i = 0; i < scene->mNumMaterials; i++)
 			{
-				Material mat;
-
-				if (f32 opacity; aiMat->Get(AI_MATKEY_OPACITY, opacity) == aiReturn_SUCCESS)
-				{
-					mat.opacity = opacity;
-				}
+				auto const* const aiMat = scene->mMaterials[i];
+				StaticMaterialData mat;
 
 				if (aiColor3D diffClr; aiMat->Get(AI_MATKEY_COLOR_DIFFUSE, diffClr) == aiReturn_SUCCESS)
 				{
 					mat.diffuseColor = convert(diffClr);
+				}
+
+				if (f32 opacity; aiMat->Get(AI_MATKEY_OPACITY, opacity) == aiReturn_SUCCESS)
+				{
+					mat.diffuseColor.alpha = static_cast<u8>(opacity * 255);
 				}
 
 				if (aiColor3D specClr; aiMat->Get(AI_MATKEY_COLOR_SPECULAR, specClr) == aiReturn_SUCCESS)
@@ -111,21 +109,37 @@ namespace leopph
 
 				if (int twoSided; aiMat->Get(AI_MATKEY_TWOSIDED, twoSided) == aiReturn_SUCCESS)
 				{
-					mat.twoSided = !twoSided;
+					mat.cullBackFace = !twoSided;
 				}
 
-				mat.diffuseMap = get_texture(aiMat, aiTextureType_DIFFUSE, textures, idToInd, rootPath);
-				mat.specularMap = get_texture(aiMat, aiTextureType_SPECULAR, textures, idToInd, rootPath);
-				mat.opacityMap = get_texture(aiMat, aiTextureType_OPACITY, textures, idToInd, rootPath);
-
-				// If the diffuse map has an alpha channel, and we couldn't parse an opacity map
-				// We assume that the transparency comes from the diffuse alpha, so we steal it
-				// And create an opacity map from that.
-				if (!mat.opacityMap.has_value() && mat.diffuseMap.has_value() && textures[mat.diffuseMap.value()].Channels() == 4)
+				if (aiString texPath; aiMat->Get(AI_MATKEY_TEXTURE(aiTextureType_DIFFUSE, 0), texPath) == aiReturn_SUCCESS)
 				{
-					auto& tex = textures[mat.diffuseMap.value()];
-					textures.push_back(tex.ExtractChannel(3));
-					mat.opacityMap = textures.size() - 1;
+					if (auto const it = texturePathToIndex.find(texPath.C_Str()); it != std::end(texturePathToIndex))
+					{
+						mat.diffuseMapIndex = it->second;
+					}
+					else
+					{
+						textures.push_back(load_texture(texPath, rootPath, scene));
+						textures.back().set_encoding(ColorEncoding::sRGB);
+						texturePathToIndex[texPath.C_Str()] = textures.size() - 1;
+						mat.diffuseMapIndex = textures.size() - 1;
+					}
+				}
+
+				if (aiString texPath; aiMat->Get(AI_MATKEY_TEXTURE(aiTextureType_SPECULAR, 0), texPath) == aiReturn_SUCCESS)
+				{
+					if (auto const it = texturePathToIndex.find(texPath.C_Str()); it != std::end(texturePathToIndex))
+					{
+						mat.specularMapIndex = it->second;
+					}
+					else
+					{
+						textures.push_back(load_texture(texPath, rootPath, scene));
+						textures.back().set_encoding(ColorEncoding::Linear);
+						texturePathToIndex[texPath.C_Str()] = textures.size() - 1;
+						mat.specularMapIndex = textures.size() - 1;
+					}
 				}
 
 				materials.push_back(mat);
@@ -212,7 +226,7 @@ namespace leopph
 
 
 
-	std::vector<StaticMeshData> import_generic_static_meshes(std::filesystem::path const& path)
+	StaticModelData import_generic_static_meshes(std::filesystem::path const& path)
 	{
 		Assimp::Importer importer;
 		auto const* scene = importer.ReadFile(path.string(),
@@ -224,16 +238,16 @@ namespace leopph
 
 		if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
 		{
-			std::cerr << "Error parsing model from file at " << path << ": " << importer.GetErrorString() << '\n';
+			internal::Logger::Instance().Error(std::format("Error parsing model file at [{}]: {}.", path.string(), importer.GetErrorString()));
 			return {};
 		}
 
-		Object object;
+		StaticModelData data;
 
-		auto [materials, textures] = process_materials(std::span{scene->mMaterials, scene->mNumMaterials}, path.parent_path());
+		auto [materials, textures] = process_materials(path.parent_path(), scene);
 
-		object.materials = std::move(materials);
-		object.textures = std::move(textures);
+		data.materials = std::move(materials);
+		data.textures = std::move(textures);
 
 		std::queue<std::pair<aiNode const*, Matrix4>> queue;
 		queue.emplace(scene->mRootNode, convert(scene->mRootNode->mTransformation) * Matrix4{1, 1, -1, 1});
@@ -254,7 +268,7 @@ namespace leopph
 						// TODO currently ignoring NGON property
 					}
 
-					object.meshes.emplace_back(process_vertices(mesh, trafo), process_indices(mesh), mesh->mMaterialIndex);
+					data.meshes.emplace_back(process_vertices(mesh, trafo), process_indices(mesh), mesh->mMaterialIndex);
 				}
 				else
 				{
@@ -270,6 +284,6 @@ namespace leopph
 			queue.pop();
 		}
 
-		return object;
+		return data;
 	}
 }

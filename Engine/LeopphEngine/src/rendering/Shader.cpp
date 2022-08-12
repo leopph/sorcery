@@ -137,14 +137,14 @@ namespace leopph
 
 	void Shader::set_uniform_internal_concrete(u32 const program, i32 const location, Vector3 const& value)
 	{
-		glProgramUniform3fv(program, location, 1, value.Data().data());
+		glProgramUniform3fv(program, location, 1, value.get_data().data());
 	}
 
 
 
 	void Shader::set_uniform_internal_concrete(u32 const program, i32 const location, Matrix4 const& value)
 	{
-		glProgramUniformMatrix4fv(program, location, 1, GL_TRUE, value.Data().data()->Data().data());
+		glProgramUniformMatrix4fv(program, location, 1, GL_TRUE, value.get_data().data()->get_data().data());
 	}
 
 
@@ -172,14 +172,14 @@ namespace leopph
 
 	void Shader::set_uniform_internal_concrete(u32 const program, i32 const location, std::span<Vector3 const> const values)
 	{
-		glProgramUniform3fv(program, location, clamp_cast<GLsizei>(values.size()), values.data()->Data().data());
+		glProgramUniform3fv(program, location, clamp_cast<GLsizei>(values.size()), values.data()->get_data().data());
 	}
 
 
 
 	void Shader::set_uniform_internal_concrete(u32 const program, i32 const location, std::span<Matrix4 const> const values)
 	{
-		glProgramUniformMatrix4fv(program, location, clamp_cast<GLsizei>(values.size()), GL_TRUE, values.data()->Data().data()->Data().data());
+		glProgramUniformMatrix4fv(program, location, clamp_cast<GLsizei>(values.size()), GL_TRUE, values.data()->get_data().data()->get_data().data());
 	}
 
 

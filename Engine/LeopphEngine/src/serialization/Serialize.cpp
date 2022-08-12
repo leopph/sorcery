@@ -1,4 +1,4 @@
-#include "Serialize.hpp"
+/*#include "Serialize.hpp"
 
 #include <iterator>
 
@@ -17,19 +17,19 @@ namespace leopph
 
 	void serialize(Image const& img, std::vector<u8>& oBuf, std::endian const endianness)
 	{
-		auto const width = img.Width();
+		auto const width = img.get_width();
 		serialize(width, oBuf, endianness);
 
-		auto const height = img.Height();
+		auto const height = img.get_height();
 		serialize(height, oBuf, endianness);
 
-		auto const chans = img.Channels();
+		auto const chans = img.get_num_channels();
 		serialize(chans, oBuf);
 
-		auto const encoding = img.Encoding();
+		auto const encoding = img.get_encoding();
 		serialize(encoding, oBuf);
 
-		std::copy_n(img.Data().data(), width * height * chans, std::back_inserter(oBuf));
+		std::copy_n(img.get_data().data(), width * height * chans, std::back_inserter(oBuf));
 	}
 
 
@@ -39,17 +39,16 @@ namespace leopph
 		serialize(color.red, oBuf);
 		serialize(color.green, oBuf);
 		serialize(color.blue, oBuf);
-		// TODO SERIALIZE ALPHA
+		serialize(color.alpha, oBuf);
 	}
 
 
 
-	void serialize(Material const& mat, std::vector<u8>& oBuf, std::endian const endianness)
+	void serialize(StaticMaterialData const& mat, std::vector<u8>& oBuf, std::endian const endianness)
 	{
 		serialize(mat.diffuseColor, oBuf);
 		serialize(mat.specularColor, oBuf);
 		serialize(mat.gloss, oBuf, endianness);
-		serialize(mat.opacity, oBuf, endianness);
 
 		static_assert(sizeof(bool) == 1); // temporary check, find better solution
 		serialize(static_cast<u8>(mat.twoSided), oBuf);
@@ -113,3 +112,4 @@ namespace leopph
 		serialize(mesh.material, oBuf, endianness);
 	}
 }
+*/

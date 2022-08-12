@@ -51,7 +51,7 @@ namespace leopph::internal
 
 
 
-	u64 Renderer::create_static_mesh(StaticMeshComponent const* component, std::span<StaticMeshData const> const data)
+	u64 Renderer::create_static_mesh(StaticModelComponent const* component, std::span<StaticModelData const> const data)
 	{
 		static u64 id{1};
 
@@ -294,16 +294,16 @@ namespace leopph::internal
 	void Renderer::prepare()
 	{
 		// Calculate additional camera matrices
-		mCamData.viewMatInv = mCamData.viewMat.Inverse();
-		mCamData.projMatInv = mCamData.projMat.Inverse();
+		mCamData.viewMatInv = mCamData.viewMat.inverse();
+		mCamData.projMatInv = mCamData.projMat.inverse();
 		mCamData.viewProjMat = mCamData.viewMat * mCamData.projMat;
-		mCamData.viewProjMatInv = mCamData.viewProjMat.Inverse();
+		mCamData.viewProjMatInv = mCamData.viewProjMat.inverse();
 
 		// Sort punctual lights by distance to camera
 
 		auto const distToCam = [this](auto const& lightData)
 		{
-			return Vector3::Distance(lightData.position, this->mCamData.position);
+			return Vector3::distance(lightData.position, this->mCamData.position);
 		};
 
 		std::ranges::sort(mSpotLightData, std::ranges::less{}, distToCam);

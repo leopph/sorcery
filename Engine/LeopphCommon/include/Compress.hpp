@@ -7,14 +7,14 @@
 #include <vector>
 
 
-namespace leopph::convert::compress
+namespace leopph
 {
-	enum class Error
+	enum class CompressionError
 	{
 		None, Inconsistency, Unknown
 	};
 
 
-	LEOPPHAPI Error compress(std::span<u8> in, std::vector<u8>& out);
-	LEOPPHAPI Error uncompress(std::span<u8> in, u64 uncompressedSize, std::vector<u8>& out);
+	LEOPPHAPI CompressionError compress(std::span<u8> in, std::vector<u8>& out);
+	LEOPPHAPI CompressionError uncompress(std::span<u8> in, u64 uncompressedSize, std::vector<u8>& out);
 }

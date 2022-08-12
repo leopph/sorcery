@@ -25,25 +25,25 @@ namespace demo
 
 		if (Input::GetKey(KeyCode::Up) || Input::GetKey(KeyCode::W))
 		{
-			posDelta += Vector3::Up();
+			posDelta += Vector3::up();
 		}
 
 		if (Input::GetKey(KeyCode::Down) || Input::GetKey(KeyCode::S))
 		{
-			posDelta += Vector3::Down();
+			posDelta += Vector3::down();
 		}
 
 		if (Input::GetKey(KeyCode::Left) || Input::GetKey(KeyCode::A))
 		{
-			posDelta += Vector3::Left();
+			posDelta += Vector3::left();
 		}
 
 		if (Input::GetKey(KeyCode::Right) || Input::GetKey(KeyCode::D))
 		{
-			posDelta += Vector3::Right();
+			posDelta += Vector3::right();
 		}
 
-		posDelta.Normalize();
+		posDelta.normalize();
 
 		if (Input::GetKey(KeyCode::LeftShift))
 		{
