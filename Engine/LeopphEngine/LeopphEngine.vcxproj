@@ -33,8 +33,6 @@
     <ClCompile Include="src\rendering\QuadMesh.cpp" />
     <ClCompile Include="src\rendering\Skybox.cpp" />
     <ClCompile Include="src\components\SpotLight.cpp" />
-    <ClCompile Include="src\rendering\StaticMaterial.cpp" />
-    <ClCompile Include="src\rendering\StaticMesh.cpp" />
     <ClCompile Include="src\rendering\CubeMesh.cpp" />
     <ClCompile Include="src\Context.cpp" />
     <ClCompile Include="src\data\DataManager.cpp" />
@@ -55,6 +53,7 @@
     <ClCompile Include="src\scene\Scene.cpp" />
     <ClCompile Include="src\scene\SceneManager.cpp" />
     <ClCompile Include="src\serialization\Serialize.cpp" />
+    <ClCompile Include="src\rendering\StaticModel.cpp" />
     <ClCompile Include="src\threading\JobSystem.cpp" />
     <ClCompile Include="src\threading\SpinLock.cpp" />
     <ClCompile Include="src\timing\Time.cpp" />
@@ -83,7 +82,6 @@
     <ClInclude Include="..\include\FrameCompleteEvent.hpp" />
     <ClInclude Include="..\include\Frustum.hpp" />
     <ClInclude Include="..\include\StaticModelData.hpp" />
-    <ClInclude Include="..\include\Texture2D.hpp" />
     <ClInclude Include="..\include\ImageSprite.hpp" />
     <ClInclude Include="..\include\Input.hpp" />
     <ClInclude Include="..\include\KeyCode.hpp" />
@@ -122,8 +120,6 @@
     <ClInclude Include="src\rendering\PersistentMappedBuffer.hpp" />
     <ClInclude Include="src\rendering\QuadMesh.hpp" />
     <ClInclude Include="src\rendering\CubeMesh.hpp" />
-    <ClInclude Include="src\rendering\StaticMaterial.hpp" />
-    <ClInclude Include="src\rendering\StaticMesh.hpp" />
     <ClCompile Include="..\deps\vendor\glad\src\gl.c" />
     <ClInclude Include="src\events\DirShadowResEvent.hpp" />
     <ClInclude Include="src\events\PointShadowResEvent.hpp" />
@@ -132,6 +128,7 @@
     <ClInclude Include="src\rendering\Renderer.hpp" />
     <ClInclude Include="src\rendering\RenderSettings.hpp" />
     <ClInclude Include="src\rendering\Shader.hpp" />
+    <ClInclude Include="src\rendering\Texture2D.hpp" />
     <ClInclude Include="src\scene\Scene.hpp" />
     <ClInclude Include="src\scene\SceneManager.hpp" />
   </ItemGroup>
@@ -147,6 +144,7 @@
     <ClInclude Include="include\rendering\RenderObject.hpp" />
     <ClInclude Include="src\serialization\Deserialize.hpp" />
     <ClInclude Include="src\serialization\Serialize.hpp" />
+    <ClInclude Include="src\rendering\StaticModel.hpp" />
     <ClInclude Include="src\threading\Job.hpp" />
     <ClInclude Include="src\threading\JobSystem.hpp" />
     <ClInclude Include="src\threading\SpinLock.hpp" />

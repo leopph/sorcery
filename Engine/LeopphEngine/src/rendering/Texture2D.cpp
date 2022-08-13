@@ -82,21 +82,21 @@ namespace leopph
 
 
 
-	u32 Texture2D::internal_handle() const
+	u32 Texture2D::get_handle() const
 	{
 		return mTexture;
 	}
 
 
 
-	u32 Texture2D::width() const
+	u32 Texture2D::get_width() const
 	{
 		return mWidth;
 	}
 
 
 
-	u32 Texture2D::height() const
+	u32 Texture2D::get_height() const
 	{
 		return mHeight;
 	}

@@ -41,11 +41,9 @@
     <ClCompile Include="src\Input.cpp" />
     <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\rendering\RenderSettings.cpp" />
-    <ClCompile Include="src\rendering\StaticMesh.cpp" />
     <ClCompile Include="src\rendering\CubeMesh.cpp" />
     <ClCompile Include="src\rendering\QuadMesh.cpp" />
     <ClCompile Include="src\rendering\PersistentMappedBuffer.cpp" />
-    <ClCompile Include="src\rendering\StaticMaterial.cpp" />
     <ClCompile Include="src\Window.cpp" />
     <ClCompile Include="src\events\WindowEvent.cpp" />
     <ClCompile Include="src\serialization\Serialize.cpp" />
@@ -53,6 +51,7 @@
     <ClCompile Include="src\assetmanagement\import\3d\ImportLeopph3d.cpp" />
     <ClCompile Include="src\assetmanagement\export\EncodeLeopph3d.cpp" />
     <ClCompile Include="src\assetmanagement\import\Import.cpp" />
+    <ClCompile Include="src\rendering\StaticModel.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\data\DataManager.hpp" />
@@ -98,7 +97,6 @@
     <ClInclude Include="..\include\Exit.hpp" />
     <ClInclude Include="..\include\FrameCompleteEvent.hpp" />
     <ClInclude Include="..\include\Frustum.hpp" />
-    <ClInclude Include="..\include\Texture2D.hpp" />
     <ClInclude Include="..\include\ImageSprite.hpp" />
     <ClInclude Include="..\include\Input.hpp" />
     <ClInclude Include="..\include\KeyCode.hpp" />
@@ -134,15 +132,15 @@
     <ClInclude Include="src\rendering\CubeMesh.hpp" />
     <ClInclude Include="src\rendering\QuadMesh.hpp" />
     <ClInclude Include="src\rendering\PersistentMappedBuffer.hpp" />
-    <ClInclude Include="src\rendering\StaticMesh.hpp" />
     <ClInclude Include="..\include\StaticModelData.hpp" />
-    <ClInclude Include="src\rendering\StaticMaterial.hpp" />
     <ClInclude Include="..\include\AABB.hpp" />
     <ClInclude Include="src\serialization\Deserialize.hpp" />
     <ClInclude Include="src\serialization\Serialize.hpp" />
     <ClInclude Include="src\assetmanagement\import\3d\ImportGeneric3d.hpp" />
     <ClInclude Include="src\assetmanagement\import\3d\ImportLeopph3d.hpp" />
     <ClInclude Include="src\assetmanagement\import\Import.hpp" />
+    <ClInclude Include="src\rendering\Texture2D.hpp" />
+    <ClInclude Include="src\rendering\StaticModel.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\rendering\shaders\glsl\include\CompositeFrag.glsl" />

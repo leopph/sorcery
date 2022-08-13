@@ -10,10 +10,9 @@
 #include "RenderingPath.hpp"
 #include "Shader.hpp"
 #include "SpotLight.hpp"
-#include "StaticMaterial.hpp"
-#include "StaticMesh.hpp"
+#include "StaticModel.hpp"
 #include "StaticModelComponent.hpp"
-#include "StaticRenderData.hpp"
+#include "StaticModelData.hpp"
 #include "Types.hpp"
 #include "WindowEvent.hpp"
 
@@ -129,6 +128,7 @@ namespace leopph::internal
 			std::vector<std::unique_ptr<PersistentMappedBuffer>> transformBuf;
 		};
 
+
 		struct CameraData
 		{
 			Extent<u32> extent;
@@ -141,11 +141,7 @@ namespace leopph::internal
 		public:
 			// Entry point for rendering a frame
 			void render();
-
-			u64 create_static_mesh(StaticModelComponent const* component, std::span<StaticModelData const> data);
-
-			void register_material(StaticMaterial const* material);
-			void unregister_material(StaticMaterial const* material);
+			
 
 			void register_dir_light(DirectionalLight const* dirLight);
 			void unregister_dir_light(DirectionalLight const* dirLight);
@@ -230,7 +226,7 @@ namespace leopph::internal
 
 			u64 mFrameCount{0};
 
-			std::unordered_map<StaticMaterial const*, PersistentMappedBuffer> mMaterialsToBuffers;
+			std::unordered_map<StaticMaterial const*, std::vector<StaticMesh const*>> mStaticMeshes;
 
 			std::vector<DirectionalLight const*> mDirLights;
 			std::vector<SpotLight const*> mSpotLights;
