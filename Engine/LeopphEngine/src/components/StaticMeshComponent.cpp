@@ -1,75 +1,104 @@
-#include "StaticModelComponent.hpp"
+#include "StaticMeshComponent.hpp"
 
-#include "../InternalContext.hpp"
-#include "../rendering/Renderer.hpp"
+#include "Image.hpp"
+#include "Texture2D.hpp"
 
 #include <utility>
+#include <vector>
 
 
-namespace leopph::internal
+namespace leopph
 {
-	bool StaticModelComponent::is_casting_shadow() const
+	/*namespace
 	{
-		return mIsCastingShadow;
-	}
-
-
-
-	void StaticModelComponent::set_casting_shadow(bool const value)
-	{
-		mIsCastingShadow = value;
-	}
-
-
-
-	void StaticModelComponent::init(std::shared_ptr<StaticMesh> staticMeshGroup)
-	{
-		mMesh = std::move(staticMeshGroup);
-		GetRenderer()->register_static_mesh(this, mMesh.get());
-	}
-
-
-
-	StaticModelComponent::StaticModelComponent(StaticModelComponent const& other) :
-		mIsCastingShadow{other.mIsCastingShadow},
-		mMesh{other.mMesh}
-	{
-		GetRenderer()->register_static_mesh(this, mMesh.get());
-	}
-
-
-
-	StaticModelComponent& StaticModelComponent::operator=(StaticModelComponent const& other)
-	{
-		if (this == &other)
+		std::shared_ptr<Material> convert_material(convert::Material const& convMat, std::span<std::shared_ptr<Texture2D> const> const textures)
 		{
-			return *this;
+			auto mat = std::make_shared<Material>();
+
+			mat->DiffuseColor = convMat.diffuseColor;
+			mat->SpecularColor = convMat.specularColor;
+			mat->Gloss = convMat.gloss;
+			mat->TwoSided = convMat.twoSided;
+			mat->Opacity = convMat.opacity;
+
+			if (convMat.diffuseMap)
+			{
+				mat->DiffuseMap = textures[*convMat.diffuseMap];
+			}
+
+			if (convMat.specularMap)
+			{
+				mat->SpecularMap = textures[*convMat.specularMap];
+			}
+
+			if (convMat.opacityMap)
+			{
+				mat->OpacityMap = textures[*convMat.opacityMap];
+			}
+
+			return mat;
 		}
 
-		GetRenderer()->unregister_static_mesh(this);
-		mMesh = other.mMesh;
-		GetRenderer()->register_static_mesh(this, mMesh.get());
 
-		return *this;
+
+		std::vector<Mesh> parse(std::filesystem::path const& path)
+		{
+			auto const imported = convert::import_3d_asset(path);
+
+			if (!imported.has_value())
+			{
+				return {};
+			}
+
+			auto const& [convTexs, convMats, convMeshes] = imported.value();
+
+			std::vector<std::shared_ptr<Texture2D>> textures;
+			textures.reserve(convTexs.size());
+
+			for (auto const& convTex : convTexs)
+			{
+				textures.push_back(std::make_shared<Texture2D>(convTex));
+			}
+
+			std::vector<std::shared_ptr<Material>> mats;
+			mats.reserve(convMats.size());
+
+			for (auto const& convMat : convMats)
+			{
+				mats.push_back(convert_material(convMat, textures));
+			}
+
+			std::vector<Mesh> meshes;
+			meshes.reserve(convMeshes.size());
+
+			for (auto const& [vertices, indices, matIndex] : convMeshes)
+			{
+				meshes.emplace_back(vertices, indices, mats[matIndex]);
+			}
+
+			return meshes;
+		}
 	}
 
 
 
-	StaticModelComponent::StaticModelComponent(StaticModelComponent&& other) noexcept :
-		StaticModelComponent{other}
-	{}
-
-
-
-	StaticModelComponent& StaticModelComponent::operator=(StaticModelComponent&& other) noexcept
+	StaticModelComponent::StaticModelComponent(std::filesystem::path path) :
+		mPath{std::move(path)}
 	{
-		return *this = other;
+		Init(MeshData{parse(mPath)});
 	}
 
 
 
-	StaticModelComponent::~StaticModelComponent()
+	ComponentPtr<> StaticModelComponent::Clone() const
 	{
-		GetRenderer()->unregister_static_mesh(this);
+		return CreateComponent<StaticModelComponent>(*this);
 	}
+
+
+
+	std::filesystem::path const& StaticModelComponent::path() const noexcept
+	{
+		return mPath;
+	}*/
 }

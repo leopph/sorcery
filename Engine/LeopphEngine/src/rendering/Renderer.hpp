@@ -4,7 +4,7 @@
 #include "Camera.hpp"
 #include "CubeMesh.hpp"
 #include "DirectionalLight.hpp"
-#include "EventReceiver.hpp"
+#include "EventReceiverHandle.hpp"
 #include "Framebuffer.hpp"
 #include "PersistentMappedBuffer.hpp"
 #include "PointLight.hpp"
@@ -13,7 +13,7 @@
 #include "SpotLight.hpp"
 #include "StaticMaterial.hpp"
 #include "StaticMesh.hpp"
-#include "StaticModelComponent.hpp"
+#include "StaticMeshComponent.hpp"
 #include "StaticModelData.hpp"
 #include "Types.hpp"
 #include "WindowEvent.hpp"
@@ -28,7 +28,7 @@ namespace leopph::internal
 {
 	#pragma warning(push)
 	#pragma warning(disable: 4324)
-	class Renderer final : public EventReceiver<WindowEvent>
+	class Renderer
 	{
 		struct ResourceUpdateFlags
 		{
@@ -92,7 +92,7 @@ namespace leopph::internal
 
 		struct MeshNode
 		{
-			StaticMesh const* mesh;
+			StaticMesh* mesh;
 			UboPerMeshData uboPerMesh;
 			std::vector<std::pair<Matrix4, Matrix4>> matrices;
 			std::vector<std::size_t> subMeshIndices;
@@ -141,23 +141,18 @@ namespace leopph::internal
 			void register_camera(Camera const* camera);
 			void unregister_camera(Camera const* camera);
 
-			void register_texture_2d(std::weak_ptr<Texture2D> tex);
-			void unregister_texture_2d(std::weak_ptr<Texture2D> const& tex);
+			void register_texture_2d(std::shared_ptr<Texture2D> tex);
+			void unregister_texture_2d(std::shared_ptr<Texture2D> const& tex);
 
-			void register_static_material(std::weak_ptr<StaticMaterial> mat);
-			void unregister_static_material(std::weak_ptr<StaticMaterial> const& mat);
+			void register_static_material(std::shared_ptr<StaticMaterial> mat);
+			void unregister_static_material(std::shared_ptr<StaticMaterial> const& mat);
 
-			void register_static_mesh(std::weak_ptr<StaticMesh> mesh);
-			void unregister_static_mesh(std::weak_ptr<StaticMesh> const& mesh);
+			void register_static_mesh(std::shared_ptr<StaticMesh> mesh);
+			void unregister_static_mesh(std::shared_ptr<StaticMesh> const& mesh);
 
 
 		private:
-			void prepare();
-			void update_framebuffers();
-			void clean_unused_resources();
-
-
-			void OnEventReceived(EventReceiver<WindowEvent>::EventParamType) override;
+			void on_event(WindowEvent const& event);
 
 
 			//void calculate_shadow_cascades(std::vector<ShadowCascade>& out);
@@ -172,11 +167,18 @@ namespace leopph::internal
 			Renderer& operator=(Renderer const& other) = delete;
 			Renderer& operator=(Renderer&& other) = delete;
 
-			~Renderer() override;
+			~Renderer();
 
 
 		private:
 			ResourceUpdateFlags mResUpdateFlags;
+			EventReceiverHandle<WindowEvent> mWindowEventReceiver{
+				[this](auto const&)
+				{
+					mResUpdateFlags.renderRes = true;
+				}
+			};
+
 
 			Shader mDepthShadowShader{"C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/DepthShadow.shader"};
 			Shader mLinearShadowShader{"C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/LinearShadow.shader"};
@@ -195,9 +197,10 @@ namespace leopph::internal
 			PersistentMappedBuffer mPerCameraUbo{sizeof UboPerCameraData};
 			PersistentMappedBuffer mPerMeshUbo{sizeof UboPerMeshData};
 
-			std::vector<std::weak_ptr<Texture2D>> mTexture2Ds;
-			std::unordered_map<std::weak_ptr<StaticMaterial const>, std::unordered_map<StaticMesh const*, std::vector<std::size_t>>> mStaticMaterials;
-			std::vector<std::weak_ptr<StaticMesh>> mStaticMeshes;
+			std::vector<std::shared_ptr<Texture2D>> mTexture2Ds;
+			std::vector<std::shared_ptr<StaticMaterial const>> mStaticMaterials;
+			std::vector<std::shared_ptr<StaticMesh>> mStaticMeshes;
+			std::unordered_map<StaticMaterial const*, std::unordered_map<StaticMesh const*, std::vector<std::size_t>>> mMaterialsToMeshes;
 
 			FrameData mFrameData;
 

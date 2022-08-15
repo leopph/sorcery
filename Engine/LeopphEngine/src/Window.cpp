@@ -4,7 +4,6 @@
 #include "KeyEvent.hpp"
 #include "Logger.hpp"
 #include "MouseEvent.hpp"
-#include "SettingsImpl.hpp"
 #include "WindowEvent.hpp"
 #include "util/api_adapters/GLFWAdapter.hpp"
 
@@ -243,7 +242,7 @@ namespace leopph
 
 	void Window::send_window_event() const
 	{
-		EventManager::Instance().Send<internal::WindowEvent>(static_cast<u32>(mWidth), static_cast<u32>(mHeight), mFullscreen, mVsync);
+		EventManager::get_instance().send<internal::WindowEvent>(static_cast<u32>(mWidth), static_cast<u32>(mHeight), mFullscreen, mVsync);
 	}
 
 
@@ -263,7 +262,7 @@ namespace leopph
 		{
 			auto const keyCode = internal::glfw::GetAbstractKeyCode(key);
 			auto const keyState = internal::glfw::GetAbstractKeyState(action);
-			EventManager::Instance().Send<internal::KeyEvent>(keyCode, keyState);
+			EventManager::get_instance().send<internal::KeyEvent>(keyCode, keyState);
 		}
 		catch (std::out_of_range const&)
 		{
@@ -275,6 +274,6 @@ namespace leopph
 
 	void Window::mouse_callback(GLFWwindow*, double const x, double const y)
 	{
-		EventManager::Instance().Send<internal::MouseEvent>(Vector2{x, y});
+		EventManager::get_instance().send<internal::MouseEvent>(Vector2{x, y});
 	}
 }

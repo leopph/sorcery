@@ -1,7 +1,7 @@
 #pragma once
 
 #include "LeopphApi.hpp"
-#include "StaticModelComponent.hpp"
+#include "StaticMeshComponent.hpp"
 
 
 namespace leopph

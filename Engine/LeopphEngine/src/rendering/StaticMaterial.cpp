@@ -68,13 +68,13 @@ namespace leopph
 			*reinterpret_cast<i32*>(bufferData + 52) = false;
 		}
 
-		internal::get_renderer()->register_static_material(weak_from_this());
+		internal::get_renderer()->register_static_material(shared_from_this());
 	}
 
 
 
 	StaticMaterial::~StaticMaterial()
 	{
-		internal::get_renderer()->unregister_static_material(weak_from_this());
+		internal::get_renderer()->unregister_static_material(shared_from_this());
 	}
 }

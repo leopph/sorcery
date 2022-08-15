@@ -74,14 +74,14 @@ namespace leopph
 		mHandle = glGetTextureHandleARB(mTexture);
 		glMakeTextureHandleResidentARB(mHandle);
 
-		internal::get_renderer()->register_texture_2d(weak_from_this());
+		internal::get_renderer()->register_texture_2d(shared_from_this());
 	}
 
 
 
 	Texture2D::~Texture2D()
 	{
-		internal::get_renderer()->unregister_texture_2d(weak_from_this());
+		internal::get_renderer()->unregister_texture_2d(shared_from_this());
 		glDeleteTextures(1, &mTexture);
 	}
 

@@ -59,7 +59,7 @@ namespace leopph::internal
 
 			renderer->render();
 			window->swap_buffers();
-			EventManager::Instance().Send<FrameCompleteEvent>();
+			EventManager::get_instance().send<FrameCompleteEvent>();
 		}
 
 		return 0;

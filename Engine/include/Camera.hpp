@@ -86,7 +86,7 @@ namespace leopph
 
 
 		private:
-			LEOPPHAPI void OnEventReceived(EventParamType event) override;
+			void on_event(internal::WindowEvent const& event) override;
 
 			std::variant<Color, std::shared_ptr<Skybox>> mBackground{Color{0, 0, 0, 255}};
 			RenderingPath mRenderingPath{RenderingPath::Forward};

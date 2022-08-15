@@ -217,7 +217,7 @@ namespace leopph
 
 
 
-	void Camera::OnEventReceived(EventParamType event)
+	void Camera::on_event(internal::WindowEvent const& event)
 	{
 		mWindowExtent =
 		{

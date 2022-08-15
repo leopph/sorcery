@@ -9,10 +9,12 @@ namespace leopph::internal
 	}
 
 
+
 	float TimeImpl::DeltaTime() const
 	{
 		return m_LastFrameDeltaTime.count();
 	}
+
 
 
 	float TimeImpl::FullTime() const
@@ -21,13 +23,15 @@ namespace leopph::internal
 	}
 
 
-	void TimeImpl::OnEventReceived(EventParamType)
+
+	void TimeImpl::on_event(FrameCompleteEvent const& event)
 	{
 		auto const currentTime{Clock::now()};
 		m_LastFrameDeltaTime = currentTime - m_LastFrameCompletionTime;
 		m_LastFrameCompletionTime = currentTime;
 		m_FullTime += m_LastFrameDeltaTime;
 	}
+
 
 
 	TimeImpl TimeImpl::s_Instance{};

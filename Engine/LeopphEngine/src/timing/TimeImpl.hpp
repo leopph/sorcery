@@ -8,7 +8,6 @@
 
 namespace leopph::internal
 {
-	// Internal-only class to measure time-related information around LeopphEngine.
 	class TimeImpl final : public EventReceiver<FrameCompleteEvent>
 	{
 		public:
@@ -27,8 +26,7 @@ namespace leopph::internal
 			TimeImpl() = default;
 			~TimeImpl() override = default;
 
-			// Updates the timing information on frame completion.
-			void OnEventReceived(EventParamType) override;
+			void on_event(FrameCompleteEvent const& event) override;
 
 			using Clock = std::chrono::high_resolution_clock;
 			using Seconds = std::chrono::duration<float>;

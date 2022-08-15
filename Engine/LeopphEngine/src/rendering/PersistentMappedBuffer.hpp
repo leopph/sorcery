@@ -13,9 +13,9 @@ namespace leopph
 			explicit PersistentMappedBuffer(u64 size);
 
 			PersistentMappedBuffer(PersistentMappedBuffer const& other) = delete;
-			PersistentMappedBuffer& operator=(PersistentMappedBuffer const& other) = delete;
-
 			PersistentMappedBuffer(PersistentMappedBuffer&& other) = delete;
+
+			PersistentMappedBuffer& operator=(PersistentMappedBuffer const& other) = delete;
 			PersistentMappedBuffer& operator=(PersistentMappedBuffer&& other) = delete;
 
 			~PersistentMappedBuffer();

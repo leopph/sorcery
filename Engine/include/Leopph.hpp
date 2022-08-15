@@ -26,7 +26,7 @@ See individual headers for more information.
 #include "Matrix.hpp"
 #include "Mesh.hpp"
 #include "MeshData.hpp"
-#include "StaticModelComponent.hpp"
+#include "StaticMeshComponent.hpp"
 #include "OrthographicCamera.hpp"
 #include "PerspectiveCamera.hpp"
 #include "Poelo.hpp"

@@ -9,7 +9,7 @@ using leopph::Vector3;
 using leopph::Space;
 using leopph::DirectionalLight;
 using leopph::Entity;
-using leopph::StaticModelComponent;
+using leopph::StaticMeshComponent;
 using leopph::PointLight;
 using leopph::Skybox;
 
@@ -54,7 +54,7 @@ namespace demo
 		lamp->get_transform().rotate(Vector3::up(), -90);
 		lamp->get_transform().rescale(0.01f, 0.01f, 0.01f);
 
-		auto const lampModel = lamp->attach_component<StaticModelComponent>("models/lamp/lamp.leopph3d");
+		auto const lampModel = lamp->attach_component<StaticMeshComponent>("models/lamp/lamp.leopph3d");
 		lampModel->set_casting_shadow(true);
 
 		auto const pLightEntity = new Entity{"plight"};
@@ -75,7 +75,7 @@ namespace demo
 		church->get_transform().rotate(Vector3::right(), 90);
 		church->get_transform().rotate(Vector3::up(), -90);
 
-		auto const churchModel = church->attach_component<StaticModelComponent>("models/church/church.leopph3d");
+		auto const churchModel = church->attach_component<StaticMeshComponent>("models/church/church.leopph3d");
 		churchModel->set_casting_shadow(true);
 
 		scene.SetActivationCallback([camera, player]()

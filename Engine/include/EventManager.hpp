@@ -3,7 +3,6 @@
 #include "EventReceiverBase.hpp"
 #include "LeopphApi.hpp"
 
-#include <algorithm>
 #include <concepts>
 #include <typeindex>
 #include <unordered_map>
@@ -19,75 +18,50 @@ namespace leopph
 	template<std::derived_from<Event> EventType>
 	class EventReceiverHandle;
 
-	// The EventManager singleton is the center of the Event System.
-	// It registers receivers for events and manages event dispatch.
+
 	class EventManager
 	{
 		public:
-			LEOPPHAPI static EventManager& Instance();
+			[[nodiscard]] LEOPPHAPI static EventManager& get_instance();
 
-			// Send the specified event to all registered receivers.
-			// This creates a new instance of the specified event by forwarding the passed arguments.
-			// The function then calls all registered receivers with this event event instance.
-			// The Event object's lifetime is the function call.
 			template<std::derived_from<Event> EventType, class... Args>
-			auto& Send(Args&&... args);
+			EventManager& send(Args&&... args);
 
-			// Internally used.
-			// CUrrently eventreceivers call this on consruction.
-			template<std::derived_from<Event> EventType>
-			auto RegisterFor(EventReceiver<EventType> const& receiver);
+			void register_receiver(std::type_index const& typeIndex, internal::EventReceiverBase* receiver);
+			void unregister_receiver(std::type_index const& typeIndex, internal::EventReceiverBase const* receiver);
 
-			// Internally used.
-			// Currently EventReceivers call this on destruction.
-			template<std::derived_from<Event> EventType>
-			auto UnregisterFrom(internal::EventReceiverBase const& handler);
-
-			EventManager(EventManager const& other) = delete;
-			void operator=(EventManager const& other) = delete;
-
-			EventManager(EventManager&& other) = delete;
-			void operator=(EventManager&& other) = delete;
 
 		private:
 			EventManager() = default;
-			constexpr ~EventManager() = default;
 
-			// To hide DataManager from interface. Not exported, cannot be explicitly called from outside the library.
-			void InternalRegister(std::type_index const& typeIndex, internal::EventReceiverBase const* receiver);
-			// To hide DataManager from interface. Not exported, cannot be explicitly called from outside the library.
-			void InternalUregister(std::type_index const& typeIndex, internal::EventReceiverBase const* receiver);
+		public:
+			EventManager(EventManager const& other) = delete;
+			EventManager(EventManager&& other) = delete;
 
-			std::unordered_map<std::type_index, std::vector<internal::EventReceiverBase const*>> m_Handlers;
+			void operator=(EventManager const& other) = delete;
+			void operator=(EventManager&& other) = delete;
+
+		private:
+			~EventManager() = default;
+
+			std::unordered_map<std::type_index, std::vector<internal::EventReceiverBase*>> mReceivers;
 	};
 
 
+
 	template<std::derived_from<Event> EventType, class... Args>
-	auto& EventManager::Send(Args&&... args)
+	EventManager& EventManager::send(Args&&... args)
 	{
-		if (auto const it{m_Handlers.find(typeid(EventType))};
-			it != m_Handlers.end())
+		if (auto const it = mReceivers.find(typeid(EventType)); it != std::end(mReceivers))
 		{
 			EventType event{std::forward<Args>(args)...};
-			std::for_each(it->second.begin(), it->second.end(), [&event](auto const& handler)
+
+			for (auto* const receiver : it->second)
 			{
-				handler->Handle(event);
-			});
+				receiver->internal_handle_event(event);
+			}
 		}
+
 		return *this;
-	}
-
-
-	template<std::derived_from<Event> EventType>
-	auto EventManager::RegisterFor(EventReceiver<EventType> const& receiver)
-	{
-		InternalRegister(typeid(EventType), &receiver);
-	}
-
-
-	template<std::derived_from<Event> EventType>
-	auto EventManager::UnregisterFrom(internal::EventReceiverBase const& handler)
-	{
-		InternalUregister(typeid(EventType), &handler);
 	}
 }

@@ -9,11 +9,10 @@
     <ClCompile Include="src\components\Cube.cpp" />
     <ClCompile Include="src\components\DirectionalLight.cpp" />
     <ClCompile Include="src\components\Light.cpp" />
-    <ClCompile Include="src\components\StaticModelComponent.cpp" />
+    <ClCompile Include="src\components\StaticMeshComponent.cpp" />
     <ClCompile Include="src\components\OrthographicCamera.cpp" />
     <ClCompile Include="src\components\PerspectiveCamera.cpp" />
     <ClCompile Include="src\components\PointLight.cpp" />
-    <ClCompile Include="src\components\StaticMeshComponent.cpp" />
     <ClCompile Include="src\rendering\Skybox.cpp" />
     <ClCompile Include="src\components\SpotLight.cpp" />
     <ClCompile Include="src\data\DataManager.cpp" />
@@ -111,7 +110,7 @@
     <ClInclude Include="..\include\OrthographicCamera.hpp" />
     <ClInclude Include="..\include\PerspectiveCamera.hpp" />
     <ClInclude Include="..\include\PointLight.hpp" />
-    <ClInclude Include="..\include\StaticModelComponent.hpp" />
+    <ClInclude Include="..\include\StaticMeshComponent.hpp" />
     <ClInclude Include="..\include\Skybox.hpp" />
     <ClInclude Include="..\include\SpotLight.hpp" />
     <ClInclude Include="..\include\Time.hpp" />

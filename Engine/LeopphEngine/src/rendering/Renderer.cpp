@@ -5,7 +5,6 @@
 #include "Context.hpp"
 #include "GlCore.hpp"
 #include "Math.hpp"
-#include "RenderSettings.hpp"
 #include "Window.hpp"
 #include "../../../include/Entity.hpp"
 
@@ -18,13 +17,61 @@ namespace leopph::internal
 {
 	void Renderer::render()
 	{
-		clean_unused_resources();
+		// Clean unused resources
+
+		std::erase_if(mTexture2Ds, [](auto const& tex)
+		{
+			return tex.use_count() == 1;
+		});
+
+		std::erase_if(mStaticMaterials, [](auto const& mat)
+		{
+			return mat.use_count() == 1;
+		});
+
+		std::erase_if(mStaticMeshes, [](auto const& mesh)
+		{
+			return mesh.use_count() == 1;
+		});
+
+
+		// Update framebuffers if needed
 
 		if (mResUpdateFlags.renderRes)
 		{
-			update_framebuffers();
+			auto const* window = get_window();
+			auto const width = window->get_width();
+			auto const height = window->get_height();
+
+			for (auto& buf : mPingPongBuffers)
+			{
+				if (buf.width != width || buf.height != height)
+				{
+					glDeleteFramebuffers(1, &buf.name);
+					glDeleteBuffers(1, &buf.depthStencilAtt);
+					glDeleteBuffers(1, &buf.clrAtts[0]);
+
+					buf.width = width;
+					buf.height = height;
+
+
+					glCreateTextures(GL_TEXTURE_2D, 1, &buf.clrAtts[0]);
+					glTextureStorage2D(buf.clrAtts[0], 1, GL_RGBA8, buf.width, buf.height);
+
+					glCreateTextures(GL_TEXTURE_2D, 1, &buf.depthStencilAtt);
+					glTextureStorage2D(buf.depthStencilAtt, 1, GL_DEPTH24_STENCIL8, buf.width, buf.height);
+
+					glCreateFramebuffers(1, &buf.name);
+					glNamedFramebufferTexture(buf.name, GL_COLOR_ATTACHMENT0, buf.clrAtts[0], 0);
+					glNamedFramebufferTexture(buf.name, GL_DEPTH_STENCIL_ATTACHMENT, buf.depthStencilAtt, 0);
+					glNamedFramebufferDrawBuffer(buf.name, GL_COLOR_ATTACHMENT0);
+				}
+			}
+
 			mResUpdateFlags.renderRes = false;
 		}
+
+		// Extract per frame data
 
 		mFrameData.uboPerFrameData.ambientLight.intensity = AmbientLight::Instance().Intensity();
 		mFrameData.uboPerFrameData.lightCount = 0;
@@ -70,8 +117,10 @@ namespace leopph::internal
 		}
 
 
+		// Extract per view data
+
 		mFrameData.meshes.clear();
-		if (mFrameData.viewCount < mCameras.size())
+		if (mFrameData.perViewData.capacity() < mCameras.size())
 		{
 			mFrameData.perViewData.resize(mCameras.size());
 		}
@@ -80,34 +129,33 @@ namespace leopph::internal
 
 		for (auto i = 0; i < mFrameData.viewCount; i++)
 		{
-			auto& [viewport, viewMatrix, projMatrix, viewProjMatrix, transformMatrices] = mFrameData.perViewData[i];
+			auto& [viewport, uboPerCameraData, materialModes, materialNodeCount] = mFrameData.perViewData[i];
 			auto const& cam = mCameras[i];
 
 			viewport = cam->get_window_extents();
-			viewMatrix = cam->build_view_matrix();
-			projMatrix = cam->build_projection_matrix();
-			viewProjMatrix = viewMatrix * projMatrix;
+			uboPerCameraData.position = cam->get_owner()->get_position();
+			uboPerCameraData.viewMat = cam->build_view_matrix();
+			uboPerCameraData.projMat = cam->build_projection_matrix();
+			uboPerCameraData.viewProjMat = uboPerCameraData.viewMat * uboPerCameraData.projMat;
+			uboPerCameraData.viewMatInv = uboPerCameraData.viewMat.inverse();
+			uboPerCameraData.projMat = uboPerCameraData.projMat.inverse();
+			uboPerCameraData.viewProjMatInv = uboPerCameraData.viewProjMat.inverse();
 
-			transformMatrices.clear();
-
-			for (auto const& meshWeak : mStaticMeshes)
+			for (auto const& [material, meshes] : mMaterialsToMeshes)
 			{
-				for (auto const mesh = meshWeak.lock();
-				     auto const* const entity : mesh->get_entities())
+				for (auto const& [mesh, subMeshIndices] : meshes)
 				{
-					if (auto const mvp = entity->get_model_matrix() * viewProjMatrix;
-						mesh->get_bounding_box().is_visible_in_frustum(mvp))
-					{
-						mFrameData.meshes.emplace(mesh);
-						transformMatrices[mesh.get()].emplace_back(mvp.transposed(), entity->get_normal_matrix().transposed()); // Transposed, because OpenGL buffer
-					}
+					for (auto const subMeshIndex : subMeshIndices)
+					{ }
 				}
 			}
 		}
 
-
 		*static_cast<UboPerFrameData*>(mPerFrameUbo.get_ptr()) = mFrameData.uboPerFrameData;
 		glBindBufferRange(GL_UNIFORM_BUFFER, 0, mPerFrameUbo.get_internal_handle(), 0, sizeof UboPerFrameData);
+
+
+		// Opaque pass
 
 		glDisable(GL_BLEND);
 		glEnable(GL_DEPTH_TEST);
@@ -121,7 +169,7 @@ namespace leopph::internal
 		glClearNamedFramebufferfv(mPingPongBuffers[0].name, GL_DEPTH, 0, &clearDepth);
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, mPingPongBuffers[0].name);
 
-		for (auto i = 0; i < mFrameData.perViewData.size(); i++)
+		for (auto i = 0; i < mFrameData.viewCount; i++)
 		{
 			auto const& [viewport, uboPerCameraData, materialNodes, materialNodeCount] = mFrameData.perViewData[i];
 
@@ -140,7 +188,7 @@ namespace leopph::internal
 				{
 					auto const& [mesh, uboPerMesh, matrices, subMeshIndices] = meshNodes[k];
 
-					// Update mesh instance buffer with matrices
+					mesh->set_instance_data(matrices);
 
 					for (auto const subMeshIndex : subMeshIndices)
 					{
@@ -215,142 +263,44 @@ namespace leopph::internal
 
 
 
-	void Renderer::register_texture_2d(std::weak_ptr<Texture2D> tex)
+	void Renderer::register_texture_2d(std::shared_ptr<Texture2D> tex)
 	{
 		mTexture2Ds.emplace_back(std::move(tex));
 	}
 
 
 
-	void Renderer::unregister_texture_2d(std::weak_ptr<Texture2D> const& tex)
+	void Renderer::unregister_texture_2d(std::shared_ptr<Texture2D> const& tex)
 	{
 		std::erase(mTexture2Ds, tex);
 	}
 
 
 
-	void Renderer::register_static_material(std::weak_ptr<StaticMaterial> mat)
+	void Renderer::register_static_material(std::shared_ptr<StaticMaterial> mat)
 	{
 		mStaticMaterials.emplace_back(std::move(mat));
 	}
 
 
 
-	void Renderer::unregister_static_material(std::weak_ptr<StaticMaterial> const& mat)
+	void Renderer::unregister_static_material(std::shared_ptr<StaticMaterial> const& mat)
 	{
 		std::erase(mStaticMaterials, mat);
 	}
 
 
 
-	void Renderer::register_static_mesh(std::weak_ptr<StaticMesh> mesh)
+	void Renderer::register_static_mesh(std::shared_ptr<StaticMesh> mesh)
 	{
 		mStaticMeshes.emplace_back(std::move(mesh));
 	}
 
 
 
-	void Renderer::unregister_static_mesh(std::weak_ptr<StaticMesh> const& mesh)
+	void Renderer::unregister_static_mesh(std::shared_ptr<StaticMesh> const& mesh)
 	{
 		std::erase(mStaticMeshes, mesh);
-	}
-
-
-
-	void Renderer::update_framebuffers()
-	{
-		auto const* window = get_window();
-		auto const width = window->get_width();
-		auto const height = window->get_height();
-
-		for (auto& buf : mPingPongBuffers)
-		{
-			if (buf.width != width || buf.height != height)
-			{
-				glDeleteFramebuffers(1, &buf.name);
-				glDeleteBuffers(1, &buf.depthStencilAtt);
-				glDeleteBuffers(1, &buf.clrAtts[0]);
-
-				buf.width = width;
-				buf.height = height;
-
-
-				glCreateTextures(GL_TEXTURE_2D, 1, &buf.clrAtts[0]);
-				glTextureStorage2D(buf.clrAtts[0], 1, GL_RGBA8, buf.width, buf.height);
-
-				glCreateTextures(GL_TEXTURE_2D, 1, &buf.depthStencilAtt);
-				glTextureStorage2D(buf.depthStencilAtt, 1, GL_DEPTH24_STENCIL8, buf.width, buf.height);
-
-				glCreateFramebuffers(1, &buf.name);
-				glNamedFramebufferTexture(buf.name, GL_COLOR_ATTACHMENT0, buf.clrAtts[0], 0);
-				glNamedFramebufferTexture(buf.name, GL_DEPTH_STENCIL_ATTACHMENT, buf.depthStencilAtt, 0);
-				glNamedFramebufferDrawBuffer(buf.name, GL_COLOR_ATTACHMENT0);
-			}
-		}
-	}
-
-
-
-	void Renderer::clean_unused_resources()
-	{
-		for (auto it = std::begin(mTexture2Ds); it != std::end(mTexture2Ds); ++it)
-		{
-			if (it->expired())
-			{
-				std::erase(mTexture2Ds, it);
-				it = std::begin(mTexture2Ds);
-			}
-		}
-
-		for (auto it = std::begin(mStaticMaterials); it != std::end(mStaticMaterials); ++it)
-		{
-			if (it->first.expired())
-			{
-				mStaticMaterials.erase(it);
-				it = std::begin(mStaticMaterials);
-			}
-		}
-
-		for (auto it = std::begin(mStaticMeshes); it != std::end(mStaticMeshes); ++it)
-		{
-			if (it->expired())
-			{
-				std::erase(mStaticMeshes, it);
-				it = std::begin(mStaticMeshes);
-			}
-		}
-	}
-
-
-
-	void Renderer::prepare()
-	{
-		// Calculate additional camera matrices
-		mCamData.viewMatInv = mCamData.viewMat.inverse();
-		mCamData.projMatInv = mCamData.projMat.inverse();
-		mCamData.viewProjMat = mCamData.viewMat * mCamData.projMat;
-		mCamData.viewProjMatInv = mCamData.viewProjMat.inverse();
-
-		// Sort punctual lights by distance to camera
-
-		auto const distToCam = [this](auto const& lightData)
-		{
-			return Vector3::distance(lightData.position, this->mCamData.position);
-		};
-
-		std::ranges::sort(mSpotLightData, std::ranges::less{}, distToCam);
-		std::ranges::sort(mPointLightData, std::ranges::less{}, distToCam);
-
-		// Select first N of the lights
-		mSpotLightData.resize(RenderSettings::get_max_spot_light_count());
-		mPointLightData.resize(RenderSettings::get_max_point_light_count());
-	}
-
-
-
-	void Renderer::OnEventReceived(EventReceiver<WindowEvent>::EventParamType)
-	{
-		mResUpdateFlags.renderRes = true;
 	}
 
 

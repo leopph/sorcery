@@ -23,8 +23,23 @@ namespace leopph
 
 
 
-	void StaticMesh::set_active_instance_buffer(std::size_t index)
-	{ }
+	void StaticMesh::set_instance_data(std::span<InstanceDataType const> const data)
+	{
+		if (data.size_bytes() > mInstanceBuf->get_size())
+		{
+			auto newBufSize = mInstanceBuf->get_size();
+
+			while (newBufSize < data.size_bytes())
+			{
+				newBufSize *= 2;
+			}
+
+			mInstanceBuf = std::make_unique<PersistentMappedBuffer>(newBufSize);
+		}
+
+		std::memcpy(mInstanceBuf->get_ptr(), data.data(), data.size_bytes());
+		mNumInstances = data.size();
+	}
 
 
 
@@ -56,8 +71,7 @@ namespace leopph
 
 
 
-	StaticMesh::StaticMesh(StaticMeshData const& data) :
-		mInstanceBuf{PersistentMappedBuffer{mNumInstances}}
+	StaticMesh::StaticMesh(StaticMeshData const& data)
 	{
 		glCreateBuffers(1, &mVbo);
 		glNamedBufferStorage(mVbo, data.vertices.size() * sizeof Vertex, data.vertices.data(), 0);
@@ -66,6 +80,7 @@ namespace leopph
 		glNamedBufferStorage(mIbo, data.indices.size() * sizeof u32, data.indices.data(), 0);
 
 		glVertexArrayVertexBuffer(mVao, 0, mVbo, 0, sizeof Vertex);
+		glVertexArrayVertexBuffer(mVao, 1, mInstanceBuf->get_internal_handle(), 0, sizeof InstanceDataType);
 		glVertexArrayElementBuffer(mVao, mIbo);
 
 		glVertexArrayAttribFormat(mVao, 0, 3, GL_FLOAT, GL_FALSE, offsetof(Vertex, position));
@@ -80,14 +95,34 @@ namespace leopph
 		glVertexArrayAttribBinding(mVao, 2, 0);
 		glEnableVertexArrayAttrib(mVao, 2);
 
-		internal::get_renderer()->register_static_mesh(weak_from_this());
+		glVertexArrayAttribFormat(mVao, 3, 4, GL_FLOAT, GL_FALSE, 0);
+		glVertexArrayAttribBinding(mVao, 3, 1);
+		glVertexArrayBindingDivisor(mVao, 3, 1);
+		glEnableVertexArrayAttrib(mVao, 3);
+
+		glVertexArrayAttribFormat(mVao, 4, 4, GL_FLOAT, GL_FALSE, sizeof Vector4);
+		glVertexArrayAttribBinding(mVao, 4, 1);
+		glVertexArrayBindingDivisor(mVao, 4, 1);
+		glEnableVertexArrayAttrib(mVao, 4);
+
+		glVertexArrayAttribFormat(mVao, 5, 4, GL_FLOAT, GL_FALSE, 2 * sizeof Vector4);
+		glVertexArrayAttribBinding(mVao, 5, 1);
+		glVertexArrayBindingDivisor(mVao, 5, 1);
+		glEnableVertexArrayAttrib(mVao, 5);
+
+		glVertexArrayAttribFormat(mVao, 6, 4, GL_FLOAT, GL_FALSE, 3 * sizeof Vector4);
+		glVertexArrayAttribBinding(mVao, 6, 1);
+		glVertexArrayBindingDivisor(mVao, 6, 1);
+		glEnableVertexArrayAttrib(mVao, 6);
+
+		internal::get_renderer()->register_static_mesh(shared_from_this());
 	}
 
 
 
 	StaticMesh::~StaticMesh()
 	{
-		internal::get_renderer()->unregister_static_mesh(weak_from_this());
+		internal::get_renderer()->unregister_static_mesh(shared_from_this());
 
 		glDeleteVertexArrays(1, &mVao);
 		glDeleteBuffers(1, &mIbo);
