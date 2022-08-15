@@ -10,7 +10,7 @@ namespace demo
 		public:
 			CharacterController2D(leopph::Transform& target, float speed, float runMult, float walkMult);
 
-			void OnFrameUpdate() override;
+			void on_frame_update() override;
 
 		private:
 			leopph::Transform* m_Target;

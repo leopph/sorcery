@@ -63,7 +63,7 @@ namespace leopph::internal
 	{
 		std::ranges::sort(m_ActiveBehaviors, BehaviorOrderFunc{}, [](auto const* behavior)
 		{
-			return behavior->UpdateIndex();
+			return behavior->get_update_index();
 		});
 	}
 }

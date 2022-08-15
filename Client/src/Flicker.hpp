@@ -11,7 +11,7 @@ namespace demo
 	{
 		public:
 			explicit Flicker(leopph::ComponentPtr<leopph::Light> light, float minOnTime, float maxOnTime, float minOffTim, float maxOffTim);
-			void OnFrameUpdate() override;
+			void on_frame_update() override;
 
 		private:
 			leopph::ComponentPtr<leopph::Light> m_Light;

@@ -10,7 +10,7 @@ class FrameRateAnalyzer final : public leopph::Behavior
 {
 	public:
 		explicit FrameRateAnalyzer(float pollInterval, unsigned maxDataSets);
-		void OnFrameUpdate() override;
+		void on_frame_update() override;
 
 	private:
 		struct FrameData

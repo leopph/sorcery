@@ -15,7 +15,7 @@ namespace demo
 	{ }
 
 
-	void Tiler::OnFrameUpdate()
+	void Tiler::on_frame_update()
 	{
 		auto const cam = Camera::Current();
 		std::ranges::for_each(m_Layers, [cam](auto& layer)

@@ -1,4 +1,4 @@
-#include "StaticModel.hpp"
+#include "StaticMaterial.hpp"
 
 #include "Context.hpp"
 #include "GlCore.hpp"
@@ -67,76 +67,14 @@ namespace leopph
 			*reinterpret_cast<u64*>(bufferData + 40) = 0;
 			*reinterpret_cast<i32*>(bufferData + 52) = false;
 		}
+
+		internal::get_renderer()->register_static_material(weak_from_this());
 	}
 
 
 
-	StaticMesh::StaticMesh(std::span<Vertex const> const vertices, std::span<u32 const> const indices) :
-		mNumIndices{indices.size()}
+	StaticMaterial::~StaticMaterial()
 	{
-		glCreateBuffers(1, &mVbo);
-		glNamedBufferStorage(mVbo, vertices.size_bytes(), vertices.data(), 0);
-
-		glCreateBuffers(1, &mIbo);
-		glNamedBufferStorage(mIbo, indices.size_bytes(), indices.data(), 0);
-
-		glVertexArrayVertexBuffer(mVao, 0, mVbo, 0, sizeof Vertex);
-		glVertexArrayElementBuffer(mVao, mIbo);
-
-		glVertexArrayAttribFormat(mVao, 0, 3, GL_FLOAT, GL_FALSE, offsetof(Vertex, position));
-		glVertexArrayAttribBinding(mVao, 0, 0);
-		glEnableVertexArrayAttrib(mVao, 0);
-
-		glVertexArrayAttribFormat(mVao, 1, 3, GL_FLOAT, GL_FALSE, offsetof(Vertex, normal));
-		glVertexArrayAttribBinding(mVao, 1, 0);
-		glEnableVertexArrayAttrib(mVao, 1);
-
-		glVertexArrayAttribFormat(mVao, 2, 2, GL_FLOAT, GL_FALSE, offsetof(Vertex, uv));
-		glVertexArrayAttribBinding(mVao, 2, 0);
-		glEnableVertexArrayAttrib(mVao, 2);
-	}
-
-
-
-	StaticMesh::~StaticMesh()
-	{
-		glDeleteVertexArrays(1, &mVao);
-		glDeleteBuffers(1, &mIbo);
-		glDeleteBuffers(1, &mVbo);
-	}
-
-
-
-	void StaticMesh::draw() const
-	{
-		glBindVertexArray(mVao);
-		glDrawElements(GL_TRIANGLES, mNumIndices, GL_UNSIGNED_INT, nullptr);
-	}
-
-
-
-	StaticModel::StaticModel(StaticModelData const& data)
-	{
-		for (auto const& img : data.textures)
-		{
-			mTextures.emplace_back(std::make_shared<Texture2D>(img));
-		}
-
-		for (auto const& matData : data.materials)
-		{
-			mMaterials.emplace_back(std::make_unique<StaticMaterial>(matData, mTextures));
-		}
-
-		for (auto const& [vertices, indices, materialIndex] : data.meshes)
-		{
-			mMeshes.emplace_back(std::make_unique<StaticMesh>(vertices, indices));
-		}
-	}
-
-
-
-	StaticModel::~StaticModel()
-	{
-		
+		internal::get_renderer()->unregister_static_material(weak_from_this());
 	}
 }

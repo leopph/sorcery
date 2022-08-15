@@ -12,7 +12,7 @@ namespace demo
 	{ }
 
 
-	void Parallaxer::OnFrameUpdate()
+	void Parallaxer::on_frame_update()
 	{
 		std::ranges::for_each(m_Layers, [this](auto const& layer)
 		{

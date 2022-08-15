@@ -1,97 +1,48 @@
 #include "Behavior.hpp"
 
-#include "../InternalContext.hpp"
-#include "../data/DataManager.hpp"
+#include <algorithm>
 
 
 namespace leopph
 {
-	int Behavior::UpdateIndex() const noexcept
+	i32 Behavior::get_update_index() const
 	{
-		return m_UpdateIndex;
+		return mUpdateIndex;
 	}
 
 
 
-	void Behavior::UpdateIndex(int const index)
+	void Behavior::set_update_index(i32 const index)
 	{
-		m_UpdateIndex = index;
-
-		if (InUse())
-		{
-			internal::GetDataManager()->SortActiveBehaviors();
-		}
+		mUpdateIndex = index;
 	}
 
 
 
-	void Behavior::set_owner(Entity* entity)
+	Behavior::Behavior()
 	{
-		auto* const dataManager = internal::GetDataManager();
-
-		if (InUse())
-		{
-			dataManager->UnregisterActiveBehavior(this);
-		}
-
-		Component::set_owner(entity);
-
-		if (InUse())
-		{
-			dataManager->RegisterActiveBehavior(this);
-		}
-	}
-
-
-
-	void Behavior::Active(bool const active)
-	{
-		auto* const dataManager = internal::GetDataManager();
-
-		if (InUse())
-		{
-			dataManager->UnregisterActiveBehavior(this);
-		}
-
-		Component::Active(active);
-
-		if (InUse())
-		{
-			dataManager->RegisterActiveBehavior(this);
-		}
+		sAllBehaviors.emplace_back(this);
 	}
 
 
 
 	Behavior::~Behavior()
 	{
-		internal::GetDataManager()->UnregisterActiveBehavior(this);
+		std::erase(sAllBehaviors, this);
 	}
 
 
 
-	Behavior& Behavior::operator=(Behavior const& other)
+	void Behavior::update_all_behaviors()
 	{
-		if (this == &other)
+		std::ranges::sort(sAllBehaviors, [](auto const* const left, auto const* const right)
 		{
-			return *this;
-		}
+			return left->get_update_index() > right->get_update_index();
+		});
 
-		auto* const dataManager = internal::GetDataManager();
-
-		if (InUse())
+		for (auto* const behavior : sAllBehaviors)
 		{
-			dataManager->UnregisterActiveBehavior(this);
+			behavior->on_frame_update();
 		}
-
-		Component::operator=(other);
-		UpdateIndex(other.m_UpdateIndex);
-
-		if (InUse())
-		{
-			dataManager->RegisterActiveBehavior(this);
-		}
-
-		return *this;
 	}
 }

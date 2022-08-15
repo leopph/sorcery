@@ -1,7 +1,9 @@
 #pragma once
 
+#include "AABB.hpp"
 #include "Color.hpp"
 #include "Image.hpp"
+#include "SubMeshDescriptor.hpp"
 #include "Types.hpp"
 #include "Vertex.hpp"
 
@@ -42,13 +44,14 @@ namespace leopph
 	{
 		std::vector<Vertex> vertices;
 		std::vector<u32> indices;
-		std::size_t materialIndex;
+		std::vector<SubMeshDescriptor> subMeshes;
+		AABB boundingBox;
 	};
 
 
 	struct StaticModelData
 	{
-		std::vector<StaticMeshData> meshes;
+		StaticMeshData mesh;
 		std::vector<StaticMaterialData> materials;
 		std::vector<Image> textures;
 	};

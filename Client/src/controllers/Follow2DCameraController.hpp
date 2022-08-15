@@ -10,7 +10,7 @@ namespace demo
 		public:
 			explicit Follow2DCameraController(leopph::ComponentPtr<leopph::Camera const> const& camera, leopph::Transform& target, leopph::Vector2 targetOffsetFromCenter);
 
-			void OnFrameUpdate() override;
+			void on_frame_update() override;
 
 		private:
 			leopph::Transform* m_CamTransform;

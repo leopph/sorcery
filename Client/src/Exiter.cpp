@@ -1,7 +1,7 @@
 #include "Exiter.hpp"
 
 
-void Exiter::OnFrameUpdate()
+void Exiter::on_frame_update()
 {
 	if (leopph::Input::GetKey(leopph::KeyCode::Escape))
 	{

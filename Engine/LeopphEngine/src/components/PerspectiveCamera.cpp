@@ -1,6 +1,7 @@
 #include "PerspectiveCamera.hpp"
 
 #include "Logger.hpp"
+#include "Math.hpp"
 
 #include <format>
 

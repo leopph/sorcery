@@ -181,9 +181,9 @@ namespace leopph
 
 
 
-		std::vector<unsigned> process_indices(aiMesh const* mesh)
+		std::vector<u32> process_indices(aiMesh const* mesh)
 		{
-			std::vector<unsigned> indices;
+			std::vector<u32> indices;
 
 			for (unsigned i = 0; i < mesh->mNumFaces; i++)
 			{
@@ -194,33 +194,6 @@ namespace leopph
 			}
 
 			return indices;
-		}
-
-
-
-		void log_primitive_error(aiMesh const* const mesh, std::filesystem::path const& path)
-		{
-			std::string msg{"Ignoring mesh without triangles in model at path ["};
-			msg += path.string();
-			msg += "]. Primitives are";
-
-			if (mesh->mPrimitiveTypes & aiPrimitiveType_POINT)
-			{
-				msg += " [points]";
-			}
-
-			if (mesh->mPrimitiveTypes & aiPrimitiveType_LINE)
-			{
-				msg += " [lines]";
-			}
-
-			if (mesh->mPrimitiveTypes & aiPrimitiveType_POLYGON)
-			{
-				msg += " [N>3 polygons]";
-			}
-
-			msg += ".";
-			internal::Logger::Instance().Debug(msg);
 		}
 	}
 
@@ -249,6 +222,9 @@ namespace leopph
 		data.materials = std::move(materials);
 		data.textures = std::move(textures);
 
+		// Groups meshes together 
+		std::unordered_map<std::size_t, std::vector<aiMesh const*>> meshIndexToMesh;
+
 		std::queue<std::pair<aiNode const*, Matrix4>> queue;
 		queue.emplace(scene->mRootNode, convert(scene->mRootNode->mTransformation) * Matrix4{1, 1, -1, 1});
 
@@ -264,15 +240,32 @@ namespace leopph
 				{
 					if (mesh->mPrimitiveTypes & aiPrimitiveType_NGONEncodingFlag)
 					{
-						internal::Logger::Instance().Debug("Found NGON encoded mesh in model at path [" + path.string() + "].");
-						// TODO currently ignoring NGON property
+						internal::Logger::Instance().Debug(std::format("Found NGON encoded submesh in model file at {}.", path.string()));
+						// TODO transform to triangle fans
 					}
 
 					data.meshes.emplace_back(process_vertices(mesh, trafo), process_indices(mesh), mesh->mMaterialIndex);
 				}
 				else
 				{
-					log_primitive_error(mesh, path);
+					std::string primitiveType;
+
+					if (mesh->mPrimitiveTypes & aiPrimitiveType_POINT)
+					{
+						primitiveType += " [points]";
+					}
+
+					if (mesh->mPrimitiveTypes & aiPrimitiveType_LINE)
+					{
+						primitiveType += " [lines]";
+					}
+
+					if (mesh->mPrimitiveTypes & aiPrimitiveType_POLYGON)
+					{
+						primitiveType += " [N>3 polygons]";
+					}
+
+					internal::Logger::Instance().Debug(std::format("Ignoring non-triangle submesh in model file at {}. Primitives in the submesh are {}.", path.string(), primitiveType));
 				}
 			}
 

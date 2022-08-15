@@ -1,47 +1,39 @@
 #pragma once
 
 #include "Component.hpp"
+#include "Types.hpp"
+
+#include <vector>
 
 
 namespace leopph
 {
-	// Special Components that are updated every frame.
-	// Their Update Index defines their priority over other Behaviors.
-	// Lower indices are called first.
-	// Only active and attached Behaviors are updated.
 	class Behavior : public Component
 	{
 		public:
-			// This function is called on all attached active Behaviors every frame.
-			virtual void OnFrameUpdate() = 0;
+			virtual void on_frame_update() = 0;
 
-			// Get the Update Index of the Behavior.
-			[[nodiscard]] LEOPPHAPI int UpdateIndex() const noexcept;
+			[[nodiscard]] LEOPPHAPI i32 get_update_index() const;
+			LEOPPHAPI void set_update_index(i32 index);
 
-			// Set the Update Index of the Behavior.
-			LEOPPHAPI void UpdateIndex(int index);
+		protected:
+			Behavior();
 
-			LEOPPHAPI void set_owner(Entity* entity) final;
-			using Component::Owner;
-
-			LEOPPHAPI void Active(bool active) final;
-			using Component::Active;
-
+		public:
+			Behavior(Behavior const& other) = delete;
 			Behavior(Behavior&& other) = delete;
+
 			Behavior& operator=(Behavior&& other) = delete;
+			Behavior& operator=(Behavior const& other) = delete;
 
 			LEOPPHAPI ~Behavior() override;
 
-		protected:
-			Behavior() = default;
 
-			// Takes the other's update index.
-			Behavior(Behavior const& other) = default;
-
-			// Takes the other's update index.
-			LEOPPHAPI Behavior& operator=(Behavior const& other);
+			static void update_all_behaviors();
 
 		private:
-			int m_UpdateIndex{0};
+			i32 mUpdateIndex{0};
+
+			static std::vector<Behavior*> sAllBehaviors;
 	};
 }

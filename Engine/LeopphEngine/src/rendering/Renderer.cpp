@@ -10,72 +10,151 @@
 #include "../../../include/Entity.hpp"
 
 #include <algorithm>
+#include <array>
+#include <cmath>
 
 
 namespace leopph::internal
 {
 	void Renderer::render()
 	{
-		mCameraData.clear();
+		clean_unused_resources();
 
-		for (auto const* const camera : mCameras)
+		if (mResUpdateFlags.renderRes)
 		{
-			extract_camera_data(*camera, mCameraData);
+			update_framebuffers();
+			mResUpdateFlags.renderRes = false;
 		}
 
-		if (mCameraData.empty())
+		mFrameData.uboPerFrameData.ambientLight.intensity = AmbientLight::Instance().Intensity();
+		mFrameData.uboPerFrameData.lightCount = 0;
+
+		for (auto i = 0; i < mDirLights.size() && mFrameData.uboPerFrameData.lightCount < NUM_MAX_LIGHTS; i++, mFrameData.uboPerFrameData.lightCount++)
 		{
-			// TODO Render some default image?
-			return;
+			auto const& light = *mDirLights[i];
+			auto& uboLight = mFrameData.uboPerFrameData.lights[mFrameData.uboPerFrameData.lightCount];
+
+			uboLight.color = light.get_color();
+			uboLight.intensity = light.get_intensity();
+			uboLight.direction = light.get_direction();
+			uboLight.type = static_cast<i32>(UboLightType::Directional);
 		}
 
-		if (!extract())
+
+		for (auto i = 0; i < mSpotLights.size() && mFrameData.uboPerFrameData.lightCount < NUM_MAX_LIGHTS; i++, mFrameData.uboPerFrameData.lightCount++)
 		{
-			return;
+			auto const& light = *mSpotLights[i];
+			auto& uboLight = mFrameData.uboPerFrameData.lights[mFrameData.uboPerFrameData.lightCount];
+
+			uboLight.color = light.get_color();
+			uboLight.intensity = light.get_intensity();
+			uboLight.direction = light.get_owner()->get_forward_axis();
+			uboLight.position = light.get_owner()->get_position();
+			uboLight.range = light.get_range();
+			uboLight.innerCos = std::cos(to_radians(light.get_inner_angle()));
+			uboLight.outerCos = std::cos(to_radians(light.get_outer_angle()));
+			uboLight.type = static_cast<i32>(UboLightType::Spot);
 		}
 
-		prepare();
-		update_resources();
 
-		if (mRenderingPath == RenderingPath::Forward)
+		for (auto i = 0; i < mPointLights.size() && mFrameData.uboPerFrameData.lightCount < NUM_MAX_LIGHTS; i++, mFrameData.uboPerFrameData.lightCount++)
 		{
-			forward_render();
+			auto const& light = *mPointLights[i];
+			auto& uboLight = mFrameData.uboPerFrameData.lights[mFrameData.uboPerFrameData.lightCount];
+
+			uboLight.color = light.get_color();
+			uboLight.intensity = light.get_intensity();
+			uboLight.position = light.get_owner()->get_position();
+			uboLight.range = light.get_range();
+			uboLight.type = static_cast<i32>(UboLightType::Point);
 		}
-		else
+
+
+		mFrameData.meshes.clear();
+		if (mFrameData.viewCount < mCameras.size())
 		{
-			deferred_render();
+			mFrameData.perViewData.resize(mCameras.size());
 		}
+		mFrameData.viewCount = mCameras.size();
+
+
+		for (auto i = 0; i < mFrameData.viewCount; i++)
+		{
+			auto& [viewport, viewMatrix, projMatrix, viewProjMatrix, transformMatrices] = mFrameData.perViewData[i];
+			auto const& cam = mCameras[i];
+
+			viewport = cam->get_window_extents();
+			viewMatrix = cam->build_view_matrix();
+			projMatrix = cam->build_projection_matrix();
+			viewProjMatrix = viewMatrix * projMatrix;
+
+			transformMatrices.clear();
+
+			for (auto const& meshWeak : mStaticMeshes)
+			{
+				for (auto const mesh = meshWeak.lock();
+				     auto const* const entity : mesh->get_entities())
+				{
+					if (auto const mvp = entity->get_model_matrix() * viewProjMatrix;
+						mesh->get_bounding_box().is_visible_in_frustum(mvp))
+					{
+						mFrameData.meshes.emplace(mesh);
+						transformMatrices[mesh.get()].emplace_back(mvp.transposed(), entity->get_normal_matrix().transposed()); // Transposed, because OpenGL buffer
+					}
+				}
+			}
+		}
+
+
+		*static_cast<UboPerFrameData*>(mPerFrameUbo.get_ptr()) = mFrameData.uboPerFrameData;
+		glBindBufferRange(GL_UNIFORM_BUFFER, 0, mPerFrameUbo.get_internal_handle(), 0, sizeof UboPerFrameData);
+
+		glDisable(GL_BLEND);
+		glEnable(GL_DEPTH_TEST);
+		glDepthFunc(GL_LEQUAL);
+		glDepthMask(GL_TRUE);
+		glDisable(GL_STENCIL_TEST);
+
+		GLfloat constexpr clearColor[]{0, 0, 0, 1};
+		GLfloat constexpr clearDepth{1};
+		glClearNamedFramebufferfv(mPingPongBuffers[0].name, GL_COLOR, 0, clearColor);
+		glClearNamedFramebufferfv(mPingPongBuffers[0].name, GL_DEPTH, 0, &clearDepth);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, mPingPongBuffers[0].name);
+
+		for (auto i = 0; i < mFrameData.perViewData.size(); i++)
+		{
+			auto const& [viewport, uboPerCameraData, materialNodes, materialNodeCount] = mFrameData.perViewData[i];
+
+			glViewport(viewport.offsetX, viewport.offsetY, viewport.width, viewport.height);
+
+			*static_cast<UboPerCameraData*>(mPerCameraUbo.get_ptr()) = uboPerCameraData;
+			glBindBufferRange(GL_UNIFORM_BUFFER, 1, mPerCameraUbo.get_internal_handle(), 0, sizeof UboPerCameraData);
+
+			for (auto j = 0; j < materialNodeCount; j++)
+			{
+				auto const& [material, meshNodes, meshNodeCount] = materialNodes[j];
+
+				material->bind_and_set_renderstate(2);
+
+				for (auto k = 0; k < meshNodeCount; k++)
+				{
+					auto const& [mesh, uboPerMesh, matrices, subMeshIndices] = meshNodes[k];
+
+					// Update mesh instance buffer with matrices
+
+					for (auto const subMeshIndex : subMeshIndices)
+					{
+						mesh->draw_sub_mesh(subMeshIndex);
+					}
+				}
+			}
+		}
+
+
+
+		glBlitNamedFramebuffer(mPingPongBuffers[0].name, 0, 0, 0, mPingPongBuffers[0].width, mPingPongBuffers[0].height, 0, 0, mPingPongBuffers[0].width, mPingPongBuffers[0].height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
 
 		++mFrameCount;
-	}
-
-
-
-	u64 Renderer::create_static_mesh(StaticModelComponent const* component, std::span<StaticModelData const> const data)
-	{
-		static u64 id{1};
-
-		for (auto const& [vertices, indices, material] : data)
-		{
-			//mIdToMeshGroup[id].meshes.emplace_back(new StaticMesh{vertices, indices});
-			//mMaterialToMeshes[material.get()]
-		}
-
-		return id++;
-	}
-
-
-
-	void Renderer::register_material(StaticMaterial const* material)
-	{
-		mMaterialsToBuffers[material];
-	}
-
-
-
-	void Renderer::unregister_material(StaticMaterial const* material)
-	{
-		mMaterialsToBuffers.erase(material);
 	}
 
 
@@ -136,155 +215,108 @@ namespace leopph::internal
 
 
 
-	void Renderer::extract_camera_data(Camera const& camera, std::vector<CameraData>& out)
+	void Renderer::register_texture_2d(std::weak_ptr<Texture2D> tex)
 	{
-		out.emplace_back(camera.get_window_extents(), camera.get_owner()->get_position(), camera.build_view_matrix(), camera.build_projection_matrix());
+		mTexture2Ds.emplace_back(std::move(tex));
 	}
 
 
 
-	bool Renderer::extract()
+	void Renderer::unregister_texture_2d(std::weak_ptr<Texture2D> const& tex)
 	{
-		// Extract main camera
-
-		auto const* const cam = Camera::Current();
-
-		// If there is no camera, abort extract and signal abort for the parent process too
-		if (!cam)
-		{
-			return false;
-		}
-
-		mCamData.position = cam->get_owner()->get_position();
-		mCamData.viewMat = cam->ViewMatrix();
-		mCamData.projMat = cam->ProjectionMatrix();
-
-		mRenderingPath = cam->get_rendering_path();
-
-
-		// Extract screen data
-
-		auto const renderMult = GetWindowImpl()->get_render_multiplier();
-		auto const windowWidth = GetWindowImpl()->get_width();
-		auto const windowHeight = GetWindowImpl()->get_height();
-		mScreenData.renderWidth = static_cast<u32>(static_cast<f32>(windowWidth) / renderMult);
-		mScreenData.renderHeight = static_cast<u32>(static_cast<f32>(windowHeight) / renderMult);
-		mScreenData.width = windowWidth;
-		mScreenData.height = windowHeight;
-		mScreenData.gamma = GetSettingsImpl()->Gamma();
-
-
-		// Extract ambient light data
-
-		mAmbientLightData.intensity = AmbientLight::Instance().Intensity();
-
-
-		// Extract directional light data
-
-		if (auto const* const dirLight = GetDataManager()->DirectionalLight())
-		{
-			UboDirLight dirData;
-			dirData.direction = dirLight->get_direction();
-			dirData.lightBase.color = dirLight->get_color();
-			dirData.lightBase.intensity = dirLight->get_intensity();
-			dirData.shadow = false; // temporary
-			mDirLightData = dirData;
-		}
-		else
-		{
-			mDirLightData.reset();
-		}
-
-
-		// Extract SpotLights
-
-		mSpotLightData.clear();
-		for (auto const* const spotLight : GetDataManager()->ActiveSpotLights())
-		{
-			UboSpotLight uboSpot;
-			uboSpot.lightBase.color = spotLight->get_color();
-			uboSpot.lightBase.intensity = spotLight->get_intensity();
-			uboSpot.direction = spotLight->get_owner()->get_transform().get_forward_axis();
-			uboSpot.position = spotLight->get_owner()->get_transform().get_position();
-			uboSpot.range = spotLight->get_range();
-			uboSpot.innerCos = math::Cos(math::ToRadians(spotLight->get_inner_angle()));
-			uboSpot.outerCos = math::Cos(math::ToRadians(spotLight->get_outer_angle()));
-			mSpotLightData.push_back(uboSpot);
-		}
-
-		// Extract PointLights
-
-		mPointLightData.clear();
-		for (auto const* const pointLight : GetDataManager()->ActivePointLights())
-		{
-			UboPointLight uboPoint;
-			uboPoint.lightBase.color = pointLight->get_color();
-			uboPoint.lightBase.intensity = pointLight->get_intensity();
-			uboPoint.position = pointLight->get_owner()->get_transform().get_position();
-			uboPoint.range = pointLight->get_range();
-			mPointLightData.push_back(uboPoint);
-		}
-
-		// Extract render nodes
-
-		/*if (mRenderNodes.size() > mStaticMeshes.size())
-		{
-			mRenderNodes.resize(mStaticMeshes.size());
-		}
-
-		std::size_t renderNodeInd = 0;
-
-		for (auto const& [mesh, component] : mStaticMeshes)
-		{
-			auto const subMeshes = mesh->get_sub_meshes();
-			auto const materials = mesh->get_materials();
-
-			for (std::size_t subMeshInd = 0; subMeshInd < subMeshes.size(); subMeshInd++)
-			{
-				mRenderNodes[renderNodeInd].vao = mesh->get_vao();
-				mRenderNodes[renderNodeInd].isCastingShadow = 
-			}
-			auto const& transform = component->Owner()->get_transform();
-			auto const meshes = mesh->get_meshes();
-			auto const materials = staticMeshGroup->get_materials();
-
-			for (std::size_t i = 0; i < meshes.size() && i < materials.size(); i++)
-			{
-				mRenderNodes.emplace_back(meshes[i]->vao, materials[i].get(), component->is_casting_shadow(), transform.get_model_matrix(), transform.get_normal_matrix());
-			}
-		}
-
-		return true;*/
+		std::erase(mTexture2Ds, tex);
 	}
 
 
 
-	void Renderer::update_resources()
+	void Renderer::register_static_material(std::weak_ptr<StaticMaterial> mat)
 	{
-		// Update Ping-Pong buffers
+		mStaticMaterials.emplace_back(std::move(mat));
+	}
+
+
+
+	void Renderer::unregister_static_material(std::weak_ptr<StaticMaterial> const& mat)
+	{
+		std::erase(mStaticMaterials, mat);
+	}
+
+
+
+	void Renderer::register_static_mesh(std::weak_ptr<StaticMesh> mesh)
+	{
+		mStaticMeshes.emplace_back(std::move(mesh));
+	}
+
+
+
+	void Renderer::unregister_static_mesh(std::weak_ptr<StaticMesh> const& mesh)
+	{
+		std::erase(mStaticMeshes, mesh);
+	}
+
+
+
+	void Renderer::update_framebuffers()
+	{
+		auto const* window = get_window();
+		auto const width = window->get_width();
+		auto const height = window->get_height();
 
 		for (auto& buf : mPingPongBuffers)
 		{
-			if (buf.width != mScreenData.renderWidth || buf.height != mScreenData.renderHeight)
+			if (buf.width != width || buf.height != height)
 			{
-				glDeleteFramebuffers(1, &buf.framebuffer);
-				glDeleteBuffers(1, &buf.depthStencilBuffer);
-				glDeleteBuffers(1, &buf.colorBuffer);
+				glDeleteFramebuffers(1, &buf.name);
+				glDeleteBuffers(1, &buf.depthStencilAtt);
+				glDeleteBuffers(1, &buf.clrAtts[0]);
 
-				buf.width = mScreenData.renderWidth;
-				buf.height = mScreenData.renderHeight;
+				buf.width = width;
+				buf.height = height;
 
 
-				glCreateTextures(GL_TEXTURE_2D, 1, &buf.colorBuffer);
-				glTextureStorage2D(buf.colorBuffer, 1, GL_RGBA8, buf.width, buf.height);
+				glCreateTextures(GL_TEXTURE_2D, 1, &buf.clrAtts[0]);
+				glTextureStorage2D(buf.clrAtts[0], 1, GL_RGBA8, buf.width, buf.height);
 
-				glCreateTextures(GL_TEXTURE_2D, 1, &buf.depthStencilBuffer);
-				glTextureStorage2D(buf.depthStencilBuffer, 1, GL_DEPTH24_STENCIL8, buf.width, buf.height);
+				glCreateTextures(GL_TEXTURE_2D, 1, &buf.depthStencilAtt);
+				glTextureStorage2D(buf.depthStencilAtt, 1, GL_DEPTH24_STENCIL8, buf.width, buf.height);
 
-				glCreateFramebuffers(1, &buf.framebuffer);
-				glNamedFramebufferTexture(buf.framebuffer, GL_COLOR_ATTACHMENT0, buf.colorBuffer, 0);
-				glNamedFramebufferTexture(buf.framebuffer, GL_DEPTH_STENCIL_ATTACHMENT, buf.depthStencilBuffer, 0);
-				glNamedFramebufferDrawBuffer(buf.framebuffer, GL_COLOR_ATTACHMENT0);
+				glCreateFramebuffers(1, &buf.name);
+				glNamedFramebufferTexture(buf.name, GL_COLOR_ATTACHMENT0, buf.clrAtts[0], 0);
+				glNamedFramebufferTexture(buf.name, GL_DEPTH_STENCIL_ATTACHMENT, buf.depthStencilAtt, 0);
+				glNamedFramebufferDrawBuffer(buf.name, GL_COLOR_ATTACHMENT0);
+			}
+		}
+	}
+
+
+
+	void Renderer::clean_unused_resources()
+	{
+		for (auto it = std::begin(mTexture2Ds); it != std::end(mTexture2Ds); ++it)
+		{
+			if (it->expired())
+			{
+				std::erase(mTexture2Ds, it);
+				it = std::begin(mTexture2Ds);
+			}
+		}
+
+		for (auto it = std::begin(mStaticMaterials); it != std::end(mStaticMaterials); ++it)
+		{
+			if (it->first.expired())
+			{
+				mStaticMaterials.erase(it);
+				it = std::begin(mStaticMaterials);
+			}
+		}
+
+		for (auto it = std::begin(mStaticMeshes); it != std::end(mStaticMeshes); ++it)
+		{
+			if (it->expired())
+			{
+				std::erase(mStaticMeshes, it);
+				it = std::begin(mStaticMeshes);
 			}
 		}
 	}
@@ -316,84 +348,6 @@ namespace leopph::internal
 
 
 
-	void Renderer::submit_common_data() const
-	{
-		auto const uboIndex = mFrameCount % NUM_UNIFORM_BUFFERS;
-
-		// Fill camera ubo with data
-		*reinterpret_cast<UboCameraData*>(mCameraBuffers[uboIndex].mapping) = mCamData;
-
-		// Bind camera ubo
-		glBindBufferRange(GL_UNIFORM_BUFFER, 0, mCameraBuffers[uboIndex].name, 0, mCameraBuffers[uboIndex].size);
-
-		// Fill lighting ubo with data
-
-		auto offset{0};
-
-		// ambient light
-		*reinterpret_cast<UboAmbientLight*>(mLightingBuffers[uboIndex].mapping + offset) = mAmbientLightData;
-		offset += sizeof UboAmbientLight;
-
-		// is there a dirlight
-		*reinterpret_cast<u32*>(mLightingBuffers[uboIndex].mapping + offset) = mDirLightData.has_value();
-		offset += sizeof u32;
-
-		// dirlight data
-		if (mDirLightData)
-		{
-			*reinterpret_cast<UboDirLight*>(mLightingBuffers[uboIndex].mapping + offset) = *mDirLightData;
-		}
-		offset += sizeof(UboDirLight);
-
-		// spotlight data
-		for (auto const& spotData : mSpotLightData)
-		{
-			*reinterpret_cast<UboSpotLight*>(mLightingBuffers[uboIndex].mapping + offset) =
-				spotData;
-			offset += sizeof UboSpotLight;
-		}
-
-		// pointlight data
-		for (auto const& pointData : mPointLightData)
-		{
-			*reinterpret_cast<UboPointLight*>(mLightingBuffers[uboIndex].mapping + offset) =
-				pointData;
-			offset += sizeof UboPointLight;
-		}
-
-		glBindBufferRange(GL_UNIFORM_BUFFER, 1, mLightingBuffers[uboIndex].name, 0, mLightingBuffers[uboIndex].size);
-	}
-
-
-
-	void Renderer::forward_render() const
-	{
-		// Opaque pass
-		glDisable(GL_BLEND);
-		glEnable(GL_DEPTH_TEST);
-		glDepthFunc(GL_LEQUAL);
-		glDepthMask(GL_TRUE);
-		glDisable(GL_STENCIL_TEST);
-		glViewport(0, 0, mScreenData.renderWidth, mScreenData.renderHeight);
-
-		GLfloat constexpr clearColor[]{0, 0, 0, 1};
-		GLfloat constexpr clearDepth{1};
-		glClearNamedFramebufferfv(mPingPongBuffers[0].framebuffer, GL_COLOR, 0, clearColor);
-		glClearNamedFramebufferfv(mPingPongBuffers[0].framebuffer, GL_DEPTH, 0, &clearDepth);
-		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, mPingPongBuffers[0].framebuffer);
-
-
-
-		glBlitNamedFramebuffer(mPingPongBuffers[1].framebuffer, 0, 0, 0, mScreenData.renderWidth, mScreenData.renderHeight, 0, 0, mScreenData.width, mScreenData.height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
-	}
-
-
-
-	void Renderer::deferred_render() const
-	{}
-
-
-
 	void Renderer::OnEventReceived(EventReceiver<WindowEvent>::EventParamType)
 	{
 		mResUpdateFlags.renderRes = true;
@@ -403,28 +357,6 @@ namespace leopph::internal
 
 	Renderer::Renderer()
 	{
-		// Create uniform buffers
-
-		auto const camBufSz = 6 * sizeof Matrix4 + sizeof Vector3;
-
-		for (auto& camBuf : mCameraBuffers)
-		{
-			glCreateBuffers(1, &camBuf.name);
-			glNamedBufferStorage(camBuf.name, camBufSz, nullptr, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
-			camBuf.size = camBufSz;
-			camBuf.mapping = static_cast<u8*>(glMapNamedBufferRange(camBuf.name, 0, camBufSz, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT));
-		}
-
-		auto const lightBufSz = sizeof UboAmbientLight + sizeof UboDirLight + RenderSettings::get_max_spot_light_count() * sizeof UboSpotLight + RenderSettings::get_max_point_light_count() * sizeof UboPointLight;
-
-		for (auto& lightBuf : mLightingBuffers)
-		{
-			glCreateBuffers(1, &lightBuf.name);
-			glNamedBufferStorage(lightBuf.name, lightBufSz, nullptr, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
-			lightBuf.size = lightBufSz;
-			lightBuf.mapping = static_cast<u8*>(glMapNamedBufferRange(lightBuf.name, 0, lightBufSz, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT));
-		}
-
 		glDepthFunc(GL_LEQUAL);
 		glFrontFace(GL_CCW);
 		glCullFace(GL_BACK);
@@ -434,27 +366,7 @@ namespace leopph::internal
 
 
 	Renderer::~Renderer()
-	{
-		// Delete uniform buffers
-
-		for (auto const& buffers : {mCameraBuffers, mLightingBuffers})
-		{
-			for (auto const& buffer : buffers)
-			{
-				glUnmapNamedBuffer(buffer.name);
-				glDeleteBuffers(1, &buffer.name);
-			}
-		}
-
-		// Delete ping-pong buffers
-
-		for (auto const& pingPongBuf : mPingPongBuffers)
-		{
-			glDeleteFramebuffers(1, &pingPongBuf.framebuffer);
-			glDeleteTextures(1, &pingPongBuf.colorBuffer);
-			glDeleteTextures(1, &pingPongBuf.depthStencilBuffer);
-		}
-	}
+	{ }
 
 
 

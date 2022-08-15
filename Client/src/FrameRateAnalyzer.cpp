@@ -13,7 +13,7 @@ FrameRateAnalyzer::FrameRateAnalyzer(float const pollInterval, unsigned const ma
 {}
 
 
-void FrameRateAnalyzer::OnFrameUpdate()
+void FrameRateAnalyzer::on_frame_update()
 {
 	auto const delta{leopph::time::DeltaTime()};
 	m_DeltaTime += delta;

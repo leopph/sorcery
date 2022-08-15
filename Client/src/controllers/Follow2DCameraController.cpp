@@ -15,7 +15,7 @@ namespace demo
 	{ }
 
 
-	void Follow2DCameraController::OnFrameUpdate()
+	void Follow2DCameraController::on_frame_update()
 	{
 		Vector2 const targetPosXy{m_Target->get_position()[0], m_Target->get_position()[1]};
 		m_CamTransform->set_position(leopph::Vector3{targetPosXy - m_Offset, m_CamTransform->get_position()[2]});

@@ -1,17 +1,16 @@
 #pragma once
 
 #include "Image.hpp"
+#include "LeopphApi.hpp"
 #include "Types.hpp"
-
-#include <memory>
 
 
 namespace leopph
 {
-	class Texture2D : std::enable_shared_from_this<Texture2D>
+	class Texture2D
 	{
 		public:
-			explicit Texture2D(Image const& img);
+			explicit LEOPPHAPI Texture2D(Image const& img);
 
 			Texture2D(Texture2D const& other) = delete;
 			Texture2D& operator=(Texture2D const& other) = delete;
@@ -21,9 +20,9 @@ namespace leopph
 
 			~Texture2D();
 
-			[[nodiscard]] u32 get_handle() const;
-			[[nodiscard]] u32 get_width() const;
-			[[nodiscard]] u32 get_height() const;
+			[[nodiscard]] LEOPPHAPI u32 internal_handle() const;
+			[[nodiscard]] LEOPPHAPI u32 width() const;
+			[[nodiscard]] LEOPPHAPI u32 height() const;
 
 		private:
 			u32 mTexture{};

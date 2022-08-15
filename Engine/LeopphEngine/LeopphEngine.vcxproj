@@ -11,6 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="AABB.cpp" />
     <ClCompile Include="src\assetmanagement\import\3d\ImportGeneric3d.cpp" />
     <ClCompile Include="src\assetmanagement\import\3d\ImportLeopph3d.cpp" />
     <ClCompile Include="src\assetmanagement\export\EncodeLeopph3d.cpp" />
@@ -36,7 +37,7 @@
     <ClCompile Include="src\rendering\CubeMesh.cpp" />
     <ClCompile Include="src\Context.cpp" />
     <ClCompile Include="src\data\DataManager.cpp" />
-    <ClCompile Include="src\data\Poelo.cpp" />
+    <ClCompile Include="src\rendering\StaticMaterial.cpp" />
     <ClCompile Include="src\scene\Entity.cpp" />
     <ClCompile Include="src\events\Event.cpp" />
     <ClCompile Include="src\events\EventManager.cpp" />
@@ -53,7 +54,7 @@
     <ClCompile Include="src\scene\Scene.cpp" />
     <ClCompile Include="src\scene\SceneManager.cpp" />
     <ClCompile Include="src\serialization\Serialize.cpp" />
-    <ClCompile Include="src\rendering\StaticModel.cpp" />
+    <ClCompile Include="src\rendering\StaticMesh.cpp" />
     <ClCompile Include="src\threading\JobSystem.cpp" />
     <ClCompile Include="src\threading\SpinLock.cpp" />
     <ClCompile Include="src\timing\Time.cpp" />
@@ -94,13 +95,13 @@
     <ClInclude Include="..\include\MouseEvent.hpp" />
     <ClInclude Include="..\include\OrthographicCamera.hpp" />
     <ClInclude Include="..\include\PerspectiveCamera.hpp" />
-    <ClInclude Include="..\include\Poelo.hpp" />
     <ClInclude Include="..\include\PointLight.hpp" />
     <ClInclude Include="..\include\StaticModelComponent.hpp" />
     <ClInclude Include="..\include\RenderingPath.hpp" />
     <ClInclude Include="..\include\RenderPass.hpp" />
     <ClInclude Include="..\include\Skybox.hpp" />
     <ClInclude Include="..\include\SpotLight.hpp" />
+    <ClInclude Include="..\include\SubMeshDescriptor.hpp" />
     <ClInclude Include="..\include\Time.hpp" />
     <ClInclude Include="..\include\Vertex.hpp" />
     <ClInclude Include="..\include\Window.hpp" />
@@ -117,6 +118,7 @@
     <ClInclude Include="include\rendering\ShaderProcessing.hpp" />
     <ClInclude Include="include\rendering\ShaderProgram.hpp" />
     <ClInclude Include="src\assetmanagement\import\Import.hpp" />
+    <ClInclude Include="src\rendering\Framebuffer.hpp" />
     <ClInclude Include="src\rendering\PersistentMappedBuffer.hpp" />
     <ClInclude Include="src\rendering\QuadMesh.hpp" />
     <ClInclude Include="src\rendering\CubeMesh.hpp" />
@@ -128,6 +130,7 @@
     <ClInclude Include="src\rendering\Renderer.hpp" />
     <ClInclude Include="src\rendering\RenderSettings.hpp" />
     <ClInclude Include="src\rendering\Shader.hpp" />
+    <ClInclude Include="src\rendering\StaticMaterial.hpp" />
     <ClInclude Include="src\rendering\Texture2D.hpp" />
     <ClInclude Include="src\scene\Scene.hpp" />
     <ClInclude Include="src\scene\SceneManager.hpp" />
@@ -144,7 +147,7 @@
     <ClInclude Include="include\rendering\RenderObject.hpp" />
     <ClInclude Include="src\serialization\Deserialize.hpp" />
     <ClInclude Include="src\serialization\Serialize.hpp" />
-    <ClInclude Include="src\rendering\StaticModel.hpp" />
+    <ClInclude Include="src\rendering\StaticMesh.hpp" />
     <ClInclude Include="src\threading\Job.hpp" />
     <ClInclude Include="src\threading\JobSystem.hpp" />
     <ClInclude Include="src\threading\SpinLock.hpp" />

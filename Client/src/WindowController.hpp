@@ -9,7 +9,7 @@ class WindowController final : public leopph::Behavior
 {
 	public:
 		WindowController();
-		void OnFrameUpdate() override;
+		void on_frame_update() override;
 
 	private:
 		leopph::Window* m_Window;

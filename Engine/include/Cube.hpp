@@ -7,7 +7,7 @@
 namespace leopph
 {
 	// A generic untextured 1x1 cube.
-	class Cube final : public internal::StaticModelComponent
+	/*class Cube final : public internal::StaticModelComponent
 	{
 		public:
 			LEOPPHAPI Cube();
@@ -17,5 +17,5 @@ namespace leopph
 		private:
 			[[nodiscard]] static std::shared_ptr<StaticMesh> create_data();
 			static std::weak_ptr<StaticMaterial> sMaterial;
-	};
+	};*/
 }

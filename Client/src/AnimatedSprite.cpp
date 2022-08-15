@@ -34,7 +34,7 @@ namespace demo
 	{ }
 
 
-	void AnimatedSprite::OnFrameUpdate()
+	void AnimatedSprite::on_frame_update()
 	{
 		m_TimeDelta += leopph::time::DeltaTime();
 

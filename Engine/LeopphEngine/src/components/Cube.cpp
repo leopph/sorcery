@@ -1,4 +1,4 @@
-#include "Cube.hpp"
+/*#include "Cube.hpp"
 
 #include "../data/DataManager.hpp"
 
@@ -96,4 +96,4 @@ namespace leopph
 
 
 	std::weak_ptr<StaticMaterial> Cube::sMaterial;
-}
+}*/

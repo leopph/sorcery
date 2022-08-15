@@ -8,13 +8,13 @@ namespace leopph
 	CubeMesh::CubeMesh()
 	{
 		glCreateBuffers(1, &mVbo);
-		glNamedBufferStorage(mVbo, sVertices.size() * sizeof decltype(sVertices)::value_type, sVertices.data(), 0);
+		glNamedBufferStorage(mVbo, sVertices.size() * sizeof(decltype(sVertices)::value_type), sVertices.data(), 0);
 
 		glCreateBuffers(1, &mIbo);
-		glNamedBufferStorage(mIbo, sIndices.size() * sizeof decltype(sIndices)::value_type, sIndices.data(), 0);
+		glNamedBufferStorage(mIbo, sIndices.size() * sizeof(decltype(sIndices)::value_type), sIndices.data(), 0);
 
 		glCreateVertexArrays(1, &mVao);
-		glVertexArrayVertexBuffer(mVao, 0, mVbo, 0, 3 * sizeof decltype(sVertices)::value_type);
+		glVertexArrayVertexBuffer(mVao, 0, mVbo, 0, 3 * sizeof(decltype(sVertices)::value_type));
 		glVertexArrayElementBuffer(mVao, mIbo);
 
 		glVertexArrayAttribFormat(mVao, 0, 3, GL_FLOAT, GL_FALSE, 0);

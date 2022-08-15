@@ -1,7 +1,7 @@
 #include "Input.hpp"
 
-#include "InternalContext.hpp"
-#include "windowing/WindowImpl.hpp"
+#include "Context.hpp"
+#include "Window.hpp"
 
 
 namespace leopph
@@ -13,10 +13,12 @@ namespace leopph
 	}
 
 
+
 	bool Input::GetKeyDown(KeyCode const key)
 	{
 		return InternalGetKeyState(key) == KeyState::Down;
 	}
+
 
 
 	bool Input::GetKeyUp(KeyCode const key)
@@ -25,22 +27,26 @@ namespace leopph
 	}
 
 
+
 	std::pair<float, float> const& Input::GetMousePosition()
 	{
 		return s_MousePos;
 	}
 
 
+
 	CursorState Input::CursorMode()
 	{
-		return internal::GetWindowImpl()->get_cursor_state();
+		return get_window()->get_cursor_state();
 	}
+
 
 
 	void Input::CursorMode(CursorState const newState)
 	{
-		internal::GetWindowImpl()->set_cursor_state(newState);
+		get_window()->set_cursor_state(newState);
 	}
+
 
 
 	KeyState Input::InternalGetKeyState(KeyCode const keyCode) noexcept
@@ -50,6 +56,7 @@ namespace leopph
 		static_assert(std::is_same_v<decltype(s_KeyStates)::mapped_type, KeyState> && KeyState{} == KeyState::Released);
 		return s_KeyStates[keyCode];
 	}
+
 
 
 	std::unordered_map<KeyCode, KeyState> Input::s_KeyStates;

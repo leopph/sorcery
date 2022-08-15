@@ -27,7 +27,7 @@ namespace demo
 			};
 
 
-			void OnFrameUpdate() override;
+			void on_frame_update() override;
 
 			[[nodiscard]]
 			Scene& CreateOrGetScene(leopph::KeyCode key);

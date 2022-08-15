@@ -71,7 +71,7 @@ namespace demo
 	}
 
 
-	void SceneSwitcher::OnFrameUpdate()
+	void SceneSwitcher::on_frame_update()
 	{
 		std::ranges::for_each(m_Scenes, [this](auto& pair)
 		{

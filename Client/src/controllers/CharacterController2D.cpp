@@ -19,7 +19,7 @@ namespace demo
 	{ }
 
 
-	void CharacterController2D::OnFrameUpdate()
+	void CharacterController2D::on_frame_update()
 	{
 		Vector3 posDelta;
 

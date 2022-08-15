@@ -15,7 +15,7 @@ namespace leopph
 
 		for (auto const& path : {left, right, top, bottom, front, back})
 		{
-			faces.emplace_back(path, ColorEncoding::sRGB);
+			faces.emplace_back(path, ImageOrientation::Original, ColorEncoding::sRGB);
 		}
 
 		glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &mCubemapName);

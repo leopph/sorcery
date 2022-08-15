@@ -17,7 +17,6 @@
     <ClCompile Include="src\rendering\Skybox.cpp" />
     <ClCompile Include="src\components\SpotLight.cpp" />
     <ClCompile Include="src\data\DataManager.cpp" />
-    <ClCompile Include="src\data\Poelo.cpp" />
     <ClCompile Include="src\events\Event.cpp" />
     <ClCompile Include="src\events\EventManager.cpp" />
     <ClCompile Include="src\events\KeyEvent.cpp" />
@@ -51,7 +50,9 @@
     <ClCompile Include="src\assetmanagement\import\3d\ImportLeopph3d.cpp" />
     <ClCompile Include="src\assetmanagement\export\EncodeLeopph3d.cpp" />
     <ClCompile Include="src\assetmanagement\import\Import.cpp" />
-    <ClCompile Include="src\rendering\StaticModel.cpp" />
+    <ClCompile Include="src\rendering\StaticMesh.cpp" />
+    <ClCompile Include="src\rendering\StaticMaterial.cpp" />
+    <ClCompile Include="AABB.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\data\DataManager.hpp" />
@@ -109,7 +110,6 @@
     <ClInclude Include="..\include\MouseEvent.hpp" />
     <ClInclude Include="..\include\OrthographicCamera.hpp" />
     <ClInclude Include="..\include\PerspectiveCamera.hpp" />
-    <ClInclude Include="..\include\Poelo.hpp" />
     <ClInclude Include="..\include\PointLight.hpp" />
     <ClInclude Include="..\include\StaticModelComponent.hpp" />
     <ClInclude Include="..\include\Skybox.hpp" />
@@ -140,7 +140,10 @@
     <ClInclude Include="src\assetmanagement\import\3d\ImportLeopph3d.hpp" />
     <ClInclude Include="src\assetmanagement\import\Import.hpp" />
     <ClInclude Include="src\rendering\Texture2D.hpp" />
-    <ClInclude Include="src\rendering\StaticModel.hpp" />
+    <ClInclude Include="src\rendering\StaticMesh.hpp" />
+    <ClInclude Include="src\rendering\StaticMaterial.hpp" />
+    <ClInclude Include="..\include\SubMeshDescriptor.hpp" />
+    <ClInclude Include="src\rendering\Framebuffer.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\rendering\shaders\glsl\include\CompositeFrag.glsl" />
