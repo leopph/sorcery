@@ -200,7 +200,7 @@ namespace leopph
 
 		int major, minor, rev;
 		glfwGetVersion(&major, &minor, &rev);
-		Logger::get_instance().debug(std::format("GLFW version {}.{}.{}.", major, minor, rev));
+		Logger::get_instance().debug(std::format("GLFW {}.{}.{}", major, minor, rev));
 
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);

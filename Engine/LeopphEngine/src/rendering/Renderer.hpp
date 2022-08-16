@@ -33,7 +33,7 @@ namespace leopph::internal
 	{
 		struct ResourceUpdateFlags
 		{
-			bool renderRes : 1{true};
+			bool renderRes : 1{false};
 		};
 
 
@@ -151,6 +151,10 @@ namespace leopph::internal
 			void register_static_mesh(std::shared_ptr<StaticMesh> mesh);
 			void unregister_static_mesh(std::shared_ptr<StaticMesh> const& mesh);
 
+		private:
+			void create_ping_pong_buffers();
+			void delete_ping_pong_buffers();
+
 
 			//void calculate_shadow_cascades(std::vector<ShadowCascade>& out);
 
@@ -199,7 +203,7 @@ namespace leopph::internal
 			std::vector<std::shared_ptr<StaticMesh>> mStaticMeshes;
 			std::unordered_map<StaticMaterial const*, std::unordered_map<StaticMesh const*, std::vector<std::size_t>>> mMaterialsToMeshes;
 
-			FrameData mFrameData;
+			FrameData mFrameData{};
 
 			std::vector<DirectionalLight const*> mDirLights;
 			std::vector<SpotLight const*> mSpotLights;

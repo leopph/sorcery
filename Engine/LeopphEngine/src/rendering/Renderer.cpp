@@ -39,35 +39,8 @@ namespace leopph::internal
 
 		if (mResUpdateFlags.renderRes)
 		{
-			auto const* window = get_window();
-			auto const width = window->get_width();
-			auto const height = window->get_height();
-
-			for (auto& buf : mPingPongBuffers)
-			{
-				if (buf.width != width || buf.height != height)
-				{
-					glDeleteFramebuffers(1, &buf.name);
-					glDeleteBuffers(1, &buf.depthStencilAtt);
-					glDeleteBuffers(1, &buf.clrAtts[0]);
-
-					buf.width = width;
-					buf.height = height;
-
-
-					glCreateTextures(GL_TEXTURE_2D, 1, &buf.clrAtts[0]);
-					glTextureStorage2D(buf.clrAtts[0], 1, GL_RGBA8, buf.width, buf.height);
-
-					glCreateTextures(GL_TEXTURE_2D, 1, &buf.depthStencilAtt);
-					glTextureStorage2D(buf.depthStencilAtt, 1, GL_DEPTH24_STENCIL8, buf.width, buf.height);
-
-					glCreateFramebuffers(1, &buf.name);
-					glNamedFramebufferTexture(buf.name, GL_COLOR_ATTACHMENT0, buf.clrAtts[0], 0);
-					glNamedFramebufferTexture(buf.name, GL_DEPTH_STENCIL_ATTACHMENT, buf.depthStencilAtt, 0);
-					glNamedFramebufferDrawBuffer(buf.name, GL_COLOR_ATTACHMENT0);
-				}
-			}
-
+			delete_ping_pong_buffers();
+			create_ping_pong_buffers();
 			mResUpdateFlags.renderRes = false;
 		}
 
@@ -305,8 +278,46 @@ namespace leopph::internal
 
 
 
+	void Renderer::create_ping_pong_buffers()
+	{
+		for (auto& [name, depthStencilAtt, width, height, clrAtts] : mPingPongBuffers)
+		{
+			glCreateFramebuffers(1, &name);
+			width = get_window()->get_width();
+			height = get_window()->get_height();
+
+			clrAtts.resize(1);
+			glCreateTextures(GL_TEXTURE_2D, 1, clrAtts.data());
+			glTextureStorage2D(clrAtts[0], 1, GL_RGBA8, width, height);
+
+			glCreateTextures(GL_TEXTURE_2D, 1, &depthStencilAtt);
+			glTextureStorage2D(depthStencilAtt, 1, GL_DEPTH24_STENCIL8, width, height);
+
+			glNamedFramebufferTexture(name, GL_COLOR_ATTACHMENT0, clrAtts[0], 0);
+			glNamedFramebufferTexture(name, GL_DEPTH_STENCIL_ATTACHMENT, depthStencilAtt, 0);
+
+			glNamedFramebufferDrawBuffer(name, GL_COLOR_ATTACHMENT0);
+		}
+	}
+
+
+
+	void Renderer::delete_ping_pong_buffers()
+	{
+		for (auto const& [name, depthStencilAtt, width, height, clrAtts] : mPingPongBuffers)
+		{
+			glDeleteTextures(1, clrAtts.data());
+			glDeleteTextures(1, &depthStencilAtt);
+			glDeleteFramebuffers(1, &name);
+		}
+	}
+
+
+
 	Renderer::Renderer()
 	{
+		create_ping_pong_buffers();
+
 		glDepthFunc(GL_LEQUAL);
 		glFrontFace(GL_CCW);
 		glCullFace(GL_BACK);
@@ -316,7 +327,9 @@ namespace leopph::internal
 
 
 	Renderer::~Renderer()
-	{ }
+	{
+		delete_ping_pong_buffers();
+	}
 
 
 
