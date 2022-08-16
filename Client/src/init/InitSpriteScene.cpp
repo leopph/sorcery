@@ -1,4 +1,4 @@
-#include "Init.hpp"
+/*#include "Init.hpp"
 #include "../AnimatedSprite.hpp"
 #include "../Parallaxer.hpp"
 #include "../Tiler.hpp"
@@ -131,3 +131,4 @@ namespace demo
 		});
 	}
 }
+*/

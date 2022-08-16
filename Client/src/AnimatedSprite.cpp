@@ -1,4 +1,4 @@
-#include "AnimatedSprite.hpp"
+/*#include "AnimatedSprite.hpp"
 
 using leopph::ImageSprite;
 using leopph::ComponentPtr;
@@ -91,3 +91,4 @@ namespace demo
 		}
 	}
 }
+*/

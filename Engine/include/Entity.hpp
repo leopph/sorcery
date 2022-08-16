@@ -144,9 +144,11 @@ namespace leopph
 	template<std::derived_from<Component> T, class... Args>
 	T& Entity::attach_component(Args&&... args)
 	{
-		mComponents.emplace_back(CreateComponent<T>(std::forward<Args>(args)...));
-		mComponents.back()->mOwner = this;
-		return *mComponents.back();
+		auto comp = std::make_unique<T>(std::forward<Args>(args)...);
+		comp->mOwner = this;
+		auto& ret = *comp;
+		mComponents.emplace_back(std::move(comp));
+		return ret;
 	}
 
 

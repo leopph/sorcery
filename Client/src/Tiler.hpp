@@ -7,7 +7,7 @@
 
 namespace demo
 {
-	class Tiler final : public leopph::Behavior
+	/*class Tiler final : public leopph::Behavior
 	{
 		public:
 			struct Layer
@@ -24,5 +24,5 @@ namespace demo
 
 		private:
 			std::vector<Layer> m_Layers;
-	};
+	};*/
 }

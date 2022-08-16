@@ -30,15 +30,6 @@
     <ClCompile Include="src\Exiter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Flicker.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\init\InitChurchScene.cpp">
-      <Filter>Header Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\SceneSwitcher.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\controllers\Follow2DCameraController.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -69,15 +60,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Exiter.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Flicker.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\init\Init.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\SceneSwitcher.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\controllers\Follow2DCameraController.hpp">

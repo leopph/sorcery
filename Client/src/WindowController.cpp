@@ -69,7 +69,7 @@ void WindowController::on_frame_update()
 		m_Window->set_height(m_DisplayModes[4].height);
 	}
 
-	if (Input::GetKeyDown(KeyCode::Q))
+	/*if (Input::GetKeyDown(KeyCode::Q))
 	{
 		if (m_Window->get_render_multiplier() > 0.1f)
 		{
@@ -80,5 +80,5 @@ void WindowController::on_frame_update()
 	if (Input::GetKeyDown(KeyCode::E))
 	{
 		m_Window->set_render_multiplier(m_Window->get_render_multiplier() + 0.1f);
-	}
+	}*/
 }

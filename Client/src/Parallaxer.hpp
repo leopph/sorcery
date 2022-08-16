@@ -12,19 +12,19 @@ namespace demo
 		public:
 			struct Layer
 			{
-				// The layer will be moved with SpeedMult * the camera's speed
-				float SpeedMult;
-				leopph::Transform* Transform;
+				// The layer will be moved with speedMult * the camera's speed
+				float speedMult;
+				leopph::Entity* entity;
 			};
 
 
-			explicit Parallaxer(leopph::ComponentPtr<leopph::Camera> camera, std::span<Layer> layers = {});
+			explicit Parallaxer(leopph::Camera* camera, std::span<Layer> layers = {});
 
 			void on_frame_update() override;
 
 		private:
-			std::vector<Layer> m_Layers;
-			leopph::ComponentPtr<leopph::Camera> m_TargetCamera;
-			float m_PrevCamPosX;
+			std::vector<Layer> mLayers;
+			leopph::Camera* mTargetCam;
+			float mPrevCamPosX;
 	};
 }

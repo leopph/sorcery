@@ -7,7 +7,7 @@
 
 namespace demo
 {
-	class AnimatedSprite final : public leopph::Behavior
+	/*class AnimatedSprite final : public leopph::Behavior
 	{
 		public:
 			enum class AnimationMode
@@ -33,5 +33,5 @@ namespace demo
 			int m_FrameInd{0};
 			// This will be added to the current frame index to get the new index.
 			int m_IndGradient{1};
-	};
+	};*/
 }

@@ -5,17 +5,14 @@ using leopph::KeyCode;
 using leopph::Vector3;
 using leopph::time::DeltaTime;
 using leopph::Space;
-using leopph::ComponentPtr;
-using leopph::Transform;
 
 
 namespace demo
 {
-	CharacterController2D::CharacterController2D(Transform& target, float const speed, float const runMult, float const walkMult) :
-		m_Target{&target},
-		m_Speed{speed},
-		m_RunMult{runMult},
-		m_WalkMult{walkMult}
+	CharacterController2D::CharacterController2D(float const speed, float const runMult, float const walkMult) :
+		mSpeed{speed},
+		mRunMult{runMult},
+		mWalkMult{walkMult}
 	{ }
 
 
@@ -47,14 +44,14 @@ namespace demo
 
 		if (Input::GetKey(KeyCode::LeftShift))
 		{
-			posDelta *= m_RunMult;
+			posDelta *= mRunMult;
 		}
 
 		if (Input::GetKey(KeyCode::LeftAlt))
 		{
-			posDelta *= m_WalkMult;
+			posDelta *= mWalkMult;
 		}
 
-		m_Target->translate(posDelta * m_Speed * DeltaTime(), Space::World);
+		get_owner()->translate(posDelta * mSpeed * DeltaTime(), Space::World);
 	}
 }
