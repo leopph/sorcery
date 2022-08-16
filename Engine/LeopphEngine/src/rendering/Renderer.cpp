@@ -19,19 +19,9 @@ namespace leopph::internal
 	{
 		// Clean unused resources
 
-		std::erase_if(mTexture2Ds, [](auto const& tex)
+		std::erase_if(mMaterialsToMeshes, [](auto const& elem)
 		{
-			return tex.use_count() == 1;
-		});
-
-		std::erase_if(mStaticMaterials, [](auto const& mat)
-		{
-			return mat.use_count() == 1;
-		});
-
-		std::erase_if(mStaticMeshes, [](auto const& mesh)
-		{
-			return mesh.use_count() == 1;
+			return elem.second.size() == 0;
 		});
 
 
@@ -92,34 +82,50 @@ namespace leopph::internal
 
 		// Extract per view data
 
-		mFrameData.meshes.clear();
-		if (mFrameData.perViewData.capacity() < mCameras.size())
-		{
-			mFrameData.perViewData.resize(mCameras.size());
-		}
-		mFrameData.viewCount = mCameras.size();
+		mFrameData.perViewData.clear();
 
 
-		for (auto i = 0; i < mFrameData.viewCount; i++)
+		for (auto const* const cam : mCameras)
 		{
-			auto& [viewport, uboPerCameraData, materialModes, materialNodeCount] = mFrameData.perViewData[i];
-			auto const& cam = mCameras[i];
+			mFrameData.perViewData.emplace_back();
+			auto& [viewport, uboPerCameraData, materialNodes] = mFrameData.perViewData.back();
 
 			viewport = cam->get_window_extents();
-			uboPerCameraData.position = cam->get_owner()->get_position();
 			uboPerCameraData.viewMat = cam->build_view_matrix();
-			uboPerCameraData.projMat = cam->build_projection_matrix();
-			uboPerCameraData.viewProjMat = uboPerCameraData.viewMat * uboPerCameraData.projMat;
 			uboPerCameraData.viewMatInv = uboPerCameraData.viewMat.inverse();
-			uboPerCameraData.projMat = uboPerCameraData.projMat.inverse();
+			uboPerCameraData.projMat = cam->build_projection_matrix();
+			uboPerCameraData.projMatInv = uboPerCameraData.projMat.inverse();
+			uboPerCameraData.viewProjMat = uboPerCameraData.viewMat * uboPerCameraData.projMat;
 			uboPerCameraData.viewProjMatInv = uboPerCameraData.viewProjMat.inverse();
+			uboPerCameraData.position = cam->get_owner()->get_position();
 
 			for (auto const& [material, meshes] : mMaterialsToMeshes)
 			{
-				for (auto const& [mesh, subMeshIndices] : meshes)
+				MaterialNode matNode{};
+
+				for (auto const& mesh : meshes)
 				{
-					for (auto const subMeshIndex : subMeshIndices)
-					{ }
+					MeshNode meshNode{};
+
+					for (auto const* const entity : mesh->get_entities())
+					{
+						if (mesh->get_bounding_box().is_visible_in_frustum(entity->get_model_matrix() * uboPerCameraData.viewProjMat))
+						{
+							meshNode.matrices.emplace_back(entity->get_model_matrix().transposed(), entity->get_normal_matrix().transposed()); // transpose because of OpenGL
+						}
+					}
+
+					if (!meshNode.matrices.empty())
+					{
+						meshNode.mesh = mesh;
+						matNode.meshNodes.emplace_back(std::move(meshNode));
+					}
+				}
+
+				if (!matNode.meshNodes.empty())
+				{
+					matNode.material = material;
+					materialNodes.emplace_back(std::move(matNode));
 				}
 			}
 		}
@@ -142,36 +148,24 @@ namespace leopph::internal
 		glClearNamedFramebufferfv(mPingPongBuffers[0].name, GL_DEPTH, 0, &clearDepth);
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, mPingPongBuffers[0].name);
 
-		for (auto i = 0; i < mFrameData.viewCount; i++)
+		for (auto const& [viewport, uboPerCameraData, materialNodes] : mFrameData.perViewData)
 		{
-			auto const& [viewport, uboPerCameraData, materialNodes, materialNodeCount] = mFrameData.perViewData[i];
-
 			glViewport(viewport.offsetX, viewport.offsetY, viewport.width, viewport.height);
 
 			*static_cast<UboPerCameraData*>(mPerCameraUbo.get_ptr()) = uboPerCameraData;
 			glBindBufferRange(GL_UNIFORM_BUFFER, 1, mPerCameraUbo.get_internal_handle(), 0, sizeof UboPerCameraData);
 
-			for (auto j = 0; j < materialNodeCount; j++)
+			for (auto const& [material, meshNodes] : materialNodes)
 			{
-				auto const& [material, meshNodes, meshNodeCount] = materialNodes[j];
-
 				material->bind_and_set_renderstate(2);
 
-				for (auto k = 0; k < meshNodeCount; k++)
+				for (auto const& [mesh, matrices] : meshNodes)
 				{
-					auto const& [mesh, uboPerMesh, matrices, subMeshIndices] = meshNodes[k];
-
 					mesh->set_instance_data(matrices);
-
-					for (auto const subMeshIndex : subMeshIndices)
-					{
-						mesh->draw_sub_mesh(subMeshIndex);
-					}
+					mesh->draw();
 				}
 			}
 		}
-
-
 
 		glBlitNamedFramebuffer(mPingPongBuffers[0].name, 0, 0, 0, mPingPongBuffers[0].width, mPingPongBuffers[0].height, 0, 0, mPingPongBuffers[0].width, mPingPongBuffers[0].height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
 
@@ -236,44 +230,16 @@ namespace leopph::internal
 
 
 
-	void Renderer::register_texture_2d(std::shared_ptr<Texture2D const> tex)
+	void Renderer::register_mesh_for_material(std::shared_ptr<StaticMaterial const> const& material, std::shared_ptr<StaticMesh> mesh)
 	{
-		mTexture2Ds.emplace_back(std::move(tex));
+		mMaterialsToMeshes[material].emplace_back(std::move(mesh));
 	}
 
 
 
-	void Renderer::unregister_texture_2d(std::shared_ptr<Texture2D> const& tex)
+	void Renderer::unregister_mesh_for_material(std::shared_ptr<StaticMaterial const> const& material, std::shared_ptr<StaticMesh> const& mesh)
 	{
-		std::erase(mTexture2Ds, tex);
-	}
-
-
-
-	void Renderer::register_static_material(std::shared_ptr<StaticMaterial> mat)
-	{
-		mStaticMaterials.emplace_back(std::move(mat));
-	}
-
-
-
-	void Renderer::unregister_static_material(std::shared_ptr<StaticMaterial> const& mat)
-	{
-		std::erase(mStaticMaterials, mat);
-	}
-
-
-
-	void Renderer::register_static_mesh(std::shared_ptr<StaticMesh> mesh)
-	{
-		mStaticMeshes.emplace_back(std::move(mesh));
-	}
-
-
-
-	void Renderer::unregister_static_mesh(std::shared_ptr<StaticMesh> const& mesh)
-	{
-		std::erase(mStaticMeshes, mesh);
+		std::erase(mMaterialsToMeshes[material], mesh);
 	}
 
 

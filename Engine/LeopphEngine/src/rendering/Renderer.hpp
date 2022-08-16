@@ -83,28 +83,21 @@ namespace leopph::internal
 			Matrix4 projMatInv;
 			Matrix4 viewProjMat;
 			Matrix4 viewProjMatInv;
-			alignas(16) Vector3 position;
+			Vector3 position;
 		};
-
-
-		struct UboPerMeshData
-		{ };
 
 
 		struct MeshNode
 		{
-			StaticMesh* mesh;
-			UboPerMeshData uboPerMesh;
+			std::shared_ptr<StaticMesh> mesh;
 			std::vector<std::pair<Matrix4, Matrix4>> matrices;
-			std::vector<std::size_t> subMeshIndices;
 		};
 
 
 		struct MaterialNode
 		{
-			StaticMaterial* material;
+			std::shared_ptr<StaticMaterial const> material;
 			std::vector<MeshNode> meshNodes;
-			std::size_t meshNodeCount;
 		};
 
 
@@ -113,16 +106,13 @@ namespace leopph::internal
 			Extent<u32> viewport;
 			UboPerCameraData uboPerCameraData;
 			std::vector<MaterialNode> materialNodes;
-			std::size_t materialNodeCount;
 		};
 
 
 		struct FrameData
 		{
-			std::unordered_set<std::shared_ptr<StaticMesh>> meshes;
 			UboPerFrameData uboPerFrameData;
 			std::vector<ViewData> perViewData;
-			u64 viewCount;
 		};
 
 
@@ -142,14 +132,8 @@ namespace leopph::internal
 			void register_camera(Camera const* camera);
 			void unregister_camera(Camera const* camera);
 
-			void register_texture_2d(std::shared_ptr<Texture2D const> tex);
-			void unregister_texture_2d(std::shared_ptr<Texture2D> const& tex);
-
-			void register_static_material(std::shared_ptr<StaticMaterial> mat);
-			void unregister_static_material(std::shared_ptr<StaticMaterial> const& mat);
-
-			void register_static_mesh(std::shared_ptr<StaticMesh> mesh);
-			void unregister_static_mesh(std::shared_ptr<StaticMesh> const& mesh);
+			void register_mesh_for_material(std::shared_ptr<StaticMaterial const> const& material, std::shared_ptr<StaticMesh> mesh);
+			void unregister_mesh_for_material(std::shared_ptr<StaticMaterial const> const& material, std::shared_ptr<StaticMesh> const& mesh);
 
 		private:
 			void create_ping_pong_buffers();
@@ -196,12 +180,8 @@ namespace leopph::internal
 			std::array<Framebuffer, 2> mPingPongBuffers;
 			PersistentMappedBuffer mPerFrameUbo{sizeof UboPerFrameData};
 			PersistentMappedBuffer mPerCameraUbo{sizeof UboPerCameraData};
-			PersistentMappedBuffer mPerMeshUbo{sizeof UboPerMeshData};
 
-			std::vector<std::shared_ptr<Texture2D const>> mTexture2Ds;
-			std::vector<std::shared_ptr<StaticMaterial const>> mStaticMaterials;
-			std::vector<std::shared_ptr<StaticMesh>> mStaticMeshes;
-			std::unordered_map<StaticMaterial const*, std::unordered_map<StaticMesh const*, std::vector<std::size_t>>> mMaterialsToMeshes;
+			std::unordered_map<std::shared_ptr<StaticMaterial const>, std::vector<std::shared_ptr<StaticMesh>>> mMaterialsToMeshes;
 
 			FrameData mFrameData{};
 

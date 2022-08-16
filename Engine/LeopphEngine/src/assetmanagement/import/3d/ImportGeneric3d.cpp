@@ -99,18 +99,10 @@ namespace leopph
 
 
 
-		// Extract geometry data from the assimp structure and group it by the used materials
+		// Extract geometry data from the assimp structure, group it by the used materials, and calculate AABB for the meshes
 
-
-		struct SubMeshData
-		{
-			std::vector<Vertex> vertices;
-			std::vector<u32> indices;
-		};
-
-
-		// Maps a material index to a list of submeshes
-		std::unordered_map<std::size_t, std::vector<SubMeshData>> subMeshDataByMaterial;
+		// Maps a material index to a list of meshes
+		std::unordered_map<std::size_t, std::vector<StaticMeshData>> subMeshDataByMaterial;
 
 		{
 			std::queue<std::pair<aiNode const*, Matrix4>> queue;
@@ -131,6 +123,8 @@ namespace leopph
 							Logger::get_instance().debug(std::format("Found NGON encoded submesh in model file at {}.", path.string()));
 							// TODO transform to triangle fans
 						}
+
+						// Process the vertices
 
 						std::vector<Vertex> vertices;
 
@@ -156,6 +150,8 @@ namespace leopph
 							vertices.push_back(vertex);
 						}
 
+						// Process the indices
+
 						std::vector<u32> indices;
 
 						for (unsigned j = 0; j < mesh->mNumFaces; j++)
@@ -166,7 +162,17 @@ namespace leopph
 							}
 						}
 
-						subMeshDataByMaterial[mesh->mMaterialIndex].emplace_back(std::move(vertices), std::move(indices));
+						// Calculate AABB
+
+						AABB bounds{};
+
+						for (auto const& [position, normal, uv] : vertices)
+						{
+							bounds.min = Vector3{std::min(bounds.min[0], position[0]), std::min(bounds.min[1], position[1]), std::min(bounds.min[2], position[2])};
+							bounds.max = Vector3{std::max(bounds.max[0], position[0]), std::max(bounds.max[1], position[1]), std::max(bounds.max[2], position[2])};
+						}
+
+						subMeshDataByMaterial[mesh->mMaterialIndex].emplace_back(std::move(vertices), std::move(indices), bounds);
 					}
 					else
 					{
@@ -187,7 +193,7 @@ namespace leopph
 							primitiveType += " [N>3 polygons]";
 						}
 
-						Logger::get_instance().debug(std::format("Ignoring non-triangle submesh in model file at {}. Primitives in the submesh are {}.", path.string(), primitiveType));
+						Logger::get_instance().debug(std::format("Ignoring non-triangle mesh in model file at {}. Primitives in the mesh are {}.", path.string(), primitiveType));
 					}
 				}
 
@@ -201,47 +207,47 @@ namespace leopph
 		}
 
 
-		// Collape the list of submeshes that use the same material and load the material data
+		// Create the final data structure by collapsing meshes over materials, combining their AABBs, and loading their material data
 
-		// Holds the same number of submeshes and materials.
-		// Element at the same index correspond to each other.
-		struct
-		{
-			std::vector<SubMeshData> subMeshes;
-			std::vector<StaticMaterialData> materials;
-		} subMeshesWithMaterials;
 
-		std::vector<Image> textures;
+		StaticModelData ret;
 
 		{
 			auto const& modelDir = path.parent_path();
+
 			// Caches loaded textures based on their file paths and indices in the array
 			std::unordered_map<std::string, std::size_t> texturePathToIndex;
 
-			for (auto& [materialIndex, subMeshes] : subMeshDataByMaterial)
+			for (auto& [materialIndex, mesh] : subMeshDataByMaterial)
 			{
-				// Accumulate the submeshes mapped to the material into one single entry
-
 				{
-					SubMeshData subMeshAccum;
+					StaticMeshData meshAccum{};
 
-					for (auto& [vertices, indices] : subMeshes)
+					// Accumulate vertices and indices
+
+					for (auto& [vertices, indices, aabb] : mesh)
 					{
 						for (auto& index : indices)
 						{
-							index += clamp_cast<u32>(subMeshAccum.vertices.size());
+							index += clamp_cast<u32>(meshAccum.vertices.size());
 						}
 
-						subMeshAccum.vertices.insert(std::end(subMeshAccum.vertices), std::begin(vertices), std::end(vertices));
-						subMeshAccum.indices.insert(std::end(subMeshAccum.indices), std::begin(indices), std::end(indices));
+						meshAccum.vertices.insert(std::end(meshAccum.vertices), std::begin(vertices), std::end(vertices));
+						meshAccum.indices.insert(std::end(meshAccum.indices), std::begin(indices), std::end(indices));
+
+						// Extend AABB
+
+						meshAccum.boundingBox.min = Vector3{std::min(meshAccum.boundingBox.min[0], aabb.min[0]), std::min(meshAccum.boundingBox.min[1], aabb.min[1]), std::min(meshAccum.boundingBox.min[2], aabb.min[2])};
+						meshAccum.boundingBox.max = Vector3{std::max(meshAccum.boundingBox.max[0], aabb.max[0]), std::max(meshAccum.boundingBox.max[1], aabb.max[1]), std::max(meshAccum.boundingBox.max[2], aabb.max[2])};
 					}
-					subMeshesWithMaterials.subMeshes.emplace_back(std::move(subMeshAccum));
+
+					ret.meshes.emplace_back(std::move(meshAccum));
 				}
 
 				// Load the corresponding material data
 
 				{
-					StaticMaterialData matData;
+					MaterialData matData;
 
 					{
 						auto const* const aiMat = scene->mMaterials[materialIndex];
@@ -279,10 +285,10 @@ namespace leopph
 							}
 							else
 							{
-								textures.push_back(load_texture(texPath, modelDir, scene));
-								textures.back().set_encoding(ColorEncoding::sRGB);
-								texturePathToIndex[texPath.C_Str()] = textures.size() - 1;
-								matData.diffuseMapIndex = textures.size() - 1;
+								ret.textures.push_back(load_texture(texPath, modelDir, scene));
+								ret.textures.back().set_encoding(ColorEncoding::sRGB);
+								texturePathToIndex[texPath.C_Str()] = ret.textures.size() - 1;
+								matData.diffuseMapIndex = ret.textures.size() - 1;
 							}
 						}
 
@@ -294,53 +300,16 @@ namespace leopph
 							}
 							else
 							{
-								textures.push_back(load_texture(texPath, modelDir, scene));
-								textures.back().set_encoding(ColorEncoding::Linear);
-								texturePathToIndex[texPath.C_Str()] = textures.size() - 1;
-								matData.specularMapIndex = textures.size() - 1;
+								ret.textures.push_back(load_texture(texPath, modelDir, scene));
+								ret.textures.back().set_encoding(ColorEncoding::Linear);
+								texturePathToIndex[texPath.C_Str()] = ret.textures.size() - 1;
+								matData.specularMapIndex = ret.textures.size() - 1;
 							}
 						}
 					}
-					subMeshesWithMaterials.materials.emplace_back(matData);
+					ret.materials.emplace_back(matData);
 				}
 			}
-		}
-
-
-		// Create the final data structure by collapsing the submeshes into one big buffer while keeping their order in line with the material list
-
-		StaticModelData ret{};
-		ret.textures = std::move(textures);
-		ret.materials = std::move(subMeshesWithMaterials.materials);
-
-		for (auto const& [vertices, indices] : subMeshesWithMaterials.subMeshes)
-		{
-			AABB bounds{};
-
-			for (auto const& [position, normal, uv] : vertices)
-			{
-				// Update submesh bounding box
-
-				bounds.min = Vector3{std::min(bounds.min[0], position[0]), std::min(bounds.min[1], position[1]), std::min(bounds.min[2], position[2])};
-				bounds.max = Vector3{std::max(bounds.max[0], position[0]), std::max(bounds.max[1], position[1]), std::max(bounds.max[2], position[2])};
-
-				// Update whole mesh bounding box
-
-				ret.mesh.boundingBox.min = Vector3{std::min(ret.mesh.boundingBox.min[0], position[0]), std::min(ret.mesh.boundingBox.min[1], position[1]), std::min(ret.mesh.boundingBox.min[2], position[2])};
-				ret.mesh.boundingBox.max = Vector3{std::max(ret.mesh.boundingBox.max[0], position[0]), std::max(ret.mesh.boundingBox.max[1], position[1]), std::max(ret.mesh.boundingBox.max[2], position[2])};
-			}
-
-			SubMeshDescriptor const descriptor
-			{
-				.indexOffset = clamp_cast<i32>(ret.mesh.indices.size()), 
-				.indexCount = clamp_cast<i32>(indices.size()), 
-				.baseVertex = clamp_cast<i32>(ret.mesh.vertices.size()), 
-				.boundingBox = bounds
-			};
-
-			ret.mesh.vertices.insert(std::end(ret.mesh.vertices), std::begin(vertices), std::end(vertices));
-			ret.mesh.indices.insert(std::end(ret.mesh.indices), std::begin(indices), std::end(indices));
-			ret.mesh.subMeshes.emplace_back(descriptor);
 		}
 
 		return ret;

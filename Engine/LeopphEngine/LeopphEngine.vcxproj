@@ -80,6 +80,7 @@
     <ClInclude Include="..\include\Exit.hpp" />
     <ClInclude Include="..\include\FrameCompleteEvent.hpp" />
     <ClInclude Include="..\include\Frustum.hpp" />
+    <ClInclude Include="..\include\Import.hpp" />
     <ClInclude Include="..\include\StaticModelData.hpp" />
     <ClInclude Include="..\include\ImageSprite.hpp" />
     <ClInclude Include="..\include\Input.hpp" />
@@ -99,7 +100,6 @@
     <ClInclude Include="..\include\RenderPass.hpp" />
     <ClInclude Include="..\include\Skybox.hpp" />
     <ClInclude Include="..\include\SpotLight.hpp" />
-    <ClInclude Include="..\include\SubMeshDescriptor.hpp" />
     <ClInclude Include="..\include\Time.hpp" />
     <ClInclude Include="..\include\Vertex.hpp" />
     <ClInclude Include="..\include\Window.hpp" />
@@ -115,7 +115,6 @@
     <ClInclude Include="include\rendering\ShaderFamily.hpp" />
     <ClInclude Include="include\rendering\ShaderProcessing.hpp" />
     <ClInclude Include="include\rendering\ShaderProgram.hpp" />
-    <ClInclude Include="src\assetmanagement\import\Import.hpp" />
     <ClInclude Include="src\rendering\Framebuffer.hpp" />
     <ClInclude Include="src\rendering\PersistentMappedBuffer.hpp" />
     <ClInclude Include="src\rendering\QuadMesh.hpp" />

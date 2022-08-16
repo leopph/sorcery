@@ -135,12 +135,11 @@
     <ClInclude Include="src\serialization\Serialize.hpp" />
     <ClInclude Include="src\assetmanagement\import\3d\ImportGeneric3d.hpp" />
     <ClInclude Include="src\assetmanagement\import\3d\ImportLeopph3d.hpp" />
-    <ClInclude Include="src\assetmanagement\import\Import.hpp" />
     <ClInclude Include="src\rendering\Texture2D.hpp" />
     <ClInclude Include="src\rendering\StaticMesh.hpp" />
     <ClInclude Include="src\rendering\StaticMaterial.hpp" />
-    <ClInclude Include="..\include\SubMeshDescriptor.hpp" />
     <ClInclude Include="src\rendering\Framebuffer.hpp" />
+    <ClInclude Include="..\include\Import.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\rendering\shaders\glsl\include\CompositeFrag.glsl" />

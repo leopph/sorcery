@@ -21,7 +21,7 @@ namespace leopph
 
 	void serialize(Image const& img, std::vector<u8>& oBuf, std::endian endianness);
 
-	void serialize(StaticMaterialData const& mat, std::vector<u8>& oBuf, std::endian endianness);
+	void serialize(MaterialData const& mat, std::vector<u8>& oBuf, std::endian endianness);
 
 	template<class T, u64 N>
 	void serialize(Vector<T, N> const& vec, std::vector<u8>& oBuf, std::endian endianness);

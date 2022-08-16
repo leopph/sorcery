@@ -3,7 +3,6 @@
 #include "AABB.hpp"
 #include "Color.hpp"
 #include "Image.hpp"
-#include "SubMeshDescriptor.hpp"
 #include "Types.hpp"
 #include "Vertex.hpp"
 
@@ -13,7 +12,7 @@
 
 namespace leopph
 {
-	struct StaticMaterialData
+	struct MaterialData
 	{
 		// RGB controls the diffuse color, A controls the opacity.
 		// For opaque surfaces, the opacity only takes part in alpha clipping,
@@ -44,15 +43,14 @@ namespace leopph
 	{
 		std::vector<Vertex> vertices;
 		std::vector<u32> indices;
-		std::vector<SubMeshDescriptor> subMeshes;
 		AABB boundingBox;
 	};
 
 
 	struct StaticModelData
 	{
-		StaticMeshData mesh;
-		std::vector<StaticMaterialData> materials;
+		std::vector<StaticMeshData> meshes;
+		std::vector<MaterialData> materials;
 		std::vector<Image> textures;
 	};
 }

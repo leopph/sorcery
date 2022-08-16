@@ -16,6 +16,17 @@ namespace leopph
 
 
 
+	Scene::~Scene()
+	{
+		// Entity destructor removes entity from this list
+		while (!mEntities.empty())
+		{
+			delete mEntities.back();
+		}
+	}
+
+
+
 	void Scene::register_entity(Entity* entity)
 	{
 		mEntities.push_back(entity);

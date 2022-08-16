@@ -1,103 +1,125 @@
 #include "StaticMeshComponent.hpp"
 
-#include "Image.hpp"
-
-#include <utility>
-#include <vector>
+#include "Context.hpp"
+#include "../rendering/Renderer.hpp"
+#include "../rendering/StaticMesh.hpp"
 
 
 namespace leopph
 {
-	/*namespace
+	std::shared_ptr<StaticMesh const> StaticMeshComponent::get_mesh() const
 	{
-		std::shared_ptr<Material> convert_material(convert::Material const& convMat, std::span<std::shared_ptr<Texture2D> const> const textures)
+		return mMesh;
+	}
+
+
+
+	void StaticMeshComponent::set_mesh(std::shared_ptr<StaticMesh> mesh)
+	{
+		try_unregister();
+		mMesh = std::move(mesh);
+		try_register();
+	}
+
+
+
+	std::shared_ptr<StaticMaterial const> StaticMeshComponent::get_material() const
+	{
+		return mMaterial;
+	}
+
+
+
+	void StaticMeshComponent::set_material(std::shared_ptr<StaticMaterial> material)
+	{
+		try_unregister();
+		mMaterial = std::move(material);
+		try_unregister();
+	}
+
+
+
+	bool StaticMeshComponent::is_casting_shadow() const
+	{
+		return mIsCastingShadow;
+	}
+
+
+
+	void StaticMeshComponent::set_casting_shadow(bool const value)
+	{
+		mIsCastingShadow = value;
+	}
+
+
+
+	StaticMeshComponent::StaticMeshComponent(std::shared_ptr<StaticMesh> mesh, std::shared_ptr<StaticMaterial> material) :
+		mMesh{std::move(mesh)},
+		mMaterial{std::move(material)}
+	{
+		try_register();
+	}
+
+
+
+	StaticMeshComponent::StaticMeshComponent(StaticMeshComponent const& other) :
+		mMesh{other.mMesh},
+		mMaterial{other.mMaterial}
+	{
+		try_register();
+	}
+
+
+
+	StaticMeshComponent& StaticMeshComponent::operator=(StaticMeshComponent const& other)
+	{
+		if (this == &other)
 		{
-			auto mat = std::make_shared<Material>();
-
-			mat->DiffuseColor = convMat.diffuseColor;
-			mat->SpecularColor = convMat.specularColor;
-			mat->Gloss = convMat.gloss;
-			mat->TwoSided = convMat.twoSided;
-			mat->Opacity = convMat.opacity;
-
-			if (convMat.diffuseMap)
-			{
-				mat->DiffuseMap = textures[*convMat.diffuseMap];
-			}
-
-			if (convMat.specularMap)
-			{
-				mat->SpecularMap = textures[*convMat.specularMap];
-			}
-
-			if (convMat.opacityMap)
-			{
-				mat->OpacityMap = textures[*convMat.opacityMap];
-			}
-
-			return mat;
+			return *this;
 		}
 
+		try_unregister();
+		mMesh = other.mMesh;
+		mMaterial = other.mMaterial;
+		try_register();
+
+		return *this;
+	}
 
 
-		std::vector<Mesh> parse(std::filesystem::path const& path)
+
+	StaticMeshComponent::~StaticMeshComponent()
+	{
+		try_unregister();
+	}
+
+
+
+	void StaticMeshComponent::try_register() const
+	{
+		if (mMesh)
 		{
-			auto const imported = convert::import_3d_asset(path);
+			mMesh->register_entity(get_owner());
+		}
 
-			if (!imported.has_value())
-			{
-				return {};
-			}
-
-			auto const& [convTexs, convMats, convMeshes] = imported.value();
-
-			std::vector<std::shared_ptr<Texture2D>> textures;
-			textures.reserve(convTexs.size());
-
-			for (auto const& convTex : convTexs)
-			{
-				textures.push_back(std::make_shared<Texture2D>(convTex));
-			}
-
-			std::vector<std::shared_ptr<Material>> mats;
-			mats.reserve(convMats.size());
-
-			for (auto const& convMat : convMats)
-			{
-				mats.push_back(convert_material(convMat, textures));
-			}
-
-			std::vector<Mesh> meshes;
-			meshes.reserve(convMeshes.size());
-
-			for (auto const& [vertices, indices, matIndex] : convMeshes)
-			{
-				meshes.emplace_back(vertices, indices, mats[matIndex]);
-			}
-
-			return meshes;
+		if (mMesh && mMaterial)
+		{
+			internal::get_renderer()->register_mesh_for_material(mMaterial, mMesh);
 		}
 	}
 
 
 
-	StaticModelComponent::StaticModelComponent(std::filesystem::path path) :
-		mPath{std::move(path)}
+	void StaticMeshComponent::try_unregister() const
 	{
-		Init(MeshData{parse(mPath)});
+		if (mMesh)
+		{
+			mMesh->unregister_entity(get_owner());
+		}
+
+		if (mMesh && mMaterial)
+		{
+			internal::get_renderer()->unregister_mesh_for_material(mMaterial, mMesh);
+		}
 	}
-
-
-
-	ComponentPtr<> StaticModelComponent::Clone() const
-	{
-		return CreateComponent<StaticModelComponent>(*this);
-	}
-
-
-
-	std::filesystem::path const& StaticModelComponent::path() const noexcept
-	{
-		return mPath;
-	}*/
 }

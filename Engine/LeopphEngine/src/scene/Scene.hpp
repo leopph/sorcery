@@ -27,7 +27,7 @@ namespace leopph
 			Scene(Scene&& other) = delete;
 			Scene& operator=(Scene&& other) = delete;
 
-			~Scene() = default;
+			~Scene();
 
 
 		private:

@@ -1,9 +1,7 @@
 #include "Texture2D.hpp"
 
-#include "Context.hpp"
 #include "GlContext.hpp"
 #include "Logger.hpp"
-#include "Renderer.hpp"
 
 #include <format>
 
@@ -73,15 +71,12 @@ namespace leopph
 
 		mHandle = glGetTextureHandleARB(mTexture);
 		glMakeTextureHandleResidentARB(mHandle);
-
-		internal::get_renderer()->register_texture_2d(shared_from_this());
 	}
 
 
 
 	Texture2D::~Texture2D()
 	{
-		internal::get_renderer()->unregister_texture_2d(shared_from_this());
 		glDeleteTextures(1, &mTexture);
 	}
 

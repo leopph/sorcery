@@ -1,24 +1,15 @@
 #include "StaticMesh.hpp"
 
-#include "Context.hpp"
 #include "GlContext.hpp"
-#include "Renderer.hpp"
 #include "Util.hpp"
 
 
 namespace leopph
 {
-	void StaticMesh::draw_sub_mesh(std::size_t const index) const
+	void StaticMesh::draw() const
 	{
 		glBindVertexArray(mVao);
-		glDrawElementsBaseVertex(GL_TRIANGLES, mSubMeshes[index].indexCount, GL_UNSIGNED_INT, reinterpret_cast<void const*>(mSubMeshes[index].indexOffset), mSubMeshes[index].baseVertex);
-	}
-
-
-
-	std::size_t StaticMesh::get_sub_mesh_count() const
-	{
-		return mSubMeshes.size();
+		glDrawElements(GL_TRIANGLES, mNumIndices, GL_UNSIGNED_INT, nullptr);
 	}
 
 
@@ -71,7 +62,9 @@ namespace leopph
 
 
 
-	StaticMesh::StaticMesh(StaticMeshData const& data)
+	StaticMesh::StaticMesh(StaticMeshData const& data) :
+		mNumIndices{clamp_cast<u32>(data.indices.size())},
+		mBoundingBox{data.boundingBox}
 	{
 		glCreateBuffers(1, &mVbo);
 		glNamedBufferStorage(mVbo, data.vertices.size() * sizeof Vertex, data.vertices.data(), 0);
@@ -114,16 +107,12 @@ namespace leopph
 		glVertexArrayAttribBinding(mVao, 6, 1);
 		glVertexArrayBindingDivisor(mVao, 6, 1);
 		glEnableVertexArrayAttrib(mVao, 6);
-
-		internal::get_renderer()->register_static_mesh(shared_from_this());
 	}
 
 
 
 	StaticMesh::~StaticMesh()
 	{
-		internal::get_renderer()->unregister_static_mesh(shared_from_this());
-
 		glDeleteVertexArrays(1, &mVao);
 		glDeleteBuffers(1, &mIbo);
 		glDeleteBuffers(1, &mVbo);

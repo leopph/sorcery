@@ -1,8 +1,6 @@
 #include "StaticMaterial.hpp"
 
-#include "Context.hpp"
 #include "GlContext.hpp"
-#include "Renderer.hpp"
 #include "Util.hpp"
 
 
@@ -24,7 +22,7 @@ namespace leopph
 
 
 
-	StaticMaterial::StaticMaterial(StaticMaterialData const& data, std::span<std::shared_ptr<Texture2D const> const> const textures) :
+	StaticMaterial::StaticMaterial(MaterialData const& data, std::span<std::shared_ptr<Texture2D const> const> const textures) :
 		mBuffer
 		{
 			// Buffer layout: 
@@ -67,14 +65,5 @@ namespace leopph
 			*reinterpret_cast<u64*>(bufferData + 40) = 0;
 			*reinterpret_cast<i32*>(bufferData + 52) = false;
 		}
-
-		internal::get_renderer()->register_static_material(shared_from_this());
-	}
-
-
-
-	StaticMaterial::~StaticMaterial()
-	{
-		internal::get_renderer()->unregister_static_material(shared_from_this());
 	}
 }

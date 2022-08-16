@@ -44,7 +44,7 @@ namespace leopph
 
 
 
-	void serialize(StaticMaterialData const& mat, std::vector<u8>& oBuf, std::endian const endianness)
+	void serialize(MaterialData const& mat, std::vector<u8>& oBuf, std::endian const endianness)
 	{
 		serialize(mat.diffuseColor, oBuf);
 		serialize(mat.specularColor, oBuf);

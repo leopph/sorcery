@@ -97,7 +97,7 @@ namespace leopph
 			auto const numMats = deserialize<u64>(it, endianness);
 
 			// all materials
-			std::vector<StaticMaterialData> mats;
+			std::vector<MaterialData> mats;
 			mats.reserve(numMats);
 
 			// parse material data
