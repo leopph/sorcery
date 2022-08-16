@@ -75,7 +75,7 @@ namespace leopph::internal::opengl
 				case GL_DEBUG_TYPE_ERROR:
 				{
 					auto const logMsg{"OpenGL error from [" + source + "] with severity [" + msgSeverity + "]: " + msg};
-					Logger::Instance().Error(logMsg);
+					Logger::get_instance().error(logMsg);
 					return;
 				}
 
@@ -85,7 +85,7 @@ namespace leopph::internal::opengl
 				case GL_DEBUG_TYPE_PERFORMANCE:
 				{
 					auto const logMsg{"OpenGL warning from [" + source + "] with severity [" + msgSeverity + "]: " + msg};
-					Logger::Instance().Warning(logMsg);
+					Logger::get_instance().warning(logMsg);
 					return;
 				}
 
@@ -105,7 +105,7 @@ namespace leopph::internal::opengl
 		if (gladLoadGL(glfwGetProcAddress) == 0)
 		{
 			auto const errMsg = "Failed to initialize OpenGL context.";
-			Logger::Instance().Critical(errMsg);
+			Logger::get_instance().critical(errMsg);
 			throw std::runtime_error{errMsg};
 		}
 
@@ -114,8 +114,8 @@ namespace leopph::internal::opengl
 		glGetIntegerv(GL_MAJOR_VERSION, &major);
 		glGetIntegerv(GL_MINOR_VERSION, &minor);
 
-		Logger::Instance().Debug("OpenGL " + std::to_string(major) + "." + std::to_string(minor));
-		Logger::Instance().Debug(std::format("{} {}", reinterpret_cast<char const*>(glGetString(GL_VENDOR)), reinterpret_cast<char const*>(glGetString(GL_RENDERER))));
+		Logger::get_instance().debug("OpenGL " + std::to_string(major) + "." + std::to_string(minor));
+		Logger::get_instance().debug(std::format("{} {}", reinterpret_cast<char const*>(glGetString(GL_VENDOR)), reinterpret_cast<char const*>(glGetString(GL_RENDERER))));
 
 		glEnable(GL_DEBUG_OUTPUT);
 		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);

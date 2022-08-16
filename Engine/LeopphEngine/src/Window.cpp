@@ -194,13 +194,13 @@ namespace leopph
 		if (!glfwInit())
 		{
 			auto const errMsg = "Failed to initialize GLFW.";
-			internal::Logger::Instance().Critical(errMsg);
+			Logger::get_instance().critical(errMsg);
 			throw std::runtime_error{errMsg};
 		}
 
 		int major, minor, rev;
 		glfwGetVersion(&major, &minor, &rev);
-		internal::Logger::Instance().Debug(std::format("GLFW version {}.{}.{}.", major, minor, rev));
+		Logger::get_instance().debug(std::format("GLFW version {}.{}.{}.", major, minor, rev));
 
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
@@ -216,7 +216,7 @@ namespace leopph
 			glfwGetError(&glfwErrMsg);
 
 			auto const errMsg = std::format("Error while creating window: {}.", glfwErrMsg);
-			internal::Logger::Instance().Critical(errMsg);
+			Logger::get_instance().critical(errMsg);
 			throw std::runtime_error{errMsg};
 		}
 
@@ -266,7 +266,7 @@ namespace leopph
 		}
 		catch (std::out_of_range const&)
 		{
-			internal::Logger::Instance().Warning("Invalid key input detected.");
+			Logger::get_instance().warning("Invalid key input detected.");
 		}
 	}
 

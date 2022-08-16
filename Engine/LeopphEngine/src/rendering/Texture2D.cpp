@@ -56,7 +56,7 @@ namespace leopph
 			}
 
 			default:
-				internal::Logger::Instance().Error(std::format("Failed to create texture: input image channel count [{}] is not supported.", img.get_num_channels()));
+				Logger::get_instance().error(std::format("Failed to create texture: input image channel count [{}] is not supported.", img.get_num_channels()));
 				return;
 		}
 

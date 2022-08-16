@@ -23,7 +23,7 @@ namespace leopph
 
 	StaticModelData import_static_leopph_3d(std::filesystem::path const& path)
 	{
-		try
+		/*try
 		{
 			std::ifstream in{path, std::ios::in | std::ios::binary};
 
@@ -33,7 +33,7 @@ namespace leopph
 			// failed to open file
 			if (!in.is_open())
 			{
-				internal::Logger::Instance().Error(std::format("Failed to parse leopph3d file at [{}]: the file does not exist.", path.string()));
+				Logger::get_instance().error(std::format("Failed to parse leopph3d file at [{}]: the file does not exist.", path.string()));
 				return {};
 			}
 
@@ -49,7 +49,7 @@ namespace leopph
 				buffer[2] != '6' ||
 				buffer[3] != '9')
 			{
-				internal::Logger::Instance().Error(std::format("Failed to parse leopph3d file at [{}]: the file is corrupted or invalid.", path.string()));
+				Logger::get_instance().error(std::format("Failed to parse leopph3d file at [{}]: the file is corrupted or invalid.", path.string()));
 				return {};
 			}
 
@@ -73,14 +73,10 @@ namespace leopph
 			// uncompress data
 			if (uncompress({std::begin(buffer), std::end(buffer)}, contentSize, uncompressed) != CompressionError::None)
 			{
-				internal::Logger::Instance().Error(std::format("Failed to parse leopph3d file at [{}]: the file contents could not be uncompressed.", path.string()));
+				Logger::get_instance().error(std::format("Failed to parse leopph3d file at [{}]: the file contents could not be uncompressed.", path.string()));
 				return {};
 			}
-
-			#ifndef NDEBUG
-			internal::Logger::Instance().CurrentLevel(internal::Logger::Level::Debug);
-			internal::Logger::Instance().Trace(std::format("Parsing leopph3d file at {}.", path.string()));
-			#endif
+			Logger::get_instance().trace(std::format("Parsing leopph3d file at {}.", path.string()));
 
 			auto it = std::cbegin(uncompressed);
 
@@ -132,8 +128,10 @@ namespace leopph
 		}
 		catch (...)
 		{
-			internal::Logger::Instance().Error(std::format("Failed to parse leopph3d file at [{}]: an unknown error occured while reading file contents.", path.string()));
+			internal::Logger::get_instance().error(std::format("Failed to parse leopph3d file at [{}]: an unknown error occured while reading file contents.", path.string()));
 			return {};
-		}
+		}*/
+
+		return {};
 	}
 }

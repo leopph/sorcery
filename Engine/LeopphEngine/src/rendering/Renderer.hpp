@@ -141,7 +141,7 @@ namespace leopph::internal
 			void register_camera(Camera const* camera);
 			void unregister_camera(Camera const* camera);
 
-			void register_texture_2d(std::shared_ptr<Texture2D> tex);
+			void register_texture_2d(std::shared_ptr<Texture2D const> tex);
 			void unregister_texture_2d(std::shared_ptr<Texture2D> const& tex);
 
 			void register_static_material(std::shared_ptr<StaticMaterial> mat);
@@ -149,10 +149,6 @@ namespace leopph::internal
 
 			void register_static_mesh(std::shared_ptr<StaticMesh> mesh);
 			void unregister_static_mesh(std::shared_ptr<StaticMesh> const& mesh);
-
-
-		private:
-			void on_event(WindowEvent const& event);
 
 
 			//void calculate_shadow_cascades(std::vector<ShadowCascade>& out);
@@ -197,7 +193,7 @@ namespace leopph::internal
 			PersistentMappedBuffer mPerCameraUbo{sizeof UboPerCameraData};
 			PersistentMappedBuffer mPerMeshUbo{sizeof UboPerMeshData};
 
-			std::vector<std::shared_ptr<Texture2D>> mTexture2Ds;
+			std::vector<std::shared_ptr<Texture2D const>> mTexture2Ds;
 			std::vector<std::shared_ptr<StaticMaterial const>> mStaticMaterials;
 			std::vector<std::shared_ptr<StaticMesh>> mStaticMeshes;
 			std::unordered_map<StaticMaterial const*, std::unordered_map<StaticMesh const*, std::vector<std::size_t>>> mMaterialsToMeshes;

@@ -32,7 +32,7 @@ namespace leopph
 	{
 		if (newIntensity <= 0)
 		{
-			internal::Logger::Instance().Warning(std::format("Ignoring attempt to set light intensity to {}. This value must be positive.", newIntensity));
+			Logger::get_instance().warning(std::format("Ignoring attempt to set light intensity to {}. This value must be positive.", newIntensity));
 			return;
 		}
 

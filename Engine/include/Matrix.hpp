@@ -324,7 +324,7 @@ namespace leopph
 				}
 			}
 
-			// Swap pivot row with the ith
+			// swap pivot row with the ith
 			auto tmp{left[i]};
 			left[i] = left[pivotInd];
 			left[pivotInd] = tmp;

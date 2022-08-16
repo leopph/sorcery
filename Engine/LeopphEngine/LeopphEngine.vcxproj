@@ -48,7 +48,6 @@
     <ClCompile Include="src\rendering\GlCore.cpp" />
     <ClCompile Include="src\rendering\Texture2D.cpp" />
     <ClCompile Include="src\rendering\Renderer.cpp" />
-    <ClCompile Include="src\rendering\RenderSettings.cpp" />
     <ClCompile Include="src\rendering\Shader.cpp" />
     <ClCompile Include="src\scene\Scene.cpp" />
     <ClCompile Include="src\scene\SceneManager.cpp" />
@@ -127,7 +126,6 @@
     <ClInclude Include="src\events\SpotShadowResEvent.hpp" />
     <ClInclude Include="src\rendering\GlCore.hpp" />
     <ClInclude Include="src\rendering\Renderer.hpp" />
-    <ClInclude Include="src\rendering\RenderSettings.hpp" />
     <ClInclude Include="src\rendering\Shader.hpp" />
     <ClInclude Include="src\rendering\StaticMaterial.hpp" />
     <ClInclude Include="src\rendering\Texture2D.hpp" />
@@ -254,8 +252,8 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)Engine\deps\vendor\assimp\lib\$(Configuration)\;$(SolutionDir)Engine\deps\vendor\glfw\src\$(Configuration)\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>assimp.lib;glfw3.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)Engine\deps\vendor\assimp\lib\$(Configuration)\;$(SolutionDir)Engine\deps\vendor\glfw\src\$(Configuration)\;$(Configuration)\;$(SolutionDir)Engine\deps\vendor\zlib\$(Configuration)\</AdditionalLibraryDirectories>
+      <AdditionalDependencies>assimp.lib;glfw3.lib;zlibstaticd.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent />
     <PreBuildEvent />
@@ -283,8 +281,8 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
-      <AdditionalLibraryDirectories>$(SolutionDir)Engine\deps\vendor\assimp\lib\$(Configuration)\;$(SolutionDir)Engine\deps\vendor\glfw\src\$(Configuration)\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>assimp.lib;glfw3.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)Engine\deps\vendor\assimp\lib\$(Configuration)\;$(SolutionDir)Engine\deps\vendor\glfw\src\$(Configuration)\;$(Configuration)\;$(SolutionDir)Engine\deps\vendor\zlib\$(Configuration)\</AdditionalLibraryDirectories>
+      <AdditionalDependencies>assimp.lib;glfw3.lib;zlibstatic.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent />
     <PreBuildEvent />

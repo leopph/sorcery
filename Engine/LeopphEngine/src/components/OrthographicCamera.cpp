@@ -19,7 +19,7 @@ namespace leopph
 			return mHorizSize / get_aspect_ratio();
 		}
 
-		internal::Logger::Instance().Warning(std::format("Invalid side [{}] while returning camera size. Returning 0.", static_cast<int>(side)));
+		Logger::get_instance().warning(std::format("Invalid side [{}] while returning camera size. Returning 0.", static_cast<int>(side)));
 		return 0;
 	}
 
@@ -37,7 +37,7 @@ namespace leopph
 		}
 		else
 		{
-			internal::Logger::Instance().Warning(std::format("Invalid side [{}] while setting camera size. Ignoring.", static_cast<int>(side)));
+			Logger::get_instance().warning(std::format("Invalid side [{}] while setting camera size. Ignoring.", static_cast<int>(side)));
 		}
 	}
 

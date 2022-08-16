@@ -2,6 +2,7 @@
 
 #include "Logger.hpp"
 
+#define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 #include <stdexcept>
 #include <string>
@@ -24,7 +25,7 @@ namespace leopph
 		if (!data)
 		{
 			// Width, height and channels are already initialized to 0 to signal emptiness, only need to throw error
-			internal::Logger::Instance().Error("Failed to load image at " + pathStr + ". Reverting to default image.");
+			Logger::get_instance().error("Failed to load image at " + pathStr + ". Reverting to default image.");
 			return;
 		}
 		#endif

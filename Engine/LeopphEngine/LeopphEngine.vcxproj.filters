@@ -38,7 +38,6 @@
     <ClCompile Include="src\Exit.cpp" />
     <ClCompile Include="src\Input.cpp" />
     <ClCompile Include="src\Main.cpp" />
-    <ClCompile Include="src\rendering\RenderSettings.cpp" />
     <ClCompile Include="src\rendering\CubeMesh.cpp" />
     <ClCompile Include="src\rendering\QuadMesh.cpp" />
     <ClCompile Include="src\rendering\PersistentMappedBuffer.cpp" />
@@ -122,7 +121,6 @@
     <ClInclude Include="src\events\SpotShadowResEvent.hpp" />
     <ClInclude Include="src\rendering\GlCore.hpp" />
     <ClInclude Include="src\rendering\Renderer.hpp" />
-    <ClInclude Include="src\rendering\RenderSettings.hpp" />
     <ClInclude Include="src\rendering\Shader.hpp" />
     <ClInclude Include="src\scene\Scene.hpp" />
     <ClInclude Include="src\scene\SceneManager.hpp" />

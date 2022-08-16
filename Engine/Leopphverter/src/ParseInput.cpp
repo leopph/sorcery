@@ -48,7 +48,7 @@ namespace leopph::convert::driver
 
 							default:
 							{
-								internal::Logger::Instance().Error(std::format("Unknown option [{}].", argv[i]));
+								Logger::get_instance().error(std::format("Unknown option [{}].", argv[i]));
 								return EXIT_FAILURE;
 							}
 						}
@@ -73,8 +73,8 @@ namespace leopph::convert::driver
 
 				default:
 				{
-					internal::Logger::Instance().Debug("Parse mode was invalid.");
-					internal::Logger::Instance().Error("Internal error.");
+					Logger::get_instance().debug("Parse mode was invalid.");
+					Logger::get_instance().error("Internal error.");
 					return EXIT_FAILURE;
 				}
 			}

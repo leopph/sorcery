@@ -19,54 +19,45 @@ namespace spdlog
 }
 
 
-namespace leopph::internal
+namespace leopph
 {
 	class Logger
 	{
 		public:
 			enum class Level
 			{
-				Trace, Debug, Info, Warning, Error, Critical
+				Trace, Debug, Info, Warning, Error, Critical, Off
 			};
 
 
-			LEOPPHAPI
-			static Logger& Instance();
+			[[nodiscard]] LEOPPHAPI static Logger& get_instance();
 
-			LEOPPHAPI void CurrentLevel(Level level);
+			[[nodiscard]] LEOPPHAPI Level get_level() const;
+			LEOPPHAPI void set_level(Level level) const;
 
-			[[nodiscard]] LEOPPHAPI Level CurrentLevel() const;
+			LEOPPHAPI void trace(std::string_view msg) const;
+			LEOPPHAPI void debug(std::string_view msg) const;
+			LEOPPHAPI void info(std::string_view msg) const;
+			LEOPPHAPI void warning(std::string_view msg) const;
+			LEOPPHAPI void error(std::string_view msg) const;
+			LEOPPHAPI void critical(std::string_view msg) const;
 
-			LEOPPHAPI void Trace(std::string_view msg) const;
-
-			LEOPPHAPI void Debug(std::string_view msg) const;
-
-			LEOPPHAPI void Critical(std::string_view msg) const;
-
-			LEOPPHAPI void Error(std::string_view msg) const;
-
-			LEOPPHAPI void Warning(std::string_view msg) const;
-
-			LEOPPHAPI void Info(std::string_view msg) const;
-
-			Logger(Logger const& other) = delete;
-			Logger& operator=(Logger const& other) = delete;
-
-			Logger(Logger&& other) noexcept = delete;
-			Logger& operator=(Logger&& other) noexcept = delete;
 
 		private:
 			Logger();
+
+		public:
+			Logger(Logger const& other) = delete;
+			Logger(Logger&& other) = delete;
+
+			Logger& operator=(Logger const& other) = delete;
+			Logger& operator=(Logger&& other) = delete;
+
+		private:
 			~Logger() = default;
 
-			std::shared_ptr<spdlog::logger> m_Logger;
+			std::unique_ptr<spdlog::logger> mLogger;
 
-			static Bimap<spdlog::level::level_enum, Level,
-			             #ifdef _DEBUG
-			             true
-			             #else
-			             false
-			             #endif
-			> m_TranslateMap;
+			static Bimap<spdlog::level::level_enum, Level> sLevelTranslateMap;
 	};
 }

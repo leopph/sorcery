@@ -20,7 +20,7 @@ namespace leopph
 			return convert_fov(mHorizFovDeg, Conversion::HorizontalToVertical);
 		}
 
-		internal::Logger::Instance().Warning(std::format("Invalid side [{}] while querying camera field of view. Returning 0.", static_cast<int>(side)));
+		Logger::get_instance().warning(std::format("Invalid side [{}] while querying camera field of view. Returning 0.", static_cast<int>(side)));
 		return 0;
 	}
 
@@ -38,7 +38,7 @@ namespace leopph
 		}
 		else
 		{
-			internal::Logger::Instance().Warning(std::format("Invalid side [{}] while setting camera field of view. Ignoring.", static_cast<int>(side)));
+			Logger::get_instance().warning(std::format("Invalid side [{}] while setting camera field of view. Ignoring.", static_cast<int>(side)));
 		}
 	}
 
@@ -89,7 +89,7 @@ namespace leopph
 			return to_degrees(2.0f * std::atan(std::tan(to_radians(fov) / 2.0f) / get_aspect_ratio()));
 		}
 
-		internal::Logger::Instance().Warning(std::format("Invalid direction [{}] while converting camera field of view. Returning 0.", static_cast<int>(conversion)));
+		Logger::get_instance().warning(std::format("Invalid direction [{}] while converting camera field of view. Returning 0.", static_cast<int>(conversion)));
 		return 0;
 	}
 }

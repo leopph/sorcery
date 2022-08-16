@@ -1,7 +1,6 @@
 #include "StaticMeshComponent.hpp"
 
 #include "Image.hpp"
-#include "Texture2D.hpp"
 
 #include <utility>
 #include <vector>

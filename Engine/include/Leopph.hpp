@@ -48,7 +48,6 @@ See individual headers for more information.
 #include "StaticMeshComponent.hpp"
 #include "StaticModelData.hpp"
 #include "SubMeshDescriptor.hpp"
-#include "Texture2D.hpp"
 #include "Time.hpp"
 #include "Types.hpp"
 #include "Util.hpp"

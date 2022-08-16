@@ -45,4 +45,8 @@ namespace leopph
 			behavior->on_frame_update();
 		}
 	}
+
+
+
+	std::vector<Behavior*> Behavior::sAllBehaviors;
 }

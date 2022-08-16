@@ -15,7 +15,7 @@ namespace leopph::internal
 			m_Poelos.erase(m_Poelos.begin());
 		}
 		// All containers should be empty at this point.
-		Logger::Instance().Debug("DataManager cleared.");
+		Logger::get_instance().debug("DataManager cleared.");
 	}
 
 

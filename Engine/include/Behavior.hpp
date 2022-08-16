@@ -17,7 +17,7 @@ namespace leopph
 			LEOPPHAPI void set_update_index(i32 index);
 
 		protected:
-			Behavior();
+			LEOPPHAPI Behavior();
 
 		public:
 			Behavior(Behavior const& other) = delete;

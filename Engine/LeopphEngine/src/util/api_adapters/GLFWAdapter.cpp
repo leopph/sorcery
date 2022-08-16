@@ -11,13 +11,7 @@
 
 namespace leopph::internal::glfw
 {
-	static Bimap<int, CursorState,
-	             #ifdef _DEBUG
-	             true
-	             #else
-	             false
-	             #endif
-	> g_CursorStates
+	static Bimap<int, CursorState> gCursorStates
 	{
 		{GLFW_CURSOR_NORMAL, CursorState::Shown},
 		{GLFW_CURSOR_HIDDEN, CursorState::Hidden},
@@ -151,13 +145,13 @@ namespace leopph::internal::glfw
 
 	CursorState GetAbstractCursorState(int const glfwCursorState)
 	{
-		return g_CursorStates.At(glfwCursorState);
+		return gCursorStates.at(glfwCursorState);
 	}
 
 
 	int GetGlfwCursorState(CursorState const abstractCursorState)
 	{
-		return g_CursorStates.At(abstractCursorState);
+		return gCursorStates.at(abstractCursorState);
 	}
 
 

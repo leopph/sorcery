@@ -263,7 +263,7 @@ namespace leopph::internal
 
 
 
-	void Renderer::register_texture_2d(std::shared_ptr<Texture2D> tex)
+	void Renderer::register_texture_2d(std::shared_ptr<Texture2D const> tex)
 	{
 		mTexture2Ds.emplace_back(std::move(tex));
 	}

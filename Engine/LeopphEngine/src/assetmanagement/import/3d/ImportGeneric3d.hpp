@@ -7,5 +7,5 @@
 
 namespace leopph
 {
-	StaticModelData import_generic_static_meshes(std::filesystem::path const& path);
+	StaticModelData import_generic_static_model(std::filesystem::path const& path);
 }

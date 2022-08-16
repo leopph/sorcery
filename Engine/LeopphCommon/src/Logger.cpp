@@ -5,7 +5,6 @@
 #include <spdlog/sinks/stdout_color_sinks.h>
 
 #include <filesystem>
-#include <stdexcept>
 #include <vector>
 
 // ReSharper disable All
@@ -14,10 +13,11 @@
 #include <Psapi.h>
 // ReSharper restore All
 
-namespace leopph::internal
+
+namespace leopph
 {
 	Logger::Logger() :
-		m_Logger{
+		mLogger{
 			[]
 			{
 				constexpr auto bufSz{100u};
@@ -25,7 +25,7 @@ namespace leopph::internal
 				#ifdef UNICODE
 				std::wstring s(bufSz, defChar);
 				#else
-		std::string s(bufSz, defChar);
+				std::string s(bufSz, defChar);
 				#endif
 				s.resize(GetModuleFileNameEx(GetCurrentProcess(), nullptr, s.data(), static_cast<DWORD>(s.size())));
 				auto const logFilePath = std::filesystem::path{s}.parent_path() / "log.txt";
@@ -33,100 +33,87 @@ namespace leopph::internal
 				std::vector<spdlog::sink_ptr> sinks;
 				sinks.push_back(std::make_shared<spdlog::sinks::stdout_color_sink_st>());
 				sinks.push_back(std::make_shared<spdlog::sinks::basic_file_sink_st>(logFilePath.string(), DMCOLLATE_TRUE));
-				return std::make_shared<spdlog::logger>("LeopphLogger", std::begin(sinks), std::end(sinks));
+				return std::make_unique<spdlog::logger>("LeopphEngine", std::begin(sinks), std::end(sinks));
 			}()
 		}
 	{
-		CurrentLevel(Level::Trace);
+		set_level(Level::Trace);
 	}
 
 
-	Logger& Logger::Instance()
+
+	Logger& Logger::get_instance()
 	{
 		static Logger instance;
 		return instance;
 	}
 
 
-	void Logger::CurrentLevel(Level const level)
+
+	Logger::Level Logger::get_level() const
 	{
-		try
-		{
-			m_Logger->set_level(m_TranslateMap.At(level));
-		}
-		catch (std::out_of_range const&)
-		{
-			auto const errMsg = "Found unknown value while setting log level.";
-			Error(errMsg);
-			throw std::domain_error{errMsg};
-		}
+		return sLevelTranslateMap.at(mLogger->level());
 	}
 
 
-	Logger::Level Logger::CurrentLevel() const
+
+	void Logger::set_level(Level const level) const
 	{
-		try
-		{
-			return m_TranslateMap.At(m_Logger->level());
-		}
-		catch (std::out_of_range const&)
-		{
-			auto const errMsg = "Found unknown value while returning current log level.";
-			Error(errMsg);
-			throw std::domain_error{errMsg};
-		}
+		mLogger->set_level(sLevelTranslateMap.at(level));
 	}
 
 
-	void Logger::Trace(std::string_view const msg) const
+
+	void Logger::trace(std::string_view const msg) const
 	{
-		m_Logger->trace(msg);
+		mLogger->trace(msg);
 	}
 
 
-	void Logger::Debug(std::string_view const msg) const
+
+	void Logger::debug(std::string_view const msg) const
 	{
-		m_Logger->debug(msg);
+		mLogger->debug(msg);
 	}
 
 
-	void Logger::Critical(std::string_view const msg) const
+
+	void Logger::info(std::string_view const msg) const
 	{
-		m_Logger->critical(msg);
+		mLogger->info(msg);
 	}
 
 
-	void Logger::Error(std::string_view const msg) const
+
+	void Logger::warning(std::string_view const msg) const
 	{
-		m_Logger->error(msg);
+		mLogger->warn(msg);
 	}
 
 
-	void Logger::Warning(std::string_view const msg) const
+
+	void Logger::error(std::string_view const msg) const
 	{
-		m_Logger->warn(msg);
+		mLogger->error(msg);
 	}
 
 
-	void Logger::Info(std::string_view const msg) const
+
+	void Logger::critical(std::string_view const msg) const
 	{
-		m_Logger->info(msg);
+		mLogger->critical(msg);
 	}
 
 
-	Bimap<spdlog::level::level_enum, Logger::Level,
-	      #ifdef _DEBUG
-	      true
-	      #else
-	      false
-	      #endif
-	> Logger::m_TranslateMap
+
+	Bimap<spdlog::level::level_enum, Logger::Level> Logger::sLevelTranslateMap
 	{
 		{spdlog::level::level_enum::trace, Level::Trace},
 		{spdlog::level::level_enum::debug, Level::Debug},
 		{spdlog::level::level_enum::info, Level::Info},
 		{spdlog::level::level_enum::warn, Level::Warning},
 		{spdlog::level::level_enum::err, Level::Error},
-		{spdlog::level::level_enum::critical, Level::Critical}
+		{spdlog::level::level_enum::critical, Level::Critical},
+		{spdlog::level::level_enum::off, Level::Off}
 	};
 }

@@ -38,7 +38,7 @@ namespace leopph
 
 		if (auto const infoLog = compile_shader(vertexShader, linePtrs))
 		{
-			internal::Logger::Instance().Error(std::format("Error while compiling shader: vertex shader failed to compile, reason: {}.", *infoLog));
+			Logger::get_instance().error(std::format("Error while compiling shader: vertex shader failed to compile, reason: {}.", *infoLog));
 			glDeleteShader(vertexShader);
 			return;
 		}
@@ -53,7 +53,7 @@ namespace leopph
 
 		if (auto const infoLog = compile_shader(fragmentShader, linePtrs))
 		{
-			internal::Logger::Instance().Error(std::format("Error while compiling shader: fragment shader failed to compile, reason: {}.", *infoLog));
+			Logger::get_instance().error(std::format("Error while compiling shader: fragment shader failed to compile, reason: {}.", *infoLog));
 			glDeleteShader(fragmentShader);
 			return;
 		}
@@ -65,7 +65,7 @@ namespace leopph
 
 		if (auto const infoLog = link_program(mProgram))
 		{
-			internal::Logger::Instance().Error(std::format("Error while compiling shader: program failed to link, reason: {}.", *infoLog));
+			Logger::get_instance().error(std::format("Error while compiling shader: program failed to link, reason: {}.", *infoLog));
 			glDeleteProgram(mProgram);
 			mProgram = 0;
 			return;
@@ -186,7 +186,7 @@ namespace leopph
 
 	void Shader::log_invalid_uniform_access(std::string_view uniformName)
 	{
-		internal::Logger::Instance().Debug(std::format("Ignoring attempt to set shader uniform [{}]: the uniform does not exist in the shader program.", uniformName));
+		Logger::get_instance().debug(std::format("Ignoring attempt to set shader uniform [{}]: the uniform does not exist in the shader program.", uniformName));
 	}
 
 
@@ -195,13 +195,13 @@ namespace leopph
 	{
 		if (path.empty())
 		{
-			internal::Logger::Instance().Error("Error reading shader file: shader path was empty.");
+			Logger::get_instance().error("Error reading shader file: shader path was empty.");
 			return {};
 		}
 
 		if (!exists(path))
 		{
-			internal::Logger::Instance().Error("Error reading shader file: the file does not exist.");
+			Logger::get_instance().error("Error reading shader file: the file does not exist.");
 			return {};
 		}
 
@@ -250,7 +250,7 @@ namespace leopph
 				else
 				{
 					// We couldn't parse the include directive so we log the error, clear the erroneous lines[i], and move on.
-					internal::Logger::Instance().Error("Error parsing shader includes: ill-formed file specifier was found.");
+					Logger::get_instance().error("Error parsing shader includes: ill-formed file specifier was found.");
 					lines[i].clear();
 					i++;
 					continue;
@@ -264,7 +264,7 @@ namespace leopph
 				if (inclFileBuf.empty())
 				{
 					// The the file to be included was either empty, or does not exist.
-					internal::Logger::Instance().Error(std::format("Error parsing shader includes: included file [{}] was empty or does not exist.", includePath.string()));
+					Logger::get_instance().error(std::format("Error parsing shader includes: included file [{}] was empty or does not exist.", includePath.string()));
 				}
 
 				process_includes_recursive(includePath, inclFileBuf);
