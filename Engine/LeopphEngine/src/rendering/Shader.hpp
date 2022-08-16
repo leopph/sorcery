@@ -71,6 +71,7 @@ namespace leopph
 			[[nodiscard]] static SourceFileInfo read_source_file(std::filesystem::path const& path);
 			static void process_includes_recursive(std::filesystem::path const& absolutePath, RawSourceLines& lines);
 			[[nodiscard]] static ProcessedSourceLines process_includes(SourceFileInfo fileInfo);
+			[[nodiscard]] static ProcessedSourceLines add_new_line_chars(ProcessedSourceLines sourceLines);
 
 
 			[[nodiscard]] static std::optional<std::string> compile_shader(u32 shader, std::span<char const* const> lines);

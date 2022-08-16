@@ -13,7 +13,7 @@
 namespace leopph
 {
 	Shader::Shader(std::filesystem::path const& path) :
-		Shader{process_includes(read_source_file(path))}
+		Shader{add_new_line_chars(process_includes(read_source_file(path)))}
 	{}
 
 
@@ -27,10 +27,10 @@ namespace leopph
 		linePtrs.push_back(VERSION_LINE);
 		linePtrs.push_back(VERTEX_DEFINE_LINE);
 
-		std::ranges::transform(sourceLines, std::back_inserter(linePtrs), [](auto const& line)
+		for (auto const& line : sourceLines)
 		{
-			return line.data();
-		});
+			linePtrs.emplace_back(line.data());
+		}
 
 		// Compile vertex shader
 
@@ -38,7 +38,7 @@ namespace leopph
 
 		if (auto const infoLog = compile_shader(vertexShader, linePtrs))
 		{
-			Logger::get_instance().error(std::format("Error while compiling shader: vertex shader failed to compile, reason: {}.", *infoLog));
+			Logger::get_instance().error(std::format("Error while compiling shader: vertex shader failed to compile, reason: {}", *infoLog));
 			glDeleteShader(vertexShader);
 			return;
 		}
@@ -53,7 +53,7 @@ namespace leopph
 
 		if (auto const infoLog = compile_shader(fragmentShader, linePtrs))
 		{
-			Logger::get_instance().error(std::format("Error while compiling shader: fragment shader failed to compile, reason: {}.", *infoLog));
+			Logger::get_instance().error(std::format("Error while compiling shader: fragment shader failed to compile, reason: {}", *infoLog));
 			glDeleteShader(fragmentShader);
 			return;
 		}
@@ -65,7 +65,7 @@ namespace leopph
 
 		if (auto const infoLog = link_program(mProgram))
 		{
-			Logger::get_instance().error(std::format("Error while compiling shader: program failed to link, reason: {}.", *infoLog));
+			Logger::get_instance().error(std::format("Error while compiling shader: program failed to link, reason: {}", *infoLog));
 			glDeleteProgram(mProgram);
 			mProgram = 0;
 			return;
@@ -286,6 +286,18 @@ namespace leopph
 	{
 		process_includes_recursive(fileInfo.absolutePath, fileInfo.lines);
 		return std::move(fileInfo.lines);
+	}
+
+
+
+	Shader::ProcessedSourceLines Shader::add_new_line_chars(ProcessedSourceLines sourceLines)
+	{
+		for (auto& line : sourceLines)
+		{
+			line.push_back('\n');
+		}
+
+		return std::move(sourceLines);
 	}
 
 

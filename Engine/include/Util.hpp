@@ -28,34 +28,34 @@ namespace leopph
 
 
 	template<std::integral To, std::integral From>
-	[[nodiscard]] To clamp_cast(From from);
+	[[nodiscard]] To clamp_cast(From what);
 }
 
 
 
 template<std::integral To, std::integral From>
-To leopph::clamp_cast(From const from)
+To leopph::clamp_cast(From const what)
 {
 	if constexpr (std::cmp_less_equal(std::numeric_limits<To>::min(), std::numeric_limits<From>::min()))
 	{
 		if constexpr (std::cmp_greater_equal(std::numeric_limits<To>::max(), std::numeric_limits<From>::max()))
 		{
-			return static_cast<To>(from);
+			return static_cast<To>(what);
 		}
 		else
 		{
-			return static_cast<To>(std::min<From>(from, std::numeric_limits<To>::max()));
+			return static_cast<To>(std::min<From>(what, std::numeric_limits<To>::max()));
 		}
 	}
 	else
 	{
 		if constexpr (std::cmp_greater_equal(std::numeric_limits<To>::max(), std::numeric_limits<From>::max()))
 		{
-			return static_cast<To>(std::max<From>(from, std::numeric_limits<To>::min()));
+			return static_cast<To>(std::max<From>(what, std::numeric_limits<To>::min()));
 		}
 		else
 		{
-			return static_cast<To>(std::clamp<From>(from, std::numeric_limits<To>::min(), std::numeric_limits<To>::max()));
+			return static_cast<To>(std::clamp<From>(what, std::numeric_limits<To>::min(), std::numeric_limits<To>::max()));
 		}
 	}
 }
