@@ -6,5 +6,5 @@
 // This must be included exactly once in your application.
 int main()
 {
-	return leopph::internal::Main(leopph::Init);
+	return leopph::internal::main(leopph::init);
 }

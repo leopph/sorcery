@@ -1,6 +1,6 @@
 #include "Skybox.hpp"
 
-#include "GlCore.hpp"
+#include "GlContext.hpp"
 #include "Image.hpp"
 
 

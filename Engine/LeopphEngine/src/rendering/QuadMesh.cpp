@@ -1,6 +1,6 @@
 #include "QuadMesh.hpp"
 
-#include "GlCore.hpp"
+#include "GlContext.hpp"
 
 
 namespace leopph

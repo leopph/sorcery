@@ -45,7 +45,7 @@
     <ClCompile Include="src\Exit.cpp" />
     <ClCompile Include="src\Input.cpp" />
     <ClCompile Include="src\Main.cpp" />
-    <ClCompile Include="src\rendering\GlCore.cpp" />
+    <ClCompile Include="src\rendering\GlContext.cpp" />
     <ClCompile Include="src\rendering\Texture2D.cpp" />
     <ClCompile Include="src\rendering\Renderer.cpp" />
     <ClCompile Include="src\rendering\Shader.cpp" />
@@ -124,7 +124,7 @@
     <ClInclude Include="src\events\DirShadowResEvent.hpp" />
     <ClInclude Include="src\events\PointShadowResEvent.hpp" />
     <ClInclude Include="src\events\SpotShadowResEvent.hpp" />
-    <ClInclude Include="src\rendering\GlCore.hpp" />
+    <ClInclude Include="src\rendering\GlContext.hpp" />
     <ClInclude Include="src\rendering\Renderer.hpp" />
     <ClInclude Include="src\rendering\Shader.hpp" />
     <ClInclude Include="src\rendering\StaticMaterial.hpp" />

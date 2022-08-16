@@ -9,7 +9,7 @@
 
 
 
-void leopph::Init()
+void leopph::init()
 {
 	get_window()->set_title("LeopphEngine Demo");
 

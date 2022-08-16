@@ -20,12 +20,14 @@
 //#include "SettingsImpl.hpp"
 #include "Window.hpp"
 //#include "data/DataManager.hpp"
+#include "Behavior.hpp"
 #include "rendering/Renderer.hpp"
+#include "Scene/SceneManager.hpp"
 
 
 namespace leopph::internal
 {
-	int Main(decltype(Init) initFunc)
+	int main(decltype(init) initFunc)
 	{
 		#ifdef _DEBUG
 		_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
@@ -43,6 +45,9 @@ namespace leopph::internal
 		auto const renderer = std::make_unique<Renderer>();
 		set_renderer(renderer.get());
 
+		auto const sceneManager = std::make_unique<SceneManager>();
+		set_scene_manager(sceneManager.get());
+
 		//auto const dataManager = std::make_unique<DataManager>();
 		//(dataManager.get());
 
@@ -51,12 +56,7 @@ namespace leopph::internal
 		while (!window->should_close())
 		{
 			window->poll_events();
-
-			//for (auto const& behavior : dataManager->ActiveBehaviors())
-			{
-				//behavior->OnFrameUpdate();
-			}
-
+			Behavior::update_all_behaviors();
 			renderer->render();
 			window->swap_buffers();
 			EventManager::get_instance().send<FrameCompleteEvent>();

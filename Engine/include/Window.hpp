@@ -86,8 +86,8 @@ namespace leopph
 
 			std::string mTitle{"LeopphEngine"};
 			GLFWwindow* mHandle{nullptr};
-			int mWidth{540};
-			int mHeight{960};
+			int mWidth{960};
+			int mHeight{540};
 			bool mFullscreen{false};
 			bool mVsync{false};
 	};

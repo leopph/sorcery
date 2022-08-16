@@ -1,7 +1,7 @@
 #include "Texture2D.hpp"
 
 #include "Context.hpp"
-#include "GlCore.hpp"
+#include "GlContext.hpp"
 #include "Logger.hpp"
 #include "Renderer.hpp"
 

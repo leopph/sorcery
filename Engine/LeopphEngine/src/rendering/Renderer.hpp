@@ -6,6 +6,7 @@
 #include "DirectionalLight.hpp"
 #include "EventReceiverHandle.hpp"
 #include "Framebuffer.hpp"
+#include "GlContext.hpp"
 #include "PersistentMappedBuffer.hpp"
 #include "PointLight.hpp"
 #include "QuadMesh.hpp"
@@ -28,7 +29,7 @@ namespace leopph::internal
 {
 	#pragma warning(push)
 	#pragma warning(disable: 4324)
-	class Renderer
+	class Renderer : OpenGlContext
 	{
 		struct ResourceUpdateFlags
 		{

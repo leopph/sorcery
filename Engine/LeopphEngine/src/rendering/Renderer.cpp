@@ -3,7 +3,7 @@
 #include "AmbientLight.hpp"
 #include "Camera.hpp"
 #include "Context.hpp"
-#include "GlCore.hpp"
+#include "GlContext.hpp"
 #include "Math.hpp"
 #include "Window.hpp"
 #include "../../../include/Entity.hpp"

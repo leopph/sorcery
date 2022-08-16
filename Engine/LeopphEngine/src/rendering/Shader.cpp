@@ -1,6 +1,6 @@
 #include "Shader.hpp"
 
-#include "GlCore.hpp"
+#include "GlContext.hpp"
 #include "Logger.hpp"
 #include "Util.hpp"
 

@@ -20,7 +20,7 @@
     <ClCompile Include="src\events\EventManager.cpp" />
     <ClCompile Include="src\events\KeyEvent.cpp" />
     <ClCompile Include="src\events\MouseEvent.cpp" />
-    <ClCompile Include="src\rendering\GlCore.cpp" />
+    <ClCompile Include="src\rendering\GlContext.cpp" />
     <ClCompile Include="src\rendering\Texture2D.cpp" />
     <ClCompile Include="src\rendering\Renderer.cpp" />
     <ClCompile Include="src\rendering\Shader.cpp" />
@@ -119,7 +119,7 @@
     <ClInclude Include="src\events\DirShadowResEvent.hpp" />
     <ClInclude Include="src\events\PointShadowResEvent.hpp" />
     <ClInclude Include="src\events\SpotShadowResEvent.hpp" />
-    <ClInclude Include="src\rendering\GlCore.hpp" />
+    <ClInclude Include="src\rendering\GlContext.hpp" />
     <ClInclude Include="src\rendering\Renderer.hpp" />
     <ClInclude Include="src\rendering\Shader.hpp" />
     <ClInclude Include="src\scene\Scene.hpp" />

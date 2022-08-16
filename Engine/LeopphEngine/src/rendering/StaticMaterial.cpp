@@ -1,7 +1,7 @@
 #include "StaticMaterial.hpp"
 
 #include "Context.hpp"
-#include "GlCore.hpp"
+#include "GlContext.hpp"
 #include "Renderer.hpp"
 #include "Util.hpp"
 

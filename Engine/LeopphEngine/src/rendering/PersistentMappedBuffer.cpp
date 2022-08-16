@@ -1,6 +1,6 @@
 #include "PersistentMappedBuffer.hpp"
 
-#include "GlCore.hpp"
+#include "GlContext.hpp"
 #include "Util.hpp"
 
 
