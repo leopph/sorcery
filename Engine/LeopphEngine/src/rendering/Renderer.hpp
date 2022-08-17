@@ -82,7 +82,7 @@ namespace leopph::internal
 		struct MeshNode
 		{
 			std::shared_ptr<StaticMesh> mesh;
-			std::vector<std::pair<Matrix4, Matrix4>> matrices; // TODO accumulate per view matrices, put them in the buffer once, store only indices, and use glDrawElementsBaseInstance
+			std::vector<StaticMesh::InstanceDataType> matrices; // TODO accumulate per view matrices, put them in the buffer once, store only indices, and use glDrawElementsBaseInstance
 		};
 
 

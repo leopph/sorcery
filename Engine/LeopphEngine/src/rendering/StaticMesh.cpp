@@ -19,15 +19,15 @@ namespace leopph
 		if (data.size_bytes() > mInstanceBuf->get_size())
 		{
 			auto newBufSize = mInstanceBuf->get_size();
-			
+
 			while (newBufSize < data.size_bytes())
 			{
-				//newBufSize *= 2;
+				newBufSize *= 2;
 			}
 
 			mInstanceBuf = std::make_unique<PersistentMappedBuffer>(newBufSize);
 		}
-		
+
 		std::memcpy(mInstanceBuf->get_ptr(), data.data(), data.size_bytes());
 		mNumInstances = data.size();
 	}

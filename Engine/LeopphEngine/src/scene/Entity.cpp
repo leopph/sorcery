@@ -268,7 +268,7 @@ namespace leopph
 
 
 
-	Matrix4 Entity::get_normal_matrix() const
+	Matrix3 Entity::get_normal_matrix() const
 	{
 		return mNormalMat;
 	}
@@ -328,12 +328,10 @@ namespace leopph
 		mModelMat[2] = Vector4{mForward * mWorldScale[2], 0};
 		mModelMat[3] = Vector4{mWorldPosition, 1};
 
-		auto const worldScaleRecip{1.f / mWorldScale};
-
-		mNormalMat[0] = Vector4{mRight * worldScaleRecip[0], -mWorldPosition[0]};
-		mNormalMat[1] = Vector4{mUp * worldScaleRecip[1], -mWorldPosition[1]};
-		mNormalMat[2] = Vector4{mForward * worldScaleRecip[2], -mWorldPosition[2]};
-		mNormalMat[3] = Vector4{0, 0, 0, 1};
+		auto const worldScaleInv{1.f / mWorldScale};
+		mNormalMat[0] = mRight * worldScaleInv;
+		mNormalMat[1] = mUp = worldScaleInv;
+		mNormalMat[2] = mForward * worldScaleInv;
 	}
 
 

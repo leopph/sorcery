@@ -18,8 +18,7 @@ namespace leopph
 		public:
 			[[nodiscard]] T get_determinant() const requires(N == M);
 			[[nodiscard]] Matrix<T, N, M> inverse() const requires(N == M);
-			[[nodiscard]] Matrix<T, M, N> transposed() const;
-			Matrix<T, N, M>& transpose() requires(N == M);
+			[[nodiscard]] Matrix<T, M, N> transpose() const;
 
 
 			auto& operator[](size_t index) const;
@@ -271,7 +270,7 @@ namespace leopph
 
 
 	template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
-	Matrix<T, M, N> Matrix<T, N, M>::transposed() const
+	Matrix<T, M, N> Matrix<T, N, M>::transpose() const
 	{
 		Matrix<T, M, N> ret;
 		for (size_t i = 0; i < N; i++)
@@ -282,23 +281,6 @@ namespace leopph
 			}
 		}
 		return ret;
-	}
-
-
-
-	template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
-	Matrix<T, N, M>& Matrix<T, N, M>::transpose() requires (N == M)
-	{
-		for (std::size_t i = 0; i < N; i++)
-		{
-			for (auto j = i + 1; j < M; j++)
-			{
-				auto temp{mData[i][j]};
-				mData[i][j] = mData[j][i];
-				mData[j][i] = temp;
-			}
-		}
-		return *this;
 	}
 
 

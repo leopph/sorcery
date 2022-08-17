@@ -133,7 +133,7 @@ namespace leopph
 							Vertex vertex
 							{
 								.position = Vector3{Vector4{convert(mesh->mVertices[j]), 1} * trafo},
-								.normal = Vector3{Vector4{convert(mesh->mNormals[j]), 0} * trafo},
+								.normal = Vector3{Vector4{convert(mesh->mNormals[j]), 0} * trafo}.normalize(),
 								.uv = [mesh, j]
 								{
 									for (std::size_t k = 0; k < AI_MAX_NUMBER_OF_TEXTURECOORDS; k++)

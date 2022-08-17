@@ -84,7 +84,7 @@ namespace leopph
 
 
 			LEOPPHAPI Matrix4 get_model_matrix() const;
-			LEOPPHAPI Matrix4 get_normal_matrix() const;
+			LEOPPHAPI Matrix3 get_normal_matrix() const;
 
 
 		private:
@@ -136,7 +136,7 @@ namespace leopph
 			std::vector<Entity*> mChildren;
 
 			Matrix4 mModelMat;
-			Matrix4 mNormalMat;
+			Matrix3 mNormalMat;
 	};
 
 
