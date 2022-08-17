@@ -27,8 +27,6 @@
 
 namespace leopph::internal
 {
-	#pragma warning(push)
-	#pragma warning(disable: 4324)
 	class Renderer : OpenGlContext
 	{
 		struct ResourceUpdateFlags
@@ -42,12 +40,6 @@ namespace leopph::internal
 			Directional = 0,
 			Spot = 1,
 			Point = 2
-		};
-
-
-		struct UboAmbientLight
-		{
-			alignas(16) Vector3 intensity;
 		};
 
 
@@ -69,7 +61,7 @@ namespace leopph::internal
 
 		struct UboPerFrameData
 		{
-			UboAmbientLight ambientLight;
+			Vector3 ambient;
 			i32 lightCount;
 			std::array<UboLightData, NUM_MAX_LIGHTS> lights;
 		};
@@ -90,7 +82,7 @@ namespace leopph::internal
 		struct MeshNode
 		{
 			std::shared_ptr<StaticMesh> mesh;
-			std::vector<std::pair<Matrix4, Matrix4>> matrices;
+			std::vector<std::pair<Matrix4, Matrix4>> matrices; // TODO accumulate per view matrices, put them in the buffer once, store only indices, and use glDrawElementsBaseInstance
 		};
 
 
@@ -165,12 +157,12 @@ namespace leopph::internal
 			};
 
 
-			Shader mDepthShadowShader{"C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/DepthShadow.shader"};
-			Shader mLinearShadowShader{"C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/LinearShadow.shader"};
-			Shader mSkyboxShader{"C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/Skybox.shader"};
+			//Shader mDepthShadowShader{"C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/DepthShadow.shader"};
+			//Shader mLinearShadowShader{"C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/LinearShadow.shader"};
+			//Shader mSkyboxShader{"C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/Skybox.shader"};
 			Shader mForwardShader{"C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/Forward.shader"};
-			Shader mTransparencyCompositeShader{"C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/TransparencyComposite.shader"};
-			Shader mGammaCorrectShader{"C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/GammaCorrect.shader"};
+			//Shader mTransparencyCompositeShader{"C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/TransparencyComposite.shader"};
+			//Shader mGammaCorrectShader{"C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/GammaCorrect.shader"};
 
 			QuadMesh mQuadMesh;
 			CubeMesh mCubeMesh;
@@ -190,5 +182,4 @@ namespace leopph::internal
 			std::vector<PointLight const*> mPointLights;
 			std::vector<Camera const*> mCameras;
 	};
-	#pragma warning(pop)
 }

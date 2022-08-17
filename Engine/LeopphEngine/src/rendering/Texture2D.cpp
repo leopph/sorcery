@@ -77,6 +77,7 @@ namespace leopph
 
 	Texture2D::~Texture2D()
 	{
+		glMakeTextureHandleNonResidentARB(mHandle);
 		glDeleteTextures(1, &mTexture);
 	}
 
@@ -84,7 +85,7 @@ namespace leopph
 
 	u32 Texture2D::get_handle() const
 	{
-		return mTexture;
+		return mHandle;
 	}
 
 

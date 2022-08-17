@@ -56,7 +56,8 @@ namespace leopph::internal
 		while (!window->should_close())
 		{
 			window->poll_events();
-			Behavior::update_all_behaviors();
+			Component::init_all();
+			Behavior::update_all();
 			renderer->render();
 			window->swap_buffers();
 			EventManager::get_instance().send<FrameCompleteEvent>();

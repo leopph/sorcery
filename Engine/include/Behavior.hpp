@@ -11,7 +11,7 @@ namespace leopph
 	class Behavior : public Component
 	{
 		public:
-			virtual void on_frame_update() = 0;
+			inline virtual void on_frame_update();
 
 			[[nodiscard]] LEOPPHAPI i32 get_update_index() const;
 			LEOPPHAPI void set_update_index(i32 index);
@@ -29,11 +29,16 @@ namespace leopph
 			LEOPPHAPI ~Behavior() override;
 
 
-			static void update_all_behaviors();
+			static void update_all();
 
 		private:
 			i32 mUpdateIndex{0};
 
-			static std::vector<Behavior*> sAllBehaviors;
+			static std::vector<Behavior*> sInstances;
 	};
+
+
+
+	inline void Behavior::on_frame_update()
+	{}
 }

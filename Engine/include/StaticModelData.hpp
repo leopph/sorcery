@@ -32,7 +32,7 @@ namespace leopph
 		f32 gloss{0};
 
 		// Discards pixels whose alpha values are under this value.
-		f32 alphaThreshold{1.f};
+		f32 alphaThreshold{0};
 
 		bool cullBackFace{true};
 		bool isTransparent{false};

@@ -16,5 +16,5 @@ namespace leopph
 	class StaticMesh;
 	class StaticMaterial;
 
-	[[nodiscard]] std::vector<std::pair<std::shared_ptr<StaticMesh>, std::shared_ptr<StaticMaterial>>> generate_render_structures(StaticModelData const& modelData);
+	[[nodiscard]] LEOPPHAPI std::vector<std::pair<std::shared_ptr<StaticMesh>, std::shared_ptr<StaticMaterial>>> generate_render_structures(StaticModelData const& modelData);
 }

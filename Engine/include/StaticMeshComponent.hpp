@@ -23,8 +23,10 @@ namespace leopph
 			[[nodiscard]] LEOPPHAPI bool is_casting_shadow() const;
 			LEOPPHAPI void set_casting_shadow(bool value);
 
+			void on_init() override;
+
 			LEOPPHAPI explicit StaticMeshComponent(std::shared_ptr<StaticMesh> mesh, std::shared_ptr<StaticMaterial> material);
-			LEOPPHAPI StaticMeshComponent(StaticMeshComponent const& other);
+			LEOPPHAPI StaticMeshComponent(StaticMeshComponent const& other) = default;
 			StaticMeshComponent(StaticMeshComponent&&) = delete;
 
 			LEOPPHAPI StaticMeshComponent& operator=(StaticMeshComponent const& other);

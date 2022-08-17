@@ -53,21 +53,17 @@ namespace leopph
 
 
 
+	void StaticMeshComponent::on_init()
+	{
+		try_register();
+	}
+
+
+
 	StaticMeshComponent::StaticMeshComponent(std::shared_ptr<StaticMesh> mesh, std::shared_ptr<StaticMaterial> material) :
 		mMesh{std::move(mesh)},
 		mMaterial{std::move(material)}
-	{
-		try_register();
-	}
-
-
-
-	StaticMeshComponent::StaticMeshComponent(StaticMeshComponent const& other) :
-		mMesh{other.mMesh},
-		mMaterial{other.mMaterial}
-	{
-		try_register();
-	}
+	{}
 
 
 

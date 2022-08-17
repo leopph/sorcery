@@ -19,6 +19,11 @@ namespace leopph
 			return;
 		}
 
+		if (!GLAD_GL_ARB_bindless_texture)
+		{
+			Logger::get_instance().critical("Failed to load required OpenGL extension [ARB_bindless_texture].");
+		}
+
 		#ifndef NDEBUG
 		int major, minor;
 		glGetIntegerv(GL_MAJOR_VERSION, &major);
@@ -121,7 +126,7 @@ namespace leopph
 		{
 			case GL_DEBUG_TYPE_ERROR:
 			{
-				Logger::get_instance().error(std::format("[OpenGL][{}][{}]: {}.", source, msgSeverity, msg));
+				Logger::get_instance().error(std::format("[OpenGL][{}][{}]: {}", source, msgSeverity, msg));
 				return;
 			}
 
@@ -130,7 +135,7 @@ namespace leopph
 			case GL_DEBUG_TYPE_PORTABILITY:
 			case GL_DEBUG_TYPE_PERFORMANCE:
 			{
-				Logger::get_instance().warning(std::format("[OpenGL][{}[{}]: {}.", source, msgSeverity, msg));
+				Logger::get_instance().warning(std::format("[OpenGL][{}[{}]: {}", source, msgSeverity, msg));
 				return;
 			}
 

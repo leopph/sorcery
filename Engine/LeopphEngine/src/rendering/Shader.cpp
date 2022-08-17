@@ -25,6 +25,7 @@ namespace leopph
 
 		std::vector<char const*> linePtrs;
 		linePtrs.push_back(VERSION_LINE);
+		linePtrs.push_back(BINDLESS_EXT_LINE);
 		linePtrs.push_back(VERTEX_DEFINE_LINE);
 
 		for (auto const& line : sourceLines)
@@ -48,7 +49,7 @@ namespace leopph
 
 		// Compile fragment shader
 
-		linePtrs[1] = FRAGMENT_DEFINE_LINE;
+		linePtrs[2] = FRAGMENT_DEFINE_LINE;
 		auto const fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
 
 		if (auto const infoLog = compile_shader(fragmentShader, linePtrs))
@@ -352,7 +353,8 @@ namespace leopph
 
 
 
-	char const* const Shader::VERSION_LINE{"#version 450 core\n"};
+	char const* const Shader::VERSION_LINE{"#version 460 core\n"};
+	char const* const Shader::BINDLESS_EXT_LINE{"#extension GL_ARB_bindless_texture : require\n"};
 	char const* const Shader::VERTEX_DEFINE_LINE{"#define VERTEX_SHADER 1\n"};
 	char const* const Shader::FRAGMENT_DEFINE_LINE{"#define FRAGMENT_SHADER 1\n"};
 }

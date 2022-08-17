@@ -89,6 +89,7 @@ namespace leopph
 
 		private:
 			static char const* const VERSION_LINE;
+			static char const* const BINDLESS_EXT_LINE;
 			static char const* const VERTEX_DEFINE_LINE;
 			static char const* const FRAGMENT_DEFINE_LINE;
 

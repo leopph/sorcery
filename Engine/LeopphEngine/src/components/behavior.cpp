@@ -21,26 +21,26 @@ namespace leopph
 
 	Behavior::Behavior()
 	{
-		sAllBehaviors.emplace_back(this);
+		sInstances.emplace_back(this);
 	}
 
 
 
 	Behavior::~Behavior()
 	{
-		std::erase(sAllBehaviors, this);
+		std::erase(sInstances, this);
 	}
 
 
 
-	void Behavior::update_all_behaviors()
+	void Behavior::update_all()
 	{
-		std::ranges::sort(sAllBehaviors, [](auto const* const left, auto const* const right)
+		std::ranges::sort(sInstances, [](auto const* const left, auto const* const right)
 		{
 			return left->get_update_index() > right->get_update_index();
 		});
 
-		for (auto* const behavior : sAllBehaviors)
+		for (auto* const behavior : sInstances)
 		{
 			behavior->on_frame_update();
 		}
@@ -48,5 +48,5 @@ namespace leopph
 
 
 
-	std::vector<Behavior*> Behavior::sAllBehaviors;
+	std::vector<Behavior*> Behavior::sInstances;
 }

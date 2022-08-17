@@ -5,33 +5,34 @@
 
 #include "CameraData.glsl"
 
-layout (location = 0) in vec3 in_Pos;
-layout (location = 1) in vec3 in_Normal;
-layout (location = 2) in vec2 in_TexCoords;
-layout (location = 3) in mat4 in_ModelMat;
-layout (location = 7) in mat4 in_NormalMat;
+layout (location = 0) in vec3 inPos;
+layout (location = 1) in vec3 inNormal;
+layout (location = 2) in vec2 inTexCoords;
+layout (location = 3) in mat4 inModelMat;
+layout (location = 7) in mat4 inNormalMat;
 
-layout (location = 0) out vec3 out_FragPos;
-layout (location = 1) out vec3 out_Normal;
-layout (location = 2) out vec2 out_TexCoords;
+layout (location = 0) out vec3 outFragPos;
+layout (location = 1) out vec3 outNormal;
+layout (location = 2) out vec2 outTexCoords;
 
 //! #define NUM_DIRLIGHT_SHADOW_CASCADE 1
-#if NUM_DIRLIGHT_SHADOW_CASCADE
+/*#if NUM_DIRLIGHT_SHADOW_CASCADE
 layout (location = 3) out float out_FragPosNdcZ;
-#endif
+#endif*/
 
 
 void main()
 {
-    vec4 fragPosWorldSpace = vec4(in_Pos, 1.0) * in_ModelMat;
-    out_Normal = in_Normal * mat3(in_NormalMat);
-    out_FragPos = fragPosWorldSpace.xyz;
-    out_TexCoords = in_TexCoords;
-    gl_Position = fragPosWorldSpace * GetCameraViewProjectionMatrix();
+    vec4 fragPosWorldSpace = vec4(inPos, 1.0) * inModelMat;
+    outNormal = inNormal * mat3(inNormalMat);
+    outFragPos = fragPosWorldSpace.xyz;
+    outTexCoords = inTexCoords;
+    gl_Position = fragPosWorldSpace * uViewProjMat;
+    //gl_Position = fragPosWorldSpace * uViewProjMat;
 
-    #if NUM_DIRLIGHT_SHADOW_CASCADE
+    /*#if NUM_DIRLIGHT_SHADOW_CASCADE
     out_FragPosNdcZ = gl_Position.z / gl_Position.w;
-    #endif
+    #endif*/
 }
 
 #endif

@@ -21,17 +21,19 @@ void leopph::init()
 	utilEnt->attach_component<WindowController>();
 
 	auto* const group = new Entity{};
-	group->rotate(Vector3::up(), 90);
+	//group->rotate(Vector3::up(), 90);
 
 	auto* const player = new Entity{};
 	player->set_parent(group);
+	player->translate(0, 0, -5, Space::Local);
 
-	auto* const camera = &player->attach_component<leopph::PerspectiveCamera>();
+	auto* const camera = &player->attach_component<PerspectiveCamera>();
 	camera->set_background(std::make_shared<Skybox>("skybox/megasun/left.hdr", "skybox/megasun/right.hdr", "skybox/megasun/top.hdr", "skybox/megasun/bottom.hdr", "skybox/megasun/front.hdr", "skybox/megasun/back.hdr"));
 	camera->set_near_clip_plane(0.1f);
 	camera->set_far_clip_plane(100);
 
 	player->attach_component<demo::FirstPersonCameraController>(2.0f, 0.1f, 5.0f, 0.2f);
+
 	auto* const sLight = &player->attach_component<leopph::SpotLight>();
 	sLight->set_color(Vector3{1});
 	sLight->set_inner_angle(25);
@@ -44,6 +46,7 @@ void leopph::init()
 	dirLightEntity->rotate(Vector3::right(), 30, Space::Local);
 
 	auto* const dirLight = &dirLightEntity->attach_component<DirectionalLight>();
+	dirLight->set_intensity(50);
 	dirLight->set_color(Vector3{.06f});
 	dirLight->set_casting_shadow(false);
 
@@ -53,8 +56,11 @@ void leopph::init()
 	lamp->rotate(Vector3::up(), -90);
 	lamp->rescale(0.01f, 0.01f, 0.01f);
 
-	//auto* const lampModel = &lamp->attach_component<StaticMeshComponent>("models/lamp/lamp.leopph3d");
-	//lampModel->set_casting_shadow(true);
+	for (auto const lampRenderData = generate_render_structures(import_static_model("models/lamp/scene.gltf"));
+	     auto const& [mesh, material] : lampRenderData)
+	{
+		lamp->attach_component<StaticMeshComponent>(mesh, material);
+	}
 
 	auto* const pLightEntity = new Entity{};
 	pLightEntity->set_parent(lamp);

@@ -3,12 +3,6 @@
 #ifndef LIGHTING_GLSL
 #define LIGHTING_GLSL
 
-// Keep in sync with C++ definitions
-
-#define NUM_MAX_CASCADE 4
-#define NUM_MAX_SPOT 8
-#define NUM_MAX_POINT 8
-
 #define MIN_SHADOW_BIAS 0.0001
 #define MAX_SHADOW_BIAS 0.01
 
@@ -19,41 +13,35 @@ struct Fragment
 	vec3 normal;
 	vec3 diff;
 	vec3 spec;
+	float alpha;
 	float gloss;
 };
+
+// Keep in sync with C++
+
+const int LIGHT_TYPE_DIR = 0;
+const int LIGHT_TYPE_SPOT = 1;
+const int LIGHT_TYPE_POINT = 2;
+const int NUM_MAX_LIGHTS = 8;
 
 
 struct Light
 {
 	vec3 color;
 	float intensity;
-};
-
-
-struct DirLight
-{
-	Light light;
-	vec3 direction;
-	bool shadow;
-};
-
-
-struct SpotLight
-{
-	Light light;
 	vec3 position;
 	float range;
 	vec3 direction;
 	float innerCos;
 	float outerCos;
+	int type;
 };
 
-
-struct PointLight
+layout(std140, binding = 0) uniform PerFrameData
 {
-	Light light;
-	vec3 position;
-	float range;
+	vec3 uAmbientIntensity;
+	int uNumLights;
+	Light uLights[NUM_MAX_LIGHTS];
 };
 
 
@@ -64,70 +52,6 @@ struct DirShadowCascade
 	float farZ;
 };
 
-
-
-layout(std140, binding = 1) uniform LightingBuffer
-{
-	vec3 ambient;
-
-	bool existsDirLight;
-	DirLight dirLight;
-
-	SpotLight spotLights[NUM_MAX_SPOT];
-	uint numSpot;
-
-	PointLight pointLights[NUM_MAX_POINT];
-	uint numPoint;
-} u_Lighting;
-
-
-
-vec3 GetAmbientIntensity()
-{
-	return u_Lighting.ambient;
-}
-
-
-
-bool ExistsDirLight()
-{
-	return u_Lighting.existsDirLight;
-}
-
-
-
-DirLight GetDirLight()
-{
-	return u_Lighting.dirLight;
-}
-
-
-
-uint GetNumSpotLights()
-{
-	return u_Lighting.numSpot;
-}
-
-
-
-SpotLight GetSpotLight(uint index)
-{
-	return u_Lighting.spotLights[index];
-}
-
-
-
-uint GetNumPointLights()
-{
-	return u_Lighting.numPoint;
-}
-
-
-
-PointLight GetPointLight(uint index)
-{
-	return u_Lighting.pointLights[index];
-}
 
 
 

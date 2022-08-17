@@ -9,7 +9,7 @@ namespace leopph
 	void StaticMesh::draw() const
 	{
 		glBindVertexArray(mVao);
-		glDrawElements(GL_TRIANGLES, mNumIndices, GL_UNSIGNED_INT, nullptr);
+		glDrawElementsInstanced(GL_TRIANGLES, mNumIndices, GL_UNSIGNED_INT, nullptr, mNumInstances);
 	}
 
 
@@ -19,15 +19,15 @@ namespace leopph
 		if (data.size_bytes() > mInstanceBuf->get_size())
 		{
 			auto newBufSize = mInstanceBuf->get_size();
-
+			
 			while (newBufSize < data.size_bytes())
 			{
-				newBufSize *= 2;
+				//newBufSize *= 2;
 			}
 
 			mInstanceBuf = std::make_unique<PersistentMappedBuffer>(newBufSize);
 		}
-
+		
 		std::memcpy(mInstanceBuf->get_ptr(), data.data(), data.size_bytes());
 		mNumInstances = data.size();
 	}
@@ -72,6 +72,8 @@ namespace leopph
 		glCreateBuffers(1, &mIbo);
 		glNamedBufferStorage(mIbo, data.indices.size() * sizeof u32, data.indices.data(), 0);
 
+		glCreateVertexArrays(1, &mVao);
+
 		glVertexArrayVertexBuffer(mVao, 0, mVbo, 0, sizeof Vertex);
 		glVertexArrayVertexBuffer(mVao, 1, mInstanceBuf->get_internal_handle(), 0, sizeof InstanceDataType);
 		glVertexArrayElementBuffer(mVao, mIbo);
@@ -90,23 +92,21 @@ namespace leopph
 
 		glVertexArrayAttribFormat(mVao, 3, 4, GL_FLOAT, GL_FALSE, 0);
 		glVertexArrayAttribBinding(mVao, 3, 1);
-		glVertexArrayBindingDivisor(mVao, 3, 1);
 		glEnableVertexArrayAttrib(mVao, 3);
 
 		glVertexArrayAttribFormat(mVao, 4, 4, GL_FLOAT, GL_FALSE, sizeof Vector4);
 		glVertexArrayAttribBinding(mVao, 4, 1);
-		glVertexArrayBindingDivisor(mVao, 4, 1);
 		glEnableVertexArrayAttrib(mVao, 4);
 
 		glVertexArrayAttribFormat(mVao, 5, 4, GL_FLOAT, GL_FALSE, 2 * sizeof Vector4);
 		glVertexArrayAttribBinding(mVao, 5, 1);
-		glVertexArrayBindingDivisor(mVao, 5, 1);
 		glEnableVertexArrayAttrib(mVao, 5);
 
 		glVertexArrayAttribFormat(mVao, 6, 4, GL_FLOAT, GL_FALSE, 3 * sizeof Vector4);
 		glVertexArrayAttribBinding(mVao, 6, 1);
-		glVertexArrayBindingDivisor(mVao, 6, 1);
 		glEnableVertexArrayAttrib(mVao, 6);
+
+		glVertexArrayBindingDivisor(mVao, 1, 1);
 	}
 
 

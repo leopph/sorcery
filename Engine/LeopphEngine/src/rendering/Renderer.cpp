@@ -36,7 +36,7 @@ namespace leopph::internal
 
 		// Extract per frame data
 
-		mFrameData.uboPerFrameData.ambientLight.intensity = AmbientLight::Instance().Intensity();
+		mFrameData.uboPerFrameData.ambient = AmbientLight::Instance().Intensity();
 		mFrameData.uboPerFrameData.lightCount = 0;
 
 		for (auto i = 0; i < mDirLights.size() && mFrameData.uboPerFrameData.lightCount < NUM_MAX_LIGHTS; i++, mFrameData.uboPerFrameData.lightCount++)
@@ -131,7 +131,6 @@ namespace leopph::internal
 		}
 
 		*static_cast<UboPerFrameData*>(mPerFrameUbo.get_ptr()) = mFrameData.uboPerFrameData;
-		glBindBufferRange(GL_UNIFORM_BUFFER, 0, mPerFrameUbo.get_internal_handle(), 0, sizeof UboPerFrameData);
 
 
 		// Opaque pass
@@ -147,6 +146,8 @@ namespace leopph::internal
 		glClearNamedFramebufferfv(mPingPongBuffers[0].name, GL_COLOR, 0, clearColor);
 		glClearNamedFramebufferfv(mPingPongBuffers[0].name, GL_DEPTH, 0, &clearDepth);
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, mPingPongBuffers[0].name);
+
+		mForwardShader.use();
 
 		for (auto const& [viewport, uboPerCameraData, materialNodes] : mFrameData.perViewData)
 		{
@@ -288,6 +289,8 @@ namespace leopph::internal
 		glFrontFace(GL_CCW);
 		glCullFace(GL_BACK);
 		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+
+		glBindBufferRange(GL_UNIFORM_BUFFER, 0, mPerFrameUbo.get_internal_handle(), 0, sizeof UboPerFrameData);
 	}
 
 

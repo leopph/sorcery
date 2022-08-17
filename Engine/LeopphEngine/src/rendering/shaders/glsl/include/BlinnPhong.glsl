@@ -43,14 +43,14 @@ float CalculateAttenuation(float dist)
 
 
 
-vec3 DirLightBlinnPhongEffect(Fragment frag, DirLight dirLight, vec3 camPos)
+vec3 DirLightBlinnPhongEffect(Fragment frag, Light dirLight, vec3 camPos)
 {
-	return BlinnPhongEffect(frag, dirLight.light.color * dirLight.light.intensity, -dirLight.direction, camPos);
+	return BlinnPhongEffect(frag, dirLight.color * dirLight.intensity, -dirLight.direction, camPos);
 }
 
 
 
-vec3 SpotLightBlinnPhongEffect(Fragment frag, SpotLight spotLight, vec3 camPos)
+vec3 SpotLightBlinnPhongEffect(Fragment frag, Light spotLight, vec3 camPos)
 {
 	vec3 dirToLight = spotLight.position - frag.pos;
 	float lightFragDist = length(dirToLight);
@@ -70,7 +70,7 @@ vec3 SpotLightBlinnPhongEffect(Fragment frag, SpotLight spotLight, vec3 camPos)
 		return vec3(0);
 	}
 
-	vec3 effect = BlinnPhongEffect(frag, dirToLight, spotLight.light.color * spotLight.light.intensity, camPos);
+	vec3 effect = BlinnPhongEffect(frag, dirToLight, spotLight.color * spotLight.intensity, camPos);
 	effect *= intensity;
 	effect *= CalculateAttenuation(lightFragDist);
 	return effect;
@@ -78,7 +78,7 @@ vec3 SpotLightBlinnPhongEffect(Fragment frag, SpotLight spotLight, vec3 camPos)
 
 
 
-vec3 PointLightBlinnPhongEffect(Fragment frag, PointLight pointLight, vec3 camPos)
+vec3 PointLightBlinnPhongEffect(Fragment frag, Light pointLight, vec3 camPos)
 {
 	vec3 dirToLight = pointLight.position - frag.pos;
 	float dist = length(dirToLight);
@@ -90,7 +90,7 @@ vec3 PointLightBlinnPhongEffect(Fragment frag, PointLight pointLight, vec3 camPo
 
 	dirToLight = normalize(dirToLight);
 
-	vec3 effect = BlinnPhongEffect(frag, dirToLight, pointLight.light.color * pointLight.light.intensity, camPos);
+	vec3 effect = BlinnPhongEffect(frag, dirToLight, pointLight.color * pointLight.intensity, camPos);
 	effect *= CalculateAttenuation(dist);
 	return effect;
 }
