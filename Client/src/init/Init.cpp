@@ -65,13 +65,16 @@ void leopph::init()
 	auto* const pLight = &pLightEntity->attach_component<PointLight>();
 	pLight->set_color(Vector3{1});
 	pLight->set_range(7);
-	pLight->set_casting_shadow(false);
+	pLight->set_casting_shadow(false);*/
 
-	auto* const church = new Entity{};
-	church->translate(0, -3, 0, Space::World);
+	/*auto* const church = new Entity{};
+	//church->translate(0, -3, 0, Space::World);
 	church->rotate(Vector3::right(), 90);
-	church->rotate(Vector3::up(), -90);*/
+	church->rotate(Vector3::up(), -90);
 
-	//auto* const churchModel = &church->attach_component<StaticMeshComponent>("models/church/church.leopph3d");
-	//churchModel->set_casting_shadow(true);
+	for (auto const churchRenderData = generate_render_structures(import_static_model("models/church/ChristchurchGreyfriarsRuinGarden03.obj"));
+		auto const& [mesh, material] : churchRenderData)
+	{
+		church->attach_component<StaticMeshComponent>(mesh, material);
+	}*/
 }
