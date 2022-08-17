@@ -50,7 +50,7 @@
     <ClCompile Include="src\assetmanagement\import\Import.cpp" />
     <ClCompile Include="src\rendering\StaticMesh.cpp" />
     <ClCompile Include="src\rendering\StaticMaterial.cpp" />
-    <ClCompile Include="AABB.cpp" />
+    <ClCompile Include="src\AABB.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\data\DataManager.hpp" />

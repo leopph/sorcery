@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="AABB.cpp" />
+    <ClCompile Include="src\AABB.cpp" />
     <ClCompile Include="src\assetmanagement\import\3d\ImportGeneric3d.cpp" />
     <ClCompile Include="src\assetmanagement\import\3d\ImportLeopph3d.cpp" />
     <ClCompile Include="src\assetmanagement\export\EncodeLeopph3d.cpp" />

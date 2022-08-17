@@ -323,15 +323,14 @@ namespace leopph
 
 	void Entity::calculate_matrices()
 	{
-		mModelMat[0] = Vector4{mRight * mWorldScale[0], 0};
-		mModelMat[1] = Vector4{mUp * mWorldScale[1], 0};
-		mModelMat[2] = Vector4{mForward * mWorldScale[2], 0};
+		mModelMat[0] = Vector4{mRight * mWorldScale, 0};
+		mModelMat[1] = Vector4{mUp * mWorldScale, 0};
+		mModelMat[2] = Vector4{mForward * mWorldScale, 0};
 		mModelMat[3] = Vector4{mWorldPosition, 1};
 
-		auto const worldScaleInv{1.f / mWorldScale};
-		mNormalMat[0] = mRight * worldScaleInv;
-		mNormalMat[1] = mUp = worldScaleInv;
-		mNormalMat[2] = mForward * worldScaleInv;
+		mNormalMat[0] = mRight / mWorldScale;
+		mNormalMat[1] = mUp / mWorldScale;
+		mNormalMat[2] = mForward / mWorldScale;
 	}
 
 

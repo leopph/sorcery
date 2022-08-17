@@ -19,9 +19,9 @@ namespace leopph
 		     auto const& boxVertex : boxVertices)
 		{
 			if (auto const boxVertexWorld = boxVertex * mvp;
-				boxVertexWorld[0] < -boxVertexWorld[3] || boxVertexWorld[0] > boxVertexWorld[3] ||
-				boxVertexWorld[1] < -boxVertexWorld[3] || boxVertexWorld[1] > boxVertexWorld[3] ||
-				boxVertexWorld[2] < -boxVertexWorld[3] || boxVertexWorld[2] > boxVertexWorld[3])
+				-boxVertexWorld[3] <= boxVertexWorld[0] && boxVertexWorld[0] <= boxVertexWorld[3] &&
+				-boxVertexWorld[3] <= boxVertexWorld[1] && boxVertexWorld[1] <= boxVertexWorld[3] &&
+				-boxVertexWorld[3] <= boxVertexWorld[2] && boxVertexWorld[2] <= boxVertexWorld[3])
 			{
 				return true;
 			}

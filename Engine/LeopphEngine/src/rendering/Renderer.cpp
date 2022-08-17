@@ -109,7 +109,7 @@ namespace leopph::internal
 
 					for (auto const* const entity : mesh->get_entities())
 					{
-						if (mesh->get_bounding_box().is_visible_in_frustum(entity->get_model_matrix() * uboPerCameraData.viewProjMat))
+						//if (mesh->get_bounding_box().is_visible_in_frustum(entity->get_model_matrix() * uboPerCameraData.viewProjMat)) // TODO add back in
 						{
 							meshNode.matrices.emplace_back(entity->get_model_matrix().transpose(), entity->get_normal_matrix().transpose()); // transpose because of OpenGL
 						}
