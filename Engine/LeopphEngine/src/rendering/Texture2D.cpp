@@ -8,6 +8,27 @@
 
 namespace leopph
 {
+	u64 Texture2D::get_handle() const
+	{
+		return mHandle;
+	}
+
+
+
+	u32 Texture2D::get_width() const
+	{
+		return mWidth;
+	}
+
+
+
+	u32 Texture2D::get_height() const
+	{
+		return mHeight;
+	}
+
+
+
 	Texture2D::Texture2D(Image const& img) :
 		mWidth{img.get_width()},
 		mHeight{img.get_height()}
@@ -79,26 +100,5 @@ namespace leopph
 	{
 		glMakeTextureHandleNonResidentARB(mHandle);
 		glDeleteTextures(1, &mTexture);
-	}
-
-
-
-	u32 Texture2D::get_handle() const
-	{
-		return mHandle;
-	}
-
-
-
-	u32 Texture2D::get_width() const
-	{
-		return mWidth;
-	}
-
-
-
-	u32 Texture2D::get_height() const
-	{
-		return mHeight;
 	}
 }
