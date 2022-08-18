@@ -7,13 +7,13 @@ namespace leopph
 {
 	struct Frustum
 	{
-		Vector3 NearTopLeft;
-		Vector3 NearBottomLeft;
-		Vector3 NearBottomRight;
-		Vector3 NearTopRight;
-		Vector3 FarTopLeft;
-		Vector3 FarBottomLeft;
-		Vector3 FarBottomRight;
-		Vector3 FarTopRight;
+		Vector3 rightTopNear;
+		Vector3 leftTopNear;
+		Vector3 leftBottomNear;
+		Vector3 rightBottomNear;
+		Vector3 rightTopFar;
+		Vector3 leftTopFar;
+		Vector3 leftBottomFar;
+		Vector3 rightBottomFar;
 	};
 }

@@ -56,18 +56,23 @@ namespace leopph
 	Frustum OrthographicCamera::build_frustum() const
 	{
 		auto static constexpr half = 1.f / 2.f;
+
 		auto const x = mHorizSize * half;
 		auto const y = mHorizSize / get_aspect_ratio() * half;
+
+		auto const near = get_near_clip_plane();
+		auto const far = get_far_clip_plane();
+
 		return Frustum
 		{
-			.NearTopLeft{-x, y, get_near_clip_plane()},
-			.NearBottomLeft{-x, -y, get_near_clip_plane()},
-			.NearBottomRight{x, -y, get_near_clip_plane()},
-			.NearTopRight{x, y, get_near_clip_plane()},
-			.FarTopLeft{-x, y, get_far_clip_plane()},
-			.FarBottomLeft{-x, -y, get_far_clip_plane()},
-			.FarBottomRight = {x, -y, get_far_clip_plane()},
-			.FarTopRight = {x, y, get_far_clip_plane()}
+			.rightTopNear{x, y, near},
+			.leftTopNear{-x, y, near},
+			.leftBottomNear{-x, -y, near},
+			.rightBottomNear{x, -y, near},
+			.rightTopFar = {x, y, far},
+			.leftTopFar{-x, y, far},
+			.leftBottomFar{-x, -y, far},
+			.rightBottomFar = {x, -y, far},
 		};
 	}
 }

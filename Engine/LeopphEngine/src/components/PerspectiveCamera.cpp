@@ -57,21 +57,24 @@ namespace leopph
 		auto const tanHalfHorizFov{std::tan(to_radians(get_fov(Side::Horizontal)) / 2.0f)};
 		auto const tanHalfVertFov{std::tan(to_radians(get_fov(Side::Vertical)) / 2.0f)};
 
-		auto const xn = get_near_clip_plane() * tanHalfHorizFov;
-		auto const xf = get_far_clip_plane() * tanHalfHorizFov;
-		auto const yn = get_near_clip_plane() * tanHalfVertFov;
-		auto const yf = get_far_clip_plane() * tanHalfVertFov;
+		auto const near = get_near_clip_plane();
+		auto const far = get_far_clip_plane();
+
+		auto const xn = near * tanHalfHorizFov;
+		auto const xf = far * tanHalfHorizFov;
+		auto const yn = near * tanHalfVertFov;
+		auto const yf = far * tanHalfVertFov;
 
 		return Frustum
 		{
-			.NearTopLeft{-xn, yn, get_near_clip_plane()},
-			.NearBottomLeft{-xn, -yn, get_near_clip_plane()},
-			.NearBottomRight{xn, -yn, get_near_clip_plane()},
-			.NearTopRight{xn, yn, get_near_clip_plane()},
-			.FarTopLeft{-xf, yf, get_far_clip_plane()},
-			.FarBottomLeft{-xf, -yf, get_far_clip_plane()},
-			.FarBottomRight{xf, -yf, get_far_clip_plane()},
-			.FarTopRight{xf, yf, get_far_clip_plane()}
+			.rightTopNear{xn, yn, near},
+			.leftTopNear{-xn, yn, near},
+			.leftBottomNear{-xn, -yn, near},
+			.rightBottomNear{xn, -yn, near},
+			.rightTopFar{xf, yf, far},
+			.leftTopFar{-xf, yf, far},
+			.leftBottomFar{-xf, -yf, far},
+			.rightBottomFar{xf, -yf, far},
 		};
 	}
 

@@ -99,6 +99,8 @@ namespace leopph::internal
 			uboPerCameraData.viewProjMatInv = uboPerCameraData.viewProjMat.inverse();
 			uboPerCameraData.position = cam->get_owner()->get_position();
 
+			auto const camFrustum = cam->build_frustum();
+
 			for (auto const& [material, meshes] : mMaterialsToMeshes)
 			{
 				MaterialNode matNode{};
@@ -109,7 +111,7 @@ namespace leopph::internal
 
 					for (auto const* const entity : mesh->get_entities())
 					{
-						if (mesh->get_bounding_box().is_visible_in_frustum(entity->get_model_matrix() * uboPerCameraData.viewProjMat)) // TODO add back in
+						if (is_aabb_in_frustum(mesh->get_bounding_box(), camFrustum, entity->get_model_matrix() * uboPerCameraData.viewMat))
 						{
 							meshNode.matrices.emplace_back(entity->get_model_matrix().transpose(), entity->get_normal_matrix().transpose()); // transpose because of OpenGL
 						}
@@ -305,8 +307,8 @@ namespace leopph::internal
 	/*void Renderer::calculate_shadow_cascades(std::vector<ShadowCascade>& out)
 	{
 		auto const frust = (*mMainCam)->Frustum();
-		auto const& frustNearZ = frust.NearBottomLeft[2];
-		auto const& frustFarZ = frust.FarBottomLeft[2];
+		auto const& frustNearZ = frust.leftBottomNear[2];
+		auto const& frustFarZ = frust.leftBottomFar[2];
 		auto const frustDepth = frustFarZ - frustNearZ;
 		auto const numCascades = static_cast<u8>(mDirShadowRes.size());
 		auto const lightViewMat = Matrix4::LookAt(Vector3{0}, (*mDirLight)->Direction(), Vector3::Up());
@@ -336,14 +338,14 @@ namespace leopph::internal
 			// The cascade vertices in camera view space.
 			std::array const cascadeVertsCam
 			{
-				Vector4{math::lerp(frust.NearTopLeft, frust.FarTopLeft, cascadeNearDist), 1.f},
-				Vector4{math::lerp(frust.NearBottomLeft, frust.FarBottomLeft, cascadeNearDist), 1.f},
-				Vector4{math::lerp(frust.NearBottomRight, frust.FarBottomRight, cascadeNearDist), 1.f},
-				Vector4{math::lerp(frust.NearTopRight, frust.FarTopRight, cascadeNearDist), 1.f},
-				Vector4{math::lerp(frust.NearTopLeft, frust.FarTopLeft, cascadeFarDist), 1.f},
-				Vector4{math::lerp(frust.NearBottomLeft, frust.FarBottomLeft, cascadeFarDist), 1.f},
-				Vector4{math::lerp(frust.NearBottomRight, frust.FarBottomRight, cascadeFarDist), 1.f},
-				Vector4{math::lerp(frust.NearTopRight, frust.FarTopRight, cascadeFarDist), 1.f},
+				Vector4{math::lerp(frust.leftTopNear, frust.leftTopFar, cascadeNearDist), 1.f},
+				Vector4{math::lerp(frust.leftBottomNear, frust.leftBottomFar, cascadeNearDist), 1.f},
+				Vector4{math::lerp(frust.rightBottomNear, frust.rightBottomFar, cascadeNearDist), 1.f},
+				Vector4{math::lerp(frust.rightTopNear, frust.rightTopFar, cascadeNearDist), 1.f},
+				Vector4{math::lerp(frust.leftTopNear, frust.leftTopFar, cascadeFarDist), 1.f},
+				Vector4{math::lerp(frust.leftBottomNear, frust.leftBottomFar, cascadeFarDist), 1.f},
+				Vector4{math::lerp(frust.rightBottomNear, frust.rightBottomFar, cascadeFarDist), 1.f},
+				Vector4{math::lerp(frust.rightTopNear, frust.rightTopFar, cascadeFarDist), 1.f},
 			};
 
 			// The light view space mininum point of the bounding box of the cascade
