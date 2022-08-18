@@ -71,7 +71,7 @@ namespace demo
 		auto const diffY = posY - mMouseY;
 
 		short coefficient = 1;
-		if (leopph::Vector3::dot(get_owner()->get_up_axis(), leopph::Vector3::up()) < 0)
+		if (dot(get_owner()->get_up_axis(), leopph::Vector3::up()) < 0)
 		{
 			coefficient = -1;
 		}
