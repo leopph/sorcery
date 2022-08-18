@@ -33,7 +33,7 @@ namespace leopph::internal
 		_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 		Logger::get_instance().set_level(Logger::Level::Trace);
 		#else
-		Logger::get_instance().set_level(Logger::Level::info);
+		Logger::get_instance().set_level(Logger::Level::Info);
 		#endif
 
 		//auto const settings = std::make_unique<SettingsImpl>();
