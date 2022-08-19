@@ -77,9 +77,9 @@ namespace leopph
 
 		public:
 			Camera(Camera const&) = delete;
-			Camera& operator=(Camera const&) = delete;
-
 			Camera(Camera&&) = delete;
+
+			Camera& operator=(Camera const&) = delete;
 			void operator=(Camera&&) = delete;
 
 			LEOPPHAPI ~Camera() override;

@@ -34,13 +34,12 @@ namespace leopph
 	{
 		if (mParent != nullptr)
 		{
-			mLocalPosition = mParent->mWorldRotation.conjugate().rotate(newPos) - mParent->mWorldPosition;
+			set_local_position(mParent->mWorldRotation.conjugate().rotate(newPos) - mParent->mWorldPosition);
 		}
 		else
 		{
-			mLocalPosition = newPos;
+			set_local_position(newPos);
 		}
-		calculate_world_position_and_update_children();
 	}
 
 
@@ -71,13 +70,12 @@ namespace leopph
 	{
 		if (mParent != nullptr)
 		{
-			mLocalRotation = mParent->mWorldRotation.conjugate() * newRot;
+			set_local_rotation(mParent->mWorldRotation.conjugate() * newRot);
 		}
 		else
 		{
-			mLocalRotation = newRot;
+			set_local_rotation(newRot);
 		}
-		calculate_world_rotation_and_update_children();
 	}
 
 
@@ -108,13 +106,12 @@ namespace leopph
 	{
 		if (mParent != nullptr)
 		{
-			mLocalScale = newScale / mParent->mWorldScale;
+			set_local_scale(newScale / mParent->mWorldScale);
 		}
 		else
 		{
-			mLocalScale = newScale;
+			set_local_scale(newScale);
 		}
-		calculate_world_scale_and_update_children();
 	}
 
 
@@ -142,7 +139,7 @@ namespace leopph
 		}
 		else if (base == Space::Local)
 		{
-			set_local_position(mLocalPosition + (vector * static_cast<Matrix3>(static_cast<Matrix4>(mLocalRotation))));
+			set_local_position(mLocalPosition + mLocalRotation.rotate(vector));
 		}
 	}
 
@@ -328,9 +325,10 @@ namespace leopph
 		mModelMat[2] = Vector4{mForward * mWorldScale, 0};
 		mModelMat[3] = Vector4{mWorldPosition, 1};
 
-		mNormalMat[0] = mRight / mWorldScale;
+		/*mNormalMat[0] = mRight / mWorldScale;
 		mNormalMat[1] = mUp / mWorldScale;
-		mNormalMat[2] = mForward / mWorldScale;
+		mNormalMat[2] = mForward / mWorldScale;*/
+		mNormalMat = Matrix3{mModelMat.inverse().transpose()};
 	}
 
 

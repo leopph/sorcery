@@ -16,7 +16,7 @@ namespace leopph
 	class Matrix
 	{
 		public:
-			[[nodiscard]] T get_determinant() const requires(N == M);
+			[[nodiscard]] T determinant() const requires(N == M);
 			[[nodiscard]] Matrix<T, M, N> transpose() const;
 			[[nodiscard]] Matrix<T, N, M> inverse() const requires(N == M);
 
@@ -51,7 +51,8 @@ namespace leopph
 			template<std::size_t N1, std::size_t M1> requires (N1 < N && M1 < M)
 			explicit Matrix(Matrix<T, N1, M1> const& other);
 
-			explicit Matrix(Matrix<T, N + 1, M + 1> const& other);
+			template<std::size_t N1, std::size_t M1> requires (N1 > N && M1 > M)
+			explicit Matrix(Matrix<T, N1, M1> const& other);
 
 			Matrix(Matrix<T, N, M> const& other) = default;
 			Matrix(Matrix<T, N, M>&& other) noexcept = default;
@@ -116,7 +117,7 @@ namespace leopph
 
 
 	template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
-	T Matrix<T, N, M>::get_determinant() const requires (N == M)
+	T Matrix<T, N, M>::determinant() const requires (N == M)
 	{
 		Matrix<T, N, M> tmp{*this};
 		for (size_t i = 1; i < N; i++)
@@ -387,9 +388,14 @@ namespace leopph
 	template<std::size_t N1, std::size_t M1> requires (N1 < N && M1 < M)
 	Matrix<T, N, M>::Matrix(Matrix<T, N1, M1> const& other)
 	{
-		for (auto i = 0; i < N; i++)
+		for (std::size_t i = 0; i < N1; i++)
 		{
-			mData[i] = Vector<T, M>{other.mData[i], 0};
+			mData[i] = Vector<T, M>{other[i], 0};
+		}
+
+		for (std::size_t i = N1; i < N; ++i)
+		{
+			mData[i] = Vector<T, M>{0};
 		}
 
 		mData[N - 1][M - 1] = static_cast<T>(1);
@@ -398,11 +404,12 @@ namespace leopph
 
 
 	template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
-	Matrix<T, N, M>::Matrix(Matrix<T, N + 1, M + 1> const& other)
+	template<std::size_t N1, std::size_t M1> requires (N1 > N && M1 > M)
+	Matrix<T, N, M>::Matrix(Matrix<T, N1, M1> const& other)
 	{
-		for (std::size_t i = 0; i < N; ++i)
+		for (std::size_t i = 0; i < N; i++)
 		{
-			mData[i] = static_cast<Vector<T, M>>(other[i]);
+			mData[i] = Vector<T, M>{other[i]};
 		}
 	}
 

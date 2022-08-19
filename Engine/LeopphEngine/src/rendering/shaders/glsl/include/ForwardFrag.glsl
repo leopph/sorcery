@@ -11,19 +11,19 @@
 #include "CameraData.glsl"
 #include "Material.glsl"
 
-layout (location = 0) in vec3 in_FragPos;
-layout (location = 1) in vec3 in_Normal;
-layout (location = 2) in vec2 in_TexCoords;
+layout (location = 0) in vec3 inFragPosWorld;
+layout (location = 1) in vec3 inNormalWorld;
+layout (location = 2) in vec2 inUv;
 
 /*#if NUM_DIRLIGHT_SHADOW_CASCADE
-layout (location = 3) in float in_FragPosNdcZ;
+layout (location = 3) in float inFragPosWorldNdcZ;
 #endif*/
 
 /*#if TRANSPARENT
 layout (location = 0) out vec4 out_Accum;
 layout (location = 1) out float out_Reveal;
 #else*/
-layout (location = 0) out vec3 out_FragColor;
+layout (location = 0) out vec3 outColor;
 //#endif
 
 
@@ -35,7 +35,7 @@ void main()
 
 	if (uMaterial.useDiffuseMap)
 	{
-		vec4 diffMapColor = texture(uMaterial.diffuseMap, in_TexCoords);
+		vec4 diffMapColor = texture(uMaterial.diffuseMap, inUv);
 		frag.diff *= diffMapColor.rgb;
 		frag.alpha *= diffMapColor.a;
 	}
@@ -45,14 +45,14 @@ void main()
 		discard;
 	}
 
-	frag.pos = in_FragPos;
-	frag.normal = normalize(in_Normal);
+	frag.pos = inFragPosWorld;
+	frag.normal = normalize(inNormalWorld);
 	frag.spec = uMaterial.specularColorGloss.rgb;
 	frag.gloss = uMaterial.specularColorGloss.a;
 
 	if (uMaterial.useSpecularMap)
 	{
-		frag.spec *= texture(uMaterial.specularMap, in_TexCoords).rgb;
+		frag.spec *= texture(uMaterial.specularMap, inUv).rgb;
 	}
 
 	vec3 camPos = uCamPosition;
@@ -76,7 +76,7 @@ void main()
 		else
 		{
 			// There was an error with a light, produce magenta
-			out_FragColor = vec3(1, 0, 1);
+			outColor = vec3(1, 0, 1);
 			return;
 		}
 	}
@@ -86,7 +86,7 @@ void main()
 	//out_Accum = vec4(color * alpha, alpha) * weight;
 	//out_Reveal = alpha;
 	//#else
-	out_FragColor = color;
+	outColor = color;
 	//#endif
 }
 

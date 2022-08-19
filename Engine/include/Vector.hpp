@@ -2,13 +2,11 @@
 
 #include "Types.hpp"
 
-#include <algorithm>
 #include <array>
 #include <cmath>
 #include <concepts>
 #include <cstddef>
 #include <limits>
-#include <numeric>
 #include <ostream>
 
 
@@ -18,7 +16,7 @@ namespace leopph
 	class Vector
 	{
 		public:
-			[[nodiscard]] f32 get_length() const;
+			[[nodiscard]] f32 length() const;
 			[[nodiscard]] Vector<T, N> normalized() const;
 			Vector<T, N>& normalize();
 
@@ -46,8 +44,8 @@ namespace leopph
 			template<std::size_t M> requires (M > N)
 			explicit Vector(Vector<T, M> const& other);
 
-			template<std::size_t M> requires (N > M)
-			explicit Vector(Vector<T, M> const& other, T const& fillVal = 1);
+			template<std::size_t M> requires (M < N)
+			explicit Vector(Vector<T, M> const& other, T const& fill);
 
 			Vector(Vector<T, N> const& other) = default;
 			Vector(Vector<T, N>&& other) noexcept = default;
@@ -147,14 +145,16 @@ namespace leopph
 
 
 	template<class T, std::size_t N> requires (N > 1)
-	f32 Vector<T, N>::get_length() const
+	f32 Vector<T, N>::length() const
 	{
-		return std::sqrtf(
-			static_cast<float>(
-				std::accumulate(mData.begin(), mData.end(), static_cast<T>(0), [](T const& sum, T const& elem)
-				{
-					return sum + std::powf(elem, 2);
-				})));
+		f32 squaredSum = 0;
+
+		for (std::size_t i = 0; i < N; i++)
+		{
+			squaredSum += std::pow(mData[i], static_cast<T>(2));
+		}
+
+		return std::sqrt(squaredSum);
 	}
 
 
@@ -170,13 +170,14 @@ namespace leopph
 	template<class T, std::size_t N> requires (N > 1)
 	Vector<T, N>& Vector<T, N>::normalize()
 	{
-		if (auto length = get_length(); std::abs(length) >= std::numeric_limits<float>::epsilon())
+		if (auto const length = this->length(); length >= std::numeric_limits<f32>::epsilon())
 		{
-			std::for_each(mData.begin(), mData.end(), [length](T& elem)
+			for (std::size_t i = 0; i < N; i++)
 			{
-				elem /= static_cast<T>(length);
-			});
+				mData[i] /= length;
+			}
 		}
+
 		return *this;
 	}
 
@@ -286,17 +287,27 @@ namespace leopph
 	template<std::size_t M> requires (M > N)
 	Vector<T, N>::Vector(Vector<T, M> const& other)
 	{
-		std::ranges::copy_n(other.get_data().begin(), N, mData.begin());
+		for (std::size_t i = 0; i < N; i++)
+		{
+			mData[i] = other[i];
+		}
 	}
 
 
 
 	template<class T, std::size_t N> requires (N > 1)
-	template<std::size_t M> requires (N > M)
-	Vector<T, N>::Vector(Vector<T, M> const& other, T const& fillVal)
+	template<std::size_t M> requires (M < N)
+	Vector<T, N>::Vector(Vector<T, M> const& other, T const& fill)
 	{
-		std::ranges::copy(other.get_data(), mData.begin());
-		std::ranges::fill(mData.begin() + M, mData.end(), fillVal);
+		for (std::size_t i = 0; i < M; i++)
+		{
+			mData[i] = other[i];
+		}
+
+		for (std::size_t i = M; i < N; ++i)
+		{
+			mData[i] = fill;
+		}
 	}
 
 

@@ -106,6 +106,22 @@ namespace leopph
 		glVertexArrayAttribBinding(mVao, 6, 1);
 		glEnableVertexArrayAttrib(mVao, 6);
 
+		glVertexArrayAttribFormat(mVao, 7, 4, GL_FLOAT, GL_FALSE, 4 * sizeof Vector4);
+		glVertexArrayAttribBinding(mVao, 7, 1);
+		glEnableVertexArrayAttrib(mVao, 7);
+
+		glVertexArrayAttribFormat(mVao, 8, 4, GL_FLOAT, GL_FALSE, 5 * sizeof Vector4);
+		glVertexArrayAttribBinding(mVao, 8, 1);
+		glEnableVertexArrayAttrib(mVao, 8);
+
+		glVertexArrayAttribFormat(mVao, 9, 4, GL_FLOAT, GL_FALSE, 6 * sizeof Vector4);
+		glVertexArrayAttribBinding(mVao, 9, 1);
+		glEnableVertexArrayAttrib(mVao, 9);
+
+		glVertexArrayAttribFormat(mVao, 10, 4, GL_FLOAT, GL_FALSE, 7 * sizeof Vector4);
+		glVertexArrayAttribBinding(mVao, 10, 1);
+		glEnableVertexArrayAttrib(mVao, 10);
+
 		glVertexArrayBindingDivisor(mVao, 1, 1);
 	}
 

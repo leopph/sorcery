@@ -120,13 +120,13 @@ namespace leopph
 			std::string mName{"Entity"};
 			std::vector<std::unique_ptr<Component>> mComponents;
 
-			Vector3 mWorldPosition;
-			Quaternion mWorldRotation;
-			Vector3 mWorldScale{1};
-
-			Vector3 mLocalPosition;
-			Quaternion mLocalRotation;
+			Vector3 mLocalPosition{0};
+			Quaternion mLocalRotation{1, 0, 0, 0};
 			Vector3 mLocalScale{1};
+
+			Vector3 mWorldPosition{mLocalPosition};
+			Quaternion mWorldRotation{mLocalRotation};
+			Vector3 mWorldScale{mLocalScale};
 
 			Vector3 mForward{Vector3::forward()};
 			Vector3 mRight{Vector3::right()};
@@ -135,8 +135,8 @@ namespace leopph
 			Entity* mParent{nullptr};
 			std::vector<Entity*> mChildren;
 
-			Matrix4 mModelMat;
-			Matrix3 mNormalMat;
+			Matrix4 mModelMat{Matrix4::identity()};
+			Matrix3 mNormalMat{Matrix4::identity()};
 	};
 
 

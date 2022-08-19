@@ -17,7 +17,7 @@ namespace leopph
 		public:
 			void draw() const;
 
-			using InstanceDataType = std::pair<Matrix4, Matrix3>;
+			using InstanceDataType = std::pair<Matrix4, Matrix4>;
 			void set_instance_data(std::span<InstanceDataType const> data);
 
 			AABB const& get_bounding_box() const;
