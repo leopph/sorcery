@@ -2,6 +2,7 @@
 
 #include "Component.hpp"
 
+#include <filesystem>
 #include <memory>
 
 
@@ -42,4 +43,7 @@ namespace leopph
 			std::shared_ptr<StaticMaterial> mMaterial;
 			bool mIsCastingShadow{true};
 	};
+
+
+	LEOPPHAPI void attach_static_mesh_component_from_model_file(Entity* entity, std::filesystem::path const& path);
 }

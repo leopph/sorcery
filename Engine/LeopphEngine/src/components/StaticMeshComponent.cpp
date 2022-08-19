@@ -1,6 +1,7 @@
 #include "StaticMeshComponent.hpp"
 
 #include "Context.hpp"
+#include "../../../include/Import.hpp"
 #include "../rendering/Renderer.hpp"
 #include "../rendering/StaticMesh.hpp"
 
@@ -116,6 +117,17 @@ namespace leopph
 		if (mMesh && mMaterial)
 		{
 			internal::get_renderer()->unregister_mesh_for_material(mMaterial, mMesh);
+		}
+	}
+
+
+
+	void attach_static_mesh_component_from_model_file(Entity* const entity, std::filesystem::path const& path)
+	{
+		for (auto const renderData = generate_render_structures(import_static_model(path));
+		     auto const& [mesh, material] : renderData)
+		{
+			entity->attach_component<StaticMeshComponent>(mesh, material);
 		}
 	}
 }
