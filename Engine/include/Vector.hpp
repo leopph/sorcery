@@ -36,7 +36,8 @@ namespace leopph
 
 			Vector() = default;
 
-			explicit Vector(T const& value);
+			template<std::convertible_to<T> T1>
+			explicit Vector(T1 const& value);
 
 			template<std::convertible_to<T>... Args> requires(sizeof...(Args) == N)
 			explicit(sizeof...(Args) <= 1) Vector(Args const&... args);
@@ -268,9 +269,13 @@ namespace leopph
 
 
 	template<class T, std::size_t N> requires (N > 1)
-	Vector<T, N>::Vector(T const& value)
+	template<std::convertible_to<T> T1>
+	Vector<T, N>::Vector(T1 const& value)
 	{
-		mData.fill(value);
+		for (std::size_t i = 0; i < N; i++)
+		{
+			mData[i] = static_cast<T>(value);
+		}
 	}
 
 
