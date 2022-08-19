@@ -325,10 +325,9 @@ namespace leopph
 		mModelMat[2] = Vector4{mForward * mWorldScale, 0};
 		mModelMat[3] = Vector4{mWorldPosition, 1};
 
-		/*mNormalMat[0] = mRight / mWorldScale;
+		mNormalMat[0] = mRight / mWorldScale;
 		mNormalMat[1] = mUp / mWorldScale;
-		mNormalMat[2] = mForward / mWorldScale;*/
-		mNormalMat = Matrix3{mModelMat.inverse().transpose()};
+		mNormalMat[2] = mForward / mWorldScale;
 	}
 
 
