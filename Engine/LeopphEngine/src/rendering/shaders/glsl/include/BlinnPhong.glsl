@@ -20,15 +20,6 @@ vec3 BlinnPhongEffect(Fragment frag, vec3 preMulLightColor, vec3 dirToLight, vec
 	vec3 halfway = normalize(dirToLight + dirToCam);
 	float specAngle = max(dot(frag.normal, halfway), 0);
 
-	// 0^0 is UB, thus it may produce nan or 0 but we have to make sure
-	// transparent objects stay lit from the back too
-	#ifdef TRANSPARENT
-	if (specAngle <= 0 && frag.gloss == 0)
-	{
-		return diffEffect;
-	}
-	#endif
-
 	float specular = pow(specAngle, 4 * frag.gloss);
 	vec3 specEffect = frag.spec * preMulLightColor * specular;
 	return diffEffect + specEffect;
@@ -70,7 +61,7 @@ vec3 SpotLightBlinnPhongEffect(Fragment frag, Light spotLight, vec3 camPos)
 		return vec3(0);
 	}
 
-	vec3 effect = BlinnPhongEffect(frag, dirToLight, spotLight.color * spotLight.intensity, camPos);
+	vec3 effect = BlinnPhongEffect(frag, spotLight.color * spotLight.intensity, dirToLight, camPos);
 	effect *= intensity;
 	effect *= CalculateAttenuation(lightFragDist);
 	return effect;
@@ -90,7 +81,7 @@ vec3 PointLightBlinnPhongEffect(Fragment frag, Light pointLight, vec3 camPos)
 
 	dirToLight = normalize(dirToLight);
 
-	vec3 effect = BlinnPhongEffect(frag, dirToLight, pointLight.color * pointLight.intensity, camPos);
+	vec3 effect = BlinnPhongEffect(frag, pointLight.color * pointLight.intensity, dirToLight, camPos);
 	effect *= CalculateAttenuation(dist);
 	return effect;
 }
