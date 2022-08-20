@@ -236,6 +236,7 @@ namespace leopph
 	Window::~Window()
 	{
 		glfwDestroyWindow(mHandle);
+		glfwTerminate();
 	}
 
 
