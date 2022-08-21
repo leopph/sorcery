@@ -55,7 +55,6 @@
     <ClCompile Include="src\threading\JobSystem.cpp" />
     <ClCompile Include="src\threading\SpinLock.cpp" />
     <ClCompile Include="src\Timer.cpp" />
-    <ClCompile Include="src\util\api_adapters\GLFWAdapter.cpp" />
     <ClCompile Include="src\Window.cpp" />
     <ClInclude Include="..\include\AABB.hpp" />
     <ClInclude Include="..\include\AmbientLight.hpp" />
@@ -143,7 +142,6 @@
     <ClInclude Include="src\threading\Job.hpp" />
     <ClInclude Include="src\threading\JobSystem.hpp" />
     <ClInclude Include="src\threading\SpinLock.hpp" />
-    <ClInclude Include="src\util\api_adapters\GLFWAdapter.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\LeopphCommon\LeopphCommon.vcxproj">
