@@ -65,9 +65,9 @@ namespace leopph
 	{
 		mViewport = viewport;
 
-		auto const* const window = get_window();
-		auto const windowWidth = static_cast<f32>(window->get_width());
-		auto const windowHeight = static_cast<f32>(window->get_height());
+		auto const& window = get_main_window();
+		auto const windowWidth = static_cast<f32>(window.get_width());
+		auto const windowHeight = static_cast<f32>(window.get_height());
 
 		mWindowExtent =
 		{
@@ -91,20 +91,20 @@ namespace leopph
 
 	void Camera::set_window_extents(Extent<u32> const& extent)
 	{
-		auto const* const window = get_window();
+		auto const& window = get_main_window();
 
-		mWindowExtent.offsetX = std::clamp<u32>(extent.offsetX, 0, window->get_width());
-		mWindowExtent.offsetY = std::clamp<u32>(extent.offsetY, 0, window->get_height());
-		mWindowExtent.width = mWindowExtent.offsetX + extent.width > window->get_width() ? 0 : extent.width;
-		mWindowExtent.height = mWindowExtent.offsetY + extent.height > window->get_height() ? 0 : extent.height;
+		mWindowExtent.offsetX = std::clamp<u32>(extent.offsetX, 0, window.get_width());
+		mWindowExtent.offsetY = std::clamp<u32>(extent.offsetY, 0, window.get_height());
+		mWindowExtent.width = mWindowExtent.offsetX + extent.width > window.get_width() ? 0 : extent.width;
+		mWindowExtent.height = mWindowExtent.offsetY + extent.height > window.get_height() ? 0 : extent.height;
 
 		auto const extentWidth = static_cast<f32>(mWindowExtent.width);
 		auto const extentHeight = static_cast<f32>(mWindowExtent.height);
 
 		mAspectRatio = extentWidth / extentHeight;
 
-		auto const windowWidth = static_cast<f32>(window->get_width());
-		auto const windowHeight = static_cast<f32>(window->get_height());
+		auto const windowWidth = static_cast<f32>(window.get_width());
+		auto const windowHeight = static_cast<f32>(window.get_height());
 
 		mViewport.offsetX = windowWidth / static_cast<f32>(mWindowExtent.offsetX);
 		mViewport.offsetY = windowHeight / static_cast<f32>(mWindowExtent.offsetY);
@@ -125,7 +125,7 @@ namespace leopph
 	{
 		if (!mEnabled)
 		{
-			internal::get_renderer()->register_camera(this);
+			internal::get_renderer().register_camera(this);
 			mEnabled = true;
 		}
 	}
@@ -136,7 +136,7 @@ namespace leopph
 	{
 		if (mEnabled)
 		{
-			internal::get_renderer()->unregister_camera(this);
+			internal::get_renderer().unregister_camera(this);
 			mEnabled = false;
 		}
 	}
@@ -190,9 +190,9 @@ namespace leopph
 		{
 			[this]
 			{
-				auto const* const window = get_window();
-				auto const windowWidth = static_cast<f32>(window->get_width());
-				auto const windowHeight = static_cast<f32>(window->get_height());
+				auto const& window = get_main_window();
+				auto const windowWidth = static_cast<f32>(window.get_width());
+				auto const windowHeight = static_cast<f32>(window.get_height());
 
 				return Extent<u32>
 				{
@@ -205,14 +205,14 @@ namespace leopph
 		},
 		mAspectRatio{static_cast<f32>(mWindowExtent.width) / static_cast<f32>(mWindowExtent.height)}
 	{
-		internal::get_renderer()->register_camera(this);
+		internal::get_renderer().register_camera(this);
 	}
 
 
 
 	Camera::~Camera()
 	{
-		internal::get_renderer()->unregister_camera(this);
+		internal::get_renderer().unregister_camera(this);
 	}
 
 

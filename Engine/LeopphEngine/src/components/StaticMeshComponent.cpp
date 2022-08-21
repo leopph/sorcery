@@ -101,7 +101,7 @@ namespace leopph
 
 		if (mMesh && mMaterial)
 		{
-			internal::get_renderer()->register_mesh_for_material(mMaterial, mMesh);
+			internal::get_renderer().register_mesh_for_material(mMaterial, mMesh);
 		}
 	}
 
@@ -116,7 +116,7 @@ namespace leopph
 
 		if (mMesh && mMaterial)
 		{
-			internal::get_renderer()->unregister_mesh_for_material(mMaterial, mMesh);
+			internal::get_renderer().unregister_mesh_for_material(mMaterial, mMesh);
 		}
 	}
 

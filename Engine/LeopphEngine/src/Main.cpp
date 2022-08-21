@@ -21,6 +21,7 @@
 #include "Window.hpp"
 //#include "data/DataManager.hpp"
 #include "Behavior.hpp"
+#include "Timer.hpp"
 #include "rendering/Renderer.hpp"
 #include "Scene/SceneManager.hpp"
 
@@ -40,7 +41,7 @@ namespace leopph::internal
 		//SetSettingsImpl(settings.get());
 
 		auto const window = std::make_unique<Window>();
-		set_window(window.get());
+		set_main_window(window.get());
 
 		auto const renderer = std::make_unique<Renderer>();
 		set_renderer(renderer.get());
@@ -48,10 +49,12 @@ namespace leopph::internal
 		auto const sceneManager = std::make_unique<SceneManager>();
 		set_scene_manager(sceneManager.get());
 
-		//auto const dataManager = std::make_unique<DataManager>();
-		//(dataManager.get());
+		auto const timer = std::make_unique<Timer>();
+		set_frame_timer(timer.get());
 
 		initFunc();
+
+		timer->init();
 
 		while (!window->should_close())
 		{
@@ -61,6 +64,7 @@ namespace leopph::internal
 			renderer->render();
 			window->swap_buffers();
 			EventManager::get_instance().send<FrameCompleteEvent>();
+			timer->tick();
 		}
 
 		return 0;

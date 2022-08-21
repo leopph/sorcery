@@ -40,7 +40,7 @@ namespace leopph
 
 
 
-	u32 Skybox::get_internal_handle() const
+	u64 Skybox::get_internal_handle() const
 	{
 		return mCubemapHandle;
 	}

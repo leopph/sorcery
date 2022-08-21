@@ -8,6 +8,6 @@ namespace leopph
 {
 	void exit()
 	{
-		get_window()->set_should_close(true);
+		get_main_window().set_should_close(true);
 	}
 }

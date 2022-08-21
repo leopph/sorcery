@@ -252,8 +252,8 @@ namespace leopph::internal
 		for (auto& [name, depthStencilAtt, width, height, clrAtts] : mPingPongBuffers)
 		{
 			glCreateFramebuffers(1, &name);
-			width = get_window()->get_width();
-			height = get_window()->get_height();
+			width = get_main_window().get_width();
+			height = get_main_window().get_height();
 
 			clrAtts.resize(1);
 			glCreateTextures(GL_TEXTURE_2D, 1, clrAtts.data());

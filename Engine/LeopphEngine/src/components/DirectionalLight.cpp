@@ -30,13 +30,13 @@ namespace leopph
 
 	DirectionalLight::DirectionalLight()
 	{
-		internal::get_renderer()->register_dir_light(this);
+		internal::get_renderer().register_dir_light(this);
 	}
 
 
 
 	DirectionalLight::~DirectionalLight()
 	{
-		internal::get_renderer()->unregister_dir_light(this);
+		internal::get_renderer().unregister_dir_light(this);
 	}
 }

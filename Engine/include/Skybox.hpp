@@ -22,7 +22,7 @@ namespace leopph
 
 			LEOPPHAPI ~Skybox();
 
-			LEOPPHAPI u32 get_internal_handle() const;
+			LEOPPHAPI u64 get_internal_handle() const;
 
 		private:
 			u32 mCubemapName;

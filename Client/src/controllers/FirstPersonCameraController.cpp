@@ -64,7 +64,7 @@ namespace demo
 			movementVector *= mWalkMult;
 		}
 
-		get_owner()->translate(movementVector * mSpeed * leopph::time::DeltaTime(), leopph::Space::World);
+		get_owner()->translate(movementVector * mSpeed * leopph::get_frame_timer().get_last_time(), leopph::Space::World);
 
 		auto const [posX, posY] = Input::GetMousePosition();
 		auto const diffX = posX - mMouseX;

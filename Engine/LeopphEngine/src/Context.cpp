@@ -5,8 +5,9 @@ namespace leopph
 {
 	namespace
 	{
-		Window* gWindow;
+		Window* gMainWindow;
 		SceneManager* gSceneManager;
+		Timer const* gFrameTimer;
 	}
 
 
@@ -20,32 +21,39 @@ namespace leopph
 
 
 
-	Window* get_window()
+	Window& get_main_window()
 	{
-		return gWindow;
+		return *gMainWindow;
 	}
 
 
 
-	SceneManager* get_scene_manager()
+	SceneManager& get_scene_manager()
 	{
-		return gSceneManager;
+		return *gSceneManager;
+	}
+
+
+
+	Timer const& get_frame_timer()
+	{
+		return *gFrameTimer;
 	}
 
 
 
 	namespace internal
 	{
-		Renderer* get_renderer()
+		Renderer& get_renderer()
 		{
-			return gRenderer;
+			return *gRenderer;
 		}
 
 
 
-		void set_window(Window* const window)
+		void set_main_window(Window* const window)
 		{
-			gWindow = window;
+			gMainWindow = window;
 		}
 
 
@@ -53,6 +61,13 @@ namespace leopph
 		void set_scene_manager(SceneManager* const sceneManager)
 		{
 			gSceneManager = sceneManager;
+		}
+
+
+
+		void set_frame_timer(Timer const* const timer)
+		{
+			gFrameTimer = timer;
 		}
 
 

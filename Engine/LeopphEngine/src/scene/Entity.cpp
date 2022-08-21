@@ -343,7 +343,7 @@ namespace leopph
 
 
 	Entity::Entity() :
-		mScene{&get_scene_manager()->get_active_scene()}
+		mScene{&get_scene_manager().get_active_scene()}
 	{
 		mScene->register_entity(this);
 	}

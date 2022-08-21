@@ -3,7 +3,6 @@
 using leopph::Input;
 using leopph::KeyCode;
 using leopph::Vector3;
-using leopph::time::DeltaTime;
 using leopph::Space;
 
 
@@ -52,6 +51,6 @@ namespace demo
 			posDelta *= mWalkMult;
 		}
 
-		get_owner()->translate(posDelta * mSpeed * DeltaTime(), Space::World);
+		get_owner()->translate(posDelta * mSpeed * leopph::get_frame_timer().get_last_time(), Space::World);
 	}
 }

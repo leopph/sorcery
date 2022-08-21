@@ -15,7 +15,6 @@
     <ClCompile Include="src\components\PointLight.cpp" />
     <ClCompile Include="src\rendering\Skybox.cpp" />
     <ClCompile Include="src\components\SpotLight.cpp" />
-    <ClCompile Include="src\data\DataManager.cpp" />
     <ClCompile Include="src\events\Event.cpp" />
     <ClCompile Include="src\events\EventManager.cpp" />
     <ClCompile Include="src\events\KeyEvent.cpp" />
@@ -28,10 +27,8 @@
     <ClCompile Include="src\scene\SceneManager.cpp" />
     <ClCompile Include="src\threading\JobSystem.cpp" />
     <ClCompile Include="src\threading\SpinLock.cpp" />
-    <ClCompile Include="src\timing\Time.cpp" />
-    <ClCompile Include="src\timing\TimeImpl.cpp" />
+    <ClCompile Include="src\Timer.cpp" />
     <ClCompile Include="src\util\api_adapters\GLFWAdapter.cpp" />
-    <ClCompile Include="src\util\less\PoeloLess.cpp" />
     <ClCompile Include="src\AmbientLight.cpp" />
     <ClCompile Include="src\Context.cpp" />
     <ClCompile Include="src\scene\Entity.cpp" />
@@ -53,7 +50,6 @@
     <ClCompile Include="src\AABB.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\data\DataManager.hpp" />
     <ClInclude Include="include\rendering\gl\GlMesh.hpp" />
     <ClInclude Include="include\rendering\gl\GlCore.hpp" />
     <ClInclude Include="include\rendering\renderers\GlDeferredRenderer.hpp" />
@@ -63,9 +59,7 @@
     <ClInclude Include="src\threading\Job.hpp" />
     <ClInclude Include="src\threading\JobSystem.hpp" />
     <ClInclude Include="src\threading\SpinLock.hpp" />
-    <ClInclude Include="src\timing\TimeImpl.hpp" />
     <ClInclude Include="src\util\api_adapters\GLFWAdapter.hpp" />
-    <ClInclude Include="src\util\less\PoeloLess.hpp" />
     <ClInclude Include="include\rendering\gl\GlMeshGroup.hpp" />
     <ClInclude Include="include\rendering\RenderObject.hpp" />
     <ClInclude Include="include\rendering\Extent.hpp" />
@@ -112,7 +106,7 @@
     <ClInclude Include="..\include\StaticMeshComponent.hpp" />
     <ClInclude Include="..\include\Skybox.hpp" />
     <ClInclude Include="..\include\SpotLight.hpp" />
-    <ClInclude Include="..\include\Time.hpp" />
+    <ClInclude Include="..\include\Timer.hpp" />
     <ClInclude Include="..\include\Vertex.hpp" />
     <ClInclude Include="..\include\Window.hpp" />
     <ClInclude Include="..\include\WindowEvent.hpp" />

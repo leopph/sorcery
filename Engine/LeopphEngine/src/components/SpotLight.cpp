@@ -36,13 +36,13 @@ namespace leopph
 
 	SpotLight::SpotLight()
 	{
-		internal::get_renderer()->register_spot_light(this);
+		internal::get_renderer().register_spot_light(this);
 	}
 
 
 
 	SpotLight::~SpotLight()
 	{
-		internal::get_renderer()->unregister_spot_light(this);
+		internal::get_renderer().unregister_spot_light(this);
 	}
 }

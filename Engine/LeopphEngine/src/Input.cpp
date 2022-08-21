@@ -37,14 +37,14 @@ namespace leopph
 
 	CursorState Input::CursorMode()
 	{
-		return get_window()->get_cursor_state();
+		return get_main_window().get_cursor_state();
 	}
 
 
 
 	void Input::CursorMode(CursorState const newState)
 	{
-		get_window()->set_cursor_state(newState);
+		get_main_window().set_cursor_state(newState);
 	}
 
 

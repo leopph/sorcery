@@ -11,9 +11,7 @@
 
 void leopph::init()
 {
-	AmbientLight::Instance().Intensity(Vector3{1});
-
-	get_window()->set_title("LeopphEngine Demo");
+	get_main_window().set_title("LeopphEngine Demo");
 
 	Input::CursorMode(CursorState::Disabled);
 
@@ -25,56 +23,37 @@ void leopph::init()
 	auto* const player = new Entity{};
 	player->set_position(Vector3{0, 0, -5});
 
-	auto* const camera = &player->attach_component<PerspectiveCamera>();
-	//camera->set_background(std::make_shared<Skybox>("skybox/megasun/left.hdr", "skybox/megasun/right.hdr", "skybox/megasun/top.hdr", "skybox/megasun/bottom.hdr", "skybox/megasun/front.hdr", "skybox/megasun/back.hdr"));
-	camera->set_near_clip_plane(0.3f);
-	camera->set_far_clip_plane(1000);
+	auto& camera = player->attach_component<PerspectiveCamera>();
+	//camera.set_background(std::make_shared<Skybox>("skybox/megasun/left.hdr", "skybox/megasun/right.hdr", "skybox/megasun/top.hdr", "skybox/megasun/bottom.hdr", "skybox/megasun/front.hdr", "skybox/megasun/back.hdr"));
+	camera.set_near_clip_plane(0.3f);
+	camera.set_far_clip_plane(1000);
 
 	player->attach_component<demo::FirstPersonCameraController>(2.0f, 0.1f, 5.0f, 0.2f);
 
-	/*auto* const sLight = &player->attach_component<leopph::SpotLight>();
-	sLight->set_color(Vector3{1});
-	sLight->set_inner_angle(25);
-	sLight->set_outer_angle(35);
-	sLight->set_range(5);*/
+	auto* const lampEntity = new Entity{};
+	lampEntity->rescale(Vector3{0.01});
+	attach_static_mesh_component_from_model_file(lampEntity, "models/lamp/scene.gltf");
 
-	/*auto* const dirLightEntity = new Entity{};
-	dirLightEntity->rotate(Vector3::up(), 45);
-	dirLightEntity->rotate(Vector3::right(), 30, Space::Local);
+	auto* const churchEntity = new Entity{};
+	churchEntity->rotate(Vector3::forward(), 90);
+	churchEntity->rotate(Vector3::right(), 90);
+	//attach_static_mesh_component_from_model_file(churchEntity, "models/church/ChristchurchGreyfriarsRuinGarden03.obj");
 
-	auto* const dirLight = &dirLightEntity->attach_component<DirectionalLight>();
-	dirLight->set_intensity(50);
-	dirLight->set_color(Vector3{.06f});
-	dirLight->set_casting_shadow(false);*/
+	AmbientLight::Instance().Intensity(Vector3{1});
 
-	auto* const lamp = new Entity{};
-	//lamp->translate(0, -1.25, 0);
-	//lamp->rotate(Vector3::up(), -90);
-	lamp->set_scale(Vector3{0.01f});
+	//auto* const dirLightEntity = new Entity{};
+	//dirLightEntity->rotate(Vector3::up(), 45);
+	//dirLightEntity->rotate(Vector3::right(), 30, Space::Local);
+	//dirLightEntity->attach_component<DirectionalLight>();
 
-	for (auto const lampRenderData = generate_render_structures(import_static_model("models/lamp/scene.gltf"));
-	     auto const& [mesh, material] : lampRenderData)
-	{
-		lamp->attach_component<StaticMeshComponent>(mesh, material);
-	}
+	/*auto& spotLight = player->attach_component<SpotLight>();
+	spotLight.set_inner_angle(25);
+	spotLight.set_outer_angle(35);
+	spotLight.set_range(5);
 
-	/*auto* const pLightEntity = new Entity{};
-	pLightEntity->set_parent(lamp);
-	pLightEntity->translate(-0.7f, 3.7f, 0, Space::Local);
-
-	auto* const pLight = &pLightEntity->attach_component<PointLight>();
-	pLight->set_color(Vector3{1});
-	pLight->set_range(7);
-	pLight->set_casting_shadow(false);*/
-
-	/*auto* const church = new Entity{};
-	//church->translate(0, -3, 0, Space::World);
-	church->rotate(Vector3::right(), 90);
-	church->rotate(Vector3::up(), -90);
-
-	for (auto const churchRenderData = generate_render_structures(import_static_model("models/church/ChristchurchGreyfriarsRuinGarden03.obj"));
-		auto const& [mesh, material] : churchRenderData)
-	{
-		church->attach_component<StaticMeshComponent>(mesh, material);
-	}*/
+	auto* const pointLightEntity = new Entity{};
+	pointLightEntity->set_parent(lampEntity);
+	pointLightEntity->translate(-0.7f, 3.7f, 0, Space::Local);
+	auto& pointLight = pointLightEntity->attach_component<PointLight>();
+	pointLight.set_range(7);*/
 }

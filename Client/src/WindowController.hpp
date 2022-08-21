@@ -12,6 +12,6 @@ class WindowController final : public leopph::Behavior
 		void on_frame_update() override;
 
 	private:
-		leopph::Window* m_Window;
-		std::vector<leopph::Window::DisplayMode> m_DisplayModes;
+		leopph::Window& mWindow;
+		std::vector<leopph::Window::DisplayMode> mDisplayModes;
 };
