@@ -2,9 +2,7 @@
 
 #include "Component.hpp"
 #include "LeopphApi.hpp"
-#include "Matrix.hpp"
-#include "Quaternion.hpp"
-#include "Vector.hpp"
+#include "Math.hpp"
 
 #include <concepts>
 #include <memory>

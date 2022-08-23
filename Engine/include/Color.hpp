@@ -1,8 +1,8 @@
 #pragma once
 
 #include "LeopphApi.hpp"
+#include "Math.hpp"
 #include "Types.hpp"
-#include "Vector.hpp"
 
 
 namespace leopph

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "CursorState.hpp"
+#include "Event.hpp"
 #include "LeopphApi.hpp"
 #include "Types.hpp"
 
@@ -14,6 +14,14 @@ struct GLFWwindow;
 
 namespace leopph
 {
+	enum class CursorState
+	{
+		Shown,
+		Hidden,
+		Disabled
+	};
+
+
 	class Window
 	{
 		public:
@@ -90,5 +98,16 @@ namespace leopph
 			int mHeight{540};
 			bool mFullscreen{false};
 			bool mVsync{false};
+	};
+
+
+	struct WindowEvent final : Event
+	{
+		WindowEvent(u32 width, u32 height, bool fullscreen, bool vsync);
+
+		u32 width;
+		u32 height;
+		bool fullscreen;
+		bool vsync;
 	};
 }

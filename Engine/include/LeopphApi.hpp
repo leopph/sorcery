@@ -4,7 +4,7 @@
 #error "Only 64 bit Windows is supported."
 #endif
 
-#ifdef ENGINE_BUILD
+#ifdef LEOPPH_EXPORT
 #define LEOPPHAPI __declspec(dllexport)
 #else
 	#define LEOPPHAPI __declspec(dllimport)

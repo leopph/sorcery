@@ -1,8 +1,7 @@
 #pragma once
 
 #include "Frustum.hpp"
-#include "Matrix.hpp"
-#include "Vector.hpp"
+#include "Math.hpp"
 
 
 

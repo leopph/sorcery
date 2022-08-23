@@ -46,4 +46,5 @@ namespace leopph
 
 
 	LEOPPHAPI void attach_static_mesh_component_from_model_file(Entity* entity, std::filesystem::path const& path);
+	LEOPPHAPI void attach_static_cube_model(Entity* entity);
 }
