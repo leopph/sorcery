@@ -1,7 +1,7 @@
 #include "Window.hpp"
 
 #include "Bimap.hpp"
-#include "EventManager.hpp"
+#include "Event.hpp"
 #include "Input.hpp"
 #include "Logger.hpp"
 

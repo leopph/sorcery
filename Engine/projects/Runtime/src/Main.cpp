@@ -14,7 +14,7 @@
 #endif
 
 #include "Context.hpp"
-#include "EventManager.hpp"
+#include "Event.hpp"
 #include "FrameCompleteEvent.hpp"
 #include "Logger.hpp"
 //#include "SettingsImpl.hpp"

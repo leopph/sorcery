@@ -35,7 +35,6 @@
     <ClCompile Include="src\Context.cpp" />
     <ClCompile Include="src\StaticMaterial.cpp" />
     <ClCompile Include="src\Entity.cpp" />
-    <ClCompile Include="src\Event.cpp" />
     <ClCompile Include="src\EventManager.cpp" />
     <ClCompile Include="src\Exit.cpp" />
     <ClCompile Include="src\Input.cpp" />
@@ -60,10 +59,6 @@
     <ClInclude Include="..\..\include\Entity.hpp" />
     <ClInclude Include="..\..\include\Entry.hpp" />
     <ClInclude Include="..\..\include\Event.hpp" />
-    <ClInclude Include="..\..\include\EventManager.hpp" />
-    <ClInclude Include="..\..\include\EventReceiver.hpp" />
-    <ClInclude Include="..\..\include\EventReceiverBase.hpp" />
-    <ClInclude Include="..\..\include\EventReceiverHandle.hpp" />
     <ClInclude Include="..\..\include\Exit.hpp" />
     <ClInclude Include="..\..\include\Extent.hpp" />
     <ClInclude Include="..\..\include\FrameCompleteEvent.hpp" />
@@ -84,7 +79,6 @@
     <ClInclude Include="..\..\include\Timer.hpp" />
     <ClInclude Include="..\..\include\Types.hpp" />
     <ClInclude Include="..\..\include\Util.hpp" />
-    <ClInclude Include="..\..\include\Vertex.hpp" />
     <ClInclude Include="..\..\include\Window.hpp" />
     <ClInclude Include="include\rendering\Extent.hpp" />
     <ClInclude Include="include\rendering\gl\GlBufferObject.hpp" />
@@ -199,6 +193,8 @@
     </CustomBuildAfterTargets>
     <CustomBuildBeforeTargets>
     </CustomBuildBeforeTargets>
+    <EnableClangTidyCodeAnalysis>true</EnableClangTidyCodeAnalysis>
+    <ClangTidyChecks>clang-analyzer-*</ClangTidyChecks>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -209,6 +205,8 @@
     </CustomBuildAfterTargets>
     <CustomBuildBeforeTargets>
     </CustomBuildBeforeTargets>
+    <EnableClangTidyCodeAnalysis>true</EnableClangTidyCodeAnalysis>
+    <ClangTidyChecks>clang-analyzer-*</ClangTidyChecks>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>

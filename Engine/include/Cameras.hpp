@@ -2,7 +2,7 @@
 
 #include "Color.hpp"
 #include "Component.hpp"
-#include "EventReceiver.hpp"
+#include "Event.hpp"
 #include "Extent.hpp"
 #include "Frustum.hpp"
 #include "Math.hpp"

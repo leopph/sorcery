@@ -4,7 +4,6 @@
 #include "Color.hpp"
 #include "Image.hpp"
 #include "Types.hpp"
-#include "Vertex.hpp"
 
 #include <optional>
 #include <vector>
@@ -36,6 +35,14 @@ namespace leopph
 
 		bool cullBackFace{true};
 		bool isTransparent{false};
+	};
+
+
+	struct Vertex
+	{
+		Vector3 position;
+		Vector3 normal;
+		Vector2 uv;
 	};
 
 

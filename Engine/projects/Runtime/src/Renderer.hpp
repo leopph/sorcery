@@ -3,7 +3,7 @@
 #include "AABB.hpp"
 #include "Cameras.hpp"
 #include "CubeMesh.hpp"
-#include "EventReceiverHandle.hpp"
+#include "Event.hpp"
 #include "Framebuffer.hpp"
 #include "GlContext.hpp"
 #include "Lights.hpp"

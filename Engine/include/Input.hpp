@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Event.hpp"
-#include "EventReceiverHandle.hpp"
+#include "Event.hpp"
 #include "FrameCompleteEvent.hpp"
 #include "LeopphApi.hpp"
 #include "Math.hpp"

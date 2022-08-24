@@ -7,7 +7,6 @@
     <ClCompile Include="src\Lights.cpp" />
     <ClCompile Include="src\StaticMeshComponent.cpp" />
     <ClCompile Include="src\Skybox.cpp" />
-    <ClCompile Include="src\Event.cpp" />
     <ClCompile Include="src\EventManager.cpp" />
     <ClCompile Include="src\GlContext.cpp" />
     <ClCompile Include="src\Texture2D.cpp" />
@@ -90,10 +89,6 @@
     <ClInclude Include="..\..\include\Entity.hpp" />
     <ClInclude Include="..\..\include\Entry.hpp" />
     <ClInclude Include="..\..\include\Event.hpp" />
-    <ClInclude Include="..\..\include\EventManager.hpp" />
-    <ClInclude Include="..\..\include\EventReceiver.hpp" />
-    <ClInclude Include="..\..\include\EventReceiverBase.hpp" />
-    <ClInclude Include="..\..\include\EventReceiverHandle.hpp" />
     <ClInclude Include="..\..\include\Exit.hpp" />
     <ClInclude Include="..\..\include\Extent.hpp" />
     <ClInclude Include="..\..\include\FrameCompleteEvent.hpp" />
@@ -114,7 +109,6 @@
     <ClInclude Include="..\..\include\Timer.hpp" />
     <ClInclude Include="..\..\include\Types.hpp" />
     <ClInclude Include="..\..\include\Util.hpp" />
-    <ClInclude Include="..\..\include\Vertex.hpp" />
     <ClInclude Include="..\..\include\Window.hpp" />
   </ItemGroup>
   <ItemGroup>

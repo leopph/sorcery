@@ -13,10 +13,6 @@ See individual headers for more information.
 #include "Context.hpp"
 #include "Entity.hpp"
 #include "Event.hpp"
-#include "EventManager.hpp"
-#include "EventReceiver.hpp"
-#include "EventReceiverBase.hpp"
-#include "EventReceiverHandle.hpp"
 #include "Exit.hpp"
 #include "Extent.hpp"
 #include "FrameCompleteEvent.hpp"
@@ -34,7 +30,6 @@ See individual headers for more information.
 #include "Timer.hpp"
 #include "Types.hpp"
 #include "Util.hpp"
-#include "Vertex.hpp"
 #include "Window.hpp"
 
 /*-----------------------------------------------------

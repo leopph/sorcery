@@ -1,8 +1,11 @@
-#include "EventManager.hpp"
+#include "Event.hpp"
 
 
 namespace leopph
 {
+	Event::~Event() = default;
+
+
 	EventManager& EventManager::get_instance()
 	{
 		static EventManager instance;
@@ -11,14 +14,14 @@ namespace leopph
 
 
 
-	void EventManager::register_receiver(std::type_index const& typeIndex, internal::EventReceiverBase* receiver)
+	void EventManager::register_receiver(std::type_index const& typeIndex, EventReceiverBase* receiver)
 	{
 		mReceivers[typeIndex].push_back(receiver);
 	}
 
 
 
-	void EventManager::unregister_receiver(std::type_index const& typeIndex, internal::EventReceiverBase const* receiver)
+	void EventManager::unregister_receiver(std::type_index const& typeIndex, EventReceiverBase const* receiver)
 	{
 		std::erase(mReceivers[typeIndex], receiver);
 	}
