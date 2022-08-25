@@ -1,10 +1,10 @@
 #include "Renderer.hpp"
 
-#include "Cameras.hpp"
+#include "CameraNodes.hpp"
 #include "Context.hpp"
-#include "Entity.hpp"
 #include "GlContext.hpp"
 #include "Math.hpp"
+#include "Node.hpp"
 #include "Window.hpp"
 
 #include <algorithm>
@@ -38,7 +38,7 @@ namespace leopph::internal
 		mFrameData.uboPerFrameData.ambient = AmbientLight::get_instance().get_intensity();
 		mFrameData.uboPerFrameData.lightCount = 0;
 
-		for (auto i = 0; i < mDirLights.size() && mFrameData.uboPerFrameData.lightCount < NUM_MAX_LIGHTS; i++, mFrameData.uboPerFrameData.lightCount++)
+		for (std::size_t i = 0; i < mDirLights.size() && mFrameData.uboPerFrameData.lightCount < NUM_MAX_LIGHTS; i++, mFrameData.uboPerFrameData.lightCount++)
 		{
 			auto const& light = *mDirLights[i];
 			auto& uboLight = mFrameData.uboPerFrameData.lights[mFrameData.uboPerFrameData.lightCount];
@@ -50,15 +50,15 @@ namespace leopph::internal
 		}
 
 
-		for (auto i = 0; i < mSpotLights.size() && mFrameData.uboPerFrameData.lightCount < NUM_MAX_LIGHTS; i++, mFrameData.uboPerFrameData.lightCount++)
+		for (std::size_t i = 0; i < mSpotLights.size() && mFrameData.uboPerFrameData.lightCount < NUM_MAX_LIGHTS; i++, mFrameData.uboPerFrameData.lightCount++)
 		{
 			auto const& light = *mSpotLights[i];
 			auto& uboLight = mFrameData.uboPerFrameData.lights[mFrameData.uboPerFrameData.lightCount];
 
 			uboLight.color = light.get_color();
 			uboLight.intensity = light.get_intensity();
-			uboLight.direction = light.get_owner()->get_forward_axis();
-			uboLight.position = light.get_owner()->get_position();
+			uboLight.direction = light.get_forward_axis();
+			uboLight.position = light.get_position();
 			uboLight.range = light.get_range();
 			uboLight.innerCos = std::cos(to_radians(light.get_inner_angle()));
 			uboLight.outerCos = std::cos(to_radians(light.get_outer_angle()));
@@ -66,14 +66,14 @@ namespace leopph::internal
 		}
 
 
-		for (auto i = 0; i < mPointLights.size() && mFrameData.uboPerFrameData.lightCount < NUM_MAX_LIGHTS; i++, mFrameData.uboPerFrameData.lightCount++)
+		for (std::size_t i = 0; i < mPointLights.size() && mFrameData.uboPerFrameData.lightCount < NUM_MAX_LIGHTS; i++, mFrameData.uboPerFrameData.lightCount++)
 		{
 			auto const& light = *mPointLights[i];
 			auto& uboLight = mFrameData.uboPerFrameData.lights[mFrameData.uboPerFrameData.lightCount];
 
 			uboLight.color = light.get_color();
 			uboLight.intensity = light.get_intensity();
-			uboLight.position = light.get_owner()->get_position();
+			uboLight.position = light.get_position();
 			uboLight.range = light.get_range();
 			uboLight.type = static_cast<i32>(UboLightType::Point);
 		}
@@ -96,7 +96,7 @@ namespace leopph::internal
 			uboPerCameraData.projMatInv = uboPerCameraData.projMat.inverse();
 			uboPerCameraData.viewProjMat = uboPerCameraData.viewMat * uboPerCameraData.projMat;
 			uboPerCameraData.viewProjMatInv = uboPerCameraData.viewProjMat.inverse();
-			uboPerCameraData.position = cam->get_owner()->get_position();
+			uboPerCameraData.position = cam->get_position();
 
 			auto const camFrustum = cam->build_frustum();
 
@@ -218,14 +218,14 @@ namespace leopph::internal
 
 
 
-	void Renderer::register_camera(Camera const* camera)
+	void Renderer::register_camera(CameraNode const* camera)
 	{
 		mCameras.push_back(camera);
 	}
 
 
 
-	void Renderer::unregister_camera(Camera const* camera)
+	void Renderer::unregister_camera(CameraNode const* camera)
 	{
 		std::erase(mCameras, camera);
 	}

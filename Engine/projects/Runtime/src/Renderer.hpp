@@ -1,7 +1,7 @@
 #pragma once
 
 #include "AABB.hpp"
-#include "Cameras.hpp"
+#include "CameraNodes.hpp"
 #include "CubeMesh.hpp"
 #include "Event.hpp"
 #include "Framebuffer.hpp"
@@ -116,8 +116,8 @@ namespace leopph::internal
 			void register_point_light(PointLight const* pointLight);
 			void unregister_point_light(PointLight const* pointLight);
 
-			void register_camera(Camera const* camera);
-			void unregister_camera(Camera const* camera);
+			void register_camera(CameraNode const* camera);
+			void unregister_camera(CameraNode const* camera);
 
 			void register_mesh_for_material(std::shared_ptr<StaticMaterial const> const& material, std::shared_ptr<StaticMesh> mesh);
 			void unregister_mesh_for_material(std::shared_ptr<StaticMaterial const> const& material, std::shared_ptr<StaticMesh> const& mesh);
@@ -155,11 +155,11 @@ namespace leopph::internal
 			//Shader mDepthShadowShader{"C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/DepthShadow.shader"};
 			//Shader mLinearShadowShader{"C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/LinearShadow.shader"};
 			//Shader mSkyboxShader{"C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/Skybox.shader"};
-			Shader mForwardShader{"C:/Dev/LeopphEngine/Engine/projects/Runtime/src/shaders/glsl/Forward.shader"};
+			Shader mForwardShader{"D:/Dev/LeopphEngine/Engine/projects/Runtime/src/shaders/glsl/Forward.shader"};
 			//Shader mTransparencyCompositeShader{"C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/TransparencyComposite.shader"};
 			//Shader mGammaCorrectShader{"C:/Dev/LeopphEngine/Engine/LeopphEngine/src/rendering/shaders/glsl/GammaCorrect.shader"};
 
-			QuadMesh mQuadMesh;
+			QuadMesh mQuadMesh; 
 			CubeMesh mCubeMesh;
 
 			u64 mFrameCount{0};
@@ -175,6 +175,6 @@ namespace leopph::internal
 			std::vector<DirectionalLight const*> mDirLights;
 			std::vector<SpotLight const*> mSpotLights;
 			std::vector<PointLight const*> mPointLights;
-			std::vector<Camera const*> mCameras;
+			std::vector<CameraNode const*> mCameras;
 	};
 }

@@ -7,14 +7,14 @@
 
 namespace demo
 {
-	/*class Tiler final : public leopph::Behavior
+	/*class Tiler final : public leopph::BehaviorNode
 	{
 		public:
 			struct Layer
 			{
-				leopph::Entity* Prototype;
-				leopph::Entity* LeftEdge;
-				leopph::Entity* RightEdge;
+				leopph::Node* Prototype;
+				leopph::Node* LeftEdge;
+				leopph::Node* RightEdge;
 			};
 
 

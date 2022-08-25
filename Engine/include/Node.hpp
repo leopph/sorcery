@@ -1,15 +1,11 @@
 #pragma once
 
-#include "Component.hpp"
 #include "LeopphApi.hpp"
 #include "Math.hpp"
 
-#include <concepts>
-#include <memory>
 #include <span>
 #include <string>
 #include <string_view>
-#include <utility>
 #include <vector>
 
 
@@ -25,7 +21,7 @@ namespace leopph
 	};
 
 
-	class Entity
+	class Node
 	{
 		public:
 			[[nodiscard]] LEOPPHAPI std::string_view get_name() const;
@@ -73,12 +69,12 @@ namespace leopph
 			[[nodiscard]] LEOPPHAPI Vector3 const& get_up_axis() const;
 
 
-			[[nodiscard]] LEOPPHAPI Entity* get_parent() const;
-			void LEOPPHAPI set_parent(Entity* parent);
+			[[nodiscard]] LEOPPHAPI Node* get_parent() const;
+			void LEOPPHAPI set_parent(Node* parent);
 			void LEOPPHAPI unparent();
 
 
-			[[nodiscard]] LEOPPHAPI std::span<Entity* const> get_children() const;
+			[[nodiscard]] LEOPPHAPI std::span<Node* const> get_children() const;
 
 
 			LEOPPHAPI Matrix4 get_model_matrix() const;
@@ -90,33 +86,25 @@ namespace leopph
 			void calculate_world_rotation_and_update_children();
 			void calculate_world_scale_and_update_children();
 			void calculate_matrices();
+			void init();
+			void deinit();
+			void take_children_from(Node const& node);
 
 
 		public:
-			template<std::derived_from<Component> T>
-			[[nodiscard]] T* get_component() const;
+			LEOPPHAPI Node();
+			LEOPPHAPI Node(Node const& other);
+			LEOPPHAPI Node(Node&& other) noexcept;
 
-			template<std::derived_from<Component> T, class... Args>
-			T& attach_component(Args&&... args);
+			LEOPPHAPI Node& operator=(Node const& other);
+			LEOPPHAPI Node& operator=(Node&& other) noexcept;
 
-			void remove_component(Component& component);
-
-
-			LEOPPHAPI Entity();
-
-			Entity(Entity const& other) = delete;
-			Entity& operator=(Entity const& other) = delete;
-
-			Entity(Entity&& other) = delete;
-			void operator=(Entity&& other) = delete;
-
-			LEOPPHAPI ~Entity();
+			virtual LEOPPHAPI ~Node();
 
 
 		private:
 			Scene* mScene;
-			std::string mName{"Entity"};
-			std::vector<std::unique_ptr<Component>> mComponents;
+			std::string mName{"Node"};
 
 			Vector3 mLocalPosition{0};
 			Quaternion mLocalRotation{1, 0, 0, 0};
@@ -130,38 +118,10 @@ namespace leopph
 			Vector3 mRight{Vector3::right()};
 			Vector3 mUp{Vector3::up()};
 
-			Entity* mParent{nullptr};
-			std::vector<Entity*> mChildren;
+			Node* mParent{nullptr};
+			std::vector<Node*> mChildren;
 
 			Matrix4 mModelMat{Matrix4::identity()};
 			Matrix3 mNormalMat{Matrix4::identity()};
 	};
-
-
-
-	template<std::derived_from<Component> T, class... Args>
-	T& Entity::attach_component(Args&&... args)
-	{
-		auto comp = std::make_unique<T>(std::forward<Args>(args)...);
-		comp->mOwner = this;
-		auto& ret = *comp;
-		mComponents.emplace_back(std::move(comp));
-		return ret;
-	}
-
-
-
-	template<std::derived_from<Component> T>
-	T* Entity::get_component() const
-	{
-		for (auto const& component : mComponents)
-		{
-			if (auto ret = std::dynamic_pointer_cast<T>(component))
-			{
-				return ret;
-			}
-		}
-
-		return nullptr;
-	}
 }

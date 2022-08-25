@@ -1,13 +1,13 @@
 #pragma once
 
-#include "Component.hpp"
 #include "Math.hpp"
+#include "Node.hpp"
 #include "Types.hpp"
 
 
 namespace leopph
 {
-	class Light : public Component
+	class Light : public Node
 	{
 		public:
 			[[nodiscard]] LEOPPHAPI Vector3 const& get_color() const;
@@ -21,14 +21,15 @@ namespace leopph
 
 		protected:
 			Light() = default;
-		public:
-			Light(Light const& other) = delete;
-			Light(Light&& other) = delete;
+			Light(Light const& other) = default;
+			Light(Light&& other) noexcept = default;
 
+		public:
 			~Light() override = default;
 
-			Light& operator=(Light const& other) = delete;
-			Light& operator=(Light&& other) = delete;
+		protected:
+			Light& operator=(Light const& other) = default;
+			Light& operator=(Light&& other) noexcept = default;
 
 		private:
 			bool mCastsShadow{false};
@@ -43,17 +44,17 @@ namespace leopph
 			[[nodiscard]] LEOPPHAPI f32 get_range() const;
 			LEOPPHAPI void set_range(f32 value);
 
-
 		protected:
 			AttenuatedLight() = default;
-		public:
-			AttenuatedLight(AttenuatedLight const& other) = delete;
-			AttenuatedLight(AttenuatedLight&& other) = delete;
+			AttenuatedLight(AttenuatedLight const& other) = default;
+			AttenuatedLight(AttenuatedLight&& other) noexcept = default;
 
+		public:
 			~AttenuatedLight() override = default;
 
-			AttenuatedLight& operator=(AttenuatedLight const& other) = delete;
-			AttenuatedLight& operator=(AttenuatedLight&& other) = delete;
+		protected:
+			AttenuatedLight& operator=(AttenuatedLight const& other) = default;
+			AttenuatedLight& operator=(AttenuatedLight&& other) noexcept = default;
 
 		private:
 			f32 mRange{10.f};
@@ -72,13 +73,13 @@ namespace leopph
 			AmbientLight() = default;
 		public:
 			AmbientLight(AmbientLight const& other) = delete;
-			AmbientLight& operator=(AmbientLight const& other) = delete;
+			AmbientLight(AmbientLight&& other) = delete;
 
 		private:
 			~AmbientLight() = default;
 
 		public:
-			AmbientLight(AmbientLight&& other) = delete;
+			AmbientLight& operator=(AmbientLight const& other) = delete;
 			AmbientLight& operator=(AmbientLight&& other) = delete;
 
 		private:
@@ -95,13 +96,13 @@ namespace leopph
 			LEOPPHAPI void set_shadow_near_plane(f32 newVal);
 
 			LEOPPHAPI DirectionalLight();
-			DirectionalLight(DirectionalLight const& other) = delete;
-			DirectionalLight(DirectionalLight&& other) = delete;
+			LEOPPHAPI DirectionalLight(DirectionalLight const& other);
+			LEOPPHAPI DirectionalLight(DirectionalLight&& other) noexcept;
 
 			LEOPPHAPI ~DirectionalLight() override;
 
-			void operator=(DirectionalLight const& other) = delete;
-			void operator=(DirectionalLight&& other) = delete;
+			LEOPPHAPI DirectionalLight& operator=(DirectionalLight const& other);
+			LEOPPHAPI DirectionalLight& operator=(DirectionalLight&& other) noexcept;
 
 		private:
 			f32 mShadowNear{50.f};
@@ -112,13 +113,13 @@ namespace leopph
 	{
 		public:
 			LEOPPHAPI PointLight();
-			PointLight(PointLight const& other) = delete;
-			PointLight(PointLight&& other) = delete;
+			LEOPPHAPI PointLight(PointLight const& other);
+			LEOPPHAPI PointLight(PointLight&& other) noexcept;
 
 			LEOPPHAPI ~PointLight() override;
 
-			void operator=(PointLight const& other) = delete;
-			void operator=(PointLight&& other) = delete;
+			LEOPPHAPI PointLight& operator=(PointLight const& other);
+			LEOPPHAPI PointLight& operator=(PointLight&& other) noexcept;
 	};
 
 
@@ -132,13 +133,13 @@ namespace leopph
 			LEOPPHAPI void set_outer_angle(f32 degrees);
 
 			LEOPPHAPI SpotLight();
-			SpotLight(SpotLight const& other) = delete;
-			SpotLight(SpotLight&& other) = delete;
+			LEOPPHAPI SpotLight(SpotLight const& other);
+			LEOPPHAPI SpotLight(SpotLight&& other) noexcept;
 
 			LEOPPHAPI ~SpotLight() override;
 
-			void operator=(SpotLight const& other) = delete;
-			void operator=(SpotLight&& other) = delete;
+			LEOPPHAPI SpotLight& operator=(SpotLight const& other);
+			LEOPPHAPI SpotLight& operator=(SpotLight&& other) noexcept;
 
 		private:
 			f32 mInnerAngle{30.f};

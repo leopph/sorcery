@@ -5,15 +5,16 @@
 
 namespace demo
 {
-	class Follow2DCameraController final : public leopph::Behavior
+	class Follow2DCameraController final : public leopph::BehaviorNode
 	{
 		public:
-			explicit Follow2DCameraController(leopph::Entity* target, leopph::Vector2 targetOffsetFromCenter);
+			explicit Follow2DCameraController(leopph::CameraNode* camera, Node* target, leopph::Vector2 targetOffsetFromCenter);
 
 			void on_frame_update() override;
 
 		private:
-			leopph::Entity* mTraget;
+			leopph::CameraNode* mCamera;
+			Node* mTarget;
 			leopph::Vector2 mOffset;
 	};
 }

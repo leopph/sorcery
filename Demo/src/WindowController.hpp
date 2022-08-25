@@ -5,7 +5,7 @@
 #include <vector>
 
 
-class WindowController final : public leopph::Behavior
+class WindowController final : public leopph::BehaviorNode
 {
 	public:
 		WindowController();

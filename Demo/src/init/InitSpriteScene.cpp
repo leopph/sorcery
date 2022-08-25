@@ -12,8 +12,8 @@
 using leopph::AmbientLight;
 using leopph::Entity;
 using leopph::ImageSprite;
-using leopph::OrthographicCamera;
-using leopph::PerspectiveCamera;
+using leopph::OrthographicCameraNode;
+using leopph::PerspectiveCameraNode;
 using leopph::Space;
 using leopph::Vector2;
 using leopph::Vector3;
@@ -27,7 +27,7 @@ namespace demo
 		scene.Add(camEntity);
 		camEntity->get_transform().set_position(Vector3{0});
 
-		auto const cam = camEntity->attach_component<OrthographicCamera>();
+		auto const cam = camEntity->attach_component<OrthographicCameraNode>();
 		cam->Activate();
 		cam->MakeCurrent();
 		cam->Size(10, leopph::Camera::Side::Vertical);

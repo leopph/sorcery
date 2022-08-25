@@ -1,9 +1,10 @@
 #pragma once
 
-#include "Component.hpp"
+#include "Node.hpp"
 
 #include <filesystem>
 #include <memory>
+#include <variant>
 
 
 namespace leopph
@@ -12,7 +13,7 @@ namespace leopph
 	class StaticMaterial;
 
 
-	class StaticMeshComponent : public Component
+	class StaticMeshNode : public Node
 	{
 		public:
 			[[nodiscard]] LEOPPHAPI std::shared_ptr<StaticMesh const> get_mesh() const;
@@ -24,16 +25,14 @@ namespace leopph
 			[[nodiscard]] LEOPPHAPI bool is_casting_shadow() const;
 			LEOPPHAPI void set_casting_shadow(bool value);
 
-			void on_init() override;
+			LEOPPHAPI explicit StaticMeshNode(std::shared_ptr<StaticMesh> mesh, std::shared_ptr<StaticMaterial> material);
+			LEOPPHAPI StaticMeshNode(StaticMeshNode const& other);
+			LEOPPHAPI StaticMeshNode(StaticMeshNode&& other) noexcept;
 
-			LEOPPHAPI explicit StaticMeshComponent(std::shared_ptr<StaticMesh> mesh, std::shared_ptr<StaticMaterial> material);
-			LEOPPHAPI StaticMeshComponent(StaticMeshComponent const& other) = default;
-			StaticMeshComponent(StaticMeshComponent&&) = delete;
+			LEOPPHAPI StaticMeshNode& operator=(StaticMeshNode const& other);
+			LEOPPHAPI StaticMeshNode& operator=(StaticMeshNode&& other) noexcept;
 
-			LEOPPHAPI StaticMeshComponent& operator=(StaticMeshComponent const& other);
-			void operator=(StaticMeshComponent&&) = delete;
-
-			LEOPPHAPI ~StaticMeshComponent() override;
+			LEOPPHAPI ~StaticMeshNode() override;
 
 		private:
 			void try_register() const;
@@ -45,6 +44,6 @@ namespace leopph
 	};
 
 
-	LEOPPHAPI void attach_static_mesh_component_from_model_file(Entity* entity, std::filesystem::path const& path);
-	LEOPPHAPI void attach_static_cube_model(Entity* entity);
+	LEOPPHAPI std::variant<Node*, StaticMeshNode*> create_static_mesh_node_from_model_file(std::filesystem::path const& path);
+	LEOPPHAPI StaticMeshNode* create_static_cube_model();
 }

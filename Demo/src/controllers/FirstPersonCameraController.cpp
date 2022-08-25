@@ -1,13 +1,14 @@
 #include "FirstPersonCameraController.hpp"
 
-using leopph::Camera;
+using leopph::CameraNode;
 using leopph::Input;
 using leopph::KeyCode;
 
 
 namespace demo
 {
-	FirstPersonCameraController::FirstPersonCameraController(float const speed, float const sens, float const runMult, float const walkMult) :
+	FirstPersonCameraController::FirstPersonCameraController(CameraNode* camera, float const speed, float const sens, float const runMult, float const walkMult) :
+		mCamera{camera},
 		mSpeed{speed},
 		mMouseSens{sens},
 		mRunMult{runMult},
@@ -24,22 +25,22 @@ namespace demo
 
 		if (Input::get_key(KeyCode::W))
 		{
-			movementVector += get_owner()->get_forward_axis();
+			movementVector += mCamera->get_forward_axis();
 		}
 
 		if (Input::get_key(KeyCode::S))
 		{
-			movementVector -= get_owner()->get_forward_axis();
+			movementVector -= mCamera->get_forward_axis();
 		}
 
 		if (Input::get_key(KeyCode::D))
 		{
-			movementVector += get_owner()->get_right_axis();
+			movementVector += mCamera->get_right_axis();
 		}
 
 		if (Input::get_key(KeyCode::A))
 		{
-			movementVector -= get_owner()->get_right_axis();
+			movementVector -= mCamera->get_right_axis();
 		}
 
 		if (Input::get_key(KeyCode::Space))
@@ -64,20 +65,20 @@ namespace demo
 			movementVector *= mWalkMult;
 		}
 
-		get_owner()->translate(movementVector * mSpeed * leopph::get_frame_timer().get_last_time(), leopph::Space::World);
+		mCamera->translate(movementVector * mSpeed * leopph::get_frame_timer().get_last_time(), leopph::Space::World);
 
 		auto const mousePos = Input::get_mouse_position();
 		auto const diffX = mousePos[0] - mMouseX;
 		auto const diffY = mousePos[1] - mMouseY;
 
 		short coefficient = 1;
-		if (dot(get_owner()->get_up_axis(), leopph::Vector3::up()) < 0)
+		if (dot(get_up_axis(), leopph::Vector3::up()) < 0)
 		{
 			coefficient = -1;
 		}
 
-		get_owner()->rotate(coefficient * leopph::Vector3::up(), diffX * mMouseSens, leopph::Space::World);
-		get_owner()->rotate(leopph::Vector3::right(), diffY * mMouseSens, leopph::Space::Local);
+		mCamera->rotate(coefficient * leopph::Vector3::up(), diffX * mMouseSens, leopph::Space::World);
+		mCamera->rotate(leopph::Vector3::right(), diffY * mMouseSens, leopph::Space::Local);
 
 		mMouseX = mousePos[0];
 		mMouseY = mousePos[1];

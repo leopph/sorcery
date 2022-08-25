@@ -1,4 +1,4 @@
-#include "Entity.hpp"
+#include "Node.hpp"
 
 #include "Context.hpp"
 #include "SceneManager.hpp"
@@ -9,28 +9,28 @@
 
 namespace leopph
 {
-	std::string_view Entity::get_name() const
+	std::string_view Node::get_name() const
 	{
 		return mName;
 	}
 
 
 
-	void Entity::set_name(std::string name)
+	void Node::set_name(std::string name)
 	{
 		mName = std::move(name);
 	}
 
 
 
-	Vector3 const& Entity::get_position() const
+	Vector3 const& Node::get_position() const
 	{
 		return mWorldPosition;
 	}
 
 
 
-	void Entity::set_position(Vector3 const& newPos)
+	void Node::set_position(Vector3 const& newPos)
 	{
 		if (mParent != nullptr)
 		{
@@ -44,14 +44,14 @@ namespace leopph
 
 
 
-	Vector3 const& Entity::get_local_position() const
+	Vector3 const& Node::get_local_position() const
 	{
 		return mLocalPosition;
 	}
 
 
 
-	void Entity::set_local_position(Vector3 const& newPos)
+	void Node::set_local_position(Vector3 const& newPos)
 	{
 		mLocalPosition = newPos;
 		calculate_world_position_and_update_children();
@@ -59,14 +59,14 @@ namespace leopph
 
 
 
-	Quaternion const& Entity::get_rotation() const
+	Quaternion const& Node::get_rotation() const
 	{
 		return mWorldRotation;
 	}
 
 
 
-	void Entity::set_rotation(Quaternion const& newRot)
+	void Node::set_rotation(Quaternion const& newRot)
 	{
 		if (mParent != nullptr)
 		{
@@ -80,14 +80,14 @@ namespace leopph
 
 
 
-	Quaternion const& Entity::get_local_rotation() const
+	Quaternion const& Node::get_local_rotation() const
 	{
 		return mLocalRotation;
 	}
 
 
 
-	void Entity::set_local_rotation(Quaternion const& newRot)
+	void Node::set_local_rotation(Quaternion const& newRot)
 	{
 		mLocalRotation = newRot;
 		calculate_world_rotation_and_update_children();
@@ -95,14 +95,14 @@ namespace leopph
 
 
 
-	Vector3 const& Entity::get_scale() const
+	Vector3 const& Node::get_scale() const
 	{
 		return mWorldScale;
 	}
 
 
 
-	void Entity::set_scale(Vector3 const& newScale)
+	void Node::set_scale(Vector3 const& newScale)
 	{
 		if (mParent != nullptr)
 		{
@@ -116,14 +116,14 @@ namespace leopph
 
 
 
-	Vector3 const& Entity::get_local_scale() const
+	Vector3 const& Node::get_local_scale() const
 	{
 		return mLocalScale;
 	}
 
 
 
-	void Entity::set_local_scale(Vector3 const& newScale)
+	void Node::set_local_scale(Vector3 const& newScale)
 	{
 		mLocalScale = newScale;
 		calculate_world_scale_and_update_children();
@@ -131,7 +131,7 @@ namespace leopph
 
 
 
-	void Entity::translate(Vector3 const& vector, Space const base)
+	void Node::translate(Vector3 const& vector, Space const base)
 	{
 		if (base == Space::World)
 		{
@@ -145,14 +145,14 @@ namespace leopph
 
 
 
-	void Entity::translate(f32 const x, f32 const y, f32 const z, Space const base)
+	void Node::translate(f32 const x, f32 const y, f32 const z, Space const base)
 	{
 		translate(Vector3{x, y, z}, base);
 	}
 
 
 
-	void Entity::rotate(Quaternion const& rotation, Space const base)
+	void Node::rotate(Quaternion const& rotation, Space const base)
 	{
 		if (base == Space::World)
 		{
@@ -166,14 +166,14 @@ namespace leopph
 
 
 
-	void Entity::rotate(Vector3 const& axis, f32 const amountDegrees, Space const base)
+	void Node::rotate(Vector3 const& axis, f32 const amountDegrees, Space const base)
 	{
 		rotate(Quaternion{axis, amountDegrees}, base);
 	}
 
 
 
-	void Entity::rescale(Vector3 const& scaling, Space const base)
+	void Node::rescale(Vector3 const& scaling, Space const base)
 	{
 		if (base == Space::World)
 		{
@@ -187,42 +187,42 @@ namespace leopph
 
 
 
-	void Entity::rescale(f32 const x, f32 const y, f32 const z, Space const base)
+	void Node::rescale(f32 const x, f32 const y, f32 const z, Space const base)
 	{
 		rescale(Vector3{x, y, z}, base);
 	}
 
 
 
-	Vector3 const& Entity::get_forward_axis() const
+	Vector3 const& Node::get_forward_axis() const
 	{
 		return mForward;
 	}
 
 
 
-	Vector3 const& Entity::get_right_axis() const
+	Vector3 const& Node::get_right_axis() const
 	{
 		return mRight;
 	}
 
 
 
-	Vector3 const& Entity::get_up_axis() const
+	Vector3 const& Node::get_up_axis() const
 	{
 		return mUp;
 	}
 
 
 
-	Entity* Entity::get_parent() const
+	Node* Node::get_parent() const
 	{
 		return mParent;
 	}
 
 
 
-	void Entity::set_parent(Entity* const parent)
+	void Node::set_parent(Node* const parent)
 	{
 		unparent();
 
@@ -236,7 +236,7 @@ namespace leopph
 
 
 
-	void Entity::unparent()
+	void Node::unparent()
 	{
 		if (mParent != nullptr)
 		{
@@ -251,28 +251,28 @@ namespace leopph
 
 
 
-	std::span<Entity* const> Entity::get_children() const
+	std::span<Node* const> Node::get_children() const
 	{
 		return mChildren;
 	}
 
 
 
-	Matrix4 Entity::get_model_matrix() const
+	Matrix4 Node::get_model_matrix() const
 	{
 		return mModelMat;
 	}
 
 
 
-	Matrix3 Entity::get_normal_matrix() const
+	Matrix3 Node::get_normal_matrix() const
 	{
 		return mNormalMat;
 	}
 
 
 
-	void Entity::calculate_world_position_and_update_children()
+	void Node::calculate_world_position_and_update_children()
 	{
 		mWorldPosition = mParent != nullptr ? mParent->mWorldRotation.rotate(mParent->mWorldPosition + mLocalPosition) : mLocalPosition;
 
@@ -286,7 +286,7 @@ namespace leopph
 
 
 
-	void Entity::calculate_world_rotation_and_update_children()
+	void Node::calculate_world_rotation_and_update_children()
 	{
 		mWorldRotation = mParent != nullptr ? mParent->mWorldRotation * mLocalRotation : mLocalRotation;
 
@@ -304,7 +304,7 @@ namespace leopph
 
 
 
-	void Entity::calculate_world_scale_and_update_children()
+	void Node::calculate_world_scale_and_update_children()
 	{
 		mWorldScale = mParent != nullptr ? mParent->mWorldScale * mLocalScale : mLocalScale;
 
@@ -318,7 +318,7 @@ namespace leopph
 
 
 
-	void Entity::calculate_matrices()
+	void Node::calculate_matrices()
 	{
 		mModelMat[0] = Vector4{mRight * mWorldScale, 0};
 		mModelMat[1] = Vector4{mUp * mWorldScale, 0};
@@ -332,25 +332,19 @@ namespace leopph
 
 
 
-	void Entity::remove_component(Component& component)
+	void Node::init()
 	{
-		std::erase_if(mComponents, [&component](auto const& elem)
+		mScene->add(this);
+
+		if (mParent)
 		{
-			return elem.get() == &component;
-		});
+			mParent->mChildren.emplace_back(this);
+		}
 	}
 
 
 
-	Entity::Entity() :
-		mScene{&get_scene_manager().get_active_scene()}
-	{
-		mScene->register_entity(this);
-	}
-
-
-
-	Entity::~Entity()
+	void Node::deinit()
 	{
 		unparent();
 
@@ -360,6 +354,107 @@ namespace leopph
 			mChildren.back()->unparent();
 		}
 
-		mScene->unregister_entity(this);
+		mScene->remove(this);
+	}
+
+
+
+	void Node::take_children_from(Node const& node)
+	{
+		while (!node.mChildren.empty())
+		{
+			auto* child = node.mChildren.back();
+			child->unparent();
+			child->set_parent(this);
+		}
+	}
+
+
+
+	Node::Node() :
+		mScene{&get_scene_manager().get_active_scene()}
+	{
+		mScene->add(this);
+	}
+
+
+
+	Node::Node(Node const& other) :
+		mScene{other.mScene},
+		mName{other.mName},
+		mLocalPosition{other.mLocalPosition},
+		mLocalScale{other.mLocalScale},
+		mWorldPosition{other.mWorldPosition},
+		mWorldRotation{other.mWorldRotation},
+		mWorldScale{other.mWorldScale},
+		mForward{other.mForward},
+		mRight{other.mRight},
+		mUp{other.mUp},
+		mParent{other.mParent},
+		mModelMat{other.mModelMat},
+		mNormalMat{other.mNormalMat}
+	{
+		init();
+	}
+
+
+
+	Node::Node(Node&& other) noexcept :
+		Node{other}
+	{
+		take_children_from(other);
+	}
+
+
+
+	Node& Node::operator=(Node const& other)
+	{
+		if (this == &other)
+		{
+			return *this;
+		}
+
+		deinit();
+
+		mScene = other.mScene;
+		mName = other.mName;
+		mLocalPosition = other.mLocalPosition;
+		mLocalRotation = other.mLocalRotation;
+		mLocalScale = other.mLocalScale;
+		mWorldPosition = other.mWorldPosition;
+		mWorldRotation = other.mWorldRotation;
+		mWorldScale = other.mWorldScale;
+		mForward = other.mForward;
+		mRight = other.mRight;
+		mUp = other.mUp;
+		mParent = other.mParent;
+		mModelMat = other.mModelMat;
+		mNormalMat = other.mNormalMat;
+
+		init();
+
+		return *this;
+	}
+
+
+
+	Node& Node::operator=(Node&& other) noexcept
+	{
+		if (this == &other)
+		{
+			return *this;
+		}
+
+		*this = other;
+		take_children_from(other);
+
+		return *this;
+	}
+
+
+
+	Node::~Node()
+	{
+		deinit();
 	}
 }

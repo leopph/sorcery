@@ -7,7 +7,7 @@
 
 namespace demo
 {
-	/*class AnimatedSprite final : public leopph::Behavior
+	/*class AnimatedSprite final : public leopph::BehaviorNode
 	{
 		public:
 			enum class AnimationMode

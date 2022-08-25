@@ -1,9 +1,9 @@
-#include "Cameras.hpp"
+#include "CameraNodes.hpp"
 
 #include "Context.hpp"
-#include "Entity.hpp"
 #include "Logger.hpp"
 #include "Math.hpp"
+#include "Node.hpp"
 #include "Renderer.hpp"
 #include "Window.hpp"
 
@@ -13,56 +13,56 @@
 
 namespace leopph
 {
-	f32 Camera::get_near_clip_plane() const
+	f32 CameraNode::get_near_clip_plane() const
 	{
 		return mNear;
 	}
 
 
 
-	void Camera::set_near_clip_plane(f32 const near)
+	void CameraNode::set_near_clip_plane(f32 const near)
 	{
 		mNear = near;
 	}
 
 
 
-	f32 Camera::get_far_clip_plane() const
+	f32 CameraNode::get_far_clip_plane() const
 	{
 		return mFar;
 	}
 
 
 
-	void Camera::set_far_clip_plane(f32 const far)
+	void CameraNode::set_far_clip_plane(f32 const far)
 	{
 		mFar = far;
 	}
 
 
 
-	std::variant<Color, std::shared_ptr<Skybox>> const& Camera::get_background() const
+	std::variant<Color, std::shared_ptr<Skybox>> const& CameraNode::get_background() const
 	{
 		return mBackground;
 	}
 
 
 
-	void Camera::set_background(std::variant<Color, std::shared_ptr<Skybox>> background)
+	void CameraNode::set_background(std::variant<Color, std::shared_ptr<Skybox>> background)
 	{
 		mBackground = std::move(background);
 	}
 
 
 
-	Extent<f32> const& Camera::get_viewport() const
+	Extent<f32> const& CameraNode::get_viewport() const
 	{
 		return mViewport;
 	}
 
 
 
-	void Camera::set_viewport(Extent<f32> const& viewport)
+	void CameraNode::set_viewport(Extent<f32> const& viewport)
 	{
 		mViewport = viewport;
 
@@ -83,14 +83,14 @@ namespace leopph
 
 
 
-	Extent<u32> Camera::get_window_extents() const
+	Extent<u32> CameraNode::get_window_extents() const
 	{
 		return mWindowExtent;
 	}
 
 
 
-	void Camera::set_window_extents(Extent<u32> const& extent)
+	void CameraNode::set_window_extents(Extent<u32> const& extent)
 	{
 		auto const& window = get_main_window();
 
@@ -115,14 +115,14 @@ namespace leopph
 
 
 
-	f32 Camera::get_aspect_ratio() const
+	f32 CameraNode::get_aspect_ratio() const
 	{
 		return mAspectRatio;
 	}
 
 
 
-	void Camera::enable()
+	void CameraNode::enable()
 	{
 		if (!mEnabled)
 		{
@@ -133,7 +133,7 @@ namespace leopph
 
 
 
-	void Camera::disable()
+	void CameraNode::disable()
 	{
 		if (mEnabled)
 		{
@@ -144,22 +144,22 @@ namespace leopph
 
 
 
-	bool Camera::is_enabled() const
+	bool CameraNode::is_enabled() const
 	{
 		return mEnabled;
 	}
 
 
 
-	Matrix4 Camera::build_view_matrix() const
+	Matrix4 CameraNode::build_view_matrix() const
 	{
 		// inv(T) * inv(R)
-		return Matrix4::translate(-get_owner()->get_position()) * Matrix4{get_owner()->get_rotation()}.transpose();
+		return Matrix4::translate(-get_position()) * Matrix4{get_rotation()}.transpose();
 	}
 
 
 
-	Vector2 Camera::transform_to_viewport(Vector3 const& vector) const
+	Vector2 CameraNode::transform_to_viewport(Vector3 const& vector) const
 	{
 		Vector4 homoPos{vector, 1};
 		homoPos *= build_view_matrix() * build_projection_matrix();
@@ -172,7 +172,7 @@ namespace leopph
 
 
 
-	Camera::Camera() :
+	CameraNode::CameraNode() :
 		mWindowExtent
 		{
 			[this]
@@ -197,14 +197,87 @@ namespace leopph
 
 
 
-	Camera::~Camera()
+	CameraNode::CameraNode(CameraNode const& other) :
+		Node{other},
+		mBackground{other.mBackground},
+		mNear{other.mNear},
+		mFar{other.mFar},
+		mViewport{other.mViewport},
+		mWindowExtent{other.mWindowExtent},
+		mAspectRatio{other.mAspectRatio},
+		mEnabled{other.mEnabled}
+	{
+		if (mEnabled)
+		{
+			internal::get_renderer().register_camera(this);
+		}
+	}
+
+
+
+	CameraNode::CameraNode(CameraNode&& other) noexcept :
+		Node{std::move(other)},
+		mBackground{other.mBackground},
+		mNear{other.mNear},
+		mFar{other.mFar},
+		mViewport{other.mViewport},
+		mWindowExtent{other.mWindowExtent},
+		mAspectRatio{other.mAspectRatio},
+		mEnabled{other.mEnabled}
+	{
+		if (mEnabled)
+		{
+			internal::get_renderer().register_camera(this);
+		}
+	}
+
+
+
+	CameraNode::~CameraNode()
 	{
 		internal::get_renderer().unregister_camera(this);
 	}
 
 
 
-	void Camera::on_event(WindowEvent const& event)
+	CameraNode& CameraNode::operator=(CameraNode const& other)
+	{
+		if (this == &other)
+		{
+			return *this;
+		}
+
+		if (mEnabled)
+		{
+			internal::get_renderer().unregister_camera(this);
+		}
+
+		mBackground = other.mBackground;
+		mNear = other.mNear;
+		mFar = other.mFar;
+		mViewport = other.mViewport;
+		mWindowExtent = other.mWindowExtent;
+		mAspectRatio = other.mAspectRatio;
+		mEnabled = other.mEnabled;
+
+		if (mEnabled)
+		{
+			internal::get_renderer().register_camera(this);
+		}
+
+		return *this;
+	}
+
+
+
+	CameraNode& CameraNode::operator=(CameraNode&& other) noexcept
+	{
+		return *this = other;
+	}
+
+
+
+	void CameraNode::on_event(WindowEvent const& event)
 	{
 		mWindowExtent =
 		{
@@ -219,7 +292,7 @@ namespace leopph
 
 
 
-	f32 OrthographicCamera::get_size(Side const side) const
+	f32 OrthographicCameraNode::get_size(Side const side) const
 	{
 		if (side == Side::Horizontal)
 		{
@@ -237,7 +310,7 @@ namespace leopph
 
 
 
-	void OrthographicCamera::size(f32 const size, Side const side)
+	void OrthographicCameraNode::size(f32 const size, Side const side)
 	{
 		if (side == Side::Horizontal)
 		{
@@ -255,7 +328,7 @@ namespace leopph
 
 
 
-	Matrix4 OrthographicCamera::build_projection_matrix() const
+	Matrix4 OrthographicCameraNode::build_projection_matrix() const
 	{
 		auto static constexpr half = 1.f / 2.f;
 		auto const x = mHorizSize * half;
@@ -265,7 +338,7 @@ namespace leopph
 
 
 
-	Frustum OrthographicCamera::build_frustum() const
+	Frustum OrthographicCameraNode::build_frustum() const
 	{
 		auto static constexpr half = 1.f / 2.f;
 
@@ -290,7 +363,7 @@ namespace leopph
 
 
 
-	f32 PerspectiveCamera::get_fov(Side const side) const
+	f32 PerspectiveCameraNode::get_fov(Side const side) const
 	{
 		if (side == Side::Horizontal)
 		{
@@ -299,7 +372,7 @@ namespace leopph
 
 		if (side == Side::Vertical)
 		{
-			return convert_fov(mHorizFovDeg, Conversion::HorizontalToVertical);
+			return convert_fov(mHorizFovDeg, false);
 		}
 
 		Logger::get_instance().warning(std::format("Invalid side [{}] while querying camera field of view. Returning 0.", static_cast<int>(side)));
@@ -308,7 +381,7 @@ namespace leopph
 
 
 
-	void PerspectiveCamera::set_fov(f32 const degrees, Side const side)
+	void PerspectiveCameraNode::set_fov(f32 const degrees, Side const side)
 	{
 		if (side == Side::Horizontal)
 		{
@@ -316,7 +389,7 @@ namespace leopph
 		}
 		else if (side == Side::Vertical)
 		{
-			mHorizFovDeg = convert_fov(degrees, Conversion::VerticalToHorizontal);
+			mHorizFovDeg = convert_fov(degrees, true);
 		}
 		else
 		{
@@ -326,15 +399,15 @@ namespace leopph
 
 
 
-	Matrix4 PerspectiveCamera::build_projection_matrix() const
+	Matrix4 PerspectiveCameraNode::build_projection_matrix() const
 	{
-		auto const fov{to_radians(convert_fov(mHorizFovDeg, Conversion::HorizontalToVertical))};
+		auto const fov{to_radians(convert_fov(mHorizFovDeg, false))};
 		return Matrix4::perspective(fov, get_aspect_ratio(), get_near_clip_plane(), get_far_clip_plane());
 	}
 
 
 
-	Frustum PerspectiveCamera::build_frustum() const
+	Frustum PerspectiveCameraNode::build_frustum() const
 	{
 		auto const tanHalfHorizFov{std::tan(to_radians(get_fov(Side::Horizontal)) / 2.0f)};
 		auto const tanHalfVertFov{std::tan(to_radians(get_fov(Side::Vertical)) / 2.0f)};
@@ -362,19 +435,13 @@ namespace leopph
 
 
 
-	f32 PerspectiveCamera::convert_fov(f32 const fov, Conversion const conversion) const
+	f32 PerspectiveCameraNode::convert_fov(f32 const fov, bool const vert2Horiz) const
 	{
-		if (conversion == Conversion::VerticalToHorizontal)
+		if (vert2Horiz)
 		{
 			return to_degrees(2.0f * std::atan(std::tan(to_radians(fov) / 2.0f) * get_aspect_ratio()));
 		}
 
-		if (conversion == Conversion::HorizontalToVertical)
-		{
-			return to_degrees(2.0f * std::atan(std::tan(to_radians(fov) / 2.0f) / get_aspect_ratio()));
-		}
-
-		Logger::get_instance().warning(std::format("Invalid direction [{}] while converting camera field of view. Returning 0.", static_cast<int>(conversion)));
-		return 0;
+		return to_degrees(2.0f * std::atan(std::tan(to_radians(fov) / 2.0f) / get_aspect_ratio()));
 	}
 }

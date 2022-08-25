@@ -1,5 +1,7 @@
 #include "Scene.hpp"
 
+#include "Node.hpp"
+
 
 namespace leopph
 {
@@ -9,7 +11,7 @@ namespace leopph
 
 
 
-	std::span<Entity* const> Scene::get_entities() const
+	std::span<Node* const> Scene::get_entities() const
 	{
 		return mEntities;
 	}
@@ -18,7 +20,7 @@ namespace leopph
 
 	Scene::~Scene()
 	{
-		// Entity destructor removes entity from this list
+		// Node destructor removes entity from this list
 		while (!mEntities.empty())
 		{
 			delete mEntities.back();
@@ -27,14 +29,14 @@ namespace leopph
 
 
 
-	void Scene::register_entity(Entity* entity)
+	void Scene::add(Node* entity)
 	{
 		mEntities.push_back(entity);
 	}
 
 
 
-	void Scene::unregister_entity(Entity* entity)
+	void Scene::remove(Node* entity)
 	{
 		std::erase(mEntities, entity);
 	}

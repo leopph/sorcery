@@ -5,14 +5,15 @@
 
 namespace demo
 {
-	class FirstPersonCameraController final : public leopph::Behavior
+	class FirstPersonCameraController final : public leopph::BehaviorNode
 	{
 		public:
-			FirstPersonCameraController(float speed, float sens, float runMult, float walkMult);
+			FirstPersonCameraController(leopph::CameraNode* camera, float speed, float sens, float runMult, float walkMult);
 
 			void on_frame_update() override;
 
 		private:
+			leopph::CameraNode* mCamera;
 			float mSpeed;
 			float mMouseSens;
 			float mRunMult;

@@ -1,4 +1,4 @@
-#include "StaticMeshComponent.hpp"
+#include "StaticMeshNode.hpp"
 
 #include "Context.hpp"
 #include "Math.hpp"
@@ -7,17 +7,19 @@
 #include "StaticMesh.hpp"
 #include "Types.hpp"
 
+#include <utility>
+
 
 namespace leopph
 {
-	std::shared_ptr<StaticMesh const> StaticMeshComponent::get_mesh() const
+	std::shared_ptr<StaticMesh const> StaticMeshNode::get_mesh() const
 	{
 		return mMesh;
 	}
 
 
 
-	void StaticMeshComponent::set_mesh(std::shared_ptr<StaticMesh> mesh)
+	void StaticMeshNode::set_mesh(std::shared_ptr<StaticMesh> mesh)
 	{
 		try_unregister();
 		mMesh = std::move(mesh);
@@ -26,14 +28,14 @@ namespace leopph
 
 
 
-	std::shared_ptr<StaticMaterial const> StaticMeshComponent::get_material() const
+	std::shared_ptr<StaticMaterial const> StaticMeshNode::get_material() const
 	{
 		return mMaterial;
 	}
 
 
 
-	void StaticMeshComponent::set_material(std::shared_ptr<StaticMaterial> material)
+	void StaticMeshNode::set_material(std::shared_ptr<StaticMaterial> material)
 	{
 		try_unregister();
 		mMaterial = std::move(material);
@@ -42,35 +44,50 @@ namespace leopph
 
 
 
-	bool StaticMeshComponent::is_casting_shadow() const
+	bool StaticMeshNode::is_casting_shadow() const
 	{
 		return mIsCastingShadow;
 	}
 
 
 
-	void StaticMeshComponent::set_casting_shadow(bool const value)
+	void StaticMeshNode::set_casting_shadow(bool const value)
 	{
 		mIsCastingShadow = value;
 	}
 
 
 
-	void StaticMeshComponent::on_init()
+	StaticMeshNode::StaticMeshNode(std::shared_ptr<StaticMesh> mesh, std::shared_ptr<StaticMaterial> material) :
+		mMesh{std::move(mesh)},
+		mMaterial{std::move(material)}
 	{
 		try_register();
 	}
 
 
 
-	StaticMeshComponent::StaticMeshComponent(std::shared_ptr<StaticMesh> mesh, std::shared_ptr<StaticMaterial> material) :
-		mMesh{std::move(mesh)},
-		mMaterial{std::move(material)}
-	{}
+	StaticMeshNode::StaticMeshNode(StaticMeshNode const& other) :
+		Node{other},
+		mMesh{other.mMesh},
+		mMaterial{other.mMaterial}
+	{
+		try_register();
+	}
 
 
 
-	StaticMeshComponent& StaticMeshComponent::operator=(StaticMeshComponent const& other)
+	StaticMeshNode::StaticMeshNode(StaticMeshNode&& other) noexcept :
+		Node{std::move(other)},
+		mMesh{other.mMesh},
+		mMaterial{other.mMaterial}
+	{
+		try_register();
+	}
+
+
+
+	StaticMeshNode& StaticMeshNode::operator=(StaticMeshNode const& other)
 	{
 		if (this == &other)
 		{
@@ -87,18 +104,25 @@ namespace leopph
 
 
 
-	StaticMeshComponent::~StaticMeshComponent()
+	StaticMeshNode& StaticMeshNode::operator=(StaticMeshNode&& other) noexcept
+	{
+		return *this = other;
+	}
+
+
+
+	StaticMeshNode::~StaticMeshNode()
 	{
 		try_unregister();
 	}
 
 
 
-	void StaticMeshComponent::try_register() const
+	void StaticMeshNode::try_register() const
 	{
 		if (mMesh)
 		{
-			mMesh->register_entity(get_owner());
+			mMesh->register_entity(this);
 		}
 
 		if (mMesh && mMaterial)
@@ -109,11 +133,11 @@ namespace leopph
 
 
 
-	void StaticMeshComponent::try_unregister() const
+	void StaticMeshNode::try_unregister() const
 	{
 		if (mMesh)
 		{
-			mMesh->unregister_entity(get_owner());
+			mMesh->unregister_entity(this);
 		}
 
 		if (mMesh && mMaterial)
@@ -124,18 +148,29 @@ namespace leopph
 
 
 
-	void attach_static_mesh_component_from_model_file(Entity* const entity, std::filesystem::path const& path)
+	std::variant<Node*, StaticMeshNode*> create_static_mesh_node_from_model_file(std::filesystem::path const& path)
 	{
-		for (auto const renderData = generate_render_structures(import_static_model(path));
-		     auto const& [mesh, material] : renderData)
+		auto const renderData = generate_render_structures(import_static_model(path));
+
+		if (renderData.size() == 1)
 		{
-			entity->attach_component<StaticMeshComponent>(mesh, material);
+			return new StaticMeshNode{renderData[0].first, renderData[0].second};
 		}
+
+		auto* const group = new Node{};
+
+		for (auto const& [mesh, material] : renderData)
+		{
+			auto* const child = new StaticMeshNode{mesh, material};
+			child->set_parent(group);
+		}
+
+		return group;
 	}
 
 
 
-	void attach_static_cube_model(Entity* entity)
+	StaticMeshNode* create_static_cube_model()
 	{
 		std::vector vertices
 		{
@@ -215,10 +250,7 @@ namespace leopph
 		modelData.meshes.emplace_back(std::move(meshData));
 		modelData.materials.emplace_back(materialData);
 
-		for (auto const renderData = generate_render_structures(modelData);
-		     auto const& [mesh, material] : renderData)
-		{
-			entity->attach_component<StaticMeshComponent>(mesh, material);
-		}
+		auto const renderData = generate_render_structures(modelData);
+		return new StaticMeshNode{renderData[0].first, renderData[0].second};
 	}
 }

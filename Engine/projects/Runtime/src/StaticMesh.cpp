@@ -41,21 +41,21 @@ namespace leopph
 
 
 
-	void StaticMesh::register_entity(Entity const* entity)
+	void StaticMesh::register_entity(Node const* entity)
 	{
 		mReferringEntities.emplace(entity);
 	}
 
 
 
-	void StaticMesh::unregister_entity(Entity const* entity)
+	void StaticMesh::unregister_entity(Node const* entity)
 	{
 		mReferringEntities.erase(entity);
 	}
 
 
 
-	std::unordered_set<Entity const*> StaticMesh::get_entities() const
+	std::unordered_set<Node const*> StaticMesh::get_entities() const
 	{
 		return mReferringEntities;
 	}

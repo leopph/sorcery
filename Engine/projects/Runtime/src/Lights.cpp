@@ -95,7 +95,7 @@ namespace leopph
 
 	Vector3 const& DirectionalLight::get_direction() const
 	{
-		return get_owner()->get_forward_axis();
+		return get_forward_axis();
 	}
 
 

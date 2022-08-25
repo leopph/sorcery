@@ -14,11 +14,10 @@
     <ClCompile Include="..\..\deps\vendor\glad\src\gl.c" />
     <ClCompile Include="src\AABB.cpp" />
     <ClCompile Include="src\EncodeLeopph3d.cpp" />
-    <ClCompile Include="src\Behavior.cpp" />
-    <ClCompile Include="src\Cameras.cpp" />
-    <ClCompile Include="src\Component.cpp" />
+    <ClCompile Include="src\BehaviorNode.cpp" />
+    <ClCompile Include="src\CameraNodes.cpp" />
     <ClCompile Include="src\Lights.cpp" />
-    <ClCompile Include="src\StaticMeshComponent.cpp" />
+    <ClCompile Include="src\StaticMeshNode.cpp" />
     <ClCompile Include="src\ModelImport.cpp" />
     <ClCompile Include="src\Color.cpp" />
     <ClCompile Include="src\Compare.cpp" />
@@ -34,7 +33,7 @@
     <ClCompile Include="src\CubeMesh.cpp" />
     <ClCompile Include="src\Context.cpp" />
     <ClCompile Include="src\StaticMaterial.cpp" />
-    <ClCompile Include="src\Entity.cpp" />
+    <ClCompile Include="src\Node.cpp" />
     <ClCompile Include="src\EventManager.cpp" />
     <ClCompile Include="src\Exit.cpp" />
     <ClCompile Include="src\Input.cpp" />
@@ -51,12 +50,11 @@
     <ClCompile Include="src\Util.cpp" />
     <ClCompile Include="src\Window.cpp" />
     <ClInclude Include="..\..\include\AABB.hpp" />
-    <ClInclude Include="..\..\include\Behavior.hpp" />
-    <ClInclude Include="..\..\include\Cameras.hpp" />
+    <ClInclude Include="..\..\include\BehaviorNode.hpp" />
+    <ClInclude Include="..\..\include\CameraNodes.hpp" />
     <ClInclude Include="..\..\include\Color.hpp" />
-    <ClInclude Include="..\..\include\Component.hpp" />
     <ClInclude Include="..\..\include\Context.hpp" />
-    <ClInclude Include="..\..\include\Entity.hpp" />
+    <ClInclude Include="..\..\include\Node.hpp" />
     <ClInclude Include="..\..\include\Entry.hpp" />
     <ClInclude Include="..\..\include\Event.hpp" />
     <ClInclude Include="..\..\include\Exit.hpp" />
@@ -74,7 +72,7 @@
     <ClInclude Include="..\..\include\Math.hpp" />
     <ClInclude Include="..\..\include\Settings.hpp" />
     <ClInclude Include="..\..\include\Skybox.hpp" />
-    <ClInclude Include="..\..\include\StaticMeshComponent.hpp" />
+    <ClInclude Include="..\..\include\StaticMeshNode.hpp" />
     <ClInclude Include="..\..\include\StaticModelData.hpp" />
     <ClInclude Include="..\..\include\Timer.hpp" />
     <ClInclude Include="..\..\include\Types.hpp" />
@@ -187,26 +185,22 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)Engine\bin\$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)Engine\int\$(Configuration)\</IntDir>
+    <IntDir>$(SolutionDir)Engine\int\$(ProjectName)\$(Configuration)_$(Platform)\</IntDir>
     <TargetName>leopph</TargetName>
     <CustomBuildAfterTargets>
     </CustomBuildAfterTargets>
     <CustomBuildBeforeTargets>
     </CustomBuildBeforeTargets>
-    <EnableClangTidyCodeAnalysis>true</EnableClangTidyCodeAnalysis>
-    <ClangTidyChecks>clang-analyzer-*</ClangTidyChecks>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)Engine\bin\$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)Engine\int\$(Configuration)\</IntDir>
+    <IntDir>$(SolutionDir)Engine\int\$(ProjectName)\$(Configuration)_$(Platform)\</IntDir>
     <TargetName>leopph</TargetName>
     <CustomBuildAfterTargets>
     </CustomBuildAfterTargets>
     <CustomBuildBeforeTargets>
     </CustomBuildBeforeTargets>
-    <EnableClangTidyCodeAnalysis>true</EnableClangTidyCodeAnalysis>
-    <ClangTidyChecks>clang-analyzer-*</ClangTidyChecks>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>

@@ -1,7 +1,6 @@
 #pragma once
 
-#include "Entity.hpp"
-
+#include <span>
 #include <string>
 #include <vector>
 
@@ -10,11 +9,11 @@ namespace leopph
 {
 	class Scene
 	{
-		friend class Entity;
+		friend class Node;
 		friend class SceneManager;
 
 		public:
-			[[nodiscard]] std::span<Entity* const> get_entities() const;
+			[[nodiscard]] std::span<Node* const> get_entities() const;
 
 
 		private:
@@ -31,10 +30,10 @@ namespace leopph
 
 
 		private:
-			void register_entity(Entity* entity);
-			void unregister_entity(Entity* entity);
+			void add(Node* entity);
+			void remove(Node* entity);
 
-			std::vector<Entity*> mEntities;
+			std::vector<Node*> mEntities;
 			std::string mName;
 	};
 }

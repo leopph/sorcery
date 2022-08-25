@@ -1,11 +1,11 @@
 #pragma once
 
 #include "Color.hpp"
-#include "Component.hpp"
 #include "Event.hpp"
 #include "Extent.hpp"
 #include "Frustum.hpp"
 #include "Math.hpp"
+#include "Node.hpp"
 #include "Skybox.hpp"
 #include "Types.hpp"
 #include "Window.hpp"
@@ -16,7 +16,7 @@
 
 namespace leopph
 {
-	class Camera : public Component, public EventReceiver<WindowEvent>
+	class CameraNode : public Node, public EventReceiver<WindowEvent>
 	{
 		public:
 			enum class Side
@@ -68,17 +68,16 @@ namespace leopph
 
 
 		protected:
-			LEOPPHAPI Camera();
+			LEOPPHAPI CameraNode();
+			LEOPPHAPI CameraNode(CameraNode const& other);
+			LEOPPHAPI CameraNode(CameraNode&& other) noexcept;
 
 		public:
-			Camera(Camera const&) = delete;
-			Camera(Camera&&) = delete;
+			LEOPPHAPI ~CameraNode() override;
 
-			Camera& operator=(Camera const&) = delete;
-			void operator=(Camera&&) = delete;
-
-			LEOPPHAPI ~Camera() override;
-
+		protected:
+			LEOPPHAPI CameraNode& operator=(CameraNode const& other);
+			LEOPPHAPI CameraNode& operator=(CameraNode&& other) noexcept;
 
 		private:
 			LEOPPHAPI void on_event(WindowEvent const& event) override;
@@ -93,7 +92,7 @@ namespace leopph
 	};
 
 
-	class OrthographicCamera final : public Camera
+	class OrthographicCameraNode final : public CameraNode
 	{
 		public:
 			[[nodiscard]] LEOPPHAPI f32 get_size(Side side = Side::Horizontal) const;
@@ -102,55 +101,22 @@ namespace leopph
 			[[nodiscard]] LEOPPHAPI Matrix4 build_projection_matrix() const override;
 			[[nodiscard]] LEOPPHAPI Frustum build_frustum() const override;
 
-
-			OrthographicCamera() = default;
-
-			OrthographicCamera(OrthographicCamera const& other) = delete;
-			OrthographicCamera& operator=(OrthographicCamera const& other) = delete;
-
-			OrthographicCamera(OrthographicCamera&& other) noexcept = delete;
-			OrthographicCamera& operator=(OrthographicCamera&& other) noexcept = delete;
-
-			~OrthographicCamera() override = default;
-
-
 		private:
 			float mHorizSize{10};
 	};
 
 
-	class PerspectiveCamera final : public Camera
+	class PerspectiveCameraNode final : public CameraNode
 	{
 		public:
 			[[nodiscard]] LEOPPHAPI f32 get_fov(Side side = Side::Horizontal) const;
 			LEOPPHAPI void set_fov(f32 degrees, Side side = Side::Horizontal);
 
-
 			[[nodiscard]] LEOPPHAPI Matrix4 build_projection_matrix() const override;
 			[[nodiscard]] LEOPPHAPI Frustum build_frustum() const override;
 
-
-			PerspectiveCamera() = default;
-
-			PerspectiveCamera(PerspectiveCamera const& other) = delete;
-			PerspectiveCamera& operator=(PerspectiveCamera const& other) = delete;
-
-			PerspectiveCamera(PerspectiveCamera&& other) noexcept = delete;
-			PerspectiveCamera& operator=(PerspectiveCamera&& other) noexcept = delete;
-
-			~PerspectiveCamera() override = default;
-
-
 		private:
-			enum class Conversion
-			{
-				VerticalToHorizontal,
-				HorizontalToVertical
-			};
-
-
-			[[nodiscard]]
-			f32 convert_fov(f32 fov, Conversion conversion) const;
+			[[nodiscard]] f32 convert_fov(f32 fov, bool vert2Horiz) const;
 
 			f32 mHorizFovDeg{100.f};
 	};

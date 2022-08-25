@@ -1,7 +1,7 @@
 #pragma once
 
 #include "AABB.hpp"
-#include "Entity.hpp"
+#include "Node.hpp"
 #include "PersistentMappedBuffer.hpp"
 #include "StaticModelData.hpp"
 
@@ -22,10 +22,10 @@ namespace leopph
 
 			AABB const& get_bounding_box() const;
 
-			void register_entity(Entity const* entity);
-			void unregister_entity(Entity const* entity);
+			void register_entity(Node const* entity);
+			void unregister_entity(Node const* entity);
 
-			[[nodiscard]] std::unordered_set<Entity const*> get_entities() const;
+			[[nodiscard]] std::unordered_set<Node const*> get_entities() const;
 
 			explicit StaticMesh(StaticMeshData const& data);
 
@@ -49,6 +49,6 @@ namespace leopph
 
 			AABB mBoundingBox;
 
-			std::unordered_set<Entity const*> mReferringEntities;
+			std::unordered_set<Node const*> mReferringEntities;
 	};
 }

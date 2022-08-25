@@ -20,7 +20,7 @@
 //#include "SettingsImpl.hpp"
 #include "Window.hpp"
 //#include "data/DataManager.hpp"
-#include "Behavior.hpp"
+#include "BehaviorNode.hpp"
 #include "Renderer.hpp"
 #include "SceneManager.hpp"
 #include "Timer.hpp"
@@ -59,8 +59,7 @@ namespace leopph::internal
 		while (!window->should_close())
 		{
 			window->poll_events();
-			Component::init_all();
-			Behavior::update_all();
+			BehaviorNode::update_all();
 			renderer->render();
 			window->swap_buffers();
 			EventManager::get_instance().send<FrameCompleteEvent>();

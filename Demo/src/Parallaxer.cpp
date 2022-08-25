@@ -5,10 +5,10 @@ using leopph::Vector3;
 
 namespace demo
 {
-	Parallaxer::Parallaxer(leopph::Camera* camera, std::span<Layer> layers) :
+	Parallaxer::Parallaxer(leopph::CameraNode* camera, std::span<Layer> layers) :
 		mLayers{layers.begin(), layers.end()},
-		mTargetCam{std::move(camera)},
-		mPrevCamPosX{mTargetCam->get_owner()->get_position()[0]}
+		mTargetCam{camera},
+		mPrevCamPosX{mTargetCam->get_position()[0]}
 	{ }
 
 
@@ -17,9 +17,9 @@ namespace demo
 	{
 		for (auto const& [speedMult, entity] : mLayers)
 		{
-			entity->set_position(entity->get_position() + Vector3{(mTargetCam->get_owner()->get_position()[0] - mPrevCamPosX) * speedMult, 0, 0});
+			entity->set_position(entity->get_position() + Vector3{(mTargetCam->get_position()[0] - mPrevCamPosX) * speedMult, 0, 0});
 		}
 
-		mPrevCamPosX = mTargetCam->get_owner()->get_position()[0];
+		mPrevCamPosX = mTargetCam->get_position()[0];
 	}
 }

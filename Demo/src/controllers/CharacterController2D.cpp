@@ -8,7 +8,8 @@ using leopph::Space;
 
 namespace demo
 {
-	CharacterController2D::CharacterController2D(float const speed, float const runMult, float const walkMult) :
+	CharacterController2D::CharacterController2D(leopph::CameraNode* camera, float const speed, float const runMult, float const walkMult) :
+		mCamera{camera},
 		mSpeed{speed},
 		mRunMult{runMult},
 		mWalkMult{walkMult}
@@ -51,6 +52,6 @@ namespace demo
 			posDelta *= mWalkMult;
 		}
 
-		get_owner()->translate(posDelta * mSpeed * leopph::get_frame_timer().get_last_time(), Space::World);
+		mCamera->translate(posDelta * mSpeed * leopph::get_frame_timer().get_last_time(), Space::World);
 	}
 }

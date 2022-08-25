@@ -7,24 +7,24 @@
 
 namespace demo
 {
-	class Parallaxer final : public leopph::Behavior
+	class Parallaxer final : public leopph::BehaviorNode
 	{
 		public:
 			struct Layer
 			{
 				// The layer will be moved with speedMult * the camera's speed
 				float speedMult;
-				leopph::Entity* entity;
+				leopph::Node* entity;
 			};
 
 
-			explicit Parallaxer(leopph::Camera* camera, std::span<Layer> layers = {});
+			explicit Parallaxer(leopph::CameraNode* camera, std::span<Layer> layers = {});
 
 			void on_frame_update() override;
 
 		private:
 			std::vector<Layer> mLayers;
-			leopph::Camera* mTargetCam;
+			leopph::CameraNode* mTargetCam;
 			float mPrevCamPosX;
 	};
 }

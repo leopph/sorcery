@@ -6,7 +6,7 @@
 #include <list>
 
 
-class FrameRateAnalyzer final : public leopph::Behavior
+class FrameRateAnalyzer final : public leopph::BehaviorNode
 {
 	public:
 		explicit FrameRateAnalyzer(float pollInterval, unsigned maxDataSets);
