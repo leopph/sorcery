@@ -39,6 +39,9 @@
     <ClCompile Include="src\Logger.cpp" />
     <ClCompile Include="src\Math.cpp" />
     <ClCompile Include="..\..\deps\vendor\glad\src\gl.c" />
+    <ClCompile Include="src\MathExport.cpp" />
+    <ClCompile Include="src\Export.cpp" />
+    <ClCompile Include="src\Test.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\rendering\gl\GlMesh.hpp" />
@@ -108,6 +111,7 @@
     <ClInclude Include="..\..\include\Types.hpp" />
     <ClInclude Include="..\..\include\Util.hpp" />
     <ClInclude Include="..\..\include\Window.hpp" />
+    <ClInclude Include="..\..\include\Test.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\shaders\glsl\include\CompositeFrag.glsl" />

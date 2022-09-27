@@ -2,6 +2,10 @@
 #define NOMINMAX
 #include <Windows.h>
 
+#include <mono/jit/jit.h>
+#include <mono/metadata/assembly.h>
+#include <mono/metadata/debug-helpers.h>
+
 #include <imgui.h>
 #include <backends/imgui_impl_win32.h>
 #include <backends/imgui_impl_dx11.h>
@@ -27,6 +31,12 @@ struct Data
 	ComPtr<ID3D11RenderTargetView> backBufRtv;
 	ComPtr<ID3D11Device> d3dDevice;
 };
+
+
+namespace leopph
+{
+	__declspec(dllimport) extern float* gData;
+}
 
 
 
@@ -116,12 +126,24 @@ int APIENTRY wWinMain(HINSTANCE const instance, [[maybe_unused]] HINSTANCE const
 
 	ImGui::CreateContext();
 	auto& io = ImGui::GetIO();
+	io.IniFilename = "";
 	static_cast<void>(io);
 
 	ImGui::StyleColorsDark();
 
 	ImGui_ImplWin32_Init(hwnd);
 	ImGui_ImplDX11_Init(appData->d3dDevice.Get(), d3dDeviceContext.Get());
+
+	auto* const monoDomain = mono_jit_init("leopph");
+	auto* const monoAssembly = mono_domain_assembly_open(monoDomain, "leopph_managed.dll");
+	auto* const monoImage = mono_assembly_get_image(monoAssembly);
+	auto* const desc = mono_method_desc_new("Foo:Bar", false);
+	auto* const klass = mono_class_from_name(monoImage, "", "Foo");
+	auto* const method = mono_method_desc_search_in_class(desc, klass);
+	MonoObject* exc;
+	mono_runtime_invoke(method, nullptr, nullptr, &exc);
+
+	MessageBoxW(hwnd, std::format(L"({}, {})", leopph::gData[0], leopph::gData[1]).c_str(), L"Vector2", 0);
 
 	while (true)
 	{
@@ -131,6 +153,7 @@ int APIENTRY wWinMain(HINSTANCE const instance, [[maybe_unused]] HINSTANCE const
 		{
 			if (msg.message == WM_QUIT)
 			{
+				mono_jit_cleanup(monoDomain);
 				ImGui_ImplDX11_Shutdown();
 				ImGui_ImplWin32_Shutdown();
 				ImGui::DestroyContext();
@@ -159,6 +182,16 @@ int APIENTRY wWinMain(HINSTANCE const instance, [[maybe_unused]] HINSTANCE const
 
 			ImGui::EndMainMenuBar();
 		}
+
+		ImGui::SetNextWindowBgAlpha(1);
+		ImGui::SetNextWindowPos(ImVec2{0, 100});
+		ImGui::SetNextWindowSize(ImVec2{100, 100});
+
+		if (ImGui::Begin("Hello", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize))
+		{
+			ImGui::Text("Hello");
+		}
+		ImGui::End();
 
 		ImGui::Render();
 
