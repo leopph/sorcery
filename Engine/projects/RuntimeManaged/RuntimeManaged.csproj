@@ -44,6 +44,7 @@
     <Compile Include="src\Node.cs" />
     <Compile Include="src\Math.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="src\Printer.cs" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
