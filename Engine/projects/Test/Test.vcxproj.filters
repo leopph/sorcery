@@ -19,4 +19,19 @@
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="src\shaders\include\CubeShader.hlsli" />
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="src\shaders\CubeVertexShader.hlsl" />
+    <FxCompile Include="src\shaders\CubePixelShader.hlsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\CubeVertexShader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\CubePixelShader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
 </Project>
