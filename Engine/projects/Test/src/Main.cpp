@@ -63,7 +63,7 @@ int main()
 		return -1;
 	}
 
-	auto const hwnd = CreateWindowEx(0, wndClass.lpszClassName, L"MyWindow", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, WINDOW_WIDTH, WINDOW_HEIGHT, nullptr, nullptr, wndClass.hInstance, 0);
+	auto const hwnd = CreateWindowExW(0, wndClass.lpszClassName, L"MyWindow", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, WINDOW_WIDTH, WINDOW_HEIGHT, nullptr, nullptr, wndClass.hInstance, 0);
 
 	if (!hwnd)
 	{
@@ -82,27 +82,33 @@ int main()
 
 	D3D_FEATURE_LEVEL constexpr requestedFeatureLevels[]{D3D_FEATURE_LEVEL_11_0};
 
-	assert(SUCCEEDED(D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, deviceCreationFlags, requestedFeatureLevels, 1, D3D11_SDK_VERSION, d3dDevice.GetAddressOf(), nullptr, d3dDeviceContext.GetAddressOf())));
+	auto hresult = D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, deviceCreationFlags, requestedFeatureLevels, 1, D3D11_SDK_VERSION, d3dDevice.GetAddressOf(), nullptr, d3dDeviceContext.GetAddressOf());
+	assert(SUCCEEDED(hresult));
 
 #ifndef NDEBUG
 	ComPtr<ID3D11Debug> d3dDebug;
-	assert(SUCCEEDED(d3dDevice.As(&d3dDebug)));
+	hresult = d3dDevice.As(&d3dDebug);
+	assert(SUCCEEDED(hresult));
 
 	ComPtr<ID3D11InfoQueue> d3dInfoQueue;
-	assert(SUCCEEDED(d3dDebug.As<ID3D11InfoQueue>(&d3dInfoQueue)));
+	hresult = d3dDebug.As<ID3D11InfoQueue>(&d3dInfoQueue);
+	assert(SUCCEEDED(hresult));
 
 	d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_CORRUPTION, true);
 	d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_ERROR, true);
 #endif
 
 	ComPtr<IDXGIDevice> dxgiDevice;
-	assert(SUCCEEDED(d3dDevice.As(&dxgiDevice)));
+	hresult = d3dDevice.As(&dxgiDevice);
+	assert(SUCCEEDED(hresult));
 
 	ComPtr<IDXGIAdapter> dxgiAdapter;
-	assert(SUCCEEDED(dxgiDevice->GetAdapter(dxgiAdapter.GetAddressOf())));
+	hresult = dxgiDevice->GetAdapter(dxgiAdapter.GetAddressOf());
+	assert(SUCCEEDED(hresult));
 
 	ComPtr<IDXGIFactory2> dxgiFactory2;
-	assert(SUCCEEDED(dxgiAdapter->GetParent(__uuidof(decltype(dxgiFactory2)::InterfaceType), reinterpret_cast<void**>(dxgiFactory2.GetAddressOf()))));
+	hresult = dxgiAdapter->GetParent(__uuidof(decltype(dxgiFactory2)::InterfaceType), reinterpret_cast<void**>(dxgiFactory2.GetAddressOf()));
+	assert(SUCCEEDED(hresult));
 
 	DXGI_SWAP_CHAIN_DESC1 constexpr swapChainDesc1
 	{
@@ -124,20 +130,25 @@ int main()
 	};
 
 	ComPtr<IDXGISwapChain1> dxgiSwapChain1;
-	assert(SUCCEEDED(dxgiFactory2->CreateSwapChainForHwnd(d3dDevice.Get(), hwnd, &swapChainDesc1, nullptr, nullptr, dxgiSwapChain1.GetAddressOf())));
+	hresult = dxgiFactory2->CreateSwapChainForHwnd(d3dDevice.Get(), hwnd, &swapChainDesc1, nullptr, nullptr, dxgiSwapChain1.GetAddressOf());
+	assert(SUCCEEDED(hresult));
 
 	ComPtr<ID3D11Texture2D> backBuf;
-	assert(SUCCEEDED(dxgiSwapChain1->GetBuffer(0, __uuidof(decltype(backBuf)::InterfaceType), reinterpret_cast<void**>(backBuf.GetAddressOf()))));
+	hresult = dxgiSwapChain1->GetBuffer(0, __uuidof(decltype(backBuf)::InterfaceType), reinterpret_cast<void**>(backBuf.GetAddressOf()));
+	assert(SUCCEEDED(hresult));
 
 	ComPtr<ID3D11RenderTargetView> backBufRtv;
-	assert(SUCCEEDED(d3dDevice->CreateRenderTargetView(backBuf.Get(), nullptr, backBufRtv.GetAddressOf())));
+	hresult = d3dDevice->CreateRenderTargetView(backBuf.Get(), nullptr, backBufRtv.GetAddressOf());
+	assert(SUCCEEDED(hresult));
 
 	ComPtr<ID3D11VertexShader> vertexShader;
-	assert(SUCCEEDED(d3dDevice->CreateVertexShader(gCubeVertShader, ARRAYSIZE(gCubeVertShader), nullptr, vertexShader.GetAddressOf())));
+	hresult = d3dDevice->CreateVertexShader(gCubeVertShader, ARRAYSIZE(gCubeVertShader), nullptr, vertexShader.GetAddressOf());
+	assert(SUCCEEDED(hresult));
 	d3dDeviceContext->VSSetShader(vertexShader.Get(), nullptr, 0);
 
 	ComPtr<ID3D11PixelShader> pixelShader;
-	assert(SUCCEEDED(d3dDevice->CreatePixelShader(gCubePixShader, ARRAYSIZE(gCubePixShader), nullptr, pixelShader.GetAddressOf())));
+	hresult = d3dDevice->CreatePixelShader(gCubePixShader, ARRAYSIZE(gCubePixShader), nullptr, pixelShader.GetAddressOf());
+	assert(SUCCEEDED(hresult));
 	d3dDeviceContext->PSSetShader(pixelShader.Get(), nullptr, 0);
 
 	D3D11_INPUT_ELEMENT_DESC constexpr inputElementDescs[]
@@ -163,7 +174,8 @@ int main()
 	};
 
 	ComPtr<ID3D11InputLayout> inputLayout;
-	assert(SUCCEEDED(d3dDevice->CreateInputLayout(inputElementDescs, ARRAYSIZE(inputElementDescs), gCubeVertShader, ARRAYSIZE(gCubeVertShader), inputLayout.GetAddressOf())));
+	hresult = d3dDevice->CreateInputLayout(inputElementDescs, ARRAYSIZE(inputElementDescs), gCubeVertShader, ARRAYSIZE(gCubeVertShader), inputLayout.GetAddressOf());
+	assert(SUCCEEDED(hresult));
 	d3dDeviceContext->IASetInputLayout(inputLayout.Get());
 	d3dDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -192,7 +204,7 @@ int main()
 		.StructureByteStride = 0
 	};
 
-	D3D11_SUBRESOURCE_DATA constexpr cubeVertexSubresourceData
+	D3D11_SUBRESOURCE_DATA const cubeVertexSubresourceData
 	{
 		.pSysMem = cubeVertexData,
 		.SysMemPitch = 0,
@@ -200,7 +212,8 @@ int main()
 	};
 
 	ComPtr<ID3D11Buffer> vertexBuffer;
-	assert(SUCCEEDED(d3dDevice->CreateBuffer(&cubeVertexBufferDesc, &cubeVertexSubresourceData, vertexBuffer.GetAddressOf())));
+	hresult = d3dDevice->CreateBuffer(&cubeVertexBufferDesc, &cubeVertexSubresourceData, vertexBuffer.GetAddressOf());
+	assert(SUCCEEDED(hresult));
 	d3dDeviceContext->IASetVertexBuffers(0, 1, vertexBuffer.GetAddressOf(), &vertexStride, &vertexOffset);
 
 	D3D11_BUFFER_DESC constexpr cubePositionBufferDesc
@@ -217,7 +230,8 @@ int main()
 	UINT constexpr positionOffset = 0;
 
 	ComPtr<ID3D11Buffer> positionBuffer;
-	assert(SUCCEEDED(d3dDevice->CreateBuffer(&cubePositionBufferDesc, nullptr, positionBuffer.GetAddressOf())));
+	hresult = d3dDevice->CreateBuffer(&cubePositionBufferDesc, nullptr, positionBuffer.GetAddressOf());
+	assert(SUCCEEDED(hresult));
 	d3dDeviceContext->IASetVertexBuffers(1, 1, positionBuffer.GetAddressOf(), &positionStride, &positionOffset);
 
 	unsigned constexpr indexData[]
@@ -252,7 +266,7 @@ int main()
 		.StructureByteStride = 0
 	};
 
-	D3D11_SUBRESOURCE_DATA constexpr indexSubresourceData
+	D3D11_SUBRESOURCE_DATA const indexSubresourceData
 	{
 		.pSysMem = indexData,
 		.SysMemPitch = 0,
@@ -260,7 +274,8 @@ int main()
 	};
 
 	ComPtr<ID3D11Buffer> indexBuffer;
-	assert(SUCCEEDED(d3dDevice->CreateBuffer(&indexBufferDesc, &indexSubresourceData, indexBuffer.GetAddressOf())));
+	hresult = d3dDevice->CreateBuffer(&indexBufferDesc, &indexSubresourceData, indexBuffer.GetAddressOf());
+	assert(SUCCEEDED(hresult));
 	d3dDeviceContext->IASetIndexBuffer(indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 
 	D3D11_BUFFER_DESC constexpr cbufferDesc
@@ -274,7 +289,8 @@ int main()
 	};
 
 	ComPtr<ID3D11Buffer> cbuffer;
-	assert(SUCCEEDED(d3dDevice->CreateBuffer(&cbufferDesc, nullptr, cbuffer.GetAddressOf())));
+	hresult = d3dDevice->CreateBuffer(&cbufferDesc, nullptr, cbuffer.GetAddressOf());
+	assert(SUCCEEDED(hresult));
 	d3dDeviceContext->VSSetConstantBuffers(0, 1, cbuffer.GetAddressOf());
 
 	D3D11_RASTERIZER_DESC constexpr rasterizerDesc
@@ -292,7 +308,8 @@ int main()
 	};
 
 	ComPtr<ID3D11RasterizerState> rasterizerState;
-	assert(SUCCEEDED(d3dDevice->CreateRasterizerState(&rasterizerDesc, rasterizerState.GetAddressOf())));
+	hresult = d3dDevice->CreateRasterizerState(&rasterizerDesc, rasterizerState.GetAddressOf());
+	assert(SUCCEEDED(hresult));
 	d3dDeviceContext->RSSetState(rasterizerState.Get());
 
 	D3D11_VIEWPORT constexpr viewPort
@@ -358,7 +375,7 @@ int main()
 			DispatchMessageW(&msg);
 		}
 
-		auto numObj = get_num_positions();
+		auto numObj = static_cast<UINT>(get_num_positions());
 
 		if (numObj == 0)
 		{
