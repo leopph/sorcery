@@ -10,8 +10,13 @@
 #include <mono/metadata/assembly.h>
 #include <mono/metadata/debug-helpers.h>
 
+#ifdef NDEBUG
 #include "CubeVertexShader.h"
 #include "CubePixelShader.h"
+#else
+#include "CubeVertexShaderDebug.h"
+#include "CubePixelShaderDebug.h"
+#endif
 
 #include <array>
 #include <cassert>
