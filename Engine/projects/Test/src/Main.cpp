@@ -51,7 +51,7 @@ int main()
 		.cbWndExtra = 0,
 		.hInstance = GetModuleHandleW(0),
 		.hIcon = nullptr,
-		.hCursor = nullptr,
+		.hCursor = LoadCursorW(nullptr, IDC_ARROW),
 		.hbrBackground = nullptr,
 		.lpszMenuName = nullptr,
 		.lpszClassName = L"MyWindow",
@@ -63,7 +63,7 @@ int main()
 		return -1;
 	}
 
-	auto const hwnd = CreateWindowExW(0, wndClass.lpszClassName, L"MyWindow", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, WINDOW_WIDTH, WINDOW_HEIGHT, nullptr, nullptr, wndClass.hInstance, 0);
+	auto const hwnd = CreateWindowExW(0, wndClass.lpszClassName, L"MyWindow", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, WINDOW_WIDTH, WINDOW_HEIGHT, nullptr, nullptr, wndClass.hInstance, nullptr);
 
 	if (!hwnd)
 	{
