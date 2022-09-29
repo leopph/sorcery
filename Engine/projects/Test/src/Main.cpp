@@ -296,8 +296,8 @@ int main()
 	D3D11_RASTERIZER_DESC constexpr rasterizerDesc
 	{
 		.FillMode = D3D11_FILL_SOLID,
-		.CullMode = D3D11_CULL_NONE,
-		.FrontCounterClockwise = FALSE,
+		.CullMode = D3D11_CULL_BACK,
+		.FrontCounterClockwise = TRUE,
 		.DepthBias = 0,
 		.DepthBiasClamp = 0,
 		.SlopeScaledDepthBias = 0,
@@ -411,10 +411,10 @@ int main()
 
 LRESULT CALLBACK window_proc(HWND const hwnd, UINT const msg, WPARAM const wparam, LPARAM const lparam)
 {
-	if (msg == WM_DESTROY)
+	if (msg == WM_CLOSE)
 	{
+		DestroyWindow(hwnd);
 		PostQuitMessage(0);
-		return 0;
 	}
 
 	return DefWindowProcW(hwnd, msg, wparam, lparam);
