@@ -1,13 +1,13 @@
 ﻿using leopph;
 using System.Runtime.InteropServices;
 
-class Test
+public class Test
 {
     [DllImport("RuntimeUnmanaged.dll", EntryPoint = "add_position")]
-    private extern static ulong AddPosition(float[] vec);
+    private extern static ulong AddPosition(Vector3 pos);
 
     [DllImport("RuntimeUnmanaged.dll", EntryPoint = "update_position")]
-    private extern static void UpdatePosition(ulong index, float[] vec);
+    private extern static void UpdatePosition(ulong index, Vector3 pos);
 
 
     public Test()
@@ -17,48 +17,52 @@ class Test
 
     private void Update()
     {
-        float deltaPos = 0.5f;
-
-        if (Input.GetKey(Key.Shift))
-        {
-            deltaPos *= 2;
-        }
-        
-        deltaPos *= Time.FrameTime;
+        var posDelta = Vector3.Zero;
 
         if (Input.GetKey(Key.RightArrow))
         {
-            _pos[0] += deltaPos;
+            posDelta += Vector3.Right;
         }
 
         if (Input.GetKey(Key.LeftArrow))
         {
-            _pos[0] -= deltaPos;
+            posDelta += Vector3.Left;
         }
 
         if (Input.GetKey(Key.Space))
         {
-            _pos[1] += deltaPos;
+            posDelta += Vector3.Up;
         }
 
         if (Input.GetKey(Key.Control))
         {
-            _pos[1] -= deltaPos;
+            posDelta += Vector3.Down;
         }
 
         if (Input.GetKey(Key.UpArrow))
         {
-            _pos[2] += deltaPos;
+            posDelta += Vector3.Forward;
         }
 
         if (Input.GetKey(Key.DownArrow))
         {
-            _pos[2] -= deltaPos;
+            posDelta += Vector3.Backward;
         }
+
+        posDelta.Normalize();
+
+        posDelta *= 0.5f;
+
+        if (Input.GetKey(Key.Shift))
+        {
+            posDelta *= 2;
+        }
+
+        _pos += posDelta * Time.FrameTime;
 
         UpdatePosition(_id, _pos);
     }
 
-    private readonly float[] _pos = new float[3] { 0, 0, 0 };
+    private Vector3 _pos = Vector3.Zero;
     private readonly ulong _id;
 }
