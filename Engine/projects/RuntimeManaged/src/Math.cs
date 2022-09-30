@@ -1,4 +1,6 @@
-﻿namespace leopph
+﻿using System.Runtime.InteropServices;
+
+namespace leopph
 {
     public static class Math
     {
@@ -33,9 +35,20 @@
         {
             return (float)System.Math.Cos(number);
         }
+
+        public static float Abs(float number)
+        {
+            return (float)System.Math.Abs(number);
+        }
+
+        public static bool NearlyEqual(float left, float right)
+        {
+            return Abs(left - right) < float.Epsilon;
+        }
     }
 
 
+    [StructLayout(LayoutKind.Sequential)]
     public struct Vector2
     {
         private readonly float[] _data;
@@ -84,10 +97,10 @@
         public static Vector2 operator /(Vector2 left, Vector2 right) => new Vector2(left.X / right.X, left.Y / right.Y);
         public static Vector2 operator /(Vector2 left, float right) => new Vector2(left.X / right, left.Y / right);
 
-        public static bool operator ==(Vector2 left, Vector2 right) => left.X == right.X && left.Y == right.Y;
+        public static bool operator ==(Vector2 left, Vector2 right) => Math.NearlyEqual(left.X, right.X) && Math.NearlyEqual(left.Y, right.Y);
         public static bool operator !=(Vector2 left, Vector2 right) => !(left == right);
 
-        public override bool Equals(object other) => other is Vector2 && this == (Vector2)other;
+        public override bool Equals(object other) => other is Vector2 vector && _data[0] == vector._data[0] && _data[1] == vector._data[1] && _data[2] == vector._data[2];
 
         public static explicit operator Vector3(Vector2 vec) => new Vector3(vec.X, vec.Y, 0);
         public static explicit operator Vector4(Vector2 vec) => new Vector4(vec.X, vec.Y, 0, 1);
@@ -97,8 +110,18 @@
         public Vector2 Normalize()
         {
             var lngth = Length;
-            X /= lngth;
-            Y /= lngth;
+
+            if (Math.NearlyEqual(lngth, 0))
+            {
+                _data[0] = 0;
+                _data[1] = 0;
+            }
+            else
+            {
+                _data[0] /= lngth;
+                _data[1] /= lngth;
+            }
+
             return this;
         }
 
@@ -106,12 +129,14 @@
     }
 
 
-    public class Vector3
+    [StructLayout(LayoutKind.Sequential)]
+    public struct Vector3
     {
-        private readonly float[] _data = new float[3];
+        private readonly float[] _data;
 
         public Vector3(float x = 0, float y = 0, float z = 0)
         {
+            _data = new float[3];
             _data[0] = x;
             _data[1] = y;
             _data[2] = z;
@@ -122,7 +147,7 @@
         public static Vector3 Up => new Vector3(0, 1, 0);
         public static Vector3 Down => new Vector3(0, -1, 0);
         public static Vector3 Forward => new Vector3(0, 0, 1);
-        public static Vector3 Back => new Vector3(0, 0, -1);
+        public static Vector3 Backward => new Vector3(0, 0, -1);
         public static Vector3 Zero => new Vector3(0, 0, 0);
         public static Vector3 One => new Vector3(1, 1, 1);
 
@@ -162,10 +187,10 @@
         public static Vector3 operator /(Vector3 left, Vector3 right) => new Vector3(left.X / right.X, left.Y / right.Y, left.Z / right.Z);
         public static Vector3 operator /(Vector3 left, float right) => new Vector3(left.X / right, left.Y / right, left.Z / right);
 
-        public static bool operator ==(Vector3 left, Vector3 right) => left.X == right.X && left.Y == right.Y && left.Z == right.Z;
+        public static bool operator ==(Vector3 left, Vector3 right) => Math.NearlyEqual(left.X, right.X) && Math.NearlyEqual(left.Y, right.Y) && Math.NearlyEqual(left.Z, right.Z);
         public static bool operator !=(Vector3 left, Vector3 right) => !(left == right);
 
-        public override bool Equals(object other) => other is Vector3 && this == (Vector3)other;
+        public override bool Equals(object other) => other is Vector3 vector && _data[0] == vector._data[0] && _data[1] == vector._data[1] && _data[2] == vector._data[2];
 
         public static explicit operator Vector2(Vector3 vec) => new Vector2(vec.X, vec.Y);
         public static explicit operator Vector4(Vector3 vec) => new Vector4(vec.X, vec.Y, 0, 1);
@@ -175,9 +200,20 @@
         public Vector3 Normalize()
         {
             var lngth = length;
-            X /= lngth;
-            Y /= lngth;
-            Z /= lngth;
+
+            if (Math.NearlyEqual(lngth, 0))
+            {
+                _data[0] = 0;
+                _data[1] = 0;
+                _data[2] = 0;
+            }
+            else
+            {
+                _data[0] /= lngth;
+                _data[1] /= lngth;
+                _data[2] /= lngth;
+            }
+
             return this;
         }
 
@@ -185,12 +221,14 @@
     }
 
 
-    public class Vector4
+    [StructLayout(LayoutKind.Sequential)]
+    public struct Vector4
     {
-        private readonly float[] _data = new float[4];
+        private readonly float[] _data;
 
         public Vector4(float x = 0, float y = 0, float z = 0, float w = 1)
         {
+            _data = new float[4];
             _data[0] = x;
             _data[1] = y;
             _data[2] = z;
@@ -239,10 +277,10 @@
         public static Vector4 operator /(Vector4 left, Vector4 right) => new Vector4(left.X / right.X, left.Y / right.Y, left.Z / right.Z, left.W / right.W);
         public static Vector4 operator /(Vector4 left, float right) => new Vector4(left.X / right, left.Y / right, left.Z / right, left.W / right);
 
-        public static bool operator ==(Vector4 left, Vector4 right) => left.X == right.X && left.Y == right.Y && left.Z == right.Z && left.W == right.W;
+        public static bool operator ==(Vector4 left, Vector4 right) => Math.NearlyEqual(left.X, right.X) && Math.NearlyEqual(left.Y, right.Y) && Math.NearlyEqual(left.Z, right.Z) && Math.NearlyEqual(left.W, right.W);
         public static bool operator !=(Vector4 left, Vector4 right) => !(left == right);
 
-        public override bool Equals(object other) => other is Vector4 && this == (Vector4)other;
+        public override bool Equals(object other) => other is Vector4 vector && _data[0] == vector._data[0] && _data[1] == vector._data[1] && _data[2] == vector._data[2] && _data[3] == vector._data[3];
 
         public static explicit operator Vector2(Vector4 vec) => new Vector2(vec.X, vec.Y);
         public static explicit operator Vector3(Vector4 vec) => new Vector3(vec.X, vec.Y, vec.Z);
@@ -252,10 +290,22 @@
         public Vector4 Normalize()
         {
             var lngth = length;
-            X /= lngth;
-            Y /= lngth;
-            Z /= lngth;
-            W /= lngth;
+
+            if (Math.NearlyEqual(lngth, 0))
+            {
+                _data[0] = 0;
+                _data[1] = 0;
+                _data[2] = 0;
+                _data[3] = 0;
+            }
+            else
+            {
+                _data[0] /= lngth;
+                _data[1] /= lngth;
+                _data[2] /= lngth;
+                _data[3] /= lngth;
+            }
+
             return this;
         }
 
@@ -263,6 +313,7 @@
     }
 
 
+    [StructLayout(LayoutKind.Sequential)]
     public struct Matrix3
     {
         public Matrix3(float e00 = 1, float e01 = 0, float e02 = 0, float e10 = 0, float e11 = 1, float e12 = 0, float e20 = 0, float e21 = 0, float e22 = 1)
@@ -291,6 +342,7 @@
     }
 
 
+    [StructLayout(LayoutKind.Sequential)]
     public struct Matrix4
     {
         public Matrix4(float e00 = 1, float e01 = 0, float e02 = 0, float e03 = 0, float e10 = 0, float e11 = 1, float e12 = 0, float e13 = 0, float e20 = 0, float e21 = 0, float e22 = 1, float e23 = 0, float e30 = 0, float e31 = 0, float e32 = 0, float e33 = 1)
@@ -326,6 +378,7 @@
     }
 
 
+    [StructLayout(LayoutKind.Sequential)]
     public struct Quaternion
     {
         private readonly float[] _data;
