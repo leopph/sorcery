@@ -21,6 +21,7 @@
 #include <array>
 #include <cassert>
 #include <cstdio>
+#include <chrono>
 
 #define DllImport __declspec(dllimport)
 
@@ -36,6 +37,8 @@ extern "C"
 {
 	DllImport Vec3f const* get_positions();
 	DllImport std::size_t get_num_positions();
+	DllImport void update_keyboard_state(unsigned char const* newState);
+	DllImport void set_frame_time(float seconds);
 }
 
 LRESULT CALLBACK window_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
@@ -240,14 +243,14 @@ int main()
 		0, 1, 2,
 		2, 3, 0,
 		// Bottom face
-		4, 5, 6,
-		6, 7, 4,
+		7, 6, 5,
+		5, 4, 7,
 		// Front face
 		2, 6, 7,
 		7, 3, 2,
 		// Back face
-		0, 1, 5,
-		5, 4, 0,
+		0, 4, 5,
+		5, 1, 0,
 		// Right face
 		0, 3, 7,
 		7, 4, 0,
@@ -323,7 +326,9 @@ int main()
 	};
 	d3dDeviceContext->RSSetViewports(1, &viewPort);
 
-	auto viewMat = DirectX::XMMatrixLookAtLH({0, 0, 0}, {0, 0, 1}, {0, 1, 0});
+	DirectX::XMVECTOR const camPos{0, 0, -2};
+	DirectX::XMVECTOR const camTarget{0, 0, 1};
+	auto viewMat = DirectX::XMMatrixLookAtLH(camPos, camTarget, {0, 1, 0});
 	auto projMat = DirectX::XMMatrixPerspectiveFovLH(DirectX::XMConvertToRadians(90), static_cast<float>(WINDOW_WIDTH) / WINDOW_HEIGHT, 0.3f, 100.f);
 	auto viewProjMat = viewMat * projMat;
 
@@ -341,24 +346,25 @@ int main()
 	auto* const monoImage = mono_assembly_get_image(monoAssembly);
 	assert(monoImage);
 
-	auto* const monoMethodDesc = mono_method_desc_new("Test:DoTest", false);
-	assert(monoMethodDesc);
+	auto* const monoTestClass = mono_class_from_name(monoImage, "", "Test");
+	assert(monoTestClass);
 
-	auto* const monoKlass = mono_class_from_name(monoImage, "", "Test");
-	assert(monoKlass);
+	auto* const monoTestInstance = mono_object_new(monoDomain, monoTestClass);
+	assert(monoTestInstance);
 
-	auto* const monoMethod = mono_method_desc_search_in_class(monoMethodDesc, monoKlass);
-	assert(monoMethod);
+	mono_runtime_object_init(monoTestInstance);
 
-	MonoObject* exception;
-	mono_runtime_invoke(monoMethod, nullptr, nullptr, &exception);
+	auto* const monoUpdateMethodDesc = mono_method_desc_new("Test:Update", false);
+	assert(monoUpdateMethodDesc);
 
-	if (exception)
-	{
-		mono_print_unhandled_exception(exception);
-	}
+	auto* const monoUpdateMethod = mono_method_desc_search_in_class(monoUpdateMethodDesc, monoTestClass);
+	assert(monoUpdateMethod);
+
+	BYTE keyboardState[256];
 
 	ShowWindow(hwnd, SW_SHOWDEFAULT);
+
+	auto lastTimePoint = std::chrono::steady_clock::now();
 
 	while (true)
 	{
@@ -373,6 +379,18 @@ int main()
 
 			TranslateMessage(&msg);
 			DispatchMessageW(&msg);
+		}
+
+		auto const success = GetKeyboardState(keyboardState);
+		assert(success);
+		update_keyboard_state(keyboardState);
+
+		MonoObject* exception;
+		mono_runtime_invoke(monoUpdateMethod, monoTestInstance, nullptr, &exception);
+
+		if (exception)
+		{
+			mono_print_unhandled_exception(exception);
 		}
 
 		auto numObj = static_cast<UINT>(get_num_positions());
@@ -405,6 +423,11 @@ int main()
 		d3dDeviceContext->DrawIndexedInstanced(ARRAYSIZE(indexData), numObj, 0, 0, 0);
 
 		dxgiSwapChain1->Present(0, 0);
+
+		auto const now = std::chrono::steady_clock::now();
+		auto const timeDelta = now - lastTimePoint;
+		set_frame_time(std::chrono::duration_cast<std::chrono::duration<float, std::ratio<1, 1>>>(timeDelta).count());
+		lastTimePoint = now;
 	}
 }
 
