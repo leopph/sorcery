@@ -336,33 +336,58 @@ int main()
 	auto* const monoImage = mono_assembly_get_image(monoAssembly);
 	assert(monoImage);
 
-	auto* const monoCubeClass = mono_class_from_name(monoImage, "", "Cube");
-	assert(monoCubeClass);
+	struct MonoDynamicNodeInstance
+	{
+		MonoObject* instance;
+		MonoMethod* tickMethod;
+	};
 
-	auto* const monoCubeInstance = mono_object_new(monoDomain, monoCubeClass);
-	assert(monoCubeInstance);
+	std::vector<MonoDynamicNodeInstance> monoDynamicNodeInstances;
 
-	mono_runtime_object_init(monoCubeInstance);
+	{
+		MonoClass* const monoDynamicNodeClass = mono_class_from_name(monoImage, "leopph", "MonoDynamicNode");
+		assert(monoDynamicNodeClass);
 
-	auto* const monoCubeUpdateMethodDesc = mono_method_desc_new("Cube:Update", false);
-	assert(monoCubeUpdateMethodDesc);
+		MonoTableInfo const* const monoTableInfo = mono_image_get_table_info(monoImage, MONO_TABLE_TYPEDEF);
+		int const numMonoTableRows = mono_table_info_get_rows(monoTableInfo);
 
-	auto* const monoCubeUpdateMethod = mono_method_desc_search_in_class(monoCubeUpdateMethodDesc, monoCubeClass);
-	assert(monoCubeUpdateMethod);
+		for (int i = 0; i < numMonoTableRows; i++)
+		{
+			unsigned cols[MONO_TYPEDEF_SIZE];
+			mono_metadata_decode_row(monoTableInfo, i, cols, MONO_TYPEDEF_SIZE);
 
-	auto* const monoCamClass = mono_class_from_name(monoImage, "", "Camera");
-	assert(monoCubeClass);
+			char const* const monoClassName = mono_metadata_string_heap(monoImage, cols[MONO_TYPEDEF_NAME]);
+			assert(monoClassName);
 
-	auto* const monoCamInstance = mono_object_new(monoDomain, monoCamClass);
-	assert(monoCamInstance);
+			char const* const monoClassNameSpace = mono_metadata_string_heap(monoImage, cols[MONO_TYPEDEF_NAMESPACE]);
+			assert(monoClassNameSpace);
 
-	mono_runtime_object_init(monoCamInstance);
+			MonoClass* monoClass = mono_class_from_name(monoImage, monoClassNameSpace, monoClassName);
+			assert(monoClass);
 
-	auto* const monoCamUpdateMethodDesc = mono_method_desc_new("Camera::Update", false);
-	assert(monoCamUpdateMethodDesc);
+			if (mono_class_is_subclass_of(monoClass, monoDynamicNodeClass, false))
+			{
+				if (MonoMethod* monoTickMethod = mono_class_get_method_from_name(monoClass, "Tick", 0))
+				{
+					MonoObject* monoInstance = mono_object_new(monoDomain, monoClass);
+					assert(monoInstance);
 
-	auto* const monoCamUpdateMethod = mono_method_desc_search_in_class(monoCamUpdateMethodDesc, monoCamClass);
-	assert(monoCamUpdateMethod);
+					if (MonoMethod* monoDefaultConstructor = mono_class_get_method_from_name(monoClass, ".ctor", 0))
+					{
+						MonoObject* monoException;
+						mono_runtime_invoke(monoDefaultConstructor, monoInstance, nullptr, &monoException);
+
+						if (monoException)
+						{
+							mono_print_unhandled_exception(monoException);
+						}
+					}
+
+					monoDynamicNodeInstances.emplace_back(monoInstance, monoTickMethod);
+				}
+			}
+		}
+	}
 
 	BYTE keyboardState[256];
 
@@ -389,19 +414,15 @@ int main()
 		assert(success);
 		update_keyboard_state(keyboardState);
 
-		MonoObject* exception;
-		mono_runtime_invoke(monoCubeUpdateMethod, monoCubeInstance, nullptr, &exception);
-
-		if (exception)
+		for (auto& [instance, tickMethod] : monoDynamicNodeInstances)
 		{
-			mono_print_unhandled_exception(exception);
-		}
+			MonoObject* exception;
+			mono_runtime_invoke(tickMethod, instance, nullptr, &exception);
 
-		mono_runtime_invoke(monoCamUpdateMethod, monoCamInstance, nullptr, &exception);
-
-		if (exception)
-		{
-			mono_print_unhandled_exception(exception);
+			if (exception)
+			{
+				mono_print_unhandled_exception(exception);
+			}
 		}
 
 		auto numObj = static_cast<UINT>(get_num_positions());

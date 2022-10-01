@@ -15,7 +15,7 @@ public class Cube : MonoDynamicNode
         _id = AddPosition(_pos);
     }
 
-    private void Update()
+    private void Tick()
     {
         var posDelta = Vector3.Zero;
 
@@ -77,7 +77,7 @@ public class Camera : MonoDynamicNode
         SetCamPos(_pos);
     }
 
-    private void Update()
+    private void Tick()
     {
         var posDelta = Vector3.Zero;
 
