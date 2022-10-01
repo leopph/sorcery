@@ -1,8 +1,7 @@
 ﻿using leopph;
 using System.Runtime.InteropServices;
-using System.Security.Cryptography;
 
-public class Cube
+public class Cube : MonoDynamicNode
 {
     [DllImport("RuntimeUnmanaged.dll", EntryPoint = "add_position")]
     private extern static ulong AddPosition(Vector3 pos);
@@ -68,7 +67,7 @@ public class Cube
     private readonly ulong _id;
 }
 
-public class Camera
+public class Camera : MonoDynamicNode
 {
     [DllImport("RuntimeUnmanaged.dll", EntryPoint = "set_cam_pos")]
     private static extern void SetCamPos(Vector3 pos);
