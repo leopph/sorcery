@@ -39,6 +39,7 @@ extern "C"
 	DllImport std::size_t get_num_positions();
 	DllImport void update_keyboard_state(unsigned char const* newState);
 	DllImport void set_frame_time(float seconds);
+	DllImport float const* get_cam_pos();
 }
 
 LRESULT CALLBACK window_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
@@ -326,17 +327,6 @@ int main()
 	};
 	d3dDeviceContext->RSSetViewports(1, &viewPort);
 
-	DirectX::XMVECTOR const camPos{0, 0, -2};
-	DirectX::XMVECTOR const camTarget{0, 0, 1};
-	auto viewMat = DirectX::XMMatrixLookAtLH(camPos, camTarget, {0, 1, 0});
-	auto projMat = DirectX::XMMatrixPerspectiveFovLH(DirectX::XMConvertToRadians(90), static_cast<float>(WINDOW_WIDTH) / WINDOW_HEIGHT, 0.3f, 100.f);
-	auto viewProjMat = viewMat * projMat;
-
-	D3D11_MAPPED_SUBRESOURCE mappedCbuffer;
-	d3dDeviceContext->Map(cbuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedCbuffer);
-	DirectX::XMStoreFloat4x4(static_cast<DirectX::XMFLOAT4X4*>(mappedCbuffer.pData), viewProjMat);
-	d3dDeviceContext->Unmap(cbuffer.Get(), 0);
-
 	auto* const monoDomain = mono_jit_init("leopph");
 	assert(monoDomain);
 
@@ -346,19 +336,33 @@ int main()
 	auto* const monoImage = mono_assembly_get_image(monoAssembly);
 	assert(monoImage);
 
-	auto* const monoTestClass = mono_class_from_name(monoImage, "", "Test");
-	assert(monoTestClass);
+	auto* const monoCubeClass = mono_class_from_name(monoImage, "", "Cube");
+	assert(monoCubeClass);
 
-	auto* const monoTestInstance = mono_object_new(monoDomain, monoTestClass);
-	assert(monoTestInstance);
+	auto* const monoCubeInstance = mono_object_new(monoDomain, monoCubeClass);
+	assert(monoCubeInstance);
 
-	mono_runtime_object_init(monoTestInstance);
+	mono_runtime_object_init(monoCubeInstance);
 
-	auto* const monoUpdateMethodDesc = mono_method_desc_new("Test:Update", false);
-	assert(monoUpdateMethodDesc);
+	auto* const monoCubeUpdateMethodDesc = mono_method_desc_new("Cube:Update", false);
+	assert(monoCubeUpdateMethodDesc);
 
-	auto* const monoUpdateMethod = mono_method_desc_search_in_class(monoUpdateMethodDesc, monoTestClass);
-	assert(monoUpdateMethod);
+	auto* const monoCubeUpdateMethod = mono_method_desc_search_in_class(monoCubeUpdateMethodDesc, monoCubeClass);
+	assert(monoCubeUpdateMethod);
+
+	auto* const monoCamClass = mono_class_from_name(monoImage, "", "Camera");
+	assert(monoCubeClass);
+
+	auto* const monoCamInstance = mono_object_new(monoDomain, monoCamClass);
+	assert(monoCamInstance);
+
+	mono_runtime_object_init(monoCamInstance);
+
+	auto* const monoCamUpdateMethodDesc = mono_method_desc_new("Camera::Update", false);
+	assert(monoCamUpdateMethodDesc);
+
+	auto* const monoCamUpdateMethod = mono_method_desc_search_in_class(monoCamUpdateMethodDesc, monoCamClass);
+	assert(monoCamUpdateMethod);
 
 	BYTE keyboardState[256];
 
@@ -386,7 +390,14 @@ int main()
 		update_keyboard_state(keyboardState);
 
 		MonoObject* exception;
-		mono_runtime_invoke(monoUpdateMethod, monoTestInstance, nullptr, &exception);
+		mono_runtime_invoke(monoCubeUpdateMethod, monoCubeInstance, nullptr, &exception);
+
+		if (exception)
+		{
+			mono_print_unhandled_exception(exception);
+		}
+
+		mono_runtime_invoke(monoCamUpdateMethod, monoCamInstance, nullptr, &exception);
 
 		if (exception)
 		{
@@ -415,6 +426,19 @@ int main()
 		}
 
 		d3dDeviceContext->Unmap(positionBuffer.Get(), 0);
+
+		DirectX::XMFLOAT3 const camPos{get_cam_pos()};
+		DirectX::XMFLOAT3 const forward{0, 0, 1};
+		auto const loadedCamPos = DirectX::XMLoadFloat3(&camPos);
+		auto const loadedCamTarget = DirectX::XMVectorAdd(DirectX::XMLoadFloat3(&forward), loadedCamPos);
+		auto viewMat = DirectX::XMMatrixLookAtLH(loadedCamPos, loadedCamTarget, {0, 1, 0});
+		auto projMat = DirectX::XMMatrixPerspectiveFovLH(DirectX::XMConvertToRadians(90), static_cast<float>(WINDOW_WIDTH) / WINDOW_HEIGHT, 0.3f, 100.f);
+		auto viewProjMat = viewMat * projMat;
+
+		D3D11_MAPPED_SUBRESOURCE mappedCbuffer;
+		d3dDeviceContext->Map(cbuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedCbuffer);
+		DirectX::XMStoreFloat4x4(static_cast<DirectX::XMFLOAT4X4*>(mappedCbuffer.pData), viewProjMat);
+		d3dDeviceContext->Unmap(cbuffer.Get(), 0);
 
 		FLOAT clearColor[]{0.5f, 0, 1, 1};
 		d3dDeviceContext->ClearRenderTargetView(backBufRtv.Get(), clearColor);

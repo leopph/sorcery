@@ -6,14 +6,15 @@
 
 using Vec3f = std::array<float, 3>;
 
-static std::vector<Vec3f> gPositions;
-static std::array<unsigned char, 256> gKeyboardState{};
-static float gLastFrameTimeSeconds{0};
-
 unsigned char constexpr KEY_NEUTRAL = 0;
 unsigned char constexpr KEY_DOWN = 1;
 unsigned char constexpr KEY_HELD = 2;
 unsigned char constexpr KEY_UP = 3;
+
+static std::vector<Vec3f> gPositions;
+static std::array<unsigned char, 256> gKeyboardState{};
+static float gLastFrameTimeSeconds{0};
+static Vec3f gCamPos{0, 0, 0};
 
 extern "C"
 {
@@ -91,5 +92,15 @@ extern "C"
 	DllExport void set_frame_time(float seconds)
 	{
 		gLastFrameTimeSeconds = seconds;
+	}
+
+	DllExport void set_cam_pos(float* pos)
+	{
+		std::memcpy(gCamPos.data(), pos, sizeof Vec3f);
+	}
+
+	DllExport float const* get_cam_pos()
+	{
+		return gCamPos.data();
 	}
 }
