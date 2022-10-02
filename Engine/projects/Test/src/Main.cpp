@@ -18,30 +18,20 @@
 #include "CubePixelShaderDebug.h"
 #endif
 
+#include <RuntimeUnmanaged.hpp>
+
 #include <array>
 #include <cassert>
 #include <cstdio>
 #include <chrono>
-
-#define DllImport __declspec(dllimport)
+#include <vector>
 
 using Microsoft::WRL::ComPtr;
-using Vec3f = std::array<float, 3>;
 
 
 auto constexpr WINDOW_WIDTH = 1280;
 auto constexpr WINDOW_HEIGHT = 720;
 auto constexpr MAX_OBJECTS = 10;
-
-
-extern "C"
-{
-	DllImport Vec3f const* get_positions();
-	DllImport std::size_t get_num_positions();
-	DllImport void update_keyboard_state(unsigned char const* newState);
-	DllImport void set_frame_time(float seconds);
-	DllImport float const* get_cam_pos();
-}
 
 
 class MonoDynamicNodeInstance
@@ -474,30 +464,28 @@ int main()
 			instance.tick();
 		}
 
-		auto numObj = static_cast<UINT>(get_num_positions());
+		std::vector<Vector3> const& positions = *get_positions();
 
-		if (numObj == 0)
+		if (positions.empty())
 		{
 			continue;
 		}
 
-		numObj = numObj > MAX_OBJECTS ? MAX_OBJECTS : numObj;
+		std::size_t const numObj{positions.size() > MAX_OBJECTS ? MAX_OBJECTS : positions.size()};
 
 		D3D11_MAPPED_SUBRESOURCE mappedPosBuffer;
 		d3dDeviceContext->Map(positionBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPosBuffer);
 		auto* mappedPosBufferData = static_cast<DirectX::XMFLOAT3*>(mappedPosBuffer.pData);
 
-		auto const* positions = get_positions();
-
-		for (int i = 0; i < MAX_OBJECTS; i++)
+		for (int i = 0; i < numObj; i++)
 		{
-			DirectX::XMFLOAT3 posData{positions[i].data()};
+			DirectX::XMFLOAT3 posData{reinterpret_cast<float const*>(&positions[i])};
 			DirectX::XMStoreFloat3(mappedPosBufferData + i, DirectX::XMLoadFloat3({&posData}));
 		}
 
 		d3dDeviceContext->Unmap(positionBuffer.Get(), 0);
 
-		DirectX::XMFLOAT3 const camPos{get_cam_pos()};
+		DirectX::XMFLOAT3 const camPos{reinterpret_cast<float const*>(get_cam_pos())};
 		DirectX::XMFLOAT3 const forward{0, 0, 1};
 		auto const loadedCamPos = DirectX::XMLoadFloat3(&camPos);
 		auto const loadedCamTarget = DirectX::XMVectorAdd(DirectX::XMLoadFloat3(&forward), loadedCamPos);
@@ -514,7 +502,7 @@ int main()
 		d3dDeviceContext->ClearRenderTargetView(backBufRtv.Get(), clearColor);
 		d3dDeviceContext->OMSetRenderTargets(1, backBufRtv.GetAddressOf(), nullptr);
 
-		d3dDeviceContext->DrawIndexedInstanced(ARRAYSIZE(indexData), numObj, 0, 0, 0);
+		d3dDeviceContext->DrawIndexedInstanced(ARRAYSIZE(indexData), static_cast<UINT>(numObj), 0, 0, 0);
 
 		dxgiSwapChain1->Present(0, 0);
 

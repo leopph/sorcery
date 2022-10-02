@@ -3,7 +3,7 @@
 namespace leopph
 {
     [StructLayout(LayoutKind.Sequential)]
-    struct Color
+    public struct Color
     {
         private byte _red, _green, _blue, _alpha;
 

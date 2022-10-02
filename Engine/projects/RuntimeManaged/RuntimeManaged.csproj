@@ -43,6 +43,7 @@
   <ItemGroup>
     <Compile Include="src\Color.cs" />
     <Compile Include="src\Input.cs" />
+    <Compile Include="src\Lights.cs" />
     <Compile Include="src\MonoDynamicNode.cs" />
     <Compile Include="src\Node.cs" />
     <Compile Include="src\Math.cs" />

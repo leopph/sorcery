@@ -4,15 +4,15 @@ using System.Runtime.InteropServices;
 public class Cube : MonoDynamicNode
 {
     [DllImport("RuntimeUnmanaged.dll", EntryPoint = "add_position")]
-    private extern static ulong AddPosition(Vector3 pos);
+    private extern static ulong AddPosition(ref Vector3 pos);
 
     [DllImport("RuntimeUnmanaged.dll", EntryPoint = "update_position")]
-    private extern static void UpdatePosition(ulong index, Vector3 pos);
+    private extern static void UpdatePosition(ulong index, ref Vector3 pos);
 
 
     public Cube()
     {
-        _id = AddPosition(_pos);
+        _id = AddPosition(ref _pos);
     }
 
     private void Tick()
@@ -60,7 +60,7 @@ public class Cube : MonoDynamicNode
 
         _pos += posDelta * Time.FrameTime;
 
-        UpdatePosition(_id, _pos);
+        UpdatePosition(_id, ref _pos);
     }
 
     private Vector3 _pos = Vector3.Zero;
@@ -70,11 +70,11 @@ public class Cube : MonoDynamicNode
 public class Camera : MonoDynamicNode
 {
     [DllImport("RuntimeUnmanaged.dll", EntryPoint = "set_cam_pos")]
-    private static extern void SetCamPos(Vector3 pos);
+    private static extern void SetCamPos(ref Vector3 pos);
 
     public Camera()
     {
-        SetCamPos(_pos);
+        SetCamPos(ref _pos);
     }
 
     private void Tick()
@@ -122,14 +122,8 @@ public class Camera : MonoDynamicNode
 
         _pos += posDelta * Time.FrameTime;
 
-        SetCamPos(_pos);
+        SetCamPos(ref _pos);
     }
 
     private Vector3 _pos = new Vector3(0, 0, -2);
-}
-
-
-public class PointLight
-{
-    private Vector3 color;
 }
