@@ -31,7 +31,7 @@ struct Vector4
 
 struct Quaternion
 {
-	float x, y, z, w;
+	float w, x, y, z;
 };
 
 

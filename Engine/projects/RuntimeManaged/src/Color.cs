@@ -1,19 +1,21 @@
-﻿using System.Runtime.InteropServices;
+﻿using System;
 
 namespace leopph
 {
-    [StructLayout(LayoutKind.Sequential)]
     public struct Color
     {
-        private byte _red, _green, _blue, _alpha;
-
         public Color(byte red = 0, byte green = 0, byte blue = 0, byte alpha = 255)
         {
-            _red = red;
-            _green = green;
-            _blue = blue;
-            _alpha = alpha;
+            R = red;
+            G = green;
+            B = blue;
+            A = alpha;
         }
+
+        public byte R { get; set; }
+        public byte G { get; set; }
+        public byte B { get; set; }
+        public byte A { get; set; }
 
         public static Color Black => new Color(0, 0, 0, 255);
         public static Color White => new Color(255, 255, 255, 255);
@@ -24,28 +26,26 @@ namespace leopph
         public static Color Magenta => new Color(255, 0, 255, 255);
         public static Color Yellow => new Color(255, 255, 0, 255);
 
-        public byte R
+        public byte this[int index]
         {
-            get => _red;
-            set => _red = value;
-        }
-
-        public byte G
-        {
-            get => _green;
-            set => _green = value;
-        }
-
-        public byte B
-        {
-            get => _blue;
-            set => _blue = value;
-        }
-
-        public byte A
-        {
-            get => _alpha;
-            set => _alpha = value;
+            get => index switch
+            {
+                0 => R,
+                1 => G,
+                2 => B,
+                3 => A,
+                _ => throw new IndexOutOfRangeException()
+            };
+            set
+            {
+                switch (index)
+                {
+                    case 0: R = value; break;
+                    case 1: G = value; break;
+                    case 2: B = value; break;
+                    default: throw new IndexOutOfRangeException();
+                }
+            }
         }
     }
 }

@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Data;
-using System.Runtime.InteropServices;
 
 namespace leopph
 {
@@ -50,7 +48,6 @@ namespace leopph
     }
 
 
-    [StructLayout(LayoutKind.Sequential)]
     public struct Vector2
     {
         public Vector2(float x = 0, float y = 0)
@@ -59,6 +56,9 @@ namespace leopph
             Y = y;
         }
 
+        public float X { get; set; }
+        public float Y { get; set; }
+
         public static Vector2 Right => new Vector2(1, 0);
         public static Vector2 Left => new Vector2(-1, 0);
         public static Vector2 Up => new Vector2(0, 1);
@@ -66,48 +66,21 @@ namespace leopph
         public static Vector2 Zero => new Vector2(0, 0);
         public static Vector2 One => new Vector2(1, 1);
 
-        public float X { get; set; } 
-        public float Y { get; set; }
-
         public float this[int index]
         {
-            get
+            get => index switch
             {
-                switch (index)
-                {
-                    case 0:
-                    {
-                        return X;
-                    }
-                    case 1:
-                    {
-                        return Y;
-                    }
-                    default:
-                    {
-                        throw new ArgumentOutOfRangeException("index");
-                    }
-                }
-            }
-
+                0 => X,
+                1 => Y,
+                _ => throw new IndexOutOfRangeException()
+            };
             set
             {
                 switch (index)
                 {
-                    case 0:
-                    {
-                        X = value;
-                        return;
-                    }
-                    case 1:
-                    {
-                        Y = value;
-                        return;
-                    }
-                    default:
-                    {
-                        throw new ArgumentOutOfRangeException("index");
-                    }
+                    case 0: X = value; break;
+                    case 1: Y = value; break;
+                    default: throw new IndexOutOfRangeException();
                 }
             }
         }
@@ -156,7 +129,6 @@ namespace leopph
     }
 
 
-    [StructLayout(LayoutKind.Sequential)]
     public struct Vector3
     {
         public Vector3(float x = 0, float y = 0, float z = 0)
@@ -165,6 +137,10 @@ namespace leopph
             Y = y;
             Z = z;
         }
+
+        public float X { get; set; }
+        public float Y { get; set; }
+        public float Z { get; set; }
 
         public static Vector3 Right => new Vector3(1, 0, 0);
         public static Vector3 Left => new Vector3(-1, 0, 0);
@@ -175,59 +151,23 @@ namespace leopph
         public static Vector3 Zero => new Vector3(0, 0, 0);
         public static Vector3 One => new Vector3(1, 1, 1);
 
-        public float X { get; set; }
-        public float Y { get; set; }
-        public float Z { get; set; }
-
-
         public float this[int index]
         {
-            get
+            get => index switch
             {
-                switch (index)
-                {
-                    case 0:
-                    {
-                        return X;
-                    }
-                    case 1:
-                    {
-                        return Y;
-                    }
-                    case 2:
-                    {
-                        return Z;
-                    }
-                    default:
-                    {
-                        throw new ArgumentOutOfRangeException("index");
-                    }
-                }
-            }
-
+                0 => X,
+                1 => Y,
+                2 => Z,
+                _ => throw new IndexOutOfRangeException()
+            };
             set
             {
                 switch (index)
                 {
-                    case 0:
-                    {
-                        X = value;
-                        return;
-                    }
-                    case 1:
-                    {
-                        Y = value;
-                        return;
-                    }
-                    case 2:
-                    {
-                        Z = value;
-                        return;
-                    }
-                    default:
-                    {
-                        throw new ArgumentOutOfRangeException("index");
-                    }
+                    case 0: X = value; break;
+                    case 1: Y = value; break;
+                    case 2: Z = value; break;
+                    default: throw new IndexOutOfRangeException();
                 }
             }
         }
@@ -278,7 +218,6 @@ namespace leopph
     }
 
 
-    [StructLayout(LayoutKind.Sequential)]
     public struct Vector4
     {
         public Vector4(float x = 0, float y = 0, float z = 0, float w = 1)
@@ -296,61 +235,23 @@ namespace leopph
 
         public float this[int index]
         {
-            get
+            get => index switch
             {
-                switch (index)
-                {
-                    case 0:
-                    {
-                        return X;
-                    }
-                    case 1:
-                    {
-                        return Y;
-                    }
-                    case 2:
-                    {
-                        return Z;
-                    }
-                    case 3:
-                    {
-                        return W;
-                    }
-                    default:
-                    {
-                        throw new ArgumentOutOfRangeException("index");
-                    }
-                }
-            }
-
+                0 => X,
+                1 => Y,
+                2 => Z,
+                3 => W,
+                _ => throw new IndexOutOfRangeException()
+            };
             set
             {
                 switch (index)
                 {
-                    case 0:
-                    {
-                        X = value;
-                        return;
-                    }
-                    case 1:
-                    {
-                        Y = value;
-                        return;
-                    }
-                    case 2:
-                    {
-                        Z = value;
-                        return;
-                    }
-                    case 3:
-                    {
-                        W = value;
-                        return;
-                    }
-                    default:
-                    {
-                        throw new ArgumentOutOfRangeException("index");
-                    }
+                    case 0: X = value; break;
+                    case 1: Y = value; break;
+                    case 2: Z = value; break;
+                    case 3: W = value; break;
+                    default: throw new IndexOutOfRangeException();
                 }
             }
         }
@@ -375,11 +276,11 @@ namespace leopph
         public static explicit operator Vector2(Vector4 vec) => new Vector2(vec.X, vec.Y);
         public static explicit operator Vector3(Vector4 vec) => new Vector3(vec.X, vec.Y, vec.Z);
 
-        public float length => Math.Sqrt(Math.Pow(X, 2) + Math.Pow(Y, 2) + Math.Pow(Z, 2) + Math.Pow(W, 2));
+        public float Length => Math.Sqrt(Math.Pow(X, 2) + Math.Pow(Y, 2) + Math.Pow(Z, 2) + Math.Pow(W, 2));
 
         public Vector4 Normalize()
         {
-            var lngth = length;
+            var lngth = Length;
 
             if (Math.NearlyEqual(lngth, 0))
             {
@@ -403,7 +304,6 @@ namespace leopph
     }
 
 
-    [StructLayout(LayoutKind.Sequential)]
     public struct Matrix3
     {
         public Matrix3(float e00 = 1, float e01 = 0, float e02 = 0, float e10 = 0, float e11 = 1, float e12 = 0, float e20 = 0, float e21 = 0, float e22 = 1)
@@ -413,65 +313,33 @@ namespace leopph
             _2 = new Vector3(e20, e21, e22);
         }
 
-        public static Matrix3 Identity => new Matrix3(1, 0, 0, 0, 1, 0, 0, 0, 1);
-
         public float this[int row, int column]
         {
-            get
+            get => row switch
             {
-                switch (row)
-                {
-                    case 0:
-                    {
-                        return _0[column];
-                    }
-                    case 1:
-                    {
-                        return _1[column];
-                    }
-                    case 2:
-                    {
-                        return _2[column];
-                    }
-                    default:
-                    {
-                        throw new ArgumentOutOfRangeException("row");
-                    }
-                }
-            }
-
+                0 => _0[column],
+                1 => _1[column],
+                2 => _2[column],
+                _ => throw new IndexOutOfRangeException()
+            };
             set
             {
                 switch (row)
                 {
-                    case 0:
-                    {
-                        _0[column] = value;
-                        return;
-                    }
-                    case 1:
-                    {
-                        _1[column] = value;
-                        return;
-                    }
-                    case 2:
-                    {
-                        _2[column] = value;
-                        return;
-                    }
-                    default:
-                    {
-                        throw new ArgumentOutOfRangeException("row");
-                    }
+                    case 0: _0[column] = value; break;
+                    case 1: _1[column] = value; break;
+                    case 2: _2[column] = value; break;
+                    default: throw new IndexOutOfRangeException();
                 }
             }
         }
+
+        public static Matrix3 Identity => new Matrix3(1, 0, 0, 0, 1, 0, 0, 0, 1);
 
         private Vector3 _0, _1, _2;
     }
 
 
-    [StructLayout(LayoutKind.Sequential)]
     public struct Matrix4
     {
         public Matrix4(float e00 = 1, float e01 = 0, float e02 = 0, float e03 = 0, float e10 = 0, float e11 = 1, float e12 = 0, float e13 = 0, float e20 = 0, float e21 = 0, float e22 = 1, float e23 = 0, float e30 = 0, float e31 = 0, float e32 = 0, float e33 = 1)
@@ -482,81 +350,43 @@ namespace leopph
             _3 = new Vector4(e30, e31, e32, e33);
         }
 
-        public static Matrix4 Identity => new Matrix4(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
-
         public float this[int row, int column]
         {
-            get
+            get => row switch
             {
-                switch (row)
-                {
-                    case 0:
-                    {
-                        return _0[column];
-                    }
-                    case 1:
-                    {
-                        return _1[column];
-                    }
-                    case 2:
-                    {
-                        return _2[column];
-                    }
-                    case 3:
-                    {
-                        return _3[column];
-                    }
-                    default:
-                    {
-                        throw new ArgumentOutOfRangeException("row");
-                    }
-                }
-            }
-
+                0 => _0[column],
+                1 => _1[column],
+                2 => _2[column],
+                3 => _3[column],
+                _ => throw new IndexOutOfRangeException()
+            };
             set
             {
                 switch (row)
                 {
-                    case 0:
-                    {
-                        _0[column] = value;
-                        return;
-                    }
-                    case 1:
-                    {
-                        _1[column] = value;
-                        return;
-                    }
-                    case 2:
-                    {
-                        _2[column] = value;
-                        return;
-                    }
-                    case 3:
-                    {
-                        _3[column] = value;
-                        return;
-                    }
-                    default:
-                    {
-                        throw new ArgumentOutOfRangeException("row");
-                    }
+                    case 0: _0[column] = value; break;
+                    case 1: _1[column] = value; break;
+                    case 2: _2[column] = value; break;
+                    case 3: _3[column] = value; break;
+                    default: throw new IndexOutOfRangeException();
                 }
             }
         }
+
+        public static Matrix4 Identity => new Matrix4(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
 
         private Vector4 _0, _1, _2, _3;
     }
 
 
-    [StructLayout(LayoutKind.Sequential)]
     public struct Quaternion
     {
-        Vector4 _data;
-
-        public Quaternion(float x = 0, float y = 0, float z = 0, float w = 1)
+        public Quaternion(float w = 1, float x = 0, float y = 0, float z = 0)
         {
-            _data = new Vector4(x, y, z, w);
+            W = w;
+            X = x;
+            Y = y;
+            Z = z;
         }
 
         public Quaternion(Vector3 axis, float angleDegrees)
@@ -564,34 +394,41 @@ namespace leopph
             var angleHalfRadians = Math.ToRadians(angleDegrees) / 2.0f;
             var vec = axis.Normalized * Math.Sin(angleHalfRadians);
 
-            _data = new Vector4(vec[0], vec[1], vec[2], Math.Cos(angleHalfRadians));
+            W = Math.Cos(angleHalfRadians);
+            X = vec.X;
+            Y = vec.Y;
+            Z = vec.Z;
+        }
+
+        public float W { get; set; }
+        public float X { get; set; }
+        public float Y { get; set; }
+        public float Z { get; set; }
+
+        public float this[int index]
+        {
+            get => index switch
+            {
+                0 => W,
+                1 => X,
+                2 => Y,
+                3 => Z,
+                _ => throw new IndexOutOfRangeException()
+            };
+            set
+            {
+                switch (index)
+                {
+                    case 0: W = value; break;
+                    case 1: X = value; break;
+                    case 2: Y = value; break;
+                    case 3: Z = value; break;
+                    default: throw new IndexOutOfRangeException();
+                }
+            }
         }
 
         public static Quaternion Identity => new Quaternion(1, 0, 0, 0);
-
-        public float W
-        {
-            get => _data.W;
-            set => _data.W = value;
-        }
-
-        public float X
-        {
-            get => _data.X;
-            set => _data.X = value;
-        }
-
-        public float Y
-        {
-            get => _data.Y;
-            set => _data.Y = value;
-        }
-
-        public float Z
-        {
-            get => _data.Z;
-            set => _data.Z = value;
-        }
 
         public float Norm => Math.Sqrt(Math.Pow(W, 2) + Math.Pow(X, 2) + Math.Pow(Y, 2) + Math.Pow(Z, 3));
 
@@ -636,12 +473,6 @@ namespace leopph
             var y = left.W * right.Y - left.X * right.Z + left.Y * right.W + left.Z * right.X;
             var z = left.W * right.Z + left.X * right.Y - left.Y * right.X + left.Z * right.W;
             return new Quaternion(w, x, y, z);
-        }
-
-        public float this[int index]
-        {
-            get => _data[index];
-            set => _data[index] = value;
         }
     }
 }
