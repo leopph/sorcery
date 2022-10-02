@@ -338,8 +338,22 @@ int main()
 
 	struct MonoDynamicNodeInstance
 	{
-		MonoObject* instance;
-		MonoMethod* tickMethod;
+		MonoObject* const instance;
+		unsigned const gcHandle;
+		MonoMethod* const tickMethod;
+
+		MonoDynamicNodeInstance(MonoObject* instance, unsigned gcHandle, MonoMethod* tickMethod) :
+			instance{instance}, gcHandle{gcHandle}, tickMethod{tickMethod}
+		{
+			assert(instance);
+			assert(gcHandle);
+			assert(tickMethod);
+		}
+
+		~MonoDynamicNodeInstance()
+		{
+			mono_gchandle_free(gcHandle);
+		}
 	};
 
 	std::vector<MonoDynamicNodeInstance> monoDynamicNodeInstances;
@@ -383,7 +397,7 @@ int main()
 						}
 					}
 
-					monoDynamicNodeInstances.emplace_back(monoInstance, monoTickMethod);
+					monoDynamicNodeInstances.emplace_back(monoInstance, mono_gchandle_new(monoInstance, true), monoTickMethod);
 				}
 			}
 		}
@@ -414,7 +428,7 @@ int main()
 		assert(success);
 		update_keyboard_state(keyboardState);
 
-		for (auto& [instance, tickMethod] : monoDynamicNodeInstances)
+		for (auto& [instance, gchandle, tickMethod] : monoDynamicNodeInstances)
 		{
 			MonoObject* exception;
 			mono_runtime_invoke(tickMethod, instance, nullptr, &exception);
