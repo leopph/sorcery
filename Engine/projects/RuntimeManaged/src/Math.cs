@@ -53,12 +53,10 @@ namespace leopph
     [StructLayout(LayoutKind.Sequential)]
     public struct Vector2
     {
-        private float _x, _y;
-
         public Vector2(float x = 0, float y = 0)
         {
-            _x = x;
-            _y = y;
+            X = x;
+            Y = y;
         }
 
         public static Vector2 Right => new Vector2(1, 0);
@@ -68,17 +66,8 @@ namespace leopph
         public static Vector2 Zero => new Vector2(0, 0);
         public static Vector2 One => new Vector2(1, 1);
 
-        public float X
-        {
-            get => _x;
-            set => _x = value;
-        }
-
-        public float Y
-        {
-            get => _y;
-            set => _y = value;
-        }
+        public float X { get; set; } 
+        public float Y { get; set; }
 
         public float this[int index]
         {
@@ -88,11 +77,11 @@ namespace leopph
                 {
                     case 0:
                     {
-                        return _x;
+                        return X;
                     }
                     case 1:
                     {
-                        return _y;
+                        return Y;
                     }
                     default:
                     {
@@ -107,12 +96,12 @@ namespace leopph
                 {
                     case 0:
                     {
-                        _x = value;
+                        X = value;
                         return;
                     }
                     case 1:
                     {
-                        _y = value;
+                        Y = value;
                         return;
                     }
                     default:
@@ -151,13 +140,13 @@ namespace leopph
 
             if (Math.NearlyEqual(lngth, 0))
             {
-                _x = 0;
-                _y = 0;
+                X = 0;
+                Y = 0;
             }
             else
             {
-                _x /= lngth;
-                _y /= lngth;
+                X /= lngth;
+                Y /= lngth;
             }
 
             return this;
@@ -170,13 +159,11 @@ namespace leopph
     [StructLayout(LayoutKind.Sequential)]
     public struct Vector3
     {
-        private float _x, _y, _z;
-
         public Vector3(float x = 0, float y = 0, float z = 0)
         {
-            _x = x;
-            _y = y;
-            _z = z;
+            X = x;
+            Y = y;
+            Z = z;
         }
 
         public static Vector3 Right => new Vector3(1, 0, 0);
@@ -188,23 +175,10 @@ namespace leopph
         public static Vector3 Zero => new Vector3(0, 0, 0);
         public static Vector3 One => new Vector3(1, 1, 1);
 
-        public float X
-        {
-            get => _x;
-            set => _x = value;
-        }
+        public float X { get; set; }
+        public float Y { get; set; }
+        public float Z { get; set; }
 
-        public float Y
-        {
-            get => _y;
-            set => _y = value;
-        }
-
-        public float Z
-        {
-            get => _z;
-            set => _z = value;
-        }
 
         public float this[int index]
         {
@@ -214,15 +188,15 @@ namespace leopph
                 {
                     case 0:
                     {
-                        return _x;
+                        return X;
                     }
                     case 1:
                     {
-                        return _y;
+                        return Y;
                     }
                     case 2:
                     {
-                        return _z;
+                        return Z;
                     }
                     default:
                     {
@@ -237,17 +211,17 @@ namespace leopph
                 {
                     case 0:
                     {
-                        _x = value;
+                        X = value;
                         return;
                     }
                     case 1:
                     {
-                        _y = value;
+                        Y = value;
                         return;
                     }
                     case 2:
                     {
-                        _z = value;
+                        Z = value;
                         return;
                     }
                     default:
@@ -278,11 +252,11 @@ namespace leopph
         public static explicit operator Vector2(Vector3 vec) => new Vector2(vec.X, vec.Y);
         public static explicit operator Vector4(Vector3 vec) => new Vector4(vec.X, vec.Y, 0, 1);
 
-        public float length => Math.Sqrt(Math.Pow(X, 2) + Math.Pow(Y, 2) + Math.Pow(Z, 2));
+        public float Length => Math.Sqrt(Math.Pow(X, 2) + Math.Pow(Y, 2) + Math.Pow(Z, 2));
 
         public Vector3 Normalize()
         {
-            var lngth = length;
+            var lngth = Length;
 
             if (Math.NearlyEqual(lngth, 0))
             {
@@ -307,39 +281,18 @@ namespace leopph
     [StructLayout(LayoutKind.Sequential)]
     public struct Vector4
     {
-        private float _x, _y, _z, _w;
-
         public Vector4(float x = 0, float y = 0, float z = 0, float w = 1)
         {
-            _x = x;
-            _y = y;
-            _z = z;
-            _w = w;
+            X = x;
+            Y = y;
+            Z = z;
+            W = w;
         }
 
-        public float X
-        {
-            get => _x;
-            set => _x = value;
-        }
-
-        public float Y
-        {
-            get => _y;
-            set => _y = value;
-        }
-
-        public float Z
-        {
-            get => _z;
-            set => _z = value;
-        }
-
-        public float W
-        {
-            get => _w;
-            set => _w = value;
-        }
+        public float X { get; set; }
+        public float Y { get; set; }
+        public float Z { get; set; }
+        public float W { get; set; }
 
         public float this[int index]
         {
@@ -349,19 +302,19 @@ namespace leopph
                 {
                     case 0:
                     {
-                        return _x;
+                        return X;
                     }
                     case 1:
                     {
-                        return _y;
+                        return Y;
                     }
                     case 2:
                     {
-                        return _z;
+                        return Z;
                     }
                     case 3:
                     {
-                        return _w;
+                        return W;
                     }
                     default:
                     {
@@ -376,22 +329,22 @@ namespace leopph
                 {
                     case 0:
                     {
-                        _x = value;
+                        X = value;
                         return;
                     }
                     case 1:
                     {
-                        _y = value;
+                        Y = value;
                         return;
                     }
                     case 2:
                     {
-                        _z = value;
+                        Z = value;
                         return;
                     }
                     case 3:
                     {
-                        _w = value;
+                        W = value;
                         return;
                     }
                     default:

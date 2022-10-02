@@ -17,11 +17,15 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Test", "Engine\projects\Test\Test.vcxproj", "{CC705A67-8B05-45AF-A560-9B9FE842A7E9}"
 	ProjectSection(ProjectDependencies) = postProject
 		{60A69D92-FA99-4F5C-804C-1DFF2CE460AD} = {60A69D92-FA99-4F5C-804C-1DFF2CE460AD}
+		{FBD9532A-EE08-4991-B417-FD897AE7F97C} = {FBD9532A-EE08-4991-B417-FD897AE7F97C}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RuntimeNative", "Engine\projects\RuntimeNative\RuntimeNative.vcxproj", "{60A69D92-FA99-4F5C-804C-1DFF2CE460AD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RuntimeManaged", "Engine\projects\RuntimeManaged\RuntimeManaged.csproj", "{FBD9532A-EE08-4991-B417-FD897AE7F97C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RuntimeManaged", "Engine\projects\RuntimeManaged\RuntimeManaged.csproj", "{FBD9532A-EE08-4991-B417-FD897AE7F97C}"
+	ProjectSection(ProjectDependencies) = postProject
+		{60A69D92-FA99-4F5C-804C-1DFF2CE460AD} = {60A69D92-FA99-4F5C-804C-1DFF2CE460AD}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
