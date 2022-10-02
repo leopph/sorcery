@@ -336,23 +336,64 @@ int main()
 	auto* const monoImage = mono_assembly_get_image(monoAssembly);
 	assert(monoImage);
 
-	struct MonoDynamicNodeInstance
+	class MonoDynamicNodeInstance
 	{
-		MonoObject* const instance;
-		unsigned const gcHandle;
-		MonoMethod* const tickMethod;
+	private:
+		MonoObject* mInstance;
+		unsigned mGcHandle;
+		MonoMethod* mTickMethod;
 
-		MonoDynamicNodeInstance(MonoObject* instance, unsigned gcHandle, MonoMethod* tickMethod) :
-			instance{instance}, gcHandle{gcHandle}, tickMethod{tickMethod}
+		static void check_and_handle_exception(MonoObject* const exception)
 		{
-			assert(instance);
-			assert(gcHandle);
-			assert(tickMethod);
+			if (exception)
+			{
+				mono_print_unhandled_exception(exception);
+			}
+		}
+
+	public:
+		void tick() const
+		{
+			MonoObject* exception;
+			mono_runtime_invoke(mTickMethod, mInstance, nullptr, &exception);
+			check_and_handle_exception(exception);
+		}
+
+		MonoDynamicNodeInstance(MonoObject* const instance, MonoMethod* const tickMethod) :
+			mInstance{instance}, mGcHandle{mono_gchandle_new(instance, true)}, mTickMethod{tickMethod}
+		{
+			assert(mInstance);
+			assert(mGcHandle);
+			assert(mTickMethod);
+
+			MonoClass* clasz = mono_object_get_class(mInstance);
+			assert(clasz);
+
+			if (MonoMethod* defaultCtor = mono_class_get_method_from_name(clasz, ".ctor", 0))
+			{
+				MonoObject* exception;
+				mono_runtime_invoke(defaultCtor, mInstance, nullptr, &exception);
+				check_and_handle_exception(exception);
+			}
+		}
+
+		MonoDynamicNodeInstance(MonoDynamicNodeInstance&& other) noexcept :
+			mInstance{other.mInstance},
+			mGcHandle{other.mGcHandle},
+			mTickMethod{other.mTickMethod}
+		{
+			other.mInstance = nullptr;
+			other.mGcHandle = 0;
+			other.mTickMethod = nullptr;
+
 		}
 
 		~MonoDynamicNodeInstance()
 		{
-			mono_gchandle_free(gcHandle);
+			if (mGcHandle)
+			{
+				mono_gchandle_free(mGcHandle);
+			}
 		}
 	};
 
@@ -386,18 +427,7 @@ int main()
 					MonoObject* monoInstance = mono_object_new(monoDomain, monoClass);
 					assert(monoInstance);
 
-					if (MonoMethod* monoDefaultConstructor = mono_class_get_method_from_name(monoClass, ".ctor", 0))
-					{
-						MonoObject* monoException;
-						mono_runtime_invoke(monoDefaultConstructor, monoInstance, nullptr, &monoException);
-
-						if (monoException)
-						{
-							mono_print_unhandled_exception(monoException);
-						}
-					}
-
-					monoDynamicNodeInstances.emplace_back(monoInstance, mono_gchandle_new(monoInstance, true), monoTickMethod);
+					monoDynamicNodeInstances.emplace_back(monoInstance, monoTickMethod);
 				}
 			}
 		}
@@ -428,15 +458,9 @@ int main()
 		assert(success);
 		update_keyboard_state(keyboardState);
 
-		for (auto& [instance, gchandle, tickMethod] : monoDynamicNodeInstances)
+		for (auto const& instance : monoDynamicNodeInstances)
 		{
-			MonoObject* exception;
-			mono_runtime_invoke(tickMethod, instance, nullptr, &exception);
-
-			if (exception)
-			{
-				mono_print_unhandled_exception(exception);
-			}
+			instance.tick();
 		}
 
 		auto numObj = static_cast<UINT>(get_num_positions());
