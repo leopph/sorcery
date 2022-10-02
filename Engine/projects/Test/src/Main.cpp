@@ -20,10 +20,8 @@
 
 #include <RuntimeNative.hpp>
 
-#include <array>
 #include <cassert>
 #include <cstdio>
-#include <chrono>
 #include <vector>
 
 using Microsoft::WRL::ComPtr;
@@ -433,12 +431,9 @@ int main()
 		}
 	}
 
-
-	BYTE keyboardState[256];
-
 	ShowWindow(hwnd, SW_SHOWDEFAULT);
 
-	auto lastTimePoint = std::chrono::steady_clock::now();
+	init_time();
 
 	while (true)
 	{
@@ -455,9 +450,7 @@ int main()
 			DispatchMessageW(&msg);
 		}
 
-		auto const success = GetKeyboardState(keyboardState);
-		assert(success);
-		update_keyboard_state(keyboardState);
+		update_keyboard_state();
 
 		for (auto const& instance : monoDynamicNodeInstances)
 		{
@@ -506,9 +499,6 @@ int main()
 
 		dxgiSwapChain1->Present(0, 0);
 
-		auto const now = std::chrono::steady_clock::now();
-		auto const timeDelta = now - lastTimePoint;
-		set_frame_time(std::chrono::duration_cast<std::chrono::duration<float, std::ratio<1, 1>>>(timeDelta).count());
-		lastTimePoint = now;
+		measure_time();
 	}
 }

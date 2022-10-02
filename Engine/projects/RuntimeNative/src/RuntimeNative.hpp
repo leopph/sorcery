@@ -1,6 +1,5 @@
 #pragma once
 
-#include <array>
 #include <cstddef>
 #include <vector>
 
@@ -85,13 +84,15 @@ extern "C"
 	API Vector3 const* get_cam_pos();
 	API void set_cam_pos(Vector3 const* pos);
 
-	API void update_keyboard_state(unsigned char const* const newState);
+	API void update_keyboard_state();
 	API bool get_key(unsigned char const key);
 	API bool get_key_down(unsigned char const key);
 	API bool get_key_up(unsigned char const key);
 
+	API float get_full_time();
 	API float get_frame_time();
-	API void set_frame_time(float seconds);
+	API void init_time();
+	API void measure_time();
 
 	API void register_point_light(PointLight* const light);
 	API std::vector<PointLight*>* get_point_lights();
