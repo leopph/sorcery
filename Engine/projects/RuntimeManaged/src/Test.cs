@@ -3,10 +3,10 @@ using System.Runtime.InteropServices;
 
 public class Cube : MonoDynamicNode
 {
-    [DllImport("RuntimeUnmanaged.dll", EntryPoint = "add_position")]
+    [DllImport("leopph_runtime_native.dll", EntryPoint = "add_position")]
     private extern static ulong AddPosition(ref Vector3 pos);
 
-    [DllImport("RuntimeUnmanaged.dll", EntryPoint = "update_position")]
+    [DllImport("leopph_runtime_native.dll", EntryPoint = "update_position")]
     private extern static void UpdatePosition(ulong index, ref Vector3 pos);
 
 
@@ -69,7 +69,7 @@ public class Cube : MonoDynamicNode
 
 public class Camera : MonoDynamicNode
 {
-    [DllImport("RuntimeUnmanaged.dll", EntryPoint = "set_cam_pos")]
+    [DllImport("leopph_runtime_native.dll", EntryPoint = "set_cam_pos")]
     private static extern void SetCamPos(ref Vector3 pos);
 
     public Camera()

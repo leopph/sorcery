@@ -1,6 +1,8 @@
-#include "RuntimeUnmanaged.hpp"
+#include "RuntimeNative.hpp"
 
 #include <cstring>
+#include <unordered_map>
+#include <memory>
 
 
 unsigned char constexpr KEY_NEUTRAL = 0;
@@ -19,11 +21,32 @@ namespace
 	float gLastFrameTimeSeconds{0};
 
 	std::vector<PointLight*> gPointLights;
+
+	std::unordered_map<std::size_t, std::unique_ptr<Node>> gNodes;
+
+	std::size_t generate_next_node_id()
+	{
+		static std::size_t currentId{0};
+		return currentId++;
+	}
 }
 
 
 extern "C"
 {
+	API std::size_t new_node()
+	{
+		std::size_t const id{generate_next_node_id()};
+		//gNodes.emplace(id, std::make_unique<Node>(Vector3{0, 0, 0}));
+		return id;
+	}
+
+	API void delete_node(std::size_t const id)
+	{
+		//gNodes.erase(id);
+	}
+
+
 	std::size_t add_position(Vector3 const* vector)
 	{
 		gPositions.emplace_back(*vector);

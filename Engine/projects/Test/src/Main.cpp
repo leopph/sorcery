@@ -18,7 +18,7 @@
 #include "CubePixelShaderDebug.h"
 #endif
 
-#include <RuntimeUnmanaged.hpp>
+#include <RuntimeNative.hpp>
 
 #include <array>
 #include <cassert>
@@ -393,7 +393,7 @@ int main()
 	auto* const monoDomain = mono_jit_init("leopph");
 	assert(monoDomain);
 
-	auto* const monoAssembly = mono_domain_assembly_open(monoDomain, "leopph_managed.dll");
+	auto* const monoAssembly = mono_domain_assembly_open(monoDomain, "leopph_runtime_managed.dll");
 	assert(monoAssembly);
 
 	auto* const monoImage = mono_assembly_get_image(monoAssembly);

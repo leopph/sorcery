@@ -128,13 +128,13 @@ namespace leopph
 {
     public static class Input
     {
-        [DllImport("RuntimeUnmanaged.dll", EntryPoint = "get_key_down")]
+        [DllImport("leopph_runtime_native.dll", EntryPoint = "get_key_down")]
         private extern static bool InternalGetKeyDown(byte key);
 
-        [DllImport("RuntimeUnmanaged.dll", EntryPoint = "get_key")]
+        [DllImport("leopph_runtime_native.dll", EntryPoint = "get_key")]
         public extern static bool InternalGetKey(byte key);
 
-        [DllImport("RuntimeUnmanaged.dll", EntryPoint = "get_key_up")]
+        [DllImport("leopph_runtime_native.dll", EntryPoint = "get_key_up")]
         public extern static bool InternalGetKeyUp(byte key);
 
         public static bool GetKeyDown(Key keyCode)

@@ -5,7 +5,7 @@
 #include <vector>
 
 
-#ifdef UNMANAGED_EXPORT
+#ifdef LEOPPH_NATIVE_RUNTIME_EXPORT
 #define API __declspec(dllexport)
 #else
 #define API __declspec(dllimport)
@@ -30,6 +30,36 @@ struct Vector4
 };
 
 
+struct Quaternion
+{
+	float x, y, z, w;
+};
+
+
+struct Matrix3
+{
+	float data[9];
+};
+
+
+struct Matrix4
+{
+	float data[16];
+};
+
+
+struct Object
+{
+	std::size_t id;
+};
+
+
+struct Node : Object
+{
+	Vector3 position;
+};
+
+
 struct Color
 {
 	unsigned char r, g, b, a;
@@ -45,6 +75,9 @@ struct PointLight
 
 extern "C"
 {
+	API std::size_t new_node();
+	API void delete_node(std::size_t id);
+
 	API std::size_t add_position(Vector3 const* vector);
 	API void update_position(std::size_t index, Vector3 const* vector);
 	API std::vector<Vector3> const* get_positions();

@@ -58,13 +58,13 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)Engine\projects\RuntimeUnmanaged\src\;C:\Program Files\Mono\include\mono-2.0;$(DXSDK_DIR)Include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Engine\projects\RuntimeNative\src\;C:\Program Files\Mono\include\mono-2.0;$(DXSDK_DIR)Include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
       <AdditionalLibraryDirectories>C:\Program Files\Mono\lib;$(DXSDK_DIR)Lib\x64;$(SolutionDir)Engine\bin\$(Configuration)\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>RuntimeUnmanaged.lib;mono-2.0-sgen.lib;dxgi.lib;d3d11.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>leopph_runtime_native.lib;mono-2.0-sgen.lib;dxgi.lib;d3d11.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -76,7 +76,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)Engine\projects\RuntimeUnmanaged\src\;C:\Program Files\Mono\include\mono-2.0;$(DXSDK_DIR)Include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Engine\projects\RuntimeNative\src\;C:\Program Files\Mono\include\mono-2.0;$(DXSDK_DIR)Include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -84,7 +84,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
       <AdditionalLibraryDirectories>C:\Program Files\Mono\lib;$(DXSDK_DIR)Lib\x64;$(SolutionDir)Engine\bin\$(Configuration)\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>RuntimeUnmanaged.lib;mono-2.0-sgen.lib;dxgi.lib;d3d11.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>leopph_runtime_native.lib;mono-2.0-sgen.lib;dxgi.lib;d3d11.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
