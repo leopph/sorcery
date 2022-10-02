@@ -127,3 +127,9 @@ public class Camera : MonoDynamicNode
 
     private Vector3 _pos = new Vector3(0, 0, -2);
 }
+
+
+public class PointLight
+{
+    private Vector3 color;
+}

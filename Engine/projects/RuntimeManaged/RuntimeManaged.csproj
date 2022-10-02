@@ -41,6 +41,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="src\Color.cs" />
     <Compile Include="src\Input.cs" />
     <Compile Include="src\MonoDynamicNode.cs" />
     <Compile Include="src\Node.cs" />

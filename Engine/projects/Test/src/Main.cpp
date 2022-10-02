@@ -26,12 +26,13 @@
 #define DllImport __declspec(dllimport)
 
 using Microsoft::WRL::ComPtr;
-
 using Vec3f = std::array<float, 3>;
+
 
 auto constexpr WINDOW_WIDTH = 1280;
 auto constexpr WINDOW_HEIGHT = 720;
 auto constexpr MAX_OBJECTS = 10;
+
 
 extern "C"
 {
@@ -42,7 +43,79 @@ extern "C"
 	DllImport float const* get_cam_pos();
 }
 
-LRESULT CALLBACK window_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
+
+class MonoDynamicNodeInstance
+{
+private:
+	MonoObject* mInstance;
+	unsigned mGcHandle;
+	MonoMethod* mTickMethod;
+
+	static void check_and_handle_exception(MonoObject* const exception)
+	{
+		if (exception)
+		{
+			mono_print_unhandled_exception(exception);
+		}
+	}
+
+public:
+	void tick() const
+	{
+		MonoObject* exception;
+		mono_runtime_invoke(mTickMethod, mInstance, nullptr, &exception);
+		check_and_handle_exception(exception);
+	}
+
+	MonoDynamicNodeInstance(MonoObject* const instance, MonoMethod* const tickMethod) :
+		mInstance{instance}, mGcHandle{mono_gchandle_new(instance, true)}, mTickMethod{tickMethod}
+	{
+		assert(mInstance);
+		assert(mGcHandle);
+		assert(mTickMethod);
+
+		MonoClass* clasz = mono_object_get_class(mInstance);
+		assert(clasz);
+
+		if (MonoMethod* defaultCtor = mono_class_get_method_from_name(clasz, ".ctor", 0))
+		{
+			MonoObject* exception;
+			mono_runtime_invoke(defaultCtor, mInstance, nullptr, &exception);
+			check_and_handle_exception(exception);
+		}
+	}
+
+	MonoDynamicNodeInstance(MonoDynamicNodeInstance&& other) noexcept :
+		mInstance{other.mInstance},
+		mGcHandle{other.mGcHandle},
+		mTickMethod{other.mTickMethod}
+	{
+		other.mInstance = nullptr;
+		other.mGcHandle = 0;
+		other.mTickMethod = nullptr;
+
+	}
+
+	~MonoDynamicNodeInstance()
+	{
+		if (mGcHandle)
+		{
+			mono_gchandle_free(mGcHandle);
+		}
+	}
+};
+
+
+LRESULT CALLBACK window_proc(HWND const hwnd, UINT const msg, WPARAM const wparam, LPARAM const lparam)
+{
+	if (msg == WM_CLOSE)
+	{
+		DestroyWindow(hwnd);
+		PostQuitMessage(0);
+	}
+
+	return DefWindowProcW(hwnd, msg, wparam, lparam);
+}
 
 
 int main()
@@ -336,102 +409,40 @@ int main()
 	auto* const monoImage = mono_assembly_get_image(monoAssembly);
 	assert(monoImage);
 
-	class MonoDynamicNodeInstance
-	{
-	private:
-		MonoObject* mInstance;
-		unsigned mGcHandle;
-		MonoMethod* mTickMethod;
-
-		static void check_and_handle_exception(MonoObject* const exception)
-		{
-			if (exception)
-			{
-				mono_print_unhandled_exception(exception);
-			}
-		}
-
-	public:
-		void tick() const
-		{
-			MonoObject* exception;
-			mono_runtime_invoke(mTickMethod, mInstance, nullptr, &exception);
-			check_and_handle_exception(exception);
-		}
-
-		MonoDynamicNodeInstance(MonoObject* const instance, MonoMethod* const tickMethod) :
-			mInstance{instance}, mGcHandle{mono_gchandle_new(instance, true)}, mTickMethod{tickMethod}
-		{
-			assert(mInstance);
-			assert(mGcHandle);
-			assert(mTickMethod);
-
-			MonoClass* clasz = mono_object_get_class(mInstance);
-			assert(clasz);
-
-			if (MonoMethod* defaultCtor = mono_class_get_method_from_name(clasz, ".ctor", 0))
-			{
-				MonoObject* exception;
-				mono_runtime_invoke(defaultCtor, mInstance, nullptr, &exception);
-				check_and_handle_exception(exception);
-			}
-		}
-
-		MonoDynamicNodeInstance(MonoDynamicNodeInstance&& other) noexcept :
-			mInstance{other.mInstance},
-			mGcHandle{other.mGcHandle},
-			mTickMethod{other.mTickMethod}
-		{
-			other.mInstance = nullptr;
-			other.mGcHandle = 0;
-			other.mTickMethod = nullptr;
-
-		}
-
-		~MonoDynamicNodeInstance()
-		{
-			if (mGcHandle)
-			{
-				mono_gchandle_free(mGcHandle);
-			}
-		}
-	};
-
 	std::vector<MonoDynamicNodeInstance> monoDynamicNodeInstances;
 
+	MonoClass* const monoDynamicNodeClass = mono_class_from_name(monoImage, "leopph", "MonoDynamicNode");
+	assert(monoDynamicNodeClass);
+
+	MonoTableInfo const* const monoTableInfo = mono_image_get_table_info(monoImage, MONO_TABLE_TYPEDEF);
+	int const numMonoTableRows = mono_table_info_get_rows(monoTableInfo);
+
+	for (int i = 0; i < numMonoTableRows; i++)
 	{
-		MonoClass* const monoDynamicNodeClass = mono_class_from_name(monoImage, "leopph", "MonoDynamicNode");
-		assert(monoDynamicNodeClass);
+		unsigned cols[MONO_TYPEDEF_SIZE];
+		mono_metadata_decode_row(monoTableInfo, i, cols, MONO_TYPEDEF_SIZE);
 
-		MonoTableInfo const* const monoTableInfo = mono_image_get_table_info(monoImage, MONO_TABLE_TYPEDEF);
-		int const numMonoTableRows = mono_table_info_get_rows(monoTableInfo);
+		char const* const monoClassName = mono_metadata_string_heap(monoImage, cols[MONO_TYPEDEF_NAME]);
+		assert(monoClassName);
 
-		for (int i = 0; i < numMonoTableRows; i++)
+		char const* const monoClassNameSpace = mono_metadata_string_heap(monoImage, cols[MONO_TYPEDEF_NAMESPACE]);
+		assert(monoClassNameSpace);
+
+		MonoClass* monoClass = mono_class_from_name(monoImage, monoClassNameSpace, monoClassName);
+		assert(monoClass);
+
+		if (mono_class_is_subclass_of(monoClass, monoDynamicNodeClass, false))
 		{
-			unsigned cols[MONO_TYPEDEF_SIZE];
-			mono_metadata_decode_row(monoTableInfo, i, cols, MONO_TYPEDEF_SIZE);
-
-			char const* const monoClassName = mono_metadata_string_heap(monoImage, cols[MONO_TYPEDEF_NAME]);
-			assert(monoClassName);
-
-			char const* const monoClassNameSpace = mono_metadata_string_heap(monoImage, cols[MONO_TYPEDEF_NAMESPACE]);
-			assert(monoClassNameSpace);
-
-			MonoClass* monoClass = mono_class_from_name(monoImage, monoClassNameSpace, monoClassName);
-			assert(monoClass);
-
-			if (mono_class_is_subclass_of(monoClass, monoDynamicNodeClass, false))
+			if (MonoMethod* monoTickMethod = mono_class_get_method_from_name(monoClass, "Tick", 0))
 			{
-				if (MonoMethod* monoTickMethod = mono_class_get_method_from_name(monoClass, "Tick", 0))
-				{
-					MonoObject* monoInstance = mono_object_new(monoDomain, monoClass);
-					assert(monoInstance);
+				MonoObject* monoInstance = mono_object_new(monoDomain, monoClass);
+				assert(monoInstance);
 
-					monoDynamicNodeInstances.emplace_back(monoInstance, monoTickMethod);
-				}
+				monoDynamicNodeInstances.emplace_back(monoInstance, monoTickMethod);
 			}
 		}
 	}
+
 
 	BYTE keyboardState[256];
 
@@ -512,16 +523,4 @@ int main()
 		set_frame_time(std::chrono::duration_cast<std::chrono::duration<float, std::ratio<1, 1>>>(timeDelta).count());
 		lastTimePoint = now;
 	}
-}
-
-
-LRESULT CALLBACK window_proc(HWND const hwnd, UINT const msg, WPARAM const wparam, LPARAM const lparam)
-{
-	if (msg == WM_CLOSE)
-	{
-		DestroyWindow(hwnd);
-		PostQuitMessage(0);
-	}
-
-	return DefWindowProcW(hwnd, msg, wparam, lparam);
 }

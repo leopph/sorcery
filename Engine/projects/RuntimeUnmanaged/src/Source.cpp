@@ -18,10 +18,10 @@ static Vec3f gCamPos{0, 0, 0};
 
 extern "C"
 {
-	DllExport std::size_t add_position(float* vector)
+	DllExport std::size_t add_position(Vec3f vector)
 	{
 		gPositions.emplace_back();
-		std::memcpy(gPositions.back().data(), vector, sizeof(Vec3f));
+		std::memcpy(gPositions.back().data(), vector.data(), sizeof(Vec3f));
 		return gPositions.size() - 1;
 	}
 

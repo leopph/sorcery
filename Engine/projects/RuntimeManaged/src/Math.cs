@@ -1,4 +1,6 @@
-﻿using System.Runtime.InteropServices;
+﻿using System;
+using System.Data;
+using System.Runtime.InteropServices;
 
 namespace leopph
 {
@@ -51,13 +53,12 @@ namespace leopph
     [StructLayout(LayoutKind.Sequential)]
     public struct Vector2
     {
-        private readonly float[] _data;
+        private float _x, _y;
 
         public Vector2(float x = 0, float y = 0)
         {
-            _data = new float[2];
-            _data[0] = x;
-            _data[1] = y;
+            _x = x;
+            _y = y;
         }
 
         public static Vector2 Right => new Vector2(1, 0);
@@ -69,20 +70,57 @@ namespace leopph
 
         public float X
         {
-            get { return _data[0]; }
-            set { _data[0] = value; }
+            get => _x;
+            set => _x = value;
         }
 
         public float Y
         {
-            get { return _data[1]; }
-            set { _data[1] = value; }
+            get => _y;
+            set => _y = value;
         }
 
         public float this[int index]
         {
-            get { return _data[index]; }
-            set { _data[index] = value; }
+            get
+            {
+                switch (index)
+                {
+                    case 0:
+                    {
+                        return _x;
+                    }
+                    case 1:
+                    {
+                        return _y;
+                    }
+                    default:
+                    {
+                        throw new ArgumentOutOfRangeException("index");
+                    }
+                }
+            }
+
+            set
+            {
+                switch (index)
+                {
+                    case 0:
+                    {
+                        _x = value;
+                        return;
+                    }
+                    case 1:
+                    {
+                        _y = value;
+                        return;
+                    }
+                    default:
+                    {
+                        throw new ArgumentOutOfRangeException("index");
+                    }
+                }
+            }
         }
 
         public static Vector2 operator -(Vector2 vec) => new Vector2(-vec.X, -vec.Y);
@@ -100,7 +138,7 @@ namespace leopph
         public static bool operator ==(Vector2 left, Vector2 right) => Math.NearlyEqual(left.X, right.X) && Math.NearlyEqual(left.Y, right.Y);
         public static bool operator !=(Vector2 left, Vector2 right) => !(left == right);
 
-        public override bool Equals(object other) => other is Vector2 vector && _data[0] == vector._data[0] && _data[1] == vector._data[1] && _data[2] == vector._data[2];
+        public override bool Equals(object other) => other is Vector2 vector && X == vector.X && Y == vector.Y;
 
         public static explicit operator Vector3(Vector2 vec) => new Vector3(vec.X, vec.Y, 0);
         public static explicit operator Vector4(Vector2 vec) => new Vector4(vec.X, vec.Y, 0, 1);
@@ -113,13 +151,13 @@ namespace leopph
 
             if (Math.NearlyEqual(lngth, 0))
             {
-                _data[0] = 0;
-                _data[1] = 0;
+                _x = 0;
+                _y = 0;
             }
             else
             {
-                _data[0] /= lngth;
-                _data[1] /= lngth;
+                _x /= lngth;
+                _y /= lngth;
             }
 
             return this;
@@ -132,14 +170,13 @@ namespace leopph
     [StructLayout(LayoutKind.Sequential)]
     public struct Vector3
     {
-        private readonly float[] _data;
+        private float _x, _y, _z;
 
         public Vector3(float x = 0, float y = 0, float z = 0)
         {
-            _data = new float[3];
-            _data[0] = x;
-            _data[1] = y;
-            _data[2] = z;
+            _x = x;
+            _y = y;
+            _z = z;
         }
 
         public static Vector3 Right => new Vector3(1, 0, 0);
@@ -153,26 +190,72 @@ namespace leopph
 
         public float X
         {
-            get { return _data[0]; }
-            set { _data[0] = value; }
+            get => _x;
+            set => _x = value;
         }
 
         public float Y
         {
-            get { return _data[1]; }
-            set { _data[1] = value; }
+            get => _y;
+            set => _y = value;
         }
 
         public float Z
         {
-            get { return _data[2]; }
-            set { _data[2] = value; }
+            get => _z;
+            set => _z = value;
         }
 
         public float this[int index]
         {
-            get { return _data[index]; }
-            set { _data[index] = value; }
+            get
+            {
+                switch (index)
+                {
+                    case 0:
+                    {
+                        return _x;
+                    }
+                    case 1:
+                    {
+                        return _y;
+                    }
+                    case 2:
+                    {
+                        return _z;
+                    }
+                    default:
+                    {
+                        throw new ArgumentOutOfRangeException("index");
+                    }
+                }
+            }
+
+            set
+            {
+                switch (index)
+                {
+                    case 0:
+                    {
+                        _x = value;
+                        return;
+                    }
+                    case 1:
+                    {
+                        _y = value;
+                        return;
+                    }
+                    case 2:
+                    {
+                        _z = value;
+                        return;
+                    }
+                    default:
+                    {
+                        throw new ArgumentOutOfRangeException("index");
+                    }
+                }
+            }
         }
 
         public static Vector3 operator -(Vector3 vec) => new Vector3(-vec.X, -vec.Y, -vec.Z);
@@ -190,7 +273,7 @@ namespace leopph
         public static bool operator ==(Vector3 left, Vector3 right) => Math.NearlyEqual(left.X, right.X) && Math.NearlyEqual(left.Y, right.Y) && Math.NearlyEqual(left.Z, right.Z);
         public static bool operator !=(Vector3 left, Vector3 right) => !(left == right);
 
-        public override bool Equals(object other) => other is Vector3 vector && _data[0] == vector._data[0] && _data[1] == vector._data[1] && _data[2] == vector._data[2];
+        public override bool Equals(object other) => other is Vector3 vector && X == vector.X && Y == vector.Y && Z == vector.Z;
 
         public static explicit operator Vector2(Vector3 vec) => new Vector2(vec.X, vec.Y);
         public static explicit operator Vector4(Vector3 vec) => new Vector4(vec.X, vec.Y, 0, 1);
@@ -203,15 +286,15 @@ namespace leopph
 
             if (Math.NearlyEqual(lngth, 0))
             {
-                _data[0] = 0;
-                _data[1] = 0;
-                _data[2] = 0;
+                X = 0;
+                Y = 0;
+                Z = 0;
             }
             else
             {
-                _data[0] /= lngth;
-                _data[1] /= lngth;
-                _data[2] /= lngth;
+                X /= lngth;
+                Y /= lngth;
+                Z /= lngth;
             }
 
             return this;
@@ -224,45 +307,99 @@ namespace leopph
     [StructLayout(LayoutKind.Sequential)]
     public struct Vector4
     {
-        private readonly float[] _data;
+        private float _x, _y, _z, _w;
 
         public Vector4(float x = 0, float y = 0, float z = 0, float w = 1)
         {
-            _data = new float[4];
-            _data[0] = x;
-            _data[1] = y;
-            _data[2] = z;
-            _data[3] = w;
+            _x = x;
+            _y = y;
+            _z = z;
+            _w = w;
         }
 
         public float X
         {
-            get { return _data[0]; }
-            set { _data[0] = value; }
+            get => _x;
+            set => _x = value;
         }
 
         public float Y
         {
-            get { return _data[1]; }
-            set { _data[1] = value; }
+            get => _y;
+            set => _y = value;
         }
 
         public float Z
         {
-            get { return _data[2]; }
-            set { _data[2] = value; }
+            get => _z;
+            set => _z = value;
         }
 
         public float W
         {
-            get { return _data[3]; }
-            set { _data[3] = value; }
+            get => _w;
+            set => _w = value;
         }
 
         public float this[int index]
         {
-            get { return _data[index]; }
-            set { _data[index] = value; }
+            get
+            {
+                switch (index)
+                {
+                    case 0:
+                    {
+                        return _x;
+                    }
+                    case 1:
+                    {
+                        return _y;
+                    }
+                    case 2:
+                    {
+                        return _z;
+                    }
+                    case 3:
+                    {
+                        return _w;
+                    }
+                    default:
+                    {
+                        throw new ArgumentOutOfRangeException("index");
+                    }
+                }
+            }
+
+            set
+            {
+                switch (index)
+                {
+                    case 0:
+                    {
+                        _x = value;
+                        return;
+                    }
+                    case 1:
+                    {
+                        _y = value;
+                        return;
+                    }
+                    case 2:
+                    {
+                        _z = value;
+                        return;
+                    }
+                    case 3:
+                    {
+                        _w = value;
+                        return;
+                    }
+                    default:
+                    {
+                        throw new ArgumentOutOfRangeException("index");
+                    }
+                }
+            }
         }
 
         public static Vector4 operator -(Vector4 vec) => new Vector4(-vec.X, -vec.Y, -vec.Z, -vec.W);
@@ -280,7 +417,7 @@ namespace leopph
         public static bool operator ==(Vector4 left, Vector4 right) => Math.NearlyEqual(left.X, right.X) && Math.NearlyEqual(left.Y, right.Y) && Math.NearlyEqual(left.Z, right.Z) && Math.NearlyEqual(left.W, right.W);
         public static bool operator !=(Vector4 left, Vector4 right) => !(left == right);
 
-        public override bool Equals(object other) => other is Vector4 vector && _data[0] == vector._data[0] && _data[1] == vector._data[1] && _data[2] == vector._data[2] && _data[3] == vector._data[3];
+        public override bool Equals(object other) => other is Vector4 vector && X == vector.X && Y == vector.Y && Z == vector.Z && W == vector.W;
 
         public static explicit operator Vector2(Vector4 vec) => new Vector2(vec.X, vec.Y);
         public static explicit operator Vector3(Vector4 vec) => new Vector3(vec.X, vec.Y, vec.Z);
@@ -293,17 +430,17 @@ namespace leopph
 
             if (Math.NearlyEqual(lngth, 0))
             {
-                _data[0] = 0;
-                _data[1] = 0;
-                _data[2] = 0;
-                _data[3] = 0;
+                X = 0;
+                Y = 0;
+                Z = 0;
+                W = 0;
             }
             else
             {
-                _data[0] /= lngth;
-                _data[1] /= lngth;
-                _data[2] /= lngth;
-                _data[3] /= lngth;
+                X /= lngth;
+                Y /= lngth;
+                Z /= lngth;
+                W /= lngth;
             }
 
             return this;
@@ -318,27 +455,66 @@ namespace leopph
     {
         public Matrix3(float e00 = 1, float e01 = 0, float e02 = 0, float e10 = 0, float e11 = 1, float e12 = 0, float e20 = 0, float e21 = 0, float e22 = 1)
         {
-            _data = new Vector3[3];
-            _data[0][0] = e00;
-            _data[0][1] = e01;
-            _data[0][2] = e02;
-            _data[1][0] = e10;
-            _data[1][1] = e11;
-            _data[1][2] = e12;
-            _data[2][0] = e20;
-            _data[2][1] = e21;
-            _data[2][2] = e22;
+            _0 = new Vector3(e00, e01, e02);
+            _1 = new Vector3(e10, e11, e12);
+            _2 = new Vector3(e20, e21, e22);
         }
 
         public static Matrix3 Identity => new Matrix3(1, 0, 0, 0, 1, 0, 0, 0, 1);
 
         public float this[int row, int column]
         {
-            get { return _data[row][column]; }
-            set { _data[row][column] = value; }
+            get
+            {
+                switch (row)
+                {
+                    case 0:
+                    {
+                        return _0[column];
+                    }
+                    case 1:
+                    {
+                        return _1[column];
+                    }
+                    case 2:
+                    {
+                        return _2[column];
+                    }
+                    default:
+                    {
+                        throw new ArgumentOutOfRangeException("row");
+                    }
+                }
+            }
+
+            set
+            {
+                switch (row)
+                {
+                    case 0:
+                    {
+                        _0[column] = value;
+                        return;
+                    }
+                    case 1:
+                    {
+                        _1[column] = value;
+                        return;
+                    }
+                    case 2:
+                    {
+                        _2[column] = value;
+                        return;
+                    }
+                    default:
+                    {
+                        throw new ArgumentOutOfRangeException("row");
+                    }
+                }
+            }
         }
 
-        private readonly Vector3[] _data;
+        private Vector3 _0, _1, _2;
     }
 
 
@@ -347,49 +523,87 @@ namespace leopph
     {
         public Matrix4(float e00 = 1, float e01 = 0, float e02 = 0, float e03 = 0, float e10 = 0, float e11 = 1, float e12 = 0, float e13 = 0, float e20 = 0, float e21 = 0, float e22 = 1, float e23 = 0, float e30 = 0, float e31 = 0, float e32 = 0, float e33 = 1)
         {
-            _data = new Vector4[4];
-            _data[0][0] = e00;
-            _data[0][1] = e01;
-            _data[0][2] = e02;
-            _data[0][3] = e03;
-            _data[1][0] = e10;
-            _data[1][1] = e11;
-            _data[1][2] = e12;
-            _data[1][3] = e13;
-            _data[2][0] = e20;
-            _data[2][1] = e21;
-            _data[2][2] = e22;
-            _data[2][3] = e23;
-            _data[3][0] = e30;
-            _data[3][1] = e31;
-            _data[3][2] = e32;
-            _data[3][3] = e33;
+            _0 = new Vector4(e00, e01, e02, e03);
+            _1 = new Vector4(e10, e11, e12, e13);
+            _2 = new Vector4(e20, e21, e22, e23);
+            _3 = new Vector4(e30, e31, e32, e33);
         }
 
         public static Matrix4 Identity => new Matrix4(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
 
         public float this[int row, int column]
         {
-            get { return _data[row][column]; }
-            set { _data[row][column] = value; }
+            get
+            {
+                switch (row)
+                {
+                    case 0:
+                    {
+                        return _0[column];
+                    }
+                    case 1:
+                    {
+                        return _1[column];
+                    }
+                    case 2:
+                    {
+                        return _2[column];
+                    }
+                    case 3:
+                    {
+                        return _3[column];
+                    }
+                    default:
+                    {
+                        throw new ArgumentOutOfRangeException("row");
+                    }
+                }
+            }
+
+            set
+            {
+                switch (row)
+                {
+                    case 0:
+                    {
+                        _0[column] = value;
+                        return;
+                    }
+                    case 1:
+                    {
+                        _1[column] = value;
+                        return;
+                    }
+                    case 2:
+                    {
+                        _2[column] = value;
+                        return;
+                    }
+                    case 3:
+                    {
+                        _3[column] = value;
+                        return;
+                    }
+                    default:
+                    {
+                        throw new ArgumentOutOfRangeException("row");
+                    }
+                }
+            }
         }
 
-        private readonly Vector4[] _data;
+        private Vector4 _0, _1, _2, _3;
     }
 
 
     [StructLayout(LayoutKind.Sequential)]
     public struct Quaternion
     {
-        private readonly float[] _data;
+        Vector4 _data;
 
-        public Quaternion(float w = 1, float x = 0, float y = 0, float z = 0)
+        public Quaternion(float x = 0, float y = 0, float z = 0, float w = 1)
         {
-            _data = new float[4];
-            _data[0] = w;
-            _data[1] = x;
-            _data[2] = y;
-            _data[3] = z;
+            _data = new Vector4(x, y, z, w);
         }
 
         public Quaternion(Vector3 axis, float angleDegrees)
@@ -397,39 +611,33 @@ namespace leopph
             var angleHalfRadians = Math.ToRadians(angleDegrees) / 2.0f;
             var vec = axis.Normalized * Math.Sin(angleHalfRadians);
 
-            _data = new float[4]
-            {
-                Math.Cos(angleHalfRadians),
-                vec[0],
-                vec[1],
-                vec[2],
-            };
+            _data = new Vector4(vec[0], vec[1], vec[2], Math.Cos(angleHalfRadians));
         }
 
         public static Quaternion Identity => new Quaternion(1, 0, 0, 0);
 
         public float W
         {
-            get => _data[0];
-            set => _data[0] = value;
+            get => _data.W;
+            set => _data.W = value;
         }
 
         public float X
         {
-            get => _data[1];
-            set => _data[1] = value;
+            get => _data.X;
+            set => _data.X = value;
         }
 
         public float Y
         {
-            get => _data[2];
-            set => _data[2] = value;
+            get => _data.Y;
+            set => _data.Y = value;
         }
 
         public float Z
         {
-            get => _data[3];
-            set => _data[3] = value;
+            get => _data.Z;
+            set => _data.Z = value;
         }
 
         public float Norm => Math.Sqrt(Math.Pow(W, 2) + Math.Pow(X, 2) + Math.Pow(Y, 2) + Math.Pow(Z, 3));
@@ -479,8 +687,8 @@ namespace leopph
 
         public float this[int index]
         {
-            get { return _data[index]; }
-            set { _data[index] = value; }
+            get => _data[index];
+            set => _data[index] = value;
         }
     }
 }
