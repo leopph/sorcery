@@ -1,4 +1,7 @@
-﻿using System;
+﻿#pragma warning disable CS0659
+#pragma warning disable CS0661
+
+using System;
 
 namespace leopph
 {
@@ -50,11 +53,7 @@ namespace leopph
 
     public struct Vector2
     {
-        public Vector2(float x = 0, float y = 0)
-        {
-            X = x;
-            Y = y;
-        }
+        public Vector2(float x = 0, float y = 0) => (X, Y) = (x, y);
 
         public float X { get; set; }
         public float Y { get; set; }
@@ -131,12 +130,7 @@ namespace leopph
 
     public struct Vector3
     {
-        public Vector3(float x = 0, float y = 0, float z = 0)
-        {
-            X = x;
-            Y = y;
-            Z = z;
-        }
+        public Vector3(float x = 0, float y = 0, float z = 0) => (X, Y, Z) = (x, y, z);
 
         public float X { get; set; }
         public float Y { get; set; }
@@ -220,13 +214,7 @@ namespace leopph
 
     public struct Vector4
     {
-        public Vector4(float x = 0, float y = 0, float z = 0, float w = 1)
-        {
-            X = x;
-            Y = y;
-            Z = z;
-            W = w;
-        }
+        public Vector4(float x = 0, float y = 0, float z = 0, float w = 1) => (X, Y, Z, W) = (x, y, z, w);
 
         public float X { get; set; }
         public float Y { get; set; }
@@ -306,12 +294,12 @@ namespace leopph
 
     public struct Matrix3
     {
-        public Matrix3(float e00 = 1, float e01 = 0, float e02 = 0, float e10 = 0, float e11 = 1, float e12 = 0, float e20 = 0, float e21 = 0, float e22 = 1)
-        {
-            _0 = new Vector3(e00, e01, e02);
-            _1 = new Vector3(e10, e11, e12);
-            _2 = new Vector3(e20, e21, e22);
-        }
+        public Matrix3(float e00 = 1, float e01 = 0, float e02 = 0,
+                        float e10 = 0, float e11 = 1, float e12 = 0,
+                        float e20 = 0, float e21 = 0, float e22 = 1) =>
+                            (_0, _1, _2) = (new Vector3(e00, e01, e02),
+                                            new Vector3(e10, e11, e12),
+                                            new Vector3(e20, e21, e22));
 
         public float this[int row, int column]
         {
@@ -342,13 +330,14 @@ namespace leopph
 
     public struct Matrix4
     {
-        public Matrix4(float e00 = 1, float e01 = 0, float e02 = 0, float e03 = 0, float e10 = 0, float e11 = 1, float e12 = 0, float e13 = 0, float e20 = 0, float e21 = 0, float e22 = 1, float e23 = 0, float e30 = 0, float e31 = 0, float e32 = 0, float e33 = 1)
-        {
-            _0 = new Vector4(e00, e01, e02, e03);
-            _1 = new Vector4(e10, e11, e12, e13);
-            _2 = new Vector4(e20, e21, e22, e23);
-            _3 = new Vector4(e30, e31, e32, e33);
-        }
+        public Matrix4(float e00 = 1, float e01 = 0, float e02 = 0, float e03 = 0,
+                        float e10 = 0, float e11 = 1, float e12 = 0, float e13 = 0,
+                        float e20 = 0, float e21 = 0, float e22 = 1, float e23 = 0,
+                        float e30 = 0, float e31 = 0, float e32 = 0, float e33 = 1) =>
+                            (_0, _1, _2, _3) = (new Vector4(e00, e01, e02, e03),
+                                                new Vector4(e10, e11, e12, e13),
+                                                new Vector4(e20, e21, e22, e23),
+                                                new Vector4(e30, e31, e32, e33));
 
         public float this[int row, int column]
         {
@@ -381,13 +370,7 @@ namespace leopph
 
     public struct Quaternion
     {
-        public Quaternion(float w = 1, float x = 0, float y = 0, float z = 0)
-        {
-            W = w;
-            X = x;
-            Y = y;
-            Z = z;
-        }
+        public Quaternion(float w = 1, float x = 0, float y = 0, float z = 0) => (W, X, Y, Z) = (w, x, y, z);
 
         public Quaternion(Vector3 axis, float angleDegrees)
         {

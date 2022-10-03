@@ -11,9 +11,9 @@ namespace leopph
 
         public static void Destroy(Object obj)
         {
-            if (obj is Node)
+            if (obj is Node node)
             {
-                DeleteNode(obj as Node);
+                DeleteNode(node);
             }
         }
     }
