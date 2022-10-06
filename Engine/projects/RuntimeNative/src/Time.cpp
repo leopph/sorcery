@@ -2,42 +2,45 @@
 
 #include <chrono>
 
-namespace
+namespace leopph
 {
-	std::chrono::steady_clock::time_point gLastFrameTimeMeasurementPoint;
-	float gLastFrameTimeSeconds;
-	float gFullTimeSeconds;
-}
-
-
-extern "C"
-{
-	float get_full_time()
+	namespace
 	{
-		return gFullTimeSeconds;
+		std::chrono::steady_clock::time_point gLastFrameTimeMeasurementPoint;
+		float gLastFrameTimeSeconds;
+		float gFullTimeSeconds;
 	}
 
 
-	float get_frame_time()
+	extern "C"
 	{
-		return gLastFrameTimeSeconds;
-	}
+		float get_full_time()
+		{
+			return gFullTimeSeconds;
+		}
 
 
-	void init_time()
-	{
-		gLastFrameTimeMeasurementPoint = std::chrono::steady_clock::now();
-		gLastFrameTimeSeconds = 0;
-		gFullTimeSeconds = 0;
-	}
+		float get_frame_time()
+		{
+			return gLastFrameTimeSeconds;
+		}
 
 
-	void measure_time()
-	{
-		std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
-		std::chrono::nanoseconds delta = now - gLastFrameTimeMeasurementPoint;
-		gLastFrameTimeSeconds = std::chrono::duration_cast<std::chrono::duration<float, std::ratio<1, 1>>>(delta).count();
-		gFullTimeSeconds += gLastFrameTimeSeconds;
-		gLastFrameTimeMeasurementPoint = now;
+		void init_time()
+		{
+			gLastFrameTimeMeasurementPoint = std::chrono::steady_clock::now();
+			gLastFrameTimeSeconds = 0;
+			gFullTimeSeconds = 0;
+		}
+
+
+		void measure_time()
+		{
+			std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
+			std::chrono::nanoseconds delta = now - gLastFrameTimeMeasurementPoint;
+			gLastFrameTimeSeconds = std::chrono::duration_cast<std::chrono::duration<float, std::ratio<1, 1>>>(delta).count();
+			gFullTimeSeconds += gLastFrameTimeSeconds;
+			gLastFrameTimeMeasurementPoint = now;
+		}
 	}
 }

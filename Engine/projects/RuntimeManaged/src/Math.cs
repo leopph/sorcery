@@ -125,6 +125,8 @@ namespace leopph
         }
 
         public Vector2 Normalized => new Vector2(X, Y).Normalize();
+
+        public override string ToString() => $"({X}, {Y})";
     }
 
 
@@ -209,6 +211,8 @@ namespace leopph
         }
 
         public Vector3 Normalized => new Vector3(X, Y, Z).Normalize();
+
+        public override string ToString() => $"({X}, {Y}, {Z})";
     }
 
 
@@ -289,6 +293,8 @@ namespace leopph
         }
 
         public Vector4 Normalized => new Vector4(X, Y, Z, W).Normalize();
+
+        public override string ToString() => $"({X}, {Y}, {Z}, {W})";
     }
 
 

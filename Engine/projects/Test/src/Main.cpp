@@ -1,3 +1,9 @@
+#ifndef NDEBUG
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+#endif
+
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <Windows.h>
@@ -25,6 +31,7 @@
 #include <vector>
 
 using Microsoft::WRL::ComPtr;
+using namespace leopph;
 
 
 auto constexpr WINDOW_WIDTH = 1280;
@@ -108,6 +115,10 @@ LRESULT CALLBACK window_proc(HWND const hwnd, UINT const msg, WPARAM const wpara
 
 int main()
 {
+#ifndef NDEBUG
+	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+#endif
+
 	WNDCLASSW const wndClass
 	{
 		.style = 0,
@@ -399,8 +410,8 @@ int main()
 
 	std::vector<MonoDynamicNodeInstance> monoDynamicNodeInstances;
 
-	MonoClass* const monoDynamicNodeClass = mono_class_from_name(monoImage, "leopph", "MonoDynamicNode");
-	assert(monoDynamicNodeClass);
+	MonoClass* const monoNodeClass = mono_class_from_name(monoImage, "leopph", "Node");
+	assert(monoNodeClass);
 
 	MonoTableInfo const* const monoTableInfo = mono_image_get_table_info(monoImage, MONO_TABLE_TYPEDEF);
 	int const numMonoTableRows = mono_table_info_get_rows(monoTableInfo);
@@ -419,7 +430,7 @@ int main()
 		MonoClass* monoClass = mono_class_from_name(monoImage, monoClassNameSpace, monoClassName);
 		assert(monoClass);
 
-		if (mono_class_is_subclass_of(monoClass, monoDynamicNodeClass, false))
+		if (mono_class_is_subclass_of(monoClass, monoNodeClass, false))
 		{
 			if (MonoMethod* monoTickMethod = mono_class_get_method_from_name(monoClass, "Tick", 0))
 			{

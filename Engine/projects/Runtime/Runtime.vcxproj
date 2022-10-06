@@ -77,7 +77,6 @@
     <ClInclude Include="..\..\include\Skybox.hpp" />
     <ClInclude Include="..\..\include\StaticMeshNode.hpp" />
     <ClInclude Include="..\..\include\StaticModelData.hpp" />
-    <ClInclude Include="..\..\include\Test.h" />
     <ClInclude Include="..\..\include\Timer.hpp" />
     <ClInclude Include="..\..\include\Types.hpp" />
     <ClInclude Include="..\..\include\Util.hpp" />

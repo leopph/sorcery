@@ -3,21 +3,25 @@
 namespace leopph
 {
     [StructLayout(LayoutKind.Sequential)]
-    public class PointLight
+    public class Light
     {
-        private Color _color = Color.White;
-        private Vector3 _pos = Vector3.Zero;
+        public Color Color {  get; set; } = Color.White;
+    }
 
-        public Color Color
-        {
-            get => _color;
-            set => _color = value;
-        }
 
-        public Vector3 Position
+    [StructLayout(LayoutKind.Sequential)]
+    public class PointLight : Light
+    {
+        public Vector3 Position { get; set; } = Vector3.One;
+
+
+        [DllImport(Constants.UNMANAGED_DLL_NAME, EntryPoint = "set_point_light")]
+        private extern static void SetLight(PointLight light);
+
+
+        public static void Test()
         {
-            get => _pos;
-            set => _pos = value;
+            SetLight(new PointLight());
         }
     }
 }

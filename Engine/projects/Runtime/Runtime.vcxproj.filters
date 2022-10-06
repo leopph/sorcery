@@ -111,7 +111,6 @@
     <ClInclude Include="..\..\include\Types.hpp" />
     <ClInclude Include="..\..\include\Util.hpp" />
     <ClInclude Include="..\..\include\Window.hpp" />
-    <ClInclude Include="..\..\include\Test.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\shaders\glsl\include\CompositeFrag.glsl" />

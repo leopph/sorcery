@@ -1,18 +1,19 @@
 ﻿using leopph;
+using System;
 using System.Runtime.InteropServices;
 
-public class Cube : MonoDynamicNode
+public class Cube : Node
 {
-    [DllImport("leopph_runtime_native.dll", EntryPoint = "add_position")]
-    private extern static ulong AddPosition(ref Vector3 pos);
+    [DllImport(Constants.UNMANAGED_DLL_NAME, EntryPoint = "add_position")]
+    private extern static ulong AddPosition(in Vector3 pos);
 
-    [DllImport("leopph_runtime_native.dll", EntryPoint = "update_position")]
-    private extern static void UpdatePosition(ulong index, ref Vector3 pos);
+    [DllImport(Constants.UNMANAGED_DLL_NAME, EntryPoint = "update_position")]
+    private extern static void UpdatePosition(ulong index, in Vector3 pos);
 
 
     public Cube()
     {
-        _id = AddPosition(ref _pos);
+        _id = AddPosition(Position);
     }
 
     private void Tick()
@@ -58,23 +59,23 @@ public class Cube : MonoDynamicNode
             posDelta *= 2;
         }
 
-        _pos += posDelta * Time.FrameTime;
+        Position += posDelta * Time.FrameTime;
 
-        UpdatePosition(_id, ref _pos);
+        UpdatePosition(_id, Position);
     }
 
-    private Vector3 _pos = Vector3.Zero;
     private readonly ulong _id;
 }
 
-public class Camera : MonoDynamicNode
+public class Camera : Node
 {
-    [DllImport("leopph_runtime_native.dll", EntryPoint = "set_cam_pos")]
-    private static extern void SetCamPos(ref Vector3 pos);
+    [DllImport(Constants.UNMANAGED_DLL_NAME, EntryPoint = "set_cam_pos")]
+    private static extern void SetCamPos(in Vector3 pos);
 
     public Camera()
     {
-        SetCamPos(ref _pos);
+        Position = new Vector3(0, 0, -2);
+        SetCamPos(Position);
     }
 
     private void Tick()
@@ -120,10 +121,8 @@ public class Camera : MonoDynamicNode
             posDelta *= 2;
         }
 
-        _pos += posDelta * Time.FrameTime;
+        Position += posDelta * Time.FrameTime;
 
-        SetCamPos(ref _pos);
+        SetCamPos(Position);
     }
-
-    private Vector3 _pos = new Vector3(0, 0, -2);
 }
