@@ -89,6 +89,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\Main.cpp" />
+    <ClCompile Include="src\Managed.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\shaders\include\CubeShader.hlsli" />
@@ -132,6 +133,7 @@
     <ClInclude Include="src\CubePixelShaderDebug.h" />
     <ClInclude Include="src\CubeVertexShader.h" />
     <ClInclude Include="src\CubeVertexShaderDebug.h" />
+    <ClInclude Include="src\Managed.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

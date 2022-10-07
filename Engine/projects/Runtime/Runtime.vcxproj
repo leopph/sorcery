@@ -188,7 +188,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)Engine\bin\$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)Engine\int\$(ProjectName)\$(Configuration)_$(Platform)\</IntDir>
+    <IntDir>$(ProjectDir)obj\$(Configuration)\</IntDir>
     <TargetName>leopph</TargetName>
     <CustomBuildAfterTargets>
     </CustomBuildAfterTargets>
@@ -198,7 +198,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)Engine\bin\$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)Engine\int\$(ProjectName)\$(Configuration)_$(Platform)\</IntDir>
+    <IntDir>$(ProjectDir)obj\$(Configuration)\</IntDir>
     <TargetName>leopph</TargetName>
     <CustomBuildAfterTargets>
     </CustomBuildAfterTargets>

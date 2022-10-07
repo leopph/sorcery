@@ -53,74 +53,34 @@ namespace leopph
 	}
 
 
-
 	u8 num_binary_digits(u32 const number)
 	{
 		return static_cast<u8>(std::log2(static_cast<f32>(number))) + 1;
 	}
 
 
+	Quaternion::Quaternion(f32 const x, f32 const y, f32 const z, f32 const w) :
+		x{x}, y{y}, z{z}, w{w}
+	{}
 
-	f32 Quaternion::get_w() const
+
+	Quaternion::Quaternion(Vector3 const& axis, f32 const angleDegrees)
 	{
-		return mW;
+		auto normalizedAxis{axis.normalized()};
+		auto const angleHalfRadians = to_radians(angleDegrees) / 2.0f;
+
+		w = std::cos(angleHalfRadians);
+		normalizedAxis *= std::sin(angleHalfRadians);
+		x = normalizedAxis[0];
+		y = normalizedAxis[1];
+		z = normalizedAxis[2];
 	}
-
-
-
-	void Quaternion::set_w(f32 const w)
-	{
-		mW = w;
-	}
-
-
-
-	f32 Quaternion::get_x() const
-	{
-		return mX;
-	}
-
-
-
-	void Quaternion::set_x(f32 const x)
-	{
-		mX = x;
-	}
-
-
-
-	f32 Quaternion::get_y() const
-	{
-		return mY;
-	}
-
-
-
-	void Quaternion::set_y(f32 const y)
-	{
-		mY = y;
-	}
-
-
-
-	f32 Quaternion::get_z() const
-	{
-		return mZ;
-	}
-
-
-
-	void Quaternion::set_z(f32 const z)
-	{
-		mZ = z;
-	}
-
 
 
 	Vector3 Quaternion::to_euler_angles() const
 	{
 		// ???
-		auto secondComponent{2 * (mW * mY - mZ * mX)};
+		auto secondComponent{2 * (w * y - z * x)};
 		if (std::abs(secondComponent) > 1)
 		{
 			secondComponent = std::copysign(PI / 2, secondComponent);
@@ -131,36 +91,33 @@ namespace leopph
 		}
 		return Vector3
 		{
-			to_degrees(std::atan2(2 * (mW * mX + mY * mZ), 1 - 2 * (std::powf(mX, 2) + std::powf(mY, 2)))),
+			to_degrees(std::atan2(2 * (w * x + y * z), 1 - 2 * (std::powf(x, 2) + std::powf(y, 2)))),
 			to_degrees(secondComponent),
-			to_degrees(std::atan2(2 * (mW * mZ + mX * mY), 1 - 2 * (std::powf(mY, 2) + std::powf(mZ, 2))))
+			to_degrees(std::atan2(2 * (w * z + x * y), 1 - 2 * (std::powf(y, 2) + std::powf(z, 2))))
 		};
 	}
 
 
-
 	f32 Quaternion::get_norm() const
 	{
-		return std::sqrt(std::powf(mW, 2) + std::powf(mX, 2) + std::powf(mY, 2) + std::powf(mZ, 2));
+		return std::sqrt(std::powf(w, 2) + std::powf(x, 2) + std::powf(y, 2) + std::powf(z, 2));
 	}
-
 
 
 	Quaternion Quaternion::normalized() const
 	{
 		auto const norm{get_norm()};
-		return Quaternion{mW / norm, mX / norm, mY / norm, mZ / norm};
+		return Quaternion{x / norm, y / norm, z / norm, w / norm};
 	}
-
 
 
 	Quaternion& Quaternion::normalize()
 	{
 		auto const norm{get_norm()};
-		mW /= norm;
-		mX /= norm;
-		mY /= norm;
-		mZ /= norm;
+		x /= norm;
+		y /= norm;
+		z /= norm;
+		w /= norm;
 		return *this;
 	}
 
@@ -168,87 +125,59 @@ namespace leopph
 
 	Quaternion Quaternion::conjugate() const
 	{
-		return Quaternion{mW, -mX, -mY, -mZ};
+		return Quaternion{-x, -y, -z, w};
 	}
-
 
 
 	Quaternion& Quaternion::conjugate_in_place()
 	{
-		mX = -mX;
-		mY = -mY;
-		mZ = -mZ;
+		x = -x;
+		y = -y;
+		z = -z;
 		return *this;
 	}
-
 
 
 	Quaternion Quaternion::inverse() const
 	{
-		auto const normSquared{std::powf(mW, 2) + std::powf(mX, 2) + std::powf(mY, 2) + std::powf(mZ, 2)};
-		return Quaternion{mW / normSquared, -mX / normSquared, -mY / normSquared, -mZ / normSquared};
+		auto const normSquared{std::powf(x, 2) + std::powf(y, 2) + std::powf(z, 2) + std::powf(w, 2)};
+		return Quaternion{-x / normSquared, -y / normSquared, -z / normSquared, w / normSquared};
 	}
-
 
 
 	Quaternion& Quaternion::invert()
 	{
-		auto const normSquared{std::powf(mW, 2) + std::powf(mX, 2) + std::powf(mY, 2) + std::powf(mZ, 2)};
-		mW /= normSquared;
-		mX = -mX / normSquared;
-		mY = -mY / normSquared;
-		mZ = -mZ / normSquared;
+		auto const normSquared{std::powf(x, 2) + std::powf(y, 2) + std::powf(z, 2) + std::powf(w, 2)};
+		x = -x / normSquared;
+		y = -y / normSquared;
+		z = -z / normSquared;
+		w /= normSquared;
 		return *this;
 	}
-
 
 
 	Quaternion::operator Matrix4() const
 	{
 		return Matrix4
 		{
-			1 - 2 * (std::powf(mY, 2) + std::powf(mZ, 2)), 2 * (mX * mY + mZ * mW), 2 * (mX * mZ - mY * mW), 0,
-			2 * (mX * mY - mZ * mW), 1 - 2 * (std::powf(mX, 2) + std::powf(mZ, 2)), 2 * (mY * mZ + mX * mW), 0,
-			2 * (mX * mZ + mY * mW), 2 * (mY * mZ - mX * mW), 1 - 2 * (std::powf(mX, 2) + std::powf(mY, 2)), 0,
+			1 - 2 * (std::powf(y, 2) + std::powf(z, 2)), 2 * (x * y + z * w), 2 * (x * z - y * w), 0,
+			2 * (x * y - z * w), 1 - 2 * (std::powf(x, 2) + std::powf(z, 2)), 2 * (y * z + x * w), 0,
+			2 * (x * z + y * w), 2 * (y * z - x * w), 1 - 2 * (std::powf(x, 2) + std::powf(y, 2)), 0,
 			0, 0, 0, 1
 		};
 	}
-
-
-
-	Quaternion::Quaternion(f32 const w, f32 const x, f32 const y, f32 const z) :
-		mW{w},
-		mX{x},
-		mY{y},
-		mZ{z}
-	{}
-
-
-
-	Quaternion::Quaternion(Vector3 const& axis, f32 const angleDegrees)
-	{
-		auto normalizedAxis{axis.normalized()};
-		auto const angleHalfRadians = to_radians(angleDegrees) / 2.0f;
-		mW = std::cos(angleHalfRadians);
-		normalizedAxis *= std::sin(angleHalfRadians);
-		mX = normalizedAxis[0];
-		mY = normalizedAxis[1];
-		mZ = normalizedAxis[2];
-	}
-
 
 
 	Quaternion operator*(Quaternion const& left, Quaternion const& right)
 	{
 		return Quaternion
 		{
-			left.get_w() * right.get_w() - left.get_x() * right.get_x() - left.get_y() * right.get_y() - left.get_z() * right.get_z(),
-			left.get_w() * right.get_x() + left.get_x() * right.get_w() + left.get_y() * right.get_z() - left.get_z() * right.get_y(),
-			left.get_w() * right.get_y() - left.get_x() * right.get_z() + left.get_y() * right.get_w() + left.get_z() * right.get_x(),
-			left.get_w() * right.get_z() + left.get_x() * right.get_y() - left.get_y() * right.get_x() + left.get_z() * right.get_w()
+			left.w * right.x + left.x * right.w + left.y * right.z - left.z * right.y,
+			left.w * right.y - left.x * right.z + left.y * right.w + left.z * right.x,
+			left.w * right.z + left.x * right.y - left.y * right.x + left.z * right.w,
+			left.w * right.w - left.x * right.x - left.y * right.y - left.z * right.z
 		};
 	}
-
 
 
 	Quaternion& operator*=(Quaternion& left, Quaternion const& right)
@@ -257,10 +186,9 @@ namespace leopph
 	}
 
 
-
 	std::ostream& operator<<(std::ostream& os, Quaternion const& q)
 	{
-		os << "(" << q.get_w() << ", " << q.get_x() << ", " << q.get_y() << ", " << q.get_y() << ")";
+		os << "(" << q.w << ", " << q.x << ", " << q.y << ", " << q.z << ")";
 		return os;
 	}
 }

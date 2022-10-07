@@ -1,21 +1,8 @@
 ﻿using leopph;
-using System;
 using System.Runtime.InteropServices;
 
 public class Cube : Node
 {
-    [DllImport(Constants.UNMANAGED_DLL_NAME, EntryPoint = "add_position")]
-    private extern static ulong AddPosition(in Vector3 pos);
-
-    [DllImport(Constants.UNMANAGED_DLL_NAME, EntryPoint = "update_position")]
-    private extern static void UpdatePosition(ulong index, in Vector3 pos);
-
-
-    public Cube()
-    {
-        _id = AddPosition(Position);
-    }
-
     private void Tick()
     {
         var posDelta = Vector3.Zero;
@@ -59,12 +46,8 @@ public class Cube : Node
             posDelta *= 2;
         }
 
-        Position += posDelta * Time.FrameTime;
-
-        UpdatePosition(_id, Position);
+        Translate(posDelta * Time.FrameTime);
     }
-
-    private readonly ulong _id;
 }
 
 public class Camera : Node
@@ -74,7 +57,7 @@ public class Camera : Node
 
     public Camera()
     {
-        Position = new Vector3(0, 0, -2);
+        Position = new Vector3(0, 0, -3);
         SetCamPos(Position);
     }
 
@@ -121,7 +104,7 @@ public class Camera : Node
             posDelta *= 2;
         }
 
-        Position += posDelta * Time.FrameTime;
+        Translate(posDelta * Time.FrameTime);
 
         SetCamPos(Position);
     }

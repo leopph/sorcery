@@ -85,18 +85,21 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\Color.cpp" />
     <ClCompile Include="src\Input.cpp" />
     <ClCompile Include="src\Math.cpp" />
     <ClCompile Include="src\Node.cpp" />
-    <ClCompile Include="src\Test.cpp" />
-    <ClCompile Include="src\Tickables.cpp" />
+    <ClCompile Include="src\Camera.cpp" />
     <ClCompile Include="src\Time.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Color.hpp" />
     <ClInclude Include="src\Core.hpp" />
+    <ClInclude Include="src\Input.hpp" />
     <ClInclude Include="src\Math.hpp" />
     <ClInclude Include="src\Node.hpp" />
-    <ClInclude Include="src\RuntimeNative.hpp" />
+    <ClInclude Include="src\Camera.hpp" />
+    <ClInclude Include="src\Time.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

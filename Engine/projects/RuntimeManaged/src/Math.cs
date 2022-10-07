@@ -376,64 +376,64 @@ namespace leopph
 
     public struct Quaternion
     {
-        public Quaternion(float w = 1, float x = 0, float y = 0, float z = 0) => (W, X, Y, Z) = (w, x, y, z);
+        public Quaternion(float x = 0, float y = 0, float z = 0, float w = 1) => (X, Y, Z, W) = (x, y, z, w);
 
         public Quaternion(Vector3 axis, float angleDegrees)
         {
             var angleHalfRadians = Math.ToRadians(angleDegrees) / 2.0f;
             var vec = axis.Normalized * Math.Sin(angleHalfRadians);
 
-            W = Math.Cos(angleHalfRadians);
             X = vec.X;
             Y = vec.Y;
             Z = vec.Z;
+            W = Math.Cos(angleHalfRadians);
         }
 
-        public float W { get; set; }
         public float X { get; set; }
         public float Y { get; set; }
         public float Z { get; set; }
+        public float W { get; set; }
 
         public float this[int index]
         {
             get => index switch
             {
-                0 => W,
-                1 => X,
-                2 => Y,
-                3 => Z,
+                0 => X,
+                1 => Y,
+                2 => Z,
+                3 => W,
                 _ => throw new IndexOutOfRangeException()
             };
             set
             {
                 switch (index)
                 {
-                    case 0: W = value; break;
-                    case 1: X = value; break;
-                    case 2: Y = value; break;
-                    case 3: Z = value; break;
+                    case 0: X = value; break;
+                    case 1: Y = value; break;
+                    case 2: Z = value; break;
+                    case 3: W = value; break;
                     default: throw new IndexOutOfRangeException();
                 }
             }
         }
 
-        public static Quaternion Identity => new Quaternion(1, 0, 0, 0);
+        public static Quaternion Identity => new Quaternion(0, 0, 0, 1);
 
-        public float Norm => Math.Sqrt(Math.Pow(W, 2) + Math.Pow(X, 2) + Math.Pow(Y, 2) + Math.Pow(Z, 3));
+        public float Norm => Math.Pow(X, 2) + Math.Pow(Y, 2) + Math.Pow(Z, 3) + Math.Sqrt(Math.Pow(W, 2));
 
         public Quaternion Normalize()
         {
             var norm = Norm;
-            W /= norm;
             X /= norm;
             Y /= norm;
             Z /= norm;
+            W /= norm;
             return this;
         }
 
-        public Quaternion Normalized => new Quaternion(W, X, Y, Z).Normalize();
+        public Quaternion Normalized => new Quaternion(X, Y, Z, W).Normalize();
 
-        public Quaternion Conjugate => new Quaternion(W, -X, -Y, -Z);
+        public Quaternion Conjugate => new Quaternion(-X, -Y, -Z, W);
 
         public Quaternion ConjugateInPlace()
         {
@@ -445,23 +445,23 @@ namespace leopph
 
         public Quaternion Invert()
         {
-            var normSquared = Math.Pow(W, 2) + Math.Pow(X, 2) + Math.Pow(Y, 2) + Math.Pow(Z, 2);
+            var normSquared = Math.Pow(X, 2) + Math.Pow(Y, 2) + Math.Pow(Z, 2) + Math.Pow(W, 2);
+            X = -X / normSquared;
+            Y = -Y / normSquared;
+            Z = -Z / normSquared;
             W /= normSquared;
-            X /= normSquared;
-            Y /= normSquared;
-            Z /= normSquared;
             return this;
         }
 
-        public Quaternion Inverse => new Quaternion(W, X, Y, Z).Invert();
+        public Quaternion Inverse => new Quaternion(X, Y, Z, W).Invert();
 
         public static Quaternion operator *(Quaternion left, Quaternion right)
         {
-            var w = left.W * right.W - left.X * right.X - left.Y * right.Y - left.Z * right.Z;
             var x = left.W * right.X + left.X * right.W + left.Y * right.Z - left.Z * right.Y;
             var y = left.W * right.Y - left.X * right.Z + left.Y * right.W + left.Z * right.X;
             var z = left.W * right.Z + left.X * right.Y - left.Y * right.X + left.Z * right.W;
-            return new Quaternion(w, x, y, z);
+            var w = left.W * right.W - left.X * right.X - left.Y * right.Y - left.Z * right.Z;
+            return new Quaternion(x, y, z, w);
         }
     }
 }

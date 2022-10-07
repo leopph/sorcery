@@ -16,6 +16,8 @@
 #include <mono/metadata/assembly.h>
 #include <mono/metadata/debug-helpers.h>
 
+#include "Managed.hpp"
+
 #ifdef NDEBUG
 #include "CubeVertexShader.h"
 #include "CubePixelShader.h"
@@ -24,81 +26,22 @@
 #include "CubePixelShaderDebug.h"
 #endif
 
-#include <RuntimeNative.hpp>
+#include <Camera.hpp>
+#include <Input.hpp>
+#include <Node.hpp>
+#include <Time.hpp>
 
+#include <algorithm>
 #include <cassert>
 #include <cstdio>
 #include <vector>
 
 using Microsoft::WRL::ComPtr;
-using namespace leopph;
 
-
-auto constexpr WINDOW_WIDTH = 1280;
-auto constexpr WINDOW_HEIGHT = 720;
-auto constexpr MAX_OBJECTS = 10;
-
-
-class MonoDynamicNodeInstance
-{
-private:
-	MonoObject* mInstance;
-	unsigned mGcHandle;
-	MonoMethod* mTickMethod;
-
-	static void check_and_handle_exception(MonoObject* const exception)
-	{
-		if (exception)
-		{
-			mono_print_unhandled_exception(exception);
-		}
-	}
-
-public:
-	void tick() const
-	{
-		MonoObject* exception;
-		mono_runtime_invoke(mTickMethod, mInstance, nullptr, &exception);
-		check_and_handle_exception(exception);
-	}
-
-	MonoDynamicNodeInstance(MonoObject* const instance, MonoMethod* const tickMethod) :
-		mInstance{instance}, mGcHandle{mono_gchandle_new(instance, true)}, mTickMethod{tickMethod}
-	{
-		assert(mInstance);
-		assert(mGcHandle);
-		assert(mTickMethod);
-
-		MonoClass* clasz = mono_object_get_class(mInstance);
-		assert(clasz);
-
-		if (MonoMethod* defaultCtor = mono_class_get_method_from_name(clasz, ".ctor", 0))
-		{
-			MonoObject* exception;
-			mono_runtime_invoke(defaultCtor, mInstance, nullptr, &exception);
-			check_and_handle_exception(exception);
-		}
-	}
-
-	MonoDynamicNodeInstance(MonoDynamicNodeInstance&& other) noexcept :
-		mInstance{other.mInstance},
-		mGcHandle{other.mGcHandle},
-		mTickMethod{other.mTickMethod}
-	{
-		other.mInstance = nullptr;
-		other.mGcHandle = 0;
-		other.mTickMethod = nullptr;
-
-	}
-
-	~MonoDynamicNodeInstance()
-	{
-		if (mGcHandle)
-		{
-			mono_gchandle_free(mGcHandle);
-		}
-	}
-};
+int constexpr WIDTH{1280};
+int constexpr HEIGHT{720};
+float constexpr ASPECT_RATIO{static_cast<float>(WIDTH) / HEIGHT};
+int constexpr MAX_NODES{10};
 
 
 LRESULT CALLBACK window_proc(HWND const hwnd, UINT const msg, WPARAM const wparam, LPARAM const lparam)
@@ -139,7 +82,17 @@ int main()
 		return -1;
 	}
 
-	auto const hwnd = CreateWindowExW(0, wndClass.lpszClassName, L"MyWindow", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, WINDOW_WIDTH, WINDOW_HEIGHT, nullptr, nullptr, wndClass.hInstance, nullptr);
+	RECT windowRect
+	{
+		.left = 0,
+		.top = 0,
+		.right = WIDTH,
+		.bottom = HEIGHT
+	};
+
+	AdjustWindowRect(&windowRect, WS_OVERLAPPEDWINDOW, false);
+
+	auto const hwnd = CreateWindowExW(0, wndClass.lpszClassName, L"MyWindow", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, windowRect.right - windowRect.left, windowRect.bottom - windowRect.top, nullptr, nullptr, wndClass.hInstance, nullptr);
 
 	if (!hwnd)
 	{
@@ -234,16 +187,43 @@ int main()
 			.SemanticIndex = 0,
 			.Format = DXGI_FORMAT_R32G32B32_FLOAT,
 			.InputSlot = 0,
-			.AlignedByteOffset = 0,
+			.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT,
 			.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA,
 			.InstanceDataStepRate = 0
 		},
 		{
-			.SemanticName = "OBJECTPOS",
+			.SemanticName = "MODELMATRIX",
 			.SemanticIndex = 0,
-			.Format = DXGI_FORMAT_R32G32B32_FLOAT,
+			.Format = DXGI_FORMAT_R32G32B32A32_FLOAT,
 			.InputSlot = 1,
-			.AlignedByteOffset = 0,
+			.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT,
+			.InputSlotClass = D3D11_INPUT_PER_INSTANCE_DATA,
+			.InstanceDataStepRate = 1
+		},
+		{
+			.SemanticName = "MODELMATRIX",
+			.SemanticIndex = 1,
+			.Format = DXGI_FORMAT_R32G32B32A32_FLOAT,
+			.InputSlot = 1,
+			.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT,
+			.InputSlotClass = D3D11_INPUT_PER_INSTANCE_DATA,
+			.InstanceDataStepRate = 1
+		},
+		{
+			.SemanticName = "MODELMATRIX",
+			.SemanticIndex = 2,
+			.Format = DXGI_FORMAT_R32G32B32A32_FLOAT,
+			.InputSlot = 1,
+			.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT,
+			.InputSlotClass = D3D11_INPUT_PER_INSTANCE_DATA,
+			.InstanceDataStepRate = 1
+		},
+		{
+			.SemanticName = "MODELMATRIX",
+			.SemanticIndex = 3,
+			.Format = DXGI_FORMAT_R32G32B32A32_FLOAT,
+			.InputSlot = 1,
+			.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT,
 			.InputSlotClass = D3D11_INPUT_PER_INSTANCE_DATA,
 			.InstanceDataStepRate = 1
 		}
@@ -292,9 +272,11 @@ int main()
 	assert(SUCCEEDED(hresult));
 	d3dDeviceContext->IASetVertexBuffers(0, 1, vertexBuffer.GetAddressOf(), &vertexStride, &vertexOffset);
 
-	D3D11_BUFFER_DESC constexpr cubePositionBufferDesc
+	UINT constexpr cubeInstanceBufferElementSize = sizeof(DirectX::XMFLOAT4X4);
+
+	D3D11_BUFFER_DESC constexpr cubeInstanceBufferDesc
 	{
-		.ByteWidth = MAX_OBJECTS * 3 * sizeof(float),
+		.ByteWidth = MAX_NODES * cubeInstanceBufferElementSize,
 		.Usage = D3D11_USAGE_DYNAMIC,
 		.BindFlags = D3D11_BIND_VERTEX_BUFFER,
 		.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
@@ -302,13 +284,12 @@ int main()
 		.StructureByteStride = 0
 	};
 
-	UINT constexpr positionStride = 3 * sizeof(float);
-	UINT constexpr positionOffset = 0;
+	UINT constexpr cubeInstanceBufferOffset = 0;
 
-	ComPtr<ID3D11Buffer> positionBuffer;
-	hresult = d3dDevice->CreateBuffer(&cubePositionBufferDesc, nullptr, positionBuffer.GetAddressOf());
+	ComPtr<ID3D11Buffer> instanceBuffer;
+	hresult = d3dDevice->CreateBuffer(&cubeInstanceBufferDesc, nullptr, instanceBuffer.GetAddressOf());
 	assert(SUCCEEDED(hresult));
-	d3dDeviceContext->IASetVertexBuffers(1, 1, positionBuffer.GetAddressOf(), &positionStride, &positionOffset);
+	d3dDeviceContext->IASetVertexBuffers(1, 1, instanceBuffer.GetAddressOf(), &cubeInstanceBufferElementSize, &cubeInstanceBufferOffset);
 
 	unsigned constexpr indexData[]
 	{
@@ -392,8 +373,8 @@ int main()
 	{
 		.TopLeftX = 0,
 		.TopLeftY = 0,
-		.Width = 1280,
-		.Height = 720,
+		.Width = WIDTH,
+		.Height = HEIGHT,
 		.MinDepth = 0,
 		.MaxDepth = 1
 	};
@@ -408,7 +389,7 @@ int main()
 	auto* const monoImage = mono_assembly_get_image(monoAssembly);
 	assert(monoImage);
 
-	std::vector<MonoDynamicNodeInstance> monoDynamicNodeInstances;
+	std::vector<leopph::ManagedNodeInstance> managedNodeInstances;
 
 	MonoClass* const monoNodeClass = mono_class_from_name(monoImage, "leopph", "Node");
 	assert(monoNodeClass);
@@ -430,21 +411,15 @@ int main()
 		MonoClass* monoClass = mono_class_from_name(monoImage, monoClassNameSpace, monoClassName);
 		assert(monoClass);
 
-		if (mono_class_is_subclass_of(monoClass, monoNodeClass, false))
+		if (mono_class_is_subclass_of(monoClass, monoNodeClass, false) && monoClass != monoNodeClass)
 		{
-			if (MonoMethod* monoTickMethod = mono_class_get_method_from_name(monoClass, "Tick", 0))
-			{
-				MonoObject* monoInstance = mono_object_new(monoDomain, monoClass);
-				assert(monoInstance);
-
-				monoDynamicNodeInstances.emplace_back(monoInstance, monoTickMethod);
-			}
+			managedNodeInstances.emplace_back(monoClass);
 		}
 	}
 
 	ShowWindow(hwnd, SW_SHOWDEFAULT);
 
-	init_time();
+	leopph::init_time();
 
 	while (true)
 	{
@@ -461,55 +436,61 @@ int main()
 			DispatchMessageW(&msg);
 		}
 
-		update_keyboard_state();
+		leopph::update_keyboard_state();
 
-		for (auto const& instance : monoDynamicNodeInstances)
+		for (auto const& node : managedNodeInstances)
 		{
-			instance.tick();
+			node.tick();
 		}
 
-		std::vector<Vector3> const& positions = *get_positions();
-
-		if (positions.empty())
+		if (leopph::nodes.empty())
 		{
 			continue;
 		}
 
-		std::size_t const numObj{positions.size() > MAX_OBJECTS ? MAX_OBJECTS : positions.size()};
+		D3D11_MAPPED_SUBRESOURCE mappedInstanceBuffer;
+		d3dDeviceContext->Map(instanceBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedInstanceBuffer);
+		DirectX::XMFLOAT4X4* mappedInstanceBufferData{static_cast<DirectX::XMFLOAT4X4*>(mappedInstanceBuffer.pData)};
 
-		D3D11_MAPPED_SUBRESOURCE mappedPosBuffer;
-		d3dDeviceContext->Map(positionBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPosBuffer);
-		auto* mappedPosBufferData = static_cast<DirectX::XMFLOAT3*>(mappedPosBuffer.pData);
-
-		for (int i = 0; i < numObj; i++)
+		for (int i = 0; auto const& [id, node] : leopph::nodes)
 		{
-			DirectX::XMFLOAT3 posData{reinterpret_cast<float const*>(&positions[i])};
-			DirectX::XMStoreFloat3(mappedPosBufferData + i, DirectX::XMLoadFloat3({&posData}));
+			if (i >= MAX_NODES)
+			{
+				break;
+			}
+
+			DirectX::XMFLOAT3 scaling{node->get_scale().get_data()};
+			DirectX::XMFLOAT4 rotation{reinterpret_cast<float const*>(&node->get_rotation())};
+			DirectX::XMFLOAT3 translation{node->get_position().get_data()};
+
+			DirectX::XMMATRIX const modelMat = DirectX::XMMatrixScalingFromVector(DirectX::XMLoadFloat3(&scaling)) *
+				DirectX::XMMatrixRotationQuaternion(DirectX::XMLoadFloat4(&rotation)) *
+				DirectX::XMMatrixTranslationFromVector(DirectX::XMLoadFloat3(&translation));
+
+			DirectX::XMStoreFloat4x4(mappedInstanceBufferData + i, modelMat);
+
+			i++;
 		}
 
-		d3dDeviceContext->Unmap(positionBuffer.Get(), 0);
+		d3dDeviceContext->Unmap(instanceBuffer.Get(), 0);
 
-		DirectX::XMFLOAT3 const camPos{reinterpret_cast<float const*>(get_cam_pos())};
-		DirectX::XMFLOAT3 const forward{0, 0, 1};
-		auto const loadedCamPos = DirectX::XMLoadFloat3(&camPos);
-		auto const loadedCamTarget = DirectX::XMVectorAdd(DirectX::XMLoadFloat3(&forward), loadedCamPos);
-		auto viewMat = DirectX::XMMatrixLookAtLH(loadedCamPos, loadedCamTarget, {0, 1, 0});
-		auto projMat = DirectX::XMMatrixPerspectiveFovLH(DirectX::XMConvertToRadians(90), static_cast<float>(WINDOW_WIDTH) / WINDOW_HEIGHT, 0.3f, 100.f);
-		auto viewProjMat = viewMat * projMat;
+		DirectX::XMFLOAT3 const camPos{leopph::camPos.get_data()};
+		DirectX::XMMATRIX viewMat = DirectX::XMMatrixLookToLH(DirectX::XMLoadFloat3(&camPos), {0, 0, 1}, {0, 1, 0});
+		DirectX::XMMATRIX projMat = DirectX::XMMatrixPerspectiveFovLH(DirectX::XMConvertToRadians(90.0f / ASPECT_RATIO), ASPECT_RATIO, 0.3f, 100.f);
 
 		D3D11_MAPPED_SUBRESOURCE mappedCbuffer;
 		d3dDeviceContext->Map(cbuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedCbuffer);
-		DirectX::XMStoreFloat4x4(static_cast<DirectX::XMFLOAT4X4*>(mappedCbuffer.pData), viewProjMat);
+		DirectX::XMStoreFloat4x4(static_cast<DirectX::XMFLOAT4X4*>(mappedCbuffer.pData), viewMat * projMat);
 		d3dDeviceContext->Unmap(cbuffer.Get(), 0);
 
 		FLOAT clearColor[]{0.5f, 0, 1, 1};
 		d3dDeviceContext->ClearRenderTargetView(backBufRtv.Get(), clearColor);
 		d3dDeviceContext->OMSetRenderTargets(1, backBufRtv.GetAddressOf(), nullptr);
 
-		d3dDeviceContext->DrawIndexedInstanced(ARRAYSIZE(indexData), static_cast<UINT>(numObj), 0, 0, 0);
+		d3dDeviceContext->DrawIndexedInstanced(ARRAYSIZE(indexData), static_cast<UINT>(std::min<std::size_t>(MAX_NODES, leopph::nodes.size())), 0, 0, 0);
 
 		dxgiSwapChain1->Present(0, 0);
 
-		measure_time();
+		leopph::measure_time();
 	}
 }

@@ -1,18 +1,19 @@
+#pragma pack_matrix(row_major)
+
 cbuffer matrices : register(b0)
 {
-	row_major float4x4 viewProj;
+	float4x4 viewProj;
 };
 
 struct VS_IN
 {
 	float3 vertexPos : VERTEXPOS;
-	float3 objectPos : OBJECTPOS;
+	float4x4 modelMat : MODELMATRIX;
 };
 
 float4 vs_main(VS_IN vs_in) : SV_POSITION
 {
-	float4x4 model = float4x4(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, vs_in.objectPos, 1);
-	return mul(float4(vs_in.vertexPos, 1), mul(model, viewProj));
+	return mul(float4(vs_in.vertexPos, 1), mul(vs_in.modelMat, viewProj));
 }
 
 float4 ps_main() : SV_TARGET
