@@ -87,6 +87,11 @@ namespace leopph
 		deinit();
 	}
 
+	LEOPPHAPI u64 Node::get_id() const
+	{
+		return mId;
+	}
+
 
 	Vector3 const& Node::get_position() const
 	{
@@ -551,6 +556,19 @@ namespace leopph
 		__declspec(dllexport) Vector3 const* get_node_forward_axis(u64 const id)
 		{
 			return &nodes[id]->get_forward_axis();
+		}
+
+
+		__declspec(dllexport) u64 get_node_parent_id(u64 const id)
+		{
+			Node* parent = nodes[id]->get_parent();
+			return parent ? parent->get_id() : 0;
+		}
+
+
+		__declspec(dllexport) void set_node_parent(u64 const targetNodeId, u64 const parentNodeId)
+		{
+			nodes[targetNodeId]->set_parent(parentNodeId == 0 ? nullptr : nodes[parentNodeId].get());
 		}
 	}
 }

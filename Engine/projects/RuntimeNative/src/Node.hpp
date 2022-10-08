@@ -65,6 +65,8 @@ namespace leopph
 
 		virtual LEOPPHAPI ~Node();
 
+		[[nodiscard]] LEOPPHAPI u64 get_id() const;
+
 		[[nodiscard]] LEOPPHAPI std::string_view get_name() const;
 		LEOPPHAPI void set_name(std::string name);
 

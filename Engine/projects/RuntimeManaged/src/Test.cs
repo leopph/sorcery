@@ -57,8 +57,10 @@ public class Camera : Node
 
     public Camera()
     {
-        Position = new Vector3(0, 0, -3);
+        Parent = new Node();
+        Parent.Position = new Vector3(0, 0, -3);
         SetCamPos(Position);
+
     }
 
     private void Tick()
@@ -104,7 +106,7 @@ public class Camera : Node
             posDelta *= 2;
         }
 
-        Translate(posDelta * Time.FrameTime);
+        Parent?.Translate(posDelta * Time.FrameTime);
 
         SetCamPos(Position);
     }

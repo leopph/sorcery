@@ -59,21 +59,20 @@ namespace leopph
 	}
 
 
-	Quaternion::Quaternion(f32 const x, f32 const y, f32 const z, f32 const w) :
+	Quaternion::Quaternion(f32 const w, f32 const x, f32 const y, f32 const z) :
 		x{x}, y{y}, z{z}, w{w}
 	{}
 
 
 	Quaternion::Quaternion(Vector3 const& axis, f32 const angleDegrees)
 	{
-		auto normalizedAxis{axis.normalized()};
 		auto const angleHalfRadians = to_radians(angleDegrees) / 2.0f;
+		auto vec = axis.normalized() * std::sinf(angleHalfRadians);
 
 		w = std::cos(angleHalfRadians);
-		normalizedAxis *= std::sin(angleHalfRadians);
-		x = normalizedAxis[0];
-		y = normalizedAxis[1];
-		z = normalizedAxis[2];
+		x = vec[0];
+		y = vec[1];
+		z = vec[2];
 	}
 
 
@@ -98,26 +97,40 @@ namespace leopph
 	}
 
 
+	void Quaternion::to_axis_angle(Vector3& axis, float& angle) const
+	{
+		axis = {x, y, z};
+		float const vectorLength = axis.length();
+		axis.normalize();
+		angle = 2 * std::atan2f(vectorLength, w);
+	}
+
+
+	f32 Quaternion::get_norm_squared() const
+	{
+		return std::powf(w, 2) + std::powf(x, 2) + std::powf(y, 2) + std::powf(z, 2);
+	}
+
+
 	f32 Quaternion::get_norm() const
 	{
-		return std::sqrt(std::powf(w, 2) + std::powf(x, 2) + std::powf(y, 2) + std::powf(z, 2));
+		return std::sqrtf(get_norm_squared());
 	}
 
 
 	Quaternion Quaternion::normalized() const
 	{
-		auto const norm{get_norm()};
-		return Quaternion{x / norm, y / norm, z / norm, w / norm};
+		return Quaternion{*this}.normalize();
 	}
 
 
 	Quaternion& Quaternion::normalize()
 	{
-		auto const norm{get_norm()};
+		auto const norm = get_norm();
+		w /= norm;
 		x /= norm;
 		y /= norm;
 		z /= norm;
-		w /= norm;
 		return *this;
 	}
 
@@ -125,7 +138,7 @@ namespace leopph
 
 	Quaternion Quaternion::conjugate() const
 	{
-		return Quaternion{-x, -y, -z, w};
+		return Quaternion{*this}.conjugate_in_place();
 	}
 
 
@@ -140,18 +153,17 @@ namespace leopph
 
 	Quaternion Quaternion::inverse() const
 	{
-		auto const normSquared{std::powf(x, 2) + std::powf(y, 2) + std::powf(z, 2) + std::powf(w, 2)};
-		return Quaternion{-x / normSquared, -y / normSquared, -z / normSquared, w / normSquared};
+		return Quaternion{*this}.invert();
 	}
 
 
 	Quaternion& Quaternion::invert()
 	{
-		auto const normSquared{std::powf(x, 2) + std::powf(y, 2) + std::powf(z, 2) + std::powf(w, 2)};
+		auto const normSquared = get_norm_squared();
+		w /= normSquared;
 		x = -x / normSquared;
 		y = -y / normSquared;
 		z = -z / normSquared;
-		w /= normSquared;
 		return *this;
 	}
 
@@ -172,10 +184,10 @@ namespace leopph
 	{
 		return Quaternion
 		{
+			left.w * right.w - left.x * right.x - left.y * right.y - left.z * right.z,
 			left.w * right.x + left.x * right.w + left.y * right.z - left.z * right.y,
 			left.w * right.y - left.x * right.z + left.y * right.w + left.z * right.x,
-			left.w * right.z + left.x * right.y - left.y * right.x + left.z * right.w,
-			left.w * right.w - left.x * right.x - left.y * right.y - left.z * right.z
+			left.w * right.z + left.x * right.y - left.y * right.x + left.z * right.w
 		};
 	}
 

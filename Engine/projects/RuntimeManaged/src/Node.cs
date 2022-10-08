@@ -19,9 +19,12 @@ namespace leopph
         private readonly ulong _id;
 
 
-        public Node()
+        public Node() : this(NativeNewNode())
+        {}
+
+        private Node(ulong id)
         {
-            _id = NativeNewNode();
+            _id = id;
         }
 
 
@@ -76,6 +79,17 @@ namespace leopph
         public Vector3 Right => NativeGetNodeRightAxis(_id);
         public Vector3 Up => NativeGetNodeUpAxis(_id);
         public Vector3 Forward => NativeGetNodeForwardAxis(_id);
+
+        public Node? Parent
+        {
+            get
+            {
+                ulong parentId = NativeGetNodeParentId(_id);
+                return parentId == 0 ? null : new Node(parentId);
+            }
+
+            set => NativeSetNodeParent(_id, value == null ? 0 : value._id);
+        }
 
 
         public void Translate(in Vector3 translation, Space space = Space.World)
@@ -250,5 +264,12 @@ namespace leopph
 
         [DllImport(Constants.UNMANAGED_DLL_NAME, EntryPoint = "get_node_forward_axis")]
         private extern static ref Vector3 NativeGetNodeForwardAxis(ulong id);
+
+
+        [DllImport(Constants.UNMANAGED_DLL_NAME, EntryPoint = "get_node_parent_id", ExactSpelling = true)]
+        private extern static ulong NativeGetNodeParentId(ulong id);
+
+        [DllImport(Constants.UNMANAGED_DLL_NAME, EntryPoint = "set_node_parent", ExactSpelling = true)]
+        private extern static void NativeSetNodeParent(ulong targetNodeId, ulong parentNodeId);
     }
 }

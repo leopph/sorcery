@@ -376,7 +376,7 @@ namespace leopph
 
     public struct Quaternion
     {
-        public Quaternion(float x = 0, float y = 0, float z = 0, float w = 1) => (X, Y, Z, W) = (x, y, z, w);
+        public Quaternion(float w, float x, float y, float z) => (X, Y, Z, W) = (x, y, z, w);
 
         public Quaternion(Vector3 axis, float angleDegrees)
         {
@@ -398,26 +398,26 @@ namespace leopph
         {
             get => index switch
             {
-                0 => X,
-                1 => Y,
-                2 => Z,
-                3 => W,
+                0 => W,
+                1 => X,
+                2 => Y,
+                3 => Z,
                 _ => throw new IndexOutOfRangeException()
             };
             set
             {
                 switch (index)
                 {
-                    case 0: X = value; break;
-                    case 1: Y = value; break;
-                    case 2: Z = value; break;
-                    case 3: W = value; break;
+                    case 0: W = value; break;
+                    case 1: X = value; break;
+                    case 2: Y = value; break;
+                    case 3: Z = value; break;
                     default: throw new IndexOutOfRangeException();
                 }
             }
         }
 
-        public static Quaternion Identity => new Quaternion(0, 0, 0, 1);
+        public static Quaternion Identity => new Quaternion(1, 0, 0, 0);
 
         public float Norm => Math.Pow(X, 2) + Math.Pow(Y, 2) + Math.Pow(Z, 3) + Math.Sqrt(Math.Pow(W, 2));
 
@@ -431,9 +431,9 @@ namespace leopph
             return this;
         }
 
-        public Quaternion Normalized => new Quaternion(X, Y, Z, W).Normalize();
+        public Quaternion Normalized => new Quaternion(W, X, Y, Z).Normalize();
 
-        public Quaternion Conjugate => new Quaternion(-X, -Y, -Z, W);
+        public Quaternion Conjugate => new Quaternion(W, -X, -Y, -Z);
 
         public Quaternion ConjugateInPlace()
         {
@@ -453,7 +453,7 @@ namespace leopph
             return this;
         }
 
-        public Quaternion Inverse => new Quaternion(X, Y, Z, W).Invert();
+        public Quaternion Inverse => new Quaternion(W, X, Y, Z).Invert();
 
         public static Quaternion operator *(Quaternion left, Quaternion right)
         {
@@ -461,7 +461,7 @@ namespace leopph
             var y = left.W * right.Y - left.X * right.Z + left.Y * right.W + left.Z * right.X;
             var z = left.W * right.Z + left.X * right.Y - left.Y * right.X + left.Z * right.W;
             var w = left.W * right.W - left.X * right.X - left.Y * right.Y - left.Z * right.Z;
-            return new Quaternion(x, y, z, w);
+            return new Quaternion(w, x, y, z);
         }
     }
 }

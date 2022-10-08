@@ -265,12 +265,15 @@ namespace leopph
 		f32 w;
 
 
-		LEOPPHAPI explicit Quaternion(f32 x = 0.0f, f32 y = 0.0f, f32 z = 0.0f, f32 w = 1.0f);
-		LEOPPHAPI explicit Quaternion(Vector3 const& axis, f32 angleDegrees);
+		LEOPPHAPI explicit Quaternion(f32 w = 1.0f, f32 x = 0.0f, f32 y = 0.0f, f32 z = 0.0f);
+		LEOPPHAPI Quaternion(Vector3 const& axis, f32 angleDegrees);
 
 		[[nodiscard]] LEOPPHAPI Vector3 to_euler_angles() const;
+		[[nodiscard]] LEOPPHAPI void to_axis_angle(Vector3& axis, float& angle) const;
 
+		[[nodiscard]] LEOPPHAPI f32 get_norm_squared() const;
 		[[nodiscard]] LEOPPHAPI f32 get_norm() const;
+
 		[[nodiscard]] LEOPPHAPI Quaternion normalized() const;
 		LEOPPHAPI Quaternion& normalize();
 
@@ -1250,7 +1253,7 @@ namespace leopph
 	template<class T>
 	auto Quaternion::rotate(Vector<T, 3> const& vec) const
 	{
-		auto const retQuat{*this * Quaternion{0, vec[0], vec[1], vec[2]} *conjugate()};
+		auto const retQuat = *this * Quaternion{0, vec[0], vec[1], vec[2]} *conjugate();
 		return Vector<T, 3>{retQuat.x, retQuat.y, retQuat.z};
 	}
 }
