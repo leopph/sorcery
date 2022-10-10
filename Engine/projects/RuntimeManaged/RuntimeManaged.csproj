@@ -3,7 +3,7 @@
 	<PropertyGroup>
 		<TargetFramework>netstandard2.1</TargetFramework>
 		<Nullable>enable</Nullable>
-		<AssemblyName>leopph_runtime_managed</AssemblyName>
+		<AssemblyName>LeopphRuntimeManaged</AssemblyName>
 		<RootNamespace>leopph</RootNamespace>
 		<BaseOutputPath>$(SolutionDir)Engine\bin</BaseOutputPath>
 		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>

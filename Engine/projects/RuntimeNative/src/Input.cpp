@@ -6,6 +6,7 @@
 
 #include <cassert>
 
+
 namespace leopph
 {
 	namespace
@@ -56,21 +57,21 @@ namespace leopph
 	}
 
 
-	extern "C"
+	namespace detail
 	{
-		__declspec(dllexport) bool get_key(u8 const key)
+		bool get_key(u8 const key)
 		{
 			return gKeyboardState[key] == KEY_DOWN || gKeyboardState[key] == KEY_HELD;
 		}
 
 
-		__declspec(dllexport) bool get_key_down(u8 const key)
+		bool get_key_down(u8 const key)
 		{
 			return gKeyboardState[key] == KEY_DOWN;
 		}
 
 
-		__declspec(dllexport) bool get_key_up(u8 const key)
+		bool get_key_up(u8 const key)
 		{
 			return gKeyboardState[key] == KEY_UP;
 		}

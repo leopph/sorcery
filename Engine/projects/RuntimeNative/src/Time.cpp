@@ -30,15 +30,15 @@ namespace leopph
 	}
 
 
-	extern "C"
+	namespace detail
 	{
-		__declspec(dllexport) f32 get_full_time()
+		f32 get_full_time()
 		{
 			return gFullTimeSeconds;
 		}
 
 
-		__declspec(dllexport) f32 get_frame_time()
+		f32 get_frame_time()
 		{
 			return gLastFrameTimeSeconds;
 		}

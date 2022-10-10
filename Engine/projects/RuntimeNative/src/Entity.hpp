@@ -12,14 +12,8 @@
 
 namespace leopph
 {
-	/*struct Node
-	{
-		u64 id{};
-		std::wstring name{};
-		Vector3 position{0, 0, 0};
-		Quaternion rotation{0, 0, 0, 1};
-		Vector3 scale{1, 1, 1};
-	};*/
+	class Component;
+
 
 	enum class Space : u8
 	{
@@ -28,7 +22,7 @@ namespace leopph
 	};
 
 
-	class Node
+	class Entity
 	{
 	private:
 		static u64 sNextId;
@@ -49,21 +43,21 @@ namespace leopph
 		Vector3 mRight{Vector3::right()};
 		Vector3 mUp{Vector3::up()};
 
-		Node* mParent{nullptr};
-		std::vector<Node*> mChildren;
+		Entity* mParent{nullptr};
+		std::vector<Entity*> mChildren;
 
 		Matrix4 mModelMat{Matrix4::identity()};
 		Matrix3 mNormalMat{Matrix4::identity()};
 
 	public:
-		LEOPPHAPI Node();
-		LEOPPHAPI Node(Node const& other);
-		LEOPPHAPI Node(Node&& other) noexcept;
+		LEOPPHAPI Entity();
+		LEOPPHAPI Entity(Entity const& other);
+		LEOPPHAPI Entity(Entity&& other) noexcept;
 
-		LEOPPHAPI Node& operator=(Node const& other);
-		LEOPPHAPI Node& operator=(Node&& other) noexcept;
+		LEOPPHAPI Entity& operator=(Entity const& other);
+		LEOPPHAPI Entity& operator=(Entity&& other) noexcept;
 
-		virtual LEOPPHAPI ~Node();
+		virtual LEOPPHAPI ~Entity();
 
 		[[nodiscard]] LEOPPHAPI u64 get_id() const;
 
@@ -101,11 +95,11 @@ namespace leopph
 		[[nodiscard]] LEOPPHAPI Vector3 const& get_right_axis() const;
 		[[nodiscard]] LEOPPHAPI Vector3 const& get_up_axis() const;
 
-		[[nodiscard]] LEOPPHAPI Node* get_parent() const;
-		void LEOPPHAPI set_parent(Node* parent);
+		[[nodiscard]] LEOPPHAPI Entity* get_parent() const;
+		void LEOPPHAPI set_parent(Entity* parent);
 		void LEOPPHAPI unparent();
 
-		[[nodiscard]] LEOPPHAPI std::span<Node* const> get_children() const;
+		[[nodiscard]] LEOPPHAPI std::span<Entity* const> get_children() const;
 
 		LEOPPHAPI Matrix4 get_model_matrix() const;
 		LEOPPHAPI Matrix3 get_normal_matrix() const;
@@ -117,8 +111,51 @@ namespace leopph
 		void calculate_matrices();
 		void init();
 		void deinit();
-		void take_children_from(Node const& node);
+		void take_children_from(Entity const& node);
 	};
 
-	LEOPPHAPI extern std::unordered_map<u64, std::unique_ptr<Node>> nodes;
+
+	LEOPPHAPI extern std::unordered_map<u64, std::unique_ptr<Entity>> entities;
+
+
+	namespace detail
+	{
+		u64 new_entity();
+		i32 is_entity_alive(u64 id);
+		void delete_entity(u64 id);
+
+		Vector3 const* get_entity_world_position(u64 id);
+		void set_entity_world_position(u64 id, Vector3 const* position);
+		Vector3 const* get_entity_local_position(u64 id);
+		void set_entity_local_position(u64 id, Vector3 const* position);
+
+		Quaternion const* get_entity_world_rotation(u64 id);
+		void set_entity_world_rotation(u64 id, Quaternion const* rotation);
+		Quaternion const* get_entity_local_rotation(u64 id);
+		void set_entity_local_rotation(u64 id, Quaternion const* rotation);
+
+		Vector3 const* get_entity_world_scale(u64 id);
+		void set_entity_world_scale(u64 id, Vector3 const* scale);
+		Vector3 const* get_entity_local_scale(u64 id);
+		void set_entity_local_scale(u64 id, Vector3 const* scale);
+
+		void translate_entity_from_vector(u64 id, Vector3 const* translation, Space space);
+		void translate_entity(u64 id, f32 x, f32 y, f32 z, Space space);
+
+		void rotate_entity(u64 id, Quaternion const* rotation, Space space);
+		void rotate_entity_angle_axis(u64 id, Vector3 const* axis, f32 angleDegrees, Space space);
+
+		void rescale_entity_from_vector(u64 id, Vector3 const* scaling, Space space);
+		void rescale_entity(u64 id, f32 x, f32 y, f32 z, Space space);
+
+		Vector3 const* get_entity_right_axis(u64 id);
+		Vector3 const* get_entity_up_axis(u64 id);
+		Vector3 const* get_entity_forward_axis(u64 id);
+
+		u64 get_entity_parent_id(u64 id);
+		void set_entity_parent(u64 targetEntityId, u64 parentEntityId);
+
+		u64 get_entity_child_count(u64 id);
+		u64 get_entity_child_id(u64 parentId, u64 childIndex);
+	}
 }

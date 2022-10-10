@@ -12,10 +12,6 @@
 #include <wrl/client.h>
 #include <DirectXMath.h>
 
-#include <mono/jit/jit.h>
-#include <mono/metadata/assembly.h>
-#include <mono/metadata/debug-helpers.h>
-
 #include "Managed.hpp"
 
 #ifdef NDEBUG
@@ -27,8 +23,9 @@
 #endif
 
 #include <Camera.hpp>
+#include <Entity.hpp>
 #include <Input.hpp>
-#include <Node.hpp>
+#include <Managed.hpp>
 #include <Time.hpp>
 
 #include <algorithm>
@@ -379,43 +376,8 @@ int main()
 		.MaxDepth = 1
 	};
 	d3dDeviceContext->RSSetViewports(1, &viewPort);
-
-	auto* const monoDomain = mono_jit_init("leopph");
-	assert(monoDomain);
-
-	auto* const monoAssembly = mono_domain_assembly_open(monoDomain, "leopph_runtime_managed.dll");
-	assert(monoAssembly);
-
-	auto* const monoImage = mono_assembly_get_image(monoAssembly);
-	assert(monoImage);
-
-	std::vector<leopph::ManagedNodeInstance> managedNodeInstances;
-
-	MonoClass* const monoNodeClass = mono_class_from_name(monoImage, "leopph", "Node");
-	assert(monoNodeClass);
-
-	MonoTableInfo const* const monoTableInfo = mono_image_get_table_info(monoImage, MONO_TABLE_TYPEDEF);
-	int const numMonoTableRows = mono_table_info_get_rows(monoTableInfo);
-
-	for (int i = 0; i < numMonoTableRows; i++)
-	{
-		unsigned cols[MONO_TYPEDEF_SIZE];
-		mono_metadata_decode_row(monoTableInfo, i, cols, MONO_TYPEDEF_SIZE);
-
-		char const* const monoClassName = mono_metadata_string_heap(monoImage, cols[MONO_TYPEDEF_NAME]);
-		assert(monoClassName);
-
-		char const* const monoClassNameSpace = mono_metadata_string_heap(monoImage, cols[MONO_TYPEDEF_NAMESPACE]);
-		assert(monoClassNameSpace);
-
-		MonoClass* monoClass = mono_class_from_name(monoImage, monoClassNameSpace, monoClassName);
-		assert(monoClass);
-
-		if (mono_class_is_subclass_of(monoClass, monoNodeClass, false) && monoClass != monoNodeClass)
-		{
-			managedNodeInstances.emplace_back(monoClass);
-		}
-	}
+	
+	leopph::initialize_managed_runtime();
 
 	ShowWindow(hwnd, SW_SHOWDEFAULT);
 
@@ -438,12 +400,12 @@ int main()
 
 		leopph::update_keyboard_state();
 
-		for (auto const& node : managedNodeInstances)
+		for (auto const& entity : leopph::managedEntityInstances)
 		{
-			node.tick();
+			entity.tick();
 		}
 
-		if (leopph::nodes.empty())
+		if (leopph::entities.empty())
 		{
 			continue;
 		}
@@ -452,16 +414,16 @@ int main()
 		d3dDeviceContext->Map(instanceBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedInstanceBuffer);
 		DirectX::XMFLOAT4X4* mappedInstanceBufferData{static_cast<DirectX::XMFLOAT4X4*>(mappedInstanceBuffer.pData)};
 
-		for (int i = 0; auto const& [id, node] : leopph::nodes)
+		for (int i = 0; auto const& [id, entity] : leopph::entities)
 		{
 			if (i >= MAX_NODES)
 			{
 				break;
 			}
 
-			DirectX::XMFLOAT3 scaling{node->get_scale().get_data()};
-			DirectX::XMFLOAT4 rotation{reinterpret_cast<float const*>(&node->get_rotation())};
-			DirectX::XMFLOAT3 translation{node->get_position().get_data()};
+			DirectX::XMFLOAT3 scaling{entity->get_scale().get_data()};
+			DirectX::XMFLOAT4 rotation{reinterpret_cast<float const*>(&entity->get_rotation())};
+			DirectX::XMFLOAT3 translation{entity->get_position().get_data()};
 
 			DirectX::XMMATRIX const modelMat = DirectX::XMMatrixScalingFromVector(DirectX::XMLoadFloat3(&scaling)) *
 				DirectX::XMMatrixRotationQuaternion(DirectX::XMLoadFloat4(&rotation)) *
@@ -487,7 +449,7 @@ int main()
 		d3dDeviceContext->ClearRenderTargetView(backBufRtv.Get(), clearColor);
 		d3dDeviceContext->OMSetRenderTargets(1, backBufRtv.GetAddressOf(), nullptr);
 
-		d3dDeviceContext->DrawIndexedInstanced(ARRAYSIZE(indexData), static_cast<UINT>(std::min<std::size_t>(MAX_NODES, leopph::nodes.size())), 0, 0, 0);
+		d3dDeviceContext->DrawIndexedInstanced(ARRAYSIZE(indexData), static_cast<UINT>(std::min<std::size_t>(MAX_NODES, leopph::entities.size())), 0, 0, 0);
 
 		dxgiSwapChain1->Present(0, 0);
 

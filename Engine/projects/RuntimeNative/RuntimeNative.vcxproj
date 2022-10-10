@@ -47,12 +47,12 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)Engine\bin\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)obj\$(Configuration)\</IntDir>
-    <TargetName>leopph_runtime_native</TargetName>
+    <TargetName>LeopphRuntimeNative</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)Engine\bin\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)obj\$(Configuration)\</IntDir>
-    <TargetName>leopph_runtime_native</TargetName>
+    <TargetName>LeopphRuntimeNative</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -61,10 +61,13 @@
       <PreprocessorDefinitions>LEOPPH_NATIVE_RUNTIME_EXPORT;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>C:\Program Files\Mono\include\mono-2.0</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>C:\Program Files\Mono\lib</AdditionalLibraryDirectories>
+      <AdditionalDependencies>mono-2.0-sgen.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -76,28 +79,34 @@
       <PreprocessorDefinitions>LEOPPH_NATIVE_RUNTIME_EXPORT;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>C:\Program Files\Mono\include\mono-2.0</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>C:\Program Files\Mono\lib</AdditionalLibraryDirectories>
+      <AdditionalDependencies>mono-2.0-sgen.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\Color.cpp" />
     <ClCompile Include="src\Input.cpp" />
+    <ClCompile Include="src\Managed.cpp" />
     <ClCompile Include="src\Math.cpp" />
-    <ClCompile Include="src\Node.cpp" />
+    <ClCompile Include="src\Entity.cpp" />
     <ClCompile Include="src\Camera.cpp" />
     <ClCompile Include="src\Time.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Color.hpp" />
+    <ClInclude Include="src\Component.hpp" />
     <ClInclude Include="src\Core.hpp" />
     <ClInclude Include="src\Input.hpp" />
+    <ClInclude Include="src\Managed.hpp" />
     <ClInclude Include="src\Math.hpp" />
-    <ClInclude Include="src\Node.hpp" />
+    <ClInclude Include="src\Entity.hpp" />
     <ClInclude Include="src\Camera.hpp" />
     <ClInclude Include="src\Time.hpp" />
   </ItemGroup>

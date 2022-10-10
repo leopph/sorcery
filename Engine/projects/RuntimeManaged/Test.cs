@@ -1,7 +1,7 @@
 ﻿using leopph;
 using System.Runtime.InteropServices;
 
-public class Cube : Node
+public class Cube : Entity
 {
     private void Tick()
     {
@@ -50,17 +50,15 @@ public class Cube : Node
     }
 }
 
-public class Camera : Node
+public class Camera : Entity
 {
-    [DllImport(Constants.UNMANAGED_DLL_NAME, EntryPoint = "set_cam_pos")]
+    [DllImport("LeopphRuntimeNative.dll", EntryPoint = "set_cam_pos")]
     private static extern void SetCamPos(in Vector3 pos);
 
     public Camera()
     {
-        Parent = new Node();
-        Parent.Position = new Vector3(0, 0, -3);
+        Position = new Vector3(0, 0, -3);
         SetCamPos(Position);
-
     }
 
     private void Tick()
@@ -106,7 +104,7 @@ public class Camera : Node
             posDelta *= 2;
         }
 
-        Parent?.Translate(posDelta * Time.FrameTime);
+        Translate(posDelta * Time.FrameTime);
 
         SetCamPos(Position);
     }
