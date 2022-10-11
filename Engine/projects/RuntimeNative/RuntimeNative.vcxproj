@@ -61,13 +61,12 @@
       <PreprocessorDefinitions>LEOPPH_NATIVE_RUNTIME_EXPORT;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>C:\Program Files\Mono\include\mono-2.0</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Program Files\Mono\include\mono-2.0;$(DXSDK_DIR)Include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Program Files\Mono\lib</AdditionalLibraryDirectories>
-      <AdditionalDependencies>mono-2.0-sgen.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Program Files\Mono\lib;$(DXSDK_DIR)Lib\x64</AdditionalLibraryDirectories>
+      <AdditionalDependencies>dxgi.lib;d3d11.lib;mono-2.0-sgen.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -79,15 +78,14 @@
       <PreprocessorDefinitions>LEOPPH_NATIVE_RUNTIME_EXPORT;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>C:\Program Files\Mono\include\mono-2.0</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Program Files\Mono\include\mono-2.0;$(DXSDK_DIR)Include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Program Files\Mono\lib</AdditionalLibraryDirectories>
-      <AdditionalDependencies>mono-2.0-sgen.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Program Files\Mono\lib;$(DXSDK_DIR)Lib\x64</AdditionalLibraryDirectories>
+      <AdditionalDependencies>dxgi.lib;d3d11.lib;mono-2.0-sgen.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -99,13 +97,17 @@
     <ClCompile Include="src\Math.cpp" />
     <ClCompile Include="src\Entity.cpp" />
     <ClCompile Include="src\Camera.cpp" />
+    <ClCompile Include="src\RenderCore.cpp" />
     <ClCompile Include="src\Time.cpp" />
+    <ClCompile Include="src\Window.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Behavior.hpp" />
     <ClInclude Include="src\Color.hpp" />
     <ClInclude Include="src\Core.hpp" />
     <ClInclude Include="src\Cube.hpp" />
+    <ClInclude Include="src\Event.hpp" />
+    <ClInclude Include="src\Extent2D.hpp" />
     <ClInclude Include="src\Input.hpp" />
     <ClInclude Include="src\Managed.hpp" />
     <ClInclude Include="src\Math.hpp" />
@@ -113,6 +115,7 @@
     <ClInclude Include="src\Camera.hpp" />
     <ClInclude Include="src\Renderer3D.hpp" />
     <ClInclude Include="src\Time.hpp" />
+    <ClInclude Include="src\Window.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

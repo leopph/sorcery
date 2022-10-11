@@ -25,10 +25,10 @@
 #include <Camera.hpp>
 #include <Cube.hpp>
 #include <Behavior.hpp>
-//#include <Entity.hpp>
 #include <Input.hpp>
 #include <Managed.hpp>
 #include <Time.hpp>
+#include <Window.hpp>
 
 #include <algorithm>
 #include <cassert>
@@ -61,43 +61,14 @@ int main()
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 #endif
 
-	WNDCLASSW const wndClass
-	{
-		.style = 0,
-		.lpfnWndProc = window_proc,
-		.cbClsExtra = 0,
-		.cbWndExtra = 0,
-		.hInstance = GetModuleHandleW(0),
-		.hIcon = nullptr,
-		.hCursor = LoadCursorW(nullptr, IDC_ARROW),
-		.hbrBackground = nullptr,
-		.lpszMenuName = nullptr,
-		.lpszClassName = L"MyWindow",
-	};
+	auto const window = leopph::Window::Create();
 
-	if (!RegisterClassW(&wndClass))
+	if (!window)
 	{
-		std::fprintf(stderr, "Failed to register window class.\n");
 		return -1;
 	}
 
-	RECT windowRect
-	{
-		.left = 0,
-		.top = 0,
-		.right = WIDTH,
-		.bottom = HEIGHT
-	};
-
-	AdjustWindowRect(&windowRect, WS_OVERLAPPEDWINDOW, false);
-
-	auto const hwnd = CreateWindowExW(0, wndClass.lpszClassName, L"MyWindow", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, windowRect.right - windowRect.left, windowRect.bottom - windowRect.top, nullptr, nullptr, wndClass.hInstance, nullptr);
-
-	if (!hwnd)
-	{
-		std::fprintf(stderr, "Failed to create window.\n");
-		return -1;
-	}
+	window->set_client_area_size(WIDTH, HEIGHT);
 
 	ComPtr<ID3D11Device> d3dDevice;
 	ComPtr<ID3D11DeviceContext> d3dDeviceContext;
@@ -158,7 +129,7 @@ int main()
 	};
 
 	ComPtr<IDXGISwapChain1> dxgiSwapChain1;
-	hresult = dxgiFactory2->CreateSwapChainForHwnd(d3dDevice.Get(), hwnd, &swapChainDesc1, nullptr, nullptr, dxgiSwapChain1.GetAddressOf());
+	hresult = dxgiFactory2->CreateSwapChainForHwnd(d3dDevice.Get(), window->get_hwnd(), &swapChainDesc1, nullptr, nullptr, dxgiSwapChain1.GetAddressOf());
 	assert(SUCCEEDED(hresult));
 
 	ComPtr<ID3D11Texture2D> backBuf;
@@ -378,10 +349,10 @@ int main()
 		.MaxDepth = 1
 	};
 	d3dDeviceContext->RSSetViewports(1, &viewPort);
-	
+
 	leopph::initialize_managed_runtime();
 
-	ShowWindow(hwnd, SW_SHOWDEFAULT);
+	window->show();
 
 	leopph::init_time();
 
