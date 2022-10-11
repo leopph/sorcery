@@ -2,83 +2,11 @@
 
 namespace leopph
 {
-	u64 Entity::sNextId{1};
-
-
-	Entity::Entity() //:
+	Entity::Entity(u64 const id) :
+		mId{id}//,
 		//mScene{&get_scene_manager().get_active_scene()}
 	{
 		//mScene->add(this);
-	}
-
-
-	Entity::Entity(Entity const& other) :
-		//mScene{other.mScene},
-		mName{other.mName},
-		mLocalPosition{other.mLocalPosition},
-		mLocalScale{other.mLocalScale},
-		mWorldPosition{other.mWorldPosition},
-		mWorldRotation{other.mWorldRotation},
-		mWorldScale{other.mWorldScale},
-		mForward{other.mForward},
-		mRight{other.mRight},
-		mUp{other.mUp},
-		mParent{other.mParent},
-		mModelMat{other.mModelMat},
-		mNormalMat{other.mNormalMat}
-	{
-		init();
-	}
-
-
-	Entity::Entity(Entity&& other) noexcept :
-		Entity{other}
-	{
-		take_children_from(other);
-	}
-
-
-	Entity& Entity::operator=(Entity const& other)
-	{
-		if (this == &other)
-		{
-			return *this;
-		}
-
-		deinit();
-
-		//mScene = other.mScene;
-		mName = other.mName;
-		mLocalPosition = other.mLocalPosition;
-		mLocalRotation = other.mLocalRotation;
-		mLocalScale = other.mLocalScale;
-		mWorldPosition = other.mWorldPosition;
-		mWorldRotation = other.mWorldRotation;
-		mWorldScale = other.mWorldScale;
-		mForward = other.mForward;
-		mRight = other.mRight;
-		mUp = other.mUp;
-		mParent = other.mParent;
-		mModelMat = other.mModelMat;
-		mNormalMat = other.mNormalMat;
-
-		init();
-
-		return *this;
-	}
-
-
-	Entity& Entity::operator=(Entity&& other) noexcept
-	{
-		if (this == &other)
-		{
-			return *this;
-		}
-
-		*this = other;
-		take_children_from(other);
-
-		return *this;
 	}
 
 
@@ -328,6 +256,24 @@ namespace leopph
 	}
 
 
+	std::span<Behavior* const> Entity::get_behaviors() const
+	{
+		return mBehaviors;
+	}
+
+
+	void Entity::add_behavior(Behavior* const behavior)
+	{
+		mBehaviors.emplace_back(behavior);
+	}
+
+
+	void Entity::remove_behavior(Behavior* const behavior)
+	{
+		std::erase(mBehaviors, behavior);
+	}
+
+
 	void Entity::calculate_world_position_and_update_children()
 	{
 		mWorldPosition = mParent != nullptr ? mParent->mWorldRotation.rotate(mParent->mWorldPosition + mLocalPosition) : mLocalPosition;
@@ -429,7 +375,7 @@ namespace leopph
 		{
 			static u64 nextId{1};
 			u64 const id{nextId++};
-			entities[id] = std::make_unique<Entity>();
+			entities[id] = std::make_unique<Entity>(id);
 			return id;
 		}
 

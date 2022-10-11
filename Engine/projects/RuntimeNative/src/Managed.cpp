@@ -1,7 +1,9 @@
 #include "Managed.hpp"
 
-#include "Input.hpp"
+#include "Behavior.hpp"
+#include "Cube.hpp"
 #include "Entity.hpp"
+#include "Input.hpp"
 #include "Time.hpp"
 
 #include <mono/jit/jit.h>
@@ -19,20 +21,16 @@ namespace leopph
 {
 	namespace
 	{
-		MonoDomain* gAppDomain;
+		MonoDomain* gDomain;
 		MonoAssembly* gRuntimeAssembly;
 		MonoImage* gRuntimeImage;
-		MonoClass* gEntityClass;
 	}
-
-
-	std::vector<ManagedEntityInstance> managedEntityInstances;
 
 
 	void initialize_managed_runtime()
 	{
-		gAppDomain = mono_jit_init("leopph");
-		assert(gAppDomain);
+		gDomain = mono_jit_init("leopph");
+		assert(gDomain);
 
 		mono_add_internal_call("leopph.Input::GetKeyDown", detail::get_key_down);
 		mono_add_internal_call("leopph.Input::GetKey", detail::get_key);
@@ -79,91 +77,34 @@ namespace leopph
 		mono_add_internal_call("leopph.Time::get_FullTime", detail::get_full_time);
 		mono_add_internal_call("leopph.Time::get_FrameTime", detail::get_frame_time);
 
-		gRuntimeAssembly = mono_domain_assembly_open(gAppDomain, "LeopphRuntimeManaged.dll");
+		mono_add_internal_call("Cube::InternalAddPos", add_cube_pos);
+		mono_add_internal_call("Cube::InternalUpdatePos", update_cube_pos);
+
+		mono_add_internal_call("leopph.Entity::InternalCreateBehavior", detail::create_behavior);
+
+		mono_add_internal_call("leopph.Behavior::InternalGetEntityId", detail::get_behavior_entity_id);
+
+		gRuntimeAssembly = mono_domain_assembly_open(gDomain, "LeopphRuntimeManaged.dll");
 		assert(gRuntimeAssembly);
 
 		gRuntimeImage = mono_assembly_get_image(gRuntimeAssembly);
 		assert(gRuntimeImage);
 
-		gEntityClass = mono_class_from_name(gRuntimeImage, "leopph", "Entity");
-		assert(gEntityClass);
-
-		MonoTableInfo const* const tableInfo = mono_image_get_table_info(gRuntimeImage, MONO_TABLE_TYPEDEF);
-		int const numRows = mono_table_info_get_rows(tableInfo);
-
-		for (int i = 0; i < numRows; i++)
-		{
-			u32 cols[MONO_TYPEDEF_SIZE];
-			mono_metadata_decode_row(tableInfo, i, cols, MONO_TYPEDEF_SIZE);
-
-			char const* const className = mono_metadata_string_heap(gRuntimeImage, cols[MONO_TYPEDEF_NAME]);
-			assert(className);
-
-			char const* const classNamespace = mono_metadata_string_heap(gRuntimeImage, cols[MONO_TYPEDEF_NAMESPACE]);
-			assert(classNamespace);
-
-			MonoClass* const clasz = mono_class_from_name(gRuntimeImage, classNamespace, className);
-			assert(clasz);
-
-			if (clasz != gEntityClass && mono_class_is_subclass_of(clasz, gEntityClass, false))
-			{
-				managedEntityInstances.emplace_back(clasz);
-			}
-		}
-	}
-
-
-	ManagedEntityInstance::ManagedEntityInstance(MonoClass* const monoClass) :
-		mGcHandle{mono_gchandle_new(mono_object_new(mono_domain_get(), monoClass), false)},
-		mTickMethod{mono_class_get_method_from_name(monoClass, "Tick", 0)}
-	{
-		assert(mGcHandle);
-
-		if (MonoMethod* defaultCtor = mono_class_get_method_from_name(monoClass, ".ctor", 0))
-		{
-			MonoObject* exception;
-			mono_runtime_invoke(defaultCtor, mono_gchandle_get_target(mGcHandle), nullptr, &exception);
-			check_and_handle_exception(exception);
-		}
-	}
-
-
-	ManagedEntityInstance::ManagedEntityInstance(ManagedEntityInstance&& other) noexcept :
-		mGcHandle{other.mGcHandle},
-		mTickMethod{other.mTickMethod}
-	{
-		other.mGcHandle = 0;
-		other.mTickMethod = nullptr;
-	}
-
-
-	ManagedEntityInstance::~ManagedEntityInstance()
-	{
-		if (mGcHandle)
-		{
-			mono_gchandle_free(mGcHandle);
-		}
-	}
-
-
-	void ManagedEntityInstance::tick() const
-	{
-		if (!mTickMethod)
-		{
-			return;
-		}
+		MonoClass* testClass = mono_class_from_name(gRuntimeImage, "", "Test");
+		MonoMethod* doTestMethod = mono_class_get_method_from_name(testClass, "DoTest", 0);
 
 		MonoObject* exception;
-		mono_runtime_invoke(mTickMethod, mono_gchandle_get_target(mGcHandle), nullptr, &exception);
-		check_and_handle_exception(exception);
-	}
+		mono_runtime_invoke(doTestMethod, nullptr, nullptr, &exception);
 
-
-	void ManagedEntityInstance::check_and_handle_exception(MonoObject* const exception)
-	{
 		if (exception)
 		{
 			mono_print_unhandled_exception(exception);
 		}
+	}
+
+
+	void cleanup_managed_runtime()
+	{
+		mono_jit_cleanup(gDomain);
 	}
 }

@@ -1,6 +1,7 @@
 ﻿#pragma warning disable CS0659
 #pragma warning disable CS0661
 
+using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -15,16 +16,13 @@ namespace leopph
 
 
     [StructLayout(LayoutKind.Sequential)]
-    public class Entity
+    public sealed class Entity
     {
-        private readonly ulong _id;
-
-
         public Entity() : this(NativeNewEntity())
         {}
 
 
-        private Entity(ulong id)
+        internal Entity(ulong id)
         {
             _id = id;
         }
@@ -34,6 +32,9 @@ namespace leopph
         {
             NativeDeleteEntity(_id);
         }
+
+
+        private ulong _id { get; }
 
 
         public Vector3 Position
@@ -138,6 +139,9 @@ namespace leopph
         {
             NativeRescale(_id, x, y, z, space);
         }
+
+
+        public T CreateBehavior<T>() where T : Behavior => (InternalCreateBehavior(typeof(T), _id) as T)!;
 
 
         public static bool operator ==(Entity? left, Entity? right)
@@ -293,5 +297,9 @@ namespace leopph
 
         [MethodImpl(MethodImplOptions.InternalCall)]
         private extern static ulong NativeGetChildId(ulong parentId, ulong childIndex);
+
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        private extern static Behavior InternalCreateBehavior(Type type, ulong entityId);
     }
 }

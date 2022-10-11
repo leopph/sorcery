@@ -1,8 +1,17 @@
 ﻿using leopph;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-public class Cube : Entity
+
+public class Cube : Behavior
 {
+    ulong _index;
+
+    private void OnInit()
+    {
+        _index = InternalAddPos(Entity.Position);
+    }
+
     private void Tick()
     {
         var posDelta = Vector3.Zero;
@@ -46,19 +55,28 @@ public class Cube : Entity
             posDelta *= 2;
         }
 
-        Translate(posDelta * Time.FrameTime);
+        Entity.Translate(posDelta * Time.FrameTime);
+        InternalUpdatePos(_index, Entity.Position);
     }
+
+
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    private extern static ulong InternalAddPos(in Vector3 pos);
+
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    private extern static void InternalUpdatePos(ulong index, in Vector3 pos);
 }
 
-public class Camera : Entity
+
+public class Camera : Behavior
 {
     [DllImport("LeopphRuntimeNative.dll", EntryPoint = "set_cam_pos")]
     private static extern void SetCamPos(in Vector3 pos);
 
-    public Camera()
+    private void OnInit()
     {
-        Position = new Vector3(0, 0, -3);
-        SetCamPos(Position);
+        Entity.Position = new Vector3(0, 0, -3);
+        SetCamPos(Entity.Position);
     }
 
     private void Tick()
@@ -104,8 +122,21 @@ public class Camera : Entity
             posDelta *= 2;
         }
 
-        Translate(posDelta * Time.FrameTime);
+        Entity.Translate(posDelta * Time.FrameTime);
 
-        SetCamPos(Position);
+        SetCamPos(Entity.Position);
+    }
+}
+
+
+public class Test
+{
+    public static void DoTest()
+    {
+        Entity e = new Entity();
+        e.CreateBehavior<Cube>();
+
+        Entity e2 = new Entity();
+        e2.CreateBehavior<Camera>();
     }
 }

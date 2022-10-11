@@ -12,8 +12,7 @@
 
 namespace leopph
 {
-	class Component;
-
+	struct Behavior;
 
 	enum class Space : u8
 	{
@@ -25,9 +24,7 @@ namespace leopph
 	class Entity
 	{
 	private:
-		static u64 sNextId;
-
-		u64 mId{sNextId++};
+		u64 mId;
 		//Scene* mScene;
 		std::string mName{"Node"};
 
@@ -49,15 +46,17 @@ namespace leopph
 		Matrix4 mModelMat{Matrix4::identity()};
 		Matrix3 mNormalMat{Matrix4::identity()};
 
+		std::vector<Behavior*> mBehaviors;
+
 	public:
-		LEOPPHAPI Entity();
-		LEOPPHAPI Entity(Entity const& other);
-		LEOPPHAPI Entity(Entity&& other) noexcept;
+		LEOPPHAPI Entity(u64 id);
+		Entity(Entity const& other) = delete;
+		Entity(Entity&& other) = delete;
 
-		LEOPPHAPI Entity& operator=(Entity const& other);
-		LEOPPHAPI Entity& operator=(Entity&& other) noexcept;
+		Entity& operator=(Entity const& other) = delete;
+		Entity& operator=(Entity&& other) = delete;
 
-		virtual LEOPPHAPI ~Entity();
+		LEOPPHAPI ~Entity();
 
 		[[nodiscard]] LEOPPHAPI u64 get_id() const;
 
@@ -103,6 +102,10 @@ namespace leopph
 
 		LEOPPHAPI Matrix4 get_model_matrix() const;
 		LEOPPHAPI Matrix3 get_normal_matrix() const;
+
+		[[nodiscard]] std::span<Behavior* const> get_behaviors() const;
+		void add_behavior(Behavior* behavior);
+		void remove_behavior(Behavior* behavior);
 
 	private:
 		void calculate_world_position_and_update_children();

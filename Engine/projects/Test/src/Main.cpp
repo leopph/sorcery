@@ -23,7 +23,9 @@
 #endif
 
 #include <Camera.hpp>
-#include <Entity.hpp>
+#include <Cube.hpp>
+#include <Behavior.hpp>
+//#include <Entity.hpp>
 #include <Input.hpp>
 #include <Managed.hpp>
 #include <Time.hpp>
@@ -400,12 +402,11 @@ int main()
 
 		leopph::update_keyboard_state();
 
-		for (auto const& entity : leopph::managedEntityInstances)
-		{
-			entity.tick();
-		}
+		leopph::init_behaviors();
+		leopph::tick_behaviors();
+		leopph::tack_behaviors();
 
-		if (leopph::entities.empty())
+		if (cubePositions.empty())
 		{
 			continue;
 		}
@@ -414,7 +415,20 @@ int main()
 		d3dDeviceContext->Map(instanceBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedInstanceBuffer);
 		DirectX::XMFLOAT4X4* mappedInstanceBufferData{static_cast<DirectX::XMFLOAT4X4*>(mappedInstanceBuffer.pData)};
 
-		for (int i = 0; auto const& [id, entity] : leopph::entities)
+		for (int i = 0; i < cubePositions.size(); i++)
+		{
+			if (i >= MAX_NODES)
+			{
+				break;
+			}
+
+			DirectX::XMMATRIX const modelMat = DirectX::XMMatrixTranslationFromVector(DirectX::XMLoadFloat3(reinterpret_cast<DirectX::XMFLOAT3*>(&cubePositions[i])));
+			DirectX::XMStoreFloat4x4(mappedInstanceBufferData + i, modelMat);
+
+			i++;
+		}
+
+		/*for (int i = 0; auto const& [id, entity] : leopph::entities)
 		{
 			if (i >= MAX_NODES)
 			{
@@ -432,7 +446,7 @@ int main()
 			DirectX::XMStoreFloat4x4(mappedInstanceBufferData + i, modelMat);
 
 			i++;
-		}
+		}*/
 
 		d3dDeviceContext->Unmap(instanceBuffer.Get(), 0);
 
@@ -449,7 +463,7 @@ int main()
 		d3dDeviceContext->ClearRenderTargetView(backBufRtv.Get(), clearColor);
 		d3dDeviceContext->OMSetRenderTargets(1, backBufRtv.GetAddressOf(), nullptr);
 
-		d3dDeviceContext->DrawIndexedInstanced(ARRAYSIZE(indexData), static_cast<UINT>(std::min<std::size_t>(MAX_NODES, leopph::entities.size())), 0, 0, 0);
+		d3dDeviceContext->DrawIndexedInstanced(ARRAYSIZE(indexData), static_cast<UINT>(std::min<std::size_t>(MAX_NODES, cubePositions.size())), 0, 0, 0);
 
 		dxgiSwapChain1->Present(0, 0);
 

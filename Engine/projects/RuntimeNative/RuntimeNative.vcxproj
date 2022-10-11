@@ -91,7 +91,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\Behavior.cpp" />
     <ClCompile Include="src\Color.cpp" />
+    <ClCompile Include="src\Cube.cpp" />
     <ClCompile Include="src\Input.cpp" />
     <ClCompile Include="src\Managed.cpp" />
     <ClCompile Include="src\Math.cpp" />
@@ -100,14 +102,16 @@
     <ClCompile Include="src\Time.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Behavior.hpp" />
     <ClInclude Include="src\Color.hpp" />
-    <ClInclude Include="src\Component.hpp" />
     <ClInclude Include="src\Core.hpp" />
+    <ClInclude Include="src\Cube.hpp" />
     <ClInclude Include="src\Input.hpp" />
     <ClInclude Include="src\Managed.hpp" />
     <ClInclude Include="src\Math.hpp" />
     <ClInclude Include="src\Entity.hpp" />
     <ClInclude Include="src\Camera.hpp" />
+    <ClInclude Include="src\Renderer3D.hpp" />
     <ClInclude Include="src\Time.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

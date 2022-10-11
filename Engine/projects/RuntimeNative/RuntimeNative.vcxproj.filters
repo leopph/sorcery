@@ -36,6 +36,12 @@
     <ClCompile Include="src\Managed.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\Behavior.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Cube.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Camera.hpp">
@@ -62,7 +68,13 @@
     <ClInclude Include="src\Managed.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Component.hpp">
+    <ClInclude Include="src\Renderer3D.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Behavior.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Cube.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
