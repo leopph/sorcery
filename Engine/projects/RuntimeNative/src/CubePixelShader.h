@@ -24,7 +24,7 @@ ret
 // Approximately 2 instruction slots used
 #endif
 
-const BYTE gCubePixShader[] =
+const BYTE gCubePixShadBytes[] =
 {
      68,  88,  66,  67, 124, 237, 
      93,  47,  47, 137, 167, 220, 

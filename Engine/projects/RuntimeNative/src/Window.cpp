@@ -3,9 +3,9 @@
 
 namespace leopph
 {
-	bool Window::sClassRegistered{false};
-	wchar_t const* const Window::sClassName{L"LeopphEngine"};
-	DWORD const Window::sInitialStyle{WS_OVERLAPPEDWINDOW};
+	bool Window::sClassRegistered{ false };
+	wchar_t const* const Window::sClassName{ L"LeopphEngine" };
+	DWORD const Window::sWindowedModeStyle{ WS_OVERLAPPEDWINDOW & ~WS_THICKFRAME};
 
 
 	std::unique_ptr<Window> Window::Create()
@@ -33,7 +33,7 @@ namespace leopph
 			};
 		}
 
-		HWND const hwnd = CreateWindowExW(0, sClassName, sClassName, sInitialStyle, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, nullptr, nullptr, GetModuleHandleW(nullptr), nullptr);
+		HWND const hwnd = CreateWindowExW(0, sClassName, sClassName, sWindowedModeStyle, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, nullptr, nullptr, GetModuleHandleW(nullptr), nullptr);
 
 		if (!hwnd)
 		{
@@ -41,7 +41,7 @@ namespace leopph
 			return nullptr;
 		}
 
-		Window* window = new Window{hwnd};
+		Window* window = new Window{ hwnd };
 
 		SetWindowLongPtrW(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(window));
 
@@ -75,7 +75,7 @@ namespace leopph
 
 
 	Window::Window(HWND const hwnd) :
-		mHwnd{hwnd}
+		mHwnd{ hwnd }
 	{}
 
 
@@ -93,7 +93,7 @@ namespace leopph
 
 			case WM_SIZE:
 			{
-				self->mOnSizeEvent.invoke({LOWORD(lparam), HIWORD(lparam)});
+				self->mOnSizeEvent.invoke({ LOWORD(lparam), HIWORD(lparam) });
 				return 0;
 			}
 
@@ -101,7 +101,7 @@ namespace leopph
 			{
 				return DefWindowProcW(hwnd, msg, wparam, lparam);
 			}
-		}		
+		}
 	}
 
 
@@ -141,5 +141,13 @@ namespace leopph
 	void Window::hide() const
 	{
 		ShowWindow(mHwnd, SW_SHOW);
+	}
+
+
+	Extent2D Window::get_client_area_size() const
+	{
+		RECT rect;
+		GetClientRect(mHwnd, &rect);
+		return { static_cast<u32>(rect.right), static_cast<u32>(rect.bottom) };
 	}
 }

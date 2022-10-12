@@ -72,7 +72,7 @@ ret
 // Approximately 21 instruction slots used
 #endif
 
-const BYTE gCubeVertShader[] =
+const BYTE gCubeVertShadBytes[] =
 {
      68,  88,  66,  67,  96, 182, 
     115, 115, 245, 253,  66,  88, 

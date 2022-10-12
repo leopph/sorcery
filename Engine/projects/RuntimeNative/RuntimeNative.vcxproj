@@ -106,6 +106,10 @@
     <ClInclude Include="src\Color.hpp" />
     <ClInclude Include="src\Core.hpp" />
     <ClInclude Include="src\Cube.hpp" />
+    <ClInclude Include="src\CubePixelShader.h" />
+    <ClInclude Include="src\CubePixelShaderDebug.h" />
+    <ClInclude Include="src\CubeVertexShader.h" />
+    <ClInclude Include="src\CubeVertexShaderDebug.h" />
     <ClInclude Include="src\Event.hpp" />
     <ClInclude Include="src\Extent2D.hpp" />
     <ClInclude Include="src\Input.hpp" />
@@ -113,9 +117,43 @@
     <ClInclude Include="src\Math.hpp" />
     <ClInclude Include="src\Entity.hpp" />
     <ClInclude Include="src\Camera.hpp" />
+    <ClInclude Include="src\RenderCore.hpp" />
     <ClInclude Include="src\Renderer3D.hpp" />
     <ClInclude Include="src\Time.hpp" />
     <ClInclude Include="src\Window.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\shaders\include\CubeShader.hlsli" />
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="src\shaders\CubePixelShader.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">ps_main</EntryPointName>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">ps_main</EntryPointName>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">gCubePixShadBytes</VariableName>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">gCubePixShadBytes</VariableName>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </ObjectFileOutput>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">src/CubePixelShaderDebug.h</HeaderFileOutput>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">src/CubePixelShader.h</HeaderFileOutput>
+    </FxCompile>
+    <FxCompile Include="src\shaders\CubeVertexShader.hlsl">
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">gCubeVertShadBytes</VariableName>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">src/CubeVertexShaderDebug.h</HeaderFileOutput>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">gCubeVertShadBytes</VariableName>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">src/CubeVertexShader.h</HeaderFileOutput>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">vs_main</EntryPointName>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">vs_main</EntryPointName>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+    </FxCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

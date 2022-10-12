@@ -18,12 +18,12 @@ namespace leopph
 	private:
 		static bool sClassRegistered;
 		static wchar_t const* const sClassName;
-		static DWORD const sInitialStyle;
+		static DWORD const sWindowedModeStyle;
 
 
 		HWND mHwnd;
 		bool mShouldClose{false};
-		DWORD mCurrentStyle{sInitialStyle};
+		DWORD mCurrentStyle{sWindowedModeStyle};
 		Event<Extent2D> mOnSizeEvent;
 
 
@@ -43,6 +43,8 @@ namespace leopph
 
 		LEOPPHAPI void show() const;
 		LEOPPHAPI void hide() const;
+
+		LEOPPHAPI Extent2D get_client_area_size() const;
 
 	private:
 		Window(HWND hwnd);
