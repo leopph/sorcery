@@ -87,7 +87,7 @@ namespace leopph
 			static u64 nextId{1};
 			u64 const id{nextId++};
 
-			Entity* const entity = entities[id].get();
+			Entity* const entity = entities[entityId].get();
 
 			Behavior* const behavior = new Behavior
 			{

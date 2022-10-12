@@ -34,8 +34,6 @@ int main()
 
 	leopph::initialize_managed_runtime();
 
-	window->show();
-
 	leopph::init_time();
 
 	while (!window->should_close())

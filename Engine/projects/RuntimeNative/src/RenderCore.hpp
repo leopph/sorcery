@@ -32,6 +32,8 @@ namespace leopph
 		UINT const static sInstanceBufferElementSize;
 		UINT const static sVertexBufferSlot;
 		UINT const static sInstanceBufferSlot;
+		UINT const static sSwapChainFlags;
+		UINT const static sPresentFlags;
 
 		static void on_window_resize(RenderCore* self, Extent2D size);
 
@@ -46,8 +48,7 @@ namespace leopph
 				   Microsoft::WRL::ComPtr<ID3D11Buffer> instanceBuffer,
 				   UINT instanceBufferElementCapacity,
 				   Microsoft::WRL::ComPtr<ID3D11Buffer> cbuffer,
-				   UINT indexCount,
-				   Window& window);
+				   UINT indexCount);
 
 	public:
 		LEOPPHAPI [[nodiscard]] static std::unique_ptr<RenderCore> Create(Window& window);

@@ -25,6 +25,8 @@ namespace leopph
 	UINT const RenderCore::sInstanceBufferElementSize{ sizeof(DirectX::XMFLOAT4X4) };
 	UINT const RenderCore::sVertexBufferSlot{ 0 };
 	UINT const RenderCore::sInstanceBufferSlot{ 1 };
+	UINT const RenderCore::sSwapChainFlags{ DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING };
+	UINT const RenderCore::sPresentFlags{ DXGI_PRESENT_ALLOW_TEARING };
 
 
 	std::unique_ptr<RenderCore> RenderCore::Create(Window& window)
@@ -123,7 +125,7 @@ namespace leopph
 			.Scaling = DXGI_SCALING_NONE,
 			.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD,
 			.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED,
-			.Flags = 0
+			.Flags = sSwapChainFlags
 		};
 
 		ComPtr<IDXGISwapChain1> swapChain;
@@ -139,6 +141,8 @@ namespace leopph
 			MessageBoxW(window.get_hwnd(), L"Failed to create swapchain.", L"Error", MB_ICONERROR);
 			return nullptr;
 		}
+
+		dxgiFactory2->MakeWindowAssociation(window.get_hwnd(), DXGI_MWA_NO_WINDOW_CHANGES);
 
 		ComPtr<ID3D11Texture2D> backBuf;
 		hresult = swapChain->GetBuffer(0,
@@ -435,7 +439,7 @@ namespace leopph
 
 		context->RSSetState(rasterizerState.Get());
 
-		Extent2D const renderRes{ window.get_client_area_size() };
+		Extent2D const renderRes{ window.get_current_client_area_size() };
 
 		std::unique_ptr<RenderCore> ret{ new RenderCore{std::move(device),
 														std::move(context),
@@ -448,8 +452,7 @@ namespace leopph
 														std::move(instanceBuffer),
 														instanceBufferElementCapacity,
 														std::move(cbuffer),
-														indexCount,
-														window} };
+														indexCount} };
 
 		window.OnSizeEvent.add_handler(ret.get(), &on_window_resize);
 
@@ -468,8 +471,7 @@ namespace leopph
 						   Microsoft::WRL::ComPtr<ID3D11Buffer> instanceBuffer,
 						   UINT const instanceBufferElementCapacity,
 						   Microsoft::WRL::ComPtr<ID3D11Buffer> cbuffer,
-						   UINT const indexCount,
-						   Window& window) :
+						   UINT const indexCount) :
 		mDevice{ std::move(device) },
 		mContext{ std::move(context) },
 		mSwapChain{ std::move(swapChain) },
@@ -579,18 +581,23 @@ namespace leopph
 									   0,
 									   0);
 
-		mSwapChain->Present(0, 0);
+		mSwapChain->Present(0, sPresentFlags);
 		return true;
 	}
 
 
 	void RenderCore::on_window_resize(RenderCore* const self, Extent2D const size)
 	{
+		if (size.width == 0 || size.height == 0)
+		{
+			return;
+		}
+
 		self->mBackBufRtv.Reset();
 		self->mSwapChain->ResizeBuffers(0,
 										0,
 										0, DXGI_FORMAT_UNKNOWN,
-										0);
+										sSwapChainFlags);
 
 		ComPtr<ID3D11Texture2D> backBuf;
 		HRESULT hresult = self->mSwapChain->GetBuffer(0,

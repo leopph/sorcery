@@ -129,6 +129,50 @@ public class Camera : Behavior
 }
 
 
+public class WindowController : Behavior
+{
+    private Extent2D _originalResolution;
+
+    private void OnInit()
+    {
+        _originalResolution = Window.WindowedResolution;
+    }
+
+    private void Tick()
+    {
+        if (Input.GetKeyDown(Key.F))
+        {
+            Window.IsBorderless = !Window.IsBorderless;
+        }
+
+        if (Input.GetKeyDown(Key.M))
+        {
+            Window.IsMinimizingOnBorderlessFocusLoss = !Window.IsMinimizingOnBorderlessFocusLoss;
+        }
+
+        if (Input.GetKeyDown(Key.One))
+        {
+            Window.WindowedResolution = new Extent2D(1280, 720);
+        }
+        
+        if (Input.GetKeyDown(Key.Two))
+        {
+            Window.WindowedResolution = new Extent2D(1600, 900);
+        }
+
+        if (Input.GetKeyDown(Key.Three))
+        {
+            Window.WindowedResolution = new Extent2D(1920, 1080);
+        }
+
+        if (Input.GetKeyDown(Key.Zero))
+        {
+            Window.WindowedResolution = _originalResolution;
+        }
+    }
+}
+
+
 public class Test
 {
     public static void DoTest()
@@ -138,5 +182,8 @@ public class Test
 
         Entity e2 = new Entity();
         e2.CreateBehavior<Camera>();
+
+        Entity e3 = new Entity();
+        e3.CreateBehavior<WindowController>();
     }
 }

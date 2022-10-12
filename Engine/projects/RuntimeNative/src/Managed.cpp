@@ -5,6 +5,7 @@
 #include "Entity.hpp"
 #include "Input.hpp"
 #include "Time.hpp"
+#include "Window.hpp"
 
 #include <mono/jit/jit.h>
 #include <mono/metadata/appdomain.h>
@@ -83,6 +84,14 @@ namespace leopph
 		mono_add_internal_call("leopph.Entity::InternalCreateBehavior", detail::create_behavior);
 
 		mono_add_internal_call("leopph.Behavior::InternalGetEntityId", detail::get_behavior_entity_id);
+
+		mono_add_internal_call("leopph.Window::InternalGetCurrentClientAreaSize", detail::get_window_current_client_area_size);
+		mono_add_internal_call("leopph.Window::InternalGetWindowedClientAreaSize", detail::get_window_windowed_client_area_size);
+		mono_add_internal_call("leopph.Window::InternalSetWindowedClientAreaSize", detail::set_window_windowed_client_area_size);
+		mono_add_internal_call("leopph.Window::InternalIsBorderless", detail::is_window_borderless);
+		mono_add_internal_call("leopph.Window::InternalSetBorderless", detail::set_window_borderless);
+		mono_add_internal_call("leopph.Window::InternalIsMinimizingOnBorderlessFocusLoss", detail::is_window_minimizing_on_borderless_focus_loss);
+		mono_add_internal_call("leopph.Window::InternalSetMinimizeOnBorderlessFocusLoss", detail::set_window_minimize_on_borderless_focus_loss);
 
 		gRuntimeAssembly = mono_domain_assembly_open(gDomain, "LeopphRuntimeManaged.dll");
 		assert(gRuntimeAssembly);

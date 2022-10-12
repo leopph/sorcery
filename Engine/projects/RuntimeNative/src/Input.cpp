@@ -11,12 +11,9 @@ namespace leopph
 {
 	namespace
 	{
-		enum Key : u8
+		enum class Key : u8
 		{
-			KEY_NEUTRAL = 0,
-			KEY_DOWN = 1,
-			KEY_HELD = 2,
-			KEY_UP = 3,
+			Neutral = 0, Down = 1, Held = 2, Up = 3
 		};
 
 		Key gKeyboardState[256]{};
@@ -33,24 +30,24 @@ namespace leopph
 		{
 			if (newState[i] & 0x80)
 			{
-				if (gKeyboardState[i] == KEY_DOWN)
+				if (gKeyboardState[i] == Key::Down)
 				{
-					gKeyboardState[i] = KEY_HELD;
+					gKeyboardState[i] = Key::Held;
 				}
-				else
+				else if (gKeyboardState[i] != Key::Held)
 				{
-					gKeyboardState[i] = KEY_DOWN;
+					gKeyboardState[i] = Key::Down;
 				}
 			}
 			else
 			{
-				if (gKeyboardState[i] == KEY_UP)
+				if (gKeyboardState[i] == Key::Up)
 				{
-					gKeyboardState[i] = KEY_NEUTRAL;
+					gKeyboardState[i] = Key::Neutral;
 				}
 				else
 				{
-					gKeyboardState[i] = KEY_UP;
+					gKeyboardState[i] = Key::Up;
 				}
 			}
 		}
@@ -61,19 +58,19 @@ namespace leopph
 	{
 		bool get_key(u8 const key)
 		{
-			return gKeyboardState[key] == KEY_DOWN || gKeyboardState[key] == KEY_HELD;
+			return gKeyboardState[key] == Key::Down || gKeyboardState[key] == Key::Held;
 		}
 
 
 		bool get_key_down(u8 const key)
 		{
-			return gKeyboardState[key] == KEY_DOWN;
+			return gKeyboardState[key] == Key::Down;
 		}
 
 
 		bool get_key_up(u8 const key)
 		{
-			return gKeyboardState[key] == KEY_UP;
+			return gKeyboardState[key] == Key::Up;
 		}
 	}
 }
