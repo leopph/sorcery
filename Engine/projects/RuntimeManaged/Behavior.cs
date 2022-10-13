@@ -1,10 +1,12 @@
-﻿using System;
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 
 namespace leopph
 {
-    public class Behavior
+    public class Behavior : NativeWrapper
     {
+        private Entity? _entity;
+
+
         public Entity Entity
         {
             get
@@ -18,8 +20,6 @@ namespace leopph
             }
         }
 
-        private ulong _id;
-        private Entity? _entity;
 
         [MethodImpl(MethodImplOptions.InternalCall)]
         private extern static ulong InternalGetEntityId(ulong behaviorId);

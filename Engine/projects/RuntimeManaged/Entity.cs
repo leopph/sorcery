@@ -3,7 +3,6 @@
 
 using System;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 
 
 namespace leopph
@@ -15,26 +14,20 @@ namespace leopph
     }
 
 
-    [StructLayout(LayoutKind.Sequential)]
-    public sealed class Entity
+    public class Entity : NativeWrapper
     {
         public Entity() : this(NativeNewEntity())
-        {}
+        { }
 
 
-        internal Entity(ulong id)
-        {
-            _id = id;
-        }
+        internal Entity(ulong id) : base(id)
+        { }
 
 
         public void Destroy()
         {
             NativeDeleteEntity(_id);
         }
-
-
-        private ulong _id { get; }
 
 
         public Vector3 Position
