@@ -1,47 +1,47 @@
 ﻿using leopph;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 
-public class Cube : Behavior
+public class MovementController : Behavior
 {
-    ulong _index;
-
-    private void OnInit()
-    {
-        _index = InternalAddPos(Entity.Position);
-    }
+    public Key left = Key.A;
+    public Key right = Key.D;
+    public Key up = Key.Space;
+    public Key down = Key.LeftControl;
+    public Key forward = Key.W;
+    public Key backward = Key.S;
+    public Key run = Key.LeftShift;
 
     private void Tick()
     {
         var posDelta = Vector3.Zero;
 
-        if (Input.GetKey(Key.RightArrow))
+        if (Input.GetKey(right))
         {
             posDelta += Vector3.Right;
         }
 
-        if (Input.GetKey(Key.LeftArrow))
+        if (Input.GetKey(left))
         {
             posDelta += Vector3.Left;
         }
 
-        if (Input.GetKey(Key.RightAlt))
+        if (Input.GetKey(up))
         {
             posDelta += Vector3.Up;
         }
 
-        if (Input.GetKey(Key.RightControl))
+        if (Input.GetKey(down))
         {
             posDelta += Vector3.Down;
         }
 
-        if (Input.GetKey(Key.UpArrow))
+        if (Input.GetKey(forward))
         {
             posDelta += Vector3.Forward;
         }
 
-        if (Input.GetKey(Key.DownArrow))
+        if (Input.GetKey(backward))
         {
             posDelta += Vector3.Backward;
         }
@@ -50,21 +50,13 @@ public class Cube : Behavior
 
         posDelta *= 0.5f;
 
-        if (Input.GetKey(Key.Shift))
+        if (Input.GetKey(run))
         {
             posDelta *= 2;
         }
 
         Entity.Translate(posDelta * Time.FrameTime);
-        InternalUpdatePos(_index, Entity.Position);
     }
-
-
-    [MethodImpl(MethodImplOptions.InternalCall)]
-    private extern static ulong InternalAddPos(in Vector3 pos);
-
-    [MethodImpl(MethodImplOptions.InternalCall)]
-    private extern static void InternalUpdatePos(ulong index, in Vector3 pos);
 }
 
 
@@ -79,7 +71,7 @@ public class Camera : Behavior
         SetCamPos(Entity.Position);
     }
 
-    private void Tick()
+    /*private void Tick()
     {
         var posDelta = Vector3.Zero;
 
@@ -125,7 +117,7 @@ public class Camera : Behavior
         Entity.Translate(posDelta * Time.FrameTime);
 
         SetCamPos(Entity.Position);
-    }
+    }*/
 }
 
 
@@ -154,7 +146,7 @@ public class WindowController : Behavior
         {
             Window.WindowedResolution = new Extent2D(1280, 720);
         }
-        
+
         if (Input.GetKeyDown(Key.Two))
         {
             Window.WindowedResolution = new Extent2D(1600, 900);
@@ -178,12 +170,13 @@ public class Test
     public static void DoTest()
     {
         Entity e = new Entity();
-        Cube c = e.CreateBehavior<Cube>();
+        CubeModel c = e.CreateComponent<CubeModel>();
+        MovementController m = e.CreateComponent<MovementController>();
 
         Entity e2 = new Entity();
-        e2.CreateBehavior<Camera>();
+        e2.CreateComponent<Camera>();
 
         Entity e3 = new Entity();
-        e3.CreateBehavior<WindowController>();
+        e3.CreateComponent<WindowController>();
     }
 }

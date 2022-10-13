@@ -2,6 +2,9 @@
 
 #include "Core.hpp"
 
+struct _MonoObject;
+typedef _MonoObject MonoObject;
+
 namespace leopph
 {
 	class ManagedAccessObject
@@ -11,9 +14,11 @@ namespace leopph
 
 	public:
 		u64 const id{sNextId++};
-		u64 const managedObjectHandle;
+		u32 const managedObjectHandle;
 
-		explicit ManagedAccessObject(u64 managedObjectHandle);
+		explicit ManagedAccessObject(MonoObject* managedObject);
+		ManagedAccessObject(ManagedAccessObject const&) = delete;
+
 		virtual ~ManagedAccessObject();
 	};
 

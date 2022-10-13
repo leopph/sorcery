@@ -3,6 +3,7 @@
 #include "Extent2D.hpp"
 #include "Core.hpp"
 #include "Window.hpp"
+#include "CubeModel.hpp"
 
 #include <d3d11.h>
 #include <dxgi1_2.h>
@@ -10,6 +11,7 @@
 #include <wrl/client.h>
 
 #include <memory>
+#include <vector>
 
 namespace leopph
 {
@@ -28,13 +30,16 @@ namespace leopph
 		UINT mInstanceBufferElementCapacity;
 		Microsoft::WRL::ComPtr<ID3D11Buffer> mCbuffer;
 		UINT mIndexCount;
-		u32 mSyncInterval{0};
+		u32 mSyncInterval{ 0 };
+
+		std::vector<CubeModel const*> mCubeModels;
 
 		UINT const static sInstanceBufferElementSize;
 		UINT const static sVertexBufferSlot;
 		UINT const static sInstanceBufferSlot;
 		UINT const static sSwapChainFlags;
 		UINT const static sPresentFlags;
+		static RenderCore* sLastInstance;
 
 		static void on_window_resize(RenderCore* self, Extent2D size);
 
@@ -60,5 +65,10 @@ namespace leopph
 
 		[[nodiscard]] u32 get_sync_interval() const;
 		void set_sync_interval(u32 interval);
+
+		void register_cube_model(CubeModel const* cubeModel);
+		void unregister_cube_model(CubeModel const* cubeModel);
+
+		static [[nodiscard]] RenderCore* get_last_instance();
 	};
 }

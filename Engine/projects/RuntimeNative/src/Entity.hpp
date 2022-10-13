@@ -51,7 +51,7 @@ namespace leopph
 		std::vector<Component*> mComponents;
 
 	public:
-		LEOPPHAPI Entity(u64 managedObjectHandle);
+		LEOPPHAPI Entity(MonoObject* managedObject);
 		Entity(Entity const& other) = delete;
 		Entity(Entity&& other) = delete;
 

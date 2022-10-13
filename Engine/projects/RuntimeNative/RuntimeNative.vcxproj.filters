@@ -39,7 +39,7 @@
     <ClCompile Include="src\Behavior.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Cube.cpp">
+    <ClCompile Include="src\CubeModel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\RenderCore.cpp">
@@ -86,7 +86,7 @@
     <ClInclude Include="src\Behavior.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Cube.hpp">
+    <ClInclude Include="src\CubeModel.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Window.hpp">

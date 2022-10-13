@@ -118,7 +118,7 @@ namespace leopph
         }
 
 
-        public T CreateBehavior<T>() where T : Behavior => (GCHandle.FromIntPtr(InternalCreateBehavior(typeof(T), _ptr)).Target as T)!;
+        public T CreateComponent<T>() where T : Component => (InternalCreateComponent(typeof(T), _ptr) as T)!;
         
 
         public static bool operator ==(Entity? left, Entity? right)
@@ -264,6 +264,6 @@ namespace leopph
 
 
         [MethodImpl(MethodImplOptions.InternalCall)]
-        private extern static IntPtr InternalCreateBehavior(Type type, IntPtr entityPtr);
+        private extern static Component InternalCreateComponent(Type type, IntPtr entityPtr);
     }
 }

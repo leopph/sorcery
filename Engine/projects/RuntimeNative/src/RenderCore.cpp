@@ -2,8 +2,8 @@
 
 #include <DirectXMath.h>
 
-#include "Cube.hpp"
 #include "Camera.hpp"
+#include "Entity.hpp"
 
 #ifdef NDEBUG
 #include "CubeVertexShader.h"
@@ -27,6 +27,7 @@ namespace leopph
 	UINT const RenderCore::sInstanceBufferSlot{ 1 };
 	UINT const RenderCore::sSwapChainFlags{ DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING };
 	UINT const RenderCore::sPresentFlags{ DXGI_PRESENT_ALLOW_TEARING };
+	RenderCore* RenderCore::sLastInstance{ nullptr };
 
 
 	std::unique_ptr<RenderCore> RenderCore::Create(Window& window)
@@ -456,6 +457,8 @@ namespace leopph
 
 		window.OnSizeEvent.add_handler(ret.get(), &on_window_resize);
 
+		sLastInstance = ret.get();
+
 		return ret;
 	}
 
@@ -489,15 +492,15 @@ namespace leopph
 
 	bool RenderCore::render()
 	{
-		if (cubePositions.empty())
+		if (mCubeModels.empty())
 		{
 			present();
 			return true;
 		}
 
-		if (cubePositions.size() > mInstanceBufferElementCapacity)
+		if (mCubeModels.size() > mInstanceBufferElementCapacity)
 		{
-			mInstanceBufferElementCapacity = static_cast<UINT>(cubePositions.size());
+			mInstanceBufferElementCapacity = static_cast<UINT>(mCubeModels.size());
 
 			D3D11_BUFFER_DESC const desc
 			{
@@ -537,11 +540,10 @@ namespace leopph
 
 		DirectX::XMFLOAT4X4* mappedInstanceBufferData{ static_cast<DirectX::XMFLOAT4X4*>(mappedInstanceBuffer.pData) };
 
-		for (int i = 0; i < cubePositions.size(); i++)
+		for (int i = 0; i < mCubeModels.size(); i++)
 		{
-			DirectX::XMMATRIX const modelMat = DirectX::XMMatrixTranslationFromVector(DirectX::XMLoadFloat3(reinterpret_cast<DirectX::XMFLOAT3*>(&cubePositions[i])));
-			DirectX::XMStoreFloat4x4(mappedInstanceBufferData + i, modelMat);
-
+			DirectX::XMFLOAT4X4 modelMat{mCubeModels[i]->entity->get_model_matrix().get_data()};
+			DirectX::XMStoreFloat4x4(mappedInstanceBufferData + i, DirectX::XMLoadFloat4x4(&modelMat));
 			i++;
 		}
 
@@ -577,7 +579,7 @@ namespace leopph
 		mContext->OMSetRenderTargets(1, mBackBufRtv.GetAddressOf(), nullptr);
 
 		mContext->DrawIndexedInstanced(mIndexCount,
-									   static_cast<UINT>(cubePositions.size()),
+									   static_cast<UINT>(mCubeModels.size()),
 									   0,
 									   0,
 									   0);
@@ -631,5 +633,23 @@ namespace leopph
 	void RenderCore::set_sync_interval(u32 const interval)
 	{
 		mSyncInterval = interval;
+	}
+
+
+	void RenderCore::register_cube_model(CubeModel const* const cubeModel)
+	{
+		mCubeModels.emplace_back(cubeModel);
+	}
+
+
+	void RenderCore::unregister_cube_model(CubeModel const* const cubeModel)
+	{
+		std::erase(mCubeModels, cubeModel);
+	}
+
+
+	RenderCore* RenderCore::get_last_instance()
+	{
+		return sLastInstance;
 	}
 }

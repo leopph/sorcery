@@ -5,8 +5,8 @@
 
 namespace leopph
 {
-	Entity::Entity(u64 const managedObjectHandle) :
-		ManagedAccessObject{managedObjectHandle}//,
+	Entity::Entity(MonoObject* const managedObject) :
+		ManagedAccessObject{ managedObject }//,
 		//mScene{&get_scene_manager().get_active_scene()}
 	{
 		//mScene->add(this);
@@ -156,7 +156,7 @@ namespace leopph
 
 	void Entity::translate(f32 const x, f32 const y, f32 const z, Space const base)
 	{
-		translate(Vector3{x, y, z}, base);
+		translate(Vector3{ x, y, z }, base);
 	}
 
 
@@ -175,7 +175,7 @@ namespace leopph
 
 	void Entity::rotate(Vector3 const& axis, f32 const amountDegrees, Space const base)
 	{
-		rotate(Quaternion{axis, amountDegrees}, base);
+		rotate(Quaternion{ axis, amountDegrees }, base);
 	}
 
 
@@ -194,7 +194,7 @@ namespace leopph
 
 	void Entity::rescale(f32 const x, f32 const y, f32 const z, Space const base)
 	{
-		rescale(Vector3{x, y, z}, base);
+		rescale(Vector3{ x, y, z }, base);
 	}
 
 
@@ -330,10 +330,10 @@ namespace leopph
 
 	void Entity::calculate_matrices()
 	{
-		mModelMat[0] = Vector4{mRight * mWorldScale, 0};
-		mModelMat[1] = Vector4{mUp * mWorldScale, 0};
-		mModelMat[2] = Vector4{mForward * mWorldScale, 0};
-		mModelMat[3] = Vector4{mWorldPosition, 1};
+		mModelMat[0] = Vector4{ mRight * mWorldScale, 0 };
+		mModelMat[1] = Vector4{ mUp * mWorldScale, 0 };
+		mModelMat[2] = Vector4{ mForward * mWorldScale, 0 };
+		mModelMat[3] = Vector4{ mWorldPosition, 1 };
 
 		mNormalMat[0] = mRight / mWorldScale;
 		mNormalMat[1] = mUp / mWorldScale;
@@ -367,14 +367,7 @@ namespace leopph
 	{
 		void entity_new(MonoObject* const managedEntity)
 		{
-			Entity* const entity = new Entity{ mono_gchandle_new(managedEntity, false) };
-			store_mao(entity);
-
-			MonoClass* const klass = mono_object_get_class(managedEntity);
-			u64 idData{ entity->id };
-			Entity* ptrData{ entity };
-			mono_field_set_value(managedEntity, mono_class_get_field_from_name(klass, "_id"), &idData);
-			mono_field_set_value(managedEntity, mono_class_get_field_from_name(klass, "_ptr"), &ptrData);
+			store_mao(new Entity{ managedEntity });
 		}
 
 

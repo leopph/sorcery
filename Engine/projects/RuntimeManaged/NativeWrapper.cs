@@ -7,8 +7,8 @@ namespace leopph
     [StructLayout(LayoutKind.Sequential)]
     public abstract class NativeWrapper
     {
-        protected ulong _id;
-        protected IntPtr _ptr;
+        private protected ulong _id;
+        private protected IntPtr _ptr;
 
 
         public static void Destroy(NativeWrapper wrapper)

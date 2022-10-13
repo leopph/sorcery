@@ -364,7 +364,7 @@ namespace leopph
 	template<class T, std::size_t N> requires (N > 1)
 		Vector<T, N> Vector<T, N>::up()
 	{
-		Vector<T, N> ret;
+		Vector<T, N> ret{};
 		ret[1] = 1;
 		return ret;
 	}
@@ -374,7 +374,7 @@ namespace leopph
 	template<class T, std::size_t N> requires (N > 1)
 		Vector<T, N> Vector<T, N>::down()
 	{
-		Vector<T, N> ret;
+		Vector<T, N> ret{};
 		ret[1] = -1;
 		return ret;
 	}
@@ -384,7 +384,7 @@ namespace leopph
 	template<class T, std::size_t N> requires (N > 1)
 		Vector<T, N> Vector<T, N>::left()
 	{
-		Vector<T, N> ret;
+		Vector<T, N> ret{};
 		ret[0] = -1;
 		return ret;
 	}
@@ -394,7 +394,7 @@ namespace leopph
 	template<class T, std::size_t N> requires (N > 1)
 		Vector<T, N> Vector<T, N>::right()
 	{
-		Vector<T, N> ret;
+		Vector<T, N> ret{};
 		ret[0] = 1;
 		return ret;
 	}
@@ -404,7 +404,7 @@ namespace leopph
 	template<class T, std::size_t N> requires (N > 1)
 		Vector<T, N> Vector<T, N>::forward() requires (N >= 3)
 	{
-		Vector<T, N> ret;
+		Vector<T, N> ret{};
 		ret[2] = 1;
 		return ret;
 	}
@@ -414,7 +414,7 @@ namespace leopph
 	template<class T, std::size_t N> requires (N > 1)
 		Vector<T, N> Vector<T, N>::backward() requires (N >= 3)
 	{
-		Vector<T, N> ret;
+		Vector<T, N> ret{};
 		ret[2] = -1;
 		return ret;
 	}
@@ -888,7 +888,7 @@ namespace leopph
 	template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
 		T const* Matrix<T, N, M>::get_data() const
 	{
-		return mData;
+		return mData[0].get_data();
 	}
 
 
