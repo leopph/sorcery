@@ -95,6 +95,7 @@
   <ItemGroup>
     <ClCompile Include="src\Behavior.cpp" />
     <ClCompile Include="src\Color.cpp" />
+    <ClCompile Include="src\Component.cpp" />
     <ClCompile Include="src\Cube.cpp" />
     <ClCompile Include="src\Input.cpp" />
     <ClCompile Include="src\Managed.cpp" />
@@ -109,6 +110,7 @@
   <ItemGroup>
     <ClInclude Include="src\Behavior.hpp" />
     <ClInclude Include="src\Color.hpp" />
+    <ClInclude Include="src\Component.hpp" />
     <ClInclude Include="src\Core.hpp" />
     <ClInclude Include="src\Cube.hpp" />
     <ClInclude Include="src\CubePixelShader.h" />

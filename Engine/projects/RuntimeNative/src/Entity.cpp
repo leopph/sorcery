@@ -1,6 +1,6 @@
 #include "Entity.hpp"
 
-#include "Behavior.hpp"
+#include "Component.hpp"
 
 
 namespace leopph
@@ -15,10 +15,10 @@ namespace leopph
 
 	Entity::~Entity()
 	{
-		// Behavior destructor removes itself from the list so we cannot iterate.
-		while (!mBehaviors.empty())
+		// Component destructor removes itself from the list so we cannot iterate.
+		while (!mComponents.empty())
 		{
-			destroy_mao(mBehaviors.back()->id);
+			destroy_mao(mComponents.back()->id);
 		}
 
 		unparent();
@@ -267,21 +267,21 @@ namespace leopph
 	}
 
 
-	std::span<Behavior* const> Entity::get_behaviors() const
+	std::span<Component* const> Entity::get_components() const
 	{
-		return mBehaviors;
+		return mComponents;
 	}
 
 
-	void Entity::add_behavior(Behavior* const behavior)
+	void Entity::add_component(Component* const component)
 	{
-		mBehaviors.emplace_back(behavior);
+		mComponents.emplace_back(component);
 	}
 
 
-	void Entity::remove_behavior(Behavior* const behavior)
+	void Entity::remove_component(Component* const component)
 	{
-		std::erase(mBehaviors, behavior);
+		std::erase(mComponents, component);
 	}
 
 
@@ -363,7 +363,7 @@ namespace leopph
 	}
 
 
-	namespace detail
+	namespace managedbindings
 	{
 		void entity_new(MonoObject* const managedEntity)
 		{

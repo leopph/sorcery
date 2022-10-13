@@ -2,7 +2,7 @@
 
 #include "Core.hpp"
 
-#include "ManagedAccessObject.hpp"
+#include "Component.hpp"
 
 #include <vector>
 
@@ -18,7 +18,7 @@ namespace leopph
 {
 	class Entity;
 
-	class Behavior : public ManagedAccessObject
+	class Behavior : public Component
 	{
 	public:
 		MonoClass* const klass;
@@ -26,9 +26,8 @@ namespace leopph
 		MonoMethod* const tickFunc;
 		MonoMethod* const tackFunc;
 		MonoMethod* const destroyFunc;
-		Entity* const entity;
 
-		Behavior(u64 managedObjectHandle, MonoClass* klass, MonoMethod* initFunc, MonoMethod* tickFunc, MonoMethod* tackFunc, MonoMethod* destroyFunc, Entity* entity);
+		Behavior(u64 managedObjectHandle, Entity* entity, MonoClass* klass, MonoMethod* initFunc, MonoMethod* tickFunc, MonoMethod* tackFunc, MonoMethod* destroyFunc);
 		~Behavior() override;
 	};
 
@@ -36,9 +35,8 @@ namespace leopph
 	LEOPPHAPI void tick_behaviors();
 	LEOPPHAPI void tack_behaviors();
 
-	namespace detail
+	namespace managedbindings
 	{
 		u64 behavior_new(MonoReflectionType* refType, Entity* entity);
-		u64 behavior_get_entity_handle(Behavior* behavior);
 	}
 }

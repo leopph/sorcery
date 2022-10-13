@@ -30,7 +30,7 @@ namespace leopph
 	}
 
 
-	namespace detail
+	namespace managedbindings
 	{
 		f32 get_full_time()
 		{

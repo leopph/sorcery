@@ -54,7 +54,7 @@ namespace leopph
 	}
 
 
-	namespace detail
+	namespace managedbindings
 	{
 		bool get_key(u8 const key)
 		{

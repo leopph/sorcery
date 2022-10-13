@@ -15,7 +15,7 @@
 
 namespace leopph
 {
-	class Behavior;
+	class Component;
 
 	enum class Space : u8
 	{
@@ -48,7 +48,7 @@ namespace leopph
 		Matrix4 mModelMat{Matrix4::identity()};
 		Matrix3 mNormalMat{Matrix4::identity()};
 
-		std::vector<Behavior*> mBehaviors;
+		std::vector<Component*> mComponents;
 
 	public:
 		LEOPPHAPI Entity(u64 managedObjectHandle);
@@ -103,9 +103,9 @@ namespace leopph
 		LEOPPHAPI Matrix4 get_model_matrix() const;
 		LEOPPHAPI Matrix3 get_normal_matrix() const;
 
-		[[nodiscard]] std::span<Behavior* const> get_behaviors() const;
-		void add_behavior(Behavior* behavior);
-		void remove_behavior(Behavior* behavior);
+		[[nodiscard]] std::span<Component* const> get_components() const;
+		void add_component(Component* component);
+		void remove_component(Component* component);
 
 	private:
 		void calculate_world_position_and_update_children();
@@ -118,7 +118,7 @@ namespace leopph
 	};
 
 
-	namespace detail
+	namespace managedbindings
 	{
 		void entity_new(MonoObject* managedEntity);
 

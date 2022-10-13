@@ -21,8 +21,8 @@ namespace leopph
 	}
 
 
-	Behavior::Behavior(u64 const managedObjectHandle, MonoClass* const klass, MonoMethod* const initFunc, MonoMethod* const tickFunc, MonoMethod* const tackFunc, MonoMethod* const destroyFunc, Entity* const entity) :
-		ManagedAccessObject{ managedObjectHandle }, klass{ klass }, initFunc{ initFunc }, tickFunc{ tickFunc }, tackFunc{ tackFunc }, destroyFunc{ destroyFunc }, entity{ entity }
+	Behavior::Behavior(u64 const managedObjectHandle, Entity* const entity, MonoClass* const klass, MonoMethod* const initFunc, MonoMethod* const tickFunc, MonoMethod* const tackFunc, MonoMethod* const destroyFunc) :
+		Component{ managedObjectHandle, entity }, klass{ klass }, initFunc{ initFunc }, tickFunc{ tickFunc }, tackFunc{ tackFunc }, destroyFunc{ destroyFunc }
 	{}
 
 
@@ -43,7 +43,7 @@ namespace leopph
 			}
 		}
 
-		entity->remove_behavior(this);
+		entity->remove_component(this);
 	}
 
 
@@ -95,7 +95,7 @@ namespace leopph
 
 
 
-	namespace detail
+	namespace managedbindings
 	{
 		u64 behavior_new(MonoReflectionType* const refType, Entity* const entity)
 		{
@@ -109,7 +109,7 @@ namespace leopph
 			MonoMethod* const tackMethod = mono_class_get_method_from_name(klass, "Tack", 0);
 			MonoMethod* const destroyMethod = mono_class_get_method_from_name(klass, "OnDestroy", 0);
 
-			Behavior* const behavior = new Behavior{ gcHandle, klass, initMethod, tickMethod, tackMethod, destroyMethod, entity };
+			Behavior* const behavior = new Behavior{ gcHandle, entity, klass, initMethod, tickMethod, tackMethod, destroyMethod };
 
 			store_mao(behavior);
 
@@ -144,15 +144,7 @@ namespace leopph
 			mono_field_set_value(mono_gchandle_get_target(gcHandle), mono_class_get_field_from_name(klass, "_id"), &idData);
 			mono_field_set_value(mono_gchandle_get_target(gcHandle), mono_class_get_field_from_name(klass, "_ptr"), &ptrData);
 
-			entity->add_behavior(behavior);
-
 			return behavior->managedObjectHandle;
-		}
-
-
-		u64 behavior_get_entity_handle(Behavior* const behavior)
-		{
-			return behavior->entity->managedObjectHandle;
 		}
 	}
 }

@@ -13,7 +13,7 @@ namespace leopph
 		u64 const id{sNextId++};
 		u64 const managedObjectHandle;
 
-		ManagedAccessObject(u64 managedObjectHandle);
+		explicit ManagedAccessObject(u64 managedObjectHandle);
 		virtual ~ManagedAccessObject();
 	};
 

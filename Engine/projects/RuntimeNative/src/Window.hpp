@@ -61,7 +61,7 @@ namespace leopph
 	};
 
 
-	namespace detail
+	namespace managedbindings
 	{
 		[[nodiscard]] Extent2D get_window_current_client_area_size();
 		[[nodiscard]] Extent2D get_window_windowed_client_area_size();
