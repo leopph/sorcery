@@ -6,6 +6,7 @@
 #include "Input.hpp"
 #include "Time.hpp"
 #include "Window.hpp"
+#include "ManagedAccessObject.hpp"
 
 #include <mono/jit/jit.h>
 #include <mono/metadata/appdomain.h>
@@ -37,11 +38,11 @@ namespace leopph
 		mono_add_internal_call("leopph.Input::GetKey", detail::get_key);
 		mono_add_internal_call("leopph.Input::GetKeyUp", detail::get_key_up);
 
-		mono_add_internal_call("leopph.Entity::NativeNewEntity", detail::new_entity);
-		mono_add_internal_call("leopph.Entity::NativeIsEntityAlive", detail::is_entity_alive);
-		mono_add_internal_call("leopph.Entity::NativeDeleteEntity", detail::delete_entity);
+		mono_add_internal_call("leopph.NativeWrapper::InternalDestroyMAO", destroy_mao);
 
-		mono_add_internal_call("leopph.Entity::NativeGetWorldPos", detail::get_entity_world_position);
+		mono_add_internal_call("leopph.Entity::NativeNew", detail::entity_new);
+
+		mono_add_internal_call("leopph.Entity::NativeGetWorldPos", detail::entity_get_world_position);
 		mono_add_internal_call("leopph.Entity::NativeSetWorldPos", detail::set_entity_world_position);
 		mono_add_internal_call("leopph.Entity::NativeGetLocalPos", detail::get_entity_local_position);
 		mono_add_internal_call("leopph.Entity::NativeSetLocalPos", detail::set_entity_local_position);
@@ -69,11 +70,11 @@ namespace leopph
 		mono_add_internal_call("leopph.Entity::NativeGetUpAxis", detail::get_entity_up_axis);
 		mono_add_internal_call("leopph.Entity::NativeGetForwardtAxis", detail::get_entity_forward_axis);
 
-		mono_add_internal_call("leopph.Entity::NativeGetParentId", detail::get_entity_parent_id);
+		mono_add_internal_call("leopph.Entity::NativeGetParentHandle", detail::get_entity_parent_handle);
 		mono_add_internal_call("leopph.Entity::NativeSetParent", detail::set_entity_parent);
 
 		mono_add_internal_call("leopph.Entity::NativeGetChildCount", detail::get_entity_child_count);
-		mono_add_internal_call("leopph.Entity::NativeGetChildId", detail::get_entity_child_id);
+		mono_add_internal_call("leopph.Entity::NativeGetChildHandle", detail::get_entity_child_handle);
 
 		mono_add_internal_call("leopph.Time::get_FullTime", detail::get_full_time);
 		mono_add_internal_call("leopph.Time::get_FrameTime", detail::get_frame_time);
@@ -81,9 +82,9 @@ namespace leopph
 		mono_add_internal_call("Cube::InternalAddPos", add_cube_pos);
 		mono_add_internal_call("Cube::InternalUpdatePos", update_cube_pos);
 
-		mono_add_internal_call("leopph.Entity::InternalCreateBehavior", detail::create_behavior);
+		mono_add_internal_call("leopph.Entity::InternalCreateBehavior", detail::behavior_new);
 
-		mono_add_internal_call("leopph.Behavior::InternalGetEntityId", detail::get_behavior_entity_id);
+		mono_add_internal_call("leopph.Behavior::InternalGetEntityHandle", detail::behavior_get_entity_handle);
 
 		mono_add_internal_call("leopph.Window::InternalGetCurrentClientAreaSize", detail::get_window_current_client_area_size);
 		mono_add_internal_call("leopph.Window::InternalGetWindowedClientAreaSize", detail::get_window_windowed_client_area_size);
@@ -114,6 +115,7 @@ namespace leopph
 
 	void cleanup_managed_runtime()
 	{
+		destroy_all_maos();
 		mono_jit_cleanup(gDomain);
 	}
 }

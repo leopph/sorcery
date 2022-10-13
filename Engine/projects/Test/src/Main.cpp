@@ -53,4 +53,6 @@ int main()
 
 		leopph::measure_time();
 	}
+
+	leopph::cleanup_managed_runtime();
 }

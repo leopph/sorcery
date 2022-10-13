@@ -178,7 +178,7 @@ public class Test
     public static void DoTest()
     {
         Entity e = new Entity();
-        e.CreateBehavior<Cube>();
+        Cube c = e.CreateBehavior<Cube>();
 
         Entity e2 = new Entity();
         e2.CreateBehavior<Camera>();

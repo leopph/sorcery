@@ -1,6 +1,9 @@
 #pragma once
 
 #include "Math.hpp"
+#include "ManagedAccessObject.hpp"
+
+#include <mono/metadata/object.h>
 
 #include <string>
 #include <string_view>
@@ -12,7 +15,7 @@
 
 namespace leopph
 {
-	struct Behavior;
+	class Behavior;
 
 	enum class Space : u8
 	{
@@ -21,10 +24,9 @@ namespace leopph
 	};
 
 
-	class Entity
+	class Entity : public ManagedAccessObject
 	{
 	private:
-		u64 mId;
 		//Scene* mScene;
 		std::string mName{"Node"};
 
@@ -49,7 +51,7 @@ namespace leopph
 		std::vector<Behavior*> mBehaviors;
 
 	public:
-		LEOPPHAPI Entity(u64 id);
+		LEOPPHAPI Entity(u64 managedObjectHandle);
 		Entity(Entity const& other) = delete;
 		Entity(Entity&& other) = delete;
 
@@ -57,8 +59,6 @@ namespace leopph
 		Entity& operator=(Entity&& other) = delete;
 
 		LEOPPHAPI ~Entity();
-
-		[[nodiscard]] LEOPPHAPI u64 get_id() const;
 
 		[[nodiscard]] LEOPPHAPI std::string_view get_name() const;
 		LEOPPHAPI void set_name(std::string name);
@@ -118,47 +118,42 @@ namespace leopph
 	};
 
 
-	LEOPPHAPI extern std::unordered_map<u64, std::unique_ptr<Entity>> entities;
-
-
 	namespace detail
 	{
-		u64 new_entity();
-		i32 is_entity_alive(u64 id);
-		void delete_entity(u64 id);
+		void entity_new(MonoObject* managedEntity);
 
-		Vector3 const* get_entity_world_position(u64 id);
-		void set_entity_world_position(u64 id, Vector3 const* position);
-		Vector3 const* get_entity_local_position(u64 id);
-		void set_entity_local_position(u64 id, Vector3 const* position);
+		Vector3 const* entity_get_world_position(Entity* const entity);
+		void set_entity_world_position(Entity* entity, Vector3 const* position);
+		Vector3 const* get_entity_local_position(Entity* entity);
+		void set_entity_local_position(Entity* entity, Vector3 const* position);
 
-		Quaternion const* get_entity_world_rotation(u64 id);
-		void set_entity_world_rotation(u64 id, Quaternion const* rotation);
-		Quaternion const* get_entity_local_rotation(u64 id);
-		void set_entity_local_rotation(u64 id, Quaternion const* rotation);
+		Quaternion const* get_entity_world_rotation(Entity* entity);
+		void set_entity_world_rotation(Entity* entity, Quaternion const* rotation);
+		Quaternion const* get_entity_local_rotation(Entity* entity);
+		void set_entity_local_rotation(Entity* entity, Quaternion const* rotation);
 
-		Vector3 const* get_entity_world_scale(u64 id);
-		void set_entity_world_scale(u64 id, Vector3 const* scale);
-		Vector3 const* get_entity_local_scale(u64 id);
-		void set_entity_local_scale(u64 id, Vector3 const* scale);
+		Vector3 const* get_entity_world_scale(Entity* entity);
+		void set_entity_world_scale(Entity* entity, Vector3 const* scale);
+		Vector3 const* get_entity_local_scale(Entity* entity);
+		void set_entity_local_scale(Entity* entity, Vector3 const* scale);
 
-		void translate_entity_from_vector(u64 id, Vector3 const* translation, Space space);
-		void translate_entity(u64 id, f32 x, f32 y, f32 z, Space space);
+		void translate_entity_from_vector(Entity* entity, Vector3 const* translation, Space space);
+		void translate_entity(Entity* entity, f32 x, f32 y, f32 z, Space space);
 
-		void rotate_entity(u64 id, Quaternion const* rotation, Space space);
-		void rotate_entity_angle_axis(u64 id, Vector3 const* axis, f32 angleDegrees, Space space);
+		void rotate_entity(Entity* entity, Quaternion const* rotation, Space space);
+		void rotate_entity_angle_axis(Entity* entity, Vector3 const* axis, f32 angleDegrees, Space space);
 
-		void rescale_entity_from_vector(u64 id, Vector3 const* scaling, Space space);
-		void rescale_entity(u64 id, f32 x, f32 y, f32 z, Space space);
+		void rescale_entity_from_vector(Entity* entity, Vector3 const* scaling, Space space);
+		void rescale_entity(Entity* entity, f32 x, f32 y, f32 z, Space space);
 
-		Vector3 const* get_entity_right_axis(u64 id);
-		Vector3 const* get_entity_up_axis(u64 id);
-		Vector3 const* get_entity_forward_axis(u64 id);
+		Vector3 const* get_entity_right_axis(Entity* entity);
+		Vector3 const* get_entity_up_axis(Entity* entity);
+		Vector3 const* get_entity_forward_axis(Entity* entity);
 
-		u64 get_entity_parent_id(u64 id);
-		void set_entity_parent(u64 targetEntityId, u64 parentEntityId);
+		u64 get_entity_parent_handle(Entity* entity);
+		void set_entity_parent(Entity* targetEntity, Entity* parentEntity);
 
-		u64 get_entity_child_count(u64 id);
-		u64 get_entity_child_id(u64 parentId, u64 childIndex);
+		u64 get_entity_child_count(Entity* entity);
+		u64 get_entity_child_handle(Entity* entity, u64 childIndex);
 	}
 }

@@ -1,27 +1,15 @@
 ﻿using System.Runtime.CompilerServices;
+using System;
+using System.Runtime.InteropServices;
 
 namespace leopph
 {
     public class Behavior : NativeWrapper
     {
-        private Entity? _entity;
-
-
-        public Entity Entity
-        {
-            get
-            {
-                if (_entity == null)
-                {
-                    _entity = new Entity(InternalGetEntityId(_id));
-                }
-                return _entity;
-
-            }
-        }
+        public Entity Entity => (GCHandle.FromIntPtr(InternalGetEntityHandle(_ptr)).Target as Entity)!;
 
 
         [MethodImpl(MethodImplOptions.InternalCall)]
-        private extern static ulong InternalGetEntityId(ulong behaviorId);
+        private extern static IntPtr InternalGetEntityHandle(IntPtr ptr);
     }
 }

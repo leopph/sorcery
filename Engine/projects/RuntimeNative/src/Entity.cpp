@@ -1,9 +1,12 @@
 #include "Entity.hpp"
 
+#include "Behavior.hpp"
+
+
 namespace leopph
 {
-	Entity::Entity(u64 const id) :
-		mId{id}//,
+	Entity::Entity(u64 const managedObjectHandle) :
+		ManagedAccessObject{managedObjectHandle}//,
 		//mScene{&get_scene_manager().get_active_scene()}
 	{
 		//mScene->add(this);
@@ -12,13 +15,21 @@ namespace leopph
 
 	Entity::~Entity()
 	{
-		deinit();
-	}
+		// Behavior destructor removes itself from the list so we cannot iterate.
+		while (!mBehaviors.empty())
+		{
+			destroy_mao(mBehaviors.back()->id);
+		}
 
+		unparent();
 
-	u64 Entity::get_id() const
-	{
-		return mId;
+		// Unparent removes the child from mChildren so we cannot iterate over it
+		while (!mChildren.empty())
+		{
+			mChildren.back()->unparent();
+		}
+
+		//mScene->remove(this);
 	}
 
 
@@ -341,20 +352,6 @@ namespace leopph
 	}
 
 
-	void Entity::deinit()
-	{
-		unparent();
-
-		// Unparent removes the child from mChildren so we cannot iterate over it
-		while (!mChildren.empty())
-		{
-			mChildren.back()->unparent();
-		}
-
-		//mScene->remove(this);
-	}
-
-
 	void Entity::take_children_from(Entity const& entity)
 	{
 		while (!entity.mChildren.empty())
@@ -366,180 +363,169 @@ namespace leopph
 	}
 
 
-	std::unordered_map<u64, std::unique_ptr<Entity>> entities;
-
-
 	namespace detail
 	{
-		u64 new_entity()
+		void entity_new(MonoObject* const managedEntity)
 		{
-			static u64 nextId{1};
-			u64 const id{nextId++};
-			entities[id] = std::make_unique<Entity>(id);
-			return id;
+			Entity* const entity = new Entity{ mono_gchandle_new(managedEntity, false) };
+			store_mao(entity);
+
+			MonoClass* const klass = mono_object_get_class(managedEntity);
+			u64 idData{ entity->id };
+			Entity* ptrData{ entity };
+			mono_field_set_value(managedEntity, mono_class_get_field_from_name(klass, "_id"), &idData);
+			mono_field_set_value(managedEntity, mono_class_get_field_from_name(klass, "_ptr"), &ptrData);
 		}
 
 
-		i32 is_entity_alive(u64 const id)
+		Vector3 const* entity_get_world_position(Entity* const entity)
 		{
-			return entities[id] != nullptr;
+			return &entity->get_position();
 		}
 
 
-		void delete_entity(u64 const id)
+		void set_entity_world_position(Entity* const entity, Vector3 const* position)
 		{
-			entities[id].reset();
+			entity->set_position(*position);
 		}
 
 
-		Vector3 const* get_entity_world_position(u64 const id)
+		Vector3 const* get_entity_local_position(Entity* const entity)
 		{
-			return &entities[id]->get_position();
+			return &entity->get_local_position();
 		}
 
 
-		void set_entity_world_position(u64 const id, Vector3 const* position)
+		void set_entity_local_position(Entity* const entity, Vector3 const* position)
 		{
-			entities[id]->set_position(*position);
+			entity->set_local_position(*position);
 		}
 
 
-		Vector3 const* get_entity_local_position(u64 const id)
+		Quaternion const* get_entity_world_rotation(Entity* const entity)
 		{
-			return &entities[id]->get_local_position();
+			return &entity->get_rotation();
 		}
 
 
-		void set_entity_local_position(u64 const id, Vector3 const* position)
+		void set_entity_world_rotation(Entity* const entity, Quaternion const* rotation)
 		{
-			entities[id]->set_local_position(*position);
+			entity->set_rotation(*rotation);
 		}
 
 
-		Quaternion const* get_entity_world_rotation(u64 const id)
+		Quaternion const* get_entity_local_rotation(Entity* const entity)
 		{
-			return &entities[id]->get_rotation();
+			return &entity->get_local_rotation();
 		}
 
 
-		void set_entity_world_rotation(u64 const id, Quaternion const* rotation)
+		void set_entity_local_rotation(Entity* const entity, Quaternion const* rotation)
 		{
-			entities[id]->set_rotation(*rotation);
+			entity->set_local_rotation(*rotation);
 		}
 
 
-		Quaternion const* get_entity_local_rotation(u64 const id)
+		Vector3 const* get_entity_world_scale(Entity* const entity)
 		{
-			return &entities[id]->get_local_rotation();
+			return &entity->get_scale();
 		}
 
 
-		void set_entity_local_rotation(u64 const id, Quaternion const* rotation)
+		void set_entity_world_scale(Entity* const entity, Vector3 const* scale)
 		{
-			entities[id]->set_local_rotation(*rotation);
+			entity->set_scale(*scale);
 		}
 
 
-		Vector3 const* get_entity_world_scale(u64 const id)
+		Vector3 const* get_entity_local_scale(Entity* const entity)
 		{
-			return &entities[id]->get_scale();
+			return &entity->get_local_scale();
 		}
 
 
-		void set_entity_world_scale(u64 const id, Vector3 const* scale)
+		void set_entity_local_scale(Entity* const entity, Vector3 const* scale)
 		{
-			entities[id]->set_scale(*scale);
+			entity->set_local_scale(*scale);
 		}
 
 
-		Vector3 const* get_entity_local_scale(u64 const id)
+		void translate_entity_from_vector(Entity* const entity, Vector3 const* translation, Space const space)
 		{
-			return &entities[id]->get_local_scale();
+			entity->translate(*translation, space);
 		}
 
 
-		void set_entity_local_scale(u64 const id, Vector3 const* scale)
+		void translate_entity(Entity* const entity, f32 const x, f32 const y, f32 const z, Space const space)
 		{
-			entities[id]->set_local_scale(*scale);
+			entity->translate(x, y, z, space);
 		}
 
 
-		void translate_entity_from_vector(u64 const id, Vector3 const* translation, Space const space)
+		void rotate_entity(Entity* const entity, Quaternion const* rotation, Space const space)
 		{
-			entities[id]->translate(*translation, space);
+			entity->rotate(*rotation, space);
 		}
 
 
-		void translate_entity(u64 const id, f32 const x, f32 const y, f32 const z, Space const space)
+		void rotate_entity_angle_axis(Entity* const entity, Vector3 const* axis, f32 const angleDegrees, Space const space)
 		{
-			entities[id]->translate(x, y, z, space);
+			entity->rotate(*axis, angleDegrees, space);
 		}
 
 
-		void rotate_entity(u64 const id, Quaternion const* rotation, Space const space)
+		void rescale_entity_from_vector(Entity* const entity, Vector3 const* scaling, Space const space)
 		{
-			entities[id]->rotate(*rotation, space);
+			entity->rescale(*scaling, space);
 		}
 
 
-		void rotate_entity_angle_axis(u64 const id, Vector3 const* axis, f32 const angleDegrees, Space const space)
+		void rescale_entity(Entity* const entity, f32 const x, f32 const y, f32 const z, Space const space)
 		{
-			entities[id]->rotate(*axis, angleDegrees, space);
+			entity->rescale(x, y, z, space);
 		}
 
 
-		void rescale_entity_from_vector(u64 const id, Vector3 const* scaling, Space const space)
+		Vector3 const* get_entity_right_axis(Entity* const entity)
 		{
-			entities[id]->rescale(*scaling, space);
+			return &entity->get_right_axis();
 		}
 
 
-		void rescale_entity(u64 const id, f32 const x, f32 const y, f32 const z, Space const space)
+		Vector3 const* get_entity_up_axis(Entity* const entity)
 		{
-			entities[id]->rescale(x, y, z, space);
+			return &entity->get_up_axis();
 		}
 
 
-		Vector3 const* get_entity_right_axis(u64 const id)
+		Vector3 const* get_entity_forward_axis(Entity* const entity)
 		{
-			return &entities[id]->get_right_axis();
+			return &entity->get_forward_axis();
 		}
 
 
-		Vector3 const* get_entity_up_axis(u64 const id)
+		u64 get_entity_parent_handle(Entity* const entity)
 		{
-			return &entities[id]->get_up_axis();
+			Entity* parent = entity->get_parent();
+			return parent ? parent->managedObjectHandle : 0;
 		}
 
 
-		Vector3 const* get_entity_forward_axis(u64 const id)
+		void set_entity_parent(Entity* const targetEntity, Entity* const parentEntity)
 		{
-			return &entities[id]->get_forward_axis();
+			targetEntity->set_parent(parentEntity);
 		}
 
 
-		u64 get_entity_parent_id(u64 const id)
+		u64 get_entity_child_count(Entity* const entity)
 		{
-			Entity* parent = entities[id]->get_parent();
-			return parent ? parent->get_id() : 0;
+			return entity->get_children().size();
 		}
 
 
-		void set_entity_parent(u64 const targetEntityId, u64 const parentEntityId)
+		u64 get_entity_child_handle(Entity* const entity, u64 const childIndex)
 		{
-			entities[targetEntityId]->set_parent(parentEntityId == 0 ? nullptr : entities[parentEntityId].get());
-		}
-
-
-		u64 get_entity_child_count(u64 const id)
-		{
-			return entities[id]->get_children().size();
-		}
-
-
-		u64 get_entity_child_id(u64 const parentId, u64 const childIndex)
-		{
-			return entities[parentId]->get_children()[childIndex]->get_id();
+			return entity->get_children()[childIndex]->managedObjectHandle;
 		}
 	}
 }

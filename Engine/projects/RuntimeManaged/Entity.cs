@@ -3,7 +3,7 @@
 
 using System;
 using System.Runtime.CompilerServices;
-
+using System.Runtime.InteropServices;
 
 namespace leopph
 {
@@ -16,126 +16,110 @@ namespace leopph
 
     public class Entity : NativeWrapper
     {
-        public Entity() : this(NativeNewEntity())
-        { }
-
-
-        internal Entity(ulong id) : base(id)
-        { }
-
-
-        public void Destroy()
+        public Entity()
         {
-            NativeDeleteEntity(_id);
+            NativeNew(this);
         }
 
 
         public Vector3 Position
         {
-            get => NativeGetWorldPos(_id);
-            set => NativeSetWorldPos(_id, in value);
+            get => NativeGetWorldPos(_ptr);
+            set => NativeSetWorldPos(_ptr, in value);
         }
 
 
         public Vector3 LocalPosition
         {
-            get => NativeGetLocalPos(_id);
-            set => NativeSetLocalPos(_id, in value);
+            get => NativeGetLocalPos(_ptr);
+            set => NativeSetLocalPos(_ptr, in value);
         }
 
 
         public Quaternion Rotation
         {
-            get => NativeGetWorldRot(_id);
-            set => NativeSetWorldRot(_id, in value);
+            get => NativeGetWorldRot(_ptr);
+            set => NativeSetWorldRot(_ptr, in value);
         }
 
 
         public Quaternion LocalRotation
         {
-            get => NativeGetLocalRot(_id);
-            set => NativeSetLocalRot(_id, in value);
+            get => NativeGetLocalRot(_ptr);
+            set => NativeSetLocalRot(_ptr, in value);
         }
 
 
         public Vector3 Scale
         {
-            get => NativeGetWorldScale(_id);
-            set => NativeSetWorldScale(_id, in value);
+            get => NativeGetWorldScale(_ptr);
+            set => NativeSetWorldScale(_ptr, in value);
         }
 
 
         public Vector3 LocalScale
         {
-            get => NativeGetLocalScale(_id);
-            set => NativeSetLocalScale(_id, in value);
+            get => NativeGetLocalScale(_ptr);
+            set => NativeSetLocalScale(_ptr, in value);
         }
 
 
-        public Vector3 Right => NativeGetRightAxis(_id);
-        public Vector3 Up => NativeGetUpAxis(_id);
-        public Vector3 Forward => NativeGetForwardAxis(_id);
+        public Vector3 Right => NativeGetRightAxis(_ptr);
+        public Vector3 Up => NativeGetUpAxis(_ptr);
+        public Vector3 Forward => NativeGetForwardAxis(_ptr);
 
 
         public Entity? Parent
         {
-            get
-            {
-                ulong parentId = NativeGetParentId(_id);
-                return parentId == 0 ? null : new Entity(parentId);
-            }
-
-            set => NativeSetParent(_id, value == null ? 0 : value._id);
+            get => GCHandle.FromIntPtr(NativeGetParentHandle(_ptr)).Target as Entity ?? null;
+            set => NativeSetParent(_ptr, value == null ? IntPtr.Zero : value._ptr);
         }
 
 
-        public ulong ChildCount => NativeGetChildCount(_id);
+        public ulong ChildCount => NativeGetChildCount(_ptr);
 
 
-        public Entity GetChild(ulong index)
-        {
-            return new Entity(NativeGetChildId(_id, index));
-        }
+        public Entity GetChild(ulong index) => (GCHandle.FromIntPtr(NativeGetChildHandle(_ptr, index)).Target as Entity)!;
 
 
         public void Translate(in Vector3 translation, Space space = Space.World)
         {
-            NativeTranslateVector(_id, in translation, space);
+            NativeTranslateVector(_ptr, in translation, space);
         }
 
 
         public void Translate(float x, float y, float z, Space space = Space.World)
         {
-            NativeTranslate(_id, x, y, z, space);
+            NativeTranslate(_ptr, x, y, z, space);
         }
 
 
         public void Rotate(in Quaternion rotation, Space space = Space.World)
         {
-            NativeRotate(_id, in rotation, space);
+            NativeRotate(_ptr, in rotation, space);
         }
 
 
         public void Rotate(in Vector3 axis, float angleDegrees, Space space = Space.World)
         {
-            NativeRotateAngleAxis(_id, in axis, angleDegrees, space);
+            NativeRotateAngleAxis(_ptr, in axis, angleDegrees, space);
         }
 
 
         public void Rescale(in Vector3 scaling, Space space = Space.World)
         {
-            NativeRescaleVector(_id, in scaling, space);
+            NativeRescaleVector(_ptr, in scaling, space);
         }
 
 
         public void Rescale(float x, float y, float z, Space space = Space.World)
         {
-            NativeRescale(_id, x, y, z, space);
+            NativeRescale(_ptr, x, y, z, space);
         }
 
 
-        public T CreateBehavior<T>() where T : Behavior => (InternalCreateBehavior(typeof(T), _id) as T)!;
-
+        public T CreateBehavior<T>() where T : Behavior => (GCHandle.FromIntPtr(InternalCreateBehavior(typeof(T), _ptr)).Target as T)!;
+        
 
         public static bool operator ==(Entity? left, Entity? right)
         {
@@ -144,17 +128,12 @@ namespace leopph
                 return true;
             }
 
-            if (left is null && !(right is null))
-            {
-                return right._id == 0 || NativeIsEntityAlive(right._id) == 0;
-            }
-
             if (!(left is null) && right is null)
             {
-                return left._id == 0 || NativeIsEntityAlive(left._id) == 0;
+                return left.Equals(right);
             }
 
-            return left?._id == right?._id;
+            return right!.Equals(left);
         }
 
 
@@ -166,14 +145,14 @@ namespace leopph
 
         public override bool Equals(object? obj)
         {
-            if (obj == null)
+            if (obj is null)
             {
-                return NativeIsEntityAlive(_id) == 0;
+                return _ptr == IntPtr.Zero;
             }
 
             if (obj is Entity entity)
             {
-                return _id == entity._id;
+                return _ptr == entity._ptr;
             }
 
             return false;
@@ -181,118 +160,110 @@ namespace leopph
 
 
         [MethodImpl(MethodImplOptions.InternalCall)]
-        private extern static ulong NativeNewEntity();
+        private extern static ulong NativeNew(Entity entity);
 
 
         [MethodImpl(MethodImplOptions.InternalCall)]
-        private extern static int NativeIsEntityAlive(ulong id);
+        private extern static ref Vector3 NativeGetWorldPos(IntPtr ptr);
 
 
         [MethodImpl(MethodImplOptions.InternalCall)]
-        private extern static void NativeDeleteEntity(ulong id);
+        private extern static void NativeSetWorldPos(IntPtr ptr, in Vector3 position);
 
 
         [MethodImpl(MethodImplOptions.InternalCall)]
-        private extern static ref Vector3 NativeGetWorldPos(ulong id);
+        private extern static ref Vector3 NativeGetLocalPos(IntPtr ptr);
 
 
         [MethodImpl(MethodImplOptions.InternalCall)]
-        private extern static void NativeSetWorldPos(ulong id, in Vector3 position);
+        private extern static void NativeSetLocalPos(IntPtr ptr, in Vector3 position);
 
 
         [MethodImpl(MethodImplOptions.InternalCall)]
-        private extern static ref Vector3 NativeGetLocalPos(ulong id);
+        private extern static ref Quaternion NativeGetWorldRot(IntPtr ptr);
 
 
         [MethodImpl(MethodImplOptions.InternalCall)]
-        private extern static void NativeSetLocalPos(ulong id, in Vector3 position);
+        private extern static void NativeSetWorldRot(IntPtr ptr, in Quaternion rotation);
 
 
         [MethodImpl(MethodImplOptions.InternalCall)]
-        private extern static ref Quaternion NativeGetWorldRot(ulong id);
+        private extern static ref Quaternion NativeGetLocalRot(IntPtr ptr);
 
 
         [MethodImpl(MethodImplOptions.InternalCall)]
-        private extern static void NativeSetWorldRot(ulong id, in Quaternion rotation);
+        private extern static void NativeSetLocalRot(IntPtr ptr, in Quaternion rotation);
 
 
         [MethodImpl(MethodImplOptions.InternalCall)]
-        private extern static ref Quaternion NativeGetLocalRot(ulong id);
+        private extern static ref Vector3 NativeGetWorldScale(IntPtr ptr);
 
 
         [MethodImpl(MethodImplOptions.InternalCall)]
-        private extern static void NativeSetLocalRot(ulong id, in Quaternion rotation);
+        private extern static void NativeSetWorldScale(IntPtr ptr, in Vector3 scale);
 
 
         [MethodImpl(MethodImplOptions.InternalCall)]
-        private extern static ref Vector3 NativeGetWorldScale(ulong id);
+        private extern static ref Vector3 NativeGetLocalScale(IntPtr ptr);
 
 
         [MethodImpl(MethodImplOptions.InternalCall)]
-        private extern static void NativeSetWorldScale(ulong id, in Vector3 scale);
+        private extern static void NativeSetLocalScale(IntPtr ptr, in Vector3 scale);
 
 
         [MethodImpl(MethodImplOptions.InternalCall)]
-        private extern static ref Vector3 NativeGetLocalScale(ulong id);
+        private extern static void NativeTranslateVector(IntPtr ptr, in Vector3 position, Space space);
 
 
         [MethodImpl(MethodImplOptions.InternalCall)]
-        private extern static void NativeSetLocalScale(ulong id, in Vector3 scale);
+        private extern static void NativeTranslate(IntPtr ptr, float x, float y, float z, Space space);
 
 
         [MethodImpl(MethodImplOptions.InternalCall)]
-        private extern static void NativeTranslateVector(ulong id, in Vector3 position, Space space);
+        private extern static void NativeRotate(IntPtr ptr, in Quaternion rotation, Space space);
 
 
         [MethodImpl(MethodImplOptions.InternalCall)]
-        private extern static void NativeTranslate(ulong id, float x, float y, float z, Space space);
+        private extern static void NativeRotateAngleAxis(IntPtr ptr, in Vector3 axis, float angleDegrees, Space space);
 
 
         [MethodImpl(MethodImplOptions.InternalCall)]
-        private extern static void NativeRotate(ulong id, in Quaternion rotation, Space space);
+        private extern static void NativeRescaleVector(IntPtr ptr, in Vector3 scaling, Space space);
 
 
         [MethodImpl(MethodImplOptions.InternalCall)]
-        private extern static void NativeRotateAngleAxis(ulong id, in Vector3 axis, float angleDegrees, Space space);
+        private extern static void NativeRescale(IntPtr ptr, float x, float y, float z, Space space);
 
 
         [MethodImpl(MethodImplOptions.InternalCall)]
-        private extern static void NativeRescaleVector(ulong id, in Vector3 scaling, Space space);
+        private extern static ref Vector3 NativeGetRightAxis(IntPtr ptr);
 
 
         [MethodImpl(MethodImplOptions.InternalCall)]
-        private extern static void NativeRescale(ulong id, float x, float y, float z, Space space);
+        private extern static ref Vector3 NativeGetUpAxis(IntPtr ptr);
 
 
         [MethodImpl(MethodImplOptions.InternalCall)]
-        private extern static ref Vector3 NativeGetRightAxis(ulong id);
+        private extern static ref Vector3 NativeGetForwardAxis(IntPtr ptr);
 
 
         [MethodImpl(MethodImplOptions.InternalCall)]
-        private extern static ref Vector3 NativeGetUpAxis(ulong id);
+        private extern static IntPtr NativeGetParentHandle(IntPtr ptr);
 
 
         [MethodImpl(MethodImplOptions.InternalCall)]
-        private extern static ref Vector3 NativeGetForwardAxis(ulong id);
+        private extern static void NativeSetParent(IntPtr targetEntityPtr, IntPtr parentEntityPtr);
 
 
         [MethodImpl(MethodImplOptions.InternalCall)]
-        private extern static ulong NativeGetParentId(ulong id);
+        private extern static ulong NativeGetChildCount(IntPtr ptr);
 
 
         [MethodImpl(MethodImplOptions.InternalCall)]
-        private extern static void NativeSetParent(ulong targetEntityId, ulong parentEntityId);
+        private extern static IntPtr NativeGetChildHandle(IntPtr parentPtr, ulong childIndex);
 
 
         [MethodImpl(MethodImplOptions.InternalCall)]
-        private extern static ulong NativeGetChildCount(ulong id);
-
-
-        [MethodImpl(MethodImplOptions.InternalCall)]
-        private extern static ulong NativeGetChildId(ulong parentId, ulong childIndex);
-
-
-        [MethodImpl(MethodImplOptions.InternalCall)]
-        private extern static Behavior InternalCreateBehavior(Type type, ulong entityId);
+        private extern static IntPtr InternalCreateBehavior(Type type, IntPtr entityPtr);
     }
 }

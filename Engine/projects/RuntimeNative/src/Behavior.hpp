@@ -2,15 +2,15 @@
 
 #include "Core.hpp"
 
+#include "ManagedAccessObject.hpp"
+
 #include <vector>
 
 struct _MonoMethod;
-struct _MonoObject;
 struct _MonoClass;
 struct _MonoReflectionType;
 
 typedef _MonoMethod MonoMethod;
-typedef _MonoObject MonoObject;
 typedef _MonoClass MonoClass;
 typedef _MonoReflectionType MonoReflectionType;
 
@@ -18,16 +18,18 @@ namespace leopph
 {
 	class Entity;
 
-	struct Behavior
+	class Behavior : public ManagedAccessObject
 	{
-		u64 id;
-		Entity* entity;
-		u32 gcHandle;
-		MonoClass* klass;
-		MonoMethod* initFunc;
-		MonoMethod* tickFunc;
-		MonoMethod* tackFunc;
-		MonoMethod* destroyFunc;
+	public:
+		MonoClass* const klass;
+		MonoMethod* const initFunc;
+		MonoMethod* const tickFunc;
+		MonoMethod* const tackFunc;
+		MonoMethod* const destroyFunc;
+		Entity* const entity;
+
+		Behavior(u64 managedObjectHandle, MonoClass* klass, MonoMethod* initFunc, MonoMethod* tickFunc, MonoMethod* tackFunc, MonoMethod* destroyFunc, Entity* entity);
+		~Behavior() override;
 	};
 
 	LEOPPHAPI void init_behaviors();
@@ -36,8 +38,7 @@ namespace leopph
 
 	namespace detail
 	{
-		MonoObject* create_behavior(MonoReflectionType* refType, u64 entityId);
-		void destroy_behavior(u64 id);
-		u64 get_behavior_entity_id(u64 behaviorId);
+		u64 behavior_new(MonoReflectionType* refType, Entity* entity);
+		u64 behavior_get_entity_handle(Behavior* behavior);
 	}
 }
