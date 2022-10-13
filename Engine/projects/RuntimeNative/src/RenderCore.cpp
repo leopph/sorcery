@@ -491,7 +491,7 @@ namespace leopph
 	{
 		if (cubePositions.empty())
 		{
-			mSwapChain->Present(0, sPresentFlags);
+			present();
 			return true;
 		}
 
@@ -582,7 +582,7 @@ namespace leopph
 									   0,
 									   0);
 
-		mSwapChain->Present(0, sPresentFlags);
+		present();
 		return true;
 	}
 
@@ -613,5 +613,23 @@ namespace leopph
 
 		self->mRenderRes = size;
 		self->mRenderAspectRatio = static_cast<f32>(size.width) / static_cast<f32>(size.height);
+	}
+
+
+	void RenderCore::present() const
+	{
+		mSwapChain->Present(mSyncInterval, sPresentFlags);
+	}
+
+
+	u32 RenderCore::get_sync_interval() const
+	{
+		return mSyncInterval;
+	}
+
+
+	void RenderCore::set_sync_interval(u32 const interval)
+	{
+		mSyncInterval = interval;
 	}
 }

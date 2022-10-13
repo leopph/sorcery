@@ -28,6 +28,7 @@ namespace leopph
 		UINT mInstanceBufferElementCapacity;
 		Microsoft::WRL::ComPtr<ID3D11Buffer> mCbuffer;
 		UINT mIndexCount;
+		u32 mSyncInterval{0};
 
 		UINT const static sInstanceBufferElementSize;
 		UINT const static sVertexBufferSlot;
@@ -50,9 +51,14 @@ namespace leopph
 				   Microsoft::WRL::ComPtr<ID3D11Buffer> cbuffer,
 				   UINT indexCount);
 
+		void present() const;
+
 	public:
 		LEOPPHAPI [[nodiscard]] static std::unique_ptr<RenderCore> Create(Window& window);
 
 		LEOPPHAPI bool render();
+
+		[[nodiscard]] u32 get_sync_interval() const;
+		void set_sync_interval(u32 interval);
 	};
 }
