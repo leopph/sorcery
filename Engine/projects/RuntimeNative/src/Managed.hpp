@@ -4,6 +4,6 @@
 
 namespace leopph
 {
-	LEOPPHAPI void initialize_managed_runtime();
+	LEOPPHAPI [[nodiscard]] bool initialize_managed_runtime();
 	LEOPPHAPI void cleanup_managed_runtime();
 }

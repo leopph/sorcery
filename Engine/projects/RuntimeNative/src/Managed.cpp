@@ -28,8 +28,37 @@ namespace leopph
 	}
 
 
-	void initialize_managed_runtime()
+	bool initialize_managed_runtime()
 	{
+		HKEY monoRegKey;
+
+		if (RegOpenKeyExA(HKEY_LOCAL_MACHINE, R"(SOFTWARE\Mono)", 0, KEY_READ, &monoRegKey) != ERROR_SUCCESS)
+		{
+			MessageBoxW(nullptr, L"Failed to locate Mono installation.", L"Error", MB_ICONERROR);
+			return false;
+		}
+
+		char buffer[512];
+		DWORD bufferSize = sizeof(buffer);
+
+		if (RegGetValueA(monoRegKey, NULL, "FrameworkAssemblyDirectory", RRF_RT_REG_SZ, NULL, buffer, &bufferSize) != ERROR_SUCCESS)
+		{
+			MessageBoxW(nullptr, L"Failed to locate Mono library directory.", L"Error", MB_ICONERROR);
+			return false;
+		}
+
+		std::string monoLibPath{ buffer };
+
+		if (RegGetValueA(monoRegKey, NULL, "MonoConfigDir", RRF_RT_REG_SZ, NULL, buffer, &bufferSize) != ERROR_SUCCESS)
+		{
+			MessageBoxW(nullptr, L"Failed to locate Mono config directory.", L"Error", MB_ICONERROR);
+			return false;
+		}
+
+		std::string monoConfigPath{ buffer };
+
+		mono_set_dirs(monoLibPath.c_str(), monoConfigPath.c_str());
+
 		gDomain = mono_jit_init("leopph");
 		assert(gDomain);
 
@@ -96,6 +125,8 @@ namespace leopph
 		{
 			mono_print_unhandled_exception(exception);
 		}
+
+		return true;
 	}
 
 

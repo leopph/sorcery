@@ -32,7 +32,10 @@ int main()
 		return -1;
 	}
 
-	leopph::initialize_managed_runtime();
+	if (!leopph::initialize_managed_runtime())
+	{
+		return -1;
+	}
 
 	leopph::init_time();
 
