@@ -3,6 +3,7 @@
 #include "Entity.hpp"
 #include "Managed.hpp"
 #include "Behavior.hpp"
+#include "CubeModel.hpp"
 
 #include <mono/metadata/appdomain.h>
 #include <mono/metadata/assembly.h>
