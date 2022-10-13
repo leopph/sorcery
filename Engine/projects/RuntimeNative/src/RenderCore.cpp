@@ -491,6 +491,7 @@ namespace leopph
 	{
 		if (cubePositions.empty())
 		{
+			mSwapChain->Present(0, sPresentFlags);
 			return true;
 		}
 
