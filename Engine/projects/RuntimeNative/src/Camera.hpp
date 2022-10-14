@@ -1,8 +1,17 @@
 #pragma once
 
-#include "Math.hpp"
+#include "Component.hpp"
 
 namespace leopph
 {
-	LEOPPHAPI extern Vector3 camPos;
+	class Camera : public Component
+	{
+	private:
+		static Camera* sInstance;
+
+	public:
+		Camera(MonoObject* managedObject, Entity* entity);
+		~Camera() override;
+		[[nodiscard]] static Camera* get_instance();
+	};
 }

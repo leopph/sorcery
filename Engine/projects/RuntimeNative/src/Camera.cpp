@@ -2,13 +2,23 @@
 
 namespace leopph
 {
-	Vector3 camPos{0, 0, 0};
+	Camera* Camera::sInstance{ nullptr };
 
-	extern "C"
+	Camera::Camera(MonoObject* const managedObject, Entity* const entity) :
+		Component{ managedObject, entity }
 	{
-		__declspec(dllexport) void set_cam_pos(Vector3 const* pos)
-		{
-			camPos = *pos;
-		}
+		sInstance = this;
+	}
+
+
+	Camera::~Camera()
+	{
+		sInstance = nullptr;
+	}
+
+
+	Camera* Camera::get_instance()
+	{
+		return sInstance;
 	}
 }

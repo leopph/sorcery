@@ -65,6 +65,8 @@ namespace leopph
 		mono_add_internal_call("leopph.Input::GetKeyDown", managedbindings::get_key_down);
 		mono_add_internal_call("leopph.Input::GetKey", managedbindings::get_key);
 		mono_add_internal_call("leopph.Input::GetKeyUp", managedbindings::get_key_up);
+		mono_add_internal_call("leopph.Input::get_MousePosition", managedbindings::get_mouse_pos);
+		mono_add_internal_call("leopph.Input::get_MouseDelta", managedbindings::get_mouse_delta);
 
 		mono_add_internal_call("leopph.Time::get_FullTime", managedbindings::get_full_time);
 		mono_add_internal_call("leopph.Time::get_FrameTime", managedbindings::get_frame_time);

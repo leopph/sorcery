@@ -1,5 +1,4 @@
 ﻿using leopph;
-using System.Runtime.InteropServices;
 
 
 public class MovementController : Behavior
@@ -60,64 +59,13 @@ public class MovementController : Behavior
 }
 
 
-public class Camera : Behavior
+public class OrientationController : Behavior
 {
-    [DllImport("LeopphRuntimeNative.dll", EntryPoint = "set_cam_pos")]
-    private static extern void SetCamPos(in Vector3 pos);
-
-    private void OnInit()
+    private void Tick()
     {
-        Entity.Position = new Vector3(0, 0, -3);
-        SetCamPos(Entity.Position);
+        Entity.Rotate(Vector3.Up, Math.ToDegrees(Input.MouseDelta.x) * Time.FrameTime, Space.World);
+        Entity.Rotate(Vector3.Right, Math.ToDegrees(Input.MouseDelta.y) * Time.FrameTime, Space.Object);
     }
-
-    /*private void Tick()
-    {
-        var posDelta = Vector3.Zero;
-
-        if (Input.GetKey(Key.D))
-        {
-            posDelta += Vector3.Right;
-        }
-
-        if (Input.GetKey(Key.A))
-        {
-            posDelta += Vector3.Left;
-        }
-
-        if (Input.GetKey(Key.Space))
-        {
-            posDelta += Vector3.Up;
-        }
-
-        if (Input.GetKey(Key.LeftControl))
-        {
-            posDelta += Vector3.Down;
-        }
-
-        if (Input.GetKey(Key.W))
-        {
-            posDelta += Vector3.Forward;
-        }
-
-        if (Input.GetKey(Key.S))
-        {
-            posDelta += Vector3.Backward;
-        }
-
-        posDelta.Normalize();
-
-        posDelta *= 0.5f;
-
-        if (Input.GetKey(Key.Shift))
-        {
-            posDelta *= 2;
-        }
-
-        Entity.Translate(posDelta * Time.FrameTime);
-
-        SetCamPos(Entity.Position);
-    }*/
 }
 
 
@@ -171,10 +119,12 @@ public class Test
     {
         Entity e = new Entity();
         CubeModel c = e.CreateComponent<CubeModel>();
-        MovementController m = e.CreateComponent<MovementController>();
 
         Entity e2 = new Entity();
+        e2.Position = new Vector3(0, 0, -3);
         e2.CreateComponent<Camera>();
+        e2.CreateComponent<OrientationController>();
+        MovementController m = e2.CreateComponent<MovementController>();
 
         Entity e3 = new Entity();
         e3.CreateComponent<WindowController>();

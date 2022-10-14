@@ -4,6 +4,7 @@
 #include "Managed.hpp"
 #include "Behavior.hpp"
 #include "CubeModel.hpp"
+#include "Camera.hpp"
 
 #include <mono/metadata/appdomain.h>
 #include <mono/metadata/assembly.h>
@@ -31,10 +32,11 @@ namespace leopph
 			return new T{ managedObject, entity };
 		}
 
-		std::unordered_map<std::string, std::unordered_map<std::string, std::function<Component*(MonoObject*, Entity*)>>> const gComponentInstantiators
+		std::unordered_map<std::string, std::unordered_map<std::string, std::function<Component* (MonoObject*, Entity*)>>> const gComponentInstantiators
 		{
 			{"leopph", {
-				{"CubeModel", instantiate<CubeModel>}
+				{"CubeModel", instantiate<CubeModel>},
+			{"Camera", instantiate<Camera>}
 		}
 			}
 		};

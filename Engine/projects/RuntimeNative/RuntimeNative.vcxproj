@@ -128,6 +128,7 @@
     <ClInclude Include="src\RenderCore.hpp" />
     <ClInclude Include="src\Renderer3D.hpp" />
     <ClInclude Include="src\Time.hpp" />
+    <ClInclude Include="src\Util.hpp" />
     <ClInclude Include="src\Window.hpp" />
   </ItemGroup>
   <ItemGroup>

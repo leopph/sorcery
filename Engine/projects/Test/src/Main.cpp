@@ -22,19 +22,24 @@ int main()
 
 	if (!window)
 	{
-		return -1;
+		return 1;
 	}
 
 	auto const renderer = leopph::RenderCore::Create(*window);
 
 	if (!renderer)
 	{
-		return -1;
+		return 2;
+	}
+
+	if (!leopph::init_input_system())
+	{
+		return 3;
 	}
 
 	if (!leopph::initialize_managed_runtime())
 	{
-		return -1;
+		return 4;
 	}
 
 	leopph::init_time();
@@ -43,7 +48,10 @@ int main()
 	{
 		window->process_events();
 
-		leopph::update_keyboard_state();
+		if (!leopph::update_input_system())
+		{
+			return 5;
+		}
 
 		leopph::init_behaviors();
 		leopph::tick_behaviors();
@@ -51,11 +59,12 @@ int main()
 
 		if (!renderer->render())
 		{
-			return -1;
+			return 6;
 		}
 
 		leopph::measure_time();
 	}
 
 	leopph::cleanup_managed_runtime();
+	leopph::cleanup_input_system();
 }

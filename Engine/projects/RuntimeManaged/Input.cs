@@ -127,6 +127,14 @@ namespace leopph
     }
 
 
+    public struct Point2D<T>
+    {
+        public T x;
+        public T y;
+        public Point2D(T x, T y) => (this.x, this.y) = (x, y);
+    }
+
+
     public static class Input
     {
         [MethodImpl(MethodImplOptions.InternalCall)]
@@ -137,5 +145,17 @@ namespace leopph
 
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static bool GetKeyUp(Key key);
+
+        public extern static Point2D<int> MousePosition
+        {
+            [MethodImpl(MethodImplOptions.InternalCall)]
+            get;
+        }
+
+        public extern static Point2D<int> MouseDelta
+        {
+            [MethodImpl(MethodImplOptions.InternalCall)]
+            get;
+        }
     }
 }

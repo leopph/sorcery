@@ -498,6 +498,14 @@ namespace leopph
 			return true;
 		}
 
+		Camera* mainCam = Camera::get_instance();
+
+		if (!mainCam)
+		{
+			present();
+			return true;
+		}
+
 		if (mCubeModels.size() > mInstanceBufferElementCapacity)
 		{
 			mInstanceBufferElementCapacity = static_cast<UINT>(mCubeModels.size());
@@ -542,15 +550,16 @@ namespace leopph
 
 		for (int i = 0; i < mCubeModels.size(); i++)
 		{
-			DirectX::XMFLOAT4X4 modelMat{mCubeModels[i]->entity->get_model_matrix().get_data()};
+			DirectX::XMFLOAT4X4 modelMat{ mCubeModels[i]->entity->get_model_matrix().get_data() };
 			DirectX::XMStoreFloat4x4(mappedInstanceBufferData + i, DirectX::XMLoadFloat4x4(&modelMat));
 			i++;
 		}
 
 		mContext->Unmap(mInstanceBuffer.Get(), 0);
 
-		DirectX::XMFLOAT3 const camPos{ leopph::camPos.get_data() };
-		DirectX::XMMATRIX viewMat = DirectX::XMMatrixLookToLH(DirectX::XMLoadFloat3(&camPos), { 0, 0, 1 }, { 0, 1, 0 });
+		DirectX::XMFLOAT3 const camPos{ mainCam->entity->get_position().get_data() };
+		DirectX::XMFLOAT3 const camForward{ mainCam->entity->get_forward_axis().get_data() };
+		DirectX::XMMATRIX viewMat = DirectX::XMMatrixLookToLH(DirectX::XMLoadFloat3(&camPos), DirectX::XMLoadFloat3(&camForward), {0, 1, 0});
 		DirectX::XMMATRIX projMat = DirectX::XMMatrixPerspectiveFovLH(DirectX::XMConvertToRadians(90.0f / mRenderAspectRatio), mRenderAspectRatio, 0.3f, 100.f);
 
 		D3D11_MAPPED_SUBRESOURCE mappedCbuffer;

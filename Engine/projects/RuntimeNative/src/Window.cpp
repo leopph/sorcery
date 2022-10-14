@@ -64,17 +64,11 @@ namespace leopph
 	{
 		MSG msg;
 
-		while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE))
+		while (PeekMessageW(&msg, mHwnd, 0, 0, PM_REMOVE))
 		{
-			if (msg.message == WM_QUIT)
-			{
-				mShouldClose = true;
-			}
-			else
-			{
-				TranslateMessage(&msg);
-				DispatchMessageW(&msg);
-			}
+			TranslateMessage(&msg);
+			DispatchMessageW(&msg);
+
 		}
 	}
 
@@ -98,7 +92,7 @@ namespace leopph
 		{
 			case WM_CLOSE:
 			{
-				PostQuitMessage(0);
+				self->mShouldClose = true;
 				return 0;
 			}
 
