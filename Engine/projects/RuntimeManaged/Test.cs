@@ -10,7 +10,7 @@ public class MovementController : Behavior
     public Key forward = Key.W;
     public Key backward = Key.S;
     public Key run = Key.LeftShift;
-    public float speed = 1;
+    public float speed = 3;
 
     private void Tick()
     {
@@ -62,12 +62,12 @@ public class MovementController : Behavior
 
 public class OrientationController : Behavior
 {
-    public float sensitivity = 100;
+    public float sensitivity = 0.05f;
 
     private void Tick()
     {
-        Entity.Rotate(Vector3.Up, sensitivity * Input.MouseDelta.x * Time.FrameTime, Space.World);
-        Entity.Rotate(Vector3.Right, sensitivity * Input.MouseDelta.y * Time.FrameTime, Space.Object);
+        Entity.Rotate(Vector3.Up, sensitivity * Input.MouseDelta.x, Space.World);
+        Entity.Rotate(Vector3.Right, sensitivity * Input.MouseDelta.y, Space.Object);
     }
 }
 
@@ -130,13 +130,13 @@ public class Test
         var e = new Entity();
         e.CreateComponent<CubeModel>();
 
-        var e2 = new Entity();
-        e2.Position = new Vector3(0, 0, -3);
+        var e2 = new Entity
+        {
+            Position = new Vector3(0, 0, -3)
+        };
         e2.CreateComponent<Camera>();
-        var m = e2.CreateComponent<MovementController>();
-        m.speed = 2;
-        var o = e2.CreateComponent<OrientationController>();
-        o.sensitivity = 250;
+        e2.CreateComponent<MovementController>();
+        e2.CreateComponent<OrientationController>();
 
         var e3 = new Entity();
         e3.CreateComponent<AppController>();
