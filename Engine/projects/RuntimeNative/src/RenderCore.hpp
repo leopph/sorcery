@@ -1,9 +1,11 @@
 #pragma once
 
-#include "Extent2D.hpp"
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+
 #include "Core.hpp"
-#include "Window.hpp"
 #include "CubeModel.hpp"
+#include "Util.hpp"
 
 #include <d3d11.h>
 #include <dxgi1_2.h>
@@ -59,7 +61,7 @@ namespace leopph
 		void present() const;
 
 	public:
-		LEOPPHAPI [[nodiscard]] static std::unique_ptr<RenderCore> Create(Window& window);
+		LEOPPHAPI [[nodiscard]] static std::unique_ptr<RenderCore> create();
 
 		LEOPPHAPI bool render();
 

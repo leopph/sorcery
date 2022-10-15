@@ -21,9 +21,6 @@
     <ClCompile Include="src\Time.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Input.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\Math.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -45,7 +42,7 @@
     <ClCompile Include="src\RenderCore.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Window.cpp">
+    <ClCompile Include="src\Platform.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\ManagedAccessObject.cpp">
@@ -71,9 +68,6 @@
     <ClInclude Include="src\Color.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Input.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\Time.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -89,13 +83,10 @@
     <ClInclude Include="src\CubeModel.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Window.hpp">
+    <ClInclude Include="src\Platform.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Event.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Extent2D.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\CubePixelShaderDebug.h">

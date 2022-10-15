@@ -1,11 +1,17 @@
 #pragma once
 
 #include "Core.hpp"
-#include "Extent2D.hpp"
 
 
 namespace leopph
 {
+	struct Extent2D
+	{
+		u32 width;
+		u32 height;
+	};
+
+
 	template<typename T>
 	struct Point2D
 	{

@@ -3,9 +3,8 @@
 #include "Behavior.hpp"
 #include "CubeModel.hpp"
 #include "Entity.hpp"
-#include "Input.hpp"
 #include "Time.hpp"
-#include "Window.hpp"
+#include "Platform.hpp"
 #include "ManagedAccessObject.hpp"
 #include "Component.hpp"
 
@@ -62,22 +61,22 @@ namespace leopph
 		gDomain = mono_jit_init("leopph");
 		assert(gDomain);
 
-		mono_add_internal_call("leopph.Input::GetKeyDown", managedbindings::get_key_down);
-		mono_add_internal_call("leopph.Input::GetKey", managedbindings::get_key);
-		mono_add_internal_call("leopph.Input::GetKeyUp", managedbindings::get_key_up);
-		mono_add_internal_call("leopph.Input::get_MousePosition", managedbindings::get_mouse_pos);
-		mono_add_internal_call("leopph.Input::get_MouseDelta", managedbindings::get_mouse_delta);
+		mono_add_internal_call("leopph.Input::GetKeyDown", platform::managedbindings::get_key_down);
+		mono_add_internal_call("leopph.Input::GetKey", platform::managedbindings::get_key);
+		mono_add_internal_call("leopph.Input::GetKeyUp", platform::managedbindings::get_key_up);
+		mono_add_internal_call("leopph.Input::get_MousePosition", platform::managedbindings::get_mouse_pos);
+		mono_add_internal_call("leopph.Input::get_MouseDelta", platform::managedbindings::get_mouse_delta);
 
 		mono_add_internal_call("leopph.Time::get_FullTime", managedbindings::get_full_time);
 		mono_add_internal_call("leopph.Time::get_FrameTime", managedbindings::get_frame_time);
 
-		mono_add_internal_call("leopph.Window::InternalGetCurrentClientAreaSize", managedbindings::get_window_current_client_area_size);
-		mono_add_internal_call("leopph.Window::InternalGetWindowedClientAreaSize", managedbindings::get_window_windowed_client_area_size);
-		mono_add_internal_call("leopph.Window::InternalSetWindowedClientAreaSize", managedbindings::set_window_windowed_client_area_size);
-		mono_add_internal_call("leopph.Window::InternalIsBorderless", managedbindings::is_window_borderless);
-		mono_add_internal_call("leopph.Window::InternalSetBorderless", managedbindings::set_window_borderless);
-		mono_add_internal_call("leopph.Window::InternalIsMinimizingOnBorderlessFocusLoss", managedbindings::is_window_minimizing_on_borderless_focus_loss);
-		mono_add_internal_call("leopph.Window::InternalSetMinimizeOnBorderlessFocusLoss", managedbindings::set_window_minimize_on_borderless_focus_loss);
+		mono_add_internal_call("leopph.Window::InternalGetCurrentClientAreaSize", platform::get_window_current_client_area_size);
+		mono_add_internal_call("leopph.Window::InternalGetWindowedClientAreaSize", platform::get_window_windowed_client_area_size);
+		mono_add_internal_call("leopph.Window::InternalSetWindowedClientAreaSize", platform::set_window_windowed_client_area_size);
+		mono_add_internal_call("leopph.Window::InternalIsBorderless", platform::is_window_borderless);
+		mono_add_internal_call("leopph.Window::InternalSetBorderless", platform::set_window_borderless);
+		mono_add_internal_call("leopph.Window::InternalIsMinimizingOnBorderlessFocusLoss", platform::is_window_minimizing_on_borderless_focus_loss);
+		mono_add_internal_call("leopph.Window::InternalSetMinimizeOnBorderlessFocusLoss", platform::set_window_minimize_on_borderless_focus_loss);
 
 		mono_add_internal_call("leopph.NativeWrapper::InternalDestroyMAO", destroy_mao);
 

@@ -65,6 +65,7 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>C:\Program Files\Mono\include\mono-2.0;$(DXSDK_DIR)Include</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -83,6 +84,7 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>C:\Program Files\Mono\include\mono-2.0;$(DXSDK_DIR)Include</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -97,7 +99,6 @@
     <ClCompile Include="src\Color.cpp" />
     <ClCompile Include="src\Component.cpp" />
     <ClCompile Include="src\CubeModel.cpp" />
-    <ClCompile Include="src\Input.cpp" />
     <ClCompile Include="src\Managed.cpp" />
     <ClCompile Include="src\ManagedAccessObject.cpp" />
     <ClCompile Include="src\Math.cpp" />
@@ -105,7 +106,7 @@
     <ClCompile Include="src\Camera.cpp" />
     <ClCompile Include="src\RenderCore.cpp" />
     <ClCompile Include="src\Time.cpp" />
-    <ClCompile Include="src\Window.cpp" />
+    <ClCompile Include="src\Platform.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Behavior.hpp" />
@@ -118,8 +119,6 @@
     <ClInclude Include="src\CubeVertexShader.h" />
     <ClInclude Include="src\CubeVertexShaderDebug.h" />
     <ClInclude Include="src\Event.hpp" />
-    <ClInclude Include="src\Extent2D.hpp" />
-    <ClInclude Include="src\Input.hpp" />
     <ClInclude Include="src\Managed.hpp" />
     <ClInclude Include="src\ManagedAccessObject.hpp" />
     <ClInclude Include="src\Math.hpp" />
@@ -129,7 +128,7 @@
     <ClInclude Include="src\Renderer3D.hpp" />
     <ClInclude Include="src\Time.hpp" />
     <ClInclude Include="src\Util.hpp" />
-    <ClInclude Include="src\Window.hpp" />
+    <ClInclude Include="src\Platform.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\shaders\include\CubeShader.hlsli" />

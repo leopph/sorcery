@@ -10,6 +10,7 @@ public class MovementController : Behavior
     public Key forward = Key.W;
     public Key backward = Key.S;
     public Key run = Key.LeftShift;
+    public float speed = 1;
 
     private void Tick()
     {
@@ -54,17 +55,19 @@ public class MovementController : Behavior
             posDelta *= 2;
         }
 
-        Entity.Translate(posDelta * Time.FrameTime);
+        Entity.Translate(speed * posDelta * Time.FrameTime, Space.Object);
     }
 }
 
 
 public class OrientationController : Behavior
 {
+    public float sensitivity = 100;
+
     private void Tick()
     {
-        Entity.Rotate(Vector3.Up, Math.ToDegrees(Input.MouseDelta.x) * Time.FrameTime, Space.World);
-        Entity.Rotate(Vector3.Right, Math.ToDegrees(Input.MouseDelta.y) * Time.FrameTime, Space.Object);
+        Entity.Rotate(Vector3.Up, sensitivity * Input.MouseDelta.x * Time.FrameTime, Space.World);
+        Entity.Rotate(Vector3.Right, sensitivity * Input.MouseDelta.y * Time.FrameTime, Space.Object);
     }
 }
 
@@ -117,16 +120,18 @@ public class Test
 {
     public static void DoTest()
     {
-        Entity e = new Entity();
-        CubeModel c = e.CreateComponent<CubeModel>();
+        var e = new Entity();
+        e.CreateComponent<CubeModel>();
 
-        Entity e2 = new Entity();
+        var e2 = new Entity();
         e2.Position = new Vector3(0, 0, -3);
         e2.CreateComponent<Camera>();
-        e2.CreateComponent<OrientationController>();
-        MovementController m = e2.CreateComponent<MovementController>();
+        var m = e2.CreateComponent<MovementController>();
+        m.speed = 2;
+        var o = e2.CreateComponent<OrientationController>();
+        o.sensitivity = 250;
 
-        Entity e3 = new Entity();
+        var e3 = new Entity();
         e3.CreateComponent<WindowController>();
     }
 }

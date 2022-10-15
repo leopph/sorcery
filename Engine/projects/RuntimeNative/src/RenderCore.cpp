@@ -1,7 +1,6 @@
 #include "RenderCore.hpp"
 
-#include <DirectXMath.h>
-
+#include "Platform.hpp"
 #include "Camera.hpp"
 #include "Entity.hpp"
 
@@ -12,6 +11,8 @@
 #include "CubeVertexShaderDebug.h"
 #include "CubePixelShaderDebug.h"
 #endif
+
+#include <DirectXMath.h>
 
 #include <cassert>
 #include <functional>
@@ -30,7 +31,7 @@ namespace leopph
 	RenderCore* RenderCore::sLastInstance{ nullptr };
 
 
-	std::unique_ptr<RenderCore> RenderCore::Create(Window& window)
+	std::unique_ptr<RenderCore> RenderCore::create()
 	{
 		#ifdef NDEBUG
 		UINT constexpr deviceCreationFlags = 0;
@@ -55,7 +56,7 @@ namespace leopph
 
 		if (FAILED(hresult))
 		{
-			MessageBoxW(window.get_hwnd(), L"Failed to create D3D device.", L"Error", MB_ICONERROR);
+			MessageBoxW(platform::get_hwnd(), L"Failed to create D3D device.", L"Error", MB_ICONERROR);
 			return nullptr;
 		}
 
@@ -65,7 +66,7 @@ namespace leopph
 
 		if (FAILED(hresult))
 		{
-			MessageBoxW(window.get_hwnd(), L"Failed to get ID3D11Debug interface.", L"Error", MB_ICONERROR);
+			MessageBoxW(platform::get_hwnd(), L"Failed to get ID3D11Debug interface.", L"Error", MB_ICONERROR);
 			return nullptr;
 		}
 
@@ -74,7 +75,7 @@ namespace leopph
 
 		if (FAILED(hresult))
 		{
-			MessageBoxW(window.get_hwnd(), L"Failed to get ID3D11InfoQueue interface.", L"Error", MB_ICONERROR);
+			MessageBoxW(platform::get_hwnd(), L"Failed to get ID3D11InfoQueue interface.", L"Error", MB_ICONERROR);
 			return nullptr;
 		}
 
@@ -87,7 +88,7 @@ namespace leopph
 
 		if (FAILED(hresult))
 		{
-			MessageBoxW(window.get_hwnd(), L"Failed to query IDXGIDevice interface.", L"Error", MB_ICONERROR);
+			MessageBoxW(platform::get_hwnd(), L"Failed to query IDXGIDevice interface.", L"Error", MB_ICONERROR);
 			return nullptr;
 		}
 
@@ -96,7 +97,7 @@ namespace leopph
 
 		if (FAILED(hresult))
 		{
-			MessageBoxW(window.get_hwnd(), L"Failed to get IDXGIAdapter.", L"Error", MB_ICONERROR);
+			MessageBoxW(platform::get_hwnd(), L"Failed to get IDXGIAdapter.", L"Error", MB_ICONERROR);
 			return nullptr;
 		}
 
@@ -106,7 +107,7 @@ namespace leopph
 
 		if (FAILED(hresult))
 		{
-			MessageBoxW(window.get_hwnd(), L"Failed to query IDXGIFactory2 interface.", L"Error", MB_ICONERROR);
+			MessageBoxW(platform::get_hwnd(), L"Failed to query IDXGIFactory2 interface.", L"Error", MB_ICONERROR);
 			return nullptr;
 		}
 
@@ -131,7 +132,7 @@ namespace leopph
 
 		ComPtr<IDXGISwapChain1> swapChain;
 		hresult = dxgiFactory2->CreateSwapChainForHwnd(device.Get(),
-													   window.get_hwnd(),
+													   platform::get_hwnd(),
 													   &swapChainDesc1,
 													   nullptr,
 													   nullptr,
@@ -139,11 +140,11 @@ namespace leopph
 
 		if (FAILED(hresult))
 		{
-			MessageBoxW(window.get_hwnd(), L"Failed to create swapchain.", L"Error", MB_ICONERROR);
+			MessageBoxW(platform::get_hwnd(), L"Failed to create swapchain.", L"Error", MB_ICONERROR);
 			return nullptr;
 		}
 
-		dxgiFactory2->MakeWindowAssociation(window.get_hwnd(), DXGI_MWA_NO_WINDOW_CHANGES);
+		dxgiFactory2->MakeWindowAssociation(platform::get_hwnd(), DXGI_MWA_NO_WINDOW_CHANGES);
 
 		ComPtr<ID3D11Texture2D> backBuf;
 		hresult = swapChain->GetBuffer(0,
@@ -152,7 +153,7 @@ namespace leopph
 
 		if (FAILED(hresult))
 		{
-			MessageBoxW(window.get_hwnd(), L"Failed to get backbuffer.", L"Error", MB_ICONERROR);
+			MessageBoxW(platform::get_hwnd(), L"Failed to get backbuffer.", L"Error", MB_ICONERROR);
 			return nullptr;
 		}
 
@@ -163,7 +164,7 @@ namespace leopph
 
 		if (FAILED(hresult))
 		{
-			MessageBoxW(window.get_hwnd(), L"Failed to create backbuffer RTV.", L"Error", MB_ICONERROR);
+			MessageBoxW(platform::get_hwnd(), L"Failed to create backbuffer RTV.", L"Error", MB_ICONERROR);
 			return nullptr;
 		}
 
@@ -175,7 +176,7 @@ namespace leopph
 
 		if (FAILED(hresult))
 		{
-			MessageBoxW(window.get_hwnd(), L"Failed to create cube vertex shader.", L"Error", MB_ICONERROR);
+			MessageBoxW(platform::get_hwnd(), L"Failed to create cube vertex shader.", L"Error", MB_ICONERROR);
 			return nullptr;
 		}
 
@@ -189,7 +190,7 @@ namespace leopph
 
 		if (FAILED(hresult))
 		{
-			MessageBoxW(window.get_hwnd(), L"Failed to create cube pixel shader.", L"Error", MB_ICONERROR);
+			MessageBoxW(platform::get_hwnd(), L"Failed to create cube pixel shader.", L"Error", MB_ICONERROR);
 			return nullptr;
 		}
 
@@ -253,7 +254,7 @@ namespace leopph
 
 		if (FAILED(hresult))
 		{
-			MessageBoxW(window.get_hwnd(), L"Failed to create cube input layout.", L"Error", MB_ICONERROR);
+			MessageBoxW(platform::get_hwnd(), L"Failed to create cube input layout.", L"Error", MB_ICONERROR);
 			return nullptr;
 		}
 
@@ -299,7 +300,7 @@ namespace leopph
 
 		if (FAILED(hresult))
 		{
-			MessageBoxW(window.get_hwnd(), L"Failed to create cube vertex buffer.", L"Error", MB_ICONERROR);
+			MessageBoxW(platform::get_hwnd(), L"Failed to create cube vertex buffer.", L"Error", MB_ICONERROR);
 			return nullptr;
 		}
 
@@ -326,7 +327,7 @@ namespace leopph
 
 		if (FAILED(hresult))
 		{
-			MessageBoxW(window.get_hwnd(), L"Failed to create cube instance buffer.", L"Error", MB_ICONERROR);
+			MessageBoxW(platform::get_hwnd(), L"Failed to create cube instance buffer.", L"Error", MB_ICONERROR);
 			return nullptr;
 		}
 
@@ -386,7 +387,7 @@ namespace leopph
 
 		if (FAILED(hresult))
 		{
-			MessageBoxW(window.get_hwnd(), L"Failed to create cube index buffer.", L"Error", MB_ICONERROR);
+			MessageBoxW(platform::get_hwnd(), L"Failed to create cube index buffer.", L"Error", MB_ICONERROR);
 			return nullptr;
 		}
 
@@ -409,7 +410,7 @@ namespace leopph
 
 		if (FAILED(hresult))
 		{
-			MessageBoxW(window.get_hwnd(), L"Failed to create cube constant buffer.", L"Error", MB_ICONERROR);
+			MessageBoxW(platform::get_hwnd(), L"Failed to create cube constant buffer.", L"Error", MB_ICONERROR);
 			return nullptr;
 		}
 
@@ -434,13 +435,13 @@ namespace leopph
 
 		if (FAILED(hresult))
 		{
-			MessageBoxW(window.get_hwnd(), L"Failed to create rasterizer state.", L"Error", MB_ICONERROR);
+			MessageBoxW(platform::get_hwnd(), L"Failed to create rasterizer state.", L"Error", MB_ICONERROR);
 			return nullptr;
 		}
 
 		context->RSSetState(rasterizerState.Get());
 
-		Extent2D const renderRes{ window.get_current_client_area_size() };
+		Extent2D const renderRes{ platform::get_window_current_client_area_size() };
 
 		std::unique_ptr<RenderCore> ret{ new RenderCore{std::move(device),
 														std::move(context),
@@ -455,7 +456,7 @@ namespace leopph
 														std::move(cbuffer),
 														indexCount} };
 
-		window.OnSizeEvent.add_handler(ret.get(), &on_window_resize);
+		platform::OnWindowSize.add_handler(ret.get(), &on_window_resize);
 
 		sLastInstance = ret.get();
 
