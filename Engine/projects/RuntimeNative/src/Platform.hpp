@@ -34,6 +34,12 @@ namespace leopph::platform
 	LEOPPHAPI [[nodiscard]] bool should_window_close();
 	LEOPPHAPI void set_should_window_close(bool shouldClose);
 
+	LEOPPHAPI [[nodiscard]] bool is_cursor_confined();
+	LEOPPHAPI void confine_cursor(bool confine);
+
+	LEOPPHAPI [[nodiscard]] bool is_cursor_hidden();
+	LEOPPHAPI void hide_cursor(bool hide);
+
 	namespace managedbindings
 	{
 		bool get_key(u8 key);

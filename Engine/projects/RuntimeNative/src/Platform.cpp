@@ -18,6 +18,7 @@ namespace leopph::platform
 		wchar_t const* const WND_CLASS_NAME{ L"LeopphEngine" };
 		DWORD constexpr WND_WINDOWED_STYLE{ WS_OVERLAPPEDWINDOW & ~WS_THICKFRAME };
 		DWORD constexpr WND_BORDLERLESS_STYLE{ WS_POPUP };
+		HCURSOR const DEFAULT_CURSOR{ LoadCursorW(nullptr, IDC_ARROW) };
 
 		HWND gHwnd{ nullptr };
 		bool gWndShouldClose{ false };
@@ -31,6 +32,9 @@ namespace leopph::platform
 		Key gKeyboardState[256]{};
 		Point2DI32 gMousePos{ 0, 0 };
 		Point2DI32 gMouseDelta{ 0, 0 };
+		bool gConfineCursor{ false };
+		bool gHideCursor{ false };
+		bool gInFocus{ true };
 	}
 
 
@@ -74,10 +78,12 @@ namespace leopph::platform
 						{
 							ShowWindow(hwnd, SW_MINIMIZE);
 						}
+						gInFocus = false;
 						gWndOnFocusLossEvent.invoke();
 					}
 					else
 					{
+						gInFocus = true;
 						gWndOnFocusGainEvent.invoke();
 					}
 
@@ -115,6 +121,24 @@ namespace leopph::platform
 					}
 
 					return 0;
+				}
+
+				case WM_MOUSEMOVE:
+				{
+					if (gInFocus && gConfineCursor)
+					{
+						RECT rect;
+						GetClientRect(gHwnd, &rect);
+						POINT midPoint
+						{
+							.x = static_cast<LONG>(static_cast<float>(rect.right) / 2.0f),
+							.y = static_cast<LONG>(static_cast<float>(rect.bottom) / 2.0f),
+						};
+						ClientToScreen(gHwnd, &midPoint);
+						SetCursorPos(midPoint.x, midPoint.y);
+					}
+
+					SetCursor(gHideCursor ? nullptr : DEFAULT_CURSOR);						
 				}
 			}
 
@@ -166,7 +190,7 @@ namespace leopph::platform
 		{
 			.usUsagePage = HID_USAGE_PAGE_GENERIC,
 			.usUsage = HID_USAGE_GENERIC_MOUSE,
-			.dwFlags = RIDEV_NOLEGACY,
+			.dwFlags = 0,
 			.hwndTarget = gHwnd
 		};
 
@@ -321,6 +345,30 @@ namespace leopph::platform
 	void set_should_window_close(bool const shouldClose)
 	{
 		gWndShouldClose = shouldClose;
+	}
+
+
+	[[nodiscard]] bool is_cursor_confined()
+	{
+		return gConfineCursor;
+	}
+
+
+	void confine_cursor(bool const confine)
+	{
+		gConfineCursor = confine;
+	}
+
+
+	[[nodiscard]] bool is_cursor_hidden()
+	{
+		return gHideCursor;
+	}
+
+
+	void hide_cursor(bool const hide)
+	{
+		gHideCursor = hide;
 	}
 
 

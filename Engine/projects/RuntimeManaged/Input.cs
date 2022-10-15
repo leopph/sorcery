@@ -157,5 +157,23 @@ namespace leopph
             [MethodImpl(MethodImplOptions.InternalCall)]
             get;
         }
+
+
+        public extern static bool IsCursorConfined
+        {
+            [MethodImpl(MethodImplOptions.InternalCall)]
+            get;
+            [MethodImpl(MethodImplOptions.InternalCall)]
+            set;
+        }
+
+
+        public extern static bool IsCursorHidden
+        {
+            [MethodImpl(MethodImplOptions.InternalCall)]
+            get;
+            [MethodImpl(MethodImplOptions.InternalCall)]
+            set;
+        }
     }
 }

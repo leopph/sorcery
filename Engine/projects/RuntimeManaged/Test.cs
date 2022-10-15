@@ -1,5 +1,5 @@
 ﻿using leopph;
-
+using System.Runtime.InteropServices;
 
 public class MovementController : Behavior
 {
@@ -79,6 +79,8 @@ public class AppController : Behavior
     private void OnInit()
     {
         _originalResolution = Window.WindowedResolution;
+        Input.IsCursorConfined = true;
+        Input.IsCursorHidden = true;
     }
 
     private void Tick()

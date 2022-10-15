@@ -66,6 +66,10 @@ namespace leopph
 		mono_add_internal_call("leopph.Input::GetKeyUp", platform::managedbindings::get_key_up);
 		mono_add_internal_call("leopph.Input::get_MousePosition", platform::managedbindings::get_mouse_pos);
 		mono_add_internal_call("leopph.Input::get_MouseDelta", platform::managedbindings::get_mouse_delta);
+		mono_add_internal_call("leopph.Input::get_IsCursorConfined", platform::is_cursor_confined);
+		mono_add_internal_call("leopph.Input::set_IsCursorConfined", platform::confine_cursor);
+		mono_add_internal_call("leopph.Input::get_IsCursorHidden", platform::is_cursor_hidden);
+		mono_add_internal_call("leopph.Input::set_IsCursorHidden", platform::hide_cursor);
 
 		mono_add_internal_call("leopph.Time::get_FullTime", managedbindings::get_full_time);
 		mono_add_internal_call("leopph.Time::get_FrameTime", managedbindings::get_frame_time);
