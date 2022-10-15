@@ -318,6 +318,12 @@ namespace leopph::platform
 	}
 
 
+	void set_should_window_close(bool const shouldClose)
+	{
+		gWndShouldClose = shouldClose;
+	}
+
+
 	namespace managedbindings
 	{
 		bool get_key(u8 const key)

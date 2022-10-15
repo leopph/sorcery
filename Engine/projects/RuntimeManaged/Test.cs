@@ -72,7 +72,7 @@ public class OrientationController : Behavior
 }
 
 
-public class WindowController : Behavior
+public class AppController : Behavior
 {
     private Extent2D _originalResolution;
 
@@ -112,6 +112,11 @@ public class WindowController : Behavior
         {
             Window.WindowedResolution = _originalResolution;
         }
+
+        if (Input.GetKeyDown(Key.Q) || Input.GetKeyDown(Key.Escape))
+        {
+            Application.Quit();
+        }
     }
 }
 
@@ -132,6 +137,6 @@ public class Test
         o.sensitivity = 250;
 
         var e3 = new Entity();
-        e3.CreateComponent<WindowController>();
+        e3.CreateComponent<AppController>();
     }
 }

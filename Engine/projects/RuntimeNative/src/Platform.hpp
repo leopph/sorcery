@@ -32,6 +32,7 @@ namespace leopph::platform
 	LEOPPHAPI void set_window_minimize_on_borderless_focus_loss(bool minimize);
 
 	LEOPPHAPI [[nodiscard]] bool should_window_close();
+	LEOPPHAPI void set_should_window_close(bool shouldClose);
 
 	namespace managedbindings
 	{

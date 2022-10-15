@@ -77,6 +77,7 @@ namespace leopph
 		mono_add_internal_call("leopph.Window::InternalSetBorderless", platform::set_window_borderless);
 		mono_add_internal_call("leopph.Window::InternalIsMinimizingOnBorderlessFocusLoss", platform::is_window_minimizing_on_borderless_focus_loss);
 		mono_add_internal_call("leopph.Window::InternalSetMinimizeOnBorderlessFocusLoss", platform::set_window_minimize_on_borderless_focus_loss);
+		mono_add_internal_call("leopph.Window::InternalSetShouldClose", platform::set_should_window_close);
 
 		mono_add_internal_call("leopph.NativeWrapper::InternalDestroyMAO", destroy_mao);
 

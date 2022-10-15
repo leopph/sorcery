@@ -50,5 +50,9 @@ namespace leopph
 
         [MethodImpl(MethodImplOptions.InternalCall)]
         private extern static void InternalSetMinimizeOnBorderlessFocusLoss(int minimize);
+
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal extern static void InternalSetShouldClose(bool shouldClose);
     }
 }
