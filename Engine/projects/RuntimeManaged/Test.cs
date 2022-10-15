@@ -127,18 +127,36 @@ public class Test
 {
     public static void DoTest()
     {
-        var e = new Entity();
-        e.CreateComponent<CubeModel>();
-
-        var e2 = new Entity
+        var cube0 = new Entity
         {
-            Position = new Vector3(0, 0, -3)
+            Position = new Vector3(0, 0, 2)
         };
-        e2.CreateComponent<Camera>();
-        e2.CreateComponent<MovementController>();
-        e2.CreateComponent<OrientationController>();
+        cube0.CreateComponent<CubeModel>();
 
-        var e3 = new Entity();
-        e3.CreateComponent<AppController>();
+        var cube1 = new Entity
+        {
+            Position = new Vector3(2, 0, 0)
+        };
+        cube1.CreateComponent<CubeModel>();
+
+        var cube2 = new Entity
+        {
+            Position = new Vector3(0, 0, -2)
+        };
+        cube2.CreateComponent<CubeModel>();
+
+        var cube3 = new Entity
+        {
+            Position = new Vector3(-2, 0, 0)
+        };
+        cube3.CreateComponent<CubeModel>();
+
+        var cam = new Entity();
+        cam.CreateComponent<Camera>();
+        cam.CreateComponent<MovementController>();
+        cam.CreateComponent<OrientationController>();
+
+        var util = new Entity();
+        util.CreateComponent<AppController>();
     }
 }

@@ -553,7 +553,6 @@ namespace leopph
 		{
 			DirectX::XMFLOAT4X4 modelMat{ mCubeModels[i]->entity->get_model_matrix().get_data() };
 			DirectX::XMStoreFloat4x4(mappedInstanceBufferData + i, DirectX::XMLoadFloat4x4(&modelMat));
-			i++;
 		}
 
 		mContext->Unmap(mInstanceBuffer.Get(), 0);
