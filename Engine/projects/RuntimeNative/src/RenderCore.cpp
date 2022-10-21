@@ -5,11 +5,11 @@
 #include "Entity.hpp"
 
 #ifdef NDEBUG
-#include "shaders/cinclude/CubeVertexShader.h"
-#include "shaders/cinclude/CubePixelShader.h"
+#include "shaders/cinclude/BlinnPhongVertShadBin.h"
+#include "shaders/cinclude/BlinnPhongPixShadBin.h"
 #else
-#include "shaders/cinclude/CubeVertexShaderDebug.h"
-#include "shaders/cinclude/CubePixelShaderDebug.h"
+#include "shaders/cinclude/BlinnPhongVertShadBinDebug.h"
+#include "shaders/cinclude/BlinnPhongPixShadBinDebug.h"
 #endif
 
 #include <DirectXMath.h>
@@ -169,8 +169,8 @@ namespace leopph
 		}
 
 		ComPtr<ID3D11VertexShader> cubeVertShader;
-		hresult = device->CreateVertexShader(gCubeVertShadBytes,
-											 ARRAYSIZE(gCubeVertShadBytes),
+		hresult = device->CreateVertexShader(gBlinnPhongVertShadBin,
+											 ARRAYSIZE(gBlinnPhongVertShadBin),
 											 nullptr,
 											 cubeVertShader.GetAddressOf());
 
@@ -183,8 +183,8 @@ namespace leopph
 		context->VSSetShader(cubeVertShader.Get(), nullptr, 0);
 
 		ComPtr<ID3D11PixelShader> cubePixShader;
-		hresult = device->CreatePixelShader(gCubePixShadBytes,
-											ARRAYSIZE(gCubePixShadBytes),
+		hresult = device->CreatePixelShader(gBlinnPhongPixShadBin,
+											ARRAYSIZE(gBlinnPhongPixShadBin),
 											nullptr,
 											cubePixShader.GetAddressOf());
 
@@ -248,8 +248,8 @@ namespace leopph
 		ComPtr<ID3D11InputLayout> inputLayout;
 		hresult = device->CreateInputLayout(inputElementDescs,
 											ARRAYSIZE(inputElementDescs),
-											gCubeVertShadBytes,
-											ARRAYSIZE(gCubeVertShadBytes),
+											gBlinnPhongVertShadBin,
+											ARRAYSIZE(gBlinnPhongVertShadBin),
 											inputLayout.GetAddressOf());
 
 		if (FAILED(hresult))

@@ -1,3 +1,6 @@
+#ifndef BLINN_PHONG_HLSLI
+#define BLINN_PHONG_HLSLI
+
 #pragma pack_matrix(row_major)
 
 cbuffer matrices : register(b0)
@@ -20,3 +23,5 @@ float4 ps_main() : SV_TARGET
 {
 	return float4(1, 1, 1, 1);
 }
+
+#endif

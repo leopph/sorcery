@@ -89,18 +89,6 @@
     <ClInclude Include="src\Event.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\shaders\cinclude\CubePixelShaderDebug.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\shaders\cinclude\CubeVertexShaderDebug.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\shaders\cinclude\CubePixelShader.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\shaders\cinclude\CubeVertexShader.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\RenderCore.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -113,13 +101,18 @@
     <ClInclude Include="src\Util.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\shaders\cinclude\BlinnPhongPixShadBinDebug.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\shaders\cinclude\BlinnPhongVertShadBinDebug.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="src\shaders\include\CubeShader.hlsli" />
     <None Include="src\shaders\include\BlinnPhong.hlsli" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="src\shaders\CubePixelShader.hlsl" />
-    <FxCompile Include="src\shaders\CubeVertexShader.hlsl" />
+    <FxCompile Include="src\shaders\BlinnPhongVert.hlsl" />
+    <FxCompile Include="src\shaders\BlinnPhongPix.hlsl" />
   </ItemGroup>
 </Project>

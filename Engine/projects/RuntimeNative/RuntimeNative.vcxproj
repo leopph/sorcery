@@ -114,10 +114,6 @@
     <ClInclude Include="src\Component.hpp" />
     <ClInclude Include="src\Core.hpp" />
     <ClInclude Include="src\CubeModel.hpp" />
-    <ClInclude Include="src\shaders\cinclude\CubePixelShader.h" />
-    <ClInclude Include="src\shaders\cinclude\CubePixelShaderDebug.h" />
-    <ClInclude Include="src\shaders\cinclude\CubeVertexShader.h" />
-    <ClInclude Include="src\shaders\cinclude\CubeVertexShaderDebug.h" />
     <ClInclude Include="src\Event.hpp" />
     <ClInclude Include="src\Managed.hpp" />
     <ClInclude Include="src\ManagedAccessObject.hpp" />
@@ -126,46 +122,47 @@
     <ClInclude Include="src\Camera.hpp" />
     <ClInclude Include="src\RenderCore.hpp" />
     <ClInclude Include="src\Renderer3D.hpp" />
+    <ClInclude Include="src\shaders\cinclude\BlinnPhongPixShadBinDebug.h" />
+    <ClInclude Include="src\shaders\cinclude\BlinnPhongVertShadBinDebug.h" />
     <ClInclude Include="src\Time.hpp" />
     <ClInclude Include="src\Util.hpp" />
     <ClInclude Include="src\Platform.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\shaders\include\BlinnPhong.hlsli" />
-    <None Include="src\shaders\include\CubeShader.hlsli" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="src\shaders\CubePixelShader.hlsl">
+    <FxCompile Include="src\shaders\BlinnPhongPix.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
       <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">ps_main</EntryPointName>
       <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">ps_main</EntryPointName>
-      <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">gCubePixShadBytes</VariableName>
-      <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">gCubePixShadBytes</VariableName>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </ObjectFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </ObjectFileOutput>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">src/shaders/cinclude/CubePixelShaderDebug.h</HeaderFileOutput>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">src/shaders/cinclude/CubePixelShader.h</HeaderFileOutput>
-    </FxCompile>
-    <FxCompile Include="src\shaders\CubeVertexShader.hlsl">
-      <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">gCubeVertShadBytes</VariableName>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">src/shaders/cinclude/CubeVertexShaderDebug.h</HeaderFileOutput>
-      <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">gCubeVertShadBytes</VariableName>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">src/shaders/cinclude/CubeVertexShader.h</HeaderFileOutput>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">vs_main</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">vs_main</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">gBlinnPhongPixShadBin</VariableName>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">src/shaders/cinclude/BlinnPhongPixShadBinDebug.h</HeaderFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
       </ObjectFileOutput>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">gBlinnPhongPixShadBin</VariableName>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">src/shaders/cinclude/BlinnPhongPixShadBin.h</HeaderFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </ObjectFileOutput>
+    </FxCompile>
+    <FxCompile Include="src\shaders\BlinnPhongVert.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">gBlinnPhongVertShadBin</VariableName>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </ObjectFileOutput>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">gBlinnPhongVertShadBin</VariableName>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </ObjectFileOutput>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">vs_main</EntryPointName>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">vs_main</EntryPointName>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">src/shaders/cinclude/BlinnPhongVertShadBinDebug.h</HeaderFileOutput>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">src/shaders/cinclude/BlinnPhongVertShadBin.h</HeaderFileOutput>
     </FxCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
