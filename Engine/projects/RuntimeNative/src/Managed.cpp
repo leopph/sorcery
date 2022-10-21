@@ -17,6 +17,7 @@
 #include <cstdio>
 #include <cassert>
 #include <vector>
+#include <filesystem>
 
 
 namespace leopph
@@ -115,7 +116,14 @@ namespace leopph
 
 		mono_add_internal_call("leopph.Component::InternalGetEntityHandle", managedbindings::component_get_entity_handle);
 
-		MonoAssembly* assembly = mono_domain_assembly_open(gDomain, "LeopphRuntimeManaged.dll");
+		//GetModuleFileNameA(GetModuleHandleW(nullptr), "");
+		char* exePath;
+		_get_pgmptr(&exePath);
+		std::filesystem::path managedLibPath{exePath};
+		managedLibPath = managedLibPath.remove_filename();
+		managedLibPath /= "LeopphRuntimeManaged.dll";
+
+		MonoAssembly* assembly = mono_domain_assembly_open(gDomain, managedLibPath.string().c_str());
 		assert(assembly);
 
 		MonoImage* image = mono_assembly_get_image(assembly);
