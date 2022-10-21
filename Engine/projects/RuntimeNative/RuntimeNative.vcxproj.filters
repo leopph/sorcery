@@ -89,16 +89,16 @@
     <ClInclude Include="src\Event.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\CubePixelShaderDebug.h">
+    <ClInclude Include="src\shaders\cinclude\CubePixelShaderDebug.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\CubeVertexShaderDebug.h">
+    <ClInclude Include="src\shaders\cinclude\CubeVertexShaderDebug.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\CubePixelShader.h">
+    <ClInclude Include="src\shaders\cinclude\CubePixelShader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\CubeVertexShader.h">
+    <ClInclude Include="src\shaders\cinclude\CubeVertexShader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\RenderCore.hpp">
@@ -116,6 +116,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="src\shaders\include\CubeShader.hlsli" />
+    <None Include="src\shaders\include\BlinnPhong.hlsli" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="src\shaders\CubePixelShader.hlsl" />

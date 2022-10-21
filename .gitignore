@@ -399,3 +399,4 @@ FodyWeavers.xsd
 
 # Custom for LeopphEngine
 Engine/deps/vendor
+Engine/projects/RuntimeNative/src/shaders/cinclude

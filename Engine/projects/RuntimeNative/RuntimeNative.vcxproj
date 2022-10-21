@@ -114,10 +114,10 @@
     <ClInclude Include="src\Component.hpp" />
     <ClInclude Include="src\Core.hpp" />
     <ClInclude Include="src\CubeModel.hpp" />
-    <ClInclude Include="src\CubePixelShader.h" />
-    <ClInclude Include="src\CubePixelShaderDebug.h" />
-    <ClInclude Include="src\CubeVertexShader.h" />
-    <ClInclude Include="src\CubeVertexShaderDebug.h" />
+    <ClInclude Include="src\shaders\cinclude\CubePixelShader.h" />
+    <ClInclude Include="src\shaders\cinclude\CubePixelShaderDebug.h" />
+    <ClInclude Include="src\shaders\cinclude\CubeVertexShader.h" />
+    <ClInclude Include="src\shaders\cinclude\CubeVertexShaderDebug.h" />
     <ClInclude Include="src\Event.hpp" />
     <ClInclude Include="src\Managed.hpp" />
     <ClInclude Include="src\ManagedAccessObject.hpp" />
@@ -131,6 +131,7 @@
     <ClInclude Include="src\Platform.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="src\shaders\include\BlinnPhong.hlsli" />
     <None Include="src\shaders\include\CubeShader.hlsli" />
   </ItemGroup>
   <ItemGroup>
@@ -147,14 +148,14 @@
       </ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </ObjectFileOutput>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">src/CubePixelShaderDebug.h</HeaderFileOutput>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">src/CubePixelShader.h</HeaderFileOutput>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">src/shaders/cinclude/CubePixelShaderDebug.h</HeaderFileOutput>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">src/shaders/cinclude/CubePixelShader.h</HeaderFileOutput>
     </FxCompile>
     <FxCompile Include="src\shaders\CubeVertexShader.hlsl">
       <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">gCubeVertShadBytes</VariableName>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">src/CubeVertexShaderDebug.h</HeaderFileOutput>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">src/shaders/cinclude/CubeVertexShaderDebug.h</HeaderFileOutput>
       <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">gCubeVertShadBytes</VariableName>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">src/CubeVertexShader.h</HeaderFileOutput>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">src/shaders/cinclude/CubeVertexShader.h</HeaderFileOutput>
       <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">vs_main</EntryPointName>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>

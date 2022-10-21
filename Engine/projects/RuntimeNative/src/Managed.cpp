@@ -116,7 +116,6 @@ namespace leopph
 
 		mono_add_internal_call("leopph.Component::InternalGetEntityHandle", managedbindings::component_get_entity_handle);
 
-		//GetModuleFileNameA(GetModuleHandleW(nullptr), "");
 		char* exePath;
 		_get_pgmptr(&exePath);
 		std::filesystem::path managedLibPath{exePath};

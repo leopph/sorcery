@@ -5,11 +5,11 @@
 #include "Entity.hpp"
 
 #ifdef NDEBUG
-#include "CubeVertexShader.h"
-#include "CubePixelShader.h"
+#include "shaders/cinclude/CubeVertexShader.h"
+#include "shaders/cinclude/CubePixelShader.h"
 #else
-#include "CubeVertexShaderDebug.h"
-#include "CubePixelShaderDebug.h"
+#include "shaders/cinclude/CubeVertexShaderDebug.h"
+#include "shaders/cinclude/CubePixelShaderDebug.h"
 #endif
 
 #include <DirectXMath.h>
