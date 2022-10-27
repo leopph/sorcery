@@ -16,8 +16,9 @@
 
 #include <cstdio>
 #include <cassert>
-#include <vector>
 #include <filesystem>
+#include <string>
+#include <vector>
 
 
 namespace leopph
@@ -30,34 +31,55 @@ namespace leopph
 
 	bool initialize_managed_runtime()
 	{
-		HKEY monoRegKey;
-
-		if (RegOpenKeyExA(HKEY_LOCAL_MACHINE, R"(SOFTWARE\Mono)", 0, KEY_READ, &monoRegKey) != ERROR_SUCCESS)
+		auto const printMonoLocationError = []()
 		{
 			MessageBoxW(nullptr, L"Failed to locate Mono installation.", L"Error", MB_ICONERROR);
-			return false;
-		}
+		};
 
-		char buffer[512];
-		DWORD bufferSize = sizeof(buffer);
-
-		if (RegGetValueA(monoRegKey, NULL, "FrameworkAssemblyDirectory", RRF_RT_REG_SZ, NULL, buffer, &bufferSize) != ERROR_SUCCESS)
+		HKEY monoRegKey;
+		if (RegOpenKeyExW(HKEY_LOCAL_MACHINE, LR"(SOFTWARE\Mono)", 0, KEY_READ, &monoRegKey) != ERROR_SUCCESS)
 		{
-			MessageBoxW(nullptr, L"Failed to locate Mono library directory.", L"Error", MB_ICONERROR);
+			printMonoLocationError();
 			return false;
 		}
 
-		std::string monoLibPath{ buffer };
-
-		if (RegGetValueA(monoRegKey, NULL, "MonoConfigDir", RRF_RT_REG_SZ, NULL, buffer, &bufferSize) != ERROR_SUCCESS)
+		auto const fwAssemblyDirKey = L"FrameworkAssemblyDirectory";
+		DWORD bufSz{};
+		if (RegGetValueW(monoRegKey, NULL, fwAssemblyDirKey, RRF_RT_REG_SZ, NULL, nullptr, &bufSz) != ERROR_SUCCESS)
 		{
-			MessageBoxW(nullptr, L"Failed to locate Mono config directory.", L"Error", MB_ICONERROR);
+			printMonoLocationError();
 			return false;
 		}
 
-		std::string monoConfigPath{ buffer };
+		std::wstring buf(static_cast<std::size_t>(bufSz), L'\0');
+		if (RegGetValueW(monoRegKey, NULL, fwAssemblyDirKey, RRF_RT_REG_SZ, NULL, buf.data(), &bufSz) != ERROR_SUCCESS)
+		{
+			printMonoLocationError();
+			return false;
+		}
 
-		mono_set_dirs(monoLibPath.c_str(), monoConfigPath.c_str());
+		std::string fwAssemblyDir(static_cast<std::size_t>(WideCharToMultiByte(CP_UTF8, 0, buf.data(), static_cast<int>(buf.size()), nullptr, 0, nullptr, nullptr)), '\0');
+		WideCharToMultiByte(CP_UTF8, 0, buf.data(), static_cast<int>(buf.size()), fwAssemblyDir.data(), static_cast<int>(fwAssemblyDir.size()), nullptr, nullptr);
+
+		auto const configDirKey = L"MonoConfigDir";
+		if (RegGetValueW(monoRegKey, NULL, configDirKey, RRF_RT_REG_SZ, NULL, nullptr, &bufSz) != ERROR_SUCCESS)
+		{
+			printMonoLocationError();
+			return false;
+		}
+
+		buf.resize(bufSz);
+
+		if (RegGetValueW(monoRegKey, NULL, configDirKey, RRF_RT_REG_SZ, NULL, buf.data(), &bufSz) != ERROR_SUCCESS)
+		{
+			printMonoLocationError();
+			return false;
+		}
+
+		std::string configDir(static_cast<std::size_t>(WideCharToMultiByte(CP_UTF8, 0, buf.data(), static_cast<int>(buf.size()), nullptr, 0, nullptr, nullptr)), '\0');
+		WideCharToMultiByte(CP_UTF8, 0, buf.data(), static_cast<int>(buf.size()), configDir.data(), static_cast<int>(configDir.size()), nullptr, nullptr);
+
+		mono_set_dirs(fwAssemblyDir.c_str(), configDir.c_str());
 
 		gDomain = mono_jit_init("leopph");
 		assert(gDomain);
@@ -118,26 +140,19 @@ namespace leopph
 
 		char* exePath;
 		_get_pgmptr(&exePath);
-		std::filesystem::path managedLibPath{exePath};
+		std::filesystem::path managedLibPath{ exePath };
 		managedLibPath = managedLibPath.remove_filename();
 		managedLibPath /= "LeopphRuntimeManaged.dll";
 
 		MonoAssembly* assembly = mono_domain_assembly_open(gDomain, managedLibPath.string().c_str());
 		assert(assembly);
 
-		MonoImage* image = mono_assembly_get_image(assembly);
+		auto const image = mono_assembly_get_image(assembly);
 		assert(image);
 
 		MonoClass* testClass = mono_class_from_name(image, "", "Test");
 		MonoMethod* doTestMethod = mono_class_get_method_from_name(testClass, "DoTest", 0);
-
-		MonoObject* exception;
-		mono_runtime_invoke(doTestMethod, nullptr, nullptr, &exception);
-
-		if (exception)
-		{
-			mono_print_unhandled_exception(exception);
-		}
+		mono_runtime_invoke(doTestMethod, nullptr, nullptr, nullptr);
 
 		return true;
 	}
