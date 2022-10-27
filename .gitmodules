@@ -3,3 +3,6 @@
 	url = https://github.com/glfw/glfw.git
 	branch = latest
 	ignore = dirty
+[submodule "mono"]
+	path = Engine/deps/vendor/mono
+	url = https://github.com/mono/mono.git
