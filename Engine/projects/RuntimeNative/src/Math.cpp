@@ -76,24 +76,55 @@ namespace leopph
 	}
 
 
-	Vector3 Quaternion::to_euler_angles() const
+	Quaternion Quaternion::FromEulerAngles(f32 const x, f32 const y, f32 const z)
 	{
-		// ???
-		auto secondComponent{2 * (w * y - z * x)};
-		if (std::abs(secondComponent) > 1)
+		auto const roll = to_radians(x);
+		auto const pitch = to_radians(y);
+		auto const yaw = to_radians(z);
+
+		auto const cr = cosf(roll * 0.5f);
+		auto const sr = sinf(roll * 0.5f);
+		auto const cp = cosf(pitch * 0.5f);
+		auto const sp = sinf(pitch * 0.5f);
+		auto const cy = cosf(yaw * 0.5f);
+		auto const sy = sinf(yaw * 0.5f);
+
+		return Quaternion
 		{
-			secondComponent = std::copysign(PI / 2, secondComponent);
-		}
-		else
-		{
-			secondComponent = std::asin(secondComponent);
-		}
-		return Vector3
-		{
-			to_degrees(std::atan2(2 * (w * x + y * z), 1 - 2 * (std::powf(x, 2) + std::powf(y, 2)))),
-			to_degrees(secondComponent),
-			to_degrees(std::atan2(2 * (w * z + x * y), 1 - 2 * (std::powf(y, 2) + std::powf(z, 2))))
+			cr * cp * cy + sr * sp * sy,
+			sr * cp * cy - cr * sp * sy,
+			cr * sp * cy + sr * cp * sy,
+			cr * cp * sy - sr * sp * cy,
 		};
+	}
+
+
+	Vector3 Quaternion::ToEulerAngles() const
+	{
+		Vector3 angles;
+
+		f32 sinr_cosp = 2 * (w * x + y * z);
+		f32 cosr_cosp = 1 - 2 * (x * x + y * y);
+		angles[0] = std::atan2f(sinr_cosp, cosr_cosp);
+
+		// pitch (y-axis rotation)
+		f32 sinp = 2 * (w * y - z * x);
+		if (std::abs(sinp) >= 1)
+			angles[1] = std::copysign(PI / 2, sinp); // use 90 degrees if out of range
+		else
+			angles[1] = std::asinf(sinp);
+
+		// yaw (z-axis rotation)
+		f32 siny_cosp = 2 * (w * z + x * y);
+		f32 cosy_cosp = 1 - 2 * (y * y + z * z);
+		angles[2] = std::atan2f(siny_cosp, cosy_cosp);
+
+		for (int i = 0; i < 3; i++)
+		{
+			angles[i] = to_degrees(angles[i]);
+		}
+
+		return angles;
 	}
 
 

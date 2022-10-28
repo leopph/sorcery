@@ -12,6 +12,10 @@
 #include <format>
 #include <optional>
 
+using leopph::Vector3;
+using leopph::Quaternion;
+using leopph::f32;
+
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 
@@ -21,6 +25,9 @@ int main()
 	{
 		return 1;
 	}
+
+	leopph::platform::set_window_borderless(false);
+	leopph::platform::set_window_windowed_client_area_size({ 1280, 720 });
 
 	auto const renderer = leopph::RenderCore::create();
 
@@ -71,7 +78,7 @@ int main()
 		ImGui_ImplWin32_NewFrame();
 		ImGui::NewFrame();
 
-		ImGui::ShowDemoWindow();
+		//ImGui::ShowDemoWindow();
 
 		if (ImGui::BeginMainMenuBar())
 		{
@@ -88,12 +95,14 @@ int main()
 			ImGui::EndMainMenuBar();
 		}
 
+		auto const menuBarHeight = ImGui::GetItemRectSize().y;
+
 		ImGui::SetNextWindowBgAlpha(1);
-		ImGui::SetNextWindowPos(ImVec2{ 0, ImGui::GetItemRectSize().y });
+		ImGui::SetNextWindowPos(ImVec2{ 0,  menuBarHeight});
 
 		static std::optional<std::size_t> selectedEntityIndex;
 
-		if (selectedEntityIndex.has_value() && *selectedEntityIndex >= leopph::gEntities.size())
+		if (selectedEntityIndex && *selectedEntityIndex >= leopph::gEntities.size())
 		{
 			selectedEntityIndex.reset();
 		}
@@ -104,7 +113,7 @@ int main()
 			for (std::size_t i = 0; i < leopph::gEntities.size(); i++)
 			{
 				ImGui::PushID(static_cast<int>(i));
-				if (ImGui::Selectable(leopph::gEntities[i]->get_name().data(), selectedEntityIndex.has_value() && *selectedEntityIndex == i))
+				if (ImGui::Selectable(leopph::gEntities[i]->get_name().data(), selectedEntityIndex && *selectedEntityIndex == i))
 				{
 					selectedEntityIndex = i;
 				}
@@ -113,9 +122,33 @@ int main()
 		}
 		ImGui::End();
 
-		if (ImGui::Begin("Entity Properties"))
-		{
+		ImGui::SetNextWindowPos({ static_cast<f32>(leopph::platform::get_window_current_client_area_size().width), menuBarHeight }, 0, ImVec2{1, 0});
+		ImGui::SetNextWindowSize({ 400, 100 }, ImGuiCond_Once);
 
+		if (ImGui::Begin("Entity Properties", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse))
+		{
+			if (selectedEntityIndex)
+			{
+				auto const entity = leopph::gEntities[*selectedEntityIndex];
+
+				Vector3 pos{ entity->get_local_position() };
+				if (ImGui::DragFloat3("Local Positon", &pos[0], 0.1f))
+				{
+					entity->set_local_position(pos);
+				}
+
+				Vector3 rotEuler{ entity->get_local_rotation().ToEulerAngles() };
+				if (ImGui::DragFloat3("Local Rotation", &rotEuler[0]))
+				{
+					entity->set_local_rotation(Quaternion::FromEulerAngles(rotEuler[0], rotEuler[1], rotEuler[2]));
+				}
+
+				Vector3 scale{ entity->get_local_scale() };
+				if (ImGui::DragFloat3("Local Scale", &scale[0], 0.05f))
+				{
+					entity->set_local_scale(scale);
+				}
+			}
 		}
 		ImGui::End();
 
