@@ -6,3 +6,6 @@
 [submodule "mono"]
 	path = Engine/deps/vendor/mono
 	url = https://github.com/mono/mono.git
+[submodule "yaml"]
+	path = Engine/deps/vendor/yaml-cpp
+	url = https://github.com/jbeder/yaml-cpp.git
