@@ -8,6 +8,8 @@
 #include "Event.hpp"
 #include "Util.hpp"
 
+#include <functional>
+
 
 namespace leopph::platform
 {
@@ -39,6 +41,8 @@ namespace leopph::platform
 
 	LEOPPHAPI [[nodiscard]] bool is_cursor_hidden();
 	LEOPPHAPI void hide_cursor(bool hide);
+
+	LEOPPHAPI void SetEventHook(std::function<bool(HWND, UINT, WPARAM, LPARAM)> handler);
 
 	namespace managedbindings
 	{

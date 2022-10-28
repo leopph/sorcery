@@ -33,6 +33,7 @@ namespace leopph
 		Microsoft::WRL::ComPtr<ID3D11Buffer> mCbuffer;
 		UINT mIndexCount;
 		u32 mSyncInterval{ 0 };
+		NormalizedViewport mNormViewport{ 0, 0, 1, 1 };
 
 		std::vector<CubeModel const*> mCubeModels;
 
@@ -58,11 +59,11 @@ namespace leopph
 				   Microsoft::WRL::ComPtr<ID3D11Buffer> cbuffer,
 				   UINT indexCount);
 
-		void present() const;
 
 	public:
 		LEOPPHAPI [[nodiscard]] static std::unique_ptr<RenderCore> create();
 
+		LEOPPHAPI void present() const;
 		LEOPPHAPI bool render();
 
 		[[nodiscard]] u32 get_sync_interval() const;
@@ -72,5 +73,11 @@ namespace leopph
 		void unregister_cube_model(CubeModel const* cubeModel);
 
 		static [[nodiscard]] RenderCore* get_last_instance();
+
+		LEOPPHAPI [[nodiscard]] ID3D11Device* get_device() const;
+		LEOPPHAPI [[nodiscard]] ID3D11DeviceContext* get_immediate_context() const;
+
+		LEOPPHAPI [[nodiscard]] NormalizedViewport const& get_normalized_viewport() const;
+		LEOPPHAPI void set_normalized_viewport(NormalizedViewport const& nvp);
 	};
 }

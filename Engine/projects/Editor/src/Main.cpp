@@ -1,128 +1,38 @@
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
-#include <Windows.h>
-
-#include <mono/jit/jit.h>
-#include <mono/metadata/assembly.h>
-#include <mono/metadata/debug-helpers.h>
+#include <Behavior.hpp>
+#include <Managed.hpp>
+#include <Platform.hpp>
+#include <RenderCore.hpp>
+#include <Time.hpp>
+#include <Entity.hpp>
 
 #include <imgui.h>
 #include <backends/imgui_impl_win32.h>
 #include <backends/imgui_impl_dx11.h>
 
-#include <d3d11.h>
-#include <dxgi1_2.h>
-
-#include <wrl/client.h>
-
 #include <format>
+#include <optional>
 
-using Microsoft::WRL::ComPtr;
-
-
-LRESULT CALLBACK window_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
-LRESULT IMGUI_IMPL_API ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
-void create_render_target_view(ComPtr<ID3D11Device> const& device, ComPtr<IDXGISwapChain1> const& swapChain, ComPtr<ID3D11RenderTargetView>& rtv);
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 
-struct Data
+int main()
 {
-	ComPtr<IDXGISwapChain1> dxgiSwapChain1;
-	ComPtr<ID3D11RenderTargetView> backBufRtv;
-	ComPtr<ID3D11Device> d3dDevice;
-};
-
-
-namespace leopph
-{
-	__declspec(dllimport) extern float* gData;
-}
-
-
-
-int APIENTRY wWinMain(HINSTANCE const instance, [[maybe_unused]] HINSTANCE const prevInstance, [[maybe_unused]] wchar_t* const cmdLine, [[maybe_unused]] int const showCmd)
-{
-	WNDCLASSW wndClass{};
-	wndClass.hInstance = instance;
-	wndClass.lpfnWndProc = window_proc;
-	wndClass.lpszClassName = L"LeopphEditor";
-
-	if (!RegisterClassW(&wndClass))
+	if (!leopph::platform::init_platform_support())
 	{
-		MessageBoxW(nullptr, L"Failed to register window class.", L"Error", MB_ICONERROR);
-		return -1;
+		return 1;
 	}
 
-	auto const hwnd = CreateWindowExW(0, wndClass.lpszClassName, L"Leopph Editor", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, nullptr, nullptr, nullptr, nullptr);
+	auto const renderer = leopph::RenderCore::create();
 
-	if (!hwnd)
+	if (!renderer)
 	{
-		MessageBoxW(nullptr, L"Failed to create window.", L"Error", MB_ICONERROR);
-		return -1;
+		return 2;
 	}
 
-	ShowWindow(hwnd, showCmd);
-
-	auto* const appData = new Data;
-	SetWindowLongPtrW(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(appData));
-
-	ComPtr<ID3D11DeviceContext> d3dDeviceContext;
-
-	auto constexpr featureLevel = D3D_FEATURE_LEVEL_11_0;
-	UINT deviceCreationFlags = 0;
-	#ifndef NDEBUG
-	deviceCreationFlags |= D3D11_CREATE_DEVICE_DEBUG;
-	#endif
-
-	D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, deviceCreationFlags, &featureLevel, 1, D3D11_SDK_VERSION, appData->d3dDevice.GetAddressOf(), nullptr, d3dDeviceContext.GetAddressOf());
-
-	#ifndef NDEBUG
-	ComPtr<ID3D11Debug> debug;
-
+	if (!leopph::initialize_managed_runtime())
 	{
-		appData->d3dDevice.As(&debug);
-
-		ComPtr<ID3D11InfoQueue> infoQueue;
-		debug.As<ID3D11InfoQueue>(&infoQueue);
-
-		infoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_CORRUPTION, true);
-		infoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_ERROR, true);
+		return 3;
 	}
-	#endif
-
-	DXGI_SWAP_CHAIN_DESC1 constexpr swapChainDesc1
-	{
-		.Width = 0,
-		.Height = 0,
-		.Format = DXGI_FORMAT_R8G8B8A8_UNORM,
-		.Stereo = FALSE,
-		.SampleDesc =
-		{
-			.Count = 1,
-			.Quality = 0
-		},
-		.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT,
-		.BufferCount = 2,
-		.Scaling = DXGI_SCALING_NONE,
-		.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD,
-		.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED,
-		.Flags = 0
-	};
-
-	ComPtr<IDXGIDevice> dxgiDevice;
-	appData->d3dDevice.As(&dxgiDevice);
-
-	ComPtr<IDXGIAdapter> dxgiAdapter;
-	dxgiDevice->GetAdapter(dxgiAdapter.GetAddressOf());
-
-	ComPtr<IDXGIFactory2> dxgiFactory2;
-	dxgiAdapter->GetParent(__uuidof(decltype(dxgiFactory2)::InterfaceType), reinterpret_cast<void**>(dxgiFactory2.GetAddressOf()));
-
-	dxgiFactory2->CreateSwapChainForHwnd(appData->d3dDevice.Get(), hwnd, &swapChainDesc1, nullptr, nullptr, appData->dxgiSwapChain1.GetAddressOf());
-
-	dxgiFactory2->MakeWindowAssociation(hwnd, DXGI_MWA_NO_WINDOW_CHANGES);
-
-	create_render_target_view(appData->d3dDevice, appData->dxgiSwapChain1, appData->backBufRtv);
 
 	ImGui::CreateContext();
 	auto& io = ImGui::GetIO();
@@ -131,42 +41,37 @@ int APIENTRY wWinMain(HINSTANCE const instance, [[maybe_unused]] HINSTANCE const
 
 	ImGui::StyleColorsDark();
 
-	ImGui_ImplWin32_Init(hwnd);
-	ImGui_ImplDX11_Init(appData->d3dDevice.Get(), d3dDeviceContext.Get());
+	ImGui_ImplWin32_Init(leopph::platform::get_hwnd());
+	ImGui_ImplDX11_Init(renderer->get_device(), renderer->get_immediate_context());
 
-	auto* const monoDomain = mono_jit_init("leopph");
-	auto* const monoAssembly = mono_domain_assembly_open(monoDomain, "leopph_managed.dll");
-	auto* const monoImage = mono_assembly_get_image(monoAssembly);
-	auto* const desc = mono_method_desc_new("Foo:Bar", false);
-	auto* const klass = mono_class_from_name(monoImage, "", "Foo");
-	auto* const method = mono_method_desc_search_in_class(desc, klass);
-	MonoObject* exc;
-	mono_runtime_invoke(method, nullptr, nullptr, &exc);
-
-	MessageBoxW(hwnd, std::format(L"({}, {})", leopph::gData[0], leopph::gData[1]).c_str(), L"Vector2", 0);
-
-	while (true)
+	leopph::platform::SetEventHook([](HWND const hwnd, UINT const msg, WPARAM const wparam, LPARAM const lparam)
 	{
-		MSG msg;
+		return ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam);
+	});
 
-		while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE))
+	leopph::init_time();
+
+	while (!leopph::platform::should_window_close())
+	{
+		if (!leopph::platform::process_platform_events())
 		{
-			if (msg.message == WM_QUIT)
-			{
-				mono_jit_cleanup(monoDomain);
-				ImGui_ImplDX11_Shutdown();
-				ImGui_ImplWin32_Shutdown();
-				ImGui::DestroyContext();
-				return static_cast<int>(msg.wParam);
-			}
+			return 4;
+		}
 
-			TranslateMessage(&msg);
-			DispatchMessageW(&msg);
+		leopph::init_behaviors();
+		leopph::tick_behaviors();
+		leopph::tack_behaviors();
+
+		if (!renderer->render())
+		{
+			return 5;
 		}
 
 		ImGui_ImplDX11_NewFrame();
 		ImGui_ImplWin32_NewFrame();
 		ImGui::NewFrame();
+
+		ImGui::ShowDemoWindow();
 
 		if (ImGui::BeginMainMenuBar())
 		{
@@ -174,7 +79,7 @@ int APIENTRY wWinMain(HINSTANCE const instance, [[maybe_unused]] HINSTANCE const
 			{
 				if (ImGui::MenuItem("Open"))
 				{
-					MessageBoxW(hwnd, L"Placeholder", L"Placeholder", 0);
+					MessageBoxW(leopph::platform::get_hwnd(), L"Placeholder", L"Placeholder", 0);
 				}
 
 				ImGui::EndMenu();
@@ -184,62 +89,47 @@ int APIENTRY wWinMain(HINSTANCE const instance, [[maybe_unused]] HINSTANCE const
 		}
 
 		ImGui::SetNextWindowBgAlpha(1);
-		ImGui::SetNextWindowPos(ImVec2{0, 100});
-		ImGui::SetNextWindowSize(ImVec2{100, 100});
+		ImGui::SetNextWindowPos(ImVec2{ 0, ImGui::GetItemRectSize().y });
 
-		if (ImGui::Begin("Hello", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize))
+		static std::optional<std::size_t> selectedEntityIndex;
+
+		if (selectedEntityIndex.has_value() && *selectedEntityIndex >= leopph::gEntities.size())
 		{
-			ImGui::Text("Hello");
+			selectedEntityIndex.reset();
+		}
+
+		ImGuiWindowFlags const entityListFlags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse;
+		if (ImGui::Begin("Entities", nullptr, entityListFlags))
+		{
+			for (std::size_t i = 0; i < leopph::gEntities.size(); i++)
+			{
+				ImGui::PushID(static_cast<int>(i));
+				if (ImGui::Selectable(leopph::gEntities[i]->get_name().data(), selectedEntityIndex.has_value() && *selectedEntityIndex == i))
+				{
+					selectedEntityIndex = i;
+				}
+				ImGui::PopID();
+			}
+		}
+		ImGui::End();
+
+		if (ImGui::Begin("Entity Properties"))
+		{
+
 		}
 		ImGui::End();
 
 		ImGui::Render();
-
-		FLOAT constexpr clearColor[]{0.5f, 0, 1.f, 1.f};
-		d3dDeviceContext->ClearRenderTargetView(appData->backBufRtv.Get(), clearColor);
-		d3dDeviceContext->OMSetRenderTargets(1, appData->backBufRtv.GetAddressOf(), nullptr);
-
 		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
-		appData->dxgiSwapChain1->Present(1, 0);
-	}
-}
+		renderer->present();
 
-
-
-LRESULT CALLBACK window_proc(HWND const hwnd, UINT const msg, WPARAM const wparam, LPARAM const lparam)
-{
-	if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam))
-	{
-		return true;
+		leopph::measure_time();
 	}
 
-	if (msg == WM_DESTROY)
-	{
-		delete reinterpret_cast<Data*>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
-		PostQuitMessage(0);
-		return 0;
-	}
-
-	if (msg == WM_SIZE)
-	{
-		if (auto* const appData = reinterpret_cast<Data*>(GetWindowLongPtrW(hwnd, GWLP_USERDATA)); wparam != SIZE_MINIMIZED && appData && appData->dxgiSwapChain1)
-		{
-			appData->backBufRtv.Reset();
-			appData->dxgiSwapChain1->ResizeBuffers(0, LOWORD(lparam), HIWORD(lparam), DXGI_FORMAT_UNKNOWN, 0);
-			create_render_target_view(appData->d3dDevice, appData->dxgiSwapChain1, appData->backBufRtv);
-		}
-		return 0;
-	}
-
-	return DefWindowProcW(hwnd, msg, wparam, lparam);
-}
-
-
-
-void create_render_target_view(ComPtr<ID3D11Device> const& device, ComPtr<IDXGISwapChain1> const& swapChain, ComPtr<ID3D11RenderTargetView>& rtv)
-{
-	ComPtr<ID3D11Texture2D> backBuf;
-	swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(backBuf.GetAddressOf()));
-	device->CreateRenderTargetView(backBuf.Get(), nullptr, rtv.GetAddressOf());
+	ImGui_ImplDX11_Shutdown();
+	ImGui_ImplWin32_Shutdown();
+	ImGui::DestroyContext();
+	leopph::cleanup_managed_runtime();
+	leopph::platform::cleanup_platform_support();
 }

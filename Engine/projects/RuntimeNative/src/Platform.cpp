@@ -35,6 +35,7 @@ namespace leopph::platform
 		bool gConfineCursor{ false };
 		bool gHideCursor{ false };
 		bool gInFocus{ true };
+		std::function<bool(HWND, UINT, WPARAM, LPARAM)> gEventHook{ nullptr };
 	}
 
 
@@ -47,6 +48,11 @@ namespace leopph::platform
 	{
 		LRESULT CALLBACK wnd_proc(HWND const hwnd, UINT const msg, WPARAM const wparam, LPARAM const lparam)
 		{
+			if (gEventHook && gEventHook(hwnd, msg, wparam, lparam))
+			{
+				return true;
+			}
+
 			switch (msg)
 			{
 				case WM_CLOSE:
@@ -369,6 +375,12 @@ namespace leopph::platform
 	void hide_cursor(bool const hide)
 	{
 		gHideCursor = hide;
+	}
+
+
+	void SetEventHook(std::function<bool(HWND, UINT, WPARAM, LPARAM)> hook)
+	{
+		gEventHook = std::move(hook);
 	}
 
 

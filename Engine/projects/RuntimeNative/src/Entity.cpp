@@ -2,14 +2,19 @@
 
 #include "Component.hpp"
 
+#include <mono/metadata/object.h>
+
 
 namespace leopph
 {
+	std::vector<Entity*> gEntities;
+
 	Entity::Entity(MonoObject* const managedObject) :
 		ManagedAccessObject{ managedObject }//,
 		//mScene{&get_scene_manager().get_active_scene()}
 	{
 		//mScene->add(this);
+		gEntities.emplace_back(this);
 	}
 
 
@@ -30,6 +35,7 @@ namespace leopph
 		}
 
 		//mScene->remove(this);
+		std::erase(gEntities, this);
 	}
 
 

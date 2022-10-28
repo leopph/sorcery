@@ -3,14 +3,14 @@
 #include "Math.hpp"
 #include "ManagedAccessObject.hpp"
 
-#include <mono/metadata/object.h>
-
 #include <string>
 #include <string_view>
 #include <unordered_map>
 #include <memory>
 #include <span>
 #include <vector>
+
+using MonoObject = struct _MonoObject;
 
 
 namespace leopph
@@ -28,7 +28,7 @@ namespace leopph
 	{
 	private:
 		//Scene* mScene;
-		std::string mName{"Node"};
+		std::string mName{"Entity"};
 
 		Vector3 mLocalPosition{0};
 		Quaternion mLocalRotation{1, 0, 0, 0};
@@ -113,9 +113,11 @@ namespace leopph
 		void calculate_world_scale_and_update_children();
 		void calculate_matrices();
 		void init();
-		void deinit();
 		void take_children_from(Entity const& node);
 	};
+
+
+	LEOPPHAPI extern std::vector<Entity*> gEntities;
 
 
 	namespace managedbindings

@@ -493,17 +493,45 @@ namespace leopph
 
 	bool RenderCore::render()
 	{
-		if (mCubeModels.empty())
+		D3D11_VIEWPORT const viewPort
 		{
-			present();
-			return true;
-		}
+			.TopLeftX = 0,
+			.TopLeftY = 0,
+			.Width = static_cast<FLOAT>(mRenderRes.width),
+			.Height = static_cast<FLOAT>(mRenderRes.height),
+			.MinDepth = 0,
+			.MaxDepth = 1
+		};
+		mContext->RSSetViewports(1, &viewPort);
+
+		FLOAT clearColor[]{ 0.5f, 0, 1, 1 };
+		mContext->ClearRenderTargetView(mBackBufRtv.Get(), clearColor);
+		mContext->OMSetRenderTargets(1, mBackBufRtv.GetAddressOf(), nullptr);
 
 		Camera* mainCam = Camera::get_instance();
 
 		if (!mainCam)
 		{
-			present();
+			return true;
+		}
+
+		DirectX::XMFLOAT3 const camPos{ mainCam->entity->get_position().get_data() };
+		DirectX::XMFLOAT3 const camForward{ mainCam->entity->get_forward_axis().get_data() };
+		DirectX::XMMATRIX viewMat = DirectX::XMMatrixLookToLH(DirectX::XMLoadFloat3(&camPos), DirectX::XMLoadFloat3(&camForward), { 0, 1, 0 });
+		DirectX::XMMATRIX projMat = DirectX::XMMatrixPerspectiveFovLH(DirectX::XMConvertToRadians(90.0f / mRenderAspectRatio), mRenderAspectRatio, 0.3f, 100.f);
+
+		D3D11_MAPPED_SUBRESOURCE mappedCbuffer;
+		mContext->Map(mCbuffer.Get(),
+					  0,
+					  D3D11_MAP_WRITE_DISCARD,
+					  0,
+					  &mappedCbuffer);
+
+		DirectX::XMStoreFloat4x4(static_cast<DirectX::XMFLOAT4X4*>(mappedCbuffer.pData), viewMat * projMat);
+		mContext->Unmap(mCbuffer.Get(), 0);
+
+		if (mCubeModels.empty())
+		{
 			return true;
 		}
 
@@ -557,43 +585,12 @@ namespace leopph
 
 		mContext->Unmap(mInstanceBuffer.Get(), 0);
 
-		DirectX::XMFLOAT3 const camPos{ mainCam->entity->get_position().get_data() };
-		DirectX::XMFLOAT3 const camForward{ mainCam->entity->get_forward_axis().get_data() };
-		DirectX::XMMATRIX viewMat = DirectX::XMMatrixLookToLH(DirectX::XMLoadFloat3(&camPos), DirectX::XMLoadFloat3(&camForward), {0, 1, 0});
-		DirectX::XMMATRIX projMat = DirectX::XMMatrixPerspectiveFovLH(DirectX::XMConvertToRadians(90.0f / mRenderAspectRatio), mRenderAspectRatio, 0.3f, 100.f);
-
-		D3D11_MAPPED_SUBRESOURCE mappedCbuffer;
-		mContext->Map(mCbuffer.Get(),
-					  0,
-					  D3D11_MAP_WRITE_DISCARD,
-					  0,
-					  &mappedCbuffer);
-
-		DirectX::XMStoreFloat4x4(static_cast<DirectX::XMFLOAT4X4*>(mappedCbuffer.pData), viewMat * projMat);
-		mContext->Unmap(mCbuffer.Get(), 0);
-
-		D3D11_VIEWPORT const viewPort
-		{
-			.TopLeftX = 0,
-			.TopLeftY = 0,
-			.Width = static_cast<FLOAT>(mRenderRes.width),
-			.Height = static_cast<FLOAT>(mRenderRes.height),
-			.MinDepth = 0,
-			.MaxDepth = 1
-		};
-		mContext->RSSetViewports(1, &viewPort);
-
-		FLOAT clearColor[]{ 0.5f, 0, 1, 1 };
-		mContext->ClearRenderTargetView(mBackBufRtv.Get(), clearColor);
-		mContext->OMSetRenderTargets(1, mBackBufRtv.GetAddressOf(), nullptr);
-
 		mContext->DrawIndexedInstanced(mIndexCount,
 									   static_cast<UINT>(mCubeModels.size()),
 									   0,
 									   0,
 									   0);
 
-		present();
 		return true;
 	}
 
@@ -660,5 +657,29 @@ namespace leopph
 	RenderCore* RenderCore::get_last_instance()
 	{
 		return sLastInstance;
+	}
+
+
+    ID3D11Device* RenderCore::get_device() const
+    {
+		return mDevice.Get();
+    }
+
+
+	ID3D11DeviceContext* RenderCore::get_immediate_context() const
+	{
+		return mContext.Get();
+	}
+
+
+	NormalizedViewport const& RenderCore::get_normalized_viewport() const
+	{
+		return mNormViewport;
+	}
+
+
+	void RenderCore::set_normalized_viewport(NormalizedViewport const& nvp)
+	{
+		mNormViewport = nvp;
 	}
 }
