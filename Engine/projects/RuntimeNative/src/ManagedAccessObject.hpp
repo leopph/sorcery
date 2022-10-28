@@ -11,11 +11,13 @@ namespace leopph
 	{
 	private:
 		static u64 sNextId;
+		u32 mGcHandle{};
 
 	public:
-		u64 const id{sNextId++};
-		u32 const managedObjectHandle;
+		u64 const id{ sNextId++ };
+		u32 const& managedObjectHandle{ mGcHandle };
 
+		ManagedAccessObject() = default;
 		explicit ManagedAccessObject(MonoObject* managedObject);
 		ManagedAccessObject(ManagedAccessObject const&) = delete;
 

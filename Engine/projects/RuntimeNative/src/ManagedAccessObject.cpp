@@ -14,7 +14,7 @@ namespace leopph
 
 
 	ManagedAccessObject::ManagedAccessObject(MonoObject* const managedObject) :
-		managedObjectHandle{ mono_gchandle_new(managedObject, false) }
+		mGcHandle{ mono_gchandle_new(managedObject, false) }
 	{
 		u64 idData{ id };
 		void* ptrData{ this };
@@ -32,7 +32,7 @@ namespace leopph
 		nullptr_t ptrData{ nullptr };
 		mono_field_set_value(managedObject, mono_class_get_field_from_name(managedClass, "_id"), &idData);
 		mono_field_set_value(managedObject, mono_class_get_field_from_name(managedClass, "_ptr"), &ptrData);
-		mono_gchandle_free(static_cast<u32>(managedObjectHandle));
+		mono_gchandle_free(static_cast<u32>(mGcHandle));
 	}
 
 

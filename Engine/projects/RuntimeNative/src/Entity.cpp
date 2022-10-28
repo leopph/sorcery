@@ -9,6 +9,11 @@ namespace leopph
 {
 	std::vector<Entity*> gEntities;
 
+	Entity::Entity()
+	{
+		gEntities.emplace_back(this);
+	}
+
 	Entity::Entity(MonoObject* const managedObject) :
 		ManagedAccessObject{ managedObject }//,
 		//mScene{&get_scene_manager().get_active_scene()}

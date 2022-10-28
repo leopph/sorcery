@@ -1,3 +1,5 @@
+#include "Serialization.hpp"
+
 #include <Behavior.hpp>
 #include <Managed.hpp>
 #include <Platform.hpp>
@@ -11,6 +13,7 @@
 
 #include <format>
 #include <optional>
+#include <fstream>
 
 using leopph::Vector3;
 using leopph::Quaternion;
@@ -87,6 +90,12 @@ int main()
 				if (ImGui::MenuItem("Open"))
 				{
 					MessageBoxW(leopph::platform::get_hwnd(), L"Placeholder", L"Placeholder", 0);
+				}
+
+				if (ImGui::MenuItem("Save"))
+				{
+					std::ofstream out{ "test.leopphscene" };
+					Serialize(leopph::gEntities, out);
 				}
 
 				ImGui::EndMenu();
