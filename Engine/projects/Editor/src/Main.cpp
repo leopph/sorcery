@@ -8,6 +8,7 @@
 #include <Entity.hpp>
 
 #include <imgui.h>
+#include <misc/cpp/imgui_stdlib.h>
 #include <backends/imgui_impl_win32.h>
 #include <backends/imgui_impl_dx11.h>
 
@@ -94,7 +95,7 @@ int main()
 
 				if (ImGui::MenuItem("Save"))
 				{
-					std::ofstream out{ "test.leopphscene" };
+					std::ofstream out{ "scene.yaml" };
 					Serialize(leopph::gEntities, out);
 				}
 
@@ -132,30 +133,66 @@ int main()
 		ImGui::End();
 
 		ImGui::SetNextWindowPos({ static_cast<f32>(leopph::platform::get_window_current_client_area_size().width), menuBarHeight }, 0, ImVec2{1, 0});
-		ImGui::SetNextWindowSize({ 400, 100 }, ImGuiCond_Once);
+		//ImGui::SetNextWindowSize({ 400, 500 }, ImGuiCond_Once);
 
-		if (ImGui::Begin("Entity Properties", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse))
+		if (ImGui::Begin("Entity Properties", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize))
 		{
 			if (selectedEntityIndex)
 			{
 				auto const& entity = leopph::gEntities[*selectedEntityIndex];
 
-				Vector3 pos{ entity->transform->GetLocalPosition() };
-				if (ImGui::DragFloat3("Local Positon", &pos[0], 0.1f))
+				static std::string entityName;
+				entityName = entity->name;
+				if (ImGui::InputText("Name", &entityName))
 				{
-					entity->transform->SetLocalPosition(pos);
+					entity->name = entityName;
 				}
 
-				Vector3 rotEuler{ entity->transform->GetLocalRotation().ToEulerAngles() };
-				if (ImGui::DragFloat3("Local Rotation", &rotEuler[0]))
+				if (ImGui::TreeNodeEx("Transform", ImGuiTreeNodeFlags_DefaultOpen))
 				{
-					entity->transform->SetLocalRotation(Quaternion::FromEulerAngles(rotEuler[0], rotEuler[1], rotEuler[2]));
+					Vector3 pos{ entity->transform->GetLocalPosition() };
+					if (ImGui::DragFloat3("Local Positon", &pos[0], 0.1f))
+					{
+						entity->transform->SetLocalPosition(pos);
+					}
+
+					Vector3 rotEuler{ entity->transform->GetLocalRotation().ToEulerAngles() };
+					if (ImGui::DragFloat3("Local Rotation", &rotEuler[0]))
+					{
+						entity->transform->SetLocalRotation(Quaternion::FromEulerAngles(rotEuler[0], rotEuler[1], rotEuler[2]));
+					}
+
+					Vector3 scale{ entity->transform->GetLocalScale() };
+					if (ImGui::DragFloat3("Local Scale", &scale[0], 0.05f))
+					{
+						entity->transform->SetLocalScale(scale);
+					}
+
+					ImGui::TreePop();
 				}
 
-				Vector3 scale{ entity->transform->GetLocalScale() };
-				if (ImGui::DragFloat3("Local Scale", &scale[0], 0.05f))
+				static std::vector<leopph::Camera*> cameraComponents;
+				cameraComponents.clear();
+				entity->GetComponents<leopph::Camera>(cameraComponents);
+
+				for ([[maybe_unused]] auto* const camera : cameraComponents)
 				{
-					entity->transform->SetLocalScale(scale);
+					if (ImGui::TreeNodeEx("Camera", ImGuiTreeNodeFlags_DefaultOpen))
+					{
+						ImGui::TreePop();
+					}
+				}
+
+				static std::vector<leopph::CubeModel*> cubeModelComponents;
+				cubeModelComponents.clear();
+				entity->GetComponents<leopph::CubeModel>(cubeModelComponents);
+
+				for ([[maybe_unused]] auto* const cubeModel : cubeModelComponents)
+				{
+					if (ImGui::TreeNodeEx("Cube Model", ImGuiTreeNodeFlags_DefaultOpen))
+					{
+						ImGui::TreePop();
+					}
 				}
 			}
 		}

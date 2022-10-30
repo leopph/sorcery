@@ -98,6 +98,7 @@
     <ClCompile Include="..\..\deps\vendor\dear_imgui\imgui_draw.cpp" />
     <ClCompile Include="..\..\deps\vendor\dear_imgui\imgui_tables.cpp" />
     <ClCompile Include="..\..\deps\vendor\dear_imgui\imgui_widgets.cpp" />
+    <ClCompile Include="..\..\deps\vendor\dear_imgui\misc\cpp\imgui_stdlib.cpp" />
     <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\Serialization.cpp" />
   </ItemGroup>

@@ -10,6 +10,7 @@
 #include <span>
 #include <vector>
 #include <optional>
+#include <concepts>
 
 
 namespace leopph
@@ -29,6 +30,32 @@ namespace leopph
 
 		static Entity* Create();
 		void AssignManagedObject(MonoObject* managedObject);
+
+		template<std::derived_from<Component> T>
+		T* GetComponent() const
+		{
+			for (auto const& component : components)
+			{
+				if (auto const castPtr = dynamic_cast<T*>(component.get()))
+				{
+					return castPtr;
+				}
+			}
+
+			return nullptr;
+		}
+
+		template<std::derived_from<Component> T>
+		void GetComponents(std::vector<T*>& outComponents) const
+		{
+			for (auto const& component : components)
+			{
+				if (auto const castPtr = dynamic_cast<T*>(component.get()))
+				{
+					outComponents.emplace_back(castPtr);
+				}
+			}
+		}
 	};
 
 
