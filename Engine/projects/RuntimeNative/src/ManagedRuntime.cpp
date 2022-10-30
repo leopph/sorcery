@@ -1,12 +1,10 @@
-#include "Managed.hpp"
+#include "ManagedRuntime.hpp"
 
-#include "Behavior.hpp"
-#include "CubeModel.hpp"
 #include "Entity.hpp"
 #include "Time.hpp"
 #include "Platform.hpp"
 #include "ManagedAccessObject.hpp"
-#include "Component.hpp"
+#include "Components.hpp"
 
 #include <mono/jit/jit.h>
 #include <mono/metadata/appdomain.h>
@@ -26,6 +24,7 @@ namespace leopph
 	namespace
 	{
 		MonoDomain* gDomain;
+		MonoImage* gImage;
 	}
 
 
@@ -106,37 +105,38 @@ namespace leopph
 		mono_add_internal_call("leopph.Window::InternalSetMinimizeOnBorderlessFocusLoss", platform::set_window_minimize_on_borderless_focus_loss);
 		mono_add_internal_call("leopph.Window::InternalSetShouldClose", platform::set_should_window_close);
 
-		mono_add_internal_call("leopph.NativeWrapper::InternalDestroyMAO", destroy_mao);
+		mono_add_internal_call("leopph.Entity::NewNativeEntity", managedbindings::CreateNativeEntity);
+		mono_add_internal_call("leopph.Entity::get_Transform", managedbindings::GetEntityTransform);
+		mono_add_internal_call("leopph.Entity::InternalCreateComponent", managedbindings::CreateComponent);
 
-		mono_add_internal_call("leopph.Entity::NativeNew", managedbindings::entity_new);
-		mono_add_internal_call("leopph.Entity::NativeGetWorldPos", managedbindings::entity_get_world_position);
-		mono_add_internal_call("leopph.Entity::NativeSetWorldPos", managedbindings::set_entity_world_position);
-		mono_add_internal_call("leopph.Entity::NativeGetLocalPos", managedbindings::get_entity_local_position);
-		mono_add_internal_call("leopph.Entity::NativeSetLocalPos", managedbindings::set_entity_local_position);
-		mono_add_internal_call("leopph.Entity::NativeGetWorldRot", managedbindings::get_entity_world_rotation);
-		mono_add_internal_call("leopph.Entity::NativeSetWorldRot", managedbindings::set_entity_world_rotation);
-		mono_add_internal_call("leopph.Entity::NativeGetLocalRot", managedbindings::get_entity_local_rotation);
-		mono_add_internal_call("leopph.Entity::NativeSetLocalRot", managedbindings::set_entity_local_rotation);
-		mono_add_internal_call("leopph.Entity::NativeGetWorldScale", managedbindings::get_entity_world_scale);
-		mono_add_internal_call("leopph.Entity::NativeSetWorldScale", managedbindings::set_entity_world_scale);
-		mono_add_internal_call("leopph.Entity::NativeGetLocalScale", managedbindings::get_entity_local_scale);
-		mono_add_internal_call("leopph.Entity::NativeSetLocalScale", managedbindings::set_entity_local_scale);
-		mono_add_internal_call("leopph.Entity::NativeTranslateVector", managedbindings::translate_entity_from_vector);
-		mono_add_internal_call("leopph.Entity::NativeTranslate", managedbindings::translate_entity);
-		mono_add_internal_call("leopph.Entity::NativeRotate", managedbindings::rotate_entity);
-		mono_add_internal_call("leopph.Entity::NativeRotateAngleAxis", managedbindings::rotate_entity_angle_axis);
-		mono_add_internal_call("leopph.Entity::NativeRescaleVector", managedbindings::rescale_entity_from_vector);
-		mono_add_internal_call("leopph.Entity::NativeRescale", managedbindings::rescale_entity);
-		mono_add_internal_call("leopph.Entity::NativeGetRightAxis", managedbindings::get_entity_right_axis);
-		mono_add_internal_call("leopph.Entity::NativeGetUpAxis", managedbindings::get_entity_up_axis);
-		mono_add_internal_call("leopph.Entity::NativeGetForwardtAxis", managedbindings::get_entity_forward_axis);
-		mono_add_internal_call("leopph.Entity::NativeGetParentHandle", managedbindings::get_entity_parent_handle);
-		mono_add_internal_call("leopph.Entity::NativeSetParent", managedbindings::set_entity_parent);
-		mono_add_internal_call("leopph.Entity::NativeGetChildCount", managedbindings::get_entity_child_count);
-		mono_add_internal_call("leopph.Entity::NativeGetChildHandle", managedbindings::get_entity_child_handle);
-		mono_add_internal_call("leopph.Entity::InternalCreateComponent", managedbindings::create_component);
+		mono_add_internal_call("leopph.Component::get_Entity", managedbindings::GetComponentEntity);
+		mono_add_internal_call("leopph.Component::get_Transform", managedbindings::GetComponentEntityTransform);
 
-		mono_add_internal_call("leopph.Component::InternalGetEntityHandle", managedbindings::component_get_entity_handle);
+		mono_add_internal_call("leopph.Transform::get_WorldPosition", managedbindings::GetTransformWorldPosition);
+		mono_add_internal_call("leopph.Transform::set_WorldPosition", managedbindings::SetTransformWorldPosition);
+		mono_add_internal_call("leopph.Transform::get_LocalPosition", managedbindings::GetTransformLocalPosition);
+		mono_add_internal_call("leopph.Transform::set_LocalPosition", managedbindings::SetTransformLocalPosition);
+		mono_add_internal_call("leopph.Transform::get_WorldRotation", managedbindings::GetTransformWorldRotation);
+		mono_add_internal_call("leopph.Transform::set_WorldRotation", managedbindings::SetTransformWorldRotation);
+		mono_add_internal_call("leopph.Transform::get_LocalRotation", managedbindings::GetTransformLocalRotation);
+		mono_add_internal_call("leopph.Transform::set_LocalRotation", managedbindings::SetTransformLocalRotation);
+		mono_add_internal_call("leopph.Transform::get_WorldScale", managedbindings::GetTransformWorldScale);
+		mono_add_internal_call("leopph.Transform::set_WorldScale", managedbindings::SetTransformWorldScale);
+		mono_add_internal_call("leopph.Transform::get_LocalScale", managedbindings::GetTransformLocalScale);
+		mono_add_internal_call("leopph.Transform::set_LocalScale", managedbindings::SetTransformLocalScale);
+		mono_add_internal_call("leopph.Transform::get_Right", managedbindings::GetTransformRightAxis);
+		mono_add_internal_call("leopph.Transform::get_Up", managedbindings::GetTransformUpAxis);
+		mono_add_internal_call("leopph.Transform::get_Forward", managedbindings::GetTransformForwardAxis);
+		mono_add_internal_call("leopph.Transform::get_Parent", managedbindings::GetTransformParent);
+		mono_add_internal_call("leopph.Transform::set_Parent", managedbindings::SetTransformParent);
+		mono_add_internal_call("leopph.Transform::get_ModelMatrix", managedbindings::GetTransformModelMatrix);
+		mono_add_internal_call("leopph.Transform::get_NormalMatrix", managedbindings::GetTransformNormalMatrix);
+		mono_add_internal_call("leopph.Transform::Translate(Vector3, Space)", managedbindings::TranslateTransformVector);
+		mono_add_internal_call("leopph.Transform::Translate(float, float, float, Space)", managedbindings::TranslateTransform);
+		mono_add_internal_call("leopph.Transform::Rotate(Quaternion, Space)", managedbindings::RotateTransform);
+		mono_add_internal_call("leopph.Transform::Rotate(Vector3, float, Space)", managedbindings::RotateTransformAngleAxis);
+		mono_add_internal_call("leopph.Transform::Rescale(Vector3, Space)", managedbindings::RescaleTransformVector);
+		mono_add_internal_call("leopph.Transform::Rescale(float, float, float, Space)", managedbindings::RescaleTransform);
 
 		char* exePath;
 		_get_pgmptr(&exePath);
@@ -147,10 +147,10 @@ namespace leopph
 		MonoAssembly* assembly = mono_domain_assembly_open(gDomain, managedLibPath.string().c_str());
 		assert(assembly);
 
-		auto const image = mono_assembly_get_image(assembly);
-		assert(image);
+		gImage = mono_assembly_get_image(assembly);
+		assert(gImage);
 
-		MonoClass* testClass = mono_class_from_name(image, "", "Test");
+		MonoClass* testClass = mono_class_from_name(gImage, "", "Test");
 		MonoMethod* doTestMethod = mono_class_get_method_from_name(testClass, "DoTest", 0);
 		mono_runtime_invoke(doTestMethod, nullptr, nullptr, nullptr);
 
@@ -160,7 +160,18 @@ namespace leopph
 
 	void cleanup_managed_runtime()
 	{
-		destroy_all_maos();
 		mono_jit_cleanup(gDomain);
+	}
+
+
+	MonoImage* GetManagedImage()
+	{
+		return gImage;
+	}
+
+
+	MonoDomain* GetManagedDomain()
+	{
+		return gDomain;
 	}
 }

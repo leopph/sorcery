@@ -2,15 +2,15 @@
 
 #include <yaml-cpp/yaml.h>
 
-void Serialize(std::span<leopph::Entity const* const> entities, std::ostream& os)
+void Serialize([[maybe_unused]] std::span<std::unique_ptr<leopph::Entity> const> entities, [[maybe_unused]] std::ostream& os)
 {
-	YAML::Emitter emitter{ os };
+	/*YAML::Emitter emitter{os};
 
 	for (auto const& entity : entities)
 	{
 		YAML::Node node;
 
-		node["name"] = entity->get_name().data();
+		node["name"] = entity->name.data();
 
 		for (int i = 0; i < 3; i++)
 		{
@@ -28,5 +28,5 @@ void Serialize(std::span<leopph::Entity const* const> entities, std::ostream& os
 		}
 
 		emitter << node;
-	}
+	}*/
 }

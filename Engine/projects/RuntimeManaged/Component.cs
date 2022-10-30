@@ -1,6 +1,4 @@
 ﻿using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using System;
 
 namespace leopph
 {
@@ -8,10 +6,16 @@ namespace leopph
     {
         private protected Component() { }
 
-        public Entity Entity => (GCHandle.FromIntPtr(InternalGetEntityHandle(_ptr)).Target as Entity)!;
+        public extern Entity Entity
+		{
+			[MethodImpl(MethodImplOptions.InternalCall)]
+			get;
+		}
 
-
-        [MethodImpl(MethodImplOptions.InternalCall)]
-        private extern static IntPtr InternalGetEntityHandle(IntPtr ptr);
+		public extern Transform Transform
+		{
+			[MethodImpl(MethodImplOptions.InternalCall)]
+			get;
+		}
     }
 }

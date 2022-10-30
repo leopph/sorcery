@@ -55,7 +55,7 @@ public class MovementController : Behavior
             posDelta *= 2;
         }
 
-        Entity.Translate(speed * posDelta * Time.FrameTime, Space.Object);
+        Transform.Translate(speed * posDelta * Time.FrameTime, Space.Local);
     }
 }
 
@@ -66,8 +66,8 @@ public class OrientationController : Behavior
 
     private void Tick()
     {
-        Entity.Rotate(Vector3.Up, sensitivity * Input.MouseDelta.x, Space.World);
-        Entity.Rotate(Vector3.Right, sensitivity * Input.MouseDelta.y, Space.Object);
+        Transform.Rotate(Vector3.Up, sensitivity * Input.MouseDelta.x, Space.World);
+        Transform.Rotate(Vector3.Right, sensitivity * Input.MouseDelta.y, Space.Local);
     }
 }
 
@@ -127,28 +127,20 @@ public class Test
 {
     public static void DoTest()
     {
-        var cube0 = new Entity
-        {
-            Position = new Vector3(0, 0, 2)
-        };
+        var cube0 = new Entity();
+		cube0.Transform.WorldPosition = new Vector3(0, 0, 2);
         cube0.CreateComponent<CubeModel>();
 
-        var cube1 = new Entity
-        {
-            Position = new Vector3(2, 0, 0)
-        };
+        var cube1 = new Entity();
+		cube1.Transform.WorldPosition = new Vector3(2, 0, 0);
         cube1.CreateComponent<CubeModel>();
 
-        var cube2 = new Entity
-        {
-            Position = new Vector3(0, 0, -2)
-        };
+        var cube2 = new Entity();
+		cube2.Transform.WorldPosition = new Vector3(0, 0, -2);
         cube2.CreateComponent<CubeModel>();
 
-        var cube3 = new Entity
-        {
-            Position = new Vector3(-2, 0, 0)
-        };
+        var cube3 = new Entity();
+		cube3.Transform.WorldPosition = new Vector3(-2, 0, 0);
         cube3.CreateComponent<CubeModel>();
 
         var cam = new Entity();
@@ -156,7 +148,7 @@ public class Test
         //cam.CreateComponent<MovementController>();
         //cam.CreateComponent<OrientationController>();
 
-        var util = new Entity();
+        //var util = new Entity();
         //util.CreateComponent<AppController>();
     }
 }

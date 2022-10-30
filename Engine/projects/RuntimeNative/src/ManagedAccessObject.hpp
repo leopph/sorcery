@@ -2,8 +2,14 @@
 
 #include "Core.hpp"
 
-struct _MonoObject;
-typedef _MonoObject MonoObject;
+#include <string_view>
+#include <optional>
+#include <concepts>
+
+
+using MonoObject = struct _MonoObject;
+using MonoClass = struct _MonoClass;
+
 
 namespace leopph
 {
@@ -11,21 +17,26 @@ namespace leopph
 	{
 	private:
 		static u64 sNextId;
-		u32 mGcHandle{};
+		std::optional<u32> mGcHandle;
+
+	protected:
+		void SetManagedObject(MonoObject* managedObject);
+		MonoObject* CreateManagedObject(MonoClass* klass);
+		MonoObject* CreateManagedObject(std::string_view classNamespace, std::string_view className);
 
 	public:
 		u64 const id{ sNextId++ };
-		u32 const& managedObjectHandle{ mGcHandle };
 
-		ManagedAccessObject() = default;
-		explicit ManagedAccessObject(MonoObject* managedObject);
-		ManagedAccessObject(ManagedAccessObject const&) = delete;
+		MonoObject* GetManagedObject() const;
 
 		virtual ~ManagedAccessObject();
-	};
 
-	void store_mao(ManagedAccessObject* mao);
-	void destroy_mao(u64 id);
-	ManagedAccessObject* get_mao_by_id(u64 id);
-	void destroy_all_maos();
+		static [[nodiscard]] void* GetNativePtrFromManagedObject(MonoObject* managedObject);
+
+		template<typename T> requires std::derived_from<std::remove_pointer_t<T>, ManagedAccessObject>
+		static [[nodiscard]] T GetNativePtrFromManagedObjectAs(MonoObject* managedObject)
+		{
+			return static_cast<T>(GetNativePtrFromManagedObject(managedObject));
+		}
+	}; 
 }

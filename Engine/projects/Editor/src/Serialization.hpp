@@ -2,7 +2,8 @@
 
 #include <Entity.hpp>
 
+#include <memory>
 #include <span>
 #include <ostream>
 
-void Serialize(std::span<leopph::Entity const* const> entities, std::ostream& os);
+void Serialize(std::span<std::unique_ptr<leopph::Entity> const> entities, std::ostream& os);

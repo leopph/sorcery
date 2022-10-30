@@ -1,22 +1,13 @@
-#ifndef NDEBUG
-#define _CRTDBG_MAP_ALLOC
-#include <stdlib.h>
-#include <crtdbg.h>
-#endif
-
-#include <Behavior.hpp>
-#include <Managed.hpp>
+#include <Components.hpp>
+#include <ManagedRuntime.hpp>
 #include <Platform.hpp>
 #include <RenderCore.hpp>
 #include <Time.hpp>
+#include <Entity.hpp>
 
 
 int main()
 {
-#ifndef NDEBUG
-	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-#endif
-
 	if (!leopph::platform::init_platform_support())
 	{
 		return 1;
@@ -52,9 +43,12 @@ int main()
 			return 5;
 		}
 
+		renderer->present();
+
 		leopph::measure_time();
 	}
 
+	leopph::gEntities.clear();
 	leopph::cleanup_managed_runtime();
 	leopph::platform::cleanup_platform_support();
 }

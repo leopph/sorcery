@@ -15,9 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\Camera.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\Time.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -30,13 +27,7 @@
     <ClCompile Include="src\Color.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Managed.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Behavior.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\CubeModel.cpp">
+    <ClCompile Include="src\ManagedRuntime.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\RenderCore.cpp">
@@ -48,14 +39,17 @@
     <ClCompile Include="src\ManagedAccessObject.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Component.cpp">
+    <ClCompile Include="src\Components.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Scene.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\SceneManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\Camera.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\Entity.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -71,16 +65,7 @@
     <ClInclude Include="src\Time.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Managed.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Renderer3D.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Behavior.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\CubeModel.hpp">
+    <ClInclude Include="src\ManagedRuntime.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Platform.hpp">
@@ -95,7 +80,7 @@
     <ClInclude Include="src\ManagedAccessObject.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Component.hpp">
+    <ClInclude Include="src\Components.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Util.hpp">
@@ -107,9 +92,16 @@
     <ClInclude Include="src\shaders\cinclude\BlinnPhongVertShadBinDebug.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\Scene.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\SceneManager.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="src\shaders\include\BlinnPhong.hlsli" />
+    <None Include="cpp.hint" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="src\shaders\BlinnPhongVert.hlsl" />

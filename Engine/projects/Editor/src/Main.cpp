@@ -1,7 +1,7 @@
 #include "Serialization.hpp"
 
-#include <Behavior.hpp>
-#include <Managed.hpp>
+#include <Components.hpp>
+#include <ManagedRuntime.hpp>
 #include <Platform.hpp>
 #include <RenderCore.hpp>
 #include <Time.hpp>
@@ -122,7 +122,7 @@ int main()
 			for (std::size_t i = 0; i < leopph::gEntities.size(); i++)
 			{
 				ImGui::PushID(static_cast<int>(i));
-				if (ImGui::Selectable(leopph::gEntities[i]->get_name().data(), selectedEntityIndex && *selectedEntityIndex == i))
+				if (ImGui::Selectable(leopph::gEntities[i]->name.data(), selectedEntityIndex && *selectedEntityIndex == i))
 				{
 					selectedEntityIndex = i;
 				}
@@ -138,24 +138,24 @@ int main()
 		{
 			if (selectedEntityIndex)
 			{
-				auto const entity = leopph::gEntities[*selectedEntityIndex];
+				auto const& entity = leopph::gEntities[*selectedEntityIndex];
 
-				Vector3 pos{ entity->get_local_position() };
+				Vector3 pos{ entity->transform->GetLocalPosition() };
 				if (ImGui::DragFloat3("Local Positon", &pos[0], 0.1f))
 				{
-					entity->set_local_position(pos);
+					entity->transform->SetLocalPosition(pos);
 				}
 
-				Vector3 rotEuler{ entity->get_local_rotation().ToEulerAngles() };
+				Vector3 rotEuler{ entity->transform->GetLocalRotation().ToEulerAngles() };
 				if (ImGui::DragFloat3("Local Rotation", &rotEuler[0]))
 				{
-					entity->set_local_rotation(Quaternion::FromEulerAngles(rotEuler[0], rotEuler[1], rotEuler[2]));
+					entity->transform->SetLocalRotation(Quaternion::FromEulerAngles(rotEuler[0], rotEuler[1], rotEuler[2]));
 				}
 
-				Vector3 scale{ entity->get_local_scale() };
+				Vector3 scale{ entity->transform->GetLocalScale() };
 				if (ImGui::DragFloat3("Local Scale", &scale[0], 0.05f))
 				{
-					entity->set_local_scale(scale);
+					entity->transform->SetLocalScale(scale);
 				}
 			}
 		}
@@ -168,6 +168,8 @@ int main()
 
 		leopph::measure_time();
 	}
+	
+	leopph::gEntities.clear();
 
 	ImGui_ImplDX11_Shutdown();
 	ImGui_ImplWin32_Shutdown();

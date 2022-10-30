@@ -1,7 +1,6 @@
 #include "RenderCore.hpp"
 
 #include "Platform.hpp"
-#include "Camera.hpp"
 #include "Entity.hpp"
 
 #ifdef NDEBUG
@@ -515,8 +514,8 @@ namespace leopph
 			return true;
 		}
 
-		DirectX::XMFLOAT3 const camPos{ mainCam->entity->get_position().get_data() };
-		DirectX::XMFLOAT3 const camForward{ mainCam->entity->get_forward_axis().get_data() };
+		DirectX::XMFLOAT3 const camPos{ mainCam->GetTransform().GetWorldPosition().get_data() };
+		DirectX::XMFLOAT3 const camForward{ mainCam->GetTransform().GetForwardAxis().get_data()};
 		DirectX::XMMATRIX viewMat = DirectX::XMMatrixLookToLH(DirectX::XMLoadFloat3(&camPos), DirectX::XMLoadFloat3(&camForward), { 0, 1, 0 });
 		DirectX::XMMATRIX projMat = DirectX::XMMatrixPerspectiveFovLH(DirectX::XMConvertToRadians(90.0f / mRenderAspectRatio), mRenderAspectRatio, 0.3f, 100.f);
 
@@ -579,7 +578,7 @@ namespace leopph
 
 		for (int i = 0; i < mCubeModels.size(); i++)
 		{
-			DirectX::XMFLOAT4X4 modelMat{ mCubeModels[i]->entity->get_model_matrix().get_data() };
+			DirectX::XMFLOAT4X4 modelMat{ mCubeModels[i]->GetTransform().GetModelMatrix().get_data()};
 			DirectX::XMStoreFloat4x4(mappedInstanceBufferData + i, DirectX::XMLoadFloat4x4(&modelMat));
 		}
 

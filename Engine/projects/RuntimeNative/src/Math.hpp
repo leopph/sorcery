@@ -170,7 +170,7 @@ namespace leopph
 
 
 		[[nodiscard]] static Matrix<T, N, M> identity() requires (N == M);
-		[[nodiscard]] static Matrix<T, 4, 4> translate(Vector<T, 3> const& vector) requires (N == 4 && M == 4);
+		[[nodiscard]] static Matrix<T, 4, 4> Translate(Vector<T, 3> const& vector) requires (N == 4 && M == 4);
 		[[nodiscard]] static Matrix<T, 4, 4> scale(Vector<T, 3> const& vector) requires (N == 4 && M == 4);
 		[[nodiscard]] static Matrix<T, 4, 4> look_at(Vector<T, 3> const& position, Vector<T, 3> const& target, Vector<T, 3> const& worldUp) requires(N == 4 && M == 4);
 		[[nodiscard]] static Matrix<T, 4, 4> orthographic(T const& left, T const& right, T const& top, T const& bottom, T const& nearClipPlane, T const& farClipPlane);
@@ -288,7 +288,7 @@ namespace leopph
 		[[nodiscard]] LEOPPHAPI explicit operator Matrix4() const;
 
 		template<class T>
-		[[nodiscard]] auto rotate(Vector<T, 3> const& vec) const;
+		[[nodiscard]] auto Rotate(Vector<T, 3> const& vec) const;
 	};
 
 
@@ -904,7 +904,7 @@ namespace leopph
 
 
 	template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
-		Matrix<T, 4, 4> Matrix<T, N, M>::translate(Vector<T, 3> const& vector) requires (N == 4 && M == 4)
+		Matrix<T, 4, 4> Matrix<T, N, M>::Translate(Vector<T, 3> const& vector) requires (N == 4 && M == 4)
 	{
 		Matrix<T, 4, 4> ret = identity();
 		for (size_t i = 0; i < 3; i++)
@@ -1253,7 +1253,7 @@ namespace leopph
 
 
 	template<class T>
-	auto Quaternion::rotate(Vector<T, 3> const& vec) const
+	auto Quaternion::Rotate(Vector<T, 3> const& vec) const
 	{
 		auto const retQuat = *this * Quaternion{0, vec[0], vec[1], vec[2]} *conjugate();
 		return Vector<T, 3>{retQuat.x, retQuat.y, retQuat.z};

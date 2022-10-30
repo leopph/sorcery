@@ -1,61 +1,87 @@
 #include "ManagedAccessObject.hpp"
 
+#include "ManagedRuntime.hpp"
+
 #include <mono/metadata/mono-gc.h>
 #include <mono/metadata/object.h>
+#include <mono/metadata/reflection.h>
+#include <mono/metadata/class.h>
 
 #include <unordered_map>
 #include <memory>
 
+
 namespace leopph
 {
-	static std::unordered_map<u64, std::unique_ptr<ManagedAccessObject>> gAllObjects;
-
 	u64 ManagedAccessObject::sNextId{ 1 };
 
 
-	ManagedAccessObject::ManagedAccessObject(MonoObject* const managedObject) :
-		mGcHandle{ mono_gchandle_new(managedObject, false) }
+	void ManagedAccessObject::SetManagedObject(MonoObject* const managedObject)
 	{
 		u64 idData{ id };
 		void* ptrData{ this };
-		MonoClass* const managedClass = mono_object_get_class(managedObject);
+
+		auto const managedClass = mono_object_get_class(managedObject);
+
 		mono_field_set_value(managedObject, mono_class_get_field_from_name(managedClass, "_id"), &idData);
 		mono_field_set_value(managedObject, mono_class_get_field_from_name(managedClass, "_ptr"), &ptrData);
+
+		mGcHandle = mono_gchandle_new(managedObject, false);
+	}
+
+
+	MonoObject* ManagedAccessObject::CreateManagedObject(MonoClass* const klass)
+	{
+		if (mGcHandle)
+		{
+			return mono_gchandle_get_target(*mGcHandle);
+		}
+
+		auto const object = mono_object_new(GetManagedDomain(), klass);
+		SetManagedObject(object);
+		return object;
+	}
+
+
+	MonoObject* ManagedAccessObject::CreateManagedObject(std::string_view const classNamespace, std::string_view const className)
+	{
+		return CreateManagedObject(mono_class_from_name(GetManagedImage(), classNamespace.data(), className.data()));
+	}
+
+
+	MonoObject* ManagedAccessObject::GetManagedObject() const
+	{
+		if (mGcHandle)
+		{
+			return mono_gchandle_get_target(*mGcHandle);
+		}
+
+		return nullptr;
 	}
 
 
 	ManagedAccessObject::~ManagedAccessObject()
 	{
-		MonoObject* const managedObject = mono_gchandle_get_target(managedObjectHandle);
-		MonoClass* const managedClass = mono_object_get_class(managedObject);
-		u64 idData{ 0 };
-		nullptr_t ptrData{ nullptr };
-		mono_field_set_value(managedObject, mono_class_get_field_from_name(managedClass, "_id"), &idData);
-		mono_field_set_value(managedObject, mono_class_get_field_from_name(managedClass, "_ptr"), &ptrData);
-		mono_gchandle_free(static_cast<u32>(mGcHandle));
+		if (mGcHandle)
+		{
+			auto const object = mono_gchandle_get_target(*mGcHandle);
+			auto const klass = mono_object_get_class(object);
+
+			u64 idData{ 0 };
+			nullptr_t ptrData{ nullptr };
+
+			mono_field_set_value(object, mono_class_get_field_from_name(klass, "_id"), &idData);
+			mono_field_set_value(object, mono_class_get_field_from_name(klass, "_ptr"), &ptrData);
+
+			mono_gchandle_free(*mGcHandle);
+		}
 	}
 
 
-	void store_mao(ManagedAccessObject* const mao)
+	void* ManagedAccessObject::GetNativePtrFromManagedObject(MonoObject* const managedObject)
 	{
-		gAllObjects[mao->id] = std::unique_ptr<ManagedAccessObject>{ mao };
-	}
-
-
-	void destroy_mao(u64 const id)
-	{
-		gAllObjects[id].reset();
-	}
-
-
-	ManagedAccessObject* get_mao_by_id(u64 const id)
-	{
-		return gAllObjects[id].get();
-	}
-
-
-	void destroy_all_maos()
-	{
-		gAllObjects.clear();
+		void* ptrData;
+		mono_field_get_value(managedObject, mono_class_get_field_from_name(mono_object_get_class(managedObject), "_ptr"), &ptrData);
+		return ptrData;
 	}
 }

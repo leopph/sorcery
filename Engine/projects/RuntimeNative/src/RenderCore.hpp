@@ -4,7 +4,7 @@
 #define NOMINMAX
 
 #include "Core.hpp"
-#include "CubeModel.hpp"
+#include "Components.hpp"
 #include "Util.hpp"
 
 #include <d3d11.h>
