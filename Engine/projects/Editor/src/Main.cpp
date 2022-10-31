@@ -16,6 +16,7 @@
 #include <optional>
 #include <fstream>
 #include <limits>
+#include <filesystem>
 
 using leopph::Vector3;
 using leopph::Quaternion;
@@ -52,8 +53,13 @@ int main()
 
 	ImGui::CreateContext();
 	auto& io = ImGui::GetIO();
-	io.IniFilename = "";
-	static_cast<void>(io);
+	char* exePath;
+	_get_pgmptr(&exePath);
+	std::filesystem::path iniFilePath{ exePath };
+	iniFilePath.remove_filename() /= "editorconfig.ini";
+	auto const iniFilePathStr = iniFilePath.string();
+	io.IniFilename = iniFilePathStr.c_str();
+	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
 	ImGui::StyleColorsDark();
 
@@ -105,6 +111,8 @@ int main()
 		ImGui_ImplWin32_NewFrame();
 		ImGui::NewFrame();
 
+		auto const dockspaceId = ImGui::DockSpaceOverViewport();
+
 		//ImGui::ShowDemoWindow();
 
 		if (ImGui::BeginMainMenuBar())
@@ -128,11 +136,6 @@ int main()
 			ImGui::EndMainMenuBar();
 		}
 
-		auto const menuBarHeight = ImGui::GetItemRectSize().y;
-
-		ImGui::SetNextWindowBgAlpha(1);
-		ImGui::SetNextWindowPos(ImVec2{ 0,  menuBarHeight });
-
 		static std::optional<std::size_t> selectedEntityIndex;
 
 		if (selectedEntityIndex && *selectedEntityIndex >= leopph::gEntities.size())
@@ -140,8 +143,7 @@ int main()
 			selectedEntityIndex.reset();
 		}
 
-		ImGuiWindowFlags const entityListFlags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse;
-		if (ImGui::Begin("Entities", nullptr, entityListFlags))
+		if (ImGui::Begin("Entities", nullptr, ImGuiWindowFlags_NoCollapse))
 		{
 			for (std::size_t i = 0; i < leopph::gEntities.size(); i++)
 			{
@@ -155,9 +157,9 @@ int main()
 		}
 		ImGui::End();
 
-		ImGui::SetNextWindowPos({ static_cast<f32>(leopph::platform::get_window_current_client_area_size().width), menuBarHeight }, 0, ImVec2{ 1, 0 });
+		ImGui::SetNextWindowSize(ImVec2{ 400, 600 }, ImGuiCond_FirstUseEver);
 
-		if (ImGui::Begin("Entity Properties", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize))
+		if (ImGui::Begin("Entity Properties", nullptr, ImGuiWindowFlags_NoCollapse))
 		{
 			if (selectedEntityIndex)
 			{

@@ -60,8 +60,8 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)Engine\deps\vendor\yaml-cpp\include;$(SolutionDir)Engine\include\;$(SolutionDir)Engine\deps\vendor\dear_imgui</AdditionalIncludeDirectories>
-      <TreatWarningAsError>true</TreatWarningAsError>
+      <AdditionalIncludeDirectories>$(SolutionDir)Engine\deps\vendor\yaml-cpp\include;$(SolutionDir)Engine\include\;$(SolutionDir)Engine\vendor\imgui</AdditionalIncludeDirectories>
+      <TreatWarningAsError>false</TreatWarningAsError>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -78,8 +78,8 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)Engine\deps\vendor\yaml-cpp\include;$(SolutionDir)Engine\include\;$(SolutionDir)Engine\deps\vendor\dear_imgui</AdditionalIncludeDirectories>
-      <TreatWarningAsError>true</TreatWarningAsError>
+      <AdditionalIncludeDirectories>$(SolutionDir)Engine\deps\vendor\yaml-cpp\include;$(SolutionDir)Engine\include\;$(SolutionDir)Engine\vendor\imgui</AdditionalIncludeDirectories>
+      <TreatWarningAsError>false</TreatWarningAsError>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -91,14 +91,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\deps\vendor\dear_imgui\backends\imgui_impl_dx11.cpp" />
-    <ClCompile Include="..\..\deps\vendor\dear_imgui\backends\imgui_impl_win32.cpp" />
-    <ClCompile Include="..\..\deps\vendor\dear_imgui\imgui.cpp" />
-    <ClCompile Include="..\..\deps\vendor\dear_imgui\imgui_demo.cpp" />
-    <ClCompile Include="..\..\deps\vendor\dear_imgui\imgui_draw.cpp" />
-    <ClCompile Include="..\..\deps\vendor\dear_imgui\imgui_tables.cpp" />
-    <ClCompile Include="..\..\deps\vendor\dear_imgui\imgui_widgets.cpp" />
-    <ClCompile Include="..\..\deps\vendor\dear_imgui\misc\cpp\imgui_stdlib.cpp" />
+    <ClCompile Include="..\..\vendor\imgui\backends\imgui_impl_dx11.cpp" />
+    <ClCompile Include="..\..\vendor\imgui\backends\imgui_impl_win32.cpp" />
+    <ClCompile Include="..\..\vendor\imgui\imgui.cpp" />
+    <ClCompile Include="..\..\vendor\imgui\imgui_demo.cpp" />
+    <ClCompile Include="..\..\vendor\imgui\imgui_draw.cpp" />
+    <ClCompile Include="..\..\vendor\imgui\imgui_tables.cpp" />
+    <ClCompile Include="..\..\vendor\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="..\..\vendor\imgui\misc\cpp\imgui_stdlib.cpp" />
     <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\Serialization.cpp" />
   </ItemGroup>
