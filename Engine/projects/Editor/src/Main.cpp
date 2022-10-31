@@ -68,9 +68,9 @@ int main()
 			return 4;
 		}
 
-		leopph::init_behaviors();
-		leopph::tick_behaviors();
-		leopph::tack_behaviors();
+		//leopph::init_behaviors();
+		//leopph::tick_behaviors();
+		//leopph::tack_behaviors();
 
 		if (!leopph::rendering::Render())
 		{

@@ -154,6 +154,7 @@ public class Test
         cam.CreateComponent<OrientationController>();
 
         var util = new Entity();
+		util.Name = "Utility";
         util.CreateComponent<AppController>();
     }
 }

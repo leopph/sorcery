@@ -2,7 +2,7 @@
 
 namespace leopph
 {
-    public enum Key
+    public enum Key : byte
     {
         LeftMouseButton = 0x01,
         RightMouseButton = 0x02,

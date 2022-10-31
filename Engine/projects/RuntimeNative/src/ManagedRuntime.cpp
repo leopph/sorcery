@@ -83,11 +83,11 @@ namespace leopph
 		gDomain = mono_jit_init("leopph");
 		assert(gDomain);
 
-		mono_add_internal_call("leopph.Input::GetKeyDown", platform::managedbindings::get_key_down);
-		mono_add_internal_call("leopph.Input::GetKey", platform::managedbindings::get_key);
-		mono_add_internal_call("leopph.Input::GetKeyUp", platform::managedbindings::get_key_up);
-		mono_add_internal_call("leopph.Input::get_MousePosition", platform::managedbindings::get_mouse_pos);
-		mono_add_internal_call("leopph.Input::get_MouseDelta", platform::managedbindings::get_mouse_delta);
+		mono_add_internal_call("leopph.Input::GetKeyDown", platform::GetKeyDown);
+		mono_add_internal_call("leopph.Input::GetKey", platform::GetKey);
+		mono_add_internal_call("leopph.Input::GetKeyUp", platform::GetKeyUp);
+		mono_add_internal_call("leopph.Input::get_MousePosition", platform::GetMousePosition);
+		mono_add_internal_call("leopph.Input::get_MouseDelta", platform::GetMouseDelta);
 		mono_add_internal_call("leopph.Input::get_IsCursorConfined", platform::is_cursor_confined);
 		mono_add_internal_call("leopph.Input::set_IsCursorConfined", platform::confine_cursor);
 		mono_add_internal_call("leopph.Input::get_IsCursorHidden", platform::is_cursor_hidden);

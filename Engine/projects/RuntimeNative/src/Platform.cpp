@@ -7,7 +7,7 @@
 
 namespace leopph::platform
 {
-	enum class Key : u8
+	enum class KeyState : u8
 	{
 		Neutral = 0, Down = 1, Held = 2, Up = 3
 	};
@@ -29,7 +29,7 @@ namespace leopph::platform
 		Event<Extent2D<u32>> gWndOnSizeEvent;
 		Event<> gWndOnFocusGainEvent;
 		Event<> gWndOnFocusLossEvent;
-		Key gKeyboardState[256]{};
+		KeyState gKeyboardState[256]{};
 		Point2D<i32> gMousePos{ 0, 0 };
 		Point2D<i32> gMouseDelta{ 0, 0 };
 		bool gConfineCursor{ false };
@@ -239,24 +239,24 @@ namespace leopph::platform
 		{
 			if (newState[i] & 0x80)
 			{
-				if (gKeyboardState[i] == Key::Down)
+				if (gKeyboardState[i] == KeyState::Down)
 				{
-					gKeyboardState[i] = Key::Held;
+					gKeyboardState[i] = KeyState::Held;
 				}
-				else if (gKeyboardState[i] != Key::Held)
+				else if (gKeyboardState[i] != KeyState::Held)
 				{
-					gKeyboardState[i] = Key::Down;
+					gKeyboardState[i] = KeyState::Down;
 				}
 			}
 			else
 			{
-				if (gKeyboardState[i] == Key::Up)
+				if (gKeyboardState[i] == KeyState::Up)
 				{
-					gKeyboardState[i] = Key::Neutral;
+					gKeyboardState[i] = KeyState::Neutral;
 				}
 				else
 				{
-					gKeyboardState[i] = Key::Up;
+					gKeyboardState[i] = KeyState::Up;
 				}
 			}
 		}
@@ -384,35 +384,32 @@ namespace leopph::platform
 	}
 
 
-	namespace managedbindings
+	bool GetKey(Key const key)
 	{
-		bool get_key(u8 const key)
-		{
-			return gKeyboardState[key] == Key::Down || gKeyboardState[key] == Key::Held;
-		}
+		return gKeyboardState[static_cast<u8>(key)] == KeyState::Down || gKeyboardState[static_cast<u8>(key)] == KeyState::Held;
+	}
 
 
-		bool get_key_down(u8 const key)
-		{
-			return gKeyboardState[key] == Key::Down;
-		}
+	bool GetKeyDown(Key const key)
+	{
+		return gKeyboardState[static_cast<u8>(key)] == KeyState::Down;
+	}
 
 
-		bool get_key_up(u8 const key)
-		{
-			return gKeyboardState[key] == Key::Up;
-		}
+	bool GetKeyUp(Key const key)
+	{
+		return gKeyboardState[static_cast<u8>(key)] == KeyState::Up;
+	}
 
 
-		Point2D<i32> get_mouse_pos()
-		{
-			return gMousePos;
-		}
+	Point2D<i32> GetMousePosition()
+	{
+		return gMousePos;
+	}
 
 
-		Point2D<i32> get_mouse_delta()
-		{
-			return gMouseDelta;
-		}
+	Point2D<i32> GetMouseDelta()
+	{
+		return gMouseDelta;
 	}
 }
