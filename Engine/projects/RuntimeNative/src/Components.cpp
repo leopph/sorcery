@@ -2,7 +2,7 @@
 
 #include "Entity.hpp"
 #include "ManagedRuntime.hpp"
-#include "RenderCore.hpp"
+#include "Renderer.hpp"
 
 #include <mono/metadata/appdomain.h>
 #include <mono/metadata/assembly.h>
@@ -374,13 +374,13 @@ namespace leopph
 	CubeModel::CubeModel(Entity* const entity) :
 		Component{ entity }
 	{
-		RenderCore::get_last_instance()->register_cube_model(this);
+		rendering::RegisterCubeModel(this);
 	}
 
 
 	CubeModel::~CubeModel()
 	{
-		RenderCore::get_last_instance()->unregister_cube_model(this);
+		rendering::UnregisterCubeModel(this);
 	}
 
 

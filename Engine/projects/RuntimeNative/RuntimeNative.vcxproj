@@ -101,7 +101,7 @@
     <ClCompile Include="src\ManagedAccessObject.cpp" />
     <ClCompile Include="src\Math.cpp" />
     <ClCompile Include="src\Entity.cpp" />
-    <ClCompile Include="src\RenderCore.cpp" />
+    <ClCompile Include="src\Renderer.cpp" />
     <ClCompile Include="src\Scene.cpp" />
     <ClCompile Include="src\SceneManager.cpp" />
     <ClCompile Include="src\Time.cpp" />
@@ -116,7 +116,7 @@
     <ClInclude Include="src\ManagedAccessObject.hpp" />
     <ClInclude Include="src\Math.hpp" />
     <ClInclude Include="src\Entity.hpp" />
-    <ClInclude Include="src\RenderCore.hpp" />
+    <ClInclude Include="src\Renderer.hpp" />
     <ClInclude Include="src\Scene.hpp" />
     <ClInclude Include="src\SceneManager.hpp" />
     <ClInclude Include="src\shaders\cinclude\BlinnPhongPixShadBinDebug.h" />

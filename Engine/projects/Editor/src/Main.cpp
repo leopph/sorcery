@@ -3,7 +3,7 @@
 #include <Components.hpp>
 #include <ManagedRuntime.hpp>
 #include <Platform.hpp>
-#include <RenderCore.hpp>
+#include <Renderer.hpp>
 #include <Time.hpp>
 #include <Entity.hpp>
 
@@ -34,9 +34,7 @@ int main()
 	leopph::platform::set_window_borderless(false);
 	leopph::platform::set_window_windowed_client_area_size({ 1280, 720 });
 
-	auto const renderer = leopph::RenderCore::create();
-
-	if (!renderer)
+	if (!leopph::rendering::InitRenderer())
 	{
 		return 2;
 	}
@@ -54,7 +52,7 @@ int main()
 	ImGui::StyleColorsDark();
 
 	ImGui_ImplWin32_Init(leopph::platform::get_hwnd());
-	ImGui_ImplDX11_Init(renderer->get_device(), renderer->get_immediate_context());
+	ImGui_ImplDX11_Init(leopph::rendering::GetDevice(), leopph::rendering::GetImmediateContext());
 
 	leopph::platform::SetEventHook([](HWND const hwnd, UINT const msg, WPARAM const wparam, LPARAM const lparam)
 	{
@@ -74,7 +72,7 @@ int main()
 		leopph::tick_behaviors();
 		leopph::tack_behaviors();
 
-		if (!renderer->render())
+		if (!leopph::rendering::Render())
 		{
 			return 5;
 		}
@@ -237,7 +235,7 @@ int main()
 		ImGui::Render();
 		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
-		renderer->present();
+		leopph::rendering::Present();
 
 		leopph::measure_time();
 	}
@@ -248,5 +246,6 @@ int main()
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
 	leopph::cleanup_managed_runtime();
+	leopph::rendering::CleanupRenderer();
 	leopph::platform::cleanup_platform_support();
 }

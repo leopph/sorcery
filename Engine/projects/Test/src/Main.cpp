@@ -1,7 +1,7 @@
 #include <Components.hpp>
 #include <ManagedRuntime.hpp>
 #include <Platform.hpp>
-#include <RenderCore.hpp>
+#include <Renderer.hpp>
 #include <Time.hpp>
 #include <Entity.hpp>
 
@@ -13,9 +13,7 @@ int main()
 		return 1;
 	}
 
-	auto const renderer = leopph::RenderCore::create();
-
-	if (!renderer)
+	if (!leopph::rendering::InitRenderer())
 	{
 		return 2;
 	}
@@ -38,17 +36,18 @@ int main()
 		leopph::tick_behaviors();
 		leopph::tack_behaviors();
 
-		if (!renderer->render())
+		if (!leopph::rendering::Render())
 		{
 			return 5;
 		}
 
-		renderer->present();
+		leopph::rendering::Present();
 
 		leopph::measure_time();
 	}
 
 	leopph::gEntities.clear();
 	leopph::cleanup_managed_runtime();
+	leopph::rendering::CleanupRenderer();
 	leopph::platform::cleanup_platform_support();
 }

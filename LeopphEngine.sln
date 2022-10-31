@@ -6,13 +6,8 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Demo", "Demo\Demo.vcxproj", "{FF07732F-0F49-4B4D-9444-0B6C503AE511}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Editor", "Engine\projects\Editor\Editor.vcxproj", "{C25EFA86-F3B2-452C-9A0C-1BD4DA533296}"
-	ProjectSection(ProjectDependencies) = postProject
-		{03803A6B-9F79-4245-936D-059A695AA449} = {03803A6B-9F79-4245-936D-059A695AA449}
-	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Runtime", "Engine\projects\Runtime\Runtime.vcxproj", "{03803A6B-9F79-4245-936D-059A695AA449}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Common", "Engine\projects\Common\Common.vcxproj", "{73B150F6-E1E9-4FA7-9E8D-761DB95DC7BC}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Test", "Engine\projects\Test\Test.vcxproj", "{CC705A67-8B05-45AF-A560-9B9FE842A7E9}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -45,10 +40,6 @@ Global
 		{03803A6B-9F79-4245-936D-059A695AA449}.Debug|x64.Build.0 = Debug|x64
 		{03803A6B-9F79-4245-936D-059A695AA449}.Release|x64.ActiveCfg = Release|x64
 		{03803A6B-9F79-4245-936D-059A695AA449}.Release|x64.Build.0 = Release|x64
-		{73B150F6-E1E9-4FA7-9E8D-761DB95DC7BC}.Debug|x64.ActiveCfg = Debug|x64
-		{73B150F6-E1E9-4FA7-9E8D-761DB95DC7BC}.Debug|x64.Build.0 = Debug|x64
-		{73B150F6-E1E9-4FA7-9E8D-761DB95DC7BC}.Release|x64.ActiveCfg = Release|x64
-		{73B150F6-E1E9-4FA7-9E8D-761DB95DC7BC}.Release|x64.Build.0 = Release|x64
 		{CC705A67-8B05-45AF-A560-9B9FE842A7E9}.Debug|x64.ActiveCfg = Debug|x64
 		{CC705A67-8B05-45AF-A560-9B9FE842A7E9}.Debug|x64.Build.0 = Debug|x64
 		{CC705A67-8B05-45AF-A560-9B9FE842A7E9}.Release|x64.ActiveCfg = Release|x64

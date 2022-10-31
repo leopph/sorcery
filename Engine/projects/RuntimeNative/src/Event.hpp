@@ -45,7 +45,7 @@ namespace leopph
 			}
 
 
-			bool equals(void* const explicitThis, void* const handler) const override
+			bool equals([[maybe_unused]] void* const explicitThis, void* const handler) const override
 			{
 				return reinterpret_cast<void*>(mHandler) == handler;
 			}
