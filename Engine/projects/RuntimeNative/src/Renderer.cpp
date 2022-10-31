@@ -554,7 +554,7 @@ namespace leopph::rendering
 		if (mainCam->GetType() == Camera::Type::Perspective)
 		{
 			auto const fovHorizRad = DirectX::XMConvertToRadians(mainCam->GetPerspectiveFov());
-			auto const fovVertRad = 2.0f * std::atanf(std::tanf(fovHorizRad / 2.0f) * gRenderAspect);
+			auto const fovVertRad = 2.0f * std::atanf(std::tanf(fovHorizRad / 2.0f) / gRenderAspect);
 			projMat = DirectX::XMMatrixPerspectiveFovLH(fovVertRad, gRenderAspect, mainCam->GetNearClipPlane(), mainCam->GetFarClipPlane());
 		}
 		else
