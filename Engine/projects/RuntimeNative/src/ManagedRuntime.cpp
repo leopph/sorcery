@@ -133,12 +133,12 @@ namespace leopph
 		mono_add_internal_call("leopph.Transform::set_Parent", managedbindings::SetTransformParent);
 		mono_add_internal_call("leopph.Transform::get_ModelMatrix", managedbindings::GetTransformModelMatrix);
 		mono_add_internal_call("leopph.Transform::get_NormalMatrix", managedbindings::GetTransformNormalMatrix);
-		mono_add_internal_call("leopph.Transform::Translate(Vector3, Space)", managedbindings::TranslateTransformVector);
-		mono_add_internal_call("leopph.Transform::Translate(float, float, float, Space)", managedbindings::TranslateTransform);
-		mono_add_internal_call("leopph.Transform::Rotate(Quaternion, Space)", managedbindings::RotateTransform);
-		mono_add_internal_call("leopph.Transform::Rotate(Vector3, float, Space)", managedbindings::RotateTransformAngleAxis);
-		mono_add_internal_call("leopph.Transform::Rescale(Vector3, Space)", managedbindings::RescaleTransformVector);
-		mono_add_internal_call("leopph.Transform::Rescale(float, float, float, Space)", managedbindings::RescaleTransform);
+		mono_add_internal_call("leopph.Transform::Translate(leopph.Vector3,leopph.Space)", managedbindings::TranslateTransformVector);
+		mono_add_internal_call("leopph.Transform::Translate(single,single,single,leopph.Space)", managedbindings::TranslateTransform);
+		mono_add_internal_call("leopph.Transform::Rotate(leopph.Quaternion,leopph.Space)", managedbindings::RotateTransform);
+		mono_add_internal_call("leopph.Transform::Rotate(leopph.Vector3,single,leopph.Space)", managedbindings::RotateTransformAngleAxis);
+		mono_add_internal_call("leopph.Transform::Rescale(leopph.Vector3,leopph.Space)", managedbindings::RescaleTransformVector);
+		mono_add_internal_call("leopph.Transform::Rescale(single,single,single,leopph.Space)", managedbindings::RescaleTransform);
 
 		char* exePath;
 		_get_pgmptr(&exePath);

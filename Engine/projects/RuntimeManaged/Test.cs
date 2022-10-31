@@ -150,10 +150,10 @@ public class Test
         var cam = new Entity();
 		cam.Name = "Camera";
         cam.CreateComponent<Camera>();
-        //cam.CreateComponent<MovementController>();
-        //cam.CreateComponent<OrientationController>();
+        cam.CreateComponent<MovementController>();
+        cam.CreateComponent<OrientationController>();
 
-        //var util = new Entity();
-        //util.CreateComponent<AppController>();
+        var util = new Entity();
+        util.CreateComponent<AppController>();
     }
 }

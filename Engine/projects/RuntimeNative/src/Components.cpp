@@ -58,7 +58,9 @@ namespace leopph
 
 			if (mono_class_is_subclass_of(managedClass, mono_class_from_name(GetManagedImage(), "leopph", "Behavior"), false))
 			{
-				return nullptr;
+				auto const behavior = new Behavior{ entity, managedClass };
+				entity->components.emplace_back(behavior);
+				return behavior->GetManagedObject();
 			}
 
 			if (!std::strcmp(mono_class_get_namespace(managedClass), "leopph") && !std::strcmp(mono_class_get_name(managedClass), "Transform"))
