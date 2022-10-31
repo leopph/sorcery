@@ -12,6 +12,8 @@
 #include <optional>
 #include <concepts>
 
+using MonoString = struct _MonoString;
+
 
 namespace leopph
 {
@@ -69,5 +71,7 @@ namespace leopph
 	{
 		void CreateNativeEntity(MonoObject* managedEntity);
 		MonoObject* GetEntityTransform(MonoObject* managedEntity);
+		MonoString* GetEntityName(MonoObject* managedEntity);
+		void SetEntityName(MonoObject* managedEntity, MonoString* managedName);
 	}
 }

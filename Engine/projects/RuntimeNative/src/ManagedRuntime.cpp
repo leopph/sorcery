@@ -106,6 +106,8 @@ namespace leopph
 		mono_add_internal_call("leopph.Window::InternalSetShouldClose", platform::set_should_window_close);
 
 		mono_add_internal_call("leopph.Entity::NewNativeEntity", managedbindings::CreateNativeEntity);
+		mono_add_internal_call("leopph.Entity::get_Name", managedbindings::GetEntityName);
+		mono_add_internal_call("leopph.Entity::set_Name", managedbindings::SetEntityName);
 		mono_add_internal_call("leopph.Entity::get_Transform", managedbindings::GetEntityTransform);
 		mono_add_internal_call("leopph.Entity::InternalCreateComponent", managedbindings::CreateComponent);
 

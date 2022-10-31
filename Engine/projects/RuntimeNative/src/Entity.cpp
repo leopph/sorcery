@@ -6,6 +6,7 @@
 
 #include <mono/metadata/class.h>
 #include <mono/metadata/reflection.h>
+#include <mono/metadata/object.h>
 
 
 namespace leopph
@@ -84,6 +85,18 @@ namespace leopph
 		{
 			auto const nativeEntity = ManagedAccessObject::GetNativePtrFromManagedObjectAs<Entity*>(managedEntity);
 			return nativeEntity->transform->GetManagedObject();
+		}
+
+
+		MonoString* GetEntityName(MonoObject* managedEntity)
+		{
+			return mono_string_new_wrapper(ManagedAccessObject::GetNativePtrFromManagedObjectAs<Entity*>(managedEntity)->name.c_str());
+		}
+
+
+		void SetEntityName(MonoObject* managedEntity, MonoString* managedName)
+		{
+			ManagedAccessObject::GetNativePtrFromManagedObjectAs<Entity*>(managedEntity)->name = mono_string_to_utf8(managedName);
 		}
 	}
 }

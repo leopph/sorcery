@@ -15,6 +15,15 @@ namespace leopph
         }
 
 
+		public extern string Name
+		{
+			[MethodImpl(MethodImplOptions.InternalCall)]
+			get;
+			[MethodImpl(MethodImplOptions.InternalCall)]
+			set;
+		}
+
+
 		public extern Transform Transform
 		{
 			[MethodImpl(MethodImplOptions.InternalCall)]
