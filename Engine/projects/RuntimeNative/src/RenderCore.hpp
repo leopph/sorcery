@@ -26,7 +26,7 @@ namespace leopph
 		Microsoft::WRL::ComPtr<ID3D11RenderTargetView> mBackBufRtv;
 		Microsoft::WRL::ComPtr<ID3D11VertexShader> mCubeVertShader;
 		Microsoft::WRL::ComPtr<ID3D11PixelShader> mCubePixShader;
-		Extent2D mRenderRes;
+		Extent2D<u32> mRenderRes;
 		f32 mRenderAspectRatio;
 		Microsoft::WRL::ComPtr<ID3D11Buffer> mInstanceBuffer;
 		UINT mInstanceBufferElementCapacity;
@@ -44,7 +44,7 @@ namespace leopph
 		UINT const static sPresentFlags;
 		static RenderCore* sLastInstance;
 
-		static void on_window_resize(RenderCore* self, Extent2D size);
+		static void on_window_resize(RenderCore* self, Extent2D<u32> size);
 
 		RenderCore(Microsoft::WRL::ComPtr<ID3D11Device> device,
 				   Microsoft::WRL::ComPtr<ID3D11DeviceContext> context,
@@ -52,7 +52,7 @@ namespace leopph
 				   Microsoft::WRL::ComPtr<ID3D11RenderTargetView> backBufRtv,
 				   Microsoft::WRL::ComPtr<ID3D11VertexShader> cubeVertShader,
 				   Microsoft::WRL::ComPtr<ID3D11PixelShader> cubePixShader,
-				   Extent2D renderRes,
+				   Extent2D<u32> renderRes,
 				   f32 renderAspectRatio,
 				   Microsoft::WRL::ComPtr<ID3D11Buffer> instanceBuffer,
 				   UINT instanceBufferElementCapacity,

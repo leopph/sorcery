@@ -1,14 +1,16 @@
 #pragma once
 
 #include "Core.hpp"
+#include "Math.hpp"
 
 
 namespace leopph
 {
+	template<typename T>
 	struct Extent2D
 	{
-		u32 width;
-		u32 height;
+		T width;
+		T height;
 	};
 
 
@@ -19,22 +21,30 @@ namespace leopph
 		T y;
 	};
 
-	using Point2DI32 = Point2D<i32>;
-	using Point2DI64 = Point2D<i64>;
-
 
 	struct Viewport
 	{
 		Point2D<u32> position;
-		Extent2D extent;
+		Extent2D<u32> extent;
 	};
 
 
 	struct NormalizedViewport
 	{
-		f32 posX;
-		f32 posY;
-		f32 extentX;
-		f32 extentY;
+		Point2D<f32> position;
+		Extent2D<f32> extent;
+	};
+
+
+	struct Frustum
+	{
+		Vector3 rightTopNear;
+		Vector3 leftTopNear;
+		Vector3 leftBottomNear;
+		Vector3 rightBottomNear;
+		Vector3 rightTopFar;
+		Vector3 leftTopFar;
+		Vector3 leftBottomFar;
+		Vector3 rightBottomFar;
 	};
 }

@@ -25,13 +25,13 @@ namespace leopph::platform
 		DWORD gWndStyle{ WND_BORDLERLESS_STYLE };
 		bool gWndMinimizeOnBorderlessFocusLoss{ false };
 		bool gWndBorderless{ true };
-		Extent2D gWndWindowedClientAreaSize{ .width = 1280, .height = 720 };
-		Event<Extent2D> gWndOnSizeEvent;
+		Extent2D<u32> gWndWindowedClientAreaSize{ .width = 1280, .height = 720 };
+		Event<Extent2D<u32>> gWndOnSizeEvent;
 		Event<> gWndOnFocusGainEvent;
 		Event<> gWndOnFocusLossEvent;
 		Key gKeyboardState[256]{};
-		Point2DI32 gMousePos{ 0, 0 };
-		Point2DI32 gMouseDelta{ 0, 0 };
+		Point2D<i32> gMousePos{ 0, 0 };
+		Point2D<i32> gMouseDelta{ 0, 0 };
 		bool gConfineCursor{ false };
 		bool gHideCursor{ false };
 		bool gInFocus{ true };
@@ -39,7 +39,7 @@ namespace leopph::platform
 	}
 
 
-	GuardedEventReference<Extent2D> OnWindowSize{ gWndOnSizeEvent };
+	GuardedEventReference<Extent2D<u32>> OnWindowSize{ gWndOnSizeEvent };
 	GuardedEventReference<> OnWindowFocusGain{ gWndOnFocusGainEvent };
 	GuardedEventReference<> OnWindowFocusLoss{ gWndOnFocusLossEvent };
 
@@ -277,7 +277,7 @@ namespace leopph::platform
 	}
 
 
-	Extent2D get_window_current_client_area_size()
+	Extent2D<u32> get_window_current_client_area_size()
 	{
 		RECT rect;
 		GetClientRect(gHwnd, &rect);
@@ -285,13 +285,13 @@ namespace leopph::platform
 	}
 
 
-	Extent2D get_window_windowed_client_area_size()
+	Extent2D<u32> get_window_windowed_client_area_size()
 	{
 		return gWndWindowedClientAreaSize;
 	}
 
 
-	void set_window_windowed_client_area_size(Extent2D const size)
+	void set_window_windowed_client_area_size(Extent2D<u32> const size)
 	{
 		gWndWindowedClientAreaSize = size;
 
@@ -404,13 +404,13 @@ namespace leopph::platform
 		}
 
 
-		Point2DI32 get_mouse_pos()
+		Point2D<i32> get_mouse_pos()
 		{
 			return gMousePos;
 		}
 
 
-		Point2DI32 get_mouse_delta()
+		Point2D<i32> get_mouse_delta()
 		{
 			return gMouseDelta;
 		}

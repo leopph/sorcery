@@ -15,6 +15,7 @@
 #include <format>
 #include <optional>
 #include <fstream>
+#include <limits>
 
 using leopph::Vector3;
 using leopph::Quaternion;
@@ -108,7 +109,7 @@ int main()
 		auto const menuBarHeight = ImGui::GetItemRectSize().y;
 
 		ImGui::SetNextWindowBgAlpha(1);
-		ImGui::SetNextWindowPos(ImVec2{ 0,  menuBarHeight});
+		ImGui::SetNextWindowPos(ImVec2{ 0,  menuBarHeight });
 
 		static std::optional<std::size_t> selectedEntityIndex;
 
@@ -132,8 +133,7 @@ int main()
 		}
 		ImGui::End();
 
-		ImGui::SetNextWindowPos({ static_cast<f32>(leopph::platform::get_window_current_client_area_size().width), menuBarHeight }, 0, ImVec2{1, 0});
-		//ImGui::SetNextWindowSize({ 400, 500 }, ImGuiCond_Once);
+		ImGui::SetNextWindowPos({ static_cast<f32>(leopph::platform::get_window_current_client_area_size().width), menuBarHeight }, 0, ImVec2{ 1, 0 });
 
 		if (ImGui::Begin("Entity Properties", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize))
 		{
@@ -179,6 +179,42 @@ int main()
 				{
 					if (ImGui::TreeNodeEx("Camera", ImGuiTreeNodeFlags_DefaultOpen))
 					{
+						char const* const camTypeNames[]{ "Orthographic", "Perspective" };
+						int currentType = camera->GetType() == leopph::Camera::Type::Orthographic ? 0 : 1;
+						if (ImGui::Combo("Type", &currentType, camTypeNames, 2))
+						{
+							camera->SetType(currentType == 0 ? leopph::Camera::Type::Orthographic : leopph::Camera::Type::Perspective);
+						}
+
+						if (camera->GetType() == leopph::Camera::Type::Perspective)
+						{
+							f32 horizFovDeg{ camera->GetPerspectiveFov() };
+							if (ImGui::DragFloat("Horizontal FOV", &horizFovDeg, 1.f, 1.f, 180.f, "%.2f", ImGuiSliderFlags_AlwaysClamp))
+							{
+								camera->SetPerspectiveFov(horizFovDeg);
+							}
+						}
+						else
+						{
+							f32 horizSize{ camera->GetOrthographicSize() };
+							if (ImGui::DragFloat("Horizontal Size", &horizSize, 1.f, 0.1f, std::numeric_limits<f32>::max(), "%.2f", ImGuiSliderFlags_AlwaysClamp))
+							{
+								camera->SetOrthoGraphicSize(horizSize);
+							}
+						}
+
+						f32 nearClip{ camera->GetNearClipPlane() };
+						if (ImGui::DragFloat("Near Clip Plane", &nearClip, 0.2f, 0.01f, std::numeric_limits<f32>::max(), "%.2f", ImGuiSliderFlags_AlwaysClamp))
+						{
+							camera->SetNearClipPlane(nearClip);
+						}
+
+						f32 farClip{ camera->GetFarClipPlane() };
+						if (ImGui::DragFloat("Far Clip Plane", &farClip, 0.2f, nearClip + 0.1f, std::numeric_limits<f32>::max(), "%.2f", ImGuiSliderFlags_AlwaysClamp))
+						{
+							camera->SetFarClipPlane(farClip);
+						}
+
 						ImGui::TreePop();
 					}
 				}
@@ -205,7 +241,7 @@ int main()
 
 		leopph::measure_time();
 	}
-	
+
 	leopph::gEntities.clear();
 
 	ImGui_ImplDX11_Shutdown();

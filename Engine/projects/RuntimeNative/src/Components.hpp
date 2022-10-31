@@ -2,6 +2,7 @@
 
 #include "ManagedAccessObject.hpp"
 #include "Math.hpp"
+#include "Util.hpp"
 
 #include <span>
 #include <vector>
@@ -166,14 +167,61 @@ namespace leopph
 
 	class Camera : public Component
 	{
+	public:
+		enum class Type : u8
+		{
+			Perspective = 0, Orthographic = 1
+		};
+
+		enum class Side : u8
+		{
+			Vertical = 0, Horizontal = 1
+		};
+
 	private:
-		static Camera* sInstance;
+		static std::vector<Camera*> sAllInstances;
+
+		f32 mNear{ 0.1f };
+		f32 mFar{ 100.f };
+		NormalizedViewport mViewport{ 0, 0, 1, 1 };
+		Extent2D<u32> mWindowExtent;
+		f32 mAspect;
+		Type mType{ Type::Perspective };
+		f32 mOrthoSizeHoriz{ 10 };
+		f32 mPerspFovHorizDeg{ 90 };
+
+
+		[[nodiscard]] f32 ConvertPerspectiveFov(f32 fov, bool vert2Horiz) const;
 
 	public:
 		Camera(Entity* entity);
 		~Camera() override;
 
-		[[nodiscard]] static Camera* get_instance();
+		LEOPPHAPI static [[nodiscard]] std::span<Camera* const> GetAllInstances();
+
+		LEOPPHAPI [[nodiscard]] f32 GetNearClipPlane() const;
+		LEOPPHAPI void SetNearClipPlane(f32 nearPlane);
+
+		LEOPPHAPI [[nodiscard]] f32 GetFarClipPlane() const;
+		LEOPPHAPI void SetFarClipPlane(f32 farPlane);
+
+		// Viewport extents are normalized between 0 and 1.
+		LEOPPHAPI [[nodiscard]] NormalizedViewport const& GetViewport() const;
+		LEOPPHAPI void SetViewport(NormalizedViewport const& viewport);
+
+		LEOPPHAPI [[nodiscard]] Extent2D<u32> GetWindowExtents() const;
+		LEOPPHAPI void SetWindowExtents(Extent2D<u32> const& extent);
+
+		LEOPPHAPI [[nodiscard]] f32 GetAspectRatio() const;
+
+		LEOPPHAPI [[nodiscard]] f32 GetOrthographicSize(Side side = Side::Horizontal) const;
+		LEOPPHAPI void SetOrthoGraphicSize(f32 size, Side side = Side::Horizontal);
+
+		LEOPPHAPI [[nodiscard]] f32 GetPerspectiveFov(Side side = Side::Horizontal) const;
+		LEOPPHAPI void SetPerspectiveFov(f32 degrees, Side side = Side::Horizontal);
+
+		LEOPPHAPI [[nodiscard]] Type GetType() const;
+		LEOPPHAPI void SetType(Type type);
 	};
 
 

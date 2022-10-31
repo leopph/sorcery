@@ -13,7 +13,7 @@
 
 namespace leopph::platform
 {
-	LEOPPHAPI extern GuardedEventReference<Extent2D> OnWindowSize;
+	LEOPPHAPI extern GuardedEventReference<Extent2D<u32>> OnWindowSize;
 	LEOPPHAPI extern GuardedEventReference<> OnWindowFocusGain;
 	LEOPPHAPI extern GuardedEventReference<> OnWindowFocusLoss;
 
@@ -23,9 +23,9 @@ namespace leopph::platform
 
 	LEOPPHAPI [[nodiscard]] HWND get_hwnd();
 
-	LEOPPHAPI [[nodiscard]] Extent2D get_window_current_client_area_size();
-	LEOPPHAPI [[nodiscard]] Extent2D get_window_windowed_client_area_size();
-	LEOPPHAPI void set_window_windowed_client_area_size(Extent2D size);
+	LEOPPHAPI [[nodiscard]] Extent2D<u32> get_window_current_client_area_size();
+	LEOPPHAPI [[nodiscard]] Extent2D<u32> get_window_windowed_client_area_size();
+	LEOPPHAPI void set_window_windowed_client_area_size(Extent2D<u32> size);
 
 	LEOPPHAPI [[nodiscard]] bool is_window_borderless();
 	LEOPPHAPI void set_window_borderless(bool borderless);
@@ -49,7 +49,7 @@ namespace leopph::platform
 		bool get_key(u8 key);
 		bool get_key_down(u8 key);
 		bool get_key_up(u8 key);
-		Point2DI32 get_mouse_pos();
-		Point2DI32 get_mouse_delta();
+		Point2D<i32> get_mouse_pos();
+		Point2D<i32> get_mouse_delta();
 	}
 }

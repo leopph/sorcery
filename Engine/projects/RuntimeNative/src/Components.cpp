@@ -384,25 +384,135 @@ namespace leopph
 	}
 
 
-	Camera* Camera::sInstance{ nullptr };
+	std::vector<Camera*> Camera::sAllInstances;
+
+
+	f32 Camera::ConvertPerspectiveFov(f32 const fov, bool const vert2Horiz) const
+	{
+		if (vert2Horiz)
+		{
+			return to_degrees(2.0f * std::atan(std::tan(to_radians(fov) / 2.0f) * mAspect));
+		}
+
+		return to_degrees(2.0f * std::atan(std::tan(to_radians(fov) / 2.0f) / mAspect));
+	}
 
 
 	Camera::Camera(Entity* const entity) :
 		Component{ entity }
 	{
-		sInstance = this;
+		sAllInstances.emplace_back(this);
 	}
 
 
 	Camera::~Camera()
 	{
-		sInstance = nullptr;
+		std::erase(sAllInstances, this);
 	}
 
 
-	Camera* Camera::get_instance()
+	std::span<Camera* const> Camera::GetAllInstances()
 	{
-		return sInstance;
+		return sAllInstances;
+	}
+
+	f32 Camera::GetNearClipPlane() const
+	{
+		return mNear;
+	}
+
+	void Camera::SetNearClipPlane(f32 const nearPlane)
+	{
+		mNear = nearPlane;
+	}
+
+	f32 Camera::GetFarClipPlane() const
+	{
+		return mFar;
+	}
+
+	void Camera::SetFarClipPlane(f32 const farPlane)
+	{
+		mFar = farPlane;
+	}
+
+	NormalizedViewport const& Camera::GetViewport() const
+	{
+		return mViewport;
+	}
+
+	Extent2D<u32> Camera::GetWindowExtents() const
+	{
+		return mWindowExtent;
+	}
+
+	f32 Camera::GetAspectRatio() const
+	{
+		return mAspect;
+	}
+
+	f32 Camera::GetOrthographicSize(Side side) const
+	{
+		if (side == Side::Horizontal)
+		{
+			return mOrthoSizeHoriz;
+		}
+
+		if (side == Side::Vertical)
+		{
+			return mOrthoSizeHoriz / mAspect;
+		}
+
+		return -1;
+	}
+
+	void Camera::SetOrthoGraphicSize(f32 size, Side side)
+	{
+		if (side == Side::Horizontal)
+		{
+			mOrthoSizeHoriz = size;
+		}
+		else if (side == Side::Vertical)
+		{
+			mOrthoSizeHoriz = size * mAspect;
+		}
+	}
+
+	f32 Camera::GetPerspectiveFov(Side const side) const
+	{
+		if (side == Side::Horizontal)
+		{
+			return mPerspFovHorizDeg;
+		}
+
+		if (side == Side::Vertical)
+		{
+			return ConvertPerspectiveFov(mPerspFovHorizDeg, false);
+		}
+
+		return -1;
+	}
+
+	void Camera::SetPerspectiveFov(f32 const degrees, Side const side)
+	{
+		if (side == Side::Horizontal)
+		{
+			mPerspFovHorizDeg = degrees;
+		}
+		else if (side == Side::Vertical)
+		{
+			mPerspFovHorizDeg = ConvertPerspectiveFov(degrees, true);
+		}
+	}
+
+	Camera::Type Camera::GetType() const
+	{
+		return mType;
+	}
+
+	void Camera::SetType(Type const type)
+	{
+		mType = type;
 	}
 
 

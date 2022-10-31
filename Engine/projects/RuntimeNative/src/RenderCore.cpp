@@ -469,7 +469,7 @@ namespace leopph
 						   Microsoft::WRL::ComPtr<ID3D11RenderTargetView> backBufRtv,
 						   Microsoft::WRL::ComPtr<ID3D11VertexShader> cubeVertShader,
 						   Microsoft::WRL::ComPtr<ID3D11PixelShader> cubePixShader,
-						   Extent2D const renderRes,
+						   Extent2D<u32> const renderRes,
 						   f32 const renderAspectRatio,
 						   Microsoft::WRL::ComPtr<ID3D11Buffer> instanceBuffer,
 						   UINT const instanceBufferElementCapacity,
@@ -507,17 +507,30 @@ namespace leopph
 		mContext->ClearRenderTargetView(mBackBufRtv.Get(), clearColor);
 		mContext->OMSetRenderTargets(1, mBackBufRtv.GetAddressOf(), nullptr);
 
-		Camera* mainCam = Camera::get_instance();
-
-		if (!mainCam)
+		if (Camera::GetAllInstances().empty())
 		{
 			return true;
 		}
 
+
+		Camera* mainCam = Camera::GetAllInstances()[0];
+
 		DirectX::XMFLOAT3 const camPos{ mainCam->GetTransform().GetWorldPosition().get_data() };
 		DirectX::XMFLOAT3 const camForward{ mainCam->GetTransform().GetForwardAxis().get_data()};
 		DirectX::XMMATRIX viewMat = DirectX::XMMatrixLookToLH(DirectX::XMLoadFloat3(&camPos), DirectX::XMLoadFloat3(&camForward), { 0, 1, 0 });
-		DirectX::XMMATRIX projMat = DirectX::XMMatrixPerspectiveFovLH(DirectX::XMConvertToRadians(90.0f / mRenderAspectRatio), mRenderAspectRatio, 0.3f, 100.f);
+
+		DirectX::XMMATRIX projMat;
+
+		if (mainCam->GetType() == Camera::Type::Perspective)
+		{
+			auto const fovHorizRad = DirectX::XMConvertToRadians(mainCam->GetPerspectiveFov());
+			auto const fovVertRad = 2.0f * std::atanf(std::tanf(fovHorizRad / 2.0f) * mRenderAspectRatio);
+			projMat = DirectX::XMMatrixPerspectiveFovLH(fovVertRad, mRenderAspectRatio, mainCam->GetNearClipPlane(), mainCam->GetFarClipPlane());
+		}
+		else
+		{
+			projMat = DirectX::XMMatrixOrthographicLH(mainCam->GetOrthographicSize(), mainCam->GetOrthographicSize() / mRenderAspectRatio, mainCam->GetNearClipPlane(), mainCam->GetFarClipPlane());
+		}
 
 		D3D11_MAPPED_SUBRESOURCE mappedCbuffer;
 		mContext->Map(mCbuffer.Get(),
@@ -594,7 +607,7 @@ namespace leopph
 	}
 
 
-	void RenderCore::on_window_resize(RenderCore* const self, Extent2D const size)
+	void RenderCore::on_window_resize(RenderCore* const self, Extent2D<u32> const size)
 	{
 		if (size.width == 0 || size.height == 0)
 		{
