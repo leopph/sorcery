@@ -102,11 +102,6 @@ int main()
 			}
 		}
 
-		if (!leopph::rendering::Render())
-		{
-			return 5;
-		}
-
 		ImGui_ImplDX11_NewFrame();
 		ImGui_ImplWin32_NewFrame();
 		ImGui::NewFrame();
@@ -258,9 +253,30 @@ int main()
 		}
 		ImGui::End();
 
-		ImGui::Render();
-		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+		if (ImGui::Begin("Scene", nullptr, ImGuiWindowFlags_NoCollapse))
+		{
+			auto const gameRes = leopph::rendering::GetGameResolution();
+			auto const sceneWindowSize = ImGui::GetContentRegionAvail();
+			leopph::Extent2D<leopph::u32> const sceneViewportSize{ static_cast<leopph::u32>(sceneWindowSize.x), static_cast<leopph::u32>(sceneWindowSize.y) };
 
+			if (sceneViewportSize.width != gameRes.width || sceneViewportSize.height != gameRes.height)
+			{
+				leopph::rendering::SetGameResolution(sceneViewportSize);
+			}
+
+			if (!leopph::rendering::DrawGame())
+			{
+				return 5;
+			}
+			
+			ImGui::Image(reinterpret_cast<void*>(leopph::rendering::GetGameFrame()), { static_cast<f32>(gameRes.width), static_cast<f32>(gameRes.height) });
+		}
+		ImGui::End();
+
+		ImGui::Render();
+
+		leopph::rendering::BindAndClearSwapChain();
+		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 		leopph::rendering::Present();
 
 		leopph::measure_time();

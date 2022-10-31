@@ -15,6 +15,8 @@
 #include <dxgi1_2.h>
 #include <dxgi1_5.h>
 
+#include <wrl/client.h>
+
 #include <cassert>
 #include <functional>
 #include <utility>
@@ -26,14 +28,17 @@ namespace leopph::rendering
 {
 	struct Resources
 	{
-		Microsoft::WRL::ComPtr<ID3D11Device> device;
-		Microsoft::WRL::ComPtr<ID3D11DeviceContext> context;
-		Microsoft::WRL::ComPtr<IDXGISwapChain1> swapChain;
-		Microsoft::WRL::ComPtr<ID3D11RenderTargetView> backBufRtv;
-		Microsoft::WRL::ComPtr<ID3D11VertexShader> cubeVertShader;
-		Microsoft::WRL::ComPtr<ID3D11PixelShader> cubePixShader;
-		Microsoft::WRL::ComPtr<ID3D11Buffer> instanceBuffer;
-		Microsoft::WRL::ComPtr<ID3D11Buffer> cbuffer;
+		ComPtr<ID3D11Device> device;
+		ComPtr<ID3D11DeviceContext> context;
+		ComPtr<IDXGISwapChain1> swapChain;
+		ComPtr<ID3D11RenderTargetView> swapChainRtv;
+		ComPtr<ID3D11Texture2D> renderTexture;
+		ComPtr<ID3D11RenderTargetView> renderTextureRtv;
+		ComPtr<ID3D11ShaderResourceView> renderTextureSrv;
+		ComPtr<ID3D11VertexShader> cubeVertShader;
+		ComPtr<ID3D11PixelShader> cubePixShader;
+		ComPtr<ID3D11Buffer> instanceBuffer;
+		ComPtr<ID3D11Buffer> cbuffer;
 	};
 
 
@@ -46,13 +51,64 @@ namespace leopph::rendering
 		Resources* gResources{ nullptr };
 		UINT gPresentFlags{ 0 };
 		UINT gSwapChainFlags{ 0 };
-		Extent2D<u32> gRenderRes;
-		f32 gRenderAspect;
+		Extent2D<u32> gGameRes;
+		f32 gGameAspect;
 		UINT gInstanceBufferElementCapacity;
 		UINT gIndexCount;
 		u32 gSyncInterval{ 0 };
-		NormalizedViewport gNormViewport{ 0, 0, 1, 1 };
 		std::vector<CubeModel const*> gCubeModels;
+
+
+		void RecreateRenderTextureAndViews(u32 const width, u32 const height)
+		{
+			D3D11_TEXTURE2D_DESC const texDesc
+			{
+				.Width = width,
+				.Height = height,
+				.MipLevels = 1,
+				.ArraySize = 1,
+				.Format = DXGI_FORMAT_R8G8B8A8_UNORM,
+				.SampleDesc
+				{
+					.Count = 1,
+					.Quality = 0
+				},
+				.Usage = D3D11_USAGE_DEFAULT,
+				.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE,
+				.CPUAccessFlags = 0,
+				.MiscFlags = 0
+			};
+
+			auto hresult = gResources->device->CreateTexture2D(&texDesc, nullptr, gResources->renderTexture.ReleaseAndGetAddressOf());
+			assert(SUCCEEDED(hresult));
+
+			D3D11_RENDER_TARGET_VIEW_DESC const rtvDesc
+			{
+				.Format = texDesc.Format,
+				.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D,
+				.Texture2D
+				{
+					.MipSlice = 0
+				}
+			};
+
+			hresult = gResources->device->CreateRenderTargetView(gResources->renderTexture.Get(), &rtvDesc, gResources->renderTextureRtv.ReleaseAndGetAddressOf());
+			assert(SUCCEEDED(hresult));
+
+			D3D11_SHADER_RESOURCE_VIEW_DESC const srvDesc
+			{
+				.Format = texDesc.Format,
+				.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D,
+				.Texture2D = 
+				{
+					.MostDetailedMip = 0,
+					.MipLevels = 1
+				}
+			};
+
+			hresult = gResources->device->CreateShaderResourceView(gResources->renderTexture.Get(), &srvDesc, gResources->renderTextureSrv.ReleaseAndGetAddressOf());
+			assert(SUCCEEDED(hresult));
+		}
 
 
 		void on_window_resize(Extent2D<u32> const size)
@@ -62,25 +118,15 @@ namespace leopph::rendering
 				return;
 			}
 
-			gResources->backBufRtv.Reset();
-			gResources->swapChain->ResizeBuffers(0,
-												 0,
-												 0, DXGI_FORMAT_UNKNOWN,
-												 gSwapChainFlags);
+			gResources->swapChainRtv.Reset();
+			gResources->swapChain->ResizeBuffers(0, 0, 0, DXGI_FORMAT_UNKNOWN, gSwapChainFlags);
 
 			ComPtr<ID3D11Texture2D> backBuf;
-			HRESULT hresult = gResources->swapChain->GetBuffer(0,
-															   __uuidof(decltype(backBuf)::InterfaceType),
-															   reinterpret_cast<void**>(backBuf.GetAddressOf()));
+			HRESULT hresult = gResources->swapChain->GetBuffer(0, __uuidof(decltype(backBuf)::InterfaceType), reinterpret_cast<void**>(backBuf.GetAddressOf()));
 			assert(SUCCEEDED(hresult));
 
-			hresult = gResources->device->CreateRenderTargetView(backBuf.Get(),
-																 nullptr,
-																 gResources->backBufRtv.GetAddressOf());
+			hresult = gResources->device->CreateRenderTargetView(backBuf.Get(), nullptr, gResources->swapChainRtv.GetAddressOf());
 			assert(SUCCEEDED(hresult));
-
-			gRenderRes = size;
-			gRenderAspect = static_cast<f32>(size.width) / static_cast<f32>(size.height);
 		}
 	}
 
@@ -171,7 +217,7 @@ namespace leopph::rendering
 
 		if (SUCCEEDED(hresult))
 		{
-			BOOL allowTearing;
+			BOOL allowTearing{};
 			dxgiFactory5->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &allowTearing, sizeof allowTearing);
 
 			if (allowTearing)
@@ -215,6 +261,8 @@ namespace leopph::rendering
 
 		dxgiFactory2->MakeWindowAssociation(platform::get_hwnd(), DXGI_MWA_NO_WINDOW_CHANGES);
 
+		RecreateRenderTextureAndViews(platform::get_window_current_client_area_size().width, platform::get_window_current_client_area_size().height);
+
 		ComPtr<ID3D11Texture2D> backBuf;
 		hresult = gResources->swapChain->GetBuffer(0,
 												   __uuidof(decltype(backBuf)::InterfaceType),
@@ -228,7 +276,7 @@ namespace leopph::rendering
 
 		hresult = gResources->device->CreateRenderTargetView(backBuf.Get(),
 															 nullptr,
-															 gResources->backBufRtv.GetAddressOf());
+															 gResources->swapChainRtv.GetAddressOf());
 
 		if (FAILED(hresult))
 		{
@@ -505,8 +553,8 @@ namespace leopph::rendering
 
 		gResources->context->RSSetState(rasterizerState.Get());
 
-		gRenderRes = platform::get_window_current_client_area_size();
-		gRenderAspect = static_cast<f32>(gRenderRes.width) / static_cast<f32>(gRenderRes.height);
+		gGameRes = platform::get_window_current_client_area_size();
+		gGameAspect = static_cast<f32>(gGameRes.width) / static_cast<f32>(gGameRes.height);
 
 		platform::OnWindowSize.add_handler(&on_window_resize);
 		return true;
@@ -519,14 +567,14 @@ namespace leopph::rendering
 	}
 
 
-	bool Render()
+	bool DrawGame()
 	{
 		D3D11_VIEWPORT const viewPort
 		{
 			.TopLeftX = 0,
 			.TopLeftY = 0,
-			.Width = static_cast<FLOAT>(gRenderRes.width),
-			.Height = static_cast<FLOAT>(gRenderRes.height),
+			.Width = static_cast<FLOAT>(gGameRes.width),
+			.Height = static_cast<FLOAT>(gGameRes.height),
 			.MinDepth = 0,
 			.MaxDepth = 1
 		};
@@ -534,14 +582,13 @@ namespace leopph::rendering
 		gResources->context->RSSetViewports(1, &viewPort);
 
 		FLOAT clearColor[]{ 0.5f, 0, 1, 1 };
-		gResources->context->ClearRenderTargetView(gResources->backBufRtv.Get(), clearColor);
-		gResources->context->OMSetRenderTargets(1, gResources->backBufRtv.GetAddressOf(), nullptr);
+		gResources->context->ClearRenderTargetView(gResources->renderTextureRtv.Get(), clearColor);
+		gResources->context->OMSetRenderTargets(1, gResources->renderTextureRtv.GetAddressOf(), nullptr);
 
 		if (Camera::GetAllInstances().empty())
 		{
 			return true;
 		}
-
 
 		Camera* mainCam = Camera::GetAllInstances()[0];
 
@@ -554,20 +601,16 @@ namespace leopph::rendering
 		if (mainCam->GetType() == Camera::Type::Perspective)
 		{
 			auto const fovHorizRad = DirectX::XMConvertToRadians(mainCam->GetPerspectiveFov());
-			auto const fovVertRad = 2.0f * std::atanf(std::tanf(fovHorizRad / 2.0f) / gRenderAspect);
-			projMat = DirectX::XMMatrixPerspectiveFovLH(fovVertRad, gRenderAspect, mainCam->GetNearClipPlane(), mainCam->GetFarClipPlane());
+			auto const fovVertRad = 2.0f * std::atanf(std::tanf(fovHorizRad / 2.0f) / gGameAspect);
+			projMat = DirectX::XMMatrixPerspectiveFovLH(fovVertRad, gGameAspect, mainCam->GetNearClipPlane(), mainCam->GetFarClipPlane());
 		}
 		else
 		{
-			projMat = DirectX::XMMatrixOrthographicLH(mainCam->GetOrthographicSize(), mainCam->GetOrthographicSize() / gRenderAspect, mainCam->GetNearClipPlane(), mainCam->GetFarClipPlane());
+			projMat = DirectX::XMMatrixOrthographicLH(mainCam->GetOrthographicSize(), mainCam->GetOrthographicSize() / gGameAspect, mainCam->GetNearClipPlane(), mainCam->GetFarClipPlane());
 		}
 
 		D3D11_MAPPED_SUBRESOURCE mappedCbuffer;
-		gResources->context->Map(gResources->cbuffer.Get(),
-								 0,
-								 D3D11_MAP_WRITE_DISCARD,
-								 0,
-								 &mappedCbuffer);
+		gResources->context->Map(gResources->cbuffer.Get(),  0, D3D11_MAP_WRITE_DISCARD, 0, &mappedCbuffer);
 
 		DirectX::XMStoreFloat4x4(static_cast<DirectX::XMFLOAT4X4*>(mappedCbuffer.pData), viewMat * projMat);
 		gResources->context->Unmap(gResources->cbuffer.Get(), 0);
@@ -591,9 +634,7 @@ namespace leopph::rendering
 				.StructureByteStride = 0
 			};
 
-			HRESULT hresult = gResources->device->CreateBuffer(&desc,
-															   nullptr,
-															   gResources->instanceBuffer.ReleaseAndGetAddressOf());
+			auto const hresult = gResources->device->CreateBuffer(&desc, nullptr, gResources->instanceBuffer.ReleaseAndGetAddressOf());
 			if (FAILED(hresult))
 			{
 				MessageBoxW(nullptr, L"Failed to resize cube instance buffer.", L"Error", MB_ICONERROR);
@@ -601,22 +642,11 @@ namespace leopph::rendering
 			}
 
 			UINT constexpr instanceBufferOffset{ 0 };
-
-			gResources->context->IASetVertexBuffers(INSTANCE_BUFFER_SLOT,
-													1,
-													gResources->instanceBuffer.GetAddressOf(),
-													&INSTANCE_BUFFER_ELEMENT_SIZE,
-													&instanceBufferOffset);
+			gResources->context->IASetVertexBuffers(INSTANCE_BUFFER_SLOT, 1, gResources->instanceBuffer.GetAddressOf(), &INSTANCE_BUFFER_ELEMENT_SIZE, &instanceBufferOffset);
 		}
 
-
 		D3D11_MAPPED_SUBRESOURCE mappedInstanceBuffer;
-		gResources->context->Map(gResources->instanceBuffer.Get(),
-								 0,
-								 D3D11_MAP_WRITE_DISCARD,
-								 0,
-								 &mappedInstanceBuffer);
-
+		gResources->context->Map(gResources->instanceBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedInstanceBuffer);
 		DirectX::XMFLOAT4X4* mappedInstanceBufferData{ static_cast<DirectX::XMFLOAT4X4*>(mappedInstanceBuffer.pData) };
 
 		for (int i = 0; i < gCubeModels.size(); i++)
@@ -627,13 +657,36 @@ namespace leopph::rendering
 
 		gResources->context->Unmap(gResources->instanceBuffer.Get(), 0);
 
-		gResources->context->DrawIndexedInstanced(gIndexCount,
-												  static_cast<UINT>(gCubeModels.size()),
-												  0,
-												  0,
-												  0);
-
+		gResources->context->DrawIndexedInstanced(gIndexCount, static_cast<UINT>(gCubeModels.size()), 0, 0, 0);
 		return true;
+	}
+
+
+	Extent2D<u32> GetGameResolution()
+	{
+		return gGameRes;
+	}
+
+
+	void SetGameResolution(Extent2D<u32> resolution)
+	{
+		gGameRes = resolution;
+		gGameAspect = static_cast<f32>(resolution.width) / static_cast<f32>(resolution.height);
+		RecreateRenderTextureAndViews(gGameRes.width, gGameRes.height);
+	}
+
+
+	ID3D11ShaderResourceView* GetGameFrame()
+	{
+		return gResources->renderTextureSrv.Get();
+	}
+
+
+	void BindAndClearSwapChain()
+	{
+		FLOAT clearColor[]{ 0, 0, 0, 1 };
+		gResources->context->ClearRenderTargetView(gResources->swapChainRtv.Get(), clearColor);
+		gResources->context->OMSetRenderTargets(1, gResources->swapChainRtv.GetAddressOf(), nullptr);
 	}
 
 
@@ -676,17 +729,5 @@ namespace leopph::rendering
 	ID3D11DeviceContext* GetImmediateContext()
 	{
 		return gResources->context.Get();
-	}
-
-
-	NormalizedViewport const& GetNormalizedViewport()
-	{
-		return gNormViewport;
-	}
-
-
-	void SetNormalizedViewport(NormalizedViewport const& nvp)
-	{
-		gNormViewport = nvp;
 	}
 }

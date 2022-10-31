@@ -1,27 +1,27 @@
 #pragma once
 
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
-
 #include "Core.hpp"
 #include "Components.hpp"
 #include "Util.hpp"
 
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
 #include <d3d11.h>
-#include <dxgi1_2.h>
 
-#include <wrl/client.h>
-
-#include <memory>
-#include <vector>
 
 namespace leopph::rendering
 {
 	LEOPPHAPI [[nodiscard]] bool InitRenderer();
 	LEOPPHAPI void CleanupRenderer();
+	
+	LEOPPHAPI [[nodiscard]] bool DrawGame();
+	LEOPPHAPI [[nodiscard]] Extent2D<u32> GetGameResolution();
+	LEOPPHAPI void SetGameResolution(Extent2D<u32> resolution);
+	LEOPPHAPI [[nodiscard]] ID3D11ShaderResourceView* GetGameFrame();
+
+	LEOPPHAPI void BindAndClearSwapChain();
 
 	LEOPPHAPI void Present();
-	LEOPPHAPI bool Render();
 
 	[[nodiscard]] u32 GetSyncInterval();
 	void SetSyncInterval(u32 interval);
@@ -31,7 +31,4 @@ namespace leopph::rendering
 
 	LEOPPHAPI [[nodiscard]] ID3D11Device* GetDevice();
 	LEOPPHAPI [[nodiscard]] ID3D11DeviceContext* GetImmediateContext();
-
-	LEOPPHAPI [[nodiscard]] NormalizedViewport const& GetNormalizedViewport();
-	LEOPPHAPI void SetNormalizedViewport(NormalizedViewport const& nvp);
 }
