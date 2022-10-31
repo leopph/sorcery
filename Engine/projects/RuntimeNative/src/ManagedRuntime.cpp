@@ -96,14 +96,14 @@ namespace leopph
 		mono_add_internal_call("leopph.Time::get_FullTime", managedbindings::get_full_time);
 		mono_add_internal_call("leopph.Time::get_FrameTime", managedbindings::get_frame_time);
 
-		mono_add_internal_call("leopph.Window::InternalGetCurrentClientAreaSize", platform::get_window_current_client_area_size);
-		mono_add_internal_call("leopph.Window::InternalGetWindowedClientAreaSize", platform::get_window_windowed_client_area_size);
-		mono_add_internal_call("leopph.Window::InternalSetWindowedClientAreaSize", platform::set_window_windowed_client_area_size);
-		mono_add_internal_call("leopph.Window::InternalIsBorderless", platform::is_window_borderless);
-		mono_add_internal_call("leopph.Window::InternalSetBorderless", platform::set_window_borderless);
-		mono_add_internal_call("leopph.Window::InternalIsMinimizingOnBorderlessFocusLoss", platform::is_window_minimizing_on_borderless_focus_loss);
-		mono_add_internal_call("leopph.Window::InternalSetMinimizeOnBorderlessFocusLoss", platform::set_window_minimize_on_borderless_focus_loss);
-		mono_add_internal_call("leopph.Window::InternalSetShouldClose", platform::set_should_window_close);
+		mono_add_internal_call("leopph.Window::get_CurrentResolution", platform::get_window_current_client_area_size);
+		mono_add_internal_call("leopph.Window::get_WindowedResolution", platform::get_window_windowed_client_area_size);
+		mono_add_internal_call("leopph.Window::set_WindowedResolution", platform::set_window_windowed_client_area_size);
+		mono_add_internal_call("leopph.Window::get_IsBorderless", platform::managedbindings::IsWindowBorderLess);
+		mono_add_internal_call("leopph.Window::set_IsBorderless", platform::managedbindings::SetWindowBorderless);
+		mono_add_internal_call("leopph.Window::get_IsMinimizingOnBorderlessFocusLoss", platform::managedbindings::IsWindowMinimizingOnBorderlessFocusLoss);
+		mono_add_internal_call("leopph.Window::set_IsMinimizeOnBorderlessFocusLoss", platform::managedbindings::SetWindowMinimizeOnBorderlessFocusLoss);
+		mono_add_internal_call("leopph.Window::InternalSetShouldClose", platform::managedbindings::SetWindowShouldClose);
 
 		mono_add_internal_call("leopph.Entity::NewNativeEntity", managedbindings::CreateNativeEntity);
 		mono_add_internal_call("leopph.Entity::get_Name", managedbindings::GetEntityName);

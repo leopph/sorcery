@@ -36,6 +36,7 @@ namespace leopph::platform
 		bool gHideCursor{ false };
 		bool gInFocus{ true };
 		std::function<bool(HWND, UINT, WPARAM, LPARAM)> gEventHook{ nullptr };
+		bool gIgnoreManagedRequests{ false };
 	}
 
 
@@ -411,5 +412,57 @@ namespace leopph::platform
 	Point2D<i32> GetMouseDelta()
 	{
 		return gMouseDelta;
+	}
+
+
+	bool IsIgnoringManagedRequests()
+	{
+		return gIgnoreManagedRequests;
+	}
+
+
+	void SetIgnoreManagedRequests(bool const ignore)
+	{
+		gIgnoreManagedRequests = ignore;
+	}
+
+
+	namespace managedbindings
+	{
+		int IsWindowBorderLess()
+		{
+			return platform::is_window_borderless();
+		}
+
+
+		void SetWindowBorderless(int const borderless)
+		{
+			if (!gIgnoreManagedRequests)
+			{
+				platform::set_window_borderless(borderless);
+			}
+		}
+
+
+		int IsWindowMinimizingOnBorderlessFocusLoss()
+		{
+			return platform::is_window_minimizing_on_borderless_focus_loss();
+		}
+
+
+		void SetWindowMinimizeOnBorderlessFocusLoss(int const minimize)
+		{
+			if (!gIgnoreManagedRequests)
+			{
+				platform::set_window_minimize_on_borderless_focus_loss(minimize);
+			}
+		}
+		void SetWindowShouldClose(int const shouldClose)
+		{
+			if (!gIgnoreManagedRequests)
+			{
+				platform::set_should_window_close(shouldClose);
+			}
+		}
 	}
 }

@@ -74,7 +74,7 @@ public class OrientationController : Behavior
 
 public class AppController : Behavior
 {
-    private Extent2D _originalResolution;
+    private Extent2D<uint> _originalResolution;
 
     private void OnInit()
     {
@@ -97,17 +97,17 @@ public class AppController : Behavior
 
         if (Input.GetKeyDown(Key.One))
         {
-            Window.WindowedResolution = new Extent2D(1280, 720);
+            Window.WindowedResolution = new Extent2D<uint>(1280, 720);
         }
 
         if (Input.GetKeyDown(Key.Two))
         {
-            Window.WindowedResolution = new Extent2D(1600, 900);
+            Window.WindowedResolution = new Extent2D<uint>(1600, 900);
         }
 
         if (Input.GetKeyDown(Key.Three))
         {
-            Window.WindowedResolution = new Extent2D(1920, 1080);
+            Window.WindowedResolution = new Extent2D<uint>(1920, 1080);
         }
 
         if (Input.GetKeyDown(Key.Zero))

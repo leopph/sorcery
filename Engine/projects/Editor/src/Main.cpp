@@ -23,6 +23,11 @@ using leopph::f32;
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
+bool EditorImGuiEventHook(HWND const hwnd, UINT const msg, WPARAM const wparam, LPARAM const lparam)
+{
+	return ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam);
+}
+
 
 int main()
 {
@@ -33,6 +38,7 @@ int main()
 
 	leopph::platform::set_window_borderless(false);
 	leopph::platform::set_window_windowed_client_area_size({ 1280, 720 });
+	leopph::platform::SetIgnoreManagedRequests(true);
 
 	if (!leopph::rendering::InitRenderer())
 	{
@@ -54,10 +60,9 @@ int main()
 	ImGui_ImplWin32_Init(leopph::platform::get_hwnd());
 	ImGui_ImplDX11_Init(leopph::rendering::GetDevice(), leopph::rendering::GetImmediateContext());
 
-	leopph::platform::SetEventHook([](HWND const hwnd, UINT const msg, WPARAM const wparam, LPARAM const lparam)
-	{
-		return ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam);
-	});
+	leopph::platform::SetEventHook(EditorImGuiEventHook);
+
+	bool runGame{ false };
 
 	leopph::init_time();
 
@@ -68,9 +73,28 @@ int main()
 			return 4;
 		}
 
-		//leopph::init_behaviors();
-		//leopph::tick_behaviors();
-		//leopph::tack_behaviors();
+		if (runGame)
+		{
+			leopph::init_behaviors();
+			leopph::tick_behaviors();
+			leopph::tack_behaviors();
+
+			if (leopph::platform::GetKeyDown(leopph::platform::Key::Escape))
+			{
+				runGame = false;
+				leopph::platform::SetEventHook(EditorImGuiEventHook);
+				leopph::platform::confine_cursor(false);
+				leopph::platform::hide_cursor(false);
+			}
+		}
+		else
+		{
+			if (leopph::platform::GetKeyDown(leopph::platform::Key::F5))
+			{
+				runGame = true;
+				leopph::platform::SetEventHook({});
+			}
+		}
 
 		if (!leopph::rendering::Render())
 		{

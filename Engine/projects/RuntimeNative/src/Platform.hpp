@@ -53,6 +53,20 @@ namespace leopph::platform
 	LEOPPHAPI [[nodiscard]] Point2D<i32> GetMousePosition();
 	LEOPPHAPI [[nodiscard]] Point2D<i32> GetMouseDelta();
 
+	LEOPPHAPI [[nodiscard]] bool IsIgnoringManagedRequests();
+	LEOPPHAPI void SetIgnoreManagedRequests(bool ignore);
+
+	namespace managedbindings
+	{
+		int IsWindowBorderLess();
+		void SetWindowBorderless(int borderless);
+
+		int IsWindowMinimizingOnBorderlessFocusLoss();
+		void SetWindowMinimizeOnBorderlessFocusLoss(int minimize);
+
+		void SetWindowShouldClose(int shouldClose);
+	}
+
 
 	enum class Key : u8
 	{
