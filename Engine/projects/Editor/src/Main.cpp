@@ -253,6 +253,9 @@ int main()
 		}
 		ImGui::End();
 
+		ImGui::SetNextWindowSize({ 480, 270 }, ImGuiCond_FirstUseEver);
+		ImGui::SetNextWindowSizeConstraints({ 480, 270 }, ImGui::GetMainViewport()->WorkSize);
+
 		if (ImGui::Begin("Scene", nullptr, ImGuiWindowFlags_NoCollapse))
 		{
 			auto const gameRes = leopph::rendering::GetGameResolution();
