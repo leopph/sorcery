@@ -17,6 +17,7 @@
 #include <fstream>
 #include <limits>
 #include <filesystem>
+#include <algorithm>
 
 using leopph::Vector3;
 using leopph::Quaternion;
@@ -46,6 +47,8 @@ int main()
 		return 2;
 	}
 
+	leopph::rendering::SetGameResolution({ 960, 540 });
+
 	if (!leopph::initialize_managed_runtime())
 	{
 		return 3;
@@ -69,6 +72,7 @@ int main()
 	leopph::platform::SetEventHook(EditorImGuiEventHook);
 
 	bool runGame{ false };
+	bool showDemoWindow{ false };
 
 	leopph::init_time();
 
@@ -106,9 +110,12 @@ int main()
 		ImGui_ImplWin32_NewFrame();
 		ImGui::NewFrame();
 
-		auto const dockspaceId = ImGui::DockSpaceOverViewport();
+		ImGui::DockSpaceOverViewport();
 
-		//ImGui::ShowDemoWindow();
+		if (showDemoWindow)
+		{
+			ImGui::ShowDemoWindow();
+		}
 
 		if (ImGui::BeginMainMenuBar())
 		{
@@ -123,6 +130,26 @@ int main()
 				{
 					std::ofstream out{ "scene.yaml" };
 					Serialize(leopph::gEntities, out);
+				}
+
+				ImGui::EndMenu();
+			}
+
+			if (ImGui::BeginMenu("Debug"))
+			{
+				if (showDemoWindow)
+				{
+					if (ImGui::MenuItem("Hide Demo Window"))
+					{
+						showDemoWindow = false;
+					}
+				}
+				else
+				{
+					if (ImGui::MenuItem("Show Demo Window"))
+					{
+						showDemoWindow = true;
+					}
 				}
 
 				ImGui::EndMenu();
@@ -253,26 +280,50 @@ int main()
 		}
 		ImGui::End();
 
-		ImGui::SetNextWindowSize({ 480, 270 }, ImGuiCond_FirstUseEver);
-		ImGui::SetNextWindowSizeConstraints({ 480, 270 }, ImGui::GetMainViewport()->WorkSize);
+		ImVec2 static constexpr gameViewportMinSize{ 480, 270 };
 
-		if (ImGui::Begin("Scene", nullptr, ImGuiWindowFlags_NoCollapse))
+		ImGui::SetNextWindowSize(gameViewportMinSize, ImGuiCond_FirstUseEver);
+		ImGui::SetNextWindowSizeConstraints(gameViewportMinSize, ImGui::GetMainViewport()->WorkSize);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+
+		if (ImGui::Begin("Game", nullptr, ImGuiWindowFlags_NoCollapse))
 		{
+			ImGui::PopStyleVar();
+
+			leopph::Extent2D<leopph::u32> const resolutions[]{ {960, 540}, {1280, 720}, {1600, 900}, {1920, 1080}, {2560, 1440}, {3840, 2160} };
+			char const* const resolutionLabels[]{ "Auto", "960x540", "1280x720", "1600x900", "1920x1080", "2560x1440", "3840x2160" };
+			static int selectedRes = 0;
+
+			if (ImGui::Combo("Resolution", &selectedRes, resolutionLabels, 7))
+			{
+				if (selectedRes != 0)
+				{
+					leopph::rendering::SetGameResolution(resolutions[selectedRes - 1]);
+				}
+			}
+
 			auto const gameRes = leopph::rendering::GetGameResolution();
-			auto const sceneWindowSize = ImGui::GetContentRegionAvail();
-			leopph::Extent2D<leopph::u32> const sceneViewportSize{ static_cast<leopph::u32>(sceneWindowSize.x), static_cast<leopph::u32>(sceneWindowSize.y) };
+			auto const contentRegionSize = ImGui::GetContentRegionAvail();
+			leopph::Extent2D<leopph::u32> const viewportRes{ static_cast<leopph::u32>(contentRegionSize.x), static_cast<leopph::u32>(contentRegionSize.y) };
+			ImVec2 frameDisplaySize;
 
-			if (sceneViewportSize.width != gameRes.width || sceneViewportSize.height != gameRes.height)
+			if (selectedRes == 0)
 			{
-				leopph::rendering::SetGameResolution(sceneViewportSize);
+				if (viewportRes.width != gameRes.width || viewportRes.height != gameRes.height)
+				{
+					leopph::rendering::SetGameResolution(viewportRes);
+				}
+
+				frameDisplaySize = contentRegionSize;
+			}
+			else
+			{
+				leopph::f32 const scale = std::min(contentRegionSize.x / static_cast<leopph::f32>(gameRes.width), contentRegionSize.y / static_cast<leopph::f32>(gameRes.height));
+				frameDisplaySize = ImVec2(gameRes.width * scale, gameRes.height * scale);
 			}
 
-			if (!leopph::rendering::DrawGame())
-			{
-				return 5;
-			}
-			
-			ImGui::Image(reinterpret_cast<void*>(leopph::rendering::GetGameFrame()), { static_cast<f32>(gameRes.width), static_cast<f32>(gameRes.height) });
+			leopph::rendering::DrawGame();
+			ImGui::Image(reinterpret_cast<void*>(leopph::rendering::GetGameFrame()), frameDisplaySize);
 		}
 		ImGui::End();
 

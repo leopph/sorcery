@@ -18,6 +18,7 @@ namespace leopph::rendering
 	LEOPPHAPI [[nodiscard]] Extent2D<u32> GetGameResolution();
 	LEOPPHAPI void SetGameResolution(Extent2D<u32> resolution);
 	LEOPPHAPI [[nodiscard]] ID3D11ShaderResourceView* GetGameFrame();
+	LEOPPHAPI [[nodiscard]] f32 GetGameAspectRatio();
 
 	LEOPPHAPI void BindAndClearSwapChain();
 

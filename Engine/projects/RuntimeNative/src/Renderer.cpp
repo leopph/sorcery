@@ -682,6 +682,12 @@ namespace leopph::rendering
 	}
 
 
+	f32 GetGameAspectRatio()
+	{
+		return gGameAspect;
+	}
+
+
 	void BindAndClearSwapChain()
 	{
 		FLOAT clearColor[]{ 0, 0, 0, 1 };
