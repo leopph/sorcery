@@ -56,6 +56,9 @@ namespace leopph::platform
 	LEOPPHAPI [[nodiscard]] bool IsIgnoringManagedRequests();
 	LEOPPHAPI void SetIgnoreManagedRequests(bool ignore);
 
+	LEOPPHAPI [[nodiscard]] bool GetEventBlock();
+	LEOPPHAPI void SetEventBlock(bool block);
+
 	namespace managedbindings
 	{
 		int IsWindowBorderLess();

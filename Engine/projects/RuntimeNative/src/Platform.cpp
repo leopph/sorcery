@@ -37,6 +37,7 @@ namespace leopph::platform
 		bool gInFocus{ true };
 		std::function<bool(HWND, UINT, WPARAM, LPARAM)> gEventHook{ nullptr };
 		bool gIgnoreManagedRequests{ false };
+		bool gBlockForEvents{ false };
 	}
 
 
@@ -145,7 +146,7 @@ namespace leopph::platform
 						SetCursorPos(midPoint.x, midPoint.y);
 					}
 
-					SetCursor(gHideCursor ? nullptr : DEFAULT_CURSOR);						
+					SetCursor(gHideCursor ? nullptr : DEFAULT_CURSOR);
 				}
 			}
 
@@ -218,10 +219,20 @@ namespace leopph::platform
 		gMouseDelta = { 0, 0 };
 
 		MSG msg;
-		while (PeekMessageW(&msg, gHwnd, 0, 0, PM_REMOVE))
+
+		if (gBlockForEvents)
 		{
+			GetMessageW(&msg, gHwnd, 0, 0);
 			TranslateMessage(&msg);
 			DispatchMessageW(&msg);
+		}
+		else
+		{
+			while (PeekMessageW(&msg, gHwnd, 0, 0, PM_REMOVE))
+			{
+				TranslateMessage(&msg);
+				DispatchMessageW(&msg);
+			}
 		}
 
 		// Apply the accumulated delta
@@ -424,6 +435,18 @@ namespace leopph::platform
 	void SetIgnoreManagedRequests(bool const ignore)
 	{
 		gIgnoreManagedRequests = ignore;
+	}
+
+
+	bool GetEventBlock()
+	{
+		return gBlockForEvents;
+	}
+
+
+	void SetEventBlock(bool const block)
+	{
+		gBlockForEvents = block;
 	}
 
 

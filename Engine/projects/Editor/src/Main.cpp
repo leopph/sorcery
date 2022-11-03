@@ -260,6 +260,7 @@ int main()
 	leopph::platform::set_window_borderless(false);
 	leopph::platform::set_window_windowed_client_area_size({ 1280, 720 });
 	leopph::platform::SetIgnoreManagedRequests(true);
+	leopph::platform::SetEventBlock(true);
 
 	if (!leopph::rendering::InitRenderer())
 	{
@@ -314,6 +315,7 @@ int main()
 				leopph::platform::SetEventHook(EditorImGuiEventHook);
 				leopph::platform::confine_cursor(false);
 				leopph::platform::hide_cursor(false);
+				leopph::platform::SetEventBlock(true);
 			}
 		}
 		else
@@ -322,6 +324,7 @@ int main()
 			{
 				runGame = true;
 				leopph::platform::SetEventHook({});
+				leopph::platform::SetEventBlock(false);
 			}
 		}
 
