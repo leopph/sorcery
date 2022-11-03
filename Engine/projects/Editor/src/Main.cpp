@@ -368,7 +368,7 @@ int main()
 			{
 				if (ImGui::MenuItem("Entity"))
 				{
-					leopph::Entity::Create();
+					leopph::Entity::Create()->CreateComponent<leopph::Transform>();
 				}
 
 				ImGui::EndMenu();
