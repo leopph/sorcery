@@ -11,7 +11,7 @@ namespace leopph
 
 	public class Camera : Component
 	{
-		[Expose]
+		
 		public extern CameraType Type
 		{
 			[MethodImpl(MethodImplOptions.InternalCall)]
@@ -21,7 +21,7 @@ namespace leopph
 		}
 
 
-		[Expose]
+		
 		// Horizontal FOV
 		public extern float PerspectiveFieldOfView
 		{
@@ -32,7 +32,7 @@ namespace leopph
 		}
 
 
-		[Expose]
+		
 		// Horizontal Size
 		public extern float OrthographicSize
 		{
@@ -43,7 +43,7 @@ namespace leopph
 		}
 
 
-		[Expose]
+		
 		public extern float NearClipPlane
 		{
 			[MethodImpl(MethodImplOptions.InternalCall)]
@@ -53,7 +53,7 @@ namespace leopph
 		}
 
 
-		[Expose]
+		
 		public extern float FarClipPlane
 		{
 			[MethodImpl(MethodImplOptions.InternalCall)]

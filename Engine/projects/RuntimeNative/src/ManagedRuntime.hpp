@@ -2,6 +2,8 @@
 
 #include "Core.hpp"
 
+#include <span>
+
 using MonoImage = struct _MonoImage;
 using MonoDomain = struct _MonoDomain;
 using MonoMethod = struct _MonoMethod;
@@ -20,7 +22,9 @@ namespace leopph
 	LEOPPHAPI void cleanup_managed_runtime();	
 	LEOPPHAPI [[nodiscard]] MonoImage* GetManagedImage();
 	LEOPPHAPI [[nodiscard]] MonoDomain* GetManagedDomain();
-	LEOPPHAPI [[nodiscard]] bool IsFieldExposed(MonoReflectionField* field);
-	LEOPPHAPI [[nodiscard]] bool IsPropertyExposed(MonoReflectionProperty* prop);
+	LEOPPHAPI [[nodiscard]] bool ShouldSerialize(MonoReflectionField* field);
+	LEOPPHAPI [[nodiscard]] bool ShouldSerialize(MonoReflectionProperty* prop);
 	LEOPPHAPI [[nodiscard]] MonoArray* GetEnumValues(MonoType* enumType);
+	LEOPPHAPI [[nodiscard]] std::span<MonoClass* const> GetComponentClasses();
+	LEOPPHAPI [[nodiscard]] bool IsTypePrimitiveOrString(MonoReflectionType* refType);
 }

@@ -20,26 +20,6 @@
 
 namespace leopph
 {
-	namespace
-	{
-		template<std::derived_from<Component> T>
-		Component* instantiate(Entity* const entity)
-		{
-			return new T{ entity };
-		}
-
-
-		std::unordered_map<std::string, std::unordered_map<std::string, std::function<Component* (Entity*)>>> const gComponentInstantiators
-		{
-			{"leopph",
-				{
-					{"CubeModel", instantiate<CubeModel>},
-					{"Camera", instantiate<Camera>}
-				}
-			}
-		};
-	}
-
 	Component::Component(Entity* const entity) :
 		entity{ entity }
 	{}
@@ -47,46 +27,12 @@ namespace leopph
 
 	Transform& Component::GetTransform() const
 	{
-		return *entity->transform;
+		return entity->GetTransform();
 	}
 
 
 	namespace managedbindings
 	{
-		MonoObject* CreateComponent(Entity* const entity, MonoReflectionType* const componentType)
-		{
-			auto const managedClass = mono_type_get_class(mono_reflection_type_get_type(componentType));
-
-			if (mono_class_is_subclass_of(managedClass, mono_class_from_name(GetManagedImage(), "leopph", "Behavior"), false))
-			{
-				auto const behavior = new Behavior{ entity, managedClass };
-				entity->components.emplace_back(behavior);
-				return behavior->GetManagedObject();
-			}
-
-			if (!std::strcmp(mono_class_get_namespace(managedClass), "leopph") && !std::strcmp(mono_class_get_name(managedClass), "Transform"))
-			{
-				return nullptr;
-			}
-
-			auto* const className = mono_class_get_name(managedClass);
-			auto* const namespaceName = mono_class_get_namespace(managedClass);
-
-			if (auto const nsIt = gComponentInstantiators.find(namespaceName); nsIt != std::end(gComponentInstantiators))
-			{
-				if (auto const nameIt = nsIt->second.find(className); nameIt != std::end(nsIt->second))
-				{
-					auto const component = nameIt->second(entity);
-					component->CreateManagedObject(managedClass);
-					entity->components.emplace_back(component);
-					return component->GetManagedObject();
-				}
-			}
-
-			return nullptr;
-		}
-
-
 		MonoObject* GetComponentEntity(MonoObject* const component)
 		{
 			return static_cast<Component*>(ManagedAccessObject::GetNativePtrFromManagedObject(component))->entity->GetManagedObject();
@@ -819,7 +765,8 @@ namespace leopph
 
 		MonoObject* GetTransformParent(MonoObject* transform)
 		{
-			return ManagedAccessObject::GetNativePtrFromManagedObjectAs<Transform*>(transform)->GetParent()->GetManagedObject();
+			auto const parent = ManagedAccessObject::GetNativePtrFromManagedObjectAs<Transform*>(transform)->GetParent();
+			return parent ? parent->GetManagedObject() : nullptr;
 		}
 
 

@@ -68,6 +68,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)Engine\deps\vendor\mono\msvc\build\sgen\$(Platform)\lib\$(Configuration);$(SolutionDir)Engine\deps\vendor\yaml-cpp\build\$(Configuration);$(DXSDK_DIR)Lib\x64;$(SolutionDir)Engine\bin\$(Configuration)</AdditionalLibraryDirectories>
       <AdditionalDependencies>libmono-static-sgen.lib;Ws2_32.lib;Bcrypt.lib;Version.lib;Winmm.lib;yaml-cppd.lib;LeopphRuntimeNative.lib;dxgi.lib;d3d11.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -88,6 +89,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)Engine\deps\vendor\mono\msvc\build\sgen\$(Platform)\lib\$(Configuration);$(SolutionDir)Engine\deps\vendor\yaml-cpp\build\$(Configuration);$(DXSDK_DIR)Lib\x64;$(SolutionDir)Engine\bin\$(Configuration)</AdditionalLibraryDirectories>
       <AdditionalDependencies>libmono-static-sgen.lib;Ws2_32.lib;Bcrypt.lib;Version.lib;Winmm.lib;yaml-cpp.lib;LeopphRuntimeNative.lib;dxgi.lib;d3d11.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -100,7 +102,6 @@
     <ClCompile Include="..\..\vendor\imgui\imgui_widgets.cpp" />
     <ClCompile Include="..\..\vendor\imgui\misc\cpp\imgui_stdlib.cpp" />
     <ClCompile Include="src\Main.cpp" />
-    <ClCompile Include="src\Serialization.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\RuntimeManaged\RuntimeManaged.csproj">
@@ -109,9 +110,6 @@
     <ProjectReference Include="..\RuntimeNative\RuntimeNative.vcxproj">
       <Project>{60a69d92-fa99-4f5c-804c-1dff2ce460ad}</Project>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="src\Serialization.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

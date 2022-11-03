@@ -80,8 +80,10 @@ namespace leopph
 
 	void* ManagedAccessObject::GetNativePtrFromManagedObject(MonoObject* const managedObject)
 	{
+		auto const klass = mono_object_get_class(managedObject);
+		auto const field = mono_class_get_field_from_name(klass, "_ptr");
 		void* ptrData;
-		mono_field_get_value(managedObject, mono_class_get_field_from_name(mono_object_get_class(managedObject), "_ptr"), &ptrData);
+		mono_field_get_value(managedObject, field, &ptrData);
 		return ptrData;
 	}
 }

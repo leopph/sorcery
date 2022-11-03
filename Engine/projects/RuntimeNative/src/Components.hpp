@@ -17,18 +17,8 @@ namespace leopph
 	class Component;
 
 
-	namespace managedbindings
-	{
-		MonoObject* CreateComponent(Entity* entity, MonoReflectionType* componentType);
-		MonoObject* GetComponentEntity(MonoObject* component);
-		MonoObject* GetComponentEntityTransform(MonoObject* component);
-	}
-
-
 	class Component : public ManagedAccessObject
 	{
-		friend MonoObject* managedbindings::CreateComponent(Entity* entity, MonoReflectionType* componentType);
-
 	public:
 		Entity* const entity;
 
@@ -36,6 +26,13 @@ namespace leopph
 
 		[[nodiscard]] Transform& GetTransform() const;
 	};
+
+
+	namespace managedbindings
+	{
+		MonoObject* GetComponentEntity(MonoObject* component);
+		MonoObject* GetComponentEntityTransform(MonoObject* component);
+	}
 
 
 	enum class Space : u8

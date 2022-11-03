@@ -1,5 +1,3 @@
-#include "Serialization.hpp"
-
 #include <Components.hpp>
 #include <ManagedRuntime.hpp>
 #include <Platform.hpp>
@@ -18,6 +16,8 @@
 #include <mono/metadata/appdomain.h>
 #include <mono/metadata/threads.h>
 
+#include <yaml-cpp/yaml.h>
+
 #include <format>
 #include <optional>
 #include <fstream>
@@ -29,6 +29,7 @@
 #include <cstring>
 #include <string>
 #include <vector>
+#include <stack>
 
 using leopph::Vector3;
 using leopph::Quaternion;
@@ -36,61 +37,186 @@ using leopph::f32;
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-bool EditorImGuiEventHook(HWND const hwnd, UINT const msg, WPARAM const wparam, LPARAM const lparam)
+namespace
 {
-	return ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam);
-}
-
-
-void DrawComponentMemberWidget(std::string_view const memberName, MonoType* const memberType, std::function<void* ()> const& getFunc, std::function<void(void**)> const& setFunc)
-{
-	std::string_view const memberTypeName = mono_type_get_name(memberType);
-
-	/*if (mono_class_is_enum(mono_type_get_class(memberType)))
+	bool EditorImGuiEventHook(HWND const hwnd, UINT const msg, WPARAM const wparam, LPARAM const lparam)
 	{
-		auto const underlyingType = mono_type_get_underlying_type(memberType);
-		static std::vector<leopph::u64> currentValue;
-		currentValue.resize(mono_type_stack_size())
-		auto const values = leopph::GetEnumValues(memberType);
-		auto const numValues = mono_array_length(values);
+		return ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam);
+	}
 
 
+	void DrawComponentMemberWidget(std::string_view const memberName, MonoType* const memberType, std::function<void* ()> const& getFunc, std::function<void(void**)> const& setFunc)
+	{
+		std::string_view const memberTypeName = mono_type_get_name(memberType);
 
-		for (std::size_t i = 0; i < numValues; i++)
+		/*if (mono_class_is_enum(mono_type_get_class(memberType)))
 		{
+			auto const underlyingType = mono_type_get_underlying_type(memberType);
+			static std::vector<leopph::u64> currentValue;
+			currentValue.resize(mono_type_stack_size())
+			auto const values = leopph::GetEnumValues(memberType);
+			auto const numValues = mono_array_length(values);
 
+
+
+			for (std::size_t i = 0; i < numValues; i++)
+			{
+
+			}
+
+		}*/
+
+		if (memberTypeName == "leopph.Vector3")
+		{
+			float data[3];
+			std::memcpy(data, getFunc(), sizeof(data));
+			if (ImGui::DragFloat3(memberName.data(), data, 0.1f))
+			{
+				auto pData = &data[0];
+				setFunc(reinterpret_cast<void**>(&pData));
+			}
 		}
-
-	}*/
-
-	if (memberTypeName == "leopph.Vector3")
-	{
-		float data[3];
-		std::memcpy(data, getFunc(), sizeof(data));
-		if (ImGui::DragFloat3(memberName.data(), data, 0.1f))
+		else if (memberTypeName == "leopph.Quaternion")
 		{
-			auto pData = &data[0];
-			setFunc(reinterpret_cast<void**>(&pData));
+			auto euler = reinterpret_cast<leopph::Quaternion*>(getFunc())->ToEulerAngles();
+			if (ImGui::DragFloat3(memberName.data(), euler.get_data()))
+			{
+				auto quaternion = leopph::Quaternion::FromEulerAngles(euler[0], euler[1], euler[2]);
+				auto pQuaternion = &quaternion;
+				setFunc(reinterpret_cast<void**>(&pQuaternion));
+			}
+		}
+		else if (memberTypeName == "System.Single")
+		{
+			float data;
+			std::memcpy(&data, getFunc(), sizeof(data));
+			if (ImGui::DragFloat(memberName.data(), &data))
+			{
+				auto pData = &data;
+				setFunc(reinterpret_cast<void**>(&pData));
+			}
 		}
 	}
-	else if (memberTypeName == "leopph.Quaternion")
+
+
+	void CloseCurrentScene()
 	{
-		auto euler = reinterpret_cast<leopph::Quaternion*>(getFunc())->ToEulerAngles();
-		if (ImGui::DragFloat3(memberName.data(), euler.get_data()))
-		{
-			auto quaternion = leopph::Quaternion::FromEulerAngles(euler[0], euler[1], euler[2]);
-			auto pQuaternion = &quaternion;
-			setFunc(reinterpret_cast<void**>(&pQuaternion));
-		}
+		leopph::gEntities.clear();
 	}
-	else if (memberTypeName == "System.Single")
+
+
+	YAML::Node SerializeScene()
 	{
-		float data;
-		std::memcpy(&data, getFunc(), sizeof(data));
-		if (ImGui::DragFloat(memberName.data(), &data))
+		YAML::Node scene;
+		for (auto const& entity : leopph::gEntities)
 		{
-			auto pData = &data;
-			setFunc(reinterpret_cast<void**>(&pData));
+			YAML::Node entityNode;
+			entityNode["name"] = entity->name;
+
+			static std::vector<leopph::Component*> components;
+			components.clear();
+
+			for (auto const& component : entity->GetComponents(components))
+			{
+				YAML::Node componentNode;
+				auto const componentClass = mono_object_get_class(component->GetManagedObject());
+				componentNode["classNameSpace"] = mono_class_get_namespace(componentClass);
+				componentNode["className"] = mono_class_get_name(componentClass);
+
+				struct ObjectAndNode
+				{
+					MonoObject* obj;
+					YAML::Node node;
+				};
+
+				std::stack<ObjectAndNode> stack;
+				stack.emplace(component->GetManagedObject(), componentNode["data"]);
+
+				do
+				{
+					ObjectAndNode objAndNode = stack.top();
+					auto& [obj, node] = objAndNode;
+					stack.pop();
+
+					auto const klass = mono_object_get_class(obj);
+
+					void* iter{ nullptr };
+
+					while (auto const field = mono_class_get_fields(klass, &iter))
+					{
+						if (auto const fieldType = mono_field_get_type(field);
+							!mono_type_is_byref(fieldType) &&
+							leopph::ShouldSerialize(mono_field_get_object(leopph::GetManagedDomain(), klass, field)))
+						{
+							auto const fieldName = mono_field_get_name(field);
+							auto const fieldObj = mono_field_get_value_object(leopph::GetManagedDomain(), field, obj);
+
+							if (leopph::IsTypePrimitiveOrString(mono_type_get_object(leopph::GetManagedDomain(), fieldType)))
+							{
+								node[fieldName]["value"] = mono_string_to_utf8(mono_object_to_string(fieldObj, nullptr));
+							}
+							else
+							{
+								stack.emplace(fieldObj, node[fieldName]["value"]);
+							}
+						}
+					}
+
+					iter = nullptr;
+
+					while (auto const prop = mono_class_get_properties(klass, &iter))
+					{
+						if (auto const propType = mono_signature_get_return_type(mono_method_signature(mono_property_get_get_method(prop)));
+							!mono_type_is_byref(propType) &&
+							leopph::ShouldSerialize(mono_property_get_object(leopph::GetManagedDomain(), klass, prop)))
+						{
+							auto const propName = mono_property_get_name(prop);
+							auto const propValueBoxed = mono_property_get_value(prop, mono_class_is_valuetype(klass) ? mono_object_unbox(obj) : obj, nullptr, nullptr);
+
+							if (leopph::IsTypePrimitiveOrString(mono_type_get_object(leopph::GetManagedDomain(), propType)))
+							{
+								auto const* str = mono_string_to_utf8(mono_object_to_string(propValueBoxed, nullptr));
+								node[propName]["value"] = str;
+							}
+							else
+							{
+								stack.emplace(propValueBoxed, node[propName]["value"]);
+							}
+						}
+					}
+				}
+				while (!stack.empty());
+
+				entityNode["components"].push_back(componentNode);
+			}
+
+			scene.push_back(entityNode);
+		}
+
+		return scene;
+	}
+
+
+	void DeserializeScene(YAML::Node const& scene)
+	{
+		for (auto const& entityNode : scene)
+		{
+			auto const entity = leopph::Entity::Create();
+			entity->name = entityNode["name"].as<std::string>();
+			entity->CreateManagedObject("leopph", "Entity");
+
+			for (auto const& componentNode : entityNode["components"])
+			{
+				auto const classNs = componentNode["classNameSpace"].as<std::string>();
+				auto const className = componentNode["className"].as<std::string>();
+				auto const componentClass = mono_class_from_name(leopph::GetManagedImage(), classNs.c_str(), className.c_str());
+				auto const managedComponent = entity->CreateComponent(componentClass)->GetManagedObject();
+
+				for (auto const& componentMember : componentNode["data"])
+				{
+
+				}
+			}
 		}
 	}
 }
@@ -194,7 +320,24 @@ int main()
 				if (ImGui::MenuItem("Save"))
 				{
 					std::ofstream out{ "scene.yaml" };
-					Serialize(leopph::gEntities, out);
+					YAML::Emitter emitter{ out };
+					emitter << SerializeScene();
+				}
+
+				if (ImGui::MenuItem("Load"))
+				{
+					CloseCurrentScene();
+					DeserializeScene(YAML::LoadFile("scene.yaml"));
+				}
+
+				ImGui::EndMenu();
+			}
+
+			if (ImGui::BeginMenu("Create"))
+			{
+				if (ImGui::MenuItem("Entity"))
+				{
+					leopph::Entity::Create();
 				}
 
 				ImGui::EndMenu();
@@ -252,7 +395,10 @@ int main()
 			{
 				auto const& entity = leopph::gEntities[*selectedEntityIndex];
 
-				for (auto const& component : entity->components)
+				static std::vector<leopph::Component*> components;
+				components.clear();
+
+				for (auto const& component : entity->GetComponents(components))
 				{
 					auto const obj = component->GetManagedObject();
 					auto const klass = mono_object_get_class(obj);
@@ -264,7 +410,7 @@ int main()
 						{
 							auto const refField = mono_field_get_object(leopph::GetManagedDomain(), klass, field);
 
-							if (leopph::IsFieldExposed(refField))
+							if (leopph::ShouldSerialize(refField))
 							{
 								DrawComponentMemberWidget(mono_field_get_name(field), mono_field_get_type(field), [field, obj]
 								{
@@ -282,7 +428,7 @@ int main()
 						{
 							auto const refProp = mono_property_get_object(leopph::GetManagedDomain(), klass, prop);
 
-							if (leopph::IsPropertyExposed(refProp))
+							if (leopph::ShouldSerialize(refProp))
 							{
 								DrawComponentMemberWidget(mono_property_get_name(prop), mono_signature_get_return_type(mono_method_signature(mono_property_get_get_method(prop))), [prop, obj]
 								{
@@ -297,95 +443,6 @@ int main()
 						ImGui::TreePop();
 					}
 				}
-				/*static std::string entityName;
-				entityName = entity->name;
-				if (ImGui::InputText("Name", &entityName))
-				{
-					entity->name = entityName;
-				}
-
-				if (ImGui::TreeNodeEx("Transform", ImGuiTreeNodeFlags_DefaultOpen))
-				{
-					Vector3 pos{ entity->transform->GetLocalPosition() };
-					if (ImGui::DragFloat3("Local Positon", &pos[0], 0.1f))
-					{
-						entity->transform->SetLocalPosition(pos);
-					}
-
-					Vector3 rotEuler{ entity->transform->GetLocalRotation().ToEulerAngles() };
-					if (ImGui::DragFloat3("Local Rotation", &rotEuler[0]))
-					{
-						entity->transform->SetLocalRotation(Quaternion::FromEulerAngles(rotEuler[0], rotEuler[1], rotEuler[2]));
-					}
-
-					Vector3 scale{ entity->transform->GetLocalScale() };
-					if (ImGui::DragFloat3("Local Scale", &scale[0], 0.05f))
-					{
-						entity->transform->SetLocalScale(scale);
-					}
-
-					ImGui::TreePop();
-				}
-
-				static std::vector<leopph::Camera*> cameraComponents;
-				cameraComponents.clear();
-				entity->GetComponents<leopph::Camera>(cameraComponents);
-
-				for ([[maybe_unused]] auto* const camera : cameraComponents)
-				{
-					if (ImGui::TreeNodeEx("Camera", ImGuiTreeNodeFlags_DefaultOpen))
-					{
-						char const* const camTypeNames[]{ "Orthographic", "Perspective" };
-						int currentType = camera->GetType() == leopph::Camera::Type::Orthographic ? 0 : 1;
-						if (ImGui::Combo("Type", &currentType, camTypeNames, 2))
-						{
-							camera->SetType(currentType == 0 ? leopph::Camera::Type::Orthographic : leopph::Camera::Type::Perspective);
-						}
-
-						if (camera->GetType() == leopph::Camera::Type::Perspective)
-						{
-							f32 horizFovDeg{ camera->GetPerspectiveFov() };
-							if (ImGui::DragFloat("Horizontal FOV", &horizFovDeg, 1.f, 1.f, 180.f, "%.2f", ImGuiSliderFlags_AlwaysClamp))
-							{
-								camera->SetPerspectiveFov(horizFovDeg);
-							}
-						}
-						else
-						{
-							f32 horizSize{ camera->GetOrthographicSize() };
-							if (ImGui::DragFloat("Horizontal Size", &horizSize, 1.f, 0.1f, std::numeric_limits<f32>::max(), "%.2f", ImGuiSliderFlags_AlwaysClamp))
-							{
-								camera->SetOrthoGraphicSize(horizSize);
-							}
-						}
-
-						f32 nearClip{ camera->GetNearClipPlane() };
-						if (ImGui::DragFloat("Near Clip Plane", &nearClip, 0.2f, 0.01f, std::numeric_limits<f32>::max(), "%.2f", ImGuiSliderFlags_AlwaysClamp))
-						{
-							camera->SetNearClipPlane(nearClip);
-						}
-
-						f32 farClip{ camera->GetFarClipPlane() };
-						if (ImGui::DragFloat("Far Clip Plane", &farClip, 0.2f, nearClip + 0.1f, std::numeric_limits<f32>::max(), "%.2f", ImGuiSliderFlags_AlwaysClamp))
-						{
-							camera->SetFarClipPlane(farClip);
-						}
-
-						ImGui::TreePop();
-					}
-				}
-
-				static std::vector<leopph::CubeModel*> cubeModelComponents;
-				cubeModelComponents.clear();
-				entity->GetComponents<leopph::CubeModel>(cubeModelComponents);
-
-				for ([[maybe_unused]] auto* const cubeModel : cubeModelComponents)
-				{
-					if (ImGui::TreeNodeEx("Cube Model", ImGuiTreeNodeFlags_DefaultOpen))
-					{
-						ImGui::TreePop();
-					}
-				}*/
 			}
 		}
 		ImGui::End();
@@ -449,7 +506,7 @@ int main()
 		leopph::measure_time();
 	}
 
-	leopph::gEntities.clear();
+	CloseCurrentScene();
 
 	ImGui_ImplDX11_Shutdown();
 	ImGui_ImplWin32_Shutdown();

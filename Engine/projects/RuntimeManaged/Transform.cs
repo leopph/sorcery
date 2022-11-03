@@ -11,6 +11,7 @@ namespace leopph
 
 	public class Transform : Component
 	{
+		[DoNotExpose]
 		public extern Vector3 WorldPosition
 		{
 			[MethodImpl(MethodImplOptions.InternalCall)]
@@ -19,7 +20,7 @@ namespace leopph
 			set;
 		}
 
-		[Expose]
+		
 		public extern Vector3 LocalPosition
 		{
 			[MethodImpl(MethodImplOptions.InternalCall)]
@@ -28,6 +29,7 @@ namespace leopph
 			set;
 		}
 
+		[DoNotExpose]
 		public extern Quaternion WorldRotation
 		{
 			[MethodImpl(MethodImplOptions.InternalCall)]
@@ -36,7 +38,7 @@ namespace leopph
 			set;
 		}
 
-		[Expose]
+		
 		public extern Quaternion LocalRotation
 		{
 			[MethodImpl(MethodImplOptions.InternalCall)]
@@ -45,6 +47,7 @@ namespace leopph
 			set;
 		}
 
+		[DoNotExpose]
 		public extern Vector3 WorldScale
 		{
 			[MethodImpl(MethodImplOptions.InternalCall)]
@@ -53,7 +56,7 @@ namespace leopph
 			set;
 		}
 
-		[Expose]
+		
 		public extern Vector3 LocalScale
 		{
 			[MethodImpl(MethodImplOptions.InternalCall)]
@@ -82,6 +85,7 @@ namespace leopph
 		}
 
 
+		[DoNotExpose]
 		public extern Transform? Parent
 		{
 			[MethodImpl(MethodImplOptions.InternalCall)]
@@ -91,14 +95,14 @@ namespace leopph
 		}
 
 
-		public Matrix4 ModelMatrix
+		public extern Matrix4 ModelMatrix
 		{
 			[MethodImpl(MethodImplOptions.InternalCall)]
 			get;
 		}
 
 
-		public Matrix3 NormalMatrix
+		public extern Matrix3 NormalMatrix
 		{
 			[MethodImpl(MethodImplOptions.InternalCall)]
 			get;

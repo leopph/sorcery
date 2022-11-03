@@ -134,9 +134,12 @@ namespace leopph
     {
         public Vector3(float x = 0, float y = 0, float z = 0) => (X, Y, Z) = (x, y, z);
 
+		
         public float X { get; set; }
-        public float Y { get; set; }
-        public float Z { get; set; }
+		
+		public float Y { get; set; }
+		
+		public float Z { get; set; }
 
         public static Vector3 Right => new Vector3(1, 0, 0);
         public static Vector3 Left => new Vector3(-1, 0, 0);

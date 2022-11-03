@@ -19,15 +19,13 @@ namespace leopph
 		static u64 sNextId;
 		std::optional<u32> mGcHandle;
 
-	protected:
-		void SetManagedObject(MonoObject* managedObject);
-		MonoObject* CreateManagedObject(MonoClass* klass);
-		MonoObject* CreateManagedObject(std::string_view classNamespace, std::string_view className);
-
 	public:
 		u64 const id{ sNextId++ };
 
-		LEOPPHAPI MonoObject* GetManagedObject() const;
+		LEOPPHAPI [[nodiscard]] MonoObject* GetManagedObject() const;
+		LEOPPHAPI void SetManagedObject(MonoObject* managedObject);
+		LEOPPHAPI MonoObject* CreateManagedObject(MonoClass* klass);
+		LEOPPHAPI MonoObject* CreateManagedObject(std::string_view classNamespace, std::string_view className);
 
 		virtual ~ManagedAccessObject();
 

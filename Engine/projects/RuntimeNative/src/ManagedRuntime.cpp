@@ -25,9 +25,11 @@ namespace leopph
 	{
 		MonoDomain* gDomain;
 		MonoImage* gImage;
-		MonoMethod* gFieldTestMethod;
-		MonoMethod* gPropertyTestMethod;
+		MonoMethod* gFieldSerializeTestMethod;
+		MonoMethod* gPropertySerializeTestMethod;
 		MonoMethod* gEnumEnumeratorMethod;
+		std::vector<MonoClass*> gComponentClasses;
+		MonoMethod* gPrimitiveTestMethod;
 	}
 
 
@@ -112,7 +114,7 @@ namespace leopph
 		mono_add_internal_call("leopph.Entity::get_Name", managedbindings::GetEntityName);
 		mono_add_internal_call("leopph.Entity::set_Name", managedbindings::SetEntityName);
 		mono_add_internal_call("leopph.Entity::get_Transform", managedbindings::GetEntityTransform);
-		mono_add_internal_call("leopph.Entity::InternalCreateComponent", managedbindings::CreateComponent);
+		mono_add_internal_call("leopph.Entity::InternalCreateComponent", managedbindings::EntityCreateComponent);
 
 		mono_add_internal_call("leopph.Component::get_Entity", managedbindings::GetComponentEntity);
 		mono_add_internal_call("leopph.Component::get_Transform", managedbindings::GetComponentEntityTransform);
@@ -143,8 +145,8 @@ namespace leopph
 		mono_add_internal_call("leopph.Transform::Rescale(leopph.Vector3,leopph.Space)", managedbindings::RescaleTransformVector);
 		mono_add_internal_call("leopph.Transform::Rescale(single,single,single,leopph.Space)", managedbindings::RescaleTransform);
 		
-		mono_add_internal_call("leopph.Camera::get_CameraType", managedbindings::GetCameraType);
-		mono_add_internal_call("leopph.Camera::set_CameraType", managedbindings::SetCameraType);
+		mono_add_internal_call("leopph.Camera::get_Type", managedbindings::GetCameraType);
+		mono_add_internal_call("leopph.Camera::set_Type", managedbindings::SetCameraType);
 		mono_add_internal_call("leopph.Camera::get_PerspectiveFieldOfView", managedbindings::GetCameraPerspectiveFov);
 		mono_add_internal_call("leopph.Camera::set_PerspectiveFieldOfView", managedbindings::SetCameraPerspectiveFov);
 		mono_add_internal_call("leopph.Camera::get_OrthographicSize", managedbindings::GetCameraOrthographicSize);
@@ -168,12 +170,33 @@ namespace leopph
 
 		auto const helperClass = mono_class_from_name(gImage, "leopph", "NativeHelpers");
 		assert(helperClass);
-		gFieldTestMethod = mono_class_get_method_from_name(helperClass, "IsFieldExposed", 1);
-		assert(gFieldTestMethod);
-		gPropertyTestMethod = mono_class_get_method_from_name(helperClass, "IsPropertyExposed", 1);
-		assert(gPropertyTestMethod);
+		gFieldSerializeTestMethod = mono_class_get_method_from_name(helperClass, "ShouldSerializeField", 1);
+		assert(gFieldSerializeTestMethod);
+		gPropertySerializeTestMethod = mono_class_get_method_from_name(helperClass, "ShouldSerializeProperty", 1);
+		assert(gPropertySerializeTestMethod);
 		gEnumEnumeratorMethod = mono_class_get_method_from_name(helperClass, "GetEnumValues", 1);
 		assert(gEnumEnumeratorMethod);
+		gPrimitiveTestMethod = mono_class_get_method_from_name(helperClass, "IsPrimitiveOrString", 1);
+		assert(gPrimitiveTestMethod);
+
+		auto const componentClass = mono_class_from_name(gImage, "leopph", "Component");
+
+		auto const table = mono_image_get_table_info(gImage, MONO_TABLE_TYPEDEF);
+		auto const numRows = mono_table_info_get_rows(table);
+
+		for (int i = 0; i < numRows; i++)
+		{
+			u32 cols[MONO_TYPEDEF_SIZE];
+			mono_metadata_decode_row(table, i, cols, MONO_TYPEDEF_SIZE);
+			auto const name = mono_metadata_string_heap(gImage, cols[MONO_TYPEDEF_NAME]);
+			auto const ns = mono_metadata_string_heap(gImage, cols[MONO_TYPEDEF_NAMESPACE]);
+			auto const klass = mono_class_from_name(gImage, ns, name);
+
+			if (mono_class_is_subclass_of(klass, componentClass, false))
+			{
+				gComponentClasses.emplace_back();
+			}
+		}
 
 		MonoClass* testClass = mono_class_from_name(gImage, "", "Test");
 		MonoMethod* doTestMethod = mono_class_get_method_from_name(testClass, "DoTest", 0);
@@ -201,17 +224,17 @@ namespace leopph
 	}
 
 
-	bool IsFieldExposed(MonoReflectionField* field)
+	bool ShouldSerialize(MonoReflectionField* field)
 	{
-		auto const res =  mono_runtime_invoke(gFieldTestMethod, nullptr, reinterpret_cast<void**>(&field), nullptr);
+		auto const res =  mono_runtime_invoke(gFieldSerializeTestMethod, nullptr, reinterpret_cast<void**>(&field), nullptr);
 
 		return *static_cast<bool*>(mono_object_unbox(res));
 	}
 
 
-	bool IsPropertyExposed(MonoReflectionProperty* prop)
+	bool ShouldSerialize(MonoReflectionProperty* prop)
 	{
-		auto const res = mono_runtime_invoke(gPropertyTestMethod, nullptr, reinterpret_cast<void**>(&prop), nullptr);
+		auto const res = mono_runtime_invoke(gPropertySerializeTestMethod, nullptr, reinterpret_cast<void**>(&prop), nullptr);
 
 		return *static_cast<bool*>(mono_object_unbox(res));
 	}
@@ -221,5 +244,16 @@ namespace leopph
 	{
 		auto typeName = mono_string_new_wrapper(mono_type_get_name(enumType));
 		return reinterpret_cast<MonoArray*>(mono_runtime_invoke(gEnumEnumeratorMethod, nullptr, reinterpret_cast<void**>(&typeName), nullptr));
+	}
+
+
+	std::span<MonoClass* const> GetComponentClasses()
+	{
+		return gComponentClasses;
+	}
+
+	bool IsTypePrimitiveOrString(MonoReflectionType* refType)
+	{
+		return *reinterpret_cast<int*>(mono_object_unbox(mono_runtime_invoke(gPrimitiveTestMethod, nullptr, reinterpret_cast<void**>(&refType), nullptr)));
 	}
 }

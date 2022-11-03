@@ -11,8 +11,10 @@
 #include <vector>
 #include <optional>
 #include <concepts>
+#include <type_traits>
 
 using MonoString = struct _MonoString;
+using MonoReflectionType = struct _MonoReflectionType;
 
 
 namespace leopph
@@ -24,19 +26,53 @@ namespace leopph
 
 	class Entity : public ManagedAccessObject
 	{
+	private:
+		Entity() = default;
+
+		std::vector<std::unique_ptr<Component>> mComponents;
+		Transform* mTransform;
+
 	public:
 		std::string name;
-		std::vector<std::unique_ptr<Component>> components;
 		Scene* scene;
-		Transform* transform;
 
-		static Entity* Create();
-		void AssignManagedObject(MonoObject* managedObject);
+		Entity(Entity const& other) = delete;
+		Entity& operator=(Entity const& other) = delete;
+
+		// Creates a raw Entity without a Transform or a managed object.
+		// Registers itself in the active scene.
+		LEOPPHAPI static Entity* Create();
+
+		LEOPPHAPI [[nodiscard]] Transform& GetTransform();
+
+		LEOPPHAPI Component* CreateComponent(MonoClass* componentClass);
+
+		template<std::derived_from<Component> T>
+		T* CreateComponent()
+		{
+			if constexpr (std::is_same_v<T, Transform>)
+			{
+				if (mTransform)
+				{
+					return mTransform;
+				}
+			}
+
+			auto const component = new T{ this };
+
+			if constexpr (std::is_same_v<T, Transform>)
+			{
+				mTransform = component;
+			}
+
+			mComponents.emplace_back(component);
+			return component;
+		}
 
 		template<std::derived_from<Component> T>
 		T* GetComponent() const
 		{
-			for (auto const& component : components)
+			for (auto const& component : mComponents)
 			{
 				if (auto const castPtr = dynamic_cast<T*>(component.get()))
 				{
@@ -48,17 +84,24 @@ namespace leopph
 		}
 
 		template<std::derived_from<Component> T>
-		void GetComponents(std::vector<T*>& outComponents) const
+		std::vector<T*>& GetComponents(std::vector<T*>& outComponents) const
 		{
-			for (auto const& component : components)
+			for (auto const& component : mComponents)
 			{
 				if (auto const castPtr = dynamic_cast<T*>(component.get()))
 				{
 					outComponents.emplace_back(castPtr);
 				}
 			}
+
+			return outComponents;
 		}
 	};
+
+	static_assert(!std::is_copy_constructible_v<Entity>);
+	static_assert(!std::is_copy_assignable_v<Entity>);
+	static_assert(!std::is_move_constructible_v<Entity>);
+	static_assert(!std::is_move_assignable_v<Entity>);
 
 
 	LEOPPHAPI extern std::vector<std::unique_ptr<Entity>> gEntities;
@@ -73,5 +116,6 @@ namespace leopph
 		MonoObject* GetEntityTransform(MonoObject* managedEntity);
 		MonoString* GetEntityName(MonoObject* managedEntity);
 		void SetEntityName(MonoObject* managedEntity, MonoString* managedName);
+		MonoObject* EntityCreateComponent(Entity* entity, MonoReflectionType* componentType);
 	}
 }
