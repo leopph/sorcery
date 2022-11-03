@@ -3,6 +3,7 @@
 #include "Core.hpp"
 
 #include <span>
+#include <string_view>
 
 using MonoImage = struct _MonoImage;
 using MonoDomain = struct _MonoDomain;
@@ -27,4 +28,5 @@ namespace leopph
 	LEOPPHAPI [[nodiscard]] MonoArray* GetEnumValues(MonoType* enumType);
 	LEOPPHAPI [[nodiscard]] std::span<MonoClass* const> GetComponentClasses();
 	LEOPPHAPI [[nodiscard]] bool IsTypePrimitiveOrString(MonoReflectionType* refType);
+	LEOPPHAPI [[nodiscard]] void ParseAndSetProperty(MonoObject* object, MonoReflectionProperty* property, std::string_view str);
 }

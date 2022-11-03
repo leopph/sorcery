@@ -30,6 +30,7 @@
 #include <string>
 #include <vector>
 #include <stack>
+#include <iostream>
 
 using leopph::Vector3;
 using leopph::Quaternion;
@@ -153,11 +154,11 @@ namespace
 
 							if (leopph::IsTypePrimitiveOrString(mono_type_get_object(leopph::GetManagedDomain(), fieldType)))
 							{
-								node[fieldName]["value"] = mono_string_to_utf8(mono_object_to_string(fieldObj, nullptr));
+								node[fieldName] = mono_string_to_utf8(mono_object_to_string(fieldObj, nullptr));
 							}
 							else
 							{
-								stack.emplace(fieldObj, node[fieldName]["value"]);
+								stack.emplace(fieldObj, node[fieldName]);
 							}
 						}
 					}
@@ -176,11 +177,11 @@ namespace
 							if (leopph::IsTypePrimitiveOrString(mono_type_get_object(leopph::GetManagedDomain(), propType)))
 							{
 								auto const* str = mono_string_to_utf8(mono_object_to_string(propValueBoxed, nullptr));
-								node[propName]["value"] = str;
+								node[propName] = str;
 							}
 							else
 							{
-								stack.emplace(propValueBoxed, node[propName]["value"]);
+								stack.emplace(propValueBoxed, node[propName]);
 							}
 						}
 					}
@@ -199,11 +200,15 @@ namespace
 
 	void DeserializeScene(YAML::Node const& scene)
 	{
+		//std::cout << "DESERIALIZE DEBUG" << std::endl;
+
 		for (auto const& entityNode : scene)
 		{
 			auto const entity = leopph::Entity::Create();
 			entity->name = entityNode["name"].as<std::string>();
 			entity->CreateManagedObject("leopph", "Entity");
+
+			//std::cout << "\tEntity, name = " << entity->name << std::endl;
 
 			for (auto const& componentNode : entityNode["components"])
 			{
@@ -212,9 +217,32 @@ namespace
 				auto const componentClass = mono_class_from_name(leopph::GetManagedImage(), classNs.c_str(), className.c_str());
 				auto const managedComponent = entity->CreateComponent(componentClass)->GetManagedObject();
 
-				for (auto const& componentMember : componentNode["data"])
-				{
+				//std::cout << "\t\tComponent, type = " << mono_class_get_name(componentClass) << std::endl;
 
+				for (YAML::const_iterator it{ componentNode["data"].begin() }; it != componentNode["data"].end(); ++it)
+				{
+					auto const memberName = it->first.as<std::string>();
+
+					if (auto const prop = mono_class_get_property_from_name(componentClass, memberName.c_str()))
+					{
+						//std::cout << "\t\t\tProperty, name = " << mono_property_get_name(prop) << std::endl;
+
+						auto const propType = mono_signature_get_return_type(mono_method_signature(mono_property_get_get_method(prop)));
+
+						if (leopph::IsTypePrimitiveOrString(mono_type_get_object(leopph::GetManagedDomain(), propType)))
+						{
+							auto const memberValue = it->second.as<std::string>();
+							leopph::ParseAndSetProperty(managedComponent, mono_property_get_object(leopph::GetManagedDomain(), componentClass, prop), memberValue.c_str());
+						}
+					}
+					else if (auto const field = mono_class_get_field_from_name(componentClass, memberName.c_str()))
+					{
+						//std::cout << "\t\t\tField, name = " << mono_field_get_name(field) << std::endl;
+					}
+					else
+					{
+						std::cerr << "\t\t\tError, found member name but no corresponding member." << std::endl;
+					}
 				}
 			}
 		}
@@ -394,6 +422,13 @@ int main()
 			if (selectedEntityIndex)
 			{
 				auto const& entity = leopph::gEntities[*selectedEntityIndex];
+
+				static std::string entityName;
+				entityName = entity->name;
+				if (ImGui::InputText("Name", &entityName))
+				{
+					entity->name = entityName;
+				}
 
 				static std::vector<leopph::Component*> components;
 				components.clear();

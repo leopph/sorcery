@@ -5,6 +5,9 @@ namespace leopph
 {
 	internal static class NativeHelpers
 	{
+		private static readonly object[] s_singleObjectHolder = new object[1];
+		private static readonly Type[] s_singleTypeHolder = new Type[1];
+
 		internal static bool ShouldSerializeField(FieldInfo field)
 		{
 			// First check for reasons to NOT serialize
@@ -87,6 +90,15 @@ namespace leopph
 		internal static bool IsPrimitiveOrString(Type type)
 		{
 			return type.IsPrimitive || type == typeof(string);
+		}
+
+
+		internal static void ParseAndSetPropertyValue(object obj, PropertyInfo property, string value)
+		{
+			s_singleObjectHolder[0] = value;
+			s_singleTypeHolder[0] = typeof(string);
+
+			property.SetValue(obj, property.GetMethod.ReturnType.GetMethod("Parse", s_singleTypeHolder).Invoke(null, s_singleObjectHolder));
 		}
 	}
 }

@@ -30,6 +30,7 @@ namespace leopph
 		MonoMethod* gEnumEnumeratorMethod;
 		std::vector<MonoClass*> gComponentClasses;
 		MonoMethod* gPrimitiveTestMethod;
+		MonoMethod* gParseSetPropertyMethod;
 	}
 
 
@@ -178,6 +179,8 @@ namespace leopph
 		assert(gEnumEnumeratorMethod);
 		gPrimitiveTestMethod = mono_class_get_method_from_name(helperClass, "IsPrimitiveOrString", 1);
 		assert(gPrimitiveTestMethod);
+		gParseSetPropertyMethod = mono_class_get_method_from_name(helperClass, "ParseAndSetPropertyValue", 3);
+		assert(gParseSetPropertyMethod);
 
 		auto const componentClass = mono_class_from_name(gImage, "leopph", "Component");
 
@@ -255,5 +258,13 @@ namespace leopph
 	bool IsTypePrimitiveOrString(MonoReflectionType* refType)
 	{
 		return *reinterpret_cast<int*>(mono_object_unbox(mono_runtime_invoke(gPrimitiveTestMethod, nullptr, reinterpret_cast<void**>(&refType), nullptr)));
+	}
+
+
+	void ParseAndSetProperty(MonoObject* object, MonoReflectionProperty* property, std::string_view str)
+	{
+		auto managedStr = mono_string_new_wrapper(str.data());
+		void* params[]{ reinterpret_cast<void*>(object), reinterpret_cast<void*>(property), reinterpret_cast<void*>(managedStr) };
+		mono_runtime_invoke(gParseSetPropertyMethod, nullptr, params, nullptr);
 	}
 }
