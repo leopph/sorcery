@@ -15,6 +15,7 @@
 #include <unordered_map>
 #include <concepts>
 #include <cstring>
+#include <algorithm>
 
 
 namespace leopph
@@ -418,40 +419,48 @@ namespace leopph
 		return sAllInstances;
 	}
 
+
 	f32 Camera::GetNearClipPlane() const
 	{
 		return mNear;
 	}
 
+
 	void Camera::SetNearClipPlane(f32 const nearPlane)
 	{
-		mNear = nearPlane;
+		mNear = std::max(nearPlane, 0.03f);
 	}
+
 
 	f32 Camera::GetFarClipPlane() const
 	{
 		return mFar;
 	}
 
+
 	void Camera::SetFarClipPlane(f32 const farPlane)
 	{
-		mFar = farPlane;
+		mFar = std::max(farPlane, mNear + 0.1f);
 	}
+
 
 	NormalizedViewport const& Camera::GetViewport() const
 	{
 		return mViewport;
 	}
 
+
 	Extent2D<u32> Camera::GetWindowExtents() const
 	{
 		return mWindowExtent;
 	}
 
+
 	f32 Camera::GetAspectRatio() const
 	{
 		return mAspect;
 	}
+
 
 	f32 Camera::GetOrthographicSize(Side side) const
 	{
@@ -468,8 +477,11 @@ namespace leopph
 		return -1;
 	}
 
+
 	void Camera::SetOrthoGraphicSize(f32 size, Side side)
 	{
+		size = std::max(size, 0.1f);
+
 		if (side == Side::Horizontal)
 		{
 			mOrthoSizeHoriz = size;
@@ -479,6 +491,7 @@ namespace leopph
 			mOrthoSizeHoriz = size * mAspect;
 		}
 	}
+
 
 	f32 Camera::GetPerspectiveFov(Side const side) const
 	{
@@ -495,8 +508,11 @@ namespace leopph
 		return -1;
 	}
 
-	void Camera::SetPerspectiveFov(f32 const degrees, Side const side)
+
+	void Camera::SetPerspectiveFov(f32 degrees, Side const side)
 	{
+		degrees = std::max(degrees, 5.f);
+
 		if (side == Side::Horizontal)
 		{
 			mPerspFovHorizDeg = degrees;
@@ -512,9 +528,73 @@ namespace leopph
 		return mType;
 	}
 
+
 	void Camera::SetType(Type const type)
 	{
 		mType = type;
+	}
+
+
+	namespace managedbindings
+	{
+		Camera::Type GetCameraType(MonoObject* camera)
+		{
+			return static_cast<Camera*>(ManagedAccessObject::GetNativePtrFromManagedObject(camera))->GetType();
+		}
+
+
+		void SetCameraType(MonoObject* camera, Camera::Type type)
+		{
+			static_cast<Camera*>(ManagedAccessObject::GetNativePtrFromManagedObject(camera))->SetType(type);
+		}
+
+
+		f32 GetCameraPerspectiveFov(MonoObject* camera)
+		{
+			return static_cast<Camera*>(ManagedAccessObject::GetNativePtrFromManagedObject(camera))->GetPerspectiveFov();
+		}
+
+
+		void SetCameraPerspectiveFov(MonoObject* camera, f32 fov)
+		{
+			static_cast<Camera*>(ManagedAccessObject::GetNativePtrFromManagedObject(camera))->SetPerspectiveFov(fov);
+		}
+
+
+		f32 GetCameraOrthographicSize(MonoObject* camera)
+		{
+			return static_cast<Camera*>(ManagedAccessObject::GetNativePtrFromManagedObject(camera))->GetOrthographicSize();
+		}
+
+
+		void SetCameraOrthographicSize(MonoObject* camera, f32 size)
+		{
+			static_cast<Camera*>(ManagedAccessObject::GetNativePtrFromManagedObject(camera))->SetOrthoGraphicSize(size);
+		}
+
+
+		f32 GetCameraNearClipPlane(MonoObject* camera)
+		{
+			return static_cast<Camera*>(ManagedAccessObject::GetNativePtrFromManagedObject(camera))->GetNearClipPlane();
+		}
+
+
+		void SetCameraNearClipPlane(MonoObject* camera, f32 nearClipPlane)
+		{
+			static_cast<Camera*>(ManagedAccessObject::GetNativePtrFromManagedObject(camera))->SetNearClipPlane(nearClipPlane);
+		}
+
+
+		f32 GetCameraFarClipPlane(MonoObject* camera)
+		{
+			return static_cast<Camera*>(ManagedAccessObject::GetNativePtrFromManagedObject(camera))->GetFarClipPlane();
+		}
+
+
+		void SetCameraFarClipPlane(MonoObject* camera, f32 farClipPlane)
+		{
+			static_cast<Camera*>(ManagedAccessObject::GetNativePtrFromManagedObject(camera))->SetFarClipPlane(farClipPlane);
+		}
 	}
 
 

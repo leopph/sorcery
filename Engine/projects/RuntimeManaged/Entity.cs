@@ -15,6 +15,7 @@ namespace leopph
         }
 
 
+		[Expose]
 		public extern string Name
 		{
 			[MethodImpl(MethodImplOptions.InternalCall)]

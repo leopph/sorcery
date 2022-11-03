@@ -225,6 +225,25 @@ namespace leopph
 	};
 
 
+	namespace managedbindings
+	{
+		Camera::Type GetCameraType(MonoObject* camera);
+		void SetCameraType(MonoObject* camera, Camera::Type type);
+
+		f32 GetCameraPerspectiveFov(MonoObject* camera);
+		void SetCameraPerspectiveFov(MonoObject* camera, f32 fov);
+
+		f32 GetCameraOrthographicSize(MonoObject* camera);
+		void SetCameraOrthographicSize(MonoObject* camera, f32 size);
+
+		f32 GetCameraNearClipPlane(MonoObject* camera);
+		void SetCameraNearClipPlane(MonoObject* camera, f32 nearClipPlane);
+		
+		f32 GetCameraFarClipPlane(MonoObject* camera);
+		void SetCameraFarClipPlane(MonoObject* camera, f32 farClipPlane);
+	}
+
+
 	class Behavior : public Component
 	{
 	public:

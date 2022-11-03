@@ -25,6 +25,9 @@ namespace leopph
 	{
 		MonoDomain* gDomain;
 		MonoImage* gImage;
+		MonoMethod* gFieldTestMethod;
+		MonoMethod* gPropertyTestMethod;
+		MonoMethod* gEnumEnumeratorMethod;
 	}
 
 
@@ -139,6 +142,17 @@ namespace leopph
 		mono_add_internal_call("leopph.Transform::Rotate(leopph.Vector3,single,leopph.Space)", managedbindings::RotateTransformAngleAxis);
 		mono_add_internal_call("leopph.Transform::Rescale(leopph.Vector3,leopph.Space)", managedbindings::RescaleTransformVector);
 		mono_add_internal_call("leopph.Transform::Rescale(single,single,single,leopph.Space)", managedbindings::RescaleTransform);
+		
+		mono_add_internal_call("leopph.Camera::get_CameraType", managedbindings::GetCameraType);
+		mono_add_internal_call("leopph.Camera::set_CameraType", managedbindings::SetCameraType);
+		mono_add_internal_call("leopph.Camera::get_PerspectiveFieldOfView", managedbindings::GetCameraPerspectiveFov);
+		mono_add_internal_call("leopph.Camera::set_PerspectiveFieldOfView", managedbindings::SetCameraPerspectiveFov);
+		mono_add_internal_call("leopph.Camera::get_OrthographicSize", managedbindings::GetCameraOrthographicSize);
+		mono_add_internal_call("leopph.Camera::set_OrthographicSize", managedbindings::SetCameraOrthographicSize);
+		mono_add_internal_call("leopph.Camera::get_NearClipPlane", managedbindings::GetCameraNearClipPlane);
+		mono_add_internal_call("leopph.Camera::set_NearClipPlane", managedbindings::SetCameraNearClipPlane);
+		mono_add_internal_call("leopph.Camera::get_FarClipPlane", managedbindings::GetCameraFarClipPlane);
+		mono_add_internal_call("leopph.Camera::set_FarClipPlane", managedbindings::SetCameraFarClipPlane);
 
 		char* exePath;
 		_get_pgmptr(&exePath);
@@ -151,6 +165,15 @@ namespace leopph
 
 		gImage = mono_assembly_get_image(assembly);
 		assert(gImage);
+
+		auto const helperClass = mono_class_from_name(gImage, "leopph", "NativeHelpers");
+		assert(helperClass);
+		gFieldTestMethod = mono_class_get_method_from_name(helperClass, "IsFieldExposed", 1);
+		assert(gFieldTestMethod);
+		gPropertyTestMethod = mono_class_get_method_from_name(helperClass, "IsPropertyExposed", 1);
+		assert(gPropertyTestMethod);
+		gEnumEnumeratorMethod = mono_class_get_method_from_name(helperClass, "GetEnumValues", 1);
+		assert(gEnumEnumeratorMethod);
 
 		MonoClass* testClass = mono_class_from_name(gImage, "", "Test");
 		MonoMethod* doTestMethod = mono_class_get_method_from_name(testClass, "DoTest", 0);
@@ -175,5 +198,28 @@ namespace leopph
 	MonoDomain* GetManagedDomain()
 	{
 		return gDomain;
+	}
+
+
+	bool IsFieldExposed(MonoReflectionField* field)
+	{
+		auto const res =  mono_runtime_invoke(gFieldTestMethod, nullptr, reinterpret_cast<void**>(&field), nullptr);
+
+		return *static_cast<bool*>(mono_object_unbox(res));
+	}
+
+
+	bool IsPropertyExposed(MonoReflectionProperty* prop)
+	{
+		auto const res = mono_runtime_invoke(gPropertyTestMethod, nullptr, reinterpret_cast<void**>(&prop), nullptr);
+
+		return *static_cast<bool*>(mono_object_unbox(res));
+	}
+
+
+	MonoArray* GetEnumValues(MonoType* enumType)
+	{
+		auto typeName = mono_string_new_wrapper(mono_type_get_name(enumType));
+		return reinterpret_cast<MonoArray*>(mono_runtime_invoke(gEnumEnumeratorMethod, nullptr, reinterpret_cast<void**>(&typeName), nullptr));
 	}
 }

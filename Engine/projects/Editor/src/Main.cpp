@@ -12,12 +12,23 @@
 #include <backends/imgui_impl_win32.h>
 #include <backends/imgui_impl_dx11.h>
 
+#include <mono/metadata/object.h>
+#include <mono/metadata/class.h>
+#include <mono/metadata/reflection.h>
+#include <mono/metadata/appdomain.h>
+#include <mono/metadata/threads.h>
+
 #include <format>
 #include <optional>
 #include <fstream>
 #include <limits>
 #include <filesystem>
 #include <algorithm>
+#include <functional>
+#include <string_view>
+#include <cstring>
+#include <string>
+#include <vector>
 
 using leopph::Vector3;
 using leopph::Quaternion;
@@ -28,6 +39,60 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg
 bool EditorImGuiEventHook(HWND const hwnd, UINT const msg, WPARAM const wparam, LPARAM const lparam)
 {
 	return ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam);
+}
+
+
+void DrawComponentMemberWidget(std::string_view const memberName, MonoType* const memberType, std::function<void* ()> const& getFunc, std::function<void(void**)> const& setFunc)
+{
+	std::string_view const memberTypeName = mono_type_get_name(memberType);
+
+	/*if (mono_class_is_enum(mono_type_get_class(memberType)))
+	{
+		auto const underlyingType = mono_type_get_underlying_type(memberType);
+		static std::vector<leopph::u64> currentValue;
+		currentValue.resize(mono_type_stack_size())
+		auto const values = leopph::GetEnumValues(memberType);
+		auto const numValues = mono_array_length(values);
+
+
+
+		for (std::size_t i = 0; i < numValues; i++)
+		{
+
+		}
+
+	}*/
+
+	if (memberTypeName == "leopph.Vector3")
+	{
+		float data[3];
+		std::memcpy(data, getFunc(), sizeof(data));
+		if (ImGui::DragFloat3(memberName.data(), data, 0.1f))
+		{
+			auto pData = &data[0];
+			setFunc(reinterpret_cast<void**>(&pData));
+		}
+	}
+	else if (memberTypeName == "leopph.Quaternion")
+	{
+		auto euler = reinterpret_cast<leopph::Quaternion*>(getFunc())->ToEulerAngles();
+		if (ImGui::DragFloat3(memberName.data(), euler.get_data()))
+		{
+			auto quaternion = leopph::Quaternion::FromEulerAngles(euler[0], euler[1], euler[2]);
+			auto pQuaternion = &quaternion;
+			setFunc(reinterpret_cast<void**>(&pQuaternion));
+		}
+	}
+	else if (memberTypeName == "System.Single")
+	{
+		float data;
+		std::memcpy(&data, getFunc(), sizeof(data));
+		if (ImGui::DragFloat(memberName.data(), &data))
+		{
+			auto pData = &data;
+			setFunc(reinterpret_cast<void**>(&pData));
+		}
+	}
 }
 
 
@@ -187,7 +252,52 @@ int main()
 			{
 				auto const& entity = leopph::gEntities[*selectedEntityIndex];
 
-				static std::string entityName;
+				for (auto const& component : entity->components)
+				{
+					auto const obj = component->GetManagedObject();
+					auto const klass = mono_object_get_class(obj);
+
+					if (ImGui::TreeNodeEx(mono_class_get_name(klass), ImGuiTreeNodeFlags_DefaultOpen))
+					{
+						void* iter{ nullptr };
+						while (auto const field = mono_class_get_fields(klass, &iter))
+						{
+							auto const refField = mono_field_get_object(leopph::GetManagedDomain(), klass, field);
+
+							if (leopph::IsFieldExposed(refField))
+							{
+								DrawComponentMemberWidget(mono_field_get_name(field), mono_field_get_type(field), [field, obj]
+								{
+									return mono_object_unbox(mono_field_get_value_object(leopph::GetManagedDomain(), field, obj));
+								}, [field, obj](void** data)
+								{
+									mono_field_set_value(obj, field, *data);
+								});
+							}
+						}
+
+						iter = nullptr;
+
+						while (auto const prop = mono_class_get_properties(klass, &iter))
+						{
+							auto const refProp = mono_property_get_object(leopph::GetManagedDomain(), klass, prop);
+
+							if (leopph::IsPropertyExposed(refProp))
+							{
+								DrawComponentMemberWidget(mono_property_get_name(prop), mono_signature_get_return_type(mono_method_signature(mono_property_get_get_method(prop))), [prop, obj]
+								{
+									return mono_object_unbox(mono_property_get_value(prop, obj, nullptr, nullptr));
+								}, [prop, obj](void** data)
+								{
+									mono_property_set_value(prop, reinterpret_cast<void*>(obj), data, nullptr);
+								});
+							}
+						}
+
+						ImGui::TreePop();
+					}
+				}
+				/*static std::string entityName;
 				entityName = entity->name;
 				if (ImGui::InputText("Name", &entityName))
 				{
@@ -275,7 +385,7 @@ int main()
 					{
 						ImGui::TreePop();
 					}
-				}
+				}*/
 			}
 		}
 		ImGui::End();
@@ -322,7 +432,10 @@ int main()
 				frameDisplaySize = ImVec2(gameRes.width * scale, gameRes.height * scale);
 			}
 
-			leopph::rendering::DrawGame();
+			if (!leopph::rendering::DrawGame())
+			{
+				return 5;
+			}
 			ImGui::Image(reinterpret_cast<void*>(leopph::rendering::GetGameFrame()), frameDisplaySize);
 		}
 		ImGui::End();

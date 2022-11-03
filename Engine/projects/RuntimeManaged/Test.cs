@@ -62,6 +62,7 @@ public class MovementController : Behavior
 
 public class OrientationController : Behavior
 {
+	[Expose]
     public float sensitivity = 0.05f;
 
     private void Tick()
@@ -70,7 +71,7 @@ public class OrientationController : Behavior
         Transform.Rotate(Vector3.Right, sensitivity * Input.MouseDelta.y, Space.Local);
     }
 }
-
+ 
 
 public class AppController : Behavior
 {

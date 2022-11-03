@@ -36,6 +36,7 @@ namespace leopph
 		[[nodiscard]] T const& operator[](size_t index) const;
 		[[nodiscard]] T& operator[](size_t index);
 		[[nodiscard]] T const* get_data() const;
+		[[nodiscard]] T* get_data();
 
 
 		[[nodiscard]] static Vector<T, N> up();
@@ -362,6 +363,13 @@ namespace leopph
 	}
 
 
+	template<class T, std::size_t N> requires (N > 1)
+		T* Vector<T, N>::get_data()
+	{
+		return mData;
+	}
+
+
 
 	template<class T, std::size_t N> requires (N > 1)
 		Vector<T, N> Vector<T, N>::up()
@@ -438,7 +446,7 @@ namespace leopph
 	template<class T, std::size_t N> requires (N > 1)
 		template<std::convertible_to<T> ... Args> requires (sizeof...(Args) == N)
 		Vector<T, N>::Vector(Args const&... args) :
-		mData{static_cast<T>(args)...}
+		mData{ static_cast<T>(args)... }
 	{}
 
 
@@ -511,7 +519,7 @@ namespace leopph
 	template<class T, std::size_t N> requires (N > 1)
 		f32 distance(Vector<T, N> const& left, Vector<T, N> const& right)
 	{
-		f32 sum{0};
+		f32 sum{ 0 };
 
 		for (size_t i = 0; i < N; i++)
 		{
@@ -674,7 +682,7 @@ namespace leopph
 	Vector<T1, N> operator/(T2 const& left, Vector<T1, N> const& right)
 	{
 		Vector<T1, N> ret;
-		T1 const numerator{static_cast<T1>(left)};
+		T1 const numerator{ static_cast<T1>(left) };
 		for (std::size_t i = 0; i < N; i++)
 		{
 			ret[i] = numerator / right[i];
@@ -765,7 +773,7 @@ namespace leopph
 	template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
 		T Matrix<T, N, M>::determinant() const requires (N == M)
 	{
-		Matrix<T, N, M> tmp{*this};
+		Matrix<T, N, M> tmp{ *this };
 		for (size_t i = 1; i < N; i++)
 		{
 			for (size_t j = 0; j < N; j++)
@@ -777,7 +785,7 @@ namespace leopph
 		{
 			tmp[i] -= tmp[0];
 		}
-		auto ret{static_cast<T>(1)};
+		auto ret{ static_cast<T>(1) };
 		for (size_t i = 0; i < N; i++)
 		{
 			ret *= tmp[i][i];
@@ -806,14 +814,14 @@ namespace leopph
 	template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
 		Matrix<T, N, M> Matrix<T, N, M>::inverse() const requires (N == M)
 	{
-		Matrix<T, N, M> left{*this};
-		Matrix<T, N, M> right{Matrix<T, N, M>::identity()};
+		Matrix<T, N, M> left{ *this };
+		Matrix<T, N, M> right{ Matrix<T, N, M>::identity() };
 
 		// Iterate over the main diagonal/submatrices
 		for (std::size_t i = 0; i < N; i++)
 		{
 			// Index of the row with the largest absolute value element in the ith column
-			auto pivotInd{i};
+			auto pivotInd{ i };
 
 			// Find index of the row with the largest absolute value element
 			for (auto j = pivotInd + 1; j < N; j++)
@@ -825,7 +833,7 @@ namespace leopph
 			}
 
 			// swap pivot row with the ith
-			auto tmp{left[i]};
+			auto tmp{ left[i] };
 			left[i] = left[pivotInd];
 			left[pivotInd] = tmp;
 
@@ -840,13 +848,13 @@ namespace leopph
 			// Because then zero is the number with the highest absolute value in the column
 			// So all other elements are also zero in the column
 			// The matrix is singular and we return garbage
-			auto const div{left[i][i]};
+			auto const div{ left[i][i] };
 			left[i] /= div;
 			right[i] /= div;
 
 			for (auto j = i + 1; j < N; j++)
 			{
-				auto const mult{left[j][i]}; // Theoretically left[i][i] is 1 so the multiplier is the element itself
+				auto const mult{ left[j][i] }; // Theoretically left[i][i] is 1 so the multiplier is the element itself
 				left[j] -= mult * left[i];
 				right[j] -= mult * right[i];
 			}
@@ -861,7 +869,7 @@ namespace leopph
 				// We subtract the jth row from the ith one
 				// Because it is guaranteed to have 0s before the main diagonal
 				// And thus it won't mess up the element in the ith row before the jth element
-				auto const mult{left[i][j]}; // left[j][j] is 1 so the multiplier is the element itself
+				auto const mult{ left[i][j] }; // left[j][j] is 1 so the multiplier is the element itself
 				left[i] -= mult * left[j];
 				right[i] -= mult * right[j];
 			}
@@ -932,9 +940,9 @@ namespace leopph
 	template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
 		Matrix<T, 4, 4> Matrix<T, N, M>::look_at(Vector<T, 3> const& position, Vector<T, 3> const& target, Vector<T, 3> const& worldUp) requires (N == 4 && M == 4)
 	{
-		Vector<T, 3> z{(target - position).normalized()};
-		Vector<T, 3> x{cross(worldUp, z).normalized()};
-		Vector<T, 3> y{cross(z, x)};
+		Vector<T, 3> z{ (target - position).normalized() };
+		Vector<T, 3> x{ cross(worldUp, z).normalized() };
+		Vector<T, 3> y{ cross(z, x) };
 		return Matrix<T, 4, 4>
 		{
 			x[0], y[0], z[0], 0,
@@ -965,11 +973,11 @@ namespace leopph
 	template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
 		Matrix<T, 4, 4> Matrix<T, N, M>::perspective(T const& fov, T const& aspectRatio, T const& nearClipPlane, T const& farClipPlane) requires (N == 4 && M == 4)
 	{
-		T tanHalfFov{static_cast<T>(std::tan(fov / static_cast<T>(2)))};
-		T top{nearClipPlane * tanHalfFov};
-		T bottom{-top};
-		T right{top * aspectRatio};
-		T left{-right};
+		T tanHalfFov{ static_cast<T>(std::tan(fov / static_cast<T>(2))) };
+		T top{ nearClipPlane * tanHalfFov };
+		T bottom{ -top };
+		T right{ top * aspectRatio };
+		T left{ -right };
 		return perspective(left, right, top, bottom, nearClipPlane, farClipPlane);
 	}
 
@@ -1018,7 +1026,7 @@ namespace leopph
 		template<std::convertible_to<T> ... Args> requires (sizeof...(Args) == N * M)
 		Matrix<T, N, M>::Matrix(Args const&... args)
 	{
-		T argArr[M * N]{static_cast<T>(args)...};
+		T argArr[M * N]{ static_cast<T>(args)... };
 		for (size_t i = 0; i < N; i++)
 		{
 			for (size_t j = 0; j < M; j++)
@@ -1036,12 +1044,12 @@ namespace leopph
 	{
 		for (std::size_t i = 0; i < N1; i++)
 		{
-			mData[i] = Vector<T, M>{other[i], 0};
+			mData[i] = Vector<T, M>{ other[i], 0 };
 		}
 
 		for (std::size_t i = N1; i < N; ++i)
 		{
-			mData[i] = Vector<T, M>{0};
+			mData[i] = Vector<T, M>{ 0 };
 		}
 
 		mData[N - 1][M - 1] = static_cast<T>(1);
@@ -1055,7 +1063,7 @@ namespace leopph
 	{
 		for (std::size_t i = 0; i < N; i++)
 		{
-			mData[i] = Vector<T, M>{other[i]};
+			mData[i] = Vector<T, M>{ other[i] };
 		}
 	}
 
@@ -1255,7 +1263,7 @@ namespace leopph
 	template<class T>
 	auto Quaternion::Rotate(Vector<T, 3> const& vec) const
 	{
-		auto const retQuat = *this * Quaternion{0, vec[0], vec[1], vec[2]} *conjugate();
+		auto const retQuat = *this * Quaternion{ 0, vec[0], vec[1], vec[2] } *conjugate();
 		return Vector<T, 3>{retQuat.x, retQuat.y, retQuat.z};
 	}
 }

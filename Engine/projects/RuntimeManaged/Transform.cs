@@ -19,6 +19,7 @@ namespace leopph
 			set;
 		}
 
+		[Expose]
 		public extern Vector3 LocalPosition
 		{
 			[MethodImpl(MethodImplOptions.InternalCall)]
@@ -35,6 +36,7 @@ namespace leopph
 			set;
 		}
 
+		[Expose]
 		public extern Quaternion LocalRotation
 		{
 			[MethodImpl(MethodImplOptions.InternalCall)]
@@ -51,6 +53,7 @@ namespace leopph
 			set;
 		}
 
+		[Expose]
 		public extern Vector3 LocalScale
 		{
 			[MethodImpl(MethodImplOptions.InternalCall)]

@@ -27,7 +27,7 @@ namespace leopph
 	public:
 		u64 const id{ sNextId++ };
 
-		MonoObject* GetManagedObject() const;
+		LEOPPHAPI MonoObject* GetManagedObject() const;
 
 		virtual ~ManagedAccessObject();
 
