@@ -106,6 +106,7 @@ namespace
 		leopph::gEntities.clear();
 	}
 
+
 	YAML::Node gSerializedSceneBackup;
 
 
@@ -127,70 +128,78 @@ namespace
 				componentNode["classNameSpace"] = mono_class_get_namespace(componentClass);
 				componentNode["className"] = mono_class_get_name(componentClass);
 
-				struct ObjectAndNode
+				std::function<void(MonoObject*, YAML::Node&)> serializeObject;
+
+				serializeObject = [&serializeObject](MonoObject* const obj, YAML::Node& node) -> void
 				{
-					MonoObject* obj;
-					YAML::Node node;
-				};
-
-				std::stack<ObjectAndNode> stack;
-				stack.emplace(component->GetManagedObject(), componentNode["data"]);
-
-				do
-				{
-					ObjectAndNode objAndNode = stack.top();
-					auto& [obj, node] = objAndNode;
-					stack.pop();
-
-					auto const klass = mono_object_get_class(obj);
+					auto const objClass = mono_object_get_class(obj);
 
 					void* iter{ nullptr };
 
-					while (auto const field = mono_class_get_fields(klass, &iter))
+					while (auto const field = mono_class_get_fields(objClass, &iter))
 					{
-						if (auto const fieldType = mono_field_get_type(field);
-							!mono_type_is_byref(fieldType) &&
-							leopph::ShouldSerialize(mono_field_get_object(leopph::GetManagedDomain(), klass, field)))
+						if (leopph::ShouldSerialize(mono_field_get_object(leopph::GetManagedDomain(), objClass, field)))
 						{
+							auto const fieldType = mono_field_get_type(field);
+							auto const fieldClass = mono_type_get_class(fieldType);
 							auto const fieldName = mono_field_get_name(field);
-							auto const fieldObj = mono_field_get_value_object(leopph::GetManagedDomain(), field, obj);
+							auto const fieldValueBoxed = mono_field_get_value_object(leopph::GetManagedDomain(), field, obj);
 
 							if (leopph::IsTypePrimitive(mono_type_get_object(leopph::GetManagedDomain(), fieldType)))
 							{
-								node[fieldName] = mono_string_to_utf8(mono_object_to_string(fieldObj, nullptr));
+								node[fieldName] = mono_string_to_utf8(mono_object_to_string(fieldValueBoxed, nullptr));
+							}
+							else if (mono_class_is_enum(fieldClass))
+							{
+								std::cerr << "Serialization of enum type fields is not yet supported." << std::endl;
+							}
+							else if (mono_class_is_valuetype(fieldClass))
+							{
+								auto dataNode = node[fieldName];
+								serializeObject(fieldValueBoxed, dataNode);
 							}
 							else
 							{
-								stack.emplace(fieldObj, node[fieldName]);
+								std::cerr << "Serialization of reference type fields is not yet supported." << std::endl;
 							}
 						}
 					}
 
 					iter = nullptr;
 
-					while (auto const prop = mono_class_get_properties(klass, &iter))
+					while (auto const prop = mono_class_get_properties(objClass, &iter))
 					{
-						if (auto const propType = mono_signature_get_return_type(mono_method_signature(mono_property_get_get_method(prop)));
-							!mono_type_is_byref(propType) &&
-							leopph::ShouldSerialize(mono_property_get_object(leopph::GetManagedDomain(), klass, prop)))
+						if (leopph::ShouldSerialize(mono_property_get_object(leopph::GetManagedDomain(), objClass, prop)))
 						{
+							auto const propType = mono_signature_get_return_type(mono_method_signature(mono_property_get_get_method(prop)));
+							auto const propClass = mono_type_get_class(propType);
 							auto const propName = mono_property_get_name(prop);
-							auto const propValueBoxed = mono_property_get_value(prop, mono_class_is_valuetype(klass) ? mono_object_unbox(obj) : obj, nullptr, nullptr);
+							auto const objPossiblyUnboxed = mono_class_is_valuetype(objClass) ? mono_object_unbox(obj) : obj;
+							auto const propValueBoxed = mono_property_get_value(prop, objPossiblyUnboxed, nullptr, nullptr);
 
 							if (leopph::IsTypePrimitive(mono_type_get_object(leopph::GetManagedDomain(), propType)))
 							{
-								auto const* str = mono_string_to_utf8(mono_object_to_string(propValueBoxed, nullptr));
-								node[propName] = str;
+								node[propName] = mono_string_to_utf8(mono_object_to_string(propValueBoxed, nullptr));
+							}
+							else if (mono_class_is_enum(propClass))
+							{
+								std::cerr << "Serialization of enum type properties is not yet supported." << std::endl;
+							}
+							else if (mono_class_is_valuetype(propClass))
+							{
+								auto dataNode = node[propName];
+								serializeObject(propValueBoxed, dataNode);
 							}
 							else
 							{
-								stack.emplace(propValueBoxed, node[propName]);
+								std::cerr << "Serialization of reference type properties is not yet supported." << std::endl;
 							}
 						}
 					}
-				}
-				while (!stack.empty());
+				};
 
+				auto dataNode = componentNode["data"];
+				serializeObject(component->GetManagedObject(), dataNode);
 				entityNode["components"].push_back(componentNode);
 			}
 
@@ -237,7 +246,7 @@ namespace
 							if (leopph::IsTypePrimitive(mono_type_get_object(leopph::GetManagedDomain(), propType)))
 							{
 								auto const memberValueStr = it->second.as<std::string>();
-								auto const parsedMemberValueBoxed = leopph::ParseAndSetProperty(mono_property_get_object(leopph::GetManagedDomain(), objClass, prop), memberValueStr.c_str());
+								auto const parsedMemberValueBoxed = leopph::ParseValue(mono_property_get_object(leopph::GetManagedDomain(), objClass, prop), memberValueStr.c_str());
 								auto parsedMemberValueUnboxed = mono_object_unbox(parsedMemberValueBoxed);
 								mono_property_set_value(prop, objPossiblyUnboxed, &parsedMemberValueUnboxed, nullptr);
 							}
@@ -259,7 +268,7 @@ namespace
 							if (leopph::IsTypePrimitive(mono_type_get_object(leopph::GetManagedDomain(), fieldType)))
 							{
 								auto const memberValueStr = it->second.as<std::string>();
-								auto const parsedMemberValueBoxed = leopph::ParseAndSetField(mono_field_get_object(leopph::GetManagedDomain(), objClass, field), memberValueStr.c_str());
+								auto const parsedMemberValueBoxed = leopph::ParseValue(mono_field_get_object(leopph::GetManagedDomain(), objClass, field), memberValueStr.c_str());
 								mono_field_set_value(obj, field, mono_object_unbox(parsedMemberValueBoxed));
 							}
 							else if (mono_class_is_valuetype(mono_type_get_class(mono_field_get_type(field))))

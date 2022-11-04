@@ -28,6 +28,6 @@ namespace leopph
 	LEOPPHAPI [[nodiscard]] MonoArray* GetEnumValues(MonoType* enumType);
 	LEOPPHAPI [[nodiscard]] std::span<MonoClass* const> GetComponentClasses();
 	LEOPPHAPI [[nodiscard]] bool IsTypePrimitive(MonoReflectionType* refType);
-	LEOPPHAPI [[nodiscard]] MonoObject* ParseAndSetField(MonoReflectionField* field, std::string_view str);
-	LEOPPHAPI [[nodiscard]] MonoObject* ParseAndSetProperty(MonoReflectionProperty* property, std::string_view str);
+	LEOPPHAPI [[nodiscard]] MonoObject* ParseValue(MonoReflectionField* field, std::string_view str);
+	LEOPPHAPI [[nodiscard]] MonoObject* ParseValue(MonoReflectionProperty* property, std::string_view str);
 }

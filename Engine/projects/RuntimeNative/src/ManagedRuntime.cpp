@@ -25,10 +25,12 @@ namespace leopph
 	{
 		MonoDomain* gDomain;
 		MonoImage* gImage;
+
+		std::vector<MonoClass*> gComponentClasses;
+
 		MonoMethod* gFieldSerializeTestMethod;
 		MonoMethod* gPropertySerializeTestMethod;
 		MonoMethod* gEnumEnumeratorMethod;
-		std::vector<MonoClass*> gComponentClasses;
 		MonoMethod* gPrimitiveTestMethod;
 		MonoMethod* gParsePropertyValueMethod;
 		MonoMethod* gParseFieldValueMethod;
@@ -262,7 +264,7 @@ namespace leopph
 	}
 
 
-	MonoObject* ParseAndSetField(MonoReflectionField* field, std::string_view const str)
+	MonoObject* ParseValue(MonoReflectionField* field, std::string_view const str)
 	{
 		auto managedStr = mono_string_new_wrapper(str.data());
 		void* params[]{ reinterpret_cast<void*>(field), reinterpret_cast<void*>(managedStr) };
@@ -271,7 +273,7 @@ namespace leopph
 	}
 
 
-	MonoObject* ParseAndSetProperty(MonoReflectionProperty* property, std::string_view const str)
+	MonoObject* ParseValue(MonoReflectionProperty* property, std::string_view const str)
 	{
 		auto managedStr = mono_string_new_wrapper(str.data());
 		void* params[]{ reinterpret_cast<void*>(property), reinterpret_cast<void*>(managedStr) };
