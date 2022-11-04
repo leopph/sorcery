@@ -106,6 +106,8 @@ namespace
 		leopph::gEntities.clear();
 	}
 
+	YAML::Node gSerializedSceneBackup;
+
 
 	YAML::Node SerializeScene()
 	{
@@ -351,6 +353,8 @@ int main()
 				leopph::platform::confine_cursor(false);
 				leopph::platform::hide_cursor(false);
 				leopph::platform::SetEventBlock(true);
+				CloseCurrentScene();
+				DeserializeScene(gSerializedSceneBackup);
 			}
 		}
 		else
@@ -360,6 +364,7 @@ int main()
 				runGame = true;
 				leopph::platform::SetEventHook({});
 				leopph::platform::SetEventBlock(false);
+				gSerializedSceneBackup = SerializeScene();
 			}
 		}
 
@@ -385,15 +390,22 @@ int main()
 
 				if (ImGui::MenuItem("Save"))
 				{
-					std::ofstream out{ "scene.yaml" };
-					YAML::Emitter emitter{ out };
-					emitter << SerializeScene();
+					if (!runGame)
+					{
+						std::ofstream out{ "scene.yaml" };
+						YAML::Emitter emitter{ out };
+						auto const serializedScene = SerializeScene();
+						emitter << serializedScene;
+						gSerializedSceneBackup = serializedScene;
+					}
 				}
 
 				if (ImGui::MenuItem("Load"))
 				{
 					CloseCurrentScene();
-					DeserializeScene(YAML::LoadFile("scene.yaml"));
+					auto const serializedScene = YAML::LoadFile("scene.yaml");
+					DeserializeScene(serializedScene);
+					gSerializedSceneBackup = serializedScene;
 				}
 
 				ImGui::EndMenu();
