@@ -200,7 +200,7 @@ namespace leopph
 
 			if (mono_class_is_subclass_of(klass, componentClass, false))
 			{
-				gComponentClasses.emplace_back();
+				gComponentClasses.emplace_back(klass);
 			}
 		}
 

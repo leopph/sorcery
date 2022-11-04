@@ -528,6 +528,27 @@ int main()
 						ImGui::TreePop();
 					}
 				}
+
+				auto constexpr addNewComponentPopupId = "AddNewComponentPopup";
+
+				if (ImGui::BeginPopupContextItem(addNewComponentPopupId))
+				{
+					for (auto const& componentClass : leopph::GetComponentClasses())
+					{
+						if (ImGui::Button(mono_class_get_name(componentClass)))
+						{
+							entity->CreateComponent(componentClass);
+							ImGui::CloseCurrentPopup();
+						}
+					}
+
+					ImGui::EndPopup();
+				}
+
+				if (ImGui::Button("Add New Component"))
+				{
+					ImGui::OpenPopup(addNewComponentPopupId);
+				}
 			}
 		}
 		ImGui::End();
