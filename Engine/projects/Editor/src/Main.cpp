@@ -580,6 +580,10 @@ int main()
 			}
 			ImGui::Image(reinterpret_cast<void*>(leopph::rendering::GetGameFrame()), frameDisplaySize);
 		}
+		else
+		{
+			ImGui::PopStyleVar();
+		}
 		ImGui::End();
 
 		ImGui::Render();
