@@ -34,6 +34,8 @@ namespace leopph
 		MonoMethod* gPrimitiveTestMethod;
 		MonoMethod* gParsePropertyValueMethod;
 		MonoMethod* gParseFieldValueMethod;
+		MonoMethod* gEnumToUnderlyingValueMethod;
+		MonoMethod* gParseEnumValueMethod;
 	}
 
 
@@ -186,6 +188,10 @@ namespace leopph
 		assert(gParsePropertyValueMethod);
 		gParseFieldValueMethod = mono_class_get_method_from_name(helperClass, "ParseFieldValue", 2);
 		assert(gParseFieldValueMethod);
+		gEnumToUnderlyingValueMethod = mono_class_get_method_from_name(helperClass, "EnumToUnderlyingType", 2);
+		assert(gEnumToUnderlyingValueMethod);
+		gParseEnumValueMethod = mono_class_get_method_from_name(helperClass, "ParseEnumValue", 2);
+		assert(gParseEnumValueMethod);
 
 		auto const componentClass = mono_class_from_name(gImage, "leopph", "Component");
 		auto const behaviorClass = mono_class_from_name(gImage, "leopph", "Behavior");
@@ -278,6 +284,23 @@ namespace leopph
 		auto managedStr = mono_string_new_wrapper(str.data());
 		void* params[]{ reinterpret_cast<void*>(property), reinterpret_cast<void*>(managedStr) };
 		auto const parsedValue = mono_runtime_invoke(gParsePropertyValueMethod, nullptr, params, nullptr);
+		return parsedValue;
+	}
+
+
+	MonoObject* EnumToUnderlyingType(MonoReflectionType* enumType, MonoObject* enumValue)
+	{
+		void* params[]{ reinterpret_cast<void*>(enumType), reinterpret_cast<void*>(enumValue) };
+		auto const underlyingValue = mono_runtime_invoke(gEnumToUnderlyingValueMethod, nullptr, params, nullptr);
+		return underlyingValue;
+	}
+
+
+	MonoObject* ParseEnumValue(MonoReflectionType* enumType, std::string_view const str)
+	{
+		auto managedStr = mono_string_new_wrapper(str.data());
+		void* params[]{ reinterpret_cast<void*>(enumType), reinterpret_cast<void*>(managedStr) };
+		auto const parsedValue = mono_runtime_invoke(gParseEnumValueMethod, nullptr, params, nullptr);
 		return parsedValue;
 	}
 }

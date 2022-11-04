@@ -30,4 +30,6 @@ namespace leopph
 	LEOPPHAPI [[nodiscard]] bool IsTypePrimitive(MonoReflectionType* refType);
 	LEOPPHAPI [[nodiscard]] MonoObject* ParseValue(MonoReflectionField* field, std::string_view str);
 	LEOPPHAPI [[nodiscard]] MonoObject* ParseValue(MonoReflectionProperty* property, std::string_view str);
+	LEOPPHAPI [[nodiscard]] MonoObject* EnumToUnderlyingType(MonoReflectionType* enumType, MonoObject* enumValue);
+	LEOPPHAPI [[nodiscard]] MonoObject* ParseEnumValue(MonoReflectionType* enumType, std::string_view str);
 }

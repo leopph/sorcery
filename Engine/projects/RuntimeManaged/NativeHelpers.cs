@@ -114,5 +114,19 @@ namespace leopph
 			var parsedValue = parseMethod.Invoke(null, s_singleObjectHolder);
 			return parsedValue;
 		}
+
+
+		internal static object ParseEnumValue(Type enumType, string value)
+		{
+			return Enum.Parse(enumType, value);
+		}
+
+
+		internal static object EnumToUnderlyingType(Type enumType, object enumValue)
+		{
+			var underlyingType = Enum.GetUnderlyingType(enumType);
+			var underlyingValue = Convert.ChangeType(enumValue, underlyingType);
+			return underlyingValue;
+		}
 	}
 }

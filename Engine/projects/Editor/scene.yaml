@@ -99,6 +99,7 @@
     - classNameSpace: leopph
       className: Camera
       data:
+        Type: 0
         PerspectiveFieldOfView: 90
         OrthographicSize: 10
         NearClipPlane: 0.1
@@ -106,6 +107,13 @@
     - classNameSpace: ""
       className: MovementController
       data:
+        left: 65
+        right: 68
+        up: 32
+        down: 162
+        forward: 87
+        backward: 83
+        run: 160
         speed: 3
     - classNameSpace: ""
       className: OrientationController
