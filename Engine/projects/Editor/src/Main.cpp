@@ -31,6 +31,7 @@
 #include <vector>
 #include <stack>
 #include <iostream>
+#include <variant>
 
 using leopph::Vector3;
 using leopph::Quaternion;
@@ -219,25 +220,84 @@ namespace
 
 				//std::cout << "\t\tComponent, type = " << mono_class_get_name(componentClass) << std::endl;
 
+				std::function<void(YAML::Node const&, MonoObject*, std::variant<MonoProperty*, MonoClassField*>)> setMember;
+				std::function<void(MonoObject*, std::string_view, YAML::Node const&)> queryAndSetMembers;
+
+				queryAndSetMembers = [&setMember](MonoObject* const memberObj, std::string_view const memberName, YAML::Node const& memberValueNode)
+				{
+					auto const memberClass = mono_object_get_class(memberObj);
+
+					if (auto const memberProp = mono_class_get_property_from_name(memberClass, memberName.data()))
+					{
+						setMember(memberValueNode, memberObj, memberProp);
+					}
+					else if (auto const memberField = mono_class_get_field_from_name(memberClass, memberName.data()))
+					{
+						setMember(memberValueNode, memberObj, memberField);
+					}
+					else
+					{
+						std::cerr << "\t\t\tError, found member name but no corresponding member." << std::endl;
+					}
+				};
+
+				setMember = [&queryAndSetMembers](YAML::Node const& node, MonoObject* const obj, std::variant<MonoProperty*, MonoClassField*> const dataMember) -> void
+				{
+					if (std::holds_alternative<MonoClassField*>(dataMember))
+					{
+						auto const field = std::get<MonoClassField*>(dataMember);
+						auto const fieldType = mono_field_get_type(field);
+
+						if (leopph::IsTypePrimitiveOrString(mono_type_get_object(leopph::GetManagedDomain(), fieldType)))
+						{
+							auto const memberValue = node.as<std::string>();
+							leopph::ParseAndSetField(obj, mono_field_get_object(leopph::GetManagedDomain(), mono_object_get_class(obj), field), memberValue.c_str());
+						}
+						else
+						{
+							for (YAML::const_iterator it{ node.begin() }; it != node.end(); ++it)
+							{
+								auto const memberObj = mono_field_get_value_object(leopph::GetManagedDomain(), field, obj);
+								queryAndSetMembers(memberObj, it->first.as<std::string>(), it->second);
+								mono_field_set_value(obj, field, mono_object_unbox(memberObj));
+							}
+						}
+					}
+					else
+					{
+						auto const prop = std::get<MonoProperty*>(dataMember);
+						auto const propType = mono_signature_get_return_type(mono_method_signature(mono_property_get_get_method(prop)));
+
+						if (leopph::IsTypePrimitiveOrString(mono_type_get_object(leopph::GetManagedDomain(), propType)))
+						{
+							auto const memberValue = node.as<std::string>();
+							leopph::ParseAndSetProperty(obj, mono_property_get_object(leopph::GetManagedDomain(), mono_object_get_class(obj), prop), memberValue.c_str());
+						}
+						else
+						{
+							for (YAML::const_iterator it{ node.begin() }; it != node.end(); ++it)
+							{
+								void* possiblyUnboxedObj = mono_class_is_valuetype(mono_object_get_class(obj)) ? mono_object_unbox(obj) : obj;
+								auto const memberObj = mono_property_get_value(prop, possiblyUnboxedObj, nullptr, nullptr);
+								queryAndSetMembers(memberObj, it->first.as<std::string>(), it->second);
+								auto memberObjUnboxed = mono_object_unbox(memberObj);
+								mono_property_set_value(prop, possiblyUnboxedObj, reinterpret_cast<void**>(&memberObjUnboxed), nullptr);
+							}
+						}
+					}
+				};
+
 				for (YAML::const_iterator it{ componentNode["data"].begin() }; it != componentNode["data"].end(); ++it)
 				{
 					auto const memberName = it->first.as<std::string>();
 
 					if (auto const prop = mono_class_get_property_from_name(componentClass, memberName.c_str()))
 					{
-						//std::cout << "\t\t\tProperty, name = " << mono_property_get_name(prop) << std::endl;
-
-						auto const propType = mono_signature_get_return_type(mono_method_signature(mono_property_get_get_method(prop)));
-
-						if (leopph::IsTypePrimitiveOrString(mono_type_get_object(leopph::GetManagedDomain(), propType)))
-						{
-							auto const memberValue = it->second.as<std::string>();
-							leopph::ParseAndSetProperty(managedComponent, mono_property_get_object(leopph::GetManagedDomain(), componentClass, prop), memberValue.c_str());
-						}
+						setMember(it->second, managedComponent, prop);
 					}
 					else if (auto const field = mono_class_get_field_from_name(componentClass, memberName.c_str()))
 					{
-						//std::cout << "\t\t\tField, name = " << mono_field_get_name(field) << std::endl;
+						setMember(it->second, managedComponent, field);
 					}
 					else
 					{

@@ -7,6 +7,7 @@ namespace leopph
 	{
 		private static readonly object[] s_singleObjectHolder = new object[1];
 		private static readonly Type[] s_singleTypeHolder = new Type[1];
+		private static readonly Type s_stringType = typeof(string);
 
 		internal static bool ShouldSerializeField(FieldInfo field)
 		{
@@ -93,12 +94,27 @@ namespace leopph
 		}
 
 
+		internal static void ParseAndSetFieldValue(object obj, FieldInfo field, string value)
+		{
+			s_singleObjectHolder[0] = value;
+			s_singleTypeHolder[0] = s_stringType;
+
+			var parseMethod = field.FieldType.GetMethod("Parse", s_singleTypeHolder);
+			var parsedValue = parseMethod.Invoke(null, s_singleObjectHolder);
+
+			field.SetValue(obj, parsedValue);
+		}
+
+
 		internal static void ParseAndSetPropertyValue(object obj, PropertyInfo property, string value)
 		{
 			s_singleObjectHolder[0] = value;
-			s_singleTypeHolder[0] = typeof(string);
+			s_singleTypeHolder[0] = s_stringType;
 
-			property.SetValue(obj, property.GetMethod.ReturnType.GetMethod("Parse", s_singleTypeHolder).Invoke(null, s_singleObjectHolder));
+			var parseMethod = property.GetMethod.ReturnType.GetMethod("Parse", s_singleTypeHolder);
+			var parsedValue = parseMethod.Invoke(null, s_singleObjectHolder);
+
+			property.SetValue(obj, parsedValue);
 		}
 	}
 }
