@@ -50,23 +50,46 @@ namespace
 	void DrawComponentMemberWidget(std::string_view const memberName, MonoType* const memberType, std::function<void* ()> const& getFunc, std::function<void(void**)> const& setFunc)
 	{
 		std::string_view const memberTypeName = mono_type_get_name(memberType);
+		auto const memberClass = mono_type_get_class(memberType);
 
-		/*if (mono_class_is_enum(mono_type_get_class(memberType)))
+		if (memberClass && mono_class_is_enum(memberClass))
 		{
-			auto const underlyingType = mono_type_get_underlying_type(memberType);
-			static std::vector<leopph::u64> currentValue;
-			currentValue.resize(mono_type_stack_size())
-			auto const values = leopph::GetEnumValues(memberType);
-			auto const numValues = mono_array_length(values);
+			auto const enumValues = leopph::GetEnumValues(mono_type_get_object(leopph::GetManagedDomain(), memberType));
+			auto const numEnumValues = mono_array_length(enumValues);
+			int valueAlign;
+			auto const valueSize = mono_type_size(mono_class_enum_basetype(memberClass), &valueAlign);
 
+			auto const pCurrentValueUnboxed = getFunc();
+			auto const currentValueBoxed = mono_value_box(leopph::GetManagedDomain(), memberClass, pCurrentValueUnboxed);
+			auto const currentValueManagedStr = mono_object_to_string(currentValueBoxed, nullptr);
+			auto const currentValueStr = mono_string_to_utf8(currentValueManagedStr);
 
-
-			for (std::size_t i = 0; i < numValues; i++)
+			if (ImGui::BeginCombo(memberName.data(), currentValueStr))
 			{
+				for (std::size_t i{ 0 }; i < numEnumValues; i++)
+				{
+					auto pValue = mono_array_addr_with_size(enumValues, valueSize, i);
+					auto const valueBoxed = mono_value_box(leopph::GetManagedDomain(), memberClass, reinterpret_cast<void*>(pValue));
 
+					bool selected{true};
+					for (std::size_t j{ 0 }; j < valueSize; j++)
+					{
+						if (*reinterpret_cast<char*>(pCurrentValueUnboxed) != *pValue)
+						{
+							selected = false;
+							break;
+						}
+					}
+
+					if (ImGui::Selectable(mono_string_to_utf8(mono_object_to_string(valueBoxed, nullptr)), selected))
+					{
+						setFunc(reinterpret_cast<void**>(&pValue));
+					}
+				}
+
+				ImGui::EndCombo();
 			}
-
-		}*/
+		}
 
 		if (memberTypeName == "leopph.Vector3")
 		{

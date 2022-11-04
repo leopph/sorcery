@@ -25,7 +25,7 @@ namespace leopph
 	LEOPPHAPI [[nodiscard]] MonoDomain* GetManagedDomain();
 	LEOPPHAPI [[nodiscard]] bool ShouldSerialize(MonoReflectionField* field);
 	LEOPPHAPI [[nodiscard]] bool ShouldSerialize(MonoReflectionProperty* prop);
-	LEOPPHAPI [[nodiscard]] MonoArray* GetEnumValues(MonoType* enumType);
+	LEOPPHAPI [[nodiscard]] MonoArray* GetEnumValues(MonoReflectionType* enumType);
 	LEOPPHAPI [[nodiscard]] std::span<MonoClass* const> GetComponentClasses();
 	LEOPPHAPI [[nodiscard]] bool IsTypePrimitive(MonoReflectionType* refType);
 	LEOPPHAPI [[nodiscard]] MonoObject* ParseValue(MonoReflectionField* field, std::string_view str);

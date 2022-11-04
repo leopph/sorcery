@@ -80,10 +80,8 @@ namespace leopph
 		}
 
 
-		internal static Array GetEnumValues(string enumTypeName)
+		internal static Array GetEnumValues(Type enumType)
 		{
-			var enumType = Type.GetType(enumTypeName);
-			Console.WriteLine(enumType.FullName);
 			return Enum.GetValues(enumType);
 		}
 

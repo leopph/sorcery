@@ -30,7 +30,7 @@ namespace leopph
 
 		MonoMethod* gFieldSerializeTestMethod;
 		MonoMethod* gPropertySerializeTestMethod;
-		MonoMethod* gEnumEnumeratorMethod;
+		MonoMethod* gGetEnumValuesMethod;
 		MonoMethod* gPrimitiveTestMethod;
 		MonoMethod* gParsePropertyValueMethod;
 		MonoMethod* gParseFieldValueMethod;
@@ -180,8 +180,8 @@ namespace leopph
 		assert(gFieldSerializeTestMethod);
 		gPropertySerializeTestMethod = mono_class_get_method_from_name(helperClass, "ShouldSerializeProperty", 1);
 		assert(gPropertySerializeTestMethod);
-		gEnumEnumeratorMethod = mono_class_get_method_from_name(helperClass, "GetEnumValues", 1);
-		assert(gEnumEnumeratorMethod);
+		gGetEnumValuesMethod = mono_class_get_method_from_name(helperClass, "GetEnumValues", 1);
+		assert(gGetEnumValuesMethod);
 		gPrimitiveTestMethod = mono_class_get_method_from_name(helperClass, "IsPrimitive", 1);
 		assert(gPrimitiveTestMethod);
 		gParsePropertyValueMethod = mono_class_get_method_from_name(helperClass, "ParsePropertyValue", 2);
@@ -251,10 +251,9 @@ namespace leopph
 	}
 
 
-	MonoArray* GetEnumValues(MonoType* enumType)
+	MonoArray* GetEnumValues(MonoReflectionType* enumType)
 	{
-		auto typeName = mono_string_new_wrapper(mono_type_get_name(enumType));
-		return reinterpret_cast<MonoArray*>(mono_runtime_invoke(gEnumEnumeratorMethod, nullptr, reinterpret_cast<void**>(&typeName), nullptr));
+		return reinterpret_cast<MonoArray*>(mono_runtime_invoke(gGetEnumValuesMethod, nullptr, reinterpret_cast<void**>(&enumType), nullptr));
 	}
 
 
