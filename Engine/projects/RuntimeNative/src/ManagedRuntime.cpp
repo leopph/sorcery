@@ -204,10 +204,6 @@ namespace leopph
 			}
 		}
 
-		MonoClass* testClass = mono_class_from_name(gImage, "", "Test");
-		MonoMethod* doTestMethod = mono_class_get_method_from_name(testClass, "DoTest", 0);
-		mono_runtime_invoke(doTestMethod, nullptr, nullptr, nullptr);
-
 		return true;
 	}
 
