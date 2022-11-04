@@ -186,6 +186,7 @@ namespace leopph
 		assert(gParseFieldValueMethod);
 
 		auto const componentClass = mono_class_from_name(gImage, "leopph", "Component");
+		auto const behaviorClass = mono_class_from_name(gImage, "leopph", "Behavior");
 
 		auto const table = mono_image_get_table_info(gImage, MONO_TABLE_TYPEDEF);
 		auto const numRows = mono_table_info_get_rows(table);
@@ -198,7 +199,7 @@ namespace leopph
 			auto const ns = mono_metadata_string_heap(gImage, cols[MONO_TYPEDEF_NAMESPACE]);
 			auto const klass = mono_class_from_name(gImage, ns, name);
 
-			if (mono_class_is_subclass_of(klass, componentClass, false))
+			if (mono_class_is_subclass_of(klass, componentClass, false) && klass != componentClass && klass != behaviorClass)
 			{
 				gComponentClasses.emplace_back(klass);
 			}
