@@ -30,8 +30,8 @@ namespace leopph
 		MonoMethod* gEnumEnumeratorMethod;
 		std::vector<MonoClass*> gComponentClasses;
 		MonoMethod* gPrimitiveTestMethod;
-		MonoMethod* gParseSetPropertyMethod;
-		MonoMethod* gParseSetFieldMethod;
+		MonoMethod* gParsePropertyValueMethod;
+		MonoMethod* gParseFieldValueMethod;
 	}
 
 
@@ -178,12 +178,12 @@ namespace leopph
 		assert(gPropertySerializeTestMethod);
 		gEnumEnumeratorMethod = mono_class_get_method_from_name(helperClass, "GetEnumValues", 1);
 		assert(gEnumEnumeratorMethod);
-		gPrimitiveTestMethod = mono_class_get_method_from_name(helperClass, "IsPrimitiveOrString", 1);
+		gPrimitiveTestMethod = mono_class_get_method_from_name(helperClass, "IsPrimitive", 1);
 		assert(gPrimitiveTestMethod);
-		gParseSetPropertyMethod = mono_class_get_method_from_name(helperClass, "ParseAndSetPropertyValue", 3);
-		assert(gParseSetPropertyMethod);
-		gParseSetFieldMethod = mono_class_get_method_from_name(helperClass, "ParseAndSetFieldValue", 3);
-		assert(gParseSetFieldMethod);
+		gParsePropertyValueMethod = mono_class_get_method_from_name(helperClass, "ParsePropertyValue", 2);
+		assert(gParsePropertyValueMethod);
+		gParseFieldValueMethod = mono_class_get_method_from_name(helperClass, "ParseFieldValue", 2);
+		assert(gParseFieldValueMethod);
 
 		auto const componentClass = mono_class_from_name(gImage, "leopph", "Component");
 
@@ -259,24 +259,26 @@ namespace leopph
 	}
 
 
-	bool IsTypePrimitiveOrString(MonoReflectionType* refType)
+	bool IsTypePrimitive(MonoReflectionType* refType)
 	{
 		return *reinterpret_cast<int*>(mono_object_unbox(mono_runtime_invoke(gPrimitiveTestMethod, nullptr, reinterpret_cast<void**>(&refType), nullptr)));
 	}
 
 
-	void ParseAndSetField(MonoObject* object, MonoReflectionField* field, std::string_view str)
+	MonoObject* ParseAndSetField(MonoReflectionField* field, std::string_view const str)
 	{
 		auto managedStr = mono_string_new_wrapper(str.data());
-		void* params[]{ reinterpret_cast<void*>(object), reinterpret_cast<void*>(field), reinterpret_cast<void*>(managedStr) };
-		mono_runtime_invoke(gParseSetFieldMethod, nullptr, params, nullptr);
+		void* params[]{ reinterpret_cast<void*>(field), reinterpret_cast<void*>(managedStr) };
+		auto const parsedValue = mono_runtime_invoke(gParseFieldValueMethod, nullptr, params, nullptr);
+		return parsedValue;
 	}
 
 
-	void ParseAndSetProperty(MonoObject* object, MonoReflectionProperty* property, std::string_view str)
+	MonoObject* ParseAndSetProperty(MonoReflectionProperty* property, std::string_view const str)
 	{
 		auto managedStr = mono_string_new_wrapper(str.data());
-		void* params[]{ reinterpret_cast<void*>(object), reinterpret_cast<void*>(property), reinterpret_cast<void*>(managedStr) };
-		mono_runtime_invoke(gParseSetPropertyMethod, nullptr, params, nullptr);
+		void* params[]{ reinterpret_cast<void*>(property), reinterpret_cast<void*>(managedStr) };
+		auto const parsedValue = mono_runtime_invoke(gParsePropertyValueMethod, nullptr, params, nullptr);
+		return parsedValue;
 	}
 }

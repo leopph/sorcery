@@ -68,11 +68,12 @@ namespace leopph
 		{
 			if (mTransform)
 			{
-				return nullptr;
+				return mTransform;
 			}
 
-			// Transform is special because it needs to be cached in the entity
-			return CreateComponent<Transform>();
+			auto const transform = CreateComponent<Transform>();
+			transform->CreateManagedObject(componentClass);
+			return transform;
 		}
 
 		if (auto const nsIt = gComponentInstantiators.find(classNs); nsIt != std::end(gComponentInstantiators))

@@ -153,7 +153,7 @@ namespace
 							auto const fieldName = mono_field_get_name(field);
 							auto const fieldObj = mono_field_get_value_object(leopph::GetManagedDomain(), field, obj);
 
-							if (leopph::IsTypePrimitiveOrString(mono_type_get_object(leopph::GetManagedDomain(), fieldType)))
+							if (leopph::IsTypePrimitive(mono_type_get_object(leopph::GetManagedDomain(), fieldType)))
 							{
 								node[fieldName] = mono_string_to_utf8(mono_object_to_string(fieldObj, nullptr));
 							}
@@ -175,7 +175,7 @@ namespace
 							auto const propName = mono_property_get_name(prop);
 							auto const propValueBoxed = mono_property_get_value(prop, mono_class_is_valuetype(klass) ? mono_object_unbox(obj) : obj, nullptr, nullptr);
 
-							if (leopph::IsTypePrimitiveOrString(mono_type_get_object(leopph::GetManagedDomain(), propType)))
+							if (leopph::IsTypePrimitive(mono_type_get_object(leopph::GetManagedDomain(), propType)))
 							{
 								auto const* str = mono_string_to_utf8(mono_object_to_string(propValueBoxed, nullptr));
 								node[propName] = str;
@@ -201,109 +201,84 @@ namespace
 
 	void DeserializeScene(YAML::Node const& scene)
 	{
-		//std::cout << "DESERIALIZE DEBUG" << std::endl;
-
 		for (auto const& entityNode : scene)
 		{
 			auto const entity = leopph::Entity::Create();
 			entity->name = entityNode["name"].as<std::string>();
 			entity->CreateManagedObject("leopph", "Entity");
 
-			//std::cout << "\tEntity, name = " << entity->name << std::endl;
-
 			for (auto const& componentNode : entityNode["components"])
 			{
 				auto const classNs = componentNode["classNameSpace"].as<std::string>();
 				auto const className = componentNode["className"].as<std::string>();
 				auto const componentClass = mono_class_from_name(leopph::GetManagedImage(), classNs.c_str(), className.c_str());
-				auto const managedComponent = entity->CreateComponent(componentClass)->GetManagedObject();
+				auto const component = entity->CreateComponent(componentClass);
+				auto const managedComponent = component->GetManagedObject();
 
-				//std::cout << "\t\tComponent, type = " << mono_class_get_name(componentClass) << std::endl;
+				std::function<void(MonoObject*, YAML::Node const&)> parseAndSetMembers;
+				std::function<MonoObject* (YAML::Node const&, MonoObject*, std::variant<MonoProperty*, MonoClassField*>)> setMember;
 
-				std::function<void(YAML::Node const&, MonoObject*, std::variant<MonoProperty*, MonoClassField*>)> setMember;
-				std::function<void(MonoObject*, std::string_view, YAML::Node const&)> queryAndSetMembers;
-
-				queryAndSetMembers = [&setMember](MonoObject* const memberObj, std::string_view const memberName, YAML::Node const& memberValueNode)
+				parseAndSetMembers = [&parseAndSetMembers](MonoObject* const obj, YAML::Node const& dataNode) -> void
 				{
-					auto const memberClass = mono_object_get_class(memberObj);
+					auto const objClass = mono_object_get_class(obj);
 
-					if (auto const memberProp = mono_class_get_property_from_name(memberClass, memberName.data()))
+					for (auto it = dataNode.begin(); it != dataNode.end(); ++it)
 					{
-						setMember(memberValueNode, memberObj, memberProp);
-					}
-					else if (auto const memberField = mono_class_get_field_from_name(memberClass, memberName.data()))
-					{
-						setMember(memberValueNode, memberObj, memberField);
-					}
-					else
-					{
-						std::cerr << "\t\t\tError, found member name but no corresponding member." << std::endl;
-					}
-				};
+						auto const memberName = it->first.as<std::string>();
 
-				setMember = [&queryAndSetMembers](YAML::Node const& node, MonoObject* const obj, std::variant<MonoProperty*, MonoClassField*> const dataMember) -> void
-				{
-					if (std::holds_alternative<MonoClassField*>(dataMember))
-					{
-						auto const field = std::get<MonoClassField*>(dataMember);
-						auto const fieldType = mono_field_get_type(field);
-
-						if (leopph::IsTypePrimitiveOrString(mono_type_get_object(leopph::GetManagedDomain(), fieldType)))
+						if (auto const prop = mono_class_get_property_from_name(objClass, memberName.data()))
 						{
-							auto const memberValue = node.as<std::string>();
-							leopph::ParseAndSetField(obj, mono_field_get_object(leopph::GetManagedDomain(), mono_object_get_class(obj), field), memberValue.c_str());
+							auto const propType = mono_signature_get_return_type(mono_method_signature(mono_property_get_get_method(prop)));
+							auto const objPossiblyUnboxed = mono_class_is_valuetype(objClass) ? mono_object_unbox(obj) : obj;
+							auto const propValueBoxed = mono_property_get_value(prop, objPossiblyUnboxed, nullptr, nullptr);
+
+							if (leopph::IsTypePrimitive(mono_type_get_object(leopph::GetManagedDomain(), propType)))
+							{
+								auto const memberValueStr = it->second.as<std::string>();
+								auto const parsedMemberValueBoxed = leopph::ParseAndSetProperty(mono_property_get_object(leopph::GetManagedDomain(), objClass, prop), memberValueStr.c_str());
+								auto parsedMemberValueUnboxed = mono_object_unbox(parsedMemberValueBoxed);
+								mono_property_set_value(prop, objPossiblyUnboxed, &parsedMemberValueUnboxed, nullptr);
+							}
+							else if (mono_class_is_valuetype(mono_type_get_class(propType)))
+							{
+								parseAndSetMembers(propValueBoxed, it->second);
+								auto propValueUnboxed = mono_object_unbox(propValueBoxed);
+								mono_property_set_value(prop, objPossiblyUnboxed, &propValueUnboxed, nullptr);
+							}
+							else
+							{
+								std::cerr << "Deserialization of reference type properties is not yet supported." << std::endl;
+							}
+						}
+						else if (auto const field = mono_class_get_field_from_name(objClass, memberName.data()))
+						{
+							auto const fieldType = mono_field_get_type(field);
+
+							if (leopph::IsTypePrimitive(mono_type_get_object(leopph::GetManagedDomain(), fieldType)))
+							{
+								auto const memberValueStr = it->second.as<std::string>();
+								auto const parsedMemberValueBoxed = leopph::ParseAndSetField(mono_field_get_object(leopph::GetManagedDomain(), objClass, field), memberValueStr.c_str());
+								mono_field_set_value(obj, field, mono_object_unbox(parsedMemberValueBoxed));
+							}
+							else if (mono_class_is_valuetype(mono_type_get_class(mono_field_get_type(field))))
+							{
+								auto const fieldValueBoxed = mono_field_get_value_object(leopph::GetManagedDomain(), field, obj);
+								parseAndSetMembers(fieldValueBoxed, it->second);
+								mono_field_set_value(obj, field, mono_object_unbox(fieldValueBoxed));
+							}
+							else
+							{
+								std::cerr << "Deserialization of reference type fields is not yet supported." << std::endl;
+							}
 						}
 						else
 						{
-							for (YAML::const_iterator it{ node.begin() }; it != node.end(); ++it)
-							{
-								auto const memberObj = mono_field_get_value_object(leopph::GetManagedDomain(), field, obj);
-								queryAndSetMembers(memberObj, it->first.as<std::string>(), it->second);
-								mono_field_set_value(obj, field, mono_object_unbox(memberObj));
-							}
-						}
-					}
-					else
-					{
-						auto const prop = std::get<MonoProperty*>(dataMember);
-						auto const propType = mono_signature_get_return_type(mono_method_signature(mono_property_get_get_method(prop)));
-
-						if (leopph::IsTypePrimitiveOrString(mono_type_get_object(leopph::GetManagedDomain(), propType)))
-						{
-							auto const memberValue = node.as<std::string>();
-							leopph::ParseAndSetProperty(obj, mono_property_get_object(leopph::GetManagedDomain(), mono_object_get_class(obj), prop), memberValue.c_str());
-						}
-						else
-						{
-							for (YAML::const_iterator it{ node.begin() }; it != node.end(); ++it)
-							{
-								void* possiblyUnboxedObj = mono_class_is_valuetype(mono_object_get_class(obj)) ? mono_object_unbox(obj) : obj;
-								auto const memberObj = mono_property_get_value(prop, possiblyUnboxedObj, nullptr, nullptr);
-								queryAndSetMembers(memberObj, it->first.as<std::string>(), it->second);
-								auto memberObjUnboxed = mono_object_unbox(memberObj);
-								mono_property_set_value(prop, possiblyUnboxedObj, reinterpret_cast<void**>(&memberObjUnboxed), nullptr);
-							}
+							std::cerr << std::format("Member \"{}\" in file has no corresponding member in class.", memberName) << std::endl;
 						}
 					}
 				};
 
-				for (YAML::const_iterator it{ componentNode["data"].begin() }; it != componentNode["data"].end(); ++it)
-				{
-					auto const memberName = it->first.as<std::string>();
-
-					if (auto const prop = mono_class_get_property_from_name(componentClass, memberName.c_str()))
-					{
-						setMember(it->second, managedComponent, prop);
-					}
-					else if (auto const field = mono_class_get_field_from_name(componentClass, memberName.c_str()))
-					{
-						setMember(it->second, managedComponent, field);
-					}
-					else
-					{
-						std::cerr << "\t\t\tError, found member name but no corresponding member." << std::endl;
-					}
-				}
+				parseAndSetMembers(managedComponent, componentNode["data"]);
 			}
 		}
 	}

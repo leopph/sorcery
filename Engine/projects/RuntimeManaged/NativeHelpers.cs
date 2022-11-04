@@ -88,33 +88,31 @@ namespace leopph
 		}
 
 
-		internal static bool IsPrimitiveOrString(Type type)
+		internal static bool IsPrimitive(Type type)
 		{
-			return type.IsPrimitive || type == typeof(string);
+			return type.IsPrimitive;
 		}
 
 
-		internal static void ParseAndSetFieldValue(object obj, FieldInfo field, string value)
+		internal static object ParseFieldValue(FieldInfo field, string value)
 		{
 			s_singleObjectHolder[0] = value;
 			s_singleTypeHolder[0] = s_stringType;
 
 			var parseMethod = field.FieldType.GetMethod("Parse", s_singleTypeHolder);
 			var parsedValue = parseMethod.Invoke(null, s_singleObjectHolder);
-
-			field.SetValue(obj, parsedValue);
+			return parsedValue;
 		}
 
 
-		internal static void ParseAndSetPropertyValue(object obj, PropertyInfo property, string value)
+		internal static object ParsePropertyValue(PropertyInfo property, string value)
 		{
 			s_singleObjectHolder[0] = value;
 			s_singleTypeHolder[0] = s_stringType;
 
 			var parseMethod = property.GetMethod.ReturnType.GetMethod("Parse", s_singleTypeHolder);
 			var parsedValue = parseMethod.Invoke(null, s_singleObjectHolder);
-
-			property.SetValue(obj, parsedValue);
+			return parsedValue;
 		}
 	}
 }
