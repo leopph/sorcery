@@ -297,7 +297,6 @@ int main()
 	leopph::platform::set_window_borderless(false);
 	leopph::platform::set_window_windowed_client_area_size({ 1280, 720 });
 	leopph::platform::SetIgnoreManagedRequests(true);
-	leopph::platform::SetEventBlock(true);
 
 	if (!leopph::rendering::InitRenderer())
 	{
@@ -305,6 +304,7 @@ int main()
 	}
 
 	leopph::rendering::SetGameResolution({ 960, 540 });
+	leopph::rendering::SetSyncInterval(1);
 
 	if (!leopph::initialize_managed_runtime())
 	{
@@ -352,7 +352,7 @@ int main()
 				leopph::platform::SetEventHook(EditorImGuiEventHook);
 				leopph::platform::confine_cursor(false);
 				leopph::platform::hide_cursor(false);
-				leopph::platform::SetEventBlock(true);
+				leopph::rendering::SetSyncInterval(1);
 				CloseCurrentScene();
 				DeserializeScene(gSerializedSceneBackup);
 			}
@@ -363,7 +363,7 @@ int main()
 			{
 				runGame = true;
 				leopph::platform::SetEventHook({});
-				leopph::platform::SetEventBlock(false);
+				leopph::rendering::SetSyncInterval(0);
 				gSerializedSceneBackup = SerializeScene();
 			}
 		}
