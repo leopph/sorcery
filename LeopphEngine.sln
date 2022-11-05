@@ -22,6 +22,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RuntimeManaged", "Engine\pr
 		{60A69D92-FA99-4F5C-804C-1DFF2CE460AD} = {60A69D92-FA99-4F5C-804C-1DFF2CE460AD}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ImGui", "Engine\projects\ImGui\ImGui.vcxproj", "{2359E10D-1161-46ED-BA5D-2AF984E94C63}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -52,6 +54,10 @@ Global
 		{FBD9532A-EE08-4991-B417-FD897AE7F97C}.Debug|x64.Build.0 = Debug|Any CPU
 		{FBD9532A-EE08-4991-B417-FD897AE7F97C}.Release|x64.ActiveCfg = Release|Any CPU
 		{FBD9532A-EE08-4991-B417-FD897AE7F97C}.Release|x64.Build.0 = Release|Any CPU
+		{2359E10D-1161-46ED-BA5D-2AF984E94C63}.Debug|x64.ActiveCfg = Debug|x64
+		{2359E10D-1161-46ED-BA5D-2AF984E94C63}.Debug|x64.Build.0 = Debug|x64
+		{2359E10D-1161-46ED-BA5D-2AF984E94C63}.Release|x64.ActiveCfg = Release|x64
+		{2359E10D-1161-46ED-BA5D-2AF984E94C63}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
