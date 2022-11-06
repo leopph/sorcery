@@ -16,7 +16,11 @@
 #include <mono/metadata/appdomain.h>
 #include <mono/metadata/threads.h>
 
+// yaml-cpp incorrectly uses dllexport specifiers so we silence their warnings
+#pragma warning (push)
+#pragma warning (disable: 4251 4275)
 #include <yaml-cpp/yaml.h>
+#pragma warning (pop)
 
 #include <format>
 #include <optional>
@@ -115,7 +119,10 @@ namespace {
 
 
 	void CloseCurrentScene() {
-		leopph::gEntities.clear();
+		static std::vector<leopph::Entity*> entities;
+		for (auto const& entity : leopph::GetEntities(entities)) {
+			leopph::DeleteEntity(entity);
+		}
 	}
 
 
@@ -124,12 +131,12 @@ namespace {
 
 	YAML::Node SerializeScene() {
 		YAML::Node scene;
-		for (auto const& entity : leopph::gEntities) {
+		static std::vector<leopph::Entity*> entities;
+		for (auto const& entity : leopph::GetEntities(entities)) {
 			YAML::Node entityNode;
 			entityNode["name"] = entity->name;
 
 			static std::vector<leopph::Component*> components;
-			components.clear();
 
 			for (auto const& component : entity->GetComponents(components)) {
 				YAML::Node componentNode;
@@ -431,17 +438,28 @@ int main() {
 		}
 
 		static std::optional<std::size_t> selectedEntityIndex;
+		static std::vector<leopph::Entity*> entities;
+		leopph::GetEntities(entities);
 
-		if (selectedEntityIndex && *selectedEntityIndex >= leopph::gEntities.size()) {
+		if (selectedEntityIndex && *selectedEntityIndex >= entities.size()) {
 			selectedEntityIndex.reset();
 		}
 
 		if (ImGui::Begin("Entities", nullptr, ImGuiWindowFlags_NoCollapse)) {
-			for (std::size_t i = 0; i < leopph::gEntities.size(); i++) {
+			for (std::size_t i = 0; i < entities.size(); i++) {
 				ImGui::PushID(static_cast<int>(i));
-				if (ImGui::Selectable(leopph::gEntities[i]->name.data(), selectedEntityIndex && *selectedEntityIndex == i)) {
+				if (ImGui::Selectable(entities[i]->name.data(), selectedEntityIndex && *selectedEntityIndex == i)) {
 					selectedEntityIndex = i;
 				}
+
+				if (ImGui::BeginPopupContextItem()) {
+					if (ImGui::Button("Delete")) {
+						leopph::DeleteEntity(entities[i]);
+					}
+					ImGui::EndPopup();
+				}
+
+				ImGui::OpenPopupOnItemClick(nullptr, ImGuiPopupFlags_MouseButtonRight);
 				ImGui::PopID();
 			}
 		}
@@ -451,7 +469,7 @@ int main() {
 
 		if (ImGui::Begin("Entity Properties", nullptr, ImGuiWindowFlags_NoCollapse)) {
 			if (selectedEntityIndex) {
-				auto const& entity = leopph::gEntities[*selectedEntityIndex];
+				auto const& entity = entities[*selectedEntityIndex];
 
 				static std::string entityName;
 				entityName = entity->name;
@@ -469,13 +487,13 @@ int main() {
 				}
 
 				static std::vector<leopph::Component*> components;
-				components.clear();
 
 				for (auto const& component : entity->GetComponents(components)) {
 					auto const obj = component->GetManagedObject();
 					auto const klass = mono_object_get_class(obj);
 
-					if (ImGui::TreeNodeEx(mono_class_get_name(klass), ImGuiTreeNodeFlags_DefaultOpen)) {
+					auto const componentNodeId = mono_class_get_name(klass);
+					if (ImGui::TreeNodeEx(componentNodeId, ImGuiTreeNodeFlags_DefaultOpen)) {
 						if (ImGui::BeginTable(std::format("TableForMember{}", mono_class_get_name(klass)).c_str(), 2, ImGuiTableFlags_Borders | ImGuiTableFlags_SizingStretchProp)) {
 							void* iter{ nullptr };
 							while (auto const field = mono_class_get_fields(klass, &iter)) {
@@ -509,11 +527,19 @@ int main() {
 
 						ImGui::TreePop();
 					}
+
+					if (ImGui::BeginPopupContextItem(componentNodeId)) {
+						if (ImGui::Button("Delete")) {
+							entities[*selectedEntityIndex]->DeleteComponent(component);
+						}
+						ImGui::EndPopup();
+					}
+					ImGui::OpenPopupOnItemClick(componentNodeId, ImGuiPopupFlags_MouseButtonRight);
 				}
 
-				auto constexpr addNewComponentPopupId = "AddNewComponentPopup";
+				ImGui::Button("Add New Component");
 
-				if (ImGui::BeginPopupContextItem(addNewComponentPopupId)) {
+				if (ImGui::BeginPopupContextItem(nullptr, ImGuiPopupFlags_MouseButtonLeft)) {
 					for (auto const& componentClass : leopph::GetComponentClasses()) {
 						if (ImGui::Button(mono_class_get_name(componentClass))) {
 							entity->CreateComponent(componentClass);
@@ -522,10 +548,6 @@ int main() {
 					}
 
 					ImGui::EndPopup();
-				}
-
-				if (ImGui::Button("Add New Component")) {
-					ImGui::OpenPopup(addNewComponentPopupId);
 				}
 			}
 		}
