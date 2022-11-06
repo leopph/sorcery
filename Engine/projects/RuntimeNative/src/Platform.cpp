@@ -102,7 +102,7 @@ namespace leopph::platform
 					if (wparam == RIM_INPUT)
 					{
 						UINT requiredSize;
-						GetRawInputData(reinterpret_cast<HRAWINPUT>(lparam), RID_INPUT, nullptr, &requiredSize, sizeof RAWINPUTHEADER);
+						GetRawInputData(reinterpret_cast<HRAWINPUT>(lparam), RID_INPUT, nullptr, &requiredSize, sizeof(RAWINPUTHEADER));
 
 						auto static bufferSize = requiredSize;
 						auto static buffer = std::make_unique_for_overwrite<BYTE[]>(requiredSize);
@@ -113,7 +113,7 @@ namespace leopph::platform
 							buffer = std::make_unique_for_overwrite<BYTE[]>(requiredSize);
 						}
 
-						GetRawInputData(reinterpret_cast<HRAWINPUT>(lparam), RID_INPUT, buffer.get(), &bufferSize, sizeof RAWINPUTHEADER);
+						GetRawInputData(reinterpret_cast<HRAWINPUT>(lparam), RID_INPUT, buffer.get(), &bufferSize, sizeof(RAWINPUTHEADER));
 
 						if (auto const* const raw = reinterpret_cast<RAWINPUT*>(buffer.get()); raw->header.dwType == RIM_TYPEMOUSE)
 						{
@@ -173,7 +173,7 @@ namespace leopph::platform
 	{
 		WNDCLASSEXW const wx
 		{
-			.cbSize = sizeof WNDCLASSEXW,
+			.cbSize = sizeof(WNDCLASSEXW),
 			.lpfnWndProc = wnd_proc,
 			.hInstance = GetModuleHandleW(nullptr),
 			.lpszClassName = WND_CLASS_NAME
@@ -201,7 +201,7 @@ namespace leopph::platform
 			.hwndTarget = gHwnd
 		};
 
-		if (!RegisterRawInputDevices(&rid, 1, sizeof RAWINPUTDEVICE))
+		if (!RegisterRawInputDevices(&rid, 1, sizeof(RAWINPUTDEVICE)))
 		{
 			MessageBoxW(nullptr, L"Failed to register raw input devices.", L"Error", MB_ICONERROR);
 			return false;

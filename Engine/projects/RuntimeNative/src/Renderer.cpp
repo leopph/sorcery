@@ -649,7 +649,7 @@ namespace leopph::rendering
 		gResources->context->Map(gResources->instanceBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedInstanceBuffer);
 		DirectX::XMFLOAT4X4* mappedInstanceBufferData{ static_cast<DirectX::XMFLOAT4X4*>(mappedInstanceBuffer.pData) };
 
-		for (int i = 0; i < gCubeModels.size(); i++)
+		for (std::size_t i = 0; i < gCubeModels.size(); i++)
 		{
 			DirectX::XMFLOAT4X4 modelMat{ gCubeModels[i]->GetTransform().GetModelMatrix().get_data() };
 			DirectX::XMStoreFloat4x4(mappedInstanceBufferData + i, DirectX::XMLoadFloat4x4(&modelMat));

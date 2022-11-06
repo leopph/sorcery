@@ -272,7 +272,7 @@ namespace leopph
 		LEOPPHAPI static Quaternion FromEulerAngles(f32 x, f32 y, f32 z);
 
 		[[nodiscard]] LEOPPHAPI Vector3 ToEulerAngles() const;
-		[[nodiscard]] LEOPPHAPI void to_axis_angle(Vector3& axis, float& angle) const;
+		LEOPPHAPI void to_axis_angle(Vector3& axis, float& angle) const;
 
 		[[nodiscard]] LEOPPHAPI f32 get_norm_squared() const;
 		[[nodiscard]] LEOPPHAPI f32 get_norm() const;

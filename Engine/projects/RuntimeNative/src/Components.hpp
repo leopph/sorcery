@@ -10,15 +10,13 @@
 using MonoReflectionType = struct _MonoReflectionType;
 
 
-namespace leopph
-{
+namespace leopph {
 	class Entity;
 	class Transform;
 	class Component;
 
 
-	class Component : public ManagedAccessObject
-	{
+	class Component : public ManagedAccessObject {
 	public:
 		Entity* const entity;
 
@@ -28,22 +26,19 @@ namespace leopph
 	};
 
 
-	namespace managedbindings
-	{
+	namespace managedbindings {
 		MonoObject* GetComponentEntity(MonoObject* component);
 		MonoObject* GetComponentEntityTransform(MonoObject* component);
 	}
 
 
-	enum class Space : u8
-	{
+	enum class Space : u8 {
 		World = 0,
 		Local = 1
 	};
 
 
-	class Transform : public Component
-	{
+	class Transform : public Component {
 	private:
 		void UpdateWorldPositionRecursive();
 		void UpdateWorldRotationRecursive();
@@ -112,8 +107,7 @@ namespace leopph
 	};
 
 
-	namespace managedbindings
-	{
+	namespace managedbindings {
 		Vector3 GetTransformWorldPosition(MonoObject* transform);
 		void SetTransformWorldPosition(MonoObject* transform, Vector3 newPos);
 
@@ -154,24 +148,20 @@ namespace leopph
 
 
 
-	class CubeModel : public Component
-	{
+	class CubeModel : public Component {
 	public:
 		CubeModel(Entity* entity);
 		~CubeModel() override;
 	};
 
 
-	class Camera : public Component
-	{
+	class Camera : public Component {
 	public:
-		enum class Type : u8
-		{
+		enum class Type : u8 {
 			Perspective = 0, Orthographic = 1
 		};
 
-		enum class Side : u8
-		{
+		enum class Side : u8 {
 			Vertical = 0, Horizontal = 1
 		};
 
@@ -180,7 +170,7 @@ namespace leopph
 
 		f32 mNear{ 0.1f };
 		f32 mFar{ 100.f };
-		NormalizedViewport mViewport{ 0, 0, 1, 1 };
+		NormalizedViewport mViewport{ { 0, 0 }, { 1, 1 } };
 		Extent2D<u32> mWindowExtent;
 		f32 mAspect;
 		Type mType{ Type::Perspective };
@@ -194,7 +184,7 @@ namespace leopph
 		Camera(Entity* entity);
 		~Camera() override;
 
-		LEOPPHAPI static [[nodiscard]] std::span<Camera* const> GetAllInstances();
+		LEOPPHAPI [[nodiscard]] static std::span<Camera* const> GetAllInstances();
 
 		LEOPPHAPI [[nodiscard]] f32 GetNearClipPlane() const;
 		LEOPPHAPI void SetNearClipPlane(f32 nearPlane);
@@ -222,8 +212,7 @@ namespace leopph
 	};
 
 
-	namespace managedbindings
-	{
+	namespace managedbindings {
 		Camera::Type GetCameraType(MonoObject* camera);
 		void SetCameraType(MonoObject* camera, Camera::Type type);
 
@@ -235,14 +224,13 @@ namespace leopph
 
 		f32 GetCameraNearClipPlane(MonoObject* camera);
 		void SetCameraNearClipPlane(MonoObject* camera, f32 nearClipPlane);
-		
+
 		f32 GetCameraFarClipPlane(MonoObject* camera);
 		void SetCameraFarClipPlane(MonoObject* camera, f32 farClipPlane);
 	}
 
 
-	class Behavior : public Component
-	{
+	class Behavior : public Component {
 	public:
 		Behavior(Entity* entity, MonoClass* klass);
 		~Behavior() override;

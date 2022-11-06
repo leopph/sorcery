@@ -29,10 +29,10 @@ namespace leopph
 
 		virtual ~ManagedAccessObject();
 
-		static [[nodiscard]] void* GetNativePtrFromManagedObject(MonoObject* managedObject);
+		[[nodiscard]] static void* GetNativePtrFromManagedObject(MonoObject* managedObject);
 
 		template<typename T> requires std::derived_from<std::remove_pointer_t<T>, ManagedAccessObject>
-		static [[nodiscard]] T GetNativePtrFromManagedObjectAs(MonoObject* managedObject)
+		[[nodiscard]] static T GetNativePtrFromManagedObjectAs(MonoObject* managedObject)
 		{
 			return static_cast<T>(GetNativePtrFromManagedObject(managedObject));
 		}

@@ -14,7 +14,7 @@ namespace leopph
 		static std::size_t sActiveSceneIndex;
 
 	public:
-		static [[nodiscard]] Scene* GetActiveScene();
+		[[nodiscard]] static Scene* GetActiveScene();
 		static Scene* CreateScene(std::string name);
 	};
 }
