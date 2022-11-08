@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core.hpp"
+#include "Object.hpp"
 
 #include <string_view>
 #include <optional>
@@ -13,7 +14,7 @@ using MonoClass = struct _MonoClass;
 
 namespace leopph
 {
-	class ManagedAccessObject
+	class ManagedAccessObject : public Object
 	{
 	private:
 		static u64 sNextId;

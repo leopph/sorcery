@@ -3,41 +3,37 @@
 #include "Core.hpp"
 #include "Math.hpp"
 
+#include <bitset>
 
-namespace leopph
-{
+
+namespace leopph {
 	template<typename T>
-	struct Extent2D
-	{
+	struct Extent2D {
 		T width;
 		T height;
 	};
 
 
 	template<typename T>
-	struct Point2D
-	{
+	struct Point2D {
 		T x;
 		T y;
 	};
 
 
-	struct Viewport
-	{
+	struct Viewport {
 		Point2D<u32> position;
 		Extent2D<u32> extent;
 	};
 
 
-	struct NormalizedViewport
-	{
+	struct NormalizedViewport {
 		Point2D<f32> position;
 		Extent2D<f32> extent;
 	};
 
 
-	struct Frustum
-	{
+	struct Frustum {
 		Vector3 rightTopNear;
 		Vector3 leftTopNear;
 		Vector3 leftBottomNear;
@@ -47,4 +43,8 @@ namespace leopph
 		Vector3 leftBottomFar;
 		Vector3 rightBottomFar;
 	};
+
+
+	using GUID = std::bitset<128>;
+	[[nodiscard]] LEOPPHAPI auto GenerateGUID() -> GUID;
 }
