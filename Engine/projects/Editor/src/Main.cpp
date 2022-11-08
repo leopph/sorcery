@@ -235,7 +235,7 @@ namespace {
 }
 
 
-int main() {
+int WINAPI wWinMain([[maybe_unused]] HINSTANCE, [[maybe_unused]] HINSTANCE, [[maybe_unused]] wchar_t*, [[maybe_unused]] int) {
 	if (!leopph::platform::init_platform_support()) {
 		return 1;
 	}
@@ -257,11 +257,8 @@ int main() {
 
 	ImGui::CreateContext();
 	auto& io = ImGui::GetIO();
-	char* exePath;
-	_get_pgmptr(&exePath);
-	std::filesystem::path iniFilePath{ exePath };
-	iniFilePath.remove_filename() /= "editorconfig.ini";
-	auto const iniFilePathStr = iniFilePath.string();
+	auto const iniFilePath{ std::filesystem::path{ leopph::platform::GetExecutablePath() }.remove_filename() /= "editorconfig.ini" };
+	auto const iniFilePathStr{ leopph::platform::WideToUtf8(iniFilePath.c_str()) };
 	io.IniFilename = iniFilePathStr.c_str();
 	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
@@ -632,4 +629,5 @@ int main() {
 	leopph::cleanup_managed_runtime();
 	leopph::rendering::CleanupRenderer();
 	leopph::platform::cleanup_platform_support();
+	return 0;
 }

@@ -435,6 +435,14 @@ namespace leopph::platform
     }
 
 
+    std::wstring_view GetExecutablePath()
+    {
+		wchar_t* exePath;
+		_get_wpgmptr(&exePath);
+		return exePath;
+    }
+
+
 	namespace managedbindings
 	{
 		int IsWindowBorderLess()

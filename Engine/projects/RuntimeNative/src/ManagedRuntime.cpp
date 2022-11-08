@@ -156,9 +156,7 @@ namespace leopph {
 		mono_add_internal_call("leopph.Camera::get_FarClipPlane", reinterpret_cast<void*>(&managedbindings::GetCameraFarClipPlane));
 		mono_add_internal_call("leopph.Camera::set_FarClipPlane", reinterpret_cast<void*>(&managedbindings::SetCameraFarClipPlane));
 
-		char* exePathStr;
-		_get_pgmptr(&exePathStr);
-		auto const managedLibPath{ std::filesystem::path{ exePathStr }.remove_filename() /= "LeopphRuntimeManaged.dll" };
+		auto const managedLibPath{ std::filesystem::path{ platform::GetExecutablePath() }.remove_filename() /= "LeopphRuntimeManaged.dll" };
 
 		auto const assembly{ mono_domain_assembly_open(gDomain, platform::WideToUtf8(managedLibPath.c_str()).c_str()) };
 

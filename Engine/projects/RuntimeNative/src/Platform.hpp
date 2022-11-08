@@ -60,6 +60,8 @@ namespace leopph::platform
 
 	[[nodiscard]] LEOPPHAPI std::string WideToUtf8(std::wstring_view wstr);
 
+	[[nodiscard]] LEOPPHAPI std::wstring_view GetExecutablePath();
+
 	namespace managedbindings
 	{
 		int IsWindowBorderLess();
