@@ -9,6 +9,8 @@
 #include "Util.hpp"
 
 #include <functional>
+#include <string>
+#include <string_view>
 
 
 namespace leopph::platform
@@ -55,6 +57,8 @@ namespace leopph::platform
 
 	LEOPPHAPI [[nodiscard]] bool IsIgnoringManagedRequests();
 	LEOPPHAPI void SetIgnoreManagedRequests(bool ignore);
+
+	[[nodiscard]] LEOPPHAPI std::string WideToUtf8(std::wstring_view wstr);
 
 	namespace managedbindings
 	{

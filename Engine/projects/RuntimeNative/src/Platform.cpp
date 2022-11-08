@@ -427,6 +427,14 @@ namespace leopph::platform
 	}
 
 
+    std::string WideToUtf8(std::wstring_view const wstr)
+    {
+		std::string ret(static_cast<std::size_t>(WideCharToMultiByte(CP_UTF8, 0, wstr.data(), static_cast<int>(wstr.size()), nullptr, 0, nullptr, nullptr)), '\0');
+		WideCharToMultiByte(CP_UTF8, 0, wstr.data(), static_cast<int>(wstr.size()), ret.data(), static_cast<int>(ret.size()), nullptr, nullptr);
+		return ret;
+    }
+
+
 	namespace managedbindings
 	{
 		int IsWindowBorderLess()
