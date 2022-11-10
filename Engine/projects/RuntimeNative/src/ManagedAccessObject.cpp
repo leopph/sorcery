@@ -86,4 +86,12 @@ namespace leopph
 		mono_field_get_value(managedObject, field, &ptrData);
 		return ptrData;
 	}
+
+
+	namespace managedbindings {
+		auto GetManagedAccessObjectGuid(MonoObject* const nativeWrapper) -> GUID
+		{
+			return ManagedAccessObject::GetNativePtrFromManagedObjectAs<ManagedAccessObject*>(nativeWrapper)->GetGuid();
+		}
+	}
 }

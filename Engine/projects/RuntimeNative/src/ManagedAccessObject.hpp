@@ -38,4 +38,9 @@ namespace leopph
 			return static_cast<T>(GetNativePtrFromManagedObject(managedObject));
 		}
 	}; 
+
+
+	namespace managedbindings {
+		auto GetManagedAccessObjectGuid(MonoObject* nativeWrapper) -> GUID;
+	}
 }

@@ -110,6 +110,8 @@ namespace leopph {
 		mono_add_internal_call("leopph.Window::set_IsMinimizingOnBorderlessFocusLoss", reinterpret_cast<void*>(&platform::managedbindings::SetWindowMinimizeOnBorderlessFocusLoss));
 		mono_add_internal_call("leopph.Window::InternalSetShouldClose", reinterpret_cast<void*>(&platform::managedbindings::SetWindowShouldClose));
 
+		mono_add_internal_call("leopph.NativeWrapper.get_Guid", reinterpret_cast<void*>(&managedbindings::GetManagedAccessObjectGuid));
+
 		mono_add_internal_call("leopph.Entity::NewNativeEntity", reinterpret_cast<void*>(&managedbindings::CreateNativeEntity));
 		mono_add_internal_call("leopph.Entity::get_Name", reinterpret_cast<void*>(&managedbindings::GetEntityName));
 		mono_add_internal_call("leopph.Entity::set_Name", reinterpret_cast<void*>(&managedbindings::SetEntityName));
