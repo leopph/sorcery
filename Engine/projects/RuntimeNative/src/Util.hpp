@@ -4,6 +4,8 @@
 #include "Math.hpp"
 
 #include <bitset>
+#include <string>
+#include <string_view>
 
 
 namespace leopph {
@@ -45,6 +47,13 @@ namespace leopph {
 	};
 
 
-	using GUID = std::bitset<128>;
-	[[nodiscard]] LEOPPHAPI auto GenerateGUID() -> GUID;
+	struct Guid {
+		leopph::u64 data0;
+		leopph::u64 data1;
+
+		[[nodiscard]] LEOPPHAPI static auto Generate() -> Guid;
+		[[nodiscard]] LEOPPHAPI static auto Parse(std::string_view str) -> Guid;
+
+		[[nodiscard]] LEOPPHAPI auto ToString() const->std::string;
+	};
 }
