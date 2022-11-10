@@ -87,7 +87,7 @@ namespace leopph {
 			return outComponents;
 		}
 
-		void DeleteComponent(Component* component);
+		LEOPPHAPI void DeleteComponent(Component* component);
 	};
 
 	static_assert(!std::is_copy_constructible_v<Entity>);

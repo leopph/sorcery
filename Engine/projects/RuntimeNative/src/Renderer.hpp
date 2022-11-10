@@ -11,25 +11,25 @@
 
 namespace leopph::rendering
 {
-	LEOPPHAPI [[nodiscard]] bool InitRenderer();
+	[[nodiscard]] LEOPPHAPI bool InitRenderer();
 	LEOPPHAPI void CleanupRenderer();
 	
-	LEOPPHAPI [[nodiscard]] bool DrawGame();
-	LEOPPHAPI [[nodiscard]] Extent2D<u32> GetGameResolution();
+	[[nodiscard]] LEOPPHAPI bool DrawGame();
+	[[nodiscard]] LEOPPHAPI Extent2D<u32> GetGameResolution();
 	LEOPPHAPI void SetGameResolution(Extent2D<u32> resolution);
-	LEOPPHAPI [[nodiscard]] ID3D11ShaderResourceView* GetGameFrame();
-	LEOPPHAPI [[nodiscard]] f32 GetGameAspectRatio();
+	[[nodiscard]] LEOPPHAPI ID3D11ShaderResourceView* GetGameFrame();
+	[[nodiscard]] LEOPPHAPI f32 GetGameAspectRatio();
 
 	LEOPPHAPI void BindAndClearSwapChain();
 
 	LEOPPHAPI void Present();
 
-	[[nodiscard]] u32 GetSyncInterval();
-	void SetSyncInterval(u32 interval);
+	[[nodiscard]] LEOPPHAPI u32 GetSyncInterval();
+	LEOPPHAPI void SetSyncInterval(u32 interval);
 
-	void RegisterCubeModel(CubeModel const* cubeModel);
-	void UnregisterCubeModel(CubeModel const* cubeModel);
+	LEOPPHAPI void RegisterCubeModel(CubeModel const* cubeModel);
+	LEOPPHAPI void UnregisterCubeModel(CubeModel const* cubeModel);
 
-	LEOPPHAPI [[nodiscard]] ID3D11Device* GetDevice();
-	LEOPPHAPI [[nodiscard]] ID3D11DeviceContext* GetImmediateContext();
+	[[nodiscard]] LEOPPHAPI ID3D11Device* GetDevice();
+	[[nodiscard]] LEOPPHAPI ID3D11DeviceContext* GetImmediateContext();
 }

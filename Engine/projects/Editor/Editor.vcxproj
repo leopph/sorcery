@@ -67,13 +67,12 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(SolutionDir)Engine\deps\vendor\mono\msvc\include</AdditionalIncludeDirectories>
-      <TreatWarningAsError>false</TreatWarningAsError>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)Engine\deps\vendor\mono\msvc\build\sgen\$(Platform)\lib\$(Configuration);$(DXSDK_DIR)Lib\x64</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libmono-static-sgen.lib;Ws2_32.lib;Bcrypt.lib;Version.lib;Winmm.lib;dxgi.lib;d3d11.lib;$(CoreLibraryDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)Engine\deps\vendor\mono\msvc\build\sgen\$(Platform)\lib\$(Configuration)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>mono-2.0-sgen.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -85,15 +84,14 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(SolutionDir)Engine\deps\vendor\mono\msvc\include</AdditionalIncludeDirectories>
-      <TreatWarningAsError>false</TreatWarningAsError>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)Engine\deps\vendor\mono\msvc\build\sgen\$(Platform)\lib\$(Configuration);$(DXSDK_DIR)Lib\x64</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libmono-static-sgen.lib;Ws2_32.lib;Bcrypt.lib;Version.lib;Winmm.lib;dxgi.lib;d3d11.lib;$(CoreLibraryDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)Engine\deps\vendor\mono\msvc\build\sgen\$(Platform)\lib\$(Configuration)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>mono-2.0-sgen.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

@@ -64,7 +64,7 @@ namespace leopph {
 		Matrix3 mNormalMat{ Matrix4::identity() };
 
 	public:
-		Transform(Entity* entity);
+		LEOPPHAPI Transform(Entity* entity);
 
 		[[nodiscard]] LEOPPHAPI Vector3 const& GetWorldPosition() const;
 		LEOPPHAPI void SetWorldPosition(Vector3 const& newPos);
