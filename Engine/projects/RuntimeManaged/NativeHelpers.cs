@@ -10,72 +10,77 @@ namespace leopph
 		private static readonly Type[] s_TypeArrayTwoElems = new Type[2];
 		private static readonly Type s_stringType = typeof(string);
 		private static readonly Type s_cultureInfoType = typeof(CultureInfo);
+		private static readonly Type s_exposeAttributeType = typeof(ExposeAttribute);
+		private static readonly Type s_doNotExposeAttributeType = typeof(DoNotExposeAttribute);
+		private static readonly Assembly s_thisAssembly = typeof(NativeHelpers).Assembly;
+
 
 		internal static bool ShouldSerializeField(FieldInfo field)
 		{
-			// First check for reasons to NOT serialize
-
-			if (field.IsStatic)
-			{
+			if (field.IsStatic) {
 				return false;
 			}
 
-			// Prohibiting attribute is stronger
-			foreach (var attr in field.CustomAttributes)
-			{
+			var typeIsExposed = field.FieldType.IsPrimitive || field.FieldType.Assembly == s_thisAssembly;
 
-				if (attr.AttributeType == typeof(DoNotExposeAttribute))
-				{
+			foreach (var attr in field.FieldType.CustomAttributes) {
+				if (attr.AttributeType == s_exposeAttributeType) {
+					typeIsExposed = true;
+					break;
+				}
+			}
+
+			if (!typeIsExposed) {
+				return false;
+			}
+
+			foreach (var attr in field.CustomAttributes) {
+				if (attr.AttributeType == s_exposeAttributeType) {
+					return true;
+				}
+				if (attr.AttributeType == s_doNotExposeAttributeType) {
 					return false;
 				}
 			}
 
-			if (field.IsPublic)
-			{
+			if (field.IsPublic) { 
 				return true;
-			}
-
-			foreach (var attr in field.CustomAttributes)
-			{
-				if (attr.AttributeType == typeof(ExposeAttribute))
-				{
-					return true;
-				}
 			}
 
 			return false;
 		}
 
+
 		internal static bool ShouldSerializeProperty(PropertyInfo property)
 		{
-			// First check for reasons to NOT serialize
-
-			if (property.GetGetMethod().IsStatic || property.GetMethod is null || property.SetMethod is null || property.GetMethod.GetParameters().Length != 0)
-			{
+			if (property.GetMethod is null || property.GetMethod.IsStatic || property.GetMethod.GetParameters().Length != 0 || property.SetMethod is null || property.SetMethod.IsStatic) {
 				return false;
 			}
 
-			// Prohibiting attribute is stronger
-			foreach (var attr in property.CustomAttributes)
-			{
+			var typeIsExposed = property.GetMethod.ReturnType.IsPrimitive || property.GetMethod.ReturnType.Assembly == s_thisAssembly;
 
-				if (attr.AttributeType == typeof(DoNotExposeAttribute))
-				{
+			foreach (var attr in property.GetMethod.ReturnType.CustomAttributes) {
+				if (attr.AttributeType == s_exposeAttributeType) {
+					typeIsExposed = true;
+					break;
+				}
+			}
+
+			if (!typeIsExposed) {
+				return false;
+			}
+
+			foreach (var attr in property.CustomAttributes) {
+				if (attr.AttributeType == s_exposeAttributeType) {
+					return true;
+				}
+				if (attr.AttributeType == s_doNotExposeAttributeType) {
 					return false;
 				}
 			}
 
-			if (property.GetMethod.IsPublic && property.SetMethod.IsPublic)
-			{
+			if (property.GetMethod.IsPublic && property.SetMethod.IsPublic) {
 				return true;
-			}
-
-			foreach (var attr in property.CustomAttributes)
-			{
-				if (attr.AttributeType == typeof(ExposeAttribute))
-				{
-					return true;
-				}
 			}
 
 			return false;

@@ -235,7 +235,7 @@ namespace {
 }
 
 
-int WINAPI wWinMain([[maybe_unused]] HINSTANCE, [[maybe_unused]] HINSTANCE, [[maybe_unused]] wchar_t*, [[maybe_unused]] int) {
+int WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ HINSTANCE, [[maybe_unused]] _In_ wchar_t*, [[maybe_unused]] _In_ int) {
 	if (!leopph::platform::init_platform_support()) {
 		return 1;
 	}
