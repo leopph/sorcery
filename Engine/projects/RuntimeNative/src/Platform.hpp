@@ -20,42 +20,42 @@ namespace leopph::platform
 	LEOPPHAPI extern GuardedEventReference<> OnWindowFocusGain;
 	LEOPPHAPI extern GuardedEventReference<> OnWindowFocusLoss;
 
-	LEOPPHAPI [[nodiscard]] bool init_platform_support();
-	LEOPPHAPI [[nodiscard]] bool process_platform_events();
+	[[nodiscard]] LEOPPHAPI bool init_platform_support();
+	[[nodiscard]] LEOPPHAPI bool process_platform_events();
 	LEOPPHAPI void cleanup_platform_support();
 
-	LEOPPHAPI [[nodiscard]] HWND get_hwnd();
+	[[nodiscard]] LEOPPHAPI HWND get_hwnd();
 
-	LEOPPHAPI [[nodiscard]] Extent2D<u32> get_window_current_client_area_size();
-	LEOPPHAPI [[nodiscard]] Extent2D<u32> get_window_windowed_client_area_size();
+	[[nodiscard]] LEOPPHAPI Extent2D<u32> get_window_current_client_area_size();
+	[[nodiscard]] LEOPPHAPI Extent2D<u32> get_window_windowed_client_area_size();
 	LEOPPHAPI void set_window_windowed_client_area_size(Extent2D<u32> size);
 
-	LEOPPHAPI [[nodiscard]] bool is_window_borderless();
+	[[nodiscard]] LEOPPHAPI bool is_window_borderless();
 	LEOPPHAPI void set_window_borderless(bool borderless);
 
-	LEOPPHAPI [[nodiscard]] bool is_window_minimizing_on_borderless_focus_loss();
+	[[nodiscard]] LEOPPHAPI bool is_window_minimizing_on_borderless_focus_loss();
 	LEOPPHAPI void set_window_minimize_on_borderless_focus_loss(bool minimize);
 
-	LEOPPHAPI [[nodiscard]] bool should_window_close();
+	[[nodiscard]] LEOPPHAPI bool should_window_close();
 	LEOPPHAPI void set_should_window_close(bool shouldClose);
 
-	LEOPPHAPI [[nodiscard]] bool is_cursor_confined();
+	[[nodiscard]] LEOPPHAPI bool is_cursor_confined();
 	LEOPPHAPI void confine_cursor(bool confine);
 
-	LEOPPHAPI [[nodiscard]] bool is_cursor_hidden();
+	[[nodiscard]] LEOPPHAPI bool is_cursor_hidden();
 	LEOPPHAPI void hide_cursor(bool hide);
 
 	LEOPPHAPI void SetEventHook(std::function<bool(HWND, UINT, WPARAM, LPARAM)> handler);
 
 	enum class Key : u8;
 
-	LEOPPHAPI [[nodiscard]] bool GetKey(Key key);
-	LEOPPHAPI [[nodiscard]] bool GetKeyDown(Key key);
-	LEOPPHAPI [[nodiscard]] bool GetKeyUp(Key key);
-	LEOPPHAPI [[nodiscard]] Point2D<i32> GetMousePosition();
-	LEOPPHAPI [[nodiscard]] Point2D<i32> GetMouseDelta();
+	[[nodiscard]] LEOPPHAPI bool GetKey(Key key);
+	[[nodiscard]] LEOPPHAPI bool GetKeyDown(Key key);
+	[[nodiscard]] LEOPPHAPI bool GetKeyUp(Key key);
+	[[nodiscard]] LEOPPHAPI Point2D<i32> GetMousePosition();
+	[[nodiscard]] LEOPPHAPI Point2D<i32> GetMouseDelta();
 
-	LEOPPHAPI [[nodiscard]] bool IsIgnoringManagedRequests();
+	[[nodiscard]] LEOPPHAPI bool IsIgnoringManagedRequests();
 	LEOPPHAPI void SetIgnoreManagedRequests(bool ignore);
 
 	[[nodiscard]] LEOPPHAPI std::string WideToUtf8(std::wstring_view wstr);

@@ -93,17 +93,17 @@ namespace leopph {
 		LEOPPHAPI void Rescale(Vector3 const& scaling, Space base = Space::World);
 		LEOPPHAPI void Rescale(f32 x, f32 y, f32 z, Space base = Space::World);
 
-		LEOPPHAPI [[nodiscard]] Vector3 const& GetRightAxis() const;
-		LEOPPHAPI [[nodiscard]] Vector3 const& GetUpAxis() const;
-		LEOPPHAPI [[nodiscard]] Vector3 const& GetForwardAxis() const;
+		[[nodiscard]] LEOPPHAPI Vector3 const& GetRightAxis() const;
+		[[nodiscard]] LEOPPHAPI Vector3 const& GetUpAxis() const;
+		[[nodiscard]] LEOPPHAPI Vector3 const& GetForwardAxis() const;
 
-		LEOPPHAPI [[nodiscard]] Transform* GetParent() const;
+		[[nodiscard]] LEOPPHAPI Transform* GetParent() const;
 		void LEOPPHAPI SetParent(Transform* parent);
 
 		[[nodiscard]] LEOPPHAPI std::span<Transform* const> GetChildren() const;
 
-		LEOPPHAPI [[nodiscard]] Matrix4 const& GetModelMatrix() const;
-		LEOPPHAPI [[nodiscard]] Matrix3 const& GetNormalMatrix() const;
+		[[nodiscard]] LEOPPHAPI Matrix4 const& GetModelMatrix() const;
+		[[nodiscard]] LEOPPHAPI Matrix3 const& GetNormalMatrix() const;
 	};
 
 
@@ -184,30 +184,30 @@ namespace leopph {
 		Camera(Entity* entity);
 		~Camera() override;
 
-		LEOPPHAPI [[nodiscard]] static std::span<Camera* const> GetAllInstances();
+		[[nodiscard]] LEOPPHAPI static std::span<Camera* const> GetAllInstances();
 
-		LEOPPHAPI [[nodiscard]] f32 GetNearClipPlane() const;
+		[[nodiscard]] LEOPPHAPI f32 GetNearClipPlane() const;
 		LEOPPHAPI void SetNearClipPlane(f32 nearPlane);
 
-		LEOPPHAPI [[nodiscard]] f32 GetFarClipPlane() const;
+		[[nodiscard]] LEOPPHAPI f32 GetFarClipPlane() const;
 		LEOPPHAPI void SetFarClipPlane(f32 farPlane);
 
 		// Viewport extents are normalized between 0 and 1.
-		LEOPPHAPI [[nodiscard]] NormalizedViewport const& GetViewport() const;
+		[[nodiscard]] LEOPPHAPI NormalizedViewport const& GetViewport() const;
 		LEOPPHAPI void SetViewport(NormalizedViewport const& viewport);
 
-		LEOPPHAPI [[nodiscard]] Extent2D<u32> GetWindowExtents() const;
+		[[nodiscard]] LEOPPHAPI Extent2D<u32> GetWindowExtents() const;
 		LEOPPHAPI void SetWindowExtents(Extent2D<u32> const& extent);
 
-		LEOPPHAPI [[nodiscard]] f32 GetAspectRatio() const;
+		[[nodiscard]] LEOPPHAPI f32 GetAspectRatio() const;
 
-		LEOPPHAPI [[nodiscard]] f32 GetOrthographicSize(Side side = Side::Horizontal) const;
+		[[nodiscard]] LEOPPHAPI f32 GetOrthographicSize(Side side = Side::Horizontal) const;
 		LEOPPHAPI void SetOrthoGraphicSize(f32 size, Side side = Side::Horizontal);
 
-		LEOPPHAPI [[nodiscard]] f32 GetPerspectiveFov(Side side = Side::Horizontal) const;
+		[[nodiscard]] LEOPPHAPI f32 GetPerspectiveFov(Side side = Side::Horizontal) const;
 		LEOPPHAPI void SetPerspectiveFov(f32 degrees, Side side = Side::Horizontal);
 
-		LEOPPHAPI [[nodiscard]] Type GetType() const;
+		[[nodiscard]] LEOPPHAPI Type GetType() const;
 		LEOPPHAPI void SetType(Type type);
 	};
 

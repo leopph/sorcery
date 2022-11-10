@@ -41,7 +41,7 @@ namespace leopph {
 		// Registers itself in the active scene.
 		LEOPPHAPI static Entity* Create();
 
-		LEOPPHAPI [[nodiscard]] Transform& GetTransform();
+		[[nodiscard]] LEOPPHAPI Transform& GetTransform();
 
 		LEOPPHAPI Component* CreateComponent(MonoClass* componentClass);
 
