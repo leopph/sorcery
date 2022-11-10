@@ -6,16 +6,16 @@
 namespace leopph {
 	class Object {
 	private:
-		GUID mGuid;
+		Guid mGuid;
 
 	public:
 		LEOPPHAPI Object();
-		LEOPPHAPI explicit Object(GUID const& guid);
+		LEOPPHAPI explicit Object(Guid const& guid);
 		virtual ~Object() = default;
 
-		[[nodiscard]] LEOPPHAPI auto GetGuid() const -> GUID const&;
+		[[nodiscard]] LEOPPHAPI auto GetGuid() const -> Guid const&;
 	};
 
 
-	[[nodiscard]] LEOPPHAPI auto GetObjectWithGuid(GUID const& guid) -> Object*;
+	[[nodiscard]] LEOPPHAPI auto GetObjectWithGuid(Guid const& guid) -> Object*;
 }

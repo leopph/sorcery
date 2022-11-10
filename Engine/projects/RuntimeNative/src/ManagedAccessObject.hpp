@@ -41,6 +41,6 @@ namespace leopph
 
 
 	namespace managedbindings {
-		auto GetManagedAccessObjectGuid(MonoObject* nativeWrapper) -> GUID;
+		auto GetManagedAccessObjectGuid(MonoObject* nativeWrapper) -> Guid;
 	}
 }

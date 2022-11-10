@@ -89,7 +89,7 @@ namespace leopph
 
 
 	namespace managedbindings {
-		auto GetManagedAccessObjectGuid(MonoObject* const nativeWrapper) -> GUID
+		auto GetManagedAccessObjectGuid(MonoObject* const nativeWrapper) -> Guid
 		{
 			return ManagedAccessObject::GetNativePtrFromManagedObjectAs<ManagedAccessObject*>(nativeWrapper)->GetGuid();
 		}

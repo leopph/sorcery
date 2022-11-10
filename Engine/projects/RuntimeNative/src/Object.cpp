@@ -9,7 +9,7 @@ namespace leopph {
 		struct GuidObjectLess {
 			using is_transparent = void;
 
-			[[nodiscard]] auto operator()(GUID const& left, GUID const& right) const -> bool {
+			[[nodiscard]] auto operator()(Guid const& left, Guid const& right) const -> bool {
 				auto const leftFirstHalf = *reinterpret_cast<leopph::u64 const*>(&left);
 				auto const leftSecondHalf = *(reinterpret_cast<leopph::u64 const*>(&left) + 1);
 				auto const rightFirstHalf = *reinterpret_cast<leopph::u64 const*>(&right);
@@ -22,11 +22,11 @@ namespace leopph {
 				return false;
 			}
 
-			[[nodiscard]] auto operator()(Object const* const left, GUID const& right) const -> bool {
+			[[nodiscard]] auto operator()(Object const* const left, Guid const& right) const -> bool {
 				return operator()(left->GetGuid(), right);
 			}
 
-			[[nodiscard]] auto operator()(GUID const& left, Object* const right) const -> bool {
+			[[nodiscard]] auto operator()(Guid const& left, Object* const right) const -> bool {
 				return operator()(left, right->GetGuid());
 			}
 
@@ -42,7 +42,7 @@ namespace leopph {
 
 	Object::Object() { 
 		do {
-			mGuid = GenerateGUID();
+			mGuid = Guid::Generate();
 		}
 		while (gAllObjects.contains(this));
 
@@ -50,19 +50,19 @@ namespace leopph {
 	}
 
 
-	Object::Object(GUID const& guid) : 
+	Object::Object(Guid const& guid) : 
 		mGuid{ guid } {
 		assert(!gAllObjects.contains(this));
 		gAllObjects.emplace(this);
 	}
 
 
-	auto Object::GetGuid() const -> GUID const& {
+	auto Object::GetGuid() const -> Guid const& {
 		return mGuid;
 	}
 
 
-	auto GetObjectWithGuid(GUID const& guid) -> Object* {
+	auto GetObjectWithGuid(Guid const& guid) -> Object* {
 		if (auto const it = gAllObjects.find(guid); it != std::end(gAllObjects)) {
 			return *it;
 		}

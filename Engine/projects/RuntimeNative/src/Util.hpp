@@ -47,10 +47,12 @@ namespace leopph {
 	};
 
 
-	struct Guid {
+	class Guid {
+	private:
 		leopph::u64 data0;
 		leopph::u64 data1;
 
+	public:
 		[[nodiscard]] LEOPPHAPI static auto Generate() -> Guid;
 		[[nodiscard]] LEOPPHAPI static auto Parse(std::string_view str) -> Guid;
 
