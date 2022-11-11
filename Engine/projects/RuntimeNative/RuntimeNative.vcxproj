@@ -56,6 +56,18 @@
     <TargetName>LeopphRuntimeNative</TargetName>
     <AllProjectIncludesArePublic>true</AllProjectIncludesArePublic>
   </PropertyGroup>
+  <PropertyGroup Label="Vcpkg">
+    <VcpkgEnabled>true</VcpkgEnabled>
+    <VcpkgEnableManifest>true</VcpkgEnableManifest>
+    <VcpkgManifestInstall>true</VcpkgManifestInstall>
+    <VcpkgAutoLink>true</VcpkgAutoLink>
+  </PropertyGroup>
+  <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <VcpkgInstalledDir>$(SolutionDir)Engine\vendor\vcpkg\</VcpkgInstalledDir>
+  </PropertyGroup>
+  <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <VcpkgInstalledDir>$(SolutionDir)Engine\vendor\vcpkg\</VcpkgInstalledDir>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <WarningLevel>Level4</WarningLevel>
@@ -109,7 +121,9 @@
     <ClCompile Include="src\OnGui.cpp" />
     <ClCompile Include="src\Renderer.cpp" />
     <ClCompile Include="src\Scene.cpp" />
+    <ClCompile Include="src\SceneElement.cpp" />
     <ClCompile Include="src\SceneManager.cpp" />
+    <ClCompile Include="src\Serialization.cpp" />
     <ClCompile Include="src\Time.cpp" />
     <ClCompile Include="src\Platform.cpp" />
     <ClCompile Include="src\Util.cpp" />
@@ -127,6 +141,7 @@
     <ClInclude Include="src\Object.hpp" />
     <ClInclude Include="src\Renderer.hpp" />
     <ClInclude Include="src\Scene.hpp" />
+    <ClInclude Include="src\SceneElement.hpp" />
     <ClInclude Include="src\SceneManager.hpp" />
     <ClInclude Include="src\shaders\cinclude\BlinnPhongPixShadBinDebug.h" />
     <ClInclude Include="src\shaders\cinclude\BlinnPhongVertShadBinDebug.h" />
@@ -137,6 +152,7 @@
   <ItemGroup>
     <None Include="cpp.hint" />
     <None Include="src\shaders\include\BlinnPhong.hlsli" />
+    <None Include="vcpkg.json" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="src\shaders\BlinnPhongPix.hlsl">

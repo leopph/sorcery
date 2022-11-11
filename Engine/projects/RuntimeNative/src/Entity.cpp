@@ -16,12 +16,12 @@ namespace leopph {
 
 	namespace {
 		template<std::derived_from<Component> T>
-		Component* instantiate(Entity* const entity) {
-			return new T{ entity };
+		Component* instantiate() {
+			return new T{};
 		}
 
 
-		std::unordered_map<std::string, std::unordered_map<std::string, std::function<Component* (Entity*)>>> const gComponentInstantiators
+		std::unordered_map<std::string, std::unordered_map<std::string, std::function<Component*()>>> const gComponentInstantiators
 		{
 			{"leopph",
 				{
@@ -43,13 +43,17 @@ namespace leopph {
 
 
 	Transform& Entity::GetTransform() {
+		if (!mTransform) {
+			mTransform = GetComponent<Transform>();
+		}
 		return *mTransform;
 	}
 
 
 	Component* Entity::CreateComponent(MonoClass* componentClass) {
 		if (mono_class_is_subclass_of(componentClass, mono_class_from_name(GetManagedImage(), "leopph", "Behavior"), false)) {
-			auto const behavior = new Behavior{ this, componentClass };
+			auto const behavior = new Behavior{componentClass };
+			behavior->entity = this;
 			mComponents.emplace_back(behavior);
 			return behavior;
 		}
@@ -69,7 +73,8 @@ namespace leopph {
 
 		if (auto const nsIt = gComponentInstantiators.find(classNs); nsIt != std::end(gComponentInstantiators)) {
 			if (auto const nameIt = nsIt->second.find(className); nameIt != std::end(nsIt->second)) {
-				auto const component = nameIt->second(this);
+				auto const component = nameIt->second();
+				component->entity = this;
 				component->CreateManagedObject(componentClass);
 				mComponents.emplace_back(component);
 				return component;

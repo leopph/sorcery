@@ -4,14 +4,11 @@
 #include "Util.hpp"
 
 namespace leopph {
-	class Object {
-	private:
-		Guid mGuid;
+	struct Object {
+		Guid guid{ Guid::Generate() };
 
-	public:
 		LEOPPHAPI Object();
-		LEOPPHAPI explicit Object(Guid const& guid);
-		virtual ~Object() = default;
+		LEOPPHAPI virtual ~Object();
 
 		[[nodiscard]] LEOPPHAPI auto GetGuid() const -> Guid const&;
 	};

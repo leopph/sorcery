@@ -20,11 +20,6 @@
 
 namespace leopph
 {
-	Component::Component(Entity* const entity) :
-		entity{ entity }
-	{}
-
-
 	Transform& Component::GetTransform() const
 	{
 		return entity->GetTransform();
@@ -102,8 +97,7 @@ namespace leopph
 	}
 
 
-	Transform::Transform(Entity* const entity) :
-		Component{ entity }
+	Transform::Transform()
 	{
 		CreateManagedObject("leopph", "Transform");
 	}
@@ -320,8 +314,7 @@ namespace leopph
 	}
 
 
-	CubeModel::CubeModel(Entity* const entity) :
-		Component{ entity }
+	CubeModel::CubeModel()
 	{
 		rendering::RegisterCubeModel(this);
 	}
@@ -347,8 +340,7 @@ namespace leopph
 	}
 
 
-	Camera::Camera(Entity* const entity) :
-		Component{ entity }
+	Camera::Camera()
 	{
 		sAllInstances.emplace_back(this);
 	}
@@ -564,8 +556,7 @@ namespace leopph
 	}
 
 
-	Behavior::Behavior(Entity* const entity, MonoClass* const klass) :
-		Component{ entity }
+	Behavior::Behavior(MonoClass* const klass)
 	{
 		auto const obj = CreateManagedObject(klass);
 
@@ -602,6 +593,27 @@ namespace leopph
 		if (MonoMethod* const destroyMethod = mono_class_get_method_from_name(mono_object_get_class(managedObj), "OnDestroy", 0))
 		{
 			invoke_method_handle_exception(managedObj, destroyMethod);
+		}
+	}
+
+
+	auto Behavior::Init(MonoClass* klass) -> void {
+		auto const obj = CreateManagedObject(klass);
+
+		if (MonoMethod* const initMethod = mono_class_get_method_from_name(klass, "OnInit", 0)) {
+			gToInit[this] = initMethod;
+		}
+
+		if (MonoMethod* const tickMethod = mono_class_get_method_from_name(klass, "Tick", 0)) {
+			gToTick[this] = tickMethod;
+		}
+
+		if (MonoMethod* const tackMethod = mono_class_get_method_from_name(klass, "Tack", 0)) {
+			gToTack[this] = tackMethod;
+		}
+
+		if (MonoMethod* const ctor = mono_class_get_method_from_name(klass, ".ctor", 0)) {
+			invoke_method_handle_exception(obj, ctor);
 		}
 	}
 

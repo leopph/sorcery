@@ -57,5 +57,6 @@ namespace leopph {
 		[[nodiscard]] LEOPPHAPI static auto Parse(std::string_view str) -> Guid;
 
 		[[nodiscard]] LEOPPHAPI auto ToString() const->std::string;
+		[[nodiscard]] LEOPPHAPI auto operator==(Guid const& other) -> bool;
 	};
 }

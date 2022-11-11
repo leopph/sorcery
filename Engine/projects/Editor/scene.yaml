@@ -1,141 +1,41 @@
-- name: Front Cube
-  components:
-    - classNameSpace: leopph
-      className: Transform
-      data:
-        LocalPosition:
-          X: 0
-          Y: 0
-          Z: 2
-        LocalRotation:
-          X: 0
-          Y: 0
-          Z: 0
-          W: 1
-        LocalScale:
-          X: 1
-          Y: 1
-          Z: 1
-    - classNameSpace: leopph
-      className: CubeModel
-- name: Right Cube
-  components:
-    - classNameSpace: leopph
-      className: Transform
-      data:
-        LocalPosition:
-          X: 2
-          Y: 0
-          Z: 0
-        LocalRotation:
-          X: 0
-          Y: 0
-          Z: 0
-          W: 1
-        LocalScale:
-          X: 1
-          Y: 1
-          Z: 1
-    - classNameSpace: leopph
-      className: CubeModel
-- name: Back Cube
-  components:
-    - classNameSpace: leopph
-      className: Transform
-      data:
-        LocalPosition:
-          X: 0
-          Y: 0
-          Z: -2
-        LocalRotation:
-          X: 0
-          Y: 0
-          Z: 0
-          W: 1
-        LocalScale:
-          X: 1
-          Y: 1
-          Z: 1
-    - classNameSpace: leopph
-      className: CubeModel
-- name: Left Cube
-  components:
-    - classNameSpace: leopph
-      className: Transform
-      data:
-        LocalPosition:
-          X: -2
-          Y: 0
-          Z: 0
-        LocalRotation:
-          X: 0
-          Y: 0
-          Z: 0
-          W: 1
-        LocalScale:
-          X: 1
-          Y: 1
-          Z: 1
-    - classNameSpace: leopph
-      className: CubeModel
-- name: Camera
-  components:
-    - classNameSpace: leopph
-      className: Transform
-      data:
-        LocalPosition:
-          X: 0
-          Y: 0
-          Z: 0
-        LocalRotation:
-          X: 0
-          Y: 0
-          Z: 0
-          W: 1
-        LocalScale:
-          X: 1
-          Y: 1
-          Z: 1
-    - classNameSpace: leopph
-      className: Camera
-      data:
-        Type: 0
-        PerspectiveFieldOfView: 90
-        OrthographicSize: 10
-        NearClipPlane: 0.1
-        FarClipPlane: 100
-    - classNameSpace: ""
-      className: MovementController
-      data:
-        left: 65
-        right: 68
-        up: 32
-        down: 162
-        forward: 87
-        backward: 83
-        run: 160
-        speed: 3
-    - classNameSpace: ""
-      className: OrientationController
-      data:
-        sensitivity: 0.05
-- name: Utility
-  components:
-    - classNameSpace: leopph
-      className: Transform
-      data:
-        LocalPosition:
-          X: 0
-          Y: 0
-          Z: 0
-        LocalRotation:
-          X: 0
-          Y: 0
-          Z: 0
-          W: 1
-        LocalScale:
-          X: 1
-          Y: 1
-          Z: 1
-    - classNameSpace: ""
-      className: AppController
+- objectType: 0
+  guid: 8768af69dfcb8d85-459a1f1aeb4417ca
+  data:
+    name: Cam
+    components:
+      - 99ea84c86cbd4092-46c22bcaba59fdf7
+      - 9ffb0dcf7459fd93-46e7efa208a9f08b
+- objectType: 1
+  guid: 99ea84c86cbd4092-46c22bcaba59fdf7
+  data:
+    entity: 8768af69dfcb8d85-459a1f1aeb4417ca
+    position: [0, 0, 0]
+    rotation: [1, 0, 0, 0]
+    scale: [1, 1, 1]
+- objectType: 2
+  guid: 9ffb0dcf7459fd93-46e7efa208a9f08b
+  data:
+    entity: 8768af69dfcb8d85-459a1f1aeb4417ca
+    type: 0
+    fov: 154
+    size: 10
+    near: 0.100000001
+    far: 100
+- objectType: 0
+  guid: ae0bac0efb7d3989-462b2c877c9484a5
+  data:
+    name: Cube
+    components:
+      - fcfd9e5499a4de81-42152279667ee945
+      - 1b0fb6d359d02bb5-4acf6733054bb0af
+- objectType: 1
+  guid: fcfd9e5499a4de81-42152279667ee945
+  data:
+    entity: ae0bac0efb7d3989-462b2c877c9484a5
+    position: [0, 0, 2]
+    rotation: [1, 0, 0, 0]
+    scale: [1, 1, 1]
+- objectType: 4
+  guid: 1b0fb6d359d02bb5-4acf6733054bb0af
+  data:
+    entity: ae0bac0efb7d3989-462b2c877c9484a5

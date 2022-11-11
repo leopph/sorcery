@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ManagedAccessObject.hpp"
+#include "SceneElement.hpp"
 #include "Math.hpp"
 
 #include <string>
@@ -23,7 +23,7 @@ namespace leopph {
 	class Scene;
 
 
-	class Entity : public ManagedAccessObject {
+	class Entity : public SceneElement {
 	private:
 		Entity() = default;
 
@@ -43,22 +43,17 @@ namespace leopph {
 
 		[[nodiscard]] LEOPPHAPI Transform& GetTransform();
 
+		[[nodiscard]] LEOPPHAPI auto GetSerializationType() const->Type override;
+		LEOPPHAPI auto Serialize(YAML::Node& node) const -> void override;
+		LEOPPHAPI auto Deserialize(YAML::Node const& node) -> void override;
+		LEOPPHAPI auto DeserializeResolveReferences(YAML::Node const& node) -> void override;
+
 		LEOPPHAPI Component* CreateComponent(MonoClass* componentClass);
 
 		template<std::derived_from<Component> T>
 		T* CreateComponent() {
-			if constexpr (std::is_same_v<T, Transform>) {
-				if (mTransform) {
-					return mTransform;
-				}
-			}
-
-			auto const component = new T{ this };
-
-			if constexpr (std::is_same_v<T, Transform>) {
-				mTransform = component;
-			}
-
+			auto const component = new T{};
+			component->entity = this;
 			mComponents.emplace_back(component);
 			return component;
 		}

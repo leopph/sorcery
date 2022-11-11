@@ -63,6 +63,7 @@
     <vcpkgEnableManifest>true</vcpkgEnableManifest>
     <vcpkgInstalledDir>$(SolutionDir)Engine\vendor\vcpkg\</vcpkgInstalledDir>
     <vcpkgManifestInstall>true</vcpkgManifestInstall>
+    <VcpkgAutoLink>true</VcpkgAutoLink>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>

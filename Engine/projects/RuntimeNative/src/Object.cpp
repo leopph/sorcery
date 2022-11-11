@@ -2,6 +2,7 @@
 
 #include <set>
 #include <cassert>
+#include <vector>
 
 
 namespace leopph {
@@ -36,35 +37,35 @@ namespace leopph {
 		};
 
 
-		std::set<Object*, GuidObjectLess> gAllObjects;
+		//std::set<Object*, GuidObjectLess> gAllObjects;
+		std::vector<Object*> gAllobjects;
 	}
 
 
-	Object::Object() { 
-		do {
-			mGuid = Guid::Generate();
-		}
-		while (gAllObjects.contains(this));
-
-		gAllObjects.emplace(this);
+	Object::Object() {
+		//gAllObjects.emplace(this);
+		gAllobjects.emplace_back(this);
 	}
 
 
-	Object::Object(Guid const& guid) : 
-		mGuid{ guid } {
-		assert(!gAllObjects.contains(this));
-		gAllObjects.emplace(this);
+	Object::~Object() {
+		std::erase(gAllobjects, this);
 	}
 
 
 	auto Object::GetGuid() const -> Guid const& {
-		return mGuid;
+		return guid;
 	}
 
 
 	auto GetObjectWithGuid(Guid const& guid) -> Object* {
-		if (auto const it = gAllObjects.find(guid); it != std::end(gAllObjects)) {
+		/*if (auto const it = gAllObjects.find(guid); it != std::end(gAllObjects)) {
 			return *it;
+		}*/
+		for (auto* const obj : gAllobjects) {
+			if (obj->guid == guid) {
+				return obj;
+			}
 		}
 		return nullptr;
 	}

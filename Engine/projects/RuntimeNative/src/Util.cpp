@@ -38,4 +38,10 @@ namespace leopph {
 		gStringStream << std::hex << data1 << "-" << std::hex << data0;
 		return gStringStream.str();
 	}
+
+
+    auto Guid::operator==(Guid const& other) -> bool
+    {
+		return data0 == other.data0 && data1 == other.data1;
+    }
 }

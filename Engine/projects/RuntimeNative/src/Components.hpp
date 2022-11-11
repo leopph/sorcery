@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ManagedAccessObject.hpp"
+#include "SceneElement.hpp"
 #include "Math.hpp"
 #include "Util.hpp"
 
@@ -16,15 +16,15 @@ namespace leopph {
 	class Component;
 
 
-	class Component : public ManagedAccessObject {
+	class Component : public SceneElement {
 	public:
-		Entity* const entity;
-
-		explicit Component(Entity* entity);
+		Entity* entity;
 
 		[[nodiscard]] Transform& GetTransform() const;
 
 		virtual auto OnGui() -> void = 0;
+		LEOPPHAPI auto Serialize(YAML::Node& node) const -> void override;
+		LEOPPHAPI auto DeserializeResolveReferences(YAML::Node const& node) -> void override;
 	};
 
 
@@ -66,9 +66,13 @@ namespace leopph {
 		Matrix3 mNormalMat{ Matrix4::identity() };
 
 	public:
-		LEOPPHAPI Transform(Entity* entity);
-	
+		LEOPPHAPI Transform();
+
 		LEOPPHAPI auto OnGui() -> void override;
+		[[nodiscard]] LEOPPHAPI auto GetSerializationType() const->Type override;
+		LEOPPHAPI auto Serialize(YAML::Node& node) const -> void override;
+		LEOPPHAPI auto Deserialize(YAML::Node const& node) -> void override;
+		LEOPPHAPI auto DeserializeResolveReferences(YAML::Node const& node) -> void override;
 
 		[[nodiscard]] LEOPPHAPI Vector3 const& GetWorldPosition() const;
 		LEOPPHAPI void SetWorldPosition(Vector3 const& newPos);
@@ -154,10 +158,13 @@ namespace leopph {
 
 	class CubeModel : public Component {
 	public:
-		CubeModel(Entity* entity);
+		LEOPPHAPI CubeModel();
 		~CubeModel() override;
 
 		LEOPPHAPI auto OnGui() -> void override;
+		[[nodiscard]] LEOPPHAPI auto GetSerializationType() const->Type override;
+		LEOPPHAPI auto Serialize(YAML::Node& node) const -> void override;
+		LEOPPHAPI auto Deserialize(YAML::Node const& node) -> void override;
 	};
 
 
@@ -187,10 +194,13 @@ namespace leopph {
 		[[nodiscard]] f32 ConvertPerspectiveFov(f32 fov, bool vert2Horiz) const;
 
 	public:
-		Camera(Entity* entity);
+		LEOPPHAPI Camera();
 		~Camera() override;
 
 		LEOPPHAPI auto OnGui() -> void override;
+		[[nodiscard]] LEOPPHAPI auto GetSerializationType() const->SceneElement::Type override;
+		LEOPPHAPI auto Serialize(YAML::Node& node) const -> void override;
+		LEOPPHAPI auto Deserialize(YAML::Node const& node) -> void override;
 
 		[[nodiscard]] LEOPPHAPI static std::span<Camera* const> GetAllInstances();
 
@@ -240,10 +250,17 @@ namespace leopph {
 
 	class Behavior : public Component {
 	public:
-		Behavior(Entity* entity, MonoClass* klass);
-		~Behavior() override;
+		Behavior() = default;
+		explicit Behavior(MonoClass* klass);
+		LEOPPHAPI ~Behavior() override;
+
+		LEOPPHAPI auto Init(MonoClass* klass) -> void;
 
 		LEOPPHAPI auto OnGui() -> void override;
+		[[nodiscard]] LEOPPHAPI auto GetSerializationType() const->Type override;
+		LEOPPHAPI auto Serialize(YAML::Node& node) const -> void override;
+		LEOPPHAPI auto Deserialize(YAML::Node const& node) -> void override;
+		LEOPPHAPI auto DeserializeResolveReferences(YAML::Node const& node) -> void override;
 	};
 
 	LEOPPHAPI void init_behaviors();
