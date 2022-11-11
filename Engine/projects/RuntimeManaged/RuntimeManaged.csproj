@@ -5,10 +5,9 @@
 		<Nullable>enable</Nullable>
 		<AssemblyName>LeopphRuntimeManaged</AssemblyName>
 		<RootNamespace>leopph</RootNamespace>
-		<BaseOutputPath>$(SolutionDir)Engine\bin</BaseOutputPath>
+		<BaseOutputPath>$(ProjectDir)bin</BaseOutputPath>
 		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
 		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
-		<UseCommonOutputDirectory>true</UseCommonOutputDirectory>
 	</PropertyGroup>
 
 </Project>
