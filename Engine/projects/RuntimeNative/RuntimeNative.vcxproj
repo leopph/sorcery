@@ -106,6 +106,7 @@
     <ClCompile Include="src\Math.cpp" />
     <ClCompile Include="src\Entity.cpp" />
     <ClCompile Include="src\Object.cpp" />
+    <ClCompile Include="src\OnGui.cpp" />
     <ClCompile Include="src\Renderer.cpp" />
     <ClCompile Include="src\Scene.cpp" />
     <ClCompile Include="src\SceneManager.cpp" />
@@ -114,6 +115,7 @@
     <ClCompile Include="src\Util.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\OnGui.hpp" />
     <ClInclude Include="src\Color.hpp" />
     <ClInclude Include="src\Components.hpp" />
     <ClInclude Include="src\Core.hpp" />
@@ -169,6 +171,11 @@
       <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">src/shaders/cinclude/BlinnPhongVertShadBinDebug.h</HeaderFileOutput>
       <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">src/shaders/cinclude/BlinnPhongVertShadBin.h</HeaderFileOutput>
     </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ImGui\ImGui.vcxproj">
+      <Project>{2359e10d-1161-46ed-ba5d-2af984e94c63}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -23,6 +23,8 @@ namespace leopph {
 		explicit Component(Entity* entity);
 
 		[[nodiscard]] Transform& GetTransform() const;
+
+		virtual auto OnGui() -> void = 0;
 	};
 
 
@@ -65,6 +67,8 @@ namespace leopph {
 
 	public:
 		LEOPPHAPI Transform(Entity* entity);
+	
+		LEOPPHAPI auto OnGui() -> void override;
 
 		[[nodiscard]] LEOPPHAPI Vector3 const& GetWorldPosition() const;
 		LEOPPHAPI void SetWorldPosition(Vector3 const& newPos);
@@ -152,6 +156,8 @@ namespace leopph {
 	public:
 		CubeModel(Entity* entity);
 		~CubeModel() override;
+
+		LEOPPHAPI auto OnGui() -> void override;
 	};
 
 
@@ -183,6 +189,8 @@ namespace leopph {
 	public:
 		Camera(Entity* entity);
 		~Camera() override;
+
+		LEOPPHAPI auto OnGui() -> void override;
 
 		[[nodiscard]] LEOPPHAPI static std::span<Camera* const> GetAllInstances();
 
@@ -234,6 +242,8 @@ namespace leopph {
 	public:
 		Behavior(Entity* entity, MonoClass* klass);
 		~Behavior() override;
+
+		LEOPPHAPI auto OnGui() -> void override;
 	};
 
 	LEOPPHAPI void init_behaviors();
