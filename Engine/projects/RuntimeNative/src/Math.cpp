@@ -99,6 +99,12 @@ namespace leopph
 	}
 
 
+    Quaternion Quaternion::FromEulerAngles(Vector3 const& euler)
+    {
+		return FromEulerAngles(euler[0], euler[1], euler[2]);
+    }
+
+
 	Vector3 Quaternion::ToEulerAngles() const
 	{
 		Vector3 angles;
