@@ -5,12 +5,6 @@ VisualStudioVersion = 17.0.32112.339
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Editor", "Engine\projects\Editor\Editor.vcxproj", "{C25EFA86-F3B2-452C-9A0C-1BD4DA533296}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Test", "Engine\projects\Test\Test.vcxproj", "{CC705A67-8B05-45AF-A560-9B9FE842A7E9}"
-	ProjectSection(ProjectDependencies) = postProject
-		{60A69D92-FA99-4F5C-804C-1DFF2CE460AD} = {60A69D92-FA99-4F5C-804C-1DFF2CE460AD}
-		{FBD9532A-EE08-4991-B417-FD897AE7F97C} = {FBD9532A-EE08-4991-B417-FD897AE7F97C}
-	EndProjectSection
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RuntimeNative", "Engine\projects\RuntimeNative\RuntimeNative.vcxproj", "{60A69D92-FA99-4F5C-804C-1DFF2CE460AD}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RuntimeManaged", "Engine\projects\RuntimeManaged\RuntimeManaged.csproj", "{FBD9532A-EE08-4991-B417-FD897AE7F97C}"
@@ -30,10 +24,6 @@ Global
 		{C25EFA86-F3B2-452C-9A0C-1BD4DA533296}.Debug|x64.Build.0 = Debug|x64
 		{C25EFA86-F3B2-452C-9A0C-1BD4DA533296}.Release|x64.ActiveCfg = Release|x64
 		{C25EFA86-F3B2-452C-9A0C-1BD4DA533296}.Release|x64.Build.0 = Release|x64
-		{CC705A67-8B05-45AF-A560-9B9FE842A7E9}.Debug|x64.ActiveCfg = Debug|x64
-		{CC705A67-8B05-45AF-A560-9B9FE842A7E9}.Debug|x64.Build.0 = Debug|x64
-		{CC705A67-8B05-45AF-A560-9B9FE842A7E9}.Release|x64.ActiveCfg = Release|x64
-		{CC705A67-8B05-45AF-A560-9B9FE842A7E9}.Release|x64.Build.0 = Release|x64
 		{60A69D92-FA99-4F5C-804C-1DFF2CE460AD}.Debug|x64.ActiveCfg = Debug|x64
 		{60A69D92-FA99-4F5C-804C-1DFF2CE460AD}.Debug|x64.Build.0 = Debug|x64
 		{60A69D92-FA99-4F5C-804C-1DFF2CE460AD}.Release|x64.ActiveCfg = Release|x64
