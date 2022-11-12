@@ -113,39 +113,59 @@ namespace leopph {
 		}
 
 
-		internal static object ParseFieldValue(FieldInfo field, string value) {
+		internal static object? ParseFieldValue(FieldInfo field, string value) {
 			s_ObjectArrayTwoElems[0] = value;
 			s_ObjectArrayTwoElems[1] = CultureInfo.InvariantCulture;
 			s_TypeArrayTwoElems[0] = s_stringType;
 			s_TypeArrayTwoElems[1] = s_cultureInfoType;
 
-			var parseMethod = field.FieldType.GetMethod("Parse", s_TypeArrayTwoElems);
-			var parsedValue = parseMethod.Invoke(null, s_ObjectArrayTwoElems);
-			return parsedValue;
+			try {
+				var parseMethod = field.FieldType.GetMethod("Parse", s_TypeArrayTwoElems);
+				var parsedValue = parseMethod?.Invoke(null, s_ObjectArrayTwoElems);
+				return parsedValue;
+			}
+			catch {
+				return null;
+			}
 		}
 
 
-		internal static object ParsePropertyValue(PropertyInfo property, string value) {
+		internal static object? ParsePropertyValue(PropertyInfo property, string value) {
 			s_ObjectArrayTwoElems[0] = value;
 			s_ObjectArrayTwoElems[1] = CultureInfo.InvariantCulture;
 			s_TypeArrayTwoElems[0] = s_stringType;
 			s_TypeArrayTwoElems[1] = s_cultureInfoType;
 
-			var parseMethod = property.GetMethod.ReturnType.GetMethod("Parse", s_TypeArrayTwoElems);
-			var parsedValue = parseMethod.Invoke(null, s_ObjectArrayTwoElems);
-			return parsedValue;
+			try {
+				var parseMethod = property.GetMethod.ReturnType.GetMethod("Parse", s_TypeArrayTwoElems);
+				var parsedValue = parseMethod?.Invoke(null, s_ObjectArrayTwoElems);
+				return parsedValue;
+			}
+			catch {
+				return null;
+			}
 		}
 
 
-		internal static object ParseEnumValue(Type enumType, string value) {
-			return Enum.Parse(enumType, value);
+		internal static object? ParseEnumValue(Type enumType, string value) {
+			try {
+				return Enum.Parse(enumType, value);
+			}
+			catch {
+				return null;
+			}
 		}
 
 
-		internal static object EnumToUnderlyingType(Type enumType, object enumValue) {
-			var underlyingType = Enum.GetUnderlyingType(enumType);
-			var underlyingValue = Convert.ChangeType(enumValue, underlyingType);
-			return underlyingValue;
+		internal static object? EnumToUnderlyingType(Type enumType, object enumValue) {
+			try {
+				var underlyingType = Enum.GetUnderlyingType(enumType);
+				var underlyingValue = Convert.ChangeType(enumValue, underlyingType);
+				return underlyingValue;
+			}
+			catch {
+				return null;
+			}
 		}
 	}
 }

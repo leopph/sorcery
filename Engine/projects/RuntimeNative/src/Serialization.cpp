@@ -336,7 +336,7 @@ namespace leopph {
 		std::function<void(MonoObject*, YAML::Node const&)> parseAndSetMembers;
 		std::function<MonoObject* (YAML::Node const&, MonoObject*, std::variant<MonoProperty*, MonoClassField*>)> setMember;
 
-		parseAndSetMembers = [&parseAndSetMembers](MonoObject* const obj, YAML::Node const& dataNode) -> void {
+		parseAndSetMembers = [&parseAndSetMembers, this](MonoObject* const obj, YAML::Node const& dataNode) -> void {
 			auto const objClass = mono_object_get_class(obj);
 
 			for (auto it = dataNode.begin(); it != dataNode.end(); ++it) {
@@ -353,14 +353,24 @@ namespace leopph {
 					if (leopph::IsTypePrimitive(propRefType)) {
 						auto const memberValueStr = it->second.as<std::string>();
 						auto const parsedMemberValueBoxed = leopph::ParseValue(refProp, memberValueStr.c_str());
-						auto parsedMemberValueUnboxed = mono_object_unbox(parsedMemberValueBoxed);
-						mono_property_set_value(prop, objPossiblyUnboxed, &parsedMemberValueUnboxed, nullptr);
+						if (!parsedMemberValueBoxed) {
+							std::cerr << std::format("Failed to deserialize property {}::{} on Behavior {}. Invalid data.", mono_type_get_name(mono_class_get_type(objClass)), memberName, GetGuid().ToString()) << std::endl;
+						}
+						else {
+							auto parsedMemberValueUnboxed = mono_object_unbox(parsedMemberValueBoxed);
+							mono_property_set_value(prop, objPossiblyUnboxed, &parsedMemberValueUnboxed, nullptr);
+						}
 					}
 					else if (mono_class_is_enum(propClass)) {
 						auto const memberValueStr = it->second.as<std::string>();
 						auto const parsedMemberValueBoxed = leopph::ParseEnumValue(propRefType, memberValueStr.c_str());
-						auto parsedMemberValueUnboxed = mono_object_unbox(parsedMemberValueBoxed);
-						mono_property_set_value(prop, objPossiblyUnboxed, &parsedMemberValueUnboxed, nullptr);
+						if (!parsedMemberValueBoxed) {
+							std::cerr << std::format("Failed to deserialize property {}::{} on Behavior {}. Invalid data.", mono_type_get_name(mono_class_get_type(objClass)), memberName, GetGuid().ToString()) << std::endl;
+						}
+						else {
+							auto parsedMemberValueUnboxed = mono_object_unbox(parsedMemberValueBoxed);
+							mono_property_set_value(prop, objPossiblyUnboxed, &parsedMemberValueUnboxed, nullptr);
+						}
 					}
 					else if (mono_class_is_valuetype(propClass)) {
 						parseAndSetMembers(propValueBoxed, it->second);
@@ -368,8 +378,21 @@ namespace leopph {
 						mono_property_set_value(prop, objPossiblyUnboxed, &propValueUnboxed, nullptr);
 					}
 					else {
-						auto managedRefValue{ static_cast<ManagedAccessObject*>(Object::FindObjectByGuid(Guid::Parse(it->second.as<std::string>())))->GetManagedObject() };
-						mono_property_set_value(prop, objPossiblyUnboxed, reinterpret_cast<void**>(&managedRefValue), nullptr);
+						auto const guidStr{ it->second.as<std::string>() };
+						auto const targetObj{ Object::FindObjectByGuid(Guid::Parse(guidStr)) };
+						if (!targetObj) {
+							std::cerr << std::format("Failed to deserialize field {}::{} on Behavior {}. Guid {} does not belong to any object.", mono_type_get_name(mono_class_get_type(objClass)), memberName, GetGuid().ToString(), guidStr) << std::endl;
+						}
+						else {
+							auto const targetObjCast{ dynamic_cast<ManagedAccessObject*>(targetObj) };
+							if (!targetObjCast) {
+								std::cerr << std::format("Failed to deserialize field {}::{} on Behavior {}. Object {} is not a LeopphEngine type. Currently only LeopphEngine types are supported for by-reference serialization.", mono_type_get_name(mono_class_get_type(objClass)), memberName, GetGuid().ToString(), guidStr) << std::endl;
+							}
+							else {
+								auto managedRefValue{ targetObjCast->GetManagedObject() };
+								mono_property_set_value(prop, objPossiblyUnboxed, reinterpret_cast<void**>(&managedRefValue), nullptr);
+							}
+						}
 					}
 				}
 				else if (auto const field = mono_class_get_field_from_name(objClass, memberName.data())) {
@@ -381,12 +404,22 @@ namespace leopph {
 					if (leopph::IsTypePrimitive(fieldRefType)) {
 						auto const memberValueStr = it->second.as<std::string>();
 						auto const parsedMemberValueBoxed = leopph::ParseValue(refField, memberValueStr.c_str());
-						mono_field_set_value(obj, field, mono_object_unbox(parsedMemberValueBoxed));
+						if (!parsedMemberValueBoxed) {
+							std::cerr << std::format("Failed to deserialize field {}::{} on Behavior {}. Invalid data.", mono_type_get_name(mono_class_get_type(objClass)), memberName, GetGuid().ToString()) << std::endl;
+						}
+						else {
+							mono_field_set_value(obj, field, mono_object_unbox(parsedMemberValueBoxed));
+						}
 					}
 					else if (mono_class_is_enum(fieldClass)) {
 						auto const memberValueStr = it->second.as<std::string>();
 						auto const parsedMemberValueBoxed = leopph::ParseEnumValue(fieldRefType, memberValueStr.c_str());
-						mono_field_set_value(obj, field, mono_object_unbox(parsedMemberValueBoxed));
+						if (!parsedMemberValueBoxed) {
+							std::cerr << std::format("Failed to deserialize field {}::{} on Behavior {}. Invalid data.", mono_type_get_name(mono_class_get_type(objClass)), memberName, GetGuid().ToString()) << std::endl;
+						}
+						else {
+							mono_field_set_value(obj, field, mono_object_unbox(parsedMemberValueBoxed));
+						}
 					}
 					else if (mono_class_is_valuetype(fieldClass)) {
 						auto const fieldValueBoxed = mono_field_get_value_object(leopph::GetManagedDomain(), field, obj);
@@ -394,12 +427,24 @@ namespace leopph {
 						mono_field_set_value(obj, field, mono_object_unbox(fieldValueBoxed));
 					}
 					else {
-						auto managedRefValue{ static_cast<ManagedAccessObject*>(Object::FindObjectByGuid(Guid::Parse(it->second.as<std::string>())))->GetManagedObject() };
-						mono_field_set_value(obj, field, reinterpret_cast<void*>(managedRefValue));
+						auto const guidStr{ it->second.as<std::string>() };
+						auto const targetObj{ Object::FindObjectByGuid(Guid::Parse(guidStr)) };
+						if (!targetObj) {
+							std::cerr << std::format("Failed to deserialize field {}::{} on Behavior {}. Guid {} does not belong to any object.", mono_type_get_name(mono_class_get_type(objClass)), memberName, GetGuid().ToString(), guidStr) << std::endl;
+						}
+						else {
+							auto const targetObjCast{ dynamic_cast<ManagedAccessObject*>(targetObj) };
+							if (!targetObjCast) {
+								std::cerr << std::format("Failed to deserialize field {}::{} on Behavior {}. Object {} is not a LeopphEngine type. Currently only LeopphEngine types are supported for by-reference serialization.", mono_type_get_name(mono_class_get_type(objClass)), memberName, GetGuid().ToString(), guidStr) << std::endl;
+							}
+							else {
+								mono_field_set_value(obj, field, reinterpret_cast<void*>(targetObjCast->GetManagedObject()));
+							}
+						}
 					}
 				}
 				else {
-					std::cerr << std::format("Member \"{}\" in file has no corresponding member in class.", memberName) << std::endl;
+					std::cerr << std::format("Ignoring member \"{}\" found in file while deserializing Behavior {}. Member is not found in the assigned type.", memberName, GetGuid().ToString()) << std::endl;
 				}
 			}
 		};

@@ -5,6 +5,8 @@
     components:
       - 99ea84c86cbd4092-46c22bcaba59fdf7
       - 9ffb0dcf7459fd93-46e7efa208a9f08b
+      - 3b55b1b323e78d84-46cb29dc61a94fe9
+      - 6cb0ce702f74ae9a-4db25fe6746613a5
 - objectType: 1
   guid: 99ea84c86cbd4092-46c22bcaba59fdf7
   data:
@@ -17,7 +19,7 @@
   data:
     entity: 8768af69dfcb8d85-459a1f1aeb4417ca
     type: 0
-    fov: 154
+    fov: 90
     size: 10
     near: 0.100000001
     far: 100
@@ -32,10 +34,31 @@
   guid: fcfd9e5499a4de81-42152279667ee945
   data:
     entity: ae0bac0efb7d3989-462b2c877c9484a5
-    position: [0, 0, 2]
+    position: [0, 0, 5]
     rotation: [1, 0, 0, 0]
     scale: [1, 1, 1]
 - objectType: 4
   guid: 1b0fb6d359d02bb5-4acf6733054bb0af
   data:
     entity: ae0bac0efb7d3989-462b2c877c9484a5
+- objectType: 3
+  guid: 3b55b1b323e78d84-46cb29dc61a94fe9
+  data:
+    entity: 8768af69dfcb8d85-459a1f1aeb4417ca
+    classNameSpace: ""
+    className: MovementController
+    left: 65
+    right: 68
+    up: 32
+    down: 162
+    forward: 87
+    backward: 83
+    run: 160
+    speed: 3
+- objectType: 3
+  guid: 6cb0ce702f74ae9a-4db25fe6746613a5
+  data:
+    entity: 8768af69dfcb8d85-459a1f1aeb4417ca
+    classNameSpace: ""
+    className: OrientationController
+    sensitivity: 0.05
