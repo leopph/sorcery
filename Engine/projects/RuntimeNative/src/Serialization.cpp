@@ -103,9 +103,27 @@ namespace leopph {
 
 
 	auto Entity::Deserialize(YAML::Node const& node) -> void {
-		SetName(node["name"].as<std::string>());
+		if (!node["name"].IsScalar()) {
+			std::cerr << "Failed to deserialize name of Entity " << GetGuid().ToString() << ". Invalid data." << std::endl;
+		}
+		else {
+			SetName(node["name"].as<std::string>());
+		}
+
 		for (auto it{ node["components"].begin() }; it != node["components"].end(); ++it) {
-			AddComponent(std::unique_ptr<Component>{(static_cast<Component*>(Object::FindObjectByGuid(Guid::Parse(it->as<std::string>()))))});
+			if (!it->IsScalar()) {
+				std::cerr << "Failed to deserialize a Component of Entity " << GetGuid().ToString() << ". Invalid data." << std::endl;
+			}
+			else {
+				auto const guidStr{ it->as<std::string>() };
+				auto const component{ (dynamic_cast<Component*>(Object::FindObjectByGuid(Guid::Parse(guidStr)))) };
+				if (!component) {
+					std::cerr << "Failed to deserialize a Component of Entity " << GetGuid().ToString() << ". Guid " << guidStr << " does not belong to any Component." << std::endl;
+				}
+				else {
+					AddComponent(std::unique_ptr<Component>{component});
+				}
+			}
 		}
 	}
 
@@ -116,7 +134,19 @@ namespace leopph {
 
 
 	auto Component::Deserialize(YAML::Node const& node) -> void {
-		SetEntity(static_cast<Entity*>(Object::FindObjectByGuid(Guid::Parse(node["entity"].as<std::string>()))));
+		if (!node["entity"].IsScalar()) {
+			std::cerr << "Failed to deserialize owning Entity of Component " << GetGuid().ToString() << ". Invalid data." << std::endl;
+		}
+		else {
+			auto const guidStr{ node["entity"].as<std::string>() };
+			auto const entity{ dynamic_cast<Entity*>(Object::FindObjectByGuid(Guid::Parse(guidStr))) };
+			if (!entity) {
+				std::cerr << "Failed to deserialize owning Entity of Component " << GetGuid().ToString() << ". Guid " << guidStr << " does not belong to any Entity." << std::endl;
+			}
+			else {
+				SetEntity(entity);
+			}
+		}
 	}
 
 
@@ -135,15 +165,39 @@ namespace leopph {
 
 
 	auto Transform::Deserialize(YAML::Node const& node) -> void {
-		SetLocalPosition(node["position"].as<Vector3>());
-		SetLocalRotation(node["rotation"].as<Quaternion>());
-		SetLocalScale(node["scale"].as<Vector3>());
+		SetLocalPosition(node["position"].as<Vector3>(GetLocalPosition()));
+		SetLocalRotation(node["rotation"].as<Quaternion>(GetLocalRotation()));
+		SetLocalScale(node["scale"].as<Vector3>(GetLocalScale()));
 		if (node["parent"]) {
-			SetParent(static_cast<Transform*>(Object::FindObjectByGuid(Guid::Parse(node["parent"].as<std::string>()))));
+			if (!node["parent"].IsScalar()) {
+				auto const guidStr{ node["parent"].as<std::string>() };
+				auto const parent{ dynamic_cast<Transform*>(Object::FindObjectByGuid(Guid::Parse(guidStr))) };
+				if (!parent) {
+					std::cerr << "Failed to deserialize parent of Transform " << GetGuid().ToString() << ". Guid " << guidStr << " does not belong to any Transform." << std::endl;
+				}
+				SetParent(parent);
+			}
 		}
 		if (node["children"]) {
-			for (auto it{ node["children"].begin() }; it != node["children"].end(); ++it) {
-				static_cast<Transform*>(Object::FindObjectByGuid(Guid::Parse(it->as<std::string>())))->SetParent(this);
+			if (!node["children"].IsSequence()) {
+				std::cerr << "Failed to deserialize children of Transform " << GetGuid().ToString() << ". Invalid data." << std::endl;
+			}
+			else {
+				for (auto it{ node["children"].begin() }; it != node["children"].end(); ++it) {
+					if (!it->IsScalar()) {
+						std::cerr << "Failed to deserialize a child of Transform " << GetGuid().ToString() << ". Invalid data." << std::endl;
+					}
+					else {
+						auto const guidStr{ it->as<std::string>() };
+						auto const child{ dynamic_cast<Transform*>(Object::FindObjectByGuid(Guid::Parse(guidStr))) };
+						if (!child) {
+							std::cerr << "Failed to deserialize a child of Transform " << GetGuid().ToString() << ". Guid " << guidStr << " does not belong to any Transform." << std::endl;
+						}
+						else {
+							child->SetParent(this);
+						}
+					}
+				}
 			}
 		}
 	}
@@ -160,11 +214,46 @@ namespace leopph {
 
 
 	auto Camera::Deserialize(YAML::Node const& node) -> void {
-		SetType(static_cast<Type>(node["type"].as<int>()));
-		SetPerspectiveFov(node["fov"].as<leopph::f32>());
-		SetOrthoGraphicSize(node["size"].as<leopph::f32>());
-		SetNearClipPlane(node["near"].as<leopph::f32>());
-		SetFarClipPlane(node["far"].as<leopph::f32>());
+		if (node["type"]) {
+			if (!node["type"].IsScalar()) {
+				std::cerr << "Failed to deserialize a type of Camera " << GetGuid().ToString() << ". Invalid data." << std::endl;
+			}
+			else {
+				SetType(static_cast<Type>(node["type"].as<int>(static_cast<int>(GetType()))));
+			}
+		}
+		if (node["fov"]) {
+			if (!node["fov"].IsScalar()) {
+				std::cerr << "Failed to deserialize a field of view of Camera " << GetGuid().ToString() << ". Invalid data." << std::endl;
+			}
+			else {
+				SetPerspectiveFov(node["fov"].as<leopph::f32>(GetPerspectiveFov()));
+			}
+		}
+		if (node["size"]) {
+			if (!node["size"].IsScalar()) {
+				std::cerr << "Failed to deserialize a size of Camera " << GetGuid().ToString() << ". Invalid data." << std::endl;
+			}
+			else {
+				SetOrthoGraphicSize(node["size"].as<leopph::f32>(GetOrthographicSize()));
+			}
+		}
+		if (node["near"]) {
+			if (!node["near"].IsScalar()) {
+				std::cerr << "Failed to deserialize a near clip plane of Camera " << GetGuid().ToString() << ". Invalid data." << std::endl;
+			}
+			else {
+				SetNearClipPlane(node["near"].as<leopph::f32>(GetNearClipPlane()));
+			}
+		}
+		if (node["far"]) {
+			if (!node["far"].IsScalar()) {
+				std::cerr << "Failed to deserialize a far clip plane of Camera " << GetGuid().ToString() << ". Invalid data." << std::endl;
+			}
+			else {
+				SetFarClipPlane(node["far"].as<leopph::f32>(GetFarClipPlane()));
+			}
+		}
 	}
 
 
