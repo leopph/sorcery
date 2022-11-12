@@ -64,6 +64,11 @@ namespace YAML {
 
 
 namespace leopph {
+	auto Entity::SetScene(Scene* const scene) -> void {
+		mScene = scene;
+	}
+
+
 	auto Entity::GetSerializationType() const -> Type {
 		return Type::Entity;
 	}
@@ -90,7 +95,7 @@ namespace leopph {
 
 
 	auto Entity::Serialize(YAML::Node& node) const -> void {
-		node["name"] = name;
+		node["name"] = mName;
 		for (auto const& component : mComponents) {
 			node["components"].push_back(component->GetGuid().ToString());
 		}
@@ -98,24 +103,27 @@ namespace leopph {
 
 
 	auto Entity::Deserialize(YAML::Node const& node) -> void {
-		name = node["name"].as<std::string>();
+		mName = node["name"].as<std::string>();
 	}
 
 
 	auto Entity::DeserializeResolveReferences(YAML::Node const& node) -> void {
 		for (auto it{ node["components"].begin() }; it != node["components"].end(); ++it) {
-			mComponents.emplace_back(static_cast<Component*>(GetObjectWithGuid(Guid::Parse(it->as<std::string>()))));
+			mComponents.emplace_back(static_cast<Component*>(Object::FindObjectByGuid(Guid::Parse(it->as<std::string>()))));
 		}
 	}
 
 
 	auto Component::Serialize(YAML::Node& node) const -> void {
-		node["entity"] = entity->guid.ToString();
+		node["entity"] = mEntity->GetGuid().ToString();
 	}
 
 
+	auto Component::Deserialize([[maybe_unused]] YAML::Node const& node) -> void {}
+
+
 	auto Component::DeserializeResolveReferences(YAML::Node const& node) -> void {
-		entity = static_cast<Entity*>(GetObjectWithGuid(Guid::Parse(node["entity"].as<std::string>())));
+		mEntity = static_cast<Entity*>(Object::FindObjectByGuid(Guid::Parse(node["entity"].as<std::string>())));
 	}
 
 
@@ -143,11 +151,11 @@ namespace leopph {
 	auto Transform::DeserializeResolveReferences(YAML::Node const& node) -> void {
 		Component::DeserializeResolveReferences(node);
 		if (node["parent"]) {
-			SetParent(static_cast<Transform*>(GetObjectWithGuid(Guid::Parse(node["parent"].as<std::string>()))));
+			SetParent(static_cast<Transform*>(Object::FindObjectByGuid(Guid::Parse(node["parent"].as<std::string>()))));
 		}
 		if (node["children"]) {
 			for (auto it{ node["children"].begin() }; it != node["children"].end(); ++it) {
-				static_cast<Transform*>(GetObjectWithGuid(Guid::Parse(it->as<std::string>())))->SetParent(this);
+				static_cast<Transform*>(Object::FindObjectByGuid(Guid::Parse(it->as<std::string>())))->SetParent(this);
 			}
 		}
 	}
@@ -155,20 +163,20 @@ namespace leopph {
 
 	auto Camera::Serialize(YAML::Node& node) const -> void {
 		Component::Serialize(node);
-		node["type"] = static_cast<int>(mType);
-		node["fov"] = mPerspFovHorizDeg;
-		node["size"] = mOrthoSizeHoriz;
-		node["near"] = mNear;
-		node["far"] = mFar;
+		node["type"] = static_cast<int>(GetType());
+		node["fov"] = GetPerspectiveFov();
+		node["size"] = GetOrthographicSize();
+		node["near"] = GetNearClipPlane();
+		node["far"] = GetFarClipPlane();
 	}
 
 
 	auto Camera::Deserialize(YAML::Node const& node) -> void {
-		mType = static_cast<Type>(node["type"].as<int>());
-		mPerspFovHorizDeg = node["fov"].as<leopph::f32>();
-		mOrthoSizeHoriz = node["size"].as<leopph::f32>();
-		mNear = node["near"].as<leopph::f32>();
-		mFar = node["far"].as<leopph::f32>();
+		SetType(static_cast<Type>(node["type"].as<int>()));
+		SetPerspectiveFov(node["fov"].as<leopph::f32>());
+		SetOrthoGraphicSize(node["size"].as<leopph::f32>());
+		SetNearClipPlane(node["near"].as<leopph::f32>());
+		SetFarClipPlane(node["far"].as<leopph::f32>());
 	}
 
 
@@ -323,15 +331,5 @@ namespace leopph {
 
 	auto Behavior::DeserializeResolveReferences(YAML::Node const& node) -> void {
 		Component::DeserializeResolveReferences(node);
-	}
-
-
-	auto CubeModel::Serialize([[maybe_unused]] YAML::Node& node) const -> void {
-		Component::Serialize(node);
-	}
-
-
-	auto CubeModel::Deserialize([[maybe_unused]] YAML::Node const& node) -> void {
-
 	}
 }

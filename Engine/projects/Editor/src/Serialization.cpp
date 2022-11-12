@@ -3,6 +3,7 @@
 #include <Entity.hpp>
 #include <Components.hpp>
 #include <ManagedRuntime.hpp>
+#include <SceneManager.hpp>
 
 #include <mono/metadata/class.h>
 #include <mono/metadata/object.h>
@@ -21,9 +22,11 @@ namespace leopph::editor {
 			YAML::Node seNode;
 			seNode["objectType"] = static_cast<int>(se->GetSerializationType());
 			seNode["guid"] = se->GetGuid().ToString();
+
 			YAML::Node dataNode;
 			se->Serialize(dataNode);
 			seNode["data"] = dataNode;
+
 			sceneNode.push_back(seNode);
 		}
 		return sceneNode;
@@ -42,13 +45,13 @@ namespace leopph::editor {
 			SceneElement* obj{ nullptr };
 			switch (static_cast<SceneElement::Type>(sceneNode[i]["objectType"].as<int>())) {
 				case SceneElement::Type::Entity: {
-					obj = Entity::Create();
+					obj = leopph::SceneManager::GetActiveScene()->CreateEntity();
 					obj->CreateManagedObject("leopph", "Entity");
 					break;
 				}
 				case SceneElement::Type::Transform: {
 					obj = new Transform{};
-					//obj->CreateManagedObject("leopph", "Transform");
+					obj->CreateManagedObject("leopph", "Transform");
 					break;
 				}
 				case SceneElement::Type::Camera: {
@@ -71,7 +74,7 @@ namespace leopph::editor {
 			}
 
 			if (obj) {
-				obj->guid = guid;
+				obj->SetGuid(guid);
 				obj->Deserialize(sceneNode[i]["data"]);
 				sceneElements.emplace_back(obj, sceneNode[i]["data"]);
 			}

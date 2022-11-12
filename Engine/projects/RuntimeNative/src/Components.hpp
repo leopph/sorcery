@@ -17,13 +17,17 @@ namespace leopph {
 
 
 	class Component : public SceneElement {
-	public:
-		Entity* entity;
+	private:
+		Entity* mEntity;
 
+	public:
+		[[nodiscard]] LEOPPHAPI auto GetEntity() -> Entity*;
+		LEOPPHAPI auto SetEntity(Entity* entity) -> void;
 		[[nodiscard]] Transform& GetTransform() const;
 
 		virtual auto OnGui() -> void = 0;
 		LEOPPHAPI auto Serialize(YAML::Node& node) const -> void override;
+		LEOPPHAPI auto Deserialize(YAML::Node const& node) -> void override;
 		LEOPPHAPI auto DeserializeResolveReferences(YAML::Node const& node) -> void override;
 	};
 
@@ -163,8 +167,6 @@ namespace leopph {
 
 		LEOPPHAPI auto OnGui() -> void override;
 		[[nodiscard]] LEOPPHAPI auto GetSerializationType() const->Type override;
-		LEOPPHAPI auto Serialize(YAML::Node& node) const -> void override;
-		LEOPPHAPI auto Deserialize(YAML::Node const& node) -> void override;
 	};
 
 

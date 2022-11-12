@@ -1,17 +1,13 @@
 #pragma once
 
 #include "SceneElement.hpp"
-#include "Math.hpp"
 
 #include <string>
 #include <string_view>
-#include <unordered_map>
 #include <memory>
 #include <span>
 #include <vector>
-#include <optional>
 #include <concepts>
-#include <type_traits>
 
 using MonoString = struct _MonoString;
 using MonoReflectionType = struct _MonoReflectionType;
@@ -24,77 +20,62 @@ namespace leopph {
 
 
 	class Entity : public SceneElement {
-	private:
-		Entity() = default;
+		friend class Scene;
 
-		std::vector<std::unique_ptr<Component>> mComponents;
+	private:
+		static std::vector<Entity*> sAllEntities;
+
+		std::string mName{ "Entity" };
+		Scene* mScene{ nullptr };
 		Transform* mTransform{ nullptr };
+		std::vector<std::unique_ptr<Component>> mComponents;
+
+		Entity();
+
+		auto SetScene(Scene* scene) -> void;
 
 	public:
-		std::string name;
-		Scene* scene{ nullptr };
+		[[nodiscard]] LEOPPHAPI static auto GetAllEntities()->std::span<Entity* const>;
+		LEOPPHAPI static auto GetAllEntities(std::vector<Entity*>& outEntities) -> std::vector<Entity*>&;
+		[[nodiscard]] LEOPPHAPI static auto FindEntityByName(std::string_view name) -> Entity*;
 
-		Entity(Entity const& other) = delete;
-		Entity& operator=(Entity const& other) = delete;
-
-		// Creates a raw Entity without a Transform or a managed object.
-		// Registers itself in the active scene.
-		LEOPPHAPI static Entity* Create();
-
-		[[nodiscard]] LEOPPHAPI Transform& GetTransform();
+		LEOPPHAPI ~Entity();
 
 		[[nodiscard]] LEOPPHAPI auto GetSerializationType() const->Type override;
 		LEOPPHAPI auto Serialize(YAML::Node& node) const -> void override;
 		LEOPPHAPI auto Deserialize(YAML::Node const& node) -> void override;
 		LEOPPHAPI auto DeserializeResolveReferences(YAML::Node const& node) -> void override;
 
-		LEOPPHAPI Component* CreateComponent(MonoClass* componentClass);
+		[[nodiscard]] LEOPPHAPI auto GetName() -> std::string_view;
+		LEOPPHAPI auto SetName(std::string name) -> void;
+		[[nodiscard]] LEOPPHAPI auto GetScene() -> Scene&;
+		[[nodiscard]] LEOPPHAPI auto GetTransform() -> Transform&;
+
+		LEOPPHAPI auto CreateComponent(MonoClass* componentClass) -> Component*;
+		LEOPPHAPI auto AddComponent(std::unique_ptr<Component> component) -> void;
+		LEOPPHAPI auto DestroyComponent(Component* component) -> void;
 
 		template<std::derived_from<Component> T>
-		T* CreateComponent() {
-			auto const component = new T{};
-			component->entity = this;
-			mComponents.emplace_back(component);
-			return component;
-		}
-
-		template<std::derived_from<Component> T>
-		T* GetComponent() const {
+		auto GetComponent() const -> T* {
 			for (auto const& component : mComponents) {
 				if (auto const castPtr = dynamic_cast<T*>(component.get())) {
 					return castPtr;
 				}
 			}
-
 			return nullptr;
 		}
 
 		template<std::derived_from<Component> T>
-		std::vector<T*>& GetComponents(std::vector<T*>& outComponents) const {
+		auto GetComponents(std::vector<T*>& outComponents) const -> std::vector<T*>& {
 			outComponents.clear();
-
 			for (auto const& component : mComponents) {
 				if (auto const castPtr = dynamic_cast<T*>(component.get())) {
 					outComponents.emplace_back(castPtr);
 				}
 			}
-
 			return outComponents;
 		}
-
-		LEOPPHAPI void DeleteComponent(Component* component);
 	};
-
-	static_assert(!std::is_copy_constructible_v<Entity>);
-	static_assert(!std::is_copy_assignable_v<Entity>);
-	static_assert(!std::is_move_constructible_v<Entity>);
-	static_assert(!std::is_move_assignable_v<Entity>);
-
-
-	LEOPPHAPI std::vector<Entity*>& GetEntities(std::vector<Entity*>& outEntities);
-	LEOPPHAPI void DeleteEntity(Entity* entity);
-
-	Entity* FindEntity(std::string_view name);
 
 
 	namespace managedbindings {

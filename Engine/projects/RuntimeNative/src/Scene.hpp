@@ -3,6 +3,7 @@
 #include "Entity.hpp"
 
 #include <string>
+#include <memory>
 #include <vector>
 
 
@@ -10,13 +11,16 @@ namespace leopph
 {
 	class Scene
 	{
+		friend class SceneManager;
+
+	private:
 		std::string mName;
-		std::vector<Entity*> mEntities;
+		std::vector<std::unique_ptr<Entity>> mEntities;
+
+		Scene(std::string mName);
 
 	public:
-		Scene(std::string name);
-
-		void AddEntity(Entity* entity);
-		void RemoveEntity(Entity* entity);
+		LEOPPHAPI Entity* CreateEntity();
+		LEOPPHAPI void DestroyEntity(Entity const* entity);
 	};
 }

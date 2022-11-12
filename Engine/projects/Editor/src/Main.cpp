@@ -7,6 +7,8 @@
 #include <Time.hpp>
 #include <Entity.hpp>
 #include <OnGui.hpp>
+#include <Scene.hpp>
+#include <SceneManager.hpp>
 
 #include <imgui.h>
 #include <misc/cpp/imgui_stdlib.h>
@@ -50,8 +52,8 @@ namespace {
 
 	void CloseCurrentScene() {
 		static std::vector<leopph::Entity*> entities;
-		for (auto const& entity : leopph::GetEntities(entities)) {
-			leopph::DeleteEntity(entity);
+		for (auto const& entity : leopph::Entity::GetAllEntities(entities)) {
+			entity->GetScene().DestroyEntity(entity);
 		}
 	}
 
@@ -168,7 +170,13 @@ int WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ H
 
 			if (ImGui::BeginMenu("Create")) {
 				if (ImGui::MenuItem("Entity")) {
-					leopph::Entity::Create()->CreateComponent<leopph::Transform>();
+					auto const entity{ leopph::SceneManager::GetActiveScene()->CreateEntity() };
+					entity->CreateManagedObject("leopph", "Entity");
+
+					auto transform = std::make_unique<leopph::Transform>();
+					transform->CreateManagedObject("leopph", "Transform");
+
+					entity->AddComponent(std::move(transform));
 				}
 
 				ImGui::EndMenu();
@@ -194,7 +202,7 @@ int WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ H
 
 		static std::optional<std::size_t> selectedEntityIndex;
 		static std::vector<leopph::Entity*> entities;
-		leopph::GetEntities(entities);
+		leopph::Entity::GetAllEntities(entities);
 
 		if (selectedEntityIndex && *selectedEntityIndex >= entities.size()) {
 			selectedEntityIndex.reset();
@@ -203,13 +211,21 @@ int WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ H
 		if (ImGui::Begin("Entities", nullptr, ImGuiWindowFlags_NoCollapse)) {
 			for (std::size_t i = 0; i < entities.size(); i++) {
 				ImGui::PushID(static_cast<int>(i));
-				if (ImGui::Selectable(entities[i]->name.data(), selectedEntityIndex && *selectedEntityIndex == i)) {
+				if (ImGui::Selectable(entities[i]->GetName().data(), selectedEntityIndex && *selectedEntityIndex == i)) {
 					selectedEntityIndex = i;
 				}
 
 				if (ImGui::BeginPopupContextItem()) {
 					if (ImGui::Button("Delete")) {
-						leopph::DeleteEntity(entities[i]);
+						entities[i]->GetScene().DestroyEntity(entities[i]);
+						leopph::Entity::GetAllEntities(entities);
+						if (!entities.empty()) {
+							selectedEntityIndex = std::min(*selectedEntityIndex, entities.size() - 1);
+						}
+						else {
+							selectedEntityIndex.reset();
+						}
+						ImGui::CloseCurrentPopup();
 					}
 					ImGui::EndPopup();
 				}
@@ -223,11 +239,11 @@ int WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ H
 		ImGui::SetNextWindowSize(ImVec2{ 400, 600 }, ImGuiCond_FirstUseEver);
 
 		if (ImGui::Begin("Entity Properties", nullptr, ImGuiWindowFlags_NoCollapse)) {
-			if (selectedEntityIndex) {
+			if (selectedEntityIndex && selectedEntityIndex < entities.size()) {
 				auto const& entity = entities[*selectedEntityIndex];
 
 				static std::string entityName;
-				entityName = entity->name;
+				entityName = entity->GetName();
 
 				if (ImGui::BeginTable("Property Widgets", 2)) {
 					ImGui::TableNextRow();
@@ -239,7 +255,7 @@ int WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ H
 					ImGui::TableSetColumnIndex(1);
 					ImGui::PushItemWidth(-FLT_MIN);
 					if (ImGui::InputText("##EntityName", &entityName)) {
-						entity->name = entityName;
+						entity->SetName(entityName);
 					}
 
 					ImGui::EndTable();
@@ -260,7 +276,7 @@ int WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ H
 
 					if (ImGui::BeginPopupContextItem(componentNodeId)) {
 						if (ImGui::Button("Delete")) {
-							entities[*selectedEntityIndex]->DeleteComponent(component);
+							entities[*selectedEntityIndex]->DestroyComponent(component);
 						}
 						ImGui::EndPopup();
 					}

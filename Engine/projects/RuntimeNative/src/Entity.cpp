@@ -12,37 +12,72 @@
 
 
 namespace leopph {
-	std::vector<std::unique_ptr<Entity>> gEntities;
-
 	namespace {
 		template<std::derived_from<Component> T>
-		Component* instantiate() {
-			return new T{};
+		std::unique_ptr<Component> instantiate() {
+			return std::make_unique<T>();
 		}
 
 
-		std::unordered_map<std::string, std::unordered_map<std::string, std::function<Component*()>>> const gComponentInstantiators
+		std::unordered_map<std::string_view, std::function<std::unique_ptr<Component>()>> const gComponentInstantiators
 		{
-			{"leopph",
-				{
-					{"CubeModel", instantiate<CubeModel>},
-					{"Camera", instantiate<Camera>}
-				}
-			}
+			{"CubeModel", instantiate<CubeModel>},
+			{"Camera", instantiate<Camera>}
 		};
 	}
 
+	std::vector<Entity*> Entity::sAllEntities;
 
-	Entity* Entity::Create() {
-		auto const entity = gEntities.emplace_back(new Entity{}).get();
-		entity->name = "Entity";
-		entity->scene = SceneManager::GetActiveScene();
-		entity->scene->AddEntity(entity);
-		return entity;
+
+	auto Entity::GetAllEntities() -> std::span<Entity* const> {
+		return sAllEntities;
 	}
 
 
-	Transform& Entity::GetTransform() {
+	auto Entity::GetAllEntities(std::vector<Entity*>& outEntities) -> std::vector<Entity*>& {
+		outEntities.clear();
+		for (auto* const entity : sAllEntities) {
+			outEntities.emplace_back(entity);
+		}
+		return outEntities;
+	}
+
+
+	auto Entity::FindEntityByName(std::string_view name) -> Entity* {
+		for (auto* const entity : sAllEntities) {
+			if (entity->mName == name) {
+				return entity;
+			}
+		}
+		return nullptr;
+	}
+
+	Entity::Entity() {
+		sAllEntities.emplace_back(this);
+	}
+
+
+	Entity::~Entity() {
+		std::erase(sAllEntities, this);
+	}
+
+
+	auto Entity::GetName() -> std::string_view {
+		return mName;
+	}
+
+
+	auto Entity::SetName(std::string name) -> void {
+		mName = std::move(name);
+	}
+
+
+	auto Entity::GetScene() -> Scene& {
+		return *mScene;
+	}
+
+
+	auto Entity::GetTransform() -> Transform& {
 		if (!mTransform) {
 			mTransform = GetComponent<Transform>();
 		}
@@ -50,87 +85,63 @@ namespace leopph {
 	}
 
 
-	Component* Entity::CreateComponent(MonoClass* componentClass) {
+	auto Entity::CreateComponent(MonoClass* const componentClass) -> Component*
+	{
 		if (mono_class_is_subclass_of(componentClass, mono_class_from_name(GetManagedImage(), "leopph", "Behavior"), false)) {
-			auto const behavior = new Behavior{componentClass };
-			behavior->entity = this;
-			mComponents.emplace_back(behavior);
-			return behavior;
+			auto behavior{ std::make_unique<Behavior>(componentClass) };
+			behavior->CreateManagedObject(componentClass);
+			auto const ret{ behavior.get()};
+			AddComponent(std::move(behavior));
+			return ret;
 		}
 
-		auto* const classNs = mono_class_get_namespace(componentClass);
-		auto* const className = mono_class_get_name(componentClass);
+		std::string_view const className{ mono_class_get_name(componentClass) };
 
-		if (!std::strcmp(classNs, "leopph") && !std::strcmp(className, "Transform")) {
-			if (mTransform) {
-				return mTransform;
-			}
-
-			auto const transform = CreateComponent<Transform>();
-			transform->CreateManagedObject(componentClass);
-			return transform;
+		if (className == "Transform") {
+			return &GetTransform();
 		}
 
-		if (auto const nsIt = gComponentInstantiators.find(classNs); nsIt != std::end(gComponentInstantiators)) {
-			if (auto const nameIt = nsIt->second.find(className); nameIt != std::end(nsIt->second)) {
-				auto const component = nameIt->second();
-				component->entity = this;
-				component->CreateManagedObject(componentClass);
-				mComponents.emplace_back(component);
-				return component;
-			}
+		if (auto const it{ gComponentInstantiators.find(className) }; it != std::end(gComponentInstantiators)) {
+			auto component{ it->second() };
+			component->CreateManagedObject(componentClass);
+			auto const ret{ component.get()};
+			AddComponent(std::move(component));
+			return ret;
 		}
 
 		return nullptr;
 	}
 
 
-	void Entity::DeleteComponent(Component* const component) {
-		if (component->entity != this || component->entity->mTransform == component) {
-			return;
+	auto Entity::AddComponent(std::unique_ptr<Component> component) -> void {
+		if (component) {
+			component->SetEntity(this);
+			mComponents.push_back(std::move(component));
 		}
-
-		std::erase_if(mComponents, [component](auto const& attachedComponent) {
-			return attachedComponent.get() == component;
-		});
 	}
 
 
-	std::vector<Entity*>& GetEntities(std::vector<Entity*>& outEntities) {
-		outEntities.clear();
-		for (auto const& entity : gEntities) {
-			outEntities.emplace_back(entity.get());
-		}
-		return outEntities;
-	}
-
-
-	void DeleteEntity(Entity* const entity) {
-		entity->scene->RemoveEntity(entity);
-		std::erase_if(gEntities, [entity](auto const& storedEntity) {
-			return entity == storedEntity.get();
-		});
-	}
-
-
-	Entity* FindEntity(std::string_view const name) {
-		for (auto const& entity : gEntities) {
-			if (entity->name == name) {
-				return entity.get();
+	auto Entity::DestroyComponent(Component* const component) -> void {
+		if (component) {
+			if (component->GetEntity()->GetGuid() != GetGuid() || component->GetTransform().GetGuid() == component->GetGuid()) {
+				return;
 			}
+			std::erase_if(mComponents, [component](auto const& attachedComponent) {
+				return attachedComponent->GetGuid() == component->GetGuid();
+			});
 		}
-
-		return nullptr;
 	}
 
 
 	namespace managedbindings {
 		void CreateNativeEntity(MonoObject* managedObject) {
-			auto const entity = Entity::Create();
+			auto const entity = SceneManager::GetActiveScene()->CreateEntity();
 			entity->SetManagedObject(managedObject);
 
-			auto const transform = entity->CreateComponent<Transform>();
+			auto transform = std::make_unique<Transform>();
 			transform->CreateManagedObject("leopph", "Transform");
+
+			entity->AddComponent(std::move(transform));
 		}
 
 
@@ -141,19 +152,19 @@ namespace leopph {
 
 
 		MonoString* GetEntityName(MonoObject* managedEntity) {
-			return mono_string_new_wrapper(ManagedAccessObject::GetNativePtrFromManagedObjectAs<Entity*>(managedEntity)->name.c_str());
+			return mono_string_new_wrapper(ManagedAccessObject::GetNativePtrFromManagedObjectAs<Entity*>(managedEntity)->GetName().data());
 		}
 
 
 		void SetEntityName(MonoObject* managedEntity, MonoString* managedName) {
-			ManagedAccessObject::GetNativePtrFromManagedObjectAs<Entity*>(managedEntity)->name = mono_string_to_utf8(managedName);
+			ManagedAccessObject::GetNativePtrFromManagedObjectAs<Entity*>(managedEntity)->SetName(mono_string_to_utf8(managedName));
 		}
 
 
 		MonoObject* EntityCreateComponent(Entity* const entity, MonoReflectionType* const componentType) {
-			auto const componentClass = mono_type_get_class(mono_reflection_type_get_type(componentType));
-			auto const component = entity->CreateComponent(componentClass);
-			return component->GetManagedObject();
+			auto const componentClass{ mono_type_get_class(mono_reflection_type_get_type(componentType)) };
+			auto const component{ entity->CreateComponent(componentClass) };
+			return component ? component->GetManagedObject() : nullptr;
 		}
 	}
 }

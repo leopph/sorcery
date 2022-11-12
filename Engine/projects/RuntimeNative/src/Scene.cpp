@@ -3,19 +3,23 @@
 
 namespace leopph
 {
-	Scene::Scene(std::string name) :
-		mName{ std::move(name) }
+	Scene::Scene(std::string mName) :
+		mName{ std::move(mName) }
 	{}
 
 
-	void Scene::AddEntity(Entity* entity)
-	{
-		mEntities.emplace_back(entity);
+	Entity* Scene::CreateEntity() {
+		auto const entity{ new Entity{} };
+		entity->SetScene(this);
+		return mEntities.emplace_back(entity).get();
 	}
 
 
-	void Scene::RemoveEntity(Entity* entity)
-	{
-		std::erase(mEntities, entity);
+	void Scene::DestroyEntity(Entity const* const entity) {
+		if (entity) {
+			std::erase_if(mEntities, [entity](auto const& ownedEntity) {
+				return ownedEntity->GetGuid() == entity->GetGuid();
+			});
+		}
 	}
 }

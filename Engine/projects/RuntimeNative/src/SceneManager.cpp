@@ -23,8 +23,8 @@ namespace leopph
 	}
 
 
-	Scene* SceneManager::CreateScene(std::string name)
+	Scene* SceneManager::CreateScene(std::string mName)
 	{
-		return sScenes.emplace_back(std::make_unique<Scene>(std::move(name))).get();
+		return sScenes.emplace_back(new Scene{ std::move(mName) }).get();
 	}
 }

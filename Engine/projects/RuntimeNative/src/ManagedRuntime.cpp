@@ -202,9 +202,9 @@ namespace leopph {
 		for (int i = 0; i < numRows; i++) {
 			u32 cols[MONO_TYPEDEF_SIZE];
 			mono_metadata_decode_row(table, i, cols, MONO_TYPEDEF_SIZE);
-			auto const name = mono_metadata_string_heap(gImage, cols[MONO_TYPEDEF_NAME]);
+			auto const mName = mono_metadata_string_heap(gImage, cols[MONO_TYPEDEF_NAME]);
 			auto const ns = mono_metadata_string_heap(gImage, cols[MONO_TYPEDEF_NAMESPACE]);
-			auto const klass = mono_class_from_name(gImage, ns, name);
+			auto const klass = mono_class_from_name(gImage, ns, mName);
 
 			if (mono_class_is_subclass_of(klass, componentClass, false) && klass != componentClass && klass != behaviorClass) {
 				gComponentClasses.emplace_back(klass);

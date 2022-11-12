@@ -40,7 +40,7 @@ namespace leopph {
 	}
 
 
-    auto Guid::operator==(Guid const& other) -> bool
+    auto Guid::operator==(Guid const& other) const -> bool
     {
 		return data0 == other.data0 && data1 == other.data1;
     }

@@ -6,67 +6,64 @@
 
 
 namespace leopph {
-	namespace {
-		struct GuidObjectLess {
-			using is_transparent = void;
-
-			[[nodiscard]] auto operator()(Guid const& left, Guid const& right) const -> bool {
-				auto const leftFirstHalf = *reinterpret_cast<leopph::u64 const*>(&left);
-				auto const leftSecondHalf = *(reinterpret_cast<leopph::u64 const*>(&left) + 1);
-				auto const rightFirstHalf = *reinterpret_cast<leopph::u64 const*>(&right);
-				auto const rightSecondHalf = *(reinterpret_cast<leopph::u64 const*>(&right) + 1);
-
-				if (leftFirstHalf < rightFirstHalf ||
-					(leftFirstHalf == rightFirstHalf && leftSecondHalf < rightSecondHalf)) {
-					return true;
-				}
-				return false;
-			}
-
-			[[nodiscard]] auto operator()(Object const* const left, Guid const& right) const -> bool {
-				return operator()(left->GetGuid(), right);
-			}
-
-			[[nodiscard]] auto operator()(Guid const& left, Object* const right) const -> bool {
-				return operator()(left, right->GetGuid());
-			}
-
-			[[nodiscard]] auto operator()(Object const* const left, Object const* const right) const -> bool {
-				return operator()(left->GetGuid(), right->GetGuid());
-			}
-		};
+	std::set<Object*, Object::GuidObjectLess> Object::sAllObjects;
 
 
-		//std::set<Object*, GuidObjectLess> gAllObjects;
-		std::vector<Object*> gAllobjects;
+	auto Object::GuidObjectLess::operator()(Guid const& left, Guid const& right) const -> bool {
+		auto const leftFirstHalf = *reinterpret_cast<leopph::u64 const*>(&left);
+		auto const leftSecondHalf = *(reinterpret_cast<leopph::u64 const*>(&left) + 1);
+		auto const rightFirstHalf = *reinterpret_cast<leopph::u64 const*>(&right);
+		auto const rightSecondHalf = *(reinterpret_cast<leopph::u64 const*>(&right) + 1);
+
+		if (leftFirstHalf < rightFirstHalf ||
+			(leftFirstHalf == rightFirstHalf && leftSecondHalf < rightSecondHalf)) {
+			return true;
+		}
+		return false;
+	}
+
+
+	auto Object::GuidObjectLess::operator()(Object const* const left, Guid const& right) const -> bool {
+		return operator()(left->GetGuid(), right);
+	}
+
+
+	auto Object::GuidObjectLess::operator()(Guid const& left, Object* const right) const -> bool {
+		return operator()(left, right->GetGuid());
+	}
+
+
+	auto Object::GuidObjectLess::operator()(Object const* const left, Object const* const right) const -> bool {
+		return operator()(left->GetGuid(), right->GetGuid());
+	}
+
+
+	auto Object::FindObjectByGuid(Guid const& guid) -> Object* {
+		if (auto const it = sAllObjects.find(guid); it != std::end(sAllObjects)) {
+			return *it;
+		}
+		return nullptr;
 	}
 
 
 	Object::Object() {
-		//gAllObjects.emplace(this);
-		gAllobjects.emplace_back(this);
+		sAllObjects.emplace(this);
 	}
 
 
 	Object::~Object() {
-		std::erase(gAllobjects, this);
+		sAllObjects.erase(this);
 	}
 
 
 	auto Object::GetGuid() const -> Guid const& {
-		return guid;
+		return mGuid;
 	}
 
 
-	auto GetObjectWithGuid(Guid const& guid) -> Object* {
-		/*if (auto const it = gAllObjects.find(guid); it != std::end(gAllObjects)) {
-			return *it;
-		}*/
-		for (auto* const obj : gAllobjects) {
-			if (obj->guid == guid) {
-				return obj;
-			}
-		}
-		return nullptr;
+	auto Object::SetGuid(Guid const& guid) -> void {
+		auto extracted{ sAllObjects.extract(this) };
+		mGuid = guid;
+		sAllObjects.insert(std::move(extracted));
 	}
 }
