@@ -45,17 +45,15 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>$(ProjectDir)bin\$(Configuration)\</OutDir>
+    <OutDir>$(SolutionDir)bin\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)obj\$(Configuration)\</IntDir>
     <TargetName>LeopphEditor</TargetName>
-    <CopyLocalProjectReference>true</CopyLocalProjectReference>
     <CopyLocalDeploymentContent>true</CopyLocalDeploymentContent>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>$(ProjectDir)bin\$(Configuration)\</OutDir>
+    <OutDir>$(SolutionDir)bin\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)obj\$(Configuration)\</IntDir>
     <TargetName>LeopphEditor</TargetName>
-    <CopyLocalProjectReference>true</CopyLocalProjectReference>
     <CopyLocalDeploymentContent>true</CopyLocalDeploymentContent>
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg">

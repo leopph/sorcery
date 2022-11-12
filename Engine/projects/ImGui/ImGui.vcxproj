@@ -44,12 +44,12 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>$(ProjectDir)bin\$(Configuration)\</OutDir>
+    <OutDir>$(SolutionDir)bin\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)obj\$(Configuration)\</IntDir>
     <PublicIncludeDirectories>$(SolutionDir)Engine\vendor\imgui</PublicIncludeDirectories>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>$(ProjectDir)bin\$(Configuration)\</OutDir>
+    <OutDir>$(SolutionDir)bin\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)obj\$(Configuration)\</IntDir>
     <PublicIncludeDirectories>$(SolutionDir)Engine\vendor\imgui</PublicIncludeDirectories>
   </PropertyGroup>

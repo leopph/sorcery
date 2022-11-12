@@ -398,6 +398,7 @@ FodyWeavers.xsd
 *.sln.iml
 
 # Custom for LeopphEngine
+bin
 Engine/vendor
 Engine/deps/vendor
 Engine/projects/RuntimeNative/src/shaders/cinclude
