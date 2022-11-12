@@ -27,7 +27,7 @@ namespace leopph {
 
 		std::string mName{ "Entity" };
 		Scene* mScene{ nullptr };
-		Transform* mTransform{ nullptr };
+		mutable Transform* mTransform{ nullptr };
 		std::vector<std::unique_ptr<Component>> mComponents;
 
 		Entity();
@@ -44,12 +44,11 @@ namespace leopph {
 		[[nodiscard]] LEOPPHAPI auto GetSerializationType() const->Type override;
 		LEOPPHAPI auto Serialize(YAML::Node& node) const -> void override;
 		LEOPPHAPI auto Deserialize(YAML::Node const& node) -> void override;
-		LEOPPHAPI auto DeserializeResolveReferences(YAML::Node const& node) -> void override;
 
-		[[nodiscard]] LEOPPHAPI auto GetName() -> std::string_view;
+		[[nodiscard]] LEOPPHAPI auto GetName() const -> std::string_view;
 		LEOPPHAPI auto SetName(std::string name) -> void;
-		[[nodiscard]] LEOPPHAPI auto GetScene() -> Scene&;
-		[[nodiscard]] LEOPPHAPI auto GetTransform() -> Transform&;
+		[[nodiscard]] LEOPPHAPI auto GetScene() const -> Scene&;
+		[[nodiscard]] LEOPPHAPI auto GetTransform() const -> Transform&;
 
 		LEOPPHAPI auto CreateComponent(MonoClass* componentClass) -> Component*;
 		LEOPPHAPI auto AddComponent(std::unique_ptr<Component> component) -> void;

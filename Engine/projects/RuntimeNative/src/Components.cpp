@@ -19,7 +19,7 @@
 
 
 namespace leopph {
-	auto Component::GetEntity() -> Entity* {
+	auto Component::GetEntity() const -> Entity* {
 		return mEntity;
 	}
 
@@ -29,7 +29,7 @@ namespace leopph {
 	}
 
 
-	Transform& Component::GetTransform() const {
+	auto Component::GetTransform() const -> Transform& {
 		return mEntity->GetTransform();
 	}
 

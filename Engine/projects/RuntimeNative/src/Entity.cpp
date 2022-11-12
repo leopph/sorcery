@@ -62,7 +62,7 @@ namespace leopph {
 	}
 
 
-	auto Entity::GetName() -> std::string_view {
+	auto Entity::GetName() const -> std::string_view {
 		return mName;
 	}
 
@@ -72,12 +72,12 @@ namespace leopph {
 	}
 
 
-	auto Entity::GetScene() -> Scene& {
+	auto Entity::GetScene() const -> Scene& {
 		return *mScene;
 	}
 
 
-	auto Entity::GetTransform() -> Transform& {
+	auto Entity::GetTransform() const -> Transform& {
 		if (!mTransform) {
 			mTransform = GetComponent<Transform>();
 		}

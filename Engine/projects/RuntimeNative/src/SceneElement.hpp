@@ -24,7 +24,6 @@ namespace leopph {
 		[[nodiscard]] virtual auto GetSerializationType() const -> Type = 0;
 		virtual auto Serialize(YAML::Node& node) const -> void = 0;
 		virtual auto Deserialize(YAML::Node const& node) -> void = 0;
-		inline virtual auto DeserializeResolveReferences([[maybe_unused]] YAML::Node const& node) -> void {}
 	};
 
 	[[nodiscard]] LEOPPHAPI auto GetAllSceneElements() -> std::span<SceneElement* const>;

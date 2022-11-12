@@ -95,7 +95,7 @@ namespace leopph {
 
 
 	auto Entity::Serialize(YAML::Node& node) const -> void {
-		node["name"] = mName;
+		node["name"] = GetName().data();
 		for (auto const& component : mComponents) {
 			node["components"].push_back(component->GetGuid().ToString());
 		}
@@ -103,37 +103,30 @@ namespace leopph {
 
 
 	auto Entity::Deserialize(YAML::Node const& node) -> void {
-		mName = node["name"].as<std::string>();
-	}
-
-
-	auto Entity::DeserializeResolveReferences(YAML::Node const& node) -> void {
+		SetName(node["name"].as<std::string>());
 		for (auto it{ node["components"].begin() }; it != node["components"].end(); ++it) {
-			mComponents.emplace_back(static_cast<Component*>(Object::FindObjectByGuid(Guid::Parse(it->as<std::string>()))));
+			AddComponent(std::unique_ptr<Component>{(static_cast<Component*>(Object::FindObjectByGuid(Guid::Parse(it->as<std::string>()))))});
 		}
 	}
 
 
 	auto Component::Serialize(YAML::Node& node) const -> void {
-		node["entity"] = mEntity->GetGuid().ToString();
+		node["entity"] = GetEntity()->GetGuid().ToString();
 	}
 
 
-	auto Component::Deserialize([[maybe_unused]] YAML::Node const& node) -> void {}
-
-
-	auto Component::DeserializeResolveReferences(YAML::Node const& node) -> void {
-		mEntity = static_cast<Entity*>(Object::FindObjectByGuid(Guid::Parse(node["entity"].as<std::string>())));
+	auto Component::Deserialize(YAML::Node const& node) -> void {
+		SetEntity(static_cast<Entity*>(Object::FindObjectByGuid(Guid::Parse(node["entity"].as<std::string>()))));
 	}
 
 
 	auto Transform::Serialize(YAML::Node& node) const -> void {
 		Component::Serialize(node);
-		node["position"] = mLocalPosition;
-		node["rotation"] = mLocalRotation;
-		node["scale"] = mLocalScale;
-		if (mParent) {
-			node["parent"] = mParent->GetGuid().ToString();
+		node["position"] = GetLocalPosition();
+		node["rotation"] = GetLocalRotation();
+		node["scale"] = GetLocalScale();
+		if (GetParent()) {
+			node["parent"] = GetParent()->GetGuid().ToString();
 		}
 		for (auto const* const child : mChildren) {
 			node["children"].push_back(child->GetGuid().ToString());
@@ -145,11 +138,6 @@ namespace leopph {
 		SetLocalPosition(node["position"].as<Vector3>());
 		SetLocalRotation(node["rotation"].as<Quaternion>());
 		SetLocalScale(node["scale"].as<Vector3>());
-	}
-
-
-	auto Transform::DeserializeResolveReferences(YAML::Node const& node) -> void {
-		Component::DeserializeResolveReferences(node);
 		if (node["parent"]) {
 			SetParent(static_cast<Transform*>(Object::FindObjectByGuid(Guid::Parse(node["parent"].as<std::string>()))));
 		}
@@ -326,10 +314,5 @@ namespace leopph {
 		};
 
 		parseAndSetMembers(managedComponent, node["data"]);
-	}
-
-
-	auto Behavior::DeserializeResolveReferences(YAML::Node const& node) -> void {
-		Component::DeserializeResolveReferences(node);
 	}
 }

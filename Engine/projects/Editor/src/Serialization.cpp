@@ -39,7 +39,7 @@ namespace leopph::editor {
 			YAML::Node node;
 		};
 
-		std::vector<SceneElementWithDataNode> sceneElements;
+		std::vector<SceneElementWithDataNode> sceneElementsWithDataNode;
 		for (std::size_t i{ 0 }; i < sceneNode.size(); i++) {
 			auto const guid{ Guid::Parse(sceneNode[i]["guid"].as<std::string>())};
 			SceneElement* obj{ nullptr };
@@ -75,13 +75,12 @@ namespace leopph::editor {
 
 			if (obj) {
 				obj->SetGuid(guid);
-				obj->Deserialize(sceneNode[i]["data"]);
-				sceneElements.emplace_back(obj, sceneNode[i]["data"]);
+				sceneElementsWithDataNode.emplace_back(obj, sceneNode[i]["data"]);
 			}
 		}
 
-		for (auto& [se, node] : sceneElements) {
-			se->DeserializeResolveReferences(node);
+		for (auto& [se, node] : sceneElementsWithDataNode) {
+			se->Deserialize(node);
 		}
 	}
 }

@@ -21,14 +21,13 @@ namespace leopph {
 		Entity* mEntity;
 
 	public:
-		[[nodiscard]] LEOPPHAPI auto GetEntity() -> Entity*;
+		[[nodiscard]] LEOPPHAPI auto GetEntity() const->Entity*;
 		LEOPPHAPI auto SetEntity(Entity* entity) -> void;
-		[[nodiscard]] Transform& GetTransform() const;
+		[[nodiscard]] LEOPPHAPI auto GetTransform() const->Transform&;
 
 		virtual auto OnGui() -> void = 0;
 		LEOPPHAPI auto Serialize(YAML::Node& node) const -> void override;
 		LEOPPHAPI auto Deserialize(YAML::Node const& node) -> void override;
-		LEOPPHAPI auto DeserializeResolveReferences(YAML::Node const& node) -> void override;
 	};
 
 
@@ -76,7 +75,6 @@ namespace leopph {
 		[[nodiscard]] LEOPPHAPI auto GetSerializationType() const->Type override;
 		LEOPPHAPI auto Serialize(YAML::Node& node) const -> void override;
 		LEOPPHAPI auto Deserialize(YAML::Node const& node) -> void override;
-		LEOPPHAPI auto DeserializeResolveReferences(YAML::Node const& node) -> void override;
 
 		[[nodiscard]] LEOPPHAPI Vector3 const& GetWorldPosition() const;
 		LEOPPHAPI void SetWorldPosition(Vector3 const& newPos);
@@ -262,7 +260,6 @@ namespace leopph {
 		[[nodiscard]] LEOPPHAPI auto GetSerializationType() const->Type override;
 		LEOPPHAPI auto Serialize(YAML::Node& node) const -> void override;
 		LEOPPHAPI auto Deserialize(YAML::Node const& node) -> void override;
-		LEOPPHAPI auto DeserializeResolveReferences(YAML::Node const& node) -> void override;
 	};
 
 	LEOPPHAPI void init_behaviors();
