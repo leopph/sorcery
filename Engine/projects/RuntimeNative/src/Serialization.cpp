@@ -200,7 +200,7 @@ namespace leopph {
 						serializeObject(fieldValueBoxed, dataNode);
 					}
 					else {
-						std::cerr << "Serialization of reference type fields is not yet supported." << std::endl;
+						node[fieldName] = ManagedAccessObject::GetNativePtrFromManagedObjectAs<ManagedAccessObject*>(fieldValueBoxed)->GetGuid().ToString();
 					}
 				}
 			}
@@ -227,7 +227,7 @@ namespace leopph {
 						serializeObject(propValueBoxed, dataNode);
 					}
 					else {
-						std::cerr << "Serialization of reference type properties is not yet supported." << std::endl;
+						node[propName] = ManagedAccessObject::GetNativePtrFromManagedObjectAs<ManagedAccessObject*>(propValueBoxed)->GetGuid().ToString();
 					}
 				}
 			}
@@ -279,7 +279,8 @@ namespace leopph {
 						mono_property_set_value(prop, objPossiblyUnboxed, &propValueUnboxed, nullptr);
 					}
 					else {
-						std::cerr << "Deserialization of reference type properties is not yet supported." << std::endl;
+						auto managedRefValue{ static_cast<ManagedAccessObject*>(Object::FindObjectByGuid(Guid::Parse(it->second.as<std::string>())))->GetManagedObject() };
+						mono_property_set_value(prop, objPossiblyUnboxed, reinterpret_cast<void**>(&managedRefValue), nullptr);
 					}
 				}
 				else if (auto const field = mono_class_get_field_from_name(objClass, memberName.data())) {
@@ -304,7 +305,8 @@ namespace leopph {
 						mono_field_set_value(obj, field, mono_object_unbox(fieldValueBoxed));
 					}
 					else {
-						std::cerr << "Deserialization of reference type fields is not yet supported." << std::endl;
+						auto managedRefValue{ static_cast<ManagedAccessObject*>(Object::FindObjectByGuid(Guid::Parse(it->second.as<std::string>())))->GetManagedObject() };
+						mono_field_set_value(obj, field, reinterpret_cast<void*>(managedRefValue));
 					}
 				}
 				else {
