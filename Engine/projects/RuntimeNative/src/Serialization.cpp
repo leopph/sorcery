@@ -381,12 +381,12 @@ namespace leopph {
 						auto const guidStr{ it->second.as<std::string>() };
 						auto const targetObj{ Object::FindObjectByGuid(Guid::Parse(guidStr)) };
 						if (!targetObj) {
-							std::cerr << std::format("Failed to deserialize field {}::{} on Behavior {}. Guid {} does not belong to any object.", mono_type_get_name(mono_class_get_type(objClass)), memberName, GetGuid().ToString(), guidStr) << std::endl;
+							std::cerr << std::format("Failed to deserialize property {}::{} on Behavior {}. Guid {} does not belong to any object.", mono_type_get_name(mono_class_get_type(objClass)), memberName, GetGuid().ToString(), guidStr) << std::endl;
 						}
 						else {
 							auto const targetObjCast{ dynamic_cast<ManagedAccessObject*>(targetObj) };
 							if (!targetObjCast) {
-								std::cerr << std::format("Failed to deserialize field {}::{} on Behavior {}. Object {} is not a LeopphEngine type. Currently only LeopphEngine types are supported for by-reference serialization.", mono_type_get_name(mono_class_get_type(objClass)), memberName, GetGuid().ToString(), guidStr) << std::endl;
+								std::cerr << std::format("Failed to deserialize property {}::{} on Behavior {}. Object {} is not a LeopphEngine type. Currently only LeopphEngine types are supported for by-reference serialization.", mono_type_get_name(mono_class_get_type(objClass)), memberName, GetGuid().ToString(), guidStr) << std::endl;
 							}
 							else {
 								auto managedRefValue{ targetObjCast->GetManagedObject() };
@@ -449,6 +449,6 @@ namespace leopph {
 			}
 		};
 
-		parseAndSetMembers(managedComponent, node["data"]);
+		parseAndSetMembers(managedComponent, node);
 	}
 }
