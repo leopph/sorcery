@@ -1,4 +1,5 @@
 #include "Serialization.hpp"
+#include "AssetManagement.hpp"
 
 #include <Components.hpp>
 #include <ManagedRuntime.hpp>
@@ -26,8 +27,10 @@
 #pragma warning (disable: 4251 4275)
 #include <yaml-cpp/yaml.h>
 #pragma warning (pop)
+#include <nfd.h>
 
 #include <algorithm>
+#include <cstdlib>
 #include <cstring>
 #include <filesystem>
 #include <format>
@@ -59,6 +62,7 @@ namespace {
 
 
 	YAML::Node gSerializedSceneBackup;
+	std::unique_ptr<leopph::editor::Project> gProject;
 }
 
 
@@ -144,6 +148,13 @@ int WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ H
 
 		if (ImGui::BeginMainMenuBar()) {
 			if (ImGui::BeginMenu("File")) {
+				if (ImGui::MenuItem("Open Project")) {
+					if (nfdchar_t* selectedPath{ nullptr }; NFD_PickFolder(nullptr, &selectedPath) == NFD_OKAY) {
+						gProject = leopph::editor::LoadProject(selectedPath);
+						std::free(selectedPath);
+					}
+				}
+
 				if (ImGui::MenuItem("Open")) {
 					MessageBoxW(leopph::platform::get_hwnd(), L"Placeholder", L"Placeholder", 0);
 				}
@@ -346,6 +357,11 @@ int WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ H
 		}
 		else {
 			ImGui::PopStyleVar();
+		}
+		ImGui::End();
+
+		if (ImGui::Begin("Assets", nullptr, ImGuiWindowFlags_NoCollapse)) {
+
 		}
 		ImGui::End();
 

@@ -98,6 +98,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\AssetManagement.cpp" />
     <ClCompile Include="src\Serialization.cpp" />
     <ClCompile Include="src\Main.cpp" />
   </ItemGroup>
@@ -120,6 +121,7 @@
     <None Include="vcpkg.json" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\AssetManagement.hpp" />
     <ClInclude Include="src\Serialization.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
