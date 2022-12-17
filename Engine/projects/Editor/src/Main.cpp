@@ -1,5 +1,6 @@
 #include "Serialization.hpp"
 #include "AssetManagement.hpp"
+#include "Widgets.hpp"
 
 #include <Components.hpp>
 #include <ManagedRuntime.hpp>
@@ -22,14 +23,11 @@
 #include <mono/metadata/appdomain.h>
 #include <mono/metadata/threads.h>
 
-// yaml-cpp incorrectly uses dllexport specifiers so we silence their warnings
-#pragma warning (push)
-#pragma warning (disable: 4251 4275)
-#include <yaml-cpp/yaml.h>
-#pragma warning (pop)
+#include <YamlInclude.hpp>
 #include <nfd.h>
 
 #include <algorithm>
+#include <atomic>
 #include <cstdlib>
 #include <cstring>
 #include <filesystem>
@@ -39,6 +37,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <thread>
 #include <vector>
 
 using leopph::Vector3;
@@ -63,6 +62,32 @@ namespace {
 
 	YAML::Node gSerializedSceneBackup;
 	std::unique_ptr<leopph::editor::Project> gProject;
+	std::atomic<bool> gLoading{ false };
+
+	auto LoadAndBlockEditor(ImGuiIO& io, std::function<void()> const& fun) -> void {
+		auto const oldFlags{ io.ConfigFlags };
+		io.ConfigFlags |= ImGuiConfigFlags_NoMouse;
+		io.ConfigFlags |= ImGuiConfigFlags_NavNoCaptureKeyboard;
+		gLoading = true;
+		fun();
+		io.ConfigFlags = oldFlags;
+		gLoading = false;
+	};
+
+
+	auto ImportAsset(ImGuiIO& io) -> void {
+		if (nfdchar_t* selectedPath{ nullptr }; NFD_OpenDialog(nullptr, nullptr, &selectedPath) == NFD_OKAY) {
+			auto const LoadAndAddAssetToProject = [selectedPath] {
+				if (auto const asset = leopph::editor::ImportAsset(selectedPath, gProject->folder); asset) {
+					gProject->assets.emplace_back(asset);
+				}
+				std::free(selectedPath);
+			};
+
+			std::thread loaderThread{ LoadAndBlockEditor, std::ref(io), LoadAndAddAssetToProject };
+			loaderThread.detach();
+		}
+	}
 }
 
 
@@ -142,6 +167,14 @@ int WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ H
 
 		ImGui::DockSpaceOverViewport();
 
+		if (gLoading) {
+			ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+			if (ImGui::Begin("LoadingIndicator", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse)) {
+				leopph::editor::DrawSpinner("##spinner", 15, 6, ImGui::GetColorU32(ImGuiCol_ButtonHovered));
+			}
+			ImGui::End();
+		}
+
 		if (showDemoWindow) {
 			ImGui::ShowDemoWindow();
 		}
@@ -150,16 +183,25 @@ int WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ H
 			if (ImGui::BeginMenu("File")) {
 				if (ImGui::MenuItem("Open Project")) {
 					if (nfdchar_t* selectedPath{ nullptr }; NFD_PickFolder(nullptr, &selectedPath) == NFD_OKAY) {
-						gProject = leopph::editor::LoadProject(selectedPath);
-						std::free(selectedPath);
+						auto const LoadAndAssignProject = [selectedPath] {
+							gProject = leopph::editor::LoadProject(selectedPath);
+							std::free(selectedPath);
+						};
+
+						std::thread loaderThread{ LoadAndBlockEditor, std::ref(io), LoadAndAssignProject };
+						loaderThread.detach();
 					}
 				}
 
-				if (ImGui::MenuItem("Open")) {
-					MessageBoxW(leopph::platform::get_hwnd(), L"Placeholder", L"Placeholder", 0);
+				if (ImGui::MenuItem("Import Asset")) {
+					ImportAsset(io);
 				}
 
-				if (ImGui::MenuItem("Save")) {
+				if (ImGui::MenuItem("Close Project")) {
+					gProject = nullptr;
+				}
+
+				if (ImGui::MenuItem("Save Test Scene")) {
 					if (!runGame) {
 						std::ofstream out{ "scene.yaml" };
 						YAML::Emitter emitter{ out };
@@ -169,7 +211,7 @@ int WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ H
 					}
 				}
 
-				if (ImGui::MenuItem("Load")) {
+				if (ImGui::MenuItem("Load Test Scene")) {
 					CloseCurrentScene();
 					auto const serializedScene = YAML::LoadFile("scene.yaml");
 					leopph::editor::DeserializeScene(serializedScene);
@@ -361,7 +403,21 @@ int WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ H
 		ImGui::End();
 
 		if (ImGui::Begin("Assets", nullptr, ImGuiWindowFlags_NoCollapse)) {
+			if (gProject) {
+				if (ImGui::BeginPopupContextItem()) {
+					if (ImGui::MenuItem("Import Asset")) {
+						ImGui::CloseCurrentPopup();
+						ImportAsset(io);
+					}
+					ImGui::EndPopup();
+				}
 
+				ImGui::OpenPopupOnItemClick(nullptr, ImGuiPopupFlags_MouseButtonRight);
+
+				for (auto const& asset : gProject->assets) {
+					ImGui::Text(asset->GetPath().filename().string().c_str());
+				}
+			}
 		}
 		ImGui::End();
 

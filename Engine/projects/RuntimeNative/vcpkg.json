@@ -2,6 +2,7 @@
 	"name": "leopphengine-editor",
 	"version": "1.0",
 	"dependencies": [
-		"yaml-cpp"
+		"yaml-cpp",
+		"stb"
 	]
 }

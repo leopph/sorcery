@@ -111,8 +111,10 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\AABB.cpp" />
     <ClCompile Include="src\Color.cpp" />
     <ClCompile Include="src\Components.cpp" />
+    <ClCompile Include="src\Image.cpp" />
     <ClCompile Include="src\ManagedRuntime.cpp" />
     <ClCompile Include="src\ManagedAccessObject.cpp" />
     <ClCompile Include="src\Math.cpp" />
@@ -129,6 +131,8 @@
     <ClCompile Include="src\Util.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\AABB.hpp" />
+    <ClInclude Include="src\Image.hpp" />
     <ClInclude Include="src\OnGui.hpp" />
     <ClInclude Include="src\Color.hpp" />
     <ClInclude Include="src\Components.hpp" />
@@ -145,9 +149,11 @@
     <ClInclude Include="src\SceneManager.hpp" />
     <ClInclude Include="src\shaders\cinclude\BlinnPhongPixShadBinDebug.h" />
     <ClInclude Include="src\shaders\cinclude\BlinnPhongVertShadBinDebug.h" />
+    <ClInclude Include="src\StaticModelData.hpp" />
     <ClInclude Include="src\Time.hpp" />
     <ClInclude Include="src\Util.hpp" />
     <ClInclude Include="src\Platform.hpp" />
+    <ClInclude Include="src\YamlInclude.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />
