@@ -22,7 +22,8 @@ namespace leopph {
 		std::unordered_map<std::string_view, std::function<std::unique_ptr<Component>()>> const gComponentInstantiators
 		{
 			{"CubeModel", instantiate<CubeModel>},
-			{"Camera", instantiate<Camera>}
+			{"Camera", instantiate<Camera>},
+			{"DirectionalLight", instantiate<DirectionalLight>}
 		};
 	}
 

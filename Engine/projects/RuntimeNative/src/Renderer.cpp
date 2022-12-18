@@ -57,6 +57,9 @@ namespace leopph::rendering
 		UINT gIndexCount;
 		u32 gSyncInterval{ 0 };
 		std::vector<CubeModel const*> gCubeModels;
+		std::vector<DirectionalLight const*> gDirLights;
+		std::vector<SpotLight const*> gSpotLights;
+		std::vector<PointLight const*> gPointLights;
 
 
 		void RecreateRenderTextureAndViews(u32 const width, u32 const height)
@@ -735,5 +738,30 @@ namespace leopph::rendering
 	ID3D11DeviceContext* GetImmediateContext()
 	{
 		return gResources->context.Get();
+	}
+
+
+	auto RegisterDirLight(DirectionalLight const* dirLight) -> void {
+		gDirLights.emplace_back(dirLight);
+	}
+
+	auto UnregisterDirLight(DirectionalLight const* dirLight) -> void {
+		std::erase(gDirLights, dirLight);
+	}
+
+	auto RegisterSpotLight(SpotLight const* spotLight) -> void {
+		gSpotLights.emplace_back(spotLight);
+	}
+
+	auto UnregisterSpotLight(SpotLight const* spotLight) -> void {
+		std::erase(gSpotLights, spotLight);
+	}
+
+	auto RegisterPointLight(PointLight const* pointLight) -> void {
+		gPointLights.emplace_back(pointLight);
+	}
+
+	auto UnregisterPointLight(PointLight const* pointLight) -> void {
+		std::erase(gPointLights, pointLight);
 	}
 }

@@ -32,4 +32,13 @@ namespace leopph::rendering
 
 	[[nodiscard]] LEOPPHAPI ID3D11Device* GetDevice();
 	[[nodiscard]] LEOPPHAPI ID3D11DeviceContext* GetImmediateContext();
+
+	LEOPPHAPI auto RegisterDirLight(DirectionalLight const* dirLight) -> void;
+	LEOPPHAPI auto UnregisterDirLight(DirectionalLight const* dirLight) -> void;
+
+	LEOPPHAPI auto RegisterSpotLight(SpotLight const* spotLight) -> void;
+	LEOPPHAPI auto UnregisterSpotLight(SpotLight const* spotLight) -> void;
+
+	LEOPPHAPI auto RegisterPointLight(PointLight const* pointLight) -> void;
+	LEOPPHAPI auto UnregisterPointLight(PointLight const* pointLight) -> void;
 }

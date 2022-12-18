@@ -14,7 +14,7 @@ namespace leopph {
 	class SceneElement : public ManagedAccessObject {
 	public:
 		enum class Type {
-			Entity, Transform, Camera, Behavior, CubeModel
+			Entity, Transform, Camera, Behavior, CubeModel, DirectionalLight
 		};
 
 		LEOPPHAPI SceneElement();

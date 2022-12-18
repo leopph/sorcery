@@ -93,6 +93,10 @@ namespace leopph {
 		return Type::CubeModel;
 	}
 
+	auto DirectionalLight::GetSerializationType() const -> Type {
+		return Type::DirectionalLight;
+	}
+
 
 	auto Entity::Serialize(YAML::Node& node) const -> void {
 		node["name"] = GetName().data();
@@ -216,7 +220,7 @@ namespace leopph {
 	auto Camera::Deserialize(YAML::Node const& node) -> void {
 		if (node["type"]) {
 			if (!node["type"].IsScalar()) {
-				std::cerr << "Failed to deserialize a type of Camera " << GetGuid().ToString() << ". Invalid data." << std::endl;
+				std::cerr << "Failed to deserialize type of Camera " << GetGuid().ToString() << ". Invalid data." << std::endl;
 			}
 			else {
 				SetType(static_cast<Type>(node["type"].as<int>(static_cast<int>(GetType()))));
@@ -224,7 +228,7 @@ namespace leopph {
 		}
 		if (node["fov"]) {
 			if (!node["fov"].IsScalar()) {
-				std::cerr << "Failed to deserialize a field of view of Camera " << GetGuid().ToString() << ". Invalid data." << std::endl;
+				std::cerr << "Failed to deserialize field of view of Camera " << GetGuid().ToString() << ". Invalid data." << std::endl;
 			}
 			else {
 				SetPerspectiveFov(node["fov"].as<leopph::f32>(GetPerspectiveFov()));
@@ -232,7 +236,7 @@ namespace leopph {
 		}
 		if (node["size"]) {
 			if (!node["size"].IsScalar()) {
-				std::cerr << "Failed to deserialize a size of Camera " << GetGuid().ToString() << ". Invalid data." << std::endl;
+				std::cerr << "Failed to deserialize size of Camera " << GetGuid().ToString() << ". Invalid data." << std::endl;
 			}
 			else {
 				SetOrthoGraphicSize(node["size"].as<leopph::f32>(GetOrthographicSize()));
@@ -240,7 +244,7 @@ namespace leopph {
 		}
 		if (node["near"]) {
 			if (!node["near"].IsScalar()) {
-				std::cerr << "Failed to deserialize a near clip plane of Camera " << GetGuid().ToString() << ". Invalid data." << std::endl;
+				std::cerr << "Failed to deserialize near clip plane of Camera " << GetGuid().ToString() << ". Invalid data." << std::endl;
 			}
 			else {
 				SetNearClipPlane(node["near"].as<leopph::f32>(GetNearClipPlane()));
@@ -248,7 +252,7 @@ namespace leopph {
 		}
 		if (node["far"]) {
 			if (!node["far"].IsScalar()) {
-				std::cerr << "Failed to deserialize a far clip plane of Camera " << GetGuid().ToString() << ". Invalid data." << std::endl;
+				std::cerr << "Failed to deserialize far clip plane of Camera " << GetGuid().ToString() << ". Invalid data." << std::endl;
 			}
 			else {
 				SetFarClipPlane(node["far"].as<leopph::f32>(GetFarClipPlane()));
@@ -450,5 +454,31 @@ namespace leopph {
 		};
 
 		parseAndSetMembers(managedComponent, node);
+	}
+
+
+	auto Light::Serialize(YAML::Node& node) const -> void {
+		node["color"] = GetColor();
+		node["intensity"] = GetIntensity();
+	}
+
+
+	auto Light::Deserialize(YAML::Node const& node) -> void {
+		if (node["color"]) {
+			if (!node["color"].IsSequence()) {
+				std::cerr << "Failed to deserialize color of Light " << GetGuid().ToString() << ". Invalid data." << std::endl;
+			}
+			else {
+				SetColor(node.as<Vector3>(GetColor()));
+			}
+		}
+		if (node["intensity"]) {
+			if (!node["intensity"].IsScalar()) {
+				std::cerr << "Failed to deserialize intensity of Light " << GetGuid().ToString() << ". Invalid data." << std::endl;
+			}
+			else {
+				SetIntensity(node.as<f32>(GetIntensity()));
+			}
+		}
 	}
 }

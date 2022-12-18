@@ -16,6 +16,7 @@
 #include <concepts>
 #include <cstring>
 #include <algorithm>
+#include <format>
 
 
 namespace leopph {
@@ -549,6 +550,155 @@ namespace leopph {
 	}
 
 
+	Vector3 const& Light::GetColor() const {
+		return mColor;
+	}
+
+
+
+	void Light::SetColor(Vector3 const& newColor) {
+		mColor = newColor;
+	}
+
+
+
+	f32 Light::GetIntensity() const {
+		return mIntensity;
+	}
+
+
+
+	void Light::SetIntensity(f32 const newIntensity) {
+		if (newIntensity <= 0) {
+			//Logger::get_instance().warning(std::format("Ignoring attempt to set light intensity to {}. This value must be positive.", newIntensity)); TODO
+			return;
+		}
+
+		mIntensity = newIntensity;
+	}
+
+
+
+	bool Light::is_casting_shadow() const {
+		return mCastsShadow;
+	}
+
+
+
+	void Light::set_casting_shadow(bool const newValue) {
+		mCastsShadow = newValue;
+	}
+
+
+
+	f32 AttenuatedLight::get_range() const {
+		return mRange;
+	}
+
+
+
+	void AttenuatedLight::set_range(f32 const value) {
+		mRange = value;
+	}
+
+
+
+	AmbientLight& AmbientLight::get_instance() {
+		static AmbientLight instance;
+		return instance;
+	}
+
+
+
+	Vector3 const& AmbientLight::get_intensity() const {
+		return mIntensity;
+	}
+
+
+
+	void AmbientLight::set_intensity(Vector3 const& intensity) {
+		mIntensity = intensity;
+	}
+
+
+
+	Vector3 const& DirectionalLight::get_direction() const {
+		return GetEntity()->GetTransform().GetForwardAxis();
+	}
+
+
+
+	f32 DirectionalLight::get_shadow_near_plane() const {
+		return mShadowNear;
+	}
+
+
+
+	void DirectionalLight::set_shadow_near_plane(f32 const newVal) {
+		mShadowNear = newVal;
+	}
+
+
+
+	DirectionalLight::DirectionalLight() {
+		rendering::RegisterDirLight(this);
+	}
+
+
+
+	DirectionalLight::~DirectionalLight() {
+		rendering::UnregisterDirLight(this);
+	}
+
+
+
+	PointLight::PointLight() {
+		rendering::RegisterPointLight(this);
+	}
+
+
+
+	PointLight::~PointLight() {
+		rendering::UnregisterPointLight(this);
+	}
+
+
+
+	f32 SpotLight::get_inner_angle() const {
+		return mInnerAngle;
+	}
+
+
+
+	void SpotLight::set_inner_angle(f32 const degrees) {
+		mInnerAngle = degrees;
+	}
+
+
+
+	f32 SpotLight::get_outer_angle() const {
+		return mOuterAngle;
+	}
+
+
+
+	void SpotLight::set_outer_angle(f32 const degrees) {
+		mOuterAngle = degrees;
+	}
+
+
+
+	SpotLight::SpotLight() {
+		rendering::RegisterSpotLight(this);
+	}
+
+
+
+	SpotLight::~SpotLight() {
+		rendering::UnregisterSpotLight(this);
+	}
+
+
 	namespace managedbindings {
 		Vector3 GetTransformWorldPosition(MonoObject* const transform) {
 			return ManagedAccessObject::GetNativePtrFromManagedObjectAs<Transform*>(transform)->GetWorldPosition();
@@ -675,6 +825,27 @@ namespace leopph {
 
 		Matrix3 GetTransformNormalMatrix(MonoObject* transform) {
 			return ManagedAccessObject::GetNativePtrFromManagedObjectAs<Transform*>(transform)->GetNormalMatrix();
+		}
+	}
+
+	namespace managedbindings {
+		auto GetLightColor(MonoObject* light) -> Vector3 {
+			return ManagedAccessObject::GetNativePtrFromManagedObjectAs<Light*>(light)->GetColor();
+		}
+
+
+		auto SetLightColor(MonoObject* light, Vector3 color) -> void {
+			ManagedAccessObject::GetNativePtrFromManagedObjectAs<Light*>(light)->SetColor(color);
+		}
+
+
+		auto GetLightIntensity(MonoObject* light) -> f32 {
+			return ManagedAccessObject::GetNativePtrFromManagedObjectAs<Light*>(light)->GetIntensity();
+		}
+
+
+		auto SetLightIntensity(MonoObject* light, f32 intensity) -> void {
+			ManagedAccessObject::GetNativePtrFromManagedObjectAs<Light*>(light)->SetIntensity(intensity);
 		}
 	}
 }

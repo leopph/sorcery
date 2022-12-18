@@ -236,4 +236,35 @@ namespace leopph {
 	auto CubeModel::OnGui() -> void {
 
 	}
+
+
+	auto Light::OnGui() -> void {
+		if (ImGui::BeginTable(std::format("{}", GetGuid().ToString()).c_str(), 2, ImGuiTableFlags_SizingStretchSame)) {
+			ImGui::TableNextRow();
+			ImGui::TableSetColumnIndex(0);
+			ImGui::PushItemWidth(FLT_MIN);
+			ImGui::TableSetColumnIndex(1);
+			ImGui::PushItemWidth(-FLT_MIN);
+
+			ImGui::TableSetColumnIndex(0);
+			ImGui::Text("Color");
+			ImGui::TableNextColumn();
+
+			Vector3 color{ mColor };
+			if (ImGui::ColorEdit3("###lightColor", color.get_data())) {
+				SetColor(color);
+			}
+
+			ImGui::TableNextColumn();
+			ImGui::Text("Intensity");
+			ImGui::TableNextColumn();
+
+			auto intensity{ mIntensity };
+			if (ImGui::DragFloat("###lightIntensity", &intensity, 0.1f)) {
+				SetIntensity(intensity);
+			}
+
+			ImGui::EndTable();
+		}
+	}
 }
