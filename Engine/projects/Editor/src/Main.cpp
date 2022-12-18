@@ -269,7 +269,7 @@ int WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ H
 				}
 
 				if (ImGui::BeginPopupContextItem()) {
-					if (ImGui::Button("Delete")) {
+					if (ImGui::MenuItem("Delete")) {
 						entities[i]->GetScene().DestroyEntity(entities[i]);
 						leopph::Entity::GetAllEntities(entities);
 						if (!entities.empty()) {
@@ -328,7 +328,7 @@ int WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ H
 					}
 
 					if (ImGui::BeginPopupContextItem(componentNodeId)) {
-						if (ImGui::Button("Delete")) {
+						if (ImGui::MenuItem("Delete")) {
 							entities[*selectedEntityIndex]->DestroyComponent(component);
 						}
 						ImGui::EndPopup();
@@ -343,8 +343,7 @@ int WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ H
 				if (ImGui::BeginPopupContextItem(nullptr, ImGuiPopupFlags_MouseButtonLeft)) {
 					for (auto const& componentClass : leopph::GetComponentClasses()) {
 						auto const componentName = mono_class_get_name(componentClass);
-						ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize(componentName).x) * 0.5f);
-						if (ImGui::Button(componentName)) {
+						if (ImGui::MenuItem(componentName)) {
 							entity->CreateComponent(componentClass);
 							ImGui::CloseCurrentPopup();
 						}
