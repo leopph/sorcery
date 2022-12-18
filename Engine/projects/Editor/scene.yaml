@@ -62,3 +62,22 @@
     classNameSpace: ""
     className: OrientationController
     sensitivity: 0.05
+- objectType: 0
+  guid: ad638f7cda8260bf-4ff3d635a16b1b9b
+  data:
+    name: DirLight
+    components:
+      - 364ebe99f9604fa7-4a0adbf9091cf68d
+      - ad23423465f6da97-4b094d35a3bb26ca
+- objectType: 1
+  guid: 364ebe99f9604fa7-4a0adbf9091cf68d
+  data:
+    entity: ad638f7cda8260bf-4ff3d635a16b1b9b
+    position: [0, 0, 0]
+    rotation: [1, 0, 0, 0]
+    scale: [1, 1, 1]
+- objectType: 5
+  guid: ad23423465f6da97-4b094d35a3bb26ca
+  data:
+    color: [1, 1, 1]
+    intensity: 1
