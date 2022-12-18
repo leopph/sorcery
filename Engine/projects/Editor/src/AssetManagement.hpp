@@ -12,12 +12,13 @@ namespace leopph::editor {
 		Image, Model
 	};
 
+
 	struct AssetFileDescriptor {
-		std::filesystem::path path;
+		std::filesystem::path absolutePath;
 		AssetType type;
+		Guid guid;
 	};
 
-	auto DiscoverAssetsInFolder(std::filesystem::path const& workingDir, std::vector<AssetFileDescriptor>& out) -> std::vector<AssetFileDescriptor>&;
 
 	class Asset : public Object {
 	private:
@@ -29,6 +30,7 @@ namespace leopph::editor {
 		[[nodiscard]] virtual auto GenerateMetaFile() const->std::string = 0;
 	};
 
+
 	class AssetLoader {
 	public:
 		virtual auto CanLoad(std::filesystem::path const& assetPath) const -> bool = 0;
@@ -36,14 +38,18 @@ namespace leopph::editor {
 		virtual ~AssetLoader() = default;
 	};
 
+
 	struct Project {
 		std::filesystem::path folder;
 		std::vector<std::shared_ptr<Asset>> assets;
 	};
 
+
+	auto DiscoverAssetsInFolder(std::filesystem::path const& workingDir, std::vector<AssetFileDescriptor>& out) -> std::vector<AssetFileDescriptor>&;
+
 	auto LoadProject(std::filesystem::path const& projectFolder) -> std::unique_ptr<Project>;
 
-	[[nodiscard]] auto LoadAsset(std::filesystem::path const& assetPath) -> std::shared_ptr<Asset>;
-	[[nodiscard]] auto LoadAsset(AssetFileDescriptor const& desc) -> std::shared_ptr<Asset>;
+	[[nodiscard]] auto LoadNewAsset(std::filesystem::path const& assetPath) -> std::shared_ptr<Asset>;
+	[[nodiscard]] auto LoadExistingAsset(AssetFileDescriptor const& desc) -> std::shared_ptr<Asset>;
 	[[nodiscard]] auto ImportAsset(std::filesystem::path const& srcPath, std::filesystem::path const& dstDirPath) -> std::shared_ptr<Asset>;
 }

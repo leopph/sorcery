@@ -29,6 +29,7 @@ namespace leopph::editor {
 	auto ModelAsset::GenerateMetaFile() const -> std::string {
 		YAML::Node node;
 		node["assetType"] = static_cast<int>(AssetType::Model);
+		node["guid"] = GetGuid().ToString();
 		YAML::Emitter emitter;
 		emitter << node;
 		return emitter.c_str();

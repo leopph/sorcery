@@ -2,6 +2,8 @@
 
 #include "ModelImport.hpp"
 
+#include <YamlInclude.hpp>
+
 #include <filesystem>
 #include <fstream>
 #include <iterator>
@@ -11,10 +13,6 @@
 namespace leopph::editor {
 	namespace {
 		std::filesystem::path const METADATA_FILE_EXTENSION{ L".leopphasset" };
-
-		[[nodiscard]] AssetType GetAssetType(std::filesystem::path const& metaPath) {
-			return AssetType::Model;
-		}
 	}
 
 
@@ -22,7 +20,9 @@ namespace leopph::editor {
 		out.clear();
 		for (auto const& childEntry : std::filesystem::recursive_directory_iterator{ workingDir }) {
 			if (auto const childPath{ std::filesystem::absolute(childEntry.path()) }; childPath.extension() == METADATA_FILE_EXTENSION) {
-				out.emplace_back(std::filesystem::path{ childPath }.replace_extension(), GetAssetType(childPath));
+				std::ifstream metaIn{ childPath };
+				auto const metaContents{ YAML::Load(metaIn) };
+				out.emplace_back(std::filesystem::path{ childPath }.replace_extension(), static_cast<AssetType>(metaContents["assetType"].as<int>()), Guid::Parse(metaContents["guid"].as<std::string>()));
 			}
 		}
 		return out;
@@ -34,28 +34,42 @@ namespace leopph::editor {
 		DiscoverAssetsInFolder(projectFolder, assetDescs);
 		auto project{ std::make_unique<Project>(projectFolder) };
 		for (auto const& desc : assetDescs) {
-			if (auto const asset{ LoadAsset(desc) }; asset) {
+			if (auto const asset{ LoadExistingAsset(desc) }; asset) {
 				project->assets.emplace_back(asset);
 			}
 		}
 		return project;
 	}
 
-	auto LoadAsset(std::filesystem::path const& assetPath) -> std::shared_ptr<Asset> {
-		ModelAssetLoader static modelAssetLoader;
-		if (modelAssetLoader.CanLoad(assetPath)) {
-			return modelAssetLoader.Load(assetPath);
+	auto LoadNewAsset(std::filesystem::path const& assetPath) -> std::shared_ptr<Asset> {
+		std::shared_ptr<Asset> asset;
+		
+		if (ModelAssetLoader static modelAssetLoader; modelAssetLoader.CanLoad(assetPath)) {
+			asset = modelAssetLoader.Load(assetPath);
 		}
-		return nullptr;
+
+		if (asset) {
+			asset->SetGuid(Guid::Generate());
+		}
+
+		return asset;
 	}
 
-	auto LoadAsset(AssetFileDescriptor const& desc) -> std::shared_ptr<Asset> {
+	auto LoadExistingAsset(AssetFileDescriptor const& desc) -> std::shared_ptr<Asset> {
+		std::shared_ptr<Asset> asset;
+
 		switch (desc.type) {
 			case AssetType::Model: {
 				ModelAssetLoader static modelAssetLoader;
-				return modelAssetLoader.Load(desc.path);
+				asset = modelAssetLoader.Load(desc.absolutePath);
+				break;
 			}
 		}
+
+		if (asset) {
+			asset->SetGuid(desc.guid);
+		}
+
 		return nullptr;
 	}
 
@@ -70,7 +84,7 @@ namespace leopph::editor {
 		if (!std::filesystem::equivalent(srcPath.parent_path(), dstDirPath)) {
 			std::filesystem::copy(srcPath, dstPath);
 		}
-		auto const asset{ LoadAsset(dstPath) };
+		auto const asset{ LoadNewAsset(dstPath) };
 		if (asset) {
 			auto const metaFilePath{ [&dstPath] {
 				auto ret{dstPath};
@@ -86,6 +100,7 @@ namespace leopph::editor {
 
 	Asset::Asset(std::filesystem::path assetPath) :
 		mPath{ std::move(assetPath) } {}
+
 
 	auto Asset::GetPath() const -> std::filesystem::path {
 		return mPath;
