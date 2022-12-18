@@ -68,6 +68,11 @@ namespace leopph::editor {
 					obj->CreateManagedObject("leopph", "CubeModel");
 					break;
 				}
+				case SceneElement::Type::DirectionalLight: {
+					obj = new DirectionalLight{};
+					obj->CreateManagedObject("leopph", "DirectionalLight");
+					break;
+				}
 				default: {
 
 				}
