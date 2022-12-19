@@ -6,9 +6,13 @@
 #ifdef NDEBUG
 #include "shaders/cinclude/BlinnPhongVertShadBin.h"
 #include "shaders/cinclude/BlinnPhongPixShadBin.h"
+#include "shaders/cinclude/ClearColorPsBin.h"
+#include "shaders/cinclude/ClearColorVsBin.h"
 #else
 #include "shaders/cinclude/BlinnPhongVertShadBinDebug.h"
 #include "shaders/cinclude/BlinnPhongPixShadBinDebug.h"
+#include "shaders/cinclude/ClearColorPsBinDebug.h"
+#include "shaders/cinclude/ClearColorVsBinDebug.h"
 #endif
 
 #include <DirectXMath.h>
@@ -43,23 +47,78 @@ namespace leopph::rendering {
 	struct Resources {
 		ComPtr<ID3D11Device> device;
 		ComPtr<ID3D11DeviceContext> context;
+
 		ComPtr<IDXGISwapChain1> swapChain;
 		ComPtr<ID3D11RenderTargetView> swapChainRtv;
 		ComPtr<ID3D11Texture2D> renderTexture;
 		ComPtr<ID3D11RenderTargetView> renderTextureRtv;
 		ComPtr<ID3D11ShaderResourceView> renderTextureSrv;
+
+		ComPtr<ID3D11VertexShader> clearColorVs;
+		ComPtr<ID3D11PixelShader> clearColorPs;
+		ComPtr<ID3D11Buffer> clearColorCbuf;
+
 		ComPtr<ID3D11VertexShader> cubeVertShader;
 		ComPtr<ID3D11PixelShader> cubePixShader;
-		ComPtr<ID3D11Buffer> instanceBuffer;
+
+		ComPtr<ID3D11Buffer> cubeVertBuf;
+		ComPtr<ID3D11Buffer> cubeInstBuf;
+		ComPtr<ID3D11Buffer> cubeIndBuf;
+		ComPtr<ID3D11InputLayout> cubeIa;
 		ComPtr<ID3D11Buffer> cbuffer;
 		ComPtr<ID3D11Buffer> lightBuffer;
+
+		ComPtr<ID3D11InputLayout> quadIa;
+		ComPtr<ID3D11Buffer> quadVertBuf;
+		ComPtr<ID3D11Buffer> quadIndBuf;
 	};
 
 
 	namespace {
+		FLOAT constexpr QUAD_VERTICES[]{
+			-1, 1, -1, -1, 1, -1, 1, 1
+		};
+		UINT constexpr QUAD_INDICES[]{
+			0, 1, 2, 2, 3, 0
+		};
+		UINT constexpr QUAD_VERT_BUF_STRIDE{ 8 };
+		UINT constexpr QUAD_VERT_BUF_OFFSET{ 0 };
+
+		UINT constexpr CUBE_INST_BUF_OFFSET{ 0 };
 		UINT constexpr INSTANCE_BUFFER_ELEMENT_SIZE{ sizeof(DirectX::XMFLOAT4X4) };
 		UINT constexpr VERTEX_BUFFER_SLOT{ 0 };
 		UINT constexpr INSTANCE_BUFFER_SLOT{ 1 };
+
+		FLOAT constexpr CUBE_VERTICES[]{
+			 0.5f,  0.5f,  0.5f,
+			-0.5f,  0.5f,  0.5f,
+			-0.5f,  0.5f, -0.5f,
+			 0.5f,  0.5f, -0.5f,
+			 0.5f, -0.5f,  0.5f,
+			-0.5f, -0.5f,  0.5f,
+			-0.5f, -0.5f, -0.5f,
+			 0.5f, -0.5f, -0.5f,
+		};
+		UINT constexpr CUBE_INDICES[]{
+			// Top face
+			0, 1, 2,
+			2, 3, 0,
+			// Bottom face
+			7, 6, 5,
+			5, 4, 7,
+			// Front face
+			2, 6, 7,
+			7, 3, 2,
+			// Back face
+			0, 4, 5,
+			5, 1, 0,
+			// Right face
+			0, 3, 7,
+			7, 4, 0,
+			// Left face
+			2, 1, 5,
+			5, 6, 2
+		};
 
 		Resources* gResources{ nullptr };
 		UINT gPresentFlags{ 0 };
@@ -67,7 +126,6 @@ namespace leopph::rendering {
 		Extent2D<u32> gGameRes;
 		f32 gGameAspect;
 		UINT gInstanceBufferElementCapacity;
-		UINT gIndexCount;
 		u32 gSyncInterval{ 0 };
 		std::vector<CubeModel const*> gCubeModels;
 		std::vector<DirectionalLight const*> gDirLights;
@@ -155,16 +213,7 @@ namespace leopph::rendering {
 
 		D3D_FEATURE_LEVEL constexpr requestedFeatureLevels[]{ D3D_FEATURE_LEVEL_11_0 };
 
-		HRESULT hresult = D3D11CreateDevice(nullptr,
-											D3D_DRIVER_TYPE_HARDWARE,
-											nullptr,
-											deviceCreationFlags,
-											requestedFeatureLevels,
-											1,
-											D3D11_SDK_VERSION,
-											gResources->device.GetAddressOf(),
-											nullptr,
-											gResources->context.GetAddressOf());
+		HRESULT hresult = D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, deviceCreationFlags, requestedFeatureLevels, 1, D3D11_SDK_VERSION, gResources->device.GetAddressOf(), nullptr, gResources->context.GetAddressOf());
 
 		if (FAILED(hresult)) {
 			MessageBoxW(platform::get_hwnd(), L"Failed to create D3D device.", L"Error", MB_ICONERROR);
@@ -209,8 +258,7 @@ namespace leopph::rendering {
 		}
 
 		ComPtr<IDXGIFactory2> dxgiFactory2;
-		hresult = dxgiAdapter->GetParent(__uuidof(decltype(dxgiFactory2)::InterfaceType),
-										 reinterpret_cast<void**>(dxgiFactory2.GetAddressOf()));
+		hresult = dxgiAdapter->GetParent(__uuidof(decltype(dxgiFactory2)::InterfaceType), reinterpret_cast<void**>(dxgiFactory2.GetAddressOf()));
 
 		if (FAILED(hresult)) {
 			MessageBoxW(platform::get_hwnd(), L"Failed to query IDXGIFactory2 interface.", L"Error", MB_ICONERROR);
@@ -218,8 +266,7 @@ namespace leopph::rendering {
 		}
 
 		ComPtr<IDXGIFactory5> dxgiFactory5;
-		hresult = dxgiAdapter->GetParent(__uuidof(decltype(dxgiFactory5)::InterfaceType),
-										 reinterpret_cast<void**>(dxgiFactory5.GetAddressOf()));
+		hresult = dxgiAdapter->GetParent(__uuidof(decltype(dxgiFactory5)::InterfaceType), reinterpret_cast<void**>(dxgiFactory5.GetAddressOf()));
 
 		if (SUCCEEDED(hresult)) {
 			BOOL allowTearing{};
@@ -250,12 +297,7 @@ namespace leopph::rendering {
 			.Flags = gSwapChainFlags
 		};
 
-		hresult = dxgiFactory2->CreateSwapChainForHwnd(gResources->device.Get(),
-													   platform::get_hwnd(),
-													   &swapChainDesc1,
-													   nullptr,
-													   nullptr,
-													   gResources->swapChain.GetAddressOf());
+		hresult = dxgiFactory2->CreateSwapChainForHwnd(gResources->device.Get(), platform::get_hwnd(), &swapChainDesc1, nullptr, nullptr, gResources->swapChain.GetAddressOf());
 
 		if (FAILED(hresult)) {
 			MessageBoxW(platform::get_hwnd(), L"Failed to create swapchain.", L"Error", MB_ICONERROR);
@@ -267,47 +309,33 @@ namespace leopph::rendering {
 		RecreateRenderTextureAndViews(platform::get_window_current_client_area_size().width, platform::get_window_current_client_area_size().height);
 
 		ComPtr<ID3D11Texture2D> backBuf;
-		hresult = gResources->swapChain->GetBuffer(0,
-												   __uuidof(decltype(backBuf)::InterfaceType),
-												   reinterpret_cast<void**>(backBuf.GetAddressOf()));
+		hresult = gResources->swapChain->GetBuffer(0, __uuidof(decltype(backBuf)::InterfaceType), reinterpret_cast<void**>(backBuf.GetAddressOf()));
 
 		if (FAILED(hresult)) {
 			MessageBoxW(platform::get_hwnd(), L"Failed to get backbuffer.", L"Error", MB_ICONERROR);
 			return false;
 		}
 
-		hresult = gResources->device->CreateRenderTargetView(backBuf.Get(),
-															 nullptr,
-															 gResources->swapChainRtv.GetAddressOf());
+		hresult = gResources->device->CreateRenderTargetView(backBuf.Get(), nullptr, gResources->swapChainRtv.GetAddressOf());
 
 		if (FAILED(hresult)) {
 			MessageBoxW(platform::get_hwnd(), L"Failed to create backbuffer RTV.", L"Error", MB_ICONERROR);
 			return false;
 		}
 
-		hresult = gResources->device->CreateVertexShader(gBlinnPhongVertShadBin,
-														 ARRAYSIZE(gBlinnPhongVertShadBin),
-														 nullptr,
-														 gResources->cubeVertShader.GetAddressOf());
+		hresult = gResources->device->CreateVertexShader(gBlinnPhongVertShadBin, ARRAYSIZE(gBlinnPhongVertShadBin), nullptr, gResources->cubeVertShader.GetAddressOf());
 
 		if (FAILED(hresult)) {
 			MessageBoxW(platform::get_hwnd(), L"Failed to create cube vertex shader.", L"Error", MB_ICONERROR);
 			return false;
 		}
 
-		gResources->context->VSSetShader(gResources->cubeVertShader.Get(), nullptr, 0);
-
-		hresult = gResources->device->CreatePixelShader(gBlinnPhongPixShadBin,
-														ARRAYSIZE(gBlinnPhongPixShadBin),
-														nullptr,
-														gResources->cubePixShader.GetAddressOf());
+		hresult = gResources->device->CreatePixelShader(gBlinnPhongPixShadBin, ARRAYSIZE(gBlinnPhongPixShadBin), nullptr, gResources->cubePixShader.GetAddressOf());
 
 		if (FAILED(hresult)) {
 			MessageBoxW(platform::get_hwnd(), L"Failed to create cube pixel shader.", L"Error", MB_ICONERROR);
 			return false;
 		}
-
-		gResources->context->PSSetShader(gResources->cubePixShader.Get(), nullptr, 0);
 
 		D3D11_INPUT_ELEMENT_DESC constexpr inputElementDescs[]
 		{
@@ -358,39 +386,18 @@ namespace leopph::rendering {
 			}
 		};
 
-		ComPtr<ID3D11InputLayout> inputLayout;
-		hresult = gResources->device->CreateInputLayout(inputElementDescs,
-														ARRAYSIZE(inputElementDescs),
-														gBlinnPhongVertShadBin,
-														ARRAYSIZE(gBlinnPhongVertShadBin),
-														inputLayout.GetAddressOf());
+		hresult = gResources->device->CreateInputLayout(inputElementDescs, ARRAYSIZE(inputElementDescs), gBlinnPhongVertShadBin, ARRAYSIZE(gBlinnPhongVertShadBin), gResources->cubeIa.GetAddressOf());
 
 		if (FAILED(hresult)) {
 			MessageBoxW(platform::get_hwnd(), L"Failed to create cube input layout.", L"Error", MB_ICONERROR);
 			return false;
 		}
 
-		gResources->context->IASetInputLayout(inputLayout.Get());
 		gResources->context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-		float constexpr cubeVertexData[]
+		D3D11_BUFFER_DESC constexpr cubeVertBufDesc
 		{
-			 0.5f,  0.5f,  0.5f,
-			-0.5f,  0.5f,  0.5f,
-			-0.5f,  0.5f, -0.5f,
-			 0.5f,  0.5f, -0.5f,
-			 0.5f, -0.5f,  0.5f,
-			-0.5f, -0.5f,  0.5f,
-			-0.5f, -0.5f, -0.5f,
-			 0.5f, -0.5f, -0.5f,
-		};
-
-		UINT constexpr vertexStride = 3 * sizeof(float);
-		UINT constexpr vertexOffset = 0;
-
-		D3D11_BUFFER_DESC constexpr cubeVertexBufferDesc
-		{
-			.ByteWidth = sizeof cubeVertexData,
+			.ByteWidth = sizeof CUBE_VERTICES,
 			.Usage = D3D11_USAGE_IMMUTABLE,
 			.BindFlags = D3D11_BIND_VERTEX_BUFFER,
 			.CPUAccessFlags = 0,
@@ -398,34 +405,23 @@ namespace leopph::rendering {
 			.StructureByteStride = 0
 		};
 
-		D3D11_SUBRESOURCE_DATA const cubeVertexSubresourceData
+		D3D11_SUBRESOURCE_DATA const cubeVertBufInitData
 		{
-			.pSysMem = cubeVertexData,
+			.pSysMem = CUBE_VERTICES,
 			.SysMemPitch = 0,
 			.SysMemSlicePitch = 0
 		};
 
-		ComPtr<ID3D11Buffer> vertexBuffer;
-		hresult = gResources->device->CreateBuffer(&cubeVertexBufferDesc,
-												   &cubeVertexSubresourceData,
-												   vertexBuffer.GetAddressOf());
+		hresult = gResources->device->CreateBuffer(&cubeVertBufDesc, &cubeVertBufInitData, gResources->cubeVertBuf.GetAddressOf());
 
 		if (FAILED(hresult)) {
 			MessageBoxW(platform::get_hwnd(), L"Failed to create cube vertex buffer.", L"Error", MB_ICONERROR);
 			return false;
 		}
 
-		gResources->context->IASetVertexBuffers(VERTEX_BUFFER_SLOT,
-												1,
-												vertexBuffer.GetAddressOf(),
-												&vertexStride,
-												&vertexOffset);
-
-		UINT const instanceBufferElementCapacity{ 1 };
-
-		D3D11_BUFFER_DESC const desc
+		D3D11_BUFFER_DESC const cubeInstBufDesc
 		{
-			.ByteWidth = instanceBufferElementCapacity * INSTANCE_BUFFER_ELEMENT_SIZE,
+			.ByteWidth = INSTANCE_BUFFER_ELEMENT_SIZE,
 			.Usage = D3D11_USAGE_DYNAMIC,
 			.BindFlags = D3D11_BIND_VERTEX_BUFFER,
 			.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
@@ -433,48 +429,16 @@ namespace leopph::rendering {
 			.StructureByteStride = 0
 		};
 
-		hresult = gResources->device->CreateBuffer(&desc, nullptr, gResources->instanceBuffer.GetAddressOf());
+		hresult = gResources->device->CreateBuffer(&cubeInstBufDesc, nullptr, gResources->cubeInstBuf.GetAddressOf());
 
 		if (FAILED(hresult)) {
 			MessageBoxW(platform::get_hwnd(), L"Failed to create cube instance buffer.", L"Error", MB_ICONERROR);
 			return false;
 		}
 
-		UINT constexpr instanceBufferOffset{ 0 };
-
-		gResources->context->IASetVertexBuffers(INSTANCE_BUFFER_SLOT,
-												1,
-												gResources->instanceBuffer.GetAddressOf(),
-												&INSTANCE_BUFFER_ELEMENT_SIZE,
-												&instanceBufferOffset);
-
-		unsigned constexpr indexData[]
+		D3D11_BUFFER_DESC constexpr cubeIndBufDesc
 		{
-			// Top face
-			0, 1, 2,
-			2, 3, 0,
-			// Bottom face
-			7, 6, 5,
-			5, 4, 7,
-			// Front face
-			2, 6, 7,
-			7, 3, 2,
-			// Back face
-			0, 4, 5,
-			5, 1, 0,
-			// Right face
-			0, 3, 7,
-			7, 4, 0,
-			// Left face
-			2, 1, 5,
-			5, 6, 2
-		};
-
-		gIndexCount = ARRAYSIZE(indexData);
-
-		D3D11_BUFFER_DESC constexpr indexBufferDesc
-		{
-			.ByteWidth = sizeof indexData,
+			.ByteWidth = sizeof CUBE_INDICES,
 			.Usage = D3D11_USAGE_IMMUTABLE,
 			.BindFlags = D3D11_BIND_INDEX_BUFFER,
 			.CPUAccessFlags = 0,
@@ -482,24 +446,19 @@ namespace leopph::rendering {
 			.StructureByteStride = 0
 		};
 
-		D3D11_SUBRESOURCE_DATA const indexSubresourceData
+		D3D11_SUBRESOURCE_DATA const cubeIndBufInitData
 		{
-			.pSysMem = indexData,
+			.pSysMem = CUBE_INDICES,
 			.SysMemPitch = 0,
 			.SysMemSlicePitch = 0
 		};
 
-		ComPtr<ID3D11Buffer> indexBuffer;
-		hresult = gResources->device->CreateBuffer(&indexBufferDesc,
-												   &indexSubresourceData,
-												   indexBuffer.GetAddressOf());
+		hresult = gResources->device->CreateBuffer(&cubeIndBufDesc, &cubeIndBufInitData, gResources->cubeIndBuf.GetAddressOf());
 
 		if (FAILED(hresult)) {
 			MessageBoxW(platform::get_hwnd(), L"Failed to create cube index buffer.", L"Error", MB_ICONERROR);
 			return false;
 		}
-
-		gResources->context->IASetIndexBuffer(indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 
 		D3D11_BUFFER_DESC constexpr cbufferDesc
 		{
@@ -511,16 +470,12 @@ namespace leopph::rendering {
 			.StructureByteStride = 0
 		};
 
-		hresult = gResources->device->CreateBuffer(&cbufferDesc,
-												   nullptr,
-												   gResources->cbuffer.GetAddressOf());
+		hresult = gResources->device->CreateBuffer(&cbufferDesc, nullptr, gResources->cbuffer.GetAddressOf());
 
 		if (FAILED(hresult)) {
 			MessageBoxW(platform::get_hwnd(), L"Failed to create cube constant buffer.", L"Error", MB_ICONERROR);
 			return false;
 		}
-
-		gResources->context->VSSetConstantBuffers(0, 1, gResources->cbuffer.GetAddressOf());
 
 		D3D11_BUFFER_DESC constexpr lightBufferDesc{
 			.ByteWidth = sizeof(LightBufferData) + 16 - sizeof(LightBufferData) % 16,
@@ -537,8 +492,6 @@ namespace leopph::rendering {
 			MessageBoxW(platform::get_hwnd(), L"Failed to create light constant buffer.", L"Error", MB_ICONERROR);
 			return false;
 		}
-
-		gResources->context->PSSetConstantBuffers(0, 1, gResources->lightBuffer.GetAddressOf());
 
 		D3D11_RASTERIZER_DESC constexpr rasterizerDesc
 		{
@@ -568,6 +521,85 @@ namespace leopph::rendering {
 		gGameAspect = static_cast<f32>(gGameRes.width) / static_cast<f32>(gGameRes.height);
 
 		platform::OnWindowSize.add_handler(&on_window_resize);
+
+		D3D11_BUFFER_DESC const quadVertBufDesc{
+			.ByteWidth = sizeof(QUAD_VERTICES),
+			.Usage = D3D11_USAGE_IMMUTABLE,
+			.BindFlags = D3D11_BIND_VERTEX_BUFFER
+		};
+		D3D11_SUBRESOURCE_DATA const quadVertBufInitData{
+			.pSysMem = QUAD_VERTICES
+		};
+		hresult = gResources->device->CreateBuffer(&quadVertBufDesc, &quadVertBufInitData, gResources->quadVertBuf.GetAddressOf());
+
+		if (FAILED(hresult)) {
+			MessageBoxW(platform::get_hwnd(), L"Failed to create quad vertex buffer.", L"Error", MB_ICONERROR);
+			return false;
+		}
+
+		D3D11_INPUT_ELEMENT_DESC const quadInputDesc{
+			.SemanticName = "VertexPos",
+			.SemanticIndex = 0,
+			.Format = DXGI_FORMAT_R32G32_FLOAT,
+			.InputSlot = 0,
+			.AlignedByteOffset = 0,
+			.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA,
+			.InstanceDataStepRate = 0,
+		};
+
+		hresult = gResources->device->CreateInputLayout(&quadInputDesc, 1, gClearColorVsBin, ARRAYSIZE(gClearColorVsBin), gResources->quadIa.GetAddressOf());
+
+		if (FAILED(hresult)) {
+			MessageBoxW(platform::get_hwnd(), L"Failed to create quad IA.", L"Error", MB_ICONERROR);
+			return false;
+		}
+
+		D3D11_BUFFER_DESC const quadIndBufDesc{
+			.ByteWidth = sizeof(QUAD_INDICES),
+			.Usage = D3D11_USAGE_IMMUTABLE,
+			.BindFlags = D3D11_BIND_INDEX_BUFFER
+		};
+
+		D3D11_SUBRESOURCE_DATA const quadIndBufInitData{
+			.pSysMem = QUAD_INDICES
+		};
+
+		hresult = gResources->device->CreateBuffer(&quadIndBufDesc, &quadIndBufInitData, gResources->quadIndBuf.GetAddressOf());
+
+		if (FAILED(hresult)) {
+			MessageBoxW(platform::get_hwnd(), L"Failed to create quad index buffer.", L"Error", MB_ICONERROR);
+			return false;
+		}
+
+
+		D3D11_BUFFER_DESC const clearColorCbufDesc{
+			.ByteWidth = 16,
+			.Usage = D3D11_USAGE_DYNAMIC,
+			.BindFlags = D3D11_BIND_CONSTANT_BUFFER,
+			.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
+		};
+
+		hresult = gResources->device->CreateBuffer(&clearColorCbufDesc, nullptr, gResources->clearColorCbuf.GetAddressOf());
+
+		if (FAILED(hresult)) {
+			MessageBoxW(platform::get_hwnd(), L"Failed to create clear color cbuf.", L"Error", MB_ICONERROR);
+			return false;
+		}
+
+		hresult = gResources->device->CreateVertexShader(gClearColorVsBin, ARRAYSIZE(gClearColorVsBin), nullptr, gResources->clearColorVs.GetAddressOf());
+
+		if (FAILED(hresult)) {
+			MessageBoxW(platform::get_hwnd(), L"Failed to create clear color VS.", L"Error", MB_ICONERROR);
+			return false;
+		}
+
+		hresult = gResources->device->CreatePixelShader(gClearColorPsBin, ARRAYSIZE(gClearColorPsBin), nullptr, gResources->clearColorPs.GetAddressOf());
+
+		if (FAILED(hresult)) {
+			MessageBoxW(platform::get_hwnd(), L"Failed to create clear color PS.", L"Error", MB_ICONERROR);
+			return false;
+		}
+
 		return true;
 	}
 
@@ -593,6 +625,20 @@ namespace leopph::rendering {
 		};
 
 		gResources->context->RSSetViewports(1, &viewport);
+
+		D3D11_MAPPED_SUBRESOURCE mappedClearColorCbuf;
+		gResources->context->Map(gResources->clearColorCbuf.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedClearColorCbuf);
+		std::memcpy(mappedClearColorCbuf.pData, cam->GetBackgroundColor().get_data(), 16);
+		gResources->context->Unmap(gResources->clearColorCbuf.Get(), 0);
+
+		gResources->context->IASetInputLayout(gResources->quadIa.Get());
+		gResources->context->IASetVertexBuffers(0, 1, gResources->quadVertBuf.GetAddressOf(), &QUAD_VERT_BUF_STRIDE, &QUAD_VERT_BUF_OFFSET);
+		gResources->context->IASetIndexBuffer(gResources->quadIndBuf.Get(), DXGI_FORMAT_R32_UINT, 0);
+		gResources->context->VSSetShader(gResources->clearColorVs.Get(), nullptr, 0);
+		gResources->context->PSSetShader(gResources->clearColorPs.Get(), nullptr, 0);
+		gResources->context->PSSetConstantBuffers(0, 1, gResources->clearColorCbuf.GetAddressOf());
+		gResources->context->OMSetRenderTargets(1, gResources->renderTextureRtv.GetAddressOf(), nullptr);
+		gResources->context->DrawIndexed(ARRAYSIZE(QUAD_INDICES), 0, 0);
 
 		DirectX::XMFLOAT3 const camPos{ cam->GetTransform().GetWorldPosition().get_data() };
 		DirectX::XMFLOAT3 const camForward{ cam->GetTransform().GetForwardAxis().get_data() };
@@ -640,37 +686,37 @@ namespace leopph::rendering {
 				.StructureByteStride = 0
 			};
 
-			auto const hresult = gResources->device->CreateBuffer(&desc, nullptr, gResources->instanceBuffer.ReleaseAndGetAddressOf());
-			if (FAILED(hresult)) {
+			if (auto const hresult = gResources->device->CreateBuffer(&desc, nullptr, gResources->cubeInstBuf.ReleaseAndGetAddressOf()); FAILED(hresult)) {
 				MessageBoxW(nullptr, L"Failed to resize cube instance buffer.", L"Error", MB_ICONERROR);
 				return false;
 			}
-
-			UINT constexpr instanceBufferOffset{ 0 };
-			gResources->context->IASetVertexBuffers(INSTANCE_BUFFER_SLOT, 1, gResources->instanceBuffer.GetAddressOf(), &INSTANCE_BUFFER_ELEMENT_SIZE, &instanceBufferOffset);
 		}
 
-		D3D11_MAPPED_SUBRESOURCE mappedInstanceBuffer;
-		gResources->context->Map(gResources->instanceBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedInstanceBuffer);
-		DirectX::XMFLOAT4X4* mappedInstanceBufferData{ static_cast<DirectX::XMFLOAT4X4*>(mappedInstanceBuffer.pData) };
-
+		D3D11_MAPPED_SUBRESOURCE mappedCubeInstBuf;
+		gResources->context->Map(gResources->cubeInstBuf.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedCubeInstBuf);
+		DirectX::XMFLOAT4X4* mappedInstBufData{ static_cast<DirectX::XMFLOAT4X4*>(mappedCubeInstBuf.pData) };
 		for (std::size_t i = 0; i < gCubeModels.size(); i++) {
 			DirectX::XMFLOAT4X4 modelMat{ gCubeModels[i]->GetTransform().GetModelMatrix().get_data() };
-			DirectX::XMStoreFloat4x4(mappedInstanceBufferData + i, DirectX::XMLoadFloat4x4(&modelMat));
+			DirectX::XMStoreFloat4x4(mappedInstBufData + i, DirectX::XMLoadFloat4x4(&modelMat));
 		}
+		gResources->context->Unmap(gResources->cubeInstBuf.Get(), 0);
 
-		gResources->context->Unmap(gResources->instanceBuffer.Get(), 0);
-
-		gResources->context->DrawIndexedInstanced(gIndexCount, static_cast<UINT>(gCubeModels.size()), 0, 0, 0);
+		ID3D11Buffer* cubeVertBufs[]{ gResources->cubeVertBuf.Get(), gResources->cubeInstBuf.Get() };
+		UINT cubeVertStrides[]{ 3 * sizeof(float), 16 * sizeof(float) };
+		UINT cubeVertOffsets[]{ 0, 0 };
+		gResources->context->IASetVertexBuffers(0, 2, cubeVertBufs, cubeVertStrides, cubeVertOffsets);
+		gResources->context->IASetIndexBuffer(gResources->cubeIndBuf.Get(), DXGI_FORMAT_R32_UINT, 0);
+		gResources->context->IASetInputLayout(gResources->cubeIa.Get());
+		gResources->context->VSSetShader(gResources->cubeVertShader.Get(), nullptr, 0);
+		gResources->context->VSSetConstantBuffers(0, 1, gResources->cbuffer.GetAddressOf());
+		gResources->context->PSSetShader(gResources->cubePixShader.Get(), nullptr, 0);
+		gResources->context->PSSetConstantBuffers(0, 1, gResources->lightBuffer.GetAddressOf());
+		gResources->context->DrawIndexedInstanced(ARRAYSIZE(CUBE_INDICES), static_cast<UINT>(gCubeModels.size()), 0, 0, 0);
 		return true;
 	}
 
 
 	bool DrawGame() {
-		FLOAT clearColor[]{ 0.5f, 0, 1, 1 };
-		gResources->context->ClearRenderTargetView(gResources->renderTextureRtv.Get(), clearColor);
-		gResources->context->OMSetRenderTargets(1, gResources->renderTextureRtv.GetAddressOf(), nullptr);
-
 		auto ret{ true };
 		for (auto const* const cam : Camera::GetAllInstances()) {
 			ret = ret && DrawCamera(cam);

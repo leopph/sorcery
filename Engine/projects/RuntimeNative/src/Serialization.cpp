@@ -264,7 +264,7 @@ namespace leopph {
 				std::cerr << "Failed to deserialize background color of Camera " << GetGuid().ToString() << ". Invalid data." << std::endl;
 			}
 			else {
-				SetBackgroundColor(node.as<leopph::Vector3>(GetBackgroundColor()));
+				SetBackgroundColor(node.as<leopph::Vector4>(GetBackgroundColor()));
 			}
 		}
 	}

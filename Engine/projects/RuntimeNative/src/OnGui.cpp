@@ -136,8 +136,8 @@ namespace leopph {
 			ImGui::Text("Background Color");
 			ImGui::TableNextColumn();
 
-			Vector3 color{ mBackgroundColor };
-			if (ImGui::ColorEdit3("###backgroundColor", color.get_data())) {
+			Vector4 color{ mBackgroundColor };
+			if (ImGui::ColorEdit4("###backgroundColor", color.get_data())) {
 				SetBackgroundColor(color);
 			}
 
