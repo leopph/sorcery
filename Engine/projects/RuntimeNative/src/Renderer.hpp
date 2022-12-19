@@ -14,6 +14,7 @@ namespace leopph::rendering
 	[[nodiscard]] LEOPPHAPI bool InitRenderer();
 	LEOPPHAPI void CleanupRenderer();
 	
+	[[nodiscard]] LEOPPHAPI bool DrawCamera(Camera const* cam);
 	[[nodiscard]] LEOPPHAPI bool DrawGame();
 	[[nodiscard]] LEOPPHAPI Extent2D<u32> GetGameResolution();
 	LEOPPHAPI void SetGameResolution(Extent2D<u32> resolution);

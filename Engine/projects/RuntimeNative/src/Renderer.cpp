@@ -577,46 +577,36 @@ namespace leopph::rendering {
 	}
 
 
-	bool DrawGame() {
-		D3D11_VIEWPORT const viewPort
-		{
-			.TopLeftX = 0,
-			.TopLeftY = 0,
-			.Width = static_cast<FLOAT>(gGameRes.width),
-			.Height = static_cast<FLOAT>(gGameRes.height),
-			.MinDepth = 0,
-			.MaxDepth = 1
-		};
-
-		gResources->context->RSSetViewports(1, &viewPort);
-
-		FLOAT clearColor[]{ 0.5f, 0, 1, 1 };
-		gResources->context->ClearRenderTargetView(gResources->renderTextureRtv.Get(), clearColor);
-		gResources->context->OMSetRenderTargets(1, gResources->renderTextureRtv.GetAddressOf(), nullptr);
-
-		if (Camera::GetAllInstances().empty()) {
-			return true;
-		}
-
+	bool DrawCamera(Camera const* const cam) {
 		if (gCubeModels.empty()) {
 			return true;
 		}
 
-		Camera* mainCam = Camera::GetAllInstances()[0];
+		auto const& camViewport{ cam->GetViewport() };
+		D3D11_VIEWPORT const viewport{
+			.TopLeftX = static_cast<FLOAT>(gGameRes.width) * camViewport.position.x,
+			.TopLeftY = static_cast<FLOAT>(gGameRes.height) * camViewport.position.y,
+			.Width = static_cast<FLOAT>(gGameRes.width) * camViewport.extent.width,
+			.Height = static_cast<FLOAT>(gGameRes.height) * camViewport.extent.height,
+			.MinDepth = 0,
+			.MaxDepth = 1
+		};
 
-		DirectX::XMFLOAT3 const camPos{ mainCam->GetTransform().GetWorldPosition().get_data() };
-		DirectX::XMFLOAT3 const camForward{ mainCam->GetTransform().GetForwardAxis().get_data() };
+		gResources->context->RSSetViewports(1, &viewport);
+
+		DirectX::XMFLOAT3 const camPos{ cam->GetTransform().GetWorldPosition().get_data() };
+		DirectX::XMFLOAT3 const camForward{ cam->GetTransform().GetForwardAxis().get_data() };
 		DirectX::XMMATRIX viewMat = DirectX::XMMatrixLookToLH(DirectX::XMLoadFloat3(&camPos), DirectX::XMLoadFloat3(&camForward), { 0, 1, 0 });
 
 		DirectX::XMMATRIX projMat;
 
-		if (mainCam->GetType() == Camera::Type::Perspective) {
-			auto const fovHorizRad = DirectX::XMConvertToRadians(mainCam->GetPerspectiveFov());
+		if (cam->GetType() == Camera::Type::Perspective) {
+			auto const fovHorizRad = DirectX::XMConvertToRadians(cam->GetPerspectiveFov());
 			auto const fovVertRad = 2.0f * std::atanf(std::tanf(fovHorizRad / 2.0f) / gGameAspect);
-			projMat = DirectX::XMMatrixPerspectiveFovLH(fovVertRad, gGameAspect, mainCam->GetNearClipPlane(), mainCam->GetFarClipPlane());
+			projMat = DirectX::XMMatrixPerspectiveFovLH(fovVertRad, gGameAspect, cam->GetNearClipPlane(), cam->GetFarClipPlane());
 		}
 		else {
-			projMat = DirectX::XMMatrixOrthographicLH(mainCam->GetOrthographicSize(), mainCam->GetOrthographicSize() / gGameAspect, mainCam->GetNearClipPlane(), mainCam->GetFarClipPlane());
+			projMat = DirectX::XMMatrixOrthographicLH(cam->GetOrthographicSize(), cam->GetOrthographicSize() / gGameAspect, cam->GetNearClipPlane(), cam->GetFarClipPlane());
 		}
 
 		D3D11_MAPPED_SUBRESOURCE mappedCbuffer;
@@ -671,8 +661,21 @@ namespace leopph::rendering {
 
 		gResources->context->Unmap(gResources->instanceBuffer.Get(), 0);
 
+		FLOAT clearColor[]{ 0.5f, 0, 1, 1 };
+		gResources->context->ClearRenderTargetView(gResources->renderTextureRtv.Get(), clearColor);
+		gResources->context->OMSetRenderTargets(1, gResources->renderTextureRtv.GetAddressOf(), nullptr);
+
 		gResources->context->DrawIndexedInstanced(gIndexCount, static_cast<UINT>(gCubeModels.size()), 0, 0, 0);
 		return true;
+	}
+
+
+	bool DrawGame() {
+		auto ret{ true };
+		for (auto const* const cam : Camera::GetAllInstances()) {
+			ret = ret && DrawCamera(cam);
+		}
+		return ret;
 	}
 
 
