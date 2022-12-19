@@ -189,7 +189,7 @@ namespace leopph {
 		Type mType{ Type::Perspective };
 		f32 mOrthoSizeHoriz{ 10 };
 		f32 mPerspFovHorizDeg{ 90 };
-		Vector4 mBackgroundColor{ 0 };
+		Vector4 mBackgroundColor{ 0, 0, 0, 1 };
 
 
 		[[nodiscard]] f32 ConvertPerspectiveFov(f32 fov, bool vert2Horiz) const;
