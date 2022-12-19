@@ -189,6 +189,7 @@ namespace leopph {
 		Type mType{ Type::Perspective };
 		f32 mOrthoSizeHoriz{ 10 };
 		f32 mPerspFovHorizDeg{ 90 };
+		Vector3 mBackgroundColor{ 0 };
 
 
 		[[nodiscard]] f32 ConvertPerspectiveFov(f32 fov, bool vert2Horiz) const;
@@ -227,6 +228,9 @@ namespace leopph {
 
 		[[nodiscard]] LEOPPHAPI Type GetType() const;
 		LEOPPHAPI void SetType(Type type);
+
+		[[nodiscard]] LEOPPHAPI auto GetBackgroundColor() const->Vector3;
+		LEOPPHAPI auto SetBackgroundColor(Vector3 const& color) -> void;
 	};
 
 

@@ -132,6 +132,15 @@ namespace leopph {
 				SetViewport(viewport);
 			}
 
+			ImGui::TableNextColumn();
+			ImGui::Text("Background Color");
+			ImGui::TableNextColumn();
+
+			Vector3 color{ mBackgroundColor };
+			if (ImGui::ColorEdit3("###backgroundColor", color.get_data())) {
+				SetBackgroundColor(color);
+			}
+
 			ImGui::EndTable();
 		}
 	}

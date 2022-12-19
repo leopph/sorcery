@@ -410,6 +410,17 @@ namespace leopph {
 	}
 
 
+	auto Camera::GetBackgroundColor() const -> Vector3 {
+		return mBackgroundColor;
+	}
+
+	auto Camera::SetBackgroundColor(Vector3 const& color) -> void {
+		for (auto i = 0; i < 3; i++) {
+			mBackgroundColor[i] = std::clamp(color[i], 0.f, 1.f);
+		}
+	}
+
+
 	namespace managedbindings {
 		Camera::Type GetCameraType(MonoObject* camera) {
 			return static_cast<Camera*>(ManagedAccessObject::GetNativePtrFromManagedObject(camera))->GetType();

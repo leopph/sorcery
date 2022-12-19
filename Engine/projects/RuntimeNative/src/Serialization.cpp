@@ -214,48 +214,57 @@ namespace leopph {
 		node["size"] = GetOrthographicSize();
 		node["near"] = GetNearClipPlane();
 		node["far"] = GetFarClipPlane();
+		node["background"] = GetBackgroundColor();
 	}
 
 
-	auto Camera::Deserialize(YAML::Node const& node) -> void {
-		if (node["type"]) {
-			if (!node["type"].IsScalar()) {
+	auto Camera::Deserialize(YAML::Node const& root) -> void {
+		if (root["type"]) {
+			if (!root["type"].IsScalar()) {
 				std::cerr << "Failed to deserialize type of Camera " << GetGuid().ToString() << ". Invalid data." << std::endl;
 			}
 			else {
-				SetType(static_cast<Type>(node["type"].as<int>(static_cast<int>(GetType()))));
+				SetType(static_cast<Type>(root["type"].as<int>(static_cast<int>(GetType()))));
 			}
 		}
-		if (node["fov"]) {
-			if (!node["fov"].IsScalar()) {
+		if (root["fov"]) {
+			if (!root["fov"].IsScalar()) {
 				std::cerr << "Failed to deserialize field of view of Camera " << GetGuid().ToString() << ". Invalid data." << std::endl;
 			}
 			else {
-				SetPerspectiveFov(node["fov"].as<leopph::f32>(GetPerspectiveFov()));
+				SetPerspectiveFov(root["fov"].as<leopph::f32>(GetPerspectiveFov()));
 			}
 		}
-		if (node["size"]) {
-			if (!node["size"].IsScalar()) {
+		if (root["size"]) {
+			if (!root["size"].IsScalar()) {
 				std::cerr << "Failed to deserialize size of Camera " << GetGuid().ToString() << ". Invalid data." << std::endl;
 			}
 			else {
-				SetOrthoGraphicSize(node["size"].as<leopph::f32>(GetOrthographicSize()));
+				SetOrthoGraphicSize(root["size"].as<leopph::f32>(GetOrthographicSize()));
 			}
 		}
-		if (node["near"]) {
-			if (!node["near"].IsScalar()) {
+		if (root["near"]) {
+			if (!root["near"].IsScalar()) {
 				std::cerr << "Failed to deserialize near clip plane of Camera " << GetGuid().ToString() << ". Invalid data." << std::endl;
 			}
 			else {
-				SetNearClipPlane(node["near"].as<leopph::f32>(GetNearClipPlane()));
+				SetNearClipPlane(root["near"].as<leopph::f32>(GetNearClipPlane()));
 			}
 		}
-		if (node["far"]) {
-			if (!node["far"].IsScalar()) {
+		if (root["far"]) {
+			if (!root["far"].IsScalar()) {
 				std::cerr << "Failed to deserialize far clip plane of Camera " << GetGuid().ToString() << ". Invalid data." << std::endl;
 			}
 			else {
-				SetFarClipPlane(node["far"].as<leopph::f32>(GetFarClipPlane()));
+				SetFarClipPlane(root["far"].as<leopph::f32>(GetFarClipPlane()));
+			}
+		}
+		if (auto const node{ root["background"] }; node) {
+			if (!node.IsSequence()) {
+				std::cerr << "Failed to deserialize background color of Camera " << GetGuid().ToString() << ". Invalid data." << std::endl;
+			}
+			else {
+				SetBackgroundColor(node.as<leopph::Vector3>(GetBackgroundColor()));
 			}
 		}
 	}
