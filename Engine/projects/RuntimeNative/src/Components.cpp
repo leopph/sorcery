@@ -333,6 +333,13 @@ namespace leopph {
 		return mViewport;
 	}
 
+	void Camera::SetViewport(NormalizedViewport const& viewport) {
+		mViewport.extent.width = std::clamp(viewport.extent.width, 0.f, 1.f);
+		mViewport.extent.height = std::clamp(viewport.extent.height, 0.f, 1.f);
+		mViewport.position.x = std::clamp(viewport.position.x, 0.f, 1.f);
+		mViewport.position.y = std::clamp(viewport.position.y, 0.f, 1.f);
+	}
+
 
 	Extent2D<u32> Camera::GetWindowExtents() const {
 		return mWindowExtent;

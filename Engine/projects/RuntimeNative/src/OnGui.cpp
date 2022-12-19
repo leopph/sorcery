@@ -114,6 +114,24 @@ namespace leopph {
 				SetFarClipPlane(farValue);
 			}
 
+			ImGui::TableNextColumn();
+			ImGui::Text("Viewport");
+			ImGui::TableNextColumn();
+
+			auto viewport{ GetViewport() };
+			if (ImGui::InputFloat(std::format("{}{}", guidStr, "ViewportX").c_str(), &viewport.position.x)) {
+				SetViewport(viewport);
+			}
+			if (ImGui::InputFloat(std::format("{}{}", guidStr, "ViewportY").c_str(), &viewport.position.y)) {
+				SetViewport(viewport);
+			}
+			if (ImGui::InputFloat(std::format("{}{}", guidStr, "ViewportW").c_str(), &viewport.extent.width)) {
+				SetViewport(viewport);
+			}
+			if (ImGui::InputFloat(std::format("{}{}", guidStr, "ViewportH").c_str(), &viewport.extent.height)) {
+				SetViewport(viewport);
+			}
+
 			ImGui::EndTable();
 		}
 	}

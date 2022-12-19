@@ -661,16 +661,16 @@ namespace leopph::rendering {
 
 		gResources->context->Unmap(gResources->instanceBuffer.Get(), 0);
 
-		FLOAT clearColor[]{ 0.5f, 0, 1, 1 };
-		gResources->context->ClearRenderTargetView(gResources->renderTextureRtv.Get(), clearColor);
-		gResources->context->OMSetRenderTargets(1, gResources->renderTextureRtv.GetAddressOf(), nullptr);
-
 		gResources->context->DrawIndexedInstanced(gIndexCount, static_cast<UINT>(gCubeModels.size()), 0, 0, 0);
 		return true;
 	}
 
 
 	bool DrawGame() {
+		FLOAT clearColor[]{ 0.5f, 0, 1, 1 };
+		gResources->context->ClearRenderTargetView(gResources->renderTextureRtv.Get(), clearColor);
+		gResources->context->OMSetRenderTargets(1, gResources->renderTextureRtv.GetAddressOf(), nullptr);
+
 		auto ret{ true };
 		for (auto const* const cam : Camera::GetAllInstances()) {
 			ret = ret && DrawCamera(cam);
