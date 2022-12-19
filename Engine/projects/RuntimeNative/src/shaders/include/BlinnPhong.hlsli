@@ -23,7 +23,9 @@ cbuffer lights : register(b0) {
 
 struct VS_IN {
 	float3 vertexPos : VERTEXPOS;
+    float3 vertexNorm : VERTEXNORMAL;
 	float4x4 modelMat : MODELMATRIX;
+    float3x3 normalMat : NORMALMATRIX;
 };
 
 struct VS_OUT {
@@ -38,19 +40,21 @@ VS_OUT vs_main(VS_IN vs_in)
 	float4 worldPos4 = mul(float4(vs_in.vertexPos, 1), vs_in.modelMat);
 	vsOut.worldPos = worldPos4.xyz;
 	vsOut.clipPos = mul(worldPos4, viewProj);
-    vsOut.normal = normalize(vs_in.vertexPos);
+    vsOut.normal = mul(vs_in.vertexNorm, vs_in.normalMat);
 	return vsOut;
 }
 
 float4 ps_main(VS_OUT psIn) : SV_TARGET
 {
+    float4 ret = float4(0.05, 0.05, 0.05, 1);
+	
 	if (calcDirLight) {
         float3 dirToLight = normalize(-dirLight.direction);
         float diffuse = saturate(dot(dirToLight, normalize(psIn.normal)));
-		return float4(diffuse * dirLight.color * dirLight.intensity, 1);
+        ret.xyz += diffuse * dirLight.color * dirLight.intensity;
 	}
 
-	return float4(1, 1, 1, 1);
+    return ret;
 }
 
 #endif

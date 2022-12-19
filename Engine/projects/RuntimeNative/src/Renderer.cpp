@@ -43,6 +43,11 @@ namespace leopph::rendering {
 		bool calcDirLight;
 	};
 
+	struct CubeInstanceData {
+		DirectX::XMFLOAT4X4 modelMat;
+		DirectX::XMFLOAT3X3 normalMat;
+	};
+
 
 	struct Resources {
 		ComPtr<ID3D11Device> device;
@@ -84,40 +89,51 @@ namespace leopph::rendering {
 		UINT constexpr QUAD_VERT_BUF_STRIDE{ 8 };
 		UINT constexpr QUAD_VERT_BUF_OFFSET{ 0 };
 
-		UINT constexpr CUBE_INST_BUF_OFFSET{ 0 };
-		UINT constexpr INSTANCE_BUFFER_ELEMENT_SIZE{ sizeof(DirectX::XMFLOAT4X4) };
-		UINT constexpr VERTEX_BUFFER_SLOT{ 0 };
-		UINT constexpr INSTANCE_BUFFER_SLOT{ 1 };
-
 		FLOAT constexpr CUBE_VERTICES[]{
-			 0.5f,  0.5f,  0.5f,
-			-0.5f,  0.5f,  0.5f,
-			-0.5f,  0.5f, -0.5f,
-			 0.5f,  0.5f, -0.5f,
-			 0.5f, -0.5f,  0.5f,
-			-0.5f, -0.5f,  0.5f,
-			-0.5f, -0.5f, -0.5f,
-			 0.5f, -0.5f, -0.5f,
+			 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+			 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+			 0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+			-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+			-0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+			-0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+			-0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+			-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
+			-0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+			 0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+			 0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
+			 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+			 0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+			 0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+			 0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+			-0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+			-0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+			-0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+			-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+			-0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+			-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+			 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+			 0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+			 0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
 		};
 		UINT constexpr CUBE_INDICES[]{
 			// Top face
-			0, 1, 2,
-			2, 3, 0,
+			1, 4, 7,
+			7, 10, 1,
 			// Bottom face
-			7, 6, 5,
-			5, 4, 7,
+			22, 19, 16,
+			16, 13, 22,
 			// Front face
-			2, 6, 7,
-			7, 3, 2,
+			8, 20, 23,
+			23, 11, 8,
 			// Back face
-			0, 4, 5,
-			5, 1, 0,
+			2, 14, 17,
+			17, 5, 2,
 			// Right face
-			0, 3, 7,
-			7, 4, 0,
+			0, 9, 21,
+			21, 12, 0,
 			// Left face
-			2, 1, 5,
-			5, 6, 2
+			6, 3, 15,
+			15, 18, 6
 		};
 
 		Resources* gResources{ nullptr };
@@ -337,10 +353,19 @@ namespace leopph::rendering {
 			return false;
 		}
 
-		D3D11_INPUT_ELEMENT_DESC constexpr inputElementDescs[]
+		D3D11_INPUT_ELEMENT_DESC constexpr cubeInputElementsDescs[]
 		{
 			{
 				.SemanticName = "VERTEXPOS",
+				.SemanticIndex = 0,
+				.Format = DXGI_FORMAT_R32G32B32_FLOAT,
+				.InputSlot = 0,
+				.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT,
+				.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA,
+				.InstanceDataStepRate = 0
+			},
+			{
+				.SemanticName = "VERTEXNORMAL",
 				.SemanticIndex = 0,
 				.Format = DXGI_FORMAT_R32G32B32_FLOAT,
 				.InputSlot = 0,
@@ -383,10 +408,37 @@ namespace leopph::rendering {
 				.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT,
 				.InputSlotClass = D3D11_INPUT_PER_INSTANCE_DATA,
 				.InstanceDataStepRate = 1
+			},
+						{
+				.SemanticName = "NORMALMATRIX",
+				.SemanticIndex = 0,
+				.Format = DXGI_FORMAT_R32G32B32_FLOAT,
+				.InputSlot = 1,
+				.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT,
+				.InputSlotClass = D3D11_INPUT_PER_INSTANCE_DATA,
+				.InstanceDataStepRate = 1
+			},
+			{
+				.SemanticName = "NORMALMATRIX",
+				.SemanticIndex = 1,
+				.Format = DXGI_FORMAT_R32G32B32_FLOAT,
+				.InputSlot = 1,
+				.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT,
+				.InputSlotClass = D3D11_INPUT_PER_INSTANCE_DATA,
+				.InstanceDataStepRate = 1
+			},
+			{
+				.SemanticName = "NORMALMATRIX",
+				.SemanticIndex = 2,
+				.Format = DXGI_FORMAT_R32G32B32_FLOAT,
+				.InputSlot = 1,
+				.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT,
+				.InputSlotClass = D3D11_INPUT_PER_INSTANCE_DATA,
+				.InstanceDataStepRate = 1
 			}
 		};
 
-		hresult = gResources->device->CreateInputLayout(inputElementDescs, ARRAYSIZE(inputElementDescs), gBlinnPhongVertShadBin, ARRAYSIZE(gBlinnPhongVertShadBin), gResources->cubeIa.GetAddressOf());
+		hresult = gResources->device->CreateInputLayout(cubeInputElementsDescs, ARRAYSIZE(cubeInputElementsDescs), gBlinnPhongVertShadBin, ARRAYSIZE(gBlinnPhongVertShadBin), gResources->cubeIa.GetAddressOf());
 
 		if (FAILED(hresult)) {
 			MessageBoxW(platform::get_hwnd(), L"Failed to create cube input layout.", L"Error", MB_ICONERROR);
@@ -421,7 +473,7 @@ namespace leopph::rendering {
 
 		D3D11_BUFFER_DESC const cubeInstBufDesc
 		{
-			.ByteWidth = INSTANCE_BUFFER_ELEMENT_SIZE,
+			.ByteWidth = sizeof(CubeInstanceData),
 			.Usage = D3D11_USAGE_DYNAMIC,
 			.BindFlags = D3D11_BIND_VERTEX_BUFFER,
 			.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
@@ -678,7 +730,7 @@ namespace leopph::rendering {
 
 			D3D11_BUFFER_DESC const desc
 			{
-				.ByteWidth = gInstanceBufferElementCapacity * INSTANCE_BUFFER_ELEMENT_SIZE,
+				.ByteWidth = gInstanceBufferElementCapacity * sizeof(CubeInstanceData),
 				.Usage = D3D11_USAGE_DYNAMIC,
 				.BindFlags = D3D11_BIND_VERTEX_BUFFER,
 				.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
@@ -694,15 +746,15 @@ namespace leopph::rendering {
 
 		D3D11_MAPPED_SUBRESOURCE mappedCubeInstBuf;
 		gResources->context->Map(gResources->cubeInstBuf.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedCubeInstBuf);
-		DirectX::XMFLOAT4X4* mappedInstBufData{ static_cast<DirectX::XMFLOAT4X4*>(mappedCubeInstBuf.pData) };
+		auto const mappedInstBufData{ static_cast<CubeInstanceData*>(mappedCubeInstBuf.pData) };
 		for (std::size_t i = 0; i < gCubeModels.size(); i++) {
-			DirectX::XMFLOAT4X4 modelMat{ gCubeModels[i]->GetTransform().GetModelMatrix().get_data() };
-			DirectX::XMStoreFloat4x4(mappedInstBufData + i, DirectX::XMLoadFloat4x4(&modelMat));
+			mappedInstBufData[i].modelMat = DirectX::XMFLOAT4X4{ gCubeModels[i]->GetTransform().GetModelMatrix().get_data() };
+			mappedInstBufData[i].normalMat = DirectX::XMFLOAT3X3{ gCubeModels[i]->GetTransform().GetNormalMatrix().get_data() };
 		}
 		gResources->context->Unmap(gResources->cubeInstBuf.Get(), 0);
 
 		ID3D11Buffer* cubeVertBufs[]{ gResources->cubeVertBuf.Get(), gResources->cubeInstBuf.Get() };
-		UINT cubeVertStrides[]{ 3 * sizeof(float), 16 * sizeof(float) };
+		UINT cubeVertStrides[]{ 6 * sizeof(float), 25 * sizeof(float) };
 		UINT cubeVertOffsets[]{ 0, 0 };
 		gResources->context->IASetVertexBuffers(0, 2, cubeVertBufs, cubeVertStrides, cubeVertOffsets);
 		gResources->context->IASetIndexBuffer(gResources->cubeIndBuf.Get(), DXGI_FORMAT_R32_UINT, 0);
