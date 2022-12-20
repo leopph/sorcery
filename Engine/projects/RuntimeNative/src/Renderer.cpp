@@ -218,7 +218,7 @@ namespace leopph::rendering {
 	}
 
 
-	bool InitRenderer() {
+	auto InitRenderer(std::shared_ptr<Window> window) -> void {
 		gResources = new Resources{};
 
 #ifdef NDEBUG
@@ -232,8 +232,7 @@ namespace leopph::rendering {
 		HRESULT hresult = D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, deviceCreationFlags, requestedFeatureLevels, 1, D3D11_SDK_VERSION, gResources->device.GetAddressOf(), nullptr, gResources->context.GetAddressOf());
 
 		if (FAILED(hresult)) {
-			MessageBoxW(platform::get_hwnd(), L"Failed to create D3D device.", L"Error", MB_ICONERROR);
-			return false;
+			throw std::runtime_error{ "Failed to create D3D device." };
 		}
 
 #ifndef NDEBUG
@@ -241,16 +240,14 @@ namespace leopph::rendering {
 		hresult = gResources->device.As(&d3dDebug);
 
 		if (FAILED(hresult)) {
-			MessageBoxW(platform::get_hwnd(), L"Failed to get ID3D11Debug interface.", L"Error", MB_ICONERROR);
-			return false;
+			throw std::runtime_error{"Failed to get ID3D11Debug interface."};
 		}
 
 		ComPtr<ID3D11InfoQueue> d3dInfoQueue;
 		hresult = d3dDebug.As<ID3D11InfoQueue>(&d3dInfoQueue);
 
 		if (FAILED(hresult)) {
-			MessageBoxW(platform::get_hwnd(), L"Failed to get ID3D11InfoQueue interface.", L"Error", MB_ICONERROR);
-			return false;
+			throw std::runtime_error{"Failed to get ID3D11InfoQueue interface."};
 		}
 
 		d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_CORRUPTION, true);
@@ -261,24 +258,21 @@ namespace leopph::rendering {
 		hresult = gResources->device.As(&dxgiDevice);
 
 		if (FAILED(hresult)) {
-			MessageBoxW(platform::get_hwnd(), L"Failed to query IDXGIDevice interface.", L"Error", MB_ICONERROR);
-			return false;
+			throw std::runtime_error{"Failed to query IDXGIDevice interface."};
 		}
 
 		ComPtr<IDXGIAdapter> dxgiAdapter;
 		hresult = dxgiDevice->GetAdapter(dxgiAdapter.GetAddressOf());
 
 		if (FAILED(hresult)) {
-			MessageBoxW(platform::get_hwnd(), L"Failed to get IDXGIAdapter.", L"Error", MB_ICONERROR);
-			return false;
+			throw std::runtime_error{"Failed to get IDXGIAdapter."};
 		}
 
 		ComPtr<IDXGIFactory2> dxgiFactory2;
 		hresult = dxgiAdapter->GetParent(__uuidof(decltype(dxgiFactory2)::InterfaceType), reinterpret_cast<void**>(dxgiFactory2.GetAddressOf()));
 
 		if (FAILED(hresult)) {
-			MessageBoxW(platform::get_hwnd(), L"Failed to query IDXGIFactory2 interface.", L"Error", MB_ICONERROR);
-			return false;
+			throw std::runtime_error{"Failed to query IDXGIFactory2 interface."};
 		}
 
 		ComPtr<IDXGIFactory5> dxgiFactory5;
@@ -313,44 +307,39 @@ namespace leopph::rendering {
 			.Flags = gSwapChainFlags
 		};
 
-		hresult = dxgiFactory2->CreateSwapChainForHwnd(gResources->device.Get(), platform::get_hwnd(), &swapChainDesc1, nullptr, nullptr, gResources->swapChain.GetAddressOf());
+		hresult = dxgiFactory2->CreateSwapChainForHwnd(gResources->device.Get(), window->GetHandle(), &swapChainDesc1, nullptr, nullptr, gResources->swapChain.GetAddressOf());
 
 		if (FAILED(hresult)) {
-			MessageBoxW(platform::get_hwnd(), L"Failed to create swapchain.", L"Error", MB_ICONERROR);
-			return false;
+			throw std::runtime_error{"Failed to create swapchain."};
 		}
 
-		dxgiFactory2->MakeWindowAssociation(platform::get_hwnd(), DXGI_MWA_NO_WINDOW_CHANGES);
+		dxgiFactory2->MakeWindowAssociation(window->GetHandle(), DXGI_MWA_NO_WINDOW_CHANGES);
 
-		RecreateRenderTextureAndViews(platform::get_window_current_client_area_size().width, platform::get_window_current_client_area_size().height);
+		RecreateRenderTextureAndViews(window->GetCurrentClientAreaSize().width, window->GetCurrentClientAreaSize().height);
 
 		ComPtr<ID3D11Texture2D> backBuf;
 		hresult = gResources->swapChain->GetBuffer(0, __uuidof(decltype(backBuf)::InterfaceType), reinterpret_cast<void**>(backBuf.GetAddressOf()));
 
 		if (FAILED(hresult)) {
-			MessageBoxW(platform::get_hwnd(), L"Failed to get backbuffer.", L"Error", MB_ICONERROR);
-			return false;
+			throw std::runtime_error{"Failed to get backbuffer."};
 		}
 
 		hresult = gResources->device->CreateRenderTargetView(backBuf.Get(), nullptr, gResources->swapChainRtv.GetAddressOf());
 
 		if (FAILED(hresult)) {
-			MessageBoxW(platform::get_hwnd(), L"Failed to create backbuffer RTV.", L"Error", MB_ICONERROR);
-			return false;
+			throw std::runtime_error{"Failed to create backbuffer RTV."};
 		}
 
 		hresult = gResources->device->CreateVertexShader(gBlinnPhongVertShadBin, ARRAYSIZE(gBlinnPhongVertShadBin), nullptr, gResources->cubeVertShader.GetAddressOf());
 
 		if (FAILED(hresult)) {
-			MessageBoxW(platform::get_hwnd(), L"Failed to create cube vertex shader.", L"Error", MB_ICONERROR);
-			return false;
+			throw std::runtime_error{"Failed to create cube vertex shader."};
 		}
 
 		hresult = gResources->device->CreatePixelShader(gBlinnPhongPixShadBin, ARRAYSIZE(gBlinnPhongPixShadBin), nullptr, gResources->cubePixShader.GetAddressOf());
 
 		if (FAILED(hresult)) {
-			MessageBoxW(platform::get_hwnd(), L"Failed to create cube pixel shader.", L"Error", MB_ICONERROR);
-			return false;
+			throw std::runtime_error{"Failed to create cube pixel shader."};
 		}
 
 		D3D11_INPUT_ELEMENT_DESC constexpr cubeInputElementsDescs[]
@@ -441,8 +430,7 @@ namespace leopph::rendering {
 		hresult = gResources->device->CreateInputLayout(cubeInputElementsDescs, ARRAYSIZE(cubeInputElementsDescs), gBlinnPhongVertShadBin, ARRAYSIZE(gBlinnPhongVertShadBin), gResources->cubeIa.GetAddressOf());
 
 		if (FAILED(hresult)) {
-			MessageBoxW(platform::get_hwnd(), L"Failed to create cube input layout.", L"Error", MB_ICONERROR);
-			return false;
+			throw std::runtime_error{"Failed to create cube input layout."};
 		}
 
 		gResources->context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -467,8 +455,7 @@ namespace leopph::rendering {
 		hresult = gResources->device->CreateBuffer(&cubeVertBufDesc, &cubeVertBufInitData, gResources->cubeVertBuf.GetAddressOf());
 
 		if (FAILED(hresult)) {
-			MessageBoxW(platform::get_hwnd(), L"Failed to create cube vertex buffer.", L"Error", MB_ICONERROR);
-			return false;
+			throw std::runtime_error{"Failed to create cube vertex buffer."};
 		}
 
 		D3D11_BUFFER_DESC const cubeInstBufDesc
@@ -484,8 +471,7 @@ namespace leopph::rendering {
 		hresult = gResources->device->CreateBuffer(&cubeInstBufDesc, nullptr, gResources->cubeInstBuf.GetAddressOf());
 
 		if (FAILED(hresult)) {
-			MessageBoxW(platform::get_hwnd(), L"Failed to create cube instance buffer.", L"Error", MB_ICONERROR);
-			return false;
+			throw std::runtime_error{"Failed to create cube instance buffer."};
 		}
 
 		D3D11_BUFFER_DESC constexpr cubeIndBufDesc
@@ -508,8 +494,7 @@ namespace leopph::rendering {
 		hresult = gResources->device->CreateBuffer(&cubeIndBufDesc, &cubeIndBufInitData, gResources->cubeIndBuf.GetAddressOf());
 
 		if (FAILED(hresult)) {
-			MessageBoxW(platform::get_hwnd(), L"Failed to create cube index buffer.", L"Error", MB_ICONERROR);
-			return false;
+			throw std::runtime_error{"Failed to create cube index buffer."};
 		}
 
 		D3D11_BUFFER_DESC constexpr cbufferDesc
@@ -525,8 +510,7 @@ namespace leopph::rendering {
 		hresult = gResources->device->CreateBuffer(&cbufferDesc, nullptr, gResources->cbuffer.GetAddressOf());
 
 		if (FAILED(hresult)) {
-			MessageBoxW(platform::get_hwnd(), L"Failed to create cube constant buffer.", L"Error", MB_ICONERROR);
-			return false;
+			throw std::runtime_error{"Failed to create cube constant buffer."};
 		}
 
 		D3D11_BUFFER_DESC constexpr lightBufferDesc{
@@ -541,8 +525,7 @@ namespace leopph::rendering {
 		hresult = gResources->device->CreateBuffer(&lightBufferDesc, nullptr, gResources->lightBuffer.GetAddressOf());
 
 		if (FAILED(hresult)) {
-			MessageBoxW(platform::get_hwnd(), L"Failed to create light constant buffer.", L"Error", MB_ICONERROR);
-			return false;
+			throw std::runtime_error{"Failed to create light constant buffer."};
 		}
 
 		D3D11_RASTERIZER_DESC constexpr rasterizerDesc
@@ -563,16 +546,15 @@ namespace leopph::rendering {
 		hresult = gResources->device->CreateRasterizerState(&rasterizerDesc, rasterizerState.GetAddressOf());
 
 		if (FAILED(hresult)) {
-			MessageBoxW(platform::get_hwnd(), L"Failed to create rasterizer state.", L"Error", MB_ICONERROR);
-			return false;
+			throw std::runtime_error{"Failed to create rasterizer state."};
 		}
 
 		gResources->context->RSSetState(rasterizerState.Get());
 
-		gGameRes = platform::get_window_current_client_area_size();
+		gGameRes = window->GetCurrentClientAreaSize();
 		gGameAspect = static_cast<f32>(gGameRes.width) / static_cast<f32>(gGameRes.height);
 
-		platform::OnWindowSize.add_handler(&on_window_resize);
+		window->OnWindowSize.add_handler(&on_window_resize);
 
 		D3D11_BUFFER_DESC const quadVertBufDesc{
 			.ByteWidth = sizeof(QUAD_VERTICES),
@@ -585,8 +567,7 @@ namespace leopph::rendering {
 		hresult = gResources->device->CreateBuffer(&quadVertBufDesc, &quadVertBufInitData, gResources->quadVertBuf.GetAddressOf());
 
 		if (FAILED(hresult)) {
-			MessageBoxW(platform::get_hwnd(), L"Failed to create quad vertex buffer.", L"Error", MB_ICONERROR);
-			return false;
+			throw std::runtime_error{"Failed to create quad vertex buffer."};
 		}
 
 		D3D11_INPUT_ELEMENT_DESC const quadInputDesc{
@@ -602,8 +583,7 @@ namespace leopph::rendering {
 		hresult = gResources->device->CreateInputLayout(&quadInputDesc, 1, gClearColorVsBin, ARRAYSIZE(gClearColorVsBin), gResources->quadIa.GetAddressOf());
 
 		if (FAILED(hresult)) {
-			MessageBoxW(platform::get_hwnd(), L"Failed to create quad IA.", L"Error", MB_ICONERROR);
-			return false;
+			throw std::runtime_error{"Failed to create quad IA."};
 		}
 
 		D3D11_BUFFER_DESC const quadIndBufDesc{
@@ -619,8 +599,7 @@ namespace leopph::rendering {
 		hresult = gResources->device->CreateBuffer(&quadIndBufDesc, &quadIndBufInitData, gResources->quadIndBuf.GetAddressOf());
 
 		if (FAILED(hresult)) {
-			MessageBoxW(platform::get_hwnd(), L"Failed to create quad index buffer.", L"Error", MB_ICONERROR);
-			return false;
+			throw std::runtime_error{"Failed to create quad index buffer."};
 		}
 
 
@@ -634,36 +613,31 @@ namespace leopph::rendering {
 		hresult = gResources->device->CreateBuffer(&clearColorCbufDesc, nullptr, gResources->clearColorCbuf.GetAddressOf());
 
 		if (FAILED(hresult)) {
-			MessageBoxW(platform::get_hwnd(), L"Failed to create clear color cbuf.", L"Error", MB_ICONERROR);
-			return false;
+			throw std::runtime_error{"Failed to create clear color cbuf."};
 		}
 
 		hresult = gResources->device->CreateVertexShader(gClearColorVsBin, ARRAYSIZE(gClearColorVsBin), nullptr, gResources->clearColorVs.GetAddressOf());
 
 		if (FAILED(hresult)) {
-			MessageBoxW(platform::get_hwnd(), L"Failed to create clear color VS.", L"Error", MB_ICONERROR);
-			return false;
+			throw std::runtime_error{"Failed to create clear color VS."};
 		}
 
 		hresult = gResources->device->CreatePixelShader(gClearColorPsBin, ARRAYSIZE(gClearColorPsBin), nullptr, gResources->clearColorPs.GetAddressOf());
 
 		if (FAILED(hresult)) {
-			MessageBoxW(platform::get_hwnd(), L"Failed to create clear color PS.", L"Error", MB_ICONERROR);
-			return false;
+			throw std::runtime_error{"Failed to create clear color PS."};
 		}
-
-		return true;
 	}
 
 
-	void CleanupRenderer() {
+	void CleanupRenderer() noexcept {
 		delete gResources;
 	}
 
 
-	bool DrawCamera(Camera const* const cam) {
+	auto DrawCamera(Camera const* const cam) -> void {
 		if (gCubeModels.empty()) {
-			return true;
+			return;
 		}
 
 		auto const& camViewport{ cam->GetViewport() };
@@ -739,8 +713,7 @@ namespace leopph::rendering {
 			};
 
 			if (auto const hresult = gResources->device->CreateBuffer(&desc, nullptr, gResources->cubeInstBuf.ReleaseAndGetAddressOf()); FAILED(hresult)) {
-				MessageBoxW(nullptr, L"Failed to resize cube instance buffer.", L"Error", MB_ICONERROR);
-				return false;
+				throw std::runtime_error{"Failed to resize cube instance buffer."};
 			}
 		}
 
@@ -764,25 +737,22 @@ namespace leopph::rendering {
 		gResources->context->PSSetShader(gResources->cubePixShader.Get(), nullptr, 0);
 		gResources->context->PSSetConstantBuffers(0, 1, gResources->lightBuffer.GetAddressOf());
 		gResources->context->DrawIndexedInstanced(ARRAYSIZE(CUBE_INDICES), static_cast<UINT>(gCubeModels.size()), 0, 0, 0);
-		return true;
 	}
 
 
-	bool DrawGame() {
-		auto ret{ true };
+	auto DrawGame() -> void {
 		for (auto const* const cam : Camera::GetAllInstances()) {
-			ret = ret && DrawCamera(cam);
+			DrawCamera(cam);
 		}
-		return ret;
 	}
 
 
-	Extent2D<u32> GetGameResolution() {
+	Extent2D<u32> GetGameResolution() noexcept {
 		return gGameRes;
 	}
 
 
-	void SetGameResolution(Extent2D<u32> resolution) {
+	void SetGameResolution(Extent2D<u32> resolution) noexcept {
 		gGameRes = resolution;
 		gGameAspect = static_cast<f32>(resolution.width) / static_cast<f32>(resolution.height);
 		RecreateRenderTextureAndViews(gGameRes.width, gGameRes.height);

@@ -38,77 +38,70 @@ namespace leopph {
 	}
 
 
-	bool initialize_managed_runtime() {
+	auto initialize_managed_runtime(std::shared_ptr<Window> window) -> void {
 		auto const printMonoLocationError = []() {
-			MessageBoxW(nullptr, L"Failed to locate Mono installation.", L"Error", MB_ICONERROR);
+			throw std::runtime_error{ "Failed to locate Mono installation." };
 		};
 
 		HKEY monoRegKey;
 		if (RegOpenKeyExW(HKEY_LOCAL_MACHINE, LR"(SOFTWARE\Mono)", 0, KEY_READ, &monoRegKey) != ERROR_SUCCESS) {
-			printMonoLocationError();
-			return false;
+			throw std::runtime_error{ "Failed to locate Mono installation." };
 		}
 
 		auto const fwAssemblyDirKey = L"FrameworkAssemblyDirectory";
 		DWORD bufSz{};
 		if (RegGetValueW(monoRegKey, NULL, fwAssemblyDirKey, RRF_RT_REG_SZ, NULL, nullptr, &bufSz) != ERROR_SUCCESS) {
-			printMonoLocationError();
-			return false;
+			throw std::runtime_error{ "Failed to locate Mono installation." };
 		}
 
 		std::wstring buf(static_cast<std::size_t>(bufSz), L'\0');
 		if (RegGetValueW(monoRegKey, NULL, fwAssemblyDirKey, RRF_RT_REG_SZ, NULL, buf.data(), &bufSz) != ERROR_SUCCESS) {
-			printMonoLocationError();
-			return false;
+			throw std::runtime_error{ "Failed to locate Mono installation." };
 		}
 
-		auto const fwAssemblyDir{ platform::WideToUtf8(buf) };
+		auto const fwAssemblyDir{ WideToUtf8(buf) };
 
 		auto const configDirKey = L"MonoConfigDir";
 		if (RegGetValueW(monoRegKey, NULL, configDirKey, RRF_RT_REG_SZ, NULL, nullptr, &bufSz) != ERROR_SUCCESS) {
-			printMonoLocationError();
-			return false;
+			throw std::runtime_error{ "Failed to locate Mono installation." };
 		}
 
 		buf.resize(bufSz);
 
 		if (RegGetValueW(monoRegKey, NULL, configDirKey, RRF_RT_REG_SZ, NULL, buf.data(), &bufSz) != ERROR_SUCCESS) {
-			printMonoLocationError();
-			return false;
+			throw std::runtime_error{ "Failed to locate Mono installation." };
 		}
 
-		auto const configDir{ platform::WideToUtf8(buf) };
+		auto const configDir{ WideToUtf8(buf) };
 
 		mono_set_dirs(fwAssemblyDir.c_str(), configDir.c_str());
 
 		gDomain = mono_jit_init("leopph");
 
 		if (!gDomain) {
-			MessageBoxW(nullptr, L"Failed to create managed domain.", L"Error", MB_ICONERROR);
-			return false;
+			throw std::runtime_error{ "Failed to create managed domain." };
 		}
 
-		mono_add_internal_call("leopph.Input::GetKeyDown", reinterpret_cast<void*>(&platform::GetKeyDown));
-		mono_add_internal_call("leopph.Input::GetKey", reinterpret_cast<void*>(&platform::GetKey));
-		mono_add_internal_call("leopph.Input::GetKeyUp", reinterpret_cast<void*>(&platform::GetKeyUp));
-		mono_add_internal_call("leopph.Input::get_MousePosition", reinterpret_cast<void*>(&platform::GetMousePosition));
-		mono_add_internal_call("leopph.Input::get_MouseDelta", reinterpret_cast<void*>(&platform::GetMouseDelta));
-		mono_add_internal_call("leopph.Input::get_IsCursorConfined", reinterpret_cast<void*>(&platform::is_cursor_confined));
-		mono_add_internal_call("leopph.Input::set_IsCursorConfined", reinterpret_cast<void*>(&platform::confine_cursor));
-		mono_add_internal_call("leopph.Input::get_IsCursorHidden", reinterpret_cast<void*>(&platform::is_cursor_hidden));
-		mono_add_internal_call("leopph.Input::set_IsCursorHidden", reinterpret_cast<void*>(&platform::hide_cursor));
+		mono_add_internal_call("leopph.Input::GetKeyDown", reinterpret_cast<void*>(&GetKeyDown));
+		mono_add_internal_call("leopph.Input::GetKey", reinterpret_cast<void*>(&GetKeyUp));
+	//mono_add_internal_call("leopph.Input::get_MousePosition", reinterpret_cast<void*>(&GetMousePosition));
+	//mono_add_internal_call("leopph.Input::get_MouseDelta", reinterpret_cast<void*>(&GetMouseDelta));
+	//mono_add_internal_call("leopph.Input::get_IsCursorConfined", reinterpret_cast<void*>(&platform::is_cursor_confined));
+	//mono_add_internal_call("leopph.Input::set_IsCursorConfined", reinterpret_cast<void*>(&platform::confine_cursor));
+	//mono_add_internal_call("leopph.Input::get_IsCursorHidden", reinterpret_cast<void*>(&platform::is_cursor_hidden));
+	//mono_add_internal_call("leopph.Input::set_IsCursorHidden", reinterpret_cast<void*>(&platform::hide_cursor));
 
 		mono_add_internal_call("leopph.Time::get_FullTime", reinterpret_cast<void*>(&managedbindings::get_full_time));
 		mono_add_internal_call("leopph.Time::get_FrameTime", reinterpret_cast<void*>(&managedbindings::get_frame_time));
 
-		mono_add_internal_call("leopph.Window::get_CurrentResolution", reinterpret_cast<void*>(&platform::get_window_current_client_area_size));
-		mono_add_internal_call("leopph.Window::get_WindowedResolution", reinterpret_cast<void*>(&platform::get_window_windowed_client_area_size));
-		mono_add_internal_call("leopph.Window::set_WindowedResolution", reinterpret_cast<void*>(&platform::set_window_windowed_client_area_size));
-		mono_add_internal_call("leopph.Window::get_IsBorderless", reinterpret_cast<void*>(&platform::managedbindings::IsWindowBorderLess));
-		mono_add_internal_call("leopph.Window::set_IsBorderless", reinterpret_cast<void*>(&platform::managedbindings::SetWindowBorderless));
-		mono_add_internal_call("leopph.Window::get_IsMinimizingOnBorderlessFocusLoss", reinterpret_cast<void*>(&platform::managedbindings::IsWindowMinimizingOnBorderlessFocusLoss));
-		mono_add_internal_call("leopph.Window::set_IsMinimizingOnBorderlessFocusLoss", reinterpret_cast<void*>(&platform::managedbindings::SetWindowMinimizeOnBorderlessFocusLoss));
-		mono_add_internal_call("leopph.Window::InternalSetShouldClose", reinterpret_cast<void*>(&platform::managedbindings::SetWindowShouldClose));
+		//mono_add_internal_call("leopph.Window::get_CurrentResolution", reinterpret_cast<void*>(&platform::get_window_current_client_area_size));
+		//mono_add_internal_call("leopph.Window::get_WindowedResolution", reinterpret_cast<void*>(&platform::get_window_windowed_client_area_size));
+		//mono_add_internal_call("leopph.Window::set_WindowedResolution", reinterpret_cast<void*>(&platform::set_window_windowed_client_area_size));
+		//mono_add_internal_call("leopph.Window::get_IsBorderless", reinterpret_cast<void*>(&platform::managedbindings::IsWindowBorderLess));
+		//mono_add_internal_call("leopph.Window::set_IsBorderless", reinterpret_cast<void*>(&platform::managedbindings::SetWindowBorderless));
+		//mono_add_internal_call("leopph.Window::get_IsMinimizingOnBorderlessFocusLoss", reinterpret_cast<void*>(&platform::managedbindings::IsWindowMinimizingOnBorderlessFocusLoss));
+		//mono_add_internal_call("leopph.Window::set_IsMinimizingOnBorderlessFocusLoss", reinterpret_cast<void*>(&platform::managedbindings::SetWindowMinimizeOnBorderlessFocusLoss));
+		//mono_add_internal_call("leopph.Window::InternalSetShouldClose", reinterpret_cast<void*>(&platform::managedbindings::SetWindowShouldClose));
 
 		mono_add_internal_call("leopph.NativeWrapper.get_Guid", reinterpret_cast<void*>(&managedbindings::GetManagedAccessObjectGuid));
 
@@ -163,20 +156,18 @@ namespace leopph {
 		mono_add_internal_call("leopph.Light::get_Intensity", reinterpret_cast<void*>(&managedbindings::GetLightIntensity));
 		mono_add_internal_call("leopph.Light::set_Intensity", reinterpret_cast<void*>(&managedbindings::SetLightIntensity));
 
-		auto const managedLibPath{ std::filesystem::path{ platform::GetExecutablePath() }.remove_filename() /= "LeopphRuntimeManaged.dll" };
+		auto const managedLibPath{ std::filesystem::path{ GetExecutablePath() }.remove_filename() /= "LeopphRuntimeManaged.dll" };
 
-		auto const assembly{ mono_domain_assembly_open(gDomain, platform::WideToUtf8(managedLibPath.c_str()).c_str()) };
+		auto const assembly{ mono_domain_assembly_open(gDomain, WideToUtf8(managedLibPath.c_str()).c_str()) };
 
 		if (!assembly) {
-			MessageBoxW(nullptr, std::format(L"Failed to open managed assembly at {}.", managedLibPath.c_str()).c_str(), L"Error", MB_ICONERROR);
-			return false;
+			throw std::runtime_error{ WideToUtf8(std::format(L"Failed to open managed assembly at {}.", managedLibPath.c_str())) };
 		}
 
 		gImage = mono_assembly_get_image(assembly);
 
 		if (!gImage) {
-			MessageBoxW(nullptr, L"Failed to image from managed assembly.", L"Error", MB_ICONERROR);
-			return false;
+			throw std::runtime_error{"Failed to image from managed assembly."};
 		}
 
 		auto const helperClass = mono_class_from_name(gImage, "leopph", "NativeHelpers");
@@ -215,8 +206,6 @@ namespace leopph {
 				gComponentClasses.emplace_back(klass);
 			}
 		}
-
-		return true;
 	}
 
 

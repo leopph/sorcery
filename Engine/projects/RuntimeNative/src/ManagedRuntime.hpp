@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core.hpp"
+#include "Platform.hpp"
 
 #include <span>
 #include <string_view>
@@ -19,7 +20,7 @@ using MonoType = struct _MonoType;
 
 namespace leopph
 {
-	[[nodiscard]] LEOPPHAPI bool initialize_managed_runtime();
+	LEOPPHAPI auto initialize_managed_runtime(std::shared_ptr<Window> window) -> void;
 	LEOPPHAPI void cleanup_managed_runtime();	
 	[[nodiscard]] LEOPPHAPI MonoImage* GetManagedImage();
 	[[nodiscard]] LEOPPHAPI MonoDomain* GetManagedDomain();

@@ -3,6 +3,7 @@
 #include "Core.hpp"
 #include "Components.hpp"
 #include "Util.hpp"
+#include "Platform.hpp"
 
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
@@ -11,13 +12,13 @@
 
 namespace leopph::rendering
 {
-	[[nodiscard]] LEOPPHAPI bool InitRenderer();
-	LEOPPHAPI void CleanupRenderer();
+	LEOPPHAPI auto InitRenderer(std::shared_ptr<Window> window) -> void;
+	LEOPPHAPI auto CleanupRenderer() noexcept -> void;
 	
-	[[nodiscard]] LEOPPHAPI bool DrawCamera(Camera const* cam);
-	[[nodiscard]] LEOPPHAPI bool DrawGame();
-	[[nodiscard]] LEOPPHAPI Extent2D<u32> GetGameResolution();
-	LEOPPHAPI void SetGameResolution(Extent2D<u32> resolution);
+	LEOPPHAPI auto DrawCamera(Camera const* cam) -> void;
+	LEOPPHAPI auto DrawGame() -> void;
+	[[nodiscard]] LEOPPHAPI auto GetGameResolution() noexcept -> Extent2D<u32>;
+	LEOPPHAPI auto SetGameResolution(Extent2D<u32> resolution) noexcept -> void;
 	[[nodiscard]] LEOPPHAPI ID3D11ShaderResourceView* GetGameFrame();
 	[[nodiscard]] LEOPPHAPI f32 GetGameAspectRatio();
 
