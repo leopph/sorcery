@@ -7,6 +7,8 @@
 #include <bitset>
 #include <string>
 #include <string_view>
+#include <type_traits>
+#include <utility>
 
 
 namespace leopph {
@@ -80,5 +82,11 @@ namespace leopph {
 				return static_cast<To>(std::clamp<From>(what, std::numeric_limits<To>::min(), std::numeric_limits<To>::max()));
 			}
 		}
+	}
+
+
+	template<auto& Obj, auto MemberFunc, typename ...Args>
+	auto Call(Args&&... args) noexcept(std::is_nothrow_invocable_v<decltype(MemberFunc), Args...>) {
+		return (Obj.*MemberFunc)(std::forward<Args>(args)...);
 	}
 }
