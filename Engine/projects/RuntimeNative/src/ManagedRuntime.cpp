@@ -5,6 +5,7 @@
 #include "Platform.hpp"
 #include "ManagedAccessObject.hpp"
 #include "Components.hpp"
+#include "Systems.hpp"
 
 #include <mono/jit/jit.h>
 #include <mono/metadata/appdomain.h>
@@ -12,7 +13,6 @@
 #include <mono/metadata/class.h>
 #include <mono/metadata/object.h>
 
-#include <cstdio>
 #include <cassert>
 #include <filesystem>
 #include <format>
@@ -21,87 +21,66 @@
 
 
 namespace leopph {
-	namespace {
-		MonoDomain* gDomain;
-		MonoImage* gImage;
-
-		std::vector<MonoClass*> gComponentClasses;
-
-		MonoMethod* gFieldSerializeTestMethod;
-		MonoMethod* gPropertySerializeTestMethod;
-		MonoMethod* gGetEnumValuesMethod;
-		MonoMethod* gPrimitiveTestMethod;
-		MonoMethod* gParsePropertyValueMethod;
-		MonoMethod* gParseFieldValueMethod;
-		MonoMethod* gEnumToUnderlyingValueMethod;
-		MonoMethod* gParseEnumValueMethod;
-	}
-
-
-	auto initialize_managed_runtime(std::shared_ptr<Window> window) -> void {
-		auto const printMonoLocationError = []() {
-			throw std::runtime_error{ "Failed to locate Mono installation." };
-		};
-
-		HKEY monoRegKey;
-		if (RegOpenKeyExW(HKEY_LOCAL_MACHINE, LR"(SOFTWARE\Mono)", 0, KEY_READ, &monoRegKey) != ERROR_SUCCESS) {
+	auto ManagedRuntime::StartUp() -> void {
+		HKEY monoRemKey;
+		if (RegOpenKeyExW(HKEY_LOCAL_MACHINE, LR"(SOFTWARE\Mono)", 0, KEY_READ, &monoRemKey) != ERROR_SUCCESS) {
 			throw std::runtime_error{ "Failed to locate Mono installation." };
 		}
 
 		auto const fwAssemblyDirKey = L"FrameworkAssemblyDirectory";
 		DWORD bufSz{};
-		if (RegGetValueW(monoRegKey, NULL, fwAssemblyDirKey, RRF_RT_REG_SZ, NULL, nullptr, &bufSz) != ERROR_SUCCESS) {
+		if (RegGetValueW(monoRemKey, nullptr, fwAssemblyDirKey, RRF_RT_REG_SZ, nullptr, nullptr, &bufSz) != ERROR_SUCCESS) {
 			throw std::runtime_error{ "Failed to locate Mono installation." };
 		}
 
 		std::wstring buf(static_cast<std::size_t>(bufSz), L'\0');
-		if (RegGetValueW(monoRegKey, NULL, fwAssemblyDirKey, RRF_RT_REG_SZ, NULL, buf.data(), &bufSz) != ERROR_SUCCESS) {
+		if (RegGetValueW(monoRemKey, nullptr, fwAssemblyDirKey, RRF_RT_REG_SZ, nullptr, buf.data(), &bufSz) != ERROR_SUCCESS) {
 			throw std::runtime_error{ "Failed to locate Mono installation." };
 		}
 
 		auto const fwAssemblyDir{ WideToUtf8(buf) };
 
-		auto const configDirKey = L"MonoConfigDir";
-		if (RegGetValueW(monoRegKey, NULL, configDirKey, RRF_RT_REG_SZ, NULL, nullptr, &bufSz) != ERROR_SUCCESS) {
+		auto const confimDirKey = L"MonoConfimDir";
+		if (RegGetValueW(monoRemKey, nullptr, confimDirKey, RRF_RT_REG_SZ, nullptr, nullptr, &bufSz) != ERROR_SUCCESS) {
 			throw std::runtime_error{ "Failed to locate Mono installation." };
 		}
 
 		buf.resize(bufSz);
 
-		if (RegGetValueW(monoRegKey, NULL, configDirKey, RRF_RT_REG_SZ, NULL, buf.data(), &bufSz) != ERROR_SUCCESS) {
+		if (RegGetValueW(monoRemKey, nullptr, confimDirKey, RRF_RT_REG_SZ, nullptr, buf.data(), &bufSz) != ERROR_SUCCESS) {
 			throw std::runtime_error{ "Failed to locate Mono installation." };
 		}
 
-		auto const configDir{ WideToUtf8(buf) };
+		auto const confimDir{ WideToUtf8(buf) };
 
-		mono_set_dirs(fwAssemblyDir.c_str(), configDir.c_str());
+		mono_set_dirs(fwAssemblyDir.c_str(), confimDir.c_str());
 
-		gDomain = mono_jit_init("leopph");
+		mDomain = mono_jit_init("leopph");
 
-		if (!gDomain) {
+		if (!mDomain) {
 			throw std::runtime_error{ "Failed to create managed domain." };
 		}
 
 		mono_add_internal_call("leopph.Input::GetKeyDown", reinterpret_cast<void*>(&GetKeyDown));
 		mono_add_internal_call("leopph.Input::GetKey", reinterpret_cast<void*>(&GetKeyUp));
-	//mono_add_internal_call("leopph.Input::get_MousePosition", reinterpret_cast<void*>(&GetMousePosition));
-	//mono_add_internal_call("leopph.Input::get_MouseDelta", reinterpret_cast<void*>(&GetMouseDelta));
-	//mono_add_internal_call("leopph.Input::get_IsCursorConfined", reinterpret_cast<void*>(&platform::is_cursor_confined));
-	//mono_add_internal_call("leopph.Input::set_IsCursorConfined", reinterpret_cast<void*>(&platform::confine_cursor));
-	//mono_add_internal_call("leopph.Input::get_IsCursorHidden", reinterpret_cast<void*>(&platform::is_cursor_hidden));
-	//mono_add_internal_call("leopph.Input::set_IsCursorHidden", reinterpret_cast<void*>(&platform::hide_cursor));
+		mono_add_internal_call("leopph.Input::get_MousePosition", reinterpret_cast<void*>(&Call<gWindow, &Window::GetMousePosition>));
+		mono_add_internal_call("leopph.Input::get_MouseDelta", reinterpret_cast<void*>(&Call<gWindow, &Window::GetMouseDelta>));
+		mono_add_internal_call("leopph.Input::get_IsCursorConfined", reinterpret_cast<void*>(&Call<gWindow, &Window::IsCursorConfined>));
+		mono_add_internal_call("leopph.Input::set_IsCursorConfined", reinterpret_cast<void*>(&Call<gWindow, &Window::SetCursorConfinement, bool>));
+		mono_add_internal_call("leopph.Input::get_IsCursorHidden", reinterpret_cast<void*>(&Call<gWindow, &Window::IsCursorHidden>));
+		mono_add_internal_call("leopph.Input::set_IsCursorHidden", reinterpret_cast<void*>(&Call<gWindow, &Window::SetCursorHiding, bool>));
 
 		mono_add_internal_call("leopph.Time::get_FullTime", reinterpret_cast<void*>(&managedbindings::get_full_time));
 		mono_add_internal_call("leopph.Time::get_FrameTime", reinterpret_cast<void*>(&managedbindings::get_frame_time));
 
-		//mono_add_internal_call("leopph.Window::get_CurrentResolution", reinterpret_cast<void*>(&platform::get_window_current_client_area_size));
-		//mono_add_internal_call("leopph.Window::get_WindowedResolution", reinterpret_cast<void*>(&platform::get_window_windowed_client_area_size));
-		//mono_add_internal_call("leopph.Window::set_WindowedResolution", reinterpret_cast<void*>(&platform::set_window_windowed_client_area_size));
-		//mono_add_internal_call("leopph.Window::get_IsBorderless", reinterpret_cast<void*>(&platform::managedbindings::IsWindowBorderLess));
-		//mono_add_internal_call("leopph.Window::set_IsBorderless", reinterpret_cast<void*>(&platform::managedbindings::SetWindowBorderless));
-		//mono_add_internal_call("leopph.Window::get_IsMinimizingOnBorderlessFocusLoss", reinterpret_cast<void*>(&platform::managedbindings::IsWindowMinimizingOnBorderlessFocusLoss));
-		//mono_add_internal_call("leopph.Window::set_IsMinimizingOnBorderlessFocusLoss", reinterpret_cast<void*>(&platform::managedbindings::SetWindowMinimizeOnBorderlessFocusLoss));
-		//mono_add_internal_call("leopph.Window::InternalSetShouldClose", reinterpret_cast<void*>(&platform::managedbindings::SetWindowShouldClose));
+		mono_add_internal_call("leopph.Window::get_CurrentResolution", reinterpret_cast<void*>(&Call<gWindow, &Window::GetCurrentClientAreaSize>));
+		mono_add_internal_call("leopph.Window::get_WindowedResolution", reinterpret_cast<void*>(&Call<gWindow, &Window::GetWindowedClientAreaSize>));
+		mono_add_internal_call("leopph.Window::set_WindowedResolution", reinterpret_cast<void*>(&Call<gWindow, &Window::SetWindowedClientAreaSize, Extent2D<u32>>));
+		mono_add_internal_call("leopph.Window::get_IsBorderless", reinterpret_cast<void*>(&Call<gWindow, &Window::IsBorderless>));
+		mono_add_internal_call("leopph.Window::set_IsBorderless", reinterpret_cast<void*>(&Call<gWindow, &Window::SetBorderless, bool>));
+		mono_add_internal_call("leopph.Window::get_IsMinimizinmOnBorderlessFocusLoss", reinterpret_cast<void*>(&Call<gWindow, &Window::IsMinimizingOnBorderlessFocusLoss>));
+		mono_add_internal_call("leopph.Window::set_IsMinimizinmOnBorderlessFocusLoss", reinterpret_cast<void*>(&Call<gWindow, &Window::SetWindowMinimizeOnBorderlessFocusLoss, bool>));
+		mono_add_internal_call("leopph.Window::InternalSetShouldClose", reinterpret_cast<void*>(&Call<gWindow, &Window::SetQuitSignal, bool>));
 
 		mono_add_internal_call("leopph.NativeWrapper.get_Guid", reinterpret_cast<void*>(&managedbindings::GetManagedAccessObjectGuid));
 
@@ -158,128 +137,131 @@ namespace leopph {
 
 		auto const managedLibPath{ std::filesystem::path{ GetExecutablePath() }.remove_filename() /= "LeopphRuntimeManaged.dll" };
 
-		auto const assembly{ mono_domain_assembly_open(gDomain, WideToUtf8(managedLibPath.c_str()).c_str()) };
+		auto const assembly{ mono_domain_assembly_open(mDomain, WideToUtf8(managedLibPath.c_str()).c_str()) };
 
 		if (!assembly) {
 			throw std::runtime_error{ WideToUtf8(std::format(L"Failed to open managed assembly at {}.", managedLibPath.c_str())) };
 		}
 
-		gImage = mono_assembly_get_image(assembly);
+		mImage = mono_assembly_get_image(assembly);
 
-		if (!gImage) {
-			throw std::runtime_error{"Failed to image from managed assembly."};
+		if (!mImage) {
+			throw std::runtime_error{ "Failed to image from managed assembly." };
 		}
 
-		auto const helperClass = mono_class_from_name(gImage, "leopph", "NativeHelpers");
+		auto const helperClass = mono_class_from_name(mImage, "leopph", "NativeHelpers");
 		assert(helperClass);
-		gFieldSerializeTestMethod = mono_class_get_method_from_name(helperClass, "ShouldSerializeField", 1);
-		assert(gFieldSerializeTestMethod);
-		gPropertySerializeTestMethod = mono_class_get_method_from_name(helperClass, "ShouldSerializeProperty", 1);
-		assert(gPropertySerializeTestMethod);
-		gGetEnumValuesMethod = mono_class_get_method_from_name(helperClass, "GetEnumValues", 1);
-		assert(gGetEnumValuesMethod);
-		gPrimitiveTestMethod = mono_class_get_method_from_name(helperClass, "IsPrimitive", 1);
-		assert(gPrimitiveTestMethod);
-		gParsePropertyValueMethod = mono_class_get_method_from_name(helperClass, "ParsePropertyValue", 2);
-		assert(gParsePropertyValueMethod);
-		gParseFieldValueMethod = mono_class_get_method_from_name(helperClass, "ParseFieldValue", 2);
-		assert(gParseFieldValueMethod);
-		gEnumToUnderlyingValueMethod = mono_class_get_method_from_name(helperClass, "EnumToUnderlyingType", 2);
-		assert(gEnumToUnderlyingValueMethod);
-		gParseEnumValueMethod = mono_class_get_method_from_name(helperClass, "ParseEnumValue", 2);
-		assert(gParseEnumValueMethod);
+		mFieldSerializeTestMethod = mono_class_get_method_from_name(helperClass, "ShouldSerializeField", 1);
+		assert(mFieldSerializeTestMethod);
+		mPropertySerializeTestMethod = mono_class_get_method_from_name(helperClass, "ShouldSerializeProperty", 1);
+		assert(mPropertySerializeTestMethod);
+		mGetEnumValuesMethod = mono_class_get_method_from_name(helperClass, "GetEnumValues", 1);
+		assert(mGetEnumValuesMethod);
+		mPrimitiveTestMethod = mono_class_get_method_from_name(helperClass, "IsPrimitive", 1);
+		assert(mPrimitiveTestMethod);
+		mParsePropertyValueMethod = mono_class_get_method_from_name(helperClass, "ParsePropertyValue", 2);
+		assert(mParsePropertyValueMethod);
+		mParseFieldValueMethod = mono_class_get_method_from_name(helperClass, "ParseFieldValue", 2);
+		assert(mParseFieldValueMethod);
+		mEnumToUnderlyingValueMethod = mono_class_get_method_from_name(helperClass, "EnumToUnderlyinmType", 2);
+		assert(mEnumToUnderlyingValueMethod);
+		mParseEnumValueMethod = mono_class_get_method_from_name(helperClass, "ParseEnumValue", 2);
+		assert(mParseEnumValueMethod);
 
-		auto const componentClass = mono_class_from_name(gImage, "leopph", "Component");
-		auto const behaviorClass = mono_class_from_name(gImage, "leopph", "Behavior");
+		auto const componentClass = mono_class_from_name(mImage, "leopph", "Component");
+		auto const behaviorClass = mono_class_from_name(mImage, "leopph", "Behavior");
 
-		auto const table = mono_image_get_table_info(gImage, MONO_TABLE_TYPEDEF);
+		auto const table = mono_image_get_table_info(mImage, MONO_TABLE_TYPEDEF);
 		auto const numRows = mono_table_info_get_rows(table);
 
 		for (int i = 0; i < numRows; i++) {
 			u32 cols[MONO_TYPEDEF_SIZE];
 			mono_metadata_decode_row(table, i, cols, MONO_TYPEDEF_SIZE);
-			auto const mName = mono_metadata_string_heap(gImage, cols[MONO_TYPEDEF_NAME]);
-			auto const ns = mono_metadata_string_heap(gImage, cols[MONO_TYPEDEF_NAMESPACE]);
-			auto const klass = mono_class_from_name(gImage, ns, mName);
+			auto const mName = mono_metadata_string_heap(mImage, cols[MONO_TYPEDEF_NAME]);
+			auto const ns = mono_metadata_string_heap(mImage, cols[MONO_TYPEDEF_NAMESPACE]);
+			auto const klass = mono_class_from_name(mImage, ns, mName);
 
 			if (mono_class_is_subclass_of(klass, componentClass, false) && klass != componentClass && klass != behaviorClass) {
-				gComponentClasses.emplace_back(klass);
+				mComponentClasses.emplace_back(klass);
 			}
 		}
 	}
 
 
-	void cleanup_managed_runtime() {
-		mono_jit_cleanup(gDomain);
+	auto ManagedRuntime::ShutDown() noexcept -> void {
+		if (mDomain) {
+			mono_jit_cleanup(mDomain);
+			mDomain = nullptr;
+		}
 	}
 
 
-	MonoImage* GetManagedImage() {
-		return gImage;
+	MonoImage* ManagedRuntime::GetManagedImage() const {
+		return mImage;
 	}
 
 
-	MonoDomain* GetManagedDomain() {
-		return gDomain;
+	MonoDomain* ManagedRuntime::GetManagedDomain() const {
+		return mDomain;
 	}
 
 
-	bool ShouldSerialize(MonoReflectionField* field) {
-		auto const res = mono_runtime_invoke(gFieldSerializeTestMethod, nullptr, reinterpret_cast<void**>(&field), nullptr);
+	bool ManagedRuntime::ShouldSerialize(MonoReflectionField* field) const {
+		auto const res = mono_runtime_invoke(mFieldSerializeTestMethod, nullptr, reinterpret_cast<void**>(&field), nullptr);
 
 		return *static_cast<bool*>(mono_object_unbox(res));
 	}
 
 
-	bool ShouldSerialize(MonoReflectionProperty* prop) {
-		auto const res = mono_runtime_invoke(gPropertySerializeTestMethod, nullptr, reinterpret_cast<void**>(&prop), nullptr);
+	bool ManagedRuntime::ShouldSerialize(MonoReflectionProperty* prop) const {
+		auto const res = mono_runtime_invoke(mPropertySerializeTestMethod, nullptr, reinterpret_cast<void**>(&prop), nullptr);
 
 		return *static_cast<bool*>(mono_object_unbox(res));
 	}
 
 
-	MonoArray* GetEnumValues(MonoReflectionType* enumType) {
-		return reinterpret_cast<MonoArray*>(mono_runtime_invoke(gGetEnumValuesMethod, nullptr, reinterpret_cast<void**>(&enumType), nullptr));
+	MonoArray* ManagedRuntime::GetEnumValues(MonoReflectionType* enumType) const {
+		return reinterpret_cast<MonoArray*>(mono_runtime_invoke(mGetEnumValuesMethod, nullptr, reinterpret_cast<void**>(&enumType), nullptr));
 	}
 
 
-	std::span<MonoClass* const> GetComponentClasses() {
-		return gComponentClasses;
+	std::span<MonoClass* const> ManagedRuntime::GetComponentClasses() {
+		return mComponentClasses;
 	}
 
 
-	bool IsTypePrimitive(MonoReflectionType* refType) {
-		return *reinterpret_cast<int*>(mono_object_unbox(mono_runtime_invoke(gPrimitiveTestMethod, nullptr, reinterpret_cast<void**>(&refType), nullptr)));
+	bool ManagedRuntime::IsTypePrimitive(MonoReflectionType* refType) const {
+		return *static_cast<int*>(mono_object_unbox(mono_runtime_invoke(mPrimitiveTestMethod, nullptr, reinterpret_cast<void**>(&refType), nullptr)));
 	}
 
 
-	MonoObject* ParseValue(MonoReflectionField* field, std::string_view const str) {
-		auto managedStr = mono_string_new_wrapper(str.data());
+	MonoObject* ManagedRuntime::ParseValue(MonoReflectionField* field, std::string_view const str) const {
+		auto const managedStr = mono_string_new_wrapper(str.data());
 		void* params[]{ reinterpret_cast<void*>(field), reinterpret_cast<void*>(managedStr) };
-		auto const parsedValue = mono_runtime_invoke(gParseFieldValueMethod, nullptr, params, nullptr);
+		auto const parsedValue = mono_runtime_invoke(mParseFieldValueMethod, nullptr, params, nullptr);
 		return parsedValue;
 	}
 
 
-	MonoObject* ParseValue(MonoReflectionProperty* property, std::string_view const str) {
-		auto managedStr = mono_string_new_wrapper(str.data());
+	MonoObject* ManagedRuntime::ParseValue(MonoReflectionProperty* property, std::string_view const str) const {
+		auto const managedStr = mono_string_new_wrapper(str.data());
 		void* params[]{ reinterpret_cast<void*>(property), reinterpret_cast<void*>(managedStr) };
-		auto const parsedValue = mono_runtime_invoke(gParsePropertyValueMethod, nullptr, params, nullptr);
+		auto const parsedValue = mono_runtime_invoke(mParsePropertyValueMethod, nullptr, params, nullptr);
 		return parsedValue;
 	}
 
 
-	MonoObject* EnumToUnderlyingType(MonoReflectionType* enumType, MonoObject* enumValue) {
+	MonoObject* ManagedRuntime::EnumToUnderlyingType(MonoReflectionType* enumType, MonoObject* enumValue) const {
 		void* params[]{ reinterpret_cast<void*>(enumType), reinterpret_cast<void*>(enumValue) };
-		auto const underlyingValue = mono_runtime_invoke(gEnumToUnderlyingValueMethod, nullptr, params, nullptr);
-		return underlyingValue;
+		auto const underlyinmValue = mono_runtime_invoke(mEnumToUnderlyingValueMethod, nullptr, params, nullptr);
+		return underlyinmValue;
 	}
 
 
-	MonoObject* ParseEnumValue(MonoReflectionType* enumType, std::string_view const str) {
-		auto managedStr = mono_string_new_wrapper(str.data());
+	MonoObject* ManagedRuntime::ParseEnumValue(MonoReflectionType* enumType, std::string_view const str) const {
+		auto const managedStr = mono_string_new_wrapper(str.data());
 		void* params[]{ reinterpret_cast<void*>(enumType), reinterpret_cast<void*>(managedStr) };
-		auto const parsedValue = mono_runtime_invoke(gParseEnumValueMethod, nullptr, params, nullptr);
+		auto const parsedValue = mono_runtime_invoke(mParseEnumValueMethod, nullptr, params, nullptr);
 		return parsedValue;
 	}
 }

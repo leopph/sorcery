@@ -18,6 +18,8 @@
 #include <algorithm>
 #include <format>
 
+#include "Systems.hpp"
+
 
 namespace leopph {
 	auto Component::GetEntity() const -> Entity* {
@@ -273,12 +275,12 @@ namespace leopph {
 
 
 	CubeModel::CubeModel() {
-		rendering::RegisterCubeModel(this);
+		gRenderer.RegisterCubeModel(this);
 	}
 
 
 	CubeModel::~CubeModel() {
-		rendering::UnregisterCubeModel(this);
+		gRenderer.UnregisterCubeModel(this);
 	}
 
 
@@ -659,25 +661,25 @@ namespace leopph {
 
 
 	DirectionalLight::DirectionalLight() {
-		rendering::RegisterDirLight(this);
+		gRenderer.RegisterDirLight(this);
 	}
 
 
 
 	DirectionalLight::~DirectionalLight() {
-		rendering::UnregisterDirLight(this);
+		gRenderer.UnregisterDirLight(this);
 	}
 
 
 
 	PointLight::PointLight() {
-		rendering::RegisterPointLight(this);
+		gRenderer.RegisterPointLight(this);
 	}
 
 
 
 	PointLight::~PointLight() {
-		rendering::UnregisterPointLight(this);
+		gRenderer.UnregisterPointLight(this);
 	}
 
 
@@ -707,13 +709,13 @@ namespace leopph {
 
 
 	SpotLight::SpotLight() {
-		rendering::RegisterSpotLight(this);
+		gRenderer.RegisterSpotLight(this);
 	}
 
 
 
 	SpotLight::~SpotLight() {
-		rendering::UnregisterSpotLight(this);
+		gRenderer.UnregisterSpotLight(this);
 	}
 
 

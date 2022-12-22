@@ -14,6 +14,8 @@
 #include <iostream>
 #include <variant>
 
+#include "Systems.hpp"
+
 namespace YAML {
 	template<typename T, std::size_t N>
 	struct convert<leopph::Vector<T, N>> {
@@ -284,18 +286,18 @@ namespace leopph {
 			void* iter{ nullptr };
 
 			while (auto const field = mono_class_get_fields(objClass, &iter)) {
-				if (leopph::ShouldSerialize(mono_field_get_object(leopph::GetManagedDomain(), objClass, field))) {
+				if (leopph::gManagedRuntime.ShouldSerialize(mono_field_get_object(leopph::gManagedRuntime.GetManagedDomain(), objClass, field))) {
 					auto const fieldType = mono_field_get_type(field);
-					auto const fieldRefType = mono_type_get_object(leopph::GetManagedDomain(), fieldType);
+					auto const fieldRefType = mono_type_get_object(leopph::gManagedRuntime.GetManagedDomain(), fieldType);
 					auto const fieldClass = mono_type_get_class(fieldType);
 					auto const fieldName = mono_field_get_name(field);
-					auto const fieldValueBoxed = mono_field_get_value_object(leopph::GetManagedDomain(), field, obj);
+					auto const fieldValueBoxed = mono_field_get_value_object(leopph::gManagedRuntime.GetManagedDomain(), field, obj);
 
-					if (leopph::IsTypePrimitive(fieldRefType)) {
+					if (leopph::gManagedRuntime.IsTypePrimitive(fieldRefType)) {
 						node[fieldName] = mono_string_to_utf8(mono_object_to_string(fieldValueBoxed, nullptr));
 					}
 					else if (mono_class_is_enum(fieldClass)) {
-						node[fieldName] = mono_string_to_utf8(mono_object_to_string(leopph::EnumToUnderlyingType(fieldRefType, fieldValueBoxed), nullptr));
+						node[fieldName] = mono_string_to_utf8(mono_object_to_string(leopph::gManagedRuntime.EnumToUnderlyingType(fieldRefType, fieldValueBoxed), nullptr));
 					}
 					else if (mono_class_is_valuetype(fieldClass)) {
 						auto dataNode = node[fieldName];
@@ -310,19 +312,19 @@ namespace leopph {
 			iter = nullptr;
 
 			while (auto const prop = mono_class_get_properties(objClass, &iter)) {
-				if (leopph::ShouldSerialize(mono_property_get_object(leopph::GetManagedDomain(), objClass, prop))) {
+				if (leopph::gManagedRuntime.ShouldSerialize(mono_property_get_object(leopph::gManagedRuntime.GetManagedDomain(), objClass, prop))) {
 					auto const propType = mono_signature_get_return_type(mono_method_signature(mono_property_get_get_method(prop)));
-					auto const propRefType = mono_type_get_object(leopph::GetManagedDomain(), propType);
+					auto const propRefType = mono_type_get_object(leopph::gManagedRuntime.GetManagedDomain(), propType);
 					auto const propClass = mono_type_get_class(propType);
 					auto const propName = mono_property_get_name(prop);
 					auto const objPossiblyUnboxed = mono_class_is_valuetype(objClass) ? mono_object_unbox(obj) : obj;
 					auto const propValueBoxed = mono_property_get_value(prop, objPossiblyUnboxed, nullptr, nullptr);
 
-					if (leopph::IsTypePrimitive(propRefType)) {
+					if (leopph::gManagedRuntime.IsTypePrimitive(propRefType)) {
 						node[propName] = mono_string_to_utf8(mono_object_to_string(propValueBoxed, nullptr));
 					}
 					else if (mono_class_is_enum(propClass)) {
-						node[propName] = mono_string_to_utf8(mono_object_to_string(leopph::EnumToUnderlyingType(propRefType, propValueBoxed), nullptr));
+						node[propName] = mono_string_to_utf8(mono_object_to_string(leopph::gManagedRuntime.EnumToUnderlyingType(propRefType, propValueBoxed), nullptr));
 					}
 					else if (mono_class_is_valuetype(propClass)) {
 						auto dataNode = node[propName];
@@ -342,7 +344,7 @@ namespace leopph {
 	auto Behavior::Deserialize(YAML::Node const& node) -> void {
 		auto const classNs = node["classNameSpace"].as<std::string>();
 		auto const className = node["className"].as<std::string>();
-		auto const componentClass = mono_class_from_name(leopph::GetManagedImage(), classNs.c_str(), className.c_str());
+		auto const componentClass = mono_class_from_name(leopph::gManagedRuntime.GetManagedImage(), classNs.c_str(), className.c_str());
 		Init(componentClass);
 		auto const managedComponent = GetManagedObject();
 
@@ -357,15 +359,15 @@ namespace leopph {
 
 				if (auto const prop = mono_class_get_property_from_name(objClass, memberName.data())) {
 					auto const propType = mono_signature_get_return_type(mono_method_signature(mono_property_get_get_method(prop)));
-					auto const propRefType = mono_type_get_object(leopph::GetManagedDomain(), propType);
+					auto const propRefType = mono_type_get_object(leopph::gManagedRuntime.GetManagedDomain(), propType);
 					auto const propClass = mono_type_get_class(propType);
 					auto const objPossiblyUnboxed = mono_class_is_valuetype(objClass) ? mono_object_unbox(obj) : obj;
 					auto const propValueBoxed = mono_property_get_value(prop, objPossiblyUnboxed, nullptr, nullptr);
-					auto const refProp = mono_property_get_object(leopph::GetManagedDomain(), objClass, prop);
+					auto const refProp = mono_property_get_object(leopph::gManagedRuntime.GetManagedDomain(), objClass, prop);
 
-					if (leopph::IsTypePrimitive(propRefType)) {
+					if (leopph::gManagedRuntime.IsTypePrimitive(propRefType)) {
 						auto const memberValueStr = it->second.as<std::string>();
-						auto const parsedMemberValueBoxed = leopph::ParseValue(refProp, memberValueStr.c_str());
+						auto const parsedMemberValueBoxed = leopph::gManagedRuntime.ParseValue(refProp, memberValueStr.c_str());
 						if (!parsedMemberValueBoxed) {
 							std::cerr << std::format("Failed to deserialize property {}::{} on Behavior {}. Invalid data.", mono_type_get_name(mono_class_get_type(objClass)), memberName, GetGuid().ToString()) << std::endl;
 						}
@@ -376,7 +378,7 @@ namespace leopph {
 					}
 					else if (mono_class_is_enum(propClass)) {
 						auto const memberValueStr = it->second.as<std::string>();
-						auto const parsedMemberValueBoxed = leopph::ParseEnumValue(propRefType, memberValueStr.c_str());
+						auto const parsedMemberValueBoxed = leopph::gManagedRuntime.ParseEnumValue(propRefType, memberValueStr.c_str());
 						if (!parsedMemberValueBoxed) {
 							std::cerr << std::format("Failed to deserialize property {}::{} on Behavior {}. Invalid data.", mono_type_get_name(mono_class_get_type(objClass)), memberName, GetGuid().ToString()) << std::endl;
 						}
@@ -410,13 +412,13 @@ namespace leopph {
 				}
 				else if (auto const field = mono_class_get_field_from_name(objClass, memberName.data())) {
 					auto const fieldType = mono_field_get_type(field);
-					auto const fieldRefType = mono_type_get_object(leopph::GetManagedDomain(), fieldType);
+					auto const fieldRefType = mono_type_get_object(leopph::gManagedRuntime.GetManagedDomain(), fieldType);
 					auto const fieldClass = mono_type_get_class(fieldType);
-					auto const refField = mono_field_get_object(leopph::GetManagedDomain(), objClass, field);
+					auto const refField = mono_field_get_object(leopph::gManagedRuntime.GetManagedDomain(), objClass, field);
 
-					if (leopph::IsTypePrimitive(fieldRefType)) {
+					if (leopph::gManagedRuntime.IsTypePrimitive(fieldRefType)) {
 						auto const memberValueStr = it->second.as<std::string>();
-						auto const parsedMemberValueBoxed = leopph::ParseValue(refField, memberValueStr.c_str());
+						auto const parsedMemberValueBoxed = leopph::gManagedRuntime.ParseValue(refField, memberValueStr.c_str());
 						if (!parsedMemberValueBoxed) {
 							std::cerr << std::format("Failed to deserialize field {}::{} on Behavior {}. Invalid data.", mono_type_get_name(mono_class_get_type(objClass)), memberName, GetGuid().ToString()) << std::endl;
 						}
@@ -426,7 +428,7 @@ namespace leopph {
 					}
 					else if (mono_class_is_enum(fieldClass)) {
 						auto const memberValueStr = it->second.as<std::string>();
-						auto const parsedMemberValueBoxed = leopph::ParseEnumValue(fieldRefType, memberValueStr.c_str());
+						auto const parsedMemberValueBoxed = leopph::gManagedRuntime.ParseEnumValue(fieldRefType, memberValueStr.c_str());
 						if (!parsedMemberValueBoxed) {
 							std::cerr << std::format("Failed to deserialize field {}::{} on Behavior {}. Invalid data.", mono_type_get_name(mono_class_get_type(objClass)), memberName, GetGuid().ToString()) << std::endl;
 						}
@@ -435,7 +437,7 @@ namespace leopph {
 						}
 					}
 					else if (mono_class_is_valuetype(fieldClass)) {
-						auto const fieldValueBoxed = mono_field_get_value_object(leopph::GetManagedDomain(), field, obj);
+						auto const fieldValueBoxed = mono_field_get_value_object(leopph::gManagedRuntime.GetManagedDomain(), field, obj);
 						parseAndSetMembers(fieldValueBoxed, it->second);
 						mono_field_set_value(obj, field, mono_object_unbox(fieldValueBoxed));
 					}

@@ -8,39 +8,95 @@
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <d3d11.h>
+#include <dxgi1_6.h>
+#include <wrl/client.h>
 
 
-namespace leopph::rendering
+namespace leopph
 {
-	LEOPPHAPI auto InitRenderer(std::shared_ptr<Window> window) -> void;
-	LEOPPHAPI auto CleanupRenderer() noexcept -> void;
-	
-	LEOPPHAPI auto DrawCamera(Camera const* cam) -> void;
-	LEOPPHAPI auto DrawGame() -> void;
-	[[nodiscard]] LEOPPHAPI auto GetGameResolution() noexcept -> Extent2D<u32>;
-	LEOPPHAPI auto SetGameResolution(Extent2D<u32> resolution) noexcept -> void;
-	[[nodiscard]] LEOPPHAPI ID3D11ShaderResourceView* GetGameFrame();
-	[[nodiscard]] LEOPPHAPI f32 GetGameAspectRatio();
+	class Renderer {
+	private:
+		struct Resources {
+			Microsoft::WRL::ComPtr<ID3D11Device> device;
+			Microsoft::WRL::ComPtr<ID3D11DeviceContext> context;
 
-	LEOPPHAPI void BindAndClearSwapChain();
+			Microsoft::WRL::ComPtr<IDXGISwapChain1> swapChain;
+			Microsoft::WRL::ComPtr<ID3D11RenderTargetView> swapChainRtv;
+			Microsoft::WRL::ComPtr<ID3D11Texture2D> renderTexture;
+			Microsoft::WRL::ComPtr<ID3D11RenderTargetView> renderTextureRtv;
+			Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> renderTextureSrv;
 
-	LEOPPHAPI void Present();
+			Microsoft::WRL::ComPtr<ID3D11VertexShader> clearColorVs;
+			Microsoft::WRL::ComPtr<ID3D11PixelShader> clearColorPs;
+			Microsoft::WRL::ComPtr<ID3D11Buffer> clearColorCbuf;
 
-	[[nodiscard]] LEOPPHAPI u32 GetSyncInterval();
-	LEOPPHAPI void SetSyncInterval(u32 interval);
+			Microsoft::WRL::ComPtr<ID3D11VertexShader> cubeVertShader;
+			Microsoft::WRL::ComPtr<ID3D11PixelShader> cubePixShader;
 
-	LEOPPHAPI void RegisterCubeModel(CubeModel const* cubeModel);
-	LEOPPHAPI void UnregisterCubeModel(CubeModel const* cubeModel);
+			Microsoft::WRL::ComPtr<ID3D11Buffer> cubeVertBuf;
+			Microsoft::WRL::ComPtr<ID3D11Buffer> cubeInstBuf;
+			Microsoft::WRL::ComPtr<ID3D11Buffer> cubeIndBuf;
+			Microsoft::WRL::ComPtr<ID3D11InputLayout> cubeIa;
+			Microsoft::WRL::ComPtr<ID3D11Buffer> cbuffer;
+			Microsoft::WRL::ComPtr<ID3D11Buffer> lightBuffer;
 
-	[[nodiscard]] LEOPPHAPI ID3D11Device* GetDevice();
-	[[nodiscard]] LEOPPHAPI ID3D11DeviceContext* GetImmediateContext();
+			Microsoft::WRL::ComPtr<ID3D11InputLayout> quadIa;
+			Microsoft::WRL::ComPtr<ID3D11Buffer> quadVertBuf;
+			Microsoft::WRL::ComPtr<ID3D11Buffer> quadIndBuf;
+		};
 
-	LEOPPHAPI auto RegisterDirLight(DirectionalLight const* dirLight) -> void;
-	LEOPPHAPI auto UnregisterDirLight(DirectionalLight const* dirLight) -> void;
+		void RecreateRenderTextureAndViews(u32 width, u32 height);
+		static auto on_window_resize(Renderer* self, Extent2D<u32> size) -> void;
 
-	LEOPPHAPI auto RegisterSpotLight(SpotLight const* spotLight) -> void;
-	LEOPPHAPI auto UnregisterSpotLight(SpotLight const* spotLight) -> void;
+		Resources* mResources{ nullptr };
+		UINT mPresentFlags{ 0 };
+		UINT mSwapChainFlags{ 0 };
+		Extent2D<u32> mGameRes;
+		f32 mGameAspect;
+		UINT mInstanceBufferElementCapacity;
+		u32 mSyncInterval{ 0 };
+		std::vector<CubeModel const*> mCubeModels;
+		std::vector<DirectionalLight const*> mDirLights;
+		std::vector<SpotLight const*> mSpotLights;
+		std::vector<PointLight const*> mPointLights;
 
-	LEOPPHAPI auto RegisterPointLight(PointLight const* pointLight) -> void;
-	LEOPPHAPI auto UnregisterPointLight(PointLight const* pointLight) -> void;
+	public:
+		Renderer() noexcept = default;
+		~Renderer() noexcept = default;
+
+		LEOPPHAPI auto StartUp() -> void;
+		LEOPPHAPI auto ShutDown() noexcept -> void;
+
+		LEOPPHAPI auto DrawCamera(Camera const* cam) -> void;
+		LEOPPHAPI auto DrawGame() -> void;
+
+		[[nodiscard]] LEOPPHAPI auto GetGameResolution() const noexcept -> Extent2D<u32>;
+		LEOPPHAPI auto SetGameResolution(Extent2D<u32> resolution) noexcept -> void;
+
+		[[nodiscard]] LEOPPHAPI auto GetGameFrame() const noexcept -> ID3D11ShaderResourceView*;
+
+		[[nodiscard]] LEOPPHAPI auto GetGameAspectRatio() const noexcept -> f32;
+
+		LEOPPHAPI auto BindAndClearSwapChain() const noexcept -> void;
+
+		LEOPPHAPI auto Present() const noexcept -> void;
+
+		[[nodiscard]] LEOPPHAPI auto GetSyncInterval() const noexcept -> u32;
+		LEOPPHAPI auto SetSyncInterval(u32 interval) noexcept -> void;
+
+		LEOPPHAPI auto RegisterCubeModel(CubeModel const* cubeModel) -> void;
+		LEOPPHAPI auto UnregisterCubeModel(CubeModel const* cubeModel) -> void;
+
+		[[nodiscard]] LEOPPHAPI auto GetDevice() const noexcept -> ID3D11Device*;
+		[[nodiscard]] LEOPPHAPI auto GetImmediateContext() const noexcept -> ID3D11DeviceContext*;
+
+		LEOPPHAPI auto RegisterDirLight(DirectionalLight const* dirLight) -> void;
+		LEOPPHAPI auto UnregisterDirLight(DirectionalLight const* dirLight) -> void;
+
+		LEOPPHAPI auto RegisterSpotLight(SpotLight const* spotLight) -> void;
+		LEOPPHAPI auto UnregisterSpotLight(SpotLight const* spotLight) -> void;
+
+		LEOPPHAPI auto RegisterPointLight(PointLight const* pointLight) -> void;
+		LEOPPHAPI auto UnregisterPointLight(PointLight const* pointLight) -> void;
+	};
 }

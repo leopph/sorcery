@@ -11,6 +11,7 @@
 #include <OnGui.hpp>
 #include <Scene.hpp>
 #include <SceneManager.hpp>
+#include <Systems.hpp>
 
 #include <imgui.h>
 #include <misc/cpp/imgui_stdlib.h>
@@ -93,17 +94,16 @@ namespace {
 
 int WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ HINSTANCE, [[maybe_unused]] _In_ wchar_t*, [[maybe_unused]] _In_ int) {
 	try {
-		auto const window{ std::make_shared<leopph::Window>() };
-		window->SetBorderless(false);
-		window->SetWindowedClientAreaSize({ 1280, 720 });
-		window->SetIgnoreManagedRequests(true);
+		leopph::gWindow.StartUp();
+		leopph::gRenderer.StartUp();
+		leopph::gManagedRuntime.StartUp();
 
-		leopph::rendering::InitRenderer(window);
+		leopph::gWindow.SetBorderless(false);
+		leopph::gWindow.SetWindowedClientAreaSize({ 1280, 720 });
+		leopph::gWindow.SetIgnoreManagedRequests(true);
 
-		leopph::rendering::SetGameResolution({ 960, 540 });
-		leopph::rendering::SetSyncInterval(1);
-
-		leopph::initialize_managed_runtime(window);
+		leopph::gRenderer.SetGameResolution({ 960, 540 });
+		leopph::gRenderer.SetSyncInterval(1);
 
 		ImGui::CreateContext();
 		auto& io = ImGui::GetIO();
@@ -116,18 +116,18 @@ int WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ H
 
 		ImGui::StyleColorsDark();
 
-		ImGui_ImplWin32_Init(window->GetHandle());
-		ImGui_ImplDX11_Init(leopph::rendering::GetDevice(), leopph::rendering::GetImmediateContext());
+		ImGui_ImplWin32_Init(leopph::gWindow.GetHandle());
+		ImGui_ImplDX11_Init(leopph::gRenderer.GetDevice(), leopph::gRenderer.GetImmediateContext());
 
-		window->SetEventHook(EditorImGuiEventHook);
+		leopph::gWindow.SetEventHook(EditorImGuiEventHook);
 
 		bool runGame{ false };
 		bool showDemoWindow{ false };
 
 		leopph::init_time();
 
-		while (!window->IsQuitSignaled()) {
-			window->ProcessEvents();
+		while (!leopph::gWindow.IsQuitSignaled()) {
+			leopph::gWindow.ProcessEvents();
 
 			if (runGame) {
 				leopph::init_behaviors();
@@ -136,10 +136,10 @@ int WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ H
 
 				if (leopph::GetKeyDown(leopph::Key::Escape)) {
 					runGame = false;
-					window->SetEventHook(EditorImGuiEventHook);
-					window->SetCursorConfinement(false);
-					window->SetCursorHiding(false);
-					leopph::rendering::SetSyncInterval(1);
+					leopph::gWindow.SetEventHook(EditorImGuiEventHook);
+					leopph::gWindow.SetCursorConfinement(false);
+					leopph::gWindow.SetCursorHiding(false);
+					leopph::gRenderer.SetSyncInterval(1);
 					CloseCurrentScene();
 					leopph::editor::DeserializeScene(gSerializedSceneBackup);
 				}
@@ -147,8 +147,8 @@ int WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ H
 			else {
 				if (leopph::GetKeyDown(leopph::Key::F5)) {
 					runGame = true;
-					window->SetEventHook({});
-					leopph::rendering::SetSyncInterval(0);
+					leopph::gWindow.SetEventHook({});
+					leopph::gRenderer.SetSyncInterval(0);
 					gSerializedSceneBackup = leopph::editor::SerializeScene();
 				}
 			}
@@ -333,7 +333,7 @@ int WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ H
 					ImGui::Button(addNewComponentLabel);
 
 					if (ImGui::BeginPopupContextItem(nullptr, ImGuiPopupFlags_MouseButtonLeft)) {
-						for (auto const& componentClass : leopph::GetComponentClasses()) {
+						for (auto const& componentClass : leopph::gManagedRuntime.GetComponentClasses()) {
 							auto const componentName = mono_class_get_name(componentClass);
 							if (ImGui::MenuItem(componentName)) {
 								entity->CreateComponent(componentClass);
@@ -356,24 +356,24 @@ int WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ H
 			if (ImGui::Begin("Game", nullptr, ImGuiWindowFlags_NoCollapse)) {
 				ImGui::PopStyleVar();
 
-				leopph::Extent2D<leopph::u32> const resolutions[]{ {960, 540}, {1280, 720}, {1600, 900}, {1920, 1080}, {2560, 1440}, {3840, 2160} };
+				leopph::Extent2D<leopph::u32> constexpr resolutions[]{ {960, 540}, {1280, 720}, {1600, 900}, {1920, 1080}, {2560, 1440}, {3840, 2160} };
 				char const* const resolutionLabels[]{ "Auto", "960x540", "1280x720", "1600x900", "1920x1080", "2560x1440", "3840x2160" };
 				static int selectedRes = 0;
 
 				if (ImGui::Combo("Resolution", &selectedRes, resolutionLabels, 7)) {
 					if (selectedRes != 0) {
-						leopph::rendering::SetGameResolution(resolutions[selectedRes - 1]);
+						leopph::gRenderer.SetGameResolution(resolutions[selectedRes - 1]);
 					}
 				}
 
-				auto const gameRes = leopph::rendering::GetGameResolution();
+				auto const gameRes = leopph::gRenderer.GetGameResolution();
 				auto const contentRegionSize = ImGui::GetContentRegionAvail();
 				leopph::Extent2D<leopph::u32> const viewportRes{ static_cast<leopph::u32>(contentRegionSize.x), static_cast<leopph::u32>(contentRegionSize.y) };
 				ImVec2 frameDisplaySize;
 
 				if (selectedRes == 0) {
 					if (viewportRes.width != gameRes.width || viewportRes.height != gameRes.height) {
-						leopph::rendering::SetGameResolution(viewportRes);
+						leopph::gRenderer.SetGameResolution(viewportRes);
 					}
 
 					frameDisplaySize = contentRegionSize;
@@ -383,8 +383,8 @@ int WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ H
 					frameDisplaySize = ImVec2(gameRes.width * scale, gameRes.height * scale);
 				}
 
-				leopph::rendering::DrawGame();
-				ImGui::Image(reinterpret_cast<void*>(leopph::rendering::GetGameFrame()), frameDisplaySize);
+				leopph::gRenderer.DrawGame();
+				ImGui::Image(reinterpret_cast<void*>(leopph::gRenderer.GetGameFrame()), frameDisplaySize);
 			}
 			else {
 				ImGui::PopStyleVar();
@@ -412,9 +412,9 @@ int WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ H
 
 			ImGui::Render();
 
-			leopph::rendering::BindAndClearSwapChain();
+			leopph::gRenderer.BindAndClearSwapChain();
 			ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-			leopph::rendering::Present();
+			leopph::gRenderer.Present();
 
 			leopph::measure_time();
 		}
@@ -424,12 +424,14 @@ int WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ H
 		ImGui_ImplDX11_Shutdown();
 		ImGui_ImplWin32_Shutdown();
 		ImGui::DestroyContext();
-		leopph::cleanup_managed_runtime();
-		leopph::rendering::CleanupRenderer();
 		return 0;
 	}
 	catch (std::exception const& ex) {
 		leopph::DisplayError(ex.what());
-		return -1;
 	}
+
+	leopph::gManagedRuntime.ShutDown();
+	leopph::gRenderer.ShutDown();
+	leopph::gWindow.ShutDown();
+	return 0;
 }

@@ -2,6 +2,7 @@
 
 #include "Platform.hpp"
 #include "Entity.hpp"
+#include "Systems.hpp"
 
 #ifdef NDEBUG
 #include "shaders/cinclude/BlinnPhongVertShadBin.h"
@@ -16,10 +17,6 @@
 #endif
 
 #include <DirectXMath.h>
-#include <dxgi1_2.h>
-#include <dxgi1_5.h>
-
-#include <wrl/client.h>
 
 #include <cassert>
 #include <functional>
@@ -28,7 +25,7 @@
 using Microsoft::WRL::ComPtr;
 
 
-namespace leopph::rendering {
+namespace leopph {
 	struct LightData {
 		Vector3 color;
 		f32 intensity;
@@ -46,36 +43,6 @@ namespace leopph::rendering {
 	struct CubeInstanceData {
 		DirectX::XMFLOAT4X4 modelMat;
 		DirectX::XMFLOAT3X3 normalMat;
-	};
-
-
-	struct Resources {
-		ComPtr<ID3D11Device> device;
-		ComPtr<ID3D11DeviceContext> context;
-
-		ComPtr<IDXGISwapChain1> swapChain;
-		ComPtr<ID3D11RenderTargetView> swapChainRtv;
-		ComPtr<ID3D11Texture2D> renderTexture;
-		ComPtr<ID3D11RenderTargetView> renderTextureRtv;
-		ComPtr<ID3D11ShaderResourceView> renderTextureSrv;
-
-		ComPtr<ID3D11VertexShader> clearColorVs;
-		ComPtr<ID3D11PixelShader> clearColorPs;
-		ComPtr<ID3D11Buffer> clearColorCbuf;
-
-		ComPtr<ID3D11VertexShader> cubeVertShader;
-		ComPtr<ID3D11PixelShader> cubePixShader;
-
-		ComPtr<ID3D11Buffer> cubeVertBuf;
-		ComPtr<ID3D11Buffer> cubeInstBuf;
-		ComPtr<ID3D11Buffer> cubeIndBuf;
-		ComPtr<ID3D11InputLayout> cubeIa;
-		ComPtr<ID3D11Buffer> cbuffer;
-		ComPtr<ID3D11Buffer> lightBuffer;
-
-		ComPtr<ID3D11InputLayout> quadIa;
-		ComPtr<ID3D11Buffer> quadVertBuf;
-		ComPtr<ID3D11Buffer> quadIndBuf;
 	};
 
 
@@ -135,91 +102,80 @@ namespace leopph::rendering {
 			6, 3, 15,
 			15, 18, 6
 		};
-
-		Resources* gResources{ nullptr };
-		UINT gPresentFlags{ 0 };
-		UINT gSwapChainFlags{ 0 };
-		Extent2D<u32> gGameRes;
-		f32 gGameAspect;
-		UINT gInstanceBufferElementCapacity;
-		u32 gSyncInterval{ 0 };
-		std::vector<CubeModel const*> gCubeModels;
-		std::vector<DirectionalLight const*> gDirLights;
-		std::vector<SpotLight const*> gSpotLights;
-		std::vector<PointLight const*> gPointLights;
-
-
-		void RecreateRenderTextureAndViews(u32 const width, u32 const height) {
-			D3D11_TEXTURE2D_DESC const texDesc
-			{
-				.Width = width,
-				.Height = height,
-				.MipLevels = 1,
-				.ArraySize = 1,
-				.Format = DXGI_FORMAT_R8G8B8A8_UNORM,
-				.SampleDesc
-				{
-					.Count = 1,
-					.Quality = 0
-				},
-				.Usage = D3D11_USAGE_DEFAULT,
-				.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE,
-				.CPUAccessFlags = 0,
-				.MiscFlags = 0
-			};
-
-			auto hresult = gResources->device->CreateTexture2D(&texDesc, nullptr, gResources->renderTexture.ReleaseAndGetAddressOf());
-			assert(SUCCEEDED(hresult));
-
-			D3D11_RENDER_TARGET_VIEW_DESC const rtvDesc
-			{
-				.Format = texDesc.Format,
-				.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D,
-				.Texture2D
-				{
-					.MipSlice = 0
-				}
-			};
-
-			hresult = gResources->device->CreateRenderTargetView(gResources->renderTexture.Get(), &rtvDesc, gResources->renderTextureRtv.ReleaseAndGetAddressOf());
-			assert(SUCCEEDED(hresult));
-
-			D3D11_SHADER_RESOURCE_VIEW_DESC const srvDesc
-			{
-				.Format = texDesc.Format,
-				.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D,
-				.Texture2D =
-				{
-					.MostDetailedMip = 0,
-					.MipLevels = 1
-				}
-			};
-
-			hresult = gResources->device->CreateShaderResourceView(gResources->renderTexture.Get(), &srvDesc, gResources->renderTextureSrv.ReleaseAndGetAddressOf());
-			assert(SUCCEEDED(hresult));
-		}
-
-
-		void on_window_resize(Extent2D<u32> const size) {
-			if (size.width == 0 || size.height == 0) {
-				return;
-			}
-
-			gResources->swapChainRtv.Reset();
-			gResources->swapChain->ResizeBuffers(0, 0, 0, DXGI_FORMAT_UNKNOWN, gSwapChainFlags);
-
-			ComPtr<ID3D11Texture2D> backBuf;
-			HRESULT hresult = gResources->swapChain->GetBuffer(0, __uuidof(decltype(backBuf)::InterfaceType), reinterpret_cast<void**>(backBuf.GetAddressOf()));
-			assert(SUCCEEDED(hresult));
-
-			hresult = gResources->device->CreateRenderTargetView(backBuf.Get(), nullptr, gResources->swapChainRtv.GetAddressOf());
-			assert(SUCCEEDED(hresult));
-		}
 	}
 
 
-	auto InitRenderer(std::shared_ptr<Window> window) -> void {
-		gResources = new Resources{};
+	void Renderer::RecreateRenderTextureAndViews(u32 const width, u32 const height) {
+		D3D11_TEXTURE2D_DESC const texDesc
+		{
+			.Width = width,
+			.Height = height,
+			.MipLevels = 1,
+			.ArraySize = 1,
+			.Format = DXGI_FORMAT_R8G8B8A8_UNORM,
+			.SampleDesc
+			{
+				.Count = 1,
+				.Quality = 0
+			},
+			.Usage = D3D11_USAGE_DEFAULT,
+			.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE,
+			.CPUAccessFlags = 0,
+			.MiscFlags = 0
+		};
+
+		auto hresult = mResources->device->CreateTexture2D(&texDesc, nullptr, mResources->renderTexture.ReleaseAndGetAddressOf());
+		assert(SUCCEEDED(hresult));
+
+		D3D11_RENDER_TARGET_VIEW_DESC const rtvDesc
+		{
+			.Format = texDesc.Format,
+			.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D,
+			.Texture2D
+			{
+				.MipSlice = 0
+			}
+		};
+
+		hresult = mResources->device->CreateRenderTargetView(mResources->renderTexture.Get(), &rtvDesc, mResources->renderTextureRtv.ReleaseAndGetAddressOf());
+		assert(SUCCEEDED(hresult));
+
+		D3D11_SHADER_RESOURCE_VIEW_DESC const srvDesc
+		{
+			.Format = texDesc.Format,
+			.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D,
+			.Texture2D =
+			{
+				.MostDetailedMip = 0,
+				.MipLevels = 1
+			}
+		};
+
+		hresult = mResources->device->CreateShaderResourceView(mResources->renderTexture.Get(), &srvDesc, mResources->renderTextureSrv.ReleaseAndGetAddressOf());
+		assert(SUCCEEDED(hresult));
+	}
+
+
+	void Renderer::on_window_resize(Renderer* const self, Extent2D<u32> const size) {
+		if (size.width == 0 || size.height == 0) {
+			return;
+		}
+
+		self->mResources->swapChainRtv.Reset();
+		self->mResources->swapChain->ResizeBuffers(0, 0, 0, DXGI_FORMAT_UNKNOWN, self->mSwapChainFlags);
+
+		ComPtr<ID3D11Texture2D> backBuf;
+		HRESULT hresult = self->mResources->swapChain->GetBuffer(0, __uuidof(decltype(backBuf)::InterfaceType), reinterpret_cast<void**>(backBuf.GetAddressOf()));
+		assert(SUCCEEDED(hresult));
+
+		hresult = self->mResources->device->CreateRenderTargetView(backBuf.Get(), nullptr, self->mResources->swapChainRtv.GetAddressOf());
+		assert(SUCCEEDED(hresult));
+	}
+
+
+
+	auto Renderer::StartUp() -> void {
+		mResources = new Resources{};
 
 #ifdef NDEBUG
 		UINT constexpr deviceCreationFlags = 0;
@@ -229,7 +185,7 @@ namespace leopph::rendering {
 
 		D3D_FEATURE_LEVEL constexpr requestedFeatureLevels[]{ D3D_FEATURE_LEVEL_11_0 };
 
-		HRESULT hresult = D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, deviceCreationFlags, requestedFeatureLevels, 1, D3D11_SDK_VERSION, gResources->device.GetAddressOf(), nullptr, gResources->context.GetAddressOf());
+		HRESULT hresult = D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, deviceCreationFlags, requestedFeatureLevels, 1, D3D11_SDK_VERSION, mResources->device.GetAddressOf(), nullptr, mResources->context.GetAddressOf());
 
 		if (FAILED(hresult)) {
 			throw std::runtime_error{ "Failed to create D3D device." };
@@ -237,17 +193,17 @@ namespace leopph::rendering {
 
 #ifndef NDEBUG
 		ComPtr<ID3D11Debug> d3dDebug;
-		hresult = gResources->device.As(&d3dDebug);
+		hresult = mResources->device.As(&d3dDebug);
 
 		if (FAILED(hresult)) {
-			throw std::runtime_error{"Failed to get ID3D11Debug interface."};
+			throw std::runtime_error{ "Failed to get ID3D11Debug interface." };
 		}
 
 		ComPtr<ID3D11InfoQueue> d3dInfoQueue;
 		hresult = d3dDebug.As<ID3D11InfoQueue>(&d3dInfoQueue);
 
 		if (FAILED(hresult)) {
-			throw std::runtime_error{"Failed to get ID3D11InfoQueue interface."};
+			throw std::runtime_error{ "Failed to get ID3D11InfoQueue interface." };
 		}
 
 		d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_CORRUPTION, true);
@@ -255,24 +211,24 @@ namespace leopph::rendering {
 #endif
 
 		ComPtr<IDXGIDevice> dxgiDevice;
-		hresult = gResources->device.As(&dxgiDevice);
+		hresult = mResources->device.As(&dxgiDevice);
 
 		if (FAILED(hresult)) {
-			throw std::runtime_error{"Failed to query IDXGIDevice interface."};
+			throw std::runtime_error{ "Failed to query IDXGIDevice interface." };
 		}
 
 		ComPtr<IDXGIAdapter> dxgiAdapter;
 		hresult = dxgiDevice->GetAdapter(dxgiAdapter.GetAddressOf());
 
 		if (FAILED(hresult)) {
-			throw std::runtime_error{"Failed to get IDXGIAdapter."};
+			throw std::runtime_error{ "Failed to get IDXGIAdapter." };
 		}
 
 		ComPtr<IDXGIFactory2> dxgiFactory2;
 		hresult = dxgiAdapter->GetParent(__uuidof(decltype(dxgiFactory2)::InterfaceType), reinterpret_cast<void**>(dxgiFactory2.GetAddressOf()));
 
 		if (FAILED(hresult)) {
-			throw std::runtime_error{"Failed to query IDXGIFactory2 interface."};
+			throw std::runtime_error{ "Failed to query IDXGIFactory2 interface." };
 		}
 
 		ComPtr<IDXGIFactory5> dxgiFactory5;
@@ -283,8 +239,8 @@ namespace leopph::rendering {
 			dxgiFactory5->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &allowTearing, sizeof allowTearing);
 
 			if (allowTearing) {
-				gSwapChainFlags |= DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
-				gPresentFlags |= DXGI_PRESENT_ALLOW_TEARING;
+				mSwapChainFlags |= DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
+				mPresentFlags |= DXGI_PRESENT_ALLOW_TEARING;
 			}
 		}
 
@@ -304,42 +260,42 @@ namespace leopph::rendering {
 			.Scaling = DXGI_SCALING_NONE,
 			.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD,
 			.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED,
-			.Flags = gSwapChainFlags
+			.Flags = mSwapChainFlags
 		};
 
-		hresult = dxgiFactory2->CreateSwapChainForHwnd(gResources->device.Get(), window->GetHandle(), &swapChainDesc1, nullptr, nullptr, gResources->swapChain.GetAddressOf());
+		hresult = dxgiFactory2->CreateSwapChainForHwnd(mResources->device.Get(), gWindow.GetHandle(), &swapChainDesc1, nullptr, nullptr, mResources->swapChain.GetAddressOf());
 
 		if (FAILED(hresult)) {
-			throw std::runtime_error{"Failed to create swapchain."};
+			throw std::runtime_error{ "Failed to create swapchain." };
 		}
 
-		dxgiFactory2->MakeWindowAssociation(window->GetHandle(), DXGI_MWA_NO_WINDOW_CHANGES);
+		dxgiFactory2->MakeWindowAssociation(gWindow.GetHandle(), DXGI_MWA_NO_WINDOW_CHANGES);
 
-		RecreateRenderTextureAndViews(window->GetCurrentClientAreaSize().width, window->GetCurrentClientAreaSize().height);
+		RecreateRenderTextureAndViews(gWindow.GetCurrentClientAreaSize().width, gWindow.GetCurrentClientAreaSize().height);
 
 		ComPtr<ID3D11Texture2D> backBuf;
-		hresult = gResources->swapChain->GetBuffer(0, __uuidof(decltype(backBuf)::InterfaceType), reinterpret_cast<void**>(backBuf.GetAddressOf()));
+		hresult = mResources->swapChain->GetBuffer(0, __uuidof(decltype(backBuf)::InterfaceType), reinterpret_cast<void**>(backBuf.GetAddressOf()));
 
 		if (FAILED(hresult)) {
-			throw std::runtime_error{"Failed to get backbuffer."};
+			throw std::runtime_error{ "Failed to get backbuffer." };
 		}
 
-		hresult = gResources->device->CreateRenderTargetView(backBuf.Get(), nullptr, gResources->swapChainRtv.GetAddressOf());
+		hresult = mResources->device->CreateRenderTargetView(backBuf.Get(), nullptr, mResources->swapChainRtv.GetAddressOf());
 
 		if (FAILED(hresult)) {
-			throw std::runtime_error{"Failed to create backbuffer RTV."};
+			throw std::runtime_error{ "Failed to create backbuffer RTV." };
 		}
 
-		hresult = gResources->device->CreateVertexShader(gBlinnPhongVertShadBin, ARRAYSIZE(gBlinnPhongVertShadBin), nullptr, gResources->cubeVertShader.GetAddressOf());
+		hresult = mResources->device->CreateVertexShader(gBlinnPhongVertShadBin, ARRAYSIZE(gBlinnPhongVertShadBin), nullptr, mResources->cubeVertShader.GetAddressOf());
 
 		if (FAILED(hresult)) {
-			throw std::runtime_error{"Failed to create cube vertex shader."};
+			throw std::runtime_error{ "Failed to create cube vertex shader." };
 		}
 
-		hresult = gResources->device->CreatePixelShader(gBlinnPhongPixShadBin, ARRAYSIZE(gBlinnPhongPixShadBin), nullptr, gResources->cubePixShader.GetAddressOf());
+		hresult = mResources->device->CreatePixelShader(gBlinnPhongPixShadBin, ARRAYSIZE(gBlinnPhongPixShadBin), nullptr, mResources->cubePixShader.GetAddressOf());
 
 		if (FAILED(hresult)) {
-			throw std::runtime_error{"Failed to create cube pixel shader."};
+			throw std::runtime_error{ "Failed to create cube pixel shader." };
 		}
 
 		D3D11_INPUT_ELEMENT_DESC constexpr cubeInputElementsDescs[]
@@ -427,13 +383,13 @@ namespace leopph::rendering {
 			}
 		};
 
-		hresult = gResources->device->CreateInputLayout(cubeInputElementsDescs, ARRAYSIZE(cubeInputElementsDescs), gBlinnPhongVertShadBin, ARRAYSIZE(gBlinnPhongVertShadBin), gResources->cubeIa.GetAddressOf());
+		hresult = mResources->device->CreateInputLayout(cubeInputElementsDescs, ARRAYSIZE(cubeInputElementsDescs), gBlinnPhongVertShadBin, ARRAYSIZE(gBlinnPhongVertShadBin), mResources->cubeIa.GetAddressOf());
 
 		if (FAILED(hresult)) {
-			throw std::runtime_error{"Failed to create cube input layout."};
+			throw std::runtime_error{ "Failed to create cube input layout." };
 		}
 
-		gResources->context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		mResources->context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 		D3D11_BUFFER_DESC constexpr cubeVertBufDesc
 		{
@@ -452,10 +408,10 @@ namespace leopph::rendering {
 			.SysMemSlicePitch = 0
 		};
 
-		hresult = gResources->device->CreateBuffer(&cubeVertBufDesc, &cubeVertBufInitData, gResources->cubeVertBuf.GetAddressOf());
+		hresult = mResources->device->CreateBuffer(&cubeVertBufDesc, &cubeVertBufInitData, mResources->cubeVertBuf.GetAddressOf());
 
 		if (FAILED(hresult)) {
-			throw std::runtime_error{"Failed to create cube vertex buffer."};
+			throw std::runtime_error{ "Failed to create cube vertex buffer." };
 		}
 
 		D3D11_BUFFER_DESC const cubeInstBufDesc
@@ -468,10 +424,10 @@ namespace leopph::rendering {
 			.StructureByteStride = 0
 		};
 
-		hresult = gResources->device->CreateBuffer(&cubeInstBufDesc, nullptr, gResources->cubeInstBuf.GetAddressOf());
+		hresult = mResources->device->CreateBuffer(&cubeInstBufDesc, nullptr, mResources->cubeInstBuf.GetAddressOf());
 
 		if (FAILED(hresult)) {
-			throw std::runtime_error{"Failed to create cube instance buffer."};
+			throw std::runtime_error{ "Failed to create cube instance buffer." };
 		}
 
 		D3D11_BUFFER_DESC constexpr cubeIndBufDesc
@@ -491,10 +447,10 @@ namespace leopph::rendering {
 			.SysMemSlicePitch = 0
 		};
 
-		hresult = gResources->device->CreateBuffer(&cubeIndBufDesc, &cubeIndBufInitData, gResources->cubeIndBuf.GetAddressOf());
+		hresult = mResources->device->CreateBuffer(&cubeIndBufDesc, &cubeIndBufInitData, mResources->cubeIndBuf.GetAddressOf());
 
 		if (FAILED(hresult)) {
-			throw std::runtime_error{"Failed to create cube index buffer."};
+			throw std::runtime_error{ "Failed to create cube index buffer." };
 		}
 
 		D3D11_BUFFER_DESC constexpr cbufferDesc
@@ -507,10 +463,10 @@ namespace leopph::rendering {
 			.StructureByteStride = 0
 		};
 
-		hresult = gResources->device->CreateBuffer(&cbufferDesc, nullptr, gResources->cbuffer.GetAddressOf());
+		hresult = mResources->device->CreateBuffer(&cbufferDesc, nullptr, mResources->cbuffer.GetAddressOf());
 
 		if (FAILED(hresult)) {
-			throw std::runtime_error{"Failed to create cube constant buffer."};
+			throw std::runtime_error{ "Failed to create cube constant buffer." };
 		}
 
 		D3D11_BUFFER_DESC constexpr lightBufferDesc{
@@ -522,10 +478,10 @@ namespace leopph::rendering {
 			.StructureByteStride = 0
 		};
 
-		hresult = gResources->device->CreateBuffer(&lightBufferDesc, nullptr, gResources->lightBuffer.GetAddressOf());
+		hresult = mResources->device->CreateBuffer(&lightBufferDesc, nullptr, mResources->lightBuffer.GetAddressOf());
 
 		if (FAILED(hresult)) {
-			throw std::runtime_error{"Failed to create light constant buffer."};
+			throw std::runtime_error{ "Failed to create light constant buffer." };
 		}
 
 		D3D11_RASTERIZER_DESC constexpr rasterizerDesc
@@ -543,18 +499,18 @@ namespace leopph::rendering {
 		};
 
 		ComPtr<ID3D11RasterizerState> rasterizerState;
-		hresult = gResources->device->CreateRasterizerState(&rasterizerDesc, rasterizerState.GetAddressOf());
+		hresult = mResources->device->CreateRasterizerState(&rasterizerDesc, rasterizerState.GetAddressOf());
 
 		if (FAILED(hresult)) {
-			throw std::runtime_error{"Failed to create rasterizer state."};
+			throw std::runtime_error{ "Failed to create rasterizer state." };
 		}
 
-		gResources->context->RSSetState(rasterizerState.Get());
+		mResources->context->RSSetState(rasterizerState.Get());
 
-		gGameRes = window->GetCurrentClientAreaSize();
-		gGameAspect = static_cast<f32>(gGameRes.width) / static_cast<f32>(gGameRes.height);
+		mGameRes = gWindow.GetCurrentClientAreaSize();
+		mGameAspect = static_cast<f32>(mGameRes.width) / static_cast<f32>(mGameRes.height);
 
-		window->OnWindowSize.add_handler(&on_window_resize);
+		gWindow.OnWindowSize.add_handler(this, &on_window_resize);
 
 		D3D11_BUFFER_DESC const quadVertBufDesc{
 			.ByteWidth = sizeof(QUAD_VERTICES),
@@ -564,10 +520,10 @@ namespace leopph::rendering {
 		D3D11_SUBRESOURCE_DATA const quadVertBufInitData{
 			.pSysMem = QUAD_VERTICES
 		};
-		hresult = gResources->device->CreateBuffer(&quadVertBufDesc, &quadVertBufInitData, gResources->quadVertBuf.GetAddressOf());
+		hresult = mResources->device->CreateBuffer(&quadVertBufDesc, &quadVertBufInitData, mResources->quadVertBuf.GetAddressOf());
 
 		if (FAILED(hresult)) {
-			throw std::runtime_error{"Failed to create quad vertex buffer."};
+			throw std::runtime_error{ "Failed to create quad vertex buffer." };
 		}
 
 		D3D11_INPUT_ELEMENT_DESC const quadInputDesc{
@@ -580,10 +536,10 @@ namespace leopph::rendering {
 			.InstanceDataStepRate = 0,
 		};
 
-		hresult = gResources->device->CreateInputLayout(&quadInputDesc, 1, gClearColorVsBin, ARRAYSIZE(gClearColorVsBin), gResources->quadIa.GetAddressOf());
+		hresult = mResources->device->CreateInputLayout(&quadInputDesc, 1, gClearColorVsBin, ARRAYSIZE(gClearColorVsBin), mResources->quadIa.GetAddressOf());
 
 		if (FAILED(hresult)) {
-			throw std::runtime_error{"Failed to create quad IA."};
+			throw std::runtime_error{ "Failed to create quad IA." };
 		}
 
 		D3D11_BUFFER_DESC const quadIndBufDesc{
@@ -596,10 +552,10 @@ namespace leopph::rendering {
 			.pSysMem = QUAD_INDICES
 		};
 
-		hresult = gResources->device->CreateBuffer(&quadIndBufDesc, &quadIndBufInitData, gResources->quadIndBuf.GetAddressOf());
+		hresult = mResources->device->CreateBuffer(&quadIndBufDesc, &quadIndBufInitData, mResources->quadIndBuf.GetAddressOf());
 
 		if (FAILED(hresult)) {
-			throw std::runtime_error{"Failed to create quad index buffer."};
+			throw std::runtime_error{ "Failed to create quad index buffer." };
 		}
 
 
@@ -610,61 +566,62 @@ namespace leopph::rendering {
 			.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
 		};
 
-		hresult = gResources->device->CreateBuffer(&clearColorCbufDesc, nullptr, gResources->clearColorCbuf.GetAddressOf());
+		hresult = mResources->device->CreateBuffer(&clearColorCbufDesc, nullptr, mResources->clearColorCbuf.GetAddressOf());
 
 		if (FAILED(hresult)) {
-			throw std::runtime_error{"Failed to create clear color cbuf."};
+			throw std::runtime_error{ "Failed to create clear color cbuf." };
 		}
 
-		hresult = gResources->device->CreateVertexShader(gClearColorVsBin, ARRAYSIZE(gClearColorVsBin), nullptr, gResources->clearColorVs.GetAddressOf());
+		hresult = mResources->device->CreateVertexShader(gClearColorVsBin, ARRAYSIZE(gClearColorVsBin), nullptr, mResources->clearColorVs.GetAddressOf());
 
 		if (FAILED(hresult)) {
-			throw std::runtime_error{"Failed to create clear color VS."};
+			throw std::runtime_error{ "Failed to create clear color VS." };
 		}
 
-		hresult = gResources->device->CreatePixelShader(gClearColorPsBin, ARRAYSIZE(gClearColorPsBin), nullptr, gResources->clearColorPs.GetAddressOf());
+		hresult = mResources->device->CreatePixelShader(gClearColorPsBin, ARRAYSIZE(gClearColorPsBin), nullptr, mResources->clearColorPs.GetAddressOf());
 
 		if (FAILED(hresult)) {
-			throw std::runtime_error{"Failed to create clear color PS."};
+			throw std::runtime_error{ "Failed to create clear color PS." };
 		}
 	}
 
 
-	void CleanupRenderer() noexcept {
-		delete gResources;
+	auto Renderer::ShutDown() noexcept -> void {
+		delete mResources;
+		mResources = nullptr;
 	}
 
 
-	auto DrawCamera(Camera const* const cam) -> void {
-		if (gCubeModels.empty()) {
+	auto Renderer::DrawCamera(Camera const* const cam) -> void {
+		if (mCubeModels.empty()) {
 			return;
 		}
 
 		auto const& camViewport{ cam->GetViewport() };
 		D3D11_VIEWPORT const viewport{
-			.TopLeftX = static_cast<FLOAT>(gGameRes.width) * camViewport.position.x,
-			.TopLeftY = static_cast<FLOAT>(gGameRes.height) * camViewport.position.y,
-			.Width = static_cast<FLOAT>(gGameRes.width) * camViewport.extent.width,
-			.Height = static_cast<FLOAT>(gGameRes.height) * camViewport.extent.height,
+			.TopLeftX = static_cast<FLOAT>(mGameRes.width) * camViewport.position.x,
+			.TopLeftY = static_cast<FLOAT>(mGameRes.height) * camViewport.position.y,
+			.Width = static_cast<FLOAT>(mGameRes.width) * camViewport.extent.width,
+			.Height = static_cast<FLOAT>(mGameRes.height) * camViewport.extent.height,
 			.MinDepth = 0,
 			.MaxDepth = 1
 		};
 
-		gResources->context->RSSetViewports(1, &viewport);
+		mResources->context->RSSetViewports(1, &viewport);
 
 		D3D11_MAPPED_SUBRESOURCE mappedClearColorCbuf;
-		gResources->context->Map(gResources->clearColorCbuf.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedClearColorCbuf);
+		mResources->context->Map(mResources->clearColorCbuf.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedClearColorCbuf);
 		std::memcpy(mappedClearColorCbuf.pData, cam->GetBackgroundColor().get_data(), 16);
-		gResources->context->Unmap(gResources->clearColorCbuf.Get(), 0);
+		mResources->context->Unmap(mResources->clearColorCbuf.Get(), 0);
 
-		gResources->context->IASetInputLayout(gResources->quadIa.Get());
-		gResources->context->IASetVertexBuffers(0, 1, gResources->quadVertBuf.GetAddressOf(), &QUAD_VERT_BUF_STRIDE, &QUAD_VERT_BUF_OFFSET);
-		gResources->context->IASetIndexBuffer(gResources->quadIndBuf.Get(), DXGI_FORMAT_R32_UINT, 0);
-		gResources->context->VSSetShader(gResources->clearColorVs.Get(), nullptr, 0);
-		gResources->context->PSSetShader(gResources->clearColorPs.Get(), nullptr, 0);
-		gResources->context->PSSetConstantBuffers(0, 1, gResources->clearColorCbuf.GetAddressOf());
-		gResources->context->OMSetRenderTargets(1, gResources->renderTextureRtv.GetAddressOf(), nullptr);
-		gResources->context->DrawIndexed(ARRAYSIZE(QUAD_INDICES), 0, 0);
+		mResources->context->IASetInputLayout(mResources->quadIa.Get());
+		mResources->context->IASetVertexBuffers(0, 1, mResources->quadVertBuf.GetAddressOf(), &QUAD_VERT_BUF_STRIDE, &QUAD_VERT_BUF_OFFSET);
+		mResources->context->IASetIndexBuffer(mResources->quadIndBuf.Get(), DXGI_FORMAT_R32_UINT, 0);
+		mResources->context->VSSetShader(mResources->clearColorVs.Get(), nullptr, 0);
+		mResources->context->PSSetShader(mResources->clearColorPs.Get(), nullptr, 0);
+		mResources->context->PSSetConstantBuffers(0, 1, mResources->clearColorCbuf.GetAddressOf());
+		mResources->context->OMSetRenderTargets(1, mResources->renderTextureRtv.GetAddressOf(), nullptr);
+		mResources->context->DrawIndexed(ARRAYSIZE(QUAD_INDICES), 0, 0);
 
 		DirectX::XMFLOAT3 const camPos{ cam->GetTransform().GetWorldPosition().get_data() };
 		DirectX::XMFLOAT3 const camForward{ cam->GetTransform().GetForwardAxis().get_data() };
@@ -674,37 +631,37 @@ namespace leopph::rendering {
 
 		if (cam->GetType() == Camera::Type::Perspective) {
 			auto const fovHorizRad = DirectX::XMConvertToRadians(cam->GetPerspectiveFov());
-			auto const fovVertRad = 2.0f * std::atanf(std::tanf(fovHorizRad / 2.0f) / gGameAspect);
-			projMat = DirectX::XMMatrixPerspectiveFovLH(fovVertRad, gGameAspect, cam->GetNearClipPlane(), cam->GetFarClipPlane());
+			auto const fovVertRad = 2.0f * std::atanf(std::tanf(fovHorizRad / 2.0f) / mGameAspect);
+			projMat = DirectX::XMMatrixPerspectiveFovLH(fovVertRad, mGameAspect, cam->GetNearClipPlane(), cam->GetFarClipPlane());
 		}
 		else {
-			projMat = DirectX::XMMatrixOrthographicLH(cam->GetOrthographicSize(), cam->GetOrthographicSize() / gGameAspect, cam->GetNearClipPlane(), cam->GetFarClipPlane());
+			projMat = DirectX::XMMatrixOrthographicLH(cam->GetOrthographicSize(), cam->GetOrthographicSize() / mGameAspect, cam->GetNearClipPlane(), cam->GetFarClipPlane());
 		}
 
 		D3D11_MAPPED_SUBRESOURCE mappedCbuffer;
-		gResources->context->Map(gResources->cbuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedCbuffer);
+		mResources->context->Map(mResources->cbuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedCbuffer);
 
 		DirectX::XMStoreFloat4x4(static_cast<DirectX::XMFLOAT4X4*>(mappedCbuffer.pData), viewMat * projMat);
-		gResources->context->Unmap(gResources->cbuffer.Get(), 0);
+		mResources->context->Unmap(mResources->cbuffer.Get(), 0);
 
 		D3D11_MAPPED_SUBRESOURCE mappedLightBuffer;
-		gResources->context->Map(gResources->lightBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedLightBuffer);
+		mResources->context->Map(mResources->lightBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedLightBuffer);
 		auto const lightBufferData{ static_cast<LightBufferData*>(mappedLightBuffer.pData) };
-		lightBufferData->calcDirLight = !gDirLights.empty();
-		if (!gDirLights.empty()) {
-			lightBufferData->dirLightData.color = gDirLights[0]->GetColor();
-			lightBufferData->dirLightData.direction = gDirLights[0]->get_direction();
-			lightBufferData->dirLightData.intensity = gDirLights[0]->GetIntensity();
+		lightBufferData->calcDirLight = !mDirLights.empty();
+		if (!mDirLights.empty()) {
+			lightBufferData->dirLightData.color = mDirLights[0]->GetColor();
+			lightBufferData->dirLightData.direction = mDirLights[0]->get_direction();
+			lightBufferData->dirLightData.intensity = mDirLights[0]->GetIntensity();
 		}
-		gResources->context->Unmap(gResources->lightBuffer.Get(), 0);
+		mResources->context->Unmap(mResources->lightBuffer.Get(), 0);
 
 
-		if (gCubeModels.size() > gInstanceBufferElementCapacity) {
-			gInstanceBufferElementCapacity = static_cast<UINT>(gCubeModels.size());
+		if (mCubeModels.size() > mInstanceBufferElementCapacity) {
+			mInstanceBufferElementCapacity = static_cast<UINT>(mCubeModels.size());
 
 			D3D11_BUFFER_DESC const desc
 			{
-				.ByteWidth = gInstanceBufferElementCapacity * sizeof(CubeInstanceData),
+				.ByteWidth = mInstanceBufferElementCapacity * sizeof(CubeInstanceData),
 				.Usage = D3D11_USAGE_DYNAMIC,
 				.BindFlags = D3D11_BIND_VERTEX_BUFFER,
 				.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
@@ -712,126 +669,126 @@ namespace leopph::rendering {
 				.StructureByteStride = 0
 			};
 
-			if (auto const hresult = gResources->device->CreateBuffer(&desc, nullptr, gResources->cubeInstBuf.ReleaseAndGetAddressOf()); FAILED(hresult)) {
-				throw std::runtime_error{"Failed to resize cube instance buffer."};
+			if (auto const hresult = mResources->device->CreateBuffer(&desc, nullptr, mResources->cubeInstBuf.ReleaseAndGetAddressOf()); FAILED(hresult)) {
+				throw std::runtime_error{ "Failed to resize cube instance buffer." };
 			}
 		}
 
 		D3D11_MAPPED_SUBRESOURCE mappedCubeInstBuf;
-		gResources->context->Map(gResources->cubeInstBuf.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedCubeInstBuf);
+		mResources->context->Map(mResources->cubeInstBuf.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedCubeInstBuf);
 		auto const mappedInstBufData{ static_cast<CubeInstanceData*>(mappedCubeInstBuf.pData) };
-		for (std::size_t i = 0; i < gCubeModels.size(); i++) {
-			mappedInstBufData[i].modelMat = DirectX::XMFLOAT4X4{ gCubeModels[i]->GetTransform().GetModelMatrix().get_data() };
-			mappedInstBufData[i].normalMat = DirectX::XMFLOAT3X3{ gCubeModels[i]->GetTransform().GetNormalMatrix().get_data() };
+		for (std::size_t i = 0; i < mCubeModels.size(); i++) {
+			mappedInstBufData[i].modelMat = DirectX::XMFLOAT4X4{ mCubeModels[i]->GetTransform().GetModelMatrix().get_data() };
+			mappedInstBufData[i].normalMat = DirectX::XMFLOAT3X3{ mCubeModels[i]->GetTransform().GetNormalMatrix().get_data() };
 		}
-		gResources->context->Unmap(gResources->cubeInstBuf.Get(), 0);
+		mResources->context->Unmap(mResources->cubeInstBuf.Get(), 0);
 
-		ID3D11Buffer* cubeVertBufs[]{ gResources->cubeVertBuf.Get(), gResources->cubeInstBuf.Get() };
+		ID3D11Buffer* cubeVertBufs[]{ mResources->cubeVertBuf.Get(), mResources->cubeInstBuf.Get() };
 		UINT cubeVertStrides[]{ 6 * sizeof(float), 25 * sizeof(float) };
 		UINT cubeVertOffsets[]{ 0, 0 };
-		gResources->context->IASetVertexBuffers(0, 2, cubeVertBufs, cubeVertStrides, cubeVertOffsets);
-		gResources->context->IASetIndexBuffer(gResources->cubeIndBuf.Get(), DXGI_FORMAT_R32_UINT, 0);
-		gResources->context->IASetInputLayout(gResources->cubeIa.Get());
-		gResources->context->VSSetShader(gResources->cubeVertShader.Get(), nullptr, 0);
-		gResources->context->VSSetConstantBuffers(0, 1, gResources->cbuffer.GetAddressOf());
-		gResources->context->PSSetShader(gResources->cubePixShader.Get(), nullptr, 0);
-		gResources->context->PSSetConstantBuffers(0, 1, gResources->lightBuffer.GetAddressOf());
-		gResources->context->DrawIndexedInstanced(ARRAYSIZE(CUBE_INDICES), static_cast<UINT>(gCubeModels.size()), 0, 0, 0);
+		mResources->context->IASetVertexBuffers(0, 2, cubeVertBufs, cubeVertStrides, cubeVertOffsets);
+		mResources->context->IASetIndexBuffer(mResources->cubeIndBuf.Get(), DXGI_FORMAT_R32_UINT, 0);
+		mResources->context->IASetInputLayout(mResources->cubeIa.Get());
+		mResources->context->VSSetShader(mResources->cubeVertShader.Get(), nullptr, 0);
+		mResources->context->VSSetConstantBuffers(0, 1, mResources->cbuffer.GetAddressOf());
+		mResources->context->PSSetShader(mResources->cubePixShader.Get(), nullptr, 0);
+		mResources->context->PSSetConstantBuffers(0, 1, mResources->lightBuffer.GetAddressOf());
+		mResources->context->DrawIndexedInstanced(ARRAYSIZE(CUBE_INDICES), static_cast<UINT>(mCubeModels.size()), 0, 0, 0);
 	}
 
 
-	auto DrawGame() -> void {
+	auto Renderer::DrawGame() -> void {
 		for (auto const* const cam : Camera::GetAllInstances()) {
 			DrawCamera(cam);
 		}
 	}
 
 
-	Extent2D<u32> GetGameResolution() noexcept {
-		return gGameRes;
+	auto Renderer::GetGameResolution() const noexcept -> Extent2D<u32> {
+		return mGameRes;
 	}
 
 
-	void SetGameResolution(Extent2D<u32> resolution) noexcept {
-		gGameRes = resolution;
-		gGameAspect = static_cast<f32>(resolution.width) / static_cast<f32>(resolution.height);
-		RecreateRenderTextureAndViews(gGameRes.width, gGameRes.height);
+	auto Renderer::SetGameResolution(Extent2D<u32> resolution) noexcept -> void {
+		mGameRes = resolution;
+		mGameAspect = static_cast<f32>(resolution.width) / static_cast<f32>(resolution.height);
+		RecreateRenderTextureAndViews(mGameRes.width, mGameRes.height);
 	}
 
 
-	ID3D11ShaderResourceView* GetGameFrame() {
-		return gResources->renderTextureSrv.Get();
+	auto Renderer::GetGameFrame() const noexcept -> ID3D11ShaderResourceView* {
+		return mResources->renderTextureSrv.Get();
 	}
 
 
-	f32 GetGameAspectRatio() {
-		return gGameAspect;
+	auto Renderer::GetGameAspectRatio() const noexcept -> f32 {
+		return mGameAspect;
 	}
 
 
-	void BindAndClearSwapChain() {
+	auto Renderer::BindAndClearSwapChain() const noexcept -> void {
 		FLOAT clearColor[]{ 0, 0, 0, 1 };
-		gResources->context->ClearRenderTargetView(gResources->swapChainRtv.Get(), clearColor);
-		gResources->context->OMSetRenderTargets(1, gResources->swapChainRtv.GetAddressOf(), nullptr);
+		mResources->context->ClearRenderTargetView(mResources->swapChainRtv.Get(), clearColor);
+		mResources->context->OMSetRenderTargets(1, mResources->swapChainRtv.GetAddressOf(), nullptr);
 	}
 
 
-	void Present() {
-		gResources->swapChain->Present(gSyncInterval, gSyncInterval ? gPresentFlags & ~DXGI_PRESENT_ALLOW_TEARING : gPresentFlags);
+	auto Renderer::Present() const noexcept -> void {
+		mResources->swapChain->Present(mSyncInterval, mSyncInterval ? mPresentFlags & ~DXGI_PRESENT_ALLOW_TEARING : mPresentFlags);
 	}
 
 
-	u32 GetSyncInterval() {
-		return gSyncInterval;
+	auto Renderer::GetSyncInterval() const noexcept -> u32{
+		return mSyncInterval;
 	}
 
 
-	void SetSyncInterval(u32 const interval) {
-		gSyncInterval = interval;
+	auto Renderer::SetSyncInterval(u32 const interval) noexcept -> void {
+		mSyncInterval = interval;
 	}
 
 
-	void RegisterCubeModel(CubeModel const* const cubeModel) {
-		gCubeModels.emplace_back(cubeModel);
+	auto Renderer::RegisterCubeModel(CubeModel const* const cubeModel) -> void {
+		mCubeModels.emplace_back(cubeModel);
 	}
 
 
-	void UnregisterCubeModel(CubeModel const* const cubeModel) {
-		std::erase(gCubeModels, cubeModel);
+	auto Renderer::UnregisterCubeModel(CubeModel const* const cubeModel) -> void {
+		std::erase(mCubeModels, cubeModel);
 	}
 
 
-	ID3D11Device* GetDevice() {
-		return gResources->device.Get();
+	auto Renderer::GetDevice() const noexcept -> ID3D11Device*{
+		return mResources->device.Get();
 	}
 
 
-	ID3D11DeviceContext* GetImmediateContext() {
-		return gResources->context.Get();
+	auto Renderer::GetImmediateContext() const noexcept -> ID3D11DeviceContext* {
+		return mResources->context.Get();
 	}
 
 
-	auto RegisterDirLight(DirectionalLight const* dirLight) -> void {
-		gDirLights.emplace_back(dirLight);
+	auto Renderer::RegisterDirLight(DirectionalLight const* dirLight) -> void {
+		mDirLights.emplace_back(dirLight);
 	}
 
-	auto UnregisterDirLight(DirectionalLight const* dirLight) -> void {
-		std::erase(gDirLights, dirLight);
+	auto Renderer::UnregisterDirLight(DirectionalLight const* dirLight) -> void {
+		std::erase(mDirLights, dirLight);
 	}
 
-	auto RegisterSpotLight(SpotLight const* spotLight) -> void {
-		gSpotLights.emplace_back(spotLight);
+	auto Renderer::RegisterSpotLight(SpotLight const* spotLight) -> void {
+		mSpotLights.emplace_back(spotLight);
 	}
 
-	auto UnregisterSpotLight(SpotLight const* spotLight) -> void {
-		std::erase(gSpotLights, spotLight);
+	auto Renderer::UnregisterSpotLight(SpotLight const* spotLight) -> void {
+		std::erase(mSpotLights, spotLight);
 	}
 
-	auto RegisterPointLight(PointLight const* pointLight) -> void {
-		gPointLights.emplace_back(pointLight);
+	auto Renderer::RegisterPointLight(PointLight const* pointLight) -> void {
+		mPointLights.emplace_back(pointLight);
 	}
 
-	auto UnregisterPointLight(PointLight const* pointLight) -> void {
-		std::erase(gPointLights, pointLight);
+	auto Renderer::UnregisterPointLight(PointLight const* pointLight) -> void {
+		std::erase(mPointLights, pointLight);
 	}
 }

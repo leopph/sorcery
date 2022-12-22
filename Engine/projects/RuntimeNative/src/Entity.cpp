@@ -10,6 +10,8 @@
 
 #include <functional>
 
+#include "Systems.hpp"
+
 
 namespace leopph {
 	namespace {
@@ -88,7 +90,7 @@ namespace leopph {
 
 	auto Entity::CreateComponent(MonoClass* const componentClass) -> Component*
 	{
-		if (mono_class_is_subclass_of(componentClass, mono_class_from_name(GetManagedImage(), "leopph", "Behavior"), false)) {
+		if (mono_class_is_subclass_of(componentClass, mono_class_from_name(gManagedRuntime.GetManagedImage(), "leopph", "Behavior"), false)) {
 			auto behavior{ std::make_unique<Behavior>(componentClass) };
 			behavior->CreateManagedObject(componentClass);
 			auto const ret{ behavior.get()};

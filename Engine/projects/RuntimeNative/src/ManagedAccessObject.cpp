@@ -1,6 +1,7 @@
 #include "ManagedAccessObject.hpp"
 
 #include "ManagedRuntime.hpp"
+#include "Systems.hpp"
 
 #include <mono/metadata/mono-gc.h>
 #include <mono/metadata/object.h>
@@ -30,7 +31,7 @@ namespace leopph
 			return mono_gchandle_get_target(*mGcHandle);
 		}
 
-		auto const object = mono_object_new(GetManagedDomain(), klass);
+		auto const object = mono_object_new(gManagedRuntime.GetManagedDomain(), klass);
 		SetManagedObject(object);
 		return object;
 	}
@@ -38,7 +39,7 @@ namespace leopph
 
 	MonoObject* ManagedAccessObject::CreateManagedObject(std::string_view const classNamespace, std::string_view const className)
 	{
-		return CreateManagedObject(mono_class_from_name(GetManagedImage(), classNamespace.data(), className.data()));
+		return CreateManagedObject(mono_class_from_name(gManagedRuntime.GetManagedImage(), classNamespace.data(), className.data()));
 	}
 
 

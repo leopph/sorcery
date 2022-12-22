@@ -9,6 +9,7 @@
 #include <string_view>
 #include <type_traits>
 #include <utility>
+#include <tuple>
 
 
 namespace leopph {
@@ -85,8 +86,8 @@ namespace leopph {
 	}
 
 
-	template<auto& Obj, auto MemberFunc, typename ...Args>
-	auto Call(Args&&... args) noexcept(std::is_nothrow_invocable_v<decltype(MemberFunc), Args...>) {
+	template<auto& Obj, auto MemberFunc, typename... Args>
+	auto Call(Args&&... args) noexcept(std::is_nothrow_invocable_v<decltype(MemberFunc), decltype(Obj), Args...>) {
 		return (Obj.*MemberFunc)(std::forward<Args>(args)...);
 	}
 }

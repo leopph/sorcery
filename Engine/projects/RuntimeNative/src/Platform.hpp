@@ -28,7 +28,7 @@ namespace leopph {
 		DWORD constexpr static WND_BORDLERLESS_STYLE{ WS_POPUP };
 		HCURSOR const inline static DEFAULT_CURSOR{ LoadCursorW(nullptr, IDC_ARROW) };
 
-		std::unique_ptr < std::remove_pointer_t<HWND>, decltype([](HWND const hwnd) { DestroyWindow(hwnd); }) > mHwnd{ nullptr };
+		HWND mHwnd{ nullptr };
 		bool mQuitSignaled{ false };
 		DWORD mCurrentStyle{ WND_BORDLERLESS_STYLE };
 		bool mMinimizeOnBorderlessFocusLoss{ false };
@@ -46,11 +46,15 @@ namespace leopph {
 		bool mIgnoreManagedRequests{ false };
 
 	public:
+		Window() noexcept = default;
+		~Window() noexcept = default;
+
+		LEOPPHAPI auto StartUp() -> void;
+		LEOPPHAPI auto ShutDown() noexcept -> void;
+
 		GuardedEventReference<Extent2D<u32>> OnWindowSize{ mOnSizeEvent };
 		GuardedEventReference<> OnWindowFocusGain{ mOnFocusGainEvent };
 		GuardedEventReference<> OnWindowFocusLoss{ mOnFocusLossEvent };
-
-		LEOPPHAPI Window();
 
 		LEOPPHAPI auto ProcessEvents() -> void;
 
@@ -97,38 +101,38 @@ namespace leopph {
 
 
 	namespace managedbindings {
-		template<Window const& WindowInstance>
+		template<Window const& Instance>
 		auto IsWindowBorderLess() noexcept -> int {
-			return WindowInstance.IsBorderless();
+			return Instance.IsBorderless();
 		}
 
 
-		template<Window& WindowInstance>
+		template<Window& Instance>
 		auto SetWindowBorderless(int const borderless) noexcept -> void {
-			if (!WindowInstance.IsIgnoringManagedRequests()) {
-				WindowInstance.SetBorderless(borderless);
+			if (!Instance.IsIgnoringManagedRequests()) {
+				Instance.SetBorderless(borderless);
 			}
 		}
 
 
-		template<Window const& WindowInstance>
+		template<Window const& Instance>
 		auto IsWindowMinimizingOnBorderlessFocusLoss() noexcept -> int {
-			return WindowInstance.IsMinimizingOnBorderlessFocusLoss();
+			return Instance.IsMinimizingOnBorderlessFocusLoss();
 		}
 
 
-		template<Window& WindowInstance>
+		template<Window& Instance>
 		auto SetWindowMinimizeOnBorderlessFocusLoss(int const minimize) noexcept -> void {
-			if (!WindowInstance.IsIgnoringManagedRequests()) {
-				WindowInstance.SetWindowMinimizeOnBorderlessFocusLoss(minimize);
+			if (!Instance.IsIgnoringManagedRequests()) {
+				Instance.SetWindowMinimizeOnBorderlessFocusLoss(minimize);
 			}
 		}
 
 
-		template<Window& WindowInstance>
+		template<Window& Instance>
 		auto SetWindowQuitSignal(int const quit) noexcept -> void {
-			if (!WindowInstance.IsIgnoringManagedRequests()) {
-				WindowInstance.SetQuitSignal(quit);
+			if (!Instance.IsIgnoringManagedRequests()) {
+				Instance.SetQuitSignal(quit);
 			}
 		}
 	}

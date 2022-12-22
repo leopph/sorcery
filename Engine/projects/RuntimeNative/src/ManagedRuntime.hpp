@@ -1,10 +1,10 @@
 #pragma once
 
 #include "Core.hpp"
-#include "Platform.hpp"
 
 #include <span>
 #include <string_view>
+#include <vector>
 
 using MonoImage = struct _MonoImage;
 using MonoDomain = struct _MonoDomain;
@@ -18,19 +18,40 @@ using MonoArray = struct _MonoArray;
 using MonoReflectionType = struct _MonoReflectionType;
 using MonoType = struct _MonoType;
 
-namespace leopph
-{
-	LEOPPHAPI auto initialize_managed_runtime(std::shared_ptr<Window> window) -> void;
-	LEOPPHAPI void cleanup_managed_runtime();	
-	[[nodiscard]] LEOPPHAPI MonoImage* GetManagedImage();
-	[[nodiscard]] LEOPPHAPI MonoDomain* GetManagedDomain();
-	[[nodiscard]] LEOPPHAPI bool ShouldSerialize(MonoReflectionField* field);
-	[[nodiscard]] LEOPPHAPI bool ShouldSerialize(MonoReflectionProperty* prop);
-	[[nodiscard]] LEOPPHAPI MonoArray* GetEnumValues(MonoReflectionType* enumType);
-	[[nodiscard]] LEOPPHAPI std::span<MonoClass* const> GetComponentClasses();
-	[[nodiscard]] LEOPPHAPI bool IsTypePrimitive(MonoReflectionType* refType);
-	[[nodiscard]] LEOPPHAPI MonoObject* ParseValue(MonoReflectionField* field, std::string_view str);
-	[[nodiscard]] LEOPPHAPI MonoObject* ParseValue(MonoReflectionProperty* property, std::string_view str);
-	[[nodiscard]] LEOPPHAPI MonoObject* EnumToUnderlyingType(MonoReflectionType* enumType, MonoObject* enumValue);
-	[[nodiscard]] LEOPPHAPI MonoObject* ParseEnumValue(MonoReflectionType* enumType, std::string_view str);
+namespace leopph {
+	class ManagedRuntime {
+	private:
+		MonoDomain* mDomain;
+		MonoImage* mImage;
+
+		std::vector<MonoClass*> mComponentClasses;
+
+		MonoMethod* mFieldSerializeTestMethod;
+		MonoMethod* mPropertySerializeTestMethod;
+		MonoMethod* mGetEnumValuesMethod;
+		MonoMethod* mPrimitiveTestMethod;
+		MonoMethod* mParsePropertyValueMethod;
+		MonoMethod* mParseFieldValueMethod;
+		MonoMethod* mEnumToUnderlyingValueMethod;
+		MonoMethod* mParseEnumValueMethod;
+
+	public:
+		ManagedRuntime() noexcept = default;
+		~ManagedRuntime() noexcept = default;
+
+		LEOPPHAPI auto StartUp() -> void;
+		LEOPPHAPI auto ShutDown() noexcept -> void;
+
+		[[nodiscard]] LEOPPHAPI auto GetManagedImage() const -> MonoImage*;
+		[[nodiscard]] LEOPPHAPI auto GetManagedDomain() const -> MonoDomain*;
+		[[nodiscard]] LEOPPHAPI auto ShouldSerialize(MonoReflectionField* field) const -> bool;
+		[[nodiscard]] LEOPPHAPI auto ShouldSerialize(MonoReflectionProperty* prop) const -> bool;
+		[[nodiscard]] LEOPPHAPI auto GetEnumValues(MonoReflectionType* enumType) const -> MonoArray*;
+		[[nodiscard]] LEOPPHAPI auto GetComponentClasses() -> std::span<MonoClass* const>;
+		[[nodiscard]] LEOPPHAPI auto IsTypePrimitive(MonoReflectionType* refType) const -> bool;
+		[[nodiscard]] LEOPPHAPI auto ParseValue(MonoReflectionField* field, std::string_view str) const -> MonoObject*;
+		[[nodiscard]] LEOPPHAPI auto ParseValue(MonoReflectionProperty* property, std::string_view str) const -> MonoObject*;
+		[[nodiscard]] LEOPPHAPI auto EnumToUnderlyingType(MonoReflectionType* enumType, MonoObject* enumValue) const -> MonoObject*;
+		[[nodiscard]] LEOPPHAPI auto ParseEnumValue(MonoReflectionType* enumType, std::string_view str) const -> MonoObject*;
+	};
 }

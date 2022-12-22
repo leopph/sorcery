@@ -129,6 +129,7 @@
     <ClCompile Include="src\Time.cpp" />
     <ClCompile Include="src\Platform.cpp" />
     <ClCompile Include="src\Util.cpp" />
+    <ClCompile Include="src\Systems.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\AABB.hpp" />
@@ -154,6 +155,7 @@
     <ClInclude Include="src\Util.hpp" />
     <ClInclude Include="src\Platform.hpp" />
     <ClInclude Include="src\YamlInclude.hpp" />
+    <ClInclude Include="src\Systems.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />

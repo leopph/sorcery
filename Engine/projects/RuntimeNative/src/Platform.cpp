@@ -8,7 +8,10 @@
 namespace leopph {
 	namespace {
 		enum class KeyState : u8 {
-			Neutral = 0, Down = 1, Held = 2, Up = 3
+			Neutral = 0,
+			Down = 1,
+			Held = 2,
+			Up = 3
 		};
 
 		KeyState mKeyboardState[256]{};
@@ -17,86 +20,80 @@ namespace leopph {
 
 	auto CALLBACK Window::WindowProc(HWND const hwnd, UINT const msg, WPARAM const wparam, LPARAM const lparam) noexcept -> LRESULT {
 		if (auto const instance{ reinterpret_cast<Window*>(GetWindowLongPtrW(hwnd, GWLP_USERDATA)) }; instance) {
-			if (instance->mEventHook && instance->mEventHook(hwnd, msg, wparam, lparam)) {
-				return true;
-			}
+			if (instance->mEventHook && instance->mEventHook(hwnd, msg, wparam, lparam)) { return true; }
 
 			switch (msg) {
-				case WM_CLOSE: {
-					instance->mQuitSignaled = true;
-					return 0;
-				}
+			case WM_CLOSE: {
+				instance->mQuitSignaled = true;
+				return 0;
+			}
 
-				case WM_SIZE: {
-					instance->mOnSizeEvent.invoke({ LOWORD(lparam), HIWORD(lparam) });
-					return 0;
-				}
+			case WM_SIZE: {
+				instance->mOnSizeEvent.invoke({ LOWORD(lparam), HIWORD(lparam) });
+				return 0;
+			}
 
-				case WM_SYSCOMMAND: {
-					if (wparam == SC_KEYMENU) {
-						return 0;
+			case WM_SYSCOMMAND: {
+				if (wparam == SC_KEYMENU) { return 0; }
+				break;
+			}
+
+			case WM_ACTIVATE: {
+				if (LOWORD(wparam) == WA_INACTIVE) {
+					if (instance->mBorderless && instance->mMinimizeOnBorderlessFocusLoss) { ShowWindow(hwnd, SW_MINIMIZE); }
+					instance->mInFocus = false;
+					instance->mOnFocusLossEvent.invoke();
+				}
+				else {
+					instance->mInFocus = true;
+					instance->mOnFocusGainEvent.invoke();
+				}
+				return 0;
+			}
+
+			case WM_INPUT: {
+				if (wparam == RIM_INPUT) {
+					UINT requiredSize;
+					GetRawInputData(reinterpret_cast<HRAWINPUT>(lparam), RID_INPUT, nullptr, &requiredSize, sizeof(RAWINPUTHEADER));
+
+					auto static bufferSize = requiredSize;
+					auto static buffer = std::make_unique_for_overwrite<BYTE[]>(requiredSize);
+
+					if (requiredSize > bufferSize) {
+						bufferSize = requiredSize;
+						buffer = std::make_unique_for_overwrite<BYTE[]>(requiredSize);
 					}
-					break;
-				}
 
-				case WM_ACTIVATE: {
-					if (LOWORD(wparam) == WA_INACTIVE) {
-						if (instance->mBorderless && instance->mMinimizeOnBorderlessFocusLoss) {
-							ShowWindow(hwnd, SW_MINIMIZE);
+					GetRawInputData(reinterpret_cast<HRAWINPUT>(lparam), RID_INPUT, buffer.get(), &bufferSize, sizeof(RAWINPUTHEADER));
+
+					if (auto const* const raw = reinterpret_cast<RAWINPUT*>(buffer.get()); raw->header.dwType == RIM_TYPEMOUSE) {
+						if (raw->data.mouse.usFlags == MOUSE_MOVE_RELATIVE) {
+							instance->mMouseDelta.x += raw->data.mouse.lLastX;
+							instance->mMouseDelta.y += raw->data.mouse.lLastY;
 						}
-						instance->mInFocus = false;
-						instance->mOnFocusLossEvent.invoke();
 					}
-					else {
-						instance->mInFocus = true;
-						instance->mOnFocusGainEvent.invoke();
-					}
-					return 0;
+
+					DefWindowProcW(hwnd, msg, wparam, lparam);
 				}
 
-				case WM_INPUT: {
-					if (wparam == RIM_INPUT) {
-						UINT requiredSize;
-						GetRawInputData(reinterpret_cast<HRAWINPUT>(lparam), RID_INPUT, nullptr, &requiredSize, sizeof(RAWINPUTHEADER));
+				return 0;
+			}
 
-						auto static bufferSize = requiredSize;
-						auto static buffer = std::make_unique_for_overwrite<BYTE[]>(requiredSize);
-
-						if (requiredSize > bufferSize) {
-							bufferSize = requiredSize;
-							buffer = std::make_unique_for_overwrite<BYTE[]>(requiredSize);
-						}
-
-						GetRawInputData(reinterpret_cast<HRAWINPUT>(lparam), RID_INPUT, buffer.get(), &bufferSize, sizeof(RAWINPUTHEADER));
-
-						if (auto const* const raw = reinterpret_cast<RAWINPUT*>(buffer.get()); raw->header.dwType == RIM_TYPEMOUSE) {
-							if (raw->data.mouse.usFlags == MOUSE_MOVE_RELATIVE) {
-								instance->mMouseDelta.x += raw->data.mouse.lLastX;
-								instance->mMouseDelta.y += raw->data.mouse.lLastY;
-							}
-						}
-
-						DefWindowProcW(hwnd, msg, wparam, lparam);
-					}
-
-					return 0;
+			case WM_MOUSEMOVE: {
+				if (instance->mInFocus && instance->mConfineCursor) {
+					RECT rect;
+					GetClientRect(hwnd, &rect);
+					POINT midPoint
+					{
+						.x = static_cast<LONG>(static_cast<float>(rect.right) / 2.0f),
+						.y = static_cast<LONG>(static_cast<float>(rect.bottom) / 2.0f),
+					};
+					ClientToScreen(hwnd, &midPoint);
+					SetCursorPos(midPoint.x, midPoint.y);
 				}
 
-				case WM_MOUSEMOVE: {
-					if (instance->mInFocus && instance->mConfineCursor) {
-						RECT rect;
-						GetClientRect(hwnd, &rect);
-						POINT midPoint
-						{
-							.x = static_cast<LONG>(static_cast<float>(rect.right) / 2.0f),
-							.y = static_cast<LONG>(static_cast<float>(rect.bottom) / 2.0f),
-						};
-						ClientToScreen(hwnd, &midPoint);
-						SetCursorPos(midPoint.x, midPoint.y);
-					}
-
-					SetCursor(instance->mHideCursor ? nullptr : DEFAULT_CURSOR);
-				}
+				SetCursor(instance->mHideCursor ? nullptr : DEFAULT_CURSOR);
+			}
 			}
 		}
 
@@ -114,11 +111,11 @@ namespace leopph {
 		};
 
 		AdjustWindowRect(&rect, mCurrentStyle, FALSE);
-		SetWindowPos(mHwnd.get(), nullptr, 0, 0, rect.right - rect.left, rect.bottom - rect.top, SWP_FRAMECHANGED);
+		SetWindowPos(mHwnd, nullptr, 0, 0, rect.right - rect.left, rect.bottom - rect.top, SWP_FRAMECHANGED);
 	}
 
 
-	Window::Window() {
+	auto Window::StartUp() -> void {
 		WNDCLASSEXW const wx
 		{
 			.cbSize = sizeof(WNDCLASSEXW),
@@ -127,31 +124,33 @@ namespace leopph {
 			.lpszClassName = WND_CLASS_NAME
 		};
 
-		if (!RegisterClassExW(&wx)) {
-			throw std::runtime_error{ "Failed to register window class." };
-		}
+		if (!RegisterClassExW(&wx)) { throw std::runtime_error{ "Failed to register window class." }; }
 
-		mHwnd.reset(CreateWindowExW(0, wx.lpszClassName, wx.lpszClassName, WND_BORDLERLESS_STYLE, 0, 0, GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN), nullptr, nullptr, wx.hInstance, nullptr));
+		mHwnd = CreateWindowExW(0, wx.lpszClassName, wx.lpszClassName, WND_BORDLERLESS_STYLE, 0, 0, GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN), nullptr, nullptr, wx.hInstance, nullptr);
 
-		if (!mHwnd) {
-			throw std::runtime_error{ "Failed to create window." };
-		}
+		if (!mHwnd) { throw std::runtime_error{ "Failed to create window." }; }
 
-		SetWindowLongPtrW(mHwnd.get(), GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
+		SetWindowLongPtrW(mHwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
 
 		RAWINPUTDEVICE const rid
 		{
 			.usUsagePage = HID_USAGE_PAGE_GENERIC,
 			.usUsage = HID_USAGE_GENERIC_MOUSE,
 			.dwFlags = 0,
-			.hwndTarget = mHwnd.get()
+			.hwndTarget = mHwnd
 		};
 
-		if (!RegisterRawInputDevices(&rid, 1, sizeof(RAWINPUTDEVICE))) {
-			throw std::runtime_error{ "Failed to register raw input devices." };
-		}
+		if (!RegisterRawInputDevices(&rid, 1, sizeof(RAWINPUTDEVICE))) { throw std::runtime_error{ "Failed to register raw input devices." }; }
 
-		ShowWindow(mHwnd.get(), SW_SHOWNORMAL);
+		ShowWindow(mHwnd, SW_SHOWNORMAL);
+	}
+
+
+	auto Window::ShutDown() noexcept -> void {
+		if (mHwnd) {
+			DestroyWindow(mHwnd);
+			mHwnd = nullptr;
+		}
 	}
 
 
@@ -160,7 +159,7 @@ namespace leopph {
 		mMouseDelta = { 0, 0 };
 
 		MSG msg;
-		while (PeekMessageW(&msg, mHwnd.get(), 0, 0, PM_REMOVE)) {
+		while (PeekMessageW(&msg, mHwnd, 0, 0, PM_REMOVE)) {
 			TranslateMessage(&msg);
 			DispatchMessageW(&msg);
 		}
@@ -171,175 +170,121 @@ namespace leopph {
 
 		BYTE newState[256];
 
-		if (!GetKeyboardState(newState)) {
-			throw std::runtime_error{ "Failed to get keyboard state." };
-		}
+		if (!GetKeyboardState(newState)) { throw std::runtime_error{ "Failed to get keyboard state." }; }
 
 		for (int i = 0; i < 256; i++) {
 			if (newState[i] & 0x80) {
-				if (mKeyboardState[i] == KeyState::Down) {
-					mKeyboardState[i] = KeyState::Held;
-				}
-				else if (mKeyboardState[i] != KeyState::Held) {
-					mKeyboardState[i] = KeyState::Down;
-				}
+				if (mKeyboardState[i] == KeyState::Down) { mKeyboardState[i] = KeyState::Held; }
+				else if (mKeyboardState[i] != KeyState::Held) { mKeyboardState[i] = KeyState::Down; }
 			}
 			else {
-				if (mKeyboardState[i] == KeyState::Up) {
-					mKeyboardState[i] = KeyState::Neutral;
-				}
-				else {
-					mKeyboardState[i] = KeyState::Up;
-				}
+				if (mKeyboardState[i] == KeyState::Up) { mKeyboardState[i] = KeyState::Neutral; }
+				else { mKeyboardState[i] = KeyState::Up; }
 			}
 		}
 	}
 
 
-	auto Window::GetHandle() const noexcept -> HWND {
-		return mHwnd.get();
-	}
+	auto Window::GetHandle() const noexcept -> HWND { return mHwnd; }
 
 
 	auto Window::GetCurrentClientAreaSize() const noexcept -> Extent2D<u32> {
 		RECT rect;
-		GetClientRect(mHwnd.get(), &rect);
+		GetClientRect(mHwnd, &rect);
 		return { static_cast<u32>(rect.right), static_cast<u32>(rect.bottom) };
 	}
 
 
-	auto Window::GetWindowedClientAreaSize() const noexcept -> Extent2D<u32> {
-		return mWindowedClientAreaSize;
-	}
+	auto Window::GetWindowedClientAreaSize() const noexcept -> Extent2D<u32> { return mWindowedClientAreaSize; }
 
 
 	auto Window::SetWindowedClientAreaSize(Extent2D<u32> const size) noexcept -> void {
 		mWindowedClientAreaSize = size;
 
-		if (!mBorderless) {
-			ApplyClientAreaSize();
-		}
+		if (!mBorderless) { ApplyClientAreaSize(); }
 	}
 
 
-	auto Window::IsBorderless() const noexcept -> bool {
-		return mBorderless;
-	}
+	auto Window::IsBorderless() const noexcept -> bool { return mBorderless; }
 
 
 	auto Window::SetBorderless(bool const borderless) noexcept -> void {
-		if (borderless == mBorderless) {
-			return;
-		}
+		if (borderless == mBorderless) { return; }
 
 		mBorderless = borderless;
 
 		if (mBorderless) {
-			SetWindowLongPtrW(mHwnd.get(), GWL_STYLE, WND_BORDLERLESS_STYLE | WS_VISIBLE);
-			SetWindowPos(mHwnd.get(), nullptr, 0, 0, GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN), SWP_FRAMECHANGED);
+			SetWindowLongPtrW(mHwnd, GWL_STYLE, WND_BORDLERLESS_STYLE | WS_VISIBLE);
+			SetWindowPos(mHwnd, nullptr, 0, 0, GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN), SWP_FRAMECHANGED);
 		}
 		else {
-			SetWindowLongPtrW(mHwnd.get(), GWL_STYLE, WND_WINDOWED_STYLE | WS_VISIBLE);
+			SetWindowLongPtrW(mHwnd, GWL_STYLE, WND_WINDOWED_STYLE | WS_VISIBLE);
 			ApplyClientAreaSize();
 		}
 	}
 
 
-	auto Window::IsMinimizingOnBorderlessFocusLoss() const noexcept -> bool {
-		return mMinimizeOnBorderlessFocusLoss;
-	}
+	auto Window::IsMinimizingOnBorderlessFocusLoss() const noexcept -> bool { return mMinimizeOnBorderlessFocusLoss; }
 
 
-	auto Window::SetWindowMinimizeOnBorderlessFocusLoss(bool const minimize) noexcept -> void {
-		mMinimizeOnBorderlessFocusLoss = minimize;
-	}
+	auto Window::SetWindowMinimizeOnBorderlessFocusLoss(bool const minimize) noexcept -> void { mMinimizeOnBorderlessFocusLoss = minimize; }
 
 
-	auto Window::IsQuitSignaled() const noexcept -> bool {
-		return mQuitSignaled;
-	}
+	auto Window::IsQuitSignaled() const noexcept -> bool { return mQuitSignaled; }
 
 
-	auto Window::SetQuitSignal(bool const quit) noexcept -> void {
-		mQuitSignaled = quit;
-	}
+	auto Window::SetQuitSignal(bool const quit) noexcept -> void { mQuitSignaled = quit; }
 
 
-	auto Window::IsCursorConfined() const noexcept -> bool {
-		return mConfineCursor;
-	}
+	auto Window::IsCursorConfined() const noexcept -> bool { return mConfineCursor; }
 
 
-	auto Window::SetCursorConfinement(bool const confine) noexcept -> void {
-		mConfineCursor = confine;
-	}
+	auto Window::SetCursorConfinement(bool const confine) noexcept -> void { mConfineCursor = confine; }
 
 
-	auto Window::IsCursorHidden() const noexcept -> bool {
-		return mHideCursor;
-	}
+	auto Window::IsCursorHidden() const noexcept -> bool { return mHideCursor; }
 
 
-	auto Window::SetCursorHiding(bool const hide) noexcept -> void {
-		mHideCursor = hide;
-	}
+	auto Window::SetCursorHiding(bool const hide) noexcept -> void { mHideCursor = hide; }
 
 
-	auto Window::SetEventHook(std::function<bool(HWND, UINT, WPARAM, LPARAM)> hook) noexcept -> void {
-		mEventHook = std::move(hook);
-	}
+	auto Window::SetEventHook(std::function<bool(HWND, UINT, WPARAM, LPARAM)> hook) noexcept -> void { mEventHook = std::move(hook); }
 
 
-	auto  Window::GetMousePosition() const noexcept -> Point2D<i32> {
-		return mMousePos;
-	}
+	auto Window::GetMousePosition() const noexcept -> Point2D<i32> { return mMousePos; }
 
 
-	auto  Window::GetMouseDelta() const noexcept -> Point2D<i32> {
-		return mMouseDelta;
-	}
+	auto Window::GetMouseDelta() const noexcept -> Point2D<i32> { return mMouseDelta; }
 
 
-	auto Window::IsIgnoringManagedRequests() const noexcept -> bool {
-		return mIgnoreManagedRequests;
-	}
+	auto Window::IsIgnoringManagedRequests() const noexcept -> bool { return mIgnoreManagedRequests; }
 
 
-	auto Window::SetIgnoreManagedRequests(bool const ignore) noexcept -> void {
-		mIgnoreManagedRequests = ignore;
-	}
+	auto Window::SetIgnoreManagedRequests(bool const ignore) noexcept -> void { mIgnoreManagedRequests = ignore; }
 
 
-	auto GetKey(Key const key) noexcept -> bool {
-		return mKeyboardState[static_cast<u8>(key)] == KeyState::Down || mKeyboardState[static_cast<u8>(key)] == KeyState::Held;
-	}
+	auto GetKey(Key const key) noexcept -> bool { return mKeyboardState[static_cast<u8>(key)] == KeyState::Down || mKeyboardState[static_cast<u8>(key)] == KeyState::Held; }
 
 
-	auto GetKeyDown(Key const key) noexcept -> bool {
-		return mKeyboardState[static_cast<u8>(key)] == KeyState::Down;
-	}
+	auto GetKeyDown(Key const key) noexcept -> bool { return mKeyboardState[static_cast<u8>(key)] == KeyState::Down; }
 
 
-	auto GetKeyUp(Key const key) noexcept -> bool {
-		return mKeyboardState[static_cast<u8>(key)] == KeyState::Up;
-	}
+	auto GetKeyUp(Key const key) noexcept -> bool { return mKeyboardState[static_cast<u8>(key)] == KeyState::Up; }
 
 
-	std::string WideToUtf8(std::wstring_view const wstr) {
+	auto WideToUtf8(std::wstring_view const wstr) -> std::string {
 		std::string ret(static_cast<std::size_t>(WideCharToMultiByte(CP_UTF8, 0, wstr.data(), static_cast<int>(wstr.size()), nullptr, 0, nullptr, nullptr)), '\0');
 		WideCharToMultiByte(CP_UTF8, 0, wstr.data(), static_cast<int>(wstr.size()), ret.data(), static_cast<int>(ret.size()), nullptr, nullptr);
 		return ret;
 	}
 
 
-	std::wstring_view GetExecutablePath() noexcept {
+	auto GetExecutablePath() noexcept -> std::wstring_view {
 		wchar_t* exePath;
 		_get_wpgmptr(&exePath);
 		return exePath;
 	}
 
 
-	auto DisplayError(std::string_view msg) noexcept -> void {
-		MessageBoxA(nullptr, msg.data(), "Error", MB_ICONERROR);
-	}
+	auto DisplayError(std::string_view msg) noexcept -> void { MessageBoxA(nullptr, msg.data(), "Error", MB_ICONERROR); }
 }
