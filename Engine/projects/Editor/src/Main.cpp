@@ -424,7 +424,6 @@ int WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ H
 		ImGui_ImplDX11_Shutdown();
 		ImGui_ImplWin32_Shutdown();
 		ImGui::DestroyContext();
-		return 0;
 	}
 	catch (std::exception const& ex) {
 		leopph::DisplayError(ex.what());
