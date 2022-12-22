@@ -24,31 +24,31 @@ namespace leopph {
 	auto ManagedRuntime::StartUp() -> void {
 		HKEY monoRemKey;
 		if (RegOpenKeyExW(HKEY_LOCAL_MACHINE, LR"(SOFTWARE\Mono)", 0, KEY_READ, &monoRemKey) != ERROR_SUCCESS) {
-			throw std::runtime_error{ "Failed to locate Mono installation." };
+			throw std::runtime_error{ "Failed to locate Mono installation. Couldn't find Mono registry key." };
 		}
 
 		auto const fwAssemblyDirKey = L"FrameworkAssemblyDirectory";
 		DWORD bufSz{};
 		if (RegGetValueW(monoRemKey, nullptr, fwAssemblyDirKey, RRF_RT_REG_SZ, nullptr, nullptr, &bufSz) != ERROR_SUCCESS) {
-			throw std::runtime_error{ "Failed to locate Mono installation." };
+			throw std::runtime_error{ "Failed to locate Mono installation. Couldn't find Mono assembly directory key." };
 		}
 
 		std::wstring buf(static_cast<std::size_t>(bufSz), L'\0');
 		if (RegGetValueW(monoRemKey, nullptr, fwAssemblyDirKey, RRF_RT_REG_SZ, nullptr, buf.data(), &bufSz) != ERROR_SUCCESS) {
-			throw std::runtime_error{ "Failed to locate Mono installation." };
+			throw std::runtime_error{ "Failed to locate Mono installation. Couldn't read Mono assembly directory key." };
 		}
 
 		auto const fwAssemblyDir{ WideToUtf8(buf) };
 
-		auto const confimDirKey = L"MonoConfimDir";
+		auto const confimDirKey = L"MonoConfigDir";
 		if (RegGetValueW(monoRemKey, nullptr, confimDirKey, RRF_RT_REG_SZ, nullptr, nullptr, &bufSz) != ERROR_SUCCESS) {
-			throw std::runtime_error{ "Failed to locate Mono installation." };
+			throw std::runtime_error{ "Failed to locate Mono installation. Couldn't find Mono config directory key." };
 		}
 
 		buf.resize(bufSz);
 
 		if (RegGetValueW(monoRemKey, nullptr, confimDirKey, RRF_RT_REG_SZ, nullptr, buf.data(), &bufSz) != ERROR_SUCCESS) {
-			throw std::runtime_error{ "Failed to locate Mono installation." };
+			throw std::runtime_error{ "Failed to locate Mono installation. Couldn't read Mono config directory key." };
 		}
 
 		auto const confimDir{ WideToUtf8(buf) };
@@ -163,7 +163,7 @@ namespace leopph {
 		assert(mParsePropertyValueMethod);
 		mParseFieldValueMethod = mono_class_get_method_from_name(helperClass, "ParseFieldValue", 2);
 		assert(mParseFieldValueMethod);
-		mEnumToUnderlyingValueMethod = mono_class_get_method_from_name(helperClass, "EnumToUnderlyinmType", 2);
+		mEnumToUnderlyingValueMethod = mono_class_get_method_from_name(helperClass, "EnumToUnderlyingType", 2);
 		assert(mEnumToUnderlyingValueMethod);
 		mParseEnumValueMethod = mono_class_get_method_from_name(helperClass, "ParseEnumValue", 2);
 		assert(mParseEnumValueMethod);
