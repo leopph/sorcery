@@ -1,14 +1,6 @@
-[submodule "glfw"]
-	path = Engine/deps/vendor/glfw
-	url = https://github.com/glfw/glfw.git
-	branch = latest
-	ignore = dirty
 [submodule "mono"]
 	path = Engine/deps/vendor/mono
 	url = https://github.com/mono/mono.git
-[submodule "yaml"]
-	path = Engine/deps/vendor/yaml-cpp
-	url = https://github.com/jbeder/yaml-cpp.git
 [submodule "imgui"]
 	path = Engine/vendor/imgui
 	url = https://github.com/ocornut/imgui.git

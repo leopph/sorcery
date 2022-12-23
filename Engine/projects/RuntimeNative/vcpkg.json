@@ -1,5 +1,5 @@
 {
-	"name": "leopphengine-editor",
+	"name": "leopphengine-runtime-native",
 	"version": "1.0",
 	"dependencies": [
 		"yaml-cpp",

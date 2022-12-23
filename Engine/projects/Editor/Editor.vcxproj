@@ -57,11 +57,11 @@
     <CopyLocalDeploymentContent>true</CopyLocalDeploymentContent>
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg">
-    <vcpkgEnabled>true</vcpkgEnabled>
-    <vcpkgEnableManifest>true</vcpkgEnableManifest>
-    <vcpkgInstalledDir>$(SolutionDir)Engine\vendor\vcpkg\</vcpkgInstalledDir>
-    <vcpkgManifestInstall>true</vcpkgManifestInstall>
+    <VcpkgEnabled>true</VcpkgEnabled>
+    <VcpkgEnableManifest>true</VcpkgEnableManifest>
+    <VcpkgManifestInstall>true</VcpkgManifestInstall>
     <VcpkgAutoLink>true</VcpkgAutoLink>
+    <VcpkgInstalledDir>$(SolutionDir)Engine\vendor\vcpkg\</VcpkgInstalledDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
