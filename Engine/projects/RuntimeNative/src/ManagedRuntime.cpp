@@ -66,10 +66,10 @@ namespace leopph {
 		mono_add_internal_call("leopph.Input::GetKeyUp", reinterpret_cast<void*>(&GetKeyUp));
 		mono_add_internal_call("leopph.Input::get_MousePosition", reinterpret_cast<void*>(&Call<gWindow, &Window::GetMousePosition>));
 		mono_add_internal_call("leopph.Input::get_MouseDelta", reinterpret_cast<void*>(&Call<gWindow, &Window::GetMouseDelta>));
-		mono_add_internal_call("leopph.Input::get_IsCursorConfined", reinterpret_cast<void*>(&Call<gWindow, &Window::IsCursorConfined>));
-		mono_add_internal_call("leopph.Input::set_IsCursorConfined", reinterpret_cast<void*>(&Call<gWindow, &Window::SetCursorConfinement, bool>));
-		mono_add_internal_call("leopph.Input::get_IsCursorHidden", reinterpret_cast<void*>(&Call<gWindow, &Window::IsCursorHidden>));
-		mono_add_internal_call("leopph.Input::set_IsCursorHidden", reinterpret_cast<void*>(&Call<gWindow, &Window::SetCursorHiding, bool>));
+		mono_add_internal_call("leopph.Input::get_IsCursorConfined", reinterpret_cast<void*>(&managedbindings::IsWindowCursorConfined<gWindow>));
+		mono_add_internal_call("leopph.Input::set_IsCursorConfined", reinterpret_cast<void*>(&managedbindings::SetWindowCursorConfinement<gWindow>));
+		mono_add_internal_call("leopph.Input::get_IsCursorHidden", reinterpret_cast<void*>(&managedbindings::IsWindowCursorHidden<gWindow>));
+		mono_add_internal_call("leopph.Input::set_IsCursorHidden", reinterpret_cast<void*>(&managedbindings::SetWindowCursorHiding<gWindow>));
 
 		mono_add_internal_call("leopph.Time::get_FullTime", reinterpret_cast<void*>(&managedbindings::get_full_time));
 		mono_add_internal_call("leopph.Time::get_FrameTime", reinterpret_cast<void*>(&managedbindings::get_frame_time));
@@ -77,11 +77,11 @@ namespace leopph {
 		mono_add_internal_call("leopph.Window::get_CurrentResolution", reinterpret_cast<void*>(&Call<gWindow, &Window::GetCurrentClientAreaSize>));
 		mono_add_internal_call("leopph.Window::get_WindowedResolution", reinterpret_cast<void*>(&Call<gWindow, &Window::GetWindowedClientAreaSize>));
 		mono_add_internal_call("leopph.Window::set_WindowedResolution", reinterpret_cast<void*>(&Call<gWindow, &Window::SetWindowedClientAreaSize, Extent2D<u32>>));
-		mono_add_internal_call("leopph.Window::get_IsBorderless", reinterpret_cast<void*>(&Call<gWindow, &Window::IsBorderless>));
-		mono_add_internal_call("leopph.Window::set_IsBorderless", reinterpret_cast<void*>(&Call<gWindow, &Window::SetBorderless, bool>));
-		mono_add_internal_call("leopph.Window::get_IsMinimizinmOnBorderlessFocusLoss", reinterpret_cast<void*>(&Call<gWindow, &Window::IsMinimizingOnBorderlessFocusLoss>));
-		mono_add_internal_call("leopph.Window::set_IsMinimizinmOnBorderlessFocusLoss", reinterpret_cast<void*>(&Call<gWindow, &Window::SetWindowMinimizeOnBorderlessFocusLoss, bool>));
-		mono_add_internal_call("leopph.Window::InternalSetShouldClose", reinterpret_cast<void*>(&Call<gWindow, &Window::SetQuitSignal, bool>));
+		mono_add_internal_call("leopph.Window::get_IsBorderless", reinterpret_cast<void*>(&managedbindings::IsWindowBorderless<gWindow>));
+		mono_add_internal_call("leopph.Window::set_IsBorderless", reinterpret_cast<void*>(&managedbindings::SetWindowBorderless<gWindow>));
+		mono_add_internal_call("leopph.Window::get_IsMinimizinmOnBorderlessFocusLoss", reinterpret_cast<void*>(&managedbindings::IsWindowMinimizingOnBorderlessFocusLoss<gWindow>));
+		mono_add_internal_call("leopph.Window::set_IsMinimizinmOnBorderlessFocusLoss", reinterpret_cast<void*>(&managedbindings::SetWindowMinimizeOnBorderlessFocusLoss<gWindow>));
+		mono_add_internal_call("leopph.Window::InternalSetShouldClose", reinterpret_cast<void*>(&managedbindings::SetWindowQuitSignal<gWindow>));
 
 		mono_add_internal_call("leopph.NativeWrapper.get_Guid", reinterpret_cast<void*>(&managedbindings::GetManagedAccessObjectGuid));
 

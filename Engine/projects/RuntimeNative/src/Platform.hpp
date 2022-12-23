@@ -68,7 +68,7 @@ namespace leopph {
 		LEOPPHAPI auto SetBorderless(bool borderless) noexcept -> void;
 
 		[[nodiscard]] LEOPPHAPI auto IsMinimizingOnBorderlessFocusLoss() const noexcept -> bool;
-		LEOPPHAPI auto SetWindowMinimizeOnBorderlessFocusLoss(bool minimize) noexcept -> void;
+		LEOPPHAPI auto SetMinimizeOnBorderlessFocusLoss(bool minimize) noexcept -> void;
 
 		[[nodiscard]] LEOPPHAPI auto IsQuitSignaled() const noexcept -> bool;
 		LEOPPHAPI auto SetQuitSignal(bool quit) noexcept -> void;
@@ -100,9 +100,11 @@ namespace leopph {
 	LEOPPHAPI auto DisplayError(std::string_view msg) noexcept -> void;
 
 
+	// Functions taking or returning bools need to be wrapped because mono's bool's are 4 bytes but msvc x64's is 1 byte
+	// Also some work in a limited way when invoked from the managed runtime, they also need to be wrapped to be limited appropriately.
 	namespace managedbindings {
 		template<Window const& Instance>
-		auto IsWindowBorderLess() noexcept -> int {
+		auto IsWindowBorderless() noexcept -> int {
 			return Instance.IsBorderless();
 		}
 
@@ -124,7 +126,7 @@ namespace leopph {
 		template<Window& Instance>
 		auto SetWindowMinimizeOnBorderlessFocusLoss(int const minimize) noexcept -> void {
 			if (!Instance.IsIgnoringManagedRequests()) {
-				Instance.SetWindowMinimizeOnBorderlessFocusLoss(minimize);
+				Instance.SetMinimizeOnBorderlessFocusLoss(minimize);
 			}
 		}
 
@@ -134,6 +136,30 @@ namespace leopph {
 			if (!Instance.IsIgnoringManagedRequests()) {
 				Instance.SetQuitSignal(quit);
 			}
+		}
+
+
+		template<Window const& Instance>
+		auto IsWindowCursorConfined() noexcept -> int {
+			return Instance.IsCursorConfined();
+		}
+
+
+		template<Window& Instance>
+		auto SetWindowCursorConfinement(int const confine) noexcept -> void {
+			Instance.SetCursorConfinement(confine);
+		}
+
+
+		template<Window const& Instance>
+		auto IsWindowCursorHidden() noexcept -> int {
+			return Instance.IsCursorHidden();
+		}
+
+
+		template<Window& Instance>
+		auto SetWindowCursorHiding(int const hide) noexcept -> void {
+			Instance.SetCursorHiding(hide);
 		}
 	}
 

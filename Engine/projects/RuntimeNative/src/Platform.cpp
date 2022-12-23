@@ -261,7 +261,7 @@ namespace leopph {
 	}
 
 
-	auto Window::SetWindowMinimizeOnBorderlessFocusLoss(bool const minimize) noexcept -> void {
+	auto Window::SetMinimizeOnBorderlessFocusLoss(bool const minimize) noexcept -> void {
 		mMinimizeOnBorderlessFocusLoss = minimize;
 	}
 
