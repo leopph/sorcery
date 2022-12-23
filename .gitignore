@@ -402,3 +402,4 @@ bin
 Engine/vendor
 Engine/deps/vendor
 Engine/projects/RuntimeNative/src/shaders/cinclude
+*vcpkg_installed
