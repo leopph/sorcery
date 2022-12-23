@@ -62,7 +62,8 @@ namespace leopph {
 		}
 
 		mono_add_internal_call("leopph.Input::GetKeyDown", reinterpret_cast<void*>(&GetKeyDown));
-		mono_add_internal_call("leopph.Input::GetKey", reinterpret_cast<void*>(&GetKeyUp));
+		mono_add_internal_call("leopph.Input::GetKey", reinterpret_cast<void*>(&GetKey));
+		mono_add_internal_call("leopph.Input::GetKeyUp", reinterpret_cast<void*>(&GetKeyUp));
 		mono_add_internal_call("leopph.Input::get_MousePosition", reinterpret_cast<void*>(&Call<gWindow, &Window::GetMousePosition>));
 		mono_add_internal_call("leopph.Input::get_MouseDelta", reinterpret_cast<void*>(&Call<gWindow, &Window::GetMouseDelta>));
 		mono_add_internal_call("leopph.Input::get_IsCursorConfined", reinterpret_cast<void*>(&Call<gWindow, &Window::IsCursorConfined>));

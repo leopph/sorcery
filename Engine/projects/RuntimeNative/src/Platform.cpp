@@ -14,13 +14,15 @@ namespace leopph {
 			Up = 3
 		};
 
-		KeyState mKeyboardState[256]{};
+		KeyState gKeyboardState[256]{};
 	}
 
 
 	auto CALLBACK Window::WindowProc(HWND const hwnd, UINT const msg, WPARAM const wparam, LPARAM const lparam) noexcept -> LRESULT {
 		if (auto const instance{ reinterpret_cast<Window*>(GetWindowLongPtrW(hwnd, GWLP_USERDATA)) }; instance) {
-			if (instance->mEventHook && instance->mEventHook(hwnd, msg, wparam, lparam)) { return true; }
+			if (instance->mEventHook && instance->mEventHook(hwnd, msg, wparam, lparam)) {
+				return true;
+			}
 
 			switch (msg) {
 			case WM_CLOSE: {
@@ -34,13 +36,17 @@ namespace leopph {
 			}
 
 			case WM_SYSCOMMAND: {
-				if (wparam == SC_KEYMENU) { return 0; }
+				if (wparam == SC_KEYMENU) {
+					return 0;
+				}
 				break;
 			}
 
 			case WM_ACTIVATE: {
 				if (LOWORD(wparam) == WA_INACTIVE) {
-					if (instance->mBorderless && instance->mMinimizeOnBorderlessFocusLoss) { ShowWindow(hwnd, SW_MINIMIZE); }
+					if (instance->mBorderless && instance->mMinimizeOnBorderlessFocusLoss) {
+						ShowWindow(hwnd, SW_MINIMIZE);
+					}
 					instance->mInFocus = false;
 					instance->mOnFocusLossEvent.invoke();
 				}
@@ -124,11 +130,15 @@ namespace leopph {
 			.lpszClassName = WND_CLASS_NAME
 		};
 
-		if (!RegisterClassExW(&wx)) { throw std::runtime_error{ "Failed to register window class." }; }
+		if (!RegisterClassExW(&wx)) {
+			throw std::runtime_error{ "Failed to register window class." };
+		}
 
 		mHwnd = CreateWindowExW(0, wx.lpszClassName, wx.lpszClassName, WND_BORDLERLESS_STYLE, 0, 0, GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN), nullptr, nullptr, wx.hInstance, nullptr);
 
-		if (!mHwnd) { throw std::runtime_error{ "Failed to create window." }; }
+		if (!mHwnd) {
+			throw std::runtime_error{ "Failed to create window." };
+		}
 
 		SetWindowLongPtrW(mHwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
 
@@ -140,7 +150,9 @@ namespace leopph {
 			.hwndTarget = mHwnd
 		};
 
-		if (!RegisterRawInputDevices(&rid, 1, sizeof(RAWINPUTDEVICE))) { throw std::runtime_error{ "Failed to register raw input devices." }; }
+		if (!RegisterRawInputDevices(&rid, 1, sizeof(RAWINPUTDEVICE))) {
+			throw std::runtime_error{ "Failed to register raw input devices." };
+		}
 
 		ShowWindow(mHwnd, SW_SHOWNORMAL);
 	}
@@ -170,22 +182,34 @@ namespace leopph {
 
 		BYTE newState[256];
 
-		if (!GetKeyboardState(newState)) { throw std::runtime_error{ "Failed to get keyboard state." }; }
+		if (!GetKeyboardState(newState)) {
+			throw std::runtime_error{ "Failed to get keyboard state." };
+		}
 
 		for (int i = 0; i < 256; i++) {
 			if (newState[i] & 0x80) {
-				if (mKeyboardState[i] == KeyState::Down) { mKeyboardState[i] = KeyState::Held; }
-				else if (mKeyboardState[i] != KeyState::Held) { mKeyboardState[i] = KeyState::Down; }
+				if (gKeyboardState[i] == KeyState::Down) {
+					gKeyboardState[i] = KeyState::Held;
+				}
+				else if (gKeyboardState[i] != KeyState::Held) {
+					gKeyboardState[i] = KeyState::Down;
+				}
 			}
 			else {
-				if (mKeyboardState[i] == KeyState::Up) { mKeyboardState[i] = KeyState::Neutral; }
-				else { mKeyboardState[i] = KeyState::Up; }
+				if (gKeyboardState[i] == KeyState::Up) {
+					gKeyboardState[i] = KeyState::Neutral;
+				}
+				else {
+					gKeyboardState[i] = KeyState::Up;
+				}
 			}
 		}
 	}
 
 
-	auto Window::GetHandle() const noexcept -> HWND { return mHwnd; }
+	auto Window::GetHandle() const noexcept -> HWND {
+		return mHwnd;
+	}
 
 
 	auto Window::GetCurrentClientAreaSize() const noexcept -> Extent2D<u32> {
@@ -195,21 +219,29 @@ namespace leopph {
 	}
 
 
-	auto Window::GetWindowedClientAreaSize() const noexcept -> Extent2D<u32> { return mWindowedClientAreaSize; }
+	auto Window::GetWindowedClientAreaSize() const noexcept -> Extent2D<u32> {
+		return mWindowedClientAreaSize;
+	}
 
 
 	auto Window::SetWindowedClientAreaSize(Extent2D<u32> const size) noexcept -> void {
 		mWindowedClientAreaSize = size;
 
-		if (!mBorderless) { ApplyClientAreaSize(); }
+		if (!mBorderless) {
+			ApplyClientAreaSize();
+		}
 	}
 
 
-	auto Window::IsBorderless() const noexcept -> bool { return mBorderless; }
+	auto Window::IsBorderless() const noexcept -> bool {
+		return mBorderless;
+	}
 
 
 	auto Window::SetBorderless(bool const borderless) noexcept -> void {
-		if (borderless == mBorderless) { return; }
+		if (borderless == mBorderless) {
+			return;
+		}
 
 		mBorderless = borderless;
 
@@ -224,52 +256,84 @@ namespace leopph {
 	}
 
 
-	auto Window::IsMinimizingOnBorderlessFocusLoss() const noexcept -> bool { return mMinimizeOnBorderlessFocusLoss; }
+	auto Window::IsMinimizingOnBorderlessFocusLoss() const noexcept -> bool {
+		return mMinimizeOnBorderlessFocusLoss;
+	}
 
 
-	auto Window::SetWindowMinimizeOnBorderlessFocusLoss(bool const minimize) noexcept -> void { mMinimizeOnBorderlessFocusLoss = minimize; }
+	auto Window::SetWindowMinimizeOnBorderlessFocusLoss(bool const minimize) noexcept -> void {
+		mMinimizeOnBorderlessFocusLoss = minimize;
+	}
 
 
-	auto Window::IsQuitSignaled() const noexcept -> bool { return mQuitSignaled; }
+	auto Window::IsQuitSignaled() const noexcept -> bool {
+		return mQuitSignaled;
+	}
 
 
-	auto Window::SetQuitSignal(bool const quit) noexcept -> void { mQuitSignaled = quit; }
+	auto Window::SetQuitSignal(bool const quit) noexcept -> void {
+		mQuitSignaled = quit;
+	}
 
 
-	auto Window::IsCursorConfined() const noexcept -> bool { return mConfineCursor; }
+	auto Window::IsCursorConfined() const noexcept -> bool {
+		return mConfineCursor;
+	}
 
 
-	auto Window::SetCursorConfinement(bool const confine) noexcept -> void { mConfineCursor = confine; }
+	auto Window::SetCursorConfinement(bool const confine) noexcept -> void {
+		mConfineCursor = confine;
+	}
 
 
-	auto Window::IsCursorHidden() const noexcept -> bool { return mHideCursor; }
+	auto Window::IsCursorHidden() const noexcept -> bool {
+		return mHideCursor;
+	}
 
 
-	auto Window::SetCursorHiding(bool const hide) noexcept -> void { mHideCursor = hide; }
+	auto Window::SetCursorHiding(bool const hide) noexcept -> void {
+		mHideCursor = hide;
+	}
 
 
-	auto Window::SetEventHook(std::function<bool(HWND, UINT, WPARAM, LPARAM)> hook) noexcept -> void { mEventHook = std::move(hook); }
+	auto Window::SetEventHook(std::function<bool(HWND, UINT, WPARAM, LPARAM)> hook) noexcept -> void {
+		mEventHook = std::move(hook);
+	}
 
 
-	auto Window::GetMousePosition() const noexcept -> Point2D<i32> { return mMousePos; }
+	auto Window::GetMousePosition() const noexcept -> Point2D<i32> {
+		return mMousePos;
+	}
 
 
-	auto Window::GetMouseDelta() const noexcept -> Point2D<i32> { return mMouseDelta; }
+	auto Window::GetMouseDelta() const noexcept -> Point2D<i32> {
+		return mMouseDelta;
+	}
 
 
-	auto Window::IsIgnoringManagedRequests() const noexcept -> bool { return mIgnoreManagedRequests; }
+	auto Window::IsIgnoringManagedRequests() const noexcept -> bool {
+		return mIgnoreManagedRequests;
+	}
 
 
-	auto Window::SetIgnoreManagedRequests(bool const ignore) noexcept -> void { mIgnoreManagedRequests = ignore; }
+	auto Window::SetIgnoreManagedRequests(bool const ignore) noexcept -> void {
+		mIgnoreManagedRequests = ignore;
+	}
 
 
-	auto GetKey(Key const key) noexcept -> bool { return mKeyboardState[static_cast<u8>(key)] == KeyState::Down || mKeyboardState[static_cast<u8>(key)] == KeyState::Held; }
+	auto GetKey(Key const key) noexcept -> bool {
+		return gKeyboardState[static_cast<u8>(key)] == KeyState::Down || gKeyboardState[static_cast<u8>(key)] == KeyState::Held;
+	}
 
 
-	auto GetKeyDown(Key const key) noexcept -> bool { return mKeyboardState[static_cast<u8>(key)] == KeyState::Down; }
+	auto GetKeyDown(Key const key) noexcept -> bool {
+		return gKeyboardState[static_cast<u8>(key)] == KeyState::Down;
+	}
 
 
-	auto GetKeyUp(Key const key) noexcept -> bool { return mKeyboardState[static_cast<u8>(key)] == KeyState::Up; }
+	auto GetKeyUp(Key const key) noexcept -> bool {
+		return gKeyboardState[static_cast<u8>(key)] == KeyState::Up;
+	}
 
 
 	auto WideToUtf8(std::wstring_view const wstr) -> std::string {
@@ -286,5 +350,7 @@ namespace leopph {
 	}
 
 
-	auto DisplayError(std::string_view msg) noexcept -> void { MessageBoxA(nullptr, msg.data(), "Error", MB_ICONERROR); }
+	auto DisplayError(std::string_view msg) noexcept -> void {
+		MessageBoxA(nullptr, msg.data(), "Error", MB_ICONERROR);
+	}
 }
