@@ -152,11 +152,13 @@
     <None Include="cpp.hint" />
     <None Include="vcpkg.json" />
     <None Include="src\shaders\include\ClearColor.hlsli" />
+    <None Include="src\shaders\include\Lights.hlsli" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="src\shaders\BlinnPhongVert.hlsl" />
     <FxCompile Include="src\shaders\BlinnPhongPix.hlsl" />
     <FxCompile Include="src\shaders\ClearColorVs.hlsl" />
     <FxCompile Include="src\shaders\ClearColorPs.hlsl" />
+    <FxCompile Include="src\shaders\PBRPs.hlsl" />
   </ItemGroup>
 </Project>

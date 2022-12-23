@@ -9,11 +9,13 @@
 #include "shaders/cinclude/BlinnPhongPixShadBin.h"
 #include "shaders/cinclude/ClearColorPsBin.h"
 #include "shaders/cinclude/ClearColorVsBin.h"
+#include "shaders/cinclude/PBRPs.h"
 #else
 #include "shaders/cinclude/BlinnPhongVertShadBinDebug.h"
 #include "shaders/cinclude/BlinnPhongPixShadBinDebug.h"
 #include "shaders/cinclude/ClearColorPsBinDebug.h"
 #include "shaders/cinclude/ClearColorVsBinDebug.h"
+#include "shaders/cinclude/PBRPsDebug.h"
 #endif
 
 #include <DirectXMath.h>
@@ -43,6 +45,17 @@ namespace leopph {
 	struct CubeInstanceData {
 		DirectX::XMFLOAT4X4 modelMat;
 		DirectX::XMFLOAT3X3 normalMat;
+	};
+
+	struct MaterialData {
+		Vector3 albedo;
+		float metallic;
+		float roughness;
+		float ao;
+	};
+
+	struct CameraBufferData {
+		Vector3 camPos;
 	};
 
 
@@ -583,6 +596,42 @@ namespace leopph {
 		if (FAILED(hresult)) {
 			throw std::runtime_error{ "Failed to create clear color PS." };
 		}
+
+		hresult = mResources->device->CreatePixelShader(gPBRPsBin, ARRAYSIZE(gPBRPsBin), nullptr, mResources->pbrPs.GetAddressOf());
+
+		if (FAILED(hresult)) {
+			throw std::runtime_error{ "Failed to create PBR PS." };
+		}
+
+		D3D11_BUFFER_DESC constexpr materialCBufDesc{
+			.ByteWidth = sizeof(MaterialData) + 16 - sizeof(MaterialData) % 16,
+			.Usage = D3D11_USAGE_DYNAMIC,
+			.BindFlags = D3D11_BIND_CONSTANT_BUFFER,
+			.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
+			.MiscFlags = 0,
+			.StructureByteStride = 0
+		};
+
+		hresult = mResources->device->CreateBuffer(&materialCBufDesc, nullptr, mResources->materialCBuf.GetAddressOf());
+
+		if (FAILED(hresult)) {
+			throw std::runtime_error{ "Failed to create material cbuffer." };
+		}
+
+		D3D11_BUFFER_DESC constexpr camCBufDesc{
+			.ByteWidth = sizeof(CameraBufferData) + 16 - sizeof(CameraBufferData) % 16,
+			.Usage = D3D11_USAGE_DYNAMIC,
+			.BindFlags = D3D11_BIND_CONSTANT_BUFFER,
+			.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
+			.MiscFlags = 0,
+			.StructureByteStride = 0
+		};
+
+		hresult = mResources->device->CreateBuffer(&camCBufDesc, nullptr, mResources->cameraCBuf.GetAddressOf());
+
+		if (FAILED(hresult)) {
+			throw std::runtime_error{ "Failed to create camera cbuffer." };
+		}
 	}
 
 
@@ -655,6 +704,21 @@ namespace leopph {
 		}
 		mResources->context->Unmap(mResources->lightBuffer.Get(), 0);
 
+		D3D11_MAPPED_SUBRESOURCE mappedMatBuf;
+		mResources->context->Map(mResources->materialCBuf.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedMatBuf);
+		auto const matBufData{ static_cast<MaterialData*>(mappedMatBuf.pData) };
+		matBufData->albedo = Vector3{ 1 };
+		matBufData->metallic = 0;
+		matBufData->ao = 0;
+		matBufData->roughness = 0.5;
+		mResources->context->Unmap(mResources->materialCBuf.Get(), 0);
+
+		D3D11_MAPPED_SUBRESOURCE mappedCamBuf;
+		mResources->context->Map(mResources->cameraCBuf.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedCamBuf);
+		auto const camBufData{ static_cast<CameraBufferData*>(mappedCamBuf.pData) };
+		camBufData->camPos = cam->GetEntity()->GetTransform().GetWorldPosition();
+		mResources->context->Unmap(mResources->cameraCBuf.Get(), 0);
+
 
 		if (mCubeModels.size() > mInstanceBufferElementCapacity) {
 			mInstanceBufferElementCapacity = static_cast<UINT>(mCubeModels.size());
@@ -691,8 +755,9 @@ namespace leopph {
 		mResources->context->IASetInputLayout(mResources->cubeIa.Get());
 		mResources->context->VSSetShader(mResources->cubeVertShader.Get(), nullptr, 0);
 		mResources->context->VSSetConstantBuffers(0, 1, mResources->cbuffer.GetAddressOf());
-		mResources->context->PSSetShader(mResources->cubePixShader.Get(), nullptr, 0);
-		mResources->context->PSSetConstantBuffers(0, 1, mResources->lightBuffer.GetAddressOf());
+		mResources->context->PSSetShader(mResources->pbrPs.Get(), nullptr, 0);
+		ID3D11Buffer* const psCBuffers[]{ mResources->materialCBuf.Get(), mResources->cameraCBuf.Get(), mResources->lightBuffer.Get() };
+		mResources->context->PSSetConstantBuffers(0, ARRAYSIZE(psCBuffers), psCBuffers);
 		mResources->context->DrawIndexedInstanced(ARRAYSIZE(CUBE_INDICES), static_cast<UINT>(mCubeModels.size()), 0, 0, 0);
 	}
 

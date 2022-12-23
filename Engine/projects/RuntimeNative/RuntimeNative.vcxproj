@@ -156,6 +156,7 @@
     <None Include="cpp.hint" />
     <None Include="src\shaders\include\BlinnPhong.hlsli" />
     <None Include="src\shaders\include\ClearColor.hlsli" />
+    <None Include="src\shaders\include\Lights.hlsli" />
     <None Include="vcpkg.json" />
   </ItemGroup>
   <ItemGroup>
@@ -222,6 +223,20 @@
       <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">gClearColorPsBin</VariableName>
       <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">src/shaders/cinclude/ClearColorPsBinDebug.h</HeaderFileOutput>
       <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">src/shaders/cinclude/ClearColorPsBin.h</HeaderFileOutput>
+    </FxCompile>
+    <FxCompile Include="src\shaders\PBRPs.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">gPBRPsBin</VariableName>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </ObjectFileOutput>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">gPBRPsBin</VariableName>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </ObjectFileOutput>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">src/shaders/cinclude/PBRPsDebug.h</HeaderFileOutput>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">src/shaders/cinclude/PBRPs.h</HeaderFileOutput>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>

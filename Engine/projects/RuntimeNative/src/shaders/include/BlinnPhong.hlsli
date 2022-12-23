@@ -1,16 +1,9 @@
 #ifndef BLINN_PHONG_HLSLI
 #define BLINN_PHONG_HLSLI
 
+#include "Lights.hlsli"
+
 #pragma pack_matrix(row_major)
-
-struct Light {
-	float3 color;
-	float intensity;
-};
-
-struct DirectionalLight : Light {
-	float3 direction;
-};
 
 cbuffer matrices : register(b0) {
 	float4x4 viewProj;
@@ -29,7 +22,7 @@ struct VS_IN {
 };
 
 struct VS_OUT {
-	float3 worldPos : TEXCOORD0;
+	float3 worldPos : WORLDPOS;
 	float3 normal : NORMAL;
 	float4 clipPos : SV_POSITION;
 };

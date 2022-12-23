@@ -43,6 +43,10 @@ namespace leopph
 			Microsoft::WRL::ComPtr<ID3D11InputLayout> quadIa;
 			Microsoft::WRL::ComPtr<ID3D11Buffer> quadVertBuf;
 			Microsoft::WRL::ComPtr<ID3D11Buffer> quadIndBuf;
+
+			Microsoft::WRL::ComPtr<ID3D11PixelShader> pbrPs;
+			Microsoft::WRL::ComPtr<ID3D11Buffer> materialCBuf;
+			Microsoft::WRL::ComPtr<ID3D11Buffer> cameraCBuf;
 		};
 
 		void RecreateRenderTextureAndViews(u32 width, u32 height);
