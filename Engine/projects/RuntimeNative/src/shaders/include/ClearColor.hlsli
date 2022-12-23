@@ -6,7 +6,7 @@ cbuffer color : register(b0) {
 }
 
 float4 VsMain(float2 pos : VertexPos) : SV_Position {
-    return float4(pos, 0, 0);
+    return float4(pos, 0, 1);
 
 }
 
