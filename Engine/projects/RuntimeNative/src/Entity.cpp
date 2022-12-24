@@ -65,16 +65,6 @@ namespace leopph {
 	}
 
 
-	auto Entity::GetName() const -> std::string_view {
-		return mName;
-	}
-
-
-	auto Entity::SetName(std::string name) -> void {
-		mName = std::move(name);
-	}
-
-
 	auto Entity::GetScene() const -> Scene& {
 		return *mScene;
 	}
@@ -137,9 +127,9 @@ namespace leopph {
 
 
 	namespace managedbindings {
-		void CreateNativeEntity(MonoObject* managedObject) {
+		void CreateNativeEntity(MonoObject* managedEntity) {
 			auto const entity = SceneManager::GetActiveScene()->CreateEntity();
-			entity->SetManagedObject(managedObject);
+			entity->SetManagedObject(managedEntity);
 
 			auto transform = std::make_unique<Transform>();
 			transform->CreateManagedObject("leopph", "Transform");

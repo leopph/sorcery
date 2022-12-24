@@ -1,8 +1,6 @@
 #include "Object.hpp"
 
 #include <set>
-#include <cassert>
-#include <vector>
 
 
 namespace leopph {
@@ -65,5 +63,15 @@ namespace leopph {
 		auto extracted{ sAllObjects.extract(this) };
 		mGuid = guid;
 		sAllObjects.insert(std::move(extracted));
+	}
+
+
+	auto Object::GetName() const noexcept -> std::string_view {
+		return mName;
+	}
+
+
+	auto Object::SetName(std::string name) noexcept -> void {
+		mName = std::move(name);
 	}
 }
