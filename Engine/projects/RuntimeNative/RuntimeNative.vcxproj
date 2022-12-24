@@ -111,6 +111,7 @@
     <ClCompile Include="src\Image.cpp" />
     <ClCompile Include="src\ManagedRuntime.cpp" />
     <ClCompile Include="src\ManagedAccessObject.cpp" />
+    <ClCompile Include="src\Material.cpp" />
     <ClCompile Include="src\Math.cpp" />
     <ClCompile Include="src\Entity.cpp" />
     <ClCompile Include="src\Object.cpp" />
@@ -128,6 +129,7 @@
   <ItemGroup>
     <ClInclude Include="src\AABB.hpp" />
     <ClInclude Include="src\Image.hpp" />
+    <ClInclude Include="src\Material.hpp" />
     <ClInclude Include="src\OnGui.hpp" />
     <ClInclude Include="src\Color.hpp" />
     <ClInclude Include="src\Components.hpp" />

@@ -90,4 +90,8 @@ namespace leopph {
 	auto Call(Args&&... args) noexcept(std::is_nothrow_invocable_v<decltype(MemberFunc), decltype(Obj), Args...>) {
 		return (Obj.*MemberFunc)(std::forward<Args>(args)...);
 	}
+
+
+	template<typename T>
+	using NonOwning = T;
 }
