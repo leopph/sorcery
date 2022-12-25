@@ -108,6 +108,7 @@
     <ClCompile Include="src\AABB.cpp" />
     <ClCompile Include="src\Color.cpp" />
     <ClCompile Include="src\Components.cpp" />
+    <ClCompile Include="src\Compress.cpp" />
     <ClCompile Include="src\Image.cpp" />
     <ClCompile Include="src\LeopphModelSerialize.cpp" />
     <ClCompile Include="src\ManagedRuntime.cpp" />
@@ -130,6 +131,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\AABB.hpp" />
+    <ClInclude Include="src\Compress.hpp" />
     <ClInclude Include="src\Image.hpp" />
     <ClInclude Include="src\Model.hpp" />
     <ClInclude Include="src\ModelImport.hpp" />
