@@ -110,7 +110,6 @@
     <ClCompile Include="src\Components.cpp" />
     <ClCompile Include="src\Compress.cpp" />
     <ClCompile Include="src\Image.cpp" />
-    <ClCompile Include="src\LeopphModelSerialize.cpp" />
     <ClCompile Include="src\ManagedRuntime.cpp" />
     <ClCompile Include="src\ManagedAccessObject.cpp" />
     <ClCompile Include="src\Math.cpp" />
@@ -149,7 +148,7 @@
     <ClInclude Include="src\Scene.hpp" />
     <ClInclude Include="src\SceneElement.hpp" />
     <ClInclude Include="src\SceneManager.hpp" />
-    <ClInclude Include="src\LeopphModelSerialize.hpp" />
+    <ClInclude Include="src\BinarySerializer.hpp" />
     <ClInclude Include="src\shaders\cinclude\BlinnPhongPixShadBinDebug.h" />
     <ClInclude Include="src\shaders\cinclude\BlinnPhongVertShadBinDebug.h" />
     <ClInclude Include="src\ModelData.hpp" />

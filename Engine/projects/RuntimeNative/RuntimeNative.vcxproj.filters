@@ -78,9 +78,6 @@
     <ClCompile Include="src\ModelImport.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\LeopphModelSerialize.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\Compress.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -164,7 +161,7 @@
     <ClInclude Include="src\ModelImport.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\LeopphModelSerialize.hpp">
+    <ClInclude Include="src\BinarySerializer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Compress.hpp">
