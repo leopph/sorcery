@@ -23,11 +23,11 @@ namespace leopph {
 		auto constexpr static SerializedSize = 1;
 
 		static auto Serialize(T const scalar, std::vector<u8>& out) -> void {
-			out.emplace_back(reinterpret_cast<u8>(scalar));
+			out.emplace_back(*reinterpret_cast<u8 const*>(&scalar));
 		}
 
 		static auto Deserialize(std::span<u8 const, 1> const bytes) -> T {
-			return reinterpret_cast<T>(bytes[0]);
+			return *reinterpret_cast<T const*>(bytes.data());
 		}
 	};
 
@@ -75,7 +75,7 @@ namespace leopph {
 			}
 
 			auto const width{ BinarySerializer<u32>::Deserialize(bytes.subspan<0, 4>(), endianness) };
-			auto const height{ BinarySerializer<u32>::Deserialize(bytes.subspan<4, 4>, endianness) };
+			auto const height{ BinarySerializer<u32>::Deserialize(bytes.subspan<4, 4>(), endianness)};
 			auto const chans{ BinarySerializer<u8>::Deserialize(bytes.subspan<8, 1>()) };
 
 			auto const imgSize{ static_cast<u64>(width) * height * chans };
@@ -118,7 +118,7 @@ namespace leopph {
 
 		static auto Serialize(Vector<T, N> const& vector, std::vector<u8>& out, std::endian const endianness) -> void {
 			for (u64 i{ 0 }; i < N; i++) {
-				if constexpr (std::is_invocable_v<decltype(BinarySerializer<T>::Serialize), T, std::vector<u8>, std::endian>) {
+				if constexpr (std::is_invocable_v<decltype(&BinarySerializer<T>::Serialize), T, std::vector<u8>&, std::endian>) {
 					BinarySerializer<T>::Serialize(vector[i], out, endianness);
 				}
 				else {
@@ -130,11 +130,11 @@ namespace leopph {
 		static auto Deserialize(std::span<u8 const, sizeof(Vector<T, N>)> const bytes, std::endian const endianness) -> Vector<T, N> {
 			Vector<T, N> ret{};
 			for (std::size_t i{ 0 }; i < N; i++) {
-				if constexpr (std::is_invocable_v<decltype(BinarySerializer<T>::Deserialize), std::span<u8 const, sizeof(T)>, std::endian>) {
-					ret[i] = BinarySerializer<T>::Deserialize(bytes.template subspan<i * sizeof(T), sizeof(T)>(), endianness);
+				if constexpr (std::is_invocable_v<decltype(&BinarySerializer<T>::Deserialize), std::span<u8 const, sizeof(T)>, std::endian>) {
+					ret[i] = BinarySerializer<T>::Deserialize(bytes.subspan(i * sizeof(T)).template first<sizeof(T)>(), endianness);
 				}
 				else {
-					ret[i] = BinarySerializer<T>::Deserialize(bytes.template subspan<i * sizeof(T), sizeof(T)>());
+					ret[i] = BinarySerializer<T>::Deserialize(bytes.subspan(i * sizeof(T)).template first<sizeof(T)>());
 				}
 			}
 			return ret;
@@ -163,7 +163,7 @@ namespace leopph {
 
 	template<>
 	struct BinarySerializer<MaterialData> {
-		auto constexpr SerializedSize{ sizeof(Color) + 3 * sizeof(f32) + sizeof(u8) + 4 * sizeof(u64) };
+		auto constexpr static SerializedSize{ sizeof(Color) + 3 * sizeof(f32) + sizeof(u8) + 4 * sizeof(u64) };
 
 		static auto Serialize(MaterialData const& matData, std::vector<u8>& out, std::endian const endianness) -> void {
 			BinarySerializer<Color>::Serialize(matData.albedo, out);
@@ -212,7 +212,7 @@ namespace leopph {
 			std::array<u64, 4> textures{};
 
 			for (std::size_t i{ 0 }; i < textures.size(); i++) {
-				textures[i] = BinarySerializer<u64>::Deserialize(bytes.subspan<sizeof(Color) + 3 * sizeof(f32) + sizeof(u8) + i * sizeof(u64), sizeof(u64)>(), endianness);
+				textures[i] = BinarySerializer<u64>::Deserialize(bytes.subspan(sizeof(Color) + 3 * sizeof(f32) + sizeof(u8) + i * sizeof(u64)).first<sizeof(u64)>(), endianness);
 			}
 
 			if (textureFlags & 0x1) {

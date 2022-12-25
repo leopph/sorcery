@@ -1,12 +1,9 @@
 #include "AssetManagement.hpp"
 
-#include "ModelImport.hpp"
-
 #include <YamlInclude.hpp>
 
 #include <filesystem>
 #include <fstream>
-#include <iterator>
 #include <algorithm>
 
 
@@ -44,13 +41,13 @@ namespace leopph::editor {
 	auto LoadNewAsset(std::filesystem::path const& assetPath) -> std::shared_ptr<Asset> {
 		std::shared_ptr<Asset> asset;
 		
-		if (ModelAssetLoader static modelAssetLoader; modelAssetLoader.CanLoad(assetPath)) {
+		/*if (ModelAssetLoader static modelAssetLoader; modelAssetLoader.CanLoad(assetPath)) {
 			asset = modelAssetLoader.Load(assetPath);
 		}
 
 		if (asset) {
 			asset->SetGuid(Guid::Generate());
-		}
+		}*/
 
 		return asset;
 	}
@@ -58,13 +55,13 @@ namespace leopph::editor {
 	auto LoadExistingAsset(AssetFileDescriptor const& desc) -> std::shared_ptr<Asset> {
 		std::shared_ptr<Asset> asset;
 
-		switch (desc.type) {
+		/*switch (desc.type) {
 			case AssetType::Model: {
 				ModelAssetLoader static modelAssetLoader;
 				asset = modelAssetLoader.Load(desc.absolutePath);
 				break;
 			}
-		}
+		}*/
 
 		if (asset) {
 			asset->SetGuid(desc.guid);
