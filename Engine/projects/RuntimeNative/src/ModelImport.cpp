@@ -6,6 +6,7 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
+#include <fstream>
 #include <queue>
 #include <unordered_map>
 
@@ -293,5 +294,57 @@ namespace leopph {
 		}
 
 		return out;
+	}
+
+	auto LoadLeopphModelAsset(std::filesystem::path const& src) -> ModelData {
+		constexpr u64 HEADER_SZ = 13;
+
+		std::ifstream in{ src, std::ios::in | std::ios::binary };
+
+		// disable whitespace skipping
+		in.unsetf(std::ios::skipws);
+
+		// failed to open file
+		if (!in.is_open()) {
+			throw std::runtime_error{ std::format("Failed to parse leopphasset file at {}, because the file does not exist.", src.string()) };
+		}
+
+		std::vector<u8> buffer(HEADER_SZ);
+
+		// read header
+		in.read(reinterpret_cast<char*>(buffer.data()), HEADER_SZ);
+
+		// failed to read header
+		if (in.eof() || in.fail() ||
+			buffer[0] != 'x' ||
+			buffer[1] != 'd' ||
+			buffer[2] != '6' ||
+			buffer[3] != '9') {
+			throw std::runtime_error{ std::format("Failed to parse leopphasset file at {}, because the file is corrupted or invalid.", src.string()) };
+		}
+
+		// parse endianness
+		auto const endianness = buffer[4] & 0x80 ? std::endian::little : std::endian::big;
+
+		// parse content size
+		auto const contentSize = BinarySerializer<u64>::Deserialize(std::span{ buffer }.subspan<5, 8>(), endianness);
+
+		// get the size of the compressed contents
+		in.seekg(0, std::ios_base::end);
+		auto const comprSz = static_cast<u64>(in.tellg()) - HEADER_SZ;
+
+		// read rest of the file
+		buffer.resize(comprSz);
+		in.seekg(HEADER_SZ, std::ios_base::beg);
+		in.read(reinterpret_cast<char*>(buffer.data()), comprSz);
+
+		std::vector<u8> uncompressed;
+
+		// uncompress data
+		if (Uncompress({ std::begin(buffer), std::end(buffer) }, contentSize, uncompressed) != CompressionError::None) {
+			throw std::runtime_error{ std::format("Failed to parse leopphasset file at {}, because the file contents could not be uncompressed.", src.string()) };
+		}
+
+		return BinarySerializer<ModelData>::Deserialize(std::span{ uncompressed }, endianness);
 	}
 }
