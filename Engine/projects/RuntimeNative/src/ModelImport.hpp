@@ -14,6 +14,6 @@
 namespace leopph {
 	[[nodiscard]] auto LoadRawModelAsset(std::filesystem::path const& src) -> std::unique_ptr<Assimp::Importer>;
 	[[nodiscard]] auto ProcessRawModelAssetData(aiScene const& importedScene, std::filesystem::path const& src) -> ModelData;
-	[[nodiscard]] auto GenerateLeopphAsset(ModelData const& modelData, std::vector<u8>& out, std::endian endianness) -> std::vector<u8>&;
+	[[nodiscard]] auto GenerateModelLeopphAsset(ModelData const& modelData, std::vector<u8>& out, std::endian endianness) -> std::vector<u8>&;
 	auto LoadLeopphModelAsset(std::filesystem::path const& src) -> void;
 }

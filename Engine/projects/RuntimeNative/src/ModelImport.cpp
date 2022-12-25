@@ -1,13 +1,14 @@
 #include "ModelImport.hpp"
 
-#include "LeopphModelSerialize.hpp"
+#include "BinarySerializer.hpp"
+#include "Compress.hpp"
+
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
 
 #include <queue>
 #include <unordered_map>
-#include <assimp/postprocess.h>
-#include <assimp/scene.h>
 
-#include "Compress.hpp"
 
 namespace leopph {
 	auto LoadRawModelAsset(std::filesystem::path const& src) -> std::unique_ptr<Assimp::Importer> {
@@ -256,7 +257,7 @@ namespace leopph {
 	}
 
 
-	auto GenerateLeopphAsset(ModelData const& modelData, std::vector<u8>& out, std::endian const endianness) -> std::vector<u8>& {
+	auto GenerateModelLeopphAsset(ModelData const& modelData, std::vector<u8>& out, std::endian const endianness) -> std::vector<u8>& {
 		if (endianness != std::endian::little && endianness != std::endian::big) {
 			auto const msg = "Error while exporting. Mixed endian architectures are currently not supported.";
 			//internal::Logger::Instance().Critical(msg);
@@ -273,11 +274,11 @@ namespace leopph {
 		out.push_back(0x01 | (endianness == std::endian::big ? 0 : 0x80));
 
 		std::vector<u8> toCompress;
-		Serialize(modelData, out, endianness);
+		BinarySerializer<ModelData>::Serialize(modelData, out, endianness);
 
 		switch (std::vector<u8> compressed; Compress(toCompress, compressed)) {
 			case CompressionError::None: {
-				Serialize(toCompress.size(), out, endianness);
+				BinarySerializer<u64>::Serialize(toCompress.size(), out, endianness);
 				std::ranges::copy(compressed, std::back_inserter(out));
 				break;
 			}
