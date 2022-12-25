@@ -1,9 +1,13 @@
 #include "ModelImport.hpp"
 
+#include "LeopphModelSerialize.hpp"
+
 #include <queue>
 #include <unordered_map>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
+
+#include "Compress.hpp"
 
 namespace leopph {
 	auto LoadRawModelAsset(std::filesystem::path const& src) -> std::unique_ptr<Assimp::Importer> {
@@ -67,7 +71,7 @@ namespace leopph {
 
 		{
 			std::queue<std::pair<aiNode const*, Matrix4>> queue;
-			queue.emplace(importedScene.mRootNode, buildMatrix4(importedScene.mRootNode->mTransformation).transpose() * Matrix4 { 1, 1, -1, 1 });
+			queue.emplace(importedScene.mRootNode, buildMatrix4(importedScene.mRootNode->mTransformation).transpose() * Matrix4{ 1, 1, -1, 1 });
 
 			while (!queue.empty()) {
 				auto& [node, trafo] = queue.front();
@@ -88,12 +92,12 @@ namespace leopph {
 						for (unsigned j = 0; j < mesh->mNumVertices; j++) {
 							Vertex vertex
 							{
-								.position = Vector3{Vector4{buildVector3(mesh->mVertices[j]), 1} *trafo},
-								.normal = Vector3{Vector4{buildVector3(mesh->mNormals[j]), 0} *trafo}.normalize(),
+								.position = Vector3{ Vector4{ buildVector3(mesh->mVertices[j]), 1 } * trafo },
+								.normal = Vector3{ Vector4{ buildVector3(mesh->mNormals[j]), 0 } * trafo }.normalize(),
 								.uv = [mesh, j, &buildVector3] {
 									for (std::size_t k = 0; k < AI_MAX_NUMBER_OF_TEXTURECOORDS; k++) {
 										if (mesh->HasTextureCoords(static_cast<unsigned>(k))) {
-											return Vector2{buildVector3(mesh->mTextureCoords[k][j])};
+											return Vector2{ buildVector3(mesh->mTextureCoords[k][j]) };
 										}
 									}
 									return Vector2{};
@@ -249,5 +253,44 @@ namespace leopph {
 		}
 
 		return ret;
+	}
+
+
+	auto GenerateLeopphAsset(ModelData const& modelData, std::vector<u8>& out, std::endian const endianness) -> std::vector<u8>& {
+		if (endianness != std::endian::little && endianness != std::endian::big) {
+			auto const msg = "Error while exporting. Mixed endian architectures are currently not supported.";
+			//internal::Logger::Instance().Critical(msg);
+			throw std::logic_error{ msg };
+		}
+
+		// signature bytes
+		out.push_back('x');
+		out.push_back('d');
+		out.push_back('6');
+		out.push_back('9');
+
+		// the version number. its MSB is used to indicate if the file is little endian
+		out.push_back(0x01 | (endianness == std::endian::big ? 0 : 0x80));
+
+		std::vector<u8> toCompress;
+		Serialize(modelData, out, endianness);
+
+		switch (std::vector<u8> compressed; Compress(toCompress, compressed)) {
+			case CompressionError::None: {
+				Serialize(toCompress.size(), out, endianness);
+				std::ranges::copy(compressed, std::back_inserter(out));
+				break;
+			}
+
+			case CompressionError::Inconsistency: {
+				throw std::runtime_error{ "Failed to compress asset file contents due to an inconsitency error." };
+			}
+
+			case CompressionError::Unknown: {
+				throw std::runtime_error{ "Failed to compress asset file contents due to an unknown error." };
+			}
+		}
+
+		return out;
 	}
 }

@@ -13,7 +13,7 @@ namespace leopph {
 	}
 
 
-	auto Compress(std::span<u8> in, std::vector<u8>& out) -> Error {
+	auto Compress(std::span<u8> in, std::vector<u8>& out) -> CompressionError {
 		auto const tmpBuf = std::make_unique_for_overwrite<u8[]>(TMP_BUF_SZ);
 
 		z_stream stream;
@@ -34,7 +34,7 @@ namespace leopph {
 
 			if (deflateRet == Z_STREAM_ERROR) {
 				deflateEnd(&stream);
-				return Error::Inconsistency;
+				return CompressionError::Inconsistency;
 			}
 
 			if (deflateRet == Z_BUF_ERROR) {
@@ -51,19 +51,19 @@ namespace leopph {
 				}
 
 				deflateEnd(&stream);
-				return Error::Unknown;
+				return CompressionError::Unknown;
 			}
 
 			if (deflateRet == Z_STREAM_END) {
 				std::copy_n(tmpBuf.get(), TMP_BUF_SZ - stream.avail_out, std::back_inserter(out));
 				deflateEnd(&stream);
-				return Error::None;
+				return CompressionError::None;
 			}
 		}
 	}
 
 
-	auto Uncompress(std::span<u8> in, u64 const uncompressedSize, std::vector<u8>& out) -> Error {
+	auto Uncompress(std::span<u8> in, u64 const uncompressedSize, std::vector<u8>& out) -> CompressionError {
 		// Make sure the vector has enough space
 		out.resize(out.size() + uncompressedSize);
 
@@ -83,17 +83,17 @@ namespace leopph {
 		switch (inflateRet) {
 			case Z_STREAM_END:
 			{
-				return Error::None;
+				return CompressionError::None;
 			}
 
 			case Z_STREAM_ERROR:
 			{
-				return Error::Inconsistency;
+				return CompressionError::Inconsistency;
 			}
 
 			default:
 			{
-				return Error::Unknown;
+				return CompressionError::Unknown;
 			}
 		}
 	}
