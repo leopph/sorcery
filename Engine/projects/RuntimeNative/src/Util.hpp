@@ -94,4 +94,8 @@ namespace leopph {
 
 	template<typename T>
 	using NonOwning = T;
+
+
+	template<class T>
+	concept Scalar = std::is_scalar_v<T>;
 }
