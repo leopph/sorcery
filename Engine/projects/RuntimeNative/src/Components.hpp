@@ -3,6 +3,7 @@
 #include "Math.hpp"
 #include "Util.hpp"
 #include "ManagedAccessObject.hpp"
+#include "Material.hpp"
 
 #include <span>
 #include <vector>
@@ -157,9 +158,14 @@ namespace leopph {
 
 
 	class CubeModel : public Component {
+		Material const* mMat{ new Material{} };
+
 	public:
 		LEOPPHAPI CubeModel();
 		~CubeModel() override;
+
+		LEOPPHAPI [[nodiscard]] auto GetMaterial() const noexcept -> Material const&;
+		LEOPPHAPI auto SetMaterial(Material const& material) noexcept -> void;
 
 		LEOPPHAPI auto OnGui() -> void override;
 		[[nodiscard]] LEOPPHAPI auto GetSerializationType() const -> Type override;

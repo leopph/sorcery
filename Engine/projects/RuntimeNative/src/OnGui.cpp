@@ -4,6 +4,8 @@
 #include "ManagedRuntime.hpp"
 
 #include <imgui.h>
+#include <misc/cpp/imgui_stdlib.h>
+
 #include <mono/metadata/class.h>
 #include <mono/metadata/object.h>
 #include <mono/metadata/reflection.h>
@@ -263,7 +265,49 @@ namespace leopph {
 
 
 	auto CubeModel::OnGui() -> void {
+		if (ImGui::BeginTable(std::format("{}", GetGuid().ToString()).c_str(), 2, ImGuiTableFlags_SizingStretchSame)) {
+			ImGui::TableNextRow();
+			ImGui::TableSetColumnIndex(0);
+			ImGui::PushItemWidth(FLT_MIN);
+			ImGui::TableSetColumnIndex(1);
+			ImGui::PushItemWidth(-FLT_MIN);
 
+			ImGui::TableSetColumnIndex(0);
+			ImGui::Text("Material");
+			ImGui::TableNextColumn();
+
+			ImGui::Text("%s", mMat->GetName().data());
+			ImGui::SameLine();
+
+			static std::vector<Material*> materials;
+			static std::string matFilter;
+
+			if (ImGui::Button("Select##SelectMaterialForCubeModel")) {
+				FindObjectsOfType(materials);
+				matFilter.clear();
+				ImGui::OpenPopup("ChooseMaterialForCubeModel");
+			}
+
+			if (ImGui::BeginPopup("ChooseMaterialForCubeModel")) {
+				if (ImGui::InputText("###SearchMat", &matFilter)) {
+					FindObjectsOfType(materials);
+					std::erase_if(materials, [](Material const* mat) {
+						return !mat->GetName().contains(matFilter);
+					});
+				}
+
+				for (auto const mat : materials) {
+					if (ImGui::Selectable(std::format("{}##matoption{}", mat->GetName(), mat->GetGuid().ToString()).c_str())) {
+						SetMaterial(*mat);
+						break;
+					}
+				}
+				
+				ImGui::EndPopup();
+			}
+
+			ImGui::EndTable();
+		}
 	}
 
 

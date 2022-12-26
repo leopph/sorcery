@@ -3,8 +3,12 @@
 #include "AABB.hpp"
 #include "Color.hpp"
 #include "Object.hpp"
-#include "Renderer.hpp"
 #include "Util.hpp"
+
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <d3d11.h>
+#include <wrl/client.h>
 
 
 namespace leopph {

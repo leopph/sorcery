@@ -284,6 +284,15 @@ namespace leopph {
 	}
 
 
+	auto CubeModel::GetMaterial() const noexcept -> Material const& {
+		return *mMat;
+	}
+
+	auto CubeModel::SetMaterial(Material const& material) noexcept -> void {
+		mMat = &material;
+	}
+
+
 	std::vector<Camera*> Camera::sAllInstances;
 
 

@@ -705,14 +705,14 @@ namespace leopph {
 		}
 		mResources->context->Unmap(mResources->lightBuffer.Get(), 0);
 
-		D3D11_MAPPED_SUBRESOURCE mappedMatBuf;
+		/*D3D11_MAPPED_SUBRESOURCE mappedMatBuf;
 		mResources->context->Map(mResources->materialCBuf.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedMatBuf);
 		auto const matBufData{ static_cast<MaterialData*>(mappedMatBuf.pData) };
 		matBufData->albedo = Vector3{ 1 };
 		matBufData->metallic = 0;
 		matBufData->ao = 0;
 		matBufData->roughness = 0.5;
-		mResources->context->Unmap(mResources->materialCBuf.Get(), 0);
+		mResources->context->Unmap(mResources->materialCBuf.Get(), 0);*/
 
 		D3D11_MAPPED_SUBRESOURCE mappedCamBuf;
 		mResources->context->Map(mResources->cameraCBuf.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedCamBuf);
@@ -757,7 +757,7 @@ namespace leopph {
 		mResources->context->VSSetShader(mResources->cubeVertShader.Get(), nullptr, 0);
 		mResources->context->VSSetConstantBuffers(0, 1, mResources->cbuffer.GetAddressOf());
 		mResources->context->PSSetShader(mResources->pbrPs.Get(), nullptr, 0);
-		ID3D11Buffer* const psCBuffers[]{ mResources->materialCBuf.Get(), mResources->cameraCBuf.Get(), mResources->lightBuffer.Get() };
+		ID3D11Buffer* const psCBuffers[]{ mCubeModels[0]->GetMaterial().GetBuffer(), mResources->cameraCBuf.Get(), mResources->lightBuffer.Get()};
 		mResources->context->PSSetConstantBuffers(0, ARRAYSIZE(psCBuffers), psCBuffers);
 		mResources->context->DrawIndexedInstanced(ARRAYSIZE(CUBE_INDICES), static_cast<UINT>(mCubeModels.size()), 0, 0, 0);
 	}
