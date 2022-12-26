@@ -2,6 +2,7 @@
 
 #include "ModelImport.hpp"
 #include "Systems.hpp"
+#include "BinarySerializer.hpp"
 
 #include <imgui.h>
 
@@ -105,6 +106,40 @@ namespace leopph {
 
 	auto Material::GetSerializationType() const -> Type {
 		return Type::Material;
+	}
+
+	void Material::SerializeBinary(std::vector<u8>& out) const {
+		Object::SerializeBinary(out);
+		BinarySerializer<Vector3>::Serialize(mBufData.albedo, out, std::endian::native);
+		BinarySerializer<f32>::Serialize(mBufData.metallic, out, std::endian::native);
+		BinarySerializer<f32>::Serialize(mBufData.roughness, out, std::endian::native);
+		BinarySerializer<f32>::Serialize(mBufData.ao, out, std::endian::native);
+	}
+
+	Object::BinaryDeserializationResult Material::DeserializeBinary(std::span<u8 const> bytes) {
+		auto ret{ Object::DeserializeBinary(bytes) };
+		bytes = bytes.subspan(ret.numBytesConsumed);
+
+		auto constexpr serializedSize{ sizeof(Vector3) + 3 * sizeof(f32) };
+
+		if (bytes.size() < serializedSize) {
+			throw std::runtime_error{ "Failed to deserialize Material, because span does not contain enough bytes to read data." };
+		}
+
+		mBufData.albedo = BinarySerializer<Vector3>::Deserialize(bytes.first<sizeof(Vector3)>(), std::endian::native);
+		mBufData.metallic = BinarySerializer<f32>::Deserialize(bytes.subspan<sizeof(Vector3), sizeof(f32)>(), std::endian::native);
+		mBufData.roughness = BinarySerializer<f32>::Deserialize(bytes.subspan<sizeof(Vector3) + sizeof(f32), sizeof(f32)>(), std::endian::native);
+		mBufData.ao = BinarySerializer<f32>::Deserialize(bytes.subspan<sizeof(Vector3) + 2 * sizeof(f32), sizeof(f32)>(), std::endian::native);
+
+		for (std::size_t i = 0; i < 4; i++) {
+			mBufData.albedo[i] = std::clamp(mBufData.albedo[i], 0.f, 1.f);
+		}
+		mBufData.metallic = std::clamp(mBufData.metallic, 0.f, 1.f);
+		mBufData.roughness = std::clamp(mBufData.roughness, 0.f, 1.f);
+		mBufData.ao = std::clamp(mBufData.ao, 0.f, 1.f);
+
+		ret.numBytesConsumed += serializedSize;
+		return ret;
 	}
 
 	void Material::OnGui() {

@@ -1,5 +1,7 @@
 #include "Object.hpp"
 
+#include "BinarySerializer.hpp"
+
 #include <set>
 #include <bit>
 #include <iterator>
@@ -100,36 +102,44 @@ namespace leopph {
 
 
 	auto Object::SerializeBinary(std::vector<u8>& out) const -> void {
-		auto const& guid{ GetGuid() };
 		auto const type{ GetSerializationType() };
+		auto const& guid{ GetGuid() };
+		auto const name{ GetName() };
 
-		auto const guidBytePtr{ reinterpret_cast<u8 const*>(&guid) };
 		auto const typeBytePtr{ reinterpret_cast<u8 const*>(&type) };
+		auto const guidBytePtr{ reinterpret_cast<u8 const*>(&guid) };
 
 		if constexpr (std::endian::native == std::endian::little) {
-			out.insert(std::end(out), guidBytePtr, guidBytePtr + sizeof guid);
 			out.insert(std::end(out), typeBytePtr, typeBytePtr + sizeof type);
+			out.insert(std::end(out), guidBytePtr, guidBytePtr + sizeof guid);
+			BinarySerializer<u64>::Serialize(name.size(), out, std::endian::native);
+			for (auto const c : name) {
+				out.emplace_back(c);
+			}
 		}
 		else {
-			out.insert(std::end(out), std::make_reverse_iterator(guidBytePtr + sizeof guid), std::make_reverse_iterator(guidBytePtr));
 			out.insert(std::end(out), std::make_reverse_iterator(typeBytePtr + sizeof type), std::make_reverse_iterator(typeBytePtr));
+			out.insert(std::end(out), std::make_reverse_iterator(guidBytePtr + sizeof guid), std::make_reverse_iterator(guidBytePtr));
 		}
 	}
 
 
 	auto Object::DeserializeBinary(std::span<u8 const> const bytes) -> BinaryDeserializationResult {
-		auto constexpr serializedSize{ sizeof Guid + sizeof Type };
+		auto serializedSize{ sizeof Type + sizeof Guid + sizeof(u64) };
 
 		if (bytes.size() < serializedSize) {
 			throw std::runtime_error{ "Failed to deserialize Object, because span does not contain enough bytes to read data." };
 		}
 
-		if (*reinterpret_cast<Type const*>(bytes.subspan<sizeof(Guid), sizeof(Type)>().data()) != GetSerializationType()) {
+		if (*reinterpret_cast<Type const*>(bytes.first<sizeof(Type)>().data()) != GetSerializationType()) {
 			throw std::runtime_error{ "Failed to deserialize Object, because the type data contained in the span does not match the object type." };
 		}
 
 		if constexpr (std::endian::native == std::endian::little) {
-			SetGuid(*reinterpret_cast<Guid const*>(bytes.first<sizeof(Guid)>().data()));
+			SetGuid(*reinterpret_cast<Guid const*>(bytes.subspan<sizeof(Type), sizeof(Guid)>().data()));
+			auto const nameLngth{ *reinterpret_cast<u64 const*>(bytes.subspan<sizeof(Type) + sizeof(Guid), sizeof(u64)>().data()) };
+			SetName(std::string{reinterpret_cast<char const*>(bytes.subspan(sizeof(Type) + sizeof(Guid) + sizeof(u64), nameLngth).data()), nameLngth });
+			serializedSize += nameLngth;
 		}
 		else {
 			throw std::runtime_error{ "Object deserialization is currently only supported on little-endian architectures." };
