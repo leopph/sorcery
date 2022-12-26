@@ -4,7 +4,7 @@
 
 #include "Color.hpp"
 #include "Image.hpp"
-#include "ModelData.hpp"
+//#include "ModelData.hpp"
 #include "Util.hpp"
 
 #include <array>
@@ -161,7 +161,7 @@ namespace leopph {
 	};
 
 
-	template<>
+	/*template<>
 	struct BinarySerializer<MaterialData> {
 		auto constexpr static SerializedSize{ sizeof(Color) + 3 * sizeof(f32) + sizeof(u8) + 4 * sizeof(u64) };
 
@@ -326,5 +326,5 @@ namespace leopph {
 
 			return ret;
 		}
-	};
+	};*/
 }

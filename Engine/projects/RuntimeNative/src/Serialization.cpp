@@ -1,9 +1,8 @@
-#include "SceneElement.hpp"
-
 #include "Entity.hpp"
 #include "Components.hpp"
 #include "Math.hpp"
 #include "ManagedRuntime.hpp"
+#include "Systems.hpp"
 
 #include <mono/metadata/class.h>
 #include <mono/metadata/object.h>
@@ -14,7 +13,6 @@
 #include <iostream>
 #include <variant>
 
-#include "Systems.hpp"
 
 namespace YAML {
 	template<typename T, std::size_t N>
@@ -81,8 +79,8 @@ namespace leopph {
 	}
 
 
-	auto Camera::GetSerializationType() const -> SceneElement::Type {
-		return SceneElement::Type::Camera;
+	auto Camera::GetSerializationType() const -> Object::Type {
+		return Object::Type::Camera;
 	}
 
 

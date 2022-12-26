@@ -18,57 +18,66 @@
 namespace leopph::editor {
 	auto SerializeScene() -> YAML::Node {
 		YAML::Node sceneNode;
-		for (auto const* const se : GetAllSceneElements()) {
+
+		auto const serializeObject{ [&sceneNode](Object const* obj) {
 			YAML::Node seNode;
-			seNode["objectType"] = static_cast<int>(se->GetSerializationType());
-			seNode["guid"] = se->GetGuid().ToString();
+			seNode["objectType"] = static_cast<int>(obj->GetSerializationType());
+			seNode["guid"] = obj->GetGuid().ToString();
 
 			YAML::Node dataNode;
-			se->Serialize(dataNode);
+			obj->Serialize(dataNode);
 			seNode["data"] = dataNode;
 
 			sceneNode.push_back(seNode);
-		}
+		} };
+
+		static std::vector<Object*> objects;
+		Object::FindObjectsOfType<Entity>(objects);
+		std::ranges::for_each(objects, serializeObject);
+		Object::FindObjectsOfType<Component>(objects);
+		std::ranges::for_each(objects, serializeObject);
 		return sceneNode;
 	}
 
 
 	auto DeserializeScene(YAML::Node const& sceneNode) -> void {
-		struct SceneElementWithDataNode {
-			SceneElement* se;
+		struct ObjectWithSerializedData {
+			Object* obj;
 			YAML::Node node;
 		};
 
-		std::vector<SceneElementWithDataNode> sceneElementsWithDataNode;
+		std::vector<ObjectWithSerializedData> objectsWithSerializedData;
+
 		for (std::size_t i{ 0 }; i < sceneNode.size(); i++) {
 			auto const guid{ Guid::Parse(sceneNode[i]["guid"].as<std::string>())};
-			SceneElement* obj{ nullptr };
-			switch (static_cast<SceneElement::Type>(sceneNode[i]["objectType"].as<int>())) {
-				case SceneElement::Type::Entity: {
+			ManagedAccessObject* obj{ nullptr };
+
+			switch (static_cast<Object::Type>(sceneNode[i]["objectType"].as<int>())) {
+				case Object::Type::Entity: {
 					obj = leopph::SceneManager::GetActiveScene()->CreateEntity();
 					obj->CreateManagedObject("leopph", "Entity");
 					break;
 				}
-				case SceneElement::Type::Transform: {
+				case Object::Type::Transform: {
 					obj = new Transform{};
 					obj->CreateManagedObject("leopph", "Transform");
 					break;
 				}
-				case SceneElement::Type::Camera: {
+				case Object::Type::Camera: {
 					obj = new Camera{};
 					obj->CreateManagedObject("leopph", "Camera");
 					break;
 				}
-				case SceneElement::Type::Behavior: {
+				case Object::Type::Behavior: {
 					obj = new Behavior{};
 					break;
 				}
-				case SceneElement::Type::CubeModel: {
+				case Object::Type::CubeModel: {
 					obj = new CubeModel{};
 					obj->CreateManagedObject("leopph", "CubeModel");
 					break;
 				}
-				case SceneElement::Type::DirectionalLight: {
+				case Object::Type::DirectionalLight: {
 					obj = new DirectionalLight{};
 					obj->CreateManagedObject("leopph", "DirectionalLight");
 					break;
@@ -80,11 +89,11 @@ namespace leopph::editor {
 
 			if (obj) {
 				obj->SetGuid(guid);
-				sceneElementsWithDataNode.emplace_back(obj, sceneNode[i]["data"]);
+				objectsWithSerializedData.emplace_back(obj, sceneNode[i]["data"]);
 			}
 		}
 
-		for (auto& [se, node] : sceneElementsWithDataNode) {
+		for (auto& [se, node] : objectsWithSerializedData) {
 			se->Deserialize(node);
 		}
 	}

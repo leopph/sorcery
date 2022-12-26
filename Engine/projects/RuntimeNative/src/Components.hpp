@@ -1,11 +1,12 @@
 #pragma once
 
-#include "SceneElement.hpp"
 #include "Math.hpp"
 #include "Util.hpp"
+#include "ManagedAccessObject.hpp"
 
 #include <span>
 #include <vector>
+
 
 using MonoReflectionType = struct _MonoReflectionType;
 
@@ -16,14 +17,14 @@ namespace leopph {
 	class Component;
 
 
-	class Component : public SceneElement {
+	class Component : public ManagedAccessObject {
 	private:
 		Entity* mEntity;
 
 	public:
-		[[nodiscard]] LEOPPHAPI auto GetEntity() const->Entity*;
+		[[nodiscard]] LEOPPHAPI auto GetEntity() const -> Entity*;
 		LEOPPHAPI auto SetEntity(Entity* entity) -> void;
-		[[nodiscard]] LEOPPHAPI auto GetTransform() const->Transform&;
+		[[nodiscard]] LEOPPHAPI auto GetTransform() const -> Transform&;
 
 		virtual auto OnGui() -> void = 0;
 		LEOPPHAPI auto Serialize(YAML::Node& node) const -> void override;
@@ -32,8 +33,8 @@ namespace leopph {
 
 
 	namespace managedbindings {
-		MonoObject* GetComponentEntity(MonoObject* component);
-		MonoObject* GetComponentEntityTransform(MonoObject* component);
+		auto GetComponentEntity(MonoObject* component) -> MonoObject*;
+		auto GetComponentEntityTransform(MonoObject* component) -> MonoObject*;
 	}
 
 
@@ -45,10 +46,10 @@ namespace leopph {
 
 	class Transform : public Component {
 	private:
-		void UpdateWorldPositionRecursive();
-		void UpdateWorldRotationRecursive();
-		void UpdateWorldScaleRecursive();
-		void UpdateMatrices();
+		auto UpdateWorldPositionRecursive() -> void;
+		auto UpdateWorldRotationRecursive() -> void;
+		auto UpdateWorldScaleRecursive() -> void;
+		auto UpdateMatrices() -> void;
 
 		Vector3 mLocalPosition{ 0, 0, 0 };
 		Quaternion mLocalRotation{ 1, 0, 0, 0 };
@@ -72,90 +73,89 @@ namespace leopph {
 		LEOPPHAPI Transform();
 
 		LEOPPHAPI auto OnGui() -> void override;
-		[[nodiscard]] LEOPPHAPI auto GetSerializationType() const->Type override;
+		[[nodiscard]] LEOPPHAPI auto GetSerializationType() const -> Type override;
 		LEOPPHAPI auto Serialize(YAML::Node& node) const -> void override;
 		LEOPPHAPI auto Deserialize(YAML::Node const& node) -> void override;
 
-		[[nodiscard]] LEOPPHAPI Vector3 const& GetWorldPosition() const;
-		LEOPPHAPI void SetWorldPosition(Vector3 const& newPos);
+		[[nodiscard]] LEOPPHAPI auto GetWorldPosition() const -> Vector3 const&;
+		LEOPPHAPI auto SetWorldPosition(Vector3 const& newPos) -> void;
 
-		[[nodiscard]] LEOPPHAPI Vector3 const& GetLocalPosition() const;
-		LEOPPHAPI void SetLocalPosition(Vector3 const& newPos);
+		[[nodiscard]] LEOPPHAPI auto GetLocalPosition() const -> Vector3 const&;
+		LEOPPHAPI auto SetLocalPosition(Vector3 const& newPos) -> void;
 
-		[[nodiscard]] LEOPPHAPI Quaternion const& GetWorldRotation() const;
-		LEOPPHAPI void SetWorldRotation(Quaternion const& newRot);
+		[[nodiscard]] LEOPPHAPI auto GetWorldRotation() const -> Quaternion const&;
+		LEOPPHAPI auto SetWorldRotation(Quaternion const& newRot) -> void;
 
-		[[nodiscard]] LEOPPHAPI Quaternion const& GetLocalRotation() const;
-		LEOPPHAPI void SetLocalRotation(Quaternion const& newRot);
+		[[nodiscard]] LEOPPHAPI auto GetLocalRotation() const -> Quaternion const&;
+		LEOPPHAPI auto SetLocalRotation(Quaternion const& newRot) -> void;
 
-		[[nodiscard]] LEOPPHAPI Vector3 const& GetWorldScale() const;
-		LEOPPHAPI void SetWorldScale(Vector3 const& newScale);
+		[[nodiscard]] LEOPPHAPI auto GetWorldScale() const -> Vector3 const&;
+		LEOPPHAPI auto SetWorldScale(Vector3 const& newScale) -> void;
 
-		[[nodiscard]] LEOPPHAPI Vector3 const& GetLocalScale() const;
-		LEOPPHAPI void SetLocalScale(Vector3 const& newScale);
+		[[nodiscard]] LEOPPHAPI auto GetLocalScale() const -> Vector3 const&;
+		LEOPPHAPI auto SetLocalScale(Vector3 const& newScale) -> void;
 
-		LEOPPHAPI void Translate(Vector3 const& vector, Space base = Space::World);
-		LEOPPHAPI void Translate(f32 x, f32 y, f32 z, Space base = Space::World);
+		LEOPPHAPI auto Translate(Vector3 const& vector, Space base = Space::World) -> void;
+		LEOPPHAPI auto Translate(f32 x, f32 y, f32 z, Space base = Space::World) -> void;
 
-		LEOPPHAPI void Rotate(Quaternion const& rotation, Space base = Space::World);
-		LEOPPHAPI void Rotate(Vector3 const& axis, f32 angleDegrees, Space base = Space::World);
+		LEOPPHAPI auto Rotate(Quaternion const& rotation, Space base = Space::World) -> void;
+		LEOPPHAPI auto Rotate(Vector3 const& axis, f32 angleDegrees, Space base = Space::World) -> void;
 
-		LEOPPHAPI void Rescale(Vector3 const& scaling, Space base = Space::World);
-		LEOPPHAPI void Rescale(f32 x, f32 y, f32 z, Space base = Space::World);
+		LEOPPHAPI auto Rescale(Vector3 const& scaling, Space base = Space::World) -> void;
+		LEOPPHAPI auto Rescale(f32 x, f32 y, f32 z, Space base = Space::World) -> void;
 
-		[[nodiscard]] LEOPPHAPI Vector3 const& GetRightAxis() const;
-		[[nodiscard]] LEOPPHAPI Vector3 const& GetUpAxis() const;
-		[[nodiscard]] LEOPPHAPI Vector3 const& GetForwardAxis() const;
+		[[nodiscard]] LEOPPHAPI auto GetRightAxis() const -> Vector3 const&;
+		[[nodiscard]] LEOPPHAPI auto GetUpAxis() const -> Vector3 const&;
+		[[nodiscard]] LEOPPHAPI auto GetForwardAxis() const -> Vector3 const&;
 
-		[[nodiscard]] LEOPPHAPI Transform* GetParent() const;
-		void LEOPPHAPI SetParent(Transform* parent);
+		[[nodiscard]] LEOPPHAPI auto GetParent() const -> Transform*;
+		LEOPPHAPI auto SetParent(Transform* parent) -> void;
 
-		[[nodiscard]] LEOPPHAPI std::span<Transform* const> GetChildren() const;
+		[[nodiscard]] LEOPPHAPI auto GetChildren() const -> std::span<Transform* const>;
 
-		[[nodiscard]] LEOPPHAPI Matrix4 const& GetModelMatrix() const;
-		[[nodiscard]] LEOPPHAPI Matrix3 const& GetNormalMatrix() const;
+		[[nodiscard]] LEOPPHAPI auto GetModelMatrix() const -> Matrix4 const&;
+		[[nodiscard]] LEOPPHAPI auto GetNormalMatrix() const -> Matrix3 const&;
 	};
 
 
 	namespace managedbindings {
-		Vector3 GetTransformWorldPosition(MonoObject* transform);
-		void SetTransformWorldPosition(MonoObject* transform, Vector3 newPos);
+		auto GetTransformWorldPosition(MonoObject* transform) -> Vector3;
+		auto SetTransformWorldPosition(MonoObject* transform, Vector3 newPos) -> void;
 
-		Vector3 GetTransformLocalPosition(MonoObject* transform);
-		void SetTransformLocalPosition(MonoObject* transform, Vector3 newPos);
+		auto GetTransformLocalPosition(MonoObject* transform) -> Vector3;
+		auto SetTransformLocalPosition(MonoObject* transform, Vector3 newPos) -> void;
 
-		Quaternion GetTransformWorldRotation(MonoObject* transform);
-		void SetTransformWorldRotation(MonoObject* transform, Quaternion newRot);
+		auto GetTransformWorldRotation(MonoObject* transform) -> Quaternion;
+		auto SetTransformWorldRotation(MonoObject* transform, Quaternion newRot) -> void;
 
-		Quaternion GetTransformLocalRotation(MonoObject* transform);
-		void SetTransformLocalRotation(MonoObject* transform, Quaternion newRot);
+		auto GetTransformLocalRotation(MonoObject* transform) -> Quaternion;
+		auto SetTransformLocalRotation(MonoObject* transform, Quaternion newRot) -> void;
 
-		Vector3 GetTransformWorldScale(MonoObject* transform);
-		void SetTransformWorldScale(MonoObject* transform, Vector3 newScale);
+		auto GetTransformWorldScale(MonoObject* transform) -> Vector3;
+		auto SetTransformWorldScale(MonoObject* transform, Vector3 newScale) -> void;
 
-		Vector3 GetTransformLocalScale(MonoObject* transform);
-		void SetTransformLocalScale(MonoObject* transform, Vector3 newScale);
+		auto GetTransformLocalScale(MonoObject* transform) -> Vector3;
+		auto SetTransformLocalScale(MonoObject* transform, Vector3 newScale) -> void;
 
-		void TranslateTransformVector(MonoObject* transform, Vector3 vector, Space base);
-		void TranslateTransform(MonoObject* transform, f32 x, f32 y, f32 z, Space base);
+		auto TranslateTransformVector(MonoObject* transform, Vector3 vector, Space base) -> void;
+		auto TranslateTransform(MonoObject* transform, f32 x, f32 y, f32 z, Space base) -> void;
 
-		void RotateTransform(MonoObject* transform, Quaternion rotation, Space base);
-		void RotateTransformAngleAxis(MonoObject* transform, Vector3 axis, f32 angleDegrees, Space base);
+		auto RotateTransform(MonoObject* transform, Quaternion rotation, Space base) -> void;
+		auto RotateTransformAngleAxis(MonoObject* transform, Vector3 axis, f32 angleDegrees, Space base) -> void;
 
-		void RescaleTransformVector(MonoObject* transform, Vector3 scaling, Space base);
-		void RescaleTransform(MonoObject* transform, f32 x, f32 y, f32 z, Space base);
+		auto RescaleTransformVector(MonoObject* transform, Vector3 scaling, Space base) -> void;
+		auto RescaleTransform(MonoObject* transform, f32 x, f32 y, f32 z, Space base) -> void;
 
-		Vector3 GetTransformRightAxis(MonoObject* transform);
-		Vector3 GetTransformUpAxis(MonoObject* transform);
-		Vector3 GetTransformForwardAxis(MonoObject* transform);
+		auto GetTransformRightAxis(MonoObject* transform) -> Vector3;
+		auto GetTransformUpAxis(MonoObject* transform) -> Vector3;
+		auto GetTransformForwardAxis(MonoObject* transform) -> Vector3;
 
-		MonoObject* GetTransformParent(MonoObject* transform);
-		void SetTransformParent(MonoObject* transform, MonoObject* parent);
+		auto GetTransformParent(MonoObject* transform) -> MonoObject*;
+		auto SetTransformParent(MonoObject* transform, MonoObject* parent) -> void;
 
-		Matrix4 GetTransformModelMatrix(MonoObject* transform);
-		Matrix3 GetTransformNormalMatrix(MonoObject* transform);
+		auto GetTransformModelMatrix(MonoObject* transform) -> Matrix4;
+		auto GetTransformNormalMatrix(MonoObject* transform) -> Matrix3;
 	}
-
 
 
 	class CubeModel : public Component {
@@ -164,18 +164,20 @@ namespace leopph {
 		~CubeModel() override;
 
 		LEOPPHAPI auto OnGui() -> void override;
-		[[nodiscard]] LEOPPHAPI auto GetSerializationType() const->Type override;
+		[[nodiscard]] LEOPPHAPI auto GetSerializationType() const -> Type override;
 	};
 
 
 	class Camera : public Component {
 	public:
 		enum class Type : u8 {
-			Perspective = 0, Orthographic = 1
+			Perspective = 0,
+			Orthographic = 1
 		};
 
 		enum class Side : u8 {
-			Vertical = 0, Horizontal = 1
+			Vertical = 0,
+			Horizontal = 1
 		};
 
 	private:
@@ -192,63 +194,63 @@ namespace leopph {
 		Vector4 mBackgroundColor{ 0, 0, 0, 1 };
 
 
-		[[nodiscard]] f32 ConvertPerspectiveFov(f32 fov, bool vert2Horiz) const;
+		[[nodiscard]] auto ConvertPerspectiveFov(f32 fov, bool vert2Horiz) const -> f32;
 
 	public:
 		LEOPPHAPI Camera();
 		~Camera() override;
 
 		LEOPPHAPI auto OnGui() -> void override;
-		[[nodiscard]] LEOPPHAPI auto GetSerializationType() const->SceneElement::Type override;
+		[[nodiscard]] LEOPPHAPI auto GetSerializationType() const -> Object::Type override;
 		LEOPPHAPI auto Serialize(YAML::Node& node) const -> void override;
 		LEOPPHAPI auto Deserialize(YAML::Node const& node) -> void override;
 
-		[[nodiscard]] LEOPPHAPI static std::span<Camera* const> GetAllInstances();
+		[[nodiscard]] LEOPPHAPI static auto GetAllInstances() -> std::span<Camera* const>;
 
-		[[nodiscard]] LEOPPHAPI f32 GetNearClipPlane() const;
-		LEOPPHAPI void SetNearClipPlane(f32 nearPlane);
+		[[nodiscard]] LEOPPHAPI auto GetNearClipPlane() const -> f32;
+		LEOPPHAPI auto SetNearClipPlane(f32 nearPlane) -> void;
 
-		[[nodiscard]] LEOPPHAPI f32 GetFarClipPlane() const;
-		LEOPPHAPI void SetFarClipPlane(f32 farPlane);
+		[[nodiscard]] LEOPPHAPI auto GetFarClipPlane() const -> f32;
+		LEOPPHAPI auto SetFarClipPlane(f32 farPlane) -> void;
 
 		// Viewport extents are normalized between 0 and 1.
-		[[nodiscard]] LEOPPHAPI NormalizedViewport const& GetViewport() const;
-		LEOPPHAPI void SetViewport(NormalizedViewport const& viewport);
+		[[nodiscard]] LEOPPHAPI auto GetViewport() const -> NormalizedViewport const&;
+		LEOPPHAPI auto SetViewport(NormalizedViewport const& viewport) -> void;
 
-		[[nodiscard]] LEOPPHAPI Extent2D<u32> GetWindowExtents() const;
-		LEOPPHAPI void SetWindowExtents(Extent2D<u32> const& extent);
+		[[nodiscard]] LEOPPHAPI auto GetWindowExtents() const -> Extent2D<u32>;
+		LEOPPHAPI auto SetWindowExtents(Extent2D<u32> const& extent) -> void;
 
-		[[nodiscard]] LEOPPHAPI f32 GetAspectRatio() const;
+		[[nodiscard]] LEOPPHAPI auto GetAspectRatio() const -> f32;
 
-		[[nodiscard]] LEOPPHAPI f32 GetOrthographicSize(Side side = Side::Horizontal) const;
-		LEOPPHAPI void SetOrthoGraphicSize(f32 size, Side side = Side::Horizontal);
+		[[nodiscard]] LEOPPHAPI auto GetOrthographicSize(Side side = Side::Horizontal) const -> f32;
+		LEOPPHAPI auto SetOrthoGraphicSize(f32 size, Side side = Side::Horizontal) -> void;
 
-		[[nodiscard]] LEOPPHAPI f32 GetPerspectiveFov(Side side = Side::Horizontal) const;
-		LEOPPHAPI void SetPerspectiveFov(f32 degrees, Side side = Side::Horizontal);
+		[[nodiscard]] LEOPPHAPI auto GetPerspectiveFov(Side side = Side::Horizontal) const -> f32;
+		LEOPPHAPI auto SetPerspectiveFov(f32 degrees, Side side = Side::Horizontal) -> void;
 
-		[[nodiscard]] LEOPPHAPI Type GetType() const;
-		LEOPPHAPI void SetType(Type type);
+		[[nodiscard]] LEOPPHAPI auto GetType() const -> Type;
+		LEOPPHAPI auto SetType(Type type) -> void;
 
-		[[nodiscard]] LEOPPHAPI auto GetBackgroundColor() const->Vector4;
+		[[nodiscard]] LEOPPHAPI auto GetBackgroundColor() const -> Vector4;
 		LEOPPHAPI auto SetBackgroundColor(Vector4 const& color) -> void;
 	};
 
 
 	namespace managedbindings {
-		Camera::Type GetCameraType(MonoObject* camera);
-		void SetCameraType(MonoObject* camera, Camera::Type type);
+		auto GetCameraType(MonoObject* camera) -> Camera::Type;
+		auto SetCameraType(MonoObject* camera, Camera::Type type) -> void;
 
-		f32 GetCameraPerspectiveFov(MonoObject* camera);
-		void SetCameraPerspectiveFov(MonoObject* camera, f32 fov);
+		auto GetCameraPerspectiveFov(MonoObject* camera) -> f32;
+		auto SetCameraPerspectiveFov(MonoObject* camera, f32 fov) -> void;
 
-		f32 GetCameraOrthographicSize(MonoObject* camera);
-		void SetCameraOrthographicSize(MonoObject* camera, f32 size);
+		auto GetCameraOrthographicSize(MonoObject* camera) -> f32;
+		auto SetCameraOrthographicSize(MonoObject* camera, f32 size) -> void;
 
-		f32 GetCameraNearClipPlane(MonoObject* camera);
-		void SetCameraNearClipPlane(MonoObject* camera, f32 nearClipPlane);
+		auto GetCameraNearClipPlane(MonoObject* camera) -> f32;
+		auto SetCameraNearClipPlane(MonoObject* camera, f32 nearClipPlane) -> void;
 
-		f32 GetCameraFarClipPlane(MonoObject* camera);
-		void SetCameraFarClipPlane(MonoObject* camera, f32 farClipPlane);
+		auto GetCameraFarClipPlane(MonoObject* camera) -> f32;
+		auto SetCameraFarClipPlane(MonoObject* camera, f32 farClipPlane) -> void;
 	}
 
 
@@ -261,26 +263,26 @@ namespace leopph {
 		LEOPPHAPI auto Init(MonoClass* klass) -> void;
 
 		LEOPPHAPI auto OnGui() -> void override;
-		[[nodiscard]] LEOPPHAPI auto GetSerializationType() const->Type override;
+		[[nodiscard]] LEOPPHAPI auto GetSerializationType() const -> Type override;
 		LEOPPHAPI auto Serialize(YAML::Node& node) const -> void override;
 		LEOPPHAPI auto Deserialize(YAML::Node const& node) -> void override;
 	};
 
-	LEOPPHAPI void init_behaviors();
-	LEOPPHAPI void tick_behaviors();
-	LEOPPHAPI void tack_behaviors();
+	LEOPPHAPI auto init_behaviors() -> void;
+	LEOPPHAPI auto tick_behaviors() -> void;
+	LEOPPHAPI auto tack_behaviors() -> void;
 
 
 	class Light : public Component {
 	public:
-		[[nodiscard]] LEOPPHAPI Vector3 const& GetColor() const;
-		LEOPPHAPI void SetColor(Vector3 const& newColor);
+		[[nodiscard]] LEOPPHAPI auto GetColor() const -> Vector3 const&;
+		LEOPPHAPI auto SetColor(Vector3 const& newColor) -> void;
 
-		[[nodiscard]] LEOPPHAPI f32 GetIntensity() const;
-		LEOPPHAPI void SetIntensity(f32 newIntensity);
+		[[nodiscard]] LEOPPHAPI auto GetIntensity() const -> f32;
+		LEOPPHAPI auto SetIntensity(f32 newIntensity) -> void;
 
-		[[nodiscard]] LEOPPHAPI bool is_casting_shadow() const;
-		LEOPPHAPI void set_casting_shadow(bool newValue);
+		[[nodiscard]] LEOPPHAPI auto is_casting_shadow() const -> bool;
+		LEOPPHAPI auto set_casting_shadow(bool newValue) -> void;
 
 		LEOPPHAPI auto OnGui() -> void override;
 		LEOPPHAPI auto Serialize(YAML::Node& node) const -> void override;
@@ -295,8 +297,8 @@ namespace leopph {
 		~Light() override = default;
 
 	protected:
-		Light& operator=(Light const& other) = default;
-		Light& operator=(Light&& other) noexcept = default;
+		auto operator=(Light const& other) -> Light& = default;
+		auto operator=(Light&& other) noexcept -> Light& = default;
 
 	private:
 		bool mCastsShadow{ false };
@@ -316,8 +318,8 @@ namespace leopph {
 
 	class AttenuatedLight : public Light {
 	public:
-		[[nodiscard]] LEOPPHAPI f32 get_range() const;
-		LEOPPHAPI void set_range(f32 value);
+		[[nodiscard]] LEOPPHAPI auto get_range() const -> f32;
+		LEOPPHAPI auto set_range(f32 value) -> void;
 
 	protected:
 		AttenuatedLight() = default;
@@ -328,8 +330,8 @@ namespace leopph {
 		~AttenuatedLight() override = default;
 
 	protected:
-		AttenuatedLight& operator=(AttenuatedLight const& other) = default;
-		AttenuatedLight& operator=(AttenuatedLight&& other) noexcept = default;
+		auto operator=(AttenuatedLight const& other) -> AttenuatedLight& = default;
+		auto operator=(AttenuatedLight&& other) noexcept -> AttenuatedLight& = default;
 
 	private:
 		f32 mRange{ 10.f };
@@ -338,13 +340,14 @@ namespace leopph {
 
 	class AmbientLight final {
 	public:
-		LEOPPHAPI static AmbientLight& get_instance();
+		LEOPPHAPI static auto get_instance() -> AmbientLight&;
 
-		[[nodiscard]] LEOPPHAPI Vector3 const& get_intensity() const;
-		LEOPPHAPI void set_intensity(Vector3 const& intensity);
+		[[nodiscard]] LEOPPHAPI auto get_intensity() const -> Vector3 const&;
+		LEOPPHAPI auto set_intensity(Vector3 const& intensity) -> void;
 
 	private:
 		AmbientLight() = default;
+
 	public:
 		AmbientLight(AmbientLight const& other) = delete;
 		AmbientLight(AmbientLight&& other) = delete;
@@ -353,8 +356,8 @@ namespace leopph {
 		~AmbientLight() = default;
 
 	public:
-		AmbientLight& operator=(AmbientLight const& other) = delete;
-		AmbientLight& operator=(AmbientLight&& other) = delete;
+		auto operator=(AmbientLight const& other) -> AmbientLight& = delete;
+		auto operator=(AmbientLight&& other) -> AmbientLight& = delete;
 
 	private:
 		Vector3 mIntensity{ 0.1f, 0.1f, 0.1f };
@@ -363,10 +366,10 @@ namespace leopph {
 
 	class DirectionalLight final : public Light {
 	public:
-		[[nodiscard]] LEOPPHAPI Vector3 const& get_direction() const;
+		[[nodiscard]] LEOPPHAPI auto get_direction() const -> Vector3 const&;
 
-		[[nodiscard]] LEOPPHAPI f32 get_shadow_near_plane() const;
-		LEOPPHAPI void set_shadow_near_plane(f32 newVal);
+		[[nodiscard]] LEOPPHAPI auto get_shadow_near_plane() const -> f32;
+		LEOPPHAPI auto set_shadow_near_plane(f32 newVal) -> void;
 
 		LEOPPHAPI DirectionalLight();
 		LEOPPHAPI DirectionalLight(DirectionalLight const& other) = delete;
@@ -374,10 +377,10 @@ namespace leopph {
 
 		LEOPPHAPI ~DirectionalLight() override;
 
-		LEOPPHAPI DirectionalLight& operator=(DirectionalLight const& other);
-		LEOPPHAPI DirectionalLight& operator=(DirectionalLight&& other) noexcept;
+		LEOPPHAPI auto operator=(DirectionalLight const& other) -> DirectionalLight&;
+		LEOPPHAPI auto operator=(DirectionalLight&& other) noexcept -> DirectionalLight&;
 
-		[[nodiscard]] LEOPPHAPI auto GetSerializationType() const->Type override;
+		[[nodiscard]] LEOPPHAPI auto GetSerializationType() const -> Type override;
 
 	private:
 		f32 mShadowNear{ 50.f };
@@ -392,18 +395,18 @@ namespace leopph {
 
 		LEOPPHAPI ~PointLight() override;
 
-		LEOPPHAPI PointLight& operator=(PointLight const& other);
-		LEOPPHAPI PointLight& operator=(PointLight&& other) noexcept;
+		LEOPPHAPI auto operator=(PointLight const& other) -> PointLight&;
+		LEOPPHAPI auto operator=(PointLight&& other) noexcept -> PointLight&;
 	};
 
 
 	class SpotLight final : public AttenuatedLight {
 	public:
-		[[nodiscard]] LEOPPHAPI f32 get_inner_angle() const;
-		LEOPPHAPI void set_inner_angle(f32 degrees);
+		[[nodiscard]] LEOPPHAPI auto get_inner_angle() const -> f32;
+		LEOPPHAPI auto set_inner_angle(f32 degrees) -> void;
 
-		[[nodiscard]] LEOPPHAPI f32 get_outer_angle() const;
-		LEOPPHAPI void set_outer_angle(f32 degrees);
+		[[nodiscard]] LEOPPHAPI auto get_outer_angle() const -> f32;
+		LEOPPHAPI auto set_outer_angle(f32 degrees) -> void;
 
 		LEOPPHAPI SpotLight();
 		LEOPPHAPI SpotLight(SpotLight const& other);
@@ -411,8 +414,8 @@ namespace leopph {
 
 		LEOPPHAPI ~SpotLight() override;
 
-		LEOPPHAPI SpotLight& operator=(SpotLight const& other);
-		LEOPPHAPI SpotLight& operator=(SpotLight&& other) noexcept;
+		LEOPPHAPI auto operator=(SpotLight const& other) -> SpotLight&;
+		LEOPPHAPI auto operator=(SpotLight&& other) noexcept -> SpotLight&;
 
 	private:
 		f32 mInnerAngle{ 30.f };

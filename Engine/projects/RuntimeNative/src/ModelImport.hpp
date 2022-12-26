@@ -1,19 +1,52 @@
 #pragma once
 
-#include "Core.hpp"
-#include "ModelData.hpp"
-
-#include <assimp/Importer.hpp>
+#include "AABB.hpp"
+#include "Color.hpp"
+#include "Image.hpp"
 
 #include <bit>
 #include <filesystem>
 #include <memory>
 #include <vector>
 
+#include "Object.hpp"
+
 
 namespace leopph {
-	[[nodiscard]] auto LoadRawModelAsset(std::filesystem::path const& src) -> std::unique_ptr<Assimp::Importer>;
-	[[nodiscard]] auto ProcessRawModelAssetData(aiScene const& importedScene, std::filesystem::path const& src) -> ModelData;
-	[[nodiscard]] auto GenerateModelLeopphAsset(ModelData const& modelData, std::vector<u8>& out, std::endian endianness) -> std::vector<u8>&;
-	[[nodiscard]] auto LoadLeopphModelAsset(std::filesystem::path const& src) -> ModelData;
+	struct ObjectImportData {
+		Guid guid{ Guid::Generate() };
+	};
+
+
+	struct MaterialImportData : ObjectImportData {
+		Color albedo{ 255, 255, 255, 255 };
+		f32 metallic{ 0 };
+		f32 roughness{ 0.5f };
+		f32 ao{ 1 };
+	};
+
+
+	struct Vertex {
+		Vector3 position;
+		Vector3 normal;
+		Vector2 uv;
+	};
+
+
+	struct MeshImportData : ObjectImportData {
+		std::vector<Vertex> vertices;
+		std::vector<u32> indices;
+		AABB bounds;
+	};
+
+
+	struct ModelImportData : ObjectImportData {
+		std::vector<MeshImportData> meshes;
+		std::vector<MaterialImportData> materials;
+	};
+
+
+	[[nodiscard]] auto CalculateBounds(std::span<Vertex const> vertices) noexcept -> AABB;
+
+	[[nodiscard]] auto ImportModelAsset(std::filesystem::path const& srcFile) -> ModelImportData;
 }

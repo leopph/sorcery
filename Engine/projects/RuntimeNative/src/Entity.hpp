@@ -1,6 +1,6 @@
 #pragma once
 
-#include "SceneElement.hpp"
+#include "ManagedAccessObject.hpp"
 
 #include <string>
 #include <string_view>
@@ -19,7 +19,7 @@ namespace leopph {
 	class Scene;
 
 
-	class Entity : public SceneElement {
+	class Entity : public ManagedAccessObject {
 		friend class Scene;
 
 	private:

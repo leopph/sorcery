@@ -5,46 +5,42 @@
 
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
+#include <assimp/Importer.hpp>
+
 
 #include <fstream>
+#include <map>
 #include <queue>
+#include <ranges>
 #include <unordered_map>
+#include <utility>
 
 
 namespace leopph {
-	auto LoadRawModelAsset(std::filesystem::path const& src) -> std::unique_ptr<Assimp::Importer> {
-		auto importer{ std::make_unique<Assimp::Importer>() };
-
-		importer->SetPropertyInteger(AI_CONFIG_PP_RVC_FLAGS, aiComponent_ANIMATIONS | aiComponent_BONEWEIGHTS | aiComponent_CAMERAS | aiComponent_LIGHTS | aiComponent_COLORS);
-
-		if (auto const scene{ importer->ReadFile(src.string(), aiProcess_JoinIdenticalVertices | aiProcess_Triangulate | aiProcess_SortByPType | aiProcess_GenUVCoords | aiProcess_GenNormals | aiProcess_RemoveComponent) }; !scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
-			throw std::runtime_error{ std::format("Failed to import model at {}: {}.", src.string(), importer->GetErrorString()) };
-		}
-
-		return importer;
-	}
-
-
-	auto ProcessRawModelAssetData(aiScene const& importedScene, std::filesystem::path const& src) -> ModelData {
-		auto const buildMatrix4 = [](aiMatrix4x4 const& aiMat) {
-			return Matrix4
-			{
+	namespace {
+		[[nodiscard]] auto ConvertMatrix(aiMatrix4x4 const& aiMat) noexcept -> Matrix4 {
+			return Matrix4{
 				aiMat.a1, aiMat.a2, aiMat.a3, aiMat.a4,
 				aiMat.b1, aiMat.b2, aiMat.b3, aiMat.b4,
 				aiMat.c1, aiMat.c2, aiMat.c3, aiMat.c4,
 				aiMat.d1, aiMat.d2, aiMat.d3, aiMat.d4
 			};
-		};
+		}
 
-		auto const buildVector3 = [](aiVector3D const& aiVec) {
+		[[nodiscard]] auto ConvertVector(aiVector3D const& aiVec) noexcept -> Vector3 {
 			return Vector3{ aiVec.x, aiVec.y, aiVec.z };
-		};
+		}
 
-		auto const buildColor = [](aiColor3D const& aiCol) {
-			return Color{ static_cast<u8>(aiCol.r * 255), static_cast<u8>(aiCol.g * 255), static_cast<u8>(aiCol.b * 255), 255 };
-		};
+		[[nodiscard]] auto ConvertColor(aiColor3D const& aiCol) noexcept -> Color {
+			return Color{
+				static_cast<u8>(aiCol.r * 255),
+				static_cast<u8>(aiCol.g * 255),
+				static_cast<u8>(aiCol.b * 255),
+				255
+			};
+		}
 
-		auto const loadTexture = [](aiString const& texPath, std::filesystem::path const& rootPath, aiScene const& scene) {
+		[[nodiscard]] auto LoadTexture(aiString const& texPath, std::filesystem::path const& rootPath, aiScene const& scene) noexcept -> Image {
 			// Texture is embedded
 			if (auto const* const embeddedTexture = scene.GetEmbeddedTexture(texPath.C_Str()); embeddedTexture) {
 				// Texture is not compressed
@@ -65,192 +61,160 @@ namespace leopph {
 			// Texture is in a separate file
 			return Image{ rootPath / texPath.C_Str(), ImageOrientation::FlipVertical };
 		};
+	};
+
+
+	auto ImportModelAsset(std::filesystem::path const& srcFile) -> ModelImportData {
+		Assimp::Importer importer;
+
+		importer.SetPropertyInteger(AI_CONFIG_PP_RVC_FLAGS, aiComponent_ANIMATIONS | aiComponent_BONEWEIGHTS | aiComponent_CAMERAS | aiComponent_LIGHTS | aiComponent_COLORS);
+
+		auto const scene{ importer.ReadFile(srcFile.string(), aiProcess_JoinIdenticalVertices | aiProcess_Triangulate | aiProcess_SortByPType | aiProcess_GenUVCoords | aiProcess_GenNormals | aiProcess_RemoveComponent) };
+
+		if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
+			throw std::runtime_error{ std::format("Failed to import model at {}: {}.", srcFile.string(), importer.GetErrorString()) };
+		}
+
+		auto const& srcDir = srcFile.parent_path();
+
+		ModelImportData ret;
+		
+		/*std::unordered_map<aiString, std::size_t> texPathToInd;
+
+		auto const LoadOrGetTextureIndexFromCache = [&ret, &texPathToInd, &srcDir, scene](aiString const& texPath) -> unsigned long long {
+			if (auto const it = texPathToInd.find(texPath); it != std::end(texPathToInd)) {
+				return it->second;
+			}
+
+			ret.textures.emplace_back(LoadTexture(texPath, srcDir, *scene));
+			ret.textures.back().image.set_encoding(ColorEncoding::sRGB);
+			texPathToInd[texPath] = ret.textures.size() - 1;
+			return ret.textures.size() - 1;
+		};*/
+		
+		ret.materials.reserve(scene->mNumMaterials);
+
+		for (unsigned i{ 0 }; i < scene->mNumMaterials; i++) {
+			auto const* const aiMat = scene->mMaterials[i];
+			auto& mat{ ret.materials.emplace_back() };
+
+			if (aiColor3D baseColor; aiMat->Get(AI_MATKEY_BASE_COLOR, baseColor) == aiReturn_SUCCESS) {
+				mat.albedo = ConvertColor(baseColor);
+			}
+
+			if (f32 metallic; aiMat->Get(AI_MATKEY_METALLIC_FACTOR, metallic) == aiReturn_SUCCESS) {
+				mat.metallic = metallic;
+			}
+
+			if (f32 roughness; aiMat->Get(AI_MATKEY_ROUGHNESS_FACTOR, roughness) == aiReturn_SUCCESS) {
+				mat.roughness = roughness;
+			}
+
+			/*if (aiString texPath; aiMat->Get(AI_MATKEY_TEXTURE(aiTextureType_BASE_COLOR, 0), texPath) == aiReturn_SUCCESS) {
+				mat.albedoMapIndex = LoadOrGetTextureIndexFromCache(texPath);
+			}
+
+			if (aiString texPath; aiMat->Get(AI_MATKEY_TEXTURE(aiTextureType_METALNESS, 0), texPath) == aiReturn_SUCCESS) {
+				mat.metallicMapIndex = LoadOrGetTextureIndexFromCache(texPath);
+			}
+
+			if (aiString texPath; aiMat->Get(AI_MATKEY_TEXTURE(aiTextureType_DIFFUSE_ROUGHNESS, 0), texPath) == aiReturn_SUCCESS) {
+				mat.roughnessMapIndex = LoadOrGetTextureIndexFromCache(texPath);
+			}*/
+		}
 
 		// Extract geometry data from the assimp structure, group it by the used materials, and calculate AABB for the meshes
 
+		struct SubMeshData {
+			std::vector<Vertex> vertices{};
+			std::vector<u32> indices{};
+		};
+
 		// Maps a material index to a list of meshes
-		std::unordered_map<std::size_t, std::vector<MeshData>> subMeshDataByMaterial;
+		std::map<std::size_t, std::vector<SubMeshData>> subMeshDataByMaterial;
 
-		{
-			std::queue<std::pair<aiNode const*, Matrix4>> queue;
-			queue.emplace(importedScene.mRootNode, buildMatrix4(importedScene.mRootNode->mTransformation).transpose() * Matrix4{ 1, 1, -1, 1 });
 
-			while (!queue.empty()) {
-				auto& [node, trafo] = queue.front();
+		std::queue<std::pair<aiNode const*, Matrix4>> queue;
+		queue.emplace(scene->mRootNode, ConvertMatrix(scene->mRootNode->mTransformation).transpose() * Matrix4{ 1, 1, -1, 1 });
 
-				for (std::size_t i = 0; i < node->mNumMeshes; ++i) {
-					// aiProcess_SortByPType will separate mixed-primitive meshes, so every mesh in theory should be clean and only contain one kind of primitive.
-					// Testing for one type only is therefore safe, but triangle meshes have to be checked for NGON encoding too.
-					if (auto const* const mesh = importedScene.mMeshes[node->mMeshes[i]]; mesh->mPrimitiveTypes & aiPrimitiveType_TRIANGLE) {
-						if (mesh->mPrimitiveTypes & aiPrimitiveType_NGONEncodingFlag) {
-							//Logger::get_instance().debug(std::format("Found NGON encoded submesh in model file at {}.", path.string()));
-							// TODO transform to triangle fans
-						}
+		while (!queue.empty()) {
+			auto& [node, trafo] = queue.front();
 
-						// Process the vertices
+			for (std::size_t i = 0; i < node->mNumMeshes; ++i) {
+				// aiProcess_SortByPType will separate mixed-primitive meshes, so every mesh in theory should be clean and only contain one kind of primitive.
+				// Testing for one type only is therefore safe, but triangle meshes have to be checked for NGON encoding too.
+				if (auto const* const mesh = scene->mMeshes[node->mMeshes[i]]; mesh->mPrimitiveTypes & aiPrimitiveType_TRIANGLE) {
+					if (mesh->mPrimitiveTypes & aiPrimitiveType_NGONEncodingFlag) {
+						//Logger::get_instance().debug(std::format("Found NGON encoded submesh in model file at {}.", path.string()));
+						// TODO transform to triangle fans
+					}
 
-						std::vector<Vertex> vertices;
+					auto& [vertices, indices]{ subMeshDataByMaterial[mesh->mMaterialIndex].emplace_back() };
 
-						for (unsigned j = 0; j < mesh->mNumVertices; j++) {
-							Vertex vertex
-							{
-								.position = Vector3{ Vector4{ buildVector3(mesh->mVertices[j]), 1 } * trafo },
-								.normal = Vector3{ Vector4{ buildVector3(mesh->mNormals[j]), 0 } * trafo }.normalize(),
-								.uv = [mesh, j, &buildVector3] {
-									for (std::size_t k = 0; k < AI_MAX_NUMBER_OF_TEXTURECOORDS; k++) {
-										if (mesh->HasTextureCoords(static_cast<unsigned>(k))) {
-											return Vector2{ buildVector3(mesh->mTextureCoords[k][j]) };
-										}
+					// Process the vertices
+					for (unsigned j = 0; j < mesh->mNumVertices; j++) {
+						vertices.emplace_back(
+							Vector3{ Vector4{ ConvertVector(mesh->mVertices[j]), 1 } * trafo },
+							Vector3{ Vector4{ ConvertVector(mesh->mNormals[j]), 0 } * trafo }.normalize(),
+							[mesh, j] {
+								for (std::size_t k = 0; k < AI_MAX_NUMBER_OF_TEXTURECOORDS; k++) {
+									if (mesh->HasTextureCoords(static_cast<unsigned>(k))) {
+										return Vector2{ ConvertVector(mesh->mTextureCoords[k][j]) };
 									}
-									return Vector2{};
-								}()
-							};
-
-							vertices.push_back(vertex);
-						}
-
-						// Process the indices
-
-						std::vector<u32> indices;
-
-						for (unsigned j = 0; j < mesh->mNumFaces; j++) {
-							for (unsigned k = 0; k < mesh->mFaces[j].mNumIndices; k++) {
-								indices.push_back(mesh->mFaces[j].mIndices[k]);
-							}
-						}
-
-						// Calculate AABB
-
-						AABB bounds{};
-
-						for (auto const& [position, normal, uv] : vertices) {
-							bounds.min = Vector3{ std::min(bounds.min[0], position[0]), std::min(bounds.min[1], position[1]), std::min(bounds.min[2], position[2]) };
-							bounds.max = Vector3{ std::max(bounds.max[0], position[0]), std::max(bounds.max[1], position[1]), std::max(bounds.max[2], position[2]) };
-						}
-
-						subMeshDataByMaterial[mesh->mMaterialIndex].emplace_back(std::move(vertices), std::move(indices), bounds);
+								}
+								return Vector2{};
+							}()
+						);
 					}
-					else {
-						std::string primitiveType;
 
-						if (mesh->mPrimitiveTypes & aiPrimitiveType_POINT) {
-							primitiveType += " [points]";
+					// Process the indices
+					for (unsigned j = 0; j < mesh->mNumFaces; j++) {
+						for (unsigned k = 0; k < mesh->mFaces[j].mNumIndices; k++) {
+							indices.push_back(mesh->mFaces[j].mIndices[k]);
 						}
-
-						if (mesh->mPrimitiveTypes & aiPrimitiveType_LINE) {
-							primitiveType += " [lines]";
-						}
-
-						if (mesh->mPrimitiveTypes & aiPrimitiveType_POLYGON) {
-							primitiveType += " [N>3 polygons]";
-						}
-
-						// TODO Implement non-triangle rendering support
-						//Logger::get_instance().debug(std::format("Ignoring non-triangle mesh in model file at {}. Primitives in the mesh are {}.", path.string(), primitiveType));
 					}
 				}
+				else {
+					std::string primitiveType;
 
-				for (std::size_t i = 0; i < node->mNumChildren; ++i) {
-					queue.emplace(node->mChildren[i], buildMatrix4(node->mChildren[i]->mTransformation).transpose() * trafo);
+					if (mesh->mPrimitiveTypes & aiPrimitiveType_POINT) {
+						primitiveType += " [points]";
+					}
+
+					if (mesh->mPrimitiveTypes & aiPrimitiveType_LINE) {
+						primitiveType += " [lines]";
+					}
+
+					if (mesh->mPrimitiveTypes & aiPrimitiveType_POLYGON) {
+						primitiveType += " [N>3 polygons]";
+					}
+
+					// TODO Implement non-triangle rendering support
+					//Logger::get_instance().debug(std::format("Ignoring non-triangle mesh in model file at {}. Primitives in the mesh are {}.", path.string(), primitiveType));
 				}
-
-				queue.pop();
 			}
+
+			for (std::size_t i = 0; i < node->mNumChildren; ++i) {
+				queue.emplace(node->mChildren[i], ConvertMatrix(node->mChildren[i]->mTransformation).transpose() * trafo);
+			}
+
+			queue.pop();
 		}
 
+		// Collapse meshes over materials and calculate their AABBs
 
-		// Create the final data structure by collapsing meshes over materials, combining their AABBs, and loading their material data
+		for(auto& subMeshes : subMeshDataByMaterial | std::views::values) {
+			auto& mesh{ ret.meshes.emplace_back() };
 
-
-		ModelData ret;
-
-		{
-			auto const& modelDir = src.parent_path();
-
-			// Caches loaded textures based on their file paths and indices in the array
-			std::unordered_map<std::string, std::size_t> texturePathToIndex;
-
-			for (auto& [materialIndex, mesh] : subMeshDataByMaterial) {
-				{
-					MeshData meshAccum{};
-
-					// Accumulate vertices and indices
-
-					for (auto& [vertices, indices, aabb] : mesh) {
-						for (auto& index : indices) {
-							index += clamp_cast<u32>(meshAccum.vertices.size());
-						}
-
-						meshAccum.vertices.insert(std::end(meshAccum.vertices), std::begin(vertices), std::end(vertices));
-						meshAccum.indices.insert(std::end(meshAccum.indices), std::begin(indices), std::end(indices));
-
-						// Extend AABB
-
-						meshAccum.boundingBox.min = Vector3{ std::min(meshAccum.boundingBox.min[0], aabb.min[0]), std::min(meshAccum.boundingBox.min[1], aabb.min[1]), std::min(meshAccum.boundingBox.min[2], aabb.min[2]) };
-						meshAccum.boundingBox.max = Vector3{ std::max(meshAccum.boundingBox.max[0], aabb.max[0]), std::max(meshAccum.boundingBox.max[1], aabb.max[1]), std::max(meshAccum.boundingBox.max[2], aabb.max[2]) };
-					}
-
-					ret.meshes.emplace_back(std::move(meshAccum));
+			for (auto& [vertices, indices] : subMeshes) {
+				for (auto& index : indices) {
+					index += clamp_cast<u32>(mesh.vertices.size());
 				}
 
-				// Load the corresponding material data
+				mesh.vertices.insert(std::end(mesh.vertices), std::begin(vertices), std::end(vertices));
+				mesh.indices.insert(std::end(mesh.indices), std::begin(indices), std::end(indices));
 
-				{
-					MaterialData matData;
-
-					{
-						auto const* const aiMat = importedScene.mMaterials[materialIndex];
-
-						if (aiColor3D baseColor; aiMat->Get(AI_MATKEY_BASE_COLOR, baseColor) == aiReturn_SUCCESS) {
-							matData.albedo = buildColor(baseColor);
-						}
-
-						if (f32 metallic; aiMat->Get(AI_MATKEY_METALLIC_FACTOR, metallic) == aiReturn_SUCCESS) {
-							matData.metallic = metallic;
-						}
-
-						if (f32 roughness; aiMat->Get(AI_MATKEY_ROUGHNESS_FACTOR, roughness) == aiReturn_SUCCESS) {
-							matData.roughness = roughness;
-						}
-
-						if (aiString texPath; aiMat->Get(AI_MATKEY_TEXTURE(aiTextureType_BASE_COLOR, 0), texPath) == aiReturn_SUCCESS) {
-							if (auto const it = texturePathToIndex.find(texPath.C_Str()); it != std::end(texturePathToIndex)) {
-								matData.albedoMapIndex = it->second;
-							}
-							else {
-								ret.textures.push_back(loadTexture(texPath, modelDir, importedScene));
-								ret.textures.back().set_encoding(ColorEncoding::sRGB);
-								texturePathToIndex[texPath.C_Str()] = ret.textures.size() - 1;
-								matData.albedoMapIndex = ret.textures.size() - 1;
-							}
-						}
-
-						if (aiString texPath; aiMat->Get(AI_MATKEY_TEXTURE(aiTextureType_METALNESS, 0), texPath) == aiReturn_SUCCESS) {
-							if (auto const it = texturePathToIndex.find(texPath.C_Str()); it != std::end(texturePathToIndex)) {
-								matData.metallicMapIndex = it->second;
-							}
-							else {
-								ret.textures.push_back(loadTexture(texPath, modelDir, importedScene));
-								ret.textures.back().set_encoding(ColorEncoding::sRGB);
-								texturePathToIndex[texPath.C_Str()] = ret.textures.size() - 1;
-								matData.metallicMapIndex = ret.textures.size() - 1;
-							}
-						}
-
-						if (aiString texPath; aiMat->Get(AI_MATKEY_TEXTURE(aiTextureType_DIFFUSE_ROUGHNESS, 0), texPath) == aiReturn_SUCCESS) {
-							if (auto const it = texturePathToIndex.find(texPath.C_Str()); it != std::end(texturePathToIndex)) {
-								matData.roughnessMapIndex = it->second;
-							}
-							else {
-								ret.textures.push_back(loadTexture(texPath, modelDir, importedScene));
-								ret.textures.back().set_encoding(ColorEncoding::Linear);
-								texturePathToIndex[texPath.C_Str()] = ret.textures.size() - 1;
-								matData.roughnessMapIndex = ret.textures.size() - 1;
-							}
-						}
-					}
-					ret.materials.emplace_back(matData);
-				}
+				mesh.bounds = CalculateBounds(mesh.vertices);
 			}
 		}
 
@@ -258,7 +222,19 @@ namespace leopph {
 	}
 
 
-	auto GenerateModelLeopphAsset(ModelData const& modelData, std::vector<u8>& out, std::endian const endianness) -> std::vector<u8>& {
+	auto CalculateBounds(std::span<Vertex const> const vertices) noexcept -> AABB {
+		AABB bounds{};
+
+		for (auto const& [position, normal, uv] : vertices) {
+			bounds.min = Vector3{ std::min(bounds.min[0], position[0]), std::min(bounds.min[1], position[1]), std::min(bounds.min[2], position[2]) };
+			bounds.max = Vector3{ std::max(bounds.max[0], position[0]), std::max(bounds.max[1], position[1]), std::max(bounds.max[2], position[2]) };
+		}
+
+		return bounds;
+	}
+
+
+	/*auto GenerateModelLeopphAsset(ModelData const& modelData, std::vector<u8>& out, std::endian const endianness) -> std::vector<u8>& {
 		if (endianness != std::endian::little && endianness != std::endian::big) {
 			auto const msg = "Error while exporting. Mixed endian architectures are currently not supported.";
 			//internal::Logger::Instance().Critical(msg);
@@ -346,5 +322,5 @@ namespace leopph {
 		}
 
 		return BinarySerializer<ModelData>::Deserialize(std::span{ uncompressed }, endianness);
-	}
+	}*/
 }
