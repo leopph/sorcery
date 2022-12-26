@@ -14,7 +14,6 @@
 #include <Systems.hpp>
 
 #include <imgui.h>
-#include <misc/cpp/imgui_stdlib.h>
 #include <backends/imgui_impl_win32.h>
 #include <backends/imgui_impl_dx11.h>
 
@@ -89,6 +88,9 @@ namespace {
 			loaderThread.detach();
 		}
 	}
+
+
+	leopph::Object* gSelected{ nullptr };
 }
 
 
@@ -244,32 +246,23 @@ int WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ H
 
 				ImGui::EndMainMenuBar();
 			}
-
-			static std::optional<std::size_t> selectedEntityIndex;
+			
 			static std::vector<leopph::Entity*> entities;
 			leopph::Entity::GetAllEntities(entities);
 
-			if (selectedEntityIndex && *selectedEntityIndex >= entities.size()) {
-				selectedEntityIndex.reset();
-			}
 
 			if (ImGui::Begin("Entities", nullptr, ImGuiWindowFlags_NoCollapse)) {
 				for (std::size_t i = 0; i < entities.size(); i++) {
 					ImGui::PushID(static_cast<int>(i));
-					if (ImGui::Selectable(entities[i]->GetName().data(), selectedEntityIndex && *selectedEntityIndex == i)) {
-						selectedEntityIndex = i;
+					if (ImGui::Selectable(entities[i]->GetName().data(), gSelected == entities[i])) {
+						gSelected = entities[i];
 					}
 
 					if (ImGui::BeginPopupContextItem()) {
 						if (ImGui::MenuItem("Delete")) {
 							entities[i]->GetScene().DestroyEntity(entities[i]);
 							leopph::Entity::GetAllEntities(entities);
-							if (!entities.empty()) {
-								selectedEntityIndex = std::min(*selectedEntityIndex, entities.size() - 1);
-							}
-							else {
-								selectedEntityIndex.reset();
-							}
+							gSelected = nullptr;
 							ImGui::CloseCurrentPopup();
 						}
 						ImGui::EndPopup();
@@ -283,66 +276,9 @@ int WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ H
 
 			ImGui::SetNextWindowSize(ImVec2{ 400, 600 }, ImGuiCond_FirstUseEver);
 
-			if (ImGui::Begin("Entity Properties", nullptr, ImGuiWindowFlags_NoCollapse)) {
-				if (selectedEntityIndex && selectedEntityIndex < entities.size()) {
-					auto const& entity = entities[*selectedEntityIndex];
-
-					static std::string entityName;
-					entityName = entity->GetName();
-
-					if (ImGui::BeginTable("Property Widgets", 2)) {
-						ImGui::TableNextRow();
-
-						ImGui::TableSetColumnIndex(0);
-						ImGui::PushItemWidth(FLT_MIN);
-						ImGui::Text("Name");
-
-						ImGui::TableSetColumnIndex(1);
-						ImGui::PushItemWidth(-FLT_MIN);
-						if (ImGui::InputText("##EntityName", &entityName)) {
-							entity->SetName(entityName);
-						}
-
-						ImGui::EndTable();
-					}
-
-					static std::vector<leopph::Component*> components;
-
-					for (auto const& component : entity->GetComponents(components)) {
-						auto const obj = component->GetManagedObject();
-						auto const klass = mono_object_get_class(obj);
-
-						auto const componentNodeId = mono_class_get_name(klass);
-						if (ImGui::TreeNodeEx(componentNodeId, ImGuiTreeNodeFlags_DefaultOpen)) {
-							ImGui::Separator();
-							component->OnGui();
-							ImGui::TreePop();
-						}
-
-						if (ImGui::BeginPopupContextItem(componentNodeId)) {
-							if (ImGui::MenuItem("Delete")) {
-								entities[*selectedEntityIndex]->DestroyComponent(component);
-							}
-							ImGui::EndPopup();
-						}
-						ImGui::OpenPopupOnItemClick(componentNodeId, ImGuiPopupFlags_MouseButtonRight);
-					}
-
-					auto constexpr addNewComponentLabel = "Add New Component";
-					ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize(addNewComponentLabel).x) * 0.5f);
-					ImGui::Button(addNewComponentLabel);
-
-					if (ImGui::BeginPopupContextItem(nullptr, ImGuiPopupFlags_MouseButtonLeft)) {
-						for (auto const& componentClass : leopph::gManagedRuntime.GetComponentClasses()) {
-							auto const componentName = mono_class_get_name(componentClass);
-							if (ImGui::MenuItem(componentName)) {
-								entity->CreateComponent(componentClass);
-								ImGui::CloseCurrentPopup();
-							}
-						}
-
-						ImGui::EndPopup();
-					}
+			if (ImGui::Begin("Object Properties", nullptr, ImGuiWindowFlags_NoCollapse)) {
+				if (gSelected) {
+					gSelected->OnGui();
 				}
 			}
 			ImGui::End();

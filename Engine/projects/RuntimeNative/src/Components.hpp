@@ -18,7 +18,6 @@ namespace leopph {
 
 
 	class Component : public ManagedAccessObject {
-	private:
 		Entity* mEntity;
 
 	public:
@@ -26,7 +25,6 @@ namespace leopph {
 		LEOPPHAPI auto SetEntity(Entity* entity) -> void;
 		[[nodiscard]] LEOPPHAPI auto GetTransform() const -> Transform&;
 
-		virtual auto OnGui() -> void = 0;
 		LEOPPHAPI auto SerializeTextual(YAML::Node& node) const -> void override;
 		LEOPPHAPI auto DeserializeTextual(YAML::Node const& node) -> void override;
 	};

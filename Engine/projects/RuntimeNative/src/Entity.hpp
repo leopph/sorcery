@@ -72,6 +72,8 @@ namespace leopph {
 			}
 			return outComponents;
 		}
+
+		LEOPPHAPI auto OnGui() -> void override;
 	};
 
 

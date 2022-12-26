@@ -3,6 +3,7 @@
 #include "Platform.hpp"
 #include "Entity.hpp"
 #include "Systems.hpp"
+#include "Util.hpp"
 
 #ifdef NDEBUG
 #include "shaders/cinclude/BlinnPhongVertShadBin.h"
@@ -642,10 +643,6 @@ namespace leopph {
 
 
 	auto Renderer::DrawCamera(Camera const* const cam) -> void {
-		if (mCubeModels.empty()) {
-			return;
-		}
-
 		auto const& camViewport{ cam->GetViewport() };
 		D3D11_VIEWPORT const viewport{
 			.TopLeftX = static_cast<FLOAT>(mGameRes.width) * camViewport.position.x,
@@ -671,6 +668,10 @@ namespace leopph {
 		mResources->context->PSSetConstantBuffers(0, 1, mResources->clearColorCbuf.GetAddressOf());
 		mResources->context->OMSetRenderTargets(1, mResources->renderTextureRtv.GetAddressOf(), nullptr);
 		mResources->context->DrawIndexed(ARRAYSIZE(QUAD_INDICES), 0, 0);
+
+		if (mCubeModels.empty()) {
+			return;
+		}
 
 		DirectX::XMFLOAT3 const camPos{ cam->GetTransform().GetWorldPosition().get_data() };
 		DirectX::XMFLOAT3 const camForward{ cam->GetTransform().GetForwardAxis().get_data() };
@@ -725,7 +726,7 @@ namespace leopph {
 
 			D3D11_BUFFER_DESC const desc
 			{
-				.ByteWidth = mInstanceBufferElementCapacity * sizeof(CubeInstanceData),
+				.ByteWidth = clamp_cast<UINT>(mInstanceBufferElementCapacity * sizeof(CubeInstanceData)),
 				.Usage = D3D11_USAGE_DYNAMIC,
 				.BindFlags = D3D11_BIND_VERTEX_BUFFER,
 				.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,

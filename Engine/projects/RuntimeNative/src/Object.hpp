@@ -77,6 +77,8 @@ namespace leopph {
 		};
 
 		LEOPPHAPI [[nodiscard]] virtual auto DeserializeBinary(std::span<u8 const> bytes) -> BinaryDeserializationResult;
+
+		virtual auto OnGui() -> void {}
 	};
 
 
