@@ -34,6 +34,7 @@
 #include <format>
 #include <fstream>
 #include <iostream>
+#include <mutex>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -91,6 +92,7 @@ namespace {
 
 
 	leopph::Object* gSelected{ nullptr };
+	std::optional<std::filesystem::path> gWorkingDir;
 }
 
 
@@ -131,233 +133,257 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 		while (!leopph::gWindow.IsQuitSignaled()) {
 			leopph::gWindow.ProcessEvents();
 
-			if (runGame) {
-				leopph::init_behaviors();
-				leopph::tick_behaviors();
-				leopph::tack_behaviors();
-
-				if (leopph::GetKeyDown(leopph::Key::Escape)) {
-					runGame = false;
-					leopph::gWindow.SetEventHook(EditorImGuiEventHook);
-					leopph::gWindow.SetCursorConfinement(false);
-					leopph::gWindow.SetCursorHiding(false);
-					leopph::gRenderer.SetSyncInterval(1);
-					CloseCurrentScene();
-					leopph::editor::DeserializeScene(gSerializedSceneBackup);
-				}
-			}
-			else {
-				if (leopph::GetKeyDown(leopph::Key::F5)) {
-					runGame = true;
-					leopph::gWindow.SetEventHook({});
-					leopph::gRenderer.SetSyncInterval(0);
-					gSerializedSceneBackup = leopph::editor::SerializeScene();
-				}
-			}
-
 			ImGui_ImplDX11_NewFrame();
 			ImGui_ImplWin32_NewFrame();
 			ImGui::NewFrame();
 
-			ImGui::DockSpaceOverViewport();
+			if (!gWorkingDir) {
+				auto flags{ ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings };
+				auto const viewport{ ImGui::GetMainViewport() };
+				ImGui::SetNextWindowPos(viewport->Pos);
+				ImGui::SetNextWindowSize(viewport->Size);
 
-			if (gLoading) {
-				ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
-				if (ImGui::Begin("LoadingIndicator", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse)) {
-					leopph::editor::DrawSpinner("##spinner", 15, 6, ImGui::GetColorU32(ImGuiCol_ButtonHovered));
+				if (ImGui::Begin("Open Project", nullptr, flags)) {
+					auto const openProjectButtonLabel{ "Open Project" };
+					auto const windowSize{ ImGui::GetWindowSize() };
+					auto const textSize{ ImGui::CalcTextSize(openProjectButtonLabel) };
+
+					ImGui::SetCursorPosX((windowSize.x - textSize.x) * 0.5f);
+					ImGui::SetCursorPosY((windowSize.y - textSize.y) * 0.5f);
+
+					if (ImGui::Button("Open Project")) {
+						if (nfdchar_t* selectedPath{ nullptr }; NFD_PickFolder(nullptr, &selectedPath) == NFD_OKAY) {
+							gWorkingDir = std::filesystem::path{ selectedPath };
+						}
+					}
 				}
 				ImGui::End();
 			}
+			else {
+				if (runGame) {
+					leopph::init_behaviors();
+					leopph::tick_behaviors();
+					leopph::tack_behaviors();
 
-			if (showDemoWindow) {
-				ImGui::ShowDemoWindow();
-			}
+					if (leopph::GetKeyDown(leopph::Key::Escape)) {
+						runGame = false;
+						leopph::gWindow.SetEventHook(EditorImGuiEventHook);
+						leopph::gWindow.SetCursorConfinement(false);
+						leopph::gWindow.SetCursorHiding(false);
+						leopph::gRenderer.SetSyncInterval(1);
+						CloseCurrentScene();
+						leopph::editor::DeserializeScene(gSerializedSceneBackup);
+					}
+				}
+				else {
+					if (leopph::GetKeyDown(leopph::Key::F5)) {
+						runGame = true;
+						leopph::gWindow.SetEventHook({});
+						leopph::gRenderer.SetSyncInterval(0);
+						gSerializedSceneBackup = leopph::editor::SerializeScene();
+					}
+				}
 
-			if (ImGui::BeginMainMenuBar()) {
-				if (ImGui::BeginMenu("File")) {
-					/*if (ImGui::MenuItem("Open Project")) {
-						if (nfdchar_t* selectedPath{ nullptr }; NFD_PickFolder(nullptr, &selectedPath) == NFD_OKAY) {
-							auto const LoadAndAssignProject = [selectedPath] {
-								gProject = leopph::editor::LoadProject(selectedPath);
-								std::free(selectedPath);
-							};
+				ImGui::DockSpaceOverViewport();
 
-							std::thread loaderThread{ LoadAndBlockEditor, std::ref(io), LoadAndAssignProject };
-							loaderThread.detach();
+				if (gLoading) {
+					ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+					if (ImGui::Begin("LoadingIndicator", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse)) {
+						leopph::editor::DrawSpinner("##spinner", 15, 6, ImGui::GetColorU32(ImGuiCol_ButtonHovered));
+					}
+					ImGui::End();
+				}
+
+				if (showDemoWindow) {
+					ImGui::ShowDemoWindow();
+				}
+
+				if (ImGui::BeginMainMenuBar()) {
+					if (ImGui::BeginMenu("File")) {
+						/*if (ImGui::MenuItem("Open Project")) {
+							if (nfdchar_t* selectedPath{ nullptr }; NFD_PickFolder(nullptr, &selectedPath) == NFD_OKAY) {
+								auto const LoadAndAssignProject = [selectedPath] {
+									gProject = leopph::editor::LoadProject(selectedPath);
+									std::free(selectedPath);
+								};
+
+								std::thread loaderThread{ LoadAndBlockEditor, std::ref(io), LoadAndAssignProject };
+								loaderThread.detach();
+							}
 						}
-					}
 
-					if (ImGui::MenuItem("Import Asset")) {
-						ImportAsset(io);
-					}
+						if (ImGui::MenuItem("Import Asset")) {
+							ImportAsset(io);
+						}
 
-					if (ImGui::MenuItem("Close Project")) {
-						gProject = nullptr;
-					}*/
+						if (ImGui::MenuItem("Close Project")) {
+							gProject = nullptr;
+						}*/
 
-					if (ImGui::MenuItem("Save Test Scene")) {
-						if (!runGame) {
-							std::ofstream out{ "scene.yaml" };
-							YAML::Emitter emitter{ out };
-							auto const serializedScene = leopph::editor::SerializeScene();
-							emitter << serializedScene;
+						if (ImGui::MenuItem("Save Test Scene")) {
+							if (!runGame) {
+								std::ofstream out{ "scene.yaml" };
+								YAML::Emitter emitter{ out };
+								auto const serializedScene = leopph::editor::SerializeScene();
+								emitter << serializedScene;
+								gSerializedSceneBackup = serializedScene;
+							}
+						}
+
+						if (ImGui::MenuItem("Load Test Scene")) {
+							CloseCurrentScene();
+							auto const serializedScene = YAML::LoadFile("scene.yaml");
+							leopph::editor::DeserializeScene(serializedScene);
 							gSerializedSceneBackup = serializedScene;
 						}
+
+						ImGui::EndMenu();
 					}
 
-					if (ImGui::MenuItem("Load Test Scene")) {
-						CloseCurrentScene();
-						auto const serializedScene = YAML::LoadFile("scene.yaml");
-						leopph::editor::DeserializeScene(serializedScene);
-						gSerializedSceneBackup = serializedScene;
-					}
+					if (ImGui::BeginMenu("Create")) {
+						if (ImGui::MenuItem("Entity")) {
+							auto const entity{ leopph::SceneManager::GetActiveScene()->CreateEntity() };
+							entity->CreateManagedObject("leopph", "Entity");
 
-					ImGui::EndMenu();
-				}
+							auto transform = std::make_unique<leopph::Transform>();
+							transform->CreateManagedObject("leopph", "Transform");
 
-				if (ImGui::BeginMenu("Create")) {
-					if (ImGui::MenuItem("Entity")) {
-						auto const entity{ leopph::SceneManager::GetActiveScene()->CreateEntity() };
-						entity->CreateManagedObject("leopph", "Entity");
-
-						auto transform = std::make_unique<leopph::Transform>();
-						transform->CreateManagedObject("leopph", "Transform");
-
-						entity->AddComponent(std::move(transform));
-					}
-
-					ImGui::EndMenu();
-				}
-
-				if (ImGui::BeginMenu("Debug")) {
-					if (showDemoWindow) {
-						if (ImGui::MenuItem("Hide Demo Window")) {
-							showDemoWindow = false;
+							entity->AddComponent(std::move(transform));
 						}
+
+						ImGui::EndMenu();
+					}
+
+					if (ImGui::BeginMenu("Debug")) {
+						if (showDemoWindow) {
+							if (ImGui::MenuItem("Hide Demo Window")) {
+								showDemoWindow = false;
+							}
+						}
+						else {
+							if (ImGui::MenuItem("Show Demo Window")) {
+								showDemoWindow = true;
+							}
+						}
+
+						ImGui::EndMenu();
+					}
+
+					ImGui::EndMainMenuBar();
+				}
+
+				static std::vector<leopph::Entity*> entities;
+				leopph::Entity::GetAllEntities(entities);
+
+
+				if (ImGui::Begin("Entities", nullptr, ImGuiWindowFlags_NoCollapse)) {
+					for (std::size_t i = 0; i < entities.size(); i++) {
+						ImGui::PushID(static_cast<int>(i));
+						if (ImGui::Selectable(entities[i]->GetName().data(), gSelected == entities[i])) {
+							gSelected = entities[i];
+						}
+
+						if (ImGui::BeginPopupContextItem()) {
+							if (ImGui::MenuItem("Delete")) {
+								entities[i]->GetScene().DestroyEntity(entities[i]);
+								leopph::Entity::GetAllEntities(entities);
+								gSelected = nullptr;
+								ImGui::CloseCurrentPopup();
+							}
+							ImGui::EndPopup();
+						}
+
+						ImGui::OpenPopupOnItemClick(nullptr, ImGuiPopupFlags_MouseButtonRight);
+						ImGui::PopID();
+					}
+				}
+				ImGui::End();
+
+				ImGui::SetNextWindowSize(ImVec2{ 400, 600 }, ImGuiCond_FirstUseEver);
+
+				if (ImGui::Begin("Object Properties", nullptr, ImGuiWindowFlags_NoCollapse)) {
+					if (gSelected) {
+						gSelected->OnGui();
+					}
+				}
+				ImGui::End();
+
+				ImVec2 static constexpr gameViewportMinSize{ 480, 270 };
+
+				ImGui::SetNextWindowSize(gameViewportMinSize, ImGuiCond_FirstUseEver);
+				ImGui::SetNextWindowSizeConstraints(gameViewportMinSize, ImGui::GetMainViewport()->WorkSize);
+				ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+
+				if (ImGui::Begin("Game", nullptr, ImGuiWindowFlags_NoCollapse)) {
+					ImGui::PopStyleVar();
+
+					leopph::Extent2D<leopph::u32> constexpr resolutions[]{ { 960, 540 }, { 1280, 720 }, { 1600, 900 }, { 1920, 1080 }, { 2560, 1440 }, { 3840, 2160 } };
+					char const* const resolutionLabels[]{ "Auto", "960x540", "1280x720", "1600x900", "1920x1080", "2560x1440", "3840x2160" };
+					static int selectedRes = 0;
+
+					if (ImGui::Combo("Resolution", &selectedRes, resolutionLabels, 7)) {
+						if (selectedRes != 0) {
+							leopph::gRenderer.SetGameResolution(resolutions[selectedRes - 1]);
+						}
+					}
+
+					auto const gameRes = leopph::gRenderer.GetGameResolution();
+					auto const contentRegionSize = ImGui::GetContentRegionAvail();
+					leopph::Extent2D<leopph::u32> const viewportRes{ static_cast<leopph::u32>(contentRegionSize.x), static_cast<leopph::u32>(contentRegionSize.y) };
+					ImVec2 frameDisplaySize;
+
+					if (selectedRes == 0) {
+						if (viewportRes.width != gameRes.width || viewportRes.height != gameRes.height) {
+							leopph::gRenderer.SetGameResolution(viewportRes);
+						}
+
+						frameDisplaySize = contentRegionSize;
 					}
 					else {
-						if (ImGui::MenuItem("Show Demo Window")) {
-							showDemoWindow = true;
-						}
+						leopph::f32 const scale = std::min(contentRegionSize.x / static_cast<leopph::f32>(gameRes.width), contentRegionSize.y / static_cast<leopph::f32>(gameRes.height));
+						frameDisplaySize = ImVec2(gameRes.width * scale, gameRes.height * scale);
 					}
 
-					ImGui::EndMenu();
+					leopph::gRenderer.DrawGame();
+					ImGui::Image(reinterpret_cast<void*>(leopph::gRenderer.GetGameFrame()), frameDisplaySize);
 				}
+				else {
+					ImGui::PopStyleVar();
+				}
+				ImGui::End();
 
-				ImGui::EndMainMenuBar();
-			}
-
-			static std::vector<leopph::Entity*> entities;
-			leopph::Entity::GetAllEntities(entities);
-
-
-			if (ImGui::Begin("Entities", nullptr, ImGuiWindowFlags_NoCollapse)) {
-				for (std::size_t i = 0; i < entities.size(); i++) {
-					ImGui::PushID(static_cast<int>(i));
-					if (ImGui::Selectable(entities[i]->GetName().data(), gSelected == entities[i])) {
-						gSelected = entities[i];
-					}
-
-					if (ImGui::BeginPopupContextItem()) {
-						if (ImGui::MenuItem("Delete")) {
-							entities[i]->GetScene().DestroyEntity(entities[i]);
-							leopph::Entity::GetAllEntities(entities);
-							gSelected = nullptr;
+				if (ImGui::Begin("Assets", nullptr, ImGuiWindowFlags_NoCollapse)) {
+					static std::vector<leopph::Object*> assets;
+					//if (gProject) {
+					if (ImGui::BeginPopupContextItem("Assets")) {
+						if (ImGui::MenuItem("Import Asset")) {
 							ImGui::CloseCurrentPopup();
+							//ImportAsset(io);
+						}
+						if (ImGui::BeginMenu("Create##CreateAsset")) {
+							if (ImGui::MenuItem("Material##CreateMaterial")) {
+								auto const mat{ new leopph::Material{} };
+								mat->SetName("New Material");
+								assets.emplace_back(mat);
+								gSelected = mat;
+							}
+							ImGui::EndMenu();
 						}
 						ImGui::EndPopup();
 					}
 
-					ImGui::OpenPopupOnItemClick(nullptr, ImGuiPopupFlags_MouseButtonRight);
-					ImGui::PopID();
-				}
-			}
-			ImGui::End();
+					ImGui::OpenPopupOnItemClick("Assets", ImGuiPopupFlags_MouseButtonRight);
 
-			ImGui::SetNextWindowSize(ImVec2{ 400, 600 }, ImGuiCond_FirstUseEver);
-
-			if (ImGui::Begin("Object Properties", nullptr, ImGuiWindowFlags_NoCollapse)) {
-				if (gSelected) {
-					gSelected->OnGui();
-				}
-			}
-			ImGui::End();
-
-			ImVec2 static constexpr gameViewportMinSize{ 480, 270 };
-
-			ImGui::SetNextWindowSize(gameViewportMinSize, ImGuiCond_FirstUseEver);
-			ImGui::SetNextWindowSizeConstraints(gameViewportMinSize, ImGui::GetMainViewport()->WorkSize);
-			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
-
-			if (ImGui::Begin("Game", nullptr, ImGuiWindowFlags_NoCollapse)) {
-				ImGui::PopStyleVar();
-
-				leopph::Extent2D<leopph::u32> constexpr resolutions[]{ { 960, 540 }, { 1280, 720 }, { 1600, 900 }, { 1920, 1080 }, { 2560, 1440 }, { 3840, 2160 } };
-				char const* const resolutionLabels[]{ "Auto", "960x540", "1280x720", "1600x900", "1920x1080", "2560x1440", "3840x2160" };
-				static int selectedRes = 0;
-
-				if (ImGui::Combo("Resolution", &selectedRes, resolutionLabels, 7)) {
-					if (selectedRes != 0) {
-						leopph::gRenderer.SetGameResolution(resolutions[selectedRes - 1]);
-					}
-				}
-
-				auto const gameRes = leopph::gRenderer.GetGameResolution();
-				auto const contentRegionSize = ImGui::GetContentRegionAvail();
-				leopph::Extent2D<leopph::u32> const viewportRes{ static_cast<leopph::u32>(contentRegionSize.x), static_cast<leopph::u32>(contentRegionSize.y) };
-				ImVec2 frameDisplaySize;
-
-				if (selectedRes == 0) {
-					if (viewportRes.width != gameRes.width || viewportRes.height != gameRes.height) {
-						leopph::gRenderer.SetGameResolution(viewportRes);
-					}
-
-					frameDisplaySize = contentRegionSize;
-				}
-				else {
-					leopph::f32 const scale = std::min(contentRegionSize.x / static_cast<leopph::f32>(gameRes.width), contentRegionSize.y / static_cast<leopph::f32>(gameRes.height));
-					frameDisplaySize = ImVec2(gameRes.width * scale, gameRes.height * scale);
-				}
-
-				leopph::gRenderer.DrawGame();
-				ImGui::Image(reinterpret_cast<void*>(leopph::gRenderer.GetGameFrame()), frameDisplaySize);
-			}
-			else {
-				ImGui::PopStyleVar();
-			}
-			ImGui::End();
-
-			if (ImGui::Begin("Assets", nullptr, ImGuiWindowFlags_NoCollapse)) {
-				static std::vector<leopph::Object*> assets;
-				//if (gProject) {
-				if (ImGui::BeginPopupContextItem("Assets")) {
-					if (ImGui::MenuItem("Import Asset")) {
-						ImGui::CloseCurrentPopup();
-						//ImportAsset(io);
-					}
-					if (ImGui::BeginMenu("Create##CreateAsset")) {
-						if (ImGui::MenuItem("Material##CreateMaterial")) {
-							auto const mat{ new leopph::Material{} };
-							mat->SetName("New Material");
-							assets.emplace_back(mat);
-							gSelected = mat;
+					for (int i{ 0 }; auto const& asset : assets) {
+						if (ImGui::Selectable(std::format("{}##{}{}", asset->GetName().data(), asset->GetName().data(), i).c_str(), gSelected == asset)) {
+							gSelected = asset;
 						}
-						ImGui::EndMenu();
+						++i;
 					}
-					ImGui::EndPopup();
+					//}
 				}
-
-				ImGui::OpenPopupOnItemClick("Assets", ImGuiPopupFlags_MouseButtonRight);
-
-				for (int i{ 0 }; auto const& asset : assets) {
-					if (ImGui::Selectable(std::format("{}##{}{}", asset->GetName().data(), asset->GetName().data(), i).c_str(), gSelected == asset)) {
-						gSelected = asset;
-					}
-					++i;
-				}
-				//}
+				ImGui::End();
 			}
-			ImGui::End();
 
 			ImGui::Render();
 
