@@ -152,7 +152,7 @@ namespace leopph {
 			ImGui::Text("Metallic");
 			ImGui::TableNextColumn();
 
-			if (f32 metallic{ GetMetallic() }; ImGui::DragFloat("###matMetallic", &metallic, 0.1f, 0.0f, 1.0f)) {
+			if (f32 metallic{ GetMetallic() }; ImGui::SliderFloat("###matMetallic", &metallic, 0.0f, 1.0f)) {
 				SetMetallic(metallic);
 			}
 
@@ -160,7 +160,7 @@ namespace leopph {
 			ImGui::Text("Roughness");
 			ImGui::TableNextColumn();
 
-			if (f32 roughness{ GetRoughness() }; ImGui::DragFloat("###matRoughness", &roughness, 0.1f, 0.0f, 1.0f)) {
+			if (f32 roughness{ GetRoughness() }; ImGui::SliderFloat("###matRoughness", &roughness, 0.0f, 1.0f)) {
 				SetRoughness(roughness);
 			}
 
@@ -168,7 +168,7 @@ namespace leopph {
 			ImGui::Text("Ambient Occlusion");
 			ImGui::TableNextColumn();
 
-			if (f32 ao{ GetAo() }; ImGui::DragFloat("###matAo", &ao, 0.1f, 0.0f, 1.0f)) {
+			if (f32 ao{ GetAo() }; ImGui::SliderFloat("###matAo", &ao, 0.0f, 1.0f)) {
 				SetAo(ao);
 			}
 
