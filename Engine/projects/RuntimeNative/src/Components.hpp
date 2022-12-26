@@ -27,8 +27,8 @@ namespace leopph {
 		[[nodiscard]] LEOPPHAPI auto GetTransform() const -> Transform&;
 
 		virtual auto OnGui() -> void = 0;
-		LEOPPHAPI auto Serialize(YAML::Node& node) const -> void override;
-		LEOPPHAPI auto Deserialize(YAML::Node const& node) -> void override;
+		LEOPPHAPI auto SerializeTextual(YAML::Node& node) const -> void override;
+		LEOPPHAPI auto DeserializeTextual(YAML::Node const& node) -> void override;
 	};
 
 
@@ -74,8 +74,8 @@ namespace leopph {
 
 		LEOPPHAPI auto OnGui() -> void override;
 		[[nodiscard]] LEOPPHAPI auto GetSerializationType() const -> Type override;
-		LEOPPHAPI auto Serialize(YAML::Node& node) const -> void override;
-		LEOPPHAPI auto Deserialize(YAML::Node const& node) -> void override;
+		LEOPPHAPI auto SerializeTextual(YAML::Node& node) const -> void override;
+		LEOPPHAPI auto DeserializeTextual(YAML::Node const& node) -> void override;
 
 		[[nodiscard]] LEOPPHAPI auto GetWorldPosition() const -> Vector3 const&;
 		LEOPPHAPI auto SetWorldPosition(Vector3 const& newPos) -> void;
@@ -202,8 +202,8 @@ namespace leopph {
 
 		LEOPPHAPI auto OnGui() -> void override;
 		[[nodiscard]] LEOPPHAPI auto GetSerializationType() const -> Object::Type override;
-		LEOPPHAPI auto Serialize(YAML::Node& node) const -> void override;
-		LEOPPHAPI auto Deserialize(YAML::Node const& node) -> void override;
+		LEOPPHAPI auto SerializeTextual(YAML::Node& node) const -> void override;
+		LEOPPHAPI auto DeserializeTextual(YAML::Node const& node) -> void override;
 
 		[[nodiscard]] LEOPPHAPI static auto GetAllInstances() -> std::span<Camera* const>;
 
@@ -264,8 +264,8 @@ namespace leopph {
 
 		LEOPPHAPI auto OnGui() -> void override;
 		[[nodiscard]] LEOPPHAPI auto GetSerializationType() const -> Type override;
-		LEOPPHAPI auto Serialize(YAML::Node& node) const -> void override;
-		LEOPPHAPI auto Deserialize(YAML::Node const& node) -> void override;
+		LEOPPHAPI auto SerializeTextual(YAML::Node& node) const -> void override;
+		LEOPPHAPI auto DeserializeTextual(YAML::Node const& node) -> void override;
 	};
 
 	LEOPPHAPI auto init_behaviors() -> void;
@@ -285,8 +285,8 @@ namespace leopph {
 		LEOPPHAPI auto set_casting_shadow(bool newValue) -> void;
 
 		LEOPPHAPI auto OnGui() -> void override;
-		LEOPPHAPI auto Serialize(YAML::Node& node) const -> void override;
-		LEOPPHAPI auto Deserialize(YAML::Node const& node) -> void override;
+		LEOPPHAPI auto SerializeTextual(YAML::Node& node) const -> void override;
+		LEOPPHAPI auto DeserializeTextual(YAML::Node const& node) -> void override;
 
 	protected:
 		Light() = default;

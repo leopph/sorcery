@@ -141,7 +141,7 @@ namespace leopph {
 		}
 	};
 
-	template<>
+	/*template<>
 	struct BinarySerializer<Vertex> {
 		auto constexpr static SerializedSize = sizeof(Vertex);
 
@@ -158,7 +158,7 @@ namespace leopph {
 				.uv = BinarySerializer<Vector2>::Deserialize(bytes.subspan<2 * sizeof(Vector3), sizeof(Vector2)>(), endianness)
 			};
 		}
-	};
+	};*/
 
 
 	/*template<>

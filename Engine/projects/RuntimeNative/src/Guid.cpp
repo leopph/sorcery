@@ -1,9 +1,8 @@
-#include "Util.hpp"
+#include "Guid.hpp"
 
 #include <combaseapi.h>
 
 #include <sstream>
-
 
 namespace leopph {
 	namespace {
@@ -20,8 +19,7 @@ namespace leopph {
 	}
 
 
-	auto Guid::Parse(std::string_view const str) -> Guid
-	{
+	auto Guid::Parse(std::string_view const str) -> Guid {
 		gStringStream.clear();
 		gStringStream.str({});
 		gStringStream << std::hex << str;
@@ -40,8 +38,7 @@ namespace leopph {
 	}
 
 
-    auto Guid::operator==(Guid const& other) const -> bool
-    {
+	auto Guid::operator==(Guid const& other) const -> bool {
 		return data0 == other.data0 && data1 == other.data1;
-    }
+	}
 }

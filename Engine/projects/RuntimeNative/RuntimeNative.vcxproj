@@ -67,7 +67,7 @@
       <WarningLevel>Level4</WarningLevel>
       <PreprocessorDefinitions>LEOPPH_NATIVE_RUNTIME_EXPORT;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
       <AdditionalIncludeDirectories>$(SolutionDir)Engine\deps\vendor\mono\msvc\include</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
@@ -88,7 +88,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>LEOPPH_NATIVE_RUNTIME_EXPORT;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
       <AdditionalIncludeDirectories>$(SolutionDir)Engine\deps\vendor\mono\msvc\include</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
@@ -109,12 +109,14 @@
     <ClCompile Include="src\Color.cpp" />
     <ClCompile Include="src\Components.cpp" />
     <ClCompile Include="src\Compress.cpp" />
+    <ClCompile Include="src\Guid.cpp" />
     <ClCompile Include="src\Image.cpp" />
     <ClCompile Include="src\ManagedRuntime.cpp" />
     <ClCompile Include="src\ManagedAccessObject.cpp" />
     <ClCompile Include="src\Math.cpp" />
     <ClCompile Include="src\Entity.cpp" />
-    <ClCompile Include="src\Model.cpp" />
+    <ClCompile Include="src\Material.cpp" />
+    <ClCompile Include="src\Mesh.cpp" />
     <ClCompile Include="src\ModelImport.cpp" />
     <ClCompile Include="src\Object.cpp" />
     <ClCompile Include="src\OnGui.cpp" />
@@ -124,14 +126,15 @@
     <ClCompile Include="src\Serialization.cpp" />
     <ClCompile Include="src\Time.cpp" />
     <ClCompile Include="src\Platform.cpp" />
-    <ClCompile Include="src\Util.cpp" />
     <ClCompile Include="src\Systems.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\AABB.hpp" />
     <ClInclude Include="src\Compress.hpp" />
+    <ClInclude Include="src\Guid.hpp" />
     <ClInclude Include="src\Image.hpp" />
-    <ClInclude Include="src\Model.hpp" />
+    <ClInclude Include="src\Material.hpp" />
+    <ClInclude Include="src\Mesh.hpp" />
     <ClInclude Include="src\ModelImport.hpp" />
     <ClInclude Include="src\OnGui.hpp" />
     <ClInclude Include="src\Color.hpp" />

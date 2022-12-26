@@ -25,7 +25,7 @@ namespace leopph::editor {
 			seNode["guid"] = obj->GetGuid().ToString();
 
 			YAML::Node dataNode;
-			obj->Serialize(dataNode);
+			obj->SerializeTextual(dataNode);
 			seNode["data"] = dataNode;
 
 			sceneNode.push_back(seNode);
@@ -94,7 +94,7 @@ namespace leopph::editor {
 		}
 
 		for (auto& [se, node] : objectsWithSerializedData) {
-			se->Deserialize(node);
+			se->DeserializeTextual(node);
 		}
 	}
 }

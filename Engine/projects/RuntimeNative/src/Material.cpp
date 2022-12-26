@@ -1,4 +1,4 @@
-#include "Model.hpp"
+#include "Material.hpp"
 
 #include "ModelImport.hpp"
 #include "Systems.hpp"
@@ -25,11 +25,28 @@ namespace leopph {
 		D3D11_MAPPED_SUBRESOURCE mappedBuf;
 		gRenderer.GetImmediateContext()->Map(mBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuf);
 		auto const bufferData{ static_cast<BufferData*>(mappedBuf.pData) };
-		bufferData->albedo = Vector3{ 1, 1, 1 };
-		bufferData->metallic = 0;
-		bufferData->roughness = 0.5f;
-		bufferData->ao = 0;
+		bufferData->albedo = mBufData.albedo;
+			bufferData->metallic = mBufData.metallic;
+		bufferData->roughness = mBufData.roughness;
+		bufferData->ao = mBufData.ao;
 		gRenderer.GetImmediateContext()->Unmap(mBuffer.Get(), 0);
+	}
+
+	auto Material::GetAlbedoColor() const noexcept -> Color {
+		auto const mulColorVec{ mBufData.albedo * 255 };
+		return Color{ static_cast<u8>(mulColorVec[0]), static_cast<u8>(mulColorVec[1]), static_cast<u8>(mulColorVec[2]), static_cast<u8>(mulColorVec[3]) };
+	}
+
+	auto Material::GetMetallic() const noexcept -> f32 {
+		return mBufData.metallic;
+	}
+
+	auto Material::GetRoughness() const noexcept -> f32 {
+		return mBufData.roughness;
+	}
+
+	auto Material::GetAo() const noexcept -> f32 {
+		return mBufData.ao;
 	}
 
 
@@ -72,5 +89,9 @@ namespace leopph {
 
 	auto Material::BindPs() const noexcept -> void {
 		gRenderer.GetImmediateContext()->PSSetConstantBuffers(0, 1, mBuffer.GetAddressOf());
+	}
+
+	auto Material::GetSerializationType() const -> Type {
+		return Type::Material;
 	}
 }

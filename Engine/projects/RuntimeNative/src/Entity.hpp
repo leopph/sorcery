@@ -42,8 +42,8 @@ namespace leopph {
 		LEOPPHAPI ~Entity();
 
 		[[nodiscard]] LEOPPHAPI auto GetSerializationType() const->Type override;
-		LEOPPHAPI auto Serialize(YAML::Node& node) const -> void override;
-		LEOPPHAPI auto Deserialize(YAML::Node const& node) -> void override;
+		LEOPPHAPI auto SerializeTextual(YAML::Node& node) const -> void override;
+		LEOPPHAPI auto DeserializeTextual(YAML::Node const& node) -> void override;
 		
 		[[nodiscard]] LEOPPHAPI auto GetScene() const -> Scene&;
 		[[nodiscard]] LEOPPHAPI auto GetTransform() const -> Transform&;

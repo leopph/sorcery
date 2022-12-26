@@ -1,11 +1,12 @@
 #pragma once
 
 #include "Core.hpp"
-#include "Util.hpp"
+#include "Guid.hpp"
 #include "YamlInclude.hpp"
 
 #include <concepts>
 #include <set>
+#include <span>
 #include <string>
 
 namespace leopph {
@@ -14,7 +15,7 @@ namespace leopph {
 			using is_transparent = void;
 			[[nodiscard]] auto operator()(Guid const& left, Guid const& right) const -> bool;
 			[[nodiscard]] auto operator()(Object const* left, Guid const& right) const -> bool;
-			[[nodiscard]] auto operator()(Guid const& left, Object* right) const -> bool;
+			[[nodiscard]] auto operator()(Guid const& left, Object const* right) const -> bool;
 			[[nodiscard]] auto operator()(Object const* left, Object const* right) const -> bool;
 		};
 
@@ -30,7 +31,9 @@ namespace leopph {
 			Camera,
 			Behavior,
 			CubeModel,
-			DirectionalLight
+			DirectionalLight,
+			Material,
+			Mesh
 		};
 
 		[[nodiscard]] LEOPPHAPI static auto FindObjectByGuid(Guid const& guid) -> Object*;
@@ -63,8 +66,17 @@ namespace leopph {
 		LEOPPHAPI auto SetName(std::string name) noexcept -> void;
 
 		[[nodiscard]] virtual auto GetSerializationType() const -> Type = 0;
-		virtual auto Serialize(YAML::Node& node) const -> void = 0;
-		virtual auto Deserialize(YAML::Node const& node) -> void = 0;
+
+		LEOPPHAPI virtual auto SerializeTextual(YAML::Node& node) const -> void;
+		LEOPPHAPI virtual auto DeserializeTextual(YAML::Node const& node) -> void;
+
+		LEOPPHAPI virtual auto SerializeBinary(std::vector<u8>& out) const -> void;
+
+		struct BinaryDeserializationResult {
+			u64 numBytesConsumed;
+		};
+
+		LEOPPHAPI [[nodiscard]] virtual auto DeserializeBinary(std::span<u8 const> bytes) -> BinaryDeserializationResult;
 	};
 
 

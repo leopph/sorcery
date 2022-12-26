@@ -98,7 +98,7 @@ namespace leopph {
 	}
 
 
-	auto Entity::Serialize(YAML::Node& node) const -> void {
+	auto Entity::SerializeTextual(YAML::Node& node) const -> void {
 		node["name"] = GetName().data();
 		for (auto const& component : mComponents) {
 			node["components"].push_back(component->GetGuid().ToString());
@@ -106,7 +106,7 @@ namespace leopph {
 	}
 
 
-	auto Entity::Deserialize(YAML::Node const& node) -> void {
+	auto Entity::DeserializeTextual(YAML::Node const& node) -> void {
 		if (!node["name"].IsScalar()) {
 			std::cerr << "Failed to deserialize name of Entity " << GetGuid().ToString() << ". Invalid data." << std::endl;
 		}
@@ -132,12 +132,12 @@ namespace leopph {
 	}
 
 
-	auto Component::Serialize(YAML::Node& node) const -> void {
+	auto Component::SerializeTextual(YAML::Node& node) const -> void {
 		node["entity"] = GetEntity()->GetGuid().ToString();
 	}
 
 
-	auto Component::Deserialize(YAML::Node const& node) -> void {
+	auto Component::DeserializeTextual(YAML::Node const& node) -> void {
 		if (!node["entity"].IsScalar()) {
 			std::cerr << "Failed to deserialize owning Entity of Component " << GetGuid().ToString() << ". Invalid data." << std::endl;
 		}
@@ -154,8 +154,8 @@ namespace leopph {
 	}
 
 
-	auto Transform::Serialize(YAML::Node& node) const -> void {
-		Component::Serialize(node);
+	auto Transform::SerializeTextual(YAML::Node& node) const -> void {
+		Component::SerializeTextual(node);
 		node["position"] = GetLocalPosition();
 		node["rotation"] = GetLocalRotation();
 		node["scale"] = GetLocalScale();
@@ -168,7 +168,7 @@ namespace leopph {
 	}
 
 
-	auto Transform::Deserialize(YAML::Node const& node) -> void {
+	auto Transform::DeserializeTextual(YAML::Node const& node) -> void {
 		SetLocalPosition(node["position"].as<Vector3>(GetLocalPosition()));
 		SetLocalRotation(node["rotation"].as<Quaternion>(GetLocalRotation()));
 		SetLocalScale(node["scale"].as<Vector3>(GetLocalScale()));
@@ -207,8 +207,8 @@ namespace leopph {
 	}
 
 
-	auto Camera::Serialize(YAML::Node& node) const -> void {
-		Component::Serialize(node);
+	auto Camera::SerializeTextual(YAML::Node& node) const -> void {
+		Component::SerializeTextual(node);
 		node["type"] = static_cast<int>(GetType());
 		node["fov"] = GetPerspectiveFov();
 		node["size"] = GetOrthographicSize();
@@ -218,7 +218,7 @@ namespace leopph {
 	}
 
 
-	auto Camera::Deserialize(YAML::Node const& root) -> void {
+	auto Camera::DeserializeTextual(YAML::Node const& root) -> void {
 		if (root["type"]) {
 			if (!root["type"].IsScalar()) {
 				std::cerr << "Failed to deserialize type of Camera " << GetGuid().ToString() << ". Invalid data." << std::endl;
@@ -270,8 +270,8 @@ namespace leopph {
 	}
 
 
-	auto Behavior::Serialize(YAML::Node& node) const -> void {
-		Component::Serialize(node);
+	auto Behavior::SerializeTextual(YAML::Node& node) const -> void {
+		Component::SerializeTextual(node);
 		auto const componentClass = mono_object_get_class(GetManagedObject());
 		node["classNameSpace"] = mono_class_get_namespace(componentClass);
 		node["className"] = mono_class_get_name(componentClass);
@@ -339,7 +339,7 @@ namespace leopph {
 	}
 
 
-	auto Behavior::Deserialize(YAML::Node const& node) -> void {
+	auto Behavior::DeserializeTextual(YAML::Node const& node) -> void {
 		auto const classNs = node["classNameSpace"].as<std::string>();
 		auto const className = node["className"].as<std::string>();
 		auto const componentClass = mono_class_from_name(leopph::gManagedRuntime.GetManagedImage(), classNs.c_str(), className.c_str());
@@ -466,13 +466,13 @@ namespace leopph {
 	}
 
 
-	auto Light::Serialize(YAML::Node& node) const -> void {
+	auto Light::SerializeTextual(YAML::Node& node) const -> void {
 		node["color"] = GetColor();
 		node["intensity"] = GetIntensity();
 	}
 
 
-	auto Light::Deserialize(YAML::Node const& node) -> void {
+	auto Light::DeserializeTextual(YAML::Node const& node) -> void {
 		if (node["color"]) {
 			if (!node["color"].IsSequence()) {
 				std::cerr << "Failed to deserialize color of Light " << GetGuid().ToString() << ". Invalid data." << std::endl;

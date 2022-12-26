@@ -9,7 +9,6 @@
 #include <string_view>
 #include <type_traits>
 #include <utility>
-#include <tuple>
 
 
 namespace leopph {
@@ -51,22 +50,8 @@ namespace leopph {
 	};
 
 
-	class Guid {
-	private:
-		leopph::u64 data0;
-		leopph::u64 data1;
-
-	public:
-		[[nodiscard]] LEOPPHAPI static auto Generate() -> Guid;
-		[[nodiscard]] LEOPPHAPI static auto Parse(std::string_view str) -> Guid;
-
-		[[nodiscard]] LEOPPHAPI auto ToString() const->std::string;
-		[[nodiscard]] LEOPPHAPI auto operator==(Guid const& other) const -> bool;
-	};
-
-
 	template<std::integral To, std::integral From>
-	To clamp_cast(From const what) {
+	auto clamp_cast(From const what) -> To {
 		if constexpr (std::cmp_less_equal(std::numeric_limits<To>::min(), std::numeric_limits<From>::min())) {
 			if constexpr (std::cmp_greater_equal(std::numeric_limits<To>::max(), std::numeric_limits<From>::max())) {
 				return static_cast<To>(what);
