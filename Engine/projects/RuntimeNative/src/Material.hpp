@@ -23,6 +23,8 @@ namespace leopph {
 		Microsoft::WRL::ComPtr<ID3D11Buffer> mBuffer;
 		BufferData mBufData;
 
+		auto UpdateGPUData() const noexcept -> void;
+
 	public:
 		LEOPPHAPI Material();
 
@@ -32,8 +34,10 @@ namespace leopph {
 
 		LEOPPHAPI [[nodiscard]] auto GetMetallic() const noexcept -> f32;
 		LEOPPHAPI auto SetMetallic(f32 metallic) noexcept -> void;
+
 		LEOPPHAPI [[nodiscard]] auto GetRoughness() const noexcept -> f32;
 		LEOPPHAPI auto SetRoughness(f32 roughness) noexcept -> void;
+
 		LEOPPHAPI [[nodiscard]] auto GetAo() const noexcept -> f32;
 		LEOPPHAPI auto SetAo(f32 ao) noexcept -> void;
 

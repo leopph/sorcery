@@ -12,6 +12,18 @@
 
 
 namespace leopph {
+	auto Material::UpdateGPUData() const noexcept -> void {
+		D3D11_MAPPED_SUBRESOURCE mappedBuf;
+		gRenderer.GetImmediateContext()->Map(mBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuf);
+		auto const mappedBufData{ static_cast<BufferData*>(mappedBuf.pData) };
+		mappedBufData->albedo = mBufData.albedo;
+		mappedBufData->metallic = mBufData.metallic;
+		mappedBufData->roughness = mBufData.roughness;
+		mappedBufData->ao = mBufData.ao;
+		gRenderer.GetImmediateContext()->Unmap(mBuffer.Get(), 0);
+	}
+
+
 	Material::Material() {
 		D3D11_BUFFER_DESC constexpr bufferDesc{
 			.ByteWidth = sizeof(BufferData) + 16 - sizeof(BufferData) % 16,
@@ -26,14 +38,7 @@ namespace leopph {
 			throw std::runtime_error{ "Failed to create buffer for material." };
 		}
 
-		D3D11_MAPPED_SUBRESOURCE mappedBuf;
-		gRenderer.GetImmediateContext()->Map(mBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuf);
-		auto const bufferData{ static_cast<BufferData*>(mappedBuf.pData) };
-		bufferData->albedo = mBufData.albedo;
-		bufferData->metallic = mBufData.metallic;
-		bufferData->roughness = mBufData.roughness;
-		bufferData->ao = mBufData.ao;
-		gRenderer.GetImmediateContext()->Unmap(mBuffer.Get(), 0);
+		UpdateGPUData();
 	}
 
 	auto Material::GetAlbedoColor() const noexcept -> Color {
@@ -41,57 +46,40 @@ namespace leopph {
 		return Color{ static_cast<u8>(mulColorVec[0]), static_cast<u8>(mulColorVec[1]), static_cast<u8>(mulColorVec[2]), static_cast<u8>(mulColorVec[3]) };
 	}
 
+	auto Material::SetAlbedoColor(Color const& albedoColor) noexcept -> void {
+		mBufData.albedo = Vector3{ albedoColor.red / 255.f, albedoColor.green / 255.f, albedoColor.blue / 255.f };
+		UpdateGPUData();
+	}
+
+	auto Material::SetAlbedoColor(Vector3 const& albedoColor) noexcept -> void {
+		SetAlbedoColor(Color{ static_cast<u8>(albedoColor[0] * 255), static_cast<u8>(albedoColor[1] * 255), static_cast<u8>(albedoColor[2] * 255), 255 });
+	}
+
 	auto Material::GetMetallic() const noexcept -> f32 {
 		return mBufData.metallic;
+	}
+
+	auto Material::SetMetallic(f32 const metallic) noexcept -> void {
+		mBufData.metallic = metallic;
+		UpdateGPUData();
 	}
 
 	auto Material::GetRoughness() const noexcept -> f32 {
 		return mBufData.roughness;
 	}
 
+	auto Material::SetRoughness(f32 const roughness) noexcept -> void {
+		mBufData.roughness = roughness;
+		UpdateGPUData();
+	}
+
 	auto Material::GetAo() const noexcept -> f32 {
 		return mBufData.ao;
 	}
 
-
-	auto Material::SetAlbedoColor(Color const& albedoColor) noexcept -> void {
-		mBufData.albedo = Vector3{ albedoColor.red / 255.f, albedoColor.green / 255.f, albedoColor.blue / 255.f };
-		D3D11_MAPPED_SUBRESOURCE mappedBuf;
-		gRenderer.GetImmediateContext()->Map(mBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuf);
-		static_cast<BufferData*>(mappedBuf.pData)->albedo = mBufData.albedo;
-		gRenderer.GetImmediateContext()->Unmap(mBuffer.Get(), 0);
-	}
-
-
-	auto Material::SetAlbedoColor(Vector3 const& albedoColor) noexcept -> void {
-		SetAlbedoColor(Color{ static_cast<u8>(albedoColor[0] * 255), static_cast<u8>(albedoColor[1] * 255), static_cast<u8>(albedoColor[2] * 255), 255 });
-	}
-
-
-	auto Material::SetMetallic(f32 const metallic) noexcept -> void {
-		mBufData.metallic = metallic;
-		D3D11_MAPPED_SUBRESOURCE mappedBuf;
-		gRenderer.GetImmediateContext()->Map(mBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuf);
-		static_cast<BufferData*>(mappedBuf.pData)->metallic = metallic;
-		gRenderer.GetImmediateContext()->Unmap(mBuffer.Get(), 0);
-	}
-
-
-	auto Material::SetRoughness(f32 const roughness) noexcept -> void {
-		mBufData.roughness = roughness;
-		D3D11_MAPPED_SUBRESOURCE mappedBuf;
-		gRenderer.GetImmediateContext()->Map(mBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuf);
-		static_cast<BufferData*>(mappedBuf.pData)->roughness = roughness;
-		gRenderer.GetImmediateContext()->Unmap(mBuffer.Get(), 0);
-	}
-
-
 	auto Material::SetAo(f32 const ao) noexcept -> void {
 		mBufData.ao = ao;
-		D3D11_MAPPED_SUBRESOURCE mappedBuf;
-		gRenderer.GetImmediateContext()->Map(mBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuf);
-		static_cast<BufferData*>(mappedBuf.pData)->ao = ao;
-		gRenderer.GetImmediateContext()->Unmap(mBuffer.Get(), 0);
+		UpdateGPUData();
 	}
 
 
@@ -108,7 +96,7 @@ namespace leopph {
 		return Type::Material;
 	}
 
-	void Material::SerializeBinary(std::vector<u8>& out) const {
+	auto Material::SerializeBinary(std::vector<u8>& out) const -> void {
 		Object::SerializeBinary(out);
 		BinarySerializer<Vector3>::Serialize(mBufData.albedo, out, std::endian::native);
 		BinarySerializer<f32>::Serialize(mBufData.metallic, out, std::endian::native);
@@ -116,7 +104,7 @@ namespace leopph {
 		BinarySerializer<f32>::Serialize(mBufData.ao, out, std::endian::native);
 	}
 
-	Object::BinaryDeserializationResult Material::DeserializeBinary(std::span<u8 const> bytes) {
+	auto Material::DeserializeBinary(std::span<u8 const> bytes) -> Object::BinaryDeserializationResult {
 		auto ret{ Object::DeserializeBinary(bytes) };
 		bytes = bytes.subspan(ret.numBytesConsumed);
 
@@ -142,7 +130,7 @@ namespace leopph {
 		return ret;
 	}
 
-	void Material::OnGui() {
+	auto Material::OnGui() -> void {
 		Object::OnGui();
 
 		if (ImGui::BeginTable(std::format("{}", GetGuid().ToString()).c_str(), 2, ImGuiTableFlags_SizingStretchSame)) {
@@ -156,14 +144,14 @@ namespace leopph {
 			ImGui::Text("Albedo Color");
 			ImGui::TableNextColumn();
 
-			if (Vector3 albedoColor{ mBufData.albedo}; ImGui::ColorEdit3("###matAlbedoColor", albedoColor.get_data())) {
+			if (Vector3 albedoColor{ mBufData.albedo }; ImGui::ColorEdit3("###matAlbedoColor", albedoColor.get_data())) {
 				SetAlbedoColor(albedoColor);
 			}
 
 			ImGui::TableNextColumn();
 			ImGui::Text("Metallic");
 			ImGui::TableNextColumn();
-			
+
 			if (f32 metallic{ GetMetallic() }; ImGui::DragFloat("###matMetallic", &metallic, 0.1f, 0.0f, 1.0f)) {
 				SetMetallic(metallic);
 			}
