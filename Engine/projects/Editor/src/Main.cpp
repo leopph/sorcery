@@ -1,6 +1,6 @@
 #include "Serialization.hpp"
-#include "AssetManagement.hpp"
 #include "Widgets.hpp"
+#include "Material.hpp"
 
 #include <Components.hpp>
 #include <ManagedRuntime.hpp>
@@ -44,15 +44,15 @@ using leopph::Vector3;
 using leopph::Quaternion;
 using leopph::f32;
 
-extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+extern auto ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) -> LRESULT;
 
 namespace {
-	bool EditorImGuiEventHook(HWND const hwnd, UINT const msg, WPARAM const wparam, LPARAM const lparam) {
+	auto EditorImGuiEventHook(HWND const hwnd, UINT const msg, WPARAM const wparam, LPARAM const lparam) -> bool {
 		return ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam);
 	}
 
 
-	void CloseCurrentScene() {
+	auto CloseCurrentScene() -> void {
 		static std::vector<leopph::Entity*> entities;
 		for (auto const& entity : leopph::Entity::GetAllEntities(entities)) {
 			entity->GetScene().DestroyEntity(entity);
@@ -61,7 +61,7 @@ namespace {
 
 
 	YAML::Node gSerializedSceneBackup;
-	std::unique_ptr<leopph::editor::Project> gProject;
+	//std::unique_ptr<leopph::editor::Project> gProject;
 	std::atomic<bool> gLoading{ false };
 
 	auto LoadAndBlockEditor(ImGuiIO& io, std::function<void()> const& fun) -> void {
@@ -75,7 +75,7 @@ namespace {
 	};
 
 
-	auto ImportAsset(ImGuiIO& io) -> void {
+	/*auto ImportAsset(ImGuiIO& io) -> void {
 		if (nfdchar_t* selectedPath{ nullptr }; NFD_OpenDialog(nullptr, nullptr, &selectedPath) == NFD_OKAY) {
 			auto const LoadAndAddAssetToProject = [selectedPath] {
 				if (auto const asset = leopph::editor::ImportAsset(selectedPath, gProject->folder); asset) {
@@ -87,14 +87,14 @@ namespace {
 			std::thread loaderThread{ LoadAndBlockEditor, std::ref(io), LoadAndAddAssetToProject };
 			loaderThread.detach();
 		}
-	}
+	}*/
 
 
 	leopph::Object* gSelected{ nullptr };
 }
 
 
-int WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ HINSTANCE, [[maybe_unused]] _In_ wchar_t*, [[maybe_unused]] _In_ int) {
+auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ HINSTANCE, [[maybe_unused]] _In_ wchar_t*, [[maybe_unused]] _In_ int) -> int {
 	try {
 		leopph::gWindow.StartUp();
 		leopph::gRenderer.StartUp();
@@ -175,7 +175,7 @@ int WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ H
 
 			if (ImGui::BeginMainMenuBar()) {
 				if (ImGui::BeginMenu("File")) {
-					if (ImGui::MenuItem("Open Project")) {
+					/*if (ImGui::MenuItem("Open Project")) {
 						if (nfdchar_t* selectedPath{ nullptr }; NFD_PickFolder(nullptr, &selectedPath) == NFD_OKAY) {
 							auto const LoadAndAssignProject = [selectedPath] {
 								gProject = leopph::editor::LoadProject(selectedPath);
@@ -193,7 +193,7 @@ int WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ H
 
 					if (ImGui::MenuItem("Close Project")) {
 						gProject = nullptr;
-					}
+					}*/
 
 					if (ImGui::MenuItem("Save Test Scene")) {
 						if (!runGame) {
@@ -246,7 +246,7 @@ int WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ H
 
 				ImGui::EndMainMenuBar();
 			}
-			
+
 			static std::vector<leopph::Entity*> entities;
 			leopph::Entity::GetAllEntities(entities);
 
@@ -292,7 +292,7 @@ int WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ H
 			if (ImGui::Begin("Game", nullptr, ImGuiWindowFlags_NoCollapse)) {
 				ImGui::PopStyleVar();
 
-				leopph::Extent2D<leopph::u32> constexpr resolutions[]{ {960, 540}, {1280, 720}, {1600, 900}, {1920, 1080}, {2560, 1440}, {3840, 2160} };
+				leopph::Extent2D<leopph::u32> constexpr resolutions[]{ { 960, 540 }, { 1280, 720 }, { 1600, 900 }, { 1920, 1080 }, { 2560, 1440 }, { 3840, 2160 } };
 				char const* const resolutionLabels[]{ "Auto", "960x540", "1280x720", "1600x900", "1920x1080", "2560x1440", "3840x2160" };
 				static int selectedRes = 0;
 
@@ -328,21 +328,34 @@ int WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ H
 			ImGui::End();
 
 			if (ImGui::Begin("Assets", nullptr, ImGuiWindowFlags_NoCollapse)) {
-				if (gProject) {
-					if (ImGui::BeginPopupContextItem()) {
-						if (ImGui::MenuItem("Import Asset")) {
-							ImGui::CloseCurrentPopup();
-							ImportAsset(io);
+				static std::vector<leopph::Object*> assets;
+				//if (gProject) {
+				if (ImGui::BeginPopupContextItem("Assets")) {
+					if (ImGui::MenuItem("Import Asset")) {
+						ImGui::CloseCurrentPopup();
+						//ImportAsset(io);
+					}
+					if (ImGui::BeginMenu("Create##CreateAsset")) {
+						if (ImGui::MenuItem("Material##CreateMaterial")) {
+							auto const mat{ new leopph::Material{} };
+							mat->SetName("New Material");
+							assets.emplace_back(mat);
+							gSelected = mat;
 						}
-						ImGui::EndPopup();
+						ImGui::EndMenu();
 					}
-
-					ImGui::OpenPopupOnItemClick(nullptr, ImGuiPopupFlags_MouseButtonRight);
-
-					for (auto const& asset : gProject->assets) {
-						ImGui::Text(asset->GetPath().filename().string().c_str());
-					}
+					ImGui::EndPopup();
 				}
+
+				ImGui::OpenPopupOnItemClick("Assets", ImGuiPopupFlags_MouseButtonRight);
+
+				for (int i{ 0 }; auto const& asset : assets) {
+					if (ImGui::Selectable(std::format("{}##{}{}", asset->GetName().data(), asset->GetName().data(), i).c_str(), gSelected == asset)) {
+						gSelected = asset;
+					}
+					++i;
+				}
+				//}
 			}
 			ImGui::End();
 

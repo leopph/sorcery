@@ -23,18 +23,22 @@ namespace leopph {
 		LEOPPHAPI Material();
 
 		LEOPPHAPI [[nodiscard]] auto GetAlbedoColor() const noexcept -> Color;
-		LEOPPHAPI auto SetAlbedoColor(Color const& albedoColor) const noexcept -> void;
+		LEOPPHAPI auto SetAlbedoColor(Color const& albedoColor) noexcept -> void;
+		LEOPPHAPI auto SetAlbedoColor(Vector3 const& albedoColor) noexcept -> void;
+
 		LEOPPHAPI [[nodiscard]] auto GetMetallic() const noexcept -> f32;
-		LEOPPHAPI auto SetMetallic(f32 metallic) const noexcept -> void;
+		LEOPPHAPI auto SetMetallic(f32 metallic) noexcept -> void;
 		LEOPPHAPI [[nodiscard]] auto GetRoughness() const noexcept -> f32;
-		LEOPPHAPI auto SetRoughness(f32 roughness) const noexcept -> void;
+		LEOPPHAPI auto SetRoughness(f32 roughness) noexcept -> void;
 		LEOPPHAPI [[nodiscard]] auto GetAo() const noexcept -> f32;
-		LEOPPHAPI auto SetAo(f32 ao) const noexcept -> void;
+		LEOPPHAPI auto SetAo(f32 ao) noexcept -> void;
 
 		LEOPPHAPI [[nodiscard]] auto GetBuffer() const noexcept -> NonOwning<ID3D11Buffer*>;
 
 		LEOPPHAPI auto BindPs() const noexcept -> void;
 
 		[[nodiscard]] auto GetSerializationType() const -> Type override;
+
+		auto OnGui() -> void override;
 	};
 }

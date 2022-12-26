@@ -3,7 +3,10 @@
 #include "ModelImport.hpp"
 #include "Systems.hpp"
 
+#include <imgui.h>
+
 #include <assimp/scene.h>
+
 #include <stdexcept>
 
 
@@ -26,7 +29,7 @@ namespace leopph {
 		gRenderer.GetImmediateContext()->Map(mBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuf);
 		auto const bufferData{ static_cast<BufferData*>(mappedBuf.pData) };
 		bufferData->albedo = mBufData.albedo;
-			bufferData->metallic = mBufData.metallic;
+		bufferData->metallic = mBufData.metallic;
 		bufferData->roughness = mBufData.roughness;
 		bufferData->ao = mBufData.ao;
 		gRenderer.GetImmediateContext()->Unmap(mBuffer.Get(), 0);
@@ -50,15 +53,22 @@ namespace leopph {
 	}
 
 
-	auto Material::SetAlbedoColor(Color const& albedoColor) const noexcept -> void {
+	auto Material::SetAlbedoColor(Color const& albedoColor) noexcept -> void {
+		mBufData.albedo = Vector3{ albedoColor.red / 255.f, albedoColor.green / 255.f, albedoColor.blue / 255.f };
 		D3D11_MAPPED_SUBRESOURCE mappedBuf;
 		gRenderer.GetImmediateContext()->Map(mBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuf);
-		static_cast<BufferData*>(mappedBuf.pData)->albedo = Vector3{ albedoColor.red / 255.f, albedoColor.green / 255.f, albedoColor.blue / 255.f };
+		static_cast<BufferData*>(mappedBuf.pData)->albedo = mBufData.albedo;
 		gRenderer.GetImmediateContext()->Unmap(mBuffer.Get(), 0);
 	}
 
 
-	auto Material::SetMetallic(f32 const metallic) const noexcept -> void {
+	auto Material::SetAlbedoColor(Vector3 const& albedoColor) noexcept -> void {
+		SetAlbedoColor(Color{ static_cast<u8>(albedoColor[0] * 255), static_cast<u8>(albedoColor[1] * 255), static_cast<u8>(albedoColor[2] * 255), 255 });
+	}
+
+
+	auto Material::SetMetallic(f32 const metallic) noexcept -> void {
+		mBufData.metallic = metallic;
 		D3D11_MAPPED_SUBRESOURCE mappedBuf;
 		gRenderer.GetImmediateContext()->Map(mBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuf);
 		static_cast<BufferData*>(mappedBuf.pData)->metallic = metallic;
@@ -66,7 +76,8 @@ namespace leopph {
 	}
 
 
-	auto Material::SetRoughness(f32 const roughness) const noexcept -> void {
+	auto Material::SetRoughness(f32 const roughness) noexcept -> void {
+		mBufData.roughness = roughness;
 		D3D11_MAPPED_SUBRESOURCE mappedBuf;
 		gRenderer.GetImmediateContext()->Map(mBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuf);
 		static_cast<BufferData*>(mappedBuf.pData)->roughness = roughness;
@@ -74,7 +85,8 @@ namespace leopph {
 	}
 
 
-	auto Material::SetAo(f32 const ao) const noexcept -> void {
+	auto Material::SetAo(f32 const ao) noexcept -> void {
+		mBufData.ao = ao;
 		D3D11_MAPPED_SUBRESOURCE mappedBuf;
 		gRenderer.GetImmediateContext()->Map(mBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuf);
 		static_cast<BufferData*>(mappedBuf.pData)->ao = ao;
@@ -93,5 +105,51 @@ namespace leopph {
 
 	auto Material::GetSerializationType() const -> Type {
 		return Type::Material;
+	}
+
+	void Material::OnGui() {
+		Object::OnGui();
+
+		if (ImGui::BeginTable(std::format("{}", GetGuid().ToString()).c_str(), 2, ImGuiTableFlags_SizingStretchSame)) {
+			ImGui::TableNextRow();
+			ImGui::TableSetColumnIndex(0);
+			ImGui::PushItemWidth(FLT_MIN);
+			ImGui::TableSetColumnIndex(1);
+			ImGui::PushItemWidth(-FLT_MIN);
+
+			ImGui::TableSetColumnIndex(0);
+			ImGui::Text("Albedo Color");
+			ImGui::TableNextColumn();
+
+			if (Vector3 albedoColor{ mBufData.albedo}; ImGui::ColorEdit3("###matAlbedoColor", albedoColor.get_data())) {
+				SetAlbedoColor(albedoColor);
+			}
+
+			ImGui::TableNextColumn();
+			ImGui::Text("Metallic");
+			ImGui::TableNextColumn();
+			
+			if (f32 metallic{ GetMetallic() }; ImGui::DragFloat("###matMetallic", &metallic, 0.1f, 0.0f, 1.0f)) {
+				SetMetallic(metallic);
+			}
+
+			ImGui::TableNextColumn();
+			ImGui::Text("Roughness");
+			ImGui::TableNextColumn();
+
+			if (f32 roughness{ GetRoughness() }; ImGui::DragFloat("###matRoughness", &roughness, 0.1f, 0.0f, 1.0f)) {
+				SetRoughness(roughness);
+			}
+
+			ImGui::TableNextColumn();
+			ImGui::Text("Ambient Occlusion");
+			ImGui::TableNextColumn();
+
+			if (f32 ao{ GetAo() }; ImGui::DragFloat("###matAo", &ao, 0.1f, 0.0f, 1.0f)) {
+				SetAo(ao);
+			}
+
+			ImGui::EndTable();
+		}
 	}
 }

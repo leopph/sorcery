@@ -21,9 +21,6 @@
     <ClCompile Include="src\Serialization.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\AssetManagement.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\Widgets.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -34,9 +31,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Serialization.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\AssetManagement.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Widgets.hpp">
