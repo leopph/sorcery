@@ -2,14 +2,10 @@
 
 #include "Core.hpp"
 
-namespace leopph
-{
-	LEOPPHAPI void init_time();
-	LEOPPHAPI void measure_time();
+namespace leopph {
+	LEOPPHAPI auto init_time() -> void;
+	LEOPPHAPI auto measure_time() -> void;
 
-	namespace managedbindings
-	{
-		f32 get_full_time();
-		f32 get_frame_time();
-	}
+	LEOPPHAPI [[nodiscard]] auto get_full_time() noexcept -> f32;
+	LEOPPHAPI [[nodiscard]] auto get_frame_time() noexcept -> f32;
 }

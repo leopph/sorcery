@@ -14,6 +14,11 @@
 
 namespace leopph
 {
+	struct EditorCamera {
+		Vector3 position;
+		Vector3 forward;
+	};
+
 	class Renderer {
 	private:
 		struct Resources {
@@ -22,9 +27,14 @@ namespace leopph
 
 			Microsoft::WRL::ComPtr<IDXGISwapChain1> swapChain;
 			Microsoft::WRL::ComPtr<ID3D11RenderTargetView> swapChainRtv;
-			Microsoft::WRL::ComPtr<ID3D11Texture2D> renderTexture;
-			Microsoft::WRL::ComPtr<ID3D11RenderTargetView> renderTextureRtv;
-			Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> renderTextureSrv;
+
+			Microsoft::WRL::ComPtr<ID3D11Texture2D> gameRenderTexture;
+			Microsoft::WRL::ComPtr<ID3D11RenderTargetView> gameRenderTextureRtv;
+			Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> gameRenderTextureSrv;
+
+			Microsoft::WRL::ComPtr<ID3D11Texture2D> sceneRenderTexture;
+			Microsoft::WRL::ComPtr<ID3D11RenderTargetView> sceneRenderTextureRtv;
+			Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> sceneRenderTextureSrv;
 
 			Microsoft::WRL::ComPtr<ID3D11VertexShader> clearColorVs;
 			Microsoft::WRL::ComPtr<ID3D11PixelShader> clearColorPs;
@@ -49,7 +59,8 @@ namespace leopph
 			Microsoft::WRL::ComPtr<ID3D11Buffer> cameraCBuf;
 		};
 
-		void RecreateRenderTextureAndViews(u32 width, u32 height);
+		void RecreateGameRenderTextureAndViews(u32 width, u32 height) const;
+		void RecreateSceneRenderTextureAndViews(u32 width, u32 height) const;
 		static auto on_window_resize(Renderer* self, Extent2D<u32> size) -> void;
 
 		Resources* mResources{ nullptr };
@@ -57,6 +68,8 @@ namespace leopph
 		UINT mSwapChainFlags{ 0 };
 		Extent2D<u32> mGameRes;
 		f32 mGameAspect;
+		Extent2D<u32> mSceneRes;
+		f32 mSceneAspect;
 		UINT mInstanceBufferElementCapacity;
 		u32 mSyncInterval{ 0 };
 		std::vector<CubeModel const*> mCubeModels;
@@ -73,13 +86,19 @@ namespace leopph
 
 		LEOPPHAPI auto DrawCamera(Camera const* cam) -> void;
 		LEOPPHAPI auto DrawGame() -> void;
+		LEOPPHAPI auto DrawSceneView(EditorCamera const& cam) -> void;
 
 		[[nodiscard]] LEOPPHAPI auto GetGameResolution() const noexcept -> Extent2D<u32>;
 		LEOPPHAPI auto SetGameResolution(Extent2D<u32> resolution) noexcept -> void;
 
+		LEOPPHAPI [[nodiscard]] auto GetSceneResolution() const noexcept -> Extent2D<u32>;
+		LEOPPHAPI auto SetSceneResolution(Extent2D<u32> resolution) noexcept -> void;
+
 		[[nodiscard]] LEOPPHAPI auto GetGameFrame() const noexcept -> ID3D11ShaderResourceView*;
+		[[nodiscard]] LEOPPHAPI auto GetSceneFrame() const noexcept -> ID3D11ShaderResourceView*;
 
 		[[nodiscard]] LEOPPHAPI auto GetGameAspectRatio() const noexcept -> f32;
+		[[nodiscard]] LEOPPHAPI auto GetSceneAspectRatio() const noexcept -> f32;
 
 		LEOPPHAPI auto BindAndClearSwapChain() const noexcept -> void;
 

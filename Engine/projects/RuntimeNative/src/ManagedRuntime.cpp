@@ -71,8 +71,8 @@ namespace leopph {
 		mono_add_internal_call("leopph.Input::get_IsCursorHidden", reinterpret_cast<void*>(&managedbindings::IsWindowCursorHidden<gWindow>));
 		mono_add_internal_call("leopph.Input::set_IsCursorHidden", reinterpret_cast<void*>(&managedbindings::SetWindowCursorHiding<gWindow>));
 
-		mono_add_internal_call("leopph.Time::get_FullTime", reinterpret_cast<void*>(&managedbindings::get_full_time));
-		mono_add_internal_call("leopph.Time::get_FrameTime", reinterpret_cast<void*>(&managedbindings::get_frame_time));
+		mono_add_internal_call("leopph.Time::get_FullTime", reinterpret_cast<void*>(&get_full_time));
+		mono_add_internal_call("leopph.Time::get_FrameTime", reinterpret_cast<void*>(&get_frame_time));
 
 		mono_add_internal_call("leopph.Window::get_CurrentResolution", reinterpret_cast<void*>(&Call<gWindow, &Window::GetCurrentClientAreaSize>));
 		mono_add_internal_call("leopph.Window::get_WindowedResolution", reinterpret_cast<void*>(&Call<gWindow, &Window::GetWindowedClientAreaSize>));

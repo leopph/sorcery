@@ -1,6 +1,7 @@
 #include "Serialization.hpp"
 #include "Widgets.hpp"
 #include "Material.hpp"
+#include "Time.hpp"
 
 #include <Components.hpp>
 #include <ManagedRuntime.hpp>
@@ -374,6 +375,61 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
 					leopph::gRenderer.DrawGame();
 					ImGui::Image(reinterpret_cast<void*>(leopph::gRenderer.GetGameFrame()), frameDisplaySize);
+				}
+				else {
+					ImGui::PopStyleVar();
+				}
+				ImGui::End();
+
+				ImVec2 static constexpr sceneViewportMinSize{ 480, 270 };
+
+				ImGui::SetNextWindowSize(sceneViewportMinSize, ImGuiCond_FirstUseEver);
+				ImGui::SetNextWindowSizeConstraints(sceneViewportMinSize, ImGui::GetMainViewport()->WorkSize);
+				ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+
+				if (ImGui::Begin("Scene", nullptr, ImGuiWindowFlags_NoCollapse)) {
+					ImGui::PopStyleVar();
+					auto const sceneRes{ leopph::gRenderer.GetSceneResolution() };
+					auto const contentRegionSize{ ImGui::GetContentRegionAvail() };
+					leopph::Extent2D const viewportRes{ static_cast<leopph::u32>(contentRegionSize.x), static_cast<leopph::u32>(contentRegionSize.y) };
+
+					if (viewportRes.width != sceneRes.width || viewportRes.height != sceneRes.height) {
+						leopph::gRenderer.SetSceneResolution(viewportRes);
+					}
+
+					static leopph::EditorCamera editorCam{
+						.position = Vector3{0, 0, 0},
+						.forward = Vector3::forward()
+					};
+
+					if (/*ImGui::IsItemHovered() &&*/ ImGui::IsMouseDown(ImGuiMouseButton_Right)) {
+						Vector3 posDelta{ 0, 0, 0 };
+						if (GetKey(leopph::Key::W) || GetKey(leopph::Key::UpArrow)) {
+							posDelta += Vector3::forward();
+						}
+						if (GetKey(leopph::Key::A) || GetKey(leopph::Key::LeftArrow)) {
+							posDelta += Vector3::left();
+						}
+						if (GetKey(leopph::Key::D) || GetKey(leopph::Key::RightArrow)) {
+							posDelta += Vector3::right();
+						}
+						if (GetKey(leopph::Key::S) || GetKey(leopph::Key::DownArrow)) {
+							posDelta += Vector3::backward();
+						}
+						posDelta.normalize();
+
+						if (GetKey(leopph::Key::Shift)) {
+							posDelta *= 2;
+						}
+						editorCam.position += posDelta * leopph::get_frame_time() * 2;
+						auto const mouseDelta{ leopph::gWindow.GetMouseDelta() };
+						auto constexpr sens{ 0.05f };
+						editorCam.forward = Quaternion{ Vector3::up(), static_cast<float>(mouseDelta.x) * sens }.Rotate(editorCam.forward);
+						editorCam.forward = Quaternion{ cross(editorCam.forward, Vector3::up()), static_cast<float>(mouseDelta.y) * sens }.Rotate(editorCam.forward);
+					}
+
+					leopph::gRenderer.DrawSceneView(editorCam);
+					ImGui::Image(leopph::gRenderer.GetSceneFrame(), contentRegionSize);
 				}
 				else {
 					ImGui::PopStyleVar();
