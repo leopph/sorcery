@@ -402,7 +402,9 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 						.forward = Vector3::forward()
 					};
 
-					if (/*ImGui::IsItemHovered() &&*/ ImGui::IsMouseDown(ImGuiMouseButton_Right)) {
+					if (ImGui::IsWindowHovered() && ImGui::IsMouseDown(ImGuiMouseButton_Right)) {
+						leopph::gWindow.SetCursorConfinement(true);
+						leopph::gWindow.SetCursorHiding(true);
 						Vector3 posDelta{ 0, 0, 0 };
 						if (GetKey(leopph::Key::W) || GetKey(leopph::Key::UpArrow)) {
 							posDelta += Vector3::forward();
@@ -426,6 +428,10 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 						auto constexpr sens{ 0.05f };
 						editorCam.forward = Quaternion{ Vector3::up(), static_cast<float>(mouseDelta.x) * sens }.Rotate(editorCam.forward);
 						editorCam.forward = Quaternion{ cross(editorCam.forward, Vector3::up()), static_cast<float>(mouseDelta.y) * sens }.Rotate(editorCam.forward);
+					}
+					else {
+						leopph::gWindow.SetCursorConfinement(false);
+						leopph::gWindow.SetCursorHiding(false);
 					}
 
 					leopph::gRenderer.DrawSceneView(editorCam);
