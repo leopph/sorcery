@@ -433,7 +433,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 						auto const mouseDelta{ leopph::gWindow.GetMouseDelta() };
 						auto constexpr sens{ 0.05f };
 						editorCam.forward = Quaternion{ Vector3::up(), static_cast<float>(mouseDelta.x) * sens }.Rotate(editorCam.forward);
-						editorCam.forward = Quaternion{ cross(editorCam.forward, Vector3::up()), static_cast<float>(mouseDelta.y) * sens }.Rotate(editorCam.forward);
+						editorCam.forward = Quaternion{ cross(editorCam.forward, Vector3::up()), static_cast<float>(-mouseDelta.y) * sens }.Rotate(editorCam.forward);
 					}
 					else {
 						leopph::gWindow.SetCursorConfinement(false);
