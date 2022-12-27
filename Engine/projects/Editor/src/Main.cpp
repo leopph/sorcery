@@ -17,6 +17,7 @@
 #include <imgui.h>
 #include <backends/imgui_impl_win32.h>
 #include <backends/imgui_impl_dx11.h>
+#include <ImGuizmo.h>
 
 #include <mono/metadata/reflection.h>
 
@@ -25,6 +26,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <DirectXMath.h>
 #include <filesystem>
 #include <format>
 #include <fstream>
@@ -163,6 +165,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 			ImGui_ImplDX11_NewFrame();
 			ImGui_ImplWin32_NewFrame();
 			ImGui::NewFrame();
+			ImGuizmo::BeginFrame();
 
 			if (!gWorkingDir || !gRootDir) {
 				auto flags{ ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings };
@@ -398,8 +401,11 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 					}
 
 					static leopph::EditorCamera editorCam{
-						.position = Vector3{0, 0, 0},
-						.forward = Vector3::forward()
+						.position = Vector3{ 0, 0, 0 },
+						.forward = Vector3::forward(),
+						.nearClip = 0.03f,
+						.farClip = 300.f,
+						.fovVertRad = leopph::to_radians(90),
 					};
 
 					if (ImGui::IsWindowHovered() && ImGui::IsMouseDown(ImGuiMouseButton_Right)) {
@@ -436,6 +442,47 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
 					leopph::gRenderer.DrawSceneView(editorCam);
 					ImGui::Image(leopph::gRenderer.GetSceneFrame(), contentRegionSize);
+
+					if (auto const selectedEntity{ dynamic_cast<leopph::Entity*>(gSelected) }; selectedEntity) {
+						static auto op{ ImGuizmo::OPERATION::TRANSLATE };
+						if (GetKeyDown(leopph::Key::T)) {
+							op = ImGuizmo::TRANSLATE;
+						}
+						if (GetKeyDown(leopph::Key::R)) {
+							op = ImGuizmo::ROTATE;
+						}
+						if (GetKeyDown(leopph::Key::S)) {
+							op = ImGuizmo::SCALE;
+						}
+
+						leopph::Matrix4 modelMat{ selectedEntity->GetTransform().GetModelMatrix() };
+						auto const viewMat{
+							[&] {
+								DirectX::XMFLOAT3 const eye{ editorCam.position.get_data() };
+								DirectX::XMFLOAT3 const forward{ editorCam.forward.get_data() };
+								DirectX::XMFLOAT3 const up{ Vector3::up().get_data() };
+								DirectX::XMFLOAT4X4 ret{};
+								auto const lookTo{ DirectX::XMMatrixLookToLH(XMLoadFloat3(&eye), XMLoadFloat3(&forward), XMLoadFloat3(&up)) };
+								auto const lookToTranspose{ XMMatrixTranspose(lookTo) };
+								XMStoreFloat4x4(&ret, lookToTranspose);
+								return ret;
+							}()
+						};
+						auto const projMat{
+							[] {
+								DirectX::XMFLOAT4X4 ret{};
+								XMStoreFloat4x4(&ret, XMMatrixTranspose(DirectX::XMMatrixPerspectiveFovLH(editorCam.fovVertRad, ImGui::GetWindowWidth() / ImGui::GetWindowHeight(), editorCam.nearClip, editorCam.farClip)));
+								return ret;
+							}()
+						};
+
+						ImGuizmo::AllowAxisFlip(false);
+						ImGuizmo::SetDrawlist();
+						ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, ImGui::GetWindowWidth(), ImGui::GetWindowHeight());
+						if (Manipulate(viewMat.m[0], projMat.m[0], op, ImGuizmo::MODE::LOCAL, &modelMat[0][0])) {
+							selectedEntity->GetTransform().SetWorldPosition(Vector3{ modelMat[3] });
+						}
+					}
 				}
 				else {
 					ImGui::PopStyleVar();

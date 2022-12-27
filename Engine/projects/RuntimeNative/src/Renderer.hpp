@@ -17,6 +17,9 @@ namespace leopph
 	struct EditorCamera {
 		Vector3 position;
 		Vector3 forward;
+		f32 nearClip;
+		f32 farClip;
+		f32 fovVertRad;
 	};
 
 	class Renderer {

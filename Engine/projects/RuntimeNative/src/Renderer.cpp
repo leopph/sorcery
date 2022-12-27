@@ -845,14 +845,11 @@ namespace leopph {
 		DirectX::XMFLOAT3 const camPos{ cam.position.get_data() };
 		DirectX::XMFLOAT3 const camForward{ cam.forward.get_data() };
 		DirectX::XMMATRIX viewMat = DirectX::XMMatrixLookToLH(DirectX::XMLoadFloat3(&camPos), DirectX::XMLoadFloat3(&camForward), { 0, 1, 0 });
-
-		auto constexpr fovHorizRad = DirectX::XMConvertToRadians(90);
-		auto const fovVertRad = 2.0f * std::atanf(std::tanf(fovHorizRad / 2.0f) / mSceneAspect);
-		DirectX::XMMATRIX const projMat = DirectX::XMMatrixPerspectiveFovLH(fovVertRad, mSceneAspect, 0.03f, 300);
+		
+		DirectX::XMMATRIX const projMat = DirectX::XMMatrixPerspectiveFovLH(cam.fovVertRad, mSceneAspect, cam.nearClip, cam.farClip);
 
 		D3D11_MAPPED_SUBRESOURCE mappedCbuffer;
 		mResources->context->Map(mResources->cbuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedCbuffer);
-
 		DirectX::XMStoreFloat4x4(static_cast<DirectX::XMFLOAT4X4*>(mappedCbuffer.pData), viewMat * projMat);
 		mResources->context->Unmap(mResources->cbuffer.Get(), 0);
 
@@ -866,15 +863,6 @@ namespace leopph {
 			lightBufferData->dirLightData.intensity = mDirLights[0]->GetIntensity();
 		}
 		mResources->context->Unmap(mResources->lightBuffer.Get(), 0);
-
-		/*D3D11_MAPPED_SUBRESOURCE mappedMatBuf;
-		mResources->context->Map(mResources->materialCBuf.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedMatBuf);
-		auto const matBufData{ static_cast<MaterialData*>(mappedMatBuf.pData) };
-		matBufData->albedo = Vector3{ 1 };
-		matBufData->metallic = 0;
-		matBufData->ao = 0;
-		matBufData->roughness = 0.5;
-		mResources->context->Unmap(mResources->materialCBuf.Get(), 0);*/
 
 		D3D11_MAPPED_SUBRESOURCE mappedCamBuf;
 		mResources->context->Map(mResources->cameraCBuf.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedCamBuf);
