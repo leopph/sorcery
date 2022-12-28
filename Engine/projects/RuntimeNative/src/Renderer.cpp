@@ -1020,4 +1020,8 @@ namespace leopph {
 	auto Renderer::UnregisterPointLight(PointLight const* pointLight) -> void {
 		std::erase(mPointLights, pointLight);
 	}
+
+	auto Renderer::GetDefaultMaterial() const noexcept -> std::shared_ptr<Material> {
+		return mDefaultMaterial;
+	}
 }

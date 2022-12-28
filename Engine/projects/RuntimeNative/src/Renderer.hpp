@@ -12,8 +12,7 @@
 #include <wrl/client.h>
 
 
-namespace leopph
-{
+namespace leopph {
 	struct EditorCamera {
 		Vector3 position;
 		Quaternion orientation;
@@ -62,8 +61,8 @@ namespace leopph
 			Microsoft::WRL::ComPtr<ID3D11Buffer> cameraCBuf;
 		};
 
-		void RecreateGameRenderTextureAndViews(u32 width, u32 height) const;
-		void RecreateSceneRenderTextureAndViews(u32 width, u32 height) const;
+		auto RecreateGameRenderTextureAndViews(u32 width, u32 height) const -> void;
+		auto RecreateSceneRenderTextureAndViews(u32 width, u32 height) const -> void;
 		static auto on_window_resize(Renderer* self, Extent2D<u32> size) -> void;
 
 		Resources* mResources{ nullptr };
@@ -79,6 +78,14 @@ namespace leopph
 		std::vector<DirectionalLight const*> mDirLights;
 		std::vector<SpotLight const*> mSpotLights;
 		std::vector<PointLight const*> mPointLights;
+
+		std::shared_ptr<Material> mDefaultMaterial{
+			[] {
+				auto ret{ std::make_shared<Material>() };
+				ret->SetName("Default Material");
+				return ret;
+			}()
+		};
 
 	public:
 		Renderer() noexcept = default;
@@ -124,5 +131,7 @@ namespace leopph
 
 		LEOPPHAPI auto RegisterPointLight(PointLight const* pointLight) -> void;
 		LEOPPHAPI auto UnregisterPointLight(PointLight const* pointLight) -> void;
+
+		[[nodiscard]] LEOPPHAPI auto GetDefaultMaterial() const noexcept -> std::shared_ptr<Material>;
 	};
 }
