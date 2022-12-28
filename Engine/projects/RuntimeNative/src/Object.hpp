@@ -22,7 +22,7 @@ namespace leopph {
 		LEOPPHAPI static std::set<Object*, GuidObjectLess> sAllObjects;
 
 		Guid mGuid{ Guid::Generate() };
-		std::string mName;
+		std::string mName{"New Object"};
 
 	public:
 		enum class Type {

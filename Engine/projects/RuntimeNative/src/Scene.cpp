@@ -26,4 +26,13 @@ namespace leopph
 	auto Scene::GetSerializationType() const -> Type {
 		return Type::Scene;
 	}
+
+
+	auto Scene::GetEntities(std::vector<Entity*>& out) const -> std::vector<Entity*>& {
+		out.clear();
+		for (auto const& entity : mEntities) {
+			out.emplace_back(entity.get());
+		}
+		return out;
+	}
 }

@@ -1,5 +1,7 @@
 #include "Entity.hpp"
 
+#include <format>
+
 #include "Components.hpp"
 #include "SceneManager.hpp"
 #include "ManagedRuntime.hpp"
@@ -29,41 +31,41 @@ namespace leopph {
 			{"Camera", instantiate<Camera>},
 			{"DirectionalLight", instantiate<DirectionalLight>}
 		};
-	}
 
-	std::vector<Entity*> Entity::sAllEntities;
-
-
-	auto Entity::GetAllEntities() -> std::span<Entity* const> {
-		return sAllEntities;
+		std::vector<Entity*> gEntityCache;
 	}
 
 
-	auto Entity::GetAllEntities(std::vector<Entity*>& outEntities) -> std::vector<Entity*>& {
-		outEntities.clear();
-		for (auto* const entity : sAllEntities) {
-			outEntities.emplace_back(entity);
-		}
-		return outEntities;
-	}
-
-
-	auto Entity::FindEntityByName(std::string_view name) -> Entity* {
-		for (auto* const entity : sAllEntities) {
-			if (entity->mName == name) {
+	auto Entity::FindEntityByName(std::string_view const name) -> Entity* {
+		
+		FindObjectsOfType(gEntityCache);
+		for (auto* const entity : gEntityCache) {
+			if (entity->GetName() == name) {
 				return entity;
 			}
 		}
 		return nullptr;
 	}
 
+
 	Entity::Entity() {
-		sAllEntities.emplace_back(this);
-	}
+		auto constexpr defaultEntityName{ "New Entity" };
+		SetName(defaultEntityName);
+		FindObjectsOfType(gEntityCache);
 
-
-	Entity::~Entity() {
-		std::erase(sAllEntities, this);
+		bool isNameUnique{ false };
+		std::size_t index{ 1 };
+		while (!isNameUnique) {
+			isNameUnique = true;
+			for (auto const entity : gEntityCache) {
+				if (entity != this && entity->GetName() == GetName()) {
+					SetName(std::format("{} ({})", defaultEntityName, index));
+					++index;
+					isNameUnique = false;
+					break;
+				}
+			}
+		}
 	}
 
 

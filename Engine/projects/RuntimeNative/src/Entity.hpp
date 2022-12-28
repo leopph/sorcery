@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ManagedAccessObject.hpp"
+#include "Components.hpp"
 
 #include <string>
 #include <string_view>
@@ -14,18 +15,12 @@ using MonoReflectionType = struct _MonoReflectionType;
 
 
 namespace leopph {
-	class Component;
-	class Transform;
 	class Scene;
 
 
-	class Entity : public ManagedAccessObject {
+	class Entity final : public ManagedAccessObject {
 		friend class Scene;
-
-	private:
-		static std::vector<Entity*> sAllEntities;
-
-		std::string mName{ "Entity" };
+		
 		Scene* mScene{ nullptr };
 		mutable Transform* mTransform{ nullptr };
 		std::vector<std::unique_ptr<Component>> mComponents;
@@ -35,11 +30,7 @@ namespace leopph {
 		auto SetScene(Scene* scene) -> void;
 
 	public:
-		[[nodiscard]] LEOPPHAPI static auto GetAllEntities()->std::span<Entity* const>;
-		LEOPPHAPI static auto GetAllEntities(std::vector<Entity*>& outEntities) -> std::vector<Entity*>&;
 		[[nodiscard]] LEOPPHAPI static auto FindEntityByName(std::string_view name) -> Entity*;
-
-		LEOPPHAPI ~Entity();
 
 		[[nodiscard]] LEOPPHAPI auto GetSerializationType() const->Type override;
 		LEOPPHAPI auto SerializeTextual(YAML::Node& node) const -> void override;

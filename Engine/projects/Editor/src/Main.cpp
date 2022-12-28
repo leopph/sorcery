@@ -46,7 +46,7 @@ namespace {
 
 
 	auto CloseCurrentScene() -> void {
-		for (static std::vector<leopph::Entity*> entities; auto const& entity : leopph::Entity::GetAllEntities(entities)) {
+		for (static std::vector<leopph::Entity*> entities; auto const& entity : leopph::SceneManager::GetActiveScene()->GetEntities(entities)) {
 			entity->GetScene().DestroyEntity(entity);
 		}
 	}
@@ -302,7 +302,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 				}
 
 				static std::vector<leopph::Entity*> entities;
-				leopph::Entity::GetAllEntities(entities);
+				leopph::SceneManager::GetActiveScene()->GetEntities(entities);
 
 
 				if (ImGui::Begin("Entities", nullptr, ImGuiWindowFlags_NoCollapse)) {
@@ -355,7 +355,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 							if (ImGui::BeginPopupContextItem()) {
 								if (ImGui::MenuItem("Delete")) {
 									entity.GetScene().DestroyEntity(&entity);
-									leopph::Entity::GetAllEntities(entities);
+									leopph::SceneManager::GetActiveScene()->GetEntities(entities);
 									gSelected = nullptr;
 									deleted = true;
 									ImGui::CloseCurrentPopup();

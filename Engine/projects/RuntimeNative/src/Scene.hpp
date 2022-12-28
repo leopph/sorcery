@@ -24,5 +24,7 @@ namespace leopph
 		LEOPPHAPI void DestroyEntity(Entity const* entity);
 
 		[[nodiscard]] auto GetSerializationType() const -> Type override;
+
+		LEOPPHAPI auto GetEntities(std::vector<Entity*>& out) const -> std::vector<Entity*>&;
 	};
 }
