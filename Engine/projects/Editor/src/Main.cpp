@@ -445,14 +445,17 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
 					if (auto const selectedEntity{ dynamic_cast<leopph::Entity*>(gSelected) }; selectedEntity) {
 						static auto op{ ImGuizmo::OPERATION::TRANSLATE };
-						if (GetKeyDown(leopph::Key::T)) {
-							op = ImGuizmo::TRANSLATE;
-						}
-						if (GetKeyDown(leopph::Key::R)) {
-							op = ImGuizmo::ROTATE;
-						}
-						if (GetKeyDown(leopph::Key::S)) {
-							op = ImGuizmo::SCALE;
+
+						if (ImGui::IsWindowFocused()) {
+							if (GetKeyDown(leopph::Key::T)) {
+								op = ImGuizmo::TRANSLATE;
+							}
+							if (GetKeyDown(leopph::Key::R)) {
+								op = ImGuizmo::ROTATE;
+							}
+							if (GetKeyDown(leopph::Key::S)) {
+								op = ImGuizmo::SCALE;
+							}
 						}
 
 						leopph::Matrix4 modelMat{ selectedEntity->GetTransform().GetModelMatrix() };
@@ -480,7 +483,13 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 						ImGuizmo::SetDrawlist();
 						ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, ImGui::GetWindowWidth(), ImGui::GetWindowHeight());
 						if (Manipulate(viewMat.m[0], projMat.m[0], op, ImGuizmo::MODE::LOCAL, &modelMat[0][0])) {
-							selectedEntity->GetTransform().SetWorldPosition(Vector3{ modelMat[3] });
+							leopph::Vector3 pos;
+							leopph::Vector3 euler;
+							leopph::Vector3 scale;
+							ImGuizmo::DecomposeMatrixToComponents(modelMat.get_data(), &pos[0], &euler[0], &scale[0]);
+							selectedEntity->GetTransform().SetWorldPosition(pos);
+							selectedEntity->GetTransform().SetWorldRotation(Quaternion::FromEulerAngles(euler));
+							selectedEntity->GetTransform().SetWorldScale(scale);
 						}
 					}
 				}
