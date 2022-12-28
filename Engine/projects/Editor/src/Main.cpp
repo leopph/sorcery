@@ -397,9 +397,9 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 						leopph::gRenderer.SetSceneResolution(viewportRes);
 					}
 
-					static leopph::EditorCamera editorCam{
-						.position = leopph::Vector3{ 0, 0, 0 },
-						.forward = leopph::Vector3::forward(),
+					leopph::EditorCamera static editorCam{
+						.position = leopph::Vector3{},
+						.orientation = leopph::Quaternion{},
 						.nearClip = 0.03f,
 						.farClip = 300.f,
 						.fovVertRad = leopph::to_radians(60),
@@ -408,6 +408,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 					if (ImGui::IsWindowHovered() && ImGui::IsMouseDown(ImGuiMouseButton_Right)) {
 						leopph::gWindow.SetCursorConfinement(true);
 						leopph::gWindow.SetCursorHiding(true);
+
 						leopph::Vector3 posDelta{ 0, 0, 0 };
 						if (GetKey(leopph::Key::W) || GetKey(leopph::Key::UpArrow)) {
 							posDelta += leopph::Vector3::forward();
@@ -421,16 +422,20 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 						if (GetKey(leopph::Key::S) || GetKey(leopph::Key::DownArrow)) {
 							posDelta += leopph::Vector3::backward();
 						}
+
 						posDelta.normalize();
 
 						if (GetKey(leopph::Key::Shift)) {
 							posDelta *= 2;
 						}
-						editorCam.position += posDelta * leopph::get_frame_time() * 2;
-						auto const mouseDelta{ leopph::gWindow.GetMouseDelta() };
+
+						editorCam.position += editorCam.orientation.Rotate(posDelta) * leopph::get_frame_time() * 2;
+
+						auto const [mouseX, mouseY]{ leopph::gWindow.GetMouseDelta() };
 						auto constexpr sens{ 0.05f };
-						editorCam.forward = leopph::Quaternion{ leopph::Vector3::up(), static_cast<float>(mouseDelta.x) * sens }.Rotate(editorCam.forward).normalize();
-						editorCam.forward = leopph::Quaternion{ cross(editorCam.forward, leopph::Vector3::up()).normalize(), static_cast<float>(-mouseDelta.y) * sens }.Rotate(editorCam.forward).normalize();
+
+						editorCam.orientation = leopph::Quaternion{ leopph::Vector3::up(), static_cast<leopph::f32>(mouseX) * sens } *editorCam.orientation;
+						editorCam.orientation *= leopph::Quaternion{ leopph::Vector3::right(), static_cast<leopph::f32>(mouseY) * sens };
 					}
 					else {
 						leopph::gWindow.SetCursorConfinement(false);
@@ -456,7 +461,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 						}
 
 						leopph::Matrix4 modelMat{ selectedEntity->GetTransform().GetModelMatrix() };
-						auto const viewMat{ leopph::Matrix4::look_at(editorCam.position, editorCam.position + editorCam.forward, leopph::Vector3::up()) };
+						auto const viewMat{ leopph::Matrix4::look_at(editorCam.position, editorCam.position + editorCam.orientation.Rotate(leopph::Vector3::forward()), leopph::Vector3::up()) };
 						auto const projMat{ leopph::Matrix4::perspective(editorCam.fovVertRad, ImGui::GetWindowWidth() / ImGui::GetWindowHeight(), editorCam.nearClip, editorCam.farClip) };
 
 						ImGuizmo::AllowAxisFlip(false);

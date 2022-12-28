@@ -843,7 +843,7 @@ namespace leopph {
 		}
 
 		DirectX::XMFLOAT3 const camPos{ cam.position.get_data() };
-		DirectX::XMFLOAT3 const camForward{ cam.forward.get_data() };
+		DirectX::XMFLOAT3 const camForward{ cam.orientation.Rotate(Vector3::forward()).get_data() };
 		DirectX::XMMATRIX viewMat = DirectX::XMMatrixLookToLH(DirectX::XMLoadFloat3(&camPos), DirectX::XMLoadFloat3(&camForward), { 0, 1, 0 });
 		
 		DirectX::XMMATRIX const projMat = DirectX::XMMatrixPerspectiveFovLH(cam.fovVertRad, mSceneAspect, cam.nearClip, cam.farClip);
