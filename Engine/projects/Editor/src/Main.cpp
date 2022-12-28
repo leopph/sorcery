@@ -7,7 +7,6 @@
 #include <ManagedRuntime.hpp>
 #include <Platform.hpp>
 #include <Renderer.hpp>
-#include <Time.hpp>
 #include <Entity.hpp>
 #include <OnGui.hpp>
 #include <Scene.hpp>
@@ -24,9 +23,10 @@
 #include <YamlInclude.hpp>
 #include <nfd.h>
 
+#include <DirectXMath.h>
+
 #include <algorithm>
 #include <atomic>
-#include <DirectXMath.h>
 #include <filesystem>
 #include <format>
 #include <fstream>
@@ -35,11 +35,9 @@
 #include <string>
 #include <vector>
 
-using leopph::Vector3;
-using leopph::Quaternion;
-using leopph::f32;
 
 extern auto ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) -> LRESULT;
+
 
 namespace {
 	auto EditorImGuiEventHook(HWND const hwnd, UINT const msg, WPARAM const wparam, LPARAM const lparam) -> bool {
@@ -48,8 +46,7 @@ namespace {
 
 
 	auto CloseCurrentScene() -> void {
-		static std::vector<leopph::Entity*> entities;
-		for (auto const& entity : leopph::Entity::GetAllEntities(entities)) {
+		for (static std::vector<leopph::Entity*> entities; auto const& entity : leopph::Entity::GetAllEntities(entities)) {
 			entity->GetScene().DestroyEntity(entity);
 		}
 	}
@@ -350,7 +347,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 					ImGui::PopStyleVar();
 
 					leopph::Extent2D<leopph::u32> constexpr resolutions[]{ { 960, 540 }, { 1280, 720 }, { 1600, 900 }, { 1920, 1080 }, { 2560, 1440 }, { 3840, 2160 } };
-					char const* const resolutionLabels[]{ "Auto", "960x540", "1280x720", "1600x900", "1920x1080", "2560x1440", "3840x2160" };
+					constexpr char const* resolutionLabels[]{ "Auto", "960x540", "1280x720", "1600x900", "1920x1080", "2560x1440", "3840x2160" };
 					static int selectedRes = 0;
 
 					if (ImGui::Combo("Resolution", &selectedRes, resolutionLabels, 7)) {
@@ -373,11 +370,11 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 					}
 					else {
 						leopph::f32 const scale = std::min(contentRegionSize.x / static_cast<leopph::f32>(gameRes.width), contentRegionSize.y / static_cast<leopph::f32>(gameRes.height));
-						frameDisplaySize = ImVec2(gameRes.width * scale, gameRes.height * scale);
+						frameDisplaySize = ImVec2(static_cast<leopph::f32>(gameRes.width) * scale, static_cast<leopph::f32>(gameRes.height) * scale);
 					}
 
 					leopph::gRenderer.DrawGame();
-					ImGui::Image(reinterpret_cast<void*>(leopph::gRenderer.GetGameFrame()), frameDisplaySize);
+					ImGui::Image(leopph::gRenderer.GetGameFrame(), frameDisplaySize);
 				}
 				else {
 					ImGui::PopStyleVar();
@@ -392,37 +389,37 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
 				if (ImGui::Begin("Scene", nullptr, ImGuiWindowFlags_NoCollapse)) {
 					ImGui::PopStyleVar();
-					auto const sceneRes{ leopph::gRenderer.GetSceneResolution() };
+					auto const [sceneWidth, sceneHeight]{ leopph::gRenderer.GetSceneResolution() };
 					auto const contentRegionSize{ ImGui::GetContentRegionAvail() };
-					leopph::Extent2D const viewportRes{ static_cast<leopph::u32>(contentRegionSize.x), static_cast<leopph::u32>(contentRegionSize.y) };
 
-					if (viewportRes.width != sceneRes.width || viewportRes.height != sceneRes.height) {
+					if (leopph::Extent2D const viewportRes{ static_cast<leopph::u32>(contentRegionSize.x), static_cast<leopph::u32>(contentRegionSize.y) };
+						viewportRes.width != sceneWidth || viewportRes.height != sceneHeight) {
 						leopph::gRenderer.SetSceneResolution(viewportRes);
 					}
 
 					static leopph::EditorCamera editorCam{
-						.position = Vector3{ 0, 0, 0 },
-						.forward = Vector3::forward(),
+						.position = leopph::Vector3{ 0, 0, 0 },
+						.forward = leopph::Vector3::forward(),
 						.nearClip = 0.03f,
 						.farClip = 300.f,
-						.fovVertRad = leopph::to_radians(90),
+						.fovVertRad = leopph::to_radians(60),
 					};
 
 					if (ImGui::IsWindowHovered() && ImGui::IsMouseDown(ImGuiMouseButton_Right)) {
 						leopph::gWindow.SetCursorConfinement(true);
 						leopph::gWindow.SetCursorHiding(true);
-						Vector3 posDelta{ 0, 0, 0 };
+						leopph::Vector3 posDelta{ 0, 0, 0 };
 						if (GetKey(leopph::Key::W) || GetKey(leopph::Key::UpArrow)) {
-							posDelta += Vector3::forward();
+							posDelta += leopph::Vector3::forward();
 						}
 						if (GetKey(leopph::Key::A) || GetKey(leopph::Key::LeftArrow)) {
-							posDelta += Vector3::left();
+							posDelta += leopph::Vector3::left();
 						}
 						if (GetKey(leopph::Key::D) || GetKey(leopph::Key::RightArrow)) {
-							posDelta += Vector3::right();
+							posDelta += leopph::Vector3::right();
 						}
 						if (GetKey(leopph::Key::S) || GetKey(leopph::Key::DownArrow)) {
-							posDelta += Vector3::backward();
+							posDelta += leopph::Vector3::backward();
 						}
 						posDelta.normalize();
 
@@ -432,8 +429,8 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 						editorCam.position += posDelta * leopph::get_frame_time() * 2;
 						auto const mouseDelta{ leopph::gWindow.GetMouseDelta() };
 						auto constexpr sens{ 0.05f };
-						editorCam.forward = Quaternion{ Vector3::up(), static_cast<float>(mouseDelta.x) * sens }.Rotate(editorCam.forward).normalize();
-						editorCam.forward = Quaternion{ cross(editorCam.forward, Vector3::up()).normalize(), static_cast<float>(-mouseDelta.y) * sens }.Rotate(editorCam.forward).normalize();
+						editorCam.forward = leopph::Quaternion{ leopph::Vector3::up(), static_cast<float>(mouseDelta.x) * sens }.Rotate(editorCam.forward).normalize();
+						editorCam.forward = leopph::Quaternion{ cross(editorCam.forward, leopph::Vector3::up()).normalize(), static_cast<float>(-mouseDelta.y) * sens }.Rotate(editorCam.forward).normalize();
 					}
 					else {
 						leopph::gWindow.SetCursorConfinement(false);
@@ -459,36 +456,18 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 						}
 
 						leopph::Matrix4 modelMat{ selectedEntity->GetTransform().GetModelMatrix() };
-						auto const viewMat{
-							[&] {
-								DirectX::XMFLOAT3 const eye{ editorCam.position.get_data() };
-								DirectX::XMFLOAT3 const forward{ editorCam.forward.get_data() };
-								DirectX::XMFLOAT3 const up{ Vector3::up().get_data() };
-								DirectX::XMFLOAT4X4 ret{};
-								auto const lookTo{ DirectX::XMMatrixLookToLH(XMLoadFloat3(&eye), XMLoadFloat3(&forward), XMLoadFloat3(&up)) };
-								auto const lookToTranspose{ XMMatrixTranspose(lookTo) };
-								XMStoreFloat4x4(&ret, lookToTranspose);
-								return ret;
-							}()
-						};
-						auto const projMat{
-							[] {
-								DirectX::XMFLOAT4X4 ret{};
-								XMStoreFloat4x4(&ret, XMMatrixTranspose(DirectX::XMMatrixPerspectiveFovLH(editorCam.fovVertRad, ImGui::GetWindowWidth() / ImGui::GetWindowHeight(), editorCam.nearClip, editorCam.farClip)));
-								return ret;
-							}()
-						};
+						auto const viewMat{ leopph::Matrix4::look_at(editorCam.position, editorCam.position + editorCam.forward, leopph::Vector3::up()) };
+						auto const projMat{ leopph::Matrix4::perspective(editorCam.fovVertRad, ImGui::GetWindowWidth() / ImGui::GetWindowHeight(), editorCam.nearClip, editorCam.farClip) };
 
 						ImGuizmo::AllowAxisFlip(false);
 						ImGuizmo::SetDrawlist();
 						ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, ImGui::GetWindowWidth(), ImGui::GetWindowHeight());
-						if (Manipulate(viewMat.m[0], projMat.m[0], op, ImGuizmo::MODE::LOCAL, &modelMat[0][0])) {
-							leopph::Vector3 pos;
-							leopph::Vector3 euler;
-							leopph::Vector3 scale;
-							ImGuizmo::DecomposeMatrixToComponents(modelMat.get_data(), &pos[0], &euler[0], &scale[0]);
+
+						if (Manipulate(viewMat.get_data(), projMat.get_data(), op, ImGuizmo::MODE::LOCAL, modelMat.get_data())) {
+							leopph::Vector3 pos, euler, scale;
+							ImGuizmo::DecomposeMatrixToComponents(modelMat.get_data(), pos.get_data(), euler.get_data(), scale.get_data());
 							selectedEntity->GetTransform().SetWorldPosition(pos);
-							selectedEntity->GetTransform().SetWorldRotation(Quaternion::FromEulerAngles(euler));
+							selectedEntity->GetTransform().SetWorldRotation(leopph::Quaternion::FromEulerAngles(euler));
 							selectedEntity->GetTransform().SetWorldScale(scale);
 						}
 					}
