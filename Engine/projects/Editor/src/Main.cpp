@@ -84,10 +84,9 @@ namespace {
 	leopph::Object* gSelected{ nullptr };
 	std::optional<std::filesystem::path> gWorkingDir;
 	std::optional<std::filesystem::path> gRootDir;
-	std::vector<std::shared_ptr<leopph::Object>> gAssets;
 
 
-	auto DiscoverAssetsInProjectFolder() -> void {
+	auto DiscoverAssetsInProjectFolder(std::vector<std::shared_ptr<leopph::Resource>>& out) -> void {
 		for (auto const& childEntry : std::filesystem::recursive_directory_iterator{ *gRootDir }) {
 			if (!childEntry.is_directory() && childEntry.path().extension() == ".leopphasset") {
 				try {
@@ -98,7 +97,7 @@ namespace {
 						throw std::runtime_error{ std::format("Failed to deserialize asset at {}, because the file is corrupt.", childEntry.path().string()) };
 					}
 					auto const type{ *reinterpret_cast<leopph::Object::Type const*>(std::span{ bytes }.first<sizeof(leopph::Object::Type)>().data()) };
-					std::shared_ptr<leopph::Object> asset;
+					std::shared_ptr<leopph::Resource> asset;
 
 					switch (type) {
 						case leopph::Object::Type::Material: {
@@ -111,7 +110,7 @@ namespace {
 					}
 
 					std::ignore = asset->DeserializeBinary(bytes);
-					gAssets.emplace_back(std::move(asset));
+					out.emplace_back(std::move(asset));
 				}
 				catch (std::exception const& ex) {
 					MessageBoxA(nullptr, ex.what(), "Error", MB_ICONERROR);
@@ -154,6 +153,8 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 		bool runGame{ false };
 		bool showDemoWindow{ false };
 
+		std::vector<std::shared_ptr<leopph::Resource>> assets;
+
 		leopph::init_time();
 
 		while (!leopph::gWindow.IsQuitSignaled()) {
@@ -182,7 +183,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 						if (nfdchar_t* selectedPath{ nullptr }; NFD_PickFolder(nullptr, &selectedPath) == NFD_OKAY) {
 							gWorkingDir = std::filesystem::path{ selectedPath };
 							gRootDir = gWorkingDir;
-							DiscoverAssetsInProjectFolder();
+							DiscoverAssetsInProjectFolder(assets);
 						}
 					}
 				}
@@ -552,22 +553,22 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 						}
 						if (ImGui::BeginMenu("Create##CreateAsset")) {
 							if (ImGui::MenuItem("Material##CreateMaterial")) {
-								auto const mat{ new leopph::Material{} };
+								auto mat{ std::make_shared<leopph::Material>() };
 								mat->SetName("New Material");
-								gAssets.emplace_back(mat);
-								gSelected = mat;
+								gSelected = mat.get();
 								static std::vector<leopph::u8> bytes;
 								mat->SerializeBinary(bytes);
 								std::ofstream out{ (*gWorkingDir / mat->GetName()).replace_extension(".leopphasset"), std::ios::binary };
 								std::ranges::copy(std::as_const(bytes), std::ostream_iterator<leopph::u8>{ out });
 								bytes.clear();
+								assets.emplace_back(std::move(mat));
 							}
 							ImGui::EndMenu();
 						}
 						ImGui::EndPopup();
 					}
 
-					for (int i{ 0 }; auto const& asset : gAssets) {
+					for (int i{ 0 }; auto const& asset : assets) {
 						if (ImGui::Selectable(std::format("{}##{}{}", asset->GetName().data(), asset->GetName().data(), i).c_str(), gSelected == asset.get())) {
 							gSelected = asset.get();
 						}

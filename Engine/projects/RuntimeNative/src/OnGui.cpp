@@ -295,7 +295,7 @@ namespace leopph {
 
 				for (auto const mat : materials) {
 					if (ImGui::Selectable(std::format("{}##matoption{}", mat->GetName(), mat->GetGuid().ToString()).c_str())) {
-						SetMaterial(*mat);
+						SetMaterial(std::static_pointer_cast<Material>(mat->GetSharedPtr()));
 						break;
 					}
 				}

@@ -158,14 +158,14 @@ namespace leopph {
 
 
 	class CubeModel : public Component {
-		Material const* mMat{ new Material{} };
+		std::shared_ptr<Material> mMat;
 
 	public:
 		LEOPPHAPI CubeModel();
 		~CubeModel() override;
 
-		LEOPPHAPI [[nodiscard]] auto GetMaterial() const noexcept -> Material const&;
-		LEOPPHAPI auto SetMaterial(Material const& material) noexcept -> void;
+		LEOPPHAPI [[nodiscard]] auto GetMaterial() const noexcept -> std::shared_ptr<Material>;
+		LEOPPHAPI auto SetMaterial(std::shared_ptr<Material> material) noexcept -> void;
 
 		LEOPPHAPI auto OnGui() -> void override;
 		[[nodiscard]] LEOPPHAPI auto GetSerializationType() const -> Type override;

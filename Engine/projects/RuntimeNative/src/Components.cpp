@@ -38,18 +38,18 @@ namespace leopph {
 
 
 	namespace managedbindings {
-		MonoObject* GetComponentEntity(MonoObject* const component) {
+		auto GetComponentEntity(MonoObject* const component) -> MonoObject* {
 			return static_cast<Component*>(ManagedAccessObject::GetNativePtrFromManagedObject(component))->GetEntity()->GetManagedObject();
 		}
 
 
-		MonoObject* GetComponentEntityTransform(MonoObject* const component) {
+		auto GetComponentEntityTransform(MonoObject* const component) -> MonoObject* {
 			return static_cast<Component*>(ManagedAccessObject::GetNativePtrFromManagedObject(component))->GetTransform().GetManagedObject();
 		}
 	}
 
 
-	void Transform::UpdateWorldPositionRecursive() {
+	auto Transform::UpdateWorldPositionRecursive() -> void {
 		mWorldPosition = mParent != nullptr ? mParent->mWorldRotation.Rotate(mParent->mWorldPosition + mLocalPosition) : mLocalPosition;
 
 		UpdateMatrices();
@@ -60,7 +60,7 @@ namespace leopph {
 	}
 
 
-	void Transform::UpdateWorldRotationRecursive() {
+	auto Transform::UpdateWorldRotationRecursive() -> void {
 		mWorldRotation = mParent != nullptr ? mParent->mWorldRotation * mLocalRotation : mLocalRotation;
 
 		mForward = mWorldRotation.Rotate(Vector3::forward());
@@ -75,7 +75,7 @@ namespace leopph {
 	}
 
 
-	void Transform::UpdateWorldScaleRecursive() {
+	auto Transform::UpdateWorldScaleRecursive() -> void {
 		mWorldScale = mParent != nullptr ? mParent->mWorldScale * mLocalScale : mLocalScale;
 
 		UpdateMatrices();
@@ -86,7 +86,7 @@ namespace leopph {
 	}
 
 
-	void Transform::UpdateMatrices() {
+	auto Transform::UpdateMatrices() -> void {
 		mModelMat[0] = Vector4{ mRight * mWorldScale, 0 };
 		mModelMat[1] = Vector4{ mUp * mWorldScale, 0 };
 		mModelMat[2] = Vector4{ mForward * mWorldScale, 0 };
@@ -102,12 +102,12 @@ namespace leopph {
 		CreateManagedObject("leopph", "Transform");
 	}
 
-	Vector3 const& Transform::GetWorldPosition() const {
+	auto Transform::GetWorldPosition() const -> Vector3 const& {
 		return mWorldPosition;
 	}
 
 
-	void Transform::SetWorldPosition(Vector3 const& newPos) {
+	auto Transform::SetWorldPosition(Vector3 const& newPos) -> void {
 		if (mParent != nullptr) {
 			SetLocalPosition(mParent->mWorldRotation.conjugate().Rotate(newPos) - mParent->mWorldPosition);
 		}
@@ -117,23 +117,23 @@ namespace leopph {
 	}
 
 
-	Vector3 const& Transform::GetLocalPosition() const {
+	auto Transform::GetLocalPosition() const -> Vector3 const& {
 		return mLocalPosition;
 	}
 
 
-	void Transform::SetLocalPosition(Vector3 const& newPos) {
+	auto Transform::SetLocalPosition(Vector3 const& newPos) -> void {
 		mLocalPosition = newPos;
 		UpdateWorldPositionRecursive();
 	}
 
 
-	Quaternion const& Transform::GetWorldRotation() const {
+	auto Transform::GetWorldRotation() const -> Quaternion const& {
 		return mWorldRotation;
 	}
 
 
-	void Transform::SetWorldRotation(Quaternion const& newRot) {
+	auto Transform::SetWorldRotation(Quaternion const& newRot) -> void {
 		if (mParent != nullptr) {
 			SetLocalRotation(mParent->mWorldRotation.conjugate() * newRot);
 		}
@@ -143,23 +143,23 @@ namespace leopph {
 	}
 
 
-	Quaternion const& Transform::GetLocalRotation() const {
+	auto Transform::GetLocalRotation() const -> Quaternion const& {
 		return mLocalRotation;
 	}
 
 
-	void Transform::SetLocalRotation(Quaternion const& newRot) {
+	auto Transform::SetLocalRotation(Quaternion const& newRot) -> void {
 		mLocalRotation = newRot;
 		UpdateWorldRotationRecursive();
 	}
 
 
-	Vector3 const& Transform::GetWorldScale() const {
+	auto Transform::GetWorldScale() const -> Vector3 const& {
 		return mWorldScale;
 	}
 
 
-	void Transform::SetWorldScale(Vector3 const& newScale) {
+	auto Transform::SetWorldScale(Vector3 const& newScale) -> void {
 		if (mParent != nullptr) {
 			SetLocalScale(newScale / mParent->mWorldScale);
 		}
@@ -169,18 +169,18 @@ namespace leopph {
 	}
 
 
-	Vector3 const& Transform::GetLocalScale() const {
+	auto Transform::GetLocalScale() const -> Vector3 const& {
 		return mLocalScale;
 	}
 
 
-	void Transform::SetLocalScale(Vector3 const& newScale) {
+	auto Transform::SetLocalScale(Vector3 const& newScale) -> void {
 		mLocalScale = newScale;
 		UpdateWorldScaleRecursive();
 	}
 
 
-	void Transform::Translate(Vector3 const& vector, Space const base) {
+	auto Transform::Translate(Vector3 const& vector, Space const base) -> void {
 		if (base == Space::World) {
 			SetWorldPosition(mWorldPosition + vector);
 		}
@@ -190,12 +190,12 @@ namespace leopph {
 	}
 
 
-	void Transform::Translate(f32 const x, f32 const y, f32 const z, Space const base) {
+	auto Transform::Translate(f32 const x, f32 const y, f32 const z, Space const base) -> void {
 		Translate(Vector3{ x, y, z }, base);
 	}
 
 
-	void Transform::Rotate(Quaternion const& rotation, Space const base) {
+	auto Transform::Rotate(Quaternion const& rotation, Space const base) -> void {
 		if (base == Space::World) {
 			SetLocalRotation(rotation * mLocalRotation);
 		}
@@ -205,12 +205,12 @@ namespace leopph {
 	}
 
 
-	void Transform::Rotate(Vector3 const& axis, f32 const amountDegrees, Space const base) {
+	auto Transform::Rotate(Vector3 const& axis, f32 const amountDegrees, Space const base) -> void {
 		Rotate(Quaternion{ axis, amountDegrees }, base);
 	}
 
 
-	void Transform::Rescale(Vector3 const& scaling, Space const base) {
+	auto Transform::Rescale(Vector3 const& scaling, Space const base) -> void {
 		if (base == Space::World) {
 			SetWorldScale(mWorldScale * scaling);
 		}
@@ -220,31 +220,31 @@ namespace leopph {
 	}
 
 
-	void Transform::Rescale(f32 const x, f32 const y, f32 const z, Space const base) {
+	auto Transform::Rescale(f32 const x, f32 const y, f32 const z, Space const base) -> void {
 		Rescale(Vector3{ x, y, z }, base);
 	}
 
 
-	Vector3 const& Transform::GetRightAxis() const {
+	auto Transform::GetRightAxis() const -> Vector3 const& {
 		return mRight;
 	}
 
 
-	Vector3 const& Transform::GetUpAxis() const {
+	auto Transform::GetUpAxis() const -> Vector3 const& {
 		return mUp;
 	}
 
 
-	Vector3 const& Transform::GetForwardAxis() const {
+	auto Transform::GetForwardAxis() const -> Vector3 const& {
 		return mForward;
 	}
 
 
-	Transform* Transform::GetParent() const {
+	auto Transform::GetParent() const -> Transform* {
 		return mParent;
 	}
 
-	void Transform::SetParent(Transform* const parent) {
+	auto Transform::SetParent(Transform* const parent) -> void {
 		if (mParent) {
 			std::erase(mParent->mChildren, this);
 		}
@@ -261,20 +261,21 @@ namespace leopph {
 	}
 
 
-	std::span<Transform* const> Transform::GetChildren() const {
+	auto Transform::GetChildren() const -> std::span<Transform* const> {
 		return mChildren;
 	}
 
-	Matrix4 const& Transform::GetModelMatrix() const {
+	auto Transform::GetModelMatrix() const -> Matrix4 const& {
 		return mModelMat;
 	}
 
-	Matrix3 const& Transform::GetNormalMatrix() const {
+	auto Transform::GetNormalMatrix() const -> Matrix3 const& {
 		return mNormalMat;
 	}
 
 
-	CubeModel::CubeModel() {
+	CubeModel::CubeModel() :
+		mMat{ gRenderer.GetDefaultMaterial() } {
 		gRenderer.RegisterCubeModel(this);
 	}
 
@@ -284,19 +285,22 @@ namespace leopph {
 	}
 
 
-	auto CubeModel::GetMaterial() const noexcept -> Material const& {
-		return *mMat;
+	auto CubeModel::GetMaterial() const noexcept -> std::shared_ptr<Material> {
+		return mMat;
 	}
 
-	auto CubeModel::SetMaterial(Material const& material) noexcept -> void {
-		mMat = &material;
+
+	auto CubeModel::SetMaterial(std::shared_ptr<Material> material) noexcept -> void {
+		if (material) {
+			mMat = std::move(material);
+		}
 	}
 
 
 	std::vector<Camera*> Camera::sAllInstances;
 
 
-	f32 Camera::ConvertPerspectiveFov(f32 const fov, bool const vert2Horiz) const {
+	auto Camera::ConvertPerspectiveFov(f32 const fov, bool const vert2Horiz) const -> f32 {
 		if (vert2Horiz) {
 			return to_degrees(2.0f * std::atan(std::tan(to_radians(fov) / 2.0f) * mAspect));
 		}
@@ -315,36 +319,36 @@ namespace leopph {
 	}
 
 
-	std::span<Camera* const> Camera::GetAllInstances() {
+	auto Camera::GetAllInstances() -> std::span<Camera* const> {
 		return sAllInstances;
 	}
 
 
-	f32 Camera::GetNearClipPlane() const {
+	auto Camera::GetNearClipPlane() const -> f32 {
 		return mNear;
 	}
 
 
-	void Camera::SetNearClipPlane(f32 const nearPlane) {
+	auto Camera::SetNearClipPlane(f32 const nearPlane) -> void {
 		mNear = std::max(nearPlane, 0.03f);
 	}
 
 
-	f32 Camera::GetFarClipPlane() const {
+	auto Camera::GetFarClipPlane() const -> f32 {
 		return mFar;
 	}
 
 
-	void Camera::SetFarClipPlane(f32 const farPlane) {
+	auto Camera::SetFarClipPlane(f32 const farPlane) -> void {
 		mFar = std::max(farPlane, mNear + 0.1f);
 	}
 
 
-	NormalizedViewport const& Camera::GetViewport() const {
+	auto Camera::GetViewport() const -> NormalizedViewport const& {
 		return mViewport;
 	}
 
-	void Camera::SetViewport(NormalizedViewport const& viewport) {
+	auto Camera::SetViewport(NormalizedViewport const& viewport) -> void {
 		mViewport.extent.width = std::clamp(viewport.extent.width, 0.f, 1.f);
 		mViewport.extent.height = std::clamp(viewport.extent.height, 0.f, 1.f);
 		mViewport.position.x = std::clamp(viewport.position.x, 0.f, 1.f);
@@ -352,17 +356,17 @@ namespace leopph {
 	}
 
 
-	Extent2D<u32> Camera::GetWindowExtents() const {
+	auto Camera::GetWindowExtents() const -> Extent2D<u32> {
 		return mWindowExtent;
 	}
 
 
-	f32 Camera::GetAspectRatio() const {
+	auto Camera::GetAspectRatio() const -> f32 {
 		return mAspect;
 	}
 
 
-	f32 Camera::GetOrthographicSize(Side side) const {
+	auto Camera::GetOrthographicSize(Side side) const -> f32 {
 		if (side == Side::Horizontal) {
 			return mOrthoSizeHoriz;
 		}
@@ -375,7 +379,7 @@ namespace leopph {
 	}
 
 
-	void Camera::SetOrthoGraphicSize(f32 size, Side side) {
+	auto Camera::SetOrthoGraphicSize(f32 size, Side side) -> void {
 		size = std::max(size, 0.1f);
 
 		if (side == Side::Horizontal) {
@@ -387,7 +391,7 @@ namespace leopph {
 	}
 
 
-	f32 Camera::GetPerspectiveFov(Side const side) const {
+	auto Camera::GetPerspectiveFov(Side const side) const -> f32 {
 		if (side == Side::Horizontal) {
 			return mPerspFovHorizDeg;
 		}
@@ -400,7 +404,7 @@ namespace leopph {
 	}
 
 
-	void Camera::SetPerspectiveFov(f32 degrees, Side const side) {
+	auto Camera::SetPerspectiveFov(f32 degrees, Side const side) -> void {
 		degrees = std::max(degrees, 5.f);
 
 		if (side == Side::Horizontal) {
@@ -411,12 +415,12 @@ namespace leopph {
 		}
 	}
 
-	Camera::Type Camera::GetType() const {
+	auto Camera::GetType() const -> Camera::Type {
 		return mType;
 	}
 
 
-	void Camera::SetType(Type const type) {
+	auto Camera::SetType(Type const type) -> void {
 		mType = type;
 	}
 
@@ -433,52 +437,52 @@ namespace leopph {
 
 
 	namespace managedbindings {
-		Camera::Type GetCameraType(MonoObject* camera) {
+		auto GetCameraType(MonoObject* camera) -> Camera::Type {
 			return static_cast<Camera*>(ManagedAccessObject::GetNativePtrFromManagedObject(camera))->GetType();
 		}
 
 
-		void SetCameraType(MonoObject* camera, Camera::Type type) {
+		auto SetCameraType(MonoObject* camera, Camera::Type type) -> void {
 			static_cast<Camera*>(ManagedAccessObject::GetNativePtrFromManagedObject(camera))->SetType(type);
 		}
 
 
-		f32 GetCameraPerspectiveFov(MonoObject* camera) {
+		auto GetCameraPerspectiveFov(MonoObject* camera) -> f32 {
 			return static_cast<Camera*>(ManagedAccessObject::GetNativePtrFromManagedObject(camera))->GetPerspectiveFov();
 		}
 
 
-		void SetCameraPerspectiveFov(MonoObject* camera, f32 fov) {
+		auto SetCameraPerspectiveFov(MonoObject* camera, f32 fov) -> void {
 			static_cast<Camera*>(ManagedAccessObject::GetNativePtrFromManagedObject(camera))->SetPerspectiveFov(fov);
 		}
 
 
-		f32 GetCameraOrthographicSize(MonoObject* camera) {
+		auto GetCameraOrthographicSize(MonoObject* camera) -> f32 {
 			return static_cast<Camera*>(ManagedAccessObject::GetNativePtrFromManagedObject(camera))->GetOrthographicSize();
 		}
 
 
-		void SetCameraOrthographicSize(MonoObject* camera, f32 size) {
+		auto SetCameraOrthographicSize(MonoObject* camera, f32 size) -> void {
 			static_cast<Camera*>(ManagedAccessObject::GetNativePtrFromManagedObject(camera))->SetOrthoGraphicSize(size);
 		}
 
 
-		f32 GetCameraNearClipPlane(MonoObject* camera) {
+		auto GetCameraNearClipPlane(MonoObject* camera) -> f32 {
 			return static_cast<Camera*>(ManagedAccessObject::GetNativePtrFromManagedObject(camera))->GetNearClipPlane();
 		}
 
 
-		void SetCameraNearClipPlane(MonoObject* camera, f32 nearClipPlane) {
+		auto SetCameraNearClipPlane(MonoObject* camera, f32 nearClipPlane) -> void {
 			static_cast<Camera*>(ManagedAccessObject::GetNativePtrFromManagedObject(camera))->SetNearClipPlane(nearClipPlane);
 		}
 
 
-		f32 GetCameraFarClipPlane(MonoObject* camera) {
+		auto GetCameraFarClipPlane(MonoObject* camera) -> f32 {
 			return static_cast<Camera*>(ManagedAccessObject::GetNativePtrFromManagedObject(camera))->GetFarClipPlane();
 		}
 
 
-		void SetCameraFarClipPlane(MonoObject* camera, f32 farClipPlane) {
+		auto SetCameraFarClipPlane(MonoObject* camera, f32 farClipPlane) -> void {
 			static_cast<Camera*>(ManagedAccessObject::GetNativePtrFromManagedObject(camera))->SetFarClipPlane(farClipPlane);
 		}
 	}
@@ -490,7 +494,7 @@ namespace leopph {
 		std::unordered_map<Behavior*, MonoMethod*> gToTack;
 
 
-		void invoke_method_handle_exception(MonoObject* const obj, MonoMethod* const method) {
+		auto invoke_method_handle_exception(MonoObject* const obj, MonoMethod* const method) -> void {
 			MonoObject* exception;
 			mono_runtime_invoke(method, obj, nullptr, &exception);
 
@@ -556,7 +560,7 @@ namespace leopph {
 	}
 
 
-	void init_behaviors() {
+	auto init_behaviors() -> void {
 		for (auto const& [behavior, method] : gToInit) {
 			invoke_method_handle_exception(behavior->GetManagedObject(), method);
 		}
@@ -565,39 +569,36 @@ namespace leopph {
 	}
 
 
-	void tick_behaviors() {
+	auto tick_behaviors() -> void {
 		for (auto const& [behavior, method] : gToTick) {
 			invoke_method_handle_exception(behavior->GetManagedObject(), method);
 		}
 	}
 
 
-	void tack_behaviors() {
+	auto tack_behaviors() -> void {
 		for (auto const& [behavior, method] : gToTack) {
 			invoke_method_handle_exception(behavior->GetManagedObject(), method);
 		}
 	}
 
 
-	Vector3 const& Light::GetColor() const {
+	auto Light::GetColor() const -> Vector3 const& {
 		return mColor;
 	}
 
 
-
-	void Light::SetColor(Vector3 const& newColor) {
+	auto Light::SetColor(Vector3 const& newColor) -> void {
 		mColor = newColor;
 	}
 
 
-
-	f32 Light::GetIntensity() const {
+	auto Light::GetIntensity() const -> f32 {
 		return mIntensity;
 	}
 
 
-
-	void Light::SetIntensity(f32 const newIntensity) {
+	auto Light::SetIntensity(f32 const newIntensity) -> void {
 		if (newIntensity <= 0) {
 			//Logger::get_instance().warning(std::format("Ignoring attempt to set light intensity to {}. This value must be positive.", newIntensity)); TODO
 			return;
@@ -607,66 +608,55 @@ namespace leopph {
 	}
 
 
-
-	bool Light::is_casting_shadow() const {
+	auto Light::is_casting_shadow() const -> bool {
 		return mCastsShadow;
 	}
 
 
-
-	void Light::set_casting_shadow(bool const newValue) {
+	auto Light::set_casting_shadow(bool const newValue) -> void {
 		mCastsShadow = newValue;
 	}
 
 
-
-	f32 AttenuatedLight::get_range() const {
+	auto AttenuatedLight::get_range() const -> f32 {
 		return mRange;
 	}
 
 
-
-	void AttenuatedLight::set_range(f32 const value) {
+	auto AttenuatedLight::set_range(f32 const value) -> void {
 		mRange = value;
 	}
 
 
-
-	AmbientLight& AmbientLight::get_instance() {
+	auto AmbientLight::get_instance() -> AmbientLight& {
 		static AmbientLight instance;
 		return instance;
 	}
 
 
-
-	Vector3 const& AmbientLight::get_intensity() const {
+	auto AmbientLight::get_intensity() const -> Vector3 const& {
 		return mIntensity;
 	}
 
 
-
-	void AmbientLight::set_intensity(Vector3 const& intensity) {
+	auto AmbientLight::set_intensity(Vector3 const& intensity) -> void {
 		mIntensity = intensity;
 	}
 
 
-
-	Vector3 const& DirectionalLight::get_direction() const {
+	auto DirectionalLight::get_direction() const -> Vector3 const& {
 		return GetEntity()->GetTransform().GetForwardAxis();
 	}
 
 
-
-	f32 DirectionalLight::get_shadow_near_plane() const {
+	auto DirectionalLight::get_shadow_near_plane() const -> f32 {
 		return mShadowNear;
 	}
 
 
-
-	void DirectionalLight::set_shadow_near_plane(f32 const newVal) {
+	auto DirectionalLight::set_shadow_near_plane(f32 const newVal) -> void {
 		mShadowNear = newVal;
 	}
-
 
 
 	DirectionalLight::DirectionalLight() {
@@ -674,11 +664,9 @@ namespace leopph {
 	}
 
 
-
 	DirectionalLight::~DirectionalLight() {
 		gRenderer.UnregisterDirLight(this);
 	}
-
 
 
 	PointLight::PointLight() {
@@ -686,41 +674,34 @@ namespace leopph {
 	}
 
 
-
 	PointLight::~PointLight() {
 		gRenderer.UnregisterPointLight(this);
 	}
 
 
-
-	f32 SpotLight::get_inner_angle() const {
+	auto SpotLight::get_inner_angle() const -> f32 {
 		return mInnerAngle;
 	}
 
 
-
-	void SpotLight::set_inner_angle(f32 const degrees) {
+	auto SpotLight::set_inner_angle(f32 const degrees) -> void {
 		mInnerAngle = degrees;
 	}
 
 
-
-	f32 SpotLight::get_outer_angle() const {
+	auto SpotLight::get_outer_angle() const -> f32 {
 		return mOuterAngle;
 	}
 
 
-
-	void SpotLight::set_outer_angle(f32 const degrees) {
+	auto SpotLight::set_outer_angle(f32 const degrees) -> void {
 		mOuterAngle = degrees;
 	}
-
 
 
 	SpotLight::SpotLight() {
 		gRenderer.RegisterSpotLight(this);
 	}
-
 
 
 	SpotLight::~SpotLight() {
@@ -729,130 +710,130 @@ namespace leopph {
 
 
 	namespace managedbindings {
-		Vector3 GetTransformWorldPosition(MonoObject* const transform) {
+		auto GetTransformWorldPosition(MonoObject* const transform) -> Vector3 {
 			return ManagedAccessObject::GetNativePtrFromManagedObjectAs<Transform*>(transform)->GetWorldPosition();
 		}
 
 
-		void SetTransformWorldPosition(MonoObject* transform, Vector3 newPos) {
+		auto SetTransformWorldPosition(MonoObject* transform, Vector3 newPos) -> void {
 			ManagedAccessObject::GetNativePtrFromManagedObjectAs<Transform*>(transform)->SetWorldPosition(newPos);
 		}
 
 
-		Vector3 GetTransformLocalPosition(MonoObject* transform) {
+		auto GetTransformLocalPosition(MonoObject* transform) -> Vector3 {
 			return ManagedAccessObject::GetNativePtrFromManagedObjectAs<Transform*>(transform)->GetLocalPosition();
 		}
 
 
-		void SetTransformLocalPosition(MonoObject* transform, Vector3 newPos) {
+		auto SetTransformLocalPosition(MonoObject* transform, Vector3 newPos) -> void {
 			ManagedAccessObject::GetNativePtrFromManagedObjectAs<Transform*>(transform)->SetLocalPosition(newPos);
 		}
 
 
-		Quaternion GetTransformWorldRotation(MonoObject* transform) {
+		auto GetTransformWorldRotation(MonoObject* transform) -> Quaternion {
 			return ManagedAccessObject::GetNativePtrFromManagedObjectAs<Transform*>(transform)->GetWorldRotation();
 		}
 
 
-		void SetTransformWorldRotation(MonoObject* transform, Quaternion newRot) {
+		auto SetTransformWorldRotation(MonoObject* transform, Quaternion newRot) -> void {
 			ManagedAccessObject::GetNativePtrFromManagedObjectAs<Transform*>(transform)->SetWorldRotation(newRot);
 		}
 
 
-		Quaternion GetTransformLocalRotation(MonoObject* transform) {
+		auto GetTransformLocalRotation(MonoObject* transform) -> Quaternion {
 			return ManagedAccessObject::GetNativePtrFromManagedObjectAs<Transform*>(transform)->GetLocalRotation();
 		}
 
 
-		void SetTransformLocalRotation(MonoObject* transform, Quaternion newRot) {
+		auto SetTransformLocalRotation(MonoObject* transform, Quaternion newRot) -> void {
 			ManagedAccessObject::GetNativePtrFromManagedObjectAs<Transform*>(transform)->SetLocalRotation(newRot);
 		}
 
 
-		Vector3 GetTransformWorldScale(MonoObject* transform) {
+		auto GetTransformWorldScale(MonoObject* transform) -> Vector3 {
 			return ManagedAccessObject::GetNativePtrFromManagedObjectAs<Transform*>(transform)->GetWorldScale();
 		}
 
 
-		void SetTransformWorldScale(MonoObject* transform, Vector3 newScale) {
+		auto SetTransformWorldScale(MonoObject* transform, Vector3 newScale) -> void {
 			ManagedAccessObject::GetNativePtrFromManagedObjectAs<Transform*>(transform)->SetWorldScale(newScale);
 		}
 
 
-		Vector3 GetTransformLocalScale(MonoObject* transform) {
+		auto GetTransformLocalScale(MonoObject* transform) -> Vector3 {
 			return ManagedAccessObject::GetNativePtrFromManagedObjectAs<Transform*>(transform)->GetLocalScale();
 		}
 
 
-		void SetTransformLocalScale(MonoObject* transform, Vector3 newScale) {
+		auto SetTransformLocalScale(MonoObject* transform, Vector3 newScale) -> void {
 			ManagedAccessObject::GetNativePtrFromManagedObjectAs<Transform*>(transform)->SetLocalScale(newScale);
 		}
 
 
-		void TranslateTransformVector(MonoObject* transform, Vector3 vector, Space base) {
+		auto TranslateTransformVector(MonoObject* transform, Vector3 vector, Space base) -> void {
 			ManagedAccessObject::GetNativePtrFromManagedObjectAs<Transform*>(transform)->Translate(vector, base);
 		}
 
 
-		void TranslateTransform(MonoObject* transform, f32 x, f32 y, f32 z, Space base) {
+		auto TranslateTransform(MonoObject* transform, f32 x, f32 y, f32 z, Space base) -> void {
 			ManagedAccessObject::GetNativePtrFromManagedObjectAs<Transform*>(transform)->Translate(x, y, z, base);
 		}
 
 
-		void RotateTransform(MonoObject* transform, Quaternion rotation, Space base) {
+		auto RotateTransform(MonoObject* transform, Quaternion rotation, Space base) -> void {
 			ManagedAccessObject::GetNativePtrFromManagedObjectAs<Transform*>(transform)->Rotate(rotation, base);
 		}
 
 
-		void RotateTransformAngleAxis(MonoObject* transform, Vector3 axis, f32 angleDegrees, Space base) {
+		auto RotateTransformAngleAxis(MonoObject* transform, Vector3 axis, f32 angleDegrees, Space base) -> void {
 			ManagedAccessObject::GetNativePtrFromManagedObjectAs<Transform*>(transform)->Rotate(axis, angleDegrees, base);
 		}
 
 
-		void RescaleTransformVector(MonoObject* transform, Vector3 scaling, Space base) {
+		auto RescaleTransformVector(MonoObject* transform, Vector3 scaling, Space base) -> void {
 			ManagedAccessObject::GetNativePtrFromManagedObjectAs<Transform*>(transform)->Rescale(scaling, base);
 		}
 
 
-		void RescaleTransform(MonoObject* transform, f32 x, f32 y, f32 z, Space base) {
+		auto RescaleTransform(MonoObject* transform, f32 x, f32 y, f32 z, Space base) -> void {
 			ManagedAccessObject::GetNativePtrFromManagedObjectAs<Transform*>(transform)->Rescale(x, y, z, base);
 		}
 
 
-		Vector3 GetTransformRightAxis(MonoObject* transform) {
+		auto GetTransformRightAxis(MonoObject* transform) -> Vector3 {
 			return ManagedAccessObject::GetNativePtrFromManagedObjectAs<Transform*>(transform)->GetRightAxis();
 		}
 
 
-		Vector3 GetTransformUpAxis(MonoObject* transform) {
+		auto GetTransformUpAxis(MonoObject* transform) -> Vector3 {
 			return ManagedAccessObject::GetNativePtrFromManagedObjectAs<Transform*>(transform)->GetUpAxis();
 		}
 
 
-		Vector3 GetTransformForwardAxis(MonoObject* transform) {
+		auto GetTransformForwardAxis(MonoObject* transform) -> Vector3 {
 			return ManagedAccessObject::GetNativePtrFromManagedObjectAs<Transform*>(transform)->GetForwardAxis();
 		}
 
 
-		MonoObject* GetTransformParent(MonoObject* transform) {
+		auto GetTransformParent(MonoObject* transform) -> MonoObject* {
 			auto const parent = ManagedAccessObject::GetNativePtrFromManagedObjectAs<Transform*>(transform)->GetParent();
 			return parent ? parent->GetManagedObject() : nullptr;
 		}
 
 
-		void SetTransformParent(MonoObject* transform, MonoObject* parent) {
+		auto SetTransformParent(MonoObject* transform, MonoObject* parent) -> void {
 			auto const nativeTransform = ManagedAccessObject::GetNativePtrFromManagedObjectAs<Transform*>(transform);
 			auto const nativeParent = parent ? static_cast<Transform*>(ManagedAccessObject::GetNativePtrFromManagedObject(parent)) : nullptr;
 			nativeTransform->SetParent(nativeParent);
 		}
 
 
-		Matrix4 GetTransformModelMatrix(MonoObject* transform) {
+		auto GetTransformModelMatrix(MonoObject* transform) -> Matrix4 {
 			return ManagedAccessObject::GetNativePtrFromManagedObjectAs<Transform*>(transform)->GetModelMatrix();
 		}
 
 
-		Matrix3 GetTransformNormalMatrix(MonoObject* transform) {
+		auto GetTransformNormalMatrix(MonoObject* transform) -> Matrix3 {
 			return ManagedAccessObject::GetNativePtrFromManagedObjectAs<Transform*>(transform)->GetNormalMatrix();
 		}
 	}

@@ -687,6 +687,9 @@ namespace leopph {
 		if (FAILED(hresult)) {
 			throw std::runtime_error{ "Failed to create camera cbuffer." };
 		}
+
+		mDefaultMaterial = std::make_shared<Material>();
+		mDefaultMaterial->SetName("Default Material");
 	}
 
 
@@ -811,7 +814,7 @@ namespace leopph {
 		mResources->context->VSSetShader(mResources->cubeVertShader.Get(), nullptr, 0);
 		mResources->context->VSSetConstantBuffers(0, 1, mResources->cbuffer.GetAddressOf());
 		mResources->context->PSSetShader(mResources->pbrPs.Get(), nullptr, 0);
-		ID3D11Buffer* const psCBuffers[]{ mCubeModels[0]->GetMaterial().GetBuffer(), mResources->cameraCBuf.Get(), mResources->lightBuffer.Get() };
+		ID3D11Buffer* const psCBuffers[]{ mCubeModels[0]->GetMaterial()->GetBuffer(), mResources->cameraCBuf.Get(), mResources->lightBuffer.Get() };
 		mResources->context->PSSetConstantBuffers(0, ARRAYSIZE(psCBuffers), psCBuffers);
 		mResources->context->DrawIndexedInstanced(ARRAYSIZE(CUBE_INDICES), static_cast<UINT>(mCubeModels.size()), 0, 0, 0);
 	}
@@ -907,7 +910,7 @@ namespace leopph {
 		mResources->context->VSSetShader(mResources->cubeVertShader.Get(), nullptr, 0);
 		mResources->context->VSSetConstantBuffers(0, 1, mResources->cbuffer.GetAddressOf());
 		mResources->context->PSSetShader(mResources->pbrPs.Get(), nullptr, 0);
-		ID3D11Buffer* const psCBuffers[]{ mCubeModels[0]->GetMaterial().GetBuffer(), mResources->cameraCBuf.Get(), mResources->lightBuffer.Get() };
+		ID3D11Buffer* const psCBuffers[]{ mCubeModels[0]->GetMaterial()->GetBuffer(), mResources->cameraCBuf.Get(), mResources->lightBuffer.Get() };
 		mResources->context->PSSetConstantBuffers(0, ARRAYSIZE(psCBuffers), psCBuffers);
 		mResources->context->OMSetRenderTargets(1, mResources->sceneRenderTextureRtv.GetAddressOf(), nullptr);
 		mResources->context->DrawIndexedInstanced(ARRAYSIZE(CUBE_INDICES), static_cast<UINT>(mCubeModels.size()), 0, 0, 0);

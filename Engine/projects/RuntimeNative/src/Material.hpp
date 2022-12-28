@@ -2,7 +2,7 @@
 
 #include "AABB.hpp"
 #include "Color.hpp"
-#include "Object.hpp"
+#include "Resource.hpp"
 #include "Util.hpp"
 
 #define WIN32_LEAN_AND_MEAN
@@ -12,7 +12,7 @@
 
 
 namespace leopph {
-	class Material final : public Object {
+	class Material final : public Resource {
 		struct BufferData {
 			Vector3 albedo{ 1, 1, 1 };
 			f32 metallic{ 0 };

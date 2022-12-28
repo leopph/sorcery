@@ -79,13 +79,7 @@ namespace leopph {
 		std::vector<SpotLight const*> mSpotLights;
 		std::vector<PointLight const*> mPointLights;
 
-		std::shared_ptr<Material> mDefaultMaterial{
-			[] {
-				auto ret{ std::make_shared<Material>() };
-				ret->SetName("Default Material");
-				return ret;
-			}()
-		};
+		std::shared_ptr<Material> mDefaultMaterial;
 
 	public:
 		Renderer() noexcept = default;
