@@ -49,44 +49,16 @@ namespace leopph {
 	}
 
 
-	auto Transform::UpdateWorldPositionRecursive() -> void {
+
+	auto Transform::UpdateWorldDataRecursive() -> void {
 		mWorldPosition = mParent != nullptr ? mParent->mWorldRotation.Rotate(mParent->mWorldPosition + mLocalPosition) : mLocalPosition;
-
-		UpdateMatrices();
-
-		for (auto* const child : mChildren) {
-			child->UpdateWorldPositionRecursive();
-		}
-	}
-
-
-	auto Transform::UpdateWorldRotationRecursive() -> void {
 		mWorldRotation = mParent != nullptr ? mParent->mWorldRotation * mLocalRotation : mLocalRotation;
+		mWorldScale = mParent != nullptr ? mParent->mWorldScale * mLocalScale : mLocalScale;
 
 		mForward = mWorldRotation.Rotate(Vector3::forward());
 		mRight = mWorldRotation.Rotate(Vector3::right());
 		mUp = mWorldRotation.Rotate(Vector3::up());
 
-		UpdateMatrices();
-
-		for (auto* const child : mChildren) {
-			child->UpdateWorldRotationRecursive();
-		}
-	}
-
-
-	auto Transform::UpdateWorldScaleRecursive() -> void {
-		mWorldScale = mParent != nullptr ? mParent->mWorldScale * mLocalScale : mLocalScale;
-
-		UpdateMatrices();
-
-		for (auto* const child : mChildren) {
-			child->UpdateWorldScaleRecursive();
-		}
-	}
-
-
-	auto Transform::UpdateMatrices() -> void {
 		mModelMat[0] = Vector4{ mRight * mWorldScale, 0 };
 		mModelMat[1] = Vector4{ mUp * mWorldScale, 0 };
 		mModelMat[2] = Vector4{ mForward * mWorldScale, 0 };
@@ -95,6 +67,10 @@ namespace leopph {
 		mNormalMat[0] = mRight / mWorldScale;
 		mNormalMat[1] = mUp / mWorldScale;
 		mNormalMat[2] = mForward / mWorldScale;
+
+		for (auto* const child : mChildren) {
+			child->UpdateWorldDataRecursive();
+		}
 	}
 
 
@@ -124,7 +100,7 @@ namespace leopph {
 
 	auto Transform::SetLocalPosition(Vector3 const& newPos) -> void {
 		mLocalPosition = newPos;
-		UpdateWorldPositionRecursive();
+		UpdateWorldDataRecursive();
 	}
 
 
@@ -150,7 +126,7 @@ namespace leopph {
 
 	auto Transform::SetLocalRotation(Quaternion const& newRot) -> void {
 		mLocalRotation = newRot;
-		UpdateWorldRotationRecursive();
+		UpdateWorldDataRecursive();
 	}
 
 
@@ -176,7 +152,7 @@ namespace leopph {
 
 	auto Transform::SetLocalScale(Vector3 const& newScale) -> void {
 		mLocalScale = newScale;
-		UpdateWorldScaleRecursive();
+		UpdateWorldDataRecursive();
 	}
 
 
@@ -255,9 +231,7 @@ namespace leopph {
 			mParent->mChildren.push_back(this);
 		}
 
-		UpdateWorldPositionRecursive();
-		UpdateWorldRotationRecursive();
-		UpdateWorldScaleRecursive();
+		UpdateWorldDataRecursive();
 	}
 
 

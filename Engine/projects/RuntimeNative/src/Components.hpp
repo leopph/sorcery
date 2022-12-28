@@ -45,10 +45,7 @@ namespace leopph {
 
 	class Transform : public Component {
 	private:
-		auto UpdateWorldPositionRecursive() -> void;
-		auto UpdateWorldRotationRecursive() -> void;
-		auto UpdateWorldScaleRecursive() -> void;
-		auto UpdateMatrices() -> void;
+		auto UpdateWorldDataRecursive() -> void;
 
 		Vector3 mLocalPosition{ 0, 0, 0 };
 		Quaternion mLocalRotation{ 1, 0, 0, 0 };
