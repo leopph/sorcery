@@ -336,6 +336,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
 							if (ImGui::BeginDragDropSource()) {
 								ImGui::SetDragDropPayload(entityPayloadType, &entity, sizeof entity);
+								ImGui::Text(entity.GetName().data());
 								ImGui::EndDragDropSource();
 							}
 
