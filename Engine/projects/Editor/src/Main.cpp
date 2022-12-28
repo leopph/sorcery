@@ -490,7 +490,10 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 				ImGui::End();
 
 				if (ImGui::Begin("Assets", nullptr, ImGuiWindowFlags_NoCollapse)) {
-					if (ImGui::BeginPopupContextItem("Assets")) {
+					if (ImGui::IsWindowHovered(ImGuiHoveredFlags_RootWindow) && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
+						ImGui::OpenPopup("AssetsContextMenu");
+					}
+					if (ImGui::BeginPopup("AssetsContextMenu")) {
 						if (ImGui::MenuItem("Import Asset")) {
 							ImGui::CloseCurrentPopup();
 							//ImportAsset(io);
@@ -511,8 +514,6 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 						}
 						ImGui::EndPopup();
 					}
-
-					ImGui::OpenPopupOnItemClick("Assets", ImGuiPopupFlags_MouseButtonRight);
 
 					for (int i{ 0 }; auto const& asset : gAssets) {
 						if (ImGui::Selectable(std::format("{}##{}{}", asset->GetName().data(), asset->GetName().data(), i).c_str(), gSelected == asset.get())) {
