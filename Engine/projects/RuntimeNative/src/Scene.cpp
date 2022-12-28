@@ -22,4 +22,8 @@ namespace leopph
 			});
 		}
 	}
+
+	auto Scene::GetSerializationType() const -> Type {
+		return Type::Scene;
+	}
 }

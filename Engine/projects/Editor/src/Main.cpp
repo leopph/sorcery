@@ -306,24 +306,82 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
 
 				if (ImGui::Begin("Entities", nullptr, ImGuiWindowFlags_NoCollapse)) {
+					auto constexpr baseFlags{ ImGuiTreeNodeFlags_OpenOnArrow };
+					auto constexpr entityPayloadType{ "ENTITY" };
+
+					if (ImGui::BeginDragDropTarget()) {
+						if (auto const payload{ ImGui::AcceptDragDropPayload(entityPayloadType) }) {
+							static_cast<leopph::Entity*>(payload->Data)->GetTransform().SetParent(nullptr);
+							ImGui::EndDragDropTarget();
+						}
+					}
+
 					for (std::size_t i = 0; i < entities.size(); i++) {
-						ImGui::PushID(static_cast<int>(i));
-						if (ImGui::Selectable(entities[i]->GetName().data(), gSelected == entities[i])) {
-							gSelected = entities[i];
-						}
+						std::function<void(leopph::Entity&)> displayEntityRecursive;
+						displayEntityRecursive = [&displayEntityRecursive](leopph::Entity& entity) -> void {
+							ImGuiTreeNodeFlags nodeFlags{ baseFlags };
 
-						if (ImGui::BeginPopupContextItem()) {
-							if (ImGui::MenuItem("Delete")) {
-								entities[i]->GetScene().DestroyEntity(entities[i]);
-								leopph::Entity::GetAllEntities(entities);
-								gSelected = nullptr;
-								ImGui::CloseCurrentPopup();
+							if (entity.GetTransform().GetChildren().empty()) {
+								nodeFlags |= ImGuiTreeNodeFlags_Leaf;
 							}
-							ImGui::EndPopup();
-						}
+							else {
+								nodeFlags |= ImGuiTreeNodeFlags_DefaultOpen;
+							}
 
-						ImGui::OpenPopupOnItemClick(nullptr, ImGuiPopupFlags_MouseButtonRight);
-						ImGui::PopID();
+							if (gSelected && gSelected->GetGuid() == entity.GetGuid()) {
+								nodeFlags |= ImGuiTreeNodeFlags_Selected;
+							}
+
+							bool const nodeOpen{ ImGui::TreeNodeEx(entity.GetName().data(), nodeFlags) };
+
+							if (ImGui::BeginDragDropSource()) {
+								ImGui::SetDragDropPayload(entityPayloadType, &entity, sizeof entity);
+								ImGui::EndDragDropSource();
+							}
+
+							if (ImGui::BeginDragDropTarget()) {
+								if (auto const payload{ ImGui::AcceptDragDropPayload(entityPayloadType) }) {
+									static_cast<leopph::Entity*>(payload->Data)->GetTransform().SetParent(&entity.GetTransform());
+								}
+								ImGui::EndDragDropTarget();
+							}
+
+							if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) {
+								gSelected = &entity;
+							}
+
+							bool deleted{ false };
+
+							if (ImGui::BeginPopupContextItem()) {
+								if (ImGui::MenuItem("Delete")) {
+									entity.GetScene().DestroyEntity(&entity);
+									leopph::Entity::GetAllEntities(entities);
+									gSelected = nullptr;
+									deleted = true;
+									ImGui::CloseCurrentPopup();
+								}
+								ImGui::EndPopup();
+							}
+
+							ImGui::OpenPopupOnItemClick(nullptr, ImGuiPopupFlags_MouseButtonRight);
+
+							if (nodeOpen) {
+								if (!deleted) {
+									for (std::size_t childIndex{ 0 }; childIndex < entity.GetTransform().GetChildren().size(); childIndex++) {
+										ImGui::PushID(static_cast<int>(childIndex));
+										displayEntityRecursive(*entity.GetTransform().GetChildren()[childIndex]->GetEntity());
+										ImGui::PopID();
+									}
+								}
+								ImGui::TreePop();
+							}
+						};
+
+						if (!entities[i]->GetTransform().GetParent()) {
+							ImGui::PushID(static_cast<int>(i));
+							displayEntityRecursive(*entities[i]);
+							ImGui::PopID();
+						}
 					}
 				}
 				ImGui::End();

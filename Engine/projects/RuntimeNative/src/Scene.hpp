@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Entity.hpp"
+#include "Object.hpp"
 
 #include <string>
 #include <memory>
@@ -9,18 +10,19 @@
 
 namespace leopph
 {
-	class Scene
+	class Scene final : public Object
 	{
 		friend class SceneManager;
 
-	private:
 		std::string mName;
 		std::vector<std::unique_ptr<Entity>> mEntities;
 
-		Scene(std::string mName);
+		explicit Scene(std::string mName);
 
 	public:
 		LEOPPHAPI Entity* CreateEntity();
 		LEOPPHAPI void DestroyEntity(Entity const* entity);
+
+		[[nodiscard]] auto GetSerializationType() const -> Type override;
 	};
 }

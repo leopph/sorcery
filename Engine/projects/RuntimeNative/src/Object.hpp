@@ -33,7 +33,8 @@ namespace leopph {
 			CubeModel,
 			DirectionalLight,
 			Material,
-			Mesh
+			Mesh,
+			Scene
 		};
 
 		[[nodiscard]] LEOPPHAPI static auto FindObjectByGuid(Guid const& guid) -> Object*;
