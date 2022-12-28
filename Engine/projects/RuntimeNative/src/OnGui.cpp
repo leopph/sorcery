@@ -276,9 +276,6 @@ namespace leopph {
 			ImGui::Text("Material");
 			ImGui::TableNextColumn();
 
-			ImGui::Text("%s", mMat->GetName().data());
-			ImGui::SameLine();
-
 			static std::vector<Material*> materials;
 			static std::string matFilter;
 
@@ -305,6 +302,9 @@ namespace leopph {
 				
 				ImGui::EndPopup();
 			}
+
+			ImGui::SameLine();
+			ImGui::Text("%s", mMat->GetName().data());
 
 			ImGui::EndTable();
 		}
