@@ -109,28 +109,33 @@ namespace leopph
 	{
 		Vector3 angles;
 
-		f32 sinr_cosp = 2 * (w * x + y * z);
-		f32 cosr_cosp = 1 - 2 * (x * x + y * y);
-		angles[0] = std::atan2f(sinr_cosp, cosr_cosp);
+		// roll (x-axis rotation)
+		auto const sinr_cosp = 2 * (w * x + y * z);
+		auto const cosr_cosp = 1 - 2 * (x * x + y * y);
+		angles[0] = std::atan2(sinr_cosp, cosr_cosp);
 
 		// pitch (y-axis rotation)
-		f32 sinp = 2 * (w * y - z * x);
+		auto const sinp = 2 * (w * y - z * x);
 		if (std::abs(sinp) >= 1)
 			angles[1] = std::copysign(PI / 2, sinp); // use 90 degrees if out of range
 		else
-			angles[1] = std::asinf(sinp);
+			angles[1] = std::asin(sinp);
 
 		// yaw (z-axis rotation)
-		f32 siny_cosp = 2 * (w * z + x * y);
-		f32 cosy_cosp = 1 - 2 * (y * y + z * z);
-		angles[2] = std::atan2f(siny_cosp, cosy_cosp);
+		auto const siny_cosp = 2 * (w * z + x * y);
+		auto const cosy_cosp = 1 - 2 * (y * y + z * z);
+		angles[2] = std::atan2(siny_cosp, cosy_cosp);
 
-		for (int i = 0; i < 3; i++)
-		{
+		for (int i = 0; i < 2; i++) {
 			angles[i] = to_degrees(angles[i]);
 		}
 
 		return angles;
+	}
+
+
+	auto Quaternion::ToRotationMatrix() const noexcept -> Matrix4 {
+		return static_cast<Matrix4>(*this);
 	}
 
 

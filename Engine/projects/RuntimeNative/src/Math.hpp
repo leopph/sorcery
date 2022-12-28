@@ -263,10 +263,12 @@ namespace leopph {
 		LEOPPHAPI explicit Quaternion(f32 w = 1.0f, f32 x = 0.0f, f32 y = 0.0f, f32 z = 0.0f);
 		LEOPPHAPI Quaternion(Vector3 const& axis, f32 angleDegrees);
 
-		LEOPPHAPI static auto FromEulerAngles(f32 x, f32 y, f32 z) -> Quaternion;
-		LEOPPHAPI static auto FromEulerAngles(Vector3 const& euler) -> Quaternion;
-
+		[[nodiscard]] LEOPPHAPI static auto FromEulerAngles(f32 x, f32 y, f32 z) -> Quaternion;
+		[[nodiscard]] LEOPPHAPI static auto FromEulerAngles(Vector3 const& euler) -> Quaternion;
 		[[nodiscard]] LEOPPHAPI auto ToEulerAngles() const -> Vector3;
+
+		[[nodiscard]] LEOPPHAPI auto ToRotationMatrix() const noexcept -> Matrix4;
+
 		LEOPPHAPI auto to_axis_angle(Vector3& axis, float& angle) const -> void;
 
 		[[nodiscard]] LEOPPHAPI auto get_norm_squared() const -> f32;
