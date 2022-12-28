@@ -59,6 +59,8 @@ namespace leopph {
 			Microsoft::WRL::ComPtr<ID3D11PixelShader> pbrPs;
 			Microsoft::WRL::ComPtr<ID3D11Buffer> materialCBuf;
 			Microsoft::WRL::ComPtr<ID3D11Buffer> cameraCBuf;
+
+			std::shared_ptr<Material> defaultMaterial;
 		};
 
 		auto RecreateGameRenderTextureAndViews(u32 width, u32 height) const -> void;
@@ -78,8 +80,6 @@ namespace leopph {
 		std::vector<DirectionalLight const*> mDirLights;
 		std::vector<SpotLight const*> mSpotLights;
 		std::vector<PointLight const*> mPointLights;
-
-		std::shared_ptr<Material> mDefaultMaterial;
 
 	public:
 		Renderer() noexcept = default;

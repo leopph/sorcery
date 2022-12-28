@@ -688,8 +688,8 @@ namespace leopph {
 			throw std::runtime_error{ "Failed to create camera cbuffer." };
 		}
 
-		mDefaultMaterial = std::make_shared<Material>();
-		mDefaultMaterial->SetName("Default Material");
+		mResources->defaultMaterial = std::make_shared<Material>();
+		mResources->defaultMaterial->SetName("Default Material");
 	}
 
 
@@ -1025,6 +1025,6 @@ namespace leopph {
 	}
 
 	auto Renderer::GetDefaultMaterial() const noexcept -> std::shared_ptr<Material> {
-		return mDefaultMaterial;
+		return mResources->defaultMaterial;
 	}
 }
