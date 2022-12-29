@@ -126,7 +126,7 @@ namespace leopph
 		auto const cosy_cosp = 1 - 2 * (y * y + z * z);
 		angles[2] = std::atan2(siny_cosp, cosy_cosp);
 
-		for (int i = 0; i < 2; i++) {
+		for (int i = 0; i < 3; i++) {
 			angles[i] = to_degrees(angles[i]);
 		}
 
