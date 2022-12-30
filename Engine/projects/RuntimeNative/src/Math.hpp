@@ -159,6 +159,7 @@ namespace leopph {
 		[[nodiscard]] auto determinant() const -> T requires(N == M);
 		[[nodiscard]] auto transpose() const -> Matrix<T, M, N>;
 		[[nodiscard]] auto inverse() const -> Matrix<T, N, M> requires(N == M);
+		[[nodiscard]] auto Trace() const noexcept -> f32 requires(N == M);
 
 
 		[[nodiscard]] auto operator[](size_t index) const -> Vector<T, M> const&;
@@ -266,7 +267,7 @@ namespace leopph {
 		[[nodiscard]] LEOPPHAPI static auto FromEulerAngles(f32 x, f32 y, f32 z) -> Quaternion;
 		[[nodiscard]] LEOPPHAPI static auto FromEulerAngles(Vector3 const& euler) -> Quaternion;
 		[[nodiscard]] LEOPPHAPI auto ToEulerAngles() const -> Vector3;
-
+		
 		[[nodiscard]] LEOPPHAPI auto ToRotationMatrix() const noexcept -> Matrix4;
 
 		[[nodiscard]] LEOPPHAPI static auto FromAxisAngle(Vector3 const& axis, f32 angleDeg) noexcept -> Quaternion;
@@ -750,6 +751,18 @@ namespace leopph {
 			}
 		}
 		return right;
+	}
+
+
+	template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
+	auto Matrix<T, N, M>::Trace() const noexcept -> f32 requires (N == M) {
+		f32 ret{ 0 };
+		for (std::size_t i{0}; i < N; i++) {
+			for (std::size_t j{0}; j < M; j++) {
+				ret += mData[i][j];
+			}
+		}
+		return ret;
 	}
 
 
