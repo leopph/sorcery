@@ -153,6 +153,17 @@ namespace leopph
 	}
 
 
+	auto Quaternion::FromTo(Vector3 const& from, Vector3 const& to) noexcept -> Quaternion {
+		auto const crossProduct{ cross(from, to) };
+		return Quaternion{
+			std::sqrt(std::pow(from.length(), 2.f) * std::pow(to.length(), 2.f)) + dot(from, to),
+			crossProduct[0],
+			crossProduct[1],
+			crossProduct[2],
+		}.normalize();
+	}
+
+
 	f32 Quaternion::get_norm_squared() const
 	{
 		return std::powf(w, 2) + std::powf(x, 2) + std::powf(y, 2) + std::powf(z, 2);

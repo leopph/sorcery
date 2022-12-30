@@ -272,6 +272,8 @@ namespace leopph {
 		[[nodiscard]] LEOPPHAPI static auto FromAxisAngle(Vector3 const& axis, f32 angleDeg) noexcept -> Quaternion;
 		LEOPPHAPI auto to_axis_angle(Vector3& axis, float& angle) const -> void;
 
+		[[nodiscard]] LEOPPHAPI static auto FromTo(Vector3 const& from, Vector3 const& to) noexcept -> Quaternion;
+
 		[[nodiscard]] LEOPPHAPI auto get_norm_squared() const -> f32;
 		[[nodiscard]] LEOPPHAPI auto get_norm() const -> f32;
 
