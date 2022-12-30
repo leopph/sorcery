@@ -269,6 +269,7 @@ namespace leopph {
 
 		[[nodiscard]] LEOPPHAPI auto ToRotationMatrix() const noexcept -> Matrix4;
 
+		[[nodiscard]] LEOPPHAPI static auto FromAxisAngle(Vector3 const& axis, f32 angleDeg) noexcept -> Quaternion;
 		LEOPPHAPI auto to_axis_angle(Vector3& axis, float& angle) const -> void;
 
 		[[nodiscard]] LEOPPHAPI auto get_norm_squared() const -> f32;

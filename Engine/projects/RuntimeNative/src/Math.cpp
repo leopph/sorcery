@@ -139,6 +139,11 @@ namespace leopph
 	}
 
 
+	auto Quaternion::FromAxisAngle(Vector3 const& axis, f32 const angleDeg) noexcept -> Quaternion {
+		return Quaternion{ axis, angleDeg };
+	}
+
+
 	void Quaternion::to_axis_angle(Vector3& axis, float& angle) const
 	{
 		axis = {x, y, z};
