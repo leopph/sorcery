@@ -106,11 +106,15 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\AABB.cpp" />
+    <ClCompile Include="src\BehaviorComponent.cpp" />
+    <ClCompile Include="src\CameraComponent.cpp" />
     <ClCompile Include="src\Color.cpp" />
-    <ClCompile Include="src\Components.cpp" />
+    <ClCompile Include="src\Component.cpp" />
     <ClCompile Include="src\Compress.cpp" />
+    <ClCompile Include="src\CubeModelComponent.cpp" />
     <ClCompile Include="src\Guid.cpp" />
     <ClCompile Include="src\Image.cpp" />
+    <ClCompile Include="src\LightComponents.cpp" />
     <ClCompile Include="src\ManagedRuntime.cpp" />
     <ClCompile Include="src\ManagedAccessObject.cpp" />
     <ClCompile Include="src\Math.cpp" />
@@ -124,22 +128,27 @@
     <ClCompile Include="src\Resource.cpp" />
     <ClCompile Include="src\Scene.cpp" />
     <ClCompile Include="src\SceneManager.cpp" />
-    <ClCompile Include="src\Serialization.cpp" />
+    <ClInclude Include="src\Serialization.hpp" />
     <ClCompile Include="src\Time.cpp" />
     <ClCompile Include="src\Platform.cpp" />
     <ClCompile Include="src\Systems.cpp" />
+    <ClCompile Include="src\TransformComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\AABB.hpp" />
+    <ClInclude Include="src\BehaviorComponent.hpp" />
+    <ClInclude Include="src\CameraComponent.hpp" />
+    <ClInclude Include="src\Component.hpp" />
     <ClInclude Include="src\Compress.hpp" />
+    <ClInclude Include="src\CubeModelComponent.hpp" />
     <ClInclude Include="src\Guid.hpp" />
     <ClInclude Include="src\Image.hpp" />
+    <ClInclude Include="src\LightComponents.hpp" />
     <ClInclude Include="src\Material.hpp" />
     <ClInclude Include="src\Mesh.hpp" />
     <ClInclude Include="src\ModelImport.hpp" />
     <ClInclude Include="src\OnGui.hpp" />
     <ClInclude Include="src\Color.hpp" />
-    <ClInclude Include="src\Components.hpp" />
     <ClInclude Include="src\Core.hpp" />
     <ClInclude Include="src\Event.hpp" />
     <ClInclude Include="src\ManagedRuntime.hpp" />
@@ -155,6 +164,7 @@
     <ClInclude Include="src\shaders\cinclude\BlinnPhongPixShadBinDebug.h" />
     <ClInclude Include="src\shaders\cinclude\BlinnPhongVertShadBinDebug.h" />
     <ClInclude Include="src\Time.hpp" />
+    <ClInclude Include="src\TransformComponent.hpp" />
     <ClInclude Include="src\Util.hpp" />
     <ClInclude Include="src\Platform.hpp" />
     <ClInclude Include="src\YamlInclude.hpp" />

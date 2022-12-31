@@ -4,6 +4,7 @@
 #include "Entity.hpp"
 #include "Systems.hpp"
 #include "Util.hpp"
+#include "TransformComponent.hpp"
 
 #ifdef NDEBUG
 #include "shaders/cinclude/BlinnPhongVertShadBin.h"
@@ -699,7 +700,7 @@ namespace leopph {
 	}
 
 
-	auto Renderer::DrawCamera(Camera const* const cam) -> void {
+	auto Renderer::DrawCamera(CameraComponent const* const cam) -> void {
 		auto const& camViewport{ cam->GetViewport() };
 		D3D11_VIEWPORT const viewport{
 			.TopLeftX = static_cast<FLOAT>(mGameRes.width) * camViewport.position.x,
@@ -730,13 +731,13 @@ namespace leopph {
 			return;
 		}
 
-		DirectX::XMFLOAT3 const camPos{ cam->GetTransform().GetWorldPosition().get_data() };
-		DirectX::XMFLOAT3 const camForward{ cam->GetTransform().GetForwardAxis().get_data() };
+		DirectX::XMFLOAT3 const camPos{ cam->GetEntity()->GetTransform().GetWorldPosition().get_data() };
+		DirectX::XMFLOAT3 const camForward{ cam->GetEntity()->GetTransform().GetForwardAxis().get_data() };
 		DirectX::XMMATRIX viewMat = DirectX::XMMatrixLookToLH(DirectX::XMLoadFloat3(&camPos), DirectX::XMLoadFloat3(&camForward), { 0, 1, 0 });
 
 		DirectX::XMMATRIX projMat;
 
-		if (cam->GetType() == Camera::Type::Perspective) {
+		if (cam->GetType() == CameraComponent::Type::Perspective) {
 			auto const fovHorizRad = DirectX::XMConvertToRadians(cam->GetPerspectiveFov());
 			auto const fovVertRad = 2.0f * std::atanf(std::tanf(fovHorizRad / 2.0f) / mGameAspect);
 			projMat = DirectX::XMMatrixPerspectiveFovLH(fovVertRad, mGameAspect, cam->GetNearClipPlane(), cam->GetFarClipPlane());
@@ -800,8 +801,8 @@ namespace leopph {
 		mResources->context->Map(mResources->cubeInstBuf.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedCubeInstBuf);
 		auto const mappedInstBufData{ static_cast<CubeInstanceData*>(mappedCubeInstBuf.pData) };
 		for (std::size_t i = 0; i < mCubeModels.size(); i++) {
-			mappedInstBufData[i].modelMat = DirectX::XMFLOAT4X4{ mCubeModels[i]->GetTransform().GetModelMatrix().get_data() };
-			mappedInstBufData[i].normalMat = DirectX::XMFLOAT3X3{ mCubeModels[i]->GetTransform().GetNormalMatrix().get_data() };
+			mappedInstBufData[i].modelMat = DirectX::XMFLOAT4X4{ mCubeModels[i]->GetEntity()->GetTransform().GetModelMatrix().get_data() };
+			mappedInstBufData[i].normalMat = DirectX::XMFLOAT3X3{ mCubeModels[i]->GetEntity()->GetTransform().GetNormalMatrix().get_data() };
 		}
 		mResources->context->Unmap(mResources->cubeInstBuf.Get(), 0);
 
@@ -821,7 +822,7 @@ namespace leopph {
 
 
 	auto Renderer::DrawGame() -> void {
-		for (auto const* const cam : Camera::GetAllInstances()) {
+		for (auto const* const cam : CameraComponent::GetAllInstances()) {
 			DrawCamera(cam);
 		}
 	}
@@ -896,8 +897,8 @@ namespace leopph {
 		mResources->context->Map(mResources->cubeInstBuf.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedCubeInstBuf);
 		auto const mappedInstBufData{ static_cast<CubeInstanceData*>(mappedCubeInstBuf.pData) };
 		for (std::size_t i = 0; i < mCubeModels.size(); i++) {
-			mappedInstBufData[i].modelMat = DirectX::XMFLOAT4X4{ mCubeModels[i]->GetTransform().GetModelMatrix().get_data() };
-			mappedInstBufData[i].normalMat = DirectX::XMFLOAT3X3{ mCubeModels[i]->GetTransform().GetNormalMatrix().get_data() };
+			mappedInstBufData[i].modelMat = DirectX::XMFLOAT4X4{ mCubeModels[i]->GetEntity()->GetTransform().GetModelMatrix().get_data() };
+			mappedInstBufData[i].normalMat = DirectX::XMFLOAT3X3{ mCubeModels[i]->GetEntity()->GetTransform().GetNormalMatrix().get_data() };
 		}
 		mResources->context->Unmap(mResources->cubeInstBuf.Get(), 0);
 
@@ -980,12 +981,12 @@ namespace leopph {
 	}
 
 
-	auto Renderer::RegisterCubeModel(CubeModel const* const cubeModel) -> void {
+	auto Renderer::RegisterCubeModel(CubeModelComponent const* const cubeModel) -> void {
 		mCubeModels.emplace_back(cubeModel);
 	}
 
 
-	auto Renderer::UnregisterCubeModel(CubeModel const* const cubeModel) -> void {
+	auto Renderer::UnregisterCubeModel(CubeModelComponent const* const cubeModel) -> void {
 		std::erase(mCubeModels, cubeModel);
 	}
 
@@ -1000,11 +1001,11 @@ namespace leopph {
 	}
 
 
-	auto Renderer::RegisterDirLight(DirectionalLight const* dirLight) -> void {
+	auto Renderer::RegisterDirLight(DirectionalLightComponent const* dirLight) -> void {
 		mDirLights.emplace_back(dirLight);
 	}
 
-	auto Renderer::UnregisterDirLight(DirectionalLight const* dirLight) -> void {
+	auto Renderer::UnregisterDirLight(DirectionalLightComponent const* dirLight) -> void {
 		std::erase(mDirLights, dirLight);
 	}
 
@@ -1016,11 +1017,11 @@ namespace leopph {
 		std::erase(mSpotLights, spotLight);
 	}
 
-	auto Renderer::RegisterPointLight(PointLight const* pointLight) -> void {
+	auto Renderer::RegisterPointLight(PointLightComponent const* pointLight) -> void {
 		mPointLights.emplace_back(pointLight);
 	}
 
-	auto Renderer::UnregisterPointLight(PointLight const* pointLight) -> void {
+	auto Renderer::UnregisterPointLight(PointLightComponent const* pointLight) -> void {
 		std::erase(mPointLights, pointLight);
 	}
 

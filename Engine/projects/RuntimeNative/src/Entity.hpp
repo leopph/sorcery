@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ManagedAccessObject.hpp"
-#include "Components.hpp"
+#include "Component.hpp"
 
 #include <string>
 #include <string_view>
@@ -22,7 +22,7 @@ namespace leopph {
 		friend class Scene;
 		
 		Scene* mScene{ nullptr };
-		mutable Transform* mTransform{ nullptr };
+		mutable TransformComponent* mTransform{ nullptr };
 		std::vector<std::unique_ptr<Component>> mComponents;
 
 		Entity();
@@ -37,7 +37,7 @@ namespace leopph {
 		LEOPPHAPI auto DeserializeTextual(YAML::Node const& node) -> void override;
 		
 		[[nodiscard]] LEOPPHAPI auto GetScene() const -> Scene&;
-		[[nodiscard]] LEOPPHAPI auto GetTransform() const -> Transform&;
+		[[nodiscard]] LEOPPHAPI auto GetTransform() const -> TransformComponent&;
 
 		LEOPPHAPI auto CreateComponent(MonoClass* componentClass) -> Component*;
 		LEOPPHAPI auto AddComponent(std::unique_ptr<Component> component) -> void;

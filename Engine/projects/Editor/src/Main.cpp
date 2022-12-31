@@ -3,7 +3,8 @@
 #include "Material.hpp"
 #include "Time.hpp"
 
-#include <Components.hpp>
+#include <TransformComponent.hpp>
+#include <BehaviorComponent.hpp>
 #include <ManagedRuntime.hpp>
 #include <Platform.hpp>
 #include <Renderer.hpp>
@@ -275,7 +276,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 							auto const entity{ leopph::SceneManager::GetActiveScene()->CreateEntity() };
 							entity->CreateManagedObject("leopph", "Entity");
 
-							auto transform = std::make_unique<leopph::Transform>();
+							auto transform = std::make_unique<leopph::TransformComponent>();
 							transform->CreateManagedObject("leopph", "Transform");
 
 							entity->AddComponent(std::move(transform));

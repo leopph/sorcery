@@ -1,7 +1,9 @@
 #pragma once
 
 #include "Core.hpp"
-#include "Components.hpp"
+#include "CubeModelComponent.hpp"
+#include "CameraComponent.hpp"
+#include "LightComponents.hpp"
 #include "Util.hpp"
 #include "Platform.hpp"
 
@@ -76,10 +78,10 @@ namespace leopph {
 		f32 mSceneAspect;
 		UINT mInstanceBufferElementCapacity;
 		u32 mSyncInterval{ 0 };
-		std::vector<CubeModel const*> mCubeModels;
-		std::vector<DirectionalLight const*> mDirLights;
+		std::vector<CubeModelComponent const*> mCubeModels;
+		std::vector<DirectionalLightComponent const*> mDirLights;
 		std::vector<SpotLight const*> mSpotLights;
-		std::vector<PointLight const*> mPointLights;
+		std::vector<PointLightComponent const*> mPointLights;
 
 	public:
 		Renderer() noexcept = default;
@@ -88,7 +90,7 @@ namespace leopph {
 		LEOPPHAPI auto StartUp() -> void;
 		LEOPPHAPI auto ShutDown() noexcept -> void;
 
-		LEOPPHAPI auto DrawCamera(Camera const* cam) -> void;
+		LEOPPHAPI auto DrawCamera(CameraComponent const* cam) -> void;
 		LEOPPHAPI auto DrawGame() -> void;
 		LEOPPHAPI auto DrawSceneView(EditorCamera const& cam) -> void;
 
@@ -111,20 +113,20 @@ namespace leopph {
 		[[nodiscard]] LEOPPHAPI auto GetSyncInterval() const noexcept -> u32;
 		LEOPPHAPI auto SetSyncInterval(u32 interval) noexcept -> void;
 
-		LEOPPHAPI auto RegisterCubeModel(CubeModel const* cubeModel) -> void;
-		LEOPPHAPI auto UnregisterCubeModel(CubeModel const* cubeModel) -> void;
+		LEOPPHAPI auto RegisterCubeModel(CubeModelComponent const* CubeModelComponent) -> void;
+		LEOPPHAPI auto UnregisterCubeModel(CubeModelComponent const* CubeModelComponent) -> void;
 
 		[[nodiscard]] LEOPPHAPI auto GetDevice() const noexcept -> ID3D11Device*;
 		[[nodiscard]] LEOPPHAPI auto GetImmediateContext() const noexcept -> ID3D11DeviceContext*;
 
-		LEOPPHAPI auto RegisterDirLight(DirectionalLight const* dirLight) -> void;
-		LEOPPHAPI auto UnregisterDirLight(DirectionalLight const* dirLight) -> void;
+		LEOPPHAPI auto RegisterDirLight(DirectionalLightComponent const* dirLight) -> void;
+		LEOPPHAPI auto UnregisterDirLight(DirectionalLightComponent const* dirLight) -> void;
 
 		LEOPPHAPI auto RegisterSpotLight(SpotLight const* spotLight) -> void;
 		LEOPPHAPI auto UnregisterSpotLight(SpotLight const* spotLight) -> void;
 
-		LEOPPHAPI auto RegisterPointLight(PointLight const* pointLight) -> void;
-		LEOPPHAPI auto UnregisterPointLight(PointLight const* pointLight) -> void;
+		LEOPPHAPI auto RegisterPointLight(PointLightComponent const* PointLightComponent) -> void;
+		LEOPPHAPI auto UnregisterPointLight(PointLightComponent const* PointLightComponent) -> void;
 
 		[[nodiscard]] LEOPPHAPI auto GetDefaultMaterial() const noexcept -> std::shared_ptr<Material>;
 	};

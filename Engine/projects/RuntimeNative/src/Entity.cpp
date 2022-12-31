@@ -2,7 +2,10 @@
 
 #include <format>
 
-#include "Components.hpp"
+#include "TransformComponent.hpp"
+#include "CubeModelComponent.hpp"
+#include "CameraComponent.hpp"
+#include "LightComponents.hpp"
 #include "SceneManager.hpp"
 #include "ManagedRuntime.hpp"
 #include "Systems.hpp"
@@ -15,6 +18,9 @@
 #include <misc/cpp/imgui_stdlib.h>
 
 #include <functional>
+#include <iostream>
+
+#include "BehaviorComponent.hpp"
 
 
 namespace leopph {
@@ -27,9 +33,9 @@ namespace leopph {
 
 		std::unordered_map<std::string_view, std::function<std::unique_ptr<Component>()>> const gComponentInstantiators
 		{
-			{"CubeModel", instantiate<CubeModel>},
-			{"Camera", instantiate<Camera>},
-			{"DirectionalLight", instantiate<DirectionalLight>}
+			{"CubeModel", instantiate<CubeModelComponent>},
+			{"Camera", instantiate<CameraComponent>},
+			{"DirectionalLight", instantiate<DirectionalLightComponent>}
 		};
 
 		std::vector<Entity*> gEntityCache;
@@ -74,9 +80,9 @@ namespace leopph {
 	}
 
 
-	auto Entity::GetTransform() const -> Transform& {
+	auto Entity::GetTransform() const -> TransformComponent& {
 		if (!mTransform) {
-			mTransform = GetComponent<Transform>();
+			mTransform = GetComponent<TransformComponent>();
 		}
 		return *mTransform;
 	}
@@ -85,7 +91,7 @@ namespace leopph {
 	auto Entity::CreateComponent(MonoClass* const componentClass) -> Component*
 	{
 		if (mono_class_is_subclass_of(componentClass, mono_class_from_name(gManagedRuntime.GetManagedImage(), "leopph", "Behavior"), false)) {
-			auto behavior{ std::make_unique<Behavior>(componentClass) };
+			auto behavior{ std::make_unique<BehaviorComponent>(componentClass) };
 			behavior->CreateManagedObject(componentClass);
 			auto const ret{ behavior.get()};
 			AddComponent(std::move(behavior));
@@ -120,7 +126,7 @@ namespace leopph {
 
 	auto Entity::DestroyComponent(Component* const component) -> void {
 		if (component) {
-			if (component->GetEntity()->GetGuid() != GetGuid() || component->GetTransform().GetGuid() == component->GetGuid()) {
+			if (component->GetEntity()->GetGuid() != GetGuid() || component->GetEntity()->GetTransform().GetGuid() == component->GetGuid()) {
 				return;
 			}
 			std::erase_if(mComponents, [component](auto const& attachedComponent) {
@@ -188,13 +194,56 @@ namespace leopph {
 		}
 	}
 
+	auto Entity::SetScene(Scene* const scene) -> void {
+		mScene = scene;
+	}
+
+
+	auto Entity::GetSerializationType() const -> Type {
+		return Type::Entity;
+	}
+
+
+	auto Entity::SerializeTextual(YAML::Node& node) const -> void {
+		node["name"] = GetName().data();
+		for (auto const& component : mComponents) {
+			node["components"].push_back(component->GetGuid().ToString());
+		}
+	}
+
+
+	auto Entity::DeserializeTextual(YAML::Node const& node) -> void {
+		if (!node["name"].IsScalar()) {
+			std::cerr << "Failed to deserialize name of Entity " << GetGuid().ToString() << ". Invalid data." << std::endl;
+		}
+		else {
+			SetName(node["name"].as<std::string>());
+		}
+
+		for (auto it{ node["components"].begin() }; it != node["components"].end(); ++it) {
+			if (!it->IsScalar()) {
+				std::cerr << "Failed to deserialize a Component of Entity " << GetGuid().ToString() << ". Invalid data." << std::endl;
+			}
+			else {
+				auto const guidStr{ it->as<std::string>() };
+				auto const component{ (dynamic_cast<Component*>(Object::FindObjectByGuid(Guid::Parse(guidStr)))) };
+				if (!component) {
+					std::cerr << "Failed to deserialize a Component of Entity " << GetGuid().ToString() << ". Guid " << guidStr << " does not belong to any Component." << std::endl;
+				}
+				else {
+					AddComponent(std::unique_ptr<Component>{component});
+				}
+			}
+		}
+	}
+
 
 	namespace managedbindings {
 		void CreateNativeEntity(MonoObject* managedEntity) {
 			auto const entity = SceneManager::GetActiveScene()->CreateEntity();
 			entity->SetManagedObject(managedEntity);
 
-			auto transform = std::make_unique<Transform>();
+			auto transform = std::make_unique<TransformComponent>();
 			transform->CreateManagedObject("leopph", "Transform");
 
 			entity->AddComponent(std::move(transform));

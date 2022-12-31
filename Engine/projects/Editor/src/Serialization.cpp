@@ -1,7 +1,11 @@
 #include "Serialization.hpp"
 
 #include <Entity.hpp>
-#include <Components.hpp>
+#include <Component.hpp>
+#include "TransformComponent.hpp"
+#include "CameraComponent.hpp"
+#include "CubeModelComponent.hpp"
+#include "LightComponents.hpp"
 #include <ManagedRuntime.hpp>
 #include <SceneManager.hpp>
 
@@ -14,6 +18,8 @@
 #include <iostream>
 #include <variant>
 #include <vector>
+
+#include "BehaviorComponent.hpp"
 
 namespace leopph::editor {
 	auto SerializeScene() -> YAML::Node {
@@ -59,26 +65,26 @@ namespace leopph::editor {
 					break;
 				}
 				case Object::Type::Transform: {
-					obj = new Transform{};
+					obj = new TransformComponent{};
 					obj->CreateManagedObject("leopph", "Transform");
 					break;
 				}
 				case Object::Type::Camera: {
-					obj = new Camera{};
+					obj = new CameraComponent{};
 					obj->CreateManagedObject("leopph", "Camera");
 					break;
 				}
 				case Object::Type::Behavior: {
-					obj = new Behavior{};
+					obj = new BehaviorComponent{};
 					break;
 				}
 				case Object::Type::CubeModel: {
-					obj = new CubeModel{};
+					obj = new CubeModelComponent{};
 					obj->CreateManagedObject("leopph", "CubeModel");
 					break;
 				}
 				case Object::Type::DirectionalLight: {
-					obj = new DirectionalLight{};
+					obj = new DirectionalLightComponent{};
 					obj->CreateManagedObject("leopph", "DirectionalLight");
 					break;
 				}

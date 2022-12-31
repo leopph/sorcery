@@ -4,7 +4,8 @@
 #include "Time.hpp"
 #include "Platform.hpp"
 #include "ManagedAccessObject.hpp"
-#include "Components.hpp"
+#include "Component.hpp"
+#include "TransformComponent.hpp"
 #include "Systems.hpp"
 
 #include <mono/jit/jit.h>
