@@ -507,6 +507,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
 					if (auto const selectedEntity{ dynamic_cast<leopph::Entity*>(gSelected) }; selectedEntity) {
 						static auto op{ ImGuizmo::OPERATION::TRANSLATE };
+						static bool showGrid{ true };
 
 						if (ImGui::IsWindowFocused()) {
 							if (GetKeyDown(leopph::Key::T)) {
@@ -518,6 +519,9 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 							if (GetKeyDown(leopph::Key::S)) {
 								op = ImGuizmo::SCALE;
 							}
+							if (GetKeyDown(leopph::Key::G)) {
+								showGrid = !showGrid;
+							}
 						}
 
 						leopph::Matrix4 modelMat{ selectedEntity->GetTransform().GetModelMatrix() };
@@ -527,6 +531,10 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 						ImGuizmo::AllowAxisFlip(false);
 						ImGuizmo::SetDrawlist();
 						ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, ImGui::GetWindowWidth(), ImGui::GetWindowHeight());
+
+						if (showGrid) {
+							ImGuizmo::DrawGrid(viewMat.get_data(), projMat.get_data(), leopph::Matrix4::identity().get_data(), editorCam.farClip);
+						}
 
 						if (Manipulate(viewMat.get_data(), projMat.get_data(), op, ImGuizmo::MODE::LOCAL, modelMat.get_data())) {
 							leopph::Vector3 pos, euler, scale;
