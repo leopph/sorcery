@@ -465,7 +465,11 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 						.fovVertRad = leopph::to_radians(60),
 					};
 
-					if (ImGui::IsWindowHovered() && ImGui::IsMouseDown(ImGuiMouseButton_Right)) {
+					static bool isMovingSceneCamera{ false };
+					isMovingSceneCamera = ImGui::IsWindowHovered() && ImGui::IsMouseDown(ImGuiMouseButton_Right);
+
+					if (isMovingSceneCamera) {
+						ImGui::SetWindowFocus();
 						leopph::gWindow.SetCursorConfinement(true);
 						leopph::gWindow.SetCursorHiding(true);
 
@@ -509,7 +513,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 						static auto op{ ImGuizmo::OPERATION::TRANSLATE };
 						static bool showGrid{ true };
 
-						if (ImGui::IsWindowFocused()) {
+						if (ImGui::IsWindowFocused() && !isMovingSceneCamera) {
 							if (GetKeyDown(leopph::Key::T)) {
 								op = ImGuizmo::TRANSLATE;
 							}
