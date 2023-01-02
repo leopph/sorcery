@@ -30,6 +30,9 @@ namespace leopph {
 		auto SetScene(Scene* scene) -> void;
 
 	public:
+		LEOPPHAPI static auto New() -> Entity*;
+		LEOPPHAPI static auto NewForManagedObject(MonoObject* managedObject) -> Entity*;
+
 		[[nodiscard]] LEOPPHAPI static auto FindEntityByName(std::string_view name) -> Entity*;
 
 		[[nodiscard]] LEOPPHAPI auto GetSerializationType() const->Type override;
@@ -68,7 +71,7 @@ namespace leopph {
 
 		LEOPPHAPI auto OnGui() -> void override;
 
-		LEOPPHAPI auto CreateManagedObject() -> MonoObject* override;
+		LEOPPHAPI auto CreateManagedObject() -> void override;
 	};
 
 

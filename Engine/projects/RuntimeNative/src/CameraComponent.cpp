@@ -147,7 +147,7 @@ namespace leopph {
 		}
 	}
 
-	auto CameraComponent::CreateManagedObject() -> MonoObject* {
+	auto CameraComponent::CreateManagedObject() -> void {
 		return ManagedAccessObject::CreateManagedObject("leopph", "Camera");
 	}
 

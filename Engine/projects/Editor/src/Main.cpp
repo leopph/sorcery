@@ -19,8 +19,6 @@
 #include <backends/imgui_impl_dx11.h>
 #include <ImGuizmo.h>
 
-#include <mono/metadata/reflection.h>
-
 #include <YamlInclude.hpp>
 #include <nfd.h>
 
@@ -31,7 +29,6 @@
 #include <filesystem>
 #include <format>
 #include <fstream>
-#include <iostream>
 #include <optional>
 #include <string>
 #include <vector>
@@ -202,6 +199,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 						leopph::gRenderer.SetSyncInterval(1);
 						CloseCurrentScene();
 						leopph::editor::DeserializeScene(objectFactory, gSerializedSceneBackup);
+						gSelected = nullptr;
 					}
 				}
 				else {

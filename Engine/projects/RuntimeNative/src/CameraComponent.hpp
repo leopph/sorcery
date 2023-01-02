@@ -76,7 +76,7 @@ namespace leopph {
 		[[nodiscard]] LEOPPHAPI auto GetBackgroundColor() const->Vector4;
 		LEOPPHAPI auto SetBackgroundColor(Vector4 const& color) -> void;
 
-		LEOPPHAPI auto CreateManagedObject() -> MonoObject* override;
+		LEOPPHAPI auto CreateManagedObject() -> void override;
 	};
 
 

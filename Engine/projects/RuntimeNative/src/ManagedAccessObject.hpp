@@ -15,15 +15,17 @@ using MonoClass = struct _MonoClass;
 
 namespace leopph {
 	class ManagedAccessObject : public Object {
-	private:
 		std::optional<u32> mGcHandle;
 
+	protected:
+		auto CreateManagedObject(MonoClass* klass) -> void;
+		auto CreateManagedObject(std::string_view classNamespace, std::string_view className) -> void;
+		auto AcquireManagedObject(MonoObject* managedObject) -> void;
+
 	public:
+		[[nodiscard]] LEOPPHAPI auto HasManagedObject() const noexcept -> bool;
 		[[nodiscard]] LEOPPHAPI auto GetManagedObject() const -> MonoObject*;
-		LEOPPHAPI auto SetManagedObject(MonoObject* managedObject) -> void;
-		LEOPPHAPI auto CreateManagedObject(MonoClass* klass) -> MonoObject*;
-		LEOPPHAPI auto CreateManagedObject(std::string_view classNamespace, std::string_view className) -> MonoObject*;
-		LEOPPHAPI virtual auto CreateManagedObject() -> MonoObject* = 0;
+		LEOPPHAPI virtual auto CreateManagedObject() -> void = 0;
 
 		LEOPPHAPI ~ManagedAccessObject() override;
 

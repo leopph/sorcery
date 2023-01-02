@@ -167,7 +167,7 @@ namespace leopph {
 
 	Object::Type const DirectionalLightComponent::SerializationType{ Type::DirectionalLight };
 
-	auto DirectionalLightComponent::CreateManagedObject() -> MonoObject* {
+	auto DirectionalLightComponent::CreateManagedObject() -> void {
 		return ManagedAccessObject::CreateManagedObject("leopph", "DirectionalLight");
 	}
 

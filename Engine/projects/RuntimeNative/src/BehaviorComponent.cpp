@@ -35,42 +35,26 @@ namespace leopph {
 	Object::Type const BehaviorComponent::SerializationType{ Type::Behavior };
 
 
-	BehaviorComponent::BehaviorComponent(MonoClass* const klass) {
-		auto const obj = ManagedAccessObject::CreateManagedObject(klass);
-
-		if (MonoMethod* const initMethod = mono_class_get_method_from_name(klass, "OnInit", 0)) {
-			gToInit[this] = initMethod;
-		}
-
-		if (MonoMethod* const tickMethod = mono_class_get_method_from_name(klass, "Tick", 0)) {
-			gToTick[this] = tickMethod;
-		}
-
-		if (MonoMethod* const tackMethod = mono_class_get_method_from_name(klass, "Tack", 0)) {
-			gToTack[this] = tackMethod;
-		}
-
-		if (MonoMethod* const ctor = mono_class_get_method_from_name(klass, ".ctor", 0)) {
-			invoke_method_handle_exception(obj, ctor);
-		}
-	}
-
-
 	BehaviorComponent::~BehaviorComponent() {
 		gToInit.erase(this);
 		gToTick.erase(this);
 		gToTack.erase(this);
 
-		MonoObject* const managedObj = GetManagedObject();
-
-		if (MonoMethod* const destroyMethod = mono_class_get_method_from_name(mono_object_get_class(managedObj), "OnDestroy", 0)) {
-			invoke_method_handle_exception(managedObj, destroyMethod);
+		if (MonoObject* const managedObj{ GetManagedObject() }) {
+			if (MonoMethod* const destroyMethod{ mono_class_get_method_from_name(mono_object_get_class(managedObj), "OnDestroy", 0) }) {
+				invoke_method_handle_exception(managedObj, destroyMethod);
+			}
 		}
 	}
 
 
-	auto BehaviorComponent::Init(MonoClass* klass) -> void {
-		auto const obj = ManagedAccessObject::CreateManagedObject(klass);
+	auto BehaviorComponent::CreateAndInitManagedObject(MonoClass* klass) -> void {
+		if (HasManagedObject()) {
+			throw std::logic_error{ "Behavior already has a managed object." };
+		}
+
+		ManagedAccessObject::CreateManagedObject(klass);
+		auto const obj{ GetManagedObject() };
 
 		if (MonoMethod* const initMethod = mono_class_get_method_from_name(klass, "OnInit", 0)) {
 			gToInit[this] = initMethod;
@@ -128,7 +112,7 @@ namespace leopph {
 				}
 
 				ImGui::TableSetColumnIndex(0);
-				ImGui::Text(memberName.data());
+				ImGui::Text("%s", memberName.data());
 				ImGui::TableSetColumnIndex(1);
 
 				auto const widgetLabel = std::format("##WidgetForMember{}", memberName);
@@ -150,7 +134,7 @@ namespace leopph {
 							auto const valueBoxed = mono_value_box(leopph::gManagedRuntime.GetManagedDomain(), memberClass, reinterpret_cast<void*>(pValue));
 
 							bool selected{ true };
-							for (std::size_t j{ 0 }; j < valueSize; j++) {
+							for (int j{ 0 }; j < valueSize; j++) {
 								if (*static_cast<char*>(pCurrentValueUnboxed) != *pValue) {
 									selected = false;
 									break;
@@ -302,7 +286,7 @@ namespace leopph {
 		auto const classNs = node["classNameSpace"].as<std::string>();
 		auto const className = node["className"].as<std::string>();
 		auto const componentClass = mono_class_from_name(leopph::gManagedRuntime.GetManagedImage(), classNs.c_str(), className.c_str());
-		Init(componentClass);
+		CreateAndInitManagedObject(componentClass);
 		auto const managedComponent = GetManagedObject();
 
 		std::function<void(MonoObject*, YAML::Node const&)> parseAndSetMembers;
@@ -425,7 +409,5 @@ namespace leopph {
 	}
 
 
-	auto BehaviorComponent::CreateManagedObject() -> MonoObject* {
-		return ManagedAccessObject::CreateManagedObject("leopph", "Behavior");
-	}
+	auto BehaviorComponent::CreateManagedObject() -> void {}
 }

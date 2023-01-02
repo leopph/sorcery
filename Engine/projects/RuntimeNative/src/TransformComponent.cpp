@@ -32,11 +32,6 @@ namespace leopph {
 		}
 	}
 
-
-	TransformComponent::TransformComponent() {
-		CreateManagedObject();
-	}
-
 	auto TransformComponent::GetWorldPosition() const -> Vector3 const& {
 		return mWorldPosition;
 	}
@@ -206,7 +201,7 @@ namespace leopph {
 		return mNormalMat;
 	}
 
-	auto TransformComponent::CreateManagedObject() -> MonoObject* {
+	auto TransformComponent::CreateManagedObject() -> void {
 		return ManagedAccessObject::CreateManagedObject("leopph", "Transform");
 	}
 

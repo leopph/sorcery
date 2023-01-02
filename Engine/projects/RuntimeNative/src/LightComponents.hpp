@@ -99,13 +99,10 @@ namespace leopph {
 
 		LEOPPHAPI ~DirectionalLightComponent() override;
 
-		LEOPPHAPI auto operator=(DirectionalLightComponent const& other) -> DirectionalLightComponent&;
-		LEOPPHAPI auto operator=(DirectionalLightComponent&& other) noexcept -> DirectionalLightComponent&;
-
 		[[nodiscard]] LEOPPHAPI auto GetSerializationType() const -> Type override;
 		LEOPPHAPI static Object::Type const SerializationType;
 
-		LEOPPHAPI auto CreateManagedObject() -> MonoObject* override;
+		LEOPPHAPI auto CreateManagedObject() -> void override;
 
 	private:
 		f32 mShadowNear{ 50.f };
@@ -115,13 +112,8 @@ namespace leopph {
 	class PointLightComponent final : public AttenuatedLightComponent {
 	public:
 		LEOPPHAPI PointLightComponent();
-		LEOPPHAPI PointLightComponent(PointLightComponent const& other);
-		LEOPPHAPI PointLightComponent(PointLightComponent&& other) noexcept;
 
 		LEOPPHAPI ~PointLightComponent() override;
-
-		LEOPPHAPI auto operator=(PointLightComponent const& other) -> PointLightComponent&;
-		LEOPPHAPI auto operator=(PointLightComponent&& other) noexcept -> PointLightComponent&;
 	};
 
 
@@ -134,13 +126,8 @@ namespace leopph {
 		LEOPPHAPI auto set_outer_angle(f32 degrees) -> void;
 
 		LEOPPHAPI SpotLight();
-		LEOPPHAPI SpotLight(SpotLight const& other);
-		LEOPPHAPI SpotLight(SpotLight&& other) noexcept;
 
 		LEOPPHAPI ~SpotLight() override;
-
-		LEOPPHAPI auto operator=(SpotLight const& other) -> SpotLight&;
-		LEOPPHAPI auto operator=(SpotLight&& other) noexcept -> SpotLight&;
 
 	private:
 		f32 mInnerAngle{ 30.f };

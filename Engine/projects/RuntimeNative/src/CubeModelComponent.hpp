@@ -19,6 +19,6 @@ namespace leopph {
 		[[nodiscard]] LEOPPHAPI auto GetSerializationType() const->Type override;
 		LEOPPHAPI static Object::Type const SerializationType;
 
-		LEOPPHAPI auto CreateManagedObject() -> MonoObject* override;
+		LEOPPHAPI auto CreateManagedObject() -> void override;
 	};
 }

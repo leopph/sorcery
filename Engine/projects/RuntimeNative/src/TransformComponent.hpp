@@ -35,8 +35,6 @@ namespace leopph {
 		Matrix3 mNormalMat{ Matrix4::identity() };
 
 	public:
-		LEOPPHAPI TransformComponent();
-
 		LEOPPHAPI auto OnGui() -> void override;
 
 		[[nodiscard]] LEOPPHAPI auto GetSerializationType() const->Type override;
@@ -84,7 +82,7 @@ namespace leopph {
 		[[nodiscard]] LEOPPHAPI auto GetModelMatrix() const->Matrix4 const&;
 		[[nodiscard]] LEOPPHAPI auto GetNormalMatrix() const->Matrix3 const&;
 
-		LEOPPHAPI auto CreateManagedObject() -> MonoObject* override;
+		LEOPPHAPI auto CreateManagedObject() -> void override;
 	};
 
 

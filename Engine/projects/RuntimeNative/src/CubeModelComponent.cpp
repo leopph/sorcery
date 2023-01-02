@@ -82,7 +82,7 @@ namespace leopph {
 	}
 
 
-	auto CubeModelComponent::CreateManagedObject() -> MonoObject* {
+	auto CubeModelComponent::CreateManagedObject() -> void {
 		return ManagedAccessObject::CreateManagedObject("leopph", "CubeModel");
 	}
 }
