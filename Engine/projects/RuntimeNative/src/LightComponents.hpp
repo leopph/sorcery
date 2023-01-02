@@ -103,6 +103,9 @@ namespace leopph {
 		LEOPPHAPI auto operator=(DirectionalLightComponent&& other) noexcept -> DirectionalLightComponent&;
 
 		[[nodiscard]] LEOPPHAPI auto GetSerializationType() const -> Type override;
+		LEOPPHAPI static Object::Type const SerializationType;
+
+		LEOPPHAPI auto CreateManagedObject() -> MonoObject* override;
 
 	private:
 		f32 mShadowNear{ 50.f };

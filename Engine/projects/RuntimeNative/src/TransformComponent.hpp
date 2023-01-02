@@ -38,7 +38,10 @@ namespace leopph {
 		LEOPPHAPI TransformComponent();
 
 		LEOPPHAPI auto OnGui() -> void override;
+
 		[[nodiscard]] LEOPPHAPI auto GetSerializationType() const->Type override;
+		LEOPPHAPI static Object::Type const SerializationType;
+
 		LEOPPHAPI auto SerializeTextual(YAML::Node& node) const -> void override;
 		LEOPPHAPI auto DeserializeTextual(YAML::Node const& node) -> void override;
 
@@ -80,6 +83,8 @@ namespace leopph {
 
 		[[nodiscard]] LEOPPHAPI auto GetModelMatrix() const->Matrix4 const&;
 		[[nodiscard]] LEOPPHAPI auto GetNormalMatrix() const->Matrix3 const&;
+
+		LEOPPHAPI auto CreateManagedObject() -> MonoObject* override;
 	};
 
 

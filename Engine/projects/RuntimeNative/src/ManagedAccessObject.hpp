@@ -13,29 +13,27 @@ using MonoObject = struct _MonoObject;
 using MonoClass = struct _MonoClass;
 
 
-namespace leopph
-{
-	class ManagedAccessObject : public Object
-	{
+namespace leopph {
+	class ManagedAccessObject : public Object {
 	private:
 		std::optional<u32> mGcHandle;
 
 	public:
-		[[nodiscard]] LEOPPHAPI MonoObject* GetManagedObject() const;
-		LEOPPHAPI void SetManagedObject(MonoObject* managedObject);
-		LEOPPHAPI MonoObject* CreateManagedObject(MonoClass* klass);
-		LEOPPHAPI MonoObject* CreateManagedObject(std::string_view classNamespace, std::string_view className);
+		[[nodiscard]] LEOPPHAPI auto GetManagedObject() const -> MonoObject*;
+		LEOPPHAPI auto SetManagedObject(MonoObject* managedObject) -> void;
+		LEOPPHAPI auto CreateManagedObject(MonoClass* klass) -> MonoObject*;
+		LEOPPHAPI auto CreateManagedObject(std::string_view classNamespace, std::string_view className) -> MonoObject*;
+		LEOPPHAPI virtual auto CreateManagedObject() -> MonoObject* = 0;
 
-		LEOPPHAPI virtual ~ManagedAccessObject();
+		LEOPPHAPI ~ManagedAccessObject() override;
 
-		[[nodiscard]] static void* GetNativePtrFromManagedObject(MonoObject* managedObject);
+		[[nodiscard]] static auto GetNativePtrFromManagedObject(MonoObject* managedObject) -> void*;
 
 		template<typename T> requires std::derived_from<std::remove_pointer_t<T>, ManagedAccessObject>
-		[[nodiscard]] static T GetNativePtrFromManagedObjectAs(MonoObject* managedObject)
-		{
+		[[nodiscard]] static auto GetNativePtrFromManagedObjectAs(MonoObject* managedObject) -> T {
 			return static_cast<T>(GetNativePtrFromManagedObject(managedObject));
 		}
-	}; 
+	};
 
 
 	namespace managedbindings {

@@ -92,7 +92,7 @@ namespace leopph {
 	{
 		if (mono_class_is_subclass_of(componentClass, mono_class_from_name(gManagedRuntime.GetManagedImage(), "leopph", "Behavior"), false)) {
 			auto behavior{ std::make_unique<BehaviorComponent>(componentClass) };
-			behavior->CreateManagedObject(componentClass);
+			behavior->CreateManagedObject();
 			auto const ret{ behavior.get()};
 			AddComponent(std::move(behavior));
 			return ret;
@@ -194,6 +194,16 @@ namespace leopph {
 		}
 	}
 
+	auto Entity::CreateManagedObject() -> MonoObject* {
+		return ManagedAccessObject::CreateManagedObject("leopph", "Entity");
+	}
+
+	auto ObjectInstantiatorFor<Entity>::Instantiate() -> Object* {
+			return SceneManager::GetActiveScene()->CreateEntity();
+	}
+
+	Object::Type const Entity::SerializationType{ Type::Entity };
+
 	auto Entity::SetScene(Scene* const scene) -> void {
 		mScene = scene;
 	}
@@ -244,7 +254,7 @@ namespace leopph {
 			entity->SetManagedObject(managedEntity);
 
 			auto transform = std::make_unique<TransformComponent>();
-			transform->CreateManagedObject("leopph", "Transform");
+			transform->CreateManagedObject();
 
 			entity->AddComponent(std::move(transform));
 		}

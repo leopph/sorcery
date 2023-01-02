@@ -32,8 +32,11 @@ namespace leopph {
 	}
 
 
+	Object::Type const BehaviorComponent::SerializationType{ Type::Behavior };
+
+
 	BehaviorComponent::BehaviorComponent(MonoClass* const klass) {
-		auto const obj = CreateManagedObject(klass);
+		auto const obj = ManagedAccessObject::CreateManagedObject(klass);
 
 		if (MonoMethod* const initMethod = mono_class_get_method_from_name(klass, "OnInit", 0)) {
 			gToInit[this] = initMethod;
@@ -67,7 +70,7 @@ namespace leopph {
 
 
 	auto BehaviorComponent::Init(MonoClass* klass) -> void {
-		auto const obj = CreateManagedObject(klass);
+		auto const obj = ManagedAccessObject::CreateManagedObject(klass);
 
 		if (MonoMethod* const initMethod = mono_class_get_method_from_name(klass, "OnInit", 0)) {
 			gToInit[this] = initMethod;
@@ -419,5 +422,10 @@ namespace leopph {
 		};
 
 		parseAndSetMembers(managedComponent, node);
+	}
+
+
+	auto BehaviorComponent::CreateManagedObject() -> MonoObject* {
+		return ManagedAccessObject::CreateManagedObject("leopph", "Behavior");
 	}
 }

@@ -7,6 +7,8 @@
 #include "Systems.hpp"
 
 namespace leopph {
+	Object::Type const CubeModelComponent::SerializationType{Object::Type::CubeModel};
+
 	CubeModelComponent::CubeModelComponent() :
 		mMat{ gRenderer.GetDefaultMaterial() } {
 		gRenderer.RegisterCubeModel(this);
@@ -77,5 +79,10 @@ namespace leopph {
 
 	auto CubeModelComponent::GetSerializationType() const -> Type {
 		return Type::CubeModel;
+	}
+
+
+	auto CubeModelComponent::CreateManagedObject() -> MonoObject* {
+		return ManagedAccessObject::CreateManagedObject("leopph", "CubeModel");
 	}
 }

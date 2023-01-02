@@ -8,6 +8,7 @@
 #include <iostream>
 
 namespace leopph {
+	Object::Type const CameraComponent::SerializationType{ Object::Type::Camera };
 	std::vector<CameraComponent*> CameraComponent::sAllInstances;
 
 
@@ -144,6 +145,10 @@ namespace leopph {
 		for (auto i = 0; i < 4; i++) {
 			mBackgroundColor[i] = std::clamp(color[i], 0.f, 1.f);
 		}
+	}
+
+	auto CameraComponent::CreateManagedObject() -> MonoObject* {
+		return ManagedAccessObject::CreateManagedObject("leopph", "Camera");
 	}
 
 	auto CameraComponent::OnGui() -> void {

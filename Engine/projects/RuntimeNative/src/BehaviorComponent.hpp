@@ -11,10 +11,14 @@ namespace leopph {
 
 		LEOPPHAPI auto Init(MonoClass* klass) -> void;
 
-		LEOPPHAPI auto OnGui() -> void override;
 		[[nodiscard]] LEOPPHAPI auto GetSerializationType() const->Type override;
+		LEOPPHAPI static Type const SerializationType;
+
+		LEOPPHAPI auto OnGui() -> void override;
 		LEOPPHAPI auto SerializeTextual(YAML::Node& node) const -> void override;
 		LEOPPHAPI auto DeserializeTextual(YAML::Node const& node) -> void override;
+
+		LEOPPHAPI auto CreateManagedObject() -> MonoObject* override;
 	};
 
 	LEOPPHAPI auto init_behaviors() -> void;

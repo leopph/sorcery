@@ -138,7 +138,7 @@ namespace leopph {
 		if constexpr (std::endian::native == std::endian::little) {
 			SetGuid(*reinterpret_cast<Guid const*>(bytes.subspan<sizeof(Type), sizeof(Guid)>().data()));
 			auto const nameLngth{ *reinterpret_cast<u64 const*>(bytes.subspan<sizeof(Type) + sizeof(Guid), sizeof(u64)>().data()) };
-			SetName(std::string{reinterpret_cast<char const*>(bytes.subspan(sizeof(Type) + sizeof(Guid) + sizeof(u64), nameLngth).data()), nameLngth });
+			SetName(std::string{ reinterpret_cast<char const*>(bytes.subspan(sizeof(Type) + sizeof(Guid) + sizeof(u64), nameLngth).data()), nameLngth });
 			serializedSize += nameLngth;
 		}
 		else {
@@ -148,4 +148,11 @@ namespace leopph {
 		return { serializedSize };
 	}
 
+
+	auto ObjectFactory::New(Object::Type const objectType) const -> Object* {
+		if (auto const it{ mInstantiators.find(objectType) }; it != std::end(mInstantiators)) {
+			return it->second->Instantiate();
+		}
+		throw std::domain_error{ "Failed to create Object, because the requested type is not registered." };
+	}
 }

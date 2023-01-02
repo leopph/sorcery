@@ -3,11 +3,14 @@
 #include "Core.hpp"
 #include "Guid.hpp"
 #include "YamlInclude.hpp"
+#include "Util.hpp"
 
 #include <concepts>
 #include <set>
 #include <span>
 #include <string>
+#include <memory>
+#include <unordered_map>
 
 namespace leopph {
 	class Object {
@@ -22,7 +25,7 @@ namespace leopph {
 		LEOPPHAPI static std::set<Object*, GuidObjectLess> sAllObjects;
 
 		Guid mGuid{ Guid::Generate() };
-		std::string mName{"New Object"};
+		std::string mName{ "New Object" };
 
 	public:
 		enum class Type {
@@ -83,6 +86,32 @@ namespace leopph {
 	};
 
 
+	class ObjectInstantiator {
+	public:
+		[[nodiscard]] virtual auto Instantiate() -> Object* = 0;
+		virtual ~ObjectInstantiator() = default;
+	};
+
+
+	template<std::derived_from<Object> T>
+	class ObjectInstantiatorFor : public ObjectInstantiator {
+		[[nodiscard]] auto Instantiate() -> Object* override;
+	};
+
+
+	class ObjectFactory {
+	public:
+		template<std::derived_from<Object> T> requires requires {
+			{ T::SerializationType } -> std::common_with<Object::Type const&>;
+		}
+		auto Register() -> void;
+		LEOPPHAPI auto New(Object::Type objectType) const -> Object*;
+
+	private:
+		std::unordered_map<Object::Type, std::unique_ptr<ObjectInstantiator>> mInstantiators;
+	};
+
+
 	template<std::derived_from<Object> T>
 	auto Object::FindObjectOfType() -> T* {
 		for (auto const obj : sAllObjects) {
@@ -123,5 +152,16 @@ namespace leopph {
 			}
 		}
 		return out;
+	}
+
+
+	template<std::derived_from<Object> T>
+	auto ObjectInstantiatorFor<T>::Instantiate() -> Object* {
+		return new T{};
+	}
+
+	template<std::derived_from<Object> T> requires requires { { T::SerializationType } -> std::common_with<Object::Type const&>; }
+	auto ObjectFactory::Register() -> void {
+		mInstantiators[T::SerializationType] = std::make_unique<ObjectInstantiatorFor<T>>();
 	}
 }

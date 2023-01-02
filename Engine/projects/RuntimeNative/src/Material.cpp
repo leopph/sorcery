@@ -12,6 +12,8 @@
 
 
 namespace leopph {
+	Object::Type const Material::SerializationType{ Type::Material };
+
 	auto Material::UpdateGPUData() const noexcept -> void {
 		D3D11_MAPPED_SUBRESOURCE mappedBuf;
 		gRenderer.GetImmediateContext()->Map(mBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuf);

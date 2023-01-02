@@ -34,7 +34,7 @@ namespace leopph {
 
 
 	TransformComponent::TransformComponent() {
-		CreateManagedObject("leopph", "Transform");
+		CreateManagedObject();
 	}
 
 	auto TransformComponent::GetWorldPosition() const -> Vector3 const& {
@@ -205,6 +205,12 @@ namespace leopph {
 	auto TransformComponent::GetNormalMatrix() const -> Matrix3 const& {
 		return mNormalMat;
 	}
+
+	auto TransformComponent::CreateManagedObject() -> MonoObject* {
+		return ManagedAccessObject::CreateManagedObject("leopph", "Transform");
+	}
+
+	Object::Type const TransformComponent::SerializationType{ Type::Transform };
 
 	auto TransformComponent::GetSerializationType() const -> Type {
 		return Type::Transform;

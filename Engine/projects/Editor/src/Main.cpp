@@ -87,7 +87,7 @@ namespace {
 	std::optional<std::filesystem::path> gRootDir;
 
 
-	auto DiscoverAssetsInProjectFolder(std::vector<std::shared_ptr<leopph::Resource>>& out) -> void {
+	auto DiscoverAssetsInProjectFolder(leopph::ObjectFactory const& objectFactory, std::vector<std::shared_ptr<leopph::Resource>>& out) -> void {
 		for (auto const& childEntry : std::filesystem::recursive_directory_iterator{ *gRootDir }) {
 			if (!childEntry.is_directory() && childEntry.path().extension() == ".leopphasset") {
 				try {
@@ -98,18 +98,7 @@ namespace {
 						throw std::runtime_error{ std::format("Failed to deserialize asset at {}, because the file is corrupt.", childEntry.path().string()) };
 					}
 					auto const type{ *reinterpret_cast<leopph::Object::Type const*>(std::span{ bytes }.first<sizeof(leopph::Object::Type)>().data()) };
-					std::shared_ptr<leopph::Resource> asset;
-
-					switch (type) {
-						case leopph::Object::Type::Material: {
-							asset = std::make_shared<leopph::Material>();
-							break;
-						}
-
-						default:
-							throw std::runtime_error{ std::format("Unknown asset type detected while parsing {}.", childEntry.path().string()) };
-					}
-
+					std::shared_ptr<leopph::Resource> asset{ dynamic_cast<leopph::Resource*>(objectFactory.New(type)) };
 					std::ignore = asset->DeserializeBinary(bytes);
 					out.emplace_back(std::move(asset));
 				}
@@ -124,6 +113,15 @@ namespace {
 
 auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ HINSTANCE, [[maybe_unused]] _In_ wchar_t*, [[maybe_unused]] _In_ int) -> int {
 	try {
+		leopph::ObjectFactory objectFactory;
+		objectFactory.Register<leopph::Entity>();
+		objectFactory.Register<leopph::TransformComponent>();
+		objectFactory.Register<leopph::CameraComponent>();
+		objectFactory.Register<leopph::BehaviorComponent>();
+		objectFactory.Register<leopph::CubeModelComponent>();
+		objectFactory.Register<leopph::DirectionalLightComponent>();
+		objectFactory.Register<leopph::Material>();
+
 		leopph::gWindow.StartUp();
 		leopph::gRenderer.StartUp();
 		leopph::gManagedRuntime.StartUp();
@@ -184,7 +182,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 						if (nfdchar_t* selectedPath{ nullptr }; NFD_PickFolder(nullptr, &selectedPath) == NFD_OKAY) {
 							gWorkingDir = std::filesystem::path{ selectedPath };
 							gRootDir = gWorkingDir;
-							DiscoverAssetsInProjectFolder(assets);
+							DiscoverAssetsInProjectFolder(objectFactory, assets);
 						}
 					}
 				}
@@ -203,7 +201,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 						leopph::gWindow.SetCursorHiding(false);
 						leopph::gRenderer.SetSyncInterval(1);
 						CloseCurrentScene();
-						leopph::editor::DeserializeScene(gSerializedSceneBackup);
+						leopph::editor::DeserializeScene(objectFactory, gSerializedSceneBackup);
 					}
 				}
 				else {
@@ -264,7 +262,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 						if (ImGui::MenuItem("Load Test Scene")) {
 							CloseCurrentScene();
 							auto const serializedScene = YAML::LoadFile("scene.yaml");
-							leopph::editor::DeserializeScene(serializedScene);
+							leopph::editor::DeserializeScene(objectFactory, serializedScene);
 							gSerializedSceneBackup = serializedScene;
 						}
 
@@ -274,10 +272,10 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 					if (ImGui::BeginMenu("Create")) {
 						if (ImGui::MenuItem("Entity")) {
 							auto const entity{ leopph::SceneManager::GetActiveScene()->CreateEntity() };
-							entity->CreateManagedObject("leopph", "Entity");
+							entity->CreateManagedObject();
 
 							auto transform = std::make_unique<leopph::TransformComponent>();
-							transform->CreateManagedObject("leopph", "Transform");
+							transform->CreateManagedObject();
 
 							entity->AddComponent(std::move(transform));
 						}

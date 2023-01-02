@@ -15,6 +15,10 @@ namespace leopph {
 		LEOPPHAPI auto SetMaterial(std::shared_ptr<Material> material) noexcept -> void;
 
 		LEOPPHAPI auto OnGui() -> void override;
+
 		[[nodiscard]] LEOPPHAPI auto GetSerializationType() const->Type override;
+		LEOPPHAPI static Object::Type const SerializationType;
+
+		LEOPPHAPI auto CreateManagedObject() -> MonoObject* override;
 	};
 }

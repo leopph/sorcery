@@ -46,6 +46,7 @@ namespace leopph {
 		LEOPPHAPI auto BindPs() const noexcept -> void;
 
 		LEOPPHAPI [[nodiscard]] auto GetSerializationType() const -> Type override;
+		LEOPPHAPI static Object::Type const SerializationType;
 
 		LEOPPHAPI auto SerializeBinary(std::vector<u8>& out) const -> void override;
 		LEOPPHAPI auto DeserializeBinary(std::span<u8 const> bytes) -> BinaryDeserializationResult override;

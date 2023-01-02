@@ -165,6 +165,12 @@ namespace leopph {
 		return Type::DirectionalLight;
 	}
 
+	Object::Type const DirectionalLightComponent::SerializationType{ Type::DirectionalLight };
+
+	auto DirectionalLightComponent::CreateManagedObject() -> MonoObject* {
+		return ManagedAccessObject::CreateManagedObject("leopph", "DirectionalLight");
+	}
+
 	auto LightComponent::OnGui() -> void {
 		if (ImGui::BeginTable(std::format("{}", GetGuid().ToString()).c_str(), 2, ImGuiTableFlags_SizingStretchSame)) {
 			ImGui::TableNextRow();

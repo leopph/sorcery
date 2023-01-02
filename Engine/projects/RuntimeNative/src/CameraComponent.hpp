@@ -40,7 +40,10 @@ namespace leopph {
 		~CameraComponent() override;
 
 		LEOPPHAPI auto OnGui() -> void override;
+
 		[[nodiscard]] LEOPPHAPI auto GetSerializationType() const->Object::Type override;
+		LEOPPHAPI static Object::Type const SerializationType;
+
 		LEOPPHAPI auto SerializeTextual(YAML::Node& node) const -> void override;
 		LEOPPHAPI auto DeserializeTextual(YAML::Node const& node) -> void override;
 
@@ -72,6 +75,8 @@ namespace leopph {
 
 		[[nodiscard]] LEOPPHAPI auto GetBackgroundColor() const->Vector4;
 		LEOPPHAPI auto SetBackgroundColor(Vector4 const& color) -> void;
+
+		LEOPPHAPI auto CreateManagedObject() -> MonoObject* override;
 	};
 
 

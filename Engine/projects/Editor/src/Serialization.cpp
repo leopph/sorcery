@@ -2,24 +2,9 @@
 
 #include <Entity.hpp>
 #include <Component.hpp>
-#include "TransformComponent.hpp"
-#include "CameraComponent.hpp"
-#include "CubeModelComponent.hpp"
-#include "LightComponents.hpp"
-#include <ManagedRuntime.hpp>
-#include <SceneManager.hpp>
-
-#include <mono/metadata/class.h>
-#include <mono/metadata/object.h>
-#include <mono/metadata/reflection.h>
 
 #include <format>
-#include <functional>
-#include <iostream>
-#include <variant>
 #include <vector>
-
-#include "BehaviorComponent.hpp"
 
 namespace leopph::editor {
 	auto SerializeScene() -> YAML::Node {
@@ -46,9 +31,9 @@ namespace leopph::editor {
 	}
 
 
-	auto DeserializeScene(YAML::Node const& sceneNode) -> void {
+	auto DeserializeScene(ObjectFactory const& factory, YAML::Node const& sceneNode) -> void {
 		struct ObjectWithSerializedData {
-			Object* obj;
+			ManagedAccessObject* obj;
 			YAML::Node node;
 		};
 
@@ -56,42 +41,7 @@ namespace leopph::editor {
 
 		for (std::size_t i{ 0 }; i < sceneNode.size(); i++) {
 			auto const guid{ Guid::Parse(sceneNode[i]["guid"].as<std::string>())};
-			ManagedAccessObject* obj{ nullptr };
-
-			switch (static_cast<Object::Type>(sceneNode[i]["objectType"].as<int>())) {
-				case Object::Type::Entity: {
-					obj = leopph::SceneManager::GetActiveScene()->CreateEntity();
-					obj->CreateManagedObject("leopph", "Entity");
-					break;
-				}
-				case Object::Type::Transform: {
-					obj = new TransformComponent{};
-					obj->CreateManagedObject("leopph", "Transform");
-					break;
-				}
-				case Object::Type::Camera: {
-					obj = new CameraComponent{};
-					obj->CreateManagedObject("leopph", "Camera");
-					break;
-				}
-				case Object::Type::Behavior: {
-					obj = new BehaviorComponent{};
-					break;
-				}
-				case Object::Type::CubeModel: {
-					obj = new CubeModelComponent{};
-					obj->CreateManagedObject("leopph", "CubeModel");
-					break;
-				}
-				case Object::Type::DirectionalLight: {
-					obj = new DirectionalLightComponent{};
-					obj->CreateManagedObject("leopph", "DirectionalLight");
-					break;
-				}
-				default: {
-
-				}
-			}
+			auto obj{ dynamic_cast<ManagedAccessObject*>(factory.New(static_cast<Object::Type>(sceneNode[i]["objectType"].as<int>()))) };
 
 			if (obj) {
 				obj->SetGuid(guid);
@@ -99,8 +49,9 @@ namespace leopph::editor {
 			}
 		}
 
-		for (auto& [se, node] : objectsWithSerializedData) {
-			se->DeserializeTextual(node);
+		for (auto& [obj, node] : objectsWithSerializedData) {
+			obj->DeserializeTextual(node);
+			obj->CreateManagedObject();
 		}
 	}
 }
