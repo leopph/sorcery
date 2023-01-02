@@ -402,6 +402,11 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 				ImGui::SetNextWindowSizeConstraints(gameViewportMinSize, ImGui::GetMainViewport()->WorkSize);
 				ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
 
+				if (runGame) {
+					ImGui::SetNextWindowCollapsed(false);
+					ImGui::SetNextWindowFocus();
+				}
+
 				if (ImGui::Begin("Game", nullptr, ImGuiWindowFlags_NoCollapse)) {
 					ImGui::PopStyleVar();
 
