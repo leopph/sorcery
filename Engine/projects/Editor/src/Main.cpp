@@ -80,12 +80,12 @@ namespace {
 
 
 	leopph::Object* gSelected{ nullptr };
-	std::optional<std::filesystem::path> gWorkingDir;
-	std::optional<std::filesystem::path> gRootDir;
+	std::optional<std::filesystem::path> gProjectDir;
+	std::filesystem::path gAssetDirRelative;
 
 
-	auto DiscoverAssetsInProjectFolder(leopph::ObjectFactory const& objectFactory, std::vector<std::shared_ptr<leopph::Resource>>& out) -> void {
-		for (auto const& childEntry : std::filesystem::recursive_directory_iterator{ *gRootDir }) {
+	auto DiscoverAssetsInProjectFolder(leopph::ObjectFactory const& objectFactory, std::unordered_map<std::filesystem::path, std::shared_ptr<leopph::Resource>>& out) -> void {
+		for (auto const& childEntry : std::filesystem::recursive_directory_iterator{ *gProjectDir }) {
 			if (!childEntry.is_directory() && childEntry.path().extension() == ".leopphasset") {
 				try {
 					std::ifstream in{ childEntry.path(), std::ios::binary };
@@ -97,7 +97,7 @@ namespace {
 					auto const type{ *reinterpret_cast<leopph::Object::Type const*>(std::span{ bytes }.first<sizeof(leopph::Object::Type)>().data()) };
 					std::shared_ptr<leopph::Resource> asset{ dynamic_cast<leopph::Resource*>(objectFactory.New(type)) };
 					std::ignore = asset->DeserializeBinary(bytes);
-					out.emplace_back(std::move(asset));
+					out[childEntry.path()] = std::move(asset);
 				}
 				catch (std::exception const& ex) {
 					MessageBoxA(nullptr, ex.what(), "Error", MB_ICONERROR);
@@ -148,8 +148,8 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
 		bool runGame{ false };
 		bool showDemoWindow{ false };
-
-		std::vector<std::shared_ptr<leopph::Resource>> assets;
+		
+		std::unordered_map<std::filesystem::path, std::shared_ptr<leopph::Resource>> assets;
 
 		leopph::init_time();
 
@@ -161,7 +161,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 			ImGui::NewFrame();
 			ImGuizmo::BeginFrame();
 
-			if (!gWorkingDir || !gRootDir) {
+			if (!gProjectDir) {
 				auto flags{ ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings };
 				auto const viewport{ ImGui::GetMainViewport() };
 				ImGui::SetNextWindowPos(viewport->Pos);
@@ -177,8 +177,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
 					if (ImGui::Button("Open Project")) {
 						if (nfdchar_t* selectedPath{ nullptr }; NFD_PickFolder(nullptr, &selectedPath) == NFD_OKAY) {
-							gWorkingDir = std::filesystem::path{ selectedPath };
-							gRootDir = gWorkingDir;
+							gProjectDir = std::filesystem::path{ selectedPath };
 							DiscoverAssetsInProjectFolder(objectFactory, assets);
 						}
 					}
@@ -568,25 +567,62 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 						if (ImGui::BeginMenu("Create##CreateAsset")) {
 							if (ImGui::MenuItem("Material##CreateMaterial")) {
 								auto mat{ std::make_shared<leopph::Material>() };
-								mat->SetName("New Material");
+
+								std::string_view constexpr fileNameBase{ "New Material" };
+								std::string fileName{ fileNameBase };
+								std::size_t fileNameIndex{ 1 };
+
+								while (true) {
+									bool isUsed{ false };
+									for (auto const& entry : std::filesystem::directory_iterator{ *gProjectDir / gAssetDirRelative }) {
+										if (entry.path().stem() == fileName) {
+											fileName = fileNameBase;
+											fileName += " ";
+											fileName += std::to_string(fileNameIndex);
+											++fileNameIndex;
+											isUsed = true;
+											break;
+										}
+									}
+
+									if (!isUsed) {
+										break;
+									}
+								}
+
+								mat->SetName(fileName);
 								gSelected = mat.get();
+
 								static std::vector<leopph::u8> bytes;
 								mat->SerializeBinary(bytes);
-								std::ofstream out{ (*gWorkingDir / mat->GetName()).replace_extension(".leopphasset"), std::ios::binary };
+
+								auto const assetPath{ (*gProjectDir / gAssetDirRelative / fileName).replace_extension(".leopphasset") };
+								std::ofstream out{ assetPath, std::ios::binary };
 								std::ranges::copy(std::as_const(bytes), std::ostream_iterator<leopph::u8>{ out });
 								bytes.clear();
-								assets.emplace_back(std::move(mat));
+
+								assets[assetPath] = std::move(mat);
 							}
 							ImGui::EndMenu();
 						}
 						ImGui::EndPopup();
 					}
 
-					for (int i{ 0 }; auto const& asset : assets) {
-						if (ImGui::Selectable(std::format("{}##{}{}", asset->GetName().data(), asset->GetName().data(), i).c_str(), gSelected == asset.get())) {
-							gSelected = asset.get();
+					for (auto const& entry : std::filesystem::directory_iterator{*gProjectDir / gAssetDirRelative}) {
+						auto const& entryPath{ entry.path() };
+						if (is_directory(entryPath)) {
+							ImGui::Selectable(std::format("{}##AssetFolderPath", entryPath.filename().string().c_str()).c_str());
+							if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) {
+								gAssetDirRelative /= entryPath.filename();
+							}
 						}
-						++i;
+						else if (auto const it{ assets.find(entryPath) }; it != std::end(assets)) {
+							auto const& asset{ it->second };
+
+							if (ImGui::Selectable(std::format("{}##{}", asset->GetName().data(), entryPath.string().c_str()).c_str(), gSelected == asset.get())) {
+								gSelected = asset.get();
+							}
+						}
 					}
 				}
 				ImGui::End();
