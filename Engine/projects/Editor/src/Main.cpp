@@ -2,6 +2,7 @@
 #include "Widgets.hpp"
 #include "Material.hpp"
 #include "Time.hpp"
+#include "BinarySerializer.hpp"
 
 #include <TransformComponent.hpp>
 #include <BehaviorComponent.hpp>
@@ -61,7 +62,22 @@ namespace {
 		fun();
 		io.ConfigFlags = oldFlags;
 		gLoading = false;
-	};
+	}
+
+	auto GenerateLeopphAssetHeader(leopph::Resource const& resource, std::vector<leopph::u8>& out) -> void {
+		leopph::BinarySerializer<leopph::i32>::Serialize(static_cast<leopph::i32>(resource.GetSerializationType()), out, std::endian::little);
+		leopph::BinarySerializer<leopph::u64>::Serialize(*reinterpret_cast<leopph::u64 const*>(&resource.GetGuid()), out, std::endian::little);
+		leopph::BinarySerializer<leopph::u64>::Serialize(*(reinterpret_cast<leopph::u64 const*>(&resource.GetGuid()) + 1), out, std::endian::little);
+		leopph::BinarySerializer<leopph::u64>::Serialize(resource.GetName().size(), out, std::endian::little);
+		for (auto const c : resource.GetName()) {
+			out.emplace_back(c);
+		}
+	}
+
+	auto SerializeResource(leopph::Resource const& resource, std::vector<leopph::u8>& out) -> void {
+		GenerateLeopphAssetHeader(resource, out);
+		resource.SerializeBinary(out);
+	}
 
 
 	/*auto ImportAsset(ImGuiIO& io) -> void {
@@ -594,7 +610,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 								gSelected = mat.get();
 
 								static std::vector<leopph::u8> bytes;
-								mat->SerializeBinary(bytes);
+								SerializeResource(*mat, bytes);
 
 								auto const assetPath{ (*gProjectDir / gAssetDirRelative / fileName).replace_extension(".leopphasset") };
 								std::ofstream out{ assetPath, std::ios::binary };

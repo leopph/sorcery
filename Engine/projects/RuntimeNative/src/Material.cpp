@@ -99,7 +99,6 @@ namespace leopph {
 	}
 
 	auto Material::SerializeBinary(std::vector<u8>& out) const -> void {
-		Object::SerializeBinary(out);
 		BinarySerializer<Vector3>::Serialize(mBufData.albedo, out, std::endian::native);
 		BinarySerializer<f32>::Serialize(mBufData.metallic, out, std::endian::native);
 		BinarySerializer<f32>::Serialize(mBufData.roughness, out, std::endian::native);
