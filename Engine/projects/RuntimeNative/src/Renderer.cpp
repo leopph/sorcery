@@ -5,6 +5,7 @@
 #include "Systems.hpp"
 #include "Util.hpp"
 #include "TransformComponent.hpp"
+#include "Mesh.hpp"
 
 #ifdef NDEBUG
 #include "shaders/cinclude/BlinnPhongVertShadBin.h"
@@ -58,6 +59,12 @@ namespace leopph {
 
 	struct CameraBufferData {
 		Vector3 camPos;
+	};
+
+	struct MatrixCBufData {
+		DirectX::XMFLOAT4X4 viewProjMat;
+		DirectX::XMFLOAT4X4 modelMat;
+		DirectX::XMFLOAT3X3 normalMat;
 	};
 
 
@@ -379,73 +386,19 @@ namespace leopph {
 				.SemanticName = "VERTEXNORMAL",
 				.SemanticIndex = 0,
 				.Format = DXGI_FORMAT_R32G32B32_FLOAT,
-				.InputSlot = 0,
+				.InputSlot = 1,
 				.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT,
 				.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA,
 				.InstanceDataStepRate = 0
 			},
 			{
-				.SemanticName = "MODELMATRIX",
+				.SemanticName = "VERTEXUV",
 				.SemanticIndex = 0,
-				.Format = DXGI_FORMAT_R32G32B32A32_FLOAT,
-				.InputSlot = 1,
+				.Format = DXGI_FORMAT_R32G32_FLOAT,
+				.InputSlot = 2,
 				.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT,
-				.InputSlotClass = D3D11_INPUT_PER_INSTANCE_DATA,
-				.InstanceDataStepRate = 1
-			},
-			{
-				.SemanticName = "MODELMATRIX",
-				.SemanticIndex = 1,
-				.Format = DXGI_FORMAT_R32G32B32A32_FLOAT,
-				.InputSlot = 1,
-				.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT,
-				.InputSlotClass = D3D11_INPUT_PER_INSTANCE_DATA,
-				.InstanceDataStepRate = 1
-			},
-			{
-				.SemanticName = "MODELMATRIX",
-				.SemanticIndex = 2,
-				.Format = DXGI_FORMAT_R32G32B32A32_FLOAT,
-				.InputSlot = 1,
-				.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT,
-				.InputSlotClass = D3D11_INPUT_PER_INSTANCE_DATA,
-				.InstanceDataStepRate = 1
-			},
-			{
-				.SemanticName = "MODELMATRIX",
-				.SemanticIndex = 3,
-				.Format = DXGI_FORMAT_R32G32B32A32_FLOAT,
-				.InputSlot = 1,
-				.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT,
-				.InputSlotClass = D3D11_INPUT_PER_INSTANCE_DATA,
-				.InstanceDataStepRate = 1
-			},
-			{
-				.SemanticName = "NORMALMATRIX",
-				.SemanticIndex = 0,
-				.Format = DXGI_FORMAT_R32G32B32_FLOAT,
-				.InputSlot = 1,
-				.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT,
-				.InputSlotClass = D3D11_INPUT_PER_INSTANCE_DATA,
-				.InstanceDataStepRate = 1
-			},
-			{
-				.SemanticName = "NORMALMATRIX",
-				.SemanticIndex = 1,
-				.Format = DXGI_FORMAT_R32G32B32_FLOAT,
-				.InputSlot = 1,
-				.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT,
-				.InputSlotClass = D3D11_INPUT_PER_INSTANCE_DATA,
-				.InstanceDataStepRate = 1
-			},
-			{
-				.SemanticName = "NORMALMATRIX",
-				.SemanticIndex = 2,
-				.Format = DXGI_FORMAT_R32G32B32_FLOAT,
-				.InputSlot = 1,
-				.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT,
-				.InputSlotClass = D3D11_INPUT_PER_INSTANCE_DATA,
-				.InstanceDataStepRate = 1
+				.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA,
+				.InstanceDataStepRate = 0
 			}
 		};
 
@@ -519,9 +472,9 @@ namespace leopph {
 			throw std::runtime_error{ "Failed to create cube index buffer." };
 		}
 
-		D3D11_BUFFER_DESC constexpr cbufferDesc
+		D3D11_BUFFER_DESC constexpr matrixCBufferDesc
 		{
-			.ByteWidth = 16 * sizeof(float),
+			.ByteWidth = sizeof(MatrixCBufData) + 16 - sizeof(MatrixCBufData) % 16,
 			.Usage = D3D11_USAGE_DYNAMIC,
 			.BindFlags = D3D11_BIND_CONSTANT_BUFFER,
 			.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
@@ -529,10 +482,10 @@ namespace leopph {
 			.StructureByteStride = 0
 		};
 
-		hresult = mResources->device->CreateBuffer(&cbufferDesc, nullptr, mResources->cbuffer.GetAddressOf());
+		hresult = mResources->device->CreateBuffer(&matrixCBufferDesc, nullptr, mResources->matrixCBuffer.GetAddressOf());
 
 		if (FAILED(hresult)) {
-			throw std::runtime_error{ "Failed to create cube constant buffer." };
+			throw std::runtime_error{ "Failed to create matrix constant buffer." };
 		}
 
 		D3D11_BUFFER_DESC constexpr lightBufferDesc{
@@ -747,10 +700,10 @@ namespace leopph {
 		}
 
 		D3D11_MAPPED_SUBRESOURCE mappedCbuffer;
-		mResources->context->Map(mResources->cbuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedCbuffer);
+		mResources->context->Map(mResources->matrixCBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedCbuffer);
 
 		DirectX::XMStoreFloat4x4(static_cast<DirectX::XMFLOAT4X4*>(mappedCbuffer.pData), viewMat * projMat);
-		mResources->context->Unmap(mResources->cbuffer.Get(), 0);
+		mResources->context->Unmap(mResources->matrixCBuffer.Get(), 0);
 
 		D3D11_MAPPED_SUBRESOURCE mappedLightBuffer;
 		mResources->context->Map(mResources->lightBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedLightBuffer);
@@ -813,7 +766,7 @@ namespace leopph {
 		mResources->context->IASetIndexBuffer(mResources->cubeIndBuf.Get(), DXGI_FORMAT_R32_UINT, 0);
 		mResources->context->IASetInputLayout(mResources->cubeIa.Get());
 		mResources->context->VSSetShader(mResources->cubeVertShader.Get(), nullptr, 0);
-		mResources->context->VSSetConstantBuffers(0, 1, mResources->cbuffer.GetAddressOf());
+		mResources->context->VSSetConstantBuffers(0, 1, mResources->matrixCBuffer.GetAddressOf());
 		mResources->context->PSSetShader(mResources->pbrPs.Get(), nullptr, 0);
 		ID3D11Buffer* const psCBuffers[]{ mCubeModels[0]->GetMaterial()->GetBuffer(), mResources->cameraCBuf.Get(), mResources->lightBuffer.Get() };
 		mResources->context->PSSetConstantBuffers(0, ARRAYSIZE(psCBuffers), psCBuffers);
@@ -846,17 +799,6 @@ namespace leopph {
 			return;
 		}
 
-		DirectX::XMFLOAT3 const camPos{ cam.position.get_data() };
-		DirectX::XMFLOAT3 const camForward{ cam.orientation.Rotate(Vector3::forward()).get_data() };
-		DirectX::XMMATRIX viewMat = DirectX::XMMatrixLookToLH(DirectX::XMLoadFloat3(&camPos), DirectX::XMLoadFloat3(&camForward), { 0, 1, 0 });
-		
-		DirectX::XMMATRIX const projMat = DirectX::XMMatrixPerspectiveFovLH(cam.fovVertRad, mSceneAspect, cam.nearClip, cam.farClip);
-
-		D3D11_MAPPED_SUBRESOURCE mappedCbuffer;
-		mResources->context->Map(mResources->cbuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedCbuffer);
-		DirectX::XMStoreFloat4x4(static_cast<DirectX::XMFLOAT4X4*>(mappedCbuffer.pData), viewMat * projMat);
-		mResources->context->Unmap(mResources->cbuffer.Get(), 0);
-
 		D3D11_MAPPED_SUBRESOURCE mappedLightBuffer;
 		mResources->context->Map(mResources->lightBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedLightBuffer);
 		auto const lightBufferData{ static_cast<LightBufferData*>(mappedLightBuffer.pData) };
@@ -874,47 +816,47 @@ namespace leopph {
 		camBufData->camPos = cam.position;
 		mResources->context->Unmap(mResources->cameraCBuf.Get(), 0);
 
+		DirectX::XMFLOAT3 const camPos{ cam.position.get_data() };
+		DirectX::XMFLOAT3 const camForward{ cam.orientation.Rotate(Vector3::forward()).get_data() };
+		DirectX::XMMATRIX const viewMat{ DirectX::XMMatrixLookToLH(DirectX::XMLoadFloat3(&camPos), DirectX::XMLoadFloat3(&camForward), { 0, 1, 0 }) };
+		DirectX::XMMATRIX const projMat{ DirectX::XMMatrixPerspectiveFovLH(cam.fovVertRad, mSceneAspect, cam.nearClip, cam.farClip) };
+		auto const viewProjMat{ XMMatrixMultiply(viewMat, projMat) };
 
-		if (mCubeModels.size() > mInstanceBufferElementCapacity) {
-			mInstanceBufferElementCapacity = static_cast<UINT>(mCubeModels.size());
+		for (auto const& cubeModel : mCubeModels) {
+			auto const mesh{ cubeModel->GetMesh() };
+			auto const mat{ cubeModel->GetMaterial() };
 
-			D3D11_BUFFER_DESC const desc
-			{
-				.ByteWidth = clamp_cast<UINT>(mInstanceBufferElementCapacity * sizeof(CubeInstanceData)),
-				.Usage = D3D11_USAGE_DYNAMIC,
-				.BindFlags = D3D11_BIND_VERTEX_BUFFER,
-				.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
-				.MiscFlags = 0,
-				.StructureByteStride = 0
-			};
-
-			if (auto const hresult = mResources->device->CreateBuffer(&desc, nullptr, mResources->cubeInstBuf.ReleaseAndGetAddressOf()); FAILED(hresult)) {
-				throw std::runtime_error{ "Failed to resize cube instance buffer." };
+			if (!mesh || !mat) {
+				continue;
 			}
-		}
 
-		D3D11_MAPPED_SUBRESOURCE mappedCubeInstBuf;
-		mResources->context->Map(mResources->cubeInstBuf.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedCubeInstBuf);
-		auto const mappedInstBufData{ static_cast<CubeInstanceData*>(mappedCubeInstBuf.pData) };
-		for (std::size_t i = 0; i < mCubeModels.size(); i++) {
-			mappedInstBufData[i].modelMat = DirectX::XMFLOAT4X4{ mCubeModels[i]->GetEntity()->GetTransform().GetModelMatrix().get_data() };
-			mappedInstBufData[i].normalMat = DirectX::XMFLOAT3X3{ mCubeModels[i]->GetEntity()->GetTransform().GetNormalMatrix().get_data() };
-		}
-		mResources->context->Unmap(mResources->cubeInstBuf.Get(), 0);
+			DirectX::XMFLOAT4X4 const modelMat{ cubeModel->GetEntity()->GetTransform().GetModelMatrix().get_data() };
+			DirectX::XMFLOAT3X3 const normalMat{ cubeModel->GetEntity()->GetTransform().GetNormalMatrix().get_data() };
 
-		ID3D11Buffer* cubeVertBufs[]{ mResources->cubeVertBuf.Get(), mResources->cubeInstBuf.Get() };
-		UINT cubeVertStrides[]{ 6 * sizeof(float), 25 * sizeof(float) };
-		UINT cubeVertOffsets[]{ 0, 0 };
-		mResources->context->IASetVertexBuffers(0, 2, cubeVertBufs, cubeVertStrides, cubeVertOffsets);
-		mResources->context->IASetIndexBuffer(mResources->cubeIndBuf.Get(), DXGI_FORMAT_R32_UINT, 0);
-		mResources->context->IASetInputLayout(mResources->cubeIa.Get());
-		mResources->context->VSSetShader(mResources->cubeVertShader.Get(), nullptr, 0);
-		mResources->context->VSSetConstantBuffers(0, 1, mResources->cbuffer.GetAddressOf());
-		mResources->context->PSSetShader(mResources->pbrPs.Get(), nullptr, 0);
-		ID3D11Buffer* const psCBuffers[]{ mCubeModels[0]->GetMaterial()->GetBuffer(), mResources->cameraCBuf.Get(), mResources->lightBuffer.Get() };
-		mResources->context->PSSetConstantBuffers(0, ARRAYSIZE(psCBuffers), psCBuffers);
-		mResources->context->OMSetRenderTargets(1, mResources->sceneRenderTextureRtv.GetAddressOf(), nullptr);
-		mResources->context->DrawIndexedInstanced(ARRAYSIZE(CUBE_INDICES), static_cast<UINT>(mCubeModels.size()), 0, 0, 0);
+			D3D11_MAPPED_SUBRESOURCE mappedMatrixCBuffer;
+			mResources->context->Map(mResources->matrixCBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedMatrixCBuffer);
+			auto& [viewProjMatData, modelMatData, normalMatData]{ *static_cast<MatrixCBufData*>(mappedMatrixCBuffer.pData) };
+
+			XMStoreFloat4x4(&viewProjMatData, XMMatrixMultiply(XMLoadFloat4x4(&modelMat), viewProjMat));
+			modelMatData = modelMat;
+			normalMatData = normalMat;
+
+			mResources->context->Unmap(mResources->matrixCBuffer.Get(), 0);
+
+			ID3D11Buffer* vertexBuffers[]{ mesh->GetPositionBuffer().Get(), mesh->GetNormalBuffer().Get(), mesh->GetUVBuffer().Get() };
+			UINT constexpr strides[]{ 3 * sizeof(Vector3), 3 * sizeof(Vector3), 3 * sizeof(Vector2) };
+			UINT constexpr offsets[]{ 0, 0, 0 };
+			mResources->context->IASetVertexBuffers(0, 3, vertexBuffers, strides, offsets);
+			mResources->context->IASetIndexBuffer(mesh->GetIndexBuffer().Get(), DXGI_FORMAT_R32_UINT, 0);
+			mResources->context->VSSetShader(mResources->cubeVertShader.Get(), nullptr, 0);
+			mResources->context->VSSetConstantBuffers(0, 1, mResources->matrixCBuffer.GetAddressOf());
+			mResources->context->PSSetShader(mResources->pbrPs.Get(), nullptr, 0);
+			ID3D11Buffer* const psCBuffers[]{ mCubeModels[0]->GetMaterial()->GetBuffer(), mResources->cameraCBuf.Get(), mResources->lightBuffer.Get() };
+			mResources->context->PSSetConstantBuffers(0, ARRAYSIZE(psCBuffers), psCBuffers);
+			mResources->context->IASetInputLayout(mResources->cubeIa.Get());
+			mResources->context->OMSetRenderTargets(1, mResources->sceneRenderTextureRtv.GetAddressOf(), nullptr);
+			mResources->context->DrawIndexed(mesh->GetIndices().size(), 0, 0);
+		}
 	}
 
 

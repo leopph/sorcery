@@ -2,10 +2,12 @@
 
 #include "Component.hpp"
 #include "Material.hpp"
+#include "Mesh.hpp"
 
 namespace leopph {
 	class CubeModelComponent : public Component {
 		std::shared_ptr<Material> mMat;
+		std::shared_ptr<Mesh> mMesh;
 
 	public:
 		LEOPPHAPI CubeModelComponent();
@@ -13,6 +15,9 @@ namespace leopph {
 
 		LEOPPHAPI [[nodiscard]] auto GetMaterial() const noexcept -> std::shared_ptr<Material>;
 		LEOPPHAPI auto SetMaterial(std::shared_ptr<Material> material) noexcept -> void;
+
+		LEOPPHAPI [[nodiscard]] auto GetMesh() const noexcept -> std::shared_ptr<Mesh>;
+		LEOPPHAPI auto SetMesh(std::shared_ptr<Mesh> mesh) noexcept -> void;
 
 		LEOPPHAPI auto OnGui() -> void override;
 

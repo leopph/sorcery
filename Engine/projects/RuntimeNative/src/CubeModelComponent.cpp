@@ -31,6 +31,16 @@ namespace leopph {
 		}
 	}
 
+	auto CubeModelComponent::GetMesh() const noexcept -> std::shared_ptr<Mesh> {
+		return mMesh;
+	}
+
+	auto CubeModelComponent::SetMesh(std::shared_ptr<Mesh> mesh) noexcept -> void {
+		if (mesh) {
+			mMesh = std::move(mesh);
+		}
+	}
+
 	auto CubeModelComponent::OnGui() -> void {
 		if (ImGui::BeginTable(std::format("{}", GetGuid().ToString()).c_str(), 2, ImGuiTableFlags_SizingStretchSame)) {
 			ImGui::TableNextRow();
@@ -72,6 +82,43 @@ namespace leopph {
 
 			ImGui::SameLine();
 			ImGui::Text("%s", mMat->GetName().data());
+
+			ImGui::TableNextColumn();
+			ImGui::Text("%s", "Mesh");
+			ImGui::TableNextColumn();
+
+			static std::vector<Mesh*> meshes;
+			static std::string meshFilter;
+
+			if (ImGui::Button("Select##SelectMeshForStaticMeshComponent")) {
+				FindObjectsOfType(meshes);
+				meshFilter.clear();
+				ImGui::OpenPopup("ChooseMeshForStaticMeshComponent");
+			}
+
+			if (ImGui::BeginPopup("ChooseMeshForStaticMeshComponent")) {
+				if (ImGui::InputText("###SearchMesh", &meshFilter)) {
+					FindObjectsOfType(meshes);
+					std::erase_if(meshes, [](Mesh const* mesh) {
+						return !mesh->GetName().contains(meshFilter);
+					});
+				}
+
+				for (auto const mesh : meshes) {
+					if (ImGui::Selectable(std::format("{}##meshoption{}", mesh->GetName(), mesh->GetGuid().ToString()).c_str())) {
+						SetMesh(std::static_pointer_cast<Mesh>(mesh->GetSharedPtr()));
+						break;
+					}
+				}
+
+				ImGui::EndPopup();
+			}
+
+			ImGui::SameLine();
+
+			if (mMesh) {
+				ImGui::Text("%s", mMesh->GetName().data());
+			}
 
 			ImGui::EndTable();
 		}

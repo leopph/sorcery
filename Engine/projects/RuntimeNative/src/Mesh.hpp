@@ -1,11 +1,15 @@
 #pragma once
 
 #include "Resource.hpp"
-#include "Renderer.hpp"
 #include "Math.hpp"
 
 #include <span>
 #include <vector>
+
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <d3d11.h>
+#include <wrl/client.h>
 
 
 namespace leopph {
@@ -51,5 +55,10 @@ namespace leopph {
 
 		LEOPPHAPI auto SerializeBinary(std::vector<u8>& out) const -> void override;
 		LEOPPHAPI [[nodiscard]] auto DeserializeBinary(std::span<u8 const> bytes) -> BinaryDeserializationResult override;
+
+		LEOPPHAPI [[nodiscard]] auto GetPositionBuffer() const noexcept -> Microsoft::WRL::ComPtr<ID3D11Buffer>;
+		LEOPPHAPI [[nodiscard]] auto GetNormalBuffer() const noexcept -> Microsoft::WRL::ComPtr<ID3D11Buffer>;
+		LEOPPHAPI [[nodiscard]] auto GetUVBuffer() const noexcept -> Microsoft::WRL::ComPtr<ID3D11Buffer>;
+		LEOPPHAPI [[nodiscard]] auto GetIndexBuffer() const noexcept -> Microsoft::WRL::ComPtr<ID3D11Buffer>;
 	};
 }

@@ -51,7 +51,7 @@ namespace leopph {
 			Microsoft::WRL::ComPtr<ID3D11Buffer> cubeInstBuf;
 			Microsoft::WRL::ComPtr<ID3D11Buffer> cubeIndBuf;
 			Microsoft::WRL::ComPtr<ID3D11InputLayout> cubeIa;
-			Microsoft::WRL::ComPtr<ID3D11Buffer> cbuffer;
+			Microsoft::WRL::ComPtr<ID3D11Buffer> matrixCBuffer;
 			Microsoft::WRL::ComPtr<ID3D11Buffer> lightBuffer;
 
 			Microsoft::WRL::ComPtr<ID3D11InputLayout> quadIa;
@@ -63,6 +63,7 @@ namespace leopph {
 			Microsoft::WRL::ComPtr<ID3D11Buffer> cameraCBuf;
 
 			std::shared_ptr<Material> defaultMaterial;
+			std::shared_ptr<Mesh> defaultMesh;
 		};
 
 		auto RecreateGameRenderTextureAndViews(u32 width, u32 height) const -> void;

@@ -6,7 +6,9 @@
 #pragma pack_matrix(row_major)
 
 cbuffer matrices : register(b0) {
-	float4x4 viewProj;
+	float4x4 viewProjMat;
+    float4x4 modelMat;
+    float3x3 normalMat;
 };
 
 cbuffer lights : register(b0) {
@@ -17,8 +19,7 @@ cbuffer lights : register(b0) {
 struct VS_IN {
 	float3 vertexPos : VERTEXPOS;
     float3 vertexNorm : VERTEXNORMAL;
-	float4x4 modelMat : MODELMATRIX;
-    float3x3 normalMat : NORMALMATRIX;
+    float2 vertexUV : VERTEXUV;
 };
 
 struct VS_OUT {
@@ -30,10 +31,10 @@ struct VS_OUT {
 VS_OUT vs_main(VS_IN vs_in)
 {
 	VS_OUT vsOut;
-	float4 worldPos4 = mul(float4(vs_in.vertexPos, 1), vs_in.modelMat);
+	float4 worldPos4 = mul(float4(vs_in.vertexPos, 1), modelMat);
 	vsOut.worldPos = worldPos4.xyz;
-	vsOut.clipPos = mul(worldPos4, viewProj);
-    vsOut.normal = mul(vs_in.vertexNorm, vs_in.normalMat);
+	vsOut.clipPos = mul(worldPos4, viewProjMat);
+    vsOut.normal = mul(vs_in.vertexNorm, normalMat);
 	return vsOut;
 }
 

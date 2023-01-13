@@ -168,6 +168,7 @@ namespace {
 		mesh->SetNormals(std::move(normals));
 		mesh->SetUVs(std::move(uvs));
 		mesh->SetIndices(std::move(indices));
+		mesh->ValidateAndUpdate();
 		return mesh;
 	}
 }

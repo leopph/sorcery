@@ -217,4 +217,21 @@ namespace leopph {
 		ret.numBytesConsumed += numBytesConsumed;
 		return ret;
 	}
+
+	auto Mesh::GetPositionBuffer() const noexcept -> Microsoft::WRL::ComPtr<ID3D11Buffer> {
+		return mPosBuf;
+	}
+
+	auto Mesh::GetNormalBuffer() const noexcept -> Microsoft::WRL::ComPtr<ID3D11Buffer> {
+		return mNormBuf;
+	}
+
+	auto Mesh::GetUVBuffer() const noexcept -> Microsoft::WRL::ComPtr<ID3D11Buffer> {
+		return mUvBuf;
+	}
+
+	auto Mesh::GetIndexBuffer() const noexcept -> Microsoft::WRL::ComPtr<ID3D11Buffer> {
+		return mIndBuf;
+	}
+
 }
