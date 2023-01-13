@@ -3,6 +3,7 @@
 #include "Material.hpp"
 #include "Time.hpp"
 #include "BinarySerializer.hpp"
+#include "ModelImport.hpp"
 
 #include <TransformComponent.hpp>
 #include <BehaviorComponent.hpp>
@@ -34,6 +35,8 @@
 #include <ranges>
 #include <string>
 #include <vector>
+
+#include "Mesh.hpp"
 
 
 extern auto ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) -> LRESULT;
@@ -159,23 +162,13 @@ namespace {
 	}
 
 	auto ImportResource(std::filesystem::path const& srcPath) -> std::shared_ptr<leopph::Resource> {
-		
-	}
-
-	auto ImportResource(ImGuiIO& io, std::unordered_map<std::filesystem::path, std::shared_ptr<leopph::Resource>>& out) -> void {
-		if (nfdchar_t* selectedPath{ nullptr }; NFD_OpenDialog(nullptr, nullptr, &selectedPath) == NFD_OKAY) {
-			auto const LoadAndAddAssetToProject = [selectedPath, &out] {
-				std::filesystem::path resPath{ selectedPath };
-				std::free(selectedPath);
-
-				if (auto const res{ ImportResource(resPath) }; res) {
-					out[std::move(resPath)] = std::move(res);
-				}
-			};
-
-			std::thread loaderThread{ LoadAndBlockEditor, std::ref(io), LoadAndAddAssetToProject };
-			loaderThread.detach();
-		}
+		auto [positions, normals, uvs, indices]{ leopph::ImportMeshResourceData(srcPath) };
+		auto mesh{ std::make_shared<leopph::Mesh>() };
+		mesh->SetPositions(std::move(positions));
+		mesh->SetNormals(std::move(normals));
+		mesh->SetUVs(std::move(uvs));
+		mesh->SetIndices(std::move(indices));
+		return mesh;
 	}
 }
 
@@ -627,16 +620,12 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 				}
 				ImGui::End();
 
-				if (ImGui::Begin("Assets", nullptr, ImGuiWindowFlags_NoCollapse)) {
+				if (ImGui::Begin("Resources", nullptr, ImGuiWindowFlags_NoCollapse)) {
 					if (ImGui::IsWindowHovered(ImGuiHoveredFlags_RootWindow) && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
-						ImGui::OpenPopup("AssetsContextMenu");
+						ImGui::OpenPopup("ResourcesContextMenu");
 					}
-					if (ImGui::BeginPopup("AssetsContextMenu")) {
-						if (ImGui::MenuItem("Import Asset")) {
-							ImGui::CloseCurrentPopup();
-							//ImportResource(io);
-						}
-						if (ImGui::BeginMenu("Create##CreateAsset")) {
+					if (ImGui::BeginPopup("ResourcesContextMenu")) {
+						if (ImGui::BeginMenu("Create##CreateResource")) {
 							if (ImGui::MenuItem("Material##CreateMaterial")) {
 								auto mat{ std::make_shared<leopph::Material>() };
 
@@ -677,6 +666,24 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 							}
 							ImGui::EndMenu();
 						}
+
+						if (ImGui::MenuItem("Import Resource")) {
+							if (nfdchar_t* selectedPath{ nullptr }; NFD_OpenDialog(nullptr, nullptr, &selectedPath) == NFD_OKAY) {
+								auto const LoadAndAddAssetToProject = [selectedPath, &resources] {
+									std::filesystem::path resPath{ selectedPath };
+									std::free(selectedPath);
+
+									if (auto const res{ ImportResource(resPath) }; res) {
+										resources[std::move(resPath)] = std::move(res);
+									}
+								};
+
+								std::thread loaderThread{ LoadAndBlockEditor, std::ref(io), LoadAndAddAssetToProject };
+								loaderThread.detach();
+							}
+							ImGui::CloseCurrentPopup();
+						}
+
 						ImGui::EndPopup();
 					}
 

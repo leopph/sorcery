@@ -45,8 +45,16 @@ namespace leopph {
 		std::vector<MaterialImportData> materials;
 	};
 
+	struct MeshData {
+		std::vector<Vector3> positions;
+		std::vector<Vector3> normals;
+		std::vector<Vector2> uvs;
+		std::vector<u32> indices;
+	};
+
 
 	[[nodiscard]] auto CalculateBounds(std::span<Vertex const> vertices) noexcept -> AABB;
 
 	[[nodiscard]] auto ImportModelAsset(std::filesystem::path const& srcFile) -> ModelImportData;
+	LEOPPHAPI [[nodiscard]] auto ImportMeshResourceData(std::filesystem::path const& srcPath) -> MeshData;
 }

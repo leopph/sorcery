@@ -5,6 +5,7 @@
 #include "BinarySerializer.hpp"
 
 #include <utility>
+#include <format>
 
 namespace leopph {
 	auto Mesh::UploadToGPU() -> void {
@@ -89,6 +90,60 @@ namespace leopph {
 		UploadToGPU();
 	}
 
+	auto Mesh::GetPositions() const noexcept -> std::span<Vector3 const> {
+		return mData.positions;
+	}
+
+	auto Mesh::SetPositions(std::vector<Vector3> positions) noexcept -> void {
+		mTempData.positions = std::move(positions);
+	}
+
+	auto Mesh::GetNormals() const noexcept -> std::span<Vector3 const> {
+		return mData.normals;
+	}
+
+	auto Mesh::SetNormals(std::vector<Vector3> normals) noexcept -> void {
+		mTempData.normals = std::move(normals);
+	}
+
+	auto Mesh::GetUVs() const noexcept -> std::span<Vector2 const> {
+		return mData.uvs;
+	}
+
+	auto Mesh::SetUVs(std::vector<Vector2> uvs) noexcept -> void {
+		mTempData.uvs = std::move(uvs);
+	}
+
+	auto Mesh::GetIndices() const noexcept -> std::span<u32 const> {
+		return mData.indices;
+	}
+
+	auto Mesh::SetIndices(std::vector<u32> indices) noexcept -> void {
+		mTempData.indices = std::move(indices);
+	}
+
+	auto Mesh::ValidateAndUpdate() -> void {
+		auto const errMsg{ std::format("Failed to validate mesh {} (\"{}\").", GetGuid().ToString(), GetName()) };
+
+		if (mTempData.positions.size() != mTempData.normals.size() ||
+			mTempData.normals.size() != mTempData.uvs.size() ||
+			mTempData.positions.empty() || mTempData.indices.empty()) {
+			throw std::runtime_error{ errMsg };
+		}
+
+		for (auto const ind : mTempData.indices) {
+			if (ind >= mTempData.positions.size()) {
+				throw std::runtime_error{ errMsg };
+			}
+		}
+
+		mData.positions = std::move(mTempData.positions);
+		mData.normals = std::move(mTempData.normals);
+		mData.uvs = std::move(mTempData.uvs);
+		mData.indices = std::move(mTempData.indices);
+
+		UploadToGPU();
+	}
 
 	auto Mesh::GetSerializationType() const -> Type {
 		return Type::Mesh;
