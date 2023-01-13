@@ -106,9 +106,6 @@ namespace leopph {
 	}
 
 	auto Material::DeserializeBinary(std::span<u8 const> bytes) -> Object::BinaryDeserializationResult {
-		auto ret{ Object::DeserializeBinary(bytes) };
-		bytes = bytes.subspan(ret.numBytesConsumed);
-
 		auto constexpr serializedSize{ sizeof(Vector3) + 3 * sizeof(f32) };
 
 		if (bytes.size() < serializedSize) {
@@ -127,8 +124,7 @@ namespace leopph {
 		mBufData.roughness = std::clamp(mBufData.roughness, 0.f, 1.f);
 		mBufData.ao = std::clamp(mBufData.ao, 0.f, 1.f);
 
-		ret.numBytesConsumed += serializedSize;
-		return ret;
+		return { serializedSize };
 	}
 
 	auto Material::OnGui() -> void {
