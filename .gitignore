@@ -401,5 +401,5 @@ FodyWeavers.xsd
 bin
 Engine/vendor
 Engine/deps/vendor
-Engine/projects/RuntimeNative/src/shaders/cinclude
+Engine/projects/RuntimeNative/src/shaders/generated
 *vcpkg_installed
