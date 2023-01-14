@@ -3,6 +3,7 @@
 #include "Systems.hpp"
 #include "Util.hpp"
 #include "BinarySerializer.hpp"
+#include "Compress.hpp"
 
 #include <utility>
 #include <format>
@@ -151,30 +152,35 @@ namespace leopph {
 
 
 	auto Mesh::SerializeBinary(std::vector<u8>& out) const -> void {
-		Object::SerializeBinary(out);
 		BinarySerializer<u64>::Serialize(mData.positions.size(), out, std::endian::native);
 		BinarySerializer<u64>::Serialize(mData.indices.size(), out, std::endian::native);
 
+		static std::vector<u8> toCompress;
+
 		for (auto const& pos : mData.positions) {
-			BinarySerializer<Vector3>::Serialize(pos, out, std::endian::native);
+			BinarySerializer<Vector3>::Serialize(pos, toCompress, std::endian::native);
 		}
 
 		for (auto const& norm : mData.normals) {
-			BinarySerializer<Vector3>::Serialize(norm, out, std::endian::native);
+			BinarySerializer<Vector3>::Serialize(norm, toCompress, std::endian::native);
 		}
 
 		for (auto const& uv : mData.uvs) {
-			BinarySerializer<Vector2>::Serialize(uv, out, std::endian::native);
+			BinarySerializer<Vector2>::Serialize(uv, toCompress, std::endian::native);
 		}
 
 		for (auto const ind : mData.indices) {
-			BinarySerializer<u32>::Serialize(ind, out, std::endian::native);
+			BinarySerializer<u32>::Serialize(ind, toCompress, std::endian::native);
 		}
+
+		if (Compress(toCompress, out) != CompressionError::None) {
+			throw std::runtime_error{ "Failed to compress mesh data while serializing." };
+		}
+
+		toCompress.clear();
 	}
 
 	auto Mesh::DeserializeBinary(std::span<u8 const> const bytes) -> BinaryDeserializationResult {
-		auto ret{ Object::DeserializeBinary(bytes) };
-
 		if (bytes.size() < 16) {
 			throw std::runtime_error{ "Failed to deserialize Mesh, because span does not contain enough bytes to read size information." };
 		}
@@ -182,40 +188,49 @@ namespace leopph {
 		auto const numVerts{ BinarySerializer<u64>::Deserialize(bytes.first<8>(), std::endian::native) };
 		auto const numInds{ BinarySerializer<u64>::Deserialize(bytes.subspan<8, 8>(), std::endian::native) };
 
-		auto const numBytesConsumed{ 16 + numVerts * (2 * sizeof(Vector3) + sizeof(Vector2)) + numInds * sizeof(u32) };
+		auto const numDataBytes{ numVerts * (2 * sizeof(Vector3) + sizeof(Vector2)) + numInds * sizeof(u32) };
 
-		if (bytes.size() < numBytesConsumed) {
-			throw std::runtime_error{ "Failed to deserialize Mesh, because span does not contain enough bytes to read data." };
+		static std::vector<u8> uncompressedBytes;
+
+		if (Uncompress(bytes, numDataBytes, uncompressedBytes) != CompressionError::None) {
+			throw std::runtime_error{ "Failed to decompress mesh while deserializing." };
 		}
+
+		if (uncompressedBytes.size() < numDataBytes) {
+			throw std::runtime_error{ "Failed to deserialize Mesh, because the uncompressed data does not contain enough bytes." };
+		}
+
+		std::span const dataBytes{ uncompressedBytes };
 
 		mData.positions.clear();
 		mData.positions.reserve(numVerts);
 		for (std::size_t i{ 0 }; i < numVerts; i++) {
-			mData.positions.emplace_back(BinarySerializer<Vector3>::Deserialize(bytes.subspan(16 + i * sizeof(Vector3)).first<sizeof(Vector3)>(), std::endian::native));
+			mData.positions.emplace_back(BinarySerializer<Vector3>::Deserialize(dataBytes.subspan(16 + i * sizeof(Vector3)).first<sizeof(Vector3)>(), std::endian::native));
 		}
 
 		mData.normals.clear();
 		mData.normals.reserve(numVerts);
 		for (std::size_t i{ 0 }; i < numVerts; i++) {
-			mData.normals.emplace_back(BinarySerializer<Vector3>::Deserialize(bytes.subspan(16 + numVerts * sizeof(Vector3) + i * sizeof(Vector3)).first<sizeof(Vector3)>(), std::endian::native));
+			mData.normals.emplace_back(BinarySerializer<Vector3>::Deserialize(dataBytes.subspan(16 + numVerts * sizeof(Vector3) + i * sizeof(Vector3)).first<sizeof(Vector3)>(), std::endian::native));
 		}
 
 		mData.uvs.clear();
 		mData.uvs.reserve(numVerts);
 		for (std::size_t i{ 0 }; i < numVerts; i++) {
-			mData.uvs.emplace_back(BinarySerializer<Vector2>::Deserialize(bytes.subspan(16 + numVerts * 2 * sizeof(Vector3) + i * sizeof(Vector2)).first<sizeof(Vector2)>(), std::endian::native));
+			mData.uvs.emplace_back(BinarySerializer<Vector2>::Deserialize(dataBytes.subspan(16 + numVerts * 2 * sizeof(Vector3) + i * sizeof(Vector2)).first<sizeof(Vector2)>(), std::endian::native));
 		}
 
 		mData.indices.clear();
 		mData.indices.reserve(numVerts);
 		for (std::size_t i{ 0 }; i < numInds; i++) {
-			mData.indices.emplace_back(BinarySerializer<u32>::Deserialize(bytes.subspan(16 + numVerts * (2 * sizeof(Vector3) + sizeof(Vector2)) + i * sizeof(u32)).first<sizeof(u32)>(), std::endian::native));
+			mData.indices.emplace_back(BinarySerializer<u32>::Deserialize(dataBytes.subspan(16 + numVerts * (2 * sizeof(Vector3) + sizeof(Vector2)) + i * sizeof(u32)).first<sizeof(u32)>(), std::endian::native));
 		}
 
-		UploadToGPU();
+		uncompressedBytes.clear();
 
-		ret.numBytesConsumed += numBytesConsumed;
-		return ret;
+		ValidateAndUpdate();
+
+		return { 16 + numDataBytes };
 	}
 
 	auto Mesh::GetPositionBuffer() const noexcept -> Microsoft::WRL::ComPtr<ID3D11Buffer> {

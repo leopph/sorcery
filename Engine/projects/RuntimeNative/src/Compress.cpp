@@ -63,7 +63,7 @@ namespace leopph {
 	}
 
 
-	auto Uncompress(std::span<u8> in, u64 const uncompressedSize, std::vector<u8>& out) -> CompressionError {
+	auto Uncompress(std::span<u8 const> in, u64 const uncompressedSize, std::vector<u8>& out) -> CompressionError {
 		// Make sure the vector has enough space
 		out.resize(out.size() + uncompressedSize);
 
@@ -72,7 +72,7 @@ namespace leopph {
 		stream.zfree = Z_NULL;
 		stream.opaque = Z_NULL;
 		stream.avail_in = static_cast<uInt>(in.size_bytes());
-		stream.next_in = in.data();
+		stream.next_in = const_cast<u8*>(in.data());
 		stream.avail_out = static_cast<uInt>(uncompressedSize);
 		stream.next_out = &out[out.size() - uncompressedSize];
 

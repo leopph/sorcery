@@ -60,5 +60,7 @@ namespace leopph {
 		LEOPPHAPI [[nodiscard]] auto GetNormalBuffer() const noexcept -> Microsoft::WRL::ComPtr<ID3D11Buffer>;
 		LEOPPHAPI [[nodiscard]] auto GetUVBuffer() const noexcept -> Microsoft::WRL::ComPtr<ID3D11Buffer>;
 		LEOPPHAPI [[nodiscard]] auto GetIndexBuffer() const noexcept -> Microsoft::WRL::ComPtr<ID3D11Buffer>;
+
+		LEOPPHAPI Type constexpr static SerializationType{ Type::Mesh };
 	};
 }

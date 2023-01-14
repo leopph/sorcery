@@ -42,6 +42,20 @@
 extern auto ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) -> LRESULT;
 
 
+class ResourceStorage {
+	std::unordered_map<std::filesystem::path, std::shared_ptr<leopph::Resource>> mData;
+
+public:
+	auto&& operator[](std::filesystem::path const& path) { return mData[absolute(path)]; }
+	auto find(std::filesystem::path const& path) const { return mData.find(path); }
+
+	auto begin() const noexcept { return std::begin(mData); }
+	auto end() const noexcept { return std::end(mData); }
+	auto cbegin() const noexcept { return std::cbegin(mData); }
+	auto cend() const noexcept { return std::cend(mData); }
+};
+
+
 namespace {
 	std::string_view constexpr RESOURCE_FILE_EXT{ ".leopphres" };
 
@@ -128,7 +142,7 @@ namespace {
 		throw std::runtime_error{ "Failed create resource header bytes: the object is not a resource type." };
 	}
 
-	auto LoadResourcesFromProjectDir(leopph::ObjectFactory const& objectFactory, std::unordered_map<std::filesystem::path, std::shared_ptr<leopph::Resource>>& out) -> void {
+	auto LoadResourcesFromProjectDir(leopph::ObjectFactory const& objectFactory, ResourceStorage& out) -> void {
 		struct ResourceAndBodyBytes {
 			std::shared_ptr<leopph::Resource> resource{};
 			std::vector<leopph::u8> bodyBytes{};
@@ -171,6 +185,35 @@ namespace {
 		mesh->ValidateAndUpdate();
 		return mesh;
 	}
+
+	auto IndexFileNameIfNeeded(std::filesystem::path const& filePathAbsolute) -> std::filesystem::path {
+		std::string const originalStem{ filePathAbsolute.stem().string() };
+		std::filesystem::path const ext{ filePathAbsolute.extension() };
+		std::filesystem::path const parentDir{ filePathAbsolute.parent_path() };
+		
+		std::string currentStem{ originalStem };
+		std::size_t fileNameIndex{ 1 };
+
+		while (true) {
+			bool isUsed{ false };
+			for (auto const& entry : std::filesystem::directory_iterator{ parentDir }) {
+				if (entry.path().stem() == currentStem) {
+					currentStem = originalStem;
+					currentStem += " ";
+					currentStem += std::to_string(fileNameIndex);
+					++fileNameIndex;
+					isUsed = true;
+					break;
+				}
+			}
+
+			if (!isUsed) {
+				break;
+			}
+		}
+
+		return (parentDir / currentStem).replace_extension(ext);
+	}
 }
 
 
@@ -184,6 +227,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 		objectFactory.Register<leopph::CubeModelComponent>();
 		objectFactory.Register<leopph::DirectionalLightComponent>();
 		objectFactory.Register<leopph::Material>();
+		objectFactory.Register<leopph::Mesh>();
 
 		leopph::gWindow.StartUp();
 		leopph::gRenderer.StartUp();
@@ -215,7 +259,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 		bool runGame{ false };
 		bool showDemoWindow{ false };
 		
-		std::unordered_map<std::filesystem::path, std::shared_ptr<leopph::Resource>> resources;
+		ResourceStorage resources;
 
 		leopph::init_time();
 
@@ -625,61 +669,49 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 					if (ImGui::IsWindowHovered(ImGuiHoveredFlags_RootWindow) && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
 						ImGui::OpenPopup("ResourcesContextMenu");
 					}
+
 					if (ImGui::BeginPopup("ResourcesContextMenu")) {
+						static std::vector<leopph::u8> outBytes;
+
 						if (ImGui::BeginMenu("Create##CreateResource")) {
 							if (ImGui::MenuItem("Material##CreateMaterial")) {
 								auto mat{ std::make_shared<leopph::Material>() };
-
-								std::string_view constexpr fileNameBase{ "New Material" };
-								std::string fileName{ fileNameBase };
-								std::size_t fileNameIndex{ 1 };
-
-								while (true) {
-									bool isUsed{ false };
-									for (auto const& entry : std::filesystem::directory_iterator{ *gProjDir / gRelativeResDir }) {
-										if (entry.path().stem() == fileName) {
-											fileName = fileNameBase;
-											fileName += " ";
-											fileName += std::to_string(fileNameIndex);
-											++fileNameIndex;
-											isUsed = true;
-											break;
-										}
-									}
-
-									if (!isUsed) {
-										break;
-									}
-								}
-
-								mat->SetName(fileName);
+								auto const outPath{ IndexFileNameIfNeeded(*gProjDir / gRelativeResDir / "New Material" += RESOURCE_FILE_EXT) };
+								mat->SetName(outPath.stem().string());
 								gSelected = mat.get();
 
-								static std::vector<leopph::u8> bytes;
-								SerializeResource(*mat, bytes);
+								SerializeResource(*mat, outBytes);
+								std::ofstream out{ outPath, std::ios::binary };
+								std::ranges::copy(std::as_const(outBytes), std::ostream_iterator<leopph::u8>{ out });
+								outBytes.clear();
 
-								auto const assetPath{ (*gProjDir / gRelativeResDir / fileName).replace_extension(RESOURCE_FILE_EXT) };
-								std::ofstream out{ assetPath, std::ios::binary };
-								std::ranges::copy(std::as_const(bytes), std::ostream_iterator<leopph::u8>{ out });
-								bytes.clear();
-
-								resources[assetPath] = std::move(mat);
+								resources[outPath] = std::move(mat);
 							}
 							ImGui::EndMenu();
 						}
 
 						if (ImGui::MenuItem("Import Resource")) {
 							if (nfdchar_t* selectedPath{ nullptr }; NFD_OpenDialog(nullptr, nullptr, &selectedPath) == NFD_OKAY) {
-								auto const LoadAndAddAssetToProject = [selectedPath, &resources] {
-									std::filesystem::path resPath{ selectedPath };
+								auto const importAsset = [selectedPath, &resources] {
+									std::filesystem::path srcPath{ selectedPath };
+									srcPath = absolute(srcPath);
 									std::free(selectedPath);
 
-									if (auto const res{ ImportResource(resPath) }; res) {
-										resources[std::move(resPath)] = std::move(res);
+									if (auto const res{ ImportResource(srcPath) }; res) {
+										auto const outPath{ IndexFileNameIfNeeded(*gProjDir / gRelativeResDir / srcPath.stem() += RESOURCE_FILE_EXT) };
+										res->SetName(outPath.stem().string());
+										gSelected = res.get();
+
+										SerializeResource(*res, outBytes);
+										std::ofstream out{ outPath, std::ios::binary };
+										std::ranges::copy(std::as_const(outBytes), std::ostream_iterator<leopph::u8>{ out });
+										outBytes.clear();
+
+										resources[std::move(outPath)] = std::move(res);
 									}
 								};
 
-								std::thread loaderThread{ LoadAndBlockEditor, std::ref(io), LoadAndAddAssetToProject };
+								std::thread loaderThread{ LoadAndBlockEditor, std::ref(io), importAsset };
 								loaderThread.detach();
 							}
 							ImGui::CloseCurrentPopup();
