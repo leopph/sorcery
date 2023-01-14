@@ -7,10 +7,11 @@
 #include "Systems.hpp"
 
 namespace leopph {
-	Object::Type const CubeModelComponent::SerializationType{Object::Type::CubeModel};
+	Object::Type const CubeModelComponent::SerializationType{ Object::Type::CubeModel };
 
 	CubeModelComponent::CubeModelComponent() :
-		mMat{ gRenderer.GetDefaultMaterial() } {
+		mMat{ gRenderer.GetDefaultMaterial() },
+		mMesh{ gRenderer.GetCubeMesh() } {
 		gRenderer.RegisterCubeModel(this);
 	}
 

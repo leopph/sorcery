@@ -57,13 +57,11 @@ namespace leopph {
 			Microsoft::WRL::ComPtr<ID3D11InputLayout> meshIA;
 			Microsoft::WRL::ComPtr<ID3D11InputLayout> clearColorIA;
 
-			Microsoft::WRL::ComPtr<ID3D11Buffer> cubeVB;
-			Microsoft::WRL::ComPtr<ID3D11Buffer> cubeIB;
 			Microsoft::WRL::ComPtr<ID3D11Buffer> quadVB;
 			Microsoft::WRL::ComPtr<ID3D11Buffer> quadIB;
 
 			std::shared_ptr<Material> defaultMaterial;
-			std::shared_ptr<Mesh> defaultMesh;
+			std::shared_ptr<Mesh> cubeMesh;
 		};
 
 		auto RecreateGameRenderTextureAndViews(u32 width, u32 height) const -> void;
@@ -136,5 +134,6 @@ namespace leopph {
 		LEOPPHAPI auto UnregisterPointLight(PointLightComponent const* PointLightComponent) -> void;
 
 		[[nodiscard]] LEOPPHAPI auto GetDefaultMaterial() const noexcept -> std::shared_ptr<Material>;
+		[[nodiscard]] LEOPPHAPI auto GetCubeMesh() const noexcept -> std::shared_ptr<Mesh>;
 	};
 }

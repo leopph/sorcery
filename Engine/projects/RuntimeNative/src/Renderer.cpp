@@ -77,51 +77,81 @@ namespace leopph {
 		UINT constexpr QUAD_VERT_BUF_STRIDE{ 8 };
 		UINT constexpr QUAD_VERT_BUF_OFFSET{ 0 };
 
-		FLOAT constexpr CUBE_VERTICES[]{
-			0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 0.0f,
-			0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f,
-			0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
-			-0.5f, 0.5f, 0.5f, -1.0f, 0.0f, 0.0f,
-			-0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f,
-			-0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
-			-0.5f, 0.5f, -0.5f, -1.0f, 0.0f, 0.0f,
-			-0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
-			-0.5f, 0.5f, -0.5f, 0.0f, 0.0f, -1.0f,
-			0.5f, 0.5f, -0.5f, 1.0f, 0.0f, 0.0f,
-			0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
-			0.5f, 0.5f, -0.5f, 0.0f, 0.0f, -1.0f,
-			0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 0.0f,
-			0.5f, -0.5f, 0.5f, 0.0f, -1.0f, 0.0f,
-			0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
-			-0.5f, -0.5f, 0.5f, -1.0f, 0.0f, 0.0f,
-			-0.5f, -0.5f, 0.5f, 0.0f, -1.0f, 0.0f,
-			-0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
-			-0.5f, -0.5f, -0.5f, -1.0f, 0.0f, 0.0f,
-			-0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f,
-			-0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f,
-			0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f,
-			0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f,
-			0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f,
+		std::vector const CUBE_POSITIONS{
+			Vector3{ 0.5f, 0.5f, 0.5f },
+			Vector3{ 0.5f, 0.5f, 0.5f },
+			Vector3{ 0.5f, 0.5f, 0.5f },
+			Vector3{ -0.5f, 0.5f, 0.5f },
+			Vector3{ -0.5f, 0.5f, 0.5f },
+			Vector3{ -0.5f, 0.5f, 0.5f },
+			Vector3{ -0.5f, 0.5f, -0.5f },
+			Vector3{ -0.5f, 0.5f, -0.5f },
+			Vector3{ -0.5f, 0.5f, -0.5f },
+			Vector3{ 0.5f, 0.5f, -0.5f },
+			Vector3{ 0.5f, 0.5f, -0.5f },
+			Vector3{ 0.5f, 0.5f, -0.5f },
+			Vector3{ 0.5f, -0.5f, 0.5f },
+			Vector3{ 0.5f, -0.5f, 0.5f },
+			Vector3{ 0.5f, -0.5f, 0.5f },
+			Vector3{ -0.5f, -0.5f, 0.5f },
+			Vector3{ -0.5f, -0.5f, 0.5f },
+			Vector3{ -0.5f, -0.5f, 0.5f },
+			Vector3{ -0.5f, -0.5f, -0.5f },
+			Vector3{ -0.5f, -0.5f, -0.5f },
+			Vector3{ -0.5f, -0.5f, -0.5f },
+			Vector3{ 0.5f, -0.5f, -0.5f },
+			Vector3{ 0.5f, -0.5f, -0.5f },
+			Vector3{ 0.5f, -0.5f, -0.5f },
 		};
-		UINT constexpr CUBE_INDICES[]{
+
+		std::vector const CUBE_NORMALS{
+			Vector3{ 1.0f, 0.0f, 0.0f },
+			Vector3{ 0.0f, 1.0f, 0.0f },
+			Vector3{ 0.0f, 0.0f, 1.0f },
+			Vector3{ -1.0f, 0.0f, 0.0f },
+			Vector3{ 0.0f, 1.0f, 0.0f },
+			Vector3{ 0.0f, 0.0f, 1.0f },
+			Vector3{ -1.0f, 0.0f, 0.0f },
+			Vector3{ 0.0f, 1.0f, 0.0f },
+			Vector3{ 0.0f, 0.0f, -1.0f },
+			Vector3{ 1.0f, 0.0f, 0.0f },
+			Vector3{ 0.0f, 1.0f, 0.0f },
+			Vector3{ 0.0f, 0.0f, -1.0f },
+			Vector3{ 1.0f, 0.0f, 0.0f },
+			Vector3{ 0.0f, -1.0f, 0.0f },
+			Vector3{ 0.0f, 0.0f, 1.0f },
+			Vector3{ -1.0f, 0.0f, 0.0f },
+			Vector3{ 0.0f, -1.0f, 0.0f },
+			Vector3{ 0.0f, 0.0f, 1.0f },
+			Vector3{ -1.0f, 0.0f, 0.0f },
+			Vector3{ 0.0f, -1.0f, 0.0f },
+			Vector3{ 0.0f, 0.0f, -1.0f },
+			Vector3{ 1.0f, 0.0f, 0.0f },
+			Vector3{ 0.0f, -1.0f, 0.0f },
+			Vector3{ 0.0f, 0.0f, -1.0f },
+		};
+
+		std::vector const CUBE_UVS{ CUBE_POSITIONS.size(), Vector2{ 0, 0 } };
+
+		std::vector<UINT> const CUBE_INDICES{
 			// Top face
-			1, 4, 7,
-			7, 10, 1,
+			7, 4, 1,
+			1, 10, 7,
 			// Bottom face
-			22, 19, 16,
-			16, 13, 22,
+			16, 19, 22,
+			22, 13, 16,
 			// Front face
-			8, 20, 23,
-			23, 11, 8,
+			23, 20, 8,
+			8, 11, 23,
 			// Back face
-			2, 14, 17,
-			17, 5, 2,
+			17, 14, 2,
+			2, 5, 17,
 			// Right face
-			0, 9, 21,
-			21, 12, 0,
+			21, 9, 0,
+			0, 12, 21,
 			// Left face
-			6, 3, 15,
-			15, 18, 6
+			15, 3, 6,
+			6, 18, 15
 		};
 	}
 
@@ -395,44 +425,6 @@ namespace leopph {
 	}
 
 	auto Renderer::CreateVertexAndIndexBuffers() const -> void {
-		D3D11_BUFFER_DESC constexpr cubeVertBufDesc{
-			.ByteWidth = sizeof CUBE_VERTICES,
-			.Usage = D3D11_USAGE_IMMUTABLE,
-			.BindFlags = D3D11_BIND_VERTEX_BUFFER,
-			.CPUAccessFlags = 0,
-			.MiscFlags = 0,
-			.StructureByteStride = 0
-		};
-
-		D3D11_SUBRESOURCE_DATA constexpr cubeVertBufInitData{
-			.pSysMem = CUBE_VERTICES,
-			.SysMemPitch = 0,
-			.SysMemSlicePitch = 0
-		};
-
-		if (FAILED(mResources->device->CreateBuffer(&cubeVertBufDesc, &cubeVertBufInitData, mResources->cubeVB.GetAddressOf()))) {
-			throw std::runtime_error{ "Failed to create cube vertex buffer." };
-		}
-
-		D3D11_BUFFER_DESC constexpr cubeIndBufDesc{
-			.ByteWidth = sizeof CUBE_INDICES,
-			.Usage = D3D11_USAGE_IMMUTABLE,
-			.BindFlags = D3D11_BIND_INDEX_BUFFER,
-			.CPUAccessFlags = 0,
-			.MiscFlags = 0,
-			.StructureByteStride = 0
-		};
-
-		D3D11_SUBRESOURCE_DATA constexpr cubeIndBufInitData{
-			.pSysMem = CUBE_INDICES,
-			.SysMemPitch = 0,
-			.SysMemSlicePitch = 0
-		};
-
-		if (FAILED(mResources->device->CreateBuffer(&cubeIndBufDesc, &cubeIndBufInitData, mResources->cubeIB.GetAddressOf()))) {
-			throw std::runtime_error{ "Failed to create cube index buffer." };
-		}
-
 		D3D11_BUFFER_DESC constexpr quadVertBufDesc{
 			.ByteWidth = sizeof QUAD_VERTICES,
 			.Usage = D3D11_USAGE_IMMUTABLE,
@@ -606,6 +598,13 @@ namespace leopph {
 		mResources->context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		mResources->defaultMaterial = std::make_shared<Material>();
 		mResources->defaultMaterial->SetName("Default Material");
+		mResources->cubeMesh = std::make_shared<Mesh>();
+		mResources->cubeMesh->SetName("Cube");
+		mResources->cubeMesh->SetPositions(CUBE_POSITIONS);
+		mResources->cubeMesh->SetNormals(CUBE_NORMALS);
+		mResources->cubeMesh->SetUVs(CUBE_UVS);
+		mResources->cubeMesh->SetIndices(CUBE_INDICES);
+		mResources->cubeMesh->ValidateAndUpdate();
 	}
 
 
@@ -790,10 +789,6 @@ namespace leopph {
 			auto const mesh{ cubeModel->GetMesh() };
 			auto const mat{ cubeModel->GetMaterial() };
 
-			if (!mesh || !mat) {
-				continue;
-			}
-
 			DirectX::XMFLOAT4X4 const modelMat{ cubeModel->GetEntity()->GetTransform().GetModelMatrix().get_data() };
 			DirectX::XMFLOAT3X3 const normalMat{ cubeModel->GetEntity()->GetTransform().GetNormalMatrix().get_data() };
 
@@ -811,11 +806,11 @@ namespace leopph {
 			mResources->context->IASetIndexBuffer(mesh->GetIndexBuffer().Get(), DXGI_FORMAT_R32_UINT, 0);
 
 			mResources->context->VSSetShader(mResources->meshVS.Get(), nullptr, 0);
-			
+
 			mResources->context->VSSetConstantBuffers(1, 1, mResources->cameraCBuf.GetAddressOf());
 			mResources->context->VSSetConstantBuffers(3, 1, mResources->modelCBuf.GetAddressOf());
 
-			mResources->context->PSSetShader(mResources->meshPbrPS.Get(), nullptr, 0);
+			mResources->context->PSSetShader(mResources->meshBlinnPhongPS.Get(), nullptr, 0);
 
 			ID3D11Buffer* const psConstantBuffers[]{ mResources->lightCBuf.Get(), mResources->cameraCBuf.Get(), mCubeModels[0]->GetMaterial()->GetBuffer() };
 			mResources->context->PSSetConstantBuffers(0, ARRAYSIZE(psConstantBuffers), psConstantBuffers);
@@ -936,5 +931,9 @@ namespace leopph {
 
 	auto Renderer::GetDefaultMaterial() const noexcept -> std::shared_ptr<Material> {
 		return mResources->defaultMaterial;
+	}
+
+	auto Renderer::GetCubeMesh() const noexcept -> std::shared_ptr<Mesh> {
+		return mResources->cubeMesh;
 	}
 }
