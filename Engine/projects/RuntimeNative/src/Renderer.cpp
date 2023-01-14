@@ -147,7 +147,10 @@ namespace leopph {
 		};
 
 		auto hresult = mResources->device->CreateTexture2D(&texDesc, nullptr, mResources->gameRenderTexture.ReleaseAndGetAddressOf());
-		assert(SUCCEEDED(hresult));
+
+		if (FAILED(hresult)) {
+			throw std::runtime_error{ "Failed to recreate game view render texture." };
+		}
 
 		D3D11_RENDER_TARGET_VIEW_DESC const rtvDesc
 		{
@@ -160,7 +163,10 @@ namespace leopph {
 		};
 
 		hresult = mResources->device->CreateRenderTargetView(mResources->gameRenderTexture.Get(), &rtvDesc, mResources->gameRenderTextureRtv.ReleaseAndGetAddressOf());
-		assert(SUCCEEDED(hresult));
+		
+		if (FAILED(hresult)) {
+			throw std::runtime_error{ "Failed to recreate game view render target view." };
+		}
 
 		D3D11_SHADER_RESOURCE_VIEW_DESC const srvDesc
 		{
@@ -174,12 +180,15 @@ namespace leopph {
 		};
 
 		hresult = mResources->device->CreateShaderResourceView(mResources->gameRenderTexture.Get(), &srvDesc, mResources->gameRenderTextureSrv.ReleaseAndGetAddressOf());
-		assert(SUCCEEDED(hresult));
+		
+		if (FAILED(hresult)) {
+			throw std::runtime_error{ "Failed to recreate game view shader resource view." };
+		}
 	}
 
 
 	auto Renderer::RecreateSceneRenderTextureAndViews(u32 const width, u32 const height) const -> void {
-		D3D11_TEXTURE2D_DESC const texDesc
+		D3D11_TEXTURE2D_DESC const colTexDesc
 		{
 			.Width = width,
 			.Height = height,
@@ -197,12 +206,15 @@ namespace leopph {
 			.MiscFlags = 0
 		};
 
-		auto hresult = mResources->device->CreateTexture2D(&texDesc, nullptr, mResources->sceneRenderTexture.ReleaseAndGetAddressOf());
-		assert(SUCCEEDED(hresult));
+		auto hresult = mResources->device->CreateTexture2D(&colTexDesc, nullptr, mResources->sceneRenderTexture.ReleaseAndGetAddressOf());
+		
+		if (FAILED(hresult)) {
+			throw std::runtime_error{ "Failed to recreate scene view color texture." };
+		}
 
-		D3D11_RENDER_TARGET_VIEW_DESC const rtvDesc
+		D3D11_RENDER_TARGET_VIEW_DESC const colRtvDesc
 		{
-			.Format = texDesc.Format,
+			.Format = colTexDesc.Format,
 			.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D,
 			.Texture2D
 			{
@@ -210,12 +222,15 @@ namespace leopph {
 			}
 		};
 
-		hresult = mResources->device->CreateRenderTargetView(mResources->sceneRenderTexture.Get(), &rtvDesc, mResources->sceneRenderTextureRtv.ReleaseAndGetAddressOf());
-		assert(SUCCEEDED(hresult));
+		hresult = mResources->device->CreateRenderTargetView(mResources->sceneRenderTexture.Get(), &colRtvDesc, mResources->sceneRenderTextureRtv.ReleaseAndGetAddressOf());
+		
+		if (FAILED(hresult)) {
+			throw std::runtime_error{ "Failed to recreate scene view render texture rtv." };
+		}
 
-		D3D11_SHADER_RESOURCE_VIEW_DESC const srvDesc
+		D3D11_SHADER_RESOURCE_VIEW_DESC const colSrvDesc
 		{
-			.Format = texDesc.Format,
+			.Format = colTexDesc.Format,
 			.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D,
 			.Texture2D =
 			{
@@ -224,8 +239,39 @@ namespace leopph {
 			}
 		};
 
-		hresult = mResources->device->CreateShaderResourceView(mResources->sceneRenderTexture.Get(), &srvDesc, mResources->sceneRenderTextureSrv.ReleaseAndGetAddressOf());
-		assert(SUCCEEDED(hresult));
+		hresult = mResources->device->CreateShaderResourceView(mResources->sceneRenderTexture.Get(), &colSrvDesc, mResources->sceneRenderTextureSrv.ReleaseAndGetAddressOf());
+		
+		if (FAILED(hresult)) {
+			throw std::runtime_error{ "Failed to recreate scene view render texture srv." };
+		}
+
+		D3D11_TEXTURE2D_DESC const dsTexDesc{
+			.Width = width,
+			.Height = height,
+			.MipLevels = 1,
+			.ArraySize = 1,
+			.Format = DXGI_FORMAT_D24_UNORM_S8_UINT,
+			.SampleDesc = {.Count = 1, .Quality = 0 },
+			.Usage = D3D11_USAGE_DEFAULT,
+			.BindFlags = D3D11_BIND_DEPTH_STENCIL,
+			.CPUAccessFlags = 0,
+			.MiscFlags = 0
+		};
+		
+		if (FAILED(mResources->device->CreateTexture2D(&dsTexDesc, nullptr, mResources->sceneDSTex.ReleaseAndGetAddressOf()))) {
+			throw std::runtime_error{ "Failed to recreate scene view depth-stencil texture." };
+		}
+
+		D3D11_DEPTH_STENCIL_VIEW_DESC const dsDsvDesc{
+			.Format = dsTexDesc.Format,
+			.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D,
+			.Flags = 0,
+			.Texture2D = {.MipSlice = 0 }
+		};
+
+		if (FAILED(mResources->device->CreateDepthStencilView(mResources->sceneDSTex.Get(), &dsDsvDesc, mResources->sceneDSV.ReleaseAndGetAddressOf()))) {
+			throw std::runtime_error{ "Failed to recreate scene view depth-stencil texture dsv." };
+		}
 	}
 
 
@@ -794,6 +840,7 @@ namespace leopph {
 
 		FLOAT constexpr clearColor[]{ 0, 0, 0, 1 };
 		mResources->context->ClearRenderTargetView(mResources->sceneRenderTextureRtv.Get(), clearColor);
+		mResources->context->ClearDepthStencilView(mResources->sceneDSV.Get(), D3D11_CLEAR_DEPTH, 1, 0);
 
 		if (mCubeModels.empty()) {
 			return;
@@ -854,7 +901,7 @@ namespace leopph {
 			ID3D11Buffer* const psCBuffers[]{ mCubeModels[0]->GetMaterial()->GetBuffer(), mResources->cameraCBuf.Get(), mResources->lightBuffer.Get() };
 			mResources->context->PSSetConstantBuffers(0, ARRAYSIZE(psCBuffers), psCBuffers);
 			mResources->context->IASetInputLayout(mResources->cubeIa.Get());
-			mResources->context->OMSetRenderTargets(1, mResources->sceneRenderTextureRtv.GetAddressOf(), nullptr);
+			mResources->context->OMSetRenderTargets(1, mResources->sceneRenderTextureRtv.GetAddressOf(), mResources->sceneDSV.Get());
 			mResources->context->DrawIndexed(mesh->GetIndices().size(), 0, 0);
 		}
 	}

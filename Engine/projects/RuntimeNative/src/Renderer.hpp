@@ -39,6 +39,8 @@ namespace leopph {
 			Microsoft::WRL::ComPtr<ID3D11Texture2D> sceneRenderTexture;
 			Microsoft::WRL::ComPtr<ID3D11RenderTargetView> sceneRenderTextureRtv;
 			Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> sceneRenderTextureSrv;
+			Microsoft::WRL::ComPtr<ID3D11Texture2D> sceneDSTex;
+			Microsoft::WRL::ComPtr<ID3D11DepthStencilView> sceneDSV;
 
 			Microsoft::WRL::ComPtr<ID3D11VertexShader> clearColorVs;
 			Microsoft::WRL::ComPtr<ID3D11PixelShader> clearColorPs;
