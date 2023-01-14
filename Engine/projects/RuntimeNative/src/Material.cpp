@@ -28,7 +28,7 @@ namespace leopph {
 
 	Material::Material() {
 		D3D11_BUFFER_DESC constexpr bufferDesc{
-			.ByteWidth = sizeof(BufferData) + 16 - sizeof(BufferData) % 16,
+			.ByteWidth = clamp_cast<UINT>(RoundToNextMultiple(sizeof(BufferData), 16)),
 			.Usage = D3D11_USAGE_DYNAMIC,
 			.BindFlags = D3D11_BIND_CONSTANT_BUFFER,
 			.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,

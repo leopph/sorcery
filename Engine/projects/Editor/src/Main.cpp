@@ -593,7 +593,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 						.position = leopph::Vector3{},
 						.orientation = leopph::Quaternion{},
 						.nearClip = 0.03f,
-						.farClip = 300.f,
+						.farClip = 10000.f,
 						.fovVertRad = leopph::to_radians(60),
 					};
 

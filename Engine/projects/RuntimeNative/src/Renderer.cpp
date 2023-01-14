@@ -520,7 +520,7 @@ namespace leopph {
 
 		D3D11_BUFFER_DESC constexpr matrixCBufferDesc
 		{
-			.ByteWidth = sizeof(MatrixCBufData) + 16 - sizeof(MatrixCBufData) % 16,
+			.ByteWidth = clamp_cast<UINT>(RoundToNextMultiple(sizeof(MatrixCBufData), 16)),
 			.Usage = D3D11_USAGE_DYNAMIC,
 			.BindFlags = D3D11_BIND_CONSTANT_BUFFER,
 			.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
@@ -535,7 +535,7 @@ namespace leopph {
 		}
 
 		D3D11_BUFFER_DESC constexpr lightBufferDesc{
-			.ByteWidth = sizeof(LightBufferData) + 16 - sizeof(LightBufferData) % 16,
+			.ByteWidth = clamp_cast<UINT>(RoundToNextMultiple(sizeof(LightBufferData), 16)),
 			.Usage = D3D11_USAGE_DYNAMIC,
 			.BindFlags = D3D11_BIND_CONSTANT_BUFFER,
 			.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
@@ -548,29 +548,6 @@ namespace leopph {
 		if (FAILED(hresult)) {
 			throw std::runtime_error{ "Failed to create light constant buffer." };
 		}
-
-		D3D11_RASTERIZER_DESC constexpr rasterizerDesc
-		{
-			.FillMode = D3D11_FILL_SOLID,
-			.CullMode = D3D11_CULL_BACK,
-			.FrontCounterClockwise = TRUE,
-			.DepthBias = 0,
-			.DepthBiasClamp = 0,
-			.SlopeScaledDepthBias = 0,
-			.DepthClipEnable = TRUE,
-			.ScissorEnable = FALSE,
-			.MultisampleEnable = FALSE,
-			.AntialiasedLineEnable = FALSE
-		};
-
-		ComPtr<ID3D11RasterizerState> rasterizerState;
-		hresult = mResources->device->CreateRasterizerState(&rasterizerDesc, rasterizerState.GetAddressOf());
-
-		if (FAILED(hresult)) {
-			throw std::runtime_error{ "Failed to create rasterizer state." };
-		}
-
-		mResources->context->RSSetState(rasterizerState.Get());
 
 		mGameRes = gWindow.GetCurrentClientAreaSize();
 		mGameAspect = static_cast<f32>(mGameRes.width) / static_cast<f32>(mGameRes.height);
@@ -659,7 +636,7 @@ namespace leopph {
 		}
 
 		D3D11_BUFFER_DESC constexpr materialCBufDesc{
-			.ByteWidth = sizeof(MaterialData) + 16 - sizeof(MaterialData) % 16,
+			.ByteWidth = clamp_cast<UINT>(RoundToNextMultiple(sizeof(MaterialData), 16)),
 			.Usage = D3D11_USAGE_DYNAMIC,
 			.BindFlags = D3D11_BIND_CONSTANT_BUFFER,
 			.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
@@ -674,7 +651,7 @@ namespace leopph {
 		}
 
 		D3D11_BUFFER_DESC constexpr camCBufDesc{
-			.ByteWidth = sizeof(CameraBufferData) + 16 - sizeof(CameraBufferData) % 16,
+			.ByteWidth = clamp_cast<UINT>(RoundToNextMultiple(sizeof(CameraBufferData), 16)),
 			.Usage = D3D11_USAGE_DYNAMIC,
 			.BindFlags = D3D11_BIND_CONSTANT_BUFFER,
 			.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
@@ -891,7 +868,7 @@ namespace leopph {
 			mResources->context->Unmap(mResources->matrixCBuffer.Get(), 0);
 
 			ID3D11Buffer* vertexBuffers[]{ mesh->GetPositionBuffer().Get(), mesh->GetNormalBuffer().Get(), mesh->GetUVBuffer().Get() };
-			UINT constexpr strides[]{ 3 * sizeof(Vector3), 3 * sizeof(Vector3), 3 * sizeof(Vector2) };
+			UINT constexpr strides[]{ sizeof(Vector3), sizeof(Vector3), sizeof(Vector2) };
 			UINT constexpr offsets[]{ 0, 0, 0 };
 			mResources->context->IASetVertexBuffers(0, 3, vertexBuffers, strides, offsets);
 			mResources->context->IASetIndexBuffer(mesh->GetIndexBuffer().Get(), DXGI_FORMAT_R32_UINT, 0);
@@ -902,7 +879,7 @@ namespace leopph {
 			mResources->context->PSSetConstantBuffers(0, ARRAYSIZE(psCBuffers), psCBuffers);
 			mResources->context->IASetInputLayout(mResources->cubeIa.Get());
 			mResources->context->OMSetRenderTargets(1, mResources->sceneRenderTextureRtv.GetAddressOf(), mResources->sceneDSV.Get());
-			mResources->context->DrawIndexed(mesh->GetIndices().size(), 0, 0);
+			mResources->context->DrawIndexed(clamp_cast<UINT>(mesh->GetIndices().size()), 0, 0);
 		}
 	}
 
