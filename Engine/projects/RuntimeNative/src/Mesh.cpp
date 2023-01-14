@@ -152,25 +152,25 @@ namespace leopph {
 
 
 	auto Mesh::SerializeBinary(std::vector<u8>& out) const -> void {
-		BinarySerializer<u64>::Serialize(mData.positions.size(), out, std::endian::native);
-		BinarySerializer<u64>::Serialize(mData.indices.size(), out, std::endian::native);
+		BinarySerializer<u64>::Serialize(mData.positions.size(), out, std::endian::little);
+		BinarySerializer<u64>::Serialize(mData.indices.size(), out, std::endian::little);
 
 		static std::vector<u8> toCompress;
 
 		for (auto const& pos : mData.positions) {
-			BinarySerializer<Vector3>::Serialize(pos, toCompress, std::endian::native);
+			BinarySerializer<Vector3>::Serialize(pos, toCompress, std::endian::little);
 		}
 
 		for (auto const& norm : mData.normals) {
-			BinarySerializer<Vector3>::Serialize(norm, toCompress, std::endian::native);
+			BinarySerializer<Vector3>::Serialize(norm, toCompress, std::endian::little);
 		}
 
 		for (auto const& uv : mData.uvs) {
-			BinarySerializer<Vector2>::Serialize(uv, toCompress, std::endian::native);
+			BinarySerializer<Vector2>::Serialize(uv, toCompress, std::endian::little);
 		}
 
 		for (auto const ind : mData.indices) {
-			BinarySerializer<u32>::Serialize(ind, toCompress, std::endian::native);
+			BinarySerializer<u32>::Serialize(ind, toCompress, std::endian::little);
 		}
 
 		if (Compress(toCompress, out) != CompressionError::None) {
@@ -185,14 +185,14 @@ namespace leopph {
 			throw std::runtime_error{ "Failed to deserialize Mesh, because span does not contain enough bytes to read size information." };
 		}
 
-		auto const numVerts{ BinarySerializer<u64>::Deserialize(bytes.first<8>(), std::endian::native) };
-		auto const numInds{ BinarySerializer<u64>::Deserialize(bytes.subspan<8, 8>(), std::endian::native) };
+		auto const numVerts{ BinarySerializer<u64>::Deserialize(bytes.first<8>(), std::endian::little) };
+		auto const numInds{ BinarySerializer<u64>::Deserialize(bytes.subspan<8, 8>(), std::endian::little) };
 
 		auto const numDataBytes{ numVerts * (2 * sizeof(Vector3) + sizeof(Vector2)) + numInds * sizeof(u32) };
 
 		static std::vector<u8> uncompressedBytes;
 
-		if (auto const err{ Uncompress(bytes, numDataBytes, uncompressedBytes) }; err != CompressionError::None) {
+		if (auto const err{ Uncompress(bytes.subspan(2 * sizeof(u64)), numDataBytes, uncompressedBytes) }; err != CompressionError::None) {
 			if (err == CompressionError::Inconsistency) {
 				throw std::runtime_error{ std::format("An inconsistency error occured while decompressing serialized data for mesh {} (\"{}\").", GetGuid().ToString(), GetName()) };
 			}
@@ -206,28 +206,28 @@ namespace leopph {
 
 		std::span const dataBytes{ uncompressedBytes };
 
-		mData.positions.clear();
-		mData.positions.reserve(numVerts);
+		mTempData.positions.clear();
+		mTempData.positions.reserve(numVerts);
 		for (std::size_t i{ 0 }; i < numVerts; i++) {
-			mData.positions.emplace_back(BinarySerializer<Vector3>::Deserialize(dataBytes.subspan(16 + i * sizeof(Vector3)).first<sizeof(Vector3)>(), std::endian::native));
+			mTempData.positions.emplace_back(BinarySerializer<Vector3>::Deserialize(dataBytes.subspan(i * sizeof(Vector3)).first<sizeof(Vector3)>(), std::endian::little));
 		}
 
-		mData.normals.clear();
-		mData.normals.reserve(numVerts);
+		mTempData.normals.clear();
+		mTempData.normals.reserve(numVerts);
 		for (std::size_t i{ 0 }; i < numVerts; i++) {
-			mData.normals.emplace_back(BinarySerializer<Vector3>::Deserialize(dataBytes.subspan(16 + numVerts * sizeof(Vector3) + i * sizeof(Vector3)).first<sizeof(Vector3)>(), std::endian::native));
+			mTempData.normals.emplace_back(BinarySerializer<Vector3>::Deserialize(dataBytes.subspan(numVerts * sizeof(Vector3) + i * sizeof(Vector3)).first<sizeof(Vector3)>(), std::endian::little));
 		}
 
-		mData.uvs.clear();
-		mData.uvs.reserve(numVerts);
+		mTempData.uvs.clear();
+		mTempData.uvs.reserve(numVerts);
 		for (std::size_t i{ 0 }; i < numVerts; i++) {
-			mData.uvs.emplace_back(BinarySerializer<Vector2>::Deserialize(dataBytes.subspan(16 + numVerts * 2 * sizeof(Vector3) + i * sizeof(Vector2)).first<sizeof(Vector2)>(), std::endian::native));
+			mTempData.uvs.emplace_back(BinarySerializer<Vector2>::Deserialize(dataBytes.subspan(numVerts * 2 * sizeof(Vector3) + i * sizeof(Vector2)).first<sizeof(Vector2)>(), std::endian::little));
 		}
 
-		mData.indices.clear();
-		mData.indices.reserve(numVerts);
+		mTempData.indices.clear();
+		mTempData.indices.reserve(numVerts);
 		for (std::size_t i{ 0 }; i < numInds; i++) {
-			mData.indices.emplace_back(BinarySerializer<u32>::Deserialize(dataBytes.subspan(16 + numVerts * (2 * sizeof(Vector3) + sizeof(Vector2)) + i * sizeof(u32)).first<sizeof(u32)>(), std::endian::native));
+			mTempData.indices.emplace_back(BinarySerializer<u32>::Deserialize(dataBytes.subspan(numVerts * (2 * sizeof(Vector3) + sizeof(Vector2)) + i * sizeof(u32)).first<sizeof(u32)>(), std::endian::little));
 		}
 
 		uncompressedBytes.clear();

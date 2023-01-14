@@ -158,7 +158,7 @@ namespace {
 		throw std::runtime_error{ "Failed create resource header bytes: the object is not a resource type." };
 	}
 
-	auto LoadResourcesFromProjectDir(leopph::ObjectFactory const& objectFactory, ResourceStorage& out) -> void {
+	auto LoadResourcesFromProjectDir(leopph::ObjectFactory const& objectFactory, ResourceStorage& out) noexcept -> void {
 		struct ResourceAndBodyBytes {
 			std::shared_ptr<leopph::Resource> resource{};
 			std::vector<leopph::u8> bodyBytes{};
