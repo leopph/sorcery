@@ -83,4 +83,18 @@ namespace leopph {
 
 	template<class T>
 	concept Scalar = std::is_scalar_v<T>;
+
+	[[nodiscard]] constexpr auto RoundToNextMultiple(auto const what, auto const multipleOf) {
+		if (multipleOf == 0) {
+			return what;
+		}
+
+		auto const remainder{ what % multipleOf };
+
+		if (remainder == 0) {
+			return what;
+		}
+
+		return what + multipleOf - remainder;
+	}
 }
