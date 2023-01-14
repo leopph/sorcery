@@ -10,13 +10,6 @@
 
 namespace leopph {
 	auto Mesh::UploadToGPU() -> void {
-		if (mData.positions.size() != mData.normals.size() ||
-			mData.normals.size() != mData.uvs.size() ||
-			mData.positions.empty() ||
-			mData.indices.empty()) {
-			throw std::runtime_error{ "Inconsistency detected in mesh data while uploading Mesh to GPU." };
-		}
-
 		D3D11_BUFFER_DESC const posDesc{
 			.ByteWidth = clamp_cast<UINT>(mData.positions.size() * sizeof(Vector3)),
 			.Usage = D3D11_USAGE_IMMUTABLE,
@@ -30,7 +23,7 @@ namespace leopph {
 			.pSysMem = mData.positions.data()
 		};
 
-		if (FAILED(gRenderer.GetDevice()->CreateBuffer(&posDesc, &posBufData, mPosBuf.GetAddressOf()))) {
+		if (FAILED(gRenderer.GetDevice()->CreateBuffer(&posDesc, &posBufData, mPosBuf.ReleaseAndGetAddressOf()))) {
 			throw std::runtime_error{ "Failed to create mesh position buffer." };
 		}
 
@@ -47,7 +40,7 @@ namespace leopph {
 			.pSysMem = mData.normals.data()
 		};
 
-		if (FAILED(gRenderer.GetDevice()->CreateBuffer(&normDesc, &normBufData, mNormBuf.GetAddressOf()))) {
+		if (FAILED(gRenderer.GetDevice()->CreateBuffer(&normDesc, &normBufData, mNormBuf.ReleaseAndGetAddressOf()))) {
 			throw std::runtime_error{ "Failed to create mesh normal buffer." };
 		}
 
@@ -64,7 +57,7 @@ namespace leopph {
 			.pSysMem = mData.uvs.data()
 		};
 
-		if (FAILED(gRenderer.GetDevice()->CreateBuffer(&uvDesc, &uvBufData, mUvBuf.GetAddressOf()))) {
+		if (FAILED(gRenderer.GetDevice()->CreateBuffer(&uvDesc, &uvBufData, mUvBuf.ReleaseAndGetAddressOf()))) {
 			throw std::runtime_error{ "Failed to create mesh uv buffer." };
 		}
 
@@ -81,14 +74,14 @@ namespace leopph {
 			.pSysMem = mData.indices.data()
 		};
 
-		if (FAILED(gRenderer.GetDevice()->CreateBuffer(&indDesc, &indBufData, mIndBuf.GetAddressOf()))) {
+		if (FAILED(gRenderer.GetDevice()->CreateBuffer(&indDesc, &indBufData, mIndBuf.ReleaseAndGetAddressOf()))) {
 			throw std::runtime_error{ "Failed to create mesh index buffer." };
 		}
 	}
 
 	Mesh::Mesh(Data data) :
-		mData{ std::move(data) } {
-		UploadToGPU();
+		mTempData{ std::move(data) } {
+		ValidateAndUpdate();
 	}
 
 	auto Mesh::GetPositions() const noexcept -> std::span<Vector3 const> {

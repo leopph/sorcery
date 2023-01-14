@@ -158,7 +158,7 @@ namespace leopph {
 		MeshData ret;
 
 		std::queue<std::pair<aiNode const*, Matrix4>> queue;
-		queue.emplace(scene->mRootNode, ConvertMatrix(scene->mRootNode->mTransformation).transpose() * Matrix4 { 1, 1, -1, 1 });
+		queue.emplace(scene->mRootNode, ConvertMatrix(scene->mRootNode->mTransformation).transpose() * Matrix4{ 1, 1, -1, 1 });
 
 		while (!queue.empty()) {
 			auto& [node, trafo] = queue.front();
@@ -179,18 +179,18 @@ namespace leopph {
 					ret.uvs.reserve(ret.uvs.size() + mesh->mNumVertices);
 
 					for (unsigned j = 0; j < mesh->mNumVertices; j++) {
-						ret.positions.emplace_back(Vector4{ ConvertVector(mesh->mVertices[j]), 1 } *trafo);
-						ret.normals.emplace_back(Vector3{ Vector4{ ConvertVector(mesh->mNormals[j]), 0 } *trafo }.normalize());
+						ret.positions.emplace_back(Vector4{ ConvertVector(mesh->mVertices[j]), 1 } * trafo);
+						ret.normals.emplace_back(Vector3{ Vector4{ ConvertVector(mesh->mNormals[j]), 0 } * trafo }.normalize());
 						ret.uvs.emplace_back([mesh, j] {
 							for (std::size_t k = 0; k < AI_MAX_NUMBER_OF_TEXTURECOORDS; k++) {
 								if (mesh->HasTextureCoords(static_cast<unsigned>(k))) {
 									return Vector2{ ConvertVector(mesh->mTextureCoords[k][j]) };
 								}
 							}
-						return Vector2{};
+							return Vector2{};
 						}());
 					}
-					
+
 					for (unsigned j = 0; j < mesh->mNumFaces; j++) {
 						ret.indices.reserve(ret.indices.size() + mesh->mFaces[j].mNumIndices);
 
