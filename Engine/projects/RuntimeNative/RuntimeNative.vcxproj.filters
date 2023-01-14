@@ -131,12 +131,6 @@
     <ClInclude Include="src\Util.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\shaders\cinclude\BlinnPhongPixShadBinDebug.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\shaders\cinclude\BlinnPhongVertShadBinDebug.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\Scene.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -205,17 +199,18 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="src\shaders\include\BlinnPhong.hlsli" />
     <None Include="cpp.hint" />
     <None Include="vcpkg.json" />
-    <None Include="src\shaders\include\ClearColor.hlsli" />
     <None Include="src\shaders\include\Lights.hlsli" />
+    <None Include="src\shaders\include\MeshVSOut.hlsli" />
+    <None Include="src\shaders\include\PbrMaterial.hlsli" />
+    <None Include="src\shaders\include\CBuffers.hlsli" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="src\shaders\BlinnPhongVert.hlsl" />
-    <FxCompile Include="src\shaders\BlinnPhongPix.hlsl" />
-    <FxCompile Include="src\shaders\ClearColorVs.hlsl" />
-    <FxCompile Include="src\shaders\ClearColorPs.hlsl" />
-    <FxCompile Include="src\shaders\PBRPs.hlsl" />
+    <FxCompile Include="src\shaders\MeshBlinnPhongPS.hlsl" />
+    <FxCompile Include="src\shaders\ClearColorVS.hlsl" />
+    <FxCompile Include="src\shaders\ClearColorPS.hlsl" />
+    <FxCompile Include="src\shaders\MeshPbrPS.hlsl" />
+    <FxCompile Include="src\shaders\MeshVS.hlsl" />
   </ItemGroup>
 </Project>

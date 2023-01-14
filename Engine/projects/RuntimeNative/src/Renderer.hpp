@@ -30,39 +30,37 @@ namespace leopph {
 			Microsoft::WRL::ComPtr<ID3D11DeviceContext> context;
 
 			Microsoft::WRL::ComPtr<IDXGISwapChain1> swapChain;
-			Microsoft::WRL::ComPtr<ID3D11RenderTargetView> swapChainRtv;
-
 			Microsoft::WRL::ComPtr<ID3D11Texture2D> gameRenderTexture;
-			Microsoft::WRL::ComPtr<ID3D11RenderTargetView> gameRenderTextureRtv;
-			Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> gameRenderTextureSrv;
-
 			Microsoft::WRL::ComPtr<ID3D11Texture2D> sceneRenderTexture;
+
+			Microsoft::WRL::ComPtr<ID3D11RenderTargetView> swapChainRtv;
+			Microsoft::WRL::ComPtr<ID3D11RenderTargetView> gameRenderTextureRtv;
 			Microsoft::WRL::ComPtr<ID3D11RenderTargetView> sceneRenderTextureRtv;
+
+			Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> gameRenderTextureSrv;
 			Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> sceneRenderTextureSrv;
+
 			Microsoft::WRL::ComPtr<ID3D11Texture2D> sceneDSTex;
 			Microsoft::WRL::ComPtr<ID3D11DepthStencilView> sceneDSV;
 
-			Microsoft::WRL::ComPtr<ID3D11VertexShader> clearColorVs;
 			Microsoft::WRL::ComPtr<ID3D11PixelShader> clearColorPs;
-			Microsoft::WRL::ComPtr<ID3D11Buffer> clearColorCbuf;
+			Microsoft::WRL::ComPtr<ID3D11VertexShader> clearColorVs;
+			Microsoft::WRL::ComPtr<ID3D11PixelShader> meshBlinnPhongPS;
+			Microsoft::WRL::ComPtr<ID3D11VertexShader> meshVS;
+			Microsoft::WRL::ComPtr<ID3D11PixelShader> meshPbrPS;
 
-			Microsoft::WRL::ComPtr<ID3D11VertexShader> cubeVertShader;
-			Microsoft::WRL::ComPtr<ID3D11PixelShader> cubePixShader;
-
-			Microsoft::WRL::ComPtr<ID3D11Buffer> cubeVertBuf;
-			Microsoft::WRL::ComPtr<ID3D11Buffer> cubeInstBuf;
-			Microsoft::WRL::ComPtr<ID3D11Buffer> cubeIndBuf;
-			Microsoft::WRL::ComPtr<ID3D11InputLayout> cubeIa;
-			Microsoft::WRL::ComPtr<ID3D11Buffer> matrixCBuffer;
-			Microsoft::WRL::ComPtr<ID3D11Buffer> lightBuffer;
-
-			Microsoft::WRL::ComPtr<ID3D11InputLayout> quadIa;
-			Microsoft::WRL::ComPtr<ID3D11Buffer> quadVertBuf;
-			Microsoft::WRL::ComPtr<ID3D11Buffer> quadIndBuf;
-
-			Microsoft::WRL::ComPtr<ID3D11PixelShader> pbrPs;
-			Microsoft::WRL::ComPtr<ID3D11Buffer> materialCBuf;
+			Microsoft::WRL::ComPtr<ID3D11Buffer> lightCBuf;
 			Microsoft::WRL::ComPtr<ID3D11Buffer> cameraCBuf;
+			Microsoft::WRL::ComPtr<ID3D11Buffer> modelCBuf;
+			Microsoft::WRL::ComPtr<ID3D11Buffer> clearColorCBuf;
+
+			Microsoft::WRL::ComPtr<ID3D11InputLayout> meshIA;
+			Microsoft::WRL::ComPtr<ID3D11InputLayout> clearColorIA;
+
+			Microsoft::WRL::ComPtr<ID3D11Buffer> cubeVB;
+			Microsoft::WRL::ComPtr<ID3D11Buffer> cubeIB;
+			Microsoft::WRL::ComPtr<ID3D11Buffer> quadVB;
+			Microsoft::WRL::ComPtr<ID3D11Buffer> quadIB;
 
 			std::shared_ptr<Material> defaultMaterial;
 			std::shared_ptr<Mesh> defaultMesh;
@@ -71,6 +69,12 @@ namespace leopph {
 		auto RecreateGameRenderTextureAndViews(u32 width, u32 height) const -> void;
 		auto RecreateSceneRenderTextureAndViews(u32 width, u32 height) const -> void;
 		static auto on_window_resize(Renderer* self, Extent2D<u32> size) -> void;
+
+		auto CreateInputLayouts() const -> void;
+		auto CreateShaders() const -> void;
+		auto CreateSwapChain(Microsoft::WRL::ComPtr<IDXGIFactory2> factory2) const -> void;
+		auto CreateVertexAndIndexBuffers() const -> void;
+		auto CreateConstantBuffers() const -> void;
 
 		Resources* mResources{ nullptr };
 		UINT mPresentFlags{ 0 };
