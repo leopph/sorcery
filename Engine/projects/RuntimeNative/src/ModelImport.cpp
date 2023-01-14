@@ -172,6 +172,8 @@ namespace leopph {
 						// TODO transform to triangle fans
 					}
 
+					auto const previousVertexCount{ clamp_cast<u32>(ret.positions.size()) };
+
 					ret.positions.reserve(ret.positions.size() + mesh->mNumVertices);
 					ret.normals.reserve(ret.normals.size() + mesh->mNumVertices);
 					ret.uvs.reserve(ret.uvs.size() + mesh->mNumVertices);
@@ -193,7 +195,7 @@ namespace leopph {
 						ret.indices.reserve(ret.indices.size() + mesh->mFaces[j].mNumIndices);
 
 						for (unsigned k = 0; k < mesh->mFaces[j].mNumIndices; k++) {
-							ret.indices.emplace_back(mesh->mFaces[j].mIndices[k]);
+							ret.indices.emplace_back(mesh->mFaces[j].mIndices[k] + previousVertexCount);
 						}
 					}
 				}

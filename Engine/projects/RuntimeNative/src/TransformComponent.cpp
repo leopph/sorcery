@@ -241,9 +241,24 @@ namespace leopph {
 			ImGui::Text("Local Scale");
 			ImGui::TableNextColumn();
 
-			Vector3 localScale{ mLocalScale };
-			if (ImGui::DragFloat3("###transformScale", localScale.get_data(), 0.1f)) {
-				SetLocalScale(localScale);
+			bool static uniformScale{ true };
+
+			ImGui::Text("%s", "Uniform");
+			ImGui::SameLine();
+			ImGui::Checkbox("##UniformScaleCheck", &uniformScale);
+			ImGui::SameLine();
+
+			if (uniformScale) {
+				f32 scale{ mLocalScale[0] };
+				if (ImGui::DragFloat("###transformScale", &scale, 0.1f)) {
+					SetLocalScale(Vector3{ scale });
+				}
+			}
+			else {
+				Vector3 localScale{ mLocalScale };
+				if (ImGui::DragFloat3("###transformScale", localScale.get_data(), 0.1f)) {
+					SetLocalScale(localScale);
+				}
 			}
 
 			ImGui::EndTable();
