@@ -242,6 +242,7 @@ namespace leopph {
 			ImGui::TableNextColumn();
 
 			bool static uniformScale{ true };
+			auto constexpr scaleSpeed{ 0.01f };
 
 			ImGui::Text("%s", "Uniform");
 			ImGui::SameLine();
@@ -250,13 +251,13 @@ namespace leopph {
 
 			if (uniformScale) {
 				f32 scale{ mLocalScale[0] };
-				if (ImGui::DragFloat("###transformScale", &scale, 0.1f)) {
+				if (ImGui::DragFloat("###transformScale", &scale, scaleSpeed)) {
 					SetLocalScale(Vector3{ scale });
 				}
 			}
 			else {
 				Vector3 localScale{ mLocalScale };
-				if (ImGui::DragFloat3("###transformScale", localScale.get_data(), 0.1f)) {
+				if (ImGui::DragFloat3("###transformScale", localScale.get_data(), scaleSpeed)) {
 					SetLocalScale(localScale);
 				}
 			}
