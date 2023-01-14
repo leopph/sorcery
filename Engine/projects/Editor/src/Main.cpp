@@ -46,13 +46,29 @@ class ResourceStorage {
 	std::unordered_map<std::filesystem::path, std::shared_ptr<leopph::Resource>> mData;
 
 public:
-	auto&& operator[](std::filesystem::path const& path) { return mData[absolute(path)]; }
-	auto find(std::filesystem::path const& path) const { return mData.find(path); }
+	auto operator[](std::filesystem::path const& path) -> auto&& {
+		return mData[absolute(path)];
+	}
 
-	auto begin() const noexcept { return std::begin(mData); }
-	auto end() const noexcept { return std::end(mData); }
-	auto cbegin() const noexcept { return std::cbegin(mData); }
-	auto cend() const noexcept { return std::cend(mData); }
+	auto find(std::filesystem::path const& path) const {
+		return mData.find(path);
+	}
+
+	auto begin() const noexcept {
+		return std::begin(mData);
+	}
+
+	auto end() const noexcept {
+		return std::end(mData);
+	}
+
+	auto cbegin() const noexcept {
+		return std::cbegin(mData);
+	}
+
+	auto cend() const noexcept {
+		return std::cend(mData);
+	}
 };
 
 
@@ -132,7 +148,7 @@ namespace {
 				res->SetName(std::string{ reinterpret_cast<char const*>(headerBytes.data()) + sizeof(leopph::i32) + sizeof(leopph::Guid) + sizeof(leopph::u64), nameSize });
 			}
 
-			return std::shared_ptr<leopph::Resource>{res};
+			return std::shared_ptr<leopph::Resource>{ res };
 		}
 
 		if (obj) {
@@ -170,8 +186,13 @@ namespace {
 		}
 
 		for (auto& [path, data] : loadedResources) {
-			std::ignore = data.resource->DeserializeBinary(data.bodyBytes);
-			out[path] = data.resource;
+			try {
+				std::ignore = data.resource->DeserializeBinary(data.bodyBytes);
+				out[path] = data.resource;
+			}
+			catch (std::exception const& ex) {
+				MessageBoxA(nullptr, ex.what(), "Error", MB_ICONERROR);
+			}
 		}
 	}
 
@@ -190,7 +211,7 @@ namespace {
 		std::string const originalStem{ filePathAbsolute.stem().string() };
 		std::filesystem::path const ext{ filePathAbsolute.extension() };
 		std::filesystem::path const parentDir{ filePathAbsolute.parent_path() };
-		
+
 		std::string currentStem{ originalStem };
 		std::size_t fileNameIndex{ 1 };
 
@@ -258,7 +279,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
 		bool runGame{ false };
 		bool showDemoWindow{ false };
-		
+
 		ResourceStorage resources;
 
 		leopph::init_time();
@@ -609,7 +630,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 						auto const [mouseX, mouseY]{ leopph::gWindow.GetMouseDelta() };
 						auto constexpr sens{ 0.05f };
 
-						editorCam.orientation = leopph::Quaternion{ leopph::Vector3::up(), static_cast<leopph::f32>(mouseX) * sens } *editorCam.orientation;
+						editorCam.orientation = leopph::Quaternion{ leopph::Vector3::up(), static_cast<leopph::f32>(mouseX) * sens } * editorCam.orientation;
 						editorCam.orientation *= leopph::Quaternion{ leopph::Vector3::right(), static_cast<leopph::f32>(mouseY) * sens };
 					}
 					else {
@@ -720,7 +741,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 						ImGui::EndPopup();
 					}
 
-					for (auto const& entry : std::filesystem::directory_iterator{*gProjDir / gRelativeResDir}) {
+					for (auto const& entry : std::filesystem::directory_iterator{ *gProjDir / gRelativeResDir }) {
 						auto const& entryPath{ entry.path() };
 						if (is_directory(entryPath)) {
 							ImGui::Selectable(std::format("{}##AssetFolderPath", entryPath.filename().string().c_str()).c_str());

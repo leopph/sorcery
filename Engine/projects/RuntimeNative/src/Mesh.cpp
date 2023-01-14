@@ -192,8 +192,12 @@ namespace leopph {
 
 		static std::vector<u8> uncompressedBytes;
 
-		if (Uncompress(bytes, numDataBytes, uncompressedBytes) != CompressionError::None) {
-			throw std::runtime_error{ "Failed to decompress mesh while deserializing." };
+		if (auto const err{ Uncompress(bytes, numDataBytes, uncompressedBytes) }; err != CompressionError::None) {
+			if (err == CompressionError::Inconsistency) {
+				throw std::runtime_error{ std::format("An inconsistency error occured while decompressing serialized data for mesh {} (\"{}\").", GetGuid().ToString(), GetName()) };
+			}
+
+			throw std::runtime_error{ std::format("An unknown error occured while decompressing serialized data for mesh {} (\"{}\").", GetGuid().ToString(), GetName()) };
 		}
 
 		if (uncompressedBytes.size() < numDataBytes) {
