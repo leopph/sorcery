@@ -51,7 +51,7 @@ namespace leopph {
 
 
 	template<std::integral To, std::integral From>
-	auto clamp_cast(From const what) -> To {
+	[[nodiscard]] constexpr auto clamp_cast(From const what) -> To {
 		if constexpr (std::cmp_less_equal(std::numeric_limits<To>::min(), std::numeric_limits<From>::min())) {
 			if constexpr (std::cmp_greater_equal(std::numeric_limits<To>::max(), std::numeric_limits<From>::max())) {
 				return static_cast<To>(what);
