@@ -71,6 +71,7 @@ namespace leopph {
 		auto CreateInputLayouts() const -> void;
 		auto CreateShaders() const -> void;
 		auto CreateSwapChain(Microsoft::WRL::ComPtr<IDXGIFactory2> factory2) const -> void;
+		auto RecreateSwapChainRtv() const -> void;
 		auto CreateVertexAndIndexBuffers() const -> void;
 		auto CreateConstantBuffers() const -> void;
 

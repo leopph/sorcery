@@ -63,7 +63,7 @@ namespace leopph {
 
 	struct CBufModelBuffer {
 		DirectX::XMFLOAT4X4 modelMat;
-		DirectX::XMFLOAT3X3 normalMat;
+		DirectX::XMMATRIX normalMat;
 	};
 
 
@@ -222,7 +222,7 @@ namespace leopph {
 			.Height = height,
 			.MipLevels = 1,
 			.ArraySize = 1,
-			.Format = DXGI_FORMAT_R8G8B8A8_UNORM,
+			.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
 			.SampleDesc
 			{
 				.Count = 1,
@@ -311,12 +311,7 @@ namespace leopph {
 		self->mResources->swapChainRtv.Reset();
 		self->mResources->swapChain->ResizeBuffers(0, 0, 0, DXGI_FORMAT_UNKNOWN, self->mSwapChainFlags);
 
-		ComPtr<ID3D11Texture2D> backBuf;
-		HRESULT hresult = self->mResources->swapChain->GetBuffer(0, IID_PPV_ARGS(backBuf.GetAddressOf()));
-		assert(SUCCEEDED(hresult));
-
-		hresult = self->mResources->device->CreateRenderTargetView(backBuf.Get(), nullptr, self->mResources->swapChainRtv.GetAddressOf());
-		assert(SUCCEEDED(hresult));
+		self->RecreateSwapChainRtv();
 	}
 
 	auto Renderer::CreateInputLayouts() const -> void {
@@ -414,12 +409,22 @@ namespace leopph {
 			throw std::runtime_error{ "Failed to create swapchain." };
 		}
 
+		RecreateSwapChainRtv();
+	}
+
+	auto Renderer::RecreateSwapChainRtv() const -> void {
 		ComPtr<ID3D11Texture2D> backBuf;
 		if (FAILED(mResources->swapChain->GetBuffer(0, IID_PPV_ARGS(backBuf.GetAddressOf())))) {
 			throw std::runtime_error{ "Failed to get swapchain backbuffer." };
 		}
 
-		if (FAILED(mResources->device->CreateRenderTargetView(backBuf.Get(), nullptr, mResources->swapChainRtv.GetAddressOf()))) {
+		D3D11_RENDER_TARGET_VIEW_DESC constexpr rtvDesc{
+			.Format = DXGI_FORMAT_R8G8B8A8_UNORM,
+			.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D,
+			.Texture2D = {.MipSlice = 0 }
+		};
+
+		if (FAILED(mResources->device->CreateRenderTargetView(backBuf.Get(), &rtvDesc, mResources->swapChainRtv.GetAddressOf()))) {
 			throw std::runtime_error{ "Failed to create swapchain backbuffer render target view." };
 		}
 	}
@@ -796,7 +801,7 @@ namespace leopph {
 			mResources->context->Map(mResources->modelCBuf.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedMatrixCBuffer);
 			auto& [modelMatData, normalMatData]{ *static_cast<CBufModelBuffer*>(mappedMatrixCBuffer.pData) };
 			modelMatData = modelMat;
-			normalMatData = normalMat;
+			normalMatData = DirectX::XMLoadFloat3x3(&normalMat);
 			mResources->context->Unmap(mResources->modelCBuf.Get(), 0);
 
 			ID3D11Buffer* vertexBuffers[]{ mesh->GetPositionBuffer().Get(), mesh->GetNormalBuffer().Get(), mesh->GetUVBuffer().Get() };
@@ -807,10 +812,10 @@ namespace leopph {
 
 			mResources->context->VSSetShader(mResources->meshVS.Get(), nullptr, 0);
 
-			mResources->context->VSSetConstantBuffers(1, 1, mResources->cameraCBuf.GetAddressOf());
-			mResources->context->VSSetConstantBuffers(3, 1, mResources->modelCBuf.GetAddressOf());
+			ID3D11Buffer* const vsConstantBuffers[]{ mResources->cameraCBuf.Get(), nullptr, mResources->modelCBuf.Get() };
+			mResources->context->VSSetConstantBuffers(1, 3, vsConstantBuffers);
 
-			mResources->context->PSSetShader(mResources->meshBlinnPhongPS.Get(), nullptr, 0);
+			mResources->context->PSSetShader(mResources->meshPbrPS.Get(), nullptr, 0);
 
 			ID3D11Buffer* const psConstantBuffers[]{ mResources->lightCBuf.Get(), mResources->cameraCBuf.Get(), mCubeModels[0]->GetMaterial()->GetBuffer() };
 			mResources->context->PSSetConstantBuffers(0, ARRAYSIZE(psConstantBuffers), psConstantBuffers);
