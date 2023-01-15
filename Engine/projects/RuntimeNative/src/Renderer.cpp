@@ -40,12 +40,13 @@ namespace leopph {
 		Vector3 direction;
 	};
 
-	struct CBufLightBuffer {
+	struct PerFrameCBufferData {
 		CBufDirLight dirLight;
-		bool calcDirLight;
+		BOOL calcDirLight;
+		f32 invGamma;
 	};
 
-	struct CBufCameraBuffer {
+	struct PerCameraCBufferData {
 		DirectX::XMFLOAT4X4 viewProjMat;
 		DirectX::XMFLOAT3 camPos;
 	};
@@ -61,7 +62,7 @@ namespace leopph {
 		CBufMaterial material;
 	};
 
-	struct CBufModelBuffer {
+	struct PerModelCBufferData {
 		DirectX::XMFLOAT4X4 modelMat;
 		DirectX::XMMATRIX normalMat;
 	};
@@ -222,7 +223,7 @@ namespace leopph {
 			.Height = height,
 			.MipLevels = 1,
 			.ArraySize = 1,
-			.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
+			.Format = DXGI_FORMAT_R8G8B8A8_UNORM,
 			.SampleDesc
 			{
 				.Count = 1,
@@ -460,8 +461,8 @@ namespace leopph {
 	}
 
 	auto Renderer::CreateConstantBuffers() const -> void {
-		D3D11_BUFFER_DESC constexpr lightCBufDesc{
-			.ByteWidth = clamp_cast<UINT>(RoundToNextMultiple(sizeof(CBufLightBuffer), 16)),
+		D3D11_BUFFER_DESC constexpr perLightCBufDesc{
+			.ByteWidth = clamp_cast<UINT>(RoundToNextMultiple(sizeof(PerFrameCBufferData), 16)),
 			.Usage = D3D11_USAGE_DYNAMIC,
 			.BindFlags = D3D11_BIND_CONSTANT_BUFFER,
 			.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
@@ -469,12 +470,12 @@ namespace leopph {
 			.StructureByteStride = 0
 		};
 
-		if (FAILED(mResources->device->CreateBuffer(&lightCBufDesc, nullptr, mResources->lightCBuf.GetAddressOf()))) {
+		if (FAILED(mResources->device->CreateBuffer(&perLightCBufDesc, nullptr, mResources->perFrameCBuf.GetAddressOf()))) {
 			throw std::runtime_error{ "Failed to create light constant buffer." };
 		}
 
-		D3D11_BUFFER_DESC constexpr camCBufDesc{
-			.ByteWidth = clamp_cast<UINT>(RoundToNextMultiple(sizeof(CBufCameraBuffer), 16)),
+		D3D11_BUFFER_DESC constexpr perCamCBufDesc{
+			.ByteWidth = clamp_cast<UINT>(RoundToNextMultiple(sizeof(PerCameraCBufferData), 16)),
 			.Usage = D3D11_USAGE_DYNAMIC,
 			.BindFlags = D3D11_BIND_CONSTANT_BUFFER,
 			.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
@@ -482,12 +483,12 @@ namespace leopph {
 			.StructureByteStride = 0
 		};
 
-		if (FAILED(mResources->device->CreateBuffer(&camCBufDesc, nullptr, mResources->cameraCBuf.GetAddressOf()))) {
+		if (FAILED(mResources->device->CreateBuffer(&perCamCBufDesc, nullptr, mResources->perCamCBuf.GetAddressOf()))) {
 			throw std::runtime_error{ "Failed to create camera constant buffer." };
 		}
 
-		D3D11_BUFFER_DESC constexpr modelCBufDesc{
-			.ByteWidth = clamp_cast<UINT>(RoundToNextMultiple(sizeof(CBufModelBuffer), 16)),
+		D3D11_BUFFER_DESC constexpr perModelCBufDesc{
+			.ByteWidth = clamp_cast<UINT>(RoundToNextMultiple(sizeof(PerModelCBufferData), 16)),
 			.Usage = D3D11_USAGE_DYNAMIC,
 			.BindFlags = D3D11_BIND_CONSTANT_BUFFER,
 			.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
@@ -495,7 +496,7 @@ namespace leopph {
 			.StructureByteStride = 0
 		};
 
-		if (FAILED(mResources->device->CreateBuffer(&modelCBufDesc, nullptr, mResources->modelCBuf.GetAddressOf()))) {
+		if (FAILED(mResources->device->CreateBuffer(&perModelCBufDesc, nullptr, mResources->perModelCBuf.GetAddressOf()))) {
 			throw std::runtime_error{ "Failed to create model constant buffer." };
 		}
 
@@ -666,21 +667,21 @@ namespace leopph {
 		}
 
 		D3D11_MAPPED_SUBRESOURCE mappedCbuffer;
-		mResources->context->Map(mResources->modelCBuf.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedCbuffer);
+		mResources->context->Map(mResources->perModelCBuf.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedCbuffer);
 
 		DirectX::XMStoreFloat4x4(static_cast<DirectX::XMFLOAT4X4*>(mappedCbuffer.pData), viewMat * projMat);
-		mResources->context->Unmap(mResources->modelCBuf.Get(), 0);
+		mResources->context->Unmap(mResources->perModelCBuf.Get(), 0);
 
 		D3D11_MAPPED_SUBRESOURCE mappedLightBuffer;
-		mResources->context->Map(mResources->lightCBuf.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedLightBuffer);
-		auto const lightBufferData{ static_cast<CBufLightBuffer*>(mappedLightBuffer.pData) };
+		mResources->context->Map(mResources->perFrameCBuf.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedLightBuffer);
+		auto const lightBufferData{ static_cast<PerFrameCBufferData*>(mappedLightBuffer.pData) };
 		lightBufferData->calcDirLight = !mDirLights.empty();
 		if (!mDirLights.empty()) {
 			lightBufferData->dirLight.color = mDirLights[0]->GetColor();
 			lightBufferData->dirLight.direction = mDirLights[0]->get_direction();
 			lightBufferData->dirLight.intensity = mDirLights[0]->GetIntensity();
 		}
-		mResources->context->Unmap(mResources->lightCBuf.Get(), 0);
+		mResources->context->Unmap(mResources->perFrameCBuf.Get(), 0);
 
 		/*D3D11_MAPPED_SUBRESOURCE mappedMatBuf;
 		mResources->context->Map(mResources->materialCBuf.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedMatBuf);
@@ -692,10 +693,10 @@ namespace leopph {
 		mResources->context->Unmap(mResources->materialCBuf.Get(), 0);
 
 		D3D11_MAPPED_SUBRESOURCE mappedCamBuf;
-		mResources->context->Map(mResources->cameraCBuf.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedCamBuf);
-		auto const camBufData{ static_cast<CBufCameraBuffer*>(mappedCamBuf.pData) };
+		mResources->context->Map(mResources->perCamCBuf.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedCamBuf);
+		auto const camBufData{ static_cast<PerCameraCBufferData*>(mappedCamBuf.pData) };
 		camBufData->camPos = cam->GetEntity()->GetTransform().GetWorldPosition();
-		mResources->context->Unmap(mResources->cameraCBuf.Get(), 0);
+		mResources->context->Unmap(mResources->perCamCBuf.Get(), 0);
 
 
 		if (mCubeModels.size() > mInstanceBufferElementCapacity) {
@@ -732,9 +733,9 @@ namespace leopph {
 		mResources->context->IASetIndexBuffer(mResources->cubeIB.Get(), DXGI_FORMAT_R32_UINT, 0);
 		mResources->context->IASetInputLayout(mResources->meshIA.Get());
 		mResources->context->VSSetShader(mResources->meshVS.Get(), nullptr, 0);
-		mResources->context->VSSetConstantBuffers(0, 1, mResources->modelCBuf.GetAddressOf());
+		mResources->context->VSSetConstantBuffers(0, 1, mResources->perModelCBuf.GetAddressOf());
 		mResources->context->PSSetShader(mResources->meshBlinnPhongPS.Get(), nullptr, 0);
-		ID3D11Buffer* const psCBuffers[]{ mCubeModels[0]->GetMaterial()->GetBuffer(), mResources->cameraCBuf.Get(), mResources->lightCBuf.Get() };
+		ID3D11Buffer* const psCBuffers[]{ mCubeModels[0]->GetMaterial()->GetBuffer(), mResources->perCamCBuf.Get(), mResources->perFrameCBuf.Get() };
 		mResources->context->PSSetConstantBuffers(0, ARRAYSIZE(psCBuffers), psCBuffers);
 		mResources->context->DrawIndexedInstanced(ARRAYSIZE(CUBE_INDICES), static_cast<UINT>(mCubeModels.size()), 0, 0, 0);*/
 	}
@@ -766,16 +767,17 @@ namespace leopph {
 			return;
 		}
 
-		D3D11_MAPPED_SUBRESOURCE mappedLightBuffer;
-		mResources->context->Map(mResources->lightCBuf.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedLightBuffer);
-		auto const lightBufferData{ static_cast<CBufLightBuffer*>(mappedLightBuffer.pData) };
-		lightBufferData->calcDirLight = !mDirLights.empty();
+		D3D11_MAPPED_SUBRESOURCE mappedPerFrameCBuf;
+		mResources->context->Map(mResources->perFrameCBuf.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerFrameCBuf);
+		auto const perFrameCBufData{ static_cast<PerFrameCBufferData*>(mappedPerFrameCBuf.pData) };
+		perFrameCBufData->invGamma = mInvGamma;
+		perFrameCBufData->calcDirLight = !mDirLights.empty();
 		if (!mDirLights.empty()) {
-			lightBufferData->dirLight.color = mDirLights[0]->GetColor();
-			lightBufferData->dirLight.direction = mDirLights[0]->get_direction();
-			lightBufferData->dirLight.intensity = mDirLights[0]->GetIntensity();
+			perFrameCBufData->dirLight.color = mDirLights[0]->GetColor();
+			perFrameCBufData->dirLight.direction = mDirLights[0]->get_direction();
+			perFrameCBufData->dirLight.intensity = mDirLights[0]->GetIntensity();
 		}
-		mResources->context->Unmap(mResources->lightCBuf.Get(), 0);
+		mResources->context->Unmap(mResources->perFrameCBuf.Get(), 0);
 
 		DirectX::XMFLOAT3 const camPos{ cam.position.get_data() };
 		DirectX::XMFLOAT3 const camForward{ cam.orientation.Rotate(Vector3::forward()).get_data() };
@@ -783,12 +785,12 @@ namespace leopph {
 		DirectX::XMMATRIX const projMat{ DirectX::XMMatrixPerspectiveFovLH(cam.fovVertRad, mSceneAspect, cam.nearClip, cam.farClip) };
 		auto const viewProjMat{ XMMatrixMultiply(viewMat, projMat) };
 
-		D3D11_MAPPED_SUBRESOURCE mappedCamBuf;
-		mResources->context->Map(mResources->cameraCBuf.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedCamBuf);
-		auto const camBufData{ static_cast<CBufCameraBuffer*>(mappedCamBuf.pData) };
-		XMStoreFloat4x4(&camBufData->viewProjMat, viewProjMat);
-		camBufData->camPos = camPos;
-		mResources->context->Unmap(mResources->cameraCBuf.Get(), 0);
+		D3D11_MAPPED_SUBRESOURCE mappedPerCamCBuf;
+		mResources->context->Map(mResources->perCamCBuf.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerCamCBuf);
+		auto const perCamCBufData{ static_cast<PerCameraCBufferData*>(mappedPerCamCBuf.pData) };
+		XMStoreFloat4x4(&perCamCBufData->viewProjMat, viewProjMat);
+		perCamCBufData->camPos = camPos;
+		mResources->context->Unmap(mResources->perCamCBuf.Get(), 0);
 
 		for (auto const& cubeModel : mCubeModels) {
 			auto const mesh{ cubeModel->GetMesh() };
@@ -797,12 +799,12 @@ namespace leopph {
 			DirectX::XMFLOAT4X4 const modelMat{ cubeModel->GetEntity()->GetTransform().GetModelMatrix().get_data() };
 			DirectX::XMFLOAT3X3 const normalMat{ cubeModel->GetEntity()->GetTransform().GetNormalMatrix().get_data() };
 
-			D3D11_MAPPED_SUBRESOURCE mappedMatrixCBuffer;
-			mResources->context->Map(mResources->modelCBuf.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedMatrixCBuffer);
-			auto& [modelMatData, normalMatData]{ *static_cast<CBufModelBuffer*>(mappedMatrixCBuffer.pData) };
+			D3D11_MAPPED_SUBRESOURCE mappedPerModelCBuf;
+			mResources->context->Map(mResources->perModelCBuf.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerModelCBuf);
+			auto& [modelMatData, normalMatData]{ *static_cast<PerModelCBufferData*>(mappedPerModelCBuf.pData) };
 			modelMatData = modelMat;
-			normalMatData = DirectX::XMLoadFloat3x3(&normalMat);
-			mResources->context->Unmap(mResources->modelCBuf.Get(), 0);
+			normalMatData = XMLoadFloat3x3(&normalMat);
+			mResources->context->Unmap(mResources->perModelCBuf.Get(), 0);
 
 			ID3D11Buffer* vertexBuffers[]{ mesh->GetPositionBuffer().Get(), mesh->GetNormalBuffer().Get(), mesh->GetUVBuffer().Get() };
 			UINT constexpr strides[]{ sizeof(Vector3), sizeof(Vector3), sizeof(Vector2) };
@@ -811,14 +813,11 @@ namespace leopph {
 			mResources->context->IASetIndexBuffer(mesh->GetIndexBuffer().Get(), DXGI_FORMAT_R32_UINT, 0);
 
 			mResources->context->VSSetShader(mResources->meshVS.Get(), nullptr, 0);
-
-			ID3D11Buffer* const vsConstantBuffers[]{ mResources->cameraCBuf.Get(), nullptr, mResources->modelCBuf.Get() };
-			mResources->context->VSSetConstantBuffers(1, 3, vsConstantBuffers);
-
 			mResources->context->PSSetShader(mResources->meshPbrPS.Get(), nullptr, 0);
 
-			ID3D11Buffer* const psConstantBuffers[]{ mResources->lightCBuf.Get(), mResources->cameraCBuf.Get(), mCubeModels[0]->GetMaterial()->GetBuffer() };
-			mResources->context->PSSetConstantBuffers(0, ARRAYSIZE(psConstantBuffers), psConstantBuffers);
+			ID3D11Buffer* const constantBuffers[]{ mResources->perFrameCBuf.Get(), mResources->perCamCBuf.Get(), mat->GetBuffer(), mResources->perModelCBuf.Get() };
+			mResources->context->VSSetConstantBuffers(0, ARRAYSIZE(constantBuffers), constantBuffers);
+			mResources->context->PSSetConstantBuffers(0, ARRAYSIZE(constantBuffers), constantBuffers);
 
 			mResources->context->IASetInputLayout(mResources->meshIA.Get());
 			mResources->context->OMSetRenderTargets(1, mResources->sceneRenderTextureRtv.GetAddressOf(), mResources->sceneDSV.Get());
@@ -940,5 +939,13 @@ namespace leopph {
 
 	auto Renderer::GetCubeMesh() const noexcept -> std::shared_ptr<Mesh> {
 		return mResources->cubeMesh;
+	}
+
+	auto Renderer::GetGamma() const noexcept -> f32 {
+		return 1.f / mInvGamma;
+	}
+
+	auto Renderer::SetGamma(f32 const gamma) noexcept -> void {
+		mInvGamma = 1.f / gamma;
 	}
 }

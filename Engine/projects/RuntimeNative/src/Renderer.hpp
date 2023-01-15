@@ -49,9 +49,9 @@ namespace leopph {
 			Microsoft::WRL::ComPtr<ID3D11VertexShader> meshVS;
 			Microsoft::WRL::ComPtr<ID3D11PixelShader> meshPbrPS;
 
-			Microsoft::WRL::ComPtr<ID3D11Buffer> lightCBuf;
-			Microsoft::WRL::ComPtr<ID3D11Buffer> cameraCBuf;
-			Microsoft::WRL::ComPtr<ID3D11Buffer> modelCBuf;
+			Microsoft::WRL::ComPtr<ID3D11Buffer> perFrameCBuf;
+			Microsoft::WRL::ComPtr<ID3D11Buffer> perCamCBuf;
+			Microsoft::WRL::ComPtr<ID3D11Buffer> perModelCBuf;
 			Microsoft::WRL::ComPtr<ID3D11Buffer> clearColorCBuf;
 
 			Microsoft::WRL::ComPtr<ID3D11InputLayout> meshIA;
@@ -88,6 +88,7 @@ namespace leopph {
 		std::vector<DirectionalLightComponent const*> mDirLights;
 		std::vector<SpotLight const*> mSpotLights;
 		std::vector<PointLightComponent const*> mPointLights;
+		f32 mInvGamma{ 1.f / 2.2f };
 
 	public:
 		Renderer() noexcept = default;
@@ -136,5 +137,8 @@ namespace leopph {
 
 		[[nodiscard]] LEOPPHAPI auto GetDefaultMaterial() const noexcept -> std::shared_ptr<Material>;
 		[[nodiscard]] LEOPPHAPI auto GetCubeMesh() const noexcept -> std::shared_ptr<Mesh>;
+
+		[[nodiscard]] LEOPPHAPI auto GetGamma() const noexcept -> f32;
+		LEOPPHAPI auto SetGamma(f32 gamma) noexcept -> void;
 	};
 }

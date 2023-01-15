@@ -39,9 +39,9 @@ float Smith(float3 N, float3 V, float3 L, float roughness) {
     return ggx1 * ggx2;
 }
 
-float4 main(MeshVsOut psIn) : SV_TARGET {
-    float3 N = normalize(psIn.normal);
-    float3 V = normalize(camPos - psIn.worldPos);
+float4 main(MeshVsOut vsOut) : SV_TARGET {
+    float3 N = normalize(vsOut.normal);
+    float3 V = normalize(camPos - vsOut.worldPos);
 
     float3 F0 = float3(0.04, 0.04, 0.04);
     F0 = lerp(F0, material.albedo, material.metallic);
@@ -74,7 +74,7 @@ float4 main(MeshVsOut psIn) : SV_TARGET {
     float3 color = ambient + Lo;
 	
     color = color / (color + 1.0);
-    color = pow(color, 1.0 / 2.2);
+    color = pow(color, invGamma);
    
     return float4(color, 1.0);
 }
