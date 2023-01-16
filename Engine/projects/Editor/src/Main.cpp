@@ -660,6 +660,10 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 							if (GetKeyDown(leopph::Key::G)) {
 								showGrid = !showGrid;
 							}
+							if (GetKeyDown(leopph::Key::F)) {
+								editorCam.position = selectedEntity->GetTransform().GetWorldPosition() - leopph::Vector3::forward() * 2;
+								editorCam.orientation = selectedEntity->GetTransform().GetLocalRotation();
+							}
 						}
 
 						leopph::Matrix4 modelMat{ selectedEntity->GetTransform().GetModelMatrix() };
