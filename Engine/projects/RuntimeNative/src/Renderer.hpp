@@ -32,8 +32,10 @@ namespace leopph {
 			Microsoft::WRL::ComPtr<IDXGISwapChain1> swapChain;
 			Microsoft::WRL::ComPtr<ID3D11Texture2D> gameHdrTexture;
 			Microsoft::WRL::ComPtr<ID3D11Texture2D> gameOutputTexture;
+			Microsoft::WRL::ComPtr<ID3D11Texture2D> gameDSTex;
 			Microsoft::WRL::ComPtr<ID3D11Texture2D> sceneHdrTexture;
 			Microsoft::WRL::ComPtr<ID3D11Texture2D> sceneOutputTexture;
+			Microsoft::WRL::ComPtr<ID3D11Texture2D> sceneDSTex;
 
 			Microsoft::WRL::ComPtr<ID3D11RenderTargetView> swapChainRtv;
 			Microsoft::WRL::ComPtr<ID3D11RenderTargetView> gameHdrTextureRtv;
@@ -46,7 +48,7 @@ namespace leopph {
 			Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> sceneHdrTextureSrv;
 			Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> sceneOutputTextureSrv;
 
-			Microsoft::WRL::ComPtr<ID3D11Texture2D> sceneDSTex;
+			Microsoft::WRL::ComPtr<ID3D11DepthStencilView> gameDSV;
 			Microsoft::WRL::ComPtr<ID3D11DepthStencilView> sceneDSV;
 
 			Microsoft::WRL::ComPtr<ID3D11PixelShader> clearColorPS;
@@ -85,6 +87,9 @@ namespace leopph {
 		auto RecreateSwapChainRtv() const -> void;
 		auto CreateVertexAndIndexBuffers() const -> void;
 		auto CreateConstantBuffers() const -> void;
+		auto DrawMeshes() const noexcept -> void;
+		auto UpdatePerFrameCB() const noexcept -> void;
+		auto DoToneMapGammaCorrectionStep(ID3D11ShaderResourceView* src, ID3D11RenderTargetView* dst) const noexcept -> void;
 
 		Resources* mResources{ nullptr };
 		UINT mPresentFlags{ 0 };
@@ -95,7 +100,7 @@ namespace leopph {
 		f32 mSceneAspect;
 		UINT mInstanceBufferElementCapacity;
 		u32 mSyncInterval{ 0 };
-		std::vector<CubeModelComponent const*> mCubeModels;
+		std::vector<CubeModelComponent const*> mStaticMeshComponents;
 		std::vector<DirectionalLightComponent const*> mDirLights;
 		std::vector<SpotLight const*> mSpotLights;
 		std::vector<PointLightComponent const*> mPointLights;
@@ -108,9 +113,9 @@ namespace leopph {
 		LEOPPHAPI auto StartUp() -> void;
 		LEOPPHAPI auto ShutDown() noexcept -> void;
 
-		LEOPPHAPI auto DrawCamera(CameraComponent const* cam) -> void;
-		LEOPPHAPI auto DrawGame() -> void;
-		LEOPPHAPI auto DrawSceneView(EditorCamera const& cam) -> void;
+		LEOPPHAPI auto DrawCamera(CameraComponent const* cam) const noexcept -> void;
+		LEOPPHAPI auto DrawGame() const noexcept -> void;
+		LEOPPHAPI auto DrawSceneView(EditorCamera const& cam) const noexcept -> void;
 
 		[[nodiscard]] LEOPPHAPI auto GetGameResolution() const noexcept -> Extent2D<u32>;
 		LEOPPHAPI auto SetGameResolution(Extent2D<u32> resolution) noexcept -> void;

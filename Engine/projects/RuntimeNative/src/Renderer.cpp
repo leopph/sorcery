@@ -169,8 +169,51 @@ namespace leopph {
 
 
 	auto Renderer::RecreateGameTexturesAndViews(u32 const width, u32 const height) const -> void {
-		D3D11_TEXTURE2D_DESC const texDesc
-		{
+		D3D11_TEXTURE2D_DESC const hdrTexDesc{
+			.Width = width,
+			.Height = height,
+			.MipLevels = 1,
+			.ArraySize = 1,
+			.Format = DXGI_FORMAT_R32G32B32A32_FLOAT,
+			.SampleDesc = {.Count = 1, .Quality = 0 },
+			.Usage = D3D11_USAGE_DEFAULT,
+			.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE,
+			.CPUAccessFlags = 0,
+			.MiscFlags = 0
+		};
+
+		if (FAILED(mResources->device->CreateTexture2D(&hdrTexDesc, nullptr, mResources->gameHdrTexture.ReleaseAndGetAddressOf()))) {
+			throw std::runtime_error{ "Failed to recreate game view hdr texture." };
+		}
+
+		D3D11_RENDER_TARGET_VIEW_DESC const hdrRtvDesc{
+			.Format = hdrTexDesc.Format,
+			.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D,
+			.Texture2D
+			{
+				.MipSlice = 0
+			}
+		};
+
+		if (FAILED(mResources->device->CreateRenderTargetView(mResources->gameHdrTexture.Get(), &hdrRtvDesc, mResources->gameHdrTextureRtv.ReleaseAndGetAddressOf()))) {
+			throw std::runtime_error{ "Failed to recreate game view hdr texture rtv." };
+		}
+
+		D3D11_SHADER_RESOURCE_VIEW_DESC const hdrSrvDesc{
+			.Format = hdrTexDesc.Format,
+			.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D,
+			.Texture2D =
+			{
+				.MostDetailedMip = 0,
+				.MipLevels = 1
+			}
+		};
+
+		if (FAILED(mResources->device->CreateShaderResourceView(mResources->gameHdrTexture.Get(), &hdrSrvDesc, mResources->gameHdrTextureSrv.ReleaseAndGetAddressOf()))) {
+			throw std::runtime_error{ "Failed to recreate game view output texture srv." };
+		}
+
+		D3D11_TEXTURE2D_DESC const outputTexDesc{
 			.Width = width,
 			.Height = height,
 			.MipLevels = 1,
@@ -187,15 +230,12 @@ namespace leopph {
 			.MiscFlags = 0
 		};
 
-		auto hresult = mResources->device->CreateTexture2D(&texDesc, nullptr, mResources->gameOutputTexture.ReleaseAndGetAddressOf());
-
-		if (FAILED(hresult)) {
-			throw std::runtime_error{ "Failed to recreate game view render texture." };
+		if (FAILED(mResources->device->CreateTexture2D(&outputTexDesc, nullptr, mResources->gameOutputTexture.ReleaseAndGetAddressOf()))) {
+			throw std::runtime_error{ "Failed to recreate game view output texture." };
 		}
 
-		D3D11_RENDER_TARGET_VIEW_DESC const rtvDesc
-		{
-			.Format = texDesc.Format,
+		D3D11_RENDER_TARGET_VIEW_DESC const outputRtvDesc{
+			.Format = outputTexDesc.Format,
 			.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D,
 			.Texture2D
 			{
@@ -203,15 +243,12 @@ namespace leopph {
 			}
 		};
 
-		hresult = mResources->device->CreateRenderTargetView(mResources->gameOutputTexture.Get(), &rtvDesc, mResources->gameOutputTextureRtv.ReleaseAndGetAddressOf());
-
-		if (FAILED(hresult)) {
-			throw std::runtime_error{ "Failed to recreate game view render target view." };
+		if (FAILED(mResources->device->CreateRenderTargetView(mResources->gameOutputTexture.Get(), &outputRtvDesc, mResources->gameOutputTextureRtv.ReleaseAndGetAddressOf()))) {
+			throw std::runtime_error{ "Failed to recreate game view output texture rtv." };
 		}
 
-		D3D11_SHADER_RESOURCE_VIEW_DESC const srvDesc
-		{
-			.Format = texDesc.Format,
+		D3D11_SHADER_RESOURCE_VIEW_DESC const outputSrvDesc{
+			.Format = outputTexDesc.Format,
 			.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D,
 			.Texture2D =
 			{
@@ -220,10 +257,36 @@ namespace leopph {
 			}
 		};
 
-		hresult = mResources->device->CreateShaderResourceView(mResources->gameOutputTexture.Get(), &srvDesc, mResources->gameOutputTextureSrv.ReleaseAndGetAddressOf());
+		if (FAILED(mResources->device->CreateShaderResourceView(mResources->gameOutputTexture.Get(), &outputSrvDesc, mResources->gameOutputTextureSrv.ReleaseAndGetAddressOf()))) {
+			throw std::runtime_error{ "Failed to recreate game view output texture srv." };
+		}
 
-		if (FAILED(hresult)) {
-			throw std::runtime_error{ "Failed to recreate game view shader resource view." };
+		D3D11_TEXTURE2D_DESC const dsTexDesc{
+			.Width = width,
+			.Height = height,
+			.MipLevels = 1,
+			.ArraySize = 1,
+			.Format = DXGI_FORMAT_D24_UNORM_S8_UINT,
+			.SampleDesc = {.Count = 1, .Quality = 0 },
+			.Usage = D3D11_USAGE_DEFAULT,
+			.BindFlags = D3D11_BIND_DEPTH_STENCIL,
+			.CPUAccessFlags = 0,
+			.MiscFlags = 0
+		};
+
+		if (FAILED(mResources->device->CreateTexture2D(&dsTexDesc, nullptr, mResources->gameDSTex.ReleaseAndGetAddressOf()))) {
+			throw std::runtime_error{ "Failed to recreate game view depth-stencil texture." };
+		}
+
+		D3D11_DEPTH_STENCIL_VIEW_DESC const dsDsvDesc{
+			.Format = dsTexDesc.Format,
+			.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D,
+			.Flags = 0,
+			.Texture2D = {.MipSlice = 0 }
+		};
+
+		if (FAILED(mResources->device->CreateDepthStencilView(mResources->gameDSTex.Get(), &dsDsvDesc, mResources->gameDSV.ReleaseAndGetAddressOf()))) {
+			throw std::runtime_error{ "Failed to recreate game view depth-stencil texture dsv." };
 		}
 	}
 
@@ -614,8 +677,99 @@ namespace leopph {
 		};
 
 		if (FAILED(mResources->device->CreateBuffer(&toneMapGammaCBDesc, nullptr, mResources->toneMapGammaCB.GetAddressOf()))) {
-			throw std::runtime_error{"Failed to create tonemap-gamma constant buffer."};
+			throw std::runtime_error{ "Failed to create tonemap-gamma constant buffer." };
 		}
+	}
+
+	auto Renderer::DrawMeshes() const noexcept -> void {
+		for (auto const& staticMeshComponent : mStaticMeshComponents) {
+			auto const mesh{ staticMeshComponent->GetMesh() };
+			auto const mat{ staticMeshComponent->GetMaterial() };
+
+			DirectX::XMFLOAT4X4 const modelMat{ staticMeshComponent->GetEntity()->GetTransform().GetModelMatrix().get_data() };
+			DirectX::XMFLOAT3X3 const normalMat{ staticMeshComponent->GetEntity()->GetTransform().GetNormalMatrix().get_data() };
+
+			D3D11_MAPPED_SUBRESOURCE mappedPerModelCBuf;
+			mResources->context->Map(mResources->perModelCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerModelCBuf);
+			auto& [modelMatData, normalMatData]{ *static_cast<PerModelCBufferData*>(mappedPerModelCBuf.pData) };
+			modelMatData = modelMat;
+			normalMatData = XMLoadFloat3x3(&normalMat);
+			mResources->context->Unmap(mResources->perModelCB.Get(), 0);
+
+			ID3D11Buffer* vertexBuffers[]{ mesh->GetPositionBuffer().Get(), mesh->GetNormalBuffer().Get(), mesh->GetUVBuffer().Get() };
+			UINT constexpr strides[]{ sizeof(Vector3), sizeof(Vector3), sizeof(Vector2) };
+			UINT constexpr offsets[]{ 0, 0, 0 };
+			mResources->context->IASetVertexBuffers(0, 3, vertexBuffers, strides, offsets);
+			mResources->context->IASetIndexBuffer(mesh->GetIndexBuffer().Get(), DXGI_FORMAT_R32_UINT, 0);
+			mResources->context->IASetInputLayout(mResources->meshIL.Get());
+
+			ID3D11Buffer* const constantBuffers[]{ mResources->perFrameCB.Get(), mResources->perCamCB.Get(), mat->GetBuffer(), mResources->perModelCB.Get() };
+
+			mResources->context->VSSetShader(mResources->meshVS.Get(), nullptr, 0);
+			mResources->context->VSSetConstantBuffers(0, ARRAYSIZE(constantBuffers), constantBuffers);
+
+			mResources->context->PSSetShader(mResources->meshPbrPS.Get(), nullptr, 0);
+			mResources->context->PSSetConstantBuffers(0, ARRAYSIZE(constantBuffers), constantBuffers);
+
+			mResources->context->DrawIndexed(clamp_cast<UINT>(mesh->GetIndices().size()), 0, 0);
+		}
+	}
+
+	auto Renderer::UpdatePerFrameCB() const noexcept -> void {
+		D3D11_MAPPED_SUBRESOURCE mappedPerFrameCB;
+		mResources->context->Map(mResources->perFrameCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerFrameCB);
+
+		auto const perFrameCBData{ static_cast<PerFrameCBufferData*>(mappedPerFrameCB.pData) };
+
+		perFrameCBData->calcDirLight = !mDirLights.empty();
+
+		if (!mDirLights.empty()) {
+			perFrameCBData->dirLight.color = mDirLights[0]->GetColor();
+			perFrameCBData->dirLight.direction = mDirLights[0]->get_direction();
+			perFrameCBData->dirLight.intensity = mDirLights[0]->GetIntensity();
+		}
+
+		mResources->context->Unmap(mResources->perFrameCB.Get(), 0);
+	}
+
+	auto Renderer::DoToneMapGammaCorrectionStep(ID3D11ShaderResourceView* const src, ID3D11RenderTargetView* const dst) const noexcept -> void {
+		// Back up old views to restore later.
+
+		ComPtr<ID3D11RenderTargetView> rtvBackup;
+		ComPtr<ID3D11DepthStencilView> dsvBackup;
+		ComPtr<ID3D11ShaderResourceView> srvBackup;
+		mResources->context->OMGetRenderTargets(1, rtvBackup.GetAddressOf(), dsvBackup.GetAddressOf());
+		mResources->context->PSGetShaderResources(0, 1, srvBackup.GetAddressOf());
+
+		// Do the step
+
+		mResources->context->OMSetRenderTargets(1, &dst, nullptr);
+
+		D3D11_MAPPED_SUBRESOURCE mappedToneMapGammaCB;
+		mResources->context->Map(mResources->toneMapGammaCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedToneMapGammaCB);
+		auto const toneMapGammaCBData{ static_cast<ToneMapGammaCBData*>(mappedToneMapGammaCB.pData) };
+		toneMapGammaCBData->invGamma = mInvGamma;
+		mResources->context->Unmap(mResources->toneMapGammaCB.Get(), 0);
+
+		ID3D11Buffer* vertexBuffers[]{ mResources->quadPosVB.Get(), mResources->quadUvVB.Get() };
+		UINT constexpr strides[]{ sizeof(Vector2), sizeof(Vector2) };
+		UINT constexpr offsets[]{ 0, 0 };
+		mResources->context->IASetVertexBuffers(0, 2, vertexBuffers, strides, offsets);
+		mResources->context->IASetIndexBuffer(mResources->quadIB.Get(), DXGI_FORMAT_R32_UINT, 0);
+		mResources->context->IASetInputLayout(mResources->texQuadIL.Get());
+
+		mResources->context->VSSetShader(mResources->texQuadVS.Get(), nullptr, 0);
+
+		mResources->context->PSSetShader(mResources->toneMapGammaPS.Get(), nullptr, 0);
+		mResources->context->PSSetConstantBuffers(0, 1, mResources->toneMapGammaCB.GetAddressOf());
+		mResources->context->PSSetShaderResources(0, 1, &src);
+
+		mResources->context->DrawIndexed(ARRAYSIZE(QUAD_INDICES), 0, 0);
+
+		// Restore old view bindings to that we don't leave any input/output conflicts behind.
+
+		mResources->context->PSSetShaderResources(0, 1, srvBackup.GetAddressOf());
+		mResources->context->OMSetRenderTargets(1, rtvBackup.GetAddressOf(), dsvBackup.Get());
 	}
 
 
@@ -726,8 +880,24 @@ namespace leopph {
 	}
 
 
-	auto Renderer::DrawCamera(CameraComponent const* const cam) -> void {
-		/*auto const& camViewport{ cam->GetViewport() };
+	auto Renderer::DrawCamera(CameraComponent const* const cam) const noexcept -> void {
+		DirectX::XMFLOAT3 const camPos{ cam->GetEntity()->GetTransform().GetWorldPosition().get_data() };
+		DirectX::XMFLOAT3 const camForward{ cam->GetEntity()->GetTransform().GetForwardAxis().get_data() };
+		DirectX::XMMATRIX const viewMat{ DirectX::XMMatrixLookToLH(XMLoadFloat3(&camPos), XMLoadFloat3(&camForward), { 0, 1, 0 }) };
+		DirectX::XMMATRIX const projMat{ cam->GetType() == CameraComponent::Type::Perspective ?
+			DirectX::XMMatrixPerspectiveFovLH(2.0f * std::atanf(std::tanf(to_radians(cam->GetPerspectiveFov()) / 2.0f) / mGameAspect), mGameAspect, cam->GetNearClipPlane(), cam->GetFarClipPlane()) :
+			DirectX::XMMatrixOrthographicLH(cam->GetOrthographicSize(), cam->GetOrthographicSize() / mGameAspect, cam->GetNearClipPlane(), cam->GetFarClipPlane()) };
+		
+		auto const viewProjMat{ XMMatrixMultiply(viewMat, projMat) };
+
+		D3D11_MAPPED_SUBRESOURCE mappedPerCamCBuf;
+		mResources->context->Map(mResources->perCamCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerCamCBuf);
+		auto const perCamCBufData{ static_cast<PerCameraCBufferData*>(mappedPerCamCBuf.pData) };
+		XMStoreFloat4x4(&perCamCBufData->viewProjMat, viewProjMat);
+		perCamCBufData->camPos = camPos;
+		mResources->context->Unmap(mResources->perCamCB.Get(), 0);
+
+		auto const& camViewport{ cam->GetViewport() };
 		D3D11_VIEWPORT const viewport{
 			.TopLeftX = static_cast<FLOAT>(mGameRes.width) * camViewport.position.x,
 			.TopLeftY = static_cast<FLOAT>(mGameRes.height) * camViewport.position.y,
@@ -739,7 +909,7 @@ namespace leopph {
 
 		mResources->context->RSSetViewports(1, &viewport);
 
-		D3D11_MAPPED_SUBRESOURCE mappedClearColorCbuf;
+		/*D3D11_MAPPED_SUBRESOURCE mappedClearColorCbuf;
 		mResources->context->Map(mResources->clearColorCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedClearColorCbuf);
 		std::memcpy(mappedClearColorCbuf.pData, cam->GetBackgroundColor().get_data(), 16);
 		mResources->context->Unmap(mResources->clearColorCB.Get(), 0);
@@ -751,109 +921,58 @@ namespace leopph {
 		mResources->context->PSSetShader(mResources->clearColorPS.Get(), nullptr, 0);
 		mResources->context->PSSetConstantBuffers(0, 1, mResources->clearColorCB.GetAddressOf());
 		mResources->context->OMSetRenderTargets(1, mResources->gameOutputTextureRtv.GetAddressOf(), nullptr);
-		mResources->context->DrawIndexed(ARRAYSIZE(QUAD_INDICES), 0, 0);
+		mResources->context->DrawIndexed(ARRAYSIZE(QUAD_INDICES), 0, 0);*/
 
-		if (mCubeModels.empty()) {
+		DrawMeshes();
+	}
+
+
+	auto Renderer::DrawGame() const noexcept -> void {
+		FLOAT constexpr clearColor[]{ 0, 0, 0, 1 };
+		mResources->context->ClearRenderTargetView(mResources->gameHdrTextureRtv.Get(), clearColor);
+		mResources->context->ClearDepthStencilView(mResources->gameDSV.Get(), D3D11_CLEAR_DEPTH, 1, 0);
+
+		if (mStaticMeshComponents.empty()) {
 			return;
 		}
 
-		DirectX::XMFLOAT3 const camPos{ cam->GetEntity()->GetTransform().GetWorldPosition().get_data() };
-		DirectX::XMFLOAT3 const camForward{ cam->GetEntity()->GetTransform().GetForwardAxis().get_data() };
-		DirectX::XMMATRIX viewMat = DirectX::XMMatrixLookToLH(DirectX::XMLoadFloat3(&camPos), DirectX::XMLoadFloat3(&camForward), { 0, 1, 0 });
+		mResources->context->OMSetRenderTargets(1, mResources->gameHdrTextureRtv.GetAddressOf(), mResources->gameDSV.Get());
 
-		DirectX::XMMATRIX projMat;
+		UpdatePerFrameCB();
 
-		if (cam->GetType() == CameraComponent::Type::Perspective) {
-			auto const fovHorizRad = DirectX::XMConvertToRadians(cam->GetPerspectiveFov());
-			auto const fovVertRad = 2.0f * std::atanf(std::tanf(fovHorizRad / 2.0f) / mGameAspect);
-			projMat = DirectX::XMMatrixPerspectiveFovLH(fovVertRad, mGameAspect, cam->GetNearClipPlane(), cam->GetFarClipPlane());
-		}
-		else {
-			projMat = DirectX::XMMatrixOrthographicLH(cam->GetOrthographicSize(), cam->GetOrthographicSize() / mGameAspect, cam->GetNearClipPlane(), cam->GetFarClipPlane());
-		}
-
-		D3D11_MAPPED_SUBRESOURCE mappedCbuffer;
-		mResources->context->Map(mResources->perModelCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedCbuffer);
-
-		DirectX::XMStoreFloat4x4(static_cast<DirectX::XMFLOAT4X4*>(mappedCbuffer.pData), viewMat * projMat);
-		mResources->context->Unmap(mResources->perModelCB.Get(), 0);
-
-		D3D11_MAPPED_SUBRESOURCE mappedLightBuffer;
-		mResources->context->Map(mResources->perFrameCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedLightBuffer);
-		auto const lightBufferData{ static_cast<PerFrameCBufferData*>(mappedLightBuffer.pData) };
-		lightBufferData->calcDirLight = !mDirLights.empty();
-		if (!mDirLights.empty()) {
-			lightBufferData->dirLight.color = mDirLights[0]->GetColor();
-			lightBufferData->dirLight.direction = mDirLights[0]->get_direction();
-			lightBufferData->dirLight.intensity = mDirLights[0]->GetIntensity();
-		}
-		mResources->context->Unmap(mResources->perFrameCB.Get(), 0);
-
-		/*D3D11_MAPPED_SUBRESOURCE mappedMatBuf;
-		mResources->context->Map(mResources->materialCBuf.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedMatBuf);
-		auto const matBufData{ static_cast<CBufMaterialBuffer*>(mappedMatBuf.pData) };
-		matBufData->albedo = Vector3{ 1 };
-		matBufData->metallic = 0;
-		matBufData->ao = 0;
-		matBufData->roughness = 0.5;
-		mResources->context->Unmap(mResources->materialCBuf.Get(), 0);
-
-		D3D11_MAPPED_SUBRESOURCE mappedCamBuf;
-		mResources->context->Map(mResources->perCamCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedCamBuf);
-		auto const camBufData{ static_cast<PerCameraCBufferData*>(mappedCamBuf.pData) };
-		camBufData->camPos = cam->GetEntity()->GetTransform().GetWorldPosition();
-		mResources->context->Unmap(mResources->perCamCB.Get(), 0);
-
-
-		if (mCubeModels.size() > mInstanceBufferElementCapacity) {
-			mInstanceBufferElementCapacity = static_cast<UINT>(mCubeModels.size());
-
-			D3D11_BUFFER_DESC const desc
-			{
-				.ByteWidth = clamp_cast<UINT>(mInstanceBufferElementCapacity * sizeof(CubeInstanceData)),
-				.Usage = D3D11_USAGE_DYNAMIC,
-				.BindFlags = D3D11_BIND_VERTEX_BUFFER,
-				.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
-				.MiscFlags = 0,
-				.StructureByteStride = 0
-			};
-
-			if (auto const hresult = mResources->device->CreateBuffer(&desc, nullptr, mResources->cubeInstBuf.ReleaseAndGetAddressOf()); FAILED(hresult)) {
-				throw std::runtime_error{ "Failed to resize cube instance buffer." };
-			}
-		}
-
-		D3D11_MAPPED_SUBRESOURCE mappedCubeInstBuf;
-		mResources->context->Map(mResources->cubeInstBuf.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedCubeInstBuf);
-		auto const mappedInstBufData{ static_cast<CubeInstanceData*>(mappedCubeInstBuf.pData) };
-		for (std::size_t i = 0; i < mCubeModels.size(); i++) {
-			mappedInstBufData[i].modelMat = DirectX::XMFLOAT4X4{ mCubeModels[i]->GetEntity()->GetTransform().GetModelMatrix().get_data() };
-			mappedInstBufData[i].normalMat = DirectX::XMFLOAT3X3{ mCubeModels[i]->GetEntity()->GetTransform().GetNormalMatrix().get_data() };
-		}
-		mResources->context->Unmap(mResources->cubeInstBuf.Get(), 0);
-
-		ID3D11Buffer* cubeVertBufs[]{ mResources->cubeVB.Get(), mResources->cubeInstBuf.Get() };
-		UINT cubeVertStrides[]{ 6 * sizeof(float), 25 * sizeof(float) };
-		UINT cubeVertOffsets[]{ 0, 0 };
-		mResources->context->IASetVertexBuffers(0, 2, cubeVertBufs, cubeVertStrides, cubeVertOffsets);
-		mResources->context->IASetIndexBuffer(mResources->cubeIB.Get(), DXGI_FORMAT_R32_UINT, 0);
-		mResources->context->IASetInputLayout(mResources->meshIL.Get());
-		mResources->context->VSSetShader(mResources->meshVS.Get(), nullptr, 0);
-		mResources->context->VSSetConstantBuffers(0, 1, mResources->perModelCB.GetAddressOf());
-		mResources->context->PSSetShader(mResources->meshBlinnPhongPS.Get(), nullptr, 0);
-		ID3D11Buffer* const psCBuffers[]{ mCubeModels[0]->GetMaterial()->GetBuffer(), mResources->perCamCB.Get(), mResources->perFrameCB.Get() };
-		mResources->context->PSSetConstantBuffers(0, ARRAYSIZE(psCBuffers), psCBuffers);
-		mResources->context->DrawIndexedInstanced(ARRAYSIZE(CUBE_INDICES), static_cast<UINT>(mCubeModels.size()), 0, 0, 0);*/
-	}
-
-
-	auto Renderer::DrawGame() -> void {
 		for (auto const* const cam : CameraComponent::GetAllInstances()) {
 			DrawCamera(cam);
 		}
+
+		DoToneMapGammaCorrectionStep(mResources->gameHdrTextureSrv.Get(), mResources->gameOutputTextureRtv.Get());
 	}
 
-	auto Renderer::DrawSceneView(EditorCamera const& cam) -> void {
+	auto Renderer::DrawSceneView(EditorCamera const& cam) const noexcept -> void {
+		FLOAT constexpr clearColor[]{ 0, 0, 0, 1 };
+		mResources->context->ClearRenderTargetView(mResources->sceneHdrTextureRtv.Get(), clearColor);
+		mResources->context->ClearDepthStencilView(mResources->sceneDSV.Get(), D3D11_CLEAR_DEPTH, 1, 0);
+
+		if (mStaticMeshComponents.empty()) {
+			return;
+		}
+
+		mResources->context->OMSetRenderTargets(1, mResources->sceneHdrTextureRtv.GetAddressOf(), mResources->sceneDSV.Get());
+
+		UpdatePerFrameCB();
+
+		DirectX::XMFLOAT3 const camPos{ cam.position.get_data() };
+		DirectX::XMFLOAT3 const camForward{ cam.orientation.Rotate(Vector3::forward()).get_data() };
+		DirectX::XMMATRIX const viewMat{ DirectX::XMMatrixLookToLH(XMLoadFloat3(&camPos), XMLoadFloat3(&camForward), { 0, 1, 0 }) };
+		DirectX::XMMATRIX const projMat{ DirectX::XMMatrixPerspectiveFovLH(cam.fovVertRad, mSceneAspect, cam.nearClip, cam.farClip) };
+		auto const viewProjMat{ XMMatrixMultiply(viewMat, projMat) };
+
+		D3D11_MAPPED_SUBRESOURCE mappedPerCamCBuf;
+		mResources->context->Map(mResources->perCamCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerCamCBuf);
+		auto const perCamCBufData{ static_cast<PerCameraCBufferData*>(mappedPerCamCBuf.pData) };
+		XMStoreFloat4x4(&perCamCBufData->viewProjMat, viewProjMat);
+		perCamCBufData->camPos = camPos;
+		mResources->context->Unmap(mResources->perCamCB.Get(), 0);
+
 		D3D11_VIEWPORT const viewport{
 			.TopLeftX = 0,
 			.TopLeftY = 0,
@@ -865,94 +984,8 @@ namespace leopph {
 
 		mResources->context->RSSetViewports(1, &viewport);
 
-		FLOAT constexpr clearColor[]{ 0, 0, 0, 1 };
-		mResources->context->ClearRenderTargetView(mResources->sceneHdrTextureRtv.Get(), clearColor);
-		mResources->context->ClearDepthStencilView(mResources->sceneDSV.Get(), D3D11_CLEAR_DEPTH, 1, 0);
-
-		if (mCubeModels.empty()) {
-			return;
-		}
-
-		mResources->context->OMSetRenderTargets(1, mResources->sceneHdrTextureRtv.GetAddressOf(), mResources->sceneDSV.Get());
-
-		D3D11_MAPPED_SUBRESOURCE mappedPerFrameCBuf;
-		mResources->context->Map(mResources->perFrameCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerFrameCBuf);
-		auto const perFrameCBufData{ static_cast<PerFrameCBufferData*>(mappedPerFrameCBuf.pData) };
-		perFrameCBufData->calcDirLight = !mDirLights.empty();
-		if (!mDirLights.empty()) {
-			perFrameCBufData->dirLight.color = mDirLights[0]->GetColor();
-			perFrameCBufData->dirLight.direction = mDirLights[0]->get_direction();
-			perFrameCBufData->dirLight.intensity = mDirLights[0]->GetIntensity();
-		}
-		mResources->context->Unmap(mResources->perFrameCB.Get(), 0);
-
-		DirectX::XMFLOAT3 const camPos{ cam.position.get_data() };
-		DirectX::XMFLOAT3 const camForward{ cam.orientation.Rotate(Vector3::forward()).get_data() };
-		DirectX::XMMATRIX const viewMat{ DirectX::XMMatrixLookToLH(DirectX::XMLoadFloat3(&camPos), DirectX::XMLoadFloat3(&camForward), { 0, 1, 0 }) };
-		DirectX::XMMATRIX const projMat{ DirectX::XMMatrixPerspectiveFovLH(cam.fovVertRad, mSceneAspect, cam.nearClip, cam.farClip) };
-		auto const viewProjMat{ XMMatrixMultiply(viewMat, projMat) };
-
-		D3D11_MAPPED_SUBRESOURCE mappedPerCamCBuf;
-		mResources->context->Map(mResources->perCamCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerCamCBuf);
-		auto const perCamCBufData{ static_cast<PerCameraCBufferData*>(mappedPerCamCBuf.pData) };
-		XMStoreFloat4x4(&perCamCBufData->viewProjMat, viewProjMat);
-		perCamCBufData->camPos = camPos;
-		mResources->context->Unmap(mResources->perCamCB.Get(), 0);
-
-		for (auto const& cubeModel : mCubeModels) {
-			auto const mesh{ cubeModel->GetMesh() };
-			auto const mat{ cubeModel->GetMaterial() };
-
-			DirectX::XMFLOAT4X4 const modelMat{ cubeModel->GetEntity()->GetTransform().GetModelMatrix().get_data() };
-			DirectX::XMFLOAT3X3 const normalMat{ cubeModel->GetEntity()->GetTransform().GetNormalMatrix().get_data() };
-
-			D3D11_MAPPED_SUBRESOURCE mappedPerModelCBuf;
-			mResources->context->Map(mResources->perModelCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerModelCBuf);
-			auto& [modelMatData, normalMatData]{ *static_cast<PerModelCBufferData*>(mappedPerModelCBuf.pData) };
-			modelMatData = modelMat;
-			normalMatData = XMLoadFloat3x3(&normalMat);
-			mResources->context->Unmap(mResources->perModelCB.Get(), 0);
-
-			ID3D11Buffer* vertexBuffers[]{ mesh->GetPositionBuffer().Get(), mesh->GetNormalBuffer().Get(), mesh->GetUVBuffer().Get() };
-			UINT constexpr strides[]{ sizeof(Vector3), sizeof(Vector3), sizeof(Vector2) };
-			UINT constexpr offsets[]{ 0, 0, 0 };
-			mResources->context->IASetVertexBuffers(0, 3, vertexBuffers, strides, offsets);
-			mResources->context->IASetIndexBuffer(mesh->GetIndexBuffer().Get(), DXGI_FORMAT_R32_UINT, 0);
-			mResources->context->IASetInputLayout(mResources->meshIL.Get());
-
-			ID3D11Buffer* const constantBuffers[]{ mResources->perFrameCB.Get(), mResources->perCamCB.Get(), mat->GetBuffer(), mResources->perModelCB.Get() };
-
-			mResources->context->VSSetShader(mResources->meshVS.Get(), nullptr, 0);
-			mResources->context->VSSetConstantBuffers(0, ARRAYSIZE(constantBuffers), constantBuffers);
-
-			mResources->context->PSSetShader(mResources->meshPbrPS.Get(), nullptr, 0);
-			mResources->context->PSSetConstantBuffers(0, ARRAYSIZE(constantBuffers), constantBuffers);
-
-			mResources->context->DrawIndexed(clamp_cast<UINT>(mesh->GetIndices().size()), 0, 0);
-		}
-
-		mResources->context->OMSetRenderTargets(1, mResources->sceneOutputTextureRtv.GetAddressOf(), nullptr);
-
-		D3D11_MAPPED_SUBRESOURCE mappedToneMapGammaCB;
-		mResources->context->Map(mResources->toneMapGammaCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedToneMapGammaCB);
-		auto const toneMapGammaCBData{ static_cast<ToneMapGammaCBData*>(mappedToneMapGammaCB.pData) };
-		toneMapGammaCBData->invGamma = mInvGamma;
-		mResources->context->Unmap(mResources->toneMapGammaCB.Get(), 0);
-
-		ID3D11Buffer* vertexBuffers[]{ mResources->quadPosVB.Get(), mResources->quadUvVB.Get() };
-		UINT constexpr strides[]{ sizeof(Vector2), sizeof(Vector2) };
-		UINT constexpr offsets[]{ 0, 0 };
-		mResources->context->IASetVertexBuffers(0, 2, vertexBuffers, strides, offsets);
-		mResources->context->IASetIndexBuffer(mResources->quadIB.Get(), DXGI_FORMAT_R32_UINT, 0);
-		mResources->context->IASetInputLayout(mResources->texQuadIL.Get());
-
-		mResources->context->VSSetShader(mResources->texQuadVS.Get(), nullptr, 0);
-
-		mResources->context->PSSetShader(mResources->toneMapGammaPS.Get(), nullptr, 0);
-		mResources->context->PSSetConstantBuffers(0, 1, mResources->toneMapGammaCB.GetAddressOf());
-		mResources->context->PSSetShaderResources(0, 1, mResources->sceneHdrTextureSrv.GetAddressOf());
-
-		mResources->context->DrawIndexed(ARRAYSIZE(QUAD_INDICES), 0, 0);
+		DrawMeshes();
+		DoToneMapGammaCorrectionStep(mResources->sceneHdrTextureSrv.Get(), mResources->sceneOutputTextureRtv.Get());
 	}
 
 
@@ -1020,12 +1053,12 @@ namespace leopph {
 
 
 	auto Renderer::RegisterCubeModel(CubeModelComponent const* const cubeModel) -> void {
-		mCubeModels.emplace_back(cubeModel);
+		mStaticMeshComponents.emplace_back(cubeModel);
 	}
 
 
 	auto Renderer::UnregisterCubeModel(CubeModelComponent const* const cubeModel) -> void {
-		std::erase(mCubeModels, cubeModel);
+		std::erase(mStaticMeshComponents, cubeModel);
 	}
 
 
