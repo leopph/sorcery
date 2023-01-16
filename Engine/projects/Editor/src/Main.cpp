@@ -647,7 +647,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 						static auto op{ ImGuizmo::OPERATION::TRANSLATE };
 						static bool showGrid{ true };
 
-						if (ImGui::IsWindowFocused() && !isMovingSceneCamera) {
+						if (!io.WantTextInput && !isMovingSceneCamera) {
 							if (GetKeyDown(leopph::Key::T)) {
 								op = ImGuizmo::TRANSLATE;
 							}
