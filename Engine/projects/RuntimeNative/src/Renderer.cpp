@@ -9,16 +9,21 @@
 
 #ifndef NDEBUG
 #include "shaders/generated/ClearColorPSBinDebug.h"
-#include "shaders/generated/ClearColorVSBinDebug.h"
 #include "shaders/generated/MeshBlinnPhongPSBinDebug.h"
 #include "shaders/generated/MeshPbrPSBinDebug.h"
 #include "shaders/generated/MeshVSBinDebug.h"
+#include "shaders/generated/QuadVSBinDebug.h"
+#include "shaders/generated/TexQuadVSBinDebug.h"
+#include "shaders/generated/ToneMapGammaPSBinDebug.h"
+
 #else
 #include "shaders/generated/ClearColorPSBin.h"
-#include "shaders/generated/ClearColorVSBin.h"
 #include "shaders/generated/MeshBlinnPhongPSBin.h"
 #include "shaders/generated/MeshPbrPSBin.h"
 #include "shaders/generated/MeshVSBin.h"
+#include "shaders/generated/QuadVSBin.h"
+#include "shaders/generated/TexQuadVSBin.h"
+#include "shaders/generated/ToneMapGammaPSBin.h"
 #endif
 
 #include <DirectXMath.h>
@@ -43,7 +48,6 @@ namespace leopph {
 	struct PerFrameCBufferData {
 		CBufDirLight dirLight;
 		BOOL calcDirLight;
-		f32 invGamma;
 	};
 
 	struct PerCameraCBufferData {
@@ -67,16 +71,23 @@ namespace leopph {
 		DirectX::XMMATRIX normalMat;
 	};
 
+	struct ToneMapGammaCBData {
+		float invGamma;
+	};
+
 
 	namespace {
-		FLOAT constexpr QUAD_VERTICES[]{
-			-1, 1, -1, -1, 1, -1, 1, 1
+		Vector2 const QUAD_POSITIONS[]{
+			{ -1, 1 }, { -1, -1 }, { 1, -1 }, { 1, 1 }
 		};
+
+		Vector2 const QUAD_UVS[]{
+			{ 0, 0 }, { 0, 1 }, { 1, 1 }, { 1, 0 }
+		};
+
 		UINT constexpr QUAD_INDICES[]{
-			0, 1, 2, 2, 3, 0
+			2, 1, 0, 0, 3, 2
 		};
-		UINT constexpr QUAD_VERT_BUF_STRIDE{ 8 };
-		UINT constexpr QUAD_VERT_BUF_OFFSET{ 0 };
 
 		std::vector const CUBE_POSITIONS{
 			Vector3{ 0.5f, 0.5f, 0.5f },
@@ -157,7 +168,7 @@ namespace leopph {
 	}
 
 
-	auto Renderer::RecreateGameRenderTextureAndViews(u32 const width, u32 const height) const -> void {
+	auto Renderer::RecreateGameTexturesAndViews(u32 const width, u32 const height) const -> void {
 		D3D11_TEXTURE2D_DESC const texDesc
 		{
 			.Width = width,
@@ -176,7 +187,7 @@ namespace leopph {
 			.MiscFlags = 0
 		};
 
-		auto hresult = mResources->device->CreateTexture2D(&texDesc, nullptr, mResources->gameRenderTexture.ReleaseAndGetAddressOf());
+		auto hresult = mResources->device->CreateTexture2D(&texDesc, nullptr, mResources->gameOutputTexture.ReleaseAndGetAddressOf());
 
 		if (FAILED(hresult)) {
 			throw std::runtime_error{ "Failed to recreate game view render texture." };
@@ -192,7 +203,7 @@ namespace leopph {
 			}
 		};
 
-		hresult = mResources->device->CreateRenderTargetView(mResources->gameRenderTexture.Get(), &rtvDesc, mResources->gameRenderTextureRtv.ReleaseAndGetAddressOf());
+		hresult = mResources->device->CreateRenderTargetView(mResources->gameOutputTexture.Get(), &rtvDesc, mResources->gameOutputTextureRtv.ReleaseAndGetAddressOf());
 
 		if (FAILED(hresult)) {
 			throw std::runtime_error{ "Failed to recreate game view render target view." };
@@ -209,16 +220,59 @@ namespace leopph {
 			}
 		};
 
-		hresult = mResources->device->CreateShaderResourceView(mResources->gameRenderTexture.Get(), &srvDesc, mResources->gameRenderTextureSrv.ReleaseAndGetAddressOf());
+		hresult = mResources->device->CreateShaderResourceView(mResources->gameOutputTexture.Get(), &srvDesc, mResources->gameOutputTextureSrv.ReleaseAndGetAddressOf());
 
 		if (FAILED(hresult)) {
 			throw std::runtime_error{ "Failed to recreate game view shader resource view." };
 		}
 	}
 
-	auto Renderer::RecreateSceneRenderTextureAndViews(u32 const width, u32 const height) const -> void {
-		D3D11_TEXTURE2D_DESC const colTexDesc
-		{
+	auto Renderer::RecreateSceneTexturesAndViews(u32 const width, u32 const height) const -> void {
+		D3D11_TEXTURE2D_DESC const hdrTexDesc{
+			.Width = width,
+			.Height = height,
+			.MipLevels = 1,
+			.ArraySize = 1,
+			.Format = DXGI_FORMAT_R32G32B32A32_FLOAT,
+			.SampleDesc = { .Count = 1, .Quality = 0 },
+			.Usage = D3D11_USAGE_DEFAULT,
+			.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE,
+			.CPUAccessFlags = 0,
+			.MiscFlags = 0
+		};
+
+		if (FAILED(mResources->device->CreateTexture2D(&hdrTexDesc, nullptr, mResources->sceneHdrTexture.ReleaseAndGetAddressOf()))) {
+			throw std::runtime_error{ "Failed to recreate scene view hdr texture." };
+		}
+
+		D3D11_RENDER_TARGET_VIEW_DESC const hdrRtvDesc{
+			.Format = hdrTexDesc.Format,
+			.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D,
+			.Texture2D
+			{
+				.MipSlice = 0
+			}
+		};
+
+		if (FAILED(mResources->device->CreateRenderTargetView(mResources->sceneHdrTexture.Get(), &hdrRtvDesc, mResources->sceneHdrTextureRtv.ReleaseAndGetAddressOf()))) {
+			throw std::runtime_error{ "Failed to recreate scene view hdr texture rtv." };
+		}
+
+		D3D11_SHADER_RESOURCE_VIEW_DESC const hdrSrvDesc{
+			.Format = hdrTexDesc.Format,
+			.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D,
+			.Texture2D =
+			{
+				.MostDetailedMip = 0,
+				.MipLevels = 1
+			}
+		};
+
+		if (FAILED(mResources->device->CreateShaderResourceView(mResources->sceneHdrTexture.Get(), &hdrSrvDesc, mResources->sceneHdrTextureSrv.ReleaseAndGetAddressOf()))) {
+			throw std::runtime_error{ "Failed to recreate scene view output texture srv." };
+		}
+
+		D3D11_TEXTURE2D_DESC const outputTexDesc{
 			.Width = width,
 			.Height = height,
 			.MipLevels = 1,
@@ -235,15 +289,12 @@ namespace leopph {
 			.MiscFlags = 0
 		};
 
-		auto hresult = mResources->device->CreateTexture2D(&colTexDesc, nullptr, mResources->sceneRenderTexture.ReleaseAndGetAddressOf());
-
-		if (FAILED(hresult)) {
-			throw std::runtime_error{ "Failed to recreate scene view color texture." };
+		if (FAILED(mResources->device->CreateTexture2D(&outputTexDesc, nullptr, mResources->sceneOutputTexture.ReleaseAndGetAddressOf()))) {
+			throw std::runtime_error{ "Failed to recreate scene view output texture." };
 		}
 
-		D3D11_RENDER_TARGET_VIEW_DESC const colRtvDesc
-		{
-			.Format = colTexDesc.Format,
+		D3D11_RENDER_TARGET_VIEW_DESC const outputRtvDesc{
+			.Format = outputTexDesc.Format,
 			.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D,
 			.Texture2D
 			{
@@ -251,15 +302,12 @@ namespace leopph {
 			}
 		};
 
-		hresult = mResources->device->CreateRenderTargetView(mResources->sceneRenderTexture.Get(), &colRtvDesc, mResources->sceneRenderTextureRtv.ReleaseAndGetAddressOf());
-
-		if (FAILED(hresult)) {
-			throw std::runtime_error{ "Failed to recreate scene view render texture rtv." };
+		if (FAILED(mResources->device->CreateRenderTargetView(mResources->sceneOutputTexture.Get(), &outputRtvDesc, mResources->sceneOutputTextureRtv.ReleaseAndGetAddressOf()))) {
+			throw std::runtime_error{ "Failed to recreate scene view output texture rtv." };
 		}
 
-		D3D11_SHADER_RESOURCE_VIEW_DESC const colSrvDesc
-		{
-			.Format = colTexDesc.Format,
+		D3D11_SHADER_RESOURCE_VIEW_DESC const outputSrvDesc{
+			.Format = outputTexDesc.Format,
 			.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D,
 			.Texture2D =
 			{
@@ -268,10 +316,8 @@ namespace leopph {
 			}
 		};
 
-		hresult = mResources->device->CreateShaderResourceView(mResources->sceneRenderTexture.Get(), &colSrvDesc, mResources->sceneRenderTextureSrv.ReleaseAndGetAddressOf());
-
-		if (FAILED(hresult)) {
-			throw std::runtime_error{ "Failed to recreate scene view render texture srv." };
+		if (FAILED(mResources->device->CreateShaderResourceView(mResources->sceneOutputTexture.Get(), &outputSrvDesc, mResources->sceneOutputTextureSrv.ReleaseAndGetAddressOf()))) {
+			throw std::runtime_error{ "Failed to recreate scene view output texture srv." };
 		}
 
 		D3D11_TEXTURE2D_DESC const dsTexDesc{
@@ -346,11 +392,11 @@ namespace leopph {
 			}
 		};
 
-		if (FAILED(mResources->device->CreateInputLayout(meshInputDesc, ARRAYSIZE(meshInputDesc), gMeshVSBin, ARRAYSIZE(gMeshVSBin), mResources->meshIA.GetAddressOf()))) {
+		if (FAILED(mResources->device->CreateInputLayout(meshInputDesc, ARRAYSIZE(meshInputDesc), gMeshVSBin, ARRAYSIZE(gMeshVSBin), mResources->meshIL.GetAddressOf()))) {
 			throw std::runtime_error{ "Failed to create mesh input layout." };
 		}
 
-		D3D11_INPUT_ELEMENT_DESC constexpr clearColorInputDesc{
+		D3D11_INPUT_ELEMENT_DESC constexpr quadInputDesc{
 			.SemanticName = "POSITION",
 			.SemanticIndex = 0,
 			.Format = DXGI_FORMAT_R32G32_FLOAT,
@@ -360,8 +406,33 @@ namespace leopph {
 			.InstanceDataStepRate = 0,
 		};
 
-		if (FAILED(mResources->device->CreateInputLayout(&clearColorInputDesc, 1, gClearColorVSBin, ARRAYSIZE(gClearColorVSBin), mResources->clearColorIA.GetAddressOf()))) {
-			throw std::runtime_error{ "Failed to create clear color input layout." };
+		if (FAILED(mResources->device->CreateInputLayout(&quadInputDesc, 1, gQuadVSBin, ARRAYSIZE(gQuadVSBin), mResources->quadIL.GetAddressOf()))) {
+			throw std::runtime_error{ "Failed to create quad input layout." };
+		}
+
+		D3D11_INPUT_ELEMENT_DESC constexpr texQuadInputDescs[]{
+			{
+				.SemanticName = "POSITION",
+				.SemanticIndex = 0,
+				.Format = DXGI_FORMAT_R32G32_FLOAT,
+				.InputSlot = 0,
+				.AlignedByteOffset = 0,
+				.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA,
+				.InstanceDataStepRate = 0
+			},
+			{
+				.SemanticName = "TEXCOORD",
+				.SemanticIndex = 0,
+				.Format = DXGI_FORMAT_R32G32_FLOAT,
+				.InputSlot = 1,
+				.AlignedByteOffset = 0,
+				.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA,
+				.InstanceDataStepRate = 0
+			}
+		};
+
+		if (FAILED(mResources->device->CreateInputLayout(texQuadInputDescs, ARRAYSIZE(texQuadInputDescs), gTexQuadVSBin, ARRAYSIZE(gTexQuadVSBin), mResources->texQuadIL.GetAddressOf()))) {
+			throw std::runtime_error{ "Failed to create textured quad input layout." };
 		}
 	}
 
@@ -378,12 +449,20 @@ namespace leopph {
 			throw std::runtime_error{ "Failed to create mesh pbr pixel shader." };
 		}
 
-		if (FAILED(mResources->device->CreateVertexShader(gClearColorVSBin, ARRAYSIZE(gClearColorVSBin), nullptr, mResources->clearColorVs.GetAddressOf()))) {
-			throw std::runtime_error{ "Failed to create clear color vertex shader." };
+		if (FAILED(mResources->device->CreateVertexShader(gQuadVSBin, ARRAYSIZE(gQuadVSBin), nullptr, mResources->quadVS.GetAddressOf()))) {
+			throw std::runtime_error{ "Failed to create quad vertex shader." };
 		}
 
-		if (FAILED(mResources->device->CreatePixelShader(gClearColorPSBin, ARRAYSIZE(gClearColorPSBin), nullptr, mResources->clearColorPs.GetAddressOf()))) {
+		if (FAILED(mResources->device->CreatePixelShader(gClearColorPSBin, ARRAYSIZE(gClearColorPSBin), nullptr, mResources->clearColorPS.GetAddressOf()))) {
 			throw std::runtime_error{ "Failed to create clear color pixel shader." };
+		}
+
+		if (FAILED(mResources->device->CreateVertexShader(gTexQuadVSBin, ARRAYSIZE(gTexQuadVSBin), nullptr, mResources->texQuadVS.GetAddressOf()))) {
+			throw std::runtime_error{ "Failed to create textured quad vertex shader." };
+		}
+
+		if (FAILED(mResources->device->CreatePixelShader(gToneMapGammaPSBin, ARRAYSIZE(gToneMapGammaPSBin), nullptr, mResources->toneMapGammaPS.GetAddressOf()))) {
+			throw std::runtime_error{ "Failed to create textured tonemap-gamma pixel shader." };
 		}
 	}
 
@@ -422,7 +501,7 @@ namespace leopph {
 		D3D11_RENDER_TARGET_VIEW_DESC constexpr rtvDesc{
 			.Format = DXGI_FORMAT_R8G8B8A8_UNORM,
 			.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D,
-			.Texture2D = {.MipSlice = 0 }
+			.Texture2D = { .MipSlice = 0 }
 		};
 
 		if (FAILED(mResources->device->CreateRenderTargetView(backBuf.Get(), &rtvDesc, mResources->swapChainRtv.GetAddressOf()))) {
@@ -431,31 +510,45 @@ namespace leopph {
 	}
 
 	auto Renderer::CreateVertexAndIndexBuffers() const -> void {
-		D3D11_BUFFER_DESC constexpr quadVertBufDesc{
-			.ByteWidth = sizeof QUAD_VERTICES,
+		D3D11_BUFFER_DESC constexpr quadPosVBDesc{
+			.ByteWidth = sizeof QUAD_POSITIONS,
 			.Usage = D3D11_USAGE_IMMUTABLE,
 			.BindFlags = D3D11_BIND_VERTEX_BUFFER
 		};
 
-		D3D11_SUBRESOURCE_DATA constexpr quadVertBufInitData{
-			.pSysMem = QUAD_VERTICES
+		D3D11_SUBRESOURCE_DATA constexpr quadPosVBInitData{
+			.pSysMem = QUAD_POSITIONS
 		};
 
-		if (FAILED(mResources->device->CreateBuffer(&quadVertBufDesc, &quadVertBufInitData, mResources->quadVB.GetAddressOf()))) {
-			throw std::runtime_error{ "Failed to create quad vertex buffer." };
+		if (FAILED(mResources->device->CreateBuffer(&quadPosVBDesc, &quadPosVBInitData, mResources->quadPosVB.GetAddressOf()))) {
+			throw std::runtime_error{ "Failed to create quad position vertex buffer." };
 		}
 
-		D3D11_BUFFER_DESC constexpr quadIndBufDesc{
-			.ByteWidth = sizeof(QUAD_INDICES),
+		D3D11_BUFFER_DESC constexpr quadUvVBDesc{
+			.ByteWidth = sizeof QUAD_UVS,
+			.Usage = D3D11_USAGE_IMMUTABLE,
+			.BindFlags = D3D11_BIND_VERTEX_BUFFER
+		};
+
+		D3D11_SUBRESOURCE_DATA constexpr quadUvVBInitData{
+			.pSysMem = QUAD_UVS
+		};
+
+		if (FAILED(mResources->device->CreateBuffer(&quadUvVBDesc, &quadUvVBInitData, mResources->quadUvVB.GetAddressOf()))) {
+			throw std::runtime_error{ "Failed to create quad uv vertex buffer." };
+		}
+
+		D3D11_BUFFER_DESC constexpr quadIBDesc{
+			.ByteWidth = sizeof QUAD_INDICES,
 			.Usage = D3D11_USAGE_IMMUTABLE,
 			.BindFlags = D3D11_BIND_INDEX_BUFFER
 		};
 
-		D3D11_SUBRESOURCE_DATA constexpr quadIndBufInitData{
+		D3D11_SUBRESOURCE_DATA constexpr quadIBInitData{
 			.pSysMem = QUAD_INDICES
 		};
 
-		if (FAILED(mResources->device->CreateBuffer(&quadIndBufDesc, &quadIndBufInitData, mResources->quadIB.GetAddressOf()))) {
+		if (FAILED(mResources->device->CreateBuffer(&quadIBDesc, &quadIBInitData, mResources->quadIB.GetAddressOf()))) {
 			throw std::runtime_error{ "Failed to create quad index buffer." };
 		}
 	}
@@ -470,7 +563,7 @@ namespace leopph {
 			.StructureByteStride = 0
 		};
 
-		if (FAILED(mResources->device->CreateBuffer(&perLightCBufDesc, nullptr, mResources->perFrameCBuf.GetAddressOf()))) {
+		if (FAILED(mResources->device->CreateBuffer(&perLightCBufDesc, nullptr, mResources->perFrameCB.GetAddressOf()))) {
 			throw std::runtime_error{ "Failed to create light constant buffer." };
 		}
 
@@ -483,7 +576,7 @@ namespace leopph {
 			.StructureByteStride = 0
 		};
 
-		if (FAILED(mResources->device->CreateBuffer(&perCamCBufDesc, nullptr, mResources->perCamCBuf.GetAddressOf()))) {
+		if (FAILED(mResources->device->CreateBuffer(&perCamCBufDesc, nullptr, mResources->perCamCB.GetAddressOf()))) {
 			throw std::runtime_error{ "Failed to create camera constant buffer." };
 		}
 
@@ -496,7 +589,7 @@ namespace leopph {
 			.StructureByteStride = 0
 		};
 
-		if (FAILED(mResources->device->CreateBuffer(&perModelCBufDesc, nullptr, mResources->perModelCBuf.GetAddressOf()))) {
+		if (FAILED(mResources->device->CreateBuffer(&perModelCBufDesc, nullptr, mResources->perModelCB.GetAddressOf()))) {
 			throw std::runtime_error{ "Failed to create model constant buffer." };
 		}
 
@@ -507,8 +600,21 @@ namespace leopph {
 			.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
 		};
 
-		if (FAILED(mResources->device->CreateBuffer(&clearColorCBufDesc, nullptr, mResources->clearColorCBuf.GetAddressOf()))) {
+		if (FAILED(mResources->device->CreateBuffer(&clearColorCBufDesc, nullptr, mResources->clearColorCB.GetAddressOf()))) {
 			throw std::runtime_error{ "Failed to create clear color constant buffer." };
+		}
+
+		D3D11_BUFFER_DESC constexpr toneMapGammaCBDesc{
+			.ByteWidth = clamp_cast<UINT>(RoundToNextMultiple(sizeof(ToneMapGammaCBData), 16)),
+			.Usage = D3D11_USAGE_DYNAMIC,
+			.BindFlags = D3D11_BIND_CONSTANT_BUFFER,
+			.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
+			.MiscFlags = 0,
+			.StructureByteStride = 0
+		};
+
+		if (FAILED(mResources->device->CreateBuffer(&toneMapGammaCBDesc, nullptr, mResources->toneMapGammaCB.GetAddressOf()))) {
+			throw std::runtime_error{"Failed to create tonemap-gamma constant buffer."};
 		}
 	}
 
@@ -589,8 +695,8 @@ namespace leopph {
 		mSceneRes = mGameRes;
 		mSceneAspect = mGameAspect;
 
-		RecreateGameRenderTextureAndViews(gWindow.GetCurrentClientAreaSize().width, gWindow.GetCurrentClientAreaSize().height);
-		RecreateSceneRenderTextureAndViews(gWindow.GetCurrentClientAreaSize().width, gWindow.GetCurrentClientAreaSize().height);
+		RecreateGameTexturesAndViews(gWindow.GetCurrentClientAreaSize().width, gWindow.GetCurrentClientAreaSize().height);
+		RecreateSceneTexturesAndViews(gWindow.GetCurrentClientAreaSize().width, gWindow.GetCurrentClientAreaSize().height);
 
 		CreateSwapChain(dxgiFactory2);
 		CreateInputLayouts();
@@ -634,17 +740,17 @@ namespace leopph {
 		mResources->context->RSSetViewports(1, &viewport);
 
 		D3D11_MAPPED_SUBRESOURCE mappedClearColorCbuf;
-		mResources->context->Map(mResources->clearColorCBuf.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedClearColorCbuf);
+		mResources->context->Map(mResources->clearColorCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedClearColorCbuf);
 		std::memcpy(mappedClearColorCbuf.pData, cam->GetBackgroundColor().get_data(), 16);
-		mResources->context->Unmap(mResources->clearColorCBuf.Get(), 0);
+		mResources->context->Unmap(mResources->clearColorCB.Get(), 0);
 
-		mResources->context->IASetInputLayout(mResources->clearColorIA.Get());
-		mResources->context->IASetVertexBuffers(0, 1, mResources->quadVB.GetAddressOf(), &QUAD_VERT_BUF_STRIDE, &QUAD_VERT_BUF_OFFSET);
+		mResources->context->IASetInputLayout(mResources->quadIL.Get());
+		mResources->context->IASetVertexBuffers(0, 1, mResources->quadPosVB.GetAddressOf(), &QUAD_VERT_BUF_STRIDE, &QUAD_VERT_BUF_OFFSET);
 		mResources->context->IASetIndexBuffer(mResources->quadIB.Get(), DXGI_FORMAT_R32_UINT, 0);
-		mResources->context->VSSetShader(mResources->clearColorVs.Get(), nullptr, 0);
-		mResources->context->PSSetShader(mResources->clearColorPs.Get(), nullptr, 0);
-		mResources->context->PSSetConstantBuffers(0, 1, mResources->clearColorCBuf.GetAddressOf());
-		mResources->context->OMSetRenderTargets(1, mResources->gameRenderTextureRtv.GetAddressOf(), nullptr);
+		mResources->context->VSSetShader(mResources->quadVS.Get(), nullptr, 0);
+		mResources->context->PSSetShader(mResources->clearColorPS.Get(), nullptr, 0);
+		mResources->context->PSSetConstantBuffers(0, 1, mResources->clearColorCB.GetAddressOf());
+		mResources->context->OMSetRenderTargets(1, mResources->gameOutputTextureRtv.GetAddressOf(), nullptr);
 		mResources->context->DrawIndexed(ARRAYSIZE(QUAD_INDICES), 0, 0);
 
 		if (mCubeModels.empty()) {
@@ -667,13 +773,13 @@ namespace leopph {
 		}
 
 		D3D11_MAPPED_SUBRESOURCE mappedCbuffer;
-		mResources->context->Map(mResources->perModelCBuf.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedCbuffer);
+		mResources->context->Map(mResources->perModelCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedCbuffer);
 
 		DirectX::XMStoreFloat4x4(static_cast<DirectX::XMFLOAT4X4*>(mappedCbuffer.pData), viewMat * projMat);
-		mResources->context->Unmap(mResources->perModelCBuf.Get(), 0);
+		mResources->context->Unmap(mResources->perModelCB.Get(), 0);
 
 		D3D11_MAPPED_SUBRESOURCE mappedLightBuffer;
-		mResources->context->Map(mResources->perFrameCBuf.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedLightBuffer);
+		mResources->context->Map(mResources->perFrameCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedLightBuffer);
 		auto const lightBufferData{ static_cast<PerFrameCBufferData*>(mappedLightBuffer.pData) };
 		lightBufferData->calcDirLight = !mDirLights.empty();
 		if (!mDirLights.empty()) {
@@ -681,7 +787,7 @@ namespace leopph {
 			lightBufferData->dirLight.direction = mDirLights[0]->get_direction();
 			lightBufferData->dirLight.intensity = mDirLights[0]->GetIntensity();
 		}
-		mResources->context->Unmap(mResources->perFrameCBuf.Get(), 0);
+		mResources->context->Unmap(mResources->perFrameCB.Get(), 0);
 
 		/*D3D11_MAPPED_SUBRESOURCE mappedMatBuf;
 		mResources->context->Map(mResources->materialCBuf.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedMatBuf);
@@ -693,10 +799,10 @@ namespace leopph {
 		mResources->context->Unmap(mResources->materialCBuf.Get(), 0);
 
 		D3D11_MAPPED_SUBRESOURCE mappedCamBuf;
-		mResources->context->Map(mResources->perCamCBuf.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedCamBuf);
+		mResources->context->Map(mResources->perCamCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedCamBuf);
 		auto const camBufData{ static_cast<PerCameraCBufferData*>(mappedCamBuf.pData) };
 		camBufData->camPos = cam->GetEntity()->GetTransform().GetWorldPosition();
-		mResources->context->Unmap(mResources->perCamCBuf.Get(), 0);
+		mResources->context->Unmap(mResources->perCamCB.Get(), 0);
 
 
 		if (mCubeModels.size() > mInstanceBufferElementCapacity) {
@@ -731,11 +837,11 @@ namespace leopph {
 		UINT cubeVertOffsets[]{ 0, 0 };
 		mResources->context->IASetVertexBuffers(0, 2, cubeVertBufs, cubeVertStrides, cubeVertOffsets);
 		mResources->context->IASetIndexBuffer(mResources->cubeIB.Get(), DXGI_FORMAT_R32_UINT, 0);
-		mResources->context->IASetInputLayout(mResources->meshIA.Get());
+		mResources->context->IASetInputLayout(mResources->meshIL.Get());
 		mResources->context->VSSetShader(mResources->meshVS.Get(), nullptr, 0);
-		mResources->context->VSSetConstantBuffers(0, 1, mResources->perModelCBuf.GetAddressOf());
+		mResources->context->VSSetConstantBuffers(0, 1, mResources->perModelCB.GetAddressOf());
 		mResources->context->PSSetShader(mResources->meshBlinnPhongPS.Get(), nullptr, 0);
-		ID3D11Buffer* const psCBuffers[]{ mCubeModels[0]->GetMaterial()->GetBuffer(), mResources->perCamCBuf.Get(), mResources->perFrameCBuf.Get() };
+		ID3D11Buffer* const psCBuffers[]{ mCubeModels[0]->GetMaterial()->GetBuffer(), mResources->perCamCB.Get(), mResources->perFrameCB.Get() };
 		mResources->context->PSSetConstantBuffers(0, ARRAYSIZE(psCBuffers), psCBuffers);
 		mResources->context->DrawIndexedInstanced(ARRAYSIZE(CUBE_INDICES), static_cast<UINT>(mCubeModels.size()), 0, 0, 0);*/
 	}
@@ -760,24 +866,25 @@ namespace leopph {
 		mResources->context->RSSetViewports(1, &viewport);
 
 		FLOAT constexpr clearColor[]{ 0, 0, 0, 1 };
-		mResources->context->ClearRenderTargetView(mResources->sceneRenderTextureRtv.Get(), clearColor);
+		mResources->context->ClearRenderTargetView(mResources->sceneHdrTextureRtv.Get(), clearColor);
 		mResources->context->ClearDepthStencilView(mResources->sceneDSV.Get(), D3D11_CLEAR_DEPTH, 1, 0);
 
 		if (mCubeModels.empty()) {
 			return;
 		}
 
+		mResources->context->OMSetRenderTargets(1, mResources->sceneHdrTextureRtv.GetAddressOf(), mResources->sceneDSV.Get());
+
 		D3D11_MAPPED_SUBRESOURCE mappedPerFrameCBuf;
-		mResources->context->Map(mResources->perFrameCBuf.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerFrameCBuf);
+		mResources->context->Map(mResources->perFrameCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerFrameCBuf);
 		auto const perFrameCBufData{ static_cast<PerFrameCBufferData*>(mappedPerFrameCBuf.pData) };
-		perFrameCBufData->invGamma = mInvGamma;
 		perFrameCBufData->calcDirLight = !mDirLights.empty();
 		if (!mDirLights.empty()) {
 			perFrameCBufData->dirLight.color = mDirLights[0]->GetColor();
 			perFrameCBufData->dirLight.direction = mDirLights[0]->get_direction();
 			perFrameCBufData->dirLight.intensity = mDirLights[0]->GetIntensity();
 		}
-		mResources->context->Unmap(mResources->perFrameCBuf.Get(), 0);
+		mResources->context->Unmap(mResources->perFrameCB.Get(), 0);
 
 		DirectX::XMFLOAT3 const camPos{ cam.position.get_data() };
 		DirectX::XMFLOAT3 const camForward{ cam.orientation.Rotate(Vector3::forward()).get_data() };
@@ -786,11 +893,11 @@ namespace leopph {
 		auto const viewProjMat{ XMMatrixMultiply(viewMat, projMat) };
 
 		D3D11_MAPPED_SUBRESOURCE mappedPerCamCBuf;
-		mResources->context->Map(mResources->perCamCBuf.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerCamCBuf);
+		mResources->context->Map(mResources->perCamCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerCamCBuf);
 		auto const perCamCBufData{ static_cast<PerCameraCBufferData*>(mappedPerCamCBuf.pData) };
 		XMStoreFloat4x4(&perCamCBufData->viewProjMat, viewProjMat);
 		perCamCBufData->camPos = camPos;
-		mResources->context->Unmap(mResources->perCamCBuf.Get(), 0);
+		mResources->context->Unmap(mResources->perCamCB.Get(), 0);
 
 		for (auto const& cubeModel : mCubeModels) {
 			auto const mesh{ cubeModel->GetMesh() };
@@ -800,29 +907,52 @@ namespace leopph {
 			DirectX::XMFLOAT3X3 const normalMat{ cubeModel->GetEntity()->GetTransform().GetNormalMatrix().get_data() };
 
 			D3D11_MAPPED_SUBRESOURCE mappedPerModelCBuf;
-			mResources->context->Map(mResources->perModelCBuf.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerModelCBuf);
+			mResources->context->Map(mResources->perModelCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerModelCBuf);
 			auto& [modelMatData, normalMatData]{ *static_cast<PerModelCBufferData*>(mappedPerModelCBuf.pData) };
 			modelMatData = modelMat;
 			normalMatData = XMLoadFloat3x3(&normalMat);
-			mResources->context->Unmap(mResources->perModelCBuf.Get(), 0);
+			mResources->context->Unmap(mResources->perModelCB.Get(), 0);
 
 			ID3D11Buffer* vertexBuffers[]{ mesh->GetPositionBuffer().Get(), mesh->GetNormalBuffer().Get(), mesh->GetUVBuffer().Get() };
 			UINT constexpr strides[]{ sizeof(Vector3), sizeof(Vector3), sizeof(Vector2) };
 			UINT constexpr offsets[]{ 0, 0, 0 };
 			mResources->context->IASetVertexBuffers(0, 3, vertexBuffers, strides, offsets);
 			mResources->context->IASetIndexBuffer(mesh->GetIndexBuffer().Get(), DXGI_FORMAT_R32_UINT, 0);
+			mResources->context->IASetInputLayout(mResources->meshIL.Get());
+
+			ID3D11Buffer* const constantBuffers[]{ mResources->perFrameCB.Get(), mResources->perCamCB.Get(), mat->GetBuffer(), mResources->perModelCB.Get() };
 
 			mResources->context->VSSetShader(mResources->meshVS.Get(), nullptr, 0);
-			mResources->context->PSSetShader(mResources->meshPbrPS.Get(), nullptr, 0);
-
-			ID3D11Buffer* const constantBuffers[]{ mResources->perFrameCBuf.Get(), mResources->perCamCBuf.Get(), mat->GetBuffer(), mResources->perModelCBuf.Get() };
 			mResources->context->VSSetConstantBuffers(0, ARRAYSIZE(constantBuffers), constantBuffers);
+
+			mResources->context->PSSetShader(mResources->meshPbrPS.Get(), nullptr, 0);
 			mResources->context->PSSetConstantBuffers(0, ARRAYSIZE(constantBuffers), constantBuffers);
 
-			mResources->context->IASetInputLayout(mResources->meshIA.Get());
-			mResources->context->OMSetRenderTargets(1, mResources->sceneRenderTextureRtv.GetAddressOf(), mResources->sceneDSV.Get());
 			mResources->context->DrawIndexed(clamp_cast<UINT>(mesh->GetIndices().size()), 0, 0);
 		}
+
+		mResources->context->OMSetRenderTargets(1, mResources->sceneOutputTextureRtv.GetAddressOf(), nullptr);
+
+		D3D11_MAPPED_SUBRESOURCE mappedToneMapGammaCB;
+		mResources->context->Map(mResources->toneMapGammaCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedToneMapGammaCB);
+		auto const toneMapGammaCBData{ static_cast<ToneMapGammaCBData*>(mappedToneMapGammaCB.pData) };
+		toneMapGammaCBData->invGamma = mInvGamma;
+		mResources->context->Unmap(mResources->toneMapGammaCB.Get(), 0);
+
+		ID3D11Buffer* vertexBuffers[]{ mResources->quadPosVB.Get(), mResources->quadUvVB.Get() };
+		UINT constexpr strides[]{ sizeof(Vector2), sizeof(Vector2) };
+		UINT constexpr offsets[]{ 0, 0 };
+		mResources->context->IASetVertexBuffers(0, 2, vertexBuffers, strides, offsets);
+		mResources->context->IASetIndexBuffer(mResources->quadIB.Get(), DXGI_FORMAT_R32_UINT, 0);
+		mResources->context->IASetInputLayout(mResources->texQuadIL.Get());
+
+		mResources->context->VSSetShader(mResources->texQuadVS.Get(), nullptr, 0);
+
+		mResources->context->PSSetShader(mResources->toneMapGammaPS.Get(), nullptr, 0);
+		mResources->context->PSSetConstantBuffers(0, 1, mResources->toneMapGammaCB.GetAddressOf());
+		mResources->context->PSSetShaderResources(0, 1, mResources->sceneHdrTextureSrv.GetAddressOf());
+
+		mResources->context->DrawIndexed(ARRAYSIZE(QUAD_INDICES), 0, 0);
 	}
 
 
@@ -834,7 +964,7 @@ namespace leopph {
 	auto Renderer::SetGameResolution(Extent2D<u32> resolution) noexcept -> void {
 		mGameRes = resolution;
 		mGameAspect = static_cast<f32>(resolution.width) / static_cast<f32>(resolution.height);
-		RecreateGameRenderTextureAndViews(mGameRes.width, mGameRes.height);
+		RecreateGameTexturesAndViews(mGameRes.width, mGameRes.height);
 	}
 
 
@@ -845,16 +975,16 @@ namespace leopph {
 	auto Renderer::SetSceneResolution(Extent2D<u32> const resolution) noexcept -> void {
 		mSceneRes = resolution;
 		mSceneAspect = static_cast<f32>(resolution.width) / static_cast<f32>(resolution.height);
-		RecreateSceneRenderTextureAndViews(mSceneRes.width, mSceneRes.height);
+		RecreateSceneTexturesAndViews(mSceneRes.width, mSceneRes.height);
 	}
 
 
 	auto Renderer::GetGameFrame() const noexcept -> ID3D11ShaderResourceView* {
-		return mResources->gameRenderTextureSrv.Get();
+		return mResources->gameOutputTextureSrv.Get();
 	}
 
 	auto Renderer::GetSceneFrame() const noexcept -> ID3D11ShaderResourceView* {
-		return mResources->sceneRenderTextureSrv.Get();
+		return mResources->sceneOutputTextureSrv.Get();
 	}
 
 

@@ -1,5 +1,5 @@
-#include "include/CBuffers.hlsli"
-#include "include/MeshVSOut.hlsli"
+#include "CBuffers.hlsli"
+#include "MeshVSOut.hlsli"
 
 float4 main(const MeshVsOut vsOut) : SV_TARGET {
     const float3 ambient = 0.03 * material.albedo;
@@ -18,6 +18,5 @@ float4 main(const MeshVsOut vsOut) : SV_TARGET {
         color += material.albedo * dirLight.color * dirLight.intensity * (diffuse + specular);
     }
 
-    const float3 correctedColor = pow(color, invGamma);
-    return float4(correctedColor, 1);
+    return float4(color, 1);
 }

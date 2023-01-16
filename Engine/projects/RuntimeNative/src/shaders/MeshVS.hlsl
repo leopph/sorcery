@@ -1,5 +1,5 @@
-#include "include/CBuffers.hlsli"
-#include "include/MeshVSOut.hlsli"
+#include "CBuffers.hlsli"
+#include "MeshVSOut.hlsli"
 
 struct MeshVSIn {
     float3 vertexPos : POSITION;

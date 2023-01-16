@@ -201,16 +201,19 @@
   <ItemGroup>
     <None Include="cpp.hint" />
     <None Include="vcpkg.json" />
-    <None Include="src\shaders\include\Lights.hlsli" />
-    <None Include="src\shaders\include\MeshVSOut.hlsli" />
-    <None Include="src\shaders\include\PbrMaterial.hlsli" />
-    <None Include="src\shaders\include\CBuffers.hlsli" />
+    <None Include="src\shaders\Lights.hlsli" />
+    <None Include="src\shaders\MeshVSOut.hlsli" />
+    <None Include="src\shaders\PbrMaterial.hlsli" />
+    <None Include="src\shaders\CBuffers.hlsli" />
+    <None Include="src\shaders\TexturedQuadVSOut.hlsli" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="src\shaders\MeshBlinnPhongPS.hlsl" />
-    <FxCompile Include="src\shaders\ClearColorVS.hlsl" />
+    <FxCompile Include="src\shaders\QuadVS.hlsl" />
     <FxCompile Include="src\shaders\ClearColorPS.hlsl" />
     <FxCompile Include="src\shaders\MeshPbrPS.hlsl" />
     <FxCompile Include="src\shaders\MeshVS.hlsl" />
+    <FxCompile Include="src\shaders\ToneMapGammaPS.hlsl" />
+    <FxCompile Include="src\shaders\TexturedQuadVS.hlsl" />
   </ItemGroup>
 </Project>

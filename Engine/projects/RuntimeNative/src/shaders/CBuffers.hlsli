@@ -7,7 +7,6 @@
 cbuffer PerFrameConstants : register(b0) {
     DirectionalLight dirLight;
     bool calcDirLight;
-    float invGamma;
 }
 
 cbuffer PerCameraConstants : register(b1) {

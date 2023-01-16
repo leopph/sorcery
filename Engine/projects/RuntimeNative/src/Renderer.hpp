@@ -30,42 +30,53 @@ namespace leopph {
 			Microsoft::WRL::ComPtr<ID3D11DeviceContext> context;
 
 			Microsoft::WRL::ComPtr<IDXGISwapChain1> swapChain;
-			Microsoft::WRL::ComPtr<ID3D11Texture2D> gameRenderTexture;
-			Microsoft::WRL::ComPtr<ID3D11Texture2D> sceneRenderTexture;
+			Microsoft::WRL::ComPtr<ID3D11Texture2D> gameHdrTexture;
+			Microsoft::WRL::ComPtr<ID3D11Texture2D> gameOutputTexture;
+			Microsoft::WRL::ComPtr<ID3D11Texture2D> sceneHdrTexture;
+			Microsoft::WRL::ComPtr<ID3D11Texture2D> sceneOutputTexture;
 
 			Microsoft::WRL::ComPtr<ID3D11RenderTargetView> swapChainRtv;
-			Microsoft::WRL::ComPtr<ID3D11RenderTargetView> gameRenderTextureRtv;
-			Microsoft::WRL::ComPtr<ID3D11RenderTargetView> sceneRenderTextureRtv;
+			Microsoft::WRL::ComPtr<ID3D11RenderTargetView> gameHdrTextureRtv;
+			Microsoft::WRL::ComPtr<ID3D11RenderTargetView> gameOutputTextureRtv;
+			Microsoft::WRL::ComPtr<ID3D11RenderTargetView> sceneHdrTextureRtv;
+			Microsoft::WRL::ComPtr<ID3D11RenderTargetView> sceneOutputTextureRtv;
 
-			Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> gameRenderTextureSrv;
-			Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> sceneRenderTextureSrv;
+			Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> gameHdrTextureSrv;
+			Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> gameOutputTextureSrv;
+			Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> sceneHdrTextureSrv;
+			Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> sceneOutputTextureSrv;
 
 			Microsoft::WRL::ComPtr<ID3D11Texture2D> sceneDSTex;
 			Microsoft::WRL::ComPtr<ID3D11DepthStencilView> sceneDSV;
 
-			Microsoft::WRL::ComPtr<ID3D11PixelShader> clearColorPs;
-			Microsoft::WRL::ComPtr<ID3D11VertexShader> clearColorVs;
+			Microsoft::WRL::ComPtr<ID3D11PixelShader> clearColorPS;
+			Microsoft::WRL::ComPtr<ID3D11VertexShader> quadVS;
 			Microsoft::WRL::ComPtr<ID3D11PixelShader> meshBlinnPhongPS;
 			Microsoft::WRL::ComPtr<ID3D11VertexShader> meshVS;
 			Microsoft::WRL::ComPtr<ID3D11PixelShader> meshPbrPS;
+			Microsoft::WRL::ComPtr<ID3D11VertexShader> texQuadVS;
+			Microsoft::WRL::ComPtr<ID3D11PixelShader> toneMapGammaPS;
 
-			Microsoft::WRL::ComPtr<ID3D11Buffer> perFrameCBuf;
-			Microsoft::WRL::ComPtr<ID3D11Buffer> perCamCBuf;
-			Microsoft::WRL::ComPtr<ID3D11Buffer> perModelCBuf;
-			Microsoft::WRL::ComPtr<ID3D11Buffer> clearColorCBuf;
+			Microsoft::WRL::ComPtr<ID3D11Buffer> perFrameCB;
+			Microsoft::WRL::ComPtr<ID3D11Buffer> perCamCB;
+			Microsoft::WRL::ComPtr<ID3D11Buffer> perModelCB;
+			Microsoft::WRL::ComPtr<ID3D11Buffer> clearColorCB;
+			Microsoft::WRL::ComPtr<ID3D11Buffer> toneMapGammaCB;
 
-			Microsoft::WRL::ComPtr<ID3D11InputLayout> meshIA;
-			Microsoft::WRL::ComPtr<ID3D11InputLayout> clearColorIA;
+			Microsoft::WRL::ComPtr<ID3D11InputLayout> meshIL;
+			Microsoft::WRL::ComPtr<ID3D11InputLayout> quadIL;
+			Microsoft::WRL::ComPtr<ID3D11InputLayout> texQuadIL;
 
-			Microsoft::WRL::ComPtr<ID3D11Buffer> quadVB;
+			Microsoft::WRL::ComPtr<ID3D11Buffer> quadPosVB;
+			Microsoft::WRL::ComPtr<ID3D11Buffer> quadUvVB;
 			Microsoft::WRL::ComPtr<ID3D11Buffer> quadIB;
 
 			std::shared_ptr<Material> defaultMaterial;
 			std::shared_ptr<Mesh> cubeMesh;
 		};
 
-		auto RecreateGameRenderTextureAndViews(u32 width, u32 height) const -> void;
-		auto RecreateSceneRenderTextureAndViews(u32 width, u32 height) const -> void;
+		auto RecreateGameTexturesAndViews(u32 width, u32 height) const -> void;
+		auto RecreateSceneTexturesAndViews(u32 width, u32 height) const -> void;
 		static auto on_window_resize(Renderer* self, Extent2D<u32> size) -> void;
 
 		auto CreateInputLayouts() const -> void;

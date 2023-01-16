@@ -1,5 +1,5 @@
-#include "include/CBuffers.hlsli"
-#include "include/MeshVSOut.hlsli"
+#include "CBuffers.hlsli"
+#include "MeshVSOut.hlsli"
 
 static const float PI = 3.14159265f;
 
@@ -72,9 +72,6 @@ float4 main(MeshVsOut vsOut) : SV_TARGET {
   
     float3 ambient = 0.03 * material.albedo * material.ao;
     float3 color = ambient + Lo;
-	
-    color = color / (color + 1.0);
-    color = pow(color, invGamma);
    
     return float4(color, 1.0);
 }
