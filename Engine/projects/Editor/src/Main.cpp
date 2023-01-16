@@ -598,11 +598,13 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 					};
 
 					static bool isMovingSceneCamera{ false };
-					isMovingSceneCamera = ImGui::IsWindowHovered() && ImGui::IsMouseDown(ImGuiMouseButton_Right);
+					isMovingSceneCamera = isMovingSceneCamera ?
+						ImGui::IsMouseDown(ImGuiMouseButton_Right) :
+						ImGui::IsWindowHovered() && ImGui::IsMouseDown(ImGuiMouseButton_Right);
 
 					if (isMovingSceneCamera) {
 						ImGui::SetWindowFocus();
-						leopph::gWindow.SetCursorConfinement(true);
+						
 						leopph::gWindow.SetCursorHiding(true);
 
 						leopph::Vector3 posDelta{ 0, 0, 0 };
