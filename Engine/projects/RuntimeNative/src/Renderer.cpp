@@ -175,7 +175,7 @@ namespace leopph {
 			.MipLevels = 1,
 			.ArraySize = 1,
 			.Format = DXGI_FORMAT_R32G32B32A32_FLOAT,
-			.SampleDesc = {.Count = 1, .Quality = 0 },
+			.SampleDesc = { .Count = 1, .Quality = 0 },
 			.Usage = D3D11_USAGE_DEFAULT,
 			.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE,
 			.CPUAccessFlags = 0,
@@ -267,7 +267,7 @@ namespace leopph {
 			.MipLevels = 1,
 			.ArraySize = 1,
 			.Format = DXGI_FORMAT_D24_UNORM_S8_UINT,
-			.SampleDesc = {.Count = 1, .Quality = 0 },
+			.SampleDesc = { .Count = 1, .Quality = 0 },
 			.Usage = D3D11_USAGE_DEFAULT,
 			.BindFlags = D3D11_BIND_DEPTH_STENCIL,
 			.CPUAccessFlags = 0,
@@ -282,7 +282,7 @@ namespace leopph {
 			.Format = dsTexDesc.Format,
 			.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D,
 			.Flags = 0,
-			.Texture2D = {.MipSlice = 0 }
+			.Texture2D = { .MipSlice = 0 }
 		};
 
 		if (FAILED(mResources->device->CreateDepthStencilView(mResources->gameDSTex.Get(), &dsDsvDesc, mResources->gameDSV.ReleaseAndGetAddressOf()))) {
@@ -422,6 +422,46 @@ namespace leopph {
 		self->mResources->swapChain->ResizeBuffers(0, 0, 0, DXGI_FORMAT_UNKNOWN, self->mSwapChainFlags);
 
 		self->RecreateSwapChainRtv();
+	}
+
+	auto Renderer::CreateDeviceAndContext() const -> void {
+		UINT creationFlags{0};
+		D3D_FEATURE_LEVEL constexpr requestedFeatureLevels[]{ D3D_FEATURE_LEVEL_11_0 };
+
+#ifndef NDEBUG
+		creationFlags |= D3D11_CREATE_DEVICE_DEBUG;
+#endif
+
+		if (FAILED(D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, creationFlags, requestedFeatureLevels, 1, D3D11_SDK_VERSION, mResources->device.GetAddressOf(), nullptr, mResources->context.GetAddressOf()))) {
+			throw std::runtime_error{ "Failed to create D3D device." };
+		}
+	}
+
+	auto Renderer::SetDebugBreaks() const -> void {
+		ComPtr<ID3D11Debug> d3dDebug;
+		if (FAILED(mResources->device.As(&d3dDebug))) {
+			throw std::runtime_error{ "Failed to get ID3D11Debug interface." };
+		}
+
+		ComPtr<ID3D11InfoQueue> d3dInfoQueue;
+		if (FAILED(d3dDebug.As<ID3D11InfoQueue>(&d3dInfoQueue))) {
+			throw std::runtime_error{ "Failed to get ID3D11InfoQueue interface." };
+		}
+
+		d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_CORRUPTION, true);
+		d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_ERROR, true);
+	}
+
+	auto Renderer::CheckTearingSupport(IDXGIFactory2* factory2) -> void {
+		if (ComPtr<IDXGIFactory5> dxgiFactory5; SUCCEEDED(factory2->QueryInterface(IID_PPV_ARGS(dxgiFactory5.GetAddressOf())))) {
+			BOOL allowTearing{};
+			dxgiFactory5->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &allowTearing, sizeof allowTearing);
+
+			if (allowTearing) {
+				mSwapChainFlags |= DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
+				mPresentFlags |= DXGI_PRESENT_ALLOW_TEARING;
+			}
+		}
 	}
 
 	auto Renderer::CreateInputLayouts() const -> void {
@@ -777,74 +817,30 @@ namespace leopph {
 	auto Renderer::StartUp() -> void {
 		mResources = new Resources{};
 
-#ifdef NDEBUG
-		UINT constexpr deviceCreationFlags = 0;
-#else
-		UINT constexpr deviceCreationFlags = D3D11_CREATE_DEVICE_DEBUG;
-#endif
-
-		D3D_FEATURE_LEVEL constexpr requestedFeatureLevels[]{ D3D_FEATURE_LEVEL_11_0 };
-
-		HRESULT hresult = D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, deviceCreationFlags, requestedFeatureLevels, 1, D3D11_SDK_VERSION, mResources->device.GetAddressOf(), nullptr, mResources->context.GetAddressOf());
-
-		if (FAILED(hresult)) {
-			throw std::runtime_error{ "Failed to create D3D device." };
-		}
+		CreateDeviceAndContext();
 
 #ifndef NDEBUG
-		ComPtr<ID3D11Debug> d3dDebug;
-		hresult = mResources->device.As(&d3dDebug);
-
-		if (FAILED(hresult)) {
-			throw std::runtime_error{ "Failed to get ID3D11Debug interface." };
-		}
-
-		ComPtr<ID3D11InfoQueue> d3dInfoQueue;
-		hresult = d3dDebug.As<ID3D11InfoQueue>(&d3dInfoQueue);
-
-		if (FAILED(hresult)) {
-			throw std::runtime_error{ "Failed to get ID3D11InfoQueue interface." };
-		}
-
-		d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_CORRUPTION, true);
-		d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_ERROR, true);
+		SetDebugBreaks();
 #endif
 
 		ComPtr<IDXGIDevice> dxgiDevice;
-		hresult = mResources->device.As(&dxgiDevice);
-
-		if (FAILED(hresult)) {
+		if (FAILED(mResources->device.As(&dxgiDevice))) {
 			throw std::runtime_error{ "Failed to query IDXGIDevice interface." };
 		}
 
 		ComPtr<IDXGIAdapter> dxgiAdapter;
-		hresult = dxgiDevice->GetAdapter(dxgiAdapter.GetAddressOf());
-
-		if (FAILED(hresult)) {
+		if (FAILED(dxgiDevice->GetAdapter(dxgiAdapter.GetAddressOf()))) {
 			throw std::runtime_error{ "Failed to get IDXGIAdapter." };
 		}
 
 		ComPtr<IDXGIFactory2> dxgiFactory2;
-		hresult = dxgiAdapter->GetParent(IID_PPV_ARGS(dxgiFactory2.GetAddressOf()));
-
-		if (FAILED(hresult)) {
+		if (FAILED(dxgiAdapter->GetParent(IID_PPV_ARGS(dxgiFactory2.GetAddressOf())))) {
 			throw std::runtime_error{ "Failed to query IDXGIFactory2 interface." };
 		}
 
-		ComPtr<IDXGIFactory5> dxgiFactory5;
-		hresult = dxgiAdapter->GetParent(IID_PPV_ARGS(dxgiFactory5.GetAddressOf()));
+		CheckTearingSupport(dxgiFactory2.Get());
 
-		if (SUCCEEDED(hresult)) {
-			BOOL allowTearing{};
-			dxgiFactory5->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &allowTearing, sizeof allowTearing);
-
-			if (allowTearing) {
-				mSwapChainFlags |= DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
-				mPresentFlags |= DXGI_PRESENT_ALLOW_TEARING;
-			}
-		}
-
-		D3D11_SAMPLER_DESC hdrTextureSamplerDesc{
+		D3D11_SAMPLER_DESC constexpr hdrTextureSamplerDesc{
 			.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT,
 			.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP,
 			.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP,
@@ -852,7 +848,7 @@ namespace leopph {
 			.MipLODBias = 0,
 			.MaxAnisotropy = 1,
 			.ComparisonFunc = D3D11_COMPARISON_NEVER,
-			.BorderColor = {1, 1, 1, 1},
+			.BorderColor = { 1, 1, 1, 1 },
 			.MinLOD = 0,
 			.MaxLOD = D3D11_FLOAT32_MAX
 		};
@@ -902,10 +898,8 @@ namespace leopph {
 		DirectX::XMFLOAT3 const camPos{ cam->GetEntity()->GetTransform().GetWorldPosition().get_data() };
 		DirectX::XMFLOAT3 const camForward{ cam->GetEntity()->GetTransform().GetForwardAxis().get_data() };
 		DirectX::XMMATRIX const viewMat{ DirectX::XMMatrixLookToLH(XMLoadFloat3(&camPos), XMLoadFloat3(&camForward), { 0, 1, 0 }) };
-		DirectX::XMMATRIX const projMat{ cam->GetType() == CameraComponent::Type::Perspective ?
-			DirectX::XMMatrixPerspectiveFovLH(2.0f * std::atanf(std::tanf(to_radians(cam->GetPerspectiveFov()) / 2.0f) / mGameAspect), mGameAspect, cam->GetNearClipPlane(), cam->GetFarClipPlane()) :
-			DirectX::XMMatrixOrthographicLH(cam->GetOrthographicSize(), cam->GetOrthographicSize() / mGameAspect, cam->GetNearClipPlane(), cam->GetFarClipPlane()) };
-		
+		DirectX::XMMATRIX const projMat{ cam->GetType() == CameraComponent::Type::Perspective ? DirectX::XMMatrixPerspectiveFovLH(2.0f * std::atanf(std::tanf(to_radians(cam->GetPerspectiveFov()) / 2.0f) / mGameAspect), mGameAspect, cam->GetNearClipPlane(), cam->GetFarClipPlane()) : DirectX::XMMatrixOrthographicLH(cam->GetOrthographicSize(), cam->GetOrthographicSize() / mGameAspect, cam->GetNearClipPlane(), cam->GetFarClipPlane()) };
+
 		auto const viewProjMat{ XMMatrixMultiply(viewMat, projMat) };
 
 		D3D11_MAPPED_SUBRESOURCE mappedPerCamCBuf;

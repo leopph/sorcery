@@ -83,6 +83,9 @@ namespace leopph {
 		auto RecreateSceneTexturesAndViews(u32 width, u32 height) const -> void;
 		static auto on_window_resize(Renderer* self, Extent2D<u32> size) -> void;
 
+		auto CreateDeviceAndContext() const -> void;
+		auto SetDebugBreaks() const -> void;
+		auto CheckTearingSupport(IDXGIFactory2* factory2) -> void;
 		auto CreateInputLayouts() const -> void;
 		auto CreateShaders() const -> void;
 		auto CreateSwapChain(Microsoft::WRL::ComPtr<IDXGIFactory2> factory2) const -> void;
