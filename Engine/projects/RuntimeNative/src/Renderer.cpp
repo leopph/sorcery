@@ -763,6 +763,7 @@ namespace leopph {
 		mResources->context->PSSetShader(mResources->toneMapGammaPS.Get(), nullptr, 0);
 		mResources->context->PSSetConstantBuffers(0, 1, mResources->toneMapGammaCB.GetAddressOf());
 		mResources->context->PSSetShaderResources(0, 1, &src);
+		mResources->context->PSSetSamplers(0, 1, mResources->hdrTextureSS.GetAddressOf());
 
 		mResources->context->DrawIndexed(ARRAYSIZE(QUAD_INDICES), 0, 0);
 
@@ -841,6 +842,23 @@ namespace leopph {
 				mSwapChainFlags |= DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
 				mPresentFlags |= DXGI_PRESENT_ALLOW_TEARING;
 			}
+		}
+
+		D3D11_SAMPLER_DESC hdrTextureSamplerDesc{
+			.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT,
+			.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP,
+			.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP,
+			.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP,
+			.MipLODBias = 0,
+			.MaxAnisotropy = 1,
+			.ComparisonFunc = D3D11_COMPARISON_NEVER,
+			.BorderColor = {1, 1, 1, 1},
+			.MinLOD = 0,
+			.MaxLOD = D3D11_FLOAT32_MAX
+		};
+
+		if (FAILED(mResources->device->CreateSamplerState(&hdrTextureSamplerDesc, mResources->hdrTextureSS.GetAddressOf()))) {
+			throw std::runtime_error{ "Failed to create hdr texture sampler state." };
 		}
 
 		mGameRes = gWindow.GetCurrentClientAreaSize();

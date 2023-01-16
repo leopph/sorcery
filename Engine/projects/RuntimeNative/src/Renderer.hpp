@@ -73,6 +73,8 @@ namespace leopph {
 			Microsoft::WRL::ComPtr<ID3D11Buffer> quadUvVB;
 			Microsoft::WRL::ComPtr<ID3D11Buffer> quadIB;
 
+			Microsoft::WRL::ComPtr<ID3D11SamplerState> hdrTextureSS;
+
 			std::shared_ptr<Material> defaultMaterial;
 			std::shared_ptr<Mesh> cubeMesh;
 		};
