@@ -894,7 +894,9 @@ auto Renderer::DrawCamera(CameraComponent const* const cam) const noexcept -> vo
 	auto const& camForward{ cam->GetEntity()->GetTransform().GetForwardAxis() };
 	auto const viewMat{ Matrix4::LookTo(camPos, camForward, Vector3::Up()) };
 	auto const projMat{
-		cam->GetType() == CameraComponent::Type::Perspective ? Matrix4::PerspectiveAsymLH(2.0f * std::atanf(std::tanf(ToRadians(cam->GetPerspectiveFov()) / 2.0f) / mGameAspect), mGameAspect, cam->GetNearClipPlane(), cam->GetFarClipPlane()) : Matrix4::OrthographicAsymmetricZ(cam->GetOrthographicSize(), cam->GetOrthographicSize() / mGameAspect, cam->GetNearClipPlane(), cam->GetFarClipPlane())
+		cam->GetType() == CameraComponent::Type::Perspective ?
+			Matrix4::PerspectiveAsymLH(2.0f * std::atanf(std::tanf(ToRadians(cam->GetPerspectiveFov()) / 2.0f) / mGameAspect), mGameAspect, cam->GetNearClipPlane(), cam->GetFarClipPlane()) :
+			Matrix4::OrthographicAsymLH(cam->GetOrthographicSize(), cam->GetOrthographicSize() / mGameAspect, cam->GetNearClipPlane(), cam->GetFarClipPlane())
 	};
 
 	auto const viewProjMat{ viewMat * projMat };
