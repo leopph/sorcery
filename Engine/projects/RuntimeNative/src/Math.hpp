@@ -173,7 +173,11 @@ public:
 	[[nodiscard]] static constexpr auto Translate(Vector<T, 3> const& vector) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4);
 	[[nodiscard]] static constexpr auto Scale(Vector<T, 3> const& vector) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4);
 	[[nodiscard]] static constexpr auto LookAt(Vector<T, 3> const& position, Vector<T, 3> const& target, Vector<T, 3> const& worldUp) noexcept -> Matrix<T, 4, 4> requires(N == 4 && M == 4);
-	[[nodiscard]] static constexpr auto Orthographic(T const& left, T const& right, T const& top, T const& bottom, T const& nearClipPlane, T const& farClipPlane) noexcept -> Matrix<T, 4, 4>;
+	[[nodiscard]] static constexpr auto LookTo(Vector<T, 3> const& position, Vector<T, 3> const& direction, Vector<T, 3> const& worldUp) noexcept -> Matrix<T, 4, 4> requires(N == 4 && M == 4);
+	[[nodiscard]] static constexpr auto Orthographic(T left, T right, T top, T bottom, T nearClipPlane, T farClipPlane) noexcept -> Matrix<T, 4, 4>;
+	[[nodiscard]] static constexpr auto Orthographic(T width, T height, T nearClipPlane, T farClipPlane) noexcept -> Matrix<T, 4, 4>;
+	[[nodiscard]] static constexpr auto OrthographicAsymmetricZ(T left, T right, T top, T bottom, T nearClipPlane, T farClipPlane) noexcept -> Matrix<T, 4, 4>;
+	[[nodiscard]] static constexpr auto OrthographicAsymmetricZ(T width, T height, T nearClipPlane, T farClipPlane) noexcept -> Matrix<T, 4, 4>;
 	[[nodiscard]] static constexpr auto Perspective(T left, T right, T top, T bottom, T nearClipPlane, T farClipPlane) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4);
 	[[nodiscard]] static auto Perspective(T fovVertRad, T aspectRatio, T nearClipPlane, T farClipPlane) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4);
 
@@ -873,9 +877,14 @@ constexpr auto Matrix<T, N, M>::LookAt(Vector<T, 3> const& position, Vector<T, 3
 	};
 }
 
+template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
+constexpr auto Matrix<T, N, M>::LookTo(Vector<T, 3> const& position, Vector<T, 3> const& direction, Vector<T, 3> const& worldUp) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
+	return LookAt(position, position + direction.Normalized(), worldUp);
+}
+
 
 template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
-constexpr auto Matrix<T, N, M>::Orthographic(T const& left, T const& right, T const& top, T const& bottom, T const& nearClipPlane, T const& farClipPlane) noexcept -> Matrix<T, 4, 4> {
+constexpr auto Matrix<T, N, M>::Orthographic(T const left, T const right, T const top, T const bottom, T const nearClipPlane, T const farClipPlane) noexcept -> Matrix<T, 4, 4> {
 	Matrix<T, 4, 4> ret;
 	ret[0][0] = static_cast<T>(static_cast<T>(2) / (right - left));
 	ret[1][1] = static_cast<T>(static_cast<T>(2) / (top - bottom));
@@ -885,6 +894,28 @@ constexpr auto Matrix<T, N, M>::Orthographic(T const& left, T const& right, T co
 	ret[3][2] = static_cast<T>(-((farClipPlane + nearClipPlane) / (farClipPlane - nearClipPlane)));
 	ret[3][3] = static_cast<T>(1);
 	return ret;
+}
+
+template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
+constexpr auto Matrix<T, N, M>::Orthographic(T const width, T const height, T const nearClipPlane, T const farClipPlane) noexcept -> Matrix<T, 4, 4> {
+	auto const halfWidth{ width / 2 };
+	auto const halfHeight{ height / 2 };
+	return Orthographic(-halfWidth, halfWidth, halfHeight, -halfHeight, nearClipPlane, farClipPlane);
+}
+
+template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
+constexpr auto Matrix<T, N, M>::OrthographicAsymmetricZ(T const left, T const right, T const top, T const bottom, T const nearClipPlane, T const farClipPlane) noexcept -> Matrix<T, 4, 4> {
+	auto ret{ Orthographic(left, right, top, bottom, nearClipPlane, farClipPlane) };
+	ret[2][2] /= 2;
+	ret[3][2] = nearClipPlane / (nearClipPlane - farClipPlane);
+	return ret;
+}
+
+template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
+constexpr auto Matrix<T, N, M>::OrthographicAsymmetricZ(T const width, T const height, T const nearClipPlane, T const farClipPlane) noexcept -> Matrix<T, 4, 4> {
+	auto const halfWidth{ width / 2 };
+	auto const halfHeight{ height / 2 };
+	return OrthographicAsymmetricZ(-halfWidth, halfWidth, halfHeight, -halfHeight, nearClipPlane, farClipPlane);
 }
 
 
