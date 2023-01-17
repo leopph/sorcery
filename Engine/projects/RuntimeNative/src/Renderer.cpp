@@ -726,8 +726,8 @@ namespace leopph {
 			auto const mesh{ staticMeshComponent->GetMesh() };
 			auto const mat{ staticMeshComponent->GetMaterial() };
 
-			DirectX::XMFLOAT4X4 const modelMat{ staticMeshComponent->GetEntity()->GetTransform().GetModelMatrix().get_data() };
-			DirectX::XMFLOAT3X3 const normalMat{ staticMeshComponent->GetEntity()->GetTransform().GetNormalMatrix().get_data() };
+			DirectX::XMFLOAT4X4 const modelMat{ staticMeshComponent->GetEntity()->GetTransform().GetModelMatrix().GetData() };
+			DirectX::XMFLOAT3X3 const normalMat{ staticMeshComponent->GetEntity()->GetTransform().GetNormalMatrix().GetData() };
 
 			D3D11_MAPPED_SUBRESOURCE mappedPerModelCBuf;
 			mResources->context->Map(mResources->perModelCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerModelCBuf);
@@ -895,10 +895,10 @@ namespace leopph {
 
 
 	auto Renderer::DrawCamera(CameraComponent const* const cam) const noexcept -> void {
-		DirectX::XMFLOAT3 const camPos{ cam->GetEntity()->GetTransform().GetWorldPosition().get_data() };
-		DirectX::XMFLOAT3 const camForward{ cam->GetEntity()->GetTransform().GetForwardAxis().get_data() };
+		DirectX::XMFLOAT3 const camPos{ cam->GetEntity()->GetTransform().GetWorldPosition().GetData() };
+		DirectX::XMFLOAT3 const camForward{ cam->GetEntity()->GetTransform().GetForwardAxis().GetData() };
 		DirectX::XMMATRIX const viewMat{ DirectX::XMMatrixLookToLH(XMLoadFloat3(&camPos), XMLoadFloat3(&camForward), { 0, 1, 0 }) };
-		DirectX::XMMATRIX const projMat{ cam->GetType() == CameraComponent::Type::Perspective ? DirectX::XMMatrixPerspectiveFovLH(2.0f * std::atanf(std::tanf(to_radians(cam->GetPerspectiveFov()) / 2.0f) / mGameAspect), mGameAspect, cam->GetNearClipPlane(), cam->GetFarClipPlane()) : DirectX::XMMatrixOrthographicLH(cam->GetOrthographicSize(), cam->GetOrthographicSize() / mGameAspect, cam->GetNearClipPlane(), cam->GetFarClipPlane()) };
+		DirectX::XMMATRIX const projMat{ cam->GetType() == CameraComponent::Type::Perspective ? DirectX::XMMatrixPerspectiveFovLH(2.0f * std::atanf(std::tanf(ToRadians(cam->GetPerspectiveFov()) / 2.0f) / mGameAspect), mGameAspect, cam->GetNearClipPlane(), cam->GetFarClipPlane()) : DirectX::XMMatrixOrthographicLH(cam->GetOrthographicSize(), cam->GetOrthographicSize() / mGameAspect, cam->GetNearClipPlane(), cam->GetFarClipPlane()) };
 
 		auto const viewProjMat{ XMMatrixMultiply(viewMat, projMat) };
 
@@ -923,7 +923,7 @@ namespace leopph {
 
 		/*D3D11_MAPPED_SUBRESOURCE mappedClearColorCbuf;
 		mResources->context->Map(mResources->clearColorCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedClearColorCbuf);
-		std::memcpy(mappedClearColorCbuf.pData, cam->GetBackgroundColor().get_data(), 16);
+		std::memcpy(mappedClearColorCbuf.pData, cam->GetBackgroundColor().GetData(), 16);
 		mResources->context->Unmap(mResources->clearColorCB.Get(), 0);
 
 		mResources->context->IASetInputLayout(mResources->quadIL.Get());
@@ -972,8 +972,8 @@ namespace leopph {
 
 		UpdatePerFrameCB();
 
-		DirectX::XMFLOAT3 const camPos{ cam.position.get_data() };
-		DirectX::XMFLOAT3 const camForward{ cam.orientation.Rotate(Vector3::forward()).get_data() };
+		DirectX::XMFLOAT3 const camPos{ cam.position.GetData() };
+		DirectX::XMFLOAT3 const camForward{ cam.orientation.Rotate(Vector3::Forward()).GetData() };
 		DirectX::XMMATRIX const viewMat{ DirectX::XMMatrixLookToLH(XMLoadFloat3(&camPos), XMLoadFloat3(&camForward), { 0, 1, 0 }) };
 		DirectX::XMMATRIX const projMat{ DirectX::XMMatrixPerspectiveFovLH(cam.fovVertRad, mSceneAspect, cam.nearClip, cam.farClip) };
 		auto const viewProjMat{ XMMatrixMultiply(viewMat, projMat) };

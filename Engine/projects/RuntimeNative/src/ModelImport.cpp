@@ -58,7 +58,7 @@ namespace leopph {
 
 
 		std::queue<std::pair<aiNode const*, Matrix4>> queue;
-		queue.emplace(scene->mRootNode, ConvertMatrix(scene->mRootNode->mTransformation).transpose() * Matrix4{ 1, 1, -1, 1 });
+		queue.emplace(scene->mRootNode, ConvertMatrix(scene->mRootNode->mTransformation).Transpose() * Matrix4{ 1, 1, -1, 1 });
 
 		while (!queue.empty()) {
 			auto& [node, trafo] = queue.front();
@@ -78,7 +78,7 @@ namespace leopph {
 					for (unsigned j = 0; j < mesh->mNumVertices; j++) {
 						vertices.emplace_back(
 							Vector3{ Vector4{ ConvertVector(mesh->mVertices[j]), 1 } * trafo },
-							Vector3{ Vector4{ ConvertVector(mesh->mNormals[j]), 0 } * trafo }.normalize(),
+							Vector3{ Vector4{ ConvertVector(mesh->mNormals[j]), 0 } * trafo }.Normalize(),
 							[mesh, j] {
 								for (std::size_t k = 0; k < AI_MAX_NUMBER_OF_TEXTURECOORDS; k++) {
 									if (mesh->HasTextureCoords(static_cast<unsigned>(k))) {
@@ -118,7 +118,7 @@ namespace leopph {
 			}
 
 			for (std::size_t i = 0; i < node->mNumChildren; ++i) {
-				queue.emplace(node->mChildren[i], ConvertMatrix(node->mChildren[i]->mTransformation).transpose() * trafo);
+				queue.emplace(node->mChildren[i], ConvertMatrix(node->mChildren[i]->mTransformation).Transpose() * trafo);
 			}
 
 			queue.pop();
@@ -158,7 +158,7 @@ namespace leopph {
 		MeshData ret;
 
 		std::queue<std::pair<aiNode const*, Matrix4>> queue;
-		queue.emplace(scene->mRootNode, ConvertMatrix(scene->mRootNode->mTransformation).transpose() * Matrix4{ 1, 1, -1, 1 });
+		queue.emplace(scene->mRootNode, ConvertMatrix(scene->mRootNode->mTransformation).Transpose() * Matrix4{ 1, 1, -1, 1 });
 
 		while (!queue.empty()) {
 			auto& [node, trafo] = queue.front();
@@ -180,7 +180,7 @@ namespace leopph {
 
 					for (unsigned j = 0; j < mesh->mNumVertices; j++) {
 						ret.positions.emplace_back(Vector4{ ConvertVector(mesh->mVertices[j]), 1 } * trafo);
-						ret.normals.emplace_back(Vector3{ Vector4{ ConvertVector(mesh->mNormals[j]), 0 } * trafo }.normalize());
+						ret.normals.emplace_back(Vector3{ Vector4{ ConvertVector(mesh->mNormals[j]), 0 } * trafo }.Normalize());
 						ret.uvs.emplace_back([mesh, j] {
 							for (std::size_t k = 0; k < AI_MAX_NUMBER_OF_TEXTURECOORDS; k++) {
 								if (mesh->HasTextureCoords(static_cast<unsigned>(k))) {
@@ -220,7 +220,7 @@ namespace leopph {
 			}
 
 			for (std::size_t i = 0; i < node->mNumChildren; ++i) {
-				queue.emplace(node->mChildren[i], ConvertMatrix(node->mChildren[i]->mTransformation).transpose() * trafo);
+				queue.emplace(node->mChildren[i], ConvertMatrix(node->mChildren[i]->mTransformation).Transpose() * trafo);
 			}
 
 			queue.pop();

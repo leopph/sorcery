@@ -117,7 +117,6 @@
     <ClCompile Include="src\LightComponents.cpp" />
     <ClCompile Include="src\ManagedRuntime.cpp" />
     <ClCompile Include="src\ManagedAccessObject.cpp" />
-    <ClCompile Include="src\Math.cpp" />
     <ClCompile Include="src\Entity.cpp" />
     <ClCompile Include="src\Material.cpp" />
     <ClCompile Include="src\Mesh.cpp" />

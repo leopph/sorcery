@@ -3,6 +3,7 @@
 #include "Core.hpp"
 
 #include <cmath>
+#include <numbers>
 #include <concepts>
 #include <cstddef>
 #include <limits>
@@ -10,132 +11,132 @@
 
 
 namespace leopph {
-	LEOPPHAPI extern f32 const PI;
+	f32 constexpr PI{ std::numbers::pi_v<f32> };
 
-	[[nodiscard]] LEOPPHAPI auto to_radians(f32 degrees) -> f32;
-	[[nodiscard]] LEOPPHAPI auto to_degrees(f32 radians) -> f32;
+	[[nodiscard]] constexpr auto ToRadians(f32 degrees) noexcept -> f32;
+	[[nodiscard]] constexpr auto ToDegrees(f32 radians) noexcept -> f32;
 
-	[[nodiscard]] LEOPPHAPI auto is_power_of_two(u32 value) -> bool;
-	[[nodiscard]] LEOPPHAPI auto next_power_of_two(u32 value) -> u32;
+	[[nodiscard]] constexpr auto IsPowerOfTwo(u32 value) noexcept -> bool;
+	[[nodiscard]] constexpr auto NextPowerOfTwo(u32 value) noexcept -> u32;
 
-	[[nodiscard]] LEOPPHAPI auto lerp(f32 from, f32 to, f32 t) -> f32;
+	[[nodiscard]] constexpr auto Lerp(f32 from, f32 to, f32 t) noexcept -> f32;
 
-	[[nodiscard]] LEOPPHAPI auto num_binary_digits(u32 number) -> u8;
+	[[nodiscard]] inline auto BinaryDigitCount(u32 number) noexcept -> u8;
 
 
 	template<class T, std::size_t N> requires(N > 1)
 	class Vector {
 	public:
-		[[nodiscard]] auto length() const -> f32;
-		[[nodiscard]] auto normalized() const -> Vector<T, N>;
-		auto normalize() -> Vector<T, N>&;
+		[[nodiscard]] auto Length() const noexcept -> f32;
+		[[nodiscard]] auto Normalized() const noexcept -> Vector;
+		auto Normalize() noexcept -> Vector&;
 
 
-		[[nodiscard]] auto operator[](size_t index) const -> T const&;
-		[[nodiscard]] auto operator[](size_t index) -> T&;
-		[[nodiscard]] auto get_data() const -> T const*;
-		[[nodiscard]] auto get_data() -> T*;
+		[[nodiscard]] constexpr auto operator[](size_t index) const noexcept -> T const&;
+		[[nodiscard]] constexpr auto operator[](size_t index) noexcept -> T&;
+		[[nodiscard]] constexpr auto GetData() const noexcept -> T const*;
+		[[nodiscard]] constexpr auto GetData() noexcept -> T*;
 
 
-		[[nodiscard]] static auto up() -> Vector<T, N>;
-		[[nodiscard]] static auto down() -> Vector<T, N>;
-		[[nodiscard]] static auto left() -> Vector<T, N>;
-		[[nodiscard]] static auto right() -> Vector<T, N>;
-		[[nodiscard]] static auto forward() -> Vector<T, N> requires(N >= 3);
-		[[nodiscard]] static auto backward() -> Vector<T, N> requires(N >= 3);
+		[[nodiscard]] static constexpr auto Up() noexcept -> Vector;
+		[[nodiscard]] static constexpr auto Down() noexcept -> Vector;
+		[[nodiscard]] static constexpr auto Left() noexcept -> Vector;
+		[[nodiscard]] static constexpr auto Right() noexcept -> Vector;
+		[[nodiscard]] static constexpr auto Forward() noexcept -> Vector requires(N >= 3);
+		[[nodiscard]] static constexpr auto Backward() noexcept -> Vector requires(N >= 3);
 
 
-		Vector() = default;
+		constexpr Vector() noexcept = default;
 
 		template<std::convertible_to<T> T1>
-		explicit Vector(T1 const& value);
+		constexpr explicit Vector(T1 const& value) noexcept;
 
 		template<std::convertible_to<T>... Args> requires(sizeof...(Args) == N)
-		explicit(sizeof...(Args) <= 1) Vector(Args const&... args);
+		constexpr explicit(sizeof...(Args) <= 1) Vector(Args const&... args) noexcept;
 
 		template<std::size_t M> requires (M > N)
-		explicit Vector(Vector<T, M> const& other);
+		constexpr explicit Vector(Vector<T, M> const& other) noexcept;
 
 		template<std::size_t M> requires (M < N)
-		explicit Vector(Vector<T, M> const& other, T const& fill);
+		constexpr explicit Vector(Vector<T, M> const& other, T const& fill) noexcept;
 
-		Vector(Vector<T, N> const& other) = default;
-		Vector(Vector<T, N>&& other) noexcept = default;
+		constexpr Vector(Vector const& other) noexcept = default;
+		constexpr Vector(Vector&& other) noexcept = default;
 
-		~Vector() = default;
+		constexpr ~Vector() noexcept = default;
 
-		auto operator=(Vector<T, N> const& other) -> Vector<T, N>& = default;
-		auto operator=(Vector<T, N>&& other) noexcept -> Vector<T, N>& = default;
+		constexpr auto operator=(Vector const& other) noexcept -> Vector& = default;
+		constexpr auto operator=(Vector&& other) noexcept -> Vector& = default;
 
 	private:
-		[[nodiscard]] static auto get_element(auto* self, std::size_t index) -> decltype(auto);
+		[[nodiscard]] constexpr static auto GetElement(auto* self, std::size_t index) noexcept -> decltype(auto);
 
 		T mData[N]{};
 	};
 
 
 	template<class T, std::size_t N> requires (N > 1)
-	auto dot(Vector<T, N> const& left, Vector<T, N> const& right) -> T;
+	[[nodiscard]] constexpr auto Dot(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> T;
 
 	template<class T, std::size_t N> requires (N > 1)
-	auto cross(Vector<T, N> const& left, Vector<T, N> const& right) -> Vector<T, N> requires(N == 3);
+	[[nodiscard]] constexpr auto Cross(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> Vector<T, N> requires(N == 3);
 
 	template<class T, std::size_t N> requires (N > 1)
-	auto distance(Vector<T, N> const& left, Vector<T, N> const& right) -> f32;
+	[[nodiscard]] auto Distance(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> f32;
 
 	template<class T, std::size_t N>
-	auto lerp(Vector<T, N> const& from, Vector<T, N> const& to, float t) -> Vector<T, N>;
+	[[nodiscard]] constexpr auto Lerp(Vector<T, N> const& from, Vector<T, N> const& to, float t) noexcept -> Vector<T, N>;
 
 	template<class T, std::size_t N>
-	auto operator-(Vector<T, N> const& operand) -> Vector<T, N>;
+	[[nodiscard]]  constexpr auto operator-(Vector<T, N> const& operand) noexcept -> Vector<T, N>;
 
 	template<class T, std::size_t N>
-	auto operator+(Vector<T, N> const& left, Vector<T, N> const& right) -> Vector<T, N>;
+	[[nodiscard]] constexpr auto operator+(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> Vector<T, N>;
 
 	template<class T, std::size_t N>
-	auto operator+=(Vector<T, N>& left, Vector<T, N> const& right) -> Vector<T, N>&;
+	constexpr auto operator+=(Vector<T, N>& left, Vector<T, N> const& right) noexcept -> Vector<T, N>&;
 
 	template<class T, std::size_t N>
-	auto operator-(Vector<T, N> const& left, Vector<T, N> const& right) -> Vector<T, N>;
+	[[nodiscard]] constexpr auto operator-(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> Vector<T, N>;
 
 	template<class T, std::size_t N>
-	auto operator-=(Vector<T, N>& left, Vector<T, N> const& right) -> Vector<T, N>&;
+	constexpr auto operator-=(Vector<T, N>& left, Vector<T, N> const& right) noexcept -> Vector<T, N>&;
 
 	template<class T1, std::convertible_to<T1> T2, std::size_t N>
-	auto operator*(Vector<T1, N> const& left, T2 const& right) -> Vector<T1, N>;
+	[[nodiscard]] constexpr auto operator*(Vector<T1, N> const& left, T2 const& right) noexcept -> Vector<T1, N>;
 
 	template<class T1, std::convertible_to<T1> T2, std::size_t N>
-	auto operator*(T2 const& left, Vector<T1, N> const& right) -> Vector<T1, N>;
+	[[nodiscard]] constexpr auto operator*(T2 const& left, Vector<T1, N> const& right) noexcept -> Vector<T1, N>;
 
 	template<class T, std::size_t N>
-	auto operator*(Vector<T, N> const& left, Vector<T, N> const& right) -> Vector<T, N>;
+	[[nodiscard]] constexpr auto operator*(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> Vector<T, N>;
 
 	template<class T1, std::convertible_to<T1> T2, std::size_t N>
-	auto operator*=(Vector<T1, N>& left, T2 const& right) -> Vector<T1, N>&;
+	constexpr auto operator*=(Vector<T1, N>& left, T2 const& right) noexcept -> Vector<T1, N>&;
 
 	template<class T, std::size_t N>
-	auto operator*=(Vector<T, N>& left, Vector<T, N> const& right) -> Vector<T, N>&;
+	constexpr auto operator*=(Vector<T, N>& left, Vector<T, N> const& right) noexcept -> Vector<T, N>&;
 
 	template<class T1, std::convertible_to<T1> T2, std::size_t N>
-	auto operator/(Vector<T1, N> const& left, T2 const& right) -> Vector<T1, N>;
+	[[nodiscard]] constexpr auto operator/(Vector<T1, N> const& left, T2 const& right) noexcept -> Vector<T1, N>;
 
 	template<class T1, std::convertible_to<T1> T2, std::size_t N>
-	auto operator/(T2 const& left, Vector<T1, N> const& right) -> Vector<T1, N>;
+	[[nodiscard]] constexpr auto operator/(T2 const& left, Vector<T1, N> const& right) noexcept -> Vector<T1, N>;
 
 	template<class T, std::size_t N>
-	auto operator/(Vector<T, N> const& left, Vector<T, N> const& right) -> Vector<T, N>;
+	[[nodiscard]] constexpr auto operator/(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> Vector<T, N>;
 
 	template<class T1, std::convertible_to<T1> T2, std::size_t N>
-	auto operator/=(Vector<T1, N>& left, T2 const& right) -> Vector<T1, N>&;
+	constexpr auto operator/=(Vector<T1, N>& left, T2 const& right) noexcept -> Vector<T1, N>&;
 
 	template<class T, std::size_t N>
-	auto operator/=(Vector<T, N>& left, Vector<T, N> const& right) -> Vector<T, N>&;
+	constexpr auto operator/=(Vector<T, N>& left, Vector<T, N> const& right) noexcept -> Vector<T, N>&;
 
 	template<class T, std::size_t N>
-	auto operator==(Vector<T, N> const& left, Vector<T, N> const& right) -> bool;
+	[[nodiscard]] constexpr auto operator==(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> bool;
 
 	template<class T, std::size_t N>
-	auto operator!=(Vector<T, N> const& left, Vector<T, N> const& right) -> bool;
+	[[nodiscard]] constexpr auto operator!=(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> bool;
 
 	template<class T, std::size_t N>
 	auto operator<<(std::ostream& stream, Vector<T, N> const& vector) -> std::ostream&;
@@ -156,53 +157,53 @@ namespace leopph {
 	template<class T, std::size_t N, std::size_t M> requires(N > 1 && M > 1)
 	class Matrix {
 	public:
-		[[nodiscard]] auto determinant() const -> T requires(N == M);
-		[[nodiscard]] auto transpose() const -> Matrix<T, M, N>;
-		[[nodiscard]] auto inverse() const -> Matrix<T, N, M> requires(N == M);
-		[[nodiscard]] auto Trace() const noexcept -> f32 requires(N == M);
+		[[nodiscard]] constexpr auto Determinant() const noexcept -> T requires(N == M);
+		[[nodiscard]] constexpr auto Transpose() const noexcept -> Matrix<T, M, N>;
+		[[nodiscard]] constexpr auto Inverse() const noexcept -> Matrix<T, N, M> requires(N == M);
+		[[nodiscard]] constexpr auto Trace() const noexcept -> f32 requires(N == M);
 
 
-		[[nodiscard]] auto operator[](size_t index) const -> Vector<T, M> const&;
-		[[nodiscard]] auto operator[](size_t index) -> Vector<T, M>&;
-		[[nodiscard]] auto get_data() -> T*;
-		[[nodiscard]] auto get_data() const -> T const*;
+		[[nodiscard]] constexpr auto operator[](size_t index) const noexcept -> Vector<T, M> const&;
+		[[nodiscard]] constexpr auto operator[](size_t index) noexcept -> Vector<T, M>&;
+		[[nodiscard]] constexpr auto GetData() noexcept -> T*;
+		[[nodiscard]] constexpr auto GetData() const noexcept -> T const*;
 
 
-		[[nodiscard]] static auto identity() -> Matrix<T, N, M> requires (N == M);
-		[[nodiscard]] static auto Translate(Vector<T, 3> const& vector) -> Matrix<T, 4, 4> requires (N == 4 && M == 4);
-		[[nodiscard]] static auto scale(Vector<T, 3> const& vector) -> Matrix<T, 4, 4> requires (N == 4 && M == 4);
-		[[nodiscard]] static auto look_at(Vector<T, 3> const& position, Vector<T, 3> const& target, Vector<T, 3> const& worldUp) -> Matrix<T, 4, 4> requires(N == 4 && M == 4);
-		[[nodiscard]] static auto orthographic(T const& left, T const& right, T const& top, T const& bottom, T const& nearClipPlane, T const& farClipPlane) -> Matrix<T, 4, 4>;
-		[[nodiscard]] static constexpr auto perspective(T left, T right, T top, T bottom, T nearClipPlane, T farClipPlane) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4);
-		[[nodiscard]] static constexpr auto perspective(T fovVertRad, T aspectRatio, T nearClipPlane, T farClipPlane) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4);
+		[[nodiscard]] static constexpr auto Identity() noexcept -> Matrix requires (N == M);
+		[[nodiscard]] static constexpr auto Translate(Vector<T, 3> const& vector) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4);
+		[[nodiscard]] static constexpr auto Scale(Vector<T, 3> const& vector) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4);
+		[[nodiscard]] static constexpr auto LookAt(Vector<T, 3> const& position, Vector<T, 3> const& target, Vector<T, 3> const& worldUp) noexcept -> Matrix<T, 4, 4> requires(N == 4 && M == 4);
+		[[nodiscard]] static constexpr auto Orthographic(T const& left, T const& right, T const& top, T const& bottom, T const& nearClipPlane, T const& farClipPlane) noexcept -> Matrix<T, 4, 4>;
+		[[nodiscard]] static constexpr auto Perspective(T left, T right, T top, T bottom, T nearClipPlane, T farClipPlane) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4);
+		[[nodiscard]] static auto Perspective(T fovVertRad, T aspectRatio, T nearClipPlane, T farClipPlane) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4);
 
 
-		Matrix() = default;
+		constexpr Matrix() noexcept = default;
 
-		explicit Matrix(T const& value);
+		constexpr explicit Matrix(T const& value) noexcept;
 
 		template<std::convertible_to<T>... Args> requires(sizeof...(Args) == std::min(N, M))
-		explicit(sizeof...(Args) <= 1) Matrix(Args const&... args);
+		constexpr explicit(sizeof...(Args) <= 1) Matrix(Args const&... args) noexcept;
 
 		template<std::size_t K> requires(K == std::min(N, M))
-		explicit Matrix(Vector<T, K> const& vec);
+		constexpr explicit Matrix(Vector<T, K> const& vec) noexcept;
 
 		template<std::convertible_to<T> ... Args> requires(sizeof...(Args) == N * M)
-		explicit(sizeof...(Args) <= 1) Matrix(Args const&... args);
+		constexpr explicit(sizeof...(Args) <= 1) Matrix(Args const&... args) noexcept;
 
 		template<std::size_t N1, std::size_t M1> requires (N1 < N && M1 < M)
-		explicit Matrix(Matrix<T, N1, M1> const& other);
+		constexpr explicit Matrix(Matrix<T, N1, M1> const& other) noexcept;
 
 		template<std::size_t N1, std::size_t M1> requires (N1 > N && M1 > M)
-		explicit Matrix(Matrix<T, N1, M1> const& other);
+		constexpr explicit Matrix(Matrix<T, N1, M1> const& other) noexcept;
 
-		Matrix(Matrix<T, N, M> const& other) = default;
-		Matrix(Matrix<T, N, M>&& other) noexcept = default;
+		constexpr Matrix(Matrix const& other) noexcept = default;
+		constexpr Matrix(Matrix&& other) noexcept = default;
 
-		~Matrix() = default;
+		constexpr ~Matrix() noexcept = default;
 
-		auto operator=(Matrix const& other) -> Matrix<T, N, M>& = default;
-		auto operator=(Matrix&& other) noexcept -> Matrix<T, N, M>& = default;
+		constexpr auto operator=(Matrix const& other) noexcept -> Matrix& = default;
+		constexpr auto operator=(Matrix&& other) noexcept -> Matrix& = default;
 
 	private:
 		Vector<T, M> mData[N]{};
@@ -210,40 +211,40 @@ namespace leopph {
 
 
 	template<class T, std::size_t N, std::size_t M>
-	auto operator+(Matrix<T, N, M> const& left, Matrix<T, N, M> const& right) -> Matrix<T, N, M>;
+	[[nodiscard]] constexpr auto operator+(Matrix<T, N, M> const& left, Matrix<T, N, M> const& right) noexcept -> Matrix<T, N, M>;
 
 	template<class T, std::size_t N, std::size_t M>
-	auto operator+=(Matrix<T, N, M>& left, Matrix<T, N, M> const& right) -> Matrix<T, N, M>&;
+	constexpr auto operator+=(Matrix<T, N, M>& left, Matrix<T, N, M> const& right) noexcept -> Matrix<T, N, M>&;
 
 	template<class T, std::size_t N, std::size_t M>
-	auto operator-(Matrix<T, N, M> const& left, Matrix<T, N, M> const& right) -> Matrix<T, N, M>;
+	[[nodiscard]] constexpr auto operator-(Matrix<T, N, M> const& left, Matrix<T, N, M> const& right) noexcept -> Matrix<T, N, M>;
 
 	template<class T, std::size_t N, std::size_t M>
-	auto operator-=(Matrix<T, N, M>& left, Matrix<T, N, M> const& right) -> Matrix<T, N, M>&;
+	constexpr auto operator-=(Matrix<T, N, M>& left, Matrix<T, N, M> const& right) noexcept -> Matrix<T, N, M>&;
 
 	template<class T, std::size_t N, std::size_t M, std::convertible_to<T> T1>
-	auto operator*(Matrix<T, N, M> const& left, T1 const& right) -> Matrix<T, N, M>;
+	[[nodiscard]] constexpr auto operator*(Matrix<T, N, M> const& left, T1 const& right) noexcept -> Matrix<T, N, M>;
 
 	template<class T, std::size_t N, std::size_t M, std::convertible_to<T> T1>
-	auto operator*(T1 const& left, Matrix<T, N, M> const& right) -> Matrix<T, N, M>;
+	[[nodiscard]] constexpr auto operator*(T1 const& left, Matrix<T, N, M> const& right) noexcept -> Matrix<T, N, M>;
 
 	template<class T, std::size_t N, std::size_t M>
-	auto operator*(Matrix<T, N, M> const& left, Vector<T, M> const& right) -> Vector<T, N>;
+	[[nodiscard]] constexpr auto operator*(Matrix<T, N, M> const& left, Vector<T, M> const& right) noexcept -> Vector<T, N>;
 
 	template<class T, std::size_t N, std::size_t M>
-	auto operator*(Vector<T, N> const& left, Matrix<T, N, M> const& right) -> Vector<T, M>;
+	[[nodiscard]] constexpr auto operator*(Vector<T, N> const& left, Matrix<T, N, M> const& right) noexcept -> Vector<T, M>;
 
 	template<class T, std::size_t N, std::size_t M, std::size_t P>
-	auto operator*(Matrix<T, N, M> const& left, Matrix<T, M, P> const& right) -> Matrix<T, N, P>;
+	[[nodiscard]] constexpr auto operator*(Matrix<T, N, M> const& left, Matrix<T, M, P> const& right) noexcept -> Matrix<T, N, P>;
 
 	template<class T, std::size_t N, std::size_t M, std::convertible_to<T> T1>
-	auto operator*=(Matrix<T, N, M>& left, T1 const& right) -> Matrix<T, N, M>&;
+	constexpr auto operator*=(Matrix<T, N, M>& left, T1 const& right) noexcept -> Matrix<T, N, M>&;
 
 	template<class T, std::size_t N>
-	auto operator*=(Vector<T, N>& left, Matrix<T, N, N> const& right) -> Vector<T, N>&;
+	constexpr auto operator*=(Vector<T, N>& left, Matrix<T, N, N> const& right) noexcept -> Vector<T, N>&;
 
 	template<class T, std::size_t N, std::size_t M>
-	auto operator*=(Matrix<T, N, M>& left, Matrix<T, M, M> const& right) -> Matrix<T, N, M>&;
+	constexpr auto operator*=(Matrix<T, N, M>& left, Matrix<T, M, M> const& right) noexcept -> Matrix<T, N, M>&;
 
 	template<class T, std::size_t N, std::size_t M>
 	auto operator<<(std::ostream& stream, Matrix<T, N, M> const& matrix) -> std::ostream&;
@@ -254,59 +255,102 @@ namespace leopph {
 
 
 	struct Quaternion {
-	public:
 		f32 x;
 		f32 y;
 		f32 z;
 		f32 w;
 
 
-		LEOPPHAPI explicit Quaternion(f32 w = 1.0f, f32 x = 0.0f, f32 y = 0.0f, f32 z = 0.0f);
-		LEOPPHAPI Quaternion(Vector3 const& axis, f32 angleDegrees);
+		constexpr explicit Quaternion(f32 w = 1.0f, f32 x = 0.0f, f32 y = 0.0f, f32 z = 0.0f) noexcept;
+		inline Quaternion(Vector3 const& axis, f32 angleDegrees) noexcept;
 
-		[[nodiscard]] LEOPPHAPI static auto FromEulerAngles(f32 x, f32 y, f32 z) -> Quaternion;
-		[[nodiscard]] LEOPPHAPI static auto FromEulerAngles(Vector3 const& euler) -> Quaternion;
-		[[nodiscard]] LEOPPHAPI auto ToEulerAngles() const -> Vector3;
-		
-		[[nodiscard]] LEOPPHAPI auto ToRotationMatrix() const noexcept -> Matrix4;
+		[[nodiscard]] inline static auto FromEulerAngles(f32 x, f32 y, f32 z) noexcept -> Quaternion;
+		[[nodiscard]] inline static auto FromEulerAngles(Vector3 const& euler) noexcept -> Quaternion;
+		[[nodiscard]] inline auto ToEulerAngles() const noexcept -> Vector3;
 
-		[[nodiscard]] LEOPPHAPI static auto FromAxisAngle(Vector3 const& axis, f32 angleDeg) noexcept -> Quaternion;
-		LEOPPHAPI auto to_axis_angle(Vector3& axis, float& angle) const -> void;
+		[[nodiscard]] constexpr auto ToRotationMatrix() const noexcept -> Matrix4;
 
-		[[nodiscard]] LEOPPHAPI static auto FromTo(Vector3 const& from, Vector3 const& to) noexcept -> Quaternion;
+		[[nodiscard]] inline static auto FromAxisAngle(Vector3 const& axis, f32 angleDeg) noexcept -> Quaternion;
+		inline auto ToAxisAngle(Vector3& axis, float& angle) const noexcept -> void;
 
-		[[nodiscard]] LEOPPHAPI auto get_norm_squared() const -> f32;
-		[[nodiscard]] LEOPPHAPI auto get_norm() const -> f32;
+		[[nodiscard]] inline static auto FromTo(Vector3 const& from, Vector3 const& to) noexcept -> Quaternion;
 
-		[[nodiscard]] LEOPPHAPI auto normalized() const -> Quaternion;
-		LEOPPHAPI auto normalize() -> Quaternion&;
+		[[nodiscard]] constexpr auto NormSquared() const noexcept -> f32;
+		[[nodiscard]] inline auto Norm() const noexcept -> f32;
 
-		[[nodiscard]] LEOPPHAPI auto conjugate() const -> Quaternion;
-		LEOPPHAPI auto conjugate_in_place() -> Quaternion&;
+		[[nodiscard]] inline auto Normalized() const noexcept -> Quaternion;
+		inline auto Normalize() noexcept -> Quaternion&;
 
-		[[nodiscard]] LEOPPHAPI auto inverse() const -> Quaternion;
-		LEOPPHAPI auto invert() -> Quaternion&;
+		[[nodiscard]] constexpr auto Conjugate() const noexcept -> Quaternion;
+		constexpr auto ConjugateInPlace() noexcept -> Quaternion&;
 
-		[[nodiscard]] LEOPPHAPI explicit operator Matrix4() const;
+		[[nodiscard]] constexpr auto Inverse() const noexcept -> Quaternion;
+		constexpr auto Invert() noexcept -> Quaternion&;
+
+		[[nodiscard]] constexpr explicit operator Matrix4() const noexcept;
 
 		template<class T>
-		[[nodiscard]] auto Rotate(Vector<T, 3> const& vec) const;
+		[[nodiscard]] constexpr auto Rotate(Vector<T, 3> const& vec) const noexcept -> Vector<T, 3>;
 	};
 
 
-	[[nodiscard]] LEOPPHAPI auto operator*(Quaternion const& left, Quaternion const& right) -> Quaternion;
+	[[nodiscard]] constexpr auto operator*(Quaternion const& left, Quaternion const& right) noexcept -> Quaternion;
 
-	LEOPPHAPI auto operator*=(Quaternion& left, Quaternion const& right) -> Quaternion&;
+	constexpr auto operator*=(Quaternion& left, Quaternion const& right) noexcept -> Quaternion&;
 
-	LEOPPHAPI auto operator<<(std::ostream& os, Quaternion const& q) -> std::ostream&;
+	inline auto operator<<(std::ostream& os, Quaternion const& q) -> std::ostream&;
 
+	/* ############################################################################################
+	 * ######## IMPLEMENTATION PART ###############################################################
+	 * ############################################################################################
+	 */
+
+	constexpr auto ToRadians(f32 const degrees) noexcept -> f32 {
+		return degrees * PI / 180.0f;
+	}
+
+
+	constexpr auto ToDegrees(f32 const radians) noexcept -> f32 {
+		return radians * 180.0f / PI;
+	}
+
+
+	constexpr auto IsPowerOfTwo(u32 const value) noexcept -> bool {
+		return value != 0 && (value & (value - 1)) == 0;
+	}
+
+
+	constexpr auto NextPowerOfTwo(u32 const value) noexcept -> u32 {
+		if (IsPowerOfTwo(value)) {
+			return value;
+		}
+
+		u32 ret{ 1 };
+
+		while (ret < value) {
+			ret <<= 1;
+		}
+
+		return ret;
+	}
+
+
+	constexpr auto Lerp(f32 const from, f32 const to, f32 const t) noexcept -> f32 {
+		return (1 - t) * from + t * to;
+	}
+
+
+	inline auto BinaryDigitCount(u32 const number) noexcept -> u8 {
+		return static_cast<u8>(std::log2(static_cast<f32>(number))) + 1;
+	}
 
 	template<class T, std::size_t N> requires (N > 1)
-	auto Vector<T, N>::length() const -> f32 {
+	auto Vector<T, N>::Length() const noexcept -> f32 {
 		f32 squaredSum = 0;
 
 		for (std::size_t i = 0; i < N; i++) {
-			squaredSum += std::pow(mData[i], static_cast<T>(2));
+			auto& elem{ mData[i] };
+			squaredSum += elem * elem;
 		}
 
 		return std::sqrt(squaredSum);
@@ -314,14 +358,14 @@ namespace leopph {
 
 
 	template<class T, std::size_t N> requires (N > 1)
-	auto Vector<T, N>::normalized() const -> Vector<T, N> {
-		return Vector<T, N>{ *this }.normalize();
+	auto Vector<T, N>::Normalized() const noexcept -> Vector<T, N> {
+		return Vector<T, N>{ *this }.Normalize();
 	}
 
 
 	template<class T, std::size_t N> requires (N > 1)
-	auto Vector<T, N>::normalize() -> Vector<T, N>& {
-		if (auto const length = this->length(); length >= std::numeric_limits<f32>::epsilon()) {
+	auto Vector<T, N>::Normalize() noexcept -> Vector<T, N>& {
+		if (auto const length = this->Length(); length >= std::numeric_limits<f32>::epsilon()) {
 			for (std::size_t i = 0; i < N; i++) {
 				mData[i] /= length;
 			}
@@ -332,31 +376,31 @@ namespace leopph {
 
 
 	template<class T, std::size_t N> requires (N > 1)
-	auto Vector<T, N>::operator[](size_t index) const -> T const& {
-		return get_element(this, index);
+	constexpr auto Vector<T, N>::operator[](size_t index) const noexcept -> T const& {
+		return GetElement(this, index);
 	}
 
 
 	template<class T, std::size_t N> requires (N > 1)
-	auto Vector<T, N>::operator[](size_t const index) -> T& {
-		return get_element(this, index);
+	constexpr auto Vector<T, N>::operator[](size_t const index) noexcept -> T& {
+		return GetElement(this, index);
 	}
 
 
 	template<class T, std::size_t N> requires (N > 1)
-	auto Vector<T, N>::get_data() const -> T const* {
+	constexpr auto Vector<T, N>::GetData() const noexcept -> T const* {
 		return mData;
 	}
 
 
 	template<class T, std::size_t N> requires (N > 1)
-	auto Vector<T, N>::get_data() -> T* {
+	constexpr auto Vector<T, N>::GetData() noexcept -> T* {
 		return mData;
 	}
 
 
 	template<class T, std::size_t N> requires (N > 1)
-	auto Vector<T, N>::up() -> Vector<T, N> {
+	constexpr auto Vector<T, N>::Up() noexcept -> Vector<T, N> {
 		Vector<T, N> ret{};
 		ret[1] = 1;
 		return ret;
@@ -364,7 +408,7 @@ namespace leopph {
 
 
 	template<class T, std::size_t N> requires (N > 1)
-	auto Vector<T, N>::down() -> Vector<T, N> {
+	constexpr auto Vector<T, N>::Down() noexcept -> Vector<T, N> {
 		Vector<T, N> ret{};
 		ret[1] = -1;
 		return ret;
@@ -372,7 +416,7 @@ namespace leopph {
 
 
 	template<class T, std::size_t N> requires (N > 1)
-	auto Vector<T, N>::left() -> Vector<T, N> {
+	constexpr auto Vector<T, N>::Left() noexcept -> Vector<T, N> {
 		Vector<T, N> ret{};
 		ret[0] = -1;
 		return ret;
@@ -380,7 +424,7 @@ namespace leopph {
 
 
 	template<class T, std::size_t N> requires (N > 1)
-	auto Vector<T, N>::right() -> Vector<T, N> {
+	constexpr auto Vector<T, N>::Right() noexcept -> Vector<T, N> {
 		Vector<T, N> ret{};
 		ret[0] = 1;
 		return ret;
@@ -388,7 +432,7 @@ namespace leopph {
 
 
 	template<class T, std::size_t N> requires (N > 1)
-	auto Vector<T, N>::forward() -> Vector<T, N> requires (N >= 3) {
+	constexpr auto Vector<T, N>::Forward() noexcept -> Vector<T, N> requires (N >= 3) {
 		Vector<T, N> ret{};
 		ret[2] = 1;
 		return ret;
@@ -396,7 +440,7 @@ namespace leopph {
 
 
 	template<class T, std::size_t N> requires (N > 1)
-	auto Vector<T, N>::backward() -> Vector<T, N> requires (N >= 3) {
+	constexpr auto Vector<T, N>::Backward() noexcept -> Vector<T, N> requires (N >= 3) {
 		Vector<T, N> ret{};
 		ret[2] = -1;
 		return ret;
@@ -405,7 +449,7 @@ namespace leopph {
 
 	template<class T, std::size_t N> requires (N > 1)
 	template<std::convertible_to<T> T1>
-	Vector<T, N>::Vector(T1 const& value) {
+	constexpr Vector<T, N>::Vector(T1 const& value) noexcept {
 		for (std::size_t i = 0; i < N; i++) {
 			mData[i] = static_cast<T>(value);
 		}
@@ -414,13 +458,13 @@ namespace leopph {
 
 	template<class T, std::size_t N> requires (N > 1)
 	template<std::convertible_to<T> ... Args> requires (sizeof...(Args) == N)
-	Vector<T, N>::Vector(Args const&... args) :
+	constexpr Vector<T, N>::Vector(Args const&... args) noexcept :
 		mData{ static_cast<T>(args)... } {}
 
 
 	template<class T, std::size_t N> requires (N > 1)
 	template<std::size_t M> requires (M > N)
-	Vector<T, N>::Vector(Vector<T, M> const& other) {
+	constexpr Vector<T, N>::Vector(Vector<T, M> const& other) noexcept {
 		for (std::size_t i = 0; i < N; i++) {
 			mData[i] = other[i];
 		}
@@ -429,7 +473,7 @@ namespace leopph {
 
 	template<class T, std::size_t N> requires (N > 1)
 	template<std::size_t M> requires (M < N)
-	Vector<T, N>::Vector(Vector<T, M> const& other, T const& fill) {
+	constexpr Vector<T, N>::Vector(Vector<T, M> const& other, T const& fill) noexcept {
 		for (std::size_t i = 0; i < M; i++) {
 			mData[i] = other[i];
 		}
@@ -441,13 +485,13 @@ namespace leopph {
 
 
 	template<class T, std::size_t N> requires (N > 1)
-	auto Vector<T, N>::get_element(auto* const self, std::size_t const index) -> decltype(auto) {
+	constexpr auto Vector<T, N>::GetElement(auto* const self, std::size_t const index) noexcept -> decltype(auto) {
 		return self->mData[index];
 	}
 
 
 	template<class T, std::size_t N> requires (N > 1)
-	auto dot(Vector<T, N> const& left, Vector<T, N> const& right) -> T {
+	constexpr auto Dot(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> T {
 		T ret{};
 
 		for (size_t i = 0; i < N; i++) {
@@ -459,7 +503,7 @@ namespace leopph {
 
 
 	template<class T, std::size_t N> requires (N > 1)
-	auto cross(Vector<T, N> const& left, Vector<T, N> const& right) -> Vector<T, N> requires (N == 3) {
+	constexpr auto Cross(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> Vector<T, N> requires (N == 3) {
 		return Vector<T, N>
 		{
 			left[1] * right[2] - left[2] * right[1],
@@ -470,7 +514,7 @@ namespace leopph {
 
 
 	template<class T, std::size_t N> requires (N > 1)
-	auto distance(Vector<T, N> const& left, Vector<T, N> const& right) -> f32 {
+	auto Distance(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> f32 {
 		f32 sum{ 0 };
 
 		for (size_t i = 0; i < N; i++) {
@@ -482,13 +526,13 @@ namespace leopph {
 
 
 	template<class T, std::size_t N>
-	auto lerp(Vector<T, N> const& from, Vector<T, N> const& to, float const t) -> Vector<T, N> {
+	constexpr auto Lerp(Vector<T, N> const& from, Vector<T, N> const& to, float const t) noexcept -> Vector<T, N> {
 		return (1 - t) * from + t * to;
 	}
 
 
 	template<class T, std::size_t N>
-	auto operator-(Vector<T, N> const& operand) -> Vector<T, N> {
+	constexpr auto operator-(Vector<T, N> const& operand) noexcept -> Vector<T, N> {
 		Vector<T, N> ret;
 		for (size_t i = 0; i < N; i++) {
 			ret[i] = -operand[i];
@@ -498,7 +542,7 @@ namespace leopph {
 
 
 	template<class T, std::size_t N>
-	auto operator+(Vector<T, N> const& left, Vector<T, N> const& right) -> Vector<T, N> {
+	constexpr auto operator+(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> Vector<T, N> {
 		Vector<T, N> ret;
 		for (size_t i = 0; i < N; i++) {
 			ret[i] = left[i] + right[i];
@@ -508,7 +552,7 @@ namespace leopph {
 
 
 	template<class T, std::size_t N>
-	auto operator+=(Vector<T, N>& left, Vector<T, N> const& right) -> Vector<T, N>& {
+	constexpr auto operator+=(Vector<T, N>& left, Vector<T, N> const& right) noexcept -> Vector<T, N>& {
 		for (std::size_t i = 0; i < N; i++) {
 			left[i] += right[i];
 		}
@@ -517,7 +561,7 @@ namespace leopph {
 
 
 	template<class T, std::size_t N>
-	auto operator-(Vector<T, N> const& left, Vector<T, N> const& right) -> Vector<T, N> {
+	constexpr auto operator-(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> Vector<T, N> {
 		Vector<T, N> ret;
 		for (std::size_t i = 0; i < N; i++) {
 			ret[i] = left[i] - right[i];
@@ -527,7 +571,7 @@ namespace leopph {
 
 
 	template<class T, std::size_t N>
-	auto operator-=(Vector<T, N>& left, Vector<T, N> const& right) -> Vector<T, N>& {
+	constexpr auto operator-=(Vector<T, N>& left, Vector<T, N> const& right) noexcept -> Vector<T, N>& {
 		for (std::size_t i = 0; i < N; i++) {
 			left[i] -= right[i];
 		}
@@ -536,7 +580,7 @@ namespace leopph {
 
 
 	template<class T1, std::convertible_to<T1> T2, std::size_t N>
-	auto operator*(Vector<T1, N> const& left, T2 const& right) -> Vector<T1, N> {
+	constexpr auto operator*(Vector<T1, N> const& left, T2 const& right) noexcept -> Vector<T1, N> {
 		Vector<T1, N> ret;
 		for (size_t i = 0; i < N; i++) {
 			ret[i] = left[i] * static_cast<T1>(right);
@@ -546,7 +590,7 @@ namespace leopph {
 
 
 	template<class T1, std::convertible_to<T1> T2, std::size_t N>
-	auto operator*(T2 const& left, Vector<T1, N> const& right) -> Vector<T1, N> {
+	constexpr auto operator*(T2 const& left, Vector<T1, N> const& right) noexcept -> Vector<T1, N> {
 		Vector<T1, N> ret;
 		for (std::size_t i = 0; i < N; i++) {
 			ret[i] = static_cast<T1>(left) * right[i];
@@ -556,7 +600,7 @@ namespace leopph {
 
 
 	template<class T, std::size_t N>
-	auto operator*(Vector<T, N> const& left, Vector<T, N> const& right) -> Vector<T, N> {
+	constexpr auto operator*(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> Vector<T, N> {
 		Vector<T, N> ret;
 		for (std::size_t i = 0; i < N; i++) {
 			ret[i] = left[i] * right[i];
@@ -566,7 +610,7 @@ namespace leopph {
 
 
 	template<class T1, std::convertible_to<T1> T2, std::size_t N>
-	auto operator*=(Vector<T1, N>& left, T2 const& right) -> Vector<T1, N>& {
+	constexpr auto operator*=(Vector<T1, N>& left, T2 const& right) noexcept -> Vector<T1, N>& {
 		for (std::size_t i = 0; i < N; i++) {
 			left[i] *= static_cast<T1>(right);
 		}
@@ -575,7 +619,7 @@ namespace leopph {
 
 
 	template<class T, std::size_t N>
-	auto operator*=(Vector<T, N>& left, Vector<T, N> const& right) -> Vector<T, N>& {
+	constexpr auto operator*=(Vector<T, N>& left, Vector<T, N> const& right) noexcept -> Vector<T, N>& {
 		for (std::size_t i = 0; i < N; i++) {
 			left[i] *= right[i];
 		}
@@ -584,7 +628,7 @@ namespace leopph {
 
 
 	template<class T1, std::convertible_to<T1> T2, std::size_t N>
-	auto operator/(Vector<T1, N> const& left, T2 const& right) -> Vector<T1, N> {
+	constexpr auto operator/(Vector<T1, N> const& left, T2 const& right) noexcept -> Vector<T1, N> {
 		Vector<T1, N> ret;
 		for (std::size_t i = 0; i < N; i++) {
 			ret[i] = left[i] / static_cast<T1>(right);
@@ -594,7 +638,7 @@ namespace leopph {
 
 
 	template<class T1, std::convertible_to<T1> T2, std::size_t N>
-	auto operator/(T2 const& left, Vector<T1, N> const& right) -> Vector<T1, N> {
+	constexpr auto operator/(T2 const& left, Vector<T1, N> const& right) noexcept -> Vector<T1, N> {
 		Vector<T1, N> ret;
 		T1 const numerator{ static_cast<T1>(left) };
 		for (std::size_t i = 0; i < N; i++) {
@@ -605,7 +649,7 @@ namespace leopph {
 
 
 	template<class T, std::size_t N>
-	auto operator/(Vector<T, N> const& left, Vector<T, N> const& right) -> Vector<T, N> {
+	constexpr auto operator/(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> Vector<T, N> {
 		Vector<T, N> ret;
 		for (std::size_t i = 0; i < N; i++) {
 			ret[i] = left[i] / right[i];
@@ -615,7 +659,7 @@ namespace leopph {
 
 
 	template<class T1, std::convertible_to<T1> T2, std::size_t N>
-	auto operator/=(Vector<T1, N>& left, T2 const& right) -> Vector<T1, N>& {
+	constexpr auto operator/=(Vector<T1, N>& left, T2 const& right) noexcept -> Vector<T1, N>& {
 		for (std::size_t i = 0; i < N; i++) {
 			left[i] /= static_cast<T1>(right);
 		}
@@ -624,7 +668,7 @@ namespace leopph {
 
 
 	template<class T, std::size_t N>
-	auto operator/=(Vector<T, N>& left, Vector<T, N> const& right) -> Vector<T, N>& {
+	constexpr auto operator/=(Vector<T, N>& left, Vector<T, N> const& right) noexcept -> Vector<T, N>& {
 		for (std::size_t i = 0; i < N; i++) {
 			left[i] /= right[i];
 		}
@@ -633,7 +677,7 @@ namespace leopph {
 
 
 	template<class T, std::size_t N>
-	auto operator==(Vector<T, N> const& left, Vector<T, N> const& right) -> bool {
+	constexpr auto operator==(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> bool {
 		for (size_t i = 0; i < N; i++) {
 			if (left[i] != right[i]) {
 				return false;
@@ -644,7 +688,7 @@ namespace leopph {
 
 
 	template<class T, std::size_t N>
-	auto operator!=(Vector<T, N> const& left, Vector<T, N> const& right) -> bool {
+	constexpr auto operator!=(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> bool {
 		return !(left == right);
 	}
 
@@ -664,7 +708,7 @@ namespace leopph {
 
 
 	template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
-	auto Matrix<T, N, M>::determinant() const -> T requires (N == M) {
+	constexpr auto Matrix<T, N, M>::Determinant() const noexcept -> T requires (N == M) {
 		Matrix<T, N, M> tmp{ *this };
 		for (size_t i = 1; i < N; i++) {
 			for (size_t j = 0; j < N; j++) {
@@ -683,7 +727,7 @@ namespace leopph {
 
 
 	template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
-	auto Matrix<T, N, M>::transpose() const -> Matrix<T, M, N> {
+	constexpr auto Matrix<T, N, M>::Transpose() const noexcept -> Matrix<T, M, N> {
 		Matrix<T, M, N> ret;
 		for (size_t i = 0; i < N; i++) {
 			for (size_t j = 0; j < M; j++) {
@@ -695,9 +739,9 @@ namespace leopph {
 
 
 	template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
-	auto Matrix<T, N, M>::inverse() const -> Matrix<T, N, M> requires (N == M) {
+	constexpr auto Matrix<T, N, M>::Inverse() const noexcept -> Matrix<T, N, M> requires (N == M) {
 		Matrix<T, N, M> left{ *this };
-		Matrix<T, N, M> right{ Matrix<T, N, M>::identity() };
+		Matrix<T, N, M> right{ Matrix<T, N, M>::Identity() };
 
 		// Iterate over the main diagonal/submatrices
 		for (std::size_t i = 0; i < N; i++) {
@@ -755,10 +799,10 @@ namespace leopph {
 
 
 	template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
-	auto Matrix<T, N, M>::Trace() const noexcept -> f32 requires (N == M) {
+	constexpr auto Matrix<T, N, M>::Trace() const noexcept -> f32 requires (N == M) {
 		f32 ret{ 0 };
-		for (std::size_t i{0}; i < N; i++) {
-			for (std::size_t j{0}; j < M; j++) {
+		for (std::size_t i{ 0 }; i < N; i++) {
+			for (std::size_t j{ 0 }; j < M; j++) {
 				ret += mData[i][j];
 			}
 		}
@@ -767,38 +811,38 @@ namespace leopph {
 
 
 	template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
-	auto Matrix<T, N, M>::operator[](size_t const index) const -> Vector<T, M> const& {
+	constexpr auto Matrix<T, N, M>::operator[](size_t const index) const noexcept -> Vector<T, M> const& {
 		return mData[index];
 	}
 
 
 	template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
-	auto Matrix<T, N, M>::operator[](size_t const index) -> Vector<T, M>& {
+	constexpr auto Matrix<T, N, M>::operator[](size_t const index) noexcept -> Vector<T, M>& {
 		return mData[index];
 	}
 
 
 	template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
-	auto Matrix<T, N, M>::get_data() -> T* {
-		return mData[0].get_data();
+	constexpr auto Matrix<T, N, M>::GetData() noexcept -> T* {
+		return mData[0].GetData();
 	}
 
 
 	template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
-	auto Matrix<T, N, M>::get_data() const -> T const* {
-		return mData[0].get_data();
+	constexpr auto Matrix<T, N, M>::GetData() const noexcept -> T const* {
+		return mData[0].GetData();
 	}
 
 
 	template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
-	auto Matrix<T, N, M>::identity() -> Matrix<T, N, M> requires (N == M) {
+	constexpr auto Matrix<T, N, M>::Identity() noexcept -> Matrix<T, N, M> requires (N == M) {
 		return Matrix<T, N, M>{ 1 };
 	}
 
 
 	template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
-	auto Matrix<T, N, M>::Translate(Vector<T, 3> const& vector) -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
-		Matrix<T, 4, 4> ret = identity();
+	constexpr auto Matrix<T, N, M>::Translate(Vector<T, 3> const& vector) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
+		Matrix<T, 4, 4> ret = Identity();
 		for (size_t i = 0; i < 3; i++) {
 			ret[3][i] = vector[i];
 		}
@@ -807,8 +851,8 @@ namespace leopph {
 
 
 	template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
-	auto Matrix<T, N, M>::scale(Vector<T, 3> const& vector) -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
-		Matrix<T, 4, 4> ret = identity();
+	constexpr auto Matrix<T, N, M>::Scale(Vector<T, 3> const& vector) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
+		Matrix<T, 4, 4> ret = Identity();
 		for (size_t i = 0; i < 3; i++) {
 			ret[i][i] = vector[i];
 		}
@@ -817,22 +861,22 @@ namespace leopph {
 
 
 	template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
-	auto Matrix<T, N, M>::look_at(Vector<T, 3> const& position, Vector<T, 3> const& target, Vector<T, 3> const& worldUp) -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
-		Vector<T, 3> z{ (target - position).normalized() };
-		Vector<T, 3> x{ cross(worldUp, z).normalized() };
-		Vector<T, 3> y{ cross(z, x) };
+	constexpr auto Matrix<T, N, M>::LookAt(Vector<T, 3> const& position, Vector<T, 3> const& target, Vector<T, 3> const& worldUp) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
+		Vector<T, 3> z{ (target - position).Normalized() };
+		Vector<T, 3> x{ Cross(worldUp, z).Normalized() };
+		Vector<T, 3> y{ Cross(z, x) };
 		return Matrix<T, 4, 4>
 		{
 			x[0], y[0], z[0], 0,
 			x[1], y[1], z[1], 0,
 			x[2], y[2], z[2], 0,
-			-dot(x, position), -dot(y, position), -dot(z, position), 1
+			-Dot(x, position), -Dot(y, position), -Dot(z, position), 1
 		};
 	}
 
 
 	template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
-	auto Matrix<T, N, M>::orthographic(T const& left, T const& right, T const& top, T const& bottom, T const& nearClipPlane, T const& farClipPlane) -> Matrix<T, 4, 4> {
+	constexpr auto Matrix<T, N, M>::Orthographic(T const& left, T const& right, T const& top, T const& bottom, T const& nearClipPlane, T const& farClipPlane) noexcept -> Matrix<T, 4, 4> {
 		Matrix<T, 4, 4> ret;
 		ret[0][0] = static_cast<T>(static_cast<T>(2) / (right - left));
 		ret[1][1] = static_cast<T>(static_cast<T>(2) / (top - bottom));
@@ -846,18 +890,18 @@ namespace leopph {
 
 
 	template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
-	constexpr auto Matrix<T, N, M>::perspective(T const fovVertRad, T const aspectRatio, T const nearClipPlane, T const farClipPlane) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
+	auto Matrix<T, N, M>::Perspective(T const fovVertRad, T const aspectRatio, T const nearClipPlane, T const farClipPlane) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
 		T tanHalfFov{ static_cast<T>(std::tan(fovVertRad / static_cast<T>(2))) };
 		T top{ nearClipPlane * tanHalfFov };
 		T bottom{ -top };
 		T right{ top * aspectRatio };
 		T left{ -right };
-		return perspective(left, right, top, bottom, nearClipPlane, farClipPlane);
+		return Perspective(left, right, top, bottom, nearClipPlane, farClipPlane);
 	}
 
 
 	template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
-	constexpr auto Matrix<T, N, M>::perspective(T const left, T const right, T const top, T const bottom, T const nearClipPlane, T const farClipPlane) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
+	constexpr auto Matrix<T, N, M>::Perspective(T const left, T const right, T const top, T const bottom, T const nearClipPlane, T const farClipPlane) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
 		Matrix<T, 4, 4> ret;
 		ret[0][0] = (static_cast<T>(2) * nearClipPlane) / (right - left);
 		ret[2][0] = (right + left) / (right - left);
@@ -871,8 +915,8 @@ namespace leopph {
 
 
 	template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
-	Matrix<T, N, M>::Matrix(T const& value) {
-		for (size_t i = 0; i < N && i < M; i++) {
+	constexpr Matrix<T, N, M>::Matrix(T const& value) noexcept {
+		for (size_t i = 0; i < std::min(N, M); i++) {
 			mData[i][i] = value;
 		}
 	}
@@ -880,7 +924,7 @@ namespace leopph {
 
 	template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
 	template<std::size_t K> requires (K == std::min(N, M))
-	Matrix<T, N, M>::Matrix(Vector<T, K> const& vec) {
+	constexpr Matrix<T, N, M>::Matrix(Vector<T, K> const& vec) noexcept {
 		for (size_t i = 0; i < K; i++) {
 			mData[i][i] = vec[i];
 		}
@@ -889,7 +933,7 @@ namespace leopph {
 
 	template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
 	template<std::convertible_to<T> ... Args> requires (sizeof...(Args) == N * M)
-	Matrix<T, N, M>::Matrix(Args const&... args) {
+	constexpr Matrix<T, N, M>::Matrix(Args const&... args) noexcept {
 		T argArr[M * N]{ static_cast<T>(args)... };
 		for (size_t i = 0; i < N; i++) {
 			for (size_t j = 0; j < M; j++) {
@@ -901,7 +945,7 @@ namespace leopph {
 
 	template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
 	template<std::size_t N1, std::size_t M1> requires (N1 < N && M1 < M)
-	Matrix<T, N, M>::Matrix(Matrix<T, N1, M1> const& other) {
+	constexpr Matrix<T, N, M>::Matrix(Matrix<T, N1, M1> const& other) noexcept {
 		for (std::size_t i = 0; i < N1; i++) {
 			mData[i] = Vector<T, M>{ other[i], 0 };
 		}
@@ -916,7 +960,7 @@ namespace leopph {
 
 	template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
 	template<std::size_t N1, std::size_t M1> requires (N1 > N && M1 > M)
-	Matrix<T, N, M>::Matrix(Matrix<T, N1, M1> const& other) {
+	constexpr Matrix<T, N, M>::Matrix(Matrix<T, N1, M1> const& other) noexcept {
 		for (std::size_t i = 0; i < N; i++) {
 			mData[i] = Vector<T, M>{ other[i] };
 		}
@@ -925,7 +969,7 @@ namespace leopph {
 
 	template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
 	template<std::convertible_to<T> ... Args> requires (sizeof...(Args) == std::min(N, M))
-	Matrix<T, N, M>::Matrix(Args const&... args) {
+	constexpr Matrix<T, N, M>::Matrix(Args const&... args) noexcept {
 		T argArr[M > N ? N : M]{ static_cast<T>(args)... };
 		for (size_t i = 0; i < M && i < N; i++) {
 			mData[i][i] = argArr[i];
@@ -934,7 +978,7 @@ namespace leopph {
 
 
 	template<class T, std::size_t N, std::size_t M>
-	auto operator+(Matrix<T, N, M> const& left, Matrix<T, N, M> const& right) -> Matrix<T, N, M> {
+	constexpr auto operator+(Matrix<T, N, M> const& left, Matrix<T, N, M> const& right) noexcept -> Matrix<T, N, M> {
 		Matrix<T, N, M> ret;
 		for (std::size_t i = 0; i < N; i++) {
 			ret[i] = left[i] + right[i];
@@ -944,7 +988,7 @@ namespace leopph {
 
 
 	template<class T, std::size_t N, std::size_t M>
-	auto operator+=(Matrix<T, N, M>& left, Matrix<T, N, M> const& right) -> Matrix<T, N, M>& {
+	constexpr auto operator+=(Matrix<T, N, M>& left, Matrix<T, N, M> const& right) noexcept -> Matrix<T, N, M>& {
 		for (std::size_t i = 0; i < N; i++) {
 			left[i] += right[i];
 		}
@@ -953,7 +997,7 @@ namespace leopph {
 
 
 	template<class T, std::size_t N, std::size_t M>
-	auto operator-(Matrix<T, N, M> const& left, Matrix<T, N, M> const& right) -> Matrix<T, N, M> {
+	constexpr auto operator-(Matrix<T, N, M> const& left, Matrix<T, N, M> const& right) noexcept -> Matrix<T, N, M> {
 		Matrix<T, N, M> ret;
 		for (std::size_t i = 0; i < N; i++) {
 			ret[i] = left[i] - right[i];
@@ -963,7 +1007,7 @@ namespace leopph {
 
 
 	template<class T, std::size_t N, std::size_t M>
-	auto operator-=(Matrix<T, N, M>& left, Matrix<T, N, M> const& right) -> Matrix<T, N, M>& {
+	constexpr auto operator-=(Matrix<T, N, M>& left, Matrix<T, N, M> const& right) noexcept -> Matrix<T, N, M>& {
 		for (std::size_t i = 0; i < N; i++) {
 			left[i] -= right[i];
 		}
@@ -972,7 +1016,7 @@ namespace leopph {
 
 
 	template<class T, std::size_t N, std::size_t M, std::convertible_to<T> T1>
-	auto operator*(Matrix<T, N, M> const& left, T1 const& right) -> Matrix<T, N, M> {
+	constexpr auto operator*(Matrix<T, N, M> const& left, T1 const& right) noexcept -> Matrix<T, N, M> {
 		Matrix<T, N, M> ret;
 		for (std::size_t i = 0; i < N; i++) {
 			ret[i] = left[i] * static_cast<T>(right);
@@ -982,7 +1026,7 @@ namespace leopph {
 
 
 	template<class T, std::size_t N, std::size_t M, std::convertible_to<T> T1>
-	auto operator*(T1 const& left, Matrix<T, N, M> const& right) -> Matrix<T, N, M> {
+	constexpr auto operator*(T1 const& left, Matrix<T, N, M> const& right) noexcept -> Matrix<T, N, M> {
 		Matrix<T, N, M> ret;
 		for (std::size_t i = 0; i < N; i++) {
 			ret[i] = static_cast<T>(left) * right[i];
@@ -992,7 +1036,7 @@ namespace leopph {
 
 
 	template<class T, std::size_t N, std::size_t M>
-	auto operator*(Matrix<T, N, M> const& left, Vector<T, M> const& right) -> Vector<T, N> {
+	constexpr auto operator*(Matrix<T, N, M> const& left, Vector<T, M> const& right) noexcept -> Vector<T, N> {
 		Vector<T, N> ret;
 		for (size_t i = 0; i < N; i++) {
 			for (size_t j = 0; j < M; j++) {
@@ -1004,7 +1048,7 @@ namespace leopph {
 
 
 	template<class T, std::size_t N, std::size_t M>
-	auto operator*(Vector<T, N> const& left, Matrix<T, N, M> const& right) -> Vector<T, M> {
+	constexpr auto operator*(Vector<T, N> const& left, Matrix<T, N, M> const& right) noexcept -> Vector<T, M> {
 		Vector<T, M> ret;
 		for (size_t j = 0; j < M; j++) {
 			for (size_t i = 0; i < N; i++) {
@@ -1016,7 +1060,7 @@ namespace leopph {
 
 
 	template<class T, std::size_t N, std::size_t M, std::size_t P>
-	auto operator*(Matrix<T, N, M> const& left, Matrix<T, M, P> const& right) -> Matrix<T, N, P> {
+	constexpr auto operator*(Matrix<T, N, M> const& left, Matrix<T, M, P> const& right) noexcept -> Matrix<T, N, P> {
 		Matrix<T, N, P> ret;
 		for (size_t i = 0; i < N; i++) {
 			for (size_t j = 0; j < P; j++) {
@@ -1030,7 +1074,7 @@ namespace leopph {
 
 
 	template<class T, std::size_t N, std::size_t M, std::convertible_to<T> T1>
-	auto operator*=(Matrix<T, N, M>& left, T1 const& right) -> Matrix<T, N, M>& {
+	constexpr auto operator*=(Matrix<T, N, M>& left, T1 const& right) noexcept -> Matrix<T, N, M>& {
 		for (std::size_t i = 0; i < N; i++) {
 			left[i] *= static_cast<T>(right);
 		}
@@ -1039,13 +1083,13 @@ namespace leopph {
 
 
 	template<class T, std::size_t N>
-	auto operator*=(Vector<T, N>& left, Matrix<T, N, N> const& right) -> Vector<T, N>& {
+	constexpr auto operator*=(Vector<T, N>& left, Matrix<T, N, N> const& right) noexcept -> Vector<T, N>& {
 		return left = left * right;
 	}
 
 
 	template<class T, std::size_t N, std::size_t M>
-	auto operator*=(Matrix<T, N, M>& left, Matrix<T, M, M> const& right) -> Matrix<T, N, M>& {
+	constexpr auto operator*=(Matrix<T, N, M>& left, Matrix<T, M, M> const& right) noexcept -> Matrix<T, N, M>& {
 		return left = left * right;
 	}
 
@@ -1067,9 +1111,187 @@ namespace leopph {
 	}
 
 
+	constexpr Quaternion::Quaternion(f32 const w, f32 const x, f32 const y, f32 const z) noexcept :
+		x{ x }, y{ y }, z{ z }, w{ w } {}
+
+	inline Quaternion::Quaternion(Vector3 const& axis, f32 const angleDegrees) noexcept {
+		auto const angleHalfRadians = ToRadians(angleDegrees) / 2.0f;
+		auto vec = axis.Normalized() * std::sinf(angleHalfRadians);
+
+		w = std::cos(angleHalfRadians);
+		x = vec[0];
+		y = vec[1];
+		z = vec[2];
+	}
+
+	inline auto Quaternion::FromEulerAngles(f32 const x, f32 const y, f32 const z) noexcept -> Quaternion {
+		auto const roll = ToRadians(x);
+		auto const pitch = ToRadians(y);
+		auto const yaw = ToRadians(z);
+
+		auto const cr = cosf(roll * 0.5f);
+		auto const sr = sinf(roll * 0.5f);
+		auto const cp = cosf(pitch * 0.5f);
+		auto const sp = sinf(pitch * 0.5f);
+		auto const cy = cosf(yaw * 0.5f);
+		auto const sy = sinf(yaw * 0.5f);
+
+		return Quaternion
+		{
+			cr * cp * cy + sr * sp * sy,
+			sr * cp * cy - cr * sp * sy,
+			cr * sp * cy + sr * cp * sy,
+			cr * cp * sy - sr * sp * cy,
+		};
+	}
+
+	inline auto Quaternion::FromEulerAngles(Vector3 const& euler) noexcept -> Quaternion {
+		return FromEulerAngles(euler[0], euler[1], euler[2]);
+	}
+
+	inline auto Quaternion::ToEulerAngles() const noexcept -> Vector3 {
+		Vector3 angles;
+
+		// roll (x-axis rotation)
+		auto const sinr_cosp = 2 * (w * x + y * z);
+		auto const cosr_cosp = 1 - 2 * (x * x + y * y);
+		angles[0] = std::atan2(sinr_cosp, cosr_cosp);
+
+		// pitch (y-axis rotation)
+		auto const sinp = 2 * (w * y - z * x);
+		if (std::abs(sinp) >= 1) {
+			angles[1] = std::copysign(PI / 2, sinp); // use 90 degrees if out of range
+		}
+		else {
+			angles[1] = std::asin(sinp);
+		}
+
+		// yaw (z-axis rotation)
+		auto const siny_cosp = 2 * (w * z + x * y);
+		auto const cosy_cosp = 1 - 2 * (y * y + z * z);
+		angles[2] = std::atan2(siny_cosp, cosy_cosp);
+
+		for (int i = 0; i < 3; i++) {
+			angles[i] = ToDegrees(angles[i]);
+		}
+
+		return angles;
+	}
+
+	constexpr auto Quaternion::ToRotationMatrix() const noexcept -> Matrix4 {
+		return static_cast<Matrix4>(*this);
+	}
+
+	inline auto Quaternion::FromAxisAngle(Vector3 const& axis, f32 const angleDeg) noexcept -> Quaternion {
+		return Quaternion{ axis, angleDeg };
+	}
+
+	inline auto Quaternion::ToAxisAngle(Vector3& axis, float& angle) const noexcept -> void {
+		axis = { x, y, z };
+		float const vectorLength = axis.Length();
+		axis.Normalize();
+		angle = 2 * std::atan2f(vectorLength, w);
+	}
+
+
+	inline auto Quaternion::FromTo(Vector3 const& from, Vector3 const& to) noexcept -> Quaternion {
+		auto const crossProduct{ Cross(from, to) };
+		return Quaternion{
+			std::sqrt(std::pow(from.Length(), 2.f) * std::pow(to.Length(), 2.f)) + Dot(from, to),
+			crossProduct[0],
+			crossProduct[1],
+			crossProduct[2],
+		}.Normalize();
+	}
+
+
+	constexpr auto Quaternion::NormSquared() const noexcept -> f32 {
+		return w * w + x * x + y * y + z * z;
+	}
+
+
+	inline auto Quaternion::Norm() const noexcept -> f32 {
+		return std::sqrtf(NormSquared());
+	}
+
+
+	inline auto Quaternion::Normalized() const noexcept -> Quaternion {
+		return Quaternion{ *this }.Normalize();
+	}
+
+
+	inline auto Quaternion::Normalize() noexcept -> Quaternion& {
+		auto const norm = Norm();
+		w /= norm;
+		x /= norm;
+		y /= norm;
+		z /= norm;
+		return *this;
+	}
+
+
+	constexpr auto Quaternion::Conjugate() const noexcept -> Quaternion {
+		return Quaternion{ *this }.ConjugateInPlace();
+	}
+
+
+	constexpr auto Quaternion::ConjugateInPlace() noexcept -> Quaternion& {
+		x = -x;
+		y = -y;
+		z = -z;
+		return *this;
+	}
+
+
+	constexpr auto Quaternion::Inverse() const noexcept -> Quaternion {
+		return Quaternion{ *this }.Invert();
+	}
+
+
+	constexpr auto Quaternion::Invert() noexcept -> Quaternion& {
+		auto const normSquared = NormSquared();
+		w /= normSquared;
+		x = -x / normSquared;
+		y = -y / normSquared;
+		z = -z / normSquared;
+		return *this;
+	}
+
+
+	constexpr Quaternion::operator Matrix4() const noexcept {
+		return Matrix4
+		{
+			1 - 2 * (y * y + z * z), 2 * (x * y + z * w), 2 * (x * z - y * w), 0,
+			2 * (x * y - z * w), 1 - 2 * (x * x + z * z), 2 * (y * z + x * w), 0,
+			2 * (x * z + y * w), 2 * (y * z - x * w), 1 - 2 * (x * x + y * y), 0,
+			0, 0, 0, 1
+		};
+	}
+
+
 	template<class T>
-	auto Quaternion::Rotate(Vector<T, 3> const& vec) const {
-		auto const retQuat = *this * Quaternion{ 0, vec[0], vec[1], vec[2] } * conjugate();
+	constexpr auto Quaternion::Rotate(Vector<T, 3> const& vec) const noexcept -> Vector<T, 3> {
+		auto const retQuat = *this * Quaternion{ 0, vec[0], vec[1], vec[2] } * Conjugate();
 		return Vector<T, 3>{ retQuat.x, retQuat.y, retQuat.z };
+	}
+
+
+	constexpr auto operator*(Quaternion const& left, Quaternion const& right) noexcept -> Quaternion {
+		return Quaternion{
+			left.w * right.w - left.x * right.x - left.y * right.y - left.z * right.z,
+			left.w * right.x + left.x * right.w + left.y * right.z - left.z * right.y,
+			left.w * right.y - left.x * right.z + left.y * right.w + left.z * right.x,
+			left.w * right.z + left.x * right.y - left.y * right.x + left.z * right.w
+		};
+	}
+
+
+	constexpr auto operator*=(Quaternion& left, Quaternion const& right) noexcept -> Quaternion& {
+		return left = left * right;
+	}
+
+
+	inline auto operator<<(std::ostream& os, Quaternion const& q) -> std::ostream& {
+		return os << "(" << q.w << ", " << q.x << ", " << q.y << ", " << q.z << ")";
 	}
 }

@@ -14,9 +14,9 @@ namespace leopph {
 		mWorldRotation = mParent != nullptr ? mParent->mWorldRotation * mLocalRotation : mLocalRotation;
 		mWorldScale = mParent != nullptr ? mParent->mWorldScale * mLocalScale : mLocalScale;
 
-		mForward = mWorldRotation.Rotate(Vector3::forward());
-		mRight = mWorldRotation.Rotate(Vector3::right());
-		mUp = mWorldRotation.Rotate(Vector3::up());
+		mForward = mWorldRotation.Rotate(Vector3::Forward());
+		mRight = mWorldRotation.Rotate(Vector3::Right());
+		mUp = mWorldRotation.Rotate(Vector3::Up());
 
 		mModelMat[0] = Vector4{ mRight * mWorldScale, 0 };
 		mModelMat[1] = Vector4{ mUp * mWorldScale, 0 };
@@ -39,7 +39,7 @@ namespace leopph {
 
 	auto TransformComponent::SetWorldPosition(Vector3 const& newPos) -> void {
 		if (mParent != nullptr) {
-			SetLocalPosition(mParent->mWorldRotation.conjugate().Rotate(newPos) - mParent->mWorldPosition);
+			SetLocalPosition(mParent->mWorldRotation.Conjugate().Rotate(newPos) - mParent->mWorldPosition);
 		}
 		else {
 			SetLocalPosition(newPos);
@@ -65,7 +65,7 @@ namespace leopph {
 
 	auto TransformComponent::SetWorldRotation(Quaternion const& newRot) -> void {
 		if (mParent != nullptr) {
-			SetLocalRotation(mParent->mWorldRotation.conjugate() * newRot);
+			SetLocalRotation(mParent->mWorldRotation.Conjugate() * newRot);
 		}
 		else {
 			SetLocalRotation(newRot);
@@ -224,7 +224,7 @@ namespace leopph {
 			ImGui::TableNextColumn();
 
 			Vector3 localPos{ mLocalPosition };
-			if (ImGui::DragFloat3("###transformPos", localPos.get_data(), 0.1f)) {
+			if (ImGui::DragFloat3("###transformPos", localPos.GetData(), 0.1f)) {
 				SetLocalPosition(localPos);
 			}
 
@@ -233,7 +233,7 @@ namespace leopph {
 			ImGui::TableNextColumn();
 
 			auto euler{ mLocalRotation.ToEulerAngles() };
-			if (ImGui::DragFloat3("###transformRot", euler.get_data(), 1.0f)) {
+			if (ImGui::DragFloat3("###transformRot", euler.GetData(), 1.0f)) {
 				SetLocalRotation(Quaternion::FromEulerAngles(euler));
 			}
 
@@ -257,7 +257,7 @@ namespace leopph {
 			}
 			else {
 				Vector3 localScale{ mLocalScale };
-				if (ImGui::DragFloat3("###transformScale", localScale.get_data(), scaleSpeed)) {
+				if (ImGui::DragFloat3("###transformScale", localScale.GetData(), scaleSpeed)) {
 					SetLocalScale(localScale);
 				}
 			}

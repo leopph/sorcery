@@ -24,15 +24,15 @@ namespace leopph {
 		Quaternion mWorldRotation{ mLocalRotation };
 		Vector3 mWorldScale{ mLocalScale };
 
-		Vector3 mForward{ Vector3::forward() };
-		Vector3 mRight{ Vector3::right() };
-		Vector3 mUp{ Vector3::up() };
+		Vector3 mForward{ Vector3::Forward() };
+		Vector3 mRight{ Vector3::Right() };
+		Vector3 mUp{ Vector3::Up() };
 
 		TransformComponent* mParent{ nullptr };
 		std::vector<TransformComponent*> mChildren;
 
-		Matrix4 mModelMat{ Matrix4::identity() };
-		Matrix3 mNormalMat{ Matrix4::identity() };
+		Matrix4 mModelMat{ Matrix4::Identity() };
+		Matrix3 mNormalMat{ Matrix4::Identity() };
 
 	public:
 		LEOPPHAPI auto OnGui() -> void override;

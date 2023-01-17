@@ -141,7 +141,7 @@ namespace leopph {
 			ImGui::Text("Albedo Color");
 			ImGui::TableNextColumn();
 
-			if (Vector3 albedoColor{ mBufData.albedo }; ImGui::ColorEdit3("###matAlbedoColor", albedoColor.get_data())) {
+			if (Vector3 albedoColor{ mBufData.albedo }; ImGui::ColorEdit3("###matAlbedoColor", albedoColor.GetData())) {
 				SetAlbedoColor(albedoColor);
 			}
 

@@ -594,7 +594,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 						.orientation = leopph::Quaternion{},
 						.nearClip = 0.03f,
 						.farClip = 10000.f,
-						.fovVertRad = leopph::to_radians(60),
+						.fovVertRad = leopph::ToRadians(60),
 					};
 
 					static bool isMovingSceneCamera{ false };
@@ -609,19 +609,19 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
 						leopph::Vector3 posDelta{ 0, 0, 0 };
 						if (GetKey(leopph::Key::W) || GetKey(leopph::Key::UpArrow)) {
-							posDelta += leopph::Vector3::forward();
+							posDelta += leopph::Vector3::Forward();
 						}
 						if (GetKey(leopph::Key::A) || GetKey(leopph::Key::LeftArrow)) {
-							posDelta += leopph::Vector3::left();
+							posDelta += leopph::Vector3::Left();
 						}
 						if (GetKey(leopph::Key::D) || GetKey(leopph::Key::RightArrow)) {
-							posDelta += leopph::Vector3::right();
+							posDelta += leopph::Vector3::Right();
 						}
 						if (GetKey(leopph::Key::S) || GetKey(leopph::Key::DownArrow)) {
-							posDelta += leopph::Vector3::backward();
+							posDelta += leopph::Vector3::Backward();
 						}
 
-						posDelta.normalize();
+						posDelta.Normalize();
 
 						if (GetKey(leopph::Key::Shift)) {
 							posDelta *= 2;
@@ -632,8 +632,8 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 						auto const [mouseX, mouseY]{ leopph::gWindow.GetMouseDelta() };
 						auto constexpr sens{ 0.05f };
 
-						editorCam.orientation = leopph::Quaternion{ leopph::Vector3::up(), static_cast<leopph::f32>(mouseX) * sens } * editorCam.orientation;
-						editorCam.orientation *= leopph::Quaternion{ leopph::Vector3::right(), static_cast<leopph::f32>(mouseY) * sens };
+						editorCam.orientation = leopph::Quaternion{ leopph::Vector3::Up(), static_cast<leopph::f32>(mouseX) * sens } * editorCam.orientation;
+						editorCam.orientation *= leopph::Quaternion{ leopph::Vector3::Right(), static_cast<leopph::f32>(mouseY) * sens };
 					}
 					else {
 						leopph::gWindow.SetCursorConfinement(false);
@@ -661,26 +661,26 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 								showGrid = !showGrid;
 							}
 							if (GetKeyDown(leopph::Key::F)) {
-								editorCam.position = selectedEntity->GetTransform().GetWorldPosition() - leopph::Vector3::forward() * 2;
+								editorCam.position = selectedEntity->GetTransform().GetWorldPosition() - leopph::Vector3::Forward() * 2;
 								editorCam.orientation = selectedEntity->GetTransform().GetLocalRotation();
 							}
 						}
 
 						leopph::Matrix4 modelMat{ selectedEntity->GetTransform().GetModelMatrix() };
-						auto const viewMat{ leopph::Matrix4::look_at(editorCam.position, editorCam.position + editorCam.orientation.Rotate(leopph::Vector3::forward()), leopph::Vector3::up()) };
-						auto const projMat{ leopph::Matrix4::perspective(editorCam.fovVertRad, ImGui::GetWindowWidth() / ImGui::GetWindowHeight(), editorCam.nearClip, editorCam.farClip) };
+						auto const viewMat{ leopph::Matrix4::LookAt(editorCam.position, editorCam.position + editorCam.orientation.Rotate(leopph::Vector3::Forward()), leopph::Vector3::Up()) };
+						auto const projMat{ leopph::Matrix4::Perspective(editorCam.fovVertRad, ImGui::GetWindowWidth() / ImGui::GetWindowHeight(), editorCam.nearClip, editorCam.farClip) };
 
 						ImGuizmo::AllowAxisFlip(false);
 						ImGuizmo::SetDrawlist();
 						ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, ImGui::GetWindowWidth(), ImGui::GetWindowHeight());
 
 						if (showGrid) {
-							ImGuizmo::DrawGrid(viewMat.get_data(), projMat.get_data(), leopph::Matrix4::identity().get_data(), editorCam.farClip);
+							ImGuizmo::DrawGrid(viewMat.GetData(), projMat.GetData(), leopph::Matrix4::Identity().GetData(), editorCam.farClip);
 						}
 
-						if (Manipulate(viewMat.get_data(), projMat.get_data(), op, ImGuizmo::MODE::LOCAL, modelMat.get_data())) {
+						if (Manipulate(viewMat.GetData(), projMat.GetData(), op, ImGuizmo::MODE::LOCAL, modelMat.GetData())) {
 							leopph::Vector3 pos, euler, scale;
-							ImGuizmo::DecomposeMatrixToComponents(modelMat.get_data(), pos.get_data(), euler.get_data(), scale.get_data());
+							ImGuizmo::DecomposeMatrixToComponents(modelMat.GetData(), pos.GetData(), euler.GetData(), scale.GetData());
 							selectedEntity->GetTransform().SetWorldPosition(pos);
 							selectedEntity->GetTransform().SetWorldRotation(leopph::Quaternion::FromEulerAngles(euler));
 							selectedEntity->GetTransform().SetWorldScale(scale);

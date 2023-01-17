@@ -42,13 +42,13 @@ namespace leopph {
 		auto const boxAxesViewSpace = [&modelViewMat] {
 			std::array boxAxes
 			{
-				Vector3::right(),
-				Vector3::up(),
-				Vector3::forward()
+				Vector3::Right(),
+				Vector3::Up(),
+				Vector3::Forward()
 			};
 
 			for (auto& axis : boxAxes) {
-				axis = Vector3{ Vector4{axis, 0} *modelViewMat }.normalize();
+				axis = Vector3{ Vector4{axis, 0} *modelViewMat }.Normalize();
 			}
 
 			return boxAxes;
@@ -62,7 +62,7 @@ namespace leopph {
 				auto boxMax = std::numeric_limits<f32>::lowest();
 
 				for (auto const& vertex : boxVerticesViewSpace) {
-					auto const proj = dot(vertex, normal);
+					auto const proj = Dot(vertex, normal);
 					boxMin = std::min(proj, boxMin);
 					boxMax = std::max(proj, boxMax);
 				}
@@ -71,7 +71,7 @@ namespace leopph {
 				auto frustMax = std::numeric_limits<f32>::lowest();
 
 				for (auto const& vertex : frustumVerticesViewSpace) {
-					auto const proj = dot(vertex, normal);
+					auto const proj = Dot(vertex, normal);
 					frustMin = std::min(proj, frustMin);
 					frustMax = std::max(proj, frustMax);
 				}
@@ -94,11 +94,11 @@ namespace leopph {
 		// Project onto frustum normals
 		if (std::array const frustumNormalsViewSpace
 		{
-			Vector3::forward(),
-			Vector3{frustum.rightTopNear[2], 0, -frustum.rightTopNear[0]}.normalize(),
-			Vector3{frustum.leftTopNear[2], 0, frustum.leftTopNear[0]}.normalize(),
-			Vector3{0, frustum.rightTopNear[2], -frustum.rightTopNear[1]}.normalize(),
-			Vector3{0, -frustum.rightBottomNear[2], frustum.rightBottomNear[1]}.normalize()
+			Vector3::Forward(),
+			Vector3{frustum.rightTopNear[2], 0, -frustum.rightTopNear[0]}.Normalize(),
+			Vector3{frustum.leftTopNear[2], 0, frustum.leftTopNear[0]}.Normalize(),
+			Vector3{0, frustum.rightTopNear[2], -frustum.rightTopNear[1]}.Normalize(),
+			Vector3{0, -frustum.rightBottomNear[2], frustum.rightBottomNear[1]}.Normalize()
 		}; !overlapOnAxes(frustumNormalsViewSpace)) {
 			return false;
 		}
@@ -108,19 +108,19 @@ namespace leopph {
 		{
 			std::array const frustumEdgesViewSpace
 			{
-				Vector3::right(),
-				Vector3::up(),
-				frustum.rightBottomNear.normalized(),
-				frustum.leftBottomNear.normalized(),
-				frustum.leftTopNear.normalized(),
-				frustum.rightTopNear.normalized()
+				Vector3::Right(),
+				Vector3::Up(),
+				frustum.rightBottomNear.Normalized(),
+				frustum.leftBottomNear.Normalized(),
+				frustum.leftTopNear.Normalized(),
+				frustum.rightTopNear.Normalized()
 			};
 
 			std::array<Vector3, boxAxesViewSpace.size()* frustumEdgesViewSpace.size()> crossProducts;
 
 			for (std::size_t i = 0; i < boxAxesViewSpace.size(); i++) {
 				for (std::size_t j = 0; j < frustumEdgesViewSpace.size(); j++) {
-					crossProducts[i * frustumEdgesViewSpace.size() + j] = cross(boxAxesViewSpace[i], frustumEdgesViewSpace[i]);
+					crossProducts[i * frustumEdgesViewSpace.size() + j] = Cross(boxAxesViewSpace[i], frustumEdgesViewSpace[i]);
 				}
 			}
 

@@ -184,7 +184,7 @@ namespace leopph {
 			ImGui::TableNextColumn();
 
 			Vector3 color{ mColor };
-			if (ImGui::ColorEdit3("###lightColor", color.get_data())) {
+			if (ImGui::ColorEdit3("###lightColor", color.GetData())) {
 				SetColor(color);
 			}
 

@@ -14,10 +14,10 @@ namespace leopph {
 
 	auto CameraComponent::ConvertPerspectiveFov(f32 const fov, bool const vert2Horiz) const -> f32 {
 		if (vert2Horiz) {
-			return to_degrees(2.0f * std::atan(std::tan(to_radians(fov) / 2.0f) * mAspect));
+			return ToDegrees(2.0f * std::atan(std::tan(ToRadians(fov) / 2.0f) * mAspect));
 		}
 
-		return to_degrees(2.0f * std::atan(std::tan(to_radians(fov) / 2.0f) / mAspect));
+		return ToDegrees(2.0f * std::atan(std::tan(ToRadians(fov) / 2.0f) / mAspect));
 	}
 
 
@@ -231,7 +231,7 @@ namespace leopph {
 			ImGui::TableNextColumn();
 
 			Vector4 color{ mBackgroundColor };
-			if (ImGui::ColorEdit4("###backgroundColor", color.get_data())) {
+			if (ImGui::ColorEdit4("###backgroundColor", color.GetData())) {
 				SetBackgroundColor(color);
 			}
 

@@ -159,7 +159,7 @@ namespace leopph {
 				}
 				else if (memberTypeName == "leopph.Quaternion") {
 					auto euler = static_cast<leopph::Quaternion*>(getFunc())->ToEulerAngles();
-					if (ImGui::DragFloat3(widgetLabel.c_str(), euler.get_data())) {
+					if (ImGui::DragFloat3(widgetLabel.c_str(), euler.GetData())) {
 						auto quaternion = leopph::Quaternion::FromEulerAngles(euler[0], euler[1], euler[2]);
 						auto pQuaternion = &quaternion;
 						setFunc(reinterpret_cast<void**>(&pQuaternion));
