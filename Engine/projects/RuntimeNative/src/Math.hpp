@@ -170,16 +170,26 @@ public:
 
 
 	[[nodiscard]] static constexpr auto Identity() noexcept -> Matrix requires (N == M);
+
 	[[nodiscard]] static constexpr auto Translate(Vector<T, 3> const& vector) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4);
 	[[nodiscard]] static constexpr auto Scale(Vector<T, 3> const& vector) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4);
+
 	[[nodiscard]] static constexpr auto LookAt(Vector<T, 3> const& position, Vector<T, 3> const& target, Vector<T, 3> const& worldUp) noexcept -> Matrix<T, 4, 4> requires(N == 4 && M == 4);
 	[[nodiscard]] static constexpr auto LookTo(Vector<T, 3> const& position, Vector<T, 3> const& direction, Vector<T, 3> const& worldUp) noexcept -> Matrix<T, 4, 4> requires(N == 4 && M == 4);
+
 	[[nodiscard]] static constexpr auto Orthographic(T left, T right, T top, T bottom, T nearClipPlane, T farClipPlane) noexcept -> Matrix<T, 4, 4>;
 	[[nodiscard]] static constexpr auto Orthographic(T width, T height, T nearClipPlane, T farClipPlane) noexcept -> Matrix<T, 4, 4>;
 	[[nodiscard]] static constexpr auto OrthographicAsymmetricZ(T left, T right, T top, T bottom, T nearClipPlane, T farClipPlane) noexcept -> Matrix<T, 4, 4>;
 	[[nodiscard]] static constexpr auto OrthographicAsymmetricZ(T width, T height, T nearClipPlane, T farClipPlane) noexcept -> Matrix<T, 4, 4>;
-	[[nodiscard]] static constexpr auto Perspective(T left, T right, T top, T bottom, T nearClipPlane, T farClipPlane) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4);
-	[[nodiscard]] static auto Perspective(T fovVertRad, T aspectRatio, T nearClipPlane, T farClipPlane) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4);
+
+	[[nodiscard]] static constexpr auto PerspectiveSymRH(T left, T right, T top, T bottom, T zNear, T zFar) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4);
+	[[nodiscard]] static constexpr auto PerspectiveSymLH(T left, T right, T top, T bottom, T zNear, T zFar) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4);
+	[[nodiscard]] static constexpr auto PerspectiveAsymRH(T left, T right, T top, T bottom, T zNear, T zFar) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4);
+	[[nodiscard]] static constexpr auto PerspectiveAsymLH(T left, T right, T top, T bottom, T zNear, T zFar) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4);
+	[[nodiscard]] static auto PerspectiveSymRH(T fovVertRad, T aspectRatio, T zNear, T zFar) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4);
+	[[nodiscard]] static auto PerspectiveSymLH(T fovVertRad, T aspectRatio, T zNear, T zFar) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4);
+	[[nodiscard]] static auto PerspectiveAsymRH(T fovVertRad, T aspectRatio, T zNear, T zFar) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4);
+	[[nodiscard]] static auto PerspectiveAsymLH(T fovVertRad, T aspectRatio, T zNear, T zFar) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4);
 
 
 	constexpr Matrix() noexcept = default;
@@ -920,27 +930,74 @@ constexpr auto Matrix<T, N, M>::OrthographicAsymmetricZ(T const width, T const h
 
 
 template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
-auto Matrix<T, N, M>::Perspective(T const fovVertRad, T const aspectRatio, T const nearClipPlane, T const farClipPlane) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
+constexpr auto Matrix<T, N, M>::PerspectiveSymRH(T const left, T const right, T const top, T const bottom, T const zNear, T const zFar) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
+	return Matrix<T, 4, 4>{
+		2 * zNear / (right - left), 0, 0, 0,
+		0, 2 * zNear / (top - bottom), 0, 0,
+		(right + left) / (right - left), (top + bottom) / (top - bottom), -(zFar + zNear) / (zFar - zNear), -1,
+		0, 0, -2 * zFar * zNear / (zFar - zNear), 0
+	};
+}
+
+template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
+constexpr auto Matrix<T, N, M>::PerspectiveSymLH(T const left, T const right, T const top, T const bottom, T const zNear, T const zFar) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
+	auto ret{ PerspectiveSymRH(left, right, top, bottom, zNear, zFar) };
+	ret[2] *= -1;
+	return ret;
+}
+
+template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
+constexpr auto Matrix<T, N, M>::PerspectiveAsymRH(T left, T right, T top, T bottom, T zNear, T zFar) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
+	auto ret{ PerspectiveAsymLH(left, right, top, bottom, zNear, zFar) };
+	ret[2] *= -1;
+	return ret;
+}
+
+template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
+constexpr auto Matrix<T, N, M>::PerspectiveAsymLH(T const left, T const right, T const top, T const bottom, T const zNear, T const zFar) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
+	return Matrix<T, 4, 4>{
+		2 * zNear / (right - left), 0, 0, 0,
+		0, 2 * zNear / (top - bottom), 0, 0,
+		(left + right) / (left - right), (top + bottom) / (bottom - top), zFar / (zFar - zNear), 1,
+		0, 0, zNear * zFar / (zNear - zFar), 0
+	};
+}
+
+template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
+auto Matrix<T, N, M>::PerspectiveSymRH(T const fovVertRad, T const aspectRatio, T const zNear, T const zFar) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
 	T tanHalfFov{ static_cast<T>(std::tan(fovVertRad / static_cast<T>(2))) };
-	T top{ nearClipPlane * tanHalfFov };
+	T top{ zNear * tanHalfFov };
 	T bottom{ -top };
 	T right{ top * aspectRatio };
 	T left{ -right };
-	return Perspective(left, right, top, bottom, nearClipPlane, farClipPlane);
+	return PerspectiveSymRH(left, right, top, bottom, zNear, zFar);
 }
 
+template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
+auto Matrix<T, N, M>::PerspectiveSymLH(T const fovVertRad, T const aspectRatio, T const zNear, T const zFar) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
+	auto ret{ PerspectiveSymRH(fovVertRad, aspectRatio, zNear, zFar) };
+	ret[2] *= -1;
+	return ret;
+}
 
 template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
-constexpr auto Matrix<T, N, M>::Perspective(T const left, T const right, T const top, T const bottom, T const nearClipPlane, T const farClipPlane) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
-	Matrix<T, 4, 4> ret;
-	ret[0][0] = (static_cast<T>(2) * nearClipPlane) / (right - left);
-	ret[2][0] = (right + left) / (right - left);
-	ret[1][1] = (static_cast<T>(2) * nearClipPlane) / (top - bottom);
-	ret[2][1] = (top + bottom) / (top - bottom);
-	ret[2][2] = (farClipPlane + nearClipPlane) / (farClipPlane - nearClipPlane);
-	ret[2][3] = static_cast<T>(1);
-	ret[3][2] = (static_cast<T>(-2) * farClipPlane * nearClipPlane) / (farClipPlane - nearClipPlane);
+auto Matrix<T, N, M>::PerspectiveAsymRH(T fovVertRad, T aspectRatio, T zNear, T zFar) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
+	auto ret{ PerspectiveAsymLH(fovVertRad, aspectRatio, zNear, zFar) };
+	ret[2] *= -1;
 	return ret;
+}
+
+template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
+auto Matrix<T, N, M>::PerspectiveAsymLH(T const fovVertRad, T const aspectRatio, T const zNear, T const zFar) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
+	auto const halfFov{ fovVertRad / 2 };
+	auto const yScale{ std::cos(halfFov) / std::sin(halfFov) };
+	auto const xScale{ yScale / aspectRatio };
+	return Matrix<T, 4, 4>{
+		xScale, 0, 0, 0,
+		0, yScale, 0, 0,
+		0, 0, zFar / (zFar - zNear), 1,
+		0, 0, -zNear * zFar / (zFar - zNear), 0
+	};
 }
 
 

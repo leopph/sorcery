@@ -73,122 +73,111 @@ public:
 
 
 namespace {
-	std::string_view constexpr RESOURCE_FILE_EXT{ ".leopphres" };
+std::string_view constexpr RESOURCE_FILE_EXT{ ".leopphres" };
 
-	leopph::Object* gSelected{ nullptr };
-	std::optional<std::filesystem::path> gProjDir;
-	std::filesystem::path gRelativeResDir;
+leopph::Object* gSelected{ nullptr };
+std::optional<std::filesystem::path> gProjDir;
+std::filesystem::path gRelativeResDir;
 
-	auto EditorImGuiEventHook(HWND const hwnd, UINT const msg, WPARAM const wparam, LPARAM const lparam) -> bool {
-		return ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam);
+auto EditorImGuiEventHook(HWND const hwnd, UINT const msg, WPARAM const wparam, LPARAM const lparam) -> bool {
+	return ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam);
+}
+
+
+auto CloseCurrentScene() -> void {
+	for (static std::vector<leopph::Entity*> entities; auto const& entity : leopph::SceneManager::GetActiveScene()->GetEntities(entities)) {
+		entity->GetScene().DestroyEntity(entity);
+	}
+}
+
+
+YAML::Node gSerializedSceneBackup;
+std::atomic<bool> gLoading{ false };
+
+auto LoadAndBlockEditor(ImGuiIO& io, std::function<void()> const& fun) -> void {
+	auto const oldFlags{ io.ConfigFlags };
+	io.ConfigFlags |= ImGuiConfigFlags_NoMouse;
+	io.ConfigFlags |= ImGuiConfigFlags_NavNoCaptureKeyboard;
+	gLoading = true;
+	fun();
+	io.ConfigFlags = oldFlags;
+	gLoading = false;
+}
+
+auto GenerateResourceFileHeader(leopph::Resource const& resource, std::vector<leopph::u8>& out) -> void {
+	leopph::BinarySerializer<leopph::i32>::Serialize(static_cast<leopph::i32>(resource.GetSerializationType()), out, std::endian::little);
+	leopph::BinarySerializer<leopph::u64>::Serialize(*reinterpret_cast<leopph::u64 const*>(&resource.GetGuid()), out, std::endian::little);
+	leopph::BinarySerializer<leopph::u64>::Serialize(*(reinterpret_cast<leopph::u64 const*>(&resource.GetGuid()) + 1), out, std::endian::little);
+	leopph::BinarySerializer<leopph::u64>::Serialize(resource.GetName().size(), out, std::endian::little);
+	for (auto const c : resource.GetName()) {
+		out.emplace_back(c);
+	}
+}
+
+auto SerializeResource(leopph::Resource const& resource, std::vector<leopph::u8>& out) -> void {
+	GenerateResourceFileHeader(resource, out);
+	resource.SerializeBinary(out);
+}
+
+auto GetHeaderFromResourceBytes(std::span<leopph::u8 const> const allBytes) -> std::span<leopph::u8 const> {
+	auto constexpr fixedContentByteCount{ sizeof(leopph::i32) + sizeof(leopph::Guid) + sizeof(leopph::u64) };
+
+	std::string_view constexpr errMsg{ "Failed to extract resource header bytes: the buffer is too small." };
+
+	if (allBytes.size() < fixedContentByteCount) {
+		throw std::runtime_error{ errMsg.data() };
 	}
 
+	auto const nameLength{ *reinterpret_cast<leopph::u64 const*>(allBytes.subspan<sizeof(leopph::i32) + sizeof(leopph::Guid), sizeof(leopph::u64)>().data()) };
 
-	auto CloseCurrentScene() -> void {
-		for (static std::vector<leopph::Entity*> entities; auto const& entity : leopph::SceneManager::GetActiveScene()->GetEntities(entities)) {
-			entity->GetScene().DestroyEntity(entity);
-		}
+	if (allBytes.size() < fixedContentByteCount + nameLength) {
+		throw std::runtime_error{ errMsg.data() };
 	}
 
+	return allBytes.first(fixedContentByteCount + nameLength);
+}
 
-	YAML::Node gSerializedSceneBackup;
-	std::atomic<bool> gLoading{ false };
+// Does not validate the passed header bytes in any way.
+auto CreateResourceFromHeader(leopph::ObjectFactory const& factory, std::span<leopph::u8 const> const headerBytes) -> std::shared_ptr<leopph::Resource> {
+	auto const obj{ factory.New(static_cast<leopph::Object::Type>(leopph::BinarySerializer<leopph::i32>::Deserialize(headerBytes.first<sizeof(leopph::i32)>(), std::endian::little))) };
 
-	auto LoadAndBlockEditor(ImGuiIO& io, std::function<void()> const& fun) -> void {
-		auto const oldFlags{ io.ConfigFlags };
-		io.ConfigFlags |= ImGuiConfigFlags_NoMouse;
-		io.ConfigFlags |= ImGuiConfigFlags_NavNoCaptureKeyboard;
-		gLoading = true;
-		fun();
-		io.ConfigFlags = oldFlags;
-		gLoading = false;
+	if (auto const res{ dynamic_cast<leopph::Resource*>(obj) }) {
+		res->SetGuid(*reinterpret_cast<leopph::Guid const*>(headerBytes.subspan<sizeof(leopph::i32), sizeof(leopph::Guid)>().data()));
+
+		if (auto const nameSize{ *reinterpret_cast<leopph::u64 const*>(headerBytes.subspan<sizeof(leopph::i32) + sizeof(leopph::Guid), sizeof(leopph::u64)>().data()) }; nameSize > 0) {
+			res->SetName(std::string{ reinterpret_cast<char const*>(headerBytes.data()) + sizeof(leopph::i32) + sizeof(leopph::Guid) + sizeof(leopph::u64), nameSize });
+		}
+
+		return std::shared_ptr<leopph::Resource>{ res };
 	}
 
-	auto GenerateResourceFileHeader(leopph::Resource const& resource, std::vector<leopph::u8>& out) -> void {
-		leopph::BinarySerializer<leopph::i32>::Serialize(static_cast<leopph::i32>(resource.GetSerializationType()), out, std::endian::little);
-		leopph::BinarySerializer<leopph::u64>::Serialize(*reinterpret_cast<leopph::u64 const*>(&resource.GetGuid()), out, std::endian::little);
-		leopph::BinarySerializer<leopph::u64>::Serialize(*(reinterpret_cast<leopph::u64 const*>(&resource.GetGuid()) + 1), out, std::endian::little);
-		leopph::BinarySerializer<leopph::u64>::Serialize(resource.GetName().size(), out, std::endian::little);
-		for (auto const c : resource.GetName()) {
-			out.emplace_back(c);
-		}
+	if (obj) {
+		delete obj;
 	}
 
-	auto SerializeResource(leopph::Resource const& resource, std::vector<leopph::u8>& out) -> void {
-		GenerateResourceFileHeader(resource, out);
-		resource.SerializeBinary(out);
-	}
+	throw std::runtime_error{ "Failed create resource header bytes: the object is not a resource type." };
+}
 
-	auto GetHeaderFromResourceBytes(std::span<leopph::u8 const> const allBytes) -> std::span<leopph::u8 const> {
-		auto constexpr fixedContentByteCount{ sizeof(leopph::i32) + sizeof(leopph::Guid) + sizeof(leopph::u64) };
+auto LoadResourcesFromProjectDir(leopph::ObjectFactory const& objectFactory, ResourceStorage& out) noexcept -> void {
+	struct ResourceAndBodyBytes {
+		std::shared_ptr<leopph::Resource> resource{};
+		std::vector<leopph::u8> bodyBytes{};
+	};
 
-		std::string_view constexpr errMsg{ "Failed to extract resource header bytes: the buffer is too small." };
+	std::unordered_map<std::filesystem::path, ResourceAndBodyBytes> loadedResources;
 
-		if (allBytes.size() < fixedContentByteCount) {
-			throw std::runtime_error{ errMsg.data() };
-		}
-
-		auto const nameLength{ *reinterpret_cast<leopph::u64 const*>(allBytes.subspan<sizeof(leopph::i32) + sizeof(leopph::Guid), sizeof(leopph::u64)>().data()) };
-
-		if (allBytes.size() < fixedContentByteCount + nameLength) {
-			throw std::runtime_error{ errMsg.data() };
-		}
-
-		return allBytes.first(fixedContentByteCount + nameLength);
-	}
-
-	// Does not validate the passed header bytes in any way.
-	auto CreateResourceFromHeader(leopph::ObjectFactory const& factory, std::span<leopph::u8 const> const headerBytes) -> std::shared_ptr<leopph::Resource> {
-		auto const obj{ factory.New(static_cast<leopph::Object::Type>(leopph::BinarySerializer<leopph::i32>::Deserialize(headerBytes.first<sizeof(leopph::i32)>(), std::endian::little))) };
-
-		if (auto const res{ dynamic_cast<leopph::Resource*>(obj) }) {
-			res->SetGuid(*reinterpret_cast<leopph::Guid const*>(headerBytes.subspan<sizeof(leopph::i32), sizeof(leopph::Guid)>().data()));
-
-			if (auto const nameSize{ *reinterpret_cast<leopph::u64 const*>(headerBytes.subspan<sizeof(leopph::i32) + sizeof(leopph::Guid), sizeof(leopph::u64)>().data()) }; nameSize > 0) {
-				res->SetName(std::string{ reinterpret_cast<char const*>(headerBytes.data()) + sizeof(leopph::i32) + sizeof(leopph::Guid) + sizeof(leopph::u64), nameSize });
-			}
-
-			return std::shared_ptr<leopph::Resource>{ res };
-		}
-
-		if (obj) {
-			delete obj;
-		}
-
-		throw std::runtime_error{ "Failed create resource header bytes: the object is not a resource type." };
-	}
-
-	auto LoadResourcesFromProjectDir(leopph::ObjectFactory const& objectFactory, ResourceStorage& out) noexcept -> void {
-		struct ResourceAndBodyBytes {
-			std::shared_ptr<leopph::Resource> resource{};
-			std::vector<leopph::u8> bodyBytes{};
-		};
-
-		std::unordered_map<std::filesystem::path, ResourceAndBodyBytes> loadedResources;
-
-		for (auto const& childEntry : std::filesystem::recursive_directory_iterator{ *gProjDir }) {
-			if (!childEntry.is_directory() && childEntry.path().extension() == RESOURCE_FILE_EXT) {
-				try {
-					std::ifstream in{ childEntry.path(), std::ios::binary };
-					std::vector<leopph::u8> bytes;
-					bytes.insert(std::begin(bytes), std::istreambuf_iterator<char>{ in }, std::istreambuf_iterator<char>{});
-
-					auto const headerBytes{ GetHeaderFromResourceBytes(bytes) };
-					std::shared_ptr res{ CreateResourceFromHeader(objectFactory, headerBytes) };
-					bytes.erase(std::begin(bytes), std::begin(bytes) + headerBytes.size());
-
-					loadedResources[childEntry.path()] = ResourceAndBodyBytes{ std::move(res), std::move(bytes) };
-				}
-				catch (std::exception const& ex) {
-					MessageBoxA(nullptr, ex.what(), "Error", MB_ICONERROR);
-				}
-			}
-		}
-
-		for (auto& [path, data] : loadedResources) {
+	for (auto const& childEntry : std::filesystem::recursive_directory_iterator{ *gProjDir }) {
+		if (!childEntry.is_directory() && childEntry.path().extension() == RESOURCE_FILE_EXT) {
 			try {
-				std::ignore = data.resource->DeserializeBinary(data.bodyBytes);
-				out[path] = data.resource;
+				std::ifstream in{ childEntry.path(), std::ios::binary };
+				std::vector<leopph::u8> bytes;
+				bytes.insert(std::begin(bytes), std::istreambuf_iterator<char>{ in }, std::istreambuf_iterator<char>{});
+
+				auto const headerBytes{ GetHeaderFromResourceBytes(bytes) };
+				std::shared_ptr res{ CreateResourceFromHeader(objectFactory, headerBytes) };
+				bytes.erase(std::begin(bytes), std::begin(bytes) + headerBytes.size());
+
+				loadedResources[childEntry.path()] = ResourceAndBodyBytes{ std::move(res), std::move(bytes) };
 			}
 			catch (std::exception const& ex) {
 				MessageBoxA(nullptr, ex.what(), "Error", MB_ICONERROR);
@@ -196,45 +185,56 @@ namespace {
 		}
 	}
 
-	auto ImportResource(std::filesystem::path const& srcPath) -> std::shared_ptr<leopph::Resource> {
-		auto [positions, normals, uvs, indices]{ leopph::ImportMeshResourceData(srcPath) };
-		auto mesh{ std::make_shared<leopph::Mesh>() };
-		mesh->SetPositions(std::move(positions));
-		mesh->SetNormals(std::move(normals));
-		mesh->SetUVs(std::move(uvs));
-		mesh->SetIndices(std::move(indices));
-		mesh->ValidateAndUpdate();
-		return mesh;
+	for (auto& [path, data] : loadedResources) {
+		try {
+			std::ignore = data.resource->DeserializeBinary(data.bodyBytes);
+			out[path] = data.resource;
+		}
+		catch (std::exception const& ex) {
+			MessageBoxA(nullptr, ex.what(), "Error", MB_ICONERROR);
+		}
 	}
+}
 
-	auto IndexFileNameIfNeeded(std::filesystem::path const& filePathAbsolute) -> std::filesystem::path {
-		std::string const originalStem{ filePathAbsolute.stem().string() };
-		std::filesystem::path const ext{ filePathAbsolute.extension() };
-		std::filesystem::path const parentDir{ filePathAbsolute.parent_path() };
+auto ImportResource(std::filesystem::path const& srcPath) -> std::shared_ptr<leopph::Resource> {
+	auto [positions, normals, uvs, indices]{ leopph::ImportMeshResourceData(srcPath) };
+	auto mesh{ std::make_shared<leopph::Mesh>() };
+	mesh->SetPositions(std::move(positions));
+	mesh->SetNormals(std::move(normals));
+	mesh->SetUVs(std::move(uvs));
+	mesh->SetIndices(std::move(indices));
+	mesh->ValidateAndUpdate();
+	return mesh;
+}
 
-		std::string currentStem{ originalStem };
-		std::size_t fileNameIndex{ 1 };
+auto IndexFileNameIfNeeded(std::filesystem::path const& filePathAbsolute) -> std::filesystem::path {
+	std::string const originalStem{ filePathAbsolute.stem().string() };
+	std::filesystem::path const ext{ filePathAbsolute.extension() };
+	std::filesystem::path const parentDir{ filePathAbsolute.parent_path() };
 
-		while (true) {
-			bool isUsed{ false };
-			for (auto const& entry : std::filesystem::directory_iterator{ parentDir }) {
-				if (entry.path().stem() == currentStem) {
-					currentStem = originalStem;
-					currentStem += " ";
-					currentStem += std::to_string(fileNameIndex);
-					++fileNameIndex;
-					isUsed = true;
-					break;
-				}
-			}
+	std::string currentStem{ originalStem };
+	std::size_t fileNameIndex{ 1 };
 
-			if (!isUsed) {
+	while (true) {
+		bool isUsed{ false };
+		for (auto const& entry : std::filesystem::directory_iterator{ parentDir }) {
+			if (entry.path().stem() == currentStem) {
+				currentStem = originalStem;
+				currentStem += " ";
+				currentStem += std::to_string(fileNameIndex);
+				++fileNameIndex;
+				isUsed = true;
 				break;
 			}
 		}
 
-		return (parentDir / currentStem).replace_extension(ext);
+		if (!isUsed) {
+			break;
+		}
 	}
+
+	return (parentDir / currentStem).replace_extension(ext);
+}
 }
 
 
@@ -599,12 +599,12 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
 					static bool isMovingSceneCamera{ false };
 					isMovingSceneCamera = isMovingSceneCamera ?
-						ImGui::IsMouseDown(ImGuiMouseButton_Right) :
-						ImGui::IsWindowHovered() && ImGui::IsMouseDown(ImGuiMouseButton_Right);
+						                      ImGui::IsMouseDown(ImGuiMouseButton_Right) :
+						                      ImGui::IsWindowHovered() && ImGui::IsMouseDown(ImGuiMouseButton_Right);
 
 					if (isMovingSceneCamera) {
 						ImGui::SetWindowFocus();
-						
+
 						leopph::gWindow.SetCursorHiding(true);
 
 						leopph::Vector3 posDelta{ 0, 0, 0 };
@@ -668,7 +668,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
 						leopph::Matrix4 modelMat{ selectedEntity->GetTransform().GetModelMatrix() };
 						auto const viewMat{ leopph::Matrix4::LookAt(editorCam.position, editorCam.position + editorCam.orientation.Rotate(leopph::Vector3::Forward()), leopph::Vector3::Up()) };
-						auto const projMat{ leopph::Matrix4::Perspective(editorCam.fovVertRad, ImGui::GetWindowWidth() / ImGui::GetWindowHeight(), editorCam.nearClip, editorCam.farClip) };
+						auto const projMat{ leopph::Matrix4::PerspectiveAsymLH(editorCam.fovVertRad, ImGui::GetWindowWidth() / ImGui::GetWindowHeight(), editorCam.nearClip, editorCam.farClip) };
 
 						ImGuizmo::AllowAxisFlip(false);
 						ImGuizmo::SetDrawlist();
