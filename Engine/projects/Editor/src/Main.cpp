@@ -667,7 +667,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 						}
 
 						leopph::Matrix4 modelMat{ selectedEntity->GetTransform().GetModelMatrix() };
-						auto const viewMat{ leopph::Matrix4::LookAt(editorCam.position, editorCam.position + editorCam.orientation.Rotate(leopph::Vector3::Forward()), leopph::Vector3::Up()) };
+						auto const viewMat{ leopph::Matrix4::LookAtLH(editorCam.position, editorCam.position + editorCam.orientation.Rotate(leopph::Vector3::Forward()), leopph::Vector3::Up()) };
 						auto const projMat{ leopph::Matrix4::PerspectiveAsymZLH(editorCam.fovVertRad, ImGui::GetWindowWidth() / ImGui::GetWindowHeight(), editorCam.nearClip, editorCam.farClip) };
 
 						ImGuizmo::AllowAxisFlip(false);

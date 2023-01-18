@@ -174,8 +174,10 @@ public:
 	[[nodiscard]] static constexpr auto Translate(Vector<T, 3> const& vector) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4);
 	[[nodiscard]] static constexpr auto Scale(Vector<T, 3> const& vector) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4);
 
-	[[nodiscard]] static constexpr auto LookAt(Vector<T, 3> const& position, Vector<T, 3> const& target, Vector<T, 3> const& worldUp) noexcept -> Matrix<T, 4, 4> requires(N == 4 && M == 4);
-	[[nodiscard]] static constexpr auto LookTo(Vector<T, 3> const& position, Vector<T, 3> const& direction, Vector<T, 3> const& worldUp) noexcept -> Matrix<T, 4, 4> requires(N == 4 && M == 4);
+	[[nodiscard]] static constexpr auto LookAtRH(Vector<T, 3> const& position, Vector<T, 3> const& target, Vector<T, 3> const& worldUp) noexcept -> Matrix<T, 4, 4> requires(N == 4 && M == 4);
+	[[nodiscard]] static constexpr auto LookAtLH(Vector<T, 3> const& position, Vector<T, 3> const& target, Vector<T, 3> const& worldUp) noexcept -> Matrix<T, 4, 4> requires(N == 4 && M == 4);
+	[[nodiscard]] static constexpr auto LookToRH(Vector<T, 3> const& position, Vector<T, 3> const& direction, Vector<T, 3> const& worldUp) noexcept -> Matrix<T, 4, 4> requires(N == 4 && M == 4);
+	[[nodiscard]] static constexpr auto LookToLH(Vector<T, 3> const& position, Vector<T, 3> const& direction, Vector<T, 3> const& worldUp) noexcept -> Matrix<T, 4, 4> requires(N == 4 && M == 4);
 
 	[[nodiscard]] static constexpr auto OrthographicSymZRH(T left, T right, T top, T bottom, T zNear, T zFar) noexcept -> Matrix<T, 4, 4>;
 	[[nodiscard]] static constexpr auto OrthographicSymZLH(T left, T right, T top, T bottom, T zNear, T zFar) noexcept -> Matrix<T, 4, 4>;
@@ -876,14 +878,26 @@ constexpr auto Matrix<T, N, M>::Scale(Vector<T, 3> const& vector) noexcept -> Ma
 	return ret;
 }
 
+template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
+constexpr auto Matrix<T, N, M>::LookAtRH(Vector<T, 3> const& position, Vector<T, 3> const& target, Vector<T, 3> const& worldUp) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
+	Vector<T, 3> z{ (position - target).Normalized() };
+	Vector<T, 3> x{ Cross(worldUp, z).Normalized() };
+	Vector<T, 3> y{ Cross(z, x) };
+	return Matrix<T, 4, 4>{
+		x[0], y[0], z[0], 0,
+		x[1], y[1], z[1], 0,
+		x[2], y[2], z[2], 0,
+		-Dot(x, position), -Dot(y, position), -Dot(z, position), 1
+	};
+}
+
 
 template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
-constexpr auto Matrix<T, N, M>::LookAt(Vector<T, 3> const& position, Vector<T, 3> const& target, Vector<T, 3> const& worldUp) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
+constexpr auto Matrix<T, N, M>::LookAtLH(Vector<T, 3> const& position, Vector<T, 3> const& target, Vector<T, 3> const& worldUp) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
 	Vector<T, 3> z{ (target - position).Normalized() };
 	Vector<T, 3> x{ Cross(worldUp, z).Normalized() };
 	Vector<T, 3> y{ Cross(z, x) };
-	return Matrix<T, 4, 4>
-	{
+	return Matrix<T, 4, 4>{
 		x[0], y[0], z[0], 0,
 		x[1], y[1], z[1], 0,
 		x[2], y[2], z[2], 0,
@@ -892,8 +906,13 @@ constexpr auto Matrix<T, N, M>::LookAt(Vector<T, 3> const& position, Vector<T, 3
 }
 
 template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
-constexpr auto Matrix<T, N, M>::LookTo(Vector<T, 3> const& position, Vector<T, 3> const& direction, Vector<T, 3> const& worldUp) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
-	return LookAt(position, position + direction.Normalized(), worldUp);
+constexpr auto Matrix<T, N, M>::LookToRH(Vector<T, 3> const& position, Vector<T, 3> const& direction, Vector<T, 3> const& worldUp) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
+	return LookAtRH(position, position + direction.Normalized(), worldUp);
+}
+
+template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
+constexpr auto Matrix<T, N, M>::LookToLH(Vector<T, 3> const& position, Vector<T, 3> const& direction, Vector<T, 3> const& worldUp) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
+	return LookAtLH(position, position + direction.Normalized(), worldUp);
 }
 
 template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
