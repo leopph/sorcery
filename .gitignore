@@ -399,7 +399,5 @@ FodyWeavers.xsd
 
 # Custom for LeopphEngine
 bin
-Engine/vendor
-Engine/deps/vendor
-Engine/projects/RuntimeNative/src/shaders/generated
+RuntimeNative/src/shaders/generated
 *vcpkg_installed
