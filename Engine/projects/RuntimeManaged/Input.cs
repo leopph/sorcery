@@ -146,7 +146,7 @@ namespace leopph
         [MethodImpl(MethodImplOptions.InternalCall)]
         public extern static bool GetKeyUp(Key key);
 
-        public extern static Point2D<int> MousePosition
+        public extern static Point2D<int> CursorPosition
         {
             [MethodImpl(MethodImplOptions.InternalCall)]
             get;
@@ -159,14 +159,16 @@ namespace leopph
         }
 
 
-        public extern static bool IsCursorConfined
-        {
+        public extern static bool IsCursorLocked {
             [MethodImpl(MethodImplOptions.InternalCall)]
             get;
-            [MethodImpl(MethodImplOptions.InternalCall)]
-            set;
         }
 
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static void LockCursor(Point2D<int> pos);
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public extern static void UnlockCursor();
 
         public extern static bool IsCursorHidden
         {

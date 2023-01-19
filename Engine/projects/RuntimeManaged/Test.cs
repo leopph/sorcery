@@ -57,7 +57,9 @@ public class OrientationController : Behavior {
     public float sensitivity = 0.05f;
 
     private void OnInit() {
-        Input.IsCursorConfined = true;
+        var currentRes = Window.CurrentResolution;
+        var midPont = new Point2D<int>((int) currentRes.width / 2, (int)currentRes.height / 2);
+        Input.LockCursor(midPont);
         Input.IsCursorHidden = true;
     }
 

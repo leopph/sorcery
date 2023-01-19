@@ -324,7 +324,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 					if (leopph::GetKeyDown(leopph::Key::Escape)) {
 						runGame = false;
 						leopph::gWindow.SetEventHook(EditorImGuiEventHook);
-						leopph::gWindow.SetCursorConfinement(false);
+						leopph::gWindow.UnlockCursor();
 						leopph::gWindow.SetCursorHiding(false);
 						leopph::gRenderer.SetSyncInterval(1);
 						CloseCurrentScene();
@@ -598,14 +598,23 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 					};
 
 					static bool isMovingSceneCamera{ false };
-					isMovingSceneCamera = isMovingSceneCamera ?
+
+					auto const wasMovingSceneCamera{ isMovingSceneCamera };
+					isMovingSceneCamera = wasMovingSceneCamera ?
 						                      ImGui::IsMouseDown(ImGuiMouseButton_Right) :
 						                      ImGui::IsWindowHovered() && ImGui::IsMouseDown(ImGuiMouseButton_Right);
 
+					if (!wasMovingSceneCamera && isMovingSceneCamera) {
+						leopph::gWindow.LockCursor(leopph::gWindow.GetCursorPosition());
+						leopph::gWindow.SetCursorHiding(true);
+					}
+					else if (wasMovingSceneCamera && !isMovingSceneCamera) {
+						leopph::gWindow.UnlockCursor();
+						leopph::gWindow.SetCursorHiding(false);
+					}
+
 					if (isMovingSceneCamera) {
 						ImGui::SetWindowFocus();
-
-						leopph::gWindow.SetCursorHiding(true);
 
 						leopph::Vector3 posDelta{ 0, 0, 0 };
 						if (GetKey(leopph::Key::W) || GetKey(leopph::Key::UpArrow)) {
@@ -634,10 +643,6 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
 						editorCam.orientation = leopph::Quaternion{ leopph::Vector3::Up(), static_cast<leopph::f32>(mouseX) * sens } * editorCam.orientation;
 						editorCam.orientation *= leopph::Quaternion{ leopph::Vector3::Right(), static_cast<leopph::f32>(mouseY) * sens };
-					}
-					else {
-						leopph::gWindow.SetCursorConfinement(false);
-						leopph::gWindow.SetCursorHiding(false);
 					}
 
 					leopph::gRenderer.DrawSceneView(editorCam);
