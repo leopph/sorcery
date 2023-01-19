@@ -31,12 +31,10 @@ public:
 	[[nodiscard]] auto Normalized() const noexcept -> Vector;
 	auto Normalize() noexcept -> Vector&;
 
-
 	[[nodiscard]] constexpr auto operator[](size_t index) const noexcept -> T const&;
 	[[nodiscard]] constexpr auto operator[](size_t index) noexcept -> T&;
 	[[nodiscard]] constexpr auto GetData() const noexcept -> T const*;
 	[[nodiscard]] constexpr auto GetData() noexcept -> T*;
-
 
 	[[nodiscard]] static constexpr auto Up() noexcept -> Vector;
 	[[nodiscard]] static constexpr auto Down() noexcept -> Vector;
@@ -45,20 +43,23 @@ public:
 	[[nodiscard]] static constexpr auto Forward() noexcept -> Vector requires(N >= 3);
 	[[nodiscard]] static constexpr auto Backward() noexcept -> Vector requires(N >= 3);
 
-
 	constexpr Vector() noexcept = default;
+	[[nodiscard]] static constexpr auto Zero() noexcept -> Vector;
 
 	template<std::convertible_to<T> T1>
-	constexpr explicit Vector(T1 const& value) noexcept;
+	constexpr explicit Vector(T1 value) noexcept;
+
+	template<std::convertible_to<T> T1>
+	[[nodiscard]] static constexpr auto Filled(T1 value) noexcept -> Vector;
 
 	template<std::convertible_to<T>... Args> requires(sizeof...(Args) == N)
-	constexpr explicit(sizeof...(Args) <= 1) Vector(Args const&... args) noexcept;
+	constexpr explicit Vector(Args&&... args) noexcept;
 
 	template<std::size_t M> requires (M > N)
 	constexpr explicit Vector(Vector<T, M> const& other) noexcept;
 
-	template<std::size_t M> requires (M < N)
-	constexpr explicit Vector(Vector<T, M> const& other, T const& fill) noexcept;
+	template<std::size_t M, std::convertible_to<T> ... Args> requires (M < N && sizeof...(Args) == N - M)
+	constexpr explicit Vector(Vector<T, M> const& other, Args&&... additionalElems) noexcept;
 
 	constexpr Vector(Vector const& other) noexcept = default;
 	constexpr Vector(Vector&& other) noexcept = default;
@@ -69,8 +70,6 @@ public:
 	constexpr auto operator=(Vector&& other) noexcept -> Vector& = default;
 
 private:
-	[[nodiscard]] constexpr static auto GetElement(auto* self, std::size_t index) noexcept -> decltype(auto);
-
 	T mData[N]{};
 };
 
@@ -199,17 +198,25 @@ public:
 
 
 	constexpr Matrix() noexcept = default;
+	[[nodiscard]] static constexpr auto Zero() noexcept -> Matrix;
 
-	constexpr explicit Matrix(T const& value) noexcept;
+	constexpr explicit Matrix(T value) noexcept;
+	[[nodiscard]] static constexpr auto Diagonal(T value) noexcept;
 
 	template<std::convertible_to<T>... Args> requires(sizeof...(Args) == std::min(N, M))
-	constexpr explicit(sizeof...(Args) <= 1) Matrix(Args const&... args) noexcept;
+	constexpr explicit Matrix(Args&&... args) noexcept;
+
+	template<std::convertible_to<T>... Args> requires(sizeof...(Args) == std::min(N, M))
+	[[nodiscard]] static constexpr auto Diagonal(Args&&... args) noexcept;
 
 	template<std::size_t K> requires(K == std::min(N, M))
 	constexpr explicit Matrix(Vector<T, K> const& vec) noexcept;
 
+	template<std::size_t K> requires(K == std::min(N, M))
+	[[nodiscard]] static constexpr auto Diagonal(Vector<T, K> const& vec) noexcept;
+
 	template<std::convertible_to<T> ... Args> requires(sizeof...(Args) == N * M)
-	constexpr explicit(sizeof...(Args) <= 1) Matrix(Args const&... args) noexcept;
+	constexpr explicit Matrix(Args&&... args) noexcept;
 
 	template<std::size_t N1, std::size_t M1> requires (N1 < N && M1 < M)
 	constexpr explicit Matrix(Matrix<T, N1, M1> const& other) noexcept;
@@ -396,13 +403,13 @@ auto Vector<T, N>::Normalize() noexcept -> Vector<T, N>& {
 
 template<class T, std::size_t N> requires (N > 1)
 constexpr auto Vector<T, N>::operator[](size_t index) const noexcept -> T const& {
-	return GetElement(this, index);
+	return mData[index];
 }
 
 
 template<class T, std::size_t N> requires (N > 1)
 constexpr auto Vector<T, N>::operator[](size_t const index) noexcept -> T& {
-	return GetElement(this, index);
+	return mData[index];
 }
 
 
@@ -465,19 +472,29 @@ constexpr auto Vector<T, N>::Backward() noexcept -> Vector<T, N> requires (N >= 
 	return ret;
 }
 
+template<class T, std::size_t N> requires (N > 1)
+constexpr auto Vector<T, N>::Zero() noexcept -> Vector {
+	return Vector{};
+}
 
 template<class T, std::size_t N> requires (N > 1)
 template<std::convertible_to<T> T1>
-constexpr Vector<T, N>::Vector(T1 const& value) noexcept {
+constexpr Vector<T, N>::Vector(T1 const value) noexcept {
 	for (std::size_t i = 0; i < N; i++) {
 		mData[i] = static_cast<T>(value);
 	}
 }
 
+template<class T, std::size_t N> requires (N > 1)
+template<std::convertible_to<T> T1>
+constexpr auto Vector<T, N>::Filled(T1 const value) noexcept -> Vector {
+	return Vector{ static_cast<T>(value) };
+}
+
 
 template<class T, std::size_t N> requires (N > 1)
 template<std::convertible_to<T> ... Args> requires (sizeof...(Args) == N)
-constexpr Vector<T, N>::Vector(Args const&... args) noexcept :
+constexpr Vector<T, N>::Vector(Args&&... args) noexcept :
 	mData{ static_cast<T>(args)... } {}
 
 
@@ -491,21 +508,15 @@ constexpr Vector<T, N>::Vector(Vector<T, M> const& other) noexcept {
 
 
 template<class T, std::size_t N> requires (N > 1)
-template<std::size_t M> requires (M < N)
-constexpr Vector<T, N>::Vector(Vector<T, M> const& other, T const& fill) noexcept {
+template<std::size_t M, std::convertible_to<T>... Args> requires (M < N && sizeof...(Args) == N - M)
+constexpr Vector<T, N>::Vector(Vector<T, M> const& other, Args&&... additionalElems) noexcept {
 	for (std::size_t i = 0; i < M; i++) {
 		mData[i] = other[i];
 	}
 
-	for (std::size_t i = M; i < N; ++i) {
-		mData[i] = fill;
-	}
-}
-
-
-template<class T, std::size_t N> requires (N > 1)
-constexpr auto Vector<T, N>::GetElement(auto* const self, std::size_t const index) noexcept -> decltype(auto) {
-	return self->mData[index];
+	[this, &additionalElems...]<std::size_t... Is>(std::index_sequence<Is...>) noexcept {
+		(static_cast<void>(mData[M + Is] = static_cast<T>(additionalElems)), ...);
+	}(std::index_sequence_for<Args...>{});
 }
 
 
@@ -1050,10 +1061,34 @@ auto Matrix<T, N, M>::PerspectiveAsymZLH(T const fovVertRad, T const aspectRatio
 
 
 template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
-constexpr Matrix<T, N, M>::Matrix(T const& value) noexcept {
+constexpr auto Matrix<T, N, M>::Zero() noexcept -> Matrix {
+	return Matrix{};
+}
+
+template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
+constexpr Matrix<T, N, M>::Matrix(T const value) noexcept {
 	for (size_t i = 0; i < std::min(N, M); i++) {
 		mData[i][i] = value;
 	}
+}
+
+template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
+constexpr auto Matrix<T, N, M>::Diagonal(T const value) noexcept {
+	return Matrix{ value };
+}
+
+template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
+template<std::convertible_to<T> ... Args> requires (sizeof...(Args) == std::min(N, M))
+constexpr Matrix<T, N, M>::Matrix(Args&&... args) noexcept {
+	[this, &args...] <std::size_t... Is>(std::index_sequence<Is...>) noexcept {
+		(static_cast<void>(mData[Is][Is] = static_cast<T>(args)), ...);
+	}(std::index_sequence_for<Args...>{});
+}
+
+template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
+template<std::convertible_to<T> ... Args> requires (sizeof...(Args) == std::min(N, M))
+constexpr auto Matrix<T, N, M>::Diagonal(Args&&... args) noexcept {
+	return Matrix{ std::forward<Args>(args)... };
 }
 
 
@@ -1065,16 +1100,19 @@ constexpr Matrix<T, N, M>::Matrix(Vector<T, K> const& vec) noexcept {
 	}
 }
 
+template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
+template<std::size_t K> requires (K == std::min(N, M))
+constexpr auto Matrix<T, N, M>::Diagonal(Vector<T, K> const& vec) noexcept {
+	return Matrix{ vec };
+}
+
 
 template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
 template<std::convertible_to<T> ... Args> requires (sizeof...(Args) == N * M)
-constexpr Matrix<T, N, M>::Matrix(Args const&... args) noexcept {
-	T argArr[M * N]{ static_cast<T>(args)... };
-	for (size_t i = 0; i < N; i++) {
-		for (size_t j = 0; j < M; j++) {
-			mData[i][j] = argArr[i * M + j];
-		}
-	}
+constexpr Matrix<T, N, M>::Matrix(Args&&... args) noexcept {
+	[this, &args...]<std::size_t... Is>(std::index_sequence<Is...>) noexcept {
+		(static_cast<void>(mData[Is / M][Is % M] = static_cast<T>(args)), ...);
+	}(std::index_sequence_for<Args...>{});
 }
 
 
@@ -1098,16 +1136,6 @@ template<std::size_t N1, std::size_t M1> requires (N1 > N && M1 > M)
 constexpr Matrix<T, N, M>::Matrix(Matrix<T, N1, M1> const& other) noexcept {
 	for (std::size_t i = 0; i < N; i++) {
 		mData[i] = Vector<T, M>{ other[i] };
-	}
-}
-
-
-template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
-template<std::convertible_to<T> ... Args> requires (sizeof...(Args) == std::min(N, M))
-constexpr Matrix<T, N, M>::Matrix(Args const&... args) noexcept {
-	T argArr[M > N ? N : M]{ static_cast<T>(args)... };
-	for (size_t i = 0; i < M && i < N; i++) {
-		mData[i][i] = argArr[i];
 	}
 }
 
@@ -1322,7 +1350,7 @@ inline auto Quaternion::FromAxisAngle(Vector3 const& axis, f32 const angleDeg) n
 }
 
 inline auto Quaternion::ToAxisAngle(Vector3& axis, float& angle) const noexcept -> void {
-	axis = { x, y, z };
+	axis = Vector3{ x, y, z };
 	float const vectorLength = axis.Length();
 	axis.Normalize();
 	angle = 2 * std::atan2f(vectorLength, w);
