@@ -1,33 +1,30 @@
 #pragma once
 
-#include "Core.hpp"
-
 #include <cmath>
 #include <numbers>
 #include <concepts>
-#include <cstddef>
 #include <limits>
 #include <ostream>
 
 
 namespace leopph {
-f32 constexpr PI{ std::numbers::pi_v<f32> };
+float constexpr PI{ std::numbers::pi_v<float> };
 
-[[nodiscard]] constexpr auto ToRadians(f32 degrees) noexcept -> f32;
-[[nodiscard]] constexpr auto ToDegrees(f32 radians) noexcept -> f32;
+[[nodiscard]] constexpr auto ToRadians(float degrees) noexcept -> float;
+[[nodiscard]] constexpr auto ToDegrees(float radians) noexcept -> float;
 
-[[nodiscard]] constexpr auto IsPowerOfTwo(u32 value) noexcept -> bool;
-[[nodiscard]] constexpr auto NextPowerOfTwo(u32 value) noexcept -> u32;
+[[nodiscard]] constexpr auto IsPowerOfTwo(unsigned value) noexcept -> bool;
+[[nodiscard]] constexpr auto NextPowerOfTwo(unsigned value) noexcept -> unsigned;
 
-[[nodiscard]] constexpr auto Lerp(f32 from, f32 to, f32 t) noexcept -> f32;
+[[nodiscard]] constexpr auto Lerp(float from, float to, float t) noexcept -> float;
 
-[[nodiscard]] inline auto BinaryDigitCount(u32 number) noexcept -> u8;
+[[nodiscard]] inline auto BinaryDigitCount(unsigned number) noexcept -> int;
 
 
-template<class T, std::size_t N> requires(N > 1)
+template<typename T, int N> requires(N > 1)
 class Vector {
 public:
-	[[nodiscard]] auto Length() const noexcept -> f32;
+	[[nodiscard]] auto Length() const noexcept -> float;
 	[[nodiscard]] auto Normalized() const noexcept -> Vector;
 	auto Normalize() noexcept -> Vector&;
 
@@ -55,10 +52,10 @@ public:
 	template<std::convertible_to<T>... Args> requires(sizeof...(Args) == N)
 	constexpr explicit Vector(Args&&... args) noexcept;
 
-	template<std::size_t M> requires (M > N)
+	template<int M> requires (M > N)
 	constexpr explicit Vector(Vector<T, M> const& other) noexcept;
 
-	template<std::size_t M, std::convertible_to<T>... Args> requires (M < N && sizeof...(Args) == N - M)
+	template<int M, std::convertible_to<T>... Args> requires (M < N && sizeof...(Args) == N - M)
 	constexpr explicit Vector(Vector<T, M> const& other, Args&&... additionalElems) noexcept;
 
 	constexpr Vector(Vector const& other) noexcept = default;
@@ -74,92 +71,92 @@ private:
 };
 
 
-template<class T, std::size_t N> requires (N > 1)
+template<typename T, int N> requires (N > 1)
 [[nodiscard]] constexpr auto Dot(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> T;
 
-template<class T, std::size_t N> requires (N > 1)
+template<typename T, int N> requires (N > 1)
 [[nodiscard]] constexpr auto Cross(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> Vector<T, N> requires(N == 3);
 
-template<class T, std::size_t N> requires (N > 1)
-[[nodiscard]] auto Distance(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> f32;
+template<typename T, int N> requires (N > 1)
+[[nodiscard]] auto Distance(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> T;
 
-template<class T, std::size_t N>
+template<typename T, int N>
 [[nodiscard]] constexpr auto Lerp(Vector<T, N> const& from, Vector<T, N> const& to, float t) noexcept -> Vector<T, N>;
 
-template<class T, std::size_t N>
+template<typename T, int N>
 [[nodiscard]] constexpr auto operator-(Vector<T, N> const& operand) noexcept -> Vector<T, N>;
 
-template<class T, std::size_t N>
+template<typename T, int N>
 [[nodiscard]] constexpr auto operator+(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> Vector<T, N>;
 
-template<class T, std::size_t N>
+template<typename T, int N>
 constexpr auto operator+=(Vector<T, N>& left, Vector<T, N> const& right) noexcept -> Vector<T, N>&;
 
-template<class T, std::size_t N>
+template<typename T, int N>
 [[nodiscard]] constexpr auto operator-(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> Vector<T, N>;
 
-template<class T, std::size_t N>
+template<typename T, int N>
 constexpr auto operator-=(Vector<T, N>& left, Vector<T, N> const& right) noexcept -> Vector<T, N>&;
 
-template<class T1, std::convertible_to<T1> T2, std::size_t N>
+template<typename T1, std::convertible_to<T1> T2, int N>
 [[nodiscard]] constexpr auto operator*(Vector<T1, N> const& left, T2 const& right) noexcept -> Vector<T1, N>;
 
-template<class T1, std::convertible_to<T1> T2, std::size_t N>
+template<typename T1, std::convertible_to<T1> T2, int N>
 [[nodiscard]] constexpr auto operator*(T2 const& left, Vector<T1, N> const& right) noexcept -> Vector<T1, N>;
 
-template<class T, std::size_t N>
+template<typename T, int N>
 [[nodiscard]] constexpr auto operator*(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> Vector<T, N>;
 
-template<class T1, std::convertible_to<T1> T2, std::size_t N>
+template<typename T1, std::convertible_to<T1> T2, int N>
 constexpr auto operator*=(Vector<T1, N>& left, T2 const& right) noexcept -> Vector<T1, N>&;
 
-template<class T, std::size_t N>
+template<typename T, int N>
 constexpr auto operator*=(Vector<T, N>& left, Vector<T, N> const& right) noexcept -> Vector<T, N>&;
 
-template<class T1, std::convertible_to<T1> T2, std::size_t N>
+template<typename T1, std::convertible_to<T1> T2, int N>
 [[nodiscard]] constexpr auto operator/(Vector<T1, N> const& left, T2 const& right) noexcept -> Vector<T1, N>;
 
-template<class T1, std::convertible_to<T1> T2, std::size_t N>
+template<typename T1, std::convertible_to<T1> T2, int N>
 [[nodiscard]] constexpr auto operator/(T2 const& left, Vector<T1, N> const& right) noexcept -> Vector<T1, N>;
 
-template<class T, std::size_t N>
+template<typename T, int N>
 [[nodiscard]] constexpr auto operator/(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> Vector<T, N>;
 
-template<class T1, std::convertible_to<T1> T2, std::size_t N>
+template<typename T1, std::convertible_to<T1> T2, int N>
 constexpr auto operator/=(Vector<T1, N>& left, T2 const& right) noexcept -> Vector<T1, N>&;
 
-template<class T, std::size_t N>
+template<typename T, int N>
 constexpr auto operator/=(Vector<T, N>& left, Vector<T, N> const& right) noexcept -> Vector<T, N>&;
 
-template<class T, std::size_t N>
+template<typename T, int N>
 [[nodiscard]] constexpr auto operator==(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> bool;
 
-template<class T, std::size_t N>
+template<typename T, int N>
 [[nodiscard]] constexpr auto operator!=(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> bool;
 
-template<class T, std::size_t N>
+template<typename T, int N>
 auto operator<<(std::ostream& stream, Vector<T, N> const& vector) -> std::ostream&;
 
-using Vector2 = Vector<f32, 2>;
-using Vector3 = Vector<f32, 3>;
-using Vector4 = Vector<f32, 4>;
+using Vector2 = Vector<float, 2>;
+using Vector3 = Vector<float, 3>;
+using Vector4 = Vector<float, 4>;
 
-using Vector2U = Vector<u32, 2>;
-using Vector3U = Vector<u32, 3>;
-using Vector4U = Vector<u32, 4>;
+using Vector2U = Vector<unsigned, 2>;
+using Vector3U = Vector<unsigned, 3>;
+using Vector4U = Vector<unsigned, 4>;
 
-using Vector2I = Vector<i32, 2>;
-using Vector3I = Vector<i32, 3>;
-using Vector4I = Vector<i32, 4>;
+using Vector2I = Vector<int, 2>;
+using Vector3I = Vector<int, 3>;
+using Vector4I = Vector<int, 4>;
 
 
-template<class T, std::size_t N, std::size_t M> requires(N > 1 && M > 1)
+template<typename T, int N, int M> requires(N > 1 && M > 1)
 class Matrix {
 public:
 	[[nodiscard]] constexpr auto Determinant() const noexcept -> T requires(N == M);
 	[[nodiscard]] constexpr auto Transpose() const noexcept -> Matrix<T, M, N>;
-	[[nodiscard]] constexpr auto Inverse() const noexcept -> Matrix<T, N, M> requires(N == M);
-	[[nodiscard]] constexpr auto Trace() const noexcept -> f32 requires(N == M);
+	[[nodiscard]] constexpr auto Inverse() const noexcept -> Matrix requires(N == M);
+	[[nodiscard]] constexpr auto Trace() const noexcept -> float requires(N == M);
 
 
 	[[nodiscard]] constexpr auto operator[](size_t index) const noexcept -> Vector<T, M> const&;
@@ -201,27 +198,27 @@ public:
 	[[nodiscard]] static constexpr auto Zero() noexcept -> Matrix;
 
 	constexpr explicit Matrix(T value) noexcept;
-	[[nodiscard]] static constexpr auto Diagonal(T value) noexcept;
+	[[nodiscard]] static constexpr auto Diagonal(T value) noexcept -> Matrix;
 
 	template<std::convertible_to<T>... Args> requires(sizeof...(Args) == std::min(N, M))
 	constexpr explicit Matrix(Args&&... args) noexcept;
 
 	template<std::convertible_to<T>... Args> requires(sizeof...(Args) == std::min(N, M))
-	[[nodiscard]] static constexpr auto Diagonal(Args&&... args) noexcept;
+	[[nodiscard]] static constexpr auto Diagonal(Args&&... args) noexcept -> Matrix;
 
-	template<std::size_t K> requires(K == std::min(N, M))
+	template<int K> requires(K == std::min(N, M))
 	constexpr explicit Matrix(Vector<T, K> const& vec) noexcept;
 
-	template<std::size_t K> requires(K == std::min(N, M))
+	template<int K> requires(K == std::min(N, M))
 	[[nodiscard]] static constexpr auto Diagonal(Vector<T, K> const& vec) noexcept -> Matrix;
 
-	template<std::convertible_to<T>... Args> requires(sizeof...(Args) == N * M)
+	template<std::convertible_to<T>... Args> requires(sizeof...(Args) == static_cast<unsigned long long>(N * M))
 	constexpr explicit Matrix(Args&&... args) noexcept;
 
-	template<std::size_t N1, std::size_t M1> requires (N1 < N && M1 < M)
+	template<int N1, int M1> requires (N1 < N && M1 < M)
 	constexpr explicit Matrix(Matrix<T, N1, M1> const& other) noexcept;
 
-	template<std::size_t N1, std::size_t M1> requires (N1 > N && M1 > M)
+	template<int N1, int M1> requires (N1 > N && M1 > M)
 	constexpr explicit Matrix(Matrix<T, N1, M1> const& other) noexcept;
 
 	constexpr Matrix(Matrix const& other) noexcept = default;
@@ -237,73 +234,73 @@ private:
 };
 
 
-template<class T, std::size_t N, std::size_t M>
+template<typename T, int N, int M>
 [[nodiscard]] constexpr auto operator+(Matrix<T, N, M> const& left, Matrix<T, N, M> const& right) noexcept -> Matrix<T, N, M>;
 
-template<class T, std::size_t N, std::size_t M>
+template<typename T, int N, int M>
 constexpr auto operator+=(Matrix<T, N, M>& left, Matrix<T, N, M> const& right) noexcept -> Matrix<T, N, M>&;
 
-template<class T, std::size_t N, std::size_t M>
+template<typename T, int N, int M>
 [[nodiscard]] constexpr auto operator-(Matrix<T, N, M> const& left, Matrix<T, N, M> const& right) noexcept -> Matrix<T, N, M>;
 
-template<class T, std::size_t N, std::size_t M>
+template<typename T, int N, int M>
 constexpr auto operator-=(Matrix<T, N, M>& left, Matrix<T, N, M> const& right) noexcept -> Matrix<T, N, M>&;
 
-template<class T, std::size_t N, std::size_t M, std::convertible_to<T> T1>
+template<typename T, int N, int M, std::convertible_to<T> T1>
 [[nodiscard]] constexpr auto operator*(Matrix<T, N, M> const& left, T1 const& right) noexcept -> Matrix<T, N, M>;
 
-template<class T, std::size_t N, std::size_t M, std::convertible_to<T> T1>
+template<typename T, int N, int M, std::convertible_to<T> T1>
 [[nodiscard]] constexpr auto operator*(T1 const& left, Matrix<T, N, M> const& right) noexcept -> Matrix<T, N, M>;
 
-template<class T, std::size_t N, std::size_t M>
+template<typename T, int N, int M>
 [[nodiscard]] constexpr auto operator*(Matrix<T, N, M> const& left, Vector<T, M> const& right) noexcept -> Vector<T, N>;
 
-template<class T, std::size_t N, std::size_t M>
+template<typename T, int N, int M>
 [[nodiscard]] constexpr auto operator*(Vector<T, N> const& left, Matrix<T, N, M> const& right) noexcept -> Vector<T, M>;
 
-template<class T, std::size_t N, std::size_t M, std::size_t P>
+template<typename T, int N, int M, int P>
 [[nodiscard]] constexpr auto operator*(Matrix<T, N, M> const& left, Matrix<T, M, P> const& right) noexcept -> Matrix<T, N, P>;
 
-template<class T, std::size_t N, std::size_t M, std::convertible_to<T> T1>
+template<typename T, int N, int M, std::convertible_to<T> T1>
 constexpr auto operator*=(Matrix<T, N, M>& left, T1 const& right) noexcept -> Matrix<T, N, M>&;
 
-template<class T, std::size_t N>
+template<typename T, int N>
 constexpr auto operator*=(Vector<T, N>& left, Matrix<T, N, N> const& right) noexcept -> Vector<T, N>&;
 
-template<class T, std::size_t N, std::size_t M>
+template<typename T, int N, int M>
 constexpr auto operator*=(Matrix<T, N, M>& left, Matrix<T, M, M> const& right) noexcept -> Matrix<T, N, M>&;
 
-template<class T, std::size_t N, std::size_t M>
+template<typename T, int N, int M>
 auto operator<<(std::ostream& stream, Matrix<T, N, M> const& matrix) -> std::ostream&;
 
-using Matrix2 = Matrix<f32, 2, 2>;
-using Matrix3 = Matrix<f32, 3, 3>;
-using Matrix4 = Matrix<f32, 4, 4>;
+using Matrix2 = Matrix<float, 2, 2>;
+using Matrix3 = Matrix<float, 3, 3>;
+using Matrix4 = Matrix<float, 4, 4>;
 
 
 struct Quaternion {
-	f32 x;
-	f32 y;
-	f32 z;
-	f32 w;
+	float x;
+	float y;
+	float z;
+	float w;
 
 
-	constexpr explicit Quaternion(f32 w = 1.0f, f32 x = 0.0f, f32 y = 0.0f, f32 z = 0.0f) noexcept;
-	inline Quaternion(Vector3 const& axis, f32 angleDegrees) noexcept;
+	constexpr explicit Quaternion(float w = 1.0f, float x = 0.0f, float y = 0.0f, float z = 0.0f) noexcept;
+	inline Quaternion(Vector3 const& axis, float angleDegrees) noexcept;
 
-	[[nodiscard]] inline static auto FromEulerAngles(f32 x, f32 y, f32 z) noexcept -> Quaternion;
+	[[nodiscard]] inline static auto FromEulerAngles(float x, float y, float z) noexcept -> Quaternion;
 	[[nodiscard]] inline static auto FromEulerAngles(Vector3 const& euler) noexcept -> Quaternion;
 	[[nodiscard]] inline auto ToEulerAngles() const noexcept -> Vector3;
 
 	[[nodiscard]] constexpr auto ToRotationMatrix() const noexcept -> Matrix4;
 
-	[[nodiscard]] inline static auto FromAxisAngle(Vector3 const& axis, f32 angleDeg) noexcept -> Quaternion;
+	[[nodiscard]] inline static auto FromAxisAngle(Vector3 const& axis, float angleDeg) noexcept -> Quaternion;
 	inline auto ToAxisAngle(Vector3& axis, float& angle) const noexcept -> void;
 
 	[[nodiscard]] inline static auto FromTo(Vector3 const& from, Vector3 const& to) noexcept -> Quaternion;
 
-	[[nodiscard]] constexpr auto NormSquared() const noexcept -> f32;
-	[[nodiscard]] inline auto Norm() const noexcept -> f32;
+	[[nodiscard]] constexpr auto NormSquared() const noexcept -> float;
+	[[nodiscard]] inline auto Norm() const noexcept -> float;
 
 	[[nodiscard]] inline auto Normalized() const noexcept -> Quaternion;
 	inline auto Normalize() noexcept -> Quaternion&;
@@ -316,7 +313,7 @@ struct Quaternion {
 
 	[[nodiscard]] constexpr explicit operator Matrix4() const noexcept;
 
-	template<class T>
+	template<typename T>
 	[[nodiscard]] constexpr auto Rotate(Vector<T, 3> const& vec) const noexcept -> Vector<T, 3>;
 };
 
@@ -331,27 +328,27 @@ inline auto operator<<(std::ostream& os, Quaternion const& q) -> std::ostream&;
  * ######## IMPLEMENTATION PART ###############################################################
  * ############################################################################################ */
 
-constexpr auto ToRadians(f32 const degrees) noexcept -> f32 {
+constexpr auto ToRadians(float const degrees) noexcept -> float {
 	return degrees * PI / 180.0f;
 }
 
 
-constexpr auto ToDegrees(f32 const radians) noexcept -> f32 {
+constexpr auto ToDegrees(float const radians) noexcept -> float {
 	return radians * 180.0f / PI;
 }
 
 
-constexpr auto IsPowerOfTwo(u32 const value) noexcept -> bool {
-	return value != 0 && (value & (value - 1)) == 0;
+constexpr auto IsPowerOfTwo(unsigned const value) noexcept -> bool {
+	return value != 0 && (value & value - 1) == 0;
 }
 
 
-constexpr auto NextPowerOfTwo(u32 const value) noexcept -> u32 {
+constexpr auto NextPowerOfTwo(unsigned const value) noexcept -> unsigned {
 	if (IsPowerOfTwo(value)) {
 		return value;
 	}
 
-	u32 ret{ 1 };
+	unsigned ret{ 1 };
 
 	while (ret < value) {
 		ret <<= 1;
@@ -361,20 +358,20 @@ constexpr auto NextPowerOfTwo(u32 const value) noexcept -> u32 {
 }
 
 
-constexpr auto Lerp(f32 const from, f32 const to, f32 const t) noexcept -> f32 {
+constexpr auto Lerp(float const from, float const to, float const t) noexcept -> float {
 	return (1 - t) * from + t * to;
 }
 
 
-inline auto BinaryDigitCount(u32 const number) noexcept -> u8 {
-	return static_cast<u8>(std::log2(static_cast<f32>(number))) + 1;
+inline auto BinaryDigitCount(unsigned const number) noexcept -> int {
+	return static_cast<u8>(std::log2(static_cast<float>(number))) + 1;
 }
 
-template<class T, std::size_t N> requires (N > 1)
-auto Vector<T, N>::Length() const noexcept -> f32 {
-	f32 squaredSum = 0;
+template<typename T, int N> requires (N > 1)
+auto Vector<T, N>::Length() const noexcept -> float {
+	float squaredSum = 0;
 
-	for (std::size_t i = 0; i < N; i++) {
+	for (int i = 0; i < N; i++) {
 		auto& elem{ mData[i] };
 		squaredSum += elem * elem;
 	}
@@ -383,16 +380,16 @@ auto Vector<T, N>::Length() const noexcept -> f32 {
 }
 
 
-template<class T, std::size_t N> requires (N > 1)
-auto Vector<T, N>::Normalized() const noexcept -> Vector<T, N> {
+template<typename T, int N> requires (N > 1)
+auto Vector<T, N>::Normalized() const noexcept -> Vector {
 	return Vector<T, N>{ *this }.Normalize();
 }
 
 
-template<class T, std::size_t N> requires (N > 1)
-auto Vector<T, N>::Normalize() noexcept -> Vector<T, N>& {
-	if (auto const length = this->Length(); length >= std::numeric_limits<f32>::epsilon()) {
-		for (std::size_t i = 0; i < N; i++) {
+template<typename T, int N> requires (N > 1)
+auto Vector<T, N>::Normalize() noexcept -> Vector& {
+	if (auto const length = this->Length(); length >= std::numeric_limits<float>::epsilon()) {
+		for (int i = 0; i < N; i++) {
 			mData[i] /= length;
 		}
 	}
@@ -401,126 +398,126 @@ auto Vector<T, N>::Normalize() noexcept -> Vector<T, N>& {
 }
 
 
-template<class T, std::size_t N> requires (N > 1)
+template<typename T, int N> requires (N > 1)
 constexpr auto Vector<T, N>::operator[](size_t index) const noexcept -> T const& {
 	return mData[index];
 }
 
 
-template<class T, std::size_t N> requires (N > 1)
+template<typename T, int N> requires (N > 1)
 constexpr auto Vector<T, N>::operator[](size_t const index) noexcept -> T& {
 	return mData[index];
 }
 
 
-template<class T, std::size_t N> requires (N > 1)
+template<typename T, int N> requires (N > 1)
 constexpr auto Vector<T, N>::GetData() const noexcept -> T const* {
 	return mData;
 }
 
 
-template<class T, std::size_t N> requires (N > 1)
+template<typename T, int N> requires (N > 1)
 constexpr auto Vector<T, N>::GetData() noexcept -> T* {
 	return mData;
 }
 
 
-template<class T, std::size_t N> requires (N > 1)
-constexpr auto Vector<T, N>::Up() noexcept -> Vector<T, N> {
+template<typename T, int N> requires (N > 1)
+constexpr auto Vector<T, N>::Up() noexcept -> Vector {
 	Vector<T, N> ret{};
 	ret[1] = 1;
 	return ret;
 }
 
 
-template<class T, std::size_t N> requires (N > 1)
-constexpr auto Vector<T, N>::Down() noexcept -> Vector<T, N> {
+template<typename T, int N> requires (N > 1)
+constexpr auto Vector<T, N>::Down() noexcept -> Vector {
 	Vector<T, N> ret{};
 	ret[1] = -1;
 	return ret;
 }
 
 
-template<class T, std::size_t N> requires (N > 1)
-constexpr auto Vector<T, N>::Left() noexcept -> Vector<T, N> {
+template<typename T, int N> requires (N > 1)
+constexpr auto Vector<T, N>::Left() noexcept -> Vector {
 	Vector<T, N> ret{};
 	ret[0] = -1;
 	return ret;
 }
 
 
-template<class T, std::size_t N> requires (N > 1)
-constexpr auto Vector<T, N>::Right() noexcept -> Vector<T, N> {
+template<typename T, int N> requires (N > 1)
+constexpr auto Vector<T, N>::Right() noexcept -> Vector {
 	Vector<T, N> ret{};
 	ret[0] = 1;
 	return ret;
 }
 
 
-template<class T, std::size_t N> requires (N > 1)
-constexpr auto Vector<T, N>::Forward() noexcept -> Vector<T, N> requires (N >= 3) {
+template<typename T, int N> requires (N > 1)
+constexpr auto Vector<T, N>::Forward() noexcept -> Vector requires (N >= 3) {
 	Vector<T, N> ret{};
 	ret[2] = 1;
 	return ret;
 }
 
 
-template<class T, std::size_t N> requires (N > 1)
-constexpr auto Vector<T, N>::Backward() noexcept -> Vector<T, N> requires (N >= 3) {
+template<typename T, int N> requires (N > 1)
+constexpr auto Vector<T, N>::Backward() noexcept -> Vector requires (N >= 3) {
 	Vector<T, N> ret{};
 	ret[2] = -1;
 	return ret;
 }
 
-template<class T, std::size_t N> requires (N > 1)
+template<typename T, int N> requires (N > 1)
 constexpr auto Vector<T, N>::Zero() noexcept -> Vector {
 	return Vector{};
 }
 
-template<class T, std::size_t N> requires (N > 1)
+template<typename T, int N> requires (N > 1)
 template<std::convertible_to<T> T1>
 constexpr Vector<T, N>::Vector(T1 const value) noexcept {
-	for (std::size_t i = 0; i < N; i++) {
+	for (int i = 0; i < N; i++) {
 		mData[i] = static_cast<T>(value);
 	}
 }
 
-template<class T, std::size_t N> requires (N > 1)
+template<typename T, int N> requires (N > 1)
 template<std::convertible_to<T> T1>
 constexpr auto Vector<T, N>::Filled(T1 const value) noexcept -> Vector {
 	return Vector{ static_cast<T>(value) };
 }
 
 
-template<class T, std::size_t N> requires (N > 1)
+template<typename T, int N> requires (N > 1)
 template<std::convertible_to<T>... Args> requires (sizeof...(Args) == N)
 constexpr Vector<T, N>::Vector(Args&&... args) noexcept :
 	mData{ static_cast<T>(args)... } {}
 
 
-template<class T, std::size_t N> requires (N > 1)
-template<std::size_t M> requires (M > N)
+template<typename T, int N> requires (N > 1)
+template<int M> requires (M > N)
 constexpr Vector<T, N>::Vector(Vector<T, M> const& other) noexcept {
-	for (std::size_t i = 0; i < N; i++) {
+	for (int i = 0; i < N; i++) {
 		mData[i] = other[i];
 	}
 }
 
 
-template<class T, std::size_t N> requires (N > 1)
-template<std::size_t M, std::convertible_to<T>... Args> requires (M < N && sizeof...(Args) == N - M)
+template<typename T, int N> requires (N > 1)
+template<int M, std::convertible_to<T>... Args> requires (M < N && sizeof...(Args) == N - M)
 constexpr Vector<T, N>::Vector(Vector<T, M> const& other, Args&&... additionalElems) noexcept {
-	for (std::size_t i = 0; i < M; i++) {
+	for (int i = 0; i < M; i++) {
 		mData[i] = other[i];
 	}
 
-	[this, &additionalElems...]<std::size_t... Is>(std::index_sequence<Is...>) noexcept {
+	[this, &additionalElems...]<int... Is>(std::index_sequence<Is...>) noexcept {
 		(static_cast<void>(mData[M + Is] = static_cast<T>(additionalElems)), ...);
 	}(std::index_sequence_for<Args...>{});
 }
 
 
-template<class T, std::size_t N> requires (N > 1)
+template<typename T, int N> requires (N > 1)
 constexpr auto Dot(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> T {
 	T ret{};
 
@@ -532,7 +529,7 @@ constexpr auto Dot(Vector<T, N> const& left, Vector<T, N> const& right) noexcept
 }
 
 
-template<class T, std::size_t N> requires (N > 1)
+template<typename T, int N> requires (N > 1)
 constexpr auto Cross(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> Vector<T, N> requires (N == 3) {
 	return Vector<T, N>
 	{
@@ -543,25 +540,25 @@ constexpr auto Cross(Vector<T, N> const& left, Vector<T, N> const& right) noexce
 }
 
 
-template<class T, std::size_t N> requires (N > 1)
-auto Distance(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> f32 {
-	f32 sum{ 0 };
+template<typename T, int N> requires (N > 1)
+auto Distance(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> T {
+	T sum{ 0 };
 
 	for (size_t i = 0; i < N; i++) {
-		sum += std::powf(static_cast<f32>(left[i] - right[i]), 2);
+		sum += std::pow(left[i] - right[i], 2);
 	}
 
-	return std::sqrtf(sum);
+	return std::sqrt(sum);
 }
 
 
-template<class T, std::size_t N>
+template<typename T, int N>
 constexpr auto Lerp(Vector<T, N> const& from, Vector<T, N> const& to, float const t) noexcept -> Vector<T, N> {
 	return (1 - t) * from + t * to;
 }
 
 
-template<class T, std::size_t N>
+template<typename T, int N>
 constexpr auto operator-(Vector<T, N> const& operand) noexcept -> Vector<T, N> {
 	Vector<T, N> ret;
 	for (size_t i = 0; i < N; i++) {
@@ -571,7 +568,7 @@ constexpr auto operator-(Vector<T, N> const& operand) noexcept -> Vector<T, N> {
 }
 
 
-template<class T, std::size_t N>
+template<typename T, int N>
 constexpr auto operator+(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> Vector<T, N> {
 	Vector<T, N> ret;
 	for (size_t i = 0; i < N; i++) {
@@ -581,35 +578,35 @@ constexpr auto operator+(Vector<T, N> const& left, Vector<T, N> const& right) no
 }
 
 
-template<class T, std::size_t N>
+template<typename T, int N>
 constexpr auto operator+=(Vector<T, N>& left, Vector<T, N> const& right) noexcept -> Vector<T, N>& {
-	for (std::size_t i = 0; i < N; i++) {
+	for (int i = 0; i < N; i++) {
 		left[i] += right[i];
 	}
 	return left;
 }
 
 
-template<class T, std::size_t N>
+template<typename T, int N>
 constexpr auto operator-(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> Vector<T, N> {
 	Vector<T, N> ret;
-	for (std::size_t i = 0; i < N; i++) {
+	for (int i = 0; i < N; i++) {
 		ret[i] = left[i] - right[i];
 	}
 	return ret;
 }
 
 
-template<class T, std::size_t N>
+template<typename T, int N>
 constexpr auto operator-=(Vector<T, N>& left, Vector<T, N> const& right) noexcept -> Vector<T, N>& {
-	for (std::size_t i = 0; i < N; i++) {
+	for (int i = 0; i < N; i++) {
 		left[i] -= right[i];
 	}
 	return left;
 }
 
 
-template<class T1, std::convertible_to<T1> T2, std::size_t N>
+template<typename T1, std::convertible_to<T1> T2, int N>
 constexpr auto operator*(Vector<T1, N> const& left, T2 const& right) noexcept -> Vector<T1, N> {
 	Vector<T1, N> ret;
 	for (size_t i = 0; i < N; i++) {
@@ -619,94 +616,94 @@ constexpr auto operator*(Vector<T1, N> const& left, T2 const& right) noexcept ->
 }
 
 
-template<class T1, std::convertible_to<T1> T2, std::size_t N>
+template<typename T1, std::convertible_to<T1> T2, int N>
 constexpr auto operator*(T2 const& left, Vector<T1, N> const& right) noexcept -> Vector<T1, N> {
 	Vector<T1, N> ret;
-	for (std::size_t i = 0; i < N; i++) {
+	for (int i = 0; i < N; i++) {
 		ret[i] = static_cast<T1>(left) * right[i];
 	}
 	return ret;
 }
 
 
-template<class T, std::size_t N>
+template<typename T, int N>
 constexpr auto operator*(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> Vector<T, N> {
 	Vector<T, N> ret;
-	for (std::size_t i = 0; i < N; i++) {
+	for (int i = 0; i < N; i++) {
 		ret[i] = left[i] * right[i];
 	}
 	return ret;
 }
 
 
-template<class T1, std::convertible_to<T1> T2, std::size_t N>
+template<typename T1, std::convertible_to<T1> T2, int N>
 constexpr auto operator*=(Vector<T1, N>& left, T2 const& right) noexcept -> Vector<T1, N>& {
-	for (std::size_t i = 0; i < N; i++) {
+	for (int i = 0; i < N; i++) {
 		left[i] *= static_cast<T1>(right);
 	}
 	return left;
 }
 
 
-template<class T, std::size_t N>
+template<typename T, int N>
 constexpr auto operator*=(Vector<T, N>& left, Vector<T, N> const& right) noexcept -> Vector<T, N>& {
-	for (std::size_t i = 0; i < N; i++) {
+	for (int i = 0; i < N; i++) {
 		left[i] *= right[i];
 	}
 	return left;
 }
 
 
-template<class T1, std::convertible_to<T1> T2, std::size_t N>
+template<typename T1, std::convertible_to<T1> T2, int N>
 constexpr auto operator/(Vector<T1, N> const& left, T2 const& right) noexcept -> Vector<T1, N> {
 	Vector<T1, N> ret;
-	for (std::size_t i = 0; i < N; i++) {
+	for (int i = 0; i < N; i++) {
 		ret[i] = left[i] / static_cast<T1>(right);
 	}
 	return ret;
 }
 
 
-template<class T1, std::convertible_to<T1> T2, std::size_t N>
+template<typename T1, std::convertible_to<T1> T2, int N>
 constexpr auto operator/(T2 const& left, Vector<T1, N> const& right) noexcept -> Vector<T1, N> {
 	Vector<T1, N> ret;
 	T1 const numerator{ static_cast<T1>(left) };
-	for (std::size_t i = 0; i < N; i++) {
+	for (int i = 0; i < N; i++) {
 		ret[i] = numerator / right[i];
 	}
 	return ret;
 }
 
 
-template<class T, std::size_t N>
+template<typename T, int N>
 constexpr auto operator/(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> Vector<T, N> {
 	Vector<T, N> ret;
-	for (std::size_t i = 0; i < N; i++) {
+	for (int i = 0; i < N; i++) {
 		ret[i] = left[i] / right[i];
 	}
 	return ret;
 }
 
 
-template<class T1, std::convertible_to<T1> T2, std::size_t N>
+template<typename T1, std::convertible_to<T1> T2, int N>
 constexpr auto operator/=(Vector<T1, N>& left, T2 const& right) noexcept -> Vector<T1, N>& {
-	for (std::size_t i = 0; i < N; i++) {
+	for (int i = 0; i < N; i++) {
 		left[i] /= static_cast<T1>(right);
 	}
 	return left;
 }
 
 
-template<class T, std::size_t N>
+template<typename T, int N>
 constexpr auto operator/=(Vector<T, N>& left, Vector<T, N> const& right) noexcept -> Vector<T, N>& {
-	for (std::size_t i = 0; i < N; i++) {
+	for (int i = 0; i < N; i++) {
 		left[i] /= right[i];
 	}
 	return left;
 }
 
 
-template<class T, std::size_t N>
+template<typename T, int N>
 constexpr auto operator==(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> bool {
 	for (size_t i = 0; i < N; i++) {
 		if (left[i] != right[i]) {
@@ -717,13 +714,13 @@ constexpr auto operator==(Vector<T, N> const& left, Vector<T, N> const& right) n
 }
 
 
-template<class T, std::size_t N>
+template<typename T, int N>
 constexpr auto operator!=(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> bool {
 	return !(left == right);
 }
 
 
-template<class T, std::size_t N>
+template<typename T, int N>
 auto operator<<(std::ostream& stream, Vector<T, N> const& vector) -> std::ostream& {
 	stream << "(";
 	for (size_t i = 0; i < N; i++) {
@@ -737,7 +734,7 @@ auto operator<<(std::ostream& stream, Vector<T, N> const& vector) -> std::ostrea
 }
 
 
-template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
+template<typename T, int N, int M> requires (N > 1 && M > 1)
 constexpr auto Matrix<T, N, M>::Determinant() const noexcept -> T requires (N == M) {
 	Matrix<T, N, M> tmp{ *this };
 	for (size_t i = 1; i < N; i++) {
@@ -756,7 +753,7 @@ constexpr auto Matrix<T, N, M>::Determinant() const noexcept -> T requires (N ==
 }
 
 
-template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
+template<typename T, int N, int M> requires (N > 1 && M > 1)
 constexpr auto Matrix<T, N, M>::Transpose() const noexcept -> Matrix<T, M, N> {
 	Matrix<T, M, N> ret;
 	for (size_t i = 0; i < N; i++) {
@@ -768,13 +765,13 @@ constexpr auto Matrix<T, N, M>::Transpose() const noexcept -> Matrix<T, M, N> {
 }
 
 
-template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
+template<typename T, int N, int M> requires (N > 1 && M > 1)
 constexpr auto Matrix<T, N, M>::Inverse() const noexcept -> Matrix<T, N, M> requires (N == M) {
 	Matrix<T, N, M> left{ *this };
 	Matrix<T, N, M> right{ Matrix<T, N, M>::Identity() };
 
 	// Iterate over the main diagonal/submatrices
-	for (std::size_t i = 0; i < N; i++) {
+	for (int i = 0; i < N; i++) {
 		// Index of the row with the largest absolute value element in the ith column
 		auto pivotInd{ i };
 
@@ -814,7 +811,7 @@ constexpr auto Matrix<T, N, M>::Inverse() const noexcept -> Matrix<T, N, M> requ
 
 	// Left is in reduced echelon form
 	// Now eliminate the remaining non-zeros outside the main diagonal
-	for (std::size_t i = 0; i < N; i++) {
+	for (int i = 0; i < N; i++) {
 		for (auto j = i + 1; j < N; j++) {
 			// We subtract the jth row from the ith one
 			// Because it is guaranteed to have 0s before the main diagonal
@@ -828,11 +825,11 @@ constexpr auto Matrix<T, N, M>::Inverse() const noexcept -> Matrix<T, N, M> requ
 }
 
 
-template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
-constexpr auto Matrix<T, N, M>::Trace() const noexcept -> f32 requires (N == M) {
-	f32 ret{ 0 };
-	for (std::size_t i{ 0 }; i < N; i++) {
-		for (std::size_t j{ 0 }; j < M; j++) {
+template<typename T, int N, int M> requires (N > 1 && M > 1)
+constexpr auto Matrix<T, N, M>::Trace() const noexcept -> float requires (N == M) {
+	float ret{ 0 };
+	for (int i{ 0 }; i < N; i++) {
+		for (int j{ 0 }; j < M; j++) {
 			ret += mData[i][j];
 		}
 	}
@@ -840,37 +837,37 @@ constexpr auto Matrix<T, N, M>::Trace() const noexcept -> f32 requires (N == M) 
 }
 
 
-template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
+template<typename T, int N, int M> requires (N > 1 && M > 1)
 constexpr auto Matrix<T, N, M>::operator[](size_t const index) const noexcept -> Vector<T, M> const& {
 	return mData[index];
 }
 
 
-template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
+template<typename T, int N, int M> requires (N > 1 && M > 1)
 constexpr auto Matrix<T, N, M>::operator[](size_t const index) noexcept -> Vector<T, M>& {
 	return mData[index];
 }
 
 
-template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
+template<typename T, int N, int M> requires (N > 1 && M > 1)
 constexpr auto Matrix<T, N, M>::GetData() noexcept -> T* {
 	return mData[0].GetData();
 }
 
 
-template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
+template<typename T, int N, int M> requires (N > 1 && M > 1)
 constexpr auto Matrix<T, N, M>::GetData() const noexcept -> T const* {
 	return mData[0].GetData();
 }
 
 
-template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
+template<typename T, int N, int M> requires (N > 1 && M > 1)
 constexpr auto Matrix<T, N, M>::Identity() noexcept -> Matrix<T, N, M> requires (N == M) {
 	return Matrix<T, N, M>{ 1 };
 }
 
 
-template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
+template<typename T, int N, int M> requires (N > 1 && M > 1)
 constexpr auto Matrix<T, N, M>::Translate(Vector<T, 3> const& vector) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
 	Matrix<T, 4, 4> ret = Identity();
 	for (size_t i = 0; i < 3; i++) {
@@ -880,7 +877,7 @@ constexpr auto Matrix<T, N, M>::Translate(Vector<T, 3> const& vector) noexcept -
 }
 
 
-template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
+template<typename T, int N, int M> requires (N > 1 && M > 1)
 constexpr auto Matrix<T, N, M>::Scale(Vector<T, 3> const& vector) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
 	Matrix<T, 4, 4> ret = Identity();
 	for (size_t i = 0; i < 3; i++) {
@@ -889,7 +886,7 @@ constexpr auto Matrix<T, N, M>::Scale(Vector<T, 3> const& vector) noexcept -> Ma
 	return ret;
 }
 
-template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
+template<typename T, int N, int M> requires (N > 1 && M > 1)
 constexpr auto Matrix<T, N, M>::LookAtRH(Vector<T, 3> const& position, Vector<T, 3> const& target, Vector<T, 3> const& worldUp) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
 	Vector<T, 3> z{ (position - target).Normalized() };
 	Vector<T, 3> x{ Cross(worldUp, z).Normalized() };
@@ -903,7 +900,7 @@ constexpr auto Matrix<T, N, M>::LookAtRH(Vector<T, 3> const& position, Vector<T,
 }
 
 
-template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
+template<typename T, int N, int M> requires (N > 1 && M > 1)
 constexpr auto Matrix<T, N, M>::LookAtLH(Vector<T, 3> const& position, Vector<T, 3> const& target, Vector<T, 3> const& worldUp) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
 	Vector<T, 3> z{ (target - position).Normalized() };
 	Vector<T, 3> x{ Cross(worldUp, z).Normalized() };
@@ -916,17 +913,17 @@ constexpr auto Matrix<T, N, M>::LookAtLH(Vector<T, 3> const& position, Vector<T,
 	};
 }
 
-template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
+template<typename T, int N, int M> requires (N > 1 && M > 1)
 constexpr auto Matrix<T, N, M>::LookToRH(Vector<T, 3> const& position, Vector<T, 3> const& direction, Vector<T, 3> const& worldUp) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
 	return LookAtRH(position, position + direction.Normalized(), worldUp);
 }
 
-template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
+template<typename T, int N, int M> requires (N > 1 && M > 1)
 constexpr auto Matrix<T, N, M>::LookToLH(Vector<T, 3> const& position, Vector<T, 3> const& direction, Vector<T, 3> const& worldUp) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
 	return LookAtLH(position, position + direction.Normalized(), worldUp);
 }
 
-template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
+template<typename T, int N, int M> requires (N > 1 && M > 1)
 constexpr auto Matrix<T, N, M>::OrthographicSymZRH(T const left, T const right, T const top, T const bottom, T const zNear, T const zFar) noexcept -> Matrix<T, 4, 4> {
 	return Matrix<T, 4, 4>{
 		2 / (right - left), 0, 0, 0,
@@ -936,21 +933,21 @@ constexpr auto Matrix<T, N, M>::OrthographicSymZRH(T const left, T const right, 
 	};
 }
 
-template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
+template<typename T, int N, int M> requires (N > 1 && M > 1)
 constexpr auto Matrix<T, N, M>::OrthographicSymZLH(T const left, T const right, T const top, T const bottom, T const zNear, T const zFar) noexcept -> Matrix<T, 4, 4> {
 	auto ret{ OrthographicSymZRH(left, right, top, bottom, zNear, zFar) };
 	ret[2][2] *= -1;
 	return ret;
 }
 
-template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
+template<typename T, int N, int M> requires (N > 1 && M > 1)
 constexpr auto Matrix<T, N, M>::OrthographicAsymZRH(T const left, T const right, T const top, T const bottom, T const zNear, T const zFar) noexcept -> Matrix<T, 4, 4> {
 	auto ret{ OrthographicAsymZLH(left, right, top, bottom, zNear, zFar) };
 	ret[2][2] *= -1;
 	return ret;
 }
 
-template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
+template<typename T, int N, int M> requires (N > 1 && M > 1)
 constexpr auto Matrix<T, N, M>::OrthographicAsymZLH(T const left, T const right, T const top, T const bottom, T const zNear, T const zFar) noexcept -> Matrix<T, 4, 4> {
 	return Matrix<T, 4, 4>{
 		2 / (right - left), 0, 0, 0,
@@ -960,35 +957,35 @@ constexpr auto Matrix<T, N, M>::OrthographicAsymZLH(T const left, T const right,
 	};
 }
 
-template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
+template<typename T, int N, int M> requires (N > 1 && M > 1)
 constexpr auto Matrix<T, N, M>::OrthographicSymZRH(T const width, T const height, T const zNear, T const zFar) noexcept -> Matrix<T, 4, 4> {
 	auto const halfWidth{ width / 2 };
 	auto const halfHeight{ height / 2 };
 	return OrthographicSymZRH(-halfWidth, halfWidth, halfHeight, -halfHeight, zNear, zFar);
 }
 
-template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
+template<typename T, int N, int M> requires (N > 1 && M > 1)
 constexpr auto Matrix<T, N, M>::OrthographicSymZLH(T const width, T const height, T const zNear, T const zFar) noexcept -> Matrix<T, 4, 4> {
 	auto const halfWidth{ width / 2 };
 	auto const halfHeight{ height / 2 };
 	return OrthographicSymZLH(-halfWidth, halfWidth, halfHeight, -halfHeight, zNear, zFar);
 }
 
-template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
+template<typename T, int N, int M> requires (N > 1 && M > 1)
 constexpr auto Matrix<T, N, M>::OrthographicAsymZRH(T const width, T const height, T const zNear, T const zFar) noexcept -> Matrix<T, 4, 4> {
 	auto const halfWidth{ width / 2 };
 	auto const halfHeight{ height / 2 };
 	return OrthographicAsymZRH(-halfWidth, halfWidth, halfHeight, -halfHeight, zNear, zFar);
 }
 
-template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
+template<typename T, int N, int M> requires (N > 1 && M > 1)
 constexpr auto Matrix<T, N, M>::OrthographicAsymZLH(T const width, T const height, T const zNear, T const zFar) noexcept -> Matrix<T, 4, 4> {
 	auto const halfWidth{ width / 2 };
 	auto const halfHeight{ height / 2 };
 	return OrthographicAsymZLH(-halfWidth, halfWidth, halfHeight, -halfHeight, zNear, zFar);
 }
 
-template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
+template<typename T, int N, int M> requires (N > 1 && M > 1)
 constexpr auto Matrix<T, N, M>::PerspectiveSymZRH(T const left, T const right, T const top, T const bottom, T const zNear, T const zFar) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
 	return Matrix<T, 4, 4>{
 		2 * zNear / (right - left), 0, 0, 0,
@@ -998,21 +995,21 @@ constexpr auto Matrix<T, N, M>::PerspectiveSymZRH(T const left, T const right, T
 	};
 }
 
-template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
+template<typename T, int N, int M> requires (N > 1 && M > 1)
 constexpr auto Matrix<T, N, M>::PerspectiveSymZLH(T const left, T const right, T const top, T const bottom, T const zNear, T const zFar) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
 	auto ret{ PerspectiveSymZRH(left, right, top, bottom, zNear, zFar) };
 	ret[2] *= -1;
 	return ret;
 }
 
-template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
+template<typename T, int N, int M> requires (N > 1 && M > 1)
 constexpr auto Matrix<T, N, M>::PerspectiveAsymZRH(T left, T right, T top, T bottom, T zNear, T zFar) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
 	auto ret{ PerspectiveAsymZLH(left, right, top, bottom, zNear, zFar) };
 	ret[2] *= -1;
 	return ret;
 }
 
-template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
+template<typename T, int N, int M> requires (N > 1 && M > 1)
 constexpr auto Matrix<T, N, M>::PerspectiveAsymZLH(T const left, T const right, T const top, T const bottom, T const zNear, T const zFar) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
 	return Matrix<T, 4, 4>{
 		2 * zNear / (right - left), 0, 0, 0,
@@ -1022,7 +1019,7 @@ constexpr auto Matrix<T, N, M>::PerspectiveAsymZLH(T const left, T const right, 
 	};
 }
 
-template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
+template<typename T, int N, int M> requires (N > 1 && M > 1)
 auto Matrix<T, N, M>::PerspectiveSymZRH(T const fovVertRad, T const aspectRatio, T const zNear, T const zFar) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
 	T tanHalfFov{ static_cast<T>(std::tan(fovVertRad / static_cast<T>(2))) };
 	T top{ zNear * tanHalfFov };
@@ -1032,21 +1029,21 @@ auto Matrix<T, N, M>::PerspectiveSymZRH(T const fovVertRad, T const aspectRatio,
 	return PerspectiveSymZRH(left, right, top, bottom, zNear, zFar);
 }
 
-template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
+template<typename T, int N, int M> requires (N > 1 && M > 1)
 auto Matrix<T, N, M>::PerspectiveSymZLH(T const fovVertRad, T const aspectRatio, T const zNear, T const zFar) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
 	auto ret{ PerspectiveSymZRH(fovVertRad, aspectRatio, zNear, zFar) };
 	ret[2] *= -1;
 	return ret;
 }
 
-template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
+template<typename T, int N, int M> requires (N > 1 && M > 1)
 auto Matrix<T, N, M>::PerspectiveAsymZRH(T fovVertRad, T aspectRatio, T zNear, T zFar) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
 	auto ret{ PerspectiveAsymZLH(fovVertRad, aspectRatio, zNear, zFar) };
 	ret[2] *= -1;
 	return ret;
 }
 
-template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
+template<typename T, int N, int M> requires (N > 1 && M > 1)
 auto Matrix<T, N, M>::PerspectiveAsymZLH(T const fovVertRad, T const aspectRatio, T const zNear, T const zFar) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
 	auto const halfFov{ fovVertRad / 2 };
 	auto const yScale{ std::cos(halfFov) / std::sin(halfFov) };
@@ -1060,70 +1057,70 @@ auto Matrix<T, N, M>::PerspectiveAsymZLH(T const fovVertRad, T const aspectRatio
 }
 
 
-template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
+template<typename T, int N, int M> requires (N > 1 && M > 1)
 constexpr auto Matrix<T, N, M>::Zero() noexcept -> Matrix {
 	return Matrix{};
 }
 
-template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
+template<typename T, int N, int M> requires (N > 1 && M > 1)
 constexpr Matrix<T, N, M>::Matrix(T const value) noexcept {
 	for (size_t i = 0; i < std::min(N, M); i++) {
 		mData[i][i] = value;
 	}
 }
 
-template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
-constexpr auto Matrix<T, N, M>::Diagonal(T const value) noexcept {
+template<typename T, int N, int M> requires (N > 1 && M > 1)
+constexpr auto Matrix<T, N, M>::Diagonal(T const value) noexcept -> Matrix {
 	return Matrix{ value };
 }
 
-template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
+template<typename T, int N, int M> requires (N > 1 && M > 1)
 template<std::convertible_to<T>... Args> requires (sizeof...(Args) == std::min(N, M))
 constexpr Matrix<T, N, M>::Matrix(Args&&... args) noexcept {
-	[this, &args...] <std::size_t... Is>(std::index_sequence<Is...>) noexcept {
+	[this, &args...] <int... Is>(std::index_sequence<Is...>) noexcept {
 		(static_cast<void>(mData[Is][Is] = static_cast<T>(args)), ...);
 	}(std::index_sequence_for<Args...>{});
 }
 
-template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
+template<typename T, int N, int M> requires (N > 1 && M > 1)
 template<std::convertible_to<T>... Args> requires (sizeof...(Args) == std::min(N, M))
-constexpr auto Matrix<T, N, M>::Diagonal(Args&&... args) noexcept {
+constexpr auto Matrix<T, N, M>::Diagonal(Args&&... args) noexcept -> Matrix {
 	return Matrix{ std::forward<Args>(args)... };
 }
 
 
-template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
-template<std::size_t K> requires (K == std::min(N, M))
+template<typename T, int N, int M> requires (N > 1 && M > 1)
+template<int K> requires (K == std::min(N, M))
 constexpr Matrix<T, N, M>::Matrix(Vector<T, K> const& vec) noexcept {
 	for (size_t i = 0; i < K; i++) {
 		mData[i][i] = vec[i];
 	}
 }
 
-template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
-template<std::size_t K> requires (K == std::min(N, M))
+template<typename T, int N, int M> requires (N > 1 && M > 1)
+template<int K> requires (K == std::min(N, M))
 constexpr auto Matrix<T, N, M>::Diagonal(Vector<T, K> const& vec) noexcept -> Matrix {
 	return Matrix{ vec };
 }
 
 
-template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
-template<std::convertible_to<T>... Args> requires (sizeof...(Args) == N * M)
+template<typename T, int N, int M> requires (N > 1 && M > 1)
+template<std::convertible_to<T>... Args> requires (sizeof...(Args) == static_cast<unsigned long long>(N * M))
 constexpr Matrix<T, N, M>::Matrix(Args&&... args) noexcept {
-	[this, &args...]<std::size_t... Is>(std::index_sequence<Is...>) noexcept {
+	[this, &args...]<int... Is>(std::index_sequence<Is...>) noexcept {
 		(static_cast<void>(mData[Is / M][Is % M] = static_cast<T>(args)), ...);
 	}(std::index_sequence_for<Args...>{});
 }
 
 
-template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
-template<std::size_t N1, std::size_t M1> requires (N1 < N && M1 < M)
+template<typename T, int N, int M> requires (N > 1 && M > 1)
+template<int N1, int M1> requires (N1 < N && M1 < M)
 constexpr Matrix<T, N, M>::Matrix(Matrix<T, N1, M1> const& other) noexcept {
-	for (std::size_t i = 0; i < N1; i++) {
+	for (int i = 0; i < N1; i++) {
 		mData[i] = Vector<T, M>{ other[i], 0 };
 	}
 
-	for (std::size_t i = N1; i < N; ++i) {
+	for (int i = N1; i < N; ++i) {
 		mData[i] = Vector<T, M>{ 0 };
 	}
 
@@ -1131,74 +1128,74 @@ constexpr Matrix<T, N, M>::Matrix(Matrix<T, N1, M1> const& other) noexcept {
 }
 
 
-template<class T, std::size_t N, std::size_t M> requires (N > 1 && M > 1)
-template<std::size_t N1, std::size_t M1> requires (N1 > N && M1 > M)
+template<typename T, int N, int M> requires (N > 1 && M > 1)
+template<int N1, int M1> requires (N1 > N && M1 > M)
 constexpr Matrix<T, N, M>::Matrix(Matrix<T, N1, M1> const& other) noexcept {
-	for (std::size_t i = 0; i < N; i++) {
+	for (int i = 0; i < N; i++) {
 		mData[i] = Vector<T, M>{ other[i] };
 	}
 }
 
 
-template<class T, std::size_t N, std::size_t M>
+template<typename T, int N, int M>
 constexpr auto operator+(Matrix<T, N, M> const& left, Matrix<T, N, M> const& right) noexcept -> Matrix<T, N, M> {
 	Matrix<T, N, M> ret;
-	for (std::size_t i = 0; i < N; i++) {
+	for (int i = 0; i < N; i++) {
 		ret[i] = left[i] + right[i];
 	}
 	return ret;
 }
 
 
-template<class T, std::size_t N, std::size_t M>
+template<typename T, int N, int M>
 constexpr auto operator+=(Matrix<T, N, M>& left, Matrix<T, N, M> const& right) noexcept -> Matrix<T, N, M>& {
-	for (std::size_t i = 0; i < N; i++) {
+	for (int i = 0; i < N; i++) {
 		left[i] += right[i];
 	}
 	return left;
 }
 
 
-template<class T, std::size_t N, std::size_t M>
+template<typename T, int N, int M>
 constexpr auto operator-(Matrix<T, N, M> const& left, Matrix<T, N, M> const& right) noexcept -> Matrix<T, N, M> {
 	Matrix<T, N, M> ret;
-	for (std::size_t i = 0; i < N; i++) {
+	for (int i = 0; i < N; i++) {
 		ret[i] = left[i] - right[i];
 	}
 	return ret;
 }
 
 
-template<class T, std::size_t N, std::size_t M>
+template<typename T, int N, int M>
 constexpr auto operator-=(Matrix<T, N, M>& left, Matrix<T, N, M> const& right) noexcept -> Matrix<T, N, M>& {
-	for (std::size_t i = 0; i < N; i++) {
+	for (int i = 0; i < N; i++) {
 		left[i] -= right[i];
 	}
 	return left;
 }
 
 
-template<class T, std::size_t N, std::size_t M, std::convertible_to<T> T1>
+template<typename T, int N, int M, std::convertible_to<T> T1>
 constexpr auto operator*(Matrix<T, N, M> const& left, T1 const& right) noexcept -> Matrix<T, N, M> {
 	Matrix<T, N, M> ret;
-	for (std::size_t i = 0; i < N; i++) {
+	for (int i = 0; i < N; i++) {
 		ret[i] = left[i] * static_cast<T>(right);
 	}
 	return ret;
 }
 
 
-template<class T, std::size_t N, std::size_t M, std::convertible_to<T> T1>
+template<typename T, int N, int M, std::convertible_to<T> T1>
 constexpr auto operator*(T1 const& left, Matrix<T, N, M> const& right) noexcept -> Matrix<T, N, M> {
 	Matrix<T, N, M> ret;
-	for (std::size_t i = 0; i < N; i++) {
+	for (int i = 0; i < N; i++) {
 		ret[i] = static_cast<T>(left) * right[i];
 	}
 	return ret;
 }
 
 
-template<class T, std::size_t N, std::size_t M>
+template<typename T, int N, int M>
 constexpr auto operator*(Matrix<T, N, M> const& left, Vector<T, M> const& right) noexcept -> Vector<T, N> {
 	Vector<T, N> ret;
 	for (size_t i = 0; i < N; i++) {
@@ -1210,7 +1207,7 @@ constexpr auto operator*(Matrix<T, N, M> const& left, Vector<T, M> const& right)
 }
 
 
-template<class T, std::size_t N, std::size_t M>
+template<typename T, int N, int M>
 constexpr auto operator*(Vector<T, N> const& left, Matrix<T, N, M> const& right) noexcept -> Vector<T, M> {
 	Vector<T, M> ret;
 	for (size_t j = 0; j < M; j++) {
@@ -1222,7 +1219,7 @@ constexpr auto operator*(Vector<T, N> const& left, Matrix<T, N, M> const& right)
 }
 
 
-template<class T, std::size_t N, std::size_t M, std::size_t P>
+template<typename T, int N, int M, int P>
 constexpr auto operator*(Matrix<T, N, M> const& left, Matrix<T, M, P> const& right) noexcept -> Matrix<T, N, P> {
 	Matrix<T, N, P> ret;
 	for (size_t i = 0; i < N; i++) {
@@ -1236,28 +1233,28 @@ constexpr auto operator*(Matrix<T, N, M> const& left, Matrix<T, M, P> const& rig
 }
 
 
-template<class T, std::size_t N, std::size_t M, std::convertible_to<T> T1>
+template<typename T, int N, int M, std::convertible_to<T> T1>
 constexpr auto operator*=(Matrix<T, N, M>& left, T1 const& right) noexcept -> Matrix<T, N, M>& {
-	for (std::size_t i = 0; i < N; i++) {
+	for (int i = 0; i < N; i++) {
 		left[i] *= static_cast<T>(right);
 	}
 	return left;
 }
 
 
-template<class T, std::size_t N>
+template<typename T, int N>
 constexpr auto operator*=(Vector<T, N>& left, Matrix<T, N, N> const& right) noexcept -> Vector<T, N>& {
 	return left = left * right;
 }
 
 
-template<class T, std::size_t N, std::size_t M>
+template<typename T, int N, int M>
 constexpr auto operator*=(Matrix<T, N, M>& left, Matrix<T, M, M> const& right) noexcept -> Matrix<T, N, M>& {
 	return left = left * right;
 }
 
 
-template<class T, std::size_t N, std::size_t M>
+template<typename T, int N, int M>
 auto operator<<(std::ostream& stream, Matrix<T, N, M> const& matrix) -> std::ostream& {
 	for (size_t i = 0; i < N; i++) {
 		for (size_t j = 0; j < M; j++) {
@@ -1274,12 +1271,12 @@ auto operator<<(std::ostream& stream, Matrix<T, N, M> const& matrix) -> std::ost
 }
 
 
-constexpr Quaternion::Quaternion(f32 const w, f32 const x, f32 const y, f32 const z) noexcept :
+constexpr Quaternion::Quaternion(float const w, float const x, float const y, float const z) noexcept :
 	x{ x }, y{ y }, z{ z }, w{ w } {}
 
-inline Quaternion::Quaternion(Vector3 const& axis, f32 const angleDegrees) noexcept {
+inline Quaternion::Quaternion(Vector3 const& axis, float const angleDegrees) noexcept {
 	auto const angleHalfRadians = ToRadians(angleDegrees) / 2.0f;
-	auto vec = axis.Normalized() * std::sinf(angleHalfRadians);
+	auto vec = axis.Normalized() * std::sin(angleHalfRadians);
 
 	w = std::cos(angleHalfRadians);
 	x = vec[0];
@@ -1287,17 +1284,17 @@ inline Quaternion::Quaternion(Vector3 const& axis, f32 const angleDegrees) noexc
 	z = vec[2];
 }
 
-inline auto Quaternion::FromEulerAngles(f32 const x, f32 const y, f32 const z) noexcept -> Quaternion {
+inline auto Quaternion::FromEulerAngles(float const x, float const y, float const z) noexcept -> Quaternion {
 	auto const roll = ToRadians(x);
 	auto const pitch = ToRadians(y);
 	auto const yaw = ToRadians(z);
 
-	auto const cr = cosf(roll * 0.5f);
-	auto const sr = sinf(roll * 0.5f);
-	auto const cp = cosf(pitch * 0.5f);
-	auto const sp = sinf(pitch * 0.5f);
-	auto const cy = cosf(yaw * 0.5f);
-	auto const sy = sinf(yaw * 0.5f);
+	auto const cr = cos(roll * 0.5f);
+	auto const sr = sin(roll * 0.5f);
+	auto const cp = cos(pitch * 0.5f);
+	auto const sp = sin(pitch * 0.5f);
+	auto const cy = cos(yaw * 0.5f);
+	auto const sy = sin(yaw * 0.5f);
 
 	return Quaternion
 	{
@@ -1345,7 +1342,7 @@ constexpr auto Quaternion::ToRotationMatrix() const noexcept -> Matrix4 {
 	return static_cast<Matrix4>(*this);
 }
 
-inline auto Quaternion::FromAxisAngle(Vector3 const& axis, f32 const angleDeg) noexcept -> Quaternion {
+inline auto Quaternion::FromAxisAngle(Vector3 const& axis, float const angleDeg) noexcept -> Quaternion {
 	return Quaternion{ axis, angleDeg };
 }
 
@@ -1353,7 +1350,7 @@ inline auto Quaternion::ToAxisAngle(Vector3& axis, float& angle) const noexcept 
 	axis = Vector3{ x, y, z };
 	float const vectorLength = axis.Length();
 	axis.Normalize();
-	angle = 2 * std::atan2f(vectorLength, w);
+	angle = 2 * std::atan2(vectorLength, w);
 }
 
 
@@ -1368,13 +1365,13 @@ inline auto Quaternion::FromTo(Vector3 const& from, Vector3 const& to) noexcept 
 }
 
 
-constexpr auto Quaternion::NormSquared() const noexcept -> f32 {
+constexpr auto Quaternion::NormSquared() const noexcept -> float {
 	return w * w + x * x + y * y + z * z;
 }
 
 
-inline auto Quaternion::Norm() const noexcept -> f32 {
-	return std::sqrtf(NormSquared());
+inline auto Quaternion::Norm() const noexcept -> float {
+	return std::sqrt(NormSquared());
 }
 
 
@@ -1432,7 +1429,7 @@ constexpr Quaternion::operator Matrix4() const noexcept {
 }
 
 
-template<class T>
+template<typename T>
 constexpr auto Quaternion::Rotate(Vector<T, 3> const& vec) const noexcept -> Vector<T, 3> {
 	auto const retQuat = *this * Quaternion{ 0, vec[0], vec[1], vec[2] } * Conjugate();
 	return Vector<T, 3>{ retQuat.x, retQuat.y, retQuat.z };
