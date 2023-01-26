@@ -648,9 +648,21 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 					leopph::gRenderer.DrawSceneView(editorCam);
 					ImGui::Image(leopph::gRenderer.GetSceneFrame(), contentRegionSize);
 
+					auto const editorCamViewMat{ leopph::Matrix4::LookAtLH(editorCam.position, editorCam.position + editorCam.orientation.Rotate(leopph::Vector3::Forward()), leopph::Vector3::Up()) };
+					auto const editorCamProjMat{ leopph::Matrix4::PerspectiveAsymZLH(editorCam.fovVertRad, ImGui::GetWindowWidth() / ImGui::GetWindowHeight(), editorCam.nearClip, editorCam.farClip) };
+
+					ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, ImGui::GetWindowWidth(), ImGui::GetWindowHeight());
+					ImGuizmo::AllowAxisFlip(false);
+					ImGuizmo::SetDrawlist();
+
+					static bool showGrid{ true };
+
+					if (showGrid) {
+						ImGuizmo::DrawGrid(editorCamViewMat.GetData(), editorCamProjMat.GetData(), leopph::Matrix4::Identity().GetData(), editorCam.farClip);
+					}
+
 					if (auto const selectedEntity{ dynamic_cast<leopph::Entity*>(gSelected) }; selectedEntity) {
 						static auto op{ ImGuizmo::OPERATION::TRANSLATE };
-						static bool showGrid{ true };
 
 						if (!io.WantTextInput && !isMovingSceneCamera) {
 							if (GetKeyDown(leopph::Key::T)) {
@@ -671,19 +683,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 							}
 						}
 
-						leopph::Matrix4 modelMat{ selectedEntity->GetTransform().GetModelMatrix() };
-						auto const viewMat{ leopph::Matrix4::LookAtLH(editorCam.position, editorCam.position + editorCam.orientation.Rotate(leopph::Vector3::Forward()), leopph::Vector3::Up()) };
-						auto const projMat{ leopph::Matrix4::PerspectiveAsymZLH(editorCam.fovVertRad, ImGui::GetWindowWidth() / ImGui::GetWindowHeight(), editorCam.nearClip, editorCam.farClip) };
-
-						ImGuizmo::AllowAxisFlip(false);
-						ImGuizmo::SetDrawlist();
-						ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, ImGui::GetWindowWidth(), ImGui::GetWindowHeight());
-
-						if (showGrid) {
-							ImGuizmo::DrawGrid(viewMat.GetData(), projMat.GetData(), leopph::Matrix4::Identity().GetData(), editorCam.farClip);
-						}
-
-						if (Manipulate(viewMat.GetData(), projMat.GetData(), op, ImGuizmo::MODE::LOCAL, modelMat.GetData())) {
+						if (leopph::Matrix4 modelMat{ selectedEntity->GetTransform().GetModelMatrix() }; Manipulate(editorCamViewMat.GetData(), editorCamProjMat.GetData(), op, ImGuizmo::MODE::LOCAL, modelMat.GetData())) {
 							leopph::Vector3 pos, euler, scale;
 							ImGuizmo::DecomposeMatrixToComponents(modelMat.GetData(), pos.GetData(), euler.GetData(), scale.GetData());
 							selectedEntity->GetTransform().SetWorldPosition(pos);
