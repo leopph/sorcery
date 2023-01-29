@@ -6,6 +6,10 @@
 #include <limits>
 #include <ostream>
 
+#ifdef __AVX2__
+#include <immintrin.h>
+#endif
+
 
 namespace leopph {
 float constexpr PI{ std::numbers::pi_v<float> };
@@ -17,8 +21,6 @@ float constexpr PI{ std::numbers::pi_v<float> };
 [[nodiscard]] constexpr auto NextPowerOfTwo(unsigned value) noexcept -> unsigned;
 
 [[nodiscard]] constexpr auto Lerp(float from, float to, float t) noexcept -> float;
-
-[[nodiscard]] inline auto BinaryDigitCount(unsigned number) noexcept -> int;
 
 
 template<typename T, int N> requires(N > 1)
@@ -69,6 +71,19 @@ public:
 private:
 	T mData[N]{};
 };
+
+
+using Vector2 = Vector<float, 2>;
+using Vector3 = Vector<float, 3>;
+using Vector4 = Vector<float, 4>;
+
+using Vector2U = Vector<unsigned, 2>;
+using Vector3U = Vector<unsigned, 3>;
+using Vector4U = Vector<unsigned, 4>;
+
+using Vector2I = Vector<int, 2>;
+using Vector3I = Vector<int, 3>;
+using Vector4I = Vector<int, 4>;
 
 
 template<typename T, int N> requires (N > 1)
@@ -136,18 +151,6 @@ template<typename T, int N>
 
 template<typename T, int N>
 auto operator<<(std::ostream& stream, Vector<T, N> const& vector) -> std::ostream&;
-
-using Vector2 = Vector<float, 2>;
-using Vector3 = Vector<float, 3>;
-using Vector4 = Vector<float, 4>;
-
-using Vector2U = Vector<unsigned, 2>;
-using Vector3U = Vector<unsigned, 3>;
-using Vector4U = Vector<unsigned, 4>;
-
-using Vector2I = Vector<int, 2>;
-using Vector3I = Vector<int, 3>;
-using Vector4I = Vector<int, 4>;
 
 
 template<typename T, int N, int M> requires(N > 1 && M > 1)
@@ -234,6 +237,11 @@ private:
 };
 
 
+using Matrix2 = Matrix<float, 2, 2>;
+using Matrix3 = Matrix<float, 3, 3>;
+using Matrix4 = Matrix<float, 4, 4>;
+
+
 template<typename T, int N, int M>
 [[nodiscard]] constexpr auto operator+(Matrix<T, N, M> const& left, Matrix<T, N, M> const& right) noexcept -> Matrix<T, N, M>;
 
@@ -261,6 +269,11 @@ template<typename T, int N, int M>
 template<typename T, int N, int M, int P>
 [[nodiscard]] constexpr auto operator*(Matrix<T, N, M> const& left, Matrix<T, M, P> const& right) noexcept -> Matrix<T, N, P>;
 
+#ifdef __AVX2__
+template<>
+[[nodiscard]] inline auto operator*(Matrix4 const& left, Matrix4 const& right) noexcept -> Matrix4;
+#endif
+
 template<typename T, int N, int M, std::convertible_to<T> T1>
 constexpr auto operator*=(Matrix<T, N, M>& left, T1 const& right) noexcept -> Matrix<T, N, M>&;
 
@@ -272,10 +285,6 @@ constexpr auto operator*=(Matrix<T, N, M>& left, Matrix<T, M, M> const& right) n
 
 template<typename T, int N, int M>
 auto operator<<(std::ostream& stream, Matrix<T, N, M> const& matrix) -> std::ostream&;
-
-using Matrix2 = Matrix<float, 2, 2>;
-using Matrix3 = Matrix<float, 3, 3>;
-using Matrix4 = Matrix<float, 4, 4>;
 
 
 struct Quaternion {
@@ -362,10 +371,6 @@ constexpr auto Lerp(float const from, float const to, float const t) noexcept ->
 	return (1 - t) * from + t * to;
 }
 
-
-inline auto BinaryDigitCount(unsigned const number) noexcept -> int {
-	return static_cast<u8>(std::log2(static_cast<float>(number))) + 1;
-}
 
 template<typename T, int N> requires (N > 1)
 auto Vector<T, N>::Length() const noexcept -> float {
@@ -1270,6 +1275,32 @@ auto operator<<(std::ostream& stream, Matrix<T, N, M> const& matrix) -> std::ost
 	return stream;
 }
 
+
+#ifdef __AVX2__
+template<>
+inline auto operator*(Matrix4 const& left, Matrix4 const& right) noexcept -> Matrix4 {
+	__m128 rows[4];
+	__m128 cols[4];
+
+	auto const colOffsetIndices{ _mm_set_epi32(12, 8, 4, 0) };
+	auto constexpr colOffsetIndexScale{ 4 };
+
+	for (int i = 0; i < 4; i++) {
+		rows[i] = _mm_load_ps(left[i].GetData());
+		cols[i] = _mm_i32gather_ps(right[0].GetData(), _mm_add_epi32(colOffsetIndices, _mm_set1_epi32(i)), colOffsetIndexScale);
+	}
+
+	Matrix4 ret;
+
+	for (int i = 0; i < 4; i++) {
+		for (int j = 0; j < 4; j++) {
+			ret[i][j] = _mm_cvtss_f32(_mm_dp_ps(rows[i], cols[j], 0b11110001));
+		}
+	}
+
+	return ret;
+}
+#endif
 
 constexpr Quaternion::Quaternion(float const w, float const x, float const y, float const z) noexcept :
 	x{ x }, y{ y }, z{ z }, w{ w } {}
