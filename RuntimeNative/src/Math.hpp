@@ -69,6 +69,9 @@ public:
 	constexpr auto operator=(Vector&& other) noexcept -> Vector& = default;
 
 private:
+#ifdef __AVX2__
+	alignas(std::same_as<T, float> && N == 4 ? 16 : 0)
+#endif
 	T mData[N]{};
 };
 
@@ -154,11 +157,7 @@ auto operator<<(std::ostream& stream, Vector<T, N> const& vector) -> std::ostrea
 
 
 template<typename T, int N, int M> requires(N > 1 && M > 1)
-class
-#ifdef __AVX2__
-	alignas(std::same_as<T, float> && N == M && N == 4 ? 16 : 0)
-#endif
-	Matrix {
+class Matrix {
 public:
 	[[nodiscard]] constexpr auto Determinant() const noexcept -> T requires(N == M);
 	[[nodiscard]] constexpr auto Transpose() const noexcept -> Matrix<T, M, N>;
