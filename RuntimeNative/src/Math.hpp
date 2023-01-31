@@ -177,6 +177,12 @@ template<>
 
 template<>
 [[nodiscard]] inline auto operator*(Vector4 const& left, Vector4 const& right) noexcept -> Vector4;
+
+template<>
+[[nodiscard]] inline auto operator*=(Vector3& left, Vector3 const& right) noexcept -> Vector3&;
+
+template<>
+[[nodiscard]] inline auto operator*=(Vector4& left, Vector4 const& right) noexcept -> Vector4&;
 #endif
 
 
@@ -831,6 +837,27 @@ inline auto operator*(Vector4 const& left, Vector4 const& right) noexcept -> Vec
 	Vector4 ret;
 	_mm_store_ps(ret.GetData(), xmm2);
 	return ret;
+}
+
+
+template<>
+inline auto operator*=(Vector3& left, Vector3 const& right) noexcept -> Vector3& {
+	auto const mask{_mm_set_epi32(0, 0x80000000, 0x80000000, 0x80000000)};
+    auto const xmm0{_mm_maskload_ps(left.GetData(), mask)};
+	auto const xmm1{_mm_maskload_ps(right.GetData(), mask)};
+	auto const xmm2{_mm_mul_ps(xmm0, xmm1)};
+	_mm_maskstore_ps(left.GetData(), mask, xmm2);
+	return left;
+}
+
+
+template<>
+inline auto operator*=(Vector4& left, Vector4 const& right) noexcept -> Vector4& {
+	auto const xmm0{_mm_load_ps(left.GetData())};
+	auto const xmm1{_mm_load_ps(right.GetData())};
+	auto const xmm2{_mm_mul_ps(xmm0, xmm1)};
+	_mm_store_ps(left.GetData(), xmm2);
+	return left;
 }
 #endif
 
