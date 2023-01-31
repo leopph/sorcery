@@ -121,31 +121,31 @@ template<typename T, int N>
 constexpr auto operator-=(Vector<T, N>& left, Vector<T, N> const& right) noexcept -> Vector<T, N>&;
 
 template<typename T1, std::convertible_to<T1> T2, int N>
-[[nodiscard]] constexpr auto operator*(Vector<T1, N> const& left, T2 const& right) noexcept -> Vector<T1, N>;
+[[nodiscard]] constexpr auto operator*(Vector<T1, N> const& left, T2 right) noexcept -> Vector<T1, N>;
 
 template<typename T1, std::convertible_to<T1> T2, int N>
-[[nodiscard]] constexpr auto operator*(T2 const& left, Vector<T1, N> const& right) noexcept -> Vector<T1, N>;
+[[nodiscard]] constexpr auto operator*(T2 left, Vector<T1, N> const& right) noexcept -> Vector<T1, N>;
 
 template<typename T, int N>
 [[nodiscard]] constexpr auto operator*(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> Vector<T, N>;
 
 template<typename T1, std::convertible_to<T1> T2, int N>
-constexpr auto operator*=(Vector<T1, N>& left, T2 const& right) noexcept -> Vector<T1, N>&;
+constexpr auto operator*=(Vector<T1, N>& left, T2 right) noexcept -> Vector<T1, N>&;
 
 template<typename T, int N>
 constexpr auto operator*=(Vector<T, N>& left, Vector<T, N> const& right) noexcept -> Vector<T, N>&;
 
 template<typename T1, std::convertible_to<T1> T2, int N>
-[[nodiscard]] constexpr auto operator/(Vector<T1, N> const& left, T2 const& right) noexcept -> Vector<T1, N>;
+[[nodiscard]] constexpr auto operator/(Vector<T1, N> const& left, T2 right) noexcept -> Vector<T1, N>;
 
 template<typename T1, std::convertible_to<T1> T2, int N>
-[[nodiscard]] constexpr auto operator/(T2 const& left, Vector<T1, N> const& right) noexcept -> Vector<T1, N>;
+[[nodiscard]] constexpr auto operator/(T2 left, Vector<T1, N> const& right) noexcept -> Vector<T1, N>;
 
 template<typename T, int N>
 [[nodiscard]] constexpr auto operator/(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> Vector<T, N>;
 
 template<typename T1, std::convertible_to<T1> T2, int N>
-constexpr auto operator/=(Vector<T1, N>& left, T2 const& right) noexcept -> Vector<T1, N>&;
+constexpr auto operator/=(Vector<T1, N>& left, T2 right) noexcept -> Vector<T1, N>&;
 
 template<typename T, int N>
 constexpr auto operator/=(Vector<T, N>& left, Vector<T, N> const& right) noexcept -> Vector<T, N>&;
@@ -160,29 +160,26 @@ template<typename T, int N>
 auto operator<<(std::ostream& stream, Vector<T, N> const& vector) -> std::ostream&;
 
 #ifdef LEOPPH_MATH_USE_INTRINSICS
-template<>
-[[nodiscard]] inline auto Length(Vector3 const& vector) noexcept -> float;
+template<> [[nodiscard]] inline auto Length(Vector3 const& vector) noexcept -> float;
+template<> [[nodiscard]] inline auto Length(Vector4 const& vector) noexcept -> float;
 
-template<>
-[[nodiscard]] inline auto Length(Vector4 const& vector) noexcept -> float;
+template<> [[nodiscard]] inline auto Dot(Vector3 const& left, Vector3 const& right) noexcept -> float;
+template<> [[nodiscard]] inline auto Dot(Vector4 const& left, Vector4 const& right) noexcept -> float;
 
-template<>
-[[nodiscard]] inline auto Dot(Vector3 const& left, Vector3 const& right) noexcept -> float;
+template<> [[nodiscard]] inline auto operator*(Vector3 const& left, float right) noexcept -> Vector3;
+template<> [[nodiscard]] inline auto operator*(Vector4 const& left, float right) noexcept -> Vector4;
 
-template<>
-[[nodiscard]] inline auto Dot(Vector4 const& left, Vector4 const& right) noexcept -> float;
+template<> [[nodiscard]] inline auto operator*(float left, Vector3 const& right) noexcept -> Vector3;
+template<> [[nodiscard]] inline auto operator*(float left, Vector4 const& right) noexcept -> Vector4;
 
-template<>
-[[nodiscard]] inline auto operator*(Vector3 const& left, Vector3 const& right) noexcept -> Vector3;
+template<> [[nodiscard]] inline auto operator*(Vector3 const& left, Vector3 const& right) noexcept -> Vector3;
+template<> [[nodiscard]] inline auto operator*(Vector4 const& left, Vector4 const& right) noexcept -> Vector4;
 
-template<>
-[[nodiscard]] inline auto operator*(Vector4 const& left, Vector4 const& right) noexcept -> Vector4;
+template<> [[nodiscard]] inline auto operator*=(Vector3& left, Vector3 const& right) noexcept -> Vector3&;
+template<> [[nodiscard]] inline auto operator*=(Vector4& left, Vector4 const& right) noexcept -> Vector4&;
 
-template<>
-[[nodiscard]] inline auto operator*=(Vector3& left, Vector3 const& right) noexcept -> Vector3&;
-
-template<>
-[[nodiscard]] inline auto operator*=(Vector4& left, Vector4 const& right) noexcept -> Vector4&;
+template<> [[nodiscard]] inline auto operator*=(Vector3& left, float right) noexcept -> Vector3&;
+template<> [[nodiscard]] inline auto operator*=(Vector4& left, float right) noexcept -> Vector4&;
 #endif
 
 
@@ -651,7 +648,7 @@ constexpr auto operator-=(Vector<T, N>& left, Vector<T, N> const& right) noexcep
 
 
 template<typename T1, std::convertible_to<T1> T2, int N>
-constexpr auto operator*(Vector<T1, N> const& left, T2 const& right) noexcept -> Vector<T1, N> {
+constexpr auto operator*(Vector<T1, N> const& left, T2 const right) noexcept -> Vector<T1, N> {
 	Vector<T1, N> ret;
 	for (size_t i = 0; i < N; i++) {
 		ret[i] = left[i] * static_cast<T1>(right);
@@ -661,7 +658,7 @@ constexpr auto operator*(Vector<T1, N> const& left, T2 const& right) noexcept ->
 
 
 template<typename T1, std::convertible_to<T1> T2, int N>
-constexpr auto operator*(T2 const& left, Vector<T1, N> const& right) noexcept -> Vector<T1, N> {
+constexpr auto operator*(T2 const left, Vector<T1, N> const& right) noexcept -> Vector<T1, N> {
 	Vector<T1, N> ret;
 	for (int i = 0; i < N; i++) {
 		ret[i] = static_cast<T1>(left) * right[i];
@@ -681,7 +678,7 @@ constexpr auto operator*(Vector<T, N> const& left, Vector<T, N> const& right) no
 
 
 template<typename T1, std::convertible_to<T1> T2, int N>
-constexpr auto operator*=(Vector<T1, N>& left, T2 const& right) noexcept -> Vector<T1, N>& {
+constexpr auto operator*=(Vector<T1, N>& left, T2 const right) noexcept -> Vector<T1, N>& {
 	for (int i = 0; i < N; i++) {
 		left[i] *= static_cast<T1>(right);
 	}
@@ -699,7 +696,7 @@ constexpr auto operator*=(Vector<T, N>& left, Vector<T, N> const& right) noexcep
 
 
 template<typename T1, std::convertible_to<T1> T2, int N>
-constexpr auto operator/(Vector<T1, N> const& left, T2 const& right) noexcept -> Vector<T1, N> {
+constexpr auto operator/(Vector<T1, N> const& left, T2 const right) noexcept -> Vector<T1, N> {
 	Vector<T1, N> ret;
 	for (int i = 0; i < N; i++) {
 		ret[i] = left[i] / static_cast<T1>(right);
@@ -709,7 +706,7 @@ constexpr auto operator/(Vector<T1, N> const& left, T2 const& right) noexcept ->
 
 
 template<typename T1, std::convertible_to<T1> T2, int N>
-constexpr auto operator/(T2 const& left, Vector<T1, N> const& right) noexcept -> Vector<T1, N> {
+constexpr auto operator/(T2 const left, Vector<T1, N> const& right) noexcept -> Vector<T1, N> {
 	Vector<T1, N> ret;
 	T1 const numerator{ static_cast<T1>(left) };
 	for (int i = 0; i < N; i++) {
@@ -730,7 +727,7 @@ constexpr auto operator/(Vector<T, N> const& left, Vector<T, N> const& right) no
 
 
 template<typename T1, std::convertible_to<T1> T2, int N>
-constexpr auto operator/=(Vector<T1, N>& left, T2 const& right) noexcept -> Vector<T1, N>& {
+constexpr auto operator/=(Vector<T1, N>& left, T2 const right) noexcept -> Vector<T1, N>& {
 	for (int i = 0; i < N; i++) {
 		left[i] /= static_cast<T1>(right);
 	}
@@ -818,6 +815,41 @@ inline auto Dot(Vector4 const& left, Vector4 const& right) noexcept -> float {
 
 
 template<>
+inline auto operator*(Vector3 const& left, float const right) noexcept -> Vector3 {
+	auto const mask{_mm_set_epi32(0, 0x80000000, 0x80000000, 0x80000000)};
+    auto const xmm0{_mm_maskload_ps(left.GetData(), mask)};
+	auto const xmm1{_mm_broadcast_ss(&right)};
+	auto const xmm2{_mm_mul_ps(xmm0, xmm1)};
+	Vector3 ret;
+	_mm_maskstore_ps(ret.GetData(), mask, xmm2);
+	return ret;
+}
+
+
+template<>
+inline auto operator*(Vector4 const& left, float const right) noexcept -> Vector4 {
+	auto const xmm0{_mm_load_ps(left.GetData())};
+	auto const xmm1{_mm_broadcast_ss(&right)};
+	auto const xmm2{_mm_mul_ps(xmm0, xmm1)};
+	Vector4 ret;
+	_mm_store_ps(ret.GetData(), xmm2);
+	return ret;
+}
+
+
+template<>
+inline auto operator*(float const left, Vector3 const& right) noexcept -> Vector3 {
+	return right * left;
+}
+
+
+template<>
+inline auto operator*(float const left, Vector4 const& right) noexcept -> Vector4 {
+	return right * left;
+}
+
+
+template<>
 inline auto operator*(Vector3 const& left, Vector3 const& right) noexcept -> Vector3 {
 	auto const mask{_mm_set_epi32(0, 0x80000000, 0x80000000, 0x80000000)};
     auto const xmm0{_mm_maskload_ps(left.GetData(), mask)};
@@ -855,6 +887,27 @@ template<>
 inline auto operator*=(Vector4& left, Vector4 const& right) noexcept -> Vector4& {
 	auto const xmm0{_mm_load_ps(left.GetData())};
 	auto const xmm1{_mm_load_ps(right.GetData())};
+	auto const xmm2{_mm_mul_ps(xmm0, xmm1)};
+	_mm_store_ps(left.GetData(), xmm2);
+	return left;
+}
+
+
+template<>
+inline auto operator*=(Vector3& left, float const right) noexcept -> Vector3& {
+	auto const mask{_mm_set_epi32(0, 0x80000000, 0x80000000, 0x80000000)};
+    auto const xmm0{_mm_maskload_ps(left.GetData(), mask)};
+	auto const xmm1{_mm_broadcast_ss(&right)};
+	auto const xmm2{_mm_mul_ps(xmm0, xmm1)};
+	_mm_maskstore_ps(left.GetData(), mask, xmm2);
+	return left;
+}
+
+
+template<>
+inline auto operator*=(Vector4& left, float const right) noexcept -> Vector4& {
+    auto const xmm0{_mm_load_ps(left.GetData())};
+	auto const xmm1{_mm_broadcast_ss(&right)};
 	auto const xmm2{_mm_mul_ps(xmm0, xmm1)};
 	_mm_store_ps(left.GetData(), xmm2);
 	return left;
