@@ -161,10 +161,19 @@ auto operator<<(std::ostream& stream, Vector<T, N> const& vector) -> std::ostrea
 
 #ifdef LEOPPH_MATH_USE_INTRINSICS
 template<>
+[[nodiscard]] inline auto Length(Vector3 const& vector) noexcept -> float;
+
+template<>
 [[nodiscard]] inline auto Length(Vector4 const& vector) noexcept -> float;
 
 template<>
+[[nodiscard]] inline auto Dot(Vector3 const& left, Vector3 const& right) noexcept -> float;
+
+template<>
 [[nodiscard]] inline auto Dot(Vector4 const& left, Vector4 const& right) noexcept -> float;
+
+template<>
+[[nodiscard]] inline auto operator*(Vector3 const& left, Vector3 const& right) noexcept -> Vector3;
 
 template<>
 [[nodiscard]] inline auto operator*(Vector4 const& left, Vector4 const& right) noexcept -> Vector4;
@@ -765,12 +774,31 @@ auto operator<<(std::ostream& stream, Vector<T, N> const& vector) -> std::ostrea
 
 #ifdef LEOPPH_MATH_USE_INTRINSICS
 template<>
+inline auto Length(Vector3 const& vector) noexcept -> float {
+	auto const mask{_mm_set_epi32(0, 0x80000000, 0x80000000, 0x80000000)};
+	auto const xmm0{_mm_maskload_ps(vector.GetData(), mask)};
+	auto const xmm1{_mm_dp_ps(xmm0, xmm0, 0b11110001)};
+	auto const xmm2{_mm_sqrt_ss(xmm1)};
+	return _mm_cvtss_f32(xmm2);
+}
+
+
+template<>
 inline auto Length(Vector4 const& vector) noexcept -> float {
 	auto const xmm0{_mm_load_ps(vector.GetData())};
 	auto const xmm1{_mm_dp_ps(xmm0, xmm0, 0b11110001)};
-	auto const xmm2{_mm_rsqrt_ss(xmm1)};
-	auto const xmm3{_mm_mul_ss(xmm1, xmm2)};
-	return _mm_cvtss_f32(xmm3);
+	auto const xmm2{_mm_sqrt_ss(xmm1)};
+	return _mm_cvtss_f32(xmm2);
+}
+
+
+template<>
+inline auto Dot(Vector3 const& left, Vector3 const& right) noexcept -> float {
+	auto const mask{_mm_set_epi32(0, 0x80000000, 0x80000000, 0x80000000)};
+	auto const xmm0{_mm_maskload_ps(left.GetData(), mask)};
+	auto const xmm1{_mm_maskload_ps(right.GetData(), mask)};
+	auto const xmm2{_mm_dp_ps(xmm0, xmm1, 0b11110001)};
+	return _mm_cvtss_f32(xmm2);
 }
 
 
@@ -780,6 +808,18 @@ inline auto Dot(Vector4 const& left, Vector4 const& right) noexcept -> float {
 	auto const xmm1{_mm_load_ps(right.GetData())};
 	auto const xmm2{_mm_dp_ps(xmm0, xmm1, 0b11110001)};
 	return _mm_cvtss_f32(xmm2);
+}
+
+
+template<>
+inline auto operator*(Vector3 const& left, Vector3 const& right) noexcept -> Vector3 {
+	auto const mask{_mm_set_epi32(0, 0x80000000, 0x80000000, 0x80000000)};
+    auto const xmm0{_mm_maskload_ps(left.GetData(), mask)};
+	auto const xmm1{_mm_maskload_ps(right.GetData(), mask)};
+	auto const xmm2{_mm_mul_ps(xmm0, xmm1)};
+	Vector3 ret;
+	_mm_maskstore_ps(ret.GetData(), mask, xmm2);
+	return ret;
 }
 
 
