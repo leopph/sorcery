@@ -161,6 +161,9 @@ auto operator<<(std::ostream& stream, Vector<T, N> const& vector) -> std::ostrea
 
 #ifdef LEOPPH_MATH_USE_INTRINSICS
 template<>
+[[nodiscard]] inline auto Length(Vector4 const& vector) noexcept -> float;
+
+template<>
 [[nodiscard]] inline auto Dot(Vector4 const& left, Vector4 const& right) noexcept -> float;
 
 template<>
@@ -762,21 +765,31 @@ auto operator<<(std::ostream& stream, Vector<T, N> const& vector) -> std::ostrea
 
 #ifdef LEOPPH_MATH_USE_INTRINSICS
 template<>
-[[nodiscard]] inline auto Dot(Vector4 const& left, Vector4 const& right) noexcept -> float {
-	auto const xmm0{_mm_loadu_ps(left.GetData())};
-	auto const xmm1{_mm_loadu_ps(right.GetData())};
+inline auto Length(Vector4 const& vector) noexcept -> float {
+	auto const xmm0{_mm_load_ps(vector.GetData())};
+	auto const xmm1{_mm_dp_ps(xmm0, xmm0, 0b11110001)};
+	auto const xmm2{_mm_rsqrt_ss(xmm1)};
+	auto const xmm3{_mm_mul_ss(xmm1, xmm2)};
+	return _mm_cvtss_f32(xmm3);
+}
+
+
+template<>
+inline auto Dot(Vector4 const& left, Vector4 const& right) noexcept -> float {
+	auto const xmm0{_mm_load_ps(left.GetData())};
+	auto const xmm1{_mm_load_ps(right.GetData())};
 	auto const xmm2{_mm_dp_ps(xmm0, xmm1, 0b11110001)};
 	return _mm_cvtss_f32(xmm2);
 }
 
 
 template<>
-[[nodiscard]] inline auto operator*(Vector4 const& left, Vector4 const& right) noexcept -> Vector4 {
-	auto const xmm0{_mm_loadu_ps(left.GetData())};
-	auto const xmm1{_mm_loadu_ps(right.GetData())};
+inline auto operator*(Vector4 const& left, Vector4 const& right) noexcept -> Vector4 {
+	auto const xmm0{_mm_load_ps(left.GetData())};
+	auto const xmm1{_mm_load_ps(right.GetData())};
 	auto const xmm2{_mm_mul_ps(xmm0, xmm1)};
 	Vector4 ret;
-	_mm_storeu_ps(ret.GetData(), xmm2);
+	_mm_store_ps(ret.GetData(), xmm2);
 	return ret;
 }
 #endif
