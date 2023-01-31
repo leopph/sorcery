@@ -1,12 +1,19 @@
 #pragma once
 
+#if !defined(LEOPPH_MATH_USE_INTRINSINCS) && defined(__AVX2__)
+#define LEOPPH_MATH_USE_INTRINSICS
+#endif
+
 #include <cmath>
 #include <numbers>
 #include <concepts>
 #include <limits>
 #include <ostream>
 
-#ifdef __AVX2__
+#ifdef LEOPPH_MATH_USE_INTRINSICS
+#include <xmmintrin.h>
+#include <pmmintrin.h>
+#include <smmintrin.h>
 #include <immintrin.h>
 #endif
 
@@ -69,7 +76,7 @@ public:
 	constexpr auto operator=(Vector&& other) noexcept -> Vector& = default;
 
 private:
-#ifdef __AVX2__
+#ifdef LEOPPH_MATH_USE_INTRINSICS
 	alignas(std::same_as<T, float> && N == 4 ? 16 : 0)
 #endif
 	T mData[N]{};
@@ -79,14 +86,6 @@ private:
 using Vector2 = Vector<float, 2>;
 using Vector3 = Vector<float, 3>;
 using Vector4 = Vector<float, 4>;
-
-using Vector2U = Vector<unsigned, 2>;
-using Vector3U = Vector<unsigned, 3>;
-using Vector4U = Vector<unsigned, 4>;
-
-using Vector2I = Vector<int, 2>;
-using Vector3I = Vector<int, 3>;
-using Vector4I = Vector<int, 4>;
 
 
 template<typename T, int N> requires (N > 1)
@@ -154,6 +153,14 @@ template<typename T, int N>
 
 template<typename T, int N>
 auto operator<<(std::ostream& stream, Vector<T, N> const& vector) -> std::ostream&;
+
+#ifdef LEOPPH_MATH_USE_INTRINSICS
+template<>
+[[nodiscard]] inline auto Dot(Vector4 const& left, Vector4 const& right) noexcept -> float;
+
+template<>
+[[nodiscard]] inline auto operator*(Vector4 const& left, Vector4 const& right) noexcept -> Vector4;
+#endif
 
 
 template<typename T, int N, int M> requires(N > 1 && M > 1)
@@ -272,7 +279,7 @@ template<typename T, int N, int M>
 template<typename T, int N, int M, int P>
 [[nodiscard]] constexpr auto operator*(Matrix<T, N, M> const& left, Matrix<T, M, P> const& right) noexcept -> Matrix<T, N, P>;
 
-#ifdef __AVX2__
+#ifdef LEOPPH_MATH_USE_INTRINSICS
 template<>
 [[nodiscard]] inline auto operator*(Matrix4 const& left, Matrix4 const& right) noexcept -> Matrix4;
 #endif
@@ -740,6 +747,28 @@ auto operator<<(std::ostream& stream, Vector<T, N> const& vector) -> std::ostrea
 	stream << ")";
 	return stream;
 }
+
+
+#ifdef LEOPPH_MATH_USE_INTRINSICS
+template<>
+[[nodiscard]] inline auto Dot(Vector4 const& left, Vector4 const& right) noexcept -> float {
+	auto const xmm0{_mm_loadu_ps(left.GetData())};
+	auto const xmm1{_mm_loadu_ps(right.GetData())};
+	auto const xmm2{_mm_dp_ps(xmm0, xmm1, 0b11110001)};
+	return _mm_cvtss_f32(xmm2);
+}
+
+
+template<>
+[[nodiscard]] inline auto operator*(Vector4 const& left, Vector4 const& right) noexcept -> Vector4 {
+	auto const xmm0{_mm_loadu_ps(left.GetData())};
+	auto const xmm1{_mm_loadu_ps(right.GetData())};
+	auto const xmm2{_mm_mul_ps(xmm0, xmm1)};
+	Vector4 ret;
+	_mm_storeu_ps(ret.GetData(), xmm2);
+	return ret;
+}
+#endif
 
 
 template<typename T, int N, int M> requires (N > 1 && M > 1)
@@ -1279,7 +1308,7 @@ auto operator<<(std::ostream& stream, Matrix<T, N, M> const& matrix) -> std::ost
 }
 
 
-#ifdef __AVX2__
+#ifdef LEOPPH_MATH_USE_INTRINSICS
 template<>
 inline auto operator*(Matrix4 const& left, Matrix4 const& right) noexcept -> Matrix4 {
 	__m128 rows[4];
