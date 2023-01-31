@@ -630,7 +630,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 							posDelta += leopph::Vector3::Backward();
 						}
 
-						posDelta.Normalize();
+						Normalize(posDelta);
 
 						if (GetKey(leopph::Key::Shift)) {
 							posDelta *= 2;

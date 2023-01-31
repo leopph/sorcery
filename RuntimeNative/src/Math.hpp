@@ -33,10 +33,6 @@ float constexpr PI{ std::numbers::pi_v<float> };
 template<typename T, int N> requires(N > 1)
 class Vector {
 public:
-	[[nodiscard]] auto Length() const noexcept -> float;
-	[[nodiscard]] auto Normalized() const noexcept -> Vector;
-	auto Normalize() noexcept -> Vector&;
-
 	[[nodiscard]] constexpr auto operator[](size_t index) const noexcept -> T const&;
 	[[nodiscard]] constexpr auto operator[](size_t index) noexcept -> T&;
 	[[nodiscard]] constexpr auto GetData() const noexcept -> T const*;
@@ -87,6 +83,15 @@ using Vector2 = Vector<float, 2>;
 using Vector3 = Vector<float, 3>;
 using Vector4 = Vector<float, 4>;
 
+
+template<typename T, int N>
+[[nodiscard]] auto Length(Vector<T, N> const& vector) noexcept -> T;
+
+template<typename T, int N>
+[[nodiscard]] auto Normalized(Vector<T, N> const& vector) noexcept -> Vector<T, N>;
+
+template<typename T, int N>
+auto Normalize(Vector<T, N>& vector) noexcept -> Vector<T, N>&;
 
 template<typename T, int N> requires (N > 1)
 [[nodiscard]] constexpr auto Dot(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> T;
@@ -383,37 +388,6 @@ constexpr auto Lerp(float const from, float const to, float const t) noexcept ->
 
 
 template<typename T, int N> requires (N > 1)
-auto Vector<T, N>::Length() const noexcept -> float {
-	float squaredSum = 0;
-
-	for (int i = 0; i < N; i++) {
-		auto& elem{ mData[i] };
-		squaredSum += elem * elem;
-	}
-
-	return std::sqrt(squaredSum);
-}
-
-
-template<typename T, int N> requires (N > 1)
-auto Vector<T, N>::Normalized() const noexcept -> Vector {
-	return Vector<T, N>{ *this }.Normalize();
-}
-
-
-template<typename T, int N> requires (N > 1)
-auto Vector<T, N>::Normalize() noexcept -> Vector& {
-	if (auto const length = this->Length(); length >= std::numeric_limits<float>::epsilon()) {
-		for (int i = 0; i < N; i++) {
-			mData[i] /= length;
-		}
-	}
-
-	return *this;
-}
-
-
-template<typename T, int N> requires (N > 1)
 constexpr auto Vector<T, N>::operator[](size_t index) const noexcept -> T const& {
 	return mData[index];
 }
@@ -529,6 +503,43 @@ constexpr Vector<T, N>::Vector(Vector<T, M> const& other, Args&&... additionalEl
 	[this, &additionalElems...]<int... Is>(std::index_sequence<Is...>) noexcept {
 		(static_cast<void>(mData[M + Is] = static_cast<T>(additionalElems)), ...);
 	}(std::index_sequence_for<Args...>{});
+}
+
+
+template<typename T, int N>
+auto Length(Vector<T, N> const& vector) noexcept -> T {
+	return std::sqrt(Dot(vector, vector));
+}
+
+
+template<typename T, int N>
+auto Normalized(Vector<T, N> const& vector) noexcept -> Vector<T, N> {
+	Vector<T, N> copy{ vector };
+	Normalize(copy);
+	return copy;
+}
+
+
+template<typename T, int N>
+auto Normalize(Vector<T, N>& vector) noexcept -> Vector<T, N>& {
+	auto const length{ Length(vector) };
+
+	if constexpr (std::is_floating_point_v<T>) {
+		if (length < std::numeric_limits<T>::epsilon()) {
+			return vector;
+		}
+	}
+	else {
+		if (length == 0) {
+			return vector;
+		}
+	}
+
+	for (int i = 0; i < N; i++) {
+		vector[i] /= length;
+	}
+
+	return vector;
 }
 
 
@@ -925,8 +936,8 @@ constexpr auto Matrix<T, N, M>::Scale(Vector<T, 3> const& vector) noexcept -> Ma
 
 template<typename T, int N, int M> requires (N > 1 && M > 1)
 constexpr auto Matrix<T, N, M>::LookAtRH(Vector<T, 3> const& position, Vector<T, 3> const& target, Vector<T, 3> const& worldUp) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
-	Vector<T, 3> z{ (position - target).Normalized() };
-	Vector<T, 3> x{ Cross(worldUp, z).Normalized() };
+	Vector<T, 3> z{ Normalized(position - target) };
+	Vector<T, 3> x{ Normalized(Cross(worldUp, z)) };
 	Vector<T, 3> y{ Cross(z, x) };
 	return Matrix<T, 4, 4>{
 		x[0], y[0], z[0], 0,
@@ -939,8 +950,8 @@ constexpr auto Matrix<T, N, M>::LookAtRH(Vector<T, 3> const& position, Vector<T,
 
 template<typename T, int N, int M> requires (N > 1 && M > 1)
 constexpr auto Matrix<T, N, M>::LookAtLH(Vector<T, 3> const& position, Vector<T, 3> const& target, Vector<T, 3> const& worldUp) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
-	Vector<T, 3> z{ (target - position).Normalized() };
-	Vector<T, 3> x{ Cross(worldUp, z).Normalized() };
+	Vector<T, 3> z{ Normalized(target - position) };
+	Vector<T, 3> x{ Normalized(Cross(worldUp, z)) };
 	Vector<T, 3> y{ Cross(z, x) };
 	return Matrix<T, 4, 4>{
 		x[0], y[0], z[0], 0,
@@ -952,12 +963,12 @@ constexpr auto Matrix<T, N, M>::LookAtLH(Vector<T, 3> const& position, Vector<T,
 
 template<typename T, int N, int M> requires (N > 1 && M > 1)
 constexpr auto Matrix<T, N, M>::LookToRH(Vector<T, 3> const& position, Vector<T, 3> const& direction, Vector<T, 3> const& worldUp) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
-	return LookAtRH(position, position + direction.Normalized(), worldUp);
+	return LookAtRH(position, position + Normalized(direction), worldUp);
 }
 
 template<typename T, int N, int M> requires (N > 1 && M > 1)
 constexpr auto Matrix<T, N, M>::LookToLH(Vector<T, 3> const& position, Vector<T, 3> const& direction, Vector<T, 3> const& worldUp) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
-	return LookAtLH(position, position + direction.Normalized(), worldUp);
+	return LookAtLH(position, position + Normalized(direction), worldUp);
 }
 
 template<typename T, int N, int M> requires (N > 1 && M > 1)
@@ -1339,7 +1350,7 @@ constexpr Quaternion::Quaternion(float const w, float const x, float const y, fl
 
 inline Quaternion::Quaternion(Vector3 const& axis, float const angleDegrees) noexcept {
 	auto const angleHalfRadians = ToRadians(angleDegrees) / 2.0f;
-	auto vec = axis.Normalized() * std::sin(angleHalfRadians);
+	auto vec = leopph::Normalized(axis) * std::sin(angleHalfRadians);
 
 	w = std::cos(angleHalfRadians);
 	x = vec[0];
@@ -1411,8 +1422,8 @@ inline auto Quaternion::FromAxisAngle(Vector3 const& axis, float const angleDeg)
 
 inline auto Quaternion::ToAxisAngle(Vector3& axis, float& angle) const noexcept -> void {
 	axis = Vector3{ x, y, z };
-	float const vectorLength = axis.Length();
-	axis.Normalize();
+	float const vectorLength = Length(axis);
+	leopph::Normalize(axis);
 	angle = 2 * std::atan2(vectorLength, w);
 }
 
@@ -1420,7 +1431,7 @@ inline auto Quaternion::ToAxisAngle(Vector3& axis, float& angle) const noexcept 
 inline auto Quaternion::FromTo(Vector3 const& from, Vector3 const& to) noexcept -> Quaternion {
 	auto const crossProduct{ Cross(from, to) };
 	return Quaternion{
-		std::sqrt(std::pow(from.Length(), 2.f) * std::pow(to.Length(), 2.f)) + Dot(from, to),
+		std::sqrt(std::pow(Length(from), 2.f) * std::pow(Length(to), 2.f)) + Dot(from, to),
 		crossProduct[0],
 		crossProduct[1],
 		crossProduct[2],

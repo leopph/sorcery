@@ -6,130 +6,130 @@
 
 
 namespace leopph {
-	bool is_aabb_in_frustum(AABB const& aabb, Frustum const& frustum, Matrix4 const& modelViewMat) {
-		auto const boxVerticesViewSpace = [&aabb, &modelViewMat] {
-			std::array boxVertices
-			{
-				Vector3{aabb.min[0], aabb.min[1], aabb.min[2]},
-				Vector3{aabb.max[0], aabb.min[1], aabb.min[2]},
-				Vector3{aabb.min[0], aabb.max[1], aabb.min[2]},
-				Vector3{aabb.max[0], aabb.max[1], aabb.min[2]},
-				Vector3{aabb.min[0], aabb.min[1], aabb.max[2]},
-				Vector3{aabb.max[0], aabb.min[1], aabb.max[2]},
-				Vector3{aabb.min[0], aabb.max[1], aabb.max[2]},
-				Vector3{aabb.max[0], aabb.max[1], aabb.max[2]},
-			};
-
-			for (auto& vertex : boxVertices) {
-				vertex = Vector3{ Vector4{vertex, 1} *modelViewMat };
-			}
-
-			return boxVertices;
-		}();
-
-		std::array const frustumVerticesViewSpace
+bool is_aabb_in_frustum(AABB const& aabb, Frustum const& frustum, Matrix4 const& modelViewMat) {
+	auto const boxVerticesViewSpace = [&aabb, &modelViewMat] {
+		std::array boxVertices
 		{
-			frustum.leftBottomFar,
-			frustum.leftBottomNear,
-			frustum.leftTopFar,
-			frustum.leftTopNear,
-			frustum.rightBottomFar,
-			frustum.rightBottomNear,
-			frustum.rightTopFar,
-			frustum.rightTopNear
+			Vector3{ aabb.min[0], aabb.min[1], aabb.min[2] },
+			Vector3{ aabb.max[0], aabb.min[1], aabb.min[2] },
+			Vector3{ aabb.min[0], aabb.max[1], aabb.min[2] },
+			Vector3{ aabb.max[0], aabb.max[1], aabb.min[2] },
+			Vector3{ aabb.min[0], aabb.min[1], aabb.max[2] },
+			Vector3{ aabb.max[0], aabb.min[1], aabb.max[2] },
+			Vector3{ aabb.min[0], aabb.max[1], aabb.max[2] },
+			Vector3{ aabb.max[0], aabb.max[1], aabb.max[2] },
 		};
 
-		auto const boxAxesViewSpace = [&modelViewMat] {
-			std::array boxAxes
-			{
-				Vector3::Right(),
-				Vector3::Up(),
-				Vector3::Forward()
-			};
+		for (auto& vertex : boxVertices) {
+			vertex = Vector3{ Vector4{ vertex, 1 } * modelViewMat };
+		}
 
-			for (auto& axis : boxAxes) {
-				axis = Vector3{ Vector4{axis, 0} *modelViewMat }.Normalize();
-			}
+		return boxVertices;
+	}();
 
-			return boxAxes;
-		}();
+	std::array const frustumVerticesViewSpace
+	{
+		frustum.leftBottomFar,
+		frustum.leftBottomNear,
+		frustum.leftTopFar,
+		frustum.leftTopNear,
+		frustum.rightBottomFar,
+		frustum.rightBottomNear,
+		frustum.rightTopFar,
+		frustum.rightTopNear
+	};
 
-
-		// Tests whether the bounding box and the frustum overlap when projected onto the passed axes
-		auto const overlapOnAxes = [&boxVerticesViewSpace, &frustumVerticesViewSpace](std::span<Vector3 const> const axes) {
-			for (auto const& normal : axes) {
-				auto boxMin = std::numeric_limits<f32>::max();
-				auto boxMax = std::numeric_limits<f32>::lowest();
-
-				for (auto const& vertex : boxVerticesViewSpace) {
-					auto const proj = Dot(vertex, normal);
-					boxMin = std::min(proj, boxMin);
-					boxMax = std::max(proj, boxMax);
-				}
-
-				auto frustMin = std::numeric_limits<f32>::max();
-				auto frustMax = std::numeric_limits<f32>::lowest();
-
-				for (auto const& vertex : frustumVerticesViewSpace) {
-					auto const proj = Dot(vertex, normal);
-					frustMin = std::min(proj, frustMin);
-					frustMax = std::max(proj, frustMax);
-				}
-
-				if (frustMax < boxMin || boxMax < frustMin) {
-					return false;
-				}
-			}
-
-			return true;
+	auto const boxAxesViewSpace = [&modelViewMat] {
+		std::array boxAxes
+		{
+			Vector3::Right(),
+			Vector3::Up(),
+			Vector3::Forward()
 		};
 
-
-		// Project onto box normals
-		// Box normals are equal to its axes
-		if (!overlapOnAxes(boxAxesViewSpace)) {
-			return false;
+		for (auto& axis : boxAxes) {
+			axis = Normalized(Vector3{ Vector4{ axis, 0 } * modelViewMat });
 		}
 
-		// Project onto frustum normals
-		if (std::array const frustumNormalsViewSpace
-		{
-			Vector3::Forward(),
-			Vector3{frustum.rightTopNear[2], 0, -frustum.rightTopNear[0]}.Normalize(),
-			Vector3{frustum.leftTopNear[2], 0, frustum.leftTopNear[0]}.Normalize(),
-			Vector3{0, frustum.rightTopNear[2], -frustum.rightTopNear[1]}.Normalize(),
-			Vector3{0, -frustum.rightBottomNear[2], frustum.rightBottomNear[1]}.Normalize()
-		}; !overlapOnAxes(frustumNormalsViewSpace)) {
-			return false;
-		}
+		return boxAxes;
+	}();
 
-		// Project onto cross products between box edges and frustum edges
-		// Box edges are equal to its axes
-		{
-			std::array const frustumEdgesViewSpace
-			{
-				Vector3::Right(),
-				Vector3::Up(),
-				frustum.rightBottomNear.Normalized(),
-				frustum.leftBottomNear.Normalized(),
-				frustum.leftTopNear.Normalized(),
-				frustum.rightTopNear.Normalized()
-			};
 
-			std::array<Vector3, boxAxesViewSpace.size()* frustumEdgesViewSpace.size()> crossProducts;
+	// Tests whether the bounding box and the frustum overlap when projected onto the passed axes
+	auto const overlapOnAxes = [&boxVerticesViewSpace, &frustumVerticesViewSpace](std::span<Vector3 const> const axes) {
+		for (auto const& normal : axes) {
+			auto boxMin = std::numeric_limits<f32>::max();
+			auto boxMax = std::numeric_limits<f32>::lowest();
 
-			for (std::size_t i = 0; i < boxAxesViewSpace.size(); i++) {
-				for (std::size_t j = 0; j < frustumEdgesViewSpace.size(); j++) {
-					crossProducts[i * frustumEdgesViewSpace.size() + j] = Cross(boxAxesViewSpace[i], frustumEdgesViewSpace[i]);
-				}
+			for (auto const& vertex : boxVerticesViewSpace) {
+				auto const proj = Dot(vertex, normal);
+				boxMin = std::min(proj, boxMin);
+				boxMax = std::max(proj, boxMax);
 			}
 
-			if (!overlapOnAxes(crossProducts)) {
+			auto frustMin = std::numeric_limits<f32>::max();
+			auto frustMax = std::numeric_limits<f32>::lowest();
+
+			for (auto const& vertex : frustumVerticesViewSpace) {
+				auto const proj = Dot(vertex, normal);
+				frustMin = std::min(proj, frustMin);
+				frustMax = std::max(proj, frustMax);
+			}
+
+			if (frustMax < boxMin || boxMax < frustMin) {
 				return false;
 			}
 		}
 
-		// Haven't found a separating axis, box and frustum must overlap
 		return true;
+	};
+
+
+	// Project onto box normals
+	// Box normals are equal to its axes
+	if (!overlapOnAxes(boxAxesViewSpace)) {
+		return false;
 	}
+
+	// Project onto frustum normals
+	if (std::array const frustumNormalsViewSpace
+	{
+		Vector3::Forward(),
+		Normalized(Vector3{ frustum.rightTopNear[2], 0, -frustum.rightTopNear[0] }),
+		Normalized(Vector3{ frustum.leftTopNear[2], 0, frustum.leftTopNear[0] }),
+		Normalized(Vector3{ 0, frustum.rightTopNear[2], -frustum.rightTopNear[1] }),
+		Normalized(Vector3{ 0, -frustum.rightBottomNear[2], frustum.rightBottomNear[1] })
+	}; !overlapOnAxes(frustumNormalsViewSpace)) {
+		return false;
+	}
+
+	// Project onto cross products between box edges and frustum edges
+	// Box edges are equal to its axes
+	{
+		std::array const frustumEdgesViewSpace
+		{
+			Vector3::Right(),
+			Vector3::Up(),
+			Normalized(frustum.rightBottomNear),
+			Normalized(frustum.leftBottomNear),
+			Normalized(frustum.leftTopNear),
+			Normalized(frustum.rightTopNear)
+		};
+
+		std::array<Vector3, boxAxesViewSpace.size() * frustumEdgesViewSpace.size()> crossProducts;
+
+		for (std::size_t i = 0; i < boxAxesViewSpace.size(); i++) {
+			for (std::size_t j = 0; j < frustumEdgesViewSpace.size(); j++) {
+				crossProducts[i * frustumEdgesViewSpace.size() + j] = Cross(boxAxesViewSpace[i], frustumEdgesViewSpace[i]);
+			}
+		}
+
+		if (!overlapOnAxes(crossProducts)) {
+			return false;
+		}
+	}
+
+	// Haven't found a separating axis, box and frustum must overlap
+	return true;
+}
 }

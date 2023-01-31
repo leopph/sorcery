@@ -185,7 +185,7 @@ auto ImportMeshResourceData(std::filesystem::path const& srcPath) -> MeshData {
 
 				for (unsigned j = 0; j < mesh->mNumVertices; j++) {
 					ret.positions.emplace_back(Vector4{ ConvertVector(mesh->mVertices[j]), 1 } * trafo);
-					ret.normals.emplace_back(Vector3{ Vector4{ ConvertVector(mesh->mNormals[j]), 0 } * trafo }.Normalize());
+					ret.normals.emplace_back(Normalized(Vector3{ Vector4{ ConvertVector(mesh->mNormals[j]), 0 } * trafo }));
 					ret.uvs.emplace_back([mesh, j] {
 						for (std::size_t k = 0; k < AI_MAX_NUMBER_OF_TEXTURECOORDS; k++) {
 							if (mesh->HasTextureCoords(static_cast<unsigned>(k))) {
