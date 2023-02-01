@@ -179,9 +179,13 @@ template<>
 
 template<>
 [[nodiscard]] inline auto operator+(Vector3 const& left, Vector3 const& right) noexcept -> Vector3;
+template<>
+[[nodiscard]] inline auto operator+(Vector4 const& left, Vector4 const& right) noexcept -> Vector4;
 
 template<>
 inline auto operator+=(Vector3& left, Vector3 const& right) noexcept -> Vector3&;
+template<>
+inline auto operator+=(Vector4& left, Vector4 const& right) noexcept -> Vector4&;
 
 template<>
 [[nodiscard]] inline auto operator-(Vector3 const& left, Vector3 const& right) noexcept -> Vector3;
@@ -879,12 +883,33 @@ inline auto operator+(Vector3 const& left, Vector3 const& right) noexcept -> Vec
 
 
 template<>
+inline auto operator+(Vector4 const& left, Vector4 const& right) noexcept -> Vector4 {
+	auto const xmm0{_mm_load_ps(left.GetData())};
+	auto const xmm1{_mm_load_ps(right.GetData())};
+	auto const xmm2{ _mm_add_ps(xmm0, xmm1) };
+	Vector3 ret;
+	_mm_store_ps(ret.GetData(), xmm2);
+	return ret;
+}
+
+
+template<>
 inline auto operator+=(Vector3& left, Vector3 const& right) noexcept -> Vector3& {
 	auto const memMask{ _mm_set_epi32(0, 1 << 31, 1 << 31, 1 << 31) };
 	auto const xmm0{_mm_maskload_ps(left.GetData(), memMask)};
 	auto const xmm1{_mm_maskload_ps(right.GetData(), memMask)};
 	auto const xmm2{ _mm_add_ps(xmm0, xmm1) };
 	_mm_maskstore_ps(left.GetData(), memMask, xmm2);
+	return left;
+}
+
+
+template<>
+inline auto operator+=(Vector4& left, Vector4 const& right) noexcept -> Vector4& {
+	auto const xmm0{_mm_load_ps(left.GetData())};
+	auto const xmm1{_mm_load_ps(right.GetData())};
+	auto const xmm2{ _mm_add_ps(xmm0, xmm1) };
+	_mm_store_ps(left.GetData(), xmm2);
 	return left;
 }
 
