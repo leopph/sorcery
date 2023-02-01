@@ -33,6 +33,8 @@ float constexpr PI{ std::numbers::pi_v<float> };
 template<typename T, int N> requires(N > 1)
 class Vector {
 public:
+	using ComponentType = T;
+
 	[[nodiscard]] constexpr auto operator[](size_t index) const noexcept -> T const&;
 	[[nodiscard]] constexpr auto operator[](size_t index) noexcept -> T&;
 	[[nodiscard]] constexpr auto GetData() const noexcept -> T const*;
@@ -120,17 +122,17 @@ template<typename T, int N>
 template<typename T, int N>
 constexpr auto operator-=(Vector<T, N>& left, Vector<T, N> const& right) noexcept -> Vector<T, N>&;
 
-template<typename T1, std::convertible_to<T1> T2, int N>
-[[nodiscard]] constexpr auto operator*(Vector<T1, N> const& left, T2 right) noexcept -> Vector<T1, N>;
+template<typename T, int N>
+[[nodiscard]] constexpr auto operator*(Vector<T, N> const& left, typename Vector<T, N>::ComponentType right) noexcept -> Vector<T, N>;
 
-template<typename T1, std::convertible_to<T1> T2, int N>
-[[nodiscard]] constexpr auto operator*(T2 left, Vector<T1, N> const& right) noexcept -> Vector<T1, N>;
+template<typename T, int N>
+[[nodiscard]] constexpr auto operator*(typename Vector<T, N>::ComponentType left, Vector<T, N> const& right) noexcept -> Vector<T, N>;
 
 template<typename T, int N>
 [[nodiscard]] constexpr auto operator*(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> Vector<T, N>;
 
-template<typename T1, std::convertible_to<T1> T2, int N>
-constexpr auto operator*=(Vector<T1, N>& left, T2 right) noexcept -> Vector<T1, N>&;
+template<typename T, int N>
+constexpr auto operator*=(Vector<T, N>& left, typename Vector<T, N>::ComponentType right) noexcept -> Vector<T, N>&;
 
 template<typename T, int N>
 constexpr auto operator*=(Vector<T, N>& left, Vector<T, N> const& right) noexcept -> Vector<T, N>&;
@@ -647,23 +649,19 @@ constexpr auto operator-=(Vector<T, N>& left, Vector<T, N> const& right) noexcep
 }
 
 
-template<typename T1, std::convertible_to<T1> T2, int N>
-constexpr auto operator*(Vector<T1, N> const& left, T2 const right) noexcept -> Vector<T1, N> {
-	Vector<T1, N> ret;
+template<typename T, int N>
+constexpr auto operator*(Vector<T, N> const& left, typename Vector<T, N>::ComponentType const right) noexcept -> Vector<T, N> {
+	Vector<T, N> ret;
 	for (size_t i = 0; i < N; i++) {
-		ret[i] = left[i] * static_cast<T1>(right);
+		ret[i] = left[i] * right;
 	}
 	return ret;
 }
 
 
-template<typename T1, std::convertible_to<T1> T2, int N>
-constexpr auto operator*(T2 const left, Vector<T1, N> const& right) noexcept -> Vector<T1, N> {
-	Vector<T1, N> ret;
-	for (int i = 0; i < N; i++) {
-		ret[i] = static_cast<T1>(left) * right[i];
-	}
-	return ret;
+template<typename T, int N>
+constexpr auto operator*(typename Vector<T, N>::ComponentType const left, Vector<T, N> const& right) noexcept -> Vector<T, N> {
+	return right * left;
 }
 
 
@@ -677,10 +675,10 @@ constexpr auto operator*(Vector<T, N> const& left, Vector<T, N> const& right) no
 }
 
 
-template<typename T1, std::convertible_to<T1> T2, int N>
-constexpr auto operator*=(Vector<T1, N>& left, T2 const right) noexcept -> Vector<T1, N>& {
+template<typename T, int N>
+constexpr auto operator*=(Vector<T, N>& left, typename Vector<T, N>::ComponentType const right) noexcept -> Vector<T, N>& {
 	for (int i = 0; i < N; i++) {
-		left[i] *= static_cast<T1>(right);
+		left[i] *= right;
 	}
 	return left;
 }
