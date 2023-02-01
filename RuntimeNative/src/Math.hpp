@@ -221,6 +221,13 @@ template<>
 inline auto operator*=(Vector3& left, float right) noexcept -> Vector3&;
 template<>
 inline auto operator*=(Vector4& left, float right) noexcept -> Vector4&;
+
+template<>
+[[nodiscard]] inline auto operator/(Vector3 const& left, float right) noexcept -> Vector3;
+template<>
+[[nodiscard]] inline auto operator/(float left, Vector3 const& right) noexcept -> Vector3;
+template<>
+[[nodiscard]] inline auto operator/(Vector3 const& left, Vector3 const& right) noexcept -> Vector3;
 #endif
 
 
@@ -1059,6 +1066,42 @@ inline auto operator*=(Vector4& left, float const right) noexcept -> Vector4& {
 	auto const xmm2{ _mm_mul_ps(xmm0, xmm1) };
 	_mm_store_ps(left.GetData(), xmm2);
 	return left;
+}
+
+
+template<>
+inline auto operator/(Vector3 const& left, float const right) noexcept -> Vector3 {
+	auto const memMask{ _mm_set_epi32(0, 1 << 31, 1 << 31, 1 << 31) };
+	auto const xmm0{ _mm_maskload_ps(left.GetData(), memMask) };
+	auto const xmm1{ _mm_broadcast_ss(&right) };
+	auto const xmm2{ _mm_div_ps(xmm0, xmm1) };
+	Vector3 ret;
+	_mm_maskstore_ps(ret.GetData(), memMask, xmm2);
+	return ret;
+}
+
+
+template<>
+inline auto operator/(float const left, Vector3 const& right) noexcept -> Vector3 {
+	auto const memMask{ _mm_set_epi32(0, 1 << 31, 1 << 31, 1 << 31) };
+	auto const xmm0{ _mm_maskload_ps(right.GetData(), memMask) };
+	auto const xmm1{ _mm_broadcast_ss(&left) };
+	auto const xmm2{ _mm_div_ps(xmm1, xmm0) };
+	Vector3 ret;
+	_mm_maskstore_ps(ret.GetData(), memMask, xmm2);
+	return ret;
+}
+
+
+template<>
+inline auto operator/(Vector3 const& left, Vector3 const& right) noexcept -> Vector3 {
+	auto const memMask{ _mm_set_epi32(0, 1 << 31, 1 << 31, 1 << 31) };
+	auto const xmm0{ _mm_maskload_ps(left.GetData(), memMask) };
+	auto const xmm1{ _mm_maskload_ps(right.GetData(), memMask) };
+	auto const xmm2{ _mm_div_ps(xmm0, xmm1) };
+	Vector3 ret;
+	_mm_maskstore_ps(ret.GetData(), memMask, xmm2);
+	return ret;
 }
 #endif
 
