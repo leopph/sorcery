@@ -239,6 +239,10 @@ template<>
 inline auto operator/=(Vector3& left, float right) noexcept -> Vector3&;
 template<>
 inline auto operator/=(Vector3& left, Vector3 const& right) noexcept -> Vector3&;
+template<>
+inline auto operator/=(Vector4& left, float right) noexcept -> Vector4&;
+template<>
+inline auto operator/=(Vector4& left, Vector4 const& right) noexcept -> Vector4&;
 #endif
 
 
@@ -1167,6 +1171,26 @@ inline auto operator/=(Vector3& left, Vector3 const& right) noexcept -> Vector3&
 	auto const xmm1{ _mm_maskload_ps(right.GetData(), memMask) };
 	auto const xmm2{ _mm_div_ps(xmm0, xmm1) };
 	_mm_maskstore_ps(left.GetData(), memMask, xmm2);
+	return left;
+}
+
+
+template<>
+inline auto operator/=(Vector4& left, float const right) noexcept -> Vector4& {
+	auto const xmm0{ _mm_load_ps(left.GetData()) };
+	auto const xmm1{ _mm_broadcast_ss(&right) };
+	auto const xmm2{ _mm_div_ps(xmm0, xmm1) };
+	_mm_store_ps(left.GetData(), xmm2);
+	return left;
+}
+
+
+template<>
+inline auto operator/=(Vector4& left, Vector4 const& right) noexcept -> Vector4& {
+	auto const xmm0{ _mm_load_ps(left.GetData()) };
+	auto const xmm1{ _mm_load_ps(right.GetData()) };
+	auto const xmm2{ _mm_div_ps(xmm0, xmm1) };
+	_mm_store_ps(left.GetData(), xmm2);
 	return left;
 }
 #endif
