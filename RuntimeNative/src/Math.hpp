@@ -832,17 +832,21 @@ inline auto Dot(Vector4 const& left, Vector4 const& right) noexcept -> float {
 
 template<>
 inline auto Cross(Vector3 const& left, Vector3 const& right) noexcept -> Vector3 {
-	auto const memMask{ _mm_set_epi32(0, 0x80000000, 0x80000000, 0x80000000) };
+	auto const memMask{ _mm_set_epi32(0, 1 << 31, 1 << 31, 1 << 31) };
 	auto const xmm0{_mm_maskload_ps(left.GetData(), memMask)};
 	auto const xmm1{_mm_maskload_ps(right.GetData(), memMask)};
 
-	auto constexpr shuffleMask{0b00001001u};
+	auto constexpr makeShuffleMask{ [](int const first, int const second, int const third) {
+		return first | second << 2 | third << 4;
+	}};
+
+	auto constexpr shuffleMask{makeShuffleMask(1, 2, 0)};
 	auto const xmm2{_mm_shuffle_ps(xmm0, xmm0, shuffleMask)};
 	auto const xmm3{_mm_shuffle_ps(xmm1, xmm1, shuffleMask)};
 
 	auto const xmm4{_mm_mul_ps(xmm1, xmm2)};
 	auto const xmm5{_mm_fmsub_ps(xmm0, xmm3, xmm4)};
-	auto const xmm6{_mm_shuffle_ps(xmm5, xmm5, 0b00001001)};
+	auto const xmm6{_mm_shuffle_ps(xmm5, xmm5, shuffleMask)};
 
 	Vector3 ret;
 	_mm_maskstore_ps(ret.GetData(), memMask, xmm6);
