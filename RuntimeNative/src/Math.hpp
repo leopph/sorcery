@@ -177,11 +177,11 @@ template<> [[nodiscard]] inline auto operator*(float left, Vector4 const& right)
 template<> [[nodiscard]] inline auto operator*(Vector3 const& left, Vector3 const& right) noexcept -> Vector3;
 template<> [[nodiscard]] inline auto operator*(Vector4 const& left, Vector4 const& right) noexcept -> Vector4;
 
-template<> [[nodiscard]] inline auto operator*=(Vector3& left, Vector3 const& right) noexcept -> Vector3&;
-template<> [[nodiscard]] inline auto operator*=(Vector4& left, Vector4 const& right) noexcept -> Vector4&;
+template<> inline auto operator*=(Vector3& left, Vector3 const& right) noexcept -> Vector3&;
+template<> inline auto operator*=(Vector4& left, Vector4 const& right) noexcept -> Vector4&;
 
-template<> [[nodiscard]] inline auto operator*=(Vector3& left, float right) noexcept -> Vector3&;
-template<> [[nodiscard]] inline auto operator*=(Vector4& left, float right) noexcept -> Vector4&;
+template<> inline auto operator*=(Vector3& left, float right) noexcept -> Vector3&;
+template<> inline auto operator*=(Vector4& left, float right) noexcept -> Vector4&;
 #endif
 
 
