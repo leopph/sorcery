@@ -100,8 +100,8 @@ auto Normalize(Vector<T, N>& vector) noexcept -> Vector<T, N>&;
 template<typename T, int N> requires (N > 1)
 [[nodiscard]] constexpr auto Dot(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> T;
 
-template<typename T, int N> requires (N > 1)
-[[nodiscard]] constexpr auto Cross(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> Vector<T, N> requires(N == 3);
+template<typename T>
+[[nodiscard]] constexpr auto Cross(Vector<T, 3> const& left, Vector<T, 3> const& right) noexcept -> Vector<T, 3>;
 
 template<typename T, int N> requires (N > 1)
 [[nodiscard]] auto Distance(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> T;
@@ -173,6 +173,9 @@ template<>
 [[nodiscard]] inline auto Dot(Vector3 const& left, Vector3 const& right) noexcept -> float;
 template<>
 [[nodiscard]] inline auto Dot(Vector4 const& left, Vector4 const& right) noexcept -> float;
+
+template<>
+[[nodiscard]] inline auto Cross(Vector3 const& left, Vector3 const& right) noexcept -> Vector3;
 
 template<>
 [[nodiscard]] inline auto operator*(Vector3 const& left, float right) noexcept -> Vector3;
@@ -588,9 +591,9 @@ constexpr auto Dot(Vector<T, N> const& left, Vector<T, N> const& right) noexcept
 }
 
 
-template<typename T, int N> requires (N > 1)
-constexpr auto Cross(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> Vector<T, N> requires (N == 3) {
-	return Vector<T, N>
+template<typename T>
+constexpr auto Cross(Vector<T, 3> const& left, Vector<T, 3> const& right) noexcept -> Vector<T, 3> {
+	return Vector<T, 3>
 	{
 		left[1] * right[2] - left[2] * right[1],
 		left[2] * right[0] - left[0] * right[2],
@@ -824,6 +827,26 @@ inline auto Dot(Vector4 const& left, Vector4 const& right) noexcept -> float {
 	auto const xmm1{ _mm_load_ps(right.GetData()) };
 	auto const xmm2{ _mm_dp_ps(xmm0, xmm1, 0b11110001) };
 	return _mm_cvtss_f32(xmm2);
+}
+
+
+template<>
+inline auto Cross(Vector3 const& left, Vector3 const& right) noexcept -> Vector3 {
+	auto const memMask{ _mm_set_epi32(0, 0x80000000, 0x80000000, 0x80000000) };
+	auto const xmm0{_mm_maskload_ps(left.GetData(), memMask)};
+	auto const xmm1{_mm_maskload_ps(right.GetData(), memMask)};
+
+	unsigned char shuffleMask{0b00001001};
+	auto const xmm2{_mm_shuffle_ps(xmm0, xmm0, shuffleMask)};
+	auto const xmm3{_mm_shuffle_ps(xmm1, xmm1, shuffleMask)};
+
+	auto const xmm4{_mm_mul_ps(xmm1, xmm2)};
+	auto const xmm5{_mm_fmsub_ps(xmm0, xmm3, xmm4)};
+	auto const xmm6{_mm_shuffle_ps(xmm5, xmm5, 0b00001001)};
+
+	Vector3 ret;
+	_mm_maskstore_ps(ret.GetData(), memMask, xmm6);
+	return ret;
 }
 
 
