@@ -836,7 +836,7 @@ inline auto Cross(Vector3 const& left, Vector3 const& right) noexcept -> Vector3
 	auto const xmm0{_mm_maskload_ps(left.GetData(), memMask)};
 	auto const xmm1{_mm_maskload_ps(right.GetData(), memMask)};
 
-	unsigned char shuffleMask{0b00001001};
+	auto constexpr shuffleMask{0b00001001u};
 	auto const xmm2{_mm_shuffle_ps(xmm0, xmm0, shuffleMask)};
 	auto const xmm3{_mm_shuffle_ps(xmm1, xmm1, shuffleMask)};
 
