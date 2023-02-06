@@ -1569,7 +1569,7 @@ constexpr auto Matrix<T, N, M>::Diagonal(Vector<T, K> const& vec) noexcept -> Ma
 template<typename T, int N, int M> requires (N > 1 && M > 1)
 template<std::convertible_to<T>... Args> requires (sizeof...(Args) == static_cast<unsigned long long>(N * M))
 constexpr Matrix<T, N, M>::Matrix(Args&&... args) noexcept {
-	[this, &args...]<int... Is>(std::index_sequence<Is...>) noexcept {
+	[this, ...args = std::forward<Args>(args)]<auto... Is>(std::index_sequence<Is...>) noexcept {
 		(static_cast<void>(mData[Is / M][Is % M] = static_cast<T>(args)), ...);
 	}(std::index_sequence_for<Args...>{});
 }
@@ -1777,12 +1777,12 @@ inline auto Quaternion::FromEulerAngles(float const x, float const y, float cons
 	auto const pitch = ToRadians(y);
 	auto const yaw = ToRadians(z);
 
-	auto const cr = cos(roll * 0.5f);
-	auto const sr = sin(roll * 0.5f);
-	auto const cp = cos(pitch * 0.5f);
-	auto const sp = sin(pitch * 0.5f);
-	auto const cy = cos(yaw * 0.5f);
-	auto const sy = sin(yaw * 0.5f);
+	auto const cr = std::cos(roll * 0.5f);
+	auto const sr = std::sin(roll * 0.5f);
+	auto const cp = std::cos(pitch * 0.5f);
+	auto const sp = std::sin(pitch * 0.5f);
+	auto const cy = std::cos(yaw * 0.5f);
+	auto const sy = std::sin(yaw * 0.5f);
 
 	return Quaternion
 	{
