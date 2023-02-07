@@ -637,6 +637,10 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
 					static bool showGrid{ true };
 
+					if (GetKeyDown(leopph::Key::G)) {
+						showGrid = !showGrid;
+					}
+
 					if (showGrid) {
 						ImGuizmo::DrawGrid(editorCamViewMat.GetData(), editorCamProjMat.GetData(), leopph::Matrix4::Identity().GetData(), editorCam.farClip);
 					}
@@ -653,9 +657,6 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 							}
 							if (GetKeyDown(leopph::Key::S)) {
 								op = ImGuizmo::SCALE;
-							}
-							if (GetKeyDown(leopph::Key::G)) {
-								showGrid = !showGrid;
 							}
 							if (GetKeyDown(leopph::Key::F)) {
 								editorCam.position = selectedEntity->GetTransform().GetWorldPosition() - leopph::Vector3::Forward() * 2;
