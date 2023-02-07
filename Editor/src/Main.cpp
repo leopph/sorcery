@@ -84,14 +84,6 @@ auto EditorImGuiEventHook(HWND const hwnd, UINT const msg, WPARAM const wparam, 
 }
 
 
-auto CloseCurrentScene() -> void {
-	for (static std::vector<leopph::Entity*> entities; auto const& entity : leopph::SceneManager::GetActiveScene()->GetEntities(entities)) {
-		entity->GetScene().DestroyEntity(entity);
-	}
-}
-
-
-YAML::Node gSerializedSceneBackup;
 std::atomic<bool> gLoading{ false };
 
 auto LoadAndBlockEditor(ImGuiIO& io, std::function<void()> const& fun) -> void {
@@ -235,6 +227,8 @@ auto IndexFileNameIfNeeded(std::filesystem::path const& filePathAbsolute) -> std
 
 	return (parentDir / currentStem).replace_extension(ext);
 }
+
+leopph::Scene* gScene;
 }
 
 
@@ -282,6 +276,8 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
 		ResourceStorage resources;
 
+		gScene = leopph::SceneManager::CreateScene("Untitled");
+
 		leopph::init_time();
 
 		while (!leopph::gWindow.IsQuitSignaled()) {
@@ -327,8 +323,8 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 						leopph::gWindow.UnlockCursor();
 						leopph::gWindow.SetCursorHiding(false);
 						leopph::gRenderer.SetSyncInterval(1);
-						CloseCurrentScene();
-						leopph::editor::DeserializeScene(objectFactory, gSerializedSceneBackup);
+						gScene->Clear();
+						gScene->Load(objectFactory);
 						gSelected = nullptr;
 					}
 				}
@@ -337,7 +333,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 						runGame = true;
 						leopph::gWindow.SetEventHook({});
 						leopph::gRenderer.SetSyncInterval(0);
-						gSerializedSceneBackup = leopph::editor::SerializeScene();
+						gScene->Save();
 					}
 				}
 
@@ -376,23 +372,6 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 						if (ImGui::MenuItem("Close Project")) {
 							gProject = nullptr;
 						}*/
-
-						if (ImGui::MenuItem("Save Test Scene")) {
-							if (!runGame) {
-								std::ofstream out{ "scene.yaml" };
-								YAML::Emitter emitter{ out };
-								auto const serializedScene = leopph::editor::SerializeScene();
-								emitter << serializedScene;
-								gSerializedSceneBackup = serializedScene;
-							}
-						}
-
-						if (ImGui::MenuItem("Load Test Scene")) {
-							CloseCurrentScene();
-							auto const serializedScene = YAML::LoadFile("scene.yaml");
-							leopph::editor::DeserializeScene(objectFactory, serializedScene);
-							gSerializedSceneBackup = serializedScene;
-						}
 
 						ImGui::EndMenu();
 					}
@@ -780,8 +759,6 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
 			leopph::measure_time();
 		}
-
-		CloseCurrentScene();
 
 		ImGui_ImplDX11_Shutdown();
 		ImGui_ImplWin32_Shutdown();
