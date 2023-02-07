@@ -1,25 +1,27 @@
 #include "SceneManager.hpp"
 
 namespace leopph {
-std::vector<std::shared_ptr<Scene>> SceneManager::sScenes{};
-std::size_t SceneManager::sActiveSceneIndex{ 0 };
+auto SceneManager::StartUp() -> void {}
 
+auto SceneManager::ShutDown() noexcept -> void {
+	mScenes.clear();
+}
 
 Scene* SceneManager::GetActiveScene() {
-	if (sActiveSceneIndex >= sScenes.size()) {
-		if (sScenes.empty()) {
-			sActiveSceneIndex = 0;
+	if (mActiveSceneIndex >= mScenes.size()) {
+		if (mScenes.empty()) {
+			mActiveSceneIndex = 0;
 			return CreateScene("New Scene");
 		}
 
-		sActiveSceneIndex = 0;
+		mActiveSceneIndex = 0;
 	}
 
-	return sScenes[sActiveSceneIndex].get();
+	return mScenes[mActiveSceneIndex].get();
 }
 
 
 Scene* SceneManager::CreateScene(std::string mName) {
-	return sScenes.emplace_back(new Scene{ std::move(mName) }).get();
+	return mScenes.emplace_back(new Scene{ std::move(mName) }).get();
 }
 }

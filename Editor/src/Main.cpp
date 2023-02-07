@@ -247,6 +247,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 		leopph::gWindow.StartUp();
 		leopph::gRenderer.StartUp();
 		leopph::gManagedRuntime.StartUp();
+		leopph::gSceneManager.StartUp();
 
 		leopph::gWindow.SetBorderless(false);
 		leopph::gWindow.SetWindowedClientAreaSize({ 1280, 720 });
@@ -276,7 +277,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
 		ResourceStorage resources;
 
-		gScene = leopph::SceneManager::CreateScene("Untitled");
+		gScene = leopph::gSceneManager.CreateScene("Untitled");
 
 		leopph::init_time();
 
@@ -378,7 +379,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
 					if (ImGui::BeginMenu("Create")) {
 						if (ImGui::MenuItem("Entity")) {
-							auto const entity{ leopph::SceneManager::GetActiveScene()->CreateEntity() };
+							auto const entity{ leopph::gSceneManager.GetActiveScene()->CreateEntity() };
 							entity->CreateManagedObject();
 
 							auto transform = std::make_unique<leopph::TransformComponent>();
@@ -409,7 +410,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 				}
 
 				static std::vector<leopph::Entity*> entities;
-				leopph::SceneManager::GetActiveScene()->GetEntities(entities);
+				leopph::gSceneManager.GetActiveScene()->GetEntities(entities);
 
 
 				if (ImGui::Begin("Entities", nullptr, ImGuiWindowFlags_NoCollapse)) {
@@ -463,7 +464,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 							if (ImGui::BeginPopupContextItem()) {
 								if (ImGui::MenuItem("Delete")) {
 									entity.GetScene().DestroyEntity(&entity);
-									leopph::SceneManager::GetActiveScene()->GetEntities(entities);
+									leopph::gSceneManager.GetActiveScene()->GetEntities(entities);
 									gSelected = nullptr;
 									deleted = true;
 									ImGui::CloseCurrentPopup();
@@ -768,6 +769,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 		leopph::DisplayError(ex.what());
 	}
 
+	leopph::gSceneManager.ShutDown();
 	leopph::gManagedRuntime.ShutDown();
 	leopph::gRenderer.ShutDown();
 	leopph::gWindow.ShutDown();

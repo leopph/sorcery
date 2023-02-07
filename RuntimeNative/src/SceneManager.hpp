@@ -8,11 +8,17 @@
 
 namespace leopph {
 class SceneManager {
-	static std::vector<std::shared_ptr<Scene>> sScenes;
-	static std::size_t sActiveSceneIndex;
+	std::vector<std::shared_ptr<Scene>> mScenes;
+	std::size_t mActiveSceneIndex{ 0 };
 
 public:
-	[[nodiscard]] LEOPPHAPI static Scene* GetActiveScene();
-	LEOPPHAPI static Scene* CreateScene(std::string mName);
+	SceneManager() noexcept = default;
+	~SceneManager() noexcept = default;
+
+	LEOPPHAPI auto StartUp() -> void;
+	LEOPPHAPI auto ShutDown() noexcept -> void;
+
+	[[nodiscard]] LEOPPHAPI Scene* GetActiveScene();
+	LEOPPHAPI Scene* CreateScene(std::string mName);
 };
 }
