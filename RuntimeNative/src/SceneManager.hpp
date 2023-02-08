@@ -20,5 +20,6 @@ public:
 
 	[[nodiscard]] LEOPPHAPI Scene* GetActiveScene();
 	LEOPPHAPI Scene* CreateScene(std::string mName);
+	LEOPPHAPI void DestroyScene(Scene const* scene);
 };
 }

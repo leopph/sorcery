@@ -36,4 +36,9 @@ public:
 
 	LEOPPHAPI auto GetEntities(std::vector<Entity*>& out) const -> std::vector<Entity*>&;
 };
+
+template<>
+class ObjectInstantiatorFor<Scene> : public ObjectInstantiator {
+	LEOPPHAPI [[nodiscard]] auto Instantiate() -> Object* override;
+};
 }

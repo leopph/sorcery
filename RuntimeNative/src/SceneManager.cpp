@@ -24,4 +24,10 @@ Scene* SceneManager::GetActiveScene() {
 Scene* SceneManager::CreateScene(std::string mName) {
 	return mScenes.emplace_back(new Scene{ std::move(mName) }).get();
 }
+
+void SceneManager::DestroyScene(Scene const* scene) {
+	std::erase_if(mScenes, [scene](auto const& storedScene) {
+		return scene == storedScene.get();
+	});
+}
 }

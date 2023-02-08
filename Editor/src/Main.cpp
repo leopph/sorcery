@@ -235,7 +235,8 @@ auto IndexFileNameIfNeeded(std::filesystem::path const& filePathAbsolute) -> std
 leopph::Scene* gScene;
 
 auto OpenProject(std::filesystem::path const& projPath, leopph::ObjectFactory const& objectFactory, ResourceStorage& resourceStorage) {
-	gScene->Clear();
+	leopph::gSceneManager.DestroyScene(gScene);
+	gScene = nullptr;
 	resourceStorage.clear();
 	gProjDir = absolute(projPath);
 	LoadResourcesFromProjectDir(objectFactory, resourceStorage);
@@ -254,6 +255,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 		objectFactory.Register<leopph::DirectionalLightComponent>();
 		objectFactory.Register<leopph::Material>();
 		objectFactory.Register<leopph::Mesh>();
+		objectFactory.Register<leopph::Scene>();
 
 		leopph::gWindow.StartUp();
 		leopph::gRenderer.StartUp();
@@ -374,11 +376,6 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 								std::thread loaderThread{ LoadAndBlockEditor, std::ref(io), LoadAndAssignProject };
 								loaderThread.detach();
 							}
-						}
-
-						if (ImGui::MenuItem("Close Project")) {
-							gProjDir.reset();
-							continue;
 						}
 
 						ImGui::EndMenu();

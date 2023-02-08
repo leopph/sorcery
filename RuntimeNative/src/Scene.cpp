@@ -1,5 +1,7 @@
 #include "Scene.hpp"
 
+#include "Systems.hpp"
+
 
 namespace leopph {
 Scene::Scene(std::string mName) :
@@ -97,5 +99,9 @@ auto Scene::GetEntities(std::vector<Entity*>& out) const -> std::vector<Entity*>
 		out.emplace_back(entity.get());
 	}
 	return out;
+}
+
+auto ObjectInstantiatorFor<Scene>::Instantiate() -> Object* {
+	return gSceneManager.CreateScene("Untitled");
 }
 }
