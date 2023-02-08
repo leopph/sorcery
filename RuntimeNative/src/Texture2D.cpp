@@ -6,7 +6,7 @@
 
 #pragma warning(push)
 #pragma warning(disable: 26451 26819 6262)
-#define STB_IMAGE_IMPLEMENTATION
+//#define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 #pragma warning(pop)
 
@@ -42,7 +42,7 @@ void Texture2D::SerializeBinary(std::vector<u8>& out) const {}
 Object::BinaryDeserializationResult Texture2D::DeserializeBinary(std::span<u8 const> const bytes) {
 	mTmpImgData.bytes.reset(stbi_load_from_memory(bytes.data(), clamp_cast<int>(bytes.size()), &mTmpImgData.width, &mTmpImgData.height, &mTmpImgData.channelCount, 0));
 	if (mTmpImgData.channelCount != 4) {
-		auto paddedData{ std::make_unique_for_overwrite<std::uint8_t[]>(clamp_cast<std::size_t>(mTmpImgData.width * mTmpImgData.height * 4)) };
+		auto paddedData{ std::make_unique_for_overwrite<std::uint8_t[]>(static_cast<std::size_t>(mTmpImgData.width * mTmpImgData.height * 4)) };
 		auto const imgSize{ mTmpImgData.width * mTmpImgData.height };
 
 		for (int i = 0; i < imgSize; i++) {

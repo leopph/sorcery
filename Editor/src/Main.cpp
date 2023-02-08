@@ -69,6 +69,10 @@ public:
 	auto cend() const noexcept {
 		return std::cend(mData);
 	}
+
+	decltype(auto) clear() noexcept {
+		mData.clear();
+	}
 };
 
 
@@ -229,6 +233,13 @@ auto IndexFileNameIfNeeded(std::filesystem::path const& filePathAbsolute) -> std
 }
 
 leopph::Scene* gScene;
+
+auto OpenProject(std::filesystem::path const& projPath, leopph::ObjectFactory const& objectFactory, ResourceStorage& resourceStorage) {
+	gScene->Clear();
+	resourceStorage.clear();
+	gProjDir = absolute(projPath);
+	LoadResourcesFromProjectDir(objectFactory, resourceStorage);
+}
 }
 
 
@@ -295,18 +306,17 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 				ImGui::SetNextWindowPos(viewport->Pos);
 				ImGui::SetNextWindowSize(viewport->Size);
 
-				if (ImGui::Begin("Open Project", nullptr, flags)) {
-					auto const openProjectButtonLabel{ "Open Project" };
+				if (ImGui::Begin("Open Project##OpenProjectWindow", nullptr, flags)) {
+					auto const openProjectButtonLabel{ "Open Project##OpenProjectButton" };
 					auto const windowSize{ ImGui::GetWindowSize() };
 					auto const textSize{ ImGui::CalcTextSize(openProjectButtonLabel) };
 
 					ImGui::SetCursorPosX((windowSize.x - textSize.x) * 0.5f);
 					ImGui::SetCursorPosY((windowSize.y - textSize.y) * 0.5f);
 
-					if (ImGui::Button("Open Project")) {
+					if (ImGui::Button(openProjectButtonLabel)) {
 						if (nfdchar_t* selectedPath{ nullptr }; NFD_PickFolder(nullptr, &selectedPath) == NFD_OKAY) {
-							gProjDir = std::filesystem::path{ selectedPath };
-							LoadResourcesFromProjectDir(objectFactory, resources);
+							OpenProject(std::filesystem::path{ selectedPath }, objectFactory, resources);
 						}
 					}
 				}
@@ -354,10 +364,10 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
 				if (ImGui::BeginMainMenuBar()) {
 					if (ImGui::BeginMenu("File")) {
-						/*if (ImGui::MenuItem("Open Project")) {
+						if (ImGui::MenuItem("Open Project")) {
 							if (nfdchar_t* selectedPath{ nullptr }; NFD_PickFolder(nullptr, &selectedPath) == NFD_OKAY) {
-								auto const LoadAndAssignProject = [selectedPath] {
-									gProject = leopph::editor::LoadProject(selectedPath);
+								auto const LoadAndAssignProject = [selectedPath, &objectFactory, &resources] {
+									OpenProject(std::filesystem::path{ selectedPath }, objectFactory, resources);
 									std::free(selectedPath);
 								};
 
@@ -366,13 +376,10 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 							}
 						}
 
-						if (ImGui::MenuItem("Import Asset")) {
-							ImportResource(io);
-						}
-
 						if (ImGui::MenuItem("Close Project")) {
-							gProject = nullptr;
-						}*/
+							gProjDir.reset();
+							continue;
+						}
 
 						ImGui::EndMenu();
 					}
@@ -771,7 +778,9 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 								ImGui::TableNextColumn();
 								auto const& entryPath{ entry.path() };
 								auto const entryStemStr{ entryPath.stem().string() };
-								if (ImGui::Button(entryStemStr.c_str(), { buttonSize, buttonSize })) {
+								if (auto const resIt{ resources.find(absolute(entryPath)) };
+									(is_directory(entryPath) || resIt != std::end(resources)) &&
+									ImGui::Button(entryStemStr.c_str(), { buttonSize, buttonSize })) {
 									if (is_directory(entryPath)) {
 										selectedProjSubDir = entryPath;
 									}
