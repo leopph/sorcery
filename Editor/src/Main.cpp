@@ -678,77 +678,112 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 				}
 				ImGui::End();
 
-				if (ImGui::Begin("Resources", nullptr, ImGuiWindowFlags_NoCollapse)) {
-					if (ImGui::IsWindowHovered(ImGuiHoveredFlags_RootWindow) && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
-						ImGui::OpenPopup("ResourcesContextMenu");
-					}
+				if (ImGui::Begin("Project", nullptr, ImGuiWindowFlags_NoCollapse)) {
+					if (ImGui::BeginTable("ProjectWindowMainTable", 2, ImGuiTableFlags_Resizable)) {
+						ImGui::TableNextRow();
+						ImGui::TableSetColumnIndex(0);
+						std::filesystem::path static selectedProjSubDir{ *gProjDir };
+						[&](this auto self, std::filesystem::path const& dir) -> void {
+							std::filesystem::directory_iterator const it{ dir };
+							ImGuiTreeNodeFlags treeNodeFlags{ ImGuiTreeNodeFlags_OpenOnArrow };
 
-					if (ImGui::BeginPopup("ResourcesContextMenu")) {
-						static std::vector<leopph::u8> outBytes;
-
-						if (ImGui::BeginMenu("Create##CreateResource")) {
-							if (ImGui::MenuItem("Material##CreateMaterial")) {
-								auto mat{ std::make_shared<leopph::Material>() };
-								auto const outPath{ IndexFileNameIfNeeded(*gProjDir / gRelativeResDir / "New Material" += RESOURCE_FILE_EXT) };
-								mat->SetName(outPath.stem().string());
-								gSelected = mat.get();
-
-								SerializeResource(*mat, outBytes);
-								std::ofstream out{ outPath, std::ios::binary };
-								std::ranges::copy(std::as_const(outBytes), std::ostream_iterator<leopph::u8>{ out });
-								outBytes.clear();
-
-								resources[outPath] = std::move(mat);
+							if (begin(it) == end(it)) {
+								treeNodeFlags |= ImGuiTreeNodeFlags_Leaf;
 							}
-							ImGui::EndMenu();
-						}
+							else {
+								treeNodeFlags |= ImGuiTreeNodeFlags_DefaultOpen;
+							}
+							if (selectedProjSubDir == dir) {
+								treeNodeFlags |= ImGuiTreeNodeFlags_Selected;
+							}
 
-						if (ImGui::MenuItem("Import Resource")) {
-							if (nfdchar_t* selectedPath{ nullptr }; NFD_OpenDialog(nullptr, nullptr, &selectedPath) == NFD_OKAY) {
-								auto const importAsset = [selectedPath, &resources] {
-									std::filesystem::path srcPath{ selectedPath };
-									srcPath = absolute(srcPath);
-									std::free(selectedPath);
+							if (ImGui::TreeNodeEx(dir.stem().string().c_str(), treeNodeFlags)) {
+								if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) {
+									selectedProjSubDir = dir;
+								}
 
-									if (auto const res{ ImportResource(srcPath) }; res) {
-										auto const outPath{ IndexFileNameIfNeeded(*gProjDir / gRelativeResDir / srcPath.stem() += RESOURCE_FILE_EXT) };
-										res->SetName(outPath.stem().string());
-										gSelected = res.get();
+								for (auto const& entry : it) {
+									if (is_directory(entry)) {
+										self(entry.path());
+									}
+								}
+								ImGui::TreePop();
+							}
+						}(*gProjDir);
 
-										SerializeResource(*res, outBytes);
+						ImGui::TableSetColumnIndex(1);
+						if (auto constexpr buttonSize{ 75 }; ImGui::BeginTable("ProjectWindowSubDirTable", static_cast<int>(ImGui::GetContentRegionAvail().x) / buttonSize)) {
+							if (ImGui::IsWindowHovered(ImGuiHoveredFlags_RootWindow) && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
+								ImGui::OpenPopup("ResourcesContextMenu");
+							}
+
+							if (ImGui::BeginPopup("ResourcesContextMenu")) {
+								static std::vector<leopph::u8> outBytes;
+
+								if (ImGui::BeginMenu("Create##CreateResource")) {
+									if (ImGui::MenuItem("Material##CreateMaterial")) {
+										auto mat{ std::make_shared<leopph::Material>() };
+										auto const outPath{ IndexFileNameIfNeeded(*gProjDir / gRelativeResDir / "New Material" += RESOURCE_FILE_EXT) };
+										mat->SetName(outPath.stem().string());
+										gSelected = mat.get();
+
+										SerializeResource(*mat, outBytes);
 										std::ofstream out{ outPath, std::ios::binary };
 										std::ranges::copy(std::as_const(outBytes), std::ostream_iterator<leopph::u8>{ out });
 										outBytes.clear();
 
-										resources[std::move(outPath)] = std::move(res);
+										resources[outPath] = std::move(mat);
 									}
-								};
+									ImGui::EndMenu();
+								}
 
-								std::thread loaderThread{ LoadAndBlockEditor, std::ref(io), importAsset };
-								loaderThread.detach();
+								if (ImGui::MenuItem("Import Resource")) {
+									if (nfdchar_t* selectedPath{ nullptr }; NFD_OpenDialog(nullptr, nullptr, &selectedPath) == NFD_OKAY) {
+										auto const importAsset = [selectedPath, &resources] {
+											std::filesystem::path srcPath{ selectedPath };
+											srcPath = absolute(srcPath);
+											std::free(selectedPath);
+
+											if (auto const res{ ImportResource(srcPath) }; res) {
+												auto const outPath{ IndexFileNameIfNeeded(*gProjDir / gRelativeResDir / srcPath.stem() += RESOURCE_FILE_EXT) };
+												res->SetName(outPath.stem().string());
+												gSelected = res.get();
+
+												SerializeResource(*res, outBytes);
+												std::ofstream out{ outPath, std::ios::binary };
+												std::ranges::copy(std::as_const(outBytes), std::ostream_iterator<leopph::u8>{ out });
+												outBytes.clear();
+
+												resources[std::move(outPath)] = std::move(res);
+											}
+										};
+
+										std::thread loaderThread{ LoadAndBlockEditor, std::ref(io), importAsset };
+										loaderThread.detach();
+									}
+									ImGui::CloseCurrentPopup();
+								}
+
+								ImGui::EndPopup();
 							}
-							ImGui::CloseCurrentPopup();
-						}
 
-						ImGui::EndPopup();
+							for (auto const& entry : std::filesystem::directory_iterator{ selectedProjSubDir }) {
+								ImGui::TableNextColumn();
+								auto const& entryPath{ entry.path() };
+								auto const entryStemStr{ entryPath.stem().string() };
+								if (ImGui::Button(entryStemStr.c_str(), { buttonSize, buttonSize })) {
+									if (is_directory(entryPath)) {
+										selectedProjSubDir = entryPath;
+									}
+									else {
+										gSelected = resources.find(absolute(entryPath))->second.get();
+									}
+								}
+							}
+						}
+						ImGui::EndTable();
 					}
-
-					for (auto const& entry : std::filesystem::directory_iterator{ *gProjDir / gRelativeResDir }) {
-						auto const& entryPath{ entry.path() };
-						if (is_directory(entryPath)) {
-							ImGui::Selectable(std::format("{}##AssetFolderPath", entryPath.filename().string().c_str()).c_str());
-							if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) {
-								gRelativeResDir /= entryPath.filename();
-							}
-						}
-						else if (auto const it{ resources.find(entryPath) }; it != std::end(resources)) {
-							auto const& asset{ it->second };
-
-							if (ImGui::Selectable(std::format("{}##{}", asset->GetName().data(), entryPath.string().c_str()).c_str(), gSelected == asset.get())) {
-								gSelected = asset.get();
-							}
-						}
-					}
+					ImGui::EndTable();
 				}
 				ImGui::End();
 			}
