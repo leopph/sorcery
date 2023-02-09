@@ -721,8 +721,8 @@ auto Renderer::CreateConstantBuffers() const -> void {
 
 auto Renderer::DrawMeshes() const noexcept -> void {
 	for (auto const& staticMeshComponent : mStaticMeshComponents) {
-		auto const mesh{ staticMeshComponent->GetMesh() };
-		auto const mat{ staticMeshComponent->GetMaterial() };
+		auto const& mesh{ staticMeshComponent->GetMesh() };
+		auto const& mat{ staticMeshComponent->GetMaterial() };
 
 		D3D11_MAPPED_SUBRESOURCE mappedPerModelCBuf;
 		mResources->context->Map(mResources->perModelCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerModelCBuf);
@@ -731,14 +731,14 @@ auto Renderer::DrawMeshes() const noexcept -> void {
 		normalMatData = Matrix4{ staticMeshComponent->GetEntity()->GetTransform().GetNormalMatrix() };
 		mResources->context->Unmap(mResources->perModelCB.Get(), 0);
 
-		ID3D11Buffer* vertexBuffers[]{ mesh->GetPositionBuffer().Get(), mesh->GetNormalBuffer().Get(), mesh->GetUVBuffer().Get() };
+		ID3D11Buffer* vertexBuffers[]{ mesh.GetPositionBuffer().Get(), mesh.GetNormalBuffer().Get(), mesh.GetUVBuffer().Get() };
 		UINT constexpr strides[]{ sizeof(Vector3), sizeof(Vector3), sizeof(Vector2) };
 		UINT constexpr offsets[]{ 0, 0, 0 };
 		mResources->context->IASetVertexBuffers(0, 3, vertexBuffers, strides, offsets);
-		mResources->context->IASetIndexBuffer(mesh->GetIndexBuffer().Get(), DXGI_FORMAT_R32_UINT, 0);
+		mResources->context->IASetIndexBuffer(mesh.GetIndexBuffer().Get(), DXGI_FORMAT_R32_UINT, 0);
 		mResources->context->IASetInputLayout(mResources->meshIL.Get());
 
-		ID3D11Buffer* const constantBuffers[]{ mResources->perFrameCB.Get(), mResources->perCamCB.Get(), mat->GetBuffer(), mResources->perModelCB.Get() };
+		ID3D11Buffer* const constantBuffers[]{ mResources->perFrameCB.Get(), mResources->perCamCB.Get(), mat.GetBuffer(), mResources->perModelCB.Get() };
 
 		mResources->context->VSSetShader(mResources->meshVS.Get(), nullptr, 0);
 		mResources->context->VSSetConstantBuffers(0, ARRAYSIZE(constantBuffers), constantBuffers);
@@ -746,7 +746,7 @@ auto Renderer::DrawMeshes() const noexcept -> void {
 		mResources->context->PSSetShader(mResources->meshPbrPS.Get(), nullptr, 0);
 		mResources->context->PSSetConstantBuffers(0, ARRAYSIZE(constantBuffers), constantBuffers);
 
-		mResources->context->DrawIndexed(clamp_cast<UINT>(mesh->GetIndices().size()), 0, 0);
+		mResources->context->DrawIndexed(clamp_cast<UINT>(mesh.GetIndices().size()), 0, 0);
 	}
 }
 

@@ -6,7 +6,6 @@
 #include "CubeModelComponent.hpp"
 #include "CameraComponent.hpp"
 #include "LightComponents.hpp"
-#include "SceneManager.hpp"
 #include "ManagedRuntime.hpp"
 #include "Systems.hpp"
 
@@ -197,7 +196,7 @@ auto Entity::CreateManagedObject() -> void {
 }
 
 auto ObjectInstantiatorFor<Entity>::Instantiate() -> Object* {
-	return gSceneManager.GetActiveScene()->CreateEntity();
+	return nullptr; // TODO
 }
 
 Object::Type const Entity::SerializationType{ Type::Entity };
@@ -207,7 +206,7 @@ auto Entity::SetScene(Scene* const scene) -> void {
 }
 
 auto Entity::New() -> Entity* {
-	return gSceneManager.GetActiveScene()->CreateEntity();
+	return nullptr; // TODO
 }
 
 auto Entity::NewForManagedObject(MonoObject* const managedObject) -> Entity* {

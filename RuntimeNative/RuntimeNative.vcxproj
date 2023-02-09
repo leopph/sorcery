@@ -128,9 +128,7 @@
     <ClCompile Include="src\Object.cpp" />
     <ClCompile Include="src\OnGui.cpp" />
     <ClCompile Include="src\Renderer.cpp" />
-    <ClCompile Include="src\Resource.cpp" />
     <ClCompile Include="src\Scene.cpp" />
-    <ClCompile Include="src\SceneManager.cpp" />
     <ClInclude Include="src\Serialization.hpp" />
     <ClCompile Include="src\Texture2D.cpp" />
     <ClCompile Include="src\Time.cpp" />
@@ -161,9 +159,7 @@
     <ClInclude Include="src\Entity.hpp" />
     <ClInclude Include="src\Object.hpp" />
     <ClInclude Include="src\Renderer.hpp" />
-    <ClInclude Include="src\Resource.hpp" />
     <ClInclude Include="src\Scene.hpp" />
-    <ClInclude Include="src\SceneManager.hpp" />
     <ClInclude Include="src\BinarySerializer.hpp" />
     <ClInclude Include="src\Texture2D.hpp" />
     <ClInclude Include="src\Time.hpp" />

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Resource.hpp"
+#include "Object.hpp"
 
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
@@ -12,7 +12,7 @@
 
 
 namespace leopph {
-class Texture2D final : public Resource {
+class Texture2D final : public Object {
 	struct ImageData {
 		int width;
 		int height;

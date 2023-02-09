@@ -1,29 +1,58 @@
 #include "Scene.hpp"
 
-#include "Systems.hpp"
-
-
 namespace leopph {
-Scene::Scene(std::string mName) :
-	mName{ std::move(mName) } {}
-
-
-auto Scene::GetSerializationType() const -> Type {
-	return SerializationType;
+auto Scene::CreateEntity() -> Entity& {
+	return *mEntities.emplace_back(new Entity{});
 }
 
-void Scene::SerializeBinary(std::vector<u8>& out) const {
-	auto const nodeStr{ Dump(mYamlData) };
-	std::span const nodeStrSpan{ reinterpret_cast<u8 const*>(nodeStr.data()), nodeStr.length() + 1 };
-	out.insert_range(std::end(out), nodeStrSpan);
+auto Scene::DestroyEntity(Entity const& entityToRemove) -> void {
+	std::erase_if(mEntities, [&entityToRemove](auto const& entity) {
+		return entity.get() == &entityToRemove;
+	});
 }
 
-Object::BinaryDeserializationResult Scene::DeserializeBinary(std::span<u8 const> const bytes) {
+auto Scene::GetEntities() const noexcept -> std::span<std::unique_ptr<Entity> const> {
+	return mEntities;
+}
+
+auto Scene::Serialize() const noexcept -> std::string {
+	return Dump(mYamlData);
+}
+
+auto Scene::Deserialize(std::span<u8 const> const bytes) -> void {
 	mYamlData = YAML::Load(reinterpret_cast<char const*>(bytes.data()));
-	return { 0 };
 }
 
-auto Scene::Load(ObjectFactory const& objectFactory) -> void {
+auto Scene::Save() -> void {
+	auto constexpr serializeObject{
+		[](Object const* obj) {
+			YAML::Node objectNode;
+
+			objectNode["objectType"] = static_cast<int>(obj->GetSerializationType());
+			objectNode["guid"] = obj->GetGuid().ToString();
+
+			YAML::Node dataNode;
+			obj->SerializeTextual(dataNode);
+			objectNode["data"] = dataNode;
+
+			return objectNode;
+		}
+	};
+
+	mYamlData.reset();
+
+	for (auto const& entity : mEntities) {
+		mYamlData.push_back(serializeObject(entity.get()));
+
+		for (auto const& component : entity->mComponents) {
+			mYamlData.push_back(serializeObject(component.get()));
+		}
+	}
+}
+
+auto Scene::Load(ObjectFactory const& factory) -> void {
+	mEntities.clear();
+
 	struct ObjectWithSerializedData {
 		ManagedAccessObject* obj;
 		YAML::Node node;
@@ -34,7 +63,7 @@ auto Scene::Load(ObjectFactory const& objectFactory) -> void {
 	for (std::size_t i{ 0 }; i < mYamlData.size(); i++) {
 		auto const guid{ Guid::Parse(mYamlData[i]["guid"].as<std::string>()) };
 
-		if (auto const obj{ dynamic_cast<ManagedAccessObject*>(objectFactory.New(static_cast<Type>(mYamlData[i]["objectType"].as<int>()))) }) {
+		if (auto const obj{ dynamic_cast<ManagedAccessObject*>(factory.New(static_cast<Object::Type>(mYamlData[i]["objectType"].as<int>()))) }) {
 			obj->SetGuid(guid);
 			objectsWithSerializedData.emplace_back(obj, mYamlData[i]["data"]);
 		}
@@ -44,64 +73,5 @@ auto Scene::Load(ObjectFactory const& objectFactory) -> void {
 		obj->DeserializeTextual(node);
 		obj->CreateManagedObject();
 	}
-}
-
-auto Scene::Save() -> void {
-	YAML::Node sceneNode;
-
-	auto const serializeObject{
-		[&sceneNode](Object const* obj) {
-			YAML::Node seNode;
-			seNode["objectType"] = static_cast<int>(obj->GetSerializationType());
-			seNode["guid"] = obj->GetGuid().ToString();
-
-			YAML::Node dataNode;
-			obj->SerializeTextual(dataNode);
-			seNode["data"] = dataNode;
-
-			sceneNode.push_back(seNode);
-		}
-	};
-
-	for (auto const& entity : mEntities) {
-		serializeObject(entity.get());
-
-		for (auto const& component : entity->mComponents) {
-			serializeObject(component.get());
-		}
-	}
-
-	mYamlData = sceneNode;
-}
-
-auto Scene::Clear() -> void {
-	mEntities.clear();
-}
-
-auto Scene::CreateEntity() -> Entity* {
-	auto const entity{ new Entity{} };
-	entity->SetScene(this);
-	return mEntities.emplace_back(entity).get();
-}
-
-
-auto Scene::DestroyEntity(Entity const* const entity) -> void {
-	if (entity) {
-		std::erase_if(mEntities, [entity](auto const& ownedEntity) {
-			return ownedEntity->GetGuid() == entity->GetGuid();
-		});
-	}
-}
-
-auto Scene::GetEntities(std::vector<Entity*>& out) const -> std::vector<Entity*>& {
-	out.clear();
-	for (auto const& entity : mEntities) {
-		out.emplace_back(entity.get());
-	}
-	return out;
-}
-
-auto ObjectInstantiatorFor<Scene>::Instantiate() -> Object* {
-	return gSceneManager.CreateScene("Untitled");
 }
 }

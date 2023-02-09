@@ -95,6 +95,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\Asset.cpp" />
     <ClCompile Include="src\Serialization.cpp" />
     <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\Widgets.cpp" />
@@ -107,6 +108,7 @@
     <None Include="vcpkg.json" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Asset.hpp" />
     <ClInclude Include="src\Serialization.hpp" />
     <ClInclude Include="src\Widgets.hpp" />
   </ItemGroup>
