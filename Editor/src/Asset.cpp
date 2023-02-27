@@ -172,6 +172,7 @@ std::shared_ptr<Object> LoadAsset(std::filesystem::path const& filePath) {
 std::string GenerateAssetMetaFileContents(Object const& asset) {
 	YAML::Node node;
 	node["guid"] = asset.GetGuid().ToString();
+	node["type"] = static_cast<int>(asset.GetSerializationType());
 	return Dump(node);
 }
 

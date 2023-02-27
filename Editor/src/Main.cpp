@@ -6,6 +6,7 @@
 #include "ModelImport.hpp"
 #include "Asset.hpp"
 #include "ObjectFactoryManager.hpp"
+#include "MeshImporter.hpp"
 
 #include <TransformComponent.hpp>
 #include <BehaviorComponent.hpp>
@@ -181,6 +182,8 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 		objectFactoryManager.Register<leopph::LightComponent>();
 		objectFactoryManager.Register<leopph::Material>();
 		objectFactoryManager.Register<leopph::Mesh>();
+
+		leopph::editor::MeshImporter meshImporter;
 
 		leopph::gWindow.StartUp();
 		leopph::gRenderer.StartUp();
@@ -690,29 +693,50 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 									ImGui::EndMenu();
 								}
 
-								if (ImGui::MenuItem("Import Asset")) {
-									if (nfdchar_t* selectedPath{ nullptr }; NFD_OpenDialog(nullptr, nullptr, &selectedPath) == NFD_OKAY) {
-										auto const importAsset{
-											[selectedPath, &resources, &projDirAbs, &assetDirRel, &createAssetMetaFile] {
-												std::filesystem::path srcPath{ selectedPath };
-												srcPath = absolute(srcPath);
+								if (ImGui::BeginMenu("Import##ImportAssetMenu")) {
+									auto const openFileDialog{
+										[](char const* filters, char const* defaultPath, std::filesystem::path& out) -> bool {
+											if (nfdchar_t* selectedPath{ nullptr }; NFD_OpenDialog(filters, defaultPath, &selectedPath) == NFD_OKAY) {
+												out = selectedPath;
 												std::free(selectedPath);
-
-												auto const dstPath{ IndexFileNameIfNeeded(projDirAbs / assetDirRel / srcPath.filename()) };
-												copy(srcPath, dstPath);
-
-												auto asset{ leopph::editor::LoadAsset(dstPath) };
-												createAssetMetaFile(*asset);
-
-												resources[std::move(dstPath)] = std::move(asset);
+												return true;
 											}
-										};
+											return false;
+										}
+									};
 
-										std::thread loaderThread{ LoadAndBlockEditor, std::ref(io), importAsset };
-										loaderThread.detach();
+									auto const copyAssetFileToProjDir{
+										[&projDirAbs, &assetDirRel](std::filesystem::path const& srcPath) -> std::filesystem::path {
+											auto const srcPathAbs{ absolute(srcPath) };
+											auto dstPath{ IndexFileNameIfNeeded(projDirAbs / assetDirRel / srcPath.filename()) };
+											copy(srcPath, dstPath);
+											return dstPath;
+										}
+									};
+
+									auto const saveNewAsset{
+										[&createAssetMetaFile, &resources](std::shared_ptr<leopph::Object> asset, std::filesystem::path const& dstPath) {
+											asset->SetName(dstPath.filename().string());
+											createAssetMetaFile(*asset);
+											resources[dstPath] = std::move(asset);
+										}
+									};
+
+									if (ImGui::MenuItem("Mesh##ImportMeshAssetMenuItem")) {
+										if (std::filesystem::path path; openFileDialog(meshImporter.GetSupportedExtensions().c_str(), nullptr, path)) {
+											std::thread loaderThread{
+												LoadAndBlockEditor, std::ref(io), [&copyAssetFileToProjDir, &saveNewAsset, &meshImporter, path] {
+													auto const assetPath{ copyAssetFileToProjDir(path) };
+													saveNewAsset(std::make_shared<leopph::Mesh>(std::move(meshImporter.Import(assetPath))), assetPath);
+												}
+											};
+											loaderThread.detach();
+										}
+
+										ImGui::CloseCurrentPopup();
 									}
 
-									ImGui::CloseCurrentPopup();
+									ImGui::EndMenu();
 								}
 
 								ImGui::EndPopup();
