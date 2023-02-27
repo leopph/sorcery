@@ -133,10 +133,6 @@ auto Entity::CreateManagedObject() -> void {
 	return ManagedAccessObject::CreateManagedObject("leopph", "Entity");
 }
 
-auto ObjectInstantiatorFor<Entity>::Instantiate() -> Object* {
-	return nullptr; // TODO
-}
-
 Object::Type const Entity::SerializationType{ Type::Entity };
 
 auto Entity::SetScene(Scene* const scene) -> void {

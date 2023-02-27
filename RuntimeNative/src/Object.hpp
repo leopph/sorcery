@@ -87,27 +87,31 @@ public:
 
 class ObjectInstantiator {
 public:
-	[[nodiscard]] virtual auto Instantiate() -> Object* = 0;
+	ObjectInstantiator() = default;
+	ObjectInstantiator(ObjectInstantiator const& other) = default;
+	ObjectInstantiator(ObjectInstantiator&& other) noexcept = default;
+
 	virtual ~ObjectInstantiator() = default;
+
+	auto operator=(ObjectInstantiator const& other) -> ObjectInstantiator& = default;
+	auto operator=(ObjectInstantiator&& other) noexcept -> ObjectInstantiator& = default;
+
+	[[nodiscard]] virtual auto Instantiate() -> Object* = 0;
 };
 
 
-template<std::derived_from<Object> T>
-class ObjectInstantiatorFor : public ObjectInstantiator {
-	[[nodiscard]] auto Instantiate() -> Object* override;
-};
-
-
-class ObjectFactory {
+class ObjectInstantiatorManager {
 public:
-	template<std::derived_from<Object> T> requires requires {
-		{ T::SerializationType } -> std::common_with<Object::Type const&>;
-	}
-	auto Register() -> void;
-	LEOPPHAPI auto New(Object::Type objectType) const -> Object*;
+	ObjectInstantiatorManager() = default;
+	ObjectInstantiatorManager(ObjectInstantiatorManager const& other) = default;
+	ObjectInstantiatorManager(ObjectInstantiatorManager&& other) noexcept = default;
 
-private:
-	std::unordered_map<Object::Type, std::unique_ptr<ObjectInstantiator>> mInstantiators;
+	virtual ~ObjectInstantiatorManager() = default;
+
+	auto operator=(ObjectInstantiatorManager const& other) -> ObjectInstantiatorManager& = default;
+	auto operator=(ObjectInstantiatorManager&& other) noexcept -> ObjectInstantiatorManager& = default;
+
+	[[nodiscard]] virtual auto GetFor(Object::Type type) const -> ObjectInstantiator& = 0;
 };
 
 
@@ -151,16 +155,5 @@ auto Object::FindObjectsOfType(std::vector<Object*>& out) -> std::vector<Object*
 		}
 	}
 	return out;
-}
-
-
-template<std::derived_from<Object> T>
-auto ObjectInstantiatorFor<T>::Instantiate() -> Object* {
-	return new T{};
-}
-
-template<std::derived_from<Object> T> requires requires { { T::SerializationType } -> std::common_with<Object::Type const&>; }
-auto ObjectFactory::Register() -> void {
-	mInstantiators[T::SerializationType] = std::make_unique<ObjectInstantiatorFor<T>>();
 }
 }

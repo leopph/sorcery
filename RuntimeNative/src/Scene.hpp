@@ -37,6 +37,6 @@ public:
 	LEOPPHAPI auto Deserialize(std::span<u8 const> bytes) -> void;
 
 	LEOPPHAPI auto Save() -> void;
-	LEOPPHAPI auto Load(ObjectFactory const& factory) -> void;
+	LEOPPHAPI auto Load(ObjectInstantiatorManager const& manager) -> void;
 };
 }

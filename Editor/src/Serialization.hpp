@@ -1,10 +1,10 @@
 #pragma once
 
 #include <YamlInclude.hpp>
-#include <Object.hpp>
+#include "ObjectFactoryManager.hpp"
 
 
 namespace leopph::editor {
-	[[nodiscard]] auto SerializeScene() -> YAML::Node;
-	auto DeserializeScene(ObjectFactory const& factory, YAML::Node const& sceneNode) -> void;
+[[nodiscard]] auto SerializeScene() -> YAML::Node;
+auto DeserializeScene(EditorObjectFactoryManager const& manager, YAML::Node const& sceneNode) -> void;
 }

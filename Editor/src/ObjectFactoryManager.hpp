@@ -10,25 +10,25 @@
 #include "ObjectWrappers.hpp"
 
 namespace leopph::editor {
-class ObjectFactoryManager {
+class EditorObjectFactoryManager : public ObjectInstantiatorManager {
 	std::unordered_map<Object::Type, std::type_index> mEnumToTypeIdx;
-	std::unordered_map<std::type_index, std::unique_ptr<BasicObjectWrapper>> mTypeIdxToWrapper;
+	std::unordered_map<std::type_index, std::unique_ptr<EditorObjectWrapper>> mTypeIdxToWrapper;
 
 public:
 	template<typename T>
 	auto Register() -> void {
 		std::type_index const typeIdx{ typeid(T) };
 		mEnumToTypeIdx.emplace(T::SerializationType, typeIdx);
-		mTypeIdxToWrapper.emplace(typeIdx, std::make_unique<ObjectWrapper<T>>());
+		mTypeIdxToWrapper.emplace(typeIdx, std::make_unique<EditorObjectWrapperFor<T>>());
 	}
 
-	[[nodiscard]] BasicObjectWrapper& GetWrapperFor(Object::Type const type) const {
+	[[nodiscard]] EditorObjectWrapper& GetFor(Object::Type const type) const override {
 		return *mTypeIdxToWrapper.at(mEnumToTypeIdx.at(type));
 	}
 
 	template<typename T>
-	[[nodiscard]] ObjectWrapper<T>& GetWrapperFor() const {
-		return static_cast<ObjectWrapper<T>&>(*mTypeIdxToWrapper.at(typeid(T)));
+	[[nodiscard]] EditorObjectWrapperFor<T>& GetFor() const {
+		return static_cast<EditorObjectWrapperFor<T>&>(*mTypeIdxToWrapper.at(typeid(T)));
 	}
 };
 }

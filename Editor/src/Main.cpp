@@ -163,17 +163,7 @@ auto OpenProject(std::filesystem::path const& targetPath, ResourceStorage& resou
 
 auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ HINSTANCE, [[maybe_unused]] _In_ wchar_t*, [[maybe_unused]] _In_ int) -> int {
 	try {
-		leopph::ObjectFactory objectFactory;
-		objectFactory.Register<leopph::Entity>();
-		objectFactory.Register<leopph::TransformComponent>();
-		objectFactory.Register<leopph::CameraComponent>();
-		objectFactory.Register<leopph::BehaviorComponent>();
-		objectFactory.Register<leopph::CubeModelComponent>();
-		objectFactory.Register<leopph::LightComponent>();
-		objectFactory.Register<leopph::Material>();
-		objectFactory.Register<leopph::Mesh>();
-
-		leopph::editor::ObjectFactoryManager objectFactoryManager;
+		leopph::editor::EditorObjectFactoryManager objectFactoryManager;
 		objectFactoryManager.Register<leopph::Entity>();
 		objectFactoryManager.Register<leopph::TransformComponent>();
 		objectFactoryManager.Register<leopph::CameraComponent>();
@@ -265,7 +255,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 						leopph::gWindow.UnlockCursor();
 						leopph::gWindow.SetCursorHiding(false);
 						leopph::gRenderer.SetSyncInterval(1);
-						scene->Load(objectFactory);
+						scene->Load(objectFactoryManager);
 						gSelected = nullptr;
 					}
 				}
@@ -430,7 +420,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
 				if (ImGui::Begin("Object Properties", nullptr, ImGuiWindowFlags_NoCollapse)) {
 					if (gSelected) {
-						objectFactoryManager.GetWrapperFor(gSelected->GetSerializationType()).OnGui(objectFactoryManager, *gSelected);
+						objectFactoryManager.GetFor(gSelected->GetSerializationType()).OnGui(objectFactoryManager, *gSelected);
 					}
 				}
 				ImGui::End();

@@ -72,13 +72,6 @@ public:
 };
 
 
-template<>
-class ObjectInstantiatorFor<Entity> : public ObjectInstantiator {
-public:
-	[[nodiscard]] LEOPPHAPI auto Instantiate() -> Object* override;
-};
-
-
 namespace managedbindings {
 void CreateNativeEntity(MonoObject* managedEntity);
 MonoObject* GetEntityTransform(MonoObject* managedEntity);

@@ -11,59 +11,46 @@
 
 
 namespace leopph::editor {
-class ObjectFactoryManager;
+class EditorObjectFactoryManager;
 
-class BasicObjectWrapper {
+class EditorObjectWrapper : public ObjectInstantiator {
 public:
-	virtual ~BasicObjectWrapper() = default;
-	virtual auto OnGui(ObjectFactoryManager const& objectFactoryManager, Object& object) -> void = 0;
+	virtual auto OnGui(EditorObjectFactoryManager const& objectFactoryManager, Object& object) -> void = 0;
 };
 
 template<typename Wrapped>
-class ObjectWrapper : public BasicObjectWrapper {
+class EditorObjectWrapperFor : public EditorObjectWrapper {
 public:
-	auto OnGui([[maybe_unused]] ObjectFactoryManager const& objectFactoryManager, [[maybe_unused]] Object& object) -> void override {}
+	auto OnGui([[maybe_unused]] EditorObjectFactoryManager const& objectFactoryManager, [[maybe_unused]] Object& object) -> void override {}
+	[[nodiscard]] auto Instantiate() -> Object* override;
 };
 
-template<>
-class ObjectWrapper<BehaviorComponent> : public BasicObjectWrapper {
-public:
-	auto OnGui(ObjectFactoryManager const& objectFactoryManager, Object& object) -> void override;
-};
+template<typename Wrapped>
+auto EditorObjectWrapperFor<Wrapped>::Instantiate() -> Object* {
+	return new Wrapped{};
+}
 
 template<>
-class ObjectWrapper<CameraComponent> : public BasicObjectWrapper {
-public:
-	auto OnGui(ObjectFactoryManager const& objectFactoryManager, Object& object) -> void override;
-};
+auto EditorObjectWrapperFor<BehaviorComponent>::OnGui(EditorObjectFactoryManager const& objectFactoryManager, Object& object) -> void;
 
 template<>
-class ObjectWrapper<CubeModelComponent> : public BasicObjectWrapper {
-public:
-	auto OnGui(ObjectFactoryManager const& objectFactoryManager, Object& object) -> void override;
-};
+auto EditorObjectWrapperFor<CameraComponent>::OnGui(EditorObjectFactoryManager const& objectFactoryManager, Object& object) -> void;
 
 template<>
-class ObjectWrapper<Entity> : public BasicObjectWrapper {
-public:
-	auto OnGui(ObjectFactoryManager const& objectFactoryManager, Object& object) -> void override;
-};
+auto EditorObjectWrapperFor<CubeModelComponent>::OnGui(EditorObjectFactoryManager const& objectFactoryManager, Object& object) -> void;
 
 template<>
-class ObjectWrapper<LightComponent> : public BasicObjectWrapper {
-public:
-	auto OnGui(ObjectFactoryManager const& objectFactoryManager, Object& object) -> void override;
-};
+auto EditorObjectWrapperFor<Entity>::OnGui(EditorObjectFactoryManager const& objectFactoryManager, Object& object) -> void;
 
 template<>
-class ObjectWrapper<Material> : public BasicObjectWrapper {
-public:
-	auto OnGui(ObjectFactoryManager const& objectFactoryManager, Object& object) -> void override;
-};
+auto EditorObjectWrapperFor<LightComponent>::OnGui(EditorObjectFactoryManager const& objectFactoryManager, Object& object) -> void;
 
 template<>
-class ObjectWrapper<TransformComponent> : public BasicObjectWrapper {
-public:
-	auto OnGui(ObjectFactoryManager const& objectFactoryManager, Object& object) -> void override;
-};
+auto EditorObjectWrapperFor<Material>::OnGui(EditorObjectFactoryManager const& objectFactoryManager, Object& object) -> void;
+
+template<>
+auto EditorObjectWrapperFor<TransformComponent>::OnGui(EditorObjectFactoryManager const& objectFactoryManager, Object& object) -> void;
+
+template<>
+auto EditorObjectWrapperFor<Entity>::Instantiate() -> Object*;
 }

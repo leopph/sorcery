@@ -16,7 +16,7 @@
 #include "ObjectFactoryManager.hpp"
 
 namespace leopph::editor {
-auto ObjectWrapper<BehaviorComponent>::OnGui(ObjectFactoryManager const&, Object& object) -> void {
+auto EditorObjectWrapperFor<BehaviorComponent>::OnGui(EditorObjectFactoryManager const&, Object& object) -> void {
 	auto const& behavior{ dynamic_cast<BehaviorComponent&>(object) };
 
 	auto const guidStr{ behavior.GetGuid().ToString() };
@@ -131,7 +131,7 @@ auto ObjectWrapper<BehaviorComponent>::OnGui(ObjectFactoryManager const&, Object
 	}
 }
 
-auto ObjectWrapper<CameraComponent>::OnGui(ObjectFactoryManager const&, Object& object) -> void {
+auto EditorObjectWrapperFor<CameraComponent>::OnGui(EditorObjectFactoryManager const&, Object& object) -> void {
 	auto& cam{ dynamic_cast<CameraComponent&>(object) };
 
 	auto const guidStr{ cam.GetGuid().ToString() };
@@ -221,7 +221,7 @@ auto ObjectWrapper<CameraComponent>::OnGui(ObjectFactoryManager const&, Object& 
 	}
 }
 
-auto ObjectWrapper<CubeModelComponent>::OnGui(ObjectFactoryManager const&, Object& object) -> void {
+auto EditorObjectWrapperFor<CubeModelComponent>::OnGui(EditorObjectFactoryManager const&, Object& object) -> void {
 	auto& model{ dynamic_cast<CubeModelComponent&>(object) };
 
 	if (ImGui::BeginTable(std::format("{}", model.GetGuid().ToString()).c_str(), 2, ImGuiTableFlags_SizingStretchSame)) {
@@ -304,7 +304,7 @@ auto ObjectWrapper<CubeModelComponent>::OnGui(ObjectFactoryManager const&, Objec
 	}
 }
 
-auto ObjectWrapper<Entity>::OnGui(ObjectFactoryManager const& objectFactoryManager, Object& object) -> void {
+auto EditorObjectWrapperFor<Entity>::OnGui(EditorObjectFactoryManager const& objectFactoryManager, Object& object) -> void {
 	auto& entity{ dynamic_cast<Entity&>(object) };
 
 	static std::string entityName;
@@ -333,7 +333,7 @@ auto ObjectWrapper<Entity>::OnGui(ObjectFactoryManager const& objectFactoryManag
 		auto const componentNodeId = mono_class_get_name(klass);
 		if (ImGui::TreeNodeEx(componentNodeId, ImGuiTreeNodeFlags_DefaultOpen)) {
 			ImGui::Separator();
-			objectFactoryManager.GetWrapperFor(component->GetSerializationType()).OnGui(objectFactoryManager, *component);
+			objectFactoryManager.GetFor(component->GetSerializationType()).OnGui(objectFactoryManager, *component);
 			ImGui::TreePop();
 		}
 
@@ -363,7 +363,7 @@ auto ObjectWrapper<Entity>::OnGui(ObjectFactoryManager const& objectFactoryManag
 	}
 }
 
-auto ObjectWrapper<LightComponent>::OnGui(ObjectFactoryManager const&, Object& object) -> void {
+auto EditorObjectWrapperFor<LightComponent>::OnGui(EditorObjectFactoryManager const&, Object& object) -> void {
 	auto& light{ dynamic_cast<LightComponent&>(object) };
 
 	if (ImGui::BeginTable(std::format("{}", light.GetGuid().ToString()).c_str(), 2, ImGuiTableFlags_SizingStretchSame)) {
@@ -395,7 +395,7 @@ auto ObjectWrapper<LightComponent>::OnGui(ObjectFactoryManager const&, Object& o
 	}
 }
 
-auto ObjectWrapper<Material>::OnGui(ObjectFactoryManager const&, Object& object) -> void {
+auto EditorObjectWrapperFor<Material>::OnGui(EditorObjectFactoryManager const&, Object& object) -> void {
 	auto& mat{ dynamic_cast<Material&>(object) };
 
 	if (ImGui::BeginTable(std::format("{}", mat.GetGuid().ToString()).c_str(), 2, ImGuiTableFlags_SizingStretchSame)) {
@@ -441,7 +441,7 @@ auto ObjectWrapper<Material>::OnGui(ObjectFactoryManager const&, Object& object)
 	}
 }
 
-auto ObjectWrapper<TransformComponent>::OnGui(ObjectFactoryManager const&, Object& object) -> void {
+auto EditorObjectWrapperFor<TransformComponent>::OnGui(EditorObjectFactoryManager const&, Object& object) -> void {
 	auto& transform{ dynamic_cast<TransformComponent&>(object) };
 
 	if (ImGui::BeginTable(std::format("{}", transform.GetGuid().ToString()).c_str(), 2, ImGuiTableFlags_SizingStretchSame)) {
@@ -496,5 +496,9 @@ auto ObjectWrapper<TransformComponent>::OnGui(ObjectFactoryManager const&, Objec
 
 		ImGui::EndTable();
 	}
+}
+
+auto EditorObjectWrapperFor<Entity>::Instantiate() -> Object* {
+	return nullptr; // TODO
 }
 }

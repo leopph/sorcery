@@ -56,7 +56,7 @@ auto Scene::Save() -> void {
 	}
 }
 
-auto Scene::Load(ObjectFactory const& factory) -> void {
+auto Scene::Load(ObjectInstantiatorManager const& manager) -> void {
 	mEntities.clear();
 
 	struct ObjectWithSerializedData {
@@ -69,7 +69,7 @@ auto Scene::Load(ObjectFactory const& factory) -> void {
 	for (std::size_t i{ 0 }; i < mYamlData.size(); i++) {
 		auto const guid{ Guid::Parse(mYamlData[i]["guid"].as<std::string>()) };
 
-		if (auto const obj{ dynamic_cast<ManagedAccessObject*>(factory.New(static_cast<Object::Type>(mYamlData[i]["objectType"].as<int>()))) }) {
+		if (auto const obj{ dynamic_cast<ManagedAccessObject*>(manager.GetFor(static_cast<Type>(mYamlData[i]["objectType"].as<int>())).Instantiate()) }) {
 			obj->SetGuid(guid);
 			objectsWithSerializedData.emplace_back(obj, mYamlData[i]["data"]);
 		}
