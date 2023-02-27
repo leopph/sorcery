@@ -756,12 +756,12 @@ auto Renderer::UpdatePerFrameCB() const noexcept -> void {
 
 	auto const perFrameCBData{ static_cast<PerFrameCBufferData*>(mappedPerFrameCB.pData) };
 
-	perFrameCBData->calcDirLight = !mDirLights.empty();
+	perFrameCBData->calcDirLight = !mLights.empty();
 
-	if (!mDirLights.empty()) {
-		perFrameCBData->dirLight.color = mDirLights[0]->GetColor();
-		perFrameCBData->dirLight.direction = mDirLights[0]->get_direction();
-		perFrameCBData->dirLight.intensity = mDirLights[0]->GetIntensity();
+	if (!mLights.empty() && mLights[0]->GetType() == LightComponent::Type::Directional) {
+		perFrameCBData->dirLight.color = mLights[0]->GetColor();
+		perFrameCBData->dirLight.direction = mLights[0]->GetDirInfo().GetDirection();
+		perFrameCBData->dirLight.intensity = mLights[0]->GetIntensity();
 	}
 
 	mResources->context->Unmap(mResources->perFrameCB.Get(), 0);
@@ -1083,28 +1083,12 @@ auto Renderer::GetImmediateContext() const noexcept -> ID3D11DeviceContext* {
 }
 
 
-auto Renderer::RegisterDirLight(DirectionalLightComponent const* dirLight) -> void {
-	mDirLights.emplace_back(dirLight);
+auto Renderer::RegisterLight(LightComponent const* light) -> void {
+	mLights.emplace_back(light);
 }
 
-auto Renderer::UnregisterDirLight(DirectionalLightComponent const* dirLight) -> void {
-	std::erase(mDirLights, dirLight);
-}
-
-auto Renderer::RegisterSpotLight(SpotLight const* spotLight) -> void {
-	mSpotLights.emplace_back(spotLight);
-}
-
-auto Renderer::UnregisterSpotLight(SpotLight const* spotLight) -> void {
-	std::erase(mSpotLights, spotLight);
-}
-
-auto Renderer::RegisterPointLight(PointLightComponent const* pointLight) -> void {
-	mPointLights.emplace_back(pointLight);
-}
-
-auto Renderer::UnregisterPointLight(PointLightComponent const* pointLight) -> void {
-	std::erase(mPointLights, pointLight);
+auto Renderer::UnregisterLight(LightComponent const* light) -> void {
+	std::erase(mLights, light);
 }
 
 auto Renderer::GetDefaultMaterial() const noexcept -> std::shared_ptr<Material> {

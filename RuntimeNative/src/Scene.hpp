@@ -17,6 +17,9 @@ class Scene : public Object {
 	YAML::Node mYamlData;
 
 public:
+	LEOPPHAPI static Type const SerializationType;
+	LEOPPHAPI auto GetSerializationType() const -> Type override;
+
 	LEOPPHAPI auto CreateEntity() -> Entity&;
 	LEOPPHAPI auto DestroyEntity(Entity const& entityToRemove) -> void;
 

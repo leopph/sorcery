@@ -13,9 +13,6 @@
 #include <mono/metadata/reflection.h>
 #include <mono/metadata/object.h>
 
-#include <imgui.h>
-#include <misc/cpp/imgui_stdlib.h>
-
 #include <functional>
 #include <iostream>
 
@@ -34,7 +31,7 @@ std::unordered_map<std::string_view, std::function<std::unique_ptr<Component>()>
 {
 	{ "CubeModel", instantiate<CubeModelComponent> },
 	{ "Camera", instantiate<CameraComponent> },
-	{ "DirectionalLight", instantiate<DirectionalLightComponent> }
+	{ "Light", instantiate<LightComponent> }
 };
 
 std::vector<Entity*> gEntityCache;
@@ -129,65 +126,6 @@ auto Entity::DestroyComponent(Component* const component) -> void {
 		std::erase_if(mComponents, [component](auto const& attachedComponent) {
 			return attachedComponent->GetGuid() == component->GetGuid();
 		});
-	}
-}
-
-void Entity::OnGui() {
-	ManagedAccessObject::OnGui();
-
-	static std::string entityName;
-	entityName = GetName();
-
-	if (ImGui::BeginTable("Property Widgets", 2)) {
-		ImGui::TableNextRow();
-
-		ImGui::TableSetColumnIndex(0);
-		ImGui::PushItemWidth(FLT_MIN);
-		ImGui::Text("Name");
-
-		ImGui::TableSetColumnIndex(1);
-		ImGui::PushItemWidth(-FLT_MIN);
-		if (ImGui::InputText("##EntityName", &entityName)) {
-			SetName(entityName);
-		}
-
-		ImGui::EndTable();
-	}
-
-	for (static std::vector<leopph::Component*> components; auto const& component : GetComponents(components)) {
-		auto const obj = component->GetManagedObject();
-		auto const klass = mono_object_get_class(obj);
-
-		auto const componentNodeId = mono_class_get_name(klass);
-		if (ImGui::TreeNodeEx(componentNodeId, ImGuiTreeNodeFlags_DefaultOpen)) {
-			ImGui::Separator();
-			component->OnGui();
-			ImGui::TreePop();
-		}
-
-		if (ImGui::BeginPopupContextItem(componentNodeId)) {
-			if (ImGui::MenuItem("Delete")) {
-				DestroyComponent(component);
-			}
-			ImGui::EndPopup();
-		}
-		ImGui::OpenPopupOnItemClick(componentNodeId, ImGuiPopupFlags_MouseButtonRight);
-	}
-
-	auto constexpr addNewComponentLabel = "Add New Component";
-	ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize(addNewComponentLabel).x) * 0.5f);
-	ImGui::Button(addNewComponentLabel);
-
-	if (ImGui::BeginPopupContextItem(nullptr, ImGuiPopupFlags_MouseButtonLeft)) {
-		for (auto const& componentClass : leopph::gManagedRuntime.GetComponentClasses()) {
-			auto const componentName = mono_class_get_name(componentClass);
-			if (ImGui::MenuItem(componentName)) {
-				CreateComponent(componentClass);
-				ImGui::CloseCurrentPopup();
-			}
-		}
-
-		ImGui::EndPopup();
 	}
 }
 

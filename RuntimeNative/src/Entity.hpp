@@ -68,8 +68,6 @@ public:
 		return outComponents;
 	}
 
-	LEOPPHAPI auto OnGui() -> void override;
-
 	LEOPPHAPI auto CreateManagedObject() -> void override;
 };
 

@@ -5,6 +5,7 @@
 #include "BinarySerializer.hpp"
 #include "ModelImport.hpp"
 #include "Asset.hpp"
+#include "ObjectFactoryManager.hpp"
 
 #include <TransformComponent.hpp>
 #include <BehaviorComponent.hpp>
@@ -167,9 +168,19 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 		objectFactory.Register<leopph::CameraComponent>();
 		objectFactory.Register<leopph::BehaviorComponent>();
 		objectFactory.Register<leopph::CubeModelComponent>();
-		objectFactory.Register<leopph::DirectionalLightComponent>();
+		objectFactory.Register<leopph::LightComponent>();
 		objectFactory.Register<leopph::Material>();
 		objectFactory.Register<leopph::Mesh>();
+
+		leopph::editor::ObjectFactoryManager objectFactoryManager;
+		objectFactoryManager.Register<leopph::Entity>();
+		objectFactoryManager.Register<leopph::TransformComponent>();
+		objectFactoryManager.Register<leopph::CameraComponent>();
+		objectFactoryManager.Register<leopph::BehaviorComponent>();
+		objectFactoryManager.Register<leopph::CubeModelComponent>();
+		objectFactoryManager.Register<leopph::LightComponent>();
+		objectFactoryManager.Register<leopph::Material>();
+		objectFactoryManager.Register<leopph::Mesh>();
 
 		leopph::gWindow.StartUp();
 		leopph::gRenderer.StartUp();
@@ -416,7 +427,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
 				if (ImGui::Begin("Object Properties", nullptr, ImGuiWindowFlags_NoCollapse)) {
 					if (gSelected) {
-						gSelected->OnGui();
+						objectFactoryManager.GetWrapperFor(gSelected->GetSerializationType()).OnGui(objectFactoryManager, *gSelected);
 					}
 				}
 				ImGui::End();
@@ -636,7 +647,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 								ImGui::OpenPopup(contextMenuId);
 							}
 
-							auto constexpr createAssetMetaFile{
+							auto const createAssetMetaFile{
 								[&projDirAbs, &assetDirRel](leopph::Object const& asset) {
 									std::ofstream{ projDirAbs / assetDirRel / asset.GetName() += RESOURCE_FILE_EXT } << leopph::editor::GenerateAssetMetaFileContents(asset);
 								}
@@ -644,7 +655,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
 							if (ImGui::BeginPopup(contextMenuId)) {
 								if (ImGui::BeginMenu("Create##CreateAssetMenu")) {
-									auto constexpr saveNewAsset{
+									auto const saveNewAsset{
 										[&resources, &projDirAbs, &assetDirRel](std::shared_ptr<leopph::Object> asset) {
 											auto const outPath{ IndexFileNameIfNeeded(projDirAbs / assetDirRel / asset->GetName() += RESOURCE_FILE_EXT) };
 											asset->SetName(outPath.stem().string());
@@ -682,7 +693,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 								if (ImGui::MenuItem("Import Asset")) {
 									if (nfdchar_t* selectedPath{ nullptr }; NFD_OpenDialog(nullptr, nullptr, &selectedPath) == NFD_OKAY) {
 										auto const importAsset{
-											[selectedPath, &resources, &projDirAbs, &assetDirRel] {
+											[selectedPath, &resources, &projDirAbs, &assetDirRel, &createAssetMetaFile] {
 												std::filesystem::path srcPath{ selectedPath };
 												srcPath = absolute(srcPath);
 												std::free(selectedPath);

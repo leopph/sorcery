@@ -1,6 +1,12 @@
 #include "Scene.hpp"
 
 namespace leopph {
+Object::Type const Scene::SerializationType{ Type::Scene };
+
+auto Scene::GetSerializationType() const -> Type {
+	return SerializationType;
+}
+
 auto Scene::CreateEntity() -> Entity& {
 	return *mEntities.emplace_back(new Entity{});
 }

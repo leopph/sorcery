@@ -13,6 +13,7 @@
 
 #include "BinarySerializer.hpp"
 #include <YamlInclude.hpp>
+#include <Serialization.hpp>
 
 #include "Material.hpp"
 
@@ -145,7 +146,7 @@ auto CalculateBounds(std::span<Vector3 const> const vertices) noexcept -> AABB {
 	if (filePath.extension() == ".mtl") {
 		auto const node{ YAML::LoadFile(filePath.string()) };
 		auto mtl{ std::make_shared<Material>() };
-		mtl->SetAlbedoColor(node["albedo"].as<Vector3>(mtl->GetAlbedoColor()));
+		mtl->SetAlbedoVector(node["albedo"].as<Vector3>(mtl->GetAlbedoVector()));
 		mtl->SetMetallic(node["metallic"].as<float>(mtl->GetMetallic()));
 		mtl->SetRoughness(node["roughness"].as<float>(mtl->GetRoughness()));
 		mtl->SetAo(node["ao"].as<float>(mtl->GetAo()));

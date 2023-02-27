@@ -28,9 +28,11 @@ class Material final : public Object {
 public:
 	LEOPPHAPI Material();
 
+	LEOPPHAPI [[nodiscard]] auto GetAlbedoVector() const noexcept -> Vector3;
+	LEOPPHAPI auto SetAlbedoVector(Vector3 const& albedoVector) noexcept -> void;
+
 	LEOPPHAPI [[nodiscard]] auto GetAlbedoColor() const noexcept -> Color;
 	LEOPPHAPI auto SetAlbedoColor(Color const& albedoColor) noexcept -> void;
-	LEOPPHAPI auto SetAlbedoColor(Vector3 const& albedoColor) noexcept -> void;
 
 	LEOPPHAPI [[nodiscard]] auto GetMetallic() const noexcept -> f32;
 	LEOPPHAPI auto SetMetallic(f32 metallic) noexcept -> void;
@@ -50,7 +52,5 @@ public:
 
 	LEOPPHAPI auto SerializeBinary(std::vector<u8>& out) const -> void override;
 	LEOPPHAPI auto DeserializeBinary(std::span<u8 const> bytes) -> BinaryDeserializationResult override;
-
-	LEOPPHAPI auto OnGui() -> void override;
 };
 }

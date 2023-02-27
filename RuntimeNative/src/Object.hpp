@@ -34,7 +34,7 @@ public:
 		Camera,
 		Behavior,
 		CubeModel,
-		DirectionalLight,
+		Light,
 		Material,
 		Mesh,
 		Scene,
@@ -82,8 +82,6 @@ public:
 	};
 
 	LEOPPHAPI [[nodiscard]] virtual auto DeserializeBinary(std::span<u8 const> bytes) -> BinaryDeserializationResult;
-
-	virtual auto OnGui() -> void {}
 };
 
 
