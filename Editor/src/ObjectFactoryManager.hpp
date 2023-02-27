@@ -19,6 +19,7 @@ public:
 	auto Register() -> void {
 		std::type_index const typeIdx{ typeid(T) };
 		mEnumToTypeIdx.emplace(T::SerializationType, typeIdx);
+		mTypeIdxToWrapper.emplace(typeIdx, std::make_unique<ObjectWrapper<T>>());
 	}
 
 	[[nodiscard]] BasicObjectWrapper& GetWrapperFor(Object::Type const type) const {
