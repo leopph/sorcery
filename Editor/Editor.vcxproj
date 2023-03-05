@@ -106,6 +106,7 @@
     <ClCompile Include="src\ObjectWrappers.cpp" />
     <ClCompile Include="src\Serialization.cpp" />
     <ClCompile Include="src\Main.cpp" />
+    <ClCompile Include="src\TextureImporter.cpp" />
     <ClCompile Include="src\Widgets.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -121,6 +122,7 @@
     <ClInclude Include="src\ObjectFactoryManager.hpp" />
     <ClInclude Include="src\ObjectWrappers.hpp" />
     <ClInclude Include="src\Serialization.hpp" />
+    <ClInclude Include="src\TextureImporter.hpp" />
     <ClInclude Include="src\Widgets.hpp" />
   </ItemGroup>
   <ItemGroup>

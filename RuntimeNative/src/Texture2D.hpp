@@ -10,27 +10,27 @@
 #include <cstdint>
 #include <memory>
 
+#include "Image.hpp"
+
 
 namespace leopph {
 class Texture2D final : public Object {
-	struct ImageData {
-		int width;
-		int height;
-		int channelCount;
-		std::unique_ptr<std::uint8_t[]> bytes;
-	};
-
 	Microsoft::WRL::ComPtr<ID3D11Texture2D> mTex;
-	ImageData mImgData{};
-	ImageData mTmpImgData{};
+	Image mImgData{};
+	Image mTmpImgData{};
 
 	void UploadToGPU();
 
 public:
+	Texture2D() = default;
+	LEOPPHAPI explicit Texture2D(Image img);
+
+	[[nodiscard]] LEOPPHAPI auto GetImageData() const noexcept -> Image const&;
+	LEOPPHAPI auto SetImageData(Image img) noexcept -> void;
+
+	LEOPPHAPI auto Update() noexcept -> void;
+
 	LEOPPHAPI Type constexpr static SerializationType{ Type::Texture2D };
 	LEOPPHAPI [[nodiscard]] auto GetSerializationType() const -> Type override;
-
-	LEOPPHAPI auto SerializeBinary(std::vector<u8>& out) const -> void override;
-	LEOPPHAPI [[nodiscard]] auto DeserializeBinary(std::span<u8 const> bytes) -> BinaryDeserializationResult override;
 };
 }
