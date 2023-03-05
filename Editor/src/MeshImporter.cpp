@@ -134,7 +134,11 @@ auto MeshImporter::GetSupportedExtensions() const -> std::string {
 	return mImpl->GetSupportedExtensions();
 }
 
-auto MeshImporter::Import(std::filesystem::path const& path) const -> Mesh::Data {
-	return mImpl->Import(path);
+auto MeshImporter::Import(std::filesystem::path const& src) -> Object* {
+	return new Mesh{ mImpl->Import(src) };
+}
+
+auto MeshImporter::GetPrecedence() const noexcept -> int {
+	return 0;
 }
 }

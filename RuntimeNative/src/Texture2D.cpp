@@ -20,7 +20,8 @@ void Texture2D::UploadToGPU() {
 		.MiscFlags = 0
 	};
 	D3D11_SUBRESOURCE_DATA const texData{
-		.pSysMem = mImgData.get_data().data()
+		.pSysMem = mImgData.get_data().data(),
+		.SysMemPitch = mImgData.get_width() * mImgData.get_num_channels()
 	};
 	gRenderer.GetDevice()->CreateTexture2D(&texDesc, &texData, mTex.ReleaseAndGetAddressOf());
 }

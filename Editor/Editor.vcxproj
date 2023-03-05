@@ -118,6 +118,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Asset.hpp" />
+    <ClInclude Include="src\Importer.hpp" />
     <ClInclude Include="src\MeshImporter.hpp" />
     <ClInclude Include="src\ObjectFactoryManager.hpp" />
     <ClInclude Include="src\ObjectWrappers.hpp" />

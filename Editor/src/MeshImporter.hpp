@@ -5,18 +5,20 @@
 #include <filesystem>
 
 #include "Mesh.hpp"
+#include "Importer.hpp"
 
 
 namespace leopph::editor {
-class MeshImporter {
+class MeshImporter : public Importer {
 	class Impl;
 	Impl* mImpl;
 
 public:
 	MeshImporter();
-	~MeshImporter();
+	~MeshImporter() override;
 
 	[[nodiscard]] auto GetSupportedExtensions() const -> std::string;
-	[[nodiscard]] auto Import(std::filesystem::path const& path) const -> Mesh::Data;
+	[[nodiscard]] auto Import(std::filesystem::path const& src) -> Object* override;
+	[[nodiscard]] auto GetPrecedence() const noexcept -> int override;
 };
 }

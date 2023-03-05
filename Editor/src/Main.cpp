@@ -33,6 +33,7 @@
 #include <algorithm>
 #include <atomic>
 #include <filesystem>
+#include <functional>
 #include <format>
 #include <fstream>
 #include <optional>
@@ -103,14 +104,19 @@ auto EditorImGuiEventHook(HWND const hwnd, UINT const msg, WPARAM const wparam, 
 	return ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam);
 }
 
-auto LoadAndBlockEditor(ImGuiIO& io, std::function<void()> const& fun, std::atomic<bool>& isEditorBusy) -> void {
-	auto const oldFlags{ io.ConfigFlags };
-	io.ConfigFlags |= ImGuiConfigFlags_NoMouse;
-	io.ConfigFlags |= ImGuiConfigFlags_NavNoCaptureKeyboard;
-	isEditorBusy = true;
-	fun();
-	io.ConfigFlags = oldFlags;
-	isEditorBusy = false;
+template<typename Callable>
+auto ExecuteInBusyEditor(std::atomic<bool>& isEditorBusy, ImGuiIO& imGuiIo, Callable&& callable) -> void {
+	std::thread{
+		[&isEditorBusy, &imGuiIo, callable] {
+			isEditorBusy = true;
+			auto const oldFlags{ imGuiIo.ConfigFlags };
+			imGuiIo.ConfigFlags |= ImGuiConfigFlags_NoMouse;
+			imGuiIo.ConfigFlags |= ImGuiConfigFlags_NavNoCaptureKeyboard;
+			std::invoke(callable);
+			imGuiIo.ConfigFlags = oldFlags;
+			isEditorBusy = false;
+		}
+	}.detach();
 }
 
 auto IndexFileNameIfNeeded(std::filesystem::path const& filePathAbsolute) -> std::filesystem::path {
@@ -147,30 +153,34 @@ auto OpenProject(std::filesystem::path const& targetPath, ResourceStorage& resou
 	resourceStorage.clear();
 	projPathAbs = absolute(targetPath);
 
-	/*struct AssetImportData {
-		std::shared_ptr<leopph::Object> asset;
-		std::vector<leopph::u8> metaContentBytes;
+	struct ImportInfo {
+		std::filesystem::path assetPath;
+		AssetMetaInfo metaInfo;
 	};
 
-	std::unordered_map<std::filesystem::path, AssetImportData> importData;
+	std::priority_queue<ImportInfo, std::vector<ImportInfo>, decltype([](ImportInfo const& lhs, ImportInfo const& rhs) {
+		return lhs.metaInfo.importPrecedence > rhs.metaInfo.importPrecedence;
+	})> queue;
 
 	for (auto const& entry : std::filesystem::recursive_directory_iterator{ projPathAbs / assetDirRel }) {
 		if (entry.path().extension() == RESOURCE_FILE_EXT) {
-			std::ifstream metaIn{ entry.path(), std::ios::binary };
-			std::vector<leopph::u8> bytes;
-			bytes.insert(std::begin(bytes), std::istreambuf_iterator<char>{ metaIn }, std::istreambuf_iterator<char>{});
-			importData[std::filesystem::path{ entry.path() }.replace_extension()].metaContentBytes = std::move(bytes);
-		}
-		else {
-			importData[entry.path()].asset = leopph::editor::LoadAsset(entry.path());
+			std::ifstream in{ entry.path(), std::ios::binary };
+			std::stringstream buffer;
+			buffer << in.rdbuf();
+			auto const assetPath{ std::filesystem::path{ entry.path() }.replace_extension() };
+			auto const meta{ ReadAssetMetaFileContents(buffer.str()) };
+			queue.emplace(assetPath, meta);
 		}
 	}
 
-	for (auto& [path, data] : importData) {
-		leopph::editor::AssignAssetMetaContents(*data.asset, data.metaContentBytes);
-		resourceStorage[path] = data.asset;
+	while (!queue.empty()) {
+		ImportInfo info{ queue.top() };
+		queue.pop();
+
+		auto& factory{ factoryManager.GetFor(info.metaInfo.type) };
+		auto const asset{ factory.GetImporter().Import(info.assetPath) };
+		resourceStorage[info.assetPath] = std::shared_ptr<Object>{ asset };
 	}
-	TODO*/
 }
 
 auto DrawStartupScreen(ResourceStorage& resources, std::unique_ptr<Scene>& scene, std::filesystem::path& projDirAbs, std::filesystem::path const& assetDirRel, EditorObjectFactoryManager const& factoryManager) -> void {
@@ -196,18 +206,15 @@ auto DrawStartupScreen(ResourceStorage& resources, std::unique_ptr<Scene>& scene
 	ImGui::End();
 }
 
-auto DrawMainMenuBar(ResourceStorage& resources, std::unique_ptr<Scene>& scene, std::filesystem::path& projDirAbs, std::filesystem::path const& assetDirRel, ImGuiIO& io, EditorObjectFactoryManager const& factoryManager, bool& showDemoWindow, std::atomic<bool>& isEditorBusy) -> void {
+auto DrawMainMenuBar(ResourceStorage& resources, std::unique_ptr<Scene>& scene, std::filesystem::path& projDirAbs, std::filesystem::path const& assetDirRel, ImGuiIO& imGuiIo, EditorObjectFactoryManager const& factoryManager, bool& showDemoWindow, std::atomic<bool>& isEditorBusy) -> void {
 	if (ImGui::BeginMainMenuBar()) {
 		if (ImGui::BeginMenu("File")) {
 			if (ImGui::MenuItem("Open Project")) {
 				if (nfdchar_t* selectedPath{ nullptr }; NFD_PickFolder(nullptr, &selectedPath) == NFD_OKAY) {
-					auto const LoadAndAssignProject = [selectedPath, &resources, &scene, &projDirAbs, &assetDirRel, &factoryManager] {
+					ExecuteInBusyEditor(isEditorBusy, imGuiIo, [selectedPath, &resources, &scene, &projDirAbs, &assetDirRel, &factoryManager] {
 						OpenProject(std::filesystem::path{ selectedPath }, resources, scene, projDirAbs, assetDirRel, factoryManager);
 						std::free(selectedPath);
-					};
-
-					std::thread loaderThread{ LoadAndBlockEditor, std::ref(io), LoadAndAssignProject, std::ref(isEditorBusy)};
-					loaderThread.detach();
+					});
 				}
 			}
 
@@ -281,7 +288,7 @@ auto DrawEntityHierarchyWindow(std::unique_ptr<Scene>& scene, Object*& selectedO
 
 				if (ImGui::BeginDragDropSource()) {
 					ImGui::SetDragDropPayload(entityPayloadType, &entity, sizeof entity);
-					ImGui::Text(entity.GetName().data());
+					ImGui::Text("%s", entity.GetName().data());
 					ImGui::EndDragDropSource();
 				}
 
@@ -522,13 +529,13 @@ auto DrawSceneViewWindow(ImGuiIO const& io, Object*& selectedObject) -> void {
 	ImGui::End();
 }
 
-auto DrawProjectWindow(ResourceStorage& resources, std::filesystem::path const& projDirAbs, std::filesystem::path const& assetDirRel, MeshImporter const& meshImporter, TextureImporter const& texImporter, ImGuiIO& imGuiIo, Object*& selectedObject, std::atomic<bool>& isEditorBusy) -> void {
+auto DrawProjectWindow(ResourceStorage& resources, std::filesystem::path const& projDirAbs, std::filesystem::path const& assetDirRel, MeshImporter& meshImporter, TextureImporter& texImporter, ImGuiIO& imGuiIo, Object*& selectedObject, std::atomic<bool>& isEditorBusy, EditorObjectFactoryManager const& factoryManager) -> void {
 	if (ImGui::Begin("Project", nullptr, ImGuiWindowFlags_NoCollapse)) {
 		if (ImGui::BeginTable("ProjectWindowMainTable", 2, ImGuiTableFlags_Resizable)) {
 			ImGui::TableNextRow();
 			ImGui::TableSetColumnIndex(0);
 			std::filesystem::path static selectedProjSubDir{ projDirAbs };
-			[&](this auto self, std::filesystem::path const& dir) -> void {
+			[](this auto self, std::filesystem::path const& dir) -> void {
 				std::filesystem::directory_iterator const it{ dir };
 				ImGuiTreeNodeFlags treeNodeFlags{ ImGuiTreeNodeFlags_OpenOnArrow };
 
@@ -565,8 +572,8 @@ auto DrawProjectWindow(ResourceStorage& resources, std::filesystem::path const& 
 				}
 
 				auto const createAssetMetaFile{
-					[&projDirAbs, &assetDirRel](Object const& asset) {
-						std::ofstream{ projDirAbs / assetDirRel / asset.GetName() += RESOURCE_FILE_EXT } << GenerateAssetMetaFileContents(asset);
+					[&projDirAbs, &assetDirRel, &factoryManager](Object const& asset) {
+						std::ofstream{ projDirAbs / assetDirRel / asset.GetName() += RESOURCE_FILE_EXT } << GenerateAssetMetaFileContents(asset, factoryManager);
 					}
 				};
 
@@ -593,15 +600,15 @@ auto DrawProjectWindow(ResourceStorage& resources, std::filesystem::path const& 
 						if (ImGui::MenuItem("Material##CreateMaterialAsset")) {
 							auto newMtl{ std::make_shared<Material>() };
 							newMtl->SetName("New Material");
-							saveNewAsset(std::move(newMtl));
 							createAssetMetaFile(*newMtl);
+							saveNewAsset(std::move(newMtl));
 						}
 
 						if (ImGui::MenuItem("Scene##CreateSceneAsset")) {
 							auto newScene{ std::make_shared<Scene>() };
 							newScene->SetName("New Scene");
-							saveNewAsset(std::move(newScene));
 							createAssetMetaFile(*newScene);
+							saveNewAsset(std::move(newScene));
 						}
 
 						ImGui::EndMenu();
@@ -620,7 +627,7 @@ auto DrawProjectWindow(ResourceStorage& resources, std::filesystem::path const& 
 						};
 
 						auto const copyAssetFileToProjDir{
-							[&projDirAbs, &assetDirRel](std::filesystem::path const& srcPath) -> std::filesystem::path {
+							[projDirAbs, assetDirRel](std::filesystem::path const& srcPath) -> std::filesystem::path {
 								auto const srcPathAbs{ absolute(srcPath) };
 								auto dstPath{ IndexFileNameIfNeeded(projDirAbs / assetDirRel / srcPath.filename()) };
 								copy(srcPath, dstPath);
@@ -629,7 +636,7 @@ auto DrawProjectWindow(ResourceStorage& resources, std::filesystem::path const& 
 						};
 
 						auto const saveNewAsset{
-							[&createAssetMetaFile, &resources](std::shared_ptr<Object> asset, std::filesystem::path const& dstPath) {
+							[createAssetMetaFile, &resources](std::shared_ptr<Object> asset, std::filesystem::path const& dstPath) {
 								asset->SetName(dstPath.filename().string());
 								createAssetMetaFile(*asset);
 								resources[dstPath] = std::move(asset);
@@ -638,13 +645,10 @@ auto DrawProjectWindow(ResourceStorage& resources, std::filesystem::path const& 
 
 						if (ImGui::MenuItem("Mesh##ImportMeshAssetMenuItem")) {
 							if (std::filesystem::path path; openFileDialog(meshImporter.GetSupportedExtensions().c_str(), nullptr, path)) {
-								std::thread loaderThread{
-									LoadAndBlockEditor, std::ref(imGuiIo), [&copyAssetFileToProjDir, &saveNewAsset, &meshImporter, path] {
-										auto const assetPath{ copyAssetFileToProjDir(path) };
-										saveNewAsset(std::make_shared<Mesh>(std::move(meshImporter.Import(assetPath))), assetPath);
-									}, std::ref(isEditorBusy)
-								};
-								loaderThread.detach();
+								ExecuteInBusyEditor(isEditorBusy, imGuiIo, [copyAssetFileToProjDir, saveNewAsset, &meshImporter, path] {
+									auto const assetPath{ copyAssetFileToProjDir(path) };
+									saveNewAsset(std::shared_ptr<Mesh>{ static_cast<Mesh*>(meshImporter.Import(assetPath)) }, assetPath);
+								});
 							}
 
 							ImGui::CloseCurrentPopup();
@@ -652,13 +656,10 @@ auto DrawProjectWindow(ResourceStorage& resources, std::filesystem::path const& 
 
 						if (ImGui::MenuItem("Texture##ImportTextureAssetMenuItem")) {
 							if (std::filesystem::path path; openFileDialog(texImporter.GetSupportedExtensions().c_str(), nullptr, path)) {
-								std::thread loaderThread{
-									LoadAndBlockEditor, std::ref(imGuiIo), [&copyAssetFileToProjDir, &saveNewAsset, &texImporter, path] {
-										auto const assetPath{ copyAssetFileToProjDir(path) };
-										saveNewAsset(std::make_shared<Texture2D>(std::move(texImporter.Import(assetPath))), assetPath);
-									}, std::ref(isEditorBusy)
-								};
-								loaderThread.detach();
+								ExecuteInBusyEditor(isEditorBusy, imGuiIo, [copyAssetFileToProjDir, saveNewAsset, &texImporter, path] {
+									auto const assetPath{ copyAssetFileToProjDir(path) };
+									saveNewAsset(std::shared_ptr<Texture2D>{ static_cast<Texture2D*>(texImporter.Import(assetPath)) }, assetPath);
+								});
 							}
 
 							ImGui::CloseCurrentPopup();
@@ -674,9 +675,7 @@ auto DrawProjectWindow(ResourceStorage& resources, std::filesystem::path const& 
 					ImGui::TableNextColumn();
 					auto const& entryPath{ entry.path() };
 					auto const entryStemStr{ entryPath.stem().string() };
-					if (auto const resIt{ resources.find(absolute(entryPath)) };
-						(is_directory(entryPath) || resIt != std::end(resources)) &&
-						ImGui::Button(entryStemStr.c_str(), { buttonSize, buttonSize })) {
+					if (auto const resIt{ resources.find(absolute(entryPath)) }; (is_directory(entryPath) || resIt != std::end(resources)) && ImGui::Button(entryStemStr.c_str(), { buttonSize, buttonSize })) {
 						if (is_directory(entryPath)) {
 							selectedProjSubDir = entryPath;
 						}
@@ -695,7 +694,7 @@ auto DrawProjectWindow(ResourceStorage& resources, std::filesystem::path const& 
 }
 
 
-auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ HINSTANCE, [[maybe_unused]] _In_ wchar_t*, [[maybe_unused]] _In_ int) -> int {
+auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ HINSTANCE, _In_ wchar_t* const lpCmdLine, [[maybe_unused]] _In_ int) -> int {
 	try {
 		leopph::gWindow.StartUp();
 		leopph::gRenderer.StartUp();
@@ -749,9 +748,9 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 			auto const argv{ CommandLineToArgvW(lpCmdLine, &argc) };
 
 			if (argc > 0) {
-				std::filesystem::path projPath{ argv[0] };
-				projPath = absolute(projPath);
-				OpenProject(projPath, resources, scene, projDirAbs, assetDirRel, factoryManager);
+				std::filesystem::path targetProjPath{ argv[0] };
+				targetProjPath = absolute(targetProjPath);
+				OpenProject(targetProjPath, resources, scene, projDirAbs, assetDirRel, factoryManager);
 			}
 
 			LocalFree(argv);
@@ -812,7 +811,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 				DrawObjectPropertiesWindow(factoryManager, selectedObject);
 				leopph::editor::DrawGameViewWindow(runGame);
 				leopph::editor::DrawSceneViewWindow(imGuiIo, selectedObject);
-				DrawProjectWindow(resources, projDirAbs, assetDirRel, meshImporter, texImporter, imGuiIo, selectedObject, isEditorBusy);
+				DrawProjectWindow(resources, projDirAbs, assetDirRel, meshImporter, texImporter, imGuiIo, selectedObject, isEditorBusy, factoryManager);
 			}
 
 			ImGui::Render();

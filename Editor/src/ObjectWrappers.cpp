@@ -14,6 +14,8 @@
 #include <mono/metadata/reflection.h>
 
 #include "ObjectFactoryManager.hpp"
+#include "TextureImporter.hpp"
+#include "MeshImporter.hpp"
 
 namespace leopph::editor {
 auto EditorObjectWrapperFor<BehaviorComponent>::OnGui(EditorObjectFactoryManager const&, Object& object) -> void {
@@ -500,5 +502,15 @@ auto EditorObjectWrapperFor<TransformComponent>::OnGui(EditorObjectFactoryManage
 
 auto EditorObjectWrapperFor<Entity>::Instantiate() -> Object* {
 	return nullptr; // TODO
+}
+
+auto EditorObjectWrapperFor<Mesh>::GetImporter() -> Importer& {
+	MeshImporter static meshImporter;
+	return meshImporter;
+}
+
+auto EditorObjectWrapperFor<Texture2D>::GetImporter() -> Importer& {
+	TextureImporter static texImporter;
+	return texImporter;
 }
 }

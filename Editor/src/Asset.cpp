@@ -122,23 +122,11 @@ namespace {
 	return std::make_shared<Mesh>(std::move(meshData));
 }
 
-
-auto CalculateBounds(std::span<Vector3 const> const vertices) noexcept -> AABB {
-	AABB bounds{};
-
-	for (auto const& position : vertices) {
-		bounds.min = Vector3{ std::min(bounds.min[0], position[0]), std::min(bounds.min[1], position[1]), std::min(bounds.min[2], position[2]) };
-		bounds.max = Vector3{ std::max(bounds.max[0], position[0]), std::max(bounds.max[1], position[1]), std::max(bounds.max[2], position[2]) };
-	}
-
-	return bounds;
-}
-
-[[nodiscard]] std::shared_ptr<Texture2D> LoadTexture2DAsset(std::filesystem::path const& filePath) {
+[[nodiscard]] auto LoadTexture2DAsset(std::filesystem::path const& filePath) -> std::shared_ptr<Texture2D> {
 	return nullptr;
 }
 
-[[nodiscard]] std::shared_ptr<Object> LoadNativeAsset(std::filesystem::path const& filePath) {
+[[nodiscard]] auto LoadNativeAsset(std::filesystem::path const& filePath) -> std::shared_ptr<Object> {
 	if (!filePath.has_extension()) {
 		return nullptr;
 	}
@@ -157,7 +145,7 @@ auto CalculateBounds(std::span<Vector3 const> const vertices) noexcept -> AABB {
 }
 }
 
-std::shared_ptr<Object> LoadAsset(std::filesystem::path const& filePath) {
+auto LoadAsset(std::filesystem::path const& filePath) -> std::shared_ptr<Object> {
 	if (auto mesh{ LoadMeshAsset(filePath) }; mesh) {
 		return mesh;
 	}
@@ -169,14 +157,23 @@ std::shared_ptr<Object> LoadAsset(std::filesystem::path const& filePath) {
 	return LoadNativeAsset(filePath);
 }
 
-std::string GenerateAssetMetaFileContents(Object const& asset) {
+auto GenerateAssetMetaFileContents(Object const& asset, EditorObjectFactoryManager const& factoryManager) -> std::string {
 	YAML::Node node;
 	node["guid"] = asset.GetGuid().ToString();
 	node["type"] = static_cast<int>(asset.GetSerializationType());
+	node["importPrecedence"] = factoryManager.GetFor(asset.GetSerializationType()).GetImporter().GetPrecedence();
 	return Dump(node);
 }
 
-void AssignAssetMetaContents(Object& asset, std::span<u8 const> const metaContentBytes) {
+auto ReadAssetMetaFileContents(std::string const& contents) -> AssetMetaInfo {
+	auto const node{ YAML::Load(contents) };
+	if (!node["guid"] || !node["type"] || !node["importPrecedence"]) {
+		throw std::runtime_error{ "Corrupt asset meta info." };
+	}
+	return AssetMetaInfo{ static_cast<Object::Type>(node["type"].as<int>()), Guid::Parse(node["guid"].as<std::string>()), node["importPrecedence"].as<int>() };
+}
+
+auto AssignAssetMetaContents(Object& asset, std::span<u8 const> const metaContentBytes) -> void {
 	auto const node{ YAML::Load(std::string_view{ reinterpret_cast<char const*>(metaContentBytes.data()), metaContentBytes.size() }.data()) };
 	asset.SetGuid(Guid::Parse(node["guid"].as<std::string>(asset.GetGuid().ToString())));
 }

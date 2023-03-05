@@ -8,6 +8,11 @@
 #include <LightComponents.hpp>
 #include <Material.hpp>
 #include <TransformComponent.hpp>
+#include "Importer.hpp"
+#include "Texture2D.hpp"
+
+#include <filesystem>
+#include <stdexcept>
 
 
 namespace leopph::editor {
@@ -16,6 +21,7 @@ class EditorObjectFactoryManager;
 class EditorObjectWrapper : public ObjectInstantiator {
 public:
 	virtual auto OnGui(EditorObjectFactoryManager const& objectFactoryManager, Object& object) -> void = 0;
+	[[nodiscard]] virtual auto GetImporter() -> Importer& = 0;
 };
 
 template<typename Wrapped>
@@ -23,6 +29,10 @@ class EditorObjectWrapperFor : public EditorObjectWrapper {
 public:
 	auto OnGui([[maybe_unused]] EditorObjectFactoryManager const& objectFactoryManager, [[maybe_unused]] Object& object) -> void override {}
 	[[nodiscard]] auto Instantiate() -> Object* override;
+
+	[[nodiscard]] auto GetImporter() -> Importer& override {
+		throw std::runtime_error{ "The wrapped type has no associated importer." };
+	}
 };
 
 template<typename Wrapped>
@@ -53,4 +63,10 @@ auto EditorObjectWrapperFor<TransformComponent>::OnGui(EditorObjectFactoryManage
 
 template<>
 auto EditorObjectWrapperFor<Entity>::Instantiate() -> Object*;
+
+template<>
+auto EditorObjectWrapperFor<Mesh>::GetImporter() -> Importer&;
+
+template<>
+auto EditorObjectWrapperFor<Texture2D>::GetImporter() -> Importer&;
 }
