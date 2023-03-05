@@ -28,7 +28,7 @@
 #include <YamlInclude.hpp>
 #include <nfd.h>
 
-#include <DirectXMath.h>
+#include <shellapi.h>
 
 #include <algorithm>
 #include <atomic>
@@ -39,6 +39,8 @@
 #include <ranges>
 #include <string>
 #include <vector>
+#include <queue>
+#include <cwchar>
 
 #include "Mesh.hpp"
 
@@ -741,6 +743,19 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 		auto factoryManager{ leopph::editor::CreateFactoryManager() };
 
 		leopph::init_time();
+
+		if (std::wcscmp(lpCmdLine, L"") != 0) {
+			int argc;
+			auto const argv{ CommandLineToArgvW(lpCmdLine, &argc) };
+
+			if (argc > 0) {
+				std::filesystem::path projPath{ argv[0] };
+				projPath = absolute(projPath);
+				OpenProject(projPath, resources, scene, projDirAbs, assetDirRel, factoryManager);
+			}
+
+			LocalFree(argv);
+		}
 
 		while (!leopph::gWindow.IsQuitSignaled()) {
 			leopph::gWindow.ProcessEvents();
