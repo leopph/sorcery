@@ -80,26 +80,35 @@ public:
 	}
 };
 
-namespace {
 std::string_view constexpr RESOURCE_FILE_EXT{ ".leopphres" };
 
-Object* gSelected{ nullptr };
+[[nodiscard]] auto CreateFactoryManager() -> EditorObjectFactoryManager {
+	EditorObjectFactoryManager factoryManager;
+	factoryManager.Register<Entity>();
+	factoryManager.Register<TransformComponent>();
+	factoryManager.Register<CameraComponent>();
+	factoryManager.Register<BehaviorComponent>();
+	factoryManager.Register<CubeModelComponent>();
+	factoryManager.Register<LightComponent>();
+	factoryManager.Register<Material>();
+	factoryManager.Register<Mesh>();
+	factoryManager.Register<Texture2D>();
+
+	return factoryManager;
+}
 
 auto EditorImGuiEventHook(HWND const hwnd, UINT const msg, WPARAM const wparam, LPARAM const lparam) -> bool {
 	return ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam);
 }
 
-
-std::atomic gLoading{ false };
-
-auto LoadAndBlockEditor(ImGuiIO& io, std::function<void()> const& fun) -> void {
+auto LoadAndBlockEditor(ImGuiIO& io, std::function<void()> const& fun, std::atomic<bool>& isEditorBusy) -> void {
 	auto const oldFlags{ io.ConfigFlags };
 	io.ConfigFlags |= ImGuiConfigFlags_NoMouse;
 	io.ConfigFlags |= ImGuiConfigFlags_NavNoCaptureKeyboard;
-	gLoading = true;
+	isEditorBusy = true;
 	fun();
 	io.ConfigFlags = oldFlags;
-	gLoading = false;
+	isEditorBusy = false;
 }
 
 auto IndexFileNameIfNeeded(std::filesystem::path const& filePathAbsolute) -> std::filesystem::path {
@@ -161,7 +170,6 @@ auto OpenProject(std::filesystem::path const& targetPath, ResourceStorage& resou
 	}
 	TODO*/
 }
-}
 
 auto DrawStartupScreen(ResourceStorage& resources, std::unique_ptr<Scene>& scene, std::filesystem::path& projDirAbs, std::filesystem::path const& assetDirRel, EditorObjectFactoryManager const& factoryManager) -> void {
 	auto constexpr flags{ ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings };
@@ -186,7 +194,7 @@ auto DrawStartupScreen(ResourceStorage& resources, std::unique_ptr<Scene>& scene
 	ImGui::End();
 }
 
-auto DrawMainMenuBar(ResourceStorage& resources, std::unique_ptr<Scene>& scene, std::filesystem::path& projDirAbs, std::filesystem::path const& assetDirRel, ImGuiIO& io, EditorObjectFactoryManager const& factoryManager, bool& showDemoWindow) -> void {
+auto DrawMainMenuBar(ResourceStorage& resources, std::unique_ptr<Scene>& scene, std::filesystem::path& projDirAbs, std::filesystem::path const& assetDirRel, ImGuiIO& io, EditorObjectFactoryManager const& factoryManager, bool& showDemoWindow, std::atomic<bool>& isEditorBusy) -> void {
 	if (ImGui::BeginMainMenuBar()) {
 		if (ImGui::BeginMenu("File")) {
 			if (ImGui::MenuItem("Open Project")) {
@@ -196,7 +204,7 @@ auto DrawMainMenuBar(ResourceStorage& resources, std::unique_ptr<Scene>& scene, 
 						std::free(selectedPath);
 					};
 
-					std::thread loaderThread{ LoadAndBlockEditor, std::ref(io), LoadAndAssignProject };
+					std::thread loaderThread{ LoadAndBlockEditor, std::ref(io), LoadAndAssignProject, std::ref(isEditorBusy)};
 					loaderThread.detach();
 				}
 			}
@@ -237,7 +245,7 @@ auto DrawMainMenuBar(ResourceStorage& resources, std::unique_ptr<Scene>& scene, 
 	}
 }
 
-auto DrawEntityHierarchyWindow(std::unique_ptr<Scene>& scene) -> void {
+auto DrawEntityHierarchyWindow(std::unique_ptr<Scene>& scene, Object*& selectedObject) -> void {
 	if (ImGui::Begin("Entities", nullptr, ImGuiWindowFlags_NoCollapse)) {
 		auto constexpr baseFlags{ ImGuiTreeNodeFlags_OpenOnArrow };
 		auto constexpr entityPayloadType{ "ENTITY" };
@@ -253,7 +261,7 @@ auto DrawEntityHierarchyWindow(std::unique_ptr<Scene>& scene) -> void {
 
 		for (std::size_t i = 0; i < entities.size(); i++) {
 			std::function<void(Entity&)> displayEntityRecursive;
-			displayEntityRecursive = [&displayEntityRecursive, &entities, &scene](Entity& entity) -> void {
+			displayEntityRecursive = [&displayEntityRecursive, &entities, &scene, &selectedObject](Entity& entity) -> void {
 				ImGuiTreeNodeFlags nodeFlags{ baseFlags };
 
 				if (entity.GetTransform().GetChildren().empty()) {
@@ -263,7 +271,7 @@ auto DrawEntityHierarchyWindow(std::unique_ptr<Scene>& scene) -> void {
 					nodeFlags |= ImGuiTreeNodeFlags_DefaultOpen;
 				}
 
-				if (gSelected && gSelected->GetGuid() == entity.GetGuid()) {
+				if (selectedObject->GetGuid() == entity.GetGuid()) {
 					nodeFlags |= ImGuiTreeNodeFlags_Selected;
 				}
 
@@ -283,7 +291,7 @@ auto DrawEntityHierarchyWindow(std::unique_ptr<Scene>& scene) -> void {
 				}
 
 				if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) {
-					gSelected = &entity;
+					selectedObject = &entity;
 				}
 
 				bool deleted{ false };
@@ -292,7 +300,7 @@ auto DrawEntityHierarchyWindow(std::unique_ptr<Scene>& scene) -> void {
 					if (ImGui::MenuItem("Delete")) {
 						entity.GetScene().DestroyEntity(entity);
 						entities = scene->GetEntities();
-						gSelected = nullptr;
+						selectedObject = nullptr;
 						deleted = true;
 						ImGui::CloseCurrentPopup();
 					}
@@ -323,12 +331,12 @@ auto DrawEntityHierarchyWindow(std::unique_ptr<Scene>& scene) -> void {
 	ImGui::End();
 }
 
-auto DrawObjectPropertiesWindow(EditorObjectFactoryManager const& factoryManager) -> void {
+auto DrawObjectPropertiesWindow(EditorObjectFactoryManager const& factoryManager, Object*& selectedObject) -> void {
 	ImGui::SetNextWindowSize(ImVec2{ 400, 600 }, ImGuiCond_FirstUseEver);
 
 	if (ImGui::Begin("Object Properties", nullptr, ImGuiWindowFlags_NoCollapse)) {
-		if (gSelected) {
-			factoryManager.GetFor(gSelected->GetSerializationType()).OnGui(factoryManager, *gSelected);
+		if (selectedObject) {
+			factoryManager.GetFor(selectedObject->GetSerializationType()).OnGui(factoryManager, *selectedObject);
 		}
 	}
 	ImGui::End();
@@ -385,7 +393,7 @@ auto DrawGameViewWindow(bool const gameRunning) -> void {
 	ImGui::End();
 }
 
-auto DrawSceneViewWindow(ImGuiIO const& io) -> void {
+auto DrawSceneViewWindow(ImGuiIO const& io, Object*& selectedObject) -> void {
 	ImVec2 static constexpr sceneViewportMinSize{ 480, 270 };
 
 	ImGui::SetNextWindowSize(sceneViewportMinSize, ImGuiCond_FirstUseEver);
@@ -478,7 +486,7 @@ auto DrawSceneViewWindow(ImGuiIO const& io) -> void {
 			ImGuizmo::DrawGrid(editorCamViewMat.GetData(), editorCamProjMat.GetData(), Matrix4::Identity().GetData(), editorCam.farClip);
 		}
 
-		if (auto const selectedEntity{ dynamic_cast<Entity*>(gSelected) }; selectedEntity) {
+		if (auto const selectedEntity{ dynamic_cast<Entity*>(selectedObject) }; selectedEntity) {
 			static auto op{ ImGuizmo::OPERATION::TRANSLATE };
 
 			if (!io.WantTextInput && !isMovingSceneCamera) {
@@ -512,7 +520,7 @@ auto DrawSceneViewWindow(ImGuiIO const& io) -> void {
 	ImGui::End();
 }
 
-auto DrawProjectWindow(ResourceStorage& resources, std::filesystem::path const& projDirAbs, std::filesystem::path const& assetDirRel, MeshImporter const& meshImporter, TextureImporter const& texImporter, ImGuiIO& imGuiIo) -> void {
+auto DrawProjectWindow(ResourceStorage& resources, std::filesystem::path const& projDirAbs, std::filesystem::path const& assetDirRel, MeshImporter const& meshImporter, TextureImporter const& texImporter, ImGuiIO& imGuiIo, Object*& selectedObject, std::atomic<bool>& isEditorBusy) -> void {
 	if (ImGui::Begin("Project", nullptr, ImGuiWindowFlags_NoCollapse)) {
 		if (ImGui::BeginTable("ProjectWindowMainTable", 2, ImGuiTableFlags_Resizable)) {
 			ImGui::TableNextRow();
@@ -555,40 +563,40 @@ auto DrawProjectWindow(ResourceStorage& resources, std::filesystem::path const& 
 				}
 
 				auto const createAssetMetaFile{
-					[&projDirAbs, &assetDirRel](leopph::Object const& asset) {
-						std::ofstream{ projDirAbs / assetDirRel / asset.GetName() += RESOURCE_FILE_EXT } << leopph::editor::GenerateAssetMetaFileContents(asset);
+					[&projDirAbs, &assetDirRel](Object const& asset) {
+						std::ofstream{ projDirAbs / assetDirRel / asset.GetName() += RESOURCE_FILE_EXT } << GenerateAssetMetaFileContents(asset);
 					}
 				};
 
 				if (ImGui::BeginPopup(contextMenuId)) {
 					if (ImGui::BeginMenu("Create##CreateAssetMenu")) {
 						auto const saveNewAsset{
-							[&resources, &projDirAbs, &assetDirRel](std::shared_ptr<leopph::Object> asset) {
+							[&resources, &projDirAbs, &assetDirRel, &selectedObject](std::shared_ptr<Object> asset) {
 								auto const outPath{ IndexFileNameIfNeeded(projDirAbs / assetDirRel / asset->GetName() += RESOURCE_FILE_EXT) };
 								asset->SetName(outPath.stem().string());
 
-								static std::vector<leopph::u8> outBytes;
+								static std::vector<u8> outBytes;
 								asset->SerializeBinary(outBytes);
 
 								std::ofstream out{ outPath, std::ios::binary };
-								std::ranges::copy(std::as_const(outBytes), std::ostream_iterator<leopph::u8>{ out });
+								std::ranges::copy(std::as_const(outBytes), std::ostream_iterator<u8>{ out });
 								outBytes.clear();
 
-								gSelected = asset.get();
+								selectedObject = asset.get();
 
 								resources[outPath] = std::move(asset);
 							}
 						};
 
 						if (ImGui::MenuItem("Material##CreateMaterialAsset")) {
-							auto newMtl{ std::make_shared<leopph::Material>() };
+							auto newMtl{ std::make_shared<Material>() };
 							newMtl->SetName("New Material");
 							saveNewAsset(std::move(newMtl));
 							createAssetMetaFile(*newMtl);
 						}
 
 						if (ImGui::MenuItem("Scene##CreateSceneAsset")) {
-							auto newScene{ std::make_shared<leopph::Scene>() };
+							auto newScene{ std::make_shared<Scene>() };
 							newScene->SetName("New Scene");
 							saveNewAsset(std::move(newScene));
 							createAssetMetaFile(*newScene);
@@ -619,7 +627,7 @@ auto DrawProjectWindow(ResourceStorage& resources, std::filesystem::path const& 
 						};
 
 						auto const saveNewAsset{
-							[&createAssetMetaFile, &resources](std::shared_ptr<leopph::Object> asset, std::filesystem::path const& dstPath) {
+							[&createAssetMetaFile, &resources](std::shared_ptr<Object> asset, std::filesystem::path const& dstPath) {
 								asset->SetName(dstPath.filename().string());
 								createAssetMetaFile(*asset);
 								resources[dstPath] = std::move(asset);
@@ -631,8 +639,8 @@ auto DrawProjectWindow(ResourceStorage& resources, std::filesystem::path const& 
 								std::thread loaderThread{
 									LoadAndBlockEditor, std::ref(imGuiIo), [&copyAssetFileToProjDir, &saveNewAsset, &meshImporter, path] {
 										auto const assetPath{ copyAssetFileToProjDir(path) };
-										saveNewAsset(std::make_shared<leopph::Mesh>(std::move(meshImporter.Import(assetPath))), assetPath);
-									}
+										saveNewAsset(std::make_shared<Mesh>(std::move(meshImporter.Import(assetPath))), assetPath);
+									}, std::ref(isEditorBusy)
 								};
 								loaderThread.detach();
 							}
@@ -645,8 +653,8 @@ auto DrawProjectWindow(ResourceStorage& resources, std::filesystem::path const& 
 								std::thread loaderThread{
 									LoadAndBlockEditor, std::ref(imGuiIo), [&copyAssetFileToProjDir, &saveNewAsset, &texImporter, path] {
 										auto const assetPath{ copyAssetFileToProjDir(path) };
-										saveNewAsset(std::make_shared<leopph::Texture2D>(std::move(texImporter.Import(assetPath))), assetPath);
-									}
+										saveNewAsset(std::make_shared<Texture2D>(std::move(texImporter.Import(assetPath))), assetPath);
+									}, std::ref(isEditorBusy)
 								};
 								loaderThread.detach();
 							}
@@ -671,7 +679,7 @@ auto DrawProjectWindow(ResourceStorage& resources, std::filesystem::path const& 
 							selectedProjSubDir = entryPath;
 						}
 						else {
-							gSelected = resources.find(absolute(entryPath))->second.get();
+							selectedObject = resources.find(absolute(entryPath))->second.get();
 						}
 					}
 				}
@@ -687,20 +695,6 @@ auto DrawProjectWindow(ResourceStorage& resources, std::filesystem::path const& 
 
 auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ HINSTANCE, [[maybe_unused]] _In_ wchar_t*, [[maybe_unused]] _In_ int) -> int {
 	try {
-		leopph::editor::EditorObjectFactoryManager factoryManager;
-		factoryManager.Register<leopph::Entity>();
-		factoryManager.Register<leopph::TransformComponent>();
-		factoryManager.Register<leopph::CameraComponent>();
-		factoryManager.Register<leopph::BehaviorComponent>();
-		factoryManager.Register<leopph::CubeModelComponent>();
-		factoryManager.Register<leopph::LightComponent>();
-		factoryManager.Register<leopph::Material>();
-		factoryManager.Register<leopph::Mesh>();
-		factoryManager.Register<leopph::Texture2D>();
-
-		leopph::editor::MeshImporter meshImporter;
-		leopph::editor::TextureImporter texImporter;
-
 		leopph::gWindow.StartUp();
 		leopph::gRenderer.StartUp();
 		leopph::gManagedRuntime.StartUp();
@@ -728,6 +722,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
 		leopph::gWindow.SetEventHook(leopph::editor::EditorImGuiEventHook);
 
+		std::atomic isEditorBusy{ false };
 		bool runGame{ false };
 		bool showDemoWindow{ false };
 
@@ -737,6 +732,13 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 		std::filesystem::path projDirAbs;
 		std::filesystem::path const assetDirRel{ "Assets" };
 		std::filesystem::path const cacheDirRel{ "Cache" };
+
+		leopph::Object* selectedObject{ nullptr };
+
+		leopph::editor::MeshImporter meshImporter;
+		leopph::editor::TextureImporter texImporter;
+
+		auto factoryManager{ leopph::editor::CreateFactoryManager() };
 
 		leopph::init_time();
 
@@ -764,7 +766,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 						leopph::gWindow.SetCursorHiding(false);
 						leopph::gRenderer.SetSyncInterval(1);
 						scene->Load(factoryManager);
-						leopph::editor::gSelected = nullptr;
+						selectedObject = nullptr;
 					}
 				}
 				else {
@@ -778,7 +780,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
 				ImGui::DockSpaceOverViewport();
 
-				if (leopph::editor::gLoading) {
+				if (isEditorBusy) {
 					ImGui::SetNextWindowPos(ImVec2(imGuiIo.DisplaySize.x * 0.5f, imGuiIo.DisplaySize.y * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
 					if (ImGui::Begin("LoadingIndicator", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse)) {
 						leopph::editor::DrawSpinner("##spinner", 15, 6, ImGui::GetColorU32(ImGuiCol_ButtonHovered));
@@ -790,13 +792,12 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 					ImGui::ShowDemoWindow();
 				}
 
-				DrawMainMenuBar(resources, scene, projDirAbs, assetDirRel, imGuiIo, factoryManager, showDemoWindow);
-
-				leopph::editor::DrawEntityHierarchyWindow(scene);
-				DrawObjectPropertiesWindow(factoryManager);
+				DrawMainMenuBar(resources, scene, projDirAbs, assetDirRel, imGuiIo, factoryManager, showDemoWindow, isEditorBusy);
+				leopph::editor::DrawEntityHierarchyWindow(scene, selectedObject);
+				DrawObjectPropertiesWindow(factoryManager, selectedObject);
 				leopph::editor::DrawGameViewWindow(runGame);
-				leopph::editor::DrawSceneViewWindow(imGuiIo);
-				DrawProjectWindow(resources, projDirAbs, assetDirRel, meshImporter, texImporter, imGuiIo);
+				leopph::editor::DrawSceneViewWindow(imGuiIo, selectedObject);
+				DrawProjectWindow(resources, projDirAbs, assetDirRel, meshImporter, texImporter, imGuiIo, selectedObject, isEditorBusy);
 			}
 
 			ImGui::Render();
