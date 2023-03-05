@@ -79,6 +79,15 @@ auto Mesh::UploadToGPU() -> void {
 	}
 }
 
+auto Mesh::CalculateBounds() -> void {
+	mBounds = {};
+
+	for (auto const& position : mData.positions) {
+		mBounds.min = Vector3{ std::min(mBounds.min[0], position[0]), std::min(mBounds.min[1], position[1]), std::min(mBounds.min[2], position[2]) };
+		mBounds.max = Vector3{ std::max(mBounds.max[0], position[0]), std::max(mBounds.max[1], position[1]), std::max(mBounds.max[2], position[2]) };
+	}
+}
+
 Mesh::Mesh(Data data) :
 	mTempData{ std::move(data) } {
 	ValidateAndUpdate();
@@ -116,6 +125,10 @@ auto Mesh::SetIndices(std::vector<u32> indices) noexcept -> void {
 	mTempData.indices = std::move(indices);
 }
 
+auto Mesh::GetBounds() const noexcept -> AABB const& {
+	return mBounds;
+}
+
 auto Mesh::ValidateAndUpdate() -> void {
 	auto const errMsg{ std::format("Failed to validate mesh {} (\"{}\").", GetGuid().ToString(), GetName()) };
 
@@ -136,6 +149,7 @@ auto Mesh::ValidateAndUpdate() -> void {
 	mData.uvs = std::move(mTempData.uvs);
 	mData.indices = std::move(mTempData.indices);
 
+	CalculateBounds();
 	UploadToGPU();
 }
 

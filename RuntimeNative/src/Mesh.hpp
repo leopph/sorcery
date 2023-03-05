@@ -2,6 +2,7 @@
 
 #include "Object.hpp"
 #include "Math.hpp"
+#include "AABB.hpp"
 
 #include <span>
 #include <vector>
@@ -25,12 +26,14 @@ public:
 private:
 	Data mData;
 	Data mTempData;
+	AABB mBounds{};
 	Microsoft::WRL::ComPtr<ID3D11Buffer> mPosBuf;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> mNormBuf;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> mUvBuf;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> mIndBuf;
 
 	auto UploadToGPU() -> void;
+	auto CalculateBounds() -> void;
 
 public:
 	Mesh() = default;
@@ -48,6 +51,8 @@ public:
 
 	LEOPPHAPI [[nodiscard]] auto GetIndices() const noexcept -> std::span<u32 const>;
 	LEOPPHAPI auto SetIndices(std::vector<u32> indices) noexcept -> void;
+
+	LEOPPHAPI [[nodiscard]] auto GetBounds() const noexcept -> AABB const&;
 
 	LEOPPHAPI auto ValidateAndUpdate() -> void;
 
