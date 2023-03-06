@@ -3,10 +3,14 @@
 #include <queue>
 
 #include "Math.hpp"
+#include "BinarySerializer.hpp"
 
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
+
+#include <fstream>
+#include <vector>
 
 namespace leopph::editor {
 class MeshImporter::Impl {
@@ -134,8 +138,70 @@ auto MeshImporter::GetSupportedExtensions() const -> std::string {
 	return mImpl->GetSupportedExtensions();
 }
 
-auto MeshImporter::Import(std::filesystem::path const& src) -> Object* {
-	return new Mesh{ mImpl->Import(src) };
+auto MeshImporter::Import(InputImportInfo const& importInfo, std::filesystem::path const& cacheDir) -> Object* {
+	auto const cachedDataPath{ cacheDir / importInfo.guid.ToString() };
+
+	if (exists(cachedDataPath)) {
+		std::ifstream in{ cachedDataPath, std::ios::binary };
+		std::vector<unsigned char> fileData{ std::istreambuf_iterator{ in }, {} };
+		std::span const bytes{ fileData };
+
+		Mesh::Data meshData;
+		auto const numVerts{ BinarySerializer<u64>::Deserialize(bytes.first<8>(), std::endian::little) };
+		auto const numInds{ BinarySerializer<u64>::Deserialize(bytes.subspan<8, 8>(), std::endian::little) };
+
+		std::span const dataBytes{ bytes.subspan(2 * sizeof(u64)) };
+
+		meshData.positions.reserve(numVerts);
+		for (std::size_t i{ 0 }; i < numVerts; i++) {
+			meshData.positions.emplace_back(BinarySerializer<Vector3>::Deserialize(dataBytes.subspan(i * sizeof(Vector3)).first<sizeof(Vector3)>(), std::endian::little));
+		}
+
+		meshData.normals.reserve(numVerts);
+		for (std::size_t i{ 0 }; i < numVerts; i++) {
+			meshData.normals.emplace_back(BinarySerializer<Vector3>::Deserialize(dataBytes.subspan(numVerts * sizeof(Vector3) + i * sizeof(Vector3)).first<sizeof(Vector3)>(), std::endian::little));
+		}
+
+		meshData.uvs.reserve(numVerts);
+		for (std::size_t i{ 0 }; i < numVerts; i++) {
+			meshData.uvs.emplace_back(BinarySerializer<Vector2>::Deserialize(dataBytes.subspan(numVerts * 2 * sizeof(Vector3) + i * sizeof(Vector2)).first<sizeof(Vector2)>(), std::endian::little));
+		}
+
+		meshData.indices.reserve(numVerts);
+		for (std::size_t i{ 0 }; i < numInds; i++) {
+			meshData.indices.emplace_back(BinarySerializer<u32>::Deserialize(dataBytes.subspan(numVerts * (2 * sizeof(Vector3) + sizeof(Vector2)) + i * sizeof(u32)).first<sizeof(u32)>(), std::endian::little));
+		}
+
+		return new Mesh{ std::move(meshData) };
+	}
+
+	auto meshData{ mImpl->Import(importInfo.src) };
+
+	std::vector<u8> cachedData;
+
+	BinarySerializer<u64>::Serialize(meshData.positions.size(), cachedData, std::endian::little);
+	BinarySerializer<u64>::Serialize(meshData.indices.size(), cachedData, std::endian::little);
+
+	for (auto const& pos : meshData.positions) {
+		BinarySerializer<Vector3>::Serialize(pos, cachedData, std::endian::little);
+	}
+
+	for (auto const& norm : meshData.normals) {
+		BinarySerializer<Vector3>::Serialize(norm, cachedData, std::endian::little);
+	}
+
+	for (auto const& uv : meshData.uvs) {
+		BinarySerializer<Vector2>::Serialize(uv, cachedData, std::endian::little);
+	}
+
+	for (auto const ind : meshData.indices) {
+		BinarySerializer<u32>::Serialize(ind, cachedData, std::endian::little);
+	}
+
+	std::ofstream out{ cachedDataPath, std::ios::out | std::ios::binary };
+	std::ranges::copy(cachedData, std::ostreambuf_iterator{ out });
+
+	return new Mesh{ std::move(meshData) };
 }
 
 auto MeshImporter::GetPrecedence() const noexcept -> int {

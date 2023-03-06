@@ -42,20 +42,20 @@ auto EditorObjectWrapperFor<BehaviorComponent>::OnGui(EditorObjectFactoryManager
 			auto const widgetLabel = std::format("##WidgetForMember{}", memberName);
 
 			if (memberClass && mono_class_is_enum(memberClass)) {
-				auto const enumValues = leopph::gManagedRuntime.GetEnumValues(mono_type_get_object(leopph::gManagedRuntime.GetManagedDomain(), memberType));
+				auto const enumValues = gManagedRuntime.GetEnumValues(mono_type_get_object(gManagedRuntime.GetManagedDomain(), memberType));
 				auto const numEnumValues = mono_array_length(enumValues);
 				int valueAlign;
 				auto const valueSize = mono_type_size(mono_class_enum_basetype(memberClass), &valueAlign);
 
 				auto const pCurrentValueUnboxed = getFunc();
-				auto const currentValueBoxed = mono_value_box(leopph::gManagedRuntime.GetManagedDomain(), memberClass, pCurrentValueUnboxed);
+				auto const currentValueBoxed = mono_value_box(gManagedRuntime.GetManagedDomain(), memberClass, pCurrentValueUnboxed);
 				auto const currentValueManagedStr = mono_object_to_string(currentValueBoxed, nullptr);
 				auto const currentValueStr = mono_string_to_utf8(currentValueManagedStr);
 
 				if (ImGui::BeginCombo(widgetLabel.c_str(), currentValueStr)) {
 					for (std::size_t i{ 0 }; i < numEnumValues; i++) {
 						auto pValue = mono_array_addr_with_size(enumValues, valueSize, i);
-						auto const valueBoxed = mono_value_box(leopph::gManagedRuntime.GetManagedDomain(), memberClass, reinterpret_cast<void*>(pValue));
+						auto const valueBoxed = mono_value_box(gManagedRuntime.GetManagedDomain(), memberClass, reinterpret_cast<void*>(pValue));
 
 						bool selected{ true };
 						for (int j{ 0 }; j < valueSize; j++) {
@@ -82,9 +82,9 @@ auto EditorObjectWrapperFor<BehaviorComponent>::OnGui(EditorObjectFactoryManager
 				}
 			}
 			else if (memberTypeName == "leopph.Quaternion") {
-				auto euler = static_cast<leopph::Quaternion*>(getFunc())->ToEulerAngles();
+				auto euler = static_cast<Quaternion*>(getFunc())->ToEulerAngles();
 				if (ImGui::DragFloat3(widgetLabel.c_str(), euler.GetData())) {
-					auto quaternion = leopph::Quaternion::FromEulerAngles(euler[0], euler[1], euler[2]);
+					auto quaternion = Quaternion::FromEulerAngles(euler[0], euler[1], euler[2]);
 					auto pQuaternion = &quaternion;
 					setFunc(reinterpret_cast<void**>(&pQuaternion));
 				}
@@ -104,11 +104,11 @@ auto EditorObjectWrapperFor<BehaviorComponent>::OnGui(EditorObjectFactoryManager
 
 		void* iter{ nullptr };
 		while (auto const field = mono_class_get_fields(klass, &iter)) {
-			auto const refField = mono_field_get_object(leopph::gManagedRuntime.GetManagedDomain(), klass, field);
+			auto const refField = mono_field_get_object(gManagedRuntime.GetManagedDomain(), klass, field);
 
-			if (leopph::gManagedRuntime.ShouldSerialize(refField)) {
+			if (gManagedRuntime.ShouldSerialize(refField)) {
 				drawComponentMemberWidget(mono_field_get_name(field), mono_field_get_type(field), [field, obj] {
-					                          return mono_object_unbox(mono_field_get_value_object(leopph::gManagedRuntime.GetManagedDomain(), field, obj));
+					                          return mono_object_unbox(mono_field_get_value_object(gManagedRuntime.GetManagedDomain(), field, obj));
 				                          }, [field, obj](void** data) {
 					                          mono_field_set_value(obj, field, *data);
 				                          });
@@ -118,9 +118,9 @@ auto EditorObjectWrapperFor<BehaviorComponent>::OnGui(EditorObjectFactoryManager
 		iter = nullptr;
 
 		while (auto const prop = mono_class_get_properties(klass, &iter)) {
-			auto const refProp = mono_property_get_object(leopph::gManagedRuntime.GetManagedDomain(), klass, prop);
+			auto const refProp = mono_property_get_object(gManagedRuntime.GetManagedDomain(), klass, prop);
 
-			if (leopph::gManagedRuntime.ShouldSerialize(refProp)) {
+			if (gManagedRuntime.ShouldSerialize(refProp)) {
 				drawComponentMemberWidget(mono_property_get_name(prop), mono_signature_get_return_type(mono_method_signature(mono_property_get_get_method(prop))), [prop, obj] {
 					                          return mono_object_unbox(mono_property_get_value(prop, obj, nullptr, nullptr));
 				                          }, [prop, obj](void** data) {
@@ -328,7 +328,7 @@ auto EditorObjectWrapperFor<Entity>::OnGui(EditorObjectFactoryManager const& obj
 		ImGui::EndTable();
 	}
 
-	for (static std::vector<leopph::Component*> components; auto const& component : entity.GetComponents(components)) {
+	for (static std::vector<Component*> components; auto const& component : entity.GetComponents(components)) {
 		auto const obj = component->GetManagedObject();
 		auto const klass = mono_object_get_class(obj);
 
@@ -353,7 +353,7 @@ auto EditorObjectWrapperFor<Entity>::OnGui(EditorObjectFactoryManager const& obj
 	ImGui::Button(addNewComponentLabel);
 
 	if (ImGui::BeginPopupContextItem(nullptr, ImGuiPopupFlags_MouseButtonLeft)) {
-		for (auto const& componentClass : leopph::gManagedRuntime.GetComponentClasses()) {
+		for (auto const& componentClass : gManagedRuntime.GetComponentClasses()) {
 			auto const componentName = mono_class_get_name(componentClass);
 			if (ImGui::MenuItem(componentName)) {
 				entity.CreateComponent(componentClass);

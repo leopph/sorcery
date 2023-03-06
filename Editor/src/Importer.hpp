@@ -15,8 +15,12 @@ public:
 
 	virtual ~Importer() = default;
 
+	struct InputImportInfo {
+		std::filesystem::path src;
+		Guid guid;
+	};
 
-	[[nodiscard]] virtual auto Import(std::filesystem::path const& src) -> Object* = 0;
+	[[nodiscard]] virtual auto Import(InputImportInfo const& importInfo, std::filesystem::path const& cacheDir) -> Object* = 0;
 	[[nodiscard]] virtual auto GetPrecedence() const noexcept -> int = 0;
 };
 }
