@@ -297,7 +297,7 @@ auto DrawEntityHierarchyWindow(std::unique_ptr<Scene>& scene, Object*& selectedO
 					nodeFlags |= ImGuiTreeNodeFlags_DefaultOpen;
 				}
 
-				if (selectedObject->GetGuid() == entity.GetGuid()) {
+				if (selectedObject && selectedObject->GetGuid() == entity.GetGuid()) {
 					nodeFlags |= ImGuiTreeNodeFlags_Selected;
 				}
 
