@@ -19,6 +19,7 @@ auto Material::UpdateGPUData() const noexcept -> void {
 	mappedBufData->metallic = mBufData.metallic;
 	mappedBufData->roughness = mBufData.roughness;
 	mappedBufData->ao = mBufData.ao;
+	mappedBufData->sampleAlbedo = mBufData.sampleAlbedo;
 	gRenderer.GetImmediateContext()->Unmap(mBuffer.Get(), 0);
 }
 

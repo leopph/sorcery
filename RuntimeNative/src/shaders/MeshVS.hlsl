@@ -14,6 +14,7 @@ MeshVsOut main(MeshVSIn vsIn) {
     ret.worldPos = worldPos4.xyz;
     ret.clipPos = mul(worldPos4, viewProjMat);
     ret.normal = mul(vsIn.vertexNorm, normalMat);
+    ret.uv = vsIn.vertexUV;
 
     return ret;
 }

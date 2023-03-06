@@ -1,6 +1,9 @@
 #include "CBuffers.hlsli"
 #include "MeshVSOut.hlsli"
 
+Texture2D gAlbedoMap;
+SamplerState gSampler;
+
 static const float PI = 3.14159265f;
 
 float3 FresnelSchlick(float cosTheta, float3 F0) {
@@ -40,11 +43,17 @@ float Smith(float3 N, float3 V, float3 L, float roughness) {
 }
 
 float4 main(MeshVsOut vsOut) : SV_TARGET {
+	float3 albedo = material.albedo;
+
+    if (material.sampleAlbedo != 0) {
+        albedo *= pow(gAlbedoMap.Sample(gSampler, vsOut.uv).rgb, 2.2);
+    }
+
     float3 N = normalize(vsOut.normal);
     float3 V = normalize(camPos - vsOut.worldPos);
 
     float3 F0 = float3(0.04, 0.04, 0.04);
-    F0 = lerp(F0, material.albedo, material.metallic);
+    F0 = lerp(F0, albedo, material.metallic);
 	           
     // reflectance equation
     float3 Lo = float3(0.0, 0.0, 0.0);
@@ -68,9 +77,9 @@ float4 main(MeshVsOut vsOut) : SV_TARGET {
             
         // add to outgoing radiance Lo
     float NdotL = max(dot(N, L), 0.0);
-    Lo += (kD * material.albedo / PI + specular) * radiance * NdotL;
+    Lo += (kD * albedo / PI + specular) * radiance * NdotL;
   
-    float3 ambient = 0.03 * material.albedo * material.ao;
+    float3 ambient = 0.03 * albedo * material.ao;
     float3 color = ambient + Lo;
    
     return float4(color, 1.0);

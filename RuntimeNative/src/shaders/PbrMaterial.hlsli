@@ -6,6 +6,7 @@ struct PbrMaterial {
     float metallic;
     float roughness;
     float ao;
+    int sampleAlbedo;
 };
 
 #endif
