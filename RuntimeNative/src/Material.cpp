@@ -100,19 +100,6 @@ auto Material::GetBuffer() const noexcept -> NonOwning<ID3D11Buffer*> {
 	return mBuffer.Get();
 }
 
-
-auto Material::BindPs() const noexcept -> void {
-	gRenderer.GetImmediateContext()->PSSetConstantBuffers(0, 1, mBuffer.GetAddressOf());
-
-	if (mAlbedoMap) {
-		auto const srv{ mAlbedoMap->GetSrv() };
-		gRenderer.GetImmediateContext()->PSSetShaderResources(0, 1, &srv);
-	}
-	else {
-		gRenderer.GetImmediateContext()->PSSetShaderResources(0, 0, nullptr);
-	}
-}
-
 auto Material::GetSerializationType() const -> Type {
 	return Type::Material;
 }

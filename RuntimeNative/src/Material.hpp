@@ -52,8 +52,6 @@ public:
 
 	LEOPPHAPI [[nodiscard]] auto GetBuffer() const noexcept -> NonOwning<ID3D11Buffer*>;
 
-	LEOPPHAPI auto BindPs() const noexcept -> void;
-
 	LEOPPHAPI [[nodiscard]] auto GetSerializationType() const -> Type override;
 	LEOPPHAPI static Type const SerializationType;
 
