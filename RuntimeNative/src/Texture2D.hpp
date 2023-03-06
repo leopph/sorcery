@@ -16,6 +16,7 @@
 namespace leopph {
 class Texture2D final : public Object {
 	Microsoft::WRL::ComPtr<ID3D11Texture2D> mTex;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> mSrv;
 	Image mImgData{};
 	Image mTmpImgData{};
 
@@ -27,6 +28,8 @@ public:
 
 	[[nodiscard]] LEOPPHAPI auto GetImageData() const noexcept -> Image const&;
 	LEOPPHAPI auto SetImageData(Image img) noexcept -> void;
+
+	[[nodiscard]] LEOPPHAPI auto GetSrv() const noexcept -> NonOwning<ID3D11ShaderResourceView*>;
 
 	LEOPPHAPI auto Update() noexcept -> void;
 

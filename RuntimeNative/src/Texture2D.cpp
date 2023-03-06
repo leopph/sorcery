@@ -23,7 +23,23 @@ void Texture2D::UploadToGPU() {
 		.pSysMem = mImgData.get_data().data(),
 		.SysMemPitch = mImgData.get_width() * mImgData.get_num_channels()
 	};
-	gRenderer.GetDevice()->CreateTexture2D(&texDesc, &texData, mTex.ReleaseAndGetAddressOf());
+
+	if (FAILED(gRenderer.GetDevice()->CreateTexture2D(&texDesc, &texData, mTex.ReleaseAndGetAddressOf()))) {
+		throw std::runtime_error{ "Failed to create GPU texture." };
+	}
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC constexpr srvDesc{
+		.Format = DXGI_FORMAT_R8G8B8A8_UNORM,
+		.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D,
+		.Texture2D = {
+			.MostDetailedMip = 0,
+			.MipLevels = static_cast<UINT>(-1)
+		}
+	};
+
+	if (FAILED(gRenderer.GetDevice()->CreateShaderResourceView(mTex.Get(), &srvDesc, mSrv.ReleaseAndGetAddressOf()))) {
+		throw std::runtime_error{ "Failed to create GPU SRV." };
+	}
 }
 
 Texture2D::Texture2D(Image img) : mTmpImgData{ std::move(img) } {
@@ -36,6 +52,10 @@ auto Texture2D::GetImageData() const noexcept -> Image const& {
 
 auto Texture2D::SetImageData(Image img) noexcept -> void {
 	mTmpImgData = std::move(img);
+}
+
+auto Texture2D::GetSrv() const noexcept -> NonOwning<ID3D11ShaderResourceView*> {
+	return mSrv.Get();
 }
 
 auto Texture2D::Update() noexcept -> void {
