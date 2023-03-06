@@ -689,15 +689,18 @@ auto DrawProjectWindow(ResourceStorage& resources, std::filesystem::path const& 
 				}
 
 				for (auto const& entry : std::filesystem::directory_iterator{ selectedProjSubDir }) {
+					auto const entryPathAbs{ absolute(entry.path()) };
+
+					if (auto const resIt{ resources.find(entryPathAbs) }; resIt != std::end(resources) || is_directory(entryPathAbs)) {
 					ImGui::TableNextColumn();
-					auto const& entryPath{ entry.path() };
-					auto const entryStemStr{ entryPath.stem().string() };
-					if (auto const resIt{ resources.find(absolute(entryPath)) }; (is_directory(entryPath) || resIt != std::end(resources)) && ImGui::Button(entryStemStr.c_str(), { buttonSize, buttonSize })) {
-						if (is_directory(entryPath)) {
-							selectedProjSubDir = entryPath;
+
+						if (ImGui::Button(entryPathAbs.stem().string().c_str(), { buttonSize, buttonSize })) {
+							if (is_directory(entryPathAbs)) {
+								selectedProjSubDir = entryPathAbs;
 						}
 						else {
-							selectedObject = resources.find(absolute(entryPath))->second.get();
+								selectedObject = resources.find(entryPathAbs)->second.get();
+							}
 						}
 					}
 				}
