@@ -194,6 +194,8 @@ auto OpenProject(std::filesystem::path const& targetPath, ResourceStorage& resou
 
 		auto const asset{ factory.GetImporter().Import(inputImportInfo, cacheDirAbs) };
 		asset->SetName(info.assetPath.stem().string());
+		asset->SetGuid(info.metaInfo.guid);
+
 		resourceStorage[info.assetPath] = std::shared_ptr<Object>{ asset };
 	}
 }
@@ -657,6 +659,7 @@ auto DrawProjectWindow(ResourceStorage& resources, std::filesystem::path const& 
 
 								auto const asset{ importer.Import(info, cacheDirAbs) };
 								asset->SetName(dstPath.stem().string());
+								asset->SetGuid(guid);
 
 								std::ofstream{ std::filesystem::path{ dstPath } += RESOURCE_FILE_EXT } << GenerateAssetMetaFileContents(*asset, factoryManager);
 								resources[dstPath] = std::shared_ptr<Object>{ asset };
