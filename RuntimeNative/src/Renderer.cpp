@@ -91,24 +91,31 @@ std::vector const CUBE_POSITIONS{
 	Vector3{ 0.5f, 0.5f, 0.5f },
 	Vector3{ 0.5f, 0.5f, 0.5f },
 	Vector3{ 0.5f, 0.5f, 0.5f },
+
 	Vector3{ -0.5f, 0.5f, 0.5f },
 	Vector3{ -0.5f, 0.5f, 0.5f },
 	Vector3{ -0.5f, 0.5f, 0.5f },
+
 	Vector3{ -0.5f, 0.5f, -0.5f },
 	Vector3{ -0.5f, 0.5f, -0.5f },
 	Vector3{ -0.5f, 0.5f, -0.5f },
+
 	Vector3{ 0.5f, 0.5f, -0.5f },
 	Vector3{ 0.5f, 0.5f, -0.5f },
 	Vector3{ 0.5f, 0.5f, -0.5f },
+
 	Vector3{ 0.5f, -0.5f, 0.5f },
 	Vector3{ 0.5f, -0.5f, 0.5f },
 	Vector3{ 0.5f, -0.5f, 0.5f },
+
 	Vector3{ -0.5f, -0.5f, 0.5f },
 	Vector3{ -0.5f, -0.5f, 0.5f },
 	Vector3{ -0.5f, -0.5f, 0.5f },
+
 	Vector3{ -0.5f, -0.5f, -0.5f },
 	Vector3{ -0.5f, -0.5f, -0.5f },
 	Vector3{ -0.5f, -0.5f, -0.5f },
+
 	Vector3{ 0.5f, -0.5f, -0.5f },
 	Vector3{ 0.5f, -0.5f, -0.5f },
 	Vector3{ 0.5f, -0.5f, -0.5f },
@@ -118,30 +125,69 @@ std::vector const CUBE_NORMALS{
 	Vector3{ 1.0f, 0.0f, 0.0f },
 	Vector3{ 0.0f, 1.0f, 0.0f },
 	Vector3{ 0.0f, 0.0f, 1.0f },
+
 	Vector3{ -1.0f, 0.0f, 0.0f },
 	Vector3{ 0.0f, 1.0f, 0.0f },
 	Vector3{ 0.0f, 0.0f, 1.0f },
+
 	Vector3{ -1.0f, 0.0f, 0.0f },
 	Vector3{ 0.0f, 1.0f, 0.0f },
 	Vector3{ 0.0f, 0.0f, -1.0f },
+
 	Vector3{ 1.0f, 0.0f, 0.0f },
 	Vector3{ 0.0f, 1.0f, 0.0f },
 	Vector3{ 0.0f, 0.0f, -1.0f },
+
 	Vector3{ 1.0f, 0.0f, 0.0f },
 	Vector3{ 0.0f, -1.0f, 0.0f },
 	Vector3{ 0.0f, 0.0f, 1.0f },
+
 	Vector3{ -1.0f, 0.0f, 0.0f },
 	Vector3{ 0.0f, -1.0f, 0.0f },
 	Vector3{ 0.0f, 0.0f, 1.0f },
+
 	Vector3{ -1.0f, 0.0f, 0.0f },
 	Vector3{ 0.0f, -1.0f, 0.0f },
 	Vector3{ 0.0f, 0.0f, -1.0f },
+
 	Vector3{ 1.0f, 0.0f, 0.0f },
 	Vector3{ 0.0f, -1.0f, 0.0f },
 	Vector3{ 0.0f, 0.0f, -1.0f },
 };
 
-std::vector const CUBE_UVS{ CUBE_POSITIONS.size(), Vector2{ 0, 0 } };
+std::vector const CUBE_UVS{
+	Vector2{ 1, 0 },
+	Vector2{ 1, 0 },
+	Vector2{ 0, 0 },
+
+	Vector2{ 0, 0 },
+	Vector2{ 0, 0 },
+	Vector2{ 1, 0 },
+
+	Vector2{ 1, 0 },
+	Vector2{ 0, 1 },
+	Vector2{ 0, 0 },
+
+	Vector2{ 0, 0 },
+	Vector2{ 1, 1 },
+	Vector2{ 1, 0 },
+
+	Vector2{ 1, 1 },
+	Vector2{ 1, 1 },
+	Vector2{ 0, 1 },
+
+	Vector2{ 0, 1 },
+	Vector2{ 0, 1 },
+	Vector2{ 1, 1 },
+
+	Vector2{ 1, 1 },
+	Vector2{ 0, 0 },
+	Vector2{ 0, 1 },
+
+	Vector2{ 0, 1 },
+	Vector2{ 1, 0 },
+	Vector2{ 1, 1 }
+};
 
 std::vector<UINT> const CUBE_INDICES{
 	// Top face
@@ -745,6 +791,14 @@ auto Renderer::DrawMeshes() const noexcept -> void {
 
 		mResources->context->PSSetShader(mResources->meshPbrPS.Get(), nullptr, 0);
 		mResources->context->PSSetConstantBuffers(0, ARRAYSIZE(constantBuffers), constantBuffers);
+
+		if (mat.GetAlbedoMap()) {
+			auto const srv{ mat.GetAlbedoMap()->GetSrv() };
+			mResources->context->PSSetShaderResources(0, 1, &srv);
+		}
+		else {
+			mResources->context->PSSetShaderResources(0, 0, nullptr);
+		}
 
 		mResources->context->DrawIndexed(clamp_cast<UINT>(mesh.GetIndices().size()), 0, 0);
 	}
