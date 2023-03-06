@@ -62,6 +62,12 @@ template<>
 auto EditorObjectWrapperFor<TransformComponent>::OnGui(EditorObjectFactoryManager const& objectFactoryManager, Object& object) -> void;
 
 template<>
+auto EditorObjectWrapperFor<Mesh>::OnGui(EditorObjectFactoryManager const& objectFactoryManager, Object& object) -> void;
+
+template<>
+auto EditorObjectWrapperFor<Texture2D>::OnGui(EditorObjectFactoryManager const& objectFactoryManager, Object& object) -> void;
+
+template<>
 auto EditorObjectWrapperFor<Entity>::Instantiate() -> Object*;
 
 template<>

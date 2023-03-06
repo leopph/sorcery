@@ -501,6 +501,60 @@ auto EditorObjectWrapperFor<TransformComponent>::OnGui(EditorObjectFactoryManage
 	}
 }
 
+auto EditorObjectWrapperFor<Mesh>::OnGui([[maybe_unused]] EditorObjectFactoryManager const& objectFactoryManager, Object& object) -> void {
+	if (auto const& mesh{ dynamic_cast<Mesh&>(object) }; ImGui::BeginTable(std::format("{}", mesh.GetGuid().ToString()).c_str(), 2, ImGuiTableFlags_SizingStretchSame)) {
+		ImGui::TableNextRow();
+		ImGui::TableSetColumnIndex(0);
+		ImGui::PushItemWidth(FLT_MIN);
+		ImGui::TableSetColumnIndex(1);
+		ImGui::PushItemWidth(-FLT_MIN);
+
+		ImGui::TableSetColumnIndex(0);
+		ImGui::Text("%s", "Vertex Count");
+
+		ImGui::TableNextColumn();
+		ImGui::Text("%s", std::to_string(mesh.GetPositions().size()).c_str());
+
+		ImGui::TableNextColumn();
+		ImGui::Text("%s", "Index Count");
+
+		ImGui::TableNextColumn();
+		ImGui::Text("%s", std::to_string(mesh.GetIndices().size()).c_str());
+
+		ImGui::EndTable();
+	}
+}
+
+auto EditorObjectWrapperFor<Texture2D>::OnGui([[maybe_unused]] EditorObjectFactoryManager const& objectFactoryManager, Object& object) -> void {
+	if (auto const& tex{ dynamic_cast<Texture2D&>(object) }; ImGui::BeginTable(std::format("{}", tex.GetGuid().ToString()).c_str(), 2, ImGuiTableFlags_SizingStretchSame)) {
+		ImGui::TableNextRow();
+		ImGui::TableSetColumnIndex(0);
+		ImGui::PushItemWidth(FLT_MIN);
+		ImGui::TableSetColumnIndex(1);
+		ImGui::PushItemWidth(-FLT_MIN);
+
+		ImGui::TableSetColumnIndex(0);
+		ImGui::Text("%s", "Width");
+
+		ImGui::TableNextColumn();
+		ImGui::Text("%s", std::to_string(tex.GetImageData().get_width()).c_str());
+
+		ImGui::TableNextColumn();
+		ImGui::Text("%s", "Height");
+
+		ImGui::TableNextColumn();
+		ImGui::Text("%s", std::to_string(tex.GetImageData().get_height()).c_str());
+
+		ImGui::TableNextColumn();
+		ImGui::Text("%s", "Channel Count");
+
+		ImGui::TableNextColumn();
+		ImGui::Text("%s", std::to_string(tex.GetImageData().get_num_channels()).c_str());
+
+		ImGui::EndTable();
+	}
+}
+
 auto EditorObjectWrapperFor<Entity>::Instantiate() -> Object* {
 	return nullptr; // TODO
 }
