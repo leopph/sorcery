@@ -642,7 +642,7 @@ auto DrawProjectWindow(ResourceStorage& resources, std::filesystem::path const& 
 						};
 
 						auto const importAsset{
-							[&projDirAbs, &assetDirRel, &cacheDirRel, &resources, createAssetMetaFile](Importer& importer, std::filesystem::path const& srcPath) {
+							[&projDirAbs, &assetDirRel, &cacheDirRel, &resources, createAssetMetaFile, &factoryManager](Importer& importer, std::filesystem::path const& srcPath) {
 								auto const srcPathAbs{ absolute(srcPath) };
 								auto const dstPath{ IndexFileNameIfNeeded(projDirAbs / assetDirRel / srcPathAbs.filename()) };
 
@@ -657,7 +657,8 @@ auto DrawProjectWindow(ResourceStorage& resources, std::filesystem::path const& 
 
 								auto const asset{ importer.Import(info, cacheDirAbs) };
 								asset->SetName(dstPath.stem().string());
-								createAssetMetaFile(*asset);
+
+								std::ofstream{ std::filesystem::path{ dstPath } += RESOURCE_FILE_EXT } << GenerateAssetMetaFileContents(*asset, factoryManager);
 								resources[dstPath] = std::shared_ptr<Object>{ asset };
 							}
 						};
@@ -692,13 +693,13 @@ auto DrawProjectWindow(ResourceStorage& resources, std::filesystem::path const& 
 					auto const entryPathAbs{ absolute(entry.path()) };
 
 					if (auto const resIt{ resources.find(entryPathAbs) }; resIt != std::end(resources) || is_directory(entryPathAbs)) {
-					ImGui::TableNextColumn();
+						ImGui::TableNextColumn();
 
 						if (ImGui::Button(entryPathAbs.stem().string().c_str(), { buttonSize, buttonSize })) {
 							if (is_directory(entryPathAbs)) {
 								selectedProjSubDir = entryPathAbs;
-						}
-						else {
+							}
+							else {
 								selectedObject = resources.find(entryPathAbs)->second.get();
 							}
 						}
