@@ -2,7 +2,6 @@
 #include "Material.hpp"
 #include "Time.hpp"
 #include "BinarySerializer.hpp"
-#include "ModelImport.hpp"
 #include "Asset.hpp"
 #include "ObjectFactoryManager.hpp"
 #include "MeshImporter.hpp"

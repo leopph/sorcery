@@ -124,7 +124,6 @@
     <ClCompile Include="src\Entity.cpp" />
     <ClCompile Include="src\Material.cpp" />
     <ClCompile Include="src\Mesh.cpp" />
-    <ClCompile Include="src\ModelImport.cpp" />
     <ClCompile Include="src\Object.cpp" />
     <ClCompile Include="src\OnGui.cpp" />
     <ClCompile Include="src\Renderer.cpp" />
@@ -148,7 +147,6 @@
     <ClInclude Include="src\LightComponents.hpp" />
     <ClInclude Include="src\Material.hpp" />
     <ClInclude Include="src\Mesh.hpp" />
-    <ClInclude Include="src\ModelImport.hpp" />
     <ClInclude Include="src\OnGui.hpp" />
     <ClInclude Include="src\Color.hpp" />
     <ClInclude Include="src\Core.hpp" />
