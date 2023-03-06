@@ -17,7 +17,7 @@ public:
 	MeshImporter();
 	~MeshImporter() override;
 
-	[[nodiscard]] auto GetSupportedExtensions() const -> std::string;
+	[[nodiscard]] auto GetSupportedExtensions() const -> std::string override;
 	[[nodiscard]] auto Import(InputImportInfo const& importInfo, std::filesystem::path const& cacheDir) -> Object* override;
 	[[nodiscard]] auto GetPrecedence() const noexcept -> int override;
 };

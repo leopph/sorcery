@@ -69,4 +69,7 @@ auto EditorObjectWrapperFor<Mesh>::GetImporter() -> Importer&;
 
 template<>
 auto EditorObjectWrapperFor<Texture2D>::GetImporter() -> Importer&;
+
+template<>
+auto EditorObjectWrapperFor<Material>::GetImporter() -> Importer&;
 }

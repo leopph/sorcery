@@ -16,6 +16,7 @@
 #include "ObjectFactoryManager.hpp"
 #include "TextureImporter.hpp"
 #include "MeshImporter.hpp"
+#include "MaterialImporter.hpp"
 
 namespace leopph::editor {
 auto EditorObjectWrapperFor<BehaviorComponent>::OnGui(EditorObjectFactoryManager const&, Object& object) -> void {
@@ -512,5 +513,10 @@ auto EditorObjectWrapperFor<Mesh>::GetImporter() -> Importer& {
 auto EditorObjectWrapperFor<Texture2D>::GetImporter() -> Importer& {
 	TextureImporter static texImporter;
 	return texImporter;
+}
+
+auto EditorObjectWrapperFor<Material>::GetImporter() -> Importer& {
+	MaterialImporter static mtlImporter;
+	return mtlImporter;
 }
 }

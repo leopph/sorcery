@@ -20,6 +20,7 @@ public:
 		Guid guid;
 	};
 
+	[[nodiscard]] virtual auto GetSupportedExtensions() const -> std::string = 0;
 	[[nodiscard]] virtual auto Import(InputImportInfo const& importInfo, std::filesystem::path const& cacheDir) -> Object* = 0;
 	[[nodiscard]] virtual auto GetPrecedence() const noexcept -> int = 0;
 };

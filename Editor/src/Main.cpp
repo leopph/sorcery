@@ -546,7 +546,7 @@ auto DrawSceneViewWindow(ImGuiIO const& io, Object*& selectedObject) -> void {
 	ImGui::End();
 }
 
-auto DrawProjectWindow(ResourceStorage& resources, std::filesystem::path const& projDirAbs, std::filesystem::path const& assetDirRel, std::filesystem::path const& cacheDirRel, MeshImporter& meshImporter, TextureImporter& texImporter, ImGuiIO& imGuiIo, Object*& selectedObject, std::atomic<bool>& isEditorBusy, EditorObjectFactoryManager const& factoryManager) -> void {
+auto DrawProjectWindow(ResourceStorage& resources, std::filesystem::path const& projDirAbs, std::filesystem::path const& assetDirRel, std::filesystem::path const& cacheDirRel, ImGuiIO& imGuiIo, Object*& selectedObject, std::atomic<bool>& isEditorBusy, EditorObjectFactoryManager const& factoryManager) -> void {
 	if (ImGui::Begin("Project", nullptr, ImGuiWindowFlags_NoCollapse)) {
 		if (ImGui::BeginTable("ProjectWindowMainTable", 2, ImGuiTableFlags_Resizable)) {
 			ImGui::TableNextRow();
@@ -589,44 +589,35 @@ auto DrawProjectWindow(ResourceStorage& resources, std::filesystem::path const& 
 				}
 
 				auto const createAssetMetaFile{
-					[&projDirAbs, &assetDirRel, &factoryManager](Object const& asset) {
-						std::ofstream{ projDirAbs / assetDirRel / asset.GetName() += RESOURCE_FILE_EXT } << GenerateAssetMetaFileContents(asset, factoryManager);
+					[&factoryManager](Object const& asset, std::filesystem::path const& dstPath) {
+						std::ofstream{ std::filesystem::path{ dstPath } += RESOURCE_FILE_EXT } << GenerateAssetMetaFileContents(asset, factoryManager);
 					}
 				};
 
 				if (ImGui::BeginPopup(contextMenuId)) {
 					if (ImGui::BeginMenu("Create##CreateAssetMenu")) {
-						auto const saveNewAsset{
-							[&resources, &projDirAbs, &assetDirRel, &selectedObject](std::shared_ptr<Object> asset) {
-								auto const outPath{ IndexFileNameIfNeeded(projDirAbs / assetDirRel / asset->GetName() += RESOURCE_FILE_EXT) };
-								asset->SetName(outPath.stem().string());
-
-								static std::vector<u8> outBytes;
-								asset->SerializeBinary(outBytes);
-
-								std::ofstream out{ outPath, std::ios::binary };
-								std::ranges::copy(std::as_const(outBytes), std::ostream_iterator<u8>{ out });
-								outBytes.clear();
-
-								selectedObject = asset.get();
-
-								resources[outPath] = std::move(asset);
-							}
-						};
-
 						if (ImGui::MenuItem("Material##CreateMaterialAsset")) {
+							auto const dstPath{ IndexFileNameIfNeeded(projDirAbs / assetDirRel / "New Material.mtl") };
+
 							auto newMtl{ std::make_shared<Material>() };
-							newMtl->SetName("New Material");
-							createAssetMetaFile(*newMtl);
-							saveNewAsset(std::move(newMtl));
+							newMtl->SetName(dstPath.stem().string());
+
+							static std::vector<u8> outBytes;
+							newMtl->SerializeBinary(outBytes);
+							std::ofstream out{ dstPath, std::ios::out | std::ios::binary };
+							std::ranges::copy(outBytes, std::ostreambuf_iterator{ out });
+							outBytes.clear();
+
+							createAssetMetaFile(*newMtl, dstPath);
+							resources[dstPath] = std::move(newMtl);
 						}
 
-						if (ImGui::MenuItem("Scene##CreateSceneAsset")) {
+						/*if (ImGui::MenuItem("Scene##CreateSceneAsset")) {
 							auto newScene{ std::make_shared<Scene>() };
 							newScene->SetName("New Scene");
 							createAssetMetaFile(*newScene);
 							saveNewAsset(std::move(newScene));
-						}
+						}*/
 
 						ImGui::EndMenu();
 					}
@@ -644,7 +635,7 @@ auto DrawProjectWindow(ResourceStorage& resources, std::filesystem::path const& 
 						};
 
 						auto const importAsset{
-							[&projDirAbs, &assetDirRel, &cacheDirRel, &resources, createAssetMetaFile, &factoryManager](Importer& importer, std::filesystem::path const& srcPath) {
+							[&projDirAbs, &assetDirRel, &cacheDirRel, &resources, &factoryManager, createAssetMetaFile](Importer& importer, std::filesystem::path const& srcPath) {
 								auto const srcPathAbs{ absolute(srcPath) };
 								auto const dstPath{ IndexFileNameIfNeeded(projDirAbs / assetDirRel / srcPathAbs.filename()) };
 
@@ -661,12 +652,14 @@ auto DrawProjectWindow(ResourceStorage& resources, std::filesystem::path const& 
 								asset->SetName(dstPath.stem().string());
 								asset->SetGuid(guid);
 
-								std::ofstream{ std::filesystem::path{ dstPath } += RESOURCE_FILE_EXT } << GenerateAssetMetaFileContents(*asset, factoryManager);
+								createAssetMetaFile(*asset, dstPath);
 								resources[dstPath] = std::shared_ptr<Object>{ asset };
 							}
 						};
 
 						if (ImGui::MenuItem("Mesh##ImportMeshAssetMenuItem")) {
+							auto& meshImporter{ factoryManager.GetFor(Object::Type::Mesh).GetImporter() };
+
 							if (std::filesystem::path path; openFileDialog(meshImporter.GetSupportedExtensions().c_str(), nullptr, path)) {
 								ExecuteInBusyEditor(isEditorBusy, imGuiIo, [importAsset, &meshImporter, path] {
 									importAsset(meshImporter, path);
@@ -677,6 +670,8 @@ auto DrawProjectWindow(ResourceStorage& resources, std::filesystem::path const& 
 						}
 
 						if (ImGui::MenuItem("Texture##ImportTextureAssetMenuItem")) {
+							auto& texImporter{ factoryManager.GetFor(Object::Type::Mesh).GetImporter() };
+
 							if (std::filesystem::path path; openFileDialog(texImporter.GetSupportedExtensions().c_str(), nullptr, path)) {
 								ExecuteInBusyEditor(isEditorBusy, imGuiIo, [importAsset, &texImporter, path] {
 									importAsset(texImporter, path);
@@ -760,9 +755,6 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
 		leopph::Object* selectedObject{ nullptr };
 
-		leopph::editor::MeshImporter meshImporter;
-		leopph::editor::TextureImporter texImporter;
-
 		auto factoryManager{ leopph::editor::CreateFactoryManager() };
 
 		leopph::init_time();
@@ -835,7 +827,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 				DrawObjectPropertiesWindow(factoryManager, selectedObject);
 				leopph::editor::DrawGameViewWindow(runGame);
 				leopph::editor::DrawSceneViewWindow(imGuiIo, selectedObject);
-				DrawProjectWindow(resources, projDirAbs, assetDirRel, cacheDirRel, meshImporter, texImporter, imGuiIo, selectedObject, isEditorBusy, factoryManager);
+				DrawProjectWindow(resources, projDirAbs, assetDirRel, cacheDirRel, imGuiIo, selectedObject, isEditorBusy, factoryManager);
 			}
 
 			ImGui::Render();
