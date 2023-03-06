@@ -55,7 +55,7 @@ auto Material::GetAlbedoColor() const noexcept -> Color {
 }
 
 auto Material::SetAlbedoColor(Color const& albedoColor) noexcept -> void {
-	SetAlbedoVector(Vector3{ albedoColor.red / 255.f, albedoColor.green / 255.f, albedoColor.blue / 255.f });
+	SetAlbedoVector(Vector3{ static_cast<float>(albedoColor.red) / 255.f, static_cast<float>(albedoColor.green) / 255.f, static_cast<float>(albedoColor.blue) / 255.f });
 }
 
 auto Material::GetMetallic() const noexcept -> f32 {
@@ -85,6 +85,16 @@ auto Material::SetAo(f32 const ao) noexcept -> void {
 	UpdateGPUData();
 }
 
+auto Material::GetAlbedoMap() const noexcept -> Texture2D* {
+	return mAlbedoMap;
+}
+
+auto Material::SetAlbedoMap(Texture2D* const tex) noexcept -> void {
+	mAlbedoMap = tex;
+	mBufData.sampleAlbedo = mAlbedoMap != nullptr;
+	UpdateGPUData();
+}
+
 
 auto Material::GetBuffer() const noexcept -> NonOwning<ID3D11Buffer*> {
 	return mBuffer.Get();
@@ -93,6 +103,14 @@ auto Material::GetBuffer() const noexcept -> NonOwning<ID3D11Buffer*> {
 
 auto Material::BindPs() const noexcept -> void {
 	gRenderer.GetImmediateContext()->PSSetConstantBuffers(0, 1, mBuffer.GetAddressOf());
+
+	if (mAlbedoMap) {
+		auto const srv{ mAlbedoMap->GetSrv() };
+		gRenderer.GetImmediateContext()->PSSetShaderResources(0, 1, &srv);
+	}
+	else {
+		gRenderer.GetImmediateContext()->PSSetShaderResources(0, 0, nullptr);
+	}
 }
 
 auto Material::GetSerializationType() const -> Type {
