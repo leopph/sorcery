@@ -104,6 +104,7 @@
     <ClCompile Include="src\Asset.cpp" />
     <ClCompile Include="src\MaterialImporter.cpp" />
     <ClCompile Include="src\MeshImporter.cpp" />
+    <ClCompile Include="src\ObjectFactoryManager.cpp" />
     <ClCompile Include="src\ObjectWrappers.cpp" />
     <ClCompile Include="src\Serialization.cpp" />
     <ClCompile Include="src\Main.cpp" />
@@ -124,6 +125,7 @@
     <ClInclude Include="src\MeshImporter.hpp" />
     <ClInclude Include="src\ObjectFactoryManager.hpp" />
     <ClInclude Include="src\ObjectWrappers.hpp" />
+    <ClInclude Include="src\ResourceStorage.hpp" />
     <ClInclude Include="src\Serialization.hpp" />
     <ClInclude Include="src\TextureImporter.hpp" />
     <ClInclude Include="src\Widgets.hpp" />

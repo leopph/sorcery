@@ -4,9 +4,7 @@
 #include "BinarySerializer.hpp"
 #include "Asset.hpp"
 #include "ObjectFactoryManager.hpp"
-#include "MeshImporter.hpp"
-#include "TextureImporter.hpp"
-#include "Texture2D.hpp"
+#include "ResourceStorage.hpp"
 
 #include <TransformComponent.hpp>
 #include <BehaviorComponent.hpp>
@@ -39,62 +37,12 @@
 #include <queue>
 #include <cwchar>
 
-#include "Mesh.hpp"
-
 
 extern auto ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) -> LRESULT;
 
 
 namespace leopph::editor {
-class ResourceStorage {
-	std::unordered_map<std::filesystem::path, std::shared_ptr<Object>> mData;
-
-public:
-	auto operator[](std::filesystem::path const& path) -> auto&& {
-		return mData[absolute(path)];
-	}
-
-	auto find(std::filesystem::path const& path) const {
-		return mData.find(path);
-	}
-
-	auto begin() const noexcept {
-		return std::begin(mData);
-	}
-
-	auto end() const noexcept {
-		return std::end(mData);
-	}
-
-	auto cbegin() const noexcept {
-		return std::cbegin(mData);
-	}
-
-	auto cend() const noexcept {
-		return std::cend(mData);
-	}
-
-	auto clear() noexcept -> decltype(auto) {
-		mData.clear();
-	}
-};
-
 std::string_view constexpr RESOURCE_FILE_EXT{ ".leopphres" };
-
-[[nodiscard]] auto CreateFactoryManager() -> EditorObjectFactoryManager {
-	EditorObjectFactoryManager factoryManager;
-	factoryManager.Register<Entity>();
-	factoryManager.Register<TransformComponent>();
-	factoryManager.Register<CameraComponent>();
-	factoryManager.Register<BehaviorComponent>();
-	factoryManager.Register<CubeModelComponent>();
-	factoryManager.Register<LightComponent>();
-	factoryManager.Register<Material>();
-	factoryManager.Register<Mesh>();
-	factoryManager.Register<Texture2D>();
-
-	return factoryManager;
-}
 
 auto EditorImGuiEventHook(HWND const hwnd, UINT const msg, WPARAM const wparam, LPARAM const lparam) -> bool {
 	return ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam);
@@ -634,7 +582,7 @@ auto DrawProjectWindow(ResourceStorage& resources, std::filesystem::path const& 
 						};
 
 						auto const importAsset{
-							[&projDirAbs, &assetDirRel, &cacheDirRel, &resources, &factoryManager, createAssetMetaFile](Importer& importer, std::filesystem::path const& srcPath) {
+							[&projDirAbs, &assetDirRel, &cacheDirRel, &resources, createAssetMetaFile](Importer& importer, std::filesystem::path const& srcPath) {
 								auto const srcPathAbs{ absolute(srcPath) };
 								auto const dstPath{ IndexFileNameIfNeeded(projDirAbs / assetDirRel / srcPathAbs.filename()) };
 

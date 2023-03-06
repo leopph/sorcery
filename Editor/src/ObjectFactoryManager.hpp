@@ -31,4 +31,6 @@ public:
 		return static_cast<EditorObjectWrapperFor<T>&>(*mTypeIdxToWrapper.at(typeid(T)));
 	}
 };
+
+[[nodiscard]] auto CreateFactoryManager() noexcept -> EditorObjectFactoryManager;
 }
