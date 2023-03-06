@@ -551,7 +551,7 @@ auto DrawProjectWindow(ResourceStorage& resources, std::filesystem::path const& 
 		if (ImGui::BeginTable("ProjectWindowMainTable", 2, ImGuiTableFlags_Resizable)) {
 			ImGui::TableNextRow();
 			ImGui::TableSetColumnIndex(0);
-			std::filesystem::path static selectedProjSubDir{ projDirAbs };
+			std::filesystem::path static selectedProjSubDir{ projDirAbs / assetDirRel };
 			[](this auto self, std::filesystem::path const& dir) -> void {
 				std::filesystem::directory_iterator const it{ dir };
 				ImGuiTreeNodeFlags treeNodeFlags{ ImGuiTreeNodeFlags_OpenOnArrow };
@@ -578,7 +578,7 @@ auto DrawProjectWindow(ResourceStorage& resources, std::filesystem::path const& 
 					}
 					ImGui::TreePop();
 				}
-			}(projDirAbs);
+			}(projDirAbs / assetDirRel);
 
 			ImGui::TableSetColumnIndex(1);
 			if (auto constexpr buttonSize{ 75 }; ImGui::BeginTable("ProjectWindowSubDirTable", static_cast<int>(ImGui::GetContentRegionAvail().x) / buttonSize)) {
