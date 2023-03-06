@@ -8,7 +8,9 @@ auto Scene::GetSerializationType() const -> Type {
 }
 
 auto Scene::CreateEntity() -> Entity& {
-	return *mEntities.emplace_back(new Entity{});
+	auto const entity = new Entity{};
+	entity->SetScene(this);
+	return *mEntities.emplace_back(entity);
 }
 
 auto Scene::DestroyEntity(Entity const& entityToRemove) -> void {
