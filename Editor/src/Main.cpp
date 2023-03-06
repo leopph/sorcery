@@ -1,4 +1,3 @@
-#include "Serialization.hpp"
 #include "Widgets.hpp"
 #include "Material.hpp"
 #include "Time.hpp"
@@ -25,7 +24,6 @@
 #include <backends/imgui_impl_dx11.h>
 #include <ImGuizmo.h>
 
-#include <YamlInclude.hpp>
 #include <nfd.h>
 
 #include <shellapi.h>
@@ -36,7 +34,6 @@
 #include <functional>
 #include <format>
 #include <fstream>
-#include <optional>
 #include <ranges>
 #include <string>
 #include <vector>
@@ -196,6 +193,7 @@ auto OpenProject(std::filesystem::path const& targetPath, ResourceStorage& resou
 		};
 
 		auto const asset{ factory.GetImporter().Import(inputImportInfo, cacheDirAbs) };
+		asset->SetName(info.assetPath.stem().string());
 		resourceStorage[info.assetPath] = std::shared_ptr<Object>{ asset };
 	}
 }
@@ -643,35 +641,31 @@ auto DrawProjectWindow(ResourceStorage& resources, std::filesystem::path const& 
 							}
 						};
 
-						auto const copyAssetFileToProjDir{
-							[projDirAbs, assetDirRel](std::filesystem::path const& srcPath) -> std::filesystem::path {
+						auto const importAsset{
+							[&projDirAbs, &assetDirRel, &cacheDirRel, &resources, createAssetMetaFile](Importer& importer, std::filesystem::path const& srcPath) {
 								auto const srcPathAbs{ absolute(srcPath) };
-								auto dstPath{ IndexFileNameIfNeeded(projDirAbs / assetDirRel / srcPath.filename()) };
-								copy(srcPath, dstPath);
-								return dstPath;
-							}
-						};
+								auto const dstPath{ IndexFileNameIfNeeded(projDirAbs / assetDirRel / srcPathAbs.filename()) };
 
-						auto const saveNewAsset{
-							[createAssetMetaFile, &resources](std::shared_ptr<Object> asset, std::filesystem::path const& dstPath) {
-								asset->SetName(dstPath.filename().string());
+								copy_file(srcPathAbs, dstPath);
+								auto const cacheDirAbs{ absolute(projDirAbs / cacheDirRel) };
+								auto const guid{ Guid::Generate() };
+
+								Importer::InputImportInfo const info{
+									.src = dstPath,
+									.guid = guid
+								};
+
+								auto const asset{ importer.Import(info, cacheDirAbs) };
+								asset->SetName(dstPath.stem().string());
 								createAssetMetaFile(*asset);
-								resources[dstPath] = std::move(asset);
+								resources[dstPath] = std::shared_ptr<Object>{ asset };
 							}
 						};
-
-						auto const cacheDirAbs{ absolute(projDirAbs / cacheDirRel) };
 
 						if (ImGui::MenuItem("Mesh##ImportMeshAssetMenuItem")) {
 							if (std::filesystem::path path; openFileDialog(meshImporter.GetSupportedExtensions().c_str(), nullptr, path)) {
-								ExecuteInBusyEditor(isEditorBusy, imGuiIo, [copyAssetFileToProjDir, saveNewAsset, &meshImporter, path, cacheDirAbs] {
-									auto const assetPath{ copyAssetFileToProjDir(path) };
-									auto const guid{ Guid::Generate() };
-									Importer::InputImportInfo const info{
-										.src = assetPath,
-										.guid = guid
-									};
-									saveNewAsset(std::shared_ptr<Mesh>{ static_cast<Mesh*>(meshImporter.Import(info, cacheDirAbs)) }, assetPath);
+								ExecuteInBusyEditor(isEditorBusy, imGuiIo, [importAsset, &meshImporter, path] {
+									importAsset(meshImporter, path);
 								});
 							}
 
@@ -680,14 +674,8 @@ auto DrawProjectWindow(ResourceStorage& resources, std::filesystem::path const& 
 
 						if (ImGui::MenuItem("Texture##ImportTextureAssetMenuItem")) {
 							if (std::filesystem::path path; openFileDialog(texImporter.GetSupportedExtensions().c_str(), nullptr, path)) {
-								ExecuteInBusyEditor(isEditorBusy, imGuiIo, [copyAssetFileToProjDir, saveNewAsset, &texImporter, path, cacheDirAbs] {
-									auto const assetPath{ copyAssetFileToProjDir(path) };
-									auto const guid{ Guid::Generate() };
-									Importer::InputImportInfo const info{
-										.src = assetPath,
-										.guid = guid
-									};
-									saveNewAsset(std::shared_ptr<Texture2D>{ static_cast<Texture2D*>(texImporter.Import(info, cacheDirAbs)) }, assetPath);
+								ExecuteInBusyEditor(isEditorBusy, imGuiIo, [importAsset, &texImporter, path] {
+									importAsset(texImporter, path);
 								});
 							}
 
