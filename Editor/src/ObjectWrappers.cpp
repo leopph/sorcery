@@ -399,9 +399,9 @@ auto EditorObjectWrapperFor<LightComponent>::OnGui(EditorObjectFactoryManager co
 }
 
 auto EditorObjectWrapperFor<Material>::OnGui(EditorObjectFactoryManager const&, Object& object) -> void {
-	auto& mat{ dynamic_cast<Material&>(object) };
+	auto& mtl{ dynamic_cast<Material&>(object) };
 
-	if (ImGui::BeginTable(std::format("{}", mat.GetGuid().ToString()).c_str(), 2, ImGuiTableFlags_SizingStretchSame)) {
+	if (ImGui::BeginTable(std::format("{}", mtl.GetGuid().ToString()).c_str(), 2, ImGuiTableFlags_SizingStretchSame)) {
 		ImGui::TableNextRow();
 		ImGui::TableSetColumnIndex(0);
 		ImGui::PushItemWidth(FLT_MIN);
@@ -412,33 +412,70 @@ auto EditorObjectWrapperFor<Material>::OnGui(EditorObjectFactoryManager const&, 
 		ImGui::Text("Albedo Color");
 		ImGui::TableNextColumn();
 
-		if (Vector3 albedoColor{ mat.GetAlbedoVector() }; ImGui::ColorEdit3("###matAlbedoColor", albedoColor.GetData())) {
-			mat.SetAlbedoVector(albedoColor);
+		if (Vector3 albedoColor{ mtl.GetAlbedoVector() }; ImGui::ColorEdit3("###matAlbedoColor", albedoColor.GetData())) {
+			mtl.SetAlbedoVector(albedoColor);
 		}
 
 		ImGui::TableNextColumn();
 		ImGui::Text("Metallic");
 		ImGui::TableNextColumn();
 
-		if (f32 metallic{ mat.GetMetallic() }; ImGui::SliderFloat("###matMetallic", &metallic, 0.0f, 1.0f)) {
-			mat.SetMetallic(metallic);
+		if (f32 metallic{ mtl.GetMetallic() }; ImGui::SliderFloat("###matMetallic", &metallic, 0.0f, 1.0f)) {
+			mtl.SetMetallic(metallic);
 		}
 
 		ImGui::TableNextColumn();
 		ImGui::Text("Roughness");
 		ImGui::TableNextColumn();
 
-		if (f32 roughness{ mat.GetRoughness() }; ImGui::SliderFloat("###matRoughness", &roughness, 0.0f, 1.0f)) {
-			mat.SetRoughness(roughness);
+		if (f32 roughness{ mtl.GetRoughness() }; ImGui::SliderFloat("###matRoughness", &roughness, 0.0f, 1.0f)) {
+			mtl.SetRoughness(roughness);
 		}
 
 		ImGui::TableNextColumn();
 		ImGui::Text("Ambient Occlusion");
 		ImGui::TableNextColumn();
 
-		if (f32 ao{ mat.GetAo() }; ImGui::SliderFloat("###matAo", &ao, 0.0f, 1.0f)) {
-			mat.SetAo(ao);
+		if (f32 ao{ mtl.GetAo() }; ImGui::SliderFloat("###matAo", &ao, 0.0f, 1.0f)) {
+			mtl.SetAo(ao);
 		}
+
+		ImGui::TableNextColumn();
+		ImGui::Text("%s", "Albedo Map");
+		ImGui::TableNextColumn();
+
+		static std::vector<Texture2D*> textures;
+		static std::string texFilter;
+
+		auto constexpr popupId{ "SelectAlbedoMapPopUp" };
+
+		if (ImGui::Button("Select##SelectAlbedoMapButton")) {
+			Object::FindObjectsOfType(textures);
+			texFilter.clear();
+			ImGui::OpenPopup(popupId);
+		}
+
+		if (ImGui::BeginPopup(popupId)) {
+			if (ImGui::InputText("###SearchAlbedoMap", &texFilter)) {
+				Object::FindObjectsOfType(textures);
+				std::erase_if(textures, [](Texture2D const* tex) {
+					return !tex->GetName().contains(texFilter);
+				});
+			}
+
+			for (auto const tex : textures) {
+				if (ImGui::Selectable(std::format("{}##texoption{}", tex->GetName(), tex->GetGuid().ToString()).c_str())) {
+					mtl.SetAlbedoMap(tex);
+					break;
+				}
+			}
+
+			ImGui::EndPopup();
+		}
+
+		ImGui::SameLine();
+
+		ImGui::Text("%s", mtl.GetAlbedoMap() ? mtl.GetAlbedoMap()->GetName().data() : "None");
 
 		ImGui::EndTable();
 	}
@@ -526,7 +563,9 @@ auto EditorObjectWrapperFor<Mesh>::OnGui([[maybe_unused]] EditorObjectFactoryMan
 }
 
 auto EditorObjectWrapperFor<Texture2D>::OnGui([[maybe_unused]] EditorObjectFactoryManager const& objectFactoryManager, Object& object) -> void {
-	if (auto const& tex{ dynamic_cast<Texture2D&>(object) }; ImGui::BeginTable(std::format("{}", tex.GetGuid().ToString()).c_str(), 2, ImGuiTableFlags_SizingStretchSame)) {
+	auto const& tex{ dynamic_cast<Texture2D&>(object) };
+
+	if (ImGui::BeginTable(std::format("{}", tex.GetGuid().ToString()).c_str(), 2, ImGuiTableFlags_SizingStretchSame)) {
 		ImGui::TableNextRow();
 		ImGui::TableSetColumnIndex(0);
 		ImGui::PushItemWidth(FLT_MIN);
@@ -553,6 +592,24 @@ auto EditorObjectWrapperFor<Texture2D>::OnGui([[maybe_unused]] EditorObjectFacto
 
 		ImGui::EndTable();
 	}
+
+	auto const contentRegion{ ImGui::GetContentRegionAvail() };
+	auto const imgWidth{ static_cast<float>(tex.GetImageData().get_width()) };
+	auto const imgHeight{ static_cast<float>(tex.GetImageData().get_height()) };
+	auto const widthRatio{ contentRegion.x / imgWidth };
+	auto const heightRatio{ contentRegion.y / imgHeight };
+	ImVec2 displaySize;
+
+	if (widthRatio > heightRatio) {
+		displaySize.x = imgWidth * heightRatio;
+		displaySize.y = imgHeight * heightRatio;
+	}
+	else {
+		displaySize.x = imgWidth * widthRatio;
+		displaySize.y = imgHeight * widthRatio;
+	}
+
+	ImGui::Image(tex.GetSrv(), displaySize);
 }
 
 auto EditorObjectWrapperFor<Entity>::Instantiate() -> Object* {
