@@ -13,6 +13,7 @@
 #include <mono/metadata/object.h>
 #include <mono/metadata/reflection.h>
 
+#include "EditorContext.hpp"
 #include "ObjectFactoryManager.hpp"
 #include "TextureImporter.hpp"
 #include "MeshImporter.hpp"
@@ -20,7 +21,7 @@
 #include "SceneImporter.hpp"
 
 namespace leopph::editor {
-auto EditorObjectWrapperFor<BehaviorComponent>::OnGui(EditorObjectFactoryManager const&, Object& object) -> void {
+auto EditorObjectWrapperFor<BehaviorComponent>::OnGui([[maybe_unused]] Context& context, Object& object) -> void {
 	auto const& behavior{ dynamic_cast<BehaviorComponent&>(object) };
 
 	auto const guidStr{ behavior.GetGuid().ToString() };
@@ -135,7 +136,7 @@ auto EditorObjectWrapperFor<BehaviorComponent>::OnGui(EditorObjectFactoryManager
 	}
 }
 
-auto EditorObjectWrapperFor<CameraComponent>::OnGui(EditorObjectFactoryManager const&, Object& object) -> void {
+auto EditorObjectWrapperFor<CameraComponent>::OnGui([[maybe_unused]] Context& context, Object& object) -> void {
 	auto& cam{ dynamic_cast<CameraComponent&>(object) };
 
 	auto const guidStr{ cam.GetGuid().ToString() };
@@ -225,7 +226,7 @@ auto EditorObjectWrapperFor<CameraComponent>::OnGui(EditorObjectFactoryManager c
 	}
 }
 
-auto EditorObjectWrapperFor<ModelComponent>::OnGui(EditorObjectFactoryManager const&, Object& object) -> void {
+auto EditorObjectWrapperFor<ModelComponent>::OnGui([[maybe_unused]] Context& context, Object& object) -> void {
 	auto& model{ dynamic_cast<ModelComponent&>(object) };
 
 	if (ImGui::BeginTable(std::format("{}", model.GetGuid().ToString()).c_str(), 2, ImGuiTableFlags_SizingStretchSame)) {
@@ -308,7 +309,7 @@ auto EditorObjectWrapperFor<ModelComponent>::OnGui(EditorObjectFactoryManager co
 	}
 }
 
-auto EditorObjectWrapperFor<Entity>::OnGui(EditorObjectFactoryManager const& objectFactoryManager, Object& object) -> void {
+auto EditorObjectWrapperFor<Entity>::OnGui(Context& context, Object& object) -> void {
 	auto& entity{ dynamic_cast<Entity&>(object) };
 
 	static std::string entityName;
@@ -337,7 +338,7 @@ auto EditorObjectWrapperFor<Entity>::OnGui(EditorObjectFactoryManager const& obj
 		auto const componentNodeId = mono_class_get_name(klass);
 		if (ImGui::TreeNodeEx(componentNodeId, ImGuiTreeNodeFlags_DefaultOpen)) {
 			ImGui::Separator();
-			objectFactoryManager.GetFor(component->GetSerializationType()).OnGui(objectFactoryManager, *component);
+			context.GetFactoryManager().GetFor(component->GetSerializationType()).OnGui(context, *component);
 			ImGui::TreePop();
 		}
 
@@ -367,7 +368,7 @@ auto EditorObjectWrapperFor<Entity>::OnGui(EditorObjectFactoryManager const& obj
 	}
 }
 
-auto EditorObjectWrapperFor<LightComponent>::OnGui(EditorObjectFactoryManager const&, Object& object) -> void {
+auto EditorObjectWrapperFor<LightComponent>::OnGui([[maybe_unused]] Context& context, Object& object) -> void {
 	auto& light{ dynamic_cast<LightComponent&>(object) };
 
 	if (ImGui::BeginTable(std::format("{}", light.GetGuid().ToString()).c_str(), 2, ImGuiTableFlags_SizingStretchSame)) {
@@ -399,7 +400,7 @@ auto EditorObjectWrapperFor<LightComponent>::OnGui(EditorObjectFactoryManager co
 	}
 }
 
-auto EditorObjectWrapperFor<Material>::OnGui(EditorObjectFactoryManager const&, Object& object) -> void {
+auto EditorObjectWrapperFor<Material>::OnGui([[maybe_unused]] Context& context, Object& object) -> void {
 	auto& mtl{ dynamic_cast<Material&>(object) };
 
 	if (ImGui::BeginTable(std::format("{}", mtl.GetGuid().ToString()).c_str(), 2, ImGuiTableFlags_SizingStretchSame)) {
@@ -482,7 +483,7 @@ auto EditorObjectWrapperFor<Material>::OnGui(EditorObjectFactoryManager const&, 
 	}
 }
 
-auto EditorObjectWrapperFor<TransformComponent>::OnGui(EditorObjectFactoryManager const&, Object& object) -> void {
+auto EditorObjectWrapperFor<TransformComponent>::OnGui([[maybe_unused]] Context& context, Object& object) -> void {
 	auto& transform{ dynamic_cast<TransformComponent&>(object) };
 
 	if (ImGui::BeginTable(std::format("{}", transform.GetGuid().ToString()).c_str(), 2, ImGuiTableFlags_SizingStretchSame)) {
@@ -539,7 +540,7 @@ auto EditorObjectWrapperFor<TransformComponent>::OnGui(EditorObjectFactoryManage
 	}
 }
 
-auto EditorObjectWrapperFor<Mesh>::OnGui([[maybe_unused]] EditorObjectFactoryManager const& objectFactoryManager, Object& object) -> void {
+auto EditorObjectWrapperFor<Mesh>::OnGui([[maybe_unused]] Context& context, Object& object) -> void {
 	if (auto const& mesh{ dynamic_cast<Mesh&>(object) }; ImGui::BeginTable(std::format("{}", mesh.GetGuid().ToString()).c_str(), 2, ImGuiTableFlags_SizingStretchSame)) {
 		ImGui::TableNextRow();
 		ImGui::TableSetColumnIndex(0);
@@ -563,7 +564,7 @@ auto EditorObjectWrapperFor<Mesh>::OnGui([[maybe_unused]] EditorObjectFactoryMan
 	}
 }
 
-auto EditorObjectWrapperFor<Texture2D>::OnGui([[maybe_unused]] EditorObjectFactoryManager const& objectFactoryManager, Object& object) -> void {
+auto EditorObjectWrapperFor<Texture2D>::OnGui([[maybe_unused]] Context& context, Object& object) -> void {
 	auto const& tex{ dynamic_cast<Texture2D&>(object) };
 
 	if (ImGui::BeginTable(std::format("{}", tex.GetGuid().ToString()).c_str(), 2, ImGuiTableFlags_SizingStretchSame)) {
@@ -613,7 +614,7 @@ auto EditorObjectWrapperFor<Texture2D>::OnGui([[maybe_unused]] EditorObjectFacto
 	ImGui::Image(tex.GetSrv(), displaySize);
 }
 
-auto EditorObjectWrapperFor<Scene>::OnGui([[maybe_unused]] EditorObjectFactoryManager const& objectFactoryManager, [[maybe_unused]] Object& object) -> void {
+auto EditorObjectWrapperFor<Scene>::OnGui([[maybe_unused]] Context& context, [[maybe_unused]] Object& object) -> void {
 	ImGui::Text("%s", "Scene Asset");
 }
 

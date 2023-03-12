@@ -269,7 +269,7 @@ auto DrawObjectPropertiesWindow(Context& context) -> void {
 
 	if (ImGui::Begin("Object Properties", nullptr, ImGuiWindowFlags_NoCollapse)) {
 		if (context.GetSelectedObject()) {
-			context.GetFactoryManager().GetFor(context.GetSelectedObject()->GetSerializationType()).OnGui(context.GetFactoryManager(), *context.GetSelectedObject());
+			context.GetFactoryManager().GetFor(context.GetSelectedObject()->GetSerializationType()).OnGui(context, *context.GetSelectedObject());
 		}
 	}
 	ImGui::End();

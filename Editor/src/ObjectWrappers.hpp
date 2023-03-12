@@ -17,17 +17,18 @@
 
 namespace leopph::editor {
 class EditorObjectFactoryManager;
+class Context;
 
 class EditorObjectWrapper : public ObjectInstantiator {
 public:
-	virtual auto OnGui(EditorObjectFactoryManager const& objectFactoryManager, Object& object) -> void = 0;
+	virtual auto OnGui(Context& context, Object& object) -> void = 0;
 	[[nodiscard]] virtual auto GetImporter() -> Importer& = 0;
 };
 
 template<typename Wrapped>
 class EditorObjectWrapperFor : public EditorObjectWrapper {
 public:
-	auto OnGui([[maybe_unused]] EditorObjectFactoryManager const& objectFactoryManager, [[maybe_unused]] Object& object) -> void override {}
+	auto OnGui([[maybe_unused]] Context& context, [[maybe_unused]] Object& object) -> void override {}
 	[[nodiscard]] auto Instantiate() -> Object* override;
 
 	[[nodiscard]] auto GetImporter() -> Importer& override {
@@ -41,34 +42,34 @@ auto EditorObjectWrapperFor<Wrapped>::Instantiate() -> Object* {
 }
 
 template<>
-auto EditorObjectWrapperFor<BehaviorComponent>::OnGui(EditorObjectFactoryManager const& objectFactoryManager, Object& object) -> void;
+auto EditorObjectWrapperFor<BehaviorComponent>::OnGui(Context& context, Object& object) -> void;
 
 template<>
-auto EditorObjectWrapperFor<CameraComponent>::OnGui(EditorObjectFactoryManager const& objectFactoryManager, Object& object) -> void;
+auto EditorObjectWrapperFor<CameraComponent>::OnGui(Context& context, Object& object) -> void;
 
 template<>
-auto EditorObjectWrapperFor<ModelComponent>::OnGui(EditorObjectFactoryManager const& objectFactoryManager, Object& object) -> void;
+auto EditorObjectWrapperFor<ModelComponent>::OnGui(Context& context, Object& object) -> void;
 
 template<>
-auto EditorObjectWrapperFor<Entity>::OnGui(EditorObjectFactoryManager const& objectFactoryManager, Object& object) -> void;
+auto EditorObjectWrapperFor<Entity>::OnGui(Context& context, Object& object) -> void;
 
 template<>
-auto EditorObjectWrapperFor<LightComponent>::OnGui(EditorObjectFactoryManager const& objectFactoryManager, Object& object) -> void;
+auto EditorObjectWrapperFor<LightComponent>::OnGui(Context& context, Object& object) -> void;
 
 template<>
-auto EditorObjectWrapperFor<Material>::OnGui(EditorObjectFactoryManager const& objectFactoryManager, Object& object) -> void;
+auto EditorObjectWrapperFor<Material>::OnGui(Context& context, Object& object) -> void;
 
 template<>
-auto EditorObjectWrapperFor<TransformComponent>::OnGui(EditorObjectFactoryManager const& objectFactoryManager, Object& object) -> void;
+auto EditorObjectWrapperFor<TransformComponent>::OnGui(Context& context, Object& object) -> void;
 
 template<>
-auto EditorObjectWrapperFor<Mesh>::OnGui(EditorObjectFactoryManager const& objectFactoryManager, Object& object) -> void;
+auto EditorObjectWrapperFor<Mesh>::OnGui(Context& context, Object& object) -> void;
 
 template<>
-auto EditorObjectWrapperFor<Texture2D>::OnGui(EditorObjectFactoryManager const& objectFactoryManager, Object& object) -> void;
+auto EditorObjectWrapperFor<Texture2D>::OnGui(Context& context, Object& object) -> void;
 
 template<>
-auto EditorObjectWrapperFor<Scene>::OnGui(EditorObjectFactoryManager const& objectFactoryManager, Object& object) -> void;
+auto EditorObjectWrapperFor<Scene>::OnGui(Context& context, Object& object) -> void;
 
 template<>
 auto EditorObjectWrapperFor<Entity>::Instantiate() -> Object*;
