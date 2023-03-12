@@ -1,5 +1,7 @@
 #pragma once
 
+#include <span>
+
 #include "Component.hpp"
 
 #include "Math.hpp"
@@ -38,8 +40,8 @@ public:
 	[[nodiscard]] LEOPPHAPI auto GetSerializationType() const -> Type override;
 	LEOPPHAPI static Object::Type const SerializationType;
 
-	LEOPPHAPI auto SerializeTextual(YAML::Node& node) const -> void override;
-	LEOPPHAPI auto DeserializeTextual(YAML::Node const& node) -> void override;
+	LEOPPHAPI auto Serialize(YAML::Node& node) const -> void override;
+	LEOPPHAPI auto Deserialize(YAML::Node const& node) -> void override;
 
 	[[nodiscard]] LEOPPHAPI auto GetWorldPosition() const -> Vector3 const&;
 	LEOPPHAPI auto SetWorldPosition(Vector3 const& newPos) -> void;

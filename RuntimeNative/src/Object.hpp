@@ -2,15 +2,12 @@
 
 #include "Core.hpp"
 #include "Guid.hpp"
-#include "YamlInclude.hpp"
 #include "Util.hpp"
 
 #include <concepts>
 #include <set>
-#include <span>
 #include <string>
-#include <memory>
-#include <unordered_map>
+#include <vector>
 
 namespace leopph {
 class Object {
@@ -71,17 +68,6 @@ public:
 	LEOPPHAPI auto SetName(std::string name) noexcept -> void;
 
 	[[nodiscard]] virtual auto GetSerializationType() const -> Type = 0;
-
-	LEOPPHAPI virtual auto SerializeTextual(YAML::Node& node) const -> void;
-	LEOPPHAPI virtual auto DeserializeTextual(YAML::Node const& node) -> void;
-
-	LEOPPHAPI virtual auto SerializeBinary(std::vector<u8>& out) const -> void;
-
-	struct BinaryDeserializationResult {
-		u64 numBytesConsumed;
-	};
-
-	LEOPPHAPI [[nodiscard]] virtual auto DeserializeBinary(std::span<u8 const> bytes) -> BinaryDeserializationResult;
 };
 
 

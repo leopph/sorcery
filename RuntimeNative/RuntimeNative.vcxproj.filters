@@ -78,13 +78,16 @@
     <ClCompile Include="src\BehaviorComponent.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\CubeModelComponent.cpp">
+    <ClCompile Include="src\ModelComponent.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\LightComponents.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Texture2D.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\SceneElement.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -170,7 +173,7 @@
     <ClInclude Include="src\BehaviorComponent.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\CubeModelComponent.hpp">
+    <ClInclude Include="src\ModelComponent.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\LightComponents.hpp">
@@ -180,6 +183,9 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Texture2D.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\SceneElement.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -149,8 +149,8 @@ auto CameraComponent::CreateManagedObject() -> void {
 	return ManagedAccessObject::CreateManagedObject("leopph", "Camera");
 }
 
-auto CameraComponent::SerializeTextual(YAML::Node& node) const -> void {
-	Component::SerializeTextual(node);
+auto CameraComponent::Serialize(YAML::Node& node) const -> void {
+	Component::Serialize(node);
 	node["type"] = static_cast<int>(GetType());
 	node["fov"] = GetPerspectiveFov();
 	node["size"] = GetOrthographicSize();
@@ -160,7 +160,7 @@ auto CameraComponent::SerializeTextual(YAML::Node& node) const -> void {
 }
 
 
-auto CameraComponent::DeserializeTextual(YAML::Node const& root) -> void {
+auto CameraComponent::Deserialize(YAML::Node const& root) -> void {
 	if (root["type"]) {
 		if (!root["type"].IsScalar()) {
 			std::cerr << "Failed to deserialize type of CameraComponent " << GetGuid().ToString() << ". Invalid data." << std::endl;

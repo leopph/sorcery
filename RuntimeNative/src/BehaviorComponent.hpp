@@ -12,8 +12,8 @@ public:
 	[[nodiscard]] LEOPPHAPI auto GetSerializationType() const -> Type override;
 	LEOPPHAPI static Type const SerializationType;
 
-	LEOPPHAPI auto SerializeTextual(YAML::Node& node) const -> void override;
-	LEOPPHAPI auto DeserializeTextual(YAML::Node const& node) -> void override;
+	LEOPPHAPI auto Serialize(YAML::Node& node) const -> void override;
+	LEOPPHAPI auto Deserialize(YAML::Node const& node) -> void override;
 
 	// NOP on Behaviors. Use CreateAndInitManagedObject.
 	LEOPPHAPI auto CreateManagedObject() -> void override;

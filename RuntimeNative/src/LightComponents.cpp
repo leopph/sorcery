@@ -73,13 +73,13 @@ auto AmbientLight::set_intensity(Vector3 const& intensity) -> void {
 	mIntensity = intensity;
 }
 
-auto LightComponent::SerializeTextual(YAML::Node& node) const -> void {
+auto LightComponent::Serialize(YAML::Node& node) const -> void {
 	node["color"] = GetColor();
 	node["intensity"] = GetIntensity();
 }
 
 
-auto LightComponent::DeserializeTextual(YAML::Node const& node) -> void {
+auto LightComponent::Deserialize(YAML::Node const& node) -> void {
 	if (node["color"]) {
 		if (!node["color"].IsSequence()) {
 			std::cerr << "Failed to deserialize color of LightComponent " << GetGuid().ToString() << ". Invalid data." << std::endl;

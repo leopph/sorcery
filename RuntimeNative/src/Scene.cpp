@@ -1,5 +1,7 @@
 #include "Scene.hpp"
 
+#include "SceneElement.hpp"
+
 namespace leopph {
 Object::Type const Scene::SerializationType{ Type::Scene };
 
@@ -33,14 +35,14 @@ auto Scene::Deserialize(std::span<u8 const> const bytes) -> void {
 
 auto Scene::Save() -> void {
 	auto constexpr serializeObject{
-		[](Object const* obj) {
+		[](SceneElement const* obj) {
 			YAML::Node objectNode;
 
 			objectNode["objectType"] = static_cast<int>(obj->GetSerializationType());
 			objectNode["guid"] = obj->GetGuid().ToString();
 
 			YAML::Node dataNode;
-			obj->SerializeTextual(dataNode);
+			obj->Serialize(dataNode);
 			objectNode["data"] = dataNode;
 
 			return objectNode;
@@ -62,7 +64,7 @@ auto Scene::Load(ObjectInstantiatorManager const& manager) -> void {
 	mEntities.clear();
 
 	struct ObjectWithSerializedData {
-		ManagedAccessObject* obj;
+		SceneElement* obj;
 		YAML::Node node;
 	};
 
@@ -71,14 +73,14 @@ auto Scene::Load(ObjectInstantiatorManager const& manager) -> void {
 	for (std::size_t i{ 0 }; i < mYamlData.size(); i++) {
 		auto const guid{ Guid::Parse(mYamlData[i]["guid"].as<std::string>()) };
 
-		if (auto const obj{ dynamic_cast<ManagedAccessObject*>(manager.GetFor(static_cast<Type>(mYamlData[i]["objectType"].as<int>())).Instantiate()) }) {
+		if (auto const obj{ dynamic_cast<SceneElement*>(manager.GetFor(static_cast<Type>(mYamlData[i]["objectType"].as<int>())).Instantiate()) }) {
 			obj->SetGuid(guid);
 			objectsWithSerializedData.emplace_back(obj, mYamlData[i]["data"]);
 		}
 	}
 
 	for (auto& [obj, node] : objectsWithSerializedData) {
-		obj->DeserializeTextual(node);
+		obj->Deserialize(node);
 		obj->CreateManagedObject();
 	}
 }

@@ -224,8 +224,8 @@ auto EditorObjectWrapperFor<CameraComponent>::OnGui(EditorObjectFactoryManager c
 	}
 }
 
-auto EditorObjectWrapperFor<CubeModelComponent>::OnGui(EditorObjectFactoryManager const&, Object& object) -> void {
-	auto& model{ dynamic_cast<CubeModelComponent&>(object) };
+auto EditorObjectWrapperFor<ModelComponent>::OnGui(EditorObjectFactoryManager const&, Object& object) -> void {
+	auto& model{ dynamic_cast<ModelComponent&>(object) };
 
 	if (ImGui::BeginTable(std::format("{}", model.GetGuid().ToString()).c_str(), 2, ImGuiTableFlags_SizingStretchSame)) {
 		ImGui::TableNextRow();

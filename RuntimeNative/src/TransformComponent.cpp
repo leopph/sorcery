@@ -209,8 +209,8 @@ auto TransformComponent::GetSerializationType() const -> Type {
 	return Type::Transform;
 }
 
-auto TransformComponent::SerializeTextual(YAML::Node& node) const -> void {
-	Component::SerializeTextual(node);
+auto TransformComponent::Serialize(YAML::Node& node) const -> void {
+	Component::Serialize(node);
 	node["position"] = GetLocalPosition();
 	node["rotation"] = GetLocalRotation();
 	node["scale"] = GetLocalScale();
@@ -223,7 +223,7 @@ auto TransformComponent::SerializeTextual(YAML::Node& node) const -> void {
 }
 
 
-auto TransformComponent::DeserializeTextual(YAML::Node const& node) -> void {
+auto TransformComponent::Deserialize(YAML::Node const& node) -> void {
 	SetLocalPosition(node["position"].as<Vector3>(GetLocalPosition()));
 	SetLocalRotation(node["rotation"].as<Quaternion>(GetLocalRotation()));
 	SetLocalScale(node["scale"].as<Vector3>(GetLocalScale()));

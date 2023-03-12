@@ -111,26 +111,4 @@ auto Material::SerializeBinary(std::vector<u8>& out) const -> void {
 	BinarySerializer<f32>::Serialize(mBufData.roughness, out, std::endian::native);
 	BinarySerializer<f32>::Serialize(mBufData.ao, out, std::endian::native);
 }
-
-auto Material::DeserializeBinary(std::span<u8 const> bytes) -> Object::BinaryDeserializationResult {
-	auto constexpr serializedSize{ sizeof(Vector3) + 3 * sizeof(f32) };
-
-	if (bytes.size() < serializedSize) {
-		throw std::runtime_error{ "Failed to deserialize Material, because span does not contain enough bytes to read data." };
-	}
-
-	mBufData.albedo = BinarySerializer<Vector3>::Deserialize(bytes.first<sizeof(Vector3)>(), std::endian::native);
-	mBufData.metallic = BinarySerializer<f32>::Deserialize(bytes.subspan<sizeof(Vector3), sizeof(f32)>(), std::endian::native);
-	mBufData.roughness = BinarySerializer<f32>::Deserialize(bytes.subspan<sizeof(Vector3) + sizeof(f32), sizeof(f32)>(), std::endian::native);
-	mBufData.ao = BinarySerializer<f32>::Deserialize(bytes.subspan<sizeof(Vector3) + 2 * sizeof(f32), sizeof(f32)>(), std::endian::native);
-
-	for (std::size_t i = 0; i < 4; i++) {
-		mBufData.albedo[i] = std::clamp(mBufData.albedo[i], 0.f, 1.f);
-	}
-	mBufData.metallic = std::clamp(mBufData.metallic, 0.f, 1.f);
-	mBufData.roughness = std::clamp(mBufData.roughness, 0.f, 1.f);
-	mBufData.ao = std::clamp(mBufData.ao, 0.f, 1.f);
-
-	return { serializedSize };
-}
 }

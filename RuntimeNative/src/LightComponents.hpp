@@ -91,8 +91,8 @@ public:
 		return self.mPointInfo;
 	}
 
-	LEOPPHAPI auto SerializeTextual(YAML::Node& node) const -> void override;
-	LEOPPHAPI auto DeserializeTextual(YAML::Node const& node) -> void override;
+	LEOPPHAPI auto Serialize(YAML::Node& node) const -> void override;
+	LEOPPHAPI auto Deserialize(YAML::Node const& node) -> void override;
 
 private:
 	bool mCastsShadow{ false };

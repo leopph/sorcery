@@ -1117,12 +1117,12 @@ auto Renderer::SetSyncInterval(u32 const interval) noexcept -> void {
 }
 
 
-auto Renderer::RegisterCubeModel(CubeModelComponent const* const cubeModel) -> void {
+auto Renderer::RegisterCubeModel(ModelComponent const* const cubeModel) -> void {
 	mStaticMeshComponents.emplace_back(cubeModel);
 }
 
 
-auto Renderer::UnregisterCubeModel(CubeModelComponent const* const cubeModel) -> void {
+auto Renderer::UnregisterCubeModel(ModelComponent const* const cubeModel) -> void {
 	std::erase(mStaticMeshComponents, cubeModel);
 }
 

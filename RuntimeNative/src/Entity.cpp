@@ -3,7 +3,7 @@
 #include <format>
 
 #include "TransformComponent.hpp"
-#include "CubeModelComponent.hpp"
+#include "ModelComponent.hpp"
 #include "CameraComponent.hpp"
 #include "LightComponents.hpp"
 #include "ManagedRuntime.hpp"
@@ -29,7 +29,7 @@ std::unique_ptr<Component> instantiate() {
 
 std::unordered_map<std::string_view, std::function<std::unique_ptr<Component>()>> const gComponentInstantiators
 {
-	{ "CubeModel", instantiate<CubeModelComponent> },
+	{ "CubeModel", instantiate<ModelComponent> },
 	{ "Camera", instantiate<CameraComponent> },
 	{ "Light", instantiate<LightComponent> }
 };
@@ -155,7 +155,7 @@ auto Entity::GetSerializationType() const -> Type {
 }
 
 
-auto Entity::SerializeTextual(YAML::Node& node) const -> void {
+auto Entity::Serialize(YAML::Node& node) const -> void {
 	node["name"] = GetName().data();
 	for (auto const& component : mComponents) {
 		node["components"].push_back(component->GetGuid().ToString());
@@ -163,7 +163,7 @@ auto Entity::SerializeTextual(YAML::Node& node) const -> void {
 }
 
 
-auto Entity::DeserializeTextual(YAML::Node const& node) -> void {
+auto Entity::Deserialize(YAML::Node const& node) -> void {
 	if (!node["name"].IsScalar()) {
 		std::cerr << "Failed to deserialize name of Entity " << GetGuid().ToString() << ". Invalid data." << std::endl;
 	}

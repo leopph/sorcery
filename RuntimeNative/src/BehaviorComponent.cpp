@@ -99,8 +99,8 @@ auto BehaviorComponent::GetSerializationType() const -> Type {
 	return Type::Behavior;
 }
 
-auto BehaviorComponent::SerializeTextual(YAML::Node& node) const -> void {
-	Component::SerializeTextual(node);
+auto BehaviorComponent::Serialize(YAML::Node& node) const -> void {
+	Component::Serialize(node);
 	auto const componentClass = mono_object_get_class(GetManagedObject());
 	node["classNameSpace"] = mono_class_get_namespace(componentClass);
 	node["className"] = mono_class_get_name(componentClass);
@@ -168,7 +168,7 @@ auto BehaviorComponent::SerializeTextual(YAML::Node& node) const -> void {
 }
 
 
-auto BehaviorComponent::DeserializeTextual(YAML::Node const& node) -> void {
+auto BehaviorComponent::Deserialize(YAML::Node const& node) -> void {
 	auto const classNs = node["classNameSpace"].as<std::string>();
 	auto const className = node["className"].as<std::string>();
 	auto const componentClass = mono_class_from_name(leopph::gManagedRuntime.GetManagedImage(), classNs.c_str(), className.c_str());

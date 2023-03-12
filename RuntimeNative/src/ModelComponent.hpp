@@ -5,13 +5,13 @@
 #include "Mesh.hpp"
 
 namespace leopph {
-class CubeModelComponent : public Component {
+class ModelComponent : public Component {
 	Material* mMat;
 	Mesh* mMesh;
 
 public:
-	LEOPPHAPI CubeModelComponent();
-	~CubeModelComponent() override;
+	LEOPPHAPI ModelComponent();
+	~ModelComponent() override;
 
 	LEOPPHAPI [[nodiscard]] auto GetMaterial() const noexcept -> Material&;
 	LEOPPHAPI auto SetMaterial(Material& material) noexcept -> void;

@@ -3,7 +3,7 @@
 #include <Object.hpp>
 #include <BehaviorComponent.hpp>
 #include <CameraComponent.hpp>
-#include <CubeModelComponent.hpp>
+#include <ModelComponent.hpp>
 #include <Entity.hpp>
 #include <LightComponents.hpp>
 #include <Material.hpp>
@@ -47,7 +47,7 @@ template<>
 auto EditorObjectWrapperFor<CameraComponent>::OnGui(EditorObjectFactoryManager const& objectFactoryManager, Object& object) -> void;
 
 template<>
-auto EditorObjectWrapperFor<CubeModelComponent>::OnGui(EditorObjectFactoryManager const& objectFactoryManager, Object& object) -> void;
+auto EditorObjectWrapperFor<ModelComponent>::OnGui(EditorObjectFactoryManager const& objectFactoryManager, Object& object) -> void;
 
 template<>
 auto EditorObjectWrapperFor<Entity>::OnGui(EditorObjectFactoryManager const& objectFactoryManager, Object& object) -> void;

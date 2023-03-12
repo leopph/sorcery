@@ -115,7 +115,7 @@
     <ClCompile Include="src\Color.cpp" />
     <ClCompile Include="src\Component.cpp" />
     <ClCompile Include="src\Compress.cpp" />
-    <ClCompile Include="src\CubeModelComponent.cpp" />
+    <ClCompile Include="src\ModelComponent.cpp" />
     <ClCompile Include="src\Guid.cpp" />
     <ClCompile Include="src\Image.cpp" />
     <ClCompile Include="src\LightComponents.cpp" />
@@ -128,7 +128,9 @@
     <ClCompile Include="src\OnGui.cpp" />
     <ClCompile Include="src\Renderer.cpp" />
     <ClCompile Include="src\Scene.cpp" />
+    <ClInclude Include="src\SceneElement.hpp" />
     <ClInclude Include="src\Serialization.hpp" />
+    <ClCompile Include="src\SceneElement.cpp" />
     <ClCompile Include="src\Texture2D.cpp" />
     <ClCompile Include="src\Time.cpp" />
     <ClCompile Include="src\Platform.cpp" />
@@ -141,7 +143,7 @@
     <ClInclude Include="src\CameraComponent.hpp" />
     <ClInclude Include="src\Component.hpp" />
     <ClInclude Include="src\Compress.hpp" />
-    <ClInclude Include="src\CubeModelComponent.hpp" />
+    <ClInclude Include="src\ModelComponent.hpp" />
     <ClInclude Include="src\Guid.hpp" />
     <ClInclude Include="src\Image.hpp" />
     <ClInclude Include="src\LightComponents.hpp" />

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ManagedAccessObject.hpp"
+#include "SceneElement.hpp"
 #include "Component.hpp"
 
 #include <string>
@@ -10,6 +10,8 @@
 #include <vector>
 #include <concepts>
 
+#include "Scene.hpp"
+
 using MonoString = struct _MonoString;
 using MonoReflectionType = struct _MonoReflectionType;
 
@@ -17,7 +19,7 @@ using MonoReflectionType = struct _MonoReflectionType;
 namespace leopph {
 class Scene;
 
-class Entity final : public ManagedAccessObject {
+class Entity final : public SceneElement {
 	friend class Scene;
 
 	Scene* mScene{ nullptr };
@@ -37,8 +39,8 @@ public:
 	[[nodiscard]] LEOPPHAPI auto GetSerializationType() const -> Type override;
 	LEOPPHAPI static Object::Type const SerializationType;
 
-	LEOPPHAPI auto SerializeTextual(YAML::Node& node) const -> void override;
-	LEOPPHAPI auto DeserializeTextual(YAML::Node const& node) -> void override;
+	LEOPPHAPI auto Serialize(YAML::Node& node) const -> void override;
+	LEOPPHAPI auto Deserialize(YAML::Node const& node) -> void override;
 
 	[[nodiscard]] LEOPPHAPI auto GetScene() const -> Scene&;
 	[[nodiscard]] LEOPPHAPI auto GetTransform() const -> TransformComponent&;

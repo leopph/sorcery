@@ -58,9 +58,6 @@ public:
 
 	LEOPPHAPI [[nodiscard]] auto GetSerializationType() const -> Type override;
 
-	LEOPPHAPI auto SerializeBinary(std::vector<u8>& out) const -> void override;
-	LEOPPHAPI [[nodiscard]] auto DeserializeBinary(std::span<u8 const> bytes) -> BinaryDeserializationResult override;
-
 	LEOPPHAPI [[nodiscard]] auto GetPositionBuffer() const noexcept -> Microsoft::WRL::ComPtr<ID3D11Buffer>;
 	LEOPPHAPI [[nodiscard]] auto GetNormalBuffer() const noexcept -> Microsoft::WRL::ComPtr<ID3D11Buffer>;
 	LEOPPHAPI [[nodiscard]] auto GetUVBuffer() const noexcept -> Microsoft::WRL::ComPtr<ID3D11Buffer>;

@@ -55,7 +55,6 @@ public:
 	LEOPPHAPI [[nodiscard]] auto GetSerializationType() const -> Type override;
 	LEOPPHAPI static Type const SerializationType;
 
-	LEOPPHAPI auto SerializeBinary(std::vector<u8>& out) const -> void override;
-	LEOPPHAPI auto DeserializeBinary(std::span<u8 const> bytes) -> BinaryDeserializationResult override;
+	LEOPPHAPI auto SerializeBinary(std::vector<u8>& out) const -> void;
 };
 }
