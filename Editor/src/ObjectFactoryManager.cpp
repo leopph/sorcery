@@ -13,7 +13,7 @@ auto CreateFactoryManager() noexcept -> EditorObjectFactoryManager {
 	factoryManager.Register<Material>();
 	factoryManager.Register<Mesh>();
 	factoryManager.Register<Texture2D>();
-
+	factoryManager.Register<Scene>();
 	return factoryManager;
 }
 }

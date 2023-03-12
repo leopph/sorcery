@@ -102,11 +102,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\Asset.cpp" />
+    <ClCompile Include="src\EditorContext.cpp" />
     <ClCompile Include="src\MaterialImporter.cpp" />
     <ClCompile Include="src\MeshImporter.cpp" />
     <ClCompile Include="src\ObjectFactoryManager.cpp" />
     <ClCompile Include="src\ObjectWrappers.cpp" />
     <ClCompile Include="src\Main.cpp" />
+    <ClCompile Include="src\SceneImporter.cpp" />
     <ClCompile Include="src\TextureImporter.cpp" />
     <ClCompile Include="src\Widgets.cpp" />
   </ItemGroup>
@@ -119,12 +121,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Asset.hpp" />
+    <ClInclude Include="src\EditorContext.hpp" />
     <ClInclude Include="src\Importer.hpp" />
     <ClInclude Include="src\MaterialImporter.hpp" />
     <ClInclude Include="src\MeshImporter.hpp" />
     <ClInclude Include="src\ObjectFactoryManager.hpp" />
     <ClInclude Include="src\ObjectWrappers.hpp" />
     <ClInclude Include="src\ResourceStorage.hpp" />
+    <ClInclude Include="src\SceneImporter.hpp" />
     <ClInclude Include="src\TextureImporter.hpp" />
     <ClInclude Include="src\Widgets.hpp" />
   </ItemGroup>

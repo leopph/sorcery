@@ -17,6 +17,7 @@
 #include "TextureImporter.hpp"
 #include "MeshImporter.hpp"
 #include "MaterialImporter.hpp"
+#include "SceneImporter.hpp"
 
 namespace leopph::editor {
 auto EditorObjectWrapperFor<BehaviorComponent>::OnGui(EditorObjectFactoryManager const&, Object& object) -> void {
@@ -612,6 +613,10 @@ auto EditorObjectWrapperFor<Texture2D>::OnGui([[maybe_unused]] EditorObjectFacto
 	ImGui::Image(tex.GetSrv(), displaySize);
 }
 
+auto EditorObjectWrapperFor<Scene>::OnGui([[maybe_unused]] EditorObjectFactoryManager const& objectFactoryManager, [[maybe_unused]] Object& object) -> void {
+	ImGui::Text("%s", "Scene Asset");
+}
+
 auto EditorObjectWrapperFor<Entity>::Instantiate() -> Object* {
 	return nullptr; // TODO
 }
@@ -629,5 +634,10 @@ auto EditorObjectWrapperFor<Texture2D>::GetImporter() -> Importer& {
 auto EditorObjectWrapperFor<Material>::GetImporter() -> Importer& {
 	MaterialImporter static mtlImporter;
 	return mtlImporter;
+}
+
+auto EditorObjectWrapperFor<Scene>::GetImporter() -> Importer& {
+	SceneImporter static sceneImporter;
+	return sceneImporter;
 }
 }

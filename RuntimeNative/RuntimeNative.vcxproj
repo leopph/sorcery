@@ -125,7 +125,6 @@
     <ClCompile Include="src\Material.cpp" />
     <ClCompile Include="src\Mesh.cpp" />
     <ClCompile Include="src\Object.cpp" />
-    <ClCompile Include="src\OnGui.cpp" />
     <ClCompile Include="src\Renderer.cpp" />
     <ClCompile Include="src\Scene.cpp" />
     <ClInclude Include="src\SceneElement.hpp" />
@@ -149,7 +148,6 @@
     <ClInclude Include="src\LightComponents.hpp" />
     <ClInclude Include="src\Material.hpp" />
     <ClInclude Include="src\Mesh.hpp" />
-    <ClInclude Include="src\OnGui.hpp" />
     <ClInclude Include="src\Color.hpp" />
     <ClInclude Include="src\Core.hpp" />
     <ClInclude Include="src\Event.hpp" />
@@ -273,11 +271,6 @@
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </ObjectFileOutput>
     </FxCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\ImGui\ImGui.vcxproj">
-      <Project>{2359e10d-1161-46ed-ba5d-2af984e94c63}</Project>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

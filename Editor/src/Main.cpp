@@ -5,6 +5,7 @@
 #include "Asset.hpp"
 #include "ObjectFactoryManager.hpp"
 #include "ResourceStorage.hpp"
+#include "EditorContext.hpp"
 
 #include <TransformComponent.hpp>
 #include <BehaviorComponent.hpp>
@@ -12,7 +13,6 @@
 #include <Platform.hpp>
 #include <Renderer.hpp>
 #include <Entity.hpp>
-#include <OnGui.hpp>
 #include <Scene.hpp>
 #include <Systems.hpp>
 
@@ -26,7 +26,6 @@
 #include <shellapi.h>
 
 #include <algorithm>
-#include <atomic>
 #include <filesystem>
 #include <functional>
 #include <format>
@@ -34,7 +33,6 @@
 #include <ranges>
 #include <string>
 #include <vector>
-#include <queue>
 #include <cwchar>
 
 
@@ -46,21 +44,6 @@ std::string_view constexpr RESOURCE_FILE_EXT{ ".leopphres" };
 
 auto EditorImGuiEventHook(HWND const hwnd, UINT const msg, WPARAM const wparam, LPARAM const lparam) -> bool {
 	return ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam);
-}
-
-template<typename Callable>
-auto ExecuteInBusyEditor(std::atomic<bool>& isEditorBusy, ImGuiIO& imGuiIo, Callable&& callable) -> void {
-	std::thread{
-		[&isEditorBusy, &imGuiIo, callable] {
-			isEditorBusy = true;
-			auto const oldFlags{ imGuiIo.ConfigFlags };
-			imGuiIo.ConfigFlags |= ImGuiConfigFlags_NoMouse;
-			imGuiIo.ConfigFlags |= ImGuiConfigFlags_NavNoCaptureKeyboard;
-			std::invoke(callable);
-			imGuiIo.ConfigFlags = oldFlags;
-			isEditorBusy = false;
-		}
-	}.detach();
 }
 
 auto IndexFileNameIfNeeded(std::filesystem::path const& filePathAbsolute) -> std::filesystem::path {
@@ -92,62 +75,11 @@ auto IndexFileNameIfNeeded(std::filesystem::path const& filePathAbsolute) -> std
 	return (parentDir / currentStem).replace_extension(ext);
 }
 
-auto OpenProject(std::filesystem::path const& targetPath, ResourceStorage& resourceStorage, std::unique_ptr<Scene>& workingScene, std::filesystem::path& projPathAbs, std::filesystem::path const& assetDirRel, std::filesystem::path const& cacheDirRel, EditorObjectFactoryManager const& factoryManager) -> void {
-	workingScene = std::make_unique<Scene>();
-	resourceStorage.clear();
-	projPathAbs = absolute(targetPath);
-
-	auto const assetDirAbs{ absolute(projPathAbs / assetDirRel) };
-	auto const cacheDirAbs{ absolute(projPathAbs / cacheDirRel) };
-
-	if (!exists(assetDirAbs)) {
-		create_directory(assetDirAbs);
-	}
-
-	if (!exists(cacheDirAbs)) {
-		create_directory(cacheDirAbs);
-	}
-
-	struct ImportInfo {
-		std::filesystem::path assetPath;
-		AssetMetaInfo metaInfo;
-	};
-
-	std::priority_queue<ImportInfo, std::vector<ImportInfo>, decltype([](ImportInfo const& lhs, ImportInfo const& rhs) {
-		return lhs.metaInfo.importPrecedence > rhs.metaInfo.importPrecedence;
-	})> queue;
-
-	for (auto const& entry : std::filesystem::recursive_directory_iterator{ projPathAbs / assetDirRel }) {
-		if (entry.path().extension() == RESOURCE_FILE_EXT) {
-			std::ifstream in{ entry.path(), std::ios::binary };
-			std::stringstream buffer;
-			buffer << in.rdbuf();
-			auto const assetPath{ std::filesystem::path{ entry.path() }.replace_extension() };
-			auto const meta{ ReadAssetMetaFileContents(buffer.str()) };
-			queue.emplace(assetPath, meta);
-		}
-	}
-
-	while (!queue.empty()) {
-		ImportInfo info{ queue.top() };
-		queue.pop();
-
-		auto& factory{ factoryManager.GetFor(info.metaInfo.type) };
-
-		Importer::InputImportInfo const inputImportInfo{
-			.src = info.assetPath,
-			.guid = info.metaInfo.guid
-		};
-
-		auto const asset{ factory.GetImporter().Import(inputImportInfo, cacheDirAbs) };
-		asset->SetName(info.assetPath.stem().string());
-		asset->SetGuid(info.metaInfo.guid);
-
-		resourceStorage[info.assetPath] = std::shared_ptr<Object>{ asset };
-	}
+auto CreateMetaFileForAsset(EditorObjectFactoryManager const& factoryManager, Object const& asset, std::filesystem::path const& dstPath) -> void {
+	std::ofstream{ std::filesystem::path{ dstPath } += RESOURCE_FILE_EXT } << GenerateAssetMetaFileContents(asset, factoryManager);
 }
 
-auto DrawStartupScreen(ResourceStorage& resources, std::unique_ptr<Scene>& scene, std::filesystem::path& projDirAbs, std::filesystem::path const& assetDirRel, std::filesystem::path const& cacheDirRel, EditorObjectFactoryManager const& factoryManager) -> void {
+auto DrawStartupScreen(Context& context) -> void {
 	auto constexpr flags{ ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings };
 	auto const viewport{ ImGui::GetMainViewport() };
 	ImGui::SetNextWindowPos(viewport->Pos);
@@ -163,22 +95,50 @@ auto DrawStartupScreen(ResourceStorage& resources, std::unique_ptr<Scene>& scene
 
 		if (ImGui::Button(openProjectButtonLabel)) {
 			if (nfdchar_t* selectedPath{ nullptr }; NFD_PickFolder(nullptr, &selectedPath) == NFD_OKAY) {
-				OpenProject(std::filesystem::path{ selectedPath }, resources, scene, projDirAbs, assetDirRel, cacheDirRel, factoryManager);
+				context.OpenProject(selectedPath);
+				std::free(selectedPath);
 			}
 		}
 	}
 	ImGui::End();
 }
 
-auto DrawMainMenuBar(ResourceStorage& resources, std::unique_ptr<Scene>& scene, std::filesystem::path& projDirAbs, std::filesystem::path const& assetDirRel, std::filesystem::path const& cacheDirRel, ImGuiIO& imGuiIo, EditorObjectFactoryManager const& factoryManager, bool& showDemoWindow, std::atomic<bool>& isEditorBusy) -> void {
+auto DrawMainMenuBar(Context& context, bool& showDemoWindow) -> void {
 	if (ImGui::BeginMainMenuBar()) {
 		if (ImGui::BeginMenu("File")) {
 			if (ImGui::MenuItem("Open Project")) {
 				if (nfdchar_t* selectedPath{ nullptr }; NFD_PickFolder(nullptr, &selectedPath) == NFD_OKAY) {
-					ExecuteInBusyEditor(isEditorBusy, imGuiIo, [selectedPath, &resources, &scene, &projDirAbs, &assetDirRel, &cacheDirRel, &factoryManager] {
-						OpenProject(std::filesystem::path{ selectedPath }, resources, scene, projDirAbs, assetDirRel, cacheDirRel, factoryManager);
+					context.ExecuteInBusyEditor([selectedPath, &context] {
+						context.OpenProject(selectedPath);
 						std::free(selectedPath);
 					});
+				}
+			}
+
+			if (ImGui::MenuItem("Open Scene")) { }
+
+			if (ImGui::MenuItem("Save Current Scene")) {
+				context.GetScene()->Save();
+				auto const sceneSerializedData{ context.GetScene()->Serialize() };
+
+				std::filesystem::path const sceneExt{ ".scene" };
+
+				if (nfdchar_t* selectedPath{ nullptr }; NFD_SaveDialog(std::string_view{ sceneExt.string() }.substr(1).data(), context.GetAssetDirectoryAbsolute().string().c_str(), &selectedPath) == NFD_OKAY) {
+					auto const outPath{ std::filesystem::path{ selectedPath }.replace_extension(sceneExt) };
+
+					if (!exists(std::filesystem::path{ outPath } += RESOURCE_FILE_EXT)) {
+						CreateMetaFileForAsset(context.GetFactoryManager(), *context.GetScene(), outPath);
+					}
+
+					if (std::ofstream out{ outPath, std::ios::out | std::ios::binary }; out.is_open()) {
+						std::ranges::copy(sceneSerializedData, std::ostreambuf_iterator{ out });
+					}
+					else {
+						MessageBoxW(nullptr, L"Failed to open file.", L"Error", MB_ICONERROR);
+					}
+
+					context.GetResources()[outPath] = context.GetScene();
+					std::free(selectedPath);
 				}
 			}
 
@@ -187,7 +147,7 @@ auto DrawMainMenuBar(ResourceStorage& resources, std::unique_ptr<Scene>& scene, 
 
 		if (ImGui::BeginMenu("Create")) {
 			if (ImGui::MenuItem("Entity")) {
-				auto& entity{ scene->CreateEntity() };
+				auto& entity{ context.GetScene()->CreateEntity() };
 				entity.CreateManagedObject();
 
 				auto transform = std::make_unique<TransformComponent>();
@@ -218,7 +178,7 @@ auto DrawMainMenuBar(ResourceStorage& resources, std::unique_ptr<Scene>& scene, 
 	}
 }
 
-auto DrawEntityHierarchyWindow(std::unique_ptr<Scene>& scene, Object*& selectedObject) -> void {
+auto DrawEntityHierarchyWindow(Context& context) -> void {
 	if (ImGui::Begin("Entities", nullptr, ImGuiWindowFlags_NoCollapse)) {
 		auto constexpr baseFlags{ ImGuiTreeNodeFlags_OpenOnArrow };
 		auto constexpr entityPayloadType{ "ENTITY" };
@@ -230,11 +190,11 @@ auto DrawEntityHierarchyWindow(std::unique_ptr<Scene>& scene, Object*& selectedO
 			}
 		}
 
-		auto entities{ scene->GetEntities() };
+		auto entities{ context.GetScene()->GetEntities() };
 
 		for (std::size_t i = 0; i < entities.size(); i++) {
 			std::function<void(Entity&)> displayEntityRecursive;
-			displayEntityRecursive = [&displayEntityRecursive, &entities, &scene, &selectedObject](Entity& entity) -> void {
+			displayEntityRecursive = [&displayEntityRecursive, &entities, &context](Entity& entity) -> void {
 				ImGuiTreeNodeFlags nodeFlags{ baseFlags };
 
 				if (entity.GetTransform().GetChildren().empty()) {
@@ -244,7 +204,7 @@ auto DrawEntityHierarchyWindow(std::unique_ptr<Scene>& scene, Object*& selectedO
 					nodeFlags |= ImGuiTreeNodeFlags_DefaultOpen;
 				}
 
-				if (selectedObject && selectedObject->GetGuid() == entity.GetGuid()) {
+				if (context.GetSelectedObject() && context.GetSelectedObject()->GetGuid() == entity.GetGuid()) {
 					nodeFlags |= ImGuiTreeNodeFlags_Selected;
 				}
 
@@ -264,7 +224,7 @@ auto DrawEntityHierarchyWindow(std::unique_ptr<Scene>& scene, Object*& selectedO
 				}
 
 				if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) {
-					selectedObject = &entity;
+					context.SetSelectedObject(&entity);
 				}
 
 				bool deleted{ false };
@@ -272,8 +232,8 @@ auto DrawEntityHierarchyWindow(std::unique_ptr<Scene>& scene, Object*& selectedO
 				if (ImGui::BeginPopupContextItem()) {
 					if (ImGui::MenuItem("Delete")) {
 						entity.GetScene().DestroyEntity(entity);
-						entities = scene->GetEntities();
-						selectedObject = nullptr;
+						entities = context.GetScene()->GetEntities();
+						context.SetSelectedObject(nullptr);
 						deleted = true;
 						ImGui::CloseCurrentPopup();
 					}
@@ -304,12 +264,12 @@ auto DrawEntityHierarchyWindow(std::unique_ptr<Scene>& scene, Object*& selectedO
 	ImGui::End();
 }
 
-auto DrawObjectPropertiesWindow(EditorObjectFactoryManager const& factoryManager, Object*& selectedObject) -> void {
+auto DrawObjectPropertiesWindow(Context& context) -> void {
 	ImGui::SetNextWindowSize(ImVec2{ 400, 600 }, ImGuiCond_FirstUseEver);
 
 	if (ImGui::Begin("Object Properties", nullptr, ImGuiWindowFlags_NoCollapse)) {
-		if (selectedObject) {
-			factoryManager.GetFor(selectedObject->GetSerializationType()).OnGui(factoryManager, *selectedObject);
+		if (context.GetSelectedObject()) {
+			context.GetFactoryManager().GetFor(context.GetSelectedObject()->GetSerializationType()).OnGui(context.GetFactoryManager(), *context.GetSelectedObject());
 		}
 	}
 	ImGui::End();
@@ -366,7 +326,7 @@ auto DrawGameViewWindow(bool const gameRunning) -> void {
 	ImGui::End();
 }
 
-auto DrawSceneViewWindow(ImGuiIO const& io, Object*& selectedObject) -> void {
+auto DrawSceneViewWindow(Context& context) -> void {
 	ImVec2 static constexpr sceneViewportMinSize{ 480, 270 };
 
 	ImGui::SetNextWindowSize(sceneViewportMinSize, ImGuiCond_FirstUseEver);
@@ -459,10 +419,10 @@ auto DrawSceneViewWindow(ImGuiIO const& io, Object*& selectedObject) -> void {
 			ImGuizmo::DrawGrid(editorCamViewMat.GetData(), editorCamProjMat.GetData(), Matrix4::Identity().GetData(), editorCam.farClip);
 		}
 
-		if (auto const selectedEntity{ dynamic_cast<Entity*>(selectedObject) }; selectedEntity) {
+		if (auto const selectedEntity{ dynamic_cast<Entity*>(context.GetSelectedObject()) }; selectedEntity) {
 			static auto op{ ImGuizmo::OPERATION::TRANSLATE };
 
-			if (!io.WantTextInput && !isMovingSceneCamera) {
+			if (!context.GetImGuiIo().WantTextInput && !isMovingSceneCamera) {
 				if (GetKeyDown(Key::T)) {
 					op = ImGuizmo::TRANSLATE;
 				}
@@ -493,12 +453,12 @@ auto DrawSceneViewWindow(ImGuiIO const& io, Object*& selectedObject) -> void {
 	ImGui::End();
 }
 
-auto DrawProjectWindow(ResourceStorage& resources, std::filesystem::path const& projDirAbs, std::filesystem::path const& assetDirRel, std::filesystem::path const& cacheDirRel, ImGuiIO& imGuiIo, Object*& selectedObject, std::atomic<bool>& isEditorBusy, EditorObjectFactoryManager const& factoryManager) -> void {
+auto DrawProjectWindow(Context& context) -> void {
 	if (ImGui::Begin("Project", nullptr, ImGuiWindowFlags_NoCollapse)) {
 		if (ImGui::BeginTable("ProjectWindowMainTable", 2, ImGuiTableFlags_Resizable)) {
 			ImGui::TableNextRow();
 			ImGui::TableSetColumnIndex(0);
-			std::filesystem::path static selectedProjSubDir{ projDirAbs / assetDirRel };
+			std::filesystem::path static selectedProjSubDir{ context.GetAssetDirectoryAbsolute() };
 			[](this auto self, std::filesystem::path const& dir) -> void {
 				std::filesystem::directory_iterator const it{ dir };
 				ImGuiTreeNodeFlags treeNodeFlags{ ImGuiTreeNodeFlags_OpenOnArrow };
@@ -525,7 +485,7 @@ auto DrawProjectWindow(ResourceStorage& resources, std::filesystem::path const& 
 					}
 					ImGui::TreePop();
 				}
-			}(projDirAbs / assetDirRel);
+			}(context.GetAssetDirectoryAbsolute());
 
 			ImGui::TableSetColumnIndex(1);
 			if (auto constexpr buttonSize{ 75 }; ImGui::BeginTable("ProjectWindowSubDirTable", static_cast<int>(ImGui::GetContentRegionAvail().x) / buttonSize)) {
@@ -535,16 +495,11 @@ auto DrawProjectWindow(ResourceStorage& resources, std::filesystem::path const& 
 					ImGui::OpenPopup(contextMenuId);
 				}
 
-				auto const createAssetMetaFile{
-					[&factoryManager](Object const& asset, std::filesystem::path const& dstPath) {
-						std::ofstream{ std::filesystem::path{ dstPath } += RESOURCE_FILE_EXT } << GenerateAssetMetaFileContents(asset, factoryManager);
-					}
-				};
 
 				if (ImGui::BeginPopup(contextMenuId)) {
 					if (ImGui::BeginMenu("Create##CreateAssetMenu")) {
 						if (ImGui::MenuItem("Material##CreateMaterialAsset")) {
-							auto const dstPath{ IndexFileNameIfNeeded(projDirAbs / assetDirRel / "New Material.mtl") };
+							auto const dstPath{ IndexFileNameIfNeeded(context.GetAssetDirectoryAbsolute() / "New Material.mtl") };
 
 							auto newMtl{ std::make_shared<Material>() };
 							newMtl->SetName(dstPath.stem().string());
@@ -555,16 +510,23 @@ auto DrawProjectWindow(ResourceStorage& resources, std::filesystem::path const& 
 							std::ranges::copy(outBytes, std::ostreambuf_iterator{ out });
 							outBytes.clear();
 
-							createAssetMetaFile(*newMtl, dstPath);
-							resources[dstPath] = std::move(newMtl);
+							CreateMetaFileForAsset(context.GetFactoryManager(), *newMtl, dstPath);
+							context.GetResources()[dstPath] = std::move(newMtl);
 						}
 
-						/*if (ImGui::MenuItem("Scene##CreateSceneAsset")) {
+						if (ImGui::MenuItem("Scene##CreateSceneAsset")) {
+							auto const dstPath{ IndexFileNameIfNeeded(context.GetAssetDirectoryAbsolute() / "New Scene.mtl") };
+
 							auto newScene{ std::make_shared<Scene>() };
-							newScene->SetName("New Scene");
-							createAssetMetaFile(*newScene);
-							saveNewAsset(std::move(newScene));
-						}*/
+							newScene->SetName(dstPath.stem().string());
+
+							auto const outStr{ newScene->Serialize() };
+							std::ofstream out{ dstPath, std::ios::out | std::ios::binary };
+							std::ranges::copy(outStr, std::ostreambuf_iterator{ out });
+
+							CreateMetaFileForAsset(context.GetFactoryManager(), *newScene, dstPath);
+							context.GetResources()[dstPath] = std::move(newScene);
+						}
 
 						ImGui::EndMenu();
 					}
@@ -582,12 +544,11 @@ auto DrawProjectWindow(ResourceStorage& resources, std::filesystem::path const& 
 						};
 
 						auto const importAsset{
-							[&projDirAbs, &assetDirRel, &cacheDirRel, &resources, createAssetMetaFile](Importer& importer, std::filesystem::path const& srcPath) {
+							[&context](Importer& importer, std::filesystem::path const& srcPath) {
 								auto const srcPathAbs{ absolute(srcPath) };
-								auto const dstPath{ IndexFileNameIfNeeded(projDirAbs / assetDirRel / srcPathAbs.filename()) };
+								auto const dstPath{ IndexFileNameIfNeeded(context.GetAssetDirectoryAbsolute() / srcPathAbs.filename()) };
 
 								copy_file(srcPathAbs, dstPath);
-								auto const cacheDirAbs{ absolute(projDirAbs / cacheDirRel) };
 								auto const guid{ Guid::Generate() };
 
 								Importer::InputImportInfo const info{
@@ -595,20 +556,20 @@ auto DrawProjectWindow(ResourceStorage& resources, std::filesystem::path const& 
 									.guid = guid
 								};
 
-								auto const asset{ importer.Import(info, cacheDirAbs) };
+								auto const asset{ importer.Import(info, context.GetCacheDirectoryAbsolute()) };
 								asset->SetName(dstPath.stem().string());
 								asset->SetGuid(guid);
 
-								createAssetMetaFile(*asset, dstPath);
-								resources[dstPath] = std::shared_ptr<Object>{ asset };
+								CreateMetaFileForAsset(context.GetFactoryManager(), *asset, dstPath);
+								context.GetResources()[dstPath] = std::shared_ptr<Object>{ asset };
 							}
 						};
 
 						if (ImGui::MenuItem("Mesh##ImportMeshAssetMenuItem")) {
-							auto& meshImporter{ factoryManager.GetFor(Object::Type::Mesh).GetImporter() };
+							auto& meshImporter{ context.GetFactoryManager().GetFor(Object::Type::Mesh).GetImporter() };
 
 							if (std::filesystem::path path; openFileDialog(meshImporter.GetSupportedExtensions().c_str(), nullptr, path)) {
-								ExecuteInBusyEditor(isEditorBusy, imGuiIo, [importAsset, &meshImporter, path] {
+								context.ExecuteInBusyEditor([importAsset, &meshImporter, path] {
 									importAsset(meshImporter, path);
 								});
 							}
@@ -617,10 +578,10 @@ auto DrawProjectWindow(ResourceStorage& resources, std::filesystem::path const& 
 						}
 
 						if (ImGui::MenuItem("Texture##ImportTextureAssetMenuItem")) {
-							auto& texImporter{ factoryManager.GetFor(Object::Type::Mesh).GetImporter() };
+							auto& texImporter{ context.GetFactoryManager().GetFor(Object::Type::Mesh).GetImporter() };
 
 							if (std::filesystem::path path; openFileDialog(texImporter.GetSupportedExtensions().c_str(), nullptr, path)) {
-								ExecuteInBusyEditor(isEditorBusy, imGuiIo, [importAsset, &texImporter, path] {
+								context.ExecuteInBusyEditor([importAsset, &texImporter, path] {
 									importAsset(texImporter, path);
 								});
 							}
@@ -637,7 +598,7 @@ auto DrawProjectWindow(ResourceStorage& resources, std::filesystem::path const& 
 				for (auto const& entry : std::filesystem::directory_iterator{ selectedProjSubDir }) {
 					auto const entryPathAbs{ absolute(entry.path()) };
 
-					if (auto const resIt{ resources.find(entryPathAbs) }; resIt != std::end(resources) || is_directory(entryPathAbs)) {
+					if (auto const resIt{ context.GetResources().find(entryPathAbs) }; resIt != std::end(context.GetResources()) || is_directory(entryPathAbs)) {
 						ImGui::TableNextColumn();
 
 						if (ImGui::Button(entryPathAbs.stem().string().c_str(), { buttonSize, buttonSize })) {
@@ -645,7 +606,7 @@ auto DrawProjectWindow(ResourceStorage& resources, std::filesystem::path const& 
 								selectedProjSubDir = entryPathAbs;
 							}
 							else {
-								selectedObject = resources.find(entryPathAbs)->second.get();
+								context.SetSelectedObject(context.GetResources().find(entryPathAbs)->second.get());
 							}
 						}
 					}
@@ -680,8 +641,6 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 		imGuiIo.IniFilename = iniFilePathStr.c_str();
 		imGuiIo.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
-		leopph::SetImGuiContext(ImGui::GetCurrentContext());
-
 		ImGui::StyleColorsDark();
 
 		ImGui_ImplWin32_Init(leopph::gWindow.GetHandle());
@@ -689,20 +648,10 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
 		leopph::gWindow.SetEventHook(leopph::editor::EditorImGuiEventHook);
 
-		std::atomic isEditorBusy{ false };
 		bool runGame{ false };
 		bool showDemoWindow{ false };
 
-		leopph::editor::ResourceStorage resources;
-		auto scene{ std::make_unique<leopph::Scene>() };
-
-		std::filesystem::path projDirAbs;
-		std::filesystem::path const assetDirRel{ "Assets" };
-		std::filesystem::path const cacheDirRel{ "Cache" };
-
-		leopph::Object* selectedObject{ nullptr };
-
-		auto factoryManager{ leopph::editor::CreateFactoryManager() };
+		leopph::editor::Context context{ imGuiIo };
 
 		leopph::init_time();
 
@@ -713,7 +662,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 			if (argc > 0) {
 				std::filesystem::path targetProjPath{ argv[0] };
 				targetProjPath = absolute(targetProjPath);
-				OpenProject(targetProjPath, resources, scene, projDirAbs, assetDirRel, cacheDirRel, factoryManager);
+				context.OpenProject(targetProjPath);
 			}
 
 			LocalFree(argv);
@@ -727,8 +676,8 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 			ImGui::NewFrame();
 			ImGuizmo::BeginFrame();
 
-			if (projDirAbs.empty()) {
-				DrawStartupScreen(resources, scene, projDirAbs, assetDirRel, cacheDirRel, factoryManager);
+			if (context.GetProjectDirectoryAbsolute().empty()) {
+				DrawStartupScreen(context);
 			}
 			else {
 				if (runGame) {
@@ -742,8 +691,8 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 						leopph::gWindow.UnlockCursor();
 						leopph::gWindow.SetCursorHiding(false);
 						leopph::gRenderer.SetSyncInterval(1);
-						scene->Load(factoryManager);
-						selectedObject = nullptr;
+						context.GetScene()->Load(context.GetFactoryManager());
+						context.SetSelectedObject(nullptr);
 					}
 				}
 				else {
@@ -751,13 +700,13 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 						runGame = true;
 						leopph::gWindow.SetEventHook({});
 						leopph::gRenderer.SetSyncInterval(0);
-						scene->Save();
+						context.GetScene()->Save();
 					}
 				}
 
 				ImGui::DockSpaceOverViewport();
 
-				if (isEditorBusy) {
+				if (context.IsEditorBusy()) {
 					ImGui::SetNextWindowPos(ImVec2(imGuiIo.DisplaySize.x * 0.5f, imGuiIo.DisplaySize.y * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
 					if (ImGui::Begin("LoadingIndicator", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse)) {
 						leopph::editor::DrawSpinner("##spinner", 15, 6, ImGui::GetColorU32(ImGuiCol_ButtonHovered));
@@ -769,12 +718,12 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 					ImGui::ShowDemoWindow();
 				}
 
-				DrawMainMenuBar(resources, scene, projDirAbs, assetDirRel, cacheDirRel, imGuiIo, factoryManager, showDemoWindow, isEditorBusy);
-				leopph::editor::DrawEntityHierarchyWindow(scene, selectedObject);
-				DrawObjectPropertiesWindow(factoryManager, selectedObject);
+				DrawMainMenuBar(context, showDemoWindow);
+				leopph::editor::DrawEntityHierarchyWindow(context);
+				DrawObjectPropertiesWindow(context);
 				leopph::editor::DrawGameViewWindow(runGame);
-				leopph::editor::DrawSceneViewWindow(imGuiIo, selectedObject);
-				DrawProjectWindow(resources, projDirAbs, assetDirRel, cacheDirRel, imGuiIo, selectedObject, isEditorBusy, factoryManager);
+				leopph::editor::DrawSceneViewWindow(context);
+				DrawProjectWindow(context);
 			}
 
 			ImGui::Render();

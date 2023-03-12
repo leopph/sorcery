@@ -68,6 +68,9 @@ template<>
 auto EditorObjectWrapperFor<Texture2D>::OnGui(EditorObjectFactoryManager const& objectFactoryManager, Object& object) -> void;
 
 template<>
+auto EditorObjectWrapperFor<Scene>::OnGui(EditorObjectFactoryManager const& objectFactoryManager, Object& object) -> void;
+
+template<>
 auto EditorObjectWrapperFor<Entity>::Instantiate() -> Object*;
 
 template<>
@@ -78,4 +81,7 @@ auto EditorObjectWrapperFor<Texture2D>::GetImporter() -> Importer&;
 
 template<>
 auto EditorObjectWrapperFor<Material>::GetImporter() -> Importer&;
+
+template<>
+auto EditorObjectWrapperFor<Scene>::GetImporter() -> Importer&;
 }
