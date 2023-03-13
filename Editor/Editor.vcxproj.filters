@@ -45,6 +45,9 @@
     <ClCompile Include="src\EditorContext.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\AssetStorage.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="vcpkg.json" />
@@ -75,7 +78,7 @@
     <ClInclude Include="src\MaterialImporter.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ResourceStorage.hpp">
+    <ClInclude Include="src\AssetStorage.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\SceneImporter.hpp">

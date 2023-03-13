@@ -102,6 +102,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\Asset.cpp" />
+    <ClCompile Include="src\AssetStorage.cpp" />
     <ClCompile Include="src\EditorContext.cpp" />
     <ClCompile Include="src\MaterialImporter.cpp" />
     <ClCompile Include="src\MeshImporter.cpp" />
@@ -127,7 +128,7 @@
     <ClInclude Include="src\MeshImporter.hpp" />
     <ClInclude Include="src\ObjectFactoryManager.hpp" />
     <ClInclude Include="src\ObjectWrappers.hpp" />
-    <ClInclude Include="src\ResourceStorage.hpp" />
+    <ClInclude Include="src\AssetStorage.hpp" />
     <ClInclude Include="src\SceneImporter.hpp" />
     <ClInclude Include="src\TextureImporter.hpp" />
     <ClInclude Include="src\Widgets.hpp" />

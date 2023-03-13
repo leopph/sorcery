@@ -6,6 +6,10 @@
 #include "Asset.hpp"
 
 namespace leopph::editor {
+auto Context::CreateMetaFileForAsset(Object const& asset, std::filesystem::path const& assetDstPath) const -> void {
+	std::ofstream{ std::filesystem::path{ assetDstPath } += ASSET_FILE_EXT } << GenerateAssetMetaFileContents(asset, mFactoryManager);
+}
+
 Context::Context(ImGuiIO& imGuiIO) :
 	mImGuiIo{ imGuiIO } { }
 
@@ -17,19 +21,19 @@ ImGuiIO& Context::GetImGuiIo() noexcept {
 	return mImGuiIo;
 }
 
-ResourceStorage const& Context::GetResources() const noexcept {
+AssetStorage const& Context::GetResources() const noexcept {
 	return mResources;
 }
 
-ResourceStorage& Context::GetResources() noexcept {
+AssetStorage& Context::GetResources() noexcept {
 	return mResources;
 }
 
-std::shared_ptr<Scene const> Context::GetScene() const noexcept {
+Scene const* Context::GetScene() const noexcept {
 	return mScene;
 }
 
-std::shared_ptr<Scene> Context::GetScene() noexcept {
+Scene* Context::GetScene() noexcept {
 	return mScene;
 }
 
@@ -62,8 +66,8 @@ std::filesystem::path const& Context::GetCacheDirectoryAbsolute() const noexcept
 }
 
 auto Context::OpenProject(std::filesystem::path const& targetPath) -> void {
-	mScene = std::make_shared<Scene>();
-	mResources.clear();
+	mScene = new Scene{};
+	mResources.Clear();
 	mProjDirAbs = absolute(targetPath);
 	mAssetDirAbs = absolute(mProjDirAbs / ASSET_DIR_REL);
 	mCacheDirAbs = absolute(mProjDirAbs / CACHE_DIR_REL);
@@ -111,7 +115,7 @@ auto Context::OpenProject(std::filesystem::path const& targetPath) -> void {
 		asset->SetName(info.assetPath.stem().string());
 		asset->SetGuid(info.metaInfo.guid);
 
-		mResources[info.assetPath] = std::shared_ptr<Object>{ asset };
+		mResources.RegisterAsset(std::unique_ptr<Object>{ asset }, info.assetPath);
 	}
 }
 

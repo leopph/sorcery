@@ -1,18 +1,19 @@
 #pragma once
 
 #include <imgui.h>
-#include "ResourceStorage.hpp"
+#include "AssetStorage.hpp"
 #include "Scene.hpp"
 #include "ObjectFactoryManager.hpp"
 
 #include <filesystem>
 #include <atomic>
+#include <variant>
 
 namespace leopph::editor {
 class Context {
 	ImGuiIO& mImGuiIo;
-	ResourceStorage mResources;
-	std::shared_ptr<Scene> mScene{ std::make_shared<Scene>() };
+	AssetStorage mResources;
+	Scene* mScene{ new Scene{} }; // TODO Leaks untitled scenes
 	EditorObjectFactoryManager mFactoryManager{ CreateFactoryManager() };
 	Object* mSelectedObject{ nullptr };
 
@@ -26,17 +27,19 @@ class Context {
 
 	std::atomic<bool> mBusy;
 
+	auto CreateMetaFileForAsset(Object const& asset, std::filesystem::path const& assetDstPath) const -> void;
+
 public:
 	explicit Context(ImGuiIO& imGuiIO);
 
 	[[nodiscard]] ImGuiIO const& GetImGuiIo() const noexcept;
 	[[nodiscard]] ImGuiIO& GetImGuiIo() noexcept;
 
-	[[nodiscard]] ResourceStorage const& GetResources() const noexcept;
-	[[nodiscard]] ResourceStorage& GetResources() noexcept;
+	[[nodiscard]] AssetStorage const& GetResources() const noexcept;
+	[[nodiscard]] AssetStorage& GetResources() noexcept;
 
-	[[nodiscard]] std::shared_ptr<Scene const> GetScene() const noexcept;
-	[[nodiscard]] std::shared_ptr<Scene> GetScene() noexcept;
+	[[nodiscard]] Scene const* GetScene() const noexcept;
+	[[nodiscard]] Scene* GetScene() noexcept;
 
 	[[nodiscard]] EditorObjectFactoryManager const& GetFactoryManager() const noexcept;
 	[[nodiscard]] EditorObjectFactoryManager& GetFactoryManager() noexcept;

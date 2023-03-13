@@ -4,7 +4,7 @@
 #include "BinarySerializer.hpp"
 #include "Asset.hpp"
 #include "ObjectFactoryManager.hpp"
-#include "ResourceStorage.hpp"
+#include "AssetStorage.hpp"
 #include "EditorContext.hpp"
 
 #include <TransformComponent.hpp>
@@ -137,7 +137,7 @@ auto DrawMainMenuBar(Context& context, bool& showDemoWindow) -> void {
 						MessageBoxW(nullptr, L"Failed to open file.", L"Error", MB_ICONERROR);
 					}
 
-					context.GetResources()[outPath] = context.GetScene();
+					context.GetResources().RegisterAsset(std::unique_ptr<Scene>(context.GetScene()), outPath);
 					std::free(selectedPath);
 				}
 			}
@@ -501,7 +501,7 @@ auto DrawProjectWindow(Context& context) -> void {
 						if (ImGui::MenuItem("Material##CreateMaterialAsset")) {
 							auto const dstPath{ IndexFileNameIfNeeded(context.GetAssetDirectoryAbsolute() / "New Material.mtl") };
 
-							auto newMtl{ std::make_shared<Material>() };
+							auto newMtl{ std::make_unique<Material>() };
 							newMtl->SetName(dstPath.stem().string());
 
 							static std::vector<u8> outBytes;
@@ -511,13 +511,13 @@ auto DrawProjectWindow(Context& context) -> void {
 							outBytes.clear();
 
 							CreateMetaFileForAsset(context.GetFactoryManager(), *newMtl, dstPath);
-							context.GetResources()[dstPath] = std::move(newMtl);
+							context.GetResources().RegisterAsset(std::move(newMtl), dstPath);
 						}
 
 						if (ImGui::MenuItem("Scene##CreateSceneAsset")) {
 							auto const dstPath{ IndexFileNameIfNeeded(context.GetAssetDirectoryAbsolute() / "New Scene.mtl") };
 
-							auto newScene{ std::make_shared<Scene>() };
+							auto newScene{ std::make_unique<Scene>() };
 							newScene->SetName(dstPath.stem().string());
 
 							auto const outStr{ newScene->Serialize() };
@@ -525,7 +525,7 @@ auto DrawProjectWindow(Context& context) -> void {
 							std::ranges::copy(outStr, std::ostreambuf_iterator{ out });
 
 							CreateMetaFileForAsset(context.GetFactoryManager(), *newScene, dstPath);
-							context.GetResources()[dstPath] = std::move(newScene);
+							context.GetResources().RegisterAsset(std::move(newScene), dstPath);
 						}
 
 						ImGui::EndMenu();
@@ -561,7 +561,7 @@ auto DrawProjectWindow(Context& context) -> void {
 								asset->SetGuid(guid);
 
 								CreateMetaFileForAsset(context.GetFactoryManager(), *asset, dstPath);
-								context.GetResources()[dstPath] = std::shared_ptr<Object>{ asset };
+								context.GetResources().RegisterAsset(std::unique_ptr<Object>{ asset }, dstPath);
 							}
 						};
 
@@ -598,7 +598,7 @@ auto DrawProjectWindow(Context& context) -> void {
 				for (auto const& entry : std::filesystem::directory_iterator{ selectedProjSubDir }) {
 					auto const entryPathAbs{ absolute(entry.path()) };
 
-					if (auto const resIt{ context.GetResources().find(entryPathAbs) }; resIt != std::end(context.GetResources()) || is_directory(entryPathAbs)) {
+					if (auto const asset{ context.GetResources().TryGetAssetAt(entryPathAbs) }; asset || is_directory(entryPathAbs)) {
 						ImGui::TableNextColumn();
 
 						if (ImGui::Button(entryPathAbs.stem().string().c_str(), { buttonSize, buttonSize })) {
@@ -606,7 +606,7 @@ auto DrawProjectWindow(Context& context) -> void {
 								selectedProjSubDir = entryPathAbs;
 							}
 							else {
-								context.SetSelectedObject(context.GetResources().find(entryPathAbs)->second.get());
+								context.SetSelectedObject(asset);
 							}
 						}
 					}
