@@ -37,6 +37,15 @@ Scene* Context::GetScene() noexcept {
 	return mScene;
 }
 
+auto Context::OpenScene(Scene* const scene) -> void {
+	if (mScene) {
+		mScene->Clear();
+	}
+
+	mScene = scene;
+	mScene->Load(mFactoryManager);
+}
+
 EditorObjectFactoryManager const& Context::GetFactoryManager() const noexcept {
 	return mFactoryManager;
 }
@@ -66,7 +75,7 @@ std::filesystem::path const& Context::GetCacheDirectoryAbsolute() const noexcept
 }
 
 auto Context::OpenProject(std::filesystem::path const& targetPath) -> void {
-	mScene = new Scene{};
+	mScene = nullptr;
 	mResources.Clear();
 	mProjDirAbs = absolute(targetPath);
 	mAssetDirAbs = absolute(mProjDirAbs / ASSET_DIR_REL);

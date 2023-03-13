@@ -13,7 +13,7 @@ namespace leopph::editor {
 class Context {
 	ImGuiIO& mImGuiIo;
 	AssetStorage mResources;
-	Scene* mScene{ new Scene{} }; // TODO Leaks untitled scenes
+	Scene* mScene{ nullptr };
 	EditorObjectFactoryManager mFactoryManager{ CreateFactoryManager() };
 	Object* mSelectedObject{ nullptr };
 
@@ -32,30 +32,31 @@ class Context {
 public:
 	explicit Context(ImGuiIO& imGuiIO);
 
-	[[nodiscard]] ImGuiIO const& GetImGuiIo() const noexcept;
-	[[nodiscard]] ImGuiIO& GetImGuiIo() noexcept;
+	[[nodiscard]] auto GetImGuiIo() const noexcept -> ImGuiIO const&;
+	[[nodiscard]] auto GetImGuiIo() noexcept -> ImGuiIO&;
 
-	[[nodiscard]] AssetStorage const& GetResources() const noexcept;
-	[[nodiscard]] AssetStorage& GetResources() noexcept;
+	[[nodiscard]] auto GetResources() const noexcept -> AssetStorage const&;
+	[[nodiscard]] auto GetResources() noexcept -> AssetStorage&;
 
-	[[nodiscard]] Scene const* GetScene() const noexcept;
-	[[nodiscard]] Scene* GetScene() noexcept;
+	[[nodiscard]] auto GetScene() const noexcept -> Scene const*;
+	[[nodiscard]] auto GetScene() noexcept -> Scene*;
+	auto OpenScene(Scene* scene) -> void;
 
-	[[nodiscard]] EditorObjectFactoryManager const& GetFactoryManager() const noexcept;
-	[[nodiscard]] EditorObjectFactoryManager& GetFactoryManager() noexcept;
+	[[nodiscard]] auto GetFactoryManager() const noexcept -> EditorObjectFactoryManager const&;
+	[[nodiscard]] auto GetFactoryManager() noexcept -> EditorObjectFactoryManager&;
 
-	[[nodiscard]] Object* GetSelectedObject() const noexcept;
-	void SetSelectedObject(Object* obj) noexcept;
+	[[nodiscard]] auto GetSelectedObject() const noexcept -> Object*;
+	auto SetSelectedObject(Object* obj) noexcept -> void;
 
-	[[nodiscard]] std::filesystem::path const& GetProjectDirectoryAbsolute() const noexcept;
-	[[nodiscard]] std::filesystem::path const& GetAssetDirectoryAbsolute() const noexcept;
-	[[nodiscard]] std::filesystem::path const& GetCacheDirectoryAbsolute() const noexcept;
+	[[nodiscard]] auto GetProjectDirectoryAbsolute() const noexcept -> std::filesystem::path const&;
+	[[nodiscard]] auto GetAssetDirectoryAbsolute() const noexcept -> std::filesystem::path const&;
+	[[nodiscard]] auto GetCacheDirectoryAbsolute() const noexcept -> std::filesystem::path const&;
 
-	[[nodiscard]] inline static std::filesystem::path const& GetAssetFileExtension() noexcept;
+	[[nodiscard]] inline static auto GetAssetFileExtension() noexcept -> std::filesystem::path const&;
 
 	auto OpenProject(std::filesystem::path const& targetPath) -> void;
 
-	[[nodiscard]] bool IsEditorBusy() const noexcept;
+	[[nodiscard]] auto IsEditorBusy() const noexcept -> bool;
 
 	template<typename Callable>
 	auto ExecuteInBusyEditor(Callable&& callable) -> void;
@@ -79,7 +80,7 @@ auto Context::ExecuteInBusyEditor(Callable&& callable) -> void {
 	}.detach();
 }
 
-inline std::filesystem::path const& Context::GetAssetFileExtension() noexcept {
+inline auto Context::GetAssetFileExtension() noexcept -> std::filesystem::path const& {
 	return ASSET_FILE_EXT;
 }
 }

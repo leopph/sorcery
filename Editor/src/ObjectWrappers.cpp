@@ -614,8 +614,11 @@ auto EditorObjectWrapperFor<Texture2D>::OnGui([[maybe_unused]] Context& context,
 	ImGui::Image(tex.GetSrv(), displaySize);
 }
 
-auto EditorObjectWrapperFor<Scene>::OnGui([[maybe_unused]] Context& context, [[maybe_unused]] Object& object) -> void {
+auto EditorObjectWrapperFor<Scene>::OnGui(Context& context, Object& object) -> void {
 	ImGui::Text("%s", "Scene Asset");
+	if (ImGui::Button("Open")) {
+		context.OpenScene(&dynamic_cast<Scene&>(object));
+	}
 }
 
 auto EditorObjectWrapperFor<Entity>::Instantiate() -> Object* {

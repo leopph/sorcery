@@ -38,5 +38,7 @@ public:
 
 	LEOPPHAPI auto Save() -> void;
 	LEOPPHAPI auto Load(ObjectInstantiatorManager const& manager) -> void;
+
+	LEOPPHAPI auto Clear() -> void;
 };
 }

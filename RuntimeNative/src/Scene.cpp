@@ -84,4 +84,8 @@ auto Scene::Load(ObjectInstantiatorManager const& manager) -> void {
 		obj->CreateManagedObject();
 	}
 }
+
+auto Scene::Clear() -> void {
+	mEntities.clear();
+}
 }

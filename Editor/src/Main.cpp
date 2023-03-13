@@ -115,8 +115,6 @@ auto DrawMainMenuBar(Context& context, bool& showDemoWindow) -> void {
 				}
 			}
 
-			if (ImGui::MenuItem("Open Scene")) { }
-
 			if (ImGui::MenuItem("Save Current Scene")) {
 				context.GetScene()->Save();
 				auto const sceneSerializedData{ context.GetScene()->Serialize() };
@@ -618,6 +616,20 @@ auto DrawProjectWindow(Context& context) -> void {
 	}
 	ImGui::End();
 }
+
+auto DrawSceneOpenPrompt() {
+	if (ImGui::Begin("No Open Scene##NoOpenScenePrompt", nullptr, ImGuiWindowFlags_None)) {
+		auto const promptTextLabel{ "Create or open a scene from the Project Menu to start editing!" };
+		auto const windowSize{ ImGui::GetWindowSize() };
+		auto const textSize{ ImGui::CalcTextSize(promptTextLabel) };
+
+		ImGui::SetCursorPosX((windowSize.x - textSize.x) * 0.5f);
+		ImGui::SetCursorPosY((windowSize.y - textSize.y) * 0.5f);
+
+		ImGui::Text("%s", promptTextLabel);
+	}
+	ImGui::End();
+}
 }
 
 
@@ -663,6 +675,14 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 				std::filesystem::path targetProjPath{ argv[0] };
 				targetProjPath = absolute(targetProjPath);
 				context.OpenProject(targetProjPath);
+			}
+
+			if (argc > 1) {
+				std::filesystem::path targetScenePath{ argv[1] };
+				targetScenePath = context.GetAssetDirectoryAbsolute() / targetScenePath;
+				if (auto const targetScene{ context.GetResources().TryGetAssetAt(targetScenePath) }) {
+					context.OpenScene(dynamic_cast<leopph::Scene*>(targetScene));
+				}
 			}
 
 			LocalFree(argv);
@@ -718,11 +738,17 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 					ImGui::ShowDemoWindow();
 				}
 
+				if (context.GetScene()) {
+					leopph::editor::DrawEntityHierarchyWindow(context);
+					leopph::editor::DrawGameViewWindow(runGame);
+					leopph::editor::DrawSceneViewWindow(context);
+				}
+				else {
+					leopph::editor::DrawSceneOpenPrompt();
+				}
+
 				DrawMainMenuBar(context, showDemoWindow);
-				leopph::editor::DrawEntityHierarchyWindow(context);
 				DrawObjectPropertiesWindow(context);
-				leopph::editor::DrawGameViewWindow(runGame);
-				leopph::editor::DrawSceneViewWindow(context);
 				DrawProjectWindow(context);
 			}
 
