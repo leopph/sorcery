@@ -2,8 +2,6 @@
 
 #include "Serialization.hpp"
 
-#include <iostream>
-
 #include "Systems.hpp"
 #include "Entity.hpp"
 #include "TransformComponent.hpp"
@@ -28,27 +26,43 @@ auto LightComponent::CreateManagedObject() -> void {
 }
 
 auto LightComponent::Serialize(YAML::Node& node) const -> void {
+	Component::Serialize(node);
 	node["color"] = GetColor();
 	node["intensity"] = GetIntensity();
+	node["castsShadow"] = IsCastingShadow();
+	node["type"] = static_cast<int>(GetType());
+	node["shadowNearPlane"] = GetShadowNearPlane();
+	node["range"] = GetRange();
+	node["innerAngle"] = GetInnerAngle();
+	node["outerAngle"] = GetOuterAngle();
 }
 
 
 auto LightComponent::Deserialize(YAML::Node const& node) -> void {
-	if (node["color"]) {
-		if (!node["color"].IsSequence()) {
-			std::cerr << "Failed to deserialize color of LightComponent " << GetGuid().ToString() << ". Invalid data." << std::endl;
-		}
-		else {
-			SetColor(node.as<Vector3>(GetColor()));
-		}
+	Component::Deserialize(node);
+	if (auto const data{ node["color"] }) {
+		SetColor(data.as<Vector3>(GetColor()));
 	}
-	if (node["intensity"]) {
-		if (!node["intensity"].IsScalar()) {
-			std::cerr << "Failed to deserialize intensity of LightComponent " << GetGuid().ToString() << ". Invalid data." << std::endl;
-		}
-		else {
-			SetIntensity(node.as<f32>(GetIntensity()));
-		}
+	if (auto const data{ node["intensity"] }) {
+		SetIntensity(data.as<f32>(GetIntensity()));
+	}
+	if (auto const data{ node["castsShadow"] }) {
+		SetCastingShadow(data.as<bool>(IsCastingShadow()));
+	}
+	if (auto const data{ node["type"] }) {
+		SetType(static_cast<Type>(data.as<int>(static_cast<int>(GetType()))));
+	}
+	if (auto const data{ node["shadowNearPlane"] }) {
+		SetShadowNearPlane(data.as<f32>(GetShadowNearPlane()));
+	}
+	if (auto const data{ node["range"] }) {
+		SetRange(data.as<f32>(GetRange()));
+	}
+	if (auto const data{ node["innerAngle"] }) {
+		SetInnerAngle(data.as<f32>(GetInnerAngle()));
+	}
+	if (auto const data{ node["outerAngle"] }) {
+		SetOuterAngle(data.as<f32>(GetOuterAngle()));
 	}
 }
 
