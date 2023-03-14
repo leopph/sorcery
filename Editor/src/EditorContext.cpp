@@ -128,7 +128,22 @@ bool Context::IsEditorBusy() const noexcept {
 	return mBusy;
 }
 
-auto Context::CreateMetaFileForAsset(Object const& asset, std::filesystem::path const& assetDstPath) const -> void {
-	std::ofstream{ std::filesystem::path{ assetDstPath } += ASSET_FILE_EXT } << GenerateAssetMetaFileContents(asset, mFactoryManager);
+auto Context::CreateMetaFileForRegisteredAsset(Object const& asset) const -> void {
+	if (auto const assetPath{ mResources.TryGetPathFor(&asset) }; !assetPath.empty()) {
+		std::ofstream{ std::filesystem::path{ assetPath } += ASSET_FILE_EXT } << GenerateAssetMetaFileContents(asset, mFactoryManager);
+	}
+}
+
+auto Context::SaveRegisteredNativeAsset(NativeAsset const& asset) const -> void {
+	if (auto const dst{ mResources.TryGetPathFor(&asset) }; !dst.empty()) {
+		std::vector<std::uint8_t> static outSerializedBytes;
+		outSerializedBytes.clear();
+
+		asset.Serialize(outSerializedBytes);
+
+		if (std::ofstream out{ dst, std::ios::out | std::ios::binary }; out.is_open()) {
+			std::ranges::copy(outSerializedBytes, std::ostreambuf_iterator{ out });
+		}
+	}
 }
 }

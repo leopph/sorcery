@@ -59,7 +59,8 @@ public:
 	template<typename Callable>
 	auto ExecuteInBusyEditor(Callable&& callable) -> void;
 
-	auto CreateMetaFileForAsset(Object const& asset, std::filesystem::path const& assetDstPath) const -> void;
+	auto CreateMetaFileForRegisteredAsset(Object const& asset) const -> void;
+	auto SaveRegisteredNativeAsset(NativeAsset const& asset) const -> void;
 };
 
 template<typename Callable>

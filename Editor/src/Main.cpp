@@ -31,7 +31,6 @@
 #include <fstream>
 #include <ranges>
 #include <string>
-#include <vector>
 #include <cwchar>
 
 
@@ -111,28 +110,9 @@ auto DrawMainMenuBar(Context& context, bool& showDemoWindow) -> void {
 			}
 
 			if (ImGui::MenuItem("Save Current Scene")) {
-				std::filesystem::path const sceneExt{ ".scene" };
-
-				if (nfdchar_t* selectedPath{ nullptr }; NFD_SaveDialog(std::string_view{ sceneExt.string() }.substr(1).data(), context.GetAssetDirectoryAbsolute().string().c_str(), &selectedPath) == NFD_OKAY) {
-					auto const outPath{ std::filesystem::path{ selectedPath }.replace_extension(sceneExt) };
-					std::free(selectedPath);
-
-					if (!exists(std::filesystem::path{ outPath } += RESOURCE_FILE_EXT)) {
-						context.CreateMetaFileForAsset(*context.GetScene(), outPath);
-					}
-
+				if (context.GetScene()) {
 					context.GetScene()->Save();
-					std::vector<std::uint8_t> static sceneSerializedData;
-					context.GetScene()->Serialize(sceneSerializedData);
-
-					if (std::ofstream out{ outPath, std::ios::out | std::ios::binary }; out.is_open()) {
-						std::ranges::copy(sceneSerializedData, std::ostreambuf_iterator{ out });
-					}
-					else {
-						MessageBoxW(nullptr, L"Failed to open file.", L"Error", MB_ICONERROR);
-					}
-
-					context.GetResources().RegisterAsset(std::unique_ptr<Scene>(context.GetScene()), outPath);
+					context.SaveRegisteredNativeAsset(*context.GetScene());
 				}
 			}
 
@@ -492,38 +472,26 @@ auto DrawProjectWindow(Context& context) -> void {
 
 				if (ImGui::BeginPopup(contextMenuId)) {
 					if (ImGui::BeginMenu("Create##CreateAssetMenu")) {
-						std::vector<std::uint8_t> static outSerializedBytes;
-
 						if (ImGui::MenuItem("Material##CreateMaterialAsset")) {
 							auto const dstPath{ IndexFileNameIfNeeded(context.GetAssetDirectoryAbsolute() / "New Material.mtl") };
 
-							auto newMtl{ std::make_unique<Material>() };
-							newMtl->SetName(dstPath.stem().string());
+							auto const mtl{ new Material{} };
+							mtl->SetName(dstPath.stem().string());
 
-							outSerializedBytes.clear();
-							newMtl->Serialize(outSerializedBytes);
-
-							std::ofstream out{ dstPath, std::ios::out | std::ios::binary };
-							std::ranges::copy(outSerializedBytes, std::ostreambuf_iterator{ out });
-
-							context.CreateMetaFileForAsset(*newMtl, dstPath);
-							context.GetResources().RegisterAsset(std::move(newMtl), dstPath);
+							context.GetResources().RegisterAsset(std::unique_ptr<Object>{ mtl }, dstPath);
+							context.SaveRegisteredNativeAsset(*mtl);
+							context.CreateMetaFileForRegisteredAsset(*mtl);
 						}
 
 						if (ImGui::MenuItem("Scene##CreateSceneAsset")) {
-							auto const dstPath{ IndexFileNameIfNeeded(context.GetAssetDirectoryAbsolute() / "New Scene.mtl") };
+							auto const dstPath{ IndexFileNameIfNeeded(context.GetAssetDirectoryAbsolute() / "New Scene.scene") };
 
-							auto newScene{ std::make_unique<Scene>() };
-							newScene->SetName(dstPath.stem().string());
+							auto const scene{ new Scene{} };
+							scene->SetName(dstPath.stem().string());
 
-							outSerializedBytes.clear();
-							newScene->Serialize(outSerializedBytes);
-
-							std::ofstream out{ dstPath, std::ios::out | std::ios::binary };
-							std::ranges::copy(outSerializedBytes, std::ostreambuf_iterator{ out });
-
-							context.CreateMetaFileForAsset(*newScene, dstPath);
-							context.GetResources().RegisterAsset(std::move(newScene), dstPath);
+							context.GetResources().RegisterAsset(std::unique_ptr<Object>{ scene }, dstPath);
+							context.SaveRegisteredNativeAsset(*scene);
+							context.CreateMetaFileForRegisteredAsset(*scene);
 						}
 
 						ImGui::EndMenu();
@@ -558,8 +526,8 @@ auto DrawProjectWindow(Context& context) -> void {
 								asset->SetName(dstPath.stem().string());
 								asset->SetGuid(guid);
 
-								context.CreateMetaFileForAsset(*asset, dstPath);
 								context.GetResources().RegisterAsset(std::unique_ptr<Object>{ asset }, dstPath);
+								context.CreateMetaFileForRegisteredAsset(*asset);
 							}
 						};
 
