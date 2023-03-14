@@ -11,6 +11,9 @@ public:
 
 	LEOPPHAPI auto CreateManagedObject() -> void override;
 
+	LEOPPHAPI auto Serialize(YAML::Node& node) const -> void override;
+	LEOPPHAPI auto Deserialize(YAML::Node const& node) -> void override;
+
 	[[nodiscard]] LEOPPHAPI auto GetColor() const -> Vector3 const&;
 	LEOPPHAPI auto SetColor(Vector3 const& color) -> void;
 
@@ -21,87 +24,37 @@ public:
 	LEOPPHAPI auto SetCastingShadow(bool castShadow) -> void;
 
 	enum class Type {
-		Directional,
-		Spot,
-		Point
-	};
-
-	class DirectionalLightInfo {
-		friend class LightComponent;
-
-		f32 mShadowNear{ 50.f };
-		LightComponent const& mOwningLightComponent;
-
-		LEOPPHAPI explicit DirectionalLightInfo(LightComponent const& lightComponent);
-
-	public:
-		[[nodiscard]] LEOPPHAPI auto GetDirection() const -> Vector3 const&;
-		[[nodiscard]] LEOPPHAPI auto GetShadowNearPlane() const -> f32;
-		LEOPPHAPI auto SetShadowNearPlane(f32 nearPlane) -> void;
-	};
-
-	class AttenuatedLightInfo {
-		f32 mRange{ 10.f };
-
-	protected:
-		AttenuatedLightInfo() = default;
-
-	public:
-		[[nodiscard]] LEOPPHAPI auto GetRange() const -> f32;
-		LEOPPHAPI auto SetRange(f32 range) -> void;
-
-		virtual ~AttenuatedLightInfo() = default;
-		AttenuatedLightInfo(AttenuatedLightInfo const&) = delete;
-		AttenuatedLightInfo(AttenuatedLightInfo&&) = delete;
-		void operator=(AttenuatedLightInfo const&) = delete;
-		void operator=(AttenuatedLightInfo&&) = delete;
-	};
-
-	class SpotLightInfo final : public AttenuatedLightInfo {
-		friend class LightComponent;
-		SpotLightInfo() = default;
-
-		f32 mInnerAngle{ 30.f };
-		f32 mOuterAngle{ 30.f };
-
-	public:
-		[[nodiscard]] LEOPPHAPI auto GetInnerAngle() const -> f32;
-		LEOPPHAPI auto SetInnerAngle(f32 degrees) -> void;
-
-		[[nodiscard]] LEOPPHAPI auto GetOuterAngle() const -> f32;
-		LEOPPHAPI auto SetOuterAngle(f32 degrees) -> void;
-	};
-
-	class PointLightInfo final : public AttenuatedLightInfo {
-		friend class LightComponent;
-		PointLightInfo() = default;
+		Directional = 0,
+		Spot        = 1,
+		Point       = 2
 	};
 
 	[[nodiscard]] LEOPPHAPI auto GetType() const noexcept -> Type;
+	LEOPPHAPI auto SetType(Type type) noexcept -> void;
 
-	[[nodiscard]] auto&& GetDirInfo(this auto&& self) {
-		return self.mDirInfo;
-	}
+	[[nodiscard]] LEOPPHAPI auto GetDirection() const -> Vector3 const&;
 
-	[[nodiscard]] auto&& GetSpotInfo(this auto&& self) {
-		return self.mSpotInfo;
-	}
+	[[nodiscard]] LEOPPHAPI auto GetShadowNearPlane() const -> f32;
+	LEOPPHAPI auto SetShadowNearPlane(f32 nearPlane) -> void;
 
-	[[nodiscard]] auto&& GetPointInfo(this auto&& self) {
-		return self.mPointInfo;
-	}
+	[[nodiscard]] LEOPPHAPI auto GetRange() const -> f32;
+	LEOPPHAPI auto SetRange(f32 range) -> void;
 
-	LEOPPHAPI auto Serialize(YAML::Node& node) const -> void override;
-	LEOPPHAPI auto Deserialize(YAML::Node const& node) -> void override;
+	[[nodiscard]] LEOPPHAPI auto GetInnerAngle() const -> f32;
+	LEOPPHAPI auto SetInnerAngle(f32 degrees) -> void;
+
+	[[nodiscard]] LEOPPHAPI auto GetOuterAngle() const -> f32;
+	LEOPPHAPI auto SetOuterAngle(f32 degrees) -> void;
 
 private:
 	bool mCastsShadow{ false };
 	Vector3 mColor{ 1.f };
 	f32 mIntensity{ 1.f };
 	Type mType{ Type::Directional };
-	DirectionalLightInfo mDirInfo{ *this };
-	SpotLightInfo mSpotInfo;
-	PointLightInfo mPointInfo;
+	f32 mShadowNear{ 50.f };
+	f32 mRange{ 10.f };
+	f32 mInnerAngle{ 30.f };
+	f32 mOuterAngle{ 30.f };
 };
 
 
@@ -137,5 +90,23 @@ auto SetLightColor(MonoObject* light, Vector3 color) -> void;
 
 auto GetLightIntensity(MonoObject* light) -> f32;
 auto SetLightIntensity(MonoObject* light, f32 intensity) -> void;
+
+auto GetLightShadowCast(MonoObject* light) -> int;
+auto SetLightShadowCast(MonoObject* light, int cast) -> void;
+
+auto GetLightType(MonoObject* light) -> LightComponent::Type;
+auto SetLightType(MonoObject* light, LightComponent::Type type) -> void;
+
+auto GetLightShadowNearPlane(MonoObject* light) -> float;
+auto SetLightShadowNearPlane(MonoObject* light, float nearPlane) -> void;
+
+auto GetLightRange(MonoObject* light) -> float;
+auto SetLightRange(MonoObject* light, float range) -> void;
+
+auto GetLightInnerAngle(MonoObject* light) -> float;
+auto SetLightInnerAngle(MonoObject* light, float innerAngle) -> void;
+
+auto GetLightOuterAngle(MonoObject* light) -> float;
+auto SetLightOuterAngle(MonoObject* light, float outerAngle) -> void;
 }
 }

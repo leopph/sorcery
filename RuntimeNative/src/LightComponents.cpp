@@ -2,7 +2,6 @@
 
 #include "Serialization.hpp"
 
-#include <format>
 #include <iostream>
 
 #include "Systems.hpp"
@@ -18,6 +17,31 @@ auto LightComponent::GetSerializationType() const -> Object::Type {
 
 auto LightComponent::CreateManagedObject() -> void {
 	return ManagedAccessObject::CreateManagedObject("leopph", "Light");
+}
+
+auto LightComponent::Serialize(YAML::Node& node) const -> void {
+	node["color"] = GetColor();
+	node["intensity"] = GetIntensity();
+}
+
+
+auto LightComponent::Deserialize(YAML::Node const& node) -> void {
+	if (node["color"]) {
+		if (!node["color"].IsSequence()) {
+			std::cerr << "Failed to deserialize color of LightComponent " << GetGuid().ToString() << ". Invalid data." << std::endl;
+		}
+		else {
+			SetColor(node.as<Vector3>(GetColor()));
+		}
+	}
+	if (node["intensity"]) {
+		if (!node["intensity"].IsScalar()) {
+			std::cerr << "Failed to deserialize intensity of LightComponent " << GetGuid().ToString() << ". Invalid data." << std::endl;
+		}
+		else {
+			SetIntensity(node.as<f32>(GetIntensity()));
+		}
+	}
 }
 
 auto LightComponent::GetColor() const -> Vector3 const& {
@@ -58,6 +82,46 @@ auto LightComponent::GetType() const noexcept -> Type {
 	return mType;
 }
 
+auto LightComponent::SetType(Type const type) noexcept -> void {
+	mType = type;
+}
+
+auto LightComponent::GetDirection() const -> Vector3 const& {
+	return GetEntity()->GetTransform().GetForwardAxis();
+}
+
+auto LightComponent::GetShadowNearPlane() const -> f32 {
+	return mShadowNear;
+}
+
+auto LightComponent::SetShadowNearPlane(f32 const nearPlane) -> void {
+	mShadowNear = nearPlane;
+}
+
+auto LightComponent::GetRange() const -> f32 {
+	return mRange;
+}
+
+auto LightComponent::SetRange(f32 const range) -> void {
+	mRange = range;
+}
+
+auto LightComponent::GetInnerAngle() const -> f32 {
+	return mInnerAngle;
+}
+
+auto LightComponent::SetInnerAngle(f32 const degrees) -> void {
+	mInnerAngle = degrees;
+}
+
+auto LightComponent::GetOuterAngle() const -> f32 {
+	return mOuterAngle;
+}
+
+auto LightComponent::SetOuterAngle(f32 const degrees) -> void {
+	mOuterAngle = degrees;
+}
+
 auto AmbientLight::get_instance() -> AmbientLight& {
 	static AmbientLight instance;
 	return instance;
@@ -71,54 +135,6 @@ auto AmbientLight::get_intensity() const -> Vector3 const& {
 
 auto AmbientLight::set_intensity(Vector3 const& intensity) -> void {
 	mIntensity = intensity;
-}
-
-auto LightComponent::Serialize(YAML::Node& node) const -> void {
-	node["color"] = GetColor();
-	node["intensity"] = GetIntensity();
-}
-
-
-auto LightComponent::Deserialize(YAML::Node const& node) -> void {
-	if (node["color"]) {
-		if (!node["color"].IsSequence()) {
-			std::cerr << "Failed to deserialize color of LightComponent " << GetGuid().ToString() << ". Invalid data." << std::endl;
-		}
-		else {
-			SetColor(node.as<Vector3>(GetColor()));
-		}
-	}
-	if (node["intensity"]) {
-		if (!node["intensity"].IsScalar()) {
-			std::cerr << "Failed to deserialize intensity of LightComponent " << GetGuid().ToString() << ". Invalid data." << std::endl;
-		}
-		else {
-			SetIntensity(node.as<f32>(GetIntensity()));
-		}
-	}
-}
-
-LightComponent::DirectionalLightInfo::DirectionalLightInfo(LightComponent const& lightComponent) :
-	mOwningLightComponent{ lightComponent } { }
-
-auto LightComponent::DirectionalLightInfo::GetDirection() const -> Vector3 const& {
-	return mOwningLightComponent.GetEntity()->GetTransform().GetForwardAxis();
-}
-
-auto LightComponent::DirectionalLightInfo::GetShadowNearPlane() const -> f32 {
-	return mShadowNear;
-}
-
-auto LightComponent::DirectionalLightInfo::SetShadowNearPlane(f32 const nearPlane) -> void {
-	mShadowNear = nearPlane;
-}
-
-auto LightComponent::AttenuatedLightInfo::GetRange() const -> f32 {
-	return mRange;
-}
-
-auto LightComponent::AttenuatedLightInfo::SetRange(f32 const range) -> void {
-	mRange = range;
 }
 
 
@@ -140,6 +156,54 @@ auto GetLightIntensity(MonoObject* light) -> f32 {
 
 auto SetLightIntensity(MonoObject* light, f32 intensity) -> void {
 	ManagedAccessObject::GetNativePtrFromManagedObjectAs<LightComponent*>(light)->SetIntensity(intensity);
+}
+
+auto GetLightShadowCast(MonoObject* light) -> int {
+	return ManagedAccessObject::GetNativePtrFromManagedObjectAs<LightComponent*>(light)->IsCastingShadow();
+}
+
+auto SetLightShadowCast(MonoObject* light, int const cast) -> void {
+	ManagedAccessObject::GetNativePtrFromManagedObjectAs<LightComponent*>(light)->SetCastingShadow(cast);
+}
+
+auto GetLightType(MonoObject* light) -> LightComponent::Type {
+	return ManagedAccessObject::GetNativePtrFromManagedObjectAs<LightComponent*>(light)->GetType();
+}
+
+auto SetLightType(MonoObject* light, LightComponent::Type const type) -> void {
+	ManagedAccessObject::GetNativePtrFromManagedObjectAs<LightComponent*>(light)->SetType(type);
+}
+
+auto GetLightShadowNearPlane(MonoObject* light) -> float {
+	return ManagedAccessObject::GetNativePtrFromManagedObjectAs<LightComponent*>(light)->GetShadowNearPlane();
+}
+
+auto SetLightShadowNearPlane(MonoObject* light, float const nearPlane) -> void {
+	ManagedAccessObject::GetNativePtrFromManagedObjectAs<LightComponent*>(light)->SetShadowNearPlane(nearPlane);
+}
+
+auto GetLightRange(MonoObject* light) -> float {
+	return ManagedAccessObject::GetNativePtrFromManagedObjectAs<LightComponent*>(light)->GetRange();
+}
+
+auto SetLightRange(MonoObject* light, float const range) -> void {
+	ManagedAccessObject::GetNativePtrFromManagedObjectAs<LightComponent*>(light)->SetRange(range);
+}
+
+auto GetLightInnerAngle(MonoObject* light) -> float {
+	return ManagedAccessObject::GetNativePtrFromManagedObjectAs<LightComponent*>(light)->GetInnerAngle();
+}
+
+auto SetLightInnerAngle(MonoObject* light, float const innerAngle) -> void {
+	ManagedAccessObject::GetNativePtrFromManagedObjectAs<LightComponent*>(light)->SetInnerAngle(innerAngle);
+}
+
+auto GetLightOuterAngle(MonoObject* light) -> float {
+	return ManagedAccessObject::GetNativePtrFromManagedObjectAs<LightComponent*>(light)->GetOuterAngle();
+}
+
+auto SetLightOuterAngle(MonoObject* light, float const outerAngle) -> void {
+	ManagedAccessObject::GetNativePtrFromManagedObjectAs<LightComponent*>(light)->SetOuterAngle(outerAngle);
 }
 }
 }

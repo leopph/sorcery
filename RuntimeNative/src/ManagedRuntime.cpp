@@ -137,6 +137,18 @@ auto ManagedRuntime::StartUp() -> void {
 	mono_add_internal_call("leopph.Light::set_Color", reinterpret_cast<void*>(&managedbindings::SetLightColor));
 	mono_add_internal_call("leopph.Light::get_Intensity", reinterpret_cast<void*>(&managedbindings::GetLightIntensity));
 	mono_add_internal_call("leopph.Light::set_Intensity", reinterpret_cast<void*>(&managedbindings::SetLightIntensity));
+	mono_add_internal_call("leopph.Light::get_CastsShadow", reinterpret_cast<void*>(&managedbindings::GetLightShadowCast));
+	mono_add_internal_call("leopph.Light::set_CastsShadow", reinterpret_cast<void*>(&managedbindings::SetLightShadowCast));
+	mono_add_internal_call("leopph.Light::get_Type", reinterpret_cast<void*>(&managedbindings::GetLightType));
+	mono_add_internal_call("leopph.Light::set_Type", reinterpret_cast<void*>(&managedbindings::SetLightType));
+	mono_add_internal_call("leopph.Light::get_ShadowNearPlane", reinterpret_cast<void*>(&managedbindings::GetLightShadowNearPlane));
+	mono_add_internal_call("leopph.Light::set_ShadowNearPlane", reinterpret_cast<void*>(&managedbindings::SetLightShadowNearPlane));
+	mono_add_internal_call("leopph.Light::get_Range", reinterpret_cast<void*>(&managedbindings::GetLightRange));
+	mono_add_internal_call("leopph.Light::set_Range", reinterpret_cast<void*>(&managedbindings::SetLightRange));
+	mono_add_internal_call("leopph.Light::get_InnerAngle", reinterpret_cast<void*>(&managedbindings::GetLightInnerAngle));
+	mono_add_internal_call("leopph.Light::set_InnerAngle", reinterpret_cast<void*>(&managedbindings::SetLightInnerAngle));
+	mono_add_internal_call("leopph.Light::get_OuterAngle", reinterpret_cast<void*>(&managedbindings::GetLightOuterAngle));
+	mono_add_internal_call("leopph.Light::set_OuterAngle", reinterpret_cast<void*>(&managedbindings::SetLightOuterAngle));
 
 	auto const managedLibPath{ std::filesystem::path{ GetExecutablePath() }.remove_filename() /= "LeopphRuntimeManaged.dll" };
 
@@ -184,7 +196,7 @@ auto ManagedRuntime::StartUp() -> void {
 		auto const ns = mono_metadata_string_heap(mImage, cols[MONO_TYPEDEF_NAMESPACE]);
 		auto const klass = mono_class_from_name(mImage, ns, mName);
 
-		if (mono_class_is_subclass_of(klass, componentClass, false) && klass != componentClass && klass != behaviorClass) {
+		if (klass && mono_class_is_subclass_of(klass, componentClass, false) && klass != componentClass && klass != behaviorClass) {
 			mComponentClasses.emplace_back(klass);
 		}
 	}

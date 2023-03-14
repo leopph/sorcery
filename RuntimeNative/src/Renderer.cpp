@@ -28,7 +28,6 @@
 
 #include <cassert>
 #include <functional>
-#include <utility>
 
 using Microsoft::WRL::ComPtr;
 
@@ -76,11 +75,11 @@ struct ToneMapGammaCBData {
 
 namespace {
 Vector2 const QUAD_POSITIONS[]{
-	{ -1, 1 }, { -1, -1 }, { 1, -1 }, { 1, 1 }
+	Vector2{ -1, 1 }, Vector2{ -1, -1 }, Vector2{ 1, -1 }, Vector2{ 1, 1 }
 };
 
 Vector2 const QUAD_UVS[]{
-	{ 0, 0 }, { 0, 1 }, { 1, 1 }, { 1, 0 }
+	Vector2{ 0, 0 }, Vector2{ 0, 1 }, Vector2{ 1, 1 }, Vector2{ 1, 0 }
 };
 
 UINT constexpr QUAD_INDICES[]{
@@ -814,7 +813,7 @@ auto Renderer::UpdatePerFrameCB() const noexcept -> void {
 
 	if (!mLights.empty() && mLights[0]->GetType() == LightComponent::Type::Directional) {
 		perFrameCBData->dirLight.color = mLights[0]->GetColor();
-		perFrameCBData->dirLight.direction = mLights[0]->GetDirInfo().GetDirection();
+		perFrameCBData->dirLight.direction = mLights[0]->GetDirection();
 		perFrameCBData->dirLight.intensity = mLights[0]->GetIntensity();
 	}
 

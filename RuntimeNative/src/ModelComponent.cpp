@@ -40,7 +40,7 @@ auto ModelComponent::GetSerializationType() const -> Type {
 
 
 auto ModelComponent::CreateManagedObject() -> void {
-	return ManagedAccessObject::CreateManagedObject("leopph", "CubeModel");
+	return ManagedAccessObject::CreateManagedObject("leopph", "Model");
 }
 
 auto ModelComponent::Serialize(YAML::Node& node) const -> void {
