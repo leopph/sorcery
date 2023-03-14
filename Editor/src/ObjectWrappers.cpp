@@ -481,6 +481,10 @@ auto EditorObjectWrapperFor<Material>::OnGui([[maybe_unused]] Context& context, 
 
 		ImGui::EndTable();
 	}
+
+	if (ImGui::Button("Save##SaveMaterialAsset")) {
+		context.SaveRegisteredNativeAsset(mtl);
+	}
 }
 
 auto EditorObjectWrapperFor<TransformComponent>::OnGui([[maybe_unused]] Context& context, Object& object) -> void {
