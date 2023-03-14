@@ -89,6 +89,8 @@ auto ModelComponent::Deserialize(YAML::Node const& node) -> void {
 		mMesh = gRenderer.GetCubeMesh().get();
 	}
 
+	mMaterials.clear();
+
 	if (auto const mtlListNode{ node["materials"] }) {
 		for (auto const mtlNode : mtlListNode) {
 			if (auto const guidStr{ mtlNode.as<std::string>() }; !guidStr.empty()) {
