@@ -29,7 +29,7 @@ std::unique_ptr<Component> instantiate() {
 
 std::unordered_map<std::string_view, std::function<std::unique_ptr<Component>()>> const gComponentInstantiators
 {
-	{ "CubeModel", instantiate<ModelComponent> },
+	{ "Model", instantiate<ModelComponent> },
 	{ "Camera", instantiate<CameraComponent> },
 	{ "Light", instantiate<LightComponent> }
 };
