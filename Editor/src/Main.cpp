@@ -510,48 +510,40 @@ auto DrawProjectWindow(Context& context) -> void {
 						};
 
 						auto const importAsset{
-							[&context](Importer& importer, std::filesystem::path const& srcPath) {
-								auto const srcPathAbs{ absolute(srcPath) };
-								auto const dstPath{ IndexFileNameIfNeeded(context.GetAssetDirectoryAbsolute() / srcPathAbs.filename()) };
+							[&context, openFileDialog](Object::Type const targetAssetType) {
+								auto& importer{ context.GetFactoryManager().GetFor(targetAssetType).GetImporter() };
 
-								copy_file(srcPathAbs, dstPath);
-								auto const guid{ Guid::Generate() };
+								if (std::filesystem::path path; openFileDialog(importer.GetSupportedExtensions().c_str(), nullptr, path)) {
+									context.ExecuteInBusyEditor([&context, &importer, path] {
+										auto const srcPathAbs{ absolute(path) };
+										auto const dstPath{ IndexFileNameIfNeeded(context.GetAssetDirectoryAbsolute() / srcPathAbs.filename()) };
 
-								Importer::InputImportInfo const info{
-									.src = dstPath,
-									.guid = guid
-								};
+										copy_file(srcPathAbs, dstPath);
+										auto const guid{ Guid::Generate() };
 
-								auto const asset{ importer.Import(info, context.GetCacheDirectoryAbsolute()) };
-								asset->SetName(dstPath.stem().string());
-								asset->SetGuid(guid);
+										Importer::InputImportInfo const info{
+											.src = dstPath,
+											.guid = guid
+										};
 
-								context.GetResources().RegisterAsset(std::unique_ptr<Object>{ asset }, dstPath);
-								context.CreateMetaFileForRegisteredAsset(*asset);
+										auto const asset{ importer.Import(info, context.GetCacheDirectoryAbsolute()) };
+										asset->SetName(dstPath.stem().string());
+										asset->SetGuid(guid);
+
+										context.GetResources().RegisterAsset(std::unique_ptr<Object>{ asset }, dstPath);
+										context.CreateMetaFileForRegisteredAsset(*asset);
+									});
+								}
 							}
 						};
 
 						if (ImGui::MenuItem("Mesh##ImportMeshAssetMenuItem")) {
-							auto& meshImporter{ context.GetFactoryManager().GetFor(Object::Type::Mesh).GetImporter() };
-
-							if (std::filesystem::path path; openFileDialog(meshImporter.GetSupportedExtensions().c_str(), nullptr, path)) {
-								context.ExecuteInBusyEditor([importAsset, &meshImporter, path] {
-									importAsset(meshImporter, path);
-								});
-							}
-
+							importAsset(Object::Type::Mesh);
 							ImGui::CloseCurrentPopup();
 						}
 
 						if (ImGui::MenuItem("Texture##ImportTextureAssetMenuItem")) {
-							auto& texImporter{ context.GetFactoryManager().GetFor(Object::Type::Mesh).GetImporter() };
-
-							if (std::filesystem::path path; openFileDialog(texImporter.GetSupportedExtensions().c_str(), nullptr, path)) {
-								context.ExecuteInBusyEditor([importAsset, &texImporter, path] {
-									importAsset(texImporter, path);
-								});
-							}
-
+							importAsset(Object::Type::Texture2D);
 							ImGui::CloseCurrentPopup();
 						}
 
