@@ -681,7 +681,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 				std::filesystem::path targetScenePath{ argv[1] };
 				targetScenePath = context.GetAssetDirectoryAbsolute() / targetScenePath;
 				if (auto const targetScene{ context.GetResources().TryGetAssetAt(targetScenePath) }) {
-					context.OpenScene(dynamic_cast<leopph::Scene*>(targetScene));
+					context.OpenScene(dynamic_cast<leopph::Scene&>(*targetScene));
 				}
 			}
 

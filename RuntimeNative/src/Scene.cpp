@@ -82,6 +82,11 @@ auto Scene::Load(ObjectInstantiatorManager const& manager) -> void {
 	for (auto& [obj, node] : objectsWithSerializedData) {
 		obj->Deserialize(node);
 		obj->CreateManagedObject();
+
+		if (auto const entity{ dynamic_cast<Entity*>(obj) }) {
+			entity->SetScene(this);
+			mEntities.emplace_back(entity);
+		}
 	}
 }
 

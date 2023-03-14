@@ -27,8 +27,6 @@ class Context {
 
 	std::atomic<bool> mBusy;
 
-	auto CreateMetaFileForAsset(Object const& asset, std::filesystem::path const& assetDstPath) const -> void;
-
 public:
 	explicit Context(ImGuiIO& imGuiIO);
 
@@ -40,7 +38,7 @@ public:
 
 	[[nodiscard]] auto GetScene() const noexcept -> Scene const*;
 	[[nodiscard]] auto GetScene() noexcept -> Scene*;
-	auto OpenScene(Scene* scene) -> void;
+	auto OpenScene(Scene& scene) -> void;
 
 	[[nodiscard]] auto GetFactoryManager() const noexcept -> EditorObjectFactoryManager const&;
 	[[nodiscard]] auto GetFactoryManager() noexcept -> EditorObjectFactoryManager&;
@@ -60,6 +58,8 @@ public:
 
 	template<typename Callable>
 	auto ExecuteInBusyEditor(Callable&& callable) -> void;
+
+	auto CreateMetaFileForAsset(Object const& asset, std::filesystem::path const& assetDstPath) const -> void;
 };
 
 template<typename Callable>

@@ -617,12 +617,12 @@ auto EditorObjectWrapperFor<Texture2D>::OnGui([[maybe_unused]] Context& context,
 auto EditorObjectWrapperFor<Scene>::OnGui(Context& context, Object& object) -> void {
 	ImGui::Text("%s", "Scene Asset");
 	if (ImGui::Button("Open")) {
-		context.OpenScene(&dynamic_cast<Scene&>(object));
+		context.OpenScene(dynamic_cast<Scene&>(object));
 	}
 }
 
 auto EditorObjectWrapperFor<Entity>::Instantiate() -> Object* {
-	return nullptr; // TODO
+	return Entity::New();
 }
 
 auto EditorObjectWrapperFor<Mesh>::GetImporter() -> Importer& {

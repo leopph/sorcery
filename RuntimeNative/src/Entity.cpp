@@ -140,7 +140,7 @@ auto Entity::SetScene(Scene* const scene) -> void {
 }
 
 auto Entity::New() -> Entity* {
-	return nullptr; // TODO
+	return new Entity{}; // TODO
 }
 
 auto Entity::NewForManagedObject(MonoObject* const managedObject) -> Entity* {

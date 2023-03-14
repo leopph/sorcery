@@ -6,10 +6,6 @@
 #include "Asset.hpp"
 
 namespace leopph::editor {
-auto Context::CreateMetaFileForAsset(Object const& asset, std::filesystem::path const& assetDstPath) const -> void {
-	std::ofstream{ std::filesystem::path{ assetDstPath } += ASSET_FILE_EXT } << GenerateAssetMetaFileContents(asset, mFactoryManager);
-}
-
 Context::Context(ImGuiIO& imGuiIO) :
 	mImGuiIo{ imGuiIO } { }
 
@@ -37,12 +33,12 @@ Scene* Context::GetScene() noexcept {
 	return mScene;
 }
 
-auto Context::OpenScene(Scene* const scene) -> void {
+auto Context::OpenScene(Scene& scene) -> void {
 	if (mScene) {
 		mScene->Clear();
 	}
 
-	mScene = scene;
+	mScene = &scene;
 	mScene->Load(mFactoryManager);
 }
 
@@ -130,5 +126,9 @@ auto Context::OpenProject(std::filesystem::path const& targetPath) -> void {
 
 bool Context::IsEditorBusy() const noexcept {
 	return mBusy;
+}
+
+auto Context::CreateMetaFileForAsset(Object const& asset, std::filesystem::path const& assetDstPath) const -> void {
+	std::ofstream{ std::filesystem::path{ assetDstPath } += ASSET_FILE_EXT } << GenerateAssetMetaFileContents(asset, mFactoryManager);
 }
 }
