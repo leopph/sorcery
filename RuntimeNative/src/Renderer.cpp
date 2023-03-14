@@ -36,13 +36,17 @@ namespace leopph {
 struct CBufLight {
 	Vector3 color;
 	f32 intensity;
-	int type;
+
 	Vector3 direction;
-	int isCastingShadow;
+	int type;
+
 	f32 shadowNearPlane;
 	f32 range;
-	f32 innerAngle;
-	f32 outerAngle;
+	f32 innerAngleCos;
+	int isCastingShadow;
+
+	Vector3 position;
+	f32 outerAngleCos;
 };
 
 struct PerFrameCBufferData {
@@ -822,8 +826,9 @@ auto Renderer::UpdatePerFrameCB() const noexcept -> void {
 		perFrameCBData->light.isCastingShadow = mLights[0]->IsCastingShadow();
 		perFrameCBData->light.shadowNearPlane = mLights[0]->GetShadowNearPlane();
 		perFrameCBData->light.range = mLights[0]->GetRange();
-		perFrameCBData->light.innerAngle = mLights[0]->GetInnerAngle();
-		perFrameCBData->light.outerAngle = mLights[0]->GetOuterAngle();
+		perFrameCBData->light.innerAngleCos = std::cos(ToRadians(mLights[0]->GetInnerAngle()));
+		perFrameCBData->light.outerAngleCos = std::cos(ToRadians(mLights[0]->GetOuterAngle()));
+		perFrameCBData->light.position = mLights[0]->GetEntity()->GetTransform().GetWorldPosition();
 	}
 
 	mResources->context->Unmap(mResources->perFrameCB.Get(), 0);

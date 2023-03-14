@@ -6,86 +6,139 @@ SamplerState gSampler;
 
 static const float PI = 3.14159265f;
 
-float3 FresnelSchlick(float cosTheta, float3 F0) {
+float3 FresnelSchlick(const float cosTheta, const float3 F0) {
     return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
-float TrowbridgeReitz(float3 N, float3 H, float roughness) {
-    float a = roughness * roughness;
-    float a2 = a * a;
-    float NdotH = max(dot(N, H), 0.0);
-    float NdotH2 = NdotH * NdotH;
+float TrowbridgeReitz(const float3 N, const float3 H, const float roughness) {
+    const float a = roughness * roughness;
+    const float a2 = a * a;
+    const float NdotH = max(dot(N, H), 0.0);
+    const float NdotH2 = NdotH * NdotH;
 	
-    float num = a2;
+    const float num = a2;
     float denom = (NdotH2 * (a2 - 1.0) + 1.0);
     denom = PI * denom * denom;
 	
     return num / denom;
 }
 
-float SchlickTrowbridgeReitz(float NdotV, float roughness) {
-    float r = (roughness + 1.0);
-    float k = (r * r) / 8.0;
+float SchlickTrowbridgeReitz(const float NdotV, const float roughness) {
+    const float r = (roughness + 1.0);
+    const float k = (r * r) / 8.0;
 
-    float num = NdotV;
-    float denom = NdotV * (1.0 - k) + k;
+    const float num = NdotV;
+    const float denom = NdotV * (1.0 - k) + k;
 	
     return num / denom;
 }
 
-float Smith(float3 N, float3 V, float3 L, float roughness) {
-    float NdotV = max(dot(N, V), 0.0);
-    float NdotL = max(dot(N, L), 0.0);
-    float ggx2 = SchlickTrowbridgeReitz(NdotV, roughness);
-    float ggx1 = SchlickTrowbridgeReitz(NdotL, roughness);
+float Smith(const float3 N, const float3 V, const float3 L, const float roughness) {
+    const float NdotV = max(dot(N, V), 0.0);
+    const float NdotL = max(dot(N, L), 0.0);
+    const float ggx2 = SchlickTrowbridgeReitz(NdotV, roughness);
+    const float ggx1 = SchlickTrowbridgeReitz(NdotL, roughness);
 	
     return ggx1 * ggx2;
 }
 
-float4 main(MeshVsOut vsOut) : SV_TARGET {
-	float3 albedo = material.albedo;
-
-    if (material.sampleAlbedo != 0) {
-        albedo *= pow(gAlbedoMap.Sample(gSampler, vsOut.uv).rgb, 2.2);
-    }
-
-    float3 ambient = 0.03 * albedo * material.ao;
-
-    if (lightCount == 0 || light.type != 0) {
-	    return float4(ambient, 1.0);
-    }
-
-    float3 N = normalize(vsOut.normal);
-    float3 V = normalize(camPos - vsOut.worldPos);
-
+float3 CalculateLighting(const float3 N, const float3 V, const float3 L, const float3 albedo, const float3 lightColor, const float lightIntensity) {
     float3 F0 = float3(0.04, 0.04, 0.04);
     F0 = lerp(F0, albedo, material.metallic);
 	           
     // reflectance equation
     float3 Lo = float3(0.0, 0.0, 0.0);
         // calculate per-light radiance
-    float3 L = normalize(-light.direction);
-    float3 H = normalize(V + L);
-    float3 radiance = light.color * light.intensity;
+    const float3 H = normalize(V + L);
+    const float3 radiance = lightColor * lightIntensity;
         
         // cook-torrance brdf
-    float NDF = TrowbridgeReitz(N, H, material.roughness);
-    float G = Smith(N, V, L, material.roughness);
-    float3 F = FresnelSchlick(max(dot(H, V), 0.0), F0);
+    const float NDF = TrowbridgeReitz(N, H, material.roughness);
+    const float G = Smith(N, V, L, material.roughness);
+    const float3 F = FresnelSchlick(max(dot(H, V), 0.0), F0);
         
-    float3 kS = F;
+    const float3 kS = F;
     float3 kD = float3(1.0, 1.0, 1.0) - kS;
     kD *= 1.0 - material.metallic;
         
-    float3 numerator = NDF * G * F;
-    float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001;
-    float3 specular = numerator / denominator;
+    const float3 numerator = NDF * G * F;
+    const float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001;
+    const float3 specular = numerator / denominator;
             
         // add to outgoing radiance Lo
-    float NdotL = max(dot(N, L), 0.0);
+    const float NdotL = max(dot(N, L), 0.0);
     Lo += (kD * albedo / PI + specular) * radiance * NdotL;
-  
-    float3 color = ambient + Lo;
    
-    return float4(color, 1.0);
+    return Lo;
+}
+
+float3 CalculateDirLight(const float3 N, const float3 V, const float3 albedo, const Light light) {
+	const float3 L = -light.direction;
+    return CalculateLighting(N, V, L, albedo, light.color, light.intensity);
+}
+
+float3 CalculateSpotLight(const float3 N, const float3 V, const float3 albedo, const Light light, const float3 fragWorldPos) {
+	float3 L = light.position - fragWorldPos;
+    const float dist = length(L);
+
+    if (dist > light.range) {
+	    return float3(0, 0, 0);
+    }
+
+    L = normalize(L);
+
+    const float thetaCos = dot(L, -light.direction);
+    const float eps = light.innerAngleCos - light.outerAngleCos;
+    const float intensity = saturate((thetaCos - light.outerAngleCos) / eps);
+
+    if (intensity == 0) {
+	    return float3(0, 0, 0);
+    }
+
+    return CalculateLighting(N, V, L, albedo, light.color, light.intensity) * intensity;
+}
+
+float3 CalculatePointLight(const float3 N, const float3 V, const float3 albedo, const Light light, const float3 fragWorldPos) {
+	float3 L = light.position - fragWorldPos;
+    const float dist = length(L);
+
+    if (dist > light.range) {
+	    return float3(0, 0, 0);
+    }
+
+    L = normalize(L);
+    return CalculateLighting(N, V, L, albedo, light.color, light.intensity);
+}
+
+float4 main(const MeshVsOut vsOut) : SV_TARGET {
+    const float3 N = normalize(vsOut.normal);
+    const float3 V = normalize(camPos - vsOut.worldPos);
+
+    float3 albedo = material.albedo;
+
+    if (material.sampleAlbedo != 0) {
+        albedo *= pow(gAlbedoMap.Sample(gSampler, vsOut.uv).rgb, 2.2);
+    }
+
+    float3 outColor = 0.03 * albedo * material.ao;
+    
+    switch (light.type) {
+    case 0: {
+        outColor += CalculateDirLight(N, V, albedo,light);
+        break;
+    }
+    case 1: {
+        outColor += CalculateSpotLight(N, V, albedo, light, vsOut.worldPos);
+        break;
+    }
+    case 2: {
+        outColor += CalculatePointLight(N, V, albedo, light, vsOut.worldPos);
+        break;
+    }
+    default: {
+        break;
+    }
+    }
+
+    return float4(outColor, 1);
 }
