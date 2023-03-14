@@ -2,7 +2,7 @@
 
 #include "AABB.hpp"
 #include "Color.hpp"
-#include "Object.hpp"
+#include "NativeAsset.hpp"
 #include "Util.hpp"
 #include "Texture2D.hpp"
 
@@ -13,7 +13,7 @@
 
 
 namespace leopph {
-class Material final : public Object {
+class Material final : public NativeAsset {
 	struct BufferData {
 		Vector3 albedo{ 1, 1, 1 };
 		f32 metallic{ 0 };
@@ -55,6 +55,7 @@ public:
 	LEOPPHAPI [[nodiscard]] auto GetSerializationType() const -> Type override;
 	LEOPPHAPI static Type const SerializationType;
 
-	LEOPPHAPI auto SerializeBinary(std::vector<u8>& out) const -> void;
+	LEOPPHAPI auto Serialize(std::vector<std::uint8_t>& out) const noexcept -> void override;
+	LEOPPHAPI auto Deserialize(std::span<std::uint8_t const> bytes) -> void override;
 };
 }

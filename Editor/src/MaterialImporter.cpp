@@ -1,7 +1,7 @@
 #include "MaterialImporter.hpp"
 
 #include "Material.hpp"
-#include "BinarySerializer.hpp"
+#include "Serialization.hpp"
 
 #include <fstream>
 #include <span>

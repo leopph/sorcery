@@ -1,6 +1,5 @@
 #include "Asset.hpp"
 
-#include "BinarySerializer.hpp"
 #include <YamlInclude.hpp>
 
 namespace leopph::editor {

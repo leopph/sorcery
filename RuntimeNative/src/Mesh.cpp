@@ -2,7 +2,7 @@
 
 #include "Systems.hpp"
 #include "Util.hpp"
-#include "BinarySerializer.hpp"
+#include "Serialization.hpp"
 #include "Compress.hpp"
 
 #include <utility>

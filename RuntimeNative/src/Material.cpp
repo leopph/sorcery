@@ -1,7 +1,7 @@
 #include "Material.hpp"
 
 #include "Systems.hpp"
-#include "BinarySerializer.hpp"
+#include "Serialization.hpp"
 
 #include <assimp/scene.h>
 
@@ -105,10 +105,12 @@ auto Material::GetSerializationType() const -> Type {
 	return Type::Material;
 }
 
-auto Material::SerializeBinary(std::vector<u8>& out) const -> void {
+auto Material::Serialize(std::vector<std::uint8_t>& out) const noexcept -> void {
 	BinarySerializer<Vector3>::Serialize(mBufData.albedo, out, std::endian::native);
 	BinarySerializer<f32>::Serialize(mBufData.metallic, out, std::endian::native);
 	BinarySerializer<f32>::Serialize(mBufData.roughness, out, std::endian::native);
 	BinarySerializer<f32>::Serialize(mBufData.ao, out, std::endian::native);
 }
+
+auto Material::Deserialize(std::span<std::uint8_t const> bytes) -> void { }
 }

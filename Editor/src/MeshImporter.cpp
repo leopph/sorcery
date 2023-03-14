@@ -1,15 +1,14 @@
 #include "MeshImporter.hpp"
 
-#include <queue>
-
 #include "Math.hpp"
-#include "BinarySerializer.hpp"
+#include "Serialization.hpp"
 
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
 #include <fstream>
+#include <queue>
 #include <vector>
 
 namespace leopph::editor {

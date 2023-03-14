@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Entity.hpp"
-#include "Object.hpp"
+#include "NativeAsset.hpp"
 
 #include "YamlInclude.hpp"
 
@@ -12,7 +12,7 @@
 
 
 namespace leopph {
-class Scene : public Object {
+class Scene : public NativeAsset {
 	std::vector<std::unique_ptr<Entity>> mEntities;
 	YAML::Node mYamlData;
 
@@ -33,8 +33,8 @@ public:
 
 	[[nodiscard]] LEOPPHAPI auto GetEntities() const noexcept -> std::span<std::unique_ptr<Entity> const>;
 
-	[[nodiscard]] LEOPPHAPI auto Serialize() const noexcept -> std::string;
-	LEOPPHAPI auto Deserialize(std::span<u8 const> bytes) -> void;
+	LEOPPHAPI auto Serialize(std::vector<std::uint8_t>& out) const noexcept -> void override;
+	LEOPPHAPI auto Deserialize(std::span<std::uint8_t const> bytes) -> void override;
 
 	LEOPPHAPI auto Save() -> void;
 	LEOPPHAPI auto Load(ObjectInstantiatorManager const& manager) -> void;

@@ -25,11 +25,12 @@ auto Scene::GetEntities() const noexcept -> std::span<std::unique_ptr<Entity> co
 	return mEntities;
 }
 
-auto Scene::Serialize() const noexcept -> std::string {
-	return Dump(mYamlData);
+auto Scene::Serialize(std::vector<std::uint8_t>& out) const noexcept -> void {
+	auto const dump{ Dump(mYamlData) };
+	out.assign(std::begin(dump), std::end(dump));
 }
 
-auto Scene::Deserialize(std::span<u8 const> const bytes) -> void {
+auto Scene::Deserialize(std::span<std::uint8_t const> const bytes) -> void {
 	mYamlData = YAML::Load(reinterpret_cast<char const*>(bytes.data()));
 }
 
