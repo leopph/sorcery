@@ -14,6 +14,7 @@ class AssetStorage {
 
 public:
 	auto RegisterAsset(std::unique_ptr<Object> asset, std::filesystem::path const& srcPath) -> void;
+	auto UnregisterAsset(std::filesystem::path const& path) -> std::unique_ptr<Object>;
 
 	[[nodiscard]] auto GetPathFor(Object const* asset) const -> std::filesystem::path const&;
 	[[nodiscard]] auto TryGetPathFor(Object const* asset) const -> std::filesystem::path;

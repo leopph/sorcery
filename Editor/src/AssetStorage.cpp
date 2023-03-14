@@ -7,6 +7,23 @@ auto AssetStorage::RegisterAsset(std::unique_ptr<Object> asset, std::filesystem:
 	mAssets.emplace_back(std::move(asset));
 }
 
+auto AssetStorage::UnregisterAsset(std::filesystem::path const& path) -> std::unique_ptr<Object> {
+	auto const asset{ mPathToAsset.at(path) };
+	mPathToAsset.erase(path);
+	mAssetToPath.erase(asset);
+
+	std::unique_ptr<Object> ret;
+
+	for (std::size_t i = 0; i < mAssets.size(); i++) {
+		if (mAssets[i].get() == asset) {
+			ret = std::move(mAssets[i]);
+			mAssets.erase(std::begin(mAssets) + i);
+		}
+	}
+
+	return ret;
+}
+
 auto AssetStorage::GetPathFor(Object const* asset) const -> std::filesystem::path const& {
 	return mAssetToPath.at(asset);
 }

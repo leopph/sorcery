@@ -18,6 +18,7 @@
 #include <imgui.h>
 #include <backends/imgui_impl_win32.h>
 #include <backends/imgui_impl_dx11.h>
+#include <misc/cpp/imgui_stdlib.h>
 #include <ImGuizmo.h>
 
 #include <nfd.h>
@@ -462,104 +463,123 @@ auto DrawProjectWindow(Context& context) -> void {
 			}(context.GetAssetDirectoryAbsolute());
 
 			ImGui::TableSetColumnIndex(1);
-			if (auto constexpr buttonSize{ 75 }; ImGui::BeginTable("ProjectWindowSubDirTable", static_cast<int>(ImGui::GetContentRegionAvail().x) / buttonSize)) {
-				auto constexpr contextMenuId{ "ProjectWindowContextMenu" };
 
-				if (ImGui::IsWindowHovered(ImGuiHoveredFlags_RootWindow) && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
-					ImGui::OpenPopup(contextMenuId);
-				}
+			auto constexpr contextMenuId{ "ProjectWindowContextMenu" };
+
+			if (ImGui::IsWindowHovered(ImGuiHoveredFlags_RootWindow) && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
+				ImGui::OpenPopup(contextMenuId);
+			}
 
 
-				if (ImGui::BeginPopup(contextMenuId)) {
-					if (ImGui::BeginMenu("Create##CreateAssetMenu")) {
-						if (ImGui::MenuItem("Material##CreateMaterialAsset")) {
-							auto const dstPath{ IndexFileNameIfNeeded(context.GetAssetDirectoryAbsolute() / "New Material.mtl") };
+			if (ImGui::BeginPopup(contextMenuId)) {
+				if (ImGui::BeginMenu("Create##CreateAssetMenu")) {
+					if (ImGui::MenuItem("Material##CreateMaterialAsset")) {
+						auto const dstPath{ IndexFileNameIfNeeded(context.GetAssetDirectoryAbsolute() / "New Material.mtl") };
 
-							auto const mtl{ new Material{} };
-							mtl->SetName(dstPath.stem().string());
+						auto const mtl{ new Material{} };
+						mtl->SetName(dstPath.stem().string());
 
-							context.GetResources().RegisterAsset(std::unique_ptr<Object>{ mtl }, dstPath);
-							context.SaveRegisteredNativeAsset(*mtl);
-							context.CreateMetaFileForRegisteredAsset(*mtl);
-						}
-
-						if (ImGui::MenuItem("Scene##CreateSceneAsset")) {
-							auto const dstPath{ IndexFileNameIfNeeded(context.GetAssetDirectoryAbsolute() / "New Scene.scene") };
-
-							auto const scene{ new Scene{} };
-							scene->SetName(dstPath.stem().string());
-
-							context.GetResources().RegisterAsset(std::unique_ptr<Object>{ scene }, dstPath);
-							context.SaveRegisteredNativeAsset(*scene);
-							context.CreateMetaFileForRegisteredAsset(*scene);
-						}
-
-						ImGui::EndMenu();
+						context.GetResources().RegisterAsset(std::unique_ptr<Object>{ mtl }, dstPath);
+						context.SaveRegisteredNativeAsset(*mtl);
+						context.CreateMetaFileForRegisteredAsset(*mtl);
 					}
 
-					if (ImGui::BeginMenu("Import##ImportAssetMenu")) {
-						auto const openFileDialog{
-							[](char const* filters, char const* defaultPath, std::filesystem::path& out) -> bool {
-								if (nfdchar_t* selectedPath{ nullptr }; NFD_OpenDialog(filters, defaultPath, &selectedPath) == NFD_OKAY) {
-									out = selectedPath;
-									std::free(selectedPath);
-									return true;
-								}
-								return false;
-							}
-						};
+					if (ImGui::MenuItem("Scene##CreateSceneAsset")) {
+						auto const dstPath{ IndexFileNameIfNeeded(context.GetAssetDirectoryAbsolute() / "New Scene.scene") };
 
-						auto const importAsset{
-							[&context, openFileDialog](Object::Type const targetAssetType) {
-								auto& importer{ context.GetFactoryManager().GetFor(targetAssetType).GetImporter() };
+						auto const scene{ new Scene{} };
+						scene->SetName(dstPath.stem().string());
 
-								if (std::filesystem::path path; openFileDialog(importer.GetSupportedExtensions().c_str(), nullptr, path)) {
-									context.ExecuteInBusyEditor([&context, &importer, path] {
-										auto const srcPathAbs{ absolute(path) };
-										auto const dstPath{ IndexFileNameIfNeeded(context.GetAssetDirectoryAbsolute() / srcPathAbs.filename()) };
-
-										copy_file(srcPathAbs, dstPath);
-										auto const guid{ Guid::Generate() };
-
-										Importer::InputImportInfo const info{
-											.src = dstPath,
-											.guid = guid
-										};
-
-										auto const asset{ importer.Import(info, context.GetCacheDirectoryAbsolute()) };
-										asset->SetName(dstPath.stem().string());
-										asset->SetGuid(guid);
-
-										context.GetResources().RegisterAsset(std::unique_ptr<Object>{ asset }, dstPath);
-										context.CreateMetaFileForRegisteredAsset(*asset);
-									});
-								}
-							}
-						};
-
-						if (ImGui::MenuItem("Mesh##ImportMeshAssetMenuItem")) {
-							importAsset(Object::Type::Mesh);
-							ImGui::CloseCurrentPopup();
-						}
-
-						if (ImGui::MenuItem("Texture##ImportTextureAssetMenuItem")) {
-							importAsset(Object::Type::Texture2D);
-							ImGui::CloseCurrentPopup();
-						}
-
-						ImGui::EndMenu();
+						context.GetResources().RegisterAsset(std::unique_ptr<Object>{ scene }, dstPath);
+						context.SaveRegisteredNativeAsset(*scene);
+						context.CreateMetaFileForRegisteredAsset(*scene);
 					}
 
-					ImGui::EndPopup();
+					ImGui::EndMenu();
 				}
 
-				for (auto const& entry : std::filesystem::directory_iterator{ selectedProjSubDir }) {
-					auto const entryPathAbs{ absolute(entry.path()) };
+				if (ImGui::BeginMenu("Import##ImportAssetMenu")) {
+					auto const openFileDialog{
+						[](char const* filters, char const* defaultPath, std::filesystem::path& out) -> bool {
+							if (nfdchar_t* selectedPath{ nullptr }; NFD_OpenDialog(filters, defaultPath, &selectedPath) == NFD_OKAY) {
+								out = selectedPath;
+								std::free(selectedPath);
+								return true;
+							}
+							return false;
+						}
+					};
 
-					if (auto const asset{ context.GetResources().TryGetAssetAt(entryPathAbs) }; asset || is_directory(entryPathAbs)) {
-						ImGui::TableNextColumn();
+					auto const importAsset{
+						[&context, openFileDialog](Object::Type const targetAssetType) {
+							auto& importer{ context.GetFactoryManager().GetFor(targetAssetType).GetImporter() };
 
-						if (ImGui::Button(entryPathAbs.stem().string().c_str(), { buttonSize, buttonSize })) {
+							if (std::filesystem::path path; openFileDialog(importer.GetSupportedExtensions().c_str(), nullptr, path)) {
+								context.ExecuteInBusyEditor([&context, &importer, path] {
+									auto const srcPathAbs{ absolute(path) };
+									auto const dstPath{ IndexFileNameIfNeeded(context.GetAssetDirectoryAbsolute() / srcPathAbs.filename()) };
+
+									copy_file(srcPathAbs, dstPath);
+									auto const guid{ Guid::Generate() };
+
+									Importer::InputImportInfo const info{
+										.src = dstPath,
+										.guid = guid
+									};
+
+									auto const asset{ importer.Import(info, context.GetCacheDirectoryAbsolute()) };
+									asset->SetName(dstPath.stem().string());
+									asset->SetGuid(guid);
+
+									context.GetResources().RegisterAsset(std::unique_ptr<Object>{ asset }, dstPath);
+									context.CreateMetaFileForRegisteredAsset(*asset);
+								});
+							}
+						}
+					};
+
+					if (ImGui::MenuItem("Mesh##ImportMeshAssetMenuItem")) {
+						importAsset(Object::Type::Mesh);
+						ImGui::CloseCurrentPopup();
+					}
+
+					if (ImGui::MenuItem("Texture##ImportTextureAssetMenuItem")) {
+						importAsset(Object::Type::Texture2D);
+						ImGui::CloseCurrentPopup();
+					}
+
+					ImGui::EndMenu();
+				}
+
+				ImGui::EndPopup();
+			}
+
+			std::filesystem::path static renameAssetPath;
+
+			for (auto const& entry : std::filesystem::directory_iterator{ selectedProjSubDir }) {
+				auto const entryPathAbs{ absolute(entry.path()) };
+
+				if (auto const asset{ context.GetResources().TryGetAssetAt(entryPathAbs) }; asset || is_directory(entryPathAbs)) {
+					if (!renameAssetPath.empty() && equivalent(renameAssetPath, entryPathAbs)) {
+						std::string input{ asset->GetName() };
+
+						if (ImGui::InputText("###RenameAsset", &input, ImGuiInputTextFlags_EnterReturnsTrue)) {
+							auto renamedAsset{ context.GetResources().UnregisterAsset(renameAssetPath) };
+
+							auto const oldAssetMetaPath{ std::filesystem::path{ renameAssetPath } += context.GetAssetFileExtension() };
+							auto const newAssetMetaPath{ renameAssetPath.parent_path() / input += renameAssetPath.extension() += context.GetAssetFileExtension() };
+							rename(oldAssetMetaPath, newAssetMetaPath);
+
+							auto const newAssetPath{ renameAssetPath.parent_path() / input += renameAssetPath.extension() };
+							rename(renameAssetPath, newAssetPath);
+
+							renamedAsset->SetName(newAssetPath.stem().string());
+							context.GetResources().RegisterAsset(std::move(renamedAsset), newAssetPath);
+							renameAssetPath.clear();
+						}
+					}
+					else {
+						if (ImGui::Selectable(entryPathAbs.stem().string().c_str(), context.GetResources().TryGetAssetAt(entryPathAbs) == context.GetSelectedObject())) {
 							if (is_directory(entryPathAbs)) {
 								selectedProjSubDir = entryPathAbs;
 							}
@@ -567,10 +587,13 @@ auto DrawProjectWindow(Context& context) -> void {
 								context.SetSelectedObject(asset);
 							}
 						}
+
+						if (ImGui::IsItemHovered() && ImGui::GetMouseClickedCount(ImGuiMouseButton_Left) == 2) {
+							renameAssetPath = entryPathAbs;
+						}
 					}
 				}
 			}
-			ImGui::EndTable();
 		}
 		ImGui::EndTable();
 	}
