@@ -4,10 +4,13 @@
 struct Light {
     float3 color;
     float intensity;
-};
-
-struct DirectionalLight : Light {
+    int type;
     float3 direction;
+    int isCastingShadow;
+    float shadowNearPlane;
+    float range;
+    float innerAngle;
+    float outerAngle;
 };
 
 #endif

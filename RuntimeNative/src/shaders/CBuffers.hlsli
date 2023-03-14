@@ -1,12 +1,12 @@
 #ifndef CBUFFERS_HLSLI
 #define CBUFFERS_HLSLI
 
-#include "Lights.hlsli"
+#include "Light.hlsli"
 #include "PbrMaterial.hlsli"
 
 cbuffer PerFrameConstants : register(b0) {
-    DirectionalLight dirLight;
-    bool calcDirLight;
+    Light light;
+    int lightCount;
 }
 
 cbuffer PerCameraConstants : register(b1) {

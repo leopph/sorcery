@@ -186,7 +186,7 @@
   <ItemGroup>
     <None Include="cpp.hint" />
     <None Include="vcpkg.json" />
-    <None Include="src\shaders\Lights.hlsli" />
+    <None Include="src\shaders\Light.hlsli" />
     <None Include="src\shaders\MeshVSOut.hlsli" />
     <None Include="src\shaders\PbrMaterial.hlsli" />
     <None Include="src\shaders\CBuffers.hlsli" />

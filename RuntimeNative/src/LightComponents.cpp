@@ -11,6 +11,14 @@
 namespace leopph {
 Object::Type const LightComponent::SerializationType{ Object::Type::Light };
 
+LightComponent::LightComponent() {
+	gRenderer.RegisterLight(this);
+}
+
+LightComponent::~LightComponent() {
+	gRenderer.UnregisterLight(this);
+}
+
 auto LightComponent::GetSerializationType() const -> Object::Type {
 	return SerializationType;
 }

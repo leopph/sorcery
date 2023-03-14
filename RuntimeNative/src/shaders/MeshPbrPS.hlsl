@@ -49,6 +49,12 @@ float4 main(MeshVsOut vsOut) : SV_TARGET {
         albedo *= pow(gAlbedoMap.Sample(gSampler, vsOut.uv).rgb, 2.2);
     }
 
+    float3 ambient = 0.03 * albedo * material.ao;
+
+    if (lightCount == 0 || light.type != 0) {
+	    return float4(ambient, 1.0);
+    }
+
     float3 N = normalize(vsOut.normal);
     float3 V = normalize(camPos - vsOut.worldPos);
 
@@ -58,9 +64,9 @@ float4 main(MeshVsOut vsOut) : SV_TARGET {
     // reflectance equation
     float3 Lo = float3(0.0, 0.0, 0.0);
         // calculate per-light radiance
-    float3 L = normalize(-dirLight.direction);
+    float3 L = normalize(-light.direction);
     float3 H = normalize(V + L);
-    float3 radiance = dirLight.color * dirLight.intensity;
+    float3 radiance = light.color * light.intensity;
         
         // cook-torrance brdf
     float NDF = TrowbridgeReitz(N, H, material.roughness);
@@ -79,7 +85,6 @@ float4 main(MeshVsOut vsOut) : SV_TARGET {
     float NdotL = max(dot(N, L), 0.0);
     Lo += (kD * albedo / PI + specular) * radiance * NdotL;
   
-    float3 ambient = 0.03 * albedo * material.ao;
     float3 color = ambient + Lo;
    
     return float4(color, 1.0);

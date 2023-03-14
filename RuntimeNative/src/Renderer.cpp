@@ -36,15 +36,18 @@ namespace leopph {
 struct CBufLight {
 	Vector3 color;
 	f32 intensity;
-};
-
-struct CBufDirLight : CBufLight {
+	int type;
 	Vector3 direction;
+	int isCastingShadow;
+	f32 shadowNearPlane;
+	f32 range;
+	f32 innerAngle;
+	f32 outerAngle;
 };
 
 struct PerFrameCBufferData {
-	CBufDirLight dirLight;
-	BOOL calcDirLight;
+	CBufLight light;
+	int lightCount;
 };
 
 struct PerCameraCBufferData {
@@ -809,12 +812,18 @@ auto Renderer::UpdatePerFrameCB() const noexcept -> void {
 
 	auto const perFrameCBData{ static_cast<PerFrameCBufferData*>(mappedPerFrameCB.pData) };
 
-	perFrameCBData->calcDirLight = !mLights.empty();
+	perFrameCBData->lightCount = clamp_cast<int>(mLights.size());
 
-	if (!mLights.empty() && mLights[0]->GetType() == LightComponent::Type::Directional) {
-		perFrameCBData->dirLight.color = mLights[0]->GetColor();
-		perFrameCBData->dirLight.direction = mLights[0]->GetDirection();
-		perFrameCBData->dirLight.intensity = mLights[0]->GetIntensity();
+	if (!mLights.empty()) {
+		perFrameCBData->light.color = mLights[0]->GetColor();
+		perFrameCBData->light.intensity = mLights[0]->GetIntensity();
+		perFrameCBData->light.type = static_cast<int>(mLights[0]->GetType());
+		perFrameCBData->light.direction = mLights[0]->GetDirection();
+		perFrameCBData->light.isCastingShadow = mLights[0]->IsCastingShadow();
+		perFrameCBData->light.shadowNearPlane = mLights[0]->GetShadowNearPlane();
+		perFrameCBData->light.range = mLights[0]->GetRange();
+		perFrameCBData->light.innerAngle = mLights[0]->GetInnerAngle();
+		perFrameCBData->light.outerAngle = mLights[0]->GetOuterAngle();
 	}
 
 	mResources->context->Unmap(mResources->perFrameCB.Get(), 0);

@@ -6,6 +6,9 @@
 namespace leopph {
 class LightComponent : public Component {
 public:
+	LEOPPHAPI LightComponent();
+	LEOPPHAPI ~LightComponent() override;
+
 	LEOPPHAPI static Type const SerializationType;
 	[[nodiscard]] LEOPPHAPI auto GetSerializationType() const -> Type override;
 
