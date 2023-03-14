@@ -952,6 +952,7 @@ auto Renderer::StartUp() -> void {
 	mResources->cubeMesh->SetNormals(CUBE_NORMALS);
 	mResources->cubeMesh->SetUVs(CUBE_UVS);
 	mResources->cubeMesh->SetIndices(CUBE_INDICES);
+	mResources->cubeMesh->SetSubMeshes(std::vector{ Mesh::SubMeshData{ 0, 0, static_cast<int>(CUBE_INDICES.size()) } });
 	mResources->cubeMesh->ValidateAndUpdate();
 }
 
