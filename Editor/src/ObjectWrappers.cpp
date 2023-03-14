@@ -396,6 +396,82 @@ auto EditorObjectWrapperFor<LightComponent>::OnGui([[maybe_unused]] Context& con
 			light.SetIntensity(intensity);
 		}
 
+		ImGui::TableNextColumn();
+		ImGui::Text("Casts Shadow");
+		ImGui::TableNextColumn();
+
+		auto castsShadow{ light.IsCastingShadow() };
+		if (ImGui::Checkbox("###lightCastsShadow", &castsShadow)) {
+			light.SetCastingShadow(castsShadow);
+		}
+
+		ImGui::TableNextColumn();
+		ImGui::Text("Type");
+		ImGui::TableNextColumn();
+
+		constexpr char const* typeOptions[]{ "Directional", "Spot", "Point" };
+		int selection{ static_cast<int>(light.GetType()) };
+		if (ImGui::Combo("###LightType", &selection, typeOptions, 3)) {
+			light.SetType(static_cast<LightComponent::Type>(selection));
+		}
+
+		switch (light.GetType()) {
+		case LightComponent::Type::Directional: {
+			ImGui::TableNextColumn();
+			ImGui::Text("Shadow Near Plane");
+			ImGui::TableNextColumn();
+
+			auto shadowNearPlane{ light.GetShadowNearPlane() };
+			if (ImGui::DragFloat("###dirLightShadowNearPlane", &shadowNearPlane)) {
+				light.SetShadowNearPlane(shadowNearPlane);
+			}
+
+			break;
+		}
+
+		case LightComponent::Type::Spot: {
+			ImGui::TableNextColumn();
+			ImGui::Text("Range");
+			ImGui::TableNextColumn();
+
+			auto range{ light.GetRange() };
+			if (ImGui::DragFloat("###spotLightRange", &range)) {
+				light.SetRange(range);
+			}
+
+			ImGui::TableNextColumn();
+			ImGui::Text("Inner Angle");
+			ImGui::TableNextColumn();
+
+			auto innerAngle{ light.GetInnerAngle() };
+			if (ImGui::DragFloat("###spotLightInnerAngle", &innerAngle)) {
+				light.SetInnerAngle(innerAngle);
+			}
+
+			ImGui::TableNextColumn();
+			ImGui::Text("Outer Angle");
+			ImGui::TableNextColumn();
+
+			auto outerAngle{ light.GetOuterAngle() };
+			if (ImGui::DragFloat("###spotLightOuterAngle", &outerAngle)) {
+				light.SetOuterAngle(outerAngle);
+			}
+			break;
+		}
+
+		case LightComponent::Type::Point: {
+			ImGui::TableNextColumn();
+			ImGui::Text("Range");
+			ImGui::TableNextColumn();
+
+			auto range{ light.GetRange() };
+			if (ImGui::DragFloat("###spotLightRange", &range)) {
+				light.SetRange(range);
+			}
+			break;
+		}
+		}
+
 		ImGui::EndTable();
 	}
 }
