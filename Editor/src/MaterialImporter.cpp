@@ -1,10 +1,8 @@
 #include "MaterialImporter.hpp"
 
 #include "Material.hpp"
-#include "Serialization.hpp"
 
 #include <fstream>
-#include <span>
 #include <vector>
 
 namespace leopph::editor {
@@ -16,13 +14,9 @@ auto MaterialImporter::Import(InputImportInfo const& importInfo, [[maybe_unused]
 	auto const material{ new Material{} };
 
 	std::ifstream in{ importInfo.src, std::ios::binary };
-	std::vector<unsigned char> fileData{ std::istreambuf_iterator{ in }, {} };
-	std::span const bytes{ fileData };
+	std::vector<std::uint8_t> fileData{ std::istreambuf_iterator{ in }, {} };
 
-	material->SetAlbedoVector(BinarySerializer<Vector3>::Deserialize(bytes.first<sizeof(Vector3)>(), std::endian::native));
-	material->SetMetallic(BinarySerializer<f32>::Deserialize(bytes.subspan<sizeof(Vector3), sizeof(f32)>(), std::endian::native));
-	material->SetRoughness(BinarySerializer<f32>::Deserialize(bytes.subspan<sizeof(Vector3) + sizeof(f32), sizeof(f32)>(), std::endian::native));
-	material->SetAo(BinarySerializer<f32>::Deserialize(bytes.subspan<sizeof(Vector3) + 2 * sizeof(f32), sizeof(f32)>(), std::endian::native));
+	material->Deserialize(fileData);
 
 	return material;
 }

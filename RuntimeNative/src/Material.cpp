@@ -112,5 +112,10 @@ auto Material::Serialize(std::vector<std::uint8_t>& out) const noexcept -> void 
 	BinarySerializer<f32>::Serialize(mBufData.ao, out, std::endian::native);
 }
 
-auto Material::Deserialize(std::span<std::uint8_t const> bytes) -> void { }
+auto Material::Deserialize(std::span<std::uint8_t const> const bytes) -> void {
+	SetAlbedoVector(BinarySerializer<Vector3>::Deserialize(bytes.first<sizeof(Vector3)>(), std::endian::native));
+	SetMetallic(BinarySerializer<f32>::Deserialize(bytes.subspan<sizeof(Vector3), sizeof(f32)>(), std::endian::native));
+	SetRoughness(BinarySerializer<f32>::Deserialize(bytes.subspan<sizeof(Vector3) + sizeof(f32), sizeof(f32)>(), std::endian::native));
+	SetAo(BinarySerializer<f32>::Deserialize(bytes.subspan<sizeof(Vector3) + 2 * sizeof(f32), sizeof(f32)>(), std::endian::native));
+}
 }
