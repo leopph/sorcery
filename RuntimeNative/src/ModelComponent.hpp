@@ -23,5 +23,8 @@ public:
 	LEOPPHAPI static Object::Type const SerializationType;
 
 	LEOPPHAPI auto CreateManagedObject() -> void override;
+
+	auto Serialize(YAML::Node& node) const -> void override;
+	auto Deserialize(YAML::Node const& node) -> void override;
 };
 }

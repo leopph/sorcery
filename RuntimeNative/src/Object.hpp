@@ -30,7 +30,7 @@ public:
 		Transform,
 		Camera,
 		Behavior,
-		CubeModel,
+		Model,
 		Light,
 		Material,
 		Mesh,
