@@ -6,8 +6,8 @@ namespace leopph {
 Object::Type const ModelComponent::SerializationType{ Object::Type::Model };
 
 ModelComponent::ModelComponent() :
-	mMat{ gRenderer.GetDefaultMaterial().get() },
 	mMesh{ gRenderer.GetCubeMesh().get() } {
+	AddMaterial(*gRenderer.GetDefaultMaterial());
 	gRenderer.RegisterCubeModel(this);
 }
 
@@ -17,13 +17,34 @@ ModelComponent::~ModelComponent() {
 }
 
 
-auto ModelComponent::GetMaterial() const noexcept -> Material& {
-	return *mMat;
+auto ModelComponent::GetMaterials() const noexcept -> std::span<Material* const> {
+	return mMaterials;
 }
 
+auto ModelComponent::AddMaterial(Material& mtl) noexcept -> void {
+	mMaterials.push_back(&mtl);
+}
 
-auto ModelComponent::SetMaterial(Material& material) noexcept -> void {
-	mMat = &material;
+auto ModelComponent::RemoveMaterial(int const idx) noexcept -> void {
+	if (idx < mMaterials.size()) {
+		mMaterials.erase(std::begin(mMaterials) + idx);
+	}
+}
+
+auto ModelComponent::ReplaceMaterial(int const idx, Material& mtl) noexcept -> void {
+	if (idx < mMaterials.size()) {
+		mMaterials[idx] = &mtl;
+	}
+}
+
+auto ModelComponent::SetMaterials(std::vector<Material*> materials) noexcept -> void {
+	for (auto const mtl : materials) {
+		if (!mtl) {
+			return;
+		}
+	}
+
+	mMaterials = std::move(materials);
 }
 
 auto ModelComponent::GetMesh() const noexcept -> Mesh& {
@@ -46,7 +67,10 @@ auto ModelComponent::CreateManagedObject() -> void {
 auto ModelComponent::Serialize(YAML::Node& node) const -> void {
 	Component::Serialize(node);
 	node["mesh"] = mMesh->GetGuid().ToString();
-	node["material"] = mMat->GetGuid().ToString();
+
+	for (auto const mtl : mMaterials) {
+		node["materials"].push_back(mtl->GetGuid().ToString());
+	}
 }
 
 auto ModelComponent::Deserialize(YAML::Node const& node) -> void {
@@ -65,17 +89,18 @@ auto ModelComponent::Deserialize(YAML::Node const& node) -> void {
 		mMesh = gRenderer.GetCubeMesh().get();
 	}
 
-	if (node["material"]) {
-		if (auto const guidStr{ node["material"].as<std::string>() }; !guidStr.empty()) {
-			mMat = dynamic_cast<Material*>(FindObjectByGuid(Guid::Parse(guidStr)));
-
-			if (!mMat) {
-				mMat = gRenderer.GetDefaultMaterial().get();
+	if (auto const mtlListNode{ node["materials"] }) {
+		for (auto const mtlNode : mtlListNode) {
+			if (auto const guidStr{ mtlNode.as<std::string>() }; !guidStr.empty()) {
+				if (auto const mtl{ dynamic_cast<Material*>(FindObjectByGuid(Guid::Parse(guidStr))) }) {
+					AddMaterial(*mtl);
+				}
 			}
 		}
 	}
-	else {
-		mMat = gRenderer.GetDefaultMaterial().get();
+
+	if (mMaterials.empty()) {
+		AddMaterial(*gRenderer.GetDefaultMaterial());
 	}
 }
 }

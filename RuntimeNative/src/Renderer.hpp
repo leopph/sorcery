@@ -103,7 +103,6 @@ private:
 	f32 mGameAspect;
 	Extent2D<u32> mSceneRes;
 	f32 mSceneAspect;
-	UINT mInstanceBufferElementCapacity;
 	u32 mSyncInterval{ 0 };
 	std::vector<ModelComponent const*> mStaticMeshComponents;
 	std::vector<LightComponent const*> mLights;

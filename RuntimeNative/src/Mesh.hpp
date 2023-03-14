@@ -16,11 +16,18 @@
 namespace leopph {
 class Mesh final : public Object {
 public:
+	struct SubMeshData {
+		int baseVertex;
+		int firstIndex;
+		int indexCount;
+	};
+
 	struct Data {
 		std::vector<Vector3> positions;
 		std::vector<Vector3> normals;
 		std::vector<Vector2> uvs;
 		std::vector<u32> indices;
+		std::vector<SubMeshData> subMeshes;
 	};
 
 private:
@@ -51,6 +58,9 @@ public:
 
 	LEOPPHAPI [[nodiscard]] auto GetIndices() const noexcept -> std::span<u32 const>;
 	LEOPPHAPI auto SetIndices(std::vector<u32> indices) noexcept -> void;
+
+	LEOPPHAPI [[nodiscard]] auto GetSubMeshes() const noexcept -> std::span<SubMeshData const>;
+	LEOPPHAPI auto SetSubMeshes(std::vector<SubMeshData> subMeshes) noexcept -> void;
 
 	LEOPPHAPI [[nodiscard]] auto GetBounds() const noexcept -> AABB const&;
 

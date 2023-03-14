@@ -69,7 +69,7 @@ public:
 						// TODO transform to triangle fans
 					}
 
-					auto const previousVertexCount{ clamp_cast<u32>(ret.positions.size()) };
+					auto const prevVertCount{ ret.positions.size() };
 
 					ret.positions.reserve(ret.positions.size() + mesh->mNumVertices);
 					ret.normals.reserve(ret.normals.size() + mesh->mNumVertices);
@@ -88,13 +88,17 @@ public:
 						}());
 					}
 
+					auto const prevIdxCount{ ret.indices.size() };
+
 					for (unsigned j = 0; j < mesh->mNumFaces; j++) {
 						ret.indices.reserve(ret.indices.size() + mesh->mFaces[j].mNumIndices);
 
 						for (unsigned k = 0; k < mesh->mFaces[j].mNumIndices; k++) {
-							ret.indices.emplace_back(mesh->mFaces[j].mIndices[k] + previousVertexCount);
+							ret.indices.emplace_back(mesh->mFaces[j].mIndices[k]);
 						}
 					}
+
+					ret.subMeshes.emplace_back(clamp_cast<int>(prevVertCount), clamp_cast<int>(prevIdxCount), clamp_cast<int>(ret.indices.size() - prevIdxCount));
 				}
 				else {
 					std::string primitiveType;
@@ -148,8 +152,9 @@ auto MeshImporter::Import(InputImportInfo const& importInfo, std::filesystem::pa
 		Mesh::Data meshData;
 		auto const numVerts{ BinarySerializer<u64>::Deserialize(bytes.first<8>(), std::endian::little) };
 		auto const numInds{ BinarySerializer<u64>::Deserialize(bytes.subspan<8, 8>(), std::endian::little) };
+		auto const numSubMeshes{ BinarySerializer<u64>::Deserialize(bytes.subspan<16, 8>(), std::endian::little) };
 
-		std::span const dataBytes{ bytes.subspan(2 * sizeof(u64)) };
+		std::span const dataBytes{ bytes.subspan(3 * sizeof(u64)) };
 
 		meshData.positions.reserve(numVerts);
 		for (std::size_t i{ 0 }; i < numVerts; i++) {
@@ -171,6 +176,16 @@ auto MeshImporter::Import(InputImportInfo const& importInfo, std::filesystem::pa
 			meshData.indices.emplace_back(BinarySerializer<u32>::Deserialize(dataBytes.subspan(numVerts * (2 * sizeof(Vector3) + sizeof(Vector2)) + i * sizeof(u32)).first<sizeof(u32)>(), std::endian::little));
 		}
 
+		auto const subMeshBytes{ dataBytes.subspan(numVerts * (2 * sizeof(Vector3) + sizeof(Vector2)) + numInds * sizeof(u32)) };
+
+		meshData.subMeshes.reserve(numSubMeshes);
+		for (std::size_t i{ 0 }; i < numSubMeshes; i++) {
+			auto const baseVertex{ BinarySerializer<int>::Deserialize(subMeshBytes.subspan(i * 3 * sizeof(int)).first<sizeof(int)>(), std::endian::little) };
+			auto const firstIndex{ BinarySerializer<int>::Deserialize(subMeshBytes.subspan(i * 3 * sizeof(int) + sizeof(int)).first<sizeof(int)>(), std::endian::little) };
+			auto const indexCount{ BinarySerializer<int>::Deserialize(subMeshBytes.subspan(i * 3 * sizeof(int) + 2 * sizeof(int)).first<sizeof(int)>(), std::endian::little) };
+			meshData.subMeshes.emplace_back(baseVertex, firstIndex, indexCount);
+		}
+
 		return new Mesh{ std::move(meshData) };
 	}
 
@@ -180,6 +195,7 @@ auto MeshImporter::Import(InputImportInfo const& importInfo, std::filesystem::pa
 
 	BinarySerializer<u64>::Serialize(meshData.positions.size(), cachedData, std::endian::little);
 	BinarySerializer<u64>::Serialize(meshData.indices.size(), cachedData, std::endian::little);
+	BinarySerializer<u64>::Serialize(meshData.subMeshes.size(), cachedData, std::endian::little);
 
 	for (auto const& pos : meshData.positions) {
 		BinarySerializer<Vector3>::Serialize(pos, cachedData, std::endian::little);
@@ -195,6 +211,12 @@ auto MeshImporter::Import(InputImportInfo const& importInfo, std::filesystem::pa
 
 	for (auto const ind : meshData.indices) {
 		BinarySerializer<u32>::Serialize(ind, cachedData, std::endian::little);
+	}
+
+	for (auto const& [baseVertex, firstIndex, indexCount] : meshData.subMeshes) {
+		BinarySerializer<int>::Serialize(baseVertex, cachedData, std::endian::little);
+		BinarySerializer<int>::Serialize(firstIndex, cachedData, std::endian::little);
+		BinarySerializer<int>::Serialize(indexCount, cachedData, std::endian::little);
 	}
 
 	std::ofstream out{ cachedDataPath, std::ios::out | std::ios::binary };

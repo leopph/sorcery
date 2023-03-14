@@ -125,22 +125,44 @@ auto Mesh::SetIndices(std::vector<u32> indices) noexcept -> void {
 	mTempData.indices = std::move(indices);
 }
 
+auto Mesh::GetSubMeshes() const noexcept -> std::span<SubMeshData const> {
+	return mData.subMeshes;
+}
+
+auto Mesh::SetSubMeshes(std::vector<SubMeshData> subMeshes) noexcept -> void {
+	mTempData.subMeshes = std::move(subMeshes);
+}
+
 auto Mesh::GetBounds() const noexcept -> AABB const& {
 	return mBounds;
 }
 
 auto Mesh::ValidateAndUpdate() -> void {
-	auto const errMsg{ std::format("Failed to validate mesh {} (\"{}\").", GetGuid().ToString(), GetName()) };
+	auto constexpr errFmt{ "Failed to validate mesh {} (\"{}\"). {}." };
 
 	if (mTempData.positions.size() != mTempData.normals.size() ||
 	    mTempData.normals.size() != mTempData.uvs.size() ||
 	    mTempData.positions.empty() || mTempData.indices.empty()) {
-		throw std::runtime_error{ errMsg };
+		throw std::runtime_error{ std::format(errFmt, GetGuid().ToString(), GetName(), "Inconsistent number of positions, normals, and UVs.") };
 	}
 
-	for (auto const ind : mTempData.indices) {
-		if (ind >= mTempData.positions.size()) {
-			throw std::runtime_error{ errMsg };
+	for (auto const& [baseVertex, firstIndex, indexCount] : mTempData.subMeshes) {
+		if (baseVertex >= mTempData.positions.size()) {
+			throw std::runtime_error{ std::format(errFmt, GetGuid().ToString(), GetName(), "A submesh contains a base vertex greater than the number of vertices.") };
+		}
+
+		if (firstIndex >= mTempData.indices.size()) {
+			throw std::runtime_error{ std::format(errFmt, GetGuid().ToString(), GetName(), "A submesh contains a first index greater than the number of indices.") };
+		}
+
+		if (firstIndex + indexCount > mTempData.indices.size()) {
+			throw std::runtime_error{ std::format(errFmt, GetGuid().ToString(), GetName(), "A submesh contains an out of bounds index region.") };
+		}
+
+		for (int i = firstIndex; i < firstIndex + indexCount; i++) {
+			if (mTempData.indices[i] + baseVertex > mTempData.positions.size()) {
+				throw std::runtime_error{ std::format(errFmt, GetGuid().ToString(), GetName(), "A submesh contains an out of bounds vertex index.") };
+			}
 		}
 	}
 
@@ -148,6 +170,7 @@ auto Mesh::ValidateAndUpdate() -> void {
 	mData.normals = std::move(mTempData.normals);
 	mData.uvs = std::move(mTempData.uvs);
 	mData.indices = std::move(mTempData.indices);
+	mData.subMeshes = std::move(mTempData.subMeshes);
 
 	CalculateBounds();
 	UploadToGPU();

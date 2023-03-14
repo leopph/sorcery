@@ -4,17 +4,23 @@
 #include "Material.hpp"
 #include "Mesh.hpp"
 
+#include <span>
+#include <vector>
+
 namespace leopph {
 class ModelComponent : public Component {
-	Material* mMat;
+	std::vector<Material*> mMaterials;
 	Mesh* mMesh;
 
 public:
 	LEOPPHAPI ModelComponent();
 	~ModelComponent() override;
 
-	LEOPPHAPI [[nodiscard]] auto GetMaterial() const noexcept -> Material&;
-	LEOPPHAPI auto SetMaterial(Material& material) noexcept -> void;
+	LEOPPHAPI [[nodiscard]] auto GetMaterials() const noexcept -> std::span<Material* const>;
+	LEOPPHAPI auto AddMaterial(Material& mtl) noexcept -> void;
+	LEOPPHAPI auto RemoveMaterial(int idx) noexcept -> void;
+	LEOPPHAPI auto ReplaceMaterial(int idx, Material& mtl) noexcept -> void;
+	LEOPPHAPI auto SetMaterials(std::vector<Material*> materials) noexcept -> void;
 
 	LEOPPHAPI [[nodiscard]] auto GetMesh() const noexcept -> Mesh&;
 	LEOPPHAPI auto SetMesh(Mesh& mesh) noexcept -> void;

@@ -774,7 +774,7 @@ auto Renderer::CreateConstantBuffers() const -> void {
 auto Renderer::DrawMeshes() const noexcept -> void {
 	for (auto const& staticMeshComponent : mStaticMeshComponents) {
 		auto const& mesh{ staticMeshComponent->GetMesh() };
-		auto const& mat{ staticMeshComponent->GetMaterial() };
+		auto const& materials{ staticMeshComponent->GetMaterials() };
 
 		D3D11_MAPPED_SUBRESOURCE mappedPerModelCBuf;
 		mResources->context->Map(mResources->perModelCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerModelCBuf);
@@ -790,23 +790,29 @@ auto Renderer::DrawMeshes() const noexcept -> void {
 		mResources->context->IASetIndexBuffer(mesh.GetIndexBuffer().Get(), DXGI_FORMAT_R32_UINT, 0);
 		mResources->context->IASetInputLayout(mResources->meshIL.Get());
 
-		ID3D11Buffer* const constantBuffers[]{ mResources->perFrameCB.Get(), mResources->perCamCB.Get(), mat.GetBuffer(), mResources->perModelCB.Get() };
-
 		mResources->context->VSSetShader(mResources->meshVS.Get(), nullptr, 0);
-		mResources->context->VSSetConstantBuffers(0, ARRAYSIZE(constantBuffers), constantBuffers);
-
 		mResources->context->PSSetShader(mResources->meshPbrPS.Get(), nullptr, 0);
-		mResources->context->PSSetConstantBuffers(0, ARRAYSIZE(constantBuffers), constantBuffers);
 
-		if (mat.GetAlbedoMap()) {
-			auto const srv{ mat.GetAlbedoMap()->GetSrv() };
-			mResources->context->PSSetShaderResources(0, 1, &srv);
-		}
-		else {
-			mResources->context->PSSetShaderResources(0, 0, nullptr);
-		}
+		auto const subMeshes{ mesh.GetSubMeshes() };
 
-		mResources->context->DrawIndexed(clamp_cast<UINT>(mesh.GetIndices().size()), 0, 0);
+		for (int i = 0; i < subMeshes.size(); i++) {
+			auto const& [baseVertex, firstIndex, indexCount]{ subMeshes[i] };
+			auto const& mtl{ materials.size() > i ? *materials[i] : *mResources->defaultMaterial };
+
+			ID3D11Buffer* const constantBuffers[]{ mResources->perFrameCB.Get(), mResources->perCamCB.Get(), mtl.GetBuffer(), mResources->perModelCB.Get() };
+			mResources->context->VSSetConstantBuffers(0, ARRAYSIZE(constantBuffers), constantBuffers);
+			mResources->context->PSSetConstantBuffers(0, ARRAYSIZE(constantBuffers), constantBuffers);
+
+			if (mtl.GetAlbedoMap()) {
+				auto const srv{ mtl.GetAlbedoMap()->GetSrv() };
+				mResources->context->PSSetShaderResources(0, 1, &srv);
+			}
+			else {
+				mResources->context->PSSetShaderResources(0, 0, nullptr);
+			}
+
+			mResources->context->DrawIndexed(indexCount, firstIndex, baseVertex);
+		}
 	}
 }
 
