@@ -563,7 +563,9 @@ auto DrawProjectWindow(Context& context) -> void {
 					if (!renameAssetPath.empty() && equivalent(renameAssetPath, entryPathAbs)) {
 						std::string input{ asset->GetName() };
 
-						if (ImGui::InputText("###RenameAsset", &input, ImGuiInputTextFlags_EnterReturnsTrue)) {
+						ImGui::SetKeyboardFocusHere(0);
+
+						if (ImGui::InputText("###RenameAsset", &input, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll)) {
 							auto renamedAsset{ context.GetResources().UnregisterAsset(renameAssetPath) };
 
 							auto const oldAssetMetaPath{ std::filesystem::path{ renameAssetPath } += context.GetAssetFileExtension() };
@@ -577,9 +579,15 @@ auto DrawProjectWindow(Context& context) -> void {
 							context.GetResources().RegisterAsset(std::move(renamedAsset), newAssetPath);
 							renameAssetPath.clear();
 						}
+
+						if (!ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left, false)) {
+							renameAssetPath.clear();
+						}
 					}
 					else {
-						if (ImGui::Selectable(entryPathAbs.stem().string().c_str(), context.GetResources().TryGetAssetAt(entryPathAbs) == context.GetSelectedObject())) {
+						auto const selected{ context.GetResources().TryGetAssetAt(entryPathAbs) == context.GetSelectedObject() };
+
+						if (ImGui::Selectable(entryPathAbs.stem().string().c_str(), selected)) {
 							if (is_directory(entryPathAbs)) {
 								selectedProjSubDir = entryPathAbs;
 							}
@@ -588,7 +596,7 @@ auto DrawProjectWindow(Context& context) -> void {
 							}
 						}
 
-						if (ImGui::IsItemHovered() && ImGui::GetMouseClickedCount(ImGuiMouseButton_Left) == 2) {
+						if ((ImGui::IsItemHovered() && ImGui::GetMouseClickedCount(ImGuiMouseButton_Left) == 2) || (selected && ImGui::IsKeyPressed(ImGuiKey_F2, false))) {
 							renameAssetPath = entryPathAbs;
 						}
 					}
