@@ -91,11 +91,7 @@ public:
 					auto const prevIdxCount{ ret.indices.size() };
 
 					for (unsigned j = 0; j < mesh->mNumFaces; j++) {
-						ret.indices.reserve(ret.indices.size() + mesh->mFaces[j].mNumIndices);
-
-						for (unsigned k = 0; k < mesh->mFaces[j].mNumIndices; k++) {
-							ret.indices.emplace_back(mesh->mFaces[j].mIndices[k]);
-						}
+						std::ranges::copy(std::span{ mesh->mFaces[j].mIndices, mesh->mFaces[j].mNumIndices }, std::back_inserter(ret.indices));
 					}
 
 					ret.subMeshes.emplace_back(clamp_cast<int>(prevVertCount), clamp_cast<int>(prevIdxCount), clamp_cast<int>(ret.indices.size() - prevIdxCount));
