@@ -26,7 +26,7 @@ auto Scene::GetEntities() const noexcept -> std::span<std::unique_ptr<Entity> co
 }
 
 auto Scene::Serialize(std::vector<std::uint8_t>& out) const noexcept -> void {
-	auto const dump{ Dump(mYamlData) };
+	auto const dump{ Dump(mYamlData) + "\r\n" };
 	out.assign(std::begin(dump), std::end(dump));
 }
 
