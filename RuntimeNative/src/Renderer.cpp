@@ -883,6 +883,8 @@ auto Renderer::DoToneMapGammaCorrectionStep(ID3D11ShaderResourceView* const src,
 	mResources->context->OMSetRenderTargets(1, rtvBackup.GetAddressOf(), dsvBackup.Get());
 }
 
+auto Renderer::DrawSkybox() const noexcept -> void { }
+
 
 auto Renderer::StartUp() -> void {
 	mResources = new Resources{};

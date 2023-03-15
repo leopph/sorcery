@@ -95,6 +95,7 @@ private:
 	auto DrawMeshes() const noexcept -> void;
 	auto UpdatePerFrameCB() const noexcept -> void;
 	auto DoToneMapGammaCorrectionStep(ID3D11ShaderResourceView* src, ID3D11RenderTargetView* dst) const noexcept -> void;
+	auto DrawSkybox() const noexcept -> void;
 
 	Resources* mResources{ nullptr };
 	UINT mPresentFlags{ 0 };

@@ -15,6 +15,7 @@ auto CreateFactoryManager() noexcept -> EditorObjectFactoryManager {
 	factoryManager.Register<Texture2D>();
 	factoryManager.Register<Scene>();
 	factoryManager.Register<Cubemap>();
+	factoryManager.Register<SkyboxComponent>();
 	return factoryManager;
 }
 }

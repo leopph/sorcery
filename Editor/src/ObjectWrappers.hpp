@@ -12,6 +12,7 @@
 #include "Texture2D.hpp"
 #include "Cubemap.hpp"
 #include "SceneElement.hpp"
+#include "SkyboxComponent.hpp"
 
 #include <concepts>
 #include <filesystem>
@@ -76,6 +77,9 @@ auto EditorObjectWrapperFor<Texture2D>::OnGui(Context& context, Object& object) 
 
 template<>
 auto EditorObjectWrapperFor<Scene>::OnGui(Context& context, Object& object) -> void;
+
+template<>
+auto EditorObjectWrapperFor<SkyboxComponent>::OnGui(Context& context, Object& object) -> void;
 
 template<>
 auto EditorObjectWrapperFor<Entity>::Instantiate() -> Object*;

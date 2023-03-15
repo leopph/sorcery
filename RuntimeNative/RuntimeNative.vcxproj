@@ -133,6 +133,7 @@
     <ClInclude Include="src\SceneElement.hpp" />
     <ClInclude Include="src\Serialization.hpp" />
     <ClCompile Include="src\SceneElement.cpp" />
+    <ClCompile Include="src\SkyboxComponent.cpp" />
     <ClCompile Include="src\Texture2D.cpp" />
     <ClCompile Include="src\Time.cpp" />
     <ClCompile Include="src\Platform.cpp" />
@@ -161,6 +162,7 @@
     <ClInclude Include="src\Object.hpp" />
     <ClInclude Include="src\Renderer.hpp" />
     <ClInclude Include="src\Scene.hpp" />
+    <ClInclude Include="src\SkyboxComponent.hpp" />
     <ClInclude Include="src\Texture2D.hpp" />
     <ClInclude Include="src\Time.hpp" />
     <ClInclude Include="src\TransformComponent.hpp" />

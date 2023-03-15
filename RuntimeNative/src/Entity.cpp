@@ -17,6 +17,7 @@
 #include <iostream>
 
 #include "BehaviorComponent.hpp"
+#include "SkyboxComponent.hpp"
 
 
 namespace leopph {
@@ -31,7 +32,8 @@ std::unordered_map<std::string_view, std::function<std::unique_ptr<Component>()>
 {
 	{ "Model", instantiate<ModelComponent> },
 	{ "Camera", instantiate<CameraComponent> },
-	{ "Light", instantiate<LightComponent> }
+	{ "Light", instantiate<LightComponent> },
+	{ "Skybox", instantiate<SkyboxComponent> }
 };
 
 std::vector<Entity*> gEntityCache;
