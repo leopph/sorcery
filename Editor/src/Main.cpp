@@ -25,6 +25,7 @@
 
 #include <shellapi.h>
 
+#include <array>
 #include <algorithm>
 #include <filesystem>
 #include <functional>
@@ -39,8 +40,6 @@ extern auto ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, L
 
 
 namespace leopph::editor {
-std::string_view constexpr RESOURCE_FILE_EXT{ ".leopphres" };
-
 auto EditorImGuiEventHook(HWND const hwnd, UINT const msg, WPARAM const wparam, LPARAM const lparam) -> bool {
 	return ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam);
 }
@@ -470,6 +469,7 @@ auto DrawProjectWindow(Context& context) -> void {
 				ImGui::OpenPopup(contextMenuId);
 			}
 
+			auto openCubemapImportModal{ false };
 
 			if (ImGui::BeginPopup(contextMenuId)) {
 				if (ImGui::BeginMenu("Create##CreateAssetMenu")) {
@@ -548,7 +548,90 @@ auto DrawProjectWindow(Context& context) -> void {
 						ImGui::CloseCurrentPopup();
 					}
 
+					if (ImGui::MenuItem("Cubemap Texture##ImportCubemapTextureAssetMenuItem")) {
+						openCubemapImportModal = true;
+						ImGui::CloseCurrentPopup();
+					}
+
 					ImGui::EndMenu();
+				}
+
+				ImGui::EndPopup();
+			}
+
+			auto constexpr cubemapImportModalId{ "Import Cubemap" };
+
+			if (openCubemapImportModal) {
+				ImGui::OpenPopup(cubemapImportModalId);
+			}
+
+			if (ImGui::BeginPopupModal(cubemapImportModalId, nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+				constexpr auto importTypeCount{ 2 };
+				constexpr std::array<char const*, importTypeCount> importTypeNames{ "From Single File", "Merge Separate Faces" };
+				static auto importTypeIdx{ 0 };
+
+				ImGui::Combo("##CubeMapImportTypeCombo", &importTypeIdx, importTypeNames.data(), importTypeCount);
+
+				auto constexpr faceCount{ 6 };
+				std::array<std::filesystem::path, faceCount> facePaths;
+				std::filesystem::path singleFilePath;
+
+				auto const drawFileSelectionEntries{
+					[]<int ElemCount>(std::span<char const* const, ElemCount> labels, std::span<std::filesystem::path, ElemCount> paths) {
+						for (int i = 0; i < ElemCount; i++) {
+							ImGui::TableNextColumn();
+							ImGui::Text("%s", labels[i]);
+							ImGui::TableNextColumn();
+							ImGui::Button("Select");
+							ImGui::SameLine();
+							ImGui::Text("%s", paths[i].empty() ? "None" : paths[i].string().c_str());
+						}
+					}
+				};
+
+				if (ImGui::BeginTable("CubeMapImportModalTable", 2)) {
+					if (importTypeIdx == 0) {
+						auto constexpr label{ "Cubemap File" };
+						drawFileSelectionEntries(std::span<char const* const, 1>{ &label, 1 }, std::span<std::filesystem::path, 1>{ &singleFilePath, 1 });
+					}
+					else if (importTypeIdx == 1) {
+						constexpr std::array<char const*, faceCount> faceNames{ "Front Face", "Back Face", "Right Face", "Left Face", "Top Face", "Bottom Face" };
+						drawFileSelectionEntries(std::span{ faceNames }, std::span{ facePaths });
+					}
+
+					ImGui::EndTable();
+				}
+
+				if (ImGui::Button("Cancel")) {
+					ImGui::CloseCurrentPopup();
+				}
+
+				ImGui::SameLine();
+
+				if (ImGui::Button("Import")) {
+					if (importTypeIdx == 0) {
+						if (singleFilePath.empty()) {
+							MessageBoxW(nullptr, L"Please select a file to import from.", L"Error", MB_ICONERROR);
+						}
+						else {
+							// Do the import
+						}
+					}
+					else if (importTypeIdx == 1) {
+						bool allFacesOk{ true };
+
+						for (auto& path : facePaths) {
+							if (path.empty()) {
+								MessageBoxW(nullptr, L"Not all faces of the cubemap are selected. Please select all of them.", L"Error", MB_ICONERROR);
+								allFacesOk = false;
+								break;
+							}
+						}
+
+						if (allFacesOk) {
+							// Do the import
+						}
+					}
 				}
 
 				ImGui::EndPopup();
