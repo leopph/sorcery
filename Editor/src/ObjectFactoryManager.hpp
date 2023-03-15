@@ -23,12 +23,18 @@ public:
 	}
 
 	[[nodiscard]] EditorObjectWrapper& GetFor(Object::Type const type) const override {
-		return *mTypeIdxToWrapper.at(mEnumToTypeIdx.at(type));
+		if (auto const typeIdxIt{ mEnumToTypeIdx.find(type) }; typeIdxIt != std::end(mEnumToTypeIdx)) {
+			if (auto const wrapperIt{ mTypeIdxToWrapper.find(typeIdxIt->second) }; wrapperIt != std::end(mTypeIdxToWrapper)) {
+				return *wrapperIt->second;
+			}
+		}
+
+		throw std::runtime_error{ "Couldn't find object wrapper for the requested type." };
 	}
 
 	template<typename T>
 	[[nodiscard]] EditorObjectWrapperFor<T>& GetFor() const {
-		return static_cast<EditorObjectWrapperFor<T>&>(*mTypeIdxToWrapper.at(typeid(T)));
+		return static_cast<EditorObjectWrapperFor<T>&>(GetFor(T::SerializationType));
 	}
 };
 
