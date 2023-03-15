@@ -72,7 +72,7 @@ float3 CalculateLighting(const float3 N, const float3 V, const float3 L, const f
     return Lo;
 }
 
-float CalculateAttenuation(const float3 distance) {
+float CalculateAttenuation(const float distance) {
     return 1 / pow(distance, 2);
 }
 
