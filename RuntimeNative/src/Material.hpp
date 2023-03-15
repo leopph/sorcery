@@ -20,12 +20,18 @@ class Material final : public NativeAsset {
 		f32 roughness{ 0.5f };
 		f32 ao{ 1 };
 		int sampleAlbedo{ 0 };
+		int sampleMetallic{ 0 };
+		int sampleRoughness{ 0 };
+		int sampleAo{ 0 };
 	};
 
 	Microsoft::WRL::ComPtr<ID3D11Buffer> mBuffer;
 	BufferData mBufData;
 
 	Texture2D* mAlbedoMap{ nullptr };
+	Texture2D* mMetallicMap{ nullptr };
+	Texture2D* mRoughnessMap{ nullptr };
+	Texture2D* mAoMap{ nullptr };
 
 	auto UpdateGPUData() const noexcept -> void;
 
@@ -49,6 +55,15 @@ public:
 
 	LEOPPHAPI [[nodiscard]] auto GetAlbedoMap() const noexcept -> Texture2D*;
 	LEOPPHAPI auto SetAlbedoMap(Texture2D* tex) noexcept -> void;
+
+	LEOPPHAPI [[nodiscard]] auto GetMetallicMap() const noexcept -> Texture2D*;
+	LEOPPHAPI auto SetMetallicMap(Texture2D* tex) noexcept -> void;
+
+	LEOPPHAPI [[nodiscard]] auto GetRoughnessMap() const noexcept -> Texture2D*;
+	LEOPPHAPI auto SetRoughnessMap(Texture2D* tex) noexcept -> void;
+
+	LEOPPHAPI [[nodiscard]] auto GetAoMap() const noexcept -> Texture2D*;
+	LEOPPHAPI auto SetAoMap(Texture2D* tex) noexcept -> void;
 
 	LEOPPHAPI [[nodiscard]] auto GetBuffer() const noexcept -> NonOwning<ID3D11Buffer*>;
 

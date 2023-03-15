@@ -7,6 +7,15 @@ struct PbrMaterial {
     float roughness;
     float ao;
     int sampleAlbedo;
+    int sampleMetallic;
+    int sampleRoughness;
+    int sampleAo;
 };
+
+Texture2D gAlbedoMap;
+Texture2D gMetallicMap;
+Texture2D gRoughnessMap;
+Texture2D gAoMap;
+SamplerState gMaterialSampler;
 
 #endif

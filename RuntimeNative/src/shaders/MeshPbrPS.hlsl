@@ -1,9 +1,6 @@
 #include "CBuffers.hlsli"
 #include "MeshVSOut.hlsli"
 
-Texture2D gAlbedoMap;
-SamplerState gSampler;
-
 static const float PI = 3.14159265f;
 
 float3 FresnelSchlick(const float cosTheta, const float3 F0) {
@@ -42,9 +39,9 @@ float Smith(const float3 N, const float3 V, const float3 L, const float roughnes
     return ggx1 * ggx2;
 }
 
-float3 CalculateLighting(const float3 N, const float3 V, const float3 L, const float3 albedo, const float3 lightColor, const float lightIntensity) {
+float3 CalculateLighting(const float3 N, const float3 V, const float3 L, const float3 albedo, const float metallic, const float roughness, const float3 lightColor, const float lightIntensity) {
     float3 F0 = float3(0.04, 0.04, 0.04);
-    F0 = lerp(F0, albedo, material.metallic);
+    F0 = lerp(F0, albedo, metallic);
 	           
     // reflectance equation
     float3 Lo = float3(0.0, 0.0, 0.0);
@@ -53,13 +50,13 @@ float3 CalculateLighting(const float3 N, const float3 V, const float3 L, const f
     const float3 radiance = lightColor * lightIntensity;
         
         // cook-torrance brdf
-    const float NDF = TrowbridgeReitz(N, H, material.roughness);
-    const float G = Smith(N, V, L, material.roughness);
+    const float NDF = TrowbridgeReitz(N, H, roughness);
+    const float G = Smith(N, V, L, roughness);
     const float3 F = FresnelSchlick(max(dot(H, V), 0.0), F0);
         
     const float3 kS = F;
     float3 kD = float3(1.0, 1.0, 1.0) - kS;
-    kD *= 1.0 - material.metallic;
+    kD *= 1.0 - metallic;
         
     const float3 numerator = NDF * G * F;
     const float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001;
@@ -76,12 +73,13 @@ float CalculateAttenuation(const float distance) {
     return 1 / pow(distance, 2);
 }
 
-float3 CalculateDirLight(const float3 N, const float3 V, const float3 albedo, const Light light) {
+float3 CalculateDirLight(const float3 N, const float3 V, const float3 albedo, const float metallic, const float roughness, const Light light) {
 	const float3 L = -light.direction;
-    return CalculateLighting(N, V, L, albedo, light.color, light.intensity);
+    return CalculateLighting(N, V, L, albedo, metallic, roughness, light.color, light.intensity);
 }
 
-float3 CalculateSpotLight(const float3 N, const float3 V, const float3 albedo, const Light light, const float3 fragWorldPos) {
+float3 CalculateSpotLight(const float3 N, const float3 V, const float3 albedo, const float metallic, const float roughness, const Light light, const float3 fragWorldPos)
+{
 	float3 L = light.position - fragWorldPos;
     const float dist = length(L);
 
@@ -99,10 +97,11 @@ float3 CalculateSpotLight(const float3 N, const float3 V, const float3 albedo, c
 	    return float3(0, 0, 0);
     }
 
-    return CalculateLighting(N, V, L, albedo, light.color, light.intensity) * intensity * CalculateAttenuation(dist);
+    return CalculateLighting(N, V, L, albedo, metallic, roughness, light.color, light.intensity) * intensity * CalculateAttenuation(dist);
 }
 
-float3 CalculatePointLight(const float3 N, const float3 V, const float3 albedo, const Light light, const float3 fragWorldPos) {
+float3 CalculatePointLight(const float3 N, const float3 V, const float3 albedo, const float metallic, const float roughness, const Light light, const float3 fragWorldPos)
+{
 	float3 L = light.position - fragWorldPos;
     const float dist = length(L);
 
@@ -111,7 +110,7 @@ float3 CalculatePointLight(const float3 N, const float3 V, const float3 albedo, 
     }
 
     L = normalize(L);
-    return CalculateLighting(N, V, L, albedo, light.color, light.intensity) * CalculateAttenuation(dist);
+    return CalculateLighting(N, V, L, albedo, metallic, roughness, light.color, light.intensity) * CalculateAttenuation(dist);
 }
 
 float4 main(const MeshVsOut vsOut) : SV_TARGET {
@@ -121,25 +120,43 @@ float4 main(const MeshVsOut vsOut) : SV_TARGET {
     float3 albedo = material.albedo;
 
     if (material.sampleAlbedo != 0) {
-        albedo *= pow(gAlbedoMap.Sample(gSampler, vsOut.uv).rgb, 2.2);
+        albedo *= pow(gAlbedoMap.Sample(gMaterialSampler, vsOut.uv).rgb, 2.2);
     }
 
-    float3 outColor = 0.03 * albedo * material.ao;
+    float metallic = material.metallic;
+
+    if (material.sampleMetallic != 0) {
+        metallic *= gMetallicMap.Sample(gMaterialSampler, vsOut.uv).r;
+    }
+
+    float roughness = material.roughness;
+
+    if (material.sampleRoughness != 0) {
+        roughness *= gRoughnessMap.Sample(gMaterialSampler, vsOut.uv).r;
+    }
+
+    float ao = material.ao;
+
+    if (material.sampleAo != 0) {
+        ao *= gAoMap.Sample(gMaterialSampler, vsOut.uv).r;
+    }
+
+    float3 outColor = 0.03 * albedo * ao;
 
     for (int i = 0; i < lightCount; i++)
     {
         switch (lights[i].type)
         {
             case 0:{
-                    outColor += CalculateDirLight(N, V, albedo, lights[i]);
+                    outColor += CalculateDirLight(N, V, albedo, metallic, roughness, lights[i]);
                     break;
                 }
             case 1:{
-                    outColor += CalculateSpotLight(N, V, albedo, lights[i], vsOut.worldPos);
+                    outColor += CalculateSpotLight(N, V, albedo, metallic, roughness, lights[i], vsOut.worldPos);
                     break;
                 }
             case 2:{
-                    outColor += CalculatePointLight(N, V, albedo, lights[i], vsOut.worldPos);
+                    outColor += CalculatePointLight(N, V, albedo, metallic, roughness, lights[i], vsOut.worldPos);
                     break;
                 }
             default:{

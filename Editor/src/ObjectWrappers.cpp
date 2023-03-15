@@ -540,32 +540,27 @@ auto EditorObjectWrapperFor<Material>::OnGui([[maybe_unused]] Context& context, 
 			mtl.SetAo(ao);
 		}
 
-		ImGui::TableNextColumn();
-		ImGui::Text("%s", "Albedo Map");
-		ImGui::TableNextColumn();
-
 		static std::vector<Texture2D*> textures;
 		static std::string texFilter;
 
-		auto constexpr popupId{ "SelectAlbedoMapPopUp" };
+		auto constexpr nullTexName{ "None" };
 
-		if (ImGui::Button("Select##SelectAlbedoMapButton")) {
-			Object::FindObjectsOfType(textures);
-			texFilter.clear();
-			ImGui::OpenPopup(popupId);
-		}
+		std::function<Texture2D*()> static texGetFn;
+		std::function<void(Texture2D*)> static texSetFn;
+
+		auto constexpr popupId{ "SelectTexturePopUp" };
 
 		if (ImGui::BeginPopup(popupId)) {
-			if (ImGui::InputText("###SearchAlbedoMap", &texFilter)) {
+			if (ImGui::InputText("###SearchTextures", &texFilter)) {
 				Object::FindObjectsOfType(textures);
 				std::erase_if(textures, [](Texture2D const* tex) {
-					return !tex->GetName().contains(texFilter);
+					return tex && !tex->GetName().contains(texFilter);
 				});
 			}
 
 			for (auto const tex : textures) {
-				if (ImGui::Selectable(std::format("{}##texoption{}", tex->GetName(), tex->GetGuid().ToString()).c_str())) {
-					mtl.SetAlbedoMap(tex);
+				if (ImGui::Selectable(std::format("{}##texoption{}", tex ? tex->GetName() : nullTexName, tex ? tex->GetGuid().ToString() : "0").c_str(), tex == texGetFn())) {
+					texSetFn(tex);
 					break;
 				}
 			}
@@ -573,9 +568,85 @@ auto EditorObjectWrapperFor<Material>::OnGui([[maybe_unused]] Context& context, 
 			ImGui::EndPopup();
 		}
 
-		ImGui::SameLine();
+		ImGui::TableNextColumn();
+		ImGui::Text("%s", "Albedo Map");
+		ImGui::TableNextColumn();
 
-		ImGui::Text("%s", mtl.GetAlbedoMap() ? mtl.GetAlbedoMap()->GetName().data() : "None");
+		if (ImGui::Button("Select##SelectAlbedoMapButton")) {
+			Object::FindObjectsOfType(textures);
+			textures.insert(std::begin(textures), nullptr);
+			texFilter.clear();
+			texGetFn = [&mtl] {
+				return mtl.GetAlbedoMap();
+			};
+			texSetFn = [&mtl](Texture2D* const tex) {
+				mtl.SetAlbedoMap(tex);
+			};
+			ImGui::OpenPopup(popupId);
+		}
+
+		ImGui::SameLine();
+		ImGui::Text("%s", mtl.GetAlbedoMap() ? mtl.GetAlbedoMap()->GetName().data() : nullTexName);
+
+		ImGui::TableNextColumn();
+		ImGui::Text("%s", "Metallic Map");
+		ImGui::TableNextColumn();
+
+		if (ImGui::Button("Select##SelectMetallicMapButton")) {
+			Object::FindObjectsOfType(textures);
+			textures.insert(std::begin(textures), nullptr);
+			texFilter.clear();
+			texGetFn = [&mtl] {
+				return mtl.GetMetallicMap();
+			};
+			texSetFn = [&mtl](Texture2D* const tex) {
+				mtl.SetMetallicMap(tex);
+			};
+			ImGui::OpenPopup(popupId);
+		}
+
+		ImGui::SameLine();
+		ImGui::Text("%s", mtl.GetMetallicMap() ? mtl.GetMetallicMap()->GetName().data() : nullTexName);
+
+		ImGui::TableNextColumn();
+		ImGui::Text("%s", "Roughness Map");
+		ImGui::TableNextColumn();
+
+		if (ImGui::Button("Select##SelectRoughnessMapButton")) {
+			Object::FindObjectsOfType(textures);
+			textures.insert(std::begin(textures), nullptr);
+			texFilter.clear();
+			texGetFn = [&mtl] {
+				return mtl.GetRoughnessMap();
+			};
+			texSetFn = [&mtl](Texture2D* const tex) {
+				mtl.SetRoughnessMap(tex);
+			};
+			ImGui::OpenPopup(popupId);
+		}
+
+		ImGui::SameLine();
+		ImGui::Text("%s", mtl.GetRoughnessMap() ? mtl.GetRoughnessMap()->GetName().data() : nullTexName);
+
+		ImGui::TableNextColumn();
+		ImGui::Text("%s", "Ambient Occlusion Map");
+		ImGui::TableNextColumn();
+
+		if (ImGui::Button("Select##SelectAoMapButton")) {
+			Object::FindObjectsOfType(textures);
+			textures.insert(std::begin(textures), nullptr);
+			texFilter.clear();
+			texGetFn = [&mtl] {
+				return mtl.GetAoMap();
+			};
+			texSetFn = [&mtl](Texture2D* const tex) {
+				mtl.SetAoMap(tex);
+			};
+			ImGui::OpenPopup(popupId);
+		}
+
+		ImGui::SameLine();
+		ImGui::Text("%s", mtl.GetAoMap() ? mtl.GetAoMap()->GetName().data() : nullTexName);
 
 		ImGui::EndTable();
 	}
