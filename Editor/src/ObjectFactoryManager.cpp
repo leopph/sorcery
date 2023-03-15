@@ -14,6 +14,7 @@ auto CreateFactoryManager() noexcept -> EditorObjectFactoryManager {
 	factoryManager.Register<Mesh>();
 	factoryManager.Register<Texture2D>();
 	factoryManager.Register<Scene>();
+	factoryManager.Register<Cubemap>();
 	return factoryManager;
 }
 }

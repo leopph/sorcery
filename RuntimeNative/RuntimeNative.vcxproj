@@ -115,6 +115,7 @@
     <ClCompile Include="src\Color.cpp" />
     <ClCompile Include="src\Component.cpp" />
     <ClCompile Include="src\Compress.cpp" />
+    <ClCompile Include="src\Cubemap.cpp" />
     <ClCompile Include="src\ModelComponent.cpp" />
     <ClCompile Include="src\Guid.cpp" />
     <ClCompile Include="src\Image.cpp" />
@@ -127,6 +128,7 @@
     <ClCompile Include="src\Object.cpp" />
     <ClCompile Include="src\Renderer.cpp" />
     <ClCompile Include="src\Scene.cpp" />
+    <ClInclude Include="src\Cubemap.hpp" />
     <ClInclude Include="src\NativeAsset.hpp" />
     <ClInclude Include="src\SceneElement.hpp" />
     <ClInclude Include="src\Serialization.hpp" />

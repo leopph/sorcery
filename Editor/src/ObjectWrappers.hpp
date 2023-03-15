@@ -10,7 +10,10 @@
 #include <TransformComponent.hpp>
 #include "Importer.hpp"
 #include "Texture2D.hpp"
+#include "Cubemap.hpp"
+#include "SceneElement.hpp"
 
+#include <concepts>
 #include <filesystem>
 #include <stdexcept>
 
@@ -29,17 +32,20 @@ template<typename Wrapped>
 class EditorObjectWrapperFor : public EditorObjectWrapper {
 public:
 	auto OnGui([[maybe_unused]] Context& context, [[maybe_unused]] Object& object) -> void override {}
-	[[nodiscard]] auto Instantiate() -> Object* override;
+
+	[[nodiscard]] auto Instantiate() -> Object* override {
+		if constexpr (std::derived_from<Wrapped, SceneElement>) {
+			return new Wrapped{};
+		}
+		else {
+			throw std::runtime_error{ "The wrapped type has no associated instantiation function." };
+		}
+	}
 
 	[[nodiscard]] auto GetImporter() -> Importer& override {
 		throw std::runtime_error{ "The wrapped type has no associated importer." };
 	}
 };
-
-template<typename Wrapped>
-auto EditorObjectWrapperFor<Wrapped>::Instantiate() -> Object* {
-	return new Wrapped{};
-}
 
 template<>
 auto EditorObjectWrapperFor<BehaviorComponent>::OnGui(Context& context, Object& object) -> void;
@@ -85,4 +91,7 @@ auto EditorObjectWrapperFor<Material>::GetImporter() -> Importer&;
 
 template<>
 auto EditorObjectWrapperFor<Scene>::GetImporter() -> Importer&;
+
+template<>
+auto EditorObjectWrapperFor<Cubemap>::GetImporter() -> Importer&;
 }

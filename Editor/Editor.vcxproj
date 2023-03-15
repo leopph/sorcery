@@ -103,6 +103,7 @@
   <ItemGroup>
     <ClCompile Include="src\Asset.cpp" />
     <ClCompile Include="src\AssetStorage.cpp" />
+    <ClCompile Include="src\CubemapImporter.cpp" />
     <ClCompile Include="src\EditorContext.cpp" />
     <ClCompile Include="src\MaterialImporter.cpp" />
     <ClCompile Include="src\MeshImporter.cpp" />
@@ -122,6 +123,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Asset.hpp" />
+    <ClInclude Include="src\CubemapImporter.hpp" />
     <ClInclude Include="src\EditorContext.hpp" />
     <ClInclude Include="src\Importer.hpp" />
     <ClInclude Include="src\MaterialImporter.hpp" />

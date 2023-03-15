@@ -469,6 +469,49 @@ auto DrawProjectWindow(Context& context) -> void {
 				ImGui::OpenPopup(contextMenuId);
 			}
 
+			auto const openFileDialog{
+				[](char const* filters, char const* defaultPath, std::filesystem::path& out) -> bool {
+					if (nfdchar_t* selectedPath{ nullptr }; NFD_OpenDialog(filters, defaultPath, &selectedPath) == NFD_OKAY) {
+						out = selectedPath;
+						std::free(selectedPath);
+						return true;
+					}
+					return false;
+				}
+			};
+
+			auto const importAsset{
+				[&context, openFileDialog](Object::Type const targetAssetType) {
+					auto& importer{ context.GetFactoryManager().GetFor(targetAssetType).GetImporter() };
+
+					if (std::filesystem::path path; openFileDialog(importer.GetSupportedExtensions().c_str(), nullptr, path)) {
+						context.ExecuteInBusyEditor([&context, &importer, path] {
+							auto const srcPathAbs{ absolute(path) };
+							auto const dstPath{ IndexFileNameIfNeeded(context.GetAssetDirectoryAbsolute() / srcPathAbs.filename()) };
+
+							copy_file(srcPathAbs, dstPath);
+							auto const guid{ Guid::Generate() };
+
+							Importer::InputImportInfo const info{
+								.src = dstPath,
+								.guid = guid
+							};
+
+							if (auto const asset{ importer.Import(info, context.GetCacheDirectoryAbsolute()) }) {
+								asset->SetName(dstPath.stem().string());
+								asset->SetGuid(guid);
+
+								context.GetResources().RegisterAsset(std::unique_ptr<Object>{ asset }, dstPath);
+								context.CreateMetaFileForRegisteredAsset(*asset);
+							}
+							else {
+								throw std::runtime_error{ std::format("Failed to import asset at {}.", srcPathAbs.string()) };
+							}
+						});
+					}
+				}
+			};
+
 			auto openCubemapImportModal{ false };
 
 			if (ImGui::BeginPopup(contextMenuId)) {
@@ -499,45 +542,6 @@ auto DrawProjectWindow(Context& context) -> void {
 				}
 
 				if (ImGui::BeginMenu("Import##ImportAssetMenu")) {
-					auto const openFileDialog{
-						[](char const* filters, char const* defaultPath, std::filesystem::path& out) -> bool {
-							if (nfdchar_t* selectedPath{ nullptr }; NFD_OpenDialog(filters, defaultPath, &selectedPath) == NFD_OKAY) {
-								out = selectedPath;
-								std::free(selectedPath);
-								return true;
-							}
-							return false;
-						}
-					};
-
-					auto const importAsset{
-						[&context, openFileDialog](Object::Type const targetAssetType) {
-							auto& importer{ context.GetFactoryManager().GetFor(targetAssetType).GetImporter() };
-
-							if (std::filesystem::path path; openFileDialog(importer.GetSupportedExtensions().c_str(), nullptr, path)) {
-								context.ExecuteInBusyEditor([&context, &importer, path] {
-									auto const srcPathAbs{ absolute(path) };
-									auto const dstPath{ IndexFileNameIfNeeded(context.GetAssetDirectoryAbsolute() / srcPathAbs.filename()) };
-
-									copy_file(srcPathAbs, dstPath);
-									auto const guid{ Guid::Generate() };
-
-									Importer::InputImportInfo const info{
-										.src = dstPath,
-										.guid = guid
-									};
-
-									auto const asset{ importer.Import(info, context.GetCacheDirectoryAbsolute()) };
-									asset->SetName(dstPath.stem().string());
-									asset->SetGuid(guid);
-
-									context.GetResources().RegisterAsset(std::unique_ptr<Object>{ asset }, dstPath);
-									context.CreateMetaFileForRegisteredAsset(*asset);
-								});
-							}
-						}
-					};
-
 					if (ImGui::MenuItem("Mesh##ImportMeshAssetMenuItem")) {
 						importAsset(Object::Type::Mesh);
 						ImGui::CloseCurrentPopup();
@@ -560,8 +564,10 @@ auto DrawProjectWindow(Context& context) -> void {
 			}
 
 			auto constexpr cubemapImportModalId{ "Import Cubemap" };
+			std::string static cubeMapcombinedFileName;
 
 			if (openCubemapImportModal) {
+				cubeMapcombinedFileName.clear();
 				ImGui::OpenPopup(cubemapImportModalId);
 			}
 
@@ -574,7 +580,6 @@ auto DrawProjectWindow(Context& context) -> void {
 
 				auto constexpr faceCount{ 6 };
 				std::array<std::filesystem::path, faceCount> facePaths;
-				std::filesystem::path singleFilePath;
 
 				auto const drawFileSelectionEntries{
 					[]<int ElemCount>(std::span<char const* const, ElemCount> labels, std::span<std::filesystem::path, ElemCount> paths) {
@@ -589,15 +594,14 @@ auto DrawProjectWindow(Context& context) -> void {
 					}
 				};
 
-				if (ImGui::BeginTable("CubeMapImportModalTable", 2)) {
-					if (importTypeIdx == 0) {
-						auto constexpr label{ "Cubemap File" };
-						drawFileSelectionEntries(std::span<char const* const, 1>{ &label, 1 }, std::span<std::filesystem::path, 1>{ &singleFilePath, 1 });
-					}
-					else if (importTypeIdx == 1) {
-						constexpr std::array<char const*, faceCount> faceNames{ "Front Face", "Back Face", "Right Face", "Left Face", "Top Face", "Bottom Face" };
-						drawFileSelectionEntries(std::span{ faceNames }, std::span{ facePaths });
-					}
+				if (importTypeIdx == 1 && ImGui::BeginTable("CubeMapImportModalTable", 2)) {
+					constexpr std::array<char const*, faceCount> faceNames{ "Front Face", "Back Face", "Right Face", "Left Face", "Top Face", "Bottom Face" };
+					drawFileSelectionEntries(std::span{ faceNames }, std::span{ facePaths });
+
+					ImGui::TableNextColumn();
+					ImGui::Text("%s", "Name of combined file");
+					ImGui::TableNextColumn();
+					ImGui::InputText("##CombinedFileInputText", &cubeMapcombinedFileName);
 
 					ImGui::EndTable();
 				}
@@ -610,12 +614,8 @@ auto DrawProjectWindow(Context& context) -> void {
 
 				if (ImGui::Button("Import")) {
 					if (importTypeIdx == 0) {
-						if (singleFilePath.empty()) {
-							MessageBoxW(nullptr, L"Please select a file to import from.", L"Error", MB_ICONERROR);
-						}
-						else {
-							// Do the import
-						}
+						importAsset(Object::Type::Cubemap);
+						ImGui::CloseCurrentPopup();
 					}
 					else if (importTypeIdx == 1) {
 						bool allFacesOk{ true };

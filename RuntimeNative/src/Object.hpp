@@ -35,7 +35,8 @@ public:
 		Material,
 		Mesh,
 		Scene,
-		Texture2D
+		Texture2D,
+		Cubemap
 	};
 
 	[[nodiscard]] LEOPPHAPI static auto FindObjectByGuid(Guid const& guid) -> Object*;

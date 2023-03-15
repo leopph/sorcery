@@ -13,6 +13,7 @@
 #include <mono/metadata/object.h>
 #include <mono/metadata/reflection.h>
 
+#include "CubemapImporter.hpp"
 #include "EditorContext.hpp"
 #include "ObjectFactoryManager.hpp"
 #include "Texture2DImporter.hpp"
@@ -816,5 +817,10 @@ auto EditorObjectWrapperFor<Material>::GetImporter() -> Importer& {
 auto EditorObjectWrapperFor<Scene>::GetImporter() -> Importer& {
 	SceneImporter static sceneImporter;
 	return sceneImporter;
+}
+
+auto EditorObjectWrapperFor<Cubemap>::GetImporter() -> Importer& {
+	CubemapImporter static cubemapImporter;
+	return cubemapImporter;
 }
 }
