@@ -72,6 +72,10 @@ float3 CalculateLighting(const float3 N, const float3 V, const float3 L, const f
     return Lo;
 }
 
+float CalculateAttenuation(const float3 distance) {
+    return 1 / pow(distance, 2);
+}
+
 float3 CalculateDirLight(const float3 N, const float3 V, const float3 albedo, const Light light) {
 	const float3 L = -light.direction;
     return CalculateLighting(N, V, L, albedo, light.color, light.intensity);
@@ -95,7 +99,7 @@ float3 CalculateSpotLight(const float3 N, const float3 V, const float3 albedo, c
 	    return float3(0, 0, 0);
     }
 
-    return CalculateLighting(N, V, L, albedo, light.color, light.intensity) * intensity;
+    return CalculateLighting(N, V, L, albedo, light.color, light.intensity) * intensity * CalculateAttenuation(dist);
 }
 
 float3 CalculatePointLight(const float3 N, const float3 V, const float3 albedo, const Light light, const float3 fragWorldPos) {
@@ -107,7 +111,7 @@ float3 CalculatePointLight(const float3 N, const float3 V, const float3 albedo, 
     }
 
     L = normalize(L);
-    return CalculateLighting(N, V, L, albedo, light.color, light.intensity);
+    return CalculateLighting(N, V, L, albedo, light.color, light.intensity) * CalculateAttenuation(dist);
 }
 
 float4 main(const MeshVsOut vsOut) : SV_TARGET {
