@@ -4,6 +4,7 @@
 	"dependencies": [
 		"yaml-cpp",
 		"assimp",
-		"nativefiledialog"
+		"nativefiledialog",
+		"stb"
 	]
 }
