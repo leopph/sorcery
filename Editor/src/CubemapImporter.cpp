@@ -18,7 +18,9 @@ auto editor::CubemapImporter::Import(InputImportInfo const& importInfo, std::fil
 	int height;
 	int channelCount;
 
-	if (auto const data{ stbi_load(importInfo.src.string().c_str(), &width, &height, &channelCount, 4) }) {
+	if (std::unique_ptr<u8, decltype([](u8* const p) {
+		stbi_image_free(p);
+	})> const data{ stbi_load(importInfo.src.string().c_str(), &width, &height, &channelCount, 4) }) {
 		std::array<Image, 6> faceImgs;
 
 		// 4:3
@@ -53,7 +55,7 @@ auto editor::CubemapImporter::Import(InputImportInfo const& importInfo, std::fil
 				auto bytes{ std::make_unique_for_overwrite<u8[]>(faceSize * faceSize * 4) };
 
 				for (int i = 0; i < faceSize; i++) {
-					std::ranges::copy_n(data + i * width * 4 + faceIdx * faceSize * 4, faceSize * 4, bytes.get() + i * faceSize * 4);
+					std::ranges::copy_n(data.get() + i * width * 4 + faceIdx * faceSize * 4, faceSize * 4, bytes.get() + i * faceSize * 4);
 				}
 
 				faceImgs[faceIdx] = Image{ static_cast<u32>(faceSize), static_cast<u32>(faceSize), 4, std::move(bytes) };
@@ -68,11 +70,12 @@ auto editor::CubemapImporter::Import(InputImportInfo const& importInfo, std::fil
 			}
 
 			for (int faceIdx = 0; faceIdx < 6; faceIdx++) {
-				faceImgs[faceIdx] = Image{ static_cast<u32>(faceSize), static_cast<u32>(faceSize), 4, std::unique_ptr<u8[]>{ data + faceIdx * faceSize * faceSize * 4 } };
+				auto bytes{ std::make_unique_for_overwrite<u8[]>(faceSize * faceSize * 4) };
+				std::ranges::copy_n(data.get() + faceIdx * faceSize * faceSize * 4, faceSize * faceSize * 4, bytes.get());
+				faceImgs[faceIdx] = Image{ static_cast<u32>(faceSize), static_cast<u32>(faceSize), 4, std::move(bytes) };
 			}
 		}
 		else {
-			stbi_image_free(data);
 			return nullptr;
 		}
 
