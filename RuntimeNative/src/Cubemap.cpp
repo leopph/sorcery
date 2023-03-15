@@ -14,7 +14,7 @@ void Cubemap::UploadToGpu() {
 		.Usage = D3D11_USAGE_IMMUTABLE,
 		.BindFlags = D3D11_BIND_SHADER_RESOURCE,
 		.CPUAccessFlags = 0,
-		.MiscFlags = 0
+		.MiscFlags = D3D11_RESOURCE_MISC_TEXTURECUBE
 	};
 
 	std::array<D3D11_SUBRESOURCE_DATA, 6> texData;
@@ -56,6 +56,7 @@ Cubemap::Cubemap(std::span<Image, 6> faces) {
 
 auto Cubemap::Update() noexcept -> void {
 	mFaceData = std::move(mTmpFaceData);
+	UploadToGpu();
 }
 
 auto Cubemap::GetSrv() const noexcept -> NonOwning<ID3D11ShaderResourceView*> {

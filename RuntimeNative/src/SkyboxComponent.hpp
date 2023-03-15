@@ -17,5 +17,14 @@ public:
 
 	[[nodiscard]] auto LEOPPHAPI GetCubemap() const noexcept -> Cubemap*;
 	auto LEOPPHAPI SetCubemap(Cubemap* cubemap) noexcept -> void;
+
+	SkyboxComponent() = default;
+	SkyboxComponent(SkyboxComponent const& other) = delete;
+	SkyboxComponent(SkyboxComponent&& other) = delete;
+
+	SkyboxComponent& operator=(SkyboxComponent const& other) = delete;
+	SkyboxComponent& operator=(SkyboxComponent&& other) = delete;
+
+	LEOPPHAPI ~SkyboxComponent() override;
 };
 }

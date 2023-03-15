@@ -203,6 +203,7 @@
     <None Include="src\shaders\PbrMaterial.hlsli" />
     <None Include="src\shaders\CBuffers.hlsli" />
     <None Include="src\shaders\TexturedQuadVSOut.hlsli" />
+    <None Include="src\shaders\SkyboxVSOut.hlsli" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="src\shaders\MeshBlinnPhongPS.hlsl" />
@@ -212,5 +213,7 @@
     <FxCompile Include="src\shaders\MeshVS.hlsl" />
     <FxCompile Include="src\shaders\ToneMapGammaPS.hlsl" />
     <FxCompile Include="src\shaders\TexturedQuadVS.hlsl" />
+    <FxCompile Include="src\shaders\SkyboxVS.hlsl" />
+    <FxCompile Include="src\shaders\SkyboxPS.hlsl" />
   </ItemGroup>
 </Project>

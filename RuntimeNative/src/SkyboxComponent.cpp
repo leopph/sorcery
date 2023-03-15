@@ -1,5 +1,7 @@
 #include "SkyboxComponent.hpp"
 
+#include "Systems.hpp"
+
 namespace leopph {
 auto SkyboxComponent::GetSerializationType() const -> Type {
 	return SerializationType;
@@ -17,6 +19,16 @@ auto SkyboxComponent::GetCubemap() const noexcept -> Cubemap* {
 }
 
 auto SkyboxComponent::SetCubemap(Cubemap* cubemap) noexcept -> void {
+	gRenderer.UnregisterSkybox(this);
+
 	mCubemap = cubemap;
+
+	if (mCubemap) {
+		gRenderer.RegisterSkybox(this);
+	}
+}
+
+SkyboxComponent::~SkyboxComponent() {
+	gRenderer.UnregisterSkybox(this);
 }
 }

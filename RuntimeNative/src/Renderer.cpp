@@ -15,6 +15,8 @@
 #include "shaders/generated/QuadVSBinDebug.h"
 #include "shaders/generated/TexQuadVSBinDebug.h"
 #include "shaders/generated/ToneMapGammaPSBinDebug.h"
+#include "shaders/generated/SkyboxPSBinDebug.h"
+#include "shaders/generated/SkyboxVSBinDebug.h"
 
 #else
 #include "shaders/generated/ClearColorPSBin.h"
@@ -24,6 +26,8 @@
 #include "shaders/generated/QuadVSBin.h"
 #include "shaders/generated/TexQuadVSBin.h"
 #include "shaders/generated/ToneMapGammaPSBin.h"
+#include "shaders/generated/SkyboxPSBin.h"
+#include "shaders/generated/SkyboxVSBin.h"
 #endif
 
 #include <cassert>
@@ -79,6 +83,10 @@ struct PerModelCBufferData {
 
 struct ToneMapGammaCBData {
 	float invGamma;
+};
+
+struct SkyboxCBData {
+	Matrix4 viewProjMtx;
 };
 
 
@@ -589,6 +597,21 @@ auto Renderer::CreateInputLayouts() const -> void {
 	if (FAILED(mResources->device->CreateInputLayout(texQuadInputDescs, ARRAYSIZE(texQuadInputDescs), gTexQuadVSBin, ARRAYSIZE(gTexQuadVSBin), mResources->texQuadIL.GetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create textured quad input layout." };
 	}
+
+	D3D11_INPUT_ELEMENT_DESC constexpr skyboxInputDesc
+	{
+		.SemanticName = "POSITION",
+		.SemanticIndex = 0,
+		.Format = DXGI_FORMAT_R32G32B32_FLOAT,
+		.InputSlot = 0,
+		.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT,
+		.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA,
+		.InstanceDataStepRate = 0
+	};
+
+	if (FAILED(mResources->device->CreateInputLayout(&skyboxInputDesc, 1, gSkyboxVSBin, ARRAYSIZE(gSkyboxVSBin), mResources->skyboxIL.GetAddressOf()))) {
+		throw std::runtime_error{ "Failed to create skybox pass input layout." };
+	}
 }
 
 auto Renderer::CreateShaders() const -> void {
@@ -618,6 +641,14 @@ auto Renderer::CreateShaders() const -> void {
 
 	if (FAILED(mResources->device->CreatePixelShader(gToneMapGammaPSBin, ARRAYSIZE(gToneMapGammaPSBin), nullptr, mResources->toneMapGammaPS.GetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create textured tonemap-gamma pixel shader." };
+	}
+
+	if (FAILED(mResources->device->CreateVertexShader(gSkyboxVSBin, ARRAYSIZE(gSkyboxVSBin), nullptr, mResources->skyboxVS.ReleaseAndGetAddressOf()))) {
+		throw std::runtime_error{ "Failed to create skybox vertex shader." };
+	}
+
+	if (FAILED(mResources->device->CreatePixelShader(gSkyboxPSBin, ARRAYSIZE(gSkyboxPSBin), nullptr, mResources->skyboxPS.ReleaseAndGetAddressOf()))) {
+		throw std::runtime_error{ "Failed to create skybox pixel shader." };
 	}
 }
 
@@ -771,6 +802,65 @@ auto Renderer::CreateConstantBuffers() const -> void {
 	if (FAILED(mResources->device->CreateBuffer(&toneMapGammaCBDesc, nullptr, mResources->toneMapGammaCB.GetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create tonemap-gamma constant buffer." };
 	}
+
+	D3D11_BUFFER_DESC constexpr skyboxCBDesc{
+		.ByteWidth = clamp_cast<UINT>(RoundToNextMultiple(sizeof(SkyboxCBData), 16)),
+		.Usage = D3D11_USAGE_DYNAMIC,
+		.BindFlags = D3D11_BIND_CONSTANT_BUFFER,
+		.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
+		.MiscFlags = 0,
+		.StructureByteStride = 0
+	};
+
+	if (FAILED(mResources->device->CreateBuffer(&skyboxCBDesc, nullptr, mResources->skyboxCB.GetAddressOf()))) {
+		throw std::runtime_error{ "Failed to create skybox pass constant buffer." };
+	}
+}
+
+auto Renderer::CreateRasterizerStates() const -> void {
+	D3D11_RASTERIZER_DESC constexpr skyboxPassRasterizerDesc{
+		.FillMode = D3D11_FILL_SOLID,
+		.CullMode = D3D11_CULL_NONE,
+		.FrontCounterClockwise = FALSE,
+		.DepthBias = 0,
+		.DepthBiasClamp = 0.0f,
+		.SlopeScaledDepthBias = 0.0f,
+		.DepthClipEnable = TRUE,
+		.ScissorEnable = FALSE,
+		.MultisampleEnable = FALSE,
+		.AntialiasedLineEnable = FALSE
+	};
+
+	if (FAILED(mResources->device->CreateRasterizerState(&skyboxPassRasterizerDesc, mResources->skyboxPassRS.ReleaseAndGetAddressOf()))) {
+		throw std::runtime_error{ "Failed to create skybox pass rasterizer state." };
+	}
+}
+
+auto Renderer::CreateDepthStencilStates() const -> void {
+	D3D11_DEPTH_STENCIL_DESC constexpr skyboxPassDepthStencilDesc{
+		.DepthEnable = TRUE,
+		.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO,
+		.DepthFunc = D3D11_COMPARISON_LESS_EQUAL,
+		.StencilEnable = FALSE,
+		.StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK,
+		.StencilWriteMask = D3D11_DEFAULT_STENCIL_WRITE_MASK,
+		.FrontFace = {
+			.StencilFailOp = D3D11_STENCIL_OP_KEEP,
+			.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP,
+			.StencilPassOp = D3D11_STENCIL_OP_KEEP,
+			.StencilFunc = D3D11_COMPARISON_ALWAYS
+		},
+		.BackFace = {
+			.StencilFailOp = D3D11_STENCIL_OP_KEEP,
+			.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP,
+			.StencilPassOp = D3D11_STENCIL_OP_KEEP,
+			.StencilFunc = D3D11_COMPARISON_ALWAYS
+		}
+	};
+
+	if (FAILED(mResources->device->CreateDepthStencilState(&skyboxPassDepthStencilDesc, mResources->skyboxPassDSS.ReleaseAndGetAddressOf()))) {
+		throw std::runtime_error{ "Failed to create skybox pass depth-stencil state." };
+	}
 }
 
 auto Renderer::DrawMeshes() const noexcept -> void {
@@ -883,7 +973,42 @@ auto Renderer::DoToneMapGammaCorrectionStep(ID3D11ShaderResourceView* const src,
 	mResources->context->OMSetRenderTargets(1, rtvBackup.GetAddressOf(), dsvBackup.Get());
 }
 
-auto Renderer::DrawSkybox() const noexcept -> void { }
+auto Renderer::DrawSkybox(Matrix4 const& camViewMtx, Matrix4 const& camProjMtx) const noexcept -> void {
+	if (mSkyboxes.empty()) {
+		return;
+	}
+
+	D3D11_MAPPED_SUBRESOURCE mappedSkyboxCB;
+	mResources->context->Map(mResources->skyboxCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedSkyboxCB);
+	auto const skyboxCBData{ static_cast<SkyboxCBData*>(mappedSkyboxCB.pData) };
+	skyboxCBData->viewProjMtx = Matrix4{ Matrix3{ camViewMtx } } * camProjMtx;
+	mResources->context->Unmap(mResources->skyboxCB.Get(), 0);
+
+	ID3D11Buffer* const vertexBuffer{ mResources->cubeMesh->GetPositionBuffer().Get() };
+	UINT constexpr stride{ sizeof(Vector3) };
+	UINT constexpr offset{ 0 };
+	mResources->context->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
+	mResources->context->IASetIndexBuffer(mResources->cubeMesh->GetIndexBuffer().Get(), DXGI_FORMAT_R32_UINT, 0);
+	mResources->context->IASetInputLayout(mResources->skyboxIL.Get());
+
+	mResources->context->VSSetShader(mResources->skyboxVS.Get(), nullptr, 0);
+	mResources->context->PSSetShader(mResources->skyboxPS.Get(), nullptr, 0);
+
+	auto const cubemapSrv{ mSkyboxes[0]->GetCubemap()->GetSrv() };
+	mResources->context->PSSetShaderResources(0, 1, &cubemapSrv);
+
+	auto const cb{ mResources->skyboxCB.Get() };
+	mResources->context->VSSetConstantBuffers(0, 1, &cb);
+
+	mResources->context->OMSetDepthStencilState(mResources->skyboxPassDSS.Get(), 0);
+	mResources->context->RSSetState(mResources->skyboxPassRS.Get());
+
+	mResources->context->DrawIndexed(clamp_cast<UINT>(CUBE_INDICES.size()), 0, 0);
+
+	// Restore state
+	mResources->context->OMSetDepthStencilState(nullptr, 0);
+	mResources->context->RSSetState(nullptr);
+}
 
 
 auto Renderer::StartUp() -> void {
@@ -943,6 +1068,8 @@ auto Renderer::StartUp() -> void {
 	CreateShaders();
 	CreateVertexAndIndexBuffers();
 	CreateConstantBuffers();
+	CreateRasterizerStates();
+	CreateDepthStencilStates();
 
 	gWindow.OnWindowSize.add_handler(this, &on_window_resize);
 
@@ -1074,6 +1201,7 @@ auto Renderer::DrawSceneView(EditorCamera const& cam) const noexcept -> void {
 	mResources->context->RSSetViewports(1, &viewport);
 
 	DrawMeshes();
+	DrawSkybox(viewMat, projMat);
 	DoToneMapGammaCorrectionStep(mResources->sceneHdrTextureSrv.Get(), mResources->sceneOutputTextureRtv.Get());
 }
 
@@ -1183,5 +1311,13 @@ auto Renderer::GetGamma() const noexcept -> f32 {
 
 auto Renderer::SetGamma(f32 const gamma) noexcept -> void {
 	mInvGamma = 1.f / gamma;
+}
+
+auto Renderer::RegisterSkybox(SkyboxComponent const* const skybox) -> void {
+	mSkyboxes.emplace_back(skybox);
+}
+
+auto Renderer::UnregisterSkybox(SkyboxComponent const* const skybox) -> void {
+	std::erase(mSkyboxes, skybox);
 }
 }

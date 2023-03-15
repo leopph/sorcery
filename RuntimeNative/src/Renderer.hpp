@@ -6,6 +6,7 @@
 #include "LightComponents.hpp"
 #include "Util.hpp"
 #include "Platform.hpp"
+#include "SkyboxComponent.hpp"
 
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
@@ -58,22 +59,30 @@ private:
 		Microsoft::WRL::ComPtr<ID3D11PixelShader> meshPbrPS;
 		Microsoft::WRL::ComPtr<ID3D11VertexShader> texQuadVS;
 		Microsoft::WRL::ComPtr<ID3D11PixelShader> toneMapGammaPS;
+		Microsoft::WRL::ComPtr<ID3D11PixelShader> skyboxPS;
+		Microsoft::WRL::ComPtr<ID3D11VertexShader> skyboxVS;
 
 		Microsoft::WRL::ComPtr<ID3D11Buffer> perFrameCB;
 		Microsoft::WRL::ComPtr<ID3D11Buffer> perCamCB;
 		Microsoft::WRL::ComPtr<ID3D11Buffer> perModelCB;
 		Microsoft::WRL::ComPtr<ID3D11Buffer> clearColorCB;
 		Microsoft::WRL::ComPtr<ID3D11Buffer> toneMapGammaCB;
+		Microsoft::WRL::ComPtr<ID3D11Buffer> skyboxCB;
 
 		Microsoft::WRL::ComPtr<ID3D11InputLayout> meshIL;
 		Microsoft::WRL::ComPtr<ID3D11InputLayout> quadIL;
 		Microsoft::WRL::ComPtr<ID3D11InputLayout> texQuadIL;
+		Microsoft::WRL::ComPtr<ID3D11InputLayout> skyboxIL;
 
 		Microsoft::WRL::ComPtr<ID3D11Buffer> quadPosVB;
 		Microsoft::WRL::ComPtr<ID3D11Buffer> quadUvVB;
 		Microsoft::WRL::ComPtr<ID3D11Buffer> quadIB;
 
 		Microsoft::WRL::ComPtr<ID3D11SamplerState> hdrTextureSS;
+
+		Microsoft::WRL::ComPtr<ID3D11RasterizerState> skyboxPassRS;
+
+		Microsoft::WRL::ComPtr<ID3D11DepthStencilState> skyboxPassDSS;
 
 		std::shared_ptr<Material> defaultMaterial;
 		std::shared_ptr<Mesh> cubeMesh;
@@ -92,10 +101,12 @@ private:
 	auto RecreateSwapChainRtv() const -> void;
 	auto CreateVertexAndIndexBuffers() const -> void;
 	auto CreateConstantBuffers() const -> void;
+	auto CreateRasterizerStates() const -> void;
+	auto CreateDepthStencilStates() const -> void;
 	auto DrawMeshes() const noexcept -> void;
 	auto UpdatePerFrameCB() const noexcept -> void;
 	auto DoToneMapGammaCorrectionStep(ID3D11ShaderResourceView* src, ID3D11RenderTargetView* dst) const noexcept -> void;
-	auto DrawSkybox() const noexcept -> void;
+	auto DrawSkybox(Matrix4 const& camViewMtx, Matrix4 const& camProjMtx) const noexcept -> void;
 
 	Resources* mResources{ nullptr };
 	UINT mPresentFlags{ 0 };
@@ -108,6 +119,7 @@ private:
 	std::vector<ModelComponent const*> mStaticMeshComponents;
 	std::vector<LightComponent const*> mLights;
 	f32 mInvGamma{ 1.f / 2.2f };
+	std::vector<SkyboxComponent const*> mSkyboxes;
 
 public:
 	Renderer() noexcept = default;
@@ -153,5 +165,8 @@ public:
 
 	[[nodiscard]] LEOPPHAPI auto GetGamma() const noexcept -> f32;
 	LEOPPHAPI auto SetGamma(f32 gamma) noexcept -> void;
+
+	auto LEOPPHAPI RegisterSkybox(SkyboxComponent const* skybox) -> void;
+	auto LEOPPHAPI UnregisterSkybox(SkyboxComponent const* skybox) -> void;
 };
 }
