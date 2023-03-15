@@ -28,5 +28,14 @@ public:
 	LEOPPHAPI auto Update() noexcept -> void;
 
 	[[nodiscard]] LEOPPHAPI auto GetSrv() const noexcept -> NonOwning<ID3D11ShaderResourceView*>;
+
+	enum FaceIndex {
+		Right = 0,
+		Left  = 1,
+		Up    = 2,
+		Down  = 3,
+		Front = 4,
+		Back  = 5
+	};
 };
 }
