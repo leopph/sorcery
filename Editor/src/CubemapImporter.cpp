@@ -28,6 +28,8 @@ auto editor::CubemapImporter::Import(InputImportInfo const& importInfo, std::fil
 			if (!IsPowerOfTwo(faceSize)) {
 				return nullptr;
 			}
+
+			return nullptr; // TODO
 		}
 		// 3:4
 		else if ((height - width) * 3 == width) {
@@ -36,6 +38,8 @@ auto editor::CubemapImporter::Import(InputImportInfo const& importInfo, std::fil
 			if (!IsPowerOfTwo(faceSize)) {
 				return nullptr;
 			}
+
+			return nullptr; // TODO
 		}
 		// 6:1
 		else if (width == 6 * height) {
@@ -49,7 +53,7 @@ auto editor::CubemapImporter::Import(InputImportInfo const& importInfo, std::fil
 				auto bytes{ std::make_unique_for_overwrite<u8[]>(faceSize * faceSize * 4) };
 
 				for (int i = 0; i < faceSize; i++) {
-					std::ranges::copy_n(data + i * width, faceSize, bytes.get() + i * faceSize);
+					std::ranges::copy_n(data + i * width * 4 + faceIdx * faceSize * 4, faceSize * 4, bytes.get() + i * faceSize * 4);
 				}
 
 				faceImgs[faceIdx] = Image{ static_cast<u32>(faceSize), static_cast<u32>(faceSize), 4, std::move(bytes) };
