@@ -15,7 +15,7 @@
 
 #include "EditorContext.hpp"
 #include "ObjectFactoryManager.hpp"
-#include "TextureImporter.hpp"
+#include "Texture2DImporter.hpp"
 #include "MeshImporter.hpp"
 #include "MaterialImporter.hpp"
 #include "SceneImporter.hpp"
@@ -804,7 +804,7 @@ auto EditorObjectWrapperFor<Mesh>::GetImporter() -> Importer& {
 }
 
 auto EditorObjectWrapperFor<Texture2D>::GetImporter() -> Importer& {
-	TextureImporter static texImporter;
+	Texture2DImporter static texImporter;
 	return texImporter;
 }
 

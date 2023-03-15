@@ -543,7 +543,7 @@ auto DrawProjectWindow(Context& context) -> void {
 						ImGui::CloseCurrentPopup();
 					}
 
-					if (ImGui::MenuItem("Texture##ImportTextureAssetMenuItem")) {
+					if (ImGui::MenuItem("2D Texture##Import2DTextureAssetMenuItem")) {
 						importAsset(Object::Type::Texture2D);
 						ImGui::CloseCurrentPopup();
 					}

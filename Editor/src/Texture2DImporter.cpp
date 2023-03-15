@@ -1,4 +1,4 @@
-#include "TextureImporter.hpp"
+#include "Texture2DImporter.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -6,11 +6,11 @@
 #include "Texture2D.hpp"
 
 namespace leopph::editor {
-auto TextureImporter::GetSupportedExtensions() const -> std::string {
+auto Texture2DImporter::GetSupportedExtensions() const -> std::string {
 	return "png,jpg,jpeg,tga,bmp,psd,gif,hdr,pic";
 }
 
-auto TextureImporter::Import(Importer::InputImportInfo const& importInfo, [[maybe_unused]] std::filesystem::path const& cacheDir) -> Object* {
+auto Texture2DImporter::Import(Importer::InputImportInfo const& importInfo, [[maybe_unused]] std::filesystem::path const& cacheDir) -> Object* {
 	int width;
 	int height;
 	int channelCount;
@@ -22,7 +22,7 @@ auto TextureImporter::Import(Importer::InputImportInfo const& importInfo, [[mayb
 	return nullptr;
 }
 
-auto TextureImporter::GetPrecedence() const noexcept -> int {
+auto Texture2DImporter::GetPrecedence() const noexcept -> int {
 	return 0;
 }
 }

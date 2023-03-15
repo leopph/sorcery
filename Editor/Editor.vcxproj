@@ -110,7 +110,7 @@
     <ClCompile Include="src\ObjectWrappers.cpp" />
     <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\SceneImporter.cpp" />
-    <ClCompile Include="src\TextureImporter.cpp" />
+    <ClCompile Include="src\Texture2DImporter.cpp" />
     <ClCompile Include="src\Widgets.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -130,7 +130,7 @@
     <ClInclude Include="src\ObjectWrappers.hpp" />
     <ClInclude Include="src\AssetStorage.hpp" />
     <ClInclude Include="src\SceneImporter.hpp" />
-    <ClInclude Include="src\TextureImporter.hpp" />
+    <ClInclude Include="src\Texture2DImporter.hpp" />
     <ClInclude Include="src\Widgets.hpp" />
   </ItemGroup>
   <ItemGroup>

@@ -30,7 +30,7 @@
     <ClCompile Include="src\MeshImporter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\TextureImporter.cpp">
+    <ClCompile Include="src\Texture2DImporter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\MaterialImporter.cpp">
@@ -69,7 +69,7 @@
     <ClInclude Include="src\MeshImporter.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\TextureImporter.hpp">
+    <ClInclude Include="src\Texture2DImporter.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Importer.hpp">
