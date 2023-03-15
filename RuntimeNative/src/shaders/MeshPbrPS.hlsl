@@ -121,23 +121,27 @@ float4 main(const MeshVsOut vsOut) : SV_TARGET {
     }
 
     float3 outColor = 0.03 * albedo * material.ao;
-    
-    switch (light.type) {
-    case 0: {
-        outColor += CalculateDirLight(N, V, albedo,light);
-        break;
-    }
-    case 1: {
-        outColor += CalculateSpotLight(N, V, albedo, light, vsOut.worldPos);
-        break;
-    }
-    case 2: {
-        outColor += CalculatePointLight(N, V, albedo, light, vsOut.worldPos);
-        break;
-    }
-    default: {
-        break;
-    }
+
+    for (int i = 0; i < lightCount; i++)
+    {
+        switch (lights[i].type)
+        {
+            case 0:{
+                    outColor += CalculateDirLight(N, V, albedo, lights[i]);
+                    break;
+                }
+            case 1:{
+                    outColor += CalculateSpotLight(N, V, albedo, lights[i], vsOut.worldPos);
+                    break;
+                }
+            case 2:{
+                    outColor += CalculatePointLight(N, V, albedo, lights[i], vsOut.worldPos);
+                    break;
+                }
+            default:{
+                    break;
+                }
+        }
     }
 
     return float4(outColor, 1);

@@ -33,6 +33,8 @@ using Microsoft::WRL::ComPtr;
 
 
 namespace leopph {
+constexpr static int MAX_LIGHT_COUNT{ 128 };
+
 struct CBufLight {
 	Vector3 color;
 	f32 intensity;
@@ -50,7 +52,7 @@ struct CBufLight {
 };
 
 struct PerFrameCBufferData {
-	CBufLight light;
+	CBufLight lights[MAX_LIGHT_COUNT];
 	int lightCount;
 };
 
@@ -824,17 +826,17 @@ auto Renderer::UpdatePerFrameCB() const noexcept -> void {
 
 	perFrameCBData->lightCount = clamp_cast<int>(mLights.size());
 
-	if (!mLights.empty()) {
-		perFrameCBData->light.color = mLights[0]->GetColor();
-		perFrameCBData->light.intensity = mLights[0]->GetIntensity();
-		perFrameCBData->light.type = static_cast<int>(mLights[0]->GetType());
-		perFrameCBData->light.direction = mLights[0]->GetDirection();
-		perFrameCBData->light.isCastingShadow = mLights[0]->IsCastingShadow();
-		perFrameCBData->light.shadowNearPlane = mLights[0]->GetShadowNearPlane();
-		perFrameCBData->light.range = mLights[0]->GetRange();
-		perFrameCBData->light.innerAngleCos = std::cos(ToRadians(mLights[0]->GetInnerAngle()));
-		perFrameCBData->light.outerAngleCos = std::cos(ToRadians(mLights[0]->GetOuterAngle()));
-		perFrameCBData->light.position = mLights[0]->GetEntity()->GetTransform().GetWorldPosition();
+	for (int i = 0; i < std::min(MAX_LIGHT_COUNT, static_cast<int>(mLights.size())); i++) {
+		perFrameCBData->lights[i].color = mLights[i]->GetColor();
+		perFrameCBData->lights[i].intensity = mLights[i]->GetIntensity();
+		perFrameCBData->lights[i].type = static_cast<int>(mLights[i]->GetType());
+		perFrameCBData->lights[i].direction = mLights[i]->GetDirection();
+		perFrameCBData->lights[i].isCastingShadow = mLights[i]->IsCastingShadow();
+		perFrameCBData->lights[i].shadowNearPlane = mLights[i]->GetShadowNearPlane();
+		perFrameCBData->lights[i].range = mLights[i]->GetRange();
+		perFrameCBData->lights[i].innerAngleCos = std::cos(ToRadians(mLights[i]->GetInnerAngle()));
+		perFrameCBData->lights[i].outerAngleCos = std::cos(ToRadians(mLights[i]->GetOuterAngle()));
+		perFrameCBData->lights[i].position = mLights[i]->GetEntity()->GetTransform().GetWorldPosition();
 	}
 
 	mResources->context->Unmap(mResources->perFrameCB.Get(), 0);

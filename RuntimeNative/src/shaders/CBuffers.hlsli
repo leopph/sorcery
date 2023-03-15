@@ -1,11 +1,13 @@
 #ifndef CBUFFERS_HLSLI
 #define CBUFFERS_HLSLI
 
+#define MAX_LIGHT_COUNT 128
+
 #include "Light.hlsli"
 #include "PbrMaterial.hlsli"
 
 cbuffer PerFrameConstants : register(b0) {
-    Light light;
+    Light lights[MAX_LIGHT_COUNT];
     int lightCount;
 }
 
