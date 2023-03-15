@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Core.hpp"
-#include "ModelComponent.hpp"
+#include "StaticMeshComponent.hpp"
 #include "CameraComponent.hpp"
 #include "LightComponents.hpp"
 #include "Util.hpp"
@@ -116,7 +116,7 @@ private:
 	Extent2D<u32> mSceneRes;
 	f32 mSceneAspect;
 	u32 mSyncInterval{ 0 };
-	std::vector<ModelComponent const*> mStaticMeshComponents;
+	std::vector<StaticMeshComponent const*> mStaticMeshComponents;
 	std::vector<LightComponent const*> mLights;
 	f32 mInvGamma{ 1.f / 2.2f };
 	std::vector<SkyboxComponent const*> mSkyboxes;
@@ -151,8 +151,8 @@ public:
 	[[nodiscard]] LEOPPHAPI auto GetSyncInterval() const noexcept -> u32;
 	LEOPPHAPI auto SetSyncInterval(u32 interval) noexcept -> void;
 
-	LEOPPHAPI auto RegisterCubeModel(ModelComponent const* CubeModelComponent) -> void;
-	LEOPPHAPI auto UnregisterCubeModel(ModelComponent const* CubeModelComponent) -> void;
+	LEOPPHAPI auto RegisterStaticMesh(StaticMeshComponent const* staticMesh) -> void;
+	LEOPPHAPI auto UnregisterStaticMesh(StaticMeshComponent const* staticMesh) -> void;
 
 	[[nodiscard]] LEOPPHAPI auto GetDevice() const noexcept -> ID3D11Device*;
 	[[nodiscard]] LEOPPHAPI auto GetImmediateContext() const noexcept -> ID3D11DeviceContext*;

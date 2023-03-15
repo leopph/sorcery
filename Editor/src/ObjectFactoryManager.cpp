@@ -8,7 +8,7 @@ auto CreateFactoryManager() noexcept -> EditorObjectFactoryManager {
 	factoryManager.Register<TransformComponent>();
 	factoryManager.Register<CameraComponent>();
 	factoryManager.Register<BehaviorComponent>();
-	factoryManager.Register<ModelComponent>();
+	factoryManager.Register<StaticMeshComponent>();
 	factoryManager.Register<LightComponent>();
 	factoryManager.Register<Material>();
 	factoryManager.Register<Mesh>();

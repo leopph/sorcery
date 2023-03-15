@@ -3,7 +3,7 @@
 #include <format>
 
 #include "TransformComponent.hpp"
-#include "ModelComponent.hpp"
+#include "StaticMeshComponent.hpp"
 #include "CameraComponent.hpp"
 #include "LightComponents.hpp"
 #include "ManagedRuntime.hpp"
@@ -30,7 +30,7 @@ std::unique_ptr<Component> instantiate() {
 
 std::unordered_map<std::string_view, std::function<std::unique_ptr<Component>()>> const gComponentInstantiators
 {
-	{ "Model", instantiate<ModelComponent> },
+	{ "StaticMesh", instantiate<StaticMeshComponent> },
 	{ "Camera", instantiate<CameraComponent> },
 	{ "Light", instantiate<LightComponent> },
 	{ "Skybox", instantiate<SkyboxComponent> }

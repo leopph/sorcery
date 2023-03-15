@@ -3,7 +3,7 @@
 #include <Object.hpp>
 #include <BehaviorComponent.hpp>
 #include <CameraComponent.hpp>
-#include <ModelComponent.hpp>
+#include <StaticMeshComponent.hpp>
 #include <Entity.hpp>
 #include <LightComponents.hpp>
 #include <Material.hpp>
@@ -55,7 +55,7 @@ template<>
 auto EditorObjectWrapperFor<CameraComponent>::OnGui(Context& context, Object& object) -> void;
 
 template<>
-auto EditorObjectWrapperFor<ModelComponent>::OnGui(Context& context, Object& object) -> void;
+auto EditorObjectWrapperFor<StaticMeshComponent>::OnGui(Context& context, Object& object) -> void;
 
 template<>
 auto EditorObjectWrapperFor<Entity>::OnGui(Context& context, Object& object) -> void;

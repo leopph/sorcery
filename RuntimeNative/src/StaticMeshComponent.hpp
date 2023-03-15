@@ -8,13 +8,13 @@
 #include <vector>
 
 namespace leopph {
-class ModelComponent : public Component {
+class StaticMeshComponent : public Component {
 	std::vector<Material*> mMaterials;
 	Mesh* mMesh;
 
 public:
-	LEOPPHAPI ModelComponent();
-	~ModelComponent() override;
+	LEOPPHAPI StaticMeshComponent();
+	~StaticMeshComponent() override;
 
 	LEOPPHAPI [[nodiscard]] auto GetMaterials() const noexcept -> std::span<Material* const>;
 	LEOPPHAPI auto AddMaterial(Material& mtl) noexcept -> void;
@@ -26,7 +26,7 @@ public:
 	LEOPPHAPI auto SetMesh(Mesh& mesh) noexcept -> void;
 
 	[[nodiscard]] LEOPPHAPI auto GetSerializationType() const -> Type override;
-	LEOPPHAPI static Object::Type const SerializationType;
+	LEOPPHAPI static Type const SerializationType;
 
 	LEOPPHAPI auto CreateManagedObject() -> void override;
 

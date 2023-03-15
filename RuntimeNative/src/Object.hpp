@@ -30,7 +30,7 @@ public:
 		Transform,
 		Camera,
 		Behavior,
-		Model,
+		StaticMesh,
 		Light,
 		Material,
 		Mesh,

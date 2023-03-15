@@ -1,43 +1,43 @@
-#include "ModelComponent.hpp"
+#include "StaticMeshComponent.hpp"
 
 #include "Systems.hpp"
 
 namespace leopph {
-Object::Type const ModelComponent::SerializationType{ Object::Type::Model };
+Object::Type const StaticMeshComponent::SerializationType{ Object::Type::StaticMesh };
 
-ModelComponent::ModelComponent() :
+StaticMeshComponent::StaticMeshComponent() :
 	mMesh{ gRenderer.GetCubeMesh().get() } {
 	AddMaterial(*gRenderer.GetDefaultMaterial());
-	gRenderer.RegisterCubeModel(this);
+	gRenderer.RegisterStaticMesh(this);
 }
 
 
-ModelComponent::~ModelComponent() {
-	gRenderer.UnregisterCubeModel(this);
+StaticMeshComponent::~StaticMeshComponent() {
+	gRenderer.UnregisterStaticMesh(this);
 }
 
 
-auto ModelComponent::GetMaterials() const noexcept -> std::span<Material* const> {
+auto StaticMeshComponent::GetMaterials() const noexcept -> std::span<Material* const> {
 	return mMaterials;
 }
 
-auto ModelComponent::AddMaterial(Material& mtl) noexcept -> void {
+auto StaticMeshComponent::AddMaterial(Material& mtl) noexcept -> void {
 	mMaterials.push_back(&mtl);
 }
 
-auto ModelComponent::RemoveMaterial(int const idx) noexcept -> void {
+auto StaticMeshComponent::RemoveMaterial(int const idx) noexcept -> void {
 	if (idx < mMaterials.size()) {
 		mMaterials.erase(std::begin(mMaterials) + idx);
 	}
 }
 
-auto ModelComponent::ReplaceMaterial(int const idx, Material& mtl) noexcept -> void {
+auto StaticMeshComponent::ReplaceMaterial(int const idx, Material& mtl) noexcept -> void {
 	if (idx < mMaterials.size()) {
 		mMaterials[idx] = &mtl;
 	}
 }
 
-auto ModelComponent::SetMaterials(std::vector<Material*> materials) noexcept -> void {
+auto StaticMeshComponent::SetMaterials(std::vector<Material*> materials) noexcept -> void {
 	for (auto const mtl : materials) {
 		if (!mtl) {
 			return;
@@ -47,24 +47,24 @@ auto ModelComponent::SetMaterials(std::vector<Material*> materials) noexcept -> 
 	mMaterials = std::move(materials);
 }
 
-auto ModelComponent::GetMesh() const noexcept -> Mesh& {
+auto StaticMeshComponent::GetMesh() const noexcept -> Mesh& {
 	return *mMesh;
 }
 
-auto ModelComponent::SetMesh(Mesh& mesh) noexcept -> void {
+auto StaticMeshComponent::SetMesh(Mesh& mesh) noexcept -> void {
 	mMesh = &mesh;
 }
 
-auto ModelComponent::GetSerializationType() const -> Type {
-	return Type::Model;
+auto StaticMeshComponent::GetSerializationType() const -> Type {
+	return Type::StaticMesh;
 }
 
 
-auto ModelComponent::CreateManagedObject() -> void {
-	return ManagedAccessObject::CreateManagedObject("leopph", "Model");
+auto StaticMeshComponent::CreateManagedObject() -> void {
+	return ManagedAccessObject::CreateManagedObject("leopph", "StaticMesh");
 }
 
-auto ModelComponent::Serialize(YAML::Node& node) const -> void {
+auto StaticMeshComponent::Serialize(YAML::Node& node) const -> void {
 	Component::Serialize(node);
 	node["mesh"] = mMesh->GetGuid().ToString();
 
@@ -73,7 +73,7 @@ auto ModelComponent::Serialize(YAML::Node& node) const -> void {
 	}
 }
 
-auto ModelComponent::Deserialize(YAML::Node const& node) -> void {
+auto StaticMeshComponent::Deserialize(YAML::Node const& node) -> void {
 	Component::Deserialize(node);
 
 	if (node["mesh"]) {

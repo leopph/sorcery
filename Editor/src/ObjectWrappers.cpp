@@ -227,8 +227,8 @@ auto EditorObjectWrapperFor<CameraComponent>::OnGui([[maybe_unused]] Context& co
 	}
 }
 
-auto EditorObjectWrapperFor<ModelComponent>::OnGui([[maybe_unused]] Context& context, Object& object) -> void {
-	auto& model{ dynamic_cast<ModelComponent&>(object) };
+auto EditorObjectWrapperFor<StaticMeshComponent>::OnGui([[maybe_unused]] Context& context, Object& object) -> void {
+	auto& model{ dynamic_cast<StaticMeshComponent&>(object) };
 
 	if (ImGui::BeginTable(std::format("{}", model.GetGuid().ToString()).c_str(), 2, ImGuiTableFlags_SizingStretchSame)) {
 		ImGui::TableNextRow();

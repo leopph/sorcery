@@ -116,7 +116,7 @@
     <ClCompile Include="src\Component.cpp" />
     <ClCompile Include="src\Compress.cpp" />
     <ClCompile Include="src\Cubemap.cpp" />
-    <ClCompile Include="src\ModelComponent.cpp" />
+    <ClCompile Include="src\StaticMeshComponent.cpp" />
     <ClCompile Include="src\Guid.cpp" />
     <ClCompile Include="src\Image.cpp" />
     <ClCompile Include="src\LightComponents.cpp" />
@@ -146,7 +146,7 @@
     <ClInclude Include="src\CameraComponent.hpp" />
     <ClInclude Include="src\Component.hpp" />
     <ClInclude Include="src\Compress.hpp" />
-    <ClInclude Include="src\ModelComponent.hpp" />
+    <ClInclude Include="src\StaticMeshComponent.hpp" />
     <ClInclude Include="src\Guid.hpp" />
     <ClInclude Include="src\Image.hpp" />
     <ClInclude Include="src\LightComponents.hpp" />

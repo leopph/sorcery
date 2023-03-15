@@ -75,7 +75,7 @@
     <ClCompile Include="src\BehaviorComponent.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ModelComponent.cpp">
+    <ClCompile Include="src\StaticMeshComponent.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\LightComponents.cpp">
@@ -170,7 +170,7 @@
     <ClInclude Include="src\BehaviorComponent.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ModelComponent.hpp">
+    <ClInclude Include="src\StaticMeshComponent.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\LightComponents.hpp">
