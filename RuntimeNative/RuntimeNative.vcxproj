@@ -130,6 +130,7 @@
     <ClCompile Include="src\Scene.cpp" />
     <ClInclude Include="src\Cubemap.hpp" />
     <ClInclude Include="src\NativeAsset.hpp" />
+    <ClInclude Include="src\RenderCamera.hpp" />
     <ClInclude Include="src\SceneElement.hpp" />
     <ClInclude Include="src\Serialization.hpp" />
     <ClCompile Include="src\SceneElement.cpp" />

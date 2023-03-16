@@ -39,7 +39,7 @@ using Microsoft::WRL::ComPtr;
 namespace leopph {
 constexpr static int MAX_LIGHT_COUNT{ 128 };
 
-struct CBufLight {
+struct LightCBufferData {
 	Vector3 color;
 	f32 intensity;
 
@@ -55,28 +55,28 @@ struct CBufLight {
 	f32 outerAngleCos;
 };
 
-struct PerFrameCBufferData {
-	CBufLight lights[MAX_LIGHT_COUNT];
+struct PerFrameCBuffer {
+	LightCBufferData lights[MAX_LIGHT_COUNT];
 	int lightCount;
 };
 
-struct PerCameraCBufferData {
+struct PerCamCBuffer {
 	Matrix4 viewProjMat;
 	Vector3 camPos;
 };
 
-struct CBufMaterial {
+struct MaterialCBufferData {
 	Vector3 albedo;
 	float metallic;
 	float roughness;
 	float ao;
 };
 
-struct CBufMaterialBuffer {
-	CBufMaterial material;
+struct PerMaterialCBuffer {
+	MaterialCBufferData material;
 };
 
-struct PerModelCBufferData {
+struct PerModelCBuffer {
 	Matrix4 modelMat;
 	Matrix4 normalMat;
 };
@@ -741,7 +741,7 @@ auto Renderer::CreateVertexAndIndexBuffers() const -> void {
 
 auto Renderer::CreateConstantBuffers() const -> void {
 	D3D11_BUFFER_DESC constexpr perLightCBufDesc{
-		.ByteWidth = clamp_cast<UINT>(RoundToNextMultiple(sizeof(PerFrameCBufferData), 16)),
+		.ByteWidth = clamp_cast<UINT>(RoundToNextMultiple(sizeof(PerFrameCBuffer), 16)),
 		.Usage = D3D11_USAGE_DYNAMIC,
 		.BindFlags = D3D11_BIND_CONSTANT_BUFFER,
 		.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
@@ -754,7 +754,7 @@ auto Renderer::CreateConstantBuffers() const -> void {
 	}
 
 	D3D11_BUFFER_DESC constexpr perCamCBufDesc{
-		.ByteWidth = clamp_cast<UINT>(RoundToNextMultiple(sizeof(PerCameraCBufferData), 16)),
+		.ByteWidth = clamp_cast<UINT>(RoundToNextMultiple(sizeof(PerCamCBuffer), 16)),
 		.Usage = D3D11_USAGE_DYNAMIC,
 		.BindFlags = D3D11_BIND_CONSTANT_BUFFER,
 		.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
@@ -767,7 +767,7 @@ auto Renderer::CreateConstantBuffers() const -> void {
 	}
 
 	D3D11_BUFFER_DESC constexpr perModelCBufDesc{
-		.ByteWidth = clamp_cast<UINT>(RoundToNextMultiple(sizeof(PerModelCBufferData), 16)),
+		.ByteWidth = clamp_cast<UINT>(RoundToNextMultiple(sizeof(PerModelCBuffer), 16)),
 		.Usage = D3D11_USAGE_DYNAMIC,
 		.BindFlags = D3D11_BIND_CONSTANT_BUFFER,
 		.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
@@ -870,7 +870,7 @@ auto Renderer::DrawMeshes() const noexcept -> void {
 
 		D3D11_MAPPED_SUBRESOURCE mappedPerModelCBuf;
 		mResources->context->Map(mResources->perModelCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerModelCBuf);
-		auto& [modelMatData, normalMatData]{ *static_cast<PerModelCBufferData*>(mappedPerModelCBuf.pData) };
+		auto& [modelMatData, normalMatData]{ *static_cast<PerModelCBuffer*>(mappedPerModelCBuf.pData) };
 		modelMatData = staticMeshComponent->GetEntity()->GetTransform().GetModelMatrix();
 		normalMatData = Matrix4{ staticMeshComponent->GetEntity()->GetTransform().GetNormalMatrix() };
 		mResources->context->Unmap(mResources->perModelCB.Get(), 0);
@@ -912,7 +912,7 @@ auto Renderer::UpdatePerFrameCB() const noexcept -> void {
 	D3D11_MAPPED_SUBRESOURCE mappedPerFrameCB;
 	mResources->context->Map(mResources->perFrameCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerFrameCB);
 
-	auto const perFrameCBData{ static_cast<PerFrameCBufferData*>(mappedPerFrameCB.pData) };
+	auto const perFrameCBData{ static_cast<PerFrameCBuffer*>(mappedPerFrameCB.pData) };
 
 	perFrameCBData->lightCount = clamp_cast<int>(mLights.size());
 
@@ -1010,6 +1010,63 @@ auto Renderer::DrawSkybox(Matrix4 const& camViewMtx, Matrix4 const& camProjMtx) 
 	mResources->context->RSSetState(nullptr);
 }
 
+auto Renderer::DrawFullWithCameras(std::span<RenderCamera const* const> const cameras, ID3D11RenderTargetView* const rtv, ID3D11DepthStencilView* const dsv, ID3D11ShaderResourceView* const srv, ID3D11RenderTargetView* const outRtv) const noexcept -> void {
+	FLOAT constexpr clearColor[]{ 0, 0, 0, 1 };
+	mResources->context->ClearRenderTargetView(rtv, clearColor);
+	mResources->context->ClearDepthStencilView(dsv, D3D11_CLEAR_DEPTH, 1, 0);
+
+	if (mStaticMeshComponents.empty()) {
+		return;
+	}
+
+	mResources->context->OMSetRenderTargets(1, &rtv, dsv);
+
+	ComPtr<ID3D11Resource> rtvResource;
+	rtv->GetResource(rtvResource.GetAddressOf());
+	ComPtr<ID3D11Texture2D> renderTarget;
+	rtvResource.As(&renderTarget);
+	D3D11_TEXTURE2D_DESC renderTargetDesc;
+	renderTarget->GetDesc(&renderTargetDesc);
+	auto const aspectRatio{ static_cast<float>(renderTargetDesc.Width) / static_cast<float>(renderTargetDesc.Height) };
+
+	D3D11_VIEWPORT const viewport{
+		.TopLeftX = 0,
+		.TopLeftY = 0,
+		.Width = static_cast<FLOAT>(renderTargetDesc.Width),
+		.Height = static_cast<FLOAT>(renderTargetDesc.Height),
+		.MinDepth = 0,
+		.MaxDepth = 1
+	};
+
+	mResources->context->RSSetViewports(1, &viewport);
+
+	UpdatePerFrameCB();
+
+	for (auto const cam : cameras) {
+		auto const camPos{ cam->GetPosition() };
+		auto const camForward{ cam->GetForwardAxis() };
+		auto const viewMat{ Matrix4::LookToLH(camPos, camForward, Vector3::Up()) };
+		auto const projMat{
+			cam->GetType() == RenderCamera::Type::Perspective ?
+				Matrix4::PerspectiveAsymZLH(2.0f * std::atanf(std::tanf(ToRadians(cam->GetHorizontalPerspectiveFov()) / 2.0f) / aspectRatio), aspectRatio, cam->GetNearClipPlane(), cam->GetFarClipPlane()) :
+				Matrix4::OrthographicAsymZLH(cam->GetHorizontalOrthographicSize(), cam->GetHorizontalOrthographicSize() / aspectRatio, cam->GetNearClipPlane(), cam->GetFarClipPlane())
+		};
+		auto const viewProjMat{ viewMat * projMat };
+
+		D3D11_MAPPED_SUBRESOURCE mappedPerCamCBuf;
+		mResources->context->Map(mResources->perCamCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerCamCBuf);
+		auto const perCamCBufData{ static_cast<PerCamCBuffer*>(mappedPerCamCBuf.pData) };
+		perCamCBufData->viewProjMat = viewProjMat;
+		perCamCBufData->camPos = camPos;
+		mResources->context->Unmap(mResources->perCamCB.Get(), 0);
+
+		DrawMeshes();
+		DrawSkybox(viewMat, projMat);
+	}
+
+	DoToneMapGammaCorrectionStep(srv, outRtv);
+}
+
 
 auto Renderer::StartUp() -> void {
 	mResources = new Resources{};
@@ -1094,115 +1151,13 @@ auto Renderer::ShutDown() noexcept -> void {
 }
 
 
-auto Renderer::DrawCamera(CameraComponent const* const cam) const noexcept -> void {
-	auto const& camPos{ cam->GetEntity()->GetTransform().GetWorldPosition() };
-	auto const& camForward{ cam->GetEntity()->GetTransform().GetForwardAxis() };
-	auto const viewMat{ Matrix4::LookToLH(camPos, camForward, Vector3::Up()) };
-	auto const projMat{
-		cam->GetType() == CameraComponent::Type::Perspective ?
-			Matrix4::PerspectiveAsymZLH(2.0f * std::atanf(std::tanf(ToRadians(cam->GetPerspectiveFov()) / 2.0f) / mGameAspect), mGameAspect, cam->GetNearClipPlane(), cam->GetFarClipPlane()) :
-			Matrix4::OrthographicAsymZLH(cam->GetOrthographicSize(), cam->GetOrthographicSize() / mGameAspect, cam->GetNearClipPlane(), cam->GetFarClipPlane())
-	};
-
-	auto const viewProjMat{ viewMat * projMat };
-
-	D3D11_MAPPED_SUBRESOURCE mappedPerCamCBuf;
-	mResources->context->Map(mResources->perCamCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerCamCBuf);
-	auto const perCamCBufData{ static_cast<PerCameraCBufferData*>(mappedPerCamCBuf.pData) };
-	perCamCBufData->viewProjMat = viewProjMat;
-	perCamCBufData->camPos = camPos;
-	mResources->context->Unmap(mResources->perCamCB.Get(), 0);
-
-	auto const& camViewport{ cam->GetViewport() };
-	D3D11_VIEWPORT const viewport{
-		.TopLeftX = static_cast<FLOAT>(mGameRes.width) * camViewport.position.x,
-		.TopLeftY = static_cast<FLOAT>(mGameRes.height) * camViewport.position.y,
-		.Width = static_cast<FLOAT>(mGameRes.width) * camViewport.extent.width,
-		.Height = static_cast<FLOAT>(mGameRes.height) * camViewport.extent.height,
-		.MinDepth = 0,
-		.MaxDepth = 1
-	};
-
-	mResources->context->RSSetViewports(1, &viewport);
-
-	/*D3D11_MAPPED_SUBRESOURCE mappedClearColorCbuf;
-	mResources->context->Map(mResources->clearColorCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedClearColorCbuf);
-	std::memcpy(mappedClearColorCbuf.pData, cam->GetBackgroundColor().GetData(), 16);
-	mResources->context->Unmap(mResources->clearColorCB.Get(), 0);
-
-	mResources->context->IASetInputLayout(mResources->quadIL.Get());
-	mResources->context->IASetVertexBuffers(0, 1, mResources->quadPosVB.GetAddressOf(), &QUAD_VERT_BUF_STRIDE, &QUAD_VERT_BUF_OFFSET);
-	mResources->context->IASetIndexBuffer(mResources->quadIB.Get(), DXGI_FORMAT_R32_UINT, 0);
-	mResources->context->VSSetShader(mResources->quadVS.Get(), nullptr, 0);
-	mResources->context->PSSetShader(mResources->clearColorPS.Get(), nullptr, 0);
-	mResources->context->PSSetConstantBuffers(0, 1, mResources->clearColorCB.GetAddressOf());
-	mResources->context->OMSetRenderTargets(1, mResources->gameOutputTextureRtv.GetAddressOf(), nullptr);
-	mResources->context->DrawIndexed(ARRAYSIZE(QUAD_INDICES), 0, 0);*/
-
-	DrawMeshes();
-}
-
-
 auto Renderer::DrawGame() const noexcept -> void {
-	FLOAT constexpr clearColor[]{ 0, 0, 0, 1 };
-	mResources->context->ClearRenderTargetView(mResources->gameHdrTextureRtv.Get(), clearColor);
-	mResources->context->ClearDepthStencilView(mResources->gameDSV.Get(), D3D11_CLEAR_DEPTH, 1, 0);
-
-	if (mStaticMeshComponents.empty()) {
-		return;
-	}
-
-	mResources->context->OMSetRenderTargets(1, mResources->gameHdrTextureRtv.GetAddressOf(), mResources->gameDSV.Get());
-
-	UpdatePerFrameCB();
-
-	for (auto const* const cam : CameraComponent::GetAllInstances()) {
-		DrawCamera(cam);
-	}
-
-	DoToneMapGammaCorrectionStep(mResources->gameHdrTextureSrv.Get(), mResources->gameOutputTextureRtv.Get());
+	DrawFullWithCameras(mGameRenderCameras, mResources->gameHdrTextureRtv.Get(), mResources->gameDSV.Get(), mResources->gameHdrTextureSrv.Get(), mResources->gameOutputTextureRtv.Get());
 }
 
-auto Renderer::DrawSceneView(EditorCamera const& cam) const noexcept -> void {
-	FLOAT constexpr clearColor[]{ 0, 0, 0, 1 };
-	mResources->context->ClearRenderTargetView(mResources->sceneHdrTextureRtv.Get(), clearColor);
-	mResources->context->ClearDepthStencilView(mResources->sceneDSV.Get(), D3D11_CLEAR_DEPTH, 1, 0);
-
-	if (mStaticMeshComponents.empty()) {
-		return;
-	}
-
-	mResources->context->OMSetRenderTargets(1, mResources->sceneHdrTextureRtv.GetAddressOf(), mResources->sceneDSV.Get());
-
-	UpdatePerFrameCB();
-
-	auto const& camPos{ cam.position };
-	auto const& camForward{ cam.orientation.Rotate(Vector3::Forward()) };
-	auto const viewMat{ Matrix4::LookToLH(camPos, camForward, Vector3::Up()) };
-	auto const projMat{ Matrix4::PerspectiveAsymZLH(cam.fovVertRad, mSceneAspect, cam.nearClip, cam.farClip) };
-	auto const viewProjMat{ viewMat * projMat };
-
-	D3D11_MAPPED_SUBRESOURCE mappedPerCamCBuf;
-	mResources->context->Map(mResources->perCamCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerCamCBuf);
-	auto const perCamCBufData{ static_cast<PerCameraCBufferData*>(mappedPerCamCBuf.pData) };
-	perCamCBufData->viewProjMat = viewProjMat;
-	perCamCBufData->camPos = camPos;
-	mResources->context->Unmap(mResources->perCamCB.Get(), 0);
-
-	D3D11_VIEWPORT const viewport{
-		.TopLeftX = 0,
-		.TopLeftY = 0,
-		.Width = static_cast<FLOAT>(mSceneRes.width),
-		.Height = static_cast<FLOAT>(mSceneRes.height),
-		.MinDepth = 0,
-		.MaxDepth = 1
-	};
-
-	mResources->context->RSSetViewports(1, &viewport);
-
-	DrawMeshes();
-	DrawSkybox(viewMat, projMat);
-	DoToneMapGammaCorrectionStep(mResources->sceneHdrTextureSrv.Get(), mResources->sceneOutputTextureRtv.Get());
+auto Renderer::DrawSceneView(RenderCamera const& cam) const noexcept -> void {
+	auto const camPtr{ &cam };
+	DrawFullWithCameras(std::span{ &camPtr, 1 }, mResources->sceneHdrTextureRtv.Get(), mResources->sceneDSV.Get(), mResources->sceneHdrTextureSrv.Get(), mResources->sceneOutputTextureRtv.Get());
 }
 
 
@@ -1319,5 +1274,13 @@ auto Renderer::RegisterSkybox(SkyboxComponent const* const skybox) -> void {
 
 auto Renderer::UnregisterSkybox(SkyboxComponent const* const skybox) -> void {
 	std::erase(mSkyboxes, skybox);
+}
+
+auto Renderer::RegisterGameCamera(RenderCamera const& cam) -> void {
+	mGameRenderCameras.emplace_back(&cam);
+}
+
+auto Renderer::UnregisterGameCamera(RenderCamera const& cam) -> void {
+	std::erase(mGameRenderCameras, &cam);
 }
 }

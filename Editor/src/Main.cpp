@@ -38,6 +38,8 @@
 #include <string>
 #include <cwchar>
 
+#include "EditorCamera.hpp"
+
 
 extern auto ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) -> LRESULT;
 
@@ -320,13 +322,7 @@ auto DrawSceneViewWindow(Context& context) -> void {
 			gRenderer.SetSceneResolution(viewportRes);
 		}
 
-		EditorCamera static editorCam{
-			.position = Vector3{},
-			.orientation = Quaternion{},
-			.nearClip = 0.03f,
-			.farClip = 10000.f,
-			.fovVertRad = ToRadians(60),
-		};
+		EditorCamera static editorCam{ Vector3{}, Quaternion{}, 0.03f, 10000.f, 90 };
 
 		static bool isMovingSceneCamera{ false };
 
@@ -379,8 +375,9 @@ auto DrawSceneViewWindow(Context& context) -> void {
 		gRenderer.DrawSceneView(editorCam);
 		ImGui::Image(gRenderer.GetSceneFrame(), contentRegionSize);
 
+		auto const windowAspectRatio{ ImGui::GetWindowWidth() / ImGui::GetWindowHeight() };
 		auto const editorCamViewMat{ Matrix4::LookAtLH(editorCam.position, editorCam.position + editorCam.orientation.Rotate(Vector3::Forward()), Vector3::Up()) };
-		auto const editorCamProjMat{ Matrix4::PerspectiveAsymZLH(editorCam.fovVertRad, ImGui::GetWindowWidth() / ImGui::GetWindowHeight(), editorCam.nearClip, editorCam.farClip) };
+		auto const editorCamProjMat{ Matrix4::PerspectiveAsymZLH(2.0f * std::atanf(std::tanf(ToRadians(editorCam.fovHorizDeg) / 2.0f) / windowAspectRatio), windowAspectRatio, editorCam.nearClip, editorCam.farClip) };
 
 		ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, ImGui::GetWindowWidth(), ImGui::GetWindowHeight());
 		ImGuizmo::AllowAxisFlip(false);

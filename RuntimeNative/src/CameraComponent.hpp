@@ -3,37 +3,23 @@
 #include <span>
 
 #include "Component.hpp"
+#include "RenderCamera.hpp"
 
 #include "Math.hpp"
 #include "Util.hpp"
 
 
 namespace leopph {
-class CameraComponent : public Component {
-public:
-	enum class Type : u8 {
-		Perspective  = 0,
-		Orthographic = 1
-	};
-
-	enum class Side : u8 {
-		Vertical   = 0,
-		Horizontal = 1
-	};
-
-private:
-	static std::vector<CameraComponent*> sAllInstances;
-
+class CameraComponent : public Component, public RenderCamera {
 	f32 mNear{ 0.1f };
 	f32 mFar{ 100.f };
 	NormalizedViewport mViewport{ { 0, 0 }, { 1, 1 } };
 	Extent2D<u32> mWindowExtent;
 	f32 mAspect;
-	Type mType{ Type::Perspective };
+	RenderCamera::Type mType{ RenderCamera::Type::Perspective };
 	f32 mOrthoSizeHoriz{ 10 };
 	f32 mPerspFovHorizDeg{ 90 };
 	Vector4 mBackgroundColor{ 0, 0, 0, 1 };
-
 
 	[[nodiscard]] auto ConvertPerspectiveFov(f32 fov, bool vert2Horiz) const -> f32;
 
@@ -47,12 +33,10 @@ public:
 	LEOPPHAPI auto Serialize(YAML::Node& node) const -> void override;
 	LEOPPHAPI auto Deserialize(YAML::Node const& node) -> void override;
 
-	[[nodiscard]] LEOPPHAPI static auto GetAllInstances() -> std::span<CameraComponent* const>;
-
-	[[nodiscard]] LEOPPHAPI auto GetNearClipPlane() const -> f32;
+	[[nodiscard]] LEOPPHAPI auto GetNearClipPlane() const noexcept -> f32 override;
 	LEOPPHAPI auto SetNearClipPlane(f32 nearPlane) -> void;
 
-	[[nodiscard]] LEOPPHAPI auto GetFarClipPlane() const -> f32;
+	[[nodiscard]] LEOPPHAPI auto GetFarClipPlane() const noexcept -> f32 override;
 	LEOPPHAPI auto SetFarClipPlane(f32 farPlane) -> void;
 
 	// Viewport extents are normalized between 0 and 1.
@@ -64,25 +48,28 @@ public:
 
 	[[nodiscard]] LEOPPHAPI auto GetAspectRatio() const -> f32;
 
-	[[nodiscard]] LEOPPHAPI auto GetOrthographicSize(Side side = Side::Horizontal) const -> f32;
+	[[nodiscard]] LEOPPHAPI auto GetHorizontalOrthographicSize() const -> f32 override;
 	LEOPPHAPI auto SetOrthoGraphicSize(f32 size, Side side = Side::Horizontal) -> void;
 
-	[[nodiscard]] LEOPPHAPI auto GetPerspectiveFov(Side side = Side::Horizontal) const -> f32;
+	[[nodiscard]] LEOPPHAPI auto GetHorizontalPerspectiveFov() const -> f32 override;
 	LEOPPHAPI auto SetPerspectiveFov(f32 degrees, Side side = Side::Horizontal) -> void;
 
-	[[nodiscard]] LEOPPHAPI auto GetType() const -> Type;
-	LEOPPHAPI auto SetType(Type type) -> void;
+	[[nodiscard]] LEOPPHAPI auto GetType() const -> RenderCamera::Type override;
+	LEOPPHAPI auto SetType(RenderCamera::Type type) -> void;
 
 	[[nodiscard]] LEOPPHAPI auto GetBackgroundColor() const -> Vector4;
 	LEOPPHAPI auto SetBackgroundColor(Vector4 const& color) -> void;
 
 	LEOPPHAPI auto CreateManagedObject() -> void override;
+
+	[[nodiscard]] auto LEOPPHAPI GetPosition() const noexcept -> Vector3 override;
+	[[nodiscard]] auto LEOPPHAPI GetForwardAxis() const noexcept -> Vector3 override;
 };
 
 
 namespace managedbindings {
-auto GetCameraType(MonoObject* camera) -> CameraComponent::Type;
-auto SetCameraType(MonoObject* camera, CameraComponent::Type type) -> void;
+auto GetCameraType(MonoObject* camera) -> RenderCamera::Type;
+auto SetCameraType(MonoObject* camera, RenderCamera::Type type) -> void;
 
 auto GetCameraPerspectiveFov(MonoObject* camera) -> f32;
 auto SetCameraPerspectiveFov(MonoObject* camera, f32 fov) -> void;

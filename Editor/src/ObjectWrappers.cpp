@@ -154,17 +154,17 @@ auto EditorObjectWrapperFor<CameraComponent>::OnGui([[maybe_unused]] Context& co
 		ImGui::TableNextColumn();
 
 		char const* const typeOptions[]{ "Perspective", "Orthographic" };
-		int selection{ cam.GetType() == CameraComponent::Type::Perspective ? 0 : 1 };
+		int selection{ cam.GetType() == RenderCamera::Type::Perspective ? 0 : 1 };
 		if (ImGui::Combo("###CameraType", &selection, typeOptions, 2)) {
-			cam.SetType(selection == 0 ? CameraComponent::Type::Perspective : CameraComponent::Type::Orthographic);
+			cam.SetType(selection == 0 ? RenderCamera::Type::Perspective : RenderCamera::Type::Orthographic);
 		}
 
 		ImGui::TableNextColumn();
 
-		if (cam.GetType() == CameraComponent::Type::Perspective) {
+		if (cam.GetType() == RenderCamera::Type::Perspective) {
 			ImGui::Text("Field Of View");
 			ImGui::TableNextColumn();
-			float value{ cam.GetPerspectiveFov() };
+			float value{ cam.GetHorizontalPerspectiveFov() };
 			if (ImGui::DragFloat(std::format("{}{}", guidStr, "FOV").c_str(), &value)) {
 				cam.SetPerspectiveFov(value);
 			}
@@ -172,7 +172,7 @@ auto EditorObjectWrapperFor<CameraComponent>::OnGui([[maybe_unused]] Context& co
 		else {
 			ImGui::Text("Size");
 			ImGui::TableNextColumn();
-			float value{ cam.GetOrthographicSize() };
+			float value{ cam.GetHorizontalOrthographicSize() };
 			if (ImGui::DragFloat(std::format("{}{}", guidStr, "OrthoSize").c_str(), &value)) {
 				cam.SetOrthoGraphicSize(value);
 			}

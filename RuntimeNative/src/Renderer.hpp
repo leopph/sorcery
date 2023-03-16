@@ -2,11 +2,11 @@
 
 #include "Core.hpp"
 #include "StaticMeshComponent.hpp"
-#include "CameraComponent.hpp"
 #include "LightComponents.hpp"
 #include "Util.hpp"
 #include "Platform.hpp"
 #include "SkyboxComponent.hpp"
+#include "RenderCamera.hpp"
 
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
@@ -16,16 +16,7 @@
 
 
 namespace leopph {
-struct EditorCamera {
-	Vector3 position;
-	Quaternion orientation;
-	f32 nearClip;
-	f32 farClip;
-	f32 fovVertRad;
-};
-
 class Renderer {
-private:
 	struct Resources {
 		Microsoft::WRL::ComPtr<ID3D11Device> device;
 		Microsoft::WRL::ComPtr<ID3D11DeviceContext> context;
@@ -107,6 +98,7 @@ private:
 	auto UpdatePerFrameCB() const noexcept -> void;
 	auto DoToneMapGammaCorrectionStep(ID3D11ShaderResourceView* src, ID3D11RenderTargetView* dst) const noexcept -> void;
 	auto DrawSkybox(Matrix4 const& camViewMtx, Matrix4 const& camProjMtx) const noexcept -> void;
+	auto DrawFullWithCameras(std::span<RenderCamera const* const> cameras, ID3D11RenderTargetView* rtv, ID3D11DepthStencilView* dsv, ID3D11ShaderResourceView* srv, ID3D11RenderTargetView* outRtv) const noexcept -> void;
 
 	Resources* mResources{ nullptr };
 	UINT mPresentFlags{ 0 };
@@ -120,6 +112,7 @@ private:
 	std::vector<LightComponent const*> mLights;
 	f32 mInvGamma{ 1.f / 2.2f };
 	std::vector<SkyboxComponent const*> mSkyboxes;
+	std::vector<RenderCamera const*> mGameRenderCameras;
 
 public:
 	Renderer() noexcept = default;
@@ -128,9 +121,8 @@ public:
 	LEOPPHAPI auto StartUp() -> void;
 	LEOPPHAPI auto ShutDown() noexcept -> void;
 
-	LEOPPHAPI auto DrawCamera(CameraComponent const* cam) const noexcept -> void;
 	LEOPPHAPI auto DrawGame() const noexcept -> void;
-	LEOPPHAPI auto DrawSceneView(EditorCamera const& cam) const noexcept -> void;
+	LEOPPHAPI auto DrawSceneView(RenderCamera const& cam) const noexcept -> void;
 
 	[[nodiscard]] LEOPPHAPI auto GetGameResolution() const noexcept -> Extent2D<u32>;
 	LEOPPHAPI auto SetGameResolution(Extent2D<u32> resolution) noexcept -> void;
@@ -168,5 +160,8 @@ public:
 
 	auto LEOPPHAPI RegisterSkybox(SkyboxComponent const* skybox) -> void;
 	auto LEOPPHAPI UnregisterSkybox(SkyboxComponent const* skybox) -> void;
+
+	auto LEOPPHAPI RegisterGameCamera(RenderCamera const& cam) -> void;
+	auto LEOPPHAPI UnregisterGameCamera(RenderCamera const& cam) -> void;
 };
 }

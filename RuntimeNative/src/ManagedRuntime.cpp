@@ -20,6 +20,8 @@
 #include <string>
 #include <vector>
 
+#include "CameraComponent.hpp"
+
 
 namespace leopph {
 auto ManagedRuntime::StartUp() -> void {
@@ -124,10 +126,10 @@ auto ManagedRuntime::StartUp() -> void {
 
 	mono_add_internal_call("leopph.Camera::get_Type", reinterpret_cast<void*>(&managedbindings::GetCameraType));
 	mono_add_internal_call("leopph.Camera::set_Type", reinterpret_cast<void*>(&managedbindings::SetCameraType));
-	mono_add_internal_call("leopph.Camera::get_PerspectiveFieldOfView", reinterpret_cast<void*>(&managedbindings::GetCameraPerspectiveFov));
-	mono_add_internal_call("leopph.Camera::set_PerspectiveFieldOfView", reinterpret_cast<void*>(&managedbindings::SetCameraPerspectiveFov));
-	mono_add_internal_call("leopph.Camera::get_OrthographicSize", reinterpret_cast<void*>(&managedbindings::GetCameraOrthographicSize));
-	mono_add_internal_call("leopph.Camera::set_OrthographicSize", reinterpret_cast<void*>(&managedbindings::SetCameraOrthographicSize));
+	mono_add_internal_call("leopph.Camera::get_PerspectiveHorizontalFieldOfView", reinterpret_cast<void*>(&managedbindings::GetCameraPerspectiveFov));
+	mono_add_internal_call("leopph.Camera::set_PerspectiveHorizontalFieldOfView", reinterpret_cast<void*>(&managedbindings::SetCameraPerspectiveFov));
+	mono_add_internal_call("leopph.Camera::get_OrthographicHorizontalSize", reinterpret_cast<void*>(&managedbindings::GetCameraOrthographicSize));
+	mono_add_internal_call("leopph.Camera::set_OrthographicHorizontalSize", reinterpret_cast<void*>(&managedbindings::SetCameraOrthographicSize));
 	mono_add_internal_call("leopph.Camera::get_NearClipPlane", reinterpret_cast<void*>(&managedbindings::GetCameraNearClipPlane));
 	mono_add_internal_call("leopph.Camera::set_NearClipPlane", reinterpret_cast<void*>(&managedbindings::SetCameraNearClipPlane));
 	mono_add_internal_call("leopph.Camera::get_FarClipPlane", reinterpret_cast<void*>(&managedbindings::GetCameraFarClipPlane));
