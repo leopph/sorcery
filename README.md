@@ -20,7 +20,8 @@ Non-exhaustive list of core libraries:
 - MSBuild
 - MSVC v143 toolset
 ### Runtime requirements
-- Windows 10 build 1809
+- Windows 10, version 1809 or newer, 64-bit
+- Mono 6.12.0 or newer
 - Feature level 11_0 capable GPU
 ### Building
 - Run **setup.bat** from the root directory
