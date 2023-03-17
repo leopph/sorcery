@@ -3,6 +3,7 @@
 #include <cstdint>
 
 #include "Math.hpp"
+#include "Util.hpp"
 
 namespace leopph {
 class RenderCamera {
@@ -24,6 +25,7 @@ public:
 	[[nodiscard]] virtual auto GetHorizontalOrthographicSize() const -> float = 0;
 	[[nodiscard]] virtual auto GetHorizontalPerspectiveFov() const -> float = 0;
 	[[nodiscard]] virtual auto GetType() const -> Type = 0;
+	[[nodiscard]] virtual auto GetFrustum(float aspectRatio) const -> Frustum = 0;
 
 	RenderCamera() = default;
 	RenderCamera(RenderCamera const& other) = default;

@@ -13,6 +13,7 @@ struct EditorCamera : RenderCamera {
 	[[nodiscard]] auto GetType() const -> Type override;
 
 	EditorCamera(Vector3 const& position, Quaternion const& orientation, float nearClip, float farClip, float fovHorizDeg);
+	[[nodiscard]] auto GetFrustum(float aspectRatio) const -> Frustum override;
 
 	Vector3 position;
 	Quaternion orientation;

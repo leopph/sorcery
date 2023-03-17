@@ -166,7 +166,7 @@ auto EditorObjectWrapperFor<CameraComponent>::OnGui([[maybe_unused]] Context& co
 			ImGui::TableNextColumn();
 			float value{ cam.GetHorizontalPerspectiveFov() };
 			if (ImGui::DragFloat(std::format("{}{}", guidStr, "FOV").c_str(), &value)) {
-				cam.SetPerspectiveFov(value);
+				cam.SetHorizontalPerspectiveFov(value);
 			}
 		}
 		else {
@@ -174,7 +174,7 @@ auto EditorObjectWrapperFor<CameraComponent>::OnGui([[maybe_unused]] Context& co
 			ImGui::TableNextColumn();
 			float value{ cam.GetHorizontalOrthographicSize() };
 			if (ImGui::DragFloat(std::format("{}{}", guidStr, "OrthoSize").c_str(), &value)) {
-				cam.SetOrthoGraphicSize(value);
+				cam.SetHorizontalOrthographicSize(value);
 			}
 		}
 

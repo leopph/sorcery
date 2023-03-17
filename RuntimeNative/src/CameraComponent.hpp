@@ -14,14 +14,10 @@ class CameraComponent : public Component, public RenderCamera {
 	f32 mNear{ 0.1f };
 	f32 mFar{ 100.f };
 	NormalizedViewport mViewport{ { 0, 0 }, { 1, 1 } };
-	Extent2D<u32> mWindowExtent;
-	f32 mAspect;
 	RenderCamera::Type mType{ RenderCamera::Type::Perspective };
 	f32 mOrthoSizeHoriz{ 10 };
 	f32 mPerspFovHorizDeg{ 90 };
 	Vector4 mBackgroundColor{ 0, 0, 0, 1 };
-
-	[[nodiscard]] auto ConvertPerspectiveFov(f32 fov, bool vert2Horiz) const -> f32;
 
 public:
 	LEOPPHAPI CameraComponent();
@@ -43,16 +39,11 @@ public:
 	[[nodiscard]] LEOPPHAPI auto GetViewport() const -> NormalizedViewport const&;
 	LEOPPHAPI auto SetViewport(NormalizedViewport const& viewport) -> void;
 
-	[[nodiscard]] LEOPPHAPI auto GetWindowExtents() const -> Extent2D<u32>;
-	LEOPPHAPI auto SetWindowExtents(Extent2D<u32> const& extent) -> void;
-
-	[[nodiscard]] LEOPPHAPI auto GetAspectRatio() const -> f32;
-
 	[[nodiscard]] LEOPPHAPI auto GetHorizontalOrthographicSize() const -> f32 override;
-	LEOPPHAPI auto SetOrthoGraphicSize(f32 size, Side side = Side::Horizontal) -> void;
+	LEOPPHAPI auto SetHorizontalOrthographicSize(f32 size) -> void;
 
 	[[nodiscard]] LEOPPHAPI auto GetHorizontalPerspectiveFov() const -> f32 override;
-	LEOPPHAPI auto SetPerspectiveFov(f32 degrees, Side side = Side::Horizontal) -> void;
+	LEOPPHAPI auto SetHorizontalPerspectiveFov(f32 degrees) -> void;
 
 	[[nodiscard]] LEOPPHAPI auto GetType() const -> RenderCamera::Type override;
 	LEOPPHAPI auto SetType(RenderCamera::Type type) -> void;
@@ -64,6 +55,10 @@ public:
 
 	[[nodiscard]] auto LEOPPHAPI GetPosition() const noexcept -> Vector3 override;
 	[[nodiscard]] auto LEOPPHAPI GetForwardAxis() const noexcept -> Vector3 override;
+	[[nodiscard]] auto LEOPPHAPI GetFrustum(float aspectRatio) const -> Frustum override;
+
+	[[nodiscard]] static auto LEOPPHAPI ConvertPerspectiveFovHorizontalToVertical(float fovDegrees, float aspectRatio) noexcept -> float;
+	[[nodiscard]] static auto LEOPPHAPI ConvertPerspectiveFovVerticalToHorizontal(float fovDegrees, float aspectRatio) noexcept -> float;
 };
 
 
