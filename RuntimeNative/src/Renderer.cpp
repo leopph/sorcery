@@ -1171,16 +1171,16 @@ auto Renderer::DrawFullWithCameras(std::span<RenderCamera const* const> const ca
 }
 
 auto Renderer::DrawShadowMaps(Matrix4 const& camViewProj) const -> void {
-	std::vector<int> q1Lights;
+	std::vector<int> static q1Lights;
 	q1Lights.clear();
 
-	std::vector<int> q2Lights;
+	std::vector<int> static q2Lights;
 	q2Lights.clear();
 
-	std::vector<int> q3Lights;
+	std::vector<int> static q3Lights;
 	q3Lights.clear();
 
-	std::vector<int> q4Lights;
+	std::vector<int> static q4Lights;
 	q4Lights.clear();
 
 	for (int i = 0; i < static_cast<int>(mLights.size()); i++) {
