@@ -12,10 +12,11 @@ struct PbrMaterial {
     int sampleAo;
 };
 
-Texture2D gAlbedoMap;
-Texture2D gMetallicMap;
-Texture2D gRoughnessMap;
-Texture2D gAoMap;
-SamplerState gMaterialSampler;
+Texture2D gAlbedoMap : register(t0);
+Texture2D gMetallicMap : register(t1);
+Texture2D gRoughnessMap : register(t2);
+Texture2D gAoMap : register(t3);
+
+SamplerState gMaterialSampler : register(s0);
 
 #endif
