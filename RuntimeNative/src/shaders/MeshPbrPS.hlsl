@@ -1,6 +1,16 @@
 #include "CBuffers.hlsli"
 #include "MeshVSOut.hlsli"
 
+Texture2D<float> gSpotPointShadowAtlas : register(t4);
+SamplerComparisonState gShadowSampler : register(s1);
+
+float SampleShadowMap(const Texture2D<float> shadowMap, const Light light, const float3 posW) {
+    const float4 posLClip = mul(float4(posW, 1), light.lightSpaceMtx);
+    float3 posLNdc = posLClip.xyz / posLClip.w;
+    posLNdc.xy = posLNdc.xy * 0.5 + 0.5;
+    return shadowMap.SampleCmpLevelZero(gShadowSampler, posLNdc.xy * light.shadowAtlasScale + light.shadowAtlasOffset, posLNdc.z);
+}
+
 static const float PI = 3.14159265f;
 
 float3 FresnelSchlick(const float cosTheta, const float3 F0) {
@@ -97,7 +107,15 @@ float3 CalculateSpotLight(const float3 N, const float3 V, const float3 albedo, c
 	    return float3(0, 0, 0);
     }
 
-    return CalculateLighting(N, V, L, albedo, metallic, roughness, light.color, light.intensity) * intensity * CalculateAttenuation(dist);
+    float3 lighting = CalculateLighting(N, V, L, albedo, metallic, roughness, light.color, light.intensity);
+    lighting *= intensity;
+    lighting *= CalculateAttenuation(dist);
+
+    if (light.isCastingShadow) {
+        lighting *= SampleShadowMap(gSpotPointShadowAtlas, light, fragWorldPos);
+    }
+    
+    return lighting;
 }
 
 float3 CalculatePointLight(const float3 N, const float3 V, const float3 albedo, const float metallic, const float roughness, const Light light, const float3 fragWorldPos)
