@@ -33,6 +33,9 @@ float constexpr PI{ std::numbers::pi_v<float> };
 
 [[nodiscard]] constexpr auto Lerp(float from, float to, float t) noexcept -> float;
 
+template<typename T>
+[[nodiscard]] constexpr auto Pow(T base, T exp) noexcept;
+
 
 template<typename T, int N> requires(N > 1)
 class Vector {
@@ -464,6 +467,17 @@ constexpr auto Lerp(float const from, float const to, float const t) noexcept ->
 	return (1 - t) * from + t * to;
 }
 
+
+template<typename T>
+constexpr auto Pow(T const base, T const exp) noexcept {
+	T ret{ 1 };
+
+	for (auto i = 0; i < exp; i++) {
+		ret *= base;
+	}
+
+	return ret;
+}
 
 template<typename T, int N> requires (N > 1)
 constexpr auto Vector<T, N>::operator[](size_t index) const noexcept -> T const& {
