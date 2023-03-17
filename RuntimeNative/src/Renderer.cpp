@@ -863,6 +863,43 @@ auto Renderer::CreateDepthStencilStates() const -> void {
 	}
 }
 
+
+auto Renderer::CreateSamplerStates() const -> void {
+	D3D11_SAMPLER_DESC constexpr hdrTextureSamplerDesc{
+		.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT,
+		.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP,
+		.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP,
+		.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP,
+		.MipLODBias = 0,
+		.MaxAnisotropy = 1,
+		.ComparisonFunc = D3D11_COMPARISON_NEVER,
+		.BorderColor = { 1, 1, 1, 1 },
+		.MinLOD = 0,
+		.MaxLOD = D3D11_FLOAT32_MAX
+	};
+
+	if (FAILED(mResources->device->CreateSamplerState(&hdrTextureSamplerDesc, mResources->hdrTextureSS.GetAddressOf()))) {
+		throw std::runtime_error{ "Failed to create hdr texture sampler state." };
+	}
+
+	D3D11_SAMPLER_DESC constexpr shadowSamplerDesc{
+		.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT,
+		.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP,
+		.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP,
+		.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP,
+		.MipLODBias = 0,
+		.MaxAnisotropy = 1,
+		.ComparisonFunc = D3D11_COMPARISON_LESS,
+		.BorderColor = { 1.0f, 1.0f, 1.0f, 1.0f },
+		.MinLOD = -FLT_MAX,
+		.MaxLOD = FLT_MAX
+	};
+
+	if (FAILED(mResources->device->CreateSamplerState(&shadowSamplerDesc, mResources->shadowSS.GetAddressOf()))) {
+		throw std::runtime_error{ "Failed to create shadow sampler state." };
+	}
+}
+
 auto Renderer::DrawMeshes() const noexcept -> void {
 	for (auto const& staticMeshComponent : mStaticMeshComponents) {
 		auto const& mesh{ staticMeshComponent->GetMesh() };
@@ -1094,23 +1131,6 @@ auto Renderer::StartUp() -> void {
 
 	CheckTearingSupport(dxgiFactory2.Get());
 
-	D3D11_SAMPLER_DESC constexpr hdrTextureSamplerDesc{
-		.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT,
-		.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP,
-		.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP,
-		.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP,
-		.MipLODBias = 0,
-		.MaxAnisotropy = 1,
-		.ComparisonFunc = D3D11_COMPARISON_NEVER,
-		.BorderColor = { 1, 1, 1, 1 },
-		.MinLOD = 0,
-		.MaxLOD = D3D11_FLOAT32_MAX
-	};
-
-	if (FAILED(mResources->device->CreateSamplerState(&hdrTextureSamplerDesc, mResources->hdrTextureSS.GetAddressOf()))) {
-		throw std::runtime_error{ "Failed to create hdr texture sampler state." };
-	}
-
 	mGameRes = gWindow.GetCurrentClientAreaSize();
 	mGameAspect = static_cast<f32>(mGameRes.width) / static_cast<f32>(mGameRes.height);
 
@@ -1127,6 +1147,7 @@ auto Renderer::StartUp() -> void {
 	CreateConstantBuffers();
 	CreateRasterizerStates();
 	CreateDepthStencilStates();
+	CreateSamplerStates();
 
 	gWindow.OnWindowSize.add_handler(this, &on_window_resize);
 
