@@ -24,8 +24,6 @@ class Renderer {
 		Microsoft::WRL::ComPtr<ID3D11Texture2D> tex;
 		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv;
 		Microsoft::WRL::ComPtr<ID3D11DepthStencilView> dsv;
-		int width;
-		int height;
 	};
 
 	struct Resources {
@@ -128,12 +126,12 @@ class Renderer {
 	auto CreateDepthStencilStates() const -> void;
 	auto CreateShadowAtlases() const -> void;
 	auto CreateSamplerStates() const -> void;
-	auto DrawMeshes() const noexcept -> void;
+	auto DrawMeshes(std::span<StaticMeshComponent const* const> camVisibleMeshes, bool useMaterials) const noexcept -> void;
 	auto UpdatePerFrameCB() const noexcept -> void;
 	auto DoToneMapGammaCorrectionStep(ID3D11ShaderResourceView* src, ID3D11RenderTargetView* dst) const noexcept -> void;
 	auto DrawSkybox(Matrix4 const& camViewMtx, Matrix4 const& camProjMtx) const noexcept -> void;
-	auto DrawFullWithCameras(std::span<RenderCamera const* const> cameras, ID3D11RenderTargetView* rtv, ID3D11DepthStencilView* dsv, ID3D11ShaderResourceView* srv, ID3D11RenderTargetView* outRtv) const noexcept -> void;
-	auto DrawShadowMaps(Matrix4 const& camViewProj) const -> void;
+	auto DrawFullWithCameras(std::span<RenderCamera const* const> cameras, ID3D11RenderTargetView* rtv, ID3D11DepthStencilView* dsv, ID3D11ShaderResourceView* srv, ID3D11RenderTargetView* outRtv) noexcept -> void;
+	auto DrawShadowMaps(Matrix4 const& camViewProj, std::span<LightComponent const*> camVisibleLights, std::span<StaticMeshComponent const* const> camVisibleMeshes) -> void;
 
 	Resources* mResources{ nullptr };
 	UINT mPresentFlags{ 0 };
@@ -158,8 +156,8 @@ public:
 	LEOPPHAPI auto StartUp() -> void;
 	LEOPPHAPI auto ShutDown() noexcept -> void;
 
-	LEOPPHAPI auto DrawGame() const noexcept -> void;
-	LEOPPHAPI auto DrawSceneView(RenderCamera const& cam) const noexcept -> void;
+	LEOPPHAPI auto DrawGame() noexcept -> void;
+	LEOPPHAPI auto DrawSceneView(RenderCamera const& cam) noexcept -> void;
 
 	[[nodiscard]] LEOPPHAPI auto GetGameResolution() const noexcept -> Extent2D<u32>;
 	LEOPPHAPI auto SetGameResolution(Extent2D<u32> resolution) noexcept -> void;

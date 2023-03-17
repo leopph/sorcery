@@ -60,14 +60,13 @@ struct LightCBufferData {
 	Matrix4 lightSpaceMtx;
 };
 
-struct PerFrameCBuffer {
-	LightCBufferData lights[MAX_LIGHT_COUNT];
-	int lightCount{};
-};
+struct PerFrameCBuffer {};
 
 struct PerCamCBuffer {
 	Matrix4 viewProjMat;
 	Vector3 camPos;
+	int lightCount{};
+	LightCBufferData lights[MAX_LIGHT_COUNT];
 };
 
 struct MaterialCBufferData {
@@ -969,8 +968,8 @@ auto Renderer::CreateSamplerStates() const -> void {
 	}
 }
 
-auto Renderer::DrawMeshes() const noexcept -> void {
-	for (auto const& staticMeshComponent : mStaticMeshComponents) {
+auto Renderer::DrawMeshes(std::span<StaticMeshComponent const* const> const camVisibleMeshes, bool const useMaterials) const noexcept -> void {
+	for (auto const& staticMeshComponent : camVisibleMeshes) {
 		auto const& mesh{ staticMeshComponent->GetMesh() };
 
 		ID3D11Buffer* vertexBuffers[]{ mesh.GetPositionBuffer().Get(), mesh.GetNormalBuffer().Get(), mesh.GetUVBuffer().Get() };
@@ -995,27 +994,31 @@ auto Renderer::DrawMeshes() const noexcept -> void {
 
 		for (int i = 0; i < static_cast<int>(subMeshes.size()); i++) {
 			auto const& [baseVertex, firstIndex, indexCount]{ subMeshes[i] };
-			auto const& mtl{ static_cast<int>(materials.size()) > i ? *materials[i] : *mResources->defaultMaterial };
 
-			auto const mtlBuffer{ mtl.GetBuffer() };
-			mResources->context->VSSetConstantBuffers(3, 1, &mtlBuffer);
-			mResources->context->PSSetConstantBuffers(3, 1, &mtlBuffer);
+			if (useMaterials) {
+				auto const& mtl{ static_cast<int>(materials.size()) > i ? *materials[i] : *mResources->defaultMaterial };
 
-			std::array const srvs{
-				mtl.GetAlbedoMap() ? mtl.GetAlbedoMap()->GetSrv() : nullptr,
-				mtl.GetMetallicMap() ? mtl.GetMetallicMap()->GetSrv() : nullptr,
-				mtl.GetRoughnessMap() ? mtl.GetRoughnessMap()->GetSrv() : nullptr,
-				mtl.GetAoMap() ? mtl.GetAoMap()->GetSrv() : nullptr
-			};
+				auto const mtlBuffer{ mtl.GetBuffer() };
+				mResources->context->VSSetConstantBuffers(3, 1, &mtlBuffer);
+				mResources->context->PSSetConstantBuffers(3, 1, &mtlBuffer);
 
-			mResources->context->PSSetShaderResources(0, static_cast<UINT>(srvs.size()), srvs.data());
+				std::array const srvs{
+					mtl.GetAlbedoMap() ? mtl.GetAlbedoMap()->GetSrv() : nullptr,
+					mtl.GetMetallicMap() ? mtl.GetMetallicMap()->GetSrv() : nullptr,
+					mtl.GetRoughnessMap() ? mtl.GetRoughnessMap()->GetSrv() : nullptr,
+					mtl.GetAoMap() ? mtl.GetAoMap()->GetSrv() : nullptr
+				};
+
+				mResources->context->PSSetShaderResources(0, static_cast<UINT>(srvs.size()), srvs.data());
+			}
+
 			mResources->context->DrawIndexed(indexCount, firstIndex, baseVertex);
 		}
 	}
 }
 
 auto Renderer::UpdatePerFrameCB() const noexcept -> void {
-	D3D11_MAPPED_SUBRESOURCE mappedPerFrameCB;
+	/*D3D11_MAPPED_SUBRESOURCE mappedPerFrameCB;
 	mResources->context->Map(mResources->perFrameCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerFrameCB);
 
 	auto const perFrameCBData{ static_cast<PerFrameCBuffer*>(mappedPerFrameCB.pData) };
@@ -1035,7 +1038,7 @@ auto Renderer::UpdatePerFrameCB() const noexcept -> void {
 		perFrameCBData->lights[i].position = mLights[i]->GetEntity()->GetTransform().GetWorldPosition();
 	}
 
-	mResources->context->Unmap(mResources->perFrameCB.Get(), 0);
+	mResources->context->Unmap(mResources->perFrameCB.Get(), 0);*/
 }
 
 auto Renderer::DoToneMapGammaCorrectionStep(ID3D11ShaderResourceView* const src, ID3D11RenderTargetView* const dst) const noexcept -> void {
@@ -1116,7 +1119,7 @@ auto Renderer::DrawSkybox(Matrix4 const& camViewMtx, Matrix4 const& camProjMtx) 
 	mResources->context->RSSetState(nullptr);
 }
 
-auto Renderer::DrawFullWithCameras(std::span<RenderCamera const* const> const cameras, ID3D11RenderTargetView* const rtv, ID3D11DepthStencilView* const dsv, ID3D11ShaderResourceView* const srv, ID3D11RenderTargetView* const outRtv) const noexcept -> void {
+auto Renderer::DrawFullWithCameras(std::span<RenderCamera const* const> const cameras, ID3D11RenderTargetView* const rtv, ID3D11DepthStencilView* const dsv, ID3D11ShaderResourceView* const srv, ID3D11RenderTargetView* const outRtv) noexcept -> void {
 	FLOAT constexpr clearColor[]{ 0, 0, 0, 1 };
 	mResources->context->ClearRenderTargetView(rtv, clearColor);
 	mResources->context->ClearDepthStencilView(dsv, D3D11_CLEAR_DEPTH, 1, 0);
@@ -1160,34 +1163,136 @@ auto Renderer::DrawFullWithCameras(std::span<RenderCamera const* const> const ca
 		};
 		auto const viewProjMat{ viewMat * projMat };
 
+		auto const camFrust{ cam->GetFrustum(aspectRatio) };
+
+		std::vector<LightComponent const*> static visibleLights;
+		visibleLights.clear();
+
+		for (auto const light : mLights) {
+			switch (light->GetType()) {
+			case LightComponent::Type::Directional: {
+				visibleLights.emplace_back(light);
+				break;
+			}
+
+			case LightComponent::Type::Spot: {
+				auto const range{ light->GetRange() };
+				auto const boundXY{ std::tan(light->GetOuterAngle()) * light->GetRange() };
+				Vector4 const center{ 0, 0, 0, 1 };
+				Vector4 const rightTop{ boundXY, boundXY, range, 1 };
+				Vector4 const leftTop{ -boundXY, boundXY, range, 1 };
+				Vector4 const rightBottom{ boundXY, -boundXY, range, 1 };
+				Vector4 const leftBottom{ -boundXY, -boundXY, range, 1 };
+
+				AABB const bounds{
+					.min = Vector3{
+						std::min(center[0], std::min(rightTop[0], std::min(leftTop[0], std::min(rightBottom[0], leftBottom[0])))),
+						std::min(center[1], std::min(rightTop[1], std::min(leftTop[1], std::min(rightBottom[1], leftBottom[1])))),
+						std::min(center[2], std::min(rightTop[2], std::min(leftTop[2], std::min(rightBottom[2], leftBottom[2]))))
+					},
+					.max = Vector3{
+						std::max(center[0], std::max(rightTop[0], std::max(leftTop[0], std::max(rightBottom[0], leftBottom[0])))),
+						std::max(center[1], std::max(rightTop[1], std::max(leftTop[1], std::max(rightBottom[1], leftBottom[1])))),
+						std::max(center[2], std::max(rightTop[2], std::max(leftTop[2], std::max(rightBottom[2], leftBottom[2]))))
+					}
+				};
+
+				if (is_aabb_in_frustum(bounds, camFrust, light->GetEntity()->GetTransform().GetModelMatrix() * viewMat)) {
+					visibleLights.emplace_back(light);
+				}
+
+				break;
+			}
+
+			case LightComponent::Type::Point: {
+				auto const range{ light->GetRange() };
+				auto const boundsOffset{ Normalized(Vector3{ 1, 1, 1 }) * range };
+
+				AABB const bounds{
+					.min = boundsOffset,
+					.max = boundsOffset,
+				};
+
+				if (is_aabb_in_frustum(bounds, camFrust, light->GetEntity()->GetTransform().GetModelMatrix() * viewMat)) {
+					visibleLights.emplace_back(light);
+				}
+				break;
+			}
+			}
+		}
+
 		D3D11_MAPPED_SUBRESOURCE mappedPerCamCBuf;
 		mResources->context->Map(mResources->perCamCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerCamCBuf);
 		auto const perCamCBufData{ static_cast<PerCamCBuffer*>(mappedPerCamCBuf.pData) };
 		perCamCBufData->viewProjMat = viewProjMat;
 		perCamCBufData->camPos = camPos;
+
+		auto const lightCount{ std::min(MAX_LIGHT_COUNT, static_cast<int>(visibleLights.size())) };
+		perCamCBufData->lightCount = lightCount;
+
+		for (int i = 0; i < lightCount; i++) {
+			perCamCBufData->lights[i].color = visibleLights[i]->GetColor();
+			perCamCBufData->lights[i].intensity = visibleLights[i]->GetIntensity();
+			perCamCBufData->lights[i].type = static_cast<int>(visibleLights[i]->GetType());
+			perCamCBufData->lights[i].direction = visibleLights[i]->GetDirection();
+			perCamCBufData->lights[i].isCastingShadow = false;
+			perCamCBufData->lights[i].shadowNearPlane = visibleLights[i]->GetShadowNearPlane();
+			perCamCBufData->lights[i].range = visibleLights[i]->GetRange();
+			perCamCBufData->lights[i].innerAngleCos = std::cos(ToRadians(visibleLights[i]->GetInnerAngle()));
+			perCamCBufData->lights[i].outerAngleCos = std::cos(ToRadians(visibleLights[i]->GetOuterAngle()));
+			perCamCBufData->lights[i].position = visibleLights[i]->GetEntity()->GetTransform().GetWorldPosition();
+		}
+
+		int quadrantIdx{ 0 };
+		/*for (std::span<std::optional<ShadowGenerationData>> const lights : { std::span{ &mSpotPointShadowAtlasAlloc.q1Light, 1 }, std::span{ mSpotPointShadowAtlasAlloc.q2Lights }, std::span{ mSpotPointShadowAtlasAlloc.q3Lights }, std::span{ mSpotPointShadowAtlasAlloc.q4Lights } }) {
+			auto const quadrantCellCount{ Pow(2, 2 * quadrantIdx) };
+			auto const quadrantRowColCount{ Pow(2, quadrantIdx) };
+			auto const quadrantCellSize{ SPOT_POINT_SHADOW_ATLAS_SIZE * 0.25f * 1.0f / quadrantRowColCount };
+			//auto const quadrantTopLeft{} TODO
+
+			for (auto const& light : lights) {
+				if (light) {
+					/*perCamCBufData->lights[light->lightIdx].isCastingShadow = true;
+					perCamCBufData->lights[light->lightIdx].lightSpaceMtx = light->lightViewProj;
+					perCamCBufData->lights[light->lightIdx].shadowAtlasOffset = 0;
+					perCamCBufData->lights[light->lightIdx].shadowAtlasScale = 0; TODO 
+				}
+			}
+		}*/
+
 		mResources->context->Unmap(mResources->perCamCB.Get(), 0);
 
-		//DrawShadowMaps(viewProjMat);
-		mResources->context->PSSetShaderResources(4, 1, mResources->spotPointShadowAtlas.srv.GetAddressOf());
+		std::vector<StaticMeshComponent const*> static visibleMeshes;
+		visibleMeshes.clear();
+
+		for (auto const meshComponent : mStaticMeshComponents) {
+			if (is_aabb_in_frustum(meshComponent->GetMesh().GetBounds(), camFrust, meshComponent->GetEntity()->GetTransform().GetModelMatrix() * viewMat)) {
+				visibleMeshes.emplace_back(meshComponent);
+			}
+		}
 
 		mResources->context->VSSetShader(mResources->meshVS.Get(), nullptr, 0);
+
+		DrawShadowMaps(viewProjMat, visibleLights, visibleMeshes);
+
 		mResources->context->PSSetShader(mResources->meshPbrPS.Get(), nullptr, 0);
 
 		mResources->context->VSSetConstantBuffers(1, 1, mResources->perCamCB.GetAddressOf());
 		mResources->context->PSSetConstantBuffers(1, 1, mResources->perCamCB.GetAddressOf());
 
 		mResources->context->OMSetRenderTargets(1, &rtv, dsv);
+		mResources->context->PSSetShaderResources(4, 1, mResources->spotPointShadowAtlas.srv.GetAddressOf());
 
 		mResources->context->RSSetViewports(1, &viewport);
 
-		DrawMeshes();
+		DrawMeshes(visibleMeshes, true);
 		DrawSkybox(viewMat, projMat);
 	}
 
 	DoToneMapGammaCorrectionStep(srv, outRtv);
 }
 
-auto Renderer::DrawShadowMaps(Matrix4 const& camViewProj) const -> void {
+auto Renderer::DrawShadowMaps(Matrix4 const& camViewProj, std::span<LightComponent const*> const camVisibleLights, std::span<StaticMeshComponent const* const> const camVisibleMeshes) -> void {
 	std::vector<int> static q1Lights;
 	q1Lights.clear();
 
@@ -1200,8 +1305,8 @@ auto Renderer::DrawShadowMaps(Matrix4 const& camViewProj) const -> void {
 	std::vector<int> static q4Lights;
 	q4Lights.clear();
 
-	for (int i = 0; i < static_cast<int>(mLights.size()); i++) {
-		if (auto const light{ mLights[i] }; light->IsCastingShadow()) {
+	for (int i = 0; i < static_cast<int>(camVisibleLights.size()); i++) {
+		if (auto const light{ camVisibleLights[i] }; light->IsCastingShadow()) {
 			switch (light->GetType()) {
 			case LightComponent::Type::Directional: {
 				break;
@@ -1315,8 +1420,61 @@ auto Renderer::DrawShadowMaps(Matrix4 const& camViewProj) const -> void {
 		}
 	}
 
-	mResources->context->OMSetRenderTargets(1, nullptr, mResources->spotPointShadowAtlas.dsv.Get());
-	//mResources->context
+	mSpotPointShadowAtlasAlloc = newAlloc;
+
+	mResources->context->OMSetRenderTargets(0, nullptr, mResources->spotPointShadowAtlas.dsv.Get());
+	mResources->context->PSSetShader(nullptr, nullptr, 0);
+
+	struct QuadrantRenderHelper {
+		std::span<std::optional<ShadowGenerationData>> lights;
+		int cellCount;
+		Vector2 baseOffset;
+	};
+
+	std::array const quadrantRenderHelpers{
+		QuadrantRenderHelper{
+			.lights = std::span{ &mSpotPointShadowAtlasAlloc.q1Light, 1 },
+			.cellCount = 1,
+			.baseOffset = Vector2{ 0, 0 }
+		},
+
+		QuadrantRenderHelper{
+			.lights = mSpotPointShadowAtlasAlloc.q2Lights,
+			.cellCount = 4,
+			.baseOffset = Vector2{ SPOT_POINT_SHADOW_ATLAS_SIZE * 0.5f, 0 }
+		},
+
+		QuadrantRenderHelper{
+			.lights = mSpotPointShadowAtlasAlloc.q3Lights,
+			.cellCount = 16,
+			.baseOffset = Vector2{ 0, SPOT_POINT_SHADOW_ATLAS_SIZE * 0.5f }
+		},
+
+		QuadrantRenderHelper{
+			.lights = mSpotPointShadowAtlasAlloc.q4Lights,
+			.cellCount = 64,
+			.baseOffset = Vector2{ SPOT_POINT_SHADOW_ATLAS_SIZE * 0.5f }
+		},
+	};
+
+	for (auto const& [lights, cellCount, baseOffset] : quadrantRenderHelpers) {
+		auto const rowCount{ static_cast<int>(std::sqrt(cellCount)) };
+		auto const cellSize{ SPOT_POINT_SHADOW_ATLAS_SIZE / rowCount };
+
+		for (int i = 0; i < lights.size(); i++) {
+			D3D11_VIEWPORT const viewport{
+				.TopLeftX = baseOffset[0] + static_cast<float>(i % rowCount * cellSize),
+				.TopLeftY = baseOffset[1] + static_cast<float>(i / rowCount * cellSize),
+				.Width = static_cast<float>(cellSize),
+				.Height = static_cast<float>(cellSize),
+				.MinDepth = 0,
+				.MaxDepth = 1
+			};
+
+			mResources->context->RSSetViewports(1, &viewport);
+			DrawMeshes(camVisibleMeshes, false);
+		}
+	}
 }
 
 
@@ -1388,11 +1546,11 @@ auto Renderer::ShutDown() noexcept -> void {
 }
 
 
-auto Renderer::DrawGame() const noexcept -> void {
+auto Renderer::DrawGame() noexcept -> void {
 	DrawFullWithCameras(mGameRenderCameras, mResources->gameHdrTextureRtv.Get(), mResources->gameDSV.Get(), mResources->gameHdrTextureSrv.Get(), mResources->gameOutputTextureRtv.Get());
 }
 
-auto Renderer::DrawSceneView(RenderCamera const& cam) const noexcept -> void {
+auto Renderer::DrawSceneView(RenderCamera const& cam) noexcept -> void {
 	auto const camPtr{ &cam };
 	DrawFullWithCameras(std::span{ &camPtr, 1 }, mResources->sceneHdrTextureRtv.Get(), mResources->sceneDSV.Get(), mResources->sceneHdrTextureSrv.Get(), mResources->sceneOutputTextureRtv.Get());
 }

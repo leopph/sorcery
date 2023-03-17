@@ -7,13 +7,14 @@
 #include "PbrMaterial.hlsli"
 
 cbuffer PerFrame : register(b0) {
-    Light lights[MAX_LIGHT_COUNT];
-    int lightCount;
+    
 }
 
 cbuffer PerCamera : register(b1) {
     row_major float4x4 viewProjMat;
     float3 camPos;
+    int lightCount;
+    Light lights[MAX_LIGHT_COUNT];
 };
 
 cbuffer PerModel : register(b2)
