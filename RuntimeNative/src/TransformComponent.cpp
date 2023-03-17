@@ -8,6 +8,8 @@
 
 namespace leopph {
 auto TransformComponent::UpdateWorldDataRecursive() -> void {
+	SetChanged(true);
+
 	mWorldPosition = mParent != nullptr ? mParent->mWorldRotation.Rotate(mParent->mWorldPosition + mLocalPosition) : mLocalPosition;
 	mWorldRotation = mParent != nullptr ? mParent->mWorldRotation * mLocalRotation : mLocalRotation;
 	mWorldScale = mParent != nullptr ? mParent->mWorldScale * mLocalScale : mLocalScale;
@@ -201,6 +203,14 @@ auto TransformComponent::GetNormalMatrix() const -> Matrix3 const& {
 
 auto TransformComponent::CreateManagedObject() -> void {
 	return ManagedAccessObject::CreateManagedObject("leopph", "Transform");
+}
+
+auto TransformComponent::HasChanged() const noexcept -> bool {
+	return mChanged;
+}
+
+auto TransformComponent::SetChanged(bool const changed) noexcept -> void {
+	mChanged = changed;
 }
 
 Object::Type const TransformComponent::SerializationType{ Type::Transform };

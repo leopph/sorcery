@@ -36,6 +36,8 @@ private:
 	Matrix4 mModelMat{ Matrix4::Identity() };
 	Matrix3 mNormalMat{ Matrix4::Identity() };
 
+	bool mChanged{ false };
+
 public:
 	[[nodiscard]] LEOPPHAPI auto GetSerializationType() const -> Type override;
 	LEOPPHAPI static Object::Type const SerializationType;
@@ -83,6 +85,9 @@ public:
 	[[nodiscard]] LEOPPHAPI auto GetNormalMatrix() const -> Matrix3 const&;
 
 	LEOPPHAPI auto CreateManagedObject() -> void override;
+
+	[[nodiscard]] LEOPPHAPI auto HasChanged() const noexcept -> bool;
+	LEOPPHAPI auto SetChanged(bool changed) noexcept -> void;
 };
 
 
