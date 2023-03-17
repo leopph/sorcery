@@ -955,14 +955,6 @@ auto Renderer::CreateSamplerStates() const -> void {
 auto Renderer::DrawMeshes() const noexcept -> void {
 	for (auto const& staticMeshComponent : mStaticMeshComponents) {
 		auto const& mesh{ staticMeshComponent->GetMesh() };
-		auto const& materials{ staticMeshComponent->GetMaterials() };
-
-		D3D11_MAPPED_SUBRESOURCE mappedPerModelCBuf;
-		mResources->context->Map(mResources->perModelCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerModelCBuf);
-		auto& [modelMatData, normalMatData]{ *static_cast<PerModelCBuffer*>(mappedPerModelCBuf.pData) };
-		modelMatData = staticMeshComponent->GetEntity()->GetTransform().GetModelMatrix();
-		normalMatData = Matrix4{ staticMeshComponent->GetEntity()->GetTransform().GetNormalMatrix() };
-		mResources->context->Unmap(mResources->perModelCB.Get(), 0);
 
 		ID3D11Buffer* vertexBuffers[]{ mesh.GetPositionBuffer().Get(), mesh.GetNormalBuffer().Get(), mesh.GetUVBuffer().Get() };
 		UINT constexpr strides[]{ sizeof(Vector3), sizeof(Vector3), sizeof(Vector2) };
@@ -971,27 +963,35 @@ auto Renderer::DrawMeshes() const noexcept -> void {
 		mResources->context->IASetIndexBuffer(mesh.GetIndexBuffer().Get(), DXGI_FORMAT_R32_UINT, 0);
 		mResources->context->IASetInputLayout(mResources->meshIL.Get());
 
-		mResources->context->VSSetShader(mResources->meshVS.Get(), nullptr, 0);
-		mResources->context->PSSetShader(mResources->meshPbrPS.Get(), nullptr, 0);
+		D3D11_MAPPED_SUBRESOURCE mappedPerModelCBuf;
+		mResources->context->Map(mResources->perModelCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerModelCBuf);
+		auto& [modelMatData, normalMatData]{ *static_cast<PerModelCBuffer*>(mappedPerModelCBuf.pData) };
+		modelMatData = staticMeshComponent->GetEntity()->GetTransform().GetModelMatrix();
+		normalMatData = Matrix4{ staticMeshComponent->GetEntity()->GetTransform().GetNormalMatrix() };
+		mResources->context->Unmap(mResources->perModelCB.Get(), 0);
+
+		mResources->context->VSSetConstantBuffers(2, 1, mResources->perModelCB.GetAddressOf());
+		mResources->context->PSSetConstantBuffers(2, 1, mResources->perModelCB.GetAddressOf());
 
 		auto const subMeshes{ mesh.GetSubMeshes() };
+		auto const& materials{ staticMeshComponent->GetMaterials() };
 
 		for (int i = 0; i < static_cast<int>(subMeshes.size()); i++) {
 			auto const& [baseVertex, firstIndex, indexCount]{ subMeshes[i] };
 			auto const& mtl{ static_cast<int>(materials.size()) > i ? *materials[i] : *mResources->defaultMaterial };
 
-			ID3D11Buffer* const constantBuffers[]{ mResources->perFrameCB.Get(), mResources->perCamCB.Get(), mtl.GetBuffer(), mResources->perModelCB.Get() };
-			mResources->context->VSSetConstantBuffers(0, ARRAYSIZE(constantBuffers), constantBuffers);
-			mResources->context->PSSetConstantBuffers(0, ARRAYSIZE(constantBuffers), constantBuffers);
+			auto const mtlBuffer{ mtl.GetBuffer() };
+			mResources->context->VSSetConstantBuffers(3, 1, &mtlBuffer);
+			mResources->context->PSSetConstantBuffers(3, 1, &mtlBuffer);
 
-			if (mtl.GetAlbedoMap()) {
-				auto const srv{ mtl.GetAlbedoMap()->GetSrv() };
-				mResources->context->PSSetShaderResources(0, 1, &srv);
-			}
-			else {
-				mResources->context->PSSetShaderResources(0, 0, nullptr);
-			}
+			std::array const srvs{
+				mtl.GetAlbedoMap() ? mtl.GetAlbedoMap()->GetSrv() : nullptr,
+				mtl.GetMetallicMap() ? mtl.GetMetallicMap()->GetSrv() : nullptr,
+				mtl.GetRoughnessMap() ? mtl.GetRoughnessMap()->GetSrv() : nullptr,
+				mtl.GetAoMap() ? mtl.GetAoMap()->GetSrv() : nullptr
+			};
 
+			mResources->context->PSSetShaderResources(0, static_cast<UINT>(srvs.size()), srvs.data());
 			mResources->context->DrawIndexed(indexCount, firstIndex, baseVertex);
 		}
 	}
@@ -1010,7 +1010,7 @@ auto Renderer::UpdatePerFrameCB() const noexcept -> void {
 		perFrameCBData->lights[i].intensity = mLights[i]->GetIntensity();
 		perFrameCBData->lights[i].type = static_cast<int>(mLights[i]->GetType());
 		perFrameCBData->lights[i].direction = mLights[i]->GetDirection();
-		perFrameCBData->lights[i].isCastingShadow = mLights[i]->IsCastingShadow();
+		perFrameCBData->lights[i].isCastingShadow = false;
 		perFrameCBData->lights[i].shadowNearPlane = mLights[i]->GetShadowNearPlane();
 		perFrameCBData->lights[i].range = mLights[i]->GetRange();
 		perFrameCBData->lights[i].innerAngleCos = std::cos(ToRadians(mLights[i]->GetInnerAngle()));
@@ -1108,8 +1108,6 @@ auto Renderer::DrawFullWithCameras(std::span<RenderCamera const* const> const ca
 		return;
 	}
 
-	mResources->context->OMSetRenderTargets(1, &rtv, dsv);
-
 	ComPtr<ID3D11Resource> rtvResource;
 	rtv->GetResource(rtvResource.GetAddressOf());
 	ComPtr<ID3D11Texture2D> renderTarget;
@@ -1127,9 +1125,12 @@ auto Renderer::DrawFullWithCameras(std::span<RenderCamera const* const> const ca
 		.MaxDepth = 1
 	};
 
-	mResources->context->RSSetViewports(1, &viewport);
+	ID3D11SamplerState* const samplers[]{ mResources->hdrTextureSS.Get(), mResources->shadowSS.Get() };
+	mResources->context->PSSetSamplers(0, 2, samplers);
 
 	UpdatePerFrameCB();
+	mResources->context->VSSetConstantBuffers(0, 1, mResources->perFrameCB.GetAddressOf());
+	mResources->context->PSSetConstantBuffers(0, 1, mResources->perFrameCB.GetAddressOf());
 
 	for (auto const cam : cameras) {
 		auto const camPos{ cam->GetPosition() };
@@ -1148,6 +1149,19 @@ auto Renderer::DrawFullWithCameras(std::span<RenderCamera const* const> const ca
 		perCamCBufData->viewProjMat = viewProjMat;
 		perCamCBufData->camPos = camPos;
 		mResources->context->Unmap(mResources->perCamCB.Get(), 0);
+
+		//DrawShadowMaps(viewProjMat);
+		mResources->context->PSSetShaderResources(4, 1, mResources->spotPointShadowAtlas.srv.GetAddressOf());
+
+		mResources->context->VSSetShader(mResources->meshVS.Get(), nullptr, 0);
+		mResources->context->PSSetShader(mResources->meshPbrPS.Get(), nullptr, 0);
+
+		mResources->context->VSSetConstantBuffers(1, 1, mResources->perCamCB.GetAddressOf());
+		mResources->context->PSSetConstantBuffers(1, 1, mResources->perCamCB.GetAddressOf());
+
+		mResources->context->OMSetRenderTargets(1, &rtv, dsv);
+
+		mResources->context->RSSetViewports(1, &viewport);
 
 		DrawMeshes();
 		DrawSkybox(viewMat, projMat);
