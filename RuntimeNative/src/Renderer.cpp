@@ -57,7 +57,7 @@ struct LightCBufferData {
 
 struct PerFrameCBuffer {
 	LightCBufferData lights[MAX_LIGHT_COUNT];
-	int lightCount;
+	int lightCount{};
 };
 
 struct PerCamCBuffer {
@@ -652,7 +652,7 @@ auto Renderer::CreateShaders() const -> void {
 	}
 }
 
-auto Renderer::CreateSwapChain(ComPtr<IDXGIFactory2> const factory2) const -> void {
+auto Renderer::CreateSwapChain(IDXGIFactory2* const factory2) const -> void {
 	DXGI_SWAP_CHAIN_DESC1 const swapChainDesc1{
 		.Width = 0,
 		.Height = 0,
@@ -887,9 +887,9 @@ auto Renderer::DrawMeshes() const noexcept -> void {
 
 		auto const subMeshes{ mesh.GetSubMeshes() };
 
-		for (int i = 0; i < subMeshes.size(); i++) {
+		for (int i = 0; i < static_cast<int>(subMeshes.size()); i++) {
 			auto const& [baseVertex, firstIndex, indexCount]{ subMeshes[i] };
-			auto const& mtl{ materials.size() > i ? *materials[i] : *mResources->defaultMaterial };
+			auto const& mtl{ static_cast<int>(materials.size()) > i ? *materials[i] : *mResources->defaultMaterial };
 
 			ID3D11Buffer* const constantBuffers[]{ mResources->perFrameCB.Get(), mResources->perCamCB.Get(), mtl.GetBuffer(), mResources->perModelCB.Get() };
 			mResources->context->VSSetConstantBuffers(0, ARRAYSIZE(constantBuffers), constantBuffers);
@@ -1120,7 +1120,7 @@ auto Renderer::StartUp() -> void {
 	RecreateGameTexturesAndViews(gWindow.GetCurrentClientAreaSize().width, gWindow.GetCurrentClientAreaSize().height);
 	RecreateSceneTexturesAndViews(gWindow.GetCurrentClientAreaSize().width, gWindow.GetCurrentClientAreaSize().height);
 
-	CreateSwapChain(dxgiFactory2);
+	CreateSwapChain(dxgiFactory2.Get());
 	CreateInputLayouts();
 	CreateShaders();
 	CreateVertexAndIndexBuffers();
@@ -1203,7 +1203,7 @@ auto Renderer::GetSceneAspectRatio() const noexcept -> f32 {
 
 
 auto Renderer::BindAndClearSwapChain() const noexcept -> void {
-	FLOAT clearColor[]{ 0, 0, 0, 1 };
+	FLOAT constexpr clearColor[]{ 0, 0, 0, 1 };
 	mResources->context->ClearRenderTargetView(mResources->swapChainRtv.Get(), clearColor);
 	mResources->context->OMSetRenderTargets(1, mResources->swapChainRtv.GetAddressOf(), nullptr);
 }
