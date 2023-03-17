@@ -1151,6 +1151,138 @@ auto Renderer::DrawFullWithCameras(std::span<RenderCamera const* const> const ca
 	DoToneMapGammaCorrectionStep(srv, outRtv);
 }
 
+auto Renderer::DrawShadowMaps(Matrix4 const& camViewProj) const -> void {
+	std::vector<int> q1Lights;
+	q1Lights.clear();
+
+	std::vector<int> q2Lights;
+	q2Lights.clear();
+
+	std::vector<int> q3Lights;
+	q3Lights.clear();
+
+	std::vector<int> q4Lights;
+	q4Lights.clear();
+
+	for (int i = 0; i < static_cast<int>(mLights.size()); i++) {
+		if (auto const light{ mLights[i] }; light->IsCastingShadow()) {
+			switch (light->GetType()) {
+			case LightComponent::Type::Directional: {
+				break;
+			}
+
+			case LightComponent::Type::Spot: {
+				auto const boundXY{ std::tan(light->GetOuterAngle()) * light->GetRange() };
+				Vector4 const center{ 0, 0, 0, 1 };
+				Vector4 const rightTop{ boundXY, boundXY, light->GetRange(), 1 };
+				Vector4 const leftTop{ -boundXY, boundXY, light->GetRange(), 1 };
+				Vector4 const rightBottom{ boundXY, -boundXY, light->GetRange(), 1 };
+				Vector4 const leftBottom{ -boundXY, -boundXY, light->GetRange(), 1 };
+
+				auto const mvp{ light->GetEntity()->GetTransform().GetModelMatrix() * camViewProj };
+				auto const centerMvp{ center * mvp };
+				auto const rightTopMvp{ rightTop * mvp };
+				auto const leftTopMvp{ leftTop * mvp };
+				auto const rightBottomMvp{ rightBottom * mvp };
+				auto const leftBottomMvp{ leftBottom * mvp };
+
+				auto const centerMvpDiv{ centerMvp / centerMvp[3] };
+				auto const rightTopMvpDiv{ rightTopMvp / rightTopMvp[3] };
+				auto const leftTopMvpDiv{ leftTopMvp / leftTopMvp[3] };
+				auto const rightBottomMvpDiv{ rightBottomMvp / rightBottomMvp[3] };
+				auto const leftBottomMvpDiv{ leftBottomMvp / leftBottomMvp[3] };
+
+				Vector3 const boundsMin{
+					std::min(centerMvpDiv[0], std::min(rightTopMvpDiv[0], std::min(leftTopMvpDiv[0], std::min(leftBottomMvpDiv[0], rightBottomMvpDiv[0])))),
+					std::min(centerMvpDiv[1], std::min(rightTopMvpDiv[1], std::min(leftTopMvpDiv[1], std::min(leftBottomMvpDiv[1], rightBottomMvpDiv[1])))),
+					std::min(centerMvpDiv[2], std::min(rightTopMvpDiv[2], std::min(leftTopMvpDiv[2], std::min(leftBottomMvpDiv[2], rightBottomMvpDiv[2]))))
+				};
+
+				Vector3 const boundsMax{
+					std::max(centerMvpDiv[0], std::max(rightTopMvpDiv[0], std::max(leftTopMvpDiv[0], std::max(leftBottomMvpDiv[0], rightBottomMvpDiv[0])))),
+					std::max(centerMvpDiv[1], std::max(rightTopMvpDiv[1], std::max(leftTopMvpDiv[1], std::max(leftBottomMvpDiv[1], rightBottomMvpDiv[1])))),
+					std::max(centerMvpDiv[2], std::max(rightTopMvpDiv[2], std::max(leftTopMvpDiv[2], std::max(leftBottomMvpDiv[2], rightBottomMvpDiv[2]))))
+				};
+
+				auto const boundsWidth{ boundsMax[0] - boundsMin[0] };
+				auto const boundsHeight{ boundsMax[1] - boundsMin[0] };
+
+				auto const boundsArea{ boundsMax[2] > 0 ? boundsWidth * boundsHeight : 0 };
+				auto constexpr screenArea{ 4 };
+				auto const boundsAreaRatio{ boundsArea / screenArea };
+
+				if (boundsAreaRatio >= 1) {
+					q1Lights.emplace_back(i);
+				}
+				else if (boundsAreaRatio >= 0.25f) {
+					q2Lights.emplace_back(i);
+				}
+				else if (boundsAreaRatio >= 0.0625f) {
+					q3Lights.emplace_back(i);
+				}
+				else if (boundsAreaRatio >= 0.015625f) {
+					q4Lights.emplace_back(i);
+				}
+				else {
+					// No shadow
+				}
+
+				break;
+			}
+
+			case LightComponent::Type::Point: {
+				break;
+			}
+			}
+		}
+	}
+
+	ShadowAtlasAllocation newAlloc{};
+
+	auto constexpr setNewAllocTierIndices{
+		[](std::span<std::optional<ShadowGenerationData>> const targetSlots, std::vector<int>& nominatedLightIndices) {
+			for (auto& lightAlloc : targetSlots) {
+				if (nominatedLightIndices.empty()) {
+					break;
+				}
+
+				lightAlloc.emplace(Matrix4{}, nominatedLightIndices.back());
+				nominatedLightIndices.pop_back();
+			}
+		}
+	};
+
+	setNewAllocTierIndices({ &newAlloc.q1Light, 1 }, q1Lights);
+	std::ranges::copy(q1Lights, std::back_inserter(q2Lights));
+	setNewAllocTierIndices(newAlloc.q2Lights, q2Lights);
+	std::ranges::copy(q2Lights, std::back_inserter(q3Lights));
+	setNewAllocTierIndices(newAlloc.q3Lights, q3Lights);
+	std::ranges::copy(q3Lights, std::back_inserter(q4Lights));
+	setNewAllocTierIndices(newAlloc.q4Lights, q4Lights);
+
+	for (std::span<std::optional<ShadowGenerationData>> allocList : std::initializer_list<std::span<std::optional<ShadowGenerationData>>>{ std::span{ &newAlloc.q1Light, 1 }, std::span{ newAlloc.q2Lights }, std::span{ newAlloc.q3Lights }, std::span{ newAlloc.q4Lights } }) {
+		for (auto& lightAlloc : allocList) {
+			if (lightAlloc) {
+				auto const view{
+					Matrix4::LookToLH(mLights[lightAlloc->lightIdx]->GetEntity()->GetTransform().GetWorldPosition(),
+					                  mLights[lightAlloc->lightIdx]->GetEntity()->GetTransform().GetForwardAxis(),
+					                  Vector3::Up())
+				};
+				auto const proj{
+					Matrix4::PerspectiveAsymZLH(ToRadians(mLights[lightAlloc->lightIdx]->GetOuterAngle() * 2),
+					                            1.f,
+					                            0.1f,
+					                            mLights[lightAlloc->lightIdx]->GetRange())
+				};
+				lightAlloc->lightViewProj = view * proj;
+			}
+		}
+	}
+
+	mResources->context->OMSetRenderTargets(1, nullptr, mResources->spotPointShadowAtlas.dsv.Get());
+	//mResources->context
+}
+
 
 auto Renderer::StartUp() -> void {
 	mResources = new Resources{};

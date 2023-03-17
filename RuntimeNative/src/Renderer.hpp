@@ -14,6 +14,9 @@
 #include <dxgi1_6.h>
 #include <wrl/client.h>
 
+#include <array>
+#include <optional>
+
 
 namespace leopph {
 class Renderer {
@@ -90,6 +93,23 @@ class Renderer {
 		ShadowAtlas spotPointShadowAtlas;
 	};
 
+	struct ShadowGenerationData {
+		Matrix4 lightViewProj;
+		int lightIdx;
+	};
+
+#pragma warning(push)
+#pragma warning(disable: 4324)
+	struct ShadowAtlasAllocation {
+		std::optional<ShadowGenerationData> q1Light;
+		std::array<std::optional<ShadowGenerationData>, 4> q2Lights;
+		std::array<std::optional<ShadowGenerationData>, 16> q3Lights;
+		std::array<std::optional<ShadowGenerationData>, 64> q4Lights;
+	};
+#pragma warning(pop)
+
+	constexpr static int SPOT_POINT_SHADOW_ATLAS_SIZE{ 4096 };
+
 	auto RecreateGameTexturesAndViews(u32 width, u32 height) const -> void;
 	auto RecreateSceneTexturesAndViews(u32 width, u32 height) const -> void;
 	static auto on_window_resize(Renderer* self, Extent2D<u32> size) -> void;
@@ -112,6 +132,7 @@ class Renderer {
 	auto DoToneMapGammaCorrectionStep(ID3D11ShaderResourceView* src, ID3D11RenderTargetView* dst) const noexcept -> void;
 	auto DrawSkybox(Matrix4 const& camViewMtx, Matrix4 const& camProjMtx) const noexcept -> void;
 	auto DrawFullWithCameras(std::span<RenderCamera const* const> cameras, ID3D11RenderTargetView* rtv, ID3D11DepthStencilView* dsv, ID3D11ShaderResourceView* srv, ID3D11RenderTargetView* outRtv) const noexcept -> void;
+	auto DrawShadowMaps(Matrix4 const& camViewProj) const -> void;
 
 	Resources* mResources{ nullptr };
 	UINT mPresentFlags{ 0 };
@@ -126,6 +147,8 @@ class Renderer {
 	f32 mInvGamma{ 1.f / 2.2f };
 	std::vector<SkyboxComponent const*> mSkyboxes;
 	std::vector<RenderCamera const*> mGameRenderCameras;
+
+	ShadowAtlasAllocation mSpotPointShadowAtlasAlloc;
 
 public:
 	Renderer() noexcept = default;
