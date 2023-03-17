@@ -17,6 +17,14 @@
 
 namespace leopph {
 class Renderer {
+	struct ShadowAtlas {
+		Microsoft::WRL::ComPtr<ID3D11Texture2D> tex;
+		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv;
+		Microsoft::WRL::ComPtr<ID3D11DepthStencilView> dsv;
+		int width;
+		int height;
+	};
+
 	struct Resources {
 		Microsoft::WRL::ComPtr<ID3D11Device> device;
 		Microsoft::WRL::ComPtr<ID3D11DeviceContext> context;
@@ -78,6 +86,8 @@ class Renderer {
 
 		std::shared_ptr<Material> defaultMaterial;
 		std::shared_ptr<Mesh> cubeMesh;
+
+		ShadowAtlas spotPointShadowAtlas;
 	};
 
 	auto RecreateGameTexturesAndViews(u32 width, u32 height) const -> void;
@@ -95,6 +105,7 @@ class Renderer {
 	auto CreateConstantBuffers() const -> void;
 	auto CreateRasterizerStates() const -> void;
 	auto CreateDepthStencilStates() const -> void;
+	auto CreateShadowAtlases() const -> void;
 	auto CreateSamplerStates() const -> void;
 	auto DrawMeshes() const noexcept -> void;
 	auto UpdatePerFrameCB() const noexcept -> void;

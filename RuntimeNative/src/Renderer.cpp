@@ -863,6 +863,53 @@ auto Renderer::CreateDepthStencilStates() const -> void {
 	}
 }
 
+auto Renderer::CreateShadowAtlases() const -> void {
+	D3D11_TEXTURE2D_DESC constexpr spotPointTexDesc{
+		.Width = SPOT_POINT_SHADOW_ATLAS_SIZE,
+		.Height = SPOT_POINT_SHADOW_ATLAS_SIZE,
+		.MipLevels = 1,
+		.ArraySize = 1,
+		.Format = DXGI_FORMAT_R16_TYPELESS,
+		.SampleDesc = {
+			.Count = 1,
+			.Quality = 0
+		},
+		.Usage = D3D11_USAGE_DEFAULT,
+		.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE,
+		.CPUAccessFlags = 0,
+		.MiscFlags = 0
+	};
+
+	if (FAILED(mResources->device->CreateTexture2D(&spotPointTexDesc, nullptr, mResources->spotPointShadowAtlas.tex.GetAddressOf()))) {
+		throw std::runtime_error{ "Failed to create spot/point shadow atlas texture." };
+	}
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC constexpr spotPointSrvDesc{
+		.Format = DXGI_FORMAT_R16_UNORM,
+		.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D,
+		.Texture2D = {
+			.MostDetailedMip = 0,
+			.MipLevels = 1
+		}
+	};
+
+	if (FAILED(mResources->device->CreateShaderResourceView(mResources->spotPointShadowAtlas.tex.Get(), &spotPointSrvDesc, mResources->spotPointShadowAtlas.srv.GetAddressOf()))) {
+		throw std::runtime_error{ "Failed to create spot/point shadow atlas srv." };
+	}
+
+	D3D11_DEPTH_STENCIL_VIEW_DESC constexpr spotPointDsvDesc{
+		.Format = DXGI_FORMAT_D16_UNORM,
+		.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D,
+		.Flags = 0,
+		.Texture2D = {
+			.MipSlice = 0
+		}
+	};
+
+	if (FAILED(mResources->device->CreateDepthStencilView(mResources->spotPointShadowAtlas.tex.Get(), &spotPointDsvDesc, mResources->spotPointShadowAtlas.dsv.GetAddressOf()))) {
+		throw std::runtime_error{ "Failed to create spot/point shadow atlas dsv." };
+	}
+}
 
 auto Renderer::CreateSamplerStates() const -> void {
 	D3D11_SAMPLER_DESC constexpr hdrTextureSamplerDesc{
@@ -1147,6 +1194,7 @@ auto Renderer::StartUp() -> void {
 	CreateConstantBuffers();
 	CreateRasterizerStates();
 	CreateDepthStencilStates();
+	CreateShadowAtlases();
 	CreateSamplerStates();
 
 	gWindow.OnWindowSize.add_handler(this, &on_window_resize);
