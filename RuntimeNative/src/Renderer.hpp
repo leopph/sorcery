@@ -81,6 +81,7 @@ class Renderer {
 		Microsoft::WRL::ComPtr<ID3D11Buffer> quadIB;
 
 		Microsoft::WRL::ComPtr<ID3D11SamplerState> hdrTextureSS;
+		Microsoft::WRL::ComPtr<ID3D11SamplerState> materialSS;
 		Microsoft::WRL::ComPtr<ID3D11SamplerState> shadowSS;
 
 		Microsoft::WRL::ComPtr<ID3D11RasterizerState> skyboxPassRS;

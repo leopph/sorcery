@@ -926,8 +926,8 @@ auto Renderer::CreateSamplerStates() const -> void {
 		.MaxAnisotropy = 1,
 		.ComparisonFunc = D3D11_COMPARISON_NEVER,
 		.BorderColor = { 1, 1, 1, 1 },
-		.MinLOD = 0,
-		.MaxLOD = D3D11_FLOAT32_MAX
+		.MinLOD = -FLT_MAX,
+		.MaxLOD = FLT_MAX
 	};
 
 	if (FAILED(mResources->device->CreateSamplerState(&hdrTextureSamplerDesc, mResources->hdrTextureSS.GetAddressOf()))) {
@@ -949,6 +949,23 @@ auto Renderer::CreateSamplerStates() const -> void {
 
 	if (FAILED(mResources->device->CreateSamplerState(&shadowSamplerDesc, mResources->shadowSS.GetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create shadow sampler state." };
+	}
+
+	D3D11_SAMPLER_DESC constexpr materialSamplerDesc{
+		.Filter = D3D11_FILTER_ANISOTROPIC,
+		.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP,
+		.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP,
+		.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP,
+		.MipLODBias = 0,
+		.MaxAnisotropy = 16,
+		.ComparisonFunc = D3D11_COMPARISON_NEVER,
+		.BorderColor = { 1.0f, 1.0f, 1.0f, 1.0f },
+		.MinLOD = -FLT_MAX,
+		.MaxLOD = FLT_MAX
+	};
+
+	if (FAILED(mResources->device->CreateSamplerState(&materialSamplerDesc, mResources->materialSS.GetAddressOf()))) {
+		throw std::runtime_error{ "Failed to create material sampler state." };
 	}
 }
 
@@ -1125,8 +1142,8 @@ auto Renderer::DrawFullWithCameras(std::span<RenderCamera const* const> const ca
 		.MaxDepth = 1
 	};
 
-	ID3D11SamplerState* const samplers[]{ mResources->hdrTextureSS.Get(), mResources->shadowSS.Get() };
-	mResources->context->PSSetSamplers(0, 2, samplers);
+	std::array const samplers{ mResources->materialSS.Get(), mResources->shadowSS.Get() };
+	mResources->context->PSSetSamplers(0, static_cast<UINT>(samplers.size()), samplers.data());
 
 	UpdatePerFrameCB();
 	mResources->context->VSSetConstantBuffers(0, 1, mResources->perFrameCB.GetAddressOf());

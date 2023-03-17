@@ -111,9 +111,9 @@ float3 CalculateSpotLight(const float3 N, const float3 V, const float3 albedo, c
     lighting *= intensity;
     lighting *= CalculateAttenuation(dist);
 
-    if (light.isCastingShadow) {
+    /*if (light.isCastingShadow) {
         lighting *= SampleShadowMap(gSpotPointShadowAtlas, light, fragWorldPos);
-    }
+    }*/
     
     return lighting;
 }
