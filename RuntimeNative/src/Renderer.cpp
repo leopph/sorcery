@@ -53,6 +53,11 @@ struct LightCBufferData {
 
 	Vector3 position;
 	f32 outerAngleCos;
+
+	Vector2 shadowAtlasOffset;
+	Vector2 shadowAtlasScale;
+
+	Matrix4 lightSpaceMtx;
 };
 
 struct PerFrameCBuffer {

@@ -15,6 +15,11 @@ struct Light {
 
     float3 position;
     float outerAngleCos;
+
+    float2 shadowAtlasOffset;
+    float2 shadowAtlasScale;
+
+    float4x4 lightSpaceMtx;
 };
 
 #endif
