@@ -595,6 +595,7 @@ auto Renderer::SetDebugBreaks() const -> void {
 
 	d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_CORRUPTION, true);
 	d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_ERROR, true);
+	d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_WARNING, true);
 }
 
 auto Renderer::CheckTearingSupport(IDXGIFactory2* factory2) -> void {
@@ -1222,10 +1223,6 @@ auto Renderer::DrawFullWithCameras(std::span<RenderCamera const* const> const ca
 	mResources->context->ClearRenderTargetView(rtv, clearColor);
 	mResources->context->ClearDepthStencilView(dsv, D3D11_CLEAR_DEPTH, 1, 0);
 
-	if (mStaticMeshComponents.empty()) {
-		return;
-	}
-
 	ComPtr<ID3D11Resource> rtvResource;
 	rtv->GetResource(rtvResource.GetAddressOf());
 	ComPtr<ID3D11Texture2D> renderTarget;
@@ -1368,6 +1365,8 @@ auto Renderer::DrawFullWithCameras(std::span<RenderCamera const* const> const ca
 
 		mResources->context->VSSetShader(mResources->meshVS.Get(), nullptr, 0);
 
+		ID3D11ShaderResourceView* const nullSrv{ nullptr };
+		mResources->context->PSSetShaderResources(4, 1, &nullSrv);
 		DrawShadowMaps(visibleLights, viewProjMat);
 
 		mResources->context->VSSetShader(mResources->meshVS.Get(), nullptr, 0);
@@ -1385,6 +1384,7 @@ auto Renderer::DrawFullWithCameras(std::span<RenderCamera const* const> const ca
 		DrawSkybox(viewMat, projMat);
 	}
 
+	mResources->context->RSSetViewports(1, &viewport);
 	DoToneMapGammaCorrectionStep(srv, outRtv);
 }
 
