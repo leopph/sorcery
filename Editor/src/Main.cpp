@@ -383,7 +383,7 @@ auto DrawSceneViewWindow(Context& context) -> void {
 		ImGuizmo::AllowAxisFlip(false);
 		ImGuizmo::SetDrawlist();
 
-		static bool showGrid{ true };
+		static bool showGrid{ false };
 
 		if (GetKeyDown(Key::G)) {
 			showGrid = !showGrid;
