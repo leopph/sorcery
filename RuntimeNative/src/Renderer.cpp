@@ -1034,7 +1034,7 @@ auto Renderer::CreateSamplerStates() const -> void {
 		.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP,
 		.MipLODBias = 0,
 		.MaxAnisotropy = 1,
-		.ComparisonFunc = D3D11_COMPARISON_LESS,
+		.ComparisonFunc = D3D11_COMPARISON_LESS_EQUAL,
 		.BorderColor = { 1.0f, 1.0f, 1.0f, 1.0f },
 		.MinLOD = -FLT_MAX,
 		.MaxLOD = FLT_MAX

@@ -4,11 +4,14 @@
 Texture2D<float> gSpotPointShadowAtlas : register(t4);
 SamplerComparisonState gShadowSampler : register(s1);
 
-float SampleShadowMap(const Texture2D<float> shadowMap, const Light light, const float3 posW) {
+float SampleShadowMap(const Texture2D<float> shadowMap, const Light light, const float3 posW, const float3 N, const float3 L) {
     const float4 posLClip = mul(float4(posW, 1), light.lightSpaceMtx);
     float3 posLNdc = posLClip.xyz / posLClip.w;
     posLNdc.xy = posLNdc.xy * 0.5 + 0.5;
-    return shadowMap.SampleCmpLevelZero(gShadowSampler, posLNdc.xy * light.shadowAtlasScale + light.shadowAtlasOffset, posLNdc.z);
+    const float MIN_SHADOW_BIAS = 0.0001;
+    const float MAX_SHADOW_BIAS = 0.01;
+    const float bias = max(MAX_SHADOW_BIAS * (1.0 - dot(N, L)), MIN_SHADOW_BIAS);
+    return shadowMap.SampleCmpLevelZero(gShadowSampler, posLNdc.xy * light.shadowAtlasScale + light.shadowAtlasOffset, posLNdc.z - bias);
 }
 
 static const float PI = 3.14159265f;
@@ -112,7 +115,7 @@ float3 CalculateSpotLight(const float3 N, const float3 V, const float3 albedo, c
     lighting *= CalculateAttenuation(dist);
 
     if (light.isCastingShadow) {
-        lighting *= SampleShadowMap(gSpotPointShadowAtlas, light, fragWorldPos);
+        lighting *= SampleShadowMap(gSpotPointShadowAtlas, light, fragWorldPos, N, L);
     }
     
     return lighting;
