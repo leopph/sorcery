@@ -1272,24 +1272,29 @@ auto Renderer::DrawFullWithCameras(std::span<RenderCamera const* const> const ca
 
 			case LightComponent::Type::Spot: {
 				auto const range{ light->GetRange() };
-				auto const boundXY{ std::tan(light->GetOuterAngle()) * light->GetRange() };
-				Vector4 const center{ 0, 0, 0, 1 };
-				Vector4 const rightTop{ boundXY, boundXY, range, 1 };
-				Vector4 const leftTop{ -boundXY, boundXY, range, 1 };
-				Vector4 const rightBottom{ boundXY, -boundXY, range, 1 };
-				Vector4 const leftBottom{ -boundXY, -boundXY, range, 1 };
+				auto const boundXY{ std::tan(ToRadians(light->GetOuterAngle())) * range };
+				std::array const boundVertices{
+					Vector3{ 0, 0, 0.1f },
+					Vector3{ boundXY, boundXY, range },
+					Vector3{ -boundXY, boundXY, range },
+					Vector3{ boundXY, -boundXY, range },
+					Vector3{ -boundXY, -boundXY, range },
+				};
 
-				AABB const bounds{
-					.min = Vector3{
-						std::min(center[0], std::min(rightTop[0], std::min(leftTop[0], std::min(rightBottom[0], leftBottom[0])))),
-						std::min(center[1], std::min(rightTop[1], std::min(leftTop[1], std::min(rightBottom[1], leftBottom[1])))),
-						std::min(center[2], std::min(rightTop[2], std::min(leftTop[2], std::min(rightBottom[2], leftBottom[2]))))
-					},
-					.max = Vector3{
-						std::max(center[0], std::max(rightTop[0], std::max(leftTop[0], std::max(rightBottom[0], leftBottom[0])))),
-						std::max(center[1], std::max(rightTop[1], std::max(leftTop[1], std::max(rightBottom[1], leftBottom[1])))),
-						std::max(center[2], std::max(rightTop[2], std::max(leftTop[2], std::max(rightBottom[2], leftBottom[2]))))
-					}
+				auto const bounds{
+					[](std::span<Vector3 const> const vertices) {
+						AABB ret{
+							.min = Vector3{ std::numeric_limits<float>::max() },
+							.max = Vector3{ std::numeric_limits<float>::lowest() }
+						};
+
+						for (auto const& vertex : vertices) {
+							ret.min = Min(ret.min, vertex);
+							ret.max = Max(ret.max, vertex);
+						}
+
+						return ret;
+					}(boundVertices)
 				};
 
 				if (is_aabb_in_frustum(bounds, camFrust, light->GetEntity()->GetTransform().GetModelMatrix() * viewMat)) {
