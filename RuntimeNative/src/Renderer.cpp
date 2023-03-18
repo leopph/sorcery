@@ -1403,36 +1403,43 @@ auto Renderer::DrawShadowMaps(std::span<LightComponent const*> const camVisibleL
 			}
 
 			case LightComponent::Type::Spot: {
-				auto const boundXY{ std::tan(light->GetOuterAngle()) * light->GetRange() };
-				Vector4 const center{ 0, 0, 0, 1 };
-				Vector4 const rightTop{ boundXY, boundXY, light->GetRange(), 1 };
-				Vector4 const leftTop{ -boundXY, boundXY, light->GetRange(), 1 };
-				Vector4 const rightBottom{ boundXY, -boundXY, light->GetRange(), 1 };
-				Vector4 const leftBottom{ -boundXY, -boundXY, light->GetRange(), 1 };
-
-				auto const mvp{ light->GetEntity()->GetTransform().GetModelMatrix() * camViewProjMtx };
-				auto const centerMvp{ center * mvp };
-				auto const rightTopMvp{ rightTop * mvp };
-				auto const leftTopMvp{ leftTop * mvp };
-				auto const rightBottomMvp{ rightBottom * mvp };
-				auto const leftBottomMvp{ leftBottom * mvp };
-
-				auto const centerMvpDiv{ centerMvp / centerMvp[3] };
-				auto const rightTopMvpDiv{ rightTopMvp / rightTopMvp[3] };
-				auto const leftTopMvpDiv{ leftTopMvp / leftTopMvp[3] };
-				auto const rightBottomMvpDiv{ rightBottomMvp / rightBottomMvp[3] };
-				auto const leftBottomMvpDiv{ leftBottomMvp / leftBottomMvp[3] };
-
-				Vector3 const boundsMin{
-					std::min(centerMvpDiv[0], std::min(rightTopMvpDiv[0], std::min(leftTopMvpDiv[0], std::min(leftBottomMvpDiv[0], rightBottomMvpDiv[0])))),
-					std::min(centerMvpDiv[1], std::min(rightTopMvpDiv[1], std::min(leftTopMvpDiv[1], std::min(leftBottomMvpDiv[1], rightBottomMvpDiv[1])))),
-					std::min(centerMvpDiv[2], std::min(rightTopMvpDiv[2], std::min(leftTopMvpDiv[2], std::min(leftBottomMvpDiv[2], rightBottomMvpDiv[2]))))
+				auto const boundXY{ std::tan(ToRadians(light->GetOuterAngle())) * light->GetRange() };
+				std::array boundVertices{
+					Vector4{ 0, 0, 0.1f, 1 },
+					Vector4{ boundXY, boundXY, light->GetRange(), 1 },
+					Vector4{ -boundXY, boundXY, light->GetRange(), 1 },
+					Vector4{ boundXY, -boundXY, light->GetRange(), 1 },
+					Vector4{ -boundXY, -boundXY, light->GetRange(), 1 },
 				};
 
-				Vector3 const boundsMax{
-					std::max(centerMvpDiv[0], std::max(rightTopMvpDiv[0], std::max(leftTopMvpDiv[0], std::max(leftBottomMvpDiv[0], rightBottomMvpDiv[0])))),
-					std::max(centerMvpDiv[1], std::max(rightTopMvpDiv[1], std::max(leftTopMvpDiv[1], std::max(leftBottomMvpDiv[1], rightBottomMvpDiv[1])))),
-					std::max(centerMvpDiv[2], std::max(rightTopMvpDiv[2], std::max(leftTopMvpDiv[2], std::max(leftBottomMvpDiv[2], rightBottomMvpDiv[2]))))
+				auto const mvp{ light->GetEntity()->GetTransform().GetModelMatrix() * camViewProjMtx };
+				auto const clampMin{ Vector4{ -1, -1, 0, std::numeric_limits<float>::lowest() } };
+				auto const clampMax{ Vector4{ 1, 1, 1, std::numeric_limits<float>::max() } };
+
+				for (auto& boundVertex : boundVertices) {
+					boundVertex *= mvp;
+					boundVertex = boundVertex / boundVertex[3];
+					boundVertex = Clamp(boundVertex, clampMin, clampMax);
+				}
+
+				auto const boundsMin{
+					[&] {
+						Vector4 ret{ std::numeric_limits<float>::max() };
+						for (auto const& boundVertex : boundVertices) {
+							ret = Min(ret, boundVertex);
+						}
+						return ret;
+					}()
+				};
+
+				auto const boundsMax{
+					[&] {
+						Vector4 ret{ std::numeric_limits<float>::lowest() };
+						for (auto const& boundVertex : boundVertices) {
+							ret = Max(ret, boundVertex);
+						}
+						return ret;
+					}()
 				};
 
 				auto const boundsWidth{ boundsMax[0] - boundsMin[0] };
