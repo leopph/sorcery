@@ -96,7 +96,8 @@ class Renderer {
 	};
 
 	struct ShadowAtlasCellData {
-		Matrix4 lightViewProj;
+		Matrix4 lightViewMtx;
+		Matrix4 lightViewProjMtx;
 		int lightIdx;
 	};
 
@@ -142,7 +143,7 @@ class Renderer {
 	auto DoToneMapGammaCorrectionStep(ID3D11ShaderResourceView* src, ID3D11RenderTargetView* dst) const noexcept -> void;
 	auto DrawSkybox(Matrix4 const& camViewMtx, Matrix4 const& camProjMtx) const noexcept -> void;
 	auto DrawFullWithCameras(std::span<RenderCamera const* const> cameras, ID3D11RenderTargetView* rtv, ID3D11DepthStencilView* dsv, ID3D11ShaderResourceView* srv, ID3D11RenderTargetView* outRtv) noexcept -> void;
-	auto DrawShadowMaps(Matrix4 const& camViewProj, std::span<LightComponent const*> camVisibleLights, std::span<StaticMeshComponent const* const> camVisibleMeshes) -> void;
+	auto DrawShadowMaps(std::span<LightComponent const*> camVisibleLights, Matrix4 const& camViewProjMtx) -> void;
 
 	Resources* mResources{ nullptr };
 	UINT mPresentFlags{ 0 };

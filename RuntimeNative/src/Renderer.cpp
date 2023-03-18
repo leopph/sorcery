@@ -59,7 +59,7 @@ struct LightCBufferData {
 	Vector2 shadowAtlasOffset;
 	Vector2 shadowAtlasScale;
 
-	Matrix4 lightSpaceMtx;
+	Matrix4 lightViewProjMtx;
 };
 
 struct PerFrameCBuffer {};
@@ -96,7 +96,7 @@ struct SkyboxCBData {
 };
 
 struct ShadowCBData {
-	Matrix4 lightVPMtx;
+	Matrix4 lightViewProjMtx;
 };
 
 
@@ -1348,7 +1348,7 @@ auto Renderer::DrawFullWithCameras(std::span<RenderCamera const* const> const ca
 			for (int j = 0; j < static_cast<int>(cells.size()); j++) {
 				if (cells[j]) {
 					perCamCBufData->lights[cells[j]->lightIdx].isCastingShadow = true;
-					perCamCBufData->lights[cells[j]->lightIdx].lightSpaceMtx = cells[j]->lightViewProj;
+					perCamCBufData->lights[cells[j]->lightIdx].lightViewProjMtx = cells[j]->lightViewProjMtx;
 					perCamCBufData->lights[cells[j]->lightIdx].shadowAtlasOffset = mSpotPointShadowAtlasAlloc.GetCellOffsetNormalized(i, j);
 					perCamCBufData->lights[cells[j]->lightIdx].shadowAtlasScale = Vector2{ 0.5f / static_cast<float>(quadrantRowColCount) };
 				}
@@ -1368,7 +1368,7 @@ auto Renderer::DrawFullWithCameras(std::span<RenderCamera const* const> const ca
 
 		mResources->context->VSSetShader(mResources->meshVS.Get(), nullptr, 0);
 
-		DrawShadowMaps(viewProjMat, visibleLights, visibleMeshes);
+		DrawShadowMaps(visibleLights, viewProjMat);
 
 		mResources->context->VSSetShader(mResources->meshVS.Get(), nullptr, 0);
 		mResources->context->PSSetShader(mResources->meshPbrPS.Get(), nullptr, 0);
@@ -1388,7 +1388,7 @@ auto Renderer::DrawFullWithCameras(std::span<RenderCamera const* const> const ca
 	DoToneMapGammaCorrectionStep(srv, outRtv);
 }
 
-auto Renderer::DrawShadowMaps(Matrix4 const& camViewProj, std::span<LightComponent const*> const camVisibleLights, std::span<StaticMeshComponent const* const> const camVisibleMeshes) -> void {
+auto Renderer::DrawShadowMaps(std::span<LightComponent const*> const camVisibleLights, Matrix4 const& camViewProjMtx) -> void {
 	std::array<std::vector<int>, 4> static lightsPerQuadrant{};
 
 	for (auto& quadrantLights : lightsPerQuadrant) {
@@ -1410,7 +1410,7 @@ auto Renderer::DrawShadowMaps(Matrix4 const& camViewProj, std::span<LightCompone
 				Vector4 const rightBottom{ boundXY, -boundXY, light->GetRange(), 1 };
 				Vector4 const leftBottom{ -boundXY, -boundXY, light->GetRange(), 1 };
 
-				auto const mvp{ light->GetEntity()->GetTransform().GetModelMatrix() * camViewProj };
+				auto const mvp{ light->GetEntity()->GetTransform().GetModelMatrix() * camViewProjMtx };
 				auto const centerMvp{ center * mvp };
 				auto const rightTopMvp{ rightTop * mvp };
 				auto const leftTopMvp{ leftTop * mvp };
@@ -1491,7 +1491,7 @@ auto Renderer::DrawShadowMaps(Matrix4 const& camViewProj, std::span<LightCompone
 				                            mLights[lightsPerQuadrant[i].back()]->GetRange())
 			};
 
-			cell.emplace(lightViewMtx * lightProjMtx, lightsPerQuadrant[i].back());
+			cell.emplace(lightViewMtx, lightViewMtx * lightProjMtx, lightsPerQuadrant[i].back());
 			lightsPerQuadrant[i].pop_back();
 		}
 
@@ -1529,10 +1529,46 @@ auto Renderer::DrawShadowMaps(Matrix4 const& camViewProj, std::span<LightCompone
 
 				D3D11_MAPPED_SUBRESOURCE mapped;
 				mResources->context->Map(mResources->shadowCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
-				static_cast<ShadowCBData*>(mapped.pData)->lightVPMtx = cells[j]->lightViewProj;
+				static_cast<ShadowCBData*>(mapped.pData)->lightViewProjMtx = cells[j]->lightViewProjMtx;
 				mResources->context->Unmap(mResources->shadowCB.Get(), 0);
 
-				DrawMeshes(camVisibleMeshes, false);
+				std::vector<StaticMeshComponent const*> static lightVisibleMeshComponents;
+				lightVisibleMeshComponents.clear();
+
+				auto const lightFrustum{
+					[](LightComponent const* const light) -> Frustum {
+						switch (light->GetType()) {
+						case LightComponent::Type::Spot: {
+							float constexpr nearClipPlane{ 0.1f };
+							float const farClipPlane{ light->GetRange() };
+							auto const radius{ std::tan(light->GetOuterAngle()) * light->GetRange() };
+
+							return Frustum{
+								.rightTopNear = Vector3{ radius, radius, nearClipPlane },
+								.leftTopNear = Vector3{ -radius, radius, nearClipPlane },
+								.leftBottomNear = Vector3{ -radius, -radius, nearClipPlane },
+								.rightBottomNear = Vector3{ radius, -radius, nearClipPlane },
+								.rightTopFar = Vector3{ radius, radius, farClipPlane },
+								.leftTopFar = Vector3{ -radius, radius, farClipPlane },
+								.leftBottomFar = Vector3{ -radius, -radius, farClipPlane },
+								.rightBottomFar = Vector3{ radius, -radius, farClipPlane }
+							};
+						}
+
+						default: {
+							return {};
+						}
+						}
+					}(mLights[cells[j]->lightIdx])
+				};
+
+				for (auto const meshComponent : mStaticMeshComponents) {
+					if (is_aabb_in_frustum(meshComponent->GetMesh().GetBounds(), lightFrustum, meshComponent->GetEntity()->GetTransform().GetModelMatrix() * cells[j]->lightViewMtx)) {
+						lightVisibleMeshComponents.emplace_back(meshComponent);
+					}
+				}
+
+				DrawMeshes(lightVisibleMeshComponents, false);
 			}
 		}
 	}
