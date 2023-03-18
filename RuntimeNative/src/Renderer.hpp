@@ -61,6 +61,7 @@ class Renderer {
 		Microsoft::WRL::ComPtr<ID3D11PixelShader> toneMapGammaPS;
 		Microsoft::WRL::ComPtr<ID3D11PixelShader> skyboxPS;
 		Microsoft::WRL::ComPtr<ID3D11VertexShader> skyboxVS;
+		Microsoft::WRL::ComPtr<ID3D11VertexShader> shadowVS;
 
 		Microsoft::WRL::ComPtr<ID3D11Buffer> perFrameCB;
 		Microsoft::WRL::ComPtr<ID3D11Buffer> perCamCB;
@@ -68,6 +69,7 @@ class Renderer {
 		Microsoft::WRL::ComPtr<ID3D11Buffer> clearColorCB;
 		Microsoft::WRL::ComPtr<ID3D11Buffer> toneMapGammaCB;
 		Microsoft::WRL::ComPtr<ID3D11Buffer> skyboxCB;
+		Microsoft::WRL::ComPtr<ID3D11Buffer> shadowCB;
 
 		Microsoft::WRL::ComPtr<ID3D11InputLayout> meshIL;
 		Microsoft::WRL::ComPtr<ID3D11InputLayout> quadIL;
@@ -92,18 +94,26 @@ class Renderer {
 		ShadowAtlas spotPointShadowAtlas;
 	};
 
-	struct ShadowGenerationData {
+	struct ShadowAtlasCellData {
 		Matrix4 lightViewProj;
 		int lightIdx;
 	};
 
 #pragma warning(push)
 #pragma warning(disable: 4324)
-	struct ShadowAtlasAllocation {
-		std::optional<ShadowGenerationData> q1Light;
-		std::array<std::optional<ShadowGenerationData>, 4> q2Lights;
-		std::array<std::optional<ShadowGenerationData>, 16> q3Lights;
-		std::array<std::optional<ShadowGenerationData>, 64> q4Lights;
+	class ShadowAtlasAllocation {
+		std::optional<ShadowAtlasCellData> q1Light;
+		std::array<std::optional<ShadowAtlasCellData>, 4> q2Lights;
+		std::array<std::optional<ShadowAtlasCellData>, 16> q3Lights;
+		std::array<std::optional<ShadowAtlasCellData>, 64> q4Lights;
+
+	public:
+		[[nodiscard]] auto GetSize() const noexcept -> int;
+		[[nodiscard]] auto GetQuadrantCells(int idx) -> std::span<std::optional<ShadowAtlasCellData>>;
+		[[nodiscard]] auto GetQuadrantRowColCount(int idx) const -> int;
+		[[nodiscard]] auto GetQuadrantCellSizeNormalized(int idx) const -> float;
+		[[nodiscard]] auto GetQuadrantOffsetNormalized(int idx) const -> Vector2;
+		[[nodiscard]] auto GetCellOffsetNormalized(int quadrantIdx, int cellIdx) const -> Vector2;
 	};
 #pragma warning(pop)
 

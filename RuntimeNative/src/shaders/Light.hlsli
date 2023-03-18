@@ -19,7 +19,7 @@ struct Light {
     float2 shadowAtlasOffset;
     float2 shadowAtlasScale;
 
-    float4x4 lightSpaceMtx;
+    row_major float4x4 lightSpaceMtx;
 };
 
 #endif

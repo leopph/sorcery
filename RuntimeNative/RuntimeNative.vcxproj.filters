@@ -218,5 +218,6 @@
     <FxCompile Include="src\shaders\TexturedQuadVS.hlsl" />
     <FxCompile Include="src\shaders\SkyboxVS.hlsl" />
     <FxCompile Include="src\shaders\SkyboxPS.hlsl" />
+    <FxCompile Include="src\shaders\ShadowVS.hlsl" />
   </ItemGroup>
 </Project>

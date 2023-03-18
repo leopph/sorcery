@@ -17,6 +17,7 @@
 #include "shaders/generated/ToneMapGammaPSBinDebug.h"
 #include "shaders/generated/SkyboxPSBinDebug.h"
 #include "shaders/generated/SkyboxVSBinDebug.h"
+#include "shaders/generated/ShadowVSBinDebug.h"
 
 #else
 #include "shaders/generated/ClearColorPSBin.h"
@@ -28,6 +29,7 @@
 #include "shaders/generated/ToneMapGammaPSBin.h"
 #include "shaders/generated/SkyboxPSBin.h"
 #include "shaders/generated/SkyboxVSBin.h"
+#include "shaders/generated/ShadowVSBin.h"
 #endif
 
 #include <cassert>
@@ -91,6 +93,10 @@ struct ToneMapGammaCBData {
 
 struct SkyboxCBData {
 	Matrix4 viewProjMtx;
+};
+
+struct ShadowCBData {
+	Matrix4 lightVPMtx;
 };
 
 
@@ -231,6 +237,77 @@ std::vector<UINT> const CUBE_INDICES{
 };
 }
 
+
+auto Renderer::ShadowAtlasAllocation::GetSize() const noexcept -> int {
+	return SPOT_POINT_SHADOW_ATLAS_SIZE;
+}
+
+auto Renderer::ShadowAtlasAllocation::GetQuadrantCells(int const idx) -> std::span<std::optional<ShadowAtlasCellData>> {
+	switch (idx) {
+	case 0: {
+		return std::span{ &q1Light, 1 };
+	}
+	case 1: {
+		return std::span{ q2Lights };
+	}
+	case 2: {
+		return std::span{ q3Lights };
+	}
+	case 3: {
+		return std::span{ q4Lights };
+	}
+	default: {
+		throw std::out_of_range{ "Shadow atlas quadrant index out of bounds." };
+	}
+	}
+}
+
+auto Renderer::ShadowAtlasAllocation::GetQuadrantRowColCount(int const idx) const -> int {
+	if (idx > 3 || idx < 0) {
+		throw std::out_of_range{ "Shadow atlas quadrant index out of bounds." };
+	}
+
+	return Pow(2, idx);
+}
+
+auto Renderer::ShadowAtlasAllocation::GetQuadrantCellSizeNormalized(int const idx) const -> float {
+	return 0.5f / static_cast<float>(GetQuadrantRowColCount(idx));
+}
+
+auto Renderer::ShadowAtlasAllocation::GetQuadrantOffsetNormalized(int const idx) const -> Vector2 {
+	switch (idx) {
+	case 0: {
+		return Vector2{ 0 };
+	}
+	case 1: {
+		return Vector2{ 0.5f, 0 };
+	}
+	case 2: {
+		return Vector2{ 0, 0.5f };
+	}
+	case 3: {
+		return Vector2{ 0.5f };
+	}
+	default: {
+		throw std::out_of_range{ "Shadow atlas quadrant index out of bounds." };
+	}
+	}
+}
+
+auto Renderer::ShadowAtlasAllocation::GetCellOffsetNormalized(int const quadrantIdx, int const cellIdx) const -> Vector2 {
+	auto const rowColCount{ GetQuadrantRowColCount(quadrantIdx) };
+
+	if (cellIdx < 0 || cellIdx > Pow(rowColCount, 2)) {
+		throw std::out_of_range{ "Shadow atlas cell index out of bounds." };
+	}
+
+	auto const quadrantOffset{ GetQuadrantOffsetNormalized(quadrantIdx) };
+	auto const cellSizeNorm{ GetQuadrantCellSizeNormalized(quadrantIdx) };
+	auto const rowIdx{ cellIdx / rowColCount };
+	auto const colIdx{ cellIdx % rowColCount };
+
+	return quadrantOffset + Vector2{ static_cast<float>(colIdx) * cellSizeNorm, static_cast<float>(rowIdx) * cellSizeNorm };
+}
 
 auto Renderer::RecreateGameTexturesAndViews(u32 const width, u32 const height) const -> void {
 	D3D11_TEXTURE2D_DESC const hdrTexDesc{
@@ -654,6 +731,10 @@ auto Renderer::CreateShaders() const -> void {
 	if (FAILED(mResources->device->CreatePixelShader(gSkyboxPSBin, ARRAYSIZE(gSkyboxPSBin), nullptr, mResources->skyboxPS.ReleaseAndGetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create skybox pixel shader." };
 	}
+
+	if (FAILED(mResources->device->CreateVertexShader(gShadowVSBin, ARRAYSIZE(gShadowVSBin), nullptr, mResources->shadowVS.GetAddressOf()))) {
+		throw std::runtime_error{ "Failed to create shadow vertex shader." };
+	}
 }
 
 auto Renderer::CreateSwapChain(IDXGIFactory2* const factory2) const -> void {
@@ -818,6 +899,19 @@ auto Renderer::CreateConstantBuffers() const -> void {
 
 	if (FAILED(mResources->device->CreateBuffer(&skyboxCBDesc, nullptr, mResources->skyboxCB.GetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create skybox pass constant buffer." };
+	}
+
+	D3D11_BUFFER_DESC constexpr shadowCBDesc{
+		.ByteWidth = clamp_cast<UINT>(RoundToNextMultiple(sizeof(ShadowCBData), 16)),
+		.Usage = D3D11_USAGE_DYNAMIC,
+		.BindFlags = D3D11_BIND_CONSTANT_BUFFER,
+		.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
+		.MiscFlags = 0,
+		.StructureByteStride = 0
+	};
+
+	if (FAILED(mResources->device->CreateBuffer(&shadowCBDesc, nullptr, mResources->shadowCB.GetAddressOf()))) {
+		throw std::runtime_error{ "Failed to create shadow constant buffer." };
 	}
 }
 
@@ -1243,22 +1337,19 @@ auto Renderer::DrawFullWithCameras(std::span<RenderCamera const* const> const ca
 			perCamCBufData->lights[i].position = visibleLights[i]->GetEntity()->GetTransform().GetWorldPosition();
 		}
 
-		int quadrantIdx{ 0 };
-		/*for (std::span<std::optional<ShadowGenerationData>> const lights : { std::span{ &mSpotPointShadowAtlasAlloc.q1Light, 1 }, std::span{ mSpotPointShadowAtlasAlloc.q2Lights }, std::span{ mSpotPointShadowAtlasAlloc.q3Lights }, std::span{ mSpotPointShadowAtlasAlloc.q4Lights } }) {
-			auto const quadrantCellCount{ Pow(2, 2 * quadrantIdx) };
-			auto const quadrantRowColCount{ Pow(2, quadrantIdx) };
-			auto const quadrantCellSize{ SPOT_POINT_SHADOW_ATLAS_SIZE * 0.25f * 1.0f / quadrantRowColCount };
-			//auto const quadrantTopLeft{} TODO
+		for (int i = 0; i < 4; i++) {
+			auto const cells{ mSpotPointShadowAtlasAlloc.GetQuadrantCells(i) };
+			auto const quadrantRowColCount{ mSpotPointShadowAtlasAlloc.GetQuadrantRowColCount(i) };
 
-			for (auto const& light : lights) {
-				if (light) {
-					/*perCamCBufData->lights[light->lightIdx].isCastingShadow = true;
-					perCamCBufData->lights[light->lightIdx].lightSpaceMtx = light->lightViewProj;
-					perCamCBufData->lights[light->lightIdx].shadowAtlasOffset = 0;
-					perCamCBufData->lights[light->lightIdx].shadowAtlasScale = 0; TODO 
+			for (int j = 0; j < static_cast<int>(cells.size()); j++) {
+				if (cells[j]) {
+					perCamCBufData->lights[cells[j]->lightIdx].isCastingShadow = true;
+					perCamCBufData->lights[cells[j]->lightIdx].lightSpaceMtx = cells[j]->lightViewProj;
+					perCamCBufData->lights[cells[j]->lightIdx].shadowAtlasOffset = mSpotPointShadowAtlasAlloc.GetCellOffsetNormalized(i, j);
+					perCamCBufData->lights[cells[j]->lightIdx].shadowAtlasScale = Vector2{ 0.5f / static_cast<float>(quadrantRowColCount) };
 				}
 			}
-		}*/
+		}
 
 		mResources->context->Unmap(mResources->perCamCB.Get(), 0);
 
@@ -1275,6 +1366,7 @@ auto Renderer::DrawFullWithCameras(std::span<RenderCamera const* const> const ca
 
 		DrawShadowMaps(viewProjMat, visibleLights, visibleMeshes);
 
+		mResources->context->VSSetShader(mResources->meshVS.Get(), nullptr, 0);
 		mResources->context->PSSetShader(mResources->meshPbrPS.Get(), nullptr, 0);
 
 		mResources->context->VSSetConstantBuffers(1, 1, mResources->perCamCB.GetAddressOf());
@@ -1293,17 +1385,11 @@ auto Renderer::DrawFullWithCameras(std::span<RenderCamera const* const> const ca
 }
 
 auto Renderer::DrawShadowMaps(Matrix4 const& camViewProj, std::span<LightComponent const*> const camVisibleLights, std::span<StaticMeshComponent const* const> const camVisibleMeshes) -> void {
-	std::vector<int> static q1Lights;
-	q1Lights.clear();
+	std::array<std::vector<int>, 4> static lightsPerQuadrant{};
 
-	std::vector<int> static q2Lights;
-	q2Lights.clear();
-
-	std::vector<int> static q3Lights;
-	q3Lights.clear();
-
-	std::vector<int> static q4Lights;
-	q4Lights.clear();
+	for (auto& quadrantLights : lightsPerQuadrant) {
+		quadrantLights.clear();
+	}
 
 	for (int i = 0; i < static_cast<int>(camVisibleLights.size()); i++) {
 		if (auto const light{ camVisibleLights[i] }; light->IsCastingShadow()) {
@@ -1352,20 +1438,23 @@ auto Renderer::DrawShadowMaps(Matrix4 const& camViewProj, std::span<LightCompone
 				auto constexpr screenArea{ 4 };
 				auto const boundsAreaRatio{ boundsArea / screenArea };
 
+				std::optional<int> quadrantIdx;
+
 				if (boundsAreaRatio >= 1) {
-					q1Lights.emplace_back(i);
+					quadrantIdx = 0;
 				}
 				else if (boundsAreaRatio >= 0.25f) {
-					q2Lights.emplace_back(i);
+					quadrantIdx = 1;
 				}
 				else if (boundsAreaRatio >= 0.0625f) {
-					q3Lights.emplace_back(i);
+					quadrantIdx = 2;
 				}
 				else if (boundsAreaRatio >= 0.015625f) {
-					q4Lights.emplace_back(i);
+					quadrantIdx = 3;
 				}
-				else {
-					// No shadow
+
+				if (quadrantIdx) {
+					lightsPerQuadrant[*quadrantIdx].emplace_back(i);
 				}
 
 				break;
@@ -1380,99 +1469,67 @@ auto Renderer::DrawShadowMaps(Matrix4 const& camViewProj, std::span<LightCompone
 
 	ShadowAtlasAllocation newAlloc{};
 
-	auto constexpr setNewAllocTierIndices{
-		[](std::span<std::optional<ShadowGenerationData>> const targetSlots, std::vector<int>& nominatedLightIndices) {
-			for (auto& lightAlloc : targetSlots) {
-				if (nominatedLightIndices.empty()) {
-					break;
-				}
-
-				lightAlloc.emplace(Matrix4{}, nominatedLightIndices.back());
-				nominatedLightIndices.pop_back();
+	for (int i = 0; i < 4; i++) {
+		for (auto& cell : newAlloc.GetQuadrantCells(i)) {
+			if (lightsPerQuadrant[i].empty()) {
+				break;
 			}
+
+			auto const lightViewMtx{
+				Matrix4::LookToLH(mLights[lightsPerQuadrant[i].back()]->GetEntity()->GetTransform().GetWorldPosition(),
+				                  mLights[lightsPerQuadrant[i].back()]->GetEntity()->GetTransform().GetForwardAxis(),
+				                  Vector3::Up())
+			};
+			auto const lightProjMtx{
+				Matrix4::PerspectiveAsymZLH(ToRadians(mLights[lightsPerQuadrant[i].back()]->GetOuterAngle() * 2),
+				                            1.f,
+				                            0.1f,
+				                            mLights[lightsPerQuadrant[i].back()]->GetRange())
+			};
+
+			cell.emplace(lightViewMtx * lightProjMtx, lightsPerQuadrant[i].back());
+			lightsPerQuadrant[i].pop_back();
 		}
-	};
 
-	setNewAllocTierIndices({ &newAlloc.q1Light, 1 }, q1Lights);
-	std::ranges::copy(q1Lights, std::back_inserter(q2Lights));
-	setNewAllocTierIndices(newAlloc.q2Lights, q2Lights);
-	std::ranges::copy(q2Lights, std::back_inserter(q3Lights));
-	setNewAllocTierIndices(newAlloc.q3Lights, q3Lights);
-	std::ranges::copy(q3Lights, std::back_inserter(q4Lights));
-	setNewAllocTierIndices(newAlloc.q4Lights, q4Lights);
-
-	for (std::span<std::optional<ShadowGenerationData>> allocList : std::initializer_list<std::span<std::optional<ShadowGenerationData>>>{ std::span{ &newAlloc.q1Light, 1 }, std::span{ newAlloc.q2Lights }, std::span{ newAlloc.q3Lights }, std::span{ newAlloc.q4Lights } }) {
-		for (auto& lightAlloc : allocList) {
-			if (lightAlloc) {
-				auto const view{
-					Matrix4::LookToLH(mLights[lightAlloc->lightIdx]->GetEntity()->GetTransform().GetWorldPosition(),
-					                  mLights[lightAlloc->lightIdx]->GetEntity()->GetTransform().GetForwardAxis(),
-					                  Vector3::Up())
-				};
-				auto const proj{
-					Matrix4::PerspectiveAsymZLH(ToRadians(mLights[lightAlloc->lightIdx]->GetOuterAngle() * 2),
-					                            1.f,
-					                            0.1f,
-					                            mLights[lightAlloc->lightIdx]->GetRange())
-				};
-				lightAlloc->lightViewProj = view * proj;
-			}
+		if (i + 1 < 4) {
+			std::ranges::copy(lightsPerQuadrant[i], std::back_inserter(lightsPerQuadrant[i + 1]));
 		}
 	}
 
 	mSpotPointShadowAtlasAlloc = newAlloc;
 
 	mResources->context->OMSetRenderTargets(0, nullptr, mResources->spotPointShadowAtlas.dsv.Get());
+	mResources->context->ClearDepthStencilView(mResources->spotPointShadowAtlas.dsv.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+	mResources->context->VSSetShader(mResources->shadowVS.Get(), nullptr, 0);
 	mResources->context->PSSetShader(nullptr, nullptr, 0);
+	mResources->context->VSSetConstantBuffers(4, 1, mResources->shadowCB.GetAddressOf());
 
-	struct QuadrantRenderHelper {
-		std::span<std::optional<ShadowGenerationData>> lights;
-		int cellCount;
-		Vector2 baseOffset;
-	};
+	for (int i = 0; i < 4; i++) {
+		auto const cells{ mSpotPointShadowAtlasAlloc.GetQuadrantCells(i) };
+		auto const cellSize{ mSpotPointShadowAtlasAlloc.GetQuadrantCellSizeNormalized(i) * static_cast<float>(mSpotPointShadowAtlasAlloc.GetSize()) };
 
-	std::array const quadrantRenderHelpers{
-		QuadrantRenderHelper{
-			.lights = std::span{ &mSpotPointShadowAtlasAlloc.q1Light, 1 },
-			.cellCount = 1,
-			.baseOffset = Vector2{ 0, 0 }
-		},
+		for (int j = 0; j < static_cast<int>(cells.size()); j++) {
+			if (cells[j]) {
+				auto const cellOffset{ mSpotPointShadowAtlasAlloc.GetCellOffsetNormalized(i, j) * static_cast<float>(mSpotPointShadowAtlasAlloc.GetSize()) };
 
-		QuadrantRenderHelper{
-			.lights = mSpotPointShadowAtlasAlloc.q2Lights,
-			.cellCount = 4,
-			.baseOffset = Vector2{ SPOT_POINT_SHADOW_ATLAS_SIZE * 0.5f, 0 }
-		},
+				D3D11_VIEWPORT const viewport{
+					.TopLeftX = cellOffset[0],
+					.TopLeftY = cellOffset[1],
+					.Width = static_cast<float>(cellSize),
+					.Height = static_cast<float>(cellSize),
+					.MinDepth = 0,
+					.MaxDepth = 1
+				};
 
-		QuadrantRenderHelper{
-			.lights = mSpotPointShadowAtlasAlloc.q3Lights,
-			.cellCount = 16,
-			.baseOffset = Vector2{ 0, SPOT_POINT_SHADOW_ATLAS_SIZE * 0.5f }
-		},
+				mResources->context->RSSetViewports(1, &viewport);
 
-		QuadrantRenderHelper{
-			.lights = mSpotPointShadowAtlasAlloc.q4Lights,
-			.cellCount = 64,
-			.baseOffset = Vector2{ SPOT_POINT_SHADOW_ATLAS_SIZE * 0.5f }
-		},
-	};
+				D3D11_MAPPED_SUBRESOURCE mapped;
+				mResources->context->Map(mResources->shadowCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
+				static_cast<ShadowCBData*>(mapped.pData)->lightVPMtx = cells[j]->lightViewProj;
+				mResources->context->Unmap(mResources->shadowCB.Get(), 0);
 
-	for (auto const& [lights, cellCount, baseOffset] : quadrantRenderHelpers) {
-		auto const rowCount{ static_cast<int>(std::sqrt(cellCount)) };
-		auto const cellSize{ SPOT_POINT_SHADOW_ATLAS_SIZE / rowCount };
-
-		for (int i = 0; i < lights.size(); i++) {
-			D3D11_VIEWPORT const viewport{
-				.TopLeftX = baseOffset[0] + static_cast<float>(i % rowCount * cellSize),
-				.TopLeftY = baseOffset[1] + static_cast<float>(i / rowCount * cellSize),
-				.Width = static_cast<float>(cellSize),
-				.Height = static_cast<float>(cellSize),
-				.MinDepth = 0,
-				.MaxDepth = 1
-			};
-
-			mResources->context->RSSetViewports(1, &viewport);
-			DrawMeshes(camVisibleMeshes, false);
+				DrawMeshes(camVisibleMeshes, false);
+			}
 		}
 	}
 }
