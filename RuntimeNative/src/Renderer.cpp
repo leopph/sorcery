@@ -1321,6 +1321,21 @@ auto Renderer::DrawFullWithCameras(std::span<RenderCamera const* const> const ca
 			}
 		}
 
+		std::vector<StaticMeshComponent const*> static visibleMeshes;
+		visibleMeshes.clear();
+
+		for (auto const meshComponent : mStaticMeshComponents) {
+			if (is_aabb_in_frustum(meshComponent->GetMesh().GetBounds(), camFrust, meshComponent->GetEntity()->GetTransform().GetModelMatrix() * viewMat)) {
+				visibleMeshes.emplace_back(meshComponent);
+			}
+		}
+
+		mResources->context->VSSetShader(mResources->meshVS.Get(), nullptr, 0);
+
+		ID3D11ShaderResourceView* const nullSrv{ nullptr };
+		mResources->context->PSSetShaderResources(4, 1, &nullSrv);
+		DrawShadowMaps(visibleLights, viewProjMat);
+
 		D3D11_MAPPED_SUBRESOURCE mappedPerCamCBuf;
 		mResources->context->Map(mResources->perCamCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerCamCBuf);
 		auto const perCamCBufData{ static_cast<PerCamCBuffer*>(mappedPerCamCBuf.pData) };
@@ -1358,21 +1373,6 @@ auto Renderer::DrawFullWithCameras(std::span<RenderCamera const* const> const ca
 		}
 
 		mResources->context->Unmap(mResources->perCamCB.Get(), 0);
-
-		std::vector<StaticMeshComponent const*> static visibleMeshes;
-		visibleMeshes.clear();
-
-		for (auto const meshComponent : mStaticMeshComponents) {
-			if (is_aabb_in_frustum(meshComponent->GetMesh().GetBounds(), camFrust, meshComponent->GetEntity()->GetTransform().GetModelMatrix() * viewMat)) {
-				visibleMeshes.emplace_back(meshComponent);
-			}
-		}
-
-		mResources->context->VSSetShader(mResources->meshVS.Get(), nullptr, 0);
-
-		ID3D11ShaderResourceView* const nullSrv{ nullptr };
-		mResources->context->PSSetShaderResources(4, 1, &nullSrv);
-		DrawShadowMaps(visibleLights, viewProjMat);
 
 		mResources->context->VSSetShader(mResources->meshVS.Get(), nullptr, 0);
 		mResources->context->PSSetShader(mResources->meshPbrPS.Get(), nullptr, 0);
