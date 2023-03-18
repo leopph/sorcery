@@ -101,15 +101,19 @@ struct ShadowCBData {
 
 
 namespace {
-Vector2 const QUAD_POSITIONS[]{
-	Vector2{ -1, 1 }, Vector2{ -1, -1 }, Vector2{ 1, -1 }, Vector2{ 1, 1 }
+std::vector const QUAD_POSITIONS{
+	Vector3{ -1, 1, 0 }, Vector3{ -1, -1, 0 }, Vector3{ 1, -1, 0 }, Vector3{ 1, 1, 0 }
 };
 
-Vector2 const QUAD_UVS[]{
+std::vector const QUAD_NORMALS{
+	Vector3::Backward(), Vector3::Backward(), Vector3::Backward(), Vector3::Backward()
+};
+
+std::vector const QUAD_UVS{
 	Vector2{ 0, 0 }, Vector2{ 0, 1 }, Vector2{ 1, 1 }, Vector2{ 1, 0 }
 };
 
-UINT constexpr QUAD_INDICES[]{
+std::vector<unsigned> const QUAD_INDICES{
 	2, 1, 0, 0, 3, 2
 };
 
@@ -643,7 +647,7 @@ auto Renderer::CreateInputLayouts() const -> void {
 	D3D11_INPUT_ELEMENT_DESC constexpr quadInputDesc{
 		.SemanticName = "POSITION",
 		.SemanticIndex = 0,
-		.Format = DXGI_FORMAT_R32G32_FLOAT,
+		.Format = DXGI_FORMAT_R32G32B32_FLOAT,
 		.InputSlot = 0,
 		.AlignedByteOffset = 0,
 		.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA,
@@ -658,7 +662,7 @@ auto Renderer::CreateInputLayouts() const -> void {
 		{
 			.SemanticName = "POSITION",
 			.SemanticIndex = 0,
-			.Format = DXGI_FORMAT_R32G32_FLOAT,
+			.Format = DXGI_FORMAT_R32G32B32_FLOAT,
 			.InputSlot = 0,
 			.AlignedByteOffset = 0,
 			.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA,
@@ -781,42 +785,42 @@ auto Renderer::RecreateSwapChainRtv() const -> void {
 }
 
 auto Renderer::CreateVertexAndIndexBuffers() const -> void {
-	D3D11_BUFFER_DESC constexpr quadPosVBDesc{
-		.ByteWidth = sizeof QUAD_POSITIONS,
+	D3D11_BUFFER_DESC const quadPosVBDesc{
+		.ByteWidth = static_cast<UINT>(QUAD_POSITIONS.size() * sizeof(decltype(QUAD_POSITIONS)::value_type)),
 		.Usage = D3D11_USAGE_IMMUTABLE,
 		.BindFlags = D3D11_BIND_VERTEX_BUFFER
 	};
 
-	D3D11_SUBRESOURCE_DATA constexpr quadPosVBInitData{
-		.pSysMem = QUAD_POSITIONS
+	D3D11_SUBRESOURCE_DATA const quadPosVBInitData{
+		.pSysMem = QUAD_POSITIONS.data()
 	};
 
 	if (FAILED(mResources->device->CreateBuffer(&quadPosVBDesc, &quadPosVBInitData, mResources->quadPosVB.GetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create quad position vertex buffer." };
 	}
 
-	D3D11_BUFFER_DESC constexpr quadUvVBDesc{
-		.ByteWidth = sizeof QUAD_UVS,
+	D3D11_BUFFER_DESC const quadUvVBDesc{
+		.ByteWidth = static_cast<UINT>(QUAD_UVS.size() * sizeof(decltype(QUAD_UVS)::value_type)),
 		.Usage = D3D11_USAGE_IMMUTABLE,
 		.BindFlags = D3D11_BIND_VERTEX_BUFFER
 	};
 
-	D3D11_SUBRESOURCE_DATA constexpr quadUvVBInitData{
-		.pSysMem = QUAD_UVS
+	D3D11_SUBRESOURCE_DATA const quadUvVBInitData{
+		.pSysMem = QUAD_UVS.data()
 	};
 
 	if (FAILED(mResources->device->CreateBuffer(&quadUvVBDesc, &quadUvVBInitData, mResources->quadUvVB.GetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create quad uv vertex buffer." };
 	}
 
-	D3D11_BUFFER_DESC constexpr quadIBDesc{
-		.ByteWidth = sizeof QUAD_INDICES,
+	D3D11_BUFFER_DESC const quadIBDesc{
+		.ByteWidth = static_cast<UINT>(QUAD_INDICES.size() * sizeof(decltype(QUAD_INDICES)::value_type)),
 		.Usage = D3D11_USAGE_IMMUTABLE,
 		.BindFlags = D3D11_BIND_INDEX_BUFFER
 	};
 
-	D3D11_SUBRESOURCE_DATA constexpr quadIBInitData{
-		.pSysMem = QUAD_INDICES
+	D3D11_SUBRESOURCE_DATA const quadIBInitData{
+		.pSysMem = QUAD_INDICES.data()
 	};
 
 	if (FAILED(mResources->device->CreateBuffer(&quadIBDesc, &quadIBInitData, mResources->quadIB.GetAddressOf()))) {
@@ -1155,7 +1159,7 @@ auto Renderer::DoToneMapGammaCorrectionStep(ID3D11ShaderResourceView* const src,
 	mResources->context->Unmap(mResources->toneMapGammaCB.Get(), 0);
 
 	ID3D11Buffer* vertexBuffers[]{ mResources->quadPosVB.Get(), mResources->quadUvVB.Get() };
-	UINT constexpr strides[]{ sizeof(Vector2), sizeof(Vector2) };
+	UINT constexpr strides[]{ sizeof(decltype(QUAD_POSITIONS)::value_type), sizeof(decltype(QUAD_UVS)::value_type) };
 	UINT constexpr offsets[]{ 0, 0 };
 	mResources->context->IASetVertexBuffers(0, 2, vertexBuffers, strides, offsets);
 	mResources->context->IASetIndexBuffer(mResources->quadIB.Get(), DXGI_FORMAT_R32_UINT, 0);
@@ -1168,7 +1172,7 @@ auto Renderer::DoToneMapGammaCorrectionStep(ID3D11ShaderResourceView* const src,
 	mResources->context->PSSetShaderResources(0, 1, &src);
 	mResources->context->PSSetSamplers(0, 1, mResources->hdrTextureSS.GetAddressOf());
 
-	mResources->context->DrawIndexed(ARRAYSIZE(QUAD_INDICES), 0, 0);
+	mResources->context->DrawIndexed(static_cast<UINT>(QUAD_INDICES.size()), 0, 0);
 
 	// Restore old view bindings to that we don't leave any input/output conflicts behind.
 
@@ -1583,9 +1587,12 @@ auto Renderer::StartUp() -> void {
 	gWindow.OnWindowSize.add_handler(this, &on_window_resize);
 
 	dxgiFactory2->MakeWindowAssociation(gWindow.GetHandle(), DXGI_MWA_NO_WINDOW_CHANGES);
+
 	mResources->context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
 	mResources->defaultMaterial = std::make_shared<Material>();
 	mResources->defaultMaterial->SetName("Default Material");
+
 	mResources->cubeMesh = std::make_shared<Mesh>();
 	mResources->cubeMesh->SetName("Cube");
 	mResources->cubeMesh->SetPositions(CUBE_POSITIONS);
@@ -1594,6 +1601,15 @@ auto Renderer::StartUp() -> void {
 	mResources->cubeMesh->SetIndices(CUBE_INDICES);
 	mResources->cubeMesh->SetSubMeshes(std::vector{ Mesh::SubMeshData{ 0, 0, static_cast<int>(CUBE_INDICES.size()) } });
 	mResources->cubeMesh->ValidateAndUpdate();
+
+	mResources->planeMesh = std::make_unique<Mesh>();
+	mResources->planeMesh->SetName("Plane");
+	mResources->planeMesh->SetPositions(QUAD_POSITIONS);
+	mResources->planeMesh->SetNormals(QUAD_NORMALS);
+	mResources->planeMesh->SetUVs(QUAD_UVS);
+	mResources->planeMesh->SetIndices(QUAD_INDICES);
+	mResources->planeMesh->SetSubMeshes(std::vector{ Mesh::SubMeshData{ 0, 0, static_cast<int>(QUAD_INDICES.size()) } });
+	mResources->planeMesh->ValidateAndUpdate();
 }
 
 
@@ -1710,6 +1726,10 @@ auto Renderer::GetDefaultMaterial() const noexcept -> std::shared_ptr<Material> 
 
 auto Renderer::GetCubeMesh() const noexcept -> std::shared_ptr<Mesh> {
 	return mResources->cubeMesh;
+}
+
+auto Renderer::GetPlaneMesh() const noexcept -> Mesh* {
+	return mResources->planeMesh.get();
 }
 
 auto Renderer::GetGamma() const noexcept -> f32 {

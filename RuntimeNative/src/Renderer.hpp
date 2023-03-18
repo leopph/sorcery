@@ -90,6 +90,7 @@ class Renderer {
 
 		std::shared_ptr<Material> defaultMaterial;
 		std::shared_ptr<Mesh> cubeMesh;
+		std::unique_ptr<Mesh> planeMesh;
 
 		ShadowAtlas spotPointShadowAtlas;
 	};
@@ -199,6 +200,7 @@ public:
 
 	[[nodiscard]] LEOPPHAPI auto GetDefaultMaterial() const noexcept -> std::shared_ptr<Material>;
 	[[nodiscard]] LEOPPHAPI auto GetCubeMesh() const noexcept -> std::shared_ptr<Mesh>;
+	[[nodiscard]] LEOPPHAPI auto GetPlaneMesh() const noexcept -> Mesh*;
 
 	[[nodiscard]] LEOPPHAPI auto GetGamma() const noexcept -> f32;
 	LEOPPHAPI auto SetGamma(f32 gamma) noexcept -> void;
