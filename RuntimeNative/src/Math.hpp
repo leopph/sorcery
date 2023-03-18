@@ -8,6 +8,7 @@
 #define LEOPPH_MATH_USE_INTRINSICS
 #endif
 
+#include <algorithm>
 #include <cmath>
 #include <numbers>
 #include <concepts>
@@ -165,6 +166,18 @@ template<typename T, int N>
 
 template<typename T, int N>
 auto operator<<(std::ostream& stream, Vector<T, N> const& vector) -> std::ostream&;
+
+template<typename T, int N>
+[[nodiscard]] auto Clamp(Vector<T, N> const& v, T min, T max) noexcept -> Vector<T, N>;
+
+template<typename T, int N>
+[[nodiscard]] auto Clamp(Vector<T, N> const& v, Vector<T, N> const& min, Vector<T, N> const& max) noexcept -> Vector<T, N>;
+
+template<typename T, int N>
+[[nodiscard]] auto Min(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> Vector<T, N>;
+
+template<typename T, int N>
+[[nodiscard]] auto Max(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> Vector<T, N>;
 
 #ifdef LEOPPH_MATH_USE_INTRINSICS
 template<>
@@ -844,6 +857,46 @@ auto operator<<(std::ostream& stream, Vector<T, N> const& vector) -> std::ostrea
 	}
 	stream << ")";
 	return stream;
+}
+
+template<typename T, int N>
+auto Clamp(Vector<T, N> const& v, T const min, T const max) noexcept -> Vector<T, N> {
+	Vector<T, N> ret{ v };
+
+	for (int i = 0; i < N; i++) {
+		ret[i] = std::clamp(v[i], min, max);
+	}
+
+	return ret;
+}
+
+template<typename T, int N>
+auto Clamp(Vector<T, N> const& v, Vector<T, N> const& min, Vector<T, N> const& max) noexcept -> Vector<T, N> {
+	Vector<T, N> ret{ v };
+
+	for (int i = 0; i < N; i++) {
+		ret[i] = std::clamp(v[i], min[i], max[i]);
+	}
+
+	return ret;
+}
+
+template<typename T, int N>
+auto Min(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> Vector<T, N> {
+	Vector<T, N> ret;
+	for (int i = 0; i < N; i++) {
+		ret[i] = std::min(left[i], right[i]);
+	}
+	return ret;
+}
+
+template<typename T, int N>
+auto Max(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> Vector<T, N> {
+	Vector<T, N> ret;
+	for (int i = 0; i < N; i++) {
+		ret[i] = std::max(left[i], right[i]);
+	}
+	return ret;
 }
 
 
