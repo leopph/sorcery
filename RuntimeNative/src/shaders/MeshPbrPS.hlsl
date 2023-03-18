@@ -8,6 +8,7 @@ float SampleShadowMap(const Texture2D<float> shadowMap, const Light light, const
     const float4 posLClip = mul(float4(posW, 1), light.lightSpaceMtx);
     float3 posLNdc = posLClip.xyz / posLClip.w;
     posLNdc.xy = posLNdc.xy * 0.5 + 0.5;
+    posLNdc.y = 1 - posLNdc.y;
     const float MIN_SHADOW_BIAS = 0.0001;
     const float MAX_SHADOW_BIAS = 0.01;
     const float bias = max(MAX_SHADOW_BIAS * (1.0 - dot(N, L)), MIN_SHADOW_BIAS);
