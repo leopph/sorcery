@@ -1408,13 +1408,17 @@ auto Renderer::DrawShadowMaps(std::span<LightComponent const*> const camVisibleL
 			}
 
 			case LightComponent::Type::Spot: {
-				auto const boundXY{ std::tan(ToRadians(light->GetOuterAngle())) * light->GetRange() };
+				auto const range{ light->GetRange() };
+				auto const boundXY{ std::tan(ToRadians(light->GetOuterAngle())) * range };
 				std::array boundVertices{
-					Vector4{ 0, 0, 0.1f, 1 },
-					Vector4{ boundXY, boundXY, light->GetRange(), 1 },
-					Vector4{ -boundXY, boundXY, light->GetRange(), 1 },
-					Vector4{ boundXY, -boundXY, light->GetRange(), 1 },
-					Vector4{ -boundXY, -boundXY, light->GetRange(), 1 },
+					Vector4{ boundXY, boundXY, 0.1f, 1 },
+					Vector4{ -boundXY, boundXY, 0.1f, 1 },
+					Vector4{ boundXY, -boundXY, 0.1f, 1 },
+					Vector4{ -boundXY, -boundXY, 0.1f, 1 },
+					Vector4{ boundXY, boundXY, range, 1 },
+					Vector4{ -boundXY, boundXY, range, 1 },
+					Vector4{ boundXY, -boundXY, range, 1 },
+					Vector4{ -boundXY, -boundXY, range, 1 },
 				};
 
 				auto const mvp{ light->GetEntity()->GetTransform().GetModelMatrix() * camViewProjMtx };
@@ -1450,7 +1454,7 @@ auto Renderer::DrawShadowMaps(std::span<LightComponent const*> const camVisibleL
 				auto const boundsWidth{ boundsMax[0] - boundsMin[0] };
 				auto const boundsHeight{ boundsMax[1] - boundsMin[0] };
 
-				auto const boundsArea{ boundsMax[2] > 0 ? boundsWidth * boundsHeight : 0 };
+				auto const boundsArea{ boundsWidth * boundsHeight };
 				auto constexpr screenArea{ 4 };
 				auto const boundsAreaRatio{ boundsArea / screenArea };
 
