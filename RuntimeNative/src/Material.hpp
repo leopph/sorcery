@@ -19,10 +19,10 @@ class Material final : public NativeAsset {
 		f32 metallic{ 0 };
 		f32 roughness{ 0.5f };
 		f32 ao{ 1 };
-		int sampleAlbedo{ 0 };
-		int sampleMetallic{ 0 };
-		int sampleRoughness{ 0 };
-		int sampleAo{ 0 };
+		BOOL sampleAlbedo{ FALSE };
+		BOOL sampleMetallic{ FALSE };
+		BOOL sampleRoughness{ FALSE };
+		BOOL sampleAo{ FALSE };
 	};
 
 	Microsoft::WRL::ComPtr<ID3D11Buffer> mBuffer;

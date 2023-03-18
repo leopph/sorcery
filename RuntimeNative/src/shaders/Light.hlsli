@@ -11,7 +11,7 @@ struct Light {
     float shadowNearPlane;
     float range;
     float innerAngleCos;
-    int isCastingShadow;
+    bool isCastingShadow;
 
     float3 position;
     float outerAngleCos;

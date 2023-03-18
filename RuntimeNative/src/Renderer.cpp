@@ -51,7 +51,7 @@ struct LightCBufferData {
 	f32 shadowNearPlane;
 	f32 range;
 	f32 innerAngleCos;
-	int isCastingShadow;
+	BOOL isCastingShadow;
 
 	Vector3 position;
 	f32 outerAngleCos;

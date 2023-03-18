@@ -115,6 +115,7 @@ float3 CalculateSpotLight(const float3 N, const float3 V, const float3 albedo, c
     lighting *= intensity;
     lighting *= CalculateAttenuation(dist);
 
+    [branch]
     if (light.isCastingShadow) {
         lighting *= SampleShadowMap(gSpotPointShadowAtlas, light, fragWorldPos, N, L);
     }
@@ -141,25 +142,25 @@ float4 main(const MeshVsOut vsOut) : SV_TARGET {
 
     float3 albedo = material.albedo;
 
-    if (material.sampleAlbedo != 0) {
+    if (material.sampleAlbedo) {
         albedo *= pow(gAlbedoMap.Sample(gMaterialSampler, vsOut.uv).rgb, 2.2);
     }
 
     float metallic = material.metallic;
 
-    if (material.sampleMetallic != 0) {
+    if (material.sampleMetallic) {
         metallic *= gMetallicMap.Sample(gMaterialSampler, vsOut.uv).r;
     }
 
     float roughness = material.roughness;
 
-    if (material.sampleRoughness != 0) {
+    if (material.sampleRoughness) {
         roughness *= gRoughnessMap.Sample(gMaterialSampler, vsOut.uv).r;
     }
 
     float ao = material.ao;
 
-    if (material.sampleAo != 0) {
+    if (material.sampleAo) {
         ao *= gAoMap.Sample(gMaterialSampler, vsOut.uv).r;
     }
 

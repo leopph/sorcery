@@ -6,10 +6,10 @@ struct PbrMaterial {
     float metallic;
     float roughness;
     float ao;
-    int sampleAlbedo;
-    int sampleMetallic;
-    int sampleRoughness;
-    int sampleAo;
+    bool sampleAlbedo;
+    bool sampleMetallic;
+    bool sampleRoughness;
+    bool sampleAo;
 };
 
 Texture2D gAlbedoMap : register(t0);
