@@ -12,24 +12,22 @@
 #include "shaders/generated/MeshBlinnPhongPSBinDebug.h"
 #include "shaders/generated/MeshPbrPSBinDebug.h"
 #include "shaders/generated/MeshVSBinDebug.h"
-#include "shaders/generated/QuadVSBinDebug.h"
-#include "shaders/generated/TexQuadVSBinDebug.h"
 #include "shaders/generated/ToneMapGammaPSBinDebug.h"
 #include "shaders/generated/SkyboxPSBinDebug.h"
 #include "shaders/generated/SkyboxVSBinDebug.h"
 #include "shaders/generated/ShadowVSBinDebug.h"
+#include "shaders/generated/ScreenVSBinDebug.h"
 
 #else
 #include "shaders/generated/ClearColorPSBin.h"
 #include "shaders/generated/MeshBlinnPhongPSBin.h"
 #include "shaders/generated/MeshPbrPSBin.h"
 #include "shaders/generated/MeshVSBin.h"
-#include "shaders/generated/QuadVSBin.h"
-#include "shaders/generated/TexQuadVSBin.h"
 #include "shaders/generated/ToneMapGammaPSBin.h"
 #include "shaders/generated/SkyboxPSBin.h"
 #include "shaders/generated/SkyboxVSBin.h"
 #include "shaders/generated/ShadowVSBin.h"
+#include "shaders/generated/ScreenVSBin.h"
 #endif
 
 #include "shaders/ShaderInterop.h"
@@ -609,45 +607,6 @@ auto Renderer::CreateInputLayouts() const -> void {
 		throw std::runtime_error{ "Failed to create mesh input layout." };
 	}
 
-	D3D11_INPUT_ELEMENT_DESC constexpr quadInputDesc{
-		.SemanticName = "POSITION",
-		.SemanticIndex = 0,
-		.Format = DXGI_FORMAT_R32G32B32_FLOAT,
-		.InputSlot = 0,
-		.AlignedByteOffset = 0,
-		.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA,
-		.InstanceDataStepRate = 0,
-	};
-
-	if (FAILED(mResources->device->CreateInputLayout(&quadInputDesc, 1, gQuadVSBin, ARRAYSIZE(gQuadVSBin), mResources->quadIL.GetAddressOf()))) {
-		throw std::runtime_error{ "Failed to create quad input layout." };
-	}
-
-	D3D11_INPUT_ELEMENT_DESC constexpr texQuadInputDescs[]{
-		{
-			.SemanticName = "POSITION",
-			.SemanticIndex = 0,
-			.Format = DXGI_FORMAT_R32G32B32_FLOAT,
-			.InputSlot = 0,
-			.AlignedByteOffset = 0,
-			.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA,
-			.InstanceDataStepRate = 0
-		},
-		{
-			.SemanticName = "TEXCOORD",
-			.SemanticIndex = 0,
-			.Format = DXGI_FORMAT_R32G32_FLOAT,
-			.InputSlot = 1,
-			.AlignedByteOffset = 0,
-			.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA,
-			.InstanceDataStepRate = 0
-		}
-	};
-
-	if (FAILED(mResources->device->CreateInputLayout(texQuadInputDescs, ARRAYSIZE(texQuadInputDescs), gTexQuadVSBin, ARRAYSIZE(gTexQuadVSBin), mResources->texQuadIL.GetAddressOf()))) {
-		throw std::runtime_error{ "Failed to create textured quad input layout." };
-	}
-
 	D3D11_INPUT_ELEMENT_DESC constexpr skyboxInputDesc
 	{
 		.SemanticName = "POSITION",
@@ -678,16 +637,8 @@ auto Renderer::CreateShaders() const -> void {
 		throw std::runtime_error{ "Failed to create mesh pbr pixel shader." };
 	}
 
-	if (FAILED(mResources->device->CreateVertexShader(gQuadVSBin, ARRAYSIZE(gQuadVSBin), nullptr, mResources->quadVS.GetAddressOf()))) {
-		throw std::runtime_error{ "Failed to create quad vertex shader." };
-	}
-
 	if (FAILED(mResources->device->CreatePixelShader(gClearColorPSBin, ARRAYSIZE(gClearColorPSBin), nullptr, mResources->clearColorPS.GetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create clear color pixel shader." };
-	}
-
-	if (FAILED(mResources->device->CreateVertexShader(gTexQuadVSBin, ARRAYSIZE(gTexQuadVSBin), nullptr, mResources->texQuadVS.GetAddressOf()))) {
-		throw std::runtime_error{ "Failed to create textured quad vertex shader." };
 	}
 
 	if (FAILED(mResources->device->CreatePixelShader(gToneMapGammaPSBin, ARRAYSIZE(gToneMapGammaPSBin), nullptr, mResources->toneMapGammaPS.GetAddressOf()))) {
@@ -704,6 +655,10 @@ auto Renderer::CreateShaders() const -> void {
 
 	if (FAILED(mResources->device->CreateVertexShader(gShadowVSBin, ARRAYSIZE(gShadowVSBin), nullptr, mResources->shadowVS.GetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create shadow vertex shader." };
+	}
+
+	if (FAILED(mResources->device->CreateVertexShader(gScreenVSBin, ARRAYSIZE(gScreenVSBin), nullptr, mResources->screenVS.GetAddressOf()))) {
+		throw std::runtime_error{ "Failed to create screen vertex shader." };
 	}
 }
 
@@ -749,51 +704,6 @@ auto Renderer::RecreateSwapChainRtv() const -> void {
 
 	if (FAILED(mResources->device->CreateRenderTargetView(backBuf.Get(), &rtvDesc, mResources->swapChainRtv.GetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create swapchain backbuffer render target view." };
-	}
-}
-
-
-auto Renderer::CreateVertexAndIndexBuffers() const -> void {
-	D3D11_BUFFER_DESC const quadPosVBDesc{
-		.ByteWidth = static_cast<UINT>(QUAD_POSITIONS.size() * sizeof(decltype(QUAD_POSITIONS)::value_type)),
-		.Usage = D3D11_USAGE_IMMUTABLE,
-		.BindFlags = D3D11_BIND_VERTEX_BUFFER
-	};
-
-	D3D11_SUBRESOURCE_DATA const quadPosVBInitData{
-		.pSysMem = QUAD_POSITIONS.data()
-	};
-
-	if (FAILED(mResources->device->CreateBuffer(&quadPosVBDesc, &quadPosVBInitData, mResources->quadPosVB.GetAddressOf()))) {
-		throw std::runtime_error{ "Failed to create quad position vertex buffer." };
-	}
-
-	D3D11_BUFFER_DESC const quadUvVBDesc{
-		.ByteWidth = static_cast<UINT>(QUAD_UVS.size() * sizeof(decltype(QUAD_UVS)::value_type)),
-		.Usage = D3D11_USAGE_IMMUTABLE,
-		.BindFlags = D3D11_BIND_VERTEX_BUFFER
-	};
-
-	D3D11_SUBRESOURCE_DATA const quadUvVBInitData{
-		.pSysMem = QUAD_UVS.data()
-	};
-
-	if (FAILED(mResources->device->CreateBuffer(&quadUvVBDesc, &quadUvVBInitData, mResources->quadUvVB.GetAddressOf()))) {
-		throw std::runtime_error{ "Failed to create quad uv vertex buffer." };
-	}
-
-	D3D11_BUFFER_DESC const quadIBDesc{
-		.ByteWidth = static_cast<UINT>(QUAD_INDICES.size() * sizeof(decltype(QUAD_INDICES)::value_type)),
-		.Usage = D3D11_USAGE_IMMUTABLE,
-		.BindFlags = D3D11_BIND_INDEX_BUFFER
-	};
-
-	D3D11_SUBRESOURCE_DATA const quadIBInitData{
-		.pSysMem = QUAD_INDICES.data()
-	};
-
-	if (FAILED(mResources->device->CreateBuffer(&quadIBDesc, &quadIBInitData, mResources->quadIB.GetAddressOf()))) {
-		throw std::runtime_error{ "Failed to create quad index buffer." };
 	}
 }
 
@@ -988,23 +898,6 @@ auto Renderer::CreateShadowAtlases() const -> void {
 
 
 auto Renderer::CreateSamplerStates() const -> void {
-	D3D11_SAMPLER_DESC constexpr hdrTextureSamplerDesc{
-		.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT,
-		.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP,
-		.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP,
-		.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP,
-		.MipLODBias = 0,
-		.MaxAnisotropy = 1,
-		.ComparisonFunc = D3D11_COMPARISON_NEVER,
-		.BorderColor = { 1, 1, 1, 1 },
-		.MinLOD = -FLT_MAX,
-		.MaxLOD = FLT_MAX
-	};
-
-	if (FAILED(mResources->device->CreateSamplerState(&hdrTextureSamplerDesc, mResources->hdrTextureSS.GetAddressOf()))) {
-		throw std::runtime_error{ "Failed to create hdr texture sampler state." };
-	}
-
 	D3D11_SAMPLER_DESC constexpr shadowSamplerDesc{
 		.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT,
 		.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP,
@@ -1038,6 +931,32 @@ auto Renderer::CreateSamplerStates() const -> void {
 	if (FAILED(mResources->device->CreateSamplerState(&materialSamplerDesc, mResources->materialSS.GetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create material sampler state." };
 	}
+}
+
+
+auto Renderer::CreateDefaultAssets() const -> void {
+	mResources->defaultMaterial = std::make_unique<Material>();
+	mResources->defaultMaterial->SetName("Default Material");
+
+	mResources->cubeMesh = std::make_unique<Mesh>();
+	mResources->cubeMesh->SetGuid(Guid{ 0, 0 });
+	mResources->cubeMesh->SetName("Cube");
+	mResources->cubeMesh->SetPositions(CUBE_POSITIONS);
+	mResources->cubeMesh->SetNormals(CUBE_NORMALS);
+	mResources->cubeMesh->SetUVs(CUBE_UVS);
+	mResources->cubeMesh->SetIndices(CUBE_INDICES);
+	mResources->cubeMesh->SetSubMeshes(std::vector{ Mesh::SubMeshData{ 0, 0, static_cast<int>(CUBE_INDICES.size()) } });
+	mResources->cubeMesh->ValidateAndUpdate();
+
+	mResources->planeMesh = std::make_unique<Mesh>();
+	mResources->planeMesh->SetGuid(Guid{ 0, 1 });
+	mResources->planeMesh->SetName("Plane");
+	mResources->planeMesh->SetPositions(QUAD_POSITIONS);
+	mResources->planeMesh->SetNormals(QUAD_NORMALS);
+	mResources->planeMesh->SetUVs(QUAD_UVS);
+	mResources->planeMesh->SetIndices(QUAD_INDICES);
+	mResources->planeMesh->SetSubMeshes(std::vector{ Mesh::SubMeshData{ 0, 0, static_cast<int>(QUAD_INDICES.size()) } });
+	mResources->planeMesh->ValidateAndUpdate();
 }
 
 
@@ -1131,28 +1050,21 @@ auto Renderer::DoToneMapGammaCorrectionStep(ID3D11ShaderResourceView* const src,
 
 	// Do the step
 
-	mResources->context->OMSetRenderTargets(1, &dst, nullptr);
-
 	D3D11_MAPPED_SUBRESOURCE mappedToneMapGammaCB;
 	mResources->context->Map(mResources->toneMapGammaCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedToneMapGammaCB);
 	auto const toneMapGammaCBData{ static_cast<ToneMapGammaCB*>(mappedToneMapGammaCB.pData) };
 	toneMapGammaCBData->invGamma = mInvGamma;
 	mResources->context->Unmap(mResources->toneMapGammaCB.Get(), 0);
 
-	ID3D11Buffer* vertexBuffers[]{ mResources->quadPosVB.Get(), mResources->quadUvVB.Get() };
-	UINT constexpr strides[]{ sizeof(decltype(QUAD_POSITIONS)::value_type), sizeof(decltype(QUAD_UVS)::value_type) };
-	UINT constexpr offsets[]{ 0, 0 };
-	mResources->context->IASetVertexBuffers(0, 2, vertexBuffers, strides, offsets);
-	mResources->context->IASetIndexBuffer(mResources->quadIB.Get(), DXGI_FORMAT_R32_UINT, 0);
-	mResources->context->IASetInputLayout(mResources->texQuadIL.Get());
-
-	mResources->context->VSSetShader(mResources->texQuadVS.Get(), nullptr, 0);
-
+	mResources->context->VSSetShader(mResources->screenVS.Get(), nullptr, 0);
 	mResources->context->PSSetShader(mResources->toneMapGammaPS.Get(), nullptr, 0);
+
+	mResources->context->OMSetRenderTargets(1, &dst, nullptr);
+
 	mResources->context->PSSetConstantBuffers(CB_SLOT_TONE_MAP_GAMMA, 1, mResources->toneMapGammaCB.GetAddressOf());
 	mResources->context->PSSetShaderResources(TEX_SLOT_TONE_MAP_SRC, 1, &src);
 
-	mResources->context->DrawIndexed(static_cast<UINT>(QUAD_INDICES.size()), 0, 0);
+	mResources->context->Draw(6, 0);
 
 	// Restore old view bindings to that we don't leave any input/output conflicts behind.
 
@@ -1618,41 +1530,18 @@ auto Renderer::StartUp() -> void {
 	CreateSwapChain(dxgiFactory2.Get());
 	CreateInputLayouts();
 	CreateShaders();
-	CreateVertexAndIndexBuffers();
 	CreateConstantBuffers();
 	CreateRasterizerStates();
 	CreateDepthStencilStates();
 	CreateShadowAtlases();
 	CreateSamplerStates();
+	CreateDefaultAssets();
 
 	gWindow.OnWindowSize.add_handler(this, &on_window_resize);
 
 	dxgiFactory2->MakeWindowAssociation(gWindow.GetHandle(), DXGI_MWA_NO_WINDOW_CHANGES);
 
 	mResources->context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-	mResources->defaultMaterial = std::make_shared<Material>();
-	mResources->defaultMaterial->SetName("Default Material");
-
-	mResources->cubeMesh = std::make_shared<Mesh>();
-	mResources->cubeMesh->SetGuid(Guid{ 0, 0 });
-	mResources->cubeMesh->SetName("Cube");
-	mResources->cubeMesh->SetPositions(CUBE_POSITIONS);
-	mResources->cubeMesh->SetNormals(CUBE_NORMALS);
-	mResources->cubeMesh->SetUVs(CUBE_UVS);
-	mResources->cubeMesh->SetIndices(CUBE_INDICES);
-	mResources->cubeMesh->SetSubMeshes(std::vector{ Mesh::SubMeshData{ 0, 0, static_cast<int>(CUBE_INDICES.size()) } });
-	mResources->cubeMesh->ValidateAndUpdate();
-
-	mResources->planeMesh = std::make_unique<Mesh>();
-	mResources->planeMesh->SetGuid(Guid{ 0, 1 });
-	mResources->planeMesh->SetName("Plane");
-	mResources->planeMesh->SetPositions(QUAD_POSITIONS);
-	mResources->planeMesh->SetNormals(QUAD_NORMALS);
-	mResources->planeMesh->SetUVs(QUAD_UVS);
-	mResources->planeMesh->SetIndices(QUAD_INDICES);
-	mResources->planeMesh->SetSubMeshes(std::vector{ Mesh::SubMeshData{ 0, 0, static_cast<int>(QUAD_INDICES.size()) } });
-	mResources->planeMesh->ValidateAndUpdate();
 }
 
 
@@ -1769,13 +1658,13 @@ auto Renderer::UnregisterLight(LightComponent const* light) -> void {
 }
 
 
-auto Renderer::GetDefaultMaterial() const noexcept -> std::shared_ptr<Material> {
-	return mResources->defaultMaterial;
+auto Renderer::GetDefaultMaterial() const noexcept -> Material* {
+	return mResources->defaultMaterial.get();
 }
 
 
-auto Renderer::GetCubeMesh() const noexcept -> std::shared_ptr<Mesh> {
-	return mResources->cubeMesh;
+auto Renderer::GetCubeMesh() const noexcept -> Mesh* {
+	return mResources->cubeMesh.get();
 }
 
 

@@ -5,8 +5,9 @@
 namespace leopph {
 Object::Type const StaticMeshComponent::SerializationType{ Object::Type::StaticMesh };
 
+
 StaticMeshComponent::StaticMeshComponent() :
-	mMesh{ gRenderer.GetCubeMesh().get() } {
+	mMesh{ gRenderer.GetCubeMesh() } {
 	AddMaterial(*gRenderer.GetDefaultMaterial());
 	gRenderer.RegisterStaticMesh(this);
 }
@@ -21,9 +22,11 @@ auto StaticMeshComponent::GetMaterials() const noexcept -> std::span<Material* c
 	return mMaterials;
 }
 
+
 auto StaticMeshComponent::AddMaterial(Material& mtl) noexcept -> void {
 	mMaterials.push_back(&mtl);
 }
+
 
 auto StaticMeshComponent::RemoveMaterial(int const idx) noexcept -> void {
 	if (idx < mMaterials.size()) {
@@ -31,11 +34,13 @@ auto StaticMeshComponent::RemoveMaterial(int const idx) noexcept -> void {
 	}
 }
 
+
 auto StaticMeshComponent::ReplaceMaterial(int const idx, Material& mtl) noexcept -> void {
 	if (idx < mMaterials.size()) {
 		mMaterials[idx] = &mtl;
 	}
 }
+
 
 auto StaticMeshComponent::SetMaterials(std::vector<Material*> materials) noexcept -> void {
 	for (auto const mtl : materials) {
@@ -47,13 +52,16 @@ auto StaticMeshComponent::SetMaterials(std::vector<Material*> materials) noexcep
 	mMaterials = std::move(materials);
 }
 
+
 auto StaticMeshComponent::GetMesh() const noexcept -> Mesh& {
 	return *mMesh;
 }
 
+
 auto StaticMeshComponent::SetMesh(Mesh& mesh) noexcept -> void {
 	mMesh = &mesh;
 }
+
 
 auto StaticMeshComponent::GetSerializationType() const -> Type {
 	return Type::StaticMesh;
@@ -64,6 +72,7 @@ auto StaticMeshComponent::CreateManagedObject() -> void {
 	return ManagedAccessObject::CreateManagedObject("leopph", "StaticMesh");
 }
 
+
 auto StaticMeshComponent::Serialize(YAML::Node& node) const -> void {
 	Component::Serialize(node);
 	node["mesh"] = mMesh->GetGuid().ToString();
@@ -73,6 +82,7 @@ auto StaticMeshComponent::Serialize(YAML::Node& node) const -> void {
 	}
 }
 
+
 auto StaticMeshComponent::Deserialize(YAML::Node const& node) -> void {
 	Component::Deserialize(node);
 
@@ -81,12 +91,12 @@ auto StaticMeshComponent::Deserialize(YAML::Node const& node) -> void {
 			mMesh = dynamic_cast<Mesh*>(FindObjectByGuid(Guid::Parse(guidStr)));
 
 			if (!mMesh) {
-				mMesh = gRenderer.GetCubeMesh().get();
+				mMesh = gRenderer.GetCubeMesh();
 			}
 		}
 	}
 	else {
-		mMesh = gRenderer.GetCubeMesh().get();
+		mMesh = gRenderer.GetCubeMesh();
 	}
 
 	mMaterials.clear();

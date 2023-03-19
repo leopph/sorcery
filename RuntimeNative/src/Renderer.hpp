@@ -54,15 +54,14 @@ class Renderer {
 		Microsoft::WRL::ComPtr<ID3D11DepthStencilView> sceneDSV;
 
 		Microsoft::WRL::ComPtr<ID3D11PixelShader> clearColorPS;
-		Microsoft::WRL::ComPtr<ID3D11VertexShader> quadVS;
 		Microsoft::WRL::ComPtr<ID3D11PixelShader> meshBlinnPhongPS;
 		Microsoft::WRL::ComPtr<ID3D11VertexShader> meshVS;
 		Microsoft::WRL::ComPtr<ID3D11PixelShader> meshPbrPS;
-		Microsoft::WRL::ComPtr<ID3D11VertexShader> texQuadVS;
 		Microsoft::WRL::ComPtr<ID3D11PixelShader> toneMapGammaPS;
 		Microsoft::WRL::ComPtr<ID3D11PixelShader> skyboxPS;
 		Microsoft::WRL::ComPtr<ID3D11VertexShader> skyboxVS;
 		Microsoft::WRL::ComPtr<ID3D11VertexShader> shadowVS;
+		Microsoft::WRL::ComPtr<ID3D11VertexShader> screenVS;
 
 		Microsoft::WRL::ComPtr<ID3D11Buffer> perFrameCB;
 		Microsoft::WRL::ComPtr<ID3D11Buffer> perCamCB;
@@ -73,15 +72,8 @@ class Renderer {
 		Microsoft::WRL::ComPtr<ID3D11Buffer> shadowCB;
 
 		Microsoft::WRL::ComPtr<ID3D11InputLayout> meshIL;
-		Microsoft::WRL::ComPtr<ID3D11InputLayout> quadIL;
-		Microsoft::WRL::ComPtr<ID3D11InputLayout> texQuadIL;
 		Microsoft::WRL::ComPtr<ID3D11InputLayout> skyboxIL;
 
-		Microsoft::WRL::ComPtr<ID3D11Buffer> quadPosVB;
-		Microsoft::WRL::ComPtr<ID3D11Buffer> quadUvVB;
-		Microsoft::WRL::ComPtr<ID3D11Buffer> quadIB;
-
-		Microsoft::WRL::ComPtr<ID3D11SamplerState> hdrTextureSS;
 		Microsoft::WRL::ComPtr<ID3D11SamplerState> materialSS;
 		Microsoft::WRL::ComPtr<ID3D11SamplerState> shadowSS;
 
@@ -89,8 +81,8 @@ class Renderer {
 
 		Microsoft::WRL::ComPtr<ID3D11DepthStencilState> skyboxPassDSS;
 
-		std::shared_ptr<Material> defaultMaterial;
-		std::shared_ptr<Mesh> cubeMesh;
+		std::unique_ptr<Material> defaultMaterial;
+		std::unique_ptr<Mesh> cubeMesh;
 		std::unique_ptr<Mesh> planeMesh;
 
 		ShadowAtlas punctualShadowAtlas;
@@ -136,12 +128,12 @@ class Renderer {
 	auto CreateShaders() const -> void;
 	auto CreateSwapChain(IDXGIFactory2* factory2) const -> void;
 	auto RecreateSwapChainRtv() const -> void;
-	auto CreateVertexAndIndexBuffers() const -> void;
 	auto CreateConstantBuffers() const -> void;
 	auto CreateRasterizerStates() const -> void;
 	auto CreateDepthStencilStates() const -> void;
 	auto CreateShadowAtlases() const -> void;
 	auto CreateSamplerStates() const -> void;
+	auto CreateDefaultAssets() const -> void;
 	auto DrawMeshes(std::span<int const> meshComponentIndices, bool useMaterials) const noexcept -> void;
 	auto UpdatePerFrameCB() const noexcept -> void;
 	auto DoToneMapGammaCorrectionStep(ID3D11ShaderResourceView* src, ID3D11RenderTargetView* dst) const noexcept -> void;
@@ -206,8 +198,8 @@ public:
 	LEOPPHAPI auto RegisterLight(LightComponent const* light) -> void;
 	LEOPPHAPI auto UnregisterLight(LightComponent const* light) -> void;
 
-	[[nodiscard]] LEOPPHAPI auto GetDefaultMaterial() const noexcept -> std::shared_ptr<Material>;
-	[[nodiscard]] LEOPPHAPI auto GetCubeMesh() const noexcept -> std::shared_ptr<Mesh>;
+	[[nodiscard]] LEOPPHAPI auto GetDefaultMaterial() const noexcept -> Material*;
+	[[nodiscard]] LEOPPHAPI auto GetCubeMesh() const noexcept -> Mesh*;
 	[[nodiscard]] LEOPPHAPI auto GetPlaneMesh() const noexcept -> Mesh*;
 
 	[[nodiscard]] LEOPPHAPI auto GetGamma() const noexcept -> f32;
