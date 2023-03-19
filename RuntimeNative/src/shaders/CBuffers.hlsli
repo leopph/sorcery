@@ -1,10 +1,9 @@
 #ifndef CBUFFERS_HLSLI
 #define CBUFFERS_HLSLI
 
-#define MAX_LIGHT_COUNT 128
-
 #include "Light.hlsli"
 #include "PbrMaterial.hlsli"
+#include "Defines.h"
 
 cbuffer PerFrame : register(b0) {
     

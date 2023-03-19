@@ -32,6 +32,8 @@
 #include "shaders/generated/ShadowVSBin.h"
 #endif
 
+#include "shaders/Defines.h"
+
 #include <cassert>
 #include <functional>
 
@@ -39,8 +41,6 @@ using Microsoft::WRL::ComPtr;
 
 
 namespace leopph {
-constexpr static int MAX_LIGHT_COUNT{ 128 };
-
 struct LightCBufferData {
 	Vector3 color;
 	f32 intensity;
