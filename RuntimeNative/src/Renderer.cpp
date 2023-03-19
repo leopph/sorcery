@@ -41,67 +41,26 @@ using Microsoft::WRL::ComPtr;
 
 
 namespace leopph {
-struct PerFrameCBuffer {};
-
-
-struct PerCamCBuffer {
-	Matrix4 viewProjMat;
-	Vector3 camPos;
-	int lightCount{};
-	ShaderLight lights[MAX_LIGHT_COUNT];
-};
-
-
-struct MaterialCBufferData {
-	Vector3 albedo;
-	float metallic;
-	float roughness;
-	float ao;
-};
-
-
-struct PerMaterialCBuffer {
-	MaterialCBufferData material;
-};
-
-
-struct PerModelCBuffer {
-	Matrix4 modelMat;
-	Matrix4 normalMat;
-};
-
-
-struct ToneMapGammaCBData {
-	float invGamma;
-};
-
-
-struct SkyboxCBData {
-	Matrix4 viewProjMtx;
-};
-
-
-struct ShadowCBData {
-	Matrix4 lightViewProjMtx;
-};
-
-
 namespace {
 std::vector const QUAD_POSITIONS{
 	Vector3{ -1, 1, 0 }, Vector3{ -1, -1, 0 }, Vector3{ 1, -1, 0 }, Vector3{ 1, 1, 0 }
 };
 
+
 std::vector const QUAD_NORMALS{
 	Vector3::Backward(), Vector3::Backward(), Vector3::Backward(), Vector3::Backward()
 };
+
 
 std::vector const QUAD_UVS{
 	Vector2{ 0, 0 }, Vector2{ 0, 1 }, Vector2{ 1, 1 }, Vector2{ 1, 0 }
 };
 
+
 std::vector<unsigned> const QUAD_INDICES{
 	2, 1, 0, 0, 3, 2
 };
+
 
 std::vector const CUBE_POSITIONS{
 	Vector3{ 0.5f, 0.5f, 0.5f },
@@ -137,6 +96,7 @@ std::vector const CUBE_POSITIONS{
 	Vector3{ 0.5f, -0.5f, -0.5f },
 };
 
+
 std::vector const CUBE_NORMALS{
 	Vector3{ 1.0f, 0.0f, 0.0f },
 	Vector3{ 0.0f, 1.0f, 0.0f },
@@ -171,6 +131,7 @@ std::vector const CUBE_NORMALS{
 	Vector3{ 0.0f, 0.0f, -1.0f },
 };
 
+
 std::vector const CUBE_UVS{
 	Vector2{ 1, 0 },
 	Vector2{ 1, 0 },
@@ -204,6 +165,7 @@ std::vector const CUBE_UVS{
 	Vector2{ 1, 0 },
 	Vector2{ 1, 1 }
 };
+
 
 std::vector<UINT> const CUBE_INDICES{
 	// Top face
@@ -837,8 +799,8 @@ auto Renderer::CreateVertexAndIndexBuffers() const -> void {
 
 
 auto Renderer::CreateConstantBuffers() const -> void {
-	D3D11_BUFFER_DESC constexpr perLightCBufDesc{
-		.ByteWidth = clamp_cast<UINT>(RoundToNextMultiple(sizeof(PerFrameCBuffer), 16)),
+	D3D11_BUFFER_DESC constexpr perFrameCbDesc{
+		.ByteWidth = clamp_cast<UINT>(RoundToNextMultiple(sizeof(PerFrameCB), 16)),
 		.Usage = D3D11_USAGE_DYNAMIC,
 		.BindFlags = D3D11_BIND_CONSTANT_BUFFER,
 		.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
@@ -846,12 +808,12 @@ auto Renderer::CreateConstantBuffers() const -> void {
 		.StructureByteStride = 0
 	};
 
-	if (FAILED(mResources->device->CreateBuffer(&perLightCBufDesc, nullptr, mResources->perFrameCB.GetAddressOf()))) {
+	if (FAILED(mResources->device->CreateBuffer(&perFrameCbDesc, nullptr, mResources->perFrameCB.GetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create light constant buffer." };
 	}
 
-	D3D11_BUFFER_DESC constexpr perCamCBufDesc{
-		.ByteWidth = clamp_cast<UINT>(RoundToNextMultiple(sizeof(PerCamCBuffer), 16)),
+	D3D11_BUFFER_DESC constexpr perCamCbDesc{
+		.ByteWidth = clamp_cast<UINT>(RoundToNextMultiple(sizeof(PerCameraCB), 16)),
 		.Usage = D3D11_USAGE_DYNAMIC,
 		.BindFlags = D3D11_BIND_CONSTANT_BUFFER,
 		.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
@@ -859,12 +821,12 @@ auto Renderer::CreateConstantBuffers() const -> void {
 		.StructureByteStride = 0
 	};
 
-	if (FAILED(mResources->device->CreateBuffer(&perCamCBufDesc, nullptr, mResources->perCamCB.GetAddressOf()))) {
+	if (FAILED(mResources->device->CreateBuffer(&perCamCbDesc, nullptr, mResources->perCamCB.GetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create camera constant buffer." };
 	}
 
-	D3D11_BUFFER_DESC constexpr perModelCBufDesc{
-		.ByteWidth = clamp_cast<UINT>(RoundToNextMultiple(sizeof(PerModelCBuffer), 16)),
+	D3D11_BUFFER_DESC constexpr perModelCbDesc{
+		.ByteWidth = clamp_cast<UINT>(RoundToNextMultiple(sizeof(PerModelCB), 16)),
 		.Usage = D3D11_USAGE_DYNAMIC,
 		.BindFlags = D3D11_BIND_CONSTANT_BUFFER,
 		.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
@@ -872,7 +834,7 @@ auto Renderer::CreateConstantBuffers() const -> void {
 		.StructureByteStride = 0
 	};
 
-	if (FAILED(mResources->device->CreateBuffer(&perModelCBufDesc, nullptr, mResources->perModelCB.GetAddressOf()))) {
+	if (FAILED(mResources->device->CreateBuffer(&perModelCbDesc, nullptr, mResources->perModelCB.GetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create model constant buffer." };
 	}
 
@@ -888,7 +850,7 @@ auto Renderer::CreateConstantBuffers() const -> void {
 	}
 
 	D3D11_BUFFER_DESC constexpr toneMapGammaCBDesc{
-		.ByteWidth = clamp_cast<UINT>(RoundToNextMultiple(sizeof(ToneMapGammaCBData), 16)),
+		.ByteWidth = clamp_cast<UINT>(RoundToNextMultiple(sizeof(ToneMapGammaCB), 16)),
 		.Usage = D3D11_USAGE_DYNAMIC,
 		.BindFlags = D3D11_BIND_CONSTANT_BUFFER,
 		.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
@@ -901,7 +863,7 @@ auto Renderer::CreateConstantBuffers() const -> void {
 	}
 
 	D3D11_BUFFER_DESC constexpr skyboxCBDesc{
-		.ByteWidth = clamp_cast<UINT>(RoundToNextMultiple(sizeof(SkyboxCBData), 16)),
+		.ByteWidth = clamp_cast<UINT>(RoundToNextMultiple(sizeof(SkyboxCB), 16)),
 		.Usage = D3D11_USAGE_DYNAMIC,
 		.BindFlags = D3D11_BIND_CONSTANT_BUFFER,
 		.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
@@ -914,7 +876,7 @@ auto Renderer::CreateConstantBuffers() const -> void {
 	}
 
 	D3D11_BUFFER_DESC constexpr shadowCBDesc{
-		.ByteWidth = clamp_cast<UINT>(RoundToNextMultiple(sizeof(ShadowCBData), 16)),
+		.ByteWidth = clamp_cast<UINT>(RoundToNextMultiple(sizeof(ShadowCB), 16)),
 		.Usage = D3D11_USAGE_DYNAMIC,
 		.BindFlags = D3D11_BIND_CONSTANT_BUFFER,
 		.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
@@ -1093,13 +1055,13 @@ auto Renderer::DrawMeshes(std::span<int const> const meshComponentIndices, bool 
 
 		D3D11_MAPPED_SUBRESOURCE mappedPerModelCBuf;
 		mResources->context->Map(mResources->perModelCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerModelCBuf);
-		auto& [modelMatData, normalMatData]{ *static_cast<PerModelCBuffer*>(mappedPerModelCBuf.pData) };
+		auto& [modelMatData, normalMatData]{ *static_cast<PerModelCB*>(mappedPerModelCBuf.pData) };
 		modelMatData = meshComponent->GetEntity()->GetTransform().GetModelMatrix();
 		normalMatData = Matrix4{ meshComponent->GetEntity()->GetTransform().GetNormalMatrix() };
 		mResources->context->Unmap(mResources->perModelCB.Get(), 0);
 
-		mResources->context->VSSetConstantBuffers(2, 1, mResources->perModelCB.GetAddressOf());
-		mResources->context->PSSetConstantBuffers(2, 1, mResources->perModelCB.GetAddressOf());
+		mResources->context->VSSetConstantBuffers(CB_SLOT_PER_MODEL, 1, mResources->perModelCB.GetAddressOf());
+		mResources->context->PSSetConstantBuffers(CB_SLOT_PER_MODEL, 1, mResources->perModelCB.GetAddressOf());
 
 		auto const subMeshes{ mesh.GetSubMeshes() };
 		auto const& materials{ meshComponent->GetMaterials() };
@@ -1111,8 +1073,8 @@ auto Renderer::DrawMeshes(std::span<int const> const meshComponentIndices, bool 
 				auto const& mtl{ static_cast<int>(materials.size()) > i ? *materials[i] : *mResources->defaultMaterial };
 
 				auto const mtlBuffer{ mtl.GetBuffer() };
-				mResources->context->VSSetConstantBuffers(3, 1, &mtlBuffer);
-				mResources->context->PSSetConstantBuffers(3, 1, &mtlBuffer);
+				mResources->context->VSSetConstantBuffers(CB_SLOT_PER_MATERIAL, 1, &mtlBuffer);
+				mResources->context->PSSetConstantBuffers(CB_SLOT_PER_MATERIAL, 1, &mtlBuffer);
 
 				std::array const srvs{
 					mtl.GetAlbedoMap() ? mtl.GetAlbedoMap()->GetSrv() : nullptr,
@@ -1121,7 +1083,17 @@ auto Renderer::DrawMeshes(std::span<int const> const meshComponentIndices, bool 
 					mtl.GetAoMap() ? mtl.GetAoMap()->GetSrv() : nullptr
 				};
 
-				mResources->context->PSSetShaderResources(0, static_cast<UINT>(srvs.size()), srvs.data());
+				auto const albedoSrv{ mtl.GetAlbedoMap() ? mtl.GetAlbedoMap()->GetSrv() : nullptr };
+				mResources->context->PSSetShaderResources(TEX_SLOT_ALBEDO_MAP, 1, &albedoSrv);
+
+				auto const metallicSrv{ mtl.GetMetallicMap() ? mtl.GetMetallicMap()->GetSrv() : nullptr };
+				mResources->context->PSSetShaderResources(TEX_SLOT_METALLIC_MAP, 1, &metallicSrv);
+
+				auto const roughnessSrv{ mtl.GetRoughnessMap() ? mtl.GetRoughnessMap()->GetSrv() : nullptr };
+				mResources->context->PSSetShaderResources(TEX_SLOT_ROUGHNESS_MAP, 1, &roughnessSrv);
+
+				auto const aoSrv{ mtl.GetAoMap() ? mtl.GetAoMap()->GetSrv() : nullptr };
+				mResources->context->PSSetShaderResources(TEX_SLOT_AO_MAP, 1, &aoSrv);
 			}
 
 			mResources->context->DrawIndexed(indexCount, firstIndex, baseVertex);
@@ -1170,7 +1142,7 @@ auto Renderer::DoToneMapGammaCorrectionStep(ID3D11ShaderResourceView* const src,
 
 	D3D11_MAPPED_SUBRESOURCE mappedToneMapGammaCB;
 	mResources->context->Map(mResources->toneMapGammaCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedToneMapGammaCB);
-	auto const toneMapGammaCBData{ static_cast<ToneMapGammaCBData*>(mappedToneMapGammaCB.pData) };
+	auto const toneMapGammaCBData{ static_cast<ToneMapGammaCB*>(mappedToneMapGammaCB.pData) };
 	toneMapGammaCBData->invGamma = mInvGamma;
 	mResources->context->Unmap(mResources->toneMapGammaCB.Get(), 0);
 
@@ -1184,15 +1156,14 @@ auto Renderer::DoToneMapGammaCorrectionStep(ID3D11ShaderResourceView* const src,
 	mResources->context->VSSetShader(mResources->texQuadVS.Get(), nullptr, 0);
 
 	mResources->context->PSSetShader(mResources->toneMapGammaPS.Get(), nullptr, 0);
-	mResources->context->PSSetConstantBuffers(0, 1, mResources->toneMapGammaCB.GetAddressOf());
-	mResources->context->PSSetShaderResources(0, 1, &src);
-	mResources->context->PSSetSamplers(0, 1, mResources->hdrTextureSS.GetAddressOf());
+	mResources->context->PSSetConstantBuffers(CB_SLOT_TONE_MAP_GAMMA, 1, mResources->toneMapGammaCB.GetAddressOf());
+	mResources->context->PSSetShaderResources(TEX_SLOT_TONE_MAP_SRC, 1, &src);
 
 	mResources->context->DrawIndexed(static_cast<UINT>(QUAD_INDICES.size()), 0, 0);
 
 	// Restore old view bindings to that we don't leave any input/output conflicts behind.
 
-	mResources->context->PSSetShaderResources(0, 1, srvBackup.GetAddressOf());
+	mResources->context->PSSetShaderResources(TEX_SLOT_TONE_MAP_SRC, 1, srvBackup.GetAddressOf());
 	mResources->context->OMSetRenderTargets(1, rtvBackup.GetAddressOf(), dsvBackup.Get());
 }
 
@@ -1204,8 +1175,8 @@ auto Renderer::DrawSkybox(Matrix4 const& camViewMtx, Matrix4 const& camProjMtx) 
 
 	D3D11_MAPPED_SUBRESOURCE mappedSkyboxCB;
 	mResources->context->Map(mResources->skyboxCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedSkyboxCB);
-	auto const skyboxCBData{ static_cast<SkyboxCBData*>(mappedSkyboxCB.pData) };
-	skyboxCBData->viewProjMtx = Matrix4{ Matrix3{ camViewMtx } } * camProjMtx;
+	auto const skyboxCBData{ static_cast<SkyboxCB*>(mappedSkyboxCB.pData) };
+	skyboxCBData->skyboxViewProjMtx = Matrix4{ Matrix3{ camViewMtx } } * camProjMtx;
 	mResources->context->Unmap(mResources->skyboxCB.Get(), 0);
 
 	ID3D11Buffer* const vertexBuffer{ mResources->cubeMesh->GetPositionBuffer().Get() };
@@ -1219,10 +1190,10 @@ auto Renderer::DrawSkybox(Matrix4 const& camViewMtx, Matrix4 const& camProjMtx) 
 	mResources->context->PSSetShader(mResources->skyboxPS.Get(), nullptr, 0);
 
 	auto const cubemapSrv{ mSkyboxes[0]->GetCubemap()->GetSrv() };
-	mResources->context->PSSetShaderResources(0, 1, &cubemapSrv);
+	mResources->context->PSSetShaderResources(TEX_SLOT_SKYBOX_CUBEMAP, 1, &cubemapSrv);
 
 	auto const cb{ mResources->skyboxCB.Get() };
-	mResources->context->VSSetConstantBuffers(0, 1, &cb);
+	mResources->context->VSSetConstantBuffers(CB_SLOT_SKYBOX_PASS, 1, &cb);
 
 	mResources->context->OMSetDepthStencilState(mResources->skyboxPassDSS.Get(), 0);
 	mResources->context->RSSetState(mResources->skyboxPassRS.Get());
@@ -1257,12 +1228,12 @@ auto Renderer::DrawFullWithCameras(std::span<RenderCamera const* const> const ca
 		.MaxDepth = 1
 	};
 
-	std::array const samplers{ mResources->materialSS.Get(), mResources->shadowSS.Get() };
-	mResources->context->PSSetSamplers(0, static_cast<UINT>(samplers.size()), samplers.data());
+	mResources->context->PSSetSamplers(SAMPLER_SLOT_MATERIAL, 1, mResources->materialSS.GetAddressOf());
+	mResources->context->PSSetSamplers(SAMPLER_SLOT_SHADOW, 1, mResources->shadowSS.GetAddressOf());
 
 	UpdatePerFrameCB();
-	mResources->context->VSSetConstantBuffers(0, 1, mResources->perFrameCB.GetAddressOf());
-	mResources->context->PSSetConstantBuffers(0, 1, mResources->perFrameCB.GetAddressOf());
+	mResources->context->VSSetConstantBuffers(CB_SLOT_PER_FRAME, 1, mResources->perFrameCB.GetAddressOf());
+	mResources->context->PSSetConstantBuffers(CB_SLOT_PER_FRAME, 1, mResources->perFrameCB.GetAddressOf());
 
 	for (auto const cam : cameras) {
 		auto const camPos{ cam->GetPosition() };
@@ -1283,7 +1254,7 @@ auto Renderer::DrawFullWithCameras(std::span<RenderCamera const* const> const ca
 
 		CalculateShadowAtlasAllocation(mLights, visibleLightIndices, viewProjMat, mSpotPointShadowAtlasAlloc);
 		ID3D11ShaderResourceView* const nullSrv{ nullptr };
-		mResources->context->PSSetShaderResources(4, 1, &nullSrv);
+		mResources->context->PSSetShaderResources(TEX_SLOT_PUNCTUAL_SHADOW_ATLAS, 1, &nullSrv);
 		DrawShadowMaps(visibleLightIndices, mSpotPointShadowAtlasAlloc);
 
 		std::vector<int> static visibleMeshIndices;
@@ -1294,8 +1265,8 @@ auto Renderer::DrawFullWithCameras(std::span<RenderCamera const* const> const ca
 
 		D3D11_MAPPED_SUBRESOURCE mappedPerCamCBuf;
 		mResources->context->Map(mResources->perCamCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerCamCBuf);
-		auto const perCamCBufData{ static_cast<PerCamCBuffer*>(mappedPerCamCBuf.pData) };
-		perCamCBufData->viewProjMat = viewProjMat;
+		auto const perCamCBufData{ static_cast<PerCameraCB*>(mappedPerCamCBuf.pData) };
+		perCamCBufData->viewProjMtx = viewProjMat;
 		perCamCBufData->camPos = camPos;
 
 		auto const lightCount{ std::min(MAX_LIGHT_COUNT, static_cast<int>(visibleLightIndices.size())) };
@@ -1331,11 +1302,11 @@ auto Renderer::DrawFullWithCameras(std::span<RenderCamera const* const> const ca
 		mResources->context->VSSetShader(mResources->meshVS.Get(), nullptr, 0);
 		mResources->context->PSSetShader(mResources->meshPbrPS.Get(), nullptr, 0);
 
-		mResources->context->VSSetConstantBuffers(1, 1, mResources->perCamCB.GetAddressOf());
-		mResources->context->PSSetConstantBuffers(1, 1, mResources->perCamCB.GetAddressOf());
+		mResources->context->VSSetConstantBuffers(CB_SLOT_PER_CAM, 1, mResources->perCamCB.GetAddressOf());
+		mResources->context->PSSetConstantBuffers(CB_SLOT_PER_CAM, 1, mResources->perCamCB.GetAddressOf());
 
 		mResources->context->OMSetRenderTargets(1, &rtv, dsv);
-		mResources->context->PSSetShaderResources(4, 1, mResources->spotPointShadowAtlas.srv.GetAddressOf());
+		mResources->context->PSSetShaderResources(TEX_SLOT_PUNCTUAL_SHADOW_ATLAS, 1, mResources->spotPointShadowAtlas.srv.GetAddressOf());
 
 		mResources->context->RSSetViewports(1, &viewport);
 
@@ -1353,7 +1324,7 @@ auto Renderer::DrawShadowMaps(std::span<int const> const visibleLightIndices, Sh
 	mResources->context->ClearDepthStencilView(mResources->spotPointShadowAtlas.dsv.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 	mResources->context->VSSetShader(mResources->shadowVS.Get(), nullptr, 0);
 	mResources->context->PSSetShader(nullptr, nullptr, 0);
-	mResources->context->VSSetConstantBuffers(4, 1, mResources->shadowCB.GetAddressOf());
+	mResources->context->VSSetConstantBuffers(CB_SLOT_SHADOW_PASS, 1, mResources->shadowCB.GetAddressOf());
 
 	for (int i = 0; i < 4; i++) {
 		auto const cells{ alloc.GetQuadrantCells(i) };
@@ -1376,7 +1347,7 @@ auto Renderer::DrawShadowMaps(std::span<int const> const visibleLightIndices, Sh
 
 				D3D11_MAPPED_SUBRESOURCE mapped;
 				mResources->context->Map(mResources->shadowCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
-				static_cast<ShadowCBData*>(mapped.pData)->lightViewProjMtx = cells[j]->lightViewProjMtx;
+				static_cast<ShadowCB*>(mapped.pData)->lightViewProjMtx = cells[j]->lightViewProjMtx;
 				mResources->context->Unmap(mResources->shadowCB.Get(), 0);
 
 				auto const lightFrustum{

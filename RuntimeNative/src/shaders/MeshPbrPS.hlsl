@@ -1,9 +1,18 @@
-#include "CBuffers.hlsli"
 #include "MeshVSOut.hlsli"
 #include "ShaderInterop.h"
 
-Texture2D<float> gSpotPointShadowAtlas : register(t4);
-SamplerComparisonState gShadowSampler : register(s1);
+
+TEXTURE2D(gAlbedoMap, float4, TEX_SLOT_ALBEDO_MAP);
+TEXTURE2D(gMetallicMap, float, TEX_SLOT_METALLIC_MAP);
+TEXTURE2D(gRoughnessMap, float, TEX_SLOT_ROUGHNESS_MAP);
+TEXTURE2D(gAoMap, float, TEX_SLOT_AO_MAP);
+TEXTURE2D(gPunctualShadowAtlas, float, TEX_SLOT_PUNCTUAL_SHADOW_ATLAS);
+
+SAMPLERSTATE(gMaterialSampler, SAMPLER_SLOT_MATERIAL);
+SAMPLERCOMPARISONSTATE(gShadowSampler, SAMPLER_SLOT_SHADOW);
+
+static const float PI = 3.14159265f;
+
 
 inline float2 TransformUVForShadowAtlas(const float2 uv, uniform const uint atlasQuadrantIdx, uniform const uint atlasCellIdx) {
     const int cellRowColCount = pow(2, atlasQuadrantIdx);
@@ -26,6 +35,7 @@ inline float2 TransformUVForShadowAtlas(const float2 uv, uniform const uint atla
     return uv * cellSize + quadrantOffset + cellOffset;
 }
 
+
 inline float SampleShadowMap(uniform const Texture2D<float> shadowMap, uniform const int lightIdx, const float3 posW, const float3 N, const float3 L) {
     const float4 posLClip = mul(float4(posW, 1), lights[lightIdx].lightViewProjMtx);
     float3 posLNdc = posLClip.xyz / posLClip.w;
@@ -37,11 +47,11 @@ inline float SampleShadowMap(uniform const Texture2D<float> shadowMap, uniform c
     return shadowMap.SampleCmpLevelZero(gShadowSampler, TransformUVForShadowAtlas(posLNdc.xy, lights[lightIdx].atlasQuadrantIdx, lights[lightIdx].atlasCellIdx), posLNdc.z - bias);
 }
 
-static const float PI = 3.14159265f;
 
 float3 FresnelSchlick(const float cosTheta, const float3 F0) {
     return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
+
 
 float TrowbridgeReitz(const float3 N, const float3 H, const float roughness) {
     const float a = roughness * roughness;
@@ -56,6 +66,7 @@ float TrowbridgeReitz(const float3 N, const float3 H, const float roughness) {
     return num / denom;
 }
 
+
 float SchlickTrowbridgeReitz(const float NdotV, const float roughness) {
     const float r = (roughness + 1.0);
     const float k = (r * r) / 8.0;
@@ -66,6 +77,7 @@ float SchlickTrowbridgeReitz(const float NdotV, const float roughness) {
     return num / denom;
 }
 
+
 float Smith(const float3 N, const float3 V, const float3 L, const float roughness) {
     const float NdotV = max(dot(N, V), 0.0);
     const float NdotL = max(dot(N, L), 0.0);
@@ -74,6 +86,7 @@ float Smith(const float3 N, const float3 V, const float3 L, const float roughnes
 	
     return ggx1 * ggx2;
 }
+
 
 float3 CalculateLighting(const float3 N, const float3 V, const float3 L, const float3 albedo, const float metallic, const float roughness, const float3 lightColor, const float lightIntensity) {
     float3 F0 = float3(0.04, 0.04, 0.04);
@@ -105,14 +118,17 @@ float3 CalculateLighting(const float3 N, const float3 V, const float3 L, const f
     return Lo;
 }
 
+
 float CalculateAttenuation(const float distance) {
     return 1 / pow(distance, 2);
 }
+
 
 float3 CalculateDirLight(const float3 N, const float3 V, const float3 albedo, const float metallic, const float roughness, uniform const int lightIdx) {
     const float3 L = -lights[lightIdx].direction;
     return CalculateLighting(N, V, L, albedo, metallic, roughness, lights[lightIdx].color, lights[lightIdx].intensity);
 }
+
 
 float3 CalculateSpotLight(const float3 N, const float3 V, const float3 albedo, const float metallic, const float roughness, uniform const int lightIdx, const float3 fragWorldPos)
 {
@@ -132,11 +148,12 @@ float3 CalculateSpotLight(const float3 N, const float3 V, const float3 albedo, c
 
     [branch]
     if (lights[lightIdx].isCastingShadow) {
-        lighting *= SampleShadowMap(gSpotPointShadowAtlas, lightIdx, fragWorldPos, N, L);
+        lighting *= SampleShadowMap(gPunctualShadowAtlas, lightIdx, fragWorldPos, N, L);
     }
     
     return lighting;
 }
+
 
 float3 CalculatePointLight(const float3 N, const float3 V, const float3 albedo, const float metallic, const float roughness, uniform const int lightIdx, const float3 fragWorldPos)
 {
@@ -153,6 +170,7 @@ float3 CalculatePointLight(const float3 N, const float3 V, const float3 albedo, 
     return lighting;
 
 }
+
 
 float4 main(const MeshVsOut vsOut) : SV_TARGET {
     const float3 N = normalize(vsOut.normal);

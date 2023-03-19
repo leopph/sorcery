@@ -1,4 +1,4 @@
-#include "CBuffers.hlsli"
+#include "ShaderInterop.h"
 #include "MeshVSOut.hlsli"
 
 struct MeshVSIn {
@@ -8,12 +8,12 @@ struct MeshVSIn {
 };
 
 MeshVsOut main(MeshVSIn vsIn) {
-    float4 worldPos4 = mul(float4(vsIn.vertexPos, 1), modelMat);
+    float4 worldPos4 = mul(float4(vsIn.vertexPos, 1), modelMtx);
 
     MeshVsOut ret;
     ret.worldPos = worldPos4.xyz;
-    ret.clipPos = mul(worldPos4, viewProjMat);
-    ret.normal = mul(vsIn.vertexNorm, normalMat);
+    ret.clipPos = mul(worldPos4, viewProjMtx);
+    ret.normal = mul(vsIn.vertexNorm, normalMtx);
     ret.uv = vsIn.vertexUV;
 
     return ret;

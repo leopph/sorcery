@@ -1,14 +1,11 @@
 #include "TexturedQuadVSOut.hlsli"
+#include "ShaderInterop.h"
 
-Texture2D gHdrTexture;
-SamplerState gSamplerState;
+TEXTURE2D(gSrcTex, float4, TEX_SLOT_TONE_MAP_SRC);
 
-cbuffer Gamma : register(b0) {
-    float invGamma;
-}
 
-float4 main(const VsOut vsOut) : SV_TARGET {
-    float3 pixelColor = gHdrTexture.Sample(gSamplerState, vsOut.uv).xyz;
+float4 main(const float4 pixelCoord : SV_POSITION) : SV_TARGET {
+    float3 pixelColor = gSrcTex.Load(pixelCoord).rgb;
 
     pixelColor = pixelColor / (pixelColor + 1.0);
 #pragma warning(push)
