@@ -1306,7 +1306,7 @@ auto Renderer::DrawFullWithCameras(std::span<RenderCamera const* const> const ca
 		CalculateShadowAtlasAllocation(mLights, visibleLightIndices, viewProjMat, mSpotPointShadowAtlasAlloc);
 		ID3D11ShaderResourceView* const nullSrv{ nullptr };
 		mResources->context->PSSetShaderResources(4, 1, &nullSrv);
-		DrawShadowMaps(mSpotPointShadowAtlasAlloc);
+		DrawShadowMaps(visibleLightIndices, mSpotPointShadowAtlasAlloc);
 
 		std::vector<int> static visibleMeshIndices;
 		visibleMeshIndices.clear();
@@ -1342,10 +1342,10 @@ auto Renderer::DrawFullWithCameras(std::span<RenderCamera const* const> const ca
 
 			for (int j = 0; j < static_cast<int>(cells.size()); j++) {
 				if (cells[j]) {
-					perCamCBufData->lights[cells[j]->lightIdx].isCastingShadow = true;
-					perCamCBufData->lights[cells[j]->lightIdx].lightViewProjMtx = cells[j]->lightViewProjMtx;
-					perCamCBufData->lights[cells[j]->lightIdx].shadowAtlasOffset = mSpotPointShadowAtlasAlloc.GetCellOffsetNormalized(i, j);
-					perCamCBufData->lights[cells[j]->lightIdx].shadowAtlasScale = Vector2{ 0.5f / static_cast<float>(quadrantRowColCount) };
+					perCamCBufData->lights[cells[j]->visibleLightIdxIdx].isCastingShadow = true;
+					perCamCBufData->lights[cells[j]->visibleLightIdxIdx].lightViewProjMtx = cells[j]->lightViewProjMtx;
+					perCamCBufData->lights[cells[j]->visibleLightIdxIdx].shadowAtlasOffset = mSpotPointShadowAtlasAlloc.GetCellOffsetNormalized(i, j);
+					perCamCBufData->lights[cells[j]->visibleLightIdxIdx].shadowAtlasScale = Vector2{ 0.5f / static_cast<float>(quadrantRowColCount) };
 				}
 			}
 		}
@@ -1372,7 +1372,7 @@ auto Renderer::DrawFullWithCameras(std::span<RenderCamera const* const> const ca
 }
 
 
-auto Renderer::DrawShadowMaps(ShadowAtlasAllocation const& alloc) const -> void {
+auto Renderer::DrawShadowMaps(std::span<int const> const visibleLightIndices, ShadowAtlasAllocation const& alloc) const -> void {
 	mResources->context->OMSetRenderTargets(0, nullptr, mResources->spotPointShadowAtlas.dsv.Get());
 	mResources->context->ClearDepthStencilView(mResources->spotPointShadowAtlas.dsv.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 	mResources->context->VSSetShader(mResources->shadowVS.Get(), nullptr, 0);
@@ -1427,7 +1427,7 @@ auto Renderer::DrawShadowMaps(ShadowAtlasAllocation const& alloc) const -> void 
 							return {};
 						}
 						}
-					}(mLights[cells[j]->lightIdx])
+					}(mLights[visibleLightIndices[cells[j]->visibleLightIdxIdx]])
 				};
 
 				std::vector<int> static visibleMeshComponentIndices;
@@ -1441,14 +1441,14 @@ auto Renderer::DrawShadowMaps(ShadowAtlasAllocation const& alloc) const -> void 
 
 
 auto Renderer::CalculateShadowAtlasAllocation(std::span<LightComponent const* const> const allLights, std::span<int const> const camVisibleLightIndices, Matrix4 const& camViewProjMtx, ShadowAtlasAllocation& alloc) -> void {
-	std::array<std::vector<int>, 4> static lightIndicesInQuadrant{};
+	std::array<std::vector<int>, 4> static lightIndexIndicesInQuadrant{};
 
-	for (auto& quadrantLights : lightIndicesInQuadrant) {
+	for (auto& quadrantLights : lightIndexIndicesInQuadrant) {
 		quadrantLights.clear();
 	}
 
-	for (auto const lightIdx : camVisibleLightIndices) {
-		if (auto const light{ allLights[lightIdx] }; light->IsCastingShadow()) {
+	for (int i = 0; i < static_cast<int>(camVisibleLightIndices.size()); i++) {
+		if (auto const light{ allLights[camVisibleLightIndices[i]] }; light->IsCastingShadow()) {
 			switch (light->GetType()) {
 			case LightComponent::Type::Directional: {
 				break;
@@ -1521,7 +1521,7 @@ auto Renderer::CalculateShadowAtlasAllocation(std::span<LightComponent const* co
 				}
 
 				if (quadrantIdx) {
-					lightIndicesInQuadrant[*quadrantIdx].emplace_back(lightIdx);
+					lightIndexIndicesInQuadrant[*quadrantIdx].emplace_back(i);
 				}
 
 				break;
@@ -1538,13 +1538,13 @@ auto Renderer::CalculateShadowAtlasAllocation(std::span<LightComponent const* co
 
 	for (int i = 0; i < 4; i++) {
 		for (auto& cell : newAlloc.GetQuadrantCells(i)) {
-			if (lightIndicesInQuadrant[i].empty()) {
+			if (lightIndexIndicesInQuadrant[i].empty()) {
 				break;
 			}
 
-			auto const lightIdx{ lightIndicesInQuadrant[i].back() };
-			auto const light{ allLights[lightIdx] };
-			lightIndicesInQuadrant[i].pop_back();
+			auto const lightIdxIdx{ lightIndexIndicesInQuadrant[i].back() };
+			auto const light{ allLights[camVisibleLightIndices[lightIdxIdx]] };
+			lightIndexIndicesInQuadrant[i].pop_back();
 
 			auto const lightViewMtx{
 				Matrix4::LookToLH(light->GetEntity()->GetTransform().GetWorldPosition(),
@@ -1558,11 +1558,11 @@ auto Renderer::CalculateShadowAtlasAllocation(std::span<LightComponent const* co
 				                            light->GetRange())
 			};
 
-			cell.emplace(lightViewMtx, lightViewMtx * lightProjMtx, lightIdx);
+			cell.emplace(lightViewMtx, lightViewMtx * lightProjMtx, lightIdxIdx);
 		}
 
 		if (i + 1 < 4) {
-			std::ranges::copy(lightIndicesInQuadrant[i], std::back_inserter(lightIndicesInQuadrant[i + 1]));
+			std::ranges::copy(lightIndexIndicesInQuadrant[i], std::back_inserter(lightIndexIndicesInQuadrant[i + 1]));
 		}
 	}
 
