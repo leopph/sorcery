@@ -10,7 +10,7 @@ namespace leopph {
 auto TransformComponent::UpdateWorldDataRecursive() -> void {
 	SetChanged(true);
 
-	mWorldPosition = mParent != nullptr ? mParent->mWorldRotation.Rotate(mParent->mWorldPosition + mLocalPosition) : mLocalPosition;
+	mWorldPosition = mParent != nullptr ? mParent->mWorldPosition + mParent->mWorldRotation.Rotate(mLocalPosition) : mLocalPosition;
 	mWorldRotation = mParent != nullptr ? mParent->mWorldRotation * mLocalRotation : mLocalRotation;
 	mWorldScale = mParent != nullptr ? mParent->mWorldScale * mLocalScale : mLocalScale;
 
