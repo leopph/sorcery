@@ -787,6 +787,15 @@ auto DrawSceneOpenPrompt() {
 	}
 	ImGui::End();
 }
+
+auto DrawPerformanceCounterWindow() {
+	if (ImGui::Begin("Performance")) {
+		ImGui::Text("%d %s", static_cast<int>(1.0f / get_frame_time()), "FPS");
+		ImGui::Text("%.2f %s", static_cast<double>(get_frame_time()), "ms");
+	}
+
+	ImGui::End();
+}
 }
 
 
@@ -907,6 +916,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 				DrawMainMenuBar(context, showDemoWindow);
 				DrawObjectPropertiesWindow(context);
 				DrawProjectWindow(context);
+				leopph::editor::DrawPerformanceCounterWindow();
 			}
 
 			ImGui::Render();
