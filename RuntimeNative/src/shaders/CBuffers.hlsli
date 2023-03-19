@@ -1,9 +1,8 @@
 #ifndef CBUFFERS_HLSLI
 #define CBUFFERS_HLSLI
 
-#include "Light.hlsli"
 #include "PbrMaterial.hlsli"
-#include "Defines.h"
+#include "ShaderInterop.h"
 
 cbuffer PerFrame : register(b0) {
     
@@ -13,7 +12,7 @@ cbuffer PerCamera : register(b1) {
     row_major float4x4 viewProjMat;
     float3 camPos;
     int lightCount;
-    Light lights[MAX_LIGHT_COUNT];
+    ShaderLight lights[MAX_LIGHT_COUNT];
 };
 
 cbuffer PerModel : register(b2)

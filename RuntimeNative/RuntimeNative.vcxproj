@@ -147,7 +147,6 @@
     <ClInclude Include="src\CameraComponent.hpp" />
     <ClInclude Include="src\Component.hpp" />
     <ClInclude Include="src\Compress.hpp" />
-    <ClInclude Include="src\shaders\Defines.h" />
     <ClInclude Include="src\StaticMeshComponent.hpp" />
     <ClInclude Include="src\Guid.hpp" />
     <ClInclude Include="src\Image.hpp" />
@@ -176,7 +175,7 @@
   <ItemGroup>
     <None Include="cpp.hint" />
     <None Include="src\shaders\CBuffers.hlsli" />
-    <None Include="src\shaders\Light.hlsli" />
+    <None Include="src\shaders\ShaderInterop.h" />
     <None Include="src\shaders\MeshVSOut.hlsli" />
     <None Include="src\shaders\PbrMaterial.hlsli" />
     <None Include="src\shaders\SkyboxVSOut.hlsli" />

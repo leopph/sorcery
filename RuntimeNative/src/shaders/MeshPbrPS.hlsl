@@ -1,18 +1,40 @@
 #include "CBuffers.hlsli"
 #include "MeshVSOut.hlsli"
+#include "ShaderInterop.h"
 
 Texture2D<float> gSpotPointShadowAtlas : register(t4);
 SamplerComparisonState gShadowSampler : register(s1);
 
+inline float2 TransformUVForShadowAtlas(const float2 uv, uniform const uint atlasQuadrantIdx, uniform const uint atlasCellIdx) {
+    const int cellRowColCount = pow(2, atlasQuadrantIdx);
+    float cellSize = 0.5f / cellRowColCount;
+
+    float2 quadrantOffset = float2(0, 0);
+
+    if (atlasQuadrantIdx == 1) {
+        quadrantOffset = float2(0.5f, 0);
+    }
+    else if (atlasQuadrantIdx == 2) {
+        quadrantOffset = float2(0, 0.5f);
+    }
+    else if (atlasQuadrantIdx == 3) {
+        quadrantOffset = float2(0.5f, 0.5f);
+    }
+
+    const float2 cellOffset = float2(atlasCellIdx % cellRowColCount, atlasCellIdx / cellRowColCount) * float2(cellSize, cellSize);
+
+    return uv * cellSize + quadrantOffset + cellOffset;
+}
+
 inline float SampleShadowMap(uniform const Texture2D<float> shadowMap, uniform const int lightIdx, const float3 posW, const float3 N, const float3 L) {
-    const float4 posLClip = mul(float4(posW, 1), lights[lightIdx].lightSpaceMtx);
+    const float4 posLClip = mul(float4(posW, 1), lights[lightIdx].lightViewProjMtx);
     float3 posLNdc = posLClip.xyz / posLClip.w;
     posLNdc.xy = posLNdc.xy * 0.5 + 0.5;
     posLNdc.y = 1 - posLNdc.y;
     const float MIN_SHADOW_BIAS = 0.0001;
     const float MAX_SHADOW_BIAS = 0.01;
     const float bias = max(MAX_SHADOW_BIAS * (1.0 - dot(N, L)), MIN_SHADOW_BIAS);
-    return shadowMap.SampleCmpLevelZero(gShadowSampler, posLNdc.xy * lights[lightIdx].shadowAtlasScale + lights[lightIdx].shadowAtlasOffset, posLNdc.z - bias);
+    return shadowMap.SampleCmpLevelZero(gShadowSampler, TransformUVForShadowAtlas(posLNdc.xy, lights[lightIdx].atlasQuadrantIdx, lights[lightIdx].atlasCellIdx), posLNdc.z - bias);
 }
 
 static const float PI = 3.14159265f;

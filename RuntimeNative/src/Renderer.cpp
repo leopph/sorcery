@@ -32,7 +32,7 @@
 #include "shaders/generated/ShadowVSBin.h"
 #endif
 
-#include "shaders/Defines.h"
+#include "shaders/ShaderInterop.h"
 
 #include <cassert>
 #include <functional>
@@ -41,28 +41,6 @@ using Microsoft::WRL::ComPtr;
 
 
 namespace leopph {
-struct LightCBufferData {
-	Vector3 color;
-	f32 intensity;
-
-	Vector3 direction;
-	int type;
-
-	f32 shadowNearPlane;
-	f32 range;
-	f32 innerAngleCos;
-	BOOL isCastingShadow;
-
-	Vector3 position;
-	f32 outerAngleCos;
-
-	Vector2 shadowAtlasOffset;
-	Vector2 shadowAtlasScale;
-
-	Matrix4 lightViewProjMtx;
-};
-
-
 struct PerFrameCBuffer {};
 
 
@@ -70,7 +48,7 @@ struct PerCamCBuffer {
 	Matrix4 viewProjMat;
 	Vector3 camPos;
 	int lightCount{};
-	LightCBufferData lights[MAX_LIGHT_COUNT];
+	ShaderLight lights[MAX_LIGHT_COUNT];
 };
 
 
@@ -1338,14 +1316,12 @@ auto Renderer::DrawFullWithCameras(std::span<RenderCamera const* const> const ca
 
 		for (int i = 0; i < 4; i++) {
 			auto const cells{ mSpotPointShadowAtlasAlloc.GetQuadrantCells(i) };
-			auto const quadrantRowColCount{ mSpotPointShadowAtlasAlloc.GetQuadrantRowColCount(i) };
-
 			for (int j = 0; j < static_cast<int>(cells.size()); j++) {
 				if (cells[j]) {
 					perCamCBufData->lights[cells[j]->visibleLightIdxIdx].isCastingShadow = true;
 					perCamCBufData->lights[cells[j]->visibleLightIdxIdx].lightViewProjMtx = cells[j]->lightViewProjMtx;
-					perCamCBufData->lights[cells[j]->visibleLightIdxIdx].shadowAtlasOffset = mSpotPointShadowAtlasAlloc.GetCellOffsetNormalized(i, j);
-					perCamCBufData->lights[cells[j]->visibleLightIdxIdx].shadowAtlasScale = Vector2{ 0.5f / static_cast<float>(quadrantRowColCount) };
+					perCamCBufData->lights[cells[j]->visibleLightIdxIdx].atlasQuadrantIdx = i;
+					perCamCBufData->lights[cells[j]->visibleLightIdxIdx].atlasCellIdx = j;
 				}
 			}
 		}
