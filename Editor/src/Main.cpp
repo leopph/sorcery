@@ -499,7 +499,8 @@ auto DrawProjectWindow(Context& context) -> void {
 								IndexFileNameIfNeeded(context.GetAssetDirectoryAbsolute() / srcPathAbs.filename())
 						};
 
-						if (!equivalent(dstPath, srcPathAbs)) {
+						if (!exists(dstPath) || !equivalent(dstPath, srcPathAbs)) {
+							
 							copy_file(srcPathAbs, dstPath);
 						}
 
