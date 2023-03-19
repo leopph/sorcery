@@ -16,7 +16,9 @@ auto SceneImporter::Import(InputImportInfo const& importInfo, [[maybe_unused]] s
 	std::ifstream in{ importInfo.src, std::ios::in | std::ios::binary };
 	std::vector<std::uint8_t> fileData{ std::istreambuf_iterator{ in }, {} };
 
-	scene->Deserialize(fileData);
+	if (!fileData.empty()) {
+		scene->Deserialize(fileData);
+	}
 
 	return scene;
 }
