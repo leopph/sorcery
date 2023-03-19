@@ -116,10 +116,6 @@
     <ClCompile Include="src\Widgets.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="scene.yaml">
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
-    </None>
     <None Include="vcpkg.json" />
   </ItemGroup>
   <ItemGroup>
