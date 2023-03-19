@@ -191,7 +191,7 @@ std::vector<UINT> const CUBE_INDICES{
 
 
 auto Renderer::ShadowAtlasAllocation::GetSize() const noexcept -> int {
-	return SPOT_POINT_SHADOW_ATLAS_SIZE;
+	return PUNCTUAL_SHADOW_ATLAS_SIZE;
 }
 
 
@@ -203,16 +203,16 @@ auto Renderer::ShadowAtlasAllocation::GetQuadrantCells(int const idx) const -> s
 auto Renderer::ShadowAtlasAllocation::GetQuadrantCells(int const idx) -> std::span<std::optional<ShadowAtlasCellData>> {
 	switch (idx) {
 	case 0: {
-		return std::span{ &q1Light, 1 };
+		return std::span{ &quadrant0, 1 };
 	}
 	case 1: {
-		return std::span{ q2Lights };
+		return std::span{ quadrant1 };
 	}
 	case 2: {
-		return std::span{ q3Lights };
+		return std::span{ quadrant2 };
 	}
 	case 3: {
-		return std::span{ q4Lights };
+		return std::span{ quadrant3 };
 	}
 	default: {
 		throw std::out_of_range{ "Shadow atlas quadrant index out of bounds." };
@@ -939,9 +939,9 @@ auto Renderer::CreateDepthStencilStates() const -> void {
 
 
 auto Renderer::CreateShadowAtlases() const -> void {
-	D3D11_TEXTURE2D_DESC constexpr spotPointTexDesc{
-		.Width = SPOT_POINT_SHADOW_ATLAS_SIZE,
-		.Height = SPOT_POINT_SHADOW_ATLAS_SIZE,
+	D3D11_TEXTURE2D_DESC constexpr punctAtlasDesc{
+		.Width = PUNCTUAL_SHADOW_ATLAS_SIZE,
+		.Height = PUNCTUAL_SHADOW_ATLAS_SIZE,
 		.MipLevels = 1,
 		.ArraySize = 1,
 		.Format = DXGI_FORMAT_R16_TYPELESS,
@@ -955,11 +955,11 @@ auto Renderer::CreateShadowAtlases() const -> void {
 		.MiscFlags = 0
 	};
 
-	if (FAILED(mResources->device->CreateTexture2D(&spotPointTexDesc, nullptr, mResources->spotPointShadowAtlas.tex.GetAddressOf()))) {
+	if (FAILED(mResources->device->CreateTexture2D(&punctAtlasDesc, nullptr, mResources->punctualShadowAtlas.tex.GetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create spot/point shadow atlas texture." };
 	}
 
-	D3D11_SHADER_RESOURCE_VIEW_DESC constexpr spotPointSrvDesc{
+	D3D11_SHADER_RESOURCE_VIEW_DESC constexpr punctSrvDesc{
 		.Format = DXGI_FORMAT_R16_UNORM,
 		.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D,
 		.Texture2D = {
@@ -968,11 +968,11 @@ auto Renderer::CreateShadowAtlases() const -> void {
 		}
 	};
 
-	if (FAILED(mResources->device->CreateShaderResourceView(mResources->spotPointShadowAtlas.tex.Get(), &spotPointSrvDesc, mResources->spotPointShadowAtlas.srv.GetAddressOf()))) {
+	if (FAILED(mResources->device->CreateShaderResourceView(mResources->punctualShadowAtlas.tex.Get(), &punctSrvDesc, mResources->punctualShadowAtlas.srv.GetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create spot/point shadow atlas srv." };
 	}
 
-	D3D11_DEPTH_STENCIL_VIEW_DESC constexpr spotPointDsvDesc{
+	D3D11_DEPTH_STENCIL_VIEW_DESC constexpr puntDsvDesc{
 		.Format = DXGI_FORMAT_D16_UNORM,
 		.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D,
 		.Flags = 0,
@@ -981,7 +981,7 @@ auto Renderer::CreateShadowAtlases() const -> void {
 		}
 	};
 
-	if (FAILED(mResources->device->CreateDepthStencilView(mResources->spotPointShadowAtlas.tex.Get(), &spotPointDsvDesc, mResources->spotPointShadowAtlas.dsv.GetAddressOf()))) {
+	if (FAILED(mResources->device->CreateDepthStencilView(mResources->punctualShadowAtlas.tex.Get(), &puntDsvDesc, mResources->punctualShadowAtlas.dsv.GetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create spot/point shadow atlas dsv." };
 	}
 }
@@ -1075,13 +1075,6 @@ auto Renderer::DrawMeshes(std::span<int const> const meshComponentIndices, bool 
 				auto const mtlBuffer{ mtl.GetBuffer() };
 				mResources->context->VSSetConstantBuffers(CB_SLOT_PER_MATERIAL, 1, &mtlBuffer);
 				mResources->context->PSSetConstantBuffers(CB_SLOT_PER_MATERIAL, 1, &mtlBuffer);
-
-				std::array const srvs{
-					mtl.GetAlbedoMap() ? mtl.GetAlbedoMap()->GetSrv() : nullptr,
-					mtl.GetMetallicMap() ? mtl.GetMetallicMap()->GetSrv() : nullptr,
-					mtl.GetRoughnessMap() ? mtl.GetRoughnessMap()->GetSrv() : nullptr,
-					mtl.GetAoMap() ? mtl.GetAoMap()->GetSrv() : nullptr
-				};
 
 				auto const albedoSrv{ mtl.GetAlbedoMap() ? mtl.GetAlbedoMap()->GetSrv() : nullptr };
 				mResources->context->PSSetShaderResources(TEX_SLOT_ALBEDO_MAP, 1, &albedoSrv);
@@ -1252,10 +1245,10 @@ auto Renderer::DrawFullWithCameras(std::span<RenderCamera const* const> const ca
 		visibleLightIndices.clear();
 		CullLights(camFrust, viewMat, mLights, visibleLightIndices);
 
-		CalculateShadowAtlasAllocation(mLights, visibleLightIndices, viewProjMat, mSpotPointShadowAtlasAlloc);
+		CalculatePunctualShadowAtlasAllocation(mLights, visibleLightIndices, viewProjMat, mPunctualShadowAtlasAlloc);
 		ID3D11ShaderResourceView* const nullSrv{ nullptr };
 		mResources->context->PSSetShaderResources(TEX_SLOT_PUNCTUAL_SHADOW_ATLAS, 1, &nullSrv);
-		DrawShadowMaps(visibleLightIndices, mSpotPointShadowAtlasAlloc);
+		DrawShadowMaps(visibleLightIndices, mPunctualShadowAtlasAlloc);
 
 		std::vector<int> static visibleMeshIndices;
 		visibleMeshIndices.clear();
@@ -1286,7 +1279,7 @@ auto Renderer::DrawFullWithCameras(std::span<RenderCamera const* const> const ca
 		}
 
 		for (int i = 0; i < 4; i++) {
-			auto const cells{ mSpotPointShadowAtlasAlloc.GetQuadrantCells(i) };
+			auto const cells{ mPunctualShadowAtlasAlloc.GetQuadrantCells(i) };
 			for (int j = 0; j < static_cast<int>(cells.size()); j++) {
 				if (cells[j]) {
 					perCamCBufData->lights[cells[j]->visibleLightIdxIdx].isCastingShadow = true;
@@ -1306,7 +1299,7 @@ auto Renderer::DrawFullWithCameras(std::span<RenderCamera const* const> const ca
 		mResources->context->PSSetConstantBuffers(CB_SLOT_PER_CAM, 1, mResources->perCamCB.GetAddressOf());
 
 		mResources->context->OMSetRenderTargets(1, &rtv, dsv);
-		mResources->context->PSSetShaderResources(TEX_SLOT_PUNCTUAL_SHADOW_ATLAS, 1, mResources->spotPointShadowAtlas.srv.GetAddressOf());
+		mResources->context->PSSetShaderResources(TEX_SLOT_PUNCTUAL_SHADOW_ATLAS, 1, mResources->punctualShadowAtlas.srv.GetAddressOf());
 
 		mResources->context->RSSetViewports(1, &viewport);
 
@@ -1320,8 +1313,8 @@ auto Renderer::DrawFullWithCameras(std::span<RenderCamera const* const> const ca
 
 
 auto Renderer::DrawShadowMaps(std::span<int const> const visibleLightIndices, ShadowAtlasAllocation const& alloc) const -> void {
-	mResources->context->OMSetRenderTargets(0, nullptr, mResources->spotPointShadowAtlas.dsv.Get());
-	mResources->context->ClearDepthStencilView(mResources->spotPointShadowAtlas.dsv.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+	mResources->context->OMSetRenderTargets(0, nullptr, mResources->punctualShadowAtlas.dsv.Get());
+	mResources->context->ClearDepthStencilView(mResources->punctualShadowAtlas.dsv.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 	mResources->context->VSSetShader(mResources->shadowVS.Get(), nullptr, 0);
 	mResources->context->PSSetShader(nullptr, nullptr, 0);
 	mResources->context->VSSetConstantBuffers(CB_SLOT_SHADOW_PASS, 1, mResources->shadowCB.GetAddressOf());
@@ -1387,7 +1380,7 @@ auto Renderer::DrawShadowMaps(std::span<int const> const visibleLightIndices, Sh
 }
 
 
-auto Renderer::CalculateShadowAtlasAllocation(std::span<LightComponent const* const> const allLights, std::span<int const> const camVisibleLightIndices, Matrix4 const& camViewProjMtx, ShadowAtlasAllocation& alloc) -> void {
+auto Renderer::CalculatePunctualShadowAtlasAllocation(std::span<LightComponent const* const> const allLights, std::span<int const> const camVisibleLightIndices, Matrix4 const& camViewProjMtx, ShadowAtlasAllocation& alloc) -> void {
 	std::array<std::vector<int>, 4> static lightIndexIndicesInQuadrant{};
 
 	for (auto& quadrantLights : lightIndexIndicesInQuadrant) {

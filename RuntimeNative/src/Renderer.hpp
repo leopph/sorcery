@@ -93,7 +93,7 @@ class Renderer {
 		std::shared_ptr<Mesh> cubeMesh;
 		std::unique_ptr<Mesh> planeMesh;
 
-		ShadowAtlas spotPointShadowAtlas;
+		ShadowAtlas punctualShadowAtlas;
 	};
 
 
@@ -107,10 +107,10 @@ class Renderer {
 #pragma warning(push)
 #pragma warning(disable: 4324)
 	class ShadowAtlasAllocation {
-		std::optional<ShadowAtlasCellData> q1Light;
-		std::array<std::optional<ShadowAtlasCellData>, 4> q2Lights;
-		std::array<std::optional<ShadowAtlasCellData>, 16> q3Lights;
-		std::array<std::optional<ShadowAtlasCellData>, 64> q4Lights;
+		std::optional<ShadowAtlasCellData> quadrant0;
+		std::array<std::optional<ShadowAtlasCellData>, 4> quadrant1;
+		std::array<std::optional<ShadowAtlasCellData>, 16> quadrant2;
+		std::array<std::optional<ShadowAtlasCellData>, 64> quadrant3;
 
 	public:
 		[[nodiscard]] auto GetSize() const noexcept -> int;
@@ -123,7 +123,7 @@ class Renderer {
 	};
 #pragma warning(pop)
 
-	constexpr static int SPOT_POINT_SHADOW_ATLAS_SIZE{ 4096 };
+	constexpr static int PUNCTUAL_SHADOW_ATLAS_SIZE{ 4096 };
 
 	auto RecreateGameTexturesAndViews(u32 width, u32 height) const -> void;
 	auto RecreateSceneTexturesAndViews(u32 width, u32 height) const -> void;
@@ -148,7 +148,7 @@ class Renderer {
 	auto DrawSkybox(Matrix4 const& camViewMtx, Matrix4 const& camProjMtx) const noexcept -> void;
 	auto DrawFullWithCameras(std::span<RenderCamera const* const> cameras, ID3D11RenderTargetView* rtv, ID3D11DepthStencilView* dsv, ID3D11ShaderResourceView* srv, ID3D11RenderTargetView* outRtv) noexcept -> void;
 	auto DrawShadowMaps(std::span<int const> visibleLightIndices, ShadowAtlasAllocation const& alloc) const -> void;
-	static auto CalculateShadowAtlasAllocation(std::span<LightComponent const* const> allLights, std::span<int const> camVisibleLightIndices, Matrix4 const& camViewProjMtx, ShadowAtlasAllocation& alloc) -> void;
+	static auto CalculatePunctualShadowAtlasAllocation(std::span<LightComponent const* const> allLights, std::span<int const> camVisibleLightIndices, Matrix4 const& camViewProjMtx, ShadowAtlasAllocation& alloc) -> void;
 	static auto CullLights(Frustum const& frust, Matrix4 const& viewMtx, std::span<LightComponent const* const> lights, std::vector<int>& visibleLightIndices) -> void;
 	static auto CullMeshComponents(Frustum const& frust, Matrix4 const& viewMtx, std::span<StaticMeshComponent const* const> meshComponents, std::vector<int>& visibleMeshComponentIndices) -> void;
 
@@ -166,7 +166,7 @@ class Renderer {
 	std::vector<SkyboxComponent const*> mSkyboxes;
 	std::vector<RenderCamera const*> mGameRenderCameras;
 
-	ShadowAtlasAllocation mSpotPointShadowAtlasAlloc;
+	ShadowAtlasAllocation mPunctualShadowAtlasAlloc;
 
 public:
 	Renderer() noexcept = default;
