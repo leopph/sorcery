@@ -815,7 +815,7 @@ auto DrawPerformanceCounterWindow() {
 		ImGui::Text("%d FPS", static_cast<int>(1.0f / frameTimeSeconds.count()));
 		ImGui::Text("%.2f ms", static_cast<double>(frameTimeMillis.count()));
 
-		if (ImPlot::BeginPlot("###frameTimeChart", ImVec2{ 0, 0 }, ImPlotFlags_NoInputs | ImPlotFlags_NoFrame)) {
+		if (ImPlot::BeginPlot("###frameTimeChart", ImGui::GetContentRegionAvail(), ImPlotFlags_NoInputs | ImPlotFlags_NoFrame)) {
 			ImPlot::SetupAxisLimits(ImAxis_Y1, 0.0, static_cast<double>(*std::ranges::max_element(dataPoints)), ImPlotCond_Always);
 			ImPlot::SetupAxisLimits(ImAxis_X1, 0, static_cast<double>(dataPoints.size()), ImPlotCond_Always);
 			ImPlot::SetupAxis(ImAxis_X1, nullptr, ImPlotAxisFlags_NoDecorations);
