@@ -111,6 +111,7 @@ class Renderer {
 
 	public:
 		[[nodiscard]] auto GetSize() const noexcept -> int;
+		[[nodiscard]] auto GetQuadrantCells(int idx) const -> std::span<std::optional<ShadowAtlasCellData> const>;
 		[[nodiscard]] auto GetQuadrantCells(int idx) -> std::span<std::optional<ShadowAtlasCellData>>;
 		[[nodiscard]] auto GetQuadrantRowColCount(int idx) const -> int;
 		[[nodiscard]] auto GetQuadrantCellSizeNormalized(int idx) const -> float;
@@ -138,12 +139,15 @@ class Renderer {
 	auto CreateDepthStencilStates() const -> void;
 	auto CreateShadowAtlases() const -> void;
 	auto CreateSamplerStates() const -> void;
-	auto DrawMeshes(std::span<StaticMeshComponent const* const> camVisibleMeshes, bool useMaterials) const noexcept -> void;
+	auto DrawMeshes(std::span<int const> meshComponentIndices, bool useMaterials) const noexcept -> void;
 	auto UpdatePerFrameCB() const noexcept -> void;
 	auto DoToneMapGammaCorrectionStep(ID3D11ShaderResourceView* src, ID3D11RenderTargetView* dst) const noexcept -> void;
 	auto DrawSkybox(Matrix4 const& camViewMtx, Matrix4 const& camProjMtx) const noexcept -> void;
 	auto DrawFullWithCameras(std::span<RenderCamera const* const> cameras, ID3D11RenderTargetView* rtv, ID3D11DepthStencilView* dsv, ID3D11ShaderResourceView* srv, ID3D11RenderTargetView* outRtv) noexcept -> void;
-	auto DrawShadowMaps(std::span<LightComponent const*> camVisibleLights, Matrix4 const& camViewProjMtx) -> void;
+	auto DrawShadowMaps(ShadowAtlasAllocation const& alloc) const -> void;
+	static auto CalculateShadowAtlasAllocation(std::span<LightComponent const* const> allLights, std::span<int const> camVisibleLightIndices, Matrix4 const& camViewProjMtx, ShadowAtlasAllocation& alloc) -> void;
+	static auto CullLights(Frustum const& frust, Matrix4 const& viewMtx, std::span<LightComponent const* const> lights, std::vector<int>& visibleLightIndices) -> void;
+	static auto CullMeshComponents(Frustum const& frust, Matrix4 const& viewMtx, std::span<StaticMeshComponent const* const> meshComponents, std::vector<int>& visibleMeshComponentIndices) -> void;
 
 	Resources* mResources{ nullptr };
 	UINT mPresentFlags{ 0 };
