@@ -6,10 +6,14 @@
 
 namespace leopph {
 	class Guid {
-		u64 data0;
-		u64 data1;
+		u64 mData0{};
+		u64 mData1{};
+
+		Guid() = default;
 
 	public:
+		LEOPPHAPI Guid(u64 data0, u64 data1);
+
 		[[nodiscard]] LEOPPHAPI static auto Generate() -> Guid;
 		[[nodiscard]] LEOPPHAPI static auto Parse(std::string_view str) -> Guid;
 

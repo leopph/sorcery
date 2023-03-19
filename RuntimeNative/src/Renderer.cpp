@@ -1695,6 +1695,7 @@ auto Renderer::StartUp() -> void {
 	mResources->defaultMaterial->SetName("Default Material");
 
 	mResources->cubeMesh = std::make_shared<Mesh>();
+	mResources->cubeMesh->SetGuid(Guid{ 0, 0 });
 	mResources->cubeMesh->SetName("Cube");
 	mResources->cubeMesh->SetPositions(CUBE_POSITIONS);
 	mResources->cubeMesh->SetNormals(CUBE_NORMALS);
@@ -1704,6 +1705,7 @@ auto Renderer::StartUp() -> void {
 	mResources->cubeMesh->ValidateAndUpdate();
 
 	mResources->planeMesh = std::make_unique<Mesh>();
+	mResources->planeMesh->SetGuid(Guid{ 0, 1 });
 	mResources->planeMesh->SetName("Plane");
 	mResources->planeMesh->SetPositions(QUAD_POSITIONS);
 	mResources->planeMesh->SetNormals(QUAD_NORMALS);
