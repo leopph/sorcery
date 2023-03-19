@@ -126,20 +126,6 @@ auto DrawMainMenuBar(Context& context, bool& showDemoWindow) -> void {
 			ImGui::EndMenu();
 		}
 
-		if (ImGui::BeginMenu("Create")) {
-			if (ImGui::MenuItem("Entity")) {
-				auto& entity{ context.GetScene()->CreateEntity() };
-				entity.CreateManagedObject();
-
-				auto transform = std::make_unique<TransformComponent>();
-				transform->CreateManagedObject();
-
-				entity.AddComponent(std::move(transform));
-			}
-
-			ImGui::EndMenu();
-		}
-
 		if (ImGui::BeginMenu("Debug")) {
 			if (showDemoWindow) {
 				if (ImGui::MenuItem("Hide Demo Window")) {
@@ -161,6 +147,26 @@ auto DrawMainMenuBar(Context& context, bool& showDemoWindow) -> void {
 
 auto DrawEntityHierarchyWindow(Context& context) -> void {
 	if (ImGui::Begin("Entities", nullptr, ImGuiWindowFlags_NoCollapse)) {
+		auto const contextId{ "EntityHierarchyContextId" };
+
+		if (ImGui::IsWindowHovered(ImGuiHoveredFlags_RootWindow) && ImGui::IsMouseReleased(ImGuiMouseButton_Right)) {
+			ImGui::OpenPopup(contextId);
+		}
+
+		if (ImGui::BeginPopup(contextId)) {
+			if (ImGui::MenuItem("Create New Entity")) {
+				auto& entity{ context.GetScene()->CreateEntity() };
+				entity.CreateManagedObject();
+
+				auto transform = std::make_unique<TransformComponent>();
+				transform->CreateManagedObject();
+
+				entity.AddComponent(std::move(transform));
+			}
+
+			ImGui::EndPopup();
+		}
+
 		auto constexpr baseFlags{ ImGuiTreeNodeFlags_OpenOnArrow };
 		auto constexpr entityPayloadType{ "ENTITY" };
 
@@ -211,6 +217,8 @@ auto DrawEntityHierarchyWindow(Context& context) -> void {
 				bool deleted{ false };
 
 				if (ImGui::BeginPopupContextItem()) {
+					context.SetSelectedObject(&entity);
+
 					if (ImGui::MenuItem("Delete")) {
 						entity.GetScene().DestroyEntity(entity);
 						entities = context.GetScene()->GetEntities();
@@ -866,15 +874,15 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 			if (argc > 0) {
 				std::filesystem::path targetProjPath{ argv[0] };
 				targetProjPath = absolute(targetProjPath);
-					context.OpenProject(targetProjPath);
+				context.OpenProject(targetProjPath);
 			}
 
 			if (argc > 1) {
 				std::filesystem::path targetScenePath{ argv[1] };
 				targetScenePath = context.GetAssetDirectoryAbsolute() / targetScenePath;
-					if (auto const targetScene{ context.GetResources().TryGetAssetAt(targetScenePath) }) {
-						context.OpenScene(dynamic_cast<leopph::Scene&>(*targetScene));
-					}
+				if (auto const targetScene{ context.GetResources().TryGetAssetAt(targetScenePath) }) {
+					context.OpenScene(dynamic_cast<leopph::Scene&>(*targetScene));
+				}
 			}
 
 			LocalFree(argv);
