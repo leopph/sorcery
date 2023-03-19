@@ -92,32 +92,25 @@ float3 CalculateDirLight(const float3 N, const float3 V, const float3 albedo, co
     return CalculateLighting(N, V, L, albedo, metallic, roughness, light.color, light.intensity);
 }
 
-float3 CalculateSpotLight(const float3 N, const float3 V, const float3 albedo, const float metallic, const float roughness, const Light light, const float3 fragWorldPos)
+float3 CalculateSpotLight(const float3 N, const float3 V, const float3 albedo, const float metallic, const float roughness, const int lightIdx, const float3 fragWorldPos)
 {
-	float3 L = light.position - fragWorldPos;
+	float3 L = lights[lightIdx].position - fragWorldPos;
     const float dist = length(L);
-
-    if (dist > light.range) {
-	    return float3(0, 0, 0);
-    }
-
     L = normalize(L);
 
-    const float thetaCos = dot(L, -light.direction);
-    const float eps = light.innerAngleCos - light.outerAngleCos;
-    const float intensity = saturate((thetaCos - light.outerAngleCos) / eps);
+    const float rangeMul = float(dist <= lights[lightIdx].range);
+    const float thetaCos = dot(L, -lights[lightIdx].direction);
+    const float eps = lights[lightIdx].innerAngleCos - lights[lightIdx].outerAngleCos;
+    const float intensity = saturate((thetaCos - lights[lightIdx].outerAngleCos) / eps);
 
-    if (intensity == 0) {
-	    return float3(0, 0, 0);
-    }
-
-    float3 lighting = CalculateLighting(N, V, L, albedo, metallic, roughness, light.color, light.intensity);
+    float3 lighting = CalculateLighting(N, V, L, albedo, metallic, roughness, lights[lightIdx].color, lights[lightIdx].intensity);
     lighting *= intensity;
     lighting *= CalculateAttenuation(dist);
+    lighting *= rangeMul;
 
     [branch]
-    if (light.isCastingShadow) {
-        lighting *= SampleShadowMap(gSpotPointShadowAtlas, light, fragWorldPos, N, L);
+    if (lights[lightIdx].isCastingShadow) {
+        lighting *= SampleShadowMap(gSpotPointShadowAtlas, lights[lightIdx], fragWorldPos, N, L);
     }
     
     return lighting;
@@ -127,13 +120,16 @@ float3 CalculatePointLight(const float3 N, const float3 V, const float3 albedo, 
 {
 	float3 L = light.position - fragWorldPos;
     const float dist = length(L);
-
-    if (dist > light.range) {
-	    return float3(0, 0, 0);
-    }
-
     L = normalize(L);
-    return CalculateLighting(N, V, L, albedo, metallic, roughness, light.color, light.intensity) * CalculateAttenuation(dist);
+
+    const float rangeMul = float(dist <= light.range);
+
+    float3 lighting = CalculateLighting(N, V, L, albedo, metallic, roughness, light.color, light.intensity);
+    lighting *= CalculateAttenuation(dist);
+    lighting *= rangeMul;
+
+    return lighting;
+
 }
 
 float4 main(const MeshVsOut vsOut) : SV_TARGET {
@@ -166,7 +162,7 @@ float4 main(const MeshVsOut vsOut) : SV_TARGET {
 
     float3 outColor = 0.03 * albedo * ao;
 
-    for (int i = 0; i < lightCount; i++)
+    for (int i = 0; i < lightCount && i < MAX_LIGHT_COUNT; i++)
     {
         switch (lights[i].type)
         {
@@ -175,7 +171,7 @@ float4 main(const MeshVsOut vsOut) : SV_TARGET {
                     break;
                 }
             case 1:{
-                    outColor += CalculateSpotLight(N, V, albedo, metallic, roughness, lights[i], vsOut.worldPos);
+                    outColor += CalculateSpotLight(N, V, albedo, metallic, roughness, i, vsOut.worldPos);
                     break;
                 }
             case 2:{
