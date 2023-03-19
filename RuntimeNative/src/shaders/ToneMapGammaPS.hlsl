@@ -1,4 +1,3 @@
-#include "TexturedQuadVSOut.hlsli"
 #include "ShaderInterop.h"
 
 TEXTURE2D(gSrcTex, float4, TEX_SLOT_TONE_MAP_SRC);

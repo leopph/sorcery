@@ -203,16 +203,12 @@
     <None Include="vcpkg.json" />
     <None Include="src\shaders\ShaderInterop.h" />
     <None Include="src\shaders\MeshVSOut.hlsli" />
-    <None Include="src\shaders\TexturedQuadVSOut.hlsli" />
     <None Include="src\shaders\SkyboxVSOut.hlsli" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="src\shaders\QuadVS.hlsl" />
-    <FxCompile Include="src\shaders\ClearColorPS.hlsl" />
     <FxCompile Include="src\shaders\MeshPbrPS.hlsl" />
     <FxCompile Include="src\shaders\MeshVS.hlsl" />
     <FxCompile Include="src\shaders\ToneMapGammaPS.hlsl" />
-    <FxCompile Include="src\shaders\TexturedQuadVS.hlsl" />
     <FxCompile Include="src\shaders\SkyboxVS.hlsl" />
     <FxCompile Include="src\shaders\SkyboxPS.hlsl" />
     <FxCompile Include="src\shaders\ShadowVS.hlsl" />

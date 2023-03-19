@@ -8,7 +8,6 @@
 #include "Mesh.hpp"
 
 #ifndef NDEBUG
-#include "shaders/generated/ClearColorPSBinDebug.h"
 #include "shaders/generated/MeshBlinnPhongPSBinDebug.h"
 #include "shaders/generated/MeshPbrPSBinDebug.h"
 #include "shaders/generated/MeshVSBinDebug.h"
@@ -19,7 +18,6 @@
 #include "shaders/generated/ScreenVSBinDebug.h"
 
 #else
-#include "shaders/generated/ClearColorPSBin.h"
 #include "shaders/generated/MeshBlinnPhongPSBin.h"
 #include "shaders/generated/MeshPbrPSBin.h"
 #include "shaders/generated/MeshVSBin.h"
@@ -637,10 +635,6 @@ auto Renderer::CreateShaders() const -> void {
 		throw std::runtime_error{ "Failed to create mesh pbr pixel shader." };
 	}
 
-	if (FAILED(mResources->device->CreatePixelShader(gClearColorPSBin, ARRAYSIZE(gClearColorPSBin), nullptr, mResources->clearColorPS.GetAddressOf()))) {
-		throw std::runtime_error{ "Failed to create clear color pixel shader." };
-	}
-
 	if (FAILED(mResources->device->CreatePixelShader(gToneMapGammaPSBin, ARRAYSIZE(gToneMapGammaPSBin), nullptr, mResources->toneMapGammaPS.GetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create textured tonemap-gamma pixel shader." };
 	}
@@ -746,17 +740,6 @@ auto Renderer::CreateConstantBuffers() const -> void {
 
 	if (FAILED(mResources->device->CreateBuffer(&perModelCbDesc, nullptr, mResources->perModelCB.GetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create model constant buffer." };
-	}
-
-	D3D11_BUFFER_DESC constexpr clearColorCBufDesc{
-		.ByteWidth = 16,
-		.Usage = D3D11_USAGE_DYNAMIC,
-		.BindFlags = D3D11_BIND_CONSTANT_BUFFER,
-		.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
-	};
-
-	if (FAILED(mResources->device->CreateBuffer(&clearColorCBufDesc, nullptr, mResources->clearColorCB.GetAddressOf()))) {
-		throw std::runtime_error{ "Failed to create clear color constant buffer." };
 	}
 
 	D3D11_BUFFER_DESC constexpr toneMapGammaCBDesc{

@@ -53,7 +53,6 @@ class Renderer {
 		Microsoft::WRL::ComPtr<ID3D11DepthStencilView> gameDSV;
 		Microsoft::WRL::ComPtr<ID3D11DepthStencilView> sceneDSV;
 
-		Microsoft::WRL::ComPtr<ID3D11PixelShader> clearColorPS;
 		Microsoft::WRL::ComPtr<ID3D11PixelShader> meshBlinnPhongPS;
 		Microsoft::WRL::ComPtr<ID3D11VertexShader> meshVS;
 		Microsoft::WRL::ComPtr<ID3D11PixelShader> meshPbrPS;
@@ -66,7 +65,6 @@ class Renderer {
 		Microsoft::WRL::ComPtr<ID3D11Buffer> perFrameCB;
 		Microsoft::WRL::ComPtr<ID3D11Buffer> perCamCB;
 		Microsoft::WRL::ComPtr<ID3D11Buffer> perModelCB;
-		Microsoft::WRL::ComPtr<ID3D11Buffer> clearColorCB;
 		Microsoft::WRL::ComPtr<ID3D11Buffer> toneMapGammaCB;
 		Microsoft::WRL::ComPtr<ID3D11Buffer> skyboxCB;
 		Microsoft::WRL::ComPtr<ID3D11Buffer> shadowCB;
