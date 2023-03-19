@@ -16,6 +16,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RuntimeManaged", "RuntimeMa
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RuntimeNative", "RuntimeNative\RuntimeNative.vcxproj", "{60A69D92-FA99-4F5C-804C-1DFF2CE460AD}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ImPlot", "ImPlot\ImPlot.vcxproj", "{FF7C6B4C-5309-4162-9E8E-95933613A389}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -42,6 +44,10 @@ Global
 		{60A69D92-FA99-4F5C-804C-1DFF2CE460AD}.Debug|x64.Build.0 = Debug|x64
 		{60A69D92-FA99-4F5C-804C-1DFF2CE460AD}.Release|x64.ActiveCfg = Release|x64
 		{60A69D92-FA99-4F5C-804C-1DFF2CE460AD}.Release|x64.Build.0 = Release|x64
+		{FF7C6B4C-5309-4162-9E8E-95933613A389}.Debug|x64.ActiveCfg = Debug|x64
+		{FF7C6B4C-5309-4162-9E8E-95933613A389}.Debug|x64.Build.0 = Debug|x64
+		{FF7C6B4C-5309-4162-9E8E-95933613A389}.Release|x64.ActiveCfg = Release|x64
+		{FF7C6B4C-5309-4162-9E8E-95933613A389}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
