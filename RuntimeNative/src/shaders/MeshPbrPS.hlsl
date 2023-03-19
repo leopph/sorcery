@@ -1,5 +1,6 @@
 #include "MeshVSOut.hlsli"
 #include "ShaderInterop.h"
+#include "BRDF.hlsli"
 
 
 TEXTURE2D(gAlbedoMap, float4, TEX_SLOT_ALBEDO_MAP);
@@ -11,10 +12,8 @@ TEXTURE2D(gPunctualShadowAtlas, float, TEX_SLOT_PUNCTUAL_SHADOW_ATLAS);
 SAMPLERSTATE(gMaterialSampler, SAMPLER_SLOT_MATERIAL);
 SAMPLERCOMPARISONSTATE(gShadowSampler, SAMPLER_SLOT_SHADOW);
 
-static const float PI = 3.14159265f;
 
-
-inline float2 TransformUVForShadowAtlas(const float2 uv, uniform const uint atlasQuadrantIdx, uniform const uint atlasCellIdx) {
+inline float2 TransformUVForShadowAtlas(const float2 uv, const uint atlasQuadrantIdx, const uint atlasCellIdx) {
     const int cellRowColCount = pow(2, atlasQuadrantIdx);
     float cellSize = 0.5f / cellRowColCount;
 
@@ -36,101 +35,18 @@ inline float2 TransformUVForShadowAtlas(const float2 uv, uniform const uint atla
 }
 
 
-inline float SampleShadowMap(uniform const Texture2D<float> shadowMap, uniform const int lightIdx, const float3 posW, const float3 N, const float3 L) {
-    const float4 posLClip = mul(float4(posW, 1), lights[lightIdx].lightViewProjMtx);
-    float3 posLNdc = posLClip.xyz / posLClip.w;
-    posLNdc.xy = posLNdc.xy * 0.5 + 0.5;
-    posLNdc.y = 1 - posLNdc.y;
-    const float MIN_SHADOW_BIAS = 0.0001;
-    const float MAX_SHADOW_BIAS = 0.01;
-    const float bias = max(MAX_SHADOW_BIAS * (1.0 - dot(N, L)), MIN_SHADOW_BIAS);
-    return shadowMap.SampleCmpLevelZero(gShadowSampler, TransformUVForShadowAtlas(posLNdc.xy, lights[lightIdx].atlasQuadrantIdx, lights[lightIdx].atlasCellIdx), posLNdc.z - bias);
-}
-
-
-float3 FresnelSchlick(const float cosTheta, const float3 F0) {
-    return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
-}
-
-
-float TrowbridgeReitz(const float3 N, const float3 H, const float roughness) {
-    const float a = roughness * roughness;
-    const float a2 = a * a;
-    const float NdotH = max(dot(N, H), 0.0);
-    const float NdotH2 = NdotH * NdotH;
-	
-    const float num = a2;
-    float denom = (NdotH2 * (a2 - 1.0) + 1.0);
-    denom = PI * denom * denom;
-	
-    return num / denom;
-}
-
-
-float SchlickTrowbridgeReitz(const float NdotV, const float roughness) {
-    const float r = (roughness + 1.0);
-    const float k = (r * r) / 8.0;
-
-    const float num = NdotV;
-    const float denom = NdotV * (1.0 - k) + k;
-	
-    return num / denom;
-}
-
-
-float Smith(const float3 N, const float3 V, const float3 L, const float roughness) {
-    const float NdotV = max(dot(N, V), 0.0);
-    const float NdotL = max(dot(N, L), 0.0);
-    const float ggx2 = SchlickTrowbridgeReitz(NdotV, roughness);
-    const float ggx1 = SchlickTrowbridgeReitz(NdotL, roughness);
-	
-    return ggx1 * ggx2;
-}
-
-
-float3 CalculateLighting(const float3 N, const float3 V, const float3 L, const float3 albedo, const float metallic, const float roughness, const float3 lightColor, const float lightIntensity) {
-    float3 F0 = float3(0.04, 0.04, 0.04);
-    F0 = lerp(F0, albedo, metallic);
-	           
-    // reflectance equation
-    float3 Lo = float3(0.0, 0.0, 0.0);
-        // calculate per-light radiance
-    const float3 H = normalize(V + L);
-    const float3 radiance = lightColor * lightIntensity;
-        
-        // cook-torrance brdf
-    const float NDF = TrowbridgeReitz(N, H, roughness);
-    const float G = Smith(N, V, L, roughness);
-    const float3 F = FresnelSchlick(max(dot(H, V), 0.0), F0);
-        
-    const float3 kS = F;
-    float3 kD = float3(1.0, 1.0, 1.0) - kS;
-    kD *= 1.0 - metallic;
-        
-    const float3 numerator = NDF * G * F;
-    const float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001;
-    const float3 specular = numerator / denominator;
-            
-        // add to outgoing radiance Lo
-    const float NdotL = max(dot(N, L), 0.0);
-    Lo += (kD * albedo / PI + specular) * radiance * NdotL;
-   
-    return Lo;
-}
-
-
-float CalculateAttenuation(const float distance) {
+inline float CalculateAttenuation(const float distance) {
     return 1 / pow(distance, 2);
 }
 
 
-float3 CalculateDirLight(const float3 N, const float3 V, const float3 albedo, const float metallic, const float roughness, uniform const int lightIdx) {
+inline float3 CalculateDirLight(const float3 N, const float3 V, const float3 albedo, const float metallic, const float roughness, const int lightIdx) {
     const float3 L = -lights[lightIdx].direction;
-    return CalculateLighting(N, V, L, albedo, metallic, roughness, lights[lightIdx].color, lights[lightIdx].intensity);
+    return CookTorrance(N, V, L, albedo, metallic, roughness, lights[lightIdx].color, lights[lightIdx].intensity);
 }
 
 
-float3 CalculateSpotLight(const float3 N, const float3 V, const float3 albedo, const float metallic, const float roughness, uniform const int lightIdx, const float3 fragWorldPos)
+inline float3 CalculateSpotLight(const float3 N, const float3 V, const float3 albedo, const float metallic, const float roughness, const int lightIdx, const float3 fragWorldPos)
 {
 	float3 L = lights[lightIdx].position - fragWorldPos;
     const float dist = length(L);
@@ -141,21 +57,30 @@ float3 CalculateSpotLight(const float3 N, const float3 V, const float3 albedo, c
     const float eps = lights[lightIdx].innerAngleCos - lights[lightIdx].outerAngleCos;
     const float intensity = saturate((thetaCos - lights[lightIdx].outerAngleCos) / eps);
 
-    float3 lighting = CalculateLighting(N, V, L, albedo, metallic, roughness, lights[lightIdx].color, lights[lightIdx].intensity);
+    float3 lighting = CookTorrance(N, V, L, albedo, metallic, roughness, lights[lightIdx].color, lights[lightIdx].intensity);
     lighting *= intensity;
     lighting *= CalculateAttenuation(dist);
     lighting *= rangeMul;
 
     [branch]
     if (lights[lightIdx].isCastingShadow) {
-        lighting *= SampleShadowMap(gPunctualShadowAtlas, lightIdx, fragWorldPos, N, L);
+        const float4 posLClip = mul(float4(fragWorldPos, 1), lights[lightIdx].lightViewProjMtx);
+        float3 posLNdc = posLClip.xyz / posLClip.w;
+        posLNdc.xy = posLNdc.xy * float2(0.5, -0.5) + 0.5;
+
+        const float MIN_SHADOW_BIAS = 0.0001;
+        const float MAX_SHADOW_BIAS = 0.01;
+        const float bias = max(MAX_SHADOW_BIAS * (1.0 - dot(N, L)), MIN_SHADOW_BIAS);
+
+        const float shadow = gPunctualShadowAtlas.SampleCmpLevelZero(gShadowSampler, TransformUVForShadowAtlas(posLNdc.xy, lights[lightIdx].atlasQuadrantIdx, lights[lightIdx].atlasCellIdx), posLNdc.z - bias);
+        lighting *= shadow;
     }
     
     return lighting;
 }
 
 
-float3 CalculatePointLight(const float3 N, const float3 V, const float3 albedo, const float metallic, const float roughness, uniform const int lightIdx, const float3 fragWorldPos)
+inline float3 CalculatePointLight(const float3 N, const float3 V, const float3 albedo, const float metallic, const float roughness, const int lightIdx, const float3 fragWorldPos)
 {
 	float3 L = lights[lightIdx].position - fragWorldPos;
     const float dist = length(L);
@@ -163,7 +88,7 @@ float3 CalculatePointLight(const float3 N, const float3 V, const float3 albedo, 
 
     const float rangeMul = float(dist <= lights[lightIdx].range);
 
-    float3 lighting = CalculateLighting(N, V, L, albedo, metallic, roughness, lights[lightIdx].color, lights[lightIdx].intensity);
+    float3 lighting = CookTorrance(N, V, L, albedo, metallic, roughness, lights[lightIdx].color, lights[lightIdx].intensity);
     lighting *= CalculateAttenuation(dist);
     lighting *= rangeMul;
 

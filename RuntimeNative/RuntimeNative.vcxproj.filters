@@ -204,6 +204,7 @@
     <None Include="src\shaders\ShaderInterop.h" />
     <None Include="src\shaders\MeshVSOut.hlsli" />
     <None Include="src\shaders\SkyboxVSOut.hlsli" />
+    <None Include="src\shaders\BRDF.hlsli" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="src\shaders\MeshPbrPS.hlsl" />
