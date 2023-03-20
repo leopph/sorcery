@@ -9,29 +9,36 @@ namespace leopph::editor {
 Context::Context(ImGuiIO& imGuiIO) :
 	mImGuiIo{ imGuiIO } { }
 
+
 ImGuiIO const& Context::GetImGuiIo() const noexcept {
 	return mImGuiIo;
 }
+
 
 ImGuiIO& Context::GetImGuiIo() noexcept {
 	return mImGuiIo;
 }
 
+
 AssetStorage const& Context::GetResources() const noexcept {
 	return mResources;
 }
+
 
 AssetStorage& Context::GetResources() noexcept {
 	return mResources;
 }
 
+
 Scene const* Context::GetScene() const noexcept {
 	return mScene;
 }
 
+
 Scene* Context::GetScene() noexcept {
 	return mScene;
 }
+
 
 auto Context::OpenScene(Scene& scene) -> void {
 	if (mScene) {
@@ -42,35 +49,44 @@ auto Context::OpenScene(Scene& scene) -> void {
 	mScene->Load(mFactoryManager);
 }
 
+
 EditorObjectFactoryManager const& Context::GetFactoryManager() const noexcept {
 	return mFactoryManager;
 }
+
 
 EditorObjectFactoryManager& Context::GetFactoryManager() noexcept {
 	return mFactoryManager;
 }
 
+
 Object* Context::GetSelectedObject() const noexcept {
 	return mSelectedObject;
 }
+
 
 void Context::SetSelectedObject(Object* const obj) noexcept {
 	mSelectedObject = obj;
 }
 
+
 std::filesystem::path const& Context::GetProjectDirectoryAbsolute() const noexcept {
 	return mProjDirAbs;
 }
+
 
 std::filesystem::path const& Context::GetAssetDirectoryAbsolute() const noexcept {
 	return mAssetDirAbs;
 }
 
+
 std::filesystem::path const& Context::GetCacheDirectoryAbsolute() const noexcept {
 	return mCacheDirAbs;
 }
 
+
 auto Context::OpenProject(std::filesystem::path const& targetPath) -> void {
+	mSelectedObject = nullptr;
 	mScene = nullptr;
 	mResources.Clear();
 	mProjDirAbs = absolute(targetPath);
@@ -124,15 +140,18 @@ auto Context::OpenProject(std::filesystem::path const& targetPath) -> void {
 	}
 }
 
+
 bool Context::IsEditorBusy() const noexcept {
 	return mBusy;
 }
+
 
 auto Context::CreateMetaFileForRegisteredAsset(Object const& asset) const -> void {
 	if (auto const assetPath{ mResources.TryGetPathFor(&asset) }; !assetPath.empty()) {
 		std::ofstream{ std::filesystem::path{ assetPath } += ASSET_FILE_EXT } << GenerateAssetMetaFileContents(asset, mFactoryManager);
 	}
 }
+
 
 auto Context::SaveRegisteredNativeAsset(NativeAsset const& asset) const -> void {
 	if (auto const dst{ mResources.TryGetPathFor(&asset) }; !dst.empty()) {
