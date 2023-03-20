@@ -1,7 +1,5 @@
 #pragma once
 
-#include <span>
-
 #include "Component.hpp"
 #include "RenderCamera.hpp"
 
@@ -56,9 +54,6 @@ public:
 	[[nodiscard]] auto LEOPPHAPI GetPosition() const noexcept -> Vector3 override;
 	[[nodiscard]] auto LEOPPHAPI GetForwardAxis() const noexcept -> Vector3 override;
 	[[nodiscard]] auto LEOPPHAPI GetFrustum(float aspectRatio) const -> Frustum override;
-
-	[[nodiscard]] static auto LEOPPHAPI ConvertPerspectiveFovHorizontalToVertical(float fovDegrees, float aspectRatio) noexcept -> float;
-	[[nodiscard]] static auto LEOPPHAPI ConvertPerspectiveFovVerticalToHorizontal(float fovDegrees, float aspectRatio) noexcept -> float;
 };
 
 
