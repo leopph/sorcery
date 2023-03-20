@@ -1441,8 +1441,8 @@ auto DrawFullWithCameras(std::span<Camera const* const> const cameras, ID3D11Ren
 
 	for (auto const cam : cameras) {
 		auto const camPos{ cam->GetPosition() };
-		auto const camViewMtx{ CalculateCameraViewMatrix(*cam) };
-		auto const camProjMtx{ CalculateCameraProjectionMatrix(*cam, aspectRatio) };
+		auto const camViewMtx{ cam->CalculateViewMatrix() };
+		auto const camProjMtx{ cam->CalculateProjectionMatrix(aspectRatio) };
 		auto const camViewProjMtx{ camViewMtx * camProjMtx };
 		auto const camFrust{ cam->CalculateFrustum(aspectRatio) };
 
@@ -1638,6 +1638,24 @@ auto Camera::CalculateFrustum(float const aspectRatio) const noexcept -> Frustum
 	}
 
 	return {};
+}
+
+
+auto Camera::CalculateViewMatrix() const noexcept -> Matrix4 {
+	return Matrix4::LookToLH(GetPosition(), GetForwardAxis(), Vector3::Up());
+}
+
+
+auto Camera::CalculateProjectionMatrix(float const aspectRatio) const noexcept -> Matrix4 {
+	switch (GetType()) {
+	case Type::Perspective:
+		return Matrix4::PerspectiveAsymZLH(ToRadians(Camera::HorizontalPerspectiveFovToVertical(GetHorizontalPerspectiveFov(), aspectRatio)), aspectRatio, GetNearClipPlane(), GetFarClipPlane());
+
+	case Type::Orthographic:
+		return Matrix4::OrthographicAsymZLH(GetHorizontalOrthographicSize(), GetHorizontalOrthographicSize() / aspectRatio, GetNearClipPlane(), GetFarClipPlane());
+	}
+
+	return Matrix4{};
 }
 
 
@@ -1936,23 +1954,5 @@ auto CullStaticMeshComponents(Frustum const& frust, Matrix4 const& viewMtx, Visi
 			visibility.visibleStaticMeshIndices.emplace_back(i);
 		}
 	}
-}
-
-
-auto CalculateCameraViewMatrix(Camera const& cam) noexcept -> Matrix4 {
-	return Matrix4::LookToLH(cam.GetPosition(), cam.GetForwardAxis(), Vector3::Up());
-}
-
-
-auto CalculateCameraProjectionMatrix(Camera const& cam, float const aspectRatio) noexcept -> Matrix4 {
-	switch (cam.GetType()) {
-	case Camera::Type::Perspective:
-		return Matrix4::PerspectiveAsymZLH(ToRadians(Camera::HorizontalPerspectiveFovToVertical(cam.GetHorizontalPerspectiveFov(), aspectRatio)), aspectRatio, cam.GetNearClipPlane(), cam.GetFarClipPlane());
-
-	case Camera::Type::Orthographic:
-		return Matrix4::OrthographicAsymZLH(cam.GetHorizontalOrthographicSize(), cam.GetHorizontalOrthographicSize() / aspectRatio, cam.GetNearClipPlane(), cam.GetFarClipPlane());
-	}
-
-	return Matrix4{};
 }
 }

@@ -391,8 +391,8 @@ auto DrawSceneViewWindow(Context& context) -> void {
 		ImGui::Image(renderer::GetSceneFrame(), contentRegionSize);
 
 		auto const windowAspectRatio{ ImGui::GetWindowWidth() / ImGui::GetWindowHeight() };
-		auto const editorCamViewMat{ CalculateCameraViewMatrix(editorCam) };
-		auto const editorCamProjMat{ CalculateCameraProjectionMatrix(editorCam, windowAspectRatio) };
+		auto const editorCamViewMat{ editorCam.CalculateViewMatrix() };
+		auto const editorCamProjMat{ editorCam.CalculateProjectionMatrix(windowAspectRatio) };
 
 		ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, ImGui::GetWindowWidth(), ImGui::GetWindowHeight());
 		ImGuizmo::AllowAxisFlip(false);

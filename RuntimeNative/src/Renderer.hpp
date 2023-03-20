@@ -75,6 +75,8 @@ public:
 	LEOPPHAPI auto SetHorizontalOrthographicSize(float size) -> void;
 
 	LEOPPHAPI [[nodiscard]] auto CalculateFrustum(float aspectRatio) const noexcept -> Frustum override;
+	LEOPPHAPI [[nodiscard]] auto CalculateViewMatrix() const noexcept -> Matrix4;
+	LEOPPHAPI [[nodiscard]] auto CalculateProjectionMatrix(float aspectRatio) const noexcept -> Matrix4;
 
 	LEOPPHAPI [[nodiscard]] static auto HorizontalPerspectiveFovToVertical(float fovDegrees, float aspectRatio) noexcept -> float;
 	LEOPPHAPI [[nodiscard]] static auto VerticalPerspectiveFovToHorizontal(float fovDegrees, float aspectRatio) noexcept -> float;
@@ -148,7 +150,4 @@ LEOPPHAPI auto UnregisterGameCamera(Camera const& cam) -> void;
 
 LEOPPHAPI auto CullLights(Frustum const& frust, Matrix4 const& viewMtx, Visibility& visibility) -> void;
 LEOPPHAPI auto CullStaticMeshComponents(Frustum const& frust, Matrix4 const& viewMtx, Visibility& visibility) -> void;
-
-LEOPPHAPI [[nodiscard]] auto CalculateCameraViewMatrix(Camera const& cam) noexcept -> Matrix4;
-LEOPPHAPI [[nodiscard]] auto CalculateCameraProjectionMatrix(Camera const& cam, float aspectRatio) noexcept -> Matrix4;
 }
