@@ -492,6 +492,7 @@ constexpr auto Pow(T const base, T const exp) noexcept {
 	return ret;
 }
 
+
 template<typename T, int N> requires (N > 1)
 constexpr auto Vector<T, N>::operator[](size_t index) const noexcept -> T const& {
 	return mData[index];
@@ -563,10 +564,12 @@ constexpr auto Vector<T, N>::Backward() noexcept -> Vector requires (N >= 3) {
 	return ret;
 }
 
+
 template<typename T, int N> requires (N > 1)
 constexpr auto Vector<T, N>::Zero() noexcept -> Vector {
 	return Vector{};
 }
+
 
 template<typename T, int N> requires (N > 1)
 template<std::convertible_to<T> T1>
@@ -575,6 +578,7 @@ constexpr Vector<T, N>::Vector(T1 const value) noexcept {
 		mData[i] = static_cast<T>(value);
 	}
 }
+
 
 template<typename T, int N> requires (N > 1)
 template<std::convertible_to<T> T1>
@@ -676,7 +680,7 @@ auto Distance(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> T
 	T sum{ 0 };
 
 	for (size_t i = 0; i < N; i++) {
-		sum += std::pow(left[i] - right[i], 2);
+		sum += std::pow(left[i] - right[i], static_cast<T>(2));
 	}
 
 	return std::sqrt(sum);
@@ -859,6 +863,7 @@ auto operator<<(std::ostream& stream, Vector<T, N> const& vector) -> std::ostrea
 	return stream;
 }
 
+
 template<typename T, int N>
 auto Clamp(Vector<T, N> const& v, T const min, T const max) noexcept -> Vector<T, N> {
 	Vector<T, N> ret{ v };
@@ -869,6 +874,7 @@ auto Clamp(Vector<T, N> const& v, T const min, T const max) noexcept -> Vector<T
 
 	return ret;
 }
+
 
 template<typename T, int N>
 auto Clamp(Vector<T, N> const& v, Vector<T, N> const& min, Vector<T, N> const& max) noexcept -> Vector<T, N> {
@@ -881,6 +887,7 @@ auto Clamp(Vector<T, N> const& v, Vector<T, N> const& min, Vector<T, N> const& m
 	return ret;
 }
 
+
 template<typename T, int N>
 auto Min(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> Vector<T, N> {
 	Vector<T, N> ret;
@@ -889,6 +896,7 @@ auto Min(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> Vector
 	}
 	return ret;
 }
+
 
 template<typename T, int N>
 auto Max(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> Vector<T, N> {
@@ -1415,6 +1423,7 @@ constexpr auto Matrix<T, N, M>::Scale(Vector<T, 3> const& vector) noexcept -> Ma
 	return ret;
 }
 
+
 template<typename T, int N, int M> requires (N > 1 && M > 1)
 constexpr auto Matrix<T, N, M>::LookAtRH(Vector<T, 3> const& position, Vector<T, 3> const& target, Vector<T, 3> const& worldUp) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
 	Vector<T, 3> z{ Normalized(position - target) };
@@ -1442,15 +1451,18 @@ constexpr auto Matrix<T, N, M>::LookAtLH(Vector<T, 3> const& position, Vector<T,
 	};
 }
 
+
 template<typename T, int N, int M> requires (N > 1 && M > 1)
 constexpr auto Matrix<T, N, M>::LookToRH(Vector<T, 3> const& position, Vector<T, 3> const& direction, Vector<T, 3> const& worldUp) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
 	return LookAtRH(position, position + Normalized(direction), worldUp);
 }
 
+
 template<typename T, int N, int M> requires (N > 1 && M > 1)
 constexpr auto Matrix<T, N, M>::LookToLH(Vector<T, 3> const& position, Vector<T, 3> const& direction, Vector<T, 3> const& worldUp) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
 	return LookAtLH(position, position + Normalized(direction), worldUp);
 }
+
 
 template<typename T, int N, int M> requires (N > 1 && M > 1)
 constexpr auto Matrix<T, N, M>::OrthographicSymZRH(T const left, T const right, T const top, T const bottom, T const zNear, T const zFar) noexcept -> Matrix<T, 4, 4> {
@@ -1462,6 +1474,7 @@ constexpr auto Matrix<T, N, M>::OrthographicSymZRH(T const left, T const right, 
 	};
 }
 
+
 template<typename T, int N, int M> requires (N > 1 && M > 1)
 constexpr auto Matrix<T, N, M>::OrthographicSymZLH(T const left, T const right, T const top, T const bottom, T const zNear, T const zFar) noexcept -> Matrix<T, 4, 4> {
 	auto ret{ OrthographicSymZRH(left, right, top, bottom, zNear, zFar) };
@@ -1469,12 +1482,14 @@ constexpr auto Matrix<T, N, M>::OrthographicSymZLH(T const left, T const right, 
 	return ret;
 }
 
+
 template<typename T, int N, int M> requires (N > 1 && M > 1)
 constexpr auto Matrix<T, N, M>::OrthographicAsymZRH(T const left, T const right, T const top, T const bottom, T const zNear, T const zFar) noexcept -> Matrix<T, 4, 4> {
 	auto ret{ OrthographicAsymZLH(left, right, top, bottom, zNear, zFar) };
 	ret[2][2] *= -1;
 	return ret;
 }
+
 
 template<typename T, int N, int M> requires (N > 1 && M > 1)
 constexpr auto Matrix<T, N, M>::OrthographicAsymZLH(T const left, T const right, T const top, T const bottom, T const zNear, T const zFar) noexcept -> Matrix<T, 4, 4> {
@@ -1486,12 +1501,14 @@ constexpr auto Matrix<T, N, M>::OrthographicAsymZLH(T const left, T const right,
 	};
 }
 
+
 template<typename T, int N, int M> requires (N > 1 && M > 1)
 constexpr auto Matrix<T, N, M>::OrthographicSymZRH(T const width, T const height, T const zNear, T const zFar) noexcept -> Matrix<T, 4, 4> {
 	auto const halfWidth{ width / 2 };
 	auto const halfHeight{ height / 2 };
 	return OrthographicSymZRH(-halfWidth, halfWidth, halfHeight, -halfHeight, zNear, zFar);
 }
+
 
 template<typename T, int N, int M> requires (N > 1 && M > 1)
 constexpr auto Matrix<T, N, M>::OrthographicSymZLH(T const width, T const height, T const zNear, T const zFar) noexcept -> Matrix<T, 4, 4> {
@@ -1500,6 +1517,7 @@ constexpr auto Matrix<T, N, M>::OrthographicSymZLH(T const width, T const height
 	return OrthographicSymZLH(-halfWidth, halfWidth, halfHeight, -halfHeight, zNear, zFar);
 }
 
+
 template<typename T, int N, int M> requires (N > 1 && M > 1)
 constexpr auto Matrix<T, N, M>::OrthographicAsymZRH(T const width, T const height, T const zNear, T const zFar) noexcept -> Matrix<T, 4, 4> {
 	auto const halfWidth{ width / 2 };
@@ -1507,12 +1525,14 @@ constexpr auto Matrix<T, N, M>::OrthographicAsymZRH(T const width, T const heigh
 	return OrthographicAsymZRH(-halfWidth, halfWidth, halfHeight, -halfHeight, zNear, zFar);
 }
 
+
 template<typename T, int N, int M> requires (N > 1 && M > 1)
 constexpr auto Matrix<T, N, M>::OrthographicAsymZLH(T const width, T const height, T const zNear, T const zFar) noexcept -> Matrix<T, 4, 4> {
 	auto const halfWidth{ width / 2 };
 	auto const halfHeight{ height / 2 };
 	return OrthographicAsymZLH(-halfWidth, halfWidth, halfHeight, -halfHeight, zNear, zFar);
 }
+
 
 template<typename T, int N, int M> requires (N > 1 && M > 1)
 constexpr auto Matrix<T, N, M>::PerspectiveSymZRH(T const left, T const right, T const top, T const bottom, T const zNear, T const zFar) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
@@ -1524,6 +1544,7 @@ constexpr auto Matrix<T, N, M>::PerspectiveSymZRH(T const left, T const right, T
 	};
 }
 
+
 template<typename T, int N, int M> requires (N > 1 && M > 1)
 constexpr auto Matrix<T, N, M>::PerspectiveSymZLH(T const left, T const right, T const top, T const bottom, T const zNear, T const zFar) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
 	auto ret{ PerspectiveSymZRH(left, right, top, bottom, zNear, zFar) };
@@ -1531,12 +1552,14 @@ constexpr auto Matrix<T, N, M>::PerspectiveSymZLH(T const left, T const right, T
 	return ret;
 }
 
+
 template<typename T, int N, int M> requires (N > 1 && M > 1)
 constexpr auto Matrix<T, N, M>::PerspectiveAsymZRH(T left, T right, T top, T bottom, T zNear, T zFar) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
 	auto ret{ PerspectiveAsymZLH(left, right, top, bottom, zNear, zFar) };
 	ret[2] *= -1;
 	return ret;
 }
+
 
 template<typename T, int N, int M> requires (N > 1 && M > 1)
 constexpr auto Matrix<T, N, M>::PerspectiveAsymZLH(T const left, T const right, T const top, T const bottom, T const zNear, T const zFar) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
@@ -1548,6 +1571,7 @@ constexpr auto Matrix<T, N, M>::PerspectiveAsymZLH(T const left, T const right, 
 	};
 }
 
+
 template<typename T, int N, int M> requires (N > 1 && M > 1)
 auto Matrix<T, N, M>::PerspectiveSymZRH(T const fovVertRad, T const aspectRatio, T const zNear, T const zFar) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
 	T tanHalfFov{ static_cast<T>(std::tan(fovVertRad / static_cast<T>(2))) };
@@ -1558,6 +1582,7 @@ auto Matrix<T, N, M>::PerspectiveSymZRH(T const fovVertRad, T const aspectRatio,
 	return PerspectiveSymZRH(left, right, top, bottom, zNear, zFar);
 }
 
+
 template<typename T, int N, int M> requires (N > 1 && M > 1)
 auto Matrix<T, N, M>::PerspectiveSymZLH(T const fovVertRad, T const aspectRatio, T const zNear, T const zFar) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
 	auto ret{ PerspectiveSymZRH(fovVertRad, aspectRatio, zNear, zFar) };
@@ -1565,12 +1590,14 @@ auto Matrix<T, N, M>::PerspectiveSymZLH(T const fovVertRad, T const aspectRatio,
 	return ret;
 }
 
+
 template<typename T, int N, int M> requires (N > 1 && M > 1)
 auto Matrix<T, N, M>::PerspectiveAsymZRH(T fovVertRad, T aspectRatio, T zNear, T zFar) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
 	auto ret{ PerspectiveAsymZLH(fovVertRad, aspectRatio, zNear, zFar) };
 	ret[2] *= -1;
 	return ret;
 }
+
 
 template<typename T, int N, int M> requires (N > 1 && M > 1)
 auto Matrix<T, N, M>::PerspectiveAsymZLH(T const fovVertRad, T const aspectRatio, T const zNear, T const zFar) noexcept -> Matrix<T, 4, 4> requires (N == 4 && M == 4) {
@@ -1591,6 +1618,7 @@ constexpr auto Matrix<T, N, M>::Zero() noexcept -> Matrix {
 	return Matrix{};
 }
 
+
 template<typename T, int N, int M> requires (N > 1 && M > 1)
 constexpr Matrix<T, N, M>::Matrix(T const value) noexcept {
 	for (size_t i = 0; i < std::min(N, M); i++) {
@@ -1598,10 +1626,12 @@ constexpr Matrix<T, N, M>::Matrix(T const value) noexcept {
 	}
 }
 
+
 template<typename T, int N, int M> requires (N > 1 && M > 1)
 constexpr auto Matrix<T, N, M>::Diagonal(T const value) noexcept -> Matrix {
 	return Matrix{ value };
 }
+
 
 template<typename T, int N, int M> requires (N > 1 && M > 1)
 template<std::convertible_to<T>... Args> requires (sizeof...(Args) == std::min(N, M))
@@ -1610,6 +1640,7 @@ constexpr Matrix<T, N, M>::Matrix(Args&&... args) noexcept {
 		(static_cast<void>(mData[Is][Is] = static_cast<T>(args)), ...);
 	}(std::index_sequence_for<Args...>{});
 }
+
 
 template<typename T, int N, int M> requires (N > 1 && M > 1)
 template<std::convertible_to<T>... Args> requires (sizeof...(Args) == std::min(N, M))
@@ -1625,6 +1656,7 @@ constexpr Matrix<T, N, M>::Matrix(Vector<T, K> const& vec) noexcept {
 		mData[i][i] = vec[i];
 	}
 }
+
 
 template<typename T, int N, int M> requires (N > 1 && M > 1)
 template<int K> requires (K == std::min(N, M))
@@ -1829,6 +1861,7 @@ inline auto operator*(Matrix4 const& left, Matrix4 const& right) noexcept -> Mat
 constexpr Quaternion::Quaternion(float const w, float const x, float const y, float const z) noexcept :
 	x{ x }, y{ y }, z{ z }, w{ w } {}
 
+
 inline Quaternion::Quaternion(Vector3 const& axis, float const angleDegrees) noexcept {
 	auto const angleHalfRadians = ToRadians(angleDegrees) / 2.0f;
 	auto vec = leopph::Normalized(axis) * std::sin(angleHalfRadians);
@@ -1838,6 +1871,7 @@ inline Quaternion::Quaternion(Vector3 const& axis, float const angleDegrees) noe
 	y = vec[1];
 	z = vec[2];
 }
+
 
 inline auto Quaternion::FromEulerAngles(float const x, float const y, float const z) noexcept -> Quaternion {
 	auto const roll = ToRadians(x);
@@ -1860,9 +1894,11 @@ inline auto Quaternion::FromEulerAngles(float const x, float const y, float cons
 	};
 }
 
+
 inline auto Quaternion::FromEulerAngles(Vector3 const& euler) noexcept -> Quaternion {
 	return FromEulerAngles(euler[0], euler[1], euler[2]);
 }
+
 
 inline auto Quaternion::ToEulerAngles() const noexcept -> Vector3 {
 	Vector3 angles;
@@ -1893,13 +1929,16 @@ inline auto Quaternion::ToEulerAngles() const noexcept -> Vector3 {
 	return angles;
 }
 
+
 constexpr auto Quaternion::ToRotationMatrix() const noexcept -> Matrix4 {
 	return static_cast<Matrix4>(*this);
 }
 
+
 inline auto Quaternion::FromAxisAngle(Vector3 const& axis, float const angleDeg) noexcept -> Quaternion {
 	return Quaternion{ axis, angleDeg };
 }
+
 
 inline auto Quaternion::ToAxisAngle(Vector3& axis, float& angle) const noexcept -> void {
 	axis = Vector3{ x, y, z };
