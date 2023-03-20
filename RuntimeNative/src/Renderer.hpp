@@ -10,6 +10,9 @@
 #define NOMINMAX
 #include <d3d11.h>
 
+#include <span>
+#include <vector>
+
 
 namespace leopph::renderer {
 class Camera {
@@ -19,7 +22,19 @@ public:
 		Orthographic = 1
 	};
 
+private:
+	constexpr static float MINIMUM_PERSPECTIVE_NEAR_CLIP_PLANE{ 0.03f };
+	constexpr static float MINIMUM_PERSPECTIVE_FAR_CLIP_PLANE_OFFSET{ 0.1f };
+	constexpr static float MINIMUM_PERSPECTIVE_HORIZONTAL_FOV{ 5.0f };
+	constexpr static float MINIMUM_ORTHOGRAPHIC_HORIZONTAL_SIZE{ 0.1f };
 
+	float mNear{ MINIMUM_PERSPECTIVE_NEAR_CLIP_PLANE };
+	float mFar{ 100.f };
+	float mOrthoSizeHoriz{ 10 };
+	float mPerspFovHorizDeg{ 90 };
+	Type mType{ Type::Perspective };
+
+public:
 	enum class Side : std::uint8_t {
 		Vertical   = 0,
 		Horizontal = 1
@@ -28,15 +43,26 @@ public:
 
 	[[nodiscard]] virtual auto GetPosition() const noexcept -> Vector3 = 0;
 	[[nodiscard]] virtual auto GetForwardAxis() const noexcept -> Vector3 = 0;
-	[[nodiscard]] virtual auto GetNearClipPlane() const noexcept -> float = 0;
-	[[nodiscard]] virtual auto GetFarClipPlane() const noexcept -> float = 0;
-	[[nodiscard]] virtual auto GetHorizontalOrthographicSize() const -> float = 0;
-	[[nodiscard]] virtual auto GetHorizontalPerspectiveFov() const -> float = 0;
-	[[nodiscard]] virtual auto GetType() const -> Type = 0;
-	[[nodiscard]] virtual auto GetFrustum(float aspectRatio) const -> Frustum = 0;
 
-	[[nodiscard]] static auto LEOPPHAPI HorizontalPerspectiveFovToVertical(float fovDegrees, float aspectRatio) noexcept -> float;
-	[[nodiscard]] static auto LEOPPHAPI VerticalPerspectiveFovToHorizontal(float fovDegrees, float aspectRatio) noexcept -> float;
+	LEOPPHAPI [[nodiscard]] auto GetNearClipPlane() const noexcept -> float;
+	LEOPPHAPI auto SetNearClipPlane(float nearClipPlane) noexcept -> void;
+
+	LEOPPHAPI [[nodiscard]] auto GetFarClipPlane() const noexcept -> float;
+	LEOPPHAPI auto SetFarClipPlane(float farClipPlane) noexcept -> void;
+
+	LEOPPHAPI [[nodiscard]] auto GetType() const noexcept -> Type;
+	LEOPPHAPI auto SetType(Type type) noexcept -> void;
+
+	LEOPPHAPI [[nodiscard]] auto GetHorizontalPerspectiveFov() const -> float;
+	LEOPPHAPI auto SetHorizontalPerspectiveFov(float degrees) -> void;
+
+	LEOPPHAPI [[nodiscard]] auto GetHorizontalOrthographicSize() const -> float;
+	LEOPPHAPI auto SetHorizontalOrthographicSize(float size) -> void;
+
+	LEOPPHAPI [[nodiscard]] auto CalculateFrustum(float aspectRatio) const noexcept -> Frustum;
+
+	LEOPPHAPI [[nodiscard]] static auto HorizontalPerspectiveFovToVertical(float fovDegrees, float aspectRatio) noexcept -> float;
+	LEOPPHAPI [[nodiscard]] static auto VerticalPerspectiveFovToHorizontal(float fovDegrees, float aspectRatio) noexcept -> float;
 
 	Camera() = default;
 	Camera(Camera const& other) = default;
@@ -46,6 +72,15 @@ public:
 	auto operator=(Camera&& other) noexcept -> Camera& = default;
 
 	virtual ~Camera() = default;
+};
+
+
+struct Visibility {
+	std::span<LightComponent const*> allLights;
+	std::vector<int> visibleLightIndices;
+
+	std::span<StaticMeshComponent const*> allStaticMeshes;
+	std::vector<int> visibleStaticMeshIndices;
 };
 
 
@@ -95,4 +130,10 @@ LEOPPHAPI auto UnregisterSkybox(SkyboxComponent const* skybox) -> void;
 
 LEOPPHAPI auto RegisterGameCamera(Camera const& cam) -> void;
 LEOPPHAPI auto UnregisterGameCamera(Camera const& cam) -> void;
+
+LEOPPHAPI auto CullLights(Camera const& cam, Visibility& visiblity) -> void;
+LEOPPHAPI auto CullStaticMeshes(Camera const& cam, Visibility& visibility) -> void;
+
+LEOPPHAPI [[nodiscard]] auto CalculateCameraViewMatrix(Camera const& cam) noexcept -> Matrix4;
+LEOPPHAPI [[nodiscard]] auto CalculateCameraProjectionMatrix(Camera const& cam, float aspectRatio) noexcept -> Matrix4;
 }

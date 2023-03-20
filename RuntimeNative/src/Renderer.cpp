@@ -1511,37 +1511,31 @@ auto DrawFullWithCameras(std::span<Camera const* const> const cameras, ID3D11Ren
 
 	for (auto const cam : cameras) {
 		auto const camPos{ cam->GetPosition() };
-		auto const camForward{ cam->GetForwardAxis() };
-		auto const viewMat{ Matrix4::LookToLH(camPos, camForward, Vector3::Up()) };
-		auto const projMat{
-			cam->GetType() == Camera::Type::Perspective ?
-				Matrix4::PerspectiveAsymZLH(ToRadians(Camera::HorizontalPerspectiveFovToVertical(cam->GetHorizontalPerspectiveFov(), aspectRatio)), aspectRatio, cam->GetNearClipPlane(), cam->GetFarClipPlane()) :
-				Matrix4::OrthographicAsymZLH(cam->GetHorizontalOrthographicSize(), cam->GetHorizontalOrthographicSize() / aspectRatio, cam->GetNearClipPlane(), cam->GetFarClipPlane())
-		};
-		auto const viewProjMat{ viewMat * projMat };
-
-		auto const camFrust{ cam->GetFrustum(aspectRatio) };
+		auto const camViewMtx{ CalculateCameraViewMatrix(*cam) };
+		auto const camProjMtx{ CalculateCameraProjectionMatrix(*cam, aspectRatio) };
+		auto const camViewProjMtx{ camViewMtx * camProjMtx };
+		auto const camFrust{ cam->CalculateFrustum(aspectRatio) };
 
 		std::vector<int> static visibleLightIndices;
 		visibleLightIndices.clear();
-		CullLights(camFrust, viewMat, gLights, visibleLightIndices);
+		CullLights(camFrust, camViewMtx, gLights, visibleLightIndices);
 		auto const lightCount{ std::min(MAX_LIGHT_COUNT, static_cast<int>(visibleLightIndices.size())) };
 
-		CalculatePunctualShadowAtlasAllocation(gLights, visibleLightIndices, camPos, viewProjMat, gPunctualShadowAtlasAlloc);
+		CalculatePunctualShadowAtlasAllocation(gLights, visibleLightIndices, camPos, camViewProjMtx, gPunctualShadowAtlasAlloc);
 		ID3D11ShaderResourceView* const nullSrv{ nullptr };
 		gResources->context->PSSetShaderResources(TEX_SLOT_PUNCTUAL_SHADOW_ATLAS, 1, &nullSrv);
 		DrawShadowMaps(visibleLightIndices, gPunctualShadowAtlasAlloc);
 
 		std::vector<int> static visibleMeshIndices;
 		visibleMeshIndices.clear();
-		CullMeshComponents(camFrust, viewMat, gStaticMeshComponents, visibleMeshIndices);
+		CullMeshComponents(camFrust, camViewMtx, gStaticMeshComponents, visibleMeshIndices);
 
 		gResources->context->VSSetShader(gResources->meshVS.Get(), nullptr, 0);
 
 		D3D11_MAPPED_SUBRESOURCE mappedPerCamCBuf;
 		gResources->context->Map(gResources->perCamCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerCamCBuf);
 		auto const perCamCBufData{ static_cast<PerCameraCB*>(mappedPerCamCBuf.pData) };
-		perCamCBufData->viewProjMtx = viewProjMat;
+		perCamCBufData->viewProjMtx = camViewProjMtx;
 		perCamCBufData->camPos = camPos;
 		perCamCBufData->lightCount = lightCount;
 		gResources->context->Unmap(gResources->perCamCB.Get(), 0);
@@ -1591,12 +1585,132 @@ auto DrawFullWithCameras(std::span<Camera const* const> const cameras, ID3D11Ren
 		gResources->context->RSSetViewports(1, &viewport);
 
 		DrawMeshes(visibleMeshIndices, true);
-		DrawSkybox(viewMat, projMat);
+		DrawSkybox(camViewMtx, camProjMtx);
 	}
 
 	gResources->context->RSSetViewports(1, &viewport);
 	DoToneMapGammaCorrectionStep(srv, outRtv);
 }
+}
+
+
+auto Camera::GetNearClipPlane() const noexcept -> float {
+	return mNear;
+}
+
+
+auto Camera::SetNearClipPlane(float const nearClipPlane) noexcept -> void {
+	if (GetType() == Type::Perspective) {
+		mNear = std::max(nearClipPlane, MINIMUM_PERSPECTIVE_NEAR_CLIP_PLANE);
+	}
+	else {
+		mNear = nearClipPlane;
+	}
+}
+
+
+auto Camera::GetFarClipPlane() const noexcept -> float {
+	return mFar;
+}
+
+
+auto Camera::SetFarClipPlane(float const farClipPlane) noexcept -> void {
+	if (GetType() == Type::Perspective) {
+		mFar = std::max(farClipPlane, mNear + 0.1f);
+	}
+	else {
+		mFar = farClipPlane;
+	}
+}
+
+
+auto Camera::GetType() const noexcept -> Type {
+	return mType;
+}
+
+
+auto Camera::SetType(Type const type) noexcept -> void {
+	if (type == Type::Perspective) {
+		mNear = std::max(mNear, MINIMUM_PERSPECTIVE_NEAR_CLIP_PLANE);
+		mFar = std::max(mFar, mNear + MINIMUM_PERSPECTIVE_FAR_CLIP_PLANE_OFFSET);
+	}
+
+	mType = type;
+}
+
+
+auto Camera::GetHorizontalPerspectiveFov() const -> float {
+	return mPerspFovHorizDeg;
+}
+
+
+auto Camera::SetHorizontalPerspectiveFov(float degrees) -> void {
+	degrees = std::max(degrees, MINIMUM_PERSPECTIVE_HORIZONTAL_FOV);
+	mPerspFovHorizDeg = degrees;
+}
+
+
+auto Camera::GetHorizontalOrthographicSize() const -> float {
+	return mOrthoSizeHoriz;
+}
+
+
+auto Camera::SetHorizontalOrthographicSize(float size) -> void {
+	size = std::max(size, MINIMUM_ORTHOGRAPHIC_HORIZONTAL_SIZE);
+	mOrthoSizeHoriz = size;
+}
+
+
+auto Camera::CalculateFrustum(float const aspectRatio) const noexcept -> Frustum {
+	auto const nearClipPlane{ GetNearClipPlane() };
+	auto const farClipPlane{ GetFarClipPlane() };
+
+	switch (GetType()) {
+	case Type::Perspective: {
+		auto const horizFov{ GetHorizontalPerspectiveFov() };
+
+
+		auto const tanHalfHorizFov{ std::tan(ToRadians(horizFov) / 2.0f) };
+		auto const tanHalfVertFov{ std::tan(ToRadians(HorizontalPerspectiveFovToVertical(horizFov, aspectRatio)) / 2.0f) };
+
+		auto const xn = nearClipPlane * tanHalfHorizFov;
+		auto const xf = farClipPlane * tanHalfHorizFov;
+		auto const yn = nearClipPlane * tanHalfVertFov;
+		auto const yf = farClipPlane * tanHalfVertFov;
+
+		return Frustum
+		{
+			.rightTopNear = Vector3{ xn, yn, nearClipPlane },
+			.leftTopNear = Vector3{ -xn, yn, nearClipPlane },
+			.leftBottomNear = Vector3{ -xn, -yn, nearClipPlane },
+			.rightBottomNear = Vector3{ xn, -yn, nearClipPlane },
+			.rightTopFar = Vector3{ xf, yf, farClipPlane },
+			.leftTopFar = Vector3{ -xf, yf, farClipPlane },
+			.leftBottomFar = Vector3{ -xf, -yf, farClipPlane },
+			.rightBottomFar = Vector3{ xf, -yf, farClipPlane },
+		};
+	}
+
+	case Type::Orthographic: {
+		auto static constexpr half = 1.f / 2.f;
+		auto const horizSize{ GetHorizontalOrthographicSize() };
+		auto const x = horizSize * half;
+		auto const y = horizSize / aspectRatio * half;
+		return Frustum
+		{
+			.rightTopNear = Vector3{ x, y, nearClipPlane },
+			.leftTopNear = Vector3{ -x, y, nearClipPlane },
+			.leftBottomNear = Vector3{ -x, -y, nearClipPlane },
+			.rightBottomNear = Vector3{ x, -y, nearClipPlane },
+			.rightTopFar = Vector3{ x, y, farClipPlane },
+			.leftTopFar = Vector3{ -x, y, farClipPlane },
+			.leftBottomFar = Vector3{ -x, -y, farClipPlane },
+			.rightBottomFar = Vector3{ x, -y, farClipPlane },
+		};
+	}
+	}
+
+	return {};
 }
 
 
@@ -1819,5 +1933,28 @@ auto RegisterGameCamera(Camera const& cam) -> void {
 
 auto UnregisterGameCamera(Camera const& cam) -> void {
 	std::erase(gGameRenderCameras, &cam);
+}
+
+
+auto CullLights(Camera const& cam, Visibility& visiblity) -> void {
+	// CullLights() TODO
+}
+
+
+auto CalculateCameraViewMatrix(Camera const& cam) noexcept -> Matrix4 {
+	return Matrix4::LookToLH(cam.GetPosition(), cam.GetForwardAxis(), Vector3::Up());
+}
+
+
+auto CalculateCameraProjectionMatrix(Camera const& cam, float const aspectRatio) noexcept -> Matrix4 {
+	switch (cam.GetType()) {
+	case Camera::Type::Perspective:
+		return Matrix4::PerspectiveAsymZLH(ToRadians(Camera::HorizontalPerspectiveFovToVertical(cam.GetHorizontalPerspectiveFov(), aspectRatio)), aspectRatio, cam.GetNearClipPlane(), cam.GetFarClipPlane());
+
+	case Camera::Type::Orthographic:
+		return Matrix4::OrthographicAsymZLH(cam.GetHorizontalOrthographicSize(), cam.GetHorizontalOrthographicSize() / aspectRatio, cam.GetNearClipPlane(), cam.GetFarClipPlane());
+	}
+
+	return Matrix4{};
 }
 }

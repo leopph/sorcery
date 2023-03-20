@@ -391,8 +391,8 @@ auto DrawSceneViewWindow(Context& context) -> void {
 		ImGui::Image(renderer::GetSceneFrame(), contentRegionSize);
 
 		auto const windowAspectRatio{ ImGui::GetWindowWidth() / ImGui::GetWindowHeight() };
-		auto const editorCamViewMat{ Matrix4::LookAtLH(editorCam.position, editorCam.position + editorCam.orientation.Rotate(Vector3::Forward()), Vector3::Up()) };
-		auto const editorCamProjMat{ Matrix4::PerspectiveAsymZLH(2.0f * std::atanf(std::tanf(ToRadians(editorCam.fovHorizDeg) / 2.0f) / windowAspectRatio), windowAspectRatio, editorCam.nearClip, editorCam.farClip) };
+		auto const editorCamViewMat{ CalculateCameraViewMatrix(editorCam) };
+		auto const editorCamProjMat{ CalculateCameraProjectionMatrix(editorCam, windowAspectRatio) };
 
 		ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, ImGui::GetWindowWidth(), ImGui::GetWindowHeight());
 		ImGuizmo::AllowAxisFlip(false);
@@ -405,7 +405,7 @@ auto DrawSceneViewWindow(Context& context) -> void {
 		}
 
 		if (showGrid) {
-			ImGuizmo::DrawGrid(editorCamViewMat.GetData(), editorCamProjMat.GetData(), Matrix4::Identity().GetData(), editorCam.farClip);
+			ImGuizmo::DrawGrid(editorCamViewMat.GetData(), editorCamProjMat.GetData(), Matrix4::Identity().GetData(), editorCam.GetFarClipPlane());
 		}
 
 		if (auto const selectedEntity{ dynamic_cast<Entity*>(context.GetSelectedObject()) }; selectedEntity) {

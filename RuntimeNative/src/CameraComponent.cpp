@@ -22,26 +22,6 @@ CameraComponent::~CameraComponent() {
 }
 
 
-auto CameraComponent::GetNearClipPlane() const noexcept -> f32 {
-	return mNear;
-}
-
-
-auto CameraComponent::SetNearClipPlane(f32 const nearPlane) -> void {
-	mNear = std::max(nearPlane, 0.03f);
-}
-
-
-auto CameraComponent::GetFarClipPlane() const noexcept -> f32 {
-	return mFar;
-}
-
-
-auto CameraComponent::SetFarClipPlane(f32 const farPlane) -> void {
-	mFar = std::max(farPlane, mNear + 0.1f);
-}
-
-
 auto CameraComponent::GetViewport() const -> NormalizedViewport const& {
 	return mViewport;
 }
@@ -52,38 +32,6 @@ auto CameraComponent::SetViewport(NormalizedViewport const& viewport) -> void {
 	mViewport.extent.height = std::clamp(viewport.extent.height, 0.f, 1.f);
 	mViewport.position.x = std::clamp(viewport.position.x, 0.f, 1.f);
 	mViewport.position.y = std::clamp(viewport.position.y, 0.f, 1.f);
-}
-
-
-auto CameraComponent::GetHorizontalOrthographicSize() const -> f32 {
-	return mOrthoSizeHoriz;
-}
-
-
-auto CameraComponent::SetHorizontalOrthographicSize(f32 size) -> void {
-	size = std::max(size, 0.1f);
-	mOrthoSizeHoriz = size;
-}
-
-
-auto CameraComponent::GetHorizontalPerspectiveFov() const -> f32 {
-	return mPerspFovHorizDeg;
-}
-
-
-auto CameraComponent::SetHorizontalPerspectiveFov(f32 degrees) -> void {
-	degrees = std::max(degrees, 5.f);
-	mPerspFovHorizDeg = degrees;
-}
-
-
-auto CameraComponent::GetType() const -> Camera::Type {
-	return mType;
-}
-
-
-auto CameraComponent::SetType(Camera::Type const type) -> void {
-	mType = type;
 }
 
 
@@ -111,56 +59,6 @@ auto CameraComponent::GetPosition() const noexcept -> Vector3 {
 
 auto CameraComponent::GetForwardAxis() const noexcept -> Vector3 {
 	return GetEntity()->GetTransform().GetForwardAxis();
-}
-
-
-auto CameraComponent::GetFrustum(float const aspectRatio) const -> Frustum {
-	switch (GetType()) {
-	case Camera::Type::Perspective: {
-		auto const horizFov{ GetHorizontalPerspectiveFov() };
-		auto const nearClipPlane{ GetNearClipPlane() };
-		auto const farClipPlane{ GetFarClipPlane() };
-
-		auto const tanHalfHorizFov{ std::tan(ToRadians(horizFov) / 2.0f) };
-		auto const tanHalfVertFov{ std::tan(ToRadians(HorizontalPerspectiveFovToVertical(horizFov, aspectRatio)) / 2.0f) };
-
-		auto const xn = nearClipPlane * tanHalfHorizFov;
-		auto const xf = farClipPlane * tanHalfHorizFov;
-		auto const yn = nearClipPlane * tanHalfVertFov;
-		auto const yf = farClipPlane * tanHalfVertFov;
-
-		return Frustum
-		{
-			.rightTopNear = Vector3{ xn, yn, nearClipPlane },
-			.leftTopNear = Vector3{ -xn, yn, nearClipPlane },
-			.leftBottomNear = Vector3{ -xn, -yn, nearClipPlane },
-			.rightBottomNear = Vector3{ xn, -yn, nearClipPlane },
-			.rightTopFar = Vector3{ xf, yf, farClipPlane },
-			.leftTopFar = Vector3{ -xf, yf, farClipPlane },
-			.leftBottomFar = Vector3{ -xf, -yf, farClipPlane },
-			.rightBottomFar = Vector3{ xf, -yf, farClipPlane },
-		};
-	}
-
-	case Camera::Type::Orthographic: {
-		auto static constexpr half = 1.f / 2.f;
-		auto const x = GetHorizontalOrthographicSize() * half;
-		auto const y = GetHorizontalOrthographicSize() / aspectRatio * half;
-		return Frustum
-		{
-			.rightTopNear = Vector3{ x, y, GetNearClipPlane() },
-			.leftTopNear = Vector3{ -x, y, GetNearClipPlane() },
-			.leftBottomNear = Vector3{ -x, -y, GetNearClipPlane() },
-			.rightBottomNear = Vector3{ x, -y, GetNearClipPlane() },
-			.rightTopFar = Vector3{ x, y, GetFarClipPlane() },
-			.leftTopFar = Vector3{ -x, y, GetFarClipPlane() },
-			.leftBottomFar = Vector3{ -x, -y, GetFarClipPlane() },
-			.rightBottomFar = Vector3{ x, -y, GetFarClipPlane() },
-		};
-	}
-	}
-
-	return {};
 }
 
 
