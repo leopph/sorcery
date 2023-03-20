@@ -88,6 +88,8 @@ public:
 
 	[[nodiscard]] LEOPPHAPI auto HasChanged() const noexcept -> bool;
 	LEOPPHAPI auto SetChanged(bool changed) noexcept -> void;
+
+	LEOPPHAPI ~TransformComponent() override;
 };
 
 

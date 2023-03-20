@@ -32,6 +32,7 @@ auto TransformComponent::UpdateWorldDataRecursive() -> void {
 	}
 }
 
+
 auto TransformComponent::GetWorldPosition() const -> Vector3 const& {
 	return mWorldPosition;
 }
@@ -174,6 +175,7 @@ auto TransformComponent::GetParent() const -> TransformComponent* {
 	return mParent;
 }
 
+
 auto TransformComponent::SetParent(TransformComponent* const parent) -> void {
 	if (mParent) {
 		std::erase(mParent->mChildren, this);
@@ -193,31 +195,49 @@ auto TransformComponent::GetChildren() const -> std::span<TransformComponent* co
 	return mChildren;
 }
 
+
 auto TransformComponent::GetModelMatrix() const -> Matrix4 const& {
 	return mModelMat;
 }
+
 
 auto TransformComponent::GetNormalMatrix() const -> Matrix3 const& {
 	return mNormalMat;
 }
 
+
 auto TransformComponent::CreateManagedObject() -> void {
 	return ManagedAccessObject::CreateManagedObject("leopph", "Transform");
 }
+
 
 auto TransformComponent::HasChanged() const noexcept -> bool {
 	return mChanged;
 }
 
+
 auto TransformComponent::SetChanged(bool const changed) noexcept -> void {
 	mChanged = changed;
 }
 
+
+TransformComponent::~TransformComponent() {
+	// SetParent(nullptr) on child removes it from this->mChildren so we cannot iterate
+	while (!mChildren.empty()) {
+		mChildren.back()->SetParent(nullptr);
+	}
+
+	SetParent(nullptr);
+}
+
+
 Object::Type const TransformComponent::SerializationType{ Type::Transform };
+
 
 auto TransformComponent::GetSerializationType() const -> Type {
 	return Type::Transform;
 }
+
 
 auto TransformComponent::Serialize(YAML::Node& node) const -> void {
 	Component::Serialize(node);
@@ -270,6 +290,7 @@ auto TransformComponent::Deserialize(YAML::Node const& node) -> void {
 		}
 	}
 }
+
 
 namespace managedbindings {
 auto GetTransformWorldPosition(MonoObject* const transform) -> Vector3 {
