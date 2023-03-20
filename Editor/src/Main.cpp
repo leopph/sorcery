@@ -1,6 +1,6 @@
 #include "Widgets.hpp"
 #include "Material.hpp"
-#include "Time.hpp"
+#include "Timing.hpp"
 #include "Asset.hpp"
 #include "ObjectFactoryManager.hpp"
 #include "AssetStorage.hpp"
@@ -51,6 +51,7 @@ auto EditorImGuiEventHook(HWND const hwnd, UINT const msg, WPARAM const wparam, 
 	return ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam);
 }
 
+
 auto IndexFileNameIfNeeded(std::filesystem::path const& filePathAbsolute) -> std::filesystem::path {
 	std::string const originalStem{ filePathAbsolute.stem().string() };
 	std::filesystem::path const ext{ filePathAbsolute.extension() };
@@ -80,6 +81,7 @@ auto IndexFileNameIfNeeded(std::filesystem::path const& filePathAbsolute) -> std
 	return (parentDir / currentStem).replace_extension(ext);
 }
 
+
 auto DrawStartupScreen(Context& context) -> void {
 	auto constexpr flags{ ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings };
 	auto const viewport{ ImGui::GetMainViewport() };
@@ -103,6 +105,7 @@ auto DrawStartupScreen(Context& context) -> void {
 	}
 	ImGui::End();
 }
+
 
 auto DrawMainMenuBar(Context& context, bool& showDemoWindow) -> void {
 	if (ImGui::BeginMainMenuBar()) {
@@ -144,6 +147,7 @@ auto DrawMainMenuBar(Context& context, bool& showDemoWindow) -> void {
 		ImGui::EndMainMenuBar();
 	}
 }
+
 
 auto DrawEntityHierarchyWindow(Context& context) -> void {
 	if (ImGui::Begin("Entities", nullptr, ImGuiWindowFlags_NoCollapse)) {
@@ -253,6 +257,7 @@ auto DrawEntityHierarchyWindow(Context& context) -> void {
 	ImGui::End();
 }
 
+
 auto DrawObjectPropertiesWindow(Context& context) -> void {
 	ImGui::SetNextWindowSize(ImVec2{ 400, 600 }, ImGuiCond_FirstUseEver);
 
@@ -263,6 +268,7 @@ auto DrawObjectPropertiesWindow(Context& context) -> void {
 	}
 	ImGui::End();
 }
+
 
 auto DrawGameViewWindow(bool const gameRunning) -> void {
 	ImVec2 static constexpr gameViewportMinSize{ 480, 270 };
@@ -314,6 +320,7 @@ auto DrawGameViewWindow(bool const gameRunning) -> void {
 	}
 	ImGui::End();
 }
+
 
 auto DrawSceneViewWindow(Context& context) -> void {
 	ImVec2 static constexpr sceneViewportMinSize{ 480, 270 };
@@ -373,7 +380,7 @@ auto DrawSceneViewWindow(Context& context) -> void {
 				posDelta *= 2;
 			}
 
-			editorCam.position += editorCam.orientation.Rotate(posDelta) * get_frame_time() * 2;
+			editorCam.position += editorCam.orientation.Rotate(posDelta) * timing::GetFrameTime() * 2;
 
 			auto const [mouseX, mouseY]{ gWindow.GetMouseDelta() };
 			auto constexpr sens{ 0.05f };
@@ -436,6 +443,7 @@ auto DrawSceneViewWindow(Context& context) -> void {
 	}
 	ImGui::End();
 }
+
 
 auto DrawProjectWindow(Context& context) -> void {
 	if (ImGui::Begin("Project", nullptr, ImGuiWindowFlags_NoCollapse)) {
@@ -500,7 +508,6 @@ auto DrawProjectWindow(Context& context) -> void {
 						};
 
 						if (!exists(dstPath) || !equivalent(dstPath, srcPathAbs)) {
-							
 							copy_file(srcPathAbs, dstPath);
 						}
 
@@ -785,6 +792,7 @@ auto DrawProjectWindow(Context& context) -> void {
 	ImGui::End();
 }
 
+
 auto DrawSceneOpenPrompt() {
 	if (ImGui::Begin("No Open Scene##NoOpenScenePrompt", nullptr, ImGuiWindowFlags_None)) {
 		auto const promptTextLabel{ "Create or open a scene from the Project Menu to start editing!" };
@@ -799,9 +807,10 @@ auto DrawSceneOpenPrompt() {
 	ImGui::End();
 }
 
+
 auto DrawPerformanceCounterWindow() {
 	if (ImGui::Begin("Performance")) {
-		std::chrono::duration<float, std::ratio<1>> const frameTimeSeconds{ get_frame_time() };
+		std::chrono::duration<float, std::ratio<1>> const frameTimeSeconds{ timing::GetFrameTime() };
 		std::chrono::duration<float, std::milli> const frameTimeMillis{ frameTimeSeconds };
 
 		auto constexpr static MAX_DATA_POINT_COUNT{ 500 };
@@ -843,7 +852,10 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 		leopph::gWindow.SetIgnoreManagedRequests(true);
 
 		leopph::gRenderer.SetGameResolution({ 960, 540 });
-		leopph::gRenderer.SetSyncInterval(1);
+		leopph::gRenderer.SetSyncInterval(0);
+
+		auto constexpr TARGET_FRAME_RATE{ 200 };
+		leopph::timing::SetTargetFrameRate(TARGET_FRAME_RATE);
 
 		ImGui::CreateContext();
 		auto& imGuiIo = ImGui::GetIO();
@@ -866,7 +878,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
 		leopph::editor::Context context{ imGuiIo };
 
-		leopph::init_time();
+		leopph::timing::OnApplicationStart();
 
 		if (std::wcscmp(lpCmdLine, L"") != 0) {
 			int argc;
@@ -911,7 +923,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 						leopph::gWindow.SetEventHook(leopph::editor::EditorImGuiEventHook);
 						leopph::gWindow.UnlockCursor();
 						leopph::gWindow.SetCursorHiding(false);
-						leopph::gRenderer.SetSyncInterval(1);
+						leopph::timing::SetTargetFrameRate(TARGET_FRAME_RATE);
 						context.GetScene()->Load(context.GetFactoryManager());
 						context.SetSelectedObject(nullptr);
 					}
@@ -920,7 +932,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 					if (GetKeyDown(leopph::Key::F5)) {
 						runGame = true;
 						leopph::gWindow.SetEventHook({});
-						leopph::gRenderer.SetSyncInterval(0);
+						leopph::timing::SetTargetFrameRate(-1);
 						context.GetScene()->Save();
 					}
 				}
@@ -960,7 +972,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 			ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 			leopph::gRenderer.Present();
 
-			leopph::measure_time();
+			leopph::timing::OnFrameEnd();
 		}
 
 		ImGui_ImplDX11_Shutdown();

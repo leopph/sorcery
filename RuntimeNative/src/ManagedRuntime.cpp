@@ -1,7 +1,7 @@
 #include "ManagedRuntime.hpp"
 
 #include "Entity.hpp"
-#include "Time.hpp"
+#include "Timing.hpp"
 #include "Platform.hpp"
 #include "ManagedAccessObject.hpp"
 #include "Component.hpp"
@@ -75,8 +75,8 @@ auto ManagedRuntime::StartUp() -> void {
 	mono_add_internal_call("leopph.Input::get_IsCursorHidden", reinterpret_cast<void*>(&managedbindings::IsWindowCursorHidden<gWindow>));
 	mono_add_internal_call("leopph.Input::set_IsCursorHidden", reinterpret_cast<void*>(&managedbindings::SetWindowCursorHiding<gWindow>));
 
-	mono_add_internal_call("leopph.Time::get_FullTime", reinterpret_cast<void*>(&get_full_time));
-	mono_add_internal_call("leopph.Time::get_FrameTime", reinterpret_cast<void*>(&get_frame_time));
+	mono_add_internal_call("leopph.Time::get_FullTime", reinterpret_cast<void*>(&timing::GetFullTime));
+	mono_add_internal_call("leopph.Time::get_FrameTime", reinterpret_cast<void*>(&timing::GetFrameTime));
 
 	mono_add_internal_call("leopph.Window::get_CurrentResolution", reinterpret_cast<void*>(&Call<gWindow, &Window::GetCurrentClientAreaSize>));
 	mono_add_internal_call("leopph.Window::get_WindowedResolution", reinterpret_cast<void*>(&Call<gWindow, &Window::GetWindowedClientAreaSize>));

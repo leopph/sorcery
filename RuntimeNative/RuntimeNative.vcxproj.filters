@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\Time.cpp">
+    <ClCompile Include="src\Timing.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Entity.cpp">
@@ -107,7 +107,7 @@
     <ClInclude Include="src\Color.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Time.hpp">
+    <ClInclude Include="src\Timing.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\ManagedRuntime.hpp">

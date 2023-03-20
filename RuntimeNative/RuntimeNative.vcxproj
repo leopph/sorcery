@@ -136,7 +136,7 @@
     <ClCompile Include="src\SceneElement.cpp" />
     <ClCompile Include="src\SkyboxComponent.cpp" />
     <ClCompile Include="src\Texture2D.cpp" />
-    <ClCompile Include="src\Time.cpp" />
+    <ClCompile Include="src\Timing.cpp" />
     <ClCompile Include="src\Platform.cpp" />
     <ClCompile Include="src\Systems.cpp" />
     <ClCompile Include="src\TransformComponent.cpp" />
@@ -165,7 +165,7 @@
     <ClInclude Include="src\Scene.hpp" />
     <ClInclude Include="src\SkyboxComponent.hpp" />
     <ClInclude Include="src\Texture2D.hpp" />
-    <ClInclude Include="src\Time.hpp" />
+    <ClInclude Include="src\Timing.hpp" />
     <ClInclude Include="src\TransformComponent.hpp" />
     <ClInclude Include="src\Util.hpp" />
     <ClInclude Include="src\Platform.hpp" />
