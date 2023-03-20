@@ -2,7 +2,7 @@
 
 #include "Serialization.hpp"
 #include "Entity.hpp"
-#include "Systems.hpp"
+#include "Renderer.hpp"
 #include "TransformComponent.hpp"
 
 #include <iostream>
@@ -13,12 +13,12 @@ Object::Type const CameraComponent::SerializationType{ Object::Type::Camera };
 
 
 CameraComponent::CameraComponent() {
-	gRenderer.RegisterGameCamera(*this);
+	renderer::RegisterGameCamera(*this);
 }
 
 
 CameraComponent::~CameraComponent() {
-	gRenderer.UnregisterGameCamera(*this);
+	renderer::UnregisterGameCamera(*this);
 }
 
 

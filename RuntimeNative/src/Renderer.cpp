@@ -1,5 +1,7 @@
 #include "Renderer.hpp"
 
+#include <dxgi1_6.h>
+
 #include "Platform.hpp"
 #include "Entity.hpp"
 #include "Systems.hpp"
@@ -36,8 +38,181 @@
 using Microsoft::WRL::ComPtr;
 
 
-namespace leopph {
+namespace leopph::renderer {
 namespace {
+constexpr int PUNCTUAL_SHADOW_ATLAS_SIZE{ 4096 };
+
+
+struct ShadowAtlas {
+	ComPtr<ID3D11Texture2D> tex;
+	ComPtr<ID3D11ShaderResourceView> srv;
+	ComPtr<ID3D11DepthStencilView> dsv;
+};
+
+
+struct Resources {
+	ComPtr<ID3D11Device> device;
+	ComPtr<ID3D11DeviceContext> context;
+
+	ComPtr<IDXGISwapChain1> swapChain;
+	ComPtr<ID3D11Texture2D> gameHdrTexture;
+	ComPtr<ID3D11Texture2D> gameOutputTexture;
+	ComPtr<ID3D11Texture2D> gameDSTex;
+	ComPtr<ID3D11Texture2D> sceneHdrTexture;
+	ComPtr<ID3D11Texture2D> sceneOutputTexture;
+	ComPtr<ID3D11Texture2D> sceneDSTex;
+
+	ComPtr<ID3D11RenderTargetView> swapChainRtv;
+	ComPtr<ID3D11RenderTargetView> gameHdrTextureRtv;
+	ComPtr<ID3D11RenderTargetView> gameOutputTextureRtv;
+	ComPtr<ID3D11RenderTargetView> sceneHdrTextureRtv;
+	ComPtr<ID3D11RenderTargetView> sceneOutputTextureRtv;
+
+	ComPtr<ID3D11ShaderResourceView> gameHdrTextureSrv;
+	ComPtr<ID3D11ShaderResourceView> gameOutputTextureSrv;
+	ComPtr<ID3D11ShaderResourceView> sceneHdrTextureSrv;
+	ComPtr<ID3D11ShaderResourceView> sceneOutputTextureSrv;
+	ComPtr<ID3D11ShaderResourceView> lightSbSrv;
+
+	ComPtr<ID3D11DepthStencilView> gameDSV;
+	ComPtr<ID3D11DepthStencilView> sceneDSV;
+
+	ComPtr<ID3D11PixelShader> meshBlinnPhongPS;
+	ComPtr<ID3D11VertexShader> meshVS;
+	ComPtr<ID3D11PixelShader> meshPbrPS;
+	ComPtr<ID3D11PixelShader> toneMapGammaPS;
+	ComPtr<ID3D11PixelShader> skyboxPS;
+	ComPtr<ID3D11VertexShader> skyboxVS;
+	ComPtr<ID3D11VertexShader> shadowVS;
+	ComPtr<ID3D11VertexShader> screenVS;
+
+	ComPtr<ID3D11Buffer> perFrameCB;
+	ComPtr<ID3D11Buffer> perCamCB;
+	ComPtr<ID3D11Buffer> perModelCB;
+	ComPtr<ID3D11Buffer> toneMapGammaCB;
+	ComPtr<ID3D11Buffer> skyboxCB;
+	ComPtr<ID3D11Buffer> shadowCB;
+	ComPtr<ID3D11Buffer> lightSB;
+
+	ComPtr<ID3D11InputLayout> meshIL;
+	ComPtr<ID3D11InputLayout> skyboxIL;
+
+	ComPtr<ID3D11SamplerState> materialSS;
+	ComPtr<ID3D11SamplerState> shadowSS;
+
+	ComPtr<ID3D11RasterizerState> skyboxPassRS;
+
+	ComPtr<ID3D11DepthStencilState> skyboxPassDSS;
+
+	std::unique_ptr<Material> defaultMaterial;
+	std::unique_ptr<Mesh> cubeMesh;
+	std::unique_ptr<Mesh> planeMesh;
+
+	ShadowAtlas punctualShadowAtlas;
+};
+
+
+struct ShadowAtlasCellData {
+	Matrix4 lightViewMtx;
+	Matrix4 lightViewProjMtx;
+	// Index into the array of indices to the visible lights, use lights[visibleLights[visibleLightIdxIdx]] to get to the light
+	int visibleLightIdxIdx;
+};
+
+
+#pragma warning(push)
+#pragma warning(disable: 4324)
+class ShadowAtlasAllocation {
+	std::optional<ShadowAtlasCellData> mQuadrant0;
+	std::array<std::optional<ShadowAtlasCellData>, 4> mQuadrant1;
+	std::array<std::optional<ShadowAtlasCellData>, 16> mQuadrant2;
+	std::array<std::optional<ShadowAtlasCellData>, 64> mQuadrant3;
+
+public:
+	[[nodiscard]] auto GetSize() const noexcept -> int {
+		return PUNCTUAL_SHADOW_ATLAS_SIZE;
+	}
+
+
+	[[nodiscard]] auto GetQuadrantCells(int const idx) const -> std::span<std::optional<ShadowAtlasCellData> const> {
+		return const_cast<ShadowAtlasAllocation*>(this)->GetQuadrantCells(idx);
+	}
+
+
+	[[nodiscard]] auto GetQuadrantCells(int const idx) -> std::span<std::optional<ShadowAtlasCellData>> {
+		switch (idx) {
+		case 0: {
+			return std::span{ &mQuadrant0, 1 };
+		}
+		case 1: {
+			return std::span{ mQuadrant1 };
+		}
+		case 2: {
+			return std::span{ mQuadrant2 };
+		}
+		case 3: {
+			return std::span{ mQuadrant3 };
+		}
+		default: {
+			throw std::out_of_range{ "Shadow atlas quadrant index out of bounds." };
+		}
+		}
+	}
+
+
+	[[nodiscard]] auto GetQuadrantRowColCount(int const idx) const -> int {
+		if (idx > 3 || idx < 0) {
+			throw std::out_of_range{ "Shadow atlas quadrant index out of bounds." };
+		}
+
+		return Pow(2, idx);
+	}
+
+
+	[[nodiscard]] auto GetQuadrantCellSizeNormalized(int const idx) const -> float {
+		return 0.5f / static_cast<float>(GetQuadrantRowColCount(idx));
+	}
+
+
+	[[nodiscard]] auto GetQuadrantOffsetNormalized(int const idx) const -> Vector2 {
+		switch (idx) {
+		case 0: {
+			return Vector2{ 0 };
+		}
+		case 1: {
+			return Vector2{ 0.5f, 0 };
+		}
+		case 2: {
+			return Vector2{ 0, 0.5f };
+		}
+		case 3: {
+			return Vector2{ 0.5f };
+		}
+		default: {
+			throw std::out_of_range{ "Shadow atlas quadrant index out of bounds." };
+		}
+		}
+	}
+
+
+	[[nodiscard]] auto GetCellOffsetNormalized(int const quadrantIdx, int const cellIdx) const -> Vector2 {
+		auto const rowColCount{ GetQuadrantRowColCount(quadrantIdx) };
+
+		if (cellIdx < 0 || cellIdx > Pow(rowColCount, 2)) {
+			throw std::out_of_range{ "Shadow atlas cell index out of bounds." };
+		}
+
+		auto const quadrantOffset{ GetQuadrantOffsetNormalized(quadrantIdx) };
+		auto const cellSizeNorm{ GetQuadrantCellSizeNormalized(quadrantIdx) };
+		auto const rowIdx{ cellIdx / rowColCount };
+		auto const colIdx{ cellIdx % rowColCount };
+
+		return quadrantOffset + Vector2{ static_cast<float>(colIdx) * cellSizeNorm, static_cast<float>(rowIdx) * cellSizeNorm };
+	}
+};
+#pragma warning(pop)
+
+
 std::vector const QUAD_POSITIONS{
 	Vector3{ -1, 1, 0 }, Vector3{ -1, -1, 0 }, Vector3{ 1, -1, 0 }, Vector3{ 1, 1, 0 }
 };
@@ -183,92 +358,25 @@ std::vector<UINT> const CUBE_INDICES{
 	15, 3, 6,
 	6, 18, 15
 };
-}
 
 
-auto Renderer::ShadowAtlasAllocation::GetSize() const noexcept -> int {
-	return PUNCTUAL_SHADOW_ATLAS_SIZE;
-}
+Resources* gResources{ nullptr };
+UINT gPresentFlags{ 0 };
+UINT gSwapChainFlags{ 0 };
+Extent2D<u32> gGameRes;
+f32 gGameAspect;
+Extent2D<u32> gSceneRes;
+f32 gSceneAspect;
+u32 gSyncInterval{ 0 };
+std::vector<StaticMeshComponent const*> gStaticMeshComponents;
+std::vector<LightComponent const*> gLights;
+f32 gInvGamma{ 1.f / 2.2f };
+std::vector<SkyboxComponent const*> gSkyboxes;
+std::vector<RenderCamera const*> gGameRenderCameras;
+ShadowAtlasAllocation gPunctualShadowAtlasAlloc;
 
 
-auto Renderer::ShadowAtlasAllocation::GetQuadrantCells(int const idx) const -> std::span<std::optional<ShadowAtlasCellData> const> {
-	return const_cast<ShadowAtlasAllocation*>(this)->GetQuadrantCells(idx);
-}
-
-
-auto Renderer::ShadowAtlasAllocation::GetQuadrantCells(int const idx) -> std::span<std::optional<ShadowAtlasCellData>> {
-	switch (idx) {
-	case 0: {
-		return std::span{ &quadrant0, 1 };
-	}
-	case 1: {
-		return std::span{ quadrant1 };
-	}
-	case 2: {
-		return std::span{ quadrant2 };
-	}
-	case 3: {
-		return std::span{ quadrant3 };
-	}
-	default: {
-		throw std::out_of_range{ "Shadow atlas quadrant index out of bounds." };
-	}
-	}
-}
-
-
-auto Renderer::ShadowAtlasAllocation::GetQuadrantRowColCount(int const idx) const -> int {
-	if (idx > 3 || idx < 0) {
-		throw std::out_of_range{ "Shadow atlas quadrant index out of bounds." };
-	}
-
-	return Pow(2, idx);
-}
-
-
-auto Renderer::ShadowAtlasAllocation::GetQuadrantCellSizeNormalized(int const idx) const -> float {
-	return 0.5f / static_cast<float>(GetQuadrantRowColCount(idx));
-}
-
-
-auto Renderer::ShadowAtlasAllocation::GetQuadrantOffsetNormalized(int const idx) const -> Vector2 {
-	switch (idx) {
-	case 0: {
-		return Vector2{ 0 };
-	}
-	case 1: {
-		return Vector2{ 0.5f, 0 };
-	}
-	case 2: {
-		return Vector2{ 0, 0.5f };
-	}
-	case 3: {
-		return Vector2{ 0.5f };
-	}
-	default: {
-		throw std::out_of_range{ "Shadow atlas quadrant index out of bounds." };
-	}
-	}
-}
-
-
-auto Renderer::ShadowAtlasAllocation::GetCellOffsetNormalized(int const quadrantIdx, int const cellIdx) const -> Vector2 {
-	auto const rowColCount{ GetQuadrantRowColCount(quadrantIdx) };
-
-	if (cellIdx < 0 || cellIdx > Pow(rowColCount, 2)) {
-		throw std::out_of_range{ "Shadow atlas cell index out of bounds." };
-	}
-
-	auto const quadrantOffset{ GetQuadrantOffsetNormalized(quadrantIdx) };
-	auto const cellSizeNorm{ GetQuadrantCellSizeNormalized(quadrantIdx) };
-	auto const rowIdx{ cellIdx / rowColCount };
-	auto const colIdx{ cellIdx % rowColCount };
-
-	return quadrantOffset + Vector2{ static_cast<float>(colIdx) * cellSizeNorm, static_cast<float>(rowIdx) * cellSizeNorm };
-}
-
-
-auto Renderer::RecreateGameTexturesAndViews(u32 const width, u32 const height) const -> void {
+auto RecreateGameTexturesAndViews(u32 const width, u32 const height) -> void {
 	D3D11_TEXTURE2D_DESC const hdrTexDesc{
 		.Width = width,
 		.Height = height,
@@ -282,7 +390,7 @@ auto Renderer::RecreateGameTexturesAndViews(u32 const width, u32 const height) c
 		.MiscFlags = 0
 	};
 
-	if (FAILED(mResources->device->CreateTexture2D(&hdrTexDesc, nullptr, mResources->gameHdrTexture.ReleaseAndGetAddressOf()))) {
+	if (FAILED(gResources->device->CreateTexture2D(&hdrTexDesc, nullptr, gResources->gameHdrTexture.ReleaseAndGetAddressOf()))) {
 		throw std::runtime_error{ "Failed to recreate game view hdr texture." };
 	}
 
@@ -295,7 +403,7 @@ auto Renderer::RecreateGameTexturesAndViews(u32 const width, u32 const height) c
 		}
 	};
 
-	if (FAILED(mResources->device->CreateRenderTargetView(mResources->gameHdrTexture.Get(), &hdrRtvDesc, mResources->gameHdrTextureRtv.ReleaseAndGetAddressOf()))) {
+	if (FAILED(gResources->device->CreateRenderTargetView(gResources->gameHdrTexture.Get(), &hdrRtvDesc, gResources->gameHdrTextureRtv.ReleaseAndGetAddressOf()))) {
 		throw std::runtime_error{ "Failed to recreate game view hdr texture rtv." };
 	}
 
@@ -309,7 +417,7 @@ auto Renderer::RecreateGameTexturesAndViews(u32 const width, u32 const height) c
 		}
 	};
 
-	if (FAILED(mResources->device->CreateShaderResourceView(mResources->gameHdrTexture.Get(), &hdrSrvDesc, mResources->gameHdrTextureSrv.ReleaseAndGetAddressOf()))) {
+	if (FAILED(gResources->device->CreateShaderResourceView(gResources->gameHdrTexture.Get(), &hdrSrvDesc, gResources->gameHdrTextureSrv.ReleaseAndGetAddressOf()))) {
 		throw std::runtime_error{ "Failed to recreate game view output texture srv." };
 	}
 
@@ -330,7 +438,7 @@ auto Renderer::RecreateGameTexturesAndViews(u32 const width, u32 const height) c
 		.MiscFlags = 0
 	};
 
-	if (FAILED(mResources->device->CreateTexture2D(&outputTexDesc, nullptr, mResources->gameOutputTexture.ReleaseAndGetAddressOf()))) {
+	if (FAILED(gResources->device->CreateTexture2D(&outputTexDesc, nullptr, gResources->gameOutputTexture.ReleaseAndGetAddressOf()))) {
 		throw std::runtime_error{ "Failed to recreate game view output texture." };
 	}
 
@@ -343,7 +451,7 @@ auto Renderer::RecreateGameTexturesAndViews(u32 const width, u32 const height) c
 		}
 	};
 
-	if (FAILED(mResources->device->CreateRenderTargetView(mResources->gameOutputTexture.Get(), &outputRtvDesc, mResources->gameOutputTextureRtv.ReleaseAndGetAddressOf()))) {
+	if (FAILED(gResources->device->CreateRenderTargetView(gResources->gameOutputTexture.Get(), &outputRtvDesc, gResources->gameOutputTextureRtv.ReleaseAndGetAddressOf()))) {
 		throw std::runtime_error{ "Failed to recreate game view output texture rtv." };
 	}
 
@@ -357,7 +465,7 @@ auto Renderer::RecreateGameTexturesAndViews(u32 const width, u32 const height) c
 		}
 	};
 
-	if (FAILED(mResources->device->CreateShaderResourceView(mResources->gameOutputTexture.Get(), &outputSrvDesc, mResources->gameOutputTextureSrv.ReleaseAndGetAddressOf()))) {
+	if (FAILED(gResources->device->CreateShaderResourceView(gResources->gameOutputTexture.Get(), &outputSrvDesc, gResources->gameOutputTextureSrv.ReleaseAndGetAddressOf()))) {
 		throw std::runtime_error{ "Failed to recreate game view output texture srv." };
 	}
 
@@ -374,7 +482,7 @@ auto Renderer::RecreateGameTexturesAndViews(u32 const width, u32 const height) c
 		.MiscFlags = 0
 	};
 
-	if (FAILED(mResources->device->CreateTexture2D(&dsTexDesc, nullptr, mResources->gameDSTex.ReleaseAndGetAddressOf()))) {
+	if (FAILED(gResources->device->CreateTexture2D(&dsTexDesc, nullptr, gResources->gameDSTex.ReleaseAndGetAddressOf()))) {
 		throw std::runtime_error{ "Failed to recreate game view depth-stencil texture." };
 	}
 
@@ -385,13 +493,13 @@ auto Renderer::RecreateGameTexturesAndViews(u32 const width, u32 const height) c
 		.Texture2D = { .MipSlice = 0 }
 	};
 
-	if (FAILED(mResources->device->CreateDepthStencilView(mResources->gameDSTex.Get(), &dsDsvDesc, mResources->gameDSV.ReleaseAndGetAddressOf()))) {
+	if (FAILED(gResources->device->CreateDepthStencilView(gResources->gameDSTex.Get(), &dsDsvDesc, gResources->gameDSV.ReleaseAndGetAddressOf()))) {
 		throw std::runtime_error{ "Failed to recreate game view depth-stencil texture dsv." };
 	}
 }
 
 
-auto Renderer::RecreateSceneTexturesAndViews(u32 const width, u32 const height) const -> void {
+auto RecreateSceneTexturesAndViews(u32 const width, u32 const height) -> void {
 	D3D11_TEXTURE2D_DESC const hdrTexDesc{
 		.Width = width,
 		.Height = height,
@@ -405,7 +513,7 @@ auto Renderer::RecreateSceneTexturesAndViews(u32 const width, u32 const height) 
 		.MiscFlags = 0
 	};
 
-	if (FAILED(mResources->device->CreateTexture2D(&hdrTexDesc, nullptr, mResources->sceneHdrTexture.ReleaseAndGetAddressOf()))) {
+	if (FAILED(gResources->device->CreateTexture2D(&hdrTexDesc, nullptr, gResources->sceneHdrTexture.ReleaseAndGetAddressOf()))) {
 		throw std::runtime_error{ "Failed to recreate scene view hdr texture." };
 	}
 
@@ -418,7 +526,7 @@ auto Renderer::RecreateSceneTexturesAndViews(u32 const width, u32 const height) 
 		}
 	};
 
-	if (FAILED(mResources->device->CreateRenderTargetView(mResources->sceneHdrTexture.Get(), &hdrRtvDesc, mResources->sceneHdrTextureRtv.ReleaseAndGetAddressOf()))) {
+	if (FAILED(gResources->device->CreateRenderTargetView(gResources->sceneHdrTexture.Get(), &hdrRtvDesc, gResources->sceneHdrTextureRtv.ReleaseAndGetAddressOf()))) {
 		throw std::runtime_error{ "Failed to recreate scene view hdr texture rtv." };
 	}
 
@@ -432,7 +540,7 @@ auto Renderer::RecreateSceneTexturesAndViews(u32 const width, u32 const height) 
 		}
 	};
 
-	if (FAILED(mResources->device->CreateShaderResourceView(mResources->sceneHdrTexture.Get(), &hdrSrvDesc, mResources->sceneHdrTextureSrv.ReleaseAndGetAddressOf()))) {
+	if (FAILED(gResources->device->CreateShaderResourceView(gResources->sceneHdrTexture.Get(), &hdrSrvDesc, gResources->sceneHdrTextureSrv.ReleaseAndGetAddressOf()))) {
 		throw std::runtime_error{ "Failed to recreate scene view output texture srv." };
 	}
 
@@ -453,7 +561,7 @@ auto Renderer::RecreateSceneTexturesAndViews(u32 const width, u32 const height) 
 		.MiscFlags = 0
 	};
 
-	if (FAILED(mResources->device->CreateTexture2D(&outputTexDesc, nullptr, mResources->sceneOutputTexture.ReleaseAndGetAddressOf()))) {
+	if (FAILED(gResources->device->CreateTexture2D(&outputTexDesc, nullptr, gResources->sceneOutputTexture.ReleaseAndGetAddressOf()))) {
 		throw std::runtime_error{ "Failed to recreate scene view output texture." };
 	}
 
@@ -466,7 +574,7 @@ auto Renderer::RecreateSceneTexturesAndViews(u32 const width, u32 const height) 
 		}
 	};
 
-	if (FAILED(mResources->device->CreateRenderTargetView(mResources->sceneOutputTexture.Get(), &outputRtvDesc, mResources->sceneOutputTextureRtv.ReleaseAndGetAddressOf()))) {
+	if (FAILED(gResources->device->CreateRenderTargetView(gResources->sceneOutputTexture.Get(), &outputRtvDesc, gResources->sceneOutputTextureRtv.ReleaseAndGetAddressOf()))) {
 		throw std::runtime_error{ "Failed to recreate scene view output texture rtv." };
 	}
 
@@ -480,7 +588,7 @@ auto Renderer::RecreateSceneTexturesAndViews(u32 const width, u32 const height) 
 		}
 	};
 
-	if (FAILED(mResources->device->CreateShaderResourceView(mResources->sceneOutputTexture.Get(), &outputSrvDesc, mResources->sceneOutputTextureSrv.ReleaseAndGetAddressOf()))) {
+	if (FAILED(gResources->device->CreateShaderResourceView(gResources->sceneOutputTexture.Get(), &outputSrvDesc, gResources->sceneOutputTextureSrv.ReleaseAndGetAddressOf()))) {
 		throw std::runtime_error{ "Failed to recreate scene view output texture srv." };
 	}
 
@@ -497,7 +605,7 @@ auto Renderer::RecreateSceneTexturesAndViews(u32 const width, u32 const height) 
 		.MiscFlags = 0
 	};
 
-	if (FAILED(mResources->device->CreateTexture2D(&dsTexDesc, nullptr, mResources->sceneDSTex.ReleaseAndGetAddressOf()))) {
+	if (FAILED(gResources->device->CreateTexture2D(&dsTexDesc, nullptr, gResources->sceneDSTex.ReleaseAndGetAddressOf()))) {
 		throw std::runtime_error{ "Failed to recreate scene view depth-stencil texture." };
 	}
 
@@ -508,25 +616,43 @@ auto Renderer::RecreateSceneTexturesAndViews(u32 const width, u32 const height) 
 		.Texture2D = { .MipSlice = 0 }
 	};
 
-	if (FAILED(mResources->device->CreateDepthStencilView(mResources->sceneDSTex.Get(), &dsDsvDesc, mResources->sceneDSV.ReleaseAndGetAddressOf()))) {
+	if (FAILED(gResources->device->CreateDepthStencilView(gResources->sceneDSTex.Get(), &dsDsvDesc, gResources->sceneDSV.ReleaseAndGetAddressOf()))) {
 		throw std::runtime_error{ "Failed to recreate scene view depth-stencil texture dsv." };
 	}
 }
 
 
-auto Renderer::on_window_resize(Renderer* const self, Extent2D<u32> const size) -> void {
+auto RecreateSwapChainRtv() -> void {
+	ComPtr<ID3D11Texture2D> backBuf;
+	if (FAILED(gResources->swapChain->GetBuffer(0, IID_PPV_ARGS(backBuf.GetAddressOf())))) {
+		throw std::runtime_error{ "Failed to get swapchain backbuffer." };
+	}
+
+	D3D11_RENDER_TARGET_VIEW_DESC constexpr rtvDesc{
+		.Format = DXGI_FORMAT_R8G8B8A8_UNORM,
+		.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D,
+		.Texture2D = { .MipSlice = 0 }
+	};
+
+	if (FAILED(gResources->device->CreateRenderTargetView(backBuf.Get(), &rtvDesc, gResources->swapChainRtv.GetAddressOf()))) {
+		throw std::runtime_error{ "Failed to create swapchain backbuffer render target view." };
+	}
+}
+
+
+auto on_window_resize(Extent2D<u32> const size) -> void {
 	if (size.width == 0 || size.height == 0) {
 		return;
 	}
 
-	self->mResources->swapChainRtv.Reset();
-	self->mResources->swapChain->ResizeBuffers(0, 0, 0, DXGI_FORMAT_UNKNOWN, self->mSwapChainFlags);
+	gResources->swapChainRtv.Reset();
+	gResources->swapChain->ResizeBuffers(0, 0, 0, DXGI_FORMAT_UNKNOWN, gSwapChainFlags);
 
-	self->RecreateSwapChainRtv();
+	RecreateSwapChainRtv();
 }
 
 
-auto Renderer::CreateDeviceAndContext() const -> void {
+auto CreateDeviceAndContext() -> void {
 	UINT creationFlags{ 0 };
 	D3D_FEATURE_LEVEL constexpr requestedFeatureLevels[]{ D3D_FEATURE_LEVEL_11_0 };
 
@@ -534,15 +660,15 @@ auto Renderer::CreateDeviceAndContext() const -> void {
 	creationFlags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif
 
-	if (FAILED(D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, creationFlags, requestedFeatureLevels, 1, D3D11_SDK_VERSION, mResources->device.GetAddressOf(), nullptr, mResources->context.GetAddressOf()))) {
+	if (FAILED(D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, creationFlags, requestedFeatureLevels, 1, D3D11_SDK_VERSION, gResources->device.GetAddressOf(), nullptr, gResources->context.GetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create D3D device." };
 	}
 }
 
 
-auto Renderer::SetDebugBreaks() const -> void {
+auto SetDebugBreaks() -> void {
 	ComPtr<ID3D11Debug> d3dDebug;
-	if (FAILED(mResources->device.As(&d3dDebug))) {
+	if (FAILED(gResources->device.As(&d3dDebug))) {
 		throw std::runtime_error{ "Failed to get ID3D11Debug interface." };
 	}
 
@@ -556,20 +682,20 @@ auto Renderer::SetDebugBreaks() const -> void {
 }
 
 
-auto Renderer::CheckTearingSupport(IDXGIFactory2* factory2) -> void {
+auto CheckTearingSupport(IDXGIFactory2* factory2) -> void {
 	if (ComPtr<IDXGIFactory5> dxgiFactory5; SUCCEEDED(factory2->QueryInterface(IID_PPV_ARGS(dxgiFactory5.GetAddressOf())))) {
 		BOOL allowTearing{};
 		dxgiFactory5->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &allowTearing, sizeof allowTearing);
 
 		if (allowTearing) {
-			mSwapChainFlags |= DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
-			mPresentFlags |= DXGI_PRESENT_ALLOW_TEARING;
+			gSwapChainFlags |= DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
+			gPresentFlags |= DXGI_PRESENT_ALLOW_TEARING;
 		}
 	}
 }
 
 
-auto Renderer::CreateInputLayouts() const -> void {
+auto CreateInputLayouts() -> void {
 	D3D11_INPUT_ELEMENT_DESC constexpr meshInputDesc[]{
 		{
 			.SemanticName = "POSITION",
@@ -600,7 +726,7 @@ auto Renderer::CreateInputLayouts() const -> void {
 		}
 	};
 
-	if (FAILED(mResources->device->CreateInputLayout(meshInputDesc, ARRAYSIZE(meshInputDesc), gMeshVSBin, ARRAYSIZE(gMeshVSBin), mResources->meshIL.GetAddressOf()))) {
+	if (FAILED(gResources->device->CreateInputLayout(meshInputDesc, ARRAYSIZE(meshInputDesc), gMeshVSBin, ARRAYSIZE(gMeshVSBin), gResources->meshIL.GetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create mesh input layout." };
 	}
 
@@ -615,48 +741,48 @@ auto Renderer::CreateInputLayouts() const -> void {
 		.InstanceDataStepRate = 0
 	};
 
-	if (FAILED(mResources->device->CreateInputLayout(&skyboxInputDesc, 1, gSkyboxVSBin, ARRAYSIZE(gSkyboxVSBin), mResources->skyboxIL.GetAddressOf()))) {
+	if (FAILED(gResources->device->CreateInputLayout(&skyboxInputDesc, 1, gSkyboxVSBin, ARRAYSIZE(gSkyboxVSBin), gResources->skyboxIL.GetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create skybox pass input layout." };
 	}
 }
 
 
-auto Renderer::CreateShaders() const -> void {
-	if (FAILED(mResources->device->CreateVertexShader(gMeshVSBin, ARRAYSIZE(gMeshVSBin), nullptr, mResources->meshVS.GetAddressOf()))) {
+auto CreateShaders() -> void {
+	if (FAILED(gResources->device->CreateVertexShader(gMeshVSBin, ARRAYSIZE(gMeshVSBin), nullptr, gResources->meshVS.GetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create mesh vertex shader." };
 	}
 
-	if (FAILED(mResources->device->CreatePixelShader(gMeshBlinnPhongPSBin, ARRAYSIZE(gMeshBlinnPhongPSBin), nullptr, mResources->meshBlinnPhongPS.GetAddressOf()))) {
+	if (FAILED(gResources->device->CreatePixelShader(gMeshBlinnPhongPSBin, ARRAYSIZE(gMeshBlinnPhongPSBin), nullptr, gResources->meshBlinnPhongPS.GetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create mesh blinn-phong pixel shader." };
 	}
 
-	if (FAILED(mResources->device->CreatePixelShader(gMeshPbrPSBin, ARRAYSIZE(gMeshPbrPSBin), nullptr, mResources->meshPbrPS.GetAddressOf()))) {
+	if (FAILED(gResources->device->CreatePixelShader(gMeshPbrPSBin, ARRAYSIZE(gMeshPbrPSBin), nullptr, gResources->meshPbrPS.GetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create mesh pbr pixel shader." };
 	}
 
-	if (FAILED(mResources->device->CreatePixelShader(gToneMapGammaPSBin, ARRAYSIZE(gToneMapGammaPSBin), nullptr, mResources->toneMapGammaPS.GetAddressOf()))) {
+	if (FAILED(gResources->device->CreatePixelShader(gToneMapGammaPSBin, ARRAYSIZE(gToneMapGammaPSBin), nullptr, gResources->toneMapGammaPS.GetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create textured tonemap-gamma pixel shader." };
 	}
 
-	if (FAILED(mResources->device->CreateVertexShader(gSkyboxVSBin, ARRAYSIZE(gSkyboxVSBin), nullptr, mResources->skyboxVS.ReleaseAndGetAddressOf()))) {
+	if (FAILED(gResources->device->CreateVertexShader(gSkyboxVSBin, ARRAYSIZE(gSkyboxVSBin), nullptr, gResources->skyboxVS.ReleaseAndGetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create skybox vertex shader." };
 	}
 
-	if (FAILED(mResources->device->CreatePixelShader(gSkyboxPSBin, ARRAYSIZE(gSkyboxPSBin), nullptr, mResources->skyboxPS.ReleaseAndGetAddressOf()))) {
+	if (FAILED(gResources->device->CreatePixelShader(gSkyboxPSBin, ARRAYSIZE(gSkyboxPSBin), nullptr, gResources->skyboxPS.ReleaseAndGetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create skybox pixel shader." };
 	}
 
-	if (FAILED(mResources->device->CreateVertexShader(gShadowVSBin, ARRAYSIZE(gShadowVSBin), nullptr, mResources->shadowVS.GetAddressOf()))) {
+	if (FAILED(gResources->device->CreateVertexShader(gShadowVSBin, ARRAYSIZE(gShadowVSBin), nullptr, gResources->shadowVS.GetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create shadow vertex shader." };
 	}
 
-	if (FAILED(mResources->device->CreateVertexShader(gScreenVSBin, ARRAYSIZE(gScreenVSBin), nullptr, mResources->screenVS.GetAddressOf()))) {
+	if (FAILED(gResources->device->CreateVertexShader(gScreenVSBin, ARRAYSIZE(gScreenVSBin), nullptr, gResources->screenVS.GetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create screen vertex shader." };
 	}
 }
 
 
-auto Renderer::CreateSwapChain(IDXGIFactory2* const factory2) const -> void {
+auto CreateSwapChain(IDXGIFactory2* const factory2) -> void {
 	DXGI_SWAP_CHAIN_DESC1 const swapChainDesc1{
 		.Width = 0,
 		.Height = 0,
@@ -672,10 +798,10 @@ auto Renderer::CreateSwapChain(IDXGIFactory2* const factory2) const -> void {
 		.Scaling = DXGI_SCALING_NONE,
 		.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD,
 		.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED,
-		.Flags = mSwapChainFlags
+		.Flags = gSwapChainFlags
 	};
 
-	if (FAILED(factory2->CreateSwapChainForHwnd(mResources->device.Get(), gWindow.GetHandle(), &swapChainDesc1, nullptr, nullptr, mResources->swapChain.GetAddressOf()))) {
+	if (FAILED(factory2->CreateSwapChainForHwnd(gResources->device.Get(), gWindow.GetHandle(), &swapChainDesc1, nullptr, nullptr, gResources->swapChain.GetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create swapchain." };
 	}
 
@@ -683,25 +809,7 @@ auto Renderer::CreateSwapChain(IDXGIFactory2* const factory2) const -> void {
 }
 
 
-auto Renderer::RecreateSwapChainRtv() const -> void {
-	ComPtr<ID3D11Texture2D> backBuf;
-	if (FAILED(mResources->swapChain->GetBuffer(0, IID_PPV_ARGS(backBuf.GetAddressOf())))) {
-		throw std::runtime_error{ "Failed to get swapchain backbuffer." };
-	}
-
-	D3D11_RENDER_TARGET_VIEW_DESC constexpr rtvDesc{
-		.Format = DXGI_FORMAT_R8G8B8A8_UNORM,
-		.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D,
-		.Texture2D = { .MipSlice = 0 }
-	};
-
-	if (FAILED(mResources->device->CreateRenderTargetView(backBuf.Get(), &rtvDesc, mResources->swapChainRtv.GetAddressOf()))) {
-		throw std::runtime_error{ "Failed to create swapchain backbuffer render target view." };
-	}
-}
-
-
-auto Renderer::CreateConstantBuffers() const -> void {
+auto CreateConstantBuffers() -> void {
 	D3D11_BUFFER_DESC constexpr perFrameCbDesc{
 		.ByteWidth = clamp_cast<UINT>(RoundToNextMultiple(sizeof(PerFrameCB), 16)),
 		.Usage = D3D11_USAGE_DYNAMIC,
@@ -711,7 +819,7 @@ auto Renderer::CreateConstantBuffers() const -> void {
 		.StructureByteStride = 0
 	};
 
-	if (FAILED(mResources->device->CreateBuffer(&perFrameCbDesc, nullptr, mResources->perFrameCB.GetAddressOf()))) {
+	if (FAILED(gResources->device->CreateBuffer(&perFrameCbDesc, nullptr, gResources->perFrameCB.GetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create light constant buffer." };
 	}
 
@@ -724,7 +832,7 @@ auto Renderer::CreateConstantBuffers() const -> void {
 		.StructureByteStride = 0
 	};
 
-	if (FAILED(mResources->device->CreateBuffer(&perCamCbDesc, nullptr, mResources->perCamCB.GetAddressOf()))) {
+	if (FAILED(gResources->device->CreateBuffer(&perCamCbDesc, nullptr, gResources->perCamCB.GetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create camera constant buffer." };
 	}
 
@@ -737,7 +845,7 @@ auto Renderer::CreateConstantBuffers() const -> void {
 		.StructureByteStride = 0
 	};
 
-	if (FAILED(mResources->device->CreateBuffer(&perModelCbDesc, nullptr, mResources->perModelCB.GetAddressOf()))) {
+	if (FAILED(gResources->device->CreateBuffer(&perModelCbDesc, nullptr, gResources->perModelCB.GetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create model constant buffer." };
 	}
 
@@ -750,7 +858,7 @@ auto Renderer::CreateConstantBuffers() const -> void {
 		.StructureByteStride = 0
 	};
 
-	if (FAILED(mResources->device->CreateBuffer(&toneMapGammaCBDesc, nullptr, mResources->toneMapGammaCB.GetAddressOf()))) {
+	if (FAILED(gResources->device->CreateBuffer(&toneMapGammaCBDesc, nullptr, gResources->toneMapGammaCB.GetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create tonemap-gamma constant buffer." };
 	}
 
@@ -763,7 +871,7 @@ auto Renderer::CreateConstantBuffers() const -> void {
 		.StructureByteStride = 0
 	};
 
-	if (FAILED(mResources->device->CreateBuffer(&skyboxCBDesc, nullptr, mResources->skyboxCB.GetAddressOf()))) {
+	if (FAILED(gResources->device->CreateBuffer(&skyboxCBDesc, nullptr, gResources->skyboxCB.GetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create skybox pass constant buffer." };
 	}
 
@@ -776,13 +884,13 @@ auto Renderer::CreateConstantBuffers() const -> void {
 		.StructureByteStride = 0
 	};
 
-	if (FAILED(mResources->device->CreateBuffer(&shadowCBDesc, nullptr, mResources->shadowCB.GetAddressOf()))) {
+	if (FAILED(gResources->device->CreateBuffer(&shadowCBDesc, nullptr, gResources->shadowCB.GetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create shadow constant buffer." };
 	}
 }
 
 
-auto Renderer::CreateRasterizerStates() const -> void {
+auto CreateRasterizerStates() -> void {
 	D3D11_RASTERIZER_DESC constexpr skyboxPassRasterizerDesc{
 		.FillMode = D3D11_FILL_SOLID,
 		.CullMode = D3D11_CULL_NONE,
@@ -796,13 +904,13 @@ auto Renderer::CreateRasterizerStates() const -> void {
 		.AntialiasedLineEnable = FALSE
 	};
 
-	if (FAILED(mResources->device->CreateRasterizerState(&skyboxPassRasterizerDesc, mResources->skyboxPassRS.ReleaseAndGetAddressOf()))) {
+	if (FAILED(gResources->device->CreateRasterizerState(&skyboxPassRasterizerDesc, gResources->skyboxPassRS.ReleaseAndGetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create skybox pass rasterizer state." };
 	}
 }
 
 
-auto Renderer::CreateDepthStencilStates() const -> void {
+auto CreateDepthStencilStates() -> void {
 	D3D11_DEPTH_STENCIL_DESC constexpr skyboxPassDepthStencilDesc{
 		.DepthEnable = TRUE,
 		.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO,
@@ -824,13 +932,13 @@ auto Renderer::CreateDepthStencilStates() const -> void {
 		}
 	};
 
-	if (FAILED(mResources->device->CreateDepthStencilState(&skyboxPassDepthStencilDesc, mResources->skyboxPassDSS.ReleaseAndGetAddressOf()))) {
+	if (FAILED(gResources->device->CreateDepthStencilState(&skyboxPassDepthStencilDesc, gResources->skyboxPassDSS.ReleaseAndGetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create skybox pass depth-stencil state." };
 	}
 }
 
 
-auto Renderer::CreateShadowAtlases() const -> void {
+auto CreateShadowAtlases() -> void {
 	D3D11_TEXTURE2D_DESC constexpr punctAtlasDesc{
 		.Width = PUNCTUAL_SHADOW_ATLAS_SIZE,
 		.Height = PUNCTUAL_SHADOW_ATLAS_SIZE,
@@ -847,7 +955,7 @@ auto Renderer::CreateShadowAtlases() const -> void {
 		.MiscFlags = 0
 	};
 
-	if (FAILED(mResources->device->CreateTexture2D(&punctAtlasDesc, nullptr, mResources->punctualShadowAtlas.tex.GetAddressOf()))) {
+	if (FAILED(gResources->device->CreateTexture2D(&punctAtlasDesc, nullptr, gResources->punctualShadowAtlas.tex.GetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create spot/point shadow atlas texture." };
 	}
 
@@ -860,7 +968,7 @@ auto Renderer::CreateShadowAtlases() const -> void {
 		}
 	};
 
-	if (FAILED(mResources->device->CreateShaderResourceView(mResources->punctualShadowAtlas.tex.Get(), &punctSrvDesc, mResources->punctualShadowAtlas.srv.GetAddressOf()))) {
+	if (FAILED(gResources->device->CreateShaderResourceView(gResources->punctualShadowAtlas.tex.Get(), &punctSrvDesc, gResources->punctualShadowAtlas.srv.GetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create spot/point shadow atlas srv." };
 	}
 
@@ -873,13 +981,13 @@ auto Renderer::CreateShadowAtlases() const -> void {
 		}
 	};
 
-	if (FAILED(mResources->device->CreateDepthStencilView(mResources->punctualShadowAtlas.tex.Get(), &puntDsvDesc, mResources->punctualShadowAtlas.dsv.GetAddressOf()))) {
+	if (FAILED(gResources->device->CreateDepthStencilView(gResources->punctualShadowAtlas.tex.Get(), &puntDsvDesc, gResources->punctualShadowAtlas.dsv.GetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create spot/point shadow atlas dsv." };
 	}
 }
 
 
-auto Renderer::CreateSamplerStates() const -> void {
+auto CreateSamplerStates() -> void {
 	D3D11_SAMPLER_DESC constexpr shadowSamplerDesc{
 		.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT,
 		.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP,
@@ -893,7 +1001,7 @@ auto Renderer::CreateSamplerStates() const -> void {
 		.MaxLOD = FLT_MAX
 	};
 
-	if (FAILED(mResources->device->CreateSamplerState(&shadowSamplerDesc, mResources->shadowSS.GetAddressOf()))) {
+	if (FAILED(gResources->device->CreateSamplerState(&shadowSamplerDesc, gResources->shadowSS.GetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create shadow sampler state." };
 	}
 
@@ -910,39 +1018,39 @@ auto Renderer::CreateSamplerStates() const -> void {
 		.MaxLOD = FLT_MAX
 	};
 
-	if (FAILED(mResources->device->CreateSamplerState(&materialSamplerDesc, mResources->materialSS.GetAddressOf()))) {
+	if (FAILED(gResources->device->CreateSamplerState(&materialSamplerDesc, gResources->materialSS.GetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create material sampler state." };
 	}
 }
 
 
-auto Renderer::CreateDefaultAssets() const -> void {
-	mResources->defaultMaterial = std::make_unique<Material>();
-	mResources->defaultMaterial->SetName("Default Material");
+auto CreateDefaultAssets() -> void {
+	gResources->defaultMaterial = std::make_unique<Material>();
+	gResources->defaultMaterial->SetName("Default Material");
 
-	mResources->cubeMesh = std::make_unique<Mesh>();
-	mResources->cubeMesh->SetGuid(Guid{ 0, 0 });
-	mResources->cubeMesh->SetName("Cube");
-	mResources->cubeMesh->SetPositions(CUBE_POSITIONS);
-	mResources->cubeMesh->SetNormals(CUBE_NORMALS);
-	mResources->cubeMesh->SetUVs(CUBE_UVS);
-	mResources->cubeMesh->SetIndices(CUBE_INDICES);
-	mResources->cubeMesh->SetSubMeshes(std::vector{ Mesh::SubMeshData{ 0, 0, static_cast<int>(CUBE_INDICES.size()) } });
-	mResources->cubeMesh->ValidateAndUpdate();
+	gResources->cubeMesh = std::make_unique<Mesh>();
+	gResources->cubeMesh->SetGuid(Guid{ 0, 0 });
+	gResources->cubeMesh->SetName("Cube");
+	gResources->cubeMesh->SetPositions(CUBE_POSITIONS);
+	gResources->cubeMesh->SetNormals(CUBE_NORMALS);
+	gResources->cubeMesh->SetUVs(CUBE_UVS);
+	gResources->cubeMesh->SetIndices(CUBE_INDICES);
+	gResources->cubeMesh->SetSubMeshes(std::vector{ Mesh::SubMeshData{ 0, 0, static_cast<int>(CUBE_INDICES.size()) } });
+	gResources->cubeMesh->ValidateAndUpdate();
 
-	mResources->planeMesh = std::make_unique<Mesh>();
-	mResources->planeMesh->SetGuid(Guid{ 0, 1 });
-	mResources->planeMesh->SetName("Plane");
-	mResources->planeMesh->SetPositions(QUAD_POSITIONS);
-	mResources->planeMesh->SetNormals(QUAD_NORMALS);
-	mResources->planeMesh->SetUVs(QUAD_UVS);
-	mResources->planeMesh->SetIndices(QUAD_INDICES);
-	mResources->planeMesh->SetSubMeshes(std::vector{ Mesh::SubMeshData{ 0, 0, static_cast<int>(QUAD_INDICES.size()) } });
-	mResources->planeMesh->ValidateAndUpdate();
+	gResources->planeMesh = std::make_unique<Mesh>();
+	gResources->planeMesh->SetGuid(Guid{ 0, 1 });
+	gResources->planeMesh->SetName("Plane");
+	gResources->planeMesh->SetPositions(QUAD_POSITIONS);
+	gResources->planeMesh->SetNormals(QUAD_NORMALS);
+	gResources->planeMesh->SetUVs(QUAD_UVS);
+	gResources->planeMesh->SetIndices(QUAD_INDICES);
+	gResources->planeMesh->SetSubMeshes(std::vector{ Mesh::SubMeshData{ 0, 0, static_cast<int>(QUAD_INDICES.size()) } });
+	gResources->planeMesh->ValidateAndUpdate();
 }
 
 
-auto Renderer::CreateStructuredBuffers() const -> void {
+auto CreateStructuredBuffers() -> void {
 	D3D11_BUFFER_DESC constexpr lightSbDesc{
 		.ByteWidth = MAX_LIGHT_COUNT * sizeof(ShaderLight),
 		.Usage = D3D11_USAGE_DYNAMIC,
@@ -952,7 +1060,7 @@ auto Renderer::CreateStructuredBuffers() const -> void {
 		.StructureByteStride = sizeof(ShaderLight)
 	};
 
-	if (FAILED(mResources->device->CreateBuffer(&lightSbDesc, nullptr, mResources->lightSB.GetAddressOf()))) {
+	if (FAILED(gResources->device->CreateBuffer(&lightSbDesc, nullptr, gResources->lightSB.GetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create light structured buffer." };
 	}
 
@@ -965,33 +1073,103 @@ auto Renderer::CreateStructuredBuffers() const -> void {
 		}
 	};
 
-	if (FAILED(mResources->device->CreateShaderResourceView(mResources->lightSB.Get(), &lightSbSrvDesc, mResources->lightSbSrv.GetAddressOf()))) {
+	if (FAILED(gResources->device->CreateShaderResourceView(gResources->lightSB.Get(), &lightSbSrvDesc, gResources->lightSbSrv.GetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create light SB SRV." };
 	}
 }
 
 
-auto Renderer::DrawMeshes(std::span<int const> const meshComponentIndices, bool const useMaterials) const noexcept -> void {
+auto CullLights(Frustum const& frust, Matrix4 const& viewMtx, std::span<LightComponent const* const> const lights, std::vector<int>& visibleLightIndices) -> void {
+	for (int lightIdx = 0; lightIdx < static_cast<int>(lights.size()); lightIdx++) {
+		switch (auto const light{ lights[lightIdx] }; light->GetType()) {
+		case LightComponent::Type::Directional: {
+			visibleLightIndices.emplace_back(lightIdx);
+			break;
+		}
+
+		case LightComponent::Type::Spot: {
+			auto const range{ light->GetRange() };
+			auto const boundXY{ std::tan(ToRadians(light->GetOuterAngle())) * range };
+			std::array const boundVertices{
+				Vector3{ 0, 0, 0.1f },
+				Vector3{ boundXY, boundXY, range },
+				Vector3{ -boundXY, boundXY, range },
+				Vector3{ boundXY, -boundXY, range },
+				Vector3{ -boundXY, -boundXY, range },
+			};
+
+			auto const bounds{
+				[](std::span<Vector3 const> const vertices) {
+					AABB ret{
+						.min = Vector3{ std::numeric_limits<float>::max() },
+						.max = Vector3{ std::numeric_limits<float>::lowest() }
+					};
+
+					for (auto const& vertex : vertices) {
+						ret.min = Min(ret.min, vertex);
+						ret.max = Max(ret.max, vertex);
+					}
+
+					return ret;
+				}(boundVertices)
+			};
+
+			if (is_aabb_in_frustum(bounds, frust, light->GetEntity()->GetTransform().GetModelMatrix() * viewMtx)) {
+				visibleLightIndices.emplace_back(lightIdx);
+			}
+
+			break;
+		}
+
+		case LightComponent::Type::Point: {
+			auto const range{ light->GetRange() };
+			auto const boundsOffset{ Normalized(Vector3{ 1, 1, 1 }) * range };
+
+			AABB const bounds{
+				.min = -boundsOffset,
+				.max = boundsOffset,
+			};
+
+			if (is_aabb_in_frustum(bounds, frust, light->GetEntity()->GetTransform().GetModelMatrix() * viewMtx)) {
+				visibleLightIndices.emplace_back(lightIdx);
+			}
+			break;
+		}
+		}
+	}
+}
+
+
+auto CullMeshComponents(Frustum const& frust, Matrix4 const& viewMtx, std::span<StaticMeshComponent const* const> const meshComponents, std::vector<int>& visibleMeshComponentIndices) -> void {
+	for (int i = 0; i < static_cast<int>(meshComponents.size()); i++) {
+		if (is_aabb_in_frustum(meshComponents[i]->GetMesh().GetBounds(), frust, meshComponents[i]->GetEntity()->GetTransform().GetModelMatrix() * viewMtx)) {
+			visibleMeshComponentIndices.emplace_back(i);
+		}
+	}
+}
+
+
+auto DrawMeshes(std::span<int const> const meshComponentIndices, bool const useMaterials) noexcept -> void {
 	for (auto const meshComponentIdx : meshComponentIndices) {
-		auto const meshComponent{ mStaticMeshComponents[meshComponentIdx] };
+		auto const meshComponent{ gStaticMeshComponents[meshComponentIdx] };
 		auto const& mesh{ meshComponent->GetMesh() };
 
 		ID3D11Buffer* vertexBuffers[]{ mesh.GetPositionBuffer().Get(), mesh.GetNormalBuffer().Get(), mesh.GetUVBuffer().Get() };
 		UINT constexpr strides[]{ sizeof(Vector3), sizeof(Vector3), sizeof(Vector2) };
 		UINT constexpr offsets[]{ 0, 0, 0 };
-		mResources->context->IASetVertexBuffers(0, 3, vertexBuffers, strides, offsets);
-		mResources->context->IASetIndexBuffer(mesh.GetIndexBuffer().Get(), DXGI_FORMAT_R32_UINT, 0);
-		mResources->context->IASetInputLayout(mResources->meshIL.Get());
+		gResources->context->IASetVertexBuffers(0, 3, vertexBuffers, strides, offsets);
+		gResources->context->IASetIndexBuffer(mesh.GetIndexBuffer().Get(), DXGI_FORMAT_R32_UINT, 0);
+		gResources->context->IASetInputLayout(gResources->meshIL.Get());
 
 		D3D11_MAPPED_SUBRESOURCE mappedPerModelCBuf;
-		mResources->context->Map(mResources->perModelCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerModelCBuf);
+		gResources->context->Map(gResources->perModelCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerModelCBuf);
 		auto& [modelMatData, normalMatData]{ *static_cast<PerModelCB*>(mappedPerModelCBuf.pData) };
 		modelMatData = meshComponent->GetEntity()->GetTransform().GetModelMatrix();
 		normalMatData = Matrix4{ meshComponent->GetEntity()->GetTransform().GetNormalMatrix() };
-		mResources->context->Unmap(mResources->perModelCB.Get(), 0);
+		gResources->context->Unmap(gResources->perModelCB.Get(), 0);
 
-		mResources->context->VSSetConstantBuffers(CB_SLOT_PER_MODEL, 1, mResources->perModelCB.GetAddressOf());
-		mResources->context->PSSetConstantBuffers(CB_SLOT_PER_MODEL, 1, mResources->perModelCB.GetAddressOf());
+		gResources->context->VSSetConstantBuffers(CB_SLOT_PER_MODEL, 1, gResources->perModelCB.GetAddressOf());
+		gResources->context->PSSetConstantBuffers(CB_SLOT_PER_MODEL, 1, gResources->perModelCB.GetAddressOf());
 
 		auto const subMeshes{ mesh.GetSubMeshes() };
 		auto const& materials{ meshComponent->GetMaterials() };
@@ -1000,253 +1178,118 @@ auto Renderer::DrawMeshes(std::span<int const> const meshComponentIndices, bool 
 			auto const& [baseVertex, firstIndex, indexCount]{ subMeshes[i] };
 
 			if (useMaterials) {
-				auto const& mtl{ static_cast<int>(materials.size()) > i ? *materials[i] : *mResources->defaultMaterial };
+				auto const& mtl{ static_cast<int>(materials.size()) > i ? *materials[i] : *gResources->defaultMaterial };
 
 				auto const mtlBuffer{ mtl.GetBuffer() };
-				mResources->context->VSSetConstantBuffers(CB_SLOT_PER_MATERIAL, 1, &mtlBuffer);
-				mResources->context->PSSetConstantBuffers(CB_SLOT_PER_MATERIAL, 1, &mtlBuffer);
+				gResources->context->VSSetConstantBuffers(CB_SLOT_PER_MATERIAL, 1, &mtlBuffer);
+				gResources->context->PSSetConstantBuffers(CB_SLOT_PER_MATERIAL, 1, &mtlBuffer);
 
 				auto const albedoSrv{ mtl.GetAlbedoMap() ? mtl.GetAlbedoMap()->GetSrv() : nullptr };
-				mResources->context->PSSetShaderResources(TEX_SLOT_ALBEDO_MAP, 1, &albedoSrv);
+				gResources->context->PSSetShaderResources(TEX_SLOT_ALBEDO_MAP, 1, &albedoSrv);
 
 				auto const metallicSrv{ mtl.GetMetallicMap() ? mtl.GetMetallicMap()->GetSrv() : nullptr };
-				mResources->context->PSSetShaderResources(TEX_SLOT_METALLIC_MAP, 1, &metallicSrv);
+				gResources->context->PSSetShaderResources(TEX_SLOT_METALLIC_MAP, 1, &metallicSrv);
 
 				auto const roughnessSrv{ mtl.GetRoughnessMap() ? mtl.GetRoughnessMap()->GetSrv() : nullptr };
-				mResources->context->PSSetShaderResources(TEX_SLOT_ROUGHNESS_MAP, 1, &roughnessSrv);
+				gResources->context->PSSetShaderResources(TEX_SLOT_ROUGHNESS_MAP, 1, &roughnessSrv);
 
 				auto const aoSrv{ mtl.GetAoMap() ? mtl.GetAoMap()->GetSrv() : nullptr };
-				mResources->context->PSSetShaderResources(TEX_SLOT_AO_MAP, 1, &aoSrv);
+				gResources->context->PSSetShaderResources(TEX_SLOT_AO_MAP, 1, &aoSrv);
 			}
 
-			mResources->context->DrawIndexed(indexCount, firstIndex, baseVertex);
+			gResources->context->DrawIndexed(indexCount, firstIndex, baseVertex);
 		}
 	}
 }
 
 
-auto Renderer::UpdatePerFrameCB() const noexcept -> void {
+auto UpdatePerFrameCB() noexcept -> void {
 	/*D3D11_MAPPED_SUBRESOURCE mappedPerFrameCB;
-	mResources->context->Map(mResources->perFrameCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerFrameCB);
+	gResources->context->Map(gResources->perFrameCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerFrameCB);
 
 	auto const perFrameCBData{ static_cast<PerFrameCBuffer*>(mappedPerFrameCB.pData) };
-
-	perFrameCBData->lightCount = clamp_cast<int>(mLights.size());
-
-	for (int i = 0; i < std::min(MAX_LIGHT_COUNT, static_cast<int>(mLights.size())); i++) {
-		perFrameCBData->lights[i].color = mLights[i]->GetColor();
-		perFrameCBData->lights[i].intensity = mLights[i]->GetIntensity();
-		perFrameCBData->lights[i].type = static_cast<int>(mLights[i]->GetType());
-		perFrameCBData->lights[i].direction = mLights[i]->GetDirection();
-		perFrameCBData->lights[i].isCastingShadow = false;
-		perFrameCBData->lights[i].shadowNearPlane = mLights[i]->GetShadowNearPlane();
-		perFrameCBData->lights[i].range = mLights[i]->GetRange();
-		perFrameCBData->lights[i].innerAngleCos = std::cos(ToRadians(mLights[i]->GetInnerAngle()));
-		perFrameCBData->lights[i].outerAngleCos = std::cos(ToRadians(mLights[i]->GetOuterAngle()));
-		perFrameCBData->lights[i].position = mLights[i]->GetEntity()->GetTransform().GetWorldPosition();
-	}
-
-	mResources->context->Unmap(mResources->perFrameCB.Get(), 0);*/
+	gResources->context->Unmap(gResources->perFrameCB.Get(), 0);*/
 }
 
 
-auto Renderer::DoToneMapGammaCorrectionStep(ID3D11ShaderResourceView* const src, ID3D11RenderTargetView* const dst) const noexcept -> void {
+auto DoToneMapGammaCorrectionStep(ID3D11ShaderResourceView* const src, ID3D11RenderTargetView* const dst) noexcept -> void {
 	// Back up old views to restore later.
 
 	ComPtr<ID3D11RenderTargetView> rtvBackup;
 	ComPtr<ID3D11DepthStencilView> dsvBackup;
 	ComPtr<ID3D11ShaderResourceView> srvBackup;
-	mResources->context->OMGetRenderTargets(1, rtvBackup.GetAddressOf(), dsvBackup.GetAddressOf());
-	mResources->context->PSGetShaderResources(0, 1, srvBackup.GetAddressOf());
+	gResources->context->OMGetRenderTargets(1, rtvBackup.GetAddressOf(), dsvBackup.GetAddressOf());
+	gResources->context->PSGetShaderResources(0, 1, srvBackup.GetAddressOf());
 
 	// Do the step
 
 	D3D11_MAPPED_SUBRESOURCE mappedToneMapGammaCB;
-	mResources->context->Map(mResources->toneMapGammaCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedToneMapGammaCB);
+	gResources->context->Map(gResources->toneMapGammaCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedToneMapGammaCB);
 	auto const toneMapGammaCBData{ static_cast<ToneMapGammaCB*>(mappedToneMapGammaCB.pData) };
-	toneMapGammaCBData->invGamma = mInvGamma;
-	mResources->context->Unmap(mResources->toneMapGammaCB.Get(), 0);
+	toneMapGammaCBData->invGamma = gInvGamma;
+	gResources->context->Unmap(gResources->toneMapGammaCB.Get(), 0);
 
-	mResources->context->VSSetShader(mResources->screenVS.Get(), nullptr, 0);
-	mResources->context->PSSetShader(mResources->toneMapGammaPS.Get(), nullptr, 0);
+	gResources->context->VSSetShader(gResources->screenVS.Get(), nullptr, 0);
+	gResources->context->PSSetShader(gResources->toneMapGammaPS.Get(), nullptr, 0);
 
-	mResources->context->OMSetRenderTargets(1, &dst, nullptr);
+	gResources->context->OMSetRenderTargets(1, &dst, nullptr);
 
-	mResources->context->PSSetConstantBuffers(CB_SLOT_TONE_MAP_GAMMA, 1, mResources->toneMapGammaCB.GetAddressOf());
-	mResources->context->PSSetShaderResources(TEX_SLOT_TONE_MAP_SRC, 1, &src);
+	gResources->context->PSSetConstantBuffers(CB_SLOT_TONE_MAP_GAMMA, 1, gResources->toneMapGammaCB.GetAddressOf());
+	gResources->context->PSSetShaderResources(TEX_SLOT_TONE_MAP_SRC, 1, &src);
 
-	mResources->context->Draw(6, 0);
+	gResources->context->Draw(6, 0);
 
 	// Restore old view bindings to that we don't leave any input/output conflicts behind.
 
-	mResources->context->PSSetShaderResources(TEX_SLOT_TONE_MAP_SRC, 1, srvBackup.GetAddressOf());
-	mResources->context->OMSetRenderTargets(1, rtvBackup.GetAddressOf(), dsvBackup.Get());
+	gResources->context->PSSetShaderResources(TEX_SLOT_TONE_MAP_SRC, 1, srvBackup.GetAddressOf());
+	gResources->context->OMSetRenderTargets(1, rtvBackup.GetAddressOf(), dsvBackup.Get());
 }
 
 
-auto Renderer::DrawSkybox(Matrix4 const& camViewMtx, Matrix4 const& camProjMtx) const noexcept -> void {
-	if (mSkyboxes.empty()) {
+auto DrawSkybox(Matrix4 const& camViewMtx, Matrix4 const& camProjMtx) noexcept -> void {
+	if (gSkyboxes.empty()) {
 		return;
 	}
 
 	D3D11_MAPPED_SUBRESOURCE mappedSkyboxCB;
-	mResources->context->Map(mResources->skyboxCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedSkyboxCB);
+	gResources->context->Map(gResources->skyboxCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedSkyboxCB);
 	auto const skyboxCBData{ static_cast<SkyboxCB*>(mappedSkyboxCB.pData) };
 	skyboxCBData->skyboxViewProjMtx = Matrix4{ Matrix3{ camViewMtx } } * camProjMtx;
-	mResources->context->Unmap(mResources->skyboxCB.Get(), 0);
+	gResources->context->Unmap(gResources->skyboxCB.Get(), 0);
 
-	ID3D11Buffer* const vertexBuffer{ mResources->cubeMesh->GetPositionBuffer().Get() };
+	ID3D11Buffer* const vertexBuffer{ gResources->cubeMesh->GetPositionBuffer().Get() };
 	UINT constexpr stride{ sizeof(Vector3) };
 	UINT constexpr offset{ 0 };
-	mResources->context->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
-	mResources->context->IASetIndexBuffer(mResources->cubeMesh->GetIndexBuffer().Get(), DXGI_FORMAT_R32_UINT, 0);
-	mResources->context->IASetInputLayout(mResources->skyboxIL.Get());
+	gResources->context->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
+	gResources->context->IASetIndexBuffer(gResources->cubeMesh->GetIndexBuffer().Get(), DXGI_FORMAT_R32_UINT, 0);
+	gResources->context->IASetInputLayout(gResources->skyboxIL.Get());
 
-	mResources->context->VSSetShader(mResources->skyboxVS.Get(), nullptr, 0);
-	mResources->context->PSSetShader(mResources->skyboxPS.Get(), nullptr, 0);
+	gResources->context->VSSetShader(gResources->skyboxVS.Get(), nullptr, 0);
+	gResources->context->PSSetShader(gResources->skyboxPS.Get(), nullptr, 0);
 
-	auto const cubemapSrv{ mSkyboxes[0]->GetCubemap()->GetSrv() };
-	mResources->context->PSSetShaderResources(TEX_SLOT_SKYBOX_CUBEMAP, 1, &cubemapSrv);
+	auto const cubemapSrv{ gSkyboxes[0]->GetCubemap()->GetSrv() };
+	gResources->context->PSSetShaderResources(TEX_SLOT_SKYBOX_CUBEMAP, 1, &cubemapSrv);
 
-	auto const cb{ mResources->skyboxCB.Get() };
-	mResources->context->VSSetConstantBuffers(CB_SLOT_SKYBOX_PASS, 1, &cb);
+	auto const cb{ gResources->skyboxCB.Get() };
+	gResources->context->VSSetConstantBuffers(CB_SLOT_SKYBOX_PASS, 1, &cb);
 
-	mResources->context->OMSetDepthStencilState(mResources->skyboxPassDSS.Get(), 0);
-	mResources->context->RSSetState(mResources->skyboxPassRS.Get());
+	gResources->context->OMSetDepthStencilState(gResources->skyboxPassDSS.Get(), 0);
+	gResources->context->RSSetState(gResources->skyboxPassRS.Get());
 
-	mResources->context->DrawIndexed(clamp_cast<UINT>(CUBE_INDICES.size()), 0, 0);
+	gResources->context->DrawIndexed(clamp_cast<UINT>(CUBE_INDICES.size()), 0, 0);
 
 	// Restore state
-	mResources->context->OMSetDepthStencilState(nullptr, 0);
-	mResources->context->RSSetState(nullptr);
+	gResources->context->OMSetDepthStencilState(nullptr, 0);
+	gResources->context->RSSetState(nullptr);
 }
 
 
-auto Renderer::DrawFullWithCameras(std::span<RenderCamera const* const> const cameras, ID3D11RenderTargetView* const rtv, ID3D11DepthStencilView* const dsv, ID3D11ShaderResourceView* const srv, ID3D11RenderTargetView* const outRtv) noexcept -> void {
-	FLOAT constexpr clearColor[]{ 0, 0, 0, 1 };
-	mResources->context->ClearRenderTargetView(rtv, clearColor);
-	mResources->context->ClearDepthStencilView(dsv, D3D11_CLEAR_DEPTH, 1, 0);
-
-	ComPtr<ID3D11Resource> rtvResource;
-	rtv->GetResource(rtvResource.GetAddressOf());
-	ComPtr<ID3D11Texture2D> renderTarget;
-	rtvResource.As(&renderTarget);
-	D3D11_TEXTURE2D_DESC renderTargetDesc;
-	renderTarget->GetDesc(&renderTargetDesc);
-	auto const aspectRatio{ static_cast<float>(renderTargetDesc.Width) / static_cast<float>(renderTargetDesc.Height) };
-
-	D3D11_VIEWPORT const viewport{
-		.TopLeftX = 0,
-		.TopLeftY = 0,
-		.Width = static_cast<FLOAT>(renderTargetDesc.Width),
-		.Height = static_cast<FLOAT>(renderTargetDesc.Height),
-		.MinDepth = 0,
-		.MaxDepth = 1
-	};
-
-	mResources->context->PSSetSamplers(SAMPLER_SLOT_MATERIAL, 1, mResources->materialSS.GetAddressOf());
-	mResources->context->PSSetSamplers(SAMPLER_SLOT_SHADOW, 1, mResources->shadowSS.GetAddressOf());
-
-	UpdatePerFrameCB();
-	mResources->context->VSSetConstantBuffers(CB_SLOT_PER_FRAME, 1, mResources->perFrameCB.GetAddressOf());
-	mResources->context->PSSetConstantBuffers(CB_SLOT_PER_FRAME, 1, mResources->perFrameCB.GetAddressOf());
-
-	for (auto const cam : cameras) {
-		auto const camPos{ cam->GetPosition() };
-		auto const camForward{ cam->GetForwardAxis() };
-		auto const viewMat{ Matrix4::LookToLH(camPos, camForward, Vector3::Up()) };
-		auto const projMat{
-			cam->GetType() == RenderCamera::Type::Perspective ?
-				Matrix4::PerspectiveAsymZLH(ToRadians(RenderCamera::HorizontalPerspectiveFovToVertical(cam->GetHorizontalPerspectiveFov(), aspectRatio)), aspectRatio, cam->GetNearClipPlane(), cam->GetFarClipPlane()) :
-				Matrix4::OrthographicAsymZLH(cam->GetHorizontalOrthographicSize(), cam->GetHorizontalOrthographicSize() / aspectRatio, cam->GetNearClipPlane(), cam->GetFarClipPlane())
-		};
-		auto const viewProjMat{ viewMat * projMat };
-
-		auto const camFrust{ cam->GetFrustum(aspectRatio) };
-
-		std::vector<int> static visibleLightIndices;
-		visibleLightIndices.clear();
-		CullLights(camFrust, viewMat, mLights, visibleLightIndices);
-		auto const lightCount{ std::min(MAX_LIGHT_COUNT, static_cast<int>(visibleLightIndices.size())) };
-
-		CalculatePunctualShadowAtlasAllocation(mLights, visibleLightIndices, camPos, viewProjMat, mPunctualShadowAtlasAlloc);
-		ID3D11ShaderResourceView* const nullSrv{ nullptr };
-		mResources->context->PSSetShaderResources(TEX_SLOT_PUNCTUAL_SHADOW_ATLAS, 1, &nullSrv);
-		DrawShadowMaps(visibleLightIndices, mPunctualShadowAtlasAlloc);
-
-		std::vector<int> static visibleMeshIndices;
-		visibleMeshIndices.clear();
-		CullMeshComponents(camFrust, viewMat, mStaticMeshComponents, visibleMeshIndices);
-
-		mResources->context->VSSetShader(mResources->meshVS.Get(), nullptr, 0);
-
-		D3D11_MAPPED_SUBRESOURCE mappedPerCamCBuf;
-		mResources->context->Map(mResources->perCamCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerCamCBuf);
-		auto const perCamCBufData{ static_cast<PerCameraCB*>(mappedPerCamCBuf.pData) };
-		perCamCBufData->viewProjMtx = viewProjMat;
-		perCamCBufData->camPos = camPos;
-		perCamCBufData->lightCount = lightCount;
-		mResources->context->Unmap(mResources->perCamCB.Get(), 0);
-
-		D3D11_MAPPED_SUBRESOURCE mappedLightSB;
-		mResources->context->Map(mResources->lightSB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedLightSB);
-		auto const mappedLightSBData{ static_cast<ShaderLight*>(mappedLightSB.pData) };
-
-		for (int i = 0; i < lightCount; i++) {
-			mappedLightSBData[i].color = mLights[visibleLightIndices[i]]->GetColor();
-			mappedLightSBData[i].intensity = mLights[visibleLightIndices[i]]->GetIntensity();
-			mappedLightSBData[i].type = static_cast<int>(mLights[visibleLightIndices[i]]->GetType());
-			mappedLightSBData[i].direction = mLights[visibleLightIndices[i]]->GetDirection();
-			mappedLightSBData[i].isCastingShadow = false;
-			mappedLightSBData[i].shadowNearPlane = mLights[visibleLightIndices[i]]->GetShadowNearPlane();
-			mappedLightSBData[i].range = mLights[visibleLightIndices[i]]->GetRange();
-			mappedLightSBData[i].innerAngleCos = std::cos(ToRadians(mLights[visibleLightIndices[i]]->GetInnerAngle()));
-			mappedLightSBData[i].outerAngleCos = std::cos(ToRadians(mLights[visibleLightIndices[i]]->GetOuterAngle()));
-			mappedLightSBData[i].position = mLights[visibleLightIndices[i]]->GetEntity()->GetTransform().GetWorldPosition();
-		}
-
-		for (int i = 0; i < 4; i++) {
-			auto const cells{ mPunctualShadowAtlasAlloc.GetQuadrantCells(i) };
-			for (int j = 0; j < static_cast<int>(cells.size()); j++) {
-				if (cells[j]) {
-					mappedLightSBData[cells[j]->visibleLightIdxIdx].isCastingShadow = true;
-					mappedLightSBData[cells[j]->visibleLightIdxIdx].lightViewProjMtx = cells[j]->lightViewProjMtx;
-					mappedLightSBData[cells[j]->visibleLightIdxIdx].atlasQuadrantIdx = i;
-					mappedLightSBData[cells[j]->visibleLightIdxIdx].atlasCellIdx = j;
-				}
-			}
-		}
-
-		mResources->context->Unmap(mResources->lightSB.Get(), 0);
-		mResources->context->PSSetShaderResources(SB_SLOT_LIGHTS, 1, mResources->lightSbSrv.GetAddressOf());
-
-
-		mResources->context->VSSetShader(mResources->meshVS.Get(), nullptr, 0);
-		mResources->context->PSSetShader(mResources->meshPbrPS.Get(), nullptr, 0);
-
-		mResources->context->VSSetConstantBuffers(CB_SLOT_PER_CAM, 1, mResources->perCamCB.GetAddressOf());
-		mResources->context->PSSetConstantBuffers(CB_SLOT_PER_CAM, 1, mResources->perCamCB.GetAddressOf());
-
-		mResources->context->OMSetRenderTargets(1, &rtv, dsv);
-		mResources->context->PSSetShaderResources(TEX_SLOT_PUNCTUAL_SHADOW_ATLAS, 1, mResources->punctualShadowAtlas.srv.GetAddressOf());
-
-		mResources->context->RSSetViewports(1, &viewport);
-
-		DrawMeshes(visibleMeshIndices, true);
-		DrawSkybox(viewMat, projMat);
-	}
-
-	mResources->context->RSSetViewports(1, &viewport);
-	DoToneMapGammaCorrectionStep(srv, outRtv);
-}
-
-
-auto Renderer::DrawShadowMaps(std::span<int const> const visibleLightIndices, ShadowAtlasAllocation const& alloc) const -> void {
-	mResources->context->OMSetRenderTargets(0, nullptr, mResources->punctualShadowAtlas.dsv.Get());
-	mResources->context->ClearDepthStencilView(mResources->punctualShadowAtlas.dsv.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
-	mResources->context->VSSetShader(mResources->shadowVS.Get(), nullptr, 0);
-	mResources->context->PSSetShader(nullptr, nullptr, 0);
-	mResources->context->VSSetConstantBuffers(CB_SLOT_SHADOW_PASS, 1, mResources->shadowCB.GetAddressOf());
+auto DrawShadowMaps(std::span<int const> const visibleLightIndices, ShadowAtlasAllocation const& alloc) -> void {
+	gResources->context->OMSetRenderTargets(0, nullptr, gResources->punctualShadowAtlas.dsv.Get());
+	gResources->context->ClearDepthStencilView(gResources->punctualShadowAtlas.dsv.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+	gResources->context->VSSetShader(gResources->shadowVS.Get(), nullptr, 0);
+	gResources->context->PSSetShader(nullptr, nullptr, 0);
+	gResources->context->VSSetConstantBuffers(CB_SLOT_SHADOW_PASS, 1, gResources->shadowCB.GetAddressOf());
 
 	for (int i = 0; i < 4; i++) {
 		auto const cells{ alloc.GetQuadrantCells(i) };
@@ -1265,12 +1308,12 @@ auto Renderer::DrawShadowMaps(std::span<int const> const visibleLightIndices, Sh
 					.MaxDepth = 1
 				};
 
-				mResources->context->RSSetViewports(1, &viewport);
+				gResources->context->RSSetViewports(1, &viewport);
 
 				D3D11_MAPPED_SUBRESOURCE mapped;
-				mResources->context->Map(mResources->shadowCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
+				gResources->context->Map(gResources->shadowCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
 				static_cast<ShadowCB*>(mapped.pData)->lightViewProjMtx = cells[j]->lightViewProjMtx;
-				mResources->context->Unmap(mResources->shadowCB.Get(), 0);
+				gResources->context->Unmap(gResources->shadowCB.Get(), 0);
 
 				auto const lightFrustum{
 					[](LightComponent const* const light) -> Frustum {
@@ -1296,12 +1339,12 @@ auto Renderer::DrawShadowMaps(std::span<int const> const visibleLightIndices, Sh
 							return {};
 						}
 						}
-					}(mLights[visibleLightIndices[cells[j]->visibleLightIdxIdx]])
+					}(gLights[visibleLightIndices[cells[j]->visibleLightIdxIdx]])
 				};
 
 				std::vector<int> static visibleMeshComponentIndices;
 				visibleMeshComponentIndices.clear();
-				CullMeshComponents(lightFrustum, cells[j]->lightViewMtx, mStaticMeshComponents, visibleMeshComponentIndices);
+				CullMeshComponents(lightFrustum, cells[j]->lightViewMtx, gStaticMeshComponents, visibleMeshComponentIndices);
 				DrawMeshes(visibleMeshComponentIndices, false);
 			}
 		}
@@ -1309,7 +1352,7 @@ auto Renderer::DrawShadowMaps(std::span<int const> const visibleLightIndices, Sh
 }
 
 
-auto Renderer::CalculatePunctualShadowAtlasAllocation(std::span<LightComponent const* const> const allLights, std::span<int const> const camVisibleLightIndices, Vector3 const& camPos, Matrix4 const& camViewProjMtx, ShadowAtlasAllocation& alloc) -> void {
+auto CalculatePunctualShadowAtlasAllocation(std::span<LightComponent const* const> const allLights, std::span<int const> const camVisibleLightIndices, Vector3 const& camPos, Matrix4 const& camViewProjMtx, ShadowAtlasAllocation& alloc) -> void {
 	std::array<std::vector<int>, 4> static lightIndexIndicesInQuadrant{};
 
 	for (auto& quadrantLights : lightIndexIndicesInQuadrant) {
@@ -1437,78 +1480,128 @@ auto Renderer::CalculatePunctualShadowAtlasAllocation(std::span<LightComponent c
 }
 
 
-auto Renderer::CullLights(Frustum const& frust, Matrix4 const& viewMtx, std::span<LightComponent const* const> const lights, std::vector<int>& visibleLightIndices) -> void {
-	for (int lightIdx = 0; lightIdx < static_cast<int>(lights.size()); lightIdx++) {
-		switch (auto const light{ lights[lightIdx] }; light->GetType()) {
-		case LightComponent::Type::Directional: {
-			visibleLightIndices.emplace_back(lightIdx);
-			break;
+auto DrawFullWithCameras(std::span<RenderCamera const* const> const cameras, ID3D11RenderTargetView* const rtv, ID3D11DepthStencilView* const dsv, ID3D11ShaderResourceView* const srv, ID3D11RenderTargetView* const outRtv) noexcept -> void {
+	FLOAT constexpr clearColor[]{ 0, 0, 0, 1 };
+	gResources->context->ClearRenderTargetView(rtv, clearColor);
+	gResources->context->ClearDepthStencilView(dsv, D3D11_CLEAR_DEPTH, 1, 0);
+
+	ComPtr<ID3D11Resource> rtvResource;
+	rtv->GetResource(rtvResource.GetAddressOf());
+	ComPtr<ID3D11Texture2D> renderTarget;
+	rtvResource.As(&renderTarget);
+	D3D11_TEXTURE2D_DESC renderTargetDesc;
+	renderTarget->GetDesc(&renderTargetDesc);
+	auto const aspectRatio{ static_cast<float>(renderTargetDesc.Width) / static_cast<float>(renderTargetDesc.Height) };
+
+	D3D11_VIEWPORT const viewport{
+		.TopLeftX = 0,
+		.TopLeftY = 0,
+		.Width = static_cast<FLOAT>(renderTargetDesc.Width),
+		.Height = static_cast<FLOAT>(renderTargetDesc.Height),
+		.MinDepth = 0,
+		.MaxDepth = 1
+	};
+
+	gResources->context->PSSetSamplers(SAMPLER_SLOT_MATERIAL, 1, gResources->materialSS.GetAddressOf());
+	gResources->context->PSSetSamplers(SAMPLER_SLOT_SHADOW, 1, gResources->shadowSS.GetAddressOf());
+
+	UpdatePerFrameCB();
+	gResources->context->VSSetConstantBuffers(CB_SLOT_PER_FRAME, 1, gResources->perFrameCB.GetAddressOf());
+	gResources->context->PSSetConstantBuffers(CB_SLOT_PER_FRAME, 1, gResources->perFrameCB.GetAddressOf());
+
+	for (auto const cam : cameras) {
+		auto const camPos{ cam->GetPosition() };
+		auto const camForward{ cam->GetForwardAxis() };
+		auto const viewMat{ Matrix4::LookToLH(camPos, camForward, Vector3::Up()) };
+		auto const projMat{
+			cam->GetType() == RenderCamera::Type::Perspective ?
+				Matrix4::PerspectiveAsymZLH(ToRadians(RenderCamera::HorizontalPerspectiveFovToVertical(cam->GetHorizontalPerspectiveFov(), aspectRatio)), aspectRatio, cam->GetNearClipPlane(), cam->GetFarClipPlane()) :
+				Matrix4::OrthographicAsymZLH(cam->GetHorizontalOrthographicSize(), cam->GetHorizontalOrthographicSize() / aspectRatio, cam->GetNearClipPlane(), cam->GetFarClipPlane())
+		};
+		auto const viewProjMat{ viewMat * projMat };
+
+		auto const camFrust{ cam->GetFrustum(aspectRatio) };
+
+		std::vector<int> static visibleLightIndices;
+		visibleLightIndices.clear();
+		CullLights(camFrust, viewMat, gLights, visibleLightIndices);
+		auto const lightCount{ std::min(MAX_LIGHT_COUNT, static_cast<int>(visibleLightIndices.size())) };
+
+		CalculatePunctualShadowAtlasAllocation(gLights, visibleLightIndices, camPos, viewProjMat, gPunctualShadowAtlasAlloc);
+		ID3D11ShaderResourceView* const nullSrv{ nullptr };
+		gResources->context->PSSetShaderResources(TEX_SLOT_PUNCTUAL_SHADOW_ATLAS, 1, &nullSrv);
+		DrawShadowMaps(visibleLightIndices, gPunctualShadowAtlasAlloc);
+
+		std::vector<int> static visibleMeshIndices;
+		visibleMeshIndices.clear();
+		CullMeshComponents(camFrust, viewMat, gStaticMeshComponents, visibleMeshIndices);
+
+		gResources->context->VSSetShader(gResources->meshVS.Get(), nullptr, 0);
+
+		D3D11_MAPPED_SUBRESOURCE mappedPerCamCBuf;
+		gResources->context->Map(gResources->perCamCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerCamCBuf);
+		auto const perCamCBufData{ static_cast<PerCameraCB*>(mappedPerCamCBuf.pData) };
+		perCamCBufData->viewProjMtx = viewProjMat;
+		perCamCBufData->camPos = camPos;
+		perCamCBufData->lightCount = lightCount;
+		gResources->context->Unmap(gResources->perCamCB.Get(), 0);
+
+		D3D11_MAPPED_SUBRESOURCE mappedLightSB;
+		gResources->context->Map(gResources->lightSB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedLightSB);
+		auto const mappedLightSBData{ static_cast<ShaderLight*>(mappedLightSB.pData) };
+
+		for (int i = 0; i < lightCount; i++) {
+			mappedLightSBData[i].color = gLights[visibleLightIndices[i]]->GetColor();
+			mappedLightSBData[i].intensity = gLights[visibleLightIndices[i]]->GetIntensity();
+			mappedLightSBData[i].type = static_cast<int>(gLights[visibleLightIndices[i]]->GetType());
+			mappedLightSBData[i].direction = gLights[visibleLightIndices[i]]->GetDirection();
+			mappedLightSBData[i].isCastingShadow = false;
+			mappedLightSBData[i].shadowNearPlane = gLights[visibleLightIndices[i]]->GetShadowNearPlane();
+			mappedLightSBData[i].range = gLights[visibleLightIndices[i]]->GetRange();
+			mappedLightSBData[i].innerAngleCos = std::cos(ToRadians(gLights[visibleLightIndices[i]]->GetInnerAngle()));
+			mappedLightSBData[i].outerAngleCos = std::cos(ToRadians(gLights[visibleLightIndices[i]]->GetOuterAngle()));
+			mappedLightSBData[i].position = gLights[visibleLightIndices[i]]->GetEntity()->GetTransform().GetWorldPosition();
 		}
 
-		case LightComponent::Type::Spot: {
-			auto const range{ light->GetRange() };
-			auto const boundXY{ std::tan(ToRadians(light->GetOuterAngle())) * range };
-			std::array const boundVertices{
-				Vector3{ 0, 0, 0.1f },
-				Vector3{ boundXY, boundXY, range },
-				Vector3{ -boundXY, boundXY, range },
-				Vector3{ boundXY, -boundXY, range },
-				Vector3{ -boundXY, -boundXY, range },
-			};
-
-			auto const bounds{
-				[](std::span<Vector3 const> const vertices) {
-					AABB ret{
-						.min = Vector3{ std::numeric_limits<float>::max() },
-						.max = Vector3{ std::numeric_limits<float>::lowest() }
-					};
-
-					for (auto const& vertex : vertices) {
-						ret.min = Min(ret.min, vertex);
-						ret.max = Max(ret.max, vertex);
-					}
-
-					return ret;
-				}(boundVertices)
-			};
-
-			if (is_aabb_in_frustum(bounds, frust, light->GetEntity()->GetTransform().GetModelMatrix() * viewMtx)) {
-				visibleLightIndices.emplace_back(lightIdx);
+		for (int i = 0; i < 4; i++) {
+			auto const cells{ gPunctualShadowAtlasAlloc.GetQuadrantCells(i) };
+			for (int j = 0; j < static_cast<int>(cells.size()); j++) {
+				if (cells[j]) {
+					mappedLightSBData[cells[j]->visibleLightIdxIdx].isCastingShadow = true;
+					mappedLightSBData[cells[j]->visibleLightIdxIdx].lightViewProjMtx = cells[j]->lightViewProjMtx;
+					mappedLightSBData[cells[j]->visibleLightIdxIdx].atlasQuadrantIdx = i;
+					mappedLightSBData[cells[j]->visibleLightIdxIdx].atlasCellIdx = j;
+				}
 			}
-
-			break;
 		}
 
-		case LightComponent::Type::Point: {
-			auto const range{ light->GetRange() };
-			auto const boundsOffset{ Normalized(Vector3{ 1, 1, 1 }) * range };
+		gResources->context->Unmap(gResources->lightSB.Get(), 0);
+		gResources->context->PSSetShaderResources(SB_SLOT_LIGHTS, 1, gResources->lightSbSrv.GetAddressOf());
 
-			AABB const bounds{
-				.min = -boundsOffset,
-				.max = boundsOffset,
-			};
 
-			if (is_aabb_in_frustum(bounds, frust, light->GetEntity()->GetTransform().GetModelMatrix() * viewMtx)) {
-				visibleLightIndices.emplace_back(lightIdx);
-			}
-			break;
-		}
-		}
+		gResources->context->VSSetShader(gResources->meshVS.Get(), nullptr, 0);
+		gResources->context->PSSetShader(gResources->meshPbrPS.Get(), nullptr, 0);
+
+		gResources->context->VSSetConstantBuffers(CB_SLOT_PER_CAM, 1, gResources->perCamCB.GetAddressOf());
+		gResources->context->PSSetConstantBuffers(CB_SLOT_PER_CAM, 1, gResources->perCamCB.GetAddressOf());
+
+		gResources->context->OMSetRenderTargets(1, &rtv, dsv);
+		gResources->context->PSSetShaderResources(TEX_SLOT_PUNCTUAL_SHADOW_ATLAS, 1, gResources->punctualShadowAtlas.srv.GetAddressOf());
+
+		gResources->context->RSSetViewports(1, &viewport);
+
+		DrawMeshes(visibleMeshIndices, true);
+		DrawSkybox(viewMat, projMat);
 	}
+
+	gResources->context->RSSetViewports(1, &viewport);
+	DoToneMapGammaCorrectionStep(srv, outRtv);
+}
 }
 
 
-auto Renderer::CullMeshComponents(Frustum const& frust, Matrix4 const& viewMtx, std::span<StaticMeshComponent const* const> const meshComponents, std::vector<int>& visibleMeshComponentIndices) -> void {
-	for (int i = 0; i < static_cast<int>(meshComponents.size()); i++) {
-		if (is_aabb_in_frustum(meshComponents[i]->GetMesh().GetBounds(), frust, meshComponents[i]->GetEntity()->GetTransform().GetModelMatrix() * viewMtx)) {
-			visibleMeshComponentIndices.emplace_back(i);
-		}
-	}
-}
-
-
-auto Renderer::StartUp() -> void {
-	mResources = new Resources{};
+auto StartUp() -> void {
+	gResources = new Resources{};
 
 	CreateDeviceAndContext();
 
@@ -1517,7 +1610,7 @@ auto Renderer::StartUp() -> void {
 #endif
 
 	ComPtr<IDXGIDevice> dxgiDevice;
-	if (FAILED(mResources->device.As(&dxgiDevice))) {
+	if (FAILED(gResources->device.As(&dxgiDevice))) {
 		throw std::runtime_error{ "Failed to query IDXGIDevice interface." };
 	}
 
@@ -1533,11 +1626,11 @@ auto Renderer::StartUp() -> void {
 
 	CheckTearingSupport(dxgiFactory2.Get());
 
-	mGameRes = gWindow.GetCurrentClientAreaSize();
-	mGameAspect = static_cast<f32>(mGameRes.width) / static_cast<f32>(mGameRes.height);
+	gGameRes = gWindow.GetCurrentClientAreaSize();
+	gGameAspect = static_cast<f32>(gGameRes.width) / static_cast<f32>(gGameRes.height);
 
-	mSceneRes = mGameRes;
-	mSceneAspect = mGameAspect;
+	gSceneRes = gGameRes;
+	gSceneAspect = gGameAspect;
 
 	RecreateGameTexturesAndViews(gWindow.GetCurrentClientAreaSize().width, gWindow.GetCurrentClientAreaSize().height);
 	RecreateSceneTexturesAndViews(gWindow.GetCurrentClientAreaSize().width, gWindow.GetCurrentClientAreaSize().height);
@@ -1553,168 +1646,168 @@ auto Renderer::StartUp() -> void {
 	CreateDefaultAssets();
 	CreateStructuredBuffers();
 
-	gWindow.OnWindowSize.add_handler(this, &on_window_resize);
+	gWindow.OnWindowSize.add_handler(&on_window_resize);
 
 	dxgiFactory2->MakeWindowAssociation(gWindow.GetHandle(), DXGI_MWA_NO_WINDOW_CHANGES);
 
-	mResources->context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	gResources->context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
 
 
-auto Renderer::ShutDown() noexcept -> void {
-	delete mResources;
-	mResources = nullptr;
+auto ShutDown() noexcept -> void {
+	delete gResources;
+	gResources = nullptr;
 }
 
 
-auto Renderer::DrawGame() noexcept -> void {
-	DrawFullWithCameras(mGameRenderCameras, mResources->gameHdrTextureRtv.Get(), mResources->gameDSV.Get(), mResources->gameHdrTextureSrv.Get(), mResources->gameOutputTextureRtv.Get());
+auto DrawGame() noexcept -> void {
+	DrawFullWithCameras(gGameRenderCameras, gResources->gameHdrTextureRtv.Get(), gResources->gameDSV.Get(), gResources->gameHdrTextureSrv.Get(), gResources->gameOutputTextureRtv.Get());
 }
 
 
-auto Renderer::DrawSceneView(RenderCamera const& cam) noexcept -> void {
+auto DrawSceneView(RenderCamera const& cam) noexcept -> void {
 	auto const camPtr{ &cam };
-	DrawFullWithCameras(std::span{ &camPtr, 1 }, mResources->sceneHdrTextureRtv.Get(), mResources->sceneDSV.Get(), mResources->sceneHdrTextureSrv.Get(), mResources->sceneOutputTextureRtv.Get());
+	DrawFullWithCameras(std::span{ &camPtr, 1 }, gResources->sceneHdrTextureRtv.Get(), gResources->sceneDSV.Get(), gResources->sceneHdrTextureSrv.Get(), gResources->sceneOutputTextureRtv.Get());
 }
 
 
-auto Renderer::GetGameResolution() const noexcept -> Extent2D<u32> {
-	return mGameRes;
+auto GetGameResolution() noexcept -> Extent2D<u32> {
+	return gGameRes;
 }
 
 
-auto Renderer::SetGameResolution(Extent2D<u32> resolution) noexcept -> void {
-	mGameRes = resolution;
-	mGameAspect = static_cast<f32>(resolution.width) / static_cast<f32>(resolution.height);
-	RecreateGameTexturesAndViews(mGameRes.width, mGameRes.height);
+auto SetGameResolution(Extent2D<u32> const resolution) noexcept -> void {
+	gGameRes = resolution;
+	gGameAspect = static_cast<f32>(resolution.width) / static_cast<f32>(resolution.height);
+	RecreateGameTexturesAndViews(gGameRes.width, gGameRes.height);
 }
 
 
-auto Renderer::GetSceneResolution() const noexcept -> Extent2D<u32> {
-	return mSceneRes;
+auto GetSceneResolution() noexcept -> Extent2D<u32> {
+	return gSceneRes;
 }
 
 
-auto Renderer::SetSceneResolution(Extent2D<u32> const resolution) noexcept -> void {
-	mSceneRes = resolution;
-	mSceneAspect = static_cast<f32>(resolution.width) / static_cast<f32>(resolution.height);
-	RecreateSceneTexturesAndViews(mSceneRes.width, mSceneRes.height);
+auto SetSceneResolution(Extent2D<u32> const resolution) noexcept -> void {
+	gSceneRes = resolution;
+	gSceneAspect = static_cast<f32>(resolution.width) / static_cast<f32>(resolution.height);
+	RecreateSceneTexturesAndViews(gSceneRes.width, gSceneRes.height);
 }
 
 
-auto Renderer::GetGameFrame() const noexcept -> ID3D11ShaderResourceView* {
-	return mResources->gameOutputTextureSrv.Get();
+auto GetGameFrame() noexcept -> ID3D11ShaderResourceView* {
+	return gResources->gameOutputTextureSrv.Get();
 }
 
 
-auto Renderer::GetSceneFrame() const noexcept -> ID3D11ShaderResourceView* {
-	return mResources->sceneOutputTextureSrv.Get();
+auto GetSceneFrame() noexcept -> ID3D11ShaderResourceView* {
+	return gResources->sceneOutputTextureSrv.Get();
 }
 
 
-auto Renderer::GetGameAspectRatio() const noexcept -> f32 {
-	return mGameAspect;
+auto GetGameAspectRatio() noexcept -> f32 {
+	return gGameAspect;
 }
 
 
-auto Renderer::GetSceneAspectRatio() const noexcept -> f32 {
-	return mSceneAspect;
+auto GetSceneAspectRatio() noexcept -> f32 {
+	return gSceneAspect;
 }
 
 
-auto Renderer::BindAndClearSwapChain() const noexcept -> void {
+auto BindAndClearSwapChain() noexcept -> void {
 	FLOAT constexpr clearColor[]{ 0, 0, 0, 1 };
-	mResources->context->ClearRenderTargetView(mResources->swapChainRtv.Get(), clearColor);
-	mResources->context->OMSetRenderTargets(1, mResources->swapChainRtv.GetAddressOf(), nullptr);
+	gResources->context->ClearRenderTargetView(gResources->swapChainRtv.Get(), clearColor);
+	gResources->context->OMSetRenderTargets(1, gResources->swapChainRtv.GetAddressOf(), nullptr);
 }
 
 
-auto Renderer::Present() const noexcept -> void {
-	mResources->swapChain->Present(mSyncInterval, mSyncInterval ? mPresentFlags & ~DXGI_PRESENT_ALLOW_TEARING : mPresentFlags);
+auto Present() noexcept -> void {
+	gResources->swapChain->Present(gSyncInterval, gSyncInterval ? gPresentFlags & ~DXGI_PRESENT_ALLOW_TEARING : gPresentFlags);
 }
 
 
-auto Renderer::GetSyncInterval() const noexcept -> u32 {
-	return mSyncInterval;
+auto GetSyncInterval() noexcept -> u32 {
+	return gSyncInterval;
 }
 
 
-auto Renderer::SetSyncInterval(u32 const interval) noexcept -> void {
-	mSyncInterval = interval;
+auto SetSyncInterval(u32 const interval) noexcept -> void {
+	gSyncInterval = interval;
 }
 
 
-auto Renderer::RegisterStaticMesh(StaticMeshComponent const* const staticMesh) -> void {
-	mStaticMeshComponents.emplace_back(staticMesh);
+auto RegisterStaticMesh(StaticMeshComponent const* const staticMesh) -> void {
+	gStaticMeshComponents.emplace_back(staticMesh);
 }
 
 
-auto Renderer::UnregisterStaticMesh(StaticMeshComponent const* const staticMesh) -> void {
-	std::erase(mStaticMeshComponents, staticMesh);
+auto UnregisterStaticMesh(StaticMeshComponent const* const staticMesh) -> void {
+	std::erase(gStaticMeshComponents, staticMesh);
 }
 
 
-auto Renderer::GetDevice() const noexcept -> ID3D11Device* {
-	return mResources->device.Get();
+auto GetDevice() noexcept -> ID3D11Device* {
+	return gResources->device.Get();
 }
 
 
-auto Renderer::GetImmediateContext() const noexcept -> ID3D11DeviceContext* {
-	return mResources->context.Get();
+auto GetImmediateContext() noexcept -> ID3D11DeviceContext* {
+	return gResources->context.Get();
 }
 
 
-auto Renderer::RegisterLight(LightComponent const* light) -> void {
-	mLights.emplace_back(light);
+auto RegisterLight(LightComponent const* light) -> void {
+	gLights.emplace_back(light);
 }
 
 
-auto Renderer::UnregisterLight(LightComponent const* light) -> void {
-	std::erase(mLights, light);
+auto UnregisterLight(LightComponent const* light) -> void {
+	std::erase(gLights, light);
 }
 
 
-auto Renderer::GetDefaultMaterial() const noexcept -> Material* {
-	return mResources->defaultMaterial.get();
+auto GetDefaultMaterial() noexcept -> Material* {
+	return gResources->defaultMaterial.get();
 }
 
 
-auto Renderer::GetCubeMesh() const noexcept -> Mesh* {
-	return mResources->cubeMesh.get();
+auto GetCubeMesh() noexcept -> Mesh* {
+	return gResources->cubeMesh.get();
 }
 
 
-auto Renderer::GetPlaneMesh() const noexcept -> Mesh* {
-	return mResources->planeMesh.get();
+auto GetPlaneMesh() noexcept -> Mesh* {
+	return gResources->planeMesh.get();
 }
 
 
-auto Renderer::GetGamma() const noexcept -> f32 {
-	return 1.f / mInvGamma;
+auto GetGamma() noexcept -> f32 {
+	return 1.f / gInvGamma;
 }
 
 
-auto Renderer::SetGamma(f32 const gamma) noexcept -> void {
-	mInvGamma = 1.f / gamma;
+auto SetGamma(f32 const gamma) noexcept -> void {
+	gInvGamma = 1.f / gamma;
 }
 
 
-auto Renderer::RegisterSkybox(SkyboxComponent const* const skybox) -> void {
-	mSkyboxes.emplace_back(skybox);
+auto RegisterSkybox(SkyboxComponent const* const skybox) -> void {
+	gSkyboxes.emplace_back(skybox);
 }
 
 
-auto Renderer::UnregisterSkybox(SkyboxComponent const* const skybox) -> void {
-	std::erase(mSkyboxes, skybox);
+auto UnregisterSkybox(SkyboxComponent const* const skybox) -> void {
+	std::erase(gSkyboxes, skybox);
 }
 
 
-auto Renderer::RegisterGameCamera(RenderCamera const& cam) -> void {
-	mGameRenderCameras.emplace_back(&cam);
+auto RegisterGameCamera(RenderCamera const& cam) -> void {
+	gGameRenderCameras.emplace_back(&cam);
 }
 
 
-auto Renderer::UnregisterGameCamera(RenderCamera const& cam) -> void {
-	std::erase(mGameRenderCameras, &cam);
+auto UnregisterGameCamera(RenderCamera const& cam) -> void {
+	std::erase(gGameRenderCameras, &cam);
 }
 }

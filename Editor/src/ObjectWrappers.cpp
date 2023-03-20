@@ -6,6 +6,7 @@
 #include <misc/cpp/imgui_stdlib.h>
 
 #include "ManagedRuntime.hpp"
+#include "Renderer.hpp"
 #include "Systems.hpp"
 
 
@@ -137,6 +138,7 @@ auto EditorObjectWrapperFor<BehaviorComponent>::OnGui([[maybe_unused]] Context& 
 	}
 }
 
+
 auto EditorObjectWrapperFor<CameraComponent>::OnGui([[maybe_unused]] Context& context, Object& object) -> void {
 	auto& cam{ dynamic_cast<CameraComponent&>(object) };
 
@@ -227,6 +229,7 @@ auto EditorObjectWrapperFor<CameraComponent>::OnGui([[maybe_unused]] Context& co
 	}
 }
 
+
 auto EditorObjectWrapperFor<StaticMeshComponent>::OnGui([[maybe_unused]] Context& context, Object& object) -> void {
 	auto& model{ dynamic_cast<StaticMeshComponent&>(object) };
 
@@ -278,7 +281,7 @@ auto EditorObjectWrapperFor<StaticMeshComponent>::OnGui([[maybe_unused]] Context
 		auto mtlCount{ clamp_cast<int>(model.GetMaterials().size()) };
 		if (ImGui::InputInt("###MtlCountInput", &mtlCount) && mtlCount >= 0) {
 			while (mtlCount > clamp_cast<int>(model.GetMaterials().size())) {
-				model.AddMaterial(*gRenderer.GetDefaultMaterial());
+				model.AddMaterial(*renderer::GetDefaultMaterial());
 			}
 			while (mtlCount < clamp_cast<int>(model.GetMaterials().size())) {
 				model.RemoveMaterial(clamp_cast<int>(model.GetMaterials().size()) - 1);
@@ -331,6 +334,7 @@ auto EditorObjectWrapperFor<StaticMeshComponent>::OnGui([[maybe_unused]] Context
 		ImGui::EndTable();
 	}
 }
+
 
 auto EditorObjectWrapperFor<Entity>::OnGui(Context& context, Object& object) -> void {
 	auto& entity{ dynamic_cast<Entity&>(object) };
@@ -390,6 +394,7 @@ auto EditorObjectWrapperFor<Entity>::OnGui(Context& context, Object& object) -> 
 		ImGui::EndPopup();
 	}
 }
+
 
 auto EditorObjectWrapperFor<LightComponent>::OnGui([[maybe_unused]] Context& context, Object& object) -> void {
 	auto& light{ dynamic_cast<LightComponent&>(object) };
@@ -498,6 +503,7 @@ auto EditorObjectWrapperFor<LightComponent>::OnGui([[maybe_unused]] Context& con
 		ImGui::EndTable();
 	}
 }
+
 
 auto EditorObjectWrapperFor<Material>::OnGui([[maybe_unused]] Context& context, Object& object) -> void {
 	auto& mtl{ dynamic_cast<Material&>(object) };
@@ -657,6 +663,7 @@ auto EditorObjectWrapperFor<Material>::OnGui([[maybe_unused]] Context& context, 
 	}
 }
 
+
 auto EditorObjectWrapperFor<TransformComponent>::OnGui([[maybe_unused]] Context& context, Object& object) -> void {
 	auto& transform{ dynamic_cast<TransformComponent&>(object) };
 
@@ -714,6 +721,7 @@ auto EditorObjectWrapperFor<TransformComponent>::OnGui([[maybe_unused]] Context&
 	}
 }
 
+
 auto EditorObjectWrapperFor<Mesh>::OnGui([[maybe_unused]] Context& context, Object& object) -> void {
 	if (auto const& mesh{ dynamic_cast<Mesh&>(object) }; ImGui::BeginTable(std::format("{}", mesh.GetGuid().ToString()).c_str(), 2, ImGuiTableFlags_SizingStretchSame)) {
 		ImGui::TableNextRow();
@@ -737,6 +745,7 @@ auto EditorObjectWrapperFor<Mesh>::OnGui([[maybe_unused]] Context& context, Obje
 		ImGui::EndTable();
 	}
 }
+
 
 auto EditorObjectWrapperFor<Texture2D>::OnGui([[maybe_unused]] Context& context, Object& object) -> void {
 	auto const& tex{ dynamic_cast<Texture2D&>(object) };
@@ -788,12 +797,14 @@ auto EditorObjectWrapperFor<Texture2D>::OnGui([[maybe_unused]] Context& context,
 	ImGui::Image(tex.GetSrv(), displaySize);
 }
 
+
 auto EditorObjectWrapperFor<Scene>::OnGui(Context& context, Object& object) -> void {
 	ImGui::Text("%s", "Scene Asset");
 	if (ImGui::Button("Open")) {
 		context.OpenScene(dynamic_cast<Scene&>(object));
 	}
 }
+
 
 auto EditorObjectWrapperFor<SkyboxComponent>::OnGui(Context& context, Object& object) -> void {
 	auto& skybox{ dynamic_cast<SkyboxComponent&>(object) };
@@ -852,29 +863,35 @@ auto EditorObjectWrapperFor<SkyboxComponent>::OnGui(Context& context, Object& ob
 	ImGui::PopID();
 }
 
+
 auto EditorObjectWrapperFor<Entity>::Instantiate() -> Object* {
 	return Entity::New();
 }
+
 
 auto EditorObjectWrapperFor<Mesh>::GetImporter() -> Importer& {
 	MeshImporter static meshImporter;
 	return meshImporter;
 }
 
+
 auto EditorObjectWrapperFor<Texture2D>::GetImporter() -> Importer& {
 	Texture2DImporter static texImporter;
 	return texImporter;
 }
+
 
 auto EditorObjectWrapperFor<Material>::GetImporter() -> Importer& {
 	MaterialImporter static mtlImporter;
 	return mtlImporter;
 }
 
+
 auto EditorObjectWrapperFor<Scene>::GetImporter() -> Importer& {
 	SceneImporter static sceneImporter;
 	return sceneImporter;
 }
+
 
 auto EditorObjectWrapperFor<Cubemap>::GetImporter() -> Importer& {
 	CubemapImporter static cubemapImporter;

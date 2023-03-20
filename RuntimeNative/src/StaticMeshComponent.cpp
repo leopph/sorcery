@@ -1,20 +1,20 @@
 #include "StaticMeshComponent.hpp"
 
-#include "Systems.hpp"
+#include "Renderer.hpp"
 
 namespace leopph {
 Object::Type const StaticMeshComponent::SerializationType{ Object::Type::StaticMesh };
 
 
 StaticMeshComponent::StaticMeshComponent() :
-	mMesh{ gRenderer.GetCubeMesh() } {
-	AddMaterial(*gRenderer.GetDefaultMaterial());
-	gRenderer.RegisterStaticMesh(this);
+	mMesh{ renderer::GetCubeMesh() } {
+	AddMaterial(*renderer::GetDefaultMaterial());
+	renderer::RegisterStaticMesh(this);
 }
 
 
 StaticMeshComponent::~StaticMeshComponent() {
-	gRenderer.UnregisterStaticMesh(this);
+	renderer::UnregisterStaticMesh(this);
 }
 
 
@@ -91,12 +91,12 @@ auto StaticMeshComponent::Deserialize(YAML::Node const& node) -> void {
 			mMesh = dynamic_cast<Mesh*>(FindObjectByGuid(Guid::Parse(guidStr)));
 
 			if (!mMesh) {
-				mMesh = gRenderer.GetCubeMesh();
+				mMesh = renderer::GetCubeMesh();
 			}
 		}
 	}
 	else {
-		mMesh = gRenderer.GetCubeMesh();
+		mMesh = renderer::GetCubeMesh();
 	}
 
 	mMaterials.clear();
@@ -112,7 +112,7 @@ auto StaticMeshComponent::Deserialize(YAML::Node const& node) -> void {
 	}
 
 	if (mMaterials.empty()) {
-		AddMaterial(*gRenderer.GetDefaultMaterial());
+		AddMaterial(*renderer::GetDefaultMaterial());
 	}
 }
 }

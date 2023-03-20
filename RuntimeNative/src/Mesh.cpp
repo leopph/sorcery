@@ -1,9 +1,8 @@
 #include "Mesh.hpp"
 
-#include "Systems.hpp"
+#include "Renderer.hpp"
 #include "Util.hpp"
 #include "Serialization.hpp"
-#include "Compress.hpp"
 
 #include <utility>
 #include <format>
@@ -23,7 +22,7 @@ auto Mesh::UploadToGPU() -> void {
 		.pSysMem = mData.positions.data()
 	};
 
-	if (FAILED(gRenderer.GetDevice()->CreateBuffer(&posDesc, &posBufData, mPosBuf.ReleaseAndGetAddressOf()))) {
+	if (FAILED(renderer::GetDevice()->CreateBuffer(&posDesc, &posBufData, mPosBuf.ReleaseAndGetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create mesh position buffer." };
 	}
 
@@ -40,7 +39,7 @@ auto Mesh::UploadToGPU() -> void {
 		.pSysMem = mData.normals.data()
 	};
 
-	if (FAILED(gRenderer.GetDevice()->CreateBuffer(&normDesc, &normBufData, mNormBuf.ReleaseAndGetAddressOf()))) {
+	if (FAILED(renderer::GetDevice()->CreateBuffer(&normDesc, &normBufData, mNormBuf.ReleaseAndGetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create mesh normal buffer." };
 	}
 
@@ -57,7 +56,7 @@ auto Mesh::UploadToGPU() -> void {
 		.pSysMem = mData.uvs.data()
 	};
 
-	if (FAILED(gRenderer.GetDevice()->CreateBuffer(&uvDesc, &uvBufData, mUvBuf.ReleaseAndGetAddressOf()))) {
+	if (FAILED(renderer::GetDevice()->CreateBuffer(&uvDesc, &uvBufData, mUvBuf.ReleaseAndGetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create mesh uv buffer." };
 	}
 
@@ -74,10 +73,11 @@ auto Mesh::UploadToGPU() -> void {
 		.pSysMem = mData.indices.data()
 	};
 
-	if (FAILED(gRenderer.GetDevice()->CreateBuffer(&indDesc, &indBufData, mIndBuf.ReleaseAndGetAddressOf()))) {
+	if (FAILED(renderer::GetDevice()->CreateBuffer(&indDesc, &indBufData, mIndBuf.ReleaseAndGetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create mesh index buffer." };
 	}
 }
+
 
 auto Mesh::CalculateBounds() -> void {
 	mBounds = {};
@@ -88,54 +88,67 @@ auto Mesh::CalculateBounds() -> void {
 	}
 }
 
+
 Mesh::Mesh(Data data) :
 	mTempData{ std::move(data) } {
 	ValidateAndUpdate();
 }
 
+
 auto Mesh::GetPositions() const noexcept -> std::span<Vector3 const> {
 	return mData.positions;
 }
+
 
 auto Mesh::SetPositions(std::vector<Vector3> positions) noexcept -> void {
 	mTempData.positions = std::move(positions);
 }
 
+
 auto Mesh::GetNormals() const noexcept -> std::span<Vector3 const> {
 	return mData.normals;
 }
+
 
 auto Mesh::SetNormals(std::vector<Vector3> normals) noexcept -> void {
 	mTempData.normals = std::move(normals);
 }
 
+
 auto Mesh::GetUVs() const noexcept -> std::span<Vector2 const> {
 	return mData.uvs;
 }
+
 
 auto Mesh::SetUVs(std::vector<Vector2> uvs) noexcept -> void {
 	mTempData.uvs = std::move(uvs);
 }
 
+
 auto Mesh::GetIndices() const noexcept -> std::span<u32 const> {
 	return mData.indices;
 }
+
 
 auto Mesh::SetIndices(std::vector<u32> indices) noexcept -> void {
 	mTempData.indices = std::move(indices);
 }
 
+
 auto Mesh::GetSubMeshes() const noexcept -> std::span<SubMeshData const> {
 	return mData.subMeshes;
 }
+
 
 auto Mesh::SetSubMeshes(std::vector<SubMeshData> subMeshes) noexcept -> void {
 	mTempData.subMeshes = std::move(subMeshes);
 }
 
+
 auto Mesh::GetBounds() const noexcept -> AABB const& {
 	return mBounds;
 }
+
 
 auto Mesh::ValidateAndUpdate() -> void {
 	auto constexpr errFmt{ "Failed to validate mesh {} (\"{}\"). {}." };
@@ -176,27 +189,33 @@ auto Mesh::ValidateAndUpdate() -> void {
 	UploadToGPU();
 }
 
+
 auto Mesh::GetSerializationType() const -> Type {
 	return Type::Mesh;
 }
+
 
 auto Mesh::GetPositionBuffer() const noexcept -> Microsoft::WRL::ComPtr<ID3D11Buffer> {
 	return mPosBuf;
 }
 
+
 auto Mesh::GetNormalBuffer() const noexcept -> Microsoft::WRL::ComPtr<ID3D11Buffer> {
 	return mNormBuf;
 }
+
 
 auto Mesh::GetUVBuffer() const noexcept -> Microsoft::WRL::ComPtr<ID3D11Buffer> {
 	return mUvBuf;
 }
 
+
 auto Mesh::GetIndexBuffer() const noexcept -> Microsoft::WRL::ComPtr<ID3D11Buffer> {
 	return mIndBuf;
 }
 
-void Mesh::SetData(Data data) noexcept {
+
+auto Mesh::SetData(Data data) noexcept -> void {
 	mTempData = std::move(data);
 }
 }

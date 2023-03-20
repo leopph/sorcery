@@ -1,9 +1,9 @@
 #include "Cubemap.hpp"
 
-#include "Systems.hpp"
+#include "Renderer.hpp"
 
 namespace leopph {
-void Cubemap::UploadToGpu() {
+auto Cubemap::UploadToGpu() -> void {
 	D3D11_TEXTURE2D_DESC const texDesc{
 		.Width = clamp_cast<UINT>(mFaceData[0].get_width()),
 		.Height = clamp_cast<UINT>(mFaceData[0].get_height()),
@@ -27,7 +27,7 @@ void Cubemap::UploadToGpu() {
 		};
 	}
 
-	if (FAILED(gRenderer.GetDevice()->CreateTexture2D(&texDesc, texData.data(), mTex.ReleaseAndGetAddressOf()))) {
+	if (FAILED(renderer::GetDevice()->CreateTexture2D(&texDesc, texData.data(), mTex.ReleaseAndGetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create GPU texture of Cubemap." };
 	}
 
@@ -40,24 +40,28 @@ void Cubemap::UploadToGpu() {
 		}
 	};
 
-	if (FAILED(gRenderer.GetDevice()->CreateShaderResourceView(mTex.Get(), &srvDesc, mSrv.ReleaseAndGetAddressOf()))) {
+	if (FAILED(renderer::GetDevice()->CreateShaderResourceView(mTex.Get(), &srvDesc, mSrv.ReleaseAndGetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create GPU SRV of Cubemap." };
 	}
 }
 
+
 auto Cubemap::GetSerializationType() const -> Type {
 	return SerializationType;
 }
+
 
 Cubemap::Cubemap(std::span<Image, 6> faces) {
 	std::ranges::move(faces, std::begin(mTmpFaceData));
 	Update();
 }
 
+
 auto Cubemap::Update() noexcept -> void {
 	mFaceData = std::move(mTmpFaceData);
 	UploadToGpu();
 }
+
 
 auto Cubemap::GetSrv() const noexcept -> NonOwning<ID3D11ShaderResourceView*> {
 	return mSrv.Get();

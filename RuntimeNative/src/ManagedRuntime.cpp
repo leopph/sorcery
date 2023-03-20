@@ -21,6 +21,7 @@
 #include <vector>
 
 #include "CameraComponent.hpp"
+#include "LightComponents.hpp"
 
 
 namespace leopph {

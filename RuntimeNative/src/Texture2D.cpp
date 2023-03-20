@@ -1,7 +1,6 @@
 #include "Texture2D.hpp"
 
 #include "Util.hpp"
-#include "Systems.hpp"
 #include "Renderer.hpp"
 
 
@@ -24,7 +23,7 @@ void Texture2D::UploadToGPU() {
 		.SysMemPitch = mImgData.get_width() * mImgData.get_num_channels()
 	};
 
-	if (FAILED(gRenderer.GetDevice()->CreateTexture2D(&texDesc, &texData, mTex.ReleaseAndGetAddressOf()))) {
+	if (FAILED(renderer::GetDevice()->CreateTexture2D(&texDesc, &texData, mTex.ReleaseAndGetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create GPU texture." };
 	}
 
@@ -37,31 +36,37 @@ void Texture2D::UploadToGPU() {
 		}
 	};
 
-	if (FAILED(gRenderer.GetDevice()->CreateShaderResourceView(mTex.Get(), &srvDesc, mSrv.ReleaseAndGetAddressOf()))) {
+	if (FAILED(renderer::GetDevice()->CreateShaderResourceView(mTex.Get(), &srvDesc, mSrv.ReleaseAndGetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create GPU SRV." };
 	}
 }
+
 
 Texture2D::Texture2D(Image img) : mTmpImgData{ std::move(img) } {
 	Update();
 }
 
+
 auto Texture2D::GetImageData() const noexcept -> Image const& {
 	return mImgData;
 }
+
 
 auto Texture2D::SetImageData(Image img) noexcept -> void {
 	mTmpImgData = std::move(img);
 }
 
+
 auto Texture2D::GetSrv() const noexcept -> NonOwning<ID3D11ShaderResourceView*> {
 	return mSrv.Get();
 }
+
 
 auto Texture2D::Update() noexcept -> void {
 	mImgData = mTmpImgData;
 	UploadToGPU();
 }
+
 
 auto Texture2D::GetSerializationType() const -> Type {
 	return SerializationType;

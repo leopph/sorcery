@@ -289,18 +289,18 @@ auto DrawGameViewWindow(bool const gameRunning) -> void {
 
 		if (ImGui::Combo("Resolution", &selectedRes, resolutionLabels, 7)) {
 			if (selectedRes != 0) {
-				gRenderer.SetGameResolution(resolutions[selectedRes - 1]);
+				renderer::SetGameResolution(resolutions[selectedRes - 1]);
 			}
 		}
 
-		auto const gameRes = gRenderer.GetGameResolution();
+		auto const gameRes = renderer::GetGameResolution();
 		auto const contentRegionSize = ImGui::GetContentRegionAvail();
 		Extent2D const viewportRes{ static_cast<u32>(contentRegionSize.x), static_cast<u32>(contentRegionSize.y) };
 		ImVec2 frameDisplaySize;
 
 		if (selectedRes == 0) {
 			if (viewportRes.width != gameRes.width || viewportRes.height != gameRes.height) {
-				gRenderer.SetGameResolution(viewportRes);
+				renderer::SetGameResolution(viewportRes);
 			}
 
 			frameDisplaySize = contentRegionSize;
@@ -310,8 +310,8 @@ auto DrawGameViewWindow(bool const gameRunning) -> void {
 			frameDisplaySize = ImVec2(static_cast<f32>(gameRes.width) * scale, static_cast<f32>(gameRes.height) * scale);
 		}
 
-		gRenderer.DrawGame();
-		ImGui::Image(gRenderer.GetGameFrame(), frameDisplaySize);
+		renderer::DrawGame();
+		ImGui::Image(renderer::GetGameFrame(), frameDisplaySize);
 	}
 	else {
 		ImGui::PopStyleVar();
@@ -329,12 +329,12 @@ auto DrawSceneViewWindow(Context& context) -> void {
 
 	if (ImGui::Begin("Scene", nullptr, ImGuiWindowFlags_NoCollapse)) {
 		ImGui::PopStyleVar();
-		auto const [sceneWidth, sceneHeight]{ gRenderer.GetSceneResolution() };
+		auto const [sceneWidth, sceneHeight]{ renderer::GetSceneResolution() };
 		auto const contentRegionSize{ ImGui::GetContentRegionAvail() };
 
 		if (Extent2D const viewportRes{ static_cast<u32>(contentRegionSize.x), static_cast<u32>(contentRegionSize.y) };
 			viewportRes.width != sceneWidth || viewportRes.height != sceneHeight) {
-			gRenderer.SetSceneResolution(viewportRes);
+			renderer::SetSceneResolution(viewportRes);
 		}
 
 		EditorCamera static editorCam{ Vector3{}, Quaternion{}, 0.03f, 10000.f, 90 };
@@ -387,8 +387,8 @@ auto DrawSceneViewWindow(Context& context) -> void {
 			editorCam.orientation *= Quaternion{ Vector3::Right(), static_cast<f32>(mouseY) * sens };
 		}
 
-		gRenderer.DrawSceneView(editorCam);
-		ImGui::Image(gRenderer.GetSceneFrame(), contentRegionSize);
+		renderer::DrawSceneView(editorCam);
+		ImGui::Image(renderer::GetSceneFrame(), contentRegionSize);
 
 		auto const windowAspectRatio{ ImGui::GetWindowWidth() / ImGui::GetWindowHeight() };
 		auto const editorCamViewMat{ Matrix4::LookAtLH(editorCam.position, editorCam.position + editorCam.orientation.Rotate(Vector3::Forward()), Vector3::Up()) };
@@ -842,15 +842,15 @@ auto DrawPerformanceCounterWindow() {
 auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ HINSTANCE, _In_ wchar_t* const lpCmdLine, [[maybe_unused]] _In_ int) -> int {
 	try {
 		leopph::gWindow.StartUp();
-		leopph::gRenderer.StartUp();
+		leopph::renderer::StartUp();
 		leopph::gManagedRuntime.StartUp();
 
 		leopph::gWindow.SetBorderless(false);
 		leopph::gWindow.SetWindowedClientAreaSize({ 1280, 720 });
 		leopph::gWindow.SetIgnoreManagedRequests(true);
 
-		leopph::gRenderer.SetGameResolution({ 960, 540 });
-		leopph::gRenderer.SetSyncInterval(0);
+		leopph::renderer::SetGameResolution({ 960, 540 });
+		leopph::renderer::SetSyncInterval(0);
 
 		auto constexpr TARGET_FRAME_RATE{ 200 };
 		leopph::timing::SetTargetFrameRate(TARGET_FRAME_RATE);
@@ -867,7 +867,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 		ImGui::StyleColorsDark();
 
 		ImGui_ImplWin32_Init(leopph::gWindow.GetHandle());
-		ImGui_ImplDX11_Init(leopph::gRenderer.GetDevice(), leopph::gRenderer.GetImmediateContext());
+		ImGui_ImplDX11_Init(leopph::renderer::GetDevice(), leopph::renderer::GetImmediateContext());
 
 		leopph::gWindow.SetEventHook(leopph::editor::EditorImGuiEventHook);
 
@@ -966,9 +966,9 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
 			ImGui::Render();
 
-			leopph::gRenderer.BindAndClearSwapChain();
+			leopph::renderer::BindAndClearSwapChain();
 			ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-			leopph::gRenderer.Present();
+			leopph::renderer::Present();
 
 			leopph::timing::OnFrameEnd();
 		}
@@ -983,7 +983,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 	}
 
 	leopph::gManagedRuntime.ShutDown();
-	leopph::gRenderer.ShutDown();
+	leopph::renderer::ShutDown();
 	leopph::gWindow.ShutDown();
 	return 0;
 }
