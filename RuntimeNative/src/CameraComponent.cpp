@@ -13,12 +13,12 @@ Object::Type const CameraComponent::SerializationType{ Object::Type::Camera };
 
 
 CameraComponent::CameraComponent() {
-	renderer::RegisterGameCamera(*this);
+	RegisterGameCamera(*this);
 }
 
 
 CameraComponent::~CameraComponent() {
-	renderer::UnregisterGameCamera(*this);
+	UnregisterGameCamera(*this);
 }
 
 
@@ -77,12 +77,12 @@ auto CameraComponent::SetHorizontalPerspectiveFov(f32 degrees) -> void {
 }
 
 
-auto CameraComponent::GetType() const -> RenderCamera::Type {
+auto CameraComponent::GetType() const -> Camera::Type {
 	return mType;
 }
 
 
-auto CameraComponent::SetType(RenderCamera::Type const type) -> void {
+auto CameraComponent::SetType(Camera::Type const type) -> void {
 	mType = type;
 }
 
@@ -116,7 +116,7 @@ auto CameraComponent::GetForwardAxis() const noexcept -> Vector3 {
 
 auto CameraComponent::GetFrustum(float const aspectRatio) const -> Frustum {
 	switch (GetType()) {
-	case RenderCamera::Type::Perspective: {
+	case Camera::Type::Perspective: {
 		auto const horizFov{ GetHorizontalPerspectiveFov() };
 		auto const nearClipPlane{ GetNearClipPlane() };
 		auto const farClipPlane{ GetFarClipPlane() };
@@ -142,7 +142,7 @@ auto CameraComponent::GetFrustum(float const aspectRatio) const -> Frustum {
 		};
 	}
 
-	case RenderCamera::Type::Orthographic: {
+	case Camera::Type::Orthographic: {
 		auto static constexpr half = 1.f / 2.f;
 		auto const x = GetHorizontalOrthographicSize() * half;
 		auto const y = GetHorizontalOrthographicSize() / aspectRatio * half;
@@ -181,7 +181,7 @@ auto CameraComponent::Deserialize(YAML::Node const& root) -> void {
 			std::cerr << "Failed to deserialize type of CameraComponent " << GetGuid().ToString() << ". Invalid data." << std::endl;
 		}
 		else {
-			SetType(static_cast<RenderCamera::Type>(root["type"].as<int>(static_cast<int>(GetType()))));
+			SetType(static_cast<Camera::Type>(root["type"].as<int>(static_cast<int>(GetType()))));
 		}
 	}
 	if (root["fov"]) {
@@ -189,7 +189,7 @@ auto CameraComponent::Deserialize(YAML::Node const& root) -> void {
 			std::cerr << "Failed to deserialize field of view of CameraComponent " << GetGuid().ToString() << ". Invalid data." << std::endl;
 		}
 		else {
-			SetHorizontalPerspectiveFov(root["fov"].as<leopph::f32>(GetHorizontalPerspectiveFov()));
+			SetHorizontalPerspectiveFov(root["fov"].as<f32>(GetHorizontalPerspectiveFov()));
 		}
 	}
 	if (root["size"]) {
@@ -197,7 +197,7 @@ auto CameraComponent::Deserialize(YAML::Node const& root) -> void {
 			std::cerr << "Failed to deserialize size of CameraComponent " << GetGuid().ToString() << ". Invalid data." << std::endl;
 		}
 		else {
-			SetHorizontalOrthographicSize(root["size"].as<leopph::f32>(GetHorizontalOrthographicSize()));
+			SetHorizontalOrthographicSize(root["size"].as<f32>(GetHorizontalOrthographicSize()));
 		}
 	}
 	if (root["near"]) {
@@ -205,7 +205,7 @@ auto CameraComponent::Deserialize(YAML::Node const& root) -> void {
 			std::cerr << "Failed to deserialize near clip plane of CameraComponent " << GetGuid().ToString() << ". Invalid data." << std::endl;
 		}
 		else {
-			SetNearClipPlane(root["near"].as<leopph::f32>(GetNearClipPlane()));
+			SetNearClipPlane(root["near"].as<f32>(GetNearClipPlane()));
 		}
 	}
 	if (root["far"]) {
@@ -213,7 +213,7 @@ auto CameraComponent::Deserialize(YAML::Node const& root) -> void {
 			std::cerr << "Failed to deserialize far clip plane of CameraComponent " << GetGuid().ToString() << ". Invalid data." << std::endl;
 		}
 		else {
-			SetFarClipPlane(root["far"].as<leopph::f32>(GetFarClipPlane()));
+			SetFarClipPlane(root["far"].as<f32>(GetFarClipPlane()));
 		}
 	}
 	if (auto const node{ root["background"] }; node) {
@@ -221,7 +221,7 @@ auto CameraComponent::Deserialize(YAML::Node const& root) -> void {
 			std::cerr << "Failed to deserialize background color of CameraComponent " << GetGuid().ToString() << ". Invalid data." << std::endl;
 		}
 		else {
-			SetBackgroundColor(node.as<leopph::Vector4>(GetBackgroundColor()));
+			SetBackgroundColor(node.as<Vector4>(GetBackgroundColor()));
 		}
 	}
 }
@@ -233,12 +233,12 @@ auto CameraComponent::GetSerializationType() const -> Object::Type {
 
 
 namespace managedbindings {
-auto GetCameraType(MonoObject* camera) -> RenderCamera::Type {
+auto GetCameraType(MonoObject* camera) -> renderer::Camera::Type {
 	return static_cast<CameraComponent*>(ManagedAccessObject::GetNativePtrFromManagedObject(camera))->GetType();
 }
 
 
-auto SetCameraType(MonoObject* camera, RenderCamera::Type type) -> void {
+auto SetCameraType(MonoObject* camera, renderer::Camera::Type type) -> void {
 	static_cast<CameraComponent*>(ManagedAccessObject::GetNativePtrFromManagedObject(camera))->SetType(type);
 }
 

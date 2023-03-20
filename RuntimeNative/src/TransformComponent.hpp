@@ -40,7 +40,7 @@ private:
 
 public:
 	[[nodiscard]] LEOPPHAPI auto GetSerializationType() const -> Type override;
-	LEOPPHAPI static Object::Type const SerializationType;
+	LEOPPHAPI static Type const SerializationType;
 
 	LEOPPHAPI auto Serialize(YAML::Node& node) const -> void override;
 	LEOPPHAPI auto Deserialize(YAML::Node const& node) -> void override;

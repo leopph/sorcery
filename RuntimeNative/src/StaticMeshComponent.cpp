@@ -3,7 +3,7 @@
 #include "Renderer.hpp"
 
 namespace leopph {
-Object::Type const StaticMeshComponent::SerializationType{ Object::Type::StaticMesh };
+Object::Type const StaticMeshComponent::SerializationType{ Type::StaticMesh };
 
 
 StaticMeshComponent::StaticMeshComponent() :

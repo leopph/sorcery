@@ -19,6 +19,7 @@ using MonoReflectionType = struct _MonoReflectionType;
 namespace leopph {
 class Scene;
 
+
 class Entity final : public SceneElement {
 	friend class Scene;
 
@@ -37,7 +38,7 @@ public:
 	[[nodiscard]] LEOPPHAPI static auto FindEntityByName(std::string_view name) -> Entity*;
 
 	[[nodiscard]] LEOPPHAPI auto GetSerializationType() const -> Type override;
-	LEOPPHAPI static Object::Type const SerializationType;
+	LEOPPHAPI static Type const SerializationType;
 
 	LEOPPHAPI auto Serialize(YAML::Node& node) const -> void override;
 	LEOPPHAPI auto Deserialize(YAML::Node const& node) -> void override;
@@ -49,6 +50,7 @@ public:
 	LEOPPHAPI auto AddComponent(std::unique_ptr<Component> component) -> void;
 	LEOPPHAPI auto DestroyComponent(Component* component) -> void;
 
+
 	template<std::derived_from<Component> T>
 	auto GetComponent() const -> T* {
 		for (auto const& component : mComponents) {
@@ -58,6 +60,7 @@ public:
 		}
 		return nullptr;
 	}
+
 
 	template<std::derived_from<Component> T>
 	auto GetComponents(std::vector<T*>& outComponents) const -> std::vector<T*>& {
@@ -69,6 +72,7 @@ public:
 		}
 		return outComponents;
 	}
+
 
 	LEOPPHAPI auto CreateManagedObject() -> void override;
 };

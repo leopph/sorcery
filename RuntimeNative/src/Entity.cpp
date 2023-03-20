@@ -131,19 +131,24 @@ auto Entity::DestroyComponent(Component* const component) -> void {
 	}
 }
 
+
 auto Entity::CreateManagedObject() -> void {
 	return ManagedAccessObject::CreateManagedObject("leopph", "Entity");
 }
 
+
 Object::Type const Entity::SerializationType{ Type::Entity };
+
 
 auto Entity::SetScene(Scene* const scene) -> void {
 	mScene = scene;
 }
 
+
 auto Entity::New() -> Entity* {
 	return new Entity{}; // TODO
 }
+
 
 auto Entity::NewForManagedObject(MonoObject* const managedObject) -> Entity* {
 	auto const entity{ New() };
@@ -179,7 +184,7 @@ auto Entity::Deserialize(YAML::Node const& node) -> void {
 		}
 		else {
 			auto const guidStr{ it->as<std::string>() };
-			auto const component{ (dynamic_cast<Component*>(Object::FindObjectByGuid(Guid::Parse(guidStr)))) };
+			auto const component{ (dynamic_cast<Component*>(FindObjectByGuid(Guid::Parse(guidStr)))) };
 			if (!component) {
 				std::cerr << "Failed to deserialize a Component of Entity " << GetGuid().ToString() << ". Guid " << guidStr << " does not belong to any Component." << std::endl;
 			}

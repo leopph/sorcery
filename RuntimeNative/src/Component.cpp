@@ -28,7 +28,7 @@ auto Component::Deserialize(YAML::Node const& node) -> void {
 	}
 	else {
 		auto const guidStr{ node["entity"].as<std::string>() };
-		auto const entity{ dynamic_cast<Entity*>(Object::FindObjectByGuid(Guid::Parse(guidStr))) };
+		auto const entity{ dynamic_cast<Entity*>(FindObjectByGuid(Guid::Parse(guidStr))) };
 		if (!entity) {
 			std::cerr << "Failed to deserialize owning Entity of Component " << GetGuid().ToString() << ". Guid " << guidStr << " does not belong to any Entity." << std::endl;
 		}
@@ -43,6 +43,7 @@ namespace managedbindings {
 auto GetComponentEntity(MonoObject* const component) -> MonoObject* {
 	return static_cast<Component*>(ManagedAccessObject::GetNativePtrFromManagedObject(component))->GetEntity()->GetManagedObject();
 }
+
 
 auto GetComponentEntityTransform(MonoObject* component) -> MonoObject* {
 	return static_cast<Component*>(ManagedAccessObject::GetNativePtrFromManagedObject(component))->GetEntity()->GetTransform().GetManagedObject();

@@ -372,7 +372,7 @@ std::vector<StaticMeshComponent const*> gStaticMeshComponents;
 std::vector<LightComponent const*> gLights;
 f32 gInvGamma{ 1.f / 2.2f };
 std::vector<SkyboxComponent const*> gSkyboxes;
-std::vector<RenderCamera const*> gGameRenderCameras;
+std::vector<Camera const*> gGameRenderCameras;
 ShadowAtlasAllocation gPunctualShadowAtlasAlloc;
 
 
@@ -1480,7 +1480,7 @@ auto CalculatePunctualShadowAtlasAllocation(std::span<LightComponent const* cons
 }
 
 
-auto DrawFullWithCameras(std::span<RenderCamera const* const> const cameras, ID3D11RenderTargetView* const rtv, ID3D11DepthStencilView* const dsv, ID3D11ShaderResourceView* const srv, ID3D11RenderTargetView* const outRtv) noexcept -> void {
+auto DrawFullWithCameras(std::span<Camera const* const> const cameras, ID3D11RenderTargetView* const rtv, ID3D11DepthStencilView* const dsv, ID3D11ShaderResourceView* const srv, ID3D11RenderTargetView* const outRtv) noexcept -> void {
 	FLOAT constexpr clearColor[]{ 0, 0, 0, 1 };
 	gResources->context->ClearRenderTargetView(rtv, clearColor);
 	gResources->context->ClearDepthStencilView(dsv, D3D11_CLEAR_DEPTH, 1, 0);
@@ -1514,8 +1514,8 @@ auto DrawFullWithCameras(std::span<RenderCamera const* const> const cameras, ID3
 		auto const camForward{ cam->GetForwardAxis() };
 		auto const viewMat{ Matrix4::LookToLH(camPos, camForward, Vector3::Up()) };
 		auto const projMat{
-			cam->GetType() == RenderCamera::Type::Perspective ?
-				Matrix4::PerspectiveAsymZLH(ToRadians(RenderCamera::HorizontalPerspectiveFovToVertical(cam->GetHorizontalPerspectiveFov(), aspectRatio)), aspectRatio, cam->GetNearClipPlane(), cam->GetFarClipPlane()) :
+			cam->GetType() == Camera::Type::Perspective ?
+				Matrix4::PerspectiveAsymZLH(ToRadians(Camera::HorizontalPerspectiveFovToVertical(cam->GetHorizontalPerspectiveFov(), aspectRatio)), aspectRatio, cam->GetNearClipPlane(), cam->GetFarClipPlane()) :
 				Matrix4::OrthographicAsymZLH(cam->GetHorizontalOrthographicSize(), cam->GetHorizontalOrthographicSize() / aspectRatio, cam->GetNearClipPlane(), cam->GetFarClipPlane())
 		};
 		auto const viewProjMat{ viewMat * projMat };
@@ -1600,6 +1600,16 @@ auto DrawFullWithCameras(std::span<RenderCamera const* const> const cameras, ID3
 }
 
 
+auto Camera::HorizontalPerspectiveFovToVertical(float const fovDegrees, float const aspectRatio) noexcept -> float {
+	return ToDegrees(2.0f * std::atan(std::tan(ToRadians(fovDegrees) / 2.0f) / aspectRatio));
+}
+
+
+auto Camera::VerticalPerspectiveFovToHorizontal(float const fovDegrees, float const aspectRatio) noexcept -> float {
+	return ToDegrees(2.0f * std::atan(std::tan(ToRadians(fovDegrees) / 2.0f) * aspectRatio));
+}
+
+
 auto StartUp() -> void {
 	gResources = new Resources{};
 
@@ -1665,7 +1675,7 @@ auto DrawGame() noexcept -> void {
 }
 
 
-auto DrawSceneView(RenderCamera const& cam) noexcept -> void {
+auto DrawSceneView(Camera const& cam) noexcept -> void {
 	auto const camPtr{ &cam };
 	DrawFullWithCameras(std::span{ &camPtr, 1 }, gResources->sceneHdrTextureRtv.Get(), gResources->sceneDSV.Get(), gResources->sceneHdrTextureSrv.Get(), gResources->sceneOutputTextureRtv.Get());
 }
@@ -1802,12 +1812,12 @@ auto UnregisterSkybox(SkyboxComponent const* const skybox) -> void {
 }
 
 
-auto RegisterGameCamera(RenderCamera const& cam) -> void {
+auto RegisterGameCamera(Camera const& cam) -> void {
 	gGameRenderCameras.emplace_back(&cam);
 }
 
 
-auto UnregisterGameCamera(RenderCamera const& cam) -> void {
+auto UnregisterGameCamera(Camera const& cam) -> void {
 	std::erase(gGameRenderCameras, &cam);
 }
 }

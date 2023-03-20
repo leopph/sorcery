@@ -260,7 +260,7 @@ auto TransformComponent::Deserialize(YAML::Node const& node) -> void {
 	if (node["parent"]) {
 		if (!node["parent"].IsScalar()) {
 			auto const guidStr{ node["parent"].as<std::string>() };
-			auto const parent{ dynamic_cast<TransformComponent*>(Object::FindObjectByGuid(Guid::Parse(guidStr))) };
+			auto const parent{ dynamic_cast<TransformComponent*>(FindObjectByGuid(Guid::Parse(guidStr))) };
 			if (!parent) {
 				std::cerr << "Failed to deserialize parent of Transform " << GetGuid().ToString() << ". Guid " << guidStr << " does not belong to any Transform." << std::endl;
 			}
@@ -278,7 +278,7 @@ auto TransformComponent::Deserialize(YAML::Node const& node) -> void {
 				}
 				else {
 					auto const guidStr{ it->as<std::string>() };
-					auto const child{ dynamic_cast<TransformComponent*>(Object::FindObjectByGuid(Guid::Parse(guidStr))) };
+					auto const child{ dynamic_cast<TransformComponent*>(FindObjectByGuid(Guid::Parse(guidStr))) };
 					if (!child) {
 						std::cerr << "Failed to deserialize a child of Transform " << GetGuid().ToString() << ". Guid " << guidStr << " does not belong to any Transform." << std::endl;
 					}

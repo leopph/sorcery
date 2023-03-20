@@ -1,18 +1,18 @@
 #pragma once
 
 #include "Component.hpp"
-#include "RenderCamera.hpp"
+#include "Renderer.hpp"
 
 #include "Math.hpp"
 #include "Util.hpp"
 
 
 namespace leopph {
-class CameraComponent : public Component, public RenderCamera {
+class CameraComponent : public Component, public renderer::Camera {
 	f32 mNear{ 0.1f };
 	f32 mFar{ 100.f };
 	NormalizedViewport mViewport{ { 0, 0 }, { 1, 1 } };
-	RenderCamera::Type mType{ RenderCamera::Type::Perspective };
+	Camera::Type mType{ Camera::Type::Perspective };
 	f32 mOrthoSizeHoriz{ 10 };
 	f32 mPerspFovHorizDeg{ 90 };
 	Vector4 mBackgroundColor{ 0, 0, 0, 1 };
@@ -43,8 +43,8 @@ public:
 	[[nodiscard]] LEOPPHAPI auto GetHorizontalPerspectiveFov() const -> f32 override;
 	LEOPPHAPI auto SetHorizontalPerspectiveFov(f32 degrees) -> void;
 
-	[[nodiscard]] LEOPPHAPI auto GetType() const -> RenderCamera::Type override;
-	LEOPPHAPI auto SetType(RenderCamera::Type type) -> void;
+	[[nodiscard]] LEOPPHAPI auto GetType() const -> Camera::Type override;
+	LEOPPHAPI auto SetType(Camera::Type type) -> void;
 
 	[[nodiscard]] LEOPPHAPI auto GetBackgroundColor() const -> Vector4;
 	LEOPPHAPI auto SetBackgroundColor(Vector4 const& color) -> void;
@@ -58,8 +58,8 @@ public:
 
 
 namespace managedbindings {
-auto GetCameraType(MonoObject* camera) -> RenderCamera::Type;
-auto SetCameraType(MonoObject* camera, RenderCamera::Type type) -> void;
+auto GetCameraType(MonoObject* camera) -> renderer::Camera::Type;
+auto SetCameraType(MonoObject* camera, renderer::Camera::Type type) -> void;
 
 auto GetCameraPerspectiveFov(MonoObject* camera) -> f32;
 auto SetCameraPerspectiveFov(MonoObject* camera, f32 fov) -> void;

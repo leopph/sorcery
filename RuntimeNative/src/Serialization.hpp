@@ -19,12 +19,13 @@ template<typename T, std::size_t N>
 struct convert<leopph::Vector<T, N>> {
 	static auto encode(leopph::Vector<T, N> const& v) -> Node {
 		Node node;
-		node.SetStyle(YAML::EmitterStyle::Flow);
+		node.SetStyle(EmitterStyle::Flow);
 		for (std::size_t i = 0; i < N; i++) {
 			node.push_back(v[i]);
 		}
 		return node;
 	}
+
 
 	static auto decode(Node const& node, leopph::Vector<T, N>& v) -> bool {
 		if (!node.IsSequence() || node.size() != N) {
@@ -37,17 +38,19 @@ struct convert<leopph::Vector<T, N>> {
 	}
 };
 
+
 template<>
 struct convert<leopph::Quaternion> {
 	static auto encode(leopph::Quaternion const& q) -> Node {
 		Node node;
-		node.SetStyle(YAML::EmitterStyle::Flow);
+		node.SetStyle(EmitterStyle::Flow);
 		node.push_back(q.w);
 		node.push_back(q.x);
 		node.push_back(q.y);
 		node.push_back(q.z);
 		return node;
 	}
+
 
 	static auto decode(Node const& node, leopph::Quaternion& q) -> bool {
 		if (!node.IsSequence() || node.size() != 4) {
@@ -67,22 +70,27 @@ namespace leopph {
 template<typename T>
 struct BinarySerializer;
 
+
 template<Scalar T> requires(sizeof(T) == 1)
 struct BinarySerializer<T> {
 	auto constexpr static SerializedSize = 1;
 
+
 	static auto Serialize(T const scalar, std::vector<std::uint8_t>& out) -> void {
 		out.emplace_back(*reinterpret_cast<std::uint8_t const*>(&scalar));
 	}
+
 
 	static auto Deserialize(std::span<u8 const, 1> const bytes) -> T {
 		return *reinterpret_cast<T const*>(bytes.data());
 	}
 };
 
+
 template<Scalar T> requires(sizeof(T) > 1)
 struct BinarySerializer<T> {
 	auto constexpr static SerializedSize = sizeof(T);
+
 
 	static auto Serialize(T const scalar, std::vector<std::uint8_t>& out, std::endian const endianness) -> void {
 		auto const* const begin = reinterpret_cast<u8 const*>(&scalar);
@@ -97,6 +105,7 @@ struct BinarySerializer<T> {
 		std::copy_n(std::reverse_iterator{ begin + sz }, sz, inserter);
 	}
 
+
 	static auto Deserialize(std::span<u8 const, sizeof(T)> const bytes, std::endian const endianness) -> T {
 		if (endianness == std::endian::native) {
 			return *reinterpret_cast<T const*>(bytes.data());
@@ -109,6 +118,7 @@ struct BinarySerializer<T> {
 	}
 };
 
+
 template<>
 struct BinarySerializer<Image> {
 	static auto Serialize(Image const& img, std::vector<std::uint8_t>& out, std::endian const endianness) -> void {
@@ -117,6 +127,7 @@ struct BinarySerializer<Image> {
 		BinarySerializer<u8>::Serialize(img.get_num_channels(), out);
 		std::copy_n(img.get_data().data(), img.get_width() * img.get_height() * img.get_num_channels(), std::back_inserter(out));
 	}
+
 
 	static auto Deserialize(std::span<u8 const> const bytes, std::endian const endianness) -> Image {
 		if (bytes.size() < 9) {
@@ -139,9 +150,11 @@ struct BinarySerializer<Image> {
 	}
 };
 
+
 template<>
 struct BinarySerializer<Color> {
 	auto constexpr static SerializedSize = sizeof(Color);
+
 
 	static auto Serialize(Color const& color, std::vector<std::uint8_t>& out) -> void {
 		BinarySerializer<u8>::Serialize(color.red, out);
@@ -149,6 +162,7 @@ struct BinarySerializer<Color> {
 		BinarySerializer<u8>::Serialize(color.blue, out);
 		BinarySerializer<u8>::Serialize(color.alpha, out);
 	}
+
 
 	static auto Deserialize(std::span<u8 const, sizeof(Color)> const bytes) -> Color {
 		return Color{
@@ -165,6 +179,7 @@ template<typename T, u64 N>
 struct BinarySerializer<Vector<T, N>> {
 	auto constexpr static SerializedSize = sizeof(Vector<T, N>);
 
+
 	static auto Serialize(Vector<T, N> const& vector, std::vector<std::uint8_t>& out, std::endian const endianness) -> void {
 		for (u64 i{ 0 }; i < N; i++) {
 			if constexpr (std::is_invocable_v<decltype(&BinarySerializer<T>::Serialize), T, std::vector<std::uint8_t>&, std::endian>) {
@@ -175,6 +190,7 @@ struct BinarySerializer<Vector<T, N>> {
 			}
 		}
 	}
+
 
 	static auto Deserialize(std::span<u8 const, sizeof(Vector<T, N>)> const bytes, std::endian const endianness) -> Vector<T, N> {
 		Vector<T, N> ret{};

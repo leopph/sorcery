@@ -1,9 +1,9 @@
 #pragma once
 
-#include "RenderCamera.hpp"
+#include <Renderer.hpp>
 
 namespace leopph::editor {
-struct EditorCamera : RenderCamera {
+struct EditorCamera : renderer::Camera {
 	[[nodiscard]] auto GetPosition() const noexcept -> Vector3 override;
 	[[nodiscard]] auto GetForwardAxis() const noexcept -> Vector3 override;
 	[[nodiscard]] auto GetNearClipPlane() const noexcept -> float override;
