@@ -1368,7 +1368,7 @@ auto Renderer::CalculatePunctualShadowAtlasAllocation(std::span<LightComponent c
 				};
 
 				auto const boundsWidth{ boundsMax[0] - boundsMin[0] };
-				auto const boundsHeight{ boundsMax[1] - boundsMin[0] };
+				auto const boundsHeight{ boundsMax[1] - boundsMin[1] };
 
 				auto const boundsArea{ boundsWidth * boundsHeight };
 				auto constexpr screenArea{ 4 };
