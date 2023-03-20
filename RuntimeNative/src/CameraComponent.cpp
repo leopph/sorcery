@@ -11,6 +11,7 @@
 namespace leopph {
 Object::Type const CameraComponent::SerializationType{ Object::Type::Camera };
 
+
 CameraComponent::CameraComponent() {
 	gRenderer.RegisterGameCamera(*this);
 }
@@ -45,6 +46,7 @@ auto CameraComponent::GetViewport() const -> NormalizedViewport const& {
 	return mViewport;
 }
 
+
 auto CameraComponent::SetViewport(NormalizedViewport const& viewport) -> void {
 	mViewport.extent.width = std::clamp(viewport.extent.width, 0.f, 1.f);
 	mViewport.extent.height = std::clamp(viewport.extent.height, 0.f, 1.f);
@@ -74,6 +76,7 @@ auto CameraComponent::SetHorizontalPerspectiveFov(f32 degrees) -> void {
 	mPerspFovHorizDeg = degrees;
 }
 
+
 auto CameraComponent::GetType() const -> RenderCamera::Type {
 	return mType;
 }
@@ -88,23 +91,28 @@ auto CameraComponent::GetBackgroundColor() const -> Vector4 {
 	return mBackgroundColor;
 }
 
+
 auto CameraComponent::SetBackgroundColor(Vector4 const& color) -> void {
 	for (auto i = 0; i < 4; i++) {
 		mBackgroundColor[i] = std::clamp(color[i], 0.f, 1.f);
 	}
 }
 
+
 auto CameraComponent::CreateManagedObject() -> void {
 	return ManagedAccessObject::CreateManagedObject("leopph", "Camera");
 }
+
 
 auto CameraComponent::GetPosition() const noexcept -> Vector3 {
 	return GetEntity()->GetTransform().GetWorldPosition();
 }
 
+
 auto CameraComponent::GetForwardAxis() const noexcept -> Vector3 {
 	return GetEntity()->GetTransform().GetForwardAxis();
 }
+
 
 auto CameraComponent::GetFrustum(float const aspectRatio) const -> Frustum {
 	switch (GetType()) {
@@ -114,7 +122,7 @@ auto CameraComponent::GetFrustum(float const aspectRatio) const -> Frustum {
 		auto const farClipPlane{ GetFarClipPlane() };
 
 		auto const tanHalfHorizFov{ std::tan(ToRadians(horizFov) / 2.0f) };
-		auto const tanHalfVertFov{ std::tan(ToRadians(ConvertPerspectiveFovHorizontalToVertical(horizFov, aspectRatio)) / 2.0f) };
+		auto const tanHalfVertFov{ std::tan(ToRadians(HorizontalPerspectiveFovToVertical(horizFov, aspectRatio)) / 2.0f) };
 
 		auto const xn = nearClipPlane * tanHalfHorizFov;
 		auto const xf = farClipPlane * tanHalfHorizFov;
@@ -154,6 +162,7 @@ auto CameraComponent::GetFrustum(float const aspectRatio) const -> Frustum {
 
 	return {};
 }
+
 
 auto CameraComponent::Serialize(YAML::Node& node) const -> void {
 	Component::Serialize(node);
@@ -217,17 +226,9 @@ auto CameraComponent::Deserialize(YAML::Node const& root) -> void {
 	}
 }
 
+
 auto CameraComponent::GetSerializationType() const -> Object::Type {
 	return Object::Type::Camera;
-}
-
-
-auto CameraComponent::ConvertPerspectiveFovHorizontalToVertical(float const fovDegrees, float const aspectRatio) noexcept -> float {
-	return ToDegrees(2.0f * std::atan(std::tan(ToRadians(fovDegrees) / 2.0f) / aspectRatio));
-}
-
-auto CameraComponent::ConvertPerspectiveFovVerticalToHorizontal(float const fovDegrees, float const aspectRatio) noexcept -> float {
-	return ToDegrees(2.0f * std::atan(std::tan(ToRadians(fovDegrees) / 2.0f) * aspectRatio));
 }
 
 

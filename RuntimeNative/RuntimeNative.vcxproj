@@ -109,6 +109,7 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\RenderCamera.cpp" />
     <ClCompile Include="src\AABB.cpp" />
     <ClCompile Include="src\BehaviorComponent.cpp" />
     <ClCompile Include="src\CameraComponent.cpp" />

@@ -1157,7 +1157,7 @@ auto Renderer::DrawFullWithCameras(std::span<RenderCamera const* const> const ca
 		auto const viewMat{ Matrix4::LookToLH(camPos, camForward, Vector3::Up()) };
 		auto const projMat{
 			cam->GetType() == RenderCamera::Type::Perspective ?
-				Matrix4::PerspectiveAsymZLH(2.0f * std::atanf(std::tanf(ToRadians(cam->GetHorizontalPerspectiveFov()) / 2.0f) / aspectRatio), aspectRatio, cam->GetNearClipPlane(), cam->GetFarClipPlane()) :
+				Matrix4::PerspectiveAsymZLH(ToRadians(RenderCamera::HorizontalPerspectiveFovToVertical(cam->GetHorizontalPerspectiveFov(), aspectRatio)), aspectRatio, cam->GetNearClipPlane(), cam->GetFarClipPlane()) :
 				Matrix4::OrthographicAsymZLH(cam->GetHorizontalOrthographicSize(), cam->GetHorizontalOrthographicSize() / aspectRatio, cam->GetNearClipPlane(), cam->GetFarClipPlane())
 		};
 		auto const viewProjMat{ viewMat * projMat };
