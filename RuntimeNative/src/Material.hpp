@@ -6,6 +6,8 @@
 #include "Util.hpp"
 #include "Texture2D.hpp"
 
+#include "shaders/ShaderInterop.h"
+
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <d3d11.h>
@@ -14,19 +16,18 @@
 
 namespace leopph {
 class Material final : public NativeAsset {
-	struct BufferData {
-		Vector3 albedo{ 1, 1, 1 };
-		f32 metallic{ 0 };
-		f32 roughness{ 0.5f };
-		f32 ao{ 1 };
-		BOOL sampleAlbedo{ FALSE };
-		BOOL sampleMetallic{ FALSE };
-		BOOL sampleRoughness{ FALSE };
-		BOOL sampleAo{ FALSE };
+	ShaderMaterial mShaderMtl{
+		.albedo = Vector3{ 1, 1, 1 },
+		.metallic = 0.0f,
+		.roughness = 0.5f,
+		.ao = 1.0f,
+		.sampleAlbedo = FALSE,
+		.sampleMetallic = FALSE,
+		.sampleRoughness = FALSE,
+		.sampleAo = FALSE
 	};
 
-	Microsoft::WRL::ComPtr<ID3D11Buffer> mBuffer;
-	BufferData mBufData;
+	Microsoft::WRL::ComPtr<ID3D11Buffer> mCB;
 
 	Texture2D* mAlbedoMap{ nullptr };
 	Texture2D* mMetallicMap{ nullptr };
@@ -34,9 +35,11 @@ class Material final : public NativeAsset {
 	Texture2D* mAoMap{ nullptr };
 
 	auto UpdateGPUData() const noexcept -> void;
+	auto CreateCB() -> void;
 
 public:
 	LEOPPHAPI Material();
+	LEOPPHAPI Material(Vector3 const& albedoVector, float metallic, float roughness, float ao, Texture2D* albedoMap, Texture2D* metallicMap, Texture2D* roughnessMap, Texture2D* aoMap);
 
 	LEOPPHAPI [[nodiscard]] auto GetAlbedoVector() const noexcept -> Vector3;
 	LEOPPHAPI auto SetAlbedoVector(Vector3 const& albedoVector) noexcept -> void;
