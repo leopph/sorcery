@@ -49,6 +49,7 @@ class Renderer {
 		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> gameOutputTextureSrv;
 		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> sceneHdrTextureSrv;
 		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> sceneOutputTextureSrv;
+		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> lightSbSrv;
 
 		Microsoft::WRL::ComPtr<ID3D11DepthStencilView> gameDSV;
 		Microsoft::WRL::ComPtr<ID3D11DepthStencilView> sceneDSV;
@@ -68,6 +69,7 @@ class Renderer {
 		Microsoft::WRL::ComPtr<ID3D11Buffer> toneMapGammaCB;
 		Microsoft::WRL::ComPtr<ID3D11Buffer> skyboxCB;
 		Microsoft::WRL::ComPtr<ID3D11Buffer> shadowCB;
+		Microsoft::WRL::ComPtr<ID3D11Buffer> lightSB;
 
 		Microsoft::WRL::ComPtr<ID3D11InputLayout> meshIL;
 		Microsoft::WRL::ComPtr<ID3D11InputLayout> skyboxIL;
@@ -132,6 +134,7 @@ class Renderer {
 	auto CreateShadowAtlases() const -> void;
 	auto CreateSamplerStates() const -> void;
 	auto CreateDefaultAssets() const -> void;
+	auto CreateStructuredBuffers() const -> void;
 	auto DrawMeshes(std::span<int const> meshComponentIndices, bool useMaterials) const noexcept -> void;
 	auto UpdatePerFrameCB() const noexcept -> void;
 	auto DoToneMapGammaCorrectionStep(ID3D11ShaderResourceView* src, ID3D11RenderTargetView* dst) const noexcept -> void;

@@ -553,7 +553,6 @@ auto Renderer::SetDebugBreaks() const -> void {
 
 	d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_CORRUPTION, true);
 	d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_ERROR, true);
-	d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_WARNING, true);
 }
 
 
@@ -943,6 +942,35 @@ auto Renderer::CreateDefaultAssets() const -> void {
 }
 
 
+auto Renderer::CreateStructuredBuffers() const -> void {
+	D3D11_BUFFER_DESC constexpr lightSbDesc{
+		.ByteWidth = MAX_LIGHT_COUNT * sizeof(ShaderLight),
+		.Usage = D3D11_USAGE_DYNAMIC,
+		.BindFlags = D3D11_BIND_SHADER_RESOURCE,
+		.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
+		.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED,
+		.StructureByteStride = sizeof(ShaderLight)
+	};
+
+	if (FAILED(mResources->device->CreateBuffer(&lightSbDesc, nullptr, mResources->lightSB.GetAddressOf()))) {
+		throw std::runtime_error{ "Failed to create light structured buffer." };
+	}
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC constexpr lightSbSrvDesc{
+		.Format = DXGI_FORMAT_UNKNOWN,
+		.ViewDimension = D3D11_SRV_DIMENSION_BUFFER,
+		.Buffer = {
+			.FirstElement = 0,
+			.NumElements = MAX_LIGHT_COUNT
+		}
+	};
+
+	if (FAILED(mResources->device->CreateShaderResourceView(mResources->lightSB.Get(), &lightSbSrvDesc, mResources->lightSbSrv.GetAddressOf()))) {
+		throw std::runtime_error{ "Failed to create light SB SRV." };
+	}
+}
+
+
 auto Renderer::DrawMeshes(std::span<int const> const meshComponentIndices, bool const useMaterials) const noexcept -> void {
 	for (auto const meshComponentIdx : meshComponentIndices) {
 		auto const meshComponent{ mStaticMeshComponents[meshComponentIdx] };
@@ -1139,6 +1167,7 @@ auto Renderer::DrawFullWithCameras(std::span<RenderCamera const* const> const ca
 		std::vector<int> static visibleLightIndices;
 		visibleLightIndices.clear();
 		CullLights(camFrust, viewMat, mLights, visibleLightIndices);
+		auto const lightCount{ std::min(MAX_LIGHT_COUNT, static_cast<int>(visibleLightIndices.size())) };
 
 		CalculatePunctualShadowAtlasAllocation(mLights, visibleLightIndices, viewProjMat, mPunctualShadowAtlasAlloc);
 		ID3D11ShaderResourceView* const nullSrv{ nullptr };
@@ -1156,36 +1185,41 @@ auto Renderer::DrawFullWithCameras(std::span<RenderCamera const* const> const ca
 		auto const perCamCBufData{ static_cast<PerCameraCB*>(mappedPerCamCBuf.pData) };
 		perCamCBufData->viewProjMtx = viewProjMat;
 		perCamCBufData->camPos = camPos;
-
-		auto const lightCount{ std::min(MAX_LIGHT_COUNT, static_cast<int>(visibleLightIndices.size())) };
 		perCamCBufData->lightCount = lightCount;
+		mResources->context->Unmap(mResources->perCamCB.Get(), 0);
+
+		D3D11_MAPPED_SUBRESOURCE mappedLightSB;
+		mResources->context->Map(mResources->lightSB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedLightSB);
+		auto const mappedLightSBData{ static_cast<ShaderLight*>(mappedLightSB.pData) };
 
 		for (int i = 0; i < lightCount; i++) {
-			perCamCBufData->lights[i].color = mLights[visibleLightIndices[i]]->GetColor();
-			perCamCBufData->lights[i].intensity = mLights[visibleLightIndices[i]]->GetIntensity();
-			perCamCBufData->lights[i].type = static_cast<int>(mLights[visibleLightIndices[i]]->GetType());
-			perCamCBufData->lights[i].direction = mLights[visibleLightIndices[i]]->GetDirection();
-			perCamCBufData->lights[i].isCastingShadow = false;
-			perCamCBufData->lights[i].shadowNearPlane = mLights[visibleLightIndices[i]]->GetShadowNearPlane();
-			perCamCBufData->lights[i].range = mLights[visibleLightIndices[i]]->GetRange();
-			perCamCBufData->lights[i].innerAngleCos = std::cos(ToRadians(mLights[visibleLightIndices[i]]->GetInnerAngle()));
-			perCamCBufData->lights[i].outerAngleCos = std::cos(ToRadians(mLights[visibleLightIndices[i]]->GetOuterAngle()));
-			perCamCBufData->lights[i].position = mLights[visibleLightIndices[i]]->GetEntity()->GetTransform().GetWorldPosition();
+			mappedLightSBData[i].color = mLights[visibleLightIndices[i]]->GetColor();
+			mappedLightSBData[i].intensity = mLights[visibleLightIndices[i]]->GetIntensity();
+			mappedLightSBData[i].type = static_cast<int>(mLights[visibleLightIndices[i]]->GetType());
+			mappedLightSBData[i].direction = mLights[visibleLightIndices[i]]->GetDirection();
+			mappedLightSBData[i].isCastingShadow = false;
+			mappedLightSBData[i].shadowNearPlane = mLights[visibleLightIndices[i]]->GetShadowNearPlane();
+			mappedLightSBData[i].range = mLights[visibleLightIndices[i]]->GetRange();
+			mappedLightSBData[i].innerAngleCos = std::cos(ToRadians(mLights[visibleLightIndices[i]]->GetInnerAngle()));
+			mappedLightSBData[i].outerAngleCos = std::cos(ToRadians(mLights[visibleLightIndices[i]]->GetOuterAngle()));
+			mappedLightSBData[i].position = mLights[visibleLightIndices[i]]->GetEntity()->GetTransform().GetWorldPosition();
 		}
 
 		for (int i = 0; i < 4; i++) {
 			auto const cells{ mPunctualShadowAtlasAlloc.GetQuadrantCells(i) };
 			for (int j = 0; j < static_cast<int>(cells.size()); j++) {
 				if (cells[j]) {
-					perCamCBufData->lights[cells[j]->visibleLightIdxIdx].isCastingShadow = true;
-					perCamCBufData->lights[cells[j]->visibleLightIdxIdx].lightViewProjMtx = cells[j]->lightViewProjMtx;
-					perCamCBufData->lights[cells[j]->visibleLightIdxIdx].atlasQuadrantIdx = i;
-					perCamCBufData->lights[cells[j]->visibleLightIdxIdx].atlasCellIdx = j;
+					mappedLightSBData[cells[j]->visibleLightIdxIdx].isCastingShadow = true;
+					mappedLightSBData[cells[j]->visibleLightIdxIdx].lightViewProjMtx = cells[j]->lightViewProjMtx;
+					mappedLightSBData[cells[j]->visibleLightIdxIdx].atlasQuadrantIdx = i;
+					mappedLightSBData[cells[j]->visibleLightIdxIdx].atlasCellIdx = j;
 				}
 			}
 		}
 
-		mResources->context->Unmap(mResources->perCamCB.Get(), 0);
+		mResources->context->Unmap(mResources->lightSB.Get(), 0);
+		mResources->context->PSSetShaderResources(SB_SLOT_LIGHTS, 1, mResources->lightSbSrv.GetAddressOf());
+
 
 		mResources->context->VSSetShader(mResources->meshVS.Get(), nullptr, 0);
 		mResources->context->PSSetShader(mResources->meshPbrPS.Get(), nullptr, 0);
@@ -1519,6 +1553,7 @@ auto Renderer::StartUp() -> void {
 	CreateShadowAtlases();
 	CreateSamplerStates();
 	CreateDefaultAssets();
+	CreateStructuredBuffers();
 
 	gWindow.OnWindowSize.add_handler(this, &on_window_resize);
 

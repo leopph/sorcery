@@ -26,6 +26,7 @@ typedef bool BOOL;
 #define TEXTURECUBE(name, type, slot) TextureCube<type> name : register(t##slot)
 #define SAMPLERCOMPARISONSTATE(name, slot) SamplerComparisonState name : register(s##slot)
 #define SAMPLERSTATE(name, slot) SamplerState name : register(s##slot)
+#define STRUCTUREDBUFFER(name, type, slot) StructuredBuffer<type> name : register(t##slot)
 #endif
 
 
@@ -51,6 +52,8 @@ typedef bool BOOL;
 #define SAMPLER_SLOT_SHADOW 1
 #define SAMPLER_SLOT_SKYBOX_CUBEMAP 0
 
+#define SB_SLOT_LIGHTS 5
+
 
 struct ShaderLight {
 	float3 color;
@@ -71,6 +74,7 @@ struct ShaderLight {
 
 	uint atlasQuadrantIdx;
 	uint atlasCellIdx;
+	float2 pad;
 };
 
 
@@ -92,36 +96,35 @@ CBUFFER(PerFrameCB, CB_SLOT_PER_FRAME) {};
 
 
 CBUFFER(PerCameraCB, CB_SLOT_PER_CAM) {
-row_major float4x4 viewProjMtx;
-float3 camPos;
-int lightCount;
-ShaderLight lights[MAX_LIGHT_COUNT];
+	row_major float4x4 viewProjMtx;
+	float3 camPos;
+	int lightCount;
 };
 
 
 CBUFFER(PerModelCB, CB_SLOT_PER_MODEL) {
-row_major float4x4 modelMtx;
-row_major float3x3 normalMtx;
+	row_major float4x4 modelMtx;
+	row_major float3x3 normalMtx;
 };
 
 
 CBUFFER(PerMaterialCB, CB_SLOT_PER_MATERIAL) {
-ShaderMaterial material;
+	ShaderMaterial material;
 };
 
 
 CBUFFER(ToneMapGammaCB, CB_SLOT_TONE_MAP_GAMMA) {
-float invGamma;
+	float invGamma;
 };
 
 
 CBUFFER(SkyboxCB, CB_SLOT_SKYBOX_PASS) {
-row_major float4x4 skyboxViewProjMtx;
+	row_major float4x4 skyboxViewProjMtx;
 };
 
 
 CBUFFER(ShadowCB, CB_SLOT_SHADOW_PASS) {
-row_major float4x4 lightViewProjMtx;
+	row_major float4x4 lightViewProjMtx;
 };
 
 

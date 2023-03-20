@@ -12,6 +12,8 @@ TEXTURE2D(gPunctualShadowAtlas, float, TEX_SLOT_PUNCTUAL_SHADOW_ATLAS);
 SAMPLERSTATE(gMaterialSampler, SAMPLER_SLOT_MATERIAL);
 SAMPLERCOMPARISONSTATE(gShadowSampler, SAMPLER_SLOT_SHADOW);
 
+STRUCTUREDBUFFER(lights, ShaderLight, SB_SLOT_LIGHTS);
+
 
 inline float2 TransformUVForShadowAtlas(const float2 uv, const uint atlasQuadrantIdx, const uint atlasCellIdx) {
     const int cellRowColCount = pow(2, atlasQuadrantIdx);
