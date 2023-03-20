@@ -50,12 +50,6 @@ private:
 	Type mType{ Type::Perspective };
 
 public:
-	enum class Side : std::uint8_t {
-		Vertical   = 0,
-		Horizontal = 1
-	};
-
-
 	[[nodiscard]] virtual auto GetPosition() const noexcept -> Vector3 = 0;
 	[[nodiscard]] virtual auto GetForwardAxis() const noexcept -> Vector3 = 0;
 
