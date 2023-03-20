@@ -1169,7 +1169,7 @@ auto Renderer::DrawFullWithCameras(std::span<RenderCamera const* const> const ca
 		CullLights(camFrust, viewMat, mLights, visibleLightIndices);
 		auto const lightCount{ std::min(MAX_LIGHT_COUNT, static_cast<int>(visibleLightIndices.size())) };
 
-		CalculatePunctualShadowAtlasAllocation(mLights, visibleLightIndices, viewProjMat, mPunctualShadowAtlasAlloc);
+		CalculatePunctualShadowAtlasAllocation(mLights, visibleLightIndices, camPos, viewProjMat, mPunctualShadowAtlasAlloc);
 		ID3D11ShaderResourceView* const nullSrv{ nullptr };
 		mResources->context->PSSetShaderResources(TEX_SLOT_PUNCTUAL_SHADOW_ATLAS, 1, &nullSrv);
 		DrawShadowMaps(visibleLightIndices, mPunctualShadowAtlasAlloc);
@@ -1309,7 +1309,7 @@ auto Renderer::DrawShadowMaps(std::span<int const> const visibleLightIndices, Sh
 }
 
 
-auto Renderer::CalculatePunctualShadowAtlasAllocation(std::span<LightComponent const* const> const allLights, std::span<int const> const camVisibleLightIndices, Matrix4 const& camViewProjMtx, ShadowAtlasAllocation& alloc) -> void {
+auto Renderer::CalculatePunctualShadowAtlasAllocation(std::span<LightComponent const* const> const allLights, std::span<int const> const camVisibleLightIndices, Vector3 const& camPos, Matrix4 const& camViewProjMtx, ShadowAtlasAllocation& alloc) -> void {
 	std::array<std::vector<int>, 4> static lightIndexIndicesInQuadrant{};
 
 	for (auto& quadrantLights : lightIndexIndicesInQuadrant) {
@@ -1338,54 +1338,39 @@ auto Renderer::CalculatePunctualShadowAtlasAllocation(std::span<LightComponent c
 				};
 
 				auto const mvp{ light->GetEntity()->GetTransform().GetModelMatrix() * camViewProjMtx };
-				auto const clampMin{ Vector4{ -1, -1, 0, std::numeric_limits<float>::lowest() } };
-				auto const clampMax{ Vector4{ 1, 1, 1, std::numeric_limits<float>::max() } };
+				Vector2 const bottomLeft{ -1, -1 };
+				Vector2 const topRight{ 1, 1 };
+
+				Vector2 min{ bottomLeft };
+				Vector2 max{ topRight };
 
 				for (auto& boundVertex : boundVertices) {
 					boundVertex *= mvp;
-					boundVertex = boundVertex / boundVertex[3];
-					boundVertex = Clamp(boundVertex, clampMin, clampMax);
+					auto const projected{ Vector2{ boundVertex } / boundVertex[3] };
+					min = Min(min, projected);
+					max = Max(max, projected);
+					min = Clamp(min, bottomLeft, topRight);
+					max = Clamp(max, bottomLeft, topRight);
 				}
 
-				auto const boundsMin{
-					[&] {
-						Vector4 ret{ std::numeric_limits<float>::max() };
-						for (auto const& boundVertex : boundVertices) {
-							ret = Min(ret, boundVertex);
-						}
-						return ret;
-					}()
-				};
+				auto const width{ max[0] - min[0] };
+				auto const height{ max[1] - min[1] };
 
-				auto const boundsMax{
-					[&] {
-						Vector4 ret{ std::numeric_limits<float>::lowest() };
-						for (auto const& boundVertex : boundVertices) {
-							ret = Max(ret, boundVertex);
-						}
-						return ret;
-					}()
-				};
-
-				auto const boundsWidth{ boundsMax[0] - boundsMin[0] };
-				auto const boundsHeight{ boundsMax[1] - boundsMin[1] };
-
-				auto const boundsArea{ boundsWidth * boundsHeight };
-				auto constexpr screenArea{ 4 };
-				auto const boundsAreaRatio{ boundsArea / screenArea };
+				auto const area{ width * height };
+				auto const coverage{ area / 4 };
 
 				std::optional<int> quadrantIdx;
 
-				if (boundsAreaRatio >= 1) {
+				if (coverage >= 1) {
 					quadrantIdx = 0;
 				}
-				else if (boundsAreaRatio >= 0.25f) {
+				else if (coverage >= 0.25f) {
 					quadrantIdx = 1;
 				}
-				else if (boundsAreaRatio >= 0.0625f) {
+				else if (coverage >= 0.0625f) {
 					quadrantIdx = 2;
 				}
-				else if (boundsAreaRatio >= 0.015625f) {
+				else if (coverage >= 0.015625f) {
 					quadrantIdx = 3;
 				}
 
@@ -1406,6 +1391,19 @@ auto Renderer::CalculatePunctualShadowAtlasAllocation(std::span<LightComponent c
 	ShadowAtlasAllocation newAlloc{};
 
 	for (int i = 0; i < 4; i++) {
+		std::ranges::sort(lightIndexIndicesInQuadrant[i], [&allLights, &camVisibleLightIndices, &camPos](int const leftIdxIdx, int const rightIdxIdx) {
+			auto const leftLight{ allLights[camVisibleLightIndices[leftIdxIdx]] };
+			auto const rightLight{ allLights[camVisibleLightIndices[rightIdxIdx]] };
+
+			auto const leftLightPos{ leftLight->GetEntity()->GetTransform().GetWorldPosition() };
+			auto const rightLightPos{ rightLight->GetEntity()->GetTransform().GetWorldPosition() };
+
+			auto const leftDist{ Distance(leftLightPos, camPos) };
+			auto const rightDist{ Distance(rightLightPos, camPos) };
+
+			return leftDist > rightDist;
+		});
+
 		for (auto& cell : newAlloc.GetQuadrantCells(i)) {
 			if (lightIndexIndicesInQuadrant[i].empty()) {
 				break;

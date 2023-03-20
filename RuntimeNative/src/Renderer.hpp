@@ -141,7 +141,7 @@ class Renderer {
 	auto DrawSkybox(Matrix4 const& camViewMtx, Matrix4 const& camProjMtx) const noexcept -> void;
 	auto DrawFullWithCameras(std::span<RenderCamera const* const> cameras, ID3D11RenderTargetView* rtv, ID3D11DepthStencilView* dsv, ID3D11ShaderResourceView* srv, ID3D11RenderTargetView* outRtv) noexcept -> void;
 	auto DrawShadowMaps(std::span<int const> visibleLightIndices, ShadowAtlasAllocation const& alloc) const -> void;
-	static auto CalculatePunctualShadowAtlasAllocation(std::span<LightComponent const* const> allLights, std::span<int const> camVisibleLightIndices, Matrix4 const& camViewProjMtx, ShadowAtlasAllocation& alloc) -> void;
+	static auto CalculatePunctualShadowAtlasAllocation(std::span<LightComponent const* const> allLights, std::span<int const> camVisibleLightIndices, Vector3 const& camPos, Matrix4 const& camViewProjMtx, ShadowAtlasAllocation& alloc) -> void;
 	static auto CullLights(Frustum const& frust, Matrix4 const& viewMtx, std::span<LightComponent const* const> lights, std::vector<int>& visibleLightIndices) -> void;
 	static auto CullMeshComponents(Frustum const& frust, Matrix4 const& viewMtx, std::span<StaticMeshComponent const* const> meshComponents, std::vector<int>& visibleMeshComponentIndices) -> void;
 
