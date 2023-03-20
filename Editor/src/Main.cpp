@@ -32,7 +32,6 @@
 #include <array>
 #include <algorithm>
 #include <filesystem>
-#include <functional>
 #include <format>
 #include <fstream>
 #include <ranges>
@@ -183,9 +182,7 @@ auto DrawEntityHierarchyWindow(Context& context) -> void {
 
 		auto entities{ context.GetScene()->GetEntities() };
 
-		for (std::size_t i = 0; i < entities.size(); i++) {
-			std::function<void(Entity&)> displayEntityRecursive;
-			displayEntityRecursive = [&displayEntityRecursive, &entities, &context](Entity& entity) -> void {
+		auto const displayEntityRecursive{[&entities, &context](this auto self, Entity& entity) -> void {
 				ImGuiTreeNodeFlags nodeFlags{ baseFlags };
 
 				if (entity.GetTransform().GetChildren().empty()) {
@@ -239,14 +236,15 @@ auto DrawEntityHierarchyWindow(Context& context) -> void {
 					if (!deleted) {
 						for (std::size_t childIndex{ 0 }; childIndex < entity.GetTransform().GetChildren().size(); childIndex++) {
 							ImGui::PushID(static_cast<int>(childIndex));
-							displayEntityRecursive(*entity.GetTransform().GetChildren()[childIndex]->GetEntity());
+							self(*entity.GetTransform().GetChildren()[childIndex]->GetEntity());
 							ImGui::PopID();
 						}
 					}
 					ImGui::TreePop();
 				}
-			};
+			}};
 
+		for (std::size_t i = 0; i < entities.size(); i++) {
 			if (!entities[i]->GetTransform().GetParent()) {
 				ImGui::PushID(static_cast<int>(i));
 				displayEntityRecursive(*entities[i]);
