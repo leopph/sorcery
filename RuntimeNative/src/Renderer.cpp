@@ -1079,76 +1079,6 @@ auto CreateStructuredBuffers() -> void {
 }
 
 
-auto CullLights(Frustum const& frust, Matrix4 const& viewMtx, std::span<LightComponent const* const> const lights, std::vector<int>& visibleLightIndices) -> void {
-	for (int lightIdx = 0; lightIdx < static_cast<int>(lights.size()); lightIdx++) {
-		switch (auto const light{ lights[lightIdx] }; light->GetType()) {
-		case LightComponent::Type::Directional: {
-			visibleLightIndices.emplace_back(lightIdx);
-			break;
-		}
-
-		case LightComponent::Type::Spot: {
-			auto const range{ light->GetRange() };
-			auto const boundXY{ std::tan(ToRadians(light->GetOuterAngle())) * range };
-			std::array const boundVertices{
-				Vector3{ 0, 0, 0.1f },
-				Vector3{ boundXY, boundXY, range },
-				Vector3{ -boundXY, boundXY, range },
-				Vector3{ boundXY, -boundXY, range },
-				Vector3{ -boundXY, -boundXY, range },
-			};
-
-			auto const bounds{
-				[](std::span<Vector3 const> const vertices) {
-					AABB ret{
-						.min = Vector3{ std::numeric_limits<float>::max() },
-						.max = Vector3{ std::numeric_limits<float>::lowest() }
-					};
-
-					for (auto const& vertex : vertices) {
-						ret.min = Min(ret.min, vertex);
-						ret.max = Max(ret.max, vertex);
-					}
-
-					return ret;
-				}(boundVertices)
-			};
-
-			if (is_aabb_in_frustum(bounds, frust, light->GetEntity()->GetTransform().GetModelMatrix() * viewMtx)) {
-				visibleLightIndices.emplace_back(lightIdx);
-			}
-
-			break;
-		}
-
-		case LightComponent::Type::Point: {
-			auto const range{ light->GetRange() };
-			auto const boundsOffset{ Normalized(Vector3{ 1, 1, 1 }) * range };
-
-			AABB const bounds{
-				.min = -boundsOffset,
-				.max = boundsOffset,
-			};
-
-			if (is_aabb_in_frustum(bounds, frust, light->GetEntity()->GetTransform().GetModelMatrix() * viewMtx)) {
-				visibleLightIndices.emplace_back(lightIdx);
-			}
-			break;
-		}
-		}
-	}
-}
-
-
-auto CullMeshComponents(Frustum const& frust, Matrix4 const& viewMtx, std::span<StaticMeshComponent const* const> const meshComponents, std::vector<int>& visibleMeshComponentIndices) -> void {
-	for (int i = 0; i < static_cast<int>(meshComponents.size()); i++) {
-		if (is_aabb_in_frustum(meshComponents[i]->GetMesh().GetBounds(), frust, meshComponents[i]->GetEntity()->GetTransform().GetModelMatrix() * viewMtx)) {
-			visibleMeshComponentIndices.emplace_back(i);
-		}
-	}
-}
-
-
 auto DrawMeshes(std::span<int const> const meshComponentIndices, bool const useMaterials) noexcept -> void {
 	for (auto const meshComponentIdx : meshComponentIndices) {
 		auto const meshComponent{ gStaticMeshComponents[meshComponentIdx] };
@@ -1284,7 +1214,7 @@ auto DrawSkybox(Matrix4 const& camViewMtx, Matrix4 const& camProjMtx) noexcept -
 }
 
 
-auto DrawShadowMaps(std::span<int const> const visibleLightIndices, ShadowAtlasAllocation const& alloc) -> void {
+auto DrawShadowMaps(Visibility const& visibility, ShadowAtlasAllocation const& alloc) -> void {
 	gResources->context->OMSetRenderTargets(0, nullptr, gResources->punctualShadowAtlas.dsv.Get());
 	gResources->context->ClearDepthStencilView(gResources->punctualShadowAtlas.dsv.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 	gResources->context->VSSetShader(gResources->shadowVS.Get(), nullptr, 0);
@@ -1339,28 +1269,28 @@ auto DrawShadowMaps(std::span<int const> const visibleLightIndices, ShadowAtlasA
 							return {};
 						}
 						}
-					}(gLights[visibleLightIndices[cells[j]->visibleLightIdxIdx]])
+					}(visibility.allLights[visibility.visibleLightIndices[cells[j]->visibleLightIdxIdx]])
 				};
 
-				std::vector<int> static visibleMeshComponentIndices;
-				visibleMeshComponentIndices.clear();
-				CullMeshComponents(lightFrustum, cells[j]->lightViewMtx, gStaticMeshComponents, visibleMeshComponentIndices);
-				DrawMeshes(visibleMeshComponentIndices, false);
+				Visibility static perLightVisibility;
+
+				CullStaticMeshComponents(lightFrustum, cells[j]->lightViewMtx, perLightVisibility);
+				DrawMeshes(perLightVisibility.visibleStaticMeshIndices, false);
 			}
 		}
 	}
 }
 
 
-auto CalculatePunctualShadowAtlasAllocation(std::span<LightComponent const* const> const allLights, std::span<int const> const camVisibleLightIndices, Vector3 const& camPos, Matrix4 const& camViewProjMtx, ShadowAtlasAllocation& alloc) -> void {
+auto CalculatePunctualShadowAtlasAllocation(Visibility const& visibility, Vector3 const& camPos, Matrix4 const& camViewProjMtx, ShadowAtlasAllocation& alloc) -> void {
 	std::array<std::vector<int>, 4> static lightIndexIndicesInQuadrant{};
 
 	for (auto& quadrantLights : lightIndexIndicesInQuadrant) {
 		quadrantLights.clear();
 	}
 
-	for (int i = 0; i < static_cast<int>(camVisibleLightIndices.size()); i++) {
-		if (auto const light{ allLights[camVisibleLightIndices[i]] }; light->IsCastingShadow()) {
+	for (int i = 0; i < static_cast<int>(visibility.visibleLightIndices.size()); i++) {
+		if (auto const light{ visibility.allLights[visibility.visibleLightIndices[i]] }; light->IsCastingShadow()) {
 			switch (light->GetType()) {
 			case LightComponent::Type::Directional: {
 				break;
@@ -1434,9 +1364,9 @@ auto CalculatePunctualShadowAtlasAllocation(std::span<LightComponent const* cons
 	ShadowAtlasAllocation newAlloc{};
 
 	for (int i = 0; i < 4; i++) {
-		std::ranges::sort(lightIndexIndicesInQuadrant[i], [&allLights, &camVisibleLightIndices, &camPos](int const leftIdxIdx, int const rightIdxIdx) {
-			auto const leftLight{ allLights[camVisibleLightIndices[leftIdxIdx]] };
-			auto const rightLight{ allLights[camVisibleLightIndices[rightIdxIdx]] };
+		std::ranges::sort(lightIndexIndicesInQuadrant[i], [&visibility, &camPos](int const leftIdxIdx, int const rightIdxIdx) {
+			auto const leftLight{ visibility.allLights[visibility.visibleLightIndices[leftIdxIdx]] };
+			auto const rightLight{ visibility.allLights[visibility.visibleLightIndices[rightIdxIdx]] };
 
 			auto const leftLightPos{ leftLight->GetEntity()->GetTransform().GetWorldPosition() };
 			auto const rightLightPos{ rightLight->GetEntity()->GetTransform().GetWorldPosition() };
@@ -1453,7 +1383,7 @@ auto CalculatePunctualShadowAtlasAllocation(std::span<LightComponent const* cons
 			}
 
 			auto const lightIdxIdx{ lightIndexIndicesInQuadrant[i].back() };
-			auto const light{ allLights[camVisibleLightIndices[lightIdxIdx]] };
+			auto const light{ visibility.allLights[visibility.visibleLightIndices[lightIdxIdx]] };
 			lightIndexIndicesInQuadrant[i].pop_back();
 
 			auto const lightViewMtx{
@@ -1516,19 +1446,16 @@ auto DrawFullWithCameras(std::span<Camera const* const> const cameras, ID3D11Ren
 		auto const camViewProjMtx{ camViewMtx * camProjMtx };
 		auto const camFrust{ cam->CalculateFrustum(aspectRatio) };
 
-		std::vector<int> static visibleLightIndices;
-		visibleLightIndices.clear();
-		CullLights(camFrust, camViewMtx, gLights, visibleLightIndices);
-		auto const lightCount{ std::min(MAX_LIGHT_COUNT, static_cast<int>(visibleLightIndices.size())) };
+		Visibility static visibility;
+		CullLights(camFrust, camViewMtx, visibility);
+		auto const lightCount{ std::min(MAX_LIGHT_COUNT, static_cast<int>(visibility.visibleLightIndices.size())) };
 
-		CalculatePunctualShadowAtlasAllocation(gLights, visibleLightIndices, camPos, camViewProjMtx, gPunctualShadowAtlasAlloc);
+		CalculatePunctualShadowAtlasAllocation(visibility, camPos, camViewProjMtx, gPunctualShadowAtlasAlloc);
 		ID3D11ShaderResourceView* const nullSrv{ nullptr };
 		gResources->context->PSSetShaderResources(TEX_SLOT_PUNCTUAL_SHADOW_ATLAS, 1, &nullSrv);
-		DrawShadowMaps(visibleLightIndices, gPunctualShadowAtlasAlloc);
+		DrawShadowMaps(visibility, gPunctualShadowAtlasAlloc);
 
-		std::vector<int> static visibleMeshIndices;
-		visibleMeshIndices.clear();
-		CullMeshComponents(camFrust, camViewMtx, gStaticMeshComponents, visibleMeshIndices);
+		CullStaticMeshComponents(camFrust, camViewMtx, visibility);
 
 		gResources->context->VSSetShader(gResources->meshVS.Get(), nullptr, 0);
 
@@ -1545,16 +1472,16 @@ auto DrawFullWithCameras(std::span<Camera const* const> const cameras, ID3D11Ren
 		auto const mappedLightSBData{ static_cast<ShaderLight*>(mappedLightSB.pData) };
 
 		for (int i = 0; i < lightCount; i++) {
-			mappedLightSBData[i].color = gLights[visibleLightIndices[i]]->GetColor();
-			mappedLightSBData[i].intensity = gLights[visibleLightIndices[i]]->GetIntensity();
-			mappedLightSBData[i].type = static_cast<int>(gLights[visibleLightIndices[i]]->GetType());
-			mappedLightSBData[i].direction = gLights[visibleLightIndices[i]]->GetDirection();
+			mappedLightSBData[i].color = gLights[visibility.visibleLightIndices[i]]->GetColor();
+			mappedLightSBData[i].intensity = gLights[visibility.visibleLightIndices[i]]->GetIntensity();
+			mappedLightSBData[i].type = static_cast<int>(gLights[visibility.visibleLightIndices[i]]->GetType());
+			mappedLightSBData[i].direction = gLights[visibility.visibleLightIndices[i]]->GetDirection();
 			mappedLightSBData[i].isCastingShadow = false;
-			mappedLightSBData[i].shadowNearPlane = gLights[visibleLightIndices[i]]->GetShadowNearPlane();
-			mappedLightSBData[i].range = gLights[visibleLightIndices[i]]->GetRange();
-			mappedLightSBData[i].innerAngleCos = std::cos(ToRadians(gLights[visibleLightIndices[i]]->GetInnerAngle()));
-			mappedLightSBData[i].outerAngleCos = std::cos(ToRadians(gLights[visibleLightIndices[i]]->GetOuterAngle()));
-			mappedLightSBData[i].position = gLights[visibleLightIndices[i]]->GetEntity()->GetTransform().GetWorldPosition();
+			mappedLightSBData[i].shadowNearPlane = gLights[visibility.visibleLightIndices[i]]->GetShadowNearPlane();
+			mappedLightSBData[i].range = gLights[visibility.visibleLightIndices[i]]->GetRange();
+			mappedLightSBData[i].innerAngleCos = std::cos(ToRadians(gLights[visibility.visibleLightIndices[i]]->GetInnerAngle()));
+			mappedLightSBData[i].outerAngleCos = std::cos(ToRadians(gLights[visibility.visibleLightIndices[i]]->GetOuterAngle()));
+			mappedLightSBData[i].position = gLights[visibility.visibleLightIndices[i]]->GetEntity()->GetTransform().GetWorldPosition();
 		}
 
 		for (int i = 0; i < 4; i++) {
@@ -1584,7 +1511,7 @@ auto DrawFullWithCameras(std::span<Camera const* const> const cameras, ID3D11Ren
 
 		gResources->context->RSSetViewports(1, &viewport);
 
-		DrawMeshes(visibleMeshIndices, true);
+		DrawMeshes(visibility.visibleStaticMeshIndices, true);
 		DrawSkybox(camViewMtx, camProjMtx);
 	}
 
@@ -1936,8 +1863,79 @@ auto UnregisterGameCamera(Camera const& cam) -> void {
 }
 
 
-auto CullLights(Camera const& cam, Visibility& visiblity) -> void {
-	// CullLights() TODO
+auto CullLights(Frustum const& frust, Matrix4 const& viewMtx, Visibility& visibility) -> void {
+	visibility.allLights = gLights;
+	visibility.visibleLightIndices.clear();
+
+	for (int lightIdx = 0; lightIdx < static_cast<int>(visibility.allLights.size()); lightIdx++) {
+		switch (auto const light{ visibility.allLights[lightIdx] }; light->GetType()) {
+		case LightComponent::Type::Directional: {
+			visibility.visibleLightIndices.emplace_back(lightIdx);
+			break;
+		}
+
+		case LightComponent::Type::Spot: {
+			auto const range{ light->GetRange() };
+			auto const boundXY{ std::tan(ToRadians(light->GetOuterAngle())) * range };
+			std::array const boundVertices{
+				Vector3{ 0, 0, 0.1f },
+				Vector3{ boundXY, boundXY, range },
+				Vector3{ -boundXY, boundXY, range },
+				Vector3{ boundXY, -boundXY, range },
+				Vector3{ -boundXY, -boundXY, range },
+			};
+
+			auto const bounds{
+				[](std::span<Vector3 const> const vertices) {
+					AABB ret{
+						.min = Vector3{ std::numeric_limits<float>::max() },
+						.max = Vector3{ std::numeric_limits<float>::lowest() }
+					};
+
+					for (auto const& vertex : vertices) {
+						ret.min = Min(ret.min, vertex);
+						ret.max = Max(ret.max, vertex);
+					}
+
+					return ret;
+				}(boundVertices)
+			};
+
+			if (is_aabb_in_frustum(bounds, frust, light->GetEntity()->GetTransform().GetModelMatrix() * viewMtx)) {
+				visibility.visibleLightIndices.emplace_back(lightIdx);
+			}
+
+			break;
+		}
+
+		case LightComponent::Type::Point: {
+			auto const range{ light->GetRange() };
+			auto const boundsOffset{ Normalized(Vector3{ 1, 1, 1 }) * range };
+
+			AABB const bounds{
+				.min = -boundsOffset,
+				.max = boundsOffset,
+			};
+
+			if (is_aabb_in_frustum(bounds, frust, light->GetEntity()->GetTransform().GetModelMatrix() * viewMtx)) {
+				visibility.visibleLightIndices.emplace_back(lightIdx);
+			}
+			break;
+		}
+		}
+	}
+}
+
+
+auto CullStaticMeshComponents(Frustum const& frust, Matrix4 const& viewMtx, Visibility& visibility) -> void {
+	visibility.allStaticMeshes = gStaticMeshComponents;
+	visibility.visibleStaticMeshIndices.clear();
+
+	for (int i = 0; i < static_cast<int>(visibility.allStaticMeshes.size()); i++) {
+		if (is_aabb_in_frustum(visibility.allStaticMeshes[i]->GetMesh().GetBounds(), frust, visibility.allStaticMeshes[i]->GetEntity()->GetTransform().GetModelMatrix() * viewMtx)) {
+			visibility.visibleStaticMeshIndices.emplace_back(i);
+		}
+	}
 }
 
 

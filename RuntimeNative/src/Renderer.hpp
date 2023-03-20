@@ -15,7 +15,22 @@
 
 
 namespace leopph::renderer {
-class Camera {
+class View {
+public:
+	[[nodiscard]] virtual auto CalculateFrustum(float aspectRatio) const noexcept -> Frustum = 0;
+
+	View() = default;
+	View(View const& other) = default;
+	View(View&& other) noexcept = default;
+
+	auto operator=(View const& other) -> View& = default;
+	auto operator=(View&& other) noexcept -> View& = default;
+
+	virtual ~View() = default;
+};
+
+
+class Camera : public View {
 public:
 	enum class Type : std::uint8_t {
 		Perspective  = 0,
@@ -59,7 +74,7 @@ public:
 	LEOPPHAPI [[nodiscard]] auto GetHorizontalOrthographicSize() const -> float;
 	LEOPPHAPI auto SetHorizontalOrthographicSize(float size) -> void;
 
-	LEOPPHAPI [[nodiscard]] auto CalculateFrustum(float aspectRatio) const noexcept -> Frustum;
+	LEOPPHAPI [[nodiscard]] auto CalculateFrustum(float aspectRatio) const noexcept -> Frustum override;
 
 	LEOPPHAPI [[nodiscard]] static auto HorizontalPerspectiveFovToVertical(float fovDegrees, float aspectRatio) noexcept -> float;
 	LEOPPHAPI [[nodiscard]] static auto VerticalPerspectiveFovToHorizontal(float fovDegrees, float aspectRatio) noexcept -> float;
@@ -71,7 +86,7 @@ public:
 	auto operator=(Camera const& other) -> Camera& = default;
 	auto operator=(Camera&& other) noexcept -> Camera& = default;
 
-	virtual ~Camera() = default;
+	~Camera() override = default;
 };
 
 
@@ -131,8 +146,8 @@ LEOPPHAPI auto UnregisterSkybox(SkyboxComponent const* skybox) -> void;
 LEOPPHAPI auto RegisterGameCamera(Camera const& cam) -> void;
 LEOPPHAPI auto UnregisterGameCamera(Camera const& cam) -> void;
 
-LEOPPHAPI auto CullLights(Camera const& cam, Visibility& visiblity) -> void;
-LEOPPHAPI auto CullStaticMeshes(Camera const& cam, Visibility& visibility) -> void;
+LEOPPHAPI auto CullLights(Frustum const& frust, Matrix4 const& viewMtx, Visibility& visibility) -> void;
+LEOPPHAPI auto CullStaticMeshComponents(Frustum const& frust, Matrix4 const& viewMtx, Visibility& visibility) -> void;
 
 LEOPPHAPI [[nodiscard]] auto CalculateCameraViewMatrix(Camera const& cam) noexcept -> Matrix4;
 LEOPPHAPI [[nodiscard]] auto CalculateCameraProjectionMatrix(Camera const& cam, float aspectRatio) noexcept -> Matrix4;
