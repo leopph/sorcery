@@ -182,7 +182,8 @@ auto DrawEntityHierarchyWindow(Context& context) -> void {
 
 		auto entities{ context.GetScene()->GetEntities() };
 
-		auto const displayEntityRecursive{[&entities, &context](this auto self, Entity& entity) -> void {
+		auto const displayEntityRecursive{
+			[&entities, &context](this auto self, Entity& entity) -> void {
 				ImGuiTreeNodeFlags nodeFlags{ baseFlags };
 
 				if (entity.GetTransform().GetChildren().empty()) {
@@ -242,7 +243,8 @@ auto DrawEntityHierarchyWindow(Context& context) -> void {
 					}
 					ImGui::TreePop();
 				}
-			}};
+			}
+		};
 
 		for (std::size_t i = 0; i < entities.size(); i++) {
 			if (!entities[i]->GetTransform().GetParent()) {
@@ -378,7 +380,9 @@ auto DrawSceneViewWindow(Context& context) -> void {
 				posDelta *= 2;
 			}
 
-			editorCam.position += editorCam.orientation.Rotate(posDelta) * timing::GetFrameTime() * 2;
+			float constexpr editorCamSpeed{ 5.0f };
+
+			editorCam.position += editorCam.orientation.Rotate(posDelta) * editorCamSpeed * timing::GetFrameTime();
 
 			auto const [mouseX, mouseY]{ gWindow.GetMouseDelta() };
 			auto constexpr sens{ 0.05f };
