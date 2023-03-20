@@ -34,7 +34,7 @@ public:
 	[[nodiscard]] LEOPPHAPI auto GetEntities() const noexcept -> std::span<std::unique_ptr<Entity> const>;
 
 	LEOPPHAPI auto Serialize(std::vector<std::uint8_t>& out) const noexcept -> void override;
-	LEOPPHAPI auto Deserialize(std::span<std::uint8_t const> bytes) -> void override;
+	LEOPPHAPI auto Deserialize(std::span<std::uint8_t const> bytes) -> void;
 
 	LEOPPHAPI auto Save() -> void;
 	LEOPPHAPI auto Load(ObjectInstantiatorManager const& manager) -> void;

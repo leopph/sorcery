@@ -74,6 +74,5 @@ public:
 	LEOPPHAPI static Type const SerializationType;
 
 	LEOPPHAPI auto Serialize(std::vector<std::uint8_t>& out) const noexcept -> void override;
-	LEOPPHAPI auto Deserialize(std::span<std::uint8_t const> bytes) -> void override;
 };
 }
