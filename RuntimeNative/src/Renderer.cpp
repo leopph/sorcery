@@ -10,7 +10,6 @@
 #include "Mesh.hpp"
 
 #ifndef NDEBUG
-#include "shaders/generated/MeshBlinnPhongPSBinDebug.h"
 #include "shaders/generated/MeshPbrPSBinDebug.h"
 #include "shaders/generated/MeshVSBinDebug.h"
 #include "shaders/generated/ToneMapGammaPSBinDebug.h"
@@ -20,7 +19,6 @@
 #include "shaders/generated/ScreenVSBinDebug.h"
 
 #else
-#include "shaders/generated/MeshBlinnPhongPSBin.h"
 #include "shaders/generated/MeshPbrPSBin.h"
 #include "shaders/generated/MeshVSBin.h"
 #include "shaders/generated/ToneMapGammaPSBin.h"
@@ -77,7 +75,6 @@ struct Resources {
 	ComPtr<ID3D11DepthStencilView> gameDSV;
 	ComPtr<ID3D11DepthStencilView> sceneDSV;
 
-	ComPtr<ID3D11PixelShader> meshBlinnPhongPS;
 	ComPtr<ID3D11VertexShader> meshVS;
 	ComPtr<ID3D11PixelShader> meshPbrPS;
 	ComPtr<ID3D11PixelShader> toneMapGammaPS;
@@ -750,10 +747,6 @@ auto CreateInputLayouts() -> void {
 auto CreateShaders() -> void {
 	if (FAILED(gResources->device->CreateVertexShader(gMeshVSBin, ARRAYSIZE(gMeshVSBin), nullptr, gResources->meshVS.GetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create mesh vertex shader." };
-	}
-
-	if (FAILED(gResources->device->CreatePixelShader(gMeshBlinnPhongPSBin, ARRAYSIZE(gMeshBlinnPhongPSBin), nullptr, gResources->meshBlinnPhongPS.GetAddressOf()))) {
-		throw std::runtime_error{ "Failed to create mesh blinn-phong pixel shader." };
 	}
 
 	if (FAILED(gResources->device->CreatePixelShader(gMeshPbrPSBin, ARRAYSIZE(gMeshPbrPSBin), nullptr, gResources->meshPbrPS.GetAddressOf()))) {
