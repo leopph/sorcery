@@ -1307,8 +1307,8 @@ auto CalculatePunctualShadowAtlasAllocation(Visibility const& visibility, Vector
 				Vector2 const bottomLeft{ -1, -1 };
 				Vector2 const topRight{ 1, 1 };
 
-				Vector2 min{ bottomLeft };
-				Vector2 max{ topRight };
+				Vector2 min{ std::numeric_limits<float>::max() };
+				Vector2 max{ std::numeric_limits<float>::lowest() };
 
 				for (auto& boundVertex : boundVertices) {
 					boundVertex *= mvp;
