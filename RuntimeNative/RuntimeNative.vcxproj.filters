@@ -45,7 +45,7 @@
     <ClCompile Include="src\Image.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\AABB.cpp">
+    <ClCompile Include="src\Bounds.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Systems.cpp">
@@ -134,7 +134,7 @@
     <ClInclude Include="src\Object.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\AABB.hpp">
+    <ClInclude Include="src\Bounds.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Image.hpp">

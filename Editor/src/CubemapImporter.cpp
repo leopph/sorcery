@@ -8,10 +8,13 @@
 #include <array>
 #include <algorithm>
 
+#include "Math.hpp"
+
 namespace leopph {
 auto editor::CubemapImporter::GetSupportedExtensions() const -> std::string {
 	return "png,jpg,jpeg,tga,bmp,psd,gif,hdr,pic";
 }
+
 
 auto editor::CubemapImporter::Import(InputImportInfo const& importInfo, std::filesystem::path const& cacheDir) -> Object* {
 	int width;
@@ -85,6 +88,7 @@ auto editor::CubemapImporter::Import(InputImportInfo const& importInfo, std::fil
 
 	return nullptr;
 }
+
 
 auto editor::CubemapImporter::GetPrecedence() const noexcept -> int {
 	return 0;

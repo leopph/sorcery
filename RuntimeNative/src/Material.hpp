@@ -1,6 +1,6 @@
 #pragma once
 
-#include "AABB.hpp"
+#include "Bounds.hpp"
 #include "Color.hpp"
 #include "NativeAsset.hpp"
 #include "Util.hpp"

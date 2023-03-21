@@ -1887,31 +1887,14 @@ auto CullLights(Frustum const& frust, Matrix4 const& viewMtx, Visibility& visibi
 		case LightComponent::Type::Spot: {
 			auto const range{ light->GetRange() };
 			auto const boundXY{ std::tan(ToRadians(light->GetOuterAngle())) * range };
-			std::array const boundVertices{
-				Vector3{ 0, 0, 0.1f },
-				Vector3{ boundXY, boundXY, range },
-				Vector3{ -boundXY, boundXY, range },
-				Vector3{ boundXY, -boundXY, range },
-				Vector3{ -boundXY, -boundXY, range },
+			AABB const bounds{
+				.min = Vector3{ -boundXY, -boundXY, 0.1f },
+				.max = Vector3{ boundXY, boundXY, range }
 			};
 
-			auto const bounds{
-				[](std::span<Vector3 const> const vertices) {
-					AABB ret{
-						.min = Vector3{ std::numeric_limits<float>::max() },
-						.max = Vector3{ std::numeric_limits<float>::lowest() }
-					};
+			auto const modelViewMtx{ light->GetEntity()->GetTransform().GetModelMatrix() * viewMtx };
 
-					for (auto const& vertex : vertices) {
-						ret.min = Min(ret.min, vertex);
-						ret.max = Max(ret.max, vertex);
-					}
-
-					return ret;
-				}(boundVertices)
-			};
-
-			if (is_aabb_in_frustum(bounds, frust, light->GetEntity()->GetTransform().GetModelMatrix() * viewMtx)) {
+			if (bounds.IsInFrustum(frust, modelViewMtx)) {
 				visibility.lightIndices.emplace_back(lightIdx);
 			}
 
@@ -1919,15 +1902,14 @@ auto CullLights(Frustum const& frust, Matrix4 const& viewMtx, Visibility& visibi
 		}
 
 		case LightComponent::Type::Point: {
-			auto const range{ light->GetRange() };
-			auto const boundsOffset{ Normalized(Vector3{ 1, 1, 1 }) * range };
-
-			AABB const bounds{
-				.min = -boundsOffset,
-				.max = boundsOffset,
+			BoundingSphere const bounds{
+				.center = Vector3{ 0 },
+				.radius = light->GetRange()
 			};
 
-			if (is_aabb_in_frustum(bounds, frust, light->GetEntity()->GetTransform().GetModelMatrix() * viewMtx)) {
+			auto const modelViewMtx{ light->GetEntity()->GetTransform().GetModelMatrix() * viewMtx };
+
+			if (bounds.IsInFrustum(frust, modelViewMtx)) {
 				visibility.lightIndices.emplace_back(lightIdx);
 			}
 			break;
@@ -1941,7 +1923,7 @@ auto CullStaticMeshComponents(Frustum const& frust, Matrix4 const& viewMtx, Visi
 	visibility.staticMeshIndices.clear();
 
 	for (int i = 0; i < static_cast<int>(gStaticMeshComponents.size()); i++) {
-		if (is_aabb_in_frustum(gStaticMeshComponents[i]->GetMesh().GetBounds(), frust, gStaticMeshComponents[i]->GetEntity()->GetTransform().GetModelMatrix() * viewMtx)) {
+		if (gStaticMeshComponents[i]->GetMesh().GetBounds().IsInFrustum(frust, gStaticMeshComponents[i]->GetEntity()->GetTransform().GetModelMatrix() * viewMtx)) {
 			visibility.staticMeshIndices.emplace_back(i);
 		}
 	}

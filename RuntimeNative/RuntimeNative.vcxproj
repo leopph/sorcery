@@ -109,7 +109,7 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\AABB.cpp" />
+    <ClCompile Include="src\Bounds.cpp" />
     <ClCompile Include="src\BehaviorComponent.cpp" />
     <ClCompile Include="src\CameraComponent.cpp" />
     <ClCompile Include="src\Color.cpp" />
@@ -141,7 +141,7 @@
     <ClCompile Include="src\TransformComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\AABB.hpp" />
+    <ClInclude Include="src\Bounds.hpp" />
     <ClInclude Include="src\BehaviorComponent.hpp" />
     <ClInclude Include="src\CameraComponent.hpp" />
     <ClInclude Include="src\Component.hpp" />

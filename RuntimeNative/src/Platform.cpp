@@ -3,6 +3,7 @@
 #include <hidusage.h>
 #include <cassert>
 #include <memory>
+#include <stdexcept>
 
 
 namespace leopph {
@@ -13,6 +14,7 @@ enum class KeyState : u8 {
 	Held    = 2,
 	Up      = 3
 };
+
 
 KeyState gKeyboardState[256]{};
 }
@@ -268,9 +270,11 @@ auto Window::IsCursorLocked() const noexcept -> bool {
 	return mLockedCursorPos.has_value();
 }
 
+
 auto Window::LockCursor(Point2D<i32> const pos) noexcept -> void {
 	mLockedCursorPos = pos;
 }
+
 
 auto Window::UnlockCursor() noexcept -> void {
 	mLockedCursorPos.reset();
@@ -313,11 +317,13 @@ auto Window::SetIgnoreManagedRequests(bool const ignore) noexcept -> void {
 	mIgnoreManagedRequests = ignore;
 }
 
+
 auto Window::ScreenCoordinateToClient(Point2D<i32> const screenCoord) const noexcept -> Point2D<i32> {
 	POINT p{ screenCoord.x, screenCoord.y };
 	ScreenToClient(mHwnd, &p);
 	return { p.x, p.y };
 }
+
 
 auto Window::ClientCoordinateToScreen(Point2D<i32> const clientCoord) const noexcept -> Point2D<i32> {
 	POINT p{ clientCoord.x, clientCoord.y };

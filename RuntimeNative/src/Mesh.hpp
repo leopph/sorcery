@@ -2,7 +2,7 @@
 
 #include "Object.hpp"
 #include "Math.hpp"
-#include "AABB.hpp"
+#include "Bounds.hpp"
 
 #include <span>
 #include <vector>
@@ -21,6 +21,7 @@ public:
 		int firstIndex;
 		int indexCount;
 	};
+
 
 	struct Data {
 		std::vector<Vector3> positions;

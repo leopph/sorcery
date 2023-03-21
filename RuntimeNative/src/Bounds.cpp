@@ -1,4 +1,4 @@
-#include "AABB.hpp"
+#include "Bounds.hpp"
 
 #include <algorithm>
 #include <array>
@@ -6,18 +6,42 @@
 
 
 namespace leopph {
-bool is_aabb_in_frustum(AABB const& aabb, Frustum const& frustum, Matrix4 const& modelViewMat) {
-	auto const boxVerticesViewSpace = [&aabb, &modelViewMat] {
+bool BoundingSphere::IsInFrustum(Frustum const& frustum, Matrix4 const& modelViewMat) const noexcept {
+	auto const sphereCenterViewSpace{ Vector3{ Vector4{ center, 1 } * modelViewMat } };
+	auto const sphereRadiusViewSpace{ Length(Vector3{ Vector4{ center + Normalize(Vector3{ 1 }) * radius, 1 } * modelViewMat } - sphereCenterViewSpace) };
+
+	std::array const frustumVerticesViewSpace
+	{
+		frustum.leftBottomFar,
+		frustum.leftBottomNear,
+		frustum.leftTopFar,
+		frustum.leftTopNear,
+		frustum.rightBottomFar,
+		frustum.rightBottomNear,
+		frustum.rightTopFar,
+		frustum.rightTopNear
+	};
+
+	/*std::array const frustumPlaneNormalsViewSpace{
+
+	};*/
+
+	return true;
+}
+
+
+bool AABB::IsInFrustum(Frustum const& frustum, Matrix4 const& modelViewMat) const noexcept {
+	auto const boxVerticesViewSpace = [this, &modelViewMat] {
 		std::array boxVertices
 		{
-			Vector3{ aabb.min[0], aabb.min[1], aabb.min[2] },
-			Vector3{ aabb.max[0], aabb.min[1], aabb.min[2] },
-			Vector3{ aabb.min[0], aabb.max[1], aabb.min[2] },
-			Vector3{ aabb.max[0], aabb.max[1], aabb.min[2] },
-			Vector3{ aabb.min[0], aabb.min[1], aabb.max[2] },
-			Vector3{ aabb.max[0], aabb.min[1], aabb.max[2] },
-			Vector3{ aabb.min[0], aabb.max[1], aabb.max[2] },
-			Vector3{ aabb.max[0], aabb.max[1], aabb.max[2] },
+			Vector3{ this->min[0], this->min[1], this->min[2] },
+			Vector3{ this->max[0], this->min[1], this->min[2] },
+			Vector3{ this->min[0], this->max[1], this->min[2] },
+			Vector3{ this->max[0], this->max[1], this->min[2] },
+			Vector3{ this->min[0], this->min[1], this->max[2] },
+			Vector3{ this->max[0], this->min[1], this->max[2] },
+			Vector3{ this->min[0], this->max[1], this->max[2] },
+			Vector3{ this->max[0], this->max[1], this->max[2] },
 		};
 
 		for (auto& vertex : boxVertices) {
@@ -58,8 +82,8 @@ bool is_aabb_in_frustum(AABB const& aabb, Frustum const& frustum, Matrix4 const&
 	// Tests whether the bounding box and the frustum overlap when projected onto the passed axes
 	auto const overlapOnAxes = [&boxVerticesViewSpace, &frustumVerticesViewSpace](std::span<Vector3 const> const axes) {
 		for (auto const& normal : axes) {
-			auto boxMin = std::numeric_limits<f32>::max();
-			auto boxMax = std::numeric_limits<f32>::lowest();
+			auto boxMin = std::numeric_limits<float>::max();
+			auto boxMax = std::numeric_limits<float>::lowest();
 
 			for (auto const& vertex : boxVerticesViewSpace) {
 				auto const proj = Dot(vertex, normal);
@@ -67,8 +91,8 @@ bool is_aabb_in_frustum(AABB const& aabb, Frustum const& frustum, Matrix4 const&
 				boxMax = std::max(proj, boxMax);
 			}
 
-			auto frustMin = std::numeric_limits<f32>::max();
-			auto frustMax = std::numeric_limits<f32>::lowest();
+			auto frustMin = std::numeric_limits<float>::max();
+			auto frustMax = std::numeric_limits<float>::lowest();
 
 			for (auto const& vertex : frustumVerticesViewSpace) {
 				auto const proj = Dot(vertex, normal);
