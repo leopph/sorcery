@@ -101,6 +101,9 @@ template<typename T, int N>
 template<typename T, int N>
 auto Normalize(Vector<T, N>& vector) noexcept -> Vector<T, N>&;
 
+template<typename T, int N>
+auto Normalize(Vector<T, N>&& vector) noexcept -> Vector<T, N>&&;
+
 template<typename T, int N> requires (N > 1)
 [[nodiscard]] constexpr auto Dot(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> T;
 
@@ -649,6 +652,12 @@ auto Normalize(Vector<T, N>& vector) noexcept -> Vector<T, N>& {
 	}
 
 	return vector;
+}
+
+
+template<typename T, int N>
+auto Normalize(Vector<T, N>&& vector) noexcept -> Vector<T, N>&& {
+	return std::move(Normalize(vector));
 }
 
 
