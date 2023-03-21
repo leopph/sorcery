@@ -120,9 +120,9 @@ auto StaticMeshComponent::Deserialize(YAML::Node const& node) -> void {
 
 
 auto StaticMeshComponent::CalculateBounds() const noexcept -> AABB {
-	auto const& [localMin, localMax]{ mMesh->GetBounds() };
+	auto const& localBounds{ mMesh->GetBounds() };
 	auto const modelMtx{ GetEntity()->GetTransform().GetModelMatrix() };
-	std::array boundsVertices{ localMin, localMax };
+	auto boundsVertices{ localBounds.CalculateVertices() };
 
 	for (auto& vertex : boundsVertices) {
 		vertex = Vector3{ Vector4{ vertex, 1 } * modelMtx };
