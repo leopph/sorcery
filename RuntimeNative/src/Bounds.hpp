@@ -2,6 +2,8 @@
 
 #include "Math.hpp"
 
+#include <span>
+
 
 namespace leopph {
 struct Frustum {
@@ -20,7 +22,7 @@ struct BoundingSphere {
 	Vector3 center;
 	float radius;
 
-	[[nodiscard]] bool IsInFrustum(Frustum const& frustum, Matrix4 const& modelViewMat) const noexcept;
+	[[nodiscard]] auto IsInFrustum(Frustum const& frustum, Matrix4 const& modelViewMat) const noexcept -> bool;
 };
 
 
@@ -28,6 +30,8 @@ struct AABB {
 	Vector3 min;
 	Vector3 max;
 
-	[[nodiscard]] bool IsInFrustum(Frustum const& frustum, Matrix4 const& modelViewMat) const noexcept;
+
+	[[nodiscard]] static auto FromVertices(std::span<Vector3 const> vertices) noexcept -> AABB;
+	[[nodiscard]] auto IsInFrustum(Frustum const& frustum, Matrix4 const& modelViewMat) const noexcept -> bool;
 };
 }

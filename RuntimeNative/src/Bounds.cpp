@@ -30,6 +30,21 @@ bool BoundingSphere::IsInFrustum(Frustum const& frustum, Matrix4 const& modelVie
 }
 
 
+auto AABB::FromVertices(std::span<Vector3 const> const vertices) noexcept -> AABB {
+	AABB bounds{
+		.min = Vector3{ std::numeric_limits<float>::max() },
+		.max = Vector3{ std::numeric_limits<float>::lowest() }
+	};
+
+	for (auto const& vertex : vertices) {
+		bounds.min = Min(bounds.min, vertex);
+		bounds.max = Max(bounds.max, vertex);
+	}
+
+	return bounds;
+}
+
+
 bool AABB::IsInFrustum(Frustum const& frustum, Matrix4 const& modelViewMat) const noexcept {
 	auto const boxVerticesViewSpace = [this, &modelViewMat] {
 		std::array boxVertices
