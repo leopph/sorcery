@@ -1,6 +1,8 @@
 #include "StaticMeshComponent.hpp"
 
+#include "Entity.hpp"
 #include "Renderer.hpp"
+#include "TransformComponent.hpp"
 
 namespace leopph {
 Object::Type const StaticMeshComponent::SerializationType{ Type::StaticMesh };
@@ -114,5 +116,18 @@ auto StaticMeshComponent::Deserialize(YAML::Node const& node) -> void {
 	if (mMaterials.empty()) {
 		AddMaterial(*renderer::GetDefaultMaterial());
 	}
+}
+
+
+auto StaticMeshComponent::CalculateBounds() const noexcept -> AABB {
+	auto const& [localMin, localMax]{ mMesh->GetBounds() };
+	auto const modelMtx{ GetEntity()->GetTransform().GetModelMatrix() };
+	std::array boundsVertices{ localMin, localMax };
+
+	for (auto& vertex : boundsVertices) {
+		vertex = Vector3{ Vector4{ vertex, 1 } * modelMtx };
+	}
+
+	return AABB::FromVertices(boundsVertices);
 }
 }

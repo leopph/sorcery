@@ -32,5 +32,7 @@ public:
 
 	auto Serialize(YAML::Node& node) const -> void override;
 	auto Deserialize(YAML::Node const& node) -> void override;
+
+	LEOPPHAPI [[nodiscard]] auto CalculateBounds() const noexcept -> AABB;
 };
 }
