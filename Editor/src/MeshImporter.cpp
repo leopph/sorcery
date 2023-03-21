@@ -15,6 +15,7 @@ namespace leopph::editor {
 class MeshImporter::Impl {
 	Assimp::Importer mImporter;
 
+
 	[[nodiscard]] static auto ConvertMatrix(aiMatrix4x4 const& aiMat) noexcept -> Matrix4 {
 		return Matrix4{
 			aiMat.a1, aiMat.a2, aiMat.a3, aiMat.a4,
@@ -23,6 +24,7 @@ class MeshImporter::Impl {
 			aiMat.d1, aiMat.d2, aiMat.d3, aiMat.d4
 		};
 	}
+
 
 	[[nodiscard]] static auto ConvertVector(aiVector3D const& aiVec) noexcept -> Vector3 {
 		return Vector3{ aiVec.x, aiVec.y, aiVec.z };
@@ -37,6 +39,7 @@ public:
 		std::erase(ret, '.');
 		return ret;
 	}
+
 
 	[[nodiscard]] auto Import(std::filesystem::path const& path) -> Mesh::Data {
 		mImporter.SetPropertyInteger(AI_CONFIG_PP_RVC_FLAGS, aiComponent_ANIMATIONS | aiComponent_BONEWEIGHTS | aiComponent_CAMERAS | aiComponent_LIGHTS | aiComponent_COLORS);
@@ -59,6 +62,7 @@ public:
 
 		while (!queue.empty()) {
 			auto const& [trafo, node] = queue.front();
+			auto const trafoInverseTranspose{ trafo.Inverse().Transpose() };
 
 			for (std::size_t i = 0; i < node->mNumMeshes; ++i) {
 				// aiProcess_SortByPType will separate mixed-primitive meshes, so every mesh in theory should be clean and only contain one kind of primitive.
@@ -75,9 +79,10 @@ public:
 					ret.normals.reserve(ret.normals.size() + mesh->mNumVertices);
 					ret.uvs.reserve(ret.uvs.size() + mesh->mNumVertices);
 
+
 					for (unsigned j = 0; j < mesh->mNumVertices; j++) {
 						ret.positions.emplace_back(Vector4{ ConvertVector(mesh->mVertices[j]), 1 } * trafo);
-						ret.normals.emplace_back(Normalized(Vector3{ Vector4{ ConvertVector(mesh->mNormals[j]), 0 } * trafo }));
+						ret.normals.emplace_back(Normalized(Vector3{ Vector4{ ConvertVector(mesh->mNormals[j]), 0 } * trafoInverseTranspose }));
 						ret.uvs.emplace_back([mesh, j] {
 							for (std::size_t k = 0; k < AI_MAX_NUMBER_OF_TEXTURECOORDS; k++) {
 								if (mesh->HasTextureCoords(static_cast<unsigned>(k))) {
@@ -127,15 +132,19 @@ public:
 	}
 };
 
+
 MeshImporter::MeshImporter() : mImpl{ new Impl{} } {}
+
 
 MeshImporter::~MeshImporter() {
 	delete mImpl;
 }
 
+
 auto MeshImporter::GetSupportedExtensions() const -> std::string {
 	return mImpl->GetSupportedExtensions();
 }
+
 
 auto MeshImporter::Import(InputImportInfo const& importInfo, std::filesystem::path const& cacheDir) -> Object* {
 	auto const cachedDataPath{ cacheDir / importInfo.guid.ToString() };
@@ -220,6 +229,7 @@ auto MeshImporter::Import(InputImportInfo const& importInfo, std::filesystem::pa
 
 	return new Mesh{ std::move(meshData) };
 }
+
 
 auto MeshImporter::GetPrecedence() const noexcept -> int {
 	return 0;
