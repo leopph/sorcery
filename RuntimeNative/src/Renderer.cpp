@@ -1886,15 +1886,21 @@ auto CullLights(Frustum const& frust, Matrix4 const& viewMtx, Visibility& visibi
 
 		case LightComponent::Type::Spot: {
 			auto const range{ light->GetRange() };
-			auto const boundXY{ std::tan(ToRadians(light->GetOuterAngle())) * range };
-			AABB const bounds{
-				.min = Vector3{ -boundXY, -boundXY, 0.1f },
-				.max = Vector3{ boundXY, boundXY, range }
+			auto const coneBaseRadius{ std::tan(ToRadians(light->GetOuterAngle())) * range };
+
+			AABB const localBounds{
+				.min = Vector3{ -coneBaseRadius, -coneBaseRadius, 0.1f },
+				.max = Vector3{ coneBaseRadius, coneBaseRadius, range }
 			};
 
 			auto const modelViewMtx{ light->GetEntity()->GetTransform().GetModelMatrix() * viewMtx };
+			auto boundsVertices{ localBounds.CalculateVertices() };
 
-			if (bounds.IsInFrustum(frust, modelViewMtx)) {
+			for (auto& vertex : boundsVertices) {
+				vertex = Vector3{ Vector4{ vertex, 1 } * modelViewMtx };
+			}
+
+			if (frust.Intersects(AABB::FromVertices(boundsVertices))) {
 				visibility.lightIndices.emplace_back(lightIdx);
 			}
 
@@ -1902,7 +1908,7 @@ auto CullLights(Frustum const& frust, Matrix4 const& viewMtx, Visibility& visibi
 		}
 
 		case LightComponent::Type::Point: {
-			BoundingSphere const bounds{
+			/*BoundingSphere const bounds{
 				.center = Vector3{ 0 },
 				.radius = light->GetRange()
 			};
@@ -1911,7 +1917,7 @@ auto CullLights(Frustum const& frust, Matrix4 const& viewMtx, Visibility& visibi
 
 			if (bounds.IsInFrustum(frust, modelViewMtx)) {
 				visibility.lightIndices.emplace_back(lightIdx);
-			}
+			}*/
 			break;
 		}
 		}
@@ -1923,7 +1929,14 @@ auto CullStaticMeshComponents(Frustum const& frust, Matrix4 const& viewMtx, Visi
 	visibility.staticMeshIndices.clear();
 
 	for (int i = 0; i < static_cast<int>(gStaticMeshComponents.size()); i++) {
-		if (gStaticMeshComponents[i]->GetMesh().GetBounds().IsInFrustum(frust, gStaticMeshComponents[i]->GetEntity()->GetTransform().GetModelMatrix() * viewMtx)) {
+		auto const worldBounds{ gStaticMeshComponents[i]->CalculateBounds() };
+		auto boundsVertices{ worldBounds.CalculateVertices() };
+
+		for (auto& vertex : boundsVertices) {
+			vertex = Vector3{ Vector4{ vertex, 1 } * viewMtx };
+		}
+
+		if (frust.Intersects(AABB::FromVertices(boundsVertices))) {
 			visibility.staticMeshIndices.emplace_back(i);
 		}
 	}
