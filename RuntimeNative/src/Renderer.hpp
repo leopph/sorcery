@@ -87,11 +87,8 @@ public:
 
 
 struct Visibility {
-	std::span<LightComponent const*> allLights;
-	std::vector<int> visibleLightIndices;
-
-	std::span<StaticMeshComponent const*> allStaticMeshes;
-	std::vector<int> visibleStaticMeshIndices;
+	std::vector<int> lightIndices;
+	std::vector<int> staticMeshIndices;
 };
 
 
