@@ -1893,11 +1893,23 @@ auto CullLights(Frustum const& frust, Matrix4 const& viewMtx, Visibility& visibi
 				.max = Vector3{ coneBaseRadius, coneBaseRadius, range }
 			};
 
-			auto const modelViewMtx{ light->GetEntity()->GetTransform().GetModelMatrix() * viewMtx };
+			auto const modelMtxNoScale{
+				[light] {
+					auto mtx{ light->GetEntity()->GetTransform().GetModelMatrix() };
+					auto const lightScale{ light->GetEntity()->GetTransform().GetWorldScale() };
+
+					for (int i = 0; i < 3; i++) {
+						mtx[i] = Vector4{ Vector3{ mtx[i] } / lightScale, mtx[i][3] };
+					}
+
+					return mtx;
+				}()
+			};
+			auto const modelViewMtxNoScale{ modelMtxNoScale * viewMtx };
 			auto boundsVertices{ localBounds.CalculateVertices() };
 
 			for (auto& vertex : boundsVertices) {
-				vertex = Vector3{ Vector4{ vertex, 1 } * modelViewMtx };
+				vertex = Vector3{ Vector4{ vertex, 1 } * modelViewMtxNoScale };
 			}
 
 			if (frust.Intersects(AABB::FromVertices(boundsVertices))) {
