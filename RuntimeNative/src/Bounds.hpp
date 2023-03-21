@@ -33,5 +33,6 @@ struct AABB {
 
 	[[nodiscard]] static auto FromVertices(std::span<Vector3 const> vertices) noexcept -> AABB;
 	[[nodiscard]] auto IsInFrustum(Frustum const& frustum, Matrix4 const& modelViewMat) const noexcept -> bool;
+	[[nodiscard]] auto CalculateVertices() const noexcept -> std::array<Vector3, 8>;
 };
 }
