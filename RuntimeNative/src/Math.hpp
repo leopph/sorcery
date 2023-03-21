@@ -182,6 +182,12 @@ template<typename T, int N>
 template<typename T, int N>
 [[nodiscard]] auto Max(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> Vector<T, N>;
 
+template<typename T, int N>
+[[nodiscard]] auto ScalarProject(Vector<T, N> const& what, Vector<T, N> const& onto) noexcept -> float;
+
+template<typename T, int N>
+[[nodiscard]] auto VectorProject(Vector<T, N> const& what, Vector<T, N> const& onto) noexcept -> Vector<T, N>;
+
 #ifdef LEOPPH_MATH_USE_INTRINSICS
 template<>
 [[nodiscard]] inline auto Length(Vector3 const& vector) noexcept -> float;
@@ -914,6 +920,18 @@ auto Max(Vector<T, N> const& left, Vector<T, N> const& right) noexcept -> Vector
 		ret[i] = std::max(left[i], right[i]);
 	}
 	return ret;
+}
+
+
+template<typename T, int N>
+auto ScalarProject(Vector<T, N> const& what, Vector<T, N> const& onto) noexcept -> float {
+	return Dot(what, Normalized(onto));
+}
+
+
+template<typename T, int N>
+auto VectorProject(Vector<T, N> const& what, Vector<T, N> const& onto) noexcept -> Vector<T, N> {
+	return ScalarProject(what, onto) * Normalized(onto);
 }
 
 
