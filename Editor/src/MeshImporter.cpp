@@ -16,18 +16,18 @@ class MeshImporter::Impl {
 	Assimp::Importer mImporter;
 
 
-	[[nodiscard]] static auto ConvertMatrix(aiMatrix4x4 const& aiMat) noexcept -> Matrix4 {
+	[[nodiscard]] static auto Convert(aiVector3D const& aiVec) noexcept -> Vector3 {
+		return Vector3{ aiVec.x, aiVec.y, aiVec.z };
+	}
+
+
+	[[nodiscard]] static auto Convert(aiMatrix4x4 const& aiMat) noexcept -> Matrix4 {
 		return Matrix4{
 			aiMat.a1, aiMat.a2, aiMat.a3, aiMat.a4,
 			aiMat.b1, aiMat.b2, aiMat.b3, aiMat.b4,
 			aiMat.c1, aiMat.c2, aiMat.c3, aiMat.c4,
 			aiMat.d1, aiMat.d2, aiMat.d3, aiMat.d4
 		};
-	}
-
-
-	[[nodiscard]] static auto ConvertVector(aiVector3D const& aiVec) noexcept -> Vector3 {
-		return Vector3{ aiVec.x, aiVec.y, aiVec.z };
 	}
 
 public:
@@ -52,19 +52,20 @@ public:
 
 		Mesh::Data ret;
 
-		struct TransformedNodeData {
-			Matrix4 transform;
+		struct NodeProcessingInfo {
+			Matrix4 accumParentTrafo;
 			aiNode const* node;
 		};
 
-		std::queue<TransformedNodeData> queue;
-		queue.emplace(ConvertMatrix(scene->mRootNode->mTransformation).Transpose() * Matrix4{ 1, 1, -1, 1 }, scene->mRootNode);
+		std::queue<NodeProcessingInfo> queue;
+		queue.emplace(Matrix4{ 1, 1, -1, 1 }, scene->mRootNode);
 
 		while (!queue.empty()) {
-			auto const& [trafo, node] = queue.front();
+			auto const& [accumParentTrafo, node] = queue.front();
+			auto const trafo{ Convert(node->mTransformation).Transpose() * accumParentTrafo };
 			auto const trafoInverseTranspose{ trafo.Inverse().Transpose() };
 
-			for (std::size_t i = 0; i < node->mNumMeshes; ++i) {
+			for (unsigned i = 0; i < node->mNumMeshes; ++i) {
 				// aiProcess_SortByPType will separate mixed-primitive meshes, so every mesh in theory should be clean and only contain one kind of primitive.
 				// Testing for one type only is therefore safe, but triangle meshes have to be checked for NGON encoding too.
 				if (auto const* const mesh = scene->mMeshes[node->mMeshes[i]]; mesh->mPrimitiveTypes & aiPrimitiveType_TRIANGLE) {
@@ -81,12 +82,12 @@ public:
 
 
 					for (unsigned j = 0; j < mesh->mNumVertices; j++) {
-						ret.positions.emplace_back(Vector4{ ConvertVector(mesh->mVertices[j]), 1 } * trafo);
-						ret.normals.emplace_back(Normalized(Vector3{ Vector4{ ConvertVector(mesh->mNormals[j]), 0 } * trafoInverseTranspose }));
+						ret.positions.emplace_back(Vector4{ Convert(mesh->mVertices[j]), 1 } * trafo);
+						ret.normals.emplace_back(Normalized(Vector3{ Vector4{ Convert(mesh->mNormals[j]), 0 } * trafoInverseTranspose }));
 						ret.uvs.emplace_back([mesh, j] {
-							for (std::size_t k = 0; k < AI_MAX_NUMBER_OF_TEXTURECOORDS; k++) {
+							for (int k = 0; k < AI_MAX_NUMBER_OF_TEXTURECOORDS; k++) {
 								if (mesh->HasTextureCoords(static_cast<unsigned>(k))) {
-									return Vector2{ ConvertVector(mesh->mTextureCoords[k][j]) };
+									return Vector2{ Convert(mesh->mTextureCoords[k][j]) };
 								}
 							}
 							return Vector2{};
@@ -101,6 +102,7 @@ public:
 
 					ret.subMeshes.emplace_back(clamp_cast<int>(prevVertCount), clamp_cast<int>(prevIdxCount), clamp_cast<int>(ret.indices.size() - prevIdxCount));
 				}
+				/*
 				else {
 					std::string primitiveType;
 
@@ -116,13 +118,13 @@ public:
 						primitiveType += " [N>3 polygons]";
 					}
 
-					// TODO Implement non-triangle rendering support
-					//Logger::get_instance().debug(std::format("Ignoring non-triangle mesh in model file at {}. Primitives in the mesh are {}.", path.string(), primitiveType));
-				}
+					TODO Implement non-triangle rendering support
+					Logger::get_instance().debug(std::format("Ignoring non-triangle mesh in model file at {}. Primitives in the mesh are {}.", path.string(), primitiveType));
+				}*/
 			}
 
-			for (std::size_t i = 0; i < node->mNumChildren; ++i) {
-				queue.emplace(ConvertMatrix(node->mChildren[i]->mTransformation).Transpose() * trafo, node->mChildren[i]);
+			for (unsigned i = 0; i < node->mNumChildren; ++i) {
+				queue.emplace(trafo, node->mChildren[i]);
 			}
 
 			queue.pop();
