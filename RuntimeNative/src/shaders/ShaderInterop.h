@@ -74,8 +74,7 @@ struct ShaderLight {
 
 	uint atlasQuadrantIdx;
 	uint atlasCellIdx;
-	float shadowBias;
-	float pad;
+	float2 pad;
 };
 
 
@@ -125,7 +124,7 @@ CBUFFER(SkyboxCB, CB_SLOT_SKYBOX_PASS) {
 
 
 CBUFFER(ShadowCB, CB_SLOT_SHADOW_PASS) {
-	row_major float4x4 lightViewProjMtx;
+	row_major float4x4 shadowBiasedViewProjMtx;
 };
 
 

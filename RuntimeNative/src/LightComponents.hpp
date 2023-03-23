@@ -63,7 +63,7 @@ private:
 	f32 mRange{ 10.f };
 	f32 mInnerAngle{ 30.f };
 	f32 mOuterAngle{ 30.f };
-	float mShadowBias{ 0.001f };
+	float mShadowBias{ 0.01f };
 };
 
 

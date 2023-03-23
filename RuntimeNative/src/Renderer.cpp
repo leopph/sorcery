@@ -111,6 +111,7 @@ struct Resources {
 
 struct ShadowAtlasCellData {
 	Matrix4 lightViewMtx;
+	Matrix4 lightShadowBiasedViewProjMtx;
 	Matrix4 lightViewProjMtx;
 	// Index into the array of indices to the visible lights, use lights[visibleLights[visibleLightIdxIdx]] to get to the light
 	int visibleLightIdxIdx;
@@ -1237,7 +1238,7 @@ auto DrawShadowMaps(Visibility const& visibility, ShadowAtlasAllocation const& a
 
 				D3D11_MAPPED_SUBRESOURCE mapped;
 				gResources->context->Map(gResources->shadowCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
-				static_cast<ShadowCB*>(mapped.pData)->lightViewProjMtx = cells[j]->lightViewProjMtx;
+				static_cast<ShadowCB*>(mapped.pData)->shadowBiasedViewProjMtx = cells[j]->lightShadowBiasedViewProjMtx;
 				gResources->context->Unmap(gResources->shadowCB.Get(), 0);
 
 				auto const shadowFrustum{
@@ -1390,6 +1391,11 @@ auto CalculatePunctualShadowAtlasAllocation(Visibility const& visibility, Vector
 				                  light->GetEntity()->GetTransform().GetForwardAxis(),
 				                  Vector3::Up())
 			};
+			auto const lightShadowBiasedViewMtx{
+				Matrix4::LookToLH(light->GetEntity()->GetTransform().GetWorldPosition() - light->GetEntity()->GetTransform().GetForwardAxis() * light->GetShadowBias(),
+				                  light->GetEntity()->GetTransform().GetForwardAxis(),
+				                  Vector3::Up())
+			};
 			auto const lightProjMtx{
 				Matrix4::PerspectiveAsymZLH(ToRadians(light->GetOuterAngle() * 2),
 				                            1.f,
@@ -1397,7 +1403,7 @@ auto CalculatePunctualShadowAtlasAllocation(Visibility const& visibility, Vector
 				                            light->GetRange())
 			};
 
-			cell.emplace(lightViewMtx, lightViewMtx * lightProjMtx, lightIdxIdx);
+			cell.emplace(lightViewMtx, lightShadowBiasedViewMtx * lightProjMtx, lightViewMtx * lightProjMtx, lightIdxIdx);
 		}
 
 		if (i + 1 < 4) {
@@ -1491,7 +1497,6 @@ auto DrawFullWithCameras(std::span<Camera const* const> const cameras, ID3D11Ren
 					mappedLightSBData[cells[j]->visibleLightIdxIdx].lightViewProjMtx = cells[j]->lightViewProjMtx;
 					mappedLightSBData[cells[j]->visibleLightIdxIdx].atlasQuadrantIdx = i;
 					mappedLightSBData[cells[j]->visibleLightIdxIdx].atlasCellIdx = j;
-					mappedLightSBData[cells[j]->visibleLightIdxIdx].shadowBias = gLights[visibility.lightIndices[cells[j]->visibleLightIdxIdx]]->GetShadowBias();
 				}
 			}
 		}

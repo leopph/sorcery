@@ -172,7 +172,7 @@ auto LightComponent::GetShadowBias() const noexcept -> float {
 
 
 auto LightComponent::SetShadowBias(float const bias) noexcept -> void {
-	mShadowBias = bias;
+	mShadowBias = std::max(bias, 0.0f);
 }
 
 
