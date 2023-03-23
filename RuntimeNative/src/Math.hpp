@@ -1931,22 +1931,18 @@ inline auto Quaternion::ToEulerAngles() const noexcept -> Vector3 {
 	Vector3 angles;
 
 	// roll (x-axis rotation)
-	auto const sinr_cosp = 2 * (w * x + y * z);
-	auto const cosr_cosp = 1 - 2 * (x * x + y * y);
+	auto const sinr_cosp{ 2 * (w * x + y * z) };
+	auto const cosr_cosp{ 1 - 2 * (x * x + y * y) };
 	angles[0] = std::atan2(sinr_cosp, cosr_cosp);
 
 	// pitch (y-axis rotation)
-	auto const sinp = 2 * (w * y - z * x);
-	if (std::abs(sinp) >= 1) {
-		angles[1] = std::copysign(PI / 2, sinp); // use 90 degrees if out of range
-	}
-	else {
-		angles[1] = std::asin(sinp);
-	}
+	auto const sinp{ std::sqrt(1 + 2 * (w * y - x * z)) };
+	auto const cosp{ std::sqrt(1 - 2 * (w * y - x * z)) };
+	angles[1] = 2 * std::atan2(sinp, cosp) - PI / 2;
 
 	// yaw (z-axis rotation)
-	auto const siny_cosp = 2 * (w * z + x * y);
-	auto const cosy_cosp = 1 - 2 * (y * y + z * z);
+	auto const siny_cosp{ 2 * (w * z + x * y) };
+	auto const cosy_cosp{ 1 - 2 * (y * y + z * z) };
 	angles[2] = std::atan2(siny_cosp, cosy_cosp);
 
 	for (int i = 0; i < 3; i++) {
