@@ -1922,16 +1922,14 @@ auto CullLights(Frustum const& frust, Matrix4 const& viewMtx, Visibility& visibi
 		}
 
 		case LightComponent::Type::Point: {
-			/*BoundingSphere const bounds{
-				.center = Vector3{ 0 },
+			BoundingSphere const viewBounds{
+				.center = Vector3{ Vector4{ light->GetEntity()->GetTransform().GetWorldPosition(), 1 } * viewMtx },
 				.radius = light->GetRange()
 			};
 
-			auto const modelViewMtx{ light->GetEntity()->GetTransform().GetModelMatrix() * viewMtx };
-
-			if (bounds.IsInFrustum(frust, modelViewMtx)) {
+			if (frust.Intersects(viewBounds)) {
 				visibility.lightIndices.emplace_back(lightIdx);
-			}*/
+			}
 			break;
 		}
 		}
