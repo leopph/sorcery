@@ -1290,6 +1290,18 @@ auto CalculateSpotLightLocalBounds(LightComponent const& spotLight) noexcept -> 
 }
 
 
+[[nodiscard]] auto CalculateModelMatrixNoScale(TransformComponent const& transform) noexcept {
+	auto mtx{ transform.GetModelMatrix() };
+	auto const scale{ transform.GetWorldScale() };
+
+	for (int i = 0; i < 3; i++) {
+		mtx[i] = Vector4{ Vector3{ mtx[i] } / scale, mtx[i][3] };
+	}
+
+	return mtx;
+}
+
+
 auto CalculatePunctualShadowAtlasAllocation(Visibility const& visibility, Vector3 const& camPos, Matrix4 const& camViewProjMtx, ShadowAtlasAllocation& alloc) -> void {
 	std::array<std::vector<int>, 4> static lightIndexIndicesInQuadrant{};
 
@@ -1308,42 +1320,52 @@ auto CalculatePunctualShadowAtlasAllocation(Visibility const& visibility, Vector
 				auto const localBounds{ CalculateSpotLightLocalBounds(*light) };
 				auto boundVertices{ localBounds.CalculateVertices() };
 
-				auto const mvp{ light->GetEntity()->GetTransform().GetModelMatrix() * camViewProjMtx };
-				Vector2 const bottomLeft{ -1, -1 };
-				Vector2 const topRight{ 1, 1 };
-
-				Vector2 min{ std::numeric_limits<float>::max() };
-				Vector2 max{ std::numeric_limits<float>::lowest() };
+				auto const modelMtxNoScale{ CalculateModelMatrixNoScale(light->GetEntity()->GetTransform()) };
 
 				for (auto& boundVertex : boundVertices) {
-					Vector4 boundVertex4{ boundVertex, 1 };
-					boundVertex4 *= mvp;
-					auto const projected{ Vector2{ boundVertex4 } / boundVertex4[3] };
-					min = Min(min, projected);
-					max = Max(max, projected);
-					min = Clamp(min, bottomLeft, topRight);
-					max = Clamp(max, bottomLeft, topRight);
+					boundVertex = Vector3{ Vector4{ boundVertex, 1 } * modelMtxNoScale };
 				}
-
-				auto const width{ max[0] - min[0] };
-				auto const height{ max[1] - min[1] };
-
-				auto const area{ width * height };
-				auto const coverage{ area / 4 };
 
 				std::optional<int> quadrantIdx;
 
-				if (coverage >= 1) {
+				if (auto const [worldMin, worldMax]{ AABB::FromVertices(boundVertices) };
+					worldMin[0] <= camPos[0] && worldMin[1] <= camPos[1] && worldMin[2] <= camPos[2] &&
+					worldMax[0] >= camPos[0] && worldMax[1] >= camPos[1] && worldMax[2] >= camPos[2]) {
 					quadrantIdx = 0;
 				}
-				else if (coverage >= 0.25f) {
-					quadrantIdx = 1;
-				}
-				else if (coverage >= 0.0625f) {
-					quadrantIdx = 2;
-				}
-				else if (coverage >= 0.015625f) {
-					quadrantIdx = 3;
+				else {
+					Vector2 const bottomLeft{ -1, -1 };
+					Vector2 const topRight{ 1, 1 };
+
+					Vector2 min{ std::numeric_limits<float>::max() };
+					Vector2 max{ std::numeric_limits<float>::lowest() };
+
+					for (auto const& boundVertex : boundVertices) {
+						Vector4 boundVertex4{ boundVertex, 1 };
+						boundVertex4 *= camViewProjMtx;
+						auto const projected{ Vector2{ boundVertex4 } / boundVertex4[3] };
+						min = Clamp(Min(min, projected), bottomLeft, topRight);
+						max = Clamp(Max(max, projected), bottomLeft, topRight);
+					}
+
+					auto const width{ max[0] - min[0] };
+					auto const height{ max[1] - min[1] };
+
+					auto const area{ width * height };
+					auto const coverage{ area / 4 };
+
+					if (coverage >= 1) {
+						quadrantIdx = 0;
+					}
+					else if (coverage >= 0.25f) {
+						quadrantIdx = 1;
+					}
+					else if (coverage >= 0.0625f) {
+						quadrantIdx = 2;
+					}
+					else if (coverage >= 0.015625f) {
+						quadrantIdx = 3;
+					}
 				}
 
 				if (quadrantIdx) {
@@ -1371,7 +1393,7 @@ auto CalculatePunctualShadowAtlasAllocation(Visibility const& visibility, Vector
 			auto const rightLightPos{ rightLight->GetEntity()->GetTransform().GetWorldPosition() };
 
 			auto const leftDist{ Distance(leftLightPos, camPos) };
-			auto const rightDist{ Distance(rightLightPos, camPos) };
+			auto const rightDist{ Distance(camPos, rightLightPos) };
 
 			return leftDist > rightDist;
 		});
@@ -1893,19 +1915,7 @@ auto CullLights(Frustum const& frust, Matrix4 const& viewMtx, Visibility& visibi
 		case LightComponent::Type::Spot: {
 			auto const localBounds{ CalculateSpotLightLocalBounds(*light) };
 
-			auto const modelMtxNoScale{
-				[light] {
-					auto mtx{ light->GetEntity()->GetTransform().GetModelMatrix() };
-					auto const lightScale{ light->GetEntity()->GetTransform().GetWorldScale() };
-
-					for (int i = 0; i < 3; i++) {
-						mtx[i] = Vector4{ Vector3{ mtx[i] } / lightScale, mtx[i][3] };
-					}
-
-					return mtx;
-				}()
-			};
-			auto const modelViewMtxNoScale{ modelMtxNoScale * viewMtx };
+			auto const modelViewMtxNoScale{ CalculateModelMatrixNoScale(light->GetEntity()->GetTransform()) * viewMtx };
 			auto boundsVertices{ localBounds.CalculateVertices() };
 
 			for (auto& vertex : boundsVertices) {
