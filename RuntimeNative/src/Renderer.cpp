@@ -1246,17 +1246,19 @@ auto DrawShadowMaps(Visibility const& visibility, ShadowAtlasAllocation const& a
 						case LightComponent::Type::Spot: {
 							auto const nearClipPlane{ light->GetShadowNearPlane() };
 							float const farClipPlane{ light->GetRange() };
-							auto const coneBaseRadius{ std::tan(light->GetOuterAngle()) * light->GetRange() };
+							auto const tanHalfFov{ std::tan(light->GetOuterAngle()) };
+							auto const nearPlaneHalfSide{ nearClipPlane * tanHalfFov };
+							auto const farPlaneHalfSide{ farClipPlane * tanHalfFov };
 
 							return Frustum{
-								.rightTopNear = Vector3{ coneBaseRadius, coneBaseRadius, nearClipPlane },
-								.leftTopNear = Vector3{ -coneBaseRadius, coneBaseRadius, nearClipPlane },
-								.leftBottomNear = Vector3{ -coneBaseRadius, -coneBaseRadius, nearClipPlane },
-								.rightBottomNear = Vector3{ coneBaseRadius, -coneBaseRadius, nearClipPlane },
-								.rightTopFar = Vector3{ coneBaseRadius, coneBaseRadius, farClipPlane },
-								.leftTopFar = Vector3{ -coneBaseRadius, coneBaseRadius, farClipPlane },
-								.leftBottomFar = Vector3{ -coneBaseRadius, -coneBaseRadius, farClipPlane },
-								.rightBottomFar = Vector3{ coneBaseRadius, -coneBaseRadius, farClipPlane }
+								.rightTopNear = Vector3{ nearPlaneHalfSide, nearPlaneHalfSide, nearClipPlane },
+								.leftTopNear = Vector3{ -nearPlaneHalfSide, nearPlaneHalfSide, nearClipPlane },
+								.leftBottomNear = Vector3{ -nearPlaneHalfSide, -nearPlaneHalfSide, nearClipPlane },
+								.rightBottomNear = Vector3{ nearPlaneHalfSide, -nearPlaneHalfSide, nearClipPlane },
+								.rightTopFar = Vector3{ farPlaneHalfSide, farPlaneHalfSide, farClipPlane },
+								.leftTopFar = Vector3{ -farPlaneHalfSide, farPlaneHalfSide, farClipPlane },
+								.leftBottomFar = Vector3{ -farPlaneHalfSide, -farPlaneHalfSide, farClipPlane },
+								.rightBottomFar = Vector3{ farPlaneHalfSide, -farPlaneHalfSide, farClipPlane }
 							};
 						}
 
