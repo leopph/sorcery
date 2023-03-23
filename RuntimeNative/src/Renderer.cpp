@@ -1160,6 +1160,8 @@ auto DoToneMapGammaCorrectionStep(ID3D11ShaderResourceView* const src, ID3D11Ren
 	gResources->context->PSSetConstantBuffers(CB_SLOT_TONE_MAP_GAMMA, 1, gResources->toneMapGammaCB.GetAddressOf());
 	gResources->context->PSSetShaderResources(TEX_SLOT_TONE_MAP_SRC, 1, &src);
 
+	gResources->context->IASetInputLayout(nullptr);
+
 	gResources->context->Draw(6, 0);
 
 	// Restore old view bindings to that we don't leave any input/output conflicts behind.
