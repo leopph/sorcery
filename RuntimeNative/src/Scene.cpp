@@ -5,9 +5,11 @@
 namespace leopph {
 Object::Type const Scene::SerializationType{ Type::Scene };
 
+
 auto Scene::GetSerializationType() const -> Type {
 	return SerializationType;
 }
+
 
 auto Scene::CreateEntity() -> Entity& {
 	auto const entity = new Entity{};
@@ -15,24 +17,30 @@ auto Scene::CreateEntity() -> Entity& {
 	return *mEntities.emplace_back(entity);
 }
 
+
 auto Scene::DestroyEntity(Entity const& entityToRemove) -> void {
 	std::erase_if(mEntities, [&entityToRemove](auto const& entity) {
 		return entity.get() == &entityToRemove;
 	});
 }
 
+
 auto Scene::GetEntities() const noexcept -> std::span<std::unique_ptr<Entity> const> {
 	return mEntities;
 }
+
 
 auto Scene::Serialize(std::vector<std::uint8_t>& out) const noexcept -> void {
 	auto const dump{ Dump(mYamlData) };
 	out.assign(std::begin(dump), std::end(dump));
 }
 
+
 auto Scene::Deserialize(std::span<std::uint8_t const> const bytes) -> void {
-	mYamlData = YAML::Load(reinterpret_cast<char const*>(bytes.data()));
+	std::string const input{ std::begin(bytes), std::end(bytes) };
+	mYamlData = YAML::Load(input);
 }
+
 
 auto Scene::Save() -> void {
 	auto constexpr serializeObject{
@@ -60,6 +68,7 @@ auto Scene::Save() -> void {
 		}
 	}
 }
+
 
 auto Scene::Load(ObjectInstantiatorManager const& manager) -> void {
 	mEntities.clear();
@@ -90,6 +99,7 @@ auto Scene::Load(ObjectInstantiatorManager const& manager) -> void {
 		}
 	}
 }
+
 
 auto Scene::Clear() -> void {
 	mEntities.clear();
