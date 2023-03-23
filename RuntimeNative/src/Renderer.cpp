@@ -1491,6 +1491,7 @@ auto DrawFullWithCameras(std::span<Camera const* const> const cameras, ID3D11Ren
 					mappedLightSBData[cells[j]->visibleLightIdxIdx].lightViewProjMtx = cells[j]->lightViewProjMtx;
 					mappedLightSBData[cells[j]->visibleLightIdxIdx].atlasQuadrantIdx = i;
 					mappedLightSBData[cells[j]->visibleLightIdxIdx].atlasCellIdx = j;
+					mappedLightSBData[cells[j]->visibleLightIdxIdx].shadowBias = gLights[visibility.lightIndices[cells[j]->visibleLightIdxIdx]]->GetShadowBias();
 				}
 			}
 		}

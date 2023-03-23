@@ -70,11 +70,7 @@ inline float3 CalculateSpotLight(const float3 N, const float3 V, const float3 al
         float3 posLNdc = posLClip.xyz / posLClip.w;
         posLNdc.xy = posLNdc.xy * float2(0.5, -0.5) + 0.5;
 
-        const float MIN_SHADOW_BIAS = 0.0001;
-        const float MAX_SHADOW_BIAS = 0.01;
-        const float bias = max(MAX_SHADOW_BIAS * (1.0 - dot(N, L)), MIN_SHADOW_BIAS);
-
-        const float shadow = gPunctualShadowAtlas.SampleCmpLevelZero(gShadowSampler, TransformUVForShadowAtlas(posLNdc.xy, lights[lightIdx].atlasQuadrantIdx, lights[lightIdx].atlasCellIdx), posLNdc.z - bias);
+        const float shadow = gPunctualShadowAtlas.SampleCmpLevelZero(gShadowSampler, TransformUVForShadowAtlas(posLNdc.xy, lights[lightIdx].atlasQuadrantIdx, lights[lightIdx].atlasCellIdx), posLNdc.z - lights[lightIdx].shadowBias);
         lighting *= shadow;
     }
     

@@ -442,6 +442,15 @@ auto EditorObjectWrapperFor<LightComponent>::OnGui([[maybe_unused]] Context& con
 			if (ImGui::DragFloat("###lightShadowNearPlane", &shadowNearPlane)) {
 				light.SetShadowNearPlane(shadowNearPlane);
 			}
+
+			ImGui::TableNextColumn();
+			ImGui::Text("%s", "Shadow Bias");
+			ImGui::TableNextColumn();
+
+			auto shadowBias{ light.GetShadowBias() };
+			if (ImGui::DragFloat("###lightShadowBias", &shadowBias, 0.001f, 0, 0.1f)) {
+				light.SetShadowBias(shadowBias);
+			}
 		}
 
 		ImGui::TableNextColumn();

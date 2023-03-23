@@ -34,9 +34,10 @@ auto LightComponent::Serialize(YAML::Node& node) const -> void {
 	Component::Serialize(node);
 	node["color"] = GetColor();
 	node["intensity"] = GetIntensity();
-	node["castsShadow"] = IsCastingShadow();
 	node["type"] = static_cast<int>(GetType());
+	node["castsShadow"] = IsCastingShadow();
 	node["shadowNearPlane"] = GetShadowNearPlane();
+	node["shadowBias"] = GetShadowBias();
 	node["range"] = GetRange();
 	node["innerAngle"] = GetInnerAngle();
 	node["outerAngle"] = GetOuterAngle();
@@ -51,14 +52,17 @@ auto LightComponent::Deserialize(YAML::Node const& node) -> void {
 	if (auto const data{ node["intensity"] }) {
 		SetIntensity(data.as<f32>(GetIntensity()));
 	}
-	if (auto const data{ node["castsShadow"] }) {
-		SetCastingShadow(data.as<bool>(IsCastingShadow()));
-	}
 	if (auto const data{ node["type"] }) {
 		SetType(static_cast<Type>(data.as<int>(static_cast<int>(GetType()))));
 	}
+	if (auto const data{ node["castsShadow"] }) {
+		SetCastingShadow(data.as<bool>(IsCastingShadow()));
+	}
 	if (auto const data{ node["shadowNearPlane"] }) {
 		SetShadowNearPlane(data.as<f32>(GetShadowNearPlane()));
+	}
+	if (auto const data{ node["shadowBias"] }) {
+		SetShadowBias(data.as<float>(GetShadowBias()));
 	}
 	if (auto const data{ node["range"] }) {
 		SetRange(data.as<f32>(GetRange()));
@@ -159,6 +163,16 @@ auto LightComponent::GetOuterAngle() const -> f32 {
 
 auto LightComponent::SetOuterAngle(f32 const degrees) -> void {
 	mOuterAngle = degrees;
+}
+
+
+auto LightComponent::GetShadowBias() const noexcept -> float {
+	return mShadowBias;
+}
+
+
+auto LightComponent::SetShadowBias(float const bias) noexcept -> void {
+	mShadowBias = bias;
 }
 
 

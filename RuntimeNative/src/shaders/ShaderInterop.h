@@ -74,7 +74,8 @@ struct ShaderLight {
 
 	uint atlasQuadrantIdx;
 	uint atlasCellIdx;
-	float2 pad;
+	float shadowBias;
+	float pad;
 };
 
 
