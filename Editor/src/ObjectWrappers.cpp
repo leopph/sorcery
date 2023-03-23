@@ -433,6 +433,17 @@ auto EditorObjectWrapperFor<LightComponent>::OnGui([[maybe_unused]] Context& con
 			light.SetCastingShadow(castsShadow);
 		}
 
+		if (light.IsCastingShadow()) {
+			ImGui::TableNextColumn();
+			ImGui::Text("%s", "Shadow Near Plane");
+			ImGui::TableNextColumn();
+
+			auto shadowNearPlane{ light.GetShadowNearPlane() };
+			if (ImGui::DragFloat("###lightShadowNearPlane", &shadowNearPlane)) {
+				light.SetShadowNearPlane(shadowNearPlane);
+			}
+		}
+
 		ImGui::TableNextColumn();
 		ImGui::Text("Type");
 		ImGui::TableNextColumn();
@@ -443,30 +454,18 @@ auto EditorObjectWrapperFor<LightComponent>::OnGui([[maybe_unused]] Context& con
 			light.SetType(static_cast<LightComponent::Type>(selection));
 		}
 
-		switch (light.GetType()) {
-		case LightComponent::Type::Directional: {
-			ImGui::TableNextColumn();
-			ImGui::Text("Shadow Near Plane");
-			ImGui::TableNextColumn();
-
-			auto shadowNearPlane{ light.GetShadowNearPlane() };
-			if (ImGui::DragFloat("###dirLightShadowNearPlane", &shadowNearPlane)) {
-				light.SetShadowNearPlane(shadowNearPlane);
-			}
-
-			break;
-		}
-
-		case LightComponent::Type::Spot: {
+		if (light.GetType() == LightComponent::Type::Spot || light.GetType() == LightComponent::Type::Point) {
 			ImGui::TableNextColumn();
 			ImGui::Text("Range");
 			ImGui::TableNextColumn();
 
 			auto range{ light.GetRange() };
-			if (ImGui::DragFloat("###spotLightRange", &range)) {
+			if (ImGui::DragFloat("###lightRange", &range)) {
 				light.SetRange(range);
 			}
+		}
 
+		if (light.GetType() == LightComponent::Type::Spot) {
 			ImGui::TableNextColumn();
 			ImGui::Text("Inner Angle");
 			ImGui::TableNextColumn();
@@ -484,20 +483,6 @@ auto EditorObjectWrapperFor<LightComponent>::OnGui([[maybe_unused]] Context& con
 			if (ImGui::DragFloat("###spotLightOuterAngle", &outerAngle)) {
 				light.SetOuterAngle(outerAngle);
 			}
-			break;
-		}
-
-		case LightComponent::Type::Point: {
-			ImGui::TableNextColumn();
-			ImGui::Text("Range");
-			ImGui::TableNextColumn();
-
-			auto range{ light.GetRange() };
-			if (ImGui::DragFloat("###spotLightRange", &range)) {
-				light.SetRange(range);
-			}
-			break;
-		}
 		}
 
 		ImGui::EndTable();

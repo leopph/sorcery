@@ -1240,23 +1240,23 @@ auto DrawShadowMaps(Visibility const& visibility, ShadowAtlasAllocation const& a
 				static_cast<ShadowCB*>(mapped.pData)->lightViewProjMtx = cells[j]->lightViewProjMtx;
 				gResources->context->Unmap(gResources->shadowCB.Get(), 0);
 
-				auto const lightFrustum{
+				auto const shadowFrustum{
 					[](LightComponent const* const light) -> Frustum {
 						switch (light->GetType()) {
 						case LightComponent::Type::Spot: {
-							float constexpr nearClipPlane{ 0.1f };
+							auto const nearClipPlane{ light->GetShadowNearPlane() };
 							float const farClipPlane{ light->GetRange() };
-							auto const radius{ std::tan(light->GetOuterAngle()) * light->GetRange() };
+							auto const coneBaseRadius{ std::tan(light->GetOuterAngle()) * light->GetRange() };
 
 							return Frustum{
-								.rightTopNear = Vector3{ radius, radius, nearClipPlane },
-								.leftTopNear = Vector3{ -radius, radius, nearClipPlane },
-								.leftBottomNear = Vector3{ -radius, -radius, nearClipPlane },
-								.rightBottomNear = Vector3{ radius, -radius, nearClipPlane },
-								.rightTopFar = Vector3{ radius, radius, farClipPlane },
-								.leftTopFar = Vector3{ -radius, radius, farClipPlane },
-								.leftBottomFar = Vector3{ -radius, -radius, farClipPlane },
-								.rightBottomFar = Vector3{ radius, -radius, farClipPlane }
+								.rightTopNear = Vector3{ coneBaseRadius, coneBaseRadius, nearClipPlane },
+								.leftTopNear = Vector3{ -coneBaseRadius, coneBaseRadius, nearClipPlane },
+								.leftBottomNear = Vector3{ -coneBaseRadius, -coneBaseRadius, nearClipPlane },
+								.rightBottomNear = Vector3{ coneBaseRadius, -coneBaseRadius, nearClipPlane },
+								.rightTopFar = Vector3{ coneBaseRadius, coneBaseRadius, farClipPlane },
+								.leftTopFar = Vector3{ -coneBaseRadius, coneBaseRadius, farClipPlane },
+								.leftBottomFar = Vector3{ -coneBaseRadius, -coneBaseRadius, farClipPlane },
+								.rightBottomFar = Vector3{ coneBaseRadius, -coneBaseRadius, farClipPlane }
 							};
 						}
 
@@ -1269,11 +1269,22 @@ auto DrawShadowMaps(Visibility const& visibility, ShadowAtlasAllocation const& a
 
 				Visibility static perLightVisibility;
 
-				CullStaticMeshComponents(lightFrustum, cells[j]->lightViewMtx, perLightVisibility);
+				CullStaticMeshComponents(shadowFrustum, cells[j]->lightViewMtx, perLightVisibility);
 				DrawMeshes(perLightVisibility.staticMeshIndices, false);
 			}
 		}
 	}
+}
+
+
+auto CalculateSpotLightLocalBounds(LightComponent const& spotLight) noexcept -> AABB {
+	auto const range{ spotLight.GetRange() };
+	auto const coneBaseRadius{ std::tan(ToRadians(spotLight.GetOuterAngle())) * range };
+
+	return AABB{
+		.min = Vector3{ -coneBaseRadius, -coneBaseRadius, 0 },
+		.max = Vector3{ coneBaseRadius, coneBaseRadius, range }
+	};
 }
 
 
@@ -1292,18 +1303,8 @@ auto CalculatePunctualShadowAtlasAllocation(Visibility const& visibility, Vector
 			}
 
 			case LightComponent::Type::Spot: {
-				auto const range{ light->GetRange() };
-				auto const boundXY{ std::tan(ToRadians(light->GetOuterAngle())) * range };
-				std::array boundVertices{
-					Vector4{ boundXY, boundXY, 0.1f, 1 },
-					Vector4{ -boundXY, boundXY, 0.1f, 1 },
-					Vector4{ boundXY, -boundXY, 0.1f, 1 },
-					Vector4{ -boundXY, -boundXY, 0.1f, 1 },
-					Vector4{ boundXY, boundXY, range, 1 },
-					Vector4{ -boundXY, boundXY, range, 1 },
-					Vector4{ boundXY, -boundXY, range, 1 },
-					Vector4{ -boundXY, -boundXY, range, 1 },
-				};
+				auto const localBounds{ CalculateSpotLightLocalBounds(*light) };
+				auto boundVertices{ localBounds.CalculateVertices() };
 
 				auto const mvp{ light->GetEntity()->GetTransform().GetModelMatrix() * camViewProjMtx };
 				Vector2 const bottomLeft{ -1, -1 };
@@ -1313,8 +1314,9 @@ auto CalculatePunctualShadowAtlasAllocation(Visibility const& visibility, Vector
 				Vector2 max{ std::numeric_limits<float>::lowest() };
 
 				for (auto& boundVertex : boundVertices) {
-					boundVertex *= mvp;
-					auto const projected{ Vector2{ boundVertex } / boundVertex[3] };
+					Vector4 boundVertex4{ boundVertex, 1 };
+					boundVertex4 *= mvp;
+					auto const projected{ Vector2{ boundVertex4 } / boundVertex4[3] };
 					min = Min(min, projected);
 					max = Max(max, projected);
 					min = Clamp(min, bottomLeft, topRight);
@@ -1389,7 +1391,7 @@ auto CalculatePunctualShadowAtlasAllocation(Visibility const& visibility, Vector
 			auto const lightProjMtx{
 				Matrix4::PerspectiveAsymZLH(ToRadians(light->GetOuterAngle() * 2),
 				                            1.f,
-				                            0.1f,
+				                            light->GetShadowNearPlane(),
 				                            light->GetRange())
 			};
 
@@ -1887,13 +1889,7 @@ auto CullLights(Frustum const& frust, Matrix4 const& viewMtx, Visibility& visibi
 		}
 
 		case LightComponent::Type::Spot: {
-			auto const range{ light->GetRange() };
-			auto const coneBaseRadius{ std::tan(ToRadians(light->GetOuterAngle())) * range };
-
-			AABB const localBounds{
-				.min = Vector3{ -coneBaseRadius, -coneBaseRadius, 0.1f },
-				.max = Vector3{ coneBaseRadius, coneBaseRadius, range }
-			};
+			auto const localBounds{ CalculateSpotLightLocalBounds(*light) };
 
 			auto const modelMtxNoScale{
 				[light] {

@@ -26,11 +26,13 @@ public:
 	[[nodiscard]] LEOPPHAPI auto IsCastingShadow() const -> bool;
 	LEOPPHAPI auto SetCastingShadow(bool castShadow) -> void;
 
+
 	enum class Type {
 		Directional = 0,
 		Spot        = 1,
 		Point       = 2
 	};
+
 
 	[[nodiscard]] LEOPPHAPI auto GetType() const noexcept -> Type;
 	LEOPPHAPI auto SetType(Type type) noexcept -> void;
@@ -54,7 +56,7 @@ private:
 	Vector3 mColor{ 1.f };
 	f32 mIntensity{ 1.f };
 	Type mType{ Type::Directional };
-	f32 mShadowNear{ 50.f };
+	f32 mShadowNear{ 0.1f };
 	f32 mRange{ 10.f };
 	f32 mInnerAngle{ 30.f };
 	f32 mOuterAngle{ 30.f };
