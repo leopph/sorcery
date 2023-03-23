@@ -66,11 +66,11 @@ inline float3 CalculateSpotLight(const float3 N, const float3 V, const float3 al
 
     [branch]
     if (lights[lightIdx].isCastingShadow) {
-        const float4 posLClip = mul(float4(fragWorldPos, 1), lights[lightIdx].lightViewProjMtx);
+        const float4 posLClip = mul(float4(fragWorldPos, 1), lights[lightIdx].shadowViewProjMtx);
         float3 posLNdc = posLClip.xyz / posLClip.w;
         posLNdc.xy = posLNdc.xy * float2(0.5, -0.5) + 0.5;
 
-        const float shadow = gPunctualShadowAtlas.SampleCmpLevelZero(gShadowSampler, TransformUVForShadowAtlas(posLNdc.xy, lights[lightIdx].atlasQuadrantIdx, lights[lightIdx].atlasCellIdx), posLNdc.z);
+        const float shadow = gPunctualShadowAtlas.SampleCmpLevelZero(gShadowSampler, TransformUVForShadowAtlas(posLNdc.xy, lights[lightIdx].atlasQuadrantIdx, lights[lightIdx].atlasCellIdx), posLNdc.z - lights[lightIdx].shadowBias);
         lighting *= shadow;
     }
     

@@ -110,9 +110,8 @@ struct Resources {
 
 
 struct ShadowAtlasCellData {
-	Matrix4 lightViewMtx;
-	Matrix4 lightShadowBiasedViewProjMtx;
-	Matrix4 lightViewProjMtx;
+	Matrix4 shadowViewMtx;
+	Matrix4 shadowViewProjMtx;
 	// Index into the array of indices to the visible lights, use lights[visibleLights[visibleLightIdxIdx]] to get to the light
 	int visibleLightIdxIdx;
 };
@@ -1238,7 +1237,7 @@ auto DrawShadowMaps(Visibility const& visibility, ShadowAtlasAllocation const& a
 
 				D3D11_MAPPED_SUBRESOURCE mapped;
 				gResources->context->Map(gResources->shadowCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
-				static_cast<ShadowCB*>(mapped.pData)->shadowBiasedViewProjMtx = cells[j]->lightShadowBiasedViewProjMtx;
+				static_cast<ShadowCB*>(mapped.pData)->shadowViewProjMtx = cells[j]->shadowViewProjMtx;
 				gResources->context->Unmap(gResources->shadowCB.Get(), 0);
 
 				auto const shadowFrustum{
@@ -1272,7 +1271,7 @@ auto DrawShadowMaps(Visibility const& visibility, ShadowAtlasAllocation const& a
 
 				Visibility static perLightVisibility;
 
-				CullStaticMeshComponents(shadowFrustum, cells[j]->lightViewMtx, perLightVisibility);
+				CullStaticMeshComponents(shadowFrustum, cells[j]->shadowViewMtx, perLightVisibility);
 				DrawMeshes(perLightVisibility.staticMeshIndices, false);
 			}
 		}
@@ -1386,24 +1385,19 @@ auto CalculatePunctualShadowAtlasAllocation(Visibility const& visibility, Vector
 			auto const light{ gLights[visibility.lightIndices[lightIdxIdx]] };
 			lightIndexIndicesInQuadrant[i].pop_back();
 
-			auto const lightViewMtx{
+			auto const shadowViewMtx{
 				Matrix4::LookToLH(light->GetEntity()->GetTransform().GetWorldPosition(),
 				                  light->GetEntity()->GetTransform().GetForwardAxis(),
 				                  Vector3::Up())
 			};
-			auto const lightShadowBiasedViewMtx{
-				Matrix4::LookToLH(light->GetEntity()->GetTransform().GetWorldPosition() - light->GetEntity()->GetTransform().GetForwardAxis() * light->GetShadowBias(),
-				                  light->GetEntity()->GetTransform().GetForwardAxis(),
-				                  Vector3::Up())
-			};
-			auto const lightProjMtx{
+			auto const shadowProjMtx{
 				Matrix4::PerspectiveAsymZLH(ToRadians(light->GetOuterAngle() * 2),
 				                            1.f,
 				                            light->GetShadowNearPlane(),
 				                            light->GetRange())
 			};
 
-			cell.emplace(lightViewMtx, lightShadowBiasedViewMtx * lightProjMtx, lightViewMtx * lightProjMtx, lightIdxIdx);
+			cell.emplace(shadowViewMtx, shadowViewMtx * shadowProjMtx, lightIdxIdx);
 		}
 
 		if (i + 1 < 4) {
@@ -1482,7 +1476,6 @@ auto DrawFullWithCameras(std::span<Camera const* const> const cameras, ID3D11Ren
 			mappedLightSBData[i].type = static_cast<int>(gLights[visibility.lightIndices[i]]->GetType());
 			mappedLightSBData[i].direction = gLights[visibility.lightIndices[i]]->GetDirection();
 			mappedLightSBData[i].isCastingShadow = false;
-			mappedLightSBData[i].shadowNearPlane = gLights[visibility.lightIndices[i]]->GetShadowNearPlane();
 			mappedLightSBData[i].range = gLights[visibility.lightIndices[i]]->GetRange();
 			mappedLightSBData[i].innerAngleCos = std::cos(ToRadians(gLights[visibility.lightIndices[i]]->GetInnerAngle()));
 			mappedLightSBData[i].outerAngleCos = std::cos(ToRadians(gLights[visibility.lightIndices[i]]->GetOuterAngle()));
@@ -1494,9 +1487,10 @@ auto DrawFullWithCameras(std::span<Camera const* const> const cameras, ID3D11Ren
 			for (int j = 0; j < static_cast<int>(cells.size()); j++) {
 				if (cells[j]) {
 					mappedLightSBData[cells[j]->visibleLightIdxIdx].isCastingShadow = true;
-					mappedLightSBData[cells[j]->visibleLightIdxIdx].lightViewProjMtx = cells[j]->lightViewProjMtx;
+					mappedLightSBData[cells[j]->visibleLightIdxIdx].shadowViewProjMtx = cells[j]->shadowViewProjMtx;
 					mappedLightSBData[cells[j]->visibleLightIdxIdx].atlasQuadrantIdx = i;
 					mappedLightSBData[cells[j]->visibleLightIdxIdx].atlasCellIdx = j;
+					mappedLightSBData[cells[j]->visibleLightIdxIdx].shadowBias = gLights[visibility.lightIndices[cells[j]->visibleLightIdxIdx]]->GetShadowBias();
 				}
 			}
 		}

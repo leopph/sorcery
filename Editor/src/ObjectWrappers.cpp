@@ -448,7 +448,7 @@ auto EditorObjectWrapperFor<LightComponent>::OnGui([[maybe_unused]] Context& con
 			ImGui::TableNextColumn();
 
 			auto shadowBias{ light.GetShadowBias() };
-			if (ImGui::DragFloat("###lightShadowBias", &shadowBias, 0.01f, 0, FLT_MAX, "%.2f", ImGuiSliderFlags_AlwaysClamp)) {
+			if (ImGui::DragFloat("###lightShadowBias", &shadowBias, 0.001f, 0, 1, "%.3f", ImGuiSliderFlags_AlwaysClamp)) {
 				light.SetShadowBias(shadowBias);
 			}
 		}

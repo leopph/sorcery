@@ -56,24 +56,24 @@ typedef bool BOOL;
 
 
 struct ShaderLight {
+	row_major float4x4 shadowViewProjMtx;
+
 	float3 color;
 	float intensity;
 
 	float3 direction;
 	int type;
 
-	float shadowNearPlane;
+	BOOL isCastingShadow;
 	float range;
 	float innerAngleCos;
-	BOOL isCastingShadow;
-
-	float3 position;
 	float outerAngleCos;
 
-	row_major float4x4 lightViewProjMtx;
-
+	float3 position;
 	uint atlasQuadrantIdx;
+
 	uint atlasCellIdx;
+	float shadowBias;
 	float2 pad;
 };
 
@@ -124,7 +124,7 @@ CBUFFER(SkyboxCB, CB_SLOT_SKYBOX_PASS) {
 
 
 CBUFFER(ShadowCB, CB_SLOT_SHADOW_PASS) {
-	row_major float4x4 shadowBiasedViewProjMtx;
+	row_major float4x4 shadowViewProjMtx;
 };
 
 
