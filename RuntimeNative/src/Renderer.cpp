@@ -1526,6 +1526,7 @@ auto Camera::GetNearClipPlane() const noexcept -> float {
 auto Camera::SetNearClipPlane(float const nearClipPlane) noexcept -> void {
 	if (GetType() == Type::Perspective) {
 		mNear = std::max(nearClipPlane, MINIMUM_PERSPECTIVE_NEAR_CLIP_PLANE);
+		SetFarClipPlane(GetFarClipPlane());
 	}
 	else {
 		mNear = nearClipPlane;
@@ -1540,7 +1541,7 @@ auto Camera::GetFarClipPlane() const noexcept -> float {
 
 auto Camera::SetFarClipPlane(float const farClipPlane) noexcept -> void {
 	if (GetType() == Type::Perspective) {
-		mFar = std::max(farClipPlane, mNear + 0.1f);
+		mFar = std::max(farClipPlane, mNear + MINIMUM_PERSPECTIVE_FAR_CLIP_PLANE_OFFSET);
 	}
 	else {
 		mFar = farClipPlane;
@@ -1554,12 +1555,11 @@ auto Camera::GetType() const noexcept -> Type {
 
 
 auto Camera::SetType(Type const type) noexcept -> void {
-	if (type == Type::Perspective) {
-		mNear = std::max(mNear, MINIMUM_PERSPECTIVE_NEAR_CLIP_PLANE);
-		mFar = std::max(mFar, mNear + MINIMUM_PERSPECTIVE_FAR_CLIP_PLANE_OFFSET);
-	}
-
 	mType = type;
+
+	if (type == Type::Perspective) {
+		SetNearClipPlane(GetNearClipPlane());
+	}
 }
 
 
