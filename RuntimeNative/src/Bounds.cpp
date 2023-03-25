@@ -23,14 +23,14 @@ auto AABB::FromVertices(std::span<Vector3 const> const vertices) noexcept -> AAB
 
 auto AABB::CalculateVertices() const noexcept -> std::array<Vector3, 8> {
 	return std::array{
-		Vector3{ min[0], min[1], min[2] },
+		min,
 		Vector3{ max[0], min[1], min[2] },
 		Vector3{ min[0], max[1], min[2] },
 		Vector3{ max[0], max[1], min[2] },
 		Vector3{ min[0], min[1], max[2] },
 		Vector3{ max[0], min[1], max[2] },
 		Vector3{ min[0], max[1], max[2] },
-		Vector3{ max[0], max[1], max[2] },
+		max,
 	};
 }
 
