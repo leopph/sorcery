@@ -1209,7 +1209,7 @@ auto DrawSkybox(Matrix4 const& camViewMtx, Matrix4 const& camProjMtx) noexcept -
 }
 
 
-auto DrawShadowMaps(Visibility const& visibility, ShadowAtlasAllocation const& alloc) -> void {
+auto DrawShadowMaps(ShadowAtlasAllocation const& alloc) -> void {
 	gResources->context->OMSetRenderTargets(0, nullptr, gResources->punctualShadowAtlas.dsv.Get());
 	gResources->context->ClearDepthStencilView(gResources->punctualShadowAtlas.dsv.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 	gResources->context->VSSetShader(gResources->shadowVS.Get(), nullptr, 0);
@@ -1240,38 +1240,11 @@ auto DrawShadowMaps(Visibility const& visibility, ShadowAtlasAllocation const& a
 				static_cast<ShadowCB*>(mapped.pData)->shadowViewProjMtx = cells[j]->shadowViewProjMtx;
 				gResources->context->Unmap(gResources->shadowCB.Get(), 0);
 
-				auto const shadowFrustum{
-					[](LightComponent const* const light) -> Frustum {
-						switch (light->GetType()) {
-						case LightComponent::Type::Spot: {
-							auto const nearClipPlane{ light->GetShadowNearPlane() };
-							float const farClipPlane{ light->GetRange() };
-							auto const tanHalfFov{ std::tan(light->GetOuterAngle()) };
-							auto const nearPlaneHalfSide{ nearClipPlane * tanHalfFov };
-							auto const farPlaneHalfSide{ farClipPlane * tanHalfFov };
-
-							return Frustum{
-								.rightTopNear = Vector3{ nearPlaneHalfSide, nearPlaneHalfSide, nearClipPlane },
-								.leftTopNear = Vector3{ -nearPlaneHalfSide, nearPlaneHalfSide, nearClipPlane },
-								.leftBottomNear = Vector3{ -nearPlaneHalfSide, -nearPlaneHalfSide, nearClipPlane },
-								.rightBottomNear = Vector3{ nearPlaneHalfSide, -nearPlaneHalfSide, nearClipPlane },
-								.rightTopFar = Vector3{ farPlaneHalfSide, farPlaneHalfSide, farClipPlane },
-								.leftTopFar = Vector3{ -farPlaneHalfSide, farPlaneHalfSide, farClipPlane },
-								.leftBottomFar = Vector3{ -farPlaneHalfSide, -farPlaneHalfSide, farClipPlane },
-								.rightBottomFar = Vector3{ farPlaneHalfSide, -farPlaneHalfSide, farClipPlane }
-							};
-						}
-
-						default: {
-							return {};
-						}
-						}
-					}(gLights[visibility.lightIndices[cells[j]->visibleLightIdxIdx]])
-				};
+				Frustum const shadowFrustumWS{ cells[j]->shadowViewProjMtx };
 
 				Visibility static perLightVisibility;
 
-				CullStaticMeshComponents(shadowFrustum, cells[j]->shadowViewMtx, perLightVisibility);
+				CullStaticMeshComponents(shadowFrustumWS, perLightVisibility);
 				DrawMeshes(perLightVisibility.staticMeshIndices, false);
 			}
 		}
@@ -1465,18 +1438,18 @@ auto DrawFullWithCameras(std::span<Camera const* const> const cameras, ID3D11Ren
 		auto const camViewMtx{ cam->CalculateViewMatrix() };
 		auto const camProjMtx{ cam->CalculateProjectionMatrix(aspectRatio) };
 		auto const camViewProjMtx{ camViewMtx * camProjMtx };
-		auto const camFrust{ cam->CalculateFrustum(aspectRatio) };
+		Frustum const camFrustWS{ camViewProjMtx };
 
 		Visibility static visibility;
-		CullLights(camFrust, camViewMtx, visibility);
+		CullLights(camFrustWS, visibility);
 		auto const lightCount{ std::min(MAX_LIGHT_COUNT, static_cast<int>(visibility.lightIndices.size())) };
 
 		CalculatePunctualShadowAtlasAllocation(visibility, camPos, camViewProjMtx, gPunctualShadowAtlasAlloc);
 		ID3D11ShaderResourceView* const nullSrv{ nullptr };
 		gResources->context->PSSetShaderResources(TEX_SLOT_PUNCTUAL_SHADOW_ATLAS, 1, &nullSrv);
-		DrawShadowMaps(visibility, gPunctualShadowAtlasAlloc);
+		DrawShadowMaps(gPunctualShadowAtlasAlloc);
 
-		CullStaticMeshComponents(camFrust, camViewMtx, visibility);
+		CullStaticMeshComponents(camFrustWS, visibility);
 
 		gResources->context->VSSetShader(gResources->meshVS.Get(), nullptr, 0);
 
@@ -1606,59 +1579,6 @@ auto Camera::GetHorizontalOrthographicSize() const -> float {
 auto Camera::SetHorizontalOrthographicSize(float size) -> void {
 	size = std::max(size, MINIMUM_ORTHOGRAPHIC_HORIZONTAL_SIZE);
 	mOrthoSizeHoriz = size;
-}
-
-
-auto Camera::CalculateFrustum(float const aspectRatio) const noexcept -> Frustum {
-	auto const nearClipPlane{ GetNearClipPlane() };
-	auto const farClipPlane{ GetFarClipPlane() };
-
-	switch (GetType()) {
-	case Type::Perspective: {
-		auto const horizFov{ GetHorizontalPerspectiveFov() };
-
-
-		auto const tanHalfHorizFov{ std::tan(ToRadians(horizFov) / 2.0f) };
-		auto const tanHalfVertFov{ std::tan(ToRadians(HorizontalPerspectiveFovToVertical(horizFov, aspectRatio)) / 2.0f) };
-
-		auto const xn = nearClipPlane * tanHalfHorizFov;
-		auto const xf = farClipPlane * tanHalfHorizFov;
-		auto const yn = nearClipPlane * tanHalfVertFov;
-		auto const yf = farClipPlane * tanHalfVertFov;
-
-		return Frustum
-		{
-			.rightTopNear = Vector3{ xn, yn, nearClipPlane },
-			.leftTopNear = Vector3{ -xn, yn, nearClipPlane },
-			.leftBottomNear = Vector3{ -xn, -yn, nearClipPlane },
-			.rightBottomNear = Vector3{ xn, -yn, nearClipPlane },
-			.rightTopFar = Vector3{ xf, yf, farClipPlane },
-			.leftTopFar = Vector3{ -xf, yf, farClipPlane },
-			.leftBottomFar = Vector3{ -xf, -yf, farClipPlane },
-			.rightBottomFar = Vector3{ xf, -yf, farClipPlane },
-		};
-	}
-
-	case Type::Orthographic: {
-		auto static constexpr half = 1.f / 2.f;
-		auto const horizSize{ GetHorizontalOrthographicSize() };
-		auto const x = horizSize * half;
-		auto const y = horizSize / aspectRatio * half;
-		return Frustum
-		{
-			.rightTopNear = Vector3{ x, y, nearClipPlane },
-			.leftTopNear = Vector3{ -x, y, nearClipPlane },
-			.leftBottomNear = Vector3{ -x, -y, nearClipPlane },
-			.rightBottomNear = Vector3{ x, -y, nearClipPlane },
-			.rightTopFar = Vector3{ x, y, farClipPlane },
-			.leftTopFar = Vector3{ -x, y, farClipPlane },
-			.leftBottomFar = Vector3{ -x, -y, farClipPlane },
-			.rightBottomFar = Vector3{ x, -y, farClipPlane },
-		};
-	}
-	}
-
-	return {};
 }
 
 
@@ -1902,7 +1822,7 @@ auto UnregisterGameCamera(Camera const& cam) -> void {
 }
 
 
-auto CullLights(Frustum const& frust, Matrix4 const& viewMtx, Visibility& visibility) -> void {
+auto CullLights(Frustum const& frustumWS, Visibility& visibility) -> void {
 	visibility.lightIndices.clear();
 
 	for (int lightIdx = 0; lightIdx < static_cast<int>(gLights.size()); lightIdx++) {
@@ -1913,16 +1833,20 @@ auto CullLights(Frustum const& frust, Matrix4 const& viewMtx, Visibility& visibi
 		}
 
 		case LightComponent::Type::Spot: {
-			auto const localBounds{ CalculateSpotLightLocalBounds(*light) };
+			auto const boundsVerticesWS{
+				[light] {
+					auto const modelMtxNoScale{ CalculateModelMatrixNoScale(light->GetEntity()->GetTransform()) };
+					auto vertices{ CalculateSpotLightLocalBounds(*light).CalculateVertices() };
 
-			auto const modelViewMtxNoScale{ CalculateModelMatrixNoScale(light->GetEntity()->GetTransform()) * viewMtx };
-			auto boundsVertices{ localBounds.CalculateVertices() };
+					for (auto& vertex : vertices) {
+						vertex = Vector3{ Vector4{ vertex, 1 } * modelMtxNoScale };
+					}
 
-			for (auto& vertex : boundsVertices) {
-				vertex = Vector3{ Vector4{ vertex, 1 } * modelViewMtxNoScale };
-			}
+					return vertices;
+				}()
+			};
 
-			if (frust.Intersects(AABB::FromVertices(boundsVertices))) {
+			if (frustumWS.Intersects(AABB::FromVertices(boundsVerticesWS))) {
 				visibility.lightIndices.emplace_back(lightIdx);
 			}
 
@@ -1930,12 +1854,12 @@ auto CullLights(Frustum const& frust, Matrix4 const& viewMtx, Visibility& visibi
 		}
 
 		case LightComponent::Type::Point: {
-			BoundingSphere const viewBounds{
-				.center = Vector3{ Vector4{ light->GetEntity()->GetTransform().GetWorldPosition(), 1 } * viewMtx },
+			BoundingSphere const boundsWS{
+				.center = Vector3{ light->GetEntity()->GetTransform().GetWorldPosition() },
 				.radius = light->GetRange()
 			};
 
-			if (frust.Intersects(viewBounds)) {
+			if (frustumWS.Intersects(boundsWS)) {
 				visibility.lightIndices.emplace_back(lightIdx);
 			}
 			break;
@@ -1945,18 +1869,11 @@ auto CullLights(Frustum const& frust, Matrix4 const& viewMtx, Visibility& visibi
 }
 
 
-auto CullStaticMeshComponents(Frustum const& frust, Matrix4 const& viewMtx, Visibility& visibility) -> void {
+auto CullStaticMeshComponents(Frustum const& frustumWS, Visibility& visibility) -> void {
 	visibility.staticMeshIndices.clear();
 
 	for (int i = 0; i < static_cast<int>(gStaticMeshComponents.size()); i++) {
-		auto const worldBounds{ gStaticMeshComponents[i]->CalculateBounds() };
-		auto boundsVertices{ worldBounds.CalculateVertices() };
-
-		for (auto& vertex : boundsVertices) {
-			vertex = Vector3{ Vector4{ vertex, 1 } * viewMtx };
-		}
-
-		if (frust.Intersects(AABB::FromVertices(boundsVertices))) {
+		if (frustumWS.Intersects(AABB::FromVertices(gStaticMeshComponents[i]->CalculateBounds().CalculateVertices()))) {
 			visibility.staticMeshIndices.emplace_back(i);
 		}
 	}

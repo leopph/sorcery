@@ -22,17 +22,24 @@ struct AABB {
 };
 
 
-struct Frustum {
-	Vector3 rightTopNear;
-	Vector3 leftTopNear;
-	Vector3 leftBottomNear;
-	Vector3 rightBottomNear;
-	Vector3 rightTopFar;
-	Vector3 leftTopFar;
-	Vector3 leftBottomFar;
-	Vector3 rightBottomFar;
+struct Plane {
+	float a, b, c, d;
 
-	[[nodiscard]] auto Intersects(AABB const& aabb) const noexcept -> bool;
+	auto Normalize() noexcept -> void;
+	[[nodiscard]] auto Normalized() const noexcept -> Plane;
+
+	[[nodiscard]] auto DistanceToPoint(Vector3 const& p) const noexcept -> float;
+};
+
+
+class Frustum {
+	// Their normals point inward
+	std::array<Plane, 6> mPlanes{};
+
+public:
+	explicit Frustum(Matrix4 const& mtx);
+
 	[[nodiscard]] auto Intersects(BoundingSphere const& boundingSphere) const noexcept -> bool;
+	[[nodiscard]] auto Intersects(AABB const& aabb) const noexcept -> bool;
 };
 }
