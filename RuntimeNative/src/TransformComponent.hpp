@@ -93,6 +93,9 @@ public:
 };
 
 
+LEOPPHAPI [[nodiscard]] auto CalculateModelMatrixNoScale(TransformComponent const& transform) noexcept -> Matrix4;
+
+
 namespace managedbindings {
 auto GetTransformWorldPosition(MonoObject* transform) -> Vector3;
 auto SetTransformWorldPosition(MonoObject* transform, Vector3 newPos) -> void;

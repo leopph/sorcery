@@ -6,6 +6,8 @@
 #include "Entity.hpp"
 #include "TransformComponent.hpp"
 
+#include <cmath>
+
 namespace leopph {
 Object::Type const LightComponent::SerializationType{ Object::Type::Light };
 
@@ -189,6 +191,20 @@ auto AmbientLight::get_intensity() const -> Vector3 const& {
 
 auto AmbientLight::set_intensity(Vector3 const& intensity) -> void {
 	mIntensity = intensity;
+}
+
+
+auto CalculateSpotLightLocalVertices(LightComponent const& spotLight) noexcept -> std::array<Vector3, 5> {
+	auto const range{ spotLight.GetRange() };
+	auto const coneBaseRadius{ std::tan(ToRadians(spotLight.GetOuterAngle())) * range };
+
+	return std::array{
+		Vector3{ -coneBaseRadius, -coneBaseRadius, range },
+		Vector3{ coneBaseRadius, -coneBaseRadius, range },
+		Vector3{ coneBaseRadius, coneBaseRadius, range },
+		Vector3{ -coneBaseRadius, coneBaseRadius, range },
+		Vector3::Zero()
+	};
 }
 
 

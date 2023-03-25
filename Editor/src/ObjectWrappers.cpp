@@ -909,10 +909,20 @@ auto EditorObjectWrapperFor<LightComponent>::OnDrawGizmosSelected([[maybe_unused
 	auto const& light{ dynamic_cast<LightComponent&>(object) };
 
 	if (light.GetType() == LightComponent::Type::Spot) {
-		auto const& transform{ light.GetEntity()->GetTransform() };
-		auto const& pos{ transform.GetWorldPosition() };
-		auto const& forward{ transform.GetForwardAxis() };
-		renderer::DrawLineAtNextRender(pos, pos + forward, Color::Magenta());
+		auto const modelMtxNoScale{ CalculateModelMatrixNoScale(light.GetEntity()->GetTransform()) };
+		auto vertices{ CalculateSpotLightLocalVertices(light) };
+
+		for (auto& vertex : vertices) {
+			vertex = Vector3{ Vector4{ vertex, 1 } * modelMtxNoScale };
+		}
+
+		const Color lineColor{ Color::Magenta() };
+
+		// This highly depends on the order CalculateSpotLightLocalVertices returns the vertices
+		for (int i = 0; i < 4; i++) {
+			renderer::DrawLineAtNextRender(vertices[4], vertices[i], lineColor);
+			renderer::DrawLineAtNextRender(vertices[i], vertices[(i + 1) % 4], lineColor);
+		}
 	}
 }
 }

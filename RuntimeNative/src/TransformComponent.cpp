@@ -231,6 +231,18 @@ TransformComponent::~TransformComponent() {
 }
 
 
+auto CalculateModelMatrixNoScale(TransformComponent const& transform) noexcept -> Matrix4 {
+	auto mtx{ transform.GetModelMatrix() };
+	auto const scale{ transform.GetWorldScale() };
+
+	for (int i = 0; i < 3; i++) {
+		mtx[i] = Vector4{ Vector3{ mtx[i] } / scale, mtx[i][3] };
+	}
+
+	return mtx;
+}
+
+
 Object::Type const TransformComponent::SerializationType{ Type::Transform };
 
 

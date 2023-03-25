@@ -3,6 +3,8 @@
 #include "Component.hpp"
 #include "Math.hpp"
 
+#include <array>
+
 namespace leopph {
 class LightComponent : public Component {
 public:
@@ -91,6 +93,9 @@ public:
 private:
 	Vector3 mIntensity{ 0.1f, 0.1f, 0.1f };
 };
+
+
+LEOPPHAPI [[nodiscard]] auto CalculateSpotLightLocalVertices(LightComponent const& spotLight) noexcept -> std::array<Vector3, 5>;
 
 
 namespace managedbindings {

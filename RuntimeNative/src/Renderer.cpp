@@ -1340,32 +1340,6 @@ auto DrawShadowMaps(ShadowAtlasAllocation const& alloc) -> void {
 }
 
 
-[[nodiscard]] auto CalculateSpotLightLocalVertices(LightComponent const& spotLight) noexcept -> std::array<Vector3, 5> {
-	auto const range{ spotLight.GetRange() };
-	auto const coneBaseRadius{ std::tan(ToRadians(spotLight.GetOuterAngle())) * range };
-
-	return std::array{
-		Vector3::Zero(),
-		Vector3{ -coneBaseRadius, -coneBaseRadius, range },
-		Vector3{ coneBaseRadius, -coneBaseRadius, range },
-		Vector3{ coneBaseRadius, coneBaseRadius, range },
-		Vector3{ -coneBaseRadius, coneBaseRadius, range }
-	};
-}
-
-
-[[nodiscard]] auto CalculateModelMatrixNoScale(TransformComponent const& transform) noexcept {
-	auto mtx{ transform.GetModelMatrix() };
-	auto const scale{ transform.GetWorldScale() };
-
-	for (int i = 0; i < 3; i++) {
-		mtx[i] = Vector4{ Vector3{ mtx[i] } / scale, mtx[i][3] };
-	}
-
-	return mtx;
-}
-
-
 auto CalculatePunctualShadowAtlasAllocation(Visibility const& visibility, Vector3 const& camPos, Matrix4 const& camViewProjMtx, ShadowAtlasAllocation& alloc) -> void {
 	std::array<std::vector<int>, 4> static lightIndexIndicesInQuadrant{};
 
@@ -1538,10 +1512,13 @@ auto DrawGizmos() -> void {
 		gResources->context->VSSetShaderResources(SB_SLOT_LINE_GIZMO_VERTEX, 1, gResources->lineGizmoVertexSbSrv.GetAddressOf());
 		gResources->context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 		gResources->context->DrawInstanced(2, static_cast<UINT>(gLineGizmoVertexData.size()), 0, 0);
-		gLineGizmoVertexData.clear();
 	}
+}
 
+
+auto ClearGizmoDrawQueue() noexcept {
 	gGizmoColors.clear();
+	gLineGizmoVertexData.clear();
 }
 
 
@@ -1654,6 +1631,8 @@ auto DrawFullWithCameras(std::span<Camera const* const> const cameras, ID3D11Ren
 
 	gResources->context->RSSetViewports(1, &viewport);
 	DoToneMapGammaCorrectionStep(srv, outRtv);
+
+	ClearGizmoDrawQueue();
 }
 }
 
