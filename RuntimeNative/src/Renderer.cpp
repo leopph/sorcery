@@ -1873,7 +1873,7 @@ auto CullStaticMeshComponents(Frustum const& frustumWS, Visibility& visibility) 
 	visibility.staticMeshIndices.clear();
 
 	for (int i = 0; i < static_cast<int>(gStaticMeshComponents.size()); i++) {
-		if (frustumWS.Intersects(AABB::FromVertices(gStaticMeshComponents[i]->CalculateBounds().CalculateVertices()))) {
+		if (frustumWS.Intersects(gStaticMeshComponents[i]->CalculateBounds())) {
 			visibility.staticMeshIndices.emplace_back(i);
 		}
 	}
