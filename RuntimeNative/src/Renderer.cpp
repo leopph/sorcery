@@ -17,6 +17,8 @@
 #include "shaders/generated/SkyboxVSBinDebug.h"
 #include "shaders/generated/ShadowVSBinDebug.h"
 #include "shaders/generated/ScreenVSBinDebug.h"
+#include "shaders/generated/GizmoPSBinDebug.h"
+#include "shaders/generated/LineGizmoVSBinDebug.h"
 
 #else
 #include "shaders/generated/MeshPbrPSBin.h"
@@ -26,6 +28,8 @@
 #include "shaders/generated/SkyboxVSBin.h"
 #include "shaders/generated/ShadowVSBin.h"
 #include "shaders/generated/ScreenVSBin.h"
+#include "shaders/generated/GizmoPSBin.h"
+#include "shaders/generated/LineGizmoVSBin.h"
 #endif
 
 #include "shaders/ShaderInterop.h"
@@ -71,17 +75,22 @@ struct Resources {
 	ComPtr<ID3D11ShaderResourceView> sceneHdrTextureSrv;
 	ComPtr<ID3D11ShaderResourceView> sceneOutputTextureSrv;
 	ComPtr<ID3D11ShaderResourceView> lightSbSrv;
+	ComPtr<ID3D11ShaderResourceView> gizmoColorSbSrv;
+	ComPtr<ID3D11ShaderResourceView> lineGizmoVertexSbSrv;
 
 	ComPtr<ID3D11DepthStencilView> gameDSV;
 	ComPtr<ID3D11DepthStencilView> sceneDSV;
 
-	ComPtr<ID3D11VertexShader> meshVS;
 	ComPtr<ID3D11PixelShader> meshPbrPS;
 	ComPtr<ID3D11PixelShader> toneMapGammaPS;
 	ComPtr<ID3D11PixelShader> skyboxPS;
+	ComPtr<ID3D11PixelShader> gizmoPS;
+
+	ComPtr<ID3D11VertexShader> meshVS;
 	ComPtr<ID3D11VertexShader> skyboxVS;
 	ComPtr<ID3D11VertexShader> shadowVS;
 	ComPtr<ID3D11VertexShader> screenVS;
+	ComPtr<ID3D11VertexShader> lineGizmoVS;
 
 	ComPtr<ID3D11Buffer> perFrameCB;
 	ComPtr<ID3D11Buffer> perCamCB;
@@ -90,6 +99,8 @@ struct Resources {
 	ComPtr<ID3D11Buffer> skyboxCB;
 	ComPtr<ID3D11Buffer> shadowCB;
 	ComPtr<ID3D11Buffer> lightSB;
+	ComPtr<ID3D11Buffer> gizmoColorSB;
+	ComPtr<ID3D11Buffer> lineGizmoVertexSB;
 
 	ComPtr<ID3D11InputLayout> meshIL;
 	ComPtr<ID3D11InputLayout> skyboxIL;
@@ -371,6 +382,10 @@ f32 gInvGamma{ 1.f / 2.2f };
 std::vector<SkyboxComponent const*> gSkyboxes;
 std::vector<Camera const*> gGameRenderCameras;
 ShadowAtlasAllocation gPunctualShadowAtlasAlloc;
+std::vector<ShaderLineGizmoVertexData> gLineGizmoVertexData;
+std::vector<Vector4> gGizmoColors;
+int gGizmoColorBufferSize{ 1 };
+int gLineGizmoVertexBufferSize{ 1 };
 
 
 auto RecreateGameTexturesAndViews(u32 const width, u32 const height) -> void {
@@ -772,6 +787,14 @@ auto CreateShaders() -> void {
 	if (FAILED(gResources->device->CreateVertexShader(gScreenVSBin, ARRAYSIZE(gScreenVSBin), nullptr, gResources->screenVS.GetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create screen vertex shader." };
 	}
+
+	if (FAILED(gResources->device->CreateVertexShader(gLineGizmoVSBin, ARRAYSIZE(gLineGizmoVSBin), nullptr, gResources->lineGizmoVS.GetAddressOf()))) {
+		throw std::runtime_error{ "Failed to create line gizmo vertex shader." };
+	}
+
+	if (FAILED(gResources->device->CreatePixelShader(gGizmoPSBin, ARRAYSIZE(gGizmoPSBin), nullptr, gResources->gizmoPS.GetAddressOf()))) {
+		throw std::runtime_error{ "Failed to create gizmo pixel shader." };
+	}
 }
 
 
@@ -1043,6 +1066,64 @@ auto CreateDefaultAssets() -> void {
 }
 
 
+auto RecreateGizmoColorBuffer() -> void {
+	D3D11_BUFFER_DESC const bufDesc{
+		.ByteWidth = static_cast<UINT>(gGizmoColorBufferSize * sizeof(decltype(gGizmoColors)::value_type)),
+		.Usage = D3D11_USAGE_DYNAMIC,
+		.BindFlags = D3D11_BIND_SHADER_RESOURCE,
+		.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
+		.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED,
+		.StructureByteStride = sizeof(decltype(gGizmoColors)::value_type)
+	};
+
+	if (FAILED(gResources->device->CreateBuffer(&bufDesc, nullptr, gResources->gizmoColorSB.ReleaseAndGetAddressOf()))) {
+		throw std::runtime_error{ "Failed to create gizmo color structured buffer." };
+	}
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC const srvDesc{
+		.Format = DXGI_FORMAT_UNKNOWN,
+		.ViewDimension = D3D11_SRV_DIMENSION_BUFFER,
+		.Buffer = {
+			.FirstElement = 0,
+			.NumElements = static_cast<UINT>(gGizmoColorBufferSize)
+		}
+	};
+
+	if (FAILED(gResources->device->CreateShaderResourceView(gResources->gizmoColorSB.Get(), &srvDesc, gResources->gizmoColorSbSrv.ReleaseAndGetAddressOf()))) {
+		throw std::runtime_error{ "Failed to create gizmo color SB SRV." };
+	}
+}
+
+
+auto RecreateLineGizmoVertexBuffer() -> void {
+	D3D11_BUFFER_DESC const bufDesc{
+		.ByteWidth = static_cast<UINT>(gLineGizmoVertexBufferSize * sizeof(decltype(gLineGizmoVertexData)::value_type)),
+		.Usage = D3D11_USAGE_DYNAMIC,
+		.BindFlags = D3D11_BIND_SHADER_RESOURCE,
+		.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
+		.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED,
+		.StructureByteStride = sizeof(decltype(gLineGizmoVertexData)::value_type)
+	};
+
+	if (FAILED(gResources->device->CreateBuffer(&bufDesc, nullptr, gResources->lineGizmoVertexSB.ReleaseAndGetAddressOf()))) {
+		throw std::runtime_error{ "Failed to create line gizmo vertex structured buffer." };
+	}
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC const srvDesc{
+		.Format = DXGI_FORMAT_UNKNOWN,
+		.ViewDimension = D3D11_SRV_DIMENSION_BUFFER,
+		.Buffer = {
+			.FirstElement = 0,
+			.NumElements = static_cast<UINT>(gLineGizmoVertexBufferSize)
+		}
+	};
+
+	if (FAILED(gResources->device->CreateShaderResourceView(gResources->lineGizmoVertexSB.Get(), &srvDesc, gResources->lineGizmoVertexSbSrv.ReleaseAndGetAddressOf()))) {
+		throw std::runtime_error{ "Failed to create line gizmo vertex SB SRV." };
+	}
+}
+
+
 auto CreateStructuredBuffers() -> void {
 	D3D11_BUFFER_DESC constexpr lightSbDesc{
 		.ByteWidth = MAX_LIGHT_COUNT * sizeof(ShaderLight),
@@ -1069,10 +1150,19 @@ auto CreateStructuredBuffers() -> void {
 	if (FAILED(gResources->device->CreateShaderResourceView(gResources->lightSB.Get(), &lightSbSrvDesc, gResources->lightSbSrv.GetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create light SB SRV." };
 	}
+
+	RecreateGizmoColorBuffer();
+	RecreateLineGizmoVertexBuffer();
 }
 
 
 auto DrawMeshes(std::span<int const> const meshComponentIndices, bool const useMaterials) noexcept -> void {
+	gResources->context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	gResources->context->IASetInputLayout(gResources->meshIL.Get());
+
+	gResources->context->VSSetConstantBuffers(CB_SLOT_PER_MODEL, 1, gResources->perModelCB.GetAddressOf());
+	gResources->context->PSSetConstantBuffers(CB_SLOT_PER_MODEL, 1, gResources->perModelCB.GetAddressOf());
+
 	for (auto const meshComponentIdx : meshComponentIndices) {
 		auto const meshComponent{ gStaticMeshComponents[meshComponentIdx] };
 		auto const& mesh{ meshComponent->GetMesh() };
@@ -1082,7 +1172,6 @@ auto DrawMeshes(std::span<int const> const meshComponentIndices, bool const useM
 		UINT constexpr offsets[]{ 0, 0, 0 };
 		gResources->context->IASetVertexBuffers(0, 3, vertexBuffers, strides, offsets);
 		gResources->context->IASetIndexBuffer(mesh.GetIndexBuffer().Get(), DXGI_FORMAT_R32_UINT, 0);
-		gResources->context->IASetInputLayout(gResources->meshIL.Get());
 
 		D3D11_MAPPED_SUBRESOURCE mappedPerModelCBuf;
 		gResources->context->Map(gResources->perModelCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerModelCBuf);
@@ -1090,9 +1179,6 @@ auto DrawMeshes(std::span<int const> const meshComponentIndices, bool const useM
 		modelMatData = meshComponent->GetEntity()->GetTransform().GetModelMatrix();
 		normalMatData = Matrix4{ meshComponent->GetEntity()->GetTransform().GetNormalMatrix() };
 		gResources->context->Unmap(gResources->perModelCB.Get(), 0);
-
-		gResources->context->VSSetConstantBuffers(CB_SLOT_PER_MODEL, 1, gResources->perModelCB.GetAddressOf());
-		gResources->context->PSSetConstantBuffers(CB_SLOT_PER_MODEL, 1, gResources->perModelCB.GetAddressOf());
 
 		auto const subMeshes{ mesh.GetSubMeshes() };
 		auto const& materials{ meshComponent->GetMaterials() };
@@ -1161,6 +1247,7 @@ auto DoToneMapGammaCorrectionStep(ID3D11ShaderResourceView* const src, ID3D11Ren
 	gResources->context->PSSetShaderResources(TEX_SLOT_TONE_MAP_SRC, 1, &src);
 
 	gResources->context->IASetInputLayout(nullptr);
+	gResources->context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	gResources->context->Draw(6, 0);
 
@@ -1188,6 +1275,7 @@ auto DrawSkybox(Matrix4 const& camViewMtx, Matrix4 const& camProjMtx) noexcept -
 	gResources->context->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
 	gResources->context->IASetIndexBuffer(gResources->cubeMesh->GetIndexBuffer().Get(), DXGI_FORMAT_R32_UINT, 0);
 	gResources->context->IASetInputLayout(gResources->skyboxIL.Get());
+	gResources->context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	gResources->context->VSSetShader(gResources->skyboxVS.Get(), nullptr, 0);
 	gResources->context->PSSetShader(gResources->skyboxPS.Get(), nullptr, 0);
@@ -1405,6 +1493,58 @@ auto CalculatePunctualShadowAtlasAllocation(Visibility const& visibility, Vector
 }
 
 
+auto DrawGizmos() -> void {
+	auto gizmoColorBufferSize{ gGizmoColorBufferSize };
+
+	while (gizmoColorBufferSize < static_cast<int>(gGizmoColors.size())) {
+		gizmoColorBufferSize *= 2;
+	}
+
+	if (gizmoColorBufferSize != gGizmoColorBufferSize) {
+		gGizmoColorBufferSize = gizmoColorBufferSize;
+		RecreateGizmoColorBuffer();
+	}
+
+	if (!gGizmoColors.empty()) {
+		D3D11_MAPPED_SUBRESOURCE mappedGizmoColorSb;
+		gResources->context->Map(gResources->gizmoColorSB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedGizmoColorSb);
+		std::memcpy(mappedGizmoColorSb.pData, gGizmoColors.data(), gGizmoColors.size() * sizeof(decltype(gGizmoColors)::value_type));
+		gResources->context->Unmap(gResources->gizmoColorSB.Get(), 0);
+	}
+
+	auto lineGizmoVertexBufferSize{ gLineGizmoVertexBufferSize };
+
+	while (lineGizmoVertexBufferSize < static_cast<int>(gLineGizmoVertexData.size())) {
+		lineGizmoVertexBufferSize *= 2;
+	}
+
+	if (lineGizmoVertexBufferSize != gLineGizmoVertexBufferSize) {
+		gLineGizmoVertexBufferSize = lineGizmoVertexBufferSize;
+		RecreateLineGizmoVertexBuffer();
+	}
+
+	if (!gLineGizmoVertexData.empty()) {
+		D3D11_MAPPED_SUBRESOURCE mappedLineGizmoVertexSb;
+		gResources->context->Map(gResources->lineGizmoVertexSB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedLineGizmoVertexSb);
+		std::memcpy(mappedLineGizmoVertexSb.pData, gLineGizmoVertexData.data(), gLineGizmoVertexData.size() * sizeof(decltype(gLineGizmoVertexData)::value_type));
+		gResources->context->Unmap(gResources->lineGizmoVertexSB.Get(), 0);
+	}
+
+	gResources->context->PSSetShader(gResources->gizmoPS.Get(), nullptr, 0);
+	gResources->context->PSSetShaderResources(SB_SLOT_GIZMO_COLOR, 1, gResources->gizmoColorSbSrv.GetAddressOf());
+
+	if (!gLineGizmoVertexData.empty()) {
+		gResources->context->VSSetShader(gResources->lineGizmoVS.Get(), nullptr, 0);
+		gResources->context->VSSetShaderResources(SB_SLOT_LINE_GIZMO_VERTEX, 1, gResources->lineGizmoVertexSbSrv.GetAddressOf());
+		gResources->context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+		gResources->context->DrawInstanced(2, static_cast<UINT>(gLineGizmoVertexData.size()), 0, 0);
+		gLineGizmoVertexData.clear();
+	}
+
+	gGizmoColors.clear();
+}
+
+
 auto DrawFullWithCameras(std::span<Camera const* const> const cameras, ID3D11RenderTargetView* const rtv, ID3D11DepthStencilView* const dsv, ID3D11ShaderResourceView* const srv, ID3D11RenderTargetView* const outRtv) noexcept -> void {
 	FLOAT constexpr clearColor[]{ 0, 0, 0, 1 };
 	gResources->context->ClearRenderTargetView(rtv, clearColor);
@@ -1448,6 +1588,7 @@ auto DrawFullWithCameras(std::span<Camera const* const> const cameras, ID3D11Ren
 		CalculatePunctualShadowAtlasAllocation(visibility, camPos, camViewProjMtx, gPunctualShadowAtlasAlloc);
 		ID3D11ShaderResourceView* const nullSrv{ nullptr };
 		gResources->context->PSSetShaderResources(TEX_SLOT_PUNCTUAL_SHADOW_ATLAS, 1, &nullSrv);
+		gResources->context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		DrawShadowMaps(gPunctualShadowAtlasAlloc);
 
 		CullStaticMeshComponents(camFrustWS, visibility);
@@ -1507,6 +1648,7 @@ auto DrawFullWithCameras(std::span<Camera const* const> const cameras, ID3D11Ren
 		gResources->context->RSSetViewports(1, &viewport);
 
 		DrawMeshes(visibility.staticMeshIndices, true);
+		DrawGizmos();
 		DrawSkybox(camViewMtx, camProjMtx);
 	}
 
@@ -1660,8 +1802,6 @@ auto StartUp() -> void {
 	gWindow.OnWindowSize.add_handler(&on_window_resize);
 
 	dxgiFactory2->MakeWindowAssociation(gWindow.GetHandle(), DXGI_MWA_NO_WINDOW_CHANGES);
-
-	gResources->context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
 
 
@@ -1878,5 +2018,11 @@ auto CullStaticMeshComponents(Frustum const& frustumWS, Visibility& visibility) 
 			visibility.staticMeshIndices.emplace_back(i);
 		}
 	}
+}
+
+
+auto DrawLineAtNextRender(Vector3 const& from, Vector3 const& to, Color const& color) -> void {
+	gGizmoColors.emplace_back(color);
+	gLineGizmoVertexData.emplace_back(from, static_cast<std::uint32_t>(gGizmoColors.size() - 1), to, 0.0f);
 }
 }

@@ -391,6 +391,10 @@ auto DrawSceneViewWindow(Context& context) -> void {
 			editorCam.orientation *= Quaternion{ Vector3::Right(), static_cast<f32>(mouseY) * sens };
 		}
 
+		if (auto const selectedObject{ context.GetSelectedObject() }) {
+			context.GetFactoryManager().GetFor(selectedObject->GetSerializationType()).OnDrawGizmosSelected(context, *selectedObject);
+		}
+
 		renderer::DrawSceneView(editorCam);
 		ImGui::Image(renderer::GetSceneFrame(), contentRegionSize);
 

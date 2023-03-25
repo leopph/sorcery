@@ -891,4 +891,28 @@ auto EditorObjectWrapperFor<Cubemap>::GetImporter() -> Importer& {
 	CubemapImporter static cubemapImporter;
 	return cubemapImporter;
 }
+
+
+auto EditorObjectWrapperFor<Entity>::OnDrawGizmosSelected(Context& context, Object& object) -> void {
+	auto const& entity{ dynamic_cast<Entity&>(object) };
+	std::vector<Component*> static components;
+	components.clear();
+	entity.GetComponents(components);
+
+	for (auto const component : components) {
+		context.GetFactoryManager().GetFor(component->GetSerializationType()).OnDrawGizmosSelected(context, *component);
+	}
+}
+
+
+auto EditorObjectWrapperFor<LightComponent>::OnDrawGizmosSelected([[maybe_unused]] Context& context, Object& object) -> void {
+	auto const& light{ dynamic_cast<LightComponent&>(object) };
+
+	if (light.GetType() == LightComponent::Type::Spot) {
+		auto const& transform{ light.GetEntity()->GetTransform() };
+		auto const& pos{ transform.GetWorldPosition() };
+		auto const& forward{ transform.GetForwardAxis() };
+		renderer::DrawLineAtNextRender(pos, pos + forward, Color::Magenta());
+	}
+}
 }

@@ -53,6 +53,8 @@ typedef bool BOOL;
 #define SAMPLER_SLOT_SKYBOX_CUBEMAP 0
 
 #define SB_SLOT_LIGHTS 5
+#define SB_SLOT_LINE_GIZMO_VERTEX 1
+#define SB_SLOT_GIZMO_COLOR 0
 
 
 struct ShaderLight {
@@ -89,6 +91,14 @@ struct ShaderMaterial {
 
 	BOOL sampleRoughness;
 	BOOL sampleAo;
+};
+
+
+struct ShaderLineGizmoVertexData {
+	float3 from;
+	uint colorIdx;
+	float3 to;
+	float pad;
 };
 
 

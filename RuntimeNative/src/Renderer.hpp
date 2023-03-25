@@ -124,4 +124,6 @@ LEOPPHAPI auto UnregisterGameCamera(Camera const& cam) -> void;
 
 LEOPPHAPI auto CullLights(Frustum const& frustumWS, Visibility& visibility) -> void;
 LEOPPHAPI auto CullStaticMeshComponents(Frustum const& frustumWS, Visibility& visibility) -> void;
+
+LEOPPHAPI auto DrawLineAtNextRender(Vector3 const& from, Vector3 const& to, Color const& color) -> void;
 }

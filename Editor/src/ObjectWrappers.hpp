@@ -23,16 +23,20 @@ namespace leopph::editor {
 class EditorObjectFactoryManager;
 class Context;
 
+
 class EditorObjectWrapper : public ObjectInstantiator {
 public:
 	virtual auto OnGui(Context& context, Object& object) -> void = 0;
 	[[nodiscard]] virtual auto GetImporter() -> Importer& = 0;
+	virtual auto OnDrawGizmosSelected(Context& context, Object& object) -> void = 0;
 };
+
 
 template<typename Wrapped>
 class EditorObjectWrapperFor : public EditorObjectWrapper {
 public:
 	auto OnGui([[maybe_unused]] Context& context, [[maybe_unused]] Object& object) -> void override {}
+
 
 	[[nodiscard]] auto Instantiate() -> Object* override {
 		if constexpr (std::derived_from<Wrapped, SceneElement>) {
@@ -43,10 +47,15 @@ public:
 		}
 	}
 
+
 	[[nodiscard]] auto GetImporter() -> Importer& override {
 		throw std::runtime_error{ "The wrapped type has no associated importer." };
 	}
+
+
+	auto OnDrawGizmosSelected([[maybe_unused]] Context& context, [[maybe_unused]] Object& object) -> void override {}
 };
+
 
 template<>
 auto EditorObjectWrapperFor<BehaviorComponent>::OnGui(Context& context, Object& object) -> void;
@@ -98,4 +107,10 @@ auto EditorObjectWrapperFor<Scene>::GetImporter() -> Importer&;
 
 template<>
 auto EditorObjectWrapperFor<Cubemap>::GetImporter() -> Importer&;
+
+template<>
+auto EditorObjectWrapperFor<Entity>::OnDrawGizmosSelected(Context& context, Object& object) -> void;
+
+template<>
+auto EditorObjectWrapperFor<LightComponent>::OnDrawGizmosSelected(Context& context, Object& object) -> void;
 }

@@ -202,6 +202,7 @@
     <None Include="src\shaders\MeshVSOut.hlsli" />
     <None Include="src\shaders\SkyboxVSOut.hlsli" />
     <None Include="src\shaders\BRDF.hlsli" />
+    <None Include="src\shaders\GizmoVsOut.hlsli" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="src\shaders\MeshPbrPS.hlsl" />
@@ -211,5 +212,7 @@
     <FxCompile Include="src\shaders\SkyboxPS.hlsl" />
     <FxCompile Include="src\shaders\ShadowVS.hlsl" />
     <FxCompile Include="src\shaders\ScreenVS.hlsl" />
+    <FxCompile Include="src\shaders\LineGizmoVS.hlsl" />
+    <FxCompile Include="src\shaders\GizmoPS.hlsl" />
   </ItemGroup>
 </Project>
