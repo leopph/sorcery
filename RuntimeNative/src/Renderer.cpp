@@ -1252,13 +1252,16 @@ auto DrawShadowMaps(ShadowAtlasAllocation const& alloc) -> void {
 }
 
 
-auto CalculateSpotLightLocalBounds(LightComponent const& spotLight) noexcept -> AABB {
+[[nodiscard]] auto CalculateSpotLightLocalVertices(LightComponent const& spotLight) noexcept -> std::array<Vector3, 5> {
 	auto const range{ spotLight.GetRange() };
 	auto const coneBaseRadius{ std::tan(ToRadians(spotLight.GetOuterAngle())) * range };
 
-	return AABB{
-		.min = Vector3{ -coneBaseRadius, -coneBaseRadius, 0 },
-		.max = Vector3{ coneBaseRadius, coneBaseRadius, range }
+	return std::array{
+		Vector3::Zero(),
+		Vector3{ -coneBaseRadius, -coneBaseRadius, range },
+		Vector3{ coneBaseRadius, -coneBaseRadius, range },
+		Vector3{ coneBaseRadius, coneBaseRadius, range },
+		Vector3{ -coneBaseRadius, coneBaseRadius, range }
 	};
 }
 
@@ -1290,18 +1293,16 @@ auto CalculatePunctualShadowAtlasAllocation(Visibility const& visibility, Vector
 			}
 
 			case LightComponent::Type::Spot: {
-				auto const localBounds{ CalculateSpotLightLocalBounds(*light) };
-				auto boundVertices{ localBounds.CalculateVertices() };
+				auto lightVertices{ CalculateSpotLightLocalVertices(*light) };
 
-				auto const modelMtxNoScale{ CalculateModelMatrixNoScale(light->GetEntity()->GetTransform()) };
-
-				for (auto& boundVertex : boundVertices) {
-					boundVertex = Vector3{ Vector4{ boundVertex, 1 } * modelMtxNoScale };
+				for (auto const modelMtxNoScale{ CalculateModelMatrixNoScale(light->GetEntity()->GetTransform()) };
+				     auto& vertex : lightVertices) {
+					vertex = Vector3{ Vector4{ vertex, 1 } * modelMtxNoScale };
 				}
 
 				std::optional<int> quadrantIdx;
 
-				if (auto const [worldMin, worldMax]{ AABB::FromVertices(boundVertices) };
+				if (auto const [worldMin, worldMax]{ AABB::FromVertices(lightVertices) };
 					worldMin[0] <= camPos[0] && worldMin[1] <= camPos[1] && worldMin[2] <= camPos[2] &&
 					worldMax[0] >= camPos[0] && worldMax[1] >= camPos[1] && worldMax[2] >= camPos[2]) {
 					quadrantIdx = 0;
@@ -1313,10 +1314,10 @@ auto CalculatePunctualShadowAtlasAllocation(Visibility const& visibility, Vector
 					Vector2 min{ std::numeric_limits<float>::max() };
 					Vector2 max{ std::numeric_limits<float>::lowest() };
 
-					for (auto const& boundVertex : boundVertices) {
-						Vector4 boundVertex4{ boundVertex, 1 };
-						boundVertex4 *= camViewProjMtx;
-						auto const projected{ Vector2{ boundVertex4 } / boundVertex4[3] };
+					for (auto& vertex : lightVertices) {
+						Vector4 vertex4{ vertex, 1 };
+						vertex4 *= camViewProjMtx;
+						auto const projected{ Vector2{ vertex4 } / vertex4[3] };
 						min = Clamp(Min(min, projected), bottomLeft, topRight);
 						max = Clamp(Max(max, projected), bottomLeft, topRight);
 					}
@@ -1833,12 +1834,12 @@ auto CullLights(Frustum const& frustumWS, Visibility& visibility) -> void {
 		}
 
 		case LightComponent::Type::Spot: {
-			auto const boundsVerticesWS{
+			auto const lightVerticesWS{
 				[light] {
-					auto const modelMtxNoScale{ CalculateModelMatrixNoScale(light->GetEntity()->GetTransform()) };
-					auto vertices{ CalculateSpotLightLocalBounds(*light).CalculateVertices() };
+					auto vertices{ CalculateSpotLightLocalVertices(*light) };
 
-					for (auto& vertex : vertices) {
+					for (auto const modelMtxNoScale{ CalculateModelMatrixNoScale(light->GetEntity()->GetTransform()) };
+					     auto& vertex : vertices) {
 						vertex = Vector3{ Vector4{ vertex, 1 } * modelMtxNoScale };
 					}
 
@@ -1846,7 +1847,7 @@ auto CullLights(Frustum const& frustumWS, Visibility& visibility) -> void {
 				}()
 			};
 
-			if (frustumWS.Intersects(AABB::FromVertices(boundsVerticesWS))) {
+			if (frustumWS.Intersects(AABB::FromVertices(lightVerticesWS))) {
 				visibility.lightIndices.emplace_back(lightIdx);
 			}
 
