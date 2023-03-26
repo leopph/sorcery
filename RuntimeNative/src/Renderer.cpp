@@ -121,7 +121,6 @@ struct Resources {
 
 
 struct ShadowAtlasCellData {
-	Matrix4 shadowViewMtx;
 	Matrix4 shadowViewProjMtx;
 	// Index into the array of indices to the visible lights, use lights[visibleLights[visibleLightIdxIdx]] to get to the light
 	int visibleLightIdxIdx;
@@ -137,11 +136,6 @@ class ShadowAtlasAllocation {
 	std::array<std::optional<ShadowAtlasCellData>, 64> mQuadrant3;
 
 public:
-	[[nodiscard]] auto GetSize() const noexcept -> int {
-		return PUNCTUAL_SHADOW_ATLAS_SIZE;
-	}
-
-
 	[[nodiscard]] auto GetQuadrantCells(int const idx) const -> std::span<std::optional<ShadowAtlasCellData> const> {
 		return const_cast<ShadowAtlasAllocation*>(this)->GetQuadrantCells(idx);
 	}
@@ -168,7 +162,7 @@ public:
 	}
 
 
-	[[nodiscard]] auto GetQuadrantRowColCount(int const idx) const -> int {
+	[[nodiscard]] static auto GetQuadrantRowColCount(int const idx) -> int {
 		if (idx > 3 || idx < 0) {
 			throw std::out_of_range{ "Shadow atlas quadrant index out of bounds." };
 		}
@@ -177,12 +171,12 @@ public:
 	}
 
 
-	[[nodiscard]] auto GetQuadrantCellSizeNormalized(int const idx) const -> float {
+	[[nodiscard]] static auto GetQuadrantCellSizeNormalized(int const idx) -> float {
 		return 0.5f / static_cast<float>(GetQuadrantRowColCount(idx));
 	}
 
 
-	[[nodiscard]] auto GetQuadrantOffsetNormalized(int const idx) const -> Vector2 {
+	[[nodiscard]] static auto GetQuadrantOffsetNormalized(int const idx) -> Vector2 {
 		switch (idx) {
 		case 0: {
 			return Vector2{ 0 };
@@ -203,7 +197,7 @@ public:
 	}
 
 
-	[[nodiscard]] auto GetCellOffsetNormalized(int const quadrantIdx, int const cellIdx) const -> Vector2 {
+	[[nodiscard]] static auto GetCellOffsetNormalized(int const quadrantIdx, int const cellIdx) -> Vector2 {
 		auto const rowColCount{ GetQuadrantRowColCount(quadrantIdx) };
 
 		if (cellIdx < 0 || cellIdx > Pow(rowColCount, 2)) {
@@ -1306,11 +1300,11 @@ auto DrawShadowMaps(ShadowAtlasAllocation const& alloc) -> void {
 
 	for (int i = 0; i < 4; i++) {
 		auto const cells{ alloc.GetQuadrantCells(i) };
-		auto const cellSize{ alloc.GetQuadrantCellSizeNormalized(i) * static_cast<float>(alloc.GetSize()) };
+		auto const cellSize{ ShadowAtlasAllocation::GetQuadrantCellSizeNormalized(i) * static_cast<float>(PUNCTUAL_SHADOW_ATLAS_SIZE) };
 
 		for (int j = 0; j < static_cast<int>(cells.size()); j++) {
 			if (cells[j]) {
-				auto const cellOffset{ alloc.GetCellOffsetNormalized(i, j) * static_cast<float>(alloc.GetSize()) };
+				auto const cellOffset{ ShadowAtlasAllocation::GetCellOffsetNormalized(i, j) * static_cast<float>(PUNCTUAL_SHADOW_ATLAS_SIZE) };
 
 				D3D11_VIEWPORT const viewport{
 					.TopLeftX = cellOffset[0],
@@ -1455,7 +1449,7 @@ auto CalculatePunctualShadowAtlasAllocation(Visibility const& visibility, Vector
 				                            light->GetRange())
 			};
 
-			cell.emplace(shadowViewMtx, shadowViewMtx * shadowProjMtx, lightIdxIdx);
+			cell.emplace(shadowViewMtx * shadowProjMtx, lightIdxIdx);
 		}
 
 		if (i + 1 < 4) {
