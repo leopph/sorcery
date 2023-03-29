@@ -800,7 +800,7 @@ auto EditorObjectWrapperFor<Scene>::OnGui(Context& context, Object& object) -> v
 }
 
 
-auto EditorObjectWrapperFor<SkyboxComponent>::OnGui(Context& context, Object& object) -> void {
+auto EditorObjectWrapperFor<SkyboxComponent>::OnGui([[maybe_unused]] Context& context, Object& object) -> void {
 	auto& skybox{ dynamic_cast<SkyboxComponent&>(object) };
 
 	ImGui::PushID(skybox.GetGuid().ToString().c_str());

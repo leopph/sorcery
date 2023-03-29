@@ -16,7 +16,7 @@ auto editor::CubemapImporter::GetSupportedExtensions() const -> std::string {
 }
 
 
-auto editor::CubemapImporter::Import(InputImportInfo const& importInfo, std::filesystem::path const& cacheDir) -> Object* {
+auto editor::CubemapImporter::Import(InputImportInfo const& importInfo, [[maybe_unused]] std::filesystem::path const& cacheDir) -> Object* {
 	int width;
 	int height;
 	int channelCount;
