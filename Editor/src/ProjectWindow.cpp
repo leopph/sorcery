@@ -7,7 +7,11 @@
 
 #include <misc/cpp/imgui_stdlib.h>
 
+#include <functional>
+
+
 namespace leopph::editor {
+namespace {
 auto IndexFileNameIfNeeded(std::filesystem::path const& filePathAbsolute) -> std::filesystem::path {
 	std::string const originalStem{ filePathAbsolute.stem().string() };
 	std::filesystem::path const ext{ filePathAbsolute.extension() };
@@ -38,39 +42,44 @@ auto IndexFileNameIfNeeded(std::filesystem::path const& filePathAbsolute) -> std
 }
 
 
+auto DrawSideFolderView(std::filesystem::path const& dir, std::filesystem::path& selectedProjSubDir) -> void {
+	std::filesystem::directory_iterator const it{ dir };
+	ImGuiTreeNodeFlags treeNodeFlags{ ImGuiTreeNodeFlags_OpenOnArrow };
+
+	if (begin(it) == end(it)) {
+		treeNodeFlags |= ImGuiTreeNodeFlags_Leaf;
+	}
+	else {
+		treeNodeFlags |= ImGuiTreeNodeFlags_DefaultOpen;
+	}
+	if (selectedProjSubDir == dir) {
+		treeNodeFlags |= ImGuiTreeNodeFlags_Selected;
+	}
+
+	if (ImGui::TreeNodeEx(dir.stem().string().c_str(), treeNodeFlags)) {
+		if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) {
+			selectedProjSubDir = dir;
+		}
+
+		for (auto const& entry : it) {
+			if (is_directory(entry)) {
+				DrawSideFolderView(entry.path(), selectedProjSubDir);
+			}
+		}
+		ImGui::TreePop();
+	}
+}
+}
+
+
 auto DrawProjectWindow(Context& context) -> void {
 	if (ImGui::Begin("Project", nullptr, ImGuiWindowFlags_NoCollapse)) {
 		if (ImGui::BeginTable("ProjectWindowMainTable", 2, ImGuiTableFlags_Resizable)) {
 			ImGui::TableNextRow();
 			ImGui::TableSetColumnIndex(0);
+
 			std::filesystem::path static selectedProjSubDir{ context.GetAssetDirectoryAbsolute() };
-			[](this auto self, std::filesystem::path const& dir) -> void {
-				std::filesystem::directory_iterator const it{ dir };
-				ImGuiTreeNodeFlags treeNodeFlags{ ImGuiTreeNodeFlags_OpenOnArrow };
-
-				if (begin(it) == end(it)) {
-					treeNodeFlags |= ImGuiTreeNodeFlags_Leaf;
-				}
-				else {
-					treeNodeFlags |= ImGuiTreeNodeFlags_DefaultOpen;
-				}
-				if (selectedProjSubDir == dir) {
-					treeNodeFlags |= ImGuiTreeNodeFlags_Selected;
-				}
-
-				if (ImGui::TreeNodeEx(dir.stem().string().c_str(), treeNodeFlags)) {
-					if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) {
-						selectedProjSubDir = dir;
-					}
-
-					for (auto const& entry : it) {
-						if (is_directory(entry)) {
-							self(entry.path());
-						}
-					}
-					ImGui::TreePop();
-				}
-			}(context.GetAssetDirectoryAbsolute());
+			DrawSideFolderView(context.GetAssetDirectoryAbsolute(), selectedProjSubDir);
 
 			ImGui::TableSetColumnIndex(1);
 

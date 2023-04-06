@@ -1,6 +1,9 @@
 #pragma once
 
+#include "Core.hpp"
+
 #include <algorithm>
+#include <string_view>
 #include <type_traits>
 #include <utility>
 
@@ -80,4 +83,7 @@ concept Scalar = std::is_scalar_v<T>;
 
 	return what + multipleOf - remainder;
 }
+
+
+LEOPPHAPI [[nodiscard]] auto Contains(std::string_view src, std::string_view target) -> bool;
 }

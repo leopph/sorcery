@@ -5,15 +5,13 @@
 #include <imgui.h>
 #include <misc/cpp/imgui_stdlib.h>
 
-#include "ManagedRuntime.hpp"
-#include "Renderer.hpp"
-#include "Systems.hpp"
-
-
 #include <mono/metadata/class.h>
 #include <mono/metadata/object.h>
 #include <mono/metadata/reflection.h>
 
+#include "ManagedRuntime.hpp"
+#include "Renderer.hpp"
+#include "Systems.hpp"
 #include "CubemapImporter.hpp"
 #include "EditorContext.hpp"
 #include "ObjectFactoryManager.hpp"
@@ -21,6 +19,8 @@
 #include "MeshImporter.hpp"
 #include "MaterialImporter.hpp"
 #include "SceneImporter.hpp"
+#include "Util.hpp"
+
 
 namespace leopph::editor {
 auto EditorObjectWrapperFor<BehaviorComponent>::OnGui([[maybe_unused]] Context& context, Object& object) -> void {
@@ -257,7 +257,7 @@ auto EditorObjectWrapperFor<StaticMeshComponent>::OnGui([[maybe_unused]] Context
 			if (ImGui::InputText("###SearchMesh", &meshFilter)) {
 				Object::FindObjectsOfType(meshes);
 				std::erase_if(meshes, [](Mesh const* mesh) {
-					return !mesh->GetName().contains(meshFilter);
+					return !Contains(mesh->GetName(), meshFilter);
 				});
 			}
 
@@ -311,7 +311,7 @@ auto EditorObjectWrapperFor<StaticMeshComponent>::OnGui([[maybe_unused]] Context
 					if (ImGui::InputText("###SearchMat", &matFilter)) {
 						Object::FindObjectsOfType(allMaterials);
 						std::erase_if(allMaterials, [](Material const* mat) {
-							return !mat->GetName().contains(matFilter);
+							return !Contains(mat->GetName(), matFilter);
 						});
 					}
 
@@ -555,7 +555,7 @@ auto EditorObjectWrapperFor<Material>::OnGui([[maybe_unused]] Context& context, 
 			if (ImGui::InputText("###SearchTextures", &texFilter)) {
 				Object::FindObjectsOfType(textures);
 				std::erase_if(textures, [](Texture2D const* tex) {
-					return tex && !tex->GetName().contains(texFilter);
+					return tex && !Contains(tex->GetName(), texFilter);
 				});
 			}
 
@@ -833,7 +833,7 @@ auto EditorObjectWrapperFor<SkyboxComponent>::OnGui([[maybe_unused]] Context& co
 			if (ImGui::InputText("##Filter", &cubemapFilter)) {
 				Object::FindObjectsOfType(cubemaps);
 				std::erase_if(cubemaps, [](Cubemap const* cubemap) {
-					return cubemap && !cubemap->GetName().contains(cubemapFilter);
+					return cubemap && !Contains(cubemap->GetName(), cubemapFilter);
 				});
 			}
 
@@ -916,7 +916,7 @@ auto EditorObjectWrapperFor<LightComponent>::OnDrawGizmosSelected([[maybe_unused
 			vertex = Vector3{ Vector4{ vertex, 1 } * modelMtxNoScale };
 		}
 
-		const Color lineColor{ Color::Magenta() };
+		Color const lineColor{ Color::Magenta() };
 
 		// This highly depends on the order CalculateSpotLightLocalVertices returns the vertices
 		for (int i = 0; i < 4; i++) {

@@ -23,14 +23,6 @@ public:
 	LEOPPHAPI auto CreateEntity() -> Entity&;
 	LEOPPHAPI auto DestroyEntity(Entity const& entityToRemove) -> void;
 
-	[[nodiscard]] constexpr decltype(auto) begin(this auto&& self) noexcept {
-		return self.mEntities.begin();
-	}
-
-	[[nodiscard]] constexpr decltype(auto) end(this auto&& self) noexcept {
-		return self.mEntities.end();
-	}
-
 	[[nodiscard]] LEOPPHAPI auto GetEntities() const noexcept -> std::span<std::unique_ptr<Entity> const>;
 
 	LEOPPHAPI auto Serialize(std::vector<std::uint8_t>& out) const noexcept -> void override;

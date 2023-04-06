@@ -1,5 +1,8 @@
 #include "EntityHierarchyWindow.hpp"
 
+#include <functional>
+
+
 namespace leopph::editor {
 auto DrawEntityHierarchyWindow(Context& context) -> void {
 	if (ImGui::Begin("Entities", nullptr, ImGuiWindowFlags_NoCollapse)) {
@@ -35,67 +38,66 @@ auto DrawEntityHierarchyWindow(Context& context) -> void {
 
 		auto entities{ context.GetScene()->GetEntities() };
 
-		auto const displayEntityRecursive{
-			[&entities, &context](this auto self, Entity& entity) -> void {
-				ImGuiTreeNodeFlags nodeFlags{ baseFlags };
+		std::function<void(Entity&)> displayEntityRecursive;
+		displayEntityRecursive = [&context, &entities, &displayEntityRecursive](Entity& entity) -> void {
+			ImGuiTreeNodeFlags nodeFlags{ baseFlags };
 
-				if (entity.GetTransform().GetChildren().empty()) {
-					nodeFlags |= ImGuiTreeNodeFlags_Leaf;
+			if (entity.GetTransform().GetChildren().empty()) {
+				nodeFlags |= ImGuiTreeNodeFlags_Leaf;
+			}
+			else {
+				nodeFlags |= ImGuiTreeNodeFlags_DefaultOpen;
+			}
+
+			if (context.GetSelectedObject() && context.GetSelectedObject()->GetGuid() == entity.GetGuid()) {
+				nodeFlags |= ImGuiTreeNodeFlags_Selected;
+			}
+
+			bool const nodeOpen{ ImGui::TreeNodeEx(entity.GetName().data(), nodeFlags) };
+
+			if (ImGui::BeginDragDropSource()) {
+				ImGui::SetDragDropPayload(entityPayloadType, &entity, sizeof entity);
+				ImGui::Text("%s", entity.GetName().data());
+				ImGui::EndDragDropSource();
+			}
+
+			if (ImGui::BeginDragDropTarget()) {
+				if (auto const payload{ ImGui::AcceptDragDropPayload(entityPayloadType) }) {
+					static_cast<Entity*>(payload->Data)->GetTransform().SetParent(&entity.GetTransform());
 				}
-				else {
-					nodeFlags |= ImGuiTreeNodeFlags_DefaultOpen;
+				ImGui::EndDragDropTarget();
+			}
+
+			if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) {
+				context.SetSelectedObject(&entity);
+			}
+
+			bool deleted{ false };
+
+			if (ImGui::BeginPopupContextItem()) {
+				context.SetSelectedObject(&entity);
+
+				if (ImGui::MenuItem("Delete")) {
+					entity.GetScene().DestroyEntity(entity);
+					entities = context.GetScene()->GetEntities();
+					context.SetSelectedObject(nullptr);
+					deleted = true;
+					ImGui::CloseCurrentPopup();
 				}
+				ImGui::EndPopup();
+			}
 
-				if (context.GetSelectedObject() && context.GetSelectedObject()->GetGuid() == entity.GetGuid()) {
-					nodeFlags |= ImGuiTreeNodeFlags_Selected;
-				}
+			ImGui::OpenPopupOnItemClick(nullptr, ImGuiPopupFlags_MouseButtonRight);
 
-				bool const nodeOpen{ ImGui::TreeNodeEx(entity.GetName().data(), nodeFlags) };
-
-				if (ImGui::BeginDragDropSource()) {
-					ImGui::SetDragDropPayload(entityPayloadType, &entity, sizeof entity);
-					ImGui::Text("%s", entity.GetName().data());
-					ImGui::EndDragDropSource();
-				}
-
-				if (ImGui::BeginDragDropTarget()) {
-					if (auto const payload{ ImGui::AcceptDragDropPayload(entityPayloadType) }) {
-						static_cast<Entity*>(payload->Data)->GetTransform().SetParent(&entity.GetTransform());
+			if (nodeOpen) {
+				if (!deleted) {
+					for (std::size_t childIndex{ 0 }; childIndex < entity.GetTransform().GetChildren().size(); childIndex++) {
+						ImGui::PushID(static_cast<int>(childIndex));
+						displayEntityRecursive(*entity.GetTransform().GetChildren()[childIndex]->GetEntity());
+						ImGui::PopID();
 					}
-					ImGui::EndDragDropTarget();
 				}
-
-				if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) {
-					context.SetSelectedObject(&entity);
-				}
-
-				bool deleted{ false };
-
-				if (ImGui::BeginPopupContextItem()) {
-					context.SetSelectedObject(&entity);
-
-					if (ImGui::MenuItem("Delete")) {
-						entity.GetScene().DestroyEntity(entity);
-						entities = context.GetScene()->GetEntities();
-						context.SetSelectedObject(nullptr);
-						deleted = true;
-						ImGui::CloseCurrentPopup();
-					}
-					ImGui::EndPopup();
-				}
-
-				ImGui::OpenPopupOnItemClick(nullptr, ImGuiPopupFlags_MouseButtonRight);
-
-				if (nodeOpen) {
-					if (!deleted) {
-						for (std::size_t childIndex{ 0 }; childIndex < entity.GetTransform().GetChildren().size(); childIndex++) {
-							ImGui::PushID(static_cast<int>(childIndex));
-							self(*entity.GetTransform().GetChildren()[childIndex]->GetEntity());
-							ImGui::PopID();
-						}
-					}
-					ImGui::TreePop();
-				}
+				ImGui::TreePop();
 			}
 		};
 
