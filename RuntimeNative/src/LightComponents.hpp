@@ -5,6 +5,7 @@
 
 #include <array>
 
+
 namespace leopph {
 class LightComponent : public Component {
 public:
@@ -53,7 +54,7 @@ public:
 	[[nodiscard]] LEOPPHAPI auto GetOuterAngle() const -> f32;
 	LEOPPHAPI auto SetOuterAngle(f32 degrees) -> void;
 
-	LEOPPHAPI [[nodiscard]] auto GetShadowBias() const noexcept -> float;
+	[[nodiscard]] LEOPPHAPI auto GetShadowBias() const noexcept -> float;
 	LEOPPHAPI auto SetShadowBias(float bias) noexcept -> void;
 
 private:
@@ -95,7 +96,7 @@ private:
 };
 
 
-LEOPPHAPI [[nodiscard]] auto CalculateSpotLightLocalVertices(LightComponent const& spotLight) noexcept -> std::array<Vector3, 5>;
+[[nodiscard]] LEOPPHAPI auto CalculateSpotLightLocalVertices(LightComponent const& spotLight) noexcept -> std::array<Vector3, 5>;
 
 
 namespace managedbindings {

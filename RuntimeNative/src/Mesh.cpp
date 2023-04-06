@@ -7,6 +7,7 @@
 #include <utility>
 #include <format>
 
+
 namespace leopph {
 auto Mesh::UploadToGPU() -> void {
 	D3D11_BUFFER_DESC const posDesc{
@@ -160,15 +161,15 @@ auto Mesh::ValidateAndUpdate() -> void {
 	}
 
 	for (auto const& [baseVertex, firstIndex, indexCount] : mTempData.subMeshes) {
-		if (baseVertex >= mTempData.positions.size()) {
+		if (baseVertex >= std::ssize(mTempData.positions)) {
 			throw std::runtime_error{ std::format(errFmt, GetGuid().ToString(), GetName(), "A submesh contains a base vertex greater than the number of vertices.") };
 		}
 
-		if (firstIndex >= mTempData.indices.size()) {
+		if (firstIndex >= std::ssize(mTempData.indices)) {
 			throw std::runtime_error{ std::format(errFmt, GetGuid().ToString(), GetName(), "A submesh contains a first index greater than the number of indices.") };
 		}
 
-		if (firstIndex + indexCount > mTempData.indices.size()) {
+		if (firstIndex + indexCount > std::ssize(mTempData.indices)) {
 			throw std::runtime_error{ std::format(errFmt, GetGuid().ToString(), GetName(), "A submesh contains an out of bounds index region.") };
 		}
 

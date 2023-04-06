@@ -7,6 +7,7 @@
 #include <span>
 #include <vector>
 
+
 namespace leopph {
 class StaticMeshComponent : public Component {
 	std::vector<Material*> mMaterials;
@@ -16,13 +17,13 @@ public:
 	LEOPPHAPI StaticMeshComponent();
 	~StaticMeshComponent() override;
 
-	LEOPPHAPI [[nodiscard]] auto GetMaterials() const noexcept -> std::span<Material* const>;
+	[[nodiscard]] LEOPPHAPI auto GetMaterials() const noexcept -> std::span<Material* const>;
 	LEOPPHAPI auto AddMaterial(Material& mtl) noexcept -> void;
 	LEOPPHAPI auto RemoveMaterial(int idx) noexcept -> void;
 	LEOPPHAPI auto ReplaceMaterial(int idx, Material& mtl) noexcept -> void;
 	LEOPPHAPI auto SetMaterials(std::vector<Material*> materials) noexcept -> void;
 
-	LEOPPHAPI [[nodiscard]] auto GetMesh() const noexcept -> Mesh&;
+	[[nodiscard]] LEOPPHAPI auto GetMesh() const noexcept -> Mesh&;
 	LEOPPHAPI auto SetMesh(Mesh& mesh) noexcept -> void;
 
 	[[nodiscard]] LEOPPHAPI auto GetSerializationType() const -> Type override;
@@ -33,6 +34,6 @@ public:
 	auto Serialize(YAML::Node& node) const -> void override;
 	auto Deserialize(YAML::Node const& node) -> void override;
 
-	LEOPPHAPI [[nodiscard]] auto CalculateBounds() const noexcept -> AABB;
+	[[nodiscard]] LEOPPHAPI auto CalculateBounds() const noexcept -> AABB;
 };
 }

@@ -93,7 +93,7 @@ public:
 };
 
 
-LEOPPHAPI [[nodiscard]] auto CalculateModelMatrixNoScale(TransformComponent const& transform) noexcept -> Matrix4;
+[[nodiscard]] LEOPPHAPI auto CalculateModelMatrixNoScale(TransformComponent const& transform) noexcept -> Matrix4;
 
 
 namespace managedbindings {

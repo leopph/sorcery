@@ -41,36 +41,36 @@ public:
 	LEOPPHAPI Material();
 	LEOPPHAPI Material(Vector3 const& albedoVector, float metallic, float roughness, float ao, Texture2D* albedoMap, Texture2D* metallicMap, Texture2D* roughnessMap, Texture2D* aoMap);
 
-	LEOPPHAPI [[nodiscard]] auto GetAlbedoVector() const noexcept -> Vector3;
+	[[nodiscard]] LEOPPHAPI auto GetAlbedoVector() const noexcept -> Vector3;
 	LEOPPHAPI auto SetAlbedoVector(Vector3 const& albedoVector) noexcept -> void;
 
-	LEOPPHAPI [[nodiscard]] auto GetAlbedoColor() const noexcept -> Color;
+	[[nodiscard]] LEOPPHAPI auto GetAlbedoColor() const noexcept -> Color;
 	LEOPPHAPI auto SetAlbedoColor(Color const& albedoColor) noexcept -> void;
 
-	LEOPPHAPI [[nodiscard]] auto GetMetallic() const noexcept -> f32;
+	[[nodiscard]] LEOPPHAPI auto GetMetallic() const noexcept -> f32;
 	LEOPPHAPI auto SetMetallic(f32 metallic) noexcept -> void;
 
-	LEOPPHAPI [[nodiscard]] auto GetRoughness() const noexcept -> f32;
+	[[nodiscard]] LEOPPHAPI auto GetRoughness() const noexcept -> f32;
 	LEOPPHAPI auto SetRoughness(f32 roughness) noexcept -> void;
 
-	LEOPPHAPI [[nodiscard]] auto GetAo() const noexcept -> f32;
+	[[nodiscard]] LEOPPHAPI auto GetAo() const noexcept -> f32;
 	LEOPPHAPI auto SetAo(f32 ao) noexcept -> void;
 
-	LEOPPHAPI [[nodiscard]] auto GetAlbedoMap() const noexcept -> Texture2D*;
+	[[nodiscard]] LEOPPHAPI auto GetAlbedoMap() const noexcept -> Texture2D*;
 	LEOPPHAPI auto SetAlbedoMap(Texture2D* tex) noexcept -> void;
 
-	LEOPPHAPI [[nodiscard]] auto GetMetallicMap() const noexcept -> Texture2D*;
+	[[nodiscard]] LEOPPHAPI auto GetMetallicMap() const noexcept -> Texture2D*;
 	LEOPPHAPI auto SetMetallicMap(Texture2D* tex) noexcept -> void;
 
-	LEOPPHAPI [[nodiscard]] auto GetRoughnessMap() const noexcept -> Texture2D*;
+	[[nodiscard]] LEOPPHAPI auto GetRoughnessMap() const noexcept -> Texture2D*;
 	LEOPPHAPI auto SetRoughnessMap(Texture2D* tex) noexcept -> void;
 
-	LEOPPHAPI [[nodiscard]] auto GetAoMap() const noexcept -> Texture2D*;
+	[[nodiscard]] LEOPPHAPI auto GetAoMap() const noexcept -> Texture2D*;
 	LEOPPHAPI auto SetAoMap(Texture2D* tex) noexcept -> void;
 
-	LEOPPHAPI [[nodiscard]] auto GetBuffer() const noexcept -> NonOwning<ID3D11Buffer*>;
+	[[nodiscard]] LEOPPHAPI auto GetBuffer() const noexcept -> NonOwning<ID3D11Buffer*>;
 
-	LEOPPHAPI [[nodiscard]] auto GetSerializationType() const -> Type override;
+	[[nodiscard]] LEOPPHAPI auto GetSerializationType() const -> Type override;
 	LEOPPHAPI static Type const SerializationType;
 
 	LEOPPHAPI auto Serialize(std::vector<std::uint8_t>& out) const noexcept -> void override;

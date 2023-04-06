@@ -7,9 +7,6 @@
 #include <d3d11.h>
 #include <wrl/client.h>
 
-#include <cstdint>
-#include <memory>
-
 #include "Image.hpp"
 
 
@@ -20,7 +17,7 @@ class Texture2D final : public Object {
 	Image mImgData{};
 	Image mTmpImgData{};
 
-	void UploadToGPU();
+	auto UploadToGPU() -> void;
 
 public:
 	Texture2D() = default;
@@ -34,6 +31,6 @@ public:
 	LEOPPHAPI auto Update() noexcept -> void;
 
 	LEOPPHAPI Type constexpr static SerializationType{ Type::Texture2D };
-	LEOPPHAPI [[nodiscard]] auto GetSerializationType() const -> Type override;
+	[[nodiscard]] LEOPPHAPI auto GetSerializationType() const -> Type override;
 };
 }

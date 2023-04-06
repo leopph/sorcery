@@ -37,26 +37,26 @@ public:
 	[[nodiscard]] virtual auto GetPosition() const noexcept -> Vector3 = 0;
 	[[nodiscard]] virtual auto GetForwardAxis() const noexcept -> Vector3 = 0;
 
-	LEOPPHAPI [[nodiscard]] auto GetNearClipPlane() const noexcept -> float;
+	[[nodiscard]] LEOPPHAPI auto GetNearClipPlane() const noexcept -> float;
 	LEOPPHAPI auto SetNearClipPlane(float nearClipPlane) noexcept -> void;
 
-	LEOPPHAPI [[nodiscard]] auto GetFarClipPlane() const noexcept -> float;
+	[[nodiscard]] LEOPPHAPI auto GetFarClipPlane() const noexcept -> float;
 	LEOPPHAPI auto SetFarClipPlane(float farClipPlane) noexcept -> void;
 
-	LEOPPHAPI [[nodiscard]] auto GetType() const noexcept -> Type;
+	[[nodiscard]] LEOPPHAPI auto GetType() const noexcept -> Type;
 	LEOPPHAPI auto SetType(Type type) noexcept -> void;
 
-	LEOPPHAPI [[nodiscard]] auto GetHorizontalPerspectiveFov() const -> float;
+	[[nodiscard]] LEOPPHAPI auto GetHorizontalPerspectiveFov() const -> float;
 	LEOPPHAPI auto SetHorizontalPerspectiveFov(float degrees) -> void;
 
-	LEOPPHAPI [[nodiscard]] auto GetHorizontalOrthographicSize() const -> float;
+	[[nodiscard]] LEOPPHAPI auto GetHorizontalOrthographicSize() const -> float;
 	LEOPPHAPI auto SetHorizontalOrthographicSize(float size) -> void;
 
-	LEOPPHAPI [[nodiscard]] auto CalculateViewMatrix() const noexcept -> Matrix4;
-	LEOPPHAPI [[nodiscard]] auto CalculateProjectionMatrix(float aspectRatio) const noexcept -> Matrix4;
+	[[nodiscard]] LEOPPHAPI auto CalculateViewMatrix() const noexcept -> Matrix4;
+	[[nodiscard]] LEOPPHAPI auto CalculateProjectionMatrix(float aspectRatio) const noexcept -> Matrix4;
 
-	LEOPPHAPI [[nodiscard]] static auto HorizontalPerspectiveFovToVertical(float fovDegrees, float aspectRatio) noexcept -> float;
-	LEOPPHAPI [[nodiscard]] static auto VerticalPerspectiveFovToHorizontal(float fovDegrees, float aspectRatio) noexcept -> float;
+	[[nodiscard]] LEOPPHAPI static auto HorizontalPerspectiveFovToVertical(float fovDegrees, float aspectRatio) noexcept -> float;
+	[[nodiscard]] LEOPPHAPI static auto VerticalPerspectiveFovToHorizontal(float fovDegrees, float aspectRatio) noexcept -> float;
 
 	Camera() = default;
 	Camera(Camera const& other) = default;
@@ -81,39 +81,39 @@ LEOPPHAPI auto ShutDown() noexcept -> void;
 LEOPPHAPI auto DrawGame() noexcept -> void;
 LEOPPHAPI auto DrawSceneView(Camera const& cam) noexcept -> void;
 
-LEOPPHAPI [[nodiscard]] auto GetGameResolution() noexcept -> Extent2D<u32>;
+[[nodiscard]] LEOPPHAPI auto GetGameResolution() noexcept -> Extent2D<u32>;
 LEOPPHAPI auto SetGameResolution(Extent2D<u32> resolution) noexcept -> void;
 
-LEOPPHAPI [[nodiscard]] auto GetSceneResolution() noexcept -> Extent2D<u32>;
+[[nodiscard]] LEOPPHAPI auto GetSceneResolution() noexcept -> Extent2D<u32>;
 LEOPPHAPI auto SetSceneResolution(Extent2D<u32> resolution) noexcept -> void;
 
-LEOPPHAPI [[nodiscard]] auto GetGameFrame() noexcept -> ID3D11ShaderResourceView*;
-LEOPPHAPI [[nodiscard]] auto GetSceneFrame() noexcept -> ID3D11ShaderResourceView*;
+[[nodiscard]] LEOPPHAPI auto GetGameFrame() noexcept -> ID3D11ShaderResourceView*;
+[[nodiscard]] LEOPPHAPI auto GetSceneFrame() noexcept -> ID3D11ShaderResourceView*;
 
-LEOPPHAPI [[nodiscard]] auto GetGameAspectRatio() noexcept -> f32;
-LEOPPHAPI [[nodiscard]] auto GetSceneAspectRatio() noexcept -> f32;
+[[nodiscard]] LEOPPHAPI auto GetGameAspectRatio() noexcept -> f32;
+[[nodiscard]] LEOPPHAPI auto GetSceneAspectRatio() noexcept -> f32;
 
 LEOPPHAPI auto BindAndClearSwapChain() noexcept -> void;
 
 LEOPPHAPI auto Present() noexcept -> void;
 
-LEOPPHAPI [[nodiscard]] auto GetSyncInterval() noexcept -> u32;
+[[nodiscard]] LEOPPHAPI auto GetSyncInterval() noexcept -> u32;
 LEOPPHAPI auto SetSyncInterval(u32 interval) noexcept -> void;
 
 LEOPPHAPI auto RegisterStaticMesh(StaticMeshComponent const* staticMesh) -> void;
 LEOPPHAPI auto UnregisterStaticMesh(StaticMeshComponent const* staticMesh) -> void;
 
-LEOPPHAPI [[nodiscard]] auto GetDevice() noexcept -> ID3D11Device*;
-LEOPPHAPI [[nodiscard]] auto GetImmediateContext() noexcept -> ID3D11DeviceContext*;
+[[nodiscard]] LEOPPHAPI auto GetDevice() noexcept -> ID3D11Device*;
+[[nodiscard]] LEOPPHAPI auto GetImmediateContext() noexcept -> ID3D11DeviceContext*;
 
 LEOPPHAPI auto RegisterLight(LightComponent const* light) -> void;
 LEOPPHAPI auto UnregisterLight(LightComponent const* light) -> void;
 
-LEOPPHAPI [[nodiscard]] auto GetDefaultMaterial() noexcept -> Material*;
-LEOPPHAPI [[nodiscard]] auto GetCubeMesh() noexcept -> Mesh*;
-LEOPPHAPI [[nodiscard]] auto GetPlaneMesh() noexcept -> Mesh*;
+[[nodiscard]] LEOPPHAPI auto GetDefaultMaterial() noexcept -> Material*;
+[[nodiscard]] LEOPPHAPI auto GetCubeMesh() noexcept -> Mesh*;
+[[nodiscard]] LEOPPHAPI auto GetPlaneMesh() noexcept -> Mesh*;
 
-LEOPPHAPI [[nodiscard]] auto GetGamma() noexcept -> f32;
+[[nodiscard]] LEOPPHAPI auto GetGamma() noexcept -> f32;
 LEOPPHAPI auto SetGamma(f32 gamma) noexcept -> void;
 
 LEOPPHAPI auto RegisterSkybox(SkyboxComponent const* skybox) -> void;

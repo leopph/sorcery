@@ -48,34 +48,34 @@ public:
 
 	LEOPPHAPI explicit Mesh(Data data);
 
-	LEOPPHAPI [[nodiscard]] auto GetPositions() const noexcept -> std::span<Vector3 const>;
+	[[nodiscard]] LEOPPHAPI auto GetPositions() const noexcept -> std::span<Vector3 const>;
 	LEOPPHAPI auto SetPositions(std::vector<Vector3> positions) noexcept -> void;
 
-	LEOPPHAPI [[nodiscard]] auto GetNormals() const noexcept -> std::span<Vector3 const>;
+	[[nodiscard]] LEOPPHAPI auto GetNormals() const noexcept -> std::span<Vector3 const>;
 	LEOPPHAPI auto SetNormals(std::vector<Vector3> normals) noexcept -> void;
 
-	LEOPPHAPI [[nodiscard]] auto GetUVs() const noexcept -> std::span<Vector2 const>;
+	[[nodiscard]] LEOPPHAPI auto GetUVs() const noexcept -> std::span<Vector2 const>;
 	LEOPPHAPI auto SetUVs(std::vector<Vector2> uvs) noexcept -> void;
 
-	LEOPPHAPI [[nodiscard]] auto GetIndices() const noexcept -> std::span<u32 const>;
+	[[nodiscard]] LEOPPHAPI auto GetIndices() const noexcept -> std::span<u32 const>;
 	LEOPPHAPI auto SetIndices(std::vector<u32> indices) noexcept -> void;
 
-	LEOPPHAPI [[nodiscard]] auto GetSubMeshes() const noexcept -> std::span<SubMeshData const>;
+	[[nodiscard]] LEOPPHAPI auto GetSubMeshes() const noexcept -> std::span<SubMeshData const>;
 	LEOPPHAPI auto SetSubMeshes(std::vector<SubMeshData> subMeshes) noexcept -> void;
 
-	LEOPPHAPI [[nodiscard]] auto GetBounds() const noexcept -> AABB const&;
+	[[nodiscard]] LEOPPHAPI auto GetBounds() const noexcept -> AABB const&;
 
 	LEOPPHAPI auto ValidateAndUpdate() -> void;
 
-	LEOPPHAPI [[nodiscard]] auto GetSerializationType() const -> Type override;
+	[[nodiscard]] LEOPPHAPI auto GetSerializationType() const -> Type override;
 
-	LEOPPHAPI [[nodiscard]] auto GetPositionBuffer() const noexcept -> Microsoft::WRL::ComPtr<ID3D11Buffer>;
-	LEOPPHAPI [[nodiscard]] auto GetNormalBuffer() const noexcept -> Microsoft::WRL::ComPtr<ID3D11Buffer>;
-	LEOPPHAPI [[nodiscard]] auto GetUVBuffer() const noexcept -> Microsoft::WRL::ComPtr<ID3D11Buffer>;
-	LEOPPHAPI [[nodiscard]] auto GetIndexBuffer() const noexcept -> Microsoft::WRL::ComPtr<ID3D11Buffer>;
+	[[nodiscard]] LEOPPHAPI auto GetPositionBuffer() const noexcept -> Microsoft::WRL::ComPtr<ID3D11Buffer>;
+	[[nodiscard]] LEOPPHAPI auto GetNormalBuffer() const noexcept -> Microsoft::WRL::ComPtr<ID3D11Buffer>;
+	[[nodiscard]] LEOPPHAPI auto GetUVBuffer() const noexcept -> Microsoft::WRL::ComPtr<ID3D11Buffer>;
+	[[nodiscard]] LEOPPHAPI auto GetIndexBuffer() const noexcept -> Microsoft::WRL::ComPtr<ID3D11Buffer>;
 
 	LEOPPHAPI Type constexpr static SerializationType{ Type::Mesh };
 
-	LEOPPHAPI void SetData(Data data) noexcept;
+	LEOPPHAPI auto SetData(Data data) noexcept -> void;
 };
 }

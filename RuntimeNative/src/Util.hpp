@@ -85,5 +85,5 @@ concept Scalar = std::is_scalar_v<T>;
 }
 
 
-LEOPPHAPI [[nodiscard]] auto Contains(std::string_view src, std::string_view target) -> bool;
+[[nodiscard]] LEOPPHAPI auto Contains(std::string_view src, std::string_view target) -> bool;
 }
