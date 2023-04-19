@@ -124,6 +124,7 @@ struct ShadowAtlasCellData {
 	Matrix4 shadowViewProjMtx;
 	// Index into the array of indices to the visible lights, use lights[visibleLights[visibleLightIdxIdx]] to get to the light
 	int visibleLightIdxIdx;
+	int lightCascadeIdx;
 };
 
 
@@ -1335,7 +1336,12 @@ auto DrawShadowMaps(ShadowAtlasAllocation const& alloc) -> void {
 
 
 auto CalculatePunctualShadowAtlasAllocation(Visibility const& visibility, Vector3 const& camPos, Matrix4 const& camViewProjMtx, ShadowAtlasAllocation& alloc) -> void {
-	std::array<std::vector<int>, 4> static lightIndexIndicesInQuadrant{};
+	struct LightCascadeIndex {
+		int lightIdxIdx;
+		int cascadeIdx;
+	};
+
+	std::array<std::vector<LightCascadeIndex>, 4> static lightIndexIndicesInQuadrant{};
 
 	for (auto& quadrantLights : lightIndexIndicesInQuadrant) {
 		quadrantLights.clear();
@@ -1399,7 +1405,7 @@ auto CalculatePunctualShadowAtlasAllocation(Visibility const& visibility, Vector
 				}
 
 				if (quadrantIdx) {
-					lightIndexIndicesInQuadrant[*quadrantIdx].emplace_back(i);
+					lightIndexIndicesInQuadrant[*quadrantIdx].emplace_back(i, 0);
 				}
 
 				break;
@@ -1415,9 +1421,9 @@ auto CalculatePunctualShadowAtlasAllocation(Visibility const& visibility, Vector
 	ShadowAtlasAllocation newAlloc{};
 
 	for (int i = 0; i < 4; i++) {
-		std::ranges::sort(lightIndexIndicesInQuadrant[i], [&visibility, &camPos](int const leftIdxIdx, int const rightIdxIdx) {
-			auto const leftLight{ gLights[visibility.lightIndices[leftIdxIdx]] };
-			auto const rightLight{ gLights[visibility.lightIndices[rightIdxIdx]] };
+		std::ranges::sort(lightIndexIndicesInQuadrant[i], [&visibility, &camPos](LightCascadeIndex const lhs, LightCascadeIndex const rhs) {
+			auto const leftLight{ gLights[visibility.lightIndices[lhs.lightIdxIdx]] };
+			auto const rightLight{ gLights[visibility.lightIndices[rhs.lightIdxIdx]] };
 
 			auto const leftLightPos{ leftLight->GetEntity()->GetTransform().GetWorldPosition() };
 			auto const rightLightPos{ rightLight->GetEntity()->GetTransform().GetWorldPosition() };
@@ -1433,7 +1439,7 @@ auto CalculatePunctualShadowAtlasAllocation(Visibility const& visibility, Vector
 				break;
 			}
 
-			auto const lightIdxIdx{ lightIndexIndicesInQuadrant[i].back() };
+			auto const [lightIdxIdx, cascadeIdx]{ lightIndexIndicesInQuadrant[i].back() };
 			auto const light{ gLights[visibility.lightIndices[lightIdxIdx]] };
 			lightIndexIndicesInQuadrant[i].pop_back();
 
@@ -1449,7 +1455,7 @@ auto CalculatePunctualShadowAtlasAllocation(Visibility const& visibility, Vector
 				                            light->GetRange())
 			};
 
-			cell.emplace(shadowViewMtx * shadowProjMtx, lightIdxIdx);
+			cell.emplace(shadowViewMtx * shadowProjMtx, lightIdxIdx, cascadeIdx);
 		}
 
 		if (i + 1 < 4) {
@@ -1596,8 +1602,8 @@ auto DrawFullWithCameras(std::span<Camera const* const> const cameras, ID3D11Ren
 				if (cells[j]) {
 					mappedLightSBData[cells[j]->visibleLightIdxIdx].isCastingShadow = true;
 					mappedLightSBData[cells[j]->visibleLightIdxIdx].shadowViewProjMtx = cells[j]->shadowViewProjMtx;
-					mappedLightSBData[cells[j]->visibleLightIdxIdx].atlasQuadrantIdx = i;
-					mappedLightSBData[cells[j]->visibleLightIdxIdx].atlasCellIdx = j;
+					mappedLightSBData[cells[j]->visibleLightIdxIdx].atlasQuadrantIndices[cells[j]->lightCascadeIdx] = i;
+					mappedLightSBData[cells[j]->visibleLightIdxIdx].atlasCellIndices[cells[j]->lightCascadeIdx] = j;
 					mappedLightSBData[cells[j]->visibleLightIdxIdx].shadowBias = gLights[visibility.lightIndices[cells[j]->visibleLightIdxIdx]]->GetShadowBias();
 				}
 			}

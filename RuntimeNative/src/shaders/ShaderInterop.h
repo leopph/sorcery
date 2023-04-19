@@ -6,6 +6,7 @@
 
 #include "../Math.hpp"
 
+
 namespace leopph {
 using float2 = Vector2;
 using float3 = Vector3;
@@ -72,11 +73,10 @@ struct ShaderLight {
 	float outerAngleCos;
 
 	float3 position;
-	uint atlasQuadrantIdx;
-
-	uint atlasCellIdx;
 	float shadowBias;
-	float2 pad;
+
+	uint atlasQuadrantIndices[6];
+	uint atlasCellIndices[6];
 };
 
 
