@@ -18,6 +18,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RuntimeNative", "RuntimeNat
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ImPlot", "ImPlot\ImPlot.vcxproj", "{FF7C6B4C-5309-4162-9E8E-95933613A389}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BinaryEmbed", "BinaryEmbed\BinaryEmbed.vcxproj", "{1E147434-1926-4F30-AC32-C77A5930EF5E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -48,6 +50,10 @@ Global
 		{FF7C6B4C-5309-4162-9E8E-95933613A389}.Debug|x64.Build.0 = Debug|x64
 		{FF7C6B4C-5309-4162-9E8E-95933613A389}.Release|x64.ActiveCfg = Release|x64
 		{FF7C6B4C-5309-4162-9E8E-95933613A389}.Release|x64.Build.0 = Release|x64
+		{1E147434-1926-4F30-AC32-C77A5930EF5E}.Debug|x64.ActiveCfg = Debug|x64
+		{1E147434-1926-4F30-AC32-C77A5930EF5E}.Debug|x64.Build.0 = Debug|x64
+		{1E147434-1926-4F30-AC32-C77A5930EF5E}.Release|x64.ActiveCfg = Release|x64
+		{1E147434-1926-4F30-AC32-C77A5930EF5E}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
