@@ -1,3 +1,4 @@
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <iterator>
@@ -23,7 +24,20 @@ auto main(int const argc, char* argv[]) -> int {
 		return -1;
 	}
 
-	std::ifstream in{ argv[1], std::ios::binary };
+	std::filesystem::path const srcPath{ argv[1] };
+
+	if (!exists(srcPath)) {
+		std::cerr << "The provided source path does not exist.\n";
+		return -1;
+	}
+
+	std::filesystem::path const dstPath{ argv[2] };
+
+	if (exists(dstPath) && last_write_time(srcPath) < last_write_time(dstPath)) {
+		return 0;
+	}
+
+	std::ifstream in{ srcPath, std::ios::binary };
 
 	if (!in.is_open()) {
 		std::cerr << "Failed to open source file.\n";
@@ -32,9 +46,14 @@ auto main(int const argc, char* argv[]) -> int {
 
 	std::vector<unsigned char> const bytes{ std::istreambuf_iterator{ in }, {} };
 
-	std::ofstream out{ argv[2], std::ios::binary | std::ios::trunc };
+	in.close();
 
-	if (out.is_open()) { }
+	std::ofstream out{ dstPath, std::ios::binary | std::ios::trunc };
+
+	if (!out.is_open()) {
+		std::cerr << "Failed to open destination file.\n";
+		return -1;
+	}
 
 	out << "unsigned char const " << argv[3] << "[] = {";
 
