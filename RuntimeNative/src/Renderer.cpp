@@ -362,7 +362,7 @@ public:
 					};
 
 					auto const shadowViewMtx{ Matrix4::Translate(-light->GetEntity()->GetTransform().GetWorldPosition()) * faceMatrices[cascadeIdx] };
-					auto const shadowProjMtx{ Matrix4::PerspectiveAsymZLH(ToRadians(90), 1, 0.01f, light->GetRange()) };
+					auto const shadowProjMtx{ Matrix4::PerspectiveAsymZLH(ToRadians(90), 1, light->GetShadowNearPlane(), light->GetRange()) };
 
 					cell.emplace(shadowViewMtx * shadowProjMtx, lightIdxIdx, cascadeIdx, light->GetShadowNormalBias());
 				}
