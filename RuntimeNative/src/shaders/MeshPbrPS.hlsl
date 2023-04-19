@@ -37,6 +37,20 @@ inline float2 TransformUVForShadowAtlas(const float2 uv, const uint atlasQuadran
 }
 
 
+inline float SampleShadowCascadeFromAtlas(const Texture2D<float> atlas, const float3 fragWorldPos, const uint lightIdx, const uint cascadeIdx) {
+    const float4 posLClip = mul(float4(fragWorldPos, 1), lights[lightIdx].shadowViewProjMatrices[cascadeIdx]);
+    float3 posLNdc = posLClip.xyz / posLClip.w;
+    posLNdc.xy = posLNdc.xy * float2(0.5, -0.5) + 0.5;
+
+    [branch]
+    if (lights[lightIdx].atlasQuadrantIndices[cascadeIdx] == INVALID_IDX) {
+        return 1.0f;
+    }
+
+    return atlas.SampleCmpLevelZero(gShadowSampler, TransformUVForShadowAtlas(posLNdc.xy, lights[lightIdx].atlasQuadrantIndices[cascadeIdx], lights[lightIdx].atlasCellIndices[cascadeIdx]), posLNdc.z - lights[lightIdx].shadowBias);
+}
+
+
 inline float CalculateAttenuation(const float distance) {
     return 1 / pow(distance, 2);
 }
@@ -66,12 +80,7 @@ inline float3 CalculateSpotLight(const float3 N, const float3 V, const float3 al
 
     [branch]
     if (lights[lightIdx].isCastingShadow) {
-        const float4 posLClip = mul(float4(fragWorldPos, 1), lights[lightIdx].shadowViewProjMtx);
-        float3 posLNdc = posLClip.xyz / posLClip.w;
-        posLNdc.xy = posLNdc.xy * float2(0.5, -0.5) + 0.5;
-
-        const float shadow = gPunctualShadowAtlas.SampleCmpLevelZero(gShadowSampler, TransformUVForShadowAtlas(posLNdc.xy, lights[lightIdx].atlasQuadrantIndices[0], lights[lightIdx].atlasCellIndices[0]), posLNdc.z - lights[lightIdx].shadowBias);
-        lighting *= shadow;
+        lighting *= SampleShadowCascadeFromAtlas(gPunctualShadowAtlas, fragWorldPos, 0, 0);
     }
     
     return lighting;
@@ -89,6 +98,21 @@ inline float3 CalculatePointLight(const float3 N, const float3 V, const float3 a
     float3 lighting = CookTorrance(N, V, L, albedo, metallic, roughness, lights[lightIdx].color, lights[lightIdx].intensity);
     lighting *= CalculateAttenuation(dist);
     lighting *= rangeMul;
+
+    [branch]
+    if (lights[lightIdx].isCastingShadow) {
+        const float3 dirToFrag = fragWorldPos - lights[lightIdx].position;
+
+        uint maxIdx = abs(dirToFrag.x) > abs(dirToFrag.y) ? 0 : 1;
+        maxIdx = abs(dirToFrag[maxIdx]) > abs(dirToFrag.z) ? maxIdx : 2;
+        uint cascadeIdx = maxIdx * 2;
+
+        if (sign(dirToFrag[maxIdx]) < 0) {
+            cascadeIdx += 1;
+        }
+
+        lighting *= SampleShadowCascadeFromAtlas(gPunctualShadowAtlas, fragWorldPos, lightIdx, cascadeIdx);
+    }
 
     return lighting;
 

@@ -57,9 +57,11 @@ typedef bool BOOL;
 #define SB_SLOT_LINE_GIZMO_VERTEX 1
 #define SB_SLOT_GIZMO_COLOR 0
 
+#define INVALID_IDX (-1)
+
 
 struct ShaderLight {
-	row_major float4x4 shadowViewProjMtx;
+	row_major float4x4 shadowViewProjMatrices[6];
 
 	float3 color;
 	float intensity;

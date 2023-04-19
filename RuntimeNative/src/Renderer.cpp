@@ -228,6 +228,54 @@ public:
 			quadrantLights.clear();
 		}
 
+		auto const determineScreenCoverage{
+			[&camPos, &camViewProjMtx](std::span<Vector3 const> const vertices) -> std::optional<int> {
+				std::optional<int> quadrantIdx;
+
+				if (auto const [worldMin, worldMax]{ AABB::FromVertices(vertices) };
+					worldMin[0] <= camPos[0] && worldMin[1] <= camPos[1] && worldMin[2] <= camPos[2] &&
+					worldMax[0] >= camPos[0] && worldMax[1] >= camPos[1] && worldMax[2] >= camPos[2]) {
+					quadrantIdx = 0;
+				}
+				else {
+					Vector2 const bottomLeft{ -1, -1 };
+					Vector2 const topRight{ 1, 1 };
+
+					Vector2 min{ std::numeric_limits<float>::max() };
+					Vector2 max{ std::numeric_limits<float>::lowest() };
+
+					for (auto& vertex : vertices) {
+						Vector4 vertex4{ vertex, 1 };
+						vertex4 *= camViewProjMtx;
+						auto const projected{ Vector2{ vertex4 } / vertex4[3] };
+						min = Clamp(Min(min, projected), bottomLeft, topRight);
+						max = Clamp(Max(max, projected), bottomLeft, topRight);
+					}
+
+					auto const width{ max[0] - min[0] };
+					auto const height{ max[1] - min[1] };
+
+					auto const area{ width * height };
+					auto const coverage{ area / 4 };
+
+					if (coverage >= 1) {
+						quadrantIdx = 0;
+					}
+					else if (coverage >= 0.25f) {
+						quadrantIdx = 1;
+					}
+					else if (coverage >= 0.0625f) {
+						quadrantIdx = 2;
+					}
+					else if (coverage >= 0.015625f) {
+						quadrantIdx = 3;
+					}
+				}
+
+				return quadrantIdx;
+			}
+		};
+
 		for (int i = 0; i < static_cast<int>(visibility.lightIndices.size()); i++) {
 			if (auto const light{ gLights[visibility.lightIndices[i]] }; light->IsCastingShadow()) {
 				if (light->GetType() == LightComponent::Type::Spot) {
@@ -238,54 +286,35 @@ public:
 						vertex = Vector3{ Vector4{ vertex, 1 } * modelMtxNoScale };
 					}
 
-					std::optional<int> quadrantIdx;
-
-					if (auto const [worldMin, worldMax]{ AABB::FromVertices(lightVertices) };
-						worldMin[0] <= camPos[0] && worldMin[1] <= camPos[1] && worldMin[2] <= camPos[2] &&
-						worldMax[0] >= camPos[0] && worldMax[1] >= camPos[1] && worldMax[2] >= camPos[2]) {
-						quadrantIdx = 0;
-					}
-					else {
-						Vector2 const bottomLeft{ -1, -1 };
-						Vector2 const topRight{ 1, 1 };
-
-						Vector2 min{ std::numeric_limits<float>::max() };
-						Vector2 max{ std::numeric_limits<float>::lowest() };
-
-						for (auto& vertex : lightVertices) {
-							Vector4 vertex4{ vertex, 1 };
-							vertex4 *= camViewProjMtx;
-							auto const projected{ Vector2{ vertex4 } / vertex4[3] };
-							min = Clamp(Min(min, projected), bottomLeft, topRight);
-							max = Clamp(Max(max, projected), bottomLeft, topRight);
-						}
-
-						auto const width{ max[0] - min[0] };
-						auto const height{ max[1] - min[1] };
-
-						auto const area{ width * height };
-						auto const coverage{ area / 4 };
-
-						if (coverage >= 1) {
-							quadrantIdx = 0;
-						}
-						else if (coverage >= 0.25f) {
-							quadrantIdx = 1;
-						}
-						else if (coverage >= 0.0625f) {
-							quadrantIdx = 2;
-						}
-						else if (coverage >= 0.015625f) {
-							quadrantIdx = 3;
-						}
-					}
-
-					if (quadrantIdx) {
+					if (auto const quadrantIdx{ determineScreenCoverage(lightVertices) }) {
 						lightIndexIndicesInQuadrant[*quadrantIdx].emplace_back(i, 0);
 					}
 				}
 				else if (light->GetType() == LightComponent::Type::Point) {
-					// TODO
+					auto const boundsHalfWidthHeight{ std::tan(ToRadians(45)) * light->GetRange() };
+
+					for (auto j = 0; j < 6; j++) {
+						std::array static const faceBoundsRotations{
+							Quaternion::FromAxisAngle(Vector3::Up(), ToRadians(90)), // +X
+							Quaternion::FromAxisAngle(Vector3::Up(), ToRadians(-90)), // -X
+							Quaternion::FromAxisAngle(Vector3::Right(), ToRadians(-90)), // +Y
+							Quaternion::FromAxisAngle(Vector3::Right(), ToRadians(90)), // -Y
+							Quaternion{}, // +Z
+							Quaternion::FromAxisAngle(Vector3::Up(), ToRadians(180)) // -Z
+						};
+
+						std::array const shadowFrustumVertices{
+							faceBoundsRotations[i].Rotate(Vector3{ boundsHalfWidthHeight, boundsHalfWidthHeight, light->GetRange() }) + light->GetEntity()->GetTransform().GetWorldPosition(),
+							faceBoundsRotations[i].Rotate(Vector3{ -boundsHalfWidthHeight, boundsHalfWidthHeight, light->GetRange() }) + light->GetEntity()->GetTransform().GetWorldPosition(),
+							faceBoundsRotations[i].Rotate(Vector3{ -boundsHalfWidthHeight, -boundsHalfWidthHeight, light->GetRange() }) + light->GetEntity()->GetTransform().GetWorldPosition(),
+							faceBoundsRotations[i].Rotate(Vector3{ boundsHalfWidthHeight, -boundsHalfWidthHeight, light->GetRange() }) + light->GetEntity()->GetTransform().GetWorldPosition(),
+							light->GetEntity()->GetTransform().GetWorldPosition(),
+						};
+
+						if (auto const quadrantIdx{ determineScreenCoverage(shadowFrustumVertices) }) {
+							lightIndexIndicesInQuadrant[*quadrantIdx].emplace_back(i, j);
+						}
+					}
 				}
 			}
 		}
@@ -308,7 +337,7 @@ public:
 				cell.reset();
 
 				if (lightIndexIndicesInQuadrant[i].empty()) {
-					break;
+					continue;
 				}
 
 				auto const [lightIdxIdx, cascadeIdx]{ lightIndexIndicesInQuadrant[i].back() };
@@ -316,22 +345,25 @@ public:
 				lightIndexIndicesInQuadrant[i].pop_back();
 
 				if (light->GetType() == LightComponent::Type::Spot) {
-					auto const shadowViewMtx{
-						Matrix4::LookToLH(light->GetEntity()->GetTransform().GetWorldPosition(),
-						                  light->GetEntity()->GetTransform().GetForwardAxis(),
-						                  Vector3::Up())
-					};
-					auto const shadowProjMtx{
-						Matrix4::PerspectiveAsymZLH(ToRadians(light->GetOuterAngle() * 2),
-						                            1.f,
-						                            light->GetShadowNearPlane(),
-						                            light->GetRange())
-					};
+					auto const shadowViewMtx{ Matrix4::LookToLH(light->GetEntity()->GetTransform().GetWorldPosition(), light->GetEntity()->GetTransform().GetForwardAxis(), Vector3::Up()) };
+					auto const shadowProjMtx{ Matrix4::PerspectiveAsymZLH(ToRadians(light->GetOuterAngle() * 2), 1.f, light->GetShadowNearPlane(), light->GetRange()) };
 
 					cell.emplace(shadowViewMtx * shadowProjMtx, lightIdxIdx, cascadeIdx);
 				}
 				else if (light->GetType() == LightComponent::Type::Point) {
-					// TODO
+					std::array static constexpr faceMatrices{
+						Matrix4{ 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 1 }, // +X
+						Matrix4{ 0, 0, -1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1 }, // -X
+						Matrix4{ 1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1 }, // +Y
+						Matrix4{ 1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1 }, // -Y
+						Matrix4{ 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 }, // +Z
+						Matrix4{ -1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1 } // -Z
+					};
+
+					auto const shadowViewMtx{ Matrix4::Translate(-light->GetEntity()->GetTransform().GetWorldPosition()) * faceMatrices[cascadeIdx] };
+					auto const shadowProjMtx{ Matrix4::PerspectiveAsymZLH(ToRadians(90), 1, 0.01f, light->GetRange()) };
+
+					cell.emplace(shadowViewMtx * shadowProjMtx, lightIdxIdx, cascadeIdx);
 				}
 			}
 
@@ -1589,6 +1621,10 @@ auto DrawFullWithCameras(std::span<Camera const* const> const cameras, ID3D11Ren
 			mappedLightSBData[i].innerAngleCos = std::cos(ToRadians(gLights[visibility.lightIndices[i]]->GetInnerAngle()));
 			mappedLightSBData[i].outerAngleCos = std::cos(ToRadians(gLights[visibility.lightIndices[i]]->GetOuterAngle()));
 			mappedLightSBData[i].position = gLights[visibility.lightIndices[i]]->GetEntity()->GetTransform().GetWorldPosition();
+
+			for (auto& idx : mappedLightSBData[i].atlasQuadrantIndices) {
+				idx = INVALID_IDX;
+			}
 		}
 
 		for (int i = 0; i < 4; i++) {
@@ -1596,7 +1632,7 @@ auto DrawFullWithCameras(std::span<Camera const* const> const cameras, ID3D11Ren
 			for (int j = 0; j < static_cast<int>(cells.size()); j++) {
 				if (cells[j]) {
 					mappedLightSBData[cells[j]->visibleLightIdxIdx].isCastingShadow = true;
-					mappedLightSBData[cells[j]->visibleLightIdxIdx].shadowViewProjMtx = cells[j]->shadowViewProjMtx;
+					mappedLightSBData[cells[j]->visibleLightIdxIdx].shadowViewProjMatrices[cells[j]->lightCascadeIdx] = cells[j]->shadowViewProjMtx;
 					mappedLightSBData[cells[j]->visibleLightIdxIdx].atlasQuadrantIndices[cells[j]->lightCascadeIdx] = i;
 					mappedLightSBData[cells[j]->visibleLightIdxIdx].atlasCellIndices[cells[j]->lightCascadeIdx] = j;
 					mappedLightSBData[cells[j]->visibleLightIdxIdx].shadowBias = gLights[visibility.lightIndices[cells[j]->visibleLightIdxIdx]]->GetShadowBias();
