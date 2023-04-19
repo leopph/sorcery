@@ -8,6 +8,7 @@
 
 #include <cmath>
 
+
 namespace leopph {
 Object::Type const LightComponent::SerializationType{ Object::Type::Light };
 
@@ -39,7 +40,7 @@ auto LightComponent::Serialize(YAML::Node& node) const -> void {
 	node["type"] = static_cast<int>(GetType());
 	node["castsShadow"] = IsCastingShadow();
 	node["shadowNearPlane"] = GetShadowNearPlane();
-	node["shadowBias"] = GetShadowBias();
+	node["shadowBias"] = GetShadowNormalBias();
 	node["range"] = GetRange();
 	node["innerAngle"] = GetInnerAngle();
 	node["outerAngle"] = GetOuterAngle();
@@ -64,7 +65,7 @@ auto LightComponent::Deserialize(YAML::Node const& node) -> void {
 		SetShadowNearPlane(data.as<f32>(GetShadowNearPlane()));
 	}
 	if (auto const data{ node["shadowBias"] }) {
-		SetShadowBias(data.as<float>(GetShadowBias()));
+		SetShadowNormalBias(data.as<float>(GetShadowNormalBias()));
 	}
 	if (auto const data{ node["range"] }) {
 		SetRange(data.as<f32>(GetRange()));
@@ -168,13 +169,13 @@ auto LightComponent::SetOuterAngle(f32 const degrees) -> void {
 }
 
 
-auto LightComponent::GetShadowBias() const noexcept -> float {
-	return mShadowBias;
+auto LightComponent::GetShadowNormalBias() const noexcept -> float {
+	return mShadowNormalBias;
 }
 
 
-auto LightComponent::SetShadowBias(float const bias) noexcept -> void {
-	mShadowBias = std::max(bias, 0.0f);
+auto LightComponent::SetShadowNormalBias(float const bias) noexcept -> void {
+	mShadowNormalBias = std::max(bias, 0.0f);
 }
 
 

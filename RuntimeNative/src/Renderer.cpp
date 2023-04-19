@@ -127,6 +127,7 @@ struct ShadowAtlasCellData {
 	// Index into the array of indices to the visible lights, use lights[visibleLights[visibleLightIdxIdx]] to get to the light
 	int visibleLightIdxIdx;
 	int lightCascadeIdx;
+	float normalBias;
 };
 
 
@@ -348,7 +349,7 @@ public:
 					auto const shadowViewMtx{ Matrix4::LookToLH(light->GetEntity()->GetTransform().GetWorldPosition(), light->GetEntity()->GetTransform().GetForwardAxis(), Vector3::Up()) };
 					auto const shadowProjMtx{ Matrix4::PerspectiveAsymZLH(ToRadians(light->GetOuterAngle() * 2), 1.f, light->GetShadowNearPlane(), light->GetRange()) };
 
-					cell.emplace(shadowViewMtx * shadowProjMtx, lightIdxIdx, cascadeIdx);
+					cell.emplace(shadowViewMtx * shadowProjMtx, lightIdxIdx, cascadeIdx, light->GetShadowNormalBias());
 				}
 				else if (light->GetType() == LightComponent::Type::Point) {
 					std::array static constexpr faceMatrices{
@@ -363,7 +364,7 @@ public:
 					auto const shadowViewMtx{ Matrix4::Translate(-light->GetEntity()->GetTransform().GetWorldPosition()) * faceMatrices[cascadeIdx] };
 					auto const shadowProjMtx{ Matrix4::PerspectiveAsymZLH(ToRadians(90), 1, 0.01f, light->GetRange()) };
 
-					cell.emplace(shadowViewMtx * shadowProjMtx, lightIdxIdx, cascadeIdx);
+					cell.emplace(shadowViewMtx * shadowProjMtx, lightIdxIdx, cascadeIdx, light->GetShadowNormalBias());
 				}
 			}
 
@@ -1479,7 +1480,9 @@ auto DrawShadowMaps(PunctualShadowAtlasAllocation const& alloc) -> void {
 
 				D3D11_MAPPED_SUBRESOURCE mapped;
 				gResources->context->Map(gResources->shadowCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
-				static_cast<ShadowCB*>(mapped.pData)->shadowViewProjMtx = cells[j]->shadowViewProjMtx;
+				auto const shadowCbData{ static_cast<ShadowCB*>(mapped.pData) };
+				shadowCbData->shadowViewProjMtx = cells[j]->shadowViewProjMtx;
+				shadowCbData->shadowNormalBias = cells[j]->normalBias;
 				gResources->context->Unmap(gResources->shadowCB.Get(), 0);
 
 				Frustum const shadowFrustumWS{ cells[j]->shadowViewProjMtx };
@@ -1635,7 +1638,6 @@ auto DrawFullWithCameras(std::span<Camera const* const> const cameras, ID3D11Ren
 					mappedLightSBData[cells[j]->visibleLightIdxIdx].shadowViewProjMatrices[cells[j]->lightCascadeIdx] = cells[j]->shadowViewProjMtx;
 					mappedLightSBData[cells[j]->visibleLightIdxIdx].atlasQuadrantIndices[cells[j]->lightCascadeIdx] = i;
 					mappedLightSBData[cells[j]->visibleLightIdxIdx].atlasCellIndices[cells[j]->lightCascadeIdx] = j;
-					mappedLightSBData[cells[j]->visibleLightIdxIdx].shadowBias = gLights[visibility.lightIndices[cells[j]->visibleLightIdxIdx]]->GetShadowBias();
 				}
 			}
 		}

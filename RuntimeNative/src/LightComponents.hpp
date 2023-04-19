@@ -54,8 +54,8 @@ public:
 	[[nodiscard]] LEOPPHAPI auto GetOuterAngle() const -> f32;
 	LEOPPHAPI auto SetOuterAngle(f32 degrees) -> void;
 
-	[[nodiscard]] LEOPPHAPI auto GetShadowBias() const noexcept -> float;
-	LEOPPHAPI auto SetShadowBias(float bias) noexcept -> void;
+	[[nodiscard]] LEOPPHAPI auto GetShadowNormalBias() const noexcept -> float;
+	LEOPPHAPI auto SetShadowNormalBias(float bias) noexcept -> void;
 
 private:
 	bool mCastsShadow{ false };
@@ -66,7 +66,7 @@ private:
 	f32 mRange{ 10.f };
 	f32 mInnerAngle{ 30.f };
 	f32 mOuterAngle{ 30.f };
-	float mShadowBias{ 0.001f };
+	float mShadowNormalBias{ 1.0f };
 };
 
 

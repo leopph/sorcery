@@ -444,12 +444,12 @@ auto EditorObjectWrapperFor<LightComponent>::OnGui([[maybe_unused]] Context& con
 			}
 
 			ImGui::TableNextColumn();
-			ImGui::Text("%s", "Shadow Bias");
+			ImGui::Text("%s", "Shadow Normal Bias");
 			ImGui::TableNextColumn();
 
-			auto shadowBias{ light.GetShadowBias() };
-			if (ImGui::DragFloat("###lightShadowBias", &shadowBias, 0.001f, 0, 1, "%.3f", ImGuiSliderFlags_AlwaysClamp)) {
-				light.SetShadowBias(shadowBias);
+			auto shadowNormalBias{ light.GetShadowNormalBias() };
+			if (ImGui::DragFloat("###lightShadowNormalBias", &shadowNormalBias, 0.01f, 0, FLT_MAX, "%.2f", ImGuiSliderFlags_AlwaysClamp)) {
+				light.SetShadowNormalBias(shadowNormalBias);
 			}
 		}
 
