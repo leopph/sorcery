@@ -247,12 +247,97 @@ public:
 };
 
 
+class SwapChain {
+	DXGI_FORMAT static constexpr FORMAT{ DXGI_FORMAT_R8G8B8A8_UNORM };
+
+	ComPtr<ID3D11Device> mDevice;
+	ComPtr<IDXGISwapChain1> mSwapChain;
+	ComPtr<ID3D11RenderTargetView> mRtv;
+
+	UINT mSwapChainFlags{ 0 };
+	UINT mPresentFlags{ 0 };
+
+
+	auto CreateRtv() -> void {
+		ComPtr<ID3D11Texture2D> backBuf;
+		if (FAILED(mSwapChain->GetBuffer(0, IID_PPV_ARGS(backBuf.GetAddressOf())))) {
+			throw std::runtime_error{ "Failed to get swap chain backbuffer." };
+		}
+
+		D3D11_RENDER_TARGET_VIEW_DESC constexpr rtvDesc{
+			.Format = FORMAT,
+			.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D,
+			.Texture2D = { .MipSlice = 0 }
+		};
+
+		if (FAILED(mDevice->CreateRenderTargetView(backBuf.Get(), &rtvDesc, mRtv.ReleaseAndGetAddressOf()))) {
+			throw std::runtime_error{ "Failed to create swap chain RTV." };
+		}
+	}
+
+public:
+	SwapChain(ComPtr<ID3D11Device> device, IDXGIFactory2* const factory) :
+		mDevice{ std::move(device) } {
+		if (ComPtr<IDXGIFactory5> factory5; SUCCEEDED(factory->QueryInterface(IID_PPV_ARGS(factory5.GetAddressOf())))) {
+			if (BOOL allowTearing{ FALSE }; SUCCEEDED(factory5->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &allowTearing, sizeof allowTearing)) && allowTearing) {
+				mSwapChainFlags |= DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
+				mPresentFlags |= DXGI_PRESENT_ALLOW_TEARING;
+			}
+		}
+
+		DXGI_SWAP_CHAIN_DESC1 const desc{
+			.Width = 0,
+			.Height = 0,
+			.Format = FORMAT,
+			.Stereo = FALSE,
+			.SampleDesc = { .Count = 1, .Quality = 0 },
+			.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT,
+			.BufferCount = 2,
+			.Scaling = DXGI_SCALING_NONE,
+			.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD,
+			.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED,
+			.Flags = mSwapChainFlags
+		};
+
+		if (FAILED(factory->CreateSwapChainForHwnd(mDevice.Get(), gWindow.GetHandle(), &desc, nullptr, nullptr, mSwapChain.GetAddressOf()))) {
+			throw std::runtime_error{ "Failed to create swap chain." };
+		}
+
+		CreateRtv();
+	}
+
+
+	auto Present(UINT const syncInterval) const -> void {
+		if (FAILED(mSwapChain->Present(syncInterval, mPresentFlags))) {
+			throw std::runtime_error{ "Failed to present swap chain." };
+		}
+	}
+
+
+	auto Resize(UINT const width, UINT const height) -> void {
+		if (width == 0 || height == 0) {
+			return;
+		}
+
+		mRtv.Reset();
+
+		if (FAILED(mSwapChain->ResizeBuffers(0, width, height, DXGI_FORMAT_UNKNOWN, mSwapChainFlags))) {
+			throw std::runtime_error{ "Failed to resize swap chain buffers." };
+		}
+
+		CreateRtv();
+	}
+
+
+	[[nodiscard]] auto GetRtv() const noexcept -> ID3D11RenderTargetView* {
+		return mRtv.Get();
+	}
+};
+
+
 struct Resources {
 	ComPtr<ID3D11Device> device;
 	ComPtr<ID3D11DeviceContext> context;
-
-	ComPtr<IDXGISwapChain1> swapChain;
-	ComPtr<ID3D11RenderTargetView> swapChainRtv;
 
 	ComPtr<ID3D11ShaderResourceView> lightSbSrv;
 	ComPtr<ID3D11ShaderResourceView> gizmoColorSbSrv;
@@ -297,6 +382,7 @@ struct Resources {
 
 	std::unique_ptr<RenderTarget> gameViewRenderTarget;
 	std::unique_ptr<RenderTarget> sceneViewRenderTarget;
+	std::unique_ptr<SwapChain> swapChain;
 };
 
 
@@ -703,8 +789,6 @@ std::vector<UINT> const CUBE_INDICES{
 
 
 Resources* gResources{ nullptr };
-UINT gPresentFlags{ 0 };
-UINT gSwapChainFlags{ 0 };
 u32 gSyncInterval{ 0 };
 std::vector<StaticMeshComponent const*> gStaticMeshComponents;
 f32 gInvGamma{ 1.f / 2.2f };
@@ -715,36 +799,6 @@ std::vector<ShaderLineGizmoVertexData> gLineGizmoVertexData;
 std::vector<Vector4> gGizmoColors;
 int gGizmoColorBufferSize{ 1 };
 int gLineGizmoVertexBufferSize{ 1 };
-
-
-auto RecreateSwapChainRtv() -> void {
-	ComPtr<ID3D11Texture2D> backBuf;
-	if (FAILED(gResources->swapChain->GetBuffer(0, IID_PPV_ARGS(backBuf.GetAddressOf())))) {
-		throw std::runtime_error{ "Failed to get swapchain backbuffer." };
-	}
-
-	D3D11_RENDER_TARGET_VIEW_DESC constexpr rtvDesc{
-		.Format = DXGI_FORMAT_R8G8B8A8_UNORM,
-		.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D,
-		.Texture2D = { .MipSlice = 0 }
-	};
-
-	if (FAILED(gResources->device->CreateRenderTargetView(backBuf.Get(), &rtvDesc, gResources->swapChainRtv.GetAddressOf()))) {
-		throw std::runtime_error{ "Failed to create swapchain backbuffer render target view." };
-	}
-}
-
-
-auto on_window_resize(Extent2D<u32> const size) -> void {
-	if (size.width == 0 || size.height == 0) {
-		return;
-	}
-
-	gResources->swapChainRtv.Reset();
-	gResources->swapChain->ResizeBuffers(0, 0, 0, DXGI_FORMAT_UNKNOWN, gSwapChainFlags);
-
-	RecreateSwapChainRtv();
-}
 
 
 auto CreateDeviceAndContext() -> void {
@@ -774,19 +828,6 @@ auto SetDebugBreaks() -> void {
 
 	d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_CORRUPTION, true);
 	d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_ERROR, true);
-}
-
-
-auto CheckTearingSupport(IDXGIFactory2* factory2) -> void {
-	if (ComPtr<IDXGIFactory5> dxgiFactory5; SUCCEEDED(factory2->QueryInterface(IID_PPV_ARGS(dxgiFactory5.GetAddressOf())))) {
-		BOOL allowTearing{};
-		dxgiFactory5->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &allowTearing, sizeof allowTearing);
-
-		if (allowTearing) {
-			gSwapChainFlags |= DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
-			gPresentFlags |= DXGI_PRESENT_ALLOW_TEARING;
-		}
-	}
 }
 
 
@@ -878,33 +919,6 @@ auto CreateShaders() -> void {
 	if (FAILED(gResources->device->CreatePixelShader(gGizmoPSBin, ARRAYSIZE(gGizmoPSBin), nullptr, gResources->gizmoPS.GetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create gizmo pixel shader." };
 	}
-}
-
-
-auto CreateSwapChain(IDXGIFactory2* const factory2) -> void {
-	DXGI_SWAP_CHAIN_DESC1 const swapChainDesc1{
-		.Width = 0,
-		.Height = 0,
-		.Format = DXGI_FORMAT_R8G8B8A8_UNORM,
-		.Stereo = FALSE,
-		.SampleDesc =
-		{
-			.Count = 1,
-			.Quality = 0
-		},
-		.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT,
-		.BufferCount = 2,
-		.Scaling = DXGI_SCALING_NONE,
-		.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD,
-		.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED,
-		.Flags = gSwapChainFlags
-	};
-
-	if (FAILED(factory2->CreateSwapChainForHwnd(gResources->device.Get(), gWindow.GetHandle(), &swapChainDesc1, nullptr, nullptr, gResources->swapChain.GetAddressOf()))) {
-		throw std::runtime_error{ "Failed to create swapchain." };
-	}
-
-	RecreateSwapChainRtv();
 }
 
 
@@ -1711,12 +1725,11 @@ auto StartUp() -> void {
 		throw std::runtime_error{ "Failed to query IDXGIFactory2 interface." };
 	}
 
-	CheckTearingSupport(dxgiFactory2.Get());
-
 	gResources->gameViewRenderTarget = std::make_unique<RenderTarget>(gResources->device, gWindow.GetCurrentClientAreaSize().width, gWindow.GetCurrentClientAreaSize().height);
 	gResources->sceneViewRenderTarget = std::make_unique<RenderTarget>(gResources->device, gWindow.GetCurrentClientAreaSize().width, gWindow.GetCurrentClientAreaSize().height);
 
-	CreateSwapChain(dxgiFactory2.Get());
+	gResources->swapChain = std::make_unique<SwapChain>(gResources->device, dxgiFactory2.Get());
+
 	CreateInputLayouts();
 	CreateShaders();
 	CreateConstantBuffers();
@@ -1727,7 +1740,9 @@ auto StartUp() -> void {
 	CreateDefaultAssets();
 	CreateStructuredBuffers();
 
-	gWindow.OnWindowSize.add_handler(&on_window_resize);
+	gWindow.OnWindowSize.add_handler([](Extent2D<u32> const size) {
+		gResources->swapChain->Resize(size.width, size.height);
+	});
 
 	dxgiFactory2->MakeWindowAssociation(gWindow.GetHandle(), DXGI_MWA_NO_WINDOW_CHANGES);
 }
@@ -1794,13 +1809,14 @@ auto GetSceneAspectRatio() noexcept -> f32 {
 
 auto BindAndClearSwapChain() noexcept -> void {
 	FLOAT constexpr clearColor[]{ 0, 0, 0, 1 };
-	gResources->context->ClearRenderTargetView(gResources->swapChainRtv.Get(), clearColor);
-	gResources->context->OMSetRenderTargets(1, gResources->swapChainRtv.GetAddressOf(), nullptr);
+	auto const rtv{ gResources->swapChain->GetRtv() };
+	gResources->context->ClearRenderTargetView(rtv, clearColor);
+	gResources->context->OMSetRenderTargets(1, &rtv, nullptr);
 }
 
 
 auto Present() noexcept -> void {
-	gResources->swapChain->Present(gSyncInterval, gSyncInterval ? gPresentFlags & ~DXGI_PRESENT_ALLOW_TEARING : gPresentFlags);
+	gResources->swapChain->Present(gSyncInterval);
 }
 
 
