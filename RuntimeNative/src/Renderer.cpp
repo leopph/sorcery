@@ -43,15 +43,416 @@ using Microsoft::WRL::ComPtr;
 
 namespace leopph::renderer {
 namespace {
-std::vector<LightComponent const*> gLights;
+struct ShadowAtlasSubcellData {
+	Matrix4 shadowViewProjMtx;
+	// Index into the array of indices to the visible lights, use lights[visibleLights[visibleLightIdxIdx]] to get to the light
+	int visibleLightIdxIdx;
+	int lightCascadeIdx;
+	float normalBias;
+};
 
-constexpr int PUNCTUAL_SHADOW_ATLAS_SIZE{ 4096 };
+
+class GridLike {
+	int mSubdivSize;
+
+protected:
+	auto ThrowIfIndexIsInvalid(int const idx) const -> void {
+		if (idx < 0 || idx >= GetElementCount()) {
+			throw std::runtime_error{ "Invalid GridLike element index." };
+		}
+	}
+
+public:
+	explicit GridLike(int const subdivSize) :
+		mSubdivSize{ subdivSize } {
+		if (!IsPowerOfTwo(mSubdivSize)) {
+			throw std::runtime_error{ "GridLike subdivision size must be power of 2." };
+		}
+	}
 
 
-struct ShadowAtlas {
-	ComPtr<ID3D11Texture2D> tex;
-	ComPtr<ID3D11ShaderResourceView> srv;
-	ComPtr<ID3D11DepthStencilView> dsv;
+	// The grid has N*N cells, this is the N of that.
+	[[nodiscard]] auto GetSubdivisionSize() const noexcept -> int {
+		return mSubdivSize;
+	}
+
+
+	[[nodiscard]] auto GetElementCount() const noexcept -> int {
+		return mSubdivSize * mSubdivSize;
+	}
+
+
+	[[nodiscard]] auto GetNormalizedElementSize() const noexcept -> float {
+		return 1.0f / static_cast<float>(mSubdivSize);
+	}
+
+
+	[[nodiscard]] auto GetNormalizedElementOffset(int const idx) const -> Vector2 {
+		ThrowIfIndexIsInvalid(idx);
+
+		Vector2 offset{ GetNormalizedElementSize() };
+		offset[0] *= static_cast<float>(static_cast<int>(idx % mSubdivSize));
+		offset[1] *= static_cast<float>(static_cast<int>(idx / mSubdivSize));
+
+		return offset;
+	}
+};
+
+
+class ShadowAtlasCell : public GridLike {
+	std::vector<std::optional<ShadowAtlasSubcellData>> mSubcells;
+
+public:
+	explicit ShadowAtlasCell(int const subdivSize) :
+		GridLike{ subdivSize } {
+		mSubcells.resize(GetElementCount());
+	}
+
+
+	[[nodiscard]] auto GetSubcell(int const idx) const -> std::optional<ShadowAtlasSubcellData> const& {
+		ThrowIfIndexIsInvalid(idx);
+		return mSubcells[idx];
+	}
+
+
+	[[nodiscard]] auto GetSubcell(int const idx) -> std::optional<ShadowAtlasSubcellData>& {
+		return const_cast<std::optional<ShadowAtlasSubcellData>&>(const_cast<ShadowAtlasCell const*>(this)->GetSubcell(idx));
+	}
+};
+
+
+class ShadowAtlas : public GridLike {
+protected:
+	ComPtr<ID3D11Texture2D> mTex;
+	ComPtr<ID3D11ShaderResourceView> mSrv;
+	ComPtr<ID3D11DepthStencilView> mDsv;
+	int mSize;
+
+
+	ShadowAtlas(ID3D11Device* const device, int const size, int const subdivSize) :
+		GridLike{ subdivSize },
+		mSize{ size } {
+		if (!IsPowerOfTwo(mSize)) {
+			throw std::runtime_error{ "Shadow Atlas size must be power of 2." };
+		}
+
+		D3D11_TEXTURE2D_DESC const texDesc{
+			.Width = static_cast<UINT>(size),
+			.Height = static_cast<UINT>(size),
+			.MipLevels = 1,
+			.ArraySize = 1,
+			.Format = DXGI_FORMAT_R16_TYPELESS,
+			.SampleDesc = { .Count = 1, .Quality = 0 },
+			.Usage = D3D11_USAGE_DEFAULT,
+			.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE,
+			.CPUAccessFlags = 0,
+			.MiscFlags = 0
+		};
+
+		if (FAILED(device->CreateTexture2D(&texDesc, nullptr, mTex.GetAddressOf()))) {
+			throw std::runtime_error{ "Failed to create Shadow Atlas texture." };
+		}
+
+		D3D11_SHADER_RESOURCE_VIEW_DESC constexpr srvDesc{
+			.Format = DXGI_FORMAT_R16_UNORM,
+			.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D,
+			.Texture2D = { .MostDetailedMip = 0, .MipLevels = 1 }
+		};
+
+		if (FAILED(device->CreateShaderResourceView(mTex.Get(), &srvDesc, mSrv.GetAddressOf()))) {
+			throw std::runtime_error{ "Failed to create Shadow Atlas SRV." };
+		}
+
+		D3D11_DEPTH_STENCIL_VIEW_DESC constexpr dsvDesc{
+			.Format = DXGI_FORMAT_D16_UNORM,
+			.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D,
+			.Flags = 0,
+			.Texture2D = { .MipSlice = 0 }
+		};
+
+		if (FAILED(device->CreateDepthStencilView(mTex.Get(), &dsvDesc, mDsv.GetAddressOf()))) {
+			throw std::runtime_error{ "Failed to create Shadow Atlas DSV." };
+		}
+	}
+
+public:
+	ShadowAtlas(ShadowAtlas const&) = delete;
+	ShadowAtlas(ShadowAtlas&&) = delete;
+
+	virtual ~ShadowAtlas() = default;
+
+	auto operator=(ShadowAtlas const&) -> void = delete;
+	auto operator=(ShadowAtlas&&) -> void = delete;
+
+
+	[[nodiscard]] auto GetDsv() const noexcept -> ID3D11DepthStencilView* {
+		return mDsv.Get();
+	}
+
+
+	[[nodiscard]] auto GetSrv() const noexcept -> ID3D11ShaderResourceView* {
+		return mSrv.Get();
+	}
+
+
+	[[nodiscard]] auto GetSize() const noexcept -> int {
+		return mSize;
+	}
+
+
+	[[nodiscard]] virtual auto GetCell(int idx) const -> ShadowAtlasCell const& = 0;
+
+	virtual auto Update(std::span<LightComponent const* const> allLights, Visibility const& visibility, Vector3 const& camPos, Matrix4 const& camViewProjMtx) -> void = 0;
+	virtual auto SetLookUpInfo(std::span<ShaderLight> lights) const -> void = 0;
+};
+
+
+#pragma warning(push)
+#pragma warning(disable: 4324)
+class PunctualShadowAtlas final : public ShadowAtlas {
+	std::array<ShadowAtlasCell, 4> mCells;
+
+public:
+	PunctualShadowAtlas(ID3D11Device* const device, int const size) :
+		ShadowAtlas{ device, size, 2 },
+		mCells{ ShadowAtlasCell{ 1 }, ShadowAtlasCell{ 2 }, ShadowAtlasCell{ 4 }, ShadowAtlasCell{ 8 } } {}
+
+
+	auto Update(std::span<LightComponent const* const> const allLights, Visibility const& visibility, Vector3 const& camPos, Matrix4 const& camViewProjMtx) -> void override {
+		struct LightCascadeIndex {
+			int lightIdxIdx;
+			int cascadeIdx;
+		};
+
+		std::array<std::vector<LightCascadeIndex>, 4> static lightIndexIndicesInCell{};
+
+		for (auto& cellLight : lightIndexIndicesInCell) {
+			cellLight.clear();
+		}
+
+		auto const determineScreenCoverage{
+			[&camPos, &camViewProjMtx](std::span<Vector3 const> const vertices) -> std::optional<int> {
+				std::optional<int> cellIdx;
+
+				if (auto const [worldMin, worldMax]{ AABB::FromVertices(vertices) };
+					worldMin[0] <= camPos[0] && worldMin[1] <= camPos[1] && worldMin[2] <= camPos[2] &&
+					worldMax[0] >= camPos[0] && worldMax[1] >= camPos[1] && worldMax[2] >= camPos[2]) {
+					cellIdx = 0;
+				}
+				else {
+					Vector2 const bottomLeft{ -1, -1 };
+					Vector2 const topRight{ 1, 1 };
+
+					Vector2 min{ std::numeric_limits<float>::max() };
+					Vector2 max{ std::numeric_limits<float>::lowest() };
+
+					for (auto& vertex : vertices) {
+						Vector4 vertex4{ vertex, 1 };
+						vertex4 *= camViewProjMtx;
+						auto const projected{ Vector2{ vertex4 } / vertex4[3] };
+						min = Clamp(Min(min, projected), bottomLeft, topRight);
+						max = Clamp(Max(max, projected), bottomLeft, topRight);
+					}
+
+					auto const width{ max[0] - min[0] };
+					auto const height{ max[1] - min[1] };
+
+					auto const area{ width * height };
+					auto const coverage{ area / 4 };
+
+					if (coverage >= 1) {
+						cellIdx = 0;
+					}
+					else if (coverage >= 0.25f) {
+						cellIdx = 1;
+					}
+					else if (coverage >= 0.0625f) {
+						cellIdx = 2;
+					}
+					else if (coverage >= 0.015625f) {
+						cellIdx = 3;
+					}
+				}
+
+				return cellIdx;
+			}
+		};
+
+		for (int i = 0; i < static_cast<int>(visibility.lightIndices.size()); i++) {
+			if (auto const light{ allLights[visibility.lightIndices[i]] }; light->IsCastingShadow()) {
+				if (light->GetType() == LightComponent::Type::Spot) {
+					auto lightVertices{ CalculateSpotLightLocalVertices(*light) };
+
+					for (auto const modelMtxNoScale{ CalculateModelMatrixNoScale(light->GetEntity()->GetTransform()) };
+					     auto& vertex : lightVertices) {
+						vertex = Vector3{ Vector4{ vertex, 1 } * modelMtxNoScale };
+					}
+
+					if (auto const cellIdx{ determineScreenCoverage(lightVertices) }) {
+						lightIndexIndicesInCell[*cellIdx].emplace_back(i, 0);
+					}
+				}
+				else if (light->GetType() == LightComponent::Type::Point) {
+					auto const boundsHalfWidthHeight{ std::tan(ToRadians(45)) * light->GetRange() };
+
+					for (auto j = 0; j < 6; j++) {
+						std::array static const faceBoundsRotations{
+							Quaternion::FromAxisAngle(Vector3::Up(), ToRadians(90)), // +X
+							Quaternion::FromAxisAngle(Vector3::Up(), ToRadians(-90)), // -X
+							Quaternion::FromAxisAngle(Vector3::Right(), ToRadians(-90)), // +Y
+							Quaternion::FromAxisAngle(Vector3::Right(), ToRadians(90)), // -Y
+							Quaternion{}, // +Z
+							Quaternion::FromAxisAngle(Vector3::Up(), ToRadians(180)) // -Z
+						};
+
+						std::array const shadowFrustumVertices{
+							faceBoundsRotations[i].Rotate(Vector3{ boundsHalfWidthHeight, boundsHalfWidthHeight, light->GetRange() }) + light->GetEntity()->GetTransform().GetWorldPosition(),
+							faceBoundsRotations[i].Rotate(Vector3{ -boundsHalfWidthHeight, boundsHalfWidthHeight, light->GetRange() }) + light->GetEntity()->GetTransform().GetWorldPosition(),
+							faceBoundsRotations[i].Rotate(Vector3{ -boundsHalfWidthHeight, -boundsHalfWidthHeight, light->GetRange() }) + light->GetEntity()->GetTransform().GetWorldPosition(),
+							faceBoundsRotations[i].Rotate(Vector3{ boundsHalfWidthHeight, -boundsHalfWidthHeight, light->GetRange() }) + light->GetEntity()->GetTransform().GetWorldPosition(),
+							light->GetEntity()->GetTransform().GetWorldPosition(),
+						};
+
+						if (auto const cellIdx{ determineScreenCoverage(shadowFrustumVertices) }) {
+							lightIndexIndicesInCell[*cellIdx].emplace_back(i, j);
+						}
+					}
+				}
+			}
+		}
+
+		for (int i = 0; i < 4; i++) {
+			std::ranges::sort(lightIndexIndicesInCell[i], [&visibility, &camPos, &allLights](LightCascadeIndex const lhs, LightCascadeIndex const rhs) {
+				auto const leftLight{ allLights[visibility.lightIndices[lhs.lightIdxIdx]] };
+				auto const rightLight{ allLights[visibility.lightIndices[rhs.lightIdxIdx]] };
+
+				auto const leftLightPos{ leftLight->GetEntity()->GetTransform().GetWorldPosition() };
+				auto const rightLightPos{ rightLight->GetEntity()->GetTransform().GetWorldPosition() };
+
+				auto const leftDist{ Distance(leftLightPos, camPos) };
+				auto const rightDist{ Distance(camPos, rightLightPos) };
+
+				return leftDist > rightDist;
+			});
+
+			for (int j = 0; j < mCells[i].GetElementCount(); j++) {
+				auto& subcell{ mCells[i].GetSubcell(j) };
+				subcell.reset();
+
+				if (lightIndexIndicesInCell[i].empty()) {
+					continue;
+				}
+
+				auto const [lightIdxIdx, cascadeIdx]{ lightIndexIndicesInCell[i].back() };
+				auto const light{ allLights[visibility.lightIndices[lightIdxIdx]] };
+				lightIndexIndicesInCell[i].pop_back();
+
+				if (light->GetType() == LightComponent::Type::Spot) {
+					auto const shadowViewMtx{ Matrix4::LookToLH(light->GetEntity()->GetTransform().GetWorldPosition(), light->GetEntity()->GetTransform().GetForwardAxis(), Vector3::Up()) };
+					auto const shadowProjMtx{ Matrix4::PerspectiveAsymZLH(ToRadians(light->GetOuterAngle() * 2), 1.f, light->GetShadowNearPlane(), light->GetRange()) };
+
+					subcell.emplace(shadowViewMtx * shadowProjMtx, lightIdxIdx, cascadeIdx, light->GetShadowNormalBias());
+				}
+				else if (light->GetType() == LightComponent::Type::Point) {
+					std::array static constexpr faceMatrices{
+						Matrix4{ 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 1 }, // +X
+						Matrix4{ 0, 0, -1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1 }, // -X
+						Matrix4{ 1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1 }, // +Y
+						Matrix4{ 1, 0, 0, 0, 0, 0, -1, 0, 0, 1, 0, 0, 0, 0, 0, 1 }, // -Y
+						Matrix4{ 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 }, // +Z
+						Matrix4{ -1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1 } // -Z
+					};
+
+					auto const shadowViewMtx{ Matrix4::Translate(-light->GetEntity()->GetTransform().GetWorldPosition()) * faceMatrices[cascadeIdx] };
+					auto const shadowProjMtx{ Matrix4::PerspectiveAsymZLH(ToRadians(90), 1, light->GetShadowNearPlane(), light->GetRange()) };
+
+					subcell.emplace(shadowViewMtx * shadowProjMtx, lightIdxIdx, cascadeIdx, light->GetShadowNormalBias());
+				}
+			}
+
+			if (i + 1 < 4) {
+				std::ranges::copy(lightIndexIndicesInCell[i], std::back_inserter(lightIndexIndicesInCell[i + 1]));
+			}
+		}
+	}
+
+
+	auto SetLookUpInfo(std::span<ShaderLight> const lights) const -> void override {
+		for (int i = 0; i < 4; i++) {
+			auto const& cell{ mCells[i] };
+
+			for (int j = 0; j < cell.GetElementCount(); j++) {
+				if (auto const& subcell{ cell.GetSubcell(j) }) {
+					lights[subcell->visibleLightIdxIdx].isCastingShadow = TRUE;
+					lights[subcell->visibleLightIdxIdx].sampleCascade[subcell->lightCascadeIdx] = TRUE;
+					lights[subcell->visibleLightIdxIdx].shadowViewProjMatrices[subcell->lightCascadeIdx] = subcell->shadowViewProjMtx;
+					lights[subcell->visibleLightIdxIdx].shadowUvOffsets[subcell->lightCascadeIdx] = GetNormalizedElementOffset(i) + cell.GetNormalizedElementOffset(j) * GetNormalizedElementSize();
+					lights[subcell->visibleLightIdxIdx].shadowUvScales[subcell->lightCascadeIdx] = GetNormalizedElementSize() * cell.GetNormalizedElementSize();
+				}
+			}
+		}
+	}
+
+
+	[[nodiscard]] auto GetCell(int const idx) const -> ShadowAtlasCell const& override {
+		ThrowIfIndexIsInvalid(idx);
+		return mCells[idx];
+	}
+};
+#pragma warning(pop)
+
+
+class DirectionalShadowAtlas final : public ShadowAtlas {
+	ShadowAtlasCell mCell;
+
+public:
+	explicit DirectionalShadowAtlas(ID3D11Device* const device, int const size) :
+		ShadowAtlas{ device, size, 1 },
+		mCell{ 1 } {}
+
+
+	auto Update(std::span<LightComponent const* const> const allLights, Visibility const& visibility, Vector3 const& camPos, Matrix4 const& camViewProjMtx) -> void override {
+		std::vector<int> static candidateLightIdxIndices;
+		candidateLightIdxIndices.clear();
+
+		for (int i = 0; i < std::ssize(visibility.lightIndices); i++) {
+			if (auto const& light{ allLights[visibility.lightIndices[i]] }; light->IsCastingShadow() && light->GetType() == LightComponent::Type::Directional) {
+				candidateLightIdxIndices.emplace_back(i);
+			}
+		}
+
+		//mCells.clear();
+		//mCells.resize(NextPowerOfTwo(candidateLightIdxIndices.size()));
+
+		for (auto i = 0; i < std::ssize(candidateLightIdxIndices); i++) {
+			auto const lightIdxIdx{ candidateLightIdxIndices[i] };
+			auto const& light{ *allLights[visibility.lightIndices[lightIdxIdx]] };
+
+			constexpr auto lambda{ 0.75f };
+
+			for (auto j = 0; j < 4; j++) {
+				// TODO
+			}
+		}
+	}
+
+
+	auto SetLookUpInfo(std::span<ShaderLight> const lights) const -> void override {
+		/*for (int i = 0; i < std::ssize(mCells); i++) {
+			if (mCells[i]) {
+				lights[mCells[i]->visibleLightIdxIdx].isCastingShadow = true;
+				lights[mCells[i]->visibleLightIdxIdx].shadowViewProjMatrices[mCells[i]->lightCascadeIdx] = mCells[i]->shadowViewProjMtx;
+				lights[mCells[i]->visibleLightIdxIdx].atlasQuadrantIndices[mCells[i]->lightCascadeIdx] = 0;
+				lights[mCells[i]->visibleLightIdxIdx].atlasCellIndices[mCells[i]->lightCascadeIdx] = i;
+			}
+		} TODO*/
+	}
+
+
+	[[nodiscard]] auto GetCell([[maybe_unused]] int const idx) const -> ShadowAtlasCell const& override {
+		ThrowIfIndexIsInvalid(idx);
+		return mCell;
+	}
 };
 
 
@@ -378,267 +779,12 @@ struct Resources {
 	std::unique_ptr<Mesh> cubeMesh;
 	std::unique_ptr<Mesh> planeMesh;
 
-	ShadowAtlas punctualShadowAtlas;
+	std::array<std::unique_ptr<ShadowAtlas>, 2> shadowAtlases;
 
 	std::unique_ptr<RenderTarget> gameViewRenderTarget;
 	std::unique_ptr<RenderTarget> sceneViewRenderTarget;
 	std::unique_ptr<SwapChain> swapChain;
 };
-
-
-struct ShadowAtlasCellData {
-	Matrix4 shadowViewProjMtx;
-	// Index into the array of indices to the visible lights, use lights[visibleLights[visibleLightIdxIdx]] to get to the light
-	int visibleLightIdxIdx;
-	int lightCascadeIdx;
-	float normalBias;
-};
-
-
-#pragma warning(push)
-#pragma warning(disable: 4324)
-class PunctualShadowAtlasAllocation {
-	std::optional<ShadowAtlasCellData> mQuadrant0;
-	std::array<std::optional<ShadowAtlasCellData>, 4> mQuadrant1;
-	std::array<std::optional<ShadowAtlasCellData>, 16> mQuadrant2;
-	std::array<std::optional<ShadowAtlasCellData>, 64> mQuadrant3;
-
-public:
-	[[nodiscard]] auto GetQuadrantCells(int const idx) const -> std::span<std::optional<ShadowAtlasCellData> const> {
-		return const_cast<PunctualShadowAtlasAllocation*>(this)->GetQuadrantCells(idx);
-	}
-
-
-	[[nodiscard]] auto GetQuadrantCells(int const idx) -> std::span<std::optional<ShadowAtlasCellData>> {
-		switch (idx) {
-		case 0: {
-			return std::span{ &mQuadrant0, 1 };
-		}
-		case 1: {
-			return std::span{ mQuadrant1 };
-		}
-		case 2: {
-			return std::span{ mQuadrant2 };
-		}
-		case 3: {
-			return std::span{ mQuadrant3 };
-		}
-		default: {
-			throw std::out_of_range{ "Shadow atlas quadrant index out of bounds." };
-		}
-		}
-	}
-
-
-	[[nodiscard]] static auto GetQuadrantRowColCount(int const idx) -> int {
-		if (idx > 3 || idx < 0) {
-			throw std::out_of_range{ "Shadow atlas quadrant index out of bounds." };
-		}
-
-		return Pow(2, idx);
-	}
-
-
-	[[nodiscard]] static auto GetQuadrantCellSizeNormalized(int const idx) -> float {
-		return 0.5f / static_cast<float>(GetQuadrantRowColCount(idx));
-	}
-
-
-	[[nodiscard]] static auto GetQuadrantOffsetNormalized(int const idx) -> Vector2 {
-		switch (idx) {
-		case 0: {
-			return Vector2{ 0 };
-		}
-		case 1: {
-			return Vector2{ 0.5f, 0 };
-		}
-		case 2: {
-			return Vector2{ 0, 0.5f };
-		}
-		case 3: {
-			return Vector2{ 0.5f };
-		}
-		default: {
-			throw std::out_of_range{ "Shadow atlas quadrant index out of bounds." };
-		}
-		}
-	}
-
-
-	[[nodiscard]] static auto GetCellOffsetNormalized(int const quadrantIdx, int const cellIdx) -> Vector2 {
-		auto const rowColCount{ GetQuadrantRowColCount(quadrantIdx) };
-
-		if (cellIdx < 0 || cellIdx > Pow(rowColCount, 2)) {
-			throw std::out_of_range{ "Shadow atlas cell index out of bounds." };
-		}
-
-		auto const quadrantOffset{ GetQuadrantOffsetNormalized(quadrantIdx) };
-		auto const cellSizeNorm{ GetQuadrantCellSizeNormalized(quadrantIdx) };
-		auto const rowIdx{ cellIdx / rowColCount };
-		auto const colIdx{ cellIdx % rowColCount };
-
-		return quadrantOffset + Vector2{ static_cast<float>(colIdx) * cellSizeNorm, static_cast<float>(rowIdx) * cellSizeNorm };
-	}
-
-
-	auto Update(Visibility const& visibility, Vector3 const& camPos, Matrix4 const& camViewProjMtx) -> void {
-		struct LightCascadeIndex {
-			int lightIdxIdx;
-			int cascadeIdx;
-		};
-
-		std::array<std::vector<LightCascadeIndex>, 4> static lightIndexIndicesInQuadrant{};
-
-		for (auto& quadrantLights : lightIndexIndicesInQuadrant) {
-			quadrantLights.clear();
-		}
-
-		auto const determineScreenCoverage{
-			[&camPos, &camViewProjMtx](std::span<Vector3 const> const vertices) -> std::optional<int> {
-				std::optional<int> quadrantIdx;
-
-				if (auto const [worldMin, worldMax]{ AABB::FromVertices(vertices) };
-					worldMin[0] <= camPos[0] && worldMin[1] <= camPos[1] && worldMin[2] <= camPos[2] &&
-					worldMax[0] >= camPos[0] && worldMax[1] >= camPos[1] && worldMax[2] >= camPos[2]) {
-					quadrantIdx = 0;
-				}
-				else {
-					Vector2 const bottomLeft{ -1, -1 };
-					Vector2 const topRight{ 1, 1 };
-
-					Vector2 min{ std::numeric_limits<float>::max() };
-					Vector2 max{ std::numeric_limits<float>::lowest() };
-
-					for (auto& vertex : vertices) {
-						Vector4 vertex4{ vertex, 1 };
-						vertex4 *= camViewProjMtx;
-						auto const projected{ Vector2{ vertex4 } / vertex4[3] };
-						min = Clamp(Min(min, projected), bottomLeft, topRight);
-						max = Clamp(Max(max, projected), bottomLeft, topRight);
-					}
-
-					auto const width{ max[0] - min[0] };
-					auto const height{ max[1] - min[1] };
-
-					auto const area{ width * height };
-					auto const coverage{ area / 4 };
-
-					if (coverage >= 1) {
-						quadrantIdx = 0;
-					}
-					else if (coverage >= 0.25f) {
-						quadrantIdx = 1;
-					}
-					else if (coverage >= 0.0625f) {
-						quadrantIdx = 2;
-					}
-					else if (coverage >= 0.015625f) {
-						quadrantIdx = 3;
-					}
-				}
-
-				return quadrantIdx;
-			}
-		};
-
-		for (int i = 0; i < static_cast<int>(visibility.lightIndices.size()); i++) {
-			if (auto const light{ gLights[visibility.lightIndices[i]] }; light->IsCastingShadow()) {
-				if (light->GetType() == LightComponent::Type::Spot) {
-					auto lightVertices{ CalculateSpotLightLocalVertices(*light) };
-
-					for (auto const modelMtxNoScale{ CalculateModelMatrixNoScale(light->GetEntity()->GetTransform()) };
-					     auto& vertex : lightVertices) {
-						vertex = Vector3{ Vector4{ vertex, 1 } * modelMtxNoScale };
-					}
-
-					if (auto const quadrantIdx{ determineScreenCoverage(lightVertices) }) {
-						lightIndexIndicesInQuadrant[*quadrantIdx].emplace_back(i, 0);
-					}
-				}
-				else if (light->GetType() == LightComponent::Type::Point) {
-					auto const boundsHalfWidthHeight{ std::tan(ToRadians(45)) * light->GetRange() };
-
-					for (auto j = 0; j < 6; j++) {
-						std::array static const faceBoundsRotations{
-							Quaternion::FromAxisAngle(Vector3::Up(), ToRadians(90)), // +X
-							Quaternion::FromAxisAngle(Vector3::Up(), ToRadians(-90)), // -X
-							Quaternion::FromAxisAngle(Vector3::Right(), ToRadians(-90)), // +Y
-							Quaternion::FromAxisAngle(Vector3::Right(), ToRadians(90)), // -Y
-							Quaternion{}, // +Z
-							Quaternion::FromAxisAngle(Vector3::Up(), ToRadians(180)) // -Z
-						};
-
-						std::array const shadowFrustumVertices{
-							faceBoundsRotations[i].Rotate(Vector3{ boundsHalfWidthHeight, boundsHalfWidthHeight, light->GetRange() }) + light->GetEntity()->GetTransform().GetWorldPosition(),
-							faceBoundsRotations[i].Rotate(Vector3{ -boundsHalfWidthHeight, boundsHalfWidthHeight, light->GetRange() }) + light->GetEntity()->GetTransform().GetWorldPosition(),
-							faceBoundsRotations[i].Rotate(Vector3{ -boundsHalfWidthHeight, -boundsHalfWidthHeight, light->GetRange() }) + light->GetEntity()->GetTransform().GetWorldPosition(),
-							faceBoundsRotations[i].Rotate(Vector3{ boundsHalfWidthHeight, -boundsHalfWidthHeight, light->GetRange() }) + light->GetEntity()->GetTransform().GetWorldPosition(),
-							light->GetEntity()->GetTransform().GetWorldPosition(),
-						};
-
-						if (auto const quadrantIdx{ determineScreenCoverage(shadowFrustumVertices) }) {
-							lightIndexIndicesInQuadrant[*quadrantIdx].emplace_back(i, j);
-						}
-					}
-				}
-			}
-		}
-
-		for (int i = 0; i < 4; i++) {
-			std::ranges::sort(lightIndexIndicesInQuadrant[i], [&visibility, &camPos](LightCascadeIndex const lhs, LightCascadeIndex const rhs) {
-				auto const leftLight{ gLights[visibility.lightIndices[lhs.lightIdxIdx]] };
-				auto const rightLight{ gLights[visibility.lightIndices[rhs.lightIdxIdx]] };
-
-				auto const leftLightPos{ leftLight->GetEntity()->GetTransform().GetWorldPosition() };
-				auto const rightLightPos{ rightLight->GetEntity()->GetTransform().GetWorldPosition() };
-
-				auto const leftDist{ Distance(leftLightPos, camPos) };
-				auto const rightDist{ Distance(camPos, rightLightPos) };
-
-				return leftDist > rightDist;
-			});
-
-			for (auto& cell : GetQuadrantCells(i)) {
-				cell.reset();
-
-				if (lightIndexIndicesInQuadrant[i].empty()) {
-					continue;
-				}
-
-				auto const [lightIdxIdx, cascadeIdx]{ lightIndexIndicesInQuadrant[i].back() };
-				auto const light{ gLights[visibility.lightIndices[lightIdxIdx]] };
-				lightIndexIndicesInQuadrant[i].pop_back();
-
-				if (light->GetType() == LightComponent::Type::Spot) {
-					auto const shadowViewMtx{ Matrix4::LookToLH(light->GetEntity()->GetTransform().GetWorldPosition(), light->GetEntity()->GetTransform().GetForwardAxis(), Vector3::Up()) };
-					auto const shadowProjMtx{ Matrix4::PerspectiveAsymZLH(ToRadians(light->GetOuterAngle() * 2), 1.f, light->GetShadowNearPlane(), light->GetRange()) };
-
-					cell.emplace(shadowViewMtx * shadowProjMtx, lightIdxIdx, cascadeIdx, light->GetShadowNormalBias());
-				}
-				else if (light->GetType() == LightComponent::Type::Point) {
-					std::array static constexpr faceMatrices{
-						Matrix4{ 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 1 }, // +X
-						Matrix4{ 0, 0, -1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1 }, // -X
-						Matrix4{ 1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1 }, // +Y
-						Matrix4{ 1, 0, 0, 0, 0, 0, -1, 0, 0, 1, 0, 0, 0, 0, 0, 1 }, // -Y
-						Matrix4{ 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 }, // +Z
-						Matrix4{ -1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1 } // -Z
-					};
-
-					auto const shadowViewMtx{ Matrix4::Translate(-light->GetEntity()->GetTransform().GetWorldPosition()) * faceMatrices[cascadeIdx] };
-					auto const shadowProjMtx{ Matrix4::PerspectiveAsymZLH(ToRadians(90), 1, light->GetShadowNearPlane(), light->GetRange()) };
-
-					cell.emplace(shadowViewMtx * shadowProjMtx, lightIdxIdx, cascadeIdx, light->GetShadowNormalBias());
-				}
-			}
-
-			if (i + 1 < 4) {
-				std::ranges::copy(lightIndexIndicesInQuadrant[i], std::back_inserter(lightIndexIndicesInQuadrant[i + 1]));
-			}
-		}
-	}
-};
-#pragma warning(pop)
 
 
 std::vector const QUAD_POSITIONS{
@@ -787,14 +933,16 @@ std::vector<UINT> const CUBE_INDICES{
 	6, 18, 15
 };
 
+constexpr auto DIR_SHADOW_ATLAS_IDX{ 0 };
+constexpr auto PUNC_SHADOW_ATLAS_IDX{ 1 };
 
 Resources* gResources{ nullptr };
 u32 gSyncInterval{ 0 };
 std::vector<StaticMeshComponent const*> gStaticMeshComponents;
 f32 gInvGamma{ 1.f / 2.2f };
 std::vector<SkyboxComponent const*> gSkyboxes;
+std::vector<LightComponent const*> gLights;
 std::vector<Camera const*> gGameRenderCameras;
-PunctualShadowAtlasAllocation gPunctualShadowAtlasAlloc;
 std::vector<ShaderLineGizmoVertexData> gLineGizmoVertexData;
 std::vector<Vector4> gGizmoColors;
 int gGizmoColorBufferSize{ 1 };
@@ -1052,51 +1200,8 @@ auto CreateDepthStencilStates() -> void {
 
 
 auto CreateShadowAtlases() -> void {
-	D3D11_TEXTURE2D_DESC constexpr punctAtlasDesc{
-		.Width = PUNCTUAL_SHADOW_ATLAS_SIZE,
-		.Height = PUNCTUAL_SHADOW_ATLAS_SIZE,
-		.MipLevels = 1,
-		.ArraySize = 1,
-		.Format = DXGI_FORMAT_R16_TYPELESS,
-		.SampleDesc = {
-			.Count = 1,
-			.Quality = 0
-		},
-		.Usage = D3D11_USAGE_DEFAULT,
-		.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE,
-		.CPUAccessFlags = 0,
-		.MiscFlags = 0
-	};
-
-	if (FAILED(gResources->device->CreateTexture2D(&punctAtlasDesc, nullptr, gResources->punctualShadowAtlas.tex.GetAddressOf()))) {
-		throw std::runtime_error{ "Failed to create spot/point shadow atlas texture." };
-	}
-
-	D3D11_SHADER_RESOURCE_VIEW_DESC constexpr punctSrvDesc{
-		.Format = DXGI_FORMAT_R16_UNORM,
-		.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D,
-		.Texture2D = {
-			.MostDetailedMip = 0,
-			.MipLevels = 1
-		}
-	};
-
-	if (FAILED(gResources->device->CreateShaderResourceView(gResources->punctualShadowAtlas.tex.Get(), &punctSrvDesc, gResources->punctualShadowAtlas.srv.GetAddressOf()))) {
-		throw std::runtime_error{ "Failed to create spot/point shadow atlas srv." };
-	}
-
-	D3D11_DEPTH_STENCIL_VIEW_DESC constexpr puntDsvDesc{
-		.Format = DXGI_FORMAT_D16_UNORM,
-		.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D,
-		.Flags = 0,
-		.Texture2D = {
-			.MipSlice = 0
-		}
-	};
-
-	if (FAILED(gResources->device->CreateDepthStencilView(gResources->punctualShadowAtlas.tex.Get(), &puntDsvDesc, gResources->punctualShadowAtlas.dsv.GetAddressOf()))) {
-		throw std::runtime_error{ "Failed to create spot/point shadow atlas dsv." };
-	}
+	gResources->shadowAtlases[PUNC_SHADOW_ATLAS_IDX] = std::make_unique<PunctualShadowAtlas>(gResources->device.Get(), 4096);
+	gResources->shadowAtlases[DIR_SHADOW_ATLAS_IDX] = std::make_unique<DirectionalShadowAtlas>(gResources->device.Get(), 4096);
 }
 
 
@@ -1291,16 +1396,16 @@ auto DrawMeshes(std::span<int const> const meshComponentIndices, bool const useM
 				gResources->context->PSSetConstantBuffers(CB_SLOT_PER_MATERIAL, 1, &mtlBuffer);
 
 				auto const albedoSrv{ mtl.GetAlbedoMap() ? mtl.GetAlbedoMap()->GetSrv() : nullptr };
-				gResources->context->PSSetShaderResources(TEX_SLOT_ALBEDO_MAP, 1, &albedoSrv);
+				gResources->context->PSSetShaderResources(RES_SLOT_ALBEDO_MAP, 1, &albedoSrv);
 
 				auto const metallicSrv{ mtl.GetMetallicMap() ? mtl.GetMetallicMap()->GetSrv() : nullptr };
-				gResources->context->PSSetShaderResources(TEX_SLOT_METALLIC_MAP, 1, &metallicSrv);
+				gResources->context->PSSetShaderResources(RES_SLOT_METALLIC_MAP, 1, &metallicSrv);
 
 				auto const roughnessSrv{ mtl.GetRoughnessMap() ? mtl.GetRoughnessMap()->GetSrv() : nullptr };
-				gResources->context->PSSetShaderResources(TEX_SLOT_ROUGHNESS_MAP, 1, &roughnessSrv);
+				gResources->context->PSSetShaderResources(RES_SLOT_ROUGHNESS_MAP, 1, &roughnessSrv);
 
 				auto const aoSrv{ mtl.GetAoMap() ? mtl.GetAoMap()->GetSrv() : nullptr };
-				gResources->context->PSSetShaderResources(TEX_SLOT_AO_MAP, 1, &aoSrv);
+				gResources->context->PSSetShaderResources(RES_SLOT_AO_MAP, 1, &aoSrv);
 			}
 
 			gResources->context->DrawIndexed(indexCount, firstIndex, baseVertex);
@@ -1341,7 +1446,7 @@ auto DoToneMapGammaCorrectionStep(ID3D11ShaderResourceView* const src, ID3D11Ren
 	gResources->context->OMSetRenderTargets(1, &dst, nullptr);
 
 	gResources->context->PSSetConstantBuffers(CB_SLOT_TONE_MAP_GAMMA, 1, gResources->toneMapGammaCB.GetAddressOf());
-	gResources->context->PSSetShaderResources(TEX_SLOT_TONE_MAP_SRC, 1, &src);
+	gResources->context->PSSetShaderResources(RES_SLOT_TONE_MAP_SRC, 1, &src);
 
 	gResources->context->IASetInputLayout(nullptr);
 	gResources->context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -1350,7 +1455,7 @@ auto DoToneMapGammaCorrectionStep(ID3D11ShaderResourceView* const src, ID3D11Ren
 
 	// Restore old view bindings to that we don't leave any input/output conflicts behind.
 
-	gResources->context->PSSetShaderResources(TEX_SLOT_TONE_MAP_SRC, 1, srvBackup.GetAddressOf());
+	gResources->context->PSSetShaderResources(RES_SLOT_TONE_MAP_SRC, 1, srvBackup.GetAddressOf());
 	gResources->context->OMSetRenderTargets(1, rtvBackup.GetAddressOf(), dsvBackup.Get());
 }
 
@@ -1378,7 +1483,7 @@ auto DrawSkybox(Matrix4 const& camViewMtx, Matrix4 const& camProjMtx) noexcept -
 	gResources->context->PSSetShader(gResources->skyboxPS.Get(), nullptr, 0);
 
 	auto const cubemapSrv{ gSkyboxes[0]->GetCubemap()->GetSrv() };
-	gResources->context->PSSetShaderResources(TEX_SLOT_SKYBOX_CUBEMAP, 1, &cubemapSrv);
+	gResources->context->PSSetShaderResources(RES_SLOT_SKYBOX_CUBEMAP, 1, &cubemapSrv);
 
 	auto const cb{ gResources->skyboxCB.Get() };
 	gResources->context->VSSetConstantBuffers(CB_SLOT_SKYBOX_PASS, 1, &cb);
@@ -1394,26 +1499,29 @@ auto DrawSkybox(Matrix4 const& camViewMtx, Matrix4 const& camProjMtx) noexcept -
 }
 
 
-auto DrawShadowMaps(PunctualShadowAtlasAllocation const& alloc) -> void {
-	gResources->context->OMSetRenderTargets(0, nullptr, gResources->punctualShadowAtlas.dsv.Get());
-	gResources->context->ClearDepthStencilView(gResources->punctualShadowAtlas.dsv.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+auto DrawShadowMaps(ShadowAtlas const& atlas) -> void {
+	gResources->context->OMSetRenderTargets(0, nullptr, atlas.GetDsv());
+	gResources->context->ClearDepthStencilView(atlas.GetDsv(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 	gResources->context->VSSetShader(gResources->shadowVS.Get(), nullptr, 0);
 	gResources->context->PSSetShader(nullptr, nullptr, 0);
 	gResources->context->VSSetConstantBuffers(CB_SLOT_SHADOW_PASS, 1, gResources->shadowCB.GetAddressOf());
 
-	for (int i = 0; i < 4; i++) {
-		auto const cells{ alloc.GetQuadrantCells(i) };
-		auto const cellSize{ PunctualShadowAtlasAllocation::GetQuadrantCellSizeNormalized(i) * static_cast<float>(PUNCTUAL_SHADOW_ATLAS_SIZE) };
+	auto const cellSizeNorm{ atlas.GetNormalizedElementSize() };
 
-		for (int j = 0; j < static_cast<int>(cells.size()); j++) {
-			if (cells[j]) {
-				auto const cellOffset{ PunctualShadowAtlasAllocation::GetCellOffsetNormalized(i, j) * static_cast<float>(PUNCTUAL_SHADOW_ATLAS_SIZE) };
+	for (auto i = 0; i < atlas.GetElementCount(); i++) {
+		auto const& cell{ atlas.GetCell(i) };
+		auto const cellOffsetNorm{ atlas.GetNormalizedElementOffset(i) };
+		auto const subcellSize{ cellSizeNorm * cell.GetNormalizedElementSize() * atlas.GetSize() };
+
+		for (auto j = 0; j < cell.GetElementCount(); j++) {
+			if (auto const& subcell{ cell.GetSubcell(j) }) {
+				auto const subcellOffset{ (cellOffsetNorm + cell.GetNormalizedElementOffset(j) * cellSizeNorm) * atlas.GetSize() };
 
 				D3D11_VIEWPORT const viewport{
-					.TopLeftX = cellOffset[0],
-					.TopLeftY = cellOffset[1],
-					.Width = static_cast<float>(cellSize),
-					.Height = static_cast<float>(cellSize),
+					.TopLeftX = subcellOffset[0],
+					.TopLeftY = subcellOffset[1],
+					.Width = subcellSize,
+					.Height = subcellSize,
 					.MinDepth = 0,
 					.MaxDepth = 1
 				};
@@ -1423,11 +1531,11 @@ auto DrawShadowMaps(PunctualShadowAtlasAllocation const& alloc) -> void {
 				D3D11_MAPPED_SUBRESOURCE mapped;
 				gResources->context->Map(gResources->shadowCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
 				auto const shadowCbData{ static_cast<ShadowCB*>(mapped.pData) };
-				shadowCbData->shadowViewProjMtx = cells[j]->shadowViewProjMtx;
-				shadowCbData->shadowNormalBias = cells[j]->normalBias;
+				shadowCbData->shadowViewProjMtx = subcell->shadowViewProjMtx;
+				shadowCbData->shadowNormalBias = subcell->normalBias;
 				gResources->context->Unmap(gResources->shadowCB.Get(), 0);
 
-				Frustum const shadowFrustumWS{ cells[j]->shadowViewProjMtx };
+				Frustum const shadowFrustumWS{ subcell->shadowViewProjMtx };
 
 				Visibility static perLightVisibility;
 
@@ -1477,11 +1585,11 @@ auto DrawGizmos() -> void {
 	}
 
 	gResources->context->PSSetShader(gResources->gizmoPS.Get(), nullptr, 0);
-	gResources->context->PSSetShaderResources(SB_SLOT_GIZMO_COLOR, 1, gResources->gizmoColorSbSrv.GetAddressOf());
+	gResources->context->PSSetShaderResources(RES_SLOT_GIZMO_COLOR, 1, gResources->gizmoColorSbSrv.GetAddressOf());
 
 	if (!gLineGizmoVertexData.empty()) {
 		gResources->context->VSSetShader(gResources->lineGizmoVS.Get(), nullptr, 0);
-		gResources->context->VSSetShaderResources(SB_SLOT_LINE_GIZMO_VERTEX, 1, gResources->lineGizmoVertexSbSrv.GetAddressOf());
+		gResources->context->VSSetShaderResources(RES_SLOT_LINE_GIZMO_VERTEX, 1, gResources->lineGizmoVertexSbSrv.GetAddressOf());
 		gResources->context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 		gResources->context->DrawInstanced(2, static_cast<UINT>(gLineGizmoVertexData.size()), 0, 0);
 	}
@@ -1528,11 +1636,19 @@ auto DrawFullWithCameras(std::span<Camera const* const> const cameras, RenderTar
 		CullLights(camFrustWS, visibility);
 		auto const lightCount{ std::min(MAX_LIGHT_COUNT, static_cast<int>(visibility.lightIndices.size())) };
 
-		gPunctualShadowAtlasAlloc.Update(visibility, camPos, camViewProjMtx);
+		for (auto const& shadowAtlas : gResources->shadowAtlases) {
+			shadowAtlas->Update(gLights, visibility, camPos, camViewProjMtx);
+		}
+
+
 		ID3D11ShaderResourceView* const nullSrv{ nullptr };
-		gResources->context->PSSetShaderResources(TEX_SLOT_PUNCTUAL_SHADOW_ATLAS, 1, &nullSrv);
+		gResources->context->PSSetShaderResources(RES_SLOT_PUNCTUAL_SHADOW_ATLAS, 1, &nullSrv);
+		gResources->context->PSSetShaderResources(RES_SLOT_DIR_SHADOW_ATLAS, 1, &nullSrv);
 		gResources->context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		DrawShadowMaps(gPunctualShadowAtlasAlloc);
+
+		for (auto const& shadowAtlas : gResources->shadowAtlases) {
+			DrawShadowMaps(*shadowAtlas);
+		}
 
 		CullStaticMeshComponents(camFrustWS, visibility);
 
@@ -1555,32 +1671,23 @@ auto DrawFullWithCameras(std::span<Camera const* const> const cameras, RenderTar
 			mappedLightSBData[i].intensity = gLights[visibility.lightIndices[i]]->GetIntensity();
 			mappedLightSBData[i].type = static_cast<int>(gLights[visibility.lightIndices[i]]->GetType());
 			mappedLightSBData[i].direction = gLights[visibility.lightIndices[i]]->GetDirection();
-			mappedLightSBData[i].isCastingShadow = false;
+			mappedLightSBData[i].isCastingShadow = FALSE;
 			mappedLightSBData[i].range = gLights[visibility.lightIndices[i]]->GetRange();
 			mappedLightSBData[i].innerAngleCos = std::cos(ToRadians(gLights[visibility.lightIndices[i]]->GetInnerAngle()));
 			mappedLightSBData[i].outerAngleCos = std::cos(ToRadians(gLights[visibility.lightIndices[i]]->GetOuterAngle()));
 			mappedLightSBData[i].position = gLights[visibility.lightIndices[i]]->GetEntity()->GetTransform().GetWorldPosition();
 
-			for (auto& idx : mappedLightSBData[i].atlasQuadrantIndices) {
-				idx = INVALID_IDX;
+			for (auto& sample : mappedLightSBData[i].sampleCascade) {
+				sample = FALSE;
 			}
 		}
 
-		for (int i = 0; i < 4; i++) {
-			auto const cells{ gPunctualShadowAtlasAlloc.GetQuadrantCells(i) };
-			for (int j = 0; j < static_cast<int>(cells.size()); j++) {
-				if (cells[j]) {
-					mappedLightSBData[cells[j]->visibleLightIdxIdx].isCastingShadow = true;
-					mappedLightSBData[cells[j]->visibleLightIdxIdx].shadowViewProjMatrices[cells[j]->lightCascadeIdx] = cells[j]->shadowViewProjMtx;
-					mappedLightSBData[cells[j]->visibleLightIdxIdx].atlasQuadrantIndices[cells[j]->lightCascadeIdx] = i;
-					mappedLightSBData[cells[j]->visibleLightIdxIdx].atlasCellIndices[cells[j]->lightCascadeIdx] = j;
-				}
-			}
+		for (auto const& shadowAtlas : gResources->shadowAtlases) {
+			shadowAtlas->SetLookUpInfo({ mappedLightSBData, static_cast<std::size_t>(lightCount) });
 		}
 
 		gResources->context->Unmap(gResources->lightSB.Get(), 0);
-		gResources->context->PSSetShaderResources(SB_SLOT_LIGHTS, 1, gResources->lightSbSrv.GetAddressOf());
-
+		gResources->context->PSSetShaderResources(RES_SLOT_LIGHTS, 1, gResources->lightSbSrv.GetAddressOf());
 
 		gResources->context->VSSetShader(gResources->meshVS.Get(), nullptr, 0);
 		gResources->context->PSSetShader(gResources->meshPbrPS.Get(), nullptr, 0);
@@ -1589,7 +1696,8 @@ auto DrawFullWithCameras(std::span<Camera const* const> const cameras, RenderTar
 		gResources->context->PSSetConstantBuffers(CB_SLOT_PER_CAM, 1, gResources->perCamCB.GetAddressOf());
 
 		gResources->context->OMSetRenderTargets(1, std::array{ rt.GetHdrRtv() }.data(), rt.GetDsv());
-		gResources->context->PSSetShaderResources(TEX_SLOT_PUNCTUAL_SHADOW_ATLAS, 1, gResources->punctualShadowAtlas.srv.GetAddressOf());
+		gResources->context->PSSetShaderResources(RES_SLOT_PUNCTUAL_SHADOW_ATLAS, 1, std::array{ gResources->shadowAtlases[PUNC_SHADOW_ATLAS_IDX]->GetSrv() }.data());
+		gResources->context->PSSetShaderResources(RES_SLOT_DIR_SHADOW_ATLAS, 1, std::array{ gResources->shadowAtlases[DIR_SHADOW_ATLAS_IDX]->GetSrv() }.data());
 
 		gResources->context->RSSetViewports(1, &viewport);
 

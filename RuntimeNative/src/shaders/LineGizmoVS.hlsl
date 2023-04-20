@@ -1,7 +1,7 @@
 #include "ShaderInterop.h"
 #include "GizmoVsOut.hlsli"
 
-STRUCTUREDBUFFER(ShaderLineGizmoVertexSB, ShaderLineGizmoVertexData, SB_SLOT_LINE_GIZMO_VERTEX);
+STRUCTUREDBUFFER(ShaderLineGizmoVertexSB, ShaderLineGizmoVertexData, RES_SLOT_LINE_GIZMO_VERTEX);
 
 
 GizmoVsOut main(const uint instanceId : SV_InstanceID, const uint vertexId : SV_VertexID) {

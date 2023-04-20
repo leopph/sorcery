@@ -3,51 +3,24 @@
 #include "BRDF.hlsli"
 
 
-TEXTURE2D(gAlbedoMap, float4, TEX_SLOT_ALBEDO_MAP);
-TEXTURE2D(gMetallicMap, float, TEX_SLOT_METALLIC_MAP);
-TEXTURE2D(gRoughnessMap, float, TEX_SLOT_ROUGHNESS_MAP);
-TEXTURE2D(gAoMap, float, TEX_SLOT_AO_MAP);
-TEXTURE2D(gPunctualShadowAtlas, float, TEX_SLOT_PUNCTUAL_SHADOW_ATLAS);
+TEXTURE2D(gAlbedoMap, float4, RES_SLOT_ALBEDO_MAP);
+TEXTURE2D(gMetallicMap, float, RES_SLOT_METALLIC_MAP);
+TEXTURE2D(gRoughnessMap, float, RES_SLOT_ROUGHNESS_MAP);
+TEXTURE2D(gAoMap, float, RES_SLOT_AO_MAP);
+TEXTURE2D(gPunctualShadowAtlas, float, RES_SLOT_PUNCTUAL_SHADOW_ATLAS);
+TEXTURE2D(gDirShadowAtlas, float, RES_SLOT_DIR_SHADOW_ATLAS);
 
 SAMPLERSTATE(gMaterialSampler, SAMPLER_SLOT_MATERIAL);
 SAMPLERCOMPARISONSTATE(gShadowSampler, SAMPLER_SLOT_SHADOW);
 
-STRUCTUREDBUFFER(lights, ShaderLight, SB_SLOT_LIGHTS);
-
-
-inline float2 TransformUVForShadowAtlas(const float2 uv, const uint atlasQuadrantIdx, const uint atlasCellIdx) {
-    const int cellRowColCount = pow(2, atlasQuadrantIdx);
-    float cellSize = 0.5f / cellRowColCount;
-
-    float2 quadrantOffset = float2(0, 0);
-
-    if (atlasQuadrantIdx == 1) {
-        quadrantOffset = float2(0.5f, 0);
-    }
-    else if (atlasQuadrantIdx == 2) {
-        quadrantOffset = float2(0, 0.5f);
-    }
-    else if (atlasQuadrantIdx == 3) {
-        quadrantOffset = float2(0.5f, 0.5f);
-    }
-
-    const float2 cellOffset = float2(atlasCellIdx % cellRowColCount, atlasCellIdx / cellRowColCount) * float2(cellSize, cellSize);
-
-    return uv * cellSize + quadrantOffset + cellOffset;
-}
+STRUCTUREDBUFFER(lights, ShaderLight, RES_SLOT_LIGHTS);
 
 
 inline float SampleShadowCascadeFromAtlas(const Texture2D<float> atlas, const float3 fragWorldPos, const uint lightIdx, const uint cascadeIdx) {
     const float4 posLClip = mul(float4(fragWorldPos, 1), lights[lightIdx].shadowViewProjMatrices[cascadeIdx]);
     float3 posLNdc = posLClip.xyz / posLClip.w;
     posLNdc.xy = posLNdc.xy * float2(0.5, -0.5) + 0.5;
-
-    [branch]
-    if (lights[lightIdx].atlasQuadrantIndices[cascadeIdx] == INVALID_IDX) {
-        return 1.0f;
-    }
-
-    return atlas.SampleCmpLevelZero(gShadowSampler, TransformUVForShadowAtlas(posLNdc.xy, lights[lightIdx].atlasQuadrantIndices[cascadeIdx], lights[lightIdx].atlasCellIndices[cascadeIdx]), posLNdc.z);
+    return atlas.SampleCmpLevelZero(gShadowSampler, posLNdc.xy * lights[lightIdx].shadowUvScales[cascadeIdx] + lights[lightIdx].shadowUvOffsets[cascadeIdx], posLNdc.z);
 }
 
 
@@ -109,7 +82,10 @@ inline float3 CalculatePointLight(const float3 N, const float3 V, const float3 a
             cascadeIdx += 1;
         }
 
-        lighting *= SampleShadowCascadeFromAtlas(gPunctualShadowAtlas, fragWorldPos, lightIdx, cascadeIdx);
+        [branch]
+        if (lights[lightIdx].sampleCascade[cascadeIdx]) {
+            lighting *= SampleShadowCascadeFromAtlas(gPunctualShadowAtlas, fragWorldPos, lightIdx, cascadeIdx);
+        }
     }
 
     return lighting;

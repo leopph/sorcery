@@ -1,7 +1,7 @@
 #include "ShaderInterop.h"
 #include "SkyboxVSOut.hlsli"
 
-TEXTURECUBE(gCubemap, float4, TEX_SLOT_SKYBOX_CUBEMAP);
+TEXTURECUBE(gCubemap, float4, RES_SLOT_SKYBOX_CUBEMAP);
 SAMPLERSTATE(gSampler, SAMPLER_SLOT_SKYBOX_CUBEMAP);
 
 

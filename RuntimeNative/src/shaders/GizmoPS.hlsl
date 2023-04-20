@@ -1,7 +1,7 @@
 #include "GizmoVsOut.hlsli"
 #include "ShaderInterop.h"
 
-STRUCTUREDBUFFER(GizmoColorSB, float4, SB_SLOT_GIZMO_COLOR);
+STRUCTUREDBUFFER(GizmoColorSB, float4, RES_SLOT_GIZMO_COLOR);
 
 float4 main(const GizmoVsOut input) : SV_TARGET
 {

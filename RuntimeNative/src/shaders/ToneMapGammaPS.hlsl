@@ -1,6 +1,6 @@
 #include "ShaderInterop.h"
 
-TEXTURE2D(gSrcTex, float4, TEX_SLOT_TONE_MAP_SRC);
+TEXTURE2D(gSrcTex, float4, RES_SLOT_TONE_MAP_SRC);
 
 
 float4 main(const float4 pixelCoord : SV_POSITION) : SV_TARGET {
