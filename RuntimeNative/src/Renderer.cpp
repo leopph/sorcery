@@ -36,6 +36,7 @@
 
 #include <cassert>
 #include <functional>
+#include <memory>
 
 using Microsoft::WRL::ComPtr;
 
@@ -54,34 +55,208 @@ struct ShadowAtlas {
 };
 
 
+class RenderTarget {
+	ComPtr<ID3D11Device> mDevice;
+
+	ComPtr<ID3D11Texture2D> mHdrTex;
+	ComPtr<ID3D11RenderTargetView> mHdrRtv;
+	ComPtr<ID3D11ShaderResourceView> mHdrSrv;
+
+	ComPtr<ID3D11Texture2D> mOutTex;
+	ComPtr<ID3D11RenderTargetView> mOutRtv;
+	ComPtr<ID3D11ShaderResourceView> mOutSrv;
+
+	ComPtr<ID3D11Texture2D> mDepthTex;
+	ComPtr<ID3D11DepthStencilView> mDsv;
+
+	UINT mWidth;
+	UINT mHeight;
+
+
+	auto Recreate() -> void {
+		D3D11_TEXTURE2D_DESC const hdrTexDesc{
+			.Width = mWidth,
+			.Height = mHeight,
+			.MipLevels = 1,
+			.ArraySize = 1,
+			.Format = DXGI_FORMAT_R16G16B16A16_FLOAT,
+			.SampleDesc = { .Count = 1, .Quality = 0 },
+			.Usage = D3D11_USAGE_DEFAULT,
+			.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE,
+			.CPUAccessFlags = 0,
+			.MiscFlags = 0
+		};
+
+		if (FAILED(mDevice->CreateTexture2D(&hdrTexDesc, nullptr, mHdrTex.ReleaseAndGetAddressOf()))) {
+			throw std::runtime_error{ "Failed to recreate Render Target HDR texture." };
+		}
+
+		D3D11_RENDER_TARGET_VIEW_DESC const hdrRtvDesc{
+			.Format = hdrTexDesc.Format,
+			.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D,
+			.Texture2D
+			{
+				.MipSlice = 0
+			}
+		};
+
+		if (FAILED(mDevice->CreateRenderTargetView(mHdrTex.Get(), &hdrRtvDesc, mHdrRtv.ReleaseAndGetAddressOf()))) {
+			throw std::runtime_error{ "Failed to recreate Render Target HDR RTV." };
+		}
+
+		D3D11_SHADER_RESOURCE_VIEW_DESC const hdrSrvDesc{
+			.Format = hdrTexDesc.Format,
+			.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D,
+			.Texture2D =
+			{
+				.MostDetailedMip = 0,
+				.MipLevels = 1
+			}
+		};
+
+		if (FAILED(mDevice->CreateShaderResourceView(mHdrTex.Get(), &hdrSrvDesc, mHdrSrv.ReleaseAndGetAddressOf()))) {
+			throw std::runtime_error{ "Failed to recreate Render Target HDR SRV." };
+		}
+
+		D3D11_TEXTURE2D_DESC const outputTexDesc{
+			.Width = mWidth,
+			.Height = mHeight,
+			.MipLevels = 1,
+			.ArraySize = 1,
+			.Format = DXGI_FORMAT_R8G8B8A8_UNORM,
+			.SampleDesc
+			{
+				.Count = 1,
+				.Quality = 0
+			},
+			.Usage = D3D11_USAGE_DEFAULT,
+			.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE,
+			.CPUAccessFlags = 0,
+			.MiscFlags = 0
+		};
+
+		if (FAILED(mDevice->CreateTexture2D(&outputTexDesc, nullptr, mOutTex.ReleaseAndGetAddressOf()))) {
+			throw std::runtime_error{ "Failed to recreate Render Target output texture." };
+		}
+
+		D3D11_RENDER_TARGET_VIEW_DESC const outputRtvDesc{
+			.Format = outputTexDesc.Format,
+			.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D,
+			.Texture2D
+			{
+				.MipSlice = 0
+			}
+		};
+
+		if (FAILED(mDevice->CreateRenderTargetView(mOutTex.Get(), &outputRtvDesc, mOutRtv.ReleaseAndGetAddressOf()))) {
+			throw std::runtime_error{ "Failed to recreate Render Target output RTV." };
+		}
+
+		D3D11_SHADER_RESOURCE_VIEW_DESC const outputSrvDesc{
+			.Format = outputTexDesc.Format,
+			.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D,
+			.Texture2D =
+			{
+				.MostDetailedMip = 0,
+				.MipLevels = 1
+			}
+		};
+
+		if (FAILED(mDevice->CreateShaderResourceView(mOutTex.Get(), &outputSrvDesc, mOutSrv.ReleaseAndGetAddressOf()))) {
+			throw std::runtime_error{ "Failed to recreate Render Target output SRV." };
+		}
+
+		D3D11_TEXTURE2D_DESC const dsTexDesc{
+			.Width = mWidth,
+			.Height = mHeight,
+			.MipLevels = 1,
+			.ArraySize = 1,
+			.Format = DXGI_FORMAT_D24_UNORM_S8_UINT,
+			.SampleDesc = { .Count = 1, .Quality = 0 },
+			.Usage = D3D11_USAGE_DEFAULT,
+			.BindFlags = D3D11_BIND_DEPTH_STENCIL,
+			.CPUAccessFlags = 0,
+			.MiscFlags = 0
+		};
+
+		if (FAILED(mDevice->CreateTexture2D(&dsTexDesc, nullptr, mDepthTex.ReleaseAndGetAddressOf()))) {
+			throw std::runtime_error{ "Failed to recreate Render Target depth-stencil texture." };
+		}
+
+		D3D11_DEPTH_STENCIL_VIEW_DESC const dsDsvDesc{
+			.Format = dsTexDesc.Format,
+			.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D,
+			.Flags = 0,
+			.Texture2D = { .MipSlice = 0 }
+		};
+
+		if (FAILED(mDevice->CreateDepthStencilView(mDepthTex.Get(), &dsDsvDesc,mDsv.ReleaseAndGetAddressOf()))) {
+			throw std::runtime_error{ "Failed to recreate Render Target DSV." };
+		}
+	}
+
+public:
+	RenderTarget(ComPtr<ID3D11Device> device, UINT const width, UINT const height) :
+		mDevice{ std::move(device) },
+		mWidth{ width },
+		mHeight{ height } {
+		Recreate();
+	}
+
+
+	auto Resize(UINT const width, UINT const height) {
+		mWidth = width;
+		mHeight = height;
+		Recreate();
+	}
+
+
+	[[nodiscard]] auto GetHdrRtv() const noexcept -> ID3D11RenderTargetView* {
+		return mHdrRtv.Get();
+	}
+
+
+	[[nodiscard]] auto GetOutRtv() const noexcept -> ID3D11RenderTargetView* {
+		return mOutRtv.Get();
+	}
+
+
+	[[nodiscard]] auto GetHdrSrv() const noexcept -> ID3D11ShaderResourceView* {
+		return mHdrSrv.Get();
+	}
+
+
+	[[nodiscard]] auto GetOutSrv() const noexcept -> ID3D11ShaderResourceView* {
+		return mOutSrv.Get();
+	}
+
+
+	[[nodiscard]] auto GetDsv() const noexcept -> ID3D11DepthStencilView* {
+		return mDsv.Get();
+	}
+
+
+	[[nodiscard]] auto GetWidth() const noexcept -> UINT {
+		return mWidth;
+	}
+
+
+	[[nodiscard]] auto GetHeight() const noexcept -> UINT {
+		return mHeight;
+	}
+};
+
+
 struct Resources {
 	ComPtr<ID3D11Device> device;
 	ComPtr<ID3D11DeviceContext> context;
 
 	ComPtr<IDXGISwapChain1> swapChain;
-	ComPtr<ID3D11Texture2D> gameHdrTexture;
-	ComPtr<ID3D11Texture2D> gameOutputTexture;
-	ComPtr<ID3D11Texture2D> gameDSTex;
-	ComPtr<ID3D11Texture2D> sceneHdrTexture;
-	ComPtr<ID3D11Texture2D> sceneOutputTexture;
-	ComPtr<ID3D11Texture2D> sceneDSTex;
-
 	ComPtr<ID3D11RenderTargetView> swapChainRtv;
-	ComPtr<ID3D11RenderTargetView> gameHdrTextureRtv;
-	ComPtr<ID3D11RenderTargetView> gameOutputTextureRtv;
-	ComPtr<ID3D11RenderTargetView> sceneHdrTextureRtv;
-	ComPtr<ID3D11RenderTargetView> sceneOutputTextureRtv;
 
-	ComPtr<ID3D11ShaderResourceView> gameHdrTextureSrv;
-	ComPtr<ID3D11ShaderResourceView> gameOutputTextureSrv;
-	ComPtr<ID3D11ShaderResourceView> sceneHdrTextureSrv;
-	ComPtr<ID3D11ShaderResourceView> sceneOutputTextureSrv;
 	ComPtr<ID3D11ShaderResourceView> lightSbSrv;
 	ComPtr<ID3D11ShaderResourceView> gizmoColorSbSrv;
 	ComPtr<ID3D11ShaderResourceView> lineGizmoVertexSbSrv;
-
-	ComPtr<ID3D11DepthStencilView> gameDSV;
-	ComPtr<ID3D11DepthStencilView> sceneDSV;
 
 	ComPtr<ID3D11PixelShader> meshPbrPS;
 	ComPtr<ID3D11PixelShader> toneMapGammaPS;
@@ -119,6 +294,9 @@ struct Resources {
 	std::unique_ptr<Mesh> planeMesh;
 
 	ShadowAtlas punctualShadowAtlas;
+
+	std::unique_ptr<RenderTarget> gameViewRenderTarget;
+	std::unique_ptr<RenderTarget> sceneViewRenderTarget;
 };
 
 
@@ -527,10 +705,6 @@ std::vector<UINT> const CUBE_INDICES{
 Resources* gResources{ nullptr };
 UINT gPresentFlags{ 0 };
 UINT gSwapChainFlags{ 0 };
-Extent2D<u32> gGameRes;
-f32 gGameAspect;
-Extent2D<u32> gSceneRes;
-f32 gSceneAspect;
 u32 gSyncInterval{ 0 };
 std::vector<StaticMeshComponent const*> gStaticMeshComponents;
 f32 gInvGamma{ 1.f / 2.2f };
@@ -541,252 +715,6 @@ std::vector<ShaderLineGizmoVertexData> gLineGizmoVertexData;
 std::vector<Vector4> gGizmoColors;
 int gGizmoColorBufferSize{ 1 };
 int gLineGizmoVertexBufferSize{ 1 };
-
-
-auto RecreateGameTexturesAndViews(u32 const width, u32 const height) -> void {
-	D3D11_TEXTURE2D_DESC const hdrTexDesc{
-		.Width = width,
-		.Height = height,
-		.MipLevels = 1,
-		.ArraySize = 1,
-		.Format = DXGI_FORMAT_R32G32B32A32_FLOAT,
-		.SampleDesc = { .Count = 1, .Quality = 0 },
-		.Usage = D3D11_USAGE_DEFAULT,
-		.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE,
-		.CPUAccessFlags = 0,
-		.MiscFlags = 0
-	};
-
-	if (FAILED(gResources->device->CreateTexture2D(&hdrTexDesc, nullptr, gResources->gameHdrTexture.ReleaseAndGetAddressOf()))) {
-		throw std::runtime_error{ "Failed to recreate game view hdr texture." };
-	}
-
-	D3D11_RENDER_TARGET_VIEW_DESC const hdrRtvDesc{
-		.Format = hdrTexDesc.Format,
-		.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D,
-		.Texture2D
-		{
-			.MipSlice = 0
-		}
-	};
-
-	if (FAILED(gResources->device->CreateRenderTargetView(gResources->gameHdrTexture.Get(), &hdrRtvDesc, gResources->gameHdrTextureRtv.ReleaseAndGetAddressOf()))) {
-		throw std::runtime_error{ "Failed to recreate game view hdr texture rtv." };
-	}
-
-	D3D11_SHADER_RESOURCE_VIEW_DESC const hdrSrvDesc{
-		.Format = hdrTexDesc.Format,
-		.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D,
-		.Texture2D =
-		{
-			.MostDetailedMip = 0,
-			.MipLevels = 1
-		}
-	};
-
-	if (FAILED(gResources->device->CreateShaderResourceView(gResources->gameHdrTexture.Get(), &hdrSrvDesc, gResources->gameHdrTextureSrv.ReleaseAndGetAddressOf()))) {
-		throw std::runtime_error{ "Failed to recreate game view output texture srv." };
-	}
-
-	D3D11_TEXTURE2D_DESC const outputTexDesc{
-		.Width = width,
-		.Height = height,
-		.MipLevels = 1,
-		.ArraySize = 1,
-		.Format = DXGI_FORMAT_R8G8B8A8_UNORM,
-		.SampleDesc
-		{
-			.Count = 1,
-			.Quality = 0
-		},
-		.Usage = D3D11_USAGE_DEFAULT,
-		.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE,
-		.CPUAccessFlags = 0,
-		.MiscFlags = 0
-	};
-
-	if (FAILED(gResources->device->CreateTexture2D(&outputTexDesc, nullptr, gResources->gameOutputTexture.ReleaseAndGetAddressOf()))) {
-		throw std::runtime_error{ "Failed to recreate game view output texture." };
-	}
-
-	D3D11_RENDER_TARGET_VIEW_DESC const outputRtvDesc{
-		.Format = outputTexDesc.Format,
-		.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D,
-		.Texture2D
-		{
-			.MipSlice = 0
-		}
-	};
-
-	if (FAILED(gResources->device->CreateRenderTargetView(gResources->gameOutputTexture.Get(), &outputRtvDesc, gResources->gameOutputTextureRtv.ReleaseAndGetAddressOf()))) {
-		throw std::runtime_error{ "Failed to recreate game view output texture rtv." };
-	}
-
-	D3D11_SHADER_RESOURCE_VIEW_DESC const outputSrvDesc{
-		.Format = outputTexDesc.Format,
-		.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D,
-		.Texture2D =
-		{
-			.MostDetailedMip = 0,
-			.MipLevels = 1
-		}
-	};
-
-	if (FAILED(gResources->device->CreateShaderResourceView(gResources->gameOutputTexture.Get(), &outputSrvDesc, gResources->gameOutputTextureSrv.ReleaseAndGetAddressOf()))) {
-		throw std::runtime_error{ "Failed to recreate game view output texture srv." };
-	}
-
-	D3D11_TEXTURE2D_DESC const dsTexDesc{
-		.Width = width,
-		.Height = height,
-		.MipLevels = 1,
-		.ArraySize = 1,
-		.Format = DXGI_FORMAT_D24_UNORM_S8_UINT,
-		.SampleDesc = { .Count = 1, .Quality = 0 },
-		.Usage = D3D11_USAGE_DEFAULT,
-		.BindFlags = D3D11_BIND_DEPTH_STENCIL,
-		.CPUAccessFlags = 0,
-		.MiscFlags = 0
-	};
-
-	if (FAILED(gResources->device->CreateTexture2D(&dsTexDesc, nullptr, gResources->gameDSTex.ReleaseAndGetAddressOf()))) {
-		throw std::runtime_error{ "Failed to recreate game view depth-stencil texture." };
-	}
-
-	D3D11_DEPTH_STENCIL_VIEW_DESC const dsDsvDesc{
-		.Format = dsTexDesc.Format,
-		.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D,
-		.Flags = 0,
-		.Texture2D = { .MipSlice = 0 }
-	};
-
-	if (FAILED(gResources->device->CreateDepthStencilView(gResources->gameDSTex.Get(), &dsDsvDesc, gResources->gameDSV.ReleaseAndGetAddressOf()))) {
-		throw std::runtime_error{ "Failed to recreate game view depth-stencil texture dsv." };
-	}
-}
-
-
-auto RecreateSceneTexturesAndViews(u32 const width, u32 const height) -> void {
-	D3D11_TEXTURE2D_DESC const hdrTexDesc{
-		.Width = width,
-		.Height = height,
-		.MipLevels = 1,
-		.ArraySize = 1,
-		.Format = DXGI_FORMAT_R32G32B32A32_FLOAT,
-		.SampleDesc = { .Count = 1, .Quality = 0 },
-		.Usage = D3D11_USAGE_DEFAULT,
-		.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE,
-		.CPUAccessFlags = 0,
-		.MiscFlags = 0
-	};
-
-	if (FAILED(gResources->device->CreateTexture2D(&hdrTexDesc, nullptr, gResources->sceneHdrTexture.ReleaseAndGetAddressOf()))) {
-		throw std::runtime_error{ "Failed to recreate scene view hdr texture." };
-	}
-
-	D3D11_RENDER_TARGET_VIEW_DESC const hdrRtvDesc{
-		.Format = hdrTexDesc.Format,
-		.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D,
-		.Texture2D
-		{
-			.MipSlice = 0
-		}
-	};
-
-	if (FAILED(gResources->device->CreateRenderTargetView(gResources->sceneHdrTexture.Get(), &hdrRtvDesc, gResources->sceneHdrTextureRtv.ReleaseAndGetAddressOf()))) {
-		throw std::runtime_error{ "Failed to recreate scene view hdr texture rtv." };
-	}
-
-	D3D11_SHADER_RESOURCE_VIEW_DESC const hdrSrvDesc{
-		.Format = hdrTexDesc.Format,
-		.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D,
-		.Texture2D =
-		{
-			.MostDetailedMip = 0,
-			.MipLevels = 1
-		}
-	};
-
-	if (FAILED(gResources->device->CreateShaderResourceView(gResources->sceneHdrTexture.Get(), &hdrSrvDesc, gResources->sceneHdrTextureSrv.ReleaseAndGetAddressOf()))) {
-		throw std::runtime_error{ "Failed to recreate scene view output texture srv." };
-	}
-
-	D3D11_TEXTURE2D_DESC const outputTexDesc{
-		.Width = width,
-		.Height = height,
-		.MipLevels = 1,
-		.ArraySize = 1,
-		.Format = DXGI_FORMAT_R8G8B8A8_UNORM,
-		.SampleDesc
-		{
-			.Count = 1,
-			.Quality = 0
-		},
-		.Usage = D3D11_USAGE_DEFAULT,
-		.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE,
-		.CPUAccessFlags = 0,
-		.MiscFlags = 0
-	};
-
-	if (FAILED(gResources->device->CreateTexture2D(&outputTexDesc, nullptr, gResources->sceneOutputTexture.ReleaseAndGetAddressOf()))) {
-		throw std::runtime_error{ "Failed to recreate scene view output texture." };
-	}
-
-	D3D11_RENDER_TARGET_VIEW_DESC const outputRtvDesc{
-		.Format = outputTexDesc.Format,
-		.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D,
-		.Texture2D
-		{
-			.MipSlice = 0
-		}
-	};
-
-	if (FAILED(gResources->device->CreateRenderTargetView(gResources->sceneOutputTexture.Get(), &outputRtvDesc, gResources->sceneOutputTextureRtv.ReleaseAndGetAddressOf()))) {
-		throw std::runtime_error{ "Failed to recreate scene view output texture rtv." };
-	}
-
-	D3D11_SHADER_RESOURCE_VIEW_DESC const outputSrvDesc{
-		.Format = outputTexDesc.Format,
-		.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D,
-		.Texture2D =
-		{
-			.MostDetailedMip = 0,
-			.MipLevels = 1
-		}
-	};
-
-	if (FAILED(gResources->device->CreateShaderResourceView(gResources->sceneOutputTexture.Get(), &outputSrvDesc, gResources->sceneOutputTextureSrv.ReleaseAndGetAddressOf()))) {
-		throw std::runtime_error{ "Failed to recreate scene view output texture srv." };
-	}
-
-	D3D11_TEXTURE2D_DESC const dsTexDesc{
-		.Width = width,
-		.Height = height,
-		.MipLevels = 1,
-		.ArraySize = 1,
-		.Format = DXGI_FORMAT_D24_UNORM_S8_UINT,
-		.SampleDesc = { .Count = 1, .Quality = 0 },
-		.Usage = D3D11_USAGE_DEFAULT,
-		.BindFlags = D3D11_BIND_DEPTH_STENCIL,
-		.CPUAccessFlags = 0,
-		.MiscFlags = 0
-	};
-
-	if (FAILED(gResources->device->CreateTexture2D(&dsTexDesc, nullptr, gResources->sceneDSTex.ReleaseAndGetAddressOf()))) {
-		throw std::runtime_error{ "Failed to recreate scene view depth-stencil texture." };
-	}
-
-	D3D11_DEPTH_STENCIL_VIEW_DESC const dsDsvDesc{
-		.Format = dsTexDesc.Format,
-		.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D,
-		.Flags = 0,
-		.Texture2D = { .MipSlice = 0 }
-	};
-
-	if (FAILED(gResources->device->CreateDepthStencilView(gResources->sceneDSTex.Get(), &dsDsvDesc, gResources->sceneDSV.ReleaseAndGetAddressOf()))) {
-		throw std::runtime_error{ "Failed to recreate scene view depth-stencil texture dsv." };
-	}
-}
 
 
 auto RecreateSwapChainRtv() -> void {
@@ -1552,24 +1480,18 @@ auto ClearGizmoDrawQueue() noexcept {
 }
 
 
-auto DrawFullWithCameras(std::span<Camera const* const> const cameras, ID3D11RenderTargetView* const rtv, ID3D11DepthStencilView* const dsv, ID3D11ShaderResourceView* const srv, ID3D11RenderTargetView* const outRtv) noexcept -> void {
+auto DrawFullWithCameras(std::span<Camera const* const> const cameras, RenderTarget const& rt) noexcept -> void {
 	FLOAT constexpr clearColor[]{ 0, 0, 0, 1 };
-	gResources->context->ClearRenderTargetView(rtv, clearColor);
-	gResources->context->ClearDepthStencilView(dsv, D3D11_CLEAR_DEPTH, 1, 0);
+	gResources->context->ClearRenderTargetView(rt.GetHdrRtv(), clearColor);
+	gResources->context->ClearDepthStencilView(rt.GetDsv(), D3D11_CLEAR_DEPTH, 1, 0);
 
-	ComPtr<ID3D11Resource> rtvResource;
-	rtv->GetResource(rtvResource.GetAddressOf());
-	ComPtr<ID3D11Texture2D> renderTarget;
-	rtvResource.As(&renderTarget);
-	D3D11_TEXTURE2D_DESC renderTargetDesc;
-	renderTarget->GetDesc(&renderTargetDesc);
-	auto const aspectRatio{ static_cast<float>(renderTargetDesc.Width) / static_cast<float>(renderTargetDesc.Height) };
+	auto const aspectRatio{ static_cast<float>(rt.GetWidth()) / static_cast<float>(rt.GetHeight()) };
 
 	D3D11_VIEWPORT const viewport{
 		.TopLeftX = 0,
 		.TopLeftY = 0,
-		.Width = static_cast<FLOAT>(renderTargetDesc.Width),
-		.Height = static_cast<FLOAT>(renderTargetDesc.Height),
+		.Width = static_cast<FLOAT>(rt.GetWidth()),
+		.Height = static_cast<FLOAT>(rt.GetHeight()),
 		.MinDepth = 0,
 		.MaxDepth = 1
 	};
@@ -1652,7 +1574,7 @@ auto DrawFullWithCameras(std::span<Camera const* const> const cameras, ID3D11Ren
 		gResources->context->VSSetConstantBuffers(CB_SLOT_PER_CAM, 1, gResources->perCamCB.GetAddressOf());
 		gResources->context->PSSetConstantBuffers(CB_SLOT_PER_CAM, 1, gResources->perCamCB.GetAddressOf());
 
-		gResources->context->OMSetRenderTargets(1, &rtv, dsv);
+		gResources->context->OMSetRenderTargets(1, std::array{ rt.GetHdrRtv() }.data(), rt.GetDsv());
 		gResources->context->PSSetShaderResources(TEX_SLOT_PUNCTUAL_SHADOW_ATLAS, 1, gResources->punctualShadowAtlas.srv.GetAddressOf());
 
 		gResources->context->RSSetViewports(1, &viewport);
@@ -1663,7 +1585,7 @@ auto DrawFullWithCameras(std::span<Camera const* const> const cameras, ID3D11Ren
 	}
 
 	gResources->context->RSSetViewports(1, &viewport);
-	DoToneMapGammaCorrectionStep(srv, outRtv);
+	DoToneMapGammaCorrectionStep(rt.GetHdrSrv(), rt.GetOutRtv());
 
 	ClearGizmoDrawQueue();
 }
@@ -1791,14 +1713,8 @@ auto StartUp() -> void {
 
 	CheckTearingSupport(dxgiFactory2.Get());
 
-	gGameRes = gWindow.GetCurrentClientAreaSize();
-	gGameAspect = static_cast<f32>(gGameRes.width) / static_cast<f32>(gGameRes.height);
-
-	gSceneRes = gGameRes;
-	gSceneAspect = gGameAspect;
-
-	RecreateGameTexturesAndViews(gWindow.GetCurrentClientAreaSize().width, gWindow.GetCurrentClientAreaSize().height);
-	RecreateSceneTexturesAndViews(gWindow.GetCurrentClientAreaSize().width, gWindow.GetCurrentClientAreaSize().height);
+	gResources->gameViewRenderTarget = std::make_unique<RenderTarget>(gResources->device, gWindow.GetCurrentClientAreaSize().width, gWindow.GetCurrentClientAreaSize().height);
+	gResources->sceneViewRenderTarget = std::make_unique<RenderTarget>(gResources->device, gWindow.GetCurrentClientAreaSize().width, gWindow.GetCurrentClientAreaSize().height);
 
 	CreateSwapChain(dxgiFactory2.Get());
 	CreateInputLayouts();
@@ -1824,57 +1740,55 @@ auto ShutDown() noexcept -> void {
 
 
 auto DrawGame() noexcept -> void {
-	DrawFullWithCameras(gGameRenderCameras, gResources->gameHdrTextureRtv.Get(), gResources->gameDSV.Get(), gResources->gameHdrTextureSrv.Get(), gResources->gameOutputTextureRtv.Get());
+	DrawFullWithCameras(gGameRenderCameras, *gResources->gameViewRenderTarget);
 }
 
 
 auto DrawSceneView(Camera const& cam) noexcept -> void {
 	auto const camPtr{ &cam };
-	DrawFullWithCameras(std::span{ &camPtr, 1 }, gResources->sceneHdrTextureRtv.Get(), gResources->sceneDSV.Get(), gResources->sceneHdrTextureSrv.Get(), gResources->sceneOutputTextureRtv.Get());
+	DrawFullWithCameras(std::span{ &camPtr, 1 }, *gResources->sceneViewRenderTarget);
 }
 
 
 auto GetGameResolution() noexcept -> Extent2D<u32> {
-	return gGameRes;
+	return { gResources->gameViewRenderTarget->GetWidth(), gResources->gameViewRenderTarget->GetHeight() };
 }
 
 
 auto SetGameResolution(Extent2D<u32> const resolution) noexcept -> void {
-	gGameRes = resolution;
-	gGameAspect = static_cast<f32>(resolution.width) / static_cast<f32>(resolution.height);
-	RecreateGameTexturesAndViews(gGameRes.width, gGameRes.height);
+	gResources->gameViewRenderTarget->Resize(resolution.width, resolution.height);
 }
 
 
 auto GetSceneResolution() noexcept -> Extent2D<u32> {
-	return gSceneRes;
+	return { gResources->sceneViewRenderTarget->GetWidth(), gResources->sceneViewRenderTarget->GetHeight() };
 }
 
 
 auto SetSceneResolution(Extent2D<u32> const resolution) noexcept -> void {
-	gSceneRes = resolution;
-	gSceneAspect = static_cast<f32>(resolution.width) / static_cast<f32>(resolution.height);
-	RecreateSceneTexturesAndViews(gSceneRes.width, gSceneRes.height);
+	gResources->sceneViewRenderTarget->Resize(resolution.width, resolution.height);
 }
 
 
 auto GetGameFrame() noexcept -> ID3D11ShaderResourceView* {
-	return gResources->gameOutputTextureSrv.Get();
+	return gResources->gameViewRenderTarget->GetOutSrv();
 }
 
 
 auto GetSceneFrame() noexcept -> ID3D11ShaderResourceView* {
-	return gResources->sceneOutputTextureSrv.Get();
+	return gResources->sceneViewRenderTarget->GetOutSrv();
 }
 
 
 auto GetGameAspectRatio() noexcept -> f32 {
-	return gGameAspect;
+	auto const& rt{ *gResources->gameViewRenderTarget };
+	return static_cast<float>(rt.GetWidth()) / static_cast<float>(rt.GetHeight());
 }
 
 
 auto GetSceneAspectRatio() noexcept -> f32 {
-	return gSceneAspect;
+	auto const& rt{ *gResources->sceneViewRenderTarget };
+	return static_cast<float>(rt.GetWidth()) / static_cast<float>(rt.GetHeight());
 }
 
 
