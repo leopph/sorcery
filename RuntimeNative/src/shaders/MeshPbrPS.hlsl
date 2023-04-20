@@ -58,7 +58,7 @@ inline float CalculateAttenuation(const float distance) {
 
 inline float3 CalculateDirLight(const float3 N, const float3 V, const float3 albedo, const float metallic, const float roughness, const int lightIdx) {
     const float3 L = -lights[lightIdx].direction;
-    return CookTorrance(N, V, L, albedo, metallic, roughness, lights[lightIdx].color, lights[lightIdx].intensity);
+    return CookTorrance(N, V, L, albedo, metallic, roughness, lights[lightIdx].color, lights[lightIdx].intensity, 1);
 }
 
 
@@ -73,9 +73,8 @@ inline float3 CalculateSpotLight(const float3 N, const float3 V, const float3 al
     const float eps = lights[lightIdx].innerAngleCos - lights[lightIdx].outerAngleCos;
     const float intensity = saturate((thetaCos - lights[lightIdx].outerAngleCos) / eps);
 
-    float3 lighting = CookTorrance(N, V, L, albedo, metallic, roughness, lights[lightIdx].color, lights[lightIdx].intensity);
+    float3 lighting = CookTorrance(N, V, L, albedo, metallic, roughness, lights[lightIdx].color, lights[lightIdx].intensity, CalculateAttenuation(dist));
     lighting *= intensity;
-    lighting *= CalculateAttenuation(dist);
     lighting *= rangeMul;
 
     [branch]
@@ -95,8 +94,7 @@ inline float3 CalculatePointLight(const float3 N, const float3 V, const float3 a
 
     const float rangeMul = float(dist <= lights[lightIdx].range);
 
-    float3 lighting = CookTorrance(N, V, L, albedo, metallic, roughness, lights[lightIdx].color, lights[lightIdx].intensity);
-    lighting *= CalculateAttenuation(dist);
+    float3 lighting = CookTorrance(N, V, L, albedo, metallic, roughness, lights[lightIdx].color, lights[lightIdx].intensity, CalculateAttenuation(dist));
     lighting *= rangeMul;
 
     [branch]
