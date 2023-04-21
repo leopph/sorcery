@@ -471,13 +471,9 @@ constexpr auto IsPowerOfTwo(unsigned const value) noexcept -> bool {
 
 
 constexpr auto NextPowerOfTwo(unsigned const value) noexcept -> unsigned {
-	if (IsPowerOfTwo(value)) {
-		return value;
-	}
-
 	unsigned ret{ 1 };
 
-	while (ret < value) {
+	while (ret <= value) {
 		ret <<= 1;
 	}
 
@@ -1886,7 +1882,10 @@ inline auto operator*(Matrix4 const& left, Matrix4 const& right) noexcept -> Mat
 #endif
 
 constexpr Quaternion::Quaternion(float const w, float const x, float const y, float const z) noexcept :
-	x{ x }, y{ y }, z{ z }, w{ w } {}
+	x{ x },
+	y{ y },
+	z{ z },
+	w{ w } {}
 
 
 inline Quaternion::Quaternion(Vector3 const& axis, float const angleDegrees) noexcept {
