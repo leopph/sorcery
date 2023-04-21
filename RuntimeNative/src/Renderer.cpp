@@ -384,7 +384,7 @@ public:
 
 				if (light->GetType() == LightComponent::Type::Spot) {
 					auto const shadowViewMtx{ Matrix4::LookToLH(light->GetEntity()->GetTransform().GetWorldPosition(), light->GetEntity()->GetTransform().GetForwardAxis(), Vector3::Up()) };
-					auto const shadowProjMtx{ Matrix4::PerspectiveAsymZLH(ToRadians(light->GetOuterAngle() * 2), 1.f, light->GetShadowNearPlane(), light->GetRange()) };
+					auto const shadowProjMtx{ Matrix4::PerspectiveAsymZLH(ToRadians(light->GetOuterAngle() * 2), 1.f, light->GetRange(), light->GetShadowNearPlane()) };
 
 					subcell.emplace(shadowViewMtx * shadowProjMtx, lightIdxIdx, cascadeIdx, light->GetShadowNormalBias());
 				}
@@ -399,7 +399,7 @@ public:
 					};
 
 					auto const shadowViewMtx{ Matrix4::Translate(-light->GetEntity()->GetTransform().GetWorldPosition()) * faceMatrices[cascadeIdx] };
-					auto const shadowProjMtx{ Matrix4::PerspectiveAsymZLH(ToRadians(90), 1, light->GetShadowNearPlane(), light->GetRange()) };
+					auto const shadowProjMtx{ Matrix4::PerspectiveAsymZLH(ToRadians(90), 1, light->GetRange(), light->GetShadowNearPlane()) };
 
 					subcell.emplace(shadowViewMtx * shadowProjMtx, lightIdxIdx, cascadeIdx, light->GetShadowNormalBias());
 				}
@@ -529,7 +529,7 @@ public:
 				};
 
 				auto const [cascadeAabbMin, cascadeAabbMax]{ AABB::FromVertices(cascadeVerts) };
-				auto const shadowProjMtx{ Matrix4::OrthographicAsymZLH(cascadeAabbMin[0], cascadeAabbMax[0], cascadeAabbMax[1], cascadeAabbMin[1], light.GetShadowNearPlane(), cascadeAabbMax[2]) };
+				auto const shadowProjMtx{ Matrix4::OrthographicAsymZLH(cascadeAabbMin[0], cascadeAabbMax[0], cascadeAabbMax[1], cascadeAabbMin[1], cascadeAabbMax[2], light.GetShadowNearPlane()) };
 
 				mCell.GetSubcell(i * mCell.GetSubdivisionSize() + cascadeIdx).emplace(shadowViewMtx * shadowProjMtx, lightIdxIdx, cascadeIdx, light.GetShadowNormalBias(), cascadeFar);
 			}
@@ -861,6 +861,7 @@ struct Resources {
 
 	ComPtr<ID3D11RasterizerState> skyboxPassRS;
 
+	ComPtr<ID3D11DepthStencilState> shadowDSS;
 	ComPtr<ID3D11DepthStencilState> skyboxPassDSS;
 
 	std::unique_ptr<Material> defaultMaterial;
@@ -1284,6 +1285,31 @@ auto CreateDepthStencilStates() -> void {
 	if (FAILED(gResources->device->CreateDepthStencilState(&skyboxPassDepthStencilDesc, gResources->skyboxPassDSS.ReleaseAndGetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create skybox pass depth-stencil state." };
 	}
+
+	D3D11_DEPTH_STENCIL_DESC constexpr shadowPassDesc{
+		.DepthEnable = TRUE,
+		.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL,
+		.DepthFunc = D3D11_COMPARISON_GREATER,
+		.StencilEnable = FALSE,
+		.StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK,
+		.StencilWriteMask = D3D11_DEFAULT_STENCIL_WRITE_MASK,
+		.FrontFace = {
+			.StencilFailOp = D3D11_STENCIL_OP_KEEP,
+			.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP,
+			.StencilPassOp = D3D11_STENCIL_OP_KEEP,
+			.StencilFunc = D3D11_COMPARISON_ALWAYS
+		},
+		.BackFace = {
+			.StencilFailOp = D3D11_STENCIL_OP_KEEP,
+			.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP,
+			.StencilPassOp = D3D11_STENCIL_OP_KEEP,
+			.StencilFunc = D3D11_COMPARISON_ALWAYS
+		}
+	};
+
+	if (FAILED(gResources->device->CreateDepthStencilState(&shadowPassDesc, gResources->shadowDSS.GetAddressOf()))) {
+		throw std::runtime_error{ "Failed to create shadow pass depth-stencil state." };
+	}
 }
 
 
@@ -1301,7 +1327,7 @@ auto CreateSamplerStates() -> void {
 		.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP,
 		.MipLODBias = 0,
 		.MaxAnisotropy = 1,
-		.ComparisonFunc = D3D11_COMPARISON_LESS_EQUAL,
+		.ComparisonFunc = D3D11_COMPARISON_GREATER_EQUAL,
 		.BorderColor = { 1.0f, 1.0f, 1.0f, 1.0f },
 		.MinLOD = -FLT_MAX,
 		.MaxLOD = FLT_MAX
@@ -1589,10 +1615,11 @@ auto DrawSkybox(Matrix4 const& camViewMtx, Matrix4 const& camProjMtx) noexcept -
 
 auto DrawShadowMaps(ShadowAtlas const& atlas) -> void {
 	gResources->context->OMSetRenderTargets(0, nullptr, atlas.GetDsv());
-	gResources->context->ClearDepthStencilView(atlas.GetDsv(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+	gResources->context->ClearDepthStencilView(atlas.GetDsv(), D3D11_CLEAR_DEPTH, 0, 0);
 	gResources->context->VSSetShader(gResources->shadowVS.Get(), nullptr, 0);
 	gResources->context->PSSetShader(nullptr, nullptr, 0);
 	gResources->context->VSSetConstantBuffers(CB_SLOT_SHADOW_PASS, 1, gResources->shadowCB.GetAddressOf());
+	gResources->context->OMSetDepthStencilState(gResources->shadowDSS.Get(), 0);
 
 	auto const cellSizeNorm{ atlas.GetNormalizedElementSize() };
 
@@ -1784,6 +1811,8 @@ auto DrawFullWithCameras(std::span<Camera const* const> const cameras, RenderTar
 		gResources->context->PSSetConstantBuffers(CB_SLOT_PER_CAM, 1, gResources->perCamCB.GetAddressOf());
 
 		gResources->context->OMSetRenderTargets(1, std::array{ rt.GetHdrRtv() }.data(), rt.GetDsv());
+		gResources->context->OMSetDepthStencilState(nullptr, 0);
+
 		gResources->context->PSSetShaderResources(RES_SLOT_PUNCTUAL_SHADOW_ATLAS, 1, std::array{ gResources->shadowAtlases[PUNC_SHADOW_ATLAS_IDX]->GetSrv() }.data());
 		gResources->context->PSSetShaderResources(RES_SLOT_DIR_SHADOW_ATLAS, 1, std::array{ gResources->shadowAtlases[DIR_SHADOW_ATLAS_IDX]->GetSrv() }.data());
 

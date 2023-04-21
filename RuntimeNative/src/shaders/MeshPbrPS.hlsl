@@ -37,7 +37,7 @@ inline float3 CalculateDirLight(const float3 N, const float3 V, const float3 alb
     if (lights[lightIdx].isCastingShadow) {
         uint cascadeIdx = 0;
 
-        while (fragPosViewZ > lights[lightIdx].cascadeFarBoundsView[cascadeIdx] && cascadeIdx < 5) {
+        while (fragPosViewZ > lights[lightIdx].cascadeFarBoundsView[cascadeIdx] && cascadeIdx < 3) {
             cascadeIdx += 1;
         }
 
