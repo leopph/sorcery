@@ -161,7 +161,7 @@ protected:
 			.Height = static_cast<UINT>(size),
 			.MipLevels = 1,
 			.ArraySize = 1,
-			.Format = DXGI_FORMAT_R16_TYPELESS,
+			.Format = DXGI_FORMAT_R32_TYPELESS,
 			.SampleDesc = { .Count = 1, .Quality = 0 },
 			.Usage = D3D11_USAGE_DEFAULT,
 			.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE,
@@ -174,7 +174,7 @@ protected:
 		}
 
 		D3D11_SHADER_RESOURCE_VIEW_DESC constexpr srvDesc{
-			.Format = DXGI_FORMAT_R16_UNORM,
+			.Format = DXGI_FORMAT_R32_FLOAT,
 			.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D,
 			.Texture2D = { .MostDetailedMip = 0, .MipLevels = 1 }
 		};
@@ -184,7 +184,7 @@ protected:
 		}
 
 		D3D11_DEPTH_STENCIL_VIEW_DESC constexpr dsvDesc{
-			.Format = DXGI_FORMAT_D16_UNORM,
+			.Format = DXGI_FORMAT_D32_FLOAT,
 			.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D,
 			.Flags = 0,
 			.Texture2D = { .MipSlice = 0 }
