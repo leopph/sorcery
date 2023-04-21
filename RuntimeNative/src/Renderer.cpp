@@ -80,7 +80,6 @@ public:
 		mSubdivSize{ subdivSize } {
 		ThrowIfSubdivInvalid();
 		}
-	}
 
 
 	// The grid has N*N cells, this is the N of that.
@@ -218,15 +217,30 @@ public:
 	}
 
 
+	auto SetLookUpInfo(std::span<ShaderLight> lights) const -> void {
+		for (int i = 0; i < GetElementCount(); i++) {
+			auto const& cell{ GetCell(i) };
+
+			for (int j = 0; j < cell.GetElementCount(); j++) {
+				if (auto const& subcell{ cell.GetSubcell(j) }) {
+					lights[subcell->visibleLightIdxIdx].isCastingShadow = TRUE;
+					lights[subcell->visibleLightIdxIdx].sampleCascade[subcell->lightCascadeIdx] = TRUE;
+					lights[subcell->visibleLightIdxIdx].shadowViewProjMatrices[subcell->lightCascadeIdx] = subcell->shadowViewProjMtx;
+					lights[subcell->visibleLightIdxIdx].shadowUvOffsets[subcell->lightCascadeIdx] = GetNormalizedElementOffset(i) + cell.GetNormalizedElementOffset(j) * GetNormalizedElementSize();
+					lights[subcell->visibleLightIdxIdx].shadowUvScales[subcell->lightCascadeIdx] = GetNormalizedElementSize() * cell.GetNormalizedElementSize();
+					lights[subcell->visibleLightIdxIdx].cascadeFarBoundsNdc[subcell->lightCascadeIdx] = subcell->cascadeFarBound;
+				}
+			}
+		}
+	}
+
+
 	[[nodiscard]] virtual auto GetCell(int idx) const -> ShadowAtlasCell const& = 0;
 
 	virtual auto Update(std::span<LightComponent const* const> allLights, Visibility const& visibility, Vector3 const& camPos, Matrix4 const& camViewProjMtx) -> void = 0;
-	virtual auto SetLookUpInfo(std::span<ShaderLight> lights) const -> void = 0;
 };
 
 
-#pragma warning(push)
-#pragma warning(disable: 4324)
 class PunctualShadowAtlas final : public ShadowAtlas {
 	std::array<ShadowAtlasCell, 4> mCells;
 
@@ -395,29 +409,11 @@ public:
 	}
 
 
-	auto SetLookUpInfo(std::span<ShaderLight> const lights) const -> void override {
-		for (int i = 0; i < 4; i++) {
-			auto const& cell{ mCells[i] };
-
-			for (int j = 0; j < cell.GetElementCount(); j++) {
-				if (auto const& subcell{ cell.GetSubcell(j) }) {
-					lights[subcell->visibleLightIdxIdx].isCastingShadow = TRUE;
-					lights[subcell->visibleLightIdxIdx].sampleCascade[subcell->lightCascadeIdx] = TRUE;
-					lights[subcell->visibleLightIdxIdx].shadowViewProjMatrices[subcell->lightCascadeIdx] = subcell->shadowViewProjMtx;
-					lights[subcell->visibleLightIdxIdx].shadowUvOffsets[subcell->lightCascadeIdx] = GetNormalizedElementOffset(i) + cell.GetNormalizedElementOffset(j) * GetNormalizedElementSize();
-					lights[subcell->visibleLightIdxIdx].shadowUvScales[subcell->lightCascadeIdx] = GetNormalizedElementSize() * cell.GetNormalizedElementSize();
-				}
-			}
-		}
-	}
-
-
 	[[nodiscard]] auto GetCell(int const idx) const -> ShadowAtlasCell const& override {
 		ThrowIfIndexIsInvalid(idx);
 		return mCells[idx];
 	}
 };
-#pragma warning(pop)
 
 
 class DirectionalShadowAtlas final : public ShadowAtlas {
@@ -455,15 +451,9 @@ public:
 	}
 
 
-	auto SetLookUpInfo(std::span<ShaderLight> const lights) const -> void override {
-		/*for (int i = 0; i < std::ssize(mCells); i++) {
-			if (mCells[i]) {
-				lights[mCells[i]->visibleLightIdxIdx].isCastingShadow = true;
-				lights[mCells[i]->visibleLightIdxIdx].shadowViewProjMatrices[mCells[i]->lightCascadeIdx] = mCells[i]->shadowViewProjMtx;
-				lights[mCells[i]->visibleLightIdxIdx].atlasQuadrantIndices[mCells[i]->lightCascadeIdx] = 0;
-				lights[mCells[i]->visibleLightIdxIdx].atlasCellIndices[mCells[i]->lightCascadeIdx] = i;
+				mCell.GetSubcell(i * mCell.GetSubdivisionSize() + cascadeIdx).emplace(shadowViewMtx * shadowProjMtx, lightIdxIdx, cascadeIdx, light.GetShadowNormalBias(), cascadeFarNdc);
 			}
-		} TODO*/
+			}
 	}
 
 
