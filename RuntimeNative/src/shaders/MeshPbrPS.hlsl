@@ -13,14 +13,14 @@ TEXTURE2D(gDirShadowAtlas, float, RES_SLOT_DIR_SHADOW_ATLAS);
 SAMPLERSTATE(gMaterialSampler, SAMPLER_SLOT_MATERIAL);
 SAMPLERCOMPARISONSTATE(gShadowSampler, SAMPLER_SLOT_SHADOW);
 
-STRUCTUREDBUFFER(lights, ShaderLight, RES_SLOT_LIGHTS);
+STRUCTUREDBUFFER(gLights, ShaderLight, RES_SLOT_LIGHTS);
 
 
 inline float SampleShadowCascadeFromAtlas(const Texture2D<float> atlas, const float3 fragWorldPos, const uint lightIdx, const uint shadowMapIdx) {
-    const float4 posLClip = mul(float4(fragWorldPos, 1), lights[lightIdx].shadowViewProjMatrices[shadowMapIdx]);
+    const float4 posLClip = mul(float4(fragWorldPos, 1), gLights[lightIdx].shadowViewProjMatrices[shadowMapIdx]);
     float3 posLNdc = posLClip.xyz / posLClip.w;
     posLNdc.xy = posLNdc.xy * float2(0.5, -0.5) + 0.5;
-    return atlas.SampleCmpLevelZero(gShadowSampler, posLNdc.xy * lights[lightIdx].shadowUvScales[shadowMapIdx] + lights[lightIdx].shadowUvOffsets[shadowMapIdx], posLNdc.z);
+    return atlas.SampleCmpLevelZero(gShadowSampler, posLNdc.xy * gLights[lightIdx].shadowUvScales[shadowMapIdx] + gLights[lightIdx].shadowUvOffsets[shadowMapIdx], posLNdc.z);
 }
 
 
@@ -30,14 +30,14 @@ inline float CalculateAttenuation(const float distance) {
 
 
 inline float3 CalculateDirLight(const float3 N, const float3 V, const float3 albedo, const float metallic, const float roughness, const int lightIdx, const float3 fragPosWorld, const float fragPosViewZ) {
-    const float3 L = -lights[lightIdx].direction;
-    float3 lighting = CookTorrance(N, V, L, albedo, metallic, roughness, lights[lightIdx].color, lights[lightIdx].intensity, 1);
+    const float3 L = -gLights[lightIdx].direction;
+    float3 lighting = CookTorrance(N, V, L, albedo, metallic, roughness, gLights[lightIdx].color, gLights[lightIdx].intensity, 1);
 
     [branch]
-    if (lights[lightIdx].isCastingShadow) {
+    if (gLights[lightIdx].isCastingShadow) {
         uint cascadeIdx = 0;
 
-        while (fragPosViewZ > lights[lightIdx].cascadeFarBoundsView[cascadeIdx] && cascadeIdx < MAX_CASCADE_COUNT) {
+        while (fragPosViewZ > gLights[lightIdx].cascadeFarBoundsView[cascadeIdx] && cascadeIdx < MAX_CASCADE_COUNT) {
             cascadeIdx += 1;
         }
 
@@ -53,21 +53,21 @@ inline float3 CalculateDirLight(const float3 N, const float3 V, const float3 alb
 
 inline float3 CalculateSpotLight(const float3 N, const float3 V, const float3 albedo, const float metallic, const float roughness, const int lightIdx, const float3 fragWorldPos)
 {
-	float3 L = lights[lightIdx].position - fragWorldPos;
+	float3 L = gLights[lightIdx].position - fragWorldPos;
     const float dist = length(L);
     L = normalize(L);
 
-    const float rangeMul = float(dist <= lights[lightIdx].range);
-    const float thetaCos = dot(L, -lights[lightIdx].direction);
-    const float eps = lights[lightIdx].innerAngleCos - lights[lightIdx].outerAngleCos;
-    const float intensity = saturate((thetaCos - lights[lightIdx].outerAngleCos) / eps);
+    const float rangeMul = float(dist <= gLights[lightIdx].range);
+    const float thetaCos = dot(L, -gLights[lightIdx].direction);
+    const float eps = gLights[lightIdx].innerAngleCos - gLights[lightIdx].outerAngleCos;
+    const float intensity = saturate((thetaCos - gLights[lightIdx].outerAngleCos) / eps);
 
-    float3 lighting = CookTorrance(N, V, L, albedo, metallic, roughness, lights[lightIdx].color, lights[lightIdx].intensity, CalculateAttenuation(dist));
+    float3 lighting = CookTorrance(N, V, L, albedo, metallic, roughness, gLights[lightIdx].color, gLights[lightIdx].intensity, CalculateAttenuation(dist));
     lighting *= intensity;
     lighting *= rangeMul;
 
     [branch]
-    if (lights[lightIdx].isCastingShadow) {
+    if (gLights[lightIdx].isCastingShadow) {
         lighting *= SampleShadowCascadeFromAtlas(gPunctualShadowAtlas, fragWorldPos, lightIdx, 0);
     }
     
@@ -77,18 +77,18 @@ inline float3 CalculateSpotLight(const float3 N, const float3 V, const float3 al
 
 inline float3 CalculatePointLight(const float3 N, const float3 V, const float3 albedo, const float metallic, const float roughness, const int lightIdx, const float3 fragWorldPos)
 {
-	float3 L = lights[lightIdx].position - fragWorldPos;
+	float3 L = gLights[lightIdx].position - fragWorldPos;
     const float dist = length(L);
     L = normalize(L);
 
-    const float rangeMul = float(dist <= lights[lightIdx].range);
+    const float rangeMul = float(dist <= gLights[lightIdx].range);
 
-    float3 lighting = CookTorrance(N, V, L, albedo, metallic, roughness, lights[lightIdx].color, lights[lightIdx].intensity, CalculateAttenuation(dist));
+    float3 lighting = CookTorrance(N, V, L, albedo, metallic, roughness, gLights[lightIdx].color, gLights[lightIdx].intensity, CalculateAttenuation(dist));
     lighting *= rangeMul;
 
     [branch]
-    if (lights[lightIdx].isCastingShadow) {
-        const float3 dirToFrag = fragWorldPos - lights[lightIdx].position;
+    if (gLights[lightIdx].isCastingShadow) {
+        const float3 dirToFrag = fragWorldPos - gLights[lightIdx].position;
 
         uint maxIdx = abs(dirToFrag.x) > abs(dirToFrag.y) ? 0 : 1;
         maxIdx = abs(dirToFrag[maxIdx]) > abs(dirToFrag.z) ? maxIdx : 2;
@@ -99,7 +99,7 @@ inline float3 CalculatePointLight(const float3 N, const float3 V, const float3 a
         }
 
         [branch]
-        if (lights[lightIdx].sampleShadowMap[shadowMapIdx]) {
+        if (gLights[lightIdx].sampleShadowMap[shadowMapIdx]) {
             lighting *= SampleShadowCascadeFromAtlas(gPunctualShadowAtlas, fragWorldPos, lightIdx, shadowMapIdx);
         }
     }
@@ -139,9 +139,13 @@ float4 main(const MeshVsOut vsOut) : SV_TARGET {
 
     float3 outColor = 0.03 * albedo * ao;
 
-    for (int i = 0; i < lightCount && i < MAX_LIGHT_COUNT; i++)
+    uint lightCount;
+    uint _;
+    gLights.GetDimensions(lightCount, _);
+
+    for (uint i = 0; i < lightCount; i++)
     {
-        switch (lights[i].type)
+        switch (gLights[i].type)
         {
             case 0:{
                     outColor += CalculateDirLight(N, V, albedo, metallic, roughness, i, vsOut.worldPos, vsOut.viewPosZ);

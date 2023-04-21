@@ -841,11 +841,109 @@ public:
 };
 
 
+template<typename T>
+class StructuredBuffer {
+	static_assert(sizeof(T) % 16 == 0, "StructuredBuffer contained type must have a size divisible by 16.");
+
+	ComPtr<ID3D11Device> mDevice;
+	ComPtr<ID3D11DeviceContext> mContext;
+	ComPtr<ID3D11Buffer> mBuffer;
+	ComPtr<ID3D11ShaderResourceView> mSrv;
+	T* mMappedPtr{ nullptr };
+	int mCapacity{ 1 };
+	int mSize{ 0 };
+
+
+	void RecreateBuffer() {
+		D3D11_BUFFER_DESC const bufDesc{
+			.ByteWidth = mCapacity * sizeof(T),
+			.Usage = D3D11_USAGE_DYNAMIC,
+			.BindFlags = D3D11_BIND_SHADER_RESOURCE,
+			.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
+			.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED,
+			.StructureByteStride = sizeof(T)
+		};
+
+		if (FAILED(mDevice->CreateBuffer(&bufDesc, nullptr, mBuffer.ReleaseAndGetAddressOf()))) {
+			throw std::runtime_error{ "Failed to recreate StructuredBuffer buffer." };
+		}
+	}
+
+
+	void RecreateSrv() {
+		D3D11_SHADER_RESOURCE_VIEW_DESC const srvDesc{
+			.Format = DXGI_FORMAT_UNKNOWN,
+			.ViewDimension = D3D11_SRV_DIMENSION_BUFFER,
+			.Buffer = { .FirstElement = 0, .NumElements = static_cast<UINT>(mSize) }
+		};
+
+		if (FAILED(mDevice->CreateShaderResourceView(mBuffer.Get(), &srvDesc, mSrv.ReleaseAndGetAddressOf()))) {
+			throw std::runtime_error{ "Failed to recreate StructuredBuffer SRV." };
+		}
+	}
+
+public:
+	StructuredBuffer(ComPtr<ID3D11Device> device, ComPtr<ID3D11DeviceContext> context) :
+		mDevice{ std::move(device) },
+		mContext{ std::move(context) } {
+		RecreateBuffer();
+	}
+
+
+	[[nodiscard]] auto GetSrv() const noexcept -> ID3D11ShaderResourceView* {
+		return mSrv.Get();
+	}
+
+
+	auto Resize(int const newSize) -> void {
+		auto newCapacity = mCapacity;
+
+		while (newCapacity < newSize) {
+			newCapacity *= 2;
+		}
+
+		if (newCapacity != mCapacity) {
+			mCapacity = newCapacity;
+			mSize = newSize;
+			Unmap();
+			RecreateBuffer();
+			RecreateSrv();
+		}
+		else if (mSize != newSize) {
+			mSize = newSize;
+			RecreateSrv();
+		}
+	}
+
+
+	[[nodiscard]] auto Map() -> std::span<T> {
+		if (mMappedPtr) {
+			return { mMappedPtr, static_cast<std::size_t>(mSize) };
+		}
+
+		D3D11_MAPPED_SUBRESOURCE mappedSubresource;
+		if (FAILED(mContext->Map(mBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedSubresource))) {
+			throw std::runtime_error{ "Failed to map Structured Buffer." };
+		}
+
+		mMappedPtr = static_cast<T*>(mappedSubresource.pData);
+		return { static_cast<T*>(mMappedPtr), static_cast<std::size_t>(mSize) };
+	}
+
+
+	auto Unmap() -> void {
+		if (mMappedPtr) {
+			mContext->Unmap(mBuffer.Get(), 0);
+			mMappedPtr = nullptr;
+		}
+	}
+};
+
+
 struct Resources {
 	ComPtr<ID3D11Device> device;
 	ComPtr<ID3D11DeviceContext> context;
 
-	ComPtr<ID3D11ShaderResourceView> lightSbSrv;
 	ComPtr<ID3D11ShaderResourceView> gizmoColorSbSrv;
 	ComPtr<ID3D11ShaderResourceView> lineGizmoVertexSbSrv;
 
@@ -866,7 +964,6 @@ struct Resources {
 	ComPtr<ID3D11Buffer> toneMapGammaCB;
 	ComPtr<ID3D11Buffer> skyboxCB;
 	ComPtr<ID3D11Buffer> shadowCB;
-	ComPtr<ID3D11Buffer> lightSB;
 	ComPtr<ID3D11Buffer> gizmoColorSB;
 	ComPtr<ID3D11Buffer> lineGizmoVertexSB;
 
@@ -890,6 +987,8 @@ struct Resources {
 	std::unique_ptr<RenderTarget> gameViewRenderTarget;
 	std::unique_ptr<RenderTarget> sceneViewRenderTarget;
 	std::unique_ptr<SwapChain> swapChain;
+
+	std::unique_ptr<StructuredBuffer<ShaderLight>> lightBuffer;
 };
 
 
@@ -1458,32 +1557,6 @@ auto RecreateLineGizmoVertexBuffer() -> void {
 
 
 auto CreateStructuredBuffers() -> void {
-	D3D11_BUFFER_DESC constexpr lightSbDesc{
-		.ByteWidth = MAX_LIGHT_COUNT * sizeof(ShaderLight),
-		.Usage = D3D11_USAGE_DYNAMIC,
-		.BindFlags = D3D11_BIND_SHADER_RESOURCE,
-		.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
-		.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED,
-		.StructureByteStride = sizeof(ShaderLight)
-	};
-
-	if (FAILED(gResources->device->CreateBuffer(&lightSbDesc, nullptr, gResources->lightSB.GetAddressOf()))) {
-		throw std::runtime_error{ "Failed to create light structured buffer." };
-	}
-
-	D3D11_SHADER_RESOURCE_VIEW_DESC constexpr lightSbSrvDesc{
-		.Format = DXGI_FORMAT_UNKNOWN,
-		.ViewDimension = D3D11_SRV_DIMENSION_BUFFER,
-		.Buffer = {
-			.FirstElement = 0,
-			.NumElements = MAX_LIGHT_COUNT
-		}
-	};
-
-	if (FAILED(gResources->device->CreateShaderResourceView(gResources->lightSB.Get(), &lightSbSrvDesc, gResources->lightSbSrv.GetAddressOf()))) {
-		throw std::runtime_error{ "Failed to create light SB SRV." };
-	}
-
 	RecreateGizmoColorBuffer();
 	RecreateLineGizmoVertexBuffer();
 }
@@ -1766,7 +1839,6 @@ auto DrawFullWithCameras(std::span<Camera const* const> const cameras, RenderTar
 
 		Visibility static visibility;
 		CullLights(camFrustWS, visibility);
-		auto const lightCount{ std::min(MAX_LIGHT_COUNT, static_cast<int>(visibility.lightIndices.size())) };
 
 		for (auto const& shadowAtlas : gResources->shadowAtlases) {
 			shadowAtlas->Update(gLights, visibility, *cam, camViewMtx, camProjMtx, camViewProjMtx);
@@ -1791,35 +1863,35 @@ auto DrawFullWithCameras(std::span<Camera const* const> const cameras, RenderTar
 		auto const perCamCBufData{ static_cast<PerCameraCB*>(mappedPerCamCBuf.pData) };
 		perCamCBufData->viewProjMtx = camViewProjMtx;
 		perCamCBufData->camPos = camPos;
-		perCamCBufData->lightCount = lightCount;
 		gResources->context->Unmap(gResources->perCamCB.Get(), 0);
 
-		D3D11_MAPPED_SUBRESOURCE mappedLightSB;
-		gResources->context->Map(gResources->lightSB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedLightSB);
-		auto const mappedLightSBData{ static_cast<ShaderLight*>(mappedLightSB.pData) };
+		auto const lightCount{ std::ssize(visibility.lightIndices) };
+		gResources->lightBuffer->Resize(static_cast<int>(lightCount));
+		auto const lightBufferData{ gResources->lightBuffer->Map() };
 
 		for (int i = 0; i < lightCount; i++) {
-			mappedLightSBData[i].color = gLights[visibility.lightIndices[i]]->GetColor();
-			mappedLightSBData[i].intensity = gLights[visibility.lightIndices[i]]->GetIntensity();
-			mappedLightSBData[i].type = static_cast<int>(gLights[visibility.lightIndices[i]]->GetType());
-			mappedLightSBData[i].direction = gLights[visibility.lightIndices[i]]->GetDirection();
-			mappedLightSBData[i].isCastingShadow = FALSE;
-			mappedLightSBData[i].range = gLights[visibility.lightIndices[i]]->GetRange();
-			mappedLightSBData[i].innerAngleCos = std::cos(ToRadians(gLights[visibility.lightIndices[i]]->GetInnerAngle()));
-			mappedLightSBData[i].outerAngleCos = std::cos(ToRadians(gLights[visibility.lightIndices[i]]->GetOuterAngle()));
-			mappedLightSBData[i].position = gLights[visibility.lightIndices[i]]->GetEntity()->GetTransform().GetWorldPosition();
+			lightBufferData[i].color = gLights[visibility.lightIndices[i]]->GetColor();
+			lightBufferData[i].intensity = gLights[visibility.lightIndices[i]]->GetIntensity();
+			lightBufferData[i].type = static_cast<int>(gLights[visibility.lightIndices[i]]->GetType());
+			lightBufferData[i].direction = gLights[visibility.lightIndices[i]]->GetDirection();
+			lightBufferData[i].isCastingShadow = FALSE;
+			lightBufferData[i].range = gLights[visibility.lightIndices[i]]->GetRange();
+			lightBufferData[i].innerAngleCos = std::cos(ToRadians(gLights[visibility.lightIndices[i]]->GetInnerAngle()));
+			lightBufferData[i].outerAngleCos = std::cos(ToRadians(gLights[visibility.lightIndices[i]]->GetOuterAngle()));
+			lightBufferData[i].position = gLights[visibility.lightIndices[i]]->GetEntity()->GetTransform().GetWorldPosition();
 
-			for (auto& sample : mappedLightSBData[i].sampleShadowMap) {
+			for (auto& sample : lightBufferData[i].sampleShadowMap) {
 				sample = FALSE;
 			}
 		}
 
 		for (auto const& shadowAtlas : gResources->shadowAtlases) {
-			shadowAtlas->SetLookUpInfo({ mappedLightSBData, static_cast<std::size_t>(lightCount) });
+			shadowAtlas->SetLookUpInfo(lightBufferData);
 		}
 
-		gResources->context->Unmap(gResources->lightSB.Get(), 0);
-		gResources->context->PSSetShaderResources(RES_SLOT_LIGHTS, 1, gResources->lightSbSrv.GetAddressOf());
+		gResources->lightBuffer->Unmap();
+
+		gResources->context->PSSetShaderResources(RES_SLOT_LIGHTS, 1, std::array{ gResources->lightBuffer->GetSrv() }.data());
 
 		gResources->context->VSSetShader(gResources->meshVS.Get(), nullptr, 0);
 		gResources->context->PSSetShader(gResources->meshPbrPS.Get(), nullptr, 0);
@@ -1971,6 +2043,8 @@ auto StartUp() -> void {
 	gResources->sceneViewRenderTarget = std::make_unique<RenderTarget>(gResources->device, gWindow.GetCurrentClientAreaSize().width, gWindow.GetCurrentClientAreaSize().height);
 
 	gResources->swapChain = std::make_unique<SwapChain>(gResources->device, dxgiFactory2.Get());
+
+	gResources->lightBuffer = std::make_unique<StructuredBuffer<ShaderLight>>(gResources->device, gResources->context);
 
 	CreateInputLayouts();
 	CreateShaders();

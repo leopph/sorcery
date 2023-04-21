@@ -30,9 +30,6 @@ typedef bool BOOL;
 #define STRUCTUREDBUFFER(name, type, slot) StructuredBuffer<type> name : register(t##slot)
 #endif
 
-
-#define MAX_LIGHT_COUNT 128
-
 #define CB_SLOT_PER_FRAME 0
 #define CB_SLOT_PER_CAM 1
 #define CB_SLOT_PER_MODEL 2
@@ -114,7 +111,7 @@ CBUFFER(PerFrameCB, CB_SLOT_PER_FRAME) {};
 CBUFFER(PerCameraCB, CB_SLOT_PER_CAM) {
 row_major float4x4 viewProjMtx;
 float3 camPos;
-int lightCount;
+float pad0;
 };
 
 
