@@ -439,7 +439,7 @@ auto EditorObjectWrapperFor<LightComponent>::OnGui([[maybe_unused]] Context& con
 			ImGui::TableNextColumn();
 
 			auto shadowNearPlane{ light.GetShadowNearPlane() };
-			if (ImGui::DragFloat("###lightShadowNearPlane", &shadowNearPlane)) {
+			if (ImGui::DragFloat("###lightShadowNearPlane", &shadowNearPlane, 0.01f)) {
 				light.SetShadowNearPlane(shadowNearPlane);
 			}
 
