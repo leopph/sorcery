@@ -59,6 +59,7 @@ struct ShadowAtlasSubcellData {
 	int shadowMapIdx;
 	float normalBias;
 	float cascadeFarBoundsView;
+	int cascadeIdx;
 };
 
 
@@ -240,7 +241,7 @@ public:
 					lights[subcell->visibleLightIdxIdx].shadowViewProjMatrices[subcell->shadowMapIdx] = subcell->shadowViewProjMtx;
 					lights[subcell->visibleLightIdxIdx].shadowUvOffsets[subcell->shadowMapIdx] = GetNormalizedElementOffset(i) + cell.GetNormalizedElementOffset(j) * GetNormalizedElementSize();
 					lights[subcell->visibleLightIdxIdx].shadowUvScales[subcell->shadowMapIdx] = GetNormalizedElementSize() * cell.GetNormalizedElementSize();
-					lights[subcell->visibleLightIdxIdx].cascadeFarBoundsView[subcell->shadowMapIdx] = subcell->cascadeFarBoundsView;
+					lights[subcell->visibleLightIdxIdx].cascadeFarBoundsView[subcell->cascadeIdx] = subcell->cascadeFarBoundsView;
 				}
 			}
 		}
@@ -263,7 +264,7 @@ public:
 		mCells{ ShadowAtlasCell{ 1 }, ShadowAtlasCell{ 2 }, ShadowAtlasCell{ 4 }, ShadowAtlasCell{ 8 } } {}
 
 
-	auto Update(std::span<LightComponent const* const> const allLights, Visibility const& visibility, Camera const& cam, Matrix4 const& camViewMtx, Matrix4 const& camProjMtx, Matrix4 const& camViewProjMtx) -> void override {
+	auto Update(std::span<LightComponent const* const> const allLights, Visibility const& visibility, Camera const& cam, [[maybe_unused]] Matrix4 const& camViewMtx, [[maybe_unused]] Matrix4 const& camProjMtx, Matrix4 const& camViewProjMtx) -> void override {
 		struct LightCascadeIndex {
 			int lightIdxIdx;
 			int shadowIdx;
@@ -340,7 +341,8 @@ public:
 					}
 				}
 				else if (light->GetType() == LightComponent::Type::Point) {
-					auto const boundsHalfWidthHeight{ std::tan(ToRadians(45)) * light->GetRange() };
+					auto const lightRange{ light->GetRange() };
+					auto const lightPos{ light->GetEntity()->GetTransform().GetWorldPosition() };
 
 					for (auto j = 0; j < 6; j++) {
 						std::array static const faceBoundsRotations{
@@ -353,11 +355,11 @@ public:
 						};
 
 						std::array const shadowFrustumVertices{
-							faceBoundsRotations[i].Rotate(Vector3{ boundsHalfWidthHeight, boundsHalfWidthHeight, light->GetRange() }) + light->GetEntity()->GetTransform().GetWorldPosition(),
-							faceBoundsRotations[i].Rotate(Vector3{ -boundsHalfWidthHeight, boundsHalfWidthHeight, light->GetRange() }) + light->GetEntity()->GetTransform().GetWorldPosition(),
-							faceBoundsRotations[i].Rotate(Vector3{ -boundsHalfWidthHeight, -boundsHalfWidthHeight, light->GetRange() }) + light->GetEntity()->GetTransform().GetWorldPosition(),
-							faceBoundsRotations[i].Rotate(Vector3{ boundsHalfWidthHeight, -boundsHalfWidthHeight, light->GetRange() }) + light->GetEntity()->GetTransform().GetWorldPosition(),
-							light->GetEntity()->GetTransform().GetWorldPosition(),
+							faceBoundsRotations[i].Rotate(Vector3{ lightRange, lightRange, lightRange }) + lightPos,
+							faceBoundsRotations[i].Rotate(Vector3{ -lightRange, lightRange, lightRange }) + lightPos,
+							faceBoundsRotations[i].Rotate(Vector3{ -lightRange, -lightRange, lightRange }) + lightPos,
+							faceBoundsRotations[i].Rotate(Vector3{ lightRange, -lightRange, lightRange }) + lightPos,
+							lightPos,
 						};
 
 						if (auto const cellIdx{ determineScreenCoverage(shadowFrustumVertices) }) {
@@ -398,22 +400,24 @@ public:
 					auto const shadowViewMtx{ Matrix4::LookToLH(light->GetEntity()->GetTransform().GetWorldPosition(), light->GetEntity()->GetTransform().GetForwardAxis(), Vector3::Up()) };
 					auto const shadowProjMtx{ Matrix4::PerspectiveAsymZLH(ToRadians(light->GetOuterAngle() * 2), 1.f, light->GetRange(), light->GetShadowNearPlane()) };
 
-					subcell.emplace(shadowViewMtx * shadowProjMtx, lightIdxIdx, shadowIdx, light->GetShadowNormalBias());
+					subcell.emplace(shadowViewMtx * shadowProjMtx, lightIdxIdx, shadowIdx, light->GetShadowNormalBias(), std::numeric_limits<float>::max(), 0);
 				}
 				else if (light->GetType() == LightComponent::Type::Point) {
-					std::array static constexpr faceMatrices{
-						Matrix4{ 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 1 }, // +X
-						Matrix4{ 0, 0, -1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1 }, // -X
-						Matrix4{ 1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1 }, // +Y
-						Matrix4{ 1, 0, 0, 0, 0, 0, -1, 0, 0, 1, 0, 0, 0, 0, 0, 1 }, // -Y
-						Matrix4{ 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 }, // +Z
-						Matrix4{ -1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1 } // -Z
+					auto const lightPos{ light->GetEntity()->GetTransform().GetWorldPosition() };
+
+					std::array const faceViewMatrices{
+						Matrix4::LookToLH(lightPos, Vector3::Right(), Vector3::Up()), // +X
+						Matrix4::LookToLH(lightPos, Vector3::Left(), Vector3::Up()), // -X
+						Matrix4::LookToLH(lightPos, Vector3::Up(), Vector3::Backward()), // +Y
+						Matrix4::LookToLH(lightPos, Vector3::Down(), Vector3::Forward()), // -Y
+						Matrix4::LookToLH(lightPos, Vector3::Forward(), Vector3::Up()), // +Z
+						Matrix4::LookToLH(lightPos, Vector3::Backward(), Vector3::Up()), // -Z
 					};
 
-					auto const shadowViewMtx{ Matrix4::Translate(-light->GetEntity()->GetTransform().GetWorldPosition()) * faceMatrices[shadowIdx] };
+					auto const shadowViewMtx{ faceViewMatrices[shadowIdx] };
 					auto const shadowProjMtx{ Matrix4::PerspectiveAsymZLH(ToRadians(90), 1, light->GetRange(), light->GetShadowNearPlane()) };
 
-					subcell.emplace(shadowViewMtx * shadowProjMtx, lightIdxIdx, shadowIdx, light->GetShadowNormalBias());
+					subcell.emplace(shadowViewMtx * shadowProjMtx, lightIdxIdx, shadowIdx, light->GetShadowNormalBias(), std::numeric_limits<float>::max(), 0);
 				}
 			}
 
@@ -440,7 +444,7 @@ public:
 		mCell{ 1 } {}
 
 
-	auto Update(std::span<LightComponent const* const> const allLights, Visibility const& visibility, Camera const& cam, Matrix4 const& camViewMtx, Matrix4 const& camProjMtx, Matrix4 const& camViewProjMtx) -> void override {
+	auto Update(std::span<LightComponent const* const> const allLights, Visibility const& visibility, Camera const& cam, Matrix4 const& camViewMtx, Matrix4 const& camProjMtx, [[maybe_unused]] Matrix4 const& camViewProjMtx) -> void override {
 		std::vector<int> static candidateLightIdxIndices;
 		candidateLightIdxIndices.clear();
 
@@ -544,7 +548,7 @@ public:
 				auto const [cascadeAabbMin, cascadeAabbMax]{ AABB::FromVertices(cascadeVerts) };
 				auto const shadowProjMtx{ Matrix4::OrthographicAsymZLH(cascadeAabbMin[0], cascadeAabbMax[0], cascadeAabbMax[1], cascadeAabbMin[1], cascadeAabbMax[2], light.GetShadowNearPlane()) };
 
-				mCell.GetSubcell(i * mCell.GetSubdivisionSize() + cascadeIdx).emplace(shadowViewMtx * shadowProjMtx, lightIdxIdx, cascadeIdx, light.GetShadowNormalBias(), cascadeFar);
+				mCell.GetSubcell(i * mCell.GetSubdivisionSize() + cascadeIdx).emplace(shadowViewMtx * shadowProjMtx, lightIdxIdx, cascadeIdx, light.GetShadowNormalBias(), cascadeFar, cascadeIdx);
 			}
 		}
 	}
@@ -1639,11 +1643,11 @@ auto DrawShadowMaps(ShadowAtlas const& atlas) -> void {
 	for (auto i = 0; i < atlas.GetElementCount(); i++) {
 		auto const& cell{ atlas.GetCell(i) };
 		auto const cellOffsetNorm{ atlas.GetNormalizedElementOffset(i) };
-		auto const subcellSize{ cellSizeNorm * cell.GetNormalizedElementSize() * atlas.GetSize() };
+		auto const subcellSize{ cellSizeNorm * cell.GetNormalizedElementSize() * static_cast<float>(atlas.GetSize()) };
 
 		for (auto j = 0; j < cell.GetElementCount(); j++) {
 			if (auto const& subcell{ cell.GetSubcell(j) }) {
-				auto const subcellOffset{ (cellOffsetNorm + cell.GetNormalizedElementOffset(j) * cellSizeNorm) * atlas.GetSize() };
+				auto const subcellOffset{ (cellOffsetNorm + cell.GetNormalizedElementOffset(j) * cellSizeNorm) * static_cast<float>(atlas.GetSize()) };
 
 				D3D11_VIEWPORT const viewport{
 					.TopLeftX = subcellOffset[0],
