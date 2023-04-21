@@ -57,9 +57,12 @@ typedef bool BOOL;
 #define SAMPLER_SLOT_SHADOW 1
 #define SAMPLER_SLOT_SKYBOX_CUBEMAP 0
 
+#define MAX_CASCADE_COUNT 4
+#define MAX_PER_LIGHT_SHADOW_MAP_COUNT 6
+
 
 struct ShaderLight {
-	row_major float4x4 shadowViewProjMatrices[6];
+	row_major float4x4 shadowViewProjMatrices[MAX_PER_LIGHT_SHADOW_MAP_COUNT];
 
 	float3 color;
 	float intensity;
@@ -72,12 +75,11 @@ struct ShaderLight {
 	float innerAngleCos;
 	float outerAngleCos;
 
-	float2 shadowUvOffsets[6];
+	float2 shadowUvOffsets[MAX_PER_LIGHT_SHADOW_MAP_COUNT];
 
-	float shadowUvScales[6];
-	BOOL sampleCascade[6];
-	float cascadeFarBoundsView[6];
-	float2 pad0;
+	float shadowUvScales[MAX_PER_LIGHT_SHADOW_MAP_COUNT];
+	BOOL sampleShadowMap[MAX_PER_LIGHT_SHADOW_MAP_COUNT];
+	float cascadeFarBoundsView[MAX_CASCADE_COUNT];
 
 	float3 position;
 	float pad1;

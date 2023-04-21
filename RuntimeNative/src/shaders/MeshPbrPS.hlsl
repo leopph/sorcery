@@ -37,11 +37,14 @@ inline float3 CalculateDirLight(const float3 N, const float3 V, const float3 alb
     if (lights[lightIdx].isCastingShadow) {
         uint cascadeIdx = 0;
 
-        while (fragPosViewZ > lights[lightIdx].cascadeFarBoundsView[cascadeIdx] && cascadeIdx < 3) {
+        while (fragPosViewZ > lights[lightIdx].cascadeFarBoundsView[cascadeIdx] && cascadeIdx < MAX_CASCADE_COUNT) {
             cascadeIdx += 1;
         }
 
-        lighting *= SampleShadowCascadeFromAtlas(gDirShadowAtlas, fragPosWorld, lightIdx, cascadeIdx);
+        [branch]
+        if (cascadeIdx != MAX_CASCADE_COUNT) {
+	        lighting *= SampleShadowCascadeFromAtlas(gDirShadowAtlas, fragPosWorld, lightIdx, cascadeIdx);
+        }
     }
 
     return lighting;
@@ -96,7 +99,7 @@ inline float3 CalculatePointLight(const float3 N, const float3 V, const float3 a
         }
 
         [branch]
-        if (lights[lightIdx].sampleCascade[cascadeIdx]) {
+        if (lights[lightIdx].sampleShadowMap[cascadeIdx]) {
             lighting *= SampleShadowCascadeFromAtlas(gPunctualShadowAtlas, fragWorldPos, lightIdx, cascadeIdx);
         }
     }
