@@ -55,6 +55,13 @@ struct ShadowAtlasSubcellData {
 class GridLike {
 	int mSubdivSize;
 
+
+	auto ThrowIfSubdivInvalid() const {
+		if (!IsPowerOfTwo(mSubdivSize)) {
+			throw std::runtime_error{ "GridLike subdivision size must be power of 2." };
+		}
+	}
+
 protected:
 	auto ThrowIfIndexIsInvalid(int const idx) const -> void {
 		if (idx < 0 || idx >= GetElementCount()) {
@@ -65,8 +72,7 @@ protected:
 public:
 	explicit GridLike(int const subdivSize) :
 		mSubdivSize{ subdivSize } {
-		if (!IsPowerOfTwo(mSubdivSize)) {
-			throw std::runtime_error{ "GridLike subdivision size must be power of 2." };
+		ThrowIfSubdivInvalid();
 		}
 	}
 
