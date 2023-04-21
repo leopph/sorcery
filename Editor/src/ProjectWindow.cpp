@@ -75,7 +75,7 @@ auto DrawSideFolderView(std::filesystem::path const& dir, std::filesystem::path&
 
 auto DrawProjectWindow(Context& context) -> void {
 	if (ImGui::Begin("Project", nullptr, ImGuiWindowFlags_NoCollapse)) {
-		if (ImGui::BeginTable("ProjectWindowMainTable", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_ScrollX)) {
+		if (ImGui::BeginTable("ProjectWindowMainTable", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_SizingFixedFit)) {
 			ImGui::TableNextRow();
 			ImGui::TableSetColumnIndex(0);
 
