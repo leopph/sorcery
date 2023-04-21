@@ -389,8 +389,8 @@ auto DrawProjectWindow(Context& context) -> void {
 					}
 				}
 			}
+			ImGui::EndTable();
 		}
-		ImGui::EndTable();
 	}
 	ImGui::End();
 }
