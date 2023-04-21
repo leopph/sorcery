@@ -29,9 +29,22 @@ inline float CalculateAttenuation(const float distance) {
 }
 
 
-inline float3 CalculateDirLight(const float3 N, const float3 V, const float3 albedo, const float metallic, const float roughness, const int lightIdx) {
+inline float3 CalculateDirLight(const float3 N, const float3 V, const float3 albedo, const float metallic, const float roughness, const int lightIdx, const float3 fragPosWorld, const float fragPosViewZ) {
     const float3 L = -lights[lightIdx].direction;
-    return CookTorrance(N, V, L, albedo, metallic, roughness, lights[lightIdx].color, lights[lightIdx].intensity, 1);
+    float3 lighting = CookTorrance(N, V, L, albedo, metallic, roughness, lights[lightIdx].color, lights[lightIdx].intensity, 1);
+
+    [branch]
+    if (lights[lightIdx].isCastingShadow) {
+        uint cascadeIdx = 0;
+
+        while (fragPosViewZ > lights[lightIdx].cascadeFarBoundsView[cascadeIdx] && cascadeIdx < 5) {
+            cascadeIdx += 1;
+        }
+
+        lighting *= SampleShadowCascadeFromAtlas(gDirShadowAtlas, fragPosWorld, lightIdx, cascadeIdx);
+    }
+
+    return lighting;
 }
 
 
@@ -128,7 +141,7 @@ float4 main(const MeshVsOut vsOut) : SV_TARGET {
         switch (lights[i].type)
         {
             case 0:{
-                    outColor += CalculateDirLight(N, V, albedo, metallic, roughness, i);
+                    outColor += CalculateDirLight(N, V, albedo, metallic, roughness, i, vsOut.worldPos, vsOut.viewPosZ);
                     break;
                 }
             case 1:{

@@ -49,6 +49,7 @@ struct ShadowAtlasSubcellData {
 	int visibleLightIdxIdx;
 	int lightCascadeIdx;
 	float normalBias;
+	float cascadeFarBoundsView;
 };
 
 
@@ -79,7 +80,7 @@ public:
 	explicit GridLike(int const subdivSize) :
 		mSubdivSize{ subdivSize } {
 		ThrowIfSubdivInvalid();
-		}
+	}
 
 
 	// The grid has N*N cells, this is the N of that.
@@ -228,7 +229,7 @@ public:
 					lights[subcell->visibleLightIdxIdx].shadowViewProjMatrices[subcell->lightCascadeIdx] = subcell->shadowViewProjMtx;
 					lights[subcell->visibleLightIdxIdx].shadowUvOffsets[subcell->lightCascadeIdx] = GetNormalizedElementOffset(i) + cell.GetNormalizedElementOffset(j) * GetNormalizedElementSize();
 					lights[subcell->visibleLightIdxIdx].shadowUvScales[subcell->lightCascadeIdx] = GetNormalizedElementSize() * cell.GetNormalizedElementSize();
-					lights[subcell->visibleLightIdxIdx].cascadeFarBoundsNdc[subcell->lightCascadeIdx] = subcell->cascadeFarBound;
+					lights[subcell->visibleLightIdxIdx].cascadeFarBoundsView[subcell->lightCascadeIdx] = subcell->cascadeFarBoundsView;
 				}
 			}
 		}
@@ -237,7 +238,7 @@ public:
 
 	[[nodiscard]] virtual auto GetCell(int idx) const -> ShadowAtlasCell const& = 0;
 
-	virtual auto Update(std::span<LightComponent const* const> allLights, Visibility const& visibility, Vector3 const& camPos, Matrix4 const& camViewProjMtx) -> void = 0;
+	virtual auto Update(std::span<LightComponent const* const> allLights, Visibility const& visibility, Camera const& cam, Matrix4 const& camViewMtx, Matrix4 const& camProjMtx, Matrix4 const& camViewProjMtx) -> void = 0;
 };
 
 
@@ -250,7 +251,7 @@ public:
 		mCells{ ShadowAtlasCell{ 1 }, ShadowAtlasCell{ 2 }, ShadowAtlasCell{ 4 }, ShadowAtlasCell{ 8 } } {}
 
 
-	auto Update(std::span<LightComponent const* const> const allLights, Visibility const& visibility, Vector3 const& camPos, Matrix4 const& camViewProjMtx) -> void override {
+	auto Update(std::span<LightComponent const* const> const allLights, Visibility const& visibility, Camera const& cam, Matrix4 const& camViewMtx, Matrix4 const& camProjMtx, Matrix4 const& camViewProjMtx) -> void override {
 		struct LightCascadeIndex {
 			int lightIdxIdx;
 			int cascadeIdx;
@@ -261,6 +262,8 @@ public:
 		for (auto& cellLight : lightIndexIndicesInCell) {
 			cellLight.clear();
 		}
+
+		auto const& camPos{ cam.GetPosition() };
 
 		auto const determineScreenCoverage{
 			[&camPos, &camViewProjMtx](std::span<Vector3 const> const vertices) -> std::optional<int> {
@@ -425,7 +428,7 @@ public:
 		mCell{ 1 } {}
 
 
-	auto Update(std::span<LightComponent const* const> const allLights, Visibility const& visibility, Vector3 const& camPos, Matrix4 const& camViewProjMtx) -> void override {
+	auto Update(std::span<LightComponent const* const> const allLights, Visibility const& visibility, Camera const& cam, Matrix4 const& camViewMtx, Matrix4 const& camProjMtx, Matrix4 const& camViewProjMtx) -> void override {
 		std::vector<int> static candidateLightIdxIndices;
 		candidateLightIdxIndices.clear();
 
@@ -435,25 +438,102 @@ public:
 			}
 		}
 
-		//mCells.clear();
-		//mCells.resize(NextPowerOfTwo(candidateLightIdxIndices.size()));
+		constexpr auto CASCADE_COUNT{ 4 };
+
+		auto newCellSubdiv{ 1 };
+
+		while (newCellSubdiv * newCellSubdiv < std::ssize(candidateLightIdxIndices) * CASCADE_COUNT) {
+			newCellSubdiv = NextPowerOfTwo(newCellSubdiv);
+		}
+
+		mCell.Resize(newCellSubdiv);
+
+		for (int i = 0; i < mCell.GetElementCount(); i++) {
+			mCell.GetSubcell(i).reset();
+		}
+
+		auto const camNear{ cam.GetNearClipPlane() };
+		auto const camFar{ cam.GetFarClipPlane() };
+
+		struct CascadeBounds {
+			float nearClip;
+			float farClip;
+		};
+
+		auto const cascadeSplits{
+			[camNear, camFar] {
+				std::array<CascadeBounds, CASCADE_COUNT> ret;
+				auto const clipRatio{ camFar / camNear };
+				ret[0].nearClip = camNear;
+				for (auto i = 1; i < CASCADE_COUNT; i++) {
+					auto const idxRatio{ static_cast<float>(i) / static_cast<float>(CASCADE_COUNT) };
+					auto constexpr lambda{ 0.75f };
+					ret[i].nearClip = lambda * camNear * std::pow(clipRatio, idxRatio) + (1 - lambda) * (camNear + idxRatio * (camFar - camNear));
+					ret[i - 1].farClip = 1.005f * ret[i].nearClip;
+				}
+				ret[CASCADE_COUNT - 1].farClip = camFar;
+				return ret;
+			}()
+		};
+
+		auto const frustumVerts{
+			[&camViewMtx, &camProjMtx] {
+				auto const camViewMtxInv{ camViewMtx.Inverse() };
+				auto const camProjMtxInv{ camProjMtx.Inverse() };
+
+				std::array ret{
+					Vector4{ 1, 1, 0, 1 },
+					Vector4{ -1, 1, 0, 1 },
+					Vector4{ -1, -1, 0, 1 },
+					Vector4{ 1, -1, 0, 1 },
+
+					Vector4{ 1, 1, 1, 1 },
+					Vector4{ -1, 1, 1, 1 },
+					Vector4{ -1, -1, 1, 1 },
+					Vector4{ 1, -1, 1, 1 },
+				};
+
+				for (auto& vert : ret) {
+					vert *= camProjMtxInv;
+					vert /= vert[3];
+					vert *= camViewMtxInv;
+				}
+
+				return ret;
+			}()
+		};
+
+		auto const frustumDepth{ camFar - camNear };
 
 		for (auto i = 0; i < std::ssize(candidateLightIdxIndices); i++) {
 			auto const lightIdxIdx{ candidateLightIdxIndices[i] };
 			auto const& light{ *allLights[visibility.lightIndices[lightIdxIdx]] };
 
-			constexpr auto lambda{ 0.75f };
+			for (auto cascadeIdx = 0; cascadeIdx < CASCADE_COUNT; cascadeIdx++) {
+				auto const [cascadeNear, cascadeFar]{ cascadeSplits[cascadeIdx] };
 
-			for (auto j = 0; j < 4; j++) {
-				// TODO
+				auto const cascadeNearNorm{ (cascadeNear - camNear) / frustumDepth };
+				auto const cascadeFarNorm{ (cascadeFar - camNear) / frustumDepth };
+
+				Matrix4 const shadowViewMtx{ Matrix4::LookToLH(Vector3::Zero(), light.GetDirection(), Vector3::Up()) };
+
+				std::array const cascadeVerts{
+					Vector3{ Lerp(frustumVerts[0], frustumVerts[4], cascadeNearNorm) * shadowViewMtx },
+					Vector3{ Lerp(frustumVerts[1], frustumVerts[5], cascadeNearNorm) * shadowViewMtx },
+					Vector3{ Lerp(frustumVerts[2], frustumVerts[6], cascadeNearNorm) * shadowViewMtx },
+					Vector3{ Lerp(frustumVerts[3], frustumVerts[7], cascadeNearNorm) * shadowViewMtx },
+					Vector3{ Lerp(frustumVerts[0], frustumVerts[4], cascadeFarNorm) * shadowViewMtx },
+					Vector3{ Lerp(frustumVerts[1], frustumVerts[5], cascadeFarNorm) * shadowViewMtx },
+					Vector3{ Lerp(frustumVerts[2], frustumVerts[6], cascadeFarNorm) * shadowViewMtx },
+					Vector3{ Lerp(frustumVerts[3], frustumVerts[7], cascadeFarNorm) * shadowViewMtx },
+				};
+
+				auto const [cascadeAabbMin, cascadeAabbMax]{ AABB::FromVertices(cascadeVerts) };
+				auto const shadowProjMtx{ Matrix4::OrthographicAsymZLH(cascadeAabbMin[0], cascadeAabbMax[0], cascadeAabbMax[1], cascadeAabbMin[1], light.GetShadowNearPlane(), cascadeAabbMax[2]) };
+
+				mCell.GetSubcell(i * mCell.GetSubdivisionSize() + cascadeIdx).emplace(shadowViewMtx * shadowProjMtx, lightIdxIdx, cascadeIdx, light.GetShadowNormalBias(), cascadeFar);
 			}
 		}
-	}
-
-
-				mCell.GetSubcell(i * mCell.GetSubdivisionSize() + cascadeIdx).emplace(shadowViewMtx * shadowProjMtx, lightIdxIdx, cascadeIdx, light.GetShadowNormalBias(), cascadeFarNdc);
-			}
-			}
 	}
 
 
@@ -1645,7 +1725,7 @@ auto DrawFullWithCameras(std::span<Camera const* const> const cameras, RenderTar
 		auto const lightCount{ std::min(MAX_LIGHT_COUNT, static_cast<int>(visibility.lightIndices.size())) };
 
 		for (auto const& shadowAtlas : gResources->shadowAtlases) {
-			shadowAtlas->Update(gLights, visibility, camPos, camViewProjMtx);
+			shadowAtlas->Update(gLights, visibility, *cam, camViewMtx, camProjMtx, camViewProjMtx);
 		}
 
 

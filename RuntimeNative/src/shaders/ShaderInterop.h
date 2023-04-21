@@ -76,9 +76,11 @@ struct ShaderLight {
 
 	float shadowUvScales[6];
 	BOOL sampleCascade[6];
+	float cascadeFarBoundsView[6];
+	float2 pad0;
 
 	float3 position;
-	float pad;
+	float pad1;
 };
 
 
