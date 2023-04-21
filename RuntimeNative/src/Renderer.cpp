@@ -69,6 +69,12 @@ protected:
 		}
 	}
 
+
+	auto SetSubdivisionSize(int const subdivSize) -> void {
+		mSubdivSize = subdivSize;
+		ThrowIfSubdivInvalid();
+	}
+
 public:
 	explicit GridLike(int const subdivSize) :
 		mSubdivSize{ subdivSize } {
@@ -123,6 +129,12 @@ public:
 
 	[[nodiscard]] auto GetSubcell(int const idx) -> std::optional<ShadowAtlasSubcellData>& {
 		return const_cast<std::optional<ShadowAtlasSubcellData>&>(const_cast<ShadowAtlasCell const*>(this)->GetSubcell(idx));
+	}
+
+
+	auto Resize(int const subdivSize) -> void {
+		SetSubdivisionSize(subdivSize);
+		mSubcells.resize(GetElementCount());
 	}
 };
 
