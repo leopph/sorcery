@@ -111,6 +111,8 @@ public:
 };
 
 
+#pragma warning(push)
+#pragma warning(disable: 4324)
 class ShadowAtlasCell : public GridLike {
 	std::vector<std::optional<ShadowAtlasSubcellData>> mSubcells;
 
@@ -240,6 +242,7 @@ public:
 
 	virtual auto Update(std::span<LightComponent const* const> allLights, Visibility const& visibility, Camera const& cam, Matrix4 const& camViewMtx, Matrix4 const& camProjMtx, Matrix4 const& camViewProjMtx) -> void = 0;
 };
+#pragma warning(pop)
 
 
 class PunctualShadowAtlas final : public ShadowAtlas {
