@@ -974,6 +974,7 @@ struct Resources {
 	ComPtr<ID3D11SamplerState> shadowSS;
 
 	ComPtr<ID3D11RasterizerState> skyboxPassRS;
+	ComPtr<ID3D11RasterizerState> shadowPassRS;
 
 	ComPtr<ID3D11DepthStencilState> shadowDSS;
 	ComPtr<ID3D11DepthStencilState> skyboxPassDSS;
@@ -1373,6 +1374,23 @@ auto CreateRasterizerStates() -> void {
 	if (FAILED(gResources->device->CreateRasterizerState(&skyboxPassRasterizerDesc, gResources->skyboxPassRS.ReleaseAndGetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create skybox pass rasterizer state." };
 	}
+
+	D3D11_RASTERIZER_DESC constexpr shadowPassRasterizerDesc{
+		.FillMode = D3D11_FILL_SOLID,
+		.CullMode = D3D11_CULL_FRONT,
+		.FrontCounterClockwise = FALSE,
+		.DepthBias = 0,
+		.DepthBiasClamp = 0,
+		.SlopeScaledDepthBias = 0,
+		.DepthClipEnable = TRUE,
+		.ScissorEnable = FALSE,
+		.MultisampleEnable = FALSE,
+		.AntialiasedLineEnable = FALSE
+	};
+
+	if (FAILED(gResources->device->CreateRasterizerState(&shadowPassRasterizerDesc, gResources->shadowPassRS.GetAddressOf()))) {
+		throw std::runtime_error{ "Failed to create shadow pass rasterizer state." };
+	}
 }
 
 
@@ -1438,15 +1456,15 @@ auto CreateShadowAtlases() -> void {
 auto CreateSamplerStates() -> void {
 	D3D11_SAMPLER_DESC constexpr shadowSamplerDesc{
 		.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT,
-		.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP,
-		.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP,
-		.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP,
+		.AddressU = D3D11_TEXTURE_ADDRESS_BORDER,
+		.AddressV = D3D11_TEXTURE_ADDRESS_BORDER,
+		.AddressW = D3D11_TEXTURE_ADDRESS_BORDER,
 		.MipLODBias = 0,
 		.MaxAnisotropy = 1,
-		.ComparisonFunc = D3D11_COMPARISON_GREATER_EQUAL,
-		.BorderColor = { 1.0f, 1.0f, 1.0f, 1.0f },
-		.MinLOD = -FLT_MAX,
-		.MaxLOD = FLT_MAX
+		.ComparisonFunc = D3D11_COMPARISON_GREATER,
+		.BorderColor = { 0, 0, 0, 0 },
+		.MinLOD = 0,
+		.MaxLOD = 0
 	};
 
 	if (FAILED(gResources->device->CreateSamplerState(&shadowSamplerDesc, gResources->shadowSS.GetAddressOf()))) {
@@ -1710,6 +1728,7 @@ auto DrawShadowMaps(ShadowAtlas const& atlas) -> void {
 	gResources->context->PSSetShader(nullptr, nullptr, 0);
 	gResources->context->VSSetConstantBuffers(CB_SLOT_SHADOW_PASS, 1, gResources->shadowCB.GetAddressOf());
 	gResources->context->OMSetDepthStencilState(gResources->shadowDSS.Get(), 0);
+	gResources->context->RSSetState(gResources->shadowPassRS.Get());
 
 	auto const cellSizeNorm{ atlas.GetNormalizedElementSize() };
 
@@ -1892,21 +1911,20 @@ auto DrawFullWithCameras(std::span<Camera const* const> const cameras, RenderTar
 
 		gResources->lightBuffer->Unmap();
 
-		gResources->context->PSSetShaderResources(RES_SLOT_LIGHTS, 1, std::array{ gResources->lightBuffer->GetSrv() }.data());
-
 		gResources->context->VSSetShader(gResources->meshVS.Get(), nullptr, 0);
-		gResources->context->PSSetShader(gResources->meshPbrPS.Get(), nullptr, 0);
-
 		gResources->context->VSSetConstantBuffers(CB_SLOT_PER_CAM, 1, gResources->perCamCB.GetAddressOf());
-		gResources->context->PSSetConstantBuffers(CB_SLOT_PER_CAM, 1, gResources->perCamCB.GetAddressOf());
 
 		gResources->context->OMSetRenderTargets(1, std::array{ rt.GetHdrRtv() }.data(), rt.GetDsv());
 		gResources->context->OMSetDepthStencilState(nullptr, 0);
 
+		gResources->context->PSSetShader(gResources->meshPbrPS.Get(), nullptr, 0);
+		gResources->context->PSSetConstantBuffers(CB_SLOT_PER_CAM, 1, gResources->perCamCB.GetAddressOf());
+		gResources->context->PSSetShaderResources(RES_SLOT_LIGHTS, 1, std::array{ gResources->lightBuffer->GetSrv() }.data());
 		gResources->context->PSSetShaderResources(RES_SLOT_PUNCTUAL_SHADOW_ATLAS, 1, std::array{ gResources->shadowAtlases[PUNC_SHADOW_ATLAS_IDX]->GetSrv() }.data());
 		gResources->context->PSSetShaderResources(RES_SLOT_DIR_SHADOW_ATLAS, 1, std::array{ gResources->shadowAtlases[DIR_SHADOW_ATLAS_IDX]->GetSrv() }.data());
 
 		gResources->context->RSSetViewports(1, &viewport);
+		gResources->context->RSSetState(nullptr);
 
 		DrawMeshes(visibility.staticMeshIndices, true);
 		DrawGizmos();

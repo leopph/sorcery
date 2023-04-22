@@ -19,13 +19,14 @@ STRUCTUREDBUFFER(gLights, ShaderLight, RES_SLOT_LIGHTS);
 inline float SampleShadowCascadeFromAtlas(const Texture2D<float> atlas, const float3 fragWorldPos, const uint lightIdx, const uint shadowMapIdx, const float3 fragNormal) {
     uint atlasSize;
     atlas.GetDimensions(atlasSize, atlasSize);
-    const float texelSize = 1.0 / (atlasSize * gLights[lightIdx].shadowUvScales[shadowMapIdx]);
+    const float atlasTexelSize = 1.0 / atlasSize;
+	const float shadowMapTexelSize = atlasTexelSize / gLights[lightIdx].shadowUvScales[shadowMapIdx];
 
-    const float4 posLClip = mul(float4(fragWorldPos + fragNormal * texelSize * gLights[lightIdx].normalBias, 1), gLights[lightIdx].shadowViewProjMatrices[shadowMapIdx]);
+    const float4 posLClip = mul(float4(fragWorldPos + fragNormal * shadowMapTexelSize * gLights[lightIdx].normalBias, 1), gLights[lightIdx].shadowViewProjMatrices[shadowMapIdx]);
     float3 posLNdc = posLClip.xyz / posLClip.w;
     posLNdc.xy = posLNdc.xy * float2(0.5, -0.5) + 0.5;
 
-    return atlas.SampleCmpLevelZero(gShadowSampler, posLNdc.xy * gLights[lightIdx].shadowUvScales[shadowMapIdx] + gLights[lightIdx].shadowUvOffsets[shadowMapIdx], posLNdc.z + texelSize * gLights[lightIdx].depthBias);
+	return atlas.SampleCmpLevelZero(gShadowSampler, posLNdc.xy * gLights[lightIdx].shadowUvScales[shadowMapIdx] + gLights[lightIdx].shadowUvOffsets[shadowMapIdx], posLNdc.z + shadowMapTexelSize * gLights[lightIdx].depthBias);
 }
 
 
