@@ -57,9 +57,8 @@ struct ShadowAtlasSubcellData {
 	// Index into the array of indices to the visible lights, use lights[visibleLights[visibleLightIdxIdx]] to get to the light
 	int visibleLightIdxIdx;
 	int shadowMapIdx;
-	float normalBias;
-	float cascadeFarBoundsView;
 	int cascadeIdx;
+	float cascadeFarBoundsView;
 };
 
 
@@ -400,7 +399,7 @@ public:
 					auto const shadowViewMtx{ Matrix4::LookToLH(light->GetEntity()->GetTransform().GetWorldPosition(), light->GetEntity()->GetTransform().GetForwardAxis(), Vector3::Up()) };
 					auto const shadowProjMtx{ Matrix4::PerspectiveAsymZLH(ToRadians(light->GetOuterAngle() * 2), 1.f, light->GetRange(), light->GetShadowNearPlane()) };
 
-					subcell.emplace(shadowViewMtx * shadowProjMtx, lightIdxIdx, shadowIdx, light->GetShadowNormalBias(), std::numeric_limits<float>::max(), 0);
+					subcell.emplace(shadowViewMtx * shadowProjMtx, lightIdxIdx, shadowIdx, 0, std::numeric_limits<float>::max());
 				}
 				else if (light->GetType() == LightComponent::Type::Point) {
 					auto const lightPos{ light->GetEntity()->GetTransform().GetWorldPosition() };
@@ -417,7 +416,7 @@ public:
 					auto const shadowViewMtx{ faceViewMatrices[shadowIdx] };
 					auto const shadowProjMtx{ Matrix4::PerspectiveAsymZLH(ToRadians(90), 1, light->GetRange(), light->GetShadowNearPlane()) };
 
-					subcell.emplace(shadowViewMtx * shadowProjMtx, lightIdxIdx, shadowIdx, light->GetShadowNormalBias(), std::numeric_limits<float>::max(), 0);
+					subcell.emplace(shadowViewMtx * shadowProjMtx, lightIdxIdx, shadowIdx, 0, std::numeric_limits<float>::max());
 				}
 			}
 
@@ -548,7 +547,7 @@ public:
 				auto const [cascadeAabbMin, cascadeAabbMax]{ AABB::FromVertices(cascadeVerts) };
 				auto const shadowProjMtx{ Matrix4::OrthographicAsymZLH(cascadeAabbMin[0], cascadeAabbMax[0], cascadeAabbMax[1], cascadeAabbMin[1], cascadeAabbMax[2], light.GetShadowNearPlane()) };
 
-				mCell.GetSubcell(i * mCell.GetSubdivisionSize() + cascadeIdx).emplace(shadowViewMtx * shadowProjMtx, lightIdxIdx, cascadeIdx, light.GetShadowNormalBias(), cascadeFar, cascadeIdx);
+				mCell.GetSubcell(i * mCell.GetSubdivisionSize() + cascadeIdx).emplace(shadowViewMtx * shadowProjMtx, lightIdxIdx, cascadeIdx, cascadeIdx, cascadeFar);
 			}
 		}
 	}
