@@ -57,6 +57,9 @@ public:
 	[[nodiscard]] LEOPPHAPI auto GetShadowNormalBias() const noexcept -> float;
 	LEOPPHAPI auto SetShadowNormalBias(float bias) noexcept -> void;
 
+	[[nodiscard]] LEOPPHAPI auto GetShadowDepthBias() const noexcept -> float;
+	LEOPPHAPI auto SetShadowDepthBias(float bias) noexcept -> void;
+
 private:
 	bool mCastsShadow{ false };
 	Vector3 mColor{ 1.f };
@@ -66,7 +69,8 @@ private:
 	f32 mRange{ 10.f };
 	f32 mInnerAngle{ 30.f };
 	f32 mOuterAngle{ 30.f };
-	float mShadowNormalBias{ 0.025f };
+	float mShadowNormalBias{ 0.0f };
+	float mShadowDepthBias{ 0.0f };
 };
 
 

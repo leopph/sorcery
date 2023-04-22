@@ -16,11 +16,16 @@ SAMPLERCOMPARISONSTATE(gShadowSampler, SAMPLER_SLOT_SHADOW);
 STRUCTUREDBUFFER(gLights, ShaderLight, RES_SLOT_LIGHTS);
 
 
-inline float SampleShadowCascadeFromAtlas(const Texture2D<float> atlas, const float3 fragWorldPos, const uint lightIdx, const uint shadowMapIdx) {
-    const float4 posLClip = mul(float4(fragWorldPos, 1), gLights[lightIdx].shadowViewProjMatrices[shadowMapIdx]);
+inline float SampleShadowCascadeFromAtlas(const Texture2D<float> atlas, const float3 fragWorldPos, const uint lightIdx, const uint shadowMapIdx, const float3 fragNormal) {
+    uint atlasSize;
+    atlas.GetDimensions(atlasSize, atlasSize);
+    const float texelSize = 1.0 / (atlasSize * gLights[lightIdx].shadowUvScales[shadowMapIdx]);
+
+    const float4 posLClip = mul(float4(fragWorldPos + fragNormal * texelSize * gLights[lightIdx].normalBias, 1), gLights[lightIdx].shadowViewProjMatrices[shadowMapIdx]);
     float3 posLNdc = posLClip.xyz / posLClip.w;
     posLNdc.xy = posLNdc.xy * float2(0.5, -0.5) + 0.5;
-    return atlas.SampleCmpLevelZero(gShadowSampler, posLNdc.xy * gLights[lightIdx].shadowUvScales[shadowMapIdx] + gLights[lightIdx].shadowUvOffsets[shadowMapIdx], posLNdc.z);
+
+    return atlas.SampleCmpLevelZero(gShadowSampler, posLNdc.xy * gLights[lightIdx].shadowUvScales[shadowMapIdx] + gLights[lightIdx].shadowUvOffsets[shadowMapIdx], posLNdc.z + texelSize * gLights[lightIdx].depthBias);
 }
 
 
@@ -43,7 +48,7 @@ inline float3 CalculateDirLight(const float3 N, const float3 V, const float3 alb
 
         [branch]
         if (cascadeIdx != MAX_CASCADE_COUNT) {
-	        lighting *= SampleShadowCascadeFromAtlas(gDirShadowAtlas, fragPosWorld, lightIdx, cascadeIdx);
+	        lighting *= SampleShadowCascadeFromAtlas(gDirShadowAtlas, fragPosWorld, lightIdx, cascadeIdx, N);
         }
     }
 
@@ -68,7 +73,7 @@ inline float3 CalculateSpotLight(const float3 N, const float3 V, const float3 al
 
     [branch]
     if (gLights[lightIdx].isCastingShadow) {
-        lighting *= SampleShadowCascadeFromAtlas(gPunctualShadowAtlas, fragWorldPos, lightIdx, 0);
+        lighting *= SampleShadowCascadeFromAtlas(gPunctualShadowAtlas, fragWorldPos, lightIdx, 0, N);
     }
     
     return lighting;
@@ -100,7 +105,7 @@ inline float3 CalculatePointLight(const float3 N, const float3 V, const float3 a
 
         [branch]
         if (gLights[lightIdx].sampleShadowMap[shadowMapIdx]) {
-            lighting *= SampleShadowCascadeFromAtlas(gPunctualShadowAtlas, fragWorldPos, lightIdx, shadowMapIdx);
+            lighting *= SampleShadowCascadeFromAtlas(gPunctualShadowAtlas, fragWorldPos, lightIdx, shadowMapIdx, N);
         }
     }
 

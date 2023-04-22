@@ -79,7 +79,10 @@ struct ShaderLight {
 	float cascadeFarBoundsView[MAX_CASCADE_COUNT];
 
 	float3 position;
-	float pad1;
+	float depthBias;
+
+	float normalBias;
+	float3 pad;
 };
 
 
@@ -138,8 +141,6 @@ row_major float4x4 skyboxViewProjMtx;
 
 CBUFFER(ShadowCB, CB_SLOT_SHADOW_PASS) {
 row_major float4x4 shadowViewProjMtx;
-float shadowNormalBias;
-float3 pad;
 };
 
 

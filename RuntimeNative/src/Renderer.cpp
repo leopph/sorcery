@@ -1737,7 +1737,6 @@ auto DrawShadowMaps(ShadowAtlas const& atlas) -> void {
 				gResources->context->Map(gResources->shadowCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
 				auto const shadowCbData{ static_cast<ShadowCB*>(mapped.pData) };
 				shadowCbData->shadowViewProjMtx = subcell->shadowViewProjMtx;
-				shadowCbData->shadowNormalBias = subcell->normalBias;
 				gResources->context->Unmap(gResources->shadowCB.Get(), 0);
 
 				Frustum const shadowFrustumWS{ subcell->shadowViewProjMtx };
@@ -1879,6 +1878,8 @@ auto DrawFullWithCameras(std::span<Camera const* const> const cameras, RenderTar
 			lightBufferData[i].innerAngleCos = std::cos(ToRadians(gLights[visibility.lightIndices[i]]->GetInnerAngle()));
 			lightBufferData[i].outerAngleCos = std::cos(ToRadians(gLights[visibility.lightIndices[i]]->GetOuterAngle()));
 			lightBufferData[i].position = gLights[visibility.lightIndices[i]]->GetEntity()->GetTransform().GetWorldPosition();
+			lightBufferData[i].depthBias = gLights[visibility.lightIndices[i]]->GetShadowDepthBias();
+			lightBufferData[i].normalBias = gLights[visibility.lightIndices[i]]->GetShadowNormalBias();
 
 			for (auto& sample : lightBufferData[i].sampleShadowMap) {
 				sample = FALSE;

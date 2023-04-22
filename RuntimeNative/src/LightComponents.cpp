@@ -179,6 +179,16 @@ auto LightComponent::SetShadowNormalBias(float const bias) noexcept -> void {
 }
 
 
+auto LightComponent::GetShadowDepthBias() const noexcept -> float {
+	return mShadowDepthBias;
+}
+
+
+auto LightComponent::SetShadowDepthBias(float const bias) noexcept -> void {
+	mShadowDepthBias = bias;
+}
+
+
 auto AmbientLight::get_instance() -> AmbientLight& {
 	static AmbientLight instance;
 	return instance;
