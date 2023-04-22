@@ -970,8 +970,14 @@ struct Resources {
 	ComPtr<ID3D11InputLayout> meshIL;
 	ComPtr<ID3D11InputLayout> skyboxIL;
 
-	ComPtr<ID3D11SamplerState> materialSS;
-	ComPtr<ID3D11SamplerState> shadowSS;
+	ComPtr<ID3D11SamplerState> ssCmpPcf;
+	ComPtr<ID3D11SamplerState> ssCmpPoint;
+	ComPtr<ID3D11SamplerState> ssAf16;
+	ComPtr<ID3D11SamplerState> ssAf8;
+	ComPtr<ID3D11SamplerState> ssAf4;
+	ComPtr<ID3D11SamplerState> ssTri;
+	ComPtr<ID3D11SamplerState> ssBi;
+	ComPtr<ID3D11SamplerState> ssPoint;
 
 	ComPtr<ID3D11RasterizerState> skyboxPassRS;
 	ComPtr<ID3D11RasterizerState> shadowPassRS;
@@ -1454,7 +1460,7 @@ auto CreateShadowAtlases() -> void {
 
 
 auto CreateSamplerStates() -> void {
-	D3D11_SAMPLER_DESC constexpr shadowSamplerDesc{
+	D3D11_SAMPLER_DESC constexpr cmpPcf{
 		.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT,
 		.AddressU = D3D11_TEXTURE_ADDRESS_BORDER,
 		.AddressV = D3D11_TEXTURE_ADDRESS_BORDER,
@@ -1467,11 +1473,28 @@ auto CreateSamplerStates() -> void {
 		.MaxLOD = 0
 	};
 
-	if (FAILED(gResources->device->CreateSamplerState(&shadowSamplerDesc, gResources->shadowSS.GetAddressOf()))) {
-		throw std::runtime_error{ "Failed to create shadow sampler state." };
+	if (FAILED(gResources->device->CreateSamplerState(&cmpPcf, gResources->ssCmpPcf.GetAddressOf()))) {
+		throw std::runtime_error{ "Failed to create PCF comparison sampler state." };
 	}
 
-	D3D11_SAMPLER_DESC constexpr materialSamplerDesc{
+	D3D11_SAMPLER_DESC constexpr cmpPointDesc{
+		.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_MIP_POINT,
+		.AddressU = D3D11_TEXTURE_ADDRESS_BORDER,
+		.AddressV = D3D11_TEXTURE_ADDRESS_BORDER,
+		.AddressW = D3D11_TEXTURE_ADDRESS_BORDER,
+		.MipLODBias = 0,
+		.MaxAnisotropy = 1,
+		.ComparisonFunc = D3D11_COMPARISON_GREATER,
+		.BorderColor = { 0, 0, 0, 0 },
+		.MinLOD = 0,
+		.MaxLOD = 0
+	};
+
+	if (FAILED(gResources->device->CreateSamplerState(&cmpPointDesc, gResources->ssCmpPoint.GetAddressOf()))) {
+		throw std::runtime_error{ "Failed to create point-filter comparison sampler state." };
+	}
+
+	D3D11_SAMPLER_DESC constexpr af16Desc{
 		.Filter = D3D11_FILTER_ANISOTROPIC,
 		.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP,
 		.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP,
@@ -1484,8 +1507,93 @@ auto CreateSamplerStates() -> void {
 		.MaxLOD = FLT_MAX
 	};
 
-	if (FAILED(gResources->device->CreateSamplerState(&materialSamplerDesc, gResources->materialSS.GetAddressOf()))) {
-		throw std::runtime_error{ "Failed to create material sampler state." };
+	if (FAILED(gResources->device->CreateSamplerState(&af16Desc, gResources->ssAf16.GetAddressOf()))) {
+		throw std::runtime_error{ "Failed to create AF16 sampler state." };
+	}
+
+	D3D11_SAMPLER_DESC constexpr af8Desc{
+		.Filter = D3D11_FILTER_ANISOTROPIC,
+		.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP,
+		.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP,
+		.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP,
+		.MipLODBias = 0,
+		.MaxAnisotropy = 8,
+		.ComparisonFunc = D3D11_COMPARISON_NEVER,
+		.BorderColor = { 1.0f, 1.0f, 1.0f, 1.0f },
+		.MinLOD = -FLT_MAX,
+		.MaxLOD = FLT_MAX
+	};
+
+	if (FAILED(gResources->device->CreateSamplerState(&af8Desc, gResources->ssAf8.GetAddressOf()))) {
+		throw std::runtime_error{ "Failed to create AF8 sampler state." };
+	}
+
+	D3D11_SAMPLER_DESC constexpr af4Desc{
+		.Filter = D3D11_FILTER_ANISOTROPIC,
+		.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP,
+		.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP,
+		.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP,
+		.MipLODBias = 0,
+		.MaxAnisotropy = 4,
+		.ComparisonFunc = D3D11_COMPARISON_NEVER,
+		.BorderColor = { 1.0f, 1.0f, 1.0f, 1.0f },
+		.MinLOD = -FLT_MAX,
+		.MaxLOD = FLT_MAX
+	};
+
+	if (FAILED(gResources->device->CreateSamplerState(&af4Desc, gResources->ssAf4.GetAddressOf()))) {
+		throw std::runtime_error{ "Failed to create AF4 sampler state." };
+	}
+
+	D3D11_SAMPLER_DESC constexpr trilinearDesc{
+		.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR,
+		.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP,
+		.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP,
+		.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP,
+		.MipLODBias = 0,
+		.MaxAnisotropy = 1,
+		.ComparisonFunc = D3D11_COMPARISON_NEVER,
+		.BorderColor = { 1.0f, 1.0f, 1.0f, 1.0f },
+		.MinLOD = -FLT_MAX,
+		.MaxLOD = FLT_MAX
+	};
+
+	if (FAILED(gResources->device->CreateSamplerState(&trilinearDesc, gResources->ssTri.GetAddressOf()))) {
+		throw std::runtime_error{ "Failed to create trilinear sampler state." };
+	}
+
+	D3D11_SAMPLER_DESC constexpr bilinearDesc{
+		.Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT,
+		.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP,
+		.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP,
+		.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP,
+		.MipLODBias = 0,
+		.MaxAnisotropy = 1,
+		.ComparisonFunc = D3D11_COMPARISON_NEVER,
+		.BorderColor = { 1.0f, 1.0f, 1.0f, 1.0f },
+		.MinLOD = -FLT_MAX,
+		.MaxLOD = FLT_MAX
+	};
+
+	if (FAILED(gResources->device->CreateSamplerState(&bilinearDesc, gResources->ssBi.GetAddressOf()))) {
+		throw std::runtime_error{ "Failed to create bilinear sampler state." };
+	}
+
+	D3D11_SAMPLER_DESC constexpr pointDesc{
+		.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT,
+		.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP,
+		.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP,
+		.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP,
+		.MipLODBias = 0,
+		.MaxAnisotropy = 1,
+		.ComparisonFunc = D3D11_COMPARISON_NEVER,
+		.BorderColor = { 1.0f, 1.0f, 1.0f, 1.0f },
+		.MinLOD = -FLT_MAX,
+		.MaxLOD = FLT_MAX
+	};
+
+	if (FAILED(gResources->device->CreateSamplerState(&pointDesc, gResources->ssPoint.GetAddressOf()))) {
+		throw std::runtime_error{ "Failed to create point-filter sampler state." };
 	}
 }
 
@@ -1841,8 +1949,14 @@ auto DrawFullWithCameras(std::span<Camera const* const> const cameras, RenderTar
 		.MaxDepth = 1
 	};
 
-	gResources->context->PSSetSamplers(SAMPLER_SLOT_MATERIAL, 1, gResources->materialSS.GetAddressOf());
-	gResources->context->PSSetSamplers(SAMPLER_SLOT_SHADOW, 1, gResources->shadowSS.GetAddressOf());
+	gResources->context->PSSetSamplers(SAMPLER_SLOT_CMP_PCF, 1, gResources->ssCmpPcf.GetAddressOf());
+	gResources->context->PSSetSamplers(SAMPLER_SLOT_CMP_POINT, 1, gResources->ssCmpPoint.GetAddressOf());
+	gResources->context->PSSetSamplers(SAMPLER_SLOT_AF16, 1, gResources->ssAf16.GetAddressOf());
+	gResources->context->PSSetSamplers(SAMPLER_SLOT_AF8, 1, gResources->ssAf8.GetAddressOf());
+	gResources->context->PSSetSamplers(SAMPLER_SLOT_AF4, 1, gResources->ssAf4.GetAddressOf());
+	gResources->context->PSSetSamplers(SAMPLER_SLOT_TRI, 1, gResources->ssTri.GetAddressOf());
+	gResources->context->PSSetSamplers(SAMPLER_SLOT_BI, 1, gResources->ssBi.GetAddressOf());
+	gResources->context->PSSetSamplers(SAMPLER_SLOT_POINT, 1, gResources->ssPoint.GetAddressOf());
 
 	UpdatePerFrameCB();
 	gResources->context->VSSetConstantBuffers(CB_SLOT_PER_FRAME, 1, gResources->perFrameCB.GetAddressOf());

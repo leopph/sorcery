@@ -206,6 +206,7 @@
     <None Include="src\shaders\SkyboxVSOut.hlsli" />
     <None Include="src\shaders\BRDF.hlsli" />
     <None Include="src\shaders\GizmoVsOut.hlsli" />
+    <None Include="src\shaders\Samplers.hlsli" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="src\shaders\MeshPbrPS.hlsl" />

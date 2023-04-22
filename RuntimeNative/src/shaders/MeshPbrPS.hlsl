@@ -1,6 +1,7 @@
 #include "MeshVSOut.hlsli"
 #include "ShaderInterop.h"
 #include "BRDF.hlsli"
+#include "Samplers.hlsli"
 
 
 TEXTURE2D(gAlbedoMap, float4, RES_SLOT_ALBEDO_MAP);
@@ -9,9 +10,6 @@ TEXTURE2D(gRoughnessMap, float, RES_SLOT_ROUGHNESS_MAP);
 TEXTURE2D(gAoMap, float, RES_SLOT_AO_MAP);
 TEXTURE2D(gPunctualShadowAtlas, float, RES_SLOT_PUNCTUAL_SHADOW_ATLAS);
 TEXTURE2D(gDirShadowAtlas, float, RES_SLOT_DIR_SHADOW_ATLAS);
-
-SAMPLERSTATE(gMaterialSampler, SAMPLER_SLOT_MATERIAL);
-SAMPLERCOMPARISONSTATE(gShadowSampler, SAMPLER_SLOT_SHADOW);
 
 STRUCTUREDBUFFER(gLights, ShaderLight, RES_SLOT_LIGHTS);
 
@@ -26,7 +24,7 @@ inline float SampleShadowCascadeFromAtlas(const Texture2D<float> atlas, const fl
     float3 posLNdc = posLClip.xyz / posLClip.w;
     posLNdc.xy = posLNdc.xy * float2(0.5, -0.5) + 0.5;
 
-	return atlas.SampleCmpLevelZero(gShadowSampler, posLNdc.xy * gLights[lightIdx].shadowUvScales[shadowMapIdx] + gLights[lightIdx].shadowUvOffsets[shadowMapIdx], posLNdc.z + shadowMapTexelSize * gLights[lightIdx].depthBias);
+	return atlas.SampleCmpLevelZero(gSamplerCmpPcf, posLNdc.xy * gLights[lightIdx].shadowUvScales[shadowMapIdx] + gLights[lightIdx].shadowUvOffsets[shadowMapIdx], posLNdc.z + shadowMapTexelSize * gLights[lightIdx].depthBias);
 }
 
 
@@ -122,25 +120,25 @@ float4 main(const MeshVsOut vsOut) : SV_TARGET {
     float3 albedo = material.albedo;
 
     if (material.sampleAlbedo) {
-        albedo *= pow(gAlbedoMap.Sample(gMaterialSampler, vsOut.uv).rgb, 2.2);
+        albedo *= pow(gAlbedoMap.Sample(gSamplerAf16, vsOut.uv).rgb, 2.2);
     }
 
     float metallic = material.metallic;
 
     if (material.sampleMetallic) {
-        metallic *= gMetallicMap.Sample(gMaterialSampler, vsOut.uv).r;
+        metallic *= gMetallicMap.Sample(gSamplerAf16, vsOut.uv).r;
     }
 
     float roughness = material.roughness;
 
     if (material.sampleRoughness) {
-        roughness *= gRoughnessMap.Sample(gMaterialSampler, vsOut.uv).r;
+        roughness *= gRoughnessMap.Sample(gSamplerAf16, vsOut.uv).r;
     }
 
     float ao = material.ao;
 
     if (material.sampleAo) {
-        ao *= gAoMap.Sample(gMaterialSampler, vsOut.uv).r;
+        ao *= gAoMap.Sample(gSamplerAf16, vsOut.uv).r;
     }
 
     float3 outColor = 0.03 * albedo * ao;
