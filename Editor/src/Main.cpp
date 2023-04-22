@@ -66,7 +66,6 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 		leopph::gWindow.SetEventHook(leopph::editor::EditorImGuiEventHook);
 
 		bool runGame{ false };
-		bool showDemoWindow{ false };
 
 		leopph::editor::Context context{ imGuiIo };
 
@@ -135,10 +134,6 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 					DrawLoadingScreen(context);
 				}
 
-				if (showDemoWindow) {
-					ImGui::ShowDemoWindow();
-				}
-
 				if (context.GetScene()) {
 					DrawEntityHierarchyWindow(context);
 					leopph::editor::DrawGameViewWindow(runGame);
@@ -148,7 +143,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 					leopph::editor::DrawOpenScenePrompt();
 				}
 
-				DrawMainMenuBar(context, showDemoWindow);
+				DrawMainMenuBar(context);
 				DrawObjectPropertiesWindow(context);
 				DrawProjectWindow(context);
 				leopph::editor::DrawPerformanceCounterWindow();

@@ -119,6 +119,7 @@
     <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\OpenScenePrompt.cpp" />
     <ClCompile Include="src\PerformanceCounterWindow.cpp" />
+    <ClCompile Include="src\ProjectSettingsWindow.cpp" />
     <ClCompile Include="src\ProjectWindow.cpp" />
     <ClCompile Include="src\SceneImporter.cpp" />
     <ClCompile Include="src\SceneViewWindow.cpp" />
@@ -148,6 +149,7 @@
     <ClInclude Include="src\AssetStorage.hpp" />
     <ClInclude Include="src\OpenScenePrompt.hpp" />
     <ClInclude Include="src\PerformanceCounterWindow.hpp" />
+    <ClInclude Include="src\ProjectSettingsWindow.hpp" />
     <ClInclude Include="src\ProjectWindow.hpp" />
     <ClInclude Include="src\SceneImporter.hpp" />
     <ClInclude Include="src\SceneViewWindow.hpp" />

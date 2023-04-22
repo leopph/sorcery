@@ -1,9 +1,23 @@
 #include "MainMenuBar.hpp"
 
+#include "ProjectSettingsWindow.hpp"
+
 #include <nfd.h>
 
+
 namespace leopph::editor {
-auto DrawMainMenuBar(Context& context, bool& showDemoWindow) -> void {
+auto DrawMainMenuBar(Context& context) -> void {
+	auto static showDemoWindow{ false };
+	auto static showProjectSettingsWindow{ false };
+
+	if (showDemoWindow) {
+		ImGui::ShowDemoWindow();
+	}
+
+	if (showProjectSettingsWindow) {
+		DrawProjectSettingsWindow(showProjectSettingsWindow);
+	}
+
 	if (ImGui::BeginMainMenuBar()) {
 		if (ImGui::BeginMenu("File")) {
 			if (ImGui::MenuItem("Open Project")) {
@@ -22,6 +36,13 @@ auto DrawMainMenuBar(Context& context, bool& showDemoWindow) -> void {
 				}
 			}
 
+			ImGui::EndMenu();
+		}
+
+		if (ImGui::BeginMenu("Options")) {
+			if (ImGui::MenuItem((std::string{ PROJECT_SETTINGS_WINDOW_TITLE } + "##MenuItem").data())) {
+				showProjectSettingsWindow = true;
+			}
 			ImGui::EndMenu();
 		}
 

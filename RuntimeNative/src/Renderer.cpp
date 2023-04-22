@@ -853,7 +853,7 @@ class StructuredBuffer {
 	int mSize{ 0 };
 
 
-	void RecreateBuffer() {
+	auto RecreateBuffer() -> void {
 		D3D11_BUFFER_DESC const bufDesc{
 			.ByteWidth = mCapacity * sizeof(T),
 			.Usage = D3D11_USAGE_DYNAMIC,
@@ -869,7 +869,7 @@ class StructuredBuffer {
 	}
 
 
-	void RecreateSrv() {
+	auto RecreateSrv() -> void {
 		D3D11_SHADER_RESOURCE_VIEW_DESC const srvDesc{
 			.Format = DXGI_FORMAT_UNKNOWN,
 			.ViewDimension = D3D11_SRV_DIMENSION_BUFFER,
@@ -2414,5 +2414,54 @@ auto CullStaticMeshComponents(Frustum const& frustumWS, Visibility& visibility) 
 auto DrawLineAtNextRender(Vector3 const& from, Vector3 const& to, Color const& color) -> void {
 	gGizmoColors.emplace_back(color);
 	gLineGizmoVertexData.emplace_back(from, static_cast<std::uint32_t>(gGizmoColors.size() - 1), to, 0.0f);
+}
+
+
+auto GetCascadeCount() noexcept -> int {
+	return gCascadeCount;
+}
+
+
+auto SetCascadeCount(int const cascadeCount) noexcept -> void {
+	gCascadeCount = std::clamp(cascadeCount, 1, MAX_CASCADE_COUNT);
+	int const splitCount{ gCascadeCount - 1 };
+
+	for (int i = 1; i < splitCount; i++) {
+		gCascadeSplits[i] = std::max(gCascadeSplits[i - 1], gCascadeSplits[i]);
+	}
+}
+
+
+auto GetMaxCascadeCount() noexcept -> int {
+	return MAX_CASCADE_COUNT;
+}
+
+
+auto GetCascadeSplits() noexcept -> std::span<float const> {
+	return { std::begin(gCascadeSplits), static_cast<std::size_t>(gCascadeCount - 1) };
+}
+
+
+auto SetCascadeSplit(int const idx, float const split) noexcept -> void {
+	auto const splitCount{ gCascadeCount - 1 };
+
+	if (idx < 0 || idx >= splitCount) {
+		return;
+	}
+
+	float const clampMin{ idx == 0 ? 0.0f : gCascadeSplits[idx - 1] };
+	float const clampMax{ idx == splitCount - 1 ? 100.0f : gCascadeSplits[idx + 1] };
+
+	gCascadeSplits[idx] = std::clamp(split, clampMin, clampMax);
+}
+
+
+auto GetShadowDistance() noexcept -> float {
+	return gShadowDistance;
+}
+
+
+auto SetShadowDistance(float const shadowDistance) noexcept -> void {
+	gShadowDistance = std::max(shadowDistance, 0.0f);
 }
 }

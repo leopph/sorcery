@@ -126,4 +126,12 @@ LEOPPHAPI auto CullLights(Frustum const& frustumWS, Visibility& visibility) -> v
 LEOPPHAPI auto CullStaticMeshComponents(Frustum const& frustumWS, Visibility& visibility) -> void;
 
 LEOPPHAPI auto DrawLineAtNextRender(Vector3 const& from, Vector3 const& to, Color const& color) -> void;
+
+[[nodiscard]] LEOPPHAPI auto GetCascadeCount() noexcept -> int;
+LEOPPHAPI auto SetCascadeCount(int cascadeCount) noexcept -> void;
+[[nodiscard]] LEOPPHAPI auto GetMaxCascadeCount() noexcept -> int;
+[[nodiscard]] LEOPPHAPI auto GetCascadeSplits() noexcept -> std::span<float const>;
+LEOPPHAPI auto SetCascadeSplit(int idx, float split) noexcept -> void;
+[[nodiscard]] LEOPPHAPI auto GetShadowDistance() noexcept -> float;
+LEOPPHAPI auto SetShadowDistance(float shadowDistance) noexcept -> void;
 }
