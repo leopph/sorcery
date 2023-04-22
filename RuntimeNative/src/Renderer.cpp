@@ -1467,7 +1467,7 @@ auto CreateSamplerStates() -> void {
 		.AddressW = D3D11_TEXTURE_ADDRESS_BORDER,
 		.MipLODBias = 0,
 		.MaxAnisotropy = 1,
-		.ComparisonFunc = D3D11_COMPARISON_GREATER,
+		.ComparisonFunc = D3D11_COMPARISON_GREATER_EQUAL,
 		.BorderColor = { 0, 0, 0, 0 },
 		.MinLOD = 0,
 		.MaxLOD = 0
@@ -1484,7 +1484,7 @@ auto CreateSamplerStates() -> void {
 		.AddressW = D3D11_TEXTURE_ADDRESS_BORDER,
 		.MipLODBias = 0,
 		.MaxAnisotropy = 1,
-		.ComparisonFunc = D3D11_COMPARISON_GREATER,
+		.ComparisonFunc = D3D11_COMPARISON_GREATER_EQUAL,
 		.BorderColor = { 0, 0, 0, 0 },
 		.MinLOD = 0,
 		.MaxLOD = 0
