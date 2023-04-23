@@ -18,7 +18,7 @@ auto DrawProjectSettingsWindow(bool& isOpen) -> void {
 		return;
 	}
 
-	if (!ImGui::BeginTable("ProjectSettingsWindowTable", 2)) {
+	if (!ImGui::BeginTable("ProjectSettingsWindowTable", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_SizingFixedFit)) {
 		ImGui::End();
 		return;
 	}
