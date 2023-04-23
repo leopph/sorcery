@@ -78,8 +78,8 @@ struct Visibility {
 LEOPPHAPI auto StartUp() -> void;
 LEOPPHAPI auto ShutDown() noexcept -> void;
 
-LEOPPHAPI auto DrawGame() noexcept -> void;
-LEOPPHAPI auto DrawSceneView(Camera const& cam) noexcept -> void;
+LEOPPHAPI auto DrawGame() -> void;
+LEOPPHAPI auto DrawSceneView(Camera const& cam) -> void;
 
 [[nodiscard]] LEOPPHAPI auto GetGameResolution() noexcept -> Extent2D<u32>;
 LEOPPHAPI auto SetGameResolution(Extent2D<u32> resolution) noexcept -> void;
@@ -127,11 +127,11 @@ LEOPPHAPI auto CullStaticMeshComponents(Frustum const& frustumWS, Visibility& vi
 
 LEOPPHAPI auto DrawLineAtNextRender(Vector3 const& from, Vector3 const& to, Color const& color) -> void;
 
-[[nodiscard]] LEOPPHAPI auto GetCascadeCount() noexcept -> int;
-LEOPPHAPI auto SetCascadeCount(int cascadeCount) noexcept -> void;
-[[nodiscard]] LEOPPHAPI auto GetMaxCascadeCount() noexcept -> int;
-[[nodiscard]] LEOPPHAPI auto GetCascadeSplits() noexcept -> std::span<float const>;
-LEOPPHAPI auto SetCascadeSplit(int idx, float split) noexcept -> void;
+[[nodiscard]] LEOPPHAPI auto GetShadowCascadeCount() noexcept -> int;
+LEOPPHAPI auto SetShadowCascadeCount(int cascadeCount) noexcept -> void;
+[[nodiscard]] LEOPPHAPI auto GetMaxShadowCascadeCount() noexcept -> int;
+[[nodiscard]] LEOPPHAPI auto GetNormalizedShadowCascadeSplits() noexcept -> std::span<float const>;
+LEOPPHAPI auto SetNormalizedShadowCascadeSplit(int idx, float split) noexcept -> void;
 [[nodiscard]] LEOPPHAPI auto GetShadowDistance() noexcept -> float;
 LEOPPHAPI auto SetShadowDistance(float shadowDistance) noexcept -> void;
 }

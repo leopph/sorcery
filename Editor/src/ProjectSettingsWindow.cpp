@@ -45,12 +45,12 @@ auto DrawProjectSettingsWindow(bool& isOpen) -> void {
 			ImGui::Text("Shadow Cascade Count");
 			ImGui::SameLine();
 
-			int cascadeCount{ renderer::GetCascadeCount() };
-			if (ImGui::SliderInt("##cascadeCountInput", &cascadeCount, 1, renderer::GetMaxCascadeCount(), "%d", ImGuiSliderFlags_NoInput)) {
-				renderer::SetCascadeCount(cascadeCount);
+			int cascadeCount{ renderer::GetShadowCascadeCount() };
+			if (ImGui::SliderInt("##cascadeCountInput", &cascadeCount, 1, renderer::GetMaxShadowCascadeCount(), "%d", ImGuiSliderFlags_NoInput)) {
+				renderer::SetShadowCascadeCount(cascadeCount);
 			}
 
-			auto const cascadeSplits{ renderer::GetCascadeSplits() };
+			auto const cascadeSplits{ renderer::GetNormalizedShadowCascadeSplits() };
 			auto const splitCount{ std::ssize(cascadeSplits) };
 
 			for (int i = 0; i < splitCount; i++) {
@@ -60,7 +60,7 @@ auto DrawProjectSettingsWindow(bool& isOpen) -> void {
 				float cascadeSplit{ cascadeSplits[i] * 100.0f };
 
 				if (ImGui::SliderFloat(std::format("##cascadeSplit {} input", i).data(), &cascadeSplit, 0, 100, "%.3f", ImGuiSliderFlags_NoInput)) {
-					renderer::SetCascadeSplit(i, cascadeSplit / 100.0f);
+					renderer::SetNormalizedShadowCascadeSplit(i, cascadeSplit / 100.0f);
 				}
 			}
 		}

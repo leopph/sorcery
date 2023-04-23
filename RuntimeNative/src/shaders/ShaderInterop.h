@@ -81,7 +81,6 @@ struct ShaderLight {
 
 	float shadowUvScales[MAX_PER_LIGHT_SHADOW_MAP_COUNT];
 	BOOL sampleShadowMap[MAX_PER_LIGHT_SHADOW_MAP_COUNT];
-	float cascadeFarBoundsView[MAX_CASCADE_COUNT];
 
 	float3 position;
 	float depthBias;
@@ -113,13 +112,27 @@ struct ShaderLineGizmoVertexData {
 };
 
 
-CBUFFER(PerFrameCB, CB_SLOT_PER_FRAME) {};
+struct ShaderPerFrameConstants {
+	int shadowCascadeCount;
+	float3 pad;
+};
+
+
+struct ShaderPerCamConstants {
+	row_major float4x4 viewProjMtx;
+	float4 shadowCascadeFarBounds;
+	float3 camPos;
+	float pad;
+};
+
+
+CBUFFER(PerFrameCB, CB_SLOT_PER_FRAME) {
+ShaderPerFrameConstants gPerFrameConstants;
+};
 
 
 CBUFFER(PerCameraCB, CB_SLOT_PER_CAM) {
-row_major float4x4 viewProjMtx;
-float3 camPos;
-float pad0;
+ShaderPerCamConstants gPerCamConstants;
 };
 
 

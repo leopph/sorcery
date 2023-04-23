@@ -39,14 +39,14 @@ inline float3 CalculateDirLight(const float3 N, const float3 V, const float3 alb
 
     [branch]
     if (gLights[lightIdx].isCastingShadow) {
-        uint cascadeIdx = 0;
+        int cascadeIdx = 0;
 
-        while (fragPosViewZ > gLights[lightIdx].cascadeFarBoundsView[cascadeIdx] && cascadeIdx < MAX_CASCADE_COUNT) {
+        while (cascadeIdx < gPerFrameConstants.shadowCascadeCount && fragPosViewZ > gPerCamConstants.shadowCascadeFarBounds[cascadeIdx]) {
             cascadeIdx += 1;
         }
 
         [branch]
-        if (cascadeIdx != MAX_CASCADE_COUNT) {
+        if (cascadeIdx != gPerFrameConstants.shadowCascadeCount) {
 	        lighting *= SampleShadowCascadeFromAtlas(gDirShadowAtlas, fragPosWorld, lightIdx, cascadeIdx, N);
         }
     }
@@ -115,7 +115,7 @@ inline float3 CalculatePointLight(const float3 N, const float3 V, const float3 a
 
 float4 main(const MeshVsOut vsOut) : SV_TARGET {
     const float3 N = normalize(vsOut.normal);
-    const float3 V = normalize(camPos - vsOut.worldPos);
+    const float3 V = normalize(gPerCamConstants.camPos - vsOut.worldPos);
 
     float3 albedo = material.albedo;
 

@@ -43,6 +43,7 @@ using Microsoft::WRL::ComPtr;
 
 namespace leopph::renderer {
 namespace {
+// Normalized to [0, 1]
 std::array<float, MAX_CASCADE_COUNT - 1> gCascadeSplits{
 	0.1f, 0.3f, 0.6f
 };
@@ -52,13 +53,40 @@ int gCascadeCount{ 4 };
 float gShadowDistance{ 100 };
 
 
+struct ShadowCascadeBoundary {
+	float nearClip;
+	float farClip;
+};
+
+
+using ShadowCascadeBoundaries = std::array<ShadowCascadeBoundary, MAX_CASCADE_COUNT>;
+
+
+[[nodiscard]] auto CalculateCameraShadowCascadeBoundaries(Camera const& cam) -> ShadowCascadeBoundaries {
+	auto const camNear{ cam.GetNearClipPlane() };
+	auto const shadowDistance{ std::min(cam.GetFarClipPlane(), gShadowDistance) };
+	auto const shadowedFrustumDepth{ shadowDistance - camNear };
+
+	ShadowCascadeBoundaries boundaries;
+
+	boundaries[0].nearClip = camNear;
+
+	for (int i = 0; i < gCascadeCount - 1; i++) {
+		boundaries[i + 1].nearClip = camNear + gCascadeSplits[i] * shadowedFrustumDepth;
+		boundaries[i].farClip = boundaries[i + 1].nearClip * 1.005f;
+	}
+
+	boundaries[gCascadeCount - 1].farClip = shadowDistance;
+
+	return boundaries;
+}
+
+
 struct ShadowAtlasSubcellData {
 	Matrix4 shadowViewProjMtx;
 	// Index into the array of indices to the visible lights, use lights[visibleLights[visibleLightIdxIdx]] to get to the light
 	int visibleLightIdxIdx;
 	int shadowMapIdx;
-	int cascadeIdx;
-	float cascadeFarBoundsView;
 };
 
 
@@ -240,7 +268,6 @@ public:
 					lights[subcell->visibleLightIdxIdx].shadowViewProjMatrices[subcell->shadowMapIdx] = subcell->shadowViewProjMtx;
 					lights[subcell->visibleLightIdxIdx].shadowUvOffsets[subcell->shadowMapIdx] = GetNormalizedElementOffset(i) + cell.GetNormalizedElementOffset(j) * GetNormalizedElementSize();
 					lights[subcell->visibleLightIdxIdx].shadowUvScales[subcell->shadowMapIdx] = GetNormalizedElementSize() * cell.GetNormalizedElementSize();
-					lights[subcell->visibleLightIdxIdx].cascadeFarBoundsView[subcell->cascadeIdx] = subcell->cascadeFarBoundsView;
 				}
 			}
 		}
@@ -249,7 +276,7 @@ public:
 
 	[[nodiscard]] virtual auto GetCell(int idx) const -> ShadowAtlasCell const& = 0;
 
-	virtual auto Update(std::span<LightComponent const* const> allLights, Visibility const& visibility, Camera const& cam, Matrix4 const& camViewMtx, Matrix4 const& camProjMtx, Matrix4 const& camViewProjMtx) -> void = 0;
+	virtual auto Update(std::span<LightComponent const* const> allLights, Visibility const& visibility, Camera const& cam, Matrix4 const& camViewMtx, Matrix4 const& camProjMtx, Matrix4 const& camViewProjMtx, ShadowCascadeBoundaries const& shadowCascadeBoundaries) -> void = 0;
 };
 #pragma warning(pop)
 
@@ -263,7 +290,7 @@ public:
 		mCells{ ShadowAtlasCell{ 1 }, ShadowAtlasCell{ 2 }, ShadowAtlasCell{ 4 }, ShadowAtlasCell{ 8 } } {}
 
 
-	auto Update(std::span<LightComponent const* const> const allLights, Visibility const& visibility, Camera const& cam, [[maybe_unused]] Matrix4 const& camViewMtx, [[maybe_unused]] Matrix4 const& camProjMtx, Matrix4 const& camViewProjMtx) -> void override {
+	auto Update(std::span<LightComponent const* const> const allLights, Visibility const& visibility, Camera const& cam, [[maybe_unused]] Matrix4 const& camViewMtx, [[maybe_unused]] Matrix4 const& camProjMtx, Matrix4 const& camViewProjMtx, [[maybe_unused]] ShadowCascadeBoundaries const& shadowCascadeBoundaries) -> void override {
 		struct LightCascadeIndex {
 			int lightIdxIdx;
 			int shadowIdx;
@@ -399,7 +426,7 @@ public:
 					auto const shadowViewMtx{ Matrix4::LookToLH(light->GetEntity()->GetTransform().GetWorldPosition(), light->GetEntity()->GetTransform().GetForwardAxis(), Vector3::Up()) };
 					auto const shadowProjMtx{ Matrix4::PerspectiveAsymZLH(ToRadians(light->GetOuterAngle() * 2), 1.f, light->GetRange(), light->GetShadowNearPlane()) };
 
-					subcell.emplace(shadowViewMtx * shadowProjMtx, lightIdxIdx, shadowIdx, 0, std::numeric_limits<float>::max());
+					subcell.emplace(shadowViewMtx * shadowProjMtx, lightIdxIdx, shadowIdx);
 				}
 				else if (light->GetType() == LightComponent::Type::Point) {
 					auto const lightPos{ light->GetEntity()->GetTransform().GetWorldPosition() };
@@ -416,7 +443,7 @@ public:
 					auto const shadowViewMtx{ faceViewMatrices[shadowIdx] };
 					auto const shadowProjMtx{ Matrix4::PerspectiveAsymZLH(ToRadians(90), 1, light->GetRange(), light->GetShadowNearPlane()) };
 
-					subcell.emplace(shadowViewMtx * shadowProjMtx, lightIdxIdx, shadowIdx, 0, std::numeric_limits<float>::max());
+					subcell.emplace(shadowViewMtx * shadowProjMtx, lightIdxIdx, shadowIdx);
 				}
 			}
 
@@ -443,7 +470,7 @@ public:
 		mCell{ 1 } {}
 
 
-	auto Update(std::span<LightComponent const* const> const allLights, Visibility const& visibility, Camera const& cam, Matrix4 const& camViewMtx, Matrix4 const& camProjMtx, [[maybe_unused]] Matrix4 const& camViewProjMtx) -> void override {
+	auto Update(std::span<LightComponent const* const> const allLights, Visibility const& visibility, Camera const& cam, Matrix4 const& camViewMtx, Matrix4 const& camProjMtx, [[maybe_unused]] Matrix4 const& camViewProjMtx, ShadowCascadeBoundaries const& shadowCascadeBoundaries) -> void override {
 		std::vector<int> static candidateLightIdxIndices;
 		candidateLightIdxIndices.clear();
 
@@ -464,34 +491,6 @@ public:
 		for (int i = 0; i < mCell.GetElementCount(); i++) {
 			mCell.GetSubcell(i).reset();
 		}
-
-		auto const camNear{ cam.GetNearClipPlane() };
-		auto const camFar{ cam.GetFarClipPlane() };
-		auto const shadowDistance{ std::min(camFar, gShadowDistance) };
-		auto const frustumDepth{ camFar - camNear };
-		auto const shadowedFrustumDepth{ shadowDistance - camNear };
-
-		struct CascadeBoundary {
-			float nearClip;
-			float farClip;
-		};
-
-		auto const cascadeBoundaries{
-			[camNear, shadowedFrustumDepth, shadowDistance] {
-				std::array<CascadeBoundary, MAX_CASCADE_COUNT> ret;
-
-				ret[0].nearClip = camNear;
-
-				for (int i = 0; i < MAX_CASCADE_COUNT - 1; i++) {
-					ret[i + 1].nearClip = camNear + gCascadeSplits[i] * shadowedFrustumDepth;
-					ret[i].farClip = ret[i + 1].nearClip * 1.005f;
-				}
-
-				ret[MAX_CASCADE_COUNT - 1].farClip = shadowDistance;
-
-				return ret;
-			}()
-		};
 
 		auto const frustumVerts{
 			[&camViewMtx, &camProjMtx] {
@@ -520,13 +519,16 @@ public:
 			}()
 		};
 
+		auto const camNear{ cam.GetNearClipPlane() };
+		auto const camFar{ cam.GetFarClipPlane() };
+		auto const frustumDepth{ camFar - camNear };
 
 		for (auto i = 0; i < std::ssize(candidateLightIdxIndices); i++) {
 			auto const lightIdxIdx{ candidateLightIdxIndices[i] };
 			auto const& light{ *allLights[visibility.lightIndices[lightIdxIdx]] };
 
 			for (auto cascadeIdx = 0; cascadeIdx < gCascadeCount; cascadeIdx++) {
-				auto const [cascadeNear, cascadeFar]{ cascadeBoundaries[cascadeIdx] };
+				auto const [cascadeNear, cascadeFar]{ shadowCascadeBoundaries[cascadeIdx] };
 
 				auto const cascadeNearNorm{ (cascadeNear - camNear) / frustumDepth };
 				auto const cascadeFarNorm{ (cascadeFar - camNear) / frustumDepth };
@@ -547,7 +549,7 @@ public:
 				auto const [cascadeAabbMin, cascadeAabbMax]{ AABB::FromVertices(cascadeVerts) };
 				auto const shadowProjMtx{ Matrix4::OrthographicAsymZLH(cascadeAabbMin[0], cascadeAabbMax[0], cascadeAabbMax[1], cascadeAabbMin[1], cascadeAabbMax[2], light.GetShadowNearPlane()) };
 
-				mCell.GetSubcell(i * mCell.GetSubdivisionSize() + cascadeIdx).emplace(shadowViewMtx * shadowProjMtx, lightIdxIdx, cascadeIdx, cascadeIdx, cascadeFar);
+				mCell.GetSubcell(i * mCell.GetSubdivisionSize() + cascadeIdx).emplace(shadowViewMtx * shadowProjMtx, lightIdxIdx, cascadeIdx);
 			}
 		}
 	}
@@ -1292,7 +1294,7 @@ auto CreateConstantBuffers() -> void {
 	};
 
 	if (FAILED(gResources->device->CreateBuffer(&perFrameCbDesc, nullptr, gResources->perFrameCB.GetAddressOf()))) {
-		throw std::runtime_error{ "Failed to create light constant buffer." };
+		throw std::runtime_error{ "Failed to create per frame CB." };
 	}
 
 	D3D11_BUFFER_DESC constexpr perCamCbDesc{
@@ -1743,15 +1745,6 @@ auto DrawMeshes(std::span<int const> const meshComponentIndices, bool const useM
 }
 
 
-auto UpdatePerFrameCB() noexcept -> void {
-	/*D3D11_MAPPED_SUBRESOURCE mappedPerFrameCB;
-	gResources->context->Map(gResources->perFrameCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerFrameCB);
-
-	auto const perFrameCBData{ static_cast<PerFrameCBuffer*>(mappedPerFrameCB.pData) };
-	gResources->context->Unmap(gResources->perFrameCB.Get(), 0);*/
-}
-
-
 auto DoToneMapGammaCorrectionStep(ID3D11ShaderResourceView* const src, ID3D11RenderTargetView* const dst) noexcept -> void {
 	// Back up old views to restore later.
 
@@ -1932,7 +1925,7 @@ auto ClearGizmoDrawQueue() noexcept {
 }
 
 
-auto DrawFullWithCameras(std::span<Camera const* const> const cameras, RenderTarget const& rt) noexcept -> void {
+auto DrawFullWithCameras(std::span<Camera const* const> const cameras, RenderTarget const& rt) -> void {
 	FLOAT constexpr clearColor[]{ 0, 0, 0, 1 };
 	gResources->context->ClearRenderTargetView(rt.GetHdrRtv(), clearColor);
 	gResources->context->ClearDepthStencilView(rt.GetDsv(), D3D11_CLEAR_DEPTH, 1, 0);
@@ -1957,7 +1950,16 @@ auto DrawFullWithCameras(std::span<Camera const* const> const cameras, RenderTar
 	gResources->context->PSSetSamplers(SAMPLER_SLOT_BI, 1, gResources->ssBi.GetAddressOf());
 	gResources->context->PSSetSamplers(SAMPLER_SLOT_POINT, 1, gResources->ssPoint.GetAddressOf());
 
-	UpdatePerFrameCB();
+	D3D11_MAPPED_SUBRESOURCE mappedPerFrameCB;
+	if (FAILED(gResources->context->Map(gResources->perFrameCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerFrameCB))) {
+		throw std::runtime_error{ "Failed to map per frame CB." };
+	}
+
+	auto const perFrameCbData{ static_cast<PerFrameCB*>(mappedPerFrameCB.pData) };
+	perFrameCbData->gPerFrameConstants.shadowCascadeCount = gCascadeCount;
+
+	gResources->context->Unmap(gResources->perFrameCB.Get(), 0);
+
 	gResources->context->VSSetConstantBuffers(CB_SLOT_PER_FRAME, 1, gResources->perFrameCB.GetAddressOf());
 	gResources->context->PSSetConstantBuffers(CB_SLOT_PER_FRAME, 1, gResources->perFrameCB.GetAddressOf());
 
@@ -1971,10 +1973,11 @@ auto DrawFullWithCameras(std::span<Camera const* const> const cameras, RenderTar
 		Visibility static visibility;
 		CullLights(camFrustWS, visibility);
 
-		for (auto const& shadowAtlas : gResources->shadowAtlases) {
-			shadowAtlas->Update(gLights, visibility, *cam, camViewMtx, camProjMtx, camViewProjMtx);
-		}
+		auto const shadowCascadeBoundaries{ CalculateCameraShadowCascadeBoundaries(*cam) };
 
+		for (auto const& shadowAtlas : gResources->shadowAtlases) {
+			shadowAtlas->Update(gLights, visibility, *cam, camViewMtx, camProjMtx, camViewProjMtx, shadowCascadeBoundaries);
+		}
 
 		ID3D11ShaderResourceView* const nullSrv{ nullptr };
 		gResources->context->PSSetShaderResources(RES_SLOT_PUNCTUAL_SHADOW_ATLAS, 1, &nullSrv);
@@ -1989,11 +1992,19 @@ auto DrawFullWithCameras(std::span<Camera const* const> const cameras, RenderTar
 
 		gResources->context->VSSetShader(gResources->meshVS.Get(), nullptr, 0);
 
-		D3D11_MAPPED_SUBRESOURCE mappedPerCamCBuf;
-		gResources->context->Map(gResources->perCamCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerCamCBuf);
-		auto const perCamCBufData{ static_cast<PerCameraCB*>(mappedPerCamCBuf.pData) };
-		perCamCBufData->viewProjMtx = camViewProjMtx;
-		perCamCBufData->camPos = camPos;
+		D3D11_MAPPED_SUBRESOURCE mappedPerCamCB;
+		if (FAILED(gResources->context->Map(gResources->perCamCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerCamCB))) {
+			throw std::runtime_error{ "Failed to map per camera CB." };
+		}
+
+		auto const perCamCbData{ static_cast<PerCameraCB*>(mappedPerCamCB.pData) };
+		perCamCbData->gPerCamConstants.viewProjMtx = camViewProjMtx;
+		perCamCbData->gPerCamConstants.camPos = camPos;
+
+		for (int i = 0; i < MAX_CASCADE_COUNT; i++) {
+			perCamCbData->gPerCamConstants.shadowCascadeFarBounds[i] = shadowCascadeBoundaries[i].farClip;
+		}
+
 		gResources->context->Unmap(gResources->perCamCB.Get(), 0);
 
 		auto const lightCount{ std::ssize(visibility.lightIndices) };
@@ -2202,12 +2213,12 @@ auto ShutDown() noexcept -> void {
 }
 
 
-auto DrawGame() noexcept -> void {
+auto DrawGame() -> void {
 	DrawFullWithCameras(gGameRenderCameras, *gResources->gameViewRenderTarget);
 }
 
 
-auto DrawSceneView(Camera const& cam) noexcept -> void {
+auto DrawSceneView(Camera const& cam) -> void {
 	auto const camPtr{ &cam };
 	DrawFullWithCameras(std::span{ &camPtr, 1 }, *gResources->sceneViewRenderTarget);
 }
@@ -2417,12 +2428,12 @@ auto DrawLineAtNextRender(Vector3 const& from, Vector3 const& to, Color const& c
 }
 
 
-auto GetCascadeCount() noexcept -> int {
+auto GetShadowCascadeCount() noexcept -> int {
 	return gCascadeCount;
 }
 
 
-auto SetCascadeCount(int const cascadeCount) noexcept -> void {
+auto SetShadowCascadeCount(int const cascadeCount) noexcept -> void {
 	gCascadeCount = std::clamp(cascadeCount, 1, MAX_CASCADE_COUNT);
 	int const splitCount{ gCascadeCount - 1 };
 
@@ -2432,17 +2443,17 @@ auto SetCascadeCount(int const cascadeCount) noexcept -> void {
 }
 
 
-auto GetMaxCascadeCount() noexcept -> int {
+auto GetMaxShadowCascadeCount() noexcept -> int {
 	return MAX_CASCADE_COUNT;
 }
 
 
-auto GetCascadeSplits() noexcept -> std::span<float const> {
+auto GetNormalizedShadowCascadeSplits() noexcept -> std::span<float const> {
 	return { std::begin(gCascadeSplits), static_cast<std::size_t>(gCascadeCount - 1) };
 }
 
 
-auto SetCascadeSplit(int const idx, float const split) noexcept -> void {
+auto SetNormalizedShadowCascadeSplit(int const idx, float const split) noexcept -> void {
 	auto const splitCount{ gCascadeCount - 1 };
 
 	if (idx < 0 || idx >= splitCount) {
@@ -2450,7 +2461,7 @@ auto SetCascadeSplit(int const idx, float const split) noexcept -> void {
 	}
 
 	float const clampMin{ idx == 0 ? 0.0f : gCascadeSplits[idx - 1] };
-	float const clampMax{ idx == splitCount - 1 ? 100.0f : gCascadeSplits[idx + 1] };
+	float const clampMax{ idx == splitCount - 1 ? 1.0f : gCascadeSplits[idx + 1] };
 
 	gCascadeSplits[idx] = std::clamp(split, clampMin, clampMax);
 }

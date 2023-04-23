@@ -8,6 +8,6 @@ GizmoVsOut main(const uint instanceId : SV_InstanceID, const uint vertexId : SV_
     const ShaderLineGizmoVertexData data = ShaderLineGizmoVertexSB[instanceId];
     GizmoVsOut ret;
     ret.colorIdx = data.colorIdx;
-    ret.position = mul(float4(vertexId == 0 ? data.from : data.to, 1), viewProjMtx);
+    ret.position = mul(float4(vertexId == 0 ? data.from : data.to, 1), gPerCamConstants.viewProjMtx);
     return ret;
 }
