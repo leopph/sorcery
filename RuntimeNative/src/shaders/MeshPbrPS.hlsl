@@ -2,6 +2,7 @@
 #include "ShaderInterop.h"
 #include "BRDF.hlsli"
 #include "Samplers.hlsli"
+#include "Util.hlsli"
 
 
 TEXTURE2D(gAlbedoMap, float4, RES_SLOT_ALBEDO_MAP);
@@ -35,7 +36,16 @@ inline float CalculateAttenuation(const float distance) {
 
 inline float3 CalculateDirLight(const float3 N, const float3 V, const float3 albedo, const float metallic, const float roughness, const int lightIdx, const float3 fragPosWorld, const float fragPosViewZ) {
     const float3 L = -gLights[lightIdx].direction;
-    float3 lighting = CookTorrance(N, V, L, albedo, metallic, roughness, gLights[lightIdx].color, gLights[lightIdx].intensity, 1);
+
+    float3 lighting;
+
+    [branch]
+    if (gPerFrameConstants.visualizeShadowCascades) {
+        lighting = VisualizeShadowCascades(fragPosViewZ);
+    }
+    else {
+        lighting = CookTorrance(N, V, L, albedo, metallic, roughness, gLights[lightIdx].color, gLights[lightIdx].intensity, 1);
+    }
 
     [branch]
     if (gLights[lightIdx].isCastingShadow) {
@@ -109,7 +119,6 @@ inline float3 CalculatePointLight(const float3 N, const float3 V, const float3 a
     }
 
     return lighting;
-
 }
 
 

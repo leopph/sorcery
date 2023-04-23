@@ -34,6 +34,12 @@ auto DrawProjectSettingsWindow(bool& isOpen) -> void {
 	ImGui::TableNextColumn();
 	if (ImGui::BeginChild("ProjectSettingsRightChild")) {
 		if (selectedSubMenu == 0) {
+			bool visualizeShadowCascades{ renderer::IsVisualizingShadowCascades() };
+
+			if (ImGui::Checkbox("Visualize Shadow Cascades", &visualizeShadowCascades)) {
+				renderer::VisualizeShadowCascades(visualizeShadowCascades);
+			}
+
 			ImGui::Text("Shadow Distance");
 			ImGui::SameLine();
 

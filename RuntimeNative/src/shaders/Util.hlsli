@@ -11,21 +11,30 @@ float3 VisualizeShadowCascades(const float viewPosZ) {
     }
 
     if (cascadeIdx == gPerFrameConstants.shadowCascadeCount) {
-        return float3(0, 0, 0);
+        return float3(1, 1, 1);
     }
+
+    float3 ret;
 
     switch (cascadeIdx) {
     case 0:
-            return float3(1, 0, 0);
+            ret = float3(164, 145, 211);
+            break;
     case 1:
-            return float3(0, 1, 0);
+            ret = float3(197, 220, 160);
+            break;
     case 2:
-            return float3(0, 0, 1);
+            ret = float3(245, 242, 184);
+            break;
     case 3:
-            return float3(1, 0, 1);
+            ret = float3(249, 218, 208);
+            break;
     default:
-            return float3(0, 0, 0);
+            ret = float3(0, 0, 0); // This should never be reached
+            break;
     }
+
+    return pow(ret / 255.0, 2.2);
 }
 
 #endif

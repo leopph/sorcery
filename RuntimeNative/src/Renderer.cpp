@@ -44,13 +44,10 @@ using Microsoft::WRL::ComPtr;
 namespace leopph::renderer {
 namespace {
 // Normalized to [0, 1]
-std::array<float, MAX_CASCADE_COUNT - 1> gCascadeSplits{
-	0.1f, 0.3f, 0.6f
-};
-
+std::array<float, MAX_CASCADE_COUNT - 1> gCascadeSplits{ 0.1f, 0.3f, 0.6f };
 int gCascadeCount{ 4 };
-
 float gShadowDistance{ 100 };
+bool gVisualizeShadowCascades{ false };
 
 
 struct ShadowCascadeBoundary {
@@ -1957,6 +1954,7 @@ auto DrawFullWithCameras(std::span<Camera const* const> const cameras, RenderTar
 
 	auto const perFrameCbData{ static_cast<PerFrameCB*>(mappedPerFrameCB.pData) };
 	perFrameCbData->gPerFrameConstants.shadowCascadeCount = gCascadeCount;
+	perFrameCbData->gPerFrameConstants.visualizeShadowCascades = gVisualizeShadowCascades;
 
 	gResources->context->Unmap(gResources->perFrameCB.Get(), 0);
 
@@ -2474,5 +2472,15 @@ auto GetShadowDistance() noexcept -> float {
 
 auto SetShadowDistance(float const shadowDistance) noexcept -> void {
 	gShadowDistance = std::max(shadowDistance, 0.0f);
+}
+
+
+auto IsVisualizingShadowCascades() noexcept -> bool {
+	return gVisualizeShadowCascades;
+}
+
+
+auto VisualizeShadowCascades(bool const visualize) noexcept -> void {
+	gVisualizeShadowCascades = visualize;
 }
 }
