@@ -18,16 +18,16 @@ float3 VisualizeShadowCascades(const float viewPosZ) {
 
     switch (cascadeIdx) {
     case 0:
-            ret = float3(164, 145, 211);
+            ret = float3(108, 110, 160);
             break;
     case 1:
-            ret = float3(197, 220, 160);
+            ret = float3(184, 216, 186);
             break;
     case 2:
-            ret = float3(245, 242, 184);
+            ret = float3(252, 221, 188);
             break;
     case 3:
-            ret = float3(249, 218, 208);
+            ret = float3(239, 149, 157);
             break;
     default:
             ret = float3(0, 0, 0); // This should never be reached
