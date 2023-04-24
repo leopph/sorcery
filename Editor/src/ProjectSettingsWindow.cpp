@@ -48,6 +48,14 @@ auto DrawProjectSettingsWindow(bool& isOpen) -> void {
 				renderer::SetShadowDistance(shadowDistance);
 			}
 
+			ImGui::Text("Stable Shadow Cascade Projection");
+			ImGui::SameLine();
+
+			bool isUsingStableShadowCascadeProjection{ renderer::IsUsingStableShadowCascadeProjection() };
+			if (ImGui::Checkbox("##StableShadowCascadeProjectionCheckbox", &isUsingStableShadowCascadeProjection)) {
+				renderer::UseStableShadowCascadeProjection(isUsingStableShadowCascadeProjection);
+			}
+
 			ImGui::Text("Shadow Cascade Count");
 			ImGui::SameLine();
 

@@ -136,4 +136,6 @@ LEOPPHAPI auto SetNormalizedShadowCascadeSplit(int idx, float split) noexcept ->
 LEOPPHAPI auto SetShadowDistance(float shadowDistance) noexcept -> void;
 [[nodiscard]] LEOPPHAPI auto IsVisualizingShadowCascades() noexcept -> bool;
 LEOPPHAPI auto VisualizeShadowCascades(bool visualize) noexcept -> void;
+[[nodiscard]] LEOPPHAPI auto IsUsingStableShadowCascadeProjection() noexcept -> bool;
+LEOPPHAPI auto UseStableShadowCascadeProjection(bool useStableProj) noexcept -> void;
 }
