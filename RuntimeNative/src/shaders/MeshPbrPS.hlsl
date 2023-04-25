@@ -25,7 +25,7 @@ inline float SampleShadowCascadeFromAtlas(const Texture2D<float> atlas, const fl
     float3 posLNdc = posLClip.xyz / posLClip.w;
     posLNdc.xy = posLNdc.xy * float2(0.5, -0.5) + 0.5;
 
-	return atlas.SampleCmpLevelZero(gSamplerCmpPcf, posLNdc.xy * gLights[lightIdx].shadowUvScales[shadowMapIdx] + gLights[lightIdx].shadowUvOffsets[shadowMapIdx], posLNdc.z + shadowMapTexelSize * gLights[lightIdx].depthBias);
+	return atlas.SampleCmpLevelZero(gSamplerCmpPoint, posLNdc.xy * gLights[lightIdx].shadowUvScales[shadowMapIdx] + gLights[lightIdx].shadowUvOffsets[shadowMapIdx], posLNdc.z + shadowMapTexelSize * gLights[lightIdx].depthBias);
 }
 
 
