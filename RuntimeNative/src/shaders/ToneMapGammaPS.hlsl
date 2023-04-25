@@ -4,7 +4,7 @@ TEXTURE2D(gSrcTex, float4, RES_SLOT_TONE_MAP_SRC);
 
 
 float4 main(const float4 pixelCoord : SV_POSITION) : SV_TARGET {
-    float3 pixelColor = gSrcTex.Load(pixelCoord).rgb;
+    float3 pixelColor = gSrcTex.Load(int3(pixelCoord.xy, 0)).rgb;
 
     pixelColor = pixelColor / (pixelColor + 1.0);
 #pragma warning(push)
