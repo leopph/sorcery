@@ -64,13 +64,14 @@ public:
 	LEOPPHAPI auto SetShadowExtension(float shadowExtension) noexcept -> void;
 
 	constexpr static auto MIN_SHADOW_EXTENSION{ 0.0f };
+	constexpr static auto MIN_SHADOW_NEAR_PLANE{ 0.1f };
 
 private:
 	bool mCastsShadow{ false };
 	Vector3 mColor{ 1.f };
 	f32 mIntensity{ 1.f };
 	Type mType{ Type::Directional };
-	f32 mShadowNear{ 0.1f };
+	f32 mShadowNear{ MIN_SHADOW_NEAR_PLANE };
 	f32 mRange{ 10.f };
 	f32 mInnerAngle{ 30.f };
 	f32 mOuterAngle{ 30.f };

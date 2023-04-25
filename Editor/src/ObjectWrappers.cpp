@@ -450,7 +450,7 @@ auto EditorObjectWrapperFor<LightComponent>::OnGui([[maybe_unused]] Context& con
 				ImGui::TableNextColumn();
 
 				auto shadowNearPlane{ light.GetShadowNearPlane() };
-				if (ImGui::DragFloat("###lightShadowNearPlane", &shadowNearPlane, 0.01f)) {
+				if (ImGui::DragFloat("###lightShadowNearPlane", &shadowNearPlane, 0.01f, LightComponent::MIN_SHADOW_NEAR_PLANE, std::numeric_limits<float>::max(), "%.3f", ImGuiSliderFlags_AlwaysClamp)) {
 					light.SetShadowNearPlane(shadowNearPlane);
 				}
 			}

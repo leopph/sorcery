@@ -144,7 +144,7 @@ auto LightComponent::GetShadowNearPlane() const -> f32 {
 
 
 auto LightComponent::SetShadowNearPlane(f32 const nearPlane) -> void {
-	mShadowNear = nearPlane;
+	mShadowNear = std::max(nearPlane, MIN_SHADOW_NEAR_PLANE);
 }
 
 
