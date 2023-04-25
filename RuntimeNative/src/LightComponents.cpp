@@ -6,6 +6,7 @@
 #include "Entity.hpp"
 #include "TransformComponent.hpp"
 
+#include <algorithm>
 #include <cmath>
 
 
@@ -45,6 +46,7 @@ auto LightComponent::Serialize(YAML::Node& node) const -> void {
 	node["innerAngle"] = GetInnerAngle();
 	node["outerAngle"] = GetOuterAngle();
 	node["shadowDepthBias"] = GetShadowDepthBias();
+	node["shadowExtension"] = GetShadowExtension();
 }
 
 
@@ -79,6 +81,9 @@ auto LightComponent::Deserialize(YAML::Node const& node) -> void {
 	}
 	if (auto const data{ node["shadowDepthBias"] }) {
 		SetShadowDepthBias(data.as<float>(GetShadowDepthBias()));
+	}
+	if (auto const data{ node["shadowExtension"] }) {
+		SetShadowExtension(data.as<float>(GetShadowExtension()));
 	}
 }
 
@@ -190,6 +195,16 @@ auto LightComponent::GetShadowDepthBias() const noexcept -> float {
 
 auto LightComponent::SetShadowDepthBias(float const bias) noexcept -> void {
 	mShadowDepthBias = bias;
+}
+
+
+auto LightComponent::GetShadowExtension() const noexcept -> float {
+	return mShadowExtension;
+}
+
+
+auto LightComponent::SetShadowExtension(float const shadowExtension) noexcept -> void {
+	mShadowExtension = std::max(shadowExtension, MIN_SHADOW_EXTENSION);
 }
 
 

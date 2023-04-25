@@ -435,12 +435,24 @@ auto EditorObjectWrapperFor<LightComponent>::OnGui([[maybe_unused]] Context& con
 
 		if (light.IsCastingShadow()) {
 			ImGui::TableNextColumn();
-			ImGui::Text("%s", "Shadow Near Plane");
-			ImGui::TableNextColumn();
 
-			auto shadowNearPlane{ light.GetShadowNearPlane() };
-			if (ImGui::DragFloat("###lightShadowNearPlane", &shadowNearPlane, 0.01f)) {
-				light.SetShadowNearPlane(shadowNearPlane);
+			if (light.GetType() == LightComponent::Type::Directional) {
+				ImGui::Text("%s", "Shadow Extension");
+				ImGui::TableNextColumn();
+
+				float shadowExt{ light.GetShadowExtension() };
+				if (ImGui::DragFloat("##lightShadowExt", &shadowExt, 1.0f, LightComponent::MIN_SHADOW_EXTENSION, std::numeric_limits<float>::max(), "%.3f", ImGuiSliderFlags_AlwaysClamp)) {
+					light.SetShadowExtension(shadowExt);
+				}
+			}
+			else {
+				ImGui::Text("%s", "Shadow Near Plane");
+				ImGui::TableNextColumn();
+
+				auto shadowNearPlane{ light.GetShadowNearPlane() };
+				if (ImGui::DragFloat("###lightShadowNearPlane", &shadowNearPlane, 0.01f)) {
+					light.SetShadowNearPlane(shadowNearPlane);
+				}
 			}
 
 			ImGui::TableNextColumn();

@@ -60,6 +60,11 @@ public:
 	[[nodiscard]] LEOPPHAPI auto GetShadowDepthBias() const noexcept -> float;
 	LEOPPHAPI auto SetShadowDepthBias(float bias) noexcept -> void;
 
+	[[nodiscard]] LEOPPHAPI auto GetShadowExtension() const noexcept -> float;
+	LEOPPHAPI auto SetShadowExtension(float shadowExtension) noexcept -> void;
+
+	constexpr static auto MIN_SHADOW_EXTENSION{ 0.0f };
+
 private:
 	bool mCastsShadow{ false };
 	Vector3 mColor{ 1.f };
@@ -71,6 +76,7 @@ private:
 	f32 mOuterAngle{ 30.f };
 	float mShadowNormalBias{ 0.0f };
 	float mShadowDepthBias{ 0.0f };
+	float mShadowExtension{ MIN_SHADOW_EXTENSION };
 };
 
 
