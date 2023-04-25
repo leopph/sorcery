@@ -35,6 +35,7 @@
 #include "shaders/ShaderInterop.h"
 
 #include <cassert>
+#include <cmath>
 #include <functional>
 #include <memory>
 
@@ -490,27 +491,29 @@ public:
 			mCell.GetSubcell(i).reset();
 		}
 
-		auto const frustumVerts{
+		// camera frustum vertices in world space
+		auto const frustumVertsWS{
 			[&camViewMtx, &camProjMtx] {
 				auto const camViewMtxInv{ camViewMtx.Inverse() };
 				auto const camProjMtxInv{ camProjMtx.Inverse() };
+				auto const camViewProjMtxInv{ camProjMtxInv * camViewMtxInv }; // for some reason inverting the VP matrix directly is very unstable here
 
 				std::array ret{
-					Vector4{ 1, 1, 0, 1 },
-					Vector4{ -1, 1, 0, 1 },
-					Vector4{ -1, -1, 0, 1 },
-					Vector4{ 1, -1, 0, 1 },
-
-					Vector4{ 1, 1, 1, 1 },
-					Vector4{ -1, 1, 1, 1 },
-					Vector4{ -1, -1, 1, 1 },
-					Vector4{ 1, -1, 1, 1 },
+					Vector3{ 1, 1, 0 },
+					Vector3{ -1, 1, 0 },
+					Vector3{ -1, -1, 0 },
+					Vector3{ 1, -1, 0 },
+					Vector3{ 1, 1, 1 },
+					Vector3{ -1, 1, 1 },
+					Vector3{ -1, -1, 1 },
+					Vector3{ 1, -1, 1 },
 				};
 
 				for (auto& vert : ret) {
-					vert *= camProjMtxInv;
-					vert /= vert[3];
-					vert *= camViewMtxInv;
+					Vector4 vert4{ vert, 1 };
+					vert4 *= camViewProjMtxInv;
+					vert4 /= vert4[3];
+					vert = Vector3{ vert4 };
 				}
 
 				return ret;
@@ -531,23 +534,86 @@ public:
 				auto const cascadeNearNorm{ (cascadeNear - camNear) / frustumDepth };
 				auto const cascadeFarNorm{ (cascadeFar - camNear) / frustumDepth };
 
-				Matrix4 const shadowViewMtx{ Matrix4::LookToLH(Vector3::Zero(), light.GetDirection(), Vector3::Up()) };
+				// cascade vertices in world space
+				auto const cascadeVertsWS{
+					[&frustumVertsWS, cascadeNearNorm, cascadeFarNorm] {
+						std::array<Vector3, 8> ret;
 
-				std::array const cascadeVerts{
-					Vector3{ Lerp(frustumVerts[0], frustumVerts[4], cascadeNearNorm) * shadowViewMtx },
-					Vector3{ Lerp(frustumVerts[1], frustumVerts[5], cascadeNearNorm) * shadowViewMtx },
-					Vector3{ Lerp(frustumVerts[2], frustumVerts[6], cascadeNearNorm) * shadowViewMtx },
-					Vector3{ Lerp(frustumVerts[3], frustumVerts[7], cascadeNearNorm) * shadowViewMtx },
-					Vector3{ Lerp(frustumVerts[0], frustumVerts[4], cascadeFarNorm) * shadowViewMtx },
-					Vector3{ Lerp(frustumVerts[1], frustumVerts[5], cascadeFarNorm) * shadowViewMtx },
-					Vector3{ Lerp(frustumVerts[2], frustumVerts[6], cascadeFarNorm) * shadowViewMtx },
-					Vector3{ Lerp(frustumVerts[3], frustumVerts[7], cascadeFarNorm) * shadowViewMtx },
+						for (int j = 0; j < 4; j++) {
+							ret[j] = Lerp(frustumVertsWS[j], frustumVertsWS[j + 4], cascadeNearNorm);
+							ret[j + 4] = Lerp(frustumVertsWS[j], frustumVertsWS[j + 4], cascadeFarNorm);
+						}
+
+						return ret;
+					}()
 				};
 
-				auto const [cascadeAabbMin, cascadeAabbMax]{ AABB::FromVertices(cascadeVerts) };
-				auto const shadowProjMtx{ Matrix4::OrthographicAsymZLH(cascadeAabbMin[0], cascadeAabbMax[0], cascadeAabbMax[1], cascadeAabbMin[1], cascadeAabbMax[2], light.GetShadowNearPlane()) };
+				Matrix4 const shadowViewMtx{ Matrix4::LookToLH(Vector3::Zero(), light.GetDirection(), Vector3::Up()) };
 
-				mCell.GetSubcell(i * mCell.GetSubdivisionSize() + cascadeIdx).emplace(shadowViewMtx * shadowProjMtx, lightIdxIdx, cascadeIdx);
+				auto const calculateTightViewProj{
+					[&cascadeVertsWS, &light, &shadowViewMtx] {
+						// cascade vertices in shadow space
+						auto const cascadeVertsSP{
+							[&cascadeVertsWS, &shadowViewMtx] {
+								std::array ret{ cascadeVertsWS };
+
+								for (auto& vert : ret) {
+									Vector4 vert4{ vert, 1 };
+									vert4 *= shadowViewMtx;
+									vert = Vector3{ vert4 };
+								}
+
+								return ret;
+							}()
+						};
+
+						auto const [cascadeAabbMin, cascadeAabbMax]{ AABB::FromVertices(cascadeVertsSP) };
+						auto const shadowProjMtx{ Matrix4::OrthographicAsymZLH(cascadeAabbMin[0], cascadeAabbMax[0], cascadeAabbMax[1], cascadeAabbMin[1], cascadeAabbMax[2], light.GetShadowNearPlane()) };
+						return shadowViewMtx * shadowProjMtx;
+					}
+				};
+
+				auto const calculateStableViewProj{
+					[&cascadeVertsWS, this, &light, &shadowViewMtx] {
+						// center of the cascade's bounding sphere in world space
+						auto const [sphereCenterWS, sphereRadius]{
+							[&cascadeVertsWS] {
+								BoundingSphere ret{
+									.center = Vector3::Zero(),
+									.radius = 0
+								};
+
+								for (auto const& vert : cascadeVertsWS) {
+									ret.center += vert;
+								}
+
+								ret.center /= static_cast<float>(std::ssize(cascadeVertsWS));
+
+								for (auto const& vert : cascadeVertsWS) {
+									ret.radius = std::max(ret.radius, Distance(vert, ret.center) / 2.0f);
+								}
+
+								return ret;
+							}()
+						};
+
+						float const unitsPerTexel{ (sphereRadius * 2.0f) / static_cast<float>(static_cast<int>(GetSize() / GetSubdivisionSize())) };
+
+						auto const sphereCenterLS{ Vector3{ Vector4{ sphereCenterWS, 1 } * shadowViewMtx } };
+						auto const xMin{ std::floor((sphereCenterLS[0] - sphereRadius) / unitsPerTexel) * unitsPerTexel };
+						auto const yMin{ std::floor((sphereCenterLS[1] - sphereRadius) / unitsPerTexel) * unitsPerTexel };
+						auto const viewportExtent{ std::floor(sphereRadius * 2.0f / unitsPerTexel) * unitsPerTexel };
+						auto const xMax{ xMin + viewportExtent };
+						auto const yMax{ yMin + viewportExtent };
+
+						auto const shadowProjMtx{ Matrix4::OrthographicAsymZLH(xMin, xMax, yMax, yMin, 1000, -1000) }; // TODO
+						return shadowViewMtx * shadowProjMtx;
+					}
+				};
+
+				auto const shadowViewProjMtx{ gUseStableShadowCascadeProjection ? calculateStableViewProj() : calculateTightViewProj() };
+
+				mCell.GetSubcell(i * mCell.GetSubdivisionSize() + cascadeIdx).emplace(shadowViewProjMtx, lightIdxIdx, cascadeIdx);
 			}
 		}
 	}
