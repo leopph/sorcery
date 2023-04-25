@@ -547,8 +547,17 @@ public:
 				DirectX::XMFLOAT3A const lightDir{ light.GetDirection().GetData() };
 				DirectX::XMFLOAT3A const worldUp{ Vector3::Up().GetData() };
 
+				float const shadowMapSize{ static_cast<float>(static_cast<int>(GetSize() / GetSubdivisionSize())) };
+
+				using DirectX::operator+;
+				using DirectX::operator-;
+				using DirectX::operator*;
+				using DirectX::operator/;
+				using DirectX::operator*=;
+				using DirectX::operator/=;
+
 				auto const calculateTightViewProj{
-					[&cascadeVertsWS, &light, &lightDir, &worldUp] {
+					[&cascadeVertsWS, &light, &lightDir, &worldUp, shadowMapSize] {
 						auto const shadowViewMtx{ XMMatrixLookToLH(DirectX::g_XMZero, XMLoadFloat3A(&lightDir), XMLoadFloat3A(&worldUp)) };
 
 						// cascade vertices in shadow space
@@ -565,8 +574,19 @@ public:
 						auto const aabbCenter{ XMLoadFloat3(&aabb.Center) };
 						auto const aabbExtents{ XMLoadFloat3(&aabb.Extents) };
 
-						auto const aabbMin{ DirectX::XMVectorSubtract(aabbCenter, aabbExtents) };
-						auto const aabbMax{ DirectX::XMVectorAdd(aabbCenter, aabbExtents) };
+						auto const aabbSize{ aabbExtents * 2.0f };
+						auto const worldUnitsPerTexel{ aabbSize / shadowMapSize };
+
+						auto aabbMin{ DirectX::XMVectorSubtract(aabbCenter, aabbExtents) };
+						auto aabbMax{ DirectX::XMVectorAdd(aabbCenter, aabbExtents) };
+
+						aabbMin /= worldUnitsPerTexel;
+						aabbMin = DirectX::XMVectorFloor(aabbMin);
+						aabbMin *= worldUnitsPerTexel;
+
+						aabbMax /= worldUnitsPerTexel;
+						aabbMax = DirectX::XMVectorFloor(aabbMax);
+						aabbMax *= worldUnitsPerTexel;
 
 						auto const shadowProjMtx{ DirectX::XMMatrixOrthographicOffCenterLH(DirectX::XMVectorGetX(aabbMin), DirectX::XMVectorGetX(aabbMax), DirectX::XMVectorGetY(aabbMin), DirectX::XMVectorGetY(aabbMax), DirectX::XMVectorGetZ(aabbMax), DirectX::XMVectorGetZ(aabbMin) - light.GetShadowExtension()) };
 
@@ -586,34 +606,33 @@ public:
 				};
 
 				auto const calculateStableViewProj{
-					[&cascadeVertsWS, this, &light, &lightDir] {
+					[&cascadeVertsWS, this, &light, &lightDir, &worldUp, shadowMapSize] {
 						DirectX::BoundingSphere boundingSphereWS;
 						DirectX::BoundingSphere::CreateFromPoints(boundingSphereWS, std::size(cascadeVertsWS), cascadeVertsWS.data(), sizeof(decltype(cascadeVertsWS)::value_type));
 
 						auto const sphereRadius{ boundingSphereWS.Radius };
 						auto const sphereCenterWS{ XMLoadFloat3(&boundingSphereWS.Center) };
 
-						DirectX::XMFLOAT3A lightUp{ light.GetEntity()->GetTransform().GetUpAxis().GetData() };
-						DirectX::XMFLOAT3A side{ light.GetEntity()->GetTransform().GetRightAxis().GetData() };
+						auto const lookTo{ DirectX::XMMatrixLookToLH(sphereCenterWS, XMLoadFloat3(&lightDir), XMLoadFloat3(&worldUp)) };
+						auto const sphereCenterLS{ XMVector3TransformCoord(sphereCenterWS, lookTo) };
 
-						auto xmLightUp{ XMLoadFloat3A(&lightUp) };
-						auto xmSide{ XMLoadFloat3A(&side) };
-						auto xmLightDir{ XMLoadFloat3A(&lightDir) };
+						auto const worldUnitsPerTexel{ sphereRadius * 2.0f / shadowMapSize };
 
-						auto const sizeSM{ static_cast<float>(static_cast<int>(GetSize() / GetSubdivisionSize())) };
+						auto const sphereRadiusVector{ DirectX::XMVectorReplicate(sphereRadius) };
+						auto min{ sphereCenterLS - sphereRadiusVector };
+						auto max{ sphereCenterLS + sphereRadiusVector };
 
-						float x = std::ceil(DirectX::XMVectorGetX(DirectX::XMVector3Dot(sphereCenterWS, xmLightUp)) * sizeSM / sphereRadius) * sphereRadius / sizeSM;
-						float y = std::ceil(DirectX::XMVectorGetX(DirectX::XMVector3Dot(sphereCenterWS, xmSide)) * sizeSM / sphereRadius) * sphereRadius / sizeSM;
+						min /= worldUnitsPerTexel;
+						min = DirectX::XMVectorFloor(min);
+						min *= worldUnitsPerTexel;
 
-						using DirectX::operator*;
-						using DirectX::operator+;
-						using DirectX::operator-;
+						max /= worldUnitsPerTexel;
+						max = DirectX::XMVectorFloor(max);
+						max *= worldUnitsPerTexel;
 
-						auto const center{ xmLightUp * x + xmSide * y + xmLightDir * DirectX::XMVectorGetX(DirectX::XMVector3Dot(sphereCenterWS, xmLightDir)) };
-						auto const origin{ center - xmLightDir * 1000.0f };
+						auto const shadowViewMtx{ DirectX::XMMatrixLookToLH(sphereCenterWS, XMLoadFloat3(&lightDir), XMLoadFloat3(&worldUp)) };
+						auto const shadowProjMtx{ DirectX::XMMatrixOrthographicOffCenterLH(DirectX::XMVectorGetX(min), DirectX::XMVectorGetX(max), DirectX::XMVectorGetY(min), DirectX::XMVectorGetY(max), sphereRadius, -sphereRadius - light.GetShadowExtension()) };
 
-						auto const shadowViewMtx{ DirectX::XMMatrixLookAtLH(origin, center, xmLightUp) };
-						auto const shadowProjMtx{ DirectX::XMMatrixOrthographicOffCenterLH(-sphereRadius, sphereRadius, -sphereRadius, sphereRadius, 1000, -1000) };
 						DirectX::XMFLOAT4X4A shadowViewProjMtx;
 						XMStoreFloat4x4A(&shadowViewProjMtx, XMMatrixMultiply(shadowViewMtx, shadowProjMtx));
 
