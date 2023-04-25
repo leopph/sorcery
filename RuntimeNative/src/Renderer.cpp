@@ -1,6 +1,8 @@
 #include "Renderer.hpp"
 
 #include <dxgi1_6.h>
+#include <DirectXMath.h>
+#include <DirectXCollision.h>
 
 #include "Platform.hpp"
 #include "Entity.hpp"
@@ -275,7 +277,7 @@ public:
 
 	[[nodiscard]] virtual auto GetCell(int idx) const -> ShadowAtlasCell const& = 0;
 
-	virtual auto Update(std::span<LightComponent const* const> allLights, Visibility const& visibility, Camera const& cam, Matrix4 const& camViewMtx, Matrix4 const& camProjMtx, Matrix4 const& camViewProjMtx, ShadowCascadeBoundaries const& shadowCascadeBoundaries) -> void = 0;
+	virtual auto Update(std::span<LightComponent const* const> allLights, Visibility const& visibility, Camera const& cam, Matrix4 const& camViewProjMtx, ShadowCascadeBoundaries const& shadowCascadeBoundaries) -> void = 0;
 };
 #pragma warning(pop)
 
@@ -289,7 +291,7 @@ public:
 		mCells{ ShadowAtlasCell{ 1 }, ShadowAtlasCell{ 2 }, ShadowAtlasCell{ 4 }, ShadowAtlasCell{ 8 } } {}
 
 
-	auto Update(std::span<LightComponent const* const> const allLights, Visibility const& visibility, Camera const& cam, [[maybe_unused]] Matrix4 const& camViewMtx, [[maybe_unused]] Matrix4 const& camProjMtx, Matrix4 const& camViewProjMtx, [[maybe_unused]] ShadowCascadeBoundaries const& shadowCascadeBoundaries) -> void override {
+	auto Update(std::span<LightComponent const* const> const allLights, Visibility const& visibility, Camera const& cam, Matrix4 const& camViewProjMtx, [[maybe_unused]] ShadowCascadeBoundaries const& shadowCascadeBoundaries) -> void override {
 		struct LightCascadeIndex {
 			int lightIdxIdx;
 			int shadowIdx;
@@ -469,7 +471,7 @@ public:
 		mCell{ 1 } {}
 
 
-	auto Update(std::span<LightComponent const* const> const allLights, Visibility const& visibility, Camera const& cam, Matrix4 const& camViewMtx, Matrix4 const& camProjMtx, [[maybe_unused]] Matrix4 const& camViewProjMtx, ShadowCascadeBoundaries const& shadowCascadeBoundaries) -> void override {
+	auto Update(std::span<LightComponent const* const> const allLights, Visibility const& visibility, Camera const& cam, Matrix4 const& camViewProjMtx, ShadowCascadeBoundaries const& shadowCascadeBoundaries) -> void override {
 		std::vector<int> static candidateLightIdxIndices;
 		candidateLightIdxIndices.clear();
 
@@ -493,28 +495,20 @@ public:
 
 		// camera frustum vertices in world space
 		auto const frustumVertsWS{
-			[&camViewMtx, &camProjMtx] {
-				auto const camViewMtxInv{ camViewMtx.Inverse() };
-				auto const camProjMtxInv{ camProjMtx.Inverse() };
-				auto const camViewProjMtxInv{ camProjMtxInv * camViewMtxInv }; // for some reason inverting the VP matrix directly is very unstable here
-
+			[&camViewProjMtx] {
 				std::array ret{
-					Vector3{ 1, 1, 0 },
-					Vector3{ -1, 1, 0 },
-					Vector3{ -1, -1, 0 },
-					Vector3{ 1, -1, 0 },
-					Vector3{ 1, 1, 1 },
-					Vector3{ -1, 1, 1 },
-					Vector3{ -1, -1, 1 },
-					Vector3{ 1, -1, 1 },
+					DirectX::XMFLOAT3{ 1, 1, 0 },
+					DirectX::XMFLOAT3{ -1, 1, 0 },
+					DirectX::XMFLOAT3{ -1, -1, 0 },
+					DirectX::XMFLOAT3{ 1, -1, 0 },
+					DirectX::XMFLOAT3{ 1, 1, 1 },
+					DirectX::XMFLOAT3{ -1, 1, 1 },
+					DirectX::XMFLOAT3{ -1, -1, 1 },
+					DirectX::XMFLOAT3{ 1, -1, 1 },
 				};
 
-				for (auto& vert : ret) {
-					Vector4 vert4{ vert, 1 };
-					vert4 *= camViewProjMtxInv;
-					vert4 /= vert4[3];
-					vert = Vector3{ vert4 };
-				}
+				DirectX::XMFLOAT4X4A const xmCamViewProjMtx{ camViewProjMtx.GetData() };
+				XMVector3TransformCoordStream(ret.data(), sizeof(decltype(ret)::value_type), ret.data(), sizeof(decltype(ret)::value_type), std::size(ret), XMMatrixInverse(nullptr, XMLoadFloat4x4A(&xmCamViewProjMtx)));
 
 				return ret;
 			}()
@@ -529,85 +523,109 @@ public:
 			auto const& light{ *allLights[visibility.lightIndices[lightIdxIdx]] };
 
 			for (auto cascadeIdx = 0; cascadeIdx < gCascadeCount; cascadeIdx++) {
-				auto const [cascadeNear, cascadeFar]{ shadowCascadeBoundaries[cascadeIdx] };
-
-				auto const cascadeNearNorm{ (cascadeNear - camNear) / frustumDepth };
-				auto const cascadeFarNorm{ (cascadeFar - camNear) / frustumDepth };
-
 				// cascade vertices in world space
 				auto const cascadeVertsWS{
-					[&frustumVertsWS, cascadeNearNorm, cascadeFarNorm] {
-						std::array<Vector3, 8> ret;
+					[&frustumVertsWS, &shadowCascadeBoundaries, cascadeIdx, camNear, frustumDepth] {
+						auto const [cascadeNear, cascadeFar]{ shadowCascadeBoundaries[cascadeIdx] };
+
+						auto const cascadeNearNorm{ (cascadeNear - camNear) / frustumDepth };
+						auto const cascadeFarNorm{ (cascadeFar - camNear) / frustumDepth };
+
+						std::array<DirectX::XMFLOAT3, 8> ret;
 
 						for (int j = 0; j < 4; j++) {
-							ret[j] = Lerp(frustumVertsWS[j], frustumVertsWS[j + 4], cascadeNearNorm);
-							ret[j + 4] = Lerp(frustumVertsWS[j], frustumVertsWS[j + 4], cascadeFarNorm);
+							auto const from{ XMLoadFloat3(&frustumVertsWS[j]) };
+							auto const to{ XMLoadFloat3(&frustumVertsWS[j + 4]) };
+							XMStoreFloat3(&ret[j], DirectX::XMVectorLerp(from, to, cascadeNearNorm));
+							XMStoreFloat3(&ret[j + 4], DirectX::XMVectorLerp(from, to, cascadeFarNorm));
 						}
 
 						return ret;
 					}()
 				};
 
-				Matrix4 const shadowViewMtx{ Matrix4::LookToLH(Vector3::Zero(), light.GetDirection(), Vector3::Up()) };
+				DirectX::XMFLOAT3A const lightDir{ light.GetDirection().GetData() };
+				DirectX::XMFLOAT3A const worldUp{ Vector3::Up().GetData() };
 
 				auto const calculateTightViewProj{
-					[&cascadeVertsWS, &light, &shadowViewMtx] {
+					[&cascadeVertsWS, &light, &lightDir, &worldUp] {
+						auto const shadowViewMtx{ XMMatrixLookToLH(DirectX::g_XMZero, XMLoadFloat3A(&lightDir), XMLoadFloat3A(&worldUp)) };
+
 						// cascade vertices in shadow space
 						auto const cascadeVertsSP{
 							[&cascadeVertsWS, &shadowViewMtx] {
-								std::array ret{ cascadeVertsWS };
-
-								for (auto& vert : ret) {
-									Vector4 vert4{ vert, 1 };
-									vert4 *= shadowViewMtx;
-									vert = Vector3{ vert4 };
-								}
-
+								std::array<DirectX::XMFLOAT3, 8> ret;
+								XMVector3TransformCoordStream(ret.data(), sizeof(decltype(ret)::value_type), cascadeVertsWS.data(), sizeof(decltype(cascadeVertsWS)::value_type), std::size(cascadeVertsWS), shadowViewMtx);
 								return ret;
 							}()
 						};
 
-						auto const [cascadeAabbMin, cascadeAabbMax]{ AABB::FromVertices(cascadeVertsSP) };
-						auto const shadowProjMtx{ Matrix4::OrthographicAsymZLH(cascadeAabbMin[0], cascadeAabbMax[0], cascadeAabbMax[1], cascadeAabbMin[1], cascadeAabbMax[2], light.GetShadowNearPlane()) };
-						return shadowViewMtx * shadowProjMtx;
+						DirectX::BoundingBox aabb;
+						DirectX::BoundingBox::CreateFromPoints(aabb, std::size(cascadeVertsSP), cascadeVertsSP.data(), sizeof(decltype(cascadeVertsSP)::value_type));
+						auto const aabbCenter{ XMLoadFloat3(&aabb.Center) };
+						auto const aabbExtents{ XMLoadFloat3(&aabb.Extents) };
+
+						auto const aabbMin{ DirectX::XMVectorSubtract(aabbCenter, aabbExtents) };
+						auto const aabbMax{ DirectX::XMVectorAdd(aabbCenter, aabbExtents) };
+
+						auto const shadowProjMtx{ DirectX::XMMatrixOrthographicOffCenterLH(DirectX::XMVectorGetX(aabbMin), DirectX::XMVectorGetX(aabbMax), DirectX::XMVectorGetY(aabbMin), DirectX::XMVectorGetY(aabbMax), DirectX::XMVectorGetZ(aabbMax), DirectX::XMVectorGetZ(aabbMin) - light.GetShadowExtension()) };
+
+						DirectX::XMFLOAT4X4A shadowViewProjMtx;
+						XMStoreFloat4x4A(&shadowViewProjMtx, XMMatrixMultiply(shadowViewMtx, shadowProjMtx));
+
+						Matrix4 ret;
+
+						for (int j = 0; j < 4; j++) {
+							for (int k = 0; k < 4; k++) {
+								ret[j][k] = shadowViewProjMtx(j, k);
+							}
+						}
+
+						return ret;
 					}
 				};
 
 				auto const calculateStableViewProj{
-					[&cascadeVertsWS, this, &light, &shadowViewMtx] {
-						// center of the cascade's bounding sphere in world space
-						auto const [sphereCenterWS, sphereRadius]{
-							[&cascadeVertsWS] {
-								BoundingSphere ret{
-									.center = Vector3::Zero(),
-									.radius = 0
-								};
+					[&cascadeVertsWS, this, &light, &lightDir] {
+						DirectX::BoundingSphere boundingSphereWS;
+						DirectX::BoundingSphere::CreateFromPoints(boundingSphereWS, std::size(cascadeVertsWS), cascadeVertsWS.data(), sizeof(decltype(cascadeVertsWS)::value_type));
 
-								for (auto const& vert : cascadeVertsWS) {
-									ret.center += vert;
-								}
+						auto const sphereRadius{ boundingSphereWS.Radius };
+						auto const sphereCenterWS{ XMLoadFloat3(&boundingSphereWS.Center) };
 
-								ret.center /= static_cast<float>(std::ssize(cascadeVertsWS));
+						DirectX::XMFLOAT3A lightUp{ light.GetEntity()->GetTransform().GetUpAxis().GetData() };
+						DirectX::XMFLOAT3A side{ light.GetEntity()->GetTransform().GetRightAxis().GetData() };
 
-								for (auto const& vert : cascadeVertsWS) {
-									ret.radius = std::max(ret.radius, Distance(vert, ret.center) / 2.0f);
-								}
+						auto xmLightUp{ XMLoadFloat3A(&lightUp) };
+						auto xmSide{ XMLoadFloat3A(&side) };
+						auto xmLightDir{ XMLoadFloat3A(&lightDir) };
 
-								return ret;
-							}()
-						};
+						auto const sizeSM{ static_cast<float>(static_cast<int>(GetSize() / GetSubdivisionSize())) };
 
-						float const unitsPerTexel{ (sphereRadius * 2.0f) / static_cast<float>(static_cast<int>(GetSize() / GetSubdivisionSize())) };
+						float x = std::ceil(DirectX::XMVectorGetX(DirectX::XMVector3Dot(sphereCenterWS, xmLightUp)) * sizeSM / sphereRadius) * sphereRadius / sizeSM;
+						float y = std::ceil(DirectX::XMVectorGetX(DirectX::XMVector3Dot(sphereCenterWS, xmSide)) * sizeSM / sphereRadius) * sphereRadius / sizeSM;
 
-						auto const sphereCenterLS{ Vector3{ Vector4{ sphereCenterWS, 1 } * shadowViewMtx } };
-						auto const xMin{ std::floor((sphereCenterLS[0] - sphereRadius) / unitsPerTexel) * unitsPerTexel };
-						auto const yMin{ std::floor((sphereCenterLS[1] - sphereRadius) / unitsPerTexel) * unitsPerTexel };
-						auto const viewportExtent{ std::floor(sphereRadius * 2.0f / unitsPerTexel) * unitsPerTexel };
-						auto const xMax{ xMin + viewportExtent };
-						auto const yMax{ yMin + viewportExtent };
+						using DirectX::operator*;
+						using DirectX::operator+;
+						using DirectX::operator-;
 
-						auto const shadowProjMtx{ Matrix4::OrthographicAsymZLH(xMin, xMax, yMax, yMin, 1000, -1000) }; // TODO
-						return shadowViewMtx * shadowProjMtx;
+						auto const center{ xmLightUp * x + xmSide * y + xmLightDir * DirectX::XMVectorGetX(DirectX::XMVector3Dot(sphereCenterWS, xmLightDir)) };
+						auto const origin{ center - xmLightDir * 1000.0f };
+
+						auto const shadowViewMtx{ DirectX::XMMatrixLookAtLH(origin, center, xmLightUp) };
+						auto const shadowProjMtx{ DirectX::XMMatrixOrthographicOffCenterLH(-sphereRadius, sphereRadius, -sphereRadius, sphereRadius, 1000, -1000) };
+						DirectX::XMFLOAT4X4A shadowViewProjMtx;
+						XMStoreFloat4x4A(&shadowViewProjMtx, XMMatrixMultiply(shadowViewMtx, shadowProjMtx));
+
+						Matrix4 ret;
+
+						for (int j = 0; j < 4; j++) {
+							for (int k = 0; k < 4; k++) {
+								ret[j][k] = shadowViewProjMtx(j, k);
+							}
+						}
+
+						return ret;
 					}
 				};
 
@@ -2041,7 +2059,7 @@ auto DrawFullWithCameras(std::span<Camera const* const> const cameras, RenderTar
 		auto const shadowCascadeBoundaries{ CalculateCameraShadowCascadeBoundaries(*cam) };
 
 		for (auto const& shadowAtlas : gResources->shadowAtlases) {
-			shadowAtlas->Update(gLights, visibility, *cam, camViewMtx, camProjMtx, camViewProjMtx, shadowCascadeBoundaries);
+			shadowAtlas->Update(gLights, visibility, *cam, camViewProjMtx, shadowCascadeBoundaries);
 		}
 
 		ID3D11ShaderResourceView* const nullSrv{ nullptr };
