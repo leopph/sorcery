@@ -94,7 +94,7 @@ auto LightComponent::GetColor() const -> Vector3 const& {
 
 
 auto LightComponent::SetColor(Vector3 const& color) -> void {
-	mColor = color;
+	mColor = Clamp(color, 0.0f, 1.0f);
 }
 
 
@@ -104,12 +104,7 @@ auto LightComponent::GetIntensity() const -> f32 {
 
 
 auto LightComponent::SetIntensity(f32 const intensity) -> void {
-	if (intensity <= 0) {
-		//Logger::get_instance().warning(std::format("Ignoring attempt to set light intensity to {}. This value must be positive.", intensity)); TODO
-		return;
-	}
-
-	mIntensity = intensity;
+	mIntensity = std::max(intensity, MIN_INTENSITY);
 }
 
 
@@ -154,7 +149,7 @@ auto LightComponent::GetRange() const -> f32 {
 
 
 auto LightComponent::SetRange(f32 const range) -> void {
-	mRange = range;
+	mRange = std::max(range, MIN_RANGE);
 }
 
 
@@ -164,7 +159,7 @@ auto LightComponent::GetInnerAngle() const -> f32 {
 
 
 auto LightComponent::SetInnerAngle(f32 const degrees) -> void {
-	mInnerAngle = degrees;
+	mInnerAngle = std::clamp(degrees, MIN_ANGLE_DEG, GetOuterAngle());
 }
 
 
@@ -174,7 +169,7 @@ auto LightComponent::GetOuterAngle() const -> f32 {
 
 
 auto LightComponent::SetOuterAngle(f32 const degrees) -> void {
-	mOuterAngle = degrees;
+	mOuterAngle = std::clamp(degrees, GetInnerAngle(), MAX_ANGLE_DEG);
 }
 
 

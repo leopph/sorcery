@@ -63,8 +63,12 @@ public:
 	[[nodiscard]] LEOPPHAPI auto GetShadowExtension() const noexcept -> float;
 	LEOPPHAPI auto SetShadowExtension(float shadowExtension) noexcept -> void;
 
-	constexpr static auto MIN_SHADOW_EXTENSION{ 0.0f };
+	constexpr static auto MIN_INTENSITY{ 0.0f };
 	constexpr static auto MIN_SHADOW_NEAR_PLANE{ 0.1f };
+	constexpr static auto MIN_RANGE{ 0.0f };
+	constexpr static auto MIN_ANGLE_DEG{ 0.0f };
+	constexpr static auto MAX_ANGLE_DEG{ 179.0f };
+	constexpr static auto MIN_SHADOW_EXTENSION{ 0.0f };
 
 private:
 	bool mCastsShadow{ false };

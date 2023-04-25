@@ -420,7 +420,7 @@ auto EditorObjectWrapperFor<LightComponent>::OnGui([[maybe_unused]] Context& con
 		ImGui::TableNextColumn();
 
 		auto intensity{ light.GetIntensity() };
-		if (ImGui::DragFloat("###lightIntensity", &intensity, 0.1f)) {
+		if (ImGui::DragFloat("###lightIntensity", &intensity, 0.1f, LightComponent::MIN_INTENSITY, std::numeric_limits<float>::max(), "%.3f", ImGuiSliderFlags_AlwaysClamp)) {
 			light.SetIntensity(intensity);
 		}
 
@@ -490,7 +490,7 @@ auto EditorObjectWrapperFor<LightComponent>::OnGui([[maybe_unused]] Context& con
 			ImGui::TableNextColumn();
 
 			auto range{ light.GetRange() };
-			if (ImGui::DragFloat("###lightRange", &range)) {
+			if (ImGui::DragFloat("###lightRange", &range, 1.0f, LightComponent::MIN_RANGE, std::numeric_limits<float>::max(), "%.3f", ImGuiSliderFlags_AlwaysClamp)) {
 				light.SetRange(range);
 			}
 		}
@@ -500,18 +500,18 @@ auto EditorObjectWrapperFor<LightComponent>::OnGui([[maybe_unused]] Context& con
 			ImGui::Text("Inner Angle");
 			ImGui::TableNextColumn();
 
-			auto innerAngle{ light.GetInnerAngle() };
-			if (ImGui::DragFloat("###spotLightInnerAngle", &innerAngle)) {
-				light.SetInnerAngle(innerAngle);
+			auto innerAngleRad{ ToRadians(light.GetInnerAngle()) };
+			if (ImGui::SliderAngle("###spotLightInnerAngle", &innerAngleRad, LightComponent::MIN_ANGLE_DEG, LightComponent::MAX_ANGLE_DEG, "%.3f", ImGuiSliderFlags_AlwaysClamp)) {
+				light.SetInnerAngle(ToDegrees(innerAngleRad));
 			}
 
 			ImGui::TableNextColumn();
 			ImGui::Text("Outer Angle");
 			ImGui::TableNextColumn();
 
-			auto outerAngle{ light.GetOuterAngle() };
-			if (ImGui::DragFloat("###spotLightOuterAngle", &outerAngle)) {
-				light.SetOuterAngle(outerAngle);
+			auto outerAngleRad{ ToRadians(light.GetOuterAngle()) };
+			if (ImGui::SliderAngle("###spotLightOuterAngle", &outerAngleRad, LightComponent::MIN_ANGLE_DEG, LightComponent::MAX_ANGLE_DEG, "%.3f", ImGuiSliderFlags_AlwaysClamp)) {
+				light.SetOuterAngle(ToDegrees(outerAngleRad));
 			}
 		}
 
