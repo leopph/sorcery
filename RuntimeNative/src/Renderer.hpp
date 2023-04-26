@@ -35,6 +35,8 @@ private:
 
 public:
 	[[nodiscard]] virtual auto GetPosition() const noexcept -> Vector3 = 0;
+	[[nodiscard]] virtual auto GetRightAxis() const noexcept -> Vector3 = 0;
+	[[nodiscard]] virtual auto GetUpAxis() const noexcept -> Vector3 = 0;
 	[[nodiscard]] virtual auto GetForwardAxis() const noexcept -> Vector3 = 0;
 
 	[[nodiscard]] LEOPPHAPI auto GetNearClipPlane() const noexcept -> float;

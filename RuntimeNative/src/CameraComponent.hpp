@@ -32,6 +32,8 @@ public:
 	LEOPPHAPI auto CreateManagedObject() -> void override;
 
 	[[nodiscard]] auto LEOPPHAPI GetPosition() const noexcept -> Vector3 override;
+	[[nodiscard]] auto LEOPPHAPI GetRightAxis() const noexcept -> Vector3 override;
+	[[nodiscard]] auto LEOPPHAPI GetUpAxis() const noexcept -> Vector3 override;
 	[[nodiscard]] auto LEOPPHAPI GetForwardAxis() const noexcept -> Vector3 override;
 };
 

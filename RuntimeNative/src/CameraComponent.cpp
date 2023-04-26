@@ -57,6 +57,16 @@ auto CameraComponent::GetPosition() const noexcept -> Vector3 {
 }
 
 
+auto CameraComponent::GetRightAxis() const noexcept -> Vector3 {
+	return GetEntity()->GetTransform().GetRightAxis();
+}
+
+
+auto CameraComponent::GetUpAxis() const noexcept -> Vector3 {
+	return GetEntity()->GetTransform().GetUpAxis();
+}
+
+
 auto CameraComponent::GetForwardAxis() const noexcept -> Vector3 {
 	return GetEntity()->GetTransform().GetForwardAxis();
 }
