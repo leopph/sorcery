@@ -74,8 +74,8 @@ struct ShaderLight {
 
 	BOOL isCastingShadow;
 	float range;
-	float innerAngleCos;
-	float outerAngleCos;
+	float halfInnerAngleCos;
+	float halfOuterAngleCos;
 
 	float2 shadowUvOffsets[MAX_PER_LIGHT_SHADOW_MAP_COUNT];
 

@@ -73,8 +73,8 @@ inline float3 CalculateSpotLight(const float3 N, const float3 V, const float3 al
 
     const float rangeMul = float(dist <= gLights[lightIdx].range);
     const float thetaCos = dot(L, -gLights[lightIdx].direction);
-    const float eps = gLights[lightIdx].innerAngleCos - gLights[lightIdx].outerAngleCos;
-    const float intensity = saturate((thetaCos - gLights[lightIdx].outerAngleCos) / eps);
+    const float eps = gLights[lightIdx].halfInnerAngleCos - gLights[lightIdx].halfOuterAngleCos;
+    const float intensity = saturate((thetaCos - gLights[lightIdx].halfOuterAngleCos) / eps);
 
     float3 lighting = CookTorrance(N, V, L, albedo, metallic, roughness, gLights[lightIdx].color, gLights[lightIdx].intensity, CalculateAttenuation(dist));
     lighting *= intensity;

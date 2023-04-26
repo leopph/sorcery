@@ -425,7 +425,7 @@ public:
 
 				if (light->GetType() == LightComponent::Type::Spot) {
 					auto const shadowViewMtx{ Matrix4::LookToLH(light->GetEntity()->GetTransform().GetWorldPosition(), light->GetEntity()->GetTransform().GetForwardAxis(), Vector3::Up()) };
-					auto const shadowProjMtx{ Matrix4::PerspectiveAsymZLH(ToRadians(light->GetOuterAngle() * 2), 1.f, light->GetRange(), light->GetShadowNearPlane()) };
+					auto const shadowProjMtx{ Matrix4::PerspectiveAsymZLH(ToRadians(light->GetOuterAngle()), 1.f, light->GetRange(), light->GetShadowNearPlane()) };
 
 					subcell.emplace(shadowViewMtx * shadowProjMtx, lightIdxIdx, shadowIdx);
 				}
@@ -2150,8 +2150,8 @@ auto DrawFullWithCameras(std::span<Camera const* const> const cameras, RenderTar
 			lightBufferData[i].direction = gLights[visibility.lightIndices[i]]->GetDirection();
 			lightBufferData[i].isCastingShadow = FALSE;
 			lightBufferData[i].range = gLights[visibility.lightIndices[i]]->GetRange();
-			lightBufferData[i].innerAngleCos = std::cos(ToRadians(gLights[visibility.lightIndices[i]]->GetInnerAngle()));
-			lightBufferData[i].outerAngleCos = std::cos(ToRadians(gLights[visibility.lightIndices[i]]->GetOuterAngle()));
+			lightBufferData[i].halfInnerAngleCos = std::cos(ToRadians(gLights[visibility.lightIndices[i]]->GetInnerAngle() / 2.0f));
+			lightBufferData[i].halfOuterAngleCos = std::cos(ToRadians(gLights[visibility.lightIndices[i]]->GetOuterAngle() / 2.0f));
 			lightBufferData[i].position = gLights[visibility.lightIndices[i]]->GetEntity()->GetTransform().GetWorldPosition();
 			lightBufferData[i].depthBias = gLights[visibility.lightIndices[i]]->GetShadowDepthBias();
 			lightBufferData[i].normalBias = gLights[visibility.lightIndices[i]]->GetShadowNormalBias();

@@ -221,7 +221,7 @@ auto AmbientLight::set_intensity(Vector3 const& intensity) -> void {
 
 auto CalculateSpotLightLocalVertices(LightComponent const& spotLight) noexcept -> std::array<Vector3, 5> {
 	auto const range{ spotLight.GetRange() };
-	auto const coneBaseRadius{ std::tan(ToRadians(spotLight.GetOuterAngle())) * range };
+	auto const coneBaseRadius{ std::tan(ToRadians(spotLight.GetOuterAngle() / 2.0f)) * range };
 
 	return std::array{
 		Vector3{ -coneBaseRadius, -coneBaseRadius, range },
