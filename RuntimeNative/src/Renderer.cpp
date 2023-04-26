@@ -277,7 +277,7 @@ public:
 
 	[[nodiscard]] virtual auto GetCell(int idx) const -> ShadowAtlasCell const& = 0;
 
-	virtual auto Update(std::span<LightComponent const* const> allLights, Visibility const& visibility, Camera const& cam, Matrix4 const& camViewProjMtx, ShadowCascadeBoundaries const& shadowCascadeBoundaries) -> void = 0;
+	virtual auto Update(std::span<LightComponent const* const> allLights, Visibility const& visibility, Camera const& cam, Matrix4 const& camViewProjMtx, ShadowCascadeBoundaries const& shadowCascadeBoundaries, float aspectRatio) -> void = 0;
 };
 #pragma warning(pop)
 
@@ -291,7 +291,7 @@ public:
 		mCells{ ShadowAtlasCell{ 1 }, ShadowAtlasCell{ 2 }, ShadowAtlasCell{ 4 }, ShadowAtlasCell{ 8 } } {}
 
 
-	auto Update(std::span<LightComponent const* const> const allLights, Visibility const& visibility, Camera const& cam, Matrix4 const& camViewProjMtx, [[maybe_unused]] ShadowCascadeBoundaries const& shadowCascadeBoundaries) -> void override {
+	auto Update(std::span<LightComponent const* const> const allLights, Visibility const& visibility, Camera const& cam, Matrix4 const& camViewProjMtx, [[maybe_unused]] ShadowCascadeBoundaries const& shadowCascadeBoundaries, [[maybe_unused]] float const aspectRatio) -> void override {
 		struct LightCascadeIndex {
 			int lightIdxIdx;
 			int shadowIdx;
@@ -471,7 +471,7 @@ public:
 		mCell{ 1 } {}
 
 
-	auto Update(std::span<LightComponent const* const> const allLights, Visibility const& visibility, Camera const& cam, Matrix4 const& camViewProjMtx, ShadowCascadeBoundaries const& shadowCascadeBoundaries) -> void override {
+	auto Update(std::span<LightComponent const* const> const allLights, Visibility const& visibility, Camera const& cam, [[maybe_unused]] Matrix4 const& camViewProjMtx, ShadowCascadeBoundaries const& shadowCascadeBoundaries, float const aspectRatio) -> void override {
 		std::vector<int> static candidateLightIdxIndices;
 		candidateLightIdxIndices.clear();
 
@@ -493,29 +493,66 @@ public:
 			mCell.GetSubcell(i).reset();
 		}
 
-		// camera frustum vertices in world space
-		auto const frustumVertsWS{
-			[&camViewProjMtx] {
-				std::array ret{
-					DirectX::XMFLOAT3{ 1, 1, 0 },
-					DirectX::XMFLOAT3{ -1, 1, 0 },
-					DirectX::XMFLOAT3{ -1, -1, 0 },
-					DirectX::XMFLOAT3{ 1, -1, 0 },
-					DirectX::XMFLOAT3{ 1, 1, 1 },
-					DirectX::XMFLOAT3{ -1, 1, 1 },
-					DirectX::XMFLOAT3{ -1, -1, 1 },
-					DirectX::XMFLOAT3{ 1, -1, 1 },
-				};
+		using DirectX::operator+;
+		using DirectX::operator-;
+		using DirectX::operator*;
+		using DirectX::operator/;
+		using DirectX::operator*=;
+		using DirectX::operator/=;
 
-				DirectX::XMFLOAT4X4A const xmCamViewProjMtx{ camViewProjMtx.GetData() };
-				XMVector3TransformCoordStream(ret.data(), sizeof(decltype(ret)::value_type), ret.data(), sizeof(decltype(ret)::value_type), std::size(ret), XMMatrixInverse(nullptr, XMLoadFloat4x4A(&xmCamViewProjMtx)));
+		auto const camNear{ cam.GetNearClipPlane() };
+		auto const camFar{ cam.GetFarClipPlane() };
+
+		auto const frustumVertsWS{
+			[&cam, aspectRatio, camNear, camFar] {
+				std::array<DirectX::XMFLOAT3, 8> ret;
+
+				DirectX::XMVECTOR const camWorldPos{ XMLoadFloat3(reinterpret_cast<DirectX::XMFLOAT3 const*>(cam.GetPosition().GetData())) };
+				DirectX::XMVECTOR const camWorldRight{ XMLoadFloat3(reinterpret_cast<DirectX::XMFLOAT3 const*>(cam.GetRightAxis().GetData())) };
+				DirectX::XMVECTOR const camWorldUp{ XMLoadFloat3(reinterpret_cast<DirectX::XMFLOAT3 const*>(cam.GetUpAxis().GetData())) };
+				DirectX::XMVECTOR const camForward{ XMLoadFloat3(reinterpret_cast<DirectX::XMFLOAT3 const*>(cam.GetForwardAxis().GetData())) };
+
+				DirectX::XMVECTOR const nearWorldForward{ camWorldPos + camForward * camNear };
+				DirectX::XMVECTOR const farWorldForward{ camWorldPos + camForward * camFar };
+
+				switch (cam.GetType()) {
+				case Camera::Type::Perspective: {
+					float const tanHalfFov{ std::tan(ToRadians(cam.GetHorizontalPerspectiveFov() / 2.0f)) };
+					float const nearExtentX{ camNear * tanHalfFov };
+					float const nearExtentY{ nearExtentX / aspectRatio };
+					float const farExtentX{ camFar * tanHalfFov };
+					float const farExtentY{ farExtentX / aspectRatio };
+
+					XMStoreFloat3(&ret[0], camWorldRight * nearExtentX + camWorldUp * nearExtentY + nearWorldForward);
+					XMStoreFloat3(&ret[1], camWorldRight * -nearExtentX + camWorldUp * nearExtentY + nearWorldForward);
+					XMStoreFloat3(&ret[2], camWorldRight * -nearExtentX + camWorldUp * -nearExtentY + nearWorldForward);
+					XMStoreFloat3(&ret[3], camWorldRight * nearExtentX + camWorldUp * -nearExtentY + nearWorldForward);
+					XMStoreFloat3(&ret[4], camWorldRight * farExtentX + camWorldUp * farExtentY + farWorldForward);
+					XMStoreFloat3(&ret[5], camWorldRight * -farExtentX + camWorldUp * farExtentY + farWorldForward);
+					XMStoreFloat3(&ret[6], camWorldRight * -farExtentX + camWorldUp * -farExtentY + farWorldForward);
+					XMStoreFloat3(&ret[7], camWorldRight * farExtentX + camWorldUp * -farExtentY + farWorldForward);
+					break;
+				}
+				case Camera::Type::Orthographic: {
+					float const extentX{ cam.GetHorizontalOrthographicSize() / 2.0f };
+					float const extentY{ extentX / aspectRatio };
+
+					XMStoreFloat3(&ret[0], camWorldRight * extentX + camWorldUp * extentY + nearWorldForward);
+					XMStoreFloat3(&ret[0], camWorldRight * -extentX + camWorldUp * extentY + nearWorldForward);
+					XMStoreFloat3(&ret[0], camWorldRight * -extentX + camWorldUp * -extentY + nearWorldForward);
+					XMStoreFloat3(&ret[0], camWorldRight * extentX + camWorldUp * -extentY + nearWorldForward);
+					XMStoreFloat3(&ret[0], camWorldRight * extentX + camWorldUp * extentY + farWorldForward);
+					XMStoreFloat3(&ret[0], camWorldRight * -extentX + camWorldUp * extentY + farWorldForward);
+					XMStoreFloat3(&ret[0], camWorldRight * -extentX + camWorldUp * -extentY + farWorldForward);
+					XMStoreFloat3(&ret[0], camWorldRight * extentX + camWorldUp * -extentY + farWorldForward);
+					break;
+				}
+				}
 
 				return ret;
 			}()
 		};
 
-		auto const camNear{ cam.GetNearClipPlane() };
-		auto const camFar{ cam.GetFarClipPlane() };
 		auto const frustumDepth{ camFar - camNear };
 
 		for (auto i = 0; i < std::ssize(candidateLightIdxIndices); i++) {
@@ -548,13 +585,6 @@ public:
 				DirectX::XMFLOAT3A const worldUp{ Vector3::Up().GetData() };
 
 				float const shadowMapSize{ static_cast<float>(static_cast<int>(GetSize() / GetSubdivisionSize())) };
-
-				using DirectX::operator+;
-				using DirectX::operator-;
-				using DirectX::operator*;
-				using DirectX::operator/;
-				using DirectX::operator*=;
-				using DirectX::operator/=;
 
 				auto const calculateTightViewProj{
 					[&cascadeVertsWS, &light, &lightDir, &worldUp, shadowMapSize] {
@@ -2078,7 +2108,7 @@ auto DrawFullWithCameras(std::span<Camera const* const> const cameras, RenderTar
 		auto const shadowCascadeBoundaries{ CalculateCameraShadowCascadeBoundaries(*cam) };
 
 		for (auto const& shadowAtlas : gResources->shadowAtlases) {
-			shadowAtlas->Update(gLights, visibility, *cam, camViewProjMtx, shadowCascadeBoundaries);
+			shadowAtlas->Update(gLights, visibility, *cam, camViewProjMtx, shadowCascadeBoundaries, aspectRatio);
 		}
 
 		ID3D11ShaderResourceView* const nullSrv{ nullptr };
