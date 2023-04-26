@@ -18,14 +18,16 @@ auto TransformComponent::UpdateWorldDataRecursive() -> void {
 	mRight = mWorldRotation.Rotate(Vector3::Right());
 	mUp = mWorldRotation.Rotate(Vector3::Up());
 
-	mModelMat[0] = Vector4{ mRight * mWorldScale, 0 };
-	mModelMat[1] = Vector4{ mUp * mWorldScale, 0 };
-	mModelMat[2] = Vector4{ mForward * mWorldScale, 0 };
+	// SRT transformation order
+
+	mModelMat[0] = Vector4{ mRight * mWorldScale[0], 0 };
+	mModelMat[1] = Vector4{ mUp * mWorldScale[1], 0 };
+	mModelMat[2] = Vector4{ mForward * mWorldScale[2], 0 };
 	mModelMat[3] = Vector4{ mWorldPosition, 1 };
 
-	mNormalMat[0] = mRight / mWorldScale;
-	mNormalMat[1] = mUp / mWorldScale;
-	mNormalMat[2] = mForward / mWorldScale;
+	mNormalMat[0] = mRight / mWorldScale[0];
+	mNormalMat[1] = mUp / mWorldScale[1];
+	mNormalMat[2] = mForward / mWorldScale[2];
 
 	for (auto* const child : mChildren) {
 		child->UpdateWorldDataRecursive();
