@@ -1,8 +1,6 @@
 #include "Renderer.hpp"
 
 #include <dxgi1_6.h>
-#include <DirectXMath.h>
-#include <DirectXCollision.h>
 
 #include "Platform.hpp"
 #include "Entity.hpp"
@@ -36,10 +34,12 @@
 
 #include "shaders/ShaderInterop.h"
 
+#include <algorithm>
 #include <cassert>
 #include <cmath>
 #include <functional>
 #include <memory>
+#include <tuple>
 
 using Microsoft::WRL::ComPtr;
 
@@ -493,27 +493,16 @@ public:
 			mCell.GetSubcell(i).reset();
 		}
 
-		using DirectX::operator+;
-		using DirectX::operator-;
-		using DirectX::operator*;
-		using DirectX::operator/;
-		using DirectX::operator*=;
-		using DirectX::operator/=;
+		float const camNear{ cam.GetNearClipPlane() };
+		float const camFar{ cam.GetFarClipPlane() };
 
-		auto const camNear{ cam.GetNearClipPlane() };
-		auto const camFar{ cam.GetFarClipPlane() };
-
+		// Order of vertices is CCW from top right, near first
 		auto const frustumVertsWS{
 			[&cam, aspectRatio, camNear, camFar] {
-				std::array<DirectX::XMFLOAT3, 8> ret;
+				std::array<Vector3, 8> ret;
 
-				DirectX::XMVECTOR const camWorldPos{ XMLoadFloat3(reinterpret_cast<DirectX::XMFLOAT3 const*>(cam.GetPosition().GetData())) };
-				DirectX::XMVECTOR const camWorldRight{ XMLoadFloat3(reinterpret_cast<DirectX::XMFLOAT3 const*>(cam.GetRightAxis().GetData())) };
-				DirectX::XMVECTOR const camWorldUp{ XMLoadFloat3(reinterpret_cast<DirectX::XMFLOAT3 const*>(cam.GetUpAxis().GetData())) };
-				DirectX::XMVECTOR const camForward{ XMLoadFloat3(reinterpret_cast<DirectX::XMFLOAT3 const*>(cam.GetForwardAxis().GetData())) };
-
-				DirectX::XMVECTOR const nearWorldForward{ camWorldPos + camForward * camNear };
-				DirectX::XMVECTOR const farWorldForward{ camWorldPos + camForward * camFar };
+				Vector3 const nearWorldForward{ cam.GetPosition() + cam.GetForwardAxis() * camNear };
+				Vector3 const farWorldForward{ cam.GetPosition() + cam.GetForwardAxis() * camFar };
 
 				switch (cam.GetType()) {
 				case Camera::Type::Perspective: {
@@ -523,28 +512,28 @@ public:
 					float const farExtentX{ camFar * tanHalfFov };
 					float const farExtentY{ farExtentX / aspectRatio };
 
-					XMStoreFloat3(&ret[0], camWorldRight * nearExtentX + camWorldUp * nearExtentY + nearWorldForward);
-					XMStoreFloat3(&ret[1], camWorldRight * -nearExtentX + camWorldUp * nearExtentY + nearWorldForward);
-					XMStoreFloat3(&ret[2], camWorldRight * -nearExtentX + camWorldUp * -nearExtentY + nearWorldForward);
-					XMStoreFloat3(&ret[3], camWorldRight * nearExtentX + camWorldUp * -nearExtentY + nearWorldForward);
-					XMStoreFloat3(&ret[4], camWorldRight * farExtentX + camWorldUp * farExtentY + farWorldForward);
-					XMStoreFloat3(&ret[5], camWorldRight * -farExtentX + camWorldUp * farExtentY + farWorldForward);
-					XMStoreFloat3(&ret[6], camWorldRight * -farExtentX + camWorldUp * -farExtentY + farWorldForward);
-					XMStoreFloat3(&ret[7], camWorldRight * farExtentX + camWorldUp * -farExtentY + farWorldForward);
+					ret[0] = nearWorldForward + cam.GetRightAxis() * nearExtentX + cam.GetUpAxis() * nearExtentY;
+					ret[1] = nearWorldForward - cam.GetRightAxis() * nearExtentX + cam.GetUpAxis() * nearExtentY;
+					ret[2] = nearWorldForward - cam.GetRightAxis() * nearExtentX - cam.GetUpAxis() * nearExtentY;
+					ret[3] = nearWorldForward + cam.GetRightAxis() * nearExtentX - cam.GetUpAxis() * nearExtentY;
+					ret[4] = farWorldForward + cam.GetRightAxis() * farExtentX + cam.GetUpAxis() * farExtentY;
+					ret[5] = farWorldForward - cam.GetRightAxis() * farExtentX + cam.GetUpAxis() * farExtentY;
+					ret[6] = farWorldForward - cam.GetRightAxis() * farExtentX - cam.GetUpAxis() * farExtentY;
+					ret[7] = farWorldForward + cam.GetRightAxis() * farExtentX - cam.GetUpAxis() * farExtentY;
 					break;
 				}
 				case Camera::Type::Orthographic: {
 					float const extentX{ cam.GetHorizontalOrthographicSize() / 2.0f };
 					float const extentY{ extentX / aspectRatio };
 
-					XMStoreFloat3(&ret[0], camWorldRight * extentX + camWorldUp * extentY + nearWorldForward);
-					XMStoreFloat3(&ret[0], camWorldRight * -extentX + camWorldUp * extentY + nearWorldForward);
-					XMStoreFloat3(&ret[0], camWorldRight * -extentX + camWorldUp * -extentY + nearWorldForward);
-					XMStoreFloat3(&ret[0], camWorldRight * extentX + camWorldUp * -extentY + nearWorldForward);
-					XMStoreFloat3(&ret[0], camWorldRight * extentX + camWorldUp * extentY + farWorldForward);
-					XMStoreFloat3(&ret[0], camWorldRight * -extentX + camWorldUp * extentY + farWorldForward);
-					XMStoreFloat3(&ret[0], camWorldRight * -extentX + camWorldUp * -extentY + farWorldForward);
-					XMStoreFloat3(&ret[0], camWorldRight * extentX + camWorldUp * -extentY + farWorldForward);
+					ret[0] = nearWorldForward + cam.GetRightAxis() * extentX + cam.GetUpAxis() * extentY;
+					ret[1] = nearWorldForward - cam.GetRightAxis() * extentX + cam.GetUpAxis() * extentY;
+					ret[2] = nearWorldForward - cam.GetRightAxis() * extentX - cam.GetUpAxis() * extentY;
+					ret[3] = nearWorldForward + cam.GetRightAxis() * extentX - cam.GetUpAxis() * extentY;
+					ret[4] = farWorldForward + cam.GetRightAxis() * extentX + cam.GetUpAxis() * extentY;
+					ret[5] = farWorldForward - cam.GetRightAxis() * extentX + cam.GetUpAxis() * extentY;
+					ret[6] = farWorldForward - cam.GetRightAxis() * extentX - cam.GetUpAxis() * extentY;
+					ret[7] = farWorldForward + cam.GetRightAxis() * extentX - cam.GetUpAxis() * extentY;
 					break;
 				}
 				}
@@ -565,116 +554,93 @@ public:
 					[&frustumVertsWS, &shadowCascadeBoundaries, cascadeIdx, camNear, frustumDepth] {
 						auto const [cascadeNear, cascadeFar]{ shadowCascadeBoundaries[cascadeIdx] };
 
-						auto const cascadeNearNorm{ (cascadeNear - camNear) / frustumDepth };
-						auto const cascadeFarNorm{ (cascadeFar - camNear) / frustumDepth };
+						float const cascadeNearNorm{ (cascadeNear - camNear) / frustumDepth };
+						float const cascadeFarNorm{ (cascadeFar - camNear) / frustumDepth };
 
-						std::array<DirectX::XMFLOAT3, 8> ret;
+						std::array<Vector3, 8> ret;
 
 						for (int j = 0; j < 4; j++) {
-							auto const from{ XMLoadFloat3(&frustumVertsWS[j]) };
-							auto const to{ XMLoadFloat3(&frustumVertsWS[j + 4]) };
-							XMStoreFloat3(&ret[j], DirectX::XMVectorLerp(from, to, cascadeNearNorm));
-							XMStoreFloat3(&ret[j + 4], DirectX::XMVectorLerp(from, to, cascadeFarNorm));
+							Vector3 const& from{ frustumVertsWS[j] };
+							Vector3 const& to{ frustumVertsWS[j + 4] };
+
+							ret[j] = Lerp(from, to, cascadeNearNorm);
+							ret[j + 4] = Lerp(from, to, cascadeFarNorm);
 						}
 
 						return ret;
 					}()
 				};
 
-				DirectX::XMFLOAT3A const lightDir{ light.GetDirection().GetData() };
-				DirectX::XMFLOAT3A const worldUp{ Vector3::Up().GetData() };
-
 				float const shadowMapSize{ static_cast<float>(static_cast<int>(GetSize() / GetSubdivisionSize())) };
 
 				auto const calculateTightViewProj{
-					[&cascadeVertsWS, &light, &lightDir, &worldUp, shadowMapSize] {
-						auto const shadowViewMtx{ XMMatrixLookToLH(DirectX::g_XMZero, XMLoadFloat3A(&lightDir), XMLoadFloat3A(&worldUp)) };
+					[&cascadeVertsWS, &light, shadowMapSize] {
+						Matrix4 const shadowViewMtx{ Matrix4::LookToLH(Vector3::Zero(), light.GetDirection(), Vector3::Up()) };
 
 						// cascade vertices in shadow space
 						auto const cascadeVertsSP{
 							[&cascadeVertsWS, &shadowViewMtx] {
-								std::array<DirectX::XMFLOAT3, 8> ret;
-								XMVector3TransformCoordStream(ret.data(), sizeof(decltype(ret)::value_type), cascadeVertsWS.data(), sizeof(decltype(cascadeVertsWS)::value_type), std::size(cascadeVertsWS), shadowViewMtx);
+								std::array<Vector3, 8> ret;
+
+								for (int j = 0; j < 8; j++) {
+									ret[j] = Vector3{ Vector4{ cascadeVertsWS[j], 1 } * shadowViewMtx };
+								}
+
 								return ret;
 							}()
 						};
 
-						DirectX::BoundingBox aabb;
-						DirectX::BoundingBox::CreateFromPoints(aabb, std::size(cascadeVertsSP), cascadeVertsSP.data(), sizeof(decltype(cascadeVertsSP)::value_type));
-						auto const aabbCenter{ XMLoadFloat3(&aabb.Center) };
-						auto const aabbExtents{ XMLoadFloat3(&aabb.Extents) };
+						AABB const aabb{ AABB::FromVertices(cascadeVertsSP) };
+						Vector3 const aabbSize{ aabb.max - aabb.min };
+						Vector3 const worldUnitsPerTexel{ aabbSize / shadowMapSize };
 
-						auto const aabbSize{ aabbExtents * 2.0f };
-						auto const worldUnitsPerTexel{ aabbSize / shadowMapSize };
-
-						auto aabbMin{ DirectX::XMVectorSubtract(aabbCenter, aabbExtents) };
-						auto aabbMax{ DirectX::XMVectorAdd(aabbCenter, aabbExtents) };
+						Vector3 aabbMin{ aabb.min };
+						Vector3 aabbMax{ aabb.max };
 
 						aabbMin /= worldUnitsPerTexel;
-						aabbMin = DirectX::XMVectorFloor(aabbMin);
+						aabbMin = Floor(aabbMin);
 						aabbMin *= worldUnitsPerTexel;
 
 						aabbMax /= worldUnitsPerTexel;
-						aabbMax = DirectX::XMVectorFloor(aabbMax);
+						aabbMax = Floor(aabbMax);
 						aabbMax *= worldUnitsPerTexel;
 
-						auto const shadowProjMtx{ DirectX::XMMatrixOrthographicOffCenterLH(DirectX::XMVectorGetX(aabbMin), DirectX::XMVectorGetX(aabbMax), DirectX::XMVectorGetY(aabbMin), DirectX::XMVectorGetY(aabbMax), DirectX::XMVectorGetZ(aabbMax), DirectX::XMVectorGetZ(aabbMin) - light.GetShadowExtension()) };
+						Matrix const shadowProjMtx{ Matrix4::OrthographicAsymZLH(aabbMin[0], aabbMax[0], aabbMax[1], aabbMin[1], aabbMax[2], aabbMin[2] - light.GetShadowExtension()) };
 
-						DirectX::XMFLOAT4X4A shadowViewProjMtx;
-						XMStoreFloat4x4A(&shadowViewProjMtx, XMMatrixMultiply(shadowViewMtx, shadowProjMtx));
-
-						Matrix4 ret;
-
-						for (int j = 0; j < 4; j++) {
-							for (int k = 0; k < 4; k++) {
-								ret[j][k] = shadowViewProjMtx(j, k);
-							}
-						}
-
-						return ret;
+						return shadowViewMtx * shadowProjMtx;
 					}
 				};
 
 				auto const calculateStableViewProj{
-					[&cascadeVertsWS, this, &light, &lightDir, &worldUp, shadowMapSize] {
-						DirectX::BoundingSphere boundingSphereWS;
-						DirectX::BoundingSphere::CreateFromPoints(boundingSphereWS, std::size(cascadeVertsWS), cascadeVertsWS.data(), sizeof(decltype(cascadeVertsWS)::value_type));
+					[&cascadeVertsWS, this, &light, shadowMapSize] {
+						Vector3 cascadeCenterWS{ Vector3::Zero() };
 
-						auto const sphereRadius{ boundingSphereWS.Radius };
-						auto const sphereCenterWS{ XMLoadFloat3(&boundingSphereWS.Center) };
-
-						auto const lookTo{ DirectX::XMMatrixLookToLH(sphereCenterWS, XMLoadFloat3(&lightDir), XMLoadFloat3(&worldUp)) };
-						auto const sphereCenterLS{ XMVector3TransformCoord(sphereCenterWS, lookTo) };
-
-						auto const worldUnitsPerTexel{ sphereRadius * 2.0f / shadowMapSize };
-
-						auto const sphereRadiusVector{ DirectX::XMVectorReplicate(sphereRadius) };
-						auto min{ sphereCenterLS - sphereRadiusVector };
-						auto max{ sphereCenterLS + sphereRadiusVector };
-
-						min /= worldUnitsPerTexel;
-						min = DirectX::XMVectorFloor(min);
-						min *= worldUnitsPerTexel;
-
-						max /= worldUnitsPerTexel;
-						max = DirectX::XMVectorFloor(max);
-						max *= worldUnitsPerTexel;
-
-						auto const shadowViewMtx{ DirectX::XMMatrixLookToLH(sphereCenterWS, XMLoadFloat3(&lightDir), XMLoadFloat3(&worldUp)) };
-						auto const shadowProjMtx{ DirectX::XMMatrixOrthographicOffCenterLH(DirectX::XMVectorGetX(min), DirectX::XMVectorGetX(max), DirectX::XMVectorGetY(min), DirectX::XMVectorGetY(max), sphereRadius, -sphereRadius - light.GetShadowExtension()) };
-
-						DirectX::XMFLOAT4X4A shadowViewProjMtx;
-						XMStoreFloat4x4A(&shadowViewProjMtx, XMMatrixMultiply(shadowViewMtx, shadowProjMtx));
-
-						Matrix4 ret;
-
-						for (int j = 0; j < 4; j++) {
-							for (int k = 0; k < 4; k++) {
-								ret[j][k] = shadowViewProjMtx(j, k);
-							}
+						for (Vector3 const& cascadeVertWS : cascadeVertsWS) {
+							cascadeCenterWS += cascadeVertWS;
 						}
 
-						return ret;
+						cascadeCenterWS /= 8.0f;
+
+						float sphereRadius{ 0.0f };
+
+						for (Vector3 const& cascadeVertWS : cascadeVertsWS) {
+							sphereRadius = std::max(sphereRadius, Distance(cascadeCenterWS, cascadeVertWS));
+						}
+
+						sphereRadius = std::ceil(sphereRadius * 16.0f) / 16.0f;
+
+						Vector3 const maxExtents{ sphereRadius };
+						Vector3 const minExtents{ -maxExtents };
+						Vector3 const cascadeExtents{ maxExtents - minExtents };
+
+						Vector3 const shadowCameraPos{ cascadeCenterWS + light.GetDirection() * -minExtents[2] };
+
+						Matrix const shadowView{ Matrix4::LookToLH(shadowCameraPos, light.GetDirection(), Vector3::Up()) };
+						Matrix shadowProj{ Matrix4::OrthographicAsymZLH(minExtents[0], maxExtents[0], maxExtents[1], minExtents[1], 0.0f, cascadeExtents[2]) };
+
+						// TODO
+
+						return Matrix4{};
 					}
 				};
 
