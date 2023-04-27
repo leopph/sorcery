@@ -188,6 +188,9 @@ template<typename T, int N>
 template<typename T, int N>
 [[nodiscard]] auto VectorProject(Vector<T, N> const& what, Vector<T, N> const& onto) noexcept -> Vector<T, N>;
 
+template<typename T, int N>
+[[nodiscard]] auto Floor(Vector<T, N> const& v) -> Vector<T, N>;
+
 #ifdef LEOPPH_MATH_USE_INTRINSICS
 template<>
 [[nodiscard]] inline auto Length(Vector3 const& vector) noexcept -> float;
@@ -928,6 +931,18 @@ auto ScalarProject(Vector<T, N> const& what, Vector<T, N> const& onto) noexcept 
 template<typename T, int N>
 auto VectorProject(Vector<T, N> const& what, Vector<T, N> const& onto) noexcept -> Vector<T, N> {
 	return ScalarProject(what, onto) * Normalized(onto);
+}
+
+
+template<typename T, int N>
+auto Floor(Vector<T, N> const& v) -> Vector<T, N> {
+	Vector<T, N> ret;
+
+	for (int i = 0; i < N; i++) {
+		ret[i] = std::floor(v[i]);
+	}
+
+	return ret;
 }
 
 
