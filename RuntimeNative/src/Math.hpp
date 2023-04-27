@@ -191,6 +191,9 @@ template<typename T, int N>
 template<typename T, int N>
 [[nodiscard]] auto Floor(Vector<T, N> const& v) -> Vector<T, N>;
 
+template<typename T, int N>
+[[nodiscard]] auto Round(Vector<T, N> const& v) -> Vector<T, N>;
+
 #ifdef LEOPPH_MATH_USE_INTRINSICS
 template<>
 [[nodiscard]] inline auto Length(Vector3 const& vector) noexcept -> float;
@@ -940,6 +943,18 @@ auto Floor(Vector<T, N> const& v) -> Vector<T, N> {
 
 	for (int i = 0; i < N; i++) {
 		ret[i] = std::floor(v[i]);
+	}
+
+	return ret;
+}
+
+
+template<typename T, int N>
+auto Round(Vector<T, N> const& v) -> Vector<T, N> {
+	Vector<T, N> ret;
+
+	for (int i = 0; i < N; i++) {
+		ret[i] = std::round(v[i]);
 	}
 
 	return ret;
