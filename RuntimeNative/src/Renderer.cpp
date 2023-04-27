@@ -51,7 +51,7 @@ std::array<float, MAX_CASCADE_COUNT - 1> gCascadeSplits{ 0.1f, 0.3f, 0.6f };
 int gCascadeCount{ 4 };
 float gShadowDistance{ 100 };
 bool gVisualizeShadowCascades{ false };
-bool gUseStableShadowCascadeProjection{ true };
+bool gUseStableShadowCascadeProjection{ false };
 
 
 struct ShadowCascadeBoundary {
