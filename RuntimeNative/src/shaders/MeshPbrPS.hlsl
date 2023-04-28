@@ -1,8 +1,8 @@
 #include "MeshVSOut.hlsli"
 #include "ShaderInterop.h"
 #include "BRDF.hlsli"
-#include "Samplers.hlsli"
 #include "ShadowFilteringModes.h"
+#include "ShadowSampling.hlsli"
 #include "Util.hlsli"
 
 
@@ -14,33 +14,6 @@ TEXTURE2D(gPunctualShadowAtlas, float, RES_SLOT_PUNCTUAL_SHADOW_ATLAS);
 TEXTURE2D(gDirShadowAtlas, float, RES_SLOT_DIR_SHADOW_ATLAS);
 
 STRUCTUREDBUFFER(gLights, ShaderLight, RES_SLOT_LIGHTS);
-
-
-float SampleShadowMapNoFilter(const Texture2D<float> shadowMap, const float2 uv, const float depth) {
-    return shadowMap.SampleCmpLevelZero(gSamplerCmpPoint, uv, depth);
-}
-
-
-float SampleShadowMapHardwarePCF(const Texture2D<float> shadowMap, const float2 uv, const float depth) {
-    return shadowMap.SampleCmpLevelZero(gSamplerCmpPcf, uv, depth);
-}
-
-
-float SampleShadowMapPCF3x34TapFast(const Texture2D<float> shadowMap, const float2 uv, const float depth) {
-    float2 shadowMapSize;
-    shadowMap.GetDimensions(shadowMapSize.x, shadowMapSize.y);
-
-    const float2 texelSize = 1.0 / shadowMapSize;
-    const float2 uvOffset = texelSize * 0.5;
-
-    float4 result;
-    result.x = SampleShadowMapHardwarePCF(shadowMap, float2(uv.x + uvOffset.x, uv.y + uvOffset.y), depth);
-    result.y = SampleShadowMapHardwarePCF(shadowMap, float2(uv.x - uvOffset.x, uv.y + uvOffset.y), depth);
-    result.z = SampleShadowMapHardwarePCF(shadowMap, float2(uv.x - uvOffset.x, uv.y - uvOffset.y), depth);
-    result.w = SampleShadowMapHardwarePCF(shadowMap, float2(uv.x + uvOffset.x, uv.y - uvOffset.y), depth);
-
-    return dot(result, 0.25);
-}
 
 
 inline float SampleShadowCascadeFromAtlas(const Texture2D<float> atlas, const float3 fragWorldPos, const uint lightIdx, const uint shadowMapIdx, const float3 fragNormal) {
@@ -57,15 +30,18 @@ inline float SampleShadowCascadeFromAtlas(const Texture2D<float> atlas, const fl
     const float depth = posLNdc.z + shadowMapTexelSize * gLights[lightIdx].depthBias;
 
     switch (gPerFrameConstants.shadowFilteringMode) {
-		case SHADOW_FILTERING_NONE: 
-			return SampleShadowMapNoFilter(atlas, uv, depth);
-		case SHADOW_FILTERING_HARDWARE_PCF: 
-			return SampleShadowMapHardwarePCF(atlas, uv, depth);
-		case SHADOW_FILTERING_PCF_3x3:
-			return SampleShadowMapPCF3x34TapFast(atlas, uv, depth);
-		default:
-            return 1.0;
-
+	case SHADOW_FILTERING_NONE: 
+		return SampleShadowMapNoFilter(atlas, uv, depth);
+	case SHADOW_FILTERING_HARDWARE_PCF: 
+		return SampleShadowMapHardwarePCF(atlas, uv, depth);
+	case SHADOW_FILTERING_PCF_3x3:
+		return SampleShadowMapPCF3x34TapFast(atlas, uv, depth);
+	case SHADOW_FILTERING_PCF_TENT_3x3:
+        return SampleShadowMapPCF3x3Tent4Tap(atlas, uv, depth);
+	case SHADOW_FILTERING_PCF_TENT_5x5:
+        return SampleShadowMapPCF5x5Tent9Tap(atlas, uv, depth);
+	default:
+        return 1.0;
     }
 }
 

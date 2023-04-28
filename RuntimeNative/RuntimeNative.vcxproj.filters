@@ -211,6 +211,7 @@
     <None Include="src\shaders\GizmoVsOut.hlsli" />
     <None Include="src\shaders\Samplers.hlsli" />
     <None Include="src\shaders\Util.hlsli" />
+    <None Include="src\shaders\ShadowSampling.hlsli" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="src\shaders\MeshPbrPS.hlsl" />

@@ -81,7 +81,9 @@ struct Visibility {
 enum class ShadowFilteringMode {
 	None        = SHADOW_FILTERING_NONE,
 	HardwarePCF = SHADOW_FILTERING_HARDWARE_PCF,
-	PCF3x3      = SHADOW_FILTERING_PCF_3x3
+	PCF3x3      = SHADOW_FILTERING_PCF_3x3,
+	PCFTent3x3  = SHADOW_FILTERING_PCF_TENT_3x3,
+	PCFTent5x5  = SHADOW_FILTERING_PCF_TENT_5x5
 };
 
 

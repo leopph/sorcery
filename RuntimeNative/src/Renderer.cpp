@@ -52,7 +52,7 @@ int gCascadeCount{ 4 };
 float gShadowDistance{ 100 };
 bool gVisualizeShadowCascades{ false };
 bool gUseStableShadowCascadeProjection{ false };
-ShadowFilteringMode gShadowFilteringMode{ ShadowFilteringMode::PCF3x3 };
+ShadowFilteringMode gShadowFilteringMode{ ShadowFilteringMode::PCFTent5x5 };
 
 
 struct ShadowCascadeBoundary {
