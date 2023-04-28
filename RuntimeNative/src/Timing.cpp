@@ -2,6 +2,7 @@
 
 #include <chrono>
 
+
 namespace leopph::timing {
 namespace {
 std::chrono::steady_clock::time_point gLastMeasurePoint;
@@ -55,6 +56,6 @@ auto GetTargetFrameRate() noexcept -> int {
 
 auto SetTargetFrameRate(int const targetFrameRate) noexcept -> void {
 	gTargetFrameRate = targetFrameRate;
-	gMinFrameTime = std::chrono::milliseconds{ static_cast<int>(1000.0f / static_cast<float>(targetFrameRate)) };
+	gMinFrameTime = std::chrono::nanoseconds{ static_cast<int>(1e9f / static_cast<float>(targetFrameRate)) };
 }
 }
