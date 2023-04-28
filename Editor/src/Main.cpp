@@ -20,6 +20,7 @@
 #include <string>
 #include <cwchar>
 
+#include "EditorSettingsWindow.hpp"
 #include "EntityHierarchyWindow.hpp"
 #include "GameViewWindow.hpp"
 #include "ImGuiIntegration.hpp"
@@ -46,8 +47,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 		leopph::renderer::SetGameResolution({ 960, 540 });
 		leopph::renderer::SetSyncInterval(0);
 
-		auto constexpr TARGET_FRAME_RATE{ 200 };
-		leopph::timing::SetTargetFrameRate(TARGET_FRAME_RATE);
+		leopph::timing::SetTargetFrameRate(leopph::editor::DEFAULT_TARGET_FRAME_RATE);
 
 		ImGui::CreateContext();
 		auto& imGuiIo = ImGui::GetIO();
@@ -104,6 +104,8 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 				DrawStartupScreen(context);
 			}
 			else {
+				int static targetFrameRate{ leopph::timing::GetTargetFrameRate() };
+
 				if (runGame) {
 					leopph::init_behaviors();
 					leopph::tick_behaviors();
@@ -114,7 +116,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 						leopph::gWindow.SetEventHook(leopph::editor::EditorImGuiEventHook);
 						leopph::gWindow.UnlockCursor();
 						leopph::gWindow.SetCursorHiding(false);
-						leopph::timing::SetTargetFrameRate(TARGET_FRAME_RATE);
+						leopph::timing::SetTargetFrameRate(targetFrameRate);
 						context.GetScene()->Load(context.GetFactoryManager());
 						context.SetSelectedObject(nullptr);
 					}
@@ -125,6 +127,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 						leopph::gWindow.SetEventHook({});
 						leopph::timing::SetTargetFrameRate(-1);
 						context.GetScene()->Save();
+						targetFrameRate = leopph::timing::GetTargetFrameRate();
 					}
 				}
 

@@ -1,6 +1,7 @@
 #include "MainMenuBar.hpp"
 
 #include "ProjectSettingsWindow.hpp"
+#include "EditorSettingsWindow.hpp"
 
 #include <nfd.h>
 
@@ -9,6 +10,7 @@ namespace leopph::editor {
 auto DrawMainMenuBar(Context& context) -> void {
 	auto static showDemoWindow{ false };
 	auto static showProjectSettingsWindow{ false };
+	auto static showEditorSettingsWindow{ false };
 
 	if (showDemoWindow) {
 		ImGui::ShowDemoWindow();
@@ -16,6 +18,10 @@ auto DrawMainMenuBar(Context& context) -> void {
 
 	if (showProjectSettingsWindow) {
 		DrawProjectSettingsWindow(showProjectSettingsWindow);
+	}
+
+	if (showEditorSettingsWindow) {
+		DrawEditorSettingsWindow(showEditorSettingsWindow);
 	}
 
 	if (ImGui::BeginMainMenuBar()) {
@@ -40,9 +46,14 @@ auto DrawMainMenuBar(Context& context) -> void {
 		}
 
 		if (ImGui::BeginMenu("Options")) {
+			if (std::string const static label{ std::string{ EDITOR_SETTINGS_WINDOW_TITLE } + "##MenuItem" }; ImGui::MenuItem(label.data())) {
+				showEditorSettingsWindow = true;
+			}
+
 			if (ImGui::MenuItem((std::string{ PROJECT_SETTINGS_WINDOW_TITLE } + "##MenuItem").data())) {
 				showProjectSettingsWindow = true;
 			}
+
 			ImGui::EndMenu();
 		}
 
