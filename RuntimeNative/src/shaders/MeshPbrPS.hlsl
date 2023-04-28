@@ -82,8 +82,7 @@ inline float3 CalculateDirLight(const float3 N, const float3 V, const float3 alb
 }
 
 
-inline float3 CalculateSpotLight(const float3 N, const float3 V, const float3 albedo, const float metallic, const float roughness, const int lightIdx, const float3 fragWorldPos)
-{
+inline float3 CalculateSpotLight(const float3 N, const float3 V, const float3 albedo, const float metallic, const float roughness, const int lightIdx, const float3 fragWorldPos) {
 	float3 L = gLights[lightIdx].position - fragWorldPos;
     const float dist = length(L);
     L = normalize(L);
@@ -106,8 +105,7 @@ inline float3 CalculateSpotLight(const float3 N, const float3 V, const float3 al
 }
 
 
-inline float3 CalculatePointLight(const float3 N, const float3 V, const float3 albedo, const float metallic, const float roughness, const int lightIdx, const float3 fragWorldPos)
-{
+inline float3 CalculatePointLight(const float3 N, const float3 V, const float3 albedo, const float metallic, const float roughness, const int lightIdx, const float3 fragWorldPos) {
 	float3 L = gLights[lightIdx].position - fragWorldPos;
     const float dist = length(L);
     L = normalize(L);
@@ -173,10 +171,8 @@ float4 main(const MeshVsOut vsOut) : SV_TARGET {
     uint _;
     gLights.GetDimensions(lightCount, _);
 
-    for (uint i = 0; i < lightCount; i++)
-    {
-        switch (gLights[i].type)
-        {
+    for (uint i = 0; i < lightCount; i++) {
+        switch (gLights[i].type) {
             case 0:{
                     outColor += CalculateDirLight(N, V, albedo, metallic, roughness, i, vsOut.worldPos, vsOut.viewPosZ);
                     break;
