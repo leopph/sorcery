@@ -55,13 +55,13 @@ inline float SampleShadowCascadeFromAtlas(const Texture2D<float> atlas, const fl
     uint atlasSize;
     atlas.GetDimensions(atlasSize, atlasSize);
     const float atlasTexelSize = 1.0 / atlasSize;
-    const float shadowMapTexelSize = atlasTexelSize / gLights[lightIdx].shadowUvScales[shadowMapIdx];
+    const float shadowMapTexelSize = atlasTexelSize / gLights[lightIdx].shadowAtlasCellSizes[shadowMapIdx];
 
     const float4 posLClip = mul(float4(fragWorldPos + fragNormal * shadowMapTexelSize * gLights[lightIdx].normalBias, 1), gLights[lightIdx].shadowViewProjMatrices[shadowMapIdx]);
     float3 posLNdc = posLClip.xyz / posLClip.w;
     posLNdc.xy = posLNdc.xy * float2(0.5, -0.5) + 0.5;
 
-    const float2 uv = posLNdc.xy * gLights[lightIdx].shadowUvScales[shadowMapIdx] + gLights[lightIdx].shadowUvOffsets[shadowMapIdx];
+    const float2 uv = posLNdc.xy * gLights[lightIdx].shadowAtlasCellSizes[shadowMapIdx] + gLights[lightIdx].shadowAtlasCellOffsets[shadowMapIdx];
     const float depth = posLNdc.z + shadowMapTexelSize * gLights[lightIdx].depthBias;
 
     switch (gPerFrameConstants.shadowFilteringMode) {

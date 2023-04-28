@@ -273,8 +273,8 @@ public:
 					lights[subcell->visibleLightIdxIdx].isCastingShadow = TRUE;
 					lights[subcell->visibleLightIdxIdx].sampleShadowMap[subcell->shadowMapIdx] = TRUE;
 					lights[subcell->visibleLightIdxIdx].shadowViewProjMatrices[subcell->shadowMapIdx] = subcell->shadowViewProjMtx;
-					lights[subcell->visibleLightIdxIdx].shadowUvOffsets[subcell->shadowMapIdx] = GetNormalizedElementOffset(i) + cell.GetNormalizedElementOffset(j) * GetNormalizedElementSize();
-					lights[subcell->visibleLightIdxIdx].shadowUvScales[subcell->shadowMapIdx] = GetNormalizedElementSize() * cell.GetNormalizedElementSize();
+					lights[subcell->visibleLightIdxIdx].shadowAtlasCellOffsets[subcell->shadowMapIdx] = GetNormalizedElementOffset(i) + cell.GetNormalizedElementOffset(j) * GetNormalizedElementSize();
+					lights[subcell->visibleLightIdxIdx].shadowAtlasCellSizes[subcell->shadowMapIdx] = GetNormalizedElementSize() * cell.GetNormalizedElementSize();
 				}
 			}
 		}
@@ -582,10 +582,8 @@ public:
 					}()
 				};
 
-				float const shadowMapSize{ static_cast<float>(static_cast<int>(GetSize() / GetSubdivisionSize())) };
-
 				auto const calculateTightViewProj{
-					[&cascadeVertsWS, &light, shadowMapSize] {
+					[&cascadeVertsWS, &light] {
 						Matrix4 const shadowViewMtx{ Matrix4::LookToLH(Vector3::Zero(), light.GetDirection(), Vector3::Up()) };
 
 						// cascade vertices in shadow space
@@ -609,7 +607,7 @@ public:
 				};
 
 				auto const calculateStableViewProj{
-					[&cascadeVertsWS, this, &light, shadowMapSize] {
+					[&cascadeVertsWS, &light, this] {
 						Vector3 cascadeCenterWS{ Vector3::Zero() };
 
 						for (Vector3 const& cascadeVertWS : cascadeVertsWS) {
@@ -624,20 +622,26 @@ public:
 							sphereRadius = std::max(sphereRadius, Distance(cascadeCenterWS, cascadeVertWS));
 						}
 
-						sphereRadius = std::ceil(sphereRadius * 16.0f) / 16.0f;
+						float const shadowMapSize{ static_cast<float>(static_cast<int>(GetSize() / GetSubdivisionSize())) };
+						float const texelsPerUnit{ shadowMapSize / (sphereRadius * 2.0f) };
 
-						Vector3 const maxExtents{ sphereRadius };
-						Vector3 const minExtents{ -maxExtents };
-						Vector3 const cascadeExtents{ maxExtents - minExtents };
+						Matrix4 const lookAtMtx{ Matrix4::LookToLH(Vector3::Zero(), light.GetDirection(), Vector3::Up()) };
+						Matrix4 const scaleMtx{ Matrix4::Scale(Vector3{ texelsPerUnit }) };
+						Matrix4 const baseViewMtx{ scaleMtx * lookAtMtx };
+						Matrix4 const baseViewInvMtx{ baseViewMtx.Inverse() };
 
-						Vector3 const shadowCameraPos{ cascadeCenterWS + light.GetDirection() * -minExtents[2] };
+						Vector3 correctedCascadeCenter{ Vector4{ cascadeCenterWS, 1 } * baseViewMtx };
 
-						Matrix const shadowView{ Matrix4::LookToLH(shadowCameraPos, light.GetDirection(), Vector3::Up()) };
-						Matrix shadowProj{ Matrix4::OrthographicAsymZLH(minExtents[0], maxExtents[0], maxExtents[1], minExtents[1], 0.0f, cascadeExtents[2]) };
+						for (int j = 0; j < 2; j++) {
+							correctedCascadeCenter[j] = std::floor(correctedCascadeCenter[j]);
+						}
 
-						// TODO
+						correctedCascadeCenter = Vector3{ Vector4{ correctedCascadeCenter, 1 } * baseViewInvMtx };
 
-						return Matrix4{};
+						Matrix4 const shadowViewMtx{ Matrix4::LookToLH(correctedCascadeCenter, light.GetDirection(), Vector3::Up()) };
+						Matrix4 const shadowProjMtx{ Matrix4::OrthographicAsymZLH(-sphereRadius, sphereRadius, sphereRadius, -sphereRadius, sphereRadius, -sphereRadius - light.GetShadowExtension()) };
+
+						return shadowViewMtx * shadowProjMtx;
 					}
 				};
 
