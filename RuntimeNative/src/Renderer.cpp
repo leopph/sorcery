@@ -355,7 +355,15 @@ public:
 		};
 
 		for (int i = 0; i < static_cast<int>(visibility.lightIndices.size()); i++) {
-			if (auto const light{ allLights[visibility.lightIndices[i]] }; light->IsCastingShadow()) {
+			if (auto const light{ allLights[visibility.lightIndices[i]] }; light->IsCastingShadow() && light->GetType() == LightComponent::Type::Spot || light->GetType() == LightComponent::Type::Point) {
+				Vector3 const& lightPos{ light->GetEntity()->GetTransform().GetWorldPosition() };
+				float const lightRange{ light->GetRange() };
+
+				// Skip the light if its bounding sphere is farther than the shadow distance
+				if (Vector3 const camToLightDir{ Normalize(lightPos - camPos) }; Distance(lightPos - camToLightDir * lightRange, cam.GetPosition()) > gShadowDistance) {
+					continue;
+				}
+
 				if (light->GetType() == LightComponent::Type::Spot) {
 					auto lightVertices{ CalculateSpotLightLocalVertices(*light) };
 
@@ -369,9 +377,6 @@ public:
 					}
 				}
 				else if (light->GetType() == LightComponent::Type::Point) {
-					auto const lightRange{ light->GetRange() };
-					auto const lightPos{ light->GetEntity()->GetTransform().GetWorldPosition() };
-
 					for (auto j = 0; j < 6; j++) {
 						std::array static const faceBoundsRotations{
 							Quaternion::FromAxisAngle(Vector3::Up(), ToRadians(90)), // +X
