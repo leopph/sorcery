@@ -47,12 +47,13 @@ auto DrawProjectSettingsWindow(bool& isOpen) -> void {
 
 			auto constexpr shadowFilteringModeNames{
 				[] {
-					std::array<char const*, 5> ret{};
+					std::array<char const*, 6> ret{};
 					ret[static_cast<int>(renderer::ShadowFilteringMode::None)] = "No Filtering";
 					ret[static_cast<int>(renderer::ShadowFilteringMode::HardwarePCF)] = "PCF 2x2 (hardware)";
 					ret[static_cast<int>(renderer::ShadowFilteringMode::PCF3x3)] = "PCF 3x3 (4 taps)";
 					ret[static_cast<int>(renderer::ShadowFilteringMode::PCFTent3x3)] = "PCF Tent 3x3 (4 taps)";
 					ret[static_cast<int>(renderer::ShadowFilteringMode::PCFTent5x5)] = "PCF Tent 5x5 (9 taps)";
+					ret[static_cast<int>(renderer::ShadowFilteringMode::PCSS)] = "PCSS";
 					return ret;
 				}()
 			};
