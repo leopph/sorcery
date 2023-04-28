@@ -2,7 +2,7 @@
 #include "ShaderInterop.h"
 #include "BRDF.hlsli"
 #include "Samplers.hlsli"
-#include "ShadowFilterModes.h"
+#include "ShadowFilteringModes.h"
 #include "Util.hlsli"
 
 
@@ -56,12 +56,12 @@ inline float SampleShadowCascadeFromAtlas(const Texture2D<float> atlas, const fl
     const float2 uv = posLNdc.xy * gLights[lightIdx].shadowUvScales[shadowMapIdx] + gLights[lightIdx].shadowUvOffsets[shadowMapIdx];
     const float depth = posLNdc.z + shadowMapTexelSize * gLights[lightIdx].depthBias;
 
-    switch (gPerFrameConstants.shadowFilterMode) {
-		case SHADOW_FILTER_NONE: 
+    switch (gPerFrameConstants.shadowFilteringMode) {
+		case SHADOW_FILTERING_NONE: 
 			return SampleShadowMapNoFilter(atlas, uv, depth);
-		case SHADOW_FILTER_HARDWARE_PCF: 
+		case SHADOW_FILTERING_HARDWARE_PCF: 
 			return SampleShadowMapHardwarePCF(atlas, uv, depth);
-		case SHADOW_FILTER_PCF_3x3:
+		case SHADOW_FILTERING_PCF_3x3:
 			return SampleShadowMapPCF3x34TapFast(atlas, uv, depth);
 		default:
             return 1.0;

@@ -145,7 +145,7 @@
     <ClInclude Include="src\CameraComponent.hpp" />
     <ClInclude Include="src\Component.hpp" />
     <ClInclude Include="src\Compress.hpp" />
-    <ClInclude Include="src\shaders\ShadowFilterModes.h" />
+    <ClInclude Include="src\shaders\ShadowFilteringModes.h" />
     <ClInclude Include="src\StaticMeshComponent.hpp" />
     <ClInclude Include="src\Guid.hpp" />
     <ClInclude Include="src\Image.hpp" />

@@ -115,7 +115,7 @@ struct ShaderLineGizmoVertexData {
 struct ShaderPerFrameConstants {
 	int shadowCascadeCount;
 	BOOL visualizeShadowCascades;
-	int shadowFilterMode;
+	int shadowFilteringMode;
 	float pad;
 };
 

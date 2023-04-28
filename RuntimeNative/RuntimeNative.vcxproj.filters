@@ -197,7 +197,7 @@
     <ClInclude Include="src\SkyboxComponent.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\shaders\ShadowFilterModes.h">
+    <ClInclude Include="src\shaders\ShadowFilteringModes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
