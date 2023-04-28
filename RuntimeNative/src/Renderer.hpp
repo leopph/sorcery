@@ -5,6 +5,7 @@
 #include "LightComponents.hpp"
 #include "Util.hpp"
 #include "SkyboxComponent.hpp"
+#include "shaders\ShadowFilterModes.h"
 
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
@@ -77,6 +78,13 @@ struct Visibility {
 };
 
 
+enum class ShadowFilterMode {
+	None        = SHADOW_FILTER_NONE,
+	HardwarePCF = SHADOW_FILTER_HARDWARE_PCF,
+	PCF3x3      = SHADOW_FILTER_PCF_3x3
+};
+
+
 LEOPPHAPI auto StartUp() -> void;
 LEOPPHAPI auto ShutDown() noexcept -> void;
 
@@ -140,4 +148,7 @@ LEOPPHAPI auto SetShadowDistance(float shadowDistance) noexcept -> void;
 LEOPPHAPI auto VisualizeShadowCascades(bool visualize) noexcept -> void;
 [[nodiscard]] LEOPPHAPI auto IsUsingStableShadowCascadeProjection() noexcept -> bool;
 LEOPPHAPI auto UseStableShadowCascadeProjection(bool useStableProj) noexcept -> void;
+
+[[nodiscard]] LEOPPHAPI auto GetShadowFilterMode() noexcept -> ShadowFilterMode;
+LEOPPHAPI auto SetShadowFilterMode(ShadowFilterMode filterMode) noexcept -> void;
 }

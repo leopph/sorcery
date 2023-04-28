@@ -115,7 +115,8 @@ struct ShaderLineGizmoVertexData {
 struct ShaderPerFrameConstants {
 	int shadowCascadeCount;
 	BOOL visualizeShadowCascades;
-	float2 pad;
+	int shadowFilterMode;
+	float pad;
 };
 
 
@@ -128,38 +129,38 @@ struct ShaderPerCamConstants {
 
 
 CBUFFER(PerFrameCB, CB_SLOT_PER_FRAME) {
-ShaderPerFrameConstants gPerFrameConstants;
+	ShaderPerFrameConstants gPerFrameConstants;
 };
 
 
 CBUFFER(PerCameraCB, CB_SLOT_PER_CAM) {
-ShaderPerCamConstants gPerCamConstants;
+	ShaderPerCamConstants gPerCamConstants;
 };
 
 
 CBUFFER(PerModelCB, CB_SLOT_PER_MODEL) {
-row_major float4x4 modelMtx;
-row_major float3x3 normalMtx;
+	row_major float4x4 modelMtx;
+	row_major float3x3 normalMtx;
 };
 
 
 CBUFFER(PerMaterialCB, CB_SLOT_PER_MATERIAL) {
-ShaderMaterial material;
+	ShaderMaterial material;
 };
 
 
 CBUFFER(ToneMapGammaCB, CB_SLOT_TONE_MAP_GAMMA) {
-float invGamma;
+	float invGamma;
 };
 
 
 CBUFFER(SkyboxCB, CB_SLOT_SKYBOX_PASS) {
-row_major float4x4 skyboxViewProjMtx;
+	row_major float4x4 skyboxViewProjMtx;
 };
 
 
 CBUFFER(ShadowCB, CB_SLOT_SHADOW_PASS) {
-row_major float4x4 shadowViewProjMtx;
+	row_major float4x4 shadowViewProjMtx;
 };
 
 

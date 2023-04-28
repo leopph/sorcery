@@ -52,6 +52,7 @@ int gCascadeCount{ 4 };
 float gShadowDistance{ 100 };
 bool gVisualizeShadowCascades{ false };
 bool gUseStableShadowCascadeProjection{ false };
+ShadowFilterMode gShadowFilterMode{ ShadowFilterMode::PCF3x3 };
 
 
 struct ShadowCascadeBoundary {
@@ -2055,6 +2056,7 @@ auto DrawFullWithCameras(std::span<Camera const* const> const cameras, RenderTar
 	auto const perFrameCbData{ static_cast<PerFrameCB*>(mappedPerFrameCB.pData) };
 	perFrameCbData->gPerFrameConstants.shadowCascadeCount = gCascadeCount;
 	perFrameCbData->gPerFrameConstants.visualizeShadowCascades = gVisualizeShadowCascades;
+	perFrameCbData->gPerFrameConstants.shadowFilterMode = static_cast<int>(gShadowFilterMode);
 
 	gResources->context->Unmap(gResources->perFrameCB.Get(), 0);
 
@@ -2592,5 +2594,15 @@ auto IsUsingStableShadowCascadeProjection() noexcept -> bool {
 
 auto UseStableShadowCascadeProjection(bool const useStableProj) noexcept -> void {
 	gUseStableShadowCascadeProjection = useStableProj;
+}
+
+
+auto GetShadowFilterMode() noexcept -> ShadowFilterMode {
+	return gShadowFilterMode;
+}
+
+
+auto SetShadowFilterMode(ShadowFilterMode const filterMode) noexcept -> void {
+	gShadowFilterMode = filterMode;
 }
 }
