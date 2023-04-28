@@ -591,22 +591,8 @@ public:
 							}()
 						};
 
-						AABB const aabb{ AABB::FromVertices(cascadeVertsSP) };
-						Vector3 const aabbSize{ aabb.max - aabb.min };
-						Vector3 const worldUnitsPerTexel{ aabbSize / shadowMapSize };
-
-						Vector3 aabbMin{ aabb.min };
-						Vector3 aabbMax{ aabb.max };
-
-						aabbMin /= worldUnitsPerTexel;
-						aabbMin = Floor(aabbMin);
-						aabbMin *= worldUnitsPerTexel;
-
-						aabbMax /= worldUnitsPerTexel;
-						aabbMax = Floor(aabbMax);
-						aabbMax *= worldUnitsPerTexel;
-
-						Matrix const shadowProjMtx{ Matrix4::OrthographicAsymZLH(aabbMin[0], aabbMax[0], aabbMax[1], aabbMin[1], aabbMax[2], aabbMin[2] - light.GetShadowExtension()) };
+						auto const [aabbMin, aabbMax]{ AABB::FromVertices(cascadeVertsSP) };
+						Matrix4 const shadowProjMtx{ Matrix4::OrthographicAsymZLH(aabbMin[0], aabbMax[0], aabbMax[1], aabbMin[1], aabbMax[2], aabbMin[2] - light.GetShadowExtension()) };
 
 						return shadowViewMtx * shadowProjMtx;
 					}
