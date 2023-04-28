@@ -180,7 +180,6 @@
     <None Include="src\shaders\MeshVSOut.hlsli" />
     <None Include="src\shaders\ShadowSampling.hlsli" />
     <None Include="src\shaders\SkyboxVSOut.hlsli" />
-    <None Include="src\shaders\Util.hlsli" />
     <None Include="vcpkg.json" />
   </ItemGroup>
   <ItemGroup>

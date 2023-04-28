@@ -5,7 +5,7 @@
 #include "LightComponents.hpp"
 #include "Util.hpp"
 #include "SkyboxComponent.hpp"
-#include "shaders\ShadowFilteringModes.h"
+#include "shaders/ShadowFilteringModes.h"
 
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX

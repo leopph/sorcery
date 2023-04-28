@@ -80,6 +80,11 @@ using ShadowCascadeBoundaries = std::array<ShadowCascadeBoundary, MAX_CASCADE_CO
 
 	boundaries[gCascadeCount - 1].farClip = shadowDistance;
 
+	for (int i = gCascadeCount; i < MAX_CASCADE_COUNT; i++) {
+		boundaries[i].nearClip = std::numeric_limits<float>::infinity();
+		boundaries[i].farClip = std::numeric_limits<float>::infinity();
+	}
+
 	return boundaries;
 }
 
@@ -2093,7 +2098,7 @@ auto DrawFullWithCameras(std::span<Camera const* const> const cameras, RenderTar
 		perCamCbData->gPerCamConstants.camPos = camPos;
 
 		for (int i = 0; i < MAX_CASCADE_COUNT; i++) {
-			perCamCbData->gPerCamConstants.shadowCascadeFarBounds[i] = shadowCascadeBoundaries[i].farClip;
+			perCamCbData->gPerCamConstants.shadowCascadeSplitDistances[i] = shadowCascadeBoundaries[i].farClip;
 		}
 
 		gResources->context->Unmap(gResources->perCamCB.Get(), 0);
