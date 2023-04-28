@@ -34,18 +34,37 @@ auto DrawProjectSettingsWindow(bool& isOpen) -> void {
 	ImGui::TableNextColumn();
 	if (ImGui::BeginChild("ProjectSettingsRightChild")) {
 		if (selectedSubMenu == 0) {
-			bool visualizeShadowCascades{ renderer::IsVisualizingShadowCascades() };
-
-			if (ImGui::Checkbox("Visualize Shadow Cascades", &visualizeShadowCascades)) {
-				renderer::VisualizeShadowCascades(visualizeShadowCascades);
-			}
-
 			ImGui::Text("Shadow Distance");
 			ImGui::SameLine();
 
 			float shadowDistance{ renderer::GetShadowDistance() };
 			if (ImGui::InputFloat("##shadowDistanceInput", &shadowDistance, 0, 0, "%.3f", ImGuiInputTextFlags_EnterReturnsTrue)) {
 				renderer::SetShadowDistance(shadowDistance);
+			}
+
+			ImGui::Text("Shadow Filtering Mode");
+			ImGui::SameLine();
+
+			auto constexpr shadowFilteringModeNames{
+				[] {
+					std::array<char const*, 3> ret{};
+					ret[static_cast<int>(renderer::ShadowFilteringMode::None)] = "No Filtering";
+					ret[static_cast<int>(renderer::ShadowFilteringMode::HardwarePCF)] = "PCF 2x2 (hardware)";
+					ret[static_cast<int>(renderer::ShadowFilteringMode::PCF3x3)] = "PCF 3x3 (4 taps)";
+					return ret;
+				}()
+			};
+			int currentShadowFilteringModeIdx{ static_cast<int>(renderer::GetShadowFilteringMode()) };
+			if (ImGui::Combo("##ShadowFilteringModeCombo", &currentShadowFilteringModeIdx, shadowFilteringModeNames.data(), static_cast<int>(std::ssize(shadowFilteringModeNames)))) {
+				SetShadowFilteringMode(static_cast<renderer::ShadowFilteringMode>(currentShadowFilteringModeIdx));
+			}
+
+			ImGui::Text("Visualize Shadow Cascades");
+			ImGui::SameLine();
+
+			bool visualizeShadowCascades{ renderer::IsVisualizingShadowCascades() };
+			if (ImGui::Checkbox("##VisualizeShadowCascadesCheckbox", &visualizeShadowCascades)) {
+				renderer::VisualizeShadowCascades(visualizeShadowCascades);
 			}
 
 			ImGui::Text("Stable Shadow Cascade Projection");
