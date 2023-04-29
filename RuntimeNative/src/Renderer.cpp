@@ -12,7 +12,7 @@
 #ifndef NDEBUG
 #include "shaders/generated/MeshPbrPSBinDebug.h"
 #include "shaders/generated/MeshVSBinDebug.h"
-#include "shaders/generated/ToneMapGammaPSBinDebug.h"
+#include "shaders/generated/PostProcessPSBinDebug.h"
 #include "shaders/generated/SkyboxPSBinDebug.h"
 #include "shaders/generated/SkyboxVSBinDebug.h"
 #include "shaders/generated/ShadowVSBinDebug.h"
@@ -23,7 +23,7 @@
 #else
 #include "shaders/generated/MeshPbrPSBin.h"
 #include "shaders/generated/MeshVSBin.h"
-#include "shaders/generated/ToneMapGammaPSBin.h"
+#include "shaders/generated/PostProcessPSBin.h"
 #include "shaders/generated/SkyboxPSBin.h"
 #include "shaders/generated/SkyboxVSBin.h"
 #include "shaders/generated/ShadowVSBin.h"
@@ -1046,23 +1046,23 @@ struct Resources {
 	ComPtr<ID3D11ShaderResourceView> gizmoColorSbSrv;
 	ComPtr<ID3D11ShaderResourceView> lineGizmoVertexSbSrv;
 
-	ComPtr<ID3D11PixelShader> meshPbrPS;
-	ComPtr<ID3D11PixelShader> toneMapGammaPS;
-	ComPtr<ID3D11PixelShader> skyboxPS;
-	ComPtr<ID3D11PixelShader> gizmoPS;
+	ComPtr<ID3D11PixelShader> psMeshPbr;
+	ComPtr<ID3D11PixelShader> psPostProcess;
+	ComPtr<ID3D11PixelShader> psSkybox;
+	ComPtr<ID3D11PixelShader> psGizmo;
 
-	ComPtr<ID3D11VertexShader> meshVS;
-	ComPtr<ID3D11VertexShader> skyboxVS;
-	ComPtr<ID3D11VertexShader> shadowVS;
-	ComPtr<ID3D11VertexShader> screenVS;
-	ComPtr<ID3D11VertexShader> lineGizmoVS;
+	ComPtr<ID3D11VertexShader> vsMesh;
+	ComPtr<ID3D11VertexShader> vsSkybox;
+	ComPtr<ID3D11VertexShader> vsShadow;
+	ComPtr<ID3D11VertexShader> vsScreen;
+	ComPtr<ID3D11VertexShader> vsLineGizmo;
 
-	ComPtr<ID3D11Buffer> perFrameCB;
-	ComPtr<ID3D11Buffer> perCamCB;
-	ComPtr<ID3D11Buffer> perModelCB;
-	ComPtr<ID3D11Buffer> toneMapGammaCB;
-	ComPtr<ID3D11Buffer> skyboxCB;
-	ComPtr<ID3D11Buffer> shadowCB;
+	ComPtr<ID3D11Buffer> cbPerFrame;
+	ComPtr<ID3D11Buffer> cbPerCam;
+	ComPtr<ID3D11Buffer> cbPerDraw;
+	ComPtr<ID3D11Buffer> cbPostProcess;
+	ComPtr<ID3D11Buffer> cbSkybox;
+	ComPtr<ID3D11Buffer> cbShadow;
 	ComPtr<ID3D11Buffer> gizmoColorSB;
 	ComPtr<ID3D11Buffer> lineGizmoVertexSB;
 
@@ -1343,39 +1343,39 @@ auto CreateInputLayouts() -> void {
 
 
 auto CreateShaders() -> void {
-	if (FAILED(gResources->device->CreateVertexShader(gMeshVSBin, ARRAYSIZE(gMeshVSBin), nullptr, gResources->meshVS.GetAddressOf()))) {
+	if (FAILED(gResources->device->CreateVertexShader(gMeshVSBin, ARRAYSIZE(gMeshVSBin), nullptr, gResources->vsMesh.GetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create mesh vertex shader." };
 	}
 
-	if (FAILED(gResources->device->CreatePixelShader(gMeshPbrPSBin, ARRAYSIZE(gMeshPbrPSBin), nullptr, gResources->meshPbrPS.GetAddressOf()))) {
+	if (FAILED(gResources->device->CreatePixelShader(gMeshPbrPSBin, ARRAYSIZE(gMeshPbrPSBin), nullptr, gResources->psMeshPbr.GetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create mesh pbr pixel shader." };
 	}
 
-	if (FAILED(gResources->device->CreatePixelShader(gToneMapGammaPSBin, ARRAYSIZE(gToneMapGammaPSBin), nullptr, gResources->toneMapGammaPS.GetAddressOf()))) {
-		throw std::runtime_error{ "Failed to create textured tonemap-gamma pixel shader." };
+	if (FAILED(gResources->device->CreatePixelShader(gPostProcessPSBin, ARRAYSIZE(gPostProcessPSBin), nullptr, gResources->psPostProcess.GetAddressOf()))) {
+		throw std::runtime_error{ "Failed to create textured post process pixel shader." };
 	}
 
-	if (FAILED(gResources->device->CreateVertexShader(gSkyboxVSBin, ARRAYSIZE(gSkyboxVSBin), nullptr, gResources->skyboxVS.ReleaseAndGetAddressOf()))) {
+	if (FAILED(gResources->device->CreateVertexShader(gSkyboxVSBin, ARRAYSIZE(gSkyboxVSBin), nullptr, gResources->vsSkybox.ReleaseAndGetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create skybox vertex shader." };
 	}
 
-	if (FAILED(gResources->device->CreatePixelShader(gSkyboxPSBin, ARRAYSIZE(gSkyboxPSBin), nullptr, gResources->skyboxPS.ReleaseAndGetAddressOf()))) {
+	if (FAILED(gResources->device->CreatePixelShader(gSkyboxPSBin, ARRAYSIZE(gSkyboxPSBin), nullptr, gResources->psSkybox.ReleaseAndGetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create skybox pixel shader." };
 	}
 
-	if (FAILED(gResources->device->CreateVertexShader(gShadowVSBin, ARRAYSIZE(gShadowVSBin), nullptr, gResources->shadowVS.GetAddressOf()))) {
+	if (FAILED(gResources->device->CreateVertexShader(gShadowVSBin, ARRAYSIZE(gShadowVSBin), nullptr, gResources->vsShadow.GetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create shadow vertex shader." };
 	}
 
-	if (FAILED(gResources->device->CreateVertexShader(gScreenVSBin, ARRAYSIZE(gScreenVSBin), nullptr, gResources->screenVS.GetAddressOf()))) {
+	if (FAILED(gResources->device->CreateVertexShader(gScreenVSBin, ARRAYSIZE(gScreenVSBin), nullptr, gResources->vsScreen.GetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create screen vertex shader." };
 	}
 
-	if (FAILED(gResources->device->CreateVertexShader(gLineGizmoVSBin, ARRAYSIZE(gLineGizmoVSBin), nullptr, gResources->lineGizmoVS.GetAddressOf()))) {
+	if (FAILED(gResources->device->CreateVertexShader(gLineGizmoVSBin, ARRAYSIZE(gLineGizmoVSBin), nullptr, gResources->vsLineGizmo.GetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create line gizmo vertex shader." };
 	}
 
-	if (FAILED(gResources->device->CreatePixelShader(gGizmoPSBin, ARRAYSIZE(gGizmoPSBin), nullptr, gResources->gizmoPS.GetAddressOf()))) {
+	if (FAILED(gResources->device->CreatePixelShader(gGizmoPSBin, ARRAYSIZE(gGizmoPSBin), nullptr, gResources->psGizmo.GetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create gizmo pixel shader." };
 	}
 }
@@ -1383,7 +1383,7 @@ auto CreateShaders() -> void {
 
 auto CreateConstantBuffers() -> void {
 	D3D11_BUFFER_DESC constexpr perFrameCbDesc{
-		.ByteWidth = clamp_cast<UINT>(RoundToNextMultiple(sizeof(PerFrameCB), 16)),
+		.ByteWidth = sizeof(PerFrameCB),
 		.Usage = D3D11_USAGE_DYNAMIC,
 		.BindFlags = D3D11_BIND_CONSTANT_BUFFER,
 		.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
@@ -1391,12 +1391,12 @@ auto CreateConstantBuffers() -> void {
 		.StructureByteStride = 0
 	};
 
-	if (FAILED(gResources->device->CreateBuffer(&perFrameCbDesc, nullptr, gResources->perFrameCB.GetAddressOf()))) {
+	if (FAILED(gResources->device->CreateBuffer(&perFrameCbDesc, nullptr, gResources->cbPerFrame.GetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create per frame CB." };
 	}
 
 	D3D11_BUFFER_DESC constexpr perCamCbDesc{
-		.ByteWidth = clamp_cast<UINT>(RoundToNextMultiple(sizeof(PerCameraCB), 16)),
+		.ByteWidth = sizeof(PerCameraCB),
 		.Usage = D3D11_USAGE_DYNAMIC,
 		.BindFlags = D3D11_BIND_CONSTANT_BUFFER,
 		.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
@@ -1404,12 +1404,12 @@ auto CreateConstantBuffers() -> void {
 		.StructureByteStride = 0
 	};
 
-	if (FAILED(gResources->device->CreateBuffer(&perCamCbDesc, nullptr, gResources->perCamCB.GetAddressOf()))) {
-		throw std::runtime_error{ "Failed to create camera constant buffer." };
+	if (FAILED(gResources->device->CreateBuffer(&perCamCbDesc, nullptr, gResources->cbPerCam.GetAddressOf()))) {
+		throw std::runtime_error{ "Failed to create per camera CB." };
 	}
 
-	D3D11_BUFFER_DESC constexpr perModelCbDesc{
-		.ByteWidth = clamp_cast<UINT>(RoundToNextMultiple(sizeof(PerModelCB), 16)),
+	D3D11_BUFFER_DESC constexpr perDrawCbDesc{
+		.ByteWidth = sizeof(PerDrawCB),
 		.Usage = D3D11_USAGE_DYNAMIC,
 		.BindFlags = D3D11_BIND_CONSTANT_BUFFER,
 		.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
@@ -1417,12 +1417,12 @@ auto CreateConstantBuffers() -> void {
 		.StructureByteStride = 0
 	};
 
-	if (FAILED(gResources->device->CreateBuffer(&perModelCbDesc, nullptr, gResources->perModelCB.GetAddressOf()))) {
-		throw std::runtime_error{ "Failed to create model constant buffer." };
+	if (FAILED(gResources->device->CreateBuffer(&perDrawCbDesc, nullptr, gResources->cbPerDraw.GetAddressOf()))) {
+		throw std::runtime_error{ "Failed to create per draw CB." };
 	}
 
-	D3D11_BUFFER_DESC constexpr toneMapGammaCBDesc{
-		.ByteWidth = clamp_cast<UINT>(RoundToNextMultiple(sizeof(ToneMapGammaCB), 16)),
+	D3D11_BUFFER_DESC constexpr postProcessCbDesc{
+		.ByteWidth = sizeof(PostProcessCB),
 		.Usage = D3D11_USAGE_DYNAMIC,
 		.BindFlags = D3D11_BIND_CONSTANT_BUFFER,
 		.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
@@ -1430,12 +1430,12 @@ auto CreateConstantBuffers() -> void {
 		.StructureByteStride = 0
 	};
 
-	if (FAILED(gResources->device->CreateBuffer(&toneMapGammaCBDesc, nullptr, gResources->toneMapGammaCB.GetAddressOf()))) {
-		throw std::runtime_error{ "Failed to create tonemap-gamma constant buffer." };
+	if (FAILED(gResources->device->CreateBuffer(&postProcessCbDesc, nullptr, gResources->cbPostProcess.GetAddressOf()))) {
+		throw std::runtime_error{ "Failed to create post-process CB." };
 	}
 
-	D3D11_BUFFER_DESC constexpr skyboxCBDesc{
-		.ByteWidth = clamp_cast<UINT>(RoundToNextMultiple(sizeof(SkyboxCB), 16)),
+	D3D11_BUFFER_DESC constexpr skyboxCbDesc{
+		.ByteWidth = sizeof(SkyboxCB),
 		.Usage = D3D11_USAGE_DYNAMIC,
 		.BindFlags = D3D11_BIND_CONSTANT_BUFFER,
 		.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
@@ -1443,12 +1443,12 @@ auto CreateConstantBuffers() -> void {
 		.StructureByteStride = 0
 	};
 
-	if (FAILED(gResources->device->CreateBuffer(&skyboxCBDesc, nullptr, gResources->skyboxCB.GetAddressOf()))) {
-		throw std::runtime_error{ "Failed to create skybox pass constant buffer." };
+	if (FAILED(gResources->device->CreateBuffer(&skyboxCbDesc, nullptr, gResources->cbSkybox.GetAddressOf()))) {
+		throw std::runtime_error{ "Failed to create skybox pass CB." };
 	}
 
-	D3D11_BUFFER_DESC constexpr shadowCBDesc{
-		.ByteWidth = clamp_cast<UINT>(RoundToNextMultiple(sizeof(ShadowCB), 16)),
+	D3D11_BUFFER_DESC constexpr shadowPassCbDesc{
+		.ByteWidth = sizeof(ShadowCB),
 		.Usage = D3D11_USAGE_DYNAMIC,
 		.BindFlags = D3D11_BIND_CONSTANT_BUFFER,
 		.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
@@ -1456,8 +1456,8 @@ auto CreateConstantBuffers() -> void {
 		.StructureByteStride = 0
 	};
 
-	if (FAILED(gResources->device->CreateBuffer(&shadowCBDesc, nullptr, gResources->shadowCB.GetAddressOf()))) {
-		throw std::runtime_error{ "Failed to create shadow constant buffer." };
+	if (FAILED(gResources->device->CreateBuffer(&shadowPassCbDesc, nullptr, gResources->cbShadow.GetAddressOf()))) {
+		throw std::runtime_error{ "Failed to create shadow pass CB." };
 	}
 }
 
@@ -1791,8 +1791,8 @@ auto DrawMeshes(std::span<int const> const meshComponentIndices, bool const useM
 	gResources->context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	gResources->context->IASetInputLayout(gResources->meshIL.Get());
 
-	gResources->context->VSSetConstantBuffers(CB_SLOT_PER_MODEL, 1, gResources->perModelCB.GetAddressOf());
-	gResources->context->PSSetConstantBuffers(CB_SLOT_PER_MODEL, 1, gResources->perModelCB.GetAddressOf());
+	gResources->context->VSSetConstantBuffers(CB_SLOT_PER_DRAW, 1, gResources->cbPerDraw.GetAddressOf());
+	gResources->context->PSSetConstantBuffers(CB_SLOT_PER_DRAW, 1, gResources->cbPerDraw.GetAddressOf());
 
 	for (auto const meshComponentIdx : meshComponentIndices) {
 		auto const meshComponent{ gStaticMeshComponents[meshComponentIdx] };
@@ -1804,12 +1804,12 @@ auto DrawMeshes(std::span<int const> const meshComponentIndices, bool const useM
 		gResources->context->IASetVertexBuffers(0, 3, vertexBuffers, strides, offsets);
 		gResources->context->IASetIndexBuffer(mesh.GetIndexBuffer().Get(), DXGI_FORMAT_R32_UINT, 0);
 
-		D3D11_MAPPED_SUBRESOURCE mappedPerModelCBuf;
-		gResources->context->Map(gResources->perModelCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerModelCBuf);
-		auto& [modelMatData, normalMatData]{ *static_cast<PerModelCB*>(mappedPerModelCBuf.pData) };
-		modelMatData = meshComponent->GetEntity()->GetTransform().GetModelMatrix();
-		normalMatData = Matrix4{ meshComponent->GetEntity()->GetTransform().GetNormalMatrix() };
-		gResources->context->Unmap(gResources->perModelCB.Get(), 0);
+		D3D11_MAPPED_SUBRESOURCE mappedPerDrawCb;
+		gResources->context->Map(gResources->cbPerDraw.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerDrawCb);
+		auto const perDrawCbData{ static_cast<PerDrawCB*>(mappedPerDrawCb.pData) };
+		perDrawCbData->gPerDrawConstants.modelMtx = meshComponent->GetEntity()->GetTransform().GetModelMatrix();
+		perDrawCbData->gPerDrawConstants.normalMtx = Matrix4{ meshComponent->GetEntity()->GetTransform().GetNormalMatrix() };
+		gResources->context->Unmap(gResources->cbPerDraw.Get(), 0);
 
 		auto const subMeshes{ mesh.GetSubMeshes() };
 		auto const& materials{ meshComponent->GetMaterials() };
@@ -1843,7 +1843,7 @@ auto DrawMeshes(std::span<int const> const meshComponentIndices, bool const useM
 }
 
 
-auto DoToneMapGammaCorrectionStep(ID3D11ShaderResourceView* const src, ID3D11RenderTargetView* const dst) noexcept -> void {
+auto PostProcess(ID3D11ShaderResourceView* const src, ID3D11RenderTargetView* const dst) noexcept -> void {
 	// Back up old views to restore later.
 
 	ComPtr<ID3D11RenderTargetView> rtvBackup;
@@ -1854,19 +1854,19 @@ auto DoToneMapGammaCorrectionStep(ID3D11ShaderResourceView* const src, ID3D11Ren
 
 	// Do the step
 
-	D3D11_MAPPED_SUBRESOURCE mappedToneMapGammaCB;
-	gResources->context->Map(gResources->toneMapGammaCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedToneMapGammaCB);
-	auto const toneMapGammaCBData{ static_cast<ToneMapGammaCB*>(mappedToneMapGammaCB.pData) };
-	toneMapGammaCBData->invGamma = gInvGamma;
-	gResources->context->Unmap(gResources->toneMapGammaCB.Get(), 0);
+	D3D11_MAPPED_SUBRESOURCE mappedCb;
+	gResources->context->Map(gResources->cbPostProcess.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedCb);
+	auto const cbData{ static_cast<PostProcessCB*>(mappedCb.pData) };
+	cbData->invGamma = gInvGamma;
+	gResources->context->Unmap(gResources->cbPostProcess.Get(), 0);
 
-	gResources->context->VSSetShader(gResources->screenVS.Get(), nullptr, 0);
-	gResources->context->PSSetShader(gResources->toneMapGammaPS.Get(), nullptr, 0);
+	gResources->context->VSSetShader(gResources->vsScreen.Get(), nullptr, 0);
+	gResources->context->PSSetShader(gResources->psPostProcess.Get(), nullptr, 0);
 
 	gResources->context->OMSetRenderTargets(1, &dst, nullptr);
 
-	gResources->context->PSSetConstantBuffers(CB_SLOT_TONE_MAP_GAMMA, 1, gResources->toneMapGammaCB.GetAddressOf());
-	gResources->context->PSSetShaderResources(RES_SLOT_TONE_MAP_SRC, 1, &src);
+	gResources->context->PSSetConstantBuffers(CB_SLOT_POST_PROCESS, 1, gResources->cbPostProcess.GetAddressOf());
+	gResources->context->PSSetShaderResources(RES_SLOT_POST_PROCESS_SRC, 1, &src);
 
 	gResources->context->IASetInputLayout(nullptr);
 	gResources->context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -1875,7 +1875,7 @@ auto DoToneMapGammaCorrectionStep(ID3D11ShaderResourceView* const src, ID3D11Ren
 
 	// Restore old view bindings to that we don't leave any input/output conflicts behind.
 
-	gResources->context->PSSetShaderResources(RES_SLOT_TONE_MAP_SRC, 1, srvBackup.GetAddressOf());
+	gResources->context->PSSetShaderResources(RES_SLOT_POST_PROCESS_SRC, 1, srvBackup.GetAddressOf());
 	gResources->context->OMSetRenderTargets(1, rtvBackup.GetAddressOf(), dsvBackup.Get());
 }
 
@@ -1886,10 +1886,10 @@ auto DrawSkybox(Matrix4 const& camViewMtx, Matrix4 const& camProjMtx) noexcept -
 	}
 
 	D3D11_MAPPED_SUBRESOURCE mappedSkyboxCB;
-	gResources->context->Map(gResources->skyboxCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedSkyboxCB);
+	gResources->context->Map(gResources->cbSkybox.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedSkyboxCB);
 	auto const skyboxCBData{ static_cast<SkyboxCB*>(mappedSkyboxCB.pData) };
 	skyboxCBData->skyboxViewProjMtx = Matrix4{ Matrix3{ camViewMtx } } * camProjMtx;
-	gResources->context->Unmap(gResources->skyboxCB.Get(), 0);
+	gResources->context->Unmap(gResources->cbSkybox.Get(), 0);
 
 	ID3D11Buffer* const vertexBuffer{ gResources->cubeMesh->GetPositionBuffer().Get() };
 	UINT constexpr stride{ sizeof(Vector3) };
@@ -1899,13 +1899,13 @@ auto DrawSkybox(Matrix4 const& camViewMtx, Matrix4 const& camProjMtx) noexcept -
 	gResources->context->IASetInputLayout(gResources->skyboxIL.Get());
 	gResources->context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	gResources->context->VSSetShader(gResources->skyboxVS.Get(), nullptr, 0);
-	gResources->context->PSSetShader(gResources->skyboxPS.Get(), nullptr, 0);
+	gResources->context->VSSetShader(gResources->vsSkybox.Get(), nullptr, 0);
+	gResources->context->PSSetShader(gResources->psSkybox.Get(), nullptr, 0);
 
 	auto const cubemapSrv{ gSkyboxes[0]->GetCubemap()->GetSrv() };
 	gResources->context->PSSetShaderResources(RES_SLOT_SKYBOX_CUBEMAP, 1, &cubemapSrv);
 
-	auto const cb{ gResources->skyboxCB.Get() };
+	auto const cb{ gResources->cbSkybox.Get() };
 	gResources->context->VSSetConstantBuffers(CB_SLOT_SKYBOX_PASS, 1, &cb);
 
 	gResources->context->OMSetDepthStencilState(gResources->skyboxPassDSS.Get(), 0);
@@ -1922,9 +1922,9 @@ auto DrawSkybox(Matrix4 const& camViewMtx, Matrix4 const& camProjMtx) noexcept -
 auto DrawShadowMaps(ShadowAtlas const& atlas) -> void {
 	gResources->context->OMSetRenderTargets(0, nullptr, atlas.GetDsv());
 	gResources->context->ClearDepthStencilView(atlas.GetDsv(), D3D11_CLEAR_DEPTH, 0, 0);
-	gResources->context->VSSetShader(gResources->shadowVS.Get(), nullptr, 0);
+	gResources->context->VSSetShader(gResources->vsShadow.Get(), nullptr, 0);
 	gResources->context->PSSetShader(nullptr, nullptr, 0);
-	gResources->context->VSSetConstantBuffers(CB_SLOT_SHADOW_PASS, 1, gResources->shadowCB.GetAddressOf());
+	gResources->context->VSSetConstantBuffers(CB_SLOT_SHADOW_PASS, 1, gResources->cbShadow.GetAddressOf());
 	gResources->context->OMSetDepthStencilState(gResources->shadowDSS.Get(), 0);
 	gResources->context->RSSetState(gResources->shadowPassRS.Get());
 
@@ -1951,10 +1951,10 @@ auto DrawShadowMaps(ShadowAtlas const& atlas) -> void {
 				gResources->context->RSSetViewports(1, &viewport);
 
 				D3D11_MAPPED_SUBRESOURCE mapped;
-				gResources->context->Map(gResources->shadowCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
+				gResources->context->Map(gResources->cbShadow.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
 				auto const shadowCbData{ static_cast<ShadowCB*>(mapped.pData) };
 				shadowCbData->shadowViewProjMtx = subcell->shadowViewProjMtx;
-				gResources->context->Unmap(gResources->shadowCB.Get(), 0);
+				gResources->context->Unmap(gResources->cbShadow.Get(), 0);
 
 				Frustum const shadowFrustumWS{ subcell->shadowViewProjMtx };
 
@@ -2005,11 +2005,11 @@ auto DrawGizmos() -> void {
 		gResources->context->Unmap(gResources->lineGizmoVertexSB.Get(), 0);
 	}
 
-	gResources->context->PSSetShader(gResources->gizmoPS.Get(), nullptr, 0);
+	gResources->context->PSSetShader(gResources->psGizmo.Get(), nullptr, 0);
 	gResources->context->PSSetShaderResources(RES_SLOT_GIZMO_COLOR, 1, gResources->gizmoColorSbSrv.GetAddressOf());
 
 	if (!gLineGizmoVertexData.empty()) {
-		gResources->context->VSSetShader(gResources->lineGizmoVS.Get(), nullptr, 0);
+		gResources->context->VSSetShader(gResources->vsLineGizmo.Get(), nullptr, 0);
 		gResources->context->VSSetShaderResources(RES_SLOT_LINE_GIZMO_VERTEX, 1, gResources->lineGizmoVertexSbSrv.GetAddressOf());
 		gResources->context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 		gResources->context->DrawInstanced(2, static_cast<UINT>(gLineGizmoVertexData.size()), 0, 0);
@@ -2049,7 +2049,7 @@ auto DrawFullWithCameras(std::span<Camera const* const> const cameras, RenderTar
 	gResources->context->PSSetSamplers(SAMPLER_SLOT_POINT, 1, gResources->ssPoint.GetAddressOf());
 
 	D3D11_MAPPED_SUBRESOURCE mappedPerFrameCB;
-	if (FAILED(gResources->context->Map(gResources->perFrameCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerFrameCB))) {
+	if (FAILED(gResources->context->Map(gResources->cbPerFrame.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerFrameCB))) {
 		throw std::runtime_error{ "Failed to map per frame CB." };
 	}
 
@@ -2058,10 +2058,10 @@ auto DrawFullWithCameras(std::span<Camera const* const> const cameras, RenderTar
 	perFrameCbData->gPerFrameConstants.visualizeShadowCascades = gVisualizeShadowCascades;
 	perFrameCbData->gPerFrameConstants.shadowFilteringMode = static_cast<int>(gShadowFilteringMode);
 
-	gResources->context->Unmap(gResources->perFrameCB.Get(), 0);
+	gResources->context->Unmap(gResources->cbPerFrame.Get(), 0);
 
-	gResources->context->VSSetConstantBuffers(CB_SLOT_PER_FRAME, 1, gResources->perFrameCB.GetAddressOf());
-	gResources->context->PSSetConstantBuffers(CB_SLOT_PER_FRAME, 1, gResources->perFrameCB.GetAddressOf());
+	gResources->context->VSSetConstantBuffers(CB_SLOT_PER_FRAME, 1, gResources->cbPerFrame.GetAddressOf());
+	gResources->context->PSSetConstantBuffers(CB_SLOT_PER_FRAME, 1, gResources->cbPerFrame.GetAddressOf());
 
 	for (auto const cam : cameras) {
 		auto const camPos{ cam->GetPosition() };
@@ -2090,10 +2090,10 @@ auto DrawFullWithCameras(std::span<Camera const* const> const cameras, RenderTar
 
 		CullStaticMeshComponents(camFrustWS, visibility);
 
-		gResources->context->VSSetShader(gResources->meshVS.Get(), nullptr, 0);
+		gResources->context->VSSetShader(gResources->vsMesh.Get(), nullptr, 0);
 
 		D3D11_MAPPED_SUBRESOURCE mappedPerCamCB;
-		if (FAILED(gResources->context->Map(gResources->perCamCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerCamCB))) {
+		if (FAILED(gResources->context->Map(gResources->cbPerCam.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerCamCB))) {
 			throw std::runtime_error{ "Failed to map per camera CB." };
 		}
 
@@ -2105,7 +2105,7 @@ auto DrawFullWithCameras(std::span<Camera const* const> const cameras, RenderTar
 			perCamCbData->gPerCamConstants.shadowCascadeSplitDistances[i] = shadowCascadeBoundaries[i].farClip;
 		}
 
-		gResources->context->Unmap(gResources->perCamCB.Get(), 0);
+		gResources->context->Unmap(gResources->cbPerCam.Get(), 0);
 
 		auto const lightCount{ std::ssize(visibility.lightIndices) };
 		gResources->lightBuffer->Resize(static_cast<int>(lightCount));
@@ -2135,14 +2135,14 @@ auto DrawFullWithCameras(std::span<Camera const* const> const cameras, RenderTar
 
 		gResources->lightBuffer->Unmap();
 
-		gResources->context->VSSetShader(gResources->meshVS.Get(), nullptr, 0);
-		gResources->context->VSSetConstantBuffers(CB_SLOT_PER_CAM, 1, gResources->perCamCB.GetAddressOf());
+		gResources->context->VSSetShader(gResources->vsMesh.Get(), nullptr, 0);
+		gResources->context->VSSetConstantBuffers(CB_SLOT_PER_CAM, 1, gResources->cbPerCam.GetAddressOf());
 
 		gResources->context->OMSetRenderTargets(1, std::array{ rt.GetHdrRtv() }.data(), rt.GetDsv());
 		gResources->context->OMSetDepthStencilState(nullptr, 0);
 
-		gResources->context->PSSetShader(gResources->meshPbrPS.Get(), nullptr, 0);
-		gResources->context->PSSetConstantBuffers(CB_SLOT_PER_CAM, 1, gResources->perCamCB.GetAddressOf());
+		gResources->context->PSSetShader(gResources->psMeshPbr.Get(), nullptr, 0);
+		gResources->context->PSSetConstantBuffers(CB_SLOT_PER_CAM, 1, gResources->cbPerCam.GetAddressOf());
 		gResources->context->PSSetShaderResources(RES_SLOT_LIGHTS, 1, std::array{ gResources->lightBuffer->GetSrv() }.data());
 		gResources->context->PSSetShaderResources(RES_SLOT_PUNCTUAL_SHADOW_ATLAS, 1, std::array{ gResources->shadowAtlases[PUNC_SHADOW_ATLAS_IDX]->GetSrv() }.data());
 		gResources->context->PSSetShaderResources(RES_SLOT_DIR_SHADOW_ATLAS, 1, std::array{ gResources->shadowAtlases[DIR_SHADOW_ATLAS_IDX]->GetSrv() }.data());
@@ -2156,7 +2156,7 @@ auto DrawFullWithCameras(std::span<Camera const* const> const cameras, RenderTar
 	}
 
 	gResources->context->RSSetViewports(1, &viewport);
-	DoToneMapGammaCorrectionStep(rt.GetHdrSrv(), rt.GetOutRtv());
+	PostProcess(rt.GetHdrSrv(), rt.GetOutRtv());
 
 	ClearGizmoDrawQueue();
 }

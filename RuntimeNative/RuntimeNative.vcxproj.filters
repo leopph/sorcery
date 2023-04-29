@@ -215,7 +215,7 @@
   <ItemGroup>
     <FxCompile Include="src\shaders\MeshPbrPS.hlsl" />
     <FxCompile Include="src\shaders\MeshVS.hlsl" />
-    <FxCompile Include="src\shaders\ToneMapGammaPS.hlsl" />
+    <FxCompile Include="src\shaders\PostProcessPS.hlsl" />
     <FxCompile Include="src\shaders\SkyboxVS.hlsl" />
     <FxCompile Include="src\shaders\SkyboxPS.hlsl" />
     <FxCompile Include="src\shaders\ShadowVS.hlsl" />

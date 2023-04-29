@@ -32,9 +32,9 @@ typedef bool BOOL;
 
 #define CB_SLOT_PER_FRAME 0
 #define CB_SLOT_PER_CAM 1
-#define CB_SLOT_PER_MODEL 2
+#define CB_SLOT_PER_DRAW 2
 #define CB_SLOT_PER_MATERIAL 3
-#define CB_SLOT_TONE_MAP_GAMMA 0
+#define CB_SLOT_POST_PROCESS 0
 #define CB_SLOT_SKYBOX_PASS 0
 #define CB_SLOT_SHADOW_PASS 0
 
@@ -42,10 +42,11 @@ typedef bool BOOL;
 #define RES_SLOT_METALLIC_MAP 1
 #define RES_SLOT_ROUGHNESS_MAP 2
 #define RES_SLOT_AO_MAP 3
-#define RES_SLOT_PUNCTUAL_SHADOW_ATLAS 4
-#define RES_SLOT_DIR_SHADOW_ATLAS 5
-#define RES_SLOT_LIGHTS 6
-#define RES_SLOT_TONE_MAP_SRC 0
+#define RES_SLOT_NORMAL_MAP 4
+#define RES_SLOT_PUNCTUAL_SHADOW_ATLAS 5
+#define RES_SLOT_DIR_SHADOW_ATLAS 6
+#define RES_SLOT_LIGHTS 7
+#define RES_SLOT_POST_PROCESS_SRC 0
 #define RES_SLOT_SKYBOX_CUBEMAP 0
 #define RES_SLOT_LINE_GIZMO_VERTEX 1
 #define RES_SLOT_GIZMO_COLOR 0
@@ -101,6 +102,8 @@ struct ShaderMaterial {
 
 	BOOL sampleRoughness;
 	BOOL sampleAo;
+	BOOL sampleNormal;
+	float pad;
 };
 
 
@@ -128,6 +131,12 @@ struct ShaderPerCamConstants {
 };
 
 
+struct ShaderPerDrawConstants {
+	row_major float4x4 modelMtx;
+	row_major float3x3 normalMtx;
+};
+
+
 CBUFFER(PerFrameCB, CB_SLOT_PER_FRAME) {
 ShaderPerFrameConstants gPerFrameConstants;
 };
@@ -138,9 +147,8 @@ ShaderPerCamConstants gPerCamConstants;
 };
 
 
-CBUFFER(PerModelCB, CB_SLOT_PER_MODEL) {
-row_major float4x4 modelMtx;
-row_major float3x3 normalMtx;
+CBUFFER(PerDrawCB, CB_SLOT_PER_DRAW) {
+ShaderPerDrawConstants gPerDrawConstants;
 };
 
 
@@ -149,8 +157,9 @@ ShaderMaterial material;
 };
 
 
-CBUFFER(ToneMapGammaCB, CB_SLOT_TONE_MAP_GAMMA) {
+CBUFFER(PostProcessCB, CB_SLOT_POST_PROCESS) {
 float invGamma;
+float3 pad;
 };
 
 

@@ -8,12 +8,12 @@ struct MeshVSIn {
 };
 
 MeshVsOut main(MeshVSIn vsIn) {
-    float4 worldPos4 = mul(float4(vsIn.vertexPos, 1), modelMtx);
+    float4 worldPos4 = mul(float4(vsIn.vertexPos, 1), gPerDrawConstants.modelMtx);
 
     MeshVsOut ret;
     ret.worldPos = worldPos4.xyz;
     ret.clipPos = mul(worldPos4, gPerCamConstants.viewProjMtx);
-    ret.normal = mul(vsIn.vertexNorm, normalMtx);
+    ret.normal = mul(vsIn.vertexNorm, gPerDrawConstants.normalMtx);
     ret.uv = vsIn.vertexUV;
     ret.viewPosZ = ret.clipPos.w;
 
