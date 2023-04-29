@@ -9,7 +9,7 @@ TEXTURE2D(gAlbedoMap, float4, RES_SLOT_ALBEDO_MAP);
 TEXTURE2D(gMetallicMap, float, RES_SLOT_METALLIC_MAP);
 TEXTURE2D(gRoughnessMap, float, RES_SLOT_ROUGHNESS_MAP);
 TEXTURE2D(gAoMap, float, RES_SLOT_AO_MAP);
-TEXTURE2D(gNormalMap, float, RES_SLOT_NORMAL_MAP);
+TEXTURE2D(gNormalMap, float3, RES_SLOT_NORMAL_MAP);
 TEXTURE2D(gPunctualShadowAtlas, float, RES_SLOT_PUNCTUAL_SHADOW_ATLAS);
 TEXTURE2D(gDirShadowAtlas, float, RES_SLOT_DIR_SHADOW_ATLAS);
 
@@ -171,9 +171,6 @@ inline float3 CalculatePointLight(const float3 N, const float3 V, const float3 a
 
 
 float4 main(const MeshVsOut vsOut) : SV_TARGET {
-    const float3 N = normalize(vsOut.normal);
-    const float3 V = normalize(gPerCamConstants.camPos - vsOut.worldPos);
-
     float3 albedo = material.albedo;
 
     if (material.sampleAlbedo) {
@@ -197,6 +194,17 @@ float4 main(const MeshVsOut vsOut) : SV_TARGET {
     if (material.sampleAo) {
         ao *= gAoMap.Sample(gSamplerAf16, vsOut.uv).r;
     }
+
+    float3 N = normalize(vsOut.normal);
+
+    if (material.sampleNormal) {
+        N = gNormalMap.Sample(gSamplerAf16, vsOut.uv).rgb;
+        N *= 2.0;
+        N -= 1.0;
+        N = normalize(mul(N, vsOut.tbnMtx));
+    }
+
+    const float3 V = normalize(gPerCamConstants.camPos - vsOut.worldPos);
 
     float3 outColor = 0.03 * albedo * ao;
 

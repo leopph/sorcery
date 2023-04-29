@@ -77,6 +77,40 @@ auto Mesh::UploadToGPU() -> void {
 	if (FAILED(renderer::GetDevice()->CreateBuffer(&indDesc, &indBufData, mIndBuf.ReleaseAndGetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create mesh index buffer." };
 	}
+
+	D3D11_BUFFER_DESC const tangentBufDesc{
+		.ByteWidth = static_cast<UINT>(mData.tangents.size() * sizeof(Vector3)),
+		.Usage = D3D11_USAGE_IMMUTABLE,
+		.BindFlags = D3D11_BIND_VERTEX_BUFFER,
+		.CPUAccessFlags = 0,
+		.MiscFlags = 0,
+		.StructureByteStride = 0
+	};
+
+	D3D11_SUBRESOURCE_DATA const tangentBufData{
+		.pSysMem = mData.tangents.data()
+	};
+
+	if (FAILED(renderer::GetDevice()->CreateBuffer(&tangentBufDesc, &tangentBufData, mTangentBuf.ReleaseAndGetAddressOf()))) {
+		throw std::runtime_error{ "Failed to create mesh tangent buffer." };
+	}
+
+	D3D11_BUFFER_DESC const bitangentBufDesc{
+		.ByteWidth = static_cast<UINT>(mData.bitangents.size() * sizeof(Vector3)),
+		.Usage = D3D11_USAGE_IMMUTABLE,
+		.BindFlags = D3D11_BIND_VERTEX_BUFFER,
+		.CPUAccessFlags = 0,
+		.MiscFlags = 0,
+		.StructureByteStride = 0
+	};
+
+	D3D11_SUBRESOURCE_DATA const bitangentBufData{
+		.pSysMem = mData.bitangents.data()
+	};
+
+	if (FAILED(renderer::GetDevice()->CreateBuffer(&bitangentBufDesc, &bitangentBufData, mBitangentBuf.ReleaseAndGetAddressOf()))) {
+		throw std::runtime_error{ "Failed to create mesh bitangent buffer." };
+	}
 }
 
 
@@ -126,6 +160,26 @@ auto Mesh::SetUVs(std::vector<Vector2> uvs) noexcept -> void {
 }
 
 
+auto Mesh::GetTangents() const noexcept -> std::span<Vector3 const> {
+	return mData.tangents;
+}
+
+
+auto Mesh::SetTangents(std::vector<Vector3> tangents) noexcept -> void {
+	mTempData.tangents = std::move(tangents);
+}
+
+
+auto Mesh::GetBitangents() const noexcept -> std::span<Vector3 const> {
+	return mData.bitangents;
+}
+
+
+auto Mesh::SetBitangents(std::vector<Vector3> bitangents) noexcept -> void {
+	mTempData.bitangents = std::move(bitangents);
+}
+
+
 auto Mesh::GetIndices() const noexcept -> std::span<u32 const> {
 	return mData.indices;
 }
@@ -156,8 +210,10 @@ auto Mesh::ValidateAndUpdate() -> void {
 
 	if (mTempData.positions.size() != mTempData.normals.size() ||
 	    mTempData.normals.size() != mTempData.uvs.size() ||
+	    mTempData.uvs.size() != mTempData.tangents.size() ||
+	    mTempData.tangents.size() != mTempData.bitangents.size() ||
 	    mTempData.positions.empty() || mTempData.indices.empty()) {
-		throw std::runtime_error{ std::format(errFmt, GetGuid().ToString(), GetName(), "Inconsistent number of positions, normals, and UVs.") };
+		throw std::runtime_error{ std::format(errFmt, GetGuid().ToString(), GetName(), "Inconsistent number of positions, normals, UVs, tangents and bitangents.") };
 	}
 
 	for (auto const& [baseVertex, firstIndex, indexCount] : mTempData.subMeshes) {
@@ -180,11 +236,7 @@ auto Mesh::ValidateAndUpdate() -> void {
 		}
 	}
 
-	mData.positions = std::move(mTempData.positions);
-	mData.normals = std::move(mTempData.normals);
-	mData.uvs = std::move(mTempData.uvs);
-	mData.indices = std::move(mTempData.indices);
-	mData.subMeshes = std::move(mTempData.subMeshes);
+	mData = std::move(mTempData);
 
 	CalculateBounds();
 	UploadToGPU();
@@ -213,6 +265,16 @@ auto Mesh::GetUVBuffer() const noexcept -> Microsoft::WRL::ComPtr<ID3D11Buffer> 
 
 auto Mesh::GetIndexBuffer() const noexcept -> Microsoft::WRL::ComPtr<ID3D11Buffer> {
 	return mIndBuf;
+}
+
+
+auto Mesh::GetTangentBuffer() const noexcept -> Microsoft::WRL::ComPtr<ID3D11Buffer> {
+	return mTangentBuf;
+}
+
+
+auto Mesh::GetBitangentBuffer() const noexcept -> Microsoft::WRL::ComPtr<ID3D11Buffer> {
+	return mBitangentBuf;
 }
 
 

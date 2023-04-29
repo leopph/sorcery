@@ -7,6 +7,7 @@ struct MeshVsOut {
     float4 clipPos : SV_POSITION;
     float2 uv : TEXCOORD;
     float viewPosZ : VIEWPOSZ;
+    float3x3 tbnMtx : TBNMTX;
 };
 
 #endif

@@ -1278,6 +1278,24 @@ auto CreateInputLayouts() -> void {
 			.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT,
 			.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA,
 			.InstanceDataStepRate = 0
+		},
+		{
+			.SemanticName = "TANGENT",
+			.SemanticIndex = 0,
+			.Format = DXGI_FORMAT_R32G32B32_FLOAT,
+			.InputSlot = 2,
+			.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT,
+			.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA,
+			.InstanceDataStepRate = 0
+		},
+		{
+			.SemanticName = "BITANGENT",
+			.SemanticIndex = 0,
+			.Format = DXGI_FORMAT_R32G32B32_FLOAT,
+			.InputSlot = 2,
+			.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT,
+			.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA,
+			.InstanceDataStepRate = 0
 		}
 	};
 
@@ -1664,8 +1682,16 @@ auto CreateDefaultAssets() -> void {
 	std::vector<Vector3> cubeNormals;
 	CalculateNormals(CUBE_POSITIONS, CUBE_INDICES, cubeNormals);
 
+	std::vector<Vector3> cubeTangents;
+	std::vector<Vector3> cubeBitangents;
+	CalculateTangentSpace(CUBE_POSITIONS, CUBE_UVS, CUBE_INDICES, cubeTangents, cubeBitangents);
+
 	std::vector<Vector3> quadNormals;
 	CalculateNormals(QUAD_POSITIONS, QUAD_INDICES, quadNormals);
+
+	std::vector<Vector3> quadTangents;
+	std::vector<Vector3> quadBitangents;
+	CalculateTangentSpace(QUAD_POSITIONS, QUAD_UVS, QUAD_INDICES, quadTangents, quadBitangents);
 
 	gResources->cubeMesh = std::make_unique<Mesh>();
 	gResources->cubeMesh->SetGuid(Guid{ 0, 0 });
@@ -1673,6 +1699,8 @@ auto CreateDefaultAssets() -> void {
 	gResources->cubeMesh->SetPositions(CUBE_POSITIONS);
 	gResources->cubeMesh->SetNormals(std::move(cubeNormals));
 	gResources->cubeMesh->SetUVs(CUBE_UVS);
+	gResources->cubeMesh->SetTangents(std::move(cubeTangents));
+	gResources->cubeMesh->SetBitangents(std::move(cubeBitangents));
 	gResources->cubeMesh->SetIndices(CUBE_INDICES);
 	gResources->cubeMesh->SetSubMeshes(std::vector{ Mesh::SubMeshData{ 0, 0, static_cast<int>(CUBE_INDICES.size()) } });
 	gResources->cubeMesh->ValidateAndUpdate();
@@ -1683,6 +1711,8 @@ auto CreateDefaultAssets() -> void {
 	gResources->planeMesh->SetPositions(QUAD_POSITIONS);
 	gResources->planeMesh->SetNormals(std::move(quadNormals));
 	gResources->planeMesh->SetUVs(QUAD_UVS);
+	gResources->planeMesh->SetTangents(std::move(quadTangents));
+	gResources->planeMesh->SetBitangents(std::move(quadBitangents));
 	gResources->planeMesh->SetIndices(QUAD_INDICES);
 	gResources->planeMesh->SetSubMeshes(std::vector{ Mesh::SubMeshData{ 0, 0, static_cast<int>(QUAD_INDICES.size()) } });
 	gResources->planeMesh->ValidateAndUpdate();
@@ -1764,10 +1794,10 @@ auto DrawMeshes(std::span<int const> const meshComponentIndices, bool const useM
 		auto const meshComponent{ gStaticMeshComponents[meshComponentIdx] };
 		auto const& mesh{ meshComponent->GetMesh() };
 
-		ID3D11Buffer* vertexBuffers[]{ mesh.GetPositionBuffer().Get(), mesh.GetNormalBuffer().Get(), mesh.GetUVBuffer().Get() };
-		UINT constexpr strides[]{ sizeof(Vector3), sizeof(Vector3), sizeof(Vector2) };
-		UINT constexpr offsets[]{ 0, 0, 0 };
-		gResources->context->IASetVertexBuffers(0, 3, vertexBuffers, strides, offsets);
+		std::array const vertexBuffers{ mesh.GetPositionBuffer().Get(), mesh.GetNormalBuffer().Get(), mesh.GetUVBuffer().Get(), mesh.GetTangentBuffer().Get(), mesh.GetBitangentBuffer().Get() };
+		UINT constexpr strides[]{ sizeof(Vector3), sizeof(Vector3), sizeof(Vector2), sizeof(Vector3), sizeof(Vector3) };
+		UINT constexpr offsets[]{ 0, 0, 0, 0, 0 };
+		gResources->context->IASetVertexBuffers(0, static_cast<UINT>(vertexBuffers.size()), vertexBuffers.data(), strides, offsets);
 		gResources->context->IASetIndexBuffer(mesh.GetIndexBuffer().Get(), DXGI_FORMAT_R32_UINT, 0);
 
 		D3D11_MAPPED_SUBRESOURCE mappedPerDrawCb;
@@ -1801,6 +1831,9 @@ auto DrawMeshes(std::span<int const> const meshComponentIndices, bool const useM
 
 				auto const aoSrv{ mtl.GetAoMap() ? mtl.GetAoMap()->GetSrv() : nullptr };
 				gResources->context->PSSetShaderResources(RES_SLOT_AO_MAP, 1, &aoSrv);
+
+				auto const normalSrv{ mtl.GetNormalMap() ? mtl.GetNormalMap()->GetSrv() : nullptr };
+				gResources->context->PSSetShaderResources(RES_SLOT_NORMAL_MAP, 1, &normalSrv);
 			}
 
 			gResources->context->DrawIndexed(indexCount, firstIndex, baseVertex);

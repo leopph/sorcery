@@ -11,6 +11,7 @@
 #include <queue>
 #include <vector>
 
+
 namespace leopph::editor {
 class MeshImporter::Impl {
 	Assimp::Importer mImporter;
@@ -44,7 +45,7 @@ public:
 	[[nodiscard]] auto Import(std::filesystem::path const& path) -> Mesh::Data {
 		mImporter.SetPropertyInteger(AI_CONFIG_PP_RVC_FLAGS, aiComponent_ANIMATIONS | aiComponent_BONEWEIGHTS | aiComponent_CAMERAS | aiComponent_LIGHTS | aiComponent_COLORS);
 
-		auto const scene{ mImporter.ReadFile(path.string(), aiProcess_JoinIdenticalVertices | aiProcess_Triangulate | aiProcess_SortByPType | aiProcess_GenUVCoords | aiProcess_GenNormals | aiProcess_RemoveComponent | aiProcess_FlipWindingOrder | aiProcess_FlipUVs) };
+		auto const scene{ mImporter.ReadFile(path.string(), aiProcess_JoinIdenticalVertices | aiProcess_Triangulate | aiProcess_SortByPType | aiProcess_GenUVCoords | aiProcess_GenNormals | aiProcess_RemoveComponent | aiProcess_FlipWindingOrder | aiProcess_FlipUVs | aiProcess_CalcTangentSpace) };
 
 		if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
 			throw std::runtime_error{ std::format("Failed to import model at {}: {}.", path.string(), mImporter.GetErrorString()) };
@@ -79,6 +80,8 @@ public:
 					ret.positions.reserve(ret.positions.size() + mesh->mNumVertices);
 					ret.normals.reserve(ret.normals.size() + mesh->mNumVertices);
 					ret.uvs.reserve(ret.uvs.size() + mesh->mNumVertices);
+					ret.tangents.reserve(ret.tangents.size() + mesh->mNumVertices);
+					ret.bitangents.reserve(ret.bitangents.size() + mesh->mNumVertices);
 
 
 					for (unsigned j = 0; j < mesh->mNumVertices; j++) {
@@ -92,6 +95,8 @@ public:
 							}
 							return Vector2{};
 						}());
+						ret.tangents.emplace_back(Convert(mesh->mTangents[j]));
+						ret.bitangents.emplace_back(Convert(mesh->mBitangents[j]));
 					}
 
 					auto const prevIdxCount{ ret.indices.size() };
@@ -135,7 +140,8 @@ public:
 };
 
 
-MeshImporter::MeshImporter() : mImpl{ new Impl{} } {}
+MeshImporter::MeshImporter() :
+	mImpl{ new Impl{} } {}
 
 
 MeshImporter::~MeshImporter() {
@@ -154,42 +160,43 @@ auto MeshImporter::Import(InputImportInfo const& importInfo, std::filesystem::pa
 	if (exists(cachedDataPath)) {
 		std::ifstream in{ cachedDataPath, std::ios::binary };
 		std::vector<unsigned char> fileData{ std::istreambuf_iterator{ in }, {} };
-		std::span const bytes{ fileData };
+		std::span bytes{ fileData };
 
 		Mesh::Data meshData;
 		auto const numVerts{ BinarySerializer<u64>::Deserialize(bytes.first<8>(), std::endian::little) };
 		auto const numInds{ BinarySerializer<u64>::Deserialize(bytes.subspan<8, 8>(), std::endian::little) };
 		auto const numSubMeshes{ BinarySerializer<u64>::Deserialize(bytes.subspan<16, 8>(), std::endian::little) };
 
-		std::span const dataBytes{ bytes.subspan(3 * sizeof(u64)) };
+		bytes = bytes.subspan(3 * sizeof(u64));
 
-		meshData.positions.reserve(numVerts);
-		for (std::size_t i{ 0 }; i < numVerts; i++) {
-			meshData.positions.emplace_back(BinarySerializer<Vector3>::Deserialize(dataBytes.subspan(i * sizeof(Vector3)).first<sizeof(Vector3)>(), std::endian::little));
-		}
+		auto const extractVertexAttributes{
+			[numVerts, &bytes]<typename AttributeType>(std::vector<AttributeType>& outAttributes) {
+				outAttributes.reserve(numVerts);
 
-		meshData.normals.reserve(numVerts);
-		for (std::size_t i{ 0 }; i < numVerts; i++) {
-			meshData.normals.emplace_back(BinarySerializer<Vector3>::Deserialize(dataBytes.subspan(numVerts * sizeof(Vector3) + i * sizeof(Vector3)).first<sizeof(Vector3)>(), std::endian::little));
-		}
+				for (std::size_t i{ 0 }; i < numVerts; i++) {
+					outAttributes.emplace_back(BinarySerializer<AttributeType>::Deserialize(bytes.first<sizeof(AttributeType)>(), std::endian::little));
+					bytes = bytes.subspan(sizeof(AttributeType));
+				}
+			}
+		};
 
-		meshData.uvs.reserve(numVerts);
-		for (std::size_t i{ 0 }; i < numVerts; i++) {
-			meshData.uvs.emplace_back(BinarySerializer<Vector2>::Deserialize(dataBytes.subspan(numVerts * 2 * sizeof(Vector3) + i * sizeof(Vector2)).first<sizeof(Vector2)>(), std::endian::little));
-		}
+		extractVertexAttributes(meshData.positions);
+		extractVertexAttributes(meshData.normals);
+		extractVertexAttributes(meshData.uvs);
+		extractVertexAttributes(meshData.tangents);
+		extractVertexAttributes(meshData.bitangents);
 
-		meshData.indices.reserve(numVerts);
+		meshData.indices.reserve(numInds);
 		for (std::size_t i{ 0 }; i < numInds; i++) {
-			meshData.indices.emplace_back(BinarySerializer<u32>::Deserialize(dataBytes.subspan(numVerts * (2 * sizeof(Vector3) + sizeof(Vector2)) + i * sizeof(u32)).first<sizeof(u32)>(), std::endian::little));
+			meshData.indices.emplace_back(BinarySerializer<unsigned>::Deserialize(bytes.first<sizeof(unsigned)>(), std::endian::little));
+			bytes = bytes.subspan(sizeof(unsigned));
 		}
-
-		auto const subMeshBytes{ dataBytes.subspan(numVerts * (2 * sizeof(Vector3) + sizeof(Vector2)) + numInds * sizeof(u32)) };
 
 		meshData.subMeshes.reserve(numSubMeshes);
 		for (std::size_t i{ 0 }; i < numSubMeshes; i++) {
-			auto const baseVertex{ BinarySerializer<int>::Deserialize(subMeshBytes.subspan(i * 3 * sizeof(int)).first<sizeof(int)>(), std::endian::little) };
-			auto const firstIndex{ BinarySerializer<int>::Deserialize(subMeshBytes.subspan(i * 3 * sizeof(int) + sizeof(int)).first<sizeof(int)>(), std::endian::little) };
-			auto const indexCount{ BinarySerializer<int>::Deserialize(subMeshBytes.subspan(i * 3 * sizeof(int) + 2 * sizeof(int)).first<sizeof(int)>(), std::endian::little) };
+			auto const baseVertex{ BinarySerializer<int>::Deserialize(bytes.subspan(i * 3 * sizeof(int)).first<sizeof(int)>(), std::endian::little) };
+			auto const firstIndex{ BinarySerializer<int>::Deserialize(bytes.subspan(i * 3 * sizeof(int) + sizeof(int)).first<sizeof(int)>(), std::endian::little) };
+			auto const indexCount{ BinarySerializer<int>::Deserialize(bytes.subspan(i * 3 * sizeof(int) + 2 * sizeof(int)).first<sizeof(int)>(), std::endian::little) };
 			meshData.subMeshes.emplace_back(baseVertex, firstIndex, indexCount);
 		}
 
@@ -214,6 +221,14 @@ auto MeshImporter::Import(InputImportInfo const& importInfo, std::filesystem::pa
 
 	for (auto const& uv : meshData.uvs) {
 		BinarySerializer<Vector2>::Serialize(uv, cachedData, std::endian::little);
+	}
+
+	for (auto const& tangent : meshData.tangents) {
+		BinarySerializer<Vector3>::Serialize(tangent, cachedData, std::endian::little);
+	}
+
+	for (auto const& bitangent : meshData.bitangents) {
+		BinarySerializer<Vector3>::Serialize(bitangent, cachedData, std::endian::little);
 	}
 
 	for (auto const ind : meshData.indices) {
