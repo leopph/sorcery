@@ -3,9 +3,13 @@
 #include "Core.hpp"
 
 #include <algorithm>
+#include <span>
 #include <string_view>
 #include <type_traits>
 #include <utility>
+#include <vector>
+
+#include "Math.hpp"
 
 
 namespace leopph {
@@ -86,4 +90,6 @@ concept Scalar = std::is_scalar_v<T>;
 
 
 [[nodiscard]] LEOPPHAPI auto Contains(std::string_view src, std::string_view target) -> bool;
+
+LEOPPHAPI auto CalculateNormals(std::span<Vector3 const> positions, std::span<unsigned const> indices, std::vector<Vector3>& out) -> std::vector<Vector3>&;
 }

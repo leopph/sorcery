@@ -1,6 +1,8 @@
 #include "Util.hpp"
 
 #include <cctype>
+#include <format>
+#include <stdexcept>
 
 
 namespace leopph {
@@ -28,5 +30,30 @@ auto Contains(std::string_view const src, std::string_view const target) -> bool
 	}
 
 	return false;
+}
+
+
+auto CalculateNormals(std::span<Vector3 const> const positions, std::span<unsigned const> const indices, std::vector<Vector3>& out) -> std::vector<Vector3>& {
+	out.resize(positions.size());
+
+	if (indices.size() % 3 != 0) {
+		throw std::runtime_error{ std::format("Cannot calculate normals because the number of indices ({}) is not divisible by 3. The calculation is only supported over triangle lists.", indices.size()) };
+	}
+
+	for (int i = 0; i < std::ssize(indices); i += 3) {
+		Vector3 const& vertex1{ positions[indices[i]] };
+		Vector3 const& vertex2{ positions[indices[i + 1]] };
+		Vector3 const& vertex3{ positions[indices[i + 2]] };
+
+		Vector3 const edge1{ Normalize(vertex2 - vertex1) };
+		Vector3 const edge2{ Normalize(vertex3 - vertex1) };
+		Vector3 const normal{ Normalize(Cross(edge1, edge2)) };
+
+		out[indices[i]] = normal;
+		out[indices[i + 1]] = normal;
+		out[indices[i + 2]] = normal;
+	}
+
+	return out;
 }
 }
