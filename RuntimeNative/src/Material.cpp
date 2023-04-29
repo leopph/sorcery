@@ -5,6 +5,7 @@
 
 #include <assimp/scene.h>
 
+#include <cstdint>
 #include <stdexcept>
 
 
@@ -194,6 +195,8 @@ auto Material::GetSerializationType() const -> Type {
 
 
 auto Material::Serialize(std::vector<std::uint8_t>& out) const noexcept -> void {
+	std::int8_t constexpr static MATERIAL_VERSION{ 1 };
+	BinarySerializer<std::int8_t>::Serialize(MATERIAL_VERSION, out);
 	BinarySerializer<Vector3>::Serialize(mShaderMtl.albedo, out, std::endian::little);
 	BinarySerializer<f32>::Serialize(mShaderMtl.metallic, out, std::endian::little);
 	BinarySerializer<f32>::Serialize(mShaderMtl.roughness, out, std::endian::little);

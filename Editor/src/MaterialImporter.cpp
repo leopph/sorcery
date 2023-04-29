@@ -2,6 +2,7 @@
 
 #include "Material.hpp"
 
+#include <cstdint>
 #include <fstream>
 #include <vector>
 
@@ -18,6 +19,9 @@ auto MaterialImporter::Import(InputImportInfo const& importInfo, [[maybe_unused]
 	std::ifstream in{ importInfo.src, std::ios::binary };
 	std::vector<std::uint8_t> fileData{ std::istreambuf_iterator{ in }, {} };
 	std::span bytes{ fileData };
+
+	std::int8_t const materialVersion{ BinarySerializer<std::int8_t>::Deserialize(bytes.first<sizeof(std::int8_t)>()) };
+	bytes = bytes.subspan(sizeof(std::int8_t));
 
 	auto const albedoVector{ BinarySerializer<Vector3>::Deserialize(bytes.first<sizeof(Vector3)>(), std::endian::little) };
 	bytes = bytes.subspan(sizeof(Vector3));
