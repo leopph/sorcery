@@ -24,7 +24,8 @@ class Material final : public NativeAsset {
 		.sampleAlbedo = FALSE,
 		.sampleMetallic = FALSE,
 		.sampleRoughness = FALSE,
-		.sampleAo = FALSE
+		.sampleAo = FALSE,
+		.sampleNormal = FALSE
 	};
 
 	Microsoft::WRL::ComPtr<ID3D11Buffer> mCB;
@@ -33,13 +34,14 @@ class Material final : public NativeAsset {
 	Texture2D* mMetallicMap{ nullptr };
 	Texture2D* mRoughnessMap{ nullptr };
 	Texture2D* mAoMap{ nullptr };
+	Texture2D* mNormalMap{ nullptr };
 
 	auto UpdateGPUData() const noexcept -> void;
 	auto CreateCB() -> void;
 
 public:
 	LEOPPHAPI Material();
-	LEOPPHAPI Material(Vector3 const& albedoVector, float metallic, float roughness, float ao, Texture2D* albedoMap, Texture2D* metallicMap, Texture2D* roughnessMap, Texture2D* aoMap);
+	LEOPPHAPI Material(Vector3 const& albedoVector, float metallic, float roughness, float ao, Texture2D* albedoMap, Texture2D* metallicMap, Texture2D* roughnessMap, Texture2D* aoMap, Texture2D* normalMap);
 
 	[[nodiscard]] LEOPPHAPI auto GetAlbedoVector() const noexcept -> Vector3;
 	LEOPPHAPI auto SetAlbedoVector(Vector3 const& albedoVector) noexcept -> void;
@@ -67,6 +69,9 @@ public:
 
 	[[nodiscard]] LEOPPHAPI auto GetAoMap() const noexcept -> Texture2D*;
 	LEOPPHAPI auto SetAoMap(Texture2D* tex) noexcept -> void;
+
+	[[nodiscard]] LEOPPHAPI auto GetNormalMap() const noexcept -> Texture2D*;
+	LEOPPHAPI auto SetNormalMap(Texture2D* tex) noexcept -> void;
 
 	[[nodiscard]] LEOPPHAPI auto GetBuffer() const noexcept -> NonOwning<ID3D11Buffer*>;
 

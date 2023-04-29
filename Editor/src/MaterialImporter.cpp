@@ -7,6 +7,7 @@
 
 #include "Serialization.hpp"
 
+
 namespace leopph::editor {
 auto MaterialImporter::GetSupportedExtensions() const -> std::string {
 	return "mtl";
@@ -42,6 +43,9 @@ auto MaterialImporter::Import(InputImportInfo const& importInfo, [[maybe_unused]
 	auto const sampleAo{ static_cast<bool>(BinarySerializer<u8>::Deserialize(bytes.first<sizeof(u8)>())) };
 	bytes = bytes.subspan(sizeof(u8));
 
+	auto const sampleNormal{ static_cast<bool>(BinarySerializer<u8>::Deserialize(bytes.first<sizeof(u8)>())) };
+	bytes = bytes.subspan(sizeof(u8));
+
 	auto const parseNextMap{
 		[&bytes]() -> Texture2D* {
 			auto const guidStrLength{ BinarySerializer<u64>::Deserialize(bytes.first<sizeof(u64)>(), std::endian::little) };
@@ -63,8 +67,9 @@ auto MaterialImporter::Import(InputImportInfo const& importInfo, [[maybe_unused]
 	auto const metallicMap{ sampleMetallic ? parseNextMap() : nullptr };
 	auto const roughnessMap{ sampleRoughness ? parseNextMap() : nullptr };
 	auto const aoMap{ sampleAo ? parseNextMap() : nullptr };
+	auto const normalMap{ sampleNormal ? parseNextMap() : nullptr };
 
-	return new Material{ albedoVector, metallic, roughness, ao, albedoMap, metallicMap, roughnessMap, aoMap };
+	return new Material{ albedoVector, metallic, roughness, ao, albedoMap, metallicMap, roughnessMap, aoMap, normalMap };
 }
 
 

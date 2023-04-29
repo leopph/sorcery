@@ -47,7 +47,7 @@ Material::Material() {
 }
 
 
-Material::Material(Vector3 const& albedoVector, float const metallic, float const roughness, float const ao, Texture2D* const albedoMap, Texture2D* const metallicMap, Texture2D* const roughnessMap, Texture2D* const aoMap) :
+Material::Material(Vector3 const& albedoVector, float const metallic, float const roughness, float const ao, Texture2D* const albedoMap, Texture2D* const metallicMap, Texture2D* const roughnessMap, Texture2D* const aoMap, Texture2D* const normalMap) :
 	mShaderMtl{
 		.albedo = albedoVector,
 		.metallic = metallic,
@@ -56,12 +56,14 @@ Material::Material(Vector3 const& albedoVector, float const metallic, float cons
 		.sampleAlbedo = albedoMap != nullptr,
 		.sampleMetallic = metallicMap != nullptr,
 		.sampleRoughness = roughnessMap != nullptr,
-		.sampleAo = aoMap != nullptr
+		.sampleAo = aoMap != nullptr,
+		.sampleNormal = normalMap != nullptr
 	},
 	mAlbedoMap{ albedoMap },
 	mMetallicMap{ metallicMap },
 	mRoughnessMap{ roughnessMap },
-	mAoMap{ aoMap } {
+	mAoMap{ aoMap },
+	mNormalMap{ normalMap } {
 	CreateCB();
 }
 
@@ -169,6 +171,18 @@ auto Material::SetAoMap(Texture2D* const tex) noexcept -> void {
 }
 
 
+auto Material::GetNormalMap() const noexcept -> Texture2D* {
+	return mNormalMap;
+}
+
+
+auto Material::SetNormalMap(Texture2D* const tex) noexcept -> void {
+	mNormalMap = tex;
+	mShaderMtl.sampleNormal = mNormalMap != nullptr;
+	UpdateGPUData();
+}
+
+
 auto Material::GetBuffer() const noexcept -> NonOwning<ID3D11Buffer*> {
 	return mCB.Get();
 }
@@ -189,6 +203,7 @@ auto Material::Serialize(std::vector<std::uint8_t>& out) const noexcept -> void 
 	BinarySerializer<u8>::Serialize(mShaderMtl.sampleMetallic != 0, out);
 	BinarySerializer<u8>::Serialize(mShaderMtl.sampleRoughness != 0, out);
 	BinarySerializer<u8>::Serialize(mShaderMtl.sampleAo != 0, out);
+	BinarySerializer<u8>::Serialize(mShaderMtl.sampleNormal != 0, out);
 
 	auto const trySerializeMap{
 		[&out](Texture2D const* const map) {
@@ -206,5 +221,6 @@ auto Material::Serialize(std::vector<std::uint8_t>& out) const noexcept -> void 
 	trySerializeMap(mMetallicMap);
 	trySerializeMap(mRoughnessMap);
 	trySerializeMap(mAoMap);
+	trySerializeMap(mNormalMap);
 }
 }

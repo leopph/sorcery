@@ -670,6 +670,26 @@ auto EditorObjectWrapperFor<Material>::OnGui([[maybe_unused]] Context& context, 
 		ImGui::SameLine();
 		ImGui::Text("%s", mtl.GetAoMap() ? mtl.GetAoMap()->GetName().data() : nullTexName);
 
+		ImGui::TableNextColumn();
+		ImGui::Text("%s", "Normal Map");
+		ImGui::TableNextColumn();
+
+		if (ImGui::Button("Select##SelectNormalMapButton")) {
+			Object::FindObjectsOfType(textures);
+			textures.insert(std::begin(textures), nullptr);
+			texFilter.clear();
+			texGetFn = [&mtl] {
+				return mtl.GetNormalMap();
+			};
+			texSetFn = [&mtl](Texture2D* const tex) {
+				mtl.SetNormalMap(tex);
+			};
+			ImGui::OpenPopup(popupId);
+		}
+
+		ImGui::SameLine();
+		ImGui::Text("%s", mtl.GetNormalMap() ? mtl.GetNormalMap()->GetName().data() : nullTexName);
+
 		ImGui::EndTable();
 	}
 
