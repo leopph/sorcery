@@ -35,11 +35,11 @@
 #include "shaders/ShaderInterop.h"
 
 #include <algorithm>
+#include <array>
 #include <cassert>
 #include <cmath>
 #include <functional>
 #include <memory>
-#include <tuple>
 
 using Microsoft::WRL::ComPtr;
 
@@ -1103,11 +1103,6 @@ std::vector const QUAD_POSITIONS{
 };
 
 
-std::vector const QUAD_NORMALS{
-	Vector3::Backward(), Vector3::Backward(), Vector3::Backward(), Vector3::Backward()
-};
-
-
 std::vector const QUAD_UVS{
 	Vector2{ 0, 0 }, Vector2{ 0, 1 }, Vector2{ 1, 1 }, Vector2{ 1, 0 }
 };
@@ -1150,41 +1145,6 @@ std::vector const CUBE_POSITIONS{
 	Vector3{ 0.5f, -0.5f, -0.5f },
 	Vector3{ 0.5f, -0.5f, -0.5f },
 	Vector3{ 0.5f, -0.5f, -0.5f },
-};
-
-
-std::vector const CUBE_NORMALS{
-	Vector3{ 1.0f, 0.0f, 0.0f },
-	Vector3{ 0.0f, 1.0f, 0.0f },
-	Vector3{ 0.0f, 0.0f, 1.0f },
-
-	Vector3{ -1.0f, 0.0f, 0.0f },
-	Vector3{ 0.0f, 1.0f, 0.0f },
-	Vector3{ 0.0f, 0.0f, 1.0f },
-
-	Vector3{ -1.0f, 0.0f, 0.0f },
-	Vector3{ 0.0f, 1.0f, 0.0f },
-	Vector3{ 0.0f, 0.0f, -1.0f },
-
-	Vector3{ 1.0f, 0.0f, 0.0f },
-	Vector3{ 0.0f, 1.0f, 0.0f },
-	Vector3{ 0.0f, 0.0f, -1.0f },
-
-	Vector3{ 1.0f, 0.0f, 0.0f },
-	Vector3{ 0.0f, -1.0f, 0.0f },
-	Vector3{ 0.0f, 0.0f, 1.0f },
-
-	Vector3{ -1.0f, 0.0f, 0.0f },
-	Vector3{ 0.0f, -1.0f, 0.0f },
-	Vector3{ 0.0f, 0.0f, 1.0f },
-
-	Vector3{ -1.0f, 0.0f, 0.0f },
-	Vector3{ 0.0f, -1.0f, 0.0f },
-	Vector3{ 0.0f, 0.0f, -1.0f },
-
-	Vector3{ 1.0f, 0.0f, 0.0f },
-	Vector3{ 0.0f, -1.0f, 0.0f },
-	Vector3{ 0.0f, 0.0f, -1.0f },
 };
 
 
@@ -1701,11 +1661,17 @@ auto CreateDefaultAssets() -> void {
 	gResources->defaultMaterial = std::make_unique<Material>();
 	gResources->defaultMaterial->SetName("Default Material");
 
+	std::vector<Vector3> cubeNormals;
+	CalculateNormals(CUBE_POSITIONS, CUBE_INDICES, cubeNormals);
+
+	std::vector<Vector3> quadNormals;
+	CalculateNormals(QUAD_POSITIONS, QUAD_INDICES, quadNormals);
+
 	gResources->cubeMesh = std::make_unique<Mesh>();
 	gResources->cubeMesh->SetGuid(Guid{ 0, 0 });
 	gResources->cubeMesh->SetName("Cube");
 	gResources->cubeMesh->SetPositions(CUBE_POSITIONS);
-	gResources->cubeMesh->SetNormals(CUBE_NORMALS);
+	gResources->cubeMesh->SetNormals(std::move(cubeNormals));
 	gResources->cubeMesh->SetUVs(CUBE_UVS);
 	gResources->cubeMesh->SetIndices(CUBE_INDICES);
 	gResources->cubeMesh->SetSubMeshes(std::vector{ Mesh::SubMeshData{ 0, 0, static_cast<int>(CUBE_INDICES.size()) } });
@@ -1715,7 +1681,7 @@ auto CreateDefaultAssets() -> void {
 	gResources->planeMesh->SetGuid(Guid{ 0, 1 });
 	gResources->planeMesh->SetName("Plane");
 	gResources->planeMesh->SetPositions(QUAD_POSITIONS);
-	gResources->planeMesh->SetNormals(QUAD_NORMALS);
+	gResources->planeMesh->SetNormals(std::move(quadNormals));
 	gResources->planeMesh->SetUVs(QUAD_UVS);
 	gResources->planeMesh->SetIndices(QUAD_INDICES);
 	gResources->planeMesh->SetSubMeshes(std::vector{ Mesh::SubMeshData{ 0, 0, static_cast<int>(QUAD_INDICES.size()) } });
