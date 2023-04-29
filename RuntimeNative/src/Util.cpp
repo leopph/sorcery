@@ -58,13 +58,12 @@ auto CalculateNormals(std::span<Vector3 const> const positions, std::span<unsign
 }
 
 
-auto CalculateTangentSpace(std::span<Vector3 const> const positions, std::span<Vector2 const> const uvs, std::span<unsigned const> const indices, std::vector<Vector3>& outTangents, std::vector<Vector3>& outBitangents) -> void {
+auto CalculateTangents(std::span<Vector3 const> const positions, std::span<Vector2 const> const uvs, std::span<unsigned const> const indices, std::vector<Vector3>& out) -> void {
 	if (indices.size() % 3 != 0) {
-		throw std::runtime_error{ std::format("Cannot calculate tangent space because the number of indices ({}) is not divisible by 3. The calculation is only supported over triangle lists.", indices.size()) };
+		throw std::runtime_error{ std::format("Cannot calculate tangents because the number of indices ({}) is not divisible by 3. The calculation is only supported over triangle lists.", indices.size()) };
 	}
 
-	outTangents.resize(positions.size());
-	outBitangents.resize(positions.size());
+	out.resize(positions.size());
 
 	for (int i = 0; i < std::ssize(indices); i += 3) {
 		Vector3 const& vertex1{ positions[indices[i]] };
@@ -88,14 +87,8 @@ auto CalculateTangentSpace(std::span<Vector3 const> const positions, std::span<V
 			tangent[j] = f * (deltaUv2[1] * edge1[j] - deltaUv1[1] * edge2[j]);
 		}
 
-		Vector3 bitangent;
 		for (int j = 0; j < 3; j++) {
-			bitangent[j] = f * (-deltaUv2[0] * edge1[j] + deltaUv1[0] * edge2[j]);
-		}
-
-		for (int j = 0; j < 3; j++) {
-			outTangents[indices[i + j]] = tangent;
-			outBitangents[indices[i + j]] = bitangent;
+			out[indices[i + j]] = tangent;
 		}
 	}
 }

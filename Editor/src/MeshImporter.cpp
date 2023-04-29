@@ -81,7 +81,6 @@ public:
 					ret.normals.reserve(ret.normals.size() + mesh->mNumVertices);
 					ret.uvs.reserve(ret.uvs.size() + mesh->mNumVertices);
 					ret.tangents.reserve(ret.tangents.size() + mesh->mNumVertices);
-					ret.bitangents.reserve(ret.bitangents.size() + mesh->mNumVertices);
 
 
 					for (unsigned j = 0; j < mesh->mNumVertices; j++) {
@@ -96,7 +95,6 @@ public:
 							return Vector2{};
 						}());
 						ret.tangents.emplace_back(Convert(mesh->mTangents[j]));
-						ret.bitangents.emplace_back(Convert(mesh->mBitangents[j]));
 					}
 
 					auto const prevIdxCount{ ret.indices.size() };
@@ -184,7 +182,6 @@ auto MeshImporter::Import(InputImportInfo const& importInfo, std::filesystem::pa
 		extractVertexAttributes(meshData.normals);
 		extractVertexAttributes(meshData.uvs);
 		extractVertexAttributes(meshData.tangents);
-		extractVertexAttributes(meshData.bitangents);
 
 		meshData.indices.reserve(numInds);
 		for (std::size_t i{ 0 }; i < numInds; i++) {
@@ -225,10 +222,6 @@ auto MeshImporter::Import(InputImportInfo const& importInfo, std::filesystem::pa
 
 	for (auto const& tangent : meshData.tangents) {
 		BinarySerializer<Vector3>::Serialize(tangent, cachedData, std::endian::little);
-	}
-
-	for (auto const& bitangent : meshData.bitangents) {
-		BinarySerializer<Vector3>::Serialize(bitangent, cachedData, std::endian::little);
 	}
 
 	for (auto const ind : meshData.indices) {

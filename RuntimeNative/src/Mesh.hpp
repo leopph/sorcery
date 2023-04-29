@@ -28,7 +28,6 @@ public:
 		std::vector<Vector3> normals;
 		std::vector<Vector2> uvs;
 		std::vector<Vector3> tangents;
-		std::vector<Vector3> bitangents;
 		std::vector<u32> indices;
 		std::vector<SubMeshData> subMeshes;
 	};
@@ -41,7 +40,6 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11Buffer> mNormBuf;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> mUvBuf;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> mTangentBuf;
-	Microsoft::WRL::ComPtr<ID3D11Buffer> mBitangentBuf;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> mIndBuf;
 
 	auto UploadToGPU() -> void;
@@ -64,9 +62,6 @@ public:
 	[[nodiscard]] LEOPPHAPI auto GetTangents() const noexcept -> std::span<Vector3 const>;
 	LEOPPHAPI auto SetTangents(std::vector<Vector3> tangents) noexcept -> void;
 
-	[[nodiscard]] LEOPPHAPI auto GetBitangents() const noexcept -> std::span<Vector3 const>;
-	LEOPPHAPI auto SetBitangents(std::vector<Vector3> bitangents) noexcept -> void;
-
 	[[nodiscard]] LEOPPHAPI auto GetIndices() const noexcept -> std::span<u32 const>;
 	LEOPPHAPI auto SetIndices(std::vector<u32> indices) noexcept -> void;
 
@@ -84,7 +79,6 @@ public:
 	[[nodiscard]] LEOPPHAPI auto GetUVBuffer() const noexcept -> Microsoft::WRL::ComPtr<ID3D11Buffer>;
 	[[nodiscard]] LEOPPHAPI auto GetIndexBuffer() const noexcept -> Microsoft::WRL::ComPtr<ID3D11Buffer>;
 	[[nodiscard]] LEOPPHAPI auto GetTangentBuffer() const noexcept -> Microsoft::WRL::ComPtr<ID3D11Buffer>;
-	[[nodiscard]] LEOPPHAPI auto GetBitangentBuffer() const noexcept -> Microsoft::WRL::ComPtr<ID3D11Buffer>;
 
 	LEOPPHAPI Type constexpr static SerializationType{ Type::Mesh };
 

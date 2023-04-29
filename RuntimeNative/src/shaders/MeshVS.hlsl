@@ -6,7 +6,6 @@ struct MeshVSIn {
     float3 normal : NORMAL;
     float2 uv : TEXCOORD;
     float3 tangent : TANGENT;
-    float3 bitangent : BITANGENT;
 };
 
 MeshVsOut main(MeshVSIn vsIn) {
@@ -19,10 +18,11 @@ MeshVsOut main(MeshVSIn vsIn) {
     ret.uv = vsIn.uv;
     ret.viewPosZ = ret.clipPos.w;
 
-    const float3 T = normalize(mul(vsIn.tangent, gPerDrawConstants.normalMtx));
-    const float3 B = normalize(mul(vsIn.bitangent, gPerDrawConstants.normalMtx));
-    const float3 N = normalize(mul(vsIn.normal, gPerDrawConstants.normalMtx));
-   ret.tbnMtx = float3x3(T, B, N);
+    float3 tangentWS = normalize(mul(vsIn.tangent, gPerDrawConstants.normalMtx));
+    const float3 normalWS = normalize(mul(vsIn.normal, gPerDrawConstants.normalMtx));
+    tangentWS = normalize(tangentWS - dot(tangentWS, normalWS) * normalWS);
+    const float3 bitangentWS = cross(normalWS, tangentWS);
+    ret.tbnMtx = float3x3(tangentWS, bitangentWS, normalWS);
 
     return ret;
 }

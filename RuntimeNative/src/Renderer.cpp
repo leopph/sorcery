@@ -1066,7 +1066,7 @@ struct Resources {
 	ComPtr<ID3D11Buffer> gizmoColorSB;
 	ComPtr<ID3D11Buffer> lineGizmoVertexSB;
 
-	ComPtr<ID3D11InputLayout> meshIL;
+	ComPtr<ID3D11InputLayout> ilMesh;
 	ComPtr<ID3D11InputLayout> skyboxIL;
 
 	ComPtr<ID3D11SamplerState> ssCmpPcf;
@@ -1287,19 +1287,10 @@ auto CreateInputLayouts() -> void {
 			.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT,
 			.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA,
 			.InstanceDataStepRate = 0
-		},
-		{
-			.SemanticName = "BITANGENT",
-			.SemanticIndex = 0,
-			.Format = DXGI_FORMAT_R32G32B32_FLOAT,
-			.InputSlot = 2,
-			.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT,
-			.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA,
-			.InstanceDataStepRate = 0
 		}
 	};
 
-	if (FAILED(gResources->device->CreateInputLayout(meshInputDesc, ARRAYSIZE(meshInputDesc), gMeshVSBin, ARRAYSIZE(gMeshVSBin), gResources->meshIL.GetAddressOf()))) {
+	if (FAILED(gResources->device->CreateInputLayout(meshInputDesc, ARRAYSIZE(meshInputDesc), gMeshVSBin, ARRAYSIZE(gMeshVSBin), gResources->ilMesh.GetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create mesh input layout." };
 	}
 
@@ -1683,15 +1674,13 @@ auto CreateDefaultAssets() -> void {
 	CalculateNormals(CUBE_POSITIONS, CUBE_INDICES, cubeNormals);
 
 	std::vector<Vector3> cubeTangents;
-	std::vector<Vector3> cubeBitangents;
-	CalculateTangentSpace(CUBE_POSITIONS, CUBE_UVS, CUBE_INDICES, cubeTangents, cubeBitangents);
+	CalculateTangents(CUBE_POSITIONS, CUBE_UVS, CUBE_INDICES, cubeTangents);
 
 	std::vector<Vector3> quadNormals;
 	CalculateNormals(QUAD_POSITIONS, QUAD_INDICES, quadNormals);
 
 	std::vector<Vector3> quadTangents;
-	std::vector<Vector3> quadBitangents;
-	CalculateTangentSpace(QUAD_POSITIONS, QUAD_UVS, QUAD_INDICES, quadTangents, quadBitangents);
+	CalculateTangents(QUAD_POSITIONS, QUAD_UVS, QUAD_INDICES, quadTangents);
 
 	gResources->cubeMesh = std::make_unique<Mesh>();
 	gResources->cubeMesh->SetGuid(Guid{ 0, 0 });
@@ -1700,7 +1689,6 @@ auto CreateDefaultAssets() -> void {
 	gResources->cubeMesh->SetNormals(std::move(cubeNormals));
 	gResources->cubeMesh->SetUVs(CUBE_UVS);
 	gResources->cubeMesh->SetTangents(std::move(cubeTangents));
-	gResources->cubeMesh->SetBitangents(std::move(cubeBitangents));
 	gResources->cubeMesh->SetIndices(CUBE_INDICES);
 	gResources->cubeMesh->SetSubMeshes(std::vector{ Mesh::SubMeshData{ 0, 0, static_cast<int>(CUBE_INDICES.size()) } });
 	gResources->cubeMesh->ValidateAndUpdate();
@@ -1712,7 +1700,6 @@ auto CreateDefaultAssets() -> void {
 	gResources->planeMesh->SetNormals(std::move(quadNormals));
 	gResources->planeMesh->SetUVs(QUAD_UVS);
 	gResources->planeMesh->SetTangents(std::move(quadTangents));
-	gResources->planeMesh->SetBitangents(std::move(quadBitangents));
 	gResources->planeMesh->SetIndices(QUAD_INDICES);
 	gResources->planeMesh->SetSubMeshes(std::vector{ Mesh::SubMeshData{ 0, 0, static_cast<int>(QUAD_INDICES.size()) } });
 	gResources->planeMesh->ValidateAndUpdate();
@@ -1785,7 +1772,7 @@ auto CreateStructuredBuffers() -> void {
 
 auto DrawMeshes(std::span<int const> const meshComponentIndices, bool const useMaterials) noexcept -> void {
 	gResources->context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	gResources->context->IASetInputLayout(gResources->meshIL.Get());
+	gResources->context->IASetInputLayout(gResources->ilMesh.Get());
 
 	gResources->context->VSSetConstantBuffers(CB_SLOT_PER_DRAW, 1, gResources->cbPerDraw.GetAddressOf());
 	gResources->context->PSSetConstantBuffers(CB_SLOT_PER_DRAW, 1, gResources->cbPerDraw.GetAddressOf());
@@ -1794,9 +1781,9 @@ auto DrawMeshes(std::span<int const> const meshComponentIndices, bool const useM
 		auto const meshComponent{ gStaticMeshComponents[meshComponentIdx] };
 		auto const& mesh{ meshComponent->GetMesh() };
 
-		std::array const vertexBuffers{ mesh.GetPositionBuffer().Get(), mesh.GetNormalBuffer().Get(), mesh.GetUVBuffer().Get(), mesh.GetTangentBuffer().Get(), mesh.GetBitangentBuffer().Get() };
-		UINT constexpr strides[]{ sizeof(Vector3), sizeof(Vector3), sizeof(Vector2), sizeof(Vector3), sizeof(Vector3) };
-		UINT constexpr offsets[]{ 0, 0, 0, 0, 0 };
+		std::array const vertexBuffers{ mesh.GetPositionBuffer().Get(), mesh.GetNormalBuffer().Get(), mesh.GetUVBuffer().Get(), mesh.GetTangentBuffer().Get() };
+		UINT constexpr strides[]{ sizeof(Vector3), sizeof(Vector3), sizeof(Vector2), sizeof(Vector3) };
+		UINT constexpr offsets[]{ 0, 0, 0, 0 };
 		gResources->context->IASetVertexBuffers(0, static_cast<UINT>(vertexBuffers.size()), vertexBuffers.data(), strides, offsets);
 		gResources->context->IASetIndexBuffer(mesh.GetIndexBuffer().Get(), DXGI_FORMAT_R32_UINT, 0);
 
