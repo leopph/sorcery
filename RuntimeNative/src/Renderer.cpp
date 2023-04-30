@@ -1066,8 +1066,8 @@ struct Resources {
 	ComPtr<ID3D11Buffer> gizmoColorSB;
 	ComPtr<ID3D11Buffer> lineGizmoVertexSB;
 
-	ComPtr<ID3D11InputLayout> ilMesh;
-	ComPtr<ID3D11InputLayout> skyboxIL;
+	ComPtr<ID3D11InputLayout> ilAllAttribs;
+	ComPtr<ID3D11InputLayout> ilPos3Only;
 
 	ComPtr<ID3D11SamplerState> ssCmpPcf;
 	ComPtr<ID3D11SamplerState> ssCmpPoint;
@@ -1251,7 +1251,7 @@ auto SetDebugBreaks() -> void {
 
 
 auto CreateInputLayouts() -> void {
-	D3D11_INPUT_ELEMENT_DESC constexpr meshInputDesc[]{
+	D3D11_INPUT_ELEMENT_DESC constexpr inputDescs[]{
 		{
 			.SemanticName = "POSITION",
 			.SemanticIndex = 0,
@@ -1290,23 +1290,12 @@ auto CreateInputLayouts() -> void {
 		}
 	};
 
-	if (FAILED(gResources->device->CreateInputLayout(meshInputDesc, ARRAYSIZE(meshInputDesc), gMeshVSBin, ARRAYSIZE(gMeshVSBin), gResources->ilMesh.GetAddressOf()))) {
-		throw std::runtime_error{ "Failed to create mesh input layout." };
+	if (FAILED(gResources->device->CreateInputLayout(inputDescs, ARRAYSIZE(inputDescs), gMeshVSBin, ARRAYSIZE(gMeshVSBin), gResources->ilAllAttribs.GetAddressOf()))) {
+		throw std::runtime_error{ "Failed to create all-attributes input layout." };
 	}
 
-	D3D11_INPUT_ELEMENT_DESC constexpr skyboxInputDesc
-	{
-		.SemanticName = "POSITION",
-		.SemanticIndex = 0,
-		.Format = DXGI_FORMAT_R32G32B32_FLOAT,
-		.InputSlot = 0,
-		.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT,
-		.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA,
-		.InstanceDataStepRate = 0
-	};
-
-	if (FAILED(gResources->device->CreateInputLayout(&skyboxInputDesc, 1, gSkyboxVSBin, ARRAYSIZE(gSkyboxVSBin), gResources->skyboxIL.GetAddressOf()))) {
-		throw std::runtime_error{ "Failed to create skybox pass input layout." };
+	if (FAILED(gResources->device->CreateInputLayout(&inputDescs[0], 1, gShadowVSBin, ARRAYSIZE(gShadowVSBin), gResources->ilPos3Only.GetAddressOf()))) {
+		throw std::runtime_error{ "Failed to create pos3d-only input layout." };
 	}
 }
 
@@ -1772,7 +1761,6 @@ auto CreateStructuredBuffers() -> void {
 
 auto DrawMeshes(std::span<int const> const meshComponentIndices, bool const useMaterials) noexcept -> void {
 	gResources->context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	gResources->context->IASetInputLayout(gResources->ilMesh.Get());
 
 	gResources->context->VSSetConstantBuffers(CB_SLOT_PER_DRAW, 1, gResources->cbPerDraw.GetAddressOf());
 	gResources->context->PSSetConstantBuffers(CB_SLOT_PER_DRAW, 1, gResources->cbPerDraw.GetAddressOf());
@@ -1882,7 +1870,7 @@ auto DrawSkybox(Matrix4 const& camViewMtx, Matrix4 const& camProjMtx) noexcept -
 	UINT constexpr offset{ 0 };
 	gResources->context->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
 	gResources->context->IASetIndexBuffer(gResources->cubeMesh->GetIndexBuffer().Get(), DXGI_FORMAT_R32_UINT, 0);
-	gResources->context->IASetInputLayout(gResources->skyboxIL.Get());
+	gResources->context->IASetInputLayout(gResources->ilPos3Only.Get());
 	gResources->context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	gResources->context->VSSetShader(gResources->vsSkybox.Get(), nullptr, 0);
@@ -1947,6 +1935,9 @@ auto DrawShadowMaps(ShadowAtlas const& atlas) -> void {
 				Visibility static perLightVisibility;
 
 				CullStaticMeshComponents(shadowFrustumWS, perLightVisibility);
+
+				gResources->context->IASetInputLayout(gResources->ilPos3Only.Get());
+
 				DrawMeshes(perLightVisibility.staticMeshIndices, false);
 			}
 		}
@@ -2135,6 +2126,8 @@ auto DrawFullWithCameras(std::span<Camera const* const> const cameras, RenderTar
 
 		gResources->context->RSSetViewports(1, &viewport);
 		gResources->context->RSSetState(nullptr);
+
+		gResources->context->IASetInputLayout(gResources->ilAllAttribs.Get());
 
 		DrawMeshes(visibility.staticMeshIndices, true);
 		DrawGizmos();
