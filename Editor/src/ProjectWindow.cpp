@@ -107,7 +107,7 @@ auto DrawProjectWindow(Context& context) -> void {
 						auto const dstPath{
 							equivalent(srcPathAbs.parent_path(), selectedProjSubDir) ?
 								srcPathAbs :
-								IndexFileNameIfNeeded(context.GetAssetDirectoryAbsolute() / srcPathAbs.filename())
+								IndexFileNameIfNeeded(selectedProjSubDir / srcPathAbs.filename())
 						};
 
 						if (!exists(dstPath) || !equivalent(dstPath, srcPathAbs)) {
