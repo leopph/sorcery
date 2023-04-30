@@ -360,7 +360,7 @@ public:
 		};
 
 		for (int i = 0; i < static_cast<int>(visibility.lightIndices.size()); i++) {
-			if (auto const light{ allLights[visibility.lightIndices[i]] }; light->IsCastingShadow() && light->GetType() == LightComponent::Type::Spot || light->GetType() == LightComponent::Type::Point) {
+			if (auto const light{ allLights[visibility.lightIndices[i]] }; light->IsCastingShadow() && (light->GetType() == LightComponent::Type::Spot || light->GetType() == LightComponent::Type::Point)) {
 				Vector3 const& lightPos{ light->GetEntity()->GetTransform().GetWorldPosition() };
 				float const lightRange{ light->GetRange() };
 
