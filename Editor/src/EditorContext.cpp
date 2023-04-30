@@ -5,6 +5,7 @@
 
 #include "Asset.hpp"
 
+
 namespace leopph::editor {
 Context::Context(ImGuiIO& imGuiIO) :
 	mImGuiIo{ imGuiIO } { }
@@ -41,12 +42,13 @@ Scene* Context::GetScene() noexcept {
 
 
 auto Context::OpenScene(Scene& scene) -> void {
+	scene.Load(mFactoryManager);
+
 	if (mScene) {
 		mScene->Clear();
 	}
 
 	mScene = &scene;
-	mScene->Load(mFactoryManager);
 }
 
 
@@ -164,5 +166,28 @@ auto Context::SaveRegisteredNativeAsset(NativeAsset const& asset) const -> void 
 			std::ranges::copy(outSerializedBytes, std::ostreambuf_iterator{ out });
 		}
 	}
+}
+
+
+auto Context::OnEnterBusyExecution() -> BusyExecutionContext {
+	bool isBusy{ false };
+	while (!mBusy.compare_exchange_weak(isBusy, true)) {}
+
+	BusyExecutionContext const ret{
+		.imGuiConfigFlagsBackup = mImGuiIo.ConfigFlags,
+		.monoThread = gManagedRuntime.AttachToThisThread()
+	};
+
+	mImGuiIo.ConfigFlags |= ImGuiConfigFlags_NoMouse;
+	mImGuiIo.ConfigFlags |= ImGuiConfigFlags_NavNoCaptureKeyboard;
+
+	return ret;
+}
+
+
+auto Context::OnFinishBusyExecution(BusyExecutionContext const& busyExecutionContext) -> void {
+	mImGuiIo.ConfigFlags = busyExecutionContext.imGuiConfigFlagsBackup;
+	gManagedRuntime.DetachFromThisThread(busyExecutionContext.monoThread);
+	mBusy = false;
 }
 }

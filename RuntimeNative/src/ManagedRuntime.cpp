@@ -13,6 +13,7 @@
 #include <mono/metadata/assembly.h>
 #include <mono/metadata/class.h>
 #include <mono/metadata/object.h>
+#include <mono/metadata/threads.h>
 
 #include <cassert>
 #include <filesystem>
@@ -281,5 +282,15 @@ MonoObject* ManagedRuntime::ParseEnumValue(MonoReflectionType* enumType, std::st
 	void* params[]{ reinterpret_cast<void*>(enumType), reinterpret_cast<void*>(managedStr) };
 	auto const parsedValue = mono_runtime_invoke(mParseEnumValueMethod, nullptr, params, nullptr);
 	return parsedValue;
+}
+
+
+auto ManagedRuntime::AttachToThisThread() const -> MonoThread* {
+	return mono_thread_attach(GetManagedDomain());
+}
+
+
+auto ManagedRuntime::DetachFromThisThread(MonoThread* const monoThread) const -> void {
+	mono_thread_detach(monoThread);
 }
 }

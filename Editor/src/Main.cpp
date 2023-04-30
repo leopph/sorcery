@@ -75,21 +75,23 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 			int argc;
 			auto const argv{ CommandLineToArgvW(lpCmdLine, &argc) };
 
-			if (argc > 0) {
-				std::filesystem::path targetProjPath{ argv[0] };
-				targetProjPath = absolute(targetProjPath);
-				context.OpenProject(targetProjPath);
-			}
-
-			if (argc > 1) {
-				std::filesystem::path targetScenePath{ argv[1] };
-				targetScenePath = context.GetAssetDirectoryAbsolute() / targetScenePath;
-				if (auto const targetScene{ context.GetResources().TryGetAssetAt(targetScenePath) }) {
-					context.OpenScene(dynamic_cast<leopph::Scene&>(*targetScene));
+			context.ExecuteInBusyEditor([argc, argv, &context] {
+				if (argc > 0) {
+					std::filesystem::path targetProjPath{ argv[0] };
+					targetProjPath = absolute(targetProjPath);
+					context.OpenProject(targetProjPath);
 				}
-			}
 
-			LocalFree(argv);
+				if (argc > 1) {
+					std::filesystem::path targetScenePath{ argv[1] };
+					targetScenePath = context.GetAssetDirectoryAbsolute() / targetScenePath;
+					if (auto const targetScene{ context.GetResources().TryGetAssetAt(targetScenePath) }) {
+						context.OpenScene(dynamic_cast<leopph::Scene&>(*targetScene));
+					}
+				}
+
+				LocalFree(argv);
+			});
 		}
 
 		while (!leopph::gWindow.IsQuitSignaled()) {

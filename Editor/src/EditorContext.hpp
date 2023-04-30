@@ -1,6 +1,9 @@
 #pragma once
 
+#include <Systems.hpp>
+
 #include <imgui.h>
+
 #include "AssetStorage.hpp"
 #include "Scene.hpp"
 #include "ObjectFactoryManager.hpp"
@@ -8,6 +11,7 @@
 #include <filesystem>
 #include <atomic>
 #include <variant>
+
 
 namespace leopph::editor {
 class Context {
@@ -61,25 +65,30 @@ public:
 
 	auto CreateMetaFileForRegisteredAsset(Object const& asset) const -> void;
 	auto SaveRegisteredNativeAsset(NativeAsset const& asset) const -> void;
+
+
+	struct BusyExecutionContext {
+		ImGuiConfigFlags imGuiConfigFlagsBackup;
+		MonoThread* monoThread;
+	};
+
+
+	auto OnEnterBusyExecution() -> BusyExecutionContext;
+	auto OnFinishBusyExecution(BusyExecutionContext const& busyExecutionContext) -> void;
 };
+
 
 template<typename Callable>
 auto Context::ExecuteInBusyEditor(Callable&& callable) -> void {
 	std::thread{
 		[this, callable] {
-			bool isBusy{ false };
-			while (!mBusy.compare_exchange_weak(isBusy, true)) {}
-
-			auto const oldFlags{ mImGuiIo.ConfigFlags };
-			mImGuiIo.ConfigFlags |= ImGuiConfigFlags_NoMouse;
-			mImGuiIo.ConfigFlags |= ImGuiConfigFlags_NavNoCaptureKeyboard;
+			BusyExecutionContext const execContext{ OnEnterBusyExecution() };
 			std::invoke(callable);
-			mImGuiIo.ConfigFlags = oldFlags;
-
-			mBusy = false;
+			OnFinishBusyExecution(execContext);
 		}
 	}.detach();
 }
+
 
 inline auto Context::GetAssetFileExtension() noexcept -> std::filesystem::path const& {
 	return ASSET_FILE_EXT;
