@@ -15,7 +15,7 @@
 #include "shaders/generated/PostProcessPSBinDebug.h"
 #include "shaders/generated/SkyboxPSBinDebug.h"
 #include "shaders/generated/SkyboxVSBinDebug.h"
-#include "shaders/generated/ShadowVSBinDebug.h"
+#include "shaders/generated/DepthOnlyVSBinDebug.h"
 #include "shaders/generated/ScreenVSBinDebug.h"
 #include "shaders/generated/GizmoPSBinDebug.h"
 #include "shaders/generated/LineGizmoVSBinDebug.h"
@@ -26,7 +26,7 @@
 #include "shaders/generated/PostProcessPSBin.h"
 #include "shaders/generated/SkyboxPSBin.h"
 #include "shaders/generated/SkyboxVSBin.h"
-#include "shaders/generated/ShadowVSBin.h"
+#include "shaders/generated/DepthOnlyVSBin.h"
 #include "shaders/generated/ScreenVSBin.h"
 #include "shaders/generated/GizmoPSBin.h"
 #include "shaders/generated/LineGizmoVSBin.h"
@@ -1053,7 +1053,7 @@ struct Resources {
 
 	ComPtr<ID3D11VertexShader> vsMesh;
 	ComPtr<ID3D11VertexShader> vsSkybox;
-	ComPtr<ID3D11VertexShader> vsShadow;
+	ComPtr<ID3D11VertexShader> vsDepthOnly;
 	ComPtr<ID3D11VertexShader> vsScreen;
 	ComPtr<ID3D11VertexShader> vsLineGizmo;
 
@@ -1062,7 +1062,7 @@ struct Resources {
 	ComPtr<ID3D11Buffer> cbPerDraw;
 	ComPtr<ID3D11Buffer> cbPostProcess;
 	ComPtr<ID3D11Buffer> cbSkybox;
-	ComPtr<ID3D11Buffer> cbShadow;
+	ComPtr<ID3D11Buffer> cbDepthOnly;
 	ComPtr<ID3D11Buffer> gizmoColorSB;
 	ComPtr<ID3D11Buffer> lineGizmoVertexSB;
 
@@ -1081,8 +1081,8 @@ struct Resources {
 	ComPtr<ID3D11RasterizerState> skyboxPassRS;
 	ComPtr<ID3D11RasterizerState> shadowPassRS;
 
-	ComPtr<ID3D11DepthStencilState> shadowDSS;
-	ComPtr<ID3D11DepthStencilState> skyboxPassDSS;
+	ComPtr<ID3D11DepthStencilState> dssShadowPass;
+	ComPtr<ID3D11DepthStencilState> dssDepthTestLessNoWrite;
 
 	std::unique_ptr<Material> defaultMaterial;
 	std::unique_ptr<Mesh> cubeMesh;
@@ -1294,7 +1294,7 @@ auto CreateInputLayouts() -> void {
 		throw std::runtime_error{ "Failed to create all-attributes input layout." };
 	}
 
-	if (FAILED(gResources->device->CreateInputLayout(&inputDescs[0], 1, gShadowVSBin, ARRAYSIZE(gShadowVSBin), gResources->ilPos3Only.GetAddressOf()))) {
+	if (FAILED(gResources->device->CreateInputLayout(&inputDescs[0], 1, gDepthOnlyVSBin, ARRAYSIZE(gDepthOnlyVSBin), gResources->ilPos3Only.GetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create pos3d-only input layout." };
 	}
 }
@@ -1321,8 +1321,8 @@ auto CreateShaders() -> void {
 		throw std::runtime_error{ "Failed to create skybox pixel shader." };
 	}
 
-	if (FAILED(gResources->device->CreateVertexShader(gShadowVSBin, ARRAYSIZE(gShadowVSBin), nullptr, gResources->vsShadow.GetAddressOf()))) {
-		throw std::runtime_error{ "Failed to create shadow vertex shader." };
+	if (FAILED(gResources->device->CreateVertexShader(gDepthOnlyVSBin, ARRAYSIZE(gDepthOnlyVSBin), nullptr, gResources->vsDepthOnly.GetAddressOf()))) {
+		throw std::runtime_error{ "Failed to create depth-only vertex shader." };
 	}
 
 	if (FAILED(gResources->device->CreateVertexShader(gScreenVSBin, ARRAYSIZE(gScreenVSBin), nullptr, gResources->vsScreen.GetAddressOf()))) {
@@ -1405,8 +1405,8 @@ auto CreateConstantBuffers() -> void {
 		throw std::runtime_error{ "Failed to create skybox pass CB." };
 	}
 
-	D3D11_BUFFER_DESC constexpr shadowPassCbDesc{
-		.ByteWidth = sizeof(ShadowCB),
+	D3D11_BUFFER_DESC constexpr depthOnlyCbDesc{
+		.ByteWidth = sizeof(DepthOnlyCB),
 		.Usage = D3D11_USAGE_DYNAMIC,
 		.BindFlags = D3D11_BIND_CONSTANT_BUFFER,
 		.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
@@ -1414,8 +1414,8 @@ auto CreateConstantBuffers() -> void {
 		.StructureByteStride = 0
 	};
 
-	if (FAILED(gResources->device->CreateBuffer(&shadowPassCbDesc, nullptr, gResources->cbShadow.GetAddressOf()))) {
-		throw std::runtime_error{ "Failed to create shadow pass CB." };
+	if (FAILED(gResources->device->CreateBuffer(&depthOnlyCbDesc, nullptr, gResources->cbDepthOnly.GetAddressOf()))) {
+		throw std::runtime_error{ "Failed to create depth-only pass CB." };
 	}
 }
 
@@ -1458,31 +1458,6 @@ auto CreateRasterizerStates() -> void {
 
 
 auto CreateDepthStencilStates() -> void {
-	D3D11_DEPTH_STENCIL_DESC constexpr skyboxPassDepthStencilDesc{
-		.DepthEnable = TRUE,
-		.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO,
-		.DepthFunc = D3D11_COMPARISON_LESS_EQUAL,
-		.StencilEnable = FALSE,
-		.StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK,
-		.StencilWriteMask = D3D11_DEFAULT_STENCIL_WRITE_MASK,
-		.FrontFace = {
-			.StencilFailOp = D3D11_STENCIL_OP_KEEP,
-			.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP,
-			.StencilPassOp = D3D11_STENCIL_OP_KEEP,
-			.StencilFunc = D3D11_COMPARISON_ALWAYS
-		},
-		.BackFace = {
-			.StencilFailOp = D3D11_STENCIL_OP_KEEP,
-			.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP,
-			.StencilPassOp = D3D11_STENCIL_OP_KEEP,
-			.StencilFunc = D3D11_COMPARISON_ALWAYS
-		}
-	};
-
-	if (FAILED(gResources->device->CreateDepthStencilState(&skyboxPassDepthStencilDesc, gResources->skyboxPassDSS.ReleaseAndGetAddressOf()))) {
-		throw std::runtime_error{ "Failed to create skybox pass depth-stencil state." };
-	}
-
 	D3D11_DEPTH_STENCIL_DESC constexpr shadowPassDesc{
 		.DepthEnable = TRUE,
 		.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL,
@@ -1504,8 +1479,33 @@ auto CreateDepthStencilStates() -> void {
 		}
 	};
 
-	if (FAILED(gResources->device->CreateDepthStencilState(&shadowPassDesc, gResources->shadowDSS.GetAddressOf()))) {
+	if (FAILED(gResources->device->CreateDepthStencilState(&shadowPassDesc, gResources->dssShadowPass.GetAddressOf()))) {
 		throw std::runtime_error{ "Failed to create shadow pass depth-stencil state." };
+	}
+
+	D3D11_DEPTH_STENCIL_DESC constexpr depthTestLessNoWriteDesc{
+		.DepthEnable = TRUE,
+		.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO,
+		.DepthFunc = D3D11_COMPARISON_LESS_EQUAL,
+		.StencilEnable = FALSE,
+		.StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK,
+		.StencilWriteMask = D3D11_DEFAULT_STENCIL_WRITE_MASK,
+		.FrontFace = {
+			.StencilFailOp = D3D11_STENCIL_OP_KEEP,
+			.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP,
+			.StencilPassOp = D3D11_STENCIL_OP_KEEP,
+			.StencilFunc = D3D11_COMPARISON_ALWAYS
+		},
+		.BackFace = {
+			.StencilFailOp = D3D11_STENCIL_OP_KEEP,
+			.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP,
+			.StencilPassOp = D3D11_STENCIL_OP_KEEP,
+			.StencilFunc = D3D11_COMPARISON_ALWAYS
+		}
+	};
+
+	if (FAILED(gResources->device->CreateDepthStencilState(&depthTestLessNoWriteDesc, gResources->dssDepthTestLessNoWrite.GetAddressOf()))) {
+		throw std::runtime_error{ "Failed to create depth-test less no-write DSS." };
 	}
 }
 
@@ -1882,7 +1882,7 @@ auto DrawSkybox(Matrix4 const& camViewMtx, Matrix4 const& camProjMtx) noexcept -
 	auto const cb{ gResources->cbSkybox.Get() };
 	gResources->context->VSSetConstantBuffers(CB_SLOT_SKYBOX_PASS, 1, &cb);
 
-	gResources->context->OMSetDepthStencilState(gResources->skyboxPassDSS.Get(), 0);
+	gResources->context->OMSetDepthStencilState(gResources->dssDepthTestLessNoWrite.Get(), 0);
 	gResources->context->RSSetState(gResources->skyboxPassRS.Get());
 
 	gResources->context->DrawIndexed(clamp_cast<UINT>(CUBE_INDICES.size()), 0, 0);
@@ -1896,10 +1896,10 @@ auto DrawSkybox(Matrix4 const& camViewMtx, Matrix4 const& camProjMtx) noexcept -
 auto DrawShadowMaps(ShadowAtlas const& atlas) -> void {
 	gResources->context->OMSetRenderTargets(0, nullptr, atlas.GetDsv());
 	gResources->context->ClearDepthStencilView(atlas.GetDsv(), D3D11_CLEAR_DEPTH, 0, 0);
-	gResources->context->VSSetShader(gResources->vsShadow.Get(), nullptr, 0);
+	gResources->context->VSSetShader(gResources->vsDepthOnly.Get(), nullptr, 0);
 	gResources->context->PSSetShader(nullptr, nullptr, 0);
-	gResources->context->VSSetConstantBuffers(CB_SLOT_SHADOW_PASS, 1, gResources->cbShadow.GetAddressOf());
-	gResources->context->OMSetDepthStencilState(gResources->shadowDSS.Get(), 0);
+	gResources->context->VSSetConstantBuffers(CB_SLOT_DEPTH_ONLY_PASS, 1, gResources->cbDepthOnly.GetAddressOf());
+	gResources->context->OMSetDepthStencilState(gResources->dssShadowPass.Get(), 0);
 	gResources->context->RSSetState(gResources->shadowPassRS.Get());
 
 	auto const cellSizeNorm{ atlas.GetNormalizedElementSize() };
@@ -1925,10 +1925,10 @@ auto DrawShadowMaps(ShadowAtlas const& atlas) -> void {
 				gResources->context->RSSetViewports(1, &viewport);
 
 				D3D11_MAPPED_SUBRESOURCE mapped;
-				gResources->context->Map(gResources->cbShadow.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
-				auto const shadowCbData{ static_cast<ShadowCB*>(mapped.pData) };
-				shadowCbData->shadowViewProjMtx = subcell->shadowViewProjMtx;
-				gResources->context->Unmap(gResources->cbShadow.Get(), 0);
+				gResources->context->Map(gResources->cbDepthOnly.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
+				auto const depthOnlyCbData{ static_cast<DepthOnlyCB*>(mapped.pData) };
+				depthOnlyCbData->gDepthOnlyViewProjMtx = subcell->shadowViewProjMtx;
+				gResources->context->Unmap(gResources->cbDepthOnly.Get(), 0);
 
 				Frustum const shadowFrustumWS{ subcell->shadowViewProjMtx };
 
@@ -2003,7 +2003,6 @@ auto ClearGizmoDrawQueue() noexcept {
 auto DrawFullWithCameras(std::span<Camera const* const> const cameras, RenderTarget const& rt) -> void {
 	FLOAT constexpr clearColor[]{ 0, 0, 0, 1 };
 	gResources->context->ClearRenderTargetView(rt.GetHdrRtv(), clearColor);
-	gResources->context->ClearDepthStencilView(rt.GetDsv(), D3D11_CLEAR_DEPTH, 1, 0);
 
 	auto const aspectRatio{ static_cast<float>(rt.GetWidth()) / static_cast<float>(rt.GetHeight()) };
 
@@ -2050,6 +2049,8 @@ auto DrawFullWithCameras(std::span<Camera const* const> const cameras, RenderTar
 		Visibility static visibility;
 		CullLights(camFrustWS, visibility);
 
+		// Shadow pass
+
 		auto const shadowCascadeBoundaries{ CalculateCameraShadowCascadeBoundaries(*cam) };
 
 		for (auto const& shadowAtlas : gResources->shadowAtlases) {
@@ -2067,6 +2068,31 @@ auto DrawFullWithCameras(std::span<Camera const* const> const cameras, RenderTar
 
 		CullStaticMeshComponents(camFrustWS, visibility);
 
+		// Depth pre-pass
+
+		gResources->context->OMSetRenderTargets(0, nullptr, rt.GetDsv());
+		gResources->context->OMSetDepthStencilState(nullptr, 0);
+
+		gResources->context->VSSetShader(gResources->vsDepthOnly.Get(), nullptr, 0);
+		gResources->context->VSSetConstantBuffers(CB_SLOT_DEPTH_ONLY_PASS, 1, gResources->cbDepthOnly.GetAddressOf());
+
+		gResources->context->RSSetViewports(1, &viewport);
+		gResources->context->RSSetState(nullptr);
+
+		gResources->context->IASetInputLayout(gResources->ilPos3Only.Get());
+
+		gResources->context->ClearDepthStencilView(rt.GetDsv(), D3D11_CLEAR_DEPTH, 1, 0);
+
+		D3D11_MAPPED_SUBRESOURCE mappedCb;
+		if (FAILED(gResources->context->Map(gResources->cbDepthOnly.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedCb))) {
+			throw std::runtime_error{ "Failed to map CB for depth pre-pass." };
+		}
+		static_cast<DepthOnlyCB*>(mappedCb.pData)->gDepthOnlyViewProjMtx = camViewProjMtx;
+		gResources->context->Unmap(gResources->cbDepthOnly.Get(), 0);
+
+		DrawMeshes(visibility.staticMeshIndices, false);
+
+		// Full forward lighting pass
 		gResources->context->VSSetShader(gResources->vsMesh.Get(), nullptr, 0);
 
 		D3D11_MAPPED_SUBRESOURCE mappedPerCamCB;
@@ -2116,7 +2142,7 @@ auto DrawFullWithCameras(std::span<Camera const* const> const cameras, RenderTar
 		gResources->context->VSSetConstantBuffers(CB_SLOT_PER_CAM, 1, gResources->cbPerCam.GetAddressOf());
 
 		gResources->context->OMSetRenderTargets(1, std::array{ rt.GetHdrRtv() }.data(), rt.GetDsv());
-		gResources->context->OMSetDepthStencilState(nullptr, 0);
+		gResources->context->OMSetDepthStencilState(gResources->dssDepthTestLessNoWrite.Get(), 0);
 
 		gResources->context->PSSetShader(gResources->psMeshPbr.Get(), nullptr, 0);
 		gResources->context->PSSetConstantBuffers(CB_SLOT_PER_CAM, 1, gResources->cbPerCam.GetAddressOf());

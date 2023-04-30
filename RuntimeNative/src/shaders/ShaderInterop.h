@@ -36,7 +36,7 @@ typedef bool BOOL;
 #define CB_SLOT_PER_MATERIAL 3
 #define CB_SLOT_POST_PROCESS 0
 #define CB_SLOT_SKYBOX_PASS 0
-#define CB_SLOT_SHADOW_PASS 0
+#define CB_SLOT_DEPTH_ONLY_PASS 0
 
 #define RES_SLOT_ALBEDO_MAP 0
 #define RES_SLOT_METALLIC_MAP 1
@@ -138,38 +138,38 @@ struct ShaderPerDrawConstants {
 
 
 CBUFFER(PerFrameCB, CB_SLOT_PER_FRAME) {
-ShaderPerFrameConstants gPerFrameConstants;
+	ShaderPerFrameConstants gPerFrameConstants;
 };
 
 
 CBUFFER(PerCameraCB, CB_SLOT_PER_CAM) {
-ShaderPerCamConstants gPerCamConstants;
+	ShaderPerCamConstants gPerCamConstants;
 };
 
 
 CBUFFER(PerDrawCB, CB_SLOT_PER_DRAW) {
-ShaderPerDrawConstants gPerDrawConstants;
+	ShaderPerDrawConstants gPerDrawConstants;
 };
 
 
 CBUFFER(PerMaterialCB, CB_SLOT_PER_MATERIAL) {
-ShaderMaterial material;
+	ShaderMaterial material;
 };
 
 
 CBUFFER(PostProcessCB, CB_SLOT_POST_PROCESS) {
-float invGamma;
-float3 pad;
+	float invGamma;
+	float3 pad;
 };
 
 
 CBUFFER(SkyboxCB, CB_SLOT_SKYBOX_PASS) {
-row_major float4x4 skyboxViewProjMtx;
+	row_major float4x4 skyboxViewProjMtx;
 };
 
 
-CBUFFER(ShadowCB, CB_SLOT_SHADOW_PASS) {
-row_major float4x4 shadowViewProjMtx;
+CBUFFER(DepthOnlyCB, CB_SLOT_DEPTH_ONLY_PASS) {
+	row_major float4x4 gDepthOnlyViewProjMtx;
 };
 
 

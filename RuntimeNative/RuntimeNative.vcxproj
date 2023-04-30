@@ -254,7 +254,7 @@
       <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)src/shaders/generated/ScreenVSBinDebug.h</HeaderFileOutput>
       <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)src/shaders/generated/ScreenVSBin.h</HeaderFileOutput>
     </FxCompile>
-    <FxCompile Include="src\shaders\ShadowVS.hlsl">
+    <FxCompile Include="src\shaders\DepthOnlyVS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
@@ -263,10 +263,10 @@
       </ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </ObjectFileOutput>
-      <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">gShadowVSBin</VariableName>
-      <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">gShadowVSBin</VariableName>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)src/shaders/generated/ShadowVSBinDebug.h</HeaderFileOutput>
-      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)src/shaders/generated/ShadowVSBin.h</HeaderFileOutput>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">gDepthOnlyVSBin</VariableName>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">gDepthOnlyVSBin</VariableName>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)src/shaders/generated/DepthOnlyVSBinDebug.h</HeaderFileOutput>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)src/shaders/generated/DepthOnlyVSBin.h</HeaderFileOutput>
     </FxCompile>
     <FxCompile Include="src\shaders\SkyboxPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
