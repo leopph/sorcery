@@ -748,6 +748,12 @@ auto EditorObjectWrapperFor<Mesh>::OnGui([[maybe_unused]] Context& context, Obje
 		ImGui::TableNextColumn();
 		ImGui::Text("%s", std::to_string(mesh.GetIndices().size()).c_str());
 
+		ImGui::TableNextColumn();
+		ImGui::Text("%s", "Submesh Count");
+
+		ImGui::TableNextColumn();
+		ImGui::Text("%s", std::to_string(mesh.GetSubMeshes().size()).c_str());
+
 		ImGui::EndTable();
 	}
 }
