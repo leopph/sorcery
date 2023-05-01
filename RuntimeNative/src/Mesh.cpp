@@ -188,7 +188,7 @@ auto Mesh::ValidateAndUpdate() -> void {
 		throw std::runtime_error{ std::format(errFmt, GetGuid().ToString(), GetName(), "Inconsistent number of positions, normals, UVs and tangents.") };
 	}
 
-	for (auto const& [baseVertex, firstIndex, indexCount] : mTempData.subMeshes) {
+	for (auto const& [baseVertex, firstIndex, indexCount, mtlSlotName] : mTempData.subMeshes) {
 		if (baseVertex >= std::ssize(mTempData.positions)) {
 			throw std::runtime_error{ std::format(errFmt, GetGuid().ToString(), GetName(), "A submesh contains a base vertex greater than the number of vertices.") };
 		}

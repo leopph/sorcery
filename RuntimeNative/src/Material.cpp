@@ -195,27 +195,25 @@ auto Material::GetSerializationType() const -> Type {
 
 
 auto Material::Serialize(std::vector<std::uint8_t>& out) const noexcept -> void {
+	auto constexpr endianness{ std::endian::little };
 	std::int8_t constexpr static MATERIAL_VERSION{ 1 };
-	BinarySerializer<std::int8_t>::Serialize(MATERIAL_VERSION, out);
-	BinarySerializer<Vector3>::Serialize(mShaderMtl.albedo, out, std::endian::little);
-	BinarySerializer<f32>::Serialize(mShaderMtl.metallic, out, std::endian::little);
-	BinarySerializer<f32>::Serialize(mShaderMtl.roughness, out, std::endian::little);
-	BinarySerializer<f32>::Serialize(mShaderMtl.ao, out, std::endian::little);
 
-	BinarySerializer<u8>::Serialize(mShaderMtl.sampleAlbedo != 0, out);
-	BinarySerializer<u8>::Serialize(mShaderMtl.sampleMetallic != 0, out);
-	BinarySerializer<u8>::Serialize(mShaderMtl.sampleRoughness != 0, out);
-	BinarySerializer<u8>::Serialize(mShaderMtl.sampleAo != 0, out);
-	BinarySerializer<u8>::Serialize(mShaderMtl.sampleNormal != 0, out);
+	BinarySerializer<std::int8_t>::Serialize(MATERIAL_VERSION, endianness, out);
+	BinarySerializer<Vector3>::Serialize(mShaderMtl.albedo, endianness, out);
+	BinarySerializer<f32>::Serialize(mShaderMtl.metallic, endianness, out);
+	BinarySerializer<f32>::Serialize(mShaderMtl.roughness, endianness, out);
+	BinarySerializer<f32>::Serialize(mShaderMtl.ao, endianness, out);
+
+	BinarySerializer<u8>::Serialize(mShaderMtl.sampleAlbedo != 0, endianness, out);
+	BinarySerializer<u8>::Serialize(mShaderMtl.sampleMetallic != 0, endianness, out);
+	BinarySerializer<u8>::Serialize(mShaderMtl.sampleRoughness != 0, endianness, out);
+	BinarySerializer<u8>::Serialize(mShaderMtl.sampleAo != 0, endianness, out);
+	BinarySerializer<u8>::Serialize(mShaderMtl.sampleNormal != 0, endianness, out);
 
 	auto const trySerializeMap{
 		[&out](Texture2D const* const map) {
 			if (map) {
-				auto const guidStr{ map->GetGuid().ToString() };
-				BinarySerializer<u64>::Serialize(guidStr.size(), out, std::endian::little);
-				std::ranges::transform(guidStr, std::back_inserter(out), [](char const c) {
-					return static_cast<uint8_t>(c);
-				});
+				BinarySerializer<std::string>::Serialize(map->GetGuid().ToString(), endianness, out);
 			}
 		}
 	};

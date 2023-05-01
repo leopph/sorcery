@@ -278,60 +278,46 @@ auto EditorObjectWrapperFor<StaticMeshComponent>::OnGui([[maybe_unused]] Context
 		ImGui::Text("%s", model.GetMesh().GetName().data());
 
 		ImGui::TableNextColumn();
-		ImGui::Text("Material Count");
-		ImGui::TableNextColumn();
+		ImGui::Text("%s", "Materials");
 
-		auto mtlCount{ clamp_cast<int>(model.GetMaterials().size()) };
-		if (ImGui::InputInt("###MtlCountInput", &mtlCount) && mtlCount >= 0) {
-			while (mtlCount > clamp_cast<int>(model.GetMaterials().size())) {
-				model.AddMaterial(*renderer::GetDefaultMaterial());
+		for (int i = 0; i < std::ssize(model.GetMesh().GetSubMeshes()); i++) {
+			std::string const& mtlSlotName{ model.GetMesh().GetSubMeshes()[i].mtlSlotName };
+
+			ImGui::TableNextRow();
+			ImGui::Text("%s", mtlSlotName.c_str());
+			/*ImGui::TableNextColumn();
+
+			static std::vector<Material*> allMaterials;
+			static std::string matFilter;
+
+			auto const popupId{ "StaticMeshComponentMaterialSelectorPopup" };
+
+			if (ImGui::Button(std::format("Select##Mtl{}", std::to_string(i)).c_str())) {
+				Object::FindObjectsOfType(allMaterials);
+				matFilter.clear();
+				ImGui::OpenPopup(popupId);
 			}
-			while (mtlCount < clamp_cast<int>(model.GetMaterials().size())) {
-				model.RemoveMaterial(clamp_cast<int>(model.GetMaterials().size()) - 1);
-			}
-		}
 
-		static std::vector<Material*> allMaterials;
-		static std::string matFilter;
-
-		if (mtlCount > 0) {
-			ImGui::TableNextColumn();
-			ImGui::Text("Materials");
-			ImGui::TableNextColumn();
-
-			for (int i = 0; i < mtlCount; i++) {
-				ImGui::TableSetColumnIndex(1);
-
-				auto const popupId{ std::format("ChooseMaterial{}ForCube", std::to_string(i)) };
-
-				if (ImGui::Button(std::format("Select##SelectMaterial{}ForModel", std::to_string(i)).c_str())) {
+			if (ImGui::BeginPopup(popupId)) {
+				if (ImGui::InputText("###SearchMat", &matFilter)) {
 					Object::FindObjectsOfType(allMaterials);
-					matFilter.clear();
-					ImGui::OpenPopup(popupId.c_str());
+					std::erase_if(allMaterials, [](Material const* mat) {
+						return !Contains(mat->GetName(), matFilter);
+					});
 				}
 
-				if (ImGui::BeginPopup(popupId.c_str())) {
-					if (ImGui::InputText("###SearchMat", &matFilter)) {
-						Object::FindObjectsOfType(allMaterials);
-						std::erase_if(allMaterials, [](Material const* mat) {
-							return !Contains(mat->GetName(), matFilter);
-						});
+				for (auto const mat : allMaterials) {
+					if (ImGui::Selectable(std::format("{}##matoption{}", mat->GetName(), mat->GetGuid().ToString()).c_str())) {
+						model.ReplaceMaterial(i, *mat);
+						break;
 					}
-
-					for (auto const mat : allMaterials) {
-						if (ImGui::Selectable(std::format("{}##matoption{}", mat->GetName(), mat->GetGuid().ToString()).c_str())) {
-							model.ReplaceMaterial(i, *mat);
-							break;
-						}
-					}
-
-					ImGui::EndPopup();
 				}
 
-				ImGui::SameLine();
-				ImGui::Text("%s", model.GetMaterials()[i]->GetName().data());
-				ImGui::TableNextRow();
+				ImGui::EndPopup();
 			}
+
+			ImGui::SameLine();
+			ImGui::Text("%s", model.GetMaterials()[i]->GetName().data());*/
 		}
 
 		ImGui::EndTable();

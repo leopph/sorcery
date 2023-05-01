@@ -5,6 +5,7 @@
 #include "Bounds.hpp"
 
 #include <span>
+#include <string>
 #include <vector>
 
 #define WIN32_LEAN_AND_MEAN
@@ -20,6 +21,8 @@ public:
 		int baseVertex;
 		int firstIndex;
 		int indexCount;
+
+		std::string mtlSlotName;
 	};
 
 

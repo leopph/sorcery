@@ -18,52 +18,45 @@ auto MaterialImporter::GetSupportedExtensions() const -> std::string {
 auto MaterialImporter::Import(InputImportInfo const& importInfo, [[maybe_unused]] std::filesystem::path const& cacheDir) -> Object* {
 	std::ifstream in{ importInfo.src, std::ios::binary };
 	std::vector<std::uint8_t> fileData{ std::istreambuf_iterator{ in }, {} };
-	std::span bytes{ fileData };
+	std::span<std::uint8_t const> bytes{ fileData };
 
-	std::int8_t const materialVersion{ BinarySerializer<std::int8_t>::Deserialize(bytes.first<sizeof(std::int8_t)>()) };
-	bytes = bytes.subspan(sizeof(std::int8_t));
+	std::endian constexpr endianness{ std::endian::little };
 
-	auto const albedoVector{ BinarySerializer<Vector3>::Deserialize(bytes.first<sizeof(Vector3)>(), std::endian::little) };
-	bytes = bytes.subspan(sizeof(Vector3));
+	std::int8_t materialVersion;
+	bytes = BinarySerializer<std::int8_t>::Deserialize(bytes, endianness, materialVersion);
 
-	auto const metallic{ BinarySerializer<f32>::Deserialize(bytes.first<sizeof(f32)>(), std::endian::little) };
-	bytes = bytes.subspan(sizeof(f32));
+	Vector3 albedoVector;
+	bytes = BinarySerializer<Vector3>::Deserialize(bytes, endianness, albedoVector);
 
-	auto const roughness{ BinarySerializer<f32>::Deserialize(bytes.first<sizeof(f32)>(), std::endian::little) };
-	bytes = bytes.subspan(sizeof(f32));
+	float metallic;
+	bytes = BinarySerializer<float>::Deserialize(bytes, endianness, metallic);
 
-	auto const ao{ BinarySerializer<f32>::Deserialize(bytes.first<sizeof(f32)>(), std::endian::little) };
-	bytes = bytes.subspan(sizeof(f32));
+	float roughness;
+	bytes = BinarySerializer<float>::Deserialize(bytes, endianness, roughness);
 
-	auto const sampleAlbedo{ static_cast<bool>(BinarySerializer<u8>::Deserialize(bytes.first<sizeof(u8)>())) };
-	bytes = bytes.subspan(sizeof(u8));
+	float ao;
+	bytes = BinarySerializer<float>::Deserialize(bytes, endianness, ao);
 
-	auto const sampleMetallic{ static_cast<bool>(BinarySerializer<u8>::Deserialize(bytes.first<sizeof(u8)>())) };
-	bytes = bytes.subspan(sizeof(u8));
+	bool sampleAlbedo;
+	bytes = BinarySerializer<bool>::Deserialize(bytes, endianness, sampleAlbedo);
 
-	auto const sampleRoughness{ static_cast<bool>(BinarySerializer<u8>::Deserialize(bytes.first<sizeof(u8)>())) };
-	bytes = bytes.subspan(sizeof(u8));
+	bool sampleMetallic;
+	bytes = BinarySerializer<bool>::Deserialize(bytes, endianness, sampleMetallic);
 
-	auto const sampleAo{ static_cast<bool>(BinarySerializer<u8>::Deserialize(bytes.first<sizeof(u8)>())) };
-	bytes = bytes.subspan(sizeof(u8));
+	bool sampleRoughness;
+	bytes = BinarySerializer<bool>::Deserialize(bytes, endianness, sampleRoughness);
 
-	auto const sampleNormal{ static_cast<bool>(BinarySerializer<u8>::Deserialize(bytes.first<sizeof(u8)>())) };
-	bytes = bytes.subspan(sizeof(u8));
+	bool sampleAo;
+	bytes = BinarySerializer<bool>::Deserialize(bytes, endianness, sampleAo);
+
+	bool sampleNormal;
+	bytes = BinarySerializer<bool>::Deserialize(bytes, endianness, sampleNormal);
 
 	auto const parseNextMap{
 		[&bytes]() -> Texture2D* {
-			auto const guidStrLength{ BinarySerializer<u64>::Deserialize(bytes.first<sizeof(u64)>(), std::endian::little) };
-			bytes = bytes.subspan(sizeof(u64));
-
-			if (bytes.size() >= guidStrLength) {
-				std::string guidStr;
-				std::ranges::copy_n(std::begin(bytes), guidStrLength, std::back_inserter(guidStr));
-				auto const ret{ dynamic_cast<Texture2D*>(Object::FindObjectByGuid(Guid::Parse(guidStr))) };
-				bytes = bytes.subspan(guidStrLength);
-				return ret;
-			}
-
-			return nullptr;
+			std::string guidStr;
+			bytes = BinarySerializer<std::string>::Deserialize(bytes, endianness, guidStr);
+			return dynamic_cast<Texture2D*>(Object::FindObjectByGuid(Guid::Parse(guidStr)));
 		}
 	};
 

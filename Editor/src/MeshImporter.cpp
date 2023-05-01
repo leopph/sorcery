@@ -7,8 +7,11 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
+#include <cstdint>
 #include <fstream>
 #include <queue>
+#include <map>
+#include <ranges>
 #include <vector>
 
 
@@ -43,7 +46,10 @@ public:
 
 
 	[[nodiscard]] auto Import(std::filesystem::path const& path) -> Mesh::Data {
+		// Remove unnecessary scene elements
 		mImporter.SetPropertyInteger(AI_CONFIG_PP_RVC_FLAGS, aiComponent_ANIMATIONS | aiComponent_BONEWEIGHTS | aiComponent_CAMERAS | aiComponent_LIGHTS | aiComponent_COLORS);
+		// Remove point and line primitives
+		mImporter.SetPropertyInteger(AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_POINT | aiPrimitiveType_LINE);
 
 		auto const scene{ mImporter.ReadFile(path.string(), aiProcess_JoinIdenticalVertices | aiProcess_Triangulate | aiProcess_SortByPType | aiProcess_GenUVCoords | aiProcess_GenNormals | aiProcess_RemoveComponent | aiProcess_FlipWindingOrder | aiProcess_FlipUVs | aiProcess_CalcTangentSpace) };
 
@@ -51,7 +57,57 @@ public:
 			throw std::runtime_error{ std::format("Failed to import model at {}: {}.", path.string(), mImporter.GetErrorString()) };
 		}
 
-		Mesh::Data ret;
+		// Convert all mesh data
+
+		struct MeshInfo {
+			std::vector<Vector3> vertices;
+			std::vector<Vector3> normals;
+			std::vector<Vector2> uvs;
+			std::vector<Vector3> tangents;
+			std::vector<unsigned> indices;
+			unsigned mtlIdx{};
+		};
+
+		std::vector<MeshInfo> meshes;
+		meshes.reserve(scene->mNumMeshes);
+
+		for (unsigned i = 0; i < scene->mNumMeshes; i++) {
+			// These meshes are always triangle-only, because
+			// AI_CONFIG_PP_SBP_REMOVE is set to remove points and lines, 
+			// aiProcess_Triangulate splits up primitives with more than 3 vertices
+			// aiProcess_SortByPType splits up meshes with more than 1 primitive type into homogeneous ones
+			// TODO Implement non-triangle rendering support
+
+			aiMesh const* const mesh{ scene->mMeshes[i] };
+			auto& [vertices, normals, uvs, tangents, indices, mtlIdx]{ meshes.emplace_back() };
+
+			vertices.reserve(mesh->mNumVertices);
+			normals.reserve(mesh->mNumVertices);
+			uvs.reserve(mesh->mNumVertices);
+			tangents.reserve(mesh->mNumVertices);
+
+			for (unsigned j = 0; j < mesh->mNumVertices; j++) {
+				vertices.emplace_back(Convert(mesh->mVertices[j]));
+				normals.emplace_back(Normalized(Convert(mesh->mNormals[j])));
+				uvs.emplace_back(mesh->HasTextureCoords(0) ? Vector2{ Convert(mesh->mTextureCoords[0][j]) } : Vector2{});
+				tangents.emplace_back(Convert(mesh->mTangents[j]));
+			}
+
+			for (unsigned j = 0; j < mesh->mNumFaces; j++) {
+				std::ranges::copy(std::span{ mesh->mFaces[j].mIndices, mesh->mFaces[j].mNumIndices }, std::back_inserter(indices));
+			}
+
+			mtlIdx = mesh->mMaterialIndex;
+		}
+
+		// Flatten the hierarchy
+
+		struct MeshReference {
+			Matrix4 trafo;
+			unsigned meshIdx;
+		};
+
+		std::vector<MeshReference> flatHierarchy;
 
 		struct NodeProcessingInfo {
 			Matrix4 accumParentTrafo;
@@ -64,66 +120,9 @@ public:
 		while (!queue.empty()) {
 			auto const& [accumParentTrafo, node] = queue.front();
 			auto const trafo{ Convert(node->mTransformation).Transpose() * accumParentTrafo };
-			auto const trafoInverseTranspose{ trafo.Inverse().Transpose() };
 
 			for (unsigned i = 0; i < node->mNumMeshes; ++i) {
-				// aiProcess_SortByPType will separate mixed-primitive meshes, so every mesh in theory should be clean and only contain one kind of primitive.
-				// Testing for one type only is therefore safe, but triangle meshes have to be checked for NGON encoding too.
-				if (auto const* const mesh = scene->mMeshes[node->mMeshes[i]]; mesh->mPrimitiveTypes & aiPrimitiveType_TRIANGLE) {
-					if (mesh->mPrimitiveTypes & aiPrimitiveType_NGONEncodingFlag) {
-						//Logger::get_instance().debug(std::format("Found NGON encoded submesh in model file at {}.", path.string()));
-						// TODO transform to triangle fans
-					}
-
-					auto const prevVertCount{ ret.positions.size() };
-
-					ret.positions.reserve(ret.positions.size() + mesh->mNumVertices);
-					ret.normals.reserve(ret.normals.size() + mesh->mNumVertices);
-					ret.uvs.reserve(ret.uvs.size() + mesh->mNumVertices);
-					ret.tangents.reserve(ret.tangents.size() + mesh->mNumVertices);
-
-
-					for (unsigned j = 0; j < mesh->mNumVertices; j++) {
-						ret.positions.emplace_back(Vector4{ Convert(mesh->mVertices[j]), 1 } * trafo);
-						ret.normals.emplace_back(Normalized(Vector3{ Vector4{ Convert(mesh->mNormals[j]), 0 } * trafoInverseTranspose }));
-						ret.uvs.emplace_back([mesh, j] {
-							for (int k = 0; k < AI_MAX_NUMBER_OF_TEXTURECOORDS; k++) {
-								if (mesh->HasTextureCoords(static_cast<unsigned>(k))) {
-									return Vector2{ Convert(mesh->mTextureCoords[k][j]) };
-								}
-							}
-							return Vector2{};
-						}());
-						ret.tangents.emplace_back(Convert(mesh->mTangents[j]));
-					}
-
-					auto const prevIdxCount{ ret.indices.size() };
-
-					for (unsigned j = 0; j < mesh->mNumFaces; j++) {
-						std::ranges::copy(std::span{ mesh->mFaces[j].mIndices, mesh->mFaces[j].mNumIndices }, std::back_inserter(ret.indices));
-					}
-
-					ret.subMeshes.emplace_back(clamp_cast<int>(prevVertCount), clamp_cast<int>(prevIdxCount), clamp_cast<int>(ret.indices.size() - prevIdxCount));
-				}
-				/*
-				else {
-					std::string primitiveType;
-
-					if (mesh->mPrimitiveTypes & aiPrimitiveType_POINT) {
-						primitiveType += " [points]";
-					}
-
-					if (mesh->mPrimitiveTypes & aiPrimitiveType_LINE) {
-						primitiveType += " [lines]";
-					}
-
-					if (mesh->mPrimitiveTypes & aiPrimitiveType_POLYGON) {
-						primitiveType += " [N>3 polygons]";
-					}
-
-					TODO Implement non-triangle rendering support
-					Logger::get_instance().debug(std::format("Ignoring non-triangle mesh in model file at {}. Primitives in the mesh are {}.", path.string(), primitiveType));
-				}*/
+				flatHierarchy.emplace_back(trafo, node->mMeshes[i]);
 			}
 
 			for (unsigned i = 0; i < node->mNumChildren; ++i) {
@@ -131,6 +130,59 @@ public:
 			}
 
 			queue.pop();
+		}
+
+		// Sort and group meshes by material index
+
+		struct SubmeshReference {
+			std::vector<MeshReference> meshes;
+		};
+
+		std::map<unsigned, SubmeshReference> submeshes;
+
+		for (auto const& [trafo, meshIdx] : flatHierarchy) {
+			submeshes[meshes[meshIdx].mtlIdx].meshes.emplace_back(trafo, meshIdx);
+		}
+
+		// Transform the vertices and create submeshes around material indices
+
+		Mesh::Data ret;
+
+		for (auto const& [submeshMtlIdx, submeshRef] : submeshes) {
+			int baseVertex{ static_cast<int>(std::ssize(ret.positions)) };
+			int firstIndex{ static_cast<int>(std::ssize(ret.indices)) };
+			int indexCount{ 0 };
+
+			// Only needed to offset the indices of the meshes forming the submesh
+			int vertexCount{ 0 };
+
+			for (auto const& [trafo, meshIdx] : submeshRef.meshes) {
+				auto const& [vertices, normals, uvs, tangents, indices, mtlIdx]{ meshes[meshIdx] };
+
+				ret.positions.reserve(ret.positions.size() + vertices.size());
+				ret.normals.reserve(ret.normals.size() + normals.size());
+				ret.uvs.reserve(ret.uvs.size() + uvs.size());
+				ret.tangents.reserve(ret.tangents.size() + tangents.size());
+
+				Matrix4 const trafoInvTransp{ trafo.Inverse().Transpose() };
+
+				for (int i = 0; i < std::ssize(vertices); i++) {
+					ret.positions.emplace_back(Vector4{ vertices[i], 1 } * trafo);
+					ret.normals.emplace_back(Vector4{ normals[i], 0 } * trafoInvTransp);
+					ret.uvs.emplace_back(uvs[i]);
+					ret.tangents.emplace_back(Vector4{ tangents[i], 0 } * trafoInvTransp);
+				}
+
+				// Submeshes use the baseVertex + firstIndex + indexCount technique but here we're composing a submesh from multiple assimp meshes so we manually have to offset each of their indices for the submesh
+				std::ranges::transform(indices, std::back_inserter(ret.indices), [vertexCount](unsigned const idx) -> unsigned {
+					return idx + vertexCount;
+				});
+
+				indexCount += static_cast<int>(std::ssize(indices));
+				vertexCount += static_cast<int>(std::ssize(vertices));
+			}
+
+			ret.subMeshes.emplace_back(baseVertex, firstIndex, indexCount, scene->mMaterials[submeshMtlIdx]->GetName().C_Str());
 		}
 
 		return ret;
@@ -154,88 +206,25 @@ auto MeshImporter::GetSupportedExtensions() const -> std::string {
 
 auto MeshImporter::Import(InputImportInfo const& importInfo, std::filesystem::path const& cacheDir) -> Object* {
 	auto const cachedDataPath{ cacheDir / importInfo.guid.ToString() };
+	auto constexpr endianness{ std::endian::little };
 
 	if (exists(cachedDataPath)) {
 		std::ifstream in{ cachedDataPath, std::ios::binary };
 		std::vector<unsigned char> fileData{ std::istreambuf_iterator{ in }, {} };
-		std::span bytes{ fileData };
 
 		Mesh::Data meshData;
-		auto const numVerts{ BinarySerializer<u64>::Deserialize(bytes.first<8>(), std::endian::little) };
-		auto const numInds{ BinarySerializer<u64>::Deserialize(bytes.subspan<8, 8>(), std::endian::little) };
-		auto const numSubMeshes{ BinarySerializer<u64>::Deserialize(bytes.subspan<16, 8>(), std::endian::little) };
-
-		bytes = bytes.subspan(3 * sizeof(u64));
-
-		auto const extractVertexAttributes{
-			[numVerts, &bytes]<typename AttributeType>(std::vector<AttributeType>& outAttributes) {
-				outAttributes.reserve(numVerts);
-
-				for (std::size_t i{ 0 }; i < numVerts; i++) {
-					outAttributes.emplace_back(BinarySerializer<AttributeType>::Deserialize(bytes.first<sizeof(AttributeType)>(), std::endian::little));
-					bytes = bytes.subspan(sizeof(AttributeType));
-				}
-			}
-		};
-
-		extractVertexAttributes(meshData.positions);
-		extractVertexAttributes(meshData.normals);
-		extractVertexAttributes(meshData.uvs);
-		extractVertexAttributes(meshData.tangents);
-
-		meshData.indices.reserve(numInds);
-		for (std::size_t i{ 0 }; i < numInds; i++) {
-			meshData.indices.emplace_back(BinarySerializer<unsigned>::Deserialize(bytes.first<sizeof(unsigned)>(), std::endian::little));
-			bytes = bytes.subspan(sizeof(unsigned));
-		}
-
-		meshData.subMeshes.reserve(numSubMeshes);
-		for (std::size_t i{ 0 }; i < numSubMeshes; i++) {
-			auto const baseVertex{ BinarySerializer<int>::Deserialize(bytes.subspan(i * 3 * sizeof(int)).first<sizeof(int)>(), std::endian::little) };
-			auto const firstIndex{ BinarySerializer<int>::Deserialize(bytes.subspan(i * 3 * sizeof(int) + sizeof(int)).first<sizeof(int)>(), std::endian::little) };
-			auto const indexCount{ BinarySerializer<int>::Deserialize(bytes.subspan(i * 3 * sizeof(int) + 2 * sizeof(int)).first<sizeof(int)>(), std::endian::little) };
-			meshData.subMeshes.emplace_back(baseVertex, firstIndex, indexCount);
-		}
+		BinarySerializer<Mesh::Data>::Deserialize(fileData, endianness, meshData);
 
 		return new Mesh{ std::move(meshData) };
 	}
 
 	auto meshData{ mImpl->Import(importInfo.src) };
 
-	std::vector<u8> cachedData;
-
-	BinarySerializer<u64>::Serialize(meshData.positions.size(), cachedData, std::endian::little);
-	BinarySerializer<u64>::Serialize(meshData.indices.size(), cachedData, std::endian::little);
-	BinarySerializer<u64>::Serialize(meshData.subMeshes.size(), cachedData, std::endian::little);
-
-	for (auto const& pos : meshData.positions) {
-		BinarySerializer<Vector3>::Serialize(pos, cachedData, std::endian::little);
-	}
-
-	for (auto const& norm : meshData.normals) {
-		BinarySerializer<Vector3>::Serialize(norm, cachedData, std::endian::little);
-	}
-
-	for (auto const& uv : meshData.uvs) {
-		BinarySerializer<Vector2>::Serialize(uv, cachedData, std::endian::little);
-	}
-
-	for (auto const& tangent : meshData.tangents) {
-		BinarySerializer<Vector3>::Serialize(tangent, cachedData, std::endian::little);
-	}
-
-	for (auto const ind : meshData.indices) {
-		BinarySerializer<u32>::Serialize(ind, cachedData, std::endian::little);
-	}
-
-	for (auto const& [baseVertex, firstIndex, indexCount] : meshData.subMeshes) {
-		BinarySerializer<int>::Serialize(baseVertex, cachedData, std::endian::little);
-		BinarySerializer<int>::Serialize(firstIndex, cachedData, std::endian::little);
-		BinarySerializer<int>::Serialize(indexCount, cachedData, std::endian::little);
-	}
+	std::vector<std::uint8_t> cacheBinaryData;
+	BinarySerializer<Mesh::Data>::Serialize(meshData, endianness, cacheBinaryData);
 
 	std::ofstream out{ cachedDataPath, std::ios::out | std::ios::binary };
-	std::ranges::copy(cachedData, std::ostreambuf_iterator{ out });
+	std::ranges::copy(cacheBinaryData, std::ostreambuf_iterator{ out });
 
 	return new Mesh{ std::move(meshData) };
 }

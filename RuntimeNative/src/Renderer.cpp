@@ -1786,7 +1786,7 @@ auto DrawMeshes(std::span<int const> const meshComponentIndices, bool const useM
 		auto const& materials{ meshComponent->GetMaterials() };
 
 		for (int i = 0; i < static_cast<int>(subMeshes.size()); i++) {
-			auto const& [baseVertex, firstIndex, indexCount]{ subMeshes[i] };
+			auto const& [baseVertex, firstIndex, indexCount, mtlSlotName]{ subMeshes[i] };
 
 			if (useMaterials) {
 				auto const& mtl{ static_cast<int>(materials.size()) > i ? *materials[i] : *gResources->defaultMaterial };

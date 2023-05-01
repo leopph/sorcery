@@ -1,17 +1,22 @@
 #pragma once
 
-#include "YamlInclude.hpp"
-#include "Math.hpp"
-#include "Color.hpp"
-#include "Image.hpp"
-#include "Util.hpp"
-
 #include <array>
 #include <bit>
 #include <cstdint>
+#include <format>
 #include <span>
 #include <stdexcept>
+#include <string>
+#include <string_view>
+#include <type_traits>
 #include <vector>
+
+#include "Color.hpp"
+#include "Core.hpp"
+#include "Image.hpp"
+#include "Math.hpp"
+#include "Mesh.hpp"
+#include "YamlInclude.hpp"
 
 
 namespace YAML {
@@ -71,138 +76,132 @@ template<typename T>
 struct BinarySerializer;
 
 
-template<Scalar T> requires(sizeof(T) == 1)
+template<typename T> requires (std::is_scalar_v<T>)
 struct BinarySerializer<T> {
-	auto constexpr static SerializedSize = 1;
+	static auto Serialize(T const scalar, [[maybe_unused]] std::endian const endianness, std::vector<std::uint8_t>& out) -> void {
+		if constexpr (sizeof(T) == 1) {
+			out.emplace_back(*reinterpret_cast<std::uint8_t const*>(&scalar));
+		}
+		else {
+			auto const* const begin = reinterpret_cast<std::uint8_t const*>(&scalar);
+			auto const sz = sizeof(T);
+			auto const inserter = std::back_inserter(out);
 
+			if (endianness == std::endian::native) {
+				std::copy_n(begin, sz, inserter);
+				return;
+			}
 
-	static auto Serialize(T const scalar, std::vector<std::uint8_t>& out) -> void {
-		out.emplace_back(*reinterpret_cast<std::uint8_t const*>(&scalar));
+			std::copy_n(std::reverse_iterator{ begin + sz }, sz, inserter);
+		}
 	}
 
 
-	static auto Deserialize(std::span<u8 const, 1> const bytes) -> T {
-		return *reinterpret_cast<T const*>(bytes.data());
+	static auto Deserialize(std::span<std::uint8_t const> bytes, [[maybe_unused]] std::endian const endianness, T& out) -> std::span<std::uint8_t const> {
+		if (bytes.size() < sizeof(T)) {
+			throw std::runtime_error{ std::format("Cannot deserialize scalar of size {} because the source byte array is only of length {}.", sizeof(T), bytes.size()) };
+		}
+
+		if constexpr (sizeof(T) == 1) {
+			out = *reinterpret_cast<T const*>(bytes.data());
+		}
+		else {
+			if (endianness == std::endian::native) {
+				out = *reinterpret_cast<T const*>(bytes.data());
+			}
+			else {
+				auto static constexpr typeSz = sizeof(T);
+				std::array<std::uint8_t, typeSz> tmpBytes{};
+				std::copy_n(std::reverse_iterator{ bytes.data() + typeSz }, typeSz, tmpBytes.data());
+				out = *reinterpret_cast<T const*>(tmpBytes.data());
+			}
+		}
+
+		return bytes.subspan(sizeof(T));
 	}
 };
 
 
-template<Scalar T> requires(sizeof(T) > 1)
-struct BinarySerializer<T> {
-	auto constexpr static SerializedSize = sizeof(T);
+template<typename T>
+struct BinarySerializer<std::vector<T>> {
+	static auto Serialize(std::span<T const> const arr, std::endian const endianness, std::vector<std::uint8_t>& out) -> void {
+		BinarySerializer<std::uint64_t>::Serialize(std::size(arr), endianness, out);
 
-
-	static auto Serialize(T const scalar, std::vector<std::uint8_t>& out, std::endian const endianness) -> void {
-		auto const* const begin = reinterpret_cast<u8 const*>(&scalar);
-		auto const sz = sizeof(T);
-		auto const inserter = std::back_inserter(out);
-
-		if (endianness == std::endian::native) {
-			std::copy_n(begin, sz, inserter);
-			return;
+		for (T const& elem : arr) {
+			BinarySerializer<T>::Serialize(elem, endianness, out);
 		}
-
-		std::copy_n(std::reverse_iterator{ begin + sz }, sz, inserter);
 	}
 
 
-	static auto Deserialize(std::span<u8 const, sizeof(T)> const bytes, std::endian const endianness) -> T {
-		if (endianness == std::endian::native) {
-			return *reinterpret_cast<T const*>(bytes.data());
+	static auto Deserialize(std::span<std::uint8_t const> bytes, std::endian const endianness, std::vector<T>& out) -> std::span<std::uint8_t const> {
+		std::uint64_t arrLength;
+		bytes = BinarySerializer<std::uint64_t>::Deserialize(bytes, endianness, arrLength);
+
+		if (std::size(bytes) < arrLength * sizeof(T)) {
+			throw std::runtime_error{ std::format("Cannot deserialize array of length {} and element size of {} because the source byte array is only of length {}.", arrLength, sizeof(T), bytes.size()) };
 		}
 
-		auto static constexpr typeSz = sizeof(T);
-		std::array<u8, typeSz> tmpBytes{};
-		std::copy_n(std::reverse_iterator{ bytes.data() + typeSz }, typeSz, tmpBytes.data());
-		return *reinterpret_cast<T const*>(tmpBytes.data());
+		out.resize(arrLength);
+
+		for (std::uint64_t i = 0; i < arrLength; i++) {
+			bytes = BinarySerializer<T>::Deserialize(bytes, endianness, out[i]);
+		}
+
+		return bytes;
 	}
+};
+
+
+template<typename T, int N>
+struct BinarySerializer<Vector<T, N>> {
+	static auto Serialize(Vector<T, N> const& vector, std::endian const endianness, std::vector<std::uint8_t>& out) -> void {
+		for (int i = 0; i < N; i++) {
+			BinarySerializer<T>::Serialize(vector[i], endianness, out);
+		}
+	}
+
+
+	static auto Deserialize(std::span<std::uint8_t const> bytes, std::endian const endianness, Vector<T, N>& out) -> std::span<std::uint8_t const> {
+		for (int i = 0; i < N; i++) {
+			bytes = BinarySerializer<T>::Deserialize(bytes, endianness, out[i]);
+		}
+
+		return bytes;
+	}
+};
+
+
+template<>
+struct BinarySerializer<std::string> {
+	LEOPPHAPI static auto Serialize(std::string_view str, std::endian endianness, std::vector<std::uint8_t>& out) -> void;
+	LEOPPHAPI static auto Deserialize(std::span<std::uint8_t const> bytes, std::endian endianness, std::string& out) -> std::span<std::uint8_t const>;
 };
 
 
 template<>
 struct BinarySerializer<Image> {
-	static auto Serialize(Image const& img, std::vector<std::uint8_t>& out, std::endian const endianness) -> void {
-		BinarySerializer<u32>::Serialize(img.get_width(), out, endianness);
-		BinarySerializer<u32>::Serialize(img.get_height(), out, endianness);
-		BinarySerializer<u8>::Serialize(img.get_num_channels(), out);
-		std::copy_n(img.get_data().data(), img.get_width() * img.get_height() * img.get_num_channels(), std::back_inserter(out));
-	}
-
-
-	static auto Deserialize(std::span<u8 const> const bytes, std::endian const endianness) -> Image {
-		if (bytes.size() < 9) {
-			throw std::runtime_error{ "Failed to serialize Image, file does not contain enough bytes to read image dimensions." };
-		}
-
-		auto const width{ BinarySerializer<u32>::Deserialize(bytes.subspan<0, 4>(), endianness) };
-		auto const height{ BinarySerializer<u32>::Deserialize(bytes.subspan<4, 4>(), endianness) };
-		auto const chans{ BinarySerializer<u8>::Deserialize(bytes.subspan<8, 1>()) };
-
-		auto const imgSize{ static_cast<u64>(width) * height * chans };
-
-		if (bytes.size() < 9 + imgSize) {
-			throw std::runtime_error{ "Failed to serialize Image, file does not contain enough bytes to read image pixel data." };
-		}
-
-		auto imgData{ std::make_unique<unsigned char[]>(imgSize) };
-		std::copy_n(std::begin(bytes), imgSize, imgData.get());
-		return Image{ width, height, chans, std::move(imgData) };
-	}
+	LEOPPHAPI static auto Serialize(Image const& img, std::endian endianness, std::vector<std::uint8_t>& out) -> void;
+	LEOPPHAPI static auto Deserialize(std::span<std::uint8_t const> bytes, std::endian endianness, Image& out) -> std::span<std::uint8_t const>;
 };
 
 
 template<>
 struct BinarySerializer<Color> {
-	auto constexpr static SerializedSize = sizeof(Color);
-
-
-	static auto Serialize(Color const& color, std::vector<std::uint8_t>& out) -> void {
-		BinarySerializer<u8>::Serialize(color.red, out);
-		BinarySerializer<u8>::Serialize(color.green, out);
-		BinarySerializer<u8>::Serialize(color.blue, out);
-		BinarySerializer<u8>::Serialize(color.alpha, out);
-	}
-
-
-	static auto Deserialize(std::span<u8 const, sizeof(Color)> const bytes) -> Color {
-		return Color{
-			BinarySerializer<u8>::Deserialize(bytes.subspan<0, 1>()),
-			BinarySerializer<u8>::Deserialize(bytes.subspan<1, 1>()),
-			BinarySerializer<u8>::Deserialize(bytes.subspan<2, 1>()),
-			BinarySerializer<u8>::Deserialize(bytes.subspan<3, 1>())
-		};
-	}
+	LEOPPHAPI static auto Serialize(Color const& color, std::endian endianness, std::vector<std::uint8_t>& out) -> void;
+	LEOPPHAPI static auto Deserialize(std::span<std::uint8_t const> bytes, std::endian endianness, Color& out) -> std::span<std::uint8_t const>;
 };
 
 
-template<typename T, u64 N>
-struct BinarySerializer<Vector<T, N>> {
-	auto constexpr static SerializedSize = sizeof(Vector<T, N>);
+template<>
+struct BinarySerializer<Mesh::SubMeshData> {
+	LEOPPHAPI static auto Serialize(Mesh::SubMeshData const& submeshData, std::endian endianness, std::vector<std::uint8_t>& out) -> void;
+	LEOPPHAPI static auto Deserialize(std::span<std::uint8_t const> bytes, std::endian endianness, Mesh::SubMeshData& out) -> std::span<std::uint8_t const>;
+};
 
 
-	static auto Serialize(Vector<T, N> const& vector, std::vector<std::uint8_t>& out, std::endian const endianness) -> void {
-		for (u64 i{ 0 }; i < N; i++) {
-			if constexpr (std::is_invocable_v<decltype(&BinarySerializer<T>::Serialize), T, std::vector<std::uint8_t>&, std::endian>) {
-				BinarySerializer<T>::Serialize(vector[i], out, endianness);
-			}
-			else {
-				BinarySerializer<T>::Serialize(vector[i], out);
-			}
-		}
-	}
-
-
-	static auto Deserialize(std::span<u8 const, sizeof(Vector<T, N>)> const bytes, std::endian const endianness) -> Vector<T, N> {
-		Vector<T, N> ret{};
-		for (std::size_t i{ 0 }; i < N; i++) {
-			if constexpr (std::is_invocable_v<decltype(&BinarySerializer<T>::Deserialize), std::span<u8 const, sizeof(T)>, std::endian>) {
-				ret[i] = BinarySerializer<T>::Deserialize(bytes.subspan(i * sizeof(T)).template first<sizeof(T)>(), endianness);
-			}
-			else {
-				ret[i] = BinarySerializer<T>::Deserialize(bytes.subspan(i * sizeof(T)).template first<sizeof(T)>());
-			}
-		}
-		return ret;
-	}
+template<>
+struct BinarySerializer<Mesh::Data> {
+	LEOPPHAPI static auto Serialize(Mesh::Data const& meshData, std::endian endianness, std::vector<std::uint8_t>& out) -> void;
+	LEOPPHAPI static auto Deserialize(std::span<std::uint8_t const> bytes, std::endian endianness, Mesh::Data& out) -> std::span<std::uint8_t const>;
 };
 }

@@ -114,6 +114,7 @@
     <ClCompile Include="src\Component.cpp" />
     <ClCompile Include="src\Compress.cpp" />
     <ClCompile Include="src\Cubemap.cpp" />
+    <ClCompile Include="src\Serialization.cpp" />
     <ClCompile Include="src\StaticMeshComponent.cpp" />
     <ClCompile Include="src\Guid.cpp" />
     <ClCompile Include="src\Image.cpp" />

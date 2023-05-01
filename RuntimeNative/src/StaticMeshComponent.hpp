@@ -13,15 +13,15 @@ class StaticMeshComponent : public Component {
 	std::vector<Material*> mMaterials;
 	Mesh* mMesh;
 
+	auto AdjustMaterialListForMesh() -> void;
+
 public:
 	LEOPPHAPI StaticMeshComponent();
 	~StaticMeshComponent() override;
 
 	[[nodiscard]] LEOPPHAPI auto GetMaterials() const noexcept -> std::span<Material* const>;
-	LEOPPHAPI auto AddMaterial(Material& mtl) noexcept -> void;
-	LEOPPHAPI auto RemoveMaterial(int idx) noexcept -> void;
-	LEOPPHAPI auto ReplaceMaterial(int idx, Material& mtl) noexcept -> void;
-	LEOPPHAPI auto SetMaterials(std::vector<Material*> materials) noexcept -> void;
+	LEOPPHAPI auto SetMaterials(std::vector<Material*> materials) -> void;
+	LEOPPHAPI auto ReplaceMaterial(int idx, Material& mtl) -> void;
 
 	[[nodiscard]] LEOPPHAPI auto GetMesh() const noexcept -> Mesh&;
 	LEOPPHAPI auto SetMesh(Mesh& mesh) noexcept -> void;

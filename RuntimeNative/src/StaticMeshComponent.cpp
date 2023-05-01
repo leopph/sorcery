@@ -4,13 +4,28 @@
 #include "Renderer.hpp"
 #include "TransformComponent.hpp"
 
+#include <format>
+#include <stdexcept>
+
+
 namespace leopph {
 Object::Type const StaticMeshComponent::SerializationType{ Type::StaticMesh };
 
 
+auto StaticMeshComponent::AdjustMaterialListForMesh() -> void {
+	if (std::size_t const subMeshCount{ std::size(mMesh->GetSubMeshes()) }, mtlCount{ std::size(mMesh->GetSubMeshes()) }; subMeshCount != mtlCount) {
+		mMaterials.resize(subMeshCount);
+
+		for (std::size_t i{ mtlCount }; i < subMeshCount; i++) {
+			mMaterials[i] = renderer::GetDefaultMaterial();
+		}
+	}
+}
+
+
 StaticMeshComponent::StaticMeshComponent() :
 	mMesh{ renderer::GetCubeMesh() } {
-	AddMaterial(*renderer::GetDefaultMaterial());
+	AdjustMaterialListForMesh();
 	renderer::RegisterStaticMesh(this);
 }
 
@@ -25,33 +40,24 @@ auto StaticMeshComponent::GetMaterials() const noexcept -> std::span<Material* c
 }
 
 
-auto StaticMeshComponent::AddMaterial(Material& mtl) noexcept -> void {
-	mMaterials.push_back(&mtl);
-}
-
-
-auto StaticMeshComponent::RemoveMaterial(int const idx) noexcept -> void {
-	if (idx < mMaterials.size()) {
-		mMaterials.erase(std::begin(mMaterials) + idx);
-	}
-}
-
-
-auto StaticMeshComponent::ReplaceMaterial(int const idx, Material& mtl) noexcept -> void {
-	if (idx < mMaterials.size()) {
-		mMaterials[idx] = &mtl;
-	}
-}
-
-
-auto StaticMeshComponent::SetMaterials(std::vector<Material*> materials) noexcept -> void {
-	for (auto const mtl : materials) {
+auto StaticMeshComponent::SetMaterials(std::vector<Material*> materials) -> void {
+	for (Material const* const mtl : materials) {
 		if (!mtl) {
-			return;
+			throw std::runtime_error{ "Found nullptr while attempting to materials on StaticMeshComponent." };
 		}
 	}
 
 	mMaterials = std::move(materials);
+	AdjustMaterialListForMesh();
+}
+
+
+auto StaticMeshComponent::ReplaceMaterial(int const idx, Material& mtl) -> void {
+	if (idx >= std::ssize(mMaterials)) {
+		throw std::runtime_error{ std::format("Invalid index {} while attempting to replace material on StaticMeshComponent.", idx) };
+	}
+
+	mMaterials[idx] = &mtl;
 }
 
 
@@ -62,6 +68,7 @@ auto StaticMeshComponent::GetMesh() const noexcept -> Mesh& {
 
 auto StaticMeshComponent::SetMesh(Mesh& mesh) noexcept -> void {
 	mMesh = &mesh;
+	AdjustMaterialListForMesh();
 }
 
 
@@ -101,21 +108,17 @@ auto StaticMeshComponent::Deserialize(YAML::Node const& node) -> void {
 		mMesh = renderer::GetCubeMesh();
 	}
 
-	mMaterials.clear();
-
 	if (auto const mtlListNode{ node["materials"] }) {
 		for (auto const mtlNode : mtlListNode) {
 			if (auto const guidStr{ mtlNode.as<std::string>() }; !guidStr.empty()) {
 				if (auto const mtl{ dynamic_cast<Material*>(FindObjectByGuid(Guid::Parse(guidStr))) }) {
-					AddMaterial(*mtl);
+					mMaterials.emplace_back(mtl);
 				}
 			}
 		}
 	}
 
-	if (mMaterials.empty()) {
-		AddMaterial(*renderer::GetDefaultMaterial());
-	}
+	AdjustMaterialListForMesh();
 }
 
 
