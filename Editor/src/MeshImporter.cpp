@@ -51,7 +51,7 @@ public:
 		// Remove point and line primitives
 		mImporter.SetPropertyInteger(AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_POINT | aiPrimitiveType_LINE);
 
-		auto const scene{ mImporter.ReadFile(path.string(), aiProcess_JoinIdenticalVertices | aiProcess_Triangulate | aiProcess_SortByPType | aiProcess_GenUVCoords | aiProcess_GenNormals | aiProcess_RemoveComponent | aiProcess_FlipWindingOrder | aiProcess_FlipUVs | aiProcess_CalcTangentSpace) };
+		auto const scene{ mImporter.ReadFile(path.string(), aiProcess_JoinIdenticalVertices | aiProcess_Triangulate | aiProcess_SortByPType | aiProcess_GenUVCoords | aiProcess_GenNormals | aiProcess_CalcTangentSpace | aiProcess_RemoveComponent | aiProcess_ConvertToLeftHanded) };
 
 		if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
 			throw std::runtime_error{ std::format("Failed to import model at {}: {}.", path.string(), mImporter.GetErrorString()) };
@@ -115,7 +115,7 @@ public:
 		};
 
 		std::queue<NodeProcessingInfo> queue;
-		queue.emplace(Matrix4{ 1, 1, -1, 1 }, scene->mRootNode);
+		queue.emplace(Matrix4::Identity(), scene->mRootNode);
 
 		while (!queue.empty()) {
 			auto const& [accumParentTrafo, node] = queue.front();
