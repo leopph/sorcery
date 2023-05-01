@@ -14,15 +14,14 @@ MeshVsOut main(MeshVSIn vsIn) {
     MeshVsOut ret;
     ret.worldPos = worldPos4.xyz;
     ret.clipPos = mul(worldPos4, gPerCamConstants.viewProjMtx);
-    ret.normal = mul(vsIn.normal, gPerDrawConstants.normalMtx);
+    ret.normal = normalize(mul(vsIn.normal, gPerDrawConstants.normalMtx));
     ret.uv = vsIn.uv;
     ret.viewPosZ = ret.clipPos.w;
 
     float3 tangentWS = normalize(mul(vsIn.tangent, gPerDrawConstants.normalMtx));
-    const float3 normalWS = normalize(mul(vsIn.normal, gPerDrawConstants.normalMtx));
-    tangentWS = normalize(tangentWS - dot(tangentWS, normalWS) * normalWS);
-    const float3 bitangentWS = cross(normalWS, tangentWS);
-    ret.tbnMtx = float3x3(tangentWS, bitangentWS, normalWS);
+    tangentWS = normalize(tangentWS - dot(tangentWS, ret.normal) * ret.normal);
+    const float3 bitangentWS = cross(ret.normal, tangentWS);
+    ret.tbnMtx = float3x3(tangentWS, bitangentWS, ret.normal);
 
     return ret;
 }
