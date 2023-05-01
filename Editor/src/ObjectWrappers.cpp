@@ -284,21 +284,22 @@ auto EditorObjectWrapperFor<StaticMeshComponent>::OnGui([[maybe_unused]] Context
 			std::string const& mtlSlotName{ model.GetMesh().GetSubMeshes()[i].mtlSlotName };
 
 			ImGui::TableNextRow();
+			ImGui::TableNextColumn();
 			ImGui::Text("%s", mtlSlotName.c_str());
-			/*ImGui::TableNextColumn();
+			ImGui::TableNextColumn();
 
 			static std::vector<Material*> allMaterials;
 			static std::string matFilter;
 
-			auto const popupId{ "StaticMeshComponentMaterialSelectorPopup" };
+			auto const popupId{ std::format("StaticMeshComponentMaterialSelectorPopup{}", i) };
 
 			if (ImGui::Button(std::format("Select##Mtl{}", std::to_string(i)).c_str())) {
 				Object::FindObjectsOfType(allMaterials);
 				matFilter.clear();
-				ImGui::OpenPopup(popupId);
+				ImGui::OpenPopup(popupId.c_str());
 			}
 
-			if (ImGui::BeginPopup(popupId)) {
+			if (ImGui::BeginPopup(popupId.c_str())) {
 				if (ImGui::InputText("###SearchMat", &matFilter)) {
 					Object::FindObjectsOfType(allMaterials);
 					std::erase_if(allMaterials, [](Material const* mat) {
@@ -317,7 +318,7 @@ auto EditorObjectWrapperFor<StaticMeshComponent>::OnGui([[maybe_unused]] Context
 			}
 
 			ImGui::SameLine();
-			ImGui::Text("%s", model.GetMaterials()[i]->GetName().data());*/
+			ImGui::Text("%s", model.GetMaterials()[i]->GetName().data());
 		}
 
 		ImGui::EndTable();
