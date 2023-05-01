@@ -1283,7 +1283,7 @@ auto CreateInputLayouts() -> void {
 			.SemanticName = "TANGENT",
 			.SemanticIndex = 0,
 			.Format = DXGI_FORMAT_R32G32B32_FLOAT,
-			.InputSlot = 2,
+			.InputSlot = 3,
 			.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT,
 			.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA,
 			.InstanceDataStepRate = 0
