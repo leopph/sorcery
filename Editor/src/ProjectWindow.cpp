@@ -149,7 +149,7 @@ auto DrawProjectWindow(Context& context) -> void {
 			if (ImGui::BeginPopup(contextMenuId)) {
 				if (ImGui::BeginMenu("Create##CreateAssetMenu")) {
 					if (ImGui::MenuItem("Material##CreateMaterialAsset")) {
-						auto const dstPath{ IndexFileNameIfNeeded(context.GetAssetDirectoryAbsolute() / "New Material.mtl") };
+						auto const dstPath{ IndexFileNameIfNeeded(selectedProjSubDir / "New Material.mtl") };
 
 						auto const mtl{ new Material{} };
 						mtl->SetName(dstPath.stem().string());
@@ -160,7 +160,7 @@ auto DrawProjectWindow(Context& context) -> void {
 					}
 
 					if (ImGui::MenuItem("Scene##CreateSceneAsset")) {
-						auto const dstPath{ IndexFileNameIfNeeded(context.GetAssetDirectoryAbsolute() / "New Scene.scene") };
+						auto const dstPath{ IndexFileNameIfNeeded(selectedProjSubDir / "New Scene.scene") };
 
 						auto const scene{ new Scene{} };
 						scene->SetName(dstPath.stem().string());
