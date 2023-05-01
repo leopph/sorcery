@@ -13,7 +13,7 @@ Object::Type const StaticMeshComponent::SerializationType{ Type::StaticMesh };
 
 
 auto StaticMeshComponent::AdjustMaterialListForMesh() -> void {
-	if (std::size_t const subMeshCount{ std::size(mMesh->GetSubMeshes()) }, mtlCount{ std::size(mMesh->GetSubMeshes()) }; subMeshCount != mtlCount) {
+	if (std::size_t const subMeshCount{ std::size(mMesh->GetSubMeshes()) }, mtlCount{ std::size(mMaterials) }; subMeshCount != mtlCount) {
 		mMaterials.resize(subMeshCount);
 
 		for (std::size_t i{ mtlCount }; i < subMeshCount; i++) {
@@ -95,18 +95,19 @@ auto StaticMeshComponent::Serialize(YAML::Node& node) const -> void {
 auto StaticMeshComponent::Deserialize(YAML::Node const& node) -> void {
 	Component::Deserialize(node);
 
+	mMesh = nullptr;
+
 	if (node["mesh"]) {
 		if (auto const guidStr{ node["mesh"].as<std::string>() }; !guidStr.empty()) {
 			mMesh = dynamic_cast<Mesh*>(FindObjectByGuid(Guid::Parse(guidStr)));
-
-			if (!mMesh) {
-				mMesh = renderer::GetCubeMesh();
-			}
 		}
 	}
-	else {
+
+	if (!mMesh) {
 		mMesh = renderer::GetCubeMesh();
 	}
+
+	mMaterials.clear();
 
 	if (auto const mtlListNode{ node["materials"] }) {
 		for (auto const mtlNode : mtlListNode) {
