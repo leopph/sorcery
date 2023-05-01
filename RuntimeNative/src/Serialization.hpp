@@ -137,10 +137,6 @@ struct BinarySerializer<std::vector<T>> {
 		std::uint64_t arrLength;
 		bytes = BinarySerializer<std::uint64_t>::Deserialize(bytes, endianness, arrLength);
 
-		if (std::size(bytes) < arrLength * sizeof(T)) {
-			throw std::runtime_error{ std::format("Cannot deserialize array of length {} and element size of {} because the source byte array is only of length {}.", arrLength, sizeof(T), bytes.size()) };
-		}
-
 		out.resize(arrLength);
 
 		for (std::uint64_t i = 0; i < arrLength; i++) {
