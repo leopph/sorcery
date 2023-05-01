@@ -1679,7 +1679,7 @@ auto CreateDefaultAssets() -> void {
 	gResources->cubeMesh->SetUVs(CUBE_UVS);
 	gResources->cubeMesh->SetTangents(std::move(cubeTangents));
 	gResources->cubeMesh->SetIndices(CUBE_INDICES);
-	gResources->cubeMesh->SetSubMeshes(std::vector{ Mesh::SubMeshData{ 0, 0, static_cast<int>(CUBE_INDICES.size()) } });
+	gResources->cubeMesh->SetSubMeshes(std::vector{ Mesh::SubMeshData{ 0, 0, static_cast<int>(CUBE_INDICES.size()), "Material" } });
 	gResources->cubeMesh->ValidateAndUpdate();
 
 	gResources->planeMesh = std::make_unique<Mesh>();
@@ -1690,7 +1690,7 @@ auto CreateDefaultAssets() -> void {
 	gResources->planeMesh->SetUVs(QUAD_UVS);
 	gResources->planeMesh->SetTangents(std::move(quadTangents));
 	gResources->planeMesh->SetIndices(QUAD_INDICES);
-	gResources->planeMesh->SetSubMeshes(std::vector{ Mesh::SubMeshData{ 0, 0, static_cast<int>(QUAD_INDICES.size()) } });
+	gResources->planeMesh->SetSubMeshes(std::vector{ Mesh::SubMeshData{ 0, 0, static_cast<int>(QUAD_INDICES.size()), "Material" } });
 	gResources->planeMesh->ValidateAndUpdate();
 }
 
