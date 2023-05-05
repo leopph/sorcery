@@ -28,10 +28,3 @@ Non-exhaustive list of core libraries:
 - Build the solution in the root directory
 ### Usage
 The compilation products are a set of runtime libraries and an editor executable. To use the engine, run the editor. The libraries are not meant to be consumed directly, instead they are part of the editor and the games exported through it.
-
-## Follow the development
-### Branches
-Development of LeopphEngine takes place on two branches.  
-- The **master** branch always contains the latest code that is verified to compile and be stable. Features may disappear from it of course, so it is in no way a "release" channel, but it is the most stable, slowest branch that never contains code that hasn't passed the dev branch.
-- The **dev** branch is where all the new stuff goes. As soon as anything changes, it is reflected in this channel. Features are highly volatile here, code may be heavily buggy, incomplete, or even non-compiling. If you happen to check this branch out and spend some time exploring it, your comments and suggestions would be very welcome.
-- There may appear other branches outside of the standard 2 branch setup. These can safely be ignored as more than likely I just set them up for organizing development of a feature according to my personal taste.
