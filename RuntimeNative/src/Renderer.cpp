@@ -1,6 +1,6 @@
 #include "Renderer.hpp"
 
-#include <dxgi1_6.h>
+#include <dxgi1_5.h>
 
 #include "Platform.hpp"
 #include "Entity.hpp"
@@ -319,8 +319,7 @@ public:
 					worldMin[0] <= camPos[0] && worldMin[1] <= camPos[1] && worldMin[2] <= camPos[2] &&
 					worldMax[0] >= camPos[0] && worldMax[1] >= camPos[1] && worldMax[2] >= camPos[2]) {
 					cellIdx = 0;
-				}
-				else {
+				} else {
 					Vector2 const bottomLeft{ -1, -1 };
 					Vector2 const topRight{ 1, 1 };
 
@@ -343,14 +342,11 @@ public:
 
 					if (coverage >= 1) {
 						cellIdx = 0;
-					}
-					else if (coverage >= 0.25f) {
+					} else if (coverage >= 0.25f) {
 						cellIdx = 1;
-					}
-					else if (coverage >= 0.0625f) {
+					} else if (coverage >= 0.0625f) {
 						cellIdx = 2;
-					}
-					else if (coverage >= 0.015625f) {
+					} else if (coverage >= 0.015625f) {
 						cellIdx = 3;
 					}
 				}
@@ -380,8 +376,7 @@ public:
 					if (auto const cellIdx{ determineScreenCoverage(lightVertices) }) {
 						lightIndexIndicesInCell[*cellIdx].emplace_back(i, 0);
 					}
-				}
-				else if (light->GetType() == LightComponent::Type::Point) {
+				} else if (light->GetType() == LightComponent::Type::Point) {
 					for (auto j = 0; j < 6; j++) {
 						std::array static const faceBoundsRotations{
 							Quaternion::FromAxisAngle(Vector3::Up(), ToRadians(90)), // +X
@@ -439,8 +434,7 @@ public:
 					auto const shadowProjMtx{ Matrix4::PerspectiveAsymZLH(ToRadians(light->GetOuterAngle()), 1.f, light->GetRange(), light->GetShadowNearPlane()) };
 
 					subcell.emplace(shadowViewMtx * shadowProjMtx, lightIdxIdx, shadowIdx);
-				}
-				else if (light->GetType() == LightComponent::Type::Point) {
+				} else if (light->GetType() == LightComponent::Type::Point) {
 					auto const lightPos{ light->GetEntity()->GetTransform().GetWorldPosition() };
 
 					std::array const faceViewMatrices{
@@ -1007,8 +1001,7 @@ public:
 			Unmap();
 			RecreateBuffer();
 			RecreateSrv();
-		}
-		else if (mSize != newSize) {
+		} else if (mSize != newSize) {
 			mSize = newSize;
 			RecreateSrv();
 		}
@@ -2177,8 +2170,7 @@ auto Camera::SetNearClipPlane(float const nearClipPlane) noexcept -> void {
 	if (GetType() == Type::Perspective) {
 		mNear = std::max(nearClipPlane, MINIMUM_PERSPECTIVE_NEAR_CLIP_PLANE);
 		SetFarClipPlane(GetFarClipPlane());
-	}
-	else {
+	} else {
 		mNear = nearClipPlane;
 	}
 }
@@ -2192,8 +2184,7 @@ auto Camera::GetFarClipPlane() const noexcept -> float {
 auto Camera::SetFarClipPlane(float const farClipPlane) noexcept -> void {
 	if (GetType() == Type::Perspective) {
 		mFar = std::max(farClipPlane, mNear + MINIMUM_PERSPECTIVE_FAR_CLIP_PLANE_OFFSET);
-	}
-	else {
+	} else {
 		mFar = farClipPlane;
 	}
 }

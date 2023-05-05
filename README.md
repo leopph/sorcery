@@ -16,11 +16,11 @@ Non-exhaustive list of core libraries:
 
 ## Building and Usage
 ### Build requirements
-- Windows
+- Windows SDK 10.0.14393.795 or newer
 - MSBuild
 - MSVC v143 toolset
 ### Runtime requirements
-- Windows 10, version 1809 or newer, 64-bit
+- Windows 10, version 1607 or newer, 64-bit
 - Mono 6.12.0 or newer
 - Feature level 11_0 capable GPU
 ### Building
