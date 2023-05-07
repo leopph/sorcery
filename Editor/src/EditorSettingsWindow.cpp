@@ -1,6 +1,7 @@
 #include "EditorSettingsWindow.hpp"
 
 #include "Timing.hpp"
+#include "Renderer.hpp"
 
 #include <imgui.h>
 
@@ -46,6 +47,14 @@ auto DrawEditorSettingsWindow(bool& isOpen) -> void {
     } else {
       ImGui::StyleColorsLight();
     }
+  }
+
+  ImGui::Text("%s", "In-Flight Frame Count");
+  ImGui::SameLine();
+
+  int inFlightFrameCount{ renderer::GetInFlightFrameCount() };
+  if (ImGui::SliderInt("##InFlightFrameCountSlider", &inFlightFrameCount, renderer::MIN_IN_FLIGHT_FRAME_COUNT, renderer::MAX_IN_FLIGHT_FRAME_COUNT, "%d", ImGuiSliderFlags_AlwaysClamp)) {
+    renderer::SetInFlightFrameCount(inFlightFrameCount);
   }
 
   ImGui::End();
