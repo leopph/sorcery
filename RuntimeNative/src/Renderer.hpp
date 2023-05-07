@@ -17,74 +17,74 @@
 namespace leopph::renderer {
 class Camera {
 public:
-	enum class Type : std::uint8_t {
-		Perspective  = 0,
-		Orthographic = 1
-	};
+  enum class Type : std::uint8_t {
+    Perspective  = 0,
+    Orthographic = 1
+  };
 
 private:
-	constexpr static float MINIMUM_PERSPECTIVE_NEAR_CLIP_PLANE{ 0.03f };
-	constexpr static float MINIMUM_PERSPECTIVE_FAR_CLIP_PLANE_OFFSET{ 0.1f };
-	constexpr static float MINIMUM_PERSPECTIVE_HORIZONTAL_FOV{ 5.0f };
-	constexpr static float MINIMUM_ORTHOGRAPHIC_HORIZONTAL_SIZE{ 0.1f };
+  constexpr static float MINIMUM_PERSPECTIVE_NEAR_CLIP_PLANE{ 0.03f };
+  constexpr static float MINIMUM_PERSPECTIVE_FAR_CLIP_PLANE_OFFSET{ 0.1f };
+  constexpr static float MINIMUM_PERSPECTIVE_HORIZONTAL_FOV{ 5.0f };
+  constexpr static float MINIMUM_ORTHOGRAPHIC_HORIZONTAL_SIZE{ 0.1f };
 
-	float mNear{ MINIMUM_PERSPECTIVE_NEAR_CLIP_PLANE };
-	float mFar{ 100.f };
-	float mOrthoSizeHoriz{ 10 };
-	float mPerspFovHorizDeg{ 90 };
-	Type mType{ Type::Perspective };
+  float mNear{ MINIMUM_PERSPECTIVE_NEAR_CLIP_PLANE };
+  float mFar{ 100.f };
+  float mOrthoSizeHoriz{ 10 };
+  float mPerspFovHorizDeg{ 90 };
+  Type mType{ Type::Perspective };
 
 public:
-	[[nodiscard]] virtual auto GetPosition() const noexcept -> Vector3 = 0;
-	[[nodiscard]] virtual auto GetRightAxis() const noexcept -> Vector3 = 0;
-	[[nodiscard]] virtual auto GetUpAxis() const noexcept -> Vector3 = 0;
-	[[nodiscard]] virtual auto GetForwardAxis() const noexcept -> Vector3 = 0;
+  [[nodiscard]] virtual auto GetPosition() const noexcept -> Vector3 = 0;
+  [[nodiscard]] virtual auto GetRightAxis() const noexcept -> Vector3 = 0;
+  [[nodiscard]] virtual auto GetUpAxis() const noexcept -> Vector3 = 0;
+  [[nodiscard]] virtual auto GetForwardAxis() const noexcept -> Vector3 = 0;
 
-	[[nodiscard]] LEOPPHAPI auto GetNearClipPlane() const noexcept -> float;
-	LEOPPHAPI auto SetNearClipPlane(float nearClipPlane) noexcept -> void;
+  [[nodiscard]] LEOPPHAPI auto GetNearClipPlane() const noexcept -> float;
+  LEOPPHAPI auto SetNearClipPlane(float nearClipPlane) noexcept -> void;
 
-	[[nodiscard]] LEOPPHAPI auto GetFarClipPlane() const noexcept -> float;
-	LEOPPHAPI auto SetFarClipPlane(float farClipPlane) noexcept -> void;
+  [[nodiscard]] LEOPPHAPI auto GetFarClipPlane() const noexcept -> float;
+  LEOPPHAPI auto SetFarClipPlane(float farClipPlane) noexcept -> void;
 
-	[[nodiscard]] LEOPPHAPI auto GetType() const noexcept -> Type;
-	LEOPPHAPI auto SetType(Type type) noexcept -> void;
+  [[nodiscard]] LEOPPHAPI auto GetType() const noexcept -> Type;
+  LEOPPHAPI auto SetType(Type type) noexcept -> void;
 
-	[[nodiscard]] LEOPPHAPI auto GetHorizontalPerspectiveFov() const -> float;
-	LEOPPHAPI auto SetHorizontalPerspectiveFov(float degrees) -> void;
+  [[nodiscard]] LEOPPHAPI auto GetHorizontalPerspectiveFov() const -> float;
+  LEOPPHAPI auto SetHorizontalPerspectiveFov(float degrees) -> void;
 
-	[[nodiscard]] LEOPPHAPI auto GetHorizontalOrthographicSize() const -> float;
-	LEOPPHAPI auto SetHorizontalOrthographicSize(float size) -> void;
+  [[nodiscard]] LEOPPHAPI auto GetHorizontalOrthographicSize() const -> float;
+  LEOPPHAPI auto SetHorizontalOrthographicSize(float size) -> void;
 
-	[[nodiscard]] LEOPPHAPI auto CalculateViewMatrix() const noexcept -> Matrix4;
-	[[nodiscard]] LEOPPHAPI auto CalculateProjectionMatrix(float aspectRatio) const noexcept -> Matrix4;
+  [[nodiscard]] LEOPPHAPI auto CalculateViewMatrix() const noexcept -> Matrix4;
+  [[nodiscard]] LEOPPHAPI auto CalculateProjectionMatrix(float aspectRatio) const noexcept -> Matrix4;
 
-	[[nodiscard]] LEOPPHAPI static auto HorizontalPerspectiveFovToVertical(float fovDegrees, float aspectRatio) noexcept -> float;
-	[[nodiscard]] LEOPPHAPI static auto VerticalPerspectiveFovToHorizontal(float fovDegrees, float aspectRatio) noexcept -> float;
+  [[nodiscard]] LEOPPHAPI static auto HorizontalPerspectiveFovToVertical(float fovDegrees, float aspectRatio) noexcept -> float;
+  [[nodiscard]] LEOPPHAPI static auto VerticalPerspectiveFovToHorizontal(float fovDegrees, float aspectRatio) noexcept -> float;
 
-	Camera() = default;
-	Camera(Camera const& other) = default;
-	Camera(Camera&& other) noexcept = default;
+  Camera() = default;
+  Camera(Camera const& other) = default;
+  Camera(Camera&& other) noexcept = default;
 
-	auto operator=(Camera const& other) -> Camera& = default;
-	auto operator=(Camera&& other) noexcept -> Camera& = default;
+  auto operator=(Camera const& other) -> Camera& = default;
+  auto operator=(Camera&& other) noexcept -> Camera& = default;
 
-	virtual ~Camera() = default;
+  virtual ~Camera() = default;
 };
 
 
 struct Visibility {
-	std::vector<int> lightIndices;
-	std::vector<int> staticMeshIndices;
+  std::vector<int> lightIndices;
+  std::vector<int> staticMeshIndices;
 };
 
 
 enum class ShadowFilteringMode {
-	None        = SHADOW_FILTERING_NONE,
-	HardwarePCF = SHADOW_FILTERING_HARDWARE_PCF,
-	PCF3x3      = SHADOW_FILTERING_PCF_3x3,
-	PCFTent3x3  = SHADOW_FILTERING_PCF_TENT_3x3,
-	PCFTent5x5  = SHADOW_FILTERING_PCF_TENT_5x5,
-	PCSS        = SHADOW_FILTERING_PCSS
+  None        = SHADOW_FILTERING_NONE,
+  HardwarePCF = SHADOW_FILTERING_HARDWARE_PCF,
+  PCF3x3      = SHADOW_FILTERING_PCF_3x3,
+  PCFTent3x3  = SHADOW_FILTERING_PCF_TENT_3x3,
+  PCFTent5x5  = SHADOW_FILTERING_PCF_TENT_5x5,
+  PCSS        = SHADOW_FILTERING_PCSS
 };
 
 
@@ -154,4 +154,9 @@ LEOPPHAPI auto UseStableShadowCascadeProjection(bool useStableProj) noexcept -> 
 
 [[nodiscard]] LEOPPHAPI auto GetShadowFilteringMode() noexcept -> ShadowFilteringMode;
 LEOPPHAPI auto SetShadowFilteringMode(ShadowFilteringMode filteringMode) noexcept -> void;
+
+[[nodiscard]] LEOPPHAPI auto GetInFlightFrameCount() noexcept -> int;
+LEOPPHAPI auto SetInFlightFrameCount(int count) -> void;
+constexpr int MIN_IN_FLIGHT_FRAME_COUNT{ 1 };
+constexpr int MAX_IN_FLIGHT_FRAME_COUNT{ 16 };
 }
