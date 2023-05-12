@@ -19,5 +19,7 @@ public:
 
   [[nodiscard]] LEOPPHAPI auto ToString() const -> std::string;
   [[nodiscard]] LEOPPHAPI auto operator==(Guid const& other) const -> bool;
+
+  [[nodiscard]] LEOPPHAPI auto IsValid() const noexcept -> bool;
 };
 }
