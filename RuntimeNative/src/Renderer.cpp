@@ -1221,7 +1221,7 @@ auto CreateDeviceAndContext() -> void {
   D3D_FEATURE_LEVEL constexpr requestedFeatureLevels[]{ D3D_FEATURE_LEVEL_11_0 };
 
 #ifndef NDEBUG
-	creationFlags |= D3D11_CREATE_DEVICE_DEBUG;
+  creationFlags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif
 
   if (FAILED(D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, creationFlags, requestedFeatureLevels, 1, D3D11_SDK_VERSION, gResources->device.GetAddressOf(), nullptr, gResources->context.GetAddressOf()))) {
@@ -1668,7 +1668,7 @@ auto CreateDefaultAssets() -> void {
   CalculateTangents(QUAD_POSITIONS, QUAD_UVS, QUAD_INDICES, quadTangents);
 
   gResources->cubeMesh = std::make_unique<Mesh>();
-  gResources->cubeMesh->SetGuid(Guid{ 0, 0 });
+  gResources->cubeMesh->SetGuid(Guid{ 0, 1 });
   gResources->cubeMesh->SetName("Cube");
   gResources->cubeMesh->SetPositions(CUBE_POSITIONS);
   gResources->cubeMesh->SetNormals(std::move(cubeNormals));
@@ -1679,7 +1679,7 @@ auto CreateDefaultAssets() -> void {
   gResources->cubeMesh->ValidateAndUpdate();
 
   gResources->planeMesh = std::make_unique<Mesh>();
-  gResources->planeMesh->SetGuid(Guid{ 0, 1 });
+  gResources->planeMesh->SetGuid(Guid{ 0, 2 });
   gResources->planeMesh->SetName("Plane");
   gResources->planeMesh->SetPositions(QUAD_POSITIONS);
   gResources->planeMesh->SetNormals(std::move(quadNormals));
@@ -2263,7 +2263,7 @@ auto StartUp() -> void {
   CreateDeviceAndContext();
 
 #ifndef NDEBUG
-	SetDebugBreaks();
+  SetDebugBreaks();
 #endif
 
   if (FAILED(gResources->device.As(&gResources->dxgiDevice))) {
