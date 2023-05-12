@@ -8,29 +8,30 @@
 #include <wrl/client.h>
 
 #include "Image.hpp"
+#include "Util.hpp"
 
 
 namespace leopph {
 class Texture2D final : public Object {
-	Microsoft::WRL::ComPtr<ID3D11Texture2D> mTex;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> mSrv;
-	Image mImgData{};
-	Image mTmpImgData{};
+  Microsoft::WRL::ComPtr<ID3D11Texture2D> mTex;
+  Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> mSrv;
+  Image mImgData{};
+  Image mTmpImgData{};
 
-	auto UploadToGPU() -> void;
+  auto UploadToGPU() -> void;
 
 public:
-	Texture2D() = default;
-	LEOPPHAPI explicit Texture2D(Image img);
+  Texture2D() = default;
+  LEOPPHAPI explicit Texture2D(Image img);
 
-	[[nodiscard]] LEOPPHAPI auto GetImageData() const noexcept -> Image const&;
-	LEOPPHAPI auto SetImageData(Image img) noexcept -> void;
+  [[nodiscard]] LEOPPHAPI auto GetImageData() const noexcept -> Image const&;
+  LEOPPHAPI auto SetImageData(Image img) noexcept -> void;
 
-	[[nodiscard]] LEOPPHAPI auto GetSrv() const noexcept -> NonOwning<ID3D11ShaderResourceView*>;
+  [[nodiscard]] LEOPPHAPI auto GetSrv() const noexcept -> ObserverPtr<ID3D11ShaderResourceView>;
 
-	LEOPPHAPI auto Update() noexcept -> void;
+  LEOPPHAPI auto Update() noexcept -> void;
 
-	LEOPPHAPI Type constexpr static SerializationType{ Type::Texture2D };
-	[[nodiscard]] LEOPPHAPI auto GetSerializationType() const -> Type override;
+  LEOPPHAPI Type constexpr static SerializationType{ Type::Texture2D };
+  [[nodiscard]] LEOPPHAPI auto GetSerializationType() const -> Type override;
 };
 }
