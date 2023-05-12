@@ -57,7 +57,7 @@ public:
   template<std::derived_from<Object> T>
   static auto FindObjectsOfType(std::vector<Object*>& out) -> std::vector<Object*>&;
 
-  LEOPPHAPI Object();
+  Object() = default;
   Object(Object const& other) = delete;
   Object(Object&& other) = delete;
 
