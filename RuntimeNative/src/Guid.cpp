@@ -54,6 +54,6 @@ auto Guid::operator==(Guid const& other) const -> bool {
 
 
 auto Guid::IsValid() const noexcept -> bool {
-  return mData0 != 0 && mData1 != 0;
+  return mData0 != 0 || mData1 != 0;
 }
 }
