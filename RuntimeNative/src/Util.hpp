@@ -3,7 +3,9 @@
 #include "Core.hpp"
 
 #include <algorithm>
+#include <filesystem>
 #include <span>
+#include <string>
 #include <string_view>
 #include <type_traits>
 #include <utility>
@@ -90,4 +92,9 @@ concept Scalar = std::is_scalar_v<T>;
 
 LEOPPHAPI auto CalculateNormals(std::span<Vector3 const> positions, std::span<unsigned const> indices, std::vector<Vector3>& out) -> std::vector<Vector3>&;
 LEOPPHAPI auto CalculateTangents(std::span<Vector3 const> positions, std::span<Vector2 const> uvs, std::span<unsigned const> indices, std::vector<Vector3>& out) -> void;
+
+// Appends an index to the specified file path to avoid name clashes
+[[nodiscard]] LEOPPHAPI auto IndexFileNameIfNeeded(std::filesystem::path const& filePathAbsolute) -> std::filesystem::path;
+
+[[nodiscard]] LEOPPHAPI auto Join(std::span<std::string const> strings, std::string const& delim) -> std::string;
 }
