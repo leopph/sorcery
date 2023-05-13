@@ -2,6 +2,7 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 
 #include "ProjectWindow.hpp"
+#include "Util.hpp"
 
 #include <nfd.h>
 #include <stb_image.h>
@@ -9,43 +10,14 @@
 #include <misc/cpp/imgui_stdlib.h>
 
 #include <functional>
+#include <optional>
 
 
 namespace leopph::editor {
 namespace {
-auto IndexFileNameIfNeeded(std::filesystem::path const& filePathAbsolute) -> std::filesystem::path {
-  std::string const originalStem{ filePathAbsolute.stem().string() };
-  std::filesystem::path const ext{ filePathAbsolute.extension() };
-  std::filesystem::path const parentDir{ filePathAbsolute.parent_path() };
-
-  std::string currentStem{ originalStem };
-  std::size_t fileNameIndex{ 1 };
-
-  while (true) {
-    bool isUsed{ false };
-    for (auto const& entry : std::filesystem::directory_iterator{ parentDir }) {
-      if (entry.path().stem() == currentStem) {
-        currentStem = originalStem;
-        currentStem += " ";
-        currentStem += std::to_string(fileNameIndex);
-        ++fileNameIndex;
-        isUsed = true;
-        break;
-      }
-    }
-
-    if (!isUsed) {
-      break;
-    }
-  }
-
-  return (parentDir / currentStem).replace_extension(ext);
-}
-
-
 auto DrawSideFolderView(std::filesystem::path const& dir, std::filesystem::path& selectedProjSubDir) -> void {
-  std::filesystem::directory_iterator const it{ dir };
-  ImGuiTreeNodeFlags treeNodeFlags{ ImGuiTreeNodeFlags_OpenOnArrow };
+  std::filesystem::directory_iterator const it{dir};
+  ImGuiTreeNodeFlags treeNodeFlags{ImGuiTreeNodeFlags_OpenOnArrow};
 
   if (begin(it) == end(it)) {
     treeNodeFlags |= ImGuiTreeNodeFlags_Leaf;
@@ -78,12 +50,12 @@ auto DrawProjectWindow(Context& context) -> void {
       ImGui::TableNextRow();
       ImGui::TableSetColumnIndex(0);
 
-      std::filesystem::path static selectedProjSubDir{ context.GetAssetDirectoryAbsolute() };
+      std::filesystem::path static selectedProjSubDir{context.GetAssetDirectoryAbsolute()};
       DrawSideFolderView(context.GetAssetDirectoryAbsolute(), selectedProjSubDir);
 
       ImGui::TableSetColumnIndex(1);
 
-      auto constexpr contextMenuId{ "ProjectWindowContextMenu" };
+      auto constexpr contextMenuId{"ProjectWindowContextMenu"};
 
       if (ImGui::IsWindowHovered(ImGuiHoveredFlags_RootWindow) && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
         ImGui::OpenPopup(contextMenuId);
@@ -91,7 +63,7 @@ auto DrawProjectWindow(Context& context) -> void {
 
       auto const openFileDialog{
         [](char const* filters, char const* defaultPath, std::filesystem::path& out) -> bool {
-          if (nfdchar_t* selectedPath{ nullptr }; NFD_OpenDialog(filters, defaultPath, &selectedPath) == NFD_OKAY) {
+          if (nfdchar_t* selectedPath{nullptr}; NFD_OpenDialog(filters, defaultPath, &selectedPath) == NFD_OKAY) {
             out = selectedPath;
             std::free(selectedPath);
             return true;
@@ -113,16 +85,16 @@ auto DrawProjectWindow(Context& context) -> void {
               copy_file(srcPathAbs, dstPath);
             }
 
-            auto const guid{ Guid::Generate() };
+            auto const guid{Guid::Generate()};
 
-            if (auto asset{ assetLoader.Load(dstPath, context.GetCacheDirectoryAbsolute()) }) {
+            if (auto asset{assetLoader.Load(dstPath, context.GetCacheDirectoryAbsolute())}) {
               asset->SetName(dstPath.stem().string());
               asset->SetGuid(guid);
 
-              context.GetResources().RegisterAsset(std::shared_ptr<Object>{ asset.release() }, dstPath);
+              context.GetResources().RegisterAsset(std::shared_ptr<Object>{asset.release()}, dstPath);
               context.CreateMetaFileForRegisteredAsset(*asset);
             } else {
-              throw std::runtime_error{ std::format("Failed to import asset at {}.", srcPathAbs.string()) };
+              throw std::runtime_error{std::format("Failed to import asset at {}.", srcPathAbs.string())};
             }
           });
         }
@@ -130,7 +102,7 @@ auto DrawProjectWindow(Context& context) -> void {
 
       auto const importAsset{
         [&context, openFileDialog, importConcreteAsset](Object::Type const targetAssetType) {
-          auto& loader{ context.GetFactoryManager().GetFor(targetAssetType).GetLoader() };
+          auto& loader{context.GetFactoryManager().GetFor(targetAssetType).GetLoader()};
 
           if (std::filesystem::path path; openFileDialog(Join(loader.GetSupportedExtensions(), ",").c_str(), nullptr, path)) {
             importConcreteAsset(loader, absolute(path));
@@ -138,28 +110,44 @@ auto DrawProjectWindow(Context& context) -> void {
         }
       };
 
-      auto openCubemapImportModal{ false };
+      auto openCubemapImportModal{false};
+
+      struct RenameInfo {
+        std::string newName;
+        std::filesystem::path src;
+      };
+
+      static std::optional<RenameInfo> renaming;
+      static std::optional<std::filesystem::path> selectedDir;
 
       if (ImGui::BeginPopup(contextMenuId)) {
-        if (ImGui::BeginMenu("Create##CreateAssetMenu")) {
-          if (ImGui::MenuItem("Material##CreateMaterialAsset")) {
-            auto const dstPath{ IndexFileNameIfNeeded(selectedProjSubDir / "New Material.mtl") };
+        if (ImGui::BeginMenu("New##Menu")) {
+          if (ImGui::MenuItem("Folder")) {
+            auto const newFolderPath{IndexFileNameIfNeeded(selectedProjSubDir / "New Folder")};
+            create_directory(newFolderPath);
+            selectedDir = newFolderPath;
+            context.SetSelectedObject(nullptr);
+            renaming = RenameInfo{.newName = newFolderPath.stem().string(), .src = newFolderPath};
+          }
 
-            auto const mtl{ new Material{} };
+          if (ImGui::MenuItem("Material##CreateMaterialAsset")) {
+            auto const dstPath{IndexFileNameIfNeeded(selectedProjSubDir / "New Material.mtl")};
+
+            auto const mtl{new Material{}};
             mtl->SetName(dstPath.stem().string());
 
-            context.GetResources().RegisterAsset(std::unique_ptr<Object>{ mtl }, dstPath);
+            context.GetResources().RegisterAsset(std::unique_ptr<Object>{mtl}, dstPath);
             context.SaveRegisteredNativeAsset(*mtl);
             context.CreateMetaFileForRegisteredAsset(*mtl);
           }
 
           if (ImGui::MenuItem("Scene##CreateSceneAsset")) {
-            auto const dstPath{ IndexFileNameIfNeeded(selectedProjSubDir / "New Scene.scene") };
+            auto const dstPath{IndexFileNameIfNeeded(selectedProjSubDir / "New Scene.scene")};
 
-            auto const scene{ new Scene{} };
+            auto const scene{new Scene{}};
             scene->SetName(dstPath.stem().string());
 
-            context.GetResources().RegisterAsset(std::unique_ptr<Object>{ scene }, dstPath);
+            context.GetResources().RegisterAsset(std::unique_ptr<Object>{scene}, dstPath);
             context.SaveRegisteredNativeAsset(*scene);
             context.CreateMetaFileForRegisteredAsset(*scene);
           }
@@ -189,9 +177,9 @@ auto DrawProjectWindow(Context& context) -> void {
         ImGui::EndPopup();
       }
 
-      auto constexpr cubemapImportModalId{ "Import Cubemap" };
+      auto constexpr cubemapImportModalId{"Import Cubemap"};
       std::string static cubeMapcombinedFileName;
-      auto constexpr faceCount{ 6 };
+      auto constexpr faceCount{6};
       std::array<std::filesystem::path, faceCount> static facePaths;
 
       if (openCubemapImportModal) {
@@ -203,9 +191,9 @@ auto DrawProjectWindow(Context& context) -> void {
       }
 
       if (ImGui::BeginPopupModal(cubemapImportModalId, nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-        constexpr auto importTypeCount{ 2 };
-        constexpr std::array<char const*, importTypeCount> importTypeNames{ "From Single File", "Merge Separate Faces" };
-        static auto importTypeIdx{ 0 };
+        constexpr auto importTypeCount{2};
+        constexpr std::array<char const*, importTypeCount> importTypeNames{"From Single File", "Merge Separate Faces"};
+        static auto importTypeIdx{0};
 
         ImGui::Combo("##CubeMapImportTypeCombo", &importTypeIdx, importTypeNames.data(), importTypeCount);
 
@@ -228,8 +216,8 @@ auto DrawProjectWindow(Context& context) -> void {
 
         if (importTypeIdx == 1 && ImGui::BeginTable("CubeMapImportModalTable", 2)) {
           // Order counts here
-          constexpr std::array<char const*, faceCount> faceNames{ "Right Face", "Left Face", "Top Face", "Bottom Face", "Front Face", "Back Face", };
-          drawFileSelectionEntries(std::span{ faceNames }, std::span{ facePaths });
+          constexpr std::array<char const*, faceCount> faceNames{"Right Face", "Left Face", "Top Face", "Bottom Face", "Front Face", "Back Face",};
+          drawFileSelectionEntries(std::span{faceNames}, std::span{facePaths});
 
           ImGui::TableNextColumn();
           ImGui::Text("%s", "Name of combined file");
@@ -250,14 +238,14 @@ auto DrawProjectWindow(Context& context) -> void {
             importAsset(Object::Type::Cubemap);
             ImGui::CloseCurrentPopup();
           } else if (importTypeIdx == 1) {
-            bool rdyToImport{ true };
+            bool rdyToImport{true};
 
             if (cubeMapcombinedFileName.empty()) {
               rdyToImport = false;
               MessageBoxW(nullptr, L"Please enter the name of the combined image file.", L"Error", MB_ICONERROR);
             }
 
-            auto const dstPath{ selectedProjSubDir / std::filesystem::path{ cubeMapcombinedFileName } += ".png" };
+            auto const dstPath{selectedProjSubDir / std::filesystem::path{cubeMapcombinedFileName} += ".png"};
 
             if (exists(dstPath)) {
               rdyToImport = false;
@@ -275,14 +263,14 @@ auto DrawProjectWindow(Context& context) -> void {
             if (rdyToImport) {
               std::array<Image, 6> loadedImages;
 
-              bool importSuccess{ true };
+              bool importSuccess{true};
 
               for (int i = 0; i < 6; i++) {
                 int width;
                 int height;
                 int channelCount;
 
-                if (auto const data{ stbi_load(facePaths[i].string().c_str(), &width, &height, &channelCount, 4) }) {
+                if (auto const data{stbi_load(facePaths[i].string().c_str(), &width, &height, &channelCount, 4)}) {
                   if (width != height) {
                     importSuccess = false;
                     MessageBoxW(nullptr, std::format(L"Image at {} cannot be used as a cubemap face because it is not square.", facePaths[i].wstring()).c_str(), L"Error", MB_ICONERROR);
@@ -304,7 +292,7 @@ auto DrawProjectWindow(Context& context) -> void {
                     break;
                   }
 
-                  loadedImages[i] = Image{ static_cast<u32>(width), static_cast<u32>(height), 4, std::unique_ptr<u8[]>{ data } };
+                  loadedImages[i] = Image{static_cast<u32>(width), static_cast<u32>(height), 4, std::unique_ptr<u8[]>{data}};
                 } else {
                   importSuccess = false;
                   MessageBoxW(nullptr, std::format(L"Failed to load image file at {}.", facePaths[i].wstring()).c_str(), L"Error", MB_ICONERROR);
@@ -313,8 +301,8 @@ auto DrawProjectWindow(Context& context) -> void {
               }
 
               if (importSuccess) {
-                auto const faceSize{ static_cast<int>(loadedImages[0].get_width()) };
-                auto combinedBytes{ std::make_unique_for_overwrite<u8[]>(6 * faceSize * faceSize * 4) };
+                auto const faceSize{static_cast<int>(loadedImages[0].get_width())};
+                auto combinedBytes{std::make_unique_for_overwrite<u8[]>(6 * faceSize * faceSize * 4)};
                 for (int i = 0; i < 6; i++) {
                   std::ranges::copy_n(loadedImages[i].get_data().data(), faceSize * faceSize * 4, combinedBytes.get() + i * faceSize * faceSize * 4);
                 }
@@ -332,48 +320,71 @@ auto DrawProjectWindow(Context& context) -> void {
         ImGui::EndPopup();
       }
 
-      std::filesystem::path static renameAssetPath;
+      for (auto const& entry : std::filesystem::directory_iterator{selectedProjSubDir}) {
+        auto const entryAbsPath{absolute(entry.path())};
 
-      for (auto const& entry : std::filesystem::directory_iterator{ selectedProjSubDir }) {
-        auto const entryPathAbs{ absolute(entry.path()) };
+        if (is_directory(entryAbsPath)) {
+          auto isSelected{selectedDir && equivalent(*selectedDir, entryAbsPath)};
 
-        if (auto const asset{ context.GetResources().TryGetAssetAt(entryPathAbs) }; asset || is_directory(entryPathAbs)) {
-          if (!renameAssetPath.empty() && equivalent(renameAssetPath, entryPathAbs)) {
-            std::string input{ asset->GetName() };
+          if (renaming && equivalent(renaming->src, entryAbsPath)) {
+            ImGui::SetKeyboardFocusHere();
+            if (ImGui::InputText("##Rename", &renaming->newName, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll)) {
+              auto const newDirName{renaming->src.parent_path() / renaming->newName};
+              std::filesystem::rename(renaming->src, newDirName);
+              renaming.reset();
 
-            ImGui::SetKeyboardFocusHere(0);
+              if (isSelected) {
+                selectedDir = newDirName;
+              }
+            }
+            if (!ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+              renaming.reset();
+            }
+          } else {
+            if (ImGui::Selectable(entryAbsPath.stem().string().c_str(), isSelected, ImGuiSelectableFlags_AllowDoubleClick)) {
+              if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+                context.SetSelectedObject(nullptr);
+                selectedDir.reset();
+                selectedProjSubDir = entryAbsPath;
+              } else {
+                context.SetSelectedObject(nullptr);
+                selectedDir = entryAbsPath;
+              }
+            }
+            if ((ImGui::IsItemHovered() && ImGui::GetMouseClickedCount(ImGuiMouseButton_Left) == 3) || (isSelected && ImGui::IsKeyPressed(ImGuiKey_F2, false))) {
+              renaming = RenameInfo{.newName = entryAbsPath.stem().string(), .src = entryAbsPath};
+            }
+          }
+        } else if (auto const asset{context.GetResources().TryGetAssetAt(entryAbsPath)}) {
+          if (renaming && equivalent(renaming->src, entryAbsPath)) {
+            ImGui::SetKeyboardFocusHere();
+            if (ImGui::InputText("##Rename", &renaming->newName, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll)) {
+              auto renamedAsset{context.GetResources().UnregisterAsset(renaming->src)};
 
-            if (ImGui::InputText("###RenameAsset", &input, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll)) {
-              auto renamedAsset{ context.GetResources().UnregisterAsset(renameAssetPath) };
+              auto const oldAssetMetaPath{std::filesystem::path{renaming->src} += context.GetAssetFileExtension()};
+              auto const newAssetMetaPath{renaming->src.parent_path() / renaming->newName += renaming->src.extension() += context.GetAssetFileExtension()};
+              std::filesystem::rename(oldAssetMetaPath, newAssetMetaPath);
 
-              auto const oldAssetMetaPath{ std::filesystem::path{ renameAssetPath } += context.GetAssetFileExtension() };
-              auto const newAssetMetaPath{ renameAssetPath.parent_path() / input += renameAssetPath.extension() += context.GetAssetFileExtension() };
-              rename(oldAssetMetaPath, newAssetMetaPath);
-
-              auto const newAssetPath{ renameAssetPath.parent_path() / input += renameAssetPath.extension() };
-              rename(renameAssetPath, newAssetPath);
+              auto const newAssetPath{renaming->src.parent_path() / renaming->newName += renaming->src.extension()};
+              std::filesystem::rename(renaming->src, newAssetPath);
 
               renamedAsset->SetName(newAssetPath.stem().string());
               context.GetResources().RegisterAsset(std::move(renamedAsset), newAssetPath);
-              renameAssetPath.clear();
+              renaming.reset();
             }
-
-            if (!ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left, false)) {
-              renameAssetPath.clear();
+            if (!ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+              renaming.reset();
             }
           } else {
-            auto const selected{ context.GetResources().TryGetAssetAt(entryPathAbs) == context.GetSelectedObject() };
+            auto isSelected{asset == context.GetSelectedObject()};
 
-            if (ImGui::Selectable(entryPathAbs.stem().string().c_str(), selected)) {
-              if (is_directory(entryPathAbs)) {
-                selectedProjSubDir = entryPathAbs;
-              } else {
-                context.SetSelectedObject(asset);
-              }
+            if (ImGui::Selectable(entryAbsPath.stem().string().c_str(), isSelected)) {
+              context.SetSelectedObject(asset);
+              selectedDir.reset();
             }
 
-            if ((ImGui::IsItemHovered() && ImGui::GetMouseClickedCount(ImGuiMouseButton_Left) == 2) || (selected && ImGui::IsKeyPressed(ImGuiKey_F2, false))) {
-              renameAssetPath = entryPathAbs;
+            if ((ImGui::IsItemHovered() && ImGui::GetMouseClickedCount(ImGuiMouseButton_Left) == 3) || (isSelected && ImGui::IsKeyPressed(ImGuiKey_F2, false))) {
+              renaming = RenameInfo{.newName = entryAbsPath.stem().string(), .src = entryAbsPath};
             }
           }
         }
