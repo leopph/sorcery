@@ -1,7 +1,7 @@
 #include <imgui.h>
 
 #include "ObjectWrappers.hpp"
-#include "../MeshImporter.hpp"
+#include "../AssetLoaders/MeshLoader.hpp"
 
 
 namespace leopph::editor {
@@ -36,8 +36,8 @@ auto ObjectWrapperFor<Mesh>::OnDrawProperties([[maybe_unused]] Context& context,
 }
 
 
-auto ObjectWrapperFor<Mesh>::GetImporter() -> Importer& {
-  MeshImporter static meshImporter;
-  return meshImporter;
+auto ObjectWrapperFor<Mesh>::GetLoader() -> AssetLoader& {
+  MeshLoader static loader;
+  return loader;
 }
 }

@@ -24,28 +24,28 @@
     <ClCompile Include="src\Asset.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\MeshImporter.cpp">
+    <ClCompile Include="src\AssetLoaders\MeshLoader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Texture2DImporter.cpp">
+    <ClCompile Include="src\AssetLoaders\Texture2DLoader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\MaterialImporter.cpp">
+    <ClCompile Include="src\AssetLoaders\MaterialLoader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\ObjectWrappers\ObjectWrapperManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\SceneImporter.cpp">
+    <ClCompile Include="src\AssetLoaders\SceneLoader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\EditorContext.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\AssetStorage.cpp">
+    <ClCompile Include="src\ResourceManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\CubemapImporter.cpp">
+    <ClCompile Include="src\AssetLoaders\CubemapLoader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\EditorCamera.cpp">
@@ -143,28 +143,28 @@
     <ClInclude Include="src\ObjectWrappers\ObjectWrappers.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\MeshImporter.hpp">
+    <ClInclude Include="src\AssetLoaders\MeshLoader.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Texture2DImporter.hpp">
+    <ClInclude Include="src\AssetLoaders\Texture2DLoader.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Importer.hpp">
+    <ClInclude Include="src\AssetLoaders\AssetLoader.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\MaterialImporter.hpp">
+    <ClInclude Include="src\AssetLoaders\MaterialLoader.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\AssetStorage.hpp">
+    <ClInclude Include="src\ResourceManager.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\SceneImporter.hpp">
+    <ClInclude Include="src\AssetLoaders\SceneLoader.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\EditorContext.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\CubemapImporter.hpp">
+    <ClInclude Include="src\AssetLoaders\CubemapLoader.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\EditorCamera.hpp">

@@ -4,21 +4,22 @@
 
 #include <imgui.h>
 
-#include "AssetStorage.hpp"
+#include "ResourceManager.hpp"
 #include "Scene.hpp"
 #include "ObjectWrappers/ObjectWrapperManager.hpp"
 
-#include <filesystem>
 #include <atomic>
+#include <filesystem>
+#include <memory>
 #include <variant>
 
 
 namespace leopph::editor {
 class Context {
   ImGuiIO& mImGuiIo;
-  AssetStorage mResources;
   Scene* mScene{ nullptr };
-  ObjectWrapperManager mFactoryManager{ ObjectWrapperManager::Create() };
+  std::shared_ptr<ObjectWrapperManager> mWrapperManager{ ObjectWrapperManager::Create() };
+  ResourceManager mResourceManager{ mWrapperManager };
   Object* mSelectedObject{ nullptr };
 
   static inline std::filesystem::path ASSET_DIR_REL{ "Assets" };
@@ -37,8 +38,8 @@ public:
   [[nodiscard]] auto GetImGuiIo() const noexcept -> ImGuiIO const&;
   [[nodiscard]] auto GetImGuiIo() noexcept -> ImGuiIO&;
 
-  [[nodiscard]] auto GetResources() const noexcept -> AssetStorage const&;
-  [[nodiscard]] auto GetResources() noexcept -> AssetStorage&;
+  [[nodiscard]] auto GetResources() const noexcept -> ResourceManager const&;
+  [[nodiscard]] auto GetResources() noexcept -> ResourceManager&;
 
   [[nodiscard]] auto GetScene() const noexcept -> Scene const*;
   [[nodiscard]] auto GetScene() noexcept -> Scene*;

@@ -1,7 +1,7 @@
 #include <imgui.h>
 
 #include "ObjectWrappers.hpp"
-#include "../Texture2DImporter.hpp"
+#include "../AssetLoaders/Texture2DLoader.hpp"
 
 
 namespace leopph::editor {
@@ -55,8 +55,8 @@ auto ObjectWrapperFor<Texture2D>::OnDrawProperties([[maybe_unused]] Context& con
 }
 
 
-auto ObjectWrapperFor<Texture2D>::GetImporter() -> Importer& {
-  Texture2DImporter static texImporter;
-  return texImporter;
+auto ObjectWrapperFor<Texture2D>::GetLoader() -> AssetLoader& {
+  Texture2DLoader static loader;
+  return loader;
 }
 }

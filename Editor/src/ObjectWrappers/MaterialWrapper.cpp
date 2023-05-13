@@ -2,7 +2,7 @@
 #include <misc/cpp/imgui_stdlib.h>
 
 #include "ObjectWrappers.hpp"
-#include "../MaterialImporter.hpp"
+#include "../AssetLoaders/MaterialLoader.hpp"
 #include "../EditorContext.hpp"
 
 
@@ -154,8 +154,8 @@ auto ObjectWrapperFor<Material>::OnDrawProperties([[maybe_unused]] Context& cont
 }
 
 
-auto ObjectWrapperFor<Material>::GetImporter() -> Importer& {
-  MaterialImporter static mtlImporter;
-  return mtlImporter;
+auto ObjectWrapperFor<Material>::GetLoader() -> AssetLoader& {
+  MaterialLoader static loader;
+  return loader;
 }
 }

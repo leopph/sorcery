@@ -21,13 +21,13 @@ ImGuiIO& Context::GetImGuiIo() noexcept {
 }
 
 
-AssetStorage const& Context::GetResources() const noexcept {
-  return mResources;
+ResourceManager const& Context::GetResources() const noexcept {
+  return mResourceManager;
 }
 
 
-AssetStorage& Context::GetResources() noexcept {
-  return mResources;
+ResourceManager& Context::GetResources() noexcept {
+  return mResourceManager;
 }
 
 
@@ -42,7 +42,7 @@ Scene* Context::GetScene() noexcept {
 
 
 auto Context::OpenScene(Scene& scene) -> void {
-  scene.Load(mFactoryManager);
+  scene.Load(*mWrapperManager);
 
   if (mScene) {
     mScene->Clear();
@@ -53,12 +53,12 @@ auto Context::OpenScene(Scene& scene) -> void {
 
 
 ObjectWrapperManager const& Context::GetFactoryManager() const noexcept {
-  return mFactoryManager;
+  return *mWrapperManager;
 }
 
 
 ObjectWrapperManager& Context::GetFactoryManager() noexcept {
-  return mFactoryManager;
+  return *mWrapperManager;
 }
 
 
@@ -90,7 +90,7 @@ std::filesystem::path const& Context::GetCacheDirectoryAbsolute() const noexcept
 auto Context::OpenProject(std::filesystem::path const& targetPath) -> void {
   mSelectedObject = nullptr;
   mScene = nullptr;
-  mResources.Clear();
+  mResourceManager.Clear();
   mProjDirAbs = absolute(targetPath);
   mAssetDirAbs = absolute(mProjDirAbs / ASSET_DIR_REL);
   mCacheDirAbs = absolute(mProjDirAbs / CACHE_DIR_REL);
@@ -127,18 +127,13 @@ auto Context::OpenProject(std::filesystem::path const& targetPath) -> void {
     ImportInfo info{ queue.top() };
     queue.pop();
 
-    auto& factory{ mFactoryManager.GetFor(info.metaInfo.type) };
+    auto& factory{ mWrapperManager->GetFor(info.metaInfo.type) };
 
-    Importer::InputImportInfo const inputImportInfo{
-      .src = info.assetPath,
-      .guid = info.metaInfo.guid
-    };
-
-    auto const asset{ factory.GetImporter().Import(inputImportInfo, mCacheDirAbs) };
+    auto asset{ factory.GetLoader().Load(info.assetPath, mCacheDirAbs) };
     asset->SetName(info.assetPath.stem().string());
     asset->SetGuid(info.metaInfo.guid);
 
-    mResources.RegisterAsset(std::unique_ptr<Object>{ asset }, info.assetPath);
+    mResourceManager.RegisterAsset(std::move(asset), info.assetPath);
   }
 }
 
@@ -149,14 +144,14 @@ bool Context::IsEditorBusy() const noexcept {
 
 
 auto Context::CreateMetaFileForRegisteredAsset(Object const& asset) const -> void {
-  if (auto const assetPath{ mResources.TryGetPathFor(&asset) }; !assetPath.empty()) {
-    std::ofstream{ std::filesystem::path{ assetPath } += ASSET_FILE_EXT } << GenerateAssetMetaFileContents(asset, mFactoryManager);
+  if (auto const assetPath{ mResourceManager.TryGetPathFor(&asset) }; !assetPath.empty()) {
+    std::ofstream{ std::filesystem::path{ assetPath } += ASSET_FILE_EXT } << GenerateAssetMetaFileContents(asset, *mWrapperManager);
   }
 }
 
 
 auto Context::SaveRegisteredNativeAsset(NativeAsset const& asset) const -> void {
-  if (auto const dst{ mResources.TryGetPathFor(&asset) }; !dst.empty()) {
+  if (auto const dst{ mResourceManager.TryGetPathFor(&asset) }; !dst.empty()) {
     std::vector<std::uint8_t> static outSerializedBytes;
     outSerializedBytes.clear();
 

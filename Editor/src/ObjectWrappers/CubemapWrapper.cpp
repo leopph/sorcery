@@ -1,11 +1,11 @@
 #include "ObjectWrappers.hpp"
 
-#include "../CubemapImporter.hpp"
+#include "../AssetLoaders/CubemapLoader.hpp"
 
 
 namespace leopph::editor {
-auto ObjectWrapperFor<Cubemap>::GetImporter() -> Importer& {
-  CubemapImporter static cubemapImporter;
-  return cubemapImporter;
+auto ObjectWrapperFor<Cubemap>::GetLoader() -> AssetLoader& {
+  CubemapLoader static loader;
+  return loader;
 }
 }

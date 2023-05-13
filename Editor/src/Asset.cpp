@@ -8,7 +8,7 @@ auto GenerateAssetMetaFileContents(Object const& asset, ObjectWrapperManager con
   YAML::Node node;
   node["guid"] = asset.GetGuid().ToString();
   node["type"] = static_cast<int>(asset.GetSerializationType());
-  node["importPrecedence"] = factoryManager.GetFor(asset.GetSerializationType()).GetImporter().GetPrecedence();
+  node["importPrecedence"] = factoryManager.GetFor(asset.GetSerializationType()).GetLoader().GetPrecedence();
   return Dump(node);
 }
 
