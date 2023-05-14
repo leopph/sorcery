@@ -29,6 +29,7 @@ public:
   virtual auto OnDrawProperties(Context& context, Object& object) -> void = 0;
   [[nodiscard]] virtual auto GetLoader() -> AssetLoader& = 0;
   virtual auto OnDrawGizmosSelected(Context& context, Object& object) -> void = 0;
+  [[nodiscard]] virtual auto GetWrappedType() const noexcept -> Object::Type = 0;
 };
 
 
@@ -53,6 +54,11 @@ public:
 
 
   auto OnDrawGizmosSelected([[maybe_unused]] Context& context, [[maybe_unused]] Object& object) -> void override {}
+
+
+  [[nodiscard]] auto GetWrappedType() const noexcept -> Object::Type override {
+    return Wrapped::SerializationType;
+  }
 };
 
 
