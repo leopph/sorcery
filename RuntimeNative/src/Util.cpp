@@ -94,33 +94,20 @@ auto CalculateTangents(std::span<Vector3 const> const positions, std::span<Vecto
 }
 
 
-auto IndexFileNameIfNeeded(std::filesystem::path const& filePathAbsolute) -> std::filesystem::path {
-  std::string const originalStem{ filePathAbsolute.stem().string() };
-  std::filesystem::path const ext{ filePathAbsolute.extension() };
-  std::filesystem::path const parentDir{ filePathAbsolute.parent_path() };
+auto GenerateUniquePath(std::filesystem::path const& absolutePath) -> std::filesystem::path {
+  std::string const originalStem{ absolutePath.stem().string() };
+  std::filesystem::path const ext{ absolutePath.extension() };
+  std::filesystem::path const parentDir{ absolutePath.parent_path() };
 
-  std::string currentStem{ originalStem };
+  std::filesystem::path ret{ absolutePath };
   std::size_t fileNameIndex{ 1 };
 
-  while (true) {
-    bool isUsed{ false };
-    for (auto const& entry : std::filesystem::directory_iterator{ parentDir }) {
-      if (entry.path().stem() == currentStem) {
-        currentStem = originalStem;
-        currentStem += " ";
-        currentStem += std::to_string(fileNameIndex);
-        ++fileNameIndex;
-        isUsed = true;
-        break;
-      }
-    }
-
-    if (!isUsed) {
-      break;
-    }
+  while (exists(ret)) {
+    ret = (parentDir / originalStem += std::to_string(fileNameIndex)) += ext;
+    fileNameIndex += 1;
   }
 
-  return (parentDir / currentStem).replace_extension(ext);
+  return ret;
 }
 
 
@@ -135,6 +122,15 @@ auto Join(std::span<std::string const> const strings, std::string const& delim) 
     }
   }
 
+  return ret;
+}
+
+
+auto ToLower(std::string_view const str) -> std::string {
+  std::string ret{ str };
+  std::ranges::transform(ret, std::begin(ret), [](char const c) {
+    return static_cast<char>(std::tolower(c));
+  });
   return ret;
 }
 }

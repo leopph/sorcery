@@ -94,7 +94,9 @@ LEOPPHAPI auto CalculateNormals(std::span<Vector3 const> positions, std::span<un
 LEOPPHAPI auto CalculateTangents(std::span<Vector3 const> positions, std::span<Vector2 const> uvs, std::span<unsigned const> indices, std::vector<Vector3>& out) -> void;
 
 // Appends an index to the specified file path to avoid name clashes
-[[nodiscard]] LEOPPHAPI auto IndexFileNameIfNeeded(std::filesystem::path const& filePathAbsolute) -> std::filesystem::path;
+[[nodiscard]] LEOPPHAPI auto GenerateUniquePath(std::filesystem::path const& absolutePath) -> std::filesystem::path;
 
 [[nodiscard]] LEOPPHAPI auto Join(std::span<std::string const> strings, std::string const& delim) -> std::string;
+
+[[nodiscard]] LEOPPHAPI auto ToLower(std::string_view str) -> std::string;
 }
