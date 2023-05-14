@@ -1,5 +1,7 @@
 #include "EditorContext.hpp"
 
+#include "Systems.hpp"
+
 #include <queue>
 #include <fstream>
 
@@ -7,8 +9,22 @@
 
 
 namespace leopph::editor {
+auto Context::OnWindowFocusGain(Context* const self) -> void {
+  if (!self->mProjDirAbs.empty()) {
+    self->mResourceManager.Refresh();
+  }
+}
+
+
 Context::Context(ImGuiIO& imGuiIO) :
-  mImGuiIo{ imGuiIO } { }
+  mImGuiIo{ imGuiIO } {
+  gWindow.OnWindowFocusGain.add_handler(this, &OnWindowFocusGain);
+}
+
+
+Context::~Context() {
+  gWindow.OnWindowFocusGain.remove_handler(this, &OnWindowFocusGain);
+}
 
 
 ImGuiIO const& Context::GetImGuiIo() const noexcept {

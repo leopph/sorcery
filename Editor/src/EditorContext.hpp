@@ -19,7 +19,7 @@ class Context {
   ImGuiIO& mImGuiIo;
   Scene* mScene{ nullptr };
   std::shared_ptr<ObjectWrapperManager> mWrapperManager{ ObjectWrapperManager::Create() };
-  ResourceManager mResourceManager{ mWrapperManager };
+  ResourceManager mResourceManager{ mWrapperManager, this };
   Object* mSelectedObject{ nullptr };
 
   static inline std::filesystem::path ASSET_DIR_REL{ "Assets" };
@@ -32,8 +32,11 @@ class Context {
 
   std::atomic<bool> mBusy;
 
+  static auto OnWindowFocusGain(Context* self) -> void;
+
 public:
   explicit Context(ImGuiIO& imGuiIO);
+  ~Context();
 
   [[nodiscard]] auto GetImGuiIo() const noexcept -> ImGuiIO const&;
   [[nodiscard]] auto GetImGuiIo() noexcept -> ImGuiIO&;
