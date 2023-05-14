@@ -15,8 +15,10 @@
 
 namespace leopph::editor {
 namespace {
-auto DrawSideFolderView(std::filesystem::path const& dir, std::filesystem::path& selectedProjSubDir) -> void {
-  std::filesystem::directory_iterator const it{ dir };
+auto DrawSideFolderViewNodeRecursive(std::filesystem::path const& absoluteRootDir, std::filesystem::path const& rootRelativeNodeDir, std::filesystem::path& currentRootRelativeDir) -> void {
+  auto const absoluteNodeDir{ canonical(absoluteRootDir / rootRelativeNodeDir) };
+
+  std::filesystem::directory_iterator const it{ absoluteNodeDir };
   ImGuiTreeNodeFlags treeNodeFlags{ ImGuiTreeNodeFlags_OpenOnArrow };
 
   if (begin(it) == end(it)) {
@@ -24,22 +26,29 @@ auto DrawSideFolderView(std::filesystem::path const& dir, std::filesystem::path&
   } else {
     treeNodeFlags |= ImGuiTreeNodeFlags_DefaultOpen;
   }
-  if (selectedProjSubDir == dir) {
+
+  if (equivalent(absoluteNodeDir, canonical(absoluteRootDir / currentRootRelativeDir))) {
     treeNodeFlags |= ImGuiTreeNodeFlags_Selected;
   }
 
-  if (ImGui::TreeNodeEx(dir.stem().string().c_str(), treeNodeFlags)) {
+  if (ImGui::TreeNodeEx(absoluteNodeDir.stem().string().c_str(), treeNodeFlags)) {
     if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) {
-      selectedProjSubDir = dir;
+      currentRootRelativeDir = rootRelativeNodeDir;
     }
 
     for (auto const& entry : it) {
       if (is_directory(entry)) {
-        DrawSideFolderView(entry.path(), selectedProjSubDir);
+        auto const rootRelativeChildDir{ relative(entry.path(), absoluteRootDir) };
+        DrawSideFolderViewNodeRecursive(absoluteRootDir, rootRelativeChildDir, currentRootRelativeDir);
       }
     }
     ImGui::TreePop();
   }
+}
+
+
+auto DrawSideFolderView(std::filesystem::path const& absoluteAssetDir, std::filesystem::path& currentRootRelativeDir) -> void {
+  DrawSideFolderViewNodeRecursive(absoluteAssetDir, "", currentRootRelativeDir);
 }
 }
 
@@ -50,8 +59,15 @@ auto DrawProjectWindow(Context& context) -> void {
       ImGui::TableNextRow();
       ImGui::TableSetColumnIndex(0);
 
-      std::filesystem::path static selectedProjSubDir{ context.GetAssetDirectoryAbsolute() };
-      DrawSideFolderView(context.GetAssetDirectoryAbsolute(), selectedProjSubDir);
+      std::filesystem::path static currentRelativeDir{ "" };
+
+      if (!exists(context.GetAssetDirectoryAbsolute() / currentRelativeDir)) {
+        currentRelativeDir = "";
+      }
+
+      DrawSideFolderView(context.GetAssetDirectoryAbsolute(), currentRelativeDir);
+
+      auto const currentAbsoluteDir{ context.GetAssetDirectoryAbsolute() / currentRelativeDir };
 
       ImGui::TableSetColumnIndex(1);
 
@@ -73,12 +89,12 @@ auto DrawProjectWindow(Context& context) -> void {
       };
 
       auto const importConcreteAsset{
-        [&context](AssetLoader& assetLoader, std::filesystem::path const& srcPathAbs) {
-          context.ExecuteInBusyEditor([&context, &assetLoader, srcPathAbs] {
+        [&context, currentAbsoluteDir](AssetLoader& assetLoader, std::filesystem::path const& srcPathAbs) {
+          context.ExecuteInBusyEditor([&context, &assetLoader, srcPathAbs, currentAbsoluteDir] {
             auto const dstPath{
-              equivalent(srcPathAbs.parent_path(), selectedProjSubDir) ?
+              equivalent(srcPathAbs.parent_path(), currentAbsoluteDir) ?
                 srcPathAbs :
-                GenerateUniquePath(selectedProjSubDir / srcPathAbs.filename())
+                GenerateUniquePath(currentAbsoluteDir / srcPathAbs.filename())
             };
 
             if (!exists(dstPath) || !equivalent(dstPath, srcPathAbs)) {
@@ -123,26 +139,26 @@ auto DrawProjectWindow(Context& context) -> void {
       if (ImGui::BeginPopup(contextMenuId)) {
         if (ImGui::BeginMenu("New##Menu")) {
           if (ImGui::MenuItem("Folder")) {
-            auto const newFolderPath{ GenerateUniquePath(selectedProjSubDir / "New Folder") };
+            auto const newFolderPath{ GenerateUniquePath(currentAbsoluteDir / "New Folder") };
             create_directory(newFolderPath);
             selectedDir = newFolderPath;
             context.SetSelectedObject(nullptr);
             renaming = RenameInfo{ .newName = newFolderPath.stem().string(), .src = newFolderPath };
           }
 
-          if (ImGui::MenuItem("Material##CreateMaterialAsset")) {
-            auto const dstPath{ GenerateUniquePath(selectedProjSubDir / "New Material.mtl") };
+          if (ImGui::MenuItem("Material")) {
+            auto const dst{ GenerateUniquePath(currentAbsoluteDir / "New Material.mtl") };
 
             auto const mtl{ new Material{} };
-            mtl->SetName(dstPath.stem().string());
+            mtl->SetName(dst.stem().string());
 
-            context.GetResources().RegisterAsset(std::unique_ptr<Object>{ mtl }, dstPath);
+            context.GetResources().RegisterAsset(std::unique_ptr<Object>{ mtl }, dst);
             context.SaveRegisteredNativeAsset(*mtl);
             context.CreateMetaFileForRegisteredAsset(*mtl);
           }
 
           if (ImGui::MenuItem("Scene##CreateSceneAsset")) {
-            auto const dstPath{ GenerateUniquePath(selectedProjSubDir / "New Scene.scene") };
+            auto const dstPath{ GenerateUniquePath(currentAbsoluteDir / "New Scene.scene") };
 
             auto const scene{ new Scene{} };
             scene->SetName(dstPath.stem().string());
@@ -245,7 +261,7 @@ auto DrawProjectWindow(Context& context) -> void {
               MessageBoxW(nullptr, L"Please enter the name of the combined image file.", L"Error", MB_ICONERROR);
             }
 
-            auto const dstPath{ selectedProjSubDir / std::filesystem::path{ cubeMapcombinedFileName } += ".png" };
+            auto const dstPath{ currentAbsoluteDir / std::filesystem::path{ cubeMapcombinedFileName } += ".png" };
 
             if (exists(dstPath)) {
               rdyToImport = false;
@@ -320,7 +336,7 @@ auto DrawProjectWindow(Context& context) -> void {
         ImGui::EndPopup();
       }
 
-      for (auto const& entry : std::filesystem::directory_iterator{ selectedProjSubDir }) {
+      for (auto const& entry : std::filesystem::directory_iterator{ currentAbsoluteDir }) {
         auto const entryAbsPath{ absolute(entry.path()) };
 
         if (is_directory(entryAbsPath)) {
@@ -345,7 +361,7 @@ auto DrawProjectWindow(Context& context) -> void {
               if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
                 context.SetSelectedObject(nullptr);
                 selectedDir.reset();
-                selectedProjSubDir = entryAbsPath;
+                currentRelativeDir = relative(entryAbsPath, context.GetAssetDirectoryAbsolute());
               } else {
                 context.SetSelectedObject(nullptr);
                 selectedDir = entryAbsPath;
