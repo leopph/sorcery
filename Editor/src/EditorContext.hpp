@@ -1,7 +1,5 @@
 #pragma once
 
-#include <Systems.hpp>
-
 #include <imgui.h>
 
 #include "ResourceManager.hpp"
@@ -73,7 +71,6 @@ public:
 
   struct BusyExecutionContext {
     ImGuiConfigFlags imGuiConfigFlagsBackup;
-    MonoThread* monoThread;
   };
 
 

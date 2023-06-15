@@ -57,10 +57,7 @@
     <AllProjectIncludesArePublic>true</AllProjectIncludesArePublic>
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg">
-    <VcpkgEnabled>true</VcpkgEnabled>
     <VcpkgEnableManifest>true</VcpkgEnableManifest>
-    <VcpkgManifestInstall>true</VcpkgManifestInstall>
-    <VcpkgAutoLink>true</VcpkgAutoLink>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -68,14 +65,16 @@
       <PreprocessorDefinitions>LEOPPH_NATIVE_RUNTIME_EXPORT;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)vendor\mono\msvc\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>
+      </AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)vendor\mono\msvc\build\sgen\$(Platform)\lib\$(Configuration)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>dxgi.lib;d3d11.lib;mono-2.0-sgen.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
+      <AdditionalDependencies>dxgi.lib;d3d11.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Lib>
       <AdditionalDependencies>
@@ -90,7 +89,8 @@
       <PreprocessorDefinitions>LEOPPH_NATIVE_RUNTIME_EXPORT;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)vendor\mono\msvc\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>
+      </AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
     </ClCompile>
@@ -98,8 +98,9 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)vendor\mono\msvc\build\sgen\$(Platform)\lib\$(Configuration)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>dxgi.lib;d3d11.lib;mono-2.0-sgen.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
+      <AdditionalDependencies>dxgi.lib;d3d11.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Lib>
       <AdditionalDependencies>
@@ -108,19 +109,17 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\Bounds.cpp" />
-    <ClCompile Include="src\BehaviorComponent.cpp" />
     <ClCompile Include="src\CameraComponent.cpp" />
     <ClCompile Include="src\Color.cpp" />
     <ClCompile Include="src\Component.cpp" />
     <ClCompile Include="src\Compress.cpp" />
     <ClCompile Include="src\Cubemap.cpp" />
+    <ClCompile Include="src\NativeAsset.cpp" />
     <ClCompile Include="src\Serialization.cpp" />
     <ClCompile Include="src\StaticMeshComponent.cpp" />
     <ClCompile Include="src\Guid.cpp" />
     <ClCompile Include="src\Image.cpp" />
     <ClCompile Include="src\LightComponents.cpp" />
-    <ClCompile Include="src\ManagedRuntime.cpp" />
-    <ClCompile Include="src\ManagedAccessObject.cpp" />
     <ClCompile Include="src\Entity.cpp" />
     <ClCompile Include="src\Material.cpp" />
     <ClCompile Include="src\Mesh.cpp" />
@@ -142,7 +141,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Bounds.hpp" />
-    <ClInclude Include="src\BehaviorComponent.hpp" />
     <ClInclude Include="src\CameraComponent.hpp" />
     <ClInclude Include="src\Component.hpp" />
     <ClInclude Include="src\Compress.hpp" />
@@ -156,8 +154,6 @@
     <ClInclude Include="src\Color.hpp" />
     <ClInclude Include="src\Core.hpp" />
     <ClInclude Include="src\Event.hpp" />
-    <ClInclude Include="src\ManagedRuntime.hpp" />
-    <ClInclude Include="src\ManagedAccessObject.hpp" />
     <ClInclude Include="src\Math.hpp" />
     <ClInclude Include="src\Entity.hpp" />
     <ClInclude Include="src\Object.hpp" />

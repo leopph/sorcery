@@ -3,6 +3,11 @@
 #include "Renderer.hpp"
 
 
+RTTR_REGISTRATION {
+  rttr::registration::class_<leopph::Cubemap>{ "Cubemap" };
+}
+
+
 namespace leopph {
 auto Cubemap::UploadToGpu() -> void {
   D3D11_TEXTURE2D_DESC const texDesc{

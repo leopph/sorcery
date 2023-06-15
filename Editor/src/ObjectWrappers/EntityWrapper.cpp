@@ -1,8 +1,7 @@
 #include <imgui.h>
 #include <misc/cpp/imgui_stdlib.h>
 
-#include <mono/metadata/class.h>
-#include <mono/metadata/object.h>
+#include <rttr/registration>
 
 #include "ObjectWrappers.hpp"
 #include "Systems.hpp"
@@ -33,10 +32,9 @@ auto ObjectWrapperFor<Entity>::OnDrawProperties(Context& context, Object& object
   }
 
   for (static std::vector<Component*> components; auto const& component : entity.GetComponents(components)) {
-    auto const obj = component->GetManagedObject();
-    auto const klass = mono_object_get_class(obj);
+    auto const type{ rttr::type::get(*component) };
 
-    auto const componentNodeId = mono_class_get_name(klass);
+    auto const componentNodeId{ type.get_name().data() };
     if (ImGui::TreeNodeEx(componentNodeId, ImGuiTreeNodeFlags_DefaultOpen)) {
       ImGui::Separator();
       context.GetFactoryManager().GetFor(component->GetSerializationType()).OnDrawProperties(context, *component);
@@ -57,10 +55,9 @@ auto ObjectWrapperFor<Entity>::OnDrawProperties(Context& context, Object& object
   ImGui::Button(addNewComponentLabel);
 
   if (ImGui::BeginPopupContextItem(nullptr, ImGuiPopupFlags_MouseButtonLeft)) {
-    for (auto const& componentClass : gManagedRuntime.GetComponentClasses()) {
-      auto const componentName = mono_class_get_name(componentClass);
-      if (ImGui::MenuItem(componentName)) {
-        entity.CreateComponent(componentClass);
+    for (auto const& componentClass : rttr::type::get_by_name("Component").get_derived_classes()) {
+      if (ImGui::MenuItem(componentClass.get_name().data())) {
+        entity.AddComponent(componentClass.create().get_value<std::shared_ptr<Component>>());
         ImGui::CloseCurrentPopup();
       }
     }

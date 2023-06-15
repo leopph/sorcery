@@ -1,5 +1,7 @@
 #pragma once
 
+#include <rttr/registration>
+
 #include "Core.hpp"
 #include "Guid.hpp"
 #include "Util.hpp"
@@ -12,6 +14,7 @@
 
 namespace leopph {
 class Object {
+  RTTR_ENABLE()
   struct GuidObjectLess {
     using is_transparent = void;
     [[nodiscard]] auto operator()(Guid const& left, Guid const& right) const -> bool;

@@ -71,12 +71,9 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <AdditionalOptions>/fp:contract %(AdditionalOptions)</AdditionalOptions>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
-      <AdditionalIncludeDirectories>$(SolutionDir)vendor\mono\msvc\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)vendor\mono\msvc\build\sgen\$(Platform)\lib\$(Configuration)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>mono-2.0-sgen.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -90,14 +87,11 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <AdditionalOptions>/fp:contract %(AdditionalOptions)</AdditionalOptions>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
-      <AdditionalIncludeDirectories>$(SolutionDir)vendor\mono\msvc\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)vendor\mono\msvc\build\sgen\$(Platform)\lib\$(Configuration)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>mono-2.0-sgen.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -118,7 +112,6 @@
     <ClCompile Include="src\AssetLoaders\MeshLoader.cpp" />
     <ClCompile Include="src\ObjectWrappers\ObjectWrapperManager.cpp" />
     <ClCompile Include="src\ObjectPropertiesWindow.cpp" />
-    <ClCompile Include="src\ObjectWrappers\BehaviorWrapper.cpp" />
     <ClCompile Include="src\ObjectWrappers\CameraWrapper.cpp" />
     <ClCompile Include="src\ObjectWrappers\EntityWrapper.cpp" />
     <ClCompile Include="src\ObjectWrappers\LightWrapper.cpp" />

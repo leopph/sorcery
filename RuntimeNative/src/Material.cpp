@@ -3,10 +3,12 @@
 #include "Renderer.hpp"
 #include "Serialization.hpp"
 
-#include <assimp/scene.h>
-
 #include <cstdint>
 #include <stdexcept>
+
+RTTR_REGISTRATION {
+  rttr::registration::class_<leopph::Material>{ "Material" };
+}
 
 
 namespace leopph {

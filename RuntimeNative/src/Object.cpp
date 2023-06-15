@@ -3,6 +3,10 @@
 #include <set>
 #include <iterator>
 
+RTTR_REGISTRATION {
+  rttr::registration::class_<leopph::Object>{ "Object" };
+}
+
 
 namespace leopph {
 std::set<Object*, Object::GuidObjectLess> Object::sAllObjects;

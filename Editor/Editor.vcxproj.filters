@@ -90,9 +90,6 @@
     <ClCompile Include="src\EditorSettingsWindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ObjectWrappers\BehaviorWrapper.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\ObjectWrappers\CameraWrapper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

@@ -13,6 +13,7 @@
 
 namespace leopph {
 class Cubemap : public Object {
+  RTTR_ENABLE(Object)
   Microsoft::WRL::ComPtr<ID3D11Texture2D> mTex;
   Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> mSrv;
   std::array<Image, 6> mFaceData{};

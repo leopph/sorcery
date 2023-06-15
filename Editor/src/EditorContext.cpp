@@ -185,8 +185,7 @@ auto Context::OnEnterBusyExecution() -> BusyExecutionContext {
   while (!mBusy.compare_exchange_weak(isBusy, true)) {}
 
   BusyExecutionContext const ret{
-    .imGuiConfigFlagsBackup = mImGuiIo.ConfigFlags,
-    .monoThread = gManagedRuntime.AttachToThisThread()
+    .imGuiConfigFlagsBackup = mImGuiIo.ConfigFlags
   };
 
   mImGuiIo.ConfigFlags |= ImGuiConfigFlags_NoMouse;
@@ -198,7 +197,6 @@ auto Context::OnEnterBusyExecution() -> BusyExecutionContext {
 
 auto Context::OnFinishBusyExecution(BusyExecutionContext const& busyExecutionContext) -> void {
   mImGuiIo.ConfigFlags = busyExecutionContext.imGuiConfigFlagsBackup;
-  gManagedRuntime.DetachFromThisThread(busyExecutionContext.monoThread);
   mBusy = false;
 }
 }

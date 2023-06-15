@@ -1,7 +1,6 @@
 #pragma once
 
 #include <Object.hpp>
-#include <BehaviorComponent.hpp>
 #include <CameraComponent.hpp>
 #include <StaticMeshComponent.hpp>
 #include <Entity.hpp>
@@ -61,9 +60,6 @@ public:
   }
 };
 
-
-template<>
-auto ObjectWrapperFor<BehaviorComponent>::OnDrawProperties(Context& context, Object& object) -> void;
 
 template<>
 auto ObjectWrapperFor<CameraComponent>::OnDrawProperties(Context& context, Object& object) -> void;

@@ -3,6 +3,10 @@
 #include "Util.hpp"
 #include "Renderer.hpp"
 
+RTTR_REGISTRATION {
+  rttr::registration::class_<leopph::Texture2D>{ "Texture2D" };
+}
+
 
 namespace leopph {
 void Texture2D::UploadToGPU() {

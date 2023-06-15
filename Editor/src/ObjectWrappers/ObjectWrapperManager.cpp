@@ -10,7 +10,6 @@ auto ObjectWrapperManager::Create() noexcept -> std::shared_ptr<ObjectWrapperMan
   ret->Register<Entity>();
   ret->Register<TransformComponent>();
   ret->Register<CameraComponent>();
-  ret->Register<BehaviorComponent>();
   ret->Register<StaticMeshComponent>();
   ret->Register<LightComponent>();
   ret->Register<Material>();

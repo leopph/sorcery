@@ -2,4 +2,3 @@
 
 
 leopph::Window leopph::gWindow;
-leopph::ManagedRuntime leopph::gManagedRuntime;

@@ -13,6 +13,7 @@
 
 namespace leopph {
 class Texture2D final : public Object {
+  RTTR_ENABLE(Object)
   Microsoft::WRL::ComPtr<ID3D11Texture2D> mTex;
   Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> mSrv;
   Image mImgData{};

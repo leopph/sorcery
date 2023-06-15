@@ -2,54 +2,55 @@
 
 #include "Renderer.hpp"
 
-namespace leopph {
-auto SkyboxComponent::GetSerializationType() const -> Type {
-	return SerializationType;
+RTTR_REGISTRATION {
+  rttr::registration::class_<leopph::SkyboxComponent>{ "SkyboxComponent" }
+    .constructor<>();
 }
 
 
-auto SkyboxComponent::CreateManagedObject() -> void {
-	return ManagedAccessObject::CreateManagedObject("leopph", "Skybox");
+namespace leopph {
+auto SkyboxComponent::GetSerializationType() const -> Type {
+  return SerializationType;
 }
 
 
 auto SkyboxComponent::Serialize(YAML::Node& node) const -> void {
-	Component::Serialize(node);
+  Component::Serialize(node);
 
-	if (mCubemap) {
-		node["cubemap"] = mCubemap->GetGuid().ToString();
-	}
+  if (mCubemap) {
+    node["cubemap"] = mCubemap->GetGuid().ToString();
+  }
 }
 
 
 auto SkyboxComponent::Deserialize(YAML::Node const& node) -> void {
-	Component::Deserialize(node);
+  Component::Deserialize(node);
 
-	if (auto const dataNode{ node["cubemap"] }) {
-		if (auto const guidStr{ dataNode.as<std::string>("") }; !guidStr.empty()) {
-			SetCubemap(dynamic_cast<Cubemap*>(FindObjectByGuid(Guid::Parse(guidStr))));
-		}
-	}
+  if (auto const dataNode{ node["cubemap"] }) {
+    if (auto const guidStr{ dataNode.as<std::string>("") }; !guidStr.empty()) {
+      SetCubemap(dynamic_cast<Cubemap*>(FindObjectByGuid(Guid::Parse(guidStr))));
+    }
+  }
 }
 
 
 auto SkyboxComponent::GetCubemap() const noexcept -> Cubemap* {
-	return mCubemap;
+  return mCubemap;
 }
 
 
 auto SkyboxComponent::SetCubemap(Cubemap* cubemap) noexcept -> void {
-	renderer::UnregisterSkybox(this);
+  renderer::UnregisterSkybox(this);
 
-	mCubemap = cubemap;
+  mCubemap = cubemap;
 
-	if (mCubemap) {
-		renderer::RegisterSkybox(this);
-	}
+  if (mCubemap) {
+    renderer::RegisterSkybox(this);
+  }
 }
 
 
 SkyboxComponent::~SkyboxComponent() {
-	renderer::UnregisterSkybox(this);
+  renderer::UnregisterSkybox(this);
 }
 }

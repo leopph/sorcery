@@ -17,6 +17,7 @@
 
 namespace leopph {
 class Material final : public NativeAsset {
+  RTTR_ENABLE(NativeAsset)
   ShaderMaterial mShaderMtl{
     .albedo = Vector3{ 1, 1, 1 },
     .metallic = 0.0f,

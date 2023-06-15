@@ -7,20 +7,16 @@ namespace leopph {
 class Entity;
 class TransformComponent;
 
+
 class Component : public SceneElement {
-	Entity* mEntity{ nullptr };
+  RTTR_ENABLE(SceneElement)
+  Entity* mEntity{ nullptr };
 
 public:
-	[[nodiscard]] LEOPPHAPI auto GetEntity() const -> Entity*;
-	LEOPPHAPI auto SetEntity(Entity* entity) -> void;
+  [[nodiscard]] LEOPPHAPI auto GetEntity() const -> Entity*;
+  LEOPPHAPI auto SetEntity(Entity* entity) -> void;
 
-	LEOPPHAPI auto Serialize(YAML::Node& node) const -> void override = 0;
-	LEOPPHAPI auto Deserialize(YAML::Node const& node) -> void override = 0;
+  LEOPPHAPI auto Serialize(YAML::Node& node) const -> void override = 0;
+  LEOPPHAPI auto Deserialize(YAML::Node const& node) -> void override = 0;
 };
-
-
-namespace managedbindings {
-auto GetComponentEntity(MonoObject* component) -> MonoObject*;
-auto GetComponentEntityTransform(MonoObject* component) -> MonoObject*;
-}
 }
