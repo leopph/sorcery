@@ -4,15 +4,10 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 17.0.32112.339
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Editor", "Editor\Editor.vcxproj", "{C25EFA86-F3B2-452C-9A0C-1BD4DA533296}"
-	ProjectSection(ProjectDependencies) = postProject
-		{65AF19F1-B2F8-4B7A-BC8A-EB0D9DB69881} = {65AF19F1-B2F8-4B7A-BC8A-EB0D9DB69881}
-	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ImGui", "ImGui\ImGui.vcxproj", "{2359E10D-1161-46ED-BA5D-2AF984E94C63}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ImGuizmo", "Imguizmo\ImGuizmo.vcxproj", "{2A6ED170-49A3-481A-B2D3-E26FE009653A}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RuntimeManaged", "RuntimeManaged\RuntimeManaged.csproj", "{65AF19F1-B2F8-4B7A-BC8A-EB0D9DB69881}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RuntimeNative", "RuntimeNative\RuntimeNative.vcxproj", "{60A69D92-FA99-4F5C-804C-1DFF2CE460AD}"
 EndProject
@@ -38,10 +33,6 @@ Global
 		{2A6ED170-49A3-481A-B2D3-E26FE009653A}.Debug|x64.Build.0 = Debug|x64
 		{2A6ED170-49A3-481A-B2D3-E26FE009653A}.Release|x64.ActiveCfg = Release|x64
 		{2A6ED170-49A3-481A-B2D3-E26FE009653A}.Release|x64.Build.0 = Release|x64
-		{65AF19F1-B2F8-4B7A-BC8A-EB0D9DB69881}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{65AF19F1-B2F8-4B7A-BC8A-EB0D9DB69881}.Debug|x64.Build.0 = Debug|Any CPU
-		{65AF19F1-B2F8-4B7A-BC8A-EB0D9DB69881}.Release|x64.ActiveCfg = Release|Any CPU
-		{65AF19F1-B2F8-4B7A-BC8A-EB0D9DB69881}.Release|x64.Build.0 = Release|Any CPU
 		{60A69D92-FA99-4F5C-804C-1DFF2CE460AD}.Debug|x64.ActiveCfg = Debug|x64
 		{60A69D92-FA99-4F5C-804C-1DFF2CE460AD}.Debug|x64.Build.0 = Debug|x64
 		{60A69D92-FA99-4F5C-804C-1DFF2CE460AD}.Release|x64.ActiveCfg = Release|x64
