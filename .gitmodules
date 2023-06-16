@@ -1,6 +1,3 @@
-[submodule "mono"]
-	path = vendor/mono
-	url = https://github.com/mono/mono.git
 [submodule "imgui"]
 	path = vendor/imgui
 	url = https://github.com/ocornut/imgui.git
