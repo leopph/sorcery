@@ -28,6 +28,7 @@
 #include "ObjectPropertiesWindow.hpp"
 #include "OpenScenePrompt.hpp"
 #include "PerformanceCounterWindow.hpp"
+#include "PhysicsManager.hpp"
 #include "ProjectWindow.hpp"
 #include "SceneViewWindow.hpp"
 #include "StartupScreen.hpp"
@@ -37,6 +38,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
   try {
     sorcery::gWindow.StartUp();
     sorcery::renderer::StartUp();
+    sorcery::gPhysicsManager.StartUp();
 
     sorcery::gWindow.SetTitle("Mage");
     sorcery::gWindow.SetBorderless(false);
@@ -103,7 +105,8 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
       if (context.GetProjectDirectoryAbsolute().empty()) {
         DrawStartupScreen(context);
-      } else {
+      }
+      else {
         int static targetFrameRate{ sorcery::timing::GetTargetFrameRate() };
 
         if (runGame) {
@@ -116,7 +119,8 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
             context.GetScene()->Load(context.GetFactoryManager());
             context.SetSelectedObject(nullptr);
           }
-        } else {
+        }
+        else {
           if (GetKeyDown(sorcery::Key::F5)) {
             runGame = true;
             sorcery::gWindow.SetEventHook({});
@@ -136,7 +140,8 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
           DrawEntityHierarchyWindow(context);
           sorcery::mage::DrawGameViewWindow(runGame);
           DrawSceneViewWindow(context);
-        } else {
+        }
+        else {
           sorcery::mage::DrawOpenScenePrompt();
         }
 
@@ -159,10 +164,12 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
     ImGui_ImplWin32_Shutdown();
     ImPlot::DestroyContext();
     ImGui::DestroyContext();
-  } catch (std::exception const& ex) {
+  }
+  catch (std::exception const& ex) {
     sorcery::DisplayError(ex.what());
   }
 
+  sorcery::gPhysicsManager.ShutDown();
   sorcery::renderer::ShutDown();
   sorcery::gWindow.ShutDown();
   return 0;

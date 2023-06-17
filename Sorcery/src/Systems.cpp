@@ -1,4 +1,9 @@
 #include "Systems.hpp"
 
+#include "PhysicsManager.hpp"
 
-sorcery::Window sorcery::gWindow;
+
+namespace sorcery {
+Window gWindow;
+PhysicsManager gPhysicsManager;
+}

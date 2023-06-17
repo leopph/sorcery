@@ -115,6 +115,7 @@
     <ClCompile Include="src\Compress.cpp" />
     <ClCompile Include="src\Cubemap.cpp" />
     <ClCompile Include="src\NativeAsset.cpp" />
+    <ClCompile Include="src\PhysicsManager.cpp" />
     <ClCompile Include="src\Serialization.cpp" />
     <ClCompile Include="src\StaticMeshComponent.cpp" />
     <ClCompile Include="src\Guid.cpp" />
@@ -129,6 +130,7 @@
     <ClCompile Include="src\Util.cpp" />
     <ClInclude Include="src\Cubemap.hpp" />
     <ClInclude Include="src\NativeAsset.hpp" />
+    <ClInclude Include="src\PhysicsManager.hpp" />
     <ClInclude Include="src\SceneElement.hpp" />
     <ClInclude Include="src\Serialization.hpp" />
     <ClCompile Include="src\SceneElement.cpp" />
