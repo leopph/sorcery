@@ -1,11 +1,17 @@
 {
 	"$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
-	"name": "leopphengine-runtime-native",
-	"version": "1.0",
 	"dependencies": [
-		"yaml-cpp",
-		"stb",
-		"zlib",
-		"rttr"
+		{
+			"name": "yaml-cpp"
+		},
+		{
+			"name": "stb"
+		},
+		{
+			"name": "zlib"
+		},
+		{
+			"name": "rttr"
+		}
 	]
 }

@@ -1,17 +1,30 @@
 {
   "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
   "dependencies": [
-    "yaml-cpp",
-    "assimp",
-    "nativefiledialog",
-    "stb",
-    "rttr",
+    {
+      "name": "yaml-cpp"
+    },
+    {
+      "name": "assimp"
+    },
+    {
+      "name": "nativefiledialog"
+    },
+    {
+      "name": "stb"
+    },
+    {
+      "name": "rttr"
+    },
     {
       "name": "imgui",
-      "default-features": false,
       "features": [ "docking-experimental", "dx11-binding", "win32-binding" ]
     },
-    "imguizmo",
-    "implot"
+    {
+      "name": "imguizmo"
+    },
+    {
+      "name": "implot"
+    }
   ]
 }
