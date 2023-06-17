@@ -5,15 +5,9 @@ VisualStudioVersion = 17.0.32112.339
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Editor", "Editor\Editor.vcxproj", "{C25EFA86-F3B2-452C-9A0C-1BD4DA533296}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ImGui", "ImGui\ImGui.vcxproj", "{2359E10D-1161-46ED-BA5D-2AF984E94C63}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ImGuizmo", "Imguizmo\ImGuizmo.vcxproj", "{2A6ED170-49A3-481A-B2D3-E26FE009653A}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RuntimeNative", "RuntimeNative\RuntimeNative.vcxproj", "{60A69D92-FA99-4F5C-804C-1DFF2CE460AD}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ImPlot", "ImPlot\ImPlot.vcxproj", "{FF7C6B4C-5309-4162-9E8E-95933613A389}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BinaryEmbed", "BinaryEmbed\BinaryEmbed.vcxproj", "{1E147434-1926-4F30-AC32-C77A5930EF5E}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Runtime", "Runtime\RuntimeNative.vcxproj", "{60A69D92-FA99-4F5C-804C-1DFF2CE460AD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -25,26 +19,14 @@ Global
 		{C25EFA86-F3B2-452C-9A0C-1BD4DA533296}.Debug|x64.Build.0 = Debug|x64
 		{C25EFA86-F3B2-452C-9A0C-1BD4DA533296}.Release|x64.ActiveCfg = Release|x64
 		{C25EFA86-F3B2-452C-9A0C-1BD4DA533296}.Release|x64.Build.0 = Release|x64
-		{2359E10D-1161-46ED-BA5D-2AF984E94C63}.Debug|x64.ActiveCfg = Debug|x64
-		{2359E10D-1161-46ED-BA5D-2AF984E94C63}.Debug|x64.Build.0 = Debug|x64
-		{2359E10D-1161-46ED-BA5D-2AF984E94C63}.Release|x64.ActiveCfg = Release|x64
-		{2359E10D-1161-46ED-BA5D-2AF984E94C63}.Release|x64.Build.0 = Release|x64
-		{2A6ED170-49A3-481A-B2D3-E26FE009653A}.Debug|x64.ActiveCfg = Debug|x64
-		{2A6ED170-49A3-481A-B2D3-E26FE009653A}.Debug|x64.Build.0 = Debug|x64
-		{2A6ED170-49A3-481A-B2D3-E26FE009653A}.Release|x64.ActiveCfg = Release|x64
-		{2A6ED170-49A3-481A-B2D3-E26FE009653A}.Release|x64.Build.0 = Release|x64
-		{60A69D92-FA99-4F5C-804C-1DFF2CE460AD}.Debug|x64.ActiveCfg = Debug|x64
-		{60A69D92-FA99-4F5C-804C-1DFF2CE460AD}.Debug|x64.Build.0 = Debug|x64
-		{60A69D92-FA99-4F5C-804C-1DFF2CE460AD}.Release|x64.ActiveCfg = Release|x64
-		{60A69D92-FA99-4F5C-804C-1DFF2CE460AD}.Release|x64.Build.0 = Release|x64
-		{FF7C6B4C-5309-4162-9E8E-95933613A389}.Debug|x64.ActiveCfg = Debug|x64
-		{FF7C6B4C-5309-4162-9E8E-95933613A389}.Debug|x64.Build.0 = Debug|x64
-		{FF7C6B4C-5309-4162-9E8E-95933613A389}.Release|x64.ActiveCfg = Release|x64
-		{FF7C6B4C-5309-4162-9E8E-95933613A389}.Release|x64.Build.0 = Release|x64
 		{1E147434-1926-4F30-AC32-C77A5930EF5E}.Debug|x64.ActiveCfg = Debug|x64
 		{1E147434-1926-4F30-AC32-C77A5930EF5E}.Debug|x64.Build.0 = Debug|x64
 		{1E147434-1926-4F30-AC32-C77A5930EF5E}.Release|x64.ActiveCfg = Release|x64
 		{1E147434-1926-4F30-AC32-C77A5930EF5E}.Release|x64.Build.0 = Release|x64
+		{60A69D92-FA99-4F5C-804C-1DFF2CE460AD}.Debug|x64.ActiveCfg = Debug|x64
+		{60A69D92-FA99-4F5C-804C-1DFF2CE460AD}.Debug|x64.Build.0 = Debug|x64
+		{60A69D92-FA99-4F5C-804C-1DFF2CE460AD}.Release|x64.ActiveCfg = Release|x64
+		{60A69D92-FA99-4F5C-804C-1DFF2CE460AD}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

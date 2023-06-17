@@ -397,7 +397,6 @@ FodyWeavers.xsd
 # JetBrains Rider
 *.sln.iml
 
-# Custom for LeopphEngine
-bin
-RuntimeNative/src/shaders/generated
-*vcpkg_installed
+# LeopphEngine
+Editor/vcpkg_installed
+Runtime/vcpkg_installed

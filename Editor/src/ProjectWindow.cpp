@@ -7,7 +7,7 @@
 #include <nfd.h>
 #include <stb_image.h>
 #include <stb_image_write.h>
-#include <misc/cpp/imgui_stdlib.h>
+#include <imgui_stdlib.h>
 
 #include <functional>
 #include <optional>

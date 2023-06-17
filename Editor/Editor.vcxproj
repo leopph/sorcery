@@ -46,13 +46,13 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)bin\$(Configuration)\</OutDir>
-    <IntDir>$(ProjectDir)obj\$(Configuration)\</IntDir>
+    <IntDir>$(SolutionDir)int\$(ProjectName)\$(Configuration)\</IntDir>
     <TargetName>LeopphEditor</TargetName>
     <CopyLocalDeploymentContent>true</CopyLocalDeploymentContent>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)bin\$(Configuration)\</OutDir>
-    <IntDir>$(ProjectDir)obj\$(Configuration)\</IntDir>
+    <IntDir>$(SolutionDir)int\$(ProjectName)\$(Configuration)\</IntDir>
     <TargetName>LeopphEditor</TargetName>
     <CopyLocalDeploymentContent>true</CopyLocalDeploymentContent>
   </PropertyGroup>
@@ -164,16 +164,7 @@
     <ClInclude Include="src\Widgets.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Imguizmo\ImGuizmo.vcxproj">
-      <Project>{2a6ed170-49a3-481a-b2d3-e26fe009653a}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\ImGui\ImGui.vcxproj">
-      <Project>{2359e10d-1161-46ed-ba5d-2af984e94c63}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\ImPlot\ImPlot.vcxproj">
-      <Project>{ff7c6b4c-5309-4162-9e8e-95933613a389}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\RuntimeNative\RuntimeNative.vcxproj">
+    <ProjectReference Include="..\Runtime\RuntimeNative.vcxproj">
       <Project>{60a69d92-fa99-4f5c-804c-1dff2ce460ad}</Project>
     </ProjectReference>
   </ItemGroup>

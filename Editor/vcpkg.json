@@ -1,11 +1,17 @@
 {
-	"name": "leopphengine-editor",
-	"version": "1.0",
-	"dependencies": [
-		"yaml-cpp",
-		"assimp",
-		"nativefiledialog",
-		"stb",
-		"rttr"
-	]
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "dependencies": [
+    "yaml-cpp",
+    "assimp",
+    "nativefiledialog",
+    "stb",
+    "rttr",
+    {
+      "name": "imgui",
+      "default-features": false,
+      "features": [ "docking-experimental", "dx11-binding", "win32-binding" ]
+    },
+    "imguizmo",
+    "implot"
+  ]
 }
