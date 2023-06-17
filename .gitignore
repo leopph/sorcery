@@ -397,7 +397,7 @@ FodyWeavers.xsd
 # JetBrains Rider
 *.sln.iml
 
-# LeopphEngine
-Editor/vcpkg_installed
-Runtime/vcpkg_installed
-Runtime/src/shaders/generated
+# Sorcery
+Mage/vcpkg_installed
+Sorcery/vcpkg_installed
+Sorcery/src/shaders/generated

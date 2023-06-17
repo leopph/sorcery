@@ -1,0 +1,37 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.32112.339
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BinaryEmbed", "BinaryEmbed\BinaryEmbed.vcxproj", "{1E147434-1926-4F30-AC32-C77A5930EF5E}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Mage", "Mage\Mage.vcxproj", "{C25EFA86-F3B2-452C-9A0C-1BD4DA533296}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Sorcery", "Sorcery\Sorcery.vcxproj", "{60A69D92-FA99-4F5C-804C-1DFF2CE460AD}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1E147434-1926-4F30-AC32-C77A5930EF5E}.Debug|x64.ActiveCfg = Debug|x64
+		{1E147434-1926-4F30-AC32-C77A5930EF5E}.Debug|x64.Build.0 = Debug|x64
+		{1E147434-1926-4F30-AC32-C77A5930EF5E}.Release|x64.ActiveCfg = Release|x64
+		{1E147434-1926-4F30-AC32-C77A5930EF5E}.Release|x64.Build.0 = Release|x64
+		{C25EFA86-F3B2-452C-9A0C-1BD4DA533296}.Debug|x64.ActiveCfg = Debug|x64
+		{C25EFA86-F3B2-452C-9A0C-1BD4DA533296}.Debug|x64.Build.0 = Debug|x64
+		{C25EFA86-F3B2-452C-9A0C-1BD4DA533296}.Release|x64.ActiveCfg = Release|x64
+		{C25EFA86-F3B2-452C-9A0C-1BD4DA533296}.Release|x64.Build.0 = Release|x64
+		{60A69D92-FA99-4F5C-804C-1DFF2CE460AD}.Debug|x64.ActiveCfg = Debug|x64
+		{60A69D92-FA99-4F5C-804C-1DFF2CE460AD}.Debug|x64.Build.0 = Debug|x64
+		{60A69D92-FA99-4F5C-804C-1DFF2CE460AD}.Release|x64.ActiveCfg = Release|x64
+		{60A69D92-FA99-4F5C-804C-1DFF2CE460AD}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {5296D7E2-257A-4DBF-93C8-817EA6C0CB45}
+	EndGlobalSection
+EndGlobal

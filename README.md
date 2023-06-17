@@ -1,10 +1,12 @@
-# ⚙ LeopphEngine ⚙
+# 🪄 Sorcery 🪄
 
-## About the project
-LeopphEngine (pronounced "lœff") is my solo-project game engine. I started building it to learn about game development technology, as this is my strongest interest. I used it as my CS BSc thesis and now I'm continuously improving it, adding more features to it. I'm planning to use it as my MSc thesis and future reference work. The name, as stupid as it may sound, comes from my last name. No, I couldn't come up with anything better. Yes, seriously.
+Sorcery is my homemade game engine that I started developing during my second BSc year as a way to learn about the technologies behind video games. I have used it as my BSc thesis and planning to use it as my MSc thesis too. Generally it lacks quite a few features, mainly because I can work on it only in my free time and I also keep reworking systems forever and ever as I learn new things. Basically I use it to implement, integrate, and play with ideas I come across as well my own.
 
-## History
-Originally LeopphEngine was a simple C++ runtime library that one could link against to create simple interactive 3D environments. The current development direction however is to create a fully featured editor capable of building levels, managing projects and resources, and exporting game executables, and to build the runtime layer on top of this.
+## Features
+Sorcery's renderer is built on DX11 and uses a built-in forward PBR pipeline with cascaded shadow maps for directional lights, classic shadow maps for spotlights and pointlights, all in atlases, using PCF filtering and normal mapping. There's a scripting layer using C++ that currently implements a Unity-like object-component system. Sorcery's editor, Mage, is a full-fledged tool with world editing, project management, asset importing, and much more.
+
+## History and Direction
+Sorcery has gone through many iterations over the years. Originally it was called LeopphEngine (pronounced "lœff", from my last name) and was only a simple C++ library running on top of OpenGL that you could link against and use kinda like you would a three.js, just in C++. The current direction is to make it a minimum viable but complete game engine.
 
 ## Used technologies and third-party libraries
 Non-exhaustive list of core components:
@@ -26,4 +28,4 @@ Non-exhaustive list of core components:
 - Run **setup.bat** from the root directory
 - Build the solution in the root directory
 ### Usage
-The compilation products are a set of runtime libraries and an editor executable. To use the engine, run the editor. The libraries are not meant to be consumed directly, instead they are part of the editor and the games exported through it.
+Just open Mage and poke around in it!
