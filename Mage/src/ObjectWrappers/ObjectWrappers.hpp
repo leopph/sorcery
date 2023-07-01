@@ -12,7 +12,7 @@
 #include "Cubemap.hpp"
 #include "SceneElement.hpp"
 #include "SkyboxComponent.hpp"
-#include "StaticRigidBody.hpp"
+#include "RigidBody.hpp"
 
 #include <concepts>
 #include <filesystem>

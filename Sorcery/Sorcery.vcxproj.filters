@@ -93,7 +93,7 @@
     <ClCompile Include="src\PhysicsManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\StaticRigidBody.cpp">
+    <ClCompile Include="src\RigidBody.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -194,7 +194,7 @@
     <ClInclude Include="src\PhysicsManager.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\StaticRigidBody.hpp">
+    <ClInclude Include="src\RigidBody.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

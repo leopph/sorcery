@@ -127,7 +127,7 @@
     <ClCompile Include="src\Object.cpp" />
     <ClCompile Include="src\Renderer.cpp" />
     <ClCompile Include="src\Scene.cpp" />
-    <ClCompile Include="src\StaticRigidBody.cpp" />
+    <ClCompile Include="src\RigidBody.cpp" />
     <ClCompile Include="src\Util.cpp" />
     <ClInclude Include="src\Cubemap.hpp" />
     <ClInclude Include="src\NativeAsset.hpp" />
@@ -162,7 +162,7 @@
     <ClInclude Include="src\Renderer.hpp" />
     <ClInclude Include="src\Scene.hpp" />
     <ClInclude Include="src\SkyboxComponent.hpp" />
-    <ClInclude Include="src\StaticRigidBody.hpp" />
+    <ClInclude Include="src\RigidBody.hpp" />
     <ClInclude Include="src\Texture2D.hpp" />
     <ClInclude Include="src\Timing.hpp" />
     <ClInclude Include="src\TransformComponent.hpp" />

@@ -5,7 +5,7 @@
 
 
 namespace sorcery {
-class StaticRigidBody : public Component {
+class RigidBody : public Component {
 public:
   LEOPPHAPI static Type const SerializationType;
 
@@ -13,11 +13,11 @@ public:
   LEOPPHAPI auto Serialize(YAML::Node& node) const -> void override;
   LEOPPHAPI auto Deserialize(YAML::Node const& node) -> void override;
 
-  LEOPPHAPI StaticRigidBody();
-  LEOPPHAPI ~StaticRigidBody() override;
+  LEOPPHAPI RigidBody();
+  LEOPPHAPI ~RigidBody() override;
 
 private:
   RTTR_ENABLE(Component)
-  ObserverPtr<InternalStaticRigidBody> mInternalPtr;
+  ObserverPtr<InternalRigidBody> mInternalPtr;
 };
 }

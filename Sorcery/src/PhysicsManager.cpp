@@ -11,7 +11,9 @@
 
 #include <PxPhysicsAPI.h>
 
+#include "Entity.hpp"
 #include "Timing.hpp"
+#include "TransformComponent.hpp"
 
 
 namespace sorcery {
@@ -32,7 +34,21 @@ class PhysicsManager::Impl {
   physx::PxScene* mScene{ nullptr };
   float mAccumTime{ 0 };
   float mSimStepSize{ 1.0f / 60.0f };
-  std::vector<std::unique_ptr<InternalStaticRigidBody>> mStaticRigidBodies;
+  std::vector<std::unique_ptr<InternalRigidBody>> mInternalRigidBodies;
+
+
+  [[nodiscard]] static auto ConvertTransformToPxTransform(TransformComponent const& transform) noexcept -> physx::PxTransform {
+    physx::PxTransform pxTransform;
+    pxTransform.p = physx::PxVec3{ transform.GetWorldPosition()[0], transform.GetWorldPosition()[1], transform.GetWorldPosition()[2] };
+    pxTransform.q = physx::PxQuat{ transform.GetWorldRotation().x, transform.GetWorldRotation().y, transform.GetWorldRotation().z, transform.GetWorldRotation().w };
+    return pxTransform;
+  }
+
+
+  static auto ConvertPxTransformToTransform(physx::PxTransform const& pxTransform, TransformComponent& transform) noexcept -> void {
+    transform.SetWorldPosition(Vector3{ pxTransform.p.x, pxTransform.p.y, pxTransform.p.z });
+    transform.SetWorldRotation(Quaternion{ pxTransform.q.w, pxTransform.q.x, pxTransform.q.y, pxTransform.q.z });
+  }
 
 public:
   auto StartUp() -> void {
@@ -70,6 +86,13 @@ public:
 
 
   auto Update() -> void {
+    for (auto const& rigidBody : mInternalRigidBodies) {
+      auto const pxRigidDynamic{ static_cast<physx::PxRigidDynamic*>(rigidBody->mData) };
+      auto const owningComponent{ static_cast<Component*>(pxRigidDynamic->userData) };
+      auto const& transform{ owningComponent->GetEntity()->GetTransform() };
+      pxRigidDynamic->setGlobalPose(ConvertTransformToPxTransform(transform));
+    }
+
     auto const frameTime{ timing::GetFrameTime() };
     mAccumTime += frameTime;
 
@@ -78,26 +101,34 @@ public:
       mScene->simulate(mSimStepSize);
       mScene->fetchResults(true);
     }
+
+    for (auto const& rigidBody : mInternalRigidBodies) {
+      auto const pxRigidDynamic{ static_cast<physx::PxRigidDynamic*>(rigidBody->mData) };
+      auto const owningComponent{ static_cast<Component*>(pxRigidDynamic->userData) };
+      auto& transform{ owningComponent->GetEntity()->GetTransform() };
+      ConvertPxTransformToTransform(pxRigidDynamic->getGlobalPose(), transform);
+    }
   }
 
 
-  [[nodiscard]] auto CreateInternalStaticRigidBody() -> ObserverPtr<InternalStaticRigidBody> {
-    auto const pxRigidStatic{ mPhysics->createRigidStatic(physx::PxTransform{ physx::PxIdentity }) };
-    mScene->addActor(*pxRigidStatic);
+  [[nodiscard]] auto CreateInternalRigidBody(ObserverPtr<Component> const owningComponent) -> ObserverPtr<InternalRigidBody> {
+    auto const pxRigidDynamic{ mPhysics->createRigidDynamic(physx::PxTransform{ physx::PxIdentity }) };
+    pxRigidDynamic->userData = owningComponent;
+    mScene->addActor(*pxRigidDynamic);
 
-    auto const& ret{ mStaticRigidBodies.emplace_back(std::make_unique<InternalStaticRigidBody>()) };
-    ret->mData = pxRigidStatic;
+    auto const& ret{ mInternalRigidBodies.emplace_back(std::make_unique<InternalRigidBody>()) };
+    ret->mData = pxRigidDynamic;
     return ret.get();
   }
 
 
-  auto DestroyInternalStaticRigidBody(ObserverPtr<InternalStaticRigidBody> const internalStaticRigidBody) -> void {
-    auto const pxRigidStatic{ static_cast<physx::PxRigidStatic*>(internalStaticRigidBody->mData) };
-    mScene->removeActor(*pxRigidStatic);
-    pxRigidStatic->release();
+  auto DestroyInternalRigidBody(ObserverPtr<InternalRigidBody> const internalRigidBody) -> void {
+    auto const pxRigidDynamic{ static_cast<physx::PxRigidDynamic*>(internalRigidBody->mData) };
+    mScene->removeActor(*pxRigidDynamic);
+    pxRigidDynamic->release();
 
-    std::erase_if(mStaticRigidBodies, [internalStaticRigidBody](auto const& elem) {
-      return elem.get() == internalStaticRigidBody;
+    std::erase_if(mInternalRigidBodies, [internalRigidBody](auto const& elem) {
+      return elem.get() == internalRigidBody;
     });
   }
 };
@@ -127,12 +158,12 @@ auto PhysicsManager::Update() const -> void {
 }
 
 
-auto PhysicsManager::CreateInternalStaticRigidBody() const -> ObserverPtr<InternalStaticRigidBody> {
-  return mImpl->CreateInternalStaticRigidBody();
+auto PhysicsManager::CreateInternalRigidBody(ObserverPtr<Component> const owningComponent) const -> ObserverPtr<InternalRigidBody> {
+  return mImpl->CreateInternalRigidBody(owningComponent);
 }
 
 
-auto PhysicsManager::DestroyInternalStaticRigidBody(ObserverPtr<InternalStaticRigidBody> const internalStaticRigidBody) const -> void {
-  return mImpl->DestroyInternalStaticRigidBody(internalStaticRigidBody);
+auto PhysicsManager::DestroyInternalRigidBody(ObserverPtr<InternalRigidBody> const internalRigidBody) const -> void {
+  return mImpl->DestroyInternalRigidBody(internalRigidBody);
 }
 }

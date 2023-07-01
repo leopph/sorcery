@@ -5,7 +5,10 @@
 
 
 namespace sorcery {
-class InternalStaticRigidBody {
+class Component;
+
+
+class InternalRigidBody {
   friend class PhysicsManager;
   void* mData;
 };
@@ -30,7 +33,7 @@ public:
   LEOPPHAPI auto ShutDown() const -> void;
   LEOPPHAPI auto Update() const -> void;
 
-  [[nodiscard]] LEOPPHAPI auto CreateInternalStaticRigidBody() const -> ObserverPtr<InternalStaticRigidBody>;
-  LEOPPHAPI auto DestroyInternalStaticRigidBody(ObserverPtr<InternalStaticRigidBody> internalStaticRigidBody) const -> void;
+  [[nodiscard]] LEOPPHAPI auto CreateInternalRigidBody(ObserverPtr<Component> owningComponent) const -> ObserverPtr<InternalRigidBody>;
+  LEOPPHAPI auto DestroyInternalRigidBody(ObserverPtr<InternalRigidBody> internalRigidBody) const -> void;
 };
 }

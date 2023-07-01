@@ -18,7 +18,7 @@ auto ObjectWrapperManager::Create() noexcept -> std::shared_ptr<ObjectWrapperMan
   ret->Register<Scene>();
   ret->Register<Cubemap>();
   ret->Register<SkyboxComponent>();
-  ret->Register<StaticRigidBody>();
+  ret->Register<RigidBody>();
 
   return ret;
 }
