@@ -119,6 +119,8 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
             context.GetScene()->Load(context.GetFactoryManager());
             context.SetSelectedObject(nullptr);
           }
+
+          sorcery::gPhysicsManager.Update();
         }
         else {
           if (GetKeyDown(sorcery::Key::F5)) {

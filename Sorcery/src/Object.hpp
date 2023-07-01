@@ -42,7 +42,8 @@ public:
     Scene,
     Texture2D,
     Cubemap,
-    Skybox
+    Skybox,
+    StaticRigidBody
   };
 
 

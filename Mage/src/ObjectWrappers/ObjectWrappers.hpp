@@ -12,6 +12,7 @@
 #include "Cubemap.hpp"
 #include "SceneElement.hpp"
 #include "SkyboxComponent.hpp"
+#include "StaticRigidBody.hpp"
 
 #include <concepts>
 #include <filesystem>
@@ -41,7 +42,8 @@ public:
   [[nodiscard]] auto Instantiate() -> Object* override {
     if constexpr (std::derived_from<Wrapped, SceneElement>) {
       return new Wrapped{};
-    } else {
+    }
+    else {
       throw std::runtime_error{ "The wrapped type has no associated instantiation function." };
     }
   }

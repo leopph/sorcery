@@ -57,7 +57,9 @@ auto ObjectWrapperFor<Entity>::OnDrawProperties(Context& context, Object& object
   if (ImGui::BeginPopupContextItem(nullptr, ImGuiPopupFlags_MouseButtonLeft)) {
     for (auto const& componentClass : rttr::type::get_by_name("Component").get_derived_classes()) {
       if (ImGui::MenuItem(componentClass.get_name().data())) {
-        entity.AddComponent(componentClass.create().get_value<std::shared_ptr<Component>>());
+        auto component{ componentClass.create().get_value<std::shared_ptr<Component>>() };
+        component->SetGuid(Guid::Generate()); // TODO guid should be generated automatically
+        entity.AddComponent(std::move(component));
         ImGui::CloseCurrentPopup();
       }
     }
