@@ -46,6 +46,8 @@ using Microsoft::WRL::ComPtr;
 
 namespace sorcery::renderer {
 namespace {
+constexpr auto AdjustClipPlanesForZMode(float& nearClipPlane, float& farClipPlane) -> void;
+
 // Normalized to [0, 1]
 std::array<float, MAX_CASCADE_COUNT - 1> gCascadeSplits{ 0.1f, 0.3f, 0.6f };
 int gCascadeCount{ 4 };
@@ -448,7 +450,10 @@ public:
           };
 
           auto const shadowViewMtx{ faceViewMatrices[shadowIdx] };
-          auto const shadowProjMtx{ Matrix4::PerspectiveAsymZLH(ToRadians(90), 1, light->GetRange(), light->GetShadowNearPlane()) };
+          auto shadowNearPlane{ light->GetShadowNearPlane() };
+          auto shadowFarPlane{ light->GetRange() };
+          AdjustClipPlanesForZMode(shadowNearPlane, shadowFarPlane);
+          auto const shadowProjMtx{ Matrix4::PerspectiveAsymZLH(ToRadians(90), 1, shadowNearPlane, shadowFarPlane) };
 
           subcell.emplace(shadowViewMtx * shadowProjMtx, lightIdxIdx, shadowIdx);
         }
@@ -511,37 +516,37 @@ public:
         Vector3 const farWorldForward{ cam.GetPosition() + cam.GetForwardAxis() * camFar };
 
         switch (cam.GetType()) {
-        case Camera::Type::Perspective: {
-          float const tanHalfFov{ std::tan(ToRadians(cam.GetHorizontalPerspectiveFov() / 2.0f)) };
-          float const nearExtentX{ camNear * tanHalfFov };
-          float const nearExtentY{ nearExtentX / aspectRatio };
-          float const farExtentX{ camFar * tanHalfFov };
-          float const farExtentY{ farExtentX / aspectRatio };
+          case Camera::Type::Perspective: {
+            float const tanHalfFov{ std::tan(ToRadians(cam.GetHorizontalPerspectiveFov() / 2.0f)) };
+            float const nearExtentX{ camNear * tanHalfFov };
+            float const nearExtentY{ nearExtentX / aspectRatio };
+            float const farExtentX{ camFar * tanHalfFov };
+            float const farExtentY{ farExtentX / aspectRatio };
 
-          ret[0] = nearWorldForward + cam.GetRightAxis() * nearExtentX + cam.GetUpAxis() * nearExtentY;
-          ret[1] = nearWorldForward - cam.GetRightAxis() * nearExtentX + cam.GetUpAxis() * nearExtentY;
-          ret[2] = nearWorldForward - cam.GetRightAxis() * nearExtentX - cam.GetUpAxis() * nearExtentY;
-          ret[3] = nearWorldForward + cam.GetRightAxis() * nearExtentX - cam.GetUpAxis() * nearExtentY;
-          ret[4] = farWorldForward + cam.GetRightAxis() * farExtentX + cam.GetUpAxis() * farExtentY;
-          ret[5] = farWorldForward - cam.GetRightAxis() * farExtentX + cam.GetUpAxis() * farExtentY;
-          ret[6] = farWorldForward - cam.GetRightAxis() * farExtentX - cam.GetUpAxis() * farExtentY;
-          ret[7] = farWorldForward + cam.GetRightAxis() * farExtentX - cam.GetUpAxis() * farExtentY;
-          break;
-        }
-        case Camera::Type::Orthographic: {
-          float const extentX{ cam.GetHorizontalOrthographicSize() / 2.0f };
-          float const extentY{ extentX / aspectRatio };
+            ret[0] = nearWorldForward + cam.GetRightAxis() * nearExtentX + cam.GetUpAxis() * nearExtentY;
+            ret[1] = nearWorldForward - cam.GetRightAxis() * nearExtentX + cam.GetUpAxis() * nearExtentY;
+            ret[2] = nearWorldForward - cam.GetRightAxis() * nearExtentX - cam.GetUpAxis() * nearExtentY;
+            ret[3] = nearWorldForward + cam.GetRightAxis() * nearExtentX - cam.GetUpAxis() * nearExtentY;
+            ret[4] = farWorldForward + cam.GetRightAxis() * farExtentX + cam.GetUpAxis() * farExtentY;
+            ret[5] = farWorldForward - cam.GetRightAxis() * farExtentX + cam.GetUpAxis() * farExtentY;
+            ret[6] = farWorldForward - cam.GetRightAxis() * farExtentX - cam.GetUpAxis() * farExtentY;
+            ret[7] = farWorldForward + cam.GetRightAxis() * farExtentX - cam.GetUpAxis() * farExtentY;
+            break;
+          }
+          case Camera::Type::Orthographic: {
+            float const extentX{ cam.GetHorizontalOrthographicSize() / 2.0f };
+            float const extentY{ extentX / aspectRatio };
 
-          ret[0] = nearWorldForward + cam.GetRightAxis() * extentX + cam.GetUpAxis() * extentY;
-          ret[1] = nearWorldForward - cam.GetRightAxis() * extentX + cam.GetUpAxis() * extentY;
-          ret[2] = nearWorldForward - cam.GetRightAxis() * extentX - cam.GetUpAxis() * extentY;
-          ret[3] = nearWorldForward + cam.GetRightAxis() * extentX - cam.GetUpAxis() * extentY;
-          ret[4] = farWorldForward + cam.GetRightAxis() * extentX + cam.GetUpAxis() * extentY;
-          ret[5] = farWorldForward - cam.GetRightAxis() * extentX + cam.GetUpAxis() * extentY;
-          ret[6] = farWorldForward - cam.GetRightAxis() * extentX - cam.GetUpAxis() * extentY;
-          ret[7] = farWorldForward + cam.GetRightAxis() * extentX - cam.GetUpAxis() * extentY;
-          break;
-        }
+            ret[0] = nearWorldForward + cam.GetRightAxis() * extentX + cam.GetUpAxis() * extentY;
+            ret[1] = nearWorldForward - cam.GetRightAxis() * extentX + cam.GetUpAxis() * extentY;
+            ret[2] = nearWorldForward - cam.GetRightAxis() * extentX - cam.GetUpAxis() * extentY;
+            ret[3] = nearWorldForward + cam.GetRightAxis() * extentX - cam.GetUpAxis() * extentY;
+            ret[4] = farWorldForward + cam.GetRightAxis() * extentX + cam.GetUpAxis() * extentY;
+            ret[5] = farWorldForward - cam.GetRightAxis() * extentX + cam.GetUpAxis() * extentY;
+            ret[6] = farWorldForward - cam.GetRightAxis() * extentX - cam.GetUpAxis() * extentY;
+            ret[7] = farWorldForward + cam.GetRightAxis() * extentX - cam.GetUpAxis() * extentY;
+            break;
+          }
         }
 
         return ret;
@@ -595,7 +600,10 @@ public:
             };
 
             auto const [aabbMin, aabbMax]{ AABB::FromVertices(cascadeVertsSP) };
-            Matrix4 const shadowProjMtx{ Matrix4::OrthographicAsymZLH(aabbMin[0], aabbMax[0], aabbMax[1], aabbMin[1], aabbMax[2], aabbMin[2] - light.GetShadowExtension()) };
+            auto shadowNearClipPlane{ aabbMin[2] - light.GetShadowExtension() };
+            auto shadowFarClipPlane{ aabbMax[2] };
+            AdjustClipPlanesForZMode(shadowNearClipPlane, shadowFarClipPlane);
+            Matrix4 const shadowProjMtx{ Matrix4::OrthographicAsymZLH(aabbMin[0], aabbMax[0], aabbMax[1], aabbMin[1], shadowNearClipPlane, shadowFarClipPlane) };
 
             return shadowViewMtx * shadowProjMtx;
           }
@@ -634,7 +642,10 @@ public:
             correctedCascadeCenter = Vector3{ Vector4{ correctedCascadeCenter, 1 } * baseViewInvMtx };
 
             Matrix4 const shadowViewMtx{ Matrix4::LookToLH(correctedCascadeCenter, light.GetDirection(), Vector3::Up()) };
-            Matrix4 const shadowProjMtx{ Matrix4::OrthographicAsymZLH(-sphereRadius, sphereRadius, sphereRadius, -sphereRadius, sphereRadius, -sphereRadius - light.GetShadowExtension()) };
+            auto shadowNearClipPlane{ -sphereRadius - light.GetShadowExtension() };
+            auto shadowFarClipPlane{ sphereRadius };
+            AdjustClipPlanesForZMode(shadowNearClipPlane, shadowFarClipPlane);
+            Matrix4 const shadowProjMtx{ Matrix4::OrthographicAsymZLH(-sphereRadius, sphereRadius, sphereRadius, -sphereRadius, shadowNearClipPlane, shadowFarClipPlane) };
 
             return shadowViewMtx * shadowProjMtx;
           }
@@ -1065,8 +1076,10 @@ struct Resources {
   ComPtr<ID3D11InputLayout> ilAllAttribs;
   ComPtr<ID3D11InputLayout> ilPos3Only;
 
-  ComPtr<ID3D11SamplerState> ssCmpPcf;
-  ComPtr<ID3D11SamplerState> ssCmpPoint;
+  ComPtr<ID3D11SamplerState> ssCmpPcfGreaterEqual;
+  ComPtr<ID3D11SamplerState> ssCmpPcfLessEqual;
+  ComPtr<ID3D11SamplerState> ssCmpPointGreaterEqual;
+  ComPtr<ID3D11SamplerState> ssCmpPointLessEqual;
   ComPtr<ID3D11SamplerState> ssAf16;
   ComPtr<ID3D11SamplerState> ssAf8;
   ComPtr<ID3D11SamplerState> ssAf4;
@@ -1077,8 +1090,10 @@ struct Resources {
   ComPtr<ID3D11RasterizerState> skyboxPassRS;
   ComPtr<ID3D11RasterizerState> shadowPassRS;
 
-  ComPtr<ID3D11DepthStencilState> dssShadowPass;
-  ComPtr<ID3D11DepthStencilState> dssDepthTestLessNoWrite;
+  ComPtr<ID3D11DepthStencilState> dssDepthTestGreaterWrite;
+  ComPtr<ID3D11DepthStencilState> dssDepthTestLessWrite;
+  ComPtr<ID3D11DepthStencilState> dssDepthTestLessEqualNoWrite;
+  ComPtr<ID3D11DepthStencilState> dssDepthTestGreaterEqualNoWrite;
 
   std::unique_ptr<Material> defaultMaterial;
   std::unique_ptr<Mesh> cubeMesh;
@@ -1214,6 +1229,65 @@ std::vector<ShaderLineGizmoVertexData> gLineGizmoVertexData;
 std::vector<Vector4> gGizmoColors;
 int gGizmoColorBufferSize{ 1 };
 int gLineGizmoVertexBufferSize{ 1 };
+
+constexpr bool IS_Z_MODE_REVERSED{ true };
+
+
+[[nodiscard]] auto GetSceneDrawDssForZMode() -> ComPtr<ID3D11DepthStencilState>& {
+  if constexpr (IS_Z_MODE_REVERSED) {
+    return gResources->dssDepthTestGreaterEqualNoWrite;
+  } else {
+    return gResources->dssDepthTestLessEqualNoWrite;
+  }
+}
+
+
+[[nodiscard]] auto GetShadowDrawDssForZMode() -> ComPtr<ID3D11DepthStencilState>& {
+  if constexpr (IS_Z_MODE_REVERSED) {
+    return gResources->dssDepthTestGreaterWrite;
+  } else {
+    return gResources->dssDepthTestLessWrite;
+  }
+}
+
+
+[[nodiscard]] auto GetSkyboxDrawDssForZMode() -> ComPtr<ID3D11DepthStencilState>& {
+  return GetShadowDrawDssForZMode();
+}
+
+
+[[nodiscard]] constexpr auto GetDepthClearValueForZMode() -> float {
+  if constexpr (IS_Z_MODE_REVERSED) {
+    return 0.0f;
+  } else {
+    return 1.0f;
+  }
+}
+
+
+[[nodiscard]] auto GetShadowPointSamplerForZMode() -> ComPtr<ID3D11SamplerState>& {
+  if constexpr (IS_Z_MODE_REVERSED) {
+    return gResources->ssCmpPointGreaterEqual;
+  } else {
+    return gResources->ssCmpPointLessEqual;
+  }
+}
+
+
+[[nodiscard]] auto GetShadowPcfSamplerForZMode() -> ComPtr<ID3D11SamplerState>& {
+  if constexpr (IS_Z_MODE_REVERSED) {
+    return gResources->ssCmpPcfGreaterEqual;
+  } else {
+    return gResources->ssCmpPcfLessEqual;
+  }
+}
+
+
+constexpr auto AdjustClipPlanesForZMode(float& nearClipPlane, float& farClipPlane) -> void {
+  if constexpr (IS_Z_MODE_REVERSED) {
+    std::swap(nearClipPlane, farClipPlane);
+  }
+}
 
 
 auto CreateDeviceAndContext() -> void {
@@ -1454,7 +1528,7 @@ auto CreateRasterizerStates() -> void {
 
 
 auto CreateDepthStencilStates() -> void {
-  D3D11_DEPTH_STENCIL_DESC constexpr shadowPassDesc{
+  D3D11_DEPTH_STENCIL_DESC constexpr depthTestGreaterWrite{
     .DepthEnable = TRUE,
     .DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL,
     .DepthFunc = D3D11_COMPARISON_GREATER,
@@ -1475,11 +1549,36 @@ auto CreateDepthStencilStates() -> void {
     }
   };
 
-  if (FAILED(gResources->device->CreateDepthStencilState(&shadowPassDesc, gResources->dssShadowPass.GetAddressOf()))) {
-    throw std::runtime_error{ "Failed to create shadow pass depth-stencil state." };
+  if (FAILED(gResources->device->CreateDepthStencilState(&depthTestGreaterWrite, gResources->dssDepthTestGreaterWrite.GetAddressOf()))) {
+    throw std::runtime_error{ "Failed to create depth-test greater write depth-stencil state." };
   }
 
-  D3D11_DEPTH_STENCIL_DESC constexpr depthTestLessNoWriteDesc{
+  D3D11_DEPTH_STENCIL_DESC constexpr depthTestLessrWrite{
+    .DepthEnable = TRUE,
+    .DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL,
+    .DepthFunc = D3D11_COMPARISON_LESS,
+    .StencilEnable = FALSE,
+    .StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK,
+    .StencilWriteMask = D3D11_DEFAULT_STENCIL_WRITE_MASK,
+    .FrontFace = {
+      .StencilFailOp = D3D11_STENCIL_OP_KEEP,
+      .StencilDepthFailOp = D3D11_STENCIL_OP_KEEP,
+      .StencilPassOp = D3D11_STENCIL_OP_KEEP,
+      .StencilFunc = D3D11_COMPARISON_ALWAYS
+    },
+    .BackFace = {
+      .StencilFailOp = D3D11_STENCIL_OP_KEEP,
+      .StencilDepthFailOp = D3D11_STENCIL_OP_KEEP,
+      .StencilPassOp = D3D11_STENCIL_OP_KEEP,
+      .StencilFunc = D3D11_COMPARISON_ALWAYS
+    }
+  };
+
+  if (FAILED(gResources->device->CreateDepthStencilState(&depthTestLessrWrite, gResources->dssDepthTestLessWrite.GetAddressOf()))) {
+    throw std::runtime_error{ "Failed to create depth-test less write depth-stencil state." };
+  }
+
+  D3D11_DEPTH_STENCIL_DESC constexpr depthTestLessEqualNoWriteDesc{
     .DepthEnable = TRUE,
     .DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO,
     .DepthFunc = D3D11_COMPARISON_LESS_EQUAL,
@@ -1500,8 +1599,33 @@ auto CreateDepthStencilStates() -> void {
     }
   };
 
-  if (FAILED(gResources->device->CreateDepthStencilState(&depthTestLessNoWriteDesc, gResources->dssDepthTestLessNoWrite.GetAddressOf()))) {
-    throw std::runtime_error{ "Failed to create depth-test less no-write DSS." };
+  if (FAILED(gResources->device->CreateDepthStencilState(&depthTestLessEqualNoWriteDesc, gResources->dssDepthTestLessEqualNoWrite.GetAddressOf()))) {
+    throw std::runtime_error{ "Failed to create depth-test less-or-equal no-write DSS." };
+  }
+
+  D3D11_DEPTH_STENCIL_DESC constexpr depthTestGreaterEqualNoWriteDesc{
+    .DepthEnable = TRUE,
+    .DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO,
+    .DepthFunc = D3D11_COMPARISON_GREATER_EQUAL,
+    .StencilEnable = FALSE,
+    .StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK,
+    .StencilWriteMask = D3D11_DEFAULT_STENCIL_WRITE_MASK,
+    .FrontFace = {
+      .StencilFailOp = D3D11_STENCIL_OP_KEEP,
+      .StencilDepthFailOp = D3D11_STENCIL_OP_KEEP,
+      .StencilPassOp = D3D11_STENCIL_OP_KEEP,
+      .StencilFunc = D3D11_COMPARISON_ALWAYS
+    },
+    .BackFace = {
+      .StencilFailOp = D3D11_STENCIL_OP_KEEP,
+      .StencilDepthFailOp = D3D11_STENCIL_OP_KEEP,
+      .StencilPassOp = D3D11_STENCIL_OP_KEEP,
+      .StencilFunc = D3D11_COMPARISON_ALWAYS
+    }
+  };
+
+  if (FAILED(gResources->device->CreateDepthStencilState(&depthTestGreaterEqualNoWriteDesc, gResources->dssDepthTestGreaterEqualNoWrite.GetAddressOf()))) {
+    throw std::runtime_error{ "Failed to create depth-test greater-or-equal no-write DSS." };
   }
 }
 
@@ -1513,7 +1637,7 @@ auto CreateShadowAtlases() -> void {
 
 
 auto CreateSamplerStates() -> void {
-  D3D11_SAMPLER_DESC constexpr cmpPcf{
+  D3D11_SAMPLER_DESC constexpr cmpPcfGreaterEqual{
     .Filter = D3D11_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT,
     .AddressU = D3D11_TEXTURE_ADDRESS_BORDER,
     .AddressV = D3D11_TEXTURE_ADDRESS_BORDER,
@@ -1526,11 +1650,28 @@ auto CreateSamplerStates() -> void {
     .MaxLOD = 0
   };
 
-  if (FAILED(gResources->device->CreateSamplerState(&cmpPcf, gResources->ssCmpPcf.GetAddressOf()))) {
-    throw std::runtime_error{ "Failed to create PCF comparison sampler state." };
+  if (FAILED(gResources->device->CreateSamplerState(&cmpPcfGreaterEqual, gResources->ssCmpPcfGreaterEqual.GetAddressOf()))) {
+    throw std::runtime_error{ "Failed to create PCF greater-equal comparison sampler state." };
   }
 
-  D3D11_SAMPLER_DESC constexpr cmpPointDesc{
+  D3D11_SAMPLER_DESC constexpr cmpPcfLessEqual{
+    .Filter = D3D11_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT,
+    .AddressU = D3D11_TEXTURE_ADDRESS_BORDER,
+    .AddressV = D3D11_TEXTURE_ADDRESS_BORDER,
+    .AddressW = D3D11_TEXTURE_ADDRESS_BORDER,
+    .MipLODBias = 0,
+    .MaxAnisotropy = 1,
+    .ComparisonFunc = D3D11_COMPARISON_LESS_EQUAL,
+    .BorderColor = { 0, 0, 0, 0 },
+    .MinLOD = 0,
+    .MaxLOD = 0
+  };
+
+  if (FAILED(gResources->device->CreateSamplerState(&cmpPcfLessEqual, gResources->ssCmpPcfLessEqual.GetAddressOf()))) {
+    throw std::runtime_error{ "Failed to create PCF less-equal comparison sampler state." };
+  }
+
+  D3D11_SAMPLER_DESC constexpr cmpPointGreaterEqualDesc{
     .Filter = D3D11_FILTER_COMPARISON_MIN_MAG_MIP_POINT,
     .AddressU = D3D11_TEXTURE_ADDRESS_BORDER,
     .AddressV = D3D11_TEXTURE_ADDRESS_BORDER,
@@ -1543,8 +1684,25 @@ auto CreateSamplerStates() -> void {
     .MaxLOD = 0
   };
 
-  if (FAILED(gResources->device->CreateSamplerState(&cmpPointDesc, gResources->ssCmpPoint.GetAddressOf()))) {
-    throw std::runtime_error{ "Failed to create point-filter comparison sampler state." };
+  if (FAILED(gResources->device->CreateSamplerState(&cmpPointGreaterEqualDesc, gResources->ssCmpPointGreaterEqual.GetAddressOf()))) {
+    throw std::runtime_error{ "Failed to create point-filter greater-equal comparison sampler state." };
+  }
+
+  D3D11_SAMPLER_DESC constexpr cmpPointLessEqualDesc{
+    .Filter = D3D11_FILTER_COMPARISON_MIN_MAG_MIP_POINT,
+    .AddressU = D3D11_TEXTURE_ADDRESS_BORDER,
+    .AddressV = D3D11_TEXTURE_ADDRESS_BORDER,
+    .AddressW = D3D11_TEXTURE_ADDRESS_BORDER,
+    .MipLODBias = 0,
+    .MaxAnisotropy = 1,
+    .ComparisonFunc = D3D11_COMPARISON_LESS_EQUAL,
+    .BorderColor = { 0, 0, 0, 0 },
+    .MinLOD = 0,
+    .MaxLOD = 0
+  };
+
+  if (FAILED(gResources->device->CreateSamplerState(&cmpPointLessEqualDesc, gResources->ssCmpPointLessEqual.GetAddressOf()))) {
+    throw std::runtime_error{ "Failed to create point-filter less-equal comparison sampler state." };
   }
 
   D3D11_SAMPLER_DESC constexpr af16Desc{
@@ -1878,7 +2036,7 @@ auto DrawSkybox(Matrix4 const& camViewMtx, Matrix4 const& camProjMtx) noexcept -
   auto const cb{ gResources->cbSkybox.Get() };
   gResources->context->VSSetConstantBuffers(CB_SLOT_SKYBOX_PASS, 1, &cb);
 
-  gResources->context->OMSetDepthStencilState(gResources->dssDepthTestLessNoWrite.Get(), 0);
+  gResources->context->OMSetDepthStencilState(gResources->dssDepthTestLessEqualNoWrite.Get(), 0);
   gResources->context->RSSetState(gResources->skyboxPassRS.Get());
 
   gResources->context->DrawIndexed(clamp_cast<UINT>(CUBE_INDICES.size()), 0, 0);
@@ -1891,11 +2049,11 @@ auto DrawSkybox(Matrix4 const& camViewMtx, Matrix4 const& camProjMtx) noexcept -
 
 auto DrawShadowMaps(ShadowAtlas const& atlas) -> void {
   gResources->context->OMSetRenderTargets(0, nullptr, atlas.GetDsv());
-  gResources->context->ClearDepthStencilView(atlas.GetDsv(), D3D11_CLEAR_DEPTH, 0, 0);
+  gResources->context->ClearDepthStencilView(atlas.GetDsv(), D3D11_CLEAR_DEPTH, GetDepthClearValueForZMode(), 0);
   gResources->context->VSSetShader(gResources->vsDepthOnly.Get(), nullptr, 0);
   gResources->context->PSSetShader(nullptr, nullptr, 0);
   gResources->context->VSSetConstantBuffers(CB_SLOT_DEPTH_ONLY_PASS, 1, gResources->cbDepthOnly.GetAddressOf());
-  gResources->context->OMSetDepthStencilState(gResources->dssShadowPass.Get(), 0);
+  gResources->context->OMSetDepthStencilState(GetShadowDrawDssForZMode().Get(), 0);
   gResources->context->RSSetState(gResources->shadowPassRS.Get());
 
   auto const cellSizeNorm{ atlas.GetNormalizedElementSize() };
@@ -2011,8 +2169,8 @@ auto DrawFullWithCameras(std::span<Camera const* const> const cameras, RenderTar
     .MaxDepth = 1
   };
 
-  gResources->context->PSSetSamplers(SAMPLER_SLOT_CMP_PCF, 1, gResources->ssCmpPcf.GetAddressOf());
-  gResources->context->PSSetSamplers(SAMPLER_SLOT_CMP_POINT, 1, gResources->ssCmpPoint.GetAddressOf());
+  gResources->context->PSSetSamplers(SAMPLER_SLOT_CMP_PCF, 1, GetShadowPcfSamplerForZMode().GetAddressOf());
+  gResources->context->PSSetSamplers(SAMPLER_SLOT_CMP_POINT, 1, GetShadowPointSamplerForZMode().GetAddressOf());
   gResources->context->PSSetSamplers(SAMPLER_SLOT_AF16, 1, gResources->ssAf16.GetAddressOf());
   gResources->context->PSSetSamplers(SAMPLER_SLOT_AF8, 1, gResources->ssAf8.GetAddressOf());
   gResources->context->PSSetSamplers(SAMPLER_SLOT_AF4, 1, gResources->ssAf4.GetAddressOf());
@@ -2067,7 +2225,7 @@ auto DrawFullWithCameras(std::span<Camera const* const> const cameras, RenderTar
     // Depth pre-pass
 
     gResources->context->OMSetRenderTargets(0, nullptr, rt.GetDsv());
-    gResources->context->OMSetDepthStencilState(nullptr, 0);
+    gResources->context->OMSetDepthStencilState(gResources->dssDepthTestLessWrite.Get(), 0);
 
     gResources->context->VSSetShader(gResources->vsDepthOnly.Get(), nullptr, 0);
     gResources->context->VSSetConstantBuffers(CB_SLOT_DEPTH_ONLY_PASS, 1, gResources->cbDepthOnly.GetAddressOf());
@@ -2077,7 +2235,7 @@ auto DrawFullWithCameras(std::span<Camera const* const> const cameras, RenderTar
 
     gResources->context->IASetInputLayout(gResources->ilPos3Only.Get());
 
-    gResources->context->ClearDepthStencilView(rt.GetDsv(), D3D11_CLEAR_DEPTH, 1, 0);
+    gResources->context->ClearDepthStencilView(rt.GetDsv(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 
     D3D11_MAPPED_SUBRESOURCE mappedCb;
     if (FAILED(gResources->context->Map(gResources->cbDepthOnly.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedCb))) {
@@ -2138,7 +2296,7 @@ auto DrawFullWithCameras(std::span<Camera const* const> const cameras, RenderTar
     gResources->context->VSSetConstantBuffers(CB_SLOT_PER_CAM, 1, gResources->cbPerCam.GetAddressOf());
 
     gResources->context->OMSetRenderTargets(1, std::array{ rt.GetHdrRtv() }.data(), rt.GetDsv());
-    gResources->context->OMSetDepthStencilState(gResources->dssDepthTestLessNoWrite.Get(), 0);
+    gResources->context->OMSetDepthStencilState(gResources->dssDepthTestLessEqualNoWrite.Get(), 0);
 
     gResources->context->PSSetShader(gResources->psMeshPbr.Get(), nullptr, 0);
     gResources->context->PSSetConstantBuffers(CB_SLOT_PER_CAM, 1, gResources->cbPerCam.GetAddressOf());
@@ -2236,11 +2394,11 @@ auto Camera::CalculateViewMatrix() const noexcept -> Matrix4 {
 
 auto Camera::CalculateProjectionMatrix(float const aspectRatio) const noexcept -> Matrix4 {
   switch (GetType()) {
-  case Type::Perspective:
-    return Matrix4::PerspectiveAsymZLH(ToRadians(Camera::HorizontalPerspectiveFovToVertical(GetHorizontalPerspectiveFov(), aspectRatio)), aspectRatio, GetNearClipPlane(), GetFarClipPlane());
+    case Type::Perspective:
+      return Matrix4::PerspectiveAsymZLH(ToRadians(Camera::HorizontalPerspectiveFovToVertical(GetHorizontalPerspectiveFov(), aspectRatio)), aspectRatio, GetNearClipPlane(), GetFarClipPlane());
 
-  case Type::Orthographic:
-    return Matrix4::OrthographicAsymZLH(GetHorizontalOrthographicSize(), GetHorizontalOrthographicSize() / aspectRatio, GetNearClipPlane(), GetFarClipPlane());
+    case Type::Orthographic:
+      return Matrix4::OrthographicAsymZLH(GetHorizontalOrthographicSize(), GetHorizontalOrthographicSize() / aspectRatio, GetNearClipPlane(), GetFarClipPlane());
   }
 
   return Matrix4{};
@@ -2469,43 +2627,43 @@ auto CullLights(Frustum const& frustumWS, Visibility& visibility) -> void {
 
   for (int lightIdx = 0; lightIdx < static_cast<int>(gLights.size()); lightIdx++) {
     switch (auto const light{ gLights[lightIdx] }; light->GetType()) {
-    case LightComponent::Type::Directional: {
-      visibility.lightIndices.emplace_back(lightIdx);
-      break;
-    }
-
-    case LightComponent::Type::Spot: {
-      auto const lightVerticesWS{
-        [light] {
-          auto vertices{ CalculateSpotLightLocalVertices(*light) };
-
-          for (auto const modelMtxNoScale{ CalculateModelMatrixNoScale(light->GetEntity()->GetTransform()) };
-               auto& vertex : vertices) {
-            vertex = Vector3{ Vector4{ vertex, 1 } * modelMtxNoScale };
-          }
-
-          return vertices;
-        }()
-      };
-
-      if (frustumWS.Intersects(AABB::FromVertices(lightVerticesWS))) {
+      case LightComponent::Type::Directional: {
         visibility.lightIndices.emplace_back(lightIdx);
+        break;
       }
 
-      break;
-    }
+      case LightComponent::Type::Spot: {
+        auto const lightVerticesWS{
+          [light] {
+            auto vertices{ CalculateSpotLightLocalVertices(*light) };
 
-    case LightComponent::Type::Point: {
-      BoundingSphere const boundsWS{
-        .center = Vector3{ light->GetEntity()->GetTransform().GetWorldPosition() },
-        .radius = light->GetRange()
-      };
+            for (auto const modelMtxNoScale{ CalculateModelMatrixNoScale(light->GetEntity()->GetTransform()) };
+                 auto& vertex : vertices) {
+              vertex = Vector3{ Vector4{ vertex, 1 } * modelMtxNoScale };
+            }
 
-      if (frustumWS.Intersects(boundsWS)) {
-        visibility.lightIndices.emplace_back(lightIdx);
+            return vertices;
+          }()
+        };
+
+        if (frustumWS.Intersects(AABB::FromVertices(lightVerticesWS))) {
+          visibility.lightIndices.emplace_back(lightIdx);
+        }
+
+        break;
       }
-      break;
-    }
+
+      case LightComponent::Type::Point: {
+        BoundingSphere const boundsWS{
+          .center = Vector3{ light->GetEntity()->GetTransform().GetWorldPosition() },
+          .radius = light->GetRange()
+        };
+
+        if (frustumWS.Intersects(boundsWS)) {
+          visibility.lightIndices.emplace_back(lightIdx);
+        }
+        break;
+      }
     }
   }
 }
