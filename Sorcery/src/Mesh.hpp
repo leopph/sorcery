@@ -17,6 +17,14 @@
 namespace sorcery {
 class Mesh final : public Object {
   RTTR_ENABLE(Object)
+  struct GeometryData {
+    std::vector<Vector3> positions;
+    std::vector<Vector3> normals;
+    std::vector<Vector2> uvs;
+    std::vector<Vector3> tangents;
+    std::vector<u32> indices;
+  };
+
 public:
   struct SubMeshData {
     int baseVertex;
@@ -37,9 +45,12 @@ public:
   };
 
 private:
-  Data mData;
-  Data mTempData;
+  GeometryData* mCPUData{ new GeometryData{} };
+  std::vector<SubMeshData> mSubmeshes;
   AABB mBounds{};
+  int mVertexCount{ 0 };
+  int mIndexCount{ 0 };
+  int mSubmeshCount{ 0 };
   Microsoft::WRL::ComPtr<ID3D11Buffer> mPosBuf;
   Microsoft::WRL::ComPtr<ID3D11Buffer> mNormBuf;
   Microsoft::WRL::ComPtr<ID3D11Buffer> mUvBuf;
@@ -52,29 +63,29 @@ private:
 public:
   Mesh() = default;
 
-  LEOPPHAPI explicit Mesh(Data data);
+  LEOPPHAPI explicit Mesh(Data data, bool keepDataInCPUMemory = true);
 
   [[nodiscard]] LEOPPHAPI auto GetPositions() const noexcept -> std::span<Vector3 const>;
-  LEOPPHAPI auto SetPositions(std::vector<Vector3> positions) noexcept -> void;
+  LEOPPHAPI auto SetPositions(std::vector<Vector3> positions, bool allocateCPUMemoryIfNeeded = true) noexcept -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetNormals() const noexcept -> std::span<Vector3 const>;
-  LEOPPHAPI auto SetNormals(std::vector<Vector3> normals) noexcept -> void;
+  LEOPPHAPI auto SetNormals(std::vector<Vector3> normals, bool allocateCPUMemoryIfNeeded = true) noexcept -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetUVs() const noexcept -> std::span<Vector2 const>;
-  LEOPPHAPI auto SetUVs(std::vector<Vector2> uvs) noexcept -> void;
+  LEOPPHAPI auto SetUVs(std::vector<Vector2> uvs, bool allocateCPUMemoryIfNeeded = true) noexcept -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetTangents() const noexcept -> std::span<Vector3 const>;
-  LEOPPHAPI auto SetTangents(std::vector<Vector3> tangents) noexcept -> void;
+  LEOPPHAPI auto SetTangents(std::vector<Vector3> tangents, bool allocateCPUMemoryIfNeeded = true) noexcept -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetIndices() const noexcept -> std::span<u32 const>;
-  LEOPPHAPI auto SetIndices(std::vector<u32> indices) noexcept -> void;
+  LEOPPHAPI auto SetIndices(std::vector<u32> indices, bool allocateCPUMemoryIfNeeded = true) noexcept -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetSubMeshes() const noexcept -> std::span<SubMeshData const>;
-  LEOPPHAPI auto SetSubMeshes(std::vector<SubMeshData> subMeshes) noexcept -> void;
+  LEOPPHAPI auto SetSubMeshes(std::vector<SubMeshData> subMeshes, bool allocateCPUMemoryIfNeeded = true) noexcept -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetBounds() const noexcept -> AABB const&;
 
-  LEOPPHAPI auto ValidateAndUpdate() -> void;
+  LEOPPHAPI auto ValidateAndUpdate(bool keepDataInCPUMemory = true) -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetSerializationType() const -> Type override;
 
@@ -86,6 +97,13 @@ public:
 
   LEOPPHAPI Type constexpr static SerializationType{ Type::Mesh };
 
-  LEOPPHAPI auto SetData(Data data) noexcept -> void;
+  LEOPPHAPI auto SetData(Data data, bool allocateCPUMemoryIfNeeded = true) noexcept -> void;
+
+  LEOPPHAPI auto ReleaseCPUMemory() -> void;
+  [[nodiscard]] LEOPPHAPI auto HasCPUMemory() const noexcept -> bool;
+
+  [[nodiscard]] LEOPPHAPI auto GetVertexCount() const noexcept -> int;
+  [[nodiscard]] LEOPPHAPI auto GetIndexCount() const noexcept -> int;
+  [[nodiscard]] LEOPPHAPI auto GetSubmeshCount() const noexcept -> int;
 };
 }

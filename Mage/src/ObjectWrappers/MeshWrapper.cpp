@@ -17,19 +17,19 @@ auto ObjectWrapperFor<Mesh>::OnDrawProperties([[maybe_unused]] Context& context,
     ImGui::Text("%s", "Vertex Count");
 
     ImGui::TableNextColumn();
-    ImGui::Text("%s", std::to_string(mesh.GetPositions().size()).c_str());
+    ImGui::Text("%s", std::to_string(mesh.GetVertexCount()).c_str());
 
     ImGui::TableNextColumn();
     ImGui::Text("%s", "Index Count");
 
     ImGui::TableNextColumn();
-    ImGui::Text("%s", std::to_string(mesh.GetIndices().size()).c_str());
+    ImGui::Text("%s", std::to_string(mesh.GetIndexCount()).c_str());
 
     ImGui::TableNextColumn();
     ImGui::Text("%s", "Submesh Count");
 
     ImGui::TableNextColumn();
-    ImGui::Text("%s", std::to_string(mesh.GetSubMeshes().size()).c_str());
+    ImGui::Text("%s", std::to_string(mesh.GetSubmeshCount()).c_str());
 
     ImGui::EndTable();
   }

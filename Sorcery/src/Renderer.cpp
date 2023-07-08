@@ -968,6 +968,7 @@ auto Renderer::Impl::CreateDefaultAssets() -> void {
   mCubeMesh->SetIndices(CUBE_INDICES);
   mCubeMesh->SetSubMeshes(std::vector{ Mesh::SubMeshData{ 0, 0, static_cast<int>(CUBE_INDICES.size()), "Material" } });
   mCubeMesh->ValidateAndUpdate();
+  mCubeMesh->ReleaseCPUMemory();
 
   mPlaneMesh = std::make_unique<Mesh>();
   mPlaneMesh->SetGuid(Guid{ 0, 2 });
@@ -979,6 +980,7 @@ auto Renderer::Impl::CreateDefaultAssets() -> void {
   mPlaneMesh->SetIndices(QUAD_INDICES);
   mPlaneMesh->SetSubMeshes(std::vector{ Mesh::SubMeshData{ 0, 0, static_cast<int>(QUAD_INDICES.size()), "Material" } });
   mPlaneMesh->ValidateAndUpdate();
+  mPlaneMesh->ReleaseCPUMemory();
 }
 
 
