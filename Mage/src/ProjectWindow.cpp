@@ -92,9 +92,7 @@ auto DrawProjectWindow(Context& context) -> void {
         [&context, currentAbsoluteDir](AssetLoader& assetLoader, std::filesystem::path const& srcPathAbs) {
           context.ExecuteInBusyEditor([&context, &assetLoader, srcPathAbs, currentAbsoluteDir] {
             auto const dstPath{
-              equivalent(srcPathAbs.parent_path(), currentAbsoluteDir) ?
-                srcPathAbs :
-                GenerateUniquePath(currentAbsoluteDir / srcPathAbs.filename())
+              equivalent(srcPathAbs.parent_path(), currentAbsoluteDir) ? srcPathAbs : GenerateUniquePath(currentAbsoluteDir / srcPathAbs.filename())
             };
 
             if (!exists(dstPath) || !equivalent(dstPath, srcPathAbs)) {
@@ -146,26 +144,27 @@ auto DrawProjectWindow(Context& context) -> void {
             renaming = RenameInfo{ .newName = newFolderPath.stem().string(), .src = newFolderPath };
           }
 
+          auto const saveNewNativeAsset{
+            [&context, currentAbsoluteDir](std::unique_ptr<NativeAsset> asset, std::string_view const targetAssetFileName) {
+              auto const dst{ GenerateUniquePath(currentAbsoluteDir / targetAssetFileName) };
+
+              asset->SetName(dst.stem().string());
+              asset->SetGuid(Guid::Generate());
+
+              auto const& assetRef{ *asset };
+
+              context.GetResources().RegisterAsset(std::move(asset), dst);
+              context.SaveRegisteredNativeAsset(assetRef);
+              context.CreateMetaFileForRegisteredAsset(assetRef);
+            }
+          };
+
           if (ImGui::MenuItem("Material")) {
-            auto const dst{ GenerateUniquePath(currentAbsoluteDir / "New Material.mtl") };
-
-            auto const mtl{ new Material{} };
-            mtl->SetName(dst.stem().string());
-
-            context.GetResources().RegisterAsset(std::unique_ptr<Object>{ mtl }, dst);
-            context.SaveRegisteredNativeAsset(*mtl);
-            context.CreateMetaFileForRegisteredAsset(*mtl);
+            saveNewNativeAsset(std::unique_ptr<NativeAsset>{ new Material{} }, "New Material.mtl");
           }
 
           if (ImGui::MenuItem("Scene##CreateSceneAsset")) {
-            auto const dstPath{ GenerateUniquePath(currentAbsoluteDir / "New Scene.scene") };
-
-            auto const scene{ new Scene{} };
-            scene->SetName(dstPath.stem().string());
-
-            context.GetResources().RegisterAsset(std::unique_ptr<Object>{ scene }, dstPath);
-            context.SaveRegisteredNativeAsset(*scene);
-            context.CreateMetaFileForRegisteredAsset(*scene);
+            saveNewNativeAsset(std::unique_ptr<NativeAsset>{ new Scene{} }, "New Scene.scene");
           }
 
           ImGui::EndMenu();
