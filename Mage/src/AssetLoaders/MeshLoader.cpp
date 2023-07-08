@@ -17,9 +17,6 @@
 
 namespace sorcery::mage {
 class MeshLoader::Impl {
-  Assimp::Importer mImporter;
-
-
   [[nodiscard]] static auto Convert(aiVector3D const& aiVec) noexcept -> Vector3 {
     return Vector3{ aiVec.x, aiVec.y, aiVec.z };
   }
@@ -36,15 +33,17 @@ class MeshLoader::Impl {
 
 public:
   [[nodiscard]] auto Import(std::filesystem::path const& path) -> Mesh::Data {
-    // Remove unnecessary scene elements
-    mImporter.SetPropertyInteger(AI_CONFIG_PP_RVC_FLAGS, aiComponent_ANIMATIONS | aiComponent_BONEWEIGHTS | aiComponent_CAMERAS | aiComponent_LIGHTS | aiComponent_COLORS);
-    // Remove point and line primitives
-    mImporter.SetPropertyInteger(AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_POINT | aiPrimitiveType_LINE);
+    Assimp::Importer importer;
 
-    auto const scene{ mImporter.ReadFile(path.string(), aiProcess_JoinIdenticalVertices | aiProcess_Triangulate | aiProcess_SortByPType | aiProcess_GenUVCoords | aiProcess_GenNormals | aiProcess_CalcTangentSpace | aiProcess_RemoveComponent | aiProcess_ConvertToLeftHanded) };
+    // Remove unnecessary scene elements
+    importer.SetPropertyInteger(AI_CONFIG_PP_RVC_FLAGS, aiComponent_ANIMATIONS | aiComponent_BONEWEIGHTS | aiComponent_CAMERAS | aiComponent_LIGHTS | aiComponent_COLORS);
+    // Remove point and line primitives
+    importer.SetPropertyInteger(AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_POINT | aiPrimitiveType_LINE);
+
+    auto const scene{ importer.ReadFile(path.string(), aiProcess_JoinIdenticalVertices | aiProcess_Triangulate | aiProcess_SortByPType | aiProcess_GenUVCoords | aiProcess_GenNormals | aiProcess_CalcTangentSpace | aiProcess_RemoveComponent | aiProcess_ConvertToLeftHanded) };
 
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
-      throw std::runtime_error{ std::format("Failed to import model at {}: {}.", path.string(), mImporter.GetErrorString()) };
+      throw std::runtime_error{ std::format("Failed to import model at {}: {}.", path.string(), importer.GetErrorString()) };
     }
 
     // Convert all mesh data
@@ -207,7 +206,7 @@ auto MeshLoader::Load(std::filesystem::path const& src, std::filesystem::path co
     Mesh::Data meshData;
     BinarySerializer<Mesh::Data>::Deserialize(fileData, endianness, meshData);
 
-    return std::make_unique<Mesh>(std::move(meshData));
+    return std::make_unique<Mesh>(std::move(meshData), false);
   }
 
   auto meshData{ mImpl->Import(src) };
@@ -219,7 +218,7 @@ auto MeshLoader::Load(std::filesystem::path const& src, std::filesystem::path co
     std::ranges::copy(cacheBinaryData, std::ostreambuf_iterator{ outCache });
   }
 
-  return std::make_unique<Mesh>(std::move(meshData));
+  return std::make_unique<Mesh>(std::move(meshData), false);
 }
 
 
