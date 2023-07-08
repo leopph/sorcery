@@ -8,7 +8,32 @@ RTTR_REGISTRATION {
 
 
 namespace sorcery {
+Scene* Scene::sActiveScene{ nullptr };
+std::vector<Scene*> Scene::sAllScenes;
 Object::Type const Scene::SerializationType{ Type::Scene };
+
+
+auto Scene::GetActiveScene() noexcept -> Scene* {
+  return sActiveScene;
+}
+
+
+Scene::Scene() {
+  sAllScenes.emplace_back(this);
+
+  if (!sActiveScene) {
+    sActiveScene = this;
+  }
+}
+
+
+Scene::~Scene() {
+  std::erase(sAllScenes, this);
+
+  if (sActiveScene == this) {
+    sActiveScene = sAllScenes.empty() ? nullptr : sAllScenes.back();
+  }
+}
 
 
 auto Scene::GetSerializationType() const -> Type {

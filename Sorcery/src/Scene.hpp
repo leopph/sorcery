@@ -14,10 +14,18 @@
 namespace sorcery {
 class Scene : public NativeAsset {
   RTTR_ENABLE(NativeAsset)
+  static Scene* sActiveScene;
+  static std::vector<Scene*> sAllScenes;
+
   std::vector<std::unique_ptr<Entity>> mEntities;
   YAML::Node mYamlData;
 
 public:
+  [[nodiscard]] LEOPPHAPI static auto GetActiveScene() noexcept -> Scene*;
+
+  LEOPPHAPI Scene();
+  LEOPPHAPI ~Scene() override;
+
   LEOPPHAPI static Type const SerializationType;
   LEOPPHAPI auto GetSerializationType() const -> Type override;
 
