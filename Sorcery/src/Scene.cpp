@@ -1,6 +1,7 @@
 #include "Scene.hpp"
 
 #include "SceneElement.hpp"
+#include "Platform.hpp"
 
 RTTR_REGISTRATION {
   rttr::registration::class_<sorcery::Scene>{ "Scene" };
@@ -115,8 +116,14 @@ auto Scene::Load(ObjectInstantiatorManager const& manager) -> void {
     auto const guid{ Guid::Parse(mYamlData[i]["guid"].as<std::string>()) };
 
     if (auto const obj{ dynamic_cast<SceneElement*>(manager.GetFor(static_cast<Type>(mYamlData[i]["objectType"].as<int>())).Instantiate()) }) {
-      obj->SetGuid(guid);
-      objectsWithSerializedData.emplace_back(obj, mYamlData[i]["data"]);
+      try {
+        obj->SetGuid(guid);
+        objectsWithSerializedData.emplace_back(obj, mYamlData[i]["data"]);
+      } catch (std::exception const& ex) {
+        DisplayError(std::format("Failed to instantiate an Object. {}", ex.what()));
+      } catch (...) {
+        DisplayError("Failed to instantiate an object.");
+      }
     }
   }
 
