@@ -12,8 +12,8 @@ RTTR_REGISTRATION {
 namespace sorcery {
 void Texture2D::UploadToGPU() {
   D3D11_TEXTURE2D_DESC const texDesc{
-    .Width = clamp_cast<UINT>(mImgData.get_width()),
-    .Height = clamp_cast<UINT>(mImgData.get_height()),
+    .Width = clamp_cast<UINT>(mImgData->get_width()),
+    .Height = clamp_cast<UINT>(mImgData->get_height()),
     .MipLevels = 1,
     .ArraySize = 1,
     .Format = DXGI_FORMAT_R8G8B8A8_UNORM,
@@ -24,8 +24,8 @@ void Texture2D::UploadToGPU() {
     .MiscFlags = 0
   };
   D3D11_SUBRESOURCE_DATA const texData{
-    .pSysMem = mImgData.get_data().data(),
-    .SysMemPitch = mImgData.get_width() * mImgData.get_num_channels()
+    .pSysMem = mImgData->get_data().data(),
+    .SysMemPitch = mImgData->get_width() * mImgData->get_num_channels()
   };
 
   if (FAILED(gRenderer.GetDevice()->CreateTexture2D(&texDesc, &texData, mTex.ReleaseAndGetAddressOf()))) {
@@ -47,19 +47,31 @@ void Texture2D::UploadToGPU() {
 }
 
 
-Texture2D::Texture2D(Image img) :
-  mTmpImgData{ std::move(img) } {
-  Update();
+Texture2D::Texture2D(Image img, bool const keepDataInCPUMemory) {
+  SetImageData(std::move(img));
+  Update(keepDataInCPUMemory);
 }
 
 
-auto Texture2D::GetImageData() const noexcept -> Image const& {
-  return mImgData;
+auto Texture2D::GetImageData() const noexcept -> ObserverPtr<Image const> {
+  return mImgData ? mImgData : nullptr;
 }
 
 
-auto Texture2D::SetImageData(Image img) noexcept -> void {
-  mTmpImgData = std::move(img);
+auto Texture2D::SetImageData(Image img, bool const allocateCPUMemoryIfNeeded) noexcept -> void {
+  if (!mImgData) {
+    if (!allocateCPUMemoryIfNeeded) {
+      return;
+    }
+
+    mImgData = new Image{ std::move(img) };
+  } else {
+    *mImgData = std::move(img);
+  }
+
+  mWidth = mImgData->get_width();
+  mHeight = mImgData->get_height();
+  mChannelCount = mImgData->get_num_channels();
 }
 
 
@@ -68,13 +80,46 @@ auto Texture2D::GetSrv() const noexcept -> ObserverPtr<ID3D11ShaderResourceView>
 }
 
 
-auto Texture2D::Update() noexcept -> void {
-  mImgData = mTmpImgData;
-  UploadToGPU();
+auto Texture2D::Update(bool const keepDataInCPUMemory) noexcept -> void {
+  if (mImgData) {
+    UploadToGPU();
+
+    if (!keepDataInCPUMemory) {
+      ReleaseCPUMemory();
+    }
+  }
 }
 
 
 auto Texture2D::GetSerializationType() const -> Type {
   return SerializationType;
+}
+
+
+auto Texture2D::ReleaseCPUMemory() -> void {
+  if (mImgData) {
+    delete mImgData;
+    mImgData = nullptr;
+  }
+}
+
+
+auto Texture2D::HasCPUMemory() const noexcept -> bool {
+  return mImgData;
+}
+
+
+auto Texture2D::GetWidth() const noexcept -> int {
+  return mWidth;
+}
+
+
+auto Texture2D::GetHeight() const noexcept -> int {
+  return mHeight;
+}
+
+
+auto Texture2D::GetChannelCount() const noexcept -> int {
+  return mChannelCount;
 }
 }

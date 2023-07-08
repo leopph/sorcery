@@ -16,23 +16,33 @@ class Texture2D final : public Object {
   RTTR_ENABLE(Object)
   Microsoft::WRL::ComPtr<ID3D11Texture2D> mTex;
   Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> mSrv;
-  Image mImgData{};
-  Image mTmpImgData{};
+  Image* mImgData{ new Image{} };
+
+  int mWidth{ 0 };
+  int mHeight{ 0 };
+  int mChannelCount{ 0 };
 
   auto UploadToGPU() -> void;
 
 public:
   Texture2D() = default;
-  LEOPPHAPI explicit Texture2D(Image img);
+  LEOPPHAPI explicit Texture2D(Image img, bool keepDataInCPUMemory = false);
 
-  [[nodiscard]] LEOPPHAPI auto GetImageData() const noexcept -> Image const&;
-  LEOPPHAPI auto SetImageData(Image img) noexcept -> void;
+  [[nodiscard]] LEOPPHAPI auto GetImageData() const noexcept -> ObserverPtr<Image const>;
+  LEOPPHAPI auto SetImageData(Image img, bool allocateCPUMemoryIfNeeded = false) noexcept -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetSrv() const noexcept -> ObserverPtr<ID3D11ShaderResourceView>;
 
-  LEOPPHAPI auto Update() noexcept -> void;
+  LEOPPHAPI auto Update(bool keepDataInCPUMemory = false) noexcept -> void;
 
   LEOPPHAPI Type constexpr static SerializationType{ Type::Texture2D };
   [[nodiscard]] LEOPPHAPI auto GetSerializationType() const -> Type override;
+
+  LEOPPHAPI auto ReleaseCPUMemory() -> void;
+  [[nodiscard]] LEOPPHAPI auto HasCPUMemory() const noexcept -> bool;
+
+  [[nodiscard]] LEOPPHAPI auto GetWidth() const noexcept -> int;
+  [[nodiscard]] LEOPPHAPI auto GetHeight() const noexcept -> int;
+  [[nodiscard]] LEOPPHAPI auto GetChannelCount() const noexcept -> int;
 };
 }
