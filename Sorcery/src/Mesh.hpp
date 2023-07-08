@@ -63,29 +63,29 @@ private:
 public:
   Mesh() = default;
 
-  LEOPPHAPI explicit Mesh(Data data, bool keepDataInCPUMemory = true);
+  LEOPPHAPI explicit Mesh(Data data, bool keepDataInCPUMemory = false);
 
   [[nodiscard]] LEOPPHAPI auto GetPositions() const noexcept -> std::span<Vector3 const>;
-  LEOPPHAPI auto SetPositions(std::vector<Vector3> positions, bool allocateCPUMemoryIfNeeded = true) noexcept -> void;
+  LEOPPHAPI auto SetPositions(std::vector<Vector3> positions, bool allocateCPUMemoryIfNeeded = false) noexcept -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetNormals() const noexcept -> std::span<Vector3 const>;
-  LEOPPHAPI auto SetNormals(std::vector<Vector3> normals, bool allocateCPUMemoryIfNeeded = true) noexcept -> void;
+  LEOPPHAPI auto SetNormals(std::vector<Vector3> normals, bool allocateCPUMemoryIfNeeded = false) noexcept -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetUVs() const noexcept -> std::span<Vector2 const>;
-  LEOPPHAPI auto SetUVs(std::vector<Vector2> uvs, bool allocateCPUMemoryIfNeeded = true) noexcept -> void;
+  LEOPPHAPI auto SetUVs(std::vector<Vector2> uvs, bool allocateCPUMemoryIfNeeded = false) noexcept -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetTangents() const noexcept -> std::span<Vector3 const>;
-  LEOPPHAPI auto SetTangents(std::vector<Vector3> tangents, bool allocateCPUMemoryIfNeeded = true) noexcept -> void;
+  LEOPPHAPI auto SetTangents(std::vector<Vector3> tangents, bool allocateCPUMemoryIfNeeded = false) noexcept -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetIndices() const noexcept -> std::span<u32 const>;
-  LEOPPHAPI auto SetIndices(std::vector<u32> indices, bool allocateCPUMemoryIfNeeded = true) noexcept -> void;
+  LEOPPHAPI auto SetIndices(std::vector<u32> indices, bool allocateCPUMemoryIfNeeded = false) noexcept -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetSubMeshes() const noexcept -> std::span<SubMeshData const>;
-  LEOPPHAPI auto SetSubMeshes(std::vector<SubMeshData> subMeshes, bool allocateCPUMemoryIfNeeded = true) noexcept -> void;
+  LEOPPHAPI auto SetSubMeshes(std::vector<SubMeshData> subMeshes, bool allocateCPUMemoryIfNeeded = false) noexcept -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetBounds() const noexcept -> AABB const&;
 
-  LEOPPHAPI auto ValidateAndUpdate(bool keepDataInCPUMemory = true) -> void;
+  LEOPPHAPI auto ValidateAndUpdate(bool keepDataInCPUMemory = false) -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetSerializationType() const -> Type override;
 
@@ -97,7 +97,7 @@ public:
 
   LEOPPHAPI Type constexpr static SerializationType{ Type::Mesh };
 
-  LEOPPHAPI auto SetData(Data data, bool allocateCPUMemoryIfNeeded = true) noexcept -> void;
+  LEOPPHAPI auto SetData(Data data, bool allocateCPUMemoryIfNeeded = false) noexcept -> void;
 
   LEOPPHAPI auto ReleaseCPUMemory() -> void;
   [[nodiscard]] LEOPPHAPI auto HasCPUMemory() const noexcept -> bool;
