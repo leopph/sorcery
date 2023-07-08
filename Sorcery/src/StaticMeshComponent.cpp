@@ -3,6 +3,7 @@
 #include "Entity.hpp"
 #include "Renderer.hpp"
 #include "TransformComponent.hpp"
+#include "Systems.hpp"
 
 #include <format>
 #include <stdexcept>
@@ -22,21 +23,21 @@ auto StaticMeshComponent::AdjustMaterialListForMesh() -> void {
     mMaterials.resize(subMeshCount);
 
     for (std::size_t i{ mtlCount }; i < subMeshCount; i++) {
-      mMaterials[i] = renderer::GetDefaultMaterial();
+      mMaterials[i] = gRenderer.GetDefaultMaterial();
     }
   }
 }
 
 
 StaticMeshComponent::StaticMeshComponent() :
-  mMesh{ renderer::GetCubeMesh() } {
+  mMesh{ gRenderer.GetCubeMesh() } {
   AdjustMaterialListForMesh();
-  renderer::RegisterStaticMesh(this);
+  gRenderer.RegisterStaticMesh(this);
 }
 
 
 StaticMeshComponent::~StaticMeshComponent() {
-  renderer::UnregisterStaticMesh(this);
+  gRenderer.UnregisterStaticMesh(this);
 }
 
 
@@ -104,7 +105,7 @@ auto StaticMeshComponent::Deserialize(YAML::Node const& node) -> void {
   }
 
   if (!mMesh) {
-    mMesh = renderer::GetCubeMesh();
+    mMesh = gRenderer.GetCubeMesh();
   }
 
   mMaterials.clear();

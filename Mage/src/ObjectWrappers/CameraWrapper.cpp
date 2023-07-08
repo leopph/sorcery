@@ -21,14 +21,14 @@ auto ObjectWrapperFor<CameraComponent>::OnDrawProperties([[maybe_unused]] Contex
     ImGui::TableNextColumn();
 
     char const* const typeOptions[]{ "Perspective", "Orthographic" };
-    int selection{ cam.GetType() == renderer::Camera::Type::Perspective ? 0 : 1 };
+    int selection{ cam.GetType() == Camera::Type::Perspective ? 0 : 1 };
     if (ImGui::Combo("###CameraType", &selection, typeOptions, 2)) {
-      cam.SetType(selection == 0 ? renderer::Camera::Type::Perspective : renderer::Camera::Type::Orthographic);
+      cam.SetType(selection == 0 ? Camera::Type::Perspective : Camera::Type::Orthographic);
     }
 
     ImGui::TableNextColumn();
 
-    if (cam.GetType() == renderer::Camera::Type::Perspective) {
+    if (cam.GetType() == Camera::Type::Perspective) {
       ImGui::Text("Field Of View");
       ImGui::TableNextColumn();
       float value{ cam.GetHorizontalPerspectiveFov() };

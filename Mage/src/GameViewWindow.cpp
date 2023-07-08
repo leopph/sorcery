@@ -4,6 +4,7 @@
 
 #include "Core.hpp"
 #include "Renderer.hpp"
+#include "Systems.hpp"
 #include "Util.hpp"
 
 
@@ -29,18 +30,18 @@ auto DrawGameViewWindow(bool const gameRunning) -> void {
 
     if (ImGui::Combo("Resolution", &selectedRes, resolutionLabels, 7)) {
       if (selectedRes != 0) {
-        renderer::SetGameResolution(resolutions[selectedRes - 1]);
+        gRenderer.SetGameResolution(resolutions[selectedRes - 1]);
       }
     }
 
-    auto const gameRes = renderer::GetGameResolution();
+    auto const gameRes = gRenderer.GetGameResolution();
     auto const contentRegionSize = ImGui::GetContentRegionAvail();
     Extent2D const viewportRes{ static_cast<u32>(contentRegionSize.x), static_cast<u32>(contentRegionSize.y) };
     ImVec2 frameDisplaySize;
 
     if (selectedRes == 0) {
       if (viewportRes.width != gameRes.width || viewportRes.height != gameRes.height) {
-        renderer::SetGameResolution(viewportRes);
+        gRenderer.SetGameResolution(viewportRes);
       }
 
       frameDisplaySize = contentRegionSize;
@@ -49,8 +50,8 @@ auto DrawGameViewWindow(bool const gameRunning) -> void {
       frameDisplaySize = ImVec2(static_cast<f32>(gameRes.width) * scale, static_cast<f32>(gameRes.height) * scale);
     }
 
-    renderer::DrawGame();
-    ImGui::Image(renderer::GetGameFrame(), frameDisplaySize);
+    gRenderer.DrawGame();
+    ImGui::Image(gRenderer.GetGameFrame(), frameDisplaySize);
   } else {
     ImGui::PopStyleVar();
   }

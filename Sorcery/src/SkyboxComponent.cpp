@@ -1,6 +1,7 @@
 #include "SkyboxComponent.hpp"
 
 #include "Renderer.hpp"
+#include "Systems.hpp"
 
 RTTR_REGISTRATION {
   rttr::registration::class_<sorcery::SkyboxComponent>{ "SkyboxComponent" }
@@ -40,17 +41,17 @@ auto SkyboxComponent::GetCubemap() const noexcept -> Cubemap* {
 
 
 auto SkyboxComponent::SetCubemap(Cubemap* cubemap) noexcept -> void {
-  renderer::UnregisterSkybox(this);
+  gRenderer.UnregisterSkybox(this);
 
   mCubemap = cubemap;
 
   if (mCubemap) {
-    renderer::RegisterSkybox(this);
+    gRenderer.RegisterSkybox(this);
   }
 }
 
 
 SkyboxComponent::~SkyboxComponent() {
-  renderer::UnregisterSkybox(this);
+  gRenderer.UnregisterSkybox(this);
 }
 }

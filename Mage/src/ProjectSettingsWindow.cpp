@@ -1,5 +1,6 @@
 #include "ProjectSettingsWindow.hpp"
 #include "Renderer.hpp"
+#include "Systems.hpp"
 
 #include <imgui.h>
 
@@ -37,9 +38,9 @@ auto DrawProjectSettingsWindow(bool& isOpen) -> void {
       ImGui::Text("Shadow Distance");
       ImGui::SameLine();
 
-      float shadowDistance{ renderer::GetShadowDistance() };
+      float shadowDistance{ gRenderer.GetShadowDistance() };
       if (ImGui::InputFloat("##shadowDistanceInput", &shadowDistance, 0, 0, "%.3f", ImGuiInputTextFlags_EnterReturnsTrue)) {
-        renderer::SetShadowDistance(shadowDistance);
+        gRenderer.SetShadowDistance(shadowDistance);
       }
 
       ImGui::Text("Shadow Filtering Mode");
@@ -48,45 +49,45 @@ auto DrawProjectSettingsWindow(bool& isOpen) -> void {
       auto constexpr shadowFilteringModeNames{
         [] {
           std::array<char const*, 6> ret{};
-          ret[static_cast<int>(renderer::ShadowFilteringMode::None)] = "No Filtering";
-          ret[static_cast<int>(renderer::ShadowFilteringMode::HardwarePCF)] = "PCF 2x2 (hardware)";
-          ret[static_cast<int>(renderer::ShadowFilteringMode::PCF3x3)] = "PCF 3x3 (4 taps)";
-          ret[static_cast<int>(renderer::ShadowFilteringMode::PCFTent3x3)] = "PCF Tent 3x3 (4 taps)";
-          ret[static_cast<int>(renderer::ShadowFilteringMode::PCFTent5x5)] = "PCF Tent 5x5 (9 taps)";
-          ret[static_cast<int>(renderer::ShadowFilteringMode::PCSS)] = "PCSS";
+          ret[static_cast<int>(ShadowFilteringMode::None)] = "No Filtering";
+          ret[static_cast<int>(ShadowFilteringMode::HardwarePCF)] = "PCF 2x2 (hardware)";
+          ret[static_cast<int>(ShadowFilteringMode::PCF3x3)] = "PCF 3x3 (4 taps)";
+          ret[static_cast<int>(ShadowFilteringMode::PCFTent3x3)] = "PCF Tent 3x3 (4 taps)";
+          ret[static_cast<int>(ShadowFilteringMode::PCFTent5x5)] = "PCF Tent 5x5 (9 taps)";
+          ret[static_cast<int>(ShadowFilteringMode::PCSS)] = "PCSS";
           return ret;
         }()
       };
-      int currentShadowFilteringModeIdx{ static_cast<int>(renderer::GetShadowFilteringMode()) };
+      int currentShadowFilteringModeIdx{ static_cast<int>(gRenderer.GetShadowFilteringMode()) };
       if (ImGui::Combo("##ShadowFilteringModeCombo", &currentShadowFilteringModeIdx, shadowFilteringModeNames.data(), static_cast<int>(std::ssize(shadowFilteringModeNames)))) {
-        SetShadowFilteringMode(static_cast<renderer::ShadowFilteringMode>(currentShadowFilteringModeIdx));
+        gRenderer.SetShadowFilteringMode(static_cast<ShadowFilteringMode>(currentShadowFilteringModeIdx));
       }
 
       ImGui::Text("Visualize Shadow Cascades");
       ImGui::SameLine();
 
-      bool visualizeShadowCascades{ renderer::IsVisualizingShadowCascades() };
+      bool visualizeShadowCascades{ gRenderer.IsVisualizingShadowCascades() };
       if (ImGui::Checkbox("##VisualizeShadowCascadesCheckbox", &visualizeShadowCascades)) {
-        renderer::VisualizeShadowCascades(visualizeShadowCascades);
+        gRenderer.VisualizeShadowCascades(visualizeShadowCascades);
       }
 
       ImGui::Text("Stable Shadow Cascade Projection");
       ImGui::SameLine();
 
-      bool isUsingStableShadowCascadeProjection{ renderer::IsUsingStableShadowCascadeProjection() };
+      bool isUsingStableShadowCascadeProjection{ gRenderer.IsUsingStableShadowCascadeProjection() };
       if (ImGui::Checkbox("##StableShadowCascadeProjectionCheckbox", &isUsingStableShadowCascadeProjection)) {
-        renderer::UseStableShadowCascadeProjection(isUsingStableShadowCascadeProjection);
+        gRenderer.UseStableShadowCascadeProjection(isUsingStableShadowCascadeProjection);
       }
 
       ImGui::Text("Shadow Cascade Count");
       ImGui::SameLine();
 
-      int cascadeCount{ renderer::GetShadowCascadeCount() };
-      if (ImGui::SliderInt("##cascadeCountInput", &cascadeCount, 1, renderer::GetMaxShadowCascadeCount(), "%d", ImGuiSliderFlags_NoInput)) {
-        renderer::SetShadowCascadeCount(cascadeCount);
+      int cascadeCount{ gRenderer.GetShadowCascadeCount() };
+      if (ImGui::SliderInt("##cascadeCountInput", &cascadeCount, 1, gRenderer.GetMaxShadowCascadeCount(), "%d", ImGuiSliderFlags_NoInput)) {
+        gRenderer.SetShadowCascadeCount(cascadeCount);
       }
 
-      auto const cascadeSplits{ renderer::GetNormalizedShadowCascadeSplits() };
+      auto const cascadeSplits{ gRenderer.GetNormalizedShadowCascadeSplits() };
       auto const splitCount{ std::ssize(cascadeSplits) };
 
       for (int i = 0; i < splitCount; i++) {
@@ -96,7 +97,7 @@ auto DrawProjectSettingsWindow(bool& isOpen) -> void {
         float cascadeSplit{ cascadeSplits[i] * 100.0f };
 
         if (ImGui::SliderFloat(std::format("##cascadeSplit {} input", i).data(), &cascadeSplit, 0, 100, "%.3f", ImGuiSliderFlags_NoInput)) {
-          renderer::SetNormalizedShadowCascadeSplit(i, cascadeSplit / 100.0f);
+          gRenderer.SetNormalizedShadowCascadeSplit(i, cascadeSplit / 100.0f);
         }
       }
     }

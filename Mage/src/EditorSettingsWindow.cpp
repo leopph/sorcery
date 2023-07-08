@@ -7,6 +7,8 @@
 
 #include <limits>
 
+#include "Systems.hpp"
+
 
 namespace sorcery::mage {
 std::string_view const EDITOR_SETTINGS_WINDOW_TITLE{ "Editor Settings" };
@@ -52,9 +54,9 @@ auto DrawEditorSettingsWindow(bool& isOpen) -> void {
   ImGui::Text("%s", "In-Flight Frame Count");
   ImGui::SameLine();
 
-  int inFlightFrameCount{ renderer::GetInFlightFrameCount() };
-  if (ImGui::SliderInt("##InFlightFrameCountSlider", &inFlightFrameCount, renderer::MIN_IN_FLIGHT_FRAME_COUNT, renderer::MAX_IN_FLIGHT_FRAME_COUNT, "%d", ImGuiSliderFlags_AlwaysClamp)) {
-    renderer::SetInFlightFrameCount(inFlightFrameCount);
+  int inFlightFrameCount{ gRenderer.GetInFlightFrameCount() };
+  if (ImGui::SliderInt("##InFlightFrameCountSlider", &inFlightFrameCount, Renderer::MIN_IN_FLIGHT_FRAME_COUNT, Renderer::MAX_IN_FLIGHT_FRAME_COUNT, "%d", ImGuiSliderFlags_AlwaysClamp)) {
+    gRenderer.SetInFlightFrameCount(inFlightFrameCount);
   }
 
   ImGui::End();

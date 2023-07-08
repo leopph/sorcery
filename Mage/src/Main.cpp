@@ -37,7 +37,7 @@
 auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ HINSTANCE, _In_ wchar_t* const lpCmdLine, [[maybe_unused]] _In_ int) -> int {
   try {
     sorcery::gWindow.StartUp();
-    sorcery::renderer::StartUp();
+    sorcery::gRenderer.StartUp();
     sorcery::gPhysicsManager.StartUp();
 
     sorcery::gWindow.SetTitle("Mage");
@@ -45,8 +45,8 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
     sorcery::gWindow.SetWindowedClientAreaSize({ 1280, 720 });
     sorcery::gWindow.SetIgnoreManagedRequests(true);
 
-    sorcery::renderer::SetGameResolution({ 960, 540 });
-    sorcery::renderer::SetSyncInterval(0);
+    sorcery::gRenderer.SetGameResolution({ 960, 540 });
+    sorcery::gRenderer.SetSyncInterval(0);
 
     sorcery::timing::SetTargetFrameRate(sorcery::mage::DEFAULT_TARGET_FRAME_RATE);
 
@@ -62,7 +62,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
     ImGui::StyleColorsDark();
 
     ImGui_ImplWin32_Init(sorcery::gWindow.GetHandle());
-    ImGui_ImplDX11_Init(sorcery::renderer::GetDevice(), sorcery::renderer::GetImmediateContext());
+    ImGui_ImplDX11_Init(sorcery::gRenderer.GetDevice(), sorcery::gRenderer.GetImmediateContext());
 
     sorcery::gWindow.SetEventHook(sorcery::mage::EditorImGuiEventHook);
 
@@ -105,8 +105,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
       if (context.GetProjectDirectoryAbsolute().empty()) {
         DrawStartupScreen(context);
-      }
-      else {
+      } else {
         int static targetFrameRate{ sorcery::timing::GetTargetFrameRate() };
 
         if (runGame) {
@@ -121,8 +120,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
           }
 
           sorcery::gPhysicsManager.Update();
-        }
-        else {
+        } else {
           if (GetKeyDown(sorcery::Key::F5)) {
             runGame = true;
             sorcery::gWindow.SetEventHook({});
@@ -142,8 +140,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
           DrawEntityHierarchyWindow(context);
           sorcery::mage::DrawGameViewWindow(runGame);
           DrawSceneViewWindow(context);
-        }
-        else {
+        } else {
           sorcery::mage::DrawOpenScenePrompt();
         }
 
@@ -155,9 +152,9 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
       ImGui::Render();
 
-      sorcery::renderer::BindAndClearSwapChain();
+      sorcery::gRenderer.BindAndClearSwapChain();
       ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-      sorcery::renderer::Present();
+      sorcery::gRenderer.Present();
 
       sorcery::timing::OnFrameEnd();
     }
@@ -166,13 +163,12 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
     ImGui_ImplWin32_Shutdown();
     ImPlot::DestroyContext();
     ImGui::DestroyContext();
-  }
-  catch (std::exception const& ex) {
+  } catch (std::exception const& ex) {
     sorcery::DisplayError(ex.what());
   }
 
   sorcery::gPhysicsManager.ShutDown();
-  sorcery::renderer::ShutDown();
+  sorcery::gRenderer.ShutDown();
   sorcery::gWindow.ShutDown();
   return 0;
 }

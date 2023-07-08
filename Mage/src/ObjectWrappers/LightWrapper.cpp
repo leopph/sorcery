@@ -1,6 +1,7 @@
 #include <imgui.h>
 
 #include "ObjectWrappers.hpp"
+#include "Systems.hpp"
 
 
 namespace sorcery::mage {
@@ -142,8 +143,8 @@ auto ObjectWrapperFor<LightComponent>::OnDrawGizmosSelected([[maybe_unused]] Con
 
     // This highly depends on the order CalculateSpotLightLocalVertices returns the vertices
     for (int i = 0; i < 4; i++) {
-      renderer::DrawLineAtNextRender(vertices[4], vertices[i], lineColor);
-      renderer::DrawLineAtNextRender(vertices[i], vertices[(i + 1) % 4], lineColor);
+      gRenderer.DrawLineAtNextRender(vertices[4], vertices[i], lineColor);
+      gRenderer.DrawLineAtNextRender(vertices[i], vertices[(i + 1) % 4], lineColor);
     }
   }
 }

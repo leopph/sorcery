@@ -6,6 +6,10 @@
 
 #include "../Math.hpp"
 
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <d3d11.h>
+
 
 namespace sorcery {
 using float2 = Vector2;
@@ -138,38 +142,38 @@ struct ShaderPerDrawConstants {
 
 
 CBUFFER(PerFrameCB, CB_SLOT_PER_FRAME) {
-ShaderPerFrameConstants gPerFrameConstants;
+  ShaderPerFrameConstants gPerFrameConstants;
 };
 
 
 CBUFFER(PerCameraCB, CB_SLOT_PER_CAM) {
-ShaderPerCamConstants gPerCamConstants;
+  ShaderPerCamConstants gPerCamConstants;
 };
 
 
 CBUFFER(PerDrawCB, CB_SLOT_PER_DRAW) {
-ShaderPerDrawConstants gPerDrawConstants;
+  ShaderPerDrawConstants gPerDrawConstants;
 };
 
 
 CBUFFER(PerMaterialCB, CB_SLOT_PER_MATERIAL) {
-ShaderMaterial material;
+  ShaderMaterial material;
 };
 
 
 CBUFFER(PostProcessCB, CB_SLOT_POST_PROCESS) {
-float invGamma;
-float3 pad;
+  float invGamma;
+  float3 pad;
 };
 
 
 CBUFFER(SkyboxCB, CB_SLOT_SKYBOX_PASS) {
-row_major float4x4 skyboxViewProjMtx;
+  row_major float4x4 skyboxViewProjMtx;
 };
 
 
 CBUFFER(DepthOnlyCB, CB_SLOT_DEPTH_ONLY_PASS) {
-row_major float4x4 gDepthOnlyViewProjMtx;
+  row_major float4x4 gDepthOnlyViewProjMtx;
 };
 
 

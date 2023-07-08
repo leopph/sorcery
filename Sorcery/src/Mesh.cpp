@@ -3,9 +3,11 @@
 #include "Renderer.hpp"
 #include "Util.hpp"
 #include "Serialization.hpp"
+#include "Systems.hpp"
 
 #include <utility>
 #include <format>
+
 
 RTTR_REGISTRATION {
   rttr::registration::class_<sorcery::Mesh>{ "Mesh" };
@@ -27,7 +29,7 @@ auto Mesh::UploadToGPU() -> void {
     .pSysMem = mData.positions.data()
   };
 
-  if (FAILED(renderer::GetDevice()->CreateBuffer(&posDesc, &posBufData, mPosBuf.ReleaseAndGetAddressOf()))) {
+  if (FAILED(gRenderer.GetDevice()->CreateBuffer(&posDesc, &posBufData, mPosBuf.ReleaseAndGetAddressOf()))) {
     throw std::runtime_error{ "Failed to create mesh position buffer." };
   }
 
@@ -44,7 +46,7 @@ auto Mesh::UploadToGPU() -> void {
     .pSysMem = mData.normals.data()
   };
 
-  if (FAILED(renderer::GetDevice()->CreateBuffer(&normDesc, &normBufData, mNormBuf.ReleaseAndGetAddressOf()))) {
+  if (FAILED(gRenderer.GetDevice()->CreateBuffer(&normDesc, &normBufData, mNormBuf.ReleaseAndGetAddressOf()))) {
     throw std::runtime_error{ "Failed to create mesh normal buffer." };
   }
 
@@ -61,7 +63,7 @@ auto Mesh::UploadToGPU() -> void {
     .pSysMem = mData.uvs.data()
   };
 
-  if (FAILED(renderer::GetDevice()->CreateBuffer(&uvDesc, &uvBufData, mUvBuf.ReleaseAndGetAddressOf()))) {
+  if (FAILED(gRenderer.GetDevice()->CreateBuffer(&uvDesc, &uvBufData, mUvBuf.ReleaseAndGetAddressOf()))) {
     throw std::runtime_error{ "Failed to create mesh uv buffer." };
   }
 
@@ -78,7 +80,7 @@ auto Mesh::UploadToGPU() -> void {
     .pSysMem = mData.indices.data()
   };
 
-  if (FAILED(renderer::GetDevice()->CreateBuffer(&indDesc, &indBufData, mIndBuf.ReleaseAndGetAddressOf()))) {
+  if (FAILED(gRenderer.GetDevice()->CreateBuffer(&indDesc, &indBufData, mIndBuf.ReleaseAndGetAddressOf()))) {
     throw std::runtime_error{ "Failed to create mesh index buffer." };
   }
 
@@ -95,7 +97,7 @@ auto Mesh::UploadToGPU() -> void {
     .pSysMem = mData.tangents.data()
   };
 
-  if (FAILED(renderer::GetDevice()->CreateBuffer(&tangentBufDesc, &tangentBufData, mTangentBuf.ReleaseAndGetAddressOf()))) {
+  if (FAILED(gRenderer.GetDevice()->CreateBuffer(&tangentBufDesc, &tangentBufData, mTangentBuf.ReleaseAndGetAddressOf()))) {
     throw std::runtime_error{ "Failed to create mesh tangent buffer." };
   }
 }

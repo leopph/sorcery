@@ -1,6 +1,7 @@
 #include "Cubemap.hpp"
 
 #include "Renderer.hpp"
+#include "Systems.hpp"
 
 
 RTTR_REGISTRATION {
@@ -33,7 +34,7 @@ auto Cubemap::UploadToGpu() -> void {
     };
   }
 
-  if (FAILED(renderer::GetDevice()->CreateTexture2D(&texDesc, texData.data(), mTex.ReleaseAndGetAddressOf()))) {
+  if (FAILED(gRenderer.GetDevice()->CreateTexture2D(&texDesc, texData.data(), mTex.ReleaseAndGetAddressOf()))) {
     throw std::runtime_error{ "Failed to create GPU texture of Cubemap." };
   }
 
@@ -46,7 +47,7 @@ auto Cubemap::UploadToGpu() -> void {
     }
   };
 
-  if (FAILED(renderer::GetDevice()->CreateShaderResourceView(mTex.Get(), &srvDesc, mSrv.ReleaseAndGetAddressOf()))) {
+  if (FAILED(gRenderer.GetDevice()->CreateShaderResourceView(mTex.Get(), &srvDesc, mSrv.ReleaseAndGetAddressOf()))) {
     throw std::runtime_error{ "Failed to create GPU SRV of Cubemap." };
   }
 }

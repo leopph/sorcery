@@ -17,12 +17,12 @@ auto DrawSceneViewWindow(Context& context) -> void {
 
   if (ImGui::Begin("Scene", nullptr, ImGuiWindowFlags_NoCollapse)) {
     ImGui::PopStyleVar();
-    auto const [sceneWidth, sceneHeight]{ renderer::GetSceneResolution() };
+    auto const [sceneWidth, sceneHeight]{ gRenderer.GetSceneResolution() };
     auto const contentRegionSize{ ImGui::GetContentRegionAvail() };
 
     if (Extent2D const viewportRes{ static_cast<u32>(contentRegionSize.x), static_cast<u32>(contentRegionSize.y) };
       viewportRes.width != sceneWidth || viewportRes.height != sceneHeight) {
-      renderer::SetSceneResolution(viewportRes);
+      gRenderer.SetSceneResolution(viewportRes);
     }
 
     EditorCamera static editorCam{ Vector3{}, Quaternion{}, 0.03f, 10000.f, 90 };
@@ -80,8 +80,8 @@ auto DrawSceneViewWindow(Context& context) -> void {
       context.GetFactoryManager().GetFor(selectedObject->GetSerializationType()).OnDrawGizmosSelected(context, *selectedObject);
     }
 
-    renderer::DrawSceneView(editorCam);
-    ImGui::Image(renderer::GetSceneFrame(), contentRegionSize);
+    gRenderer.DrawSceneView(editorCam);
+    ImGui::Image(gRenderer.GetSceneFrame(), contentRegionSize);
 
     auto const windowAspectRatio{ ImGui::GetWindowWidth() / ImGui::GetWindowHeight() };
     auto const editorCamViewMat{ editorCam.CalculateViewMatrix() };

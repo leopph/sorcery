@@ -2,6 +2,7 @@
 
 #include "Util.hpp"
 #include "Renderer.hpp"
+#include "Systems.hpp"
 
 RTTR_REGISTRATION {
   rttr::registration::class_<sorcery::Texture2D>{ "Texture2D" };
@@ -27,7 +28,7 @@ void Texture2D::UploadToGPU() {
     .SysMemPitch = mImgData.get_width() * mImgData.get_num_channels()
   };
 
-  if (FAILED(renderer::GetDevice()->CreateTexture2D(&texDesc, &texData, mTex.ReleaseAndGetAddressOf()))) {
+  if (FAILED(gRenderer.GetDevice()->CreateTexture2D(&texDesc, &texData, mTex.ReleaseAndGetAddressOf()))) {
     throw std::runtime_error{ "Failed to create GPU texture." };
   }
 
@@ -40,7 +41,7 @@ void Texture2D::UploadToGPU() {
     }
   };
 
-  if (FAILED(renderer::GetDevice()->CreateShaderResourceView(mTex.Get(), &srvDesc, mSrv.ReleaseAndGetAddressOf()))) {
+  if (FAILED(gRenderer.GetDevice()->CreateShaderResourceView(mTex.Get(), &srvDesc, mSrv.ReleaseAndGetAddressOf()))) {
     throw std::runtime_error{ "Failed to create GPU SRV." };
   }
 }

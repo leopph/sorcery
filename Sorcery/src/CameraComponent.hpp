@@ -8,7 +8,7 @@
 
 
 namespace sorcery {
-class CameraComponent : public Component, public renderer::Camera {
+class CameraComponent : public Component, public Camera {
   RTTR_ENABLE(Component)
   NormalizedViewport mViewport{ { 0, 0 }, { 1, 1 } };
   Vector4 mBackgroundColor{ 0, 0, 0, 1 };

@@ -2,9 +2,11 @@
 
 #include "Renderer.hpp"
 #include "Serialization.hpp"
+#include "Systems.hpp"
 
 #include <cstdint>
 #include <stdexcept>
+
 
 RTTR_REGISTRATION {
   rttr::registration::class_<sorcery::Material>{ "Material" };
@@ -17,9 +19,9 @@ Object::Type const Material::SerializationType{ Type::Material };
 
 auto Material::UpdateGPUData() const noexcept -> void {
   D3D11_MAPPED_SUBRESOURCE mappedCB;
-  renderer::GetImmediateContext()->Map(mCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedCB);
+  gRenderer.GetImmediateContext()->Map(mCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedCB);
   *static_cast<ShaderMaterial*>(mappedCB.pData) = mShaderMtl;
-  renderer::GetImmediateContext()->Unmap(mCB.Get(), 0);
+  gRenderer.GetImmediateContext()->Unmap(mCB.Get(), 0);
 }
 
 
@@ -39,7 +41,7 @@ auto Material::CreateCB() -> void {
     .SysMemSlicePitch = 0
   };
 
-  if (FAILED(renderer::GetDevice()->CreateBuffer(&cbDesc, &initialData, mCB.GetAddressOf()))) {
+  if (FAILED(gRenderer.GetDevice()->CreateBuffer(&cbDesc, &initialData, mCB.GetAddressOf()))) {
     throw std::runtime_error{ "Failed to create material CB." };
   }
 }

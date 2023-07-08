@@ -5,9 +5,11 @@
 #include "Renderer.hpp"
 #include "Entity.hpp"
 #include "TransformComponent.hpp"
+#include "Systems.hpp"
 
 #include <algorithm>
 #include <cmath>
+
 
 RTTR_REGISTRATION {
   rttr::registration::class_<sorcery::LightComponent>{ "LightComponent" }
@@ -20,12 +22,12 @@ Object::Type const LightComponent::SerializationType{ Object::Type::Light };
 
 
 LightComponent::LightComponent() {
-  renderer::RegisterLight(this);
+  gRenderer.RegisterLight(this);
 }
 
 
 LightComponent::~LightComponent() {
-  renderer::UnregisterLight(this);
+  gRenderer.UnregisterLight(this);
 }
 
 

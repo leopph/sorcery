@@ -4,7 +4,7 @@
 
 
 namespace sorcery::mage {
-struct EditorCamera : renderer::Camera {
+struct EditorCamera : Camera {
   [[nodiscard]] auto GetPosition() const noexcept -> Vector3 override;
   [[nodiscard]] auto GetRightAxis() const noexcept -> Vector3 override;
   [[nodiscard]] auto GetUpAxis() const noexcept -> Vector3 override;
