@@ -31,6 +31,8 @@ class Context {
   std::atomic<bool> mBusy;
 
   static auto OnWindowFocusGain(Context* self) -> void;
+  static auto HandleBackgroundThreadException(std::exception const& ex) -> void;
+  static auto HandleUnknownBackgroundThreadException() -> void;
 
 public:
   explicit Context(ImGuiIO& imGuiIO);
@@ -84,7 +86,15 @@ auto Context::ExecuteInBusyEditor(Callable&& callable) -> void {
   std::thread{
     [this, callable] {
       BusyExecutionContext const execContext{ OnEnterBusyExecution() };
-      std::invoke(callable);
+
+      try {
+        std::invoke(callable);
+      } catch (std::exception const& ex) {
+        HandleBackgroundThreadException(ex);
+      } catch (...) {
+        HandleUnknownBackgroundThreadException();
+      }
+
       OnFinishBusyExecution(execContext);
     }
   }.detach();

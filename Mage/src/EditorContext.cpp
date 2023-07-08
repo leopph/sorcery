@@ -16,6 +16,16 @@ auto Context::OnWindowFocusGain(Context* const self) -> void {
 }
 
 
+auto Context::HandleBackgroundThreadException(std::exception const& ex) -> void {
+  DisplayError(ex.what());
+}
+
+
+auto Context::HandleUnknownBackgroundThreadException() -> void {
+  DisplayError("Unknown error.");
+}
+
+
 Context::Context(ImGuiIO& imGuiIO) :
   mImGuiIo{ imGuiIO } {
   gWindow.OnWindowFocusGain.add_handler(this, &OnWindowFocusGain);
@@ -27,32 +37,32 @@ Context::~Context() {
 }
 
 
-ImGuiIO const& Context::GetImGuiIo() const noexcept {
+auto Context::GetImGuiIo() const noexcept -> ImGuiIO const& {
   return mImGuiIo;
 }
 
 
-ImGuiIO& Context::GetImGuiIo() noexcept {
+auto Context::GetImGuiIo() noexcept -> ImGuiIO& {
   return mImGuiIo;
 }
 
 
-ResourceManager const& Context::GetResources() const noexcept {
+auto Context::GetResources() const noexcept -> ResourceManager const& {
   return mResourceManager;
 }
 
 
-ResourceManager& Context::GetResources() noexcept {
+auto Context::GetResources() noexcept -> ResourceManager& {
   return mResourceManager;
 }
 
 
-Scene const* Context::GetScene() const noexcept {
+auto Context::GetScene() const noexcept -> Scene const* {
   return mScene;
 }
 
 
-Scene* Context::GetScene() noexcept {
+auto Context::GetScene() noexcept -> Scene* {
   return mScene;
 }
 
@@ -68,37 +78,37 @@ auto Context::OpenScene(Scene& scene) -> void {
 }
 
 
-ObjectWrapperManager const& Context::GetFactoryManager() const noexcept {
+auto Context::GetFactoryManager() const noexcept -> ObjectWrapperManager const& {
   return *mWrapperManager;
 }
 
 
-ObjectWrapperManager& Context::GetFactoryManager() noexcept {
+auto Context::GetFactoryManager() noexcept -> ObjectWrapperManager& {
   return *mWrapperManager;
 }
 
 
-Object* Context::GetSelectedObject() const noexcept {
+auto Context::GetSelectedObject() const noexcept -> Object* {
   return mSelectedObject;
 }
 
 
-void Context::SetSelectedObject(Object* const obj) noexcept {
+auto Context::SetSelectedObject(Object* const obj) noexcept -> void {
   mSelectedObject = obj;
 }
 
 
-std::filesystem::path const& Context::GetProjectDirectoryAbsolute() const noexcept {
+auto Context::GetProjectDirectoryAbsolute() const noexcept -> std::filesystem::path const& {
   return mProjDirAbs;
 }
 
 
-std::filesystem::path const& Context::GetAssetDirectoryAbsolute() const noexcept {
+auto Context::GetAssetDirectoryAbsolute() const noexcept -> std::filesystem::path const& {
   return mAssetDirAbs;
 }
 
 
-std::filesystem::path const& Context::GetCacheDirectoryAbsolute() const noexcept {
+auto Context::GetCacheDirectoryAbsolute() const noexcept -> std::filesystem::path const& {
   return mCacheDirAbs;
 }
 
@@ -154,7 +164,7 @@ auto Context::OpenProject(std::filesystem::path const& targetPath) -> void {
 }
 
 
-bool Context::IsEditorBusy() const noexcept {
+auto Context::IsEditorBusy() const noexcept -> bool {
   return mBusy;
 }
 
