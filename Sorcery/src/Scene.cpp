@@ -44,6 +44,7 @@ auto Scene::GetSerializationType() const -> Type {
 auto Scene::CreateEntity() -> Entity& {
   auto const entity = new Entity{};
   entity->SetScene(this);
+  entity->SetGuid(Guid::Generate());
   return *mEntities.emplace_back(entity);
 }
 

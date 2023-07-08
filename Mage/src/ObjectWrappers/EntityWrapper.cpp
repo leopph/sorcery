@@ -70,7 +70,7 @@ auto ObjectWrapperFor<Entity>::OnDrawProperties(Context& context, Object& object
 
 
 auto ObjectWrapperFor<Entity>::Instantiate() -> Object* {
-  return Entity::New();
+  return &Scene::GetActiveScene()->CreateEntity();
 }
 
 

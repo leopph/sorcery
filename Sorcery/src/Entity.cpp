@@ -90,13 +90,8 @@ auto Entity::DestroyComponent(Component* const component) -> void {
 Object::Type const Entity::SerializationType{ Type::Entity };
 
 
-auto Entity::SetScene(Scene* const scene) -> void {
+auto Entity::SetScene(Scene* const scene) noexcept -> void {
   mScene = scene;
-}
-
-
-auto Entity::New() -> Entity* {
-  return new Entity{}; // TODO
 }
 
 

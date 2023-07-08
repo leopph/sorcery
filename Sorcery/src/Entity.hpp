@@ -24,11 +24,9 @@ class Entity final : public SceneElement {
 
   Entity();
 
-  auto SetScene(Scene* scene) -> void;
+  auto SetScene(Scene* scene) noexcept -> void;
 
 public:
-  LEOPPHAPI static auto New() -> Entity*;
-
   [[nodiscard]] LEOPPHAPI static auto FindEntityByName(std::string_view name) -> Entity*;
 
   [[nodiscard]] LEOPPHAPI auto GetSerializationType() const -> Type override;
