@@ -56,14 +56,18 @@ auto StructuredBuffer<T>::RecreateBuffer() -> void {
 
 template<typename T>
 auto StructuredBuffer<T>::RecreateSrv() -> void {
-  D3D11_SHADER_RESOURCE_VIEW_DESC const srvDesc{
-    .Format = DXGI_FORMAT_UNKNOWN,
-    .ViewDimension = D3D11_SRV_DIMENSION_BUFFER,
-    .Buffer = { .FirstElement = 0, .NumElements = static_cast<UINT>(mSize) }
-  };
+  if (mSize == 0) {
+    mSrv.Reset();
+  } else {
+    D3D11_SHADER_RESOURCE_VIEW_DESC const srvDesc{
+      .Format = DXGI_FORMAT_UNKNOWN,
+      .ViewDimension = D3D11_SRV_DIMENSION_BUFFER,
+      .Buffer = { .FirstElement = 0, .NumElements = static_cast<UINT>(mSize) }
+    };
 
-  if (FAILED(mDevice->CreateShaderResourceView(mBuffer.Get(), &srvDesc, mSrv.ReleaseAndGetAddressOf()))) {
-    throw std::runtime_error{ "Failed to recreate StructuredBuffer SRV." };
+    if (FAILED(mDevice->CreateShaderResourceView(mBuffer.Get(), &srvDesc, mSrv.ReleaseAndGetAddressOf()))) {
+      throw std::runtime_error{ "Failed to recreate StructuredBuffer SRV." };
+    }
   }
 }
 
