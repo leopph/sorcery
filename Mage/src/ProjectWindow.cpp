@@ -22,7 +22,7 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& rootDirAbs, 
   auto const isSelected{ selectedNodePathRootRel && equivalent(nodePathAbs, canonical(rootDirAbs / *selectedNodePathRootRel)) };
   auto const isRenaming{ mRenameInfo && equivalent(mRenameInfo->nodePathAbs, nodePathAbs) };
 
-  ImGuiTreeNodeFlags treeNodeFlags{ ImGuiTreeNodeFlags_OpenOnArrow };
+  ImGuiTreeNodeFlags treeNodeFlags{ ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_FramePadding | ImGuiTreeNodeFlags_OpenOnDoubleClick };
 
   if (!isDirectory) {
     treeNodeFlags |= ImGuiTreeNodeFlags_Leaf;
@@ -36,6 +36,8 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& rootDirAbs, 
 
   if (isRenaming) {
     treeNodeFlags |= ImGuiTreeNodeFlags_AllowItemOverlap;
+  } else {
+    treeNodeFlags |= ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_SpanFullWidth;
   }
 
   auto const treeNodePos{ ImGui::GetCursorPos() };
