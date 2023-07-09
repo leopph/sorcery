@@ -58,6 +58,9 @@ public:
   [[nodiscard]] auto GetAssetDirectoryAbsolute() const noexcept -> std::filesystem::path const&;
   [[nodiscard]] auto GetCacheDirectoryAbsolute() const noexcept -> std::filesystem::path const&;
 
+  [[nodiscard]] static auto GetAssetDirectoryProjectRootRelative() noexcept -> std::filesystem::path const&;
+  [[nodiscard]] static auto GetCacheDirectoryProjectRootRelative() noexcept -> std::filesystem::path const&;
+
   [[nodiscard]] inline static auto GetAssetFileExtension() noexcept -> std::filesystem::path const&;
 
   auto OpenProject(std::filesystem::path const& targetPath) -> void;

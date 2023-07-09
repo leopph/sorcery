@@ -17,9 +17,9 @@
 
 namespace sorcery::mage {
 auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& rootDirAbs, std::filesystem::path const& thisNodePathRootRel, std::optional<std::filesystem::path>& selectedNodePathRootRel) -> void {
-  auto nodePathAbs{ canonical(rootDirAbs / thisNodePathRootRel) };
+  auto nodePathAbs{ rootDirAbs / thisNodePathRootRel };
   auto const isDirectory{ is_directory(nodePathAbs) };
-  auto const isSelected{ selectedNodePathRootRel && equivalent(nodePathAbs, canonical(rootDirAbs / *selectedNodePathRootRel)) };
+  auto const isSelected{ selectedNodePathRootRel && equivalent(nodePathAbs, rootDirAbs / *selectedNodePathRootRel) };
   auto const isRenaming{ mRenameInfo && equivalent(mRenameInfo->nodePathAbs, nodePathAbs) };
 
   ImGuiTreeNodeFlags treeNodeFlags{ ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_FramePadding | ImGuiTreeNodeFlags_OpenOnDoubleClick };
@@ -168,7 +168,7 @@ auto ProjectWindow::Draw() -> void {
       mSelectedNodePathRootRel = std::nullopt;
     }
 
-    DrawFilesystemTree(mContext->GetAssetDirectoryAbsolute(), "", mSelectedNodePathRootRel);
+    DrawFilesystemTree(mContext->GetProjectDirectoryAbsolute(), Context::GetAssetDirectoryProjectRootRelative(), mSelectedNodePathRootRel);
 
     if (ImGui::IsWindowHovered(ImGuiHoveredFlags_RootWindow) && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
       ImGui::OpenPopup(CONTEXT_MENU_ID);

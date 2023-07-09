@@ -113,6 +113,16 @@ auto Context::GetCacheDirectoryAbsolute() const noexcept -> std::filesystem::pat
 }
 
 
+auto Context::GetAssetDirectoryProjectRootRelative() noexcept -> std::filesystem::path const& {
+  return ASSET_DIR_REL;
+}
+
+
+auto Context::GetCacheDirectoryProjectRootRelative() noexcept -> std::filesystem::path const& {
+  return CACHE_DIR_REL;
+}
+
+
 auto Context::OpenProject(std::filesystem::path const& targetPath) -> void {
   mSelectedObject = nullptr;
   mScene = nullptr;
