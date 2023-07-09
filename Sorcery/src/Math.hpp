@@ -80,9 +80,6 @@ public:
   constexpr auto operator=(Vector&& other) noexcept -> Vector& = default;
 
 private:
-#ifdef LEOPPH_MATH_USE_INTRINSICS
-	alignas(std::same_as<T, float> && N == 4 ? 16 : 0)
-#endif
   T mData[N]{};
 };
 
@@ -973,7 +970,7 @@ inline auto Length(Vector3 const& vector) noexcept -> float {
 
 template<>
 inline auto Length(Vector4 const& vector) noexcept -> float {
-	auto const xmm0{ _mm_load_ps(vector.GetData()) };
+	auto const xmm0{ _mm_loadu_ps(vector.GetData()) };
 	auto const xmm1{ _mm_dp_ps(xmm0, xmm0, 0b11110001) };
 	auto const xmm2{ _mm_sqrt_ss(xmm1) };
 	return _mm_cvtss_f32(xmm2);
@@ -992,8 +989,8 @@ inline auto Dot(Vector3 const& left, Vector3 const& right) noexcept -> float {
 
 template<>
 inline auto Dot(Vector4 const& left, Vector4 const& right) noexcept -> float {
-	auto const xmm0{ _mm_load_ps(left.GetData()) };
-	auto const xmm1{ _mm_load_ps(right.GetData()) };
+	auto const xmm0{ _mm_loadu_ps(left.GetData()) };
+	auto const xmm1{ _mm_loadu_ps(right.GetData()) };
 	auto const xmm2{ _mm_dp_ps(xmm0, xmm1, 0b11110001) };
 	return _mm_cvtss_f32(xmm2);
 }
@@ -1037,11 +1034,11 @@ inline auto operator+(Vector3 const& left, Vector3 const& right) noexcept -> Vec
 
 template<>
 inline auto operator+(Vector4 const& left, Vector4 const& right) noexcept -> Vector4 {
-	auto const xmm0{_mm_load_ps(left.GetData())};
-	auto const xmm1{_mm_load_ps(right.GetData())};
+	auto const xmm0{_mm_loadu_ps(left.GetData())};
+	auto const xmm1{_mm_loadu_ps(right.GetData())};
 	auto const xmm2{ _mm_add_ps(xmm0, xmm1) };
 	Vector4 ret;
-	_mm_store_ps(ret.GetData(), xmm2);
+	_mm_storeu_ps(ret.GetData(), xmm2);
 	return ret;
 }
 
@@ -1059,10 +1056,10 @@ inline auto operator+=(Vector3& left, Vector3 const& right) noexcept -> Vector3&
 
 template<>
 inline auto operator+=(Vector4& left, Vector4 const& right) noexcept -> Vector4& {
-	auto const xmm0{_mm_load_ps(left.GetData())};
-	auto const xmm1{_mm_load_ps(right.GetData())};
+	auto const xmm0{_mm_loadu_ps(left.GetData())};
+	auto const xmm1{_mm_loadu_ps(right.GetData())};
 	auto const xmm2{ _mm_add_ps(xmm0, xmm1) };
-	_mm_store_ps(left.GetData(), xmm2);
+	_mm_storeu_ps(left.GetData(), xmm2);
 	return left;
 }
 
@@ -1081,11 +1078,11 @@ inline auto operator-(Vector3 const& left, Vector3 const& right) noexcept -> Vec
 
 template<>
 inline auto operator-(Vector4 const& left, Vector4 const& right) noexcept -> Vector4 {
-	auto const xmm0{_mm_load_ps(left.GetData())};
-	auto const xmm1{_mm_load_ps(right.GetData())};
+	auto const xmm0{_mm_loadu_ps(left.GetData())};
+	auto const xmm1{_mm_loadu_ps(right.GetData())};
 	auto const xmm2{ _mm_sub_ps(xmm0, xmm1) };
 	Vector4 ret;
-	_mm_store_ps(ret.GetData(), xmm2);
+	_mm_storeu_ps(ret.GetData(), xmm2);
 	return ret;
 }
 
@@ -1103,10 +1100,10 @@ inline auto operator-=(Vector3& left, Vector3 const& right) noexcept -> Vector3&
 
 template<>
 inline auto operator-=(Vector4& left, Vector4 const& right) noexcept -> Vector4& {
-	auto const xmm0{_mm_load_ps(left.GetData())};
-	auto const xmm1{_mm_load_ps(right.GetData())};
+	auto const xmm0{_mm_loadu_ps(left.GetData())};
+	auto const xmm1{_mm_loadu_ps(right.GetData())};
 	auto const xmm2{ _mm_sub_ps(xmm0, xmm1) };
-	_mm_store_ps(left.GetData(), xmm2);
+	_mm_storeu_ps(left.GetData(), xmm2);
 	return left;
 }
 
@@ -1125,11 +1122,11 @@ inline auto operator*(Vector3 const& left, float const right) noexcept -> Vector
 
 template<>
 inline auto operator*(Vector4 const& left, float const right) noexcept -> Vector4 {
-	auto const xmm0{ _mm_load_ps(left.GetData()) };
+	auto const xmm0{ _mm_loadu_ps(left.GetData()) };
 	auto const xmm1{ _mm_broadcast_ss(&right) };
 	auto const xmm2{ _mm_mul_ps(xmm0, xmm1) };
 	Vector4 ret;
-	_mm_store_ps(ret.GetData(), xmm2);
+	_mm_storeu_ps(ret.GetData(), xmm2);
 	return ret;
 }
 
@@ -1160,11 +1157,11 @@ inline auto operator*(Vector3 const& left, Vector3 const& right) noexcept -> Vec
 
 template<>
 inline auto operator*(Vector4 const& left, Vector4 const& right) noexcept -> Vector4 {
-	auto const xmm0{ _mm_load_ps(left.GetData()) };
-	auto const xmm1{ _mm_load_ps(right.GetData()) };
+	auto const xmm0{ _mm_loadu_ps(left.GetData()) };
+	auto const xmm1{ _mm_loadu_ps(right.GetData()) };
 	auto const xmm2{ _mm_mul_ps(xmm0, xmm1) };
 	Vector4 ret;
-	_mm_store_ps(ret.GetData(), xmm2);
+	_mm_storeu_ps(ret.GetData(), xmm2);
 	return ret;
 }
 
@@ -1182,10 +1179,10 @@ inline auto operator*=(Vector3& left, Vector3 const& right) noexcept -> Vector3&
 
 template<>
 inline auto operator*=(Vector4& left, Vector4 const& right) noexcept -> Vector4& {
-	auto const xmm0{ _mm_load_ps(left.GetData()) };
-	auto const xmm1{ _mm_load_ps(right.GetData()) };
+	auto const xmm0{ _mm_loadu_ps(left.GetData()) };
+	auto const xmm1{ _mm_loadu_ps(right.GetData()) };
 	auto const xmm2{ _mm_mul_ps(xmm0, xmm1) };
-	_mm_store_ps(left.GetData(), xmm2);
+	_mm_storeu_ps(left.GetData(), xmm2);
 	return left;
 }
 
@@ -1203,10 +1200,10 @@ inline auto operator*=(Vector3& left, float const right) noexcept -> Vector3& {
 
 template<>
 inline auto operator*=(Vector4& left, float const right) noexcept -> Vector4& {
-	auto const xmm0{ _mm_load_ps(left.GetData()) };
+	auto const xmm0{ _mm_loadu_ps(left.GetData()) };
 	auto const xmm1{ _mm_broadcast_ss(&right) };
 	auto const xmm2{ _mm_mul_ps(xmm0, xmm1) };
-	_mm_store_ps(left.GetData(), xmm2);
+	_mm_storeu_ps(left.GetData(), xmm2);
 	return left;
 }
 
@@ -1249,33 +1246,33 @@ inline auto operator/(Vector3 const& left, Vector3 const& right) noexcept -> Vec
 
 template<>
 inline auto operator/(Vector4 const& left, float const right) noexcept -> Vector4 {
-	auto const xmm0{ _mm_load_ps(left.GetData()) };
+	auto const xmm0{ _mm_loadu_ps(left.GetData()) };
 	auto const xmm1{ _mm_broadcast_ss(&right) };
 	auto const xmm2{ _mm_div_ps(xmm0, xmm1) };
 	Vector4 ret;
-	_mm_store_ps(ret.GetData(), xmm2);
+	_mm_storeu_ps(ret.GetData(), xmm2);
 	return ret;
 }
 
 
 template<>
 inline auto operator/(float const left, Vector4 const& right) noexcept -> Vector4 {
-	auto const xmm0{ _mm_load_ps(right.GetData()) };
+	auto const xmm0{ _mm_loadu_ps(right.GetData()) };
 	auto const xmm1{ _mm_broadcast_ss(&left) };
 	auto const xmm2{ _mm_div_ps(xmm1, xmm0) };
 	Vector4 ret;
-	_mm_store_ps(ret.GetData(), xmm2);
+	_mm_storeu_ps(ret.GetData(), xmm2);
 	return ret;
 }
 
 
 template<>
 inline auto operator/(Vector4 const& left, Vector4 const& right) noexcept -> Vector4 {
-	auto const xmm0{ _mm_load_ps(left.GetData()) };
-	auto const xmm1{ _mm_load_ps(right.GetData()) };
+	auto const xmm0{ _mm_loadu_ps(left.GetData()) };
+	auto const xmm1{ _mm_loadu_ps(right.GetData()) };
 	auto const xmm2{ _mm_div_ps(xmm0, xmm1) };
 	Vector4 ret;
-	_mm_store_ps(ret.GetData(), xmm2);
+	_mm_storeu_ps(ret.GetData(), xmm2);
 	return ret;
 }
 
@@ -1304,20 +1301,20 @@ inline auto operator/=(Vector3& left, Vector3 const& right) noexcept -> Vector3&
 
 template<>
 inline auto operator/=(Vector4& left, float const right) noexcept -> Vector4& {
-	auto const xmm0{ _mm_load_ps(left.GetData()) };
+	auto const xmm0{ _mm_loadu_ps(left.GetData()) };
 	auto const xmm1{ _mm_broadcast_ss(&right) };
 	auto const xmm2{ _mm_div_ps(xmm0, xmm1) };
-	_mm_store_ps(left.GetData(), xmm2);
+	_mm_storeu_ps(left.GetData(), xmm2);
 	return left;
 }
 
 
 template<>
 inline auto operator/=(Vector4& left, Vector4 const& right) noexcept -> Vector4& {
-	auto const xmm0{ _mm_load_ps(left.GetData()) };
-	auto const xmm1{ _mm_load_ps(right.GetData()) };
+	auto const xmm0{ _mm_loadu_ps(left.GetData()) };
+	auto const xmm1{ _mm_loadu_ps(right.GetData()) };
 	auto const xmm2{ _mm_div_ps(xmm0, xmm1) };
-	_mm_store_ps(left.GetData(), xmm2);
+	_mm_storeu_ps(left.GetData(), xmm2);
 	return left;
 }
 #endif
@@ -1894,7 +1891,7 @@ inline auto operator*(Matrix4 const& left, Matrix4 const& right) noexcept -> Mat
 	auto constexpr colOffsetIndexScale{ 4 };
 
 	for (int i = 0; i < 4; i++) {
-		rows[i] = _mm_load_ps(left[i].GetData());
+		rows[i] = _mm_loadu_ps(left[i].GetData());
 		cols[i] = _mm_i32gather_ps(right[0].GetData(), _mm_add_epi32(colOffsetIndices, _mm_set1_epi32(i)), colOffsetIndexScale);
 	}
 
