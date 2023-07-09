@@ -12,6 +12,8 @@
 #include <functional>
 #include <optional>
 
+#include "Platform.hpp"
+
 
 namespace sorcery::mage {
 namespace {
@@ -53,21 +55,82 @@ auto DrawSideFolderView(std::filesystem::path const& absoluteAssetDir, std::file
 }
 
 
-auto DrawProjectWindow(Context& context) -> void {
-  if (ImGui::Begin("Project", nullptr, ImGuiWindowFlags_NoCollapse)) {
+auto ProjectWindow::OpenFileDialog(std::string_view const filters, std::string_view const defaultPath, std::filesystem::path& out) -> bool {
+  if (nfdchar_t* selectedPath{ nullptr }; NFD_OpenDialog(filters.data(), defaultPath.data(), &selectedPath) == NFD_OKAY) {
+    out = selectedPath;
+    std::free(selectedPath);
+    return true;
+  }
+
+  return false;
+}
+
+
+auto ProjectWindow::ImportConcreteAsset(Context& context, AssetLoader& assetLoader, std::filesystem::path const& srcPathAbs, std::filesystem::path const& selectedDirAbs) -> void {
+  context.ExecuteInBusyEditor([&context, &assetLoader, srcPathAbs, selectedDirAbs] {
+    auto const dstPath{
+      equivalent(srcPathAbs.parent_path(), selectedDirAbs) ? srcPathAbs : GenerateUniquePath(selectedDirAbs / srcPathAbs.filename())
+    };
+
+    if (!exists(dstPath) || !equivalent(dstPath, srcPathAbs)) {
+      copy_file(srcPathAbs, dstPath);
+    }
+
+    auto const guid{ Guid::Generate() };
+
+    if (auto asset{ assetLoader.Load(dstPath, context.GetCacheDirectoryAbsolute()) }) {
+      asset->SetName(dstPath.stem().string());
+      asset->SetGuid(guid);
+
+      context.GetResources().RegisterAsset(std::shared_ptr<Object>{ asset.release() }, dstPath);
+      context.CreateMetaFileForRegisteredAsset(*asset);
+    } else {
+      throw std::runtime_error{ std::format("Failed to import asset at {}.", srcPathAbs.string()) };
+    }
+  });
+}
+
+
+auto ProjectWindow::ImportAsset(Context& context, Object::Type const targetAssetType, std::filesystem::path const& selectedDirAbs) -> void {
+  auto& loader{ context.GetFactoryManager().GetFor(targetAssetType).GetLoader() };
+
+  if (std::filesystem::path path; OpenFileDialog(Join(loader.GetSupportedExtensions(), ",").c_str(), nullptr, path)) {
+    ImportConcreteAsset(context, loader, absolute(path), selectedDirAbs);
+  }
+}
+
+
+auto ProjectWindow::SaveNewNativeAsset(Context& context, std::unique_ptr<NativeAsset> asset, std::string_view const targetAssetFileName, std::filesystem::path const& selectedDirAbs) -> void {
+  auto const dst{ GenerateUniquePath(selectedDirAbs / targetAssetFileName) };
+
+  asset->SetName(dst.stem().string());
+  asset->SetGuid(Guid::Generate());
+
+  auto const& assetRef{ *asset };
+
+  context.GetResources().RegisterAsset(std::move(asset), dst);
+  context.SaveRegisteredNativeAsset(assetRef);
+  context.CreateMetaFileForRegisteredAsset(assetRef);
+}
+
+
+ProjectWindow::ProjectWindow(Context& context) :
+  mContext{ &context } { }
+
+
+auto ProjectWindow::Draw() -> void {
+  if (ImGui::Begin("Project", &mIsOpen, ImGuiWindowFlags_NoCollapse)) {
     if (ImGui::BeginTable("ProjectWindowMainTable", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_SizingFixedFit)) {
       ImGui::TableNextRow();
       ImGui::TableSetColumnIndex(0);
 
-      std::filesystem::path static currentRelativeDir{ "" };
-
-      if (!exists(context.GetAssetDirectoryAbsolute() / currentRelativeDir)) {
-        currentRelativeDir = "";
+      if (!exists(mContext->GetAssetDirectoryAbsolute() / mSelectedDirRel)) {
+        mSelectedDirRel = "";
       }
 
-      DrawSideFolderView(context.GetAssetDirectoryAbsolute(), currentRelativeDir);
+      DrawSideFolderView(mContext->GetAssetDirectoryAbsolute(), mSelectedDirRel);
 
-      auto const currentAbsoluteDir{ context.GetAssetDirectoryAbsolute() / currentRelativeDir };
+      auto const selectedDirAbs{ mContext->GetAssetDirectoryAbsolute() / mSelectedDirRel };
 
       ImGui::TableSetColumnIndex(1);
 
@@ -76,53 +139,6 @@ auto DrawProjectWindow(Context& context) -> void {
       if (ImGui::IsWindowHovered(ImGuiHoveredFlags_RootWindow) && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
         ImGui::OpenPopup(contextMenuId);
       }
-
-      auto const openFileDialog{
-        [](char const* filters, char const* defaultPath, std::filesystem::path& out) -> bool {
-          if (nfdchar_t* selectedPath{ nullptr }; NFD_OpenDialog(filters, defaultPath, &selectedPath) == NFD_OKAY) {
-            out = selectedPath;
-            std::free(selectedPath);
-            return true;
-          }
-          return false;
-        }
-      };
-
-      auto const importConcreteAsset{
-        [&context, currentAbsoluteDir](AssetLoader& assetLoader, std::filesystem::path const& srcPathAbs) {
-          context.ExecuteInBusyEditor([&context, &assetLoader, srcPathAbs, currentAbsoluteDir] {
-            auto const dstPath{
-              equivalent(srcPathAbs.parent_path(), currentAbsoluteDir) ? srcPathAbs : GenerateUniquePath(currentAbsoluteDir / srcPathAbs.filename())
-            };
-
-            if (!exists(dstPath) || !equivalent(dstPath, srcPathAbs)) {
-              copy_file(srcPathAbs, dstPath);
-            }
-
-            auto const guid{ Guid::Generate() };
-
-            if (auto asset{ assetLoader.Load(dstPath, context.GetCacheDirectoryAbsolute()) }) {
-              asset->SetName(dstPath.stem().string());
-              asset->SetGuid(guid);
-
-              context.GetResources().RegisterAsset(std::shared_ptr<Object>{ asset.release() }, dstPath);
-              context.CreateMetaFileForRegisteredAsset(*asset);
-            } else {
-              throw std::runtime_error{ std::format("Failed to import asset at {}.", srcPathAbs.string()) };
-            }
-          });
-        }
-      };
-
-      auto const importAsset{
-        [&context, openFileDialog, importConcreteAsset](Object::Type const targetAssetType) {
-          auto& loader{ context.GetFactoryManager().GetFor(targetAssetType).GetLoader() };
-
-          if (std::filesystem::path path; openFileDialog(Join(loader.GetSupportedExtensions(), ",").c_str(), nullptr, path)) {
-            importConcreteAsset(loader, absolute(path));
-          }
-        }
-      };
 
       auto openCubemapImportModal{ false };
 
@@ -137,34 +153,19 @@ auto DrawProjectWindow(Context& context) -> void {
       if (ImGui::BeginPopup(contextMenuId)) {
         if (ImGui::BeginMenu("New##Menu")) {
           if (ImGui::MenuItem("Folder")) {
-            auto const newFolderPath{ GenerateUniquePath(currentAbsoluteDir / "New Folder") };
+            auto const newFolderPath{ GenerateUniquePath(selectedDirAbs / "New Folder") };
             create_directory(newFolderPath);
             selectedDir = newFolderPath;
-            context.SetSelectedObject(nullptr);
+            mContext->SetSelectedObject(nullptr);
             renaming = RenameInfo{ .newName = newFolderPath.stem().string(), .src = newFolderPath };
           }
 
-          auto const saveNewNativeAsset{
-            [&context, currentAbsoluteDir](std::unique_ptr<NativeAsset> asset, std::string_view const targetAssetFileName) {
-              auto const dst{ GenerateUniquePath(currentAbsoluteDir / targetAssetFileName) };
-
-              asset->SetName(dst.stem().string());
-              asset->SetGuid(Guid::Generate());
-
-              auto const& assetRef{ *asset };
-
-              context.GetResources().RegisterAsset(std::move(asset), dst);
-              context.SaveRegisteredNativeAsset(assetRef);
-              context.CreateMetaFileForRegisteredAsset(assetRef);
-            }
-          };
-
           if (ImGui::MenuItem("Material")) {
-            saveNewNativeAsset(std::unique_ptr<NativeAsset>{ new Material{} }, "New Material.mtl");
+            SaveNewNativeAsset(*mContext, std::unique_ptr<NativeAsset>{ new Material{} }, "New Material.mtl", selectedDirAbs);
           }
 
           if (ImGui::MenuItem("Scene##CreateSceneAsset")) {
-            saveNewNativeAsset(std::unique_ptr<NativeAsset>{ new Scene{} }, "New Scene.scene");
+            SaveNewNativeAsset(*mContext, std::unique_ptr<NativeAsset>{ new Scene{} }, "New Scene.scene", selectedDirAbs);
           }
 
           ImGui::EndMenu();
@@ -172,12 +173,12 @@ auto DrawProjectWindow(Context& context) -> void {
 
         if (ImGui::BeginMenu("Import##ImportAssetMenu")) {
           if (ImGui::MenuItem("Mesh##ImportMeshAssetMenuItem")) {
-            importAsset(Object::Type::Mesh);
+            ImportAsset(*mContext, Object::Type::Mesh, selectedDirAbs);
             ImGui::CloseCurrentPopup();
           }
 
           if (ImGui::MenuItem("2D Texture##Import2DTextureAssetMenuItem")) {
-            importAsset(Object::Type::Texture2D);
+            ImportAsset(*mContext, Object::Type::Texture2D, selectedDirAbs);
             ImGui::CloseCurrentPopup();
           }
 
@@ -213,14 +214,14 @@ auto DrawProjectWindow(Context& context) -> void {
         ImGui::Combo("##CubeMapImportTypeCombo", &importTypeIdx, importTypeNames.data(), importTypeCount);
 
         auto const drawFileSelectionEntries{
-          [&context, openFileDialog]<int ElemCount>(std::span<char const* const, ElemCount> labels, std::span<std::filesystem::path, ElemCount> paths) {
+          [this]<int ElemCount>(std::span<char const* const, ElemCount> labels, std::span<std::filesystem::path, ElemCount> paths) {
             for (int i = 0; i < ElemCount; i++) {
               ImGui::PushID(i);
               ImGui::TableNextColumn();
               ImGui::Text("%s", labels[i]);
               ImGui::TableNextColumn();
               if (ImGui::Button("Select")) {
-                openFileDialog(Join(context.GetFactoryManager().GetFor<Cubemap>().GetLoader().GetSupportedExtensions(), ",").c_str(), nullptr, paths[i]);
+                std::ignore = OpenFileDialog(Join(mContext->GetFactoryManager().GetFor<Cubemap>().GetLoader().GetSupportedExtensions(), ",").c_str(), nullptr, paths[i]);
               }
               ImGui::SameLine();
               ImGui::Text("%s", paths[i].empty() ? "None" : paths[i].filename().string().c_str());
@@ -250,27 +251,27 @@ auto DrawProjectWindow(Context& context) -> void {
 
         if (ImGui::Button("Import")) {
           if (importTypeIdx == 0) {
-            importAsset(Object::Type::Cubemap);
+            ImportAsset(*mContext, Object::Type::Cubemap, selectedDirAbs);
             ImGui::CloseCurrentPopup();
           } else if (importTypeIdx == 1) {
             bool rdyToImport{ true };
 
             if (cubeMapcombinedFileName.empty()) {
               rdyToImport = false;
-              MessageBoxW(nullptr, L"Please enter the name of the combined image file.", L"Error", MB_ICONERROR);
+              DisplayError("Please enter the name of the combined image file.");
             }
 
-            auto const dstPath{ currentAbsoluteDir / std::filesystem::path{ cubeMapcombinedFileName } += ".png" };
+            auto const dstPath{ selectedDirAbs / std::filesystem::path{ cubeMapcombinedFileName } += ".png" };
 
             if (exists(dstPath)) {
               rdyToImport = false;
-              MessageBoxW(nullptr, L"The filename is already in use.", L"Error", MB_ICONERROR);
+              DisplayError("The filename is already in use.");
             }
 
             for (auto& path : facePaths) {
               if (path.empty()) {
                 rdyToImport = false;
-                MessageBoxW(nullptr, L"Not all faces of the cubemap are selected. Please select all of them.", L"Error", MB_ICONERROR);
+                DisplayError("Not all faces of the cubemap are selected. Please select all of them.");
                 break;
               }
             }
@@ -288,21 +289,21 @@ auto DrawProjectWindow(Context& context) -> void {
                 if (auto const data{ stbi_load(facePaths[i].string().c_str(), &width, &height, &channelCount, 4) }) {
                   if (width != height) {
                     importSuccess = false;
-                    MessageBoxW(nullptr, std::format(L"Image at {} cannot be used as a cubemap face because it is not square.", facePaths[i].wstring()).c_str(), L"Error", MB_ICONERROR);
+                    DisplayError(std::format(L"Image at {} cannot be used as a cubemap face because it is not square.", facePaths[i].wstring()));
                     stbi_image_free(data);
                     break;
                   }
 
                   if (!IsPowerOfTwo(width)) {
                     importSuccess = false;
-                    MessageBoxW(nullptr, std::format(L"Image at {} cannot be used as a cubemap face because its dimensions are not powers of two.", facePaths[i].wstring()).c_str(), L"Error", MB_ICONERROR);
+                    DisplayError(std::format(L"Image at {} cannot be used as a cubemap face because its dimensions are not powers of two.", facePaths[i].wstring()));
                     stbi_image_free(data);
                     break;
                   }
 
                   if (i > 0 && static_cast<int>(loadedImages[i - 1].get_width()) != width) {
                     importSuccess = false;
-                    MessageBoxW(nullptr, std::format(L"The image dimensions at {} don't match the dimensions of the previous images.", facePaths[i].wstring()).c_str(), L"Error", MB_ICONERROR);
+                    DisplayError(std::format(L"The image dimensions at {} don't match the dimensions of the previous images.", facePaths[i].wstring()));
                     stbi_image_free(data);
                     break;
                   }
@@ -310,7 +311,7 @@ auto DrawProjectWindow(Context& context) -> void {
                   loadedImages[i] = Image{ static_cast<u32>(width), static_cast<u32>(height), 4, std::unique_ptr<u8[]>{ data } };
                 } else {
                   importSuccess = false;
-                  MessageBoxW(nullptr, std::format(L"Failed to load image file at {}.", facePaths[i].wstring()).c_str(), L"Error", MB_ICONERROR);
+                  DisplayError(std::format(L"Failed to load image file at {}.", facePaths[i].wstring()));
                   break;
                 }
               }
@@ -322,9 +323,9 @@ auto DrawProjectWindow(Context& context) -> void {
                   std::ranges::copy_n(loadedImages[i].get_data().data(), faceSize * faceSize * 4, combinedBytes.get() + i * faceSize * faceSize * 4);
                 }
                 if (!stbi_write_png(dstPath.string().c_str(), faceSize, 6 * faceSize, 4, combinedBytes.get(), faceSize * 4)) {
-                  MessageBoxW(nullptr, L"Failed to write combined image.", L"Error", MB_ICONERROR);
+                  DisplayError("Failed to write combined image.");
                 } else {
-                  importConcreteAsset(context.GetFactoryManager().GetFor<Cubemap>().GetLoader(), dstPath);
+                  ImportConcreteAsset(*mContext, mContext->GetFactoryManager().GetFor<Cubemap>().GetLoader(), dstPath, selectedDirAbs);
                   ImGui::CloseCurrentPopup();
                 }
               }
@@ -335,7 +336,7 @@ auto DrawProjectWindow(Context& context) -> void {
         ImGui::EndPopup();
       }
 
-      for (auto const& entry : std::filesystem::directory_iterator{ currentAbsoluteDir }) {
+      for (auto const& entry : std::filesystem::directory_iterator{ selectedDirAbs }) {
         auto const entryAbsPath{ absolute(entry.path()) };
 
         if (is_directory(entryAbsPath)) {
@@ -358,11 +359,11 @@ auto DrawProjectWindow(Context& context) -> void {
           } else {
             if (ImGui::Selectable(entryAbsPath.stem().string().c_str(), isSelected, ImGuiSelectableFlags_AllowDoubleClick)) {
               if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
-                context.SetSelectedObject(nullptr);
+                mContext->SetSelectedObject(nullptr);
                 selectedDir.reset();
-                currentRelativeDir = relative(entryAbsPath, context.GetAssetDirectoryAbsolute());
+                mSelectedDirRel = relative(entryAbsPath, mContext->GetAssetDirectoryAbsolute());
               } else {
-                context.SetSelectedObject(nullptr);
+                mContext->SetSelectedObject(nullptr);
                 selectedDir = entryAbsPath;
               }
             }
@@ -370,31 +371,31 @@ auto DrawProjectWindow(Context& context) -> void {
               renaming = RenameInfo{ .newName = entryAbsPath.stem().string(), .src = entryAbsPath };
             }
           }
-        } else if (auto const asset{ context.GetResources().TryGetAssetAt(entryAbsPath) }) {
+        } else if (auto const asset{ mContext->GetResources().TryGetAssetAt(entryAbsPath) }) {
           if (renaming && equivalent(renaming->src, entryAbsPath)) {
             ImGui::SetKeyboardFocusHere();
             if (ImGui::InputText("##Rename", &renaming->newName, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll)) {
-              auto renamedAsset{ context.GetResources().UnregisterAsset(renaming->src) };
+              auto renamedAsset{ mContext->GetResources().UnregisterAsset(renaming->src) };
 
-              auto const oldAssetMetaPath{ std::filesystem::path{ renaming->src } += context.GetAssetFileExtension() };
-              auto const newAssetMetaPath{ renaming->src.parent_path() / renaming->newName += renaming->src.extension() += context.GetAssetFileExtension() };
+              auto const oldAssetMetaPath{ std::filesystem::path{ renaming->src } += mContext->GetAssetFileExtension() };
+              auto const newAssetMetaPath{ renaming->src.parent_path() / renaming->newName += renaming->src.extension() += mContext->GetAssetFileExtension() };
               std::filesystem::rename(oldAssetMetaPath, newAssetMetaPath);
 
               auto const newAssetPath{ renaming->src.parent_path() / renaming->newName += renaming->src.extension() };
               std::filesystem::rename(renaming->src, newAssetPath);
 
               renamedAsset->SetName(newAssetPath.stem().string());
-              context.GetResources().RegisterAsset(std::move(renamedAsset), newAssetPath);
+              mContext->GetResources().RegisterAsset(std::move(renamedAsset), newAssetPath);
               renaming.reset();
             }
             if (!ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
               renaming.reset();
             }
           } else {
-            auto isSelected{ asset == context.GetSelectedObject() };
+            auto isSelected{ asset == mContext->GetSelectedObject() };
 
             if (ImGui::Selectable(entryAbsPath.stem().string().c_str(), isSelected)) {
-              context.SetSelectedObject(asset);
+              mContext->SetSelectedObject(asset);
               selectedDir.reset();
             }
 

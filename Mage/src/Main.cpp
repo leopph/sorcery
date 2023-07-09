@@ -95,6 +95,8 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
       });
     }
 
+    auto const projectWindow{ std::make_unique<sorcery::mage::ProjectWindow>(context) };
+
     while (!sorcery::gWindow.IsQuitSignaled()) {
       sorcery::gWindow.ProcessEvents();
 
@@ -146,7 +148,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
         DrawMainMenuBar(context);
         DrawObjectPropertiesWindow(context);
-        DrawProjectWindow(context);
+        projectWindow->Draw();
         sorcery::mage::DrawPerformanceCounterWindow();
       }
 
