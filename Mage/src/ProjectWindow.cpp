@@ -17,7 +17,7 @@
 
 namespace sorcery::mage {
 auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& rootDirAbs, std::filesystem::path const& thisNodePathRootRel, std::optional<std::filesystem::path>& selectedNodePathRootRel) -> void {
-  auto const nodePathAbs{ canonical(rootDirAbs / thisNodePathRootRel) };
+  auto nodePathAbs{ canonical(rootDirAbs / thisNodePathRootRel) };
   auto const isDirectory{ is_directory(nodePathAbs) };
   auto const isSelected{ selectedNodePathRootRel && equivalent(nodePathAbs, canonical(rootDirAbs / *selectedNodePathRootRel)) };
   auto const isRenaming{ mRenameInfo && equivalent(mRenameInfo->nodePathAbs, nodePathAbs) };
@@ -72,6 +72,8 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& rootDirAbs, 
         if (isSelected) {
           selectedNodePathRootRel = relative(newNodePathAbs, rootDirAbs);
         }
+
+        nodePathAbs = newNodePathAbs;
       }
 
       if ((!ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) || ImGui::IsKeyPressed(ImGuiKey_Escape)) {
