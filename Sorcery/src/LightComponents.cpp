@@ -13,7 +13,7 @@
 
 RTTR_REGISTRATION {
   rttr::registration::class_<sorcery::LightComponent>{ "LightComponent" }
-    /*.constructor<>()(rttr::policy::ctor::as_raw_ptr)*/;
+    .constructor<>();
 }
 
 
