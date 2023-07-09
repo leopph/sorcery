@@ -106,6 +106,7 @@ public:
 [[nodiscard]] LEOPPHAPI std::wstring_view GetExecutablePath() noexcept;
 
 LEOPPHAPI auto DisplayError(std::string_view msg) noexcept -> void;
+LEOPPHAPI auto DisplayError(std::wstring_view msg) noexcept -> void;
 
 
 // Functions taking or returning bools need to be wrapped because mono's bool's are 4 bytes but msvc x64's is 1 byte

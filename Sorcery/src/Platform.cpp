@@ -27,72 +27,72 @@ auto CALLBACK Window::WindowProc(HWND const hwnd, UINT const msg, WPARAM const w
     }
 
     switch (msg) {
-    case WM_CLOSE: {
-      instance->mQuitSignaled = true;
-      return 0;
-    }
-
-    case WM_SIZE: {
-      instance->mOnSizeEvent.invoke({ LOWORD(lparam), HIWORD(lparam) });
-      return 0;
-    }
-
-    case WM_SYSCOMMAND: {
-      if (wparam == SC_KEYMENU) {
+      case WM_CLOSE: {
+        instance->mQuitSignaled = true;
         return 0;
       }
-      break;
-    }
 
-    case WM_ACTIVATE: {
-      if (LOWORD(wparam) == WA_INACTIVE) {
-        if (instance->mBorderless && instance->mMinimizeOnBorderlessFocusLoss) {
-          ShowWindow(hwnd, SW_MINIMIZE);
-        }
-        instance->mInFocus = false;
-        instance->mOnFocusLossEvent.invoke();
-      } else {
-        instance->mInFocus = true;
-        instance->mOnFocusGainEvent.invoke();
+      case WM_SIZE: {
+        instance->mOnSizeEvent.invoke({ LOWORD(lparam), HIWORD(lparam) });
+        return 0;
       }
-      return 0;
-    }
 
-    case WM_INPUT: {
-      if (wparam == RIM_INPUT) {
-        UINT requiredSize;
-        GetRawInputData(reinterpret_cast<HRAWINPUT>(lparam), RID_INPUT, nullptr, &requiredSize, sizeof(RAWINPUTHEADER));
-
-        auto static bufferSize = requiredSize;
-        auto static buffer = std::make_unique_for_overwrite<BYTE[]>(requiredSize);
-
-        if (requiredSize > bufferSize) {
-          bufferSize = requiredSize;
-          buffer = std::make_unique_for_overwrite<BYTE[]>(requiredSize);
+      case WM_SYSCOMMAND: {
+        if (wparam == SC_KEYMENU) {
+          return 0;
         }
+        break;
+      }
 
-        GetRawInputData(reinterpret_cast<HRAWINPUT>(lparam), RID_INPUT, buffer.get(), &bufferSize, sizeof(RAWINPUTHEADER));
-
-        if (auto const* const raw = reinterpret_cast<RAWINPUT*>(buffer.get()); raw->header.dwType == RIM_TYPEMOUSE) {
-          if (raw->data.mouse.usFlags == MOUSE_MOVE_RELATIVE) {
-            instance->mMouseDelta.x += raw->data.mouse.lLastX;
-            instance->mMouseDelta.y += raw->data.mouse.lLastY;
+      case WM_ACTIVATE: {
+        if (LOWORD(wparam) == WA_INACTIVE) {
+          if (instance->mBorderless && instance->mMinimizeOnBorderlessFocusLoss) {
+            ShowWindow(hwnd, SW_MINIMIZE);
           }
+          instance->mInFocus = false;
+          instance->mOnFocusLossEvent.invoke();
+        } else {
+          instance->mInFocus = true;
+          instance->mOnFocusGainEvent.invoke();
+        }
+        return 0;
+      }
+
+      case WM_INPUT: {
+        if (wparam == RIM_INPUT) {
+          UINT requiredSize;
+          GetRawInputData(reinterpret_cast<HRAWINPUT>(lparam), RID_INPUT, nullptr, &requiredSize, sizeof(RAWINPUTHEADER));
+
+          auto static bufferSize = requiredSize;
+          auto static buffer = std::make_unique_for_overwrite<BYTE[]>(requiredSize);
+
+          if (requiredSize > bufferSize) {
+            bufferSize = requiredSize;
+            buffer = std::make_unique_for_overwrite<BYTE[]>(requiredSize);
+          }
+
+          GetRawInputData(reinterpret_cast<HRAWINPUT>(lparam), RID_INPUT, buffer.get(), &bufferSize, sizeof(RAWINPUTHEADER));
+
+          if (auto const* const raw = reinterpret_cast<RAWINPUT*>(buffer.get()); raw->header.dwType == RIM_TYPEMOUSE) {
+            if (raw->data.mouse.usFlags == MOUSE_MOVE_RELATIVE) {
+              instance->mMouseDelta.x += raw->data.mouse.lLastX;
+              instance->mMouseDelta.y += raw->data.mouse.lLastY;
+            }
+          }
+
+          DefWindowProcW(hwnd, msg, wparam, lparam);
         }
 
-        DefWindowProcW(hwnd, msg, wparam, lparam);
+        return 0;
       }
 
-      return 0;
-    }
+      case WM_MOUSEMOVE: {
+        if (instance->mInFocus && instance->mLockedCursorPos) {
+          SetCursorPos(instance->mLockedCursorPos->x, instance->mLockedCursorPos->y);
+        }
 
-    case WM_MOUSEMOVE: {
-      if (instance->mInFocus && instance->mLockedCursorPos) {
-        SetCursorPos(instance->mLockedCursorPos->x, instance->mLockedCursorPos->y);
+        SetCursor(instance->mHideCursor ? nullptr : DEFAULT_CURSOR);
       }
-
-      SetCursor(instance->mHideCursor ? nullptr : DEFAULT_CURSOR);
-    }
     }
   }
 
@@ -374,7 +374,12 @@ auto GetExecutablePath() noexcept -> std::wstring_view {
 }
 
 
-auto DisplayError(std::string_view msg) noexcept -> void {
+auto DisplayError(std::string_view const msg) noexcept -> void {
   MessageBoxA(nullptr, msg.data(), "Error", MB_ICONERROR);
+}
+
+
+auto DisplayError(std::wstring_view const msg) noexcept -> void {
+  MessageBoxW(nullptr, msg.data(), L"Error", MB_ICONERROR);
 }
 }
