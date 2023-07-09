@@ -16,15 +16,14 @@
 
 
 namespace sorcery::mage {
-auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& rootDirAbs, std::filesystem::path const& thisNodePathRootRel, std::optional<std::filesystem::path>& selectedNodePathRootRel) -> void {
+auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& rootDirAbs, std::filesystem::path const& thisNodePathRootRel, bool const isThisNodeDirectory, Object* assetAtThisNode, std::optional<std::filesystem::path>& selectedNodePathRootRel) -> void {
   auto nodePathAbs{ rootDirAbs / thisNodePathRootRel };
-  auto const isDirectory{ is_directory(nodePathAbs) };
   auto const isSelected{ selectedNodePathRootRel && equivalent(nodePathAbs, rootDirAbs / *selectedNodePathRootRel) };
   auto const isRenaming{ mRenameInfo && equivalent(mRenameInfo->nodePathAbs, nodePathAbs) };
 
   ImGuiTreeNodeFlags treeNodeFlags{ ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_FramePadding | ImGuiTreeNodeFlags_OpenOnDoubleClick };
 
-  if (!isDirectory) {
+  if (!isThisNodeDirectory) {
     treeNodeFlags |= ImGuiTreeNodeFlags_Leaf;
   } else {
     treeNodeFlags |= ImGuiTreeNodeFlags_DefaultOpen;
@@ -47,7 +46,7 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& rootDirAbs, 
 
     if (ImGui::IsItemClicked()) {
       selectedNodePathRootRel = thisNodePathRootRel;
-      mContext->SetSelectedObject(isDirectory ? nullptr : mContext->GetResources().TryGetAssetAt(nodePathAbs));
+      mContext->SetSelectedObject(assetAtThisNode);
     }
 
     if (isRenaming) {
@@ -57,7 +56,7 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& rootDirAbs, 
       if (ImGui::InputText("##Rename", &mRenameInfo->newName, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll)) {
         auto const newNodePathAbs{ mRenameInfo->nodePathAbs.parent_path() / mRenameInfo->newName += mRenameInfo->nodePathAbs.extension() };
 
-        if (!isDirectory) {
+        if (!isThisNodeDirectory) {
           auto renamedAsset{ mContext->GetResources().UnregisterAsset(mRenameInfo->nodePathAbs) };
 
           auto const oldAssetMetaPath{ std::filesystem::path{ mRenameInfo->nodePathAbs } += mContext->GetAssetFileExtension() };
@@ -85,11 +84,13 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& rootDirAbs, 
       mRenameInfo = RenameInfo{ .newName = nodePathAbs.stem().string(), .nodePathAbs = nodePathAbs };
     }
 
-    if (isDirectory) {
+    if (isThisNodeDirectory) {
       for (auto const& entry : std::filesystem::directory_iterator{ nodePathAbs }) {
-        if (is_directory(entry.path()) || mContext->GetResources().TryGetAssetAt(absolute(entry.path()))) {
+        auto const entryIsDirectory{ entry.is_directory() };
+
+        if (auto const assetAtEntry{ entryIsDirectory ? nullptr : mContext->GetResources().TryGetAssetAt(absolute(entry.path())) }; entryIsDirectory || assetAtEntry) {
           auto const rootRelativeChildDir{ relative(entry.path(), rootDirAbs) };
-          DrawFilesystemTree(rootDirAbs, rootRelativeChildDir, selectedNodePathRootRel);
+          DrawFilesystemTree(rootDirAbs, rootRelativeChildDir, entryIsDirectory, assetAtEntry, selectedNodePathRootRel);
         }
       }
     }
@@ -168,7 +169,7 @@ auto ProjectWindow::Draw() -> void {
       mSelectedNodePathRootRel = std::nullopt;
     }
 
-    DrawFilesystemTree(mContext->GetProjectDirectoryAbsolute(), Context::GetAssetDirectoryProjectRootRelative(), mSelectedNodePathRootRel);
+    DrawFilesystemTree(mContext->GetProjectDirectoryAbsolute(), Context::GetAssetDirectoryProjectRootRelative(), true, nullptr, mSelectedNodePathRootRel);
 
     if (ImGui::IsWindowHovered(ImGuiHoveredFlags_RootWindow) && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
       ImGui::OpenPopup(CONTEXT_MENU_ID);
