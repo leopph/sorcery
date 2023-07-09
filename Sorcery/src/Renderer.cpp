@@ -167,9 +167,6 @@ class Renderer::Impl {
 
   ComPtr<IDXGIDevice1> mDxgiDevice;
 
-  ComPtr<ID3D11ShaderResourceView> mGizmoColorSbSrv;
-  ComPtr<ID3D11ShaderResourceView> mLineGizmoVertexSbSrv;
-
   ComPtr<ID3D11PixelShader> mMeshPbrPs;
   ComPtr<ID3D11PixelShader> mPostProcessPs;
   ComPtr<ID3D11PixelShader> mSkyboxPs;
@@ -187,8 +184,6 @@ class Renderer::Impl {
   ComPtr<ID3D11Buffer> mPostProcessCb;
   ComPtr<ID3D11Buffer> mSkyboxCb;
   ComPtr<ID3D11Buffer> mDepthOnlyCb;
-  ComPtr<ID3D11Buffer> mGizmoColorSb;
-  ComPtr<ID3D11Buffer> mLineGizmoVertexSb;
 
   ComPtr<ID3D11InputLayout> mAllAttribsIl;
   ComPtr<ID3D11InputLayout> mPos3OnlyIl;
@@ -224,17 +219,21 @@ class Renderer::Impl {
   std::unique_ptr<SwapChain> mSwapChain;
 
   std::unique_ptr<StructuredBuffer<ShaderLight>> mLightBuffer;
+  std::unique_ptr<StructuredBuffer<Vector4>> mGizmoColorBuffer;
+  std::unique_ptr<StructuredBuffer<ShaderLineGizmoVertexData>> mLineGizmoVertexDataBuffer;
 
   u32 mSyncInterval{ 0 };
-  std::vector<StaticMeshComponent const*> mStaticMeshComponents;
   f32 mInvGamma{ 1.f / 2.2f };
+  int mInFlightFrameCount{ 2 };
+
+  std::vector<StaticMeshComponent const*> mStaticMeshComponents;
   std::vector<SkyboxComponent const*> mSkyboxes;
   std::vector<LightComponent const*> mLights;
   std::vector<Camera const*> mGameRenderCameras;
-  std::vector<ShaderLineGizmoVertexData> mLineGizmoVertexData;
+
   std::vector<Vector4> mGizmoColors;
-  int mGizmoColorBufferSize{ 1 };
-  int mLineGizmoVertexBufferSize{ 1 };
+  std::vector<ShaderLineGizmoVertexData> mLineGizmoVertexData;
+
   // Normalized to [0, 1]
   std::array<float, MAX_CASCADE_COUNT - 1> mCascadeSplits{ 0.1f, 0.3f, 0.6f };
   int mCascadeCount{ 4 };
@@ -242,8 +241,6 @@ class Renderer::Impl {
   bool mVisualizeShadowCascades{ false };
   bool mUseStableShadowCascadeProjection{ false };
   ShadowFilteringMode mShadowFilteringMode{ ShadowFilteringMode::PCFTent5x5 };
-  int mInFlightFrameCount{ 2 };
-
 
   [[nodiscard]] auto GetSceneDrawDssForReversedDepth() -> ComPtr<ID3D11DepthStencilState>&;
   [[nodiscard]] auto GetShadowDrawDssForReversedDepth() -> ComPtr<ID3D11DepthStencilState>&;
@@ -251,11 +248,10 @@ class Renderer::Impl {
   [[nodiscard]] auto GetShadowPointSamplerForReversedDepth() -> ComPtr<ID3D11SamplerState>&;
   [[nodiscard]] auto GetShadowPcfSamplerForReversedDepth() -> ComPtr<ID3D11SamplerState>&;
 
-
-  [[nodiscard]] auto CalculateCameraShadowCascadeBoundaries(Camera const& cam) -> ShadowCascadeBoundaries;
+  [[nodiscard]] auto CalculateCameraShadowCascadeBoundaries(Camera const& cam) const -> ShadowCascadeBoundaries;
 
   auto CreateDeviceAndContext() -> void;
-  auto SetDebugBreaks() -> void;
+  auto SetDebugBreaks() const -> void;
   auto CreateInputLayouts() -> void;
   auto CreateShaders() -> void;
   auto CreateConstantBuffers() -> void;
@@ -264,13 +260,10 @@ class Renderer::Impl {
   auto CreateShadowAtlases() -> void;
   auto CreateSamplerStates() -> void;
   auto CreateDefaultAssets() -> void;
-  auto RecreateGizmoColorBuffer() -> void;
-  auto RecreateLineGizmoVertexBuffer() -> void;
-  auto CreateStructuredBuffers() -> void;
 
   auto DrawShadowMaps(ShadowAtlas const& atlas) -> void;
   auto DrawMeshes(std::span<int const> meshComponentIndices, bool useMaterials) noexcept -> void;
-  auto DrawSkybox(Matrix4 const& camViewMtx, Matrix4 const& camProjMtx) noexcept -> void;
+  auto DrawSkybox(Matrix4 const& camViewMtx, Matrix4 const& camProjMtx) const noexcept -> void;
   auto DrawGizmos() -> void;
   auto PostProcess(ID3D11ShaderResourceView* src, ID3D11RenderTargetView* dst) noexcept -> void;
   auto DrawFullWithCameras(std::span<Camera const* const> cameras, RenderTarget const& rt) -> void;
@@ -398,7 +391,7 @@ auto Renderer::Impl::GetShadowPcfSamplerForReversedDepth() -> ComPtr<ID3D11Sampl
 }
 
 
-auto Renderer::Impl::CalculateCameraShadowCascadeBoundaries(Camera const& cam) -> ShadowCascadeBoundaries {
+auto Renderer::Impl::CalculateCameraShadowCascadeBoundaries(Camera const& cam) const -> ShadowCascadeBoundaries {
   auto const camNear{ cam.GetNearClipPlane() };
   auto const shadowDistance{ std::min(cam.GetFarClipPlane(), mShadowDistance) };
   auto const shadowedFrustumDepth{ shadowDistance - camNear };
@@ -437,7 +430,7 @@ auto Renderer::Impl::CreateDeviceAndContext() -> void {
 }
 
 
-auto Renderer::Impl::SetDebugBreaks() -> void {
+auto Renderer::Impl::SetDebugBreaks() const -> void {
   ComPtr<ID3D11Debug> d3dDebug;
   if (FAILED(mDevice.As(&d3dDebug))) {
     throw std::runtime_error{ "Failed to get ID3D11Debug interface." };
@@ -984,70 +977,6 @@ auto Renderer::Impl::CreateDefaultAssets() -> void {
 }
 
 
-auto Renderer::Impl::RecreateGizmoColorBuffer() -> void {
-  D3D11_BUFFER_DESC const bufDesc{
-    .ByteWidth = static_cast<UINT>(mGizmoColorBufferSize * sizeof(decltype(mGizmoColors)::value_type)),
-    .Usage = D3D11_USAGE_DYNAMIC,
-    .BindFlags = D3D11_BIND_SHADER_RESOURCE,
-    .CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
-    .MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED,
-    .StructureByteStride = sizeof(decltype(mGizmoColors)::value_type)
-  };
-
-  if (FAILED(mDevice->CreateBuffer(&bufDesc, nullptr, mGizmoColorSb.ReleaseAndGetAddressOf()))) {
-    throw std::runtime_error{ "Failed to create gizmo color structured buffer." };
-  }
-
-  D3D11_SHADER_RESOURCE_VIEW_DESC const srvDesc{
-    .Format = DXGI_FORMAT_UNKNOWN,
-    .ViewDimension = D3D11_SRV_DIMENSION_BUFFER,
-    .Buffer = {
-      .FirstElement = 0,
-      .NumElements = static_cast<UINT>(mGizmoColorBufferSize)
-    }
-  };
-
-  if (FAILED(mDevice->CreateShaderResourceView(mGizmoColorSb.Get(), &srvDesc, mGizmoColorSbSrv.ReleaseAndGetAddressOf()))) {
-    throw std::runtime_error{ "Failed to create gizmo color SB SRV." };
-  }
-}
-
-
-auto Renderer::Impl::RecreateLineGizmoVertexBuffer() -> void {
-  D3D11_BUFFER_DESC const bufDesc{
-    .ByteWidth = static_cast<UINT>(mLineGizmoVertexBufferSize * sizeof(decltype(mLineGizmoVertexData)::value_type)),
-    .Usage = D3D11_USAGE_DYNAMIC,
-    .BindFlags = D3D11_BIND_SHADER_RESOURCE,
-    .CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
-    .MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED,
-    .StructureByteStride = sizeof(decltype(mLineGizmoVertexData)::value_type)
-  };
-
-  if (FAILED(mDevice->CreateBuffer(&bufDesc, nullptr, mLineGizmoVertexSb.ReleaseAndGetAddressOf()))) {
-    throw std::runtime_error{ "Failed to create line gizmo vertex structured buffer." };
-  }
-
-  D3D11_SHADER_RESOURCE_VIEW_DESC const srvDesc{
-    .Format = DXGI_FORMAT_UNKNOWN,
-    .ViewDimension = D3D11_SRV_DIMENSION_BUFFER,
-    .Buffer = {
-      .FirstElement = 0,
-      .NumElements = static_cast<UINT>(mLineGizmoVertexBufferSize)
-    }
-  };
-
-  if (FAILED(mDevice->CreateShaderResourceView(mLineGizmoVertexSb.Get(), &srvDesc, mLineGizmoVertexSbSrv.ReleaseAndGetAddressOf()))) {
-    throw std::runtime_error{ "Failed to create line gizmo vertex SB SRV." };
-  }
-}
-
-
-auto Renderer::Impl::CreateStructuredBuffers() -> void {
-  RecreateGizmoColorBuffer();
-  RecreateLineGizmoVertexBuffer();
-}
-
-
 auto Renderer::Impl::DrawMeshes(std::span<int const> const meshComponentIndices, bool const useMaterials) noexcept -> void {
   mImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -1143,7 +1072,7 @@ auto Renderer::Impl::PostProcess(ID3D11ShaderResourceView* const src, ID3D11Rend
 }
 
 
-auto Renderer::Impl::DrawSkybox(Matrix4 const& camViewMtx, Matrix4 const& camProjMtx) noexcept -> void {
+auto Renderer::Impl::DrawSkybox(Matrix4 const& camViewMtx, Matrix4 const& camProjMtx) const noexcept -> void {
   if (mSkyboxes.empty()) {
     return;
   }
@@ -1235,48 +1164,20 @@ auto Renderer::Impl::DrawShadowMaps(ShadowAtlas const& atlas) -> void {
 
 
 auto Renderer::Impl::DrawGizmos() -> void {
-  auto gizmoColorBufferSize{ mGizmoColorBufferSize };
+  mGizmoColorBuffer->Resize(static_cast<int>(std::ssize(mGizmoColors)));
+  std::ranges::copy(mGizmoColors, std::begin(mGizmoColorBuffer->Map()));
+  mGizmoColorBuffer->Unmap();
 
-  while (gizmoColorBufferSize < static_cast<int>(mGizmoColors.size())) {
-    gizmoColorBufferSize *= 2;
-  }
-
-  if (gizmoColorBufferSize != mGizmoColorBufferSize) {
-    mGizmoColorBufferSize = gizmoColorBufferSize;
-    RecreateGizmoColorBuffer();
-  }
-
-  if (!mGizmoColors.empty()) {
-    D3D11_MAPPED_SUBRESOURCE mappedGizmoColorSb;
-    mImmediateContext->Map(mGizmoColorSb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedGizmoColorSb);
-    std::memcpy(mappedGizmoColorSb.pData, mGizmoColors.data(), mGizmoColors.size() * sizeof(decltype(mGizmoColors)::value_type));
-    mImmediateContext->Unmap(mGizmoColorSb.Get(), 0);
-  }
-
-  auto lineGizmoVertexBufferSize{ mLineGizmoVertexBufferSize };
-
-  while (lineGizmoVertexBufferSize < static_cast<int>(mLineGizmoVertexData.size())) {
-    lineGizmoVertexBufferSize *= 2;
-  }
-
-  if (lineGizmoVertexBufferSize != mLineGizmoVertexBufferSize) {
-    mLineGizmoVertexBufferSize = lineGizmoVertexBufferSize;
-    RecreateLineGizmoVertexBuffer();
-  }
-
-  if (!mLineGizmoVertexData.empty()) {
-    D3D11_MAPPED_SUBRESOURCE mappedLineGizmoVertexSb;
-    mImmediateContext->Map(mLineGizmoVertexSb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedLineGizmoVertexSb);
-    std::memcpy(mappedLineGizmoVertexSb.pData, mLineGizmoVertexData.data(), mLineGizmoVertexData.size() * sizeof(decltype(mLineGizmoVertexData)::value_type));
-    mImmediateContext->Unmap(mLineGizmoVertexSb.Get(), 0);
-  }
+  mLineGizmoVertexDataBuffer->Resize(static_cast<int>(std::ssize(mLineGizmoVertexData)));
+  std::ranges::copy(mLineGizmoVertexData, std::begin(mLineGizmoVertexDataBuffer->Map()));
+  mLineGizmoVertexDataBuffer->Unmap();
 
   mImmediateContext->PSSetShader(mGizmoPs.Get(), nullptr, 0);
-  mImmediateContext->PSSetShaderResources(RES_SLOT_GIZMO_COLOR, 1, mGizmoColorSbSrv.GetAddressOf());
+  mImmediateContext->PSSetShaderResources(RES_SLOT_GIZMO_COLOR, 1, std::array{ mGizmoColorBuffer->GetSrv() }.data());
 
   if (!mLineGizmoVertexData.empty()) {
     mImmediateContext->VSSetShader(mLineGizmoVs.Get(), nullptr, 0);
-    mImmediateContext->VSSetShaderResources(RES_SLOT_LINE_GIZMO_VERTEX, 1, mLineGizmoVertexSbSrv.GetAddressOf());
+    mImmediateContext->VSSetShaderResources(RES_SLOT_LINE_GIZMO_VERTEX, 1, std::array{ mLineGizmoVertexDataBuffer->GetSrv() }.data());
     mImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
     mImmediateContext->DrawInstanced(2, static_cast<UINT>(mLineGizmoVertexData.size()), 0, 0);
   }
@@ -1488,6 +1389,8 @@ auto Renderer::Impl::StartUp() -> void {
   mSwapChain = std::make_unique<SwapChain>(mDevice, dxgiFactory2.Get());
 
   mLightBuffer = std::make_unique<StructuredBuffer<ShaderLight>>(mDevice, mImmediateContext);
+  mGizmoColorBuffer = std::make_unique<StructuredBuffer<Vector4>>(mDevice, mImmediateContext);
+  mLineGizmoVertexDataBuffer = std::make_unique<StructuredBuffer<ShaderLineGizmoVertexData>>(mDevice, mImmediateContext);
 
   CreateInputLayouts();
   CreateShaders();
@@ -1497,16 +1400,15 @@ auto Renderer::Impl::StartUp() -> void {
   CreateShadowAtlases();
   CreateSamplerStates();
   CreateDefaultAssets();
-  CreateStructuredBuffers();
 
-  gWindow.OnWindowSize.add_handler(this, OnWindowSize);
+  gWindow.OnWindowSize.add_handler(this, &OnWindowSize);
 
   dxgiFactory2->MakeWindowAssociation(gWindow.GetHandle(), DXGI_MWA_NO_WINDOW_CHANGES);
 }
 
 
 auto Renderer::Impl::ShutDown() -> void {
-  gWindow.OnWindowSize.remove_handler(this, OnWindowSize);
+  gWindow.OnWindowSize.remove_handler(this, &OnWindowSize);
 }
 
 
