@@ -1,5 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "builtin-baseline": "92bad87dfb4e711ac658a9ca33e1183184677020",
   "dependencies": [
     {
       "name": "yaml-cpp"
@@ -18,7 +19,8 @@
     },
     {
       "name": "imgui",
-      "features": [ "docking-experimental", "dx11-binding", "win32-binding" ]
+      "features": [ "docking-experimental", "dx11-binding", "win32-binding" ],
+      "version>=": "1.89.7"
     },
     {
       "name": "imguizmo"
