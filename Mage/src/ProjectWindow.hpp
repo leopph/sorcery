@@ -22,7 +22,7 @@ class ProjectWindow {
 
   Context* mContext;
   bool mIsOpen{ true };
-  std::optional<std::filesystem::path> mSelectedNodePathRootRel; // nullopt is none is selected
+  std::optional<std::filesystem::path> mSelectedNodePathProjDirRel; // nullopt is none is selected
   std::optional<RenameInfo> mRenameInfo; // nullopt if not renaming
 
   auto DrawFilesystemTree(std::filesystem::path const& rootDirAbs, std::filesystem::path const& thisNodePathRootRel, bool isThisNodeDirectory, Object* assetAtThisNode, std::optional<std::filesystem::path>& selectedNodePathRootRel) -> void;

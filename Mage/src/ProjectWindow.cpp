@@ -34,7 +34,8 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& rootDirAbs, 
   }
 
   if (isRenaming) {
-    treeNodeFlags |= ImGuiTreeNodeFlags_AllowItemOverlap;
+    treeNodeFlags |= ImGuiTreeNodeFlags_AllowOverlap;
+    ImGui::SetNextItemAllowOverlap();
   } else {
     treeNodeFlags |= ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_SpanFullWidth;
   }
@@ -42,8 +43,6 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& rootDirAbs, 
   auto const treeNodePos{ ImGui::GetCursorPos() };
 
   if (ImGui::TreeNodeEx(std::format("{}{}", isRenaming ? "##" : "", nodePathAbs.stem().string()).c_str(), treeNodeFlags)) {
-    ImGui::SetItemAllowOverlap();
-
     if (ImGui::IsItemClicked()) {
       selectedNodePathRootRel = thisNodePathRootRel;
       mContext->SetSelectedObject(assetAtThisNode);
@@ -165,18 +164,18 @@ ProjectWindow::ProjectWindow(Context& context) :
 
 auto ProjectWindow::Draw() -> void {
   if (ImGui::Begin("Project", &mIsOpen, ImGuiWindowFlags_NoCollapse)) {
-    if ((!ImGui::IsWindowHovered() && (ImGui::IsMouseClicked(ImGuiMouseButton_Left) || ImGui::IsMouseClicked(ImGuiMouseButton_Right))) || (mSelectedNodePathRootRel && !exists(mContext->GetAssetDirectoryAbsolute() / *mSelectedNodePathRootRel))) {
-      mSelectedNodePathRootRel = std::nullopt;
+    if ((!ImGui::IsWindowHovered() && (ImGui::IsMouseClicked(ImGuiMouseButton_Left) || ImGui::IsMouseClicked(ImGuiMouseButton_Right))) || (mSelectedNodePathProjDirRel && !exists(mContext->GetProjectDirectoryAbsolute() / *mSelectedNodePathProjDirRel))) {
+      mSelectedNodePathProjDirRel = std::nullopt;
     }
 
-    DrawFilesystemTree(mContext->GetProjectDirectoryAbsolute(), Context::GetAssetDirectoryProjectRootRelative(), true, nullptr, mSelectedNodePathRootRel);
+    DrawFilesystemTree(mContext->GetProjectDirectoryAbsolute(), Context::GetAssetDirectoryProjectRootRelative(), true, nullptr, mSelectedNodePathProjDirRel);
 
     if (ImGui::IsWindowHovered(ImGuiHoveredFlags_RootWindow) && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
       ImGui::OpenPopup(CONTEXT_MENU_ID);
     }
 
     std::filesystem::path const targetWorkingDirPathAbs{
-      mSelectedNodePathRootRel ? is_directory(*mSelectedNodePathRootRel) ? mContext->GetAssetDirectoryAbsolute() / *mSelectedNodePathRootRel : (mContext->GetAssetDirectoryAbsolute() / *mSelectedNodePathRootRel).parent_path() : mContext->GetAssetDirectoryAbsolute()
+      mSelectedNodePathProjDirRel ? is_directory(*mSelectedNodePathProjDirRel) ? mContext->GetAssetDirectoryAbsolute() / *mSelectedNodePathProjDirRel : (mContext->GetAssetDirectoryAbsolute() / *mSelectedNodePathProjDirRel).parent_path() : mContext->GetAssetDirectoryAbsolute()
     };
 
     auto openCubemapImportModal{ false };
@@ -186,7 +185,7 @@ auto ProjectWindow::Draw() -> void {
         if (ImGui::MenuItem("Folder")) {
           auto const newFolderPath{ GenerateUniquePath(targetWorkingDirPathAbs / "New Folder") };
           create_directory(newFolderPath);
-          mSelectedNodePathRootRel = relative(newFolderPath, mContext->GetAssetDirectoryAbsolute());
+          mSelectedNodePathProjDirRel = relative(newFolderPath, mContext->GetAssetDirectoryAbsolute());
           mContext->SetSelectedObject(nullptr);
           mRenameInfo = RenameInfo{ .newName = newFolderPath.stem().string(), .nodePathAbs = newFolderPath };
         }
