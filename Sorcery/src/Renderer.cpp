@@ -214,8 +214,6 @@ class Renderer::Impl {
   std::unique_ptr<DirectionalShadowAtlas> mDirectionalShadowAtlas;
   std::unique_ptr<PunctualShadowAtlas> mPunctualShadowAtlas;
 
-  std::unique_ptr<RenderTarget> mGameViewRenderTarget;
-  std::unique_ptr<RenderTarget> mSceneViewRenderTarget;
   std::unique_ptr<SwapChain> mSwapChain;
 
   std::unique_ptr<StructuredBuffer<ShaderLight>> mLightBuffer;
@@ -276,21 +274,7 @@ public:
   auto StartUp() -> void;
   auto ShutDown() -> void;
 
-  auto DrawGame() -> void;
-  auto DrawSceneView(Camera const& cam) -> void;
-
-
-  auto GetGameResolution() noexcept -> Extent2D<u32>;
-  auto SetGameResolution(Extent2D<u32> resolution) noexcept -> void;
-
-  auto GetSceneResolution() noexcept -> Extent2D<u32>;
-  auto SetSceneResolution(Extent2D<u32> resolution) noexcept -> void;
-
-  auto GetGameFrame() noexcept -> ID3D11ShaderResourceView*;
-  auto GetSceneFrame() noexcept -> ID3D11ShaderResourceView*;
-
-  auto GetGameAspectRatio() noexcept -> f32;
-  auto GetSceneAspectRatio() noexcept -> f32;
+  auto DrawCamera(Camera const& cam, RenderTarget* rt) -> void;
 
   auto BindAndClearSwapChain() noexcept -> void;
   auto Present() noexcept -> void;
@@ -1383,9 +1367,6 @@ auto Renderer::Impl::StartUp() -> void {
     throw std::runtime_error{ "Failed to query IDXGIFactory2 interface." };
   }
 
-  mGameViewRenderTarget = std::make_unique<RenderTarget>(mDevice, gWindow.GetCurrentClientAreaSize().width, gWindow.GetCurrentClientAreaSize().height);
-  mSceneViewRenderTarget = std::make_unique<RenderTarget>(mDevice, gWindow.GetCurrentClientAreaSize().width, gWindow.GetCurrentClientAreaSize().height);
-
   mSwapChain = std::make_unique<SwapChain>(mDevice, dxgiFactory2.Get());
 
   mLightBuffer = std::make_unique<StructuredBuffer<ShaderLight>>(mDevice, mImmediateContext);
@@ -1412,56 +1393,8 @@ auto Renderer::Impl::ShutDown() -> void {
 }
 
 
-auto Renderer::Impl::DrawGame() -> void {
-  DrawFullWithCameras(mGameRenderCameras, *mGameViewRenderTarget);
-}
-
-
-auto Renderer::Impl::DrawSceneView(Camera const& cam) -> void {
-  auto const camPtr{ &cam };
-  DrawFullWithCameras(std::span{ &camPtr, 1 }, *mSceneViewRenderTarget);
-}
-
-
-auto Renderer::Impl::GetGameResolution() noexcept -> Extent2D<u32> {
-  return { mGameViewRenderTarget->GetWidth(), mGameViewRenderTarget->GetHeight() };
-}
-
-
-auto Renderer::Impl::SetGameResolution(Extent2D<u32> const resolution) noexcept -> void {
-  mGameViewRenderTarget->Resize(resolution.width, resolution.height);
-}
-
-
-auto Renderer::Impl::GetSceneResolution() noexcept -> Extent2D<u32> {
-  return { mSceneViewRenderTarget->GetWidth(), mSceneViewRenderTarget->GetHeight() };
-}
-
-
-auto Renderer::Impl::SetSceneResolution(Extent2D<u32> const resolution) noexcept -> void {
-  mSceneViewRenderTarget->Resize(resolution.width, resolution.height);
-}
-
-
-auto Renderer::Impl::GetGameFrame() noexcept -> ID3D11ShaderResourceView* {
-  return mGameViewRenderTarget->GetOutSrv();
-}
-
-
-auto Renderer::Impl::GetSceneFrame() noexcept -> ID3D11ShaderResourceView* {
-  return mSceneViewRenderTarget->GetOutSrv();
-}
-
-
-auto Renderer::Impl::GetGameAspectRatio() noexcept -> f32 {
-  auto const& rt{ *mGameViewRenderTarget };
-  return static_cast<float>(rt.GetWidth()) / static_cast<float>(rt.GetHeight());
-}
-
-
-auto Renderer::Impl::GetSceneAspectRatio() noexcept -> f32 {
-  auto const& rt{ *mSceneViewRenderTarget };
-  return static_cast<float>(rt.GetWidth()) / static_cast<float>(rt.GetHeight());
+auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget* rt) -> void {
+  DrawFullWithCameras()
 }
 
 
@@ -1732,16 +1665,7 @@ auto Renderer::ShutDown() -> void {
 }
 
 
-auto Renderer::DrawGame() -> void { mImpl->DrawGame(); }
-auto Renderer::DrawSceneView(Camera const& cam) -> void { mImpl->DrawSceneView(cam); }
-auto Renderer::GetGameResolution() noexcept -> Extent2D<u32> { return mImpl->GetGameResolution(); }
-auto Renderer::SetGameResolution(Extent2D<u32> const resolution) noexcept -> void { mImpl->SetGameResolution(resolution); }
-auto Renderer::GetSceneResolution() noexcept -> Extent2D<u32> { return mImpl->GetSceneResolution(); }
-auto Renderer::SetSceneResolution(Extent2D<u32> const resolution) noexcept -> void { mImpl->SetSceneResolution(resolution); }
-auto Renderer::GetGameFrame() noexcept -> ID3D11ShaderResourceView* { return mImpl->GetGameFrame(); }
-auto Renderer::GetSceneFrame() noexcept -> ID3D11ShaderResourceView* { return mImpl->GetSceneFrame(); }
-auto Renderer::GetGameAspectRatio() noexcept -> f32 { return mImpl->GetGameAspectRatio(); }
-auto Renderer::GetSceneAspectRatio() noexcept -> f32 { return mImpl->GetSceneAspectRatio(); }
+auto Renderer::DrawCamera(Camera const& cam, RenderTarget* const rt) -> void { mImpl->DrawCamera(cam, rt); }
 auto Renderer::BindAndClearSwapChain() noexcept -> void { mImpl->BindAndClearSwapChain(); }
 auto Renderer::Present() noexcept -> void { mImpl->Present(); }
 auto Renderer::GetSyncInterval() noexcept -> u32 { return mImpl->GetSyncInterval(); }

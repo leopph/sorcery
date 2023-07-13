@@ -13,6 +13,8 @@
 #define NOMINMAX
 #include <d3d11.h>
 
+#include "RenderTarget.hpp"
+
 
 namespace sorcery {
 enum class ShadowFilteringMode {
@@ -41,6 +43,8 @@ public:
 
   LEOPPHAPI auto StartUp() -> void;
   LEOPPHAPI auto ShutDown() -> void;
+
+  LEOPPHAPI auto DrawCamera(Camera const& cam, RenderTarget* rt = nullptr) -> void;
 
   LEOPPHAPI auto DrawGame() -> void;
   LEOPPHAPI auto DrawSceneView(Camera const& cam) -> void;

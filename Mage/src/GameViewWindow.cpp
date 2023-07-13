@@ -9,7 +9,7 @@
 
 
 namespace sorcery::mage {
-auto DrawGameViewWindow(bool const gameRunning) -> void {
+auto GameViewWindow::Draw(bool const gameRunning) -> void {
   ImVec2 static constexpr gameViewportMinSize{ 480, 270 };
 
   ImGui::SetNextWindowSize(gameViewportMinSize, ImGuiCond_FirstUseEver);

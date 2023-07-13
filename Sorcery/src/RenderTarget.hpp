@@ -5,39 +5,41 @@
 #include <d3d11.h>
 #include <wrl/client.h>
 
+#include <optional>
+#include <string>
+
+#include "Core.hpp"
+
 
 namespace sorcery {
 class RenderTarget {
-  Microsoft::WRL::ComPtr<ID3D11Device> mDevice;
-
-  Microsoft::WRL::ComPtr<ID3D11Texture2D> mHdrTex;
-  Microsoft::WRL::ComPtr<ID3D11RenderTargetView> mHdrRtv;
-  Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> mHdrSrv;
-
-  Microsoft::WRL::ComPtr<ID3D11Texture2D> mOutTex;
-  Microsoft::WRL::ComPtr<ID3D11RenderTargetView> mOutRtv;
-  Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> mOutSrv;
-
-  Microsoft::WRL::ComPtr<ID3D11Texture2D> mDepthTex;
-  Microsoft::WRL::ComPtr<ID3D11DepthStencilView> mDsv;
-
-  UINT mWidth;
-  UINT mHeight;
-
-  auto Recreate() -> void;
+  friend class Renderer;
 
 public:
-  RenderTarget(Microsoft::WRL::ComPtr<ID3D11Device> device, UINT width, UINT height);
+  struct Desc {
+    UINT width{ 1024 };
+    UINT height{ 1024 };
 
-  auto Resize(UINT width, UINT height) -> void;
+    std::optional<DXGI_FORMAT> colorFormat{ DXGI_FORMAT_R8G8B8A8_UNORM };
+    std::optional<DXGI_FORMAT> depthStencilFormat{ DXGI_FORMAT_D24_UNORM_S8_UINT };
 
-  [[nodiscard]] auto GetHdrRtv() const noexcept -> ID3D11RenderTargetView*;
-  [[nodiscard]] auto GetOutRtv() const noexcept -> ID3D11RenderTargetView*;
-  [[nodiscard]] auto GetHdrSrv() const noexcept -> ID3D11ShaderResourceView*;
-  [[nodiscard]] auto GetOutSrv() const noexcept -> ID3D11ShaderResourceView*;
-  [[nodiscard]] auto GetDsv() const noexcept -> ID3D11DepthStencilView*;
+    std::string debugName;
+  };
 
-  [[nodiscard]] auto GetWidth() const noexcept -> UINT;
-  [[nodiscard]] auto GetHeight() const noexcept -> UINT;
+private:
+  Desc mDesc;
+
+  Microsoft::WRL::ComPtr<ID3D11Texture2D> mColorTex;
+  Microsoft::WRL::ComPtr<ID3D11Texture2D> mDepthStencilTex;
+
+  Microsoft::WRL::ComPtr<ID3D11RenderTargetView> mRtv;
+  Microsoft::WRL::ComPtr<ID3D11DepthStencilView> mDsv;
+
+  Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> mColorSrv;
+  Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> mDepthStencilSrv;
+
+public:
+  LEOPPHAPI explicit RenderTarget(Desc const& desc);
+  [[nodiscard]] LEOPPHAPI auto GetDesc() const noexcept -> Desc const&;
 };
 }

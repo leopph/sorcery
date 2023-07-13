@@ -8,7 +8,7 @@
 
 
 namespace sorcery::mage {
-auto DrawSceneViewWindow(Context& context) -> void {
+auto SceneViewWindow::Draw(Context& context) -> void {
   ImVec2 static constexpr sceneViewportMinSize{ 480, 270 };
 
   ImGui::SetNextWindowSize(sceneViewportMinSize, ImGuiCond_FirstUseEver);
@@ -30,9 +30,7 @@ auto DrawSceneViewWindow(Context& context) -> void {
     static bool isMovingSceneCamera{ false };
 
     auto const wasMovingSceneCamera{ isMovingSceneCamera };
-    isMovingSceneCamera = wasMovingSceneCamera ?
-                            ImGui::IsMouseDown(ImGuiMouseButton_Right) :
-                            ImGui::IsWindowHovered() && ImGui::IsMouseDown(ImGuiMouseButton_Right);
+    isMovingSceneCamera = wasMovingSceneCamera ? ImGui::IsMouseDown(ImGuiMouseButton_Right) : ImGui::IsWindowHovered() && ImGui::IsMouseDown(ImGuiMouseButton_Right);
 
     if (!wasMovingSceneCamera && isMovingSceneCamera) {
       gWindow.LockCursor(gWindow.GetCursorPosition());
