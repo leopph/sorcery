@@ -8,6 +8,11 @@
 
 
 namespace sorcery {
+auto RenderTarget::Desc::operator==(Desc const& other) const -> bool {
+  return width == other.width && height == other.height && colorFormat == other.colorFormat && depthStencilFormat == other.depthStencilFormat;
+}
+
+
 RenderTarget::RenderTarget(Desc const& desc) :
   mDesc{ desc } {
   auto const device{ gRenderer.GetDevice() };

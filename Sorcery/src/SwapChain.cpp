@@ -9,20 +9,51 @@ using Microsoft::WRL::ComPtr;
 
 
 namespace sorcery {
-auto SwapChain::CreateRtv() -> void {
+auto SwapChain::RecreateViews() -> void {
   ComPtr<ID3D11Texture2D> backBuf;
   if (FAILED(mSwapChain->GetBuffer(0, IID_PPV_ARGS(backBuf.GetAddressOf())))) {
     throw std::runtime_error{ "Failed to get swap chain backbuffer." };
   }
 
   D3D11_RENDER_TARGET_VIEW_DESC constexpr rtvDesc{
-    .Format = FORMAT,
+    .Format = COLOR_FORMAT,
     .ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D,
     .Texture2D = { .MipSlice = 0 }
   };
 
   if (FAILED(mDevice->CreateRenderTargetView(backBuf.Get(), &rtvDesc, mRtv.ReleaseAndGetAddressOf()))) {
     throw std::runtime_error{ "Failed to create swap chain RTV." };
+  }
+
+  D3D11_DEPTH_STENCIL_VIEW_DESC constexpr dsvDesc{
+    .Format = DEPTH_STENCIL_FORMAT,
+    .ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D,
+    .Flags = 0,
+    .Texture2D = { .MipSlice = 0 }
+  };
+
+  if (FAILED(mDevice->CreateDepthStencilView(mDepthStencilTex.Get(), &dsvDesc, mDsv.ReleaseAndGetAddressOf()))) {
+    throw std::runtime_error{ "Failed to create swap chain DSV." };
+  }
+}
+
+
+auto SwapChain::RecreateDepthStencilTex(UINT const width, UINT const height) -> void {
+  D3D11_TEXTURE2D_DESC const desc{
+    .Width = width,
+    .Height = height,
+    .MipLevels = 1,
+    .ArraySize = 1,
+    .Format = DEPTH_STENCIL_FORMAT,
+    .SampleDesc = { .Count = 1, .Quality = 0 },
+    .Usage = D3D11_USAGE_DEFAULT,
+    .BindFlags = D3D11_BIND_DEPTH_STENCIL,
+    .CPUAccessFlags = 0,
+    .MiscFlags = 0
+  };
+
+  if (FAILED(mDevice->CreateTexture2D(&desc, nullptr, mDepthStencilTex.ReleaseAndGetAddressOf()))) {
+    throw std::runtime_error{ "Failed to recreate swap chain depth-stencil texture." };
   }
 }
 
@@ -39,7 +70,7 @@ SwapChain::SwapChain(ComPtr<ID3D11Device> device, IDXGIFactory2* const factory):
   DXGI_SWAP_CHAIN_DESC1 const desc{
     .Width = 0,
     .Height = 0,
-    .Format = FORMAT,
+    .Format = COLOR_FORMAT,
     .Stereo = FALSE,
     .SampleDesc = { .Count = 1, .Quality = 0 },
     .BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT,
@@ -54,7 +85,8 @@ SwapChain::SwapChain(ComPtr<ID3D11Device> device, IDXGIFactory2* const factory):
     throw std::runtime_error{ "Failed to create swap chain." };
   }
 
-  CreateRtv();
+  RecreateDepthStencilTex(gWindow.GetCurrentClientAreaSize().width, gWindow.GetCurrentClientAreaSize().height);
+  RecreateViews();
 }
 
 
@@ -71,16 +103,23 @@ auto SwapChain::Resize(UINT const width, UINT const height) -> void {
   }
 
   mRtv.Reset();
+  mDsv.Reset();
 
   if (FAILED(mSwapChain->ResizeBuffers(0, width, height, DXGI_FORMAT_UNKNOWN, mSwapChainFlags))) {
     throw std::runtime_error{ "Failed to resize swap chain buffers." };
   }
 
-  CreateRtv();
+  RecreateDepthStencilTex(width, height);
+  RecreateViews();
 }
 
 
 auto SwapChain::GetRtv() const noexcept -> ID3D11RenderTargetView* {
   return mRtv.Get();
+}
+
+
+auto SwapChain::GetDsv() const noexcept -> ID3D11DepthStencilView* {
+  return mDsv.Get();
 }
 }

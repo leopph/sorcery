@@ -45,7 +45,7 @@ public:
   LEOPPHAPI auto ShutDown() -> void;
 
   LEOPPHAPI auto DrawCamera(Camera const& cam, RenderTarget* rt = nullptr) -> void;
-  LEOPPHAPI auto PostProcessCamera(Camera const& cam, RenderTarget* rt = nullptr) -> void;
+  LEOPPHAPI auto DrawAllCameras(RenderTarget* rt = nullptr) -> void;
   LEOPPHAPI auto BindAndClearSwapChain() noexcept -> void;
   LEOPPHAPI auto Present() noexcept -> void;
 
@@ -78,6 +78,8 @@ public:
   LEOPPHAPI auto CullStaticMeshComponents(Frustum const& frustumWS, Visibility& visibility) -> void;
 
   LEOPPHAPI auto DrawLineAtNextRender(Vector3 const& from, Vector3 const& to, Color const& color) -> void;
+
+  LEOPPHAPI auto GetTemporaryRenderTarget(RenderTarget::Desc const& desc) -> RenderTarget&;
 
   [[nodiscard]] LEOPPHAPI auto GetShadowCascadeCount() noexcept -> int;
   LEOPPHAPI auto SetShadowCascadeCount(int cascadeCount) noexcept -> void;

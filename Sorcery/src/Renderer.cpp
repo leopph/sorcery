@@ -240,6 +240,8 @@ class Renderer::Impl {
   bool mUseStableShadowCascadeProjection{ false };
   ShadowFilteringMode mShadowFilteringMode{ ShadowFilteringMode::PCFTent5x5 };
 
+  std::vector<std::unique_ptr<RenderTarget>> mTmpRenderTargets;
+
   [[nodiscard]] auto GetSceneDrawDssForReversedDepth() -> ComPtr<ID3D11DepthStencilState>&;
   [[nodiscard]] auto GetShadowDrawDssForReversedDepth() -> ComPtr<ID3D11DepthStencilState>&;
   [[nodiscard]] auto GetSkyboxDrawDssForReversedDepth() -> ComPtr<ID3D11DepthStencilState>&;
@@ -274,7 +276,7 @@ public:
   auto ShutDown() -> void;
 
   auto DrawCamera(Camera const& cam, RenderTarget* rt) -> void;
-  auto PostProcessCamera(Camera const& cam, RenderTarget* rt) -> void;
+  auto DrawAllCameras(RenderTarget* rt) -> void;
 
   auto BindAndClearSwapChain() noexcept -> void;
   auto Present() noexcept -> void;
@@ -331,6 +333,8 @@ public:
 
   auto GetInFlightFrameCount() noexcept -> int;
   auto SetInFlightFrameCount(int count) -> void;
+
+  auto GetTemporaryRenderTarget(RenderTarget::Desc const& desc) -> RenderTarget&;
 };
 
 
@@ -1229,13 +1233,23 @@ auto Renderer::Impl::ShutDown() -> void {
 
 
 auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget* rt) -> void {
-  FLOAT constexpr clearColor[]{ 0, 0, 0, 1 };
-  mImmediateContext->ClearRenderTargetView(rt ? rt->GetRtv() : mSwapChain->GetRtv(), clearColor);
-
   auto const rtWidth{ rt ? rt->GetDesc().width : gWindow.GetCurrentClientAreaSize().width };
   auto const rtHeight{ rt ? rt->GetDesc().height : gWindow.GetCurrentClientAreaSize().height };
+  auto const rtAspect{ static_cast<float>(rtWidth) / static_cast<float>(rtHeight) };
 
-  auto const aspectRatio{ static_cast<float>(rtWidth) / static_cast<float>(rtHeight) };
+  RenderTarget::Desc const hdrRtDesc{
+    .width = rtWidth,
+    .height = rtHeight,
+    .colorFormat = DXGI_FORMAT_R16G16B16A16_FLOAT,
+    .depthStencilFormat = DXGI_FORMAT_D32_FLOAT,
+    .debugName = "Camera HDR RenderTarget"
+  };
+
+  auto const& hdrRt{ GetTemporaryRenderTarget(hdrRtDesc) };
+
+  FLOAT constexpr clearColor[]{ 0, 0, 0, 1 };
+  mImmediateContext->ClearRenderTargetView(hdrRt.GetRtv(), clearColor);
+
 
   D3D11_VIEWPORT const viewport{
     .TopLeftX = 0,
@@ -1272,7 +1286,7 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget* rt) -> void {
 
   auto const camPos{ cam.GetPosition() };
   auto const camViewMtx{ cam.CalculateViewMatrix() };
-  auto const camProjMtx{ cam.CalculateProjectionMatrix(aspectRatio) };
+  auto const camProjMtx{ cam.CalculateProjectionMatrix(rtAspect) };
   auto const camViewProjMtx{ camViewMtx * camProjMtx };
   Frustum const camFrustWS{ camViewProjMtx };
 
@@ -1288,7 +1302,7 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget* rt) -> void {
   mImmediateContext->PSSetShaderResources(RES_SLOT_DIR_SHADOW_ATLAS, 1, &nullSrv);
   mImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-  mDirectionalShadowAtlas->Update(mLights, visibility, cam, shadowCascadeBoundaries, aspectRatio, mCascadeCount, mUseStableShadowCascadeProjection);
+  mDirectionalShadowAtlas->Update(mLights, visibility, cam, shadowCascadeBoundaries, rtAspect, mCascadeCount, mUseStableShadowCascadeProjection);
   DrawShadowMaps(*mDirectionalShadowAtlas);
 
   mPunctualShadowAtlas->Update(mLights, visibility, cam, camViewProjMtx, mShadowDistance);
@@ -1298,7 +1312,7 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget* rt) -> void {
 
   // Depth pre-pass
 
-  mImmediateContext->OMSetRenderTargets(0, nullptr, rt ? rt->GetDsv() : mSwapChain->GetDsv() /* TODO create default DSV */);
+  mImmediateContext->OMSetRenderTargets(0, nullptr, hdrRt.GetDsv());
   mImmediateContext->OMSetDepthStencilState(mDepthTestLessWriteDss.Get(), 0);
 
   mImmediateContext->VSSetShader(mDepthOnlyVs.Get(), nullptr, 0);
@@ -1309,7 +1323,7 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget* rt) -> void {
 
   mImmediateContext->IASetInputLayout(mPos3OnlyIl.Get());
 
-  mImmediateContext->ClearDepthStencilView(rt->GetDsv(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+  mImmediateContext->ClearDepthStencilView(hdrRt.GetDsv(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 
   D3D11_MAPPED_SUBRESOURCE mappedCb;
   if (FAILED(mImmediateContext->Map(mDepthOnlyCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedCb))) {
@@ -1368,7 +1382,7 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget* rt) -> void {
   mImmediateContext->VSSetShader(mMeshVs.Get(), nullptr, 0);
   mImmediateContext->VSSetConstantBuffers(CB_SLOT_PER_CAM, 1, mPerCamCb.GetAddressOf());
 
-  mImmediateContext->OMSetRenderTargets(1, std::array{ rt ? rt->GetRtv() : mSwapChain->GetRtv() }.data(), rt ? rt->GetDsv() : mSwapChain->GetDsv() /* TODO make default dsv */);
+  mImmediateContext->OMSetRenderTargets(1, std::array{ hdrRt.GetRtv() }.data(), hdrRt.GetDsv());
   mImmediateContext->OMSetDepthStencilState(mDepthTestLessEqualNoWriteDss.Get(), 0);
 
   mImmediateContext->PSSetShader(mMeshPbrPs.Get(), nullptr, 0);
@@ -1384,12 +1398,16 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget* rt) -> void {
 
   DrawMeshes(visibility.staticMeshIndices, true);
   DrawSkybox(camViewMtx, camProjMtx);
+
+  mImmediateContext->RSSetViewports(1, &viewport);
+  PostProcess(hdrRt.GetColorSrv(), rt ? rt->GetRtv() : mSwapChain->GetRtv());
 }
 
 
-auto Renderer::Impl::PostProcessCamera(Camera const& cam, RenderTarget* rt) -> void {
-  mImmediateContext->RSSetViewports(1, &viewport);
-  PostProcess(rt.GetHdrSrv(), rt.auto GetOutRtv);
+auto Renderer::Impl::DrawAllCameras(RenderTarget* rt) -> void {
+  for (auto const& cam : mGameRenderCameras) {
+    DrawCamera(*cam, rt);
+  }
 }
 
 
@@ -1648,6 +1666,17 @@ auto Renderer::Impl::SetInFlightFrameCount(int const count) -> void {
 }
 
 
+auto Renderer::Impl::GetTemporaryRenderTarget(RenderTarget::Desc const& desc) -> RenderTarget& {
+  for (auto const& rt : mTmpRenderTargets) {
+    if (rt->GetDesc() == desc) {
+      return *rt;
+    }
+  }
+
+  return *mTmpRenderTargets.emplace_back(std::make_unique<RenderTarget>(desc));
+}
+
+
 auto Renderer::StartUp() -> void {
   mImpl = new Impl{};
   mImpl->StartUp();
@@ -1661,7 +1690,7 @@ auto Renderer::ShutDown() -> void {
 
 
 auto Renderer::DrawCamera(Camera const& cam, RenderTarget* const rt) -> void { mImpl->DrawCamera(cam, rt); }
-auto Renderer::PostProcessCamera(Camera const& cam, RenderTarget* rt) -> void { mImpl->PostProcessCamera(cam, rt); }
+auto Renderer::DrawAllCameras(RenderTarget* rt) -> void { mImpl->DrawAllCameras(rt); }
 auto Renderer::BindAndClearSwapChain() noexcept -> void { mImpl->BindAndClearSwapChain(); }
 auto Renderer::Present() noexcept -> void { mImpl->Present(); }
 auto Renderer::GetSyncInterval() noexcept -> u32 { return mImpl->GetSyncInterval(); }
@@ -1684,6 +1713,7 @@ auto Renderer::UnregisterGameCamera(Camera const& cam) -> void { mImpl->Unregist
 auto Renderer::CullLights(Frustum const& frustumWS, Visibility& visibility) -> void { mImpl->CullLights(frustumWS, visibility); }
 auto Renderer::CullStaticMeshComponents(Frustum const& frustumWS, Visibility& visibility) -> void { mImpl->CullStaticMeshComponents(frustumWS, visibility); }
 auto Renderer::DrawLineAtNextRender(Vector3 const& from, Vector3 const& to, Color const& color) -> void { mImpl->DrawLineAtNextRender(from, to, color); }
+auto Renderer::GetTemporaryRenderTarget(RenderTarget::Desc const& desc) -> RenderTarget& { return mImpl->GetTemporaryRenderTarget(desc); }
 auto Renderer::GetShadowCascadeCount() noexcept -> int { return mImpl->GetShadowCascadeCount(); }
 auto Renderer::SetShadowCascadeCount(int const cascadeCount) noexcept -> void { mImpl->SetShadowCascadeCount(cascadeCount); }
 auto Renderer::GetMaxShadowCascadeCount() noexcept -> int { return mImpl->GetMaxShadowCascadeCount(); }

@@ -22,6 +22,8 @@ public:
     std::optional<DXGI_FORMAT> depthStencilFormat{ DXGI_FORMAT_D24_UNORM_S8_UINT };
 
     std::string debugName;
+
+    LEOPPHAPI [[nodiscard]] auto operator==(Desc const& other) const -> bool;
   };
 
 private:
@@ -38,6 +40,14 @@ private:
 
 public:
   LEOPPHAPI explicit RenderTarget(Desc const& desc);
+  RenderTarget(RenderTarget const&) = delete;
+  RenderTarget(RenderTarget&&) = delete;
+
+  ~RenderTarget() = default;
+
+  auto operator=(RenderTarget const&) -> void = delete;
+  auto operator=(RenderTarget&&) -> void = delete;
+
   [[nodiscard]] LEOPPHAPI auto GetDesc() const noexcept -> Desc const&;
 
   [[nodiscard]] LEOPPHAPI auto GetRtv() const noexcept -> ID3D11RenderTargetView*;

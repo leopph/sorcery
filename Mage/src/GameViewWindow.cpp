@@ -9,7 +9,7 @@
 
 
 namespace sorcery::mage {
-auto GameViewWindow::Draw(bool const gameRunning, EditorCamera const& editorCam) -> void {
+auto GameViewWindow::Draw(bool const gameRunning) -> void {
   ImVec2 static constexpr gameViewportMinSize{ 480, 270 };
 
   ImGui::SetNextWindowSize(gameViewportMinSize, ImGuiCond_FirstUseEver);
@@ -35,25 +35,17 @@ auto GameViewWindow::Draw(bool const gameRunning, EditorCamera const& editorCam)
 
     auto const desiredRes{ selectedRes == 0 ? viewportRes : Extent2D<u32>{ resolutions[selectedRes].width, resolutions[selectedRes].height } };
 
-    if (!mHdrRenderTarget || mHdrRenderTarget->GetDesc().width != desiredRes.width || mHdrRenderTarget->GetDesc().height != desiredRes.height) {
-      mHdrRenderTarget = std::make_unique<RenderTarget>(RenderTarget::Desc{
-        .width = desiredRes.width,
-        .height = desiredRes.height,
-        .colorFormat = DXGI_FORMAT_R16G16B16A16_FLOAT,
-        .depthStencilFormat = DXGI_FORMAT_D32_FLOAT,
-        .debugName = "Game View HDR"
-      });
-    }
-
-    if (!mFinalRenderTarget || mFinalRenderTarget->GetDesc().width != desiredRes.width || mFinalRenderTarget->GetDesc().height != desiredRes.height) {
-      mFinalRenderTarget = std::make_unique<RenderTarget>(RenderTarget::Desc{
+    if (!mRenderTarget || mRenderTarget->GetDesc().width != desiredRes.width || mRenderTarget->GetDesc().height != desiredRes.height) {
+      mRenderTarget = std::make_unique<RenderTarget>(RenderTarget::Desc{
         .width = desiredRes.width,
         .height = desiredRes.height,
         .colorFormat = DXGI_FORMAT_R8G8B8A8_UNORM,
         .depthStencilFormat = std::nullopt,
-        .debugName = "Game View Final"
+        .debugName = "Game View RenderTarget"
       });
     }
+
+    gRenderer.DrawAllCameras(mRenderTarget.get());
 
     auto const frameDisplaySize{
       selectedRes == 0
@@ -64,9 +56,7 @@ auto GameViewWindow::Draw(bool const gameRunning, EditorCamera const& editorCam)
         }()
     };
 
-    gRenderer.DrawCamera(editorCam, mHdrRenderTarget.get());
-    // Do post process TODO
-    ImGui::Image(mFinalRenderTarget->GetColorSrv(), frameDisplaySize);
+    ImGui::Image(mRenderTarget->GetColorSrv(), frameDisplaySize);
   } else {
     ImGui::PopStyleVar();
   }

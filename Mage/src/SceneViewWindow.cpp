@@ -20,27 +20,15 @@ auto SceneViewWindow::Draw(Context& context) -> void {
     auto const contentRegionSize{ ImGui::GetContentRegionAvail() };
     Extent2D const desiredRes{ static_cast<u32>(contentRegionSize.x), static_cast<u32>(contentRegionSize.y) };
 
-    if (!mHdrRenderTarget || mHdrRenderTarget->GetDesc().width != desiredRes.width || mHdrRenderTarget->GetDesc().height != desiredRes.height) {
-      mHdrRenderTarget = std::make_unique<RenderTarget>(RenderTarget::Desc{
-        .width = desiredRes.width,
-        .height = desiredRes.height,
-        .colorFormat = DXGI_FORMAT_R16G16B16A16_FLOAT,
-        .depthStencilFormat = DXGI_FORMAT_D32_FLOAT,
-        .debugName = "Game View HDR"
-      });
-    }
-
-    if (!mFinalRenderTarget || mFinalRenderTarget->GetDesc().width != desiredRes.width || mFinalRenderTarget->GetDesc().height != desiredRes.height) {
-      mFinalRenderTarget = std::make_unique<RenderTarget>(RenderTarget::Desc{
+    if (!mRenderTarget || mRenderTarget->GetDesc().width != desiredRes.width || mRenderTarget->GetDesc().height != desiredRes.height) {
+      mRenderTarget = std::make_unique<RenderTarget>(RenderTarget::Desc{
         .width = desiredRes.width,
         .height = desiredRes.height,
         .colorFormat = DXGI_FORMAT_R8G8B8A8_UNORM,
         .depthStencilFormat = std::nullopt,
-        .debugName = "Game View Final"
+        .debugName = "Game View RenderTarget"
       });
     }
-
-    EditorCamera static editorCam{ Vector3{}, Quaternion{}, 0.03f, 10000.f, 90 };
 
     static bool isMovingSceneCamera{ false };
 
@@ -80,26 +68,25 @@ auto SceneViewWindow::Draw(Context& context) -> void {
 
       float constexpr editorCamSpeed{ 5.0f };
 
-      editorCam.position += editorCam.orientation.Rotate(posDelta) * editorCamSpeed * timing::GetFrameTime();
+      mEditorCam.position += mEditorCam.orientation.Rotate(posDelta) * editorCamSpeed * timing::GetFrameTime();
 
       auto const [mouseX, mouseY]{ gWindow.GetMouseDelta() };
       auto constexpr sens{ 0.05f };
 
-      editorCam.orientation = Quaternion{ Vector3::Up(), static_cast<f32>(mouseX) * sens } * editorCam.orientation;
-      editorCam.orientation *= Quaternion{ Vector3::Right(), static_cast<f32>(mouseY) * sens };
+      mEditorCam.orientation = Quaternion{ Vector3::Up(), static_cast<f32>(mouseX) * sens } * mEditorCam.orientation;
+      mEditorCam.orientation *= Quaternion{ Vector3::Right(), static_cast<f32>(mouseY) * sens };
     }
 
     if (auto const selectedObject{ context.GetSelectedObject() }) {
       context.GetFactoryManager().GetFor(selectedObject->GetSerializationType()).OnDrawGizmosSelected(context, *selectedObject);
     }
 
-    gRenderer.DrawCamera(editorCam, mHdrRenderTarget.get());
-    // Do post process TODO
-    ImGui::Image(mFinalRenderTarget->GetColorSrv(), contentRegionSize);
+    gRenderer.DrawCamera(mEditorCam, mRenderTarget.get());
+    ImGui::Image(mRenderTarget->GetColorSrv(), contentRegionSize);
 
     auto const windowAspectRatio{ ImGui::GetWindowWidth() / ImGui::GetWindowHeight() };
-    auto const editorCamViewMat{ editorCam.CalculateViewMatrix() };
-    auto const editorCamProjMat{ editorCam.CalculateProjectionMatrix(windowAspectRatio) };
+    auto const editorCamViewMat{ mEditorCam.CalculateViewMatrix() };
+    auto const editorCamProjMat{ mEditorCam.CalculateProjectionMatrix(windowAspectRatio) };
 
     ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, ImGui::GetWindowWidth(), ImGui::GetWindowHeight());
     ImGuizmo::AllowAxisFlip(false);
@@ -112,7 +99,7 @@ auto SceneViewWindow::Draw(Context& context) -> void {
     }
 
     if (showGrid) {
-      ImGuizmo::DrawGrid(editorCamViewMat.GetData(), editorCamProjMat.GetData(), Matrix4::Identity().GetData(), editorCam.GetFarClipPlane());
+      ImGuizmo::DrawGrid(editorCamViewMat.GetData(), editorCamProjMat.GetData(), Matrix4::Identity().GetData(), mEditorCam.GetFarClipPlane());
     }
 
     if (auto const selectedEntity{ dynamic_cast<Entity*>(context.GetSelectedObject()) }; selectedEntity) {
@@ -129,8 +116,8 @@ auto SceneViewWindow::Draw(Context& context) -> void {
           op = ImGuizmo::SCALE;
         }
         if (GetKeyDown(Key::F)) {
-          editorCam.position = selectedEntity->GetTransform().GetWorldPosition() - Vector3::Forward() * 2;
-          editorCam.orientation = selectedEntity->GetTransform().GetLocalRotation();
+          mEditorCam.position = selectedEntity->GetTransform().GetWorldPosition() - Vector3::Forward() * 2;
+          mEditorCam.orientation = selectedEntity->GetTransform().GetLocalRotation();
         }
       }
 

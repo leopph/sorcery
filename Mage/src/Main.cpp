@@ -45,7 +45,6 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
     sorcery::gWindow.SetWindowedClientAreaSize({ 1280, 720 });
     sorcery::gWindow.SetIgnoreManagedRequests(true);
 
-    sorcery::gRenderer.SetGameResolution({ 960, 540 });
     sorcery::gRenderer.SetSyncInterval(0);
 
     sorcery::timing::SetTargetFrameRate(sorcery::mage::DEFAULT_TARGET_FRAME_RATE);
@@ -97,6 +96,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
     auto const projectWindow{ std::make_unique<sorcery::mage::ProjectWindow>(context) };
     auto const sceneViewWindow{ std::make_unique<sorcery::mage::SceneViewWindow>() };
+    auto const gameViewWindow{ std::make_unique<sorcery::mage::GameViewWindow>() };
 
     while (!sorcery::gWindow.IsQuitSignaled()) {
       sorcery::gWindow.ProcessEvents();
@@ -141,8 +141,8 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
         if (context.GetScene()) {
           DrawEntityHierarchyWindow(context);
-          sorcery::mage::DrawGameViewWindow(runGame);
-          DrawSceneViewWindow(context);
+          gameViewWindow->Draw(runGame);
+          sceneViewWindow->Draw(context);
         } else {
           sorcery::mage::DrawOpenScenePrompt();
         }
