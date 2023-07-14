@@ -240,7 +240,15 @@ class Renderer::Impl {
   bool mUseStableShadowCascadeProjection{ false };
   ShadowFilteringMode mShadowFilteringMode{ ShadowFilteringMode::PCFTent5x5 };
 
-  std::vector<std::unique_ptr<RenderTarget>> mTmpRenderTargets;
+
+  struct TempRenderTargetRecord {
+    std::unique_ptr<RenderTarget> rt;
+    int ageInFrames;
+  };
+
+
+  constexpr static int MAX_TMP_RT_AGE{ 10 };
+  std::vector<TempRenderTargetRecord> mTmpRenderTargets;
 
   [[nodiscard]] auto GetSceneDrawDssForReversedDepth() -> ComPtr<ID3D11DepthStencilState>&;
   [[nodiscard]] auto GetShadowDrawDssForReversedDepth() -> ComPtr<ID3D11DepthStencilState>&;
@@ -264,10 +272,10 @@ class Renderer::Impl {
   auto DrawShadowMaps(ShadowAtlas const& atlas) -> void;
   auto DrawMeshes(std::span<int const> meshComponentIndices, bool useMaterials) noexcept -> void;
   auto DrawSkybox(Matrix4 const& camViewMtx, Matrix4 const& camProjMtx) const noexcept -> void;
-  auto DrawGizmos() -> void;
   auto PostProcess(ID3D11ShaderResourceView* src, ID3D11RenderTargetView* dst) noexcept -> void;
 
   auto ClearGizmoDrawQueue() noexcept -> void;
+  auto ReleaseTempRenderTargets() noexcept -> void;
 
   static auto OnWindowSize(Impl* self, Extent2D<u32> size) -> void;
 
@@ -277,7 +285,7 @@ public:
 
   auto DrawCamera(Camera const& cam, RenderTarget* rt) -> void;
   auto DrawAllCameras(RenderTarget* rt) -> void;
-
+  auto DrawGizmos(RenderTarget const* rt) -> void;
   auto BindAndClearSwapChain() noexcept -> void;
   auto Present() noexcept -> void;
 
@@ -1175,7 +1183,13 @@ auto Renderer::Impl::DrawShadowMaps(ShadowAtlas const& atlas) -> void {
 }
 
 
-auto Renderer::Impl::DrawGizmos() -> void {
+auto Renderer::Impl::DrawGizmos(RenderTarget const* const rt) -> void {
+  mImmediateContext->OMSetRenderTargets(1, std::array{
+                                          rt
+                                            ? rt->GetRtv()
+                                            : mSwapChain->GetRtv()
+                                        }.data(), nullptr);
+
   mGizmoColorBuffer->Resize(static_cast<int>(std::ssize(mGizmoColors)));
   std::ranges::copy(mGizmoColors, std::begin(mGizmoColorBuffer->Map()));
   mGizmoColorBuffer->Unmap();
@@ -1199,6 +1213,14 @@ auto Renderer::Impl::DrawGizmos() -> void {
 auto Renderer::Impl::ClearGizmoDrawQueue() noexcept -> void {
   mGizmoColors.clear();
   mLineGizmoVertexData.clear();
+}
+
+
+auto Renderer::Impl::ReleaseTempRenderTargets() noexcept -> void {
+  std::erase_if(mTmpRenderTargets, [](TempRenderTargetRecord& tmpRtRecord) {
+    tmpRtRecord.ageInFrames += 1;
+    return tmpRtRecord.ageInFrames >= MAX_TMP_RT_AGE;
+  });
 }
 
 
@@ -1456,6 +1478,9 @@ auto Renderer::Impl::BindAndClearSwapChain() noexcept -> void {
 
 auto Renderer::Impl::Present() noexcept -> void {
   mSwapChain->Present(mSyncInterval);
+
+  ClearGizmoDrawQueue();
+  ReleaseTempRenderTargets();
 }
 
 
@@ -1710,13 +1735,13 @@ auto Renderer::Impl::SetInFlightFrameCount(int const count) -> void {
 
 
 auto Renderer::Impl::GetTemporaryRenderTarget(RenderTarget::Desc const& desc) -> RenderTarget& {
-  for (auto const& rt : mTmpRenderTargets) {
+  for (auto const& [rt, ageInYears] : mTmpRenderTargets) {
     if (rt->GetDesc() == desc) {
       return *rt;
     }
   }
 
-  return *mTmpRenderTargets.emplace_back(std::make_unique<RenderTarget>(desc));
+  return *mTmpRenderTargets.emplace_back(std::make_unique<RenderTarget>(desc), 0).rt;
 }
 
 
@@ -1734,6 +1759,7 @@ auto Renderer::ShutDown() -> void {
 
 auto Renderer::DrawCamera(Camera const& cam, RenderTarget* const rt) -> void { mImpl->DrawCamera(cam, rt); }
 auto Renderer::DrawAllCameras(RenderTarget* rt) -> void { mImpl->DrawAllCameras(rt); }
+auto Renderer::DrawGizmos(RenderTarget const* const rt) -> void { mImpl->DrawGizmos(rt); }
 auto Renderer::BindAndClearSwapChain() noexcept -> void { mImpl->BindAndClearSwapChain(); }
 auto Renderer::Present() noexcept -> void { mImpl->Present(); }
 auto Renderer::GetSyncInterval() noexcept -> u32 { return mImpl->GetSyncInterval(); }

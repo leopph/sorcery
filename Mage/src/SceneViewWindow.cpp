@@ -85,6 +85,7 @@ auto SceneViewWindow::Draw(Context& context) -> void {
     }
 
     gRenderer.DrawCamera(mEditorCam, mRenderTarget.get());
+    gRenderer.DrawGizmos(mRenderTarget.get());
     ImGui::Image(mRenderTarget->GetColorSrv(), contentRegionSize);
 
     auto const windowAspectRatio{ ImGui::GetWindowWidth() / ImGui::GetWindowHeight() };
