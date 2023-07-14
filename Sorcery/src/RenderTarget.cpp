@@ -130,4 +130,24 @@ RenderTarget::RenderTarget(Desc const& desc) :
 auto RenderTarget::GetDesc() const noexcept -> Desc const& {
   return mDesc;
 }
+
+
+auto RenderTarget::GetRtv() const noexcept -> ID3D11RenderTargetView* {
+  return mRtv.Get();
+}
+
+
+auto RenderTarget::GetDsv() const noexcept -> ID3D11DepthStencilView* {
+  return mDsv.Get();
+}
+
+
+auto RenderTarget::GetColorSrv() const noexcept -> ID3D11ShaderResourceView* {
+  return mColorSrv.Get();
+}
+
+
+auto RenderTarget::GetDepthStencilSrv() const noexcept -> ID3D11ShaderResourceView* {
+  return mDepthStencilSrv.Get();
+}
 }

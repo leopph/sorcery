@@ -17,12 +17,27 @@ auto SceneViewWindow::Draw(Context& context) -> void {
 
   if (ImGui::Begin("Scene", nullptr, ImGuiWindowFlags_NoCollapse)) {
     ImGui::PopStyleVar();
-    auto const [sceneWidth, sceneHeight]{ gRenderer.GetSceneResolution() };
     auto const contentRegionSize{ ImGui::GetContentRegionAvail() };
+    Extent2D const desiredRes{ static_cast<u32>(contentRegionSize.x), static_cast<u32>(contentRegionSize.y) };
 
-    if (Extent2D const viewportRes{ static_cast<u32>(contentRegionSize.x), static_cast<u32>(contentRegionSize.y) };
-      viewportRes.width != sceneWidth || viewportRes.height != sceneHeight) {
-      gRenderer.SetSceneResolution(viewportRes);
+    if (!mHdrRenderTarget || mHdrRenderTarget->GetDesc().width != desiredRes.width || mHdrRenderTarget->GetDesc().height != desiredRes.height) {
+      mHdrRenderTarget = std::make_unique<RenderTarget>(RenderTarget::Desc{
+        .width = desiredRes.width,
+        .height = desiredRes.height,
+        .colorFormat = DXGI_FORMAT_R16G16B16A16_FLOAT,
+        .depthStencilFormat = DXGI_FORMAT_D32_FLOAT,
+        .debugName = "Game View HDR"
+      });
+    }
+
+    if (!mFinalRenderTarget || mFinalRenderTarget->GetDesc().width != desiredRes.width || mFinalRenderTarget->GetDesc().height != desiredRes.height) {
+      mFinalRenderTarget = std::make_unique<RenderTarget>(RenderTarget::Desc{
+        .width = desiredRes.width,
+        .height = desiredRes.height,
+        .colorFormat = DXGI_FORMAT_R8G8B8A8_UNORM,
+        .depthStencilFormat = std::nullopt,
+        .debugName = "Game View Final"
+      });
     }
 
     EditorCamera static editorCam{ Vector3{}, Quaternion{}, 0.03f, 10000.f, 90 };
@@ -78,8 +93,9 @@ auto SceneViewWindow::Draw(Context& context) -> void {
       context.GetFactoryManager().GetFor(selectedObject->GetSerializationType()).OnDrawGizmosSelected(context, *selectedObject);
     }
 
-    gRenderer.DrawSceneView(editorCam);
-    ImGui::Image(gRenderer.GetSceneFrame(), contentRegionSize);
+    gRenderer.DrawCamera(editorCam, mHdrRenderTarget.get());
+    // Do post process TODO
+    ImGui::Image(mFinalRenderTarget->GetColorSrv(), contentRegionSize);
 
     auto const windowAspectRatio{ ImGui::GetWindowWidth() / ImGui::GetWindowHeight() };
     auto const editorCamViewMat{ editorCam.CalculateViewMatrix() };

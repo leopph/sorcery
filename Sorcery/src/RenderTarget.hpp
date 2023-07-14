@@ -13,8 +13,6 @@
 
 namespace sorcery {
 class RenderTarget {
-  friend class Renderer;
-
 public:
   struct Desc {
     UINT width{ 1024 };
@@ -41,5 +39,11 @@ private:
 public:
   LEOPPHAPI explicit RenderTarget(Desc const& desc);
   [[nodiscard]] LEOPPHAPI auto GetDesc() const noexcept -> Desc const&;
+
+  [[nodiscard]] LEOPPHAPI auto GetRtv() const noexcept -> ID3D11RenderTargetView*;
+  [[nodiscard]] LEOPPHAPI auto GetDsv() const noexcept -> ID3D11DepthStencilView*;
+
+  [[nodiscard]] LEOPPHAPI auto GetColorSrv() const noexcept -> ID3D11ShaderResourceView*;
+  [[nodiscard]] LEOPPHAPI auto GetDepthStencilSrv() const noexcept -> ID3D11ShaderResourceView*;
 };
 }

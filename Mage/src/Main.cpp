@@ -96,6 +96,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
     }
 
     auto const projectWindow{ std::make_unique<sorcery::mage::ProjectWindow>(context) };
+    auto const sceneViewWindow{ std::make_unique<sorcery::mage::SceneViewWindow>() };
 
     while (!sorcery::gWindow.IsQuitSignaled()) {
       sorcery::gWindow.ProcessEvents();

@@ -45,24 +45,8 @@ public:
   LEOPPHAPI auto ShutDown() -> void;
 
   LEOPPHAPI auto DrawCamera(Camera const& cam, RenderTarget* rt = nullptr) -> void;
-
-  LEOPPHAPI auto DrawGame() -> void;
-  LEOPPHAPI auto DrawSceneView(Camera const& cam) -> void;
-
-  [[nodiscard]] LEOPPHAPI auto GetGameResolution() noexcept -> Extent2D<u32>;
-  LEOPPHAPI auto SetGameResolution(Extent2D<u32> resolution) noexcept -> void;
-
-  [[nodiscard]] LEOPPHAPI auto GetSceneResolution() noexcept -> Extent2D<u32>;
-  LEOPPHAPI auto SetSceneResolution(Extent2D<u32> resolution) noexcept -> void;
-
-  [[nodiscard]] LEOPPHAPI auto GetGameFrame() noexcept -> ID3D11ShaderResourceView*;
-  [[nodiscard]] LEOPPHAPI auto GetSceneFrame() noexcept -> ID3D11ShaderResourceView*;
-
-  [[nodiscard]] LEOPPHAPI auto GetGameAspectRatio() noexcept -> f32;
-  [[nodiscard]] LEOPPHAPI auto GetSceneAspectRatio() noexcept -> f32;
-
+  LEOPPHAPI auto PostProcessCamera(Camera const& cam, RenderTarget* rt = nullptr) -> void;
   LEOPPHAPI auto BindAndClearSwapChain() noexcept -> void;
-
   LEOPPHAPI auto Present() noexcept -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetSyncInterval() noexcept -> u32;

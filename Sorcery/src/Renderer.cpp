@@ -264,7 +264,6 @@ class Renderer::Impl {
   auto DrawSkybox(Matrix4 const& camViewMtx, Matrix4 const& camProjMtx) const noexcept -> void;
   auto DrawGizmos() -> void;
   auto PostProcess(ID3D11ShaderResourceView* src, ID3D11RenderTargetView* dst) noexcept -> void;
-  auto DrawFullWithCameras(std::span<Camera const* const> cameras, RenderTarget const& rt) -> void;
 
   auto ClearGizmoDrawQueue() noexcept -> void;
 
@@ -275,6 +274,7 @@ public:
   auto ShutDown() -> void;
 
   auto DrawCamera(Camera const& cam, RenderTarget* rt) -> void;
+  auto PostProcessCamera(Camera const& cam, RenderTarget* rt) -> void;
 
   auto BindAndClearSwapChain() noexcept -> void;
   auto Present() noexcept -> void;
@@ -1179,171 +1179,6 @@ auto Renderer::Impl::OnWindowSize(Impl* const self, Extent2D<u32> const size) ->
 }
 
 
-auto Renderer::Impl::DrawFullWithCameras(std::span<Camera const* const> const cameras, RenderTarget const& rt) -> void {
-  FLOAT constexpr clearColor[]{ 0, 0, 0, 1 };
-  mImmediateContext->ClearRenderTargetView(rt.GetHdrRtv(), clearColor);
-
-  auto const aspectRatio{ static_cast<float>(rt.GetWidth()) / static_cast<float>(rt.GetHeight()) };
-
-  D3D11_VIEWPORT const viewport{
-    .TopLeftX = 0,
-    .TopLeftY = 0,
-    .Width = static_cast<FLOAT>(rt.GetWidth()),
-    .Height = static_cast<FLOAT>(rt.GetHeight()),
-    .MinDepth = 0,
-    .MaxDepth = 1
-  };
-
-  mImmediateContext->PSSetSamplers(SAMPLER_SLOT_CMP_PCF, 1, GetShadowPcfSamplerForReversedDepth().GetAddressOf());
-  mImmediateContext->PSSetSamplers(SAMPLER_SLOT_CMP_POINT, 1, GetShadowPointSamplerForReversedDepth().GetAddressOf());
-  mImmediateContext->PSSetSamplers(SAMPLER_SLOT_AF16, 1, mAf16Ss.GetAddressOf());
-  mImmediateContext->PSSetSamplers(SAMPLER_SLOT_AF8, 1, mAf8Ss.GetAddressOf());
-  mImmediateContext->PSSetSamplers(SAMPLER_SLOT_AF4, 1, mAf4Ss.GetAddressOf());
-  mImmediateContext->PSSetSamplers(SAMPLER_SLOT_TRI, 1, mTrilinearSs.GetAddressOf());
-  mImmediateContext->PSSetSamplers(SAMPLER_SLOT_BI, 1, mBilinearSs.GetAddressOf());
-  mImmediateContext->PSSetSamplers(SAMPLER_SLOT_POINT, 1, mPointSs.GetAddressOf());
-
-  D3D11_MAPPED_SUBRESOURCE mappedPerFrameCB;
-  if (FAILED(mImmediateContext->Map(mPerFrameCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerFrameCB))) {
-    throw std::runtime_error{ "Failed to map per frame CB." };
-  }
-
-  auto const perFrameCbData{ static_cast<PerFrameCB*>(mappedPerFrameCB.pData) };
-  perFrameCbData->gPerFrameConstants.shadowCascadeCount = mCascadeCount;
-  perFrameCbData->gPerFrameConstants.visualizeShadowCascades = mVisualizeShadowCascades;
-  perFrameCbData->gPerFrameConstants.shadowFilteringMode = static_cast<int>(mShadowFilteringMode);
-
-  mImmediateContext->Unmap(mPerFrameCb.Get(), 0);
-
-  mImmediateContext->VSSetConstantBuffers(CB_SLOT_PER_FRAME, 1, mPerFrameCb.GetAddressOf());
-  mImmediateContext->PSSetConstantBuffers(CB_SLOT_PER_FRAME, 1, mPerFrameCb.GetAddressOf());
-
-  for (auto const cam : cameras) {
-    auto const camPos{ cam->GetPosition() };
-    auto const camViewMtx{ cam->CalculateViewMatrix() };
-    auto const camProjMtx{ cam->CalculateProjectionMatrix(aspectRatio) };
-    auto const camViewProjMtx{ camViewMtx * camProjMtx };
-    Frustum const camFrustWS{ camViewProjMtx };
-
-    Visibility static visibility;
-    CullLights(camFrustWS, visibility);
-
-    // Shadow pass
-
-    auto const shadowCascadeBoundaries{ CalculateCameraShadowCascadeBoundaries(*cam) };
-
-
-    ID3D11ShaderResourceView* const nullSrv{ nullptr };
-    mImmediateContext->PSSetShaderResources(RES_SLOT_PUNCTUAL_SHADOW_ATLAS, 1, &nullSrv);
-    mImmediateContext->PSSetShaderResources(RES_SLOT_DIR_SHADOW_ATLAS, 1, &nullSrv);
-    mImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-    mDirectionalShadowAtlas->Update(mLights, visibility, *cam, shadowCascadeBoundaries, aspectRatio, mCascadeCount, mUseStableShadowCascadeProjection);
-    DrawShadowMaps(*mDirectionalShadowAtlas);
-
-    mPunctualShadowAtlas->Update(mLights, visibility, *cam, camViewProjMtx, mShadowDistance);
-    DrawShadowMaps(*mPunctualShadowAtlas);
-
-    CullStaticMeshComponents(camFrustWS, visibility);
-
-    // Depth pre-pass
-
-    mImmediateContext->OMSetRenderTargets(0, nullptr, rt.GetDsv());
-    mImmediateContext->OMSetDepthStencilState(mDepthTestLessWriteDss.Get(), 0);
-
-    mImmediateContext->VSSetShader(mDepthOnlyVs.Get(), nullptr, 0);
-    mImmediateContext->VSSetConstantBuffers(CB_SLOT_DEPTH_ONLY_PASS, 1, mDepthOnlyCb.GetAddressOf());
-
-    mImmediateContext->RSSetViewports(1, &viewport);
-    mImmediateContext->RSSetState(nullptr);
-
-    mImmediateContext->IASetInputLayout(mPos3OnlyIl.Get());
-
-    mImmediateContext->ClearDepthStencilView(rt.GetDsv(), D3D11_CLEAR_DEPTH, 1.0f, 0);
-
-    D3D11_MAPPED_SUBRESOURCE mappedCb;
-    if (FAILED(mImmediateContext->Map(mDepthOnlyCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedCb))) {
-      throw std::runtime_error{ "Failed to map CB for depth pre-pass." };
-    }
-    static_cast<DepthOnlyCB*>(mappedCb.pData)->gDepthOnlyViewProjMtx = camViewProjMtx;
-    mImmediateContext->Unmap(mDepthOnlyCb.Get(), 0);
-
-    DrawMeshes(visibility.staticMeshIndices, false);
-
-    // Full forward lighting pass
-    mImmediateContext->VSSetShader(mMeshVs.Get(), nullptr, 0);
-
-    D3D11_MAPPED_SUBRESOURCE mappedPerCamCB;
-    if (FAILED(mImmediateContext->Map(mPerCamCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerCamCB))) {
-      throw std::runtime_error{ "Failed to map per camera CB." };
-    }
-
-    auto const perCamCbData{ static_cast<PerCameraCB*>(mappedPerCamCB.pData) };
-    perCamCbData->gPerCamConstants.viewProjMtx = camViewProjMtx;
-    perCamCbData->gPerCamConstants.camPos = camPos;
-
-    for (int i = 0; i < MAX_CASCADE_COUNT; i++) {
-      perCamCbData->gPerCamConstants.shadowCascadeSplitDistances[i] = shadowCascadeBoundaries[i].farClip;
-    }
-
-    mImmediateContext->Unmap(mPerCamCb.Get(), 0);
-
-    auto const lightCount{ std::ssize(visibility.lightIndices) };
-    mLightBuffer->Resize(static_cast<int>(lightCount));
-    auto const lightBufferData{ mLightBuffer->Map() };
-
-    for (int i = 0; i < lightCount; i++) {
-      lightBufferData[i].color = mLights[visibility.lightIndices[i]]->GetColor();
-      lightBufferData[i].intensity = mLights[visibility.lightIndices[i]]->GetIntensity();
-      lightBufferData[i].type = static_cast<int>(mLights[visibility.lightIndices[i]]->GetType());
-      lightBufferData[i].direction = mLights[visibility.lightIndices[i]]->GetDirection();
-      lightBufferData[i].isCastingShadow = FALSE;
-      lightBufferData[i].range = mLights[visibility.lightIndices[i]]->GetRange();
-      lightBufferData[i].halfInnerAngleCos = std::cos(ToRadians(mLights[visibility.lightIndices[i]]->GetInnerAngle() / 2.0f));
-      lightBufferData[i].halfOuterAngleCos = std::cos(ToRadians(mLights[visibility.lightIndices[i]]->GetOuterAngle() / 2.0f));
-      lightBufferData[i].position = mLights[visibility.lightIndices[i]]->GetEntity()->GetTransform().GetWorldPosition();
-      lightBufferData[i].depthBias = mLights[visibility.lightIndices[i]]->GetShadowDepthBias();
-      lightBufferData[i].normalBias = mLights[visibility.lightIndices[i]]->GetShadowNormalBias();
-
-      for (auto& sample : lightBufferData[i].sampleShadowMap) {
-        sample = FALSE;
-      }
-    }
-
-    mDirectionalShadowAtlas->SetLookUpInfo(lightBufferData);
-    mPunctualShadowAtlas->SetLookUpInfo(lightBufferData);
-
-    mLightBuffer->Unmap();
-
-    mImmediateContext->VSSetShader(mMeshVs.Get(), nullptr, 0);
-    mImmediateContext->VSSetConstantBuffers(CB_SLOT_PER_CAM, 1, mPerCamCb.GetAddressOf());
-
-    mImmediateContext->OMSetRenderTargets(1, std::array{ rt.GetHdrRtv() }.data(), rt.GetDsv());
-    mImmediateContext->OMSetDepthStencilState(mDepthTestLessEqualNoWriteDss.Get(), 0);
-
-    mImmediateContext->PSSetShader(mMeshPbrPs.Get(), nullptr, 0);
-    mImmediateContext->PSSetConstantBuffers(CB_SLOT_PER_CAM, 1, mPerCamCb.GetAddressOf());
-    mImmediateContext->PSSetShaderResources(RES_SLOT_LIGHTS, 1, std::array{ mLightBuffer->GetSrv() }.data());
-    mImmediateContext->PSSetShaderResources(RES_SLOT_DIR_SHADOW_ATLAS, 1, std::array{ mDirectionalShadowAtlas->GetSrv() }.data());
-    mImmediateContext->PSSetShaderResources(RES_SLOT_PUNCTUAL_SHADOW_ATLAS, 1, std::array{ mPunctualShadowAtlas->GetSrv() }.data());
-
-    mImmediateContext->RSSetViewports(1, &viewport);
-    mImmediateContext->RSSetState(nullptr);
-
-    mImmediateContext->IASetInputLayout(mAllAttribsIl.Get());
-
-    DrawMeshes(visibility.staticMeshIndices, true);
-    DrawGizmos();
-    DrawSkybox(camViewMtx, camProjMtx);
-  }
-
-  mImmediateContext->RSSetViewports(1, &viewport);
-  PostProcess(rt.GetHdrSrv(), rt.GetOutRtv());
-
-  ClearGizmoDrawQueue();
-}
-
-
 auto Renderer::Impl::StartUp() -> void {
   CreateDeviceAndContext();
 
@@ -1394,7 +1229,167 @@ auto Renderer::Impl::ShutDown() -> void {
 
 
 auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget* rt) -> void {
-  DrawFullWithCameras()
+  FLOAT constexpr clearColor[]{ 0, 0, 0, 1 };
+  mImmediateContext->ClearRenderTargetView(rt ? rt->GetRtv() : mSwapChain->GetRtv(), clearColor);
+
+  auto const rtWidth{ rt ? rt->GetDesc().width : gWindow.GetCurrentClientAreaSize().width };
+  auto const rtHeight{ rt ? rt->GetDesc().height : gWindow.GetCurrentClientAreaSize().height };
+
+  auto const aspectRatio{ static_cast<float>(rtWidth) / static_cast<float>(rtHeight) };
+
+  D3D11_VIEWPORT const viewport{
+    .TopLeftX = 0,
+    .TopLeftY = 0,
+    .Width = static_cast<FLOAT>(rtWidth),
+    .Height = static_cast<FLOAT>(rtHeight),
+    .MinDepth = 0,
+    .MaxDepth = 1
+  };
+
+  mImmediateContext->PSSetSamplers(SAMPLER_SLOT_CMP_PCF, 1, GetShadowPcfSamplerForReversedDepth().GetAddressOf());
+  mImmediateContext->PSSetSamplers(SAMPLER_SLOT_CMP_POINT, 1, GetShadowPointSamplerForReversedDepth().GetAddressOf());
+  mImmediateContext->PSSetSamplers(SAMPLER_SLOT_AF16, 1, mAf16Ss.GetAddressOf());
+  mImmediateContext->PSSetSamplers(SAMPLER_SLOT_AF8, 1, mAf8Ss.GetAddressOf());
+  mImmediateContext->PSSetSamplers(SAMPLER_SLOT_AF4, 1, mAf4Ss.GetAddressOf());
+  mImmediateContext->PSSetSamplers(SAMPLER_SLOT_TRI, 1, mTrilinearSs.GetAddressOf());
+  mImmediateContext->PSSetSamplers(SAMPLER_SLOT_BI, 1, mBilinearSs.GetAddressOf());
+  mImmediateContext->PSSetSamplers(SAMPLER_SLOT_POINT, 1, mPointSs.GetAddressOf());
+
+  D3D11_MAPPED_SUBRESOURCE mappedPerFrameCB;
+  if (FAILED(mImmediateContext->Map(mPerFrameCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerFrameCB))) {
+    throw std::runtime_error{ "Failed to map per frame CB." };
+  }
+
+  auto const perFrameCbData{ static_cast<PerFrameCB*>(mappedPerFrameCB.pData) };
+  perFrameCbData->gPerFrameConstants.shadowCascadeCount = mCascadeCount;
+  perFrameCbData->gPerFrameConstants.visualizeShadowCascades = mVisualizeShadowCascades;
+  perFrameCbData->gPerFrameConstants.shadowFilteringMode = static_cast<int>(mShadowFilteringMode);
+
+  mImmediateContext->Unmap(mPerFrameCb.Get(), 0);
+
+  mImmediateContext->VSSetConstantBuffers(CB_SLOT_PER_FRAME, 1, mPerFrameCb.GetAddressOf());
+  mImmediateContext->PSSetConstantBuffers(CB_SLOT_PER_FRAME, 1, mPerFrameCb.GetAddressOf());
+
+  auto const camPos{ cam.GetPosition() };
+  auto const camViewMtx{ cam.CalculateViewMatrix() };
+  auto const camProjMtx{ cam.CalculateProjectionMatrix(aspectRatio) };
+  auto const camViewProjMtx{ camViewMtx * camProjMtx };
+  Frustum const camFrustWS{ camViewProjMtx };
+
+  Visibility static visibility;
+  CullLights(camFrustWS, visibility);
+
+  // Shadow pass
+
+  auto const shadowCascadeBoundaries{ CalculateCameraShadowCascadeBoundaries(cam) };
+
+  ID3D11ShaderResourceView* const nullSrv{ nullptr };
+  mImmediateContext->PSSetShaderResources(RES_SLOT_PUNCTUAL_SHADOW_ATLAS, 1, &nullSrv);
+  mImmediateContext->PSSetShaderResources(RES_SLOT_DIR_SHADOW_ATLAS, 1, &nullSrv);
+  mImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+  mDirectionalShadowAtlas->Update(mLights, visibility, cam, shadowCascadeBoundaries, aspectRatio, mCascadeCount, mUseStableShadowCascadeProjection);
+  DrawShadowMaps(*mDirectionalShadowAtlas);
+
+  mPunctualShadowAtlas->Update(mLights, visibility, cam, camViewProjMtx, mShadowDistance);
+  DrawShadowMaps(*mPunctualShadowAtlas);
+
+  CullStaticMeshComponents(camFrustWS, visibility);
+
+  // Depth pre-pass
+
+  mImmediateContext->OMSetRenderTargets(0, nullptr, rt ? rt->GetDsv() : mSwapChain->GetDsv() /* TODO create default DSV */);
+  mImmediateContext->OMSetDepthStencilState(mDepthTestLessWriteDss.Get(), 0);
+
+  mImmediateContext->VSSetShader(mDepthOnlyVs.Get(), nullptr, 0);
+  mImmediateContext->VSSetConstantBuffers(CB_SLOT_DEPTH_ONLY_PASS, 1, mDepthOnlyCb.GetAddressOf());
+
+  mImmediateContext->RSSetViewports(1, &viewport);
+  mImmediateContext->RSSetState(nullptr);
+
+  mImmediateContext->IASetInputLayout(mPos3OnlyIl.Get());
+
+  mImmediateContext->ClearDepthStencilView(rt->GetDsv(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+
+  D3D11_MAPPED_SUBRESOURCE mappedCb;
+  if (FAILED(mImmediateContext->Map(mDepthOnlyCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedCb))) {
+    throw std::runtime_error{ "Failed to map CB for depth pre-pass." };
+  }
+  static_cast<DepthOnlyCB*>(mappedCb.pData)->gDepthOnlyViewProjMtx = camViewProjMtx;
+  mImmediateContext->Unmap(mDepthOnlyCb.Get(), 0);
+
+  DrawMeshes(visibility.staticMeshIndices, false);
+
+  // Full forward lighting pass
+  mImmediateContext->VSSetShader(mMeshVs.Get(), nullptr, 0);
+
+  D3D11_MAPPED_SUBRESOURCE mappedPerCamCB;
+  if (FAILED(mImmediateContext->Map(mPerCamCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerCamCB))) {
+    throw std::runtime_error{ "Failed to map per camera CB." };
+  }
+
+  auto const perCamCbData{ static_cast<PerCameraCB*>(mappedPerCamCB.pData) };
+  perCamCbData->gPerCamConstants.viewProjMtx = camViewProjMtx;
+  perCamCbData->gPerCamConstants.camPos = camPos;
+
+  for (int i = 0; i < MAX_CASCADE_COUNT; i++) {
+    perCamCbData->gPerCamConstants.shadowCascadeSplitDistances[i] = shadowCascadeBoundaries[i].farClip;
+  }
+
+  mImmediateContext->Unmap(mPerCamCb.Get(), 0);
+
+  auto const lightCount{ std::ssize(visibility.lightIndices) };
+  mLightBuffer->Resize(static_cast<int>(lightCount));
+  auto const lightBufferData{ mLightBuffer->Map() };
+
+  for (int i = 0; i < lightCount; i++) {
+    lightBufferData[i].color = mLights[visibility.lightIndices[i]]->GetColor();
+    lightBufferData[i].intensity = mLights[visibility.lightIndices[i]]->GetIntensity();
+    lightBufferData[i].type = static_cast<int>(mLights[visibility.lightIndices[i]]->GetType());
+    lightBufferData[i].direction = mLights[visibility.lightIndices[i]]->GetDirection();
+    lightBufferData[i].isCastingShadow = FALSE;
+    lightBufferData[i].range = mLights[visibility.lightIndices[i]]->GetRange();
+    lightBufferData[i].halfInnerAngleCos = std::cos(ToRadians(mLights[visibility.lightIndices[i]]->GetInnerAngle() / 2.0f));
+    lightBufferData[i].halfOuterAngleCos = std::cos(ToRadians(mLights[visibility.lightIndices[i]]->GetOuterAngle() / 2.0f));
+    lightBufferData[i].position = mLights[visibility.lightIndices[i]]->GetEntity()->GetTransform().GetWorldPosition();
+    lightBufferData[i].depthBias = mLights[visibility.lightIndices[i]]->GetShadowDepthBias();
+    lightBufferData[i].normalBias = mLights[visibility.lightIndices[i]]->GetShadowNormalBias();
+
+    for (auto& sample : lightBufferData[i].sampleShadowMap) {
+      sample = FALSE;
+    }
+  }
+
+  mDirectionalShadowAtlas->SetLookUpInfo(lightBufferData);
+  mPunctualShadowAtlas->SetLookUpInfo(lightBufferData);
+
+  mLightBuffer->Unmap();
+
+  mImmediateContext->VSSetShader(mMeshVs.Get(), nullptr, 0);
+  mImmediateContext->VSSetConstantBuffers(CB_SLOT_PER_CAM, 1, mPerCamCb.GetAddressOf());
+
+  mImmediateContext->OMSetRenderTargets(1, std::array{ rt ? rt->GetRtv() : mSwapChain->GetRtv() }.data(), rt ? rt->GetDsv() : mSwapChain->GetDsv() /* TODO make default dsv */);
+  mImmediateContext->OMSetDepthStencilState(mDepthTestLessEqualNoWriteDss.Get(), 0);
+
+  mImmediateContext->PSSetShader(mMeshPbrPs.Get(), nullptr, 0);
+  mImmediateContext->PSSetConstantBuffers(CB_SLOT_PER_CAM, 1, mPerCamCb.GetAddressOf());
+  mImmediateContext->PSSetShaderResources(RES_SLOT_LIGHTS, 1, std::array{ mLightBuffer->GetSrv() }.data());
+  mImmediateContext->PSSetShaderResources(RES_SLOT_DIR_SHADOW_ATLAS, 1, std::array{ mDirectionalShadowAtlas->GetSrv() }.data());
+  mImmediateContext->PSSetShaderResources(RES_SLOT_PUNCTUAL_SHADOW_ATLAS, 1, std::array{ mPunctualShadowAtlas->GetSrv() }.data());
+
+  mImmediateContext->RSSetViewports(1, &viewport);
+  mImmediateContext->RSSetState(nullptr);
+
+  mImmediateContext->IASetInputLayout(mAllAttribsIl.Get());
+
+  DrawMeshes(visibility.staticMeshIndices, true);
+  DrawSkybox(camViewMtx, camProjMtx);
+}
+
+
+auto Renderer::Impl::PostProcessCamera(Camera const& cam, RenderTarget* rt) -> void {
+  mImmediateContext->RSSetViewports(1, &viewport);
+  PostProcess(rt.GetHdrSrv(), rt.auto GetOutRtv);
 }
 
 
@@ -1666,6 +1661,7 @@ auto Renderer::ShutDown() -> void {
 
 
 auto Renderer::DrawCamera(Camera const& cam, RenderTarget* const rt) -> void { mImpl->DrawCamera(cam, rt); }
+auto Renderer::PostProcessCamera(Camera const& cam, RenderTarget* rt) -> void { mImpl->PostProcessCamera(cam, rt); }
 auto Renderer::BindAndClearSwapChain() noexcept -> void { mImpl->BindAndClearSwapChain(); }
 auto Renderer::Present() noexcept -> void { mImpl->Present(); }
 auto Renderer::GetSyncInterval() noexcept -> u32 { return mImpl->GetSyncInterval(); }
