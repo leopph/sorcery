@@ -25,7 +25,8 @@ auto SceneViewWindow::Draw(Context& context) -> void {
         .width = desiredRes.width,
         .height = desiredRes.height,
         .colorFormat = DXGI_FORMAT_R8G8B8A8_UNORM,
-        .depthStencilFormat = std::nullopt,
+        .depthBufferBitCount = 0,
+        .stencilBufferBitCount = 0,
         .debugName = "Game View RenderTarget"
       });
     }
@@ -33,7 +34,9 @@ auto SceneViewWindow::Draw(Context& context) -> void {
     static bool isMovingSceneCamera{ false };
 
     auto const wasMovingSceneCamera{ isMovingSceneCamera };
-    isMovingSceneCamera = wasMovingSceneCamera ? ImGui::IsMouseDown(ImGuiMouseButton_Right) : ImGui::IsWindowHovered() && ImGui::IsMouseDown(ImGuiMouseButton_Right);
+    isMovingSceneCamera = wasMovingSceneCamera
+                            ? ImGui::IsMouseDown(ImGuiMouseButton_Right)
+                            : ImGui::IsWindowHovered() && ImGui::IsMouseDown(ImGuiMouseButton_Right);
 
     if (!wasMovingSceneCamera && isMovingSceneCamera) {
       gWindow.LockCursor(gWindow.GetCursorPosition());

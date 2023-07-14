@@ -995,25 +995,49 @@ auto Renderer::Impl::DrawMeshes(std::span<int const> const meshComponentIndices,
       auto const& [baseVertex, firstIndex, indexCount, mtlSlotName]{ subMeshes[i] };
 
       if (useMaterials) {
-        auto const& mtl{ static_cast<int>(materials.size()) > i ? *materials[i] : *mDefaultMaterial };
+        auto const& mtl{
+          static_cast<int>(materials.size()) > i
+            ? *materials[i]
+            : *mDefaultMaterial
+        };
 
         auto const mtlBuffer{ mtl.GetBuffer() };
         mImmediateContext->VSSetConstantBuffers(CB_SLOT_PER_MATERIAL, 1, &mtlBuffer);
         mImmediateContext->PSSetConstantBuffers(CB_SLOT_PER_MATERIAL, 1, &mtlBuffer);
 
-        auto const albedoSrv{ mtl.GetAlbedoMap() ? mtl.GetAlbedoMap()->GetSrv() : nullptr };
+        auto const albedoSrv{
+          mtl.GetAlbedoMap()
+            ? mtl.GetAlbedoMap()->GetSrv()
+            : nullptr
+        };
         mImmediateContext->PSSetShaderResources(RES_SLOT_ALBEDO_MAP, 1, &albedoSrv);
 
-        auto const metallicSrv{ mtl.GetMetallicMap() ? mtl.GetMetallicMap()->GetSrv() : nullptr };
+        auto const metallicSrv{
+          mtl.GetMetallicMap()
+            ? mtl.GetMetallicMap()->GetSrv()
+            : nullptr
+        };
         mImmediateContext->PSSetShaderResources(RES_SLOT_METALLIC_MAP, 1, &metallicSrv);
 
-        auto const roughnessSrv{ mtl.GetRoughnessMap() ? mtl.GetRoughnessMap()->GetSrv() : nullptr };
+        auto const roughnessSrv{
+          mtl.GetRoughnessMap()
+            ? mtl.GetRoughnessMap()->GetSrv()
+            : nullptr
+        };
         mImmediateContext->PSSetShaderResources(RES_SLOT_ROUGHNESS_MAP, 1, &roughnessSrv);
 
-        auto const aoSrv{ mtl.GetAoMap() ? mtl.GetAoMap()->GetSrv() : nullptr };
+        auto const aoSrv{
+          mtl.GetAoMap()
+            ? mtl.GetAoMap()->GetSrv()
+            : nullptr
+        };
         mImmediateContext->PSSetShaderResources(RES_SLOT_AO_MAP, 1, &aoSrv);
 
-        auto const normalSrv{ mtl.GetNormalMap() ? mtl.GetNormalMap()->GetSrv() : nullptr };
+        auto const normalSrv{
+          mtl.GetNormalMap()
+            ? mtl.GetNormalMap()->GetSrv()
+            : nullptr
+        };
         mImmediateContext->PSSetShaderResources(RES_SLOT_NORMAL_MAP, 1, &normalSrv);
       }
 
@@ -1233,15 +1257,24 @@ auto Renderer::Impl::ShutDown() -> void {
 
 
 auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget* rt) -> void {
-  auto const rtWidth{ rt ? rt->GetDesc().width : gWindow.GetCurrentClientAreaSize().width };
-  auto const rtHeight{ rt ? rt->GetDesc().height : gWindow.GetCurrentClientAreaSize().height };
+  auto const rtWidth{
+    rt
+      ? rt->GetDesc().width
+      : gWindow.GetCurrentClientAreaSize().width
+  };
+  auto const rtHeight{
+    rt
+      ? rt->GetDesc().height
+      : gWindow.GetCurrentClientAreaSize().height
+  };
   auto const rtAspect{ static_cast<float>(rtWidth) / static_cast<float>(rtHeight) };
 
   RenderTarget::Desc const hdrRtDesc{
     .width = rtWidth,
     .height = rtHeight,
     .colorFormat = DXGI_FORMAT_R16G16B16A16_FLOAT,
-    .depthStencilFormat = DXGI_FORMAT_D32_FLOAT,
+    .depthBufferBitCount = 32,
+    .stencilBufferBitCount = 0,
     .debugName = "Camera HDR RenderTarget"
   };
 
@@ -1400,7 +1433,9 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget* rt) -> void {
   DrawSkybox(camViewMtx, camProjMtx);
 
   mImmediateContext->RSSetViewports(1, &viewport);
-  PostProcess(hdrRt.GetColorSrv(), rt ? rt->GetRtv() : mSwapChain->GetRtv());
+  PostProcess(hdrRt.GetColorSrv(), rt
+                                     ? rt->GetRtv()
+                                     : mSwapChain->GetRtv());
 }
 
 
@@ -1605,8 +1640,16 @@ auto Renderer::Impl::SetNormalizedShadowCascadeSplit(int const idx, float const 
     return;
   }
 
-  float const clampMin{ idx == 0 ? 0.0f : mCascadeSplits[idx - 1] };
-  float const clampMax{ idx == splitCount - 1 ? 1.0f : mCascadeSplits[idx + 1] };
+  float const clampMin{
+    idx == 0
+      ? 0.0f
+      : mCascadeSplits[idx - 1]
+  };
+  float const clampMax{
+    idx == splitCount - 1
+      ? 1.0f
+      : mCascadeSplits[idx + 1]
+  };
 
   mCascadeSplits[idx] = std::clamp(split, clampMin, clampMax);
 }

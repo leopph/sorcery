@@ -19,7 +19,8 @@ public:
     UINT height{ 1024 };
 
     std::optional<DXGI_FORMAT> colorFormat{ DXGI_FORMAT_R8G8B8A8_UNORM };
-    std::optional<DXGI_FORMAT> depthStencilFormat{ DXGI_FORMAT_D24_UNORM_S8_UINT };
+    int depthBufferBitCount;
+    int stencilBufferBitCount;
 
     std::string debugName;
 
@@ -36,7 +37,8 @@ private:
   Microsoft::WRL::ComPtr<ID3D11DepthStencilView> mDsv;
 
   Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> mColorSrv;
-  Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> mDepthStencilSrv;
+  Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> mDepthSrv;
+  Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> mStencilSrv;
 
 public:
   LEOPPHAPI explicit RenderTarget(Desc const& desc);
@@ -54,6 +56,7 @@ public:
   [[nodiscard]] LEOPPHAPI auto GetDsv() const noexcept -> ID3D11DepthStencilView*;
 
   [[nodiscard]] LEOPPHAPI auto GetColorSrv() const noexcept -> ID3D11ShaderResourceView*;
-  [[nodiscard]] LEOPPHAPI auto GetDepthStencilSrv() const noexcept -> ID3D11ShaderResourceView*;
+  [[nodiscard]] LEOPPHAPI auto GetDepthSrv() const noexcept -> ID3D11ShaderResourceView*;
+  [[nodiscard]] LEOPPHAPI auto GetStencilSrv() const noexcept -> ID3D11ShaderResourceView*;
 };
 }

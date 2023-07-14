@@ -33,14 +33,19 @@ auto GameViewWindow::Draw(bool const gameRunning) -> void {
     auto const contentRegionSize = ImGui::GetContentRegionAvail();
     Extent2D const viewportRes{ static_cast<u32>(contentRegionSize.x), static_cast<u32>(contentRegionSize.y) };
 
-    auto const desiredRes{ selectedRes == 0 ? viewportRes : Extent2D<u32>{ resolutions[selectedRes].width, resolutions[selectedRes].height } };
+    auto const desiredRes{
+      selectedRes == 0
+        ? viewportRes
+        : Extent2D<u32>{ resolutions[selectedRes].width, resolutions[selectedRes].height }
+    };
 
     if (!mRenderTarget || mRenderTarget->GetDesc().width != desiredRes.width || mRenderTarget->GetDesc().height != desiredRes.height) {
       mRenderTarget = std::make_unique<RenderTarget>(RenderTarget::Desc{
         .width = desiredRes.width,
         .height = desiredRes.height,
         .colorFormat = DXGI_FORMAT_R8G8B8A8_UNORM,
-        .depthStencilFormat = std::nullopt,
+        .depthBufferBitCount = 0,
+        .stencilBufferBitCount = 0,
         .debugName = "Game View RenderTarget"
       });
     }
