@@ -44,8 +44,8 @@ public:
   LEOPPHAPI auto StartUp() -> void;
   LEOPPHAPI auto ShutDown() -> void;
 
-  LEOPPHAPI auto DrawCamera(Camera const& cam, RenderTarget* rt = nullptr) -> void;
-  LEOPPHAPI auto DrawAllCameras(RenderTarget* rt = nullptr) -> void;
+  LEOPPHAPI auto DrawCamera(Camera const& cam, RenderTarget const* rt = nullptr) -> void;
+  LEOPPHAPI auto DrawAllCameras(RenderTarget const* rt = nullptr) -> void;
   LEOPPHAPI auto DrawGizmos(RenderTarget const* rt = nullptr) -> void;
   LEOPPHAPI auto BindAndClearSwapChain() noexcept -> void;
   LEOPPHAPI auto Present() noexcept -> void;

@@ -40,7 +40,7 @@ RenderTarget::RenderTarget(Desc const& desc) :
     }
 
     std::string colorTexName{ desc.debugName + " - Color Texture" };
-    if (FAILED(mColorTex->SetPrivateData(WKPDID_D3DDebugObjectName, std::ssize(colorTexName), colorTexName.data()))) {
+    if (FAILED(mColorTex->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(std::size(colorTexName)), colorTexName.data()))) {
       throw std::runtime_error{ "Failed to set RenderTarget color texture debug name." };
     }
 
@@ -55,7 +55,7 @@ RenderTarget::RenderTarget(Desc const& desc) :
     }
 
     std::string colorRtvName{ desc.debugName + " - RTV" };
-    if (FAILED(mRtv->SetPrivateData(WKPDID_D3DDebugObjectName, std::ssize(colorRtvName), colorRtvName.data()))) {
+    if (FAILED(mRtv->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(std::size(colorRtvName)), colorRtvName.data()))) {
       throw std::runtime_error{ "Failed to set RenderTarget RTV debug name." };
     }
 
@@ -70,7 +70,7 @@ RenderTarget::RenderTarget(Desc const& desc) :
     }
 
     std::string colorSrvName{ desc.debugName + " - Color SRV" };
-    if (FAILED(mColorSrv->SetPrivateData(WKPDID_D3DDebugObjectName, std::ssize(colorSrvName), colorSrvName.data()))) {
+    if (FAILED(mColorSrv->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(std::size(colorSrvName)), colorSrvName.data()))) {
       throw std::runtime_error{ "Failed to set RenderTarget color SRV debug name." };
     }
   }
@@ -112,7 +112,7 @@ RenderTarget::RenderTarget(Desc const& desc) :
     }
 
     std::string depthStencilTexName{ desc.debugName + " - Depth-Stencil Texture" };
-    if (FAILED(mDepthStencilTex->SetPrivateData(WKPDID_D3DDebugObjectName, std::ssize(depthStencilTexName), depthStencilTexName.data()))) {
+    if (FAILED(mDepthStencilTex->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(std::size(depthStencilTexName)), depthStencilTexName.data()))) {
       throw std::runtime_error{ "Failed to set RenderTarget depth-stencil texture debug name." };
     }
 
@@ -146,7 +146,7 @@ RenderTarget::RenderTarget(Desc const& desc) :
     }
 
     std::string dsvName{ desc.debugName + " - DSV" };
-    if (FAILED(mDsv->SetPrivateData(WKPDID_D3DDebugObjectName, std::ssize(dsvName), dsvName.data()))) {
+    if (FAILED(mDsv->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(std::size(dsvName)), dsvName.data()))) {
       throw std::runtime_error{ "Failed to set RenderTarget DSV debug name." };
     }
 
@@ -174,7 +174,7 @@ RenderTarget::RenderTarget(Desc const& desc) :
       }
 
       std::string depthSrvName{ desc.debugName + " - Depth SRV" };
-      if (FAILED(mDepthSrv->SetPrivateData(WKPDID_D3DDebugObjectName, std::ssize(depthSrvName), depthSrvName.data()))) {
+      if (FAILED(mDepthSrv->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(std::size(depthSrvName)), depthSrvName.data()))) {
         throw std::runtime_error{ "Failed to set RenderTarget depth SRV debug name." };
       }
     }
@@ -199,7 +199,7 @@ RenderTarget::RenderTarget(Desc const& desc) :
       }
 
       std::string stencilSrvName{ desc.debugName + " - Stencil SRV" };
-      if (FAILED(mStencilSrv->SetPrivateData(WKPDID_D3DDebugObjectName, std::ssize(stencilSrvName), stencilSrvName.data()))) {
+      if (FAILED(mStencilSrv->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(std::size(stencilSrvName)), stencilSrvName.data()))) {
         throw std::runtime_error{ "Failed to set RenderTarget stencil SRV debug name." };
       }
     }

@@ -283,8 +283,8 @@ public:
   auto StartUp() -> void;
   auto ShutDown() -> void;
 
-  auto DrawCamera(Camera const& cam, RenderTarget* rt) -> void;
-  auto DrawAllCameras(RenderTarget* rt) -> void;
+  auto DrawCamera(Camera const& cam, RenderTarget const* rt) -> void;
+  auto DrawAllCameras(RenderTarget const* rt) -> void;
   auto DrawGizmos(RenderTarget const* rt) -> void;
   auto BindAndClearSwapChain() noexcept -> void;
   auto Present() noexcept -> void;
@@ -1278,7 +1278,7 @@ auto Renderer::Impl::ShutDown() -> void {
 }
 
 
-auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget* rt) -> void {
+auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt) -> void {
   auto const rtWidth{
     rt
       ? rt->GetDesc().width
@@ -1461,7 +1461,7 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget* rt) -> void {
 }
 
 
-auto Renderer::Impl::DrawAllCameras(RenderTarget* rt) -> void {
+auto Renderer::Impl::DrawAllCameras(RenderTarget const* const rt) -> void {
   for (auto const& cam : mGameRenderCameras) {
     DrawCamera(*cam, rt);
   }
@@ -1735,8 +1735,9 @@ auto Renderer::Impl::SetInFlightFrameCount(int const count) -> void {
 
 
 auto Renderer::Impl::GetTemporaryRenderTarget(RenderTarget::Desc const& desc) -> RenderTarget& {
-  for (auto const& [rt, ageInYears] : mTmpRenderTargets) {
+  for (auto& [rt, lastUseInFrames] : mTmpRenderTargets) {
     if (rt->GetDesc() == desc) {
+      lastUseInFrames = 0;
       return *rt;
     }
   }
@@ -1757,8 +1758,8 @@ auto Renderer::ShutDown() -> void {
 }
 
 
-auto Renderer::DrawCamera(Camera const& cam, RenderTarget* const rt) -> void { mImpl->DrawCamera(cam, rt); }
-auto Renderer::DrawAllCameras(RenderTarget* rt) -> void { mImpl->DrawAllCameras(rt); }
+auto Renderer::DrawCamera(Camera const& cam, RenderTarget const* rt) -> void { mImpl->DrawCamera(cam, rt); }
+auto Renderer::DrawAllCameras(RenderTarget const* rt) -> void { mImpl->DrawAllCameras(rt); }
 auto Renderer::DrawGizmos(RenderTarget const* const rt) -> void { mImpl->DrawGizmos(rt); }
 auto Renderer::BindAndClearSwapChain() noexcept -> void { mImpl->BindAndClearSwapChain(); }
 auto Renderer::Present() noexcept -> void { mImpl->Present(); }
