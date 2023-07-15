@@ -84,7 +84,6 @@ auto StaticMeshComponent::GetSerializationType() const -> Type {
 
 
 auto StaticMeshComponent::Serialize(YAML::Node& node) const -> void {
-  Component::Serialize(node);
   node["mesh"] = mMesh->GetGuid().ToString();
 
   for (auto const mtl : mMaterials) {
@@ -94,8 +93,6 @@ auto StaticMeshComponent::Serialize(YAML::Node& node) const -> void {
 
 
 auto StaticMeshComponent::Deserialize(YAML::Node const& node) -> void {
-  Component::Deserialize(node);
-
   mMesh = nullptr;
 
   if (node["mesh"]) {

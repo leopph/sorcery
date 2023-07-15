@@ -102,9 +102,6 @@ auto Entity::GetSerializationType() const -> Type {
 
 auto Entity::Serialize(YAML::Node& node) const -> void {
   node["name"] = GetName().data();
-  for (auto const& component : mComponents) {
-    node["components"].push_back(component->GetGuid().ToString());
-  }
 }
 
 
@@ -113,20 +110,6 @@ auto Entity::Deserialize(YAML::Node const& node) -> void {
     std::cerr << "Failed to deserialize name of Entity " << GetGuid().ToString() << ". Invalid data." << std::endl;
   } else {
     SetName(node["name"].as<std::string>());
-  }
-
-  for (auto it{ node["components"].begin() }; it != node["components"].end(); ++it) {
-    if (!it->IsScalar()) {
-      std::cerr << "Failed to deserialize a Component of Entity " << GetGuid().ToString() << ". Invalid data." << std::endl;
-    } else {
-      auto const guidStr{ it->as<std::string>() };
-      auto const component{ (dynamic_cast<Component*>(FindObjectByGuid(Guid::Parse(guidStr)))) };
-      if (!component) {
-        std::cerr << "Failed to deserialize a Component of Entity " << GetGuid().ToString() << ". Guid " << guidStr << " does not belong to any Component." << std::endl;
-      } else {
-        AddComponent(std::unique_ptr<Component>{ component });
-      }
-    }
   }
 }
 }

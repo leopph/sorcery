@@ -5,7 +5,6 @@
 
 #include "YamlInclude.hpp"
 
-#include <string>
 #include <memory>
 #include <vector>
 #include <span>

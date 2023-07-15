@@ -15,9 +15,15 @@ namespace sorcery {
 auto TransformComponent::UpdateWorldDataRecursive() -> void {
   SetChanged(true);
 
-  mWorldPosition = mParent != nullptr ? mParent->mWorldPosition + mParent->mWorldRotation.Rotate(mLocalPosition) : mLocalPosition;
-  mWorldRotation = mParent != nullptr ? mParent->mWorldRotation * mLocalRotation : mLocalRotation;
-  mWorldScale = mParent != nullptr ? mParent->mWorldScale * mLocalScale : mLocalScale;
+  mWorldPosition = mParent != nullptr
+                     ? mParent->mWorldPosition + mParent->mWorldRotation.Rotate(mLocalPosition)
+                     : mLocalPosition;
+  mWorldRotation = mParent != nullptr
+                     ? mParent->mWorldRotation * mLocalRotation
+                     : mLocalRotation;
+  mWorldScale = mParent != nullptr
+                  ? mParent->mWorldScale * mLocalScale
+                  : mLocalScale;
 
   mForward = mWorldRotation.Rotate(Vector3::Forward());
   mRight = mWorldRotation.Rotate(Vector3::Right());
@@ -248,7 +254,6 @@ auto TransformComponent::GetSerializationType() const -> Type {
 
 
 auto TransformComponent::Serialize(YAML::Node& node) const -> void {
-  Component::Serialize(node);
   node["position"] = GetLocalPosition();
   node["rotation"] = GetLocalRotation();
   node["scale"] = GetLocalScale();

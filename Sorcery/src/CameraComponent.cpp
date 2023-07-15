@@ -75,7 +75,6 @@ auto CameraComponent::GetForwardAxis() const noexcept -> Vector3 {
 
 
 auto CameraComponent::Serialize(YAML::Node& node) const -> void {
-  Component::Serialize(node);
   node["type"] = static_cast<int>(GetType());
   node["fov"] = GetHorizontalPerspectiveFov();
   node["size"] = GetHorizontalOrthographicSize();

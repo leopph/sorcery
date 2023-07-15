@@ -37,7 +37,6 @@ auto LightComponent::GetSerializationType() const -> Object::Type {
 
 
 auto LightComponent::Serialize(YAML::Node& node) const -> void {
-  Component::Serialize(node);
   node["color"] = GetColor();
   node["intensity"] = GetIntensity();
   node["type"] = static_cast<int>(GetType());
@@ -53,7 +52,6 @@ auto LightComponent::Serialize(YAML::Node& node) const -> void {
 
 
 auto LightComponent::Deserialize(YAML::Node const& node) -> void {
-  Component::Deserialize(node);
   if (auto const data{ node["color"] }) {
     SetColor(data.as<Vector3>(GetColor()));
   }

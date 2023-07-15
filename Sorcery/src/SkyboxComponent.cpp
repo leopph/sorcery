@@ -16,8 +16,6 @@ auto SkyboxComponent::GetSerializationType() const -> Type {
 
 
 auto SkyboxComponent::Serialize(YAML::Node& node) const -> void {
-  Component::Serialize(node);
-
   if (mCubemap) {
     node["cubemap"] = mCubemap->GetGuid().ToString();
   }
@@ -25,8 +23,6 @@ auto SkyboxComponent::Serialize(YAML::Node& node) const -> void {
 
 
 auto SkyboxComponent::Deserialize(YAML::Node const& node) -> void {
-  Component::Deserialize(node);
-
   if (auto const dataNode{ node["cubemap"] }) {
     if (auto const guidStr{ dataNode.as<std::string>("") }; !guidStr.empty()) {
       SetCubemap(dynamic_cast<Cubemap*>(FindObjectByGuid(Guid::Parse(guidStr))));

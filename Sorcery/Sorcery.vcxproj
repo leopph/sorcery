@@ -121,6 +121,7 @@
     <ClCompile Include="src\PhysicsManager.cpp" />
     <ClCompile Include="src\PunctualShadowAtlas.cpp" />
     <ClCompile Include="src\RenderTarget.cpp" />
+    <ClCompile Include="src\ResourceManager.cpp" />
     <ClCompile Include="src\Serialization.cpp" />
     <ClCompile Include="src\ShadowAtlas.cpp" />
     <ClCompile Include="src\StaticMeshComponent.cpp" />
@@ -137,6 +138,7 @@
     <ClCompile Include="src\SwapChain.cpp" />
     <ClCompile Include="src\Util.cpp" />
     <ClInclude Include="src\Graphics.hpp" />
+    <ClInclude Include="src\ResourceManager.hpp" />
     <ClInclude Include="src\ShadowCascadeBoundary.hpp" />
     <ClInclude Include="src\Camera.hpp" />
     <ClInclude Include="src\Cubemap.hpp" />

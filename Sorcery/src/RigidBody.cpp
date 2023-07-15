@@ -17,14 +17,10 @@ auto RigidBody::GetSerializationType() const -> Type {
 }
 
 
-auto RigidBody::Serialize(YAML::Node& node) const -> void {
-  Component::Serialize(node);
-}
+auto RigidBody::Serialize(YAML::Node& node) const -> void {}
 
 
-auto RigidBody::Deserialize(YAML::Node const& node) -> void {
-  Component::Deserialize(node);
-}
+auto RigidBody::Deserialize(YAML::Node const& node) -> void {}
 
 
 RigidBody::RigidBody() :

@@ -32,7 +32,9 @@ Scene::~Scene() {
   std::erase(sAllScenes, this);
 
   if (sActiveScene == this) {
-    sActiveScene = sAllScenes.empty() ? nullptr : sAllScenes.back();
+    sActiveScene = sAllScenes.empty()
+                     ? nullptr
+                     : sAllScenes.back();
   }
 }
 
@@ -75,29 +77,28 @@ auto Scene::Deserialize(std::span<std::uint8_t const> const bytes) -> void {
 
 
 auto Scene::Save() -> void {
-  auto constexpr serializeObject{
-    [](SceneElement const* obj) {
-      YAML::Node objectNode;
-
-      objectNode["objectType"] = static_cast<int>(obj->GetSerializationType());
-      objectNode["guid"] = obj->GetGuid().ToString();
-
-      YAML::Node dataNode;
-      obj->Serialize(dataNode);
-      objectNode["data"] = dataNode;
-
-      return objectNode;
-    }
-  };
-
   mYamlData.reset();
+  mYamlData["version"] = 1;
 
   for (auto const& entity : mEntities) {
-    mYamlData.push_back(serializeObject(entity.get()));
+    YAML::Node entityDataNode;
+    entity->Serialize(entityDataNode);
+
+    YAML::Node entityNode;
+    entityNode["data"] = entityDataNode;
 
     for (auto const& component : entity->mComponents) {
-      mYamlData.push_back(serializeObject(component.get()));
+      YAML::Node componentDataNode;
+      component->Serialize(componentDataNode);
+
+      YAML::Node componentNode;
+      componentNode["type"] = static_cast<int>(component->GetSerializationType());
+      componentNode["data"] = componentDataNode;
+
+      entityNode["components"].push_back(componentNode);
     }
+
+    mYamlData["entities"].push_back(entityNode);
   }
 }
 
@@ -106,30 +107,20 @@ auto Scene::Load(ObjectInstantiatorManager const& manager) -> void {
   sActiveScene = this;
   mEntities.clear();
 
-  struct ObjectWithSerializedData {
-    SceneElement* obj;
-    YAML::Node node;
-  };
+  if (auto const version{ mYamlData["version"] }; version && version.IsScalar() && version.as<int>(1) == 1) {
+    for (auto const entityNode : mYamlData["entities"]) {
+      auto const& entity{ mEntities.emplace_back(new Entity{}) };
+      entity->Deserialize(entityNode["data"]);
 
-  std::vector<ObjectWithSerializedData> objectsWithSerializedData;
-
-  for (std::size_t i{ 0 }; i < mYamlData.size(); i++) {
-    auto const guid{ Guid::Parse(mYamlData[i]["guid"].as<std::string>()) };
-
-    if (auto const obj{ dynamic_cast<SceneElement*>(manager.GetFor(static_cast<Type>(mYamlData[i]["objectType"].as<int>())).Instantiate()) }) {
-      try {
-        obj->SetGuid(guid);
-        objectsWithSerializedData.emplace_back(obj, mYamlData[i]["data"]);
-      } catch (std::exception const& ex) {
-        DisplayError(std::format("Failed to instantiate an Object. {}", ex.what()));
-      } catch (...) {
-        DisplayError("Failed to instantiate an object.");
+      for (auto const componentNode : entityNode["components"]) {
+        if (auto const component{ dynamic_cast<Component*>(manager.GetFor(static_cast<Type>(componentNode["type"].as<int>())).Instantiate()) }) {
+          entity->AddComponent(std::shared_ptr<Component>{ component });
+          component->Deserialize(componentNode["data"]);
+        }
       }
     }
-  }
-
-  for (auto& [obj, node] : objectsWithSerializedData) {
-    obj->Deserialize(node);
+  } else {
+    throw std::runtime_error{ std::format("Couldn't load scene \"{}\" because its version number is unsupported.", GetName()) };
   }
 }
 
