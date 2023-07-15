@@ -86,7 +86,9 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
           std::filesystem::path targetScenePath{ argv[1] };
           targetScenePath = context.GetAssetDirectoryAbsolute() / targetScenePath;
           if (auto const targetScene{ context.GetResources().TryGetAssetAt(targetScenePath) }) {
-            context.OpenScene(dynamic_cast<sorcery::Scene&>(*targetScene));
+            if (auto const targetSceneCast{ dynamic_cast<sorcery::Scene*>(targetScene) }; targetSceneCast) {
+              context.OpenScene(*targetSceneCast);
+            }
           }
         }
 
