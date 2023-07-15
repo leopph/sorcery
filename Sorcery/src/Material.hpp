@@ -2,7 +2,7 @@
 
 #include "Bounds.hpp"
 #include "Color.hpp"
-#include "NativeAsset.hpp"
+#include "NativeResource.hpp"
 #include "Util.hpp"
 #include "Texture2D.hpp"
 #include "Util.hpp"
@@ -16,8 +16,8 @@
 
 
 namespace sorcery {
-class Material final : public NativeAsset {
-  RTTR_ENABLE(NativeAsset)
+class Material final : public NativeResource {
+  RTTR_ENABLE(NativeResource)
   ShaderMaterial mShaderMtl{
     .albedo = Vector3{ 1, 1, 1 },
     .metallic = 0.0f,

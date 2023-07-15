@@ -16,7 +16,7 @@ auto SceneLoader::GetSupportedExtensions() const -> std::span<std::string const>
 }
 
 
-auto SceneLoader::Load(std::filesystem::path const& src, [[maybe_unused]] std::filesystem::path const& cache) -> std::unique_ptr<Object> {
+auto SceneLoader::Load(std::filesystem::path const& src, [[maybe_unused]] std::filesystem::path const& cache) -> std::unique_ptr<Resource> {
   auto scene{ std::make_unique<Scene>() };
 
   if (std::ifstream in{ src, std::ios::in | std::ios::binary }; in.is_open()) {

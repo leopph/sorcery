@@ -20,7 +20,7 @@ auto MaterialLoader::GetSupportedExtensions() const -> std::span<std::string con
 }
 
 
-auto MaterialLoader::Load(std::filesystem::path const& src, [[maybe_unused]] std::filesystem::path const& cache) -> std::unique_ptr<Object> {
+auto MaterialLoader::Load(std::filesystem::path const& src, [[maybe_unused]] std::filesystem::path const& cache) -> std::unique_ptr<Resource> {
   std::ifstream in{ src, std::ios::binary };
   std::vector<std::uint8_t> fileData{ std::istreambuf_iterator{ in }, {} };
   std::span<std::uint8_t const> bytes{ fileData };
@@ -65,11 +65,31 @@ auto MaterialLoader::Load(std::filesystem::path const& src, [[maybe_unused]] std
     }
   };
 
-  auto const albedoMap{ sampleAlbedo ? parseNextMap() : nullptr };
-  auto const metallicMap{ sampleMetallic ? parseNextMap() : nullptr };
-  auto const roughnessMap{ sampleRoughness ? parseNextMap() : nullptr };
-  auto const aoMap{ sampleAo ? parseNextMap() : nullptr };
-  auto const normalMap{ sampleNormal ? parseNextMap() : nullptr };
+  auto const albedoMap{
+    sampleAlbedo
+      ? parseNextMap()
+      : nullptr
+  };
+  auto const metallicMap{
+    sampleMetallic
+      ? parseNextMap()
+      : nullptr
+  };
+  auto const roughnessMap{
+    sampleRoughness
+      ? parseNextMap()
+      : nullptr
+  };
+  auto const aoMap{
+    sampleAo
+      ? parseNextMap()
+      : nullptr
+  };
+  auto const normalMap{
+    sampleNormal
+      ? parseNextMap()
+      : nullptr
+  };
 
   return std::make_unique<Material>(albedoVector, metallic, roughness, ao, albedoMap, metallicMap, roughnessMap, aoMap, normalMap);
 }

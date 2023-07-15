@@ -4,7 +4,7 @@
 
 
 namespace sorcery::mage {
-auto GenerateAssetMetaFileContents(Object const& asset, ObjectWrapperManager const& factoryManager) -> std::string {
+auto GenerateAssetMetaFileContents(Resource const& asset, ObjectWrapperManager const& factoryManager) -> std::string {
   YAML::Node node;
   node["guid"] = asset.GetGuid().ToString();
   node["type"] = static_cast<int>(asset.GetSerializationType());

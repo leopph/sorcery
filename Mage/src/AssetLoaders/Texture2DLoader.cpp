@@ -18,7 +18,7 @@ auto Texture2DLoader::GetSupportedExtensions() const -> std::span<std::string co
 }
 
 
-auto Texture2DLoader::Load(std::filesystem::path const& src, [[maybe_unused]] std::filesystem::path const& cache) -> std::unique_ptr<Object> {
+auto Texture2DLoader::Load(std::filesystem::path const& src, [[maybe_unused]] std::filesystem::path const& cache) -> std::unique_ptr<Resource> {
   int width;
   int height;
   int channelCount;

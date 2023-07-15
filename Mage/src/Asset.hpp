@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Object.hpp>
+#include <Resource.hpp>
 #include "ObjectWrappers/ObjectWrapperManager.hpp"
 
 
@@ -12,6 +12,6 @@ struct AssetMetaInfo {
 };
 
 
-[[nodiscard]] auto GenerateAssetMetaFileContents(Object const& asset, ObjectWrapperManager const& factoryManager) -> std::string;
+[[nodiscard]] auto GenerateAssetMetaFileContents(Resource const& asset, ObjectWrapperManager const& factoryManager) -> std::string;
 [[nodiscard]] auto ReadAssetMetaFileContents(std::string const& contents) -> AssetMetaInfo;
 }

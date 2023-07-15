@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Object.hpp"
+#include "Resource.hpp"
 
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
@@ -12,8 +12,8 @@
 
 
 namespace sorcery {
-class Texture2D final : public Object {
-  RTTR_ENABLE(Object)
+class Texture2D final : public Resource {
+  RTTR_ENABLE(Resource)
   Microsoft::WRL::ComPtr<ID3D11Texture2D> mTex;
   Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> mSrv;
   Image* mImgData{ new Image{} };

@@ -16,7 +16,6 @@ auto DrawEntityHierarchyWindow(Context& context) -> void {
       if (ImGui::MenuItem("Create New Entity")) {
         auto& entity{ context.GetScene()->CreateEntity() };
         auto transform = std::make_unique<TransformComponent>();
-        transform->SetGuid(Guid::Generate());
         entity.AddComponent(std::move(transform));
       }
 
@@ -45,7 +44,7 @@ auto DrawEntityHierarchyWindow(Context& context) -> void {
         nodeFlags |= ImGuiTreeNodeFlags_DefaultOpen;
       }
 
-      if (context.GetSelectedObject() && context.GetSelectedObject()->GetGuid() == entity.GetGuid()) {
+      if (context.GetSelectedObject() && context.GetSelectedObject() == &entity) {
         nodeFlags |= ImGuiTreeNodeFlags_Selected;
       }
 

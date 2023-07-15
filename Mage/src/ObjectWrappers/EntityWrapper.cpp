@@ -31,23 +31,35 @@ auto ObjectWrapperFor<Entity>::OnDrawProperties(Context& context, Object& object
     ImGui::EndTable();
   }
 
-  for (static std::vector<Component*> components; auto const& component : entity.GetComponents(components)) {
-    auto const type{ rttr::type::get(*component) };
+  static std::vector<Component*> components;
+  entity.GetComponents(components);
 
-    auto const componentNodeId{ type.get_name().data() };
-    if (ImGui::TreeNodeEx(componentNodeId, ImGuiTreeNodeFlags_DefaultOpen)) {
+  for (std::size_t i{ 0 }; i < std::size(components); i++) {
+    auto const treeNodeId{ std::to_string(i) };
+
+    if (ImGui::TreeNodeEx(treeNodeId.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
       ImGui::Separator();
-      context.GetFactoryManager().GetFor(component->GetSerializationType()).OnDrawProperties(context, *component);
+      if (ImGui::BeginTable("Component Property Table", 2, ImGuiTableFlags_SizingStretchSame)) {
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::PushItemWidth(FLT_MIN);
+        ImGui::TableSetColumnIndex(1);
+        ImGui::PushItemWidth(-FLT_MIN);
+        ImGui::TableSetColumnIndex(0);
+        context.GetFactoryManager().GetFor(components[i]->GetSerializationType()).OnDrawProperties(context, *components[i]);
+        ImGui::EndTable();
+      }
+
       ImGui::TreePop();
     }
 
-    if (ImGui::BeginPopupContextItem(componentNodeId)) {
+    if (ImGui::BeginPopupContextItem(treeNodeId.c_str())) {
       if (ImGui::MenuItem("Delete")) {
-        entity.DestroyComponent(component);
+        entity.DestroyComponent(components[i]);
       }
       ImGui::EndPopup();
     }
-    ImGui::OpenPopupOnItemClick(componentNodeId, ImGuiPopupFlags_MouseButtonRight);
+    ImGui::OpenPopupOnItemClick(treeNodeId.c_str(), ImGuiPopupFlags_MouseButtonRight);
   }
 
   auto constexpr addNewComponentLabel = "Add New Component";
@@ -58,7 +70,6 @@ auto ObjectWrapperFor<Entity>::OnDrawProperties(Context& context, Object& object
     for (auto const& componentClass : rttr::type::get_by_name("Component").get_derived_classes()) {
       if (ImGui::MenuItem(componentClass.get_name().data())) {
         auto component{ componentClass.create().get_value<std::shared_ptr<Component>>() };
-        component->SetGuid(Guid::Generate()); // TODO guid should be generated automatically
         entity.AddComponent(std::move(component));
         ImGui::CloseCurrentPopup();
       }

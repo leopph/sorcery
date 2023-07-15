@@ -4,7 +4,7 @@
 #include <d3d11.h>
 #include <wrl/client.h>
 
-#include "Object.hpp"
+#include "Resource.hpp"
 #include "Image.hpp"
 #include "Util.hpp"
 
@@ -12,8 +12,8 @@
 
 
 namespace sorcery {
-class Cubemap : public Object {
-  RTTR_ENABLE(Object)
+class Cubemap : public Resource {
+  RTTR_ENABLE(Resource)
   Microsoft::WRL::ComPtr<ID3D11Texture2D> mTex;
   Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> mSrv;
   std::array<Image, 6> mFaceData{};

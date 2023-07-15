@@ -179,14 +179,14 @@ auto Context::IsEditorBusy() const noexcept -> bool {
 }
 
 
-auto Context::CreateMetaFileForRegisteredAsset(Object const& asset) const -> void {
+auto Context::CreateMetaFileForRegisteredAsset(Resource const& asset) const -> void {
   if (auto const assetPath{ mResourceManager.TryGetPathFor(&asset) }; !assetPath.empty()) {
     std::ofstream{ std::filesystem::path{ assetPath } += ASSET_FILE_EXT } << GenerateAssetMetaFileContents(asset, *mWrapperManager);
   }
 }
 
 
-auto Context::SaveRegisteredNativeAsset(NativeAsset const& asset) const -> void {
+auto Context::SaveRegisteredNativeAsset(NativeResource const& asset) const -> void {
   if (auto const dst{ mResourceManager.TryGetPathFor(&asset) }; !dst.empty()) {
     std::vector<std::uint8_t> static outSerializedBytes;
     outSerializedBytes.clear();

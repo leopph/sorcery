@@ -21,7 +21,7 @@ auto mage::CubemapLoader::GetSupportedExtensions() const -> std::span<std::strin
 }
 
 
-auto mage::CubemapLoader::Load(std::filesystem::path const& src, [[maybe_unused]] std::filesystem::path const& cache) -> std::unique_ptr<Object> {
+auto mage::CubemapLoader::Load(std::filesystem::path const& src, [[maybe_unused]] std::filesystem::path const& cache) -> std::unique_ptr<Resource> {
   int width;
   int height;
   int channelCount;

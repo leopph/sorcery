@@ -3,11 +3,9 @@
 #include <rttr/registration>
 
 #include "Core.hpp"
-#include "Guid.hpp"
 #include "Util.hpp"
 
 #include <concepts>
-#include <set>
 #include <string>
 #include <vector>
 
@@ -15,18 +13,8 @@
 namespace sorcery {
 class Object {
   RTTR_ENABLE()
-  struct GuidObjectLess {
-    using is_transparent = void;
-    [[nodiscard]] auto operator()(Guid const& left, Guid const& right) const -> bool;
-    [[nodiscard]] auto operator()(Object const* left, Guid const& right) const -> bool;
-    [[nodiscard]] auto operator()(Guid const& left, Object const* right) const -> bool;
-    [[nodiscard]] auto operator()(Object const* left, Object const* right) const -> bool;
-  };
+  LEOPPHAPI static std::vector<ObserverPtr<Object>> sAllObjects;
 
-
-  LEOPPHAPI static std::set<Object*, GuidObjectLess> sAllObjects;
-
-  Guid mGuid;
   std::string mName{ "New Object" };
 
 public:
@@ -47,8 +35,6 @@ public:
   };
 
 
-  [[nodiscard]] LEOPPHAPI static auto FindObjectByGuid(Guid const& guid) -> Object*;
-
   template<std::derived_from<Object> T>
   [[nodiscard]] static auto FindObjectOfType() -> T*;
 
@@ -61,7 +47,7 @@ public:
   template<std::derived_from<Object> T>
   static auto FindObjectsOfType(std::vector<Object*>& out) -> std::vector<Object*>&;
 
-  Object() = default;
+  LEOPPHAPI Object();
   Object(Object const& other) = delete;
   Object(Object&& other) = delete;
 
@@ -69,9 +55,6 @@ public:
 
   auto operator=(Object const& other) -> void = delete;
   auto operator=(Object&& other) -> void = delete;
-
-  [[nodiscard]] LEOPPHAPI auto GetGuid() const -> Guid const&;
-  LEOPPHAPI auto SetGuid(Guid const& guid) -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetName() const noexcept -> std::string_view;
   LEOPPHAPI auto SetName(std::string name) noexcept -> void;

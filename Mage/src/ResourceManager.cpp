@@ -100,7 +100,7 @@ auto ResourceManager::Refresh() -> void {
 }
 
 
-auto ResourceManager::CreateResource(std::shared_ptr<NativeAsset> obj, std::filesystem::path const& relativeResourcePath) -> void {
+auto ResourceManager::CreateResource(std::shared_ptr<NativeResource> obj, std::filesystem::path const& relativeResourcePath) -> void {
   if (!obj) {
     throw std::runtime_error{ "Cannot create resource from null object." };
   }
@@ -160,7 +160,7 @@ auto ResourceManager::MoveResource(std::filesystem::path const& relativeOldPath,
 
   for (auto& knownPath : mKnownAbsoluteResourcePaths) {
     if (equivalent(knownPath, absoluteOldPath)) {
-      std::shared_ptr<Object> loadedResource;
+      std::shared_ptr<Resource> loadedResource;
 
       if (auto const it{ mLoadedResources.find(knownPath) }; it != std::end(mLoadedResources)) {
         loadedResource = std::move(it->second);
@@ -206,7 +206,7 @@ auto ResourceManager::ImportResource(std::filesystem::path const& src, std::file
 }
 
 
-auto ResourceManager::LoadResource(std::filesystem::path const& relativeResourcePath) -> std::weak_ptr<Object> {
+auto ResourceManager::LoadResource(std::filesystem::path const& relativeResourcePath) -> std::weak_ptr<Resource> {
   auto const absoluteResourcePath{ mContext->GetAssetDirectoryAbsolute() / relativeResourcePath };
 
   if (auto const it{ mLoadedResources.find(mContext->GetAssetDirectoryAbsolute() / relativeResourcePath) }; it != std::end(mLoadedResources)) {
@@ -223,19 +223,19 @@ ResourceManager::ResourceManager(std::shared_ptr<ObjectWrapperManager> wrapperMa
   mContext{ context } {}
 
 
-auto ResourceManager::RegisterAsset(std::shared_ptr<Object> asset, std::filesystem::path const& srcPath) -> void {
+auto ResourceManager::RegisterAsset(std::shared_ptr<Resource> asset, std::filesystem::path const& srcPath) -> void {
   mAssetToPath[asset.get()] = srcPath;
   mPathToAsset[srcPath] = asset.get();
   mAssets.emplace_back(std::move(asset));
 }
 
 
-auto ResourceManager::UnregisterAsset(std::filesystem::path const& path) -> std::shared_ptr<Object> {
+auto ResourceManager::UnregisterAsset(std::filesystem::path const& path) -> std::shared_ptr<Resource> {
   auto const asset{ mPathToAsset.at(path) };
   mPathToAsset.erase(path);
   mAssetToPath.erase(asset);
 
-  std::shared_ptr<Object> ret;
+  std::shared_ptr<Resource> ret;
 
   for (std::size_t i = 0; i < mAssets.size(); i++) {
     if (mAssets[i].get() == asset) {
@@ -248,12 +248,12 @@ auto ResourceManager::UnregisterAsset(std::filesystem::path const& path) -> std:
 }
 
 
-auto ResourceManager::GetPathFor(Object const* asset) const -> std::filesystem::path const& {
+auto ResourceManager::GetPathFor(Resource const* asset) const -> std::filesystem::path const& {
   return mAssetToPath.at(asset);
 }
 
 
-auto ResourceManager::TryGetPathFor(Object const* asset) const -> std::filesystem::path {
+auto ResourceManager::TryGetPathFor(Resource const* asset) const -> std::filesystem::path {
   if (auto const it{ mAssetToPath.find(asset) }; it != std::end(mAssetToPath)) {
     return it->second;
   }
@@ -261,12 +261,12 @@ auto ResourceManager::TryGetPathFor(Object const* asset) const -> std::filesyste
 }
 
 
-auto ResourceManager::GetAssetAt(std::filesystem::path const& srcPath) const -> Object* {
+auto ResourceManager::GetAssetAt(std::filesystem::path const& srcPath) const -> ObserverPtr<Resource> {
   return mPathToAsset.at(srcPath);
 }
 
 
-auto ResourceManager::TryGetAssetAt(std::filesystem::path const& srcPath) const -> Object* {
+auto ResourceManager::TryGetAssetAt(std::filesystem::path const& srcPath) const -> ObserverPtr<Resource> {
   if (auto const it{ mPathToAsset.find(srcPath) }; it != std::end(mPathToAsset)) {
     return it->second;
   }

@@ -78,7 +78,9 @@ public:
       for (unsigned j = 0; j < mesh->mNumVertices; j++) {
         vertices.emplace_back(Convert(mesh->mVertices[j]));
         normals.emplace_back(Normalized(Convert(mesh->mNormals[j])));
-        uvs.emplace_back(mesh->HasTextureCoords(0) ? Vector2{ Convert(mesh->mTextureCoords[0][j]) } : Vector2{});
+        uvs.emplace_back(mesh->HasTextureCoords(0)
+                           ? Vector2{ Convert(mesh->mTextureCoords[0][j]) }
+                           : Vector2{});
         tangents.emplace_back(Convert(mesh->mTangents[j]));
       }
 
@@ -197,7 +199,7 @@ auto MeshLoader::GetSupportedExtensions() const -> std::span<std::string const> 
 }
 
 
-auto MeshLoader::Load(std::filesystem::path const& src, std::filesystem::path const& cache) -> std::unique_ptr<Object> {
+auto MeshLoader::Load(std::filesystem::path const& src, std::filesystem::path const& cache) -> std::unique_ptr<Resource> {
   auto constexpr endianness{ std::endian::little };
 
   if (std::ifstream inCache{ cache, std::ios::binary }; inCache.is_open()) {

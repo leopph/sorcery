@@ -42,7 +42,9 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& rootDirAbs, 
 
   auto const treeNodePos{ ImGui::GetCursorPos() };
 
-  if (ImGui::TreeNodeEx(std::format("{}{}", isRenaming ? "##" : "", nodePathAbs.stem().string()).c_str(), treeNodeFlags)) {
+  if (ImGui::TreeNodeEx(std::format("{}{}", isRenaming
+                                              ? "##"
+                                              : "", nodePathAbs.stem().string()).c_str(), treeNodeFlags)) {
     if (ImGui::IsItemClicked()) {
       selectedNodePathRootRel = thisNodePathRootRel;
       mContext->SetSelectedObject(assetAtThisNode);
@@ -87,7 +89,11 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& rootDirAbs, 
       for (auto const& entry : std::filesystem::directory_iterator{ nodePathAbs }) {
         auto const entryIsDirectory{ entry.is_directory() };
 
-        if (auto const assetAtEntry{ entryIsDirectory ? nullptr : mContext->GetResources().TryGetAssetAt(absolute(entry.path())) }; entryIsDirectory || assetAtEntry) {
+        if (auto const assetAtEntry{
+          entryIsDirectory
+            ? nullptr
+            : mContext->GetResources().TryGetAssetAt(absolute(entry.path()))
+        }; entryIsDirectory || assetAtEntry) {
           auto const rootRelativeChildDir{ relative(entry.path(), rootDirAbs) };
           DrawFilesystemTree(rootDirAbs, rootRelativeChildDir, entryIsDirectory, assetAtEntry, selectedNodePathRootRel);
         }
@@ -113,7 +119,9 @@ auto ProjectWindow::OpenFileDialog(std::string_view const filters, std::string_v
 auto ProjectWindow::ImportConcreteAsset(Context& context, AssetLoader& assetLoader, std::filesystem::path const& srcPathAbs, std::filesystem::path const& selectedDirAbs) -> void {
   context.ExecuteInBusyEditor([&context, &assetLoader, srcPathAbs, selectedDirAbs] {
     auto const dstPath{
-      equivalent(srcPathAbs.parent_path(), selectedDirAbs) ? srcPathAbs : GenerateUniquePath(selectedDirAbs / srcPathAbs.filename())
+      equivalent(srcPathAbs.parent_path(), selectedDirAbs)
+        ? srcPathAbs
+        : GenerateUniquePath(selectedDirAbs / srcPathAbs.filename())
     };
 
     if (!exists(dstPath) || !equivalent(dstPath, srcPathAbs)) {
@@ -126,7 +134,7 @@ auto ProjectWindow::ImportConcreteAsset(Context& context, AssetLoader& assetLoad
       asset->SetName(dstPath.stem().string());
       asset->SetGuid(guid);
 
-      context.GetResources().RegisterAsset(std::shared_ptr<Object>{ asset.release() }, dstPath);
+      context.GetResources().RegisterAsset(std::shared_ptr<Resource>{ asset.release() }, dstPath);
       context.CreateMetaFileForRegisteredAsset(*asset);
     } else {
       throw std::runtime_error{ std::format("Failed to import asset at {}.", srcPathAbs.string()) };
@@ -144,7 +152,7 @@ auto ProjectWindow::ImportAsset(Context& context, Object::Type const targetAsset
 }
 
 
-auto ProjectWindow::SaveNewNativeAsset(Context& context, std::unique_ptr<NativeAsset> asset, std::string_view const targetAssetFileName, std::filesystem::path const& selectedDirAbs) -> void {
+auto ProjectWindow::SaveNewNativeAsset(Context& context, std::unique_ptr<NativeResource> asset, std::string_view const targetAssetFileName, std::filesystem::path const& selectedDirAbs) -> void {
   auto const dst{ GenerateUniquePath(selectedDirAbs / targetAssetFileName) };
 
   asset->SetName(dst.stem().string());
@@ -175,7 +183,11 @@ auto ProjectWindow::Draw() -> void {
     }
 
     std::filesystem::path const targetWorkingDirPathAbs{
-      mSelectedNodePathProjDirRel ? is_directory(*mSelectedNodePathProjDirRel) ? mContext->GetAssetDirectoryAbsolute() / *mSelectedNodePathProjDirRel : (mContext->GetAssetDirectoryAbsolute() / *mSelectedNodePathProjDirRel).parent_path() : mContext->GetAssetDirectoryAbsolute()
+      mSelectedNodePathProjDirRel
+        ? is_directory(*mSelectedNodePathProjDirRel)
+            ? mContext->GetAssetDirectoryAbsolute() / *mSelectedNodePathProjDirRel
+            : (mContext->GetAssetDirectoryAbsolute() / *mSelectedNodePathProjDirRel).parent_path()
+        : mContext->GetAssetDirectoryAbsolute()
     };
 
     auto openCubemapImportModal{ false };
@@ -191,11 +203,11 @@ auto ProjectWindow::Draw() -> void {
         }
 
         if (ImGui::MenuItem("Material")) {
-          SaveNewNativeAsset(*mContext, std::unique_ptr<NativeAsset>{ new Material{} }, "New Material.mtl", targetWorkingDirPathAbs);
+          SaveNewNativeAsset(*mContext, std::unique_ptr<NativeResource>{ new Material{} }, "New Material.mtl", targetWorkingDirPathAbs);
         }
 
         if (ImGui::MenuItem("Scene##CreateSceneAsset")) {
-          SaveNewNativeAsset(*mContext, std::unique_ptr<NativeAsset>{ new Scene{} }, "New Scene.scene", targetWorkingDirPathAbs);
+          SaveNewNativeAsset(*mContext, std::unique_ptr<NativeResource>{ new Scene{} }, "New Scene.scene", targetWorkingDirPathAbs);
         }
 
         ImGui::EndMenu();
@@ -254,7 +266,9 @@ auto ProjectWindow::Draw() -> void {
             std::ignore = OpenFileDialog(Join(mContext->GetFactoryManager().GetFor<Cubemap>().GetLoader().GetSupportedExtensions(), ",").c_str(), nullptr, facePaths[i]);
           }
           ImGui::SameLine();
-          ImGui::Text("%s", facePaths[i].empty() ? "None" : facePaths[i].filename().string().c_str());
+          ImGui::Text("%s", facePaths[i].empty()
+                              ? "None"
+                              : facePaths[i].filename().string().c_str());
           ImGui::PopID();
         }
 

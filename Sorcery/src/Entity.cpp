@@ -77,11 +77,11 @@ auto Entity::AddComponent(std::shared_ptr<Component> component) -> void {
 
 auto Entity::DestroyComponent(Component* const component) -> void {
   if (component) {
-    if (component->GetEntity()->GetGuid() != GetGuid() || component->GetEntity()->GetTransform().GetGuid() == component->GetGuid()) {
+    if (component->GetEntity() != this || &component->GetEntity()->GetTransform() == component) {
       return;
     }
     std::erase_if(mComponents, [component](auto const& attachedComponent) {
-      return attachedComponent->GetGuid() == component->GetGuid();
+      return attachedComponent.get() == component;
     });
   }
 }
@@ -107,7 +107,7 @@ auto Entity::Serialize(YAML::Node& node) const -> void {
 
 auto Entity::Deserialize(YAML::Node const& node) -> void {
   if (!node["name"].IsScalar()) {
-    std::cerr << "Failed to deserialize name of Entity " << GetGuid().ToString() << ". Invalid data." << std::endl;
+    std::cerr << "Failed to deserialize name of Entity. Invalid data." << std::endl;
   } else {
     SetName(node["name"].as<std::string>());
   }

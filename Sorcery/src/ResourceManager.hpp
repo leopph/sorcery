@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Core.hpp"
-#include "Object.hpp"
+#include "Resource.hpp"
 
 #include <unordered_map>
 #include <vector>
@@ -14,7 +14,7 @@
 namespace sorcery {
 class ResourceManager {
   struct ResourceEntry {
-    std::unique_ptr<Object> resource;
+    std::unique_ptr<Resource> resource;
     std::uint32_t version;
   };
 
@@ -23,7 +23,7 @@ class ResourceManager {
 };
 
 
-template<std::derived_from<Object> T>
+template<std::derived_from<Resource> T>
 class ResourceHandle {
   friend class ResourceManager;
   std::uint32_t mIdx;

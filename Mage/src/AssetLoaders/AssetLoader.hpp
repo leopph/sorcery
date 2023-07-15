@@ -4,7 +4,7 @@
 #include <memory>
 #include <span>
 
-#include "Object.hpp"
+#include "Resource.hpp"
 
 
 namespace sorcery::mage {
@@ -20,7 +20,7 @@ public:
   virtual ~AssetLoader() = default;
 
   [[nodiscard]] virtual auto GetSupportedExtensions() const -> std::span<std::string const> = 0;
-  [[nodiscard]] virtual auto Load(std::filesystem::path const& src, std::filesystem::path const& cache) -> std::unique_ptr<Object> = 0;
+  [[nodiscard]] virtual auto Load(std::filesystem::path const& src, std::filesystem::path const& cache) -> std::unique_ptr<Resource> = 0;
   [[nodiscard]] virtual auto GetPrecedence() const noexcept -> int = 0;
 };
 }

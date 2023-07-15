@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Entity.hpp"
-#include "NativeAsset.hpp"
+#include "NativeResource.hpp"
 
 #include "YamlInclude.hpp"
 
@@ -11,8 +11,8 @@
 
 
 namespace sorcery {
-class Scene : public NativeAsset {
-  RTTR_ENABLE(NativeAsset)
+class Scene : public NativeResource {
+  RTTR_ENABLE(NativeResource)
   static Scene* sActiveScene;
   static std::vector<Scene*> sAllScenes;
 

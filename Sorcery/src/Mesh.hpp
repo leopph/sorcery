@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Object.hpp"
+#include "Resource.hpp"
 #include "Math.hpp"
 #include "Bounds.hpp"
 
@@ -15,8 +15,8 @@
 
 
 namespace sorcery {
-class Mesh final : public Object {
-  RTTR_ENABLE(Object)
+class Mesh final : public Resource {
+  RTTR_ENABLE(Resource)
   struct GeometryData {
     std::vector<Vector3> positions;
     std::vector<Vector3> normals;

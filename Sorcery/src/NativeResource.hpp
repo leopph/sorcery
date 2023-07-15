@@ -1,14 +1,14 @@
 #pragma once
 
-#include "Object.hpp"
+#include "Resource.hpp"
 
 #include <cstdint>
 #include <vector>
 
 
 namespace sorcery {
-class NativeAsset : public Object {
-  RTTR_ENABLE(Object)
+class NativeResource : public Resource {
+  RTTR_ENABLE(Resource)
 public:
   LEOPPHAPI virtual auto Serialize(std::vector<std::uint8_t>& out) const noexcept -> void = 0;
 };

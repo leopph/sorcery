@@ -87,7 +87,7 @@
     <ClCompile Include="src\Serialization.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\NativeAsset.cpp">
+    <ClCompile Include="src\NativeResource.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\PhysicsManager.cpp">
@@ -118,6 +118,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\ResourceManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Resource.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -203,7 +206,7 @@
     <ClInclude Include="src\SceneElement.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\NativeAsset.hpp">
+    <ClInclude Include="src\NativeResource.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Cubemap.hpp">
@@ -255,6 +258,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\ResourceManager.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Resource.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -5,7 +5,7 @@
 #include <memory>
 #include <unordered_map>
 
-#include "Object.hpp"
+#include "Resource.hpp"
 #include "ObjectWrappers/ObjectWrapperManager.hpp"
 
 
@@ -13,12 +13,12 @@ namespace sorcery::mage {
 class ResourceManager {
   static inline std::filesystem::path META_FILE_EXT{ ".leopphasset" };
 
-  std::vector<std::shared_ptr<Object>> mAssets;
-  std::unordered_map<std::filesystem::path, ObserverPtr<Object>> mPathToAsset;
-  std::unordered_map<ObserverPtr<Object const>, std::filesystem::path> mAssetToPath;
+  std::vector<std::shared_ptr<Resource>> mAssets;
+  std::unordered_map<std::filesystem::path, ObserverPtr<Resource>> mPathToAsset;
+  std::unordered_map<ObserverPtr<Resource const>, std::filesystem::path> mAssetToPath;
 
   std::vector<std::filesystem::path> mKnownAbsoluteResourcePaths;
-  std::unordered_map<std::filesystem::path, std::shared_ptr<Object>> mLoadedResources;
+  std::unordered_map<std::filesystem::path, std::shared_ptr<Resource>> mLoadedResources;
 
   std::filesystem::path mRootDirAbs{ std::filesystem::absolute(".") };
   std::shared_ptr<ObjectWrapperManager> mWrapperManager;
@@ -29,20 +29,20 @@ class ResourceManager {
 public:
   auto Refresh() -> void;
 
-  auto CreateResource(std::shared_ptr<NativeAsset> obj, std::filesystem::path const& relativeResourcePath) -> void;
+  auto CreateResource(std::shared_ptr<NativeResource> obj, std::filesystem::path const& relativeResourcePath) -> void;
   auto MoveResource(std::filesystem::path const& relativeOldPath, std::filesystem::path const& relativeNewPath) -> void;
   auto ImportResource(std::filesystem::path const& src, std::filesystem::path const& relativeTargetDir) -> void;
-  auto LoadResource(std::filesystem::path const& relativeResourcePath) -> std::weak_ptr<Object>;
+  auto LoadResource(std::filesystem::path const& relativeResourcePath) -> std::weak_ptr<Resource>;
 
   ResourceManager(std::shared_ptr<ObjectWrapperManager> wrapperManager, ObserverPtr<Context> context);
 
-  auto RegisterAsset(std::shared_ptr<Object> asset, std::filesystem::path const& srcPath) -> void;
-  auto UnregisterAsset(std::filesystem::path const& path) -> std::shared_ptr<Object>;
+  auto RegisterAsset(std::shared_ptr<Resource> asset, std::filesystem::path const& srcPath) -> void;
+  auto UnregisterAsset(std::filesystem::path const& path) -> std::shared_ptr<Resource>;
 
-  [[nodiscard]] auto GetPathFor(Object const* asset) const -> std::filesystem::path const&;
-  [[nodiscard]] auto TryGetPathFor(Object const* asset) const -> std::filesystem::path;
-  [[nodiscard]] auto GetAssetAt(std::filesystem::path const& srcPath) const -> Object*;
-  [[nodiscard]] auto TryGetAssetAt(std::filesystem::path const& srcPath) const -> Object*;
+  [[nodiscard]] auto GetPathFor(Resource const* asset) const -> std::filesystem::path const&;
+  [[nodiscard]] auto TryGetPathFor(Resource const* asset) const -> std::filesystem::path;
+  [[nodiscard]] auto GetAssetAt(std::filesystem::path const& srcPath) const -> ObserverPtr<Resource>;
+  [[nodiscard]] auto TryGetAssetAt(std::filesystem::path const& srcPath) const -> ObserverPtr<Resource>;
 
   auto Clear() -> void;
 

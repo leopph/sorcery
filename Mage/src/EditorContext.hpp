@@ -70,8 +70,8 @@ public:
   template<typename Callable>
   auto ExecuteInBusyEditor(Callable&& callable) -> void;
 
-  auto CreateMetaFileForRegisteredAsset(Object const& asset) const -> void;
-  auto SaveRegisteredNativeAsset(NativeAsset const& asset) const -> void;
+  auto CreateMetaFileForRegisteredAsset(Resource const& asset) const -> void;
+  auto SaveRegisteredNativeAsset(NativeResource const& asset) const -> void;
 
 
   struct BusyExecutionContext {
