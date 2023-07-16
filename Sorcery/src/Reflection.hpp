@@ -1,7 +1,6 @@
 #pragma once
 
 #include <utility>
-#include <memory>
 
 #include <rttr/registration>
 
@@ -14,11 +13,11 @@ template<typename T, typename... Args>
 
 
 template<typename T, typename... Args>
-[[nodiscard]] auto CreateByUniquePtr(Args&&... args) -> std::unique_ptr<T> {
-  return std::unique_ptr<T>{ new T{ std::forward<Args>(args)... } };
+[[nodiscard]] auto CreateByRawPtr(Args&&... args) -> T* {
+  return new T{ std::forward<Args>(args)... };
 }
 
 
 #define REFLECT_REGISTER_CTOR_BY_VALUE(type, ...) constructor(&::sorcery::CreateByValue<type, __VA_ARGS__>)
-#define REFLECT_REGISTER_CTOR_BY_UNIQUE_PTR(type, ...) constructor(&::sorcery::CreateByUniquePtr<type, __VA_ARGS__>)
+#define REFLECT_REGISTER_CTOR_BY_RAW_PTR(type, ...) constructor(&::sorcery::CreateByRawPtr<type, __VA_ARGS__>)
 }
