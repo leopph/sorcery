@@ -96,6 +96,16 @@ auto ReflectionSerializeToYAML(rttr::variant const& variant, std::unordered_map<
     } else {
       ret = 0;
     }
+  } else if (isWrapper) {
+    if (variant.can_convert<std::shared_ptr<SceneElement>()>()) {
+      if (auto const it{ ptrFixUp.find(variant.convert<std::shared_ptr<SceneElement>>().get()) }; it != std::end(ptrFixUp)) {
+        ret = it->second;
+      } else {
+        ret = 0;
+      }
+    } else {
+      ret = 0;
+    }
   } else if (rawWrappedType.is_class()) {
     for (auto const& prop : objType.get_properties()) {
       ret[prop.get_name().to_string()] = ReflectionSerializeToYAML(prop.get_value(variant), ptrFixUp);
@@ -165,7 +175,7 @@ auto ReflectioNDeserializeFromYAML(YAML::Node const& objNode, std::unordered_map
     auto sequence{ variant.create_sequential_view() };
 
     for (auto const& elemNode : objNode) {
-      rttr::variant elem;
+      auto elem{ sequence.get_value_type().create() };
       ReflectioNDeserializeFromYAML(elemNode, ptrFixUp, elem);
       sequence.insert(sequence.end(), elem);
     }
@@ -179,9 +189,21 @@ auto ReflectioNDeserializeFromYAML(YAML::Node const& objNode, std::unordered_map
     } else {
       variant = nullptr;
     }
+  } else if (isWrapper) {
+    if (variant.can_convert<std::shared_ptr<SceneElement>()>()) {
+      if (auto const ptrId{ objNode.as<int>() }; ptrId != 0) {
+        if (auto const it{ ptrFixUp.find(ptrId) }; it != std::end(ptrFixUp)) {
+          variant = it->second;
+        } else {
+          variant = nullptr;
+        }
+      } else {
+        variant = nullptr;
+      }
+    }
   } else if (rawWrappedType.is_class()) {
     for (auto const& prop : objType.get_properties()) {
-      rttr::variant propValue;
+      auto propValue{ prop.get_value(variant) };
       ReflectioNDeserializeFromYAML(objNode[prop.get_name().to_string()], ptrFixUp, propValue);
       std::ignore = prop.set_value(variant, propValue);
     }
