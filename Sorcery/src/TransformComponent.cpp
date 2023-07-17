@@ -6,8 +6,13 @@
 #include <iostream>
 
 RTTR_REGISTRATION {
-  rttr::registration::class_<sorcery::TransformComponent>{ "TransformComponent" }
-    .constructor<>();
+  rttr::registration::class_<sorcery::TransformComponent>{ "Transform Component" }
+    .constructor<>()(rttr::policy::ctor::as_raw_ptr)
+    .property("localPosition", &sorcery::TransformComponent::GetLocalPosition, &sorcery::TransformComponent::SetLocalPosition)
+    .property("localRotation", &sorcery::TransformComponent::GetLocalRotation, &sorcery::TransformComponent::SetLocalRotation)
+    .property("localScale", &sorcery::TransformComponent::GetLocalScale, &sorcery::TransformComponent::SetLocalScale)
+    .property("parent", &sorcery::TransformComponent::GetParent, &sorcery::TransformComponent::SetParent)
+    .property("children", &sorcery::TransformComponent::mChildren)(rttr::policy::prop::as_reference_wrapper);
 }
 
 
@@ -250,54 +255,5 @@ Object::Type const TransformComponent::SerializationType{ Type::Transform };
 
 auto TransformComponent::GetSerializationType() const -> Type {
   return Type::Transform;
-}
-
-
-auto TransformComponent::Serialize(YAML::Node& node) const -> void {
-  node["position"] = GetLocalPosition();
-  node["rotation"] = GetLocalRotation();
-  node["scale"] = GetLocalScale();
-  if (GetParent()) {
-    node["parent"] = GetParent()->GetGuid().ToString();
-  }
-  for (auto const* const child : mChildren) {
-    node["children"].push_back(child->GetGuid().ToString());
-  }
-}
-
-
-auto TransformComponent::Deserialize(YAML::Node const& node) -> void {
-  SetLocalPosition(node["position"].as<Vector3>(GetLocalPosition()));
-  SetLocalRotation(node["rotation"].as<Quaternion>(GetLocalRotation()));
-  SetLocalScale(node["scale"].as<Vector3>(GetLocalScale()));
-  if (node["parent"]) {
-    if (!node["parent"].IsScalar()) {
-      auto const guidStr{ node["parent"].as<std::string>() };
-      auto const parent{ dynamic_cast<TransformComponent*>(FindObjectByGuid(Guid::Parse(guidStr))) };
-      if (!parent) {
-        std::cerr << "Failed to deserialize parent of Transform " << GetGuid().ToString() << ". Guid " << guidStr << " does not belong to any Transform." << std::endl;
-      }
-      SetParent(parent);
-    }
-  }
-  if (node["children"]) {
-    if (!node["children"].IsSequence()) {
-      std::cerr << "Failed to deserialize children of Transform " << GetGuid().ToString() << ". Invalid data." << std::endl;
-    } else {
-      for (auto it{ node["children"].begin() }; it != node["children"].end(); ++it) {
-        if (!it->IsScalar()) {
-          std::cerr << "Failed to deserialize a child of Transform " << GetGuid().ToString() << ". Invalid data." << std::endl;
-        } else {
-          auto const guidStr{ it->as<std::string>() };
-          auto const child{ dynamic_cast<TransformComponent*>(FindObjectByGuid(Guid::Parse(guidStr))) };
-          if (!child) {
-            std::cerr << "Failed to deserialize a child of Transform " << GetGuid().ToString() << ". Guid " << guidStr << " does not belong to any Transform." << std::endl;
-          } else {
-            child->SetParent(this);
-          }
-        }
-      }
-    }
-  }
 }
 }

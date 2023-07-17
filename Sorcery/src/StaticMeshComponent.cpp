@@ -9,8 +9,8 @@
 #include <stdexcept>
 
 RTTR_REGISTRATION {
-  rttr::registration::class_<sorcery::StaticMeshComponent>{ "StaticMeshComponent" }
-    .constructor<>();
+  rttr::registration::class_<sorcery::StaticMeshComponent>{ "Static Mesh Component" }
+    .REFLECT_REGISTER_COMPONENT_CTOR;
 }
 
 
@@ -83,47 +83,9 @@ auto StaticMeshComponent::GetSerializationType() const -> Type {
 }
 
 
-auto StaticMeshComponent::Serialize(YAML::Node& node) const -> void {
-  node["mesh"] = mMesh->GetGuid().ToString();
-
-  for (auto const mtl : mMaterials) {
-    node["materials"].push_back(mtl->GetGuid().ToString());
-  }
-}
-
-
-auto StaticMeshComponent::Deserialize(YAML::Node const& node) -> void {
-  mMesh = nullptr;
-
-  if (node["mesh"]) {
-    if (auto const guidStr{ node["mesh"].as<std::string>() }; !guidStr.empty()) {
-      mMesh = dynamic_cast<Mesh*>(FindObjectByGuid(Guid::Parse(guidStr)));
-    }
-  }
-
-  if (!mMesh) {
-    mMesh = gRenderer.GetCubeMesh();
-  }
-
-  mMaterials.clear();
-
-  if (auto const mtlListNode{ node["materials"] }) {
-    for (auto const mtlNode : mtlListNode) {
-      if (auto const guidStr{ mtlNode.as<std::string>() }; !guidStr.empty()) {
-        if (auto const mtl{ dynamic_cast<Material*>(FindObjectByGuid(Guid::Parse(guidStr))) }) {
-          mMaterials.emplace_back(mtl);
-        }
-      }
-    }
-  }
-
-  AdjustMaterialListForMesh();
-}
-
-
 auto StaticMeshComponent::CalculateBounds() const noexcept -> AABB {
   auto const& localBounds{ mMesh->GetBounds() };
-  auto const modelMtx{ GetEntity()->GetTransform().GetModelMatrix() };
+  auto const modelMtx{ GetEntity().GetTransform().GetModelMatrix() };
   auto boundsVertices{ localBounds.CalculateVertices() };
 
   for (auto& vertex : boundsVertices) {

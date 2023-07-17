@@ -16,9 +16,6 @@ public:
   LEOPPHAPI static Type const SerializationType;
   [[nodiscard]] LEOPPHAPI auto GetSerializationType() const -> Type override;
 
-  LEOPPHAPI auto Serialize(YAML::Node& node) const -> void override;
-  LEOPPHAPI auto Deserialize(YAML::Node const& node) -> void override;
-
   [[nodiscard]] LEOPPHAPI auto GetColor() const -> Vector3 const&;
   LEOPPHAPI auto SetColor(Vector3 const& color) -> void;
 

@@ -1,6 +1,7 @@
 #include "Component.hpp"
 
 #include <iostream>
+#include <cassert>
 
 #include "Entity.hpp"
 #include "TransformComponent.hpp"
@@ -11,12 +12,13 @@ RTTR_REGISTRATION {
 
 
 namespace sorcery {
-auto Component::GetEntity() const -> Entity* {
-  return mEntity;
+auto Component::GetEntity() const -> Entity& {
+  assert(mEntity);
+  return *mEntity;
 }
 
 
-auto Component::SetEntity(Entity* const entity) -> void {
-  mEntity = entity;
+auto Component::SetEntity(Entity& entity) -> void {
+  mEntity = std::addressof(entity);
 }
 }

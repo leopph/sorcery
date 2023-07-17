@@ -10,9 +10,9 @@
 #include "../AssetLoaders/AssetLoader.hpp"
 #include "Texture2D.hpp"
 #include "Cubemap.hpp"
-#include "SceneElement.hpp"
+#include "SceneObject.hpp"
 #include "SkyboxComponent.hpp"
-#include "RigidBody.hpp"
+#include "RigidBodyComponent.hpp"
 
 #include <concepts>
 #include <filesystem>
@@ -40,10 +40,9 @@ public:
 
 
   [[nodiscard]] auto Instantiate() -> Object* override {
-    if constexpr (std::derived_from<Wrapped, SceneElement>) {
+    if constexpr (std::derived_from<Wrapped, SceneObject>) {
       return new Wrapped{};
-    }
-    else {
+    } else {
       throw std::runtime_error{ "The wrapped type has no associated instantiation function." };
     }
   }

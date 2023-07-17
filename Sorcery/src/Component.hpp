@@ -1,6 +1,6 @@
 #pragma once
 
-#include "SceneElement.hpp"
+#include "SceneObject.hpp"
 
 
 namespace sorcery {
@@ -8,12 +8,12 @@ class Entity;
 class TransformComponent;
 
 
-class Component : public SceneElement {
-  RTTR_ENABLE(SceneElement)
-  Entity* mEntity{ nullptr };
+class Component : public SceneObject {
+  RTTR_ENABLE(SceneObject)
+  ObserverPtr<Entity> mEntity{ nullptr };
 
 public:
-  [[nodiscard]] LEOPPHAPI auto GetEntity() const -> Entity*;
-  LEOPPHAPI auto SetEntity(Entity* entity) -> void;
+  [[nodiscard]] LEOPPHAPI auto GetEntity() const -> Entity&;
+  LEOPPHAPI auto SetEntity(Entity& entity) -> void;
 };
 }

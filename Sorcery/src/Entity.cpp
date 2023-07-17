@@ -8,11 +8,14 @@
 
 #include <functional>
 #include <iostream>
+#include <cassert>
 
 #include "SkyboxComponent.hpp"
 
 RTTR_REGISTRATION {
-  rttr::registration::class_<sorcery::Entity>{ "Entity" };
+  rttr::registration::class_<sorcery::Entity>{ "Entity" }
+    .REFLECT_REGISTER_ENTITY_CTOR
+    .property("components", &sorcery::Entity::mComponents)(rttr::policy::prop::as_reference_wrapper);
 }
 
 
@@ -30,6 +33,14 @@ auto Entity::FindEntityByName(std::string_view const name) -> Entity* {
     }
   }
   return nullptr;
+}
+
+
+Object::Type const Entity::SerializationType{ Type::Entity };
+
+
+auto Entity::GetSerializationType() const -> Type {
+  return SerializationType;
 }
 
 
@@ -55,61 +66,34 @@ Entity::Entity() {
 
 
 auto Entity::GetScene() const -> Scene& {
+  assert(mScene);
   return *mScene;
+}
+
+
+auto Entity::SetScene(Scene& scene) noexcept -> void {
+  mScene = std::addressof(scene);
 }
 
 
 auto Entity::GetTransform() const -> TransformComponent& {
   if (!mTransform) {
     mTransform = GetComponent<TransformComponent>();
+    assert(mTransform);
   }
   return *mTransform;
 }
 
 
-auto Entity::AddComponent(std::shared_ptr<Component> component) -> void {
-  if (component) {
-    component->SetEntity(this);
-    mComponents.push_back(std::move(component));
-  }
+auto Entity::AddComponent(Component& component) -> void {
+  component.SetEntity(*this);
+  mComponents.emplace_back(&component);
 }
 
 
-auto Entity::DestroyComponent(Component* const component) -> void {
-  if (component) {
-    if (component->GetEntity() != this || &component->GetEntity()->GetTransform() == component) {
-      return;
-    }
-    std::erase_if(mComponents, [component](auto const& attachedComponent) {
-      return attachedComponent.get() == component;
-    });
-  }
-}
-
-
-Object::Type const Entity::SerializationType{ Type::Entity };
-
-
-auto Entity::SetScene(Scene* const scene) noexcept -> void {
-  mScene = scene;
-}
-
-
-auto Entity::GetSerializationType() const -> Type {
-  return Type::Entity;
-}
-
-
-auto Entity::Serialize(YAML::Node& node) const -> void {
-  node["name"] = GetName().data();
-}
-
-
-auto Entity::Deserialize(YAML::Node const& node) -> void {
-  if (!node["name"].IsScalar()) {
-    std::cerr << "Failed to deserialize name of Entity. Invalid data." << std::endl;
-  } else {
-    SetName(node["name"].as<std::string>());
-  }
+auto Entity::RemoveComponent(Component& component) -> void {
+  std::erase_if(mComponents, [&component](auto const storedComponent) {
+    return storedComponent == &component;
+  });
 }
 }

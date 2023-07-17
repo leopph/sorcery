@@ -5,29 +5,13 @@
 
 RTTR_REGISTRATION {
   rttr::registration::class_<sorcery::SkyboxComponent>{ "SkyboxComponent" }
-    .constructor<>();
+    .REFLECT_REGISTER_COMPONENT_CTOR;
 }
 
 
 namespace sorcery {
 auto SkyboxComponent::GetSerializationType() const -> Type {
   return SerializationType;
-}
-
-
-auto SkyboxComponent::Serialize(YAML::Node& node) const -> void {
-  if (mCubemap) {
-    node["cubemap"] = mCubemap->GetGuid().ToString();
-  }
-}
-
-
-auto SkyboxComponent::Deserialize(YAML::Node const& node) -> void {
-  if (auto const dataNode{ node["cubemap"] }) {
-    if (auto const guidStr{ dataNode.as<std::string>("") }; !guidStr.empty()) {
-      SetCubemap(dynamic_cast<Cubemap*>(FindObjectByGuid(Guid::Parse(guidStr))));
-    }
-  }
 }
 
 

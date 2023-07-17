@@ -1,51 +1,53 @@
 #pragma once
 
-#include "SceneElement.hpp"
+#include "SceneObject.hpp"
 #include "Component.hpp"
 
-#include <memory>
 #include <vector>
 #include <concepts>
 
-#include "Scene.hpp"
+#include "Reflection.hpp"
 
 
 namespace sorcery {
 class Scene;
 
 
-class Entity final : public SceneElement {
-  RTTR_ENABLE(SceneElement)
+class Entity final : public SceneObject {
+  RTTR_ENABLE(SceneObject)
+  RTTR_REGISTRATION_FRIEND
   friend class Scene;
 
-  Scene* mScene{ nullptr };
-  mutable TransformComponent* mTransform{ nullptr };
-  std::vector<std::shared_ptr<Component>> mComponents;
-
-  Entity();
-
-  auto SetScene(Scene* scene) noexcept -> void;
+  ObserverPtr<Scene> mScene{ nullptr };
+  mutable ObserverPtr<TransformComponent> mTransform{ nullptr };
+  std::vector<ObserverPtr<Component>> mComponents;
 
 public:
   [[nodiscard]] LEOPPHAPI static auto FindEntityByName(std::string_view name) -> Entity*;
 
-  [[nodiscard]] LEOPPHAPI auto GetSerializationType() const -> Type override;
   LEOPPHAPI static Type const SerializationType;
+  [[nodiscard]] LEOPPHAPI auto GetSerializationType() const -> Type override;
 
-  LEOPPHAPI auto Serialize(YAML::Node& node) const -> void override;
-  LEOPPHAPI auto Deserialize(YAML::Node const& node) -> void override;
+private:
+  Entity();
 
+public:
   [[nodiscard]] LEOPPHAPI auto GetScene() const -> Scene&;
+
+private:
+  auto SetScene(Scene& scene) noexcept -> void;
+
+public:
   [[nodiscard]] LEOPPHAPI auto GetTransform() const -> TransformComponent&;
 
-  LEOPPHAPI auto AddComponent(std::shared_ptr<Component> component) -> void;
-  LEOPPHAPI auto DestroyComponent(Component* component) -> void;
+  LEOPPHAPI auto AddComponent(Component& component) -> void;
+  LEOPPHAPI auto RemoveComponent(Component& component) -> void;
 
 
   template<std::derived_from<Component> T>
-  auto GetComponent() const -> T* {
-    for (auto const& component : mComponents) {
-      if (auto const castPtr = dynamic_cast<T*>(component.get())) {
+  auto GetComponent() const -> ObserverPtr<T> {
+    for (auto const component : mComponents) {
+      if (auto const castPtr = dynamic_cast<ObserverPtr<T>>(component)) {
         return castPtr;
       }
     }
@@ -54,11 +56,14 @@ public:
 
 
   template<std::derived_from<Component> T>
-  auto GetComponents(std::vector<T*>& outComponents) const -> std::vector<T*>& {
-    outComponents.clear();
-    for (auto const& component : mComponents) {
-      if (auto const castPtr = dynamic_cast<T*>(component.get())) {
-        outComponents.emplace_back(castPtr);
+  auto GetComponents(std::vector<ObserverPtr<T>>& outComponents) const -> std::vector<ObserverPtr<T>>& {
+    if constexpr (std::is_same_v<T, Component>) {
+      std::ranges::copy(mComponents, std::back_inserter(outComponents));
+    } else {
+      for (auto const component : mComponents) {
+        if (auto const castPtr{ dynamic_cast<ObserverPtr<T>>(component) }) {
+          outComponents.emplace_back(castPtr);
+        }
       }
     }
     return outComponents;

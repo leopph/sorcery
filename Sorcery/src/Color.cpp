@@ -1,6 +1,20 @@
 #include "Color.hpp"
+#include "Util.hpp"
+#include "Reflection.hpp"
 
 #include <algorithm>
+
+
+RTTR_REGISTRATION {
+  rttr::registration::class_<sorcery::Color>{ "Color" }
+    .constructor()(rttr::policy::ctor::as_object)
+    .constructor<sorcery::u8, sorcery::u8, sorcery::u8, sorcery::u8>()(rttr::policy::ctor::as_object)
+    .constructor<sorcery::Vector4 const&>()(rttr::policy::ctor::as_object)
+    .property("red", &sorcery::Color::red)
+    .property("green", &sorcery::Color::green)
+    .property("blue", &sorcery::Color::blue)
+    .property("alpha", &sorcery::Color::alpha);
+}
 
 
 namespace sorcery {
@@ -29,42 +43,42 @@ Color::operator Vector4() const {
 }
 
 
-Color Color::Black() {
+auto Color::Black() -> Color {
   return Color{ 0, 0, 0, 255 };
 }
 
 
-Color Color::Red() {
+auto Color::Red() -> Color {
   return Color{ 255, 0, 0, 255 };
 }
 
 
-Color Color::Green() {
+auto Color::Green() -> Color {
   return Color{ 0, 255, 0, 255 };
 }
 
 
-Color Color::Blue() {
+auto Color::Blue() -> Color {
   return Color{ 0, 0, 255, 255 };
 }
 
 
-Color Color::Cyan() {
+auto Color::Cyan() -> Color {
   return Color{ 0, 255, 255, 255 };
 }
 
 
-Color Color::Magenta() {
+auto Color::Magenta() -> Color {
   return Color{ 255, 0, 255, 255 };
 }
 
 
-Color Color::Yellow() {
+auto Color::Yellow() -> Color {
   return Color{ 255, 255, 0, 255 };
 }
 
 
-Color Color::White() {
+auto Color::White() -> Color {
   return Color{ 255, 255, 255, 255 };
 }
 }

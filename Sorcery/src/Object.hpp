@@ -1,9 +1,8 @@
 #pragma once
 
-#include <rttr/registration>
-
 #include "Core.hpp"
 #include "Util.hpp"
+#include "Reflection.hpp"
 
 #include <concepts>
 #include <string>
@@ -13,6 +12,7 @@
 namespace sorcery {
 class Object {
   RTTR_ENABLE()
+  RTTR_REGISTRATION_FRIEND
   LEOPPHAPI static std::vector<ObserverPtr<Object>> sAllObjects;
 
   std::string mName{ "New Object" };

@@ -72,7 +72,7 @@ auto PunctualShadowAtlas::Update(std::span<LightComponent const* const> const al
 
   for (int i = 0; i < static_cast<int>(visibility.lightIndices.size()); i++) {
     if (auto const light{ allLights[visibility.lightIndices[i]] }; light->IsCastingShadow() && (light->GetType() == LightComponent::Type::Spot || light->GetType() == LightComponent::Type::Point)) {
-      Vector3 const& lightPos{ light->GetEntity()->GetTransform().GetWorldPosition() };
+      Vector3 const& lightPos{ light->GetEntity().GetTransform().GetWorldPosition() };
       float const lightRange{ light->GetRange() };
 
       // Skip the light if its bounding sphere is farther than the shadow distance
@@ -83,7 +83,7 @@ auto PunctualShadowAtlas::Update(std::span<LightComponent const* const> const al
       if (light->GetType() == LightComponent::Type::Spot) {
         auto lightVertices{ CalculateSpotLightLocalVertices(*light) };
 
-        for (auto const modelMtxNoScale{ CalculateModelMatrixNoScale(light->GetEntity()->GetTransform()) };
+        for (auto const modelMtxNoScale{ CalculateModelMatrixNoScale(light->GetEntity().GetTransform()) };
              auto& vertex : lightVertices) {
           vertex = Vector3{ Vector4{ vertex, 1 } * modelMtxNoScale };
         }
@@ -123,8 +123,8 @@ auto PunctualShadowAtlas::Update(std::span<LightComponent const* const> const al
       auto const leftLight{ allLights[visibility.lightIndices[lhs.lightIdxIdx]] };
       auto const rightLight{ allLights[visibility.lightIndices[rhs.lightIdxIdx]] };
 
-      auto const leftLightPos{ leftLight->GetEntity()->GetTransform().GetWorldPosition() };
-      auto const rightLightPos{ rightLight->GetEntity()->GetTransform().GetWorldPosition() };
+      auto const leftLightPos{ leftLight->GetEntity().GetTransform().GetWorldPosition() };
+      auto const rightLightPos{ rightLight->GetEntity().GetTransform().GetWorldPosition() };
 
       auto const leftDist{ Distance(leftLightPos, camPos) };
       auto const rightDist{ Distance(camPos, rightLightPos) };
@@ -145,12 +145,12 @@ auto PunctualShadowAtlas::Update(std::span<LightComponent const* const> const al
       lightIndexIndicesInCell[i].pop_back();
 
       if (light->GetType() == LightComponent::Type::Spot) {
-        auto const shadowViewMtx{ Matrix4::LookToLH(light->GetEntity()->GetTransform().GetWorldPosition(), light->GetEntity()->GetTransform().GetForwardAxis(), Vector3::Up()) };
+        auto const shadowViewMtx{ Matrix4::LookToLH(light->GetEntity().GetTransform().GetWorldPosition(), light->GetEntity().GetTransform().GetForwardAxis(), Vector3::Up()) };
         auto const shadowProjMtx{ Matrix4::PerspectiveAsymZLH(ToRadians(light->GetOuterAngle()), 1.f, light->GetRange(), light->GetShadowNearPlane()) };
 
         subcell.emplace(shadowViewMtx * shadowProjMtx, lightIdxIdx, shadowIdx);
       } else if (light->GetType() == LightComponent::Type::Point) {
-        auto const lightPos{ light->GetEntity()->GetTransform().GetWorldPosition() };
+        auto const lightPos{ light->GetEntity().GetTransform().GetWorldPosition() };
 
         std::array const faceViewMatrices{
           Matrix4::LookToLH(lightPos, Vector3::Right(), Vector3::Up()), // +X

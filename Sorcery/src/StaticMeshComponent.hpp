@@ -30,9 +30,6 @@ public:
   [[nodiscard]] LEOPPHAPI auto GetSerializationType() const -> Type override;
   LEOPPHAPI static Type const SerializationType;
 
-  auto Serialize(YAML::Node& node) const -> void override;
-  auto Deserialize(YAML::Node const& node) -> void override;
-
   [[nodiscard]] LEOPPHAPI auto CalculateBounds() const noexcept -> AABB;
 };
 }

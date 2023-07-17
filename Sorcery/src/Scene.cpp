@@ -1,6 +1,6 @@
 #include "Scene.hpp"
 
-#include "SceneElement.hpp"
+#include "SceneObject.hpp"
 #include "Platform.hpp"
 
 RTTR_REGISTRATION {
@@ -84,7 +84,7 @@ auto ReflectionSerializeToYAML(rttr::variant const& variant, std::unordered_map<
     for (auto const& elem : variant.create_sequential_view()) {
       ret.push_back(ReflectionSerializeToYAML(elem, ptrFixUp));
     }
-  } else if (objType.is_pointer() && rawWrappedType.is_derived_from(rttr::type::get<SceneElement>())) {
+  } else if (objType.is_pointer() && rawWrappedType.is_derived_from(rttr::type::get<SceneObject>())) {
     auto const ptr{
       isWrapper
         ? variant.get_wrapped_value<void const*>()
@@ -96,17 +96,7 @@ auto ReflectionSerializeToYAML(rttr::variant const& variant, std::unordered_map<
     } else {
       ret = 0;
     }
-  } else if (isWrapper) {
-    if (variant.can_convert<std::shared_ptr<SceneElement>()>()) {
-      if (auto const it{ ptrFixUp.find(variant.convert<std::shared_ptr<SceneElement>>().get()) }; it != std::end(ptrFixUp)) {
-        ret = it->second;
-      } else {
-        ret = 0;
-      }
-    } else {
-      ret = 0;
-    }
-  } else if (rawWrappedType.is_class()) {
+  } else if (rawWrappedType.is_class() && !isWrapper) {
     for (auto const& prop : objType.get_properties()) {
       ret[prop.get_name().to_string()] = ReflectionSerializeToYAML(prop.get_value(variant), ptrFixUp);
     }
@@ -131,7 +121,7 @@ auto ReflectionSerializeToYAML(T const& obj, std::unordered_map<void const*, int
 }
 
 
-auto ReflectioNDeserializeFromYAML(YAML::Node const& objNode, std::unordered_map<int, std::shared_ptr<SceneElement>> const& ptrFixUp, rttr::variant& variant) -> void {
+auto ReflectioNDeserializeFromYAML(YAML::Node const& objNode, std::unordered_map<int, ObserverPtr<SceneObject>> const& ptrFixUp, rttr::variant& variant) -> void {
   auto const objType{ variant.get_type() };
   auto const isWrapper{ objType.is_wrapper() };
   auto const wrappedType{ objType.get_wrapped_type() };
@@ -179,29 +169,17 @@ auto ReflectioNDeserializeFromYAML(YAML::Node const& objNode, std::unordered_map
       ReflectioNDeserializeFromYAML(elemNode, ptrFixUp, elem);
       sequence.insert(sequence.end(), elem);
     }
-  } else if (objType.is_pointer() && rawWrappedType.is_derived_from(rttr::type::get<SceneElement>())) {
+  } else if (objType.is_pointer() && rawWrappedType.is_derived_from(rttr::type::get<SceneObject>())) {
     if (auto const ptrId{ objNode.as<int>() }; ptrId != 0) {
       if (auto const it{ ptrFixUp.find(ptrId) }; it != std::end(ptrFixUp)) {
-        variant = it->second.get();
+        variant = it->second;
       } else {
         variant = nullptr;
       }
     } else {
       variant = nullptr;
     }
-  } else if (isWrapper) {
-    if (variant.can_convert<std::shared_ptr<SceneElement>()>()) {
-      if (auto const ptrId{ objNode.as<int>() }; ptrId != 0) {
-        if (auto const it{ ptrFixUp.find(ptrId) }; it != std::end(ptrFixUp)) {
-          variant = it->second;
-        } else {
-          variant = nullptr;
-        }
-      } else {
-        variant = nullptr;
-      }
-    }
-  } else if (rawWrappedType.is_class()) {
+  } else if (rawWrappedType.is_class() && !isWrapper) {
     for (auto const& prop : objType.get_properties()) {
       auto propValue{ prop.get_value(variant) };
       ReflectioNDeserializeFromYAML(objNode[prop.get_name().to_string()], ptrFixUp, propValue);
@@ -211,7 +189,7 @@ auto ReflectioNDeserializeFromYAML(YAML::Node const& objNode, std::unordered_map
 }
 
 
-auto ReflectionDeserializeFromYAML(YAML::Node const& objNode, std::unordered_map<int, std::shared_ptr<SceneElement>> const& ptrFixUp, Object& obj) -> void {
+auto ReflectionDeserializeFromYAML(YAML::Node const& objNode, std::unordered_map<int, ObserverPtr<SceneObject>> const& ptrFixUp, Object& obj) -> void {
   auto const objType{ rttr::type::get(obj) };
 
   auto const& propertiesNode{ objNode["properties"] };
@@ -262,20 +240,51 @@ auto Scene::GetSerializationType() const -> Type {
 
 
 auto Scene::CreateEntity() -> Entity& {
-  auto const entity = new Entity{};
-  entity->SetScene(this);
-  return *mEntities.emplace_back(entity);
+  auto* const entity = new Entity{};
+  entity->SetScene(*this);
+
+  mSceneObjects.emplace_back(entity);
+  mEntities.emplace_back(entity);
+
+  return *entity;
 }
 
 
-auto Scene::DestroyEntity(Entity const& entityToRemove) -> void {
-  std::erase_if(mEntities, [&entityToRemove](auto const& entity) {
-    return entity.get() == &entityToRemove;
+auto Scene::DestroyEntity(Entity const& entity) -> void {
+  if (std::addressof(entity.GetScene()) != this) {
+    return;
+  }
+
+  static std::vector<ObserverPtr<Component>> entityComponents;
+  entityComponents.clear();
+
+  for (auto const component : entity.GetComponents(entityComponents)) {
+    std::erase(mComponents, component);
+    std::erase_if(mSceneObjects, [component](auto const& sceneObject) {
+      return sceneObject.get() == component;
+    });
+  }
+
+  std::erase(mEntities, std::addressof(entity));
+  std::erase_if(mSceneObjects, [&entity](auto const& sceneObject) {
+    return sceneObject.get() == std::addressof(entity);
   });
 }
 
 
-auto Scene::GetEntities() const noexcept -> std::span<std::unique_ptr<Entity> const> {
+auto Scene::DestroyComponent(Component const& component) -> void {
+  if (std::addressof(component.GetEntity().GetScene()) != this) {
+    return;
+  }
+
+  std::erase(mComponents, std::addressof(component));
+  std::erase_if(mSceneObjects, [&component](auto const& sceneObject) {
+    return sceneObject.get() == std::addressof(component);
+  });
+}
+
+
+auto Scene::GetEntities() const noexcept -> std::span<ObserverPtr<Entity> const> {
   return mEntities;
 }
 
@@ -298,20 +307,12 @@ auto Scene::Save() -> void {
 
   static std::unordered_map<void const*, int> ptrFixUp;
 
-  for (auto const& entity : mEntities) {
-    ptrFixUp[entity.get()] = static_cast<int>(std::ssize(ptrFixUp) + 1);
-
-    for (auto const& component : entity->mComponents) {
-      ptrFixUp[component.get()] = static_cast<int>(std::ssize(ptrFixUp) + 1);
-    }
+  for (auto const& sceneObject : mSceneObjects) {
+    ptrFixUp[sceneObject.get()] = static_cast<int>(std::ssize(ptrFixUp) + 1);
   }
 
-  for (auto const& entity : mEntities) {
-    mYamlData["objects"].push_back(ReflectionSerializeToYAML(*entity, ptrFixUp));
-
-    for (auto const& component : entity->mComponents) {
-      mYamlData["objects"].push_back(ReflectionSerializeToYAML(*component, ptrFixUp));
-    }
+  for (auto const& sceneObject : mSceneObjects) {
+    mYamlData["sceneObjects"].push_back(ReflectionSerializeToYAML(*sceneObject, ptrFixUp));
   }
 
   ptrFixUp.clear();
@@ -320,18 +321,31 @@ auto Scene::Save() -> void {
 
 auto Scene::Load(ObjectInstantiatorManager const& manager) -> void {
   sActiveScene = this;
+  mSceneObjects.clear();
   mEntities.clear();
+  mComponents.clear();
 
   if (auto const version{ mYamlData["version"] }; !version || !version.IsScalar() || version.as<int>(1) != 1) {
     throw std::runtime_error{ std::format("Couldn't load scene \"{}\" because its version number is unsupported.", GetName()) };
   }
 
-  static std::unordered_map<int, std::shared_ptr<SceneElement>> ptrFixUp;
+  static std::unordered_map<int, SceneObject*> ptrFixUp;
 
-  for (auto const objectNode : mYamlData["objects"]) {
-    auto const typeNode{ objectNode["type"] };
+  for (auto const& sceneObjectNode : mYamlData["sceneObjects"]) {
+    auto const typeNode{ sceneObjectNode["type"] };
     auto const type{ rttr::type::get(typeNode.as<std::string>()) };
-    ptrFixUp[static_cast<int>(std::ssize(ptrFixUp)) + 1] = type.create().get_value<std::shared_ptr<SceneElement>>();
+    auto const sceneObjectVariant{ type.create() };
+    mSceneObjects.emplace_back(sceneObjectVariant.get_value<SceneObject*>());
+
+    if (type == rttr::type::get<Entity>()) {
+      mEntities.push_back(sceneObjectVariant.get_value<Entity*>());
+    } else if (type.is_derived_from(rttr::type::get<Component>())) {
+      mComponents.push_back(sceneObjectVariant.get_value<Component*>());
+    } else {
+      throw std::runtime_error{ "Instantiated SceneObject is neither an Entity nor a Component!" };
+    }
+
+    ptrFixUp[static_cast<int>(std::ssize(ptrFixUp)) + 1] = sceneObjectVariant.get_value<SceneObject*>();
   }
 
   for (auto const& [fileId, obj] : ptrFixUp) {
@@ -343,6 +357,6 @@ auto Scene::Load(ObjectInstantiatorManager const& manager) -> void {
 
 
 auto Scene::Clear() -> void {
-  mEntities.clear();
+  mSceneObjects.clear();
 }
 }

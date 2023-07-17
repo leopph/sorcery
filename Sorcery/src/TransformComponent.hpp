@@ -16,6 +16,8 @@ enum class Space : u8 {
 
 class TransformComponent : public Component {
   RTTR_ENABLE(Component)
+  RTTR_REGISTRATION_FRIEND
+
 private:
   auto UpdateWorldDataRecursive() -> void;
 
@@ -42,9 +44,6 @@ private:
 public:
   [[nodiscard]] LEOPPHAPI auto GetSerializationType() const -> Type override;
   LEOPPHAPI static Type const SerializationType;
-
-  LEOPPHAPI auto Serialize(YAML::Node& node) const -> void override;
-  LEOPPHAPI auto Deserialize(YAML::Node const& node) -> void override;
 
   [[nodiscard]] LEOPPHAPI auto GetWorldPosition() const -> Vector3 const&;
   LEOPPHAPI auto SetWorldPosition(Vector3 const& newPos) -> void;

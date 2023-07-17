@@ -1,7 +1,8 @@
 #include "Object.hpp"
 
 RTTR_REGISTRATION {
-  rttr::registration::class_<sorcery::Object>{ "Object" };
+  rttr::registration::class_<sorcery::Object>{ "Object" }
+    .property("name", &sorcery::Object::mName);
 }
 
 

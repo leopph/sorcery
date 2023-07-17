@@ -20,14 +20,11 @@ public:
   [[nodiscard]] LEOPPHAPI auto GetSerializationType() const -> Object::Type override;
   LEOPPHAPI static Object::Type const SerializationType;
 
-  LEOPPHAPI auto Serialize(YAML::Node& node) const -> void override;
-  LEOPPHAPI auto Deserialize(YAML::Node const& node) -> void override;
-
   // Viewport extents are normalized between 0 and 1.
   [[nodiscard]] LEOPPHAPI auto GetViewport() const -> NormalizedViewport const&;
   LEOPPHAPI auto SetViewport(NormalizedViewport const& viewport) -> void;
 
-  [[nodiscard]] LEOPPHAPI auto GetBackgroundColor() const -> Vector4;
+  [[nodiscard]] LEOPPHAPI auto GetBackgroundColor() const -> Vector4 const&;
   LEOPPHAPI auto SetBackgroundColor(Vector4 const& color) -> void;
 
   [[nodiscard]] auto LEOPPHAPI GetPosition() const noexcept -> Vector3 override;

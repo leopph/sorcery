@@ -992,8 +992,8 @@ auto Renderer::Impl::DrawMeshes(std::span<int const> const meshComponentIndices,
     D3D11_MAPPED_SUBRESOURCE mappedPerDrawCb;
     mImmediateContext->Map(mPerDrawCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerDrawCb);
     auto const perDrawCbData{ static_cast<PerDrawCB*>(mappedPerDrawCb.pData) };
-    perDrawCbData->gPerDrawConstants.modelMtx = meshComponent->GetEntity()->GetTransform().GetModelMatrix();
-    perDrawCbData->gPerDrawConstants.normalMtx = Matrix4{ meshComponent->GetEntity()->GetTransform().GetNormalMatrix() };
+    perDrawCbData->gPerDrawConstants.modelMtx = meshComponent->GetEntity().GetTransform().GetModelMatrix();
+    perDrawCbData->gPerDrawConstants.normalMtx = Matrix4{ meshComponent->GetEntity().GetTransform().GetNormalMatrix() };
     mImmediateContext->Unmap(mPerDrawCb.Get(), 0);
 
     auto const subMeshes{ mesh.GetSubMeshes() };
@@ -1420,7 +1420,7 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
     lightBufferData[i].range = mLights[visibility.lightIndices[i]]->GetRange();
     lightBufferData[i].halfInnerAngleCos = std::cos(ToRadians(mLights[visibility.lightIndices[i]]->GetInnerAngle() / 2.0f));
     lightBufferData[i].halfOuterAngleCos = std::cos(ToRadians(mLights[visibility.lightIndices[i]]->GetOuterAngle() / 2.0f));
-    lightBufferData[i].position = mLights[visibility.lightIndices[i]]->GetEntity()->GetTransform().GetWorldPosition();
+    lightBufferData[i].position = mLights[visibility.lightIndices[i]]->GetEntity().GetTransform().GetWorldPosition();
     lightBufferData[i].depthBias = mLights[visibility.lightIndices[i]]->GetShadowDepthBias();
     lightBufferData[i].normalBias = mLights[visibility.lightIndices[i]]->GetShadowNormalBias();
 
@@ -1584,7 +1584,7 @@ auto Renderer::Impl::CullLights(Frustum const& frustumWS, Visibility& visibility
           [light] {
             auto vertices{ CalculateSpotLightLocalVertices(*light) };
 
-            for (auto const modelMtxNoScale{ CalculateModelMatrixNoScale(light->GetEntity()->GetTransform()) };
+            for (auto const modelMtxNoScale{ CalculateModelMatrixNoScale(light->GetEntity().GetTransform()) };
                  auto& vertex : vertices) {
               vertex = Vector3{ Vector4{ vertex, 1 } * modelMtxNoScale };
             }
@@ -1602,7 +1602,7 @@ auto Renderer::Impl::CullLights(Frustum const& frustumWS, Visibility& visibility
 
       case LightComponent::Type::Point: {
         BoundingSphere const boundsWS{
-          .center = Vector3{ light->GetEntity()->GetTransform().GetWorldPosition() },
+          .center = Vector3{ light->GetEntity().GetTransform().GetWorldPosition() },
           .radius = light->GetRange()
         };
 

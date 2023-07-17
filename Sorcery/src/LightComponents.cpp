@@ -1,7 +1,5 @@
 #include "LightComponents.hpp"
 
-#include "Serialization.hpp"
-
 #include "Renderer.hpp"
 #include "Entity.hpp"
 #include "TransformComponent.hpp"
@@ -12,8 +10,19 @@
 
 
 RTTR_REGISTRATION {
-  rttr::registration::class_<sorcery::LightComponent>{ "LightComponent" }
-    .constructor<>();
+  rttr::registration::class_<sorcery::LightComponent>{ "Light Component" }
+    .REFLECT_REGISTER_COMPONENT_CTOR
+    .property("color", &sorcery::LightComponent::GetColor, &sorcery::LightComponent::SetColor)
+    .property("intensity", &sorcery::LightComponent::GetIntensity, &sorcery::LightComponent::SetIntensity)
+    .property("type", &sorcery::LightComponent::GetType, &sorcery::LightComponent::SetType)
+    .property("castsShadow", &sorcery::LightComponent::IsCastingShadow, &sorcery::LightComponent::SetCastingShadow)
+    .property("shadowNearClipPlane", &sorcery::LightComponent::GetShadowNearPlane, &sorcery::LightComponent::SetShadowNearPlane)
+    .property("shadowNormalBias", &sorcery::LightComponent::GetShadowNormalBias, &sorcery::LightComponent::SetShadowNormalBias)
+    .property("shadowDepthBias", &sorcery::LightComponent::GetShadowDepthBias, &sorcery::LightComponent::SetShadowDepthBias)
+    .property("shadowExtension", &sorcery::LightComponent::GetShadowExtension, &sorcery::LightComponent::SetShadowExtension)
+    .property("range", &sorcery::LightComponent::GetRange, &sorcery::LightComponent::SetRange)
+    .property("innerAngle", &sorcery::LightComponent::GetInnerAngle, &sorcery::LightComponent::SetInnerAngle)
+    .property("outerAngle", &sorcery::LightComponent::GetOuterAngle, &sorcery::LightComponent::SetOuterAngle);
 }
 
 
@@ -33,58 +42,6 @@ LightComponent::~LightComponent() {
 
 auto LightComponent::GetSerializationType() const -> Object::Type {
   return SerializationType;
-}
-
-
-auto LightComponent::Serialize(YAML::Node& node) const -> void {
-  node["color"] = GetColor();
-  node["intensity"] = GetIntensity();
-  node["type"] = static_cast<int>(GetType());
-  node["castsShadow"] = IsCastingShadow();
-  node["shadowNearPlane"] = GetShadowNearPlane();
-  node["shadowNormalBias"] = GetShadowNormalBias();
-  node["range"] = GetRange();
-  node["innerAngle"] = GetInnerAngle();
-  node["outerAngle"] = GetOuterAngle();
-  node["shadowDepthBias"] = GetShadowDepthBias();
-  node["shadowExtension"] = GetShadowExtension();
-}
-
-
-auto LightComponent::Deserialize(YAML::Node const& node) -> void {
-  if (auto const data{ node["color"] }) {
-    SetColor(data.as<Vector3>(GetColor()));
-  }
-  if (auto const data{ node["intensity"] }) {
-    SetIntensity(data.as<f32>(GetIntensity()));
-  }
-  if (auto const data{ node["type"] }) {
-    SetType(static_cast<Type>(data.as<int>(static_cast<int>(GetType()))));
-  }
-  if (auto const data{ node["castsShadow"] }) {
-    SetCastingShadow(data.as<bool>(IsCastingShadow()));
-  }
-  if (auto const data{ node["shadowNearPlane"] }) {
-    SetShadowNearPlane(data.as<f32>(GetShadowNearPlane()));
-  }
-  if (auto const data{ node["shadowNormalBias"] }) {
-    SetShadowNormalBias(data.as<float>(GetShadowNormalBias()));
-  }
-  if (auto const data{ node["range"] }) {
-    SetRange(data.as<f32>(GetRange()));
-  }
-  if (auto const data{ node["innerAngle"] }) {
-    SetInnerAngle(data.as<f32>(GetInnerAngle()));
-  }
-  if (auto const data{ node["outerAngle"] }) {
-    SetOuterAngle(data.as<f32>(GetOuterAngle()));
-  }
-  if (auto const data{ node["shadowDepthBias"] }) {
-    SetShadowDepthBias(data.as<float>(GetShadowDepthBias()));
-  }
-  if (auto const data{ node["shadowExtension"] }) {
-    SetShadowExtension(data.as<float>(GetShadowExtension()));
-  }
 }
 
 
@@ -129,7 +86,7 @@ auto LightComponent::SetType(Type const type) noexcept -> void {
 
 
 auto LightComponent::GetDirection() const -> Vector3 const& {
-  return GetEntity()->GetTransform().GetForwardAxis();
+  return GetEntity().GetTransform().GetForwardAxis();
 }
 
 

@@ -89,7 +89,7 @@ public:
     for (auto const& rigidBody : mInternalRigidBodies) {
       auto const pxRigidDynamic{ static_cast<physx::PxRigidDynamic*>(rigidBody->mData) };
       auto const owningComponent{ static_cast<Component*>(pxRigidDynamic->userData) };
-      auto const& transform{ owningComponent->GetEntity()->GetTransform() };
+      auto const& transform{ owningComponent->GetEntity().GetTransform() };
       pxRigidDynamic->setGlobalPose(ConvertTransformToPxTransform(transform));
     }
 
@@ -105,7 +105,7 @@ public:
     for (auto const& rigidBody : mInternalRigidBodies) {
       auto const pxRigidDynamic{ static_cast<physx::PxRigidDynamic*>(rigidBody->mData) };
       auto const owningComponent{ static_cast<Component*>(pxRigidDynamic->userData) };
-      auto& transform{ owningComponent->GetEntity()->GetTransform() };
+      auto& transform{ owningComponent->GetEntity().GetTransform() };
       ConvertPxTransformToTransform(pxRigidDynamic->getGlobalPose(), transform);
     }
   }
