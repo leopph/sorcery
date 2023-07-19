@@ -6,14 +6,9 @@
 
 
 namespace sorcery {
-namespace {
-std::stringstream gStringStream;
-}
-
-
 Guid::Guid(u64 const data0, u64 const data1) :
-  mData0{ data0 },
-  mData1{ data1 } { }
+  mDataLo{ data0 },
+  mDataHi{ data1 } { }
 
 
 auto Guid::Generate() -> Guid {
@@ -30,30 +25,36 @@ auto Guid::Generate() -> Guid {
 
 
 auto Guid::Parse(std::string_view const str) -> Guid {
-  gStringStream.clear();
-  gStringStream.str({});
-  gStringStream << std::hex << str;
-  Guid guid{};
+  std::stringstream strStream;
+  strStream << std::hex << str;
+  Guid guid;
   char sep;
-  gStringStream >> guid.mData1 >> sep >> guid.mData0;
+  strStream >> guid.mDataHi >> sep >> guid.mDataLo;
   return guid;
 }
 
 
 auto Guid::ToString() const -> std::string {
-  gStringStream.clear();
-  gStringStream.str({});
-  gStringStream << std::hex << mData1 << "-" << std::hex << mData0;
-  return gStringStream.str();
+  return std::string{ *this };
 }
 
 
-auto Guid::operator==(Guid const& other) const -> bool {
-  return mData0 == other.mData0 && mData1 == other.mData1;
+auto Guid::operator<=>(Guid const& other) const noexcept -> std::strong_ordering {
+  auto const hiComp{ mDataHi <=> other.mDataHi };
+  return hiComp != std::strong_ordering::equivalent
+           ? hiComp
+           : mDataLo <=> other.mDataLo;
 }
 
 
 auto Guid::IsValid() const noexcept -> bool {
-  return mData0 != 0 || mData1 != 0;
+  return mDataLo != 0 || mDataHi != 0;
+}
+
+
+Guid::operator std::string() const {
+  std::stringstream strStream;
+  strStream << std::hex << mDataHi << "-" << std::hex << mDataLo;
+  return strStream.str();
 }
 }

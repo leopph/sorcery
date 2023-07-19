@@ -2,13 +2,14 @@
 
 #include "Core.hpp"
 
+#include <compare>
 #include <string>
 
 
 namespace sorcery {
 class Guid {
-  u64 mData0{ 0 };
-  u64 mData1{ 0 };
+  u64 mDataLo{ 0 };
+  u64 mDataHi{ 0 };
 
 public:
   Guid() = default;
@@ -18,8 +19,10 @@ public:
   [[nodiscard]] LEOPPHAPI static auto Parse(std::string_view str) -> Guid;
 
   [[nodiscard]] LEOPPHAPI auto ToString() const -> std::string;
-  [[nodiscard]] LEOPPHAPI auto operator==(Guid const& other) const -> bool;
+  [[nodiscard]] LEOPPHAPI auto operator<=>(Guid const& other) const noexcept -> std::strong_ordering;
 
   [[nodiscard]] LEOPPHAPI auto IsValid() const noexcept -> bool;
+
+  [[nodiscard]] LEOPPHAPI explicit operator std::string() const;
 };
 }
