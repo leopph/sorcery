@@ -92,7 +92,7 @@ public:
   [[nodiscard]] LEOPPHAPI auto ClientCoordinateToScreen(Point2D<i32> clientCoord) const noexcept -> Point2D<i32>;
 
   [[nodiscard]] LEOPPHAPI auto GetTitle() const noexcept -> std::string_view;
-  [[nodiscard]] LEOPPHAPI auto SetTitle(std::string title) -> void;
+  LEOPPHAPI auto SetTitle(std::string title) -> void;
 };
 
 

@@ -3,34 +3,22 @@
 #include "Core.hpp"
 #include "Resource.hpp"
 
-#include <unordered_map>
-#include <vector>
-#include <typeindex>
-#include <memory>
-#include <cstdint>
-#include <concepts>
-
 
 namespace sorcery {
 class ResourceManager {
-  struct ResourceEntry {
-    std::unique_ptr<Resource> resource;
-    std::uint32_t version;
+  struct ResourceGuidLess {
+    using is_transparent = void;
+    [[nodiscard]] auto operator()(std::shared_ptr<Resource> const& lhs, std::shared_ptr<Resource> const& rhs) const noexcept -> bool;
+    [[nodiscard]] auto operator()(std::shared_ptr<Resource> const& lhs, Guid const& rhs) const noexcept -> bool;
+    [[nodiscard]] auto operator()(Guid const& lhs, std::shared_ptr<Resource> const& rhs) const noexcept -> bool;
   };
 
 
-  std::unordered_map<std::type_index, std::vector<ResourceEntry>> mResources;
-};
-
-
-template<std::derived_from<Resource> T>
-class ResourceHandle {
-  friend class ResourceManager;
-  std::uint32_t mIdx;
-  std::uint32_t mVersion;
+  std::set<std::shared_ptr<Resource>, ResourceGuidLess> mResources;
 
 public:
-  [[nodiscard]] bool isValid() const noexcept { return mIdx != 0; }
+  LEOPPHAPI auto AddResource(std::shared_ptr<Resource> res) -> std::weak_ptr<Resource>;
+  [[nodiscard]] LEOPPHAPI auto FindResource(Guid const& guid) -> std::weak_ptr<Resource>;
 };
 
 

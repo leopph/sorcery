@@ -2,6 +2,10 @@
 
 #include "SceneObject.hpp"
 #include "Platform.hpp"
+#undef FindResource
+
+#include "ResourceManager.hpp"
+
 
 RTTR_REGISTRATION {
   rttr::registration::class_<sorcery::Scene>{ "Scene" };
@@ -96,6 +100,12 @@ auto ReflectionSerializeToYAML(rttr::variant const& variant, std::unordered_map<
     } else {
       ret = 0;
     }
+  } else if (isWrapper && wrappedType.is_pointer() && rawWrappedType.is_derived_from(rttr::type::get<Resource>())) {
+    if (auto const res{ variant.extract_wrapped_value().get_value<Resource*>() }) {
+      ret = res->GetGuid().ToString();
+    } else {
+      ret = Guid{}.ToString();
+    }
   } else if (rawWrappedType.is_class() && !isWrapper) {
     for (auto const& prop : objType.get_properties()) {
       ret[prop.get_name().to_string()] = ReflectionSerializeToYAML(prop.get_value(variant), ptrFixUp);
@@ -179,6 +189,8 @@ auto ReflectioNDeserializeFromYAML(YAML::Node const& objNode, std::unordered_map
     } else {
       variant = nullptr;
     }
+  } else if (isWrapper && wrappedType.is_pointer() && rawWrappedType.is_derived_from(rttr::type::get<Resource>())) {
+    variant = gResourceManager.FindResource(Guid::Parse(objNode.as<std::string>()));
   } else if (rawWrappedType.is_class() && !isWrapper) {
     for (auto const& prop : objType.get_properties()) {
       auto propValue{ prop.get_value(variant) };

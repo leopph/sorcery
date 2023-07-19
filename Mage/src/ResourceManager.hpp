@@ -7,6 +7,7 @@
 
 #include "Resource.hpp"
 #include "ObjectWrappers/ObjectWrapperManager.hpp"
+#include "YamlInclude.hpp"
 
 
 namespace sorcery::mage {
