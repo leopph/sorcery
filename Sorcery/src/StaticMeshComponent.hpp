@@ -1,8 +1,8 @@
 #pragma once
 
 #include "Component.hpp"
-#include "Material.hpp"
-#include "Mesh.hpp"
+#include "Resources/Material.hpp"
+#include "Resources/Mesh.hpp"
 
 #include <span>
 #include <vector>

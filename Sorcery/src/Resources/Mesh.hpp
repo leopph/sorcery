@@ -1,8 +1,8 @@
 #pragma once
 
 #include "Resource.hpp"
-#include "Math.hpp"
-#include "Bounds.hpp"
+#include "../Math.hpp"
+#include "../Bounds.hpp"
 
 #include <span>
 #include <string>

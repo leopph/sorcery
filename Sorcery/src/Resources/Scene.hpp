@@ -1,10 +1,10 @@
 #pragma once
 
-#include "NativeResource.hpp"
-#include "Entity.hpp"
-#include "Component.hpp"
+#include "Resource.hpp"
+#include "../Entity.hpp"
+#include "../Component.hpp"
 
-#include "YamlInclude.hpp"
+#include "../YamlInclude.hpp"
 
 #include <memory>
 #include <vector>
@@ -13,8 +13,8 @@
 
 
 namespace sorcery {
-class Scene : public NativeResource {
-  RTTR_ENABLE(NativeResource)
+class Scene : public Resource {
+  RTTR_ENABLE(Resource)
   static Scene* sActiveScene;
   static std::vector<Scene*> sAllScenes;
 
@@ -29,7 +29,13 @@ public:
   [[nodiscard]] LEOPPHAPI static auto GetActiveScene() noexcept -> Scene*;
 
   LEOPPHAPI Scene();
+  Scene(Scene const& other) = delete;
+  Scene(Scene&& other) = delete;
+
   LEOPPHAPI ~Scene() override;
+
+  auto operator=(Scene const& other) -> void = delete;
+  auto operator=(Scene&& other) -> void = delete;
 
   LEOPPHAPI static Type const SerializationType;
   LEOPPHAPI auto GetSerializationType() const -> Type override;
@@ -42,9 +48,6 @@ public:
   LEOPPHAPI auto DestroyComponent(Component const& component) -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetEntities() const noexcept -> std::span<ObserverPtr<Entity> const>;
-
-  LEOPPHAPI auto Serialize(std::vector<std::uint8_t>& out) const noexcept -> void override;
-  LEOPPHAPI auto Deserialize(std::span<std::uint8_t const> bytes) -> void;
 
   LEOPPHAPI auto Save() -> void;
   LEOPPHAPI auto Load(ObjectInstantiatorManager const& manager) -> void;

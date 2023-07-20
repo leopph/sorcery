@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Object.hpp"
-#include "Guid.hpp"
+#include "../Object.hpp"
+#include "../Guid.hpp"
 
 
 namespace sorcery {

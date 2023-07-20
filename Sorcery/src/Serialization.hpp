@@ -15,7 +15,7 @@
 #include "Core.hpp"
 #include "Image.hpp"
 #include "Math.hpp"
-#include "Mesh.hpp"
+#include "Resources/Mesh.hpp"
 #include "YamlInclude.hpp"
 
 

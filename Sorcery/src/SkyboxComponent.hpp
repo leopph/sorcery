@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Component.hpp"
-#include "Cubemap.hpp"
+#include "Resources/Cubemap.hpp"
 
 
 namespace sorcery {

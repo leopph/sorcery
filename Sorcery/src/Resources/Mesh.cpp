@@ -1,9 +1,9 @@
 #include "Mesh.hpp"
 
-#include "Renderer.hpp"
-#include "Util.hpp"
-#include "Serialization.hpp"
-#include "Systems.hpp"
+#include "../Renderer.hpp"
+#include "../Util.hpp"
+#include "../Serialization.hpp"
+#include "../Systems.hpp"
 
 #include <utility>
 #include <format>
@@ -120,7 +120,9 @@ Mesh::Mesh(Data data, bool const keepDataInCPUMemory) {
 
 
 auto Mesh::GetPositions() const noexcept -> std::span<Vector3 const> {
-  return mCPUData ? mCPUData->positions : std::span<Vector3 const>{};
+  return mCPUData
+           ? mCPUData->positions
+           : std::span<Vector3 const>{};
 }
 
 
@@ -138,7 +140,9 @@ auto Mesh::SetPositions(std::vector<Vector3> positions, bool const allocateCPUMe
 
 
 auto Mesh::GetNormals() const noexcept -> std::span<Vector3 const> {
-  return mCPUData ? mCPUData->normals : std::span<Vector3 const>{};
+  return mCPUData
+           ? mCPUData->normals
+           : std::span<Vector3 const>{};
 }
 
 
@@ -156,7 +160,9 @@ auto Mesh::SetNormals(std::vector<Vector3> normals, bool const allocateCPUMemory
 
 
 auto Mesh::GetUVs() const noexcept -> std::span<Vector2 const> {
-  return mCPUData ? mCPUData->uvs : std::span<Vector2 const>{};
+  return mCPUData
+           ? mCPUData->uvs
+           : std::span<Vector2 const>{};
 }
 
 
@@ -174,7 +180,9 @@ auto Mesh::SetUVs(std::vector<Vector2> uvs, bool const allocateCPUMemoryIfNeeded
 
 
 auto Mesh::GetTangents() const noexcept -> std::span<Vector3 const> {
-  return mCPUData ? mCPUData->tangents : std::span<Vector3 const>{};
+  return mCPUData
+           ? mCPUData->tangents
+           : std::span<Vector3 const>{};
 }
 
 
@@ -192,7 +200,9 @@ auto Mesh::SetTangents(std::vector<Vector3> tangents, bool const allocateCPUMemo
 
 
 auto Mesh::GetIndices() const noexcept -> std::span<u32 const> {
-  return mCPUData ? mCPUData->indices : std::span<u32 const>{};
+  return mCPUData
+           ? mCPUData->indices
+           : std::span<u32 const>{};
 }
 
 

@@ -1,0 +1,15 @@
+#pragma once
+
+#include "ResourceImporter.hpp"
+
+
+namespace sorcery {
+class MeshImporter final : public ResourceImporter {
+  RTTR_ENABLE(ResourceImporter)
+
+public:
+  LEOPPHAPI auto GetSupportedFileExtensions(std::vector<std::string>& out) -> void override;
+  [[nodiscard]] LEOPPHAPI auto Import(std::filesystem::path const& src) -> std::shared_ptr<Resource> override;
+  [[nodiscard]] LEOPPHAPI auto GetPrecedence() const noexcept -> int override;
+};
+}

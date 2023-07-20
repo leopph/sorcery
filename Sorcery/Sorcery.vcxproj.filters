@@ -30,7 +30,7 @@
     <ClCompile Include="src\Platform.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Scene.cpp">
+    <ClCompile Include="src\Resources\Scene.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Object.cpp">
@@ -45,7 +45,7 @@
     <ClCompile Include="src\Systems.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Material.cpp">
+    <ClCompile Include="src\Resources\Material.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Compress.cpp">
@@ -54,7 +54,7 @@
     <ClCompile Include="src\Guid.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Mesh.cpp">
+    <ClCompile Include="src\Resources\Mesh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Component.cpp">
@@ -72,10 +72,10 @@
     <ClCompile Include="src\LightComponents.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Texture2D.cpp">
+    <ClCompile Include="src\Resources\Texture2D.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Cubemap.cpp">
+    <ClCompile Include="src\Resources\Cubemap.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\SkyboxComponent.cpp">
@@ -85,9 +85,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Serialization.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\NativeResource.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\PhysicsManager.cpp">
@@ -120,13 +117,25 @@
     <ClCompile Include="src\ResourceManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Resource.cpp">
+    <ClCompile Include="src\Resources\Resource.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\SceneObject.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Math.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Resources\ResourceImporter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Resources\MeshImporter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Resources\TextureImporter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Resources\MaterialImporter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -158,7 +167,7 @@
     <ClInclude Include="src\Util.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Scene.hpp">
+    <ClInclude Include="src\Resources\Scene.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Object.hpp">
@@ -176,7 +185,7 @@
     <ClInclude Include="src\Systems.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Material.hpp">
+    <ClInclude Include="src\Resources\Material.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Compress.hpp">
@@ -185,7 +194,7 @@
     <ClInclude Include="src\Guid.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Mesh.hpp">
+    <ClInclude Include="src\Resources\Mesh.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Component.hpp">
@@ -206,16 +215,13 @@
     <ClInclude Include="src\Serialization.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Texture2D.hpp">
+    <ClInclude Include="src\Resources\Texture2D.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\SceneObject.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\NativeResource.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Cubemap.hpp">
+    <ClInclude Include="src\Resources\Cubemap.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\SkyboxComponent.hpp">
@@ -266,10 +272,22 @@
     <ClInclude Include="src\ResourceManager.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Resource.hpp">
+    <ClInclude Include="src\Resources\Resource.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Reflection.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Resources\ResourceImporter.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Resources\MeshImporter.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Resources\TextureImporter.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Resources\MaterialImporter.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

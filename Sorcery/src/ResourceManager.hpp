@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Core.hpp"
-#include "Resource.hpp"
+#include "Resources/Resource.hpp"
 
 
 namespace sorcery {
@@ -17,6 +17,8 @@ class ResourceManager {
   std::set<std::shared_ptr<Resource>, ResourceGuidLess> mResources;
 
 public:
+  constexpr static std::string_view RESOURCE_META_FILE_EXT{ ".mojo" };
+
   LEOPPHAPI auto AddResource(std::shared_ptr<Resource> res) -> std::weak_ptr<Resource>;
   [[nodiscard]] LEOPPHAPI auto FindResource(Guid const& guid) -> std::weak_ptr<Resource>;
 };

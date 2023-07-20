@@ -1,10 +1,10 @@
 #include "Scene.hpp"
 
-#include "SceneObject.hpp"
-#include "Platform.hpp"
+#include "../SceneObject.hpp"
+#include "../Platform.hpp"
 #undef FindResource
 
-#include "ResourceManager.hpp"
+#include "../ResourceManager.hpp"
 
 
 RTTR_REGISTRATION {
@@ -298,18 +298,6 @@ auto Scene::DestroyComponent(Component const& component) -> void {
 
 auto Scene::GetEntities() const noexcept -> std::span<ObserverPtr<Entity> const> {
   return mEntities;
-}
-
-
-auto Scene::Serialize(std::vector<std::uint8_t>& out) const noexcept -> void {
-  auto const dump{ Dump(mYamlData) };
-  out.assign(std::begin(dump), std::end(dump));
-}
-
-
-auto Scene::Deserialize(std::span<std::uint8_t const> const bytes) -> void {
-  std::string const input{ std::begin(bytes), std::end(bytes) };
-  mYamlData = YAML::Load(input);
 }
 
 

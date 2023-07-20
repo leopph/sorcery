@@ -7,8 +7,8 @@
 #include <d3d11.h>
 #include <wrl/client.h>
 
-#include "Image.hpp"
-#include "Util.hpp"
+#include "../Image.hpp"
+#include "../Util.hpp"
 
 
 namespace sorcery {

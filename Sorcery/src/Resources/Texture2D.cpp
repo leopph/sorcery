@@ -1,8 +1,8 @@
 #include "Texture2D.hpp"
 
-#include "Util.hpp"
-#include "Renderer.hpp"
-#include "Systems.hpp"
+#include "../Util.hpp"
+#include "../Renderer.hpp"
+#include "../Systems.hpp"
 
 RTTR_REGISTRATION {
   rttr::registration::class_<sorcery::Texture2D>{ "Texture2D" };
@@ -54,7 +54,9 @@ Texture2D::Texture2D(Image img, bool const keepDataInCPUMemory) {
 
 
 auto Texture2D::GetImageData() const noexcept -> ObserverPtr<Image const> {
-  return mImgData ? mImgData : nullptr;
+  return mImgData
+           ? mImgData
+           : nullptr;
 }
 
 

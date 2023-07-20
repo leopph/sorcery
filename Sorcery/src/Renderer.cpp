@@ -7,7 +7,6 @@
 #include "Systems.hpp"
 #include "Util.hpp"
 #include "TransformComponent.hpp"
-#include "Mesh.hpp"
 #include "Graphics.hpp"
 
 #ifndef NDEBUG
@@ -1014,37 +1013,52 @@ auto Renderer::Impl::DrawMeshes(std::span<int const> const meshComponentIndices,
         mImmediateContext->PSSetConstantBuffers(CB_SLOT_PER_MATERIAL, 1, &mtlBuffer);
 
         auto const albedoSrv{
-          mtl.GetAlbedoMap()
-            ? mtl.GetAlbedoMap()->GetSrv()
-            : nullptr
+          [&mtl] {
+            auto const albedoMap{ mtl.GetAlbedoMap().lock() };
+            return albedoMap
+                     ? albedoMap->GetSrv()
+                     : nullptr;
+          }()
         };
         mImmediateContext->PSSetShaderResources(RES_SLOT_ALBEDO_MAP, 1, &albedoSrv);
 
         auto const metallicSrv{
-          mtl.GetMetallicMap()
-            ? mtl.GetMetallicMap()->GetSrv()
-            : nullptr
+          [&mtl] {
+            auto const metallicMap{ mtl.GetMetallicMap().lock() };
+            return metallicMap
+                     ? metallicMap->GetSrv()
+                     : nullptr;
+          }()
         };
         mImmediateContext->PSSetShaderResources(RES_SLOT_METALLIC_MAP, 1, &metallicSrv);
 
         auto const roughnessSrv{
-          mtl.GetRoughnessMap()
-            ? mtl.GetRoughnessMap()->GetSrv()
-            : nullptr
+          [&mtl] {
+            auto const roughnessMap{ mtl.GetRoughnessMap().lock() };
+            return roughnessMap
+                     ? roughnessMap->GetSrv()
+                     : nullptr;
+          }()
         };
         mImmediateContext->PSSetShaderResources(RES_SLOT_ROUGHNESS_MAP, 1, &roughnessSrv);
 
         auto const aoSrv{
-          mtl.GetAoMap()
-            ? mtl.GetAoMap()->GetSrv()
-            : nullptr
+          [&mtl] {
+            auto const aoMap{ mtl.GetAoMap().lock() };
+            return aoMap
+                     ? aoMap->GetSrv()
+                     : nullptr;
+          }()
         };
         mImmediateContext->PSSetShaderResources(RES_SLOT_AO_MAP, 1, &aoSrv);
 
         auto const normalSrv{
-          mtl.GetNormalMap()
-            ? mtl.GetNormalMap()->GetSrv()
-            : nullptr
+          [&mtl] {
+            auto const normalMap{ mtl.GetNormalMap().lock() };
+            return normalMap
+                     ? normalMap->GetSrv()
+                     : nullptr;
+          }()
         };
         mImmediateContext->PSSetShaderResources(RES_SLOT_NORMAL_MAP, 1, &normalSrv);
       }

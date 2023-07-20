@@ -5,8 +5,8 @@
 #include <wrl/client.h>
 
 #include "Resource.hpp"
-#include "Image.hpp"
-#include "Util.hpp"
+#include "../Image.hpp"
+#include "../Util.hpp"
 
 #include <array>
 
