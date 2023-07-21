@@ -2,8 +2,8 @@
 
 #include "../SceneObject.hpp"
 #include "../Platform.hpp"
+#include "../Serialization.hpp"
 #undef FindResource
-
 #include "../ResourceManager.hpp"
 
 
@@ -13,209 +13,6 @@ RTTR_REGISTRATION {
 
 
 namespace sorcery {
-namespace {
-auto ReflectionSerializeToYAML(rttr::variant const& variant, std::unordered_map<void const*, int> const& ptrFixUp) -> YAML::Node {
-  auto const objType{ variant.get_type() };
-  auto const isWrapper{ objType.is_wrapper() };
-  auto const wrappedType{ objType.get_wrapped_type() };
-  auto const rawWrappedType{
-    isWrapper
-      ? wrappedType.get_raw_type()
-      : objType.get_raw_type()
-  };
-
-  YAML::Node ret;
-
-  if (rawWrappedType.is_arithmetic()) {
-    if (rawWrappedType == rttr::type::get<char>()) {
-      ret = isWrapper
-              ? variant.get_wrapped_value<char>()
-              : variant.get_value<char>();
-    } else if (rawWrappedType == rttr::type::get<signed char>()) {
-      ret = isWrapper
-              ? variant.get_wrapped_value<signed char>()
-              : variant.get_value<signed char>();
-    } else if (rawWrappedType == rttr::type::get<unsigned char>()) {
-      ret = isWrapper
-              ? variant.get_wrapped_value<unsigned char>()
-              : variant.get_value<unsigned char>();
-    } else if (rawWrappedType == rttr::type::get<short>()) {
-      ret = isWrapper
-              ? variant.get_wrapped_value<short>()
-              : variant.get_value<short>();
-    } else if (rawWrappedType == rttr::type::get<unsigned short>()) {
-      ret = isWrapper
-              ? variant.get_wrapped_value<unsigned short>()
-              : variant.get_value<unsigned short>();
-    } else if (rawWrappedType == rttr::type::get<int>()) {
-      ret = isWrapper
-              ? variant.get_wrapped_value<int>()
-              : variant.get_value<int>();
-    } else if (rawWrappedType == rttr::type::get<unsigned>()) {
-      ret = isWrapper
-              ? variant.get_wrapped_value<unsigned>()
-              : variant.get_value<unsigned>();
-    } else if (rawWrappedType == rttr::type::get<long>()) {
-      ret = isWrapper
-              ? variant.get_wrapped_value<long>()
-              : variant.get_value<long>();
-    } else if (rawWrappedType == rttr::type::get<unsigned long>()) {
-      ret = isWrapper
-              ? variant.get_wrapped_value<unsigned long>()
-              : variant.get_value<unsigned long>();
-    } else if (rawWrappedType == rttr::type::get<long long>()) {
-      ret = isWrapper
-              ? variant.get_wrapped_value<long long>()
-              : variant.get_value<long long>();
-    } else if (rawWrappedType == rttr::type::get<unsigned long long>()) {
-      ret = isWrapper
-              ? variant.get_wrapped_value<unsigned long long>()
-              : variant.get_value<unsigned long long>();
-    } else if (rawWrappedType == rttr::type::get<float>()) {
-      ret = isWrapper
-              ? variant.get_wrapped_value<float>()
-              : variant.get_value<float>();
-    } else if (rawWrappedType == rttr::type::get<double>()) {
-      ret = isWrapper
-              ? variant.get_wrapped_value<double>()
-              : variant.get_value<double>();
-    } else if (rawWrappedType == rttr::type::get<long double>()) {
-      ret = isWrapper
-              ? variant.get_wrapped_value<long double>()
-              : variant.get_value<long double>();
-    }
-  } else if (rawWrappedType.is_sequential_container()) {
-    for (auto const& elem : variant.create_sequential_view()) {
-      ret.push_back(ReflectionSerializeToYAML(elem, ptrFixUp));
-    }
-  } else if (objType.is_pointer() && rawWrappedType.is_derived_from(rttr::type::get<SceneObject>())) {
-    auto const ptr{
-      isWrapper
-        ? variant.get_wrapped_value<void const*>()
-        : variant.get_value<void const*>()
-    };
-
-    if (auto const it{ ptrFixUp.find(ptr) }; it != std::end(ptrFixUp)) {
-      ret = it->second;
-    } else {
-      ret = 0;
-    }
-  } else if (isWrapper && wrappedType.is_pointer() && rawWrappedType.is_derived_from(rttr::type::get<Resource>())) {
-    if (auto const res{ variant.extract_wrapped_value().get_value<Resource*>() }) {
-      ret = res->GetGuid().ToString();
-    } else {
-      ret = Guid{}.ToString();
-    }
-  } else if (rawWrappedType.is_class() && !isWrapper) {
-    for (auto const& prop : objType.get_properties()) {
-      ret[prop.get_name().to_string()] = ReflectionSerializeToYAML(prop.get_value(variant), ptrFixUp);
-    }
-  }
-
-  return ret;
-}
-
-
-template<typename T>
-auto ReflectionSerializeToYAML(T const& obj, std::unordered_map<void const*, int> const& ptrFixUp) -> YAML::Node {
-  auto const objType{ rttr::type::get<T>() };
-
-  YAML::Node ret;
-  ret["type"] = objType.get_name().to_string();
-
-  for (auto const& prop : objType.get_properties()) {
-    ret["properties"][prop.get_name().to_string()] = ReflectionSerializeToYAML(prop.get_value(obj), ptrFixUp);
-  }
-
-  return ret;
-}
-
-
-auto ReflectioNDeserializeFromYAML(YAML::Node const& objNode, std::unordered_map<int, ObserverPtr<SceneObject>> const& ptrFixUp, rttr::variant& variant) -> void {
-  auto const objType{ variant.get_type() };
-  auto const isWrapper{ objType.is_wrapper() };
-  auto const wrappedType{ objType.get_wrapped_type() };
-  auto const rawWrappedType{
-    isWrapper
-      ? wrappedType.get_raw_type()
-      : objType.get_raw_type()
-  };
-
-  if (rawWrappedType.is_arithmetic()) {
-    if (rawWrappedType == rttr::type::get<char>()) {
-      variant = objNode.as<char>();
-    } else if (rawWrappedType == rttr::type::get<signed char>()) {
-      variant = objNode.as<signed char>();
-    } else if (rawWrappedType == rttr::type::get<unsigned char>()) {
-      variant = objNode.as<unsigned char>();
-    } else if (rawWrappedType == rttr::type::get<short>()) {
-      variant = objNode.as<short>();
-    } else if (rawWrappedType == rttr::type::get<unsigned short>()) {
-      variant = objNode.as<unsigned short>();
-    } else if (rawWrappedType == rttr::type::get<int>()) {
-      variant = objNode.as<int>();
-    } else if (rawWrappedType == rttr::type::get<unsigned>()) {
-      variant = objNode.as<unsigned>();
-    } else if (rawWrappedType == rttr::type::get<long>()) {
-      variant = objNode.as<long>();
-    } else if (rawWrappedType == rttr::type::get<unsigned long>()) {
-      variant = objNode.as<unsigned long>();
-    } else if (rawWrappedType == rttr::type::get<long long>()) {
-      variant = objNode.as<long long>();
-    } else if (rawWrappedType == rttr::type::get<unsigned long long>()) {
-      variant = objNode.as<unsigned long long>();
-    } else if (rawWrappedType == rttr::type::get<float>()) {
-      variant = objNode.as<float>();
-    } else if (rawWrappedType == rttr::type::get<double>()) {
-      variant = objNode.as<double>();
-    } else if (rawWrappedType == rttr::type::get<long double>()) {
-      variant = objNode.as<long double>();
-    }
-  } else if (rawWrappedType.is_sequential_container()) {
-    auto sequence{ variant.create_sequential_view() };
-
-    for (auto const& elemNode : objNode) {
-      auto elem{ sequence.get_value_type().create() };
-      ReflectioNDeserializeFromYAML(elemNode, ptrFixUp, elem);
-      sequence.insert(sequence.end(), elem);
-    }
-  } else if (objType.is_pointer() && rawWrappedType.is_derived_from(rttr::type::get<SceneObject>())) {
-    if (auto const ptrId{ objNode.as<int>() }; ptrId != 0) {
-      if (auto const it{ ptrFixUp.find(ptrId) }; it != std::end(ptrFixUp)) {
-        variant = it->second;
-      } else {
-        variant = nullptr;
-      }
-    } else {
-      variant = nullptr;
-    }
-  } else if (isWrapper && wrappedType.is_pointer() && rawWrappedType.is_derived_from(rttr::type::get<Resource>())) {
-    variant = gResourceManager.FindResource(Guid::Parse(objNode.as<std::string>()));
-  } else if (rawWrappedType.is_class() && !isWrapper) {
-    for (auto const& prop : objType.get_properties()) {
-      auto propValue{ prop.get_value(variant) };
-      ReflectioNDeserializeFromYAML(objNode[prop.get_name().to_string()], ptrFixUp, propValue);
-      std::ignore = prop.set_value(variant, propValue);
-    }
-  }
-}
-
-
-auto ReflectionDeserializeFromYAML(YAML::Node const& objNode, std::unordered_map<int, ObserverPtr<SceneObject>> const& ptrFixUp, Object& obj) -> void {
-  auto const objType{ rttr::type::get(obj) };
-
-  auto const& propertiesNode{ objNode["properties"] };
-
-  for (auto it{ propertiesNode.begin() }; it != propertiesNode.end(); ++it) {
-    auto const prop{ objType.get_property(it->first.as<std::string>()) };
-    auto propValue{ prop.get_value(obj) };
-    ReflectioNDeserializeFromYAML(it->second, ptrFixUp, propValue);
-    std::ignore = prop.set_value(obj, propValue);
-  }
-}
-}
-
-
 Scene* Scene::sActiveScene{ nullptr };
 std::vector<Scene*> Scene::sAllScenes;
 Object::Type const Scene::SerializationType{ Type::Scene };
@@ -321,8 +118,52 @@ auto Scene::Save() -> void {
     ptrFixUp[sceneObject.get()] = static_cast<int>(std::ssize(ptrFixUp) + 1);
   }
 
+  std::function<YAML::Node(rttr::variant const&)> extensionFunc;
+  extensionFunc = [&extensionFunc](rttr::variant const& variant) {
+    auto const objType{ variant.get_type() };
+    auto const isWrapper{ objType.is_wrapper() };
+    auto const wrappedType{ objType.get_wrapped_type() };
+    auto const rawWrappedType{
+      isWrapper
+        ? wrappedType.get_raw_type()
+        : objType.get_raw_type()
+    };
+
+    YAML::Node ret;
+
+    if (rawWrappedType.is_sequential_container()) {
+      for (auto const& elem : variant.create_sequential_view()) {
+        ret.push_back(ReflectionSerializeToYAML(elem, extensionFunc));
+      }
+    } else if (objType.is_pointer() && rawWrappedType.is_derived_from(rttr::type::get<SceneObject>())) {
+      auto const ptr{
+        isWrapper
+          ? variant.get_wrapped_value<void const*>()
+          : variant.get_value<void const*>()
+      };
+
+      if (auto const it{ ptrFixUp.find(ptr) }; it != std::end(ptrFixUp)) {
+        ret = it->second;
+      } else {
+        ret = 0;
+      }
+    } else if (isWrapper && wrappedType.is_pointer() && rawWrappedType.is_derived_from(rttr::type::get<Resource>())) {
+      if (auto const res{ variant.extract_wrapped_value().get_value<Resource*>() }) {
+        ret = res->GetGuid().ToString();
+      } else {
+        ret = Guid{}.ToString();
+      }
+    } else if (rawWrappedType.is_class() && !isWrapper) {
+      for (auto const& prop : objType.get_properties()) {
+        ret[prop.get_name().to_string()] = ReflectionSerializeToYAML(prop.get_value(variant), extensionFunc);
+      }
+    }
+
+    return ret;
+  };
+
   for (auto const& sceneObject : mSceneObjects) {
-    mYamlData["sceneObjects"].push_back(ReflectionSerializeToYAML(*sceneObject, ptrFixUp));
+    mYamlData["sceneObjects"].push_back(ReflectionSerializeToYAML(*sceneObject, extensionFunc));
   }
 
   ptrFixUp.clear();
@@ -358,8 +199,48 @@ auto Scene::Load(ObjectInstantiatorManager const& manager) -> void {
     ptrFixUp[static_cast<int>(std::ssize(ptrFixUp)) + 1] = sceneObjectVariant.get_value<SceneObject*>();
   }
 
+  std::function<void(YAML::Node const&, rttr::variant& variant)> extensionFunc;
+  extensionFunc = [&extensionFunc](YAML::Node const& objNode, rttr::variant& variant) {
+    auto const objType{ variant.get_type() };
+    auto const isWrapper{ objType.is_wrapper() };
+    auto const wrappedType{ objType.get_wrapped_type() };
+    auto const rawWrappedType{
+      isWrapper
+        ? wrappedType.get_raw_type()
+        : objType.get_raw_type()
+    };
+
+    if (rawWrappedType.is_sequential_container()) {
+      auto sequence{ variant.create_sequential_view() };
+
+      for (auto const& elemNode : objNode) {
+        auto elem{ sequence.get_value_type().create() };
+        ReflectionDeserializeFromYAML(elemNode, elem, extensionFunc);
+        sequence.insert(sequence.end(), elem);
+      }
+    } else if (objType.is_pointer() && rawWrappedType.is_derived_from(rttr::type::get<SceneObject>())) {
+      if (auto const ptrId{ objNode.as<int>() }; ptrId != 0) {
+        if (auto const it{ ptrFixUp.find(ptrId) }; it != std::end(ptrFixUp)) {
+          variant = it->second;
+        } else {
+          variant = nullptr;
+        }
+      } else {
+        variant = nullptr;
+      }
+    } else if (isWrapper && wrappedType.is_pointer() && rawWrappedType.is_derived_from(rttr::type::get<Resource>())) {
+      variant = gResourceManager.FindResource(Guid::Parse(objNode.as<std::string>()));
+    } else if (rawWrappedType.is_class() && !isWrapper) {
+      for (auto const& prop : objType.get_properties()) {
+        auto propValue{ prop.get_value(variant) };
+        ReflectionDeserializeFromYAML(objNode[prop.get_name().to_string()], propValue, extensionFunc);
+        std::ignore = prop.set_value(variant, propValue);
+      }
+    }
+  };
+
   for (auto const& [fileId, obj] : ptrFixUp) {
-    ReflectionDeserializeFromYAML(mYamlData["objects"][fileId - 1], ptrFixUp, *obj);
+    ReflectionDeserializeFromYAML(mYamlData["objects"][fileId - 1], *obj, extensionFunc);
   }
 
   ptrFixUp.clear();
