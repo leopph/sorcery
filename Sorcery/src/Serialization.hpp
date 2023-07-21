@@ -104,9 +104,17 @@ struct BinarySerializer<Mesh::Data> {
 
 template<typename T>
 [[nodiscard]] auto ReflectionSerializeToYAML(T const& obj, std::function<YAML::Node(rttr::variant const&)> const& extensionFunc = {}) -> YAML::Node;
+[[nodiscard]] auto ReflectionSerializeToYAML(rttr::variant const& obj, std::function<YAML::Node(rttr::variant const&)> const& extensionFunc = {}) -> YAML::Node;
 
 template<typename T>
 auto ReflectionDeserializeFromYAML(YAML::Node const& objNode, T& obj, std::function<void(YAML::Node const&, rttr::variant&)> const& extensionFunc = {}) -> void;
+auto ReflectionDeserializeFromYAML(YAML::Node const& objNode, rttr::variant& obj, std::function<void(YAML::Node const&, rttr::variant&)> const& extensionFunc = {}) -> void;
+
+
+namespace detail {
+[[nodiscard]] auto ReflectionSerializeToYAML(rttr::variant const& variant, std::function<YAML::Node(rttr::variant const&)> const& extensionFunc) -> YAML::Node;
+auto ReflectionDeserializeFromYAML(YAML::Node const& objNode, rttr::variant& variant, std::function<void(YAML::Node const&, rttr::variant&)> const& extensionFunc) -> void;
+}
 }
 
 
@@ -218,12 +226,6 @@ auto BinarySerializer<Vector<T, N>>::Deserialize(std::span<std::uint8_t const> b
   }
 
   return bytes;
-}
-
-
-namespace detail {
-[[nodiscard]] auto ReflectionSerializeToYAML(rttr::variant const& variant, std::function<YAML::Node(rttr::variant const&)> const& extensionFunc) -> YAML::Node;
-auto ReflectionDeserializeFromYAML(YAML::Node const& objNode, rttr::variant& variant, std::function<void(YAML::Node const&, rttr::variant&)> const& extensionFunc) -> void;
 }
 
 
