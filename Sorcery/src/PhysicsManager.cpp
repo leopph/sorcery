@@ -9,7 +9,7 @@
 #include <stdexcept>
 #include <vector>
 
-#include <PxPhysicsAPI.h>
+#include "physx/PxPhysicsAPI.h"
 
 #include "Entity.hpp"
 #include "Timing.hpp"

@@ -1,21 +1,18 @@
 {
   "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
-  "builtin-baseline": "92bad87dfb4e711ac658a9ca33e1183184677020",
+  "builtin-baseline": "50a4aa2be9c05e16d34c98369a8e1dd01796c3f0",
   "dependencies": [
     {
-      "name": "yaml-cpp"
+      "name": "yaml-cpp",
+      "version>=": "0.7.0"
     },
     {
-      "name": "assimp"
+      "name": "rttr",
+      "version>=": "0.9.6+20210811"
     },
     {
-      "name": "nativefiledialog"
-    },
-    {
-      "name": "stb"
-    },
-    {
-      "name": "rttr"
+      "name": "nativefiledialog",
+      "version>=": "2022-01-20"
     },
     {
       "name": "imgui",
@@ -23,10 +20,12 @@
       "version>=": "1.89.7"
     },
     {
-      "name": "imguizmo"
+      "name": "imguizmo",
+      "version>=": "1.83"
     },
     {
-      "name": "implot"
+      "name": "implot",
+      "version>=": "0.15"
     }
   ]
 }

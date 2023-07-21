@@ -1,10 +1,14 @@
 {
 	"$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
-	"builtin-baseline": "f6a5d4e8eb7476b8d7fc12a56dff300c1c986131",
+	"builtin-baseline": "50a4aa2be9c05e16d34c98369a8e1dd01796c3f0",
 	"dependencies": [
 		{
 			"name": "yaml-cpp",
 			"version>=": "0.7.0"
+		},
+		{
+			"name": "rttr",
+			"version>=": "0.9.6+20210811"
 		},
 		{
 			"name": "stb",
@@ -15,12 +19,8 @@
 			"version>=": "1.2.13"
 		},
 		{
-			"name": "rttr",
-			"version>=": "0.9.6+20210811"
-		},
-		{
 			"name": "physx",
-			"version>=": "4.1.2"
+			"version>=": "5.2.1"
 		},
 		{
 			"name": "assimp",
