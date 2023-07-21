@@ -45,6 +45,8 @@ auto ResourceManager::LoadResource(std::filesystem::path const& src) -> std::wea
     res->SetGuid(guid);
     auto const [it, inserted]{ mResources.emplace(res) };
     assert(inserted);
+    mPathToResource.emplace(absolute(src), it->get());
+    mResourceToPath.emplace(it->get(), absolute(src));
     return *it;
   } else {
     // Otherwise we just find an importer for it
@@ -75,6 +77,8 @@ auto ResourceManager::LoadResource(std::filesystem::path const& src) -> std::wea
             YAML::Emitter emitter{ metaOutStream };
             emitter << metaNode;
 
+            mPathToResource.emplace(absolute(src), it->get());
+            mResourceToPath.emplace(it->get(), absolute(src));
             return *it;
           }
         }
