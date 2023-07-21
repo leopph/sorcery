@@ -1,7 +1,6 @@
 #include "SkyboxComponent.hpp"
 
 #include "Renderer.hpp"
-#include "Systems.hpp"
 
 RTTR_REGISTRATION {
   rttr::registration::class_<sorcery::SkyboxComponent>{ "SkyboxComponent" }

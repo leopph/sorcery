@@ -3,7 +3,6 @@
 #include "Renderer.hpp"
 #include "Entity.hpp"
 #include "TransformComponent.hpp"
-#include "Systems.hpp"
 
 #include <algorithm>
 #include <cmath>

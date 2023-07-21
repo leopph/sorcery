@@ -1,9 +1,10 @@
 #include "SwapChain.hpp"
-#include "Systems.hpp"
 
 #include <stdexcept>
 
 #include <dxgi1_5.h>
+
+#include "Platform.hpp"
 
 using Microsoft::WRL::ComPtr;
 

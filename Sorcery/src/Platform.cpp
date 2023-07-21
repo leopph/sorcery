@@ -7,6 +7,9 @@
 
 
 namespace sorcery {
+Window gWindow;
+
+
 namespace {
 enum class KeyState : u8 {
   Neutral = 0,
@@ -91,7 +94,9 @@ auto CALLBACK Window::WindowProc(HWND const hwnd, UINT const msg, WPARAM const w
           SetCursorPos(instance->mLockedCursorPos->x, instance->mLockedCursorPos->y);
         }
 
-        SetCursor(instance->mHideCursor ? nullptr : DEFAULT_CURSOR);
+        SetCursor(instance->mHideCursor
+                    ? nullptr
+                    : DEFAULT_CURSOR);
       }
     }
   }

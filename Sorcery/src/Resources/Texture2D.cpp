@@ -2,7 +2,6 @@
 
 #include "../Util.hpp"
 #include "../Renderer.hpp"
-#include "../Systems.hpp"
 
 RTTR_REGISTRATION {
   rttr::registration::class_<sorcery::Texture2D>{ "Texture2D" };

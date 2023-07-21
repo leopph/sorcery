@@ -1,7 +1,5 @@
 #include "RenderTarget.hpp"
 
-#include "Systems.hpp"
-
 #include <stdexcept>
 
 #include "Renderer.hpp"

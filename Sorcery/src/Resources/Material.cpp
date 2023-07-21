@@ -2,7 +2,6 @@
 
 #include "../Renderer.hpp"
 #include "../Serialization.hpp"
-#include "../Systems.hpp"
 #undef FindResource
 #include "../ResourceManager.hpp"
 

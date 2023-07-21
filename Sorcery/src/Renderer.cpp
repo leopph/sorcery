@@ -4,7 +4,6 @@
 
 #include "Platform.hpp"
 #include "Entity.hpp"
-#include "Systems.hpp"
 #include "Util.hpp"
 #include "TransformComponent.hpp"
 #include "Graphics.hpp"
@@ -51,6 +50,9 @@ using Microsoft::WRL::ComPtr;
 
 
 namespace sorcery {
+Renderer gRenderer;
+
+
 namespace {
 std::vector const QUAD_POSITIONS{
   Vector3{ -1, 1, 0 }, Vector3{ -1, -1, 0 }, Vector3{ 1, -1, 0 }, Vector3{ 1, 1, 0 }

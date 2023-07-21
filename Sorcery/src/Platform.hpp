@@ -96,6 +96,9 @@ public:
 };
 
 
+LEOPPHAPI extern Window gWindow;
+
+
 [[nodiscard]] LEOPPHAPI auto GetKey(Key key) noexcept -> bool;
 [[nodiscard]] LEOPPHAPI auto GetKeyDown(Key key) noexcept -> bool;
 [[nodiscard]] LEOPPHAPI auto GetKeyUp(Key key) noexcept -> bool;

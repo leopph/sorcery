@@ -17,6 +17,9 @@
 
 
 namespace sorcery {
+PhysicsManager gPhysicsManager;
+
+
 namespace {
 class PhysXErrorCallback : public physx::PxErrorCallback {
   auto reportError([[maybe_unused]] physx::PxErrorCode::Enum code, char const* message, [[maybe_unused]] char const* file, [[maybe_unused]] int line) -> void override {

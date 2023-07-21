@@ -102,4 +102,7 @@ public:
   constexpr static int MIN_IN_FLIGHT_FRAME_COUNT{ 1 };
   constexpr static int MAX_IN_FLIGHT_FRAME_COUNT{ 16 };
 };
+
+
+LEOPPHAPI extern Renderer gRenderer;
 }

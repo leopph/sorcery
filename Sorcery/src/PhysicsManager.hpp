@@ -36,4 +36,7 @@ public:
   [[nodiscard]] LEOPPHAPI auto CreateInternalRigidBody(ObserverPtr<Component> owningComponent) const -> ObserverPtr<InternalRigidBody>;
   LEOPPHAPI auto DestroyInternalRigidBody(ObserverPtr<InternalRigidBody> internalRigidBody) const -> void;
 };
+
+
+LEOPPHAPI extern PhysicsManager gPhysicsManager;
 }
