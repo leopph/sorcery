@@ -3,7 +3,9 @@
 #include "Core.hpp"
 #include "Resources/Resource.hpp"
 
+#include <concepts>
 #include <filesystem>
+#include <vector>
 
 
 namespace sorcery {
@@ -25,8 +27,24 @@ public:
 
   LEOPPHAPI auto LoadResource(std::filesystem::path const& src) -> std::weak_ptr<Resource>;
   LEOPPHAPI auto RemoveResource(Resource const& res) -> void;
+#ifdef FindResource // <Windows.h> bullshit
+#undef FindResource
+#endif
   [[nodiscard]] LEOPPHAPI auto FindResource(Guid const& guid) -> std::weak_ptr<Resource>;
+
+  template<std::derived_from<Resource> T>
+  auto FindResourcesOfType(std::vector<std::weak_ptr<T>>& out) -> void;
 };
+
+
+template<std::derived_from<Resource> T>
+auto ResourceManager::FindResourcesOfType(std::vector<std::weak_ptr<T>>& out) -> void {
+  for (auto const& res : mResources) {
+    if (rttr::rttr_cast<T*>(res.get())) {
+      out.emplace_back(std::static_pointer_cast<T>(res));
+    }
+  }
+}
 
 
 LEOPPHAPI extern ResourceManager gResourceManager;

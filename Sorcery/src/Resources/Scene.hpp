@@ -39,7 +39,7 @@ public:
   LEOPPHAPI auto DestroyEntity(Entity const& entity) -> void;
 
   template<std::derived_from<Component> T>
-  LEOPPHAPI auto CreateComponent(Entity& targetEntity) -> ObserverPtr<T>;
+  auto CreateComponent(Entity& targetEntity) -> ObserverPtr<T>;
   LEOPPHAPI auto DestroyComponent(Component const& component) -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetEntities() const noexcept -> std::span<ObserverPtr<Entity> const>;

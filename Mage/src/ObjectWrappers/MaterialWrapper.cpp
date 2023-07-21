@@ -2,8 +2,8 @@
 #include <imgui_stdlib.h>
 
 #include "ObjectWrappers.hpp"
-#include "../AssetLoaders/MaterialLoader.hpp"
 #include "../EditorContext.hpp"
+#include "ResourceManager.hpp"
 
 
 namespace sorcery::mage {
@@ -50,9 +50,9 @@ auto ObjectWrapperFor<Material>::OnDrawProperties([[maybe_unused]] Context& cont
     }
 
     auto drawTextureOption{
-      [callCount = 0](std::string_view const label, auto&& texGetFn, auto&& texSetFn) mutable {
+      [callCount = 0]<typename TexGetFn, typename TexSetFn>(std::string_view const label, TexGetFn&& texGetFn, TexSetFn&& texSetFn) mutable requires std::is_invocable_r_v<std::shared_ptr<Texture2D>, TexGetFn> && std::is_invocable_r_v<void, TexSetFn, std::shared_ptr<Texture2D>> {
         auto constexpr nullTexName{ "None" };
-        static std::vector<Texture2D*> textures;
+        static std::vector<std::weak_ptr<Texture2D>> textures;
         static std::string texFilter;
 
         ImGui::TableNextColumn();
@@ -63,17 +63,20 @@ auto ObjectWrapperFor<Material>::OnDrawProperties([[maybe_unused]] Context& cont
 
         auto const queryTextures{
           [] {
-            Object::FindObjectsOfType(textures);
+            gResourceManager.FindResourcesOfType(textures);
 
-            std::erase_if(textures, [](Texture2D const* tex) {
+            std::erase_if(textures, [](std::weak_ptr<Texture2D> const& texWeak) {
+              auto const tex{ texWeak.lock() };
               return tex && !Contains(tex->GetName(), texFilter);
             });
 
-            std::ranges::sort(textures, [](Texture2D const* const left, Texture2D const* const right) {
-              return left->GetName() < right->GetName();
+            std::ranges::sort(textures, [](std::weak_ptr<Texture2D> const& lhsWeak, std::weak_ptr<Texture2D> const& rhsWeak) {
+              auto const lhs{ lhsWeak.lock() };
+              auto const rhs{ rhsWeak.lock() };
+              return !lhs || (rhs && lhs->GetName() < rhs->GetName());
             });
 
-            textures.insert(std::begin(textures), nullptr);
+            textures.insert(std::begin(textures), std::weak_ptr<Texture2D>{});
           }
         };
 
@@ -82,8 +85,13 @@ auto ObjectWrapperFor<Material>::OnDrawProperties([[maybe_unused]] Context& cont
             queryTextures();
           }
 
-          for (auto const tex : textures) {
-            if (ImGui::Selectable(std::format("{}##texoption{}", tex ? tex->GetName() : nullTexName, tex ? tex->GetGuid().ToString() : "0").c_str(), tex == texGetFn())) {
+          for (auto const texWeak : textures) {
+            auto const tex{ texWeak.lock() };
+            if (ImGui::Selectable(std::format("{}##texoption{}", tex
+                                                                   ? tex->GetName()
+                                                                   : nullTexName, tex
+                                                                                    ? tex->GetGuid().ToString()
+                                                                                    : "0").c_str(), tex == texGetFn())) {
               texSetFn(tex);
               break;
             }
@@ -99,49 +107,51 @@ auto ObjectWrapperFor<Material>::OnDrawProperties([[maybe_unused]] Context& cont
         }
 
         ImGui::SameLine();
-        ImGui::Text("%s", texGetFn() ? texGetFn()->GetName().data() : nullTexName);
+        ImGui::Text("%s", texGetFn()
+                            ? texGetFn()->GetName().data()
+                            : nullTexName);
 
         callCount += 1;
       }
     };
 
     drawTextureOption("Albedo Map",
-                      [&mtl]() -> Texture2D* {
-                        return mtl.GetAlbedoMap();
+                      [&mtl] {
+                        return mtl.GetAlbedoMap().lock();
                       },
-                      [&mtl](Texture2D* const tex) -> void {
+                      [&mtl](auto const& tex) -> void {
                         mtl.SetAlbedoMap(tex);
                       });
 
     drawTextureOption("Metallic Map",
-                      [&mtl]() -> Texture2D* {
-                        return mtl.GetMetallicMap();
+                      [&mtl] {
+                        return mtl.GetMetallicMap().lock();
                       },
-                      [&mtl](Texture2D* const tex) -> void {
+                      [&mtl](auto const& tex) -> void {
                         mtl.SetMetallicMap(tex);
                       });
 
     drawTextureOption("Roughness Map",
-                      [&mtl]() -> Texture2D* {
-                        return mtl.GetRoughnessMap();
+                      [&mtl]() {
+                        return mtl.GetRoughnessMap().lock();
                       },
-                      [&mtl](Texture2D* const tex) -> void {
+                      [&mtl](auto const& tex) -> void {
                         mtl.SetRoughnessMap(tex);
                       });
 
     drawTextureOption("Ambient Occlusion Map",
-                      [&mtl]() -> Texture2D* {
-                        return mtl.GetAoMap();
+                      [&mtl] {
+                        return mtl.GetAoMap().lock();
                       },
-                      [&mtl](Texture2D* const tex) -> void {
+                      [&mtl](auto const& tex) -> void {
                         mtl.SetAoMap(tex);
                       });
 
     drawTextureOption("Normal Map",
-                      [&mtl]() -> Texture2D* {
-                        return mtl.GetNormalMap();
+                      [&mtl] {
+                        return mtl.GetNormalMap().lock();
                       },
-                      [&mtl](Texture2D* const tex) -> void {
+                      [&mtl](auto const& tex) -> void {
                         mtl.SetNormalMap(tex);
                       });
 
@@ -151,11 +161,5 @@ auto ObjectWrapperFor<Material>::OnDrawProperties([[maybe_unused]] Context& cont
   if (ImGui::Button("Save##SaveMaterialAsset")) {
     context.SaveRegisteredNativeAsset(mtl);
   }
-}
-
-
-auto ObjectWrapperFor<Material>::GetLoader() -> AssetLoader& {
-  MaterialLoader static loader;
-  return loader;
 }
 }

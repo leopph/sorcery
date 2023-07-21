@@ -7,7 +7,6 @@
 #include <LightComponents.hpp>
 #include <Material.hpp>
 #include <TransformComponent.hpp>
-#include "../AssetLoaders/AssetLoader.hpp"
 #include "Texture2D.hpp"
 #include "Cubemap.hpp"
 #include "SceneObject.hpp"
@@ -27,7 +26,6 @@ class Context;
 class ObjectWrapper : public ObjectInstantiator {
 public:
   virtual auto OnDrawProperties(Context& context, Object& object) -> void = 0;
-  [[nodiscard]] virtual auto GetLoader() -> AssetLoader& = 0;
   virtual auto OnDrawGizmosSelected(Context& context, Object& object) -> void = 0;
   [[nodiscard]] virtual auto GetWrappedType() const noexcept -> Object::Type = 0;
 };
@@ -45,11 +43,6 @@ public:
     } else {
       throw std::runtime_error{ "The wrapped type has no associated instantiation function." };
     }
-  }
-
-
-  [[nodiscard]] auto GetLoader() -> AssetLoader& override {
-    throw std::runtime_error{ "The wrapped type has no associated importer." };
   }
 
 
@@ -94,21 +87,6 @@ auto ObjectWrapperFor<SkyboxComponent>::OnDrawProperties(Context& context, Objec
 
 template<>
 auto ObjectWrapperFor<Entity>::Instantiate() -> Object*;
-
-template<>
-auto ObjectWrapperFor<Mesh>::GetLoader() -> AssetLoader&;
-
-template<>
-auto ObjectWrapperFor<Texture2D>::GetLoader() -> AssetLoader&;
-
-template<>
-auto ObjectWrapperFor<Material>::GetLoader() -> AssetLoader&;
-
-template<>
-auto ObjectWrapperFor<Scene>::GetLoader() -> AssetLoader&;
-
-template<>
-auto ObjectWrapperFor<Cubemap>::GetLoader() -> AssetLoader&;
 
 template<>
 auto ObjectWrapperFor<Entity>::OnDrawGizmosSelected(Context& context, Object& object) -> void;
