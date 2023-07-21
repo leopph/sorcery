@@ -3,6 +3,8 @@
 #include "../Renderer.hpp"
 #include "../Serialization.hpp"
 #include "../Systems.hpp"
+#undef FindResource
+#include "../ResourceManager.hpp"
 
 #include <cstdint>
 #include <stdexcept>
@@ -195,5 +197,75 @@ auto Material::GetBuffer() const noexcept -> ObserverPtr<ID3D11Buffer> {
 
 auto Material::GetSerializationType() const -> Type {
   return SerializationType;
+}
+
+
+auto Material::Serialize() const noexcept -> YAML::Node {
+  YAML::Node ret;
+
+  ret["albedo"] = GetAlbedoVector();
+  ret["metallic"] = GetMetallic();
+  ret["roughness"] = GetRoughness();
+  ret["ao"] = GetAo();
+
+  auto const albedoMap{ GetAlbedoMap().lock() };
+  ret["albedoMap"] = static_cast<std::string>(albedoMap
+                                                ? albedoMap->GetGuid()
+                                                : Guid::Invalid());
+
+  auto const metallicMap{ GetMetallicMap().lock() };
+  ret["metallicMap"] = static_cast<std::string>(metallicMap
+                                                  ? metallicMap->GetGuid()
+                                                  : Guid::Invalid());
+
+  auto const roughnessMap{ GetRoughnessMap().lock() };
+  ret["roughnessMap"] = static_cast<std::string>(roughnessMap
+                                                   ? roughnessMap->GetGuid()
+                                                   : Guid::Invalid());
+
+  auto const aoMap{ GetAoMap().lock() };
+  ret["aoMap"] = static_cast<std::string>(aoMap
+                                            ? aoMap->GetGuid()
+                                            : Guid::Invalid());
+
+  auto const normalMap{ GetNormalMap().lock() };
+  ret["normalMap"] = static_cast<std::string>(normalMap
+                                                ? normalMap->GetGuid()
+                                                : Guid::Invalid());
+
+  return ret;
+}
+
+
+auto Material::Deserialize(YAML::Node const& yamlNode) noexcept -> void {
+  SetAlbedoVector(yamlNode["albedo"].as<Vector3>(GetAlbedoVector()));
+  SetMetallic(yamlNode["metallic"].as<float>(GetMetallic()));
+  SetRoughness(yamlNode["roughness"].as<float>(GetRoughness()));
+  SetAo(yamlNode["ao"].as<float>(GetAo()));
+
+  auto const albedoMapGuid{ Guid::Parse(yamlNode["albedoMap"].as<std::string>()) };
+  SetAlbedoMap(albedoMapGuid.IsValid()
+                 ? std::dynamic_pointer_cast<Texture2D>(gResourceManager.FindResource(albedoMapGuid).lock())
+                 : GetAlbedoMap());
+
+  auto const metallicMapGuid{ Guid::Parse(yamlNode["metallicMap"].as<std::string>()) };
+  SetMetallicMap(metallicMapGuid.IsValid()
+                   ? std::dynamic_pointer_cast<Texture2D>(gResourceManager.FindResource(metallicMapGuid).lock())
+                   : GetMetallicMap());
+
+  auto const roughnessMapGuid{ Guid::Parse(yamlNode["roughnessMap"].as<std::string>()) };
+  SetRoughnessMap(roughnessMapGuid.IsValid()
+                    ? std::dynamic_pointer_cast<Texture2D>(gResourceManager.FindResource(roughnessMapGuid).lock())
+                    : GetRoughnessMap());
+
+  auto const aoMapGuid{ Guid::Parse(yamlNode["aoMap"].as<std::string>()) };
+  SetAoMap(aoMapGuid.IsValid()
+             ? std::dynamic_pointer_cast<Texture2D>(gResourceManager.FindResource(aoMapGuid).lock())
+             : GetAoMap());
+
+  auto const normalMapGuid{ Guid::Parse(yamlNode["normalMap"].as<std::string>()) };
+  SetNormalMap(normalMapGuid.IsValid()
+                 ? std::dynamic_pointer_cast<Texture2D>(gResourceManager.FindResource(normalMapGuid).lock())
+                 : GetNormalMap());
 }
 }

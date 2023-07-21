@@ -12,6 +12,8 @@ class Guid {
   u64 mDataHi{ 0 };
 
 public:
+  [[nodiscard]] LEOPPHAPI static auto Invalid() noexcept -> Guid;
+
   Guid() = default;
   LEOPPHAPI Guid(u64 data0, u64 data1);
 

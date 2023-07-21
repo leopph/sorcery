@@ -251,6 +251,16 @@ auto Scene::GetSerializationType() const -> Type {
 }
 
 
+auto Scene::Serialize() const noexcept -> YAML::Node {
+  return mYamlData;
+}
+
+
+auto Scene::Deserialize(YAML::Node const& yamlNode) noexcept -> void {
+  mYamlData = yamlNode;
+}
+
+
 auto Scene::CreateEntity() -> Entity& {
   auto* const entity = new Entity{};
   entity->SetScene(*this);

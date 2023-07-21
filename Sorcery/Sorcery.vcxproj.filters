@@ -126,16 +126,16 @@
     <ClCompile Include="src\Math.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Resources\ResourceImporter.cpp">
+    <ClCompile Include="src\ResourceImporters\ResourceImporter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Resources\MeshImporter.cpp">
+    <ClCompile Include="src\ResourceImporters\MeshImporter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Resources\TextureImporter.cpp">
+    <ClCompile Include="src\ResourceImporters\TextureImporter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Resources\MaterialImporter.cpp">
+    <ClCompile Include="src\ResourceImporters\NativeResourceImporter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -177,9 +177,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Image.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\YamlInclude.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Systems.hpp">
@@ -278,16 +275,19 @@
     <ClInclude Include="src\Reflection.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Resources\ResourceImporter.hpp">
+    <ClInclude Include="src\ResourceImporters\ResourceImporter.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Resources\MeshImporter.hpp">
+    <ClInclude Include="src\ResourceImporters\MeshImporter.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Resources\TextureImporter.hpp">
+    <ClInclude Include="src\ResourceImporters\TextureImporter.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Resources\MaterialImporter.hpp">
+    <ClInclude Include="src\Resources\NativeResource.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ResourceImporters\NativeResourceImporter.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

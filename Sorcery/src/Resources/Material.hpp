@@ -2,7 +2,7 @@
 
 #include "../Bounds.hpp"
 #include "../Color.hpp"
-#include "Resource.hpp"
+#include "NativeResource.hpp"
 #include "../Util.hpp"
 #include "Texture2D.hpp"
 
@@ -15,8 +15,8 @@
 
 
 namespace sorcery {
-class Material final : public Resource {
-  RTTR_ENABLE(Resource)
+class Material final : public NativeResource {
+  RTTR_ENABLE(NativeResource)
   ShaderMaterial mShaderMtl{
     .albedo = Vector3{ 1, 1, 1 },
     .metallic = 0.0f,
@@ -76,7 +76,10 @@ public:
 
   [[nodiscard]] LEOPPHAPI auto GetBuffer() const noexcept -> ObserverPtr<ID3D11Buffer>;
 
-  [[nodiscard]] LEOPPHAPI auto GetSerializationType() const -> Type override;
   LEOPPHAPI static Type const SerializationType;
+  [[nodiscard]] LEOPPHAPI auto GetSerializationType() const -> Type override;
+
+  [[nodiscard]] LEOPPHAPI auto Serialize() const noexcept -> YAML::Node override;
+  LEOPPHAPI auto Deserialize(YAML::Node const& yamlNode) noexcept -> void override;
 };
 }

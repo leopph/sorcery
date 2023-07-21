@@ -1,10 +1,8 @@
 #pragma once
 
-#include "Resource.hpp"
+#include "NativeResource.hpp"
 #include "../Entity.hpp"
 #include "../Component.hpp"
-
-#include "../YamlInclude.hpp"
 
 #include <memory>
 #include <vector>
@@ -13,8 +11,8 @@
 
 
 namespace sorcery {
-class Scene : public Resource {
-  RTTR_ENABLE(Resource)
+class Scene final : public NativeResource {
+  RTTR_ENABLE(NativeResource)
   static Scene* sActiveScene;
   static std::vector<Scene*> sAllScenes;
 
@@ -37,9 +35,6 @@ public:
   auto operator=(Scene const& other) -> void = delete;
   auto operator=(Scene&& other) -> void = delete;
 
-  LEOPPHAPI static Type const SerializationType;
-  LEOPPHAPI auto GetSerializationType() const -> Type override;
-
   LEOPPHAPI auto CreateEntity() -> Entity&;
   LEOPPHAPI auto DestroyEntity(Entity const& entity) -> void;
 
@@ -53,6 +48,12 @@ public:
   LEOPPHAPI auto Load(ObjectInstantiatorManager const& manager) -> void;
 
   LEOPPHAPI auto Clear() -> void;
+
+  LEOPPHAPI static Type const SerializationType;
+  LEOPPHAPI auto GetSerializationType() const -> Type override;
+
+  [[nodiscard]] LEOPPHAPI auto Serialize() const noexcept -> YAML::Node override;
+  LEOPPHAPI auto Deserialize(YAML::Node const& yamlNode) noexcept -> void override;
 };
 
 

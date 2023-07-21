@@ -1,6 +1,6 @@
 #include "TextureImporter.hpp"
-#include "Texture2D.hpp"
-#include "Cubemap.hpp"
+#include "../Resources/Texture2D.hpp"
+#include "../Resources/Cubemap.hpp"
 
 #include <stb_image.h>
 

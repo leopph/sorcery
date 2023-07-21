@@ -6,6 +6,11 @@
 
 
 namespace sorcery {
+auto Guid::Invalid() noexcept -> Guid {
+  return Guid{};
+}
+
+
 Guid::Guid(u64 const data0, u64 const data1) :
   mDataLo{ data0 },
   mDataHi{ data1 } { }
