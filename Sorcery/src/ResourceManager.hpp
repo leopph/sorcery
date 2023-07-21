@@ -2,6 +2,8 @@
 
 #include "Core.hpp"
 #include "Resources/Resource.hpp"
+#include "Resources/NativeResource.hpp"
+#include "Serialization.hpp"
 
 #include <concepts>
 #include <filesystem>
@@ -25,7 +27,7 @@ class ResourceManager {
 public:
   constexpr static std::string_view RESOURCE_META_FILE_EXT{ ".mojo" };
 
-  LEOPPHAPI auto LoadResource(std::filesystem::path const& src) -> std::weak_ptr<Resource>;
+  LEOPPHAPI auto LoadResource(std::filesystem::path const& src, bool forceReload = false) -> std::weak_ptr<Resource>;
   LEOPPHAPI auto RemoveResource(Resource const& res) -> void;
 #ifdef FindResource // <Windows.h> bullshit
 #undef FindResource
@@ -34,6 +36,8 @@ public:
 
   template<std::derived_from<Resource> T>
   auto FindResourcesOfType(std::vector<std::weak_ptr<T>>& out) -> void;
+
+  [[nodiscard]] LEOPPHAPI static auto GenerateMetaForNativeResource(NativeResource const& nativeRes) -> YAML::Node;
 };
 
 

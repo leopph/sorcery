@@ -1,7 +1,7 @@
 #include "ResourceManager.hpp"
 #include "Reflection.hpp"
 #include "ResourceImporters/ResourceImporter.hpp"
-#include "Serialization.hpp"
+#include "ResourceImporters/NativeResourceImporter.hpp"
 #undef FindResource
 
 #include <cassert>
@@ -27,9 +27,17 @@ auto ResourceManager::ResourceGuidLess::operator()(Guid const& lhs, std::shared_
 }
 
 
-auto ResourceManager::LoadResource(std::filesystem::path const& src) -> std::weak_ptr<Resource> {
+auto ResourceManager::LoadResource(std::filesystem::path const& src, bool const forceReload) -> std::weak_ptr<Resource> {
   if (!src.has_extension()) {
     return {};
+  }
+
+  if (auto const it{ mPathToResource.find(src) }; it != std::end(mPathToResource)) {
+    if (forceReload) {
+      RemoveResource(*it->second);
+    } else {
+      return *mResources.find(it->second->GetGuid());
+    }
   }
 
   if (auto const metaFilePath{ std::filesystem::path{ src } += RESOURCE_META_FILE_EXT }; exists(metaFilePath)) {
@@ -91,6 +99,8 @@ auto ResourceManager::LoadResource(std::filesystem::path const& src) -> std::wea
 
 auto ResourceManager::RemoveResource(Resource const& res) -> void {
   if (auto const it{ mResources.find(res.GetGuid()) }; it != std::end(mResources)) {
+    mPathToResource.erase(mResourceToPath.at(it->get()));
+    mResourceToPath.erase(it->get());
     mResources.erase(it);
   }
 }
@@ -101,5 +111,18 @@ auto ResourceManager::FindResource(Guid const& guid) -> std::weak_ptr<Resource> 
   return it != std::end(mResources)
            ? *it
            : nullptr;
+}
+
+
+auto ResourceManager::GenerateMetaForNativeResource(NativeResource const& nativeRes) -> YAML::Node {
+  YAML::Node importerNode;
+  importerNode["type"] = rttr::type::get<NativeResourceImporter>().get_name().to_string();
+  importerNode["properties"] = ReflectionSerializeToYAML(NativeResourceImporter{});
+
+  YAML::Node metaNode;
+  metaNode["guid"] = static_cast<std::string>(nativeRes.GetGuid());
+  metaNode["importer"] = importerNode;
+
+  return metaNode;
 }
 }
