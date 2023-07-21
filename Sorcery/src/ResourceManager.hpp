@@ -3,6 +3,8 @@
 #include "Core.hpp"
 #include "Resources/Resource.hpp"
 
+#include <filesystem>
+
 
 namespace sorcery {
 class ResourceManager {
@@ -15,11 +17,14 @@ class ResourceManager {
 
 
   std::set<std::shared_ptr<Resource>, ResourceGuidLess> mResources;
+  std::map<std::filesystem::path, ObserverPtr<Resource>> mPathToResource;
+  std::map<ObserverPtr<Resource>, std::filesystem::path> mResourceToPath;
 
 public:
   constexpr static std::string_view RESOURCE_META_FILE_EXT{ ".mojo" };
 
-  LEOPPHAPI auto AddResource(std::shared_ptr<Resource> res) -> std::weak_ptr<Resource>;
+  LEOPPHAPI auto LoadResource(std::filesystem::path const& src) -> std::weak_ptr<Resource>;
+  LEOPPHAPI auto RemoveResource(Resource const& res) -> void;
   [[nodiscard]] LEOPPHAPI auto FindResource(Guid const& guid) -> std::weak_ptr<Resource>;
 };
 
