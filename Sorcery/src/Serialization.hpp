@@ -231,17 +231,10 @@ auto BinarySerializer<Vector<T, N>>::Deserialize(std::span<std::uint8_t const> b
 
 template<typename T>
 auto ReflectionSerializeToYAML(T const& obj, std::function<YAML::Node(rttr::variant const&)> const& extensionFunc) -> YAML::Node {
-  rttr::type const objType{ rttr::type::get(obj) };
-
-  if (!objType.is_valid()) {
-    return {};
-  }
-
   YAML::Node retNode;
-  retNode["type"] = objType.get_name().to_string();
 
-  for (auto const prop : objType.get_properties()) {
-    retNode["properties"].push_back(detail::ReflectionSerializeToYAML(prop.get_value(obj), extensionFunc));
+  for (auto const prop : rttr::type::get(obj).get_properties()) {
+    retNode.push_back(detail::ReflectionSerializeToYAML(prop.get_value(obj), extensionFunc));
   }
 
   return retNode;
@@ -250,19 +243,7 @@ auto ReflectionSerializeToYAML(T const& obj, std::function<YAML::Node(rttr::vari
 
 template<typename T>
 auto ReflectionDeserializeFromYAML(YAML::Node const& objNode, T& obj, std::function<void(YAML::Node const&, rttr::variant&)> const& extensionFunc) -> void {
-  auto const nodeStoredType{
-    rttr::type::get(objNode["type"]
-                      ? objNode["type"].as<std::string>()
-                      : "")
-  };
-
-  rttr::type const objType{ rttr::type::get(obj) };
-
-  if (!nodeStoredType.is_valid() || !objType.is_valid() || nodeStoredType != objType) {
-    return;
-  }
-
-  for (auto const prop : objType.get_properties()) {
+  for (auto const prop : rttr::type::get(obj).get_properties()) {
     rttr::variant propValue{ prop.get_value(obj) };
     detail::ReflectionDeserializeFromYAML(objNode["properties"], propValue, extensionFunc);
     prop.set_value(obj, propValue);

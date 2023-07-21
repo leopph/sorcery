@@ -143,16 +143,9 @@ auto BinarySerializer<Mesh::Data>::Deserialize(std::span<std::uint8_t const> byt
 
 
 auto ReflectionSerializeToYAML(rttr::variant const& obj, std::function<YAML::Node(rttr::variant const&)> const& extensionFunc) -> YAML::Node {
-  rttr::type const objType{ obj.get_type() };
-
-  if (!objType.is_valid()) {
-    return {};
-  }
-
   YAML::Node retNode;
-  retNode["type"] = objType.get_name().to_string();
 
-  for (auto const prop : objType.get_properties()) {
+  for (auto const prop : obj.get_type().get_properties()) {
     retNode["properties"].push_back(detail::ReflectionSerializeToYAML(prop.get_value(obj), extensionFunc));
   }
 
@@ -161,19 +154,7 @@ auto ReflectionSerializeToYAML(rttr::variant const& obj, std::function<YAML::Nod
 
 
 auto ReflectionDeserializeFromYAML(YAML::Node const& objNode, rttr::variant& obj, std::function<void(YAML::Node const&, rttr::variant&)> const& extensionFunc) -> void {
-  auto const nodeStoredType{
-    rttr::type::get(objNode["type"]
-                      ? objNode["type"].as<std::string>()
-                      : "")
-  };
-
-  rttr::type const objType{ obj.get_type() };
-
-  if (!nodeStoredType.is_valid() || !objType.is_valid() || nodeStoredType != objType) {
-    return;
-  }
-
-  for (auto const prop : objType.get_properties()) {
+  for (auto const prop : obj.get_type().get_properties()) {
     rttr::variant propValue{ prop.get_value(obj) };
     detail::ReflectionDeserializeFromYAML(objNode["properties"], propValue, extensionFunc);
     std::ignore = prop.set_value(obj, propValue);

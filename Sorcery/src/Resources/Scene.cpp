@@ -163,7 +163,10 @@ auto Scene::Save() -> void {
   };
 
   for (auto const& sceneObject : mSceneObjects) {
-    mYamlData["sceneObjects"].push_back(ReflectionSerializeToYAML(*sceneObject, extensionFunc));
+    YAML::Node sceneObjectNode;
+    sceneObjectNode["type"] = rttr::type::get(*sceneObject);
+    sceneObjectNode["properties"] = ReflectionSerializeToYAML(*sceneObject, extensionFunc);
+    mYamlData["sceneObjects"].push_back(sceneObjectNode);
   }
 
   ptrFixUp.clear();
@@ -240,7 +243,7 @@ auto Scene::Load(ObjectInstantiatorManager const& manager) -> void {
   };
 
   for (auto const& [fileId, obj] : ptrFixUp) {
-    ReflectionDeserializeFromYAML(mYamlData["objects"][fileId - 1], *obj, extensionFunc);
+    ReflectionDeserializeFromYAML(mYamlData["sceneObjects"][fileId - 1]["properties"], *obj, extensionFunc);
   }
 
   ptrFixUp.clear();
