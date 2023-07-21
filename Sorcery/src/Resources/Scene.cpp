@@ -164,7 +164,7 @@ auto Scene::Save() -> void {
 
   for (auto const& sceneObject : mSceneObjects) {
     YAML::Node sceneObjectNode;
-    sceneObjectNode["type"] = rttr::type::get(*sceneObject);
+    sceneObjectNode["type"] = rttr::type::get(*sceneObject).get_name().to_string();
     sceneObjectNode["properties"] = ReflectionSerializeToYAML(*sceneObject, extensionFunc);
     mYamlData["sceneObjects"].push_back(sceneObjectNode);
   }
