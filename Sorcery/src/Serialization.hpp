@@ -15,6 +15,7 @@
 #include "Core.hpp"
 #include "Image.hpp"
 #include "Math.hpp"
+#include "Guid.hpp"
 #include "Resources/Mesh.hpp"
 #include "Reflection.hpp"
 
@@ -37,6 +38,13 @@ template<>
 struct convert<sorcery::Quaternion> {
   LEOPPHAPI static auto encode(sorcery::Quaternion const& q) -> Node;
   LEOPPHAPI static auto decode(Node const& node, sorcery::Quaternion& q) -> bool;
+};
+
+
+template<>
+struct convert<sorcery::Guid> {
+  LEOPPHAPI static auto encode(sorcery::Guid const& guid) -> Node;
+  LEOPPHAPI static auto decode(Node const& node, sorcery::Guid& guid) -> bool;
 };
 }
 

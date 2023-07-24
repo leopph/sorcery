@@ -23,6 +23,20 @@ auto convert<sorcery::Quaternion>::decode(Node const& node, sorcery::Quaternion&
   q.z = node[3].as<sorcery::f32>();
   return true;
 }
+
+
+auto convert<sorcery::Guid>::encode(sorcery::Guid const& guid) -> Node {
+  return Node{ static_cast<std::string>(guid) };
+}
+
+
+auto convert<sorcery::Guid>::decode(Node const& node, sorcery::Guid& guid) -> bool {
+  if (!node.IsScalar()) {
+    return false;
+  }
+  guid = sorcery::Guid::Parse(node.as<std::string>());
+  return true;
+}
 }
 
 
