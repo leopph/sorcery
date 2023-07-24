@@ -88,7 +88,7 @@ public:
   [[nodiscard]] LEOPPHAPI auto IsLoaded(Guid const& guid) const -> bool;
 
   template<std::derived_from<Resource> ResType>
-  LEOPPHAPI auto Add(std::shared_ptr<ResType>&& resource) -> ResourceHandle<ResType>;
+  auto Add(std::shared_ptr<ResType>&& resource) -> ResourceHandle<ResType>;
 
   LEOPPHAPI auto UpdateGuidPathMappings(std::map<Guid, std::filesystem::path> mappings) -> void;
 
