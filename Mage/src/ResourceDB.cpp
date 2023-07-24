@@ -39,6 +39,11 @@ auto ResourceDB::Refresh() -> void {
 
 auto ResourceDB::ChangeProjectDir(std::filesystem::path const& projDirAbs) -> void {
   mResDirAbs = projDirAbs / RESOURCE_DIR_PROJ_REL;
+
+  for (auto const& guid : mGuidToAbsPath | std::views::keys) {
+    gResourceManager.Unload(guid);
+  }
+
   mGuidToAbsPath.clear();
 
   for (auto const& entry : std::filesystem::recursive_directory_iterator{ mResDirAbs }) {
@@ -48,7 +53,6 @@ auto ResourceDB::ChangeProjectDir(std::filesystem::path const& projDirAbs) -> vo
     }
   }
 
-  gResourceManager.UnloadAll();
   gResourceManager.UpdateGuidPathMappings(mGuidToAbsPath);
 }
 
