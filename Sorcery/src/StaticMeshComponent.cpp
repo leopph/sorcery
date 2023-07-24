@@ -40,14 +40,14 @@ StaticMeshComponent::~StaticMeshComponent() {
 }
 
 
-auto StaticMeshComponent::GetMaterials() const noexcept -> std::span<Material* const> {
+auto StaticMeshComponent::GetMaterials() const noexcept -> std::span<ResourceHandle<Material> const> {
   return mMaterials;
 }
 
 
-auto StaticMeshComponent::SetMaterials(std::vector<Material*> materials) -> void {
-  for (Material const* const mtl : materials) {
-    if (!mtl) {
+auto StaticMeshComponent::SetMaterials(std::vector<ResourceHandle<Material>> materials) -> void {
+  for (auto const& mtl : materials) {
+    if (mtl == nullres) {
       throw std::runtime_error{ "Found nullptr while attempting to materials on StaticMeshComponent." };
     }
   }
@@ -57,12 +57,12 @@ auto StaticMeshComponent::SetMaterials(std::vector<Material*> materials) -> void
 }
 
 
-auto StaticMeshComponent::ReplaceMaterial(int const idx, Material& mtl) -> void {
+auto StaticMeshComponent::ReplaceMaterial(int const idx, ResourceHandle<Material> const& mtl) -> void {
   if (idx >= std::ssize(mMaterials)) {
     throw std::runtime_error{ std::format("Invalid index {} while attempting to replace material on StaticMeshComponent.", idx) };
   }
 
-  mMaterials[idx] = &mtl;
+  mMaterials[idx] = mtl;
 }
 
 

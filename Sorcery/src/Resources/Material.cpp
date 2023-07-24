@@ -53,27 +53,6 @@ Material::Material() {
 }
 
 
-Material::Material(Vector3 const& albedoVector, float const metallic, float const roughness, float const ao, std::weak_ptr<Texture2D> albedoMap, std::weak_ptr<Texture2D> metallicMap, std::weak_ptr<Texture2D> roughnessMap, std::weak_ptr<Texture2D> aoMap, std::weak_ptr<Texture2D> normalMap) :
-  mShaderMtl{
-    .albedo = albedoVector,
-    .metallic = metallic,
-    .roughness = roughness,
-    .ao = ao,
-    .sampleAlbedo = albedoMap.lock() != nullptr,
-    .sampleMetallic = metallicMap.lock() != nullptr,
-    .sampleRoughness = roughnessMap.lock() != nullptr,
-    .sampleAo = aoMap.lock() != nullptr,
-    .sampleNormal = normalMap.lock() != nullptr
-  },
-  mAlbedoMap{ std::move(albedoMap) },
-  mMetallicMap{ std::move(metallicMap) },
-  mRoughnessMap{ std::move(roughnessMap) },
-  mAoMap{ std::move(aoMap) },
-  mNormalMap{ std::move(normalMap) } {
-  CreateCB();
-}
-
-
 auto Material::GetAlbedoVector() const noexcept -> Vector3 {
   return mShaderMtl.albedo;
 }
@@ -129,62 +108,62 @@ auto Material::SetAo(f32 const ao) noexcept -> void {
 }
 
 
-auto Material::GetAlbedoMap() const noexcept -> std::weak_ptr<Texture2D> {
+auto Material::GetAlbedoMap() const noexcept -> ResourceHandle<Texture2D> {
   return mAlbedoMap;
 }
 
 
-auto Material::SetAlbedoMap(std::weak_ptr<Texture2D> tex) noexcept -> void {
+auto Material::SetAlbedoMap(ResourceHandle<Texture2D> tex) noexcept -> void {
   mAlbedoMap = std::move(tex);
-  mShaderMtl.sampleAlbedo = mAlbedoMap.lock() != nullptr;
+  mShaderMtl.sampleAlbedo = mAlbedoMap != nullres;
   UpdateGPUData();
 }
 
 
-auto Material::GetMetallicMap() const noexcept -> std::weak_ptr<Texture2D> {
+auto Material::GetMetallicMap() const noexcept -> ResourceHandle<Texture2D> {
   return mMetallicMap;
 }
 
 
-auto Material::SetMetallicMap(std::weak_ptr<Texture2D> tex) noexcept -> void {
+auto Material::SetMetallicMap(ResourceHandle<Texture2D> tex) noexcept -> void {
   mMetallicMap = std::move(tex);
-  mShaderMtl.sampleMetallic = mMetallicMap.lock() != nullptr;
+  mShaderMtl.sampleMetallic = mMetallicMap != nullres;
   UpdateGPUData();
 }
 
 
-auto Material::GetRoughnessMap() const noexcept -> std::weak_ptr<Texture2D> {
+auto Material::GetRoughnessMap() const noexcept -> ResourceHandle<Texture2D> {
   return mRoughnessMap;
 }
 
 
-auto Material::SetRoughnessMap(std::weak_ptr<Texture2D> tex) noexcept -> void {
+auto Material::SetRoughnessMap(ResourceHandle<Texture2D> tex) noexcept -> void {
   mRoughnessMap = std::move(tex);
-  mShaderMtl.sampleRoughness = mRoughnessMap.lock() != nullptr;
+  mShaderMtl.sampleRoughness = mRoughnessMap != nullres;
   UpdateGPUData();
 }
 
 
-auto Material::GetAoMap() const noexcept -> std::weak_ptr<Texture2D> {
+auto Material::GetAoMap() const noexcept -> ResourceHandle<Texture2D> {
   return mAoMap;
 }
 
 
-auto Material::SetAoMap(std::weak_ptr<Texture2D> tex) noexcept -> void {
+auto Material::SetAoMap(ResourceHandle<Texture2D> tex) noexcept -> void {
   mAoMap = std::move(tex);
-  mShaderMtl.sampleAo = mAoMap.lock() != nullptr;
+  mShaderMtl.sampleAo = mAoMap != nullres;
   UpdateGPUData();
 }
 
 
-auto Material::GetNormalMap() const noexcept -> std::weak_ptr<Texture2D> {
+auto Material::GetNormalMap() const noexcept -> ResourceHandle<Texture2D> {
   return mNormalMap;
 }
 
 
-auto Material::SetNormalMap(std::weak_ptr<Texture2D> tex) noexcept -> void {
+auto Material::SetNormalMap(ResourceHandle<Texture2D> tex) noexcept -> void {
   mNormalMap = std::move(tex);
-  mShaderMtl.sampleNormal = mNormalMap.lock() != nullptr;
+  mShaderMtl.sampleNormal = mNormalMap != nullres;
   UpdateGPUData();
 }
 
@@ -207,30 +186,30 @@ auto Material::Serialize() const noexcept -> YAML::Node {
   ret["roughness"] = GetRoughness();
   ret["ao"] = GetAo();
 
-  auto const albedoMap{ GetAlbedoMap().lock() };
-  ret["albedoMap"] = static_cast<std::string>(albedoMap
-                                                ? albedoMap->GetGuid()
-                                                : Guid::Invalid());
+  auto const albedoMap{ GetAlbedoMap().Get() };
+  ret["albedoMap"] = albedoMap
+                       ? albedoMap->GetGuid()
+                       : Guid::Invalid();
 
-  auto const metallicMap{ GetMetallicMap().lock() };
-  ret["metallicMap"] = static_cast<std::string>(metallicMap
-                                                  ? metallicMap->GetGuid()
-                                                  : Guid::Invalid());
+  auto const metallicMap{ GetMetallicMap().Get() };
+  ret["metallicMap"] = metallicMap
+                         ? metallicMap->GetGuid()
+                         : Guid::Invalid();
 
-  auto const roughnessMap{ GetRoughnessMap().lock() };
-  ret["roughnessMap"] = static_cast<std::string>(roughnessMap
-                                                   ? roughnessMap->GetGuid()
-                                                   : Guid::Invalid());
+  auto const roughnessMap{ GetRoughnessMap().Get() };
+  ret["roughnessMap"] = roughnessMap
+                          ? roughnessMap->GetGuid()
+                          : Guid::Invalid();
 
-  auto const aoMap{ GetAoMap().lock() };
-  ret["aoMap"] = static_cast<std::string>(aoMap
-                                            ? aoMap->GetGuid()
-                                            : Guid::Invalid());
+  auto const aoMap{ GetAoMap().Get() };
+  ret["aoMap"] = aoMap
+                   ? aoMap->GetGuid()
+                   : Guid::Invalid();
 
-  auto const normalMap{ GetNormalMap().lock() };
-  ret["normalMap"] = static_cast<std::string>(normalMap
-                                                ? normalMap->GetGuid()
-                                                : Guid::Invalid());
+  auto const normalMap{ GetNormalMap().Get() };
+  ret["normalMap"] = normalMap
+                       ? normalMap->GetGuid()
+                       : Guid::Invalid();
 
   return ret;
 }
@@ -242,29 +221,29 @@ auto Material::Deserialize(YAML::Node const& yamlNode) noexcept -> void {
   SetRoughness(yamlNode["roughness"].as<float>(GetRoughness()));
   SetAo(yamlNode["ao"].as<float>(GetAo()));
 
-  auto const albedoMapGuid{ Guid::Parse(yamlNode["albedoMap"].as<std::string>()) };
+  auto const albedoMapGuid{ yamlNode["albedoMap"].as<Guid>() };
   SetAlbedoMap(albedoMapGuid.IsValid()
-                 ? std::dynamic_pointer_cast<Texture2D>(gResourceManager.FindResource(albedoMapGuid).lock())
+                 ? gResourceManager.Load<Texture2D>(albedoMapGuid)
                  : GetAlbedoMap());
 
-  auto const metallicMapGuid{ Guid::Parse(yamlNode["metallicMap"].as<std::string>()) };
+  auto const metallicMapGuid{ yamlNode["metallicMap"].as<Guid>() };
   SetMetallicMap(metallicMapGuid.IsValid()
-                   ? std::dynamic_pointer_cast<Texture2D>(gResourceManager.FindResource(metallicMapGuid).lock())
+                   ? gResourceManager.Load<Texture2D>(metallicMapGuid)
                    : GetMetallicMap());
 
-  auto const roughnessMapGuid{ Guid::Parse(yamlNode["roughnessMap"].as<std::string>()) };
+  auto const roughnessMapGuid{ yamlNode["roughnessMap"].as<Guid>() };
   SetRoughnessMap(roughnessMapGuid.IsValid()
-                    ? std::dynamic_pointer_cast<Texture2D>(gResourceManager.FindResource(roughnessMapGuid).lock())
+                    ? gResourceManager.Load<Texture2D>(roughnessMapGuid)
                     : GetRoughnessMap());
 
-  auto const aoMapGuid{ Guid::Parse(yamlNode["aoMap"].as<std::string>()) };
+  auto const aoMapGuid{ yamlNode["aoMap"].as<Guid>() };
   SetAoMap(aoMapGuid.IsValid()
-             ? std::dynamic_pointer_cast<Texture2D>(gResourceManager.FindResource(aoMapGuid).lock())
+             ? gResourceManager.Load<Texture2D>(aoMapGuid)
              : GetAoMap());
 
-  auto const normalMapGuid{ Guid::Parse(yamlNode["normalMap"].as<std::string>()) };
+  auto const normalMapGuid{ yamlNode["normalMap"].as<Guid>() };
   SetNormalMap(normalMapGuid.IsValid()
-                 ? std::dynamic_pointer_cast<Texture2D>(gResourceManager.FindResource(normalMapGuid).lock())
+                 ? gResourceManager.Load<Texture2D>(normalMapGuid)
                  : GetNormalMap());
 }
 }

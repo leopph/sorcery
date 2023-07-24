@@ -5,6 +5,7 @@
 #include "NativeResource.hpp"
 #include "../Util.hpp"
 #include "Texture2D.hpp"
+#include "../ResourceManager.hpp"
 
 #include "../shaders/ShaderInterop.h"
 
@@ -31,18 +32,17 @@ class Material final : public NativeResource {
 
   Microsoft::WRL::ComPtr<ID3D11Buffer> mCB;
 
-  std::weak_ptr<Texture2D> mAlbedoMap{};
-  std::weak_ptr<Texture2D> mMetallicMap{};
-  std::weak_ptr<Texture2D> mRoughnessMap{};
-  std::weak_ptr<Texture2D> mAoMap{};
-  std::weak_ptr<Texture2D> mNormalMap{};
+  ResourceHandle<Texture2D> mAlbedoMap;
+  ResourceHandle<Texture2D> mMetallicMap;
+  ResourceHandle<Texture2D> mRoughnessMap;
+  ResourceHandle<Texture2D> mAoMap;
+  ResourceHandle<Texture2D> mNormalMap;
 
   auto UpdateGPUData() const noexcept -> void;
   auto CreateCB() -> void;
 
 public:
   LEOPPHAPI Material();
-  LEOPPHAPI Material(Vector3 const& albedoVector, float metallic, float roughness, float ao, std::weak_ptr<Texture2D> albedoMap, std::weak_ptr<Texture2D> metallicMap, std::weak_ptr<Texture2D> roughnessMap, std::weak_ptr<Texture2D> aoMap, std::weak_ptr<Texture2D> normalMap);
 
   [[nodiscard]] LEOPPHAPI auto GetAlbedoVector() const noexcept -> Vector3;
   LEOPPHAPI auto SetAlbedoVector(Vector3 const& albedoVector) noexcept -> void;
@@ -59,20 +59,20 @@ public:
   [[nodiscard]] LEOPPHAPI auto GetAo() const noexcept -> f32;
   LEOPPHAPI auto SetAo(f32 ao) noexcept -> void;
 
-  [[nodiscard]] LEOPPHAPI auto GetAlbedoMap() const noexcept -> std::weak_ptr<Texture2D>;
-  LEOPPHAPI auto SetAlbedoMap(std::weak_ptr<Texture2D> tex) noexcept -> void;
+  [[nodiscard]] LEOPPHAPI auto GetAlbedoMap() const noexcept -> ResourceHandle<Texture2D>;
+  LEOPPHAPI auto SetAlbedoMap(ResourceHandle<Texture2D> tex) noexcept -> void;
 
-  [[nodiscard]] LEOPPHAPI auto GetMetallicMap() const noexcept -> std::weak_ptr<Texture2D>;
-  LEOPPHAPI auto SetMetallicMap(std::weak_ptr<Texture2D> tex) noexcept -> void;
+  [[nodiscard]] LEOPPHAPI auto GetMetallicMap() const noexcept -> ResourceHandle<Texture2D>;
+  LEOPPHAPI auto SetMetallicMap(ResourceHandle<Texture2D> tex) noexcept -> void;
 
-  [[nodiscard]] LEOPPHAPI auto GetRoughnessMap() const noexcept -> std::weak_ptr<Texture2D>;
-  LEOPPHAPI auto SetRoughnessMap(std::weak_ptr<Texture2D> tex) noexcept -> void;
+  [[nodiscard]] LEOPPHAPI auto GetRoughnessMap() const noexcept -> ResourceHandle<Texture2D>;
+  LEOPPHAPI auto SetRoughnessMap(ResourceHandle<Texture2D> tex) noexcept -> void;
 
-  [[nodiscard]] LEOPPHAPI auto GetAoMap() const noexcept -> std::weak_ptr<Texture2D>;
-  LEOPPHAPI auto SetAoMap(std::weak_ptr<Texture2D> tex) noexcept -> void;
+  [[nodiscard]] LEOPPHAPI auto GetAoMap() const noexcept -> ResourceHandle<Texture2D>;
+  LEOPPHAPI auto SetAoMap(ResourceHandle<Texture2D> tex) noexcept -> void;
 
-  [[nodiscard]] LEOPPHAPI auto GetNormalMap() const noexcept -> std::weak_ptr<Texture2D>;
-  LEOPPHAPI auto SetNormalMap(std::weak_ptr<Texture2D> tex) noexcept -> void;
+  [[nodiscard]] LEOPPHAPI auto GetNormalMap() const noexcept -> ResourceHandle<Texture2D>;
+  LEOPPHAPI auto SetNormalMap(ResourceHandle<Texture2D> tex) noexcept -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetBuffer() const noexcept -> ObserverPtr<ID3D11Buffer>;
 

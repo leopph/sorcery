@@ -11,7 +11,7 @@
 namespace sorcery {
 class StaticMeshComponent : public Component {
   RTTR_ENABLE(Component)
-  std::vector<Material*> mMaterials;
+  std::vector<ResourceHandle<Material>> mMaterials;
   Mesh* mMesh;
 
   auto AdjustMaterialListForMesh() -> void;
@@ -20,9 +20,9 @@ public:
   LEOPPHAPI StaticMeshComponent();
   ~StaticMeshComponent() override;
 
-  [[nodiscard]] LEOPPHAPI auto GetMaterials() const noexcept -> std::span<Material* const>;
-  LEOPPHAPI auto SetMaterials(std::vector<Material*> materials) -> void;
-  LEOPPHAPI auto ReplaceMaterial(int idx, Material& mtl) -> void;
+  [[nodiscard]] LEOPPHAPI auto GetMaterials() const noexcept -> std::span<ResourceHandle<Material> const>;
+  LEOPPHAPI auto SetMaterials(std::vector<ResourceHandle<Material>> materials) -> void;
+  LEOPPHAPI auto ReplaceMaterial(int idx, ResourceHandle<Material> const& mtl) -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetMesh() const noexcept -> Mesh&;
   LEOPPHAPI auto SetMesh(Mesh& mesh) noexcept -> void;
