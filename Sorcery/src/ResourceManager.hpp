@@ -84,7 +84,8 @@ public:
 
   [[nodiscard]] LEOPPHAPI auto IsLoaded(Guid const& guid) const -> bool;
 
-  LEOPPHAPI auto Add(std::shared_ptr<Resource>&& resource) -> void;
+  template<std::derived_from<Resource> ResType>
+  LEOPPHAPI auto Add(std::shared_ptr<ResType>&& resource) -> ResourceHandle<ResType>;
 
   LEOPPHAPI auto UpdateGuidPathMappings(std::map<Guid, std::filesystem::path> mappings) -> void;
 
@@ -149,6 +150,20 @@ auto ResourceManager::Load(Guid const& guid) -> ResourceHandle<ResType> {
       rh.mResource = res;
       rh.mGuid = res->GetGuid();
     }
+  }
+
+  return rh;
+}
+
+
+template<std::derived_from<Resource> ResType>
+auto ResourceManager::Add(std::shared_ptr<ResType>&& resource) -> ResourceHandle<ResType> {
+  ResourceHandle<ResType> rh;
+
+  if (resource && resource->GetGuid().IsValid()) {
+    rh.mGuid = resource->GetGuid();
+    rh.mResource = std::static_pointer_cast<ResType>(resource);
+    mResources.emplace(std::move(resource));
   }
 
   return rh;

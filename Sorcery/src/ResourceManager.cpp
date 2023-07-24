@@ -82,13 +82,6 @@ auto ResourceManager::IsLoaded(Guid const& guid) const -> bool {
 }
 
 
-auto ResourceManager::Add(std::shared_ptr<Resource>&& resource) -> void {
-  if (resource && resource->GetGuid().IsValid()) {
-    mResources.emplace(std::move(resource));
-  }
-}
-
-
 auto ResourceManager::UpdateGuidPathMappings(std::map<Guid, std::filesystem::path> mappings) -> void {
   mGuidPathMappings = std::move(mappings);
 }
