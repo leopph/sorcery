@@ -18,7 +18,13 @@ Object::Type const StaticMeshComponent::SerializationType{ Type::StaticMesh };
 
 
 auto StaticMeshComponent::AdjustMaterialListForMesh() -> void {
-  if (std::size_t const subMeshCount{ std::size(mMesh->GetSubMeshes()) }, mtlCount{ std::size(mMaterials) }; subMeshCount != mtlCount) {
+  auto const mesh{ mMesh.Get() };
+
+  if (!mesh) {
+    return;
+  }
+
+  if (std::size_t const subMeshCount{ std::size(mesh->GetSubMeshes()) }, mtlCount{ std::size(mMaterials) }; subMeshCount != mtlCount) {
     mMaterials.resize(subMeshCount);
 
     for (std::size_t i{ mtlCount }; i < subMeshCount; i++) {
@@ -66,14 +72,16 @@ auto StaticMeshComponent::ReplaceMaterial(int const idx, ResourceHandle<Material
 }
 
 
-auto StaticMeshComponent::GetMesh() const noexcept -> Mesh& {
-  return *mMesh;
+auto StaticMeshComponent::GetMesh() const noexcept -> ResourceHandle<Mesh> const& {
+  return mMesh;
 }
 
 
-auto StaticMeshComponent::SetMesh(Mesh& mesh) noexcept -> void {
-  mMesh = &mesh;
-  AdjustMaterialListForMesh();
+auto StaticMeshComponent::SetMesh(ResourceHandle<Mesh> const& mesh) noexcept -> void {
+  if (mesh) {
+    mMesh = mesh;
+    AdjustMaterialListForMesh();
+  }
 }
 
 
@@ -83,7 +91,13 @@ auto StaticMeshComponent::GetSerializationType() const -> Type {
 
 
 auto StaticMeshComponent::CalculateBounds() const noexcept -> AABB {
-  auto const& localBounds{ mMesh->GetBounds() };
+  auto const mesh{ mMesh.Get() };
+
+  if (!mesh) {
+    return AABB{};
+  }
+
+  auto const& localBounds{ mesh->GetBounds() };
   auto const modelMtx{ GetEntity().GetTransform().GetModelMatrix() };
   auto boundsVertices{ localBounds.CalculateVertices() };
 

@@ -985,13 +985,17 @@ auto Renderer::Impl::DrawMeshes(std::span<int const> const meshComponentIndices,
 
   for (auto const meshComponentIdx : meshComponentIndices) {
     auto const meshComponent{ mStaticMeshComponents[meshComponentIdx] };
-    auto const& mesh{ meshComponent->GetMesh() };
+    auto const mesh{ meshComponent->GetMesh().Get() };
 
-    std::array const vertexBuffers{ mesh.GetPositionBuffer().Get(), mesh.GetNormalBuffer().Get(), mesh.GetUVBuffer().Get(), mesh.GetTangentBuffer().Get() };
+    if (!mesh) {
+      continue;
+    }
+
+    std::array const vertexBuffers{ mesh->GetPositionBuffer().Get(), mesh->GetNormalBuffer().Get(), mesh->GetUVBuffer().Get(), mesh->GetTangentBuffer().Get() };
     UINT constexpr strides[]{ sizeof(Vector3), sizeof(Vector3), sizeof(Vector2), sizeof(Vector3) };
     UINT constexpr offsets[]{ 0, 0, 0, 0 };
     mImmediateContext->IASetVertexBuffers(0, static_cast<UINT>(vertexBuffers.size()), vertexBuffers.data(), strides, offsets);
-    mImmediateContext->IASetIndexBuffer(mesh.GetIndexBuffer().Get(), DXGI_FORMAT_R32_UINT, 0);
+    mImmediateContext->IASetIndexBuffer(mesh->GetIndexBuffer().Get(), DXGI_FORMAT_R32_UINT, 0);
 
     D3D11_MAPPED_SUBRESOURCE mappedPerDrawCb;
     mImmediateContext->Map(mPerDrawCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerDrawCb);
@@ -1000,7 +1004,7 @@ auto Renderer::Impl::DrawMeshes(std::span<int const> const meshComponentIndices,
     perDrawCbData->gPerDrawConstants.normalMtx = Matrix4{ meshComponent->GetEntity().GetTransform().GetNormalMatrix() };
     mImmediateContext->Unmap(mPerDrawCb.Get(), 0);
 
-    auto const subMeshes{ mesh.GetSubMeshes() };
+    auto const subMeshes{ mesh->GetSubMeshes() };
     auto const& materials{ meshComponent->GetMaterials() };
 
     for (int i = 0; i < static_cast<int>(subMeshes.size()); i++) {

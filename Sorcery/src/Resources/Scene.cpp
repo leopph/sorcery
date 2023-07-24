@@ -232,7 +232,7 @@ auto Scene::Load(ObjectInstantiatorManager const& manager) -> void {
         variant = nullptr;
       }
     } else if (isWrapper && wrappedType.is_pointer() && rawWrappedType.is_derived_from(rttr::type::get<Resource>())) {
-      variant = gResourceManager.FindResource(Guid::Parse(objNode.as<std::string>()));
+      variant = gResourceManager.LoadResource(objNode.as<Guid>());
     } else if (rawWrappedType.is_class() && !isWrapper) {
       for (auto const& prop : objType.get_properties()) {
         auto propValue{ prop.get_value(variant) };
