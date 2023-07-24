@@ -53,8 +53,12 @@ public:
   [[nodiscard]] auto operator==(ResourceHandle const& other) const -> bool;
   [[nodiscard]] auto operator==(NullResT other) const -> bool;
 
-  [[nodiscard]] auto Get() const -> ObserverPtr<Resource> override;
-  [[nodiscard]] auto GetOrLoad() -> ObserverPtr<Resource> override;
+  [[nodiscard]] auto Get() const -> ObserverPtr<ResType> override;
+  [[nodiscard]] auto GetOrLoad() -> ObserverPtr<ResType> override;
+
+  [[nodiscard]] auto IsValid() const noexcept -> bool;
+
+  operator bool() const noexcept;
 };
 
 
@@ -118,19 +122,31 @@ auto ResourceHandle<ResType>::operator==([[maybe_unused]] NullResT other) const 
 
 
 template<std::derived_from<Resource> ResType>
-auto ResourceHandle<ResType>::Get() const -> ObserverPtr<Resource> {
+auto ResourceHandle<ResType>::Get() const -> ObserverPtr<ResType> {
   return mResource.lock().get();
 }
 
 
 template<std::derived_from<Resource> ResType>
-auto ResourceHandle<ResType>::GetOrLoad() -> ObserverPtr<Resource> {
+auto ResourceHandle<ResType>::GetOrLoad() -> ObserverPtr<ResType> {
   if (auto const currentlyReferenced{ Get() }) {
     return currentlyReferenced;
   }
 
   *this = gResourceManager.Load<ResType>(mGuid);
   return mResource.lock().get();
+}
+
+
+template<std::derived_from<Resource> ResType>
+auto ResourceHandle<ResType>::IsValid() const noexcept -> bool {
+  return *this != nullres;
+}
+
+
+template<std::derived_from<Resource> ResType>
+ResourceHandle<ResType>::operator bool() const noexcept {
+  return IsValid();
 }
 
 
