@@ -84,7 +84,6 @@ public:
   auto Load(Guid const& guid) -> ResourceHandle<ResType>;
 
   LEOPPHAPI auto Unload(Guid const& guid) -> void;
-  LEOPPHAPI auto UnloadAll() -> void;
 
   [[nodiscard]] LEOPPHAPI auto IsLoaded(Guid const& guid) const -> bool;
 

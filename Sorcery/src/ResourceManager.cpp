@@ -72,11 +72,6 @@ auto ResourceManager::Unload(Guid const& guid) -> void {
 }
 
 
-auto ResourceManager::UnloadAll() -> void {
-  mResources.clear();
-}
-
-
 auto ResourceManager::IsLoaded(Guid const& guid) const -> bool {
   return mResources.contains(guid);
 }
