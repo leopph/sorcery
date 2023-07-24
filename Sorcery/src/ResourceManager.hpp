@@ -3,7 +3,6 @@
 #include "Core.hpp"
 #include "Serialization.hpp"
 #include "Resources/Resource.hpp"
-#include "Resources/NativeResource.hpp"
 
 #include <concepts>
 #include <filesystem>
@@ -54,8 +53,8 @@ public:
   [[nodiscard]] auto operator==(ResourceHandle const& other) const -> bool;
   [[nodiscard]] auto operator==(NullResT other) const -> bool;
 
-  [[nodiscard]] LEOPPHAPI auto Get() const -> ObserverPtr<Resource> override;
-  [[nodiscard]] LEOPPHAPI auto GetOrLoad() -> ObserverPtr<Resource> override;
+  [[nodiscard]] auto Get() const -> ObserverPtr<Resource> override;
+  [[nodiscard]] auto GetOrLoad() -> ObserverPtr<Resource> override;
 };
 
 
@@ -81,6 +80,7 @@ public:
   auto Load(Guid const& guid) -> ResourceHandle<ResType>;
 
   LEOPPHAPI auto Unload(Guid const& guid) -> void;
+  LEOPPHAPI auto UnloadAll() -> void;
 
   [[nodiscard]] LEOPPHAPI auto IsLoaded(Guid const& guid) const -> bool;
 
@@ -90,8 +90,6 @@ public:
 
   template<std::derived_from<Resource> T>
   auto FindResourcesOfType(std::vector<std::weak_ptr<T>>& out) -> void;
-
-  [[nodiscard]] LEOPPHAPI static auto GenerateMetaForNativeResource(NativeResource const& nativeRes) -> YAML::Node;
 };
 
 

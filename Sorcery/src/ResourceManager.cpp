@@ -72,6 +72,11 @@ auto ResourceManager::Unload(Guid const& guid) -> void {
 }
 
 
+auto ResourceManager::UnloadAll() -> void {
+  mResources.clear();
+}
+
+
 auto ResourceManager::IsLoaded(Guid const& guid) const -> bool {
   return mResources.contains(guid);
 }
@@ -86,18 +91,5 @@ auto ResourceManager::Add(std::shared_ptr<Resource>&& resource) -> void {
 
 auto ResourceManager::UpdateGuidPathMappings(std::map<Guid, std::filesystem::path> mappings) -> void {
   mGuidPathMappings = std::move(mappings);
-}
-
-
-auto ResourceManager::GenerateMetaForNativeResource(NativeResource const& nativeRes) -> YAML::Node {
-  YAML::Node importerNode;
-  importerNode["type"] = rttr::type::get<NativeResourceImporter>().get_name().to_string();
-  importerNode["properties"] = ReflectionSerializeToYAML(NativeResourceImporter{});
-
-  YAML::Node metaNode;
-  metaNode["guid"] = static_cast<std::string>(nativeRes.GetGuid());
-  metaNode["importer"] = importerNode;
-
-  return metaNode;
 }
 }
