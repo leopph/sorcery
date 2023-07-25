@@ -15,8 +15,7 @@ auto DrawEntityHierarchyWindow(Context& context) -> void {
     if (ImGui::BeginPopup(contextId)) {
       if (ImGui::MenuItem("Create New Entity")) {
         auto& entity{ context.GetScene()->CreateEntity() };
-        auto transform = std::make_unique<TransformComponent>();
-        entity.AddComponent(std::move(transform));
+        context.GetScene()->CreateComponent<TransformComponent>(entity);
       }
 
       ImGui::EndPopup();
@@ -88,7 +87,7 @@ auto DrawEntityHierarchyWindow(Context& context) -> void {
         if (!deleted) {
           for (std::size_t childIndex{ 0 }; childIndex < entity.GetTransform().GetChildren().size(); childIndex++) {
             ImGui::PushID(static_cast<int>(childIndex));
-            displayEntityRecursive(*entity.GetTransform().GetChildren()[childIndex]->GetEntity());
+            displayEntityRecursive(entity.GetTransform().GetChildren()[childIndex]->GetEntity());
             ImGui::PopID();
           }
         }

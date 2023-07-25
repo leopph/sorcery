@@ -38,7 +38,7 @@ auto DrawMainMenuBar(Context& context) -> void {
       if (ImGui::MenuItem("Save Current Scene")) {
         if (context.GetScene()) {
           context.GetScene()->Save();
-          context.SaveRegisteredNativeAsset(*context.GetScene());
+          context.GetResourceDatabase().SaveResource(*context.GetScene());
         }
       }
 
