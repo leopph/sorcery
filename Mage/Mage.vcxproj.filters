@@ -39,7 +39,7 @@
     <ClCompile Include="src\EntityHierarchyWindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ObjectPropertiesWindow.cpp">
+    <ClCompile Include="src\PropertiesWindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\GameViewWindow.cpp">
@@ -131,7 +131,7 @@
     <ClInclude Include="src\EntityHierarchyWindow.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ObjectPropertiesWindow.hpp">
+    <ClInclude Include="src\PropertiesWindow.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\GameViewWindow.hpp">

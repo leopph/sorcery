@@ -25,7 +25,7 @@
 #include "ImGuiIntegration.hpp"
 #include "LoadingScreen.hpp"
 #include "MainMenuBar.hpp"
-#include "ObjectPropertiesWindow.hpp"
+#include "PropertiesWindow.hpp"
 #include "OpenScenePrompt.hpp"
 #include "PerformanceCounterWindow.hpp"
 #include "PhysicsManager.hpp"
@@ -99,6 +99,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
     auto const projectWindow{ std::make_unique<sorcery::mage::ProjectWindow>(context) };
     auto const sceneViewWindow{ std::make_unique<sorcery::mage::SceneViewWindow>() };
     auto const gameViewWindow{ std::make_unique<sorcery::mage::GameViewWindow>() };
+    auto const propertiesWindow{ std::make_unique<sorcery::mage::PropertiesWindow>(context) };
 
     while (!sorcery::gWindow.IsQuitSignaled()) {
       sorcery::gWindow.ProcessEvents();
@@ -150,7 +151,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
         }
 
         DrawMainMenuBar(context);
-        DrawObjectPropertiesWindow(context);
+        propertiesWindow->Draw();
         projectWindow->Draw();
         sorcery::mage::DrawPerformanceCounterWindow();
       }

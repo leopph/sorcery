@@ -102,7 +102,7 @@
     <ClCompile Include="src\MainMenuBar.cpp" />
     <ClCompile Include="src\ObjectWrappers\MaterialWrapper.cpp" />
     <ClCompile Include="src\ObjectWrappers\ObjectWrapperManager.cpp" />
-    <ClCompile Include="src\ObjectPropertiesWindow.cpp" />
+    <ClCompile Include="src\PropertiesWindow.cpp" />
     <ClCompile Include="src\ObjectWrappers\CameraWrapper.cpp" />
     <ClCompile Include="src\ObjectWrappers\EntityWrapper.cpp" />
     <ClCompile Include="src\ObjectWrappers\LightWrapper.cpp" />
@@ -135,7 +135,7 @@
     <ClInclude Include="src\LoadingScreen.hpp" />
     <ClInclude Include="src\MainMenuBar.hpp" />
     <ClInclude Include="src\ObjectWrappers\ObjectWrapperManager.hpp" />
-    <ClInclude Include="src\ObjectPropertiesWindow.hpp" />
+    <ClInclude Include="src\PropertiesWindow.hpp" />
     <ClInclude Include="src\ObjectWrappers\ObjectWrappers.hpp" />
     <ClInclude Include="src\ResourceDB.hpp" />
     <ClInclude Include="src\OpenScenePrompt.hpp" />
