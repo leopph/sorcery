@@ -21,6 +21,7 @@ public:
   [[nodiscard]] auto GetResourceDirectoryAbsolutePath() -> std::filesystem::path const&;
 
   auto CreateResource(std::shared_ptr<NativeResource>&& res, std::filesystem::path const& targetPathResDirRel) -> void;
+  auto SaveResource(NativeResource const& res) -> void;
   auto ImportResource(std::filesystem::path const& targetPathResDirRel) -> void;
   auto MoveResource(Guid const& guid, std::filesystem::path const& targetPathResDirRel) -> void;
   auto DeleteResource(Guid const& guid) -> void;

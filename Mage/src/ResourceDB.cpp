@@ -95,6 +95,15 @@ auto ResourceDB::CreateResource(std::shared_ptr<NativeResource>&& res, std::file
 }
 
 
+auto ResourceDB::SaveResource(NativeResource const& res) -> void {
+  if (auto const it{ mGuidToAbsPath.find(res.GetGuid()) }; it != std::end(mGuidToAbsPath)) {
+    std::ofstream outStream{ it->second };
+    YAML::Emitter emitter{ outStream };
+    emitter << res.Serialize();
+  }
+}
+
+
 auto ResourceDB::ImportResource(std::filesystem::path const& targetPathResDirRel) -> void {
   auto const targetPathAbs{ mResDirAbs / targetPathResDirRel };
 
