@@ -7,8 +7,6 @@
 
 #include <limits>
 
-#include "Systems.hpp"
-
 
 namespace sorcery::mage {
 std::string_view const EDITOR_SETTINGS_WINDOW_TITLE{ "Editor Settings" };
@@ -26,7 +24,9 @@ auto DrawEditorSettingsWindow(bool& isOpen) -> void {
 
   bool isFrameRateLimited{ timing::GetTargetFrameRate() != -1 };
   if (ImGui::Checkbox("##FrameRateLimitCheckbox", &isFrameRateLimited)) {
-    timing::SetTargetFrameRate(isFrameRateLimited ? DEFAULT_TARGET_FRAME_RATE : -1);
+    timing::SetTargetFrameRate(isFrameRateLimited
+                                 ? DEFAULT_TARGET_FRAME_RATE
+                                 : -1);
   }
 
   if (isFrameRateLimited) {
