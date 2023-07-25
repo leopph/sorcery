@@ -21,16 +21,10 @@
     <ClCompile Include="src\Widgets.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Asset.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\ObjectWrappers\ObjectWrapperManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\EditorContext.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\ResourceManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\EditorCamera.cpp">
@@ -105,6 +99,9 @@
     <ClCompile Include="src\ObjectWrappers\SkyboxWrapper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\ResourceDB.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="vcpkg.json" />
@@ -113,16 +110,10 @@
     <ClInclude Include="src\Widgets.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Asset.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\ObjectWrappers\ObjectWrapperManager.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\ObjectWrappers\ObjectWrappers.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\ResourceManager.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\EditorContext.hpp">
@@ -168,6 +159,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\EditorSettingsWindow.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ResourceDB.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
