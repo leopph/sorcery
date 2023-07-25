@@ -42,6 +42,7 @@ public:
   ResourceHandle() = default;
   ResourceHandle(ResourceHandle const& other) = default;
   ResourceHandle(ResourceHandle&& other) noexcept = default;
+  ResourceHandle(NullResT other);
 
   ~ResourceHandle() override = default;
 
@@ -93,11 +94,16 @@ public:
   LEOPPHAPI auto UpdateGuidPathMappings(std::map<Guid, std::filesystem::path> mappings) -> void;
 
   template<std::derived_from<Resource> T>
-  auto FindResourcesOfType(std::vector<std::weak_ptr<T>>& out) -> void;
+  auto FindResourcesOfType(std::vector<ResourceHandle<T>>& out) -> void;
 };
 
 
 LEOPPHAPI extern ResourceManager gResourceManager;
+
+
+template<std::derived_from<Resource> ResType>
+ResourceHandle<ResType>::ResourceHandle([[maybe_unused]] NullResT other) :
+  mGuid{ Guid::Invalid() } { }
 
 
 template<std::derived_from<Resource> ResType>
@@ -186,10 +192,20 @@ auto ResourceManager::Add(std::shared_ptr<ResType>&& resource) -> ResourceHandle
 
 
 template<std::derived_from<Resource> T>
-auto ResourceManager::FindResourcesOfType(std::vector<std::weak_ptr<T>>& out) -> void {
+auto ResourceManager::FindResourcesOfType(std::vector<ResourceHandle<T>>& out) -> void {
   for (auto const& res : mResources) {
-    if (rttr::rttr_cast<T*>(res.get())) {
-      out.emplace_back(std::static_pointer_cast<T>(res));
+    if constexpr (!std::is_same_v<T, Resource>) {
+      if (rttr::rttr_cast<T*>(res.get())) {
+        ResourceHandle<T> rh;
+        rh.mGuid = res->GetGuid();
+        rh.mResource = res;
+        out.emplace_back(std::move(rh));
+      }
+    } else {
+      ResourceHandle<T> rh;
+      rh.mGuid = res->GetGuid();
+      rh.mResource = res;
+      out.emplace_back(std::move(rh));
     }
   }
 }
