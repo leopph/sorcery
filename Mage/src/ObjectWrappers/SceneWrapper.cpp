@@ -2,7 +2,6 @@
 
 #include "ObjectWrappers.hpp"
 #include "../EditorContext.hpp"
-#include "../AssetLoaders/SceneLoader.hpp"
 
 
 namespace sorcery::mage {
@@ -11,11 +10,5 @@ auto ObjectWrapperFor<Scene>::OnDrawProperties(Context& context, Object& object)
   if (ImGui::Button("Open")) {
     context.OpenScene(dynamic_cast<Scene&>(object));
   }
-}
-
-
-auto ObjectWrapperFor<Scene>::GetLoader() -> AssetLoader& {
-  SceneLoader static sceneImporter;
-  return sceneImporter;
 }
 }

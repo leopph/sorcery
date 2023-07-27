@@ -8,8 +8,6 @@
 #include "Platform.hpp"
 
 #include <nfd.h>
-#include <stb_image.h>
-#include <stb_image_write.h>
 #include <imgui_stdlib.h>
 
 #include <optional>

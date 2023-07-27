@@ -1,7 +1,6 @@
 #include <imgui.h>
 
 #include "ObjectWrappers.hpp"
-#include "../AssetLoaders/Texture2DLoader.hpp"
 
 
 namespace sorcery::mage {
@@ -52,11 +51,5 @@ auto ObjectWrapperFor<Texture2D>::OnDrawProperties([[maybe_unused]] Context& con
   }
 
   ImGui::Image(tex.GetSrv(), displaySize);
-}
-
-
-auto ObjectWrapperFor<Texture2D>::GetLoader() -> AssetLoader& {
-  Texture2DLoader static loader;
-  return loader;
 }
 }

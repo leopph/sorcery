@@ -1,7 +1,6 @@
 #include <imgui.h>
 
 #include "ObjectWrappers.hpp"
-#include "../AssetLoaders/MeshLoader.hpp"
 
 
 namespace sorcery::mage {
@@ -33,11 +32,5 @@ auto ObjectWrapperFor<Mesh>::OnDrawProperties([[maybe_unused]] Context& context,
 
     ImGui::EndTable();
   }
-}
-
-
-auto ObjectWrapperFor<Mesh>::GetLoader() -> AssetLoader& {
-  MeshLoader static loader;
-  return loader;
 }
 }
