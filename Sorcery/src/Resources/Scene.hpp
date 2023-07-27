@@ -61,11 +61,15 @@ template<std::derived_from<Component> T>
 auto Scene::CreateComponent(Entity& targetEntity) -> ObserverPtr<T> {
   for (auto& sceneObject : mSceneObjects) {
     if (sceneObject.get() == std::addressof(targetEntity)) {
-      auto const component{ mSceneObjects.emplace_back(new T{}).get() };
-      mComponents.emplace_back(component);
-      component->SetEntity(targetEntity);
-      targetEntity.AddComponent(*component);
-      return component;
+      auto component{ std::make_unique<T>() };
+      auto ret{ component.get() };
+      mSceneObjects.emplace_back(std::move(component));
+      mComponents.emplace_back(ret);
+
+      ret->SetEntity(targetEntity);
+      targetEntity.AddComponent(*ret);
+
+      return ret;
     }
   }
 
