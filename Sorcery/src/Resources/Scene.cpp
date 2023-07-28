@@ -58,199 +58,127 @@ auto Scene::Deserialize(YAML::Node const& yamlNode) noexcept -> void {
 }
 
 
-auto Scene::CreateEntity() -> Entity& {
-  auto* const entity = new Entity{};
-  entity->SetScene(*this);
-
-  mSceneObjects.emplace_back(entity);
-  mEntities.emplace_back(entity);
-
-  return *entity;
-}
-
-
-auto Scene::DestroyEntity(Entity const& entity) -> void {
-  if (std::addressof(entity.GetScene()) != this) {
-    return;
-  }
-
-  static std::vector<ObserverPtr<Component>> entityComponents;
-  entityComponents.clear();
-
-  for (auto const component : entity.GetComponents(entityComponents)) {
-    std::erase(mComponents, component);
-    std::erase_if(mSceneObjects, [component](auto const& sceneObject) {
-      return sceneObject.get() == component;
-    });
-  }
-
-  std::erase(mEntities, std::addressof(entity));
-  std::erase_if(mSceneObjects, [&entity](auto const& sceneObject) {
-    return sceneObject.get() == std::addressof(entity);
-  });
-}
-
-
-auto Scene::DestroyComponent(Component const& component) -> void {
-  if (std::addressof(component.GetEntity().GetScene()) != this) {
-    return;
-  }
-
-  std::erase(mComponents, std::addressof(component));
-  std::erase_if(mSceneObjects, [&component](auto const& sceneObject) {
-    return sceneObject.get() == std::addressof(component);
-  });
-}
-
-
 auto Scene::GetEntities() const noexcept -> std::span<ObserverPtr<Entity> const> {
   return mEntities;
 }
 
 
 auto Scene::Save() -> void {
+  static std::vector<ObserverPtr<SceneObject>> tmpThisSceneObjects;
+  tmpThisSceneObjects.clear();
+
+  static std::vector<ObserverPtr<Component>> tmpComponents;
+  tmpComponents.clear();
+
+  static std::unordered_map<void const*, int> ptrFixUp;
+  ptrFixUp.clear();
+
   mYamlData.reset();
   mYamlData["version"] = 1;
 
-  static std::unordered_map<void const*, int> ptrFixUp;
+  for (auto const entity : mEntities) {
+    tmpThisSceneObjects.emplace_back(entity);
 
-  for (auto const& sceneObject : mSceneObjects) {
-    ptrFixUp[sceneObject.get()] = static_cast<int>(std::ssize(ptrFixUp) + 1);
+    for (auto const component : entity->GetComponents(tmpComponents)) {
+      tmpThisSceneObjects.emplace_back(component);
+    }
   }
 
-  std::function<YAML::Node(rttr::variant const&)> extensionFunc;
-  extensionFunc = [&extensionFunc](rttr::variant const& variant) {
-    auto const objType{ variant.get_type() };
-    auto const isWrapper{ objType.is_wrapper() };
-    auto const wrappedType{ objType.get_wrapped_type() };
-    auto const rawWrappedType{
-      isWrapper
-        ? wrappedType.get_raw_type()
-        : objType.get_raw_type()
-    };
+  for (auto const sceneObj : tmpThisSceneObjects) {
+    ptrFixUp[sceneObj] = static_cast<int>(std::ssize(ptrFixUp) + 1);
+  }
 
-    YAML::Node ret;
+  auto const extensionFunc{
+    [](rttr::variant const& v) -> YAML::Node {
+      auto const type{ v.get_type() };
+      YAML::Node retNode;
 
-    if (rawWrappedType.is_sequential_container()) {
-      for (auto const& elem : variant.create_sequential_view()) {
-        ret.push_back(ReflectionSerializeToYaml(elem, extensionFunc));
+      if (type.is_pointer() && type.get_raw_type().is_derived_from(rttr::type::get<SceneObject>())) {
+        auto const it{ ptrFixUp.find(v.get_value<SceneObject*>()) };
+        retNode = it != std::end(ptrFixUp)
+                    ? it->second
+                    : 0;
+      } else if (type.is_wrapper() && type.get_wrapped_type().is_pointer() && type.get_wrapped_type().get_raw_type().is_derived_from(rttr::type::get<SceneObject>())) {
+        auto const it{ ptrFixUp.find(v.get_wrapped_value<SceneObject*>()) };
+        retNode = it != std::end(ptrFixUp)
+                    ? it->second
+                    : 0;
+      } else if (type.is_sequential_container()) {
+        if (auto const seqView{ v.create_sequential_view() }; seqView.get_value_type().is_pointer() && seqView.get_value_type().get_raw_type().is_derived_from(rttr::type::get<SceneObject>())) {
+          for (auto const elem : seqView) {
+            auto const it{ ptrFixUp.find(elem.get_value<SceneObject*>()) };
+            retNode.push_back(it != std::end(ptrFixUp)
+                                ? it->second
+                                : 0);
+          }
+        }
       }
-    } else if (objType.is_pointer() && rawWrappedType.is_derived_from(rttr::type::get<SceneObject>())) {
-      auto const ptr{
-        isWrapper
-          ? variant.get_wrapped_value<void const*>()
-          : variant.get_value<void const*>()
-      };
 
-      if (auto const it{ ptrFixUp.find(ptr) }; it != std::end(ptrFixUp)) {
-        ret = it->second;
-      } else {
-        ret = 0;
-      }
-    } else if (isWrapper && wrappedType.is_pointer() && rawWrappedType.is_derived_from(rttr::type::get<Resource>())) {
-      if (auto const res{ variant.extract_wrapped_value().get_value<Resource*>() }) {
-        ret = res->GetGuid().ToString();
-      } else {
-        ret = Guid{}.ToString();
-      }
-    } else if (rawWrappedType.is_class() && !isWrapper) {
-      for (auto const& prop : objType.get_properties()) {
-        ret[prop.get_name().to_string()] = ReflectionSerializeToYaml(prop.get_value(variant), extensionFunc);
-      }
+      return retNode;
     }
-
-    return ret;
   };
 
-  for (auto const& sceneObject : mSceneObjects) {
-    YAML::Node sceneObjectNode;
-    sceneObjectNode["type"] = rttr::type::get(*sceneObject).get_name().to_string();
-    sceneObjectNode["properties"] = ReflectionSerializeToYaml(*sceneObject, extensionFunc);
-    mYamlData["sceneObjects"].push_back(sceneObjectNode);
+  for (auto const sceneObj : tmpThisSceneObjects) {
+    YAML::Node sceneObjNode;
+    sceneObjNode["type"] = rttr::type::get(*sceneObj).get_name().to_string();
+    sceneObjNode["properties"] = ReflectionSerializeToYaml(*sceneObj, extensionFunc);
+    mYamlData["sceneObjects"].push_back(sceneObjNode);
   }
-
-  ptrFixUp.clear();
 }
 
 
 auto Scene::Load(ObjectInstantiatorManager const& manager) -> void {
+  static std::unordered_map<int, SceneObject*> ptrFixUp;
+  ptrFixUp.clear();
+
   sActiveScene = this;
-  mSceneObjects.clear();
   mEntities.clear();
-  mComponents.clear();
 
   if (auto const version{ mYamlData["version"] }; !version || !version.IsScalar() || version.as<int>(1) != 1) {
     throw std::runtime_error{ std::format("Couldn't load scene \"{}\" because its version number is unsupported.", GetName()) };
   }
 
-  static std::unordered_map<int, SceneObject*> ptrFixUp;
-
   for (auto const& sceneObjectNode : mYamlData["sceneObjects"]) {
     auto const typeNode{ sceneObjectNode["type"] };
     auto const type{ rttr::type::get(typeNode.as<std::string>()) };
     auto const sceneObjectVariant{ type.create() };
-    mSceneObjects.emplace_back(sceneObjectVariant.get_value<SceneObject*>());
-
-    if (type == rttr::type::get<Entity>()) {
-      mEntities.push_back(sceneObjectVariant.get_value<Entity*>());
-    } else if (type.is_derived_from(rttr::type::get<Component>())) {
-      mComponents.push_back(sceneObjectVariant.get_value<Component*>());
-    } else {
-      throw std::runtime_error{ "Instantiated SceneObject is neither an Entity nor a Component!" };
-    }
-
     ptrFixUp[static_cast<int>(std::ssize(ptrFixUp)) + 1] = sceneObjectVariant.get_value<SceneObject*>();
   }
 
-  std::function<void(YAML::Node const&, rttr::variant& variant)> extensionFunc;
-  extensionFunc = [&extensionFunc](YAML::Node const& objNode, rttr::variant& variant) {
-    auto const objType{ variant.get_type() };
-    auto const isWrapper{ objType.is_wrapper() };
-    auto const wrappedType{ objType.get_wrapped_type() };
-    auto const rawWrappedType{
-      isWrapper
-        ? wrappedType.get_raw_type()
-        : objType.get_raw_type()
-    };
+  auto const extensionFunc{
+    [&extensionFunc](YAML::Node const& objNode, rttr::variant& v) -> void {
+      if (auto const type{ v.get_type() }; (type.is_pointer() && type.get_raw_type().is_derived_from(rttr::type::get<SceneObject>())) || (type.is_wrapper() && type.get_wrapped_type().is_pointer() && type.get_wrapped_type().get_raw_type().is_derived_from(rttr::type::get<SceneObject>()))) {
+        auto const it{ ptrFixUp.find(objNode.as<int>(0)) };
+        v = it != std::end(ptrFixUp)
+              ? it->second
+              : nullptr;
+      } else if (type.is_sequential_container()) {
+        if (objNode.IsSequence()) {
+          auto seqView{ v.create_sequential_view() };
+          seqView.set_size(objNode.size());
 
-    if (rawWrappedType.is_sequential_container()) {
-      auto sequence{ variant.create_sequential_view() };
-
-      for (auto const& elemNode : objNode) {
-        auto elem{ sequence.get_value_type().create() };
-        ReflectionDeserializeFromYaml(elemNode, elem, extensionFunc);
-        sequence.insert(sequence.end(), elem);
-      }
-    } else if (objType.is_pointer() && rawWrappedType.is_derived_from(rttr::type::get<SceneObject>())) {
-      if (auto const ptrId{ objNode.as<int>() }; ptrId != 0) {
-        if (auto const it{ ptrFixUp.find(ptrId) }; it != std::end(ptrFixUp)) {
-          variant = it->second;
-        } else {
-          variant = nullptr;
+          for (auto i{ 0 }; i < std::ssize(objNode); i++) {
+            auto const it{ ptrFixUp.find(objNode.as<int>(0)) };
+            seqView.set_value(i, it != std::end(ptrFixUp)
+                                   ? it->second
+                                   : nullptr);
+          }
         }
-      } else {
-        variant = nullptr;
-      }
-    } else if (isWrapper && wrappedType.is_pointer() && rawWrappedType.is_derived_from(rttr::type::get<Resource>())) {
-      variant = gResourceManager.LoadResource(objNode.as<Guid>());
-    } else if (rawWrappedType.is_class() && !isWrapper) {
-      for (auto const& prop : objType.get_properties()) {
-        auto propValue{ prop.get_value(variant) };
-        ReflectionDeserializeFromYaml(objNode[prop.get_name().to_string()], propValue, extensionFunc);
-        std::ignore = prop.set_value(variant, propValue);
       }
     }
   };
 
   for (auto const& [fileId, obj] : ptrFixUp) {
     ReflectionDeserializeFromYaml(mYamlData["sceneObjects"][fileId - 1]["properties"], *obj, extensionFunc);
-  }
 
-  ptrFixUp.clear();
+    if (auto const entity{ rttr::rttr_cast<ObserverPtr<Entity>>(obj) }) {
+      mEntities.emplace_back(entity);
+    }
+  }
 }
 
 
 auto Scene::Clear() -> void {
-  mSceneObjects.clear();
+  mEntities.clear();
 }
 }

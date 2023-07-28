@@ -17,9 +17,7 @@ class Scene final : public NativeResource {
   static std::vector<Scene*> sAllScenes;
 
 
-  std::vector<std::unique_ptr<SceneObject>> mSceneObjects;
   std::vector<ObserverPtr<Entity>> mEntities;
-  std::vector<ObserverPtr<Component>> mComponents;
 
   YAML::Node mYamlData;
 
@@ -35,13 +33,6 @@ public:
   auto operator=(Scene const& other) -> void = delete;
   auto operator=(Scene&& other) -> void = delete;
 
-  LEOPPHAPI auto CreateEntity() -> Entity&;
-  LEOPPHAPI auto DestroyEntity(Entity const& entity) -> void;
-
-  template<std::derived_from<Component> T>
-  auto CreateComponent(Entity& targetEntity) -> ObserverPtr<T>;
-  LEOPPHAPI auto DestroyComponent(Component const& component) -> void;
-
   [[nodiscard]] LEOPPHAPI auto GetEntities() const noexcept -> std::span<ObserverPtr<Entity> const>;
 
   LEOPPHAPI auto Save() -> void;
@@ -55,24 +46,4 @@ public:
   [[nodiscard]] LEOPPHAPI auto Serialize() const noexcept -> YAML::Node override;
   LEOPPHAPI auto Deserialize(YAML::Node const& yamlNode) noexcept -> void override;
 };
-
-
-template<std::derived_from<Component> T>
-auto Scene::CreateComponent(Entity& targetEntity) -> ObserverPtr<T> {
-  for (auto& sceneObject : mSceneObjects) {
-    if (sceneObject.get() == std::addressof(targetEntity)) {
-      auto component{ std::make_unique<T>() };
-      auto ret{ component.get() };
-      mSceneObjects.emplace_back(std::move(component));
-      mComponents.emplace_back(ret);
-
-      ret->SetEntity(targetEntity);
-      targetEntity.AddComponent(*ret);
-
-      return ret;
-    }
-  }
-
-  return nullptr;
-}
 }

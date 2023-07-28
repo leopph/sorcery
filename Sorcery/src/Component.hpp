@@ -9,6 +9,7 @@ class TransformComponent;
 
 
 class Component : public SceneObject {
+  RTTR_REGISTRATION_FRIEND
   RTTR_ENABLE(SceneObject)
   ObserverPtr<Entity> mEntity{ nullptr };
 
