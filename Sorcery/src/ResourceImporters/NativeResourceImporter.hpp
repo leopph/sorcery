@@ -12,7 +12,7 @@ public:
   static char const* const SCENE_FILE_EXT;
 
   auto GetSupportedFileExtensions(std::vector<std::string>& out) -> void override;
-  [[nodiscard]] auto Import(std::filesystem::path const& src) -> std::shared_ptr<Resource> override;
+  [[nodiscard]] auto Import(std::filesystem::path const& src) -> ObserverPtr<Resource> override;
   [[nodiscard]] auto GetPrecedence() const noexcept -> int override;
 };
 }

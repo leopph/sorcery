@@ -1,7 +1,6 @@
 #include "ResourceManager.hpp"
 #include "Reflection.hpp"
 #include "ResourceImporters/ResourceImporter.hpp"
-#include "ResourceImporters/NativeResourceImporter.hpp"
 
 #include <cassert>
 
@@ -10,22 +9,22 @@ namespace sorcery {
 ResourceManager gResourceManager;
 
 
-auto ResourceManager::ResourceGuidLess::operator()(std::shared_ptr<Resource> const& lhs, std::shared_ptr<Resource> const& rhs) const noexcept -> bool {
+auto ResourceManager::ResourceGuidLess::operator()(ObserverPtr<Resource> const lhs, ObserverPtr<Resource> const rhs) const noexcept -> bool {
   return lhs->GetGuid() < rhs->GetGuid();
 }
 
 
-auto ResourceManager::ResourceGuidLess::operator()(std::shared_ptr<Resource> const& lhs, Guid const& rhs) const noexcept -> bool {
+auto ResourceManager::ResourceGuidLess::operator()(ObserverPtr<Resource> const lhs, Guid const& rhs) const noexcept -> bool {
   return lhs->GetGuid() < rhs;
 }
 
 
-auto ResourceManager::ResourceGuidLess::operator()(Guid const& lhs, std::shared_ptr<Resource> const& rhs) const noexcept -> bool {
+auto ResourceManager::ResourceGuidLess::operator()(Guid const& lhs, ObserverPtr<Resource> const rhs) const noexcept -> bool {
   return lhs < rhs->GetGuid();
 }
 
 
-auto ResourceManager::InternalLoadResource(std::filesystem::path const& src) -> std::shared_ptr<Resource> {
+auto ResourceManager::InternalLoadResource(std::filesystem::path const& src) -> ObserverPtr<Resource> {
   auto const metaFilePath{ std::filesystem::path{ src } += RESOURCE_META_FILE_EXT };
 
   if (!exists(metaFilePath)) {
@@ -60,13 +59,14 @@ auto ResourceManager::InternalLoadResource(std::filesystem::path const& src) -> 
 }
 
 
-auto ResourceManager::LoadResource(Guid const& guid) -> ResourceHandle<Resource> {
+auto ResourceManager::LoadResource(Guid const& guid) -> ObserverPtr<Resource> {
   return Load<Resource>(guid);
 }
 
 
 auto ResourceManager::Unload(Guid const& guid) -> void {
   if (auto const it{ mResources.find(guid) }; it != std::end(mResources)) {
+    Object::Destroy(**it);
     mResources.erase(it);
   }
 }

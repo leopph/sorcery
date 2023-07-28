@@ -26,7 +26,7 @@ auto TextureImporter::GetSupportedFileExtensions(std::vector<std::string>& out) 
 }
 
 
-auto TextureImporter::Import(std::filesystem::path const& src) -> std::shared_ptr<Resource> {
+auto TextureImporter::Import(std::filesystem::path const& src) -> ObserverPtr<Resource> {
   switch (mTexType) {
     case TextureType::Texture2D: {
       int width;
@@ -34,7 +34,7 @@ auto TextureImporter::Import(std::filesystem::path const& src) -> std::shared_pt
       int channelCount;
 
       if (auto const imgData{ stbi_load(src.string().c_str(), &width, &height, &channelCount, 4) }) {
-        return std::make_unique<Texture2D>(Image{ static_cast<u32>(width), static_cast<u32>(height), 4, std::unique_ptr<u8[]>{ imgData } });
+        return new Texture2D{ Image{ static_cast<u32>(width), static_cast<u32>(height), 4, std::unique_ptr<u8[]>{ imgData } } };
       }
 
       return nullptr;
@@ -106,7 +106,7 @@ auto TextureImporter::Import(std::filesystem::path const& src) -> std::shared_pt
         }
 
         // Create the cubemap from the face imgs
-        return std::make_unique<Cubemap>(faceImgs);
+        return new Cubemap{ faceImgs };
       }
 
       return nullptr;

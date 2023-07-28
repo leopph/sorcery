@@ -30,7 +30,7 @@ auto Object::SetName(std::string name) noexcept -> void {
 }
 
 
-auto Object::Destroy(Object const& obj) const -> void {
+auto Object::Destroy(Object const& obj) -> void {
   auto const p{ std::addressof(obj) };
   delete p;
 

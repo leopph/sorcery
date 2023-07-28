@@ -20,7 +20,7 @@ auto NativeResourceImporter::GetSupportedFileExtensions(std::vector<std::string>
 }
 
 
-auto NativeResourceImporter::Import(std::filesystem::path const& src) -> std::shared_ptr<Resource> {
+auto NativeResourceImporter::Import(std::filesystem::path const& src) -> ObserverPtr<Resource> {
   if (!src.has_extension()) {
     return nullptr;
   }
@@ -31,12 +31,12 @@ auto NativeResourceImporter::Import(std::filesystem::path const& src) -> std::sh
     return nullptr;
   }
 
-  std::shared_ptr<NativeResource> nativeRes;
+  ObserverPtr<NativeResource> nativeRes{ nullptr };
 
   if (src.extension() == MATERIAL_FILE_EXT) {
-    nativeRes = std::make_shared<Material>();
+    nativeRes = new Material{};
   } else if (src.extension() == SCENE_FILE_EXT) {
-    nativeRes = std::make_shared<Scene>();
+    nativeRes = new Scene{};
   }
 
   if (nativeRes) {

@@ -26,7 +26,7 @@ private:
 
 public:
   LEOPPHAPI auto GetSupportedFileExtensions(std::vector<std::string>& out) -> void override;
-  [[nodiscard]] LEOPPHAPI auto Import(std::filesystem::path const& src) -> std::shared_ptr<Resource> override;
+  [[nodiscard]] LEOPPHAPI auto Import(std::filesystem::path const& src) -> ObserverPtr<Resource> override;
   [[nodiscard]] LEOPPHAPI auto GetPrecedence() const noexcept -> int override;
 };
 }

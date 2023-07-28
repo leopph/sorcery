@@ -37,7 +37,7 @@ auto MeshImporter::GetSupportedFileExtensions(std::vector<std::string>& out) -> 
 }
 
 
-auto MeshImporter::Import(std::filesystem::path const& src) -> std::shared_ptr<Resource> {
+auto MeshImporter::Import(std::filesystem::path const& src) -> ObserverPtr<Resource> {
   Assimp::Importer importer;
 
   // Remove unnecessary scene elements
@@ -181,7 +181,7 @@ auto MeshImporter::Import(std::filesystem::path const& src) -> std::shared_ptr<R
     ret.subMeshes.emplace_back(baseVertex, firstIndex, indexCount, scene->mMaterials[submeshMtlIdx]->GetName().C_Str());
   }
 
-  return std::make_shared<Mesh>(std::move(ret));
+  return new Mesh{ std::move(ret) };
 }
 
 
