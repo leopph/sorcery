@@ -59,6 +59,8 @@ public:
   [[nodiscard]] LEOPPHAPI auto GetName() const noexcept -> std::string_view;
   LEOPPHAPI auto SetName(std::string name) noexcept -> void;
 
+  LEOPPHAPI auto Destroy(Object const& obj) const -> void;
+
   [[nodiscard]] virtual auto GetSerializationType() const -> Type = 0;
 };
 
