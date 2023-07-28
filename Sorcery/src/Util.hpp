@@ -65,10 +65,6 @@ auto Call(Args&&... args) noexcept(std::is_nothrow_invocable_v<decltype(MemberFu
 }
 
 
-template<typename T>
-using ObserverPtr = T*;
-
-
 template<class T>
 concept Scalar = std::is_scalar_v<T>;
 

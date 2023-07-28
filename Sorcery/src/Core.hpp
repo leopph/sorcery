@@ -30,6 +30,9 @@ using f32 = float;
 using f64 = double;
 
 constexpr auto CACHE_LINE_SIZE = 64;
+
+template<typename T>
+using ObserverPtr = T*;
 #else
 #error "Only Windows x86-64 is supported."
 #endif
