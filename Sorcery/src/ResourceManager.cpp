@@ -42,7 +42,7 @@ auto ResourceManager::InternalLoadResource(std::filesystem::path const& src) -> 
   auto const importerType{ rttr::type::get(metaNode["importer"]["type"]) };
 
   auto importerVariant{ importerType.create() };
-  ReflectionDeserializeFromYAML(metaNode["importer"]["properties"], importerVariant);
+  ReflectionDeserializeFromYaml(metaNode["importer"]["properties"], importerVariant);
   auto& importer{ importerVariant.get_value<ResourceImporter>() };
 
   auto res{ importer.Import(src) };

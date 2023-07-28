@@ -73,7 +73,7 @@ auto ResourceDB::CreateResource(std::shared_ptr<NativeResource>&& res, std::file
 
   YAML::Node importerNode;
   importerNode["type"] = rttr::type::get<NativeResourceImporter>().get_name().to_string();
-  importerNode["properties"] = ReflectionSerializeToYAML(NativeResourceImporter{});
+  importerNode["properties"] = ReflectionSerializeToYaml(NativeResourceImporter{});
 
   YAML::Node metaNode;
   metaNode["guid"] = res->GetGuid();
@@ -119,7 +119,7 @@ auto ResourceDB::ImportResource(std::filesystem::path const& targetPathResDirRel
       if (ext == targetPathAbs.extension()) {
         YAML::Node importerNode;
         importerNode["type"] = importerType.get_name().to_string();
-        importerNode["properties"] = ReflectionSerializeToYAML(importerVariant);
+        importerNode["properties"] = ReflectionSerializeToYaml(importerVariant);
 
         auto const guid{ Guid::Generate() };
 

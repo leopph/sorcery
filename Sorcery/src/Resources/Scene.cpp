@@ -133,7 +133,7 @@ auto Scene::Save() -> void {
 
     if (rawWrappedType.is_sequential_container()) {
       for (auto const& elem : variant.create_sequential_view()) {
-        ret.push_back(ReflectionSerializeToYAML(elem, extensionFunc));
+        ret.push_back(ReflectionSerializeToYaml(elem, extensionFunc));
       }
     } else if (objType.is_pointer() && rawWrappedType.is_derived_from(rttr::type::get<SceneObject>())) {
       auto const ptr{
@@ -155,7 +155,7 @@ auto Scene::Save() -> void {
       }
     } else if (rawWrappedType.is_class() && !isWrapper) {
       for (auto const& prop : objType.get_properties()) {
-        ret[prop.get_name().to_string()] = ReflectionSerializeToYAML(prop.get_value(variant), extensionFunc);
+        ret[prop.get_name().to_string()] = ReflectionSerializeToYaml(prop.get_value(variant), extensionFunc);
       }
     }
 
@@ -165,7 +165,7 @@ auto Scene::Save() -> void {
   for (auto const& sceneObject : mSceneObjects) {
     YAML::Node sceneObjectNode;
     sceneObjectNode["type"] = rttr::type::get(*sceneObject).get_name().to_string();
-    sceneObjectNode["properties"] = ReflectionSerializeToYAML(*sceneObject, extensionFunc);
+    sceneObjectNode["properties"] = ReflectionSerializeToYaml(*sceneObject, extensionFunc);
     mYamlData["sceneObjects"].push_back(sceneObjectNode);
   }
 
@@ -218,7 +218,7 @@ auto Scene::Load(ObjectInstantiatorManager const& manager) -> void {
 
       for (auto const& elemNode : objNode) {
         auto elem{ sequence.get_value_type().create() };
-        ReflectionDeserializeFromYAML(elemNode, elem, extensionFunc);
+        ReflectionDeserializeFromYaml(elemNode, elem, extensionFunc);
         sequence.insert(sequence.end(), elem);
       }
     } else if (objType.is_pointer() && rawWrappedType.is_derived_from(rttr::type::get<SceneObject>())) {
@@ -236,14 +236,14 @@ auto Scene::Load(ObjectInstantiatorManager const& manager) -> void {
     } else if (rawWrappedType.is_class() && !isWrapper) {
       for (auto const& prop : objType.get_properties()) {
         auto propValue{ prop.get_value(variant) };
-        ReflectionDeserializeFromYAML(objNode[prop.get_name().to_string()], propValue, extensionFunc);
+        ReflectionDeserializeFromYaml(objNode[prop.get_name().to_string()], propValue, extensionFunc);
         std::ignore = prop.set_value(variant, propValue);
       }
     }
   };
 
   for (auto const& [fileId, obj] : ptrFixUp) {
-    ReflectionDeserializeFromYAML(mYamlData["sceneObjects"][fileId - 1]["properties"], *obj, extensionFunc);
+    ReflectionDeserializeFromYaml(mYamlData["sceneObjects"][fileId - 1]["properties"], *obj, extensionFunc);
   }
 
   ptrFixUp.clear();

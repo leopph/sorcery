@@ -1,5 +1,8 @@
 #include "Serialization.hpp"
 
+#include "Resources/Resource.hpp"
+#include "ResourceManager.hpp"
+
 
 namespace YAML {
 auto convert<sorcery::Quaternion>::encode(sorcery::Quaternion const& q) -> Node {
@@ -41,148 +44,86 @@ auto convert<sorcery::Guid>::decode(Node const& node, sorcery::Guid& guid) -> bo
 
 
 namespace sorcery {
-auto ReflectionSerializeToYAML(rttr::variant const& obj, std::function<YAML::Node(rttr::variant const&)> const& extensionFunc) -> YAML::Node {
+auto ReflectionSerializeToYaml(rttr::variant const& v, std::function<YAML::Node(rttr::variant const&)> const& extensionFunc) -> YAML::Node {
   YAML::Node retNode;
 
-  for (auto const prop : obj.get_type().get_properties()) {
-    retNode["properties"].push_back(detail::ReflectionSerializeToYAML(prop.get_value(obj), extensionFunc));
+  if (auto const underlyingType{
+    v.get_type().is_wrapper()
+      ? v.get_type().get_wrapped_type()
+      : v.get_type()
+  }; underlyingType.is_arithmetic()) {
+    [&v, &underlyingType, &retNode]<typename... Types> {
+      ([&v, &underlyingType, &retNode]<typename T> {
+        if (underlyingType == rttr::type::get<T>()) {
+          retNode = v.get_value<T>();
+        }
+      }.template operator()<Types>(), ...);
+    }.operator()<char, signed char, unsigned char, short, unsigned short, int, unsigned, long, unsigned long, long
+                 long, unsigned long long, float, double, long double>();
+  } else if (v.is_sequential_container()) {
+    for (auto const& elem : v.create_sequential_view()) {
+      retNode.push_back(ReflectionSerializeToYaml(elem, extensionFunc));
+    }
+  } else if (v.get_type().is_wrapper()) {
+    // We presume that it's a std::reference_wrapper then
+    if (!v.get_type().get_wrapped_type().is_pointer()) {
+      // TODO
+    }
+  } else if (v.get_type().is_pointer()) {
+    if (v.get_type().get_raw_type().is_derived_from(rttr::type::get<Resource>())) {
+      retNode = v.get_value<Resource*>()->GetGuid();
+    }
+  } else if (underlyingType.is_class()) {
+    for (auto const prop : underlyingType.get_properties()) {
+      retNode[prop.get_name().to_string()] = ReflectionSerializeToYaml(prop.get_value(v), extensionFunc);
+    }
+  } else if (extensionFunc) {
+    retNode = extensionFunc(v);
   }
 
   return retNode;
 }
 
 
-auto ReflectionDeserializeFromYAML(YAML::Node const& objNode, rttr::variant& obj, std::function<void(YAML::Node const&, rttr::variant&)> const& extensionFunc) -> void {
-  for (auto const prop : obj.get_type().get_properties()) {
-    rttr::variant propValue{ prop.get_value(obj) };
-    detail::ReflectionDeserializeFromYAML(objNode["properties"], propValue, extensionFunc);
-    std::ignore = prop.set_value(obj, propValue);
-  }
-}
+auto ReflectionDeserializeFromYaml(YAML::Node const& objNode, rttr::variant& v, std::function<void(YAML::Node const&, rttr::variant&)> const& extensionFunc) -> void {
+  if (auto const underlyingType{
+    v.get_type().is_wrapper()
+      ? v.get_type().get_wrapped_type()
+      : v.get_type()
+  }; underlyingType.is_arithmetic()) {
+    [&v, &underlyingType, &objNode]<typename... Types> {
+      ([&v, &underlyingType, &objNode]<typename T> {
+        if (underlyingType == rttr::type::get<T>()) {
+          v = objNode.as<T>();
+        }
+      }.template operator()<Types>(), ...);
+    }.operator()<char, signed char, unsigned char, short, unsigned short, int, unsigned, long, unsigned long, long
+                 long, unsigned long long, float, double, long double>();
+  } else if (v.is_sequential_container()) {
+    auto seqView{ v.create_sequential_view() };
+    seqView.set_size(objNode.size());
 
-
-namespace detail {
-auto ReflectionSerializeToYAML(rttr::variant const& variant, std::function<YAML::Node(rttr::variant const&)> const& extensionFunc) -> YAML::Node {
-  auto const objType{ variant.get_type() };
-  auto const isWrapper{ objType.is_wrapper() };
-  auto const wrappedType{ objType.get_wrapped_type() };
-  auto const rawWrappedType{
-    isWrapper
-      ? wrappedType.get_raw_type()
-      : objType.get_raw_type()
-  };
-
-  YAML::Node ret;
-
-  if (rawWrappedType.is_arithmetic()) {
-    if (rawWrappedType == rttr::type::get<char>()) {
-      ret = isWrapper
-              ? variant.get_wrapped_value<char>()
-              : variant.get_value<char>();
-    } else if (rawWrappedType == rttr::type::get<signed char>()) {
-      ret = isWrapper
-              ? variant.get_wrapped_value<signed char>()
-              : variant.get_value<signed char>();
-    } else if (rawWrappedType == rttr::type::get<unsigned char>()) {
-      ret = isWrapper
-              ? variant.get_wrapped_value<unsigned char>()
-              : variant.get_value<unsigned char>();
-    } else if (rawWrappedType == rttr::type::get<short>()) {
-      ret = isWrapper
-              ? variant.get_wrapped_value<short>()
-              : variant.get_value<short>();
-    } else if (rawWrappedType == rttr::type::get<unsigned short>()) {
-      ret = isWrapper
-              ? variant.get_wrapped_value<unsigned short>()
-              : variant.get_value<unsigned short>();
-    } else if (rawWrappedType == rttr::type::get<int>()) {
-      ret = isWrapper
-              ? variant.get_wrapped_value<int>()
-              : variant.get_value<int>();
-    } else if (rawWrappedType == rttr::type::get<unsigned>()) {
-      ret = isWrapper
-              ? variant.get_wrapped_value<unsigned>()
-              : variant.get_value<unsigned>();
-    } else if (rawWrappedType == rttr::type::get<long>()) {
-      ret = isWrapper
-              ? variant.get_wrapped_value<long>()
-              : variant.get_value<long>();
-    } else if (rawWrappedType == rttr::type::get<unsigned long>()) {
-      ret = isWrapper
-              ? variant.get_wrapped_value<unsigned long>()
-              : variant.get_value<unsigned long>();
-    } else if (rawWrappedType == rttr::type::get<long long>()) {
-      ret = isWrapper
-              ? variant.get_wrapped_value<long long>()
-              : variant.get_value<long long>();
-    } else if (rawWrappedType == rttr::type::get<unsigned long long>()) {
-      ret = isWrapper
-              ? variant.get_wrapped_value<unsigned long long>()
-              : variant.get_value<unsigned long long>();
-    } else if (rawWrappedType == rttr::type::get<float>()) {
-      ret = isWrapper
-              ? variant.get_wrapped_value<float>()
-              : variant.get_value<float>();
-    } else if (rawWrappedType == rttr::type::get<double>()) {
-      ret = isWrapper
-              ? variant.get_wrapped_value<double>()
-              : variant.get_value<double>();
-    } else if (rawWrappedType == rttr::type::get<long double>()) {
-      ret = isWrapper
-              ? variant.get_wrapped_value<long double>()
-              : variant.get_value<long double>();
+    for (auto i{ 0ll }; i < std::ssize(objNode); i++) {
+      rttr::variant elem;
+      ReflectionDeserializeFromYaml(objNode[i], elem, extensionFunc);
+      seqView.set_value(i, elem);
+    }
+  } else if (v.get_type().is_wrapper()) {
+    // We presume that it's a std::reference_wrapper then
+    if (!v.get_type().get_wrapped_type().is_pointer()) {
+      // TODO
+    }
+  } else if (v.get_type().is_pointer()) {
+    if (v.get_type().get_raw_type().is_derived_from(rttr::type::get<Resource>())) {
+      v = gResourceManager.LoadResource(objNode.as<Guid>()).Get();
+    }
+  } else if (underlyingType.is_class()) {
+    for (auto const prop : underlyingType.get_properties()) {
+      auto propValue{ prop.get_value(v) };
+      ReflectionDeserializeFromYaml(objNode[prop.get_name().to_string()], propValue, extensionFunc);
     }
   } else if (extensionFunc) {
-    ret = extensionFunc(variant);
+    extensionFunc(objNode, v);
   }
-
-  return ret;
-}
-
-
-auto ReflectionDeserializeFromYAML(YAML::Node const& objNode, rttr::variant& variant, std::function<void(YAML::Node const&, rttr::variant&)> const& extensionFunc) -> void {
-  auto const objType{ variant.get_type() };
-  auto const isWrapper{ objType.is_wrapper() };
-  auto const wrappedType{ objType.get_wrapped_type() };
-  auto const rawWrappedType{
-    isWrapper
-      ? wrappedType.get_raw_type()
-      : objType.get_raw_type()
-  };
-
-  if (rawWrappedType.is_arithmetic()) {
-    if (rawWrappedType == rttr::type::get<char>()) {
-      variant = objNode.as<char>();
-    } else if (rawWrappedType == rttr::type::get<signed char>()) {
-      variant = objNode.as<signed char>();
-    } else if (rawWrappedType == rttr::type::get<unsigned char>()) {
-      variant = objNode.as<unsigned char>();
-    } else if (rawWrappedType == rttr::type::get<short>()) {
-      variant = objNode.as<short>();
-    } else if (rawWrappedType == rttr::type::get<unsigned short>()) {
-      variant = objNode.as<unsigned short>();
-    } else if (rawWrappedType == rttr::type::get<int>()) {
-      variant = objNode.as<int>();
-    } else if (rawWrappedType == rttr::type::get<unsigned>()) {
-      variant = objNode.as<unsigned>();
-    } else if (rawWrappedType == rttr::type::get<long>()) {
-      variant = objNode.as<long>();
-    } else if (rawWrappedType == rttr::type::get<unsigned long>()) {
-      variant = objNode.as<unsigned long>();
-    } else if (rawWrappedType == rttr::type::get<long long>()) {
-      variant = objNode.as<long long>();
-    } else if (rawWrappedType == rttr::type::get<unsigned long long>()) {
-      variant = objNode.as<unsigned long long>();
-    } else if (rawWrappedType == rttr::type::get<float>()) {
-      variant = objNode.as<float>();
-    } else if (rawWrappedType == rttr::type::get<double>()) {
-      variant = objNode.as<double>();
-    } else if (rawWrappedType == rttr::type::get<long double>()) {
-      variant = objNode.as<long double>();
-    }
-  } else if (extensionFunc) {
-    extensionFunc(objNode, variant);
-  }
-}
 }
 }
