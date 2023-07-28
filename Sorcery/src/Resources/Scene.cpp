@@ -83,7 +83,7 @@ auto Scene::RemoveEntity(Entity const& entity) -> void {
 }
 
 
-auto Scene::GetEntities() const noexcept -> std::span<ObserverPtr<Entity> const> {
+auto Scene::GetEntities() const noexcept -> std::vector<ObserverPtr<Entity>> const& {
   return mEntities;
 }
 

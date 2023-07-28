@@ -30,13 +30,13 @@ Object::~Object() {
 }
 
 
-auto Object::GetName() const noexcept -> std::string_view {
+auto Object::GetName() const noexcept -> std::string const& {
   return mName;
 }
 
 
-auto Object::SetName(std::string name) noexcept -> void {
-  mName = std::move(name);
+auto Object::SetName(std::string const& name) -> void {
+  mName = name;
 }
 
 

@@ -1,9 +1,6 @@
 #pragma once
 
-#include <span>
-
 #include "Component.hpp"
-
 #include "Math.hpp"
 
 
@@ -34,7 +31,7 @@ private:
   Vector3 mUp{ Vector3::Up() };
 
   TransformComponent* mParent{ nullptr };
-  std::vector<TransformComponent*> mChildren;
+  std::vector<ObserverPtr<TransformComponent>> mChildren;
 
   Matrix4 mModelMat{ Matrix4::Identity() };
   Matrix3 mNormalMat{ Matrix4::Identity() };
@@ -73,10 +70,10 @@ public:
   [[nodiscard]] LEOPPHAPI auto GetUpAxis() const -> Vector3 const&;
   [[nodiscard]] LEOPPHAPI auto GetForwardAxis() const -> Vector3 const&;
 
-  [[nodiscard]] LEOPPHAPI auto GetParent() const -> TransformComponent*;
-  LEOPPHAPI auto SetParent(TransformComponent* parent) -> void;
+  [[nodiscard]] LEOPPHAPI auto GetParent() const -> ObserverPtr<TransformComponent>;
+  LEOPPHAPI auto SetParent(ObserverPtr<TransformComponent> parent) -> void;
 
-  [[nodiscard]] LEOPPHAPI auto GetChildren() const -> std::span<TransformComponent* const>;
+  [[nodiscard]] LEOPPHAPI auto GetChildren() const -> std::vector<ObserverPtr<TransformComponent>> const&;
 
   [[nodiscard]] LEOPPHAPI auto GetModelMatrix() const -> Matrix4 const&;
   [[nodiscard]] LEOPPHAPI auto GetNormalMatrix() const -> Matrix3 const&;

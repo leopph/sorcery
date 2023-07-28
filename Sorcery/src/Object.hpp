@@ -27,8 +27,8 @@ public:
   auto operator=(Object const& other) -> void = delete;
   auto operator=(Object&& other) -> void = delete;
 
-  [[nodiscard]] LEOPPHAPI auto GetName() const noexcept -> std::string_view;
-  LEOPPHAPI auto SetName(std::string name) noexcept -> void;
+  [[nodiscard]] LEOPPHAPI auto GetName() const noexcept -> std::string const&;
+  LEOPPHAPI auto SetName(std::string const& name) -> void;
 
   virtual auto OnDrawProperties() -> void {}
   virtual auto OnDrawGizmosSelected() -> void {}

@@ -43,19 +43,19 @@ StaticMeshComponent::~StaticMeshComponent() {
 }
 
 
-auto StaticMeshComponent::GetMaterials() const noexcept -> std::span<ObserverPtr<Material> const> {
+auto StaticMeshComponent::GetMaterials() const noexcept -> std::vector<ObserverPtr<Material>> const& {
   return mMaterials;
 }
 
 
-auto StaticMeshComponent::SetMaterials(std::vector<ObserverPtr<Material>> materials) -> void {
+auto StaticMeshComponent::SetMaterials(std::vector<ObserverPtr<Material>> const& materials) -> void {
   for (auto const mtl : materials) {
     if (!mtl) {
       throw std::runtime_error{ "Found nullptr while attempting to materials on StaticMeshComponent." };
     }
   }
 
-  mMaterials = std::move(materials);
+  mMaterials = materials;
   AdjustMaterialListForMesh();
 }
 

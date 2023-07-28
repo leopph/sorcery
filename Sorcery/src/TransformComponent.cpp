@@ -183,12 +183,12 @@ auto TransformComponent::GetForwardAxis() const -> Vector3 const& {
 }
 
 
-auto TransformComponent::GetParent() const -> TransformComponent* {
+auto TransformComponent::GetParent() const -> ObserverPtr<TransformComponent> {
   return mParent;
 }
 
 
-auto TransformComponent::SetParent(TransformComponent* const parent) -> void {
+auto TransformComponent::SetParent(ObserverPtr<TransformComponent> parent) -> void {
   if (mParent) {
     std::erase(mParent->mChildren, this);
   }
@@ -203,7 +203,7 @@ auto TransformComponent::SetParent(TransformComponent* const parent) -> void {
 }
 
 
-auto TransformComponent::GetChildren() const -> std::span<TransformComponent* const> {
+auto TransformComponent::GetChildren() const -> std::vector<ObserverPtr<TransformComponent>> const& {
   return mChildren;
 }
 
