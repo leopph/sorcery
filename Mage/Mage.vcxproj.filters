@@ -21,9 +21,6 @@
     <ClCompile Include="src\Widgets.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ObjectWrappers\ObjectWrapperManager.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\EditorContext.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -78,12 +75,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Widgets.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\ObjectWrappers\ObjectWrapperManager.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\ObjectWrappers\ObjectWrappers.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\EditorContext.hpp">
