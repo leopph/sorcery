@@ -38,4 +38,11 @@ auto Object::GetName() const noexcept -> std::string_view {
 auto Object::SetName(std::string name) noexcept -> void {
   mName = std::move(name);
 }
+
+
+auto Object::DestroyAll() -> void {
+  while (!sAllObjects.empty()) {
+    delete sAllObjects.back();
+  }
+}
 }

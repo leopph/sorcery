@@ -44,6 +44,8 @@ public:
 
   template<std::derived_from<Object> T>
   static auto FindObjectsOfType(std::vector<Object*>& out) -> std::vector<Object*>&;
+
+  LEOPPHAPI static auto DestroyAll() -> void;
 };
 
 

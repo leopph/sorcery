@@ -20,6 +20,10 @@ std::vector<Scene*> Scene::sAllScenes;
 
 
 auto Scene::GetActiveScene() noexcept -> Scene* {
+  if (!sActiveScene) {
+    sActiveScene = new Scene{};
+  }
+
   return sActiveScene;
 }
 
@@ -35,6 +39,11 @@ Scene::Scene() {
 
 Scene::~Scene() {
   std::erase(sAllScenes, this);
+
+  // Strange loop needed because Entity dtor calls Scene::RemoveEntity
+  while (!mEntities.empty()) {
+    delete mEntities.back();
+  }
 
   if (sActiveScene == this) {
     sActiveScene = sAllScenes.empty()
@@ -61,6 +70,16 @@ auto Scene::OnDrawProperties() -> void {
   if (ImGui::Button("Open")) {
     //context.OpenScene(dynamic_cast<Scene&>(object)); TODO
   }
+}
+
+
+auto Scene::AddEntity(Entity& entity) -> void {
+  mEntities.push_back(std::addressof(entity));
+}
+
+
+auto Scene::RemoveEntity(Entity const& entity) -> void {
+  std::erase(mEntities, std::addressof(entity));
 }
 
 

@@ -1,5 +1,7 @@
 #include "Entity.hpp"
 
+#include "Resources/Scene.hpp"
+
 #include <functional>
 #include <iostream>
 #include <cassert>
@@ -33,7 +35,8 @@ auto Entity::FindEntityByName(std::string_view const name) -> Entity* {
 }
 
 
-Entity::Entity() {
+Entity::Entity() :
+  mScene{ Scene::GetActiveScene() } {
   auto constexpr defaultEntityName{ "New Entity" };
   SetName(defaultEntityName);
   FindObjectsOfType(gEntityCache);
@@ -51,17 +54,20 @@ Entity::Entity() {
       }
     }
   }
+
+  mScene->AddEntity(*this);
+}
+
+
+Entity::~Entity() {
+  mScene->RemoveEntity(*this);
+  // TODO deleting components?
 }
 
 
 auto Entity::GetScene() const -> Scene& {
   assert(mScene);
   return *mScene;
-}
-
-
-auto Entity::SetScene(Scene& scene) noexcept -> void {
-  mScene = std::addressof(scene);
 }
 
 

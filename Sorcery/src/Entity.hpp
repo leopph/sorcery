@@ -17,30 +17,27 @@ class Scene;
 class Entity final : public SceneObject {
   RTTR_ENABLE(SceneObject)
   RTTR_REGISTRATION_FRIEND
-  friend class Scene;
 
   ObserverPtr<Scene> mScene{ nullptr };
   mutable ObserverPtr<TransformComponent> mTransform{ nullptr };
   std::vector<ObserverPtr<Component>> mComponents;
 
 public:
-  [[nodiscard]] LEOPPHAPI static auto FindEntityByName(std::string_view name) -> Entity*;
+  LEOPPHAPI Entity();
+  Entity(Entity const& other) = delete;
+  Entity(Entity&& other) = delete;
 
-private:
-  Entity();
+  LEOPPHAPI ~Entity() override;
 
-public:
-  [[nodiscard]] LEOPPHAPI auto GetScene() const -> Scene&;
+  auto operator=(Entity const& other) -> void = delete;
+  auto operator=(Entity&& other) -> void = delete;
 
-private:
-  auto SetScene(Scene& scene) noexcept -> void;
-
-public:
   [[nodiscard]] LEOPPHAPI auto GetTransform() const -> TransformComponent&;
+
+  [[nodiscard]] LEOPPHAPI auto GetScene() const -> Scene&;
 
   LEOPPHAPI auto AddComponent(Component& component) -> void;
   LEOPPHAPI auto RemoveComponent(Component& component) -> void;
-
 
   template<std::derived_from<Component> T>
   auto GetComponent() const -> ObserverPtr<T>;
@@ -50,6 +47,8 @@ public:
 
   LEOPPHAPI auto OnDrawProperties() -> void override;
   LEOPPHAPI auto OnDrawGizmosSelected() -> void override;
+
+  [[nodiscard]] LEOPPHAPI static auto FindEntityByName(std::string_view name) -> Entity*;
 };
 
 

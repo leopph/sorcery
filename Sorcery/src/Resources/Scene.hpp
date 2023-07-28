@@ -31,6 +31,8 @@ public:
   auto operator=(Scene const& other) -> void = delete;
   auto operator=(Scene&& other) -> void = delete;
 
+  LEOPPHAPI auto AddEntity(Entity& entity) -> void;
+  LEOPPHAPI auto RemoveEntity(Entity const& entity) -> void;
   [[nodiscard]] LEOPPHAPI auto GetEntities() const noexcept -> std::span<ObserverPtr<Entity> const>;
 
   LEOPPHAPI auto Save() -> void;
