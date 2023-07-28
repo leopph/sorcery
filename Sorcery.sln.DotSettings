@@ -46,6 +46,10 @@
 	<s:Boolean x:Key="/Default/CodeStyle/CodeFormatting/CppFormatting/USE_INDENT_FROM_VS/@EntryValue">False</s:Boolean>
 	<s:Boolean x:Key="/Default/CodeStyle/CodeFormatting/CppFormatting/WRAP_LINES/@EntryValue">False</s:Boolean>
 	<s:String x:Key="/Default/CodeStyle/CodeFormatting/CppFormatting/WRAP_TERNARY_EXPR_STYLE/@EntryValue">CHOP_ALWAYS</s:String>
+	<s:String x:Key="/Default/CodeStyle/CppSortIncludes/IncludeSortCategories/@EntryValue">&lt;CppIncludeCategories&gt;&#xD;
+  &lt;CppIncludeCategorySetting Pattern="^&amp;quot;.*" Description="#include &amp;quot;header&amp;quot;" Group="2" Order="2" /&gt;&#xD;
+  &lt;CppIncludeCategorySetting Pattern="^&amp;lt;.*" Description="#include &amp;lt;header&amp;gt;" Group="3" Order="3" /&gt;&#xD;
+&lt;/CppIncludeCategories&gt;</s:String>
 	<s:Boolean x:Key="/Default/CodeStyle/Generate/=CppDefinitions/@KeyIndexDefined">True</s:Boolean>
 	<s:String x:Key="/Default/CodeStyle/Generate/=CppDefinitions/Options/=GenerateInlineDefinitions/@EntryIndexedValue">False</s:String>
 	<s:String x:Key="/Default/CodeStyle/Naming/CppNaming/Rules/=Class_0020and_0020struct_0020fields/@EntryIndexedValue"></s:String>
