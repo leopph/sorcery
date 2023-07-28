@@ -146,7 +146,7 @@ auto Scene::Load(ObjectInstantiatorManager const& manager) -> void {
   }
 
   auto const extensionFunc{
-    [&extensionFunc](YAML::Node const& objNode, rttr::variant& v) -> void {
+    [](YAML::Node const& objNode, rttr::variant& v) -> void {
       if (auto const type{ v.get_type() }; (type.is_pointer() && type.get_raw_type().is_derived_from(rttr::type::get<SceneObject>())) || (type.is_wrapper() && type.get_wrapped_type().is_pointer() && type.get_wrapped_type().get_raw_type().is_derived_from(rttr::type::get<SceneObject>()))) {
         auto const it{ ptrFixUp.find(objNode.as<int>(0)) };
         v = it != std::end(ptrFixUp)
