@@ -208,9 +208,9 @@ class Renderer::Impl {
   ComPtr<ID3D11DepthStencilState> mDepthTestLessEqualNoWriteDss;
   ComPtr<ID3D11DepthStencilState> mDepthTestGreaterEqualNoWriteDss;
 
-  ResourceHandle<Material> mDefaultMaterial;
-  ResourceHandle<Mesh> mCubeMesh;
-  ResourceHandle<Mesh> mPlaneMesh;
+  ObserverPtr<Material> mDefaultMaterial;
+  ObserverPtr<Mesh> mCubeMesh;
+  ObserverPtr<Mesh> mPlaneMesh;
 
   std::unique_ptr<DirectionalShadowAtlas> mDirectionalShadowAtlas;
   std::unique_ptr<PunctualShadowAtlas> mPunctualShadowAtlas;
@@ -302,9 +302,9 @@ public:
   auto RegisterLight(LightComponent const* light) -> void;
   auto UnregisterLight(LightComponent const* light) -> void;
 
-  auto GetDefaultMaterial() noexcept -> ResourceHandle<Material>;
-  auto GetCubeMesh() noexcept -> ResourceHandle<Mesh>;
-  auto GetPlaneMesh() noexcept -> ResourceHandle<Mesh>;
+  auto GetDefaultMaterial() noexcept -> ObserverPtr<Material>;
+  auto GetCubeMesh() noexcept -> ObserverPtr<Mesh>;
+  auto GetPlaneMesh() noexcept -> ObserverPtr<Mesh>;
 
   auto GetGamma() noexcept -> f32;
   auto SetGamma(f32 gamma) noexcept -> void;
@@ -933,9 +933,9 @@ auto Renderer::Impl::CreateSamplerStates() -> void {
 
 
 auto Renderer::Impl::CreateDefaultAssets() -> void {
-  auto defaultMtl{ std::make_shared<Material>() };
-  defaultMtl->SetName("Default Material");
-  mDefaultMaterial = gResourceManager.Add(std::move(defaultMtl));
+  mDefaultMaterial = new Material{};
+  mDefaultMaterial->SetName("Default Material");
+  gResourceManager.Add(mDefaultMaterial);
 
   std::vector<Vector3> cubeNormals;
   CalculateNormals(CUBE_POSITIONS, CUBE_INDICES, cubeNormals);
@@ -949,31 +949,31 @@ auto Renderer::Impl::CreateDefaultAssets() -> void {
   std::vector<Vector3> quadTangents;
   CalculateTangents(QUAD_POSITIONS, QUAD_UVS, QUAD_INDICES, quadTangents);
 
-  auto cubeMesh{ std::make_shared<Mesh>() };
-  cubeMesh->SetGuid(Guid{ 0, 1 });
-  cubeMesh->SetName("Cube");
-  cubeMesh->SetPositions(CUBE_POSITIONS);
-  cubeMesh->SetNormals(std::move(cubeNormals));
-  cubeMesh->SetUVs(CUBE_UVS);
-  cubeMesh->SetTangents(std::move(cubeTangents));
-  cubeMesh->SetIndices(CUBE_INDICES);
-  cubeMesh->SetSubMeshes(std::vector{ Mesh::SubMeshData{ 0, 0, static_cast<int>(CUBE_INDICES.size()), "Material" } });
-  cubeMesh->ValidateAndUpdate();
-  cubeMesh->ReleaseCPUMemory();
-  mCubeMesh = gResourceManager.Add(std::move(cubeMesh));
+  mCubeMesh = new Mesh{};
+  mCubeMesh->SetGuid(Guid{ 0, 1 });
+  mCubeMesh->SetName("Cube");
+  mCubeMesh->SetPositions(CUBE_POSITIONS);
+  mCubeMesh->SetNormals(std::move(cubeNormals));
+  mCubeMesh->SetUVs(CUBE_UVS);
+  mCubeMesh->SetTangents(std::move(cubeTangents));
+  mCubeMesh->SetIndices(CUBE_INDICES);
+  mCubeMesh->SetSubMeshes(std::vector{ Mesh::SubMeshData{ 0, 0, static_cast<int>(CUBE_INDICES.size()), "Material" } });
+  mCubeMesh->ValidateAndUpdate();
+  mCubeMesh->ReleaseCPUMemory();
+  gResourceManager.Add(mCubeMesh);
 
-  auto planeMesh{ std::make_shared<Mesh>() };
-  planeMesh->SetGuid(Guid{ 0, 2 });
-  planeMesh->SetName("Plane");
-  planeMesh->SetPositions(QUAD_POSITIONS);
-  planeMesh->SetNormals(std::move(quadNormals));
-  planeMesh->SetUVs(QUAD_UVS);
-  planeMesh->SetTangents(std::move(quadTangents));
-  planeMesh->SetIndices(QUAD_INDICES);
-  planeMesh->SetSubMeshes(std::vector{ Mesh::SubMeshData{ 0, 0, static_cast<int>(QUAD_INDICES.size()), "Material" } });
-  planeMesh->ValidateAndUpdate();
-  planeMesh->ReleaseCPUMemory();
-  mPlaneMesh = gResourceManager.Add(std::move(planeMesh));
+  mPlaneMesh = new Mesh{};
+  mPlaneMesh->SetGuid(Guid{ 0, 2 });
+  mPlaneMesh->SetName("Plane");
+  mPlaneMesh->SetPositions(QUAD_POSITIONS);
+  mPlaneMesh->SetNormals(std::move(quadNormals));
+  mPlaneMesh->SetUVs(QUAD_UVS);
+  mPlaneMesh->SetTangents(std::move(quadTangents));
+  mPlaneMesh->SetIndices(QUAD_INDICES);
+  mPlaneMesh->SetSubMeshes(std::vector{ Mesh::SubMeshData{ 0, 0, static_cast<int>(QUAD_INDICES.size()), "Material" } });
+  mPlaneMesh->ValidateAndUpdate();
+  mPlaneMesh->ReleaseCPUMemory();
+  gResourceManager.Add(mPlaneMesh);
 }
 
 
@@ -985,17 +985,13 @@ auto Renderer::Impl::DrawMeshes(std::span<int const> const meshComponentIndices,
 
   for (auto const meshComponentIdx : meshComponentIndices) {
     auto const meshComponent{ mStaticMeshComponents[meshComponentIdx] };
-    auto const mesh{ meshComponent->GetMesh().Get() };
+    auto const& mesh{ meshComponent->GetMesh() };
 
-    if (!mesh) {
-      continue;
-    }
-
-    std::array const vertexBuffers{ mesh->GetPositionBuffer().Get(), mesh->GetNormalBuffer().Get(), mesh->GetUVBuffer().Get(), mesh->GetTangentBuffer().Get() };
+    std::array const vertexBuffers{ mesh.GetPositionBuffer().Get(), mesh.GetNormalBuffer().Get(), mesh.GetUVBuffer().Get(), mesh.GetTangentBuffer().Get() };
     UINT constexpr strides[]{ sizeof(Vector3), sizeof(Vector3), sizeof(Vector2), sizeof(Vector3) };
     UINT constexpr offsets[]{ 0, 0, 0, 0 };
     mImmediateContext->IASetVertexBuffers(0, static_cast<UINT>(vertexBuffers.size()), vertexBuffers.data(), strides, offsets);
-    mImmediateContext->IASetIndexBuffer(mesh->GetIndexBuffer().Get(), DXGI_FORMAT_R32_UINT, 0);
+    mImmediateContext->IASetIndexBuffer(mesh.GetIndexBuffer().Get(), DXGI_FORMAT_R32_UINT, 0);
 
     D3D11_MAPPED_SUBRESOURCE mappedPerDrawCb;
     mImmediateContext->Map(mPerDrawCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerDrawCb);
@@ -1004,74 +1000,72 @@ auto Renderer::Impl::DrawMeshes(std::span<int const> const meshComponentIndices,
     perDrawCbData->gPerDrawConstants.normalMtx = Matrix4{ meshComponent->GetEntity().GetTransform().GetNormalMatrix() };
     mImmediateContext->Unmap(mPerDrawCb.Get(), 0);
 
-    auto const subMeshes{ mesh->GetSubMeshes() };
+    auto const subMeshes{ mesh.GetSubMeshes() };
     auto const& materials{ meshComponent->GetMaterials() };
 
     for (int i = 0; i < static_cast<int>(subMeshes.size()); i++) {
       auto const& [baseVertex, firstIndex, indexCount, mtlSlotName]{ subMeshes[i] };
 
       if (useMaterials) {
-        auto const& mtlHandle{
+        auto const mtl{
           static_cast<int>(materials.size()) > i
             ? materials[i]
             : mDefaultMaterial
         };
 
-        if (auto const mtl{ mtlHandle.Get() }) {
-          auto const mtlBuffer{ mtl->GetBuffer() };
-          mImmediateContext->VSSetConstantBuffers(CB_SLOT_PER_MATERIAL, 1, &mtlBuffer);
-          mImmediateContext->PSSetConstantBuffers(CB_SLOT_PER_MATERIAL, 1, &mtlBuffer);
+        auto const mtlBuffer{ mtl->GetBuffer() };
+        mImmediateContext->VSSetConstantBuffers(CB_SLOT_PER_MATERIAL, 1, &mtlBuffer);
+        mImmediateContext->PSSetConstantBuffers(CB_SLOT_PER_MATERIAL, 1, &mtlBuffer);
 
-          auto const albedoSrv{
-            [mtl] {
-              auto const albedoMap{ mtl->GetAlbedoMap().Get() };
-              return albedoMap
-                       ? albedoMap->GetSrv()
-                       : nullptr;
-            }()
-          };
-          mImmediateContext->PSSetShaderResources(RES_SLOT_ALBEDO_MAP, 1, &albedoSrv);
+        auto const albedoSrv{
+          [mtl] {
+            auto const albedoMap{ mtl->GetAlbedoMap() };
+            return albedoMap
+                     ? albedoMap->GetSrv()
+                     : nullptr;
+          }()
+        };
+        mImmediateContext->PSSetShaderResources(RES_SLOT_ALBEDO_MAP, 1, &albedoSrv);
 
-          auto const metallicSrv{
-            [mtl] {
-              auto const metallicMap{ mtl->GetMetallicMap().Get() };
-              return metallicMap
-                       ? metallicMap->GetSrv()
-                       : nullptr;
-            }()
-          };
-          mImmediateContext->PSSetShaderResources(RES_SLOT_METALLIC_MAP, 1, &metallicSrv);
+        auto const metallicSrv{
+          [mtl] {
+            auto const metallicMap{ mtl->GetMetallicMap() };
+            return metallicMap
+                     ? metallicMap->GetSrv()
+                     : nullptr;
+          }()
+        };
+        mImmediateContext->PSSetShaderResources(RES_SLOT_METALLIC_MAP, 1, &metallicSrv);
 
-          auto const roughnessSrv{
-            [mtl] {
-              auto const roughnessMap{ mtl->GetRoughnessMap().Get() };
-              return roughnessMap
-                       ? roughnessMap->GetSrv()
-                       : nullptr;
-            }()
-          };
-          mImmediateContext->PSSetShaderResources(RES_SLOT_ROUGHNESS_MAP, 1, &roughnessSrv);
+        auto const roughnessSrv{
+          [mtl] {
+            auto const roughnessMap{ mtl->GetRoughnessMap() };
+            return roughnessMap
+                     ? roughnessMap->GetSrv()
+                     : nullptr;
+          }()
+        };
+        mImmediateContext->PSSetShaderResources(RES_SLOT_ROUGHNESS_MAP, 1, &roughnessSrv);
 
-          auto const aoSrv{
-            [mtl] {
-              auto const aoMap{ mtl->GetAoMap().Get() };
-              return aoMap
-                       ? aoMap->GetSrv()
-                       : nullptr;
-            }()
-          };
-          mImmediateContext->PSSetShaderResources(RES_SLOT_AO_MAP, 1, &aoSrv);
+        auto const aoSrv{
+          [mtl] {
+            auto const aoMap{ mtl->GetAoMap() };
+            return aoMap
+                     ? aoMap->GetSrv()
+                     : nullptr;
+          }()
+        };
+        mImmediateContext->PSSetShaderResources(RES_SLOT_AO_MAP, 1, &aoSrv);
 
-          auto const normalSrv{
-            [&mtl] {
-              auto const normalMap{ mtl->GetNormalMap().Get() };
-              return normalMap
-                       ? normalMap->GetSrv()
-                       : nullptr;
-            }()
-          };
-          mImmediateContext->PSSetShaderResources(RES_SLOT_NORMAL_MAP, 1, &normalSrv);
-        }
+        auto const normalSrv{
+          [&mtl] {
+            auto const normalMap{ mtl->GetNormalMap() };
+            return normalMap
+                     ? normalMap->GetSrv()
+                     : nullptr;
+          }()
+        };
+        mImmediateContext->PSSetShaderResources(RES_SLOT_NORMAL_MAP, 1, &normalSrv);
       }
 
       mImmediateContext->DrawIndexed(indexCount, firstIndex, baseVertex);
@@ -1128,11 +1122,11 @@ auto Renderer::Impl::DrawSkybox(Matrix4 const& camViewMtx, Matrix4 const& camPro
   skyboxCBData->skyboxViewProjMtx = Matrix4{ Matrix3{ camViewMtx } } * camProjMtx;
   mImmediateContext->Unmap(mSkyboxCb.Get(), 0);
 
-  ID3D11Buffer* const vertexBuffer{ mCubeMesh.Get()->GetPositionBuffer().Get() };
+  ID3D11Buffer* const vertexBuffer{ mCubeMesh->GetPositionBuffer().Get() };
   UINT constexpr stride{ sizeof(Vector3) };
   UINT constexpr offset{ 0 };
   mImmediateContext->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
-  mImmediateContext->IASetIndexBuffer(mCubeMesh.Get()->GetIndexBuffer().Get(), DXGI_FORMAT_R32_UINT, 0);
+  mImmediateContext->IASetIndexBuffer(mCubeMesh->GetIndexBuffer().Get(), DXGI_FORMAT_R32_UINT, 0);
   mImmediateContext->IASetInputLayout(mPos3OnlyIl.Get());
   mImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -1549,17 +1543,17 @@ auto Renderer::Impl::UnregisterLight(LightComponent const* light) -> void {
 }
 
 
-auto Renderer::Impl::GetDefaultMaterial() noexcept -> ResourceHandle<Material> {
+auto Renderer::Impl::GetDefaultMaterial() noexcept -> ObserverPtr<Material> {
   return mDefaultMaterial;
 }
 
 
-auto Renderer::Impl::GetCubeMesh() noexcept -> ResourceHandle<Mesh> {
+auto Renderer::Impl::GetCubeMesh() noexcept -> ObserverPtr<Mesh> {
   return mCubeMesh;
 }
 
 
-auto Renderer::Impl::GetPlaneMesh() noexcept -> ResourceHandle<Mesh> {
+auto Renderer::Impl::GetPlaneMesh() noexcept -> ObserverPtr<Mesh> {
   return mPlaneMesh;
 }
 
@@ -1796,9 +1790,9 @@ auto Renderer::GetDevice() noexcept -> ID3D11Device* { return mImpl->GetDevice()
 auto Renderer::GetImmediateContext() noexcept -> ID3D11DeviceContext* { return mImpl->GetImmediateContext(); }
 auto Renderer::RegisterLight(LightComponent const* light) -> void { mImpl->RegisterLight(light); }
 auto Renderer::UnregisterLight(LightComponent const* light) -> void { mImpl->UnregisterLight(light); }
-auto Renderer::GetDefaultMaterial() noexcept -> ResourceHandle<Material> { return mImpl->GetDefaultMaterial(); }
-auto Renderer::GetCubeMesh() noexcept -> ResourceHandle<Mesh> { return mImpl->GetCubeMesh(); }
-auto Renderer::GetPlaneMesh() noexcept -> ResourceHandle<Mesh> { return mImpl->GetPlaneMesh(); }
+auto Renderer::GetDefaultMaterial() noexcept -> ObserverPtr<Material> { return mImpl->GetDefaultMaterial(); }
+auto Renderer::GetCubeMesh() noexcept -> ObserverPtr<Mesh> { return mImpl->GetCubeMesh(); }
+auto Renderer::GetPlaneMesh() noexcept -> ObserverPtr<Mesh> { return mImpl->GetPlaneMesh(); }
 auto Renderer::GetGamma() noexcept -> f32 { return mImpl->GetGamma(); }
 auto Renderer::SetGamma(f32 const gamma) noexcept -> void { mImpl->SetGamma(gamma); }
 auto Renderer::RegisterSkybox(SkyboxComponent const* skybox) -> void { mImpl->RegisterSkybox(skybox); }

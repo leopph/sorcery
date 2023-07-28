@@ -1,5 +1,7 @@
 #include "StaticMeshComponent.hpp"
 
+#include <cassert>
+
 #include "Entity.hpp"
 #include "Renderer.hpp"
 #include "TransformComponent.hpp"
@@ -18,13 +20,9 @@ Object::Type const StaticMeshComponent::SerializationType{ Type::StaticMesh };
 
 
 auto StaticMeshComponent::AdjustMaterialListForMesh() -> void {
-  auto const mesh{ mMesh.Get() };
+  assert(mMesh);
 
-  if (!mesh) {
-    return;
-  }
-
-  if (std::size_t const subMeshCount{ std::size(mesh->GetSubMeshes()) }, mtlCount{ std::size(mMaterials) }; subMeshCount != mtlCount) {
+  if (std::size_t const subMeshCount{ std::size(mMesh->GetSubMeshes()) }, mtlCount{ std::size(mMaterials) }; subMeshCount != mtlCount) {
     mMaterials.resize(subMeshCount);
 
     for (std::size_t i{ mtlCount }; i < subMeshCount; i++) {
@@ -46,14 +44,14 @@ StaticMeshComponent::~StaticMeshComponent() {
 }
 
 
-auto StaticMeshComponent::GetMaterials() const noexcept -> std::span<ResourceHandle<Material> const> {
+auto StaticMeshComponent::GetMaterials() const noexcept -> std::span<ObserverPtr<Material> const> {
   return mMaterials;
 }
 
 
-auto StaticMeshComponent::SetMaterials(std::vector<ResourceHandle<Material>> materials) -> void {
-  for (auto const& mtl : materials) {
-    if (mtl == nullres) {
+auto StaticMeshComponent::SetMaterials(std::vector<ObserverPtr<Material>> materials) -> void {
+  for (auto const mtl : materials) {
+    if (!mtl) {
       throw std::runtime_error{ "Found nullptr while attempting to materials on StaticMeshComponent." };
     }
   }
@@ -63,25 +61,24 @@ auto StaticMeshComponent::SetMaterials(std::vector<ResourceHandle<Material>> mat
 }
 
 
-auto StaticMeshComponent::ReplaceMaterial(int const idx, ResourceHandle<Material> const& mtl) -> void {
+auto StaticMeshComponent::ReplaceMaterial(int const idx, Material& mtl) -> void {
   if (idx >= std::ssize(mMaterials)) {
     throw std::runtime_error{ std::format("Invalid index {} while attempting to replace material on StaticMeshComponent.", idx) };
   }
 
-  mMaterials[idx] = mtl;
+  mMaterials[idx] = std::addressof(mtl);
 }
 
 
-auto StaticMeshComponent::GetMesh() const noexcept -> ResourceHandle<Mesh> const& {
-  return mMesh;
+auto StaticMeshComponent::GetMesh() const noexcept -> Mesh& {
+  assert(mMesh);
+  return *mMesh;
 }
 
 
-auto StaticMeshComponent::SetMesh(ResourceHandle<Mesh> const& mesh) noexcept -> void {
-  if (mesh) {
-    mMesh = mesh;
-    AdjustMaterialListForMesh();
-  }
+auto StaticMeshComponent::SetMesh(Mesh& mesh) noexcept -> void {
+  mMesh = std::addressof(mesh);
+  AdjustMaterialListForMesh();
 }
 
 
@@ -91,13 +88,9 @@ auto StaticMeshComponent::GetSerializationType() const -> Type {
 
 
 auto StaticMeshComponent::CalculateBounds() const noexcept -> AABB {
-  auto const mesh{ mMesh.Get() };
+  assert(mMesh);
 
-  if (!mesh) {
-    return AABB{};
-  }
-
-  auto const& localBounds{ mesh->GetBounds() };
+  auto const& localBounds{ mMesh->GetBounds() };
   auto const modelMtx{ GetEntity().GetTransform().GetModelMatrix() };
   auto boundsVertices{ localBounds.CalculateVertices() };
 

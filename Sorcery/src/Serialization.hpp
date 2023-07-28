@@ -74,12 +74,13 @@ auto convert<sorcery::Vector<T, N>>::decode(Node const& node, sorcery::Vector<T,
 namespace sorcery {
 template<typename T>
 auto ReflectionSerializeToYaml(T const& obj, std::function<YAML::Node(rttr::variant const&)> const& extensionFunc) -> YAML::Node {
-  return ReflectionSerializeToYaml(std::ref(obj), extensionFunc);
+  return ReflectionSerializeToYaml(rttr::variant{ std::ref(obj) }, extensionFunc);
 }
 
 
 template<typename T>
 auto ReflectionDeserializeFromYaml(YAML::Node const& objNode, T& obj, std::function<void(YAML::Node const&, rttr::variant&)> const& extensionFunc) -> void {
-  ReflectionDeserializeFromYaml(objNode, std::ref(obj), extensionFunc);
+  rttr::variant v{ std::ref(obj) };
+  ReflectionDeserializeFromYaml(objNode, v, extensionFunc);
 }
 }

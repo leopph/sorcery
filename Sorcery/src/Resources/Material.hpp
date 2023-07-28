@@ -32,11 +32,11 @@ class Material final : public NativeResource {
 
   Microsoft::WRL::ComPtr<ID3D11Buffer> mCB;
 
-  ResourceHandle<Texture2D> mAlbedoMap;
-  ResourceHandle<Texture2D> mMetallicMap;
-  ResourceHandle<Texture2D> mRoughnessMap;
-  ResourceHandle<Texture2D> mAoMap;
-  ResourceHandle<Texture2D> mNormalMap;
+  ObserverPtr<Texture2D> mAlbedoMap;
+  ObserverPtr<Texture2D> mMetallicMap;
+  ObserverPtr<Texture2D> mRoughnessMap;
+  ObserverPtr<Texture2D> mAoMap;
+  ObserverPtr<Texture2D> mNormalMap;
 
   auto UpdateGPUData() const noexcept -> void;
   auto CreateCB() -> void;
@@ -59,20 +59,20 @@ public:
   [[nodiscard]] LEOPPHAPI auto GetAo() const noexcept -> f32;
   LEOPPHAPI auto SetAo(f32 ao) noexcept -> void;
 
-  [[nodiscard]] LEOPPHAPI auto GetAlbedoMap() const noexcept -> ResourceHandle<Texture2D>;
-  LEOPPHAPI auto SetAlbedoMap(ResourceHandle<Texture2D> tex) noexcept -> void;
+  [[nodiscard]] LEOPPHAPI auto GetAlbedoMap() const noexcept -> ObserverPtr<Texture2D>;
+  LEOPPHAPI auto SetAlbedoMap(ObserverPtr<Texture2D> tex) noexcept -> void;
 
-  [[nodiscard]] LEOPPHAPI auto GetMetallicMap() const noexcept -> ResourceHandle<Texture2D>;
-  LEOPPHAPI auto SetMetallicMap(ResourceHandle<Texture2D> tex) noexcept -> void;
+  [[nodiscard]] LEOPPHAPI auto GetMetallicMap() const noexcept -> ObserverPtr<Texture2D>;
+  LEOPPHAPI auto SetMetallicMap(ObserverPtr<Texture2D> tex) noexcept -> void;
 
-  [[nodiscard]] LEOPPHAPI auto GetRoughnessMap() const noexcept -> ResourceHandle<Texture2D>;
-  LEOPPHAPI auto SetRoughnessMap(ResourceHandle<Texture2D> tex) noexcept -> void;
+  [[nodiscard]] LEOPPHAPI auto GetRoughnessMap() const noexcept -> ObserverPtr<Texture2D>;
+  LEOPPHAPI auto SetRoughnessMap(ObserverPtr<Texture2D> tex) noexcept -> void;
 
-  [[nodiscard]] LEOPPHAPI auto GetAoMap() const noexcept -> ResourceHandle<Texture2D>;
-  LEOPPHAPI auto SetAoMap(ResourceHandle<Texture2D> tex) noexcept -> void;
+  [[nodiscard]] LEOPPHAPI auto GetAoMap() const noexcept -> ObserverPtr<Texture2D>;
+  LEOPPHAPI auto SetAoMap(ObserverPtr<Texture2D> tex) noexcept -> void;
 
-  [[nodiscard]] LEOPPHAPI auto GetNormalMap() const noexcept -> ResourceHandle<Texture2D>;
-  LEOPPHAPI auto SetNormalMap(ResourceHandle<Texture2D> tex) noexcept -> void;
+  [[nodiscard]] LEOPPHAPI auto GetNormalMap() const noexcept -> ObserverPtr<Texture2D>;
+  LEOPPHAPI auto SetNormalMap(ObserverPtr<Texture2D> tex) noexcept -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetBuffer() const noexcept -> ObserverPtr<ID3D11Buffer>;
 

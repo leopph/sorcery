@@ -108,62 +108,62 @@ auto Material::SetAo(f32 const ao) noexcept -> void {
 }
 
 
-auto Material::GetAlbedoMap() const noexcept -> ResourceHandle<Texture2D> {
+auto Material::GetAlbedoMap() const noexcept -> ObserverPtr<Texture2D> {
   return mAlbedoMap;
 }
 
 
-auto Material::SetAlbedoMap(ResourceHandle<Texture2D> tex) noexcept -> void {
+auto Material::SetAlbedoMap(ObserverPtr<Texture2D> tex) noexcept -> void {
   mAlbedoMap = std::move(tex);
-  mShaderMtl.sampleAlbedo = mAlbedoMap != nullres;
+  mShaderMtl.sampleAlbedo = mAlbedoMap != nullptr;
   UpdateGPUData();
 }
 
 
-auto Material::GetMetallicMap() const noexcept -> ResourceHandle<Texture2D> {
+auto Material::GetMetallicMap() const noexcept -> ObserverPtr<Texture2D> {
   return mMetallicMap;
 }
 
 
-auto Material::SetMetallicMap(ResourceHandle<Texture2D> tex) noexcept -> void {
+auto Material::SetMetallicMap(ObserverPtr<Texture2D> tex) noexcept -> void {
   mMetallicMap = std::move(tex);
-  mShaderMtl.sampleMetallic = mMetallicMap != nullres;
+  mShaderMtl.sampleMetallic = mMetallicMap != nullptr;
   UpdateGPUData();
 }
 
 
-auto Material::GetRoughnessMap() const noexcept -> ResourceHandle<Texture2D> {
+auto Material::GetRoughnessMap() const noexcept -> ObserverPtr<Texture2D> {
   return mRoughnessMap;
 }
 
 
-auto Material::SetRoughnessMap(ResourceHandle<Texture2D> tex) noexcept -> void {
+auto Material::SetRoughnessMap(ObserverPtr<Texture2D> tex) noexcept -> void {
   mRoughnessMap = std::move(tex);
-  mShaderMtl.sampleRoughness = mRoughnessMap != nullres;
+  mShaderMtl.sampleRoughness = mRoughnessMap != nullptr;
   UpdateGPUData();
 }
 
 
-auto Material::GetAoMap() const noexcept -> ResourceHandle<Texture2D> {
+auto Material::GetAoMap() const noexcept -> ObserverPtr<Texture2D> {
   return mAoMap;
 }
 
 
-auto Material::SetAoMap(ResourceHandle<Texture2D> tex) noexcept -> void {
+auto Material::SetAoMap(ObserverPtr<Texture2D> tex) noexcept -> void {
   mAoMap = std::move(tex);
-  mShaderMtl.sampleAo = mAoMap != nullres;
+  mShaderMtl.sampleAo = mAoMap != nullptr;
   UpdateGPUData();
 }
 
 
-auto Material::GetNormalMap() const noexcept -> ResourceHandle<Texture2D> {
+auto Material::GetNormalMap() const noexcept -> ObserverPtr<Texture2D> {
   return mNormalMap;
 }
 
 
-auto Material::SetNormalMap(ResourceHandle<Texture2D> tex) noexcept -> void {
+auto Material::SetNormalMap(ObserverPtr<Texture2D> tex) noexcept -> void {
   mNormalMap = std::move(tex);
-  mShaderMtl.sampleNormal = mNormalMap != nullres;
+  mShaderMtl.sampleNormal = mNormalMap != nullptr;
   UpdateGPUData();
 }
 
@@ -186,27 +186,27 @@ auto Material::Serialize() const noexcept -> YAML::Node {
   ret["roughness"] = GetRoughness();
   ret["ao"] = GetAo();
 
-  auto const albedoMap{ GetAlbedoMap().Get() };
+  auto const albedoMap{ GetAlbedoMap() };
   ret["albedoMap"] = albedoMap
                        ? albedoMap->GetGuid()
                        : Guid::Invalid();
 
-  auto const metallicMap{ GetMetallicMap().Get() };
+  auto const metallicMap{ GetMetallicMap() };
   ret["metallicMap"] = metallicMap
                          ? metallicMap->GetGuid()
                          : Guid::Invalid();
 
-  auto const roughnessMap{ GetRoughnessMap().Get() };
+  auto const roughnessMap{ GetRoughnessMap() };
   ret["roughnessMap"] = roughnessMap
                           ? roughnessMap->GetGuid()
                           : Guid::Invalid();
 
-  auto const aoMap{ GetAoMap().Get() };
+  auto const aoMap{ GetAoMap() };
   ret["aoMap"] = aoMap
                    ? aoMap->GetGuid()
                    : Guid::Invalid();
 
-  auto const normalMap{ GetNormalMap().Get() };
+  auto const normalMap{ GetNormalMap() };
   ret["normalMap"] = normalMap
                        ? normalMap->GetGuid()
                        : Guid::Invalid();

@@ -115,7 +115,7 @@ auto ReflectionDeserializeFromYaml(YAML::Node const& objNode, rttr::variant& v, 
     }
   } else if (v.get_type().is_pointer()) {
     if (v.get_type().get_raw_type().is_derived_from(rttr::type::get<Resource>())) {
-      v = gResourceManager.LoadResource(objNode.as<Guid>()).Get();
+      v = gResourceManager.LoadResource(objNode.as<Guid>());
     }
   } else if (underlyingType.is_class()) {
     for (auto const prop : underlyingType.get_properties()) {

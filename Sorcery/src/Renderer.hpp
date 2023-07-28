@@ -62,9 +62,9 @@ public:
   LEOPPHAPI auto RegisterLight(LightComponent const* light) -> void;
   LEOPPHAPI auto UnregisterLight(LightComponent const* light) -> void;
 
-  [[nodiscard]] LEOPPHAPI auto GetDefaultMaterial() noexcept -> ResourceHandle<Material>;
-  [[nodiscard]] LEOPPHAPI auto GetCubeMesh() noexcept -> ResourceHandle<Mesh>;
-  [[nodiscard]] LEOPPHAPI auto GetPlaneMesh() noexcept -> ResourceHandle<Mesh>;
+  [[nodiscard]] LEOPPHAPI auto GetDefaultMaterial() noexcept -> ObserverPtr<Material>;
+  [[nodiscard]] LEOPPHAPI auto GetCubeMesh() noexcept -> ObserverPtr<Mesh>;
+  [[nodiscard]] LEOPPHAPI auto GetPlaneMesh() noexcept -> ObserverPtr<Mesh>;
 
   [[nodiscard]] LEOPPHAPI auto GetGamma() noexcept -> f32;
   LEOPPHAPI auto SetGamma(f32 gamma) noexcept -> void;
