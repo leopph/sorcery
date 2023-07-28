@@ -12,11 +12,6 @@ RTTR_REGISTRATION {
 
 
 namespace sorcery {
-auto SkyboxComponent::GetSerializationType() const -> Type {
-  return SerializationType;
-}
-
-
 auto SkyboxComponent::GetCubemap() const noexcept -> Cubemap* {
   return mCubemap;
 }

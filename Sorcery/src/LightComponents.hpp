@@ -13,9 +13,6 @@ public:
   LEOPPHAPI LightComponent();
   LEOPPHAPI ~LightComponent() override;
 
-  LEOPPHAPI static Type const SerializationType;
-  [[nodiscard]] LEOPPHAPI auto GetSerializationType() const -> Type override;
-
   [[nodiscard]] LEOPPHAPI auto GetColor() const -> Vector3 const&;
   LEOPPHAPI auto SetColor(Vector3 const& color) -> void;
 

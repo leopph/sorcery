@@ -94,11 +94,6 @@ auto Texture2D::Update(bool const keepDataInCPUMemory) noexcept -> void {
 }
 
 
-auto Texture2D::GetSerializationType() const -> Type {
-  return SerializationType;
-}
-
-
 auto Texture2D::ReleaseCPUMemory() -> void {
   if (mImgData) {
     delete mImgData;

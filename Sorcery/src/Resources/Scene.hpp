@@ -4,10 +4,8 @@
 #include "../Entity.hpp"
 #include "../Component.hpp"
 
-#include <memory>
 #include <vector>
 #include <span>
-#include <concepts>
 
 
 namespace sorcery {
@@ -36,12 +34,9 @@ public:
   [[nodiscard]] LEOPPHAPI auto GetEntities() const noexcept -> std::span<ObserverPtr<Entity> const>;
 
   LEOPPHAPI auto Save() -> void;
-  LEOPPHAPI auto Load(ObjectInstantiatorManager const& manager) -> void;
+  LEOPPHAPI auto Load() -> void;
 
   LEOPPHAPI auto Clear() -> void;
-
-  LEOPPHAPI static Type const SerializationType;
-  LEOPPHAPI auto GetSerializationType() const -> Type override;
 
   [[nodiscard]] LEOPPHAPI auto Serialize() const noexcept -> YAML::Node override;
   LEOPPHAPI auto Deserialize(YAML::Node const& yamlNode) noexcept -> void override;

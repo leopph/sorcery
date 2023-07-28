@@ -281,11 +281,6 @@ auto Mesh::ValidateAndUpdate(bool const keepDataInCPUMemory) -> void {
 }
 
 
-auto Mesh::GetSerializationType() const -> Type {
-  return Type::Mesh;
-}
-
-
 auto Mesh::GetPositionBuffer() const noexcept -> Microsoft::WRL::ComPtr<ID3D11Buffer> {
   return mPosBuf;
 }

@@ -5,7 +5,6 @@
 
 namespace sorcery {
 class Entity;
-class TransformComponent;
 
 
 class Component : public SceneObject {

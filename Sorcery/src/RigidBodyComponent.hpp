@@ -7,10 +7,6 @@
 namespace sorcery {
 class RigidBodyComponent : public Component {
 public:
-  LEOPPHAPI static Type const SerializationType;
-
-  [[nodiscard]] LEOPPHAPI auto GetSerializationType() const -> Type override;
-
   LEOPPHAPI RigidBodyComponent();
   LEOPPHAPI ~RigidBodyComponent() override;
 

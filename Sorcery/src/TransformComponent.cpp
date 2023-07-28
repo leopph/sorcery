@@ -2,7 +2,6 @@
 
 #include "Serialization.hpp"
 
-#include <format>
 #include <imgui.h>
 #include <iostream>
 
@@ -294,13 +293,5 @@ auto CalculateModelMatrixNoScale(TransformComponent const& transform) noexcept -
   }
 
   return mtx;
-}
-
-
-Object::Type const TransformComponent::SerializationType{ Type::Transform };
-
-
-auto TransformComponent::GetSerializationType() const -> Type {
-  return Type::Transform;
 }
 }

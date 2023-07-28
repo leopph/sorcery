@@ -17,9 +17,6 @@ public:
   LEOPPHAPI CameraComponent();
   ~CameraComponent() override;
 
-  [[nodiscard]] LEOPPHAPI auto GetSerializationType() const -> Object::Type override;
-  LEOPPHAPI static Object::Type const SerializationType;
-
   // Viewport extents are normalized between 0 and 1.
   [[nodiscard]] LEOPPHAPI auto GetViewport() const -> NormalizedViewport const&;
   LEOPPHAPI auto SetViewport(NormalizedViewport const& viewport) -> void;

@@ -42,9 +42,6 @@ private:
   bool mChanged{ false };
 
 public:
-  [[nodiscard]] LEOPPHAPI auto GetSerializationType() const -> Type override;
-  LEOPPHAPI static Type const SerializationType;
-
   [[nodiscard]] LEOPPHAPI auto GetWorldPosition() const -> Vector3 const&;
   LEOPPHAPI auto SetWorldPosition(Vector3 const& newPos) -> void;
 

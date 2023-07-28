@@ -22,9 +22,6 @@ RTTR_REGISTRATION {
 
 
 namespace sorcery {
-Object::Type const CameraComponent::SerializationType{ Object::Type::Camera };
-
-
 CameraComponent::CameraComponent() {
   gRenderer.RegisterGameCamera(*this);
 }
@@ -160,10 +157,5 @@ auto CameraComponent::OnDrawProperties() -> void {
   if (ImGui::ColorEdit4("###backgroundColor", color.GetData())) {
     SetBackgroundColor(color);
   }
-}
-
-
-auto CameraComponent::GetSerializationType() const -> Object::Type {
-  return Object::Type::Camera;
 }
 }

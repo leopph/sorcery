@@ -2,6 +2,7 @@
 
 #include "SceneObject.hpp"
 #include "Component.hpp"
+#include "TransformComponent.hpp"
 
 #include <vector>
 #include <concepts>
@@ -24,9 +25,6 @@ class Entity final : public SceneObject {
 
 public:
   [[nodiscard]] LEOPPHAPI static auto FindEntityByName(std::string_view name) -> Entity*;
-
-  LEOPPHAPI static Type const SerializationType;
-  [[nodiscard]] LEOPPHAPI auto GetSerializationType() const -> Type override;
 
 private:
   Entity();

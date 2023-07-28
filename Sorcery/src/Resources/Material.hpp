@@ -76,9 +76,6 @@ public:
 
   [[nodiscard]] LEOPPHAPI auto GetBuffer() const noexcept -> ObserverPtr<ID3D11Buffer>;
 
-  LEOPPHAPI static Type const SerializationType;
-  [[nodiscard]] LEOPPHAPI auto GetSerializationType() const -> Type override;
-
   [[nodiscard]] LEOPPHAPI auto Serialize() const noexcept -> YAML::Node override;
   LEOPPHAPI auto Deserialize(YAML::Node const& yamlNode) noexcept -> void override;
 

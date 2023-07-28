@@ -18,35 +18,6 @@ class Object {
   std::string mName{ "New Object" };
 
 public:
-  enum class Type {
-    Entity,
-    Transform,
-    Camera,
-    Behavior,
-    StaticMesh,
-    Light,
-    Material,
-    Mesh,
-    Scene,
-    Texture2D,
-    Cubemap,
-    Skybox,
-    StaticRigidBody
-  };
-
-
-  template<std::derived_from<Object> T>
-  [[nodiscard]] static auto FindObjectOfType() -> T*;
-
-  template<std::derived_from<Object> T>
-  static auto FindObjectsOfType(std::vector<T*>& out) -> std::vector<T*>&;
-
-  template<std::derived_from<Object> T>
-  [[nodiscard]] auto FindObjectsOfType() -> std::vector<T*>;
-
-  template<std::derived_from<Object> T>
-  static auto FindObjectsOfType(std::vector<Object*>& out) -> std::vector<Object*>&;
-
   LEOPPHAPI Object();
   Object(Object const& other) = delete;
   Object(Object&& other) = delete;
@@ -59,40 +30,20 @@ public:
   [[nodiscard]] LEOPPHAPI auto GetName() const noexcept -> std::string_view;
   LEOPPHAPI auto SetName(std::string name) noexcept -> void;
 
-  [[nodiscard]] virtual auto GetSerializationType() const -> Type = 0;
-
   virtual auto OnDrawProperties() -> void {}
   virtual auto OnDrawGizmosSelected() -> void {}
-};
 
+  template<std::derived_from<Object> T>
+  [[nodiscard]] static auto FindObjectOfType() -> T*;
 
-class ObjectInstantiator {
-public:
-  ObjectInstantiator() = default;
-  ObjectInstantiator(ObjectInstantiator const& other) = default;
-  ObjectInstantiator(ObjectInstantiator&& other) noexcept = default;
+  template<std::derived_from<Object> T>
+  static auto FindObjectsOfType(std::vector<T*>& out) -> std::vector<T*>&;
 
-  virtual ~ObjectInstantiator() = default;
+  template<std::derived_from<Object> T>
+  [[nodiscard]] auto FindObjectsOfType() -> std::vector<T*>;
 
-  auto operator=(ObjectInstantiator const& other) -> ObjectInstantiator& = default;
-  auto operator=(ObjectInstantiator&& other) noexcept -> ObjectInstantiator& = default;
-
-  [[nodiscard]] virtual auto Instantiate() -> Object* = 0;
-};
-
-
-class ObjectInstantiatorManager {
-public:
-  ObjectInstantiatorManager() = default;
-  ObjectInstantiatorManager(ObjectInstantiatorManager const& other) = default;
-  ObjectInstantiatorManager(ObjectInstantiatorManager&& other) noexcept = default;
-
-  virtual ~ObjectInstantiatorManager() = default;
-
-  auto operator=(ObjectInstantiatorManager const& other) -> ObjectInstantiatorManager& = default;
-  auto operator=(ObjectInstantiatorManager&& other) noexcept -> ObjectInstantiatorManager& = default;
-
-  [[nodiscard]] virtual auto GetFor(Object::Type type) const -> ObjectInstantiator& = 0;
+  template<std::derived_from<Object> T>
+  static auto FindObjectsOfType(std::vector<Object*>& out) -> std::vector<Object*>&;
 };
 
 

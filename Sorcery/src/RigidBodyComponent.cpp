@@ -8,14 +8,6 @@ RTTR_REGISTRATION {
 
 
 namespace sorcery {
-Object::Type const RigidBodyComponent::SerializationType{ Object::Type::StaticRigidBody };
-
-
-auto RigidBodyComponent::GetSerializationType() const -> Type {
-  return SerializationType;
-}
-
-
 RigidBodyComponent::RigidBodyComponent() :
   mInternalPtr{ gPhysicsManager.CreateInternalRigidBody(this) } {}
 

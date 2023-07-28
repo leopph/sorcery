@@ -17,7 +17,6 @@ RTTR_REGISTRATION {
 namespace sorcery {
 Scene* Scene::sActiveScene{ nullptr };
 std::vector<Scene*> Scene::sAllScenes;
-Object::Type const Scene::SerializationType{ Type::Scene };
 
 
 auto Scene::GetActiveScene() noexcept -> Scene* {
@@ -42,11 +41,6 @@ Scene::~Scene() {
                      ? nullptr
                      : sAllScenes.back();
   }
-}
-
-
-auto Scene::GetSerializationType() const -> Type {
-  return SerializationType;
 }
 
 
@@ -139,7 +133,7 @@ auto Scene::Save() -> void {
 }
 
 
-auto Scene::Load(ObjectInstantiatorManager const& manager) -> void {
+auto Scene::Load() -> void {
   static std::unordered_map<int, SceneObject*> ptrFixUp;
   ptrFixUp.clear();
 

@@ -27,9 +27,6 @@ public:
   [[nodiscard]] LEOPPHAPI auto GetMesh() const noexcept -> Mesh&;
   LEOPPHAPI auto SetMesh(Mesh& mesh) noexcept -> void;
 
-  [[nodiscard]] LEOPPHAPI auto GetSerializationType() const -> Type override;
-  LEOPPHAPI static Type const SerializationType;
-
   [[nodiscard]] LEOPPHAPI auto CalculateBounds() const noexcept -> AABB;
 
   LEOPPHAPI auto OnDrawProperties() -> void override;

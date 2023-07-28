@@ -1,11 +1,5 @@
 #include "Entity.hpp"
 
-
-#include "TransformComponent.hpp"
-#include "StaticMeshComponent.hpp"
-#include "CameraComponent.hpp"
-#include "SkyboxComponent.hpp"
-
 #include <functional>
 #include <iostream>
 #include <cassert>
@@ -36,14 +30,6 @@ auto Entity::FindEntityByName(std::string_view const name) -> Entity* {
     }
   }
   return nullptr;
-}
-
-
-Object::Type const Entity::SerializationType{ Type::Entity };
-
-
-auto Entity::GetSerializationType() const -> Type {
-  return SerializationType;
 }
 
 
@@ -101,7 +87,7 @@ auto Entity::RemoveComponent(Component& component) -> void {
 }
 
 
-void Entity::OnDrawProperties() {
+auto Entity::OnDrawProperties() -> void {
   SceneObject::OnDrawProperties();
 
   static std::string entityName;
@@ -159,7 +145,7 @@ void Entity::OnDrawProperties() {
   ImGui::Button(addNewComponentLabel);
 
   if (ImGui::BeginPopupContextItem(nullptr, ImGuiPopupFlags_MouseButtonLeft)) {
-    for (auto const& componentClass : rttr::type::get_by_name("Component").get_derived_classes()) {
+    for (auto const& componentClass : rttr::type::get<Component>().get_derived_classes()) {
       if (ImGui::MenuItem(componentClass.get_name().data())) {
         AddComponent(*componentClass.create().get_value<ObserverPtr<Component>>());
         ImGui::CloseCurrentPopup();
@@ -171,7 +157,7 @@ void Entity::OnDrawProperties() {
 }
 
 
-void Entity::OnDrawGizmosSelected() {
+auto Entity::OnDrawGizmosSelected() -> void {
   SceneObject::OnDrawGizmosSelected();
 
   for (auto const component : mComponents) {

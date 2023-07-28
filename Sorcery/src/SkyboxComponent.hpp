@@ -10,9 +10,6 @@ class SkyboxComponent : public Component {
   Cubemap* mCubemap{ nullptr };
 
 public:
-  Type constexpr static SerializationType{ Type::Skybox };
-  [[nodiscard]] auto LEOPPHAPI GetSerializationType() const -> Type override;
-
   [[nodiscard]] auto LEOPPHAPI GetCubemap() const noexcept -> Cubemap*;
   auto LEOPPHAPI SetCubemap(Cubemap* cubemap) noexcept -> void;
 
@@ -20,8 +17,8 @@ public:
   SkyboxComponent(SkyboxComponent const& other) = delete;
   SkyboxComponent(SkyboxComponent&& other) = delete;
 
-  SkyboxComponent& operator=(SkyboxComponent const& other) = delete;
-  SkyboxComponent& operator=(SkyboxComponent&& other) = delete;
+  auto operator=(SkyboxComponent const& other) -> SkyboxComponent& = delete;
+  auto operator=(SkyboxComponent&& other) -> SkyboxComponent& = delete;
 
   LEOPPHAPI ~SkyboxComponent() override;
 

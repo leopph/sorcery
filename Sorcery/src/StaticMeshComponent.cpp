@@ -18,9 +18,6 @@ RTTR_REGISTRATION {
 
 
 namespace sorcery {
-Object::Type const StaticMeshComponent::SerializationType{ Type::StaticMesh };
-
-
 auto StaticMeshComponent::AdjustMaterialListForMesh() -> void {
   assert(mMesh);
 
@@ -81,11 +78,6 @@ auto StaticMeshComponent::GetMesh() const noexcept -> Mesh& {
 auto StaticMeshComponent::SetMesh(Mesh& mesh) noexcept -> void {
   mMesh = std::addressof(mesh);
   AdjustMaterialListForMesh();
-}
-
-
-auto StaticMeshComponent::GetSerializationType() const -> Type {
-  return Type::StaticMesh;
 }
 
 

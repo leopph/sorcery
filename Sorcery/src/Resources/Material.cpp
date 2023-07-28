@@ -17,9 +17,6 @@ RTTR_REGISTRATION {
 
 
 namespace sorcery {
-Object::Type const Material::SerializationType{ Type::Material };
-
-
 auto Material::UpdateGPUData() const noexcept -> void {
   D3D11_MAPPED_SUBRESOURCE mappedCB;
   gRenderer.GetImmediateContext()->Map(mCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedCB);
@@ -172,11 +169,6 @@ auto Material::SetNormalMap(ObserverPtr<Texture2D> tex) noexcept -> void {
 
 auto Material::GetBuffer() const noexcept -> ObserverPtr<ID3D11Buffer> {
   return mCB.Get();
-}
-
-
-auto Material::GetSerializationType() const -> Type {
-  return SerializationType;
 }
 
 

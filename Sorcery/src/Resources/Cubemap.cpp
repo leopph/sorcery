@@ -52,11 +52,6 @@ auto Cubemap::UploadToGpu() -> void {
 }
 
 
-auto Cubemap::GetSerializationType() const -> Type {
-  return SerializationType;
-}
-
-
 Cubemap::Cubemap(std::span<Image, 6> faces) {
   std::ranges::move(faces, std::begin(mTmpFaceData));
   Update();

@@ -35,9 +35,6 @@ public:
 
   LEOPPHAPI auto Update(bool keepDataInCPUMemory = false) noexcept -> void;
 
-  LEOPPHAPI Type constexpr static SerializationType{ Type::Texture2D };
-  [[nodiscard]] LEOPPHAPI auto GetSerializationType() const -> Type override;
-
   LEOPPHAPI auto ReleaseCPUMemory() -> void;
   [[nodiscard]] LEOPPHAPI auto HasCPUMemory() const noexcept -> bool;
 

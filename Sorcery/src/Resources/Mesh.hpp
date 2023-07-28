@@ -87,15 +87,11 @@ public:
 
   LEOPPHAPI auto ValidateAndUpdate(bool keepDataInCPUMemory = false) -> void;
 
-  [[nodiscard]] LEOPPHAPI auto GetSerializationType() const -> Type override;
-
   [[nodiscard]] LEOPPHAPI auto GetPositionBuffer() const noexcept -> Microsoft::WRL::ComPtr<ID3D11Buffer>;
   [[nodiscard]] LEOPPHAPI auto GetNormalBuffer() const noexcept -> Microsoft::WRL::ComPtr<ID3D11Buffer>;
   [[nodiscard]] LEOPPHAPI auto GetUVBuffer() const noexcept -> Microsoft::WRL::ComPtr<ID3D11Buffer>;
   [[nodiscard]] LEOPPHAPI auto GetIndexBuffer() const noexcept -> Microsoft::WRL::ComPtr<ID3D11Buffer>;
   [[nodiscard]] LEOPPHAPI auto GetTangentBuffer() const noexcept -> Microsoft::WRL::ComPtr<ID3D11Buffer>;
-
-  LEOPPHAPI Type constexpr static SerializationType{ Type::Mesh };
 
   LEOPPHAPI auto SetData(Data data, bool allocateCPUMemoryIfNeeded = false) noexcept -> void;
 

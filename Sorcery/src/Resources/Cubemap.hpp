@@ -22,9 +22,6 @@ class Cubemap : public Resource {
   void UploadToGpu();
 
 public:
-  Type static constexpr SerializationType{ Type::Cubemap };
-  [[nodiscard]] LEOPPHAPI auto GetSerializationType() const -> Type override;
-
   explicit LEOPPHAPI Cubemap(std::span<Image, 6> faces);
 
   LEOPPHAPI auto Update() noexcept -> void;
