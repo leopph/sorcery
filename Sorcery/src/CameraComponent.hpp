@@ -31,5 +31,7 @@ public:
   [[nodiscard]] auto LEOPPHAPI GetRightAxis() const noexcept -> Vector3 override;
   [[nodiscard]] auto LEOPPHAPI GetUpAxis() const noexcept -> Vector3 override;
   [[nodiscard]] auto LEOPPHAPI GetForwardAxis() const noexcept -> Vector3 override;
+
+  LEOPPHAPI auto OnDrawProperties() -> void override;
 };
 }

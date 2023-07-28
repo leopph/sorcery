@@ -31,5 +31,7 @@ public:
   LEOPPHAPI static Type const SerializationType;
 
   [[nodiscard]] LEOPPHAPI auto CalculateBounds() const noexcept -> AABB;
+
+  LEOPPHAPI auto OnDrawProperties() -> void override;
 };
 }

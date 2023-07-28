@@ -1,5 +1,7 @@
 #include "Texture2D.hpp"
 
+#include <imgui.h>
+
 #include "../Util.hpp"
 #include "../Renderer.hpp"
 
@@ -9,7 +11,7 @@ RTTR_REGISTRATION {
 
 
 namespace sorcery {
-void Texture2D::UploadToGPU() {
+auto Texture2D::UploadToGPU() -> void {
   D3D11_TEXTURE2D_DESC const texDesc{
     .Width = clamp_cast<UINT>(mImgData->get_width()),
     .Height = clamp_cast<UINT>(mImgData->get_height()),
@@ -122,5 +124,55 @@ auto Texture2D::GetHeight() const noexcept -> int {
 
 auto Texture2D::GetChannelCount() const noexcept -> int {
   return mChannelCount;
+}
+
+
+auto Texture2D::OnDrawProperties() -> void {
+  Resource::OnDrawProperties();
+
+  if (ImGui::BeginTable(std::format("{}", GetGuid().ToString()).c_str(), 2, ImGuiTableFlags_SizingStretchSame)) {
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    ImGui::PushItemWidth(FLT_MIN);
+    ImGui::TableSetColumnIndex(1);
+    ImGui::PushItemWidth(-FLT_MIN);
+
+    ImGui::TableSetColumnIndex(0);
+    ImGui::Text("%s", "Width");
+
+    ImGui::TableNextColumn();
+    ImGui::Text("%s", std::to_string(GetWidth()).c_str());
+
+    ImGui::TableNextColumn();
+    ImGui::Text("%s", "Height");
+
+    ImGui::TableNextColumn();
+    ImGui::Text("%s", std::to_string(GetHeight()).c_str());
+
+    ImGui::TableNextColumn();
+    ImGui::Text("%s", "Channel Count");
+
+    ImGui::TableNextColumn();
+    ImGui::Text("%s", std::to_string(GetChannelCount()).c_str());
+
+    ImGui::EndTable();
+  }
+
+  auto const contentRegion{ ImGui::GetContentRegionAvail() };
+  auto const imgWidth{ static_cast<float>(GetWidth()) };
+  auto const imgHeight{ static_cast<float>(GetHeight()) };
+  auto const widthRatio{ contentRegion.x / imgWidth };
+  auto const heightRatio{ contentRegion.y / imgHeight };
+  ImVec2 displaySize;
+
+  if (widthRatio > heightRatio) {
+    displaySize.x = imgWidth * heightRatio;
+    displaySize.y = imgHeight * heightRatio;
+  } else {
+    displaySize.x = imgWidth * widthRatio;
+    displaySize.y = imgHeight * widthRatio;
+  }
+
+  ImGui::Image(GetSrv(), displaySize);
 }
 }

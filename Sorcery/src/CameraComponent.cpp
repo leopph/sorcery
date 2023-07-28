@@ -5,6 +5,8 @@
 #include "TransformComponent.hpp"
 #include "Reflection.hpp"
 
+#include <imgui.h>
+
 #include <iostream>
 
 
@@ -75,6 +77,89 @@ auto CameraComponent::GetUpAxis() const noexcept -> Vector3 {
 
 auto CameraComponent::GetForwardAxis() const noexcept -> Vector3 {
   return GetEntity().GetTransform().GetForwardAxis();
+}
+
+
+auto CameraComponent::OnDrawProperties() -> void {
+  Component::OnDrawProperties();
+
+  ImGui::Text("Type");
+  ImGui::TableNextColumn();
+
+  constexpr char const* typeOptions[]{ "Perspective", "Orthographic" };
+  int selection{
+    GetType() == Camera::Type::Perspective
+      ? 0
+      : 1
+  };
+  if (ImGui::Combo("###CameraType", &selection, typeOptions, 2)) {
+    SetType(selection == 0
+              ? Camera::Type::Perspective
+              : Camera::Type::Orthographic);
+  }
+
+  ImGui::TableNextColumn();
+
+  if (GetType() == Camera::Type::Perspective) {
+    ImGui::Text("Field Of View");
+    ImGui::TableNextColumn();
+    float value{ GetHorizontalPerspectiveFov() };
+    if (ImGui::DragFloat("FOV", &value)) {
+      SetHorizontalPerspectiveFov(value);
+    }
+  } else {
+    ImGui::Text("Size");
+    ImGui::TableNextColumn();
+    float value{ GetHorizontalOrthographicSize() };
+    if (ImGui::DragFloat("OrthoSize", &value)) {
+      SetHorizontalOrthographicSize(value);
+    }
+  }
+
+  ImGui::TableNextColumn();
+  ImGui::Text("Near Clip Plane");
+  ImGui::TableNextColumn();
+
+  float nearValue{ GetNearClipPlane() };
+  if (ImGui::DragFloat("NearClip", &nearValue)) {
+    SetNearClipPlane(nearValue);
+  }
+
+  ImGui::TableNextColumn();
+  ImGui::Text("Far Clip Plane");
+  ImGui::TableNextColumn();
+
+  float farValue{ GetFarClipPlane() };
+  if (ImGui::DragFloat("FarClip", &farValue)) {
+    SetFarClipPlane(farValue);
+  }
+
+  ImGui::TableNextColumn();
+  ImGui::Text("Viewport");
+  ImGui::TableNextColumn();
+
+  auto viewport{ GetViewport() };
+  if (ImGui::InputFloat("ViewportX", &viewport.position.x)) {
+    SetViewport(viewport);
+  }
+  if (ImGui::InputFloat("ViewportY", &viewport.position.y)) {
+    SetViewport(viewport);
+  }
+  if (ImGui::InputFloat("ViewportW", &viewport.extent.width)) {
+    SetViewport(viewport);
+  }
+  if (ImGui::InputFloat("ViewportH", &viewport.extent.height)) {
+    SetViewport(viewport);
+  }
+
+  ImGui::TableNextColumn();
+  ImGui::Text("Background Color");
+  ImGui::TableNextColumn();
+
+  Vector4 color{ GetBackgroundColor() };
+  if (ImGui::ColorEdit4("###backgroundColor", color.GetData())) {
+    SetBackgroundColor(color);
+  }
 }
 
 

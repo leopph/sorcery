@@ -3,6 +3,7 @@
 #include "Serialization.hpp"
 
 #include <format>
+#include <imgui.h>
 #include <iostream>
 
 RTTR_REGISTRATION {
@@ -235,6 +236,52 @@ TransformComponent::~TransformComponent() {
   }
 
   SetParent(nullptr);
+}
+
+
+auto TransformComponent::OnDrawProperties() -> void {
+  Component::OnDrawProperties();
+
+  ImGui::Text("Local Position");
+  ImGui::TableNextColumn();
+
+  Vector3 localPos{ GetLocalPosition() };
+  if (ImGui::DragFloat3("###transformPos", localPos.GetData(), 0.1f)) {
+    SetLocalPosition(localPos);
+  }
+
+  ImGui::TableNextColumn();
+  ImGui::Text("Local Rotation");
+  ImGui::TableNextColumn();
+
+  auto euler{ GetLocalRotation().ToEulerAngles() };
+  if (ImGui::DragFloat3("###transformRot", euler.GetData(), 1.0f)) {
+    SetLocalRotation(Quaternion::FromEulerAngles(euler));
+  }
+
+  ImGui::TableNextColumn();
+  ImGui::Text("Local Scale");
+  ImGui::TableNextColumn();
+
+  bool static uniformScale{ true };
+  auto constexpr scaleSpeed{ 0.01f };
+
+  ImGui::Text("%s", "Uniform");
+  ImGui::SameLine();
+  ImGui::Checkbox("##UniformScaleCheck", &uniformScale);
+  ImGui::SameLine();
+
+  if (uniformScale) {
+    f32 scale{ GetLocalScale()[0] };
+    if (ImGui::DragFloat("###transformScale", &scale, scaleSpeed)) {
+      SetLocalScale(Vector3{ scale });
+    }
+  } else {
+    Vector3 localScale{ GetLocalScale() };
+    if (ImGui::DragFloat3("###transformScale", localScale.GetData(), scaleSpeed)) {
+      SetLocalScale(localScale);
+    }
+  }
 }
 
 

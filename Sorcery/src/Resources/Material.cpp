@@ -6,6 +6,8 @@
 #include "../ResourceManager.hpp"
 
 #include <cstdint>
+#include <imgui.h>
+#include <imgui_stdlib.h>
 #include <stdexcept>
 
 
@@ -245,5 +247,158 @@ auto Material::Deserialize(YAML::Node const& yamlNode) noexcept -> void {
   SetNormalMap(normalMapGuid.IsValid()
                  ? gResourceManager.Load<Texture2D>(normalMapGuid)
                  : GetNormalMap());
+}
+
+
+auto Material::OnDrawProperties() -> void {
+  NativeResource::OnDrawProperties();
+
+  if (ImGui::BeginTable(std::format("{}", GetGuid().ToString()).c_str(), 2, ImGuiTableFlags_SizingStretchSame)) {
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    ImGui::PushItemWidth(FLT_MIN);
+    ImGui::TableSetColumnIndex(1);
+    ImGui::PushItemWidth(-FLT_MIN);
+
+    ImGui::TableSetColumnIndex(0);
+    ImGui::Text("Albedo Color");
+    ImGui::TableNextColumn();
+
+    if (Vector3 albedoColor{ GetAlbedoVector() }; ImGui::ColorEdit3("###matAlbedoColor", albedoColor.GetData())) {
+      SetAlbedoVector(albedoColor);
+    }
+
+    ImGui::TableNextColumn();
+    ImGui::Text("Metallic");
+    ImGui::TableNextColumn();
+
+    if (f32 metallic{ GetMetallic() }; ImGui::SliderFloat("###matMetallic", &metallic, 0.0f, 1.0f)) {
+      SetMetallic(metallic);
+    }
+
+    ImGui::TableNextColumn();
+    ImGui::Text("Roughness");
+    ImGui::TableNextColumn();
+
+    if (f32 roughness{ GetRoughness() }; ImGui::SliderFloat("###matRoughness", &roughness, 0.0f, 1.0f)) {
+      SetRoughness(roughness);
+    }
+
+    ImGui::TableNextColumn();
+    ImGui::Text("Ambient Occlusion");
+    ImGui::TableNextColumn();
+
+    if (f32 ao{ GetAo() }; ImGui::SliderFloat("###matAo", &ao, 0.0f, 1.0f)) {
+      SetAo(ao);
+    }
+
+    auto drawTextureOption{
+      [callCount = 0]<typename TexGetFn, typename TexSetFn>(std::string_view const label, TexGetFn&& texGetFn, TexSetFn&& texSetFn) mutable requires std::is_invocable_r_v<ObserverPtr<Texture2D>, TexGetFn> && std::is_invocable_r_v<void, TexSetFn, ObserverPtr<Texture2D>> {
+        auto constexpr nullTexName{ "None" };
+        static std::vector<ObserverPtr<Texture2D>> textures;
+        static std::string texFilter;
+
+        ImGui::TableNextColumn();
+        ImGui::Text("%s", label.data());
+        ImGui::TableNextColumn();
+
+        auto const popupId{ std::format("SelectTexturePopUp{}", callCount) };
+
+        auto const queryTextures{
+          [] {
+            Object::FindObjectsOfType(textures);
+
+            std::erase_if(textures, [](auto const tex) {
+              return tex && !Contains(tex->GetName(), texFilter);
+            });
+
+            std::ranges::sort(textures, [](auto const lhs, auto const rhs) {
+              return !lhs || (rhs && lhs->GetName() < rhs->GetName());
+            });
+
+            textures.insert(std::begin(textures), nullptr);
+          }
+        };
+
+        if (ImGui::BeginPopup(popupId.data())) {
+          if (ImGui::InputText("###SearchTextures", &texFilter)) {
+            queryTextures();
+          }
+
+          for (auto const tex : textures) {
+            if (ImGui::Selectable(std::format("{}##texoption{}", tex
+                                                                   ? tex->GetName()
+                                                                   : nullTexName, tex
+                                                                                    ? tex->GetGuid().ToString()
+                                                                                    : "0").c_str(), tex == texGetFn())) {
+              texSetFn(tex);
+              break;
+            }
+          }
+
+          ImGui::EndPopup();
+        }
+
+        if (ImGui::Button(std::format("Select##SelectTextureButton{}", callCount).data())) {
+          texFilter.clear();
+          queryTextures();
+          ImGui::OpenPopup(popupId.data());
+        }
+
+        ImGui::SameLine();
+        ImGui::Text("%s", texGetFn()
+                            ? texGetFn()->GetName().data()
+                            : nullTexName);
+
+        callCount += 1;
+      }
+    };
+
+    drawTextureOption("Albedo Map",
+                      [this] {
+                        return GetAlbedoMap();
+                      },
+                      [this](auto const tex) -> void {
+                        SetAlbedoMap(tex);
+                      });
+
+    drawTextureOption("Metallic Map",
+                      [this] {
+                        return GetMetallicMap();
+                      },
+                      [this](auto const tex) -> void {
+                        SetMetallicMap(tex);
+                      });
+
+    drawTextureOption("Roughness Map",
+                      [this] {
+                        return GetRoughnessMap();
+                      },
+                      [this](auto const tex) -> void {
+                        SetRoughnessMap(tex);
+                      });
+
+    drawTextureOption("Ambient Occlusion Map",
+                      [this] {
+                        return GetAoMap();
+                      },
+                      [this](auto const tex) -> void {
+                        SetAoMap(tex);
+                      });
+
+    drawTextureOption("Normal Map",
+                      [this] {
+                        return GetNormalMap();
+                      },
+                      [this](auto const tex) -> void {
+                        SetNormalMap(tex);
+                      });
+
+    ImGui::EndTable();
+  }
+
+  if (ImGui::Button("Save##SaveMaterialAsset")) {
+    // context.SaveRegisteredNativeAsset(mtl); TODO
+  }
 }
 }

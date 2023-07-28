@@ -6,6 +6,7 @@
 
 #include <utility>
 #include <format>
+#include <imgui.h>
 
 
 RTTR_REGISTRATION {
@@ -351,5 +352,38 @@ auto Mesh::GetIndexCount() const noexcept -> int {
 
 auto Mesh::GetSubmeshCount() const noexcept -> int {
   return mSubmeshCount;
+}
+
+
+auto Mesh::OnDrawProperties() -> void {
+  Resource::OnDrawProperties();
+
+  if (ImGui::BeginTable(std::format("{}", GetGuid().ToString()).c_str(), 2, ImGuiTableFlags_SizingStretchSame)) {
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    ImGui::PushItemWidth(FLT_MIN);
+    ImGui::TableSetColumnIndex(1);
+    ImGui::PushItemWidth(-FLT_MIN);
+
+    ImGui::TableSetColumnIndex(0);
+    ImGui::Text("%s", "Vertex Count");
+
+    ImGui::TableNextColumn();
+    ImGui::Text("%s", std::to_string(GetVertexCount()).c_str());
+
+    ImGui::TableNextColumn();
+    ImGui::Text("%s", "Index Count");
+
+    ImGui::TableNextColumn();
+    ImGui::Text("%s", std::to_string(GetIndexCount()).c_str());
+
+    ImGui::TableNextColumn();
+    ImGui::Text("%s", "Submesh Count");
+
+    ImGui::TableNextColumn();
+    ImGui::Text("%s", std::to_string(GetSubmeshCount()).c_str());
+
+    ImGui::EndTable();
+  }
 }
 }

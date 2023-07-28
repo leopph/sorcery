@@ -105,5 +105,7 @@ public:
   [[nodiscard]] LEOPPHAPI auto GetVertexCount() const noexcept -> int;
   [[nodiscard]] LEOPPHAPI auto GetIndexCount() const noexcept -> int;
   [[nodiscard]] LEOPPHAPI auto GetSubmeshCount() const noexcept -> int;
+
+  LEOPPHAPI auto OnDrawProperties() -> void override;
 };
 }

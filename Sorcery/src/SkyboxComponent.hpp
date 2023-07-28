@@ -24,5 +24,7 @@ public:
   SkyboxComponent& operator=(SkyboxComponent&& other) = delete;
 
   LEOPPHAPI ~SkyboxComponent() override;
+
+  LEOPPHAPI auto OnDrawProperties() -> void override;
 };
 }

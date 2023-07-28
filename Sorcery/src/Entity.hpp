@@ -45,28 +45,38 @@ public:
 
 
   template<std::derived_from<Component> T>
-  auto GetComponent() const -> ObserverPtr<T> {
-    for (auto const component : mComponents) {
-      if (auto const castPtr = dynamic_cast<ObserverPtr<T>>(component)) {
-        return castPtr;
-      }
-    }
-    return nullptr;
-  }
-
+  auto GetComponent() const -> ObserverPtr<T>;
 
   template<std::derived_from<Component> T>
-  auto GetComponents(std::vector<ObserverPtr<T>>& outComponents) const -> std::vector<ObserverPtr<T>>& {
-    if constexpr (std::is_same_v<T, Component>) {
-      std::ranges::copy(mComponents, std::back_inserter(outComponents));
-    } else {
-      for (auto const component : mComponents) {
-        if (auto const castPtr{ dynamic_cast<ObserverPtr<T>>(component) }) {
-          outComponents.emplace_back(castPtr);
-        }
+  auto GetComponents(std::vector<ObserverPtr<T>>& outComponents) const -> std::vector<ObserverPtr<T>>&;
+
+  LEOPPHAPI auto OnDrawProperties() -> void override;
+  LEOPPHAPI auto OnDrawGizmosSelected() -> void override;
+};
+
+
+template<std::derived_from<Component> T>
+auto Entity::GetComponent() const -> ObserverPtr<T> {
+  for (auto const component : mComponents) {
+    if (auto const castPtr = dynamic_cast<ObserverPtr<T>>(component)) {
+      return castPtr;
+    }
+  }
+  return nullptr;
+}
+
+
+template<std::derived_from<Component> T>
+auto Entity::GetComponents(std::vector<ObserverPtr<T>>& outComponents) const -> std::vector<ObserverPtr<T>>& {
+  if constexpr (std::is_same_v<T, Component>) {
+    std::ranges::copy(mComponents, std::back_inserter(outComponents));
+  } else {
+    for (auto const component : mComponents) {
+      if (auto const castPtr{ dynamic_cast<ObserverPtr<T>>(component) }) {
+        outComponents.emplace_back(castPtr);
       }
     }
-    return outComponents;
   }
-};
+  return outComponents;
+}
 }

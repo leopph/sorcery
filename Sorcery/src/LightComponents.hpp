@@ -59,6 +59,9 @@ public:
   [[nodiscard]] LEOPPHAPI auto GetShadowExtension() const noexcept -> float;
   LEOPPHAPI auto SetShadowExtension(float shadowExtension) noexcept -> void;
 
+  LEOPPHAPI auto OnDrawProperties() -> void override;
+  LEOPPHAPI auto OnDrawGizmosSelected() -> void override;
+
   constexpr static auto MIN_INTENSITY{ 0.0f };
   constexpr static auto MIN_SHADOW_NEAR_PLANE{ 0.1f };
   constexpr static auto MIN_RANGE{ 0.0f };

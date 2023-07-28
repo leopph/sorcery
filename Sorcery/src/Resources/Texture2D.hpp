@@ -44,5 +44,7 @@ public:
   [[nodiscard]] LEOPPHAPI auto GetWidth() const noexcept -> int;
   [[nodiscard]] LEOPPHAPI auto GetHeight() const noexcept -> int;
   [[nodiscard]] LEOPPHAPI auto GetChannelCount() const noexcept -> int;
+
+  LEOPPHAPI auto OnDrawProperties() -> void override;
 };
 }

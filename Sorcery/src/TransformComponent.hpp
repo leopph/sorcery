@@ -88,6 +88,8 @@ public:
   LEOPPHAPI auto SetChanged(bool changed) noexcept -> void;
 
   LEOPPHAPI ~TransformComponent() override;
+
+  LEOPPHAPI auto OnDrawProperties() -> void override;
 };
 
 

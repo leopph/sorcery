@@ -11,6 +11,11 @@
 			"version>=": "0.9.6+20210811"
 		},
 		{
+			"name": "imgui",
+			"features": [ "docking-experimental", "dx11-binding", "win32-binding" ],
+			"version>=": "1.89.7"
+		},
+		{
 			"name": "stb",
 			"version>=": "2022-09-09"
 		},
