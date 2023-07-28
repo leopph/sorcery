@@ -43,7 +43,10 @@ public:
   auto GetComponent() const -> ObserverPtr<T>;
 
   template<std::derived_from<Component> T>
-  auto GetComponents(std::vector<ObserverPtr<T>>& outComponents) const -> std::vector<ObserverPtr<T>>&;
+  auto GetComponents(std::vector<ObserverPtr<T>>& out) const -> std::vector<ObserverPtr<T>>&;
+
+  template<std::derived_from<Component> T>
+  auto GetComponents() const -> std::vector<ObserverPtr<T>>;
 
   LEOPPHAPI auto OnDrawProperties() -> void override;
   LEOPPHAPI auto OnDrawGizmosSelected() -> void override;
@@ -54,26 +57,44 @@ public:
 
 template<std::derived_from<Component> T>
 auto Entity::GetComponent() const -> ObserverPtr<T> {
-  for (auto const component : mComponents) {
-    if (auto const castPtr = dynamic_cast<ObserverPtr<T>>(component)) {
-      return castPtr;
+  if constexpr (std::same_as<Component, T>) {
+    return mComponents.empty()
+             ? nullptr
+             : mComponents.front();
+  } else {
+    for (auto const component : mComponents) {
+      if (auto const castPtr{ rttr::rttr_cast<ObserverPtr<T>>(component) }) {
+        return castPtr;
+      }
     }
+
+    return nullptr;
   }
-  return nullptr;
 }
 
 
 template<std::derived_from<Component> T>
-auto Entity::GetComponents(std::vector<ObserverPtr<T>>& outComponents) const -> std::vector<ObserverPtr<T>>& {
+auto Entity::GetComponents(std::vector<ObserverPtr<T>>& out) const -> std::vector<ObserverPtr<T>>& {
   if constexpr (std::is_same_v<T, Component>) {
-    std::ranges::copy(mComponents, std::back_inserter(outComponents));
+    out = mComponents;
   } else {
+    out.clear();
+
     for (auto const component : mComponents) {
-      if (auto const castPtr{ dynamic_cast<ObserverPtr<T>>(component) }) {
-        outComponents.emplace_back(castPtr);
+      if (auto const castPtr{ rttr::rttr_cast<ObserverPtr<T>>(component) }) {
+        out.emplace_back(castPtr);
       }
     }
   }
-  return outComponents;
+
+  return out;
+}
+
+
+template<std::derived_from<Component> T>
+auto Entity::GetComponents() const -> std::vector<ObserverPtr<T>> {
+  std::vector<ObserverPtr<T>> ret;
+  GetComponents(ret);
+  return ret;
 }
 }
