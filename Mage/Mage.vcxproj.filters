@@ -21,7 +21,7 @@
     <ClCompile Include="src\Widgets.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\EditorContext.cpp">
+    <ClCompile Include="src\Application.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\EditorCamera.cpp">
@@ -77,7 +77,7 @@
     <ClInclude Include="src\Widgets.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\EditorContext.hpp">
+    <ClInclude Include="src\Application.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\EditorCamera.hpp">

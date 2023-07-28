@@ -4,8 +4,16 @@
 
 
 namespace sorcery::mage {
-extern std::string_view const EDITOR_SETTINGS_WINDOW_TITLE;
-auto constexpr DEFAULT_TARGET_FRAME_RATE{ 200 };
+class EditorSettingsWindow {
+  bool mIsOpen{ false };
+
+public:
+  static std::string_view constexpr TITLE{ "Editor Settings" };
+  static auto constexpr DEFAULT_TARGET_FRAME_RATE{ 200 };
+
+  auto Draw() -> void;
+};
+
 
 auto DrawEditorSettingsWindow(bool& isOpen) -> void;
 }

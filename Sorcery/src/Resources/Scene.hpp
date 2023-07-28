@@ -37,7 +37,7 @@ public:
 
   LEOPPHAPI auto Save() -> void;
   LEOPPHAPI auto Load() -> void;
-
+  LEOPPHAPI auto SetActive() -> void;
   LEOPPHAPI auto Clear() -> void;
 
   [[nodiscard]] LEOPPHAPI auto Serialize() const noexcept -> YAML::Node override;

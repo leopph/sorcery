@@ -203,6 +203,11 @@ auto Scene::Load() -> void {
 }
 
 
+auto Scene::SetActive() -> void {
+  sActiveScene = this;
+}
+
+
 auto Scene::Clear() -> void {
   mEntities.clear();
 }

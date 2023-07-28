@@ -1,5 +1,5 @@
 #include "Timing.hpp"
-#include "EditorContext.hpp"
+#include "Application.hpp"
 
 #include <Platform.hpp>
 #include <Renderer.hpp>
@@ -66,7 +66,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
     bool runGame{ false };
 
-    sorcery::mage::Context context{ imGuiIo };
+    sorcery::mage::Application context{ imGuiIo };
 
     sorcery::timing::OnApplicationStart();
 

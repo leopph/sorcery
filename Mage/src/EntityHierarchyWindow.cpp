@@ -4,7 +4,11 @@
 
 
 namespace sorcery::mage {
-auto DrawEntityHierarchyWindow(Context& context) -> void {
+EntityHierarchyWindow::EntityHierarchyWindow(Application& app) :
+  mApp{ std::addressof(app) } {}
+
+
+auto EntityHierarchyWindow::Draw() -> void {
   if (ImGui::Begin("Entities", nullptr, ImGuiWindowFlags_NoCollapse)) {
     auto const contextId{ "EntityHierarchyContextId" };
 
@@ -14,8 +18,9 @@ auto DrawEntityHierarchyWindow(Context& context) -> void {
 
     if (ImGui::BeginPopup(contextId)) {
       if (ImGui::MenuItem("Create New Entity")) {
-        auto& entity{ context.GetScene()->CreateEntity() };
-        context.GetScene()->CreateComponent<TransformComponent>(entity);
+        mApp->GetScene()->SetActive();
+        auto const entity{ new Entity{} };
+        entity->AddComponent(*new TransformComponent{});
       }
 
       ImGui::EndPopup();
@@ -31,10 +36,10 @@ auto DrawEntityHierarchyWindow(Context& context) -> void {
       }
     }
 
-    auto entities{ context.GetScene()->GetEntities() };
+    auto entities{ mApp->GetScene()->GetEntities() };
 
     std::function<void(Entity&)> displayEntityRecursive;
-    displayEntityRecursive = [&context, &entities, &displayEntityRecursive](Entity& entity) -> void {
+    displayEntityRecursive = [this, &entities, &displayEntityRecursive](Entity& entity) -> void {
       ImGuiTreeNodeFlags nodeFlags{ baseFlags };
 
       if (entity.GetTransform().GetChildren().empty()) {
@@ -43,7 +48,7 @@ auto DrawEntityHierarchyWindow(Context& context) -> void {
         nodeFlags |= ImGuiTreeNodeFlags_DefaultOpen;
       }
 
-      if (context.GetSelectedObject() && context.GetSelectedObject() == &entity) {
+      if (mApp->GetSelectedObject() && mApp->GetSelectedObject() == &entity) {
         nodeFlags |= ImGuiTreeNodeFlags_Selected;
       }
 
@@ -63,18 +68,18 @@ auto DrawEntityHierarchyWindow(Context& context) -> void {
       }
 
       if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) {
-        context.SetSelectedObject(&entity);
+        mApp->SetSelectedObject(&entity);
       }
 
       bool deleted{ false };
 
       if (ImGui::BeginPopupContextItem()) {
-        context.SetSelectedObject(&entity);
+        mApp->SetSelectedObject(&entity);
 
         if (ImGui::MenuItem("Delete")) {
-          entity.GetScene().DestroyEntity(entity);
-          entities = context.GetScene()->GetEntities();
-          context.SetSelectedObject(nullptr);
+          delete std::addressof(entity);
+          entities = mApp->GetScene()->GetEntities();
+          mApp->SetSelectedObject(nullptr);
           deleted = true;
           ImGui::CloseCurrentPopup();
         }

@@ -4,7 +4,6 @@
 
 #include "ResourceDB.hpp"
 #include "Scene.hpp"
-#include "ObjectWrappers/ObjectWrapperManager.hpp"
 
 #include <atomic>
 #include <filesystem>
@@ -13,10 +12,9 @@
 
 
 namespace sorcery::mage {
-class Context {
+class Application {
   ImGuiIO& mImGuiIo;
-  Scene* mScene{ nullptr };
-  std::shared_ptr<ObjectWrapperManager> mWrapperManager{ ObjectWrapperManager::Create() };
+  Scene* mScene{ new Scene{} };
   ResourceDB mResourceDB;
   Object* mSelectedObject{ nullptr };
 
@@ -24,13 +22,13 @@ class Context {
 
   std::atomic<bool> mBusy;
 
-  static auto OnWindowFocusGain(Context* self) -> void;
+  static auto OnWindowFocusGain(Application* self) -> void;
   static auto HandleBackgroundThreadException(std::exception const& ex) -> void;
   static auto HandleUnknownBackgroundThreadException() -> void;
 
 public:
-  explicit Context(ImGuiIO& imGuiIO);
-  ~Context();
+  explicit Application(ImGuiIO& imGuiIO);
+  ~Application();
 
   [[nodiscard]] auto GetImGuiIo() const noexcept -> ImGuiIO const&;
   [[nodiscard]] auto GetImGuiIo() noexcept -> ImGuiIO&;
@@ -41,9 +39,6 @@ public:
   [[nodiscard]] auto GetScene() const noexcept -> Scene const*;
   [[nodiscard]] auto GetScene() noexcept -> Scene*;
   auto OpenScene(Scene& scene) -> void;
-
-  [[nodiscard]] auto GetFactoryManager() const noexcept -> ObjectWrapperManager const&;
-  [[nodiscard]] auto GetFactoryManager() noexcept -> ObjectWrapperManager&;
 
   [[nodiscard]] auto GetSelectedObject() const noexcept -> Object*;
   auto SetSelectedObject(Object* obj) noexcept -> void;
@@ -69,7 +64,7 @@ public:
 
 
 template<typename Callable>
-auto Context::ExecuteInBusyEditor(Callable&& callable) -> void {
+auto Application::ExecuteInBusyEditor(Callable&& callable) -> void {
   std::thread{
     [this, callable] {
       BusyExecutionContext const execContext{ OnEnterBusyExecution() };

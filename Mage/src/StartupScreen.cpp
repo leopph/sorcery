@@ -4,7 +4,7 @@
 
 
 namespace sorcery::mage {
-auto DrawStartupScreen(Context& context) -> void {
+auto DrawStartupScreen(Application& context) -> void {
   auto constexpr flags{ ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings };
   auto const viewport{ ImGui::GetMainViewport() };
   ImGui::SetNextWindowPos(viewport->Pos);

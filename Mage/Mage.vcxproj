@@ -93,7 +93,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\EditorCamera.cpp" />
-    <ClCompile Include="src\EditorContext.cpp" />
+    <ClCompile Include="src\Application.cpp" />
     <ClCompile Include="src\EditorSettingsWindow.cpp" />
     <ClCompile Include="src\EntityHierarchyWindow.cpp" />
     <ClCompile Include="src\GameViewWindow.cpp" />
@@ -116,7 +116,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\EditorCamera.hpp" />
-    <ClInclude Include="src\EditorContext.hpp" />
+    <ClInclude Include="src\Application.hpp" />
     <ClInclude Include="src\EditorSettingsWindow.hpp" />
     <ClInclude Include="src\EntityHierarchyWindow.hpp" />
     <ClInclude Include="src\GameViewWindow.hpp" />

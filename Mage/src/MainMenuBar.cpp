@@ -7,7 +7,7 @@
 
 
 namespace sorcery::mage {
-auto DrawMainMenuBar(Context& context) -> void {
+auto DrawMainMenuBar(Application& context) -> void {
   auto static showDemoWindow{ false };
   auto static showProjectSettingsWindow{ false };
   auto static showEditorSettingsWindow{ false };

@@ -2,14 +2,14 @@
 
 
 namespace sorcery::mage {
-PropertiesWindow::PropertiesWindow(Context& context) :
-  mContext{ &context } { }
+PropertiesWindow::PropertiesWindow(Application& app) :
+  mApp{ &app } { }
 
 
 auto PropertiesWindow::Draw() -> void {
   if (ImGui::Begin("Object Properties", &mIsOpen)) {
-    if (auto const selectedObj{ mContext->GetSelectedObject() }) {
-      mContext->GetFactoryManager().GetFor(selectedObj->GetSerializationType()).OnDrawProperties(*mContext, *selectedObj);
+    if (auto const selectedObj{ mApp->GetSelectedObject() }) {
+      selectedObj->OnDrawProperties();
     }
   }
   ImGui::End();

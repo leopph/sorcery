@@ -8,7 +8,7 @@
 
 
 namespace sorcery::mage {
-auto SceneViewWindow::Draw(Context& context) -> void {
+auto SceneViewWindow::Draw(Application& context) -> void {
   ImVec2 static constexpr sceneViewportMinSize{ 480, 270 };
 
   ImGui::SetNextWindowSize(sceneViewportMinSize, ImGuiCond_FirstUseEver);

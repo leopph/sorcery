@@ -4,6 +4,8 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 
 #include "ProjectWindow.hpp"
+
+#include "Material.hpp"
 #include "Util.hpp"
 #include "Platform.hpp"
 
@@ -114,7 +116,7 @@ auto ProjectWindow::OpenFileDialog(std::string_view const filters, std::string_v
 }
 
 
-auto ProjectWindow::ImportConcreteAsset(Context& context, AssetLoader& assetLoader, std::filesystem::path const& srcPathAbs, std::filesystem::path const& selectedDirAbs) -> void {
+auto ProjectWindow::ImportConcreteAsset(Application& context, AssetLoader& assetLoader, std::filesystem::path const& srcPathAbs, std::filesystem::path const& selectedDirAbs) -> void {
   context.ExecuteInBusyEditor([&context, &assetLoader, srcPathAbs, selectedDirAbs] {
     auto const dstPath{
       equivalent(srcPathAbs.parent_path(), selectedDirAbs)
@@ -141,7 +143,7 @@ auto ProjectWindow::ImportConcreteAsset(Context& context, AssetLoader& assetLoad
 }
 
 
-auto ProjectWindow::ImportAsset(Context& context, Object::Type const targetAssetType, std::filesystem::path const& selectedDirAbs) -> void {
+auto ProjectWindow::ImportAsset(Application& context, Object::Type const targetAssetType, std::filesystem::path const& selectedDirAbs) -> void {
   auto& loader{ context.GetFactoryManager().GetFor(targetAssetType).GetLoader() };
 
   if (std::filesystem::path path; OpenFileDialog(Join(loader.GetSupportedExtensions(), ",").c_str(), nullptr, path)) {
@@ -150,7 +152,7 @@ auto ProjectWindow::ImportAsset(Context& context, Object::Type const targetAsset
 }
 
 
-auto ProjectWindow::SaveNewNativeAsset(Context& context, std::unique_ptr<NativeResource> asset, std::string_view const targetAssetFileName, std::filesystem::path const& selectedDirAbs) -> void {
+auto ProjectWindow::SaveNewNativeAsset(Application& context, std::unique_ptr<NativeResource> asset, std::string_view const targetAssetFileName, std::filesystem::path const& selectedDirAbs) -> void {
   auto const dst{ GenerateUniquePath(selectedDirAbs / targetAssetFileName) };
 
   asset->SetName(dst.stem().string());
@@ -164,7 +166,7 @@ auto ProjectWindow::SaveNewNativeAsset(Context& context, std::unique_ptr<NativeR
 }
 
 
-ProjectWindow::ProjectWindow(Context& context) :
+ProjectWindow::ProjectWindow(Application& context) :
   mContext{ &context } { }
 
 
@@ -174,7 +176,7 @@ auto ProjectWindow::Draw() -> void {
       mSelectedNodePathProjDirRel = std::nullopt;
     }
 
-    DrawFilesystemTree(mContext->GetProjectDirectoryAbsolute(), Context::GetAssetDirectoryProjectRootRelative(), true, nullptr, mSelectedNodePathProjDirRel);
+    DrawFilesystemTree(mContext->GetProjectDirectoryAbsolute(), Application::GetAssetDirectoryProjectRootRelative(), true, nullptr, mSelectedNodePathProjDirRel);
 
     if (ImGui::IsWindowHovered(ImGuiHoveredFlags_RootWindow) && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
       ImGui::OpenPopup(CONTEXT_MENU_ID);
@@ -191,7 +193,7 @@ auto ProjectWindow::Draw() -> void {
     auto openCubemapImportModal{ false };
 
     if (ImGui::BeginPopup(CONTEXT_MENU_ID)) {
-      if (ImGui::BeginMenu("New##Menu")) {
+      if (ImGui::BeginMenu("New")) {
         if (ImGui::MenuItem("Folder")) {
           auto const newFolderPath{ GenerateUniquePath(targetWorkingDirPathAbs / "New Folder") };
           create_directory(newFolderPath);
@@ -201,17 +203,17 @@ auto ProjectWindow::Draw() -> void {
         }
 
         if (ImGui::MenuItem("Material")) {
-          SaveNewNativeAsset(*mContext, std::unique_ptr<NativeResource>{ new Material{} }, "New Material.mtl", targetWorkingDirPathAbs);
+          mContext->GetResourceDatabase().CreateResource(new Material{}, "New Material.mtl");
         }
 
         if (ImGui::MenuItem("Scene##CreateSceneAsset")) {
-          SaveNewNativeAsset(*mContext, std::unique_ptr<NativeResource>{ new Scene{} }, "New Scene.scene", targetWorkingDirPathAbs);
+          mContext->GetResourceDatabase().CreateResource(new Scene{}, "New Scene.scene");
         }
 
         ImGui::EndMenu();
       }
 
-      if (ImGui::BeginMenu("Import##ImportAssetMenu")) {
+      if (ImGui::MenuItem("Import")) {
         if (ImGui::MenuItem("Mesh##ImportMeshAssetMenuItem")) {
           ImportAsset(*mContext, Object::Type::Mesh, targetWorkingDirPathAbs);
           ImGui::CloseCurrentPopup();
@@ -228,144 +230,6 @@ auto ProjectWindow::Draw() -> void {
         }
 
         ImGui::EndMenu();
-      }
-
-      ImGui::EndPopup();
-    }
-
-    std::string static cubeMapcombinedFileName;
-    std::array<std::filesystem::path, 6> static facePaths;
-
-    if (openCubemapImportModal) {
-      for (auto& path : facePaths) {
-        path.clear();
-      }
-      cubeMapcombinedFileName.clear();
-      ImGui::OpenPopup(CUBEMAP_IMPORT_MODAL_ID);
-    }
-
-    if (ImGui::BeginPopupModal(CUBEMAP_IMPORT_MODAL_ID, nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-      constexpr auto importTypeCount{ 2 };
-      constexpr std::array<char const*, importTypeCount> importTypeNames{ "From Single File", "Merge Separate Faces" };
-      static auto importTypeIdx{ 0 };
-
-      ImGui::Combo("##CubeMapImportTypeCombo", &importTypeIdx, importTypeNames.data(), importTypeCount);
-
-      if (importTypeIdx == 1 && ImGui::BeginTable("CubeMapImportModalTable", 2)) {
-        // Order counts here
-        constexpr std::array faceNames{ "Right Face", "Left Face", "Top Face", "Bottom Face", "Front Face", "Back Face", };
-
-        for (int i = 0; i < 6; i++) {
-          ImGui::PushID(i);
-          ImGui::TableNextColumn();
-          ImGui::Text("%s", faceNames[i]);
-          ImGui::TableNextColumn();
-          if (ImGui::Button("Select")) {
-            std::ignore = OpenFileDialog(Join(mContext->GetFactoryManager().GetFor<Cubemap>().GetLoader().GetSupportedExtensions(), ",").c_str(), nullptr, facePaths[i]);
-          }
-          ImGui::SameLine();
-          ImGui::Text("%s", facePaths[i].empty()
-                              ? "None"
-                              : facePaths[i].filename().string().c_str());
-          ImGui::PopID();
-        }
-
-        ImGui::TableNextColumn();
-        ImGui::Text("%s", "Name of combined file");
-        ImGui::TableNextColumn();
-        ImGui::InputText("##CombinedFileInputText", &cubeMapcombinedFileName);
-
-        ImGui::EndTable();
-      }
-
-      if (ImGui::Button("Cancel")) {
-        ImGui::CloseCurrentPopup();
-      }
-
-      ImGui::SameLine();
-
-      if (ImGui::Button("Import")) {
-        if (importTypeIdx == 0) {
-          ImportAsset(*mContext, Object::Type::Cubemap, targetWorkingDirPathAbs);
-          ImGui::CloseCurrentPopup();
-        } else if (importTypeIdx == 1) {
-          bool rdyToImport{ true };
-
-          if (cubeMapcombinedFileName.empty()) {
-            rdyToImport = false;
-            DisplayError("Please enter the name of the combined image file.");
-          }
-
-          auto const dstPath{ targetWorkingDirPathAbs / std::filesystem::path{ cubeMapcombinedFileName } += ".png" };
-
-          if (exists(dstPath)) {
-            rdyToImport = false;
-            DisplayError("The filename is already in use.");
-          }
-
-          for (auto& path : facePaths) {
-            if (path.empty()) {
-              rdyToImport = false;
-              DisplayError("Not all faces of the cubemap are selected. Please select all of them.");
-              break;
-            }
-          }
-
-          if (rdyToImport) {
-            std::array<Image, 6> loadedImages;
-
-            bool importSuccess{ true };
-
-            for (int i = 0; i < 6; i++) {
-              int width;
-              int height;
-              int channelCount;
-
-              if (auto const data{ stbi_load(facePaths[i].string().c_str(), &width, &height, &channelCount, 4) }) {
-                if (width != height) {
-                  importSuccess = false;
-                  DisplayError(std::format(L"Image at {} cannot be used as a cubemap face because it is not square.", facePaths[i].wstring()));
-                  stbi_image_free(data);
-                  break;
-                }
-
-                if (!IsPowerOfTwo(width)) {
-                  importSuccess = false;
-                  DisplayError(std::format(L"Image at {} cannot be used as a cubemap face because its dimensions are not powers of two.", facePaths[i].wstring()));
-                  stbi_image_free(data);
-                  break;
-                }
-
-                if (i > 0 && static_cast<int>(loadedImages[i - 1].get_width()) != width) {
-                  importSuccess = false;
-                  DisplayError(std::format(L"The image dimensions at {} don't match the dimensions of the previous images.", facePaths[i].wstring()));
-                  stbi_image_free(data);
-                  break;
-                }
-
-                loadedImages[i] = Image{ static_cast<u32>(width), static_cast<u32>(height), 4, std::unique_ptr<u8[]>{ data } };
-              } else {
-                importSuccess = false;
-                DisplayError(std::format(L"Failed to load image file at {}.", facePaths[i].wstring()));
-                break;
-              }
-            }
-
-            if (importSuccess) {
-              auto const faceSize{ static_cast<int>(loadedImages[0].get_width()) };
-              auto combinedBytes{ std::make_unique_for_overwrite<u8[]>(6 * faceSize * faceSize * 4) };
-              for (int i = 0; i < 6; i++) {
-                std::ranges::copy_n(loadedImages[i].get_data().data(), faceSize * faceSize * 4, combinedBytes.get() + i * faceSize * faceSize * 4);
-              }
-              if (!stbi_write_png(dstPath.string().c_str(), faceSize, 6 * faceSize, 4, combinedBytes.get(), faceSize * 4)) {
-                DisplayError("Failed to write combined image.");
-              } else {
-                ImportConcreteAsset(*mContext, mContext->GetFactoryManager().GetFor<Cubemap>().GetLoader(), dstPath, targetWorkingDirPathAbs);
-                ImGui::CloseCurrentPopup();
-              }
-            }
-          }
-        }
       }
 
       ImGui::EndPopup();

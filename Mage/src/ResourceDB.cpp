@@ -62,7 +62,7 @@ auto ResourceDB::GetResourceDirectoryAbsolutePath() -> std::filesystem::path con
 }
 
 
-auto ResourceDB::CreateResource(std::shared_ptr<NativeResource>&& res, std::filesystem::path const& targetPathResDirRel) -> void {
+auto ResourceDB::CreateResource(ObserverPtr<NativeResource> res, std::filesystem::path const& targetPathResDirRel) -> void {
   if (!res) {
     return;
   }
@@ -90,7 +90,7 @@ auto ResourceDB::CreateResource(std::shared_ptr<NativeResource>&& res, std::file
 
   mGuidToAbsPath.insert_or_assign(res->GetGuid(), targetPathAbs);
 
-  gResourceManager.Add(std::move(res));
+  gResourceManager.Add(res);
   gResourceManager.UpdateGuidPathMappings(mGuidToAbsPath);
 }
 
@@ -162,8 +162,8 @@ auto ResourceDB::MoveResource(Guid const& guid, std::filesystem::path const& tar
   rename(srcPathAbs, dstPathAbs);
   rename(srcMetaPathAbs, dstMetaPathAbs);
 
-  if (auto const rh{ gResourceManager.LoadResource(guid) }; rh.Get()) {
-    rh.Get()->SetName(dstMetaPathAbs.stem().string());
+  if (auto const rh{ gResourceManager.LoadResource(guid) }) {
+    rh->SetName(dstMetaPathAbs.stem().string());
   }
 
   gResourceManager.UpdateGuidPathMappings(mGuidToAbsPath);

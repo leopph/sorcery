@@ -1,8 +1,8 @@
 #pragma once
 
-#include "EditorContext.hpp"
+#include "Application.hpp"
 
 
 namespace sorcery::mage {
-auto DrawMainMenuBar(Context& context) -> void;
+auto DrawMainMenuBar(Application& context) -> void;
 }

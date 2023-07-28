@@ -9,12 +9,9 @@
 
 
 namespace sorcery::mage {
-std::string_view const EDITOR_SETTINGS_WINDOW_TITLE{ "Editor Settings" };
-
-
-auto DrawEditorSettingsWindow(bool& isOpen) -> void {
+auto EditorSettingsWindow::Draw() -> void {
   ImGui::SetNextWindowSizeConstraints(ImVec2{ 200, 200 }, ImVec2{ std::numeric_limits<float>::max(), std::numeric_limits<float>::max() });
-  if (std::string const static windowName{ std::string{ EDITOR_SETTINGS_WINDOW_TITLE } + "##Window" }; !ImGui::Begin(windowName.data(), &isOpen)) {
+  if (std::string const static windowName{ std::string{ TITLE } + "##Window" }; !ImGui::Begin(windowName.data(), &mIsOpen)) {
     ImGui::End();
     return;
   }

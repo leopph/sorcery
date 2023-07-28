@@ -1,15 +1,15 @@
 #pragma once
 
-#include "EditorContext.hpp"
+#include "Application.hpp"
 
 
 namespace sorcery::mage {
 class PropertiesWindow {
-  Context* mContext;
+  Application* mApp;
   bool mIsOpen{ true };
 
 public:
-  explicit PropertiesWindow(Context& context);
+  explicit PropertiesWindow(Application& app);
   auto Draw() -> void;
 };
 }
