@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Core.hpp"
-#include "Util.hpp"
 #include "Reflection.hpp"
 
 #include <concepts>
@@ -34,60 +33,58 @@ public:
   virtual auto OnDrawGizmosSelected() -> void {}
 
   template<std::derived_from<Object> T>
-  [[nodiscard]] static auto FindObjectOfType() -> T*;
+  [[nodiscard]] static auto FindObjectOfType() -> ObserverPtr<T>;
 
   template<std::derived_from<Object> T>
-  static auto FindObjectsOfType(std::vector<T*>& out) -> std::vector<T*>&;
+  static auto FindObjectsOfType(std::vector<ObserverPtr<T>>& out) -> std::vector<ObserverPtr<T>>&;
 
   template<std::derived_from<Object> T>
-  [[nodiscard]] auto FindObjectsOfType() -> std::vector<T*>;
-
-  template<std::derived_from<Object> T>
-  static auto FindObjectsOfType(std::vector<Object*>& out) -> std::vector<Object*>&;
+  [[nodiscard]] auto FindObjectsOfType() -> std::vector<ObserverPtr<T>>;
 
   LEOPPHAPI static auto DestroyAll() -> void;
 };
 
 
 template<std::derived_from<Object> T>
-auto Object::FindObjectOfType() -> T* {
-  for (auto const obj : sAllObjects) {
-    if (auto const castObj{ dynamic_cast<T*>(obj) }; castObj) {
-      return castObj;
+auto Object::FindObjectOfType() -> ObserverPtr<T> {
+  if constexpr (std::same_as<Object, T>) {
+    return sAllObjects.empty()
+             ? nullptr
+             : sAllObjects.front();
+  } else {
+    for (auto const obj : sAllObjects) {
+      if (auto const castObj{ rttr::rttr_cast<ObserverPtr<T>>(obj) }) {
+        return castObj;
+      }
     }
+
+    return nullptr;
   }
-  return nullptr;
 }
 
 
 template<std::derived_from<Object> T>
-auto Object::FindObjectsOfType(std::vector<T*>& out) -> std::vector<T*>& {
-  out.clear();
-  for (auto const obj : sAllObjects) {
-    if (auto const castObj{ dynamic_cast<T*>(obj) }; castObj) {
-      out.emplace_back(castObj);
+auto Object::FindObjectsOfType(std::vector<ObserverPtr<T>>& out) -> std::vector<ObserverPtr<T>>& {
+  if constexpr (std::same_as<Object, T>) {
+    out = sAllObjects;
+  } else {
+    out.clear();
+
+    for (auto const obj : sAllObjects) {
+      if (auto const castObj{ rttr::rttr_cast<ObserverPtr<T>>(obj) }) {
+        out.emplace_back(castObj);
+      }
     }
   }
+
   return out;
 }
 
 
 template<std::derived_from<Object> T>
-auto Object::FindObjectsOfType() -> std::vector<T*> {
-  std::vector<T*> ret;
+auto Object::FindObjectsOfType() -> std::vector<ObserverPtr<T>> {
+  std::vector<ObserverPtr<T>> ret;
   FindObjectsOfType<T>(ret);
   return ret;
-}
-
-
-template<std::derived_from<Object> T>
-auto Object::FindObjectsOfType(std::vector<Object*>& out) -> std::vector<Object*>& {
-  out.clear();
-  for (auto const obj : sAllObjects) {
-    if (dynamic_cast<T*>(obj)) {
-      out.emplace_back(obj);
-    }
-  }
-  return out;
 }
 }
