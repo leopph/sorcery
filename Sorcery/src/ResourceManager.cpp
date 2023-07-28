@@ -66,7 +66,7 @@ auto ResourceManager::LoadResource(Guid const& guid) -> ObserverPtr<Resource> {
 
 auto ResourceManager::Unload(Guid const& guid) -> void {
   if (auto const it{ mResources.find(guid) }; it != std::end(mResources)) {
-    Object::Destroy(**it);
+    delete *it;
     mResources.erase(it);
   }
 }
