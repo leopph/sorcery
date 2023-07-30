@@ -137,6 +137,8 @@
     <ClCompile Include="src\RigidBody.cpp" />
     <ClCompile Include="src\SwapChain.cpp" />
     <ClCompile Include="src\Util.cpp" />
+    <ClInclude Include="src\Pool.hpp" />
+    <ClInclude Include="src\PoolAllocator.hpp" />
     <ClInclude Include="src\Graphics.hpp" />
     <ClInclude Include="src\ResourceManager.hpp" />
     <ClInclude Include="src\ShadowCascadeBoundary.hpp" />
