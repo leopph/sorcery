@@ -88,7 +88,9 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& resDirAbs, s
 
     if (isDirectory) {
       for (auto const& entry : std::filesystem::directory_iterator{ pathAbs }) {
-        DrawFilesystemTree(resDirAbs, relative(entry.path(), resDirAbs));
+        if (entry.path().extension() != ResourceManager::RESOURCE_META_FILE_EXT) {
+          DrawFilesystemTree(resDirAbs, relative(entry.path(), resDirAbs));
+        }
       }
     }
 
