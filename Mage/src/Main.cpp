@@ -171,6 +171,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
     sorcery::DisplayError(ex.what());
   }
 
+  sorcery::Object::DestroyAll();
   sorcery::gPhysicsManager.ShutDown();
   sorcery::gRenderer.ShutDown();
   sorcery::gWindow.ShutDown();
