@@ -114,6 +114,7 @@
     <ClCompile Include="src\Color.cpp" />
     <ClCompile Include="src\Component.cpp" />
     <ClCompile Include="src\Compress.cpp" />
+    <ClCompile Include="src\GUI.cpp" />
     <ClCompile Include="src\ResourceImporters\MeshImporter.cpp" />
     <ClCompile Include="src\ResourceImporters\NativeResourceImporter.cpp" />
     <ClCompile Include="src\ResourceImporters\TextureImporter.cpp" />
@@ -144,6 +145,7 @@
     <ClCompile Include="src\SwapChain.cpp" />
     <ClCompile Include="src\Util.cpp" />
     <ClInclude Include="src\Graphics.hpp" />
+    <ClInclude Include="src\GUI.hpp" />
     <ClInclude Include="src\ResourceImporters\NativeResourceImporter.hpp" />
     <ClInclude Include="src\Resources\NativeResource.hpp" />
     <ClInclude Include="src\Reflection.hpp" />

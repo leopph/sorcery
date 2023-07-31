@@ -1,6 +1,7 @@
 #include "Application.hpp"
 
 #include "Platform.hpp"
+#include "GUI.hpp"
 
 
 namespace sorcery::mage {
@@ -24,6 +25,7 @@ auto Application::HandleUnknownBackgroundThreadException() -> void {
 Application::Application(ImGuiIO& imGuiIO) :
   mImGuiIo{ imGuiIO } {
   gWindow.OnWindowFocusGain.add_handler(this, &OnWindowFocusGain);
+  SetImGuiContext(*ImGui::GetCurrentContext());
 }
 
 
