@@ -79,6 +79,12 @@ auto ResourceDB::CreateResource(NativeResource& res, std::filesystem::path const
     res.SetGuid(Guid::Generate());
   }
 
+  auto const resNode{ res.Serialize() };
+  auto const targetPathAbs{ mResDirAbs / targetPathResDirRel };
+  std::ofstream outResStream{ targetPathAbs };
+  YAML::Emitter resEmitter{ outResStream };
+  resEmitter << resNode;
+
   YAML::Node importerNode;
   importerNode["type"] = rttr::type::get<NativeResourceImporter>().get_name().to_string();
   importerNode["properties"] = ReflectionSerializeToYaml(NativeResourceImporter{});
@@ -87,9 +93,7 @@ auto ResourceDB::CreateResource(NativeResource& res, std::filesystem::path const
   metaNode["guid"] = res.GetGuid();
   metaNode["importer"] = importerNode;
 
-  auto const targetPathAbs{ mResDirAbs / targetPathResDirRel };
-  auto const targetMetaPathAbs{ targetPathAbs / ResourceManager::RESOURCE_META_FILE_EXT };
-
+  auto const targetMetaPathAbs{ std::filesystem::path{ targetPathAbs } += ResourceManager::RESOURCE_META_FILE_EXT };
   std::ofstream outMetaStream{ targetMetaPathAbs };
   YAML::Emitter metaEmitter{ outMetaStream };
   metaEmitter << metaNode;
