@@ -122,7 +122,7 @@ auto ResourceDB::ImportResource(std::filesystem::path const& targetPathResDirRel
 
   for (auto const& importerType : rttr::type::get<ResourceImporter>().get_derived_classes()) {
     auto importerVariant{ importerType.create() };
-    auto& importer{ importerVariant.get_value<ResourceImporter>() };
+    auto& importer{ rttr::variant_cast<ResourceImporter&>(importerVariant) };
 
     static std::vector<std::string> supportedExtensions;
     supportedExtensions.clear();
@@ -140,7 +140,7 @@ auto ResourceDB::ImportResource(std::filesystem::path const& targetPathResDirRel
         metaNode["guid"] = guid;
         metaNode["importer"] = importerNode;
 
-        std::ofstream outMetaStream{ targetPathAbs / ResourceManager::RESOURCE_META_FILE_EXT };
+        std::ofstream outMetaStream{ std::filesystem::path{ targetPathAbs } += ResourceManager::RESOURCE_META_FILE_EXT };
         YAML::Emitter metaEmitter{ outMetaStream };
         metaEmitter << metaNode;
         outMetaStream.flush();
