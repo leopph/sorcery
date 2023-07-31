@@ -44,6 +44,10 @@ auto ResourceDB::Refresh() -> void {
 auto ResourceDB::ChangeProjectDir(std::filesystem::path const& projDirAbs) -> void {
   mResDirAbs = projDirAbs / RESOURCE_DIR_PROJ_REL;
 
+  if (!exists(mResDirAbs)) {
+    create_directory(mResDirAbs);
+  }
+
   for (auto const& guid : mGuidToAbsPath | std::views::keys) {
     gResourceManager.Unload(guid);
   }
