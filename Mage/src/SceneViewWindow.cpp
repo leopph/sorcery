@@ -81,7 +81,7 @@ auto SceneViewWindow::Draw(Application& context) -> void {
     }
 
     if (auto const selectedObject{ context.GetSelectedObject() }) {
-      context.GetFactoryManager().GetFor(selectedObject->GetSerializationType()).OnDrawGizmosSelected(context, *selectedObject);
+      selectedObject->OnDrawGizmosSelected();
     }
 
     gRenderer.DrawCamera(mEditorCam, mRenderTarget.get());
