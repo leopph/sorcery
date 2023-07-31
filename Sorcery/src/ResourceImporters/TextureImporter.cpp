@@ -14,15 +14,15 @@ RTTR_REGISTRATION {
 
 namespace sorcery {
 auto TextureImporter::GetSupportedFileExtensions(std::vector<std::string>& out) -> void {
-  out.emplace_back("png");
-  out.emplace_back("jpg");
-  out.emplace_back("jpeg");
-  out.emplace_back("tga");
-  out.emplace_back("bmp");
-  out.emplace_back("psd");
-  out.emplace_back("gif");
-  out.emplace_back("hdr");
-  out.emplace_back("pic");
+  out.emplace_back(".png");
+  out.emplace_back(".jpg");
+  out.emplace_back(".jpeg");
+  out.emplace_back(".tga");
+  out.emplace_back(".bmp");
+  out.emplace_back(".psd");
+  out.emplace_back(".gif");
+  out.emplace_back(".hdr");
+  out.emplace_back(".pic");
 }
 
 
