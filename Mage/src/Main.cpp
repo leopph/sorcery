@@ -94,6 +94,9 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
     auto const sceneViewWindow{ std::make_unique<sorcery::mage::SceneViewWindow>() };
     auto const gameViewWindow{ std::make_unique<sorcery::mage::GameViewWindow>() };
     auto const propertiesWindow{ std::make_unique<sorcery::mage::PropertiesWindow>(app) };
+    auto const editorSettingsWindow{ std::make_unique<sorcery::mage::EditorSettingsWindow>() };
+    auto const mainMenuBar{ std::make_unique<sorcery::mage::MainMenuBar>(app, *editorSettingsWindow) };
+    auto const entityHierarchyWindow{ std::make_unique<sorcery::mage::EntityHierarchyWindow>(app) };
 
     while (!sorcery::gWindow.IsQuitSignaled()) {
       sorcery::gWindow.ProcessEvents();
@@ -137,14 +140,15 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
         }
 
         if (app.GetScene()) {
-          DrawEntityHierarchyWindow(app);
+          entityHierarchyWindow->Draw();
           gameViewWindow->Draw(runGame);
           sceneViewWindow->Draw(app);
         } else {
           sorcery::mage::DrawOpenScenePrompt();
         }
 
-        DrawMainMenuBar(app);
+        mainMenuBar->Draw();
+        editorSettingsWindow->Draw();
         propertiesWindow->Draw();
         projectWindow->Draw();
         sorcery::mage::DrawPerformanceCounterWindow();

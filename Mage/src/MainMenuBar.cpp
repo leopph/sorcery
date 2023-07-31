@@ -7,10 +7,14 @@
 
 
 namespace sorcery::mage {
-auto DrawMainMenuBar(Application& context) -> void {
+MainMenuBar::MainMenuBar(Application& app, EditorSettingsWindow& editorSettingsWindow) :
+  mApp{ &app },
+  mEditorSettingsWindow{ &editorSettingsWindow } { }
+
+
+auto MainMenuBar::Draw() -> void {
   auto static showDemoWindow{ false };
   auto static showProjectSettingsWindow{ false };
-  auto static showEditorSettingsWindow{ false };
 
   if (showDemoWindow) {
     ImGui::ShowDemoWindow();
@@ -20,25 +24,21 @@ auto DrawMainMenuBar(Application& context) -> void {
     DrawProjectSettingsWindow(showProjectSettingsWindow);
   }
 
-  if (showEditorSettingsWindow) {
-    DrawEditorSettingsWindow(showEditorSettingsWindow);
-  }
-
   if (ImGui::BeginMainMenuBar()) {
     if (ImGui::BeginMenu("File")) {
       if (ImGui::MenuItem("Open Project")) {
         if (nfdchar_t* selectedPath{ nullptr }; NFD_PickFolder(nullptr, &selectedPath) == NFD_OKAY) {
-          context.ExecuteInBusyEditor([selectedPath, &context] {
-            context.OpenProject(selectedPath);
+          mApp->ExecuteInBusyEditor([selectedPath, this] {
+            mApp->OpenProject(selectedPath);
             std::free(selectedPath);
           });
         }
       }
 
       if (ImGui::MenuItem("Save Current Scene")) {
-        if (context.GetScene()) {
-          context.GetScene()->Save();
-          context.GetResourceDatabase().SaveResource(*context.GetScene());
+        if (mApp->GetScene()) {
+          mApp->GetScene()->Save();
+          mApp->GetResourceDatabase().SaveResource(*mApp->GetScene());
         }
       }
 
@@ -47,7 +47,7 @@ auto DrawMainMenuBar(Application& context) -> void {
 
     if (ImGui::BeginMenu("Options")) {
       if (ImGui::MenuItem(EditorSettingsWindow::TITLE.data())) {
-        showEditorSettingsWindow = true;
+        mEditorSettingsWindow->SetOpen(true);
       }
 
       if (ImGui::MenuItem(PROJECT_SETTINGS_WINDOW_TITLE.data())) {

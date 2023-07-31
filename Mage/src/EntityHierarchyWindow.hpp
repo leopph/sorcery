@@ -12,7 +12,4 @@ public:
 
   auto Draw() -> void;
 };
-
-
-auto DrawEntityHierarchyWindow(Application& context) -> void;
 }

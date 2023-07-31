@@ -38,11 +38,11 @@ struct convert<sorcery::Guid> {
 namespace sorcery {
 template<typename T>
 [[nodiscard]] auto ReflectionSerializeToYaml(T const& obj, std::function<YAML::Node(rttr::variant const&)> const& extensionFunc = {}) -> YAML::Node;
-[[nodiscard]] auto ReflectionSerializeToYaml(rttr::variant const& v, std::function<YAML::Node(rttr::variant const&)> const& extensionFunc = {}) -> YAML::Node;
+[[nodiscard]] LEOPPHAPI auto ReflectionSerializeToYaml(rttr::variant const& v, std::function<YAML::Node(rttr::variant const&)> const& extensionFunc = {}) -> YAML::Node;
 
 template<typename T>
 auto ReflectionDeserializeFromYaml(YAML::Node const& objNode, T& obj, std::function<void(YAML::Node const&, rttr::variant&)> const& extensionFunc = {}) -> void;
-auto ReflectionDeserializeFromYaml(YAML::Node const& objNode, rttr::variant& v, std::function<void(YAML::Node const&, rttr::variant&)> const& extensionFunc = {}) -> void;
+LEOPPHAPI auto ReflectionDeserializeFromYaml(YAML::Node const& objNode, rttr::variant& v, std::function<void(YAML::Node const&, rttr::variant&)> const& extensionFunc = {}) -> void;
 }
 
 

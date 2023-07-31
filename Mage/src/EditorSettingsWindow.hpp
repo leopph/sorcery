@@ -12,8 +12,6 @@ public:
   static auto constexpr DEFAULT_TARGET_FRAME_RATE{ 200 };
 
   auto Draw() -> void;
+  auto SetOpen(bool isOpen) noexcept -> void;
 };
-
-
-auto DrawEditorSettingsWindow(bool& isOpen) -> void;
 }

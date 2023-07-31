@@ -58,4 +58,9 @@ auto EditorSettingsWindow::Draw() -> void {
 
   ImGui::End();
 }
+
+
+auto EditorSettingsWindow::SetOpen(bool const isOpen) noexcept -> void {
+  mIsOpen = isOpen;
+}
 }

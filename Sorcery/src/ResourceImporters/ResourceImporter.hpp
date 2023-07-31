@@ -14,9 +14,9 @@ class ResourceImporter {
   RTTR_ENABLE()
 
 public:
-  LEOPPHAPI virtual auto GetSupportedFileExtensions(std::vector<std::string>& out) -> void = 0;
-  [[nodiscard]] LEOPPHAPI virtual auto Import(std::filesystem::path const& src) -> ObserverPtr<Resource> = 0;
-  [[nodiscard]] LEOPPHAPI virtual auto GetPrecedence() const noexcept -> int = 0;
+  virtual auto GetSupportedFileExtensions(std::vector<std::string>& out) -> void = 0;
+  [[nodiscard]] virtual auto Import(std::filesystem::path const& src) -> ObserverPtr<Resource> = 0;
+  [[nodiscard]] virtual auto GetPrecedence() const noexcept -> int = 0;
 
   ResourceImporter() = default;
   ResourceImporter(ResourceImporter const& other) = delete;

@@ -13,16 +13,16 @@ namespace sorcery {
 class ResourceManager {
   struct ResourceGuidLess {
     using is_transparent = void;
-    [[nodiscard]] auto operator()(ObserverPtr<Resource> lhs, ObserverPtr<Resource> rhs) const noexcept -> bool;
-    [[nodiscard]] auto operator()(ObserverPtr<Resource> lhs, Guid const& rhs) const noexcept -> bool;
-    [[nodiscard]] auto operator()(Guid const& lhs, ObserverPtr<Resource> rhs) const noexcept -> bool;
+    [[nodiscard]] LEOPPHAPI auto operator()(ObserverPtr<Resource> lhs, ObserverPtr<Resource> rhs) const noexcept -> bool;
+    [[nodiscard]] LEOPPHAPI auto operator()(ObserverPtr<Resource> lhs, Guid const& rhs) const noexcept -> bool;
+    [[nodiscard]] LEOPPHAPI auto operator()(Guid const& lhs, ObserverPtr<Resource> rhs) const noexcept -> bool;
   };
 
 
   std::set<ObserverPtr<Resource>, ResourceGuidLess> mResources;
   std::map<Guid, std::filesystem::path> mGuidPathMappings;
 
-  [[nodiscard]] auto InternalLoadResource(std::filesystem::path const& src) -> ObserverPtr<Resource>;
+  [[nodiscard]] LEOPPHAPI auto InternalLoadResource(std::filesystem::path const& src) -> ObserverPtr<Resource>;
 
 public:
   constexpr static std::string_view RESOURCE_META_FILE_EXT{ ".mojo" };
