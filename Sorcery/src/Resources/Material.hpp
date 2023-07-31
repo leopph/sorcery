@@ -32,11 +32,11 @@ class Material final : public NativeResource {
 
   Microsoft::WRL::ComPtr<ID3D11Buffer> mCB;
 
-  ObserverPtr<Texture2D> mAlbedoMap;
-  ObserverPtr<Texture2D> mMetallicMap;
-  ObserverPtr<Texture2D> mRoughnessMap;
-  ObserverPtr<Texture2D> mAoMap;
-  ObserverPtr<Texture2D> mNormalMap;
+  ObserverPtr<Texture2D> mAlbedoMap{ nullptr };
+  ObserverPtr<Texture2D> mMetallicMap{ nullptr };
+  ObserverPtr<Texture2D> mRoughnessMap{ nullptr };
+  ObserverPtr<Texture2D> mAoMap{ nullptr };
+  ObserverPtr<Texture2D> mNormalMap{ nullptr };
 
   auto UpdateGPUData() const noexcept -> void;
   auto CreateCB() -> void;

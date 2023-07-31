@@ -112,8 +112,8 @@ auto Material::GetAlbedoMap() const noexcept -> ObserverPtr<Texture2D> {
 }
 
 
-auto Material::SetAlbedoMap(ObserverPtr<Texture2D> tex) noexcept -> void {
-  mAlbedoMap = std::move(tex);
+auto Material::SetAlbedoMap(ObserverPtr<Texture2D> const tex) noexcept -> void {
+  mAlbedoMap = tex;
   mShaderMtl.sampleAlbedo = mAlbedoMap != nullptr;
   UpdateGPUData();
 }
@@ -124,8 +124,8 @@ auto Material::GetMetallicMap() const noexcept -> ObserverPtr<Texture2D> {
 }
 
 
-auto Material::SetMetallicMap(ObserverPtr<Texture2D> tex) noexcept -> void {
-  mMetallicMap = std::move(tex);
+auto Material::SetMetallicMap(ObserverPtr<Texture2D> const tex) noexcept -> void {
+  mMetallicMap = tex;
   mShaderMtl.sampleMetallic = mMetallicMap != nullptr;
   UpdateGPUData();
 }
@@ -136,8 +136,8 @@ auto Material::GetRoughnessMap() const noexcept -> ObserverPtr<Texture2D> {
 }
 
 
-auto Material::SetRoughnessMap(ObserverPtr<Texture2D> tex) noexcept -> void {
-  mRoughnessMap = std::move(tex);
+auto Material::SetRoughnessMap(ObserverPtr<Texture2D> const tex) noexcept -> void {
+  mRoughnessMap = tex;
   mShaderMtl.sampleRoughness = mRoughnessMap != nullptr;
   UpdateGPUData();
 }
@@ -148,8 +148,8 @@ auto Material::GetAoMap() const noexcept -> ObserverPtr<Texture2D> {
 }
 
 
-auto Material::SetAoMap(ObserverPtr<Texture2D> tex) noexcept -> void {
-  mAoMap = std::move(tex);
+auto Material::SetAoMap(ObserverPtr<Texture2D> const tex) noexcept -> void {
+  mAoMap = tex;
   mShaderMtl.sampleAo = mAoMap != nullptr;
   UpdateGPUData();
 }
@@ -160,8 +160,8 @@ auto Material::GetNormalMap() const noexcept -> ObserverPtr<Texture2D> {
 }
 
 
-auto Material::SetNormalMap(ObserverPtr<Texture2D> tex) noexcept -> void {
-  mNormalMap = std::move(tex);
+auto Material::SetNormalMap(ObserverPtr<Texture2D> const tex) noexcept -> void {
+  mNormalMap = tex;
   mShaderMtl.sampleNormal = mNormalMap != nullptr;
   UpdateGPUData();
 }
