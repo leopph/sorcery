@@ -88,9 +88,7 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& resDirAbs, s
 
     if (isDirectory) {
       for (auto const& entry : std::filesystem::directory_iterator{ pathAbs }) {
-        if (entry.is_directory()) {
-          DrawFilesystemTree(resDirAbs, relative(entry.path(), resDirAbs));
-        }
+        DrawFilesystemTree(resDirAbs, relative(entry.path(), resDirAbs));
       }
     }
 
