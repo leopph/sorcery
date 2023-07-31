@@ -19,12 +19,12 @@ public:
   [[nodiscard]] virtual auto GetPrecedence() const noexcept -> int = 0;
 
   ResourceImporter() = default;
-  ResourceImporter(ResourceImporter const& other) = delete;
-  ResourceImporter(ResourceImporter&& other) = delete;
+  ResourceImporter(ResourceImporter const& other) = default;
+  ResourceImporter(ResourceImporter&& other) noexcept = default;
 
   virtual ~ResourceImporter() = default;
 
-  auto operator=(ResourceImporter const& other) -> void = delete;
-  auto operator=(ResourceImporter&& other) -> void = delete;
+  auto operator=(ResourceImporter const& other) -> ResourceImporter& = default;
+  auto operator=(ResourceImporter&& other) noexcept -> ResourceImporter& = default;
 };
 }

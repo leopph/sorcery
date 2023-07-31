@@ -9,7 +9,7 @@
 
 RTTR_REGISTRATION {
   rttr::registration::class_<sorcery::MeshImporter>{ "Mesh Importer" }
-    .constructor();
+    .REFLECT_REGISTER_RESOURCE_IMPORTER_CTOR;
 }
 
 

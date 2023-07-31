@@ -6,7 +6,7 @@
 
 RTTR_REGISTRATION {
   rttr::registration::class_<sorcery::TextureImporter>("Texture Importer")
-    .constructor()
+    .REFLECT_REGISTER_RESOURCE_IMPORTER_CTOR
     .property("Texture Type", &sorcery::TextureImporter::mTexType)
     .property("Non-Power Of Two Rounding", &sorcery::TextureImporter::mRounding);
 }

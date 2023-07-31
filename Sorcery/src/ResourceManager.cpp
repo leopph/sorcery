@@ -38,11 +38,14 @@ auto ResourceManager::InternalLoadResource(std::filesystem::path const& src) -> 
     return *it;
   }
 
-  auto const importerType{ rttr::type::get(metaNode["importer"]["type"]) };
+  auto const importerType{ rttr::type::get_by_name(metaNode["importer"]["type"].as<std::string>()) };
+  assert(importerType.is_valid());
 
   auto importerVariant{ importerType.create() };
-  ReflectionDeserializeFromYaml(metaNode["importer"]["properties"], importerVariant);
-  auto& importer{ importerVariant.get_value<ResourceImporter>() };
+  assert(importerVariant.is_valid());
+
+  auto& importer{ rttr::variant_cast<ResourceImporter&>(importerVariant) };
+  ReflectionDeserializeFromYaml(metaNode["importer"]["properties"], importer);
 
   auto res{ importer.Import(src) };
 

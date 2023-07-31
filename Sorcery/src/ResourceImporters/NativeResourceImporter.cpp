@@ -5,7 +5,7 @@
 
 RTTR_REGISTRATION {
   rttr::registration::class_<sorcery::NativeResourceImporter>{ "Native Resource Importer" }
-    .constructor();
+    .REFLECT_REGISTER_RESOURCE_IMPORTER_CTOR;
 }
 
 
