@@ -14,7 +14,6 @@
 #include <shellapi.h>
 
 #include <filesystem>
-#include <ranges>
 #include <string>
 #include <cwchar>
 
@@ -46,7 +45,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
     sorcery::gRenderer.SetSyncInterval(0);
 
-    sorcery::timing::SetTargetFrameRate(sorcery::mage::DEFAULT_TARGET_FRAME_RATE);
+    sorcery::timing::SetTargetFrameRate(sorcery::mage::EditorSettingsWindow::DEFAULT_TARGET_FRAME_RATE);
 
     ImGui::CreateContext();
     auto& imGuiIo = ImGui::GetIO();
@@ -66,7 +65,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
     bool runGame{ false };
 
-    sorcery::mage::Application context{ imGuiIo };
+    sorcery::mage::Application app{ imGuiIo };
 
     sorcery::timing::OnApplicationStart();
 
@@ -74,20 +73,16 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
       int argc;
       auto const argv{ CommandLineToArgvW(lpCmdLine, &argc) };
 
-      context.ExecuteInBusyEditor([argc, argv, &context] {
+      app.ExecuteInBusyEditor([argc, argv, &app] {
         if (argc > 0) {
           std::filesystem::path targetProjPath{ argv[0] };
           targetProjPath = absolute(targetProjPath);
-          context.OpenProject(targetProjPath);
+          app.OpenProject(targetProjPath);
         }
 
         if (argc > 1) {
-          std::filesystem::path targetScenePath{ argv[1] };
-          targetScenePath = context.GetAssetDirectoryAbsolute() / targetScenePath;
-          if (auto const targetScene{ context.GetResources().TryGetAssetAt(targetScenePath) }) {
-            if (auto const targetSceneCast{ dynamic_cast<sorcery::Scene*>(targetScene) }; targetSceneCast) {
-              context.OpenScene(*targetSceneCast);
-            }
+          if (auto const scene{ sorcery::gResourceManager.Load<sorcery::Scene>(app.GetResourceDatabase().PathToGuid(argv[1])) }) {
+            app.OpenScene(*scene);
           }
         }
 
@@ -95,10 +90,10 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
       });
     }
 
-    auto const projectWindow{ std::make_unique<sorcery::mage::ProjectWindow>(context) };
+    auto const projectWindow{ std::make_unique<sorcery::mage::ProjectWindow>(app) };
     auto const sceneViewWindow{ std::make_unique<sorcery::mage::SceneViewWindow>() };
     auto const gameViewWindow{ std::make_unique<sorcery::mage::GameViewWindow>() };
-    auto const propertiesWindow{ std::make_unique<sorcery::mage::PropertiesWindow>(context) };
+    auto const propertiesWindow{ std::make_unique<sorcery::mage::PropertiesWindow>(app) };
 
     while (!sorcery::gWindow.IsQuitSignaled()) {
       sorcery::gWindow.ProcessEvents();
@@ -108,8 +103,8 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
       ImGui::NewFrame();
       ImGuizmo::BeginFrame();
 
-      if (context.GetProjectDirectoryAbsolute().empty()) {
-        DrawStartupScreen(context);
+      if (app.GetProjectDirectoryAbsolute().empty()) {
+        DrawStartupScreen(app);
       } else {
         int static targetFrameRate{ sorcery::timing::GetTargetFrameRate() };
 
@@ -120,8 +115,8 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
             sorcery::gWindow.UnlockCursor();
             sorcery::gWindow.SetCursorHiding(false);
             sorcery::timing::SetTargetFrameRate(targetFrameRate);
-            context.GetScene()->Load(context.GetFactoryManager());
-            context.SetSelectedObject(nullptr);
+            app.GetScene()->Load();
+            app.SetSelectedObject(nullptr);
           }
 
           sorcery::gPhysicsManager.Update();
@@ -130,26 +125,26 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
             runGame = true;
             sorcery::gWindow.SetEventHook({});
             sorcery::timing::SetTargetFrameRate(-1);
-            context.GetScene()->Save();
+            app.GetScene()->Save();
             targetFrameRate = sorcery::timing::GetTargetFrameRate();
           }
         }
 
         ImGui::DockSpaceOverViewport();
 
-        if (context.IsEditorBusy()) {
-          DrawLoadingScreen(context);
+        if (app.IsEditorBusy()) {
+          DrawLoadingScreen(app);
         }
 
-        if (context.GetScene()) {
-          DrawEntityHierarchyWindow(context);
+        if (app.GetScene()) {
+          DrawEntityHierarchyWindow(app);
           gameViewWindow->Draw(runGame);
-          sceneViewWindow->Draw(context);
+          sceneViewWindow->Draw(app);
         } else {
           sorcery::mage::DrawOpenScenePrompt();
         }
 
-        DrawMainMenuBar(context);
+        DrawMainMenuBar(app);
         propertiesWindow->Draw();
         projectWindow->Draw();
         sorcery::mage::DrawPerformanceCounterWindow();
