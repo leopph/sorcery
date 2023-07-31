@@ -2,14 +2,16 @@
 
 #include "ResourceImporter.hpp"
 
+#include <string_view>
+
 
 namespace sorcery {
 class NativeResourceImporter final : public ResourceImporter {
   RTTR_ENABLE(ResourceImporter)
 
 public:
-  static char const* const MATERIAL_FILE_EXT;
-  static char const* const SCENE_FILE_EXT;
+  constexpr static std::string_view MATERIAL_FILE_EXT{ ".mtl" };
+  constexpr static std::string_view SCENE_FILE_EXT{ ".scene" };
 
   LEOPPHAPI auto GetSupportedFileExtensions(std::vector<std::string>& out) -> void override;
   [[nodiscard]] LEOPPHAPI auto Import(std::filesystem::path const& src) -> ObserverPtr<Resource> override;

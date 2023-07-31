@@ -2,6 +2,8 @@
 
 #include "ProjectSettingsWindow.hpp"
 #include "EditorSettingsWindow.hpp"
+#include "NativeResourceImporter.hpp"
+#include "ResourceManager.hpp"
 
 #include <nfd.h>
 
@@ -32,6 +34,18 @@ auto MainMenuBar::Draw() -> void {
             mApp->OpenProject(selectedPath);
             std::free(selectedPath);
           });
+        }
+      }
+
+      if (ImGui::MenuItem("Open Scene")) {
+        if (nfdchar_t* dstPathAbs{ nullptr }; NFD_OpenDialog(NativeResourceImporter::SCENE_FILE_EXT.substr(1).data(), mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath().string().c_str(), &dstPathAbs) == NFD_OKAY) {
+          if (auto const dstPathResDirRel{ relative(dstPathAbs, mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath()) }; !dstPathResDirRel.empty()) {
+            mApp->ExecuteInBusyEditor([dstPathResDirRel, this] {
+              mApp->OpenScene(*gResourceManager.Load<Scene>(mApp->GetResourceDatabase().PathToGuid(dstPathResDirRel)));
+            });
+
+            std::free(dstPathAbs);
+          }
         }
       }
 

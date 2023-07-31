@@ -32,6 +32,8 @@ Scene::Scene() {
   if (!sActiveScene) {
     sActiveScene = this;
   }
+
+  Save();
 }
 
 

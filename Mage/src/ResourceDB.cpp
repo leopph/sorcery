@@ -33,7 +33,7 @@ auto ResourceDB::InternalImportResource(std::filesystem::path const& targetPathR
         metaNode["guid"] = guid;
         metaNode["importer"] = importerNode;
 
-        std::ofstream outMetaStream{ GetMetaPath(targetPathAbs) };
+        std::ofstream outMetaStream{ ResourceManager::GetMetaPath(targetPathAbs) };
         YAML::Emitter metaEmitter{ outMetaStream };
         metaEmitter << metaNode;
         outMetaStream.flush();
@@ -53,14 +53,14 @@ auto ResourceDB::Refresh() -> void {
   std::map<std::filesystem::path, Guid> newAbsPathToGuid;
 
   for (auto const& entry : std::filesystem::recursive_directory_iterator{ mResDirAbs }) {
-    if (IsMetaFile(entry.path())) {
+    if (ResourceManager::IsMetaFile(entry.path())) {
       auto const metaNode{ YAML::LoadFile(entry.path().string()) };
       auto const guid{ metaNode["guid"].as<Guid>() };
       auto const resPathAbs{ std::filesystem::path{ entry.path() }.replace_extension() };
 
       newGuidToAbsPath.emplace(guid, resPathAbs);
       newAbsPathToGuid.emplace(resPathAbs, guid);
-    } else if (!exists(GetMetaPath(entry.path()))) {
+    } else if (!exists(ResourceManager::GetMetaPath(entry.path()))) {
       InternalImportResource(entry.path().lexically_relative(GetResourceDirectoryAbsolutePath()), newGuidToAbsPath, newAbsPathToGuid);
     }
   }
@@ -119,7 +119,7 @@ auto ResourceDB::CreateResource(NativeResource& res, std::filesystem::path const
   metaNode["guid"] = res.GetGuid();
   metaNode["importer"] = importerNode;
 
-  std::ofstream outMetaStream{ GetMetaPath(targetPathAbs) };
+  std::ofstream outMetaStream{ ResourceManager::GetMetaPath(targetPathAbs) };
   YAML::Emitter metaEmitter{ outMetaStream };
   metaEmitter << metaNode;
 
@@ -156,9 +156,9 @@ auto ResourceDB::MoveResource(Guid const& guid, std::filesystem::path const& tar
   }
 
   auto const srcPathAbs{ it->second };
-  auto const srcMetaPathAbs{ GetMetaPath(srcPathAbs) };
+  auto const srcMetaPathAbs{ ResourceManager::GetMetaPath(srcPathAbs) };
   auto const dstPathAbs{ mResDirAbs / targetPathResDirRel };
-  auto const dstMetaPathAbs{ GetMetaPath(dstPathAbs) };
+  auto const dstMetaPathAbs{ ResourceManager::GetMetaPath(dstPathAbs) };
 
   if (!exists(srcPathAbs) || !exists(srcMetaPathAbs) || exists(dstPathAbs) || exists(dstMetaPathAbs)) {
     return;
@@ -201,15 +201,5 @@ auto ResourceDB::PathToGuid(std::filesystem::path const& pathResDirRel) -> Guid 
 
 auto ResourceDB::GenerateUniqueResourceDirectoryRelativePath(std::filesystem::path const& targetPathResDirRel) const -> std::filesystem::path {
   return GenerateUniquePath(mResDirAbs / targetPathResDirRel);
-}
-
-
-auto ResourceDB::GetMetaPath(std::filesystem::path const& path) -> std::filesystem::path {
-  return std::filesystem::path{ path } += ResourceManager::RESOURCE_META_FILE_EXT;
-}
-
-
-auto ResourceDB::IsMetaFile(std::filesystem::path const& path) -> bool {
-  return path.extension() == ResourceManager::RESOURCE_META_FILE_EXT;
 }
 }

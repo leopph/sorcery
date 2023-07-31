@@ -10,10 +10,6 @@ RTTR_REGISTRATION {
 
 
 namespace sorcery {
-char const* const NativeResourceImporter::MATERIAL_FILE_EXT{ ".mtl" };
-char const* const NativeResourceImporter::SCENE_FILE_EXT{ ".scene" };
-
-
 auto NativeResourceImporter::GetSupportedFileExtensions(std::vector<std::string>& out) -> void {
   out.emplace_back(MATERIAL_FILE_EXT);
   out.emplace_back(SCENE_FILE_EXT);
@@ -27,7 +23,7 @@ auto NativeResourceImporter::Import(std::filesystem::path const& src) -> Observe
 
   auto const yamlNode{ YAML::LoadFile(src.string()) };
 
-  if (!yamlNode.IsDefined() || yamlNode.IsNull()) {
+  if (!yamlNode.IsDefined()) {
     return nullptr;
   }
 

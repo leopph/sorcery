@@ -33,7 +33,5 @@ public:
   [[nodiscard]] auto PathToGuid(std::filesystem::path const& pathResDirRel) -> Guid;
 
   [[nodiscard]] auto GenerateUniqueResourceDirectoryRelativePath(std::filesystem::path const& targetPathResDirRel) const -> std::filesystem::path;
-  [[nodiscard]] static auto GetMetaPath(std::filesystem::path const& path) -> std::filesystem::path;
-  [[nodiscard]] static auto IsMetaFile(std::filesystem::path const& path) -> bool;
 };
 }

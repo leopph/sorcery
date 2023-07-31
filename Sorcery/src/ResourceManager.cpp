@@ -83,4 +83,14 @@ auto ResourceManager::IsLoaded(Guid const& guid) const -> bool {
 auto ResourceManager::UpdateGuidPathMappings(std::map<Guid, std::filesystem::path> mappings) -> void {
   mGuidPathMappings = std::move(mappings);
 }
+
+
+auto ResourceManager::GetMetaPath(std::filesystem::path const& path) -> std::filesystem::path {
+  return std::filesystem::path{ path } += RESOURCE_META_FILE_EXT;
+}
+
+
+auto ResourceManager::IsMetaFile(std::filesystem::path const& path) -> bool {
+  return path.extension() == RESOURCE_META_FILE_EXT;
+}
 }
