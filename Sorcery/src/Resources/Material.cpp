@@ -242,8 +242,8 @@ auto Material::Deserialize(YAML::Node const& yamlNode) noexcept -> void {
 }
 
 
-auto Material::OnDrawProperties() -> void {
-  NativeResource::OnDrawProperties();
+auto Material::OnDrawProperties(bool& changed) -> void {
+  NativeResource::OnDrawProperties(changed);
 
   if (ImGui::BeginTable(std::format("{}", GetGuid().ToString()).c_str(), 2, ImGuiTableFlags_SizingStretchSame)) {
     ImGui::TableNextRow();
@@ -258,6 +258,7 @@ auto Material::OnDrawProperties() -> void {
 
     if (Vector3 albedoColor{ GetAlbedoVector() }; ImGui::ColorEdit3("###matAlbedoColor", albedoColor.GetData())) {
       SetAlbedoVector(albedoColor);
+      changed = true;
     }
 
     ImGui::TableNextColumn();
@@ -266,6 +267,7 @@ auto Material::OnDrawProperties() -> void {
 
     if (f32 metallic{ GetMetallic() }; ImGui::SliderFloat("###matMetallic", &metallic, 0.0f, 1.0f)) {
       SetMetallic(metallic);
+      changed = true;
     }
 
     ImGui::TableNextColumn();
@@ -274,6 +276,7 @@ auto Material::OnDrawProperties() -> void {
 
     if (f32 roughness{ GetRoughness() }; ImGui::SliderFloat("###matRoughness", &roughness, 0.0f, 1.0f)) {
       SetRoughness(roughness);
+      changed = true;
     }
 
     ImGui::TableNextColumn();
@@ -282,10 +285,11 @@ auto Material::OnDrawProperties() -> void {
 
     if (f32 ao{ GetAo() }; ImGui::SliderFloat("###matAo", &ao, 0.0f, 1.0f)) {
       SetAo(ao);
+      changed = true;
     }
 
     auto drawTextureOption{
-      [callCount = 0]<typename TexGetFn, typename TexSetFn>(std::string_view const label, TexGetFn&& texGetFn, TexSetFn&& texSetFn) mutable requires std::is_invocable_r_v<ObserverPtr<Texture2D>, TexGetFn> && std::is_invocable_r_v<void, TexSetFn, ObserverPtr<Texture2D>> {
+      [callCount = 0, &changed]<typename TexGetFn, typename TexSetFn>(std::string_view const label, TexGetFn&& texGetFn, TexSetFn&& texSetFn) mutable requires std::is_invocable_r_v<ObserverPtr<Texture2D>, TexGetFn> && std::is_invocable_r_v<void, TexSetFn, ObserverPtr<Texture2D>> {
         auto constexpr nullTexName{ "None" };
         static std::vector<ObserverPtr<Texture2D>> textures;
         static std::string texFilter;
@@ -298,7 +302,7 @@ auto Material::OnDrawProperties() -> void {
 
         auto const queryTextures{
           [] {
-            Object::FindObjectsOfType(textures);
+            FindObjectsOfType(textures);
 
             std::erase_if(textures, [](auto const tex) {
               return tex && !Contains(tex->GetName(), texFilter);
@@ -324,6 +328,8 @@ auto Material::OnDrawProperties() -> void {
                                                                                     ? tex->GetGuid().ToString()
                                                                                     : "0").c_str(), tex == texGetFn())) {
               texSetFn(tex);
+              changed = true;
+
               break;
             }
           }
@@ -387,10 +393,6 @@ auto Material::OnDrawProperties() -> void {
                       });
 
     ImGui::EndTable();
-  }
-
-  if (ImGui::Button("Save##SaveMaterialAsset")) {
-    // context.SaveRegisteredNativeAsset(mtl); TODO
   }
 }
 }

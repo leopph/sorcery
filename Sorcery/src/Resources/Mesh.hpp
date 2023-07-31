@@ -102,6 +102,6 @@ public:
   [[nodiscard]] LEOPPHAPI auto GetIndexCount() const noexcept -> int;
   [[nodiscard]] LEOPPHAPI auto GetSubmeshCount() const noexcept -> int;
 
-  LEOPPHAPI auto OnDrawProperties() -> void override;
+  LEOPPHAPI auto OnDrawProperties(bool& changed) -> void override;
 };
 }

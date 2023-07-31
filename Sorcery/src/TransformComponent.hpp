@@ -83,7 +83,7 @@ public:
 
   LEOPPHAPI ~TransformComponent() override;
 
-  LEOPPHAPI auto OnDrawProperties() -> void override;
+  LEOPPHAPI auto OnDrawProperties(bool& changed) -> void override;
 };
 
 

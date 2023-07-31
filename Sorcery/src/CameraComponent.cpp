@@ -77,8 +77,8 @@ auto CameraComponent::GetForwardAxis() const noexcept -> Vector3 {
 }
 
 
-auto CameraComponent::OnDrawProperties() -> void {
-  Component::OnDrawProperties();
+auto CameraComponent::OnDrawProperties(bool& changed) -> void {
+  Component::OnDrawProperties(changed);
 
   ImGui::Text("Type");
   ImGui::TableNextColumn();

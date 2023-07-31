@@ -22,6 +22,6 @@ public:
 
   LEOPPHAPI ~SkyboxComponent() override;
 
-  LEOPPHAPI auto OnDrawProperties() -> void override;
+  LEOPPHAPI auto OnDrawProperties(bool& changed) -> void override;
 };
 }

@@ -93,8 +93,8 @@ auto Entity::RemoveComponent(Component& component) -> void {
 }
 
 
-auto Entity::OnDrawProperties() -> void {
-  SceneObject::OnDrawProperties();
+auto Entity::OnDrawProperties(bool& changed) -> void {
+  SceneObject::OnDrawProperties(changed);
 
   static std::string entityName;
   entityName = GetName();
@@ -128,7 +128,7 @@ auto Entity::OnDrawProperties() -> void {
         ImGui::PushItemWidth(-FLT_MIN);
         ImGui::TableSetColumnIndex(0);
 
-        mComponents[i]->OnDrawProperties();
+        mComponents[i]->OnDrawProperties(changed);
         ImGui::EndTable();
       }
 

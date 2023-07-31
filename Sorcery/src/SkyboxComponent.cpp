@@ -33,8 +33,8 @@ SkyboxComponent::~SkyboxComponent() {
 }
 
 
-auto SkyboxComponent::OnDrawProperties() -> void {
-  Component::OnDrawProperties();
+auto SkyboxComponent::OnDrawProperties(bool& changed) -> void {
+  Component::OnDrawProperties(changed);
 
   ImGui::Text("%s", "Cubemap");
 

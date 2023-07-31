@@ -48,7 +48,7 @@ public:
   template<std::derived_from<Component> T>
   auto GetComponents() const -> std::vector<ObserverPtr<T>>;
 
-  LEOPPHAPI auto OnDrawProperties() -> void override;
+  LEOPPHAPI auto OnDrawProperties(bool& changed) -> void override;
   LEOPPHAPI auto OnDrawGizmosSelected() -> void override;
 
   [[nodiscard]] LEOPPHAPI static auto FindEntityByName(std::string_view name) -> Entity*;

@@ -96,8 +96,8 @@ auto StaticMeshComponent::CalculateBounds() const noexcept -> AABB {
 }
 
 
-auto StaticMeshComponent::OnDrawProperties() -> void {
-  Component::OnDrawProperties();
+auto StaticMeshComponent::OnDrawProperties(bool& changed) -> void {
+  Component::OnDrawProperties(changed);
 
   ImGui::Text("%s", "Mesh");
   ImGui::TableNextColumn();

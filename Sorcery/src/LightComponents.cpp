@@ -152,8 +152,8 @@ auto LightComponent::SetShadowExtension(float const shadowExtension) noexcept ->
 }
 
 
-auto LightComponent::OnDrawProperties() -> void {
-  Component::OnDrawProperties();
+auto LightComponent::OnDrawProperties(bool& changed) -> void {
+  Component::OnDrawProperties(changed);
 
   ImGui::Text("Color");
   ImGui::TableNextColumn();

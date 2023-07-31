@@ -238,8 +238,8 @@ TransformComponent::~TransformComponent() {
 }
 
 
-auto TransformComponent::OnDrawProperties() -> void {
-  Component::OnDrawProperties();
+auto TransformComponent::OnDrawProperties(bool& changed) -> void {
+  Component::OnDrawProperties(changed);
 
   ImGui::Text("Local Position");
   ImGui::TableNextColumn();

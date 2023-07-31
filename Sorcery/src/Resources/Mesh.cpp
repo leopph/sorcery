@@ -350,8 +350,8 @@ auto Mesh::GetSubmeshCount() const noexcept -> int {
 }
 
 
-auto Mesh::OnDrawProperties() -> void {
-  Resource::OnDrawProperties();
+auto Mesh::OnDrawProperties(bool& changed) -> void {
+  Resource::OnDrawProperties(changed);
 
   if (ImGui::BeginTable(std::format("{}", GetGuid().ToString()).c_str(), 2, ImGuiTableFlags_SizingStretchSame)) {
     ImGui::TableNextRow();

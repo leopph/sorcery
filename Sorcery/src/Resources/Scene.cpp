@@ -6,8 +6,6 @@
 #undef FindResource
 #include "../ResourceManager.hpp"
 
-#include <imgui.h>
-
 
 RTTR_REGISTRATION {
   rttr::registration::class_<sorcery::Scene>{ "Scene" };
@@ -60,16 +58,6 @@ auto Scene::Serialize() const noexcept -> YAML::Node {
 
 auto Scene::Deserialize(YAML::Node const& yamlNode) noexcept -> void {
   mYamlData = yamlNode;
-}
-
-
-auto Scene::OnDrawProperties() -> void {
-  NativeResource::OnDrawProperties();
-
-  ImGui::Text("%s", "Scene Asset");
-  if (ImGui::Button("Open")) {
-    //context.OpenScene(dynamic_cast<Scene&>(object)); TODO
-  }
 }
 
 

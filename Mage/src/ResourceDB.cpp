@@ -3,6 +3,7 @@
 #include "NativeResourceImporter.hpp"
 #include "ResourceManager.hpp"
 #include "Reflection.hpp"
+#include "Util.hpp"
 
 #include <fstream>
 #include <ranges>
@@ -62,13 +63,9 @@ auto ResourceDB::GetResourceDirectoryAbsolutePath() -> std::filesystem::path con
 }
 
 
-auto ResourceDB::CreateResource(ObserverPtr<NativeResource> res, std::filesystem::path const& targetPathResDirRel) -> void {
-  if (!res) {
-    return;
-  }
-
-  if (!res->GetGuid().IsValid()) {
-    res->SetGuid(Guid::Generate());
+auto ResourceDB::CreateResource(NativeResource& res, std::filesystem::path const& targetPathResDirRel) -> void {
+  if (!res.GetGuid().IsValid()) {
+    res.SetGuid(Guid::Generate());
   }
 
   YAML::Node importerNode;
@@ -76,7 +73,7 @@ auto ResourceDB::CreateResource(ObserverPtr<NativeResource> res, std::filesystem
   importerNode["properties"] = ReflectionSerializeToYaml(NativeResourceImporter{});
 
   YAML::Node metaNode;
-  metaNode["guid"] = res->GetGuid();
+  metaNode["guid"] = res.GetGuid();
   metaNode["importer"] = importerNode;
 
   auto const targetPathAbs{ mResDirAbs / targetPathResDirRel };
@@ -86,11 +83,11 @@ auto ResourceDB::CreateResource(ObserverPtr<NativeResource> res, std::filesystem
   YAML::Emitter metaEmitter{ outMetaStream };
   metaEmitter << metaNode;
 
-  res->SetName(targetPathResDirRel.stem().string());
+  res.SetName(targetPathResDirRel.stem().string());
 
-  mGuidToAbsPath.insert_or_assign(res->GetGuid(), targetPathAbs);
+  mGuidToAbsPath.insert_or_assign(res.GetGuid(), targetPathAbs);
 
-  gResourceManager.Add(res);
+  gResourceManager.Add(std::addressof(res));
   gResourceManager.UpdateGuidPathMappings(mGuidToAbsPath);
 }
 
@@ -176,6 +173,11 @@ auto ResourceDB::DeleteResource(Guid const& guid) -> void {
     mGuidToAbsPath.erase(it);
     gResourceManager.UpdateGuidPathMappings(mGuidToAbsPath);
   }
+}
+
+
+auto ResourceDB::IsSavedResource(NativeResource const& res) const -> bool {
+  return mGuidToAbsPath.contains(res.GetGuid());
 }
 
 

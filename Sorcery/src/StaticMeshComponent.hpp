@@ -28,6 +28,6 @@ public:
 
   [[nodiscard]] LEOPPHAPI auto CalculateBounds() const noexcept -> AABB;
 
-  LEOPPHAPI auto OnDrawProperties() -> void override;
+  LEOPPHAPI auto OnDrawProperties(bool& changed) -> void override;
 };
 }

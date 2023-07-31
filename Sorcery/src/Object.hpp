@@ -29,7 +29,7 @@ public:
   [[nodiscard]] LEOPPHAPI auto GetName() const noexcept -> std::string const&;
   LEOPPHAPI auto SetName(std::string const& name) -> void;
 
-  virtual auto OnDrawProperties() -> void {}
+  virtual auto OnDrawProperties([[maybe_unused]] bool& changed) -> void {}
   virtual auto OnDrawGizmosSelected() -> void {}
 
   template<std::derived_from<Object> T>
