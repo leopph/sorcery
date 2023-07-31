@@ -11,7 +11,8 @@
 
 namespace sorcery::mage {
 auto ResourceDB::Refresh() -> void {
-  std::map<Guid, std::filesystem::path> newMapping;
+  std::map<Guid, std::filesystem::path> newGuidToAbsPath;
+  std::map<std::filesystem::path, Guid> newAbsPathToGuid;
 
   for (auto const& entry : std::filesystem::recursive_directory_iterator{ mResDirAbs }) {
     if (entry.path().extension() == ResourceManager::RESOURCE_META_FILE_EXT) {
@@ -19,7 +20,8 @@ auto ResourceDB::Refresh() -> void {
       auto const guid{ metaNode["guid"].as<Guid>() };
       auto const resPath{ std::filesystem::path{ entry.path() }.replace_extension() };
 
-      newMapping.emplace(guid, resPath);
+      newGuidToAbsPath.emplace(guid, resPath);
+      newAbsPathToGuid.emplace(resPath, guid);
 
       if (auto const it{ mGuidToAbsPath.find(guid) }; it == std::end(mGuidToAbsPath)) {
         ImportResource(relative(resPath, mResDirAbs));
@@ -28,12 +30,13 @@ auto ResourceDB::Refresh() -> void {
   }
 
   for (auto const& guid : mGuidToAbsPath | std::views::keys) {
-    if (!newMapping.contains(guid)) {
+    if (!newGuidToAbsPath.contains(guid)) {
       DeleteResource(guid);
     }
   }
 
-  mGuidToAbsPath = std::move(newMapping);
+  mGuidToAbsPath = std::move(newGuidToAbsPath);
+  mAbsPathToGuid = std::move(newAbsPathToGuid);
   gResourceManager.UpdateGuidPathMappings(mGuidToAbsPath);
 }
 
@@ -46,11 +49,15 @@ auto ResourceDB::ChangeProjectDir(std::filesystem::path const& projDirAbs) -> vo
   }
 
   mGuidToAbsPath.clear();
+  mAbsPathToGuid.clear();
 
   for (auto const& entry : std::filesystem::recursive_directory_iterator{ mResDirAbs }) {
     if (entry.path().extension() == ResourceManager::RESOURCE_META_FILE_EXT) {
       auto const metaNode{ YAML::LoadFile(entry.path().string()) };
-      mGuidToAbsPath.insert_or_assign(metaNode["guid"].as<Guid>(), std::filesystem::path{ entry.path() }.replace_extension());
+      auto const guid{ metaNode["guid"].as<Guid>() };
+      auto const absPath{ std::filesystem::path{ entry.path() }.replace_extension() };
+      mGuidToAbsPath.insert_or_assign(guid, absPath);
+      mAbsPathToGuid.insert_or_assign(absPath, guid);
     }
   }
 
@@ -86,6 +93,7 @@ auto ResourceDB::CreateResource(NativeResource& res, std::filesystem::path const
   res.SetName(targetPathResDirRel.stem().string());
 
   mGuidToAbsPath.insert_or_assign(res.GetGuid(), targetPathAbs);
+  mAbsPathToGuid.insert_or_assign(targetPathAbs, res.GetGuid());
 
   gResourceManager.Add(std::addressof(res));
   gResourceManager.UpdateGuidPathMappings(mGuidToAbsPath);
@@ -130,6 +138,7 @@ auto ResourceDB::ImportResource(std::filesystem::path const& targetPathResDirRel
         outMetaStream.flush();
 
         mGuidToAbsPath.insert_or_assign(guid, targetPathAbs);
+        mAbsPathToGuid.insert_or_assign(targetPathAbs, guid);
 
         gResourceManager.UpdateGuidPathMappings(mGuidToAbsPath);
         gResourceManager.LoadResource(guid);
@@ -170,6 +179,7 @@ auto ResourceDB::MoveResource(Guid const& guid, std::filesystem::path const& tar
 auto ResourceDB::DeleteResource(Guid const& guid) -> void {
   if (auto const it{ mGuidToAbsPath.find(guid) }; it != std::end(mGuidToAbsPath)) {
     gResourceManager.Unload(guid);
+    mAbsPathToGuid.erase(it->second);
     mGuidToAbsPath.erase(it);
     gResourceManager.UpdateGuidPathMappings(mGuidToAbsPath);
   }
@@ -178,6 +188,15 @@ auto ResourceDB::DeleteResource(Guid const& guid) -> void {
 
 auto ResourceDB::IsSavedResource(NativeResource const& res) const -> bool {
   return mGuidToAbsPath.contains(res.GetGuid());
+}
+
+
+auto ResourceDB::PathToGuid(std::filesystem::path const& pathResDirRel) -> Guid {
+  if (auto const it{ mAbsPathToGuid.find(GetResourceDirectoryAbsolutePath() / pathResDirRel) }; it != std::end(mAbsPathToGuid)) {
+    return it->second;
+  }
+
+  return Guid::Invalid();
 }
 
 

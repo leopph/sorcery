@@ -12,6 +12,7 @@ namespace sorcery::mage {
 class ResourceDB {
   std::filesystem::path mResDirAbs;
   std::map<Guid, std::filesystem::path> mGuidToAbsPath;
+  std::map<std::filesystem::path, Guid> mAbsPathToGuid;
 
   constexpr static std::string_view RESOURCE_DIR_PROJ_REL{ "Resources" };
 
@@ -26,6 +27,7 @@ public:
   auto MoveResource(Guid const& guid, std::filesystem::path const& targetPathResDirRel) -> void;
   auto DeleteResource(Guid const& guid) -> void;
   [[nodiscard]] auto IsSavedResource(NativeResource const& res) const -> bool;
+  [[nodiscard]] auto PathToGuid(std::filesystem::path const& pathResDirRel) -> Guid;
 
   [[nodiscard]] auto GenerateUniqueResourceDirectoryRelativePath(std::filesystem::path const& targetPathResDirRel) const -> std::filesystem::path;
 };
