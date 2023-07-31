@@ -46,11 +46,11 @@ auto DrawMainMenuBar(Application& context) -> void {
     }
 
     if (ImGui::BeginMenu("Options")) {
-      if (std::string const static label{ std::string{ EDITOR_SETTINGS_WINDOW_TITLE } + "##MenuItem" }; ImGui::MenuItem(label.data())) {
+      if (ImGui::MenuItem(EditorSettingsWindow::TITLE.data())) {
         showEditorSettingsWindow = true;
       }
 
-      if (ImGui::MenuItem((std::string{ PROJECT_SETTINGS_WINDOW_TITLE } + "##MenuItem").data())) {
+      if (ImGui::MenuItem(PROJECT_SETTINGS_WINDOW_TITLE.data())) {
         showProjectSettingsWindow = true;
       }
 
