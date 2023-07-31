@@ -17,7 +17,7 @@
 
 namespace sorcery::mage {
 auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& resDirAbs, std::filesystem::path const& thisPathResDirRel) -> void {
-  auto const pathAbs{ resDirAbs / thisPathResDirRel };
+  auto const pathAbs{ canonical(resDirAbs / thisPathResDirRel) };
   auto const isSelected{ equivalent(pathAbs, resDirAbs / mSelectedPathResDirRel) };
   auto const isRenaming{ mRenameInfo && equivalent(mRenameInfo->nodePathAbs, pathAbs) };
   auto const isDirectory{ is_directory(pathAbs) };
@@ -120,7 +120,7 @@ auto ProjectWindow::Draw() -> void {
       mSelectedPathResDirRel.clear();
     }
 
-    DrawFilesystemTree(mContext->GetResourceDatabase().GetResourceDirectoryAbsolutePath(), "");
+    DrawFilesystemTree(mContext->GetResourceDatabase().GetResourceDirectoryAbsolutePath(), {});
 
     std::filesystem::path const selectedPathAbs{
       mSelectedPathResDirRel.empty()
