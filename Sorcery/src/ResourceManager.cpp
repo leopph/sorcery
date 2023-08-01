@@ -53,6 +53,7 @@ auto ResourceManager::InternalLoadResource(std::filesystem::path const& src) -> 
     return nullptr;
   }
 
+  res->SetName(src.stem().string());
   res->SetGuid(guid);
 
   auto const [it, inserted]{ mResources.emplace(res) };
