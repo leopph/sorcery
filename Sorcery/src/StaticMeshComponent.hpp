@@ -10,6 +10,7 @@
 namespace sorcery {
 class StaticMeshComponent : public Component {
   RTTR_ENABLE(Component)
+  RTTR_REGISTRATION_FRIEND
   std::vector<ObserverPtr<Material>> mMaterials;
   ObserverPtr<Mesh> mMesh;
 

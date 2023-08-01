@@ -7,7 +7,8 @@
 
 RTTR_REGISTRATION {
   rttr::registration::class_<sorcery::SkyboxComponent>{ "SkyboxComponent" }
-    .REFLECT_REGISTER_COMPONENT_CTOR;
+    .REFLECT_REGISTER_COMPONENT_CTOR
+    .property("cubemap", &sorcery::SkyboxComponent::GetCubemap, &sorcery::SkyboxComponent::SetCubemap);
 }
 
 
