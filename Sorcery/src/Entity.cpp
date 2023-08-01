@@ -14,7 +14,7 @@
 RTTR_REGISTRATION {
   rttr::registration::class_<sorcery::Entity>{ "Entity" }
     .REFLECT_REGISTER_ENTITY_CTOR
-    .property("components", &sorcery::Entity::mComponents)(rttr::policy::prop::as_reference_wrapper);
+    .property("components", &sorcery::Entity::mComponents);
 }
 
 
