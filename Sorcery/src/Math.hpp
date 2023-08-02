@@ -9,6 +9,7 @@
 #endif
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <numbers>
 #include <concepts>
@@ -80,7 +81,7 @@ public:
   constexpr auto operator=(Vector&& other) noexcept -> Vector& = default;
 
 private:
-  T mData[N]{};
+  std::array<T, N> mData{};
 };
 
 
@@ -515,13 +516,13 @@ constexpr auto Vector<T, N>::operator[](size_t const index) noexcept -> T& {
 
 template<typename T, int N> requires (N > 1)
 constexpr auto Vector<T, N>::GetData() const noexcept -> T const* {
-  return mData;
+  return mData.data();
 }
 
 
 template<typename T, int N> requires (N > 1)
 constexpr auto Vector<T, N>::GetData() noexcept -> T* {
-  return mData;
+  return mData.data();
 }
 
 
