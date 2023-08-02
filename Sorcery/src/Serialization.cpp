@@ -100,6 +100,17 @@ auto ReflectionSerializeToYaml(rttr::variant const& v, std::function<YAML::Node(
     return YAML::Node{ v.get_value<unsigned long long>() };
   }
 
+  if (v.get_type() == rttr::type::get<float>()) {
+    return YAML::Node{ v.get_value<float>() };
+  }
+
+  if (v.get_type() == rttr::type::get<double>()) {
+    return YAML::Node{ v.get_value<double>() };
+  }
+
+  if (v.get_type() == rttr::type::get<long double>()) {
+    return YAML::Node{ v.get_value<long double>() };
+  }
 
   if (v.get_type() == rttr::type::get<std::string>()) {
     return YAML::Node{ v.get_value<std::string>() };
@@ -177,6 +188,10 @@ auto ReflectionDeserializeFromYaml(YAML::Node const& node, Object& obj, std::fun
 
 
 auto ReflectionDeserializeFromYaml(YAML::Node const& node, rttr::variant& v, std::function<void(YAML::Node const&, rttr::variant&)> const& extensionFunc) -> void {
+  if (node.IsNull()) {
+    return;
+  }
+
   if (v.get_type() == rttr::type::get<char>()) {
     try {
       v = node.as<char>();
@@ -250,6 +265,27 @@ auto ReflectionDeserializeFromYaml(YAML::Node const& node, rttr::variant& v, std
   if (v.get_type() == rttr::type::get<unsigned long long>()) {
     try {
       v = node.as<unsigned long long>();
+    } catch (...) { }
+    return;
+  }
+
+  if (v.get_type() == rttr::type::get<float>()) {
+    try {
+      v = node.as<float>();
+    } catch (...) { }
+    return;
+  }
+
+  if (v.get_type() == rttr::type::get<double>()) {
+    try {
+      v = node.as<double>();
+    } catch (...) { }
+    return;
+  }
+
+  if (v.get_type() == rttr::type::get<long double>()) {
+    try {
+      v = node.as<long double>();
     } catch (...) { }
     return;
   }
