@@ -36,7 +36,7 @@ auto EntityHierarchyWindow::Draw() -> void {
       }
     }
 
-    auto entities{ mApp->GetScene()->GetEntities() };
+    std::span entities{ mApp->GetScene()->GetEntities() };
 
     std::function<void(Entity&)> displayEntityRecursive;
     displayEntityRecursive = [this, &entities, &displayEntityRecursive](Entity& entity) -> void {
