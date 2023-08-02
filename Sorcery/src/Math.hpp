@@ -8,6 +8,8 @@
 #define LEOPPH_MATH_USE_INTRINSICS
 #endif
 
+#include "Reflection.hpp"
+
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -41,6 +43,8 @@ template<typename T>
 
 template<typename T, int N> requires(N > 1)
 class Vector {
+  RTTR_REGISTRATION_FRIEND
+
 public:
   [[nodiscard]] constexpr auto operator[](size_t index) const noexcept -> T const&;
   [[nodiscard]] constexpr auto operator[](size_t index) noexcept -> T&;
