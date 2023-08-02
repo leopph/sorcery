@@ -105,28 +105,24 @@ auto Scene::Save() -> void {
 
   auto const extensionFunc{
     [](rttr::variant const& v) -> YAML::Node {
-      auto const type{ v.get_type() };
       YAML::Node retNode;
 
-      if (type.is_pointer() && type.get_raw_type().is_derived_from(rttr::type::get<SceneObject>())) {
-        auto const it{ ptrFixUp.find(v.get_value<SceneObject*>()) };
+      if (auto const typeOrWrappedType{
+        v.get_type().is_wrapper()
+          ? v.get_type().get_wrapped_type()
+          : v.get_type()
+      }; typeOrWrappedType.is_pointer() && typeOrWrappedType.get_raw_type().is_derived_from(rttr::type::get<SceneObject>())) {
+        auto const ptr{
+          v.get_type().is_wrapper()
+            ? v.get_wrapped_value<SceneObject*>()
+            : v.get_value<SceneObject*>()
+        };
+        auto const it{
+          ptrFixUp.find(ptr)
+        };
         retNode = it != std::end(ptrFixUp)
                     ? it->second
                     : 0;
-      } else if (type.is_wrapper() && type.get_wrapped_type().is_pointer() && type.get_wrapped_type().get_raw_type().is_derived_from(rttr::type::get<SceneObject>())) {
-        auto const it{ ptrFixUp.find(v.get_wrapped_value<SceneObject*>()) };
-        retNode = it != std::end(ptrFixUp)
-                    ? it->second
-                    : 0;
-      } else if (type.is_sequential_container()) {
-        if (auto const seqView{ v.create_sequential_view() }; seqView.get_value_type().is_pointer() && seqView.get_value_type().get_raw_type().is_derived_from(rttr::type::get<SceneObject>())) {
-          for (auto const elem : seqView) {
-            auto const it{ ptrFixUp.find(elem.get_value<SceneObject*>()) };
-            retNode.push_back(it != std::end(ptrFixUp)
-                                ? it->second
-                                : 0);
-          }
-        }
       }
 
       return retNode;
@@ -146,6 +142,7 @@ auto Scene::Load() -> void {
   static std::unordered_map<int, SceneObject*> ptrFixUp;
   ptrFixUp.clear();
 
+  auto const lastActiveScene{ sActiveScene };
   sActiveScene = this;
   mEntities.clear();
 
@@ -155,29 +152,19 @@ auto Scene::Load() -> void {
 
   for (auto const& sceneObjectNode : mYamlData["sceneObjects"]) {
     auto const typeNode{ sceneObjectNode["type"] };
-    auto const type{ rttr::type::get(typeNode.as<std::string>()) };
+    auto const type{ rttr::type::get_by_name(typeNode.as<std::string>()) };
     auto const sceneObjectVariant{ type.create() };
     ptrFixUp[static_cast<int>(std::ssize(ptrFixUp)) + 1] = sceneObjectVariant.get_value<SceneObject*>();
   }
 
   auto const extensionFunc{
     [](YAML::Node const& objNode, rttr::variant& v) -> void {
-      if (auto const type{ v.get_type() }; (type.is_pointer() && type.get_raw_type().is_derived_from(rttr::type::get<SceneObject>())) || (type.is_wrapper() && type.get_wrapped_type().is_pointer() && type.get_wrapped_type().get_raw_type().is_derived_from(rttr::type::get<SceneObject>()))) {
-        auto const it{ ptrFixUp.find(objNode.as<int>(0)) };
-        v = it != std::end(ptrFixUp)
-              ? it->second
-              : nullptr;
-      } else if (type.is_sequential_container()) {
-        if (objNode.IsSequence()) {
-          auto seqView{ v.create_sequential_view() };
-          seqView.set_size(objNode.size());
-
-          for (auto i{ 0 }; i < std::ssize(objNode); i++) {
-            auto const it{ ptrFixUp.find(objNode.as<int>(0)) };
-            seqView.set_value(i, it != std::end(ptrFixUp)
-                                   ? it->second
-                                   : nullptr);
-          }
+      if (v.get_type().is_pointer() && v.get_type().get_raw_type().is_derived_from(rttr::type::get<SceneObject>())) {
+        if (auto const it{ ptrFixUp.find(objNode.as<int>(0)) }; it != std::end(ptrFixUp)) {
+          auto const type{ v.get_type() };
+          v = it->second;
+          auto const success{ v.convert(type) };
+          assert(success);
         }
       }
     }
@@ -185,11 +172,9 @@ auto Scene::Load() -> void {
 
   for (auto const& [fileId, obj] : ptrFixUp) {
     ReflectionDeserializeFromYaml(mYamlData["sceneObjects"][fileId - 1]["properties"], *obj, extensionFunc);
-
-    if (auto const entity{ rttr::rttr_cast<ObserverPtr<Entity>>(obj) }) {
-      mEntities.emplace_back(entity);
-    }
   }
+
+  sActiveScene = lastActiveScene;
 }
 
 
