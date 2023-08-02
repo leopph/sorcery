@@ -46,47 +46,121 @@ auto convert<sorcery::Guid>::decode(Node const& node, sorcery::Guid& guid) -> bo
 
 
 namespace sorcery {
-auto ReflectionSerializeToYaml(rttr::variant const& v, std::function<YAML::Node(rttr::variant const&)> const& extensionFunc) -> YAML::Node {
-  YAML::Node retNode;
+auto ReflectionSerializeToYaml(Object const& obj, std::function<YAML::Node(rttr::variant const&)> const& extensionFunc) -> YAML::Node {
+  YAML::Node ret;
+  for (auto const& prop : rttr::type::get(obj).get_properties()) {
+    ret[prop.get_name().to_string()] = ReflectionSerializeToYaml(prop.get_value(obj), extensionFunc);
+  }
+  return ret;
+}
 
-  if (auto const typeOrWrappedType{
-    (v.get_type().is_wrapper()
-       ? v.get_type().get_wrapped_type()
-       : v.get_type())
-  }; typeOrWrappedType.is_arithmetic()) {
-    [&v, &retNode, &typeOrWrappedType]<typename... Types> {
-      ([&v, &retNode, &typeOrWrappedType]<typename T> {
-        if (typeOrWrappedType == rttr::type::get<T>()) {
-          retNode = v.get_type().is_wrapper()
-                      ? v.get_wrapped_value<T>()
-                      : v.get_value<T>();
-        }
-      }.template operator()<Types>(), ...);
-    }.operator()<char, signed char, unsigned char, short, unsigned short, int, unsigned, long, unsigned long, long
-                 long, unsigned long long, float, double, long double>();
-  } else if (v.can_convert<std::string>()) {
-    auto success{ true };
-    auto const str{ v.convert<std::string>(&success) };
-    if (success) {
-      retNode = str;
-    }
-  } else if (v.is_sequential_container()) {
-    for (auto const& elem : v.create_sequential_view()) {
-      retNode.push_back(ReflectionSerializeToYaml(elem, extensionFunc));
-    }
-  } else if (typeOrWrappedType.is_pointer() && typeOrWrappedType.get_raw_type().is_derived_from(rttr::type::get<Resource>())) {
-    retNode = (v.get_type().is_wrapper()
-                 ? v.get_wrapped_value<Resource*>()
-                 : v.get_value<Resource*>())->GetGuid();
-  } else if (typeOrWrappedType.is_class()) {
-    for (auto const& prop : typeOrWrappedType.get_properties()) {
-      retNode[prop.get_name().to_string()] = ReflectionSerializeToYaml(prop.get_value(v), extensionFunc);
-    }
-  } else if (extensionFunc) {
-    retNode = extensionFunc(v);
+
+auto ReflectionSerializeToYaml(rttr::variant const& v, std::function<YAML::Node(rttr::variant const&)> const& extensionFunc) -> YAML::Node {
+  if (v.get_type() == rttr::type::get<char>()) {
+    return YAML::Node{ v.get_value<char>() };
   }
 
-  return retNode;
+  if (v.get_type() == rttr::type::get<signed char>()) {
+    return YAML::Node{ v.get_value<signed char>() };
+  }
+
+  if (v.get_type() == rttr::type::get<unsigned char>()) {
+    return YAML::Node{ v.get_value<unsigned char>() };
+  }
+
+  if (v.get_type() == rttr::type::get<short>()) {
+    return YAML::Node{ v.get_value<short>() };
+  }
+
+  if (v.get_type() == rttr::type::get<unsigned short>()) {
+    return YAML::Node{ v.get_value<unsigned short>() };
+  }
+
+  if (v.get_type() == rttr::type::get<int>()) {
+    return YAML::Node{ v.get_value<int>() };
+  }
+
+  if (v.get_type() == rttr::type::get<unsigned>()) {
+    return YAML::Node{ v.get_value<unsigned>() };
+  }
+
+  if (v.get_type() == rttr::type::get<long>()) {
+    return YAML::Node{ v.get_value<long>() };
+  }
+
+  if (v.get_type() == rttr::type::get<unsigned long>()) {
+    return YAML::Node{ v.get_value<unsigned long>() };
+  }
+
+  if (v.get_type() == rttr::type::get<long long>()) {
+    return YAML::Node{ v.get_value<long long>() };
+  }
+
+  if (v.get_type() == rttr::type::get<unsigned long long>()) {
+    return YAML::Node{ v.get_value<unsigned long long>() };
+  }
+
+
+  if (v.get_type() == rttr::type::get<std::string>()) {
+    return YAML::Node{ v.get_value<std::string>() };
+  }
+
+  if (v.get_type().is_pointer() && v.get_type().get_raw_type().is_derived_from(rttr::type::get<Resource>())) {
+    return YAML::Node{ v.get_value<ObserverPtr<Resource>>()->GetGuid() };
+  }
+
+  if (v.is_sequential_container()) {
+    auto const container{ v.create_sequential_view() };
+    assert(container.is_valid());
+
+    YAML::Node node;
+
+    for (auto const& elem : container) {
+      auto const value{ elem.extract_wrapped_value() };
+      assert(value.is_valid());
+      node.push_back(ReflectionSerializeToYaml(value, extensionFunc));
+    }
+
+    return node;
+  }
+
+  if (v.is_associative_container()) {
+    return {};
+  }
+
+  if (v.get_type().is_enumeration()) {
+    return {}; // TODO
+  }
+
+  if (v.get_type().is_class()) {
+    YAML::Node node;
+
+    for (auto const& prop : v.get_type().get_properties()) {
+      auto const value{ prop.get_value(v) };
+      assert(value.is_valid());
+      node[prop.get_name().to_string()] = ReflectionSerializeToYaml(value, extensionFunc);
+    }
+
+    return node;
+  }
+
+  if (v.get_type().is_wrapper() && v.get_type().get_wrapped_type().is_class()) {
+    YAML::Node node;
+
+    for (auto const& prop : v.get_type().get_wrapped_type().get_properties()) {
+      auto const value{ prop.get_value(v) };
+      assert(value.is_valid());
+      node[prop.get_name().to_string()] = ReflectionSerializeToYaml(value, extensionFunc);
+    }
+
+    return node;
+  }
+
+  if (extensionFunc) {
+    return extensionFunc(v);
+  }
+
+  return {};
 }
 
 
@@ -223,7 +297,7 @@ auto ReflectionDeserializeFromYaml(YAML::Node const& node, rttr::variant& v, std
   }
 
   if (v.get_type().is_enumeration()) {
-    return;
+    return; // TODO
   }
 
   if (v.get_type().is_class()) {
@@ -255,5 +329,10 @@ auto ReflectionDeserializeFromYaml(YAML::Node const& node, rttr::variant& v, std
   if (extensionFunc) {
     extensionFunc(node, v);
   }
+}
+
+
+auto ReflectionDeserializeFromYaml(YAML::Node const& node, rttr::variant&& v, std::function<void(YAML::Node const&, rttr::variant&)> const& extensionFunc) -> void {
+  ReflectionDeserializeFromYaml(node, v, extensionFunc);
 }
 }

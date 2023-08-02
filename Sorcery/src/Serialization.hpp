@@ -40,14 +40,16 @@ struct convert<sorcery::Guid> {
 
 
 namespace sorcery {
-template<typename T>
+template<typename T> requires (!std::derived_from<T, Object>)
 [[nodiscard]] auto ReflectionSerializeToYaml(T const& obj, std::function<YAML::Node(rttr::variant const&)> const& extensionFunc = {}) -> YAML::Node;
+[[nodiscard]] LEOPPHAPI auto ReflectionSerializeToYaml(Object const& obj, std::function<YAML::Node(rttr::variant const&)> const& extensionFunc = {}) -> YAML::Node;
 [[nodiscard]] LEOPPHAPI auto ReflectionSerializeToYaml(rttr::variant const& v, std::function<YAML::Node(rttr::variant const&)> const& extensionFunc = {}) -> YAML::Node;
 
 template<typename T> requires (!std::derived_from<T, Object>)
 auto ReflectionDeserializeFromYaml(YAML::Node const& node, T& obj, std::function<void(YAML::Node const&, rttr::variant&)> const& extensionFunc = {}) -> void;
 LEOPPHAPI auto ReflectionDeserializeFromYaml(YAML::Node const& node, Object& obj, std::function<void(YAML::Node const&, rttr::variant&)> const& extensionFunc = {}) -> void;
 LEOPPHAPI auto ReflectionDeserializeFromYaml(YAML::Node const& node, rttr::variant& v, std::function<void(YAML::Node const&, rttr::variant&)> const& extensionFunc = {}) -> void;
+LEOPPHAPI auto ReflectionDeserializeFromYaml(YAML::Node const& node, rttr::variant&& v, std::function<void(YAML::Node const&, rttr::variant&)> const& extensionFunc = {}) -> void;
 }
 
 
@@ -77,25 +79,14 @@ auto convert<sorcery::Vector<T, N>>::decode(Node const& node, sorcery::Vector<T,
 
 
 namespace sorcery {
-template<typename T>
+template<typename T> requires (!std::derived_from<T, Object>)
 auto ReflectionSerializeToYaml(T const& obj, std::function<YAML::Node(rttr::variant const&)> const& extensionFunc) -> YAML::Node {
-  if constexpr (std::is_base_of_v<Object, T>) {
-    YAML::Node ret;
-    for (auto const& prop : rttr::type::get(obj).get_properties()) {
-      auto const propValue{ prop.get_value(obj) };
-      assert(propValue.is_valid());
-      ret[prop.get_name().to_string()] = ReflectionSerializeToYaml(propValue, extensionFunc);
-    }
-    return ret;
-  } else {
-    return ReflectionSerializeToYaml(rttr::variant{ std::ref(obj) }, extensionFunc);
-  }
+  return ReflectionSerializeToYaml(rttr::variant{ std::ref(obj) }, extensionFunc);
 }
 
 
 template<typename T> requires (!std::derived_from<T, Object>)
 auto ReflectionDeserializeFromYaml(YAML::Node const& node, T& obj, std::function<void(YAML::Node const&, rttr::variant&)> const& extensionFunc) -> void {
-  rttr::variant v{ std::ref(obj) };
-  ReflectionDeserializeFromYaml(node, v, extensionFunc);
+  ReflectionDeserializeFromYaml(node, rttr::variant{ std::ref(obj) }, extensionFunc);
 }
 }

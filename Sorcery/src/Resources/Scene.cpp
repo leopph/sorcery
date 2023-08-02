@@ -107,19 +107,8 @@ auto Scene::Save() -> void {
     [](rttr::variant const& v) -> YAML::Node {
       YAML::Node retNode;
 
-      if (auto const typeOrWrappedType{
-        v.get_type().is_wrapper()
-          ? v.get_type().get_wrapped_type()
-          : v.get_type()
-      }; typeOrWrappedType.is_pointer() && typeOrWrappedType.get_raw_type().is_derived_from(rttr::type::get<SceneObject>())) {
-        auto const ptr{
-          v.get_type().is_wrapper()
-            ? v.get_wrapped_value<SceneObject*>()
-            : v.get_value<SceneObject*>()
-        };
-        auto const it{
-          ptrFixUp.find(ptr)
-        };
+      if (v.get_type().is_pointer() && v.get_type().get_raw_type().is_derived_from(rttr::type::get<SceneObject>())) {
+        auto const it{ ptrFixUp.find(v.get_value<SceneObject*>()) };
         retNode = it != std::end(ptrFixUp)
                     ? it->second
                     : 0;
