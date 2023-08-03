@@ -5,6 +5,16 @@
 #include <stb_image.h>
 
 RTTR_REGISTRATION {
+  rttr::registration::enumeration<sorcery::TextureImporter::TextureType>("Texture Import Type")(
+    rttr::value("Texture2D", sorcery::TextureImporter::TextureType::Texture2D),
+    rttr::value("Cubemap", sorcery::TextureImporter::TextureType::Cubemap)
+  );
+
+  rttr::registration::enumeration<sorcery::TextureImporter::NonPowerOfTwoRounding>("Texture Import Non-Power Of Two Rounding")(
+    rttr::value("None", sorcery::TextureImporter::NonPowerOfTwoRounding::None),
+    rttr::value("NextPowerOfTwo", sorcery::TextureImporter::NonPowerOfTwoRounding::NextPowerOfTwo)
+  );
+
   rttr::registration::class_<sorcery::TextureImporter>("Texture Importer")
     .REFLECT_REGISTER_RESOURCE_IMPORTER_CTOR
     .property("Texture Type", &sorcery::TextureImporter::mTexType)
@@ -33,8 +43,8 @@ auto TextureImporter::Import(std::filesystem::path const& src) -> ObserverPtr<Re
       int height;
       int channelCount;
 
-      if (auto const imgData{ stbi_load(src.string().c_str(), &width, &height, &channelCount, 4) }) {
-        return new Texture2D{ Image{ static_cast<u32>(width), static_cast<u32>(height), 4, std::unique_ptr<u8[]>{ imgData } } };
+      if (auto const imgData{stbi_load(src.string().c_str(), &width, &height, &channelCount, 4)}) {
+        return new Texture2D{Image{static_cast<u32>(width), static_cast<u32>(height), 4, std::unique_ptr<u8[]>{imgData}}};
       }
 
       return nullptr;
@@ -47,12 +57,12 @@ auto TextureImporter::Import(std::filesystem::path const& src) -> ObserverPtr<Re
 
       if (std::unique_ptr<u8, decltype([](u8* const p) {
         stbi_image_free(p);
-      })> const data{ stbi_load(src.string().c_str(), &width, &height, &channelCount, 4) }) {
+      })> const data{stbi_load(src.string().c_str(), &width, &height, &channelCount, 4)}) {
         std::array<Image, 6> faceImgs;
 
         // 4:3
         if ((width - height) * 3 == height) {
-          auto const faceSize{ width / 4 };
+          auto const faceSize{width / 4};
 
           if (!IsPowerOfTwo(faceSize)) {
             return nullptr;
@@ -62,7 +72,7 @@ auto TextureImporter::Import(std::filesystem::path const& src) -> ObserverPtr<Re
         }
         // 3:4
         else if ((height - width) * 3 == width) {
-          auto const faceSize{ height / 4 };
+          auto const faceSize{height / 4};
 
           if (!IsPowerOfTwo(faceSize)) {
             return nullptr;
@@ -72,41 +82,41 @@ auto TextureImporter::Import(std::filesystem::path const& src) -> ObserverPtr<Re
         }
         // 6:1
         else if (width == 6 * height) {
-          auto const faceSize{ width / 6 };
+          auto const faceSize{width / 6};
 
           if (!IsPowerOfTwo(faceSize)) {
             return nullptr;
           }
 
           for (int faceIdx = 0; faceIdx < 6; faceIdx++) {
-            auto bytes{ std::make_unique_for_overwrite<u8[]>(faceSize * faceSize * 4) };
+            auto bytes{std::make_unique_for_overwrite<u8[]>(faceSize * faceSize * 4)};
 
             for (int i = 0; i < faceSize; i++) {
               std::ranges::copy_n(data.get() + i * width * 4 + faceIdx * faceSize * 4, faceSize * 4, bytes.get() + i * faceSize * 4);
             }
 
-            faceImgs[faceIdx] = Image{ static_cast<u32>(faceSize), static_cast<u32>(faceSize), 4, std::move(bytes) };
+            faceImgs[faceIdx] = Image{static_cast<u32>(faceSize), static_cast<u32>(faceSize), 4, std::move(bytes)};
           }
         }
         // 1:6
         else if (height == 6 * width) {
-          auto const faceSize{ height / 6 };
+          auto const faceSize{height / 6};
 
           if (!IsPowerOfTwo(faceSize)) {
             return nullptr;
           }
 
           for (int faceIdx = 0; faceIdx < 6; faceIdx++) {
-            auto bytes{ std::make_unique_for_overwrite<u8[]>(faceSize * faceSize * 4) };
+            auto bytes{std::make_unique_for_overwrite<u8[]>(faceSize * faceSize * 4)};
             std::ranges::copy_n(data.get() + faceIdx * faceSize * faceSize * 4, faceSize * faceSize * 4, bytes.get());
-            faceImgs[faceIdx] = Image{ static_cast<u32>(faceSize), static_cast<u32>(faceSize), 4, std::move(bytes) };
+            faceImgs[faceIdx] = Image{static_cast<u32>(faceSize), static_cast<u32>(faceSize), 4, std::move(bytes)};
           }
         } else {
           return nullptr;
         }
 
         // Create the cubemap from the face imgs
-        return new Cubemap{ faceImgs };
+        return new Cubemap{faceImgs};
       }
 
       return nullptr;
