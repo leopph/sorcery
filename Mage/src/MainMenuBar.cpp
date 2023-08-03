@@ -10,13 +10,13 @@
 
 namespace sorcery::mage {
 MainMenuBar::MainMenuBar(Application& app, EditorSettingsWindow& editorSettingsWindow) :
-  mApp{ &app },
-  mEditorSettingsWindow{ &editorSettingsWindow } { }
+  mApp{&app},
+  mEditorSettingsWindow{&editorSettingsWindow} { }
 
 
 auto MainMenuBar::Draw() -> void {
-  auto static showDemoWindow{ false };
-  auto static showProjectSettingsWindow{ false };
+  auto static showDemoWindow{false};
+  auto static showProjectSettingsWindow{false};
 
   if (showDemoWindow) {
     ImGui::ShowDemoWindow();
@@ -28,18 +28,13 @@ auto MainMenuBar::Draw() -> void {
 
   if (ImGui::BeginMainMenuBar()) {
     if (ImGui::BeginMenu("File")) {
-      if (ImGui::MenuItem("Open Project")) {
-        if (nfdchar_t* selectedPath{ nullptr }; NFD_PickFolder(nullptr, &selectedPath) == NFD_OKAY) {
-          mApp->ExecuteInBusyEditor([selectedPath, this] {
-            mApp->OpenProject(selectedPath);
-            std::free(selectedPath);
-          });
-        }
+      if (ImGui::MenuItem("New Scene")) {
+        mApp->OpenScene(*new Scene{});
       }
 
       if (ImGui::MenuItem("Open Scene")) {
-        if (nfdchar_t* dstPathAbs{ nullptr }; NFD_OpenDialog(NativeResourceImporter::SCENE_FILE_EXT.substr(1).data(), mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath().string().c_str(), &dstPathAbs) == NFD_OKAY) {
-          if (auto const dstPathResDirRel{ relative(dstPathAbs, mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath()) }; !dstPathResDirRel.empty()) {
+        if (nfdchar_t* dstPathAbs{nullptr}; NFD_OpenDialog(NativeResourceImporter::SCENE_FILE_EXT.substr(1).data(), mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath().string().c_str(), &dstPathAbs) == NFD_OKAY) {
+          if (auto const dstPathResDirRel{relative(dstPathAbs, mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath())}; !dstPathResDirRel.empty()) {
             mApp->ExecuteInBusyEditor([dstPathResDirRel, this] {
               mApp->OpenScene(*gResourceManager.Load<Scene>(mApp->GetResourceDatabase().PathToGuid(dstPathResDirRel)));
             });
@@ -49,12 +44,19 @@ auto MainMenuBar::Draw() -> void {
         }
       }
 
-      if (ImGui::MenuItem("Save Current Scene")) {
+      if (ImGui::MenuItem("Save Scene")) {
         mApp->SaveCurrentSceneToFile();
       }
 
-      if (ImGui::MenuItem("New Scene")) {
-        mApp->OpenScene(*new Scene{});
+      ImGui::Separator();
+
+      if (ImGui::MenuItem("Open Project")) {
+        if (nfdchar_t* selectedPath{nullptr}; NFD_PickFolder(nullptr, &selectedPath) == NFD_OKAY) {
+          mApp->ExecuteInBusyEditor([selectedPath, this] {
+            mApp->OpenProject(selectedPath);
+            std::free(selectedPath);
+          });
+        }
       }
 
       ImGui::EndMenu();
