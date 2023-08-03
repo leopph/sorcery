@@ -18,7 +18,7 @@
 
 namespace sorcery::mage {
 auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& resDirAbs, std::filesystem::path const& thisPathResDirRel) -> void {
-  auto const pathAbs{canonical(resDirAbs / thisPathResDirRel)};
+  auto pathAbs{canonical(resDirAbs / thisPathResDirRel)};
   auto const isSelected{equivalent(pathAbs, resDirAbs / mSelectedPathResDirRel)};
   auto const isRenaming{mRenameInfo && equivalent(mRenameInfo->nodePathAbs, pathAbs)};
   auto const isDirectory{is_directory(pathAbs)};
@@ -74,29 +74,23 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& resDirAbs, s
       ImGui::SetKeyboardFocusHere();
       ImGui::SetCursorPos(treeNodePos);
 
-      /* TODO if (ImGui::InputText("##Rename", &mRenameInfo->newName, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll)) {
-        auto const newNodePathAbs{ mRenameInfo->nodePathAbs.parent_path() / mRenameInfo->newName += mRenameInfo->nodePathAbs.extension() };
+      if (ImGui::InputText("##Rename", &mRenameInfo->newName, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll)) {
+        auto const newPathAbs{mRenameInfo->nodePathAbs.parent_path() / mRenameInfo->newName += mRenameInfo->nodePathAbs.extension()};
 
-        if (!isThisNodeDirectory) {
-          auto renamedAsset{ mApp->GetResources().UnregisterAsset(mRenameInfo->nodePathAbs) };
-
-          auto const oldAssetMetaPath{ std::filesystem::path{ mRenameInfo->nodePathAbs } += mApp->GetAssetFileExtension() };
-          auto const newAssetMetaPath{ std::filesystem::path{ newNodePathAbs } += mApp->GetAssetFileExtension() };
-          std::filesystem::rename(oldAssetMetaPath, newAssetMetaPath);
-
-          renamedAsset->SetName(newNodePathAbs.stem().string());
-          mApp->GetResources().RegisterAsset(std::move(renamedAsset), newNodePathAbs);
+        if (isDirectory) {
+          std::filesystem::rename(mRenameInfo->nodePathAbs, newPathAbs);
+        } else {
+          mApp->GetResourceDatabase().MoveResource(mApp->GetResourceDatabase().PathToGuid(thisPathResDirRel), newPathAbs.lexically_relative(mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath()));
         }
 
-        std::filesystem::rename(mRenameInfo->nodePathAbs, newNodePathAbs);
         mRenameInfo.reset();
 
         if (isSelected) {
-          selectedPathResDirRel = relative(newNodePathAbs, resDirAbs);
+          mSelectedPathResDirRel = relative(newPathAbs, resDirAbs);
         }
 
-        nodePathAbs = newNodePathAbs;
-      }*/
+        pathAbs = newPathAbs;
+      }
 
       if ((!ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) || ImGui::IsKeyPressed(ImGuiKey_Escape)) {
         mRenameInfo.reset();
