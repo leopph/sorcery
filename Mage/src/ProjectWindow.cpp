@@ -49,7 +49,25 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& resDirAbs, s
                                               : "", pathAbs.stem().string()).c_str(), treeNodeFlags)) {
     if (ImGui::IsItemClicked()) {
       mSelectedPathResDirRel = thisPathResDirRel;
-      mApp->SetSelectedObject(gResourceManager.LoadResource(mApp->GetResourceDatabase().PathToGuid(pathAbs)));
+      mApp->SetSelectedObject(gResourceManager.LoadResource(mApp->GetResourceDatabase().PathToGuid(thisPathResDirRel)));
+    }
+
+    auto const startRenaming{
+      [this, &pathAbs] {
+        mRenameInfo = RenameInfo{.newName = pathAbs.stem().string(), .nodePathAbs = pathAbs};
+      }
+    };
+
+    if (ImGui::BeginPopupContextItem()) {
+      if (ImGui::MenuItem("Rename")) {
+        startRenaming();
+      }
+
+      if (ImGui::MenuItem("Delete")) {
+        mApp->GetResourceDatabase().DeleteResource(mApp->GetResourceDatabase().PathToGuid(thisPathResDirRel));
+      }
+
+      ImGui::EndPopup();
     }
 
     if (isRenaming) {
@@ -84,7 +102,7 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& resDirAbs, s
         mRenameInfo.reset();
       }
     } else if ((ImGui::IsItemHovered() && ImGui::GetMouseClickedCount(ImGuiMouseButton_Left) == 3) || (isSelected && ImGui::IsKeyPressed(ImGuiKey_F2, false))) {
-      mRenameInfo = RenameInfo{.newName = pathAbs.stem().string(), .nodePathAbs = pathAbs};
+      startRenaming();
     }
 
     if (isDirectory) {

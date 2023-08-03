@@ -164,6 +164,8 @@ auto ResourceDB::MoveResource(Guid const& guid, std::filesystem::path const& tar
 
 auto ResourceDB::DeleteResource(Guid const& guid) -> void {
   if (auto const it{mGuidToAbsPath.find(guid)}; it != std::end(mGuidToAbsPath)) {
+    std::filesystem::remove(it->second);
+    std::filesystem::remove(ResourceManager::GetMetaPath(it->second));
     gResourceManager.Unload(guid);
     mAbsPathToGuid.erase(it->second);
     mGuidToAbsPath.erase(it);
