@@ -7,12 +7,17 @@
 #include "TransformComponent.hpp"
 
 RTTR_REGISTRATION {
-  rttr::registration::class_<sorcery::Component>{ "Component" }
+  rttr::registration::class_<sorcery::Component>{"Component"}
     .property("entity", &sorcery::Component::mEntity);
 }
 
 
 namespace sorcery {
+Component::~Component() {
+  mEntity->RemoveComponent(*this);
+}
+
+
 auto Component::GetEntity() const -> Entity& {
   assert(mEntity);
   return *mEntity;

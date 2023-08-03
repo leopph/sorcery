@@ -8,12 +8,12 @@
 
 
 RTTR_REGISTRATION {
-  rttr::registration::class_<sorcery::Scene>{ "Scene" };
+  rttr::registration::class_<sorcery::Scene>{"Scene"};
 }
 
 
 namespace sorcery {
-Scene* Scene::sActiveScene{ nullptr };
+Scene* Scene::sActiveScene{nullptr};
 std::vector<Scene*> Scene::sAllScenes;
 
 
@@ -108,7 +108,7 @@ auto Scene::Save() -> void {
       YAML::Node retNode;
 
       if (v.get_type().is_pointer() && v.get_type().get_raw_type().is_derived_from(rttr::type::get<SceneObject>())) {
-        auto const it{ ptrFixUp.find(v.get_value<SceneObject*>()) };
+        auto const it{ptrFixUp.find(v.get_value<SceneObject*>())};
         retNode = it != std::end(ptrFixUp)
                     ? it->second
                     : 0;
@@ -131,28 +131,28 @@ auto Scene::Load() -> void {
   static std::unordered_map<int, SceneObject*> ptrFixUp;
   ptrFixUp.clear();
 
-  auto const lastActiveScene{ sActiveScene };
+  auto const lastActiveScene{sActiveScene};
   sActiveScene = this;
   mEntities.clear();
 
-  if (auto const version{ mYamlData["version"] }; !version || !version.IsScalar() || version.as<int>(1) != 1) {
-    throw std::runtime_error{ std::format("Couldn't load scene \"{}\" because its version number is unsupported.", GetName()) };
+  if (auto const version{mYamlData["version"]}; !version || !version.IsScalar() || version.as<int>(1) != 1) {
+    throw std::runtime_error{std::format("Couldn't load scene \"{}\" because its version number is unsupported.", GetName())};
   }
 
   for (auto const& sceneObjectNode : mYamlData["sceneObjects"]) {
-    auto const typeNode{ sceneObjectNode["type"] };
-    auto const type{ rttr::type::get_by_name(typeNode.as<std::string>()) };
-    auto const sceneObjectVariant{ type.create() };
+    auto const typeNode{sceneObjectNode["type"]};
+    auto const type{rttr::type::get_by_name(typeNode.as<std::string>())};
+    auto const sceneObjectVariant{type.create()};
     ptrFixUp[static_cast<int>(std::ssize(ptrFixUp)) + 1] = sceneObjectVariant.get_value<SceneObject*>();
   }
 
   auto const extensionFunc{
     [](YAML::Node const& objNode, rttr::variant& v) -> void {
       if (v.get_type().is_pointer() && v.get_type().get_raw_type().is_derived_from(rttr::type::get<SceneObject>())) {
-        if (auto const it{ ptrFixUp.find(objNode.as<int>(0)) }; it != std::end(ptrFixUp)) {
-          auto const type{ v.get_type() };
+        if (auto const it{ptrFixUp.find(objNode.as<int>(0))}; it != std::end(ptrFixUp)) {
+          auto const type{v.get_type()};
           v = it->second;
-          auto const success{ v.convert(type) };
+          auto const success{v.convert(type)};
           assert(success);
         }
       }
@@ -173,6 +173,9 @@ auto Scene::SetActive() -> void {
 
 
 auto Scene::Clear() -> void {
-  mEntities.clear();
+  // Entity destructor modifies this collection, hence the strange loop
+  while (!mEntities.empty()) {
+    delete mEntities.back();
+  }
 }
 }

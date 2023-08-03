@@ -12,7 +12,7 @@
 
 
 RTTR_REGISTRATION {
-  rttr::registration::class_<sorcery::Entity>{ "Entity" }
+  rttr::registration::class_<sorcery::Entity>{"Entity"}
     .REFLECT_REGISTER_ENTITY_CTOR
     .property("components", &sorcery::Entity::mComponents);
 }
@@ -36,13 +36,13 @@ auto Entity::FindEntityByName(std::string_view const name) -> Entity* {
 
 
 Entity::Entity() :
-  mScene{ Scene::GetActiveScene() } {
-  auto constexpr defaultEntityName{ "New Entity" };
+  mScene{Scene::GetActiveScene()} {
+  auto constexpr defaultEntityName{"New Entity"};
   SetName(defaultEntityName);
   FindObjectsOfType(gEntityCache);
 
-  bool isNameUnique{ false };
-  std::size_t index{ 1 };
+  bool isNameUnique{false};
+  std::size_t index{1};
   while (!isNameUnique) {
     isNameUnique = true;
     for (auto const entity : gEntityCache) {
@@ -61,7 +61,11 @@ Entity::Entity() :
 
 Entity::~Entity() {
   mScene->RemoveEntity(*this);
-  // TODO deleting components?
+
+  // Entity destructor modifies this collection, hence the strange loop
+  while (!mComponents.empty()) {
+    delete mComponents.back();
+  }
 }
 
 
@@ -115,8 +119,8 @@ auto Entity::OnDrawProperties(bool& changed) -> void {
     ImGui::EndTable();
   }
 
-  for (std::size_t i{ 0 }; i < std::size(mComponents); i++) {
-    auto const treeNodeId{ std::format("{}##{}", rttr::type::get(*mComponents[i]).get_name().to_string(), std::to_string(i)) };
+  for (std::size_t i{0}; i < std::size(mComponents); i++) {
+    auto const treeNodeId{std::format("{}##{}", rttr::type::get(*mComponents[i]).get_name().to_string(), std::to_string(i))};
 
     if (ImGui::TreeNodeEx(treeNodeId.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
       ImGui::Separator();
