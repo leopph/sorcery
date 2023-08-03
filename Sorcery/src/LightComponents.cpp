@@ -10,6 +10,12 @@
 
 
 RTTR_REGISTRATION {
+  rttr::registration::enumeration<sorcery::LightComponent::Type>("Light Type")(
+    rttr::value("Directional", sorcery::LightComponent::Type::Directional),
+    rttr::value("Spot", sorcery::LightComponent::Type::Spot),
+    rttr::value("Point", sorcery::LightComponent::Type::Point)
+  );
+
   rttr::registration::class_<sorcery::LightComponent>{ "Light Component" }
     .REFLECT_REGISTER_COMPONENT_CTOR
     .property("color", &sorcery::LightComponent::GetColor, &sorcery::LightComponent::SetColor)

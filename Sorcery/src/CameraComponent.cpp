@@ -11,6 +11,11 @@
 
 
 RTTR_REGISTRATION {
+  rttr::registration::enumeration<sorcery::CameraComponent::Type>("Camera Type")(
+    rttr::value("Orthographic", sorcery::CameraComponent::Type::Orthographic),
+    rttr::value("Perspective", sorcery::CameraComponent::Type::Perspective)
+  );
+
   rttr::registration::class_<sorcery::CameraComponent>{ "Camera Component" }
     .REFLECT_REGISTER_SCENE_OBJECT_CTOR
     .property("fov", &sorcery::CameraComponent::GetHorizontalPerspectiveFov, &sorcery::CameraComponent::SetHorizontalPerspectiveFov)
