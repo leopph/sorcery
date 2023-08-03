@@ -118,7 +118,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
             sorcery::gWindow.UnlockCursor();
             sorcery::gWindow.SetCursorHiding(false);
             sorcery::timing::SetTargetFrameRate(targetFrameRate);
-            app.GetScene()->Load();
+            app.GetScene().Load();
             app.SetSelectedObject(nullptr);
           }
 
@@ -128,7 +128,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
             runGame = true;
             sorcery::gWindow.SetEventHook({});
             sorcery::timing::SetTargetFrameRate(-1);
-            app.GetScene()->Save();
+            app.GetScene().Save();
             targetFrameRate = sorcery::timing::GetTargetFrameRate();
           }
         }
@@ -139,13 +139,9 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
           DrawLoadingScreen(app);
         }
 
-        if (app.GetScene()) {
-          entityHierarchyWindow->Draw();
-          gameViewWindow->Draw(runGame);
-          sceneViewWindow->Draw(app);
-        } else {
-          sorcery::mage::DrawOpenScenePrompt();
-        }
+        entityHierarchyWindow->Draw();
+        gameViewWindow->Draw(runGame);
+        sceneViewWindow->Draw(app);
 
         mainMenuBar->Draw();
         editorSettingsWindow->Draw();

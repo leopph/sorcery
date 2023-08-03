@@ -2,6 +2,9 @@
 
 #include "Platform.hpp"
 #include "GUI.hpp"
+#include "NativeResourceImporter.hpp"
+
+#include <nfd.h>
 
 
 namespace sorcery::mage {
@@ -54,24 +57,33 @@ auto Application::GetResourceDatabase() noexcept -> ResourceDB& {
 }
 
 
-auto Application::GetScene() const noexcept -> Scene const* {
-  return mScene;
-}
-
-
-auto Application::GetScene() noexcept -> Scene* {
-  return mScene;
+auto Application::GetScene() const noexcept -> Scene& {
+  assert(mScene);
+  return *mScene;
 }
 
 
 auto Application::OpenScene(Scene& scene) -> void {
   scene.Load();
+  assert(mScene);
+  mScene->Clear();
+  mScene = std::addressof(scene);
+}
 
-  if (mScene) {
-    mScene->Clear();
+
+auto Application::SaveCurrentSceneToFile() -> void {
+  assert(mScene);
+  mScene->Save();
+  if (mResourceDB.IsSavedResource(*mScene)) {
+    mResourceDB.SaveResource(*mScene);
+  } else {
+    if (nfdchar_t* dst; NFD_SaveDialog(NativeResourceImporter::SCENE_FILE_EXT.substr(1).data(), mResourceDB.GetResourceDirectoryAbsolutePath().string().c_str(), &dst) == NFD_OKAY) {
+      if (auto const dstResDirRel{ relative(std::filesystem::path{ dst }, mResourceDB.GetResourceDirectoryAbsolutePath()) += NativeResourceImporter::SCENE_FILE_EXT }; !dstResDirRel.empty()) {
+        mResourceDB.CreateResource(*mScene, dstResDirRel);
+      }
+      std::free(dst);
+    }
   }
-
-  mScene = &scene;
 }
 
 
@@ -92,7 +104,7 @@ auto Application::GetProjectDirectoryAbsolute() const noexcept -> std::filesyste
 
 auto Application::OpenProject(std::filesystem::path const& targetPath) -> void {
   mSelectedObject = nullptr;
-  mScene = nullptr;
+  mScene = new Scene{};
   mProjDirAbs = absolute(targetPath);
   mResourceDB.ChangeProjectDir(mProjDirAbs);
 }

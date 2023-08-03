@@ -28,7 +28,13 @@ class Application {
 
 public:
   explicit Application(ImGuiIO& imGuiIO);
+  Application(Application const&) = delete;
+  Application(Application&&) = delete;
+
   ~Application();
+
+  auto operator=(Application const&) -> void = delete;
+  auto operator=(Application&&) -> void = delete;
 
   [[nodiscard]] auto GetImGuiIo() const noexcept -> ImGuiIO const&;
   [[nodiscard]] auto GetImGuiIo() noexcept -> ImGuiIO&;
@@ -36,9 +42,9 @@ public:
   [[nodiscard]] auto GetResourceDatabase() const noexcept -> ResourceDB const&;
   [[nodiscard]] auto GetResourceDatabase() noexcept -> ResourceDB&;
 
-  [[nodiscard]] auto GetScene() const noexcept -> Scene const*;
-  [[nodiscard]] auto GetScene() noexcept -> Scene*;
+  [[nodiscard]] auto GetScene() const noexcept -> Scene&;
   auto OpenScene(Scene& scene) -> void;
+  auto SaveCurrentSceneToFile() -> void;
 
   [[nodiscard]] auto GetSelectedObject() const noexcept -> Object*;
   auto SetSelectedObject(Object* obj) noexcept -> void;

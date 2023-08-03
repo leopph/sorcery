@@ -18,7 +18,7 @@ auto EntityHierarchyWindow::Draw() -> void {
 
     if (ImGui::BeginPopup(contextId)) {
       if (ImGui::MenuItem("Create New Entity")) {
-        mApp->GetScene()->SetActive();
+        mApp->GetScene().SetActive();
         auto const entity{ new Entity{} };
         entity->AddComponent(*new TransformComponent{});
       }
@@ -36,7 +36,7 @@ auto EntityHierarchyWindow::Draw() -> void {
       }
     }
 
-    std::span entities{ mApp->GetScene()->GetEntities() };
+    std::span entities{ mApp->GetScene().GetEntities() };
 
     std::function<void(Entity&)> displayEntityRecursive;
     displayEntityRecursive = [this, &entities, &displayEntityRecursive](Entity& entity) -> void {
@@ -78,7 +78,7 @@ auto EntityHierarchyWindow::Draw() -> void {
 
         if (ImGui::MenuItem("Delete")) {
           delete std::addressof(entity);
-          entities = mApp->GetScene()->GetEntities();
+          entities = mApp->GetScene().GetEntities();
           mApp->SetSelectedObject(nullptr);
           deleted = true;
           ImGui::CloseCurrentPopup();

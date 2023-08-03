@@ -50,10 +50,11 @@ auto MainMenuBar::Draw() -> void {
       }
 
       if (ImGui::MenuItem("Save Current Scene")) {
-        if (mApp->GetScene()) {
-          mApp->GetScene()->Save();
-          mApp->GetResourceDatabase().SaveResource(*mApp->GetScene());
-        }
+        mApp->SaveCurrentSceneToFile();
+      }
+
+      if (ImGui::MenuItem("New Scene")) {
+        mApp->OpenScene(*new Scene{});
       }
 
       ImGui::EndMenu();
