@@ -8,14 +8,14 @@
 
 namespace sorcery {
 class Guid {
-  u64 mDataLo{ 0 };
-  u64 mDataHi{ 0 };
+  u64 mLowBits{0};
+  u64 mHighBits{0};
 
 public:
   [[nodiscard]] LEOPPHAPI static auto Invalid() noexcept -> Guid;
 
   Guid() = default;
-  LEOPPHAPI Guid(u64 data0, u64 data1);
+  LEOPPHAPI Guid(u64 lowBits, u64 highBits);
 
   [[nodiscard]] LEOPPHAPI static auto Generate() -> Guid;
   [[nodiscard]] LEOPPHAPI static auto Parse(std::string_view str) -> Guid;

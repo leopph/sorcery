@@ -11,9 +11,9 @@ auto Guid::Invalid() noexcept -> Guid {
 }
 
 
-Guid::Guid(u64 const data0, u64 const data1) :
-  mDataLo{ data0 },
-  mDataHi{ data1 } { }
+Guid::Guid(u64 const lowBits, u64 const highBits) :
+  mLowBits{lowBits},
+  mHighBits{highBits} { }
 
 
 auto Guid::Generate() -> Guid {
@@ -34,32 +34,32 @@ auto Guid::Parse(std::string_view const str) -> Guid {
   strStream << std::hex << str;
   Guid guid;
   char sep;
-  strStream >> guid.mDataHi >> sep >> guid.mDataLo;
+  strStream >> guid.mHighBits >> sep >> guid.mLowBits;
   return guid;
 }
 
 
 auto Guid::ToString() const -> std::string {
-  return std::string{ *this };
+  return std::string{*this};
 }
 
 
 auto Guid::operator<=>(Guid const& other) const noexcept -> std::strong_ordering {
-  auto const hiComp{ mDataHi <=> other.mDataHi };
+  auto const hiComp{mHighBits <=> other.mHighBits};
   return hiComp != std::strong_ordering::equivalent
            ? hiComp
-           : mDataLo <=> other.mDataLo;
+           : mLowBits <=> other.mLowBits;
 }
 
 
 auto Guid::IsValid() const noexcept -> bool {
-  return mDataLo != 0 || mDataHi != 0;
+  return mLowBits != 0 || mHighBits != 0;
 }
 
 
 Guid::operator std::string() const {
   std::stringstream strStream;
-  strStream << std::hex << mDataHi << "-" << std::hex << mDataLo;
+  strStream << std::hex << mHighBits << "-" << std::hex << mLowBits;
   return strStream.str();
 }
 }

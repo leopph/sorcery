@@ -55,12 +55,12 @@ Renderer gRenderer;
 
 namespace {
 std::vector const QUAD_POSITIONS{
-  Vector3{ -1, 1, 0 }, Vector3{ -1, -1, 0 }, Vector3{ 1, -1, 0 }, Vector3{ 1, 1, 0 }
+  Vector3{-1, 1, 0}, Vector3{-1, -1, 0}, Vector3{1, -1, 0}, Vector3{1, 1, 0}
 };
 
 
 std::vector const QUAD_UVS{
-  Vector2{ 0, 0 }, Vector2{ 0, 1 }, Vector2{ 1, 1 }, Vector2{ 1, 0 }
+  Vector2{0, 0}, Vector2{0, 1}, Vector2{1, 1}, Vector2{1, 0}
 };
 
 
@@ -70,72 +70,72 @@ std::vector<unsigned> const QUAD_INDICES{
 
 
 std::vector const CUBE_POSITIONS{
-  Vector3{ 0.5f, 0.5f, 0.5f },
-  Vector3{ 0.5f, 0.5f, 0.5f },
-  Vector3{ 0.5f, 0.5f, 0.5f },
+  Vector3{0.5f, 0.5f, 0.5f},
+  Vector3{0.5f, 0.5f, 0.5f},
+  Vector3{0.5f, 0.5f, 0.5f},
 
-  Vector3{ -0.5f, 0.5f, 0.5f },
-  Vector3{ -0.5f, 0.5f, 0.5f },
-  Vector3{ -0.5f, 0.5f, 0.5f },
+  Vector3{-0.5f, 0.5f, 0.5f},
+  Vector3{-0.5f, 0.5f, 0.5f},
+  Vector3{-0.5f, 0.5f, 0.5f},
 
-  Vector3{ -0.5f, 0.5f, -0.5f },
-  Vector3{ -0.5f, 0.5f, -0.5f },
-  Vector3{ -0.5f, 0.5f, -0.5f },
+  Vector3{-0.5f, 0.5f, -0.5f},
+  Vector3{-0.5f, 0.5f, -0.5f},
+  Vector3{-0.5f, 0.5f, -0.5f},
 
-  Vector3{ 0.5f, 0.5f, -0.5f },
-  Vector3{ 0.5f, 0.5f, -0.5f },
-  Vector3{ 0.5f, 0.5f, -0.5f },
+  Vector3{0.5f, 0.5f, -0.5f},
+  Vector3{0.5f, 0.5f, -0.5f},
+  Vector3{0.5f, 0.5f, -0.5f},
 
-  Vector3{ 0.5f, -0.5f, 0.5f },
-  Vector3{ 0.5f, -0.5f, 0.5f },
-  Vector3{ 0.5f, -0.5f, 0.5f },
+  Vector3{0.5f, -0.5f, 0.5f},
+  Vector3{0.5f, -0.5f, 0.5f},
+  Vector3{0.5f, -0.5f, 0.5f},
 
-  Vector3{ -0.5f, -0.5f, 0.5f },
-  Vector3{ -0.5f, -0.5f, 0.5f },
-  Vector3{ -0.5f, -0.5f, 0.5f },
+  Vector3{-0.5f, -0.5f, 0.5f},
+  Vector3{-0.5f, -0.5f, 0.5f},
+  Vector3{-0.5f, -0.5f, 0.5f},
 
-  Vector3{ -0.5f, -0.5f, -0.5f },
-  Vector3{ -0.5f, -0.5f, -0.5f },
-  Vector3{ -0.5f, -0.5f, -0.5f },
+  Vector3{-0.5f, -0.5f, -0.5f},
+  Vector3{-0.5f, -0.5f, -0.5f},
+  Vector3{-0.5f, -0.5f, -0.5f},
 
-  Vector3{ 0.5f, -0.5f, -0.5f },
-  Vector3{ 0.5f, -0.5f, -0.5f },
-  Vector3{ 0.5f, -0.5f, -0.5f },
+  Vector3{0.5f, -0.5f, -0.5f},
+  Vector3{0.5f, -0.5f, -0.5f},
+  Vector3{0.5f, -0.5f, -0.5f},
 };
 
 
 std::vector const CUBE_UVS{
-  Vector2{ 1, 0 },
-  Vector2{ 1, 0 },
-  Vector2{ 0, 0 },
+  Vector2{1, 0},
+  Vector2{1, 0},
+  Vector2{0, 0},
 
-  Vector2{ 0, 0 },
-  Vector2{ 0, 0 },
-  Vector2{ 1, 0 },
+  Vector2{0, 0},
+  Vector2{0, 0},
+  Vector2{1, 0},
 
-  Vector2{ 1, 0 },
-  Vector2{ 0, 1 },
-  Vector2{ 0, 0 },
+  Vector2{1, 0},
+  Vector2{0, 1},
+  Vector2{0, 0},
 
-  Vector2{ 0, 0 },
-  Vector2{ 1, 1 },
-  Vector2{ 1, 0 },
+  Vector2{0, 0},
+  Vector2{1, 1},
+  Vector2{1, 0},
 
-  Vector2{ 1, 1 },
-  Vector2{ 1, 1 },
-  Vector2{ 0, 1 },
+  Vector2{1, 1},
+  Vector2{1, 1},
+  Vector2{0, 1},
 
-  Vector2{ 0, 1 },
-  Vector2{ 0, 1 },
-  Vector2{ 1, 1 },
+  Vector2{0, 1},
+  Vector2{0, 1},
+  Vector2{1, 1},
 
-  Vector2{ 1, 1 },
-  Vector2{ 0, 0 },
-  Vector2{ 0, 1 },
+  Vector2{1, 1},
+  Vector2{0, 0},
+  Vector2{0, 1},
 
-  Vector2{ 0, 1 },
-  Vector2{ 1, 0 },
-  Vector2{ 1, 1 }
+  Vector2{0, 1},
+  Vector2{1, 0},
+  Vector2{1, 1}
 };
 
 
@@ -208,9 +208,9 @@ class Renderer::Impl {
   ComPtr<ID3D11DepthStencilState> mDepthTestLessEqualNoWriteDss;
   ComPtr<ID3D11DepthStencilState> mDepthTestGreaterEqualNoWriteDss;
 
-  ObserverPtr<Material> mDefaultMaterial;
-  ObserverPtr<Mesh> mCubeMesh;
-  ObserverPtr<Mesh> mPlaneMesh;
+  ObserverPtr<Material> mDefaultMaterial{nullptr};
+  ObserverPtr<Mesh> mCubeMesh{nullptr};
+  ObserverPtr<Mesh> mPlaneMesh{nullptr};
 
   std::unique_ptr<DirectionalShadowAtlas> mDirectionalShadowAtlas;
   std::unique_ptr<PunctualShadowAtlas> mPunctualShadowAtlas;
@@ -221,9 +221,9 @@ class Renderer::Impl {
   std::unique_ptr<StructuredBuffer<Vector4>> mGizmoColorBuffer;
   std::unique_ptr<StructuredBuffer<ShaderLineGizmoVertexData>> mLineGizmoVertexDataBuffer;
 
-  u32 mSyncInterval{ 0 };
-  f32 mInvGamma{ 1.f / 2.2f };
-  int mInFlightFrameCount{ 2 };
+  u32 mSyncInterval{0};
+  f32 mInvGamma{1.f / 2.2f};
+  int mInFlightFrameCount{2};
 
   std::vector<StaticMeshComponent const*> mStaticMeshComponents;
   std::vector<SkyboxComponent const*> mSkyboxes;
@@ -234,12 +234,12 @@ class Renderer::Impl {
   std::vector<ShaderLineGizmoVertexData> mLineGizmoVertexData;
 
   // Normalized to [0, 1]
-  std::array<float, MAX_CASCADE_COUNT - 1> mCascadeSplits{ 0.1f, 0.3f, 0.6f };
-  int mCascadeCount{ 4 };
-  float mShadowDistance{ 100 };
-  bool mVisualizeShadowCascades{ false };
-  bool mUseStableShadowCascadeProjection{ false };
-  ShadowFilteringMode mShadowFilteringMode{ ShadowFilteringMode::PCFTent5x5 };
+  std::array<float, MAX_CASCADE_COUNT - 1> mCascadeSplits{0.1f, 0.3f, 0.6f};
+  int mCascadeCount{4};
+  float mShadowDistance{100};
+  bool mVisualizeShadowCascades{false};
+  bool mUseStableShadowCascadeProjection{false};
+  ShadowFilteringMode mShadowFilteringMode{ShadowFilteringMode::PCFTent5x5};
 
 
   struct TempRenderTargetRecord {
@@ -248,8 +248,12 @@ class Renderer::Impl {
   };
 
 
-  constexpr static int MAX_TMP_RT_AGE{ 10 };
+  constexpr static int MAX_TMP_RT_AGE{10};
   std::vector<TempRenderTargetRecord> mTmpRenderTargets;
+
+  inline static const Guid DEFAULT_MATERIAL_GUID{1, 0};
+  inline static const Guid CUBE_MESH_GUID{2, 0};
+  inline static const Guid PLANE_MESH_GUID{3, 0};
 
   [[nodiscard]] auto GetSceneDrawDssForReversedDepth() -> ComPtr<ID3D11DepthStencilState>&;
   [[nodiscard]] auto GetShadowDrawDssForReversedDepth() -> ComPtr<ID3D11DepthStencilState>&;
@@ -389,9 +393,9 @@ auto Renderer::Impl::GetShadowPcfSamplerForReversedDepth() -> ComPtr<ID3D11Sampl
 
 
 auto Renderer::Impl::CalculateCameraShadowCascadeBoundaries(Camera const& cam) const -> ShadowCascadeBoundaries {
-  auto const camNear{ cam.GetNearClipPlane() };
-  auto const shadowDistance{ std::min(cam.GetFarClipPlane(), mShadowDistance) };
-  auto const shadowedFrustumDepth{ shadowDistance - camNear };
+  auto const camNear{cam.GetNearClipPlane()};
+  auto const shadowDistance{std::min(cam.GetFarClipPlane(), mShadowDistance)};
+  auto const shadowedFrustumDepth{shadowDistance - camNear};
 
   ShadowCascadeBoundaries boundaries;
 
@@ -414,15 +418,15 @@ auto Renderer::Impl::CalculateCameraShadowCascadeBoundaries(Camera const& cam) c
 
 
 auto Renderer::Impl::CreateDeviceAndContext() -> void {
-  UINT creationFlags{ 0 };
-  D3D_FEATURE_LEVEL constexpr requestedFeatureLevels[]{ D3D_FEATURE_LEVEL_11_0 };
+  UINT creationFlags{0};
+  D3D_FEATURE_LEVEL constexpr requestedFeatureLevels[]{D3D_FEATURE_LEVEL_11_0};
 
 #ifndef NDEBUG
   creationFlags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif
 
   if (FAILED(D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, creationFlags, requestedFeatureLevels, 1, D3D11_SDK_VERSION, mDevice.GetAddressOf(), nullptr, mImmediateContext.GetAddressOf()))) {
-    throw std::runtime_error{ "Failed to create D3D device." };
+    throw std::runtime_error{"Failed to create D3D device."};
   }
 }
 
@@ -430,12 +434,12 @@ auto Renderer::Impl::CreateDeviceAndContext() -> void {
 auto Renderer::Impl::SetDebugBreaks() const -> void {
   ComPtr<ID3D11Debug> d3dDebug;
   if (FAILED(mDevice.As(&d3dDebug))) {
-    throw std::runtime_error{ "Failed to get ID3D11Debug interface." };
+    throw std::runtime_error{"Failed to get ID3D11Debug interface."};
   }
 
   ComPtr<ID3D11InfoQueue> d3dInfoQueue;
   if (FAILED(d3dDebug.As<ID3D11InfoQueue>(&d3dInfoQueue))) {
-    throw std::runtime_error{ "Failed to get ID3D11InfoQueue interface." };
+    throw std::runtime_error{"Failed to get ID3D11InfoQueue interface."};
   }
 
   d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_CORRUPTION, true);
@@ -484,50 +488,50 @@ auto Renderer::Impl::CreateInputLayouts() -> void {
   };
 
   if (FAILED(mDevice->CreateInputLayout(inputDescs, ARRAYSIZE(inputDescs), gMeshVSBin, ARRAYSIZE(gMeshVSBin), mAllAttribsIl.GetAddressOf()))) {
-    throw std::runtime_error{ "Failed to create all-attributes input layout." };
+    throw std::runtime_error{"Failed to create all-attributes input layout."};
   }
 
   if (FAILED(mDevice->CreateInputLayout(&inputDescs[0], 1, gDepthOnlyVSBin, ARRAYSIZE(gDepthOnlyVSBin), mPos3OnlyIl.GetAddressOf()))) {
-    throw std::runtime_error{ "Failed to create pos3d-only input layout." };
+    throw std::runtime_error{"Failed to create pos3d-only input layout."};
   }
 }
 
 
 auto Renderer::Impl::CreateShaders() -> void {
   if (FAILED(mDevice->CreateVertexShader(gMeshVSBin, ARRAYSIZE(gMeshVSBin), nullptr, mMeshVs.GetAddressOf()))) {
-    throw std::runtime_error{ "Failed to create mesh vertex shader." };
+    throw std::runtime_error{"Failed to create mesh vertex shader."};
   }
 
   if (FAILED(mDevice->CreatePixelShader(gMeshPbrPSBin, ARRAYSIZE(gMeshPbrPSBin), nullptr, mMeshPbrPs.GetAddressOf()))) {
-    throw std::runtime_error{ "Failed to create mesh pbr pixel shader." };
+    throw std::runtime_error{"Failed to create mesh pbr pixel shader."};
   }
 
   if (FAILED(mDevice->CreatePixelShader(gPostProcessPSBin, ARRAYSIZE(gPostProcessPSBin), nullptr, mPostProcessPs.GetAddressOf()))) {
-    throw std::runtime_error{ "Failed to create textured post process pixel shader." };
+    throw std::runtime_error{"Failed to create textured post process pixel shader."};
   }
 
   if (FAILED(mDevice->CreateVertexShader(gSkyboxVSBin, ARRAYSIZE(gSkyboxVSBin), nullptr, mSkyboxVs.ReleaseAndGetAddressOf()))) {
-    throw std::runtime_error{ "Failed to create skybox vertex shader." };
+    throw std::runtime_error{"Failed to create skybox vertex shader."};
   }
 
   if (FAILED(mDevice->CreatePixelShader(gSkyboxPSBin, ARRAYSIZE(gSkyboxPSBin), nullptr, mSkyboxPs.ReleaseAndGetAddressOf()))) {
-    throw std::runtime_error{ "Failed to create skybox pixel shader." };
+    throw std::runtime_error{"Failed to create skybox pixel shader."};
   }
 
   if (FAILED(mDevice->CreateVertexShader(gDepthOnlyVSBin, ARRAYSIZE(gDepthOnlyVSBin), nullptr, mDepthOnlyVs.GetAddressOf()))) {
-    throw std::runtime_error{ "Failed to create depth-only vertex shader." };
+    throw std::runtime_error{"Failed to create depth-only vertex shader."};
   }
 
   if (FAILED(mDevice->CreateVertexShader(gScreenVSBin, ARRAYSIZE(gScreenVSBin), nullptr, mScreenVs.GetAddressOf()))) {
-    throw std::runtime_error{ "Failed to create screen vertex shader." };
+    throw std::runtime_error{"Failed to create screen vertex shader."};
   }
 
   if (FAILED(mDevice->CreateVertexShader(gLineGizmoVSBin, ARRAYSIZE(gLineGizmoVSBin), nullptr, mLineGizmoVs.GetAddressOf()))) {
-    throw std::runtime_error{ "Failed to create line gizmo vertex shader." };
+    throw std::runtime_error{"Failed to create line gizmo vertex shader."};
   }
 
   if (FAILED(mDevice->CreatePixelShader(gGizmoPSBin, ARRAYSIZE(gGizmoPSBin), nullptr, mGizmoPs.GetAddressOf()))) {
-    throw std::runtime_error{ "Failed to create gizmo pixel shader." };
+    throw std::runtime_error{"Failed to create gizmo pixel shader."};
   }
 }
 
@@ -543,7 +547,7 @@ auto Renderer::Impl::CreateConstantBuffers() -> void {
   };
 
   if (FAILED(mDevice->CreateBuffer(&perFrameCbDesc, nullptr, mPerFrameCb.GetAddressOf()))) {
-    throw std::runtime_error{ "Failed to create per frame CB." };
+    throw std::runtime_error{"Failed to create per frame CB."};
   }
 
   D3D11_BUFFER_DESC constexpr perCamCbDesc{
@@ -556,7 +560,7 @@ auto Renderer::Impl::CreateConstantBuffers() -> void {
   };
 
   if (FAILED(mDevice->CreateBuffer(&perCamCbDesc, nullptr, mPerCamCb.GetAddressOf()))) {
-    throw std::runtime_error{ "Failed to create per camera CB." };
+    throw std::runtime_error{"Failed to create per camera CB."};
   }
 
   D3D11_BUFFER_DESC constexpr perDrawCbDesc{
@@ -569,7 +573,7 @@ auto Renderer::Impl::CreateConstantBuffers() -> void {
   };
 
   if (FAILED(mDevice->CreateBuffer(&perDrawCbDesc, nullptr, mPerDrawCb.GetAddressOf()))) {
-    throw std::runtime_error{ "Failed to create per draw CB." };
+    throw std::runtime_error{"Failed to create per draw CB."};
   }
 
   D3D11_BUFFER_DESC constexpr postProcessCbDesc{
@@ -582,7 +586,7 @@ auto Renderer::Impl::CreateConstantBuffers() -> void {
   };
 
   if (FAILED(mDevice->CreateBuffer(&postProcessCbDesc, nullptr, mPostProcessCb.GetAddressOf()))) {
-    throw std::runtime_error{ "Failed to create post-process CB." };
+    throw std::runtime_error{"Failed to create post-process CB."};
   }
 
   D3D11_BUFFER_DESC constexpr skyboxCbDesc{
@@ -595,7 +599,7 @@ auto Renderer::Impl::CreateConstantBuffers() -> void {
   };
 
   if (FAILED(mDevice->CreateBuffer(&skyboxCbDesc, nullptr, mSkyboxCb.GetAddressOf()))) {
-    throw std::runtime_error{ "Failed to create skybox pass CB." };
+    throw std::runtime_error{"Failed to create skybox pass CB."};
   }
 
   D3D11_BUFFER_DESC constexpr depthOnlyCbDesc{
@@ -608,7 +612,7 @@ auto Renderer::Impl::CreateConstantBuffers() -> void {
   };
 
   if (FAILED(mDevice->CreateBuffer(&depthOnlyCbDesc, nullptr, mDepthOnlyCb.GetAddressOf()))) {
-    throw std::runtime_error{ "Failed to create depth-only pass CB." };
+    throw std::runtime_error{"Failed to create depth-only pass CB."};
   }
 }
 
@@ -628,7 +632,7 @@ auto Renderer::Impl::CreateRasterizerStates() -> void {
   };
 
   if (FAILED(mDevice->CreateRasterizerState(&skyboxPassRasterizerDesc, mSkyboxPassRs.ReleaseAndGetAddressOf()))) {
-    throw std::runtime_error{ "Failed to create skybox pass rasterizer state." };
+    throw std::runtime_error{"Failed to create skybox pass rasterizer state."};
   }
 
   D3D11_RASTERIZER_DESC constexpr shadowPassRasterizerDesc{
@@ -645,7 +649,7 @@ auto Renderer::Impl::CreateRasterizerStates() -> void {
   };
 
   if (FAILED(mDevice->CreateRasterizerState(&shadowPassRasterizerDesc, mShadowPassRs.GetAddressOf()))) {
-    throw std::runtime_error{ "Failed to create shadow pass rasterizer state." };
+    throw std::runtime_error{"Failed to create shadow pass rasterizer state."};
   }
 }
 
@@ -673,7 +677,7 @@ auto Renderer::Impl::CreateDepthStencilStates() -> void {
   };
 
   if (FAILED(mDevice->CreateDepthStencilState(&depthTestGreaterWrite, mDepthTestGreaterWriteDss.GetAddressOf()))) {
-    throw std::runtime_error{ "Failed to create depth-test greater write depth-stencil state." };
+    throw std::runtime_error{"Failed to create depth-test greater write depth-stencil state."};
   }
 
   D3D11_DEPTH_STENCIL_DESC constexpr depthTestLessrWrite{
@@ -698,7 +702,7 @@ auto Renderer::Impl::CreateDepthStencilStates() -> void {
   };
 
   if (FAILED(mDevice->CreateDepthStencilState(&depthTestLessrWrite, mDepthTestLessWriteDss.GetAddressOf()))) {
-    throw std::runtime_error{ "Failed to create depth-test less write depth-stencil state." };
+    throw std::runtime_error{"Failed to create depth-test less write depth-stencil state."};
   }
 
   D3D11_DEPTH_STENCIL_DESC constexpr depthTestLessEqualNoWriteDesc{
@@ -723,7 +727,7 @@ auto Renderer::Impl::CreateDepthStencilStates() -> void {
   };
 
   if (FAILED(mDevice->CreateDepthStencilState(&depthTestLessEqualNoWriteDesc, mDepthTestLessEqualNoWriteDss.GetAddressOf()))) {
-    throw std::runtime_error{ "Failed to create depth-test less-or-equal no-write DSS." };
+    throw std::runtime_error{"Failed to create depth-test less-or-equal no-write DSS."};
   }
 
   D3D11_DEPTH_STENCIL_DESC constexpr depthTestGreaterEqualNoWriteDesc{
@@ -748,7 +752,7 @@ auto Renderer::Impl::CreateDepthStencilStates() -> void {
   };
 
   if (FAILED(mDevice->CreateDepthStencilState(&depthTestGreaterEqualNoWriteDesc, mDepthTestGreaterEqualNoWriteDss.GetAddressOf()))) {
-    throw std::runtime_error{ "Failed to create depth-test greater-or-equal no-write DSS." };
+    throw std::runtime_error{"Failed to create depth-test greater-or-equal no-write DSS."};
   }
 }
 
@@ -768,13 +772,13 @@ auto Renderer::Impl::CreateSamplerStates() -> void {
     .MipLODBias = 0,
     .MaxAnisotropy = 1,
     .ComparisonFunc = D3D11_COMPARISON_GREATER_EQUAL,
-    .BorderColor = { 0, 0, 0, 0 },
+    .BorderColor = {0, 0, 0, 0},
     .MinLOD = 0,
     .MaxLOD = 0
   };
 
   if (FAILED(mDevice->CreateSamplerState(&cmpPcfGreaterEqual, mCmpPcfGreaterEqualSs.GetAddressOf()))) {
-    throw std::runtime_error{ "Failed to create PCF greater-equal comparison sampler state." };
+    throw std::runtime_error{"Failed to create PCF greater-equal comparison sampler state."};
   }
 
   D3D11_SAMPLER_DESC constexpr cmpPcfLessEqual{
@@ -785,13 +789,13 @@ auto Renderer::Impl::CreateSamplerStates() -> void {
     .MipLODBias = 0,
     .MaxAnisotropy = 1,
     .ComparisonFunc = D3D11_COMPARISON_LESS_EQUAL,
-    .BorderColor = { 0, 0, 0, 0 },
+    .BorderColor = {0, 0, 0, 0},
     .MinLOD = 0,
     .MaxLOD = 0
   };
 
   if (FAILED(mDevice->CreateSamplerState(&cmpPcfLessEqual, mCmpPcfLessEqualSs.GetAddressOf()))) {
-    throw std::runtime_error{ "Failed to create PCF less-equal comparison sampler state." };
+    throw std::runtime_error{"Failed to create PCF less-equal comparison sampler state."};
   }
 
   D3D11_SAMPLER_DESC constexpr cmpPointGreaterEqualDesc{
@@ -802,13 +806,13 @@ auto Renderer::Impl::CreateSamplerStates() -> void {
     .MipLODBias = 0,
     .MaxAnisotropy = 1,
     .ComparisonFunc = D3D11_COMPARISON_GREATER_EQUAL,
-    .BorderColor = { 0, 0, 0, 0 },
+    .BorderColor = {0, 0, 0, 0},
     .MinLOD = 0,
     .MaxLOD = 0
   };
 
   if (FAILED(mDevice->CreateSamplerState(&cmpPointGreaterEqualDesc, mCmpPointGreaterEqualSs.GetAddressOf()))) {
-    throw std::runtime_error{ "Failed to create point-filter greater-equal comparison sampler state." };
+    throw std::runtime_error{"Failed to create point-filter greater-equal comparison sampler state."};
   }
 
   D3D11_SAMPLER_DESC constexpr cmpPointLessEqualDesc{
@@ -819,13 +823,13 @@ auto Renderer::Impl::CreateSamplerStates() -> void {
     .MipLODBias = 0,
     .MaxAnisotropy = 1,
     .ComparisonFunc = D3D11_COMPARISON_LESS_EQUAL,
-    .BorderColor = { 0, 0, 0, 0 },
+    .BorderColor = {0, 0, 0, 0},
     .MinLOD = 0,
     .MaxLOD = 0
   };
 
   if (FAILED(mDevice->CreateSamplerState(&cmpPointLessEqualDesc, mCmpPointLessEqualSs.GetAddressOf()))) {
-    throw std::runtime_error{ "Failed to create point-filter less-equal comparison sampler state." };
+    throw std::runtime_error{"Failed to create point-filter less-equal comparison sampler state."};
   }
 
   D3D11_SAMPLER_DESC constexpr af16Desc{
@@ -836,13 +840,13 @@ auto Renderer::Impl::CreateSamplerStates() -> void {
     .MipLODBias = 0,
     .MaxAnisotropy = 16,
     .ComparisonFunc = D3D11_COMPARISON_NEVER,
-    .BorderColor = { 1.0f, 1.0f, 1.0f, 1.0f },
+    .BorderColor = {1.0f, 1.0f, 1.0f, 1.0f},
     .MinLOD = -FLT_MAX,
     .MaxLOD = FLT_MAX
   };
 
   if (FAILED(mDevice->CreateSamplerState(&af16Desc, mAf16Ss.GetAddressOf()))) {
-    throw std::runtime_error{ "Failed to create AF16 sampler state." };
+    throw std::runtime_error{"Failed to create AF16 sampler state."};
   }
 
   D3D11_SAMPLER_DESC constexpr af8Desc{
@@ -853,13 +857,13 @@ auto Renderer::Impl::CreateSamplerStates() -> void {
     .MipLODBias = 0,
     .MaxAnisotropy = 8,
     .ComparisonFunc = D3D11_COMPARISON_NEVER,
-    .BorderColor = { 1.0f, 1.0f, 1.0f, 1.0f },
+    .BorderColor = {1.0f, 1.0f, 1.0f, 1.0f},
     .MinLOD = -FLT_MAX,
     .MaxLOD = FLT_MAX
   };
 
   if (FAILED(mDevice->CreateSamplerState(&af8Desc, mAf8Ss.GetAddressOf()))) {
-    throw std::runtime_error{ "Failed to create AF8 sampler state." };
+    throw std::runtime_error{"Failed to create AF8 sampler state."};
   }
 
   D3D11_SAMPLER_DESC constexpr af4Desc{
@@ -870,13 +874,13 @@ auto Renderer::Impl::CreateSamplerStates() -> void {
     .MipLODBias = 0,
     .MaxAnisotropy = 4,
     .ComparisonFunc = D3D11_COMPARISON_NEVER,
-    .BorderColor = { 1.0f, 1.0f, 1.0f, 1.0f },
+    .BorderColor = {1.0f, 1.0f, 1.0f, 1.0f},
     .MinLOD = -FLT_MAX,
     .MaxLOD = FLT_MAX
   };
 
   if (FAILED(mDevice->CreateSamplerState(&af4Desc, mAf4Ss.GetAddressOf()))) {
-    throw std::runtime_error{ "Failed to create AF4 sampler state." };
+    throw std::runtime_error{"Failed to create AF4 sampler state."};
   }
 
   D3D11_SAMPLER_DESC constexpr trilinearDesc{
@@ -887,13 +891,13 @@ auto Renderer::Impl::CreateSamplerStates() -> void {
     .MipLODBias = 0,
     .MaxAnisotropy = 1,
     .ComparisonFunc = D3D11_COMPARISON_NEVER,
-    .BorderColor = { 1.0f, 1.0f, 1.0f, 1.0f },
+    .BorderColor = {1.0f, 1.0f, 1.0f, 1.0f},
     .MinLOD = -FLT_MAX,
     .MaxLOD = FLT_MAX
   };
 
   if (FAILED(mDevice->CreateSamplerState(&trilinearDesc, mTrilinearSs.GetAddressOf()))) {
-    throw std::runtime_error{ "Failed to create trilinear sampler state." };
+    throw std::runtime_error{"Failed to create trilinear sampler state."};
   }
 
   D3D11_SAMPLER_DESC constexpr bilinearDesc{
@@ -904,13 +908,13 @@ auto Renderer::Impl::CreateSamplerStates() -> void {
     .MipLODBias = 0,
     .MaxAnisotropy = 1,
     .ComparisonFunc = D3D11_COMPARISON_NEVER,
-    .BorderColor = { 1.0f, 1.0f, 1.0f, 1.0f },
+    .BorderColor = {1.0f, 1.0f, 1.0f, 1.0f},
     .MinLOD = -FLT_MAX,
     .MaxLOD = FLT_MAX
   };
 
   if (FAILED(mDevice->CreateSamplerState(&bilinearDesc, mBilinearSs.GetAddressOf()))) {
-    throw std::runtime_error{ "Failed to create bilinear sampler state." };
+    throw std::runtime_error{"Failed to create bilinear sampler state."};
   }
 
   D3D11_SAMPLER_DESC constexpr pointDesc{
@@ -921,19 +925,20 @@ auto Renderer::Impl::CreateSamplerStates() -> void {
     .MipLODBias = 0,
     .MaxAnisotropy = 1,
     .ComparisonFunc = D3D11_COMPARISON_NEVER,
-    .BorderColor = { 1.0f, 1.0f, 1.0f, 1.0f },
+    .BorderColor = {1.0f, 1.0f, 1.0f, 1.0f},
     .MinLOD = -FLT_MAX,
     .MaxLOD = FLT_MAX
   };
 
   if (FAILED(mDevice->CreateSamplerState(&pointDesc, mPointSs.GetAddressOf()))) {
-    throw std::runtime_error{ "Failed to create point-filter sampler state." };
+    throw std::runtime_error{"Failed to create point-filter sampler state."};
   }
 }
 
 
 auto Renderer::Impl::CreateDefaultAssets() -> void {
   mDefaultMaterial = new Material{};
+  mDefaultMaterial->SetGuid(DEFAULT_MATERIAL_GUID);
   mDefaultMaterial->SetName("Default Material");
   gResourceManager.Add(mDefaultMaterial);
 
@@ -950,27 +955,27 @@ auto Renderer::Impl::CreateDefaultAssets() -> void {
   CalculateTangents(QUAD_POSITIONS, QUAD_UVS, QUAD_INDICES, quadTangents);
 
   mCubeMesh = new Mesh{};
-  mCubeMesh->SetGuid(Guid{ 0, 1 });
+  mCubeMesh->SetGuid(CUBE_MESH_GUID);
   mCubeMesh->SetName("Cube");
   mCubeMesh->SetPositions(CUBE_POSITIONS);
   mCubeMesh->SetNormals(std::move(cubeNormals));
   mCubeMesh->SetUVs(CUBE_UVS);
   mCubeMesh->SetTangents(std::move(cubeTangents));
   mCubeMesh->SetIndices(CUBE_INDICES);
-  mCubeMesh->SetSubMeshes(std::vector{ Mesh::SubMeshData{ 0, 0, static_cast<int>(CUBE_INDICES.size()), "Material" } });
+  mCubeMesh->SetSubMeshes(std::vector{Mesh::SubMeshData{0, 0, static_cast<int>(CUBE_INDICES.size()), "Material"}});
   mCubeMesh->ValidateAndUpdate();
   mCubeMesh->ReleaseCPUMemory();
   gResourceManager.Add(mCubeMesh);
 
   mPlaneMesh = new Mesh{};
-  mPlaneMesh->SetGuid(Guid{ 0, 2 });
+  mPlaneMesh->SetGuid(PLANE_MESH_GUID);
   mPlaneMesh->SetName("Plane");
   mPlaneMesh->SetPositions(QUAD_POSITIONS);
   mPlaneMesh->SetNormals(std::move(quadNormals));
   mPlaneMesh->SetUVs(QUAD_UVS);
   mPlaneMesh->SetTangents(std::move(quadTangents));
   mPlaneMesh->SetIndices(QUAD_INDICES);
-  mPlaneMesh->SetSubMeshes(std::vector{ Mesh::SubMeshData{ 0, 0, static_cast<int>(QUAD_INDICES.size()), "Material" } });
+  mPlaneMesh->SetSubMeshes(std::vector{Mesh::SubMeshData{0, 0, static_cast<int>(QUAD_INDICES.size()), "Material"}});
   mPlaneMesh->ValidateAndUpdate();
   mPlaneMesh->ReleaseCPUMemory();
   gResourceManager.Add(mPlaneMesh);
@@ -984,27 +989,27 @@ auto Renderer::Impl::DrawMeshes(std::span<int const> const meshComponentIndices,
   mImmediateContext->PSSetConstantBuffers(CB_SLOT_PER_DRAW, 1, mPerDrawCb.GetAddressOf());
 
   for (auto const meshComponentIdx : meshComponentIndices) {
-    auto const meshComponent{ mStaticMeshComponents[meshComponentIdx] };
-    auto const& mesh{ meshComponent->GetMesh() };
+    auto const meshComponent{mStaticMeshComponents[meshComponentIdx]};
+    auto const& mesh{meshComponent->GetMesh()};
 
-    std::array const vertexBuffers{ mesh.GetPositionBuffer().Get(), mesh.GetNormalBuffer().Get(), mesh.GetUVBuffer().Get(), mesh.GetTangentBuffer().Get() };
-    UINT constexpr strides[]{ sizeof(Vector3), sizeof(Vector3), sizeof(Vector2), sizeof(Vector3) };
-    UINT constexpr offsets[]{ 0, 0, 0, 0 };
+    std::array const vertexBuffers{mesh.GetPositionBuffer().Get(), mesh.GetNormalBuffer().Get(), mesh.GetUVBuffer().Get(), mesh.GetTangentBuffer().Get()};
+    UINT constexpr strides[]{sizeof(Vector3), sizeof(Vector3), sizeof(Vector2), sizeof(Vector3)};
+    UINT constexpr offsets[]{0, 0, 0, 0};
     mImmediateContext->IASetVertexBuffers(0, static_cast<UINT>(vertexBuffers.size()), vertexBuffers.data(), strides, offsets);
     mImmediateContext->IASetIndexBuffer(mesh.GetIndexBuffer().Get(), DXGI_FORMAT_R32_UINT, 0);
 
     D3D11_MAPPED_SUBRESOURCE mappedPerDrawCb;
     mImmediateContext->Map(mPerDrawCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerDrawCb);
-    auto const perDrawCbData{ static_cast<PerDrawCB*>(mappedPerDrawCb.pData) };
+    auto const perDrawCbData{static_cast<PerDrawCB*>(mappedPerDrawCb.pData)};
     perDrawCbData->gPerDrawConstants.modelMtx = meshComponent->GetEntity().GetTransform().GetModelMatrix();
-    perDrawCbData->gPerDrawConstants.normalMtx = Matrix4{ meshComponent->GetEntity().GetTransform().GetNormalMatrix() };
+    perDrawCbData->gPerDrawConstants.normalMtx = Matrix4{meshComponent->GetEntity().GetTransform().GetNormalMatrix()};
     mImmediateContext->Unmap(mPerDrawCb.Get(), 0);
 
-    auto const subMeshes{ mesh.GetSubMeshes() };
-    auto const& materials{ meshComponent->GetMaterials() };
+    auto const subMeshes{mesh.GetSubMeshes()};
+    auto const& materials{meshComponent->GetMaterials()};
 
     for (int i = 0; i < static_cast<int>(subMeshes.size()); i++) {
-      auto const& [baseVertex, firstIndex, indexCount, mtlSlotName]{ subMeshes[i] };
+      auto const& [baseVertex, firstIndex, indexCount, mtlSlotName]{subMeshes[i]};
 
       if (useMaterials) {
         auto const mtl{
@@ -1013,13 +1018,13 @@ auto Renderer::Impl::DrawMeshes(std::span<int const> const meshComponentIndices,
             : mDefaultMaterial
         };
 
-        auto const mtlBuffer{ mtl->GetBuffer() };
+        auto const mtlBuffer{mtl->GetBuffer()};
         mImmediateContext->VSSetConstantBuffers(CB_SLOT_PER_MATERIAL, 1, &mtlBuffer);
         mImmediateContext->PSSetConstantBuffers(CB_SLOT_PER_MATERIAL, 1, &mtlBuffer);
 
         auto const albedoSrv{
           [mtl] {
-            auto const albedoMap{ mtl->GetAlbedoMap() };
+            auto const albedoMap{mtl->GetAlbedoMap()};
             return albedoMap
                      ? albedoMap->GetSrv()
                      : nullptr;
@@ -1029,7 +1034,7 @@ auto Renderer::Impl::DrawMeshes(std::span<int const> const meshComponentIndices,
 
         auto const metallicSrv{
           [mtl] {
-            auto const metallicMap{ mtl->GetMetallicMap() };
+            auto const metallicMap{mtl->GetMetallicMap()};
             return metallicMap
                      ? metallicMap->GetSrv()
                      : nullptr;
@@ -1039,7 +1044,7 @@ auto Renderer::Impl::DrawMeshes(std::span<int const> const meshComponentIndices,
 
         auto const roughnessSrv{
           [mtl] {
-            auto const roughnessMap{ mtl->GetRoughnessMap() };
+            auto const roughnessMap{mtl->GetRoughnessMap()};
             return roughnessMap
                      ? roughnessMap->GetSrv()
                      : nullptr;
@@ -1049,7 +1054,7 @@ auto Renderer::Impl::DrawMeshes(std::span<int const> const meshComponentIndices,
 
         auto const aoSrv{
           [mtl] {
-            auto const aoMap{ mtl->GetAoMap() };
+            auto const aoMap{mtl->GetAoMap()};
             return aoMap
                      ? aoMap->GetSrv()
                      : nullptr;
@@ -1059,7 +1064,7 @@ auto Renderer::Impl::DrawMeshes(std::span<int const> const meshComponentIndices,
 
         auto const normalSrv{
           [&mtl] {
-            auto const normalMap{ mtl->GetNormalMap() };
+            auto const normalMap{mtl->GetNormalMap()};
             return normalMap
                      ? normalMap->GetSrv()
                      : nullptr;
@@ -1087,7 +1092,7 @@ auto Renderer::Impl::PostProcess(ID3D11ShaderResourceView* const src, ID3D11Rend
 
   D3D11_MAPPED_SUBRESOURCE mappedCb;
   mImmediateContext->Map(mPostProcessCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedCb);
-  auto const cbData{ static_cast<PostProcessCB*>(mappedCb.pData) };
+  auto const cbData{static_cast<PostProcessCB*>(mappedCb.pData)};
   cbData->invGamma = mInvGamma;
   mImmediateContext->Unmap(mPostProcessCb.Get(), 0);
 
@@ -1118,13 +1123,13 @@ auto Renderer::Impl::DrawSkybox(Matrix4 const& camViewMtx, Matrix4 const& camPro
 
   D3D11_MAPPED_SUBRESOURCE mappedSkyboxCB;
   mImmediateContext->Map(mSkyboxCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedSkyboxCB);
-  auto const skyboxCBData{ static_cast<SkyboxCB*>(mappedSkyboxCB.pData) };
-  skyboxCBData->skyboxViewProjMtx = Matrix4{ Matrix3{ camViewMtx } } * camProjMtx;
+  auto const skyboxCBData{static_cast<SkyboxCB*>(mappedSkyboxCB.pData)};
+  skyboxCBData->skyboxViewProjMtx = Matrix4{Matrix3{camViewMtx}} * camProjMtx;
   mImmediateContext->Unmap(mSkyboxCb.Get(), 0);
 
-  ID3D11Buffer* const vertexBuffer{ mCubeMesh->GetPositionBuffer().Get() };
-  UINT constexpr stride{ sizeof(Vector3) };
-  UINT constexpr offset{ 0 };
+  ID3D11Buffer* const vertexBuffer{mCubeMesh->GetPositionBuffer().Get()};
+  UINT constexpr stride{sizeof(Vector3)};
+  UINT constexpr offset{0};
   mImmediateContext->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
   mImmediateContext->IASetIndexBuffer(mCubeMesh->GetIndexBuffer().Get(), DXGI_FORMAT_R32_UINT, 0);
   mImmediateContext->IASetInputLayout(mPos3OnlyIl.Get());
@@ -1133,10 +1138,10 @@ auto Renderer::Impl::DrawSkybox(Matrix4 const& camViewMtx, Matrix4 const& camPro
   mImmediateContext->VSSetShader(mSkyboxVs.Get(), nullptr, 0);
   mImmediateContext->PSSetShader(mSkyboxPs.Get(), nullptr, 0);
 
-  auto const cubemapSrv{ mSkyboxes[0]->GetCubemap()->GetSrv() };
+  auto const cubemapSrv{mSkyboxes[0]->GetCubemap()->GetSrv()};
   mImmediateContext->PSSetShaderResources(RES_SLOT_SKYBOX_CUBEMAP, 1, &cubemapSrv);
 
-  auto const cb{ mSkyboxCb.Get() };
+  auto const cb{mSkyboxCb.Get()};
   mImmediateContext->VSSetConstantBuffers(CB_SLOT_SKYBOX_PASS, 1, &cb);
 
   mImmediateContext->OMSetDepthStencilState(mDepthTestLessEqualNoWriteDss.Get(), 0);
@@ -1159,16 +1164,16 @@ auto Renderer::Impl::DrawShadowMaps(ShadowAtlas const& atlas) -> void {
   mImmediateContext->OMSetDepthStencilState(GetShadowDrawDssForReversedDepth().Get(), 0);
   mImmediateContext->RSSetState(mShadowPassRs.Get());
 
-  auto const cellSizeNorm{ atlas.GetNormalizedElementSize() };
+  auto const cellSizeNorm{atlas.GetNormalizedElementSize()};
 
   for (auto i = 0; i < atlas.GetElementCount(); i++) {
-    auto const& cell{ atlas.GetCell(i) };
-    auto const cellOffsetNorm{ atlas.GetNormalizedElementOffset(i) };
-    auto const subcellSize{ cellSizeNorm * cell.GetNormalizedElementSize() * static_cast<float>(atlas.GetSize()) };
+    auto const& cell{atlas.GetCell(i)};
+    auto const cellOffsetNorm{atlas.GetNormalizedElementOffset(i)};
+    auto const subcellSize{cellSizeNorm * cell.GetNormalizedElementSize() * static_cast<float>(atlas.GetSize())};
 
     for (auto j = 0; j < cell.GetElementCount(); j++) {
-      if (auto const& subcell{ cell.GetSubcell(j) }) {
-        auto const subcellOffset{ (cellOffsetNorm + cell.GetNormalizedElementOffset(j) * cellSizeNorm) * static_cast<float>(atlas.GetSize()) };
+      if (auto const& subcell{cell.GetSubcell(j)}) {
+        auto const subcellOffset{(cellOffsetNorm + cell.GetNormalizedElementOffset(j) * cellSizeNorm) * static_cast<float>(atlas.GetSize())};
 
         D3D11_VIEWPORT const viewport{
           .TopLeftX = subcellOffset[0],
@@ -1183,11 +1188,11 @@ auto Renderer::Impl::DrawShadowMaps(ShadowAtlas const& atlas) -> void {
 
         D3D11_MAPPED_SUBRESOURCE mapped;
         mImmediateContext->Map(mDepthOnlyCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
-        auto const depthOnlyCbData{ static_cast<DepthOnlyCB*>(mapped.pData) };
+        auto const depthOnlyCbData{static_cast<DepthOnlyCB*>(mapped.pData)};
         depthOnlyCbData->gDepthOnlyViewProjMtx = subcell->shadowViewProjMtx;
         mImmediateContext->Unmap(mDepthOnlyCb.Get(), 0);
 
-        Frustum const shadowFrustumWS{ subcell->shadowViewProjMtx };
+        Frustum const shadowFrustumWS{subcell->shadowViewProjMtx};
 
         Visibility static perLightVisibility;
 
@@ -1218,11 +1223,11 @@ auto Renderer::Impl::DrawGizmos(RenderTarget const* const rt) -> void {
   mLineGizmoVertexDataBuffer->Unmap();
 
   mImmediateContext->PSSetShader(mGizmoPs.Get(), nullptr, 0);
-  mImmediateContext->PSSetShaderResources(RES_SLOT_GIZMO_COLOR, 1, std::array{ mGizmoColorBuffer->GetSrv() }.data());
+  mImmediateContext->PSSetShaderResources(RES_SLOT_GIZMO_COLOR, 1, std::array{mGizmoColorBuffer->GetSrv()}.data());
 
   if (!mLineGizmoVertexData.empty()) {
     mImmediateContext->VSSetShader(mLineGizmoVs.Get(), nullptr, 0);
-    mImmediateContext->VSSetShaderResources(RES_SLOT_LINE_GIZMO_VERTEX, 1, std::array{ mLineGizmoVertexDataBuffer->GetSrv() }.data());
+    mImmediateContext->VSSetShaderResources(RES_SLOT_LINE_GIZMO_VERTEX, 1, std::array{mLineGizmoVertexDataBuffer->GetSrv()}.data());
     mImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
     mImmediateContext->DrawInstanced(2, static_cast<UINT>(mLineGizmoVertexData.size()), 0, 0);
   }
@@ -1256,19 +1261,19 @@ auto Renderer::Impl::StartUp() -> void {
 #endif
 
   if (FAILED(mDevice.As(&mDxgiDevice))) {
-    throw std::runtime_error{ "Failed to query IDXGIDevice interface." };
+    throw std::runtime_error{"Failed to query IDXGIDevice interface."};
   }
 
   SetInFlightFrameCount(2);
 
   ComPtr<IDXGIAdapter> dxgiAdapter;
   if (FAILED(mDxgiDevice->GetAdapter(dxgiAdapter.GetAddressOf()))) {
-    throw std::runtime_error{ "Failed to get IDXGIAdapter." };
+    throw std::runtime_error{"Failed to get IDXGIAdapter."};
   }
 
   ComPtr<IDXGIFactory2> dxgiFactory2;
   if (FAILED(dxgiAdapter->GetParent(IID_PPV_ARGS(dxgiFactory2.GetAddressOf())))) {
-    throw std::runtime_error{ "Failed to query IDXGIFactory2 interface." };
+    throw std::runtime_error{"Failed to query IDXGIFactory2 interface."};
   }
 
   mSwapChain = std::make_unique<SwapChain>(mDevice, dxgiFactory2.Get());
@@ -1308,7 +1313,7 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
       ? rt->GetDesc().height
       : gWindow.GetCurrentClientAreaSize().height
   };
-  auto const rtAspect{ static_cast<float>(rtWidth) / static_cast<float>(rtHeight) };
+  auto const rtAspect{static_cast<float>(rtWidth) / static_cast<float>(rtHeight)};
 
   RenderTarget::Desc const hdrRtDesc{
     .width = rtWidth,
@@ -1319,9 +1324,9 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
     .debugName = "Camera HDR RenderTarget"
   };
 
-  auto const& hdrRt{ GetTemporaryRenderTarget(hdrRtDesc) };
+  auto const& hdrRt{GetTemporaryRenderTarget(hdrRtDesc)};
 
-  FLOAT constexpr clearColor[]{ 0, 0, 0, 1 };
+  FLOAT constexpr clearColor[]{0, 0, 0, 1};
   mImmediateContext->ClearRenderTargetView(hdrRt.GetRtv(), clearColor);
 
 
@@ -1345,10 +1350,10 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
 
   D3D11_MAPPED_SUBRESOURCE mappedPerFrameCB;
   if (FAILED(mImmediateContext->Map(mPerFrameCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerFrameCB))) {
-    throw std::runtime_error{ "Failed to map per frame CB." };
+    throw std::runtime_error{"Failed to map per frame CB."};
   }
 
-  auto const perFrameCbData{ static_cast<PerFrameCB*>(mappedPerFrameCB.pData) };
+  auto const perFrameCbData{static_cast<PerFrameCB*>(mappedPerFrameCB.pData)};
   perFrameCbData->gPerFrameConstants.shadowCascadeCount = mCascadeCount;
   perFrameCbData->gPerFrameConstants.visualizeShadowCascades = mVisualizeShadowCascades;
   perFrameCbData->gPerFrameConstants.shadowFilteringMode = static_cast<int>(mShadowFilteringMode);
@@ -1358,20 +1363,20 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
   mImmediateContext->VSSetConstantBuffers(CB_SLOT_PER_FRAME, 1, mPerFrameCb.GetAddressOf());
   mImmediateContext->PSSetConstantBuffers(CB_SLOT_PER_FRAME, 1, mPerFrameCb.GetAddressOf());
 
-  auto const camPos{ cam.GetPosition() };
-  auto const camViewMtx{ cam.CalculateViewMatrix() };
-  auto const camProjMtx{ cam.CalculateProjectionMatrix(rtAspect) };
-  auto const camViewProjMtx{ camViewMtx * camProjMtx };
-  Frustum const camFrustWS{ camViewProjMtx };
+  auto const camPos{cam.GetPosition()};
+  auto const camViewMtx{cam.CalculateViewMatrix()};
+  auto const camProjMtx{cam.CalculateProjectionMatrix(rtAspect)};
+  auto const camViewProjMtx{camViewMtx * camProjMtx};
+  Frustum const camFrustWS{camViewProjMtx};
 
   Visibility static visibility;
   CullLights(camFrustWS, visibility);
 
   // Shadow pass
 
-  auto const shadowCascadeBoundaries{ CalculateCameraShadowCascadeBoundaries(cam) };
+  auto const shadowCascadeBoundaries{CalculateCameraShadowCascadeBoundaries(cam)};
 
-  ID3D11ShaderResourceView* const nullSrv{ nullptr };
+  ID3D11ShaderResourceView* const nullSrv{nullptr};
   mImmediateContext->PSSetShaderResources(RES_SLOT_PUNCTUAL_SHADOW_ATLAS, 1, &nullSrv);
   mImmediateContext->PSSetShaderResources(RES_SLOT_DIR_SHADOW_ATLAS, 1, &nullSrv);
   mImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -1401,7 +1406,7 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
 
   D3D11_MAPPED_SUBRESOURCE mappedCb;
   if (FAILED(mImmediateContext->Map(mDepthOnlyCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedCb))) {
-    throw std::runtime_error{ "Failed to map CB for depth pre-pass." };
+    throw std::runtime_error{"Failed to map CB for depth pre-pass."};
   }
   static_cast<DepthOnlyCB*>(mappedCb.pData)->gDepthOnlyViewProjMtx = camViewProjMtx;
   mImmediateContext->Unmap(mDepthOnlyCb.Get(), 0);
@@ -1413,10 +1418,10 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
 
   D3D11_MAPPED_SUBRESOURCE mappedPerCamCB;
   if (FAILED(mImmediateContext->Map(mPerCamCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerCamCB))) {
-    throw std::runtime_error{ "Failed to map per camera CB." };
+    throw std::runtime_error{"Failed to map per camera CB."};
   }
 
-  auto const perCamCbData{ static_cast<PerCameraCB*>(mappedPerCamCB.pData) };
+  auto const perCamCbData{static_cast<PerCameraCB*>(mappedPerCamCB.pData)};
   perCamCbData->gPerCamConstants.viewProjMtx = camViewProjMtx;
   perCamCbData->gPerCamConstants.camPos = camPos;
 
@@ -1426,9 +1431,9 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
 
   mImmediateContext->Unmap(mPerCamCb.Get(), 0);
 
-  auto const lightCount{ std::ssize(visibility.lightIndices) };
+  auto const lightCount{std::ssize(visibility.lightIndices)};
   mLightBuffer->Resize(static_cast<int>(lightCount));
-  auto const lightBufferData{ mLightBuffer->Map() };
+  auto const lightBufferData{mLightBuffer->Map()};
 
   for (int i = 0; i < lightCount; i++) {
     lightBufferData[i].color = mLights[visibility.lightIndices[i]]->GetColor();
@@ -1456,14 +1461,14 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
   mImmediateContext->VSSetShader(mMeshVs.Get(), nullptr, 0);
   mImmediateContext->VSSetConstantBuffers(CB_SLOT_PER_CAM, 1, mPerCamCb.GetAddressOf());
 
-  mImmediateContext->OMSetRenderTargets(1, std::array{ hdrRt.GetRtv() }.data(), hdrRt.GetDsv());
+  mImmediateContext->OMSetRenderTargets(1, std::array{hdrRt.GetRtv()}.data(), hdrRt.GetDsv());
   mImmediateContext->OMSetDepthStencilState(mDepthTestLessEqualNoWriteDss.Get(), 0);
 
   mImmediateContext->PSSetShader(mMeshPbrPs.Get(), nullptr, 0);
   mImmediateContext->PSSetConstantBuffers(CB_SLOT_PER_CAM, 1, mPerCamCb.GetAddressOf());
-  mImmediateContext->PSSetShaderResources(RES_SLOT_LIGHTS, 1, std::array{ mLightBuffer->GetSrv() }.data());
-  mImmediateContext->PSSetShaderResources(RES_SLOT_DIR_SHADOW_ATLAS, 1, std::array{ mDirectionalShadowAtlas->GetSrv() }.data());
-  mImmediateContext->PSSetShaderResources(RES_SLOT_PUNCTUAL_SHADOW_ATLAS, 1, std::array{ mPunctualShadowAtlas->GetSrv() }.data());
+  mImmediateContext->PSSetShaderResources(RES_SLOT_LIGHTS, 1, std::array{mLightBuffer->GetSrv()}.data());
+  mImmediateContext->PSSetShaderResources(RES_SLOT_DIR_SHADOW_ATLAS, 1, std::array{mDirectionalShadowAtlas->GetSrv()}.data());
+  mImmediateContext->PSSetShaderResources(RES_SLOT_PUNCTUAL_SHADOW_ATLAS, 1, std::array{mPunctualShadowAtlas->GetSrv()}.data());
 
   mImmediateContext->RSSetViewports(1, &viewport);
   mImmediateContext->RSSetState(nullptr);
@@ -1488,8 +1493,8 @@ auto Renderer::Impl::DrawAllCameras(RenderTarget const* const rt) -> void {
 
 
 auto Renderer::Impl::BindAndClearSwapChain() noexcept -> void {
-  FLOAT constexpr clearColor[]{ 0, 0, 0, 1 };
-  auto const rtv{ mSwapChain->GetRtv() };
+  FLOAT constexpr clearColor[]{0, 0, 0, 1};
+  auto const rtv{mSwapChain->GetRtv()};
   mImmediateContext->ClearRenderTargetView(rtv, clearColor);
   mImmediateContext->OMSetRenderTargets(1, &rtv, nullptr);
 }
@@ -1592,7 +1597,7 @@ auto Renderer::Impl::CullLights(Frustum const& frustumWS, Visibility& visibility
   visibility.lightIndices.clear();
 
   for (int lightIdx = 0; lightIdx < static_cast<int>(mLights.size()); lightIdx++) {
-    switch (auto const light{ mLights[lightIdx] }; light->GetType()) {
+    switch (auto const light{mLights[lightIdx]}; light->GetType()) {
       case LightComponent::Type::Directional: {
         visibility.lightIndices.emplace_back(lightIdx);
         break;
@@ -1601,11 +1606,11 @@ auto Renderer::Impl::CullLights(Frustum const& frustumWS, Visibility& visibility
       case LightComponent::Type::Spot: {
         auto const lightVerticesWS{
           [light] {
-            auto vertices{ CalculateSpotLightLocalVertices(*light) };
+            auto vertices{CalculateSpotLightLocalVertices(*light)};
 
-            for (auto const modelMtxNoScale{ CalculateModelMatrixNoScale(light->GetEntity().GetTransform()) };
+            for (auto const modelMtxNoScale{CalculateModelMatrixNoScale(light->GetEntity().GetTransform())};
                  auto& vertex : vertices) {
-              vertex = Vector3{ Vector4{ vertex, 1 } * modelMtxNoScale };
+              vertex = Vector3{Vector4{vertex, 1} * modelMtxNoScale};
             }
 
             return vertices;
@@ -1621,7 +1626,7 @@ auto Renderer::Impl::CullLights(Frustum const& frustumWS, Visibility& visibility
 
       case LightComponent::Type::Point: {
         BoundingSphere const boundsWS{
-          .center = Vector3{ light->GetEntity().GetTransform().GetWorldPosition() },
+          .center = Vector3{light->GetEntity().GetTransform().GetWorldPosition()},
           .radius = light->GetRange()
         };
 
@@ -1659,7 +1664,7 @@ auto Renderer::Impl::GetShadowCascadeCount() noexcept -> int {
 
 auto Renderer::Impl::SetShadowCascadeCount(int const cascadeCount) noexcept -> void {
   mCascadeCount = std::clamp(cascadeCount, 1, MAX_CASCADE_COUNT);
-  int const splitCount{ mCascadeCount - 1 };
+  int const splitCount{mCascadeCount - 1};
 
   for (int i = 1; i < splitCount; i++) {
     mCascadeSplits[i] = std::max(mCascadeSplits[i - 1], mCascadeSplits[i]);
@@ -1673,12 +1678,12 @@ auto Renderer::Impl::GetMaxShadowCascadeCount() noexcept -> int {
 
 
 auto Renderer::Impl::GetNormalizedShadowCascadeSplits() noexcept -> std::span<float const> {
-  return { std::begin(mCascadeSplits), static_cast<std::size_t>(mCascadeCount - 1) };
+  return {std::begin(mCascadeSplits), static_cast<std::size_t>(mCascadeCount - 1)};
 }
 
 
 auto Renderer::Impl::SetNormalizedShadowCascadeSplit(int const idx, float const split) noexcept -> void {
-  auto const splitCount{ mCascadeCount - 1 };
+  auto const splitCount{mCascadeCount - 1};
 
   if (idx < 0 || idx >= splitCount) {
     return;
@@ -1748,7 +1753,7 @@ auto Renderer::Impl::SetInFlightFrameCount(int const count) -> void {
   mInFlightFrameCount = std::clamp(count, MIN_IN_FLIGHT_FRAME_COUNT, MAX_IN_FLIGHT_FRAME_COUNT);
 
   if (FAILED(mDxgiDevice->SetMaximumFrameLatency(mInFlightFrameCount))) {
-    throw std::runtime_error{ "Failed to set in-flight frame count." };
+    throw std::runtime_error{"Failed to set in-flight frame count."};
   }
 }
 
