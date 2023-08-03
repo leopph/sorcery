@@ -151,10 +151,6 @@ auto ReflectionSerializeToYaml(rttr::variant const& v, std::function<YAML::Node(
     return {};
   }
 
-  if (v.get_type().is_enumeration()) {
-    return {}; // TODO
-  }
-
   if (v.get_type().is_class()) {
     YAML::Node node;
 
@@ -366,10 +362,6 @@ auto ReflectionDeserializeFromYaml(YAML::Node const& node, rttr::variant& v, std
 
   if (v.is_associative_container()) {
     return;
-  }
-
-  if (v.get_type().is_enumeration()) {
-    return; // TODO
   }
 
   if (v.get_type().is_class()) {
