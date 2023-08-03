@@ -56,6 +56,10 @@ auto ReflectionSerializeToYaml(Object const& obj, std::function<YAML::Node(rttr:
 
 
 auto ReflectionSerializeToYaml(rttr::variant const& v, std::function<YAML::Node(rttr::variant const&)> const& extensionFunc) -> YAML::Node {
+  if (v.get_type() == rttr::type::get<bool>()) {
+    return YAML::Node{ v.get_value<bool>() };
+  }
+
   if (v.get_type() == rttr::type::get<char>()) {
     return YAML::Node{ v.get_value<char>() };
   }
@@ -189,6 +193,13 @@ auto ReflectionDeserializeFromYaml(YAML::Node const& node, Object& obj, std::fun
 
 auto ReflectionDeserializeFromYaml(YAML::Node const& node, rttr::variant& v, std::function<void(YAML::Node const&, rttr::variant&)> const& extensionFunc) -> void {
   if (node.IsNull()) {
+    return;
+  }
+
+  if (v.get_type() == rttr::type::get<bool>()) {
+    try {
+      v = node.as<bool>();
+    } catch (...) {}
     return;
   }
 
