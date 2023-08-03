@@ -120,6 +120,14 @@ auto ReflectionSerializeToYaml(rttr::variant const& v, std::function<YAML::Node(
     return YAML::Node{ v.get_value<std::string>() };
   }
 
+  if (v.get_type().is_enumeration()) {
+    auto const enumeration{ v.get_type().get_enumeration() };
+    auto underlying{ v };
+    auto const success{ underlying.convert(enumeration.get_underlying_type()) };
+    assert(success);
+    return ReflectionSerializeToYaml(underlying, extensionFunc);
+  }
+
   if (v.get_type().is_pointer() && v.get_type().get_raw_type().is_derived_from(rttr::type::get<Resource>())) {
     return YAML::Node{ v.get_value<ObserverPtr<Resource>>()->GetGuid() };
   }
@@ -192,7 +200,7 @@ auto ReflectionDeserializeFromYaml(YAML::Node const& node, Object& obj, std::fun
 
 
 auto ReflectionDeserializeFromYaml(YAML::Node const& node, rttr::variant& v, std::function<void(YAML::Node const&, rttr::variant&)> const& extensionFunc) -> void {
-  if (node.IsNull()) {
+  if (node.IsNull() || !v.get_type().is_valid()) {
     return;
   }
 
@@ -305,6 +313,21 @@ auto ReflectionDeserializeFromYaml(YAML::Node const& node, rttr::variant& v, std
     try {
       v = node.as<std::string>();
     } catch (...) { }
+    return;
+  }
+
+  if (v.get_type().is_enumeration()) {
+    auto const enumeration{ v.get_type().get_enumeration() };
+    assert(enumeration.is_valid());
+    auto copy{ v };
+    assert(copy.is_valid());
+    auto success{ copy.convert(enumeration.get_underlying_type()) };
+    assert(success);
+    ReflectionDeserializeFromYaml(node, copy, extensionFunc);
+    assert(copy.is_valid());
+    success = copy.convert(enumeration.get_type());
+    assert(success);
+    v = copy;
     return;
   }
 
