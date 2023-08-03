@@ -26,7 +26,7 @@ auto Application::HandleUnknownBackgroundThreadException() -> void {
 
 
 Application::Application(ImGuiIO& imGuiIO) :
-  mImGuiIo{ imGuiIO } {
+  mImGuiIo{imGuiIO} {
   gWindow.OnWindowFocusGain.add_handler(this, &OnWindowFocusGain);
   SetImGuiContext(*ImGui::GetCurrentContext());
 }
@@ -64,10 +64,12 @@ auto Application::GetScene() const noexcept -> Scene& {
 
 
 auto Application::OpenScene(Scene& scene) -> void {
-  scene.Load();
-  assert(mScene);
-  mScene->Clear();
-  mScene = std::addressof(scene);
+  if (std::addressof(scene) != mScene) {
+    scene.Load();
+    assert(mScene);
+    mScene->Clear();
+    mScene = std::addressof(scene);
+  }
 }
 
 
@@ -78,7 +80,7 @@ auto Application::SaveCurrentSceneToFile() -> void {
     mResourceDB.SaveResource(*mScene);
   } else {
     if (nfdchar_t* dst; NFD_SaveDialog(NativeResourceImporter::SCENE_FILE_EXT.substr(1).data(), mResourceDB.GetResourceDirectoryAbsolutePath().string().c_str(), &dst) == NFD_OKAY) {
-      if (auto const dstResDirRel{ relative(std::filesystem::path{ dst }, mResourceDB.GetResourceDirectoryAbsolutePath()) += NativeResourceImporter::SCENE_FILE_EXT }; !dstResDirRel.empty()) {
+      if (auto const dstResDirRel{relative(std::filesystem::path{dst}, mResourceDB.GetResourceDirectoryAbsolutePath()) += NativeResourceImporter::SCENE_FILE_EXT}; !dstResDirRel.empty()) {
         mResourceDB.CreateResource(*mScene, dstResDirRel);
       }
       std::free(dst);
@@ -116,7 +118,7 @@ auto Application::IsEditorBusy() const noexcept -> bool {
 
 
 auto Application::OnEnterBusyExecution() -> BusyExecutionContext {
-  bool isBusy{ false };
+  bool isBusy{false};
   while (!mBusy.compare_exchange_weak(isBusy, true)) {}
 
   BusyExecutionContext const ret{
