@@ -24,7 +24,6 @@
 #include "LoadingScreen.hpp"
 #include "MainMenuBar.hpp"
 #include "PropertiesWindow.hpp"
-#include "OpenScenePrompt.hpp"
 #include "PerformanceCounterWindow.hpp"
 #include "PhysicsManager.hpp"
 #include "ProjectWindow.hpp"

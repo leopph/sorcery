@@ -102,7 +102,6 @@
     <ClCompile Include="src\MainMenuBar.cpp" />
     <ClCompile Include="src\PropertiesWindow.cpp" />
     <ClCompile Include="src\Main.cpp" />
-    <ClCompile Include="src\OpenScenePrompt.cpp" />
     <ClCompile Include="src\PerformanceCounterWindow.cpp" />
     <ClCompile Include="src\ProjectSettingsWindow.cpp" />
     <ClCompile Include="src\ProjectWindow.cpp" />
@@ -125,7 +124,6 @@
     <ClInclude Include="src\MainMenuBar.hpp" />
     <ClInclude Include="src\PropertiesWindow.hpp" />
     <ClInclude Include="src\ResourceDB.hpp" />
-    <ClInclude Include="src\OpenScenePrompt.hpp" />
     <ClInclude Include="src\PerformanceCounterWindow.hpp" />
     <ClInclude Include="src\ProjectSettingsWindow.hpp" />
     <ClInclude Include="src\ProjectWindow.hpp" />

@@ -48,9 +48,6 @@
     <ClCompile Include="src\ProjectWindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\OpenScenePrompt.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\PerformanceCounterWindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -102,9 +99,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\ProjectWindow.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\OpenScenePrompt.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\PerformanceCounterWindow.hpp">
