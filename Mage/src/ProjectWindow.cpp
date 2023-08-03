@@ -8,6 +8,7 @@
 #include "Material.hpp"
 #include "Util.hpp"
 #include "Platform.hpp"
+#include "ReflectionDisplayProperties.hpp"
 
 #include <nfd.h>
 #include <imgui_stdlib.h>
@@ -48,7 +49,7 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& resDirAbs, s
                                               : "", pathAbs.stem().string()).c_str(), treeNodeFlags)) {
     if (ImGui::IsItemClicked()) {
       mSelectedPathResDirRel = thisPathResDirRel;
-      mContext->SetSelectedObject(gResourceManager.LoadResource(mContext->GetResourceDatabase().PathToGuid(pathAbs)));
+      mApp->SetSelectedObject(gResourceManager.LoadResource(mApp->GetResourceDatabase().PathToGuid(pathAbs)));
     }
 
     if (isRenaming) {
@@ -59,14 +60,14 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& resDirAbs, s
         auto const newNodePathAbs{ mRenameInfo->nodePathAbs.parent_path() / mRenameInfo->newName += mRenameInfo->nodePathAbs.extension() };
 
         if (!isThisNodeDirectory) {
-          auto renamedAsset{ mContext->GetResources().UnregisterAsset(mRenameInfo->nodePathAbs) };
+          auto renamedAsset{ mApp->GetResources().UnregisterAsset(mRenameInfo->nodePathAbs) };
 
-          auto const oldAssetMetaPath{ std::filesystem::path{ mRenameInfo->nodePathAbs } += mContext->GetAssetFileExtension() };
-          auto const newAssetMetaPath{ std::filesystem::path{ newNodePathAbs } += mContext->GetAssetFileExtension() };
+          auto const oldAssetMetaPath{ std::filesystem::path{ mRenameInfo->nodePathAbs } += mApp->GetAssetFileExtension() };
+          auto const newAssetMetaPath{ std::filesystem::path{ newNodePathAbs } += mApp->GetAssetFileExtension() };
           std::filesystem::rename(oldAssetMetaPath, newAssetMetaPath);
 
           renamedAsset->SetName(newNodePathAbs.stem().string());
-          mContext->GetResources().RegisterAsset(std::move(renamedAsset), newNodePathAbs);
+          mApp->GetResources().RegisterAsset(std::move(renamedAsset), newNodePathAbs);
         }
 
         std::filesystem::rename(mRenameInfo->nodePathAbs, newNodePathAbs);
@@ -111,21 +112,21 @@ auto ProjectWindow::OpenFileDialog(std::string_view const filters, std::string_v
 
 
 ProjectWindow::ProjectWindow(Application& context) :
-  mContext{&context} { }
+  mApp{&context} { }
 
 
 auto ProjectWindow::Draw() -> void {
   if (ImGui::Begin("Project", &mIsOpen, ImGuiWindowFlags_NoCollapse)) {
-    if ((!ImGui::IsWindowHovered() && (ImGui::IsMouseClicked(ImGuiMouseButton_Left) || ImGui::IsMouseClicked(ImGuiMouseButton_Right))) || (!mSelectedPathResDirRel.empty() && !exists(mContext->GetProjectDirectoryAbsolute() / mSelectedPathResDirRel))) {
+    if ((!ImGui::IsWindowHovered() && (ImGui::IsMouseClicked(ImGuiMouseButton_Left) || ImGui::IsMouseClicked(ImGuiMouseButton_Right))) || (!mSelectedPathResDirRel.empty() && !exists(mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath() / mSelectedPathResDirRel))) {
       mSelectedPathResDirRel.clear();
     }
 
-    DrawFilesystemTree(mContext->GetResourceDatabase().GetResourceDirectoryAbsolutePath(), {});
+    DrawFilesystemTree(mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath(), {});
 
     std::filesystem::path const selectedPathAbs{
       mSelectedPathResDirRel.empty()
-        ? mContext->GetResourceDatabase().GetResourceDirectoryAbsolutePath()
-        : mContext->GetResourceDatabase().GetResourceDirectoryAbsolutePath() / mSelectedPathResDirRel
+        ? mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath()
+        : mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath() / mSelectedPathResDirRel
     };
 
     std::filesystem::path const workingDirAbs{
@@ -134,40 +135,72 @@ auto ProjectWindow::Draw() -> void {
         : selectedPathAbs.parent_path()
     };
 
+    auto constexpr contextMenuId{"Context Menu"};
+    auto constexpr importModalId{"Importer Settings"};
+
     if (ImGui::IsWindowHovered(ImGuiHoveredFlags_RootWindow) && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
-      ImGui::OpenPopup(CONTEXT_MENU_ID);
+      ImGui::OpenPopup(contextMenuId);
     }
 
-    if (ImGui::BeginPopup(CONTEXT_MENU_ID)) {
+    bool openImportModal{false};
+
+    if (ImGui::BeginPopup(contextMenuId)) {
       if (ImGui::BeginMenu("New")) {
         if (ImGui::MenuItem("Folder")) {
           auto const newFolderPathAbs{GenerateUniquePath(workingDirAbs / "New Folder")};
           create_directory(newFolderPathAbs);
 
-          mSelectedPathResDirRel = newFolderPathAbs.lexically_relative(mContext->GetResourceDatabase().GetResourceDirectoryAbsolutePath());
-          mContext->SetSelectedObject(nullptr);
+          mSelectedPathResDirRel = newFolderPathAbs.lexically_relative(mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath());
+          mApp->SetSelectedObject(nullptr);
           mRenameInfo = RenameInfo{.newName = newFolderPathAbs.stem().string(), .nodePathAbs = newFolderPathAbs};
         }
 
         if (ImGui::MenuItem("Material")) {
-          mContext->GetResourceDatabase().CreateResource(*new Material{}, workingDirAbs / "New Material.mtl");
+          mApp->GetResourceDatabase().CreateResource(*new Material{}, workingDirAbs / "New Material.mtl");
         }
 
-        if (ImGui::MenuItem("Scene##CreateSceneAsset")) {
-          mContext->GetResourceDatabase().CreateResource(*new Scene{}, workingDirAbs / "New Scene.scene");
+        if (ImGui::MenuItem("Scene")) {
+          mApp->GetResourceDatabase().CreateResource(*new Scene{}, workingDirAbs / "New Scene.scene");
         }
 
         ImGui::EndMenu();
       }
 
+
       if (ImGui::MenuItem("Import")) {
-        if (std::filesystem::path srcPathAbs; OpenFileDialog("", "", srcPathAbs)) {
-          if (srcPathAbs.lexically_relative(mContext->GetResourceDatabase().GetResourceDirectoryAbsolutePath()).empty()) {
-            auto const dstPathAbs{workingDirAbs / srcPathAbs.filename()};
-            copy_file(srcPathAbs, dstPathAbs);
-            mContext->GetResourceDatabase().ImportResource(dstPathAbs.lexically_relative(mContext->GetResourceDatabase().GetResourceDirectoryAbsolutePath()));
+        if (std::filesystem::path srcPathAbs; OpenFileDialog("", "", srcPathAbs) && srcPathAbs.lexically_relative(mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath()).empty()) {
+          auto const dstPathAbs{workingDirAbs / srcPathAbs.filename()};
+          copy_file(srcPathAbs, dstPathAbs);
+          auto const dstPathResDirRel{dstPathAbs.lexically_relative(mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath())};
+
+          if (auto const importerNode{mApp->GetResourceDatabase().FindImporterForResourceFile(dstPathResDirRel)}; !importerNode.IsNull()) {
+            mImportModal.node = importerNode;
+            mImportModal.dstPathResDirRel = dstPathResDirRel;
+
+            openImportModal = true;
           }
         }
+      }
+
+      ImGui::EndPopup();
+    }
+
+    if (openImportModal) {
+      ImGui::OpenPopup(importModalId);
+    }
+
+    if (ImGui::BeginPopupModal(importModalId)) {
+      ReflectionDisplayProperties(mImportModal.node);
+
+      if (ImGui::Button("Cancel")) {
+        ImGui::CloseCurrentPopup();
+      }
+
+      ImGui::SameLine();
+
+      if (ImGui::Button("Import")) {
+        mApp->GetResourceDatabase().ImportResource(mImportModal.dstPathResDirRel);
+        ImGui::CloseCurrentPopup();
       }
 
       ImGui::EndPopup();

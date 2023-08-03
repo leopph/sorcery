@@ -14,7 +14,7 @@ class ResourceDB {
   std::map<Guid, std::filesystem::path> mGuidToAbsPath;
   std::map<std::filesystem::path, Guid> mAbsPathToGuid;
 
-  constexpr static std::string_view RESOURCE_DIR_PROJ_REL{ "Resources" };
+  constexpr static std::string_view RESOURCE_DIR_PROJ_REL{"Resources"};
 
   // Uses the passed mappings to store the results and does not update the ResourceManager's mappings.
   auto InternalImportResource(std::filesystem::path const& targetPathResDirRel, std::map<Guid, std::filesystem::path>& guidToAbsPath, std::map<std::filesystem::path, Guid>& absPathToGuid) const -> void;
@@ -33,5 +33,7 @@ public:
   [[nodiscard]] auto PathToGuid(std::filesystem::path const& pathResDirRel) -> Guid;
 
   [[nodiscard]] auto GenerateUniqueResourceDirectoryRelativePath(std::filesystem::path const& targetPathResDirRel) const -> std::filesystem::path;
+
+  [[nodiscard]] auto FindImporterForResourceFile(std::filesystem::path const& targetPathResDirRel) const -> YAML::Node;
 };
 }

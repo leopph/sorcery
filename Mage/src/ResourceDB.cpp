@@ -11,40 +11,27 @@
 
 namespace sorcery::mage {
 auto ResourceDB::InternalImportResource(std::filesystem::path const& targetPathResDirRel, std::map<Guid, std::filesystem::path>& guidToAbsPath, std::map<std::filesystem::path, Guid>& absPathToGuid) const -> void {
-  auto const targetPathAbs{ mResDirAbs / targetPathResDirRel };
+  auto const importerNode{FindImporterForResourceFile(targetPathResDirRel)};
 
-  for (auto const& importerType : rttr::type::get<ResourceImporter>().get_derived_classes()) {
-    auto importerVariant{ importerType.create() };
-    auto& importer{ rttr::variant_cast<ResourceImporter&>(importerVariant) };
-
-    static std::vector<std::string> supportedExtensions;
-    supportedExtensions.clear();
-    importer.GetSupportedFileExtensions(supportedExtensions);
-
-    for (auto const& ext : supportedExtensions) {
-      if (ext == targetPathAbs.extension()) {
-        YAML::Node importerNode;
-        importerNode["type"] = importerType.get_name().to_string();
-        importerNode["properties"] = ReflectionSerializeToYaml(importerVariant);
-
-        auto const guid{ Guid::Generate() };
-
-        YAML::Node metaNode;
-        metaNode["guid"] = guid;
-        metaNode["importer"] = importerNode;
-
-        std::ofstream outMetaStream{ ResourceManager::GetMetaPath(targetPathAbs) };
-        YAML::Emitter metaEmitter{ outMetaStream };
-        metaEmitter << metaNode;
-        outMetaStream.flush();
-
-        guidToAbsPath.insert_or_assign(guid, targetPathAbs);
-        absPathToGuid.insert_or_assign(targetPathAbs, guid);
-
-        return;
-      }
-    }
+  if (importerNode.IsNull()) {
+    return;
   }
+
+  auto const guid{Guid::Generate()};
+
+  YAML::Node metaNode;
+  metaNode["guid"] = guid;
+  metaNode["importer"] = importerNode;
+
+  auto const targetPathAbs{mResDirAbs / targetPathResDirRel};
+
+  std::ofstream outMetaStream{ResourceManager::GetMetaPath(targetPathAbs)};
+  YAML::Emitter metaEmitter{outMetaStream};
+  metaEmitter << metaNode;
+  outMetaStream.flush();
+
+  guidToAbsPath.insert_or_assign(guid, targetPathAbs);
+  absPathToGuid.insert_or_assign(targetPathAbs, guid);
 }
 
 
@@ -52,11 +39,11 @@ auto ResourceDB::Refresh() -> void {
   std::map<Guid, std::filesystem::path> newGuidToAbsPath;
   std::map<std::filesystem::path, Guid> newAbsPathToGuid;
 
-  for (auto const& entry : std::filesystem::recursive_directory_iterator{ mResDirAbs }) {
+  for (auto const& entry : std::filesystem::recursive_directory_iterator{mResDirAbs}) {
     if (ResourceManager::IsMetaFile(entry.path())) {
-      auto const metaNode{ YAML::LoadFile(entry.path().string()) };
-      auto const guid{ metaNode["guid"].as<Guid>() };
-      auto const resPathAbs{ std::filesystem::path{ entry.path() }.replace_extension() };
+      auto const metaNode{YAML::LoadFile(entry.path().string())};
+      auto const guid{metaNode["guid"].as<Guid>()};
+      auto const resPathAbs{std::filesystem::path{entry.path()}.replace_extension()};
 
       newGuidToAbsPath.emplace(guid, resPathAbs);
       newAbsPathToGuid.emplace(resPathAbs, guid);
@@ -105,10 +92,10 @@ auto ResourceDB::CreateResource(NativeResource& res, std::filesystem::path const
     res.SetGuid(Guid::Generate());
   }
 
-  auto const resNode{ res.Serialize() };
-  auto const targetPathAbs{ mResDirAbs / targetPathResDirRel };
-  std::ofstream outResStream{ targetPathAbs };
-  YAML::Emitter resEmitter{ outResStream };
+  auto const resNode{res.Serialize()};
+  auto const targetPathAbs{mResDirAbs / targetPathResDirRel};
+  std::ofstream outResStream{targetPathAbs};
+  YAML::Emitter resEmitter{outResStream};
   resEmitter << resNode;
 
   YAML::Node importerNode;
@@ -119,8 +106,8 @@ auto ResourceDB::CreateResource(NativeResource& res, std::filesystem::path const
   metaNode["guid"] = res.GetGuid();
   metaNode["importer"] = importerNode;
 
-  std::ofstream outMetaStream{ ResourceManager::GetMetaPath(targetPathAbs) };
-  YAML::Emitter metaEmitter{ outMetaStream };
+  std::ofstream outMetaStream{ResourceManager::GetMetaPath(targetPathAbs)};
+  YAML::Emitter metaEmitter{outMetaStream};
   metaEmitter << metaNode;
 
   res.SetName(targetPathResDirRel.stem().string());
@@ -134,9 +121,9 @@ auto ResourceDB::CreateResource(NativeResource& res, std::filesystem::path const
 
 
 auto ResourceDB::SaveResource(NativeResource const& res) -> void {
-  if (auto const it{ mGuidToAbsPath.find(res.GetGuid()) }; it != std::end(mGuidToAbsPath)) {
-    std::ofstream outStream{ it->second };
-    YAML::Emitter emitter{ outStream };
+  if (auto const it{mGuidToAbsPath.find(res.GetGuid())}; it != std::end(mGuidToAbsPath)) {
+    std::ofstream outStream{it->second};
+    YAML::Emitter emitter{outStream};
     emitter << res.Serialize();
   }
 }
@@ -149,16 +136,16 @@ auto ResourceDB::ImportResource(std::filesystem::path const& targetPathResDirRel
 
 
 auto ResourceDB::MoveResource(Guid const& guid, std::filesystem::path const& targetPathResDirRel) -> void {
-  auto const it{ mGuidToAbsPath.find(guid) };
+  auto const it{mGuidToAbsPath.find(guid)};
 
   if (it == std::end(mGuidToAbsPath)) {
     return;
   }
 
-  auto const srcPathAbs{ it->second };
-  auto const srcMetaPathAbs{ ResourceManager::GetMetaPath(srcPathAbs) };
-  auto const dstPathAbs{ mResDirAbs / targetPathResDirRel };
-  auto const dstMetaPathAbs{ ResourceManager::GetMetaPath(dstPathAbs) };
+  auto const srcPathAbs{it->second};
+  auto const srcMetaPathAbs{ResourceManager::GetMetaPath(srcPathAbs)};
+  auto const dstPathAbs{mResDirAbs / targetPathResDirRel};
+  auto const dstMetaPathAbs{ResourceManager::GetMetaPath(dstPathAbs)};
 
   if (!exists(srcPathAbs) || !exists(srcMetaPathAbs) || exists(dstPathAbs) || exists(dstMetaPathAbs)) {
     return;
@@ -167,7 +154,7 @@ auto ResourceDB::MoveResource(Guid const& guid, std::filesystem::path const& tar
   rename(srcPathAbs, dstPathAbs);
   rename(srcMetaPathAbs, dstMetaPathAbs);
 
-  if (auto const rh{ gResourceManager.LoadResource(guid) }) {
+  if (auto const rh{gResourceManager.LoadResource(guid)}) {
     rh->SetName(dstMetaPathAbs.stem().string());
   }
 
@@ -176,7 +163,7 @@ auto ResourceDB::MoveResource(Guid const& guid, std::filesystem::path const& tar
 
 
 auto ResourceDB::DeleteResource(Guid const& guid) -> void {
-  if (auto const it{ mGuidToAbsPath.find(guid) }; it != std::end(mGuidToAbsPath)) {
+  if (auto const it{mGuidToAbsPath.find(guid)}; it != std::end(mGuidToAbsPath)) {
     gResourceManager.Unload(guid);
     mAbsPathToGuid.erase(it->second);
     mGuidToAbsPath.erase(it);
@@ -191,7 +178,7 @@ auto ResourceDB::IsSavedResource(NativeResource const& res) const -> bool {
 
 
 auto ResourceDB::PathToGuid(std::filesystem::path const& pathResDirRel) -> Guid {
-  if (auto const it{ mAbsPathToGuid.find(GetResourceDirectoryAbsolutePath() / pathResDirRel) }; it != std::end(mAbsPathToGuid)) {
+  if (auto const it{mAbsPathToGuid.find(GetResourceDirectoryAbsolutePath() / pathResDirRel)}; it != std::end(mAbsPathToGuid)) {
     return it->second;
   }
 
@@ -201,5 +188,30 @@ auto ResourceDB::PathToGuid(std::filesystem::path const& pathResDirRel) -> Guid 
 
 auto ResourceDB::GenerateUniqueResourceDirectoryRelativePath(std::filesystem::path const& targetPathResDirRel) const -> std::filesystem::path {
   return GenerateUniquePath(mResDirAbs / targetPathResDirRel);
+}
+
+
+auto ResourceDB::FindImporterForResourceFile(std::filesystem::path const& targetPathResDirRel) const -> YAML::Node {
+  auto const targetPathAbs{mResDirAbs / targetPathResDirRel};
+
+  for (auto const& importerType : rttr::type::get<ResourceImporter>().get_derived_classes()) {
+    auto importerVariant{importerType.create()};
+    auto& importer{rttr::variant_cast<ResourceImporter&>(importerVariant)};
+
+    static std::vector<std::string> supportedExtensions;
+    supportedExtensions.clear();
+    importer.GetSupportedFileExtensions(supportedExtensions);
+
+    for (auto const& ext : supportedExtensions) {
+      if (ext == targetPathAbs.extension()) {
+        YAML::Node importerNode;
+        importerNode["type"] = importerType.get_name().to_string();
+        importerNode["properties"] = ReflectionSerializeToYaml(importerVariant);
+        return importerNode;
+      }
+    }
+  }
+
+  return {};
 }
 }

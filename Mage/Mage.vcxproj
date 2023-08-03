@@ -105,6 +105,7 @@
     <ClCompile Include="src\PerformanceCounterWindow.cpp" />
     <ClCompile Include="src\ProjectSettingsWindow.cpp" />
     <ClCompile Include="src\ProjectWindow.cpp" />
+    <ClCompile Include="src\ReflectionDisplayProperties.cpp" />
     <ClCompile Include="src\ResourceDB.cpp" />
     <ClCompile Include="src\SceneViewWindow.cpp" />
     <ClCompile Include="src\StartupScreen.cpp" />
@@ -123,6 +124,7 @@
     <ClInclude Include="src\LoadingScreen.hpp" />
     <ClInclude Include="src\MainMenuBar.hpp" />
     <ClInclude Include="src\PropertiesWindow.hpp" />
+    <ClInclude Include="src\ReflectionDisplayProperties.hpp" />
     <ClInclude Include="src\ResourceDB.hpp" />
     <ClInclude Include="src\PerformanceCounterWindow.hpp" />
     <ClInclude Include="src\ProjectSettingsWindow.hpp" />
