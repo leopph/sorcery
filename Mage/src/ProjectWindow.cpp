@@ -17,7 +17,8 @@
 
 
 namespace sorcery::mage {
-auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& resDirAbs, std::filesystem::path const& thisPathResDirRel) -> void {
+auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& resDirAbs, std::filesystem::path const& thisPathResDirRel) noexcept -> bool {
+  auto ret{false};
   auto pathAbs{canonical(resDirAbs / thisPathResDirRel)};
   auto const isSelected{equivalent(pathAbs, resDirAbs / mSelectedPathResDirRel)};
   auto const isRenaming{mRenameInfo && equivalent(mRenameInfo->nodePathAbs, pathAbs)};
@@ -90,6 +91,7 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& resDirAbs, s
         }
 
         pathAbs = newPathAbs;
+        ret = true;
       }
 
       if ((!ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) || ImGui::IsKeyPressed(ImGuiKey_Escape)) {
@@ -102,13 +104,18 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& resDirAbs, s
     if (isDirectory) {
       for (auto const& entry : std::filesystem::directory_iterator{pathAbs}) {
         if (entry.path().extension() != ResourceManager::RESOURCE_META_FILE_EXT) {
-          DrawFilesystemTree(resDirAbs, relative(entry.path(), resDirAbs));
+          if (DrawFilesystemTree(resDirAbs, relative(entry.path(), resDirAbs))) {
+            // The directory_iterator does not guarantee anything when the directory tree changes, it's safer to skip the rest of the frame.
+            break;
+          }
         }
       }
     }
 
     ImGui::TreePop();
   }
+
+  return ret;
 }
 
 
@@ -133,7 +140,7 @@ auto ProjectWindow::Draw() -> void {
       mSelectedPathResDirRel.clear();
     }
 
-    DrawFilesystemTree(mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath(), {});
+    std::ignore = DrawFilesystemTree(mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath(), {});
 
     std::filesystem::path const selectedPathAbs{
       mSelectedPathResDirRel.empty()
