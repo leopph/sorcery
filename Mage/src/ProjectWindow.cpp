@@ -17,12 +17,12 @@
 
 namespace sorcery::mage {
 auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& resDirAbs, std::filesystem::path const& thisPathResDirRel) -> void {
-  auto const pathAbs{ canonical(resDirAbs / thisPathResDirRel) };
-  auto const isSelected{ equivalent(pathAbs, resDirAbs / mSelectedPathResDirRel) };
-  auto const isRenaming{ mRenameInfo && equivalent(mRenameInfo->nodePathAbs, pathAbs) };
-  auto const isDirectory{ is_directory(pathAbs) };
+  auto const pathAbs{canonical(resDirAbs / thisPathResDirRel)};
+  auto const isSelected{equivalent(pathAbs, resDirAbs / mSelectedPathResDirRel)};
+  auto const isRenaming{mRenameInfo && equivalent(mRenameInfo->nodePathAbs, pathAbs)};
+  auto const isDirectory{is_directory(pathAbs)};
 
-  ImGuiTreeNodeFlags treeNodeFlags{ ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_FramePadding | ImGuiTreeNodeFlags_OpenOnDoubleClick };
+  ImGuiTreeNodeFlags treeNodeFlags{ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_FramePadding | ImGuiTreeNodeFlags_OpenOnDoubleClick};
 
   if (!isDirectory) {
     treeNodeFlags |= ImGuiTreeNodeFlags_Leaf;
@@ -41,7 +41,7 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& resDirAbs, s
     treeNodeFlags |= ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_SpanFullWidth;
   }
 
-  auto const treeNodePos{ ImGui::GetCursorPos() };
+  auto const treeNodePos{ImGui::GetCursorPos()};
 
   if (ImGui::TreeNodeEx(std::format("{}{}", isRenaming
                                               ? "##"
@@ -83,11 +83,11 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& resDirAbs, s
         mRenameInfo.reset();
       }
     } else if ((ImGui::IsItemHovered() && ImGui::GetMouseClickedCount(ImGuiMouseButton_Left) == 3) || (isSelected && ImGui::IsKeyPressed(ImGuiKey_F2, false))) {
-      mRenameInfo = RenameInfo{ .newName = pathAbs.stem().string(), .nodePathAbs = pathAbs };
+      mRenameInfo = RenameInfo{.newName = pathAbs.stem().string(), .nodePathAbs = pathAbs};
     }
 
     if (isDirectory) {
-      for (auto const& entry : std::filesystem::directory_iterator{ pathAbs }) {
+      for (auto const& entry : std::filesystem::directory_iterator{pathAbs}) {
         if (entry.path().extension() != ResourceManager::RESOURCE_META_FILE_EXT) {
           DrawFilesystemTree(resDirAbs, relative(entry.path(), resDirAbs));
         }
@@ -100,7 +100,7 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& resDirAbs, s
 
 
 auto ProjectWindow::OpenFileDialog(std::string_view const filters, std::string_view const defaultPath, std::filesystem::path& out) -> bool {
-  if (nfdchar_t* selectedPath{ nullptr }; NFD_OpenDialog(filters.data(), defaultPath.data(), &selectedPath) == NFD_OKAY) {
+  if (nfdchar_t* selectedPath{nullptr}; NFD_OpenDialog(filters.data(), defaultPath.data(), &selectedPath) == NFD_OKAY) {
     out = selectedPath;
     std::free(selectedPath);
     return true;
@@ -111,7 +111,7 @@ auto ProjectWindow::OpenFileDialog(std::string_view const filters, std::string_v
 
 
 ProjectWindow::ProjectWindow(Application& context) :
-  mContext{ &context } { }
+  mContext{&context} { }
 
 
 auto ProjectWindow::Draw() -> void {
@@ -141,12 +141,12 @@ auto ProjectWindow::Draw() -> void {
     if (ImGui::BeginPopup(CONTEXT_MENU_ID)) {
       if (ImGui::BeginMenu("New")) {
         if (ImGui::MenuItem("Folder")) {
-          auto const newFolderPathAbs{ GenerateUniquePath(workingDirAbs / "New Folder") };
+          auto const newFolderPathAbs{GenerateUniquePath(workingDirAbs / "New Folder")};
           create_directory(newFolderPathAbs);
 
           mSelectedPathResDirRel = newFolderPathAbs.lexically_relative(mContext->GetResourceDatabase().GetResourceDirectoryAbsolutePath());
           mContext->SetSelectedObject(nullptr);
-          mRenameInfo = RenameInfo{ .newName = newFolderPathAbs.stem().string(), .nodePathAbs = newFolderPathAbs };
+          mRenameInfo = RenameInfo{.newName = newFolderPathAbs.stem().string(), .nodePathAbs = newFolderPathAbs};
         }
 
         if (ImGui::MenuItem("Material")) {
@@ -163,13 +163,11 @@ auto ProjectWindow::Draw() -> void {
       if (ImGui::MenuItem("Import")) {
         if (std::filesystem::path srcPathAbs; OpenFileDialog("", "", srcPathAbs)) {
           if (srcPathAbs.lexically_relative(mContext->GetResourceDatabase().GetResourceDirectoryAbsolutePath()).empty()) {
-            auto const dstPathAbs{ workingDirAbs / srcPathAbs.filename() };
+            auto const dstPathAbs{workingDirAbs / srcPathAbs.filename()};
             copy_file(srcPathAbs, dstPathAbs);
             mContext->GetResourceDatabase().ImportResource(dstPathAbs.lexically_relative(mContext->GetResourceDatabase().GetResourceDirectoryAbsolutePath()));
           }
         }
-
-        ImGui::EndMenu();
       }
 
       ImGui::EndPopup();
