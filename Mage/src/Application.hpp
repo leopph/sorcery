@@ -14,9 +14,9 @@
 namespace sorcery::mage {
 class Application {
   ImGuiIO& mImGuiIo;
-  Scene* mScene{ new Scene{} };
+  Scene* mScene{new Scene{}};
   ResourceDB mResourceDB;
-  Object* mSelectedObject{ nullptr };
+  Object* mSelectedObject{nullptr};
 
   std::filesystem::path mProjDirAbs;
 
@@ -55,6 +55,7 @@ public:
 
   [[nodiscard]] auto IsEditorBusy() const noexcept -> bool;
 
+private:
   template<typename Callable>
   auto ExecuteInBusyEditor(Callable&& callable) -> void;
 
@@ -73,7 +74,7 @@ template<typename Callable>
 auto Application::ExecuteInBusyEditor(Callable&& callable) -> void {
   std::thread{
     [this, callable] {
-      BusyExecutionContext const execContext{ OnEnterBusyExecution() };
+      BusyExecutionContext const execContext{OnEnterBusyExecution()};
 
       try {
         std::invoke(callable);

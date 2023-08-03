@@ -39,7 +39,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
     sorcery::gWindow.SetTitle("Mage");
     sorcery::gWindow.SetBorderless(false);
-    sorcery::gWindow.SetWindowedClientAreaSize({ 1280, 720 });
+    sorcery::gWindow.SetWindowedClientAreaSize({1280, 720});
     sorcery::gWindow.SetIgnoreManagedRequests(true);
 
     sorcery::gRenderer.SetSyncInterval(0);
@@ -48,8 +48,8 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
     ImGui::CreateContext();
     auto& imGuiIo = ImGui::GetIO();
-    auto const iniFilePath{ std::filesystem::path{ sorcery::GetExecutablePath() }.remove_filename() /= "editorconfig.ini" };
-    auto const iniFilePathStr{ sorcery::WideToUtf8(iniFilePath.c_str()) };
+    auto const iniFilePath{std::filesystem::path{sorcery::GetExecutablePath()}.remove_filename() /= "editorconfig.ini"};
+    auto const iniFilePathStr{sorcery::WideToUtf8(iniFilePath.c_str())};
     imGuiIo.IniFilename = iniFilePathStr.c_str();
     imGuiIo.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
@@ -62,40 +62,38 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
     sorcery::gWindow.SetEventHook(sorcery::mage::EditorImGuiEventHook);
 
-    bool runGame{ false };
+    bool runGame{false};
 
-    sorcery::mage::Application app{ imGuiIo };
+    sorcery::mage::Application app{imGuiIo};
 
     sorcery::timing::OnApplicationStart();
 
     if (std::wcscmp(lpCmdLine, L"") != 0) {
       int argc;
-      auto const argv{ CommandLineToArgvW(lpCmdLine, &argc) };
+      auto const argv{CommandLineToArgvW(lpCmdLine, &argc)};
 
-      app.ExecuteInBusyEditor([argc, argv, &app] {
-        if (argc > 0) {
-          std::filesystem::path targetProjPath{ argv[0] };
-          targetProjPath = absolute(targetProjPath);
-          app.OpenProject(targetProjPath);
+      if (argc > 0) {
+        std::filesystem::path targetProjPath{argv[0]};
+        targetProjPath = absolute(targetProjPath);
+        app.OpenProject(targetProjPath);
+      }
+
+      if (argc > 1) {
+        if (auto const scene{sorcery::gResourceManager.Load<sorcery::Scene>(app.GetResourceDatabase().PathToGuid(argv[1]))}) {
+          app.OpenScene(*scene);
         }
+      }
 
-        if (argc > 1) {
-          if (auto const scene{ sorcery::gResourceManager.Load<sorcery::Scene>(app.GetResourceDatabase().PathToGuid(argv[1])) }) {
-            app.OpenScene(*scene);
-          }
-        }
-
-        LocalFree(argv);
-      });
+      LocalFree(argv);
     }
 
-    auto const projectWindow{ std::make_unique<sorcery::mage::ProjectWindow>(app) };
-    auto const sceneViewWindow{ std::make_unique<sorcery::mage::SceneViewWindow>() };
-    auto const gameViewWindow{ std::make_unique<sorcery::mage::GameViewWindow>() };
-    auto const propertiesWindow{ std::make_unique<sorcery::mage::PropertiesWindow>(app) };
-    auto const editorSettingsWindow{ std::make_unique<sorcery::mage::EditorSettingsWindow>() };
-    auto const mainMenuBar{ std::make_unique<sorcery::mage::MainMenuBar>(app, *editorSettingsWindow) };
-    auto const entityHierarchyWindow{ std::make_unique<sorcery::mage::EntityHierarchyWindow>(app) };
+    auto const projectWindow{std::make_unique<sorcery::mage::ProjectWindow>(app)};
+    auto const sceneViewWindow{std::make_unique<sorcery::mage::SceneViewWindow>()};
+    auto const gameViewWindow{std::make_unique<sorcery::mage::GameViewWindow>()};
+    auto const propertiesWindow{std::make_unique<sorcery::mage::PropertiesWindow>(app)};
+    auto const editorSettingsWindow{std::make_unique<sorcery::mage::EditorSettingsWindow>()};
+    auto const mainMenuBar{std::make_unique<sorcery::mage::MainMenuBar>(app, *editorSettingsWindow)};
+    auto const entityHierarchyWindow{std::make_unique<sorcery::mage::EntityHierarchyWindow>(app)};
 
     while (!sorcery::gWindow.IsQuitSignaled()) {
       sorcery::gWindow.ProcessEvents();
@@ -108,7 +106,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
       if (app.GetProjectDirectoryAbsolute().empty()) {
         DrawStartupScreen(app);
       } else {
-        int static targetFrameRate{ sorcery::timing::GetTargetFrameRate() };
+        int static targetFrameRate{sorcery::timing::GetTargetFrameRate()};
 
         if (runGame) {
           if (GetKeyDown(sorcery::Key::Escape)) {

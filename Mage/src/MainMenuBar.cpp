@@ -35,11 +35,9 @@ auto MainMenuBar::Draw() -> void {
       if (ImGui::MenuItem("Open Scene")) {
         if (nfdchar_t* dstPathAbs{nullptr}; NFD_OpenDialog(NativeResourceImporter::SCENE_FILE_EXT.substr(1).data(), mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath().string().c_str(), &dstPathAbs) == NFD_OKAY) {
           if (auto const dstPathResDirRel{relative(dstPathAbs, mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath())}; !dstPathResDirRel.empty()) {
-            mApp->ExecuteInBusyEditor([dstPathResDirRel, this] {
-              auto const scene{gResourceManager.Load<Scene>(mApp->GetResourceDatabase().PathToGuid(dstPathResDirRel))};
-              assert(scene);
-              mApp->OpenScene(*scene);
-            });
+            auto const scene{gResourceManager.Load<Scene>(mApp->GetResourceDatabase().PathToGuid(dstPathResDirRel))};
+            assert(scene);
+            mApp->OpenScene(*scene);
 
             std::free(dstPathAbs);
           }
@@ -54,10 +52,8 @@ auto MainMenuBar::Draw() -> void {
 
       if (ImGui::MenuItem("Open Project")) {
         if (nfdchar_t* selectedPath{nullptr}; NFD_PickFolder(nullptr, &selectedPath) == NFD_OKAY) {
-          mApp->ExecuteInBusyEditor([selectedPath, this] {
-            mApp->OpenProject(selectedPath);
-            std::free(selectedPath);
-          });
+          mApp->OpenProject(selectedPath);
+          std::free(selectedPath);
         }
       }
 
