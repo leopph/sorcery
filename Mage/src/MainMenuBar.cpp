@@ -36,7 +36,9 @@ auto MainMenuBar::Draw() -> void {
         if (nfdchar_t* dstPathAbs{nullptr}; NFD_OpenDialog(NativeResourceImporter::SCENE_FILE_EXT.substr(1).data(), mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath().string().c_str(), &dstPathAbs) == NFD_OKAY) {
           if (auto const dstPathResDirRel{relative(dstPathAbs, mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath())}; !dstPathResDirRel.empty()) {
             mApp->ExecuteInBusyEditor([dstPathResDirRel, this] {
-              mApp->OpenScene(*gResourceManager.Load<Scene>(mApp->GetResourceDatabase().PathToGuid(dstPathResDirRel)));
+              auto const scene{gResourceManager.Load<Scene>(mApp->GetResourceDatabase().PathToGuid(dstPathResDirRel))};
+              assert(scene);
+              mApp->OpenScene(*scene);
             });
 
             std::free(dstPathAbs);
