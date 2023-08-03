@@ -49,7 +49,7 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& resDirAbs, s
                                               : "", pathAbs.stem().string()).c_str(), treeNodeFlags)) {
     if (ImGui::IsItemClicked()) {
       mSelectedPathResDirRel = thisPathResDirRel;
-      mApp->SetSelectedObject(gResourceManager.LoadResource(mApp->GetResourceDatabase().PathToGuid(thisPathResDirRel)));
+      mApp->SetSelectedObject(gResourceManager.Load(mApp->GetResourceDatabase().PathToGuid(thisPathResDirRel)));
     }
 
     auto const startRenaming{

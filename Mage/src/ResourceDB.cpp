@@ -154,7 +154,7 @@ auto ResourceDB::MoveResource(Guid const& guid, std::filesystem::path const& tar
   rename(srcPathAbs, dstPathAbs);
   rename(srcMetaPathAbs, dstMetaPathAbs);
 
-  if (auto const rh{gResourceManager.LoadResource(guid)}) {
+  if (auto const rh{gResourceManager.Load(guid)}) {
     rh->SetName(dstMetaPathAbs.stem().string());
   }
 

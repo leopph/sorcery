@@ -25,10 +25,9 @@ class ResourceManager {
   [[nodiscard]] LEOPPHAPI auto InternalLoadResource(std::filesystem::path const& src) -> ObserverPtr<Resource>;
 
 public:
-  constexpr static std::string_view RESOURCE_META_FILE_EXT{ ".mojo" };
+  constexpr static std::string_view RESOURCE_META_FILE_EXT{".mojo"};
 
-  LEOPPHAPI auto LoadResource(Guid const& guid) -> ObserverPtr<Resource>;
-  template<std::derived_from<Resource> ResType>
+  template<std::derived_from<Resource> ResType = Resource>
   auto Load(Guid const& guid) -> ObserverPtr<ResType>;
 
   LEOPPHAPI auto Unload(Guid const& guid) -> void;
@@ -50,8 +49,18 @@ LEOPPHAPI extern ResourceManager gResourceManager;
 
 template<std::derived_from<Resource> ResType>
 auto ResourceManager::Load(Guid const& guid) -> ObserverPtr<ResType> {
-  if (auto const it{ mGuidPathMappings.find(guid) }; it != std::end(mGuidPathMappings)) {
-    auto const res{ InternalLoadResource(it->second) };
+  if (auto const it{mResources.find(guid)}; it != std::end(mResources)) {
+    if constexpr (!std::is_same_v<ResType, Resource>) {
+      if (rttr::rttr_cast<ObserverPtr<ResType>>(*it)) {
+        return static_cast<ObserverPtr<ResType>>(*it);
+      }
+    } else {
+      return *it;
+    }
+  }
+
+  if (auto const it{mGuidPathMappings.find(guid)}; it != std::end(mGuidPathMappings)) {
+    auto const res{InternalLoadResource(it->second)};
 
     if constexpr (!std::is_same_v<ResType, Resource>) {
       if (rttr::rttr_cast<ObserverPtr<ResType>>(res)) {
