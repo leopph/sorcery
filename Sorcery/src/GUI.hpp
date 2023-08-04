@@ -8,7 +8,6 @@
 #include <imgui_stdlib.h>
 
 #include <concepts>
-#include <cstdlib>
 #include <format>
 #include <string>
 #include <optional>
@@ -20,12 +19,15 @@ LEOPPHAPI auto SetImGuiContext(ImGuiContext& ctx) -> void;
 
 template<std::derived_from<Resource> T>
 class ResourcePicker {
+  inline static int sNextInstanceId{0};
+
   std::vector<Guid> mGuids;
   std::vector<ObserverPtr<T>> mResources;
   std::string mFilter;
-  std::string const mPopupId{std::to_string(std::rand())};
-  std::string const mButtonLabel{std::format("Select##{}", mPopupId)};
-  std::string const mInputTextLabel{std::format("###Filter{}", mPopupId)};
+  int const mInstanceId{sNextInstanceId++};
+  std::string const mPopupId{std::format("PopupResourcePicker{}", mInstanceId)};
+  std::string const mButtonLabel{std::format("Select##ResourcePicker{}", mInstanceId)};
+  std::string const mInputTextLabel{std::format("###FilterResourcePicker{}", mInstanceId)};
 
   constexpr static std::string_view NULL_RES_DISPLAY_NAME{"None"};
 
