@@ -18,30 +18,38 @@ namespace sorcery {
 LEOPPHAPI auto SetImGuiContext(ImGuiContext& ctx) -> void;
 
 
-template<std::derived_from<Object> T>
-class ObjectPicker {
-  inline static int sNextInstanceId{0};
+namespace detail {
+class ObjectPickerBase {
+  static int sNextInstanceId;
 
+protected:
+  [[nodiscard]] LEOPPHAPI static auto GetNextInstanceId() noexcept -> int;
+};
+}
+
+
+template<std::derived_from<Object> T>
+class ObjectPicker : detail::ObjectPickerBase {
   std::vector<Guid> mGuids;
   std::vector<ObserverPtr<T>> mObjects;
   std::string mFilter;
-  int const mInstanceId{sNextInstanceId++};
+  int const mInstanceId{GetNextInstanceId()};
   std::string const mPopupId{std::format("PopupObjectPicker{}", mInstanceId)};
   std::string const mButtonLabel{std::format("Select##ObjectPicker{}", mInstanceId)};
   std::string const mInputTextLabel{std::format("###FilterObjectPicker{}", mInstanceId)};
 
   constexpr static std::string_view NULL_DISPLAY_NAME{"None"};
 
-  auto QueryObjects() noexcept -> void;
+  auto QueryObjects(bool insertNull) noexcept -> void;
 
 public:
   // Returns whether an assignment was made.
-  [[nodiscard]] auto Draw(ObserverPtr<T>& targetObj) noexcept -> bool;
+  [[nodiscard]] auto Draw(ObserverPtr<T>& targetObj, bool allowNull = true) noexcept -> bool;
 };
 
 
 template<std::derived_from<Object> T>
-auto ObjectPicker<T>::QueryObjects() noexcept -> void {
+auto ObjectPicker<T>::QueryObjects(bool const insertNull) noexcept -> void {
   if constexpr (std::derived_from<T, Resource>) {
     mGuids.clear();
     gResourceManager.GetGuidsForResourcesOfType<T>(mGuids);
@@ -64,17 +72,19 @@ auto ObjectPicker<T>::QueryObjects() noexcept -> void {
     return !lhs || (rhs && lhs->GetName() < rhs->GetName());
   });
 
-  mObjects.insert(std::begin(mObjects), nullptr);
+  if (insertNull) {
+    mObjects.insert(std::begin(mObjects), nullptr);
+  }
 }
 
 
 template<std::derived_from<Object> T>
-auto ObjectPicker<T>::Draw(ObserverPtr<T>& targetObj) noexcept -> bool {
+auto ObjectPicker<T>::Draw(ObserverPtr<T>& targetObj, bool const allowNull) noexcept -> bool {
   auto ret{false};
 
   if (ImGui::BeginPopup(mPopupId.c_str())) {
     if (ImGui::InputText(mInputTextLabel.c_str(), &mFilter)) {
-      QueryObjects();
+      QueryObjects(allowNull);
     }
 
     for (auto const obj : mObjects) {
@@ -89,7 +99,7 @@ auto ObjectPicker<T>::Draw(ObserverPtr<T>& targetObj) noexcept -> bool {
 
   if (ImGui::Button(mButtonLabel.c_str())) {
     mFilter.clear();
-    QueryObjects();
+    QueryObjects(allowNull);
     ImGui::OpenPopup(mPopupId.c_str());
   }
 
