@@ -12,7 +12,16 @@
 
 
 RTTR_REGISTRATION {
-  rttr::registration::class_<sorcery::Material>{"Material"};
+  rttr::registration::class_<sorcery::Material>{"Material"}
+    .property("albedo", &sorcery::Material::GetAlbedoVector, &sorcery::Material::SetAlbedoVector)
+    .property("metallic", &sorcery::Material::GetMetallic, &sorcery::Material::SetMetallic)
+    .property("roughness", &sorcery::Material::GetRoughness, &sorcery::Material::SetRoughness)
+    .property("ao", &sorcery::Material::GetAo, &sorcery::Material::SetAo)
+    .property("albedoMap", &sorcery::Material::GetAlbedoMap, &sorcery::Material::SetAlbedoMap)
+    .property("metallicMap", &sorcery::Material::GetMetallicMap, &sorcery::Material::SetMetallicMap)
+    .property("roughnessMap", &sorcery::Material::GetRoughnessMap, &sorcery::Material::SetRoughnessMap)
+    .property("aoMap", &sorcery::Material::GetAoMap, &sorcery::Material::SetAoMap)
+    .property("normalMap", &sorcery::Material::GetNormalMap, &sorcery::Material::SetNormalMap);
 }
 
 
@@ -52,7 +61,7 @@ Material::Material() {
 }
 
 
-auto Material::GetAlbedoVector() const noexcept -> Vector3 {
+auto Material::GetAlbedoVector() const noexcept -> Vector3 const& {
   return mShaderMtl.albedo;
 }
 
@@ -69,7 +78,7 @@ auto Material::GetAlbedoColor() const noexcept -> Color {
 }
 
 
-auto Material::SetAlbedoColor(Color const& albedoColor) noexcept -> void {
+auto Material::SetAlbedoColor(Color const albedoColor) noexcept -> void {
   SetAlbedoVector(Vector3{static_cast<float>(albedoColor.red) / 255.f, static_cast<float>(albedoColor.green) / 255.f, static_cast<float>(albedoColor.blue) / 255.f});
 }
 
@@ -294,6 +303,7 @@ auto Material::OnDrawProperties(bool& changed) -> void {
     static ObjectPicker<Texture2D> albedoMapPicker;
     if (auto albedoMap{GetAlbedoMap()}; albedoMapPicker.Draw(albedoMap)) {
       SetAlbedoMap(albedoMap);
+      changed = true;
     }
 
     ImGui::TableNextColumn();
@@ -302,6 +312,7 @@ auto Material::OnDrawProperties(bool& changed) -> void {
     static ObjectPicker<Texture2D> metallicMapPicker;
     if (auto metallicMap{GetMetallicMap()}; metallicMapPicker.Draw(metallicMap)) {
       SetMetallicMap(metallicMap);
+      changed = true;
     }
 
     ImGui::TableNextColumn();
@@ -310,6 +321,7 @@ auto Material::OnDrawProperties(bool& changed) -> void {
     static ObjectPicker<Texture2D> roughnessMapPicker;
     if (auto roughnessMap{GetRoughnessMap()}; roughnessMapPicker.Draw(roughnessMap)) {
       SetRoughnessMap(roughnessMap);
+      changed = true;
     }
 
     ImGui::TableNextColumn();
@@ -318,6 +330,7 @@ auto Material::OnDrawProperties(bool& changed) -> void {
     static ObjectPicker<Texture2D> aoMapPicker;
     if (auto aoMap{GetAoMap()}; aoMapPicker.Draw(aoMap)) {
       SetAoMap(aoMap);
+      changed = true;
     }
 
     ImGui::TableNextColumn();
@@ -326,6 +339,7 @@ auto Material::OnDrawProperties(bool& changed) -> void {
     static ObjectPicker<Texture2D> normalMapPicker;
     if (auto normalMap{GetNormalMap()}; normalMapPicker.Draw(normalMap)) {
       SetNormalMap(normalMap);
+      changed = true;
     }
 
     ImGui::EndTable();

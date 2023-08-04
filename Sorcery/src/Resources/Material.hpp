@@ -19,7 +19,7 @@ namespace sorcery {
 class Material final : public NativeResource {
   RTTR_ENABLE(NativeResource)
   ShaderMaterial mShaderMtl{
-    .albedo = Vector3{ 1, 1, 1 },
+    .albedo = Vector3{1, 1, 1},
     .metallic = 0.0f,
     .roughness = 0.5f,
     .ao = 1.0f,
@@ -32,11 +32,11 @@ class Material final : public NativeResource {
 
   Microsoft::WRL::ComPtr<ID3D11Buffer> mCB;
 
-  ObserverPtr<Texture2D> mAlbedoMap{ nullptr };
-  ObserverPtr<Texture2D> mMetallicMap{ nullptr };
-  ObserverPtr<Texture2D> mRoughnessMap{ nullptr };
-  ObserverPtr<Texture2D> mAoMap{ nullptr };
-  ObserverPtr<Texture2D> mNormalMap{ nullptr };
+  ObserverPtr<Texture2D> mAlbedoMap{nullptr};
+  ObserverPtr<Texture2D> mMetallicMap{nullptr};
+  ObserverPtr<Texture2D> mRoughnessMap{nullptr};
+  ObserverPtr<Texture2D> mAoMap{nullptr};
+  ObserverPtr<Texture2D> mNormalMap{nullptr};
 
   auto UpdateGPUData() const noexcept -> void;
   auto CreateCB() -> void;
@@ -44,11 +44,11 @@ class Material final : public NativeResource {
 public:
   LEOPPHAPI Material();
 
-  [[nodiscard]] LEOPPHAPI auto GetAlbedoVector() const noexcept -> Vector3;
+  [[nodiscard]] LEOPPHAPI auto GetAlbedoVector() const noexcept -> Vector3 const&;
   LEOPPHAPI auto SetAlbedoVector(Vector3 const& albedoVector) noexcept -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetAlbedoColor() const noexcept -> Color;
-  LEOPPHAPI auto SetAlbedoColor(Color const& albedoColor) noexcept -> void;
+  LEOPPHAPI auto SetAlbedoColor(Color albedoColor) noexcept -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetMetallic() const noexcept -> f32;
   LEOPPHAPI auto SetMetallic(f32 metallic) noexcept -> void;
