@@ -110,8 +110,23 @@ auto ResourceManager::GetGuidsForResourcesOfType(rttr::type const& type, std::ve
     Guid loadedGuid;
     std::unique_ptr<ResourceImporter> importer;
 
-    if (gResourceManager.LoadMeta(resPathAbs, loadedGuid, importer) && importer->GetImportedType(resPathAbs) == type) {
+    if (gResourceManager.LoadMeta(resPathAbs, loadedGuid, importer) && importer->GetImportedType(resPathAbs).is_derived_from(type)) {
       out.emplace_back(loadedGuid);
+    }
+  }
+
+  // Resources that don't come from files
+  for (auto const res : mResources) {
+    auto contains{false};
+    for (auto const& guid : out) {
+      if (guid <=> res->GetGuid() == std::strong_ordering::equal) {
+        contains = true;
+        break;
+      }
+    }
+
+    if (!contains && rttr::type::get(*res).is_derived_from(type)) {
+      out.emplace_back(res->GetGuid());
     }
   }
 }
