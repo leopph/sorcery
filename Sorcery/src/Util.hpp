@@ -74,7 +74,7 @@ concept Scalar = std::is_scalar_v<T>;
     return what;
   }
 
-  auto const remainder{ what % multipleOf };
+  auto const remainder{what % multipleOf};
 
   if (remainder == 0) {
     return what;
@@ -95,4 +95,6 @@ LEOPPHAPI auto CalculateTangents(std::span<Vector3 const> positions, std::span<V
 [[nodiscard]] LEOPPHAPI auto Join(std::span<std::string const> strings, std::string const& delim) -> std::string;
 
 [[nodiscard]] LEOPPHAPI auto ToLower(std::string_view str) -> std::string;
+
+[[nodiscard]] LEOPPHAPI bool IsSubpath(std::filesystem::path const& path, std::filesystem::path const& base);
 }
