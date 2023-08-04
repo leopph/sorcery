@@ -71,6 +71,7 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& resDirAbs, s
       }
 
       if (ImGui::MenuItem("Delete")) {
+        mApp->SetSelectedObject(nullptr);
         mApp->GetResourceDatabase().DeleteResource(mApp->GetResourceDatabase().PathToGuid(thisPathResDirRel));
       }
 
