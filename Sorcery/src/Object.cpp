@@ -1,7 +1,9 @@
 #include "Object.hpp"
 
+#include <cassert>
+
 RTTR_REGISTRATION {
-  rttr::registration::class_<sorcery::Object>{ "Object" }
+  rttr::registration::class_<sorcery::Object>{"Object"}
     .property("name", &sorcery::Object::mName);
 }
 
@@ -22,7 +24,8 @@ Object::~Object() {
     for (auto const prop : rttr::type::get(*otherObj).get_properties()) {
       if (prop.get_type().is_pointer()) {
         if (prop.get_value(*otherObj).get_value<Object*>() == this) {
-          prop.set_value(*otherObj, nullptr);
+          auto const success{prop.set_value(*otherObj, nullptr)};
+          assert(success);
         }
       }
     }
