@@ -8,7 +8,7 @@
 #include <assimp/postprocess.h>
 
 RTTR_REGISTRATION {
-  rttr::registration::class_<sorcery::MeshImporter>{ "Mesh Importer" }
+  rttr::registration::class_<sorcery::MeshImporter>{"Mesh Importer"}
     .REFLECT_REGISTER_RESOURCE_IMPORTER_CTOR;
 }
 
@@ -16,7 +16,7 @@ RTTR_REGISTRATION {
 namespace sorcery {
 namespace {
 [[nodiscard]] auto Convert(aiVector3D const& aiVec) noexcept -> Vector3 {
-  return Vector3{ aiVec.x, aiVec.y, aiVec.z };
+  return Vector3{aiVec.x, aiVec.y, aiVec.z};
 }
 
 
@@ -45,10 +45,10 @@ auto MeshImporter::Import(std::filesystem::path const& src) -> ObserverPtr<Resou
   // Remove point and line primitives
   importer.SetPropertyInteger(AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_POINT | aiPrimitiveType_LINE);
 
-  auto const scene{ importer.ReadFile(src.string(), aiProcess_JoinIdenticalVertices | aiProcess_Triangulate | aiProcess_SortByPType | aiProcess_GenUVCoords | aiProcess_GenNormals | aiProcess_CalcTangentSpace | aiProcess_RemoveComponent | aiProcess_ConvertToLeftHanded) };
+  auto const scene{importer.ReadFile(src.string(), aiProcess_JoinIdenticalVertices | aiProcess_Triangulate | aiProcess_SortByPType | aiProcess_GenUVCoords | aiProcess_GenNormals | aiProcess_CalcTangentSpace | aiProcess_RemoveComponent | aiProcess_ConvertToLeftHanded)};
 
   if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
-    throw std::runtime_error{ std::format("Failed to import model at {}: {}.", src.string(), importer.GetErrorString()) };
+    throw std::runtime_error{std::format("Failed to import model at {}: {}.", src.string(), importer.GetErrorString())};
   }
 
   // Convert all mesh data
@@ -72,8 +72,8 @@ auto MeshImporter::Import(std::filesystem::path const& src) -> ObserverPtr<Resou
     // aiProcess_SortByPType splits up meshes with more than 1 primitive type into homogeneous ones
     // TODO Implement non-triangle rendering support
 
-    aiMesh const* const mesh{ scene->mMeshes[i] };
-    auto& [vertices, normals, uvs, tangents, indices, mtlIdx]{ meshes.emplace_back() };
+    aiMesh const* const mesh{scene->mMeshes[i]};
+    auto& [vertices, normals, uvs, tangents, indices, mtlIdx]{meshes.emplace_back()};
 
     vertices.reserve(mesh->mNumVertices);
     normals.reserve(mesh->mNumVertices);
@@ -84,13 +84,13 @@ auto MeshImporter::Import(std::filesystem::path const& src) -> ObserverPtr<Resou
       vertices.emplace_back(Convert(mesh->mVertices[j]));
       normals.emplace_back(Normalized(Convert(mesh->mNormals[j])));
       uvs.emplace_back(mesh->HasTextureCoords(0)
-                         ? Vector2{ Convert(mesh->mTextureCoords[0][j]) }
+                         ? Vector2{Convert(mesh->mTextureCoords[0][j])}
                          : Vector2{});
       tangents.emplace_back(Convert(mesh->mTangents[j]));
     }
 
     for (unsigned j = 0; j < mesh->mNumFaces; j++) {
-      std::ranges::copy(std::span{ mesh->mFaces[j].mIndices, mesh->mFaces[j].mNumIndices }, std::back_inserter(indices));
+      std::ranges::copy(std::span{mesh->mFaces[j].mIndices, mesh->mFaces[j].mNumIndices}, std::back_inserter(indices));
     }
 
     mtlIdx = mesh->mMaterialIndex;
@@ -115,7 +115,7 @@ auto MeshImporter::Import(std::filesystem::path const& src) -> ObserverPtr<Resou
 
   while (!queue.empty()) {
     auto const& [accumParentTrafo, node] = queue.front();
-    auto const trafo{ Convert(node->mTransformation).Transpose() * accumParentTrafo };
+    auto const trafo{Convert(node->mTransformation).Transpose() * accumParentTrafo};
 
     for (unsigned i = 0; i < node->mNumMeshes; ++i) {
       flatHierarchy.emplace_back(trafo, node->mMeshes[i]);
@@ -145,28 +145,28 @@ auto MeshImporter::Import(std::filesystem::path const& src) -> ObserverPtr<Resou
   Mesh::Data ret;
 
   for (auto const& [submeshMtlIdx, submeshRef] : submeshes) {
-    int baseVertex{ static_cast<int>(std::ssize(ret.positions)) };
-    int firstIndex{ static_cast<int>(std::ssize(ret.indices)) };
-    int indexCount{ 0 };
+    int baseVertex{static_cast<int>(std::ssize(ret.positions))};
+    int firstIndex{static_cast<int>(std::ssize(ret.indices))};
+    int indexCount{0};
 
     // Only needed to offset the indices of the meshes forming the submesh
-    int vertexCount{ 0 };
+    int vertexCount{0};
 
     for (auto const& [trafo, meshIdx] : submeshRef.meshes) {
-      auto const& [vertices, normals, uvs, tangents, indices, mtlIdx]{ meshes[meshIdx] };
+      auto const& [vertices, normals, uvs, tangents, indices, mtlIdx]{meshes[meshIdx]};
 
       ret.positions.reserve(ret.positions.size() + vertices.size());
       ret.normals.reserve(ret.normals.size() + normals.size());
       ret.uvs.reserve(ret.uvs.size() + uvs.size());
       ret.tangents.reserve(ret.tangents.size() + tangents.size());
 
-      Matrix4 const trafoInvTransp{ trafo.Inverse().Transpose() };
+      Matrix4 const trafoInvTransp{trafo.Inverse().Transpose()};
 
       for (int i = 0; i < std::ssize(vertices); i++) {
-        ret.positions.emplace_back(Vector4{ vertices[i], 1 } * trafo);
-        ret.normals.emplace_back(Vector4{ normals[i], 0 } * trafoInvTransp);
+        ret.positions.emplace_back(Vector4{vertices[i], 1} * trafo);
+        ret.normals.emplace_back(Vector4{normals[i], 0} * trafoInvTransp);
         ret.uvs.emplace_back(uvs[i]);
-        ret.tangents.emplace_back(Vector4{ tangents[i], 0 } * trafoInvTransp);
+        ret.tangents.emplace_back(Vector4{tangents[i], 0} * trafoInvTransp);
       }
 
       // Submeshes use the baseVertex + firstIndex + indexCount technique but here we're composing a submesh from multiple assimp meshes so we manually have to offset each of their indices for the submesh
@@ -181,11 +181,16 @@ auto MeshImporter::Import(std::filesystem::path const& src) -> ObserverPtr<Resou
     ret.subMeshes.emplace_back(baseVertex, firstIndex, indexCount, scene->mMaterials[submeshMtlIdx]->GetName().C_Str());
   }
 
-  return new Mesh{ std::move(ret) };
+  return new Mesh{std::move(ret)};
 }
 
 
 auto MeshImporter::GetPrecedence() const noexcept -> int {
   return 0;
+}
+
+
+auto MeshImporter::GetImportedType(std::filesystem::path const& resPathAbs) noexcept -> rttr::type {
+  return rttr::type::get<Mesh>();
 }
 }

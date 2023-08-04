@@ -4,7 +4,7 @@
 #include "../Resources/Scene.hpp"
 
 RTTR_REGISTRATION {
-  rttr::registration::class_<sorcery::NativeResourceImporter>{ "Native Resource Importer" }
+  rttr::registration::class_<sorcery::NativeResourceImporter>{"Native Resource Importer"}
     .REFLECT_REGISTER_RESOURCE_IMPORTER_CTOR;
 }
 
@@ -21,13 +21,13 @@ auto NativeResourceImporter::Import(std::filesystem::path const& src) -> Observe
     return nullptr;
   }
 
-  auto const yamlNode{ YAML::LoadFile(src.string()) };
+  auto const yamlNode{YAML::LoadFile(src.string())};
 
   if (!yamlNode.IsDefined()) {
     return nullptr;
   }
 
-  ObserverPtr<NativeResource> nativeRes{ nullptr };
+  ObserverPtr<NativeResource> nativeRes{nullptr};
 
   if (src.extension() == MATERIAL_FILE_EXT) {
     nativeRes = new Material{};
@@ -45,5 +45,18 @@ auto NativeResourceImporter::Import(std::filesystem::path const& src) -> Observe
 
 auto NativeResourceImporter::GetPrecedence() const noexcept -> int {
   return 0;
+}
+
+
+auto NativeResourceImporter::GetImportedType(std::filesystem::path const& resPathAbs) noexcept -> rttr::type {
+  if (resPathAbs.extension() == MATERIAL_FILE_EXT) {
+    return rttr::type::get<Material>();
+  }
+
+  if (resPathAbs.extension() == SCENE_FILE_EXT) {
+    return rttr::type::get<Scene>();
+  }
+
+  return rttr::type::get_by_name("");
 }
 }
