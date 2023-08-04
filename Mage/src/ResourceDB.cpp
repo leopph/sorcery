@@ -198,11 +198,11 @@ auto ResourceDB::FindImporterForResourceFile(std::filesystem::path const& target
 
   for (auto const& importerType : rttr::type::get<ResourceImporter>().get_derived_classes()) {
     auto importerVariant{importerType.create()};
-    auto& importer{rttr::variant_cast<ResourceImporter&>(importerVariant)};
+    std::unique_ptr<ResourceImporter> const importer{importerVariant.get_value<ResourceImporter*>()};
 
     static std::vector<std::string> supportedExtensions;
     supportedExtensions.clear();
-    importer.GetSupportedFileExtensions(supportedExtensions);
+    importer->GetSupportedFileExtensions(supportedExtensions);
 
     for (auto const& ext : supportedExtensions) {
       if (ext == targetPathAbs.extension()) {
