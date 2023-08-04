@@ -45,6 +45,7 @@ auto ResourcePicker<T>::QueryResources() noexcept -> void {
   gResourceManager.GetGuidsForResourcesOfType<T>(mGuids);
 
   mResources.clear();
+  mResources.reserve(mGuids.size());
   for (auto const& guid : mGuids) {
     mResources.emplace_back(gResourceManager.Load<T>(guid));
   }
