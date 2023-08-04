@@ -187,7 +187,7 @@ auto ProjectWindow::Draw() -> void {
 
 
       if (ImGui::MenuItem("Import")) {
-        if (std::filesystem::path srcPathAbs; OpenFileDialog("", "", srcPathAbs) && srcPathAbs.lexically_relative(mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath()).empty()) {
+        if (std::filesystem::path srcPathAbs; OpenFileDialog("", "", srcPathAbs) && !IsSubpath(srcPathAbs, mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath())) {
           auto const dstPathAbs{workingDirAbs / srcPathAbs.filename()};
           copy_file(srcPathAbs, dstPathAbs);
           auto const dstPathResDirRel{dstPathAbs.lexically_relative(mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath())};
