@@ -48,9 +48,15 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& resDirAbs, s
   if (ImGui::TreeNodeEx(std::format("{}{}", isRenaming
                                               ? "##"
                                               : "", pathAbs.stem().string()).c_str(), treeNodeFlags)) {
-    if (ImGui::IsItemClicked()) {
+    if (ImGui::IsItemClicked(ImGuiMouseButton_Left) || ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
       mSelectedPathResDirRel = thisPathResDirRel;
       mApp->SetSelectedObject(gResourceManager.Load(mApp->GetResourceDatabase().PathToGuid(thisPathResDirRel)));
+    }
+
+    constexpr auto popupContextId{"PopupContext"};
+
+    if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
+      ImGui::OpenPopup(popupContextId);
     }
 
     auto const startRenaming{
@@ -59,7 +65,7 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& resDirAbs, s
       }
     };
 
-    if (ImGui::BeginPopupContextItem()) {
+    if (ImGui::BeginPopup(popupContextId)) {
       if (ImGui::MenuItem("Rename")) {
         startRenaming();
       }
@@ -157,7 +163,7 @@ auto ProjectWindow::Draw() -> void {
     auto constexpr contextMenuId{"Context Menu"};
     auto constexpr importModalId{"Importer Settings"};
 
-    if (ImGui::IsWindowHovered(ImGuiHoveredFlags_RootWindow) && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
+    if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
       ImGui::OpenPopup(contextMenuId);
     }
 
