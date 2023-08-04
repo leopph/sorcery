@@ -291,7 +291,7 @@ auto Material::OnDrawProperties(bool& changed) -> void {
     ImGui::TableNextColumn();
     ImGui::Text("%s", "Albedo Map");
     ImGui::TableNextColumn();
-    static ResourcePicker<Texture2D> albedoMapPicker;
+    static ObjectPicker<Texture2D> albedoMapPicker;
     if (auto albedoMap{GetAlbedoMap()}; albedoMapPicker.Draw(albedoMap)) {
       SetAlbedoMap(albedoMap);
     }
@@ -299,7 +299,7 @@ auto Material::OnDrawProperties(bool& changed) -> void {
     ImGui::TableNextColumn();
     ImGui::Text("%s", "Metallic Map");
     ImGui::TableNextColumn();
-    static ResourcePicker<Texture2D> metallicMapPicker;
+    static ObjectPicker<Texture2D> metallicMapPicker;
     if (auto metallicMap{GetMetallicMap()}; metallicMapPicker.Draw(metallicMap)) {
       SetMetallicMap(metallicMap);
     }
@@ -307,7 +307,7 @@ auto Material::OnDrawProperties(bool& changed) -> void {
     ImGui::TableNextColumn();
     ImGui::Text("%s", "Roughness Map");
     ImGui::TableNextColumn();
-    static ResourcePicker<Texture2D> roughnessMapPicker;
+    static ObjectPicker<Texture2D> roughnessMapPicker;
     if (auto roughnessMap{GetRoughnessMap()}; roughnessMapPicker.Draw(roughnessMap)) {
       SetRoughnessMap(roughnessMap);
     }
@@ -315,7 +315,7 @@ auto Material::OnDrawProperties(bool& changed) -> void {
     ImGui::TableNextColumn();
     ImGui::Text("%s", "Ambient Occlusion Map");
     ImGui::TableNextColumn();
-    static ResourcePicker<Texture2D> aoMapPicker;
+    static ObjectPicker<Texture2D> aoMapPicker;
     if (auto aoMap{GetAoMap()}; aoMapPicker.Draw(aoMap)) {
       SetAoMap(aoMap);
     }
@@ -323,7 +323,7 @@ auto Material::OnDrawProperties(bool& changed) -> void {
     ImGui::TableNextColumn();
     ImGui::Text("%s", "Normal Map");
     ImGui::TableNextColumn();
-    static ResourcePicker<Texture2D> normalMapPicker;
+    static ObjectPicker<Texture2D> normalMapPicker;
     if (auto normalMap{GetNormalMap()}; normalMapPicker.Draw(normalMap)) {
       SetNormalMap(normalMap);
     }
