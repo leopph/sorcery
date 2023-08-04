@@ -2,6 +2,7 @@
 
 #include "Core.hpp"
 #include "Serialization.hpp"
+#include "ResourceImporters/ResourceImporter.hpp"
 #include "Resources/Resource.hpp"
 
 #include <concepts>
@@ -22,7 +23,7 @@ class ResourceManager {
   std::set<ObserverPtr<Resource>, ResourceGuidLess> mResources;
   std::map<Guid, std::filesystem::path> mGuidPathMappings;
 
-  [[nodiscard]] LEOPPHAPI auto InternalLoadResource(std::filesystem::path const& src) -> ObserverPtr<Resource>;
+  [[nodiscard]] LEOPPHAPI auto InternalLoadResource(std::filesystem::path const& resPathAbs) -> ObserverPtr<Resource>;
 
 public:
   constexpr static std::string_view RESOURCE_META_FILE_EXT{".mojo"};
@@ -41,6 +42,11 @@ public:
 
   [[nodiscard]] LEOPPHAPI static auto GetMetaPath(std::filesystem::path const& path) -> std::filesystem::path;
   [[nodiscard]] LEOPPHAPI static auto IsMetaFile(std::filesystem::path const& path) -> bool;
+  [[nodiscard]] LEOPPHAPI static auto LoadMeta(std::filesystem::path const& resPathAbs, Guid& guid, std::unique_ptr<ResourceImporter>& importer) noexcept -> bool;
+
+  template<std::derived_from<Resource> T>
+  auto GetGuidsForResourcesOfType(std::vector<Guid>& out) const noexcept -> void;
+  auto LEOPPHAPI GetGuidsForResourcesOfType(rttr::type const& type, std::vector<Guid>& out) const noexcept -> void;
 };
 
 
@@ -80,5 +86,11 @@ auto ResourceManager::Add(ObserverPtr<ResType> resource) -> void {
   if (resource && resource->GetGuid().IsValid()) {
     mResources.emplace(resource);
   }
+}
+
+
+template<std::derived_from<Resource> T>
+auto ResourceManager::GetGuidsForResourcesOfType(std::vector<Guid>& out) const noexcept -> void {
+  GetGuidsForResourcesOfType(rttr::type::get<T>(), out);
 }
 }

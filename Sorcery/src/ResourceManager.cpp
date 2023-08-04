@@ -3,6 +3,7 @@
 #include "ResourceImporters/ResourceImporter.hpp"
 
 #include <cassert>
+#include <ranges>
 
 
 namespace sorcery {
@@ -24,36 +25,25 @@ auto ResourceManager::ResourceGuidLess::operator()(Guid const& lhs, ObserverPtr<
 }
 
 
-auto ResourceManager::InternalLoadResource(std::filesystem::path const& src) -> ObserverPtr<Resource> {
-  auto const metaFilePath{std::filesystem::path{src} += RESOURCE_META_FILE_EXT};
+auto ResourceManager::InternalLoadResource(std::filesystem::path const& resPathAbs) -> ObserverPtr<Resource> {
+  Guid guid;
+  std::unique_ptr<ResourceImporter> importer;
 
-  if (!exists(metaFilePath)) {
+  if (!LoadMeta(resPathAbs, guid, importer)) {
     return nullptr;
   }
-
-  auto const metaNode{YAML::LoadFile(metaFilePath.string())};
-  auto const guid{Guid::Parse(metaNode["guid"].as<std::string>())};
 
   if (auto const it{mResources.find(guid)}; it != std::end(mResources)) {
     return *it;
   }
 
-  auto const importerType{rttr::type::get_by_name(metaNode["importer"]["type"].as<std::string>())};
-  assert(importerType.is_valid());
-
-  auto importerVariant{importerType.create()};
-  assert(importerVariant.is_valid());
-
-  auto& importer{rttr::variant_cast<ResourceImporter&>(importerVariant)};
-  ReflectionDeserializeFromYaml(metaNode["importer"]["properties"], importer);
-
-  auto res{importer.Import(src)};
+  auto res{importer->Import(resPathAbs)};
 
   if (!res) {
     return nullptr;
   }
 
-  res->SetName(src.stem().string());
+  res->SetName(resPathAbs.stem().string());
   res->SetGuid(guid);
 
   auto const [it, inserted]{mResources.emplace(res)};
@@ -88,5 +78,41 @@ auto ResourceManager::GetMetaPath(std::filesystem::path const& path) -> std::fil
 
 auto ResourceManager::IsMetaFile(std::filesystem::path const& path) -> bool {
   return path.extension() == RESOURCE_META_FILE_EXT;
+}
+
+
+auto ResourceManager::LoadMeta(std::filesystem::path const& resPathAbs, Guid& guid, std::unique_ptr<ResourceImporter>& importer) noexcept -> bool {
+  auto const metaPathAbs{GetMetaPath(resPathAbs)};
+
+  if (!exists(metaPathAbs)) {
+    guid = Guid::Invalid();
+    importer = nullptr;
+    return false;
+  }
+
+  auto const metaNode{YAML::LoadFile(metaPathAbs.string())};
+  guid = Guid::Parse(metaNode["guid"].as<std::string>());
+
+  auto const importerType{rttr::type::get_by_name(metaNode["importer"]["type"].as<std::string>())};
+  assert(importerType.is_valid());
+
+  auto importerVariant{importerType.create()};
+  assert(importerVariant.is_valid());
+
+  importer.reset(importerVariant.get_value<ResourceImporter*>());
+  ReflectionDeserializeFromYaml(metaNode["importer"]["properties"], *importer);
+  return true;
+}
+
+
+auto ResourceManager::GetGuidsForResourcesOfType(rttr::type const& type, std::vector<Guid>& out) const noexcept -> void {
+  for (auto const& resPathAbs : mGuidPathMappings | std::views::values) {
+    Guid loadedGuid;
+    std::unique_ptr<ResourceImporter> importer;
+
+    if (gResourceManager.LoadMeta(resPathAbs, loadedGuid, importer) && importer->GetImportedType(resPathAbs) == type) {
+      out.emplace_back(loadedGuid);
+    }
+  }
 }
 }
