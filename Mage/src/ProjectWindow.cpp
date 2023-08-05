@@ -20,7 +20,7 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& resDirAbs, s
   auto const isRenaming{mRenameInfo && equivalent(mRenameInfo->nodePathAbs, thisPathAbs)};
   auto const isDirectory{is_directory(thisPathAbs)};
 
-  ImGuiTreeNodeFlags treeNodeFlags{ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_FramePadding | ImGuiTreeNodeFlags_OpenOnDoubleClick};
+  ImGuiTreeNodeFlags treeNodeFlags{ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick};
 
   if (!isDirectory) {
     treeNodeFlags |= ImGuiTreeNodeFlags_Leaf;
@@ -35,8 +35,6 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& resDirAbs, s
   if (isRenaming) {
     treeNodeFlags |= ImGuiTreeNodeFlags_AllowOverlap;
     ImGui::SetNextItemAllowOverlap();
-  } else {
-    treeNodeFlags |= ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_SpanFullWidth;
   }
 
   auto const treeNodePos{ImGui::GetCursorPos()};
@@ -145,8 +143,6 @@ auto ProjectWindow::Draw() -> void {
       mSelectedPathResDirRel.clear();
     }
 
-    std::ignore = DrawFilesystemTree(mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath(), {});
-
     std::filesystem::path const selectedPathAbs{
       mSelectedPathResDirRel.empty()
         ? mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath()
@@ -229,6 +225,8 @@ auto ProjectWindow::Draw() -> void {
 
       ImGui::EndPopup();
     }
+
+    std::ignore = DrawFilesystemTree(mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath(), {});
   }
   ImGui::End();
 }
