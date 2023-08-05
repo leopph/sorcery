@@ -227,6 +227,18 @@ auto ResourceDB::DeleteResource(Guid const& guid) -> void {
 }
 
 
+auto ResourceDB::DeleteDirectory(std::filesystem::path const& pathResDirRel) -> bool {
+  auto const pathAbs{weakly_canonical(GetResourceDirectoryAbsolutePath() / pathResDirRel)};
+
+  if (!exists(pathAbs) || !is_directory(pathAbs)) {
+    return false;
+  }
+
+  //for (auto const& entry : std::filesystem::recursive_directory_iterator) TODO
+  return true;
+}
+
+
 auto ResourceDB::IsSavedResource(NativeResource const& res) const -> bool {
   return mGuidToAbsPath.contains(res.GetGuid());
 }

@@ -36,6 +36,7 @@ public:
   // Returns whether the move was successful.
   [[nodiscard]] auto MoveDirectory(std::filesystem::path const& srcPathResDirRel, std::filesystem::path const& dstPathResDirRel) -> bool;
   auto DeleteResource(Guid const& guid) -> void;
+  [[nodiscard]] auto DeleteDirectory(std::filesystem::path const& pathResDirRel) -> bool;
   [[nodiscard]] auto IsSavedResource(NativeResource const& res) const -> bool;
   [[nodiscard]] auto PathToGuid(std::filesystem::path const& pathResDirRel) -> Guid;
 

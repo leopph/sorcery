@@ -159,12 +159,16 @@ auto ProjectWindow::DrawContextMenu() noexcept -> void {
       StartRenamingSelected();
     }
 
-    if (ImGui::MenuItem("Delete", nullptr, nullptr, !is_directory(selectedPathAbs))) {
+    if (ImGui::MenuItem("Delete", nullptr, nullptr, !isResDirSelected)) {
       if (is_directory(selectedPathAbs)) {
-        // TODO delete resources in folder
+        if (mApp->GetResourceDatabase().DeleteDirectory(selectedPathAbs)) {
+          mApp->SetSelectedObject(nullptr);
+          mSelectedPathResDirRel.clear();
+        }
       } else {
-        mApp->SetSelectedObject(nullptr);
         mApp->GetResourceDatabase().DeleteResource(mApp->GetResourceDatabase().PathToGuid(mSelectedPathResDirRel));
+        mApp->SetSelectedObject(nullptr);
+        mSelectedPathResDirRel.clear();
       }
     }
 
