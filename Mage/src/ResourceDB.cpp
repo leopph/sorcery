@@ -152,11 +152,11 @@ auto ResourceDB::ImportResource(std::filesystem::path const& targetPathResDirRel
 }
 
 
-auto ResourceDB::MoveResource(Guid const& guid, std::filesystem::path const& targetPathResDirRel) -> void {
+auto ResourceDB::MoveResource(Guid const& guid, std::filesystem::path const& targetPathResDirRel) -> bool {
   auto const it{mGuidToAbsPath.find(guid)};
 
   if (it == std::end(mGuidToAbsPath)) {
-    return;
+    return false;
   }
 
   auto const srcPathAbs{it->second};
@@ -165,7 +165,7 @@ auto ResourceDB::MoveResource(Guid const& guid, std::filesystem::path const& tar
   auto const dstMetaPathAbs{ResourceManager::GetMetaPath(dstPathAbs)};
 
   if (!exists(srcPathAbs) || !exists(srcMetaPathAbs) || exists(dstPathAbs) || exists(dstMetaPathAbs)) {
-    return;
+    return false;
   }
 
   rename(srcPathAbs, dstPathAbs);
@@ -176,6 +176,42 @@ auto ResourceDB::MoveResource(Guid const& guid, std::filesystem::path const& tar
   }
 
   gResourceManager.UpdateGuidPathMappings(mGuidToAbsPath);
+  return true;
+}
+
+
+auto ResourceDB::MoveDirectory(std::filesystem::path const& srcPathResDirRel, std::filesystem::path const& dstPathResDirRel) -> bool {
+  auto const srcPathAbs{weakly_canonical(GetResourceDirectoryAbsolutePath() / srcPathResDirRel)};
+  auto const dstPathAbs{weakly_canonical(GetResourceDirectoryAbsolutePath() / dstPathResDirRel)};
+
+  if (!exists(srcPathAbs) || exists(dstPathAbs) || !is_directory(srcPathAbs) || equivalent(srcPathAbs, GetResourceDirectoryAbsolutePath())) {
+    return false;
+  }
+
+  rename(srcPathAbs, dstPathAbs);
+
+  for (auto& absPath : mGuidToAbsPath | std::views::values) {
+    if (IsSubpath(absPath, srcPathAbs)) {
+      absPath = dstPathAbs / absPath.lexically_relative(srcPathAbs);
+    }
+  }
+
+  std::vector<std::filesystem::path> absPathsToUpdate;
+
+  for (auto const& absPath : mAbsPathToGuid | std::views::keys) {
+    if (IsSubpath(absPath, srcPathAbs)) {
+      absPathsToUpdate.emplace_back(absPath);
+    }
+  }
+
+  for (auto const& absPath : absPathsToUpdate) {
+    auto node{mAbsPathToGuid.extract(absPath)};
+    node.key() = dstPathAbs / absPath.lexically_relative(srcPathAbs);
+    mAbsPathToGuid.insert(std::move(node));
+  }
+
+  gResourceManager.UpdateGuidPathMappings(mGuidToAbsPath);
+  return true;
 }
 
 

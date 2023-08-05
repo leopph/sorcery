@@ -56,20 +56,18 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& resDirAbs, s
 
       if (ImGui::InputText("##Rename", &mRenameInfo->newName, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll)) {
         auto const newPathAbs{mRenameInfo->nodePathAbs.parent_path() / mRenameInfo->newName += mRenameInfo->nodePathAbs.extension()};
+        auto const newPathResDirRel{newPathAbs.lexically_relative(mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath())};
 
-        if (isDirectory) {
-          // std::filesystem::rename(mRenameInfo->nodePathAbs, newPathAbs); TODO mappings in the directory should be updated
-        } else {
-          mApp->GetResourceDatabase().MoveResource(mApp->GetResourceDatabase().PathToGuid(thisPathResDirRel), newPathAbs.lexically_relative(mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath()));
+        if (isDirectory
+              ? mApp->GetResourceDatabase().MoveDirectory(mRenameInfo->nodePathAbs.lexically_relative(mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath()), newPathResDirRel)
+              : mApp->GetResourceDatabase().MoveResource(mApp->GetResourceDatabase().PathToGuid(thisPathResDirRel), newPathResDirRel)) {
+          mSelectedPathResDirRel = newPathAbs.lexically_relative(resDirAbs);
+          selectedPathAbs = resDirAbs / mSelectedPathResDirRel;
+          thisPathAbs = newPathAbs;
+          ret = true;
         }
 
         mRenameInfo.reset();
-
-        mSelectedPathResDirRel = newPathAbs.lexically_relative(resDirAbs);
-        selectedPathAbs = resDirAbs / mSelectedPathResDirRel;
-
-        thisPathAbs = newPathAbs;
-        ret = true;
       }
 
       if ((!ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) || ImGui::IsKeyPressed(ImGuiKey_Escape)) {
@@ -157,7 +155,7 @@ auto ProjectWindow::DrawContextMenu() noexcept -> void {
       }
     }
 
-    if (ImGui::MenuItem("Rename", nullptr, nullptr, !isResDirSelected && !is_directory(selectedPathAbs))) {
+    if (ImGui::MenuItem("Rename", nullptr, nullptr, !isResDirSelected)) {
       StartRenamingSelected();
     }
 

@@ -31,7 +31,10 @@ public:
   auto CreateResource(NativeResource& res, std::filesystem::path const& targetPathResDirRel) -> void;
   auto SaveResource(NativeResource const& res) -> void;
   auto ImportResource(std::filesystem::path const& targetPathResDirRel) -> void;
-  auto MoveResource(Guid const& guid, std::filesystem::path const& targetPathResDirRel) -> void;
+  // Returns whether the move was successful.
+  [[nodiscard]] auto MoveResource(Guid const& guid, std::filesystem::path const& targetPathResDirRel) -> bool;
+  // Returns whether the move was successful.
+  [[nodiscard]] auto MoveDirectory(std::filesystem::path const& srcPathResDirRel, std::filesystem::path const& dstPathResDirRel) -> bool;
   auto DeleteResource(Guid const& guid) -> void;
   [[nodiscard]] auto IsSavedResource(NativeResource const& res) const -> bool;
   [[nodiscard]] auto PathToGuid(std::filesystem::path const& pathResDirRel) -> Guid;
