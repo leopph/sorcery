@@ -35,6 +35,10 @@ auto ResourceDB::InternalImportResource(std::filesystem::path const& targetPathR
 }
 
 
+ResourceDB::ResourceDB(ObserverPtr<Object>& selectedObjectPtr) :
+  mSelectedObjectPtr{std::addressof(selectedObjectPtr)} {}
+
+
 auto ResourceDB::Refresh() -> void {
   std::map<Guid, std::filesystem::path> newGuidToAbsPath;
   std::map<std::filesystem::path, Guid> newAbsPathToGuid;
@@ -65,6 +69,9 @@ auto ResourceDB::Refresh() -> void {
   }
 
   for (auto const& guid : resourcesToDelete) {
+    if (*mSelectedObjectPtr && *mSelectedObjectPtr == gResourceManager.Load(guid)) {
+      *mSelectedObjectPtr = nullptr;
+    }
     DeleteResource(guid);
   }
 

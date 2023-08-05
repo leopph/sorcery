@@ -13,6 +13,8 @@ class ResourceDB {
   std::filesystem::path mResDirAbs;
   std::map<Guid, std::filesystem::path> mGuidToAbsPath;
   std::map<std::filesystem::path, Guid> mAbsPathToGuid;
+  ObserverPtr<ObserverPtr<Object>> mSelectedObjectPtr;
+
 
   constexpr static std::string_view RESOURCE_DIR_PROJ_REL{"Resources"};
 
@@ -20,6 +22,8 @@ class ResourceDB {
   auto InternalImportResource(std::filesystem::path const& targetPathResDirRel, std::map<Guid, std::filesystem::path>& guidToAbsPath, std::map<std::filesystem::path, Guid>& absPathToGuid) const -> void;
 
 public:
+  explicit ResourceDB(ObserverPtr<Object>& selectedObjectPtr);
+
   auto Refresh() -> void;
   auto ChangeProjectDir(std::filesystem::path const& projDirAbs) -> void;
   [[nodiscard]] auto GetResourceDirectoryAbsolutePath() -> std::filesystem::path const&;

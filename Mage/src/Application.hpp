@@ -15,8 +15,8 @@ namespace sorcery::mage {
 class Application {
   ImGuiIO& mImGuiIo;
   Scene* mScene{new Scene{}};
-  ResourceDB mResourceDB;
   Object* mSelectedObject{nullptr};
+  ResourceDB mResourceDB{mSelectedObject};
 
   std::filesystem::path mProjDirAbs;
 
