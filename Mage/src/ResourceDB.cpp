@@ -41,12 +41,15 @@ auto ResourceDB::Refresh() -> void {
 
   for (auto const& entry : std::filesystem::recursive_directory_iterator{mResDirAbs}) {
     if (ResourceManager::IsMetaFile(entry.path())) {
-      auto const metaNode{YAML::LoadFile(entry.path().string())};
-      auto const guid{metaNode["guid"].as<Guid>()};
-      auto const resPathAbs{std::filesystem::path{entry.path()}.replace_extension()};
+      if (auto const resPathAbs{std::filesystem::path{entry.path()}.replace_extension()}; exists(resPathAbs)) {
+        auto const metaNode{YAML::LoadFile(entry.path().string())};
+        auto const guid{metaNode["guid"].as<Guid>()};
 
-      newGuidToAbsPath.emplace(guid, resPathAbs);
-      newAbsPathToGuid.emplace(resPathAbs, guid);
+        newGuidToAbsPath.emplace(guid, resPathAbs);
+        newAbsPathToGuid.emplace(resPathAbs, guid);
+      } else {
+        remove(entry.path());
+      }
     } else if (!exists(ResourceManager::GetMetaPath(entry.path()))) {
       InternalImportResource(entry.path().lexically_relative(GetResourceDirectoryAbsolutePath()), newGuidToAbsPath, newAbsPathToGuid);
     }
