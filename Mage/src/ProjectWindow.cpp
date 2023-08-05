@@ -1,8 +1,3 @@
-// ReSharper disable All
-#define _CRT_SECURE_NO_WARNINGS
-// ReSharper restore All
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-
 #include "ProjectWindow.hpp"
 
 #include "Material.hpp"
@@ -19,10 +14,11 @@
 namespace sorcery::mage {
 auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& resDirAbs, std::filesystem::path const& thisPathResDirRel) noexcept -> bool {
   auto ret{false};
-  auto pathAbs{canonical(resDirAbs / thisPathResDirRel)};
-  auto const isSelected{equivalent(pathAbs, resDirAbs / mSelectedPathResDirRel)};
-  auto const isRenaming{mRenameInfo && equivalent(mRenameInfo->nodePathAbs, pathAbs)};
-  auto const isDirectory{is_directory(pathAbs)};
+  auto thisPathAbs{canonical(resDirAbs / thisPathResDirRel)};
+  auto selectedPathAbs{resDirAbs / mSelectedPathResDirRel};
+  auto const isSelected{exists(thisPathAbs) && exists(selectedPathAbs) && equivalent(thisPathAbs, selectedPathAbs)};
+  auto const isRenaming{mRenameInfo && equivalent(mRenameInfo->nodePathAbs, thisPathAbs)};
+  auto const isDirectory{is_directory(thisPathAbs)};
 
   ImGuiTreeNodeFlags treeNodeFlags{ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_FramePadding | ImGuiTreeNodeFlags_OpenOnDoubleClick};
 
@@ -47,9 +43,10 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& resDirAbs, s
 
   if (ImGui::TreeNodeEx(std::format("{}{}", isRenaming
                                               ? "##"
-                                              : "", pathAbs.stem().string()).c_str(), treeNodeFlags)) {
+                                              : "", thisPathAbs.stem().string()).c_str(), treeNodeFlags)) {
     if (ImGui::IsItemClicked(ImGuiMouseButton_Left) || ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
       mSelectedPathResDirRel = thisPathResDirRel;
+      selectedPathAbs = resDirAbs / mSelectedPathResDirRel;
       mApp->SetSelectedObject(gResourceManager.Load(mApp->GetResourceDatabase().PathToGuid(thisPathResDirRel)));
     }
 
@@ -60,8 +57,8 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& resDirAbs, s
     }
 
     auto const startRenaming{
-      [this, &pathAbs] {
-        mRenameInfo = RenameInfo{.newName = pathAbs.stem().string(), .nodePathAbs = pathAbs};
+      [this, &thisPathAbs] {
+        mRenameInfo = RenameInfo{.newName = thisPathAbs.stem().string(), .nodePathAbs = thisPathAbs};
       }
     };
 
@@ -94,10 +91,11 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& resDirAbs, s
         mRenameInfo.reset();
 
         if (isSelected) {
-          mSelectedPathResDirRel = relative(newPathAbs, resDirAbs);
+          mSelectedPathResDirRel = newPathAbs.lexically_relative(resDirAbs);
+          selectedPathAbs = resDirAbs / mSelectedPathResDirRel;
         }
 
-        pathAbs = newPathAbs;
+        thisPathAbs = newPathAbs;
         ret = true;
       }
 
@@ -109,7 +107,7 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& resDirAbs, s
     }
 
     if (isDirectory) {
-      for (auto const& entry : std::filesystem::directory_iterator{pathAbs}) {
+      for (auto const& entry : std::filesystem::directory_iterator{thisPathAbs}) {
         if (entry.path().extension() != ResourceManager::RESOURCE_META_FILE_EXT) {
           if (DrawFilesystemTree(resDirAbs, relative(entry.path(), resDirAbs))) {
             // The directory_iterator does not guarantee anything when the directory tree changes, it's safer to skip the rest of the frame.
