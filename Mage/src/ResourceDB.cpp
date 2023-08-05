@@ -234,7 +234,19 @@ auto ResourceDB::DeleteDirectory(std::filesystem::path const& pathResDirRel) -> 
     return false;
   }
 
-  //for (auto const& entry : std::filesystem::recursive_directory_iterator) TODO
+  std::vector<Guid> resourcesToDelete;
+
+  for (auto const& entry : std::filesystem::recursive_directory_iterator{pathAbs}) {
+    if (auto const it{mAbsPathToGuid.find(entry.path())}; it != std::end(mAbsPathToGuid)) {
+      resourcesToDelete.emplace_back(it->second);
+    }
+  }
+
+  for (auto const& guid : resourcesToDelete) {
+    DeleteResource(guid);
+  }
+
+  remove_all(pathAbs);
   return true;
 }
 
