@@ -81,12 +81,65 @@ auto convert<sorcery::Vector<T, N>>::decode(Node const& node, sorcery::Vector<T,
 namespace sorcery {
 template<typename T> requires (!std::derived_from<T, Object>)
 auto ReflectionSerializeToYaml(T const& obj, std::function<YAML::Node(rttr::variant const&)> const& extensionFunc) -> YAML::Node {
-  return ReflectionSerializeToYaml(rttr::variant{ std::ref(obj) }, extensionFunc);
+  if constexpr (std::is_arithmetic_v<T> || std::is_enum_v<T>) {
+    return ReflectionSerializeToYaml(rttr::variant{obj}, extensionFunc);
+  } else {
+    auto const type{rttr::type::get(obj)};
+    assert(type.is_valid());
+    if (type.is_sequential_container()) {
+      return ReflectionSerializeToYaml(rttr::variant{std::ref(obj)}, extensionFunc);
+    }
+
+    if (type.is_associative_container() || type.is_pointer() || type.is_wrapper()) {
+      return {};
+    }
+
+    if (type.is_class()) {
+      YAML::Node ret;
+      for (auto const& prop : type.get_properties()) {
+        auto propValue{prop.get_value(obj)};
+        assert(propValue.is_valid());
+        ret[prop.get_name().to_string()] = ReflectionSerializeToYaml(propValue, extensionFunc);
+      }
+      return ret;
+    }
+
+    return {};
+  }
 }
 
 
 template<typename T> requires (!std::derived_from<T, Object>)
 auto ReflectionDeserializeFromYaml(YAML::Node const& node, T& obj, std::function<void(YAML::Node const&, rttr::variant&)> const& extensionFunc) -> void {
-  ReflectionDeserializeFromYaml(node, rttr::variant{ std::ref(obj) }, extensionFunc);
+  if constexpr (std::is_arithmetic_v<T> || std::is_enum_v<T>) {
+    rttr::variant v{obj};
+    assert(v.is_valid());
+    ReflectionDeserializeFromYaml(node, v, extensionFunc);
+    assert(v.is_valid());
+    obj = v.get_value<T>();
+  } else {
+    auto const type{rttr::type::get(obj)};
+    assert(type.is_valid());
+
+    if (type.is_sequential_container()) {
+      ReflectionDeserializeFromYaml(node, rttr::variant{std::ref(obj)}, extensionFunc);
+      return;
+    }
+
+    if (type.is_associative_container() || type.is_pointer() || type.is_wrapper()) {
+      return;
+    }
+
+    if (type.is_class()) {
+      for (auto const& prop : type.get_properties()) {
+        auto propValue{prop.get_value(obj)};
+        assert(propValue.is_valid());
+        ReflectionDeserializeFromYaml(node[prop.get_name().to_string()], propValue, extensionFunc);
+        assert(propValue.is_valid());
+        auto const success{prop.set_value(obj, propValue)};
+        assert(success);
+      }
+    }
+  }
 }
 }
