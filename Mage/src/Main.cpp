@@ -37,7 +37,6 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
     sorcery::gRenderer.StartUp();
     sorcery::gPhysicsManager.StartUp();
 
-    sorcery::gWindow.SetTitle("Mage");
     sorcery::gWindow.SetBorderless(false);
     sorcery::gWindow.SetWindowedClientAreaSize({1280, 720});
     sorcery::gWindow.SetIgnoreManagedRequests(true);

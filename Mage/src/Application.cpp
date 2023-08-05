@@ -8,6 +8,9 @@
 
 
 namespace sorcery::mage {
+std::string_view const Application::WINDOW_TITLE_BASE{"Mage"};
+
+
 auto Application::OnWindowFocusGain(Application* const self) -> void {
   if (!self->mProjDirAbs.empty()) {
     self->mResourceDB.Refresh();
@@ -27,6 +30,7 @@ auto Application::HandleUnknownBackgroundThreadException() -> void {
 
 Application::Application(ImGuiIO& imGuiIO) :
   mImGuiIo{imGuiIO} {
+  gWindow.SetTitle(std::string{WINDOW_TITLE_BASE});
   gWindow.OnWindowFocusGain.add_handler(this, &OnWindowFocusGain);
   SetImGuiContext(*ImGui::GetCurrentContext());
 }
@@ -109,6 +113,7 @@ auto Application::OpenProject(std::filesystem::path const& targetPath) -> void {
   mScene = new Scene{};
   mProjDirAbs = absolute(targetPath);
   mResourceDB.ChangeProjectDir(mProjDirAbs);
+  gWindow.SetTitle(std::string{WINDOW_TITLE_BASE} + " - " + targetPath.stem().string());
 }
 
 

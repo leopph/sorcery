@@ -21,6 +21,7 @@ class Application {
   std::filesystem::path mProjDirAbs;
 
   std::atomic<bool> mBusy;
+  static std::string_view const WINDOW_TITLE_BASE;
 
   static auto OnWindowFocusGain(Application* self) -> void;
   static auto HandleBackgroundThreadException(std::exception const& ex) -> void;
