@@ -26,10 +26,16 @@ class ProjectWindow {
   std::filesystem::path mSelectedPathResDirRel; // empty if not selected
   std::optional<RenameInfo> mRenameInfo; // nullopt if not renaming
   ImportModalData mImportModal{};
+  bool mOpenImportModal{false};
+  bool mOpenContextMenu{false};
+
+  constexpr static std::string_view CONTEXT_MENU_ID{"ContextMenu"};
 
   // Returns whether the drawn subtree was modified.
   [[nodiscard]] auto DrawFilesystemTree(std::filesystem::path const& resDirAbs, std::filesystem::path const& thisPathResDirRel) noexcept -> bool;
   [[nodiscard]] static auto OpenFileDialog(std::string_view filters, std::string_view defaultPath, std::filesystem::path& out) -> bool;
+  auto DrawContextMenu() noexcept -> void;
+  auto StartRenamingSelected() noexcept -> void;
 
 public:
   explicit ProjectWindow(Application& context);
