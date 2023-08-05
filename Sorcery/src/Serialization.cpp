@@ -196,7 +196,7 @@ auto ReflectionDeserializeFromYaml(YAML::Node const& node, Object& obj, std::fun
 
 
 auto ReflectionDeserializeFromYaml(YAML::Node const& node, rttr::variant& v, std::function<void(YAML::Node const&, rttr::variant&)> const& extensionFunc) -> void {
-  if (node.IsNull() || !v.get_type().is_valid()) {
+  if (!node.IsDefined() || node.IsNull() || !v.get_type().is_valid()) {
     return;
   }
 
