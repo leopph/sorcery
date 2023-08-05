@@ -16,7 +16,6 @@ class ResourceImporter {
 public:
   virtual auto GetSupportedFileExtensions(std::vector<std::string>& out) -> void = 0;
   [[nodiscard]] virtual auto Import(std::filesystem::path const& src) -> ObserverPtr<Resource> = 0;
-  [[nodiscard]] virtual auto GetPrecedence() const noexcept -> int = 0;
   [[nodiscard]] virtual auto GetImportedType(std::filesystem::path const& resPathAbs) noexcept -> rttr::type = 0;
 
   ResourceImporter() = default;

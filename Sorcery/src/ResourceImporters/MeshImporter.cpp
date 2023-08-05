@@ -185,11 +185,6 @@ auto MeshImporter::Import(std::filesystem::path const& src) -> ObserverPtr<Resou
 }
 
 
-auto MeshImporter::GetPrecedence() const noexcept -> int {
-  return 0;
-}
-
-
 auto MeshImporter::GetImportedType(std::filesystem::path const& resPathAbs) noexcept -> rttr::type {
   return rttr::type::get<Mesh>();
 }

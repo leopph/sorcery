@@ -127,11 +127,6 @@ auto TextureImporter::Import(std::filesystem::path const& src) -> ObserverPtr<Re
 }
 
 
-auto TextureImporter::GetPrecedence() const noexcept -> int {
-  return 0;
-}
-
-
 auto TextureImporter::GetImportedType(std::filesystem::path const& resPathAbs) noexcept -> rttr::type {
   switch (mTexType) {
     case TextureType::Texture2D: {

@@ -43,11 +43,6 @@ auto NativeResourceImporter::Import(std::filesystem::path const& src) -> Observe
 }
 
 
-auto NativeResourceImporter::GetPrecedence() const noexcept -> int {
-  return 0;
-}
-
-
 auto NativeResourceImporter::GetImportedType(std::filesystem::path const& resPathAbs) noexcept -> rttr::type {
   if (resPathAbs.extension() == MATERIAL_FILE_EXT) {
     return rttr::type::get<Material>();
