@@ -146,6 +146,8 @@ auto ProjectWindow::DrawContextMenu() noexcept -> void {
             mOpenImportModal = true;
           }
         }
+
+        NFD_PathSet_Free(&pathSet);
       }
     }
 
