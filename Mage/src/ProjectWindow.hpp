@@ -15,7 +15,7 @@ class ProjectWindow {
   };
 
 
-  struct ImportModalData {
+  struct ImportModalFileData {
     YAML::Node node;
     std::filesystem::path dstPathResDirRel;
   };
@@ -25,7 +25,7 @@ class ProjectWindow {
   bool mIsOpen{true};
   std::filesystem::path mSelectedPathResDirRel; // empty if not selected
   std::optional<RenameInfo> mRenameInfo; // nullopt if not renaming
-  ImportModalData mImportModal{};
+  std::vector<ImportModalFileData> mImportModalFiles{};
   bool mOpenImportModal{false};
   bool mOpenContextMenu{false};
 
@@ -33,7 +33,6 @@ class ProjectWindow {
 
   // Returns whether the drawn subtree was modified.
   [[nodiscard]] auto DrawFilesystemTree(std::filesystem::path const& resDirAbs, std::filesystem::path const& thisPathResDirRel) noexcept -> bool;
-  [[nodiscard]] static auto OpenFileDialog(std::string_view filters, std::string_view defaultPath, std::filesystem::path& out) -> bool;
   auto DrawContextMenu() noexcept -> void;
   auto StartRenamingSelected() noexcept -> void;
 

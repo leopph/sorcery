@@ -14,7 +14,7 @@
 namespace sorcery::mage {
 auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& resDirAbs, std::filesystem::path const& thisPathResDirRel) noexcept -> bool {
   auto ret{false};
-  auto thisPathAbs{canonical(resDirAbs / thisPathResDirRel)};
+  auto thisPathAbs{weakly_canonical(resDirAbs / thisPathResDirRel)};
   auto selectedPathAbs{resDirAbs / mSelectedPathResDirRel};
   auto const isSelected{exists(thisPathAbs) && exists(selectedPathAbs) && equivalent(thisPathAbs, selectedPathAbs)};
   auto const isRenaming{mRenameInfo && exists(mRenameInfo->nodePathAbs) && exists(thisPathAbs) && equivalent(mRenameInfo->nodePathAbs, thisPathAbs)};
@@ -97,17 +97,6 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& resDirAbs, s
 }
 
 
-auto ProjectWindow::OpenFileDialog(std::string_view const filters, std::string_view const defaultPath, std::filesystem::path& out) -> bool {
-  if (nfdchar_t* selectedPath{nullptr}; NFD_OpenDialog(filters.data(), defaultPath.data(), &selectedPath) == NFD_OKAY) {
-    out = selectedPath;
-    std::free(selectedPath);
-    return true;
-  }
-
-  return false;
-}
-
-
 auto ProjectWindow::DrawContextMenu() noexcept -> void {
   if (ImGui::BeginPopup(CONTEXT_MENU_ID.data())) {
     auto const selectedPathAbs{weakly_canonical(mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath() / mSelectedPathResDirRel)};
@@ -142,15 +131,20 @@ auto ProjectWindow::DrawContextMenu() noexcept -> void {
     }
 
     if (ImGui::MenuItem("Import")) {
-      if (std::filesystem::path srcPathAbs; OpenFileDialog("", "", srcPathAbs) && !IsSubpath(srcPathAbs, mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath())) {
-        auto const dstPathAbs{workingDirAbs / srcPathAbs.filename()};
-        copy_file(srcPathAbs, dstPathAbs);
-        auto const dstPathResDirRel{dstPathAbs.lexically_relative(mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath())};
+      if (nfdpathset_t pathSet; NFD_OpenDialogMultiple("", "", &pathSet) == NFD_OKAY) {
+        mImportModalFiles.clear();
+        mOpenImportModal = false;
 
-        if (auto const importerNode{mApp->GetResourceDatabase().FindImporterForResourceFile(dstPathResDirRel)}; !importerNode.IsNull()) {
-          mImportModal.node = importerNode;
-          mImportModal.dstPathResDirRel = dstPathResDirRel;
-          mOpenImportModal = true;
+        for (std::size_t i{0}; i < NFD_PathSet_GetCount(&pathSet); i++) {
+          std::filesystem::path const srcPathAbs{NFD_PathSet_GetPath(&pathSet, i)};
+          auto const dstPathAbs{workingDirAbs / srcPathAbs.filename()};
+          copy_file(srcPathAbs, dstPathAbs);
+          auto const dstPathResDirRel{dstPathAbs.lexically_relative(mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath())};
+
+          if (auto const importerNode{mApp->GetResourceDatabase().FindImporterForResourceFile(dstPathResDirRel)}; !importerNode.IsNull()) {
+            mImportModalFiles.emplace_back(importerNode, dstPathResDirRel);
+            mOpenImportModal = true;
+          }
         }
       }
     }
@@ -188,9 +182,7 @@ ProjectWindow::ProjectWindow(Application& context) :
 
 auto ProjectWindow::Draw() -> void {
   if (ImGui::Begin("Project", &mIsOpen, ImGuiWindowFlags_NoCollapse)) {
-    auto const clickedOutside{!ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup | ImGuiHoveredFlags_ChildWindows) && ImGui::IsAnyItemHovered() && (ImGui::IsMouseClicked(ImGuiMouseButton_Left) || ImGui::IsMouseClicked(ImGuiMouseButton_Right))};
-    auto const selectedDoesNotExist{!mSelectedPathResDirRel.empty() && !exists(mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath() / mSelectedPathResDirRel)};
-    if (clickedOutside || selectedDoesNotExist) {
+    if ((!ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup | ImGuiHoveredFlags_ChildWindows) && ImGui::IsAnyItemHovered() && (ImGui::IsMouseClicked(ImGuiMouseButton_Left) || ImGui::IsMouseClicked(ImGuiMouseButton_Right))) || (!mSelectedPathResDirRel.empty() && !exists(mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath() / mSelectedPathResDirRel))) {
       mSelectedPathResDirRel.clear();
     }
 
@@ -215,16 +207,23 @@ auto ProjectWindow::Draw() -> void {
     }
 
     if (ImGui::BeginPopupModal(importModalId)) {
-      ReflectionDisplayProperties(mImportModal.node);
+      for (auto& [node, dstPathResDirRel] : mImportModalFiles) {
+        ImGui::SeparatorText(dstPathResDirRel.stem().string().c_str());
+        ReflectionDisplayProperties(node);
+      }
 
       if (ImGui::Button("Cancel")) {
+        mImportModalFiles.clear();
         ImGui::CloseCurrentPopup();
       }
 
       ImGui::SameLine();
 
       if (ImGui::Button("Import")) {
-        mApp->GetResourceDatabase().ImportResource(mImportModal.dstPathResDirRel);
+        for (auto const& [node, dstPathResDirRel] : mImportModalFiles) {
+          mApp->GetResourceDatabase().ImportResource(dstPathResDirRel);
+        }
+        mImportModalFiles.clear();
         ImGui::CloseCurrentPopup();
       }
 
