@@ -15,9 +15,10 @@ class ProjectWindow {
   };
 
 
-  struct ImportModalFileData {
+  struct FileImportInfo {
     YAML::Node node;
-    std::filesystem::path dstPathResDirRel;
+    std::filesystem::path srcPathAbs;
+    std::filesystem::path dstPathAbs;
   };
 
 
@@ -25,7 +26,7 @@ class ProjectWindow {
   bool mIsOpen{true};
   std::filesystem::path mSelectedPathResDirRel; // empty if not selected
   std::optional<RenameInfo> mRenameInfo; // nullopt if not renaming
-  std::vector<ImportModalFileData> mImportModalFiles{};
+  std::vector<FileImportInfo> mFilesToImport;
   bool mOpenImportModal{false};
   bool mOpenContextMenu{false};
 

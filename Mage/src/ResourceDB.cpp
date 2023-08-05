@@ -270,9 +270,7 @@ auto ResourceDB::GenerateUniqueResourceDirectoryRelativePath(std::filesystem::pa
 }
 
 
-auto ResourceDB::FindImporterForResourceFile(std::filesystem::path const& targetPathResDirRel) const -> YAML::Node {
-  auto const targetPathAbs{mResDirAbs / targetPathResDirRel};
-
+auto ResourceDB::FindImporterForResourceFile(std::filesystem::path const& path) -> YAML::Node {
   for (auto const& importerType : rttr::type::get<ResourceImporter>().get_derived_classes()) {
     auto importerVariant{importerType.create()};
     std::unique_ptr<ResourceImporter> const importer{importerVariant.get_value<ResourceImporter*>()};
@@ -282,7 +280,7 @@ auto ResourceDB::FindImporterForResourceFile(std::filesystem::path const& target
     importer->GetSupportedFileExtensions(supportedExtensions);
 
     for (auto const& ext : supportedExtensions) {
-      if (ext == targetPathAbs.extension()) {
+      if (ext == path.extension()) {
         YAML::Node importerNode;
         importerNode["type"] = importerType.get_name().to_string();
         importerNode["properties"] = ReflectionSerializeToYaml(*importer);

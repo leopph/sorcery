@@ -42,6 +42,6 @@ public:
 
   [[nodiscard]] auto GenerateUniqueResourceDirectoryRelativePath(std::filesystem::path const& targetPathResDirRel) const -> std::filesystem::path;
 
-  [[nodiscard]] auto FindImporterForResourceFile(std::filesystem::path const& targetPathResDirRel) const -> YAML::Node;
+  [[nodiscard]] static auto FindImporterForResourceFile(std::filesystem::path const& path) -> YAML::Node;
 };
 }

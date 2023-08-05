@@ -132,17 +132,13 @@ auto ProjectWindow::DrawContextMenu() noexcept -> void {
 
     if (ImGui::MenuItem("Import")) {
       if (nfdpathset_t pathSet; NFD_OpenDialogMultiple("", "", &pathSet) == NFD_OKAY) {
-        mImportModalFiles.clear();
+        mFilesToImport.clear();
         mOpenImportModal = false;
 
         for (std::size_t i{0}; i < NFD_PathSet_GetCount(&pathSet); i++) {
           std::filesystem::path const srcPathAbs{NFD_PathSet_GetPath(&pathSet, i)};
-          auto const dstPathAbs{workingDirAbs / srcPathAbs.filename()};
-          copy_file(srcPathAbs, dstPathAbs);
-          auto const dstPathResDirRel{dstPathAbs.lexically_relative(mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath())};
-
-          if (auto const importerNode{mApp->GetResourceDatabase().FindImporterForResourceFile(dstPathResDirRel)}; !importerNode.IsNull()) {
-            mImportModalFiles.emplace_back(importerNode, dstPathResDirRel);
+          if (auto const importerNode{ResourceDB::FindImporterForResourceFile(srcPathAbs)}; !importerNode.IsNull()) {
+            mFilesToImport.emplace_back(importerNode, srcPathAbs, workingDirAbs / srcPathAbs.filename());
             mOpenImportModal = true;
           }
         }
@@ -209,23 +205,24 @@ auto ProjectWindow::Draw() -> void {
     }
 
     if (ImGui::BeginPopupModal(importModalId)) {
-      for (auto& [node, dstPathResDirRel] : mImportModalFiles) {
-        ImGui::SeparatorText(dstPathResDirRel.stem().string().c_str());
-        ReflectionDisplayProperties(node);
+      for (auto& [importerNode, srcPathAbs, dstPathAbs] : mFilesToImport) {
+        ImGui::SeparatorText(srcPathAbs.stem().string().c_str());
+        ReflectionDisplayProperties(importerNode);
       }
 
       if (ImGui::Button("Cancel")) {
-        mImportModalFiles.clear();
+        mFilesToImport.clear();
         ImGui::CloseCurrentPopup();
       }
 
       ImGui::SameLine();
 
       if (ImGui::Button("Import")) {
-        for (auto const& [node, dstPathResDirRel] : mImportModalFiles) {
-          mApp->GetResourceDatabase().ImportResource(dstPathResDirRel);
+        for (auto const& [importerNode, srcPathAbs, dstPathAbs] : mFilesToImport) {
+          copy_file(srcPathAbs, dstPathAbs);
+          mApp->GetResourceDatabase().ImportResource(dstPathAbs.lexically_relative(mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath()));
         }
-        mImportModalFiles.clear();
+        mFilesToImport.clear();
         ImGui::CloseCurrentPopup();
       }
 
