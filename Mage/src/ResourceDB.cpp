@@ -52,10 +52,17 @@ auto ResourceDB::Refresh() -> void {
     }
   }
 
+  std::vector<Guid> resourcesToDelete;
+
   for (auto const& guid : mGuidToAbsPath | std::views::keys) {
     if (!newGuidToAbsPath.contains(guid)) {
-      DeleteResource(guid);
+      // DeleteResource modifies this collection, so we collect the to be deleted resources first
+      resourcesToDelete.emplace_back(guid);
     }
+  }
+
+  for (auto const& guid : resourcesToDelete) {
+    DeleteResource(guid);
   }
 
   mGuidToAbsPath = std::move(newGuidToAbsPath);
