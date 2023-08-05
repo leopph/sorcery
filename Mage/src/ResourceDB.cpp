@@ -225,7 +225,7 @@ auto ResourceDB::FindImporterForResourceFile(std::filesystem::path const& target
       if (ext == targetPathAbs.extension()) {
         YAML::Node importerNode;
         importerNode["type"] = importerType.get_name().to_string();
-        importerNode["properties"] = ReflectionSerializeToYaml(importerVariant);
+        importerNode["properties"] = ReflectionSerializeToYaml(*importer);
         return importerNode;
       }
     }
