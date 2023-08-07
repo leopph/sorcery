@@ -222,8 +222,14 @@ auto ProjectWindow::Draw() -> void {
       mSelectedPathResDirRel.clear();
     }
 
-    if (ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
-      mOpenContextMenu = true;
+    if (ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered()) {
+      if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) || ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
+        mSelectedPathResDirRel.clear();
+      }
+
+      if (ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
+        mOpenContextMenu = true;
+      }
     }
 
     std::ignore = DrawFilesystemTree(mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath(), {});
