@@ -9,6 +9,7 @@
 #include <imgui_stdlib.h>
 #include <nfd.h>
 
+#include <cstring>
 #include <optional>
 
 
@@ -41,14 +42,29 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& resDirAbs, s
   auto const treeNodePos{ImGui::GetCursorPos()};
 
   if (ImGui::TreeNodeEx(std::format("{}{}", isRenaming ? "##" : "", thisPathAbs.stem().string()).c_str(), treeNodeFlags)) {
-    if (ImGui::BeginDragDropSource()) {
+    if (!thisPathResDirRel.empty() && ImGui::BeginDragDropSource()) {
       if (isDirectory) {
-        // TODO
+        auto const thisPathResDirRelStr{thisPathResDirRel.string()};
+        ImGui::SetDragDropPayload(DIR_NODE_DRAG_DROP_TYPE_STR.data(), thisPathResDirRelStr.c_str(), thisPathResDirRelStr.size() + 1);
       } else {
         auto const res{gResourceManager.Load(mApp->GetResourceDatabase().PathToGuid(thisPathResDirRel))};
-        ImGui::SetDragDropPayload(ObjectDragDropData::TYPE_STR.data(), &res, sizeof(res));
+        ImGui::SetDragDropPayload(ObjectDragDropData::TYPE_STR.data(), &res, sizeof(decltype(res)));
       }
       ImGui::EndDragDropSource();
+    }
+
+    if (isDirectory && ImGui::BeginDragDropTarget()) {
+      if (auto const payload{ImGui::AcceptDragDropPayload(DIR_NODE_DRAG_DROP_TYPE_STR.data())}) {
+        std::string payloadPathResDirRelStr(static_cast<std::size_t>(payload->DataSize), '\0');
+        std::memcpy(payloadPathResDirRelStr.data(), payload->Data, payload->DataSize);
+        std::filesystem::path const payloadPathResDirRel{payloadPathResDirRelStr};
+
+        if (mApp->GetResourceDatabase().MoveDirectory(payloadPathResDirRel, thisPathResDirRel / payloadPathResDirRel.stem())) {
+          ret = true;
+        }
+      }
+
+      ImGui::EndDragDropTarget();
     }
 
     if ((ImGui::IsItemHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Left)) || ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
