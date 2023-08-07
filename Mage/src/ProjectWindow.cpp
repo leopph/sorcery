@@ -175,7 +175,7 @@ auto ProjectWindow::DrawContextMenu() noexcept -> void {
         for (std::size_t i{0}; i < NFD_PathSet_GetCount(&pathSet); i++) {
           std::filesystem::path const srcPathAbs{NFD_PathSet_GetPath(&pathSet, i)};
           if (auto importer{ResourceManager::GetNewImporterForResourceFile(srcPathAbs)}) {
-            mFilesToImport.emplace_back(std::move(importer), srcPathAbs, workingDirAbs / srcPathAbs.filename()); // TODO generate unique dst path
+            mFilesToImport.emplace_back(std::move(importer), srcPathAbs, GenerateUniquePath(workingDirAbs / srcPathAbs.filename()));
             mOpenImportModal = true;
           }
         }
