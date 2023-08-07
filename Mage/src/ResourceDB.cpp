@@ -1,8 +1,8 @@
 #include "ResourceDB.hpp"
 
 #include "NativeResourceImporter.hpp"
-#include "ResourceManager.hpp"
 #include "Reflection.hpp"
+#include "ResourceManager.hpp"
 #include "Util.hpp"
 
 #include <fstream>
@@ -189,28 +189,8 @@ auto ResourceDB::MoveDirectory(std::filesystem::path const& srcPathResDirRel, st
   }
 
   rename(srcPathAbs, dstPathAbs);
+  Refresh();
 
-  for (auto& absPath : mGuidToAbsPath | std::views::values) {
-    if (IsSubpath(absPath, srcPathAbs)) {
-      absPath = dstPathAbs / absPath.lexically_relative(srcPathAbs);
-    }
-  }
-
-  std::vector<std::filesystem::path> absPathsToUpdate;
-
-  for (auto const& absPath : mAbsPathToGuid | std::views::keys) {
-    if (IsSubpath(absPath, srcPathAbs)) {
-      absPathsToUpdate.emplace_back(absPath);
-    }
-  }
-
-  for (auto const& absPath : absPathsToUpdate) {
-    auto node{mAbsPathToGuid.extract(absPath)};
-    node.key() = dstPathAbs / absPath.lexically_relative(srcPathAbs);
-    mAbsPathToGuid.insert(std::move(node));
-  }
-
-  gResourceManager.UpdateGuidPathMappings(mGuidToAbsPath);
   return true;
 }
 
