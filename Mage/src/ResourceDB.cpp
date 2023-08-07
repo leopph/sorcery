@@ -75,7 +75,7 @@ auto ResourceDB::Refresh() -> void {
   }
 
   for (auto const& guid : resourcesToDelete) {
-    if (*mSelectedObjectPtr && *mSelectedObjectPtr == gResourceManager.Load(guid)) {
+    if (*mSelectedObjectPtr && *mSelectedObjectPtr == gResourceManager.GetOrLoad(guid)) {
       *mSelectedObjectPtr = nullptr;
     }
     DeleteResource(guid);
@@ -84,7 +84,7 @@ auto ResourceDB::Refresh() -> void {
   // We rename loaded resources that have been moved in the file system
   for (auto const& [guid, pathAbs] : newGuidToAbsPath) {
     if (auto const it{mGuidToAbsPath.find(guid)}; it != std::end(mGuidToAbsPath) && it->second != pathAbs && gResourceManager.IsLoaded(guid)) {
-      gResourceManager.Load(guid)->SetName(pathAbs.stem().string());
+      gResourceManager.GetOrLoad(guid)->SetName(pathAbs.stem().string());
     }
   }
 

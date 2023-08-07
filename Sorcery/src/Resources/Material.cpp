@@ -226,27 +226,27 @@ auto Material::Deserialize(YAML::Node const& yamlNode) noexcept -> void {
 
   auto const albedoMapGuid{yamlNode["albedoMap"].as<Guid>()};
   SetAlbedoMap(albedoMapGuid.IsValid()
-                 ? gResourceManager.Load<Texture2D>(albedoMapGuid)
+                 ? gResourceManager.GetOrLoad<Texture2D>(albedoMapGuid)
                  : GetAlbedoMap());
 
   auto const metallicMapGuid{yamlNode["metallicMap"].as<Guid>()};
   SetMetallicMap(metallicMapGuid.IsValid()
-                   ? gResourceManager.Load<Texture2D>(metallicMapGuid)
+                   ? gResourceManager.GetOrLoad<Texture2D>(metallicMapGuid)
                    : GetMetallicMap());
 
   auto const roughnessMapGuid{yamlNode["roughnessMap"].as<Guid>()};
   SetRoughnessMap(roughnessMapGuid.IsValid()
-                    ? gResourceManager.Load<Texture2D>(roughnessMapGuid)
+                    ? gResourceManager.GetOrLoad<Texture2D>(roughnessMapGuid)
                     : GetRoughnessMap());
 
   auto const aoMapGuid{yamlNode["aoMap"].as<Guid>()};
   SetAoMap(aoMapGuid.IsValid()
-             ? gResourceManager.Load<Texture2D>(aoMapGuid)
+             ? gResourceManager.GetOrLoad<Texture2D>(aoMapGuid)
              : GetAoMap());
 
   auto const normalMapGuid{yamlNode["normalMap"].as<Guid>()};
   SetNormalMap(normalMapGuid.IsValid()
-                 ? gResourceManager.Load<Texture2D>(normalMapGuid)
+                 ? gResourceManager.GetOrLoad<Texture2D>(normalMapGuid)
                  : GetNormalMap());
 }
 

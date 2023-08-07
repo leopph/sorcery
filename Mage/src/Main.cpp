@@ -78,7 +78,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
       }
 
       if (argc > 1) {
-        if (auto const scene{sorcery::gResourceManager.Load<sorcery::Scene>(app.GetResourceDatabase().PathToGuid(argv[1]))}) {
+        if (auto const scene{sorcery::gResourceManager.GetOrLoad<sorcery::Scene>(app.GetResourceDatabase().PathToGuid(argv[1]))}) {
           app.OpenScene(*scene);
         }
       }

@@ -63,7 +63,7 @@ auto ObjectPicker<T>::QueryObjects(bool const insertNull) noexcept -> void {
     mObjects.clear();
     mObjects.reserve(mGuids.size());
     for (auto const& guid : mGuids) {
-      mObjects.emplace_back(gResourceManager.Load<T>(guid));
+      mObjects.emplace_back(gResourceManager.GetOrLoad<T>(guid));
     }
   } else {
     mObjects.clear();

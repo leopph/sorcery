@@ -29,7 +29,7 @@ public:
   constexpr static std::string_view RESOURCE_META_FILE_EXT{".mojo"};
 
   template<std::derived_from<Resource> ResType = Resource>
-  auto Load(Guid const& guid) -> ObserverPtr<ResType>;
+  auto GetOrLoad(Guid const& guid) -> ObserverPtr<ResType>;
 
   LEOPPHAPI auto Unload(Guid const& guid) -> void;
 
@@ -54,7 +54,7 @@ LEOPPHAPI extern ResourceManager gResourceManager;
 
 
 template<std::derived_from<Resource> ResType>
-auto ResourceManager::Load(Guid const& guid) -> ObserverPtr<ResType> {
+auto ResourceManager::GetOrLoad(Guid const& guid) -> ObserverPtr<ResType> {
   if (auto const it{mResources.find(guid)}; it != std::end(mResources)) {
     if constexpr (!std::is_same_v<ResType, Resource>) {
       if (rttr::rttr_cast<ObserverPtr<ResType>>(*it)) {
