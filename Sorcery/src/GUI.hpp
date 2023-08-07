@@ -2,16 +2,16 @@
 
 #include "Core.hpp"
 #include "Object.hpp"
-#include "Resources/Resource.hpp"
 #include "ResourceManager.hpp"
+#include "Resources/Resource.hpp"
 
 #include <imgui.h>
 #include <imgui_stdlib.h>
 
 #include <concepts>
 #include <format>
-#include <string>
 #include <optional>
+#include <string>
 
 
 namespace sorcery {
@@ -45,6 +45,12 @@ class ObjectPicker : detail::ObjectPickerBase {
 public:
   // Returns whether an assignment was made.
   [[nodiscard]] auto Draw(ObserverPtr<T>& targetObj, bool allowNull = true) noexcept -> bool;
+};
+
+
+struct ObjectDragDropData {
+  LEOPPHAPI static std::string_view const TYPE_STR;
+  ObserverPtr<Object> ptr;
 };
 
 
@@ -107,6 +113,16 @@ auto ObjectPicker<T>::Draw(ObserverPtr<T>& targetObj, bool const allowNull) noex
   ImGui::Text("%s", targetObj
                       ? targetObj->GetName().c_str()
                       : NULL_DISPLAY_NAME.data());
+
+  if (ImGui::BeginDragDropTarget()) {
+    if (auto const payload{ImGui::AcceptDragDropPayload(ObjectDragDropData::TYPE_STR.data())}) {
+      if (auto const dragDropData{static_cast<ObserverPtr<ObjectDragDropData>>(payload->Data)}; dragDropData && dragDropData->ptr && rttr::type::get(*dragDropData->ptr).is_derived_from(rttr::type::get<T>())) {
+        targetObj = static_cast<ObserverPtr<T>>(dragDropData->ptr);
+        ret = true;
+      }
+    }
+    ImGui::EndDragDropTarget();
+  }
 
   return ret;
 }
