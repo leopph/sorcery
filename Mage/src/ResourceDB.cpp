@@ -46,24 +46,30 @@ auto ResourceDB::Refresh() -> void {
   for (auto const& entry : std::filesystem::recursive_directory_iterator{mResDirAbs}) {
     if (ResourceManager::IsMetaFile(entry.path())) {
       if (auto const resPathAbs{std::filesystem::path{entry.path()}.replace_extension()}; exists(resPathAbs)) {
+        // If we find a resource-meta file pair, we take note of them
+
         auto const metaNode{YAML::LoadFile(entry.path().string())};
         auto const guid{metaNode["guid"].as<Guid>()};
 
         newGuidToAbsPath.emplace(guid, resPathAbs);
         newAbsPathToGuid.emplace(resPathAbs, guid);
       } else {
+        // If it's an orphaned meta file, we remove it
         remove(entry.path());
       }
     } else if (!exists(ResourceManager::GetMetaPath(entry.path()))) {
+      // If we find a file that is not a meta file, we attempt to import it as a resource
       InternalImportResource(entry.path().lexically_relative(GetResourceDirectoryAbsolutePath()), newGuidToAbsPath, newAbsPathToGuid);
     }
   }
+
+  // We delete resources that are no longer present in the current file system directory.
+  // Because DeleteResource modifies mGuidToAbsPath, we collect the to be deleted resources first and delete them in separate loop
 
   std::vector<Guid> resourcesToDelete;
 
   for (auto const& guid : mGuidToAbsPath | std::views::keys) {
     if (!newGuidToAbsPath.contains(guid)) {
-      // DeleteResource modifies this collection, so we collect the to be deleted resources first
       resourcesToDelete.emplace_back(guid);
     }
   }
@@ -73,6 +79,13 @@ auto ResourceDB::Refresh() -> void {
       *mSelectedObjectPtr = nullptr;
     }
     DeleteResource(guid);
+  }
+
+  // We rename loaded resources that have been moved in the file system
+  for (auto const& [guid, pathAbs] : newGuidToAbsPath) {
+    if (auto const it{mGuidToAbsPath.find(guid)}; it != std::end(mGuidToAbsPath) && it->second != pathAbs && gResourceManager.IsLoaded(guid)) {
+      gResourceManager.Load(guid)->SetName(pathAbs.stem().string());
+    }
   }
 
   mGuidToAbsPath = std::move(newGuidToAbsPath);
