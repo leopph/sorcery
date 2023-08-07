@@ -29,7 +29,7 @@ auto ResourceManager::InternalLoadResource(std::filesystem::path const& resPathA
   Guid guid;
   std::unique_ptr<ResourceImporter> importer;
 
-  if (!LoadMeta(resPathAbs, guid, importer)) {
+  if (!LoadMeta(resPathAbs, std::addressof(guid), std::addressof(importer))) {
     return nullptr;
   }
 
@@ -76,7 +76,7 @@ auto ResourceManager::GetGuidsForResourcesOfType(rttr::type const& type, std::ve
     Guid loadedGuid;
     std::unique_ptr<ResourceImporter> importer;
 
-    if (LoadMeta(resPathAbs, loadedGuid, importer) && importer->GetImportedType(resPathAbs).is_derived_from(type)) {
+    if (LoadMeta(resPathAbs, std::addressof(loadedGuid), std::addressof(importer)) && importer->GetImportedType(resPathAbs).is_derived_from(type)) {
       out.emplace_back(loadedGuid);
     }
   }
@@ -108,26 +108,30 @@ auto ResourceManager::IsMetaFile(std::filesystem::path const& path) -> bool {
 }
 
 
-auto ResourceManager::LoadMeta(std::filesystem::path const& resPathAbs, Guid& guid, std::unique_ptr<ResourceImporter>& importer) noexcept -> bool {
+auto ResourceManager::LoadMeta(std::filesystem::path const& resPathAbs, ObserverPtr<Guid> const guid, ObserverPtr<std::unique_ptr<ResourceImporter>> const importer) noexcept -> bool {
   auto const metaPathAbs{GetMetaPath(resPathAbs)};
 
   if (!exists(metaPathAbs)) {
-    guid = Guid::Invalid();
-    importer = nullptr;
     return false;
   }
 
   auto const metaNode{YAML::LoadFile(metaPathAbs.string())};
-  guid = Guid::Parse(metaNode["guid"].as<std::string>());
 
-  auto const importerType{rttr::type::get_by_name(metaNode["importer"]["type"].as<std::string>())};
-  assert(importerType.is_valid());
+  if (guid) {
+    *guid = Guid::Parse(metaNode["guid"].as<std::string>());
+  }
 
-  auto importerVariant{importerType.create()};
-  assert(importerVariant.is_valid());
+  if (importer) {
+    auto const importerType{rttr::type::get_by_name(metaNode["importer"]["type"].as<std::string>())};
+    assert(importerType.is_valid());
 
-  importer.reset(importerVariant.get_value<ResourceImporter*>());
-  ReflectionDeserializeFromYaml(metaNode["importer"]["properties"], *importer);
+    auto importerVariant{importerType.create()};
+    assert(importerVariant.is_valid());
+
+    importer->reset(importerVariant.get_value<ResourceImporter*>());
+    ReflectionDeserializeFromYaml(metaNode["importer"]["properties"], **importer);
+  }
+
   return true;
 }
 

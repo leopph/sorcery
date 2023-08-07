@@ -175,12 +175,21 @@ auto ProjectWindow::DrawContextMenu() noexcept -> void {
         for (std::size_t i{0}; i < NFD_PathSet_GetCount(&pathSet); i++) {
           std::filesystem::path const srcPathAbs{NFD_PathSet_GetPath(&pathSet, i)};
           if (auto importer{ResourceManager::GetNewImporterForResourceFile(srcPathAbs)}) {
-            mFilesToImport.emplace_back(std::move(importer), srcPathAbs, workingDirAbs / srcPathAbs.filename());
+            mFilesToImport.emplace_back(std::move(importer), srcPathAbs, workingDirAbs / srcPathAbs.filename()); // TODO generate unique dst path
             mOpenImportModal = true;
           }
         }
 
         NFD_PathSet_Free(&pathSet);
+      }
+    }
+
+    ImGui::Separator();
+
+    if (ImGui::MenuItem("Reimport", nullptr, nullptr, !is_directory(selectedPathAbs))) {
+      if (std::unique_ptr<ResourceImporter> importer; ResourceManager::LoadMeta(selectedPathAbs, nullptr, std::addressof(importer))) {
+        mFilesToImport.emplace_back(std::move(importer), selectedPathAbs, selectedPathAbs);
+        mOpenImportModal = true;
       }
     }
 
@@ -265,7 +274,9 @@ auto ProjectWindow::Draw() -> void {
 
       if (ImGui::Button("Import")) {
         for (auto const& [importer, srcPathAbs, dstPathAbs] : mFilesToImport) {
-          copy_file(srcPathAbs, dstPathAbs);
+          if (exists(srcPathAbs) && !exists(dstPathAbs)) {
+            copy_file(srcPathAbs, dstPathAbs);
+          }
           mApp->GetResourceDatabase().ImportResource(dstPathAbs.lexically_relative(mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath()), importer.get());
         }
         mFilesToImport.clear();

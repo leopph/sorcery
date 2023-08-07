@@ -46,7 +46,10 @@ public:
 
   [[nodiscard]] LEOPPHAPI static auto GetMetaPath(std::filesystem::path const& path) -> std::filesystem::path;
   [[nodiscard]] LEOPPHAPI static auto IsMetaFile(std::filesystem::path const& path) -> bool;
-  [[nodiscard]] LEOPPHAPI static auto LoadMeta(std::filesystem::path const& resPathAbs, Guid& guid, std::unique_ptr<ResourceImporter>& importer) noexcept -> bool;
+  // If the meta file successfully loads, guid and importer will be set to the read values.
+  // Nullptrs can be passed to skip loading certain pieces of information.
+  // The arguments won't be changed if the meta file failes to load.
+  [[nodiscard]] LEOPPHAPI static auto LoadMeta(std::filesystem::path const& resPathAbs, ObserverPtr<Guid> guid, ObserverPtr<std::unique_ptr<ResourceImporter>> importer) noexcept -> bool;
   [[nodiscard]] LEOPPHAPI static auto GetNewImporterForResourceFile(std::filesystem::path const& path) -> std::unique_ptr<ResourceImporter>;
 };
 

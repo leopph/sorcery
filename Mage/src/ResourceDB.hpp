@@ -21,7 +21,8 @@ class ResourceDB {
 
   // Uses the passed mappings to store the results and does not update the ResourceManager's mappings.
   // Writes the passed importer into the target meta file.
-  auto InternalImportResource(std::filesystem::path const& targetPathResDirRel, std::map<Guid, std::filesystem::path>& guidToAbsPath, std::map<std::filesystem::path, Guid>& absPathToGuid, ResourceImporter& importer) const -> void;
+  // Assigns the passed Guid to the resource.
+  auto InternalImportResource(std::filesystem::path const& resPathResDirRel, std::map<Guid, std::filesystem::path>& guidToAbsPath, std::map<std::filesystem::path, Guid>& absPathToGuid, ResourceImporter& importer, Guid const& guid) const -> void;
 
 public:
   explicit ResourceDB(ObserverPtr<Object>& selectedObjectPtr);
@@ -32,7 +33,7 @@ public:
 
   auto CreateResource(NativeResource& res, std::filesystem::path const& targetPathResDirRel) -> void;
   auto SaveResource(NativeResource const& res) -> void;
-  auto ImportResource(std::filesystem::path const& targetPathResDirRel, ObserverPtr<ResourceImporter> importer = nullptr) -> void;
+  auto ImportResource(std::filesystem::path const& resPathResDirRel, ObserverPtr<ResourceImporter> importer = nullptr) -> void;
   // Returns whether the move was successful.
   [[nodiscard]] auto MoveResource(Guid const& guid, std::filesystem::path const& targetPathResDirRel) -> bool;
   // Returns whether the move was successful.

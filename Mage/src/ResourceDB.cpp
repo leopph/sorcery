@@ -10,26 +10,24 @@
 
 
 namespace sorcery::mage {
-auto ResourceDB::InternalImportResource(std::filesystem::path const& targetPathResDirRel, std::map<Guid, std::filesystem::path>& guidToAbsPath, std::map<std::filesystem::path, Guid>& absPathToGuid, ResourceImporter& importer) const -> void {
+auto ResourceDB::InternalImportResource(std::filesystem::path const& resPathResDirRel, std::map<Guid, std::filesystem::path>& guidToAbsPath, std::map<std::filesystem::path, Guid>& absPathToGuid, ResourceImporter& importer, Guid const& guid) const -> void {
   YAML::Node importerNode;
   importerNode["type"] = rttr::type::get(importer).get_name().data();
   importerNode["properties"] = ReflectionSerializeToYaml(importer);
-
-  auto const guid{Guid::Generate()};
 
   YAML::Node metaNode;
   metaNode["guid"] = guid;
   metaNode["importer"] = importerNode;
 
-  auto const targetPathAbs{mResDirAbs / targetPathResDirRel};
+  auto const resPathAbs{mResDirAbs / resPathResDirRel};
+  auto const metaPathAbs{ResourceManager::GetMetaPath(resPathAbs)};
 
-  std::ofstream outMetaStream{ResourceManager::GetMetaPath(targetPathAbs)};
+  std::ofstream outMetaStream{metaPathAbs, std::ios::out | std::ios::trunc};
   YAML::Emitter metaEmitter{outMetaStream};
   metaEmitter << metaNode;
-  outMetaStream.flush();
 
-  guidToAbsPath.insert_or_assign(guid, targetPathAbs);
-  absPathToGuid.insert_or_assign(targetPathAbs, guid);
+  guidToAbsPath.insert_or_assign(guid, resPathAbs);
+  absPathToGuid.insert_or_assign(resPathAbs, guid);
 }
 
 
@@ -58,7 +56,7 @@ auto ResourceDB::Refresh() -> void {
     } else if (!exists(ResourceManager::GetMetaPath(entry.path()))) {
       // If we find a file that is not a meta file, we attempt to import it as a resource
       if (auto const importer{ResourceManager::GetNewImporterForResourceFile(entry.path())}) {
-        InternalImportResource(entry.path().lexically_relative(GetResourceDirectoryAbsolutePath()), newGuidToAbsPath, newAbsPathToGuid, *importer);
+        InternalImportResource(entry.path().lexically_relative(GetResourceDirectoryAbsolutePath()), newGuidToAbsPath, newAbsPathToGuid, *importer, Guid::Generate());
       }
     }
   }
@@ -159,12 +157,34 @@ auto ResourceDB::SaveResource(NativeResource const& res) -> void {
 }
 
 
-auto ResourceDB::ImportResource(std::filesystem::path const& targetPathResDirRel, ObserverPtr<ResourceImporter> const importer) -> void {
-  if (importer) {
-    InternalImportResource(targetPathResDirRel, mGuidToAbsPath, mAbsPathToGuid, *importer);
-  } else if (auto const ownedImporter{ResourceManager::GetNewImporterForResourceFile(targetPathResDirRel)}) {
-    InternalImportResource(targetPathResDirRel, mGuidToAbsPath, mAbsPathToGuid, *ownedImporter);
+auto ResourceDB::ImportResource(std::filesystem::path const& resPathResDirRel, ObserverPtr<ResourceImporter> importer) -> void {
+  // Temporary to keep a potentially freshly created importer alive in this stack frame.
+  // Use the observer ptr, do not access this directly.
+  std::unique_ptr<ResourceImporter> ownedImporter;
+
+  if (!importer) {
+    // If we weren't passed an importer instance, we use a new default one.
+    ownedImporter = ResourceManager::GetNewImporterForResourceFile(resPathResDirRel);
+    importer = ownedImporter.get();
   }
+
+  auto guid{Guid::Invalid()};
+
+  // If a meta file already exists for the resource, we attempt to reimport it and keep its Guid.
+  if (ResourceManager::LoadMeta(GetResourceDirectoryAbsolutePath() / resPathResDirRel, std::addressof(guid), nullptr) && gResourceManager.IsLoaded(guid)) {
+    if (*mSelectedObjectPtr == gResourceManager.GetOrLoad(guid)) {
+      *mSelectedObjectPtr = nullptr;
+    }
+
+    gResourceManager.Unload(guid);
+  }
+
+  // If there is no meta file, we proceed with a regular import.
+  if (!guid.IsValid()) {
+    guid = Guid::Generate();
+  }
+
+  InternalImportResource(resPathResDirRel, mGuidToAbsPath, mAbsPathToGuid, *importer, guid);
   gResourceManager.UpdateGuidPathMappings(mGuidToAbsPath);
 }
 
