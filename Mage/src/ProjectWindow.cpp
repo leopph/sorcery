@@ -251,7 +251,9 @@ auto ProjectWindow::Draw() -> void {
     if (ImGui::BeginPopupModal(importModalId)) {
       for (auto& [importer, srcPathAbs, dstPathAbs] : mFilesToImport) {
         ImGui::SeparatorText(srcPathAbs.stem().string().c_str());
+        ImGui::PushID(srcPathAbs.string().c_str());
         ReflectionDisplayProperties(*importer);
+        ImGui::PopID();
       }
 
       if (ImGui::Button("Cancel")) {
