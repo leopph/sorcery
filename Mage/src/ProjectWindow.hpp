@@ -1,8 +1,10 @@
 #pragma once
 
 #include "Application.hpp"
+#include "ResourceImporters/ResourceImporter.hpp"
 
 #include <filesystem>
+#include <memory>
 #include <optional>
 #include <string>
 
@@ -16,7 +18,7 @@ class ProjectWindow {
 
 
   struct FileImportInfo {
-    YAML::Node node;
+    std::unique_ptr<ResourceImporter> importer;
     std::filesystem::path srcPathAbs;
     std::filesystem::path dstPathAbs;
   };

@@ -2,6 +2,7 @@
 
 #include "Guid.hpp"
 #include "NativeResource.hpp"
+#include "ResourceImporters/ResourceImporter.hpp"
 
 #include <filesystem>
 #include <map>
@@ -19,7 +20,8 @@ class ResourceDB {
   constexpr static std::string_view RESOURCE_DIR_PROJ_REL{"Resources"};
 
   // Uses the passed mappings to store the results and does not update the ResourceManager's mappings.
-  auto InternalImportResource(std::filesystem::path const& targetPathResDirRel, std::map<Guid, std::filesystem::path>& guidToAbsPath, std::map<std::filesystem::path, Guid>& absPathToGuid) const -> void;
+  // Writes the passed importer into the target meta file.
+  auto InternalImportResource(std::filesystem::path const& targetPathResDirRel, std::map<Guid, std::filesystem::path>& guidToAbsPath, std::map<std::filesystem::path, Guid>& absPathToGuid, ResourceImporter& importer) const -> void;
 
 public:
   explicit ResourceDB(ObserverPtr<Object>& selectedObjectPtr);
@@ -30,7 +32,7 @@ public:
 
   auto CreateResource(NativeResource& res, std::filesystem::path const& targetPathResDirRel) -> void;
   auto SaveResource(NativeResource const& res) -> void;
-  auto ImportResource(std::filesystem::path const& targetPathResDirRel) -> void;
+  auto ImportResource(std::filesystem::path const& targetPathResDirRel, ObserverPtr<ResourceImporter> importer = nullptr) -> void;
   // Returns whether the move was successful.
   [[nodiscard]] auto MoveResource(Guid const& guid, std::filesystem::path const& targetPathResDirRel) -> bool;
   // Returns whether the move was successful.
@@ -43,7 +45,5 @@ public:
   [[nodiscard]] auto GuidToPath(Guid const& guid) -> std::filesystem::path;
 
   [[nodiscard]] auto GenerateUniqueResourceDirectoryRelativePath(std::filesystem::path const& targetPathResDirRel) const -> std::filesystem::path;
-
-  [[nodiscard]] static auto FindImporterForResourceFile(std::filesystem::path const& path) -> YAML::Node;
 };
 }

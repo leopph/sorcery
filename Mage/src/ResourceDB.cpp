@@ -10,12 +10,10 @@
 
 
 namespace sorcery::mage {
-auto ResourceDB::InternalImportResource(std::filesystem::path const& targetPathResDirRel, std::map<Guid, std::filesystem::path>& guidToAbsPath, std::map<std::filesystem::path, Guid>& absPathToGuid) const -> void {
-  auto const importerNode{FindImporterForResourceFile(targetPathResDirRel)};
-
-  if (importerNode.IsNull()) {
-    return;
-  }
+auto ResourceDB::InternalImportResource(std::filesystem::path const& targetPathResDirRel, std::map<Guid, std::filesystem::path>& guidToAbsPath, std::map<std::filesystem::path, Guid>& absPathToGuid, ResourceImporter& importer) const -> void {
+  YAML::Node importerNode;
+  importerNode["type"] = rttr::type::get(importer).get_name().data();
+  importerNode["properties"] = ReflectionSerializeToYaml(importer);
 
   auto const guid{Guid::Generate()};
 
@@ -59,7 +57,9 @@ auto ResourceDB::Refresh() -> void {
       }
     } else if (!exists(ResourceManager::GetMetaPath(entry.path()))) {
       // If we find a file that is not a meta file, we attempt to import it as a resource
-      InternalImportResource(entry.path().lexically_relative(GetResourceDirectoryAbsolutePath()), newGuidToAbsPath, newAbsPathToGuid);
+      if (auto const importer{ResourceManager::GetNewImporterForResourceFile(entry.path())}) {
+        InternalImportResource(entry.path().lexically_relative(GetResourceDirectoryAbsolutePath()), newGuidToAbsPath, newAbsPathToGuid, *importer);
+      }
     }
   }
 
@@ -159,8 +159,12 @@ auto ResourceDB::SaveResource(NativeResource const& res) -> void {
 }
 
 
-auto ResourceDB::ImportResource(std::filesystem::path const& targetPathResDirRel) -> void {
-  InternalImportResource(targetPathResDirRel, mGuidToAbsPath, mAbsPathToGuid);
+auto ResourceDB::ImportResource(std::filesystem::path const& targetPathResDirRel, ObserverPtr<ResourceImporter> const importer) -> void {
+  if (importer) {
+    InternalImportResource(targetPathResDirRel, mGuidToAbsPath, mAbsPathToGuid, *importer);
+  } else if (auto const ownedImporter{ResourceManager::GetNewImporterForResourceFile(targetPathResDirRel)}) {
+    InternalImportResource(targetPathResDirRel, mGuidToAbsPath, mAbsPathToGuid, *ownedImporter);
+  }
   gResourceManager.UpdateGuidPathMappings(mGuidToAbsPath);
 }
 
@@ -265,28 +269,5 @@ auto ResourceDB::GuidToPath(Guid const& guid) -> std::filesystem::path {
 
 auto ResourceDB::GenerateUniqueResourceDirectoryRelativePath(std::filesystem::path const& targetPathResDirRel) const -> std::filesystem::path {
   return GenerateUniquePath(mResDirAbs / targetPathResDirRel);
-}
-
-
-auto ResourceDB::FindImporterForResourceFile(std::filesystem::path const& path) -> YAML::Node {
-  for (auto const& importerType : rttr::type::get<ResourceImporter>().get_derived_classes()) {
-    auto importerVariant{importerType.create()};
-    std::unique_ptr<ResourceImporter> const importer{importerVariant.get_value<ResourceImporter*>()};
-
-    static std::vector<std::string> supportedExtensions;
-    supportedExtensions.clear();
-    importer->GetSupportedFileExtensions(supportedExtensions);
-
-    for (auto const& ext : supportedExtensions) {
-      if (ext == path.extension()) {
-        YAML::Node importerNode;
-        importerNode["type"] = importerType.get_name().to_string();
-        importerNode["properties"] = ReflectionSerializeToYaml(*importer);
-        return importerNode;
-      }
-    }
-  }
-
-  return {};
 }
 }

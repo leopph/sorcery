@@ -71,6 +71,33 @@ auto ResourceManager::UpdateGuidPathMappings(std::map<Guid, std::filesystem::pat
 }
 
 
+auto ResourceManager::GetGuidsForResourcesOfType(rttr::type const& type, std::vector<Guid>& out) const noexcept -> void {
+  for (auto const& resPathAbs : mGuidPathMappings | std::views::values) {
+    Guid loadedGuid;
+    std::unique_ptr<ResourceImporter> importer;
+
+    if (LoadMeta(resPathAbs, loadedGuid, importer) && importer->GetImportedType(resPathAbs).is_derived_from(type)) {
+      out.emplace_back(loadedGuid);
+    }
+  }
+
+  // Resources that don't come from files
+  for (auto const res : mResources) {
+    auto contains{false};
+    for (auto const& guid : out) {
+      if (guid <=> res->GetGuid() == std::strong_ordering::equal) {
+        contains = true;
+        break;
+      }
+    }
+
+    if (!contains && rttr::type::get(*res).is_derived_from(type)) {
+      out.emplace_back(res->GetGuid());
+    }
+  }
+}
+
+
 auto ResourceManager::GetMetaPath(std::filesystem::path const& path) -> std::filesystem::path {
   return std::filesystem::path{path} += RESOURCE_META_FILE_EXT;
 }
@@ -105,29 +132,22 @@ auto ResourceManager::LoadMeta(std::filesystem::path const& resPathAbs, Guid& gu
 }
 
 
-auto ResourceManager::GetGuidsForResourcesOfType(rttr::type const& type, std::vector<Guid>& out) const noexcept -> void {
-  for (auto const& resPathAbs : mGuidPathMappings | std::views::values) {
-    Guid loadedGuid;
-    std::unique_ptr<ResourceImporter> importer;
+auto ResourceManager::GetNewImporterForResourceFile(std::filesystem::path const& path) -> std::unique_ptr<ResourceImporter> {
+  for (auto const& importerType : rttr::type::get<ResourceImporter>().get_derived_classes()) {
+    auto importerVariant{importerType.create()};
+    std::unique_ptr<ResourceImporter> importer{importerVariant.get_value<ResourceImporter*>()};
 
-    if (gResourceManager.LoadMeta(resPathAbs, loadedGuid, importer) && importer->GetImportedType(resPathAbs).is_derived_from(type)) {
-      out.emplace_back(loadedGuid);
-    }
-  }
+    static std::vector<std::string> supportedExtensions;
+    supportedExtensions.clear();
+    importer->GetSupportedFileExtensions(supportedExtensions);
 
-  // Resources that don't come from files
-  for (auto const res : mResources) {
-    auto contains{false};
-    for (auto const& guid : out) {
-      if (guid <=> res->GetGuid() == std::strong_ordering::equal) {
-        contains = true;
-        break;
+    for (auto const& ext : supportedExtensions) {
+      if (ext == path.extension()) {
+        return importer;
       }
     }
-
-    if (!contains && rttr::type::get(*res).is_derived_from(type)) {
-      out.emplace_back(res->GetGuid());
-    }
   }
+
+  return {};
 }
 }

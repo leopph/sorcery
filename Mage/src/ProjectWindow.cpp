@@ -174,8 +174,8 @@ auto ProjectWindow::DrawContextMenu() noexcept -> void {
 
         for (std::size_t i{0}; i < NFD_PathSet_GetCount(&pathSet); i++) {
           std::filesystem::path const srcPathAbs{NFD_PathSet_GetPath(&pathSet, i)};
-          if (auto const importerNode{ResourceDB::FindImporterForResourceFile(srcPathAbs)}; !importerNode.IsNull()) {
-            mFilesToImport.emplace_back(importerNode, srcPathAbs, workingDirAbs / srcPathAbs.filename());
+          if (auto importer{ResourceManager::GetNewImporterForResourceFile(srcPathAbs)}) {
+            mFilesToImport.emplace_back(std::move(importer), srcPathAbs, workingDirAbs / srcPathAbs.filename());
             mOpenImportModal = true;
           }
         }
@@ -243,9 +243,9 @@ auto ProjectWindow::Draw() -> void {
     }
 
     if (ImGui::BeginPopupModal(importModalId)) {
-      for (auto& [importerNode, srcPathAbs, dstPathAbs] : mFilesToImport) {
+      for (auto& [importer, srcPathAbs, dstPathAbs] : mFilesToImport) {
         ImGui::SeparatorText(srcPathAbs.stem().string().c_str());
-        ReflectionDisplayProperties(importerNode);
+        ReflectionDisplayProperties(*importer);
       }
 
       if (ImGui::Button("Cancel")) {
@@ -256,9 +256,9 @@ auto ProjectWindow::Draw() -> void {
       ImGui::SameLine();
 
       if (ImGui::Button("Import")) {
-        for (auto const& [importerNode, srcPathAbs, dstPathAbs] : mFilesToImport) {
+        for (auto const& [importer, srcPathAbs, dstPathAbs] : mFilesToImport) {
           copy_file(srcPathAbs, dstPathAbs);
-          mApp->GetResourceDatabase().ImportResource(dstPathAbs.lexically_relative(mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath()));
+          mApp->GetResourceDatabase().ImportResource(dstPathAbs.lexically_relative(mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath()), importer.get());
         }
         mFilesToImport.clear();
         ImGui::CloseCurrentPopup();
