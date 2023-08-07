@@ -21,6 +21,7 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& resDirAbs, s
   auto const isSelected{exists(thisPathAbs) && exists(selectedPathAbs) && equivalent(thisPathAbs, selectedPathAbs)};
   auto const isRenaming{mRenameInfo && exists(mRenameInfo->nodePathAbs) && exists(thisPathAbs) && equivalent(mRenameInfo->nodePathAbs, thisPathAbs)};
   auto const isDirectory{is_directory(thisPathAbs)};
+  auto& resDb{mApp->GetResourceDatabase()};
 
   ImGuiTreeNodeFlags treeNodeFlags{ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick};
 
@@ -47,7 +48,7 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& resDirAbs, s
         auto const thisPathResDirRelStr{thisPathResDirRel.string()};
         ImGui::SetDragDropPayload(DIR_NODE_DRAG_DROP_TYPE_STR.data(), thisPathResDirRelStr.c_str(), thisPathResDirRelStr.size() + 1);
       } else {
-        auto const res{gResourceManager.Load(mApp->GetResourceDatabase().PathToGuid(thisPathResDirRel))};
+        auto const res{gResourceManager.Load(resDb.PathToGuid(thisPathResDirRel))};
         ImGui::SetDragDropPayload(ObjectDragDropData::TYPE_STR.data(), &res, sizeof(decltype(res)));
       }
       ImGui::EndDragDropSource();
@@ -59,10 +60,19 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& resDirAbs, s
         std::memcpy(payloadPathResDirRelStr.data(), payload->Data, payload->DataSize);
         std::filesystem::path const payloadPathResDirRel{payloadPathResDirRelStr};
 
-        if (mApp->GetResourceDatabase().MoveDirectory(payloadPathResDirRel, thisPathResDirRel / payloadPathResDirRel.stem())) {
+        if (resDb.MoveDirectory(payloadPathResDirRel, thisPathResDirRel / payloadPathResDirRel.filename())) {
           ret = true;
         }
       }
+
+      if (auto const payload{ImGui::AcceptDragDropPayload(ObjectDragDropData::TYPE_STR.data())}) {
+        if (auto const objectDragDropData{static_cast<ObserverPtr<ObjectDragDropData>>(payload->Data)}; objectDragDropData && objectDragDropData->ptr && rttr::type::get(*objectDragDropData->ptr).is_derived_from(rttr::type::get<Resource>())) {
+          if (auto const res{static_cast<ObserverPtr<Resource>>(objectDragDropData->ptr)}; resDb.MoveResource(res->GetGuid(), thisPathResDirRel / resDb.GuidToPath(res->GetGuid()).filename())) {
+            ret = true;
+          }
+        }
+      }
+
 
       ImGui::EndDragDropTarget();
     }
@@ -70,7 +80,7 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& resDirAbs, s
     if ((ImGui::IsItemHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Left)) || ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
       mSelectedPathResDirRel = thisPathResDirRel;
       selectedPathAbs = resDirAbs / mSelectedPathResDirRel;
-      mApp->SetSelectedObject(gResourceManager.Load(mApp->GetResourceDatabase().PathToGuid(thisPathResDirRel)));
+      mApp->SetSelectedObject(gResourceManager.Load(resDb.PathToGuid(thisPathResDirRel)));
     }
 
     if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
@@ -83,11 +93,11 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& resDirAbs, s
 
       if (ImGui::InputText("##Rename", &mRenameInfo->newName, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll)) {
         auto const newPathAbs{mRenameInfo->nodePathAbs.parent_path() / mRenameInfo->newName += mRenameInfo->nodePathAbs.extension()};
-        auto const newPathResDirRel{newPathAbs.lexically_relative(mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath())};
+        auto const newPathResDirRel{newPathAbs.lexically_relative(resDb.GetResourceDirectoryAbsolutePath())};
 
         if (isDirectory
-              ? mApp->GetResourceDatabase().MoveDirectory(mRenameInfo->nodePathAbs.lexically_relative(mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath()), newPathResDirRel)
-              : mApp->GetResourceDatabase().MoveResource(mApp->GetResourceDatabase().PathToGuid(thisPathResDirRel), newPathResDirRel)) {
+              ? resDb.MoveDirectory(mRenameInfo->nodePathAbs.lexically_relative(resDb.GetResourceDirectoryAbsolutePath()), newPathResDirRel)
+              : resDb.MoveResource(resDb.PathToGuid(thisPathResDirRel), newPathResDirRel)) {
           mSelectedPathResDirRel = newPathAbs.lexically_relative(resDirAbs);
           selectedPathAbs = resDirAbs / mSelectedPathResDirRel;
           thisPathAbs = newPathAbs;
@@ -201,7 +211,8 @@ auto ProjectWindow::StartRenamingSelected() noexcept -> void {
 }
 
 
-ProjectWindow::ProjectWindow(Application& context) :
+ProjectWindow::ProjectWindow(Application& context)
+  :
   mApp{&context} { }
 
 
