@@ -141,8 +141,10 @@ auto Entity::OnDrawProperties(bool& changed) -> void {
 
     if (ImGui::BeginPopupContextItem(treeNodeId.c_str())) {
       if (ImGui::MenuItem("Delete")) {
+        auto const component{mComponents[i]};
         mComponents.erase(std::begin(mComponents) + i);
-        delete mComponents[i];
+        delete component;
+        ImGui::EndPopup();
         break;
       }
       ImGui::EndPopup();
