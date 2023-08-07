@@ -1,12 +1,13 @@
 #include "ProjectWindow.hpp"
 
+#include "GUI.hpp"
 #include "Material.hpp"
-#include "Util.hpp"
 #include "Platform.hpp"
 #include "ReflectionDisplayProperties.hpp"
+#include "Util.hpp"
 
-#include <nfd.h>
 #include <imgui_stdlib.h>
+#include <nfd.h>
 
 #include <optional>
 
@@ -40,7 +41,17 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& resDirAbs, s
   auto const treeNodePos{ImGui::GetCursorPos()};
 
   if (ImGui::TreeNodeEx(std::format("{}{}", isRenaming ? "##" : "", thisPathAbs.stem().string()).c_str(), treeNodeFlags)) {
-    if (ImGui::IsItemClicked(ImGuiMouseButton_Left) || ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
+    if (ImGui::BeginDragDropSource()) {
+      if (isDirectory) {
+        // TODO
+      } else {
+        auto const res{gResourceManager.Load(mApp->GetResourceDatabase().PathToGuid(thisPathResDirRel))};
+        ImGui::SetDragDropPayload(ObjectDragDropData::TYPE_STR.data(), &res, sizeof(res));
+      }
+      ImGui::EndDragDropSource();
+    }
+
+    if ((ImGui::IsItemHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Left)) || ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
       mSelectedPathResDirRel = thisPathResDirRel;
       selectedPathAbs = resDirAbs / mSelectedPathResDirRel;
       mApp->SetSelectedObject(gResourceManager.Load(mApp->GetResourceDatabase().PathToGuid(thisPathResDirRel)));
@@ -180,7 +191,7 @@ ProjectWindow::ProjectWindow(Application& context) :
 
 auto ProjectWindow::Draw() -> void {
   if (ImGui::Begin("Project", &mIsOpen, ImGuiWindowFlags_NoCollapse)) {
-    if ((!ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup | ImGuiHoveredFlags_ChildWindows) && ImGui::IsAnyItemHovered() && (ImGui::IsMouseClicked(ImGuiMouseButton_Left) || ImGui::IsMouseClicked(ImGuiMouseButton_Right))) || (!mSelectedPathResDirRel.empty() && !exists(mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath() / mSelectedPathResDirRel))) {
+    if ((!ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup | ImGuiHoveredFlags_ChildWindows) && ImGui::IsAnyItemHovered() && (ImGui::IsMouseReleased(ImGuiMouseButton_Left) || ImGui::IsMouseReleased(ImGuiMouseButton_Right))) || (!mSelectedPathResDirRel.empty() && !exists(mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath() / mSelectedPathResDirRel))) {
       mSelectedPathResDirRel.clear();
     }
 
