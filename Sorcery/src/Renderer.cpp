@@ -2,22 +2,22 @@
 
 #include <dxgi1_5.h>
 
-#include "Platform.hpp"
 #include "Entity.hpp"
-#include "Util.hpp"
-#include "TransformComponent.hpp"
 #include "Graphics.hpp"
+#include "Platform.hpp"
+#include "TransformComponent.hpp"
+#include "Util.hpp"
 
 #ifndef NDEBUG
+#include "shaders/generated/DepthOnlyVSBinDebug.h"
+#include "shaders/generated/GizmoPSBinDebug.h"
+#include "shaders/generated/LineGizmoVSBinDebug.h"
 #include "shaders/generated/MeshPbrPSBinDebug.h"
 #include "shaders/generated/MeshVSBinDebug.h"
 #include "shaders/generated/PostProcessPSBinDebug.h"
+#include "shaders/generated/ScreenVSBinDebug.h"
 #include "shaders/generated/SkyboxPSBinDebug.h"
 #include "shaders/generated/SkyboxVSBinDebug.h"
-#include "shaders/generated/DepthOnlyVSBinDebug.h"
-#include "shaders/generated/ScreenVSBinDebug.h"
-#include "shaders/generated/GizmoPSBinDebug.h"
-#include "shaders/generated/LineGizmoVSBinDebug.h"
 
 #else
 #include "shaders/generated/MeshPbrPSBin.h"
@@ -31,13 +31,13 @@
 #include "shaders/generated/LineGizmoVSBin.h"
 #endif
 
-#include "shaders/ShaderInterop.h"
 #include "DirectionalShadowAtlas.hpp"
 #include "PunctualShadowAtlas.hpp"
 #include "RenderTarget.hpp"
-#include "SwapChain.hpp"
-#include "StructuredBuffer.hpp"
 #include "ShadowCascadeBoundary.hpp"
+#include "StructuredBuffer.hpp"
+#include "SwapChain.hpp"
+#include "shaders/ShaderInterop.h"
 
 #include <algorithm>
 #include <array>
@@ -251,9 +251,9 @@ class Renderer::Impl {
   constexpr static int MAX_TMP_RT_AGE{10};
   std::vector<TempRenderTargetRecord> mTmpRenderTargets;
 
-  inline static const Guid DEFAULT_MATERIAL_GUID{1, 0};
-  inline static const Guid CUBE_MESH_GUID{2, 0};
-  inline static const Guid PLANE_MESH_GUID{3, 0};
+  inline static Guid const DEFAULT_MATERIAL_GUID{1, 0};
+  inline static Guid const CUBE_MESH_GUID{2, 0};
+  inline static Guid const PLANE_MESH_GUID{3, 0};
 
   [[nodiscard]] auto GetSceneDrawDssForReversedDepth() -> ComPtr<ID3D11DepthStencilState>&;
   [[nodiscard]] auto GetShadowDrawDssForReversedDepth() -> ComPtr<ID3D11DepthStencilState>&;
@@ -990,90 +990,86 @@ auto Renderer::Impl::DrawMeshes(std::span<int const> const meshComponentIndices,
 
   for (auto const meshComponentIdx : meshComponentIndices) {
     auto const meshComponent{mStaticMeshComponents[meshComponentIdx]};
-    auto const& mesh{meshComponent->GetMesh()};
 
-    std::array const vertexBuffers{mesh.GetPositionBuffer().Get(), mesh.GetNormalBuffer().Get(), mesh.GetUVBuffer().Get(), mesh.GetTangentBuffer().Get()};
-    UINT constexpr strides[]{sizeof(Vector3), sizeof(Vector3), sizeof(Vector2), sizeof(Vector3)};
-    UINT constexpr offsets[]{0, 0, 0, 0};
-    mImmediateContext->IASetVertexBuffers(0, static_cast<UINT>(vertexBuffers.size()), vertexBuffers.data(), strides, offsets);
-    mImmediateContext->IASetIndexBuffer(mesh.GetIndexBuffer().Get(), DXGI_FORMAT_R32_UINT, 0);
+    if (auto const mesh{meshComponent->GetMesh()}) {
+      std::array const vertexBuffers{mesh->GetPositionBuffer().Get(), mesh->GetNormalBuffer().Get(), mesh->GetUVBuffer().Get(), mesh->GetTangentBuffer().Get()};
+      UINT constexpr strides[]{sizeof(Vector3), sizeof(Vector3), sizeof(Vector2), sizeof(Vector3)};
+      UINT constexpr offsets[]{0, 0, 0, 0};
+      mImmediateContext->IASetVertexBuffers(0, static_cast<UINT>(vertexBuffers.size()), vertexBuffers.data(), strides, offsets);
+      mImmediateContext->IASetIndexBuffer(mesh->GetIndexBuffer().Get(), DXGI_FORMAT_R32_UINT, 0);
 
-    D3D11_MAPPED_SUBRESOURCE mappedPerDrawCb;
-    mImmediateContext->Map(mPerDrawCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerDrawCb);
-    auto const perDrawCbData{static_cast<PerDrawCB*>(mappedPerDrawCb.pData)};
-    perDrawCbData->gPerDrawConstants.modelMtx = meshComponent->GetEntity().GetTransform().GetModelMatrix();
-    perDrawCbData->gPerDrawConstants.normalMtx = Matrix4{meshComponent->GetEntity().GetTransform().GetNormalMatrix()};
-    mImmediateContext->Unmap(mPerDrawCb.Get(), 0);
+      D3D11_MAPPED_SUBRESOURCE mappedPerDrawCb;
+      mImmediateContext->Map(mPerDrawCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerDrawCb);
+      auto const perDrawCbData{static_cast<PerDrawCB*>(mappedPerDrawCb.pData)};
+      perDrawCbData->gPerDrawConstants.modelMtx = meshComponent->GetEntity().GetTransform().GetModelMatrix();
+      perDrawCbData->gPerDrawConstants.normalMtx = Matrix4{meshComponent->GetEntity().GetTransform().GetNormalMatrix()};
+      mImmediateContext->Unmap(mPerDrawCb.Get(), 0);
 
-    auto const subMeshes{mesh.GetSubMeshes()};
-    auto const& materials{meshComponent->GetMaterials()};
+      auto const subMeshes{mesh->GetSubMeshes()};
+      auto const& materials{meshComponent->GetMaterials()};
+      assert(std::ssize(subMeshes) == std::ssize(materials));
 
-    for (int i = 0; i < static_cast<int>(subMeshes.size()); i++) {
-      auto const& [baseVertex, firstIndex, indexCount, mtlSlotName]{subMeshes[i]};
+      for (std::size_t i{0}; i < std::size(subMeshes); i++) {
+        auto const& [baseVertex, firstIndex, indexCount, mtlSlotName]{subMeshes[i]};
 
-      if (useMaterials) {
-        auto const mtl{
-          static_cast<int>(materials.size()) > i
-            ? materials[i]
-            : mDefaultMaterial
-        };
+        if (auto const mtl{materials[i]}; mtl && useMaterials) {
+          auto const mtlBuffer{mtl->GetBuffer()};
+          mImmediateContext->VSSetConstantBuffers(CB_SLOT_PER_MATERIAL, 1, &mtlBuffer);
+          mImmediateContext->PSSetConstantBuffers(CB_SLOT_PER_MATERIAL, 1, &mtlBuffer);
 
-        auto const mtlBuffer{mtl->GetBuffer()};
-        mImmediateContext->VSSetConstantBuffers(CB_SLOT_PER_MATERIAL, 1, &mtlBuffer);
-        mImmediateContext->PSSetConstantBuffers(CB_SLOT_PER_MATERIAL, 1, &mtlBuffer);
+          auto const albedoSrv{
+            [mtl] {
+              auto const albedoMap{mtl->GetAlbedoMap()};
+              return albedoMap
+                       ? albedoMap->GetSrv()
+                       : nullptr;
+            }()
+          };
+          mImmediateContext->PSSetShaderResources(RES_SLOT_ALBEDO_MAP, 1, &albedoSrv);
 
-        auto const albedoSrv{
-          [mtl] {
-            auto const albedoMap{mtl->GetAlbedoMap()};
-            return albedoMap
-                     ? albedoMap->GetSrv()
-                     : nullptr;
-          }()
-        };
-        mImmediateContext->PSSetShaderResources(RES_SLOT_ALBEDO_MAP, 1, &albedoSrv);
+          auto const metallicSrv{
+            [mtl] {
+              auto const metallicMap{mtl->GetMetallicMap()};
+              return metallicMap
+                       ? metallicMap->GetSrv()
+                       : nullptr;
+            }()
+          };
+          mImmediateContext->PSSetShaderResources(RES_SLOT_METALLIC_MAP, 1, &metallicSrv);
 
-        auto const metallicSrv{
-          [mtl] {
-            auto const metallicMap{mtl->GetMetallicMap()};
-            return metallicMap
-                     ? metallicMap->GetSrv()
-                     : nullptr;
-          }()
-        };
-        mImmediateContext->PSSetShaderResources(RES_SLOT_METALLIC_MAP, 1, &metallicSrv);
+          auto const roughnessSrv{
+            [mtl] {
+              auto const roughnessMap{mtl->GetRoughnessMap()};
+              return roughnessMap
+                       ? roughnessMap->GetSrv()
+                       : nullptr;
+            }()
+          };
+          mImmediateContext->PSSetShaderResources(RES_SLOT_ROUGHNESS_MAP, 1, &roughnessSrv);
 
-        auto const roughnessSrv{
-          [mtl] {
-            auto const roughnessMap{mtl->GetRoughnessMap()};
-            return roughnessMap
-                     ? roughnessMap->GetSrv()
-                     : nullptr;
-          }()
-        };
-        mImmediateContext->PSSetShaderResources(RES_SLOT_ROUGHNESS_MAP, 1, &roughnessSrv);
+          auto const aoSrv{
+            [mtl] {
+              auto const aoMap{mtl->GetAoMap()};
+              return aoMap
+                       ? aoMap->GetSrv()
+                       : nullptr;
+            }()
+          };
+          mImmediateContext->PSSetShaderResources(RES_SLOT_AO_MAP, 1, &aoSrv);
 
-        auto const aoSrv{
-          [mtl] {
-            auto const aoMap{mtl->GetAoMap()};
-            return aoMap
-                     ? aoMap->GetSrv()
-                     : nullptr;
-          }()
-        };
-        mImmediateContext->PSSetShaderResources(RES_SLOT_AO_MAP, 1, &aoSrv);
+          auto const normalSrv{
+            [&mtl] {
+              auto const normalMap{mtl->GetNormalMap()};
+              return normalMap
+                       ? normalMap->GetSrv()
+                       : nullptr;
+            }()
+          };
+          mImmediateContext->PSSetShaderResources(RES_SLOT_NORMAL_MAP, 1, &normalSrv);
+        }
 
-        auto const normalSrv{
-          [&mtl] {
-            auto const normalMap{mtl->GetNormalMap()};
-            return normalMap
-                     ? normalMap->GetSrv()
-                     : nullptr;
-          }()
-        };
-        mImmediateContext->PSSetShaderResources(RES_SLOT_NORMAL_MAP, 1, &normalSrv);
+        mImmediateContext->DrawIndexed(indexCount, firstIndex, baseVertex);
       }
-
-      mImmediateContext->DrawIndexed(indexCount, firstIndex, baseVertex);
     }
   }
 }

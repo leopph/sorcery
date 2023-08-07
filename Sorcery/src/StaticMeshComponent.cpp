@@ -1,15 +1,13 @@
 #include "StaticMeshComponent.hpp"
 
 #include "Entity.hpp"
+#include "Gui.hpp"
 #include "Renderer.hpp"
 #include "TransformComponent.hpp"
-#include "Gui.hpp"
 
 #include <imgui.h>
-#include <imgui_stdlib.h>
 
 #include <format>
-#include <cassert>
 #include <stdexcept>
 
 RTTR_REGISTRATION {
@@ -21,10 +19,13 @@ RTTR_REGISTRATION {
 
 
 namespace sorcery {
-auto StaticMeshComponent::AdjustMaterialListForMesh() -> void {
-  assert(mMesh);
+auto StaticMeshComponent::ResizeMaterialListToSubmeshCount() -> void {
+  if (!mMesh) {
+    mMaterials.clear();
+    return;
+  }
 
-  if (std::size_t const subMeshCount{std::size(mMesh->GetSubMeshes())}, mtlCount{std::size(mMaterials)}; subMeshCount != mtlCount) {
+  if (auto const subMeshCount{std::size(mMesh->GetSubMeshes())}, mtlCount{std::size(mMaterials)}; subMeshCount != mtlCount) {
     mMaterials.resize(subMeshCount);
 
     for (std::size_t i{mtlCount}; i < subMeshCount; i++) {
@@ -36,7 +37,7 @@ auto StaticMeshComponent::AdjustMaterialListForMesh() -> void {
 
 StaticMeshComponent::StaticMeshComponent() :
   mMesh{gRenderer.GetCubeMesh()} {
-  AdjustMaterialListForMesh();
+  ResizeMaterialListToSubmeshCount();
   gRenderer.RegisterStaticMesh(this);
 }
 
@@ -46,46 +47,41 @@ StaticMeshComponent::~StaticMeshComponent() {
 }
 
 
+auto StaticMeshComponent::GetMesh() const noexcept -> ObserverPtr<Mesh> {
+  return mMesh;
+}
+
+
+auto StaticMeshComponent::SetMesh(ObserverPtr<Mesh> const mesh) noexcept -> void {
+  mMesh = mesh;
+  ResizeMaterialListToSubmeshCount();
+}
+
+
 auto StaticMeshComponent::GetMaterials() const noexcept -> std::vector<ObserverPtr<Material>> const& {
   return mMaterials;
 }
 
 
 auto StaticMeshComponent::SetMaterials(std::vector<ObserverPtr<Material>> const& materials) -> void {
-  for (auto const mtl : materials) {
-    if (!mtl) {
-      throw std::runtime_error{"Found nullptr while attempting to materials on StaticMeshComponent."};
-    }
-  }
-
   mMaterials = materials;
-  AdjustMaterialListForMesh();
+  ResizeMaterialListToSubmeshCount();
 }
 
 
-auto StaticMeshComponent::ReplaceMaterial(int const idx, Material& mtl) -> void {
+auto StaticMeshComponent::SetMaterial(int const idx, ObserverPtr<Material> const mtl) -> void {
   if (idx >= std::ssize(mMaterials)) {
     throw std::runtime_error{std::format("Invalid index {} while attempting to replace material on StaticMeshComponent.", idx)};
   }
 
-  mMaterials[idx] = std::addressof(mtl);
-}
-
-
-auto StaticMeshComponent::GetMesh() const noexcept -> Mesh& {
-  assert(mMesh);
-  return *mMesh;
-}
-
-
-auto StaticMeshComponent::SetMesh(Mesh& mesh) noexcept -> void {
-  mMesh = std::addressof(mesh);
-  AdjustMaterialListForMesh();
+  mMaterials[idx] = mtl;
 }
 
 
 auto StaticMeshComponent::CalculateBounds() const noexcept -> AABB {
-  assert(mMesh);
+  if (!mMesh) {
+    return AABB{};
+  }
 
   auto const& localBounds{mMesh->GetBounds()};
   auto const modelMtx{GetEntity().GetTransform().GetModelMatrix()};
@@ -105,32 +101,33 @@ auto StaticMeshComponent::OnDrawProperties(bool& changed) -> void {
   ImGui::Text("%s", "Mesh");
   ImGui::TableNextColumn();
   static ObjectPicker<Mesh> meshPicker;
-  if (auto mesh{std::addressof(GetMesh())}; meshPicker.Draw(mesh, false)) {
-    assert(mesh);
-    SetMesh(*mesh);
+  if (auto mesh{GetMesh()}; meshPicker.Draw(mesh, true)) {
+    SetMesh(mesh);
   }
 
-  ImGui::TableNextColumn();
-  ImGui::Text("%s", "Materials");
-
-  auto const submeshCount{GetMesh().GetSubmeshCount()};
-
-  static std::vector<ObjectPicker<Material>> mtlPickers;
-  if (std::ssize(mtlPickers) < submeshCount) {
-    mtlPickers.resize(submeshCount);
-  }
-
-  auto const mtls{GetMaterials()};
-  for (int i = 0; i < submeshCount; i++) {
-    std::string const& mtlSlotName{GetMesh().GetSubMeshes()[i].mtlSlotName};
-
-    ImGui::TableNextRow();
+  if (auto const mesh{GetMesh()}) {
     ImGui::TableNextColumn();
-    ImGui::Text("%s", mtlSlotName.c_str());
-    ImGui::TableNextColumn();
-    if (auto mtl{mtls[i]}; mtlPickers[i].Draw(mtl, false)) {
-      assert(mtl);
-      ReplaceMaterial(i, *mtl);
+    ImGui::Text("%s", "Materials");
+
+    auto const submeshCount{mesh->GetSubmeshCount()};
+
+    static std::vector<ObjectPicker<Material>> mtlPickers;
+    if (std::ssize(mtlPickers) < submeshCount) {
+      mtlPickers.resize(submeshCount);
+    }
+
+    auto const mtls{GetMaterials()};
+
+    for (int i = 0; i < submeshCount; i++) {
+      std::string const& mtlSlotName{mesh->GetSubMeshes()[i].mtlSlotName};
+
+      ImGui::TableNextRow();
+      ImGui::TableNextColumn();
+      ImGui::Text("%s", mtlSlotName.c_str());
+      ImGui::TableNextColumn();
+      if (auto mtl{mtls[i]}; mtlPickers[i].Draw(mtl, true)) {
+        SetMaterial(i, mtl);
+      }
     }
   }
 }
