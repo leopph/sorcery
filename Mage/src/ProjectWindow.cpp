@@ -138,7 +138,7 @@ auto ProjectWindow::DrawContextMenu() noexcept -> void {
   if (ImGui::BeginPopup(CONTEXT_MENU_ID.data())) {
     auto const selectedPathAbs{weakly_canonical(mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath() / mSelectedPathResDirRel)};
     auto const workingDirAbs{is_directory(selectedPathAbs) ? selectedPathAbs : selectedPathAbs.parent_path()};
-    auto const isResDirSelected{equivalent(selectedPathAbs, mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath())};
+    auto const isResDirSelected{exists(selectedPathAbs) && exists(mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath()) && equivalent(selectedPathAbs, mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath())};
 
     if (ImGui::BeginMenu("New")) {
       if (ImGui::MenuItem("Folder")) {
