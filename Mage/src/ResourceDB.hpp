@@ -39,6 +39,8 @@ public:
   [[nodiscard]] auto DeleteDirectory(std::filesystem::path const& pathResDirRel) -> bool;
   [[nodiscard]] auto IsSavedResource(NativeResource const& res) const -> bool;
   [[nodiscard]] auto PathToGuid(std::filesystem::path const& pathResDirRel) -> Guid;
+  // Returns a resource directory relative path, or empty if not found.
+  [[nodiscard]] auto GuidToPath(Guid const& guid) -> std::filesystem::path;
 
   [[nodiscard]] auto GenerateUniqueResourceDirectoryRelativePath(std::filesystem::path const& targetPathResDirRel) const -> std::filesystem::path;
 

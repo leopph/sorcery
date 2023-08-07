@@ -245,6 +245,15 @@ auto ResourceDB::PathToGuid(std::filesystem::path const& pathResDirRel) -> Guid 
 }
 
 
+auto ResourceDB::GuidToPath(Guid const& guid) -> std::filesystem::path {
+  if (auto const it{mGuidToAbsPath.find(guid)}; it != std::end(mGuidToAbsPath)) {
+    return it->second.lexically_relative(GetResourceDirectoryAbsolutePath());
+  }
+
+  return {};
+}
+
+
 auto ResourceDB::GenerateUniqueResourceDirectoryRelativePath(std::filesystem::path const& targetPathResDirRel) const -> std::filesystem::path {
   return GenerateUniquePath(mResDirAbs / targetPathResDirRel);
 }
