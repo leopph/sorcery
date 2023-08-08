@@ -6,13 +6,12 @@
 #include <iostream>
 
 RTTR_REGISTRATION {
-  rttr::registration::class_<sorcery::TransformComponent>{ "Transform Component" }
+  rttr::registration::class_<sorcery::TransformComponent>{"Transform Component"}
     .constructor<>()(rttr::policy::ctor::as_raw_ptr)
     .property("localPosition", &sorcery::TransformComponent::GetLocalPosition, &sorcery::TransformComponent::SetLocalPosition)
     .property("localRotation", &sorcery::TransformComponent::GetLocalRotation, &sorcery::TransformComponent::SetLocalRotation)
     .property("localScale", &sorcery::TransformComponent::GetLocalScale, &sorcery::TransformComponent::SetLocalScale)
-    .property("parent", &sorcery::TransformComponent::GetParent, &sorcery::TransformComponent::SetParent)
-    .property("children", &sorcery::TransformComponent::mChildren)(rttr::policy::prop::as_reference_wrapper);
+    .property("parent", &sorcery::TransformComponent::GetParent, &sorcery::TransformComponent::SetParent);
 }
 
 
@@ -36,10 +35,10 @@ auto TransformComponent::UpdateWorldDataRecursive() -> void {
 
   // SRT transformation order
 
-  mModelMat[0] = Vector4{ mRight * mWorldScale[0], 0 };
-  mModelMat[1] = Vector4{ mUp * mWorldScale[1], 0 };
-  mModelMat[2] = Vector4{ mForward * mWorldScale[2], 0 };
-  mModelMat[3] = Vector4{ mWorldPosition, 1 };
+  mModelMat[0] = Vector4{mRight * mWorldScale[0], 0};
+  mModelMat[1] = Vector4{mUp * mWorldScale[1], 0};
+  mModelMat[2] = Vector4{mForward * mWorldScale[2], 0};
+  mModelMat[3] = Vector4{mWorldPosition, 1};
 
   mNormalMat[0] = mRight / mWorldScale[0];
   mNormalMat[1] = mUp / mWorldScale[1];
@@ -136,7 +135,7 @@ auto TransformComponent::Translate(Vector3 const& vector, Space const base) -> v
 
 
 auto TransformComponent::Translate(f32 const x, f32 const y, f32 const z, Space const base) -> void {
-  Translate(Vector3{ x, y, z }, base);
+  Translate(Vector3{x, y, z}, base);
 }
 
 
@@ -150,7 +149,7 @@ auto TransformComponent::Rotate(Quaternion const& rotation, Space const base) ->
 
 
 auto TransformComponent::Rotate(Vector3 const& axis, f32 const amountDegrees, Space const base) -> void {
-  Rotate(Quaternion{ axis, amountDegrees }, base);
+  Rotate(Quaternion{axis, amountDegrees}, base);
 }
 
 
@@ -164,7 +163,7 @@ auto TransformComponent::Rescale(Vector3 const& scaling, Space const base) -> vo
 
 
 auto TransformComponent::Rescale(f32 const x, f32 const y, f32 const z, Space const base) -> void {
-  Rescale(Vector3{ x, y, z }, base);
+  Rescale(Vector3{x, y, z}, base);
 }
 
 
@@ -244,7 +243,7 @@ auto TransformComponent::OnDrawProperties(bool& changed) -> void {
   ImGui::Text("Local Position");
   ImGui::TableNextColumn();
 
-  Vector3 localPos{ GetLocalPosition() };
+  Vector3 localPos{GetLocalPosition()};
   if (ImGui::DragFloat3("###transformPos", localPos.GetData(), 0.1f)) {
     SetLocalPosition(localPos);
   }
@@ -253,7 +252,7 @@ auto TransformComponent::OnDrawProperties(bool& changed) -> void {
   ImGui::Text("Local Rotation");
   ImGui::TableNextColumn();
 
-  auto euler{ GetLocalRotation().ToEulerAngles() };
+  auto euler{GetLocalRotation().ToEulerAngles()};
   if (ImGui::DragFloat3("###transformRot", euler.GetData(), 1.0f)) {
     SetLocalRotation(Quaternion::FromEulerAngles(euler));
   }
@@ -262,8 +261,8 @@ auto TransformComponent::OnDrawProperties(bool& changed) -> void {
   ImGui::Text("Local Scale");
   ImGui::TableNextColumn();
 
-  bool static uniformScale{ true };
-  auto constexpr scaleSpeed{ 0.01f };
+  bool static uniformScale{true};
+  auto constexpr scaleSpeed{0.01f};
 
   ImGui::Text("%s", "Uniform");
   ImGui::SameLine();
@@ -271,12 +270,12 @@ auto TransformComponent::OnDrawProperties(bool& changed) -> void {
   ImGui::SameLine();
 
   if (uniformScale) {
-    f32 scale{ GetLocalScale()[0] };
+    f32 scale{GetLocalScale()[0]};
     if (ImGui::DragFloat("###transformScale", &scale, scaleSpeed)) {
-      SetLocalScale(Vector3{ scale });
+      SetLocalScale(Vector3{scale});
     }
   } else {
-    Vector3 localScale{ GetLocalScale() };
+    Vector3 localScale{GetLocalScale()};
     if (ImGui::DragFloat3("###transformScale", localScale.GetData(), scaleSpeed)) {
       SetLocalScale(localScale);
     }
@@ -285,11 +284,11 @@ auto TransformComponent::OnDrawProperties(bool& changed) -> void {
 
 
 auto CalculateModelMatrixNoScale(TransformComponent const& transform) noexcept -> Matrix4 {
-  auto mtx{ transform.GetModelMatrix() };
-  auto const scale{ transform.GetWorldScale() };
+  auto mtx{transform.GetModelMatrix()};
+  auto const scale{transform.GetWorldScale()};
 
   for (int i = 0; i < 3; i++) {
-    mtx[i] = Vector4{ Vector3{ mtx[i] } / scale, mtx[i][3] };
+    mtx[i] = Vector4{Vector3{mtx[i]} / scale, mtx[i][3]};
   }
 
   return mtx;
