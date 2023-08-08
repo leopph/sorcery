@@ -10,15 +10,9 @@ RTTR_REGISTRATION {
     rttr::value("Cubemap", sorcery::TextureImporter::TextureType::Cubemap)
   );
 
-  rttr::registration::enumeration<sorcery::TextureImporter::NonPowerOfTwoRounding>("Texture Import Non-Power Of Two Rounding")(
-    rttr::value("None", sorcery::TextureImporter::NonPowerOfTwoRounding::None),
-    rttr::value("NextPowerOfTwo", sorcery::TextureImporter::NonPowerOfTwoRounding::NextPowerOfTwo)
-  );
-
   rttr::registration::class_<sorcery::TextureImporter>("Texture Importer")
     .REFLECT_REGISTER_RESOURCE_IMPORTER_CTOR
-    .property("Texture Type", &sorcery::TextureImporter::mTexType)
-    .property("Non-Power Of Two Rounding", &sorcery::TextureImporter::mRounding);
+    .property("Texture Type", &sorcery::TextureImporter::mTexType);
 }
 
 

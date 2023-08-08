@@ -11,18 +11,11 @@ public:
     Cubemap   = 1
   };
 
-
-  enum class NonPowerOfTwoRounding {
-    None           = 0,
-    NextPowerOfTwo = 1
-  };
-
 private:
   RTTR_ENABLE(ResourceImporter)
   RTTR_REGISTRATION_FRIEND
 
   TextureType mTexType{TextureType::Texture2D};
-  NonPowerOfTwoRounding mRounding{NonPowerOfTwoRounding::NextPowerOfTwo};
 
 public:
   LEOPPHAPI auto GetSupportedFileExtensions(std::vector<std::string>& out) -> void override;
