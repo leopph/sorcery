@@ -2,6 +2,7 @@
 #include "../Resources/Texture2D.hpp"
 #include "../Resources/Cubemap.hpp"
 
+#define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
 RTTR_REGISTRATION {
@@ -37,8 +38,8 @@ auto TextureImporter::Import(std::filesystem::path const& src) -> ObserverPtr<Re
       int height;
       int channelCount;
 
-      if (auto const imgData{stbi_load(src.string().c_str(), &width, &height, &channelCount, 4)}) {
-        return new Texture2D{Image{static_cast<u32>(width), static_cast<u32>(height), 4, std::unique_ptr<u8[]>{imgData}}};
+      if (auto const imgData{stbi_load(src.string().c_str(), &width, &height, &channelCount, 0)}) {
+        return new Texture2D{Image{width, height, channelCount, std::unique_ptr<std::uint8_t[]>{imgData}}};
       }
 
       return nullptr;
@@ -49,7 +50,7 @@ auto TextureImporter::Import(std::filesystem::path const& src) -> ObserverPtr<Re
       int height;
       int channelCount;
 
-      if (std::unique_ptr<u8, decltype([](u8* const p) {
+      if (std::unique_ptr<std::uint8_t, decltype([](std::uint8_t* const p) {
         stbi_image_free(p);
       })> const data{stbi_load(src.string().c_str(), &width, &height, &channelCount, 4)}) {
         std::array<Image, 6> faceImgs;
@@ -83,13 +84,13 @@ auto TextureImporter::Import(std::filesystem::path const& src) -> ObserverPtr<Re
           }
 
           for (int faceIdx = 0; faceIdx < 6; faceIdx++) {
-            auto bytes{std::make_unique_for_overwrite<u8[]>(faceSize * faceSize * 4)};
+            auto bytes{std::make_unique_for_overwrite<std::uint8_t[]>(faceSize * faceSize * 4)};
 
             for (int i = 0; i < faceSize; i++) {
               std::ranges::copy_n(data.get() + i * width * 4 + faceIdx * faceSize * 4, faceSize * 4, bytes.get() + i * faceSize * 4);
             }
 
-            faceImgs[faceIdx] = Image{static_cast<u32>(faceSize), static_cast<u32>(faceSize), 4, std::move(bytes)};
+            faceImgs[faceIdx] = Image{faceSize, faceSize, 4, std::move(bytes)};
           }
         }
         // 1:6
@@ -101,9 +102,9 @@ auto TextureImporter::Import(std::filesystem::path const& src) -> ObserverPtr<Re
           }
 
           for (int faceIdx = 0; faceIdx < 6; faceIdx++) {
-            auto bytes{std::make_unique_for_overwrite<u8[]>(faceSize * faceSize * 4)};
+            auto bytes{std::make_unique_for_overwrite<std::uint8_t[]>(faceSize * faceSize * 4)};
             std::ranges::copy_n(data.get() + faceIdx * faceSize * faceSize * 4, faceSize * faceSize * 4, bytes.get());
-            faceImgs[faceIdx] = Image{static_cast<u32>(faceSize), static_cast<u32>(faceSize), 4, std::move(bytes)};
+            faceImgs[faceIdx] = Image{faceSize, faceSize, 4, std::move(bytes)};
           }
         } else {
           return nullptr;
