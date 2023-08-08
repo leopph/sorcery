@@ -11,7 +11,7 @@ RTTR_REGISTRATION {
 
 
 namespace sorcery {
-auto Texture2D::UploadToGpu() -> void {
+auto Texture2D::UploadToGpu(bool const allowBlockCompression) -> void {
   struct FormatInfo {
     DXGI_FORMAT texFormat;
     DXGI_FORMAT srvFormat;
@@ -19,21 +19,23 @@ auto Texture2D::UploadToGpu() -> void {
   };
 
   auto const& [texFormat, srvFormat, alternativeData]{
-    [this]() -> FormatInfo {
+    [this, allowBlockCompression]() -> FormatInfo {
       auto const channelCount{mImgData->GetChannelCount()};
 
-      if (auto blockCompressedData{mImgData->CreateBlockCompressedData()}) {
-        if (channelCount == 1) {
-          return FormatInfo{.texFormat = DXGI_FORMAT_BC4_TYPELESS, .srvFormat = DXGI_FORMAT_BC4_UNORM, .compressedData = std::move(blockCompressedData)};
-        }
-        if (channelCount == 2) {
-          return FormatInfo{.texFormat = DXGI_FORMAT_BC5_TYPELESS, .srvFormat = DXGI_FORMAT_BC5_UNORM, .compressedData = std::move(blockCompressedData)};
-        }
-        if (channelCount == 3) {
-          return FormatInfo{.texFormat = DXGI_FORMAT_BC1_TYPELESS, .srvFormat = DXGI_FORMAT_BC1_UNORM, .compressedData = std::move(blockCompressedData)};
-        }
-        if (channelCount == 4) {
-          return FormatInfo{.texFormat = DXGI_FORMAT_BC3_TYPELESS, .srvFormat = DXGI_FORMAT_BC3_UNORM, .compressedData = std::move(blockCompressedData)};
+      if (allowBlockCompression) {
+        if (auto blockCompressedData{mImgData->CreateBlockCompressedData()}) {
+          if (channelCount == 1) {
+            return FormatInfo{.texFormat = DXGI_FORMAT_BC4_TYPELESS, .srvFormat = DXGI_FORMAT_BC4_UNORM, .compressedData = std::move(blockCompressedData)};
+          }
+          if (channelCount == 2) {
+            return FormatInfo{.texFormat = DXGI_FORMAT_BC5_TYPELESS, .srvFormat = DXGI_FORMAT_BC5_UNORM, .compressedData = std::move(blockCompressedData)};
+          }
+          if (channelCount == 3) {
+            return FormatInfo{.texFormat = DXGI_FORMAT_BC1_TYPELESS, .srvFormat = DXGI_FORMAT_BC1_UNORM, .compressedData = std::move(blockCompressedData)};
+          }
+          if (channelCount == 4) {
+            return FormatInfo{.texFormat = DXGI_FORMAT_BC3_TYPELESS, .srvFormat = DXGI_FORMAT_BC3_UNORM, .compressedData = std::move(blockCompressedData)};
+          }
         }
       }
       if (channelCount == 1) {
@@ -87,9 +89,9 @@ auto Texture2D::UploadToGpu() -> void {
 }
 
 
-Texture2D::Texture2D(Image img, bool const keepDataInCpuMemory) {
+Texture2D::Texture2D(Image img, bool const keepDataInCpuMemory, bool const allowBlockCompression) {
   SetImageData(std::move(img));
-  Update(keepDataInCpuMemory);
+  Update(keepDataInCpuMemory, allowBlockCompression);
 }
 
 
@@ -116,9 +118,9 @@ auto Texture2D::GetSrv() const noexcept -> ObserverPtr<ID3D11ShaderResourceView>
 }
 
 
-auto Texture2D::Update(bool const keepDataInCpuMemory) noexcept -> void {
+auto Texture2D::Update(bool const keepDataInCpuMemory, bool const allowBlockCompression) noexcept -> void {
   if (mImgData) {
-    UploadToGpu();
+    UploadToGpu(allowBlockCompression);
 
     if (!keepDataInCpuMemory) {
       ReleaseCpuMemory();

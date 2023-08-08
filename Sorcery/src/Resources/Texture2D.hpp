@@ -22,18 +22,18 @@ class Texture2D final : public Resource {
   int mHeight{0};
   int mChannelCount{0};
 
-  auto UploadToGpu() -> void;
+  auto UploadToGpu(bool allowBlockCompression) -> void;
 
 public:
   Texture2D() = default;
-  LEOPPHAPI explicit Texture2D(Image img, bool keepDataInCpuMemory = false);
+  LEOPPHAPI explicit Texture2D(Image img, bool keepDataInCpuMemory = false, bool allowBlockCompression = true);
 
   [[nodiscard]] LEOPPHAPI auto GetImageData() const noexcept -> ObserverPtr<Image const>;
   LEOPPHAPI auto SetImageData(Image img) noexcept -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetSrv() const noexcept -> ObserverPtr<ID3D11ShaderResourceView>;
 
-  LEOPPHAPI auto Update(bool keepDataInCpuMemory = false) noexcept -> void;
+  LEOPPHAPI auto Update(bool keepDataInCpuMemory = false, bool allowBlockCompression = true) noexcept -> void;
 
   [[nodiscard]] LEOPPHAPI auto HasCpuMemory() const noexcept -> bool;
   LEOPPHAPI auto ReleaseCpuMemory() -> void;
