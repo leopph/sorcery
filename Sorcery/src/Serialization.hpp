@@ -136,7 +136,7 @@ auto ReflectionDeserializeFromYaml(YAML::Node const& node, T& obj, std::function
         assert(propValue.is_valid());
         ReflectionDeserializeFromYaml(node[prop.get_name().to_string()], propValue, extensionFunc);
         assert(propValue.is_valid());
-        auto const success{prop.set_value(obj, propValue)};
+        [[maybe_unused]] auto const success{prop.set_value(obj, propValue)};
         assert(success);
       }
     }

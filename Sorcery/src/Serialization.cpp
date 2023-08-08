@@ -123,7 +123,7 @@ auto ReflectionSerializeToYaml(rttr::variant const& v, std::function<YAML::Node(
   if (v.get_type().is_enumeration()) {
     auto const enumeration{v.get_type().get_enumeration()};
     auto underlying{v};
-    auto const success{underlying.convert(enumeration.get_underlying_type())};
+    [[maybe_unused]] auto const success{underlying.convert(enumeration.get_underlying_type())};
     assert(success);
     return ReflectionSerializeToYaml(underlying, extensionFunc);
   }
@@ -189,7 +189,7 @@ auto ReflectionDeserializeFromYaml(YAML::Node const& node, Object& obj, std::fun
     assert(value.is_valid());
     ReflectionDeserializeFromYaml(node[prop.get_name().to_string()], value, extensionFunc);
     assert(value.is_valid());
-    auto const success{prop.set_value(obj, value)};
+    [[maybe_unused]] auto const success{prop.set_value(obj, value)};
     assert(success);
   }
 }
@@ -332,7 +332,7 @@ auto ReflectionDeserializeFromYaml(YAML::Node const& node, rttr::variant& v, std
       if (auto const res{gResourceManager.GetOrLoad(node.as<Guid>())}) {
         auto const type{v.get_type()};
         v = res;
-        auto const success{v.convert(type)};
+        [[maybe_unused]] auto const success{v.convert(type)};
         assert(success);
       }
     } catch (...) { }
@@ -344,7 +344,7 @@ auto ReflectionDeserializeFromYaml(YAML::Node const& node, rttr::variant& v, std
     assert(container.is_valid());
 
     if (container.is_dynamic()) {
-      auto const success{container.set_size(node.size())};
+      [[maybe_unused]] auto const success{container.set_size(node.size())};
       assert(success);
     }
 
@@ -353,7 +353,7 @@ auto ReflectionDeserializeFromYaml(YAML::Node const& node, rttr::variant& v, std
       assert(value.is_valid());
       ReflectionDeserializeFromYaml(node[i], value, extensionFunc);
       assert(value.is_valid());
-      auto const success{container.set_value(i, value)};
+      [[maybe_unused]] auto const success{container.set_value(i, value)};
       assert(success);
     }
 
@@ -370,7 +370,7 @@ auto ReflectionDeserializeFromYaml(YAML::Node const& node, rttr::variant& v, std
       assert(value.is_valid());
       ReflectionDeserializeFromYaml(node[prop.get_name().to_string()], value, extensionFunc);
       assert(value.is_valid());
-      auto const success{prop.set_value(v, value)};
+      [[maybe_unused]] auto const success{prop.set_value(v, value)};
       assert(success);
     }
 
@@ -383,7 +383,7 @@ auto ReflectionDeserializeFromYaml(YAML::Node const& node, rttr::variant& v, std
       assert(value.is_valid());
       ReflectionDeserializeFromYaml(node[prop.get_name().to_string()], value, extensionFunc);
       assert(value.is_valid());
-      auto const success{prop.set_value(v, value)};
+      [[maybe_unused]] auto const success{prop.set_value(v, value)};
       assert(success);
     }
 

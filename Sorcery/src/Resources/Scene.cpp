@@ -152,7 +152,7 @@ auto Scene::Load() -> void {
         if (auto const it{ptrFixUp.find(objNode.as<int>(0))}; it != std::end(ptrFixUp)) {
           auto const type{v.get_type()};
           v = it->second;
-          auto const success{v.convert(type)};
+          [[maybe_unused]] auto const success{v.convert(type)};
           assert(success);
         }
       }

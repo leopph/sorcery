@@ -33,7 +33,7 @@ auto ReflectionDisplayProperties(T& obj) -> void {
       if (ImGui::BeginCombo(prop.get_name().data(), enumeration.value_to_name(propValue).data())) {
         for (auto const& name : enumeration.get_names()) {
           if (auto const valueOfName{enumeration.name_to_value(name)}; ImGui::Selectable(name.data(), propValue == valueOfName)) {
-            auto const success{prop.set_value(obj, valueOfName)};
+            [[maybe_unused]] auto const success{prop.set_value(obj, valueOfName)};
             assert(success);
           }
         }

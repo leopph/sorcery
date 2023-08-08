@@ -24,7 +24,7 @@ Object::~Object() {
     for (auto const prop : rttr::type::get(*otherObj).get_properties()) {
       if (prop.get_type().is_pointer()) {
         if (prop.get_value(*otherObj).get_value<Object*>() == this) {
-          auto const success{prop.set_value(*otherObj, nullptr)};
+          [[maybe_unused]] auto const success{prop.set_value(*otherObj, nullptr)};
           assert(success);
         }
       }
