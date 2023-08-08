@@ -16,6 +16,8 @@ private:
   RTTR_REGISTRATION_FRIEND
 
   TextureType mTexType{TextureType::Texture2D};
+  bool mKeepInCpuMemory{false};
+  bool mAllowBlockCompression{false};
 
 public:
   LEOPPHAPI auto GetSupportedFileExtensions(std::vector<std::string>& out) -> void override;

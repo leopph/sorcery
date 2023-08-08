@@ -13,7 +13,9 @@ RTTR_REGISTRATION {
 
   rttr::registration::class_<sorcery::TextureImporter>("Texture Importer")
     .REFLECT_REGISTER_RESOURCE_IMPORTER_CTOR
-    .property("Texture Type", &sorcery::TextureImporter::mTexType);
+    .property("Texture Type", &sorcery::TextureImporter::mTexType)
+    .property("Keep in CPU Memory", &sorcery::TextureImporter::mKeepInCpuMemory)
+    .property("Allow Block Compression", &sorcery::TextureImporter::mAllowBlockCompression);
 }
 
 
@@ -39,7 +41,7 @@ auto TextureImporter::Import(std::filesystem::path const& src) -> ObserverPtr<Re
       int channelCount;
 
       if (auto const imgData{stbi_load(src.string().c_str(), &width, &height, &channelCount, 0)}) {
-        return new Texture2D{Image{width, height, channelCount, std::unique_ptr<std::uint8_t[]>{imgData}}};
+        return new Texture2D{Image{width, height, channelCount, std::unique_ptr<std::uint8_t[]>{imgData}}, mKeepInCpuMemory, mAllowBlockCompression};
       }
 
       return nullptr;
