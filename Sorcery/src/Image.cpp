@@ -158,8 +158,9 @@ auto Image::CreateBlockCompressedData() const noexcept -> std::optional<BlockCom
     return ret;
   }
 
-  if (mChannelCount == 2) { }
-
+  if (mChannelCount == 2) {
+    // TODO
+  }
 
   if (mChannelCount == 3) {
     BlockCompressedData ret{
@@ -176,16 +177,33 @@ auto Image::CreateBlockCompressedData() const noexcept -> std::optional<BlockCom
       for (int j{0}; j < mWidth; j += 4) {
         std::array<std::uint8_t, 64> blockData;
         extractBlock.operator()<4>(alphaExtended, i, j, blockData);
-        stb_compress_dxt_block(dstBlock, blockData.data(), 0, STB_DXT_NORMAL);
+        stb_compress_dxt_block(dstBlock, blockData.data(), 0, STB_DXT_HIGHQUAL);
         dstBlock += 8;
       }
     }
 
-    if (mChannelCount == 4) { }
-
     return ret;
   }
 
+  if (mChannelCount == 4) {
+    BlockCompressedData ret{
+      .bytes = std::make_unique_for_overwrite<std::uint8_t[]>(static_cast<std::size_t>(mWidth) * mHeight),
+      .rowByteCount = mWidth * 4
+    };
+
+    auto dstBlock{ret.bytes.get()};
+
+    for (int i{0}; i < mHeight; i += 4) {
+      for (int j{0}; j < mWidth; j += 4) {
+        std::array<std::uint8_t, 64> blockData;
+        extractBlock.operator()<4>(*this, i, j, blockData);
+        stb_compress_dxt_block(dstBlock, blockData.data(), 10, STB_DXT_HIGHQUAL);
+        dstBlock += 16;
+      }
+    }
+
+    return ret;
+  }
 
   return std::nullopt;
 }
