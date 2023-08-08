@@ -186,7 +186,7 @@ auto ProjectWindow::DrawContextMenu() noexcept -> void {
 
     ImGui::Separator();
 
-    if (ImGui::MenuItem("Reimport", nullptr, nullptr, !is_directory(selectedPathAbs))) {
+    if (ImGui::MenuItem("Import Settings", nullptr, nullptr, !is_directory(selectedPathAbs))) {
       if (std::unique_ptr<ResourceImporter> importer; ResourceManager::LoadMeta(selectedPathAbs, nullptr, std::addressof(importer))) {
         mFilesToImport.emplace_back(std::move(importer), selectedPathAbs, selectedPathAbs);
         mOpenImportModal = true;
@@ -250,7 +250,7 @@ auto ProjectWindow::Draw() -> void {
 
     DrawContextMenu();
 
-    auto constexpr importModalId{"Importer Settings"};
+    auto constexpr importModalId{"Import Settings"};
 
     if (mOpenImportModal) {
       mOpenImportModal = false;
