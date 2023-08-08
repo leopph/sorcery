@@ -4,19 +4,19 @@
 
 
 RTTR_REGISTRATION {
-  rttr::registration::class_<sorcery::Cubemap>{ "Cubemap" };
+  rttr::registration::class_<sorcery::Cubemap>{"Cubemap"};
 }
 
 
 namespace sorcery {
 auto Cubemap::UploadToGpu() -> void {
   D3D11_TEXTURE2D_DESC const texDesc{
-    .Width = clamp_cast<UINT>(mFaceData[0].get_width()),
-    .Height = clamp_cast<UINT>(mFaceData[0].get_height()),
+    .Width = clamp_cast<UINT>(mFaceData[0].GetWidth()),
+    .Height = clamp_cast<UINT>(mFaceData[0].GetHeight()),
     .MipLevels = 1,
     .ArraySize = 6,
     .Format = DXGI_FORMAT_R8G8B8A8_UNORM,
-    .SampleDesc = { .Count = 1, .Quality = 0 },
+    .SampleDesc = {.Count = 1, .Quality = 0},
     .Usage = D3D11_USAGE_IMMUTABLE,
     .BindFlags = D3D11_BIND_SHADER_RESOURCE,
     .CPUAccessFlags = 0,
@@ -27,14 +27,14 @@ auto Cubemap::UploadToGpu() -> void {
 
   for (int i = 0; i < 6; i++) {
     texData[i] = D3D11_SUBRESOURCE_DATA{
-      .pSysMem = mFaceData[i].get_data().data(),
-      .SysMemPitch = mFaceData[i].get_width() * mFaceData[i].get_num_channels(),
+      .pSysMem = mFaceData[i].GetData().data(),
+      .SysMemPitch = static_cast<UINT>(mFaceData[i].GetWidth() * mFaceData[i].GetChannelCount()),
       .SysMemSlicePitch = 0
     };
   }
 
   if (FAILED(gRenderer.GetDevice()->CreateTexture2D(&texDesc, texData.data(), mTex.ReleaseAndGetAddressOf()))) {
-    throw std::runtime_error{ "Failed to create GPU texture of Cubemap." };
+    throw std::runtime_error{"Failed to create GPU texture of Cubemap."};
   }
 
   D3D11_SHADER_RESOURCE_VIEW_DESC constexpr srvDesc{
@@ -47,7 +47,7 @@ auto Cubemap::UploadToGpu() -> void {
   };
 
   if (FAILED(gRenderer.GetDevice()->CreateShaderResourceView(mTex.Get(), &srvDesc, mSrv.ReleaseAndGetAddressOf()))) {
-    throw std::runtime_error{ "Failed to create GPU SRV of Cubemap." };
+    throw std::runtime_error{"Failed to create GPU SRV of Cubemap."};
   }
 }
 

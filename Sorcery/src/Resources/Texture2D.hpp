@@ -14,29 +14,29 @@
 namespace sorcery {
 class Texture2D final : public Resource {
   RTTR_ENABLE(Resource)
-  Microsoft::WRL::ComPtr<ID3D11Texture2D> mTex;
-  Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> mSrv;
-  Image* mImgData{ new Image{} };
+  Microsoft::WRL::ComPtr<ID3D11Texture2D> mTex{nullptr};
+  Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> mSrv{nullptr};
+  std::unique_ptr<Image> mImgData{nullptr};
 
-  int mWidth{ 0 };
-  int mHeight{ 0 };
-  int mChannelCount{ 0 };
+  int mWidth{0};
+  int mHeight{0};
+  int mChannelCount{0};
 
-  auto UploadToGPU() -> void;
+  auto UploadToGpu() -> void;
 
 public:
   Texture2D() = default;
-  LEOPPHAPI explicit Texture2D(Image img, bool keepDataInCPUMemory = false);
+  LEOPPHAPI explicit Texture2D(Image img, bool keepDataInCpuMemory = false);
 
   [[nodiscard]] LEOPPHAPI auto GetImageData() const noexcept -> ObserverPtr<Image const>;
-  LEOPPHAPI auto SetImageData(Image img, bool allocateCPUMemoryIfNeeded = false) noexcept -> void;
+  LEOPPHAPI auto SetImageData(Image img) noexcept -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetSrv() const noexcept -> ObserverPtr<ID3D11ShaderResourceView>;
 
-  LEOPPHAPI auto Update(bool keepDataInCPUMemory = false) noexcept -> void;
+  LEOPPHAPI auto Update(bool keepDataInCpuMemory = false) noexcept -> void;
 
-  LEOPPHAPI auto ReleaseCPUMemory() -> void;
-  [[nodiscard]] LEOPPHAPI auto HasCPUMemory() const noexcept -> bool;
+  [[nodiscard]] LEOPPHAPI auto HasCpuMemory() const noexcept -> bool;
+  LEOPPHAPI auto ReleaseCpuMemory() -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetWidth() const noexcept -> int;
   [[nodiscard]] LEOPPHAPI auto GetHeight() const noexcept -> int;
