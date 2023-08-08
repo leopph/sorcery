@@ -14,14 +14,21 @@ auto ReflectionDisplayProperties(T& obj) -> void {
       auto propValue{prop.get_value(obj)};
       assert(propValue.is_valid());
 
-      auto success{false};
-      auto propValueStr{propValue.to_string(&success)};
-      assert(success);
-
-      if (ImGui::InputText(prop.get_name().data(), &propValueStr)) {
-        if (rttr::variant newValue{propValueStr}; newValue.convert(prop.get_type())) {
-          success = prop.set_value(obj, newValue);
+      if (propValue.template is_type<bool>()) {
+        if (auto boolValue{propValue.template get_value<bool>()}; ImGui::Checkbox(prop.get_name().data(), &boolValue)) {
+          [[maybe_unused]] auto const success{prop.set_value(obj, boolValue)};
           assert(success);
+        }
+      } else {
+        auto success{false};
+        auto propValueStr{propValue.to_string(&success)};
+        assert(success);
+
+        if (ImGui::InputText(prop.get_name().data(), &propValueStr)) {
+          if (rttr::variant newValue{propValueStr}; newValue.convert(prop.get_type())) {
+            success = prop.set_value(obj, newValue);
+            assert(success);
+          }
         }
       }
     } else if (prop.get_type().is_enumeration()) {
