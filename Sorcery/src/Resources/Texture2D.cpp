@@ -15,36 +15,39 @@ auto Texture2D::UploadToGpu() -> void {
   struct FormatInfo {
     DXGI_FORMAT texFormat;
     DXGI_FORMAT srvFormat;
+    std::optional<Image::BlockCompressedData> compressedData;
   };
 
-  auto const& [texFormat, srvFormat]{
+  auto const& [texFormat, srvFormat, alternativeData]{
     [this]() -> FormatInfo {
-      if (auto const channelCount{mImgData->GetChannelCount()}; mImgData->GetWidth() % 4 == 0 && mImgData->GetHeight() % 4 == 0 && false) {
+      auto const channelCount{mImgData->GetChannelCount()};
+
+      if (auto blockCompressedData{mImgData->CreateBlockCompressedData()}) {
         if (channelCount == 1) {
-          return FormatInfo{.texFormat = DXGI_FORMAT_BC4_TYPELESS, .srvFormat = DXGI_FORMAT_BC4_UNORM};
+          return FormatInfo{.texFormat = DXGI_FORMAT_BC4_TYPELESS, .srvFormat = DXGI_FORMAT_BC4_UNORM, .compressedData = std::move(blockCompressedData)};
         }
         if (channelCount == 2) {
-          return FormatInfo{.texFormat = DXGI_FORMAT_BC5_TYPELESS, .srvFormat = DXGI_FORMAT_BC5_UNORM};
+          return FormatInfo{.texFormat = DXGI_FORMAT_BC5_TYPELESS, .srvFormat = DXGI_FORMAT_BC5_UNORM, .compressedData = std::move(blockCompressedData)};
         }
         if (channelCount == 3) {
-          return FormatInfo{.texFormat = DXGI_FORMAT_BC1_TYPELESS, .srvFormat = DXGI_FORMAT_BC1_UNORM};
+          return FormatInfo{.texFormat = DXGI_FORMAT_BC1_TYPELESS, .srvFormat = DXGI_FORMAT_BC1_UNORM, .compressedData = std::move(blockCompressedData)};
         }
         if (channelCount == 4) {
-          return FormatInfo{.texFormat = DXGI_FORMAT_BC3_TYPELESS, .srvFormat = DXGI_FORMAT_BC3_UNORM};
+          return FormatInfo{.texFormat = DXGI_FORMAT_BC3_TYPELESS, .srvFormat = DXGI_FORMAT_BC3_UNORM, .compressedData = std::move(blockCompressedData)};
         }
-      } else {
-        if (channelCount == 1) {
-          return FormatInfo{.texFormat = DXGI_FORMAT_R8_TYPELESS, .srvFormat = DXGI_FORMAT_R8_UNORM};
+      }
+      if (channelCount == 1) {
+        return FormatInfo{.texFormat = DXGI_FORMAT_R8_TYPELESS, .srvFormat = DXGI_FORMAT_R8_UNORM};
+      }
+      if (channelCount == 2) {
+        return FormatInfo{.texFormat = DXGI_FORMAT_R8G8_TYPELESS, .srvFormat = DXGI_FORMAT_R8G8_UNORM};
+      }
+      if (channelCount == 3 || channelCount == 4) {
+        if (channelCount == 3) {
+          mImgData->AppendChannel(255);
+          mChannelCount = 4;
         }
-        if (channelCount == 2) {
-          return FormatInfo{.texFormat = DXGI_FORMAT_R8G8_TYPELESS, .srvFormat = DXGI_FORMAT_R8G8_UNORM};
-        }
-        if (channelCount == 3 || channelCount == 4) {
-          if (channelCount == 3) {
-            mImgData->AppendChannel(255);
-          }
-          return FormatInfo{.texFormat = DXGI_FORMAT_R8G8B8A8_TYPELESS, .srvFormat = DXGI_FORMAT_R8G8B8A8_UNORM};
-        }
+        return FormatInfo{.texFormat = DXGI_FORMAT_R8G8B8A8_TYPELESS, .srvFormat = DXGI_FORMAT_R8G8B8A8_UNORM};
       }
       return FormatInfo{.texFormat = DXGI_FORMAT_UNKNOWN, .srvFormat = DXGI_FORMAT_UNKNOWN};
     }()
@@ -53,17 +56,22 @@ auto Texture2D::UploadToGpu() -> void {
   D3D11_TEXTURE2D_DESC const texDesc{
     .Width = clamp_cast<UINT>(mImgData->GetWidth()),
     .Height = clamp_cast<UINT>(mImgData->GetHeight()),
-    .MipLevels = 0,
+    .MipLevels = 1,
     .ArraySize = 1,
     .Format = texFormat,
     .SampleDesc = {.Count = 1, .Quality = 0},
     .Usage = D3D11_USAGE_DEFAULT,
-    .BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET,
+    .BindFlags = D3D11_BIND_SHADER_RESOURCE,
     .CPUAccessFlags = 0,
-    .MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS
+    .MiscFlags = 0
   };
 
-  if (FAILED(gRenderer.GetDevice()->CreateTexture2D(&texDesc, nullptr, mTex.ReleaseAndGetAddressOf()))) {
+  D3D11_SUBRESOURCE_DATA const subResData{
+    .pSysMem = alternativeData ? alternativeData->bytes.get() : mImgData->GetData().data(),
+    .SysMemPitch = static_cast<UINT>(alternativeData ? alternativeData->rowByteCount : mImgData->GetWidth() * mImgData->GetChannelCount())
+  };
+
+  if (FAILED(gRenderer.GetDevice()->CreateTexture2D(&texDesc, &subResData, mTex.ReleaseAndGetAddressOf()))) {
     throw std::runtime_error{"Failed to create GPU texture."};
   }
 
@@ -76,9 +84,6 @@ auto Texture2D::UploadToGpu() -> void {
   if (FAILED(gRenderer.GetDevice()->CreateShaderResourceView(mTex.Get(), &srvDesc, mSrv.ReleaseAndGetAddressOf()))) {
     throw std::runtime_error{"Failed to create GPU SRV."};
   }
-
-  gRenderer.GetImmediateContext()->UpdateSubresource(mTex.Get(), 0, nullptr, mImgData->GetData().data(), mImgData->GetWidth() * mImgData->GetChannelCount(), 0);
-  gRenderer.GetImmediateContext()->GenerateMips(mSrv.Get());
 }
 
 
