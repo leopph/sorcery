@@ -1129,7 +1129,7 @@ auto Renderer::Impl::DrawSkybox(Matrix4 const& camViewMtx, Matrix4 const& camPro
   UINT constexpr stride{sizeof(Vector3)};
   UINT constexpr offset{0};
   mImmediateContext->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
-  mImmediateContext->IASetIndexBuffer(mCubeMesh->GetIndexBuffer().Get(), DXGI_FORMAT_R32_UINT, 0);
+  mImmediateContext->IASetIndexBuffer(mCubeMesh->GetIndexBuffer().Get(), mCubeMesh->GetIndexFormat(), 0);
   mImmediateContext->IASetInputLayout(mPos3OnlyIl.Get());
   mImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
