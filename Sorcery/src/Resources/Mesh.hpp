@@ -62,36 +62,45 @@ private:
   DXGI_FORMAT mIdxFormat{DXGI_FORMAT_R16_UINT};
 
   auto UploadToGpu() noexcept -> void;
-  auto CalculateBounds() -> void;
-  auto EnsureCpuMemory() -> void;
+  auto CalculateBounds() noexcept -> void;
+  auto EnsureCpuMemory() noexcept -> void;
+  auto Set16BitIndicesFrom32BitBuffer(std::span<std::uint32_t const> indices) noexcept -> void;
 
 public:
   Mesh() = default;
-  LEOPPHAPI explicit Mesh(Data const& data, bool keepDataInCpuMemory = false) noexcept;
+  LEOPPHAPI explicit Mesh(Data data, bool keepDataInCpuMemory = false) noexcept;
 
   [[nodiscard]] LEOPPHAPI auto GetPositions() const noexcept -> std::span<Vector3 const>;
   LEOPPHAPI auto SetPositions(std::span<Vector3 const> positions) noexcept -> void;
+  LEOPPHAPI auto SetPositions(std::vector<Vector3>&& positions) noexcept -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetNormals() const noexcept -> std::span<Vector3 const>;
   LEOPPHAPI auto SetNormals(std::span<Vector3 const> normals) noexcept -> void;
+  LEOPPHAPI auto SetNormals(std::vector<Vector3>&& normals) noexcept -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetUVs() const noexcept -> std::span<Vector2 const>;
   LEOPPHAPI auto SetUVs(std::span<Vector2 const> uvs) noexcept -> void;
+  LEOPPHAPI auto SetUVs(std::vector<Vector2>&& uvs) noexcept -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetTangents() const noexcept -> std::span<Vector3 const>;
   LEOPPHAPI auto SetTangents(std::span<Vector3 const> tangents) noexcept -> void;
+  LEOPPHAPI auto SetTangents(std::vector<Vector3>&& tangents) noexcept -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetIndices16() const noexcept -> std::span<std::uint16_t const>;
   [[nodiscard]] LEOPPHAPI auto GetIndices32() const noexcept -> std::span<std::uint32_t const>;
   LEOPPHAPI auto SetIndices(std::span<std::uint16_t const> indices) noexcept -> void;
   LEOPPHAPI auto SetIndices(std::span<std::uint32_t const> indices) noexcept -> void;
+  LEOPPHAPI auto SetIndices(std::vector<std::uint16_t>&& indices) noexcept -> void;
+  LEOPPHAPI auto SetIndices(std::vector<std::uint32_t>&& indices) noexcept -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetSubMeshes() const noexcept -> std::span<SubMeshData const>;
   LEOPPHAPI auto SetSubMeshes(std::span<SubMeshData const> submeshes) noexcept -> void;
+  LEOPPHAPI auto SetSubmeshes(std::vector<SubMeshData>&& submeshes) noexcept -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetBounds() const noexcept -> AABB const&;
 
   LEOPPHAPI auto SetData(Data const& data) noexcept -> void;
+  LEOPPHAPI auto SetData(Data&& data) noexcept -> void;
   [[nodiscard]] LEOPPHAPI auto ValidateAndUpdate(bool keepDataInCpuMemory = false) noexcept -> bool;
 
   [[nodiscard]] LEOPPHAPI auto HasCpuMemory() const noexcept -> bool;

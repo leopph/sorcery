@@ -115,7 +115,7 @@ auto Mesh::UploadToGpu() noexcept -> void {
 }
 
 
-auto Mesh::CalculateBounds() -> void {
+auto Mesh::CalculateBounds() noexcept -> void {
   mBounds.min = Vector3{std::numeric_limits<float>::max()};
   mBounds.max = Vector3{std::numeric_limits<float>::lowest()};
 
@@ -126,15 +126,26 @@ auto Mesh::CalculateBounds() -> void {
 }
 
 
-auto Mesh::EnsureCpuMemory() -> void {
+auto Mesh::EnsureCpuMemory() noexcept -> void {
   if (!mCpuData) {
     mCpuData = std::make_unique<GeometryData>();
   }
 }
 
 
-Mesh::Mesh(Data const& data, bool const keepDataInCpuMemory) noexcept {
-  SetData(data);
+auto Mesh::Set16BitIndicesFrom32BitBuffer(std::span<std::uint32_t const> const indices) noexcept -> void {
+  assert(HasCpuMemory());
+  mCpuData->indices16.clear();
+  std::ranges::transform(indices, std::back_inserter(mCpuData->indices16), [](std::uint32_t const idx) {
+    return static_cast<std::uint16_t>(idx);
+  });
+  mCpuData->indices32.clear();
+  mIdxFormat = DXGI_FORMAT_R16_UINT;
+}
+
+
+Mesh::Mesh(Data data, bool const keepDataInCpuMemory) noexcept {
+  SetData(std::move(data));
   std::ignore = ValidateAndUpdate(keepDataInCpuMemory);
 }
 
@@ -150,6 +161,12 @@ auto Mesh::SetPositions(std::span<Vector3 const> positions) noexcept -> void {
 }
 
 
+auto Mesh::SetPositions(std::vector<Vector3>&& positions) noexcept -> void {
+  EnsureCpuMemory();
+  mCpuData->positions = std::move(positions);
+}
+
+
 auto Mesh::GetNormals() const noexcept -> std::span<Vector3 const> {
   return mCpuData ? mCpuData->normals : std::span<Vector3 const>{};
 }
@@ -158,6 +175,12 @@ auto Mesh::GetNormals() const noexcept -> std::span<Vector3 const> {
 auto Mesh::SetNormals(std::span<Vector3 const> normals) noexcept -> void {
   EnsureCpuMemory();
   mCpuData->normals.assign(std::begin(normals), std::end(normals));
+}
+
+
+auto Mesh::SetNormals(std::vector<Vector3>&& normals) noexcept -> void {
+  EnsureCpuMemory();
+  mCpuData->normals = std::move(normals);
 }
 
 
@@ -172,6 +195,12 @@ auto Mesh::SetUVs(std::span<Vector2 const> uvs) noexcept -> void {
 }
 
 
+auto Mesh::SetUVs(std::vector<Vector2>&& uvs) noexcept -> void {
+  EnsureCpuMemory();
+  mCpuData->uvs = std::move(uvs);
+}
+
+
 auto Mesh::GetTangents() const noexcept -> std::span<Vector3 const> {
   return mCpuData ? mCpuData->tangents : std::span<Vector3 const>{};
 }
@@ -180,6 +209,12 @@ auto Mesh::GetTangents() const noexcept -> std::span<Vector3 const> {
 auto Mesh::SetTangents(std::span<Vector3 const> tangents) noexcept -> void {
   EnsureCpuMemory();
   mCpuData->tangents.assign(std::begin(tangents), std::end(tangents));
+}
+
+
+auto Mesh::SetTangents(std::vector<Vector3>&& tangents) noexcept -> void {
+  EnsureCpuMemory();
+  mCpuData->tangents = std::move(tangents);
 }
 
 
@@ -213,11 +248,31 @@ auto Mesh::SetIndices(std::span<std::uint32_t const> const indices) noexcept -> 
     }
   }
 
-  std::ranges::transform(indices, std::back_inserter(mCpuData->indices16), [](std::uint32_t const idx) {
-    return static_cast<std::uint16_t>(idx);
-  });
+  Set16BitIndicesFrom32BitBuffer(indices);
+}
+
+
+auto Mesh::SetIndices(std::vector<std::uint16_t>&& indices) noexcept -> void {
+  EnsureCpuMemory();
+  mCpuData->indices16 = std::move(indices);
   mCpuData->indices32.clear();
   mIdxFormat = DXGI_FORMAT_R16_UINT;
+}
+
+
+auto Mesh::SetIndices(std::vector<std::uint32_t>&& indices) noexcept -> void {
+  EnsureCpuMemory();
+
+  for (auto const idx : indices) {
+    if (idx > std::numeric_limits<std::uint16_t>::max()) {
+      mCpuData->indices16.clear();
+      mCpuData->indices32 = std::move(indices);
+      mIdxFormat = DXGI_FORMAT_R32_UINT;
+      return;
+    }
+  }
+
+  Set16BitIndicesFrom32BitBuffer(indices);
 }
 
 
@@ -228,6 +283,11 @@ auto Mesh::GetSubMeshes() const noexcept -> std::span<SubMeshData const> {
 
 auto Mesh::SetSubMeshes(std::span<SubMeshData const> submeshes) noexcept -> void {
   mSubmeshes.assign(std::begin(submeshes), std::end(submeshes));
+}
+
+
+auto Mesh::SetSubmeshes(std::vector<SubMeshData>&& submeshes) noexcept -> void {
+  mSubmeshes = std::move(submeshes);
 }
 
 
@@ -244,6 +304,17 @@ auto Mesh::SetData(Data const& data) noexcept -> void {
   SetTangents(data.tangents);
   SetIndices(data.indices);
   SetSubMeshes(data.subMeshes);
+}
+
+
+auto Mesh::SetData(Data&& data) noexcept -> void {
+  EnsureCpuMemory();
+  SetPositions(std::move(data.positions));
+  SetNormals(std::move(data.normals));
+  SetUVs(std::move(data.uvs));
+  SetTangents(std::move(data.tangents));
+  SetIndices(std::move(data.indices));
+  SetSubMeshes(std::move(data.subMeshes));
 }
 
 
