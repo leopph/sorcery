@@ -4,16 +4,16 @@
 #include <stb_dxt.h>
 
 #include <array>
-#include <cstring>
 #include <utility>
 
 
 namespace sorcery {
-Image::Image(int const width, int const height, int const channelCount, std::unique_ptr<std::uint8_t[]> bytes) noexcept :
+Image::Image(int const width, int const height, int const channelCount, std::unique_ptr<std::uint8_t[]> bytes, bool const isSrgb) noexcept :
   mData{std::move(bytes)},
   mWidth{width},
   mHeight{height},
-  mChannelCount{channelCount} { }
+  mChannelCount{channelCount},
+  mIsSrgb{isSrgb} { }
 
 
 Image::Image(Image const& other) :
@@ -72,6 +72,16 @@ auto Image::GetHeight() const noexcept -> int {
 
 auto Image::GetChannelCount() const noexcept -> int {
   return mChannelCount;
+}
+
+
+auto Image::IsSrgb() const noexcept -> bool {
+  return mIsSrgb;
+}
+
+
+auto Image::SetSrgb(bool const srgb) noexcept -> void {
+  mIsSrgb = srgb;
 }
 
 

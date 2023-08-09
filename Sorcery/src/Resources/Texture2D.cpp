@@ -31,9 +31,15 @@ auto Texture2D::UploadToGpu(bool const allowBlockCompression) -> void {
             return FormatInfo{.texFormat = DXGI_FORMAT_BC5_TYPELESS, .srvFormat = DXGI_FORMAT_BC5_UNORM, .compressedData = std::move(blockCompressedData)};
           }
           if (channelCount == 3) {
+            if (mImgData->IsSrgb()) {
+              return FormatInfo{.texFormat = DXGI_FORMAT_BC1_TYPELESS, .srvFormat = DXGI_FORMAT_BC1_UNORM_SRGB, .compressedData = std::move(blockCompressedData)};
+            }
             return FormatInfo{.texFormat = DXGI_FORMAT_BC1_TYPELESS, .srvFormat = DXGI_FORMAT_BC1_UNORM, .compressedData = std::move(blockCompressedData)};
           }
           if (channelCount == 4) {
+            if (mImgData->IsSrgb()) {
+              return FormatInfo{.texFormat = DXGI_FORMAT_BC3_TYPELESS, .srvFormat = DXGI_FORMAT_BC3_UNORM_SRGB, .compressedData = std::move(blockCompressedData)};
+            }
             return FormatInfo{.texFormat = DXGI_FORMAT_BC3_TYPELESS, .srvFormat = DXGI_FORMAT_BC3_UNORM, .compressedData = std::move(blockCompressedData)};
           }
         }
@@ -48,6 +54,9 @@ auto Texture2D::UploadToGpu(bool const allowBlockCompression) -> void {
         if (channelCount == 3) {
           mImgData->AppendChannel(255);
           mChannelCount = 4;
+        }
+        if (mImgData->IsSrgb()) {
+          return FormatInfo{.texFormat = DXGI_FORMAT_R8G8B8A8_TYPELESS, .srvFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB};
         }
         return FormatInfo{.texFormat = DXGI_FORMAT_R8G8B8A8_TYPELESS, .srvFormat = DXGI_FORMAT_R8G8B8A8_UNORM};
       }

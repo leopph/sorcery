@@ -14,6 +14,7 @@ class Image {
   int mWidth{0};
   int mHeight{0};
   int mChannelCount{0};
+  bool mIsSrgb{true};
 
 public:
   struct BlockCompressedData {
@@ -23,7 +24,7 @@ public:
 
 
   Image() noexcept = default;
-  LEOPPHAPI Image(int width, int height, int channelCount, std::unique_ptr<std::uint8_t[]> bytes) noexcept;
+  LEOPPHAPI Image(int width, int height, int channelCount, std::unique_ptr<std::uint8_t[]> bytes, bool isSrgb = true) noexcept;
   LEOPPHAPI Image(Image const& other);
   LEOPPHAPI Image(Image&& other) noexcept;
 
@@ -35,6 +36,8 @@ public:
   [[nodiscard]] LEOPPHAPI auto GetWidth() const noexcept -> int;
   [[nodiscard]] LEOPPHAPI auto GetHeight() const noexcept -> int;
   [[nodiscard]] LEOPPHAPI auto GetChannelCount() const noexcept -> int;
+  [[nodiscard]] LEOPPHAPI auto IsSrgb() const noexcept -> bool;
+  LEOPPHAPI auto SetSrgb(bool srgb) noexcept -> void;
 
   // Removes the specified color channel from the image and returns it as a new, single channel image.
   [[nodiscard]] LEOPPHAPI auto ExtractChannel(int channelIdx) -> Image;

@@ -15,7 +15,7 @@ auto Cubemap::UploadToGpu() -> void {
     .Height = clamp_cast<UINT>(mFaceData[0].GetHeight()),
     .MipLevels = 1,
     .ArraySize = 6,
-    .Format = DXGI_FORMAT_R8G8B8A8_UNORM,
+    .Format = DXGI_FORMAT_R8G8B8A8_TYPELESS,
     .SampleDesc = {.Count = 1, .Quality = 0},
     .Usage = D3D11_USAGE_IMMUTABLE,
     .BindFlags = D3D11_BIND_SHADER_RESOURCE,
@@ -37,8 +37,8 @@ auto Cubemap::UploadToGpu() -> void {
     throw std::runtime_error{"Failed to create GPU texture of Cubemap."};
   }
 
-  D3D11_SHADER_RESOURCE_VIEW_DESC constexpr srvDesc{
-    .Format = DXGI_FORMAT_R8G8B8A8_UNORM,
+  D3D11_SHADER_RESOURCE_VIEW_DESC const srvDesc{
+    .Format = mFaceData[0].IsSrgb() ? DXGI_FORMAT_R8G8B8A8_UNORM_SRGB : DXGI_FORMAT_R8G8B8A8_UNORM,
     .ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE,
     .TextureCube = {
       .MostDetailedMip = 0,

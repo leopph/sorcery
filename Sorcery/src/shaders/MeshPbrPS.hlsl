@@ -174,7 +174,7 @@ float4 main(const MeshVsOut vsOut) : SV_TARGET {
     float3 albedo = material.albedo;
 
     if (material.sampleAlbedo) {
-        albedo *= pow(gAlbedoMap.Sample(gSamplerAf16, vsOut.uv).rgb, 2.2);
+        albedo *= gAlbedoMap.Sample(gSamplerAf16, vsOut.uv).rgb;
     }
 
     float metallic = material.metallic;
