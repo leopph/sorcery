@@ -2,7 +2,7 @@
 #include "../Resources/Texture2D.hpp"
 #include "../Resources/Cubemap.hpp"
 
-#define STB_IMAGE_IMPLEMENTATION
+#include <cassert>
 #include <stb_image.h>
 
 RTTR_REGISTRATION {

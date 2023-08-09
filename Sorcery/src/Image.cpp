@@ -1,6 +1,5 @@
 #include "Image.hpp"
 
-#define STB_DXT_IMPLEMENTATION
 #include <algorithm>
 #include <stb_dxt.h>
 
