@@ -4,20 +4,20 @@
 #include "../Util.hpp"
 #include "../Serialization.hpp"
 
-#include <utility>
-#include <format>
 #include <imgui.h>
+
+#include <cassert>
 
 
 RTTR_REGISTRATION {
-  rttr::registration::class_<sorcery::Mesh>{ "Mesh" };
+  rttr::registration::class_<sorcery::Mesh>{"Mesh"};
 }
 
 
 namespace sorcery {
-auto Mesh::UploadToGPU() -> void {
-  D3D11_BUFFER_DESC const posDesc{
-    .ByteWidth = clamp_cast<UINT>(mCPUData->positions.size() * sizeof(Vector3)),
+auto Mesh::UploadToGpu() noexcept -> void {
+  D3D11_BUFFER_DESC const posBufDesc{
+    .ByteWidth = clamp_cast<UINT>(mCpuData->positions.size() * sizeof(Vector3)),
     .Usage = D3D11_USAGE_IMMUTABLE,
     .BindFlags = D3D11_BIND_VERTEX_BUFFER,
     .CPUAccessFlags = 0,
@@ -26,15 +26,14 @@ auto Mesh::UploadToGPU() -> void {
   };
 
   D3D11_SUBRESOURCE_DATA const posBufData{
-    .pSysMem = mCPUData->positions.data()
+    .pSysMem = mCpuData->positions.data()
   };
 
-  if (FAILED(gRenderer.GetDevice()->CreateBuffer(&posDesc, &posBufData, mPosBuf.ReleaseAndGetAddressOf()))) {
-    throw std::runtime_error{ "Failed to create mesh position buffer." };
-  }
+  [[maybe_unused]] auto hr{gRenderer.GetDevice()->CreateBuffer(&posBufDesc, &posBufData, mPosBuf.ReleaseAndGetAddressOf())};
+  assert(SUCCEEDED(hr));
 
-  D3D11_BUFFER_DESC const normDesc{
-    .ByteWidth = clamp_cast<UINT>(mCPUData->normals.size() * sizeof(Vector3)),
+  D3D11_BUFFER_DESC const normBufDesc{
+    .ByteWidth = clamp_cast<UINT>(mCpuData->normals.size() * sizeof(Vector3)),
     .Usage = D3D11_USAGE_IMMUTABLE,
     .BindFlags = D3D11_BIND_VERTEX_BUFFER,
     .CPUAccessFlags = 0,
@@ -43,15 +42,14 @@ auto Mesh::UploadToGPU() -> void {
   };
 
   D3D11_SUBRESOURCE_DATA const normBufData{
-    .pSysMem = mCPUData->normals.data()
+    .pSysMem = mCpuData->normals.data()
   };
 
-  if (FAILED(gRenderer.GetDevice()->CreateBuffer(&normDesc, &normBufData, mNormBuf.ReleaseAndGetAddressOf()))) {
-    throw std::runtime_error{ "Failed to create mesh normal buffer." };
-  }
+  hr = gRenderer.GetDevice()->CreateBuffer(&normBufDesc, &normBufData, mNormBuf.ReleaseAndGetAddressOf());
+  assert(SUCCEEDED(hr));
 
-  D3D11_BUFFER_DESC const uvDesc{
-    .ByteWidth = clamp_cast<UINT>(mCPUData->uvs.size() * sizeof(Vector2)),
+  D3D11_BUFFER_DESC const uvBufDesc{
+    .ByteWidth = clamp_cast<UINT>(mCpuData->uvs.size() * sizeof(Vector2)),
     .Usage = D3D11_USAGE_IMMUTABLE,
     .BindFlags = D3D11_BIND_VERTEX_BUFFER,
     .CPUAccessFlags = 0,
@@ -60,15 +58,31 @@ auto Mesh::UploadToGPU() -> void {
   };
 
   D3D11_SUBRESOURCE_DATA const uvBufData{
-    .pSysMem = mCPUData->uvs.data()
+    .pSysMem = mCpuData->uvs.data()
   };
 
-  if (FAILED(gRenderer.GetDevice()->CreateBuffer(&uvDesc, &uvBufData, mUvBuf.ReleaseAndGetAddressOf()))) {
-    throw std::runtime_error{ "Failed to create mesh uv buffer." };
-  }
+  hr = gRenderer.GetDevice()->CreateBuffer(&uvBufDesc, &uvBufData, mUvBuf.ReleaseAndGetAddressOf());
+  assert(SUCCEEDED(hr));
 
-  D3D11_BUFFER_DESC const indDesc{
-    .ByteWidth = clamp_cast<UINT>(mCPUData->indices.size() * sizeof(u32)),
+  struct IdxBufInfo {
+    UINT size;
+    void* dataPtr;
+  };
+
+  auto const& [idxBufSize, idxBufDataPtr]{
+    [this] {
+      if (mIdxFormat == DXGI_FORMAT_R16_UINT) {
+        return IdxBufInfo{.size = static_cast<UINT>(std::size(mCpuData->indices16) * sizeof(std::uint16_t)), .dataPtr = mCpuData->indices16.data()};
+      }
+      if (mIdxFormat == DXGI_FORMAT_R32_UINT) {
+        return IdxBufInfo{.size = static_cast<UINT>(std::size(mCpuData->indices32) * sizeof(std::uint32_t)), .dataPtr = mCpuData->indices32.data()};
+      }
+      return IdxBufInfo{.size = 0, .dataPtr = nullptr};
+    }()
+  };
+
+  D3D11_BUFFER_DESC const idxBufDesc{
+    .ByteWidth = idxBufSize,
     .Usage = D3D11_USAGE_IMMUTABLE,
     .BindFlags = D3D11_BIND_INDEX_BUFFER,
     .CPUAccessFlags = 0,
@@ -76,16 +90,15 @@ auto Mesh::UploadToGPU() -> void {
     .StructureByteStride = 0
   };
 
-  D3D11_SUBRESOURCE_DATA const indBufData{
-    .pSysMem = mCPUData->indices.data()
+  D3D11_SUBRESOURCE_DATA const idxBufData{
+    .pSysMem = idxBufDataPtr
   };
 
-  if (FAILED(gRenderer.GetDevice()->CreateBuffer(&indDesc, &indBufData, mIndBuf.ReleaseAndGetAddressOf()))) {
-    throw std::runtime_error{ "Failed to create mesh index buffer." };
-  }
+  hr = gRenderer.GetDevice()->CreateBuffer(&idxBufDesc, &idxBufData, mIdxBuf.ReleaseAndGetAddressOf());
+  assert(SUCCEEDED(hr));
 
   D3D11_BUFFER_DESC const tangentBufDesc{
-    .ByteWidth = static_cast<UINT>(mCPUData->tangents.size() * sizeof(Vector3)),
+    .ByteWidth = static_cast<UINT>(mCpuData->tangents.size() * sizeof(Vector3)),
     .Usage = D3D11_USAGE_IMMUTABLE,
     .BindFlags = D3D11_BIND_VERTEX_BUFFER,
     .CPUAccessFlags = 0,
@@ -94,128 +107,117 @@ auto Mesh::UploadToGPU() -> void {
   };
 
   D3D11_SUBRESOURCE_DATA const tangentBufData{
-    .pSysMem = mCPUData->tangents.data()
+    .pSysMem = mCpuData->tangents.data()
   };
 
-  if (FAILED(gRenderer.GetDevice()->CreateBuffer(&tangentBufDesc, &tangentBufData, mTangentBuf.ReleaseAndGetAddressOf()))) {
-    throw std::runtime_error{ "Failed to create mesh tangent buffer." };
-  }
+  hr = gRenderer.GetDevice()->CreateBuffer(&tangentBufDesc, &tangentBufData, mTangentBuf.ReleaseAndGetAddressOf());
+  assert(SUCCEEDED(hr));
 }
 
 
 auto Mesh::CalculateBounds() -> void {
-  mBounds = {};
+  mBounds.min = Vector3{std::numeric_limits<float>::max()};
+  mBounds.max = Vector3{std::numeric_limits<float>::lowest()};
 
-  for (auto const& position : mCPUData->positions) {
-    mBounds.min = Vector3{ std::min(mBounds.min[0], position[0]), std::min(mBounds.min[1], position[1]), std::min(mBounds.min[2], position[2]) };
-    mBounds.max = Vector3{ std::max(mBounds.max[0], position[0]), std::max(mBounds.max[1], position[1]), std::max(mBounds.max[2], position[2]) };
+  for (auto const& position : mCpuData->positions) {
+    mBounds.min = Min(mBounds.min, position);
+    mBounds.max = Max(mBounds.max, position);
   }
 }
 
 
-Mesh::Mesh(Data data, bool const keepDataInCPUMemory) {
-  SetData(std::move(data));
-  ValidateAndUpdate(keepDataInCPUMemory);
+auto Mesh::EnsureCpuMemory() -> void {
+  if (!mCpuData) {
+    mCpuData = std::make_unique<GeometryData>();
+  }
+}
+
+
+Mesh::Mesh(Data const& data, bool const keepDataInCpuMemory) noexcept {
+  SetData(data);
+  std::ignore = ValidateAndUpdate(keepDataInCpuMemory);
 }
 
 
 auto Mesh::GetPositions() const noexcept -> std::span<Vector3 const> {
-  return mCPUData
-           ? mCPUData->positions
-           : std::span<Vector3 const>{};
+  return mCpuData ? mCpuData->positions : std::span<Vector3 const>{};
 }
 
 
-auto Mesh::SetPositions(std::vector<Vector3> positions, bool const allocateCPUMemoryIfNeeded) noexcept -> void {
-  if (!mCPUData) {
-    if (!allocateCPUMemoryIfNeeded) {
-      return;
-    }
-
-    mCPUData = new GeometryData{};
-  }
-
-  mCPUData->positions = std::move(positions);
+auto Mesh::SetPositions(std::span<Vector3 const> positions) noexcept -> void {
+  EnsureCpuMemory();
+  mCpuData->positions.assign(std::begin(positions), std::end(positions));
 }
 
 
 auto Mesh::GetNormals() const noexcept -> std::span<Vector3 const> {
-  return mCPUData
-           ? mCPUData->normals
-           : std::span<Vector3 const>{};
+  return mCpuData ? mCpuData->normals : std::span<Vector3 const>{};
 }
 
 
-auto Mesh::SetNormals(std::vector<Vector3> normals, bool const allocateCPUMemoryIfNeeded) noexcept -> void {
-  if (!mCPUData) {
-    if (!allocateCPUMemoryIfNeeded) {
-      return;
-    }
-
-    mCPUData = new GeometryData{};
-  }
-
-  mCPUData->normals = std::move(normals);
+auto Mesh::SetNormals(std::span<Vector3 const> normals) noexcept -> void {
+  EnsureCpuMemory();
+  mCpuData->normals.assign(std::begin(normals), std::end(normals));
 }
 
 
 auto Mesh::GetUVs() const noexcept -> std::span<Vector2 const> {
-  return mCPUData
-           ? mCPUData->uvs
-           : std::span<Vector2 const>{};
+  return mCpuData ? mCpuData->uvs : std::span<Vector2 const>{};
 }
 
 
-auto Mesh::SetUVs(std::vector<Vector2> uvs, bool const allocateCPUMemoryIfNeeded) noexcept -> void {
-  if (!mCPUData) {
-    if (!allocateCPUMemoryIfNeeded) {
-      return;
-    }
-
-    mCPUData = new GeometryData{};
-  }
-
-  mCPUData->uvs = std::move(uvs);
+auto Mesh::SetUVs(std::span<Vector2 const> uvs) noexcept -> void {
+  EnsureCpuMemory();
+  mCpuData->uvs.assign(std::begin(uvs), std::end(uvs));
 }
 
 
 auto Mesh::GetTangents() const noexcept -> std::span<Vector3 const> {
-  return mCPUData
-           ? mCPUData->tangents
-           : std::span<Vector3 const>{};
+  return mCpuData ? mCpuData->tangents : std::span<Vector3 const>{};
 }
 
 
-auto Mesh::SetTangents(std::vector<Vector3> tangents, bool const allocateCPUMemoryIfNeeded) noexcept -> void {
-  if (!mCPUData) {
-    if (!allocateCPUMemoryIfNeeded) {
+auto Mesh::SetTangents(std::span<Vector3 const> tangents) noexcept -> void {
+  EnsureCpuMemory();
+  mCpuData->tangents.assign(std::begin(tangents), std::end(tangents));
+}
+
+
+auto Mesh::GetIndices16() const noexcept -> std::span<std::uint16_t const> {
+  return mCpuData ? mCpuData->indices16 : std::span<std::uint16_t const>{};
+}
+
+
+auto Mesh::GetIndices32() const noexcept -> std::span<std::uint32_t const> {
+  return mCpuData ? mCpuData->indices32 : std::span<std::uint32_t const>{};
+}
+
+
+auto Mesh::SetIndices(std::span<std::uint16_t const> const indices) noexcept -> void {
+  EnsureCpuMemory();
+  mCpuData->indices16.assign(std::begin(indices), std::end(indices));
+  mCpuData->indices32.clear();
+  mIdxFormat = DXGI_FORMAT_R16_UINT;
+}
+
+
+auto Mesh::SetIndices(std::span<std::uint32_t const> const indices) noexcept -> void {
+  EnsureCpuMemory();
+
+  for (auto const idx : indices) {
+    if (idx > std::numeric_limits<std::uint16_t>::max()) {
+      mCpuData->indices16.clear();
+      mCpuData->indices32.assign(std::begin(indices), std::end(indices));
+      mIdxFormat = DXGI_FORMAT_R32_UINT;
       return;
     }
-
-    mCPUData = new GeometryData{};
   }
 
-  mCPUData->tangents = std::move(tangents);
-}
-
-
-auto Mesh::GetIndices() const noexcept -> std::span<u32 const> {
-  return mCPUData
-           ? mCPUData->indices
-           : std::span<u32 const>{};
-}
-
-
-auto Mesh::SetIndices(std::vector<u32> indices, bool const allocateCPUMemoryIfNeeded) noexcept -> void {
-  if (!mCPUData) {
-    if (!allocateCPUMemoryIfNeeded) {
-      return;
-    }
-
-    mCPUData = new GeometryData{};
-  }
-
-  mCPUData->indices = std::move(indices);
+  std::ranges::transform(indices, std::back_inserter(mCpuData->indices16), [](std::uint32_t const idx) {
+    return static_cast<std::uint16_t>(idx);
+  });
+  mCpuData->indices32.clear();
+  mIdxFormat = DXGI_FORMAT_R16_UINT;
 }
 
 
@@ -224,8 +226,8 @@ auto Mesh::GetSubMeshes() const noexcept -> std::span<SubMeshData const> {
 }
 
 
-auto Mesh::SetSubMeshes(std::vector<SubMeshData> subMeshes, bool const allocateCPUMemoryIfNeeded) noexcept -> void {
-  mSubmeshes = std::move(subMeshes);
+auto Mesh::SetSubMeshes(std::span<SubMeshData const> submeshes) noexcept -> void {
+  mSubmeshes.assign(std::begin(submeshes), std::end(submeshes));
 }
 
 
@@ -234,50 +236,71 @@ auto Mesh::GetBounds() const noexcept -> AABB const& {
 }
 
 
-auto Mesh::ValidateAndUpdate(bool const keepDataInCPUMemory) -> void {
-  if (!mCPUData) {
-    return;
+auto Mesh::SetData(Data const& data) noexcept -> void {
+  EnsureCpuMemory();
+  SetPositions(data.positions);
+  SetNormals(data.normals);
+  SetUVs(data.uvs);
+  SetTangents(data.tangents);
+  SetIndices(data.indices);
+  SetSubMeshes(data.subMeshes);
+}
+
+
+auto Mesh::ValidateAndUpdate(bool const keepDataInCpuMemory) noexcept -> bool {
+  if (!mCpuData) {
+    return true;
   }
 
-  auto constexpr errFmt{ "Failed to validate mesh {} (\"{}\"). {}." };
-
-  if (mCPUData->positions.size() != mCPUData->normals.size() ||
-      mCPUData->normals.size() != mCPUData->uvs.size() ||
-      mCPUData->uvs.size() != mCPUData->tangents.size() ||
-      mCPUData->positions.empty() || mCPUData->indices.empty()) {
-    throw std::runtime_error{ std::format(errFmt, GetGuid().ToString(), GetName(), "Inconsistent number of positions, normals, UVs and tangents.") };
+  if (mCpuData->positions.size() != mCpuData->normals.size() || mCpuData->normals.size() != mCpuData->uvs.size() || mCpuData->uvs.size() != mCpuData->tangents.size() ||
+      mCpuData->positions.empty() || (mCpuData->indices16.empty() && mCpuData->indices32.empty())) {
+    return false;
   }
 
-  for (auto const& [baseVertex, firstIndex, indexCount, mtlSlotName] : mSubmeshes) {
-    if (baseVertex >= std::ssize(mCPUData->positions)) {
-      throw std::runtime_error{ std::format(errFmt, GetGuid().ToString(), GetName(), "A submesh contains a base vertex greater than the number of vertices.") };
+  for (auto const& [baseVertex, firstIdx, idxCount, mtlSlotName] : mSubmeshes) {
+    if (baseVertex >= std::ssize(mCpuData->positions)) {
+      return false;
     }
 
-    if (firstIndex >= std::ssize(mCPUData->indices)) {
-      throw std::runtime_error{ std::format(errFmt, GetGuid().ToString(), GetName(), "A submesh contains a first index greater than the number of indices.") };
+    if (firstIdx >= std::ssize(mCpuData->indices16) && firstIdx >= std::ssize(mCpuData->indices32)) {
+      return false;
     }
 
-    if (firstIndex + indexCount > std::ssize(mCPUData->indices)) {
-      throw std::runtime_error{ std::format(errFmt, GetGuid().ToString(), GetName(), "A submesh contains an out of bounds index region.") };
+    auto const lastIdx{firstIdx + idxCount - 1};
+
+    if (lastIdx >= std::ssize(mCpuData->indices16) && lastIdx >= std::ssize(mCpuData->indices32)) {
+      return false;
     }
 
-    for (int i = firstIndex; i < firstIndex + indexCount; i++) {
-      if (mCPUData->indices[i] + baseVertex > mCPUData->positions.size()) {
-        throw std::runtime_error{ std::format(errFmt, GetGuid().ToString(), GetName(), "A submesh contains an out of bounds vertex index.") };
+    for (auto i{firstIdx}; i <= lastIdx; i++) {
+      if (auto const idx{std::ssize(mCpuData->indices16) > i ? mCpuData->indices16[i] : mCpuData->indices32[i]}; idx + baseVertex > std::size(mCpuData->positions)) {
+        return false;
       }
     }
   }
 
-  mVertexCount = static_cast<int>(std::ssize(mCPUData->positions));
-  mIndexCount = static_cast<int>(std::ssize(mCPUData->indices));
+  mVertexCount = static_cast<int>(std::ssize(mCpuData->positions));
+  mIndexCount = static_cast<int>(mCpuData->indices16.empty() ? std::ssize(mCpuData->indices32) : std::ssize(mCpuData->indices16));
   mSubmeshCount = static_cast<int>(std::ssize(mSubmeshes));
 
   CalculateBounds();
-  UploadToGPU();
+  UploadToGpu();
 
-  if (!keepDataInCPUMemory) {
-    ReleaseCPUMemory();
+  if (!keepDataInCpuMemory) {
+    ReleaseCpuMemory();
   }
+
+  return true;
+}
+
+
+auto Mesh::HasCpuMemory() const noexcept -> bool {
+  return static_cast<bool>(mCpuData);
+}
+
+
+auto Mesh::ReleaseCpuMemory() noexcept -> void {
+  mCpuData.reset();
 }
 
 
@@ -296,42 +319,13 @@ auto Mesh::GetUVBuffer() const noexcept -> Microsoft::WRL::ComPtr<ID3D11Buffer> 
 }
 
 
-auto Mesh::GetIndexBuffer() const noexcept -> Microsoft::WRL::ComPtr<ID3D11Buffer> {
-  return mIndBuf;
-}
-
-
 auto Mesh::GetTangentBuffer() const noexcept -> Microsoft::WRL::ComPtr<ID3D11Buffer> {
   return mTangentBuf;
 }
 
 
-auto Mesh::SetData(Data data, bool const allocateCPUMemoryIfNeeded) noexcept -> void {
-  if (!mCPUData) {
-    if (!allocateCPUMemoryIfNeeded) {
-      return;
-    }
-
-    mCPUData = new GeometryData{};
-  } else {
-    mCPUData->positions = std::move(data.positions);
-    mCPUData->normals = std::move(data.normals);
-    mCPUData->uvs = std::move(data.uvs);
-    mCPUData->tangents = std::move(data.tangents);
-    mCPUData->indices = std::move(data.indices);
-    mSubmeshes = std::move(data.subMeshes);
-  }
-}
-
-
-auto Mesh::ReleaseCPUMemory() -> void {
-  delete mCPUData;
-  mCPUData = nullptr;
-}
-
-
-auto Mesh::HasCPUMemory() const noexcept -> bool {
-  return mCPUData != nullptr;
+auto Mesh::GetIndexBuffer() const noexcept -> Microsoft::WRL::ComPtr<ID3D11Buffer> {
+  return mIdxBuf;
 }
 
 
@@ -350,35 +344,16 @@ auto Mesh::GetSubmeshCount() const noexcept -> int {
 }
 
 
+auto Mesh::GetIndexFormat() const noexcept -> DXGI_FORMAT {
+  return mIdxFormat;
+}
+
+
 auto Mesh::OnDrawProperties(bool& changed) -> void {
   Resource::OnDrawProperties(changed);
 
-  if (ImGui::BeginTable(std::format("{}", GetGuid().ToString()).c_str(), 2, ImGuiTableFlags_SizingStretchSame)) {
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::PushItemWidth(FLT_MIN);
-    ImGui::TableSetColumnIndex(1);
-    ImGui::PushItemWidth(-FLT_MIN);
-
-    ImGui::TableSetColumnIndex(0);
-    ImGui::Text("%s", "Vertex Count");
-
-    ImGui::TableNextColumn();
-    ImGui::Text("%s", std::to_string(GetVertexCount()).c_str());
-
-    ImGui::TableNextColumn();
-    ImGui::Text("%s", "Index Count");
-
-    ImGui::TableNextColumn();
-    ImGui::Text("%s", std::to_string(GetIndexCount()).c_str());
-
-    ImGui::TableNextColumn();
-    ImGui::Text("%s", "Submesh Count");
-
-    ImGui::TableNextColumn();
-    ImGui::Text("%s", std::to_string(GetSubmeshCount()).c_str());
-
-    ImGui::EndTable();
-  }
+  ImGui::Text("%s: %d", "Vertex Count", GetVertexCount());
+  ImGui::Text("%s: %d", "Index Count", GetIndexCount());
+  ImGui::Text("%s: %d", "Submesh Count", GetSubmeshCount());
 }
 }

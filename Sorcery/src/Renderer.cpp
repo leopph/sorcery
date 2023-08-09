@@ -64,7 +64,7 @@ std::vector const QUAD_UVS{
 };
 
 
-std::vector<unsigned> const QUAD_INDICES{
+std::vector<std::uint32_t> const QUAD_INDICES{
   2, 1, 0, 0, 3, 2
 };
 
@@ -139,7 +139,7 @@ std::vector const CUBE_UVS{
 };
 
 
-std::vector<UINT> const CUBE_INDICES{
+std::vector<std::uint32_t> const CUBE_INDICES{
   // Top face
   7, 4, 1,
   1, 10, 7,
@@ -963,8 +963,9 @@ auto Renderer::Impl::CreateDefaultAssets() -> void {
   mCubeMesh->SetTangents(std::move(cubeTangents));
   mCubeMesh->SetIndices(CUBE_INDICES);
   mCubeMesh->SetSubMeshes(std::vector{Mesh::SubMeshData{0, 0, static_cast<int>(CUBE_INDICES.size()), "Material"}});
-  mCubeMesh->ValidateAndUpdate();
-  mCubeMesh->ReleaseCPUMemory();
+  if (!mCubeMesh->ValidateAndUpdate(false)) {
+    throw std::runtime_error{"Failed to validate and update default cube mesh."};
+  }
   gResourceManager.Add(mCubeMesh);
 
   mPlaneMesh = new Mesh{};
@@ -976,8 +977,9 @@ auto Renderer::Impl::CreateDefaultAssets() -> void {
   mPlaneMesh->SetTangents(std::move(quadTangents));
   mPlaneMesh->SetIndices(QUAD_INDICES);
   mPlaneMesh->SetSubMeshes(std::vector{Mesh::SubMeshData{0, 0, static_cast<int>(QUAD_INDICES.size()), "Material"}});
-  mPlaneMesh->ValidateAndUpdate();
-  mPlaneMesh->ReleaseCPUMemory();
+  if (!mPlaneMesh->ValidateAndUpdate(false)) {
+    throw std::runtime_error{"Failed to validate and update default plane mesh."};
+  }
   gResourceManager.Add(mPlaneMesh);
 }
 
@@ -996,7 +998,7 @@ auto Renderer::Impl::DrawMeshes(std::span<int const> const meshComponentIndices,
       UINT constexpr strides[]{sizeof(Vector3), sizeof(Vector3), sizeof(Vector2), sizeof(Vector3)};
       UINT constexpr offsets[]{0, 0, 0, 0};
       mImmediateContext->IASetVertexBuffers(0, static_cast<UINT>(vertexBuffers.size()), vertexBuffers.data(), strides, offsets);
-      mImmediateContext->IASetIndexBuffer(mesh->GetIndexBuffer().Get(), DXGI_FORMAT_R32_UINT, 0);
+      mImmediateContext->IASetIndexBuffer(mesh->GetIndexBuffer().Get(), mesh->GetIndexFormat(), 0);
 
       D3D11_MAPPED_SUBRESOURCE mappedPerDrawCb;
       mImmediateContext->Map(mPerDrawCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerDrawCb);

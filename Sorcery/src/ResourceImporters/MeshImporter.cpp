@@ -181,7 +181,7 @@ auto MeshImporter::Import(std::filesystem::path const& src) -> ObserverPtr<Resou
     ret.subMeshes.emplace_back(baseVertex, firstIndex, indexCount, scene->mMaterials[submeshMtlIdx]->GetName().C_Str());
   }
 
-  return new Mesh{std::move(ret)};
+  return new Mesh{ret};
 }
 
 
