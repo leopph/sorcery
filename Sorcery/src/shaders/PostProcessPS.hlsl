@@ -10,7 +10,7 @@ float4 main(const float4 pixelCoord : SV_POSITION) : SV_TARGET {
     pixelColor = pixelColor / (pixelColor + 1.0);
 
     // Gamma correction
-    pixelColor = pow(pixelColor, invGamma);
+    //pixelColor = pow(pixelColor, invGamma);
 
     return float4(pixelColor, 1);
 }

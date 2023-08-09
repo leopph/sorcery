@@ -47,7 +47,8 @@ public:
   LEOPPHAPI auto DrawCamera(Camera const& cam, RenderTarget const* rt = nullptr) -> void;
   LEOPPHAPI auto DrawAllCameras(RenderTarget const* rt = nullptr) -> void;
   LEOPPHAPI auto DrawGizmos(RenderTarget const* rt = nullptr) -> void;
-  LEOPPHAPI auto BindAndClearSwapChain() noexcept -> void;
+  LEOPPHAPI auto BindAndClearMainRt() noexcept -> void;
+  LEOPPHAPI auto BlitMainRtToSwapChain() noexcept -> void;
   LEOPPHAPI auto Present() noexcept -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetSyncInterval() noexcept -> u32;
@@ -99,8 +100,8 @@ public:
 
   [[nodiscard]] LEOPPHAPI auto GetInFlightFrameCount() noexcept -> int;
   LEOPPHAPI auto SetInFlightFrameCount(int count) -> void;
-  constexpr static int MIN_IN_FLIGHT_FRAME_COUNT{ 1 };
-  constexpr static int MAX_IN_FLIGHT_FRAME_COUNT{ 16 };
+  constexpr static int MIN_IN_FLIGHT_FRAME_COUNT{1};
+  constexpr static int MAX_IN_FLIGHT_FRAME_COUNT{16};
 };
 
 

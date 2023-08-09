@@ -148,8 +148,9 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
       ImGui::Render();
 
-      sorcery::gRenderer.BindAndClearSwapChain();
+      sorcery::gRenderer.BindAndClearMainRt();
       ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+      sorcery::gRenderer.BlitMainRtToSwapChain();
       sorcery::gRenderer.Present();
 
       sorcery::timing::OnFrameEnd();

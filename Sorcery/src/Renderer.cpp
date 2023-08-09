@@ -220,6 +220,7 @@ class Renderer::Impl {
   std::unique_ptr<StructuredBuffer<ShaderLight>> mLightBuffer;
   std::unique_ptr<StructuredBuffer<Vector4>> mGizmoColorBuffer;
   std::unique_ptr<StructuredBuffer<ShaderLineGizmoVertexData>> mLineGizmoVertexDataBuffer;
+  std::unique_ptr<RenderTarget> mMainRt;
 
   u32 mSyncInterval{0};
   f32 mInvGamma{1.f / 2.2f};
@@ -291,7 +292,8 @@ public:
   auto DrawCamera(Camera const& cam, RenderTarget const* rt) -> void;
   auto DrawAllCameras(RenderTarget const* rt) -> void;
   auto DrawGizmos(RenderTarget const* rt) -> void;
-  auto BindAndClearSwapChain() noexcept -> void;
+  auto BindAndClearMainRt() noexcept -> void;
+  auto BlitMainRtToSwapChain() noexcept -> void;
   auto Present() noexcept -> void;
 
   auto GetSyncInterval() noexcept -> u32;
@@ -1248,6 +1250,13 @@ auto Renderer::Impl::ReleaseTempRenderTargets() noexcept -> void {
 
 auto Renderer::Impl::OnWindowSize(Impl* const self, Extent2D<u32> const size) -> void {
   self->mSwapChain->Resize(size.width, size.height);
+
+  if (size.width != 0 && size.height != 0) {
+    RenderTarget::Desc desc{self->mMainRt->GetDesc()};
+    desc.width = size.width;
+    desc.height = size.height;
+    self->mMainRt = std::make_unique<RenderTarget>(desc);
+  }
 }
 
 
@@ -1279,6 +1288,14 @@ auto Renderer::Impl::StartUp() -> void {
   mLightBuffer = std::make_unique<StructuredBuffer<ShaderLight>>(mDevice, mImmediateContext);
   mGizmoColorBuffer = std::make_unique<StructuredBuffer<Vector4>>(mDevice, mImmediateContext);
   mLineGizmoVertexDataBuffer = std::make_unique<StructuredBuffer<ShaderLineGizmoVertexData>>(mDevice, mImmediateContext);
+  mMainRt = std::make_unique<RenderTarget>(RenderTarget::Desc{
+    .width = gWindow.GetCurrentClientAreaSize().width,
+    .height = gWindow.GetCurrentClientAreaSize().height,
+    .colorFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
+    .depthBufferBitCount = 0,
+    .stencilBufferBitCount = 0,
+    .debugName = "Main RT"
+  });
 
   CreateInputLayouts();
   CreateShaders();
@@ -1490,11 +1507,22 @@ auto Renderer::Impl::DrawAllCameras(RenderTarget const* const rt) -> void {
 }
 
 
-auto Renderer::Impl::BindAndClearSwapChain() noexcept -> void {
+auto Renderer::Impl::BindAndClearMainRt() noexcept -> void {
+  auto const rtv{mMainRt->GetRtv()};
   FLOAT constexpr clearColor[]{0, 0, 0, 1};
-  auto const rtv{mSwapChain->GetRtv()};
   mImmediateContext->ClearRenderTargetView(rtv, clearColor);
   mImmediateContext->OMSetRenderTargets(1, &rtv, nullptr);
+}
+
+
+auto Renderer::Impl::BlitMainRtToSwapChain() noexcept -> void {
+  ComPtr<ID3D11Resource> mainRtColorTex;
+  mMainRt->GetRtv()->GetResource(mainRtColorTex.GetAddressOf());
+
+  ComPtr<ID3D11Resource> backBuf;
+  mSwapChain->GetRtv()->GetResource(backBuf.GetAddressOf());
+
+  mImmediateContext->CopyResource(backBuf.Get(), mainRtColorTex.Get());
 }
 
 
@@ -1783,7 +1811,8 @@ auto Renderer::ShutDown() -> void {
 auto Renderer::DrawCamera(Camera const& cam, RenderTarget const* rt) -> void { mImpl->DrawCamera(cam, rt); }
 auto Renderer::DrawAllCameras(RenderTarget const* rt) -> void { mImpl->DrawAllCameras(rt); }
 auto Renderer::DrawGizmos(RenderTarget const* const rt) -> void { mImpl->DrawGizmos(rt); }
-auto Renderer::BindAndClearSwapChain() noexcept -> void { mImpl->BindAndClearSwapChain(); }
+auto Renderer::BindAndClearMainRt() noexcept -> void { mImpl->BindAndClearMainRt(); }
+auto Renderer::BlitMainRtToSwapChain() noexcept -> void { mImpl->BlitMainRtToSwapChain(); }
 auto Renderer::Present() noexcept -> void { mImpl->Present(); }
 auto Renderer::GetSyncInterval() noexcept -> u32 { return mImpl->GetSyncInterval(); }
 auto Renderer::SetSyncInterval(u32 const interval) noexcept -> void { mImpl->SetSyncInterval(interval); }
