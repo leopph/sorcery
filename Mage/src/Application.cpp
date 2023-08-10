@@ -34,6 +34,9 @@ Application::Application(ImGuiIO& imGuiIO) :
   gWindow.OnWindowFocusGain.add_handler(this, &OnWindowFocusGain);
   SetImGuiContext(*ImGui::GetCurrentContext());
   SetGuiDarkMode(mIsInDarkMode);
+
+  auto const font{imGuiIO.Fonts->AddFontFromFileTTF(R"(C:\Windows\Fonts\Segoeui.ttf)", 16)};
+  imGuiIO.FontDefault = font;
 }
 
 
