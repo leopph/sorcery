@@ -90,7 +90,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
     auto const sceneViewWindow{std::make_unique<sorcery::mage::SceneViewWindow>()};
     auto const gameViewWindow{std::make_unique<sorcery::mage::GameViewWindow>()};
     auto const propertiesWindow{std::make_unique<sorcery::mage::PropertiesWindow>(app)};
-    auto const editorSettingsWindow{std::make_unique<sorcery::mage::EditorSettingsWindow>()};
+    auto const editorSettingsWindow{std::make_unique<sorcery::mage::EditorSettingsWindow>(app)};
     auto const mainMenuBar{std::make_unique<sorcery::mage::MainMenuBar>(app, *editorSettingsWindow)};
     auto const entityHierarchyWindow{std::make_unique<sorcery::mage::EntityHierarchyWindow>(app)};
 

@@ -21,6 +21,8 @@ class Application {
   std::filesystem::path mProjDirAbs;
 
   std::atomic<bool> mBusy;
+  bool mIsInDarkMode{true};
+
   static std::string_view const WINDOW_TITLE_BASE;
 
   static auto OnWindowFocusGain(Application* self) -> void;
@@ -55,6 +57,9 @@ public:
   auto OpenProject(std::filesystem::path const& targetPath) -> void;
 
   [[nodiscard]] auto IsEditorBusy() const noexcept -> bool;
+
+  [[nodiscard]] auto IsGuiDarkMode() const noexcept -> bool;
+  auto SetGuiDarkMode(bool darkMode) noexcept -> void;
 
 private:
   template<typename Callable>
