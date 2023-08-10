@@ -70,14 +70,14 @@ auto ResourceManager::GetOrLoad(Guid const& guid) -> ObserverPtr<ResType> {
   }
 
   if (auto const it{mGuidPathMappings.find(guid)}; it != std::end(mGuidPathMappings)) {
-    auto const res{InternalLoadResource(it->second)};
-
-    if constexpr (!std::is_same_v<ResType, Resource>) {
-      if (rttr::rttr_cast<ObserverPtr<ResType>>(res)) {
-        return static_cast<ObserverPtr<ResType>>(res);
+    if (auto const res{InternalLoadResource(it->second)}) {
+      if constexpr (!std::is_same_v<ResType, Resource>) {
+        if (rttr::rttr_cast<ObserverPtr<ResType>>(res)) {
+          return static_cast<ObserverPtr<ResType>>(res);
+        }
+      } else {
+        return res;
       }
-    } else {
-      return res;
     }
   }
 
