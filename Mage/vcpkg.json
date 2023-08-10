@@ -12,7 +12,7 @@
     },
     {
       "name": "imgui",
-      "features": [ "docking-experimental", "dx11-binding", "win32-binding" ],
+      "features": [ "docking-experimental", "win32-binding" ],
       "version>=": "1.89.7"
     },
     {

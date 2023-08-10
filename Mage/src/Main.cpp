@@ -6,7 +6,6 @@
 
 #include <imgui.h>
 #include <imgui_impl_win32.h>
-#include <imgui_impl_dx11.h>
 
 #include <ImGuizmo.h>
 #include <implot.h>
@@ -56,8 +55,13 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
     ImGui::StyleColorsDark();
 
-    ImGui_ImplWin32_Init(sorcery::gWindow.GetHandle());
-    ImGui_ImplDX11_Init(sorcery::gRenderer.GetDevice(), sorcery::gRenderer.GetImmediateContext());
+    if (!ImGui_ImplWin32_Init(sorcery::gWindow.GetHandle())) {
+      throw std::runtime_error{"Failed to initialize Dear ImGui Win32 Implementation."};
+    }
+
+    if (!sorcery::mage::ImGui_ImplDX11_Init(sorcery::gRenderer.GetDevice(), sorcery::gRenderer.GetImmediateContext())) {
+      throw std::runtime_error{"Failed to initialize Dear ImGui DX11 Implementation."};
+    }
 
     sorcery::gWindow.SetEventHook(sorcery::mage::EditorImGuiEventHook);
 
@@ -97,7 +101,7 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
     while (!sorcery::gWindow.IsQuitSignaled()) {
       sorcery::gWindow.ProcessEvents();
 
-      ImGui_ImplDX11_NewFrame();
+      sorcery::mage::ImGui_ImplDX11_NewFrame();
       ImGui_ImplWin32_NewFrame();
       ImGui::NewFrame();
       ImGuizmo::BeginFrame();
@@ -149,14 +153,14 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
       ImGui::Render();
 
       sorcery::gRenderer.BindAndClearMainRt();
-      ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+      sorcery::mage::ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
       sorcery::gRenderer.BlitMainRtToSwapChain();
       sorcery::gRenderer.Present();
 
       sorcery::timing::OnFrameEnd();
     }
 
-    ImGui_ImplDX11_Shutdown();
+    sorcery::mage::ImGui_ImplDX11_Shutdown();
     ImGui_ImplWin32_Shutdown();
     ImPlot::DestroyContext();
     ImGui::DestroyContext();
