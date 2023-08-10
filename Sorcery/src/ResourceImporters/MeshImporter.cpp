@@ -1,6 +1,8 @@
 #include "MeshImporter.hpp"
 #include "../Resources/Mesh.hpp"
 
+#include "../FileIo.hpp"
+
 #include <queue>
 
 #include <assimp/Importer.hpp>
@@ -38,6 +40,12 @@ auto MeshImporter::GetSupportedFileExtensions(std::vector<std::string>& out) -> 
 
 
 auto MeshImporter::Import(std::filesystem::path const& src) -> ObserverPtr<Resource> {
+  std::vector<unsigned char> bytes;
+
+  if (!ReadFileBinary(src, bytes)) {
+    return nullptr;
+  }
+
   Assimp::Importer importer;
 
   // Remove unnecessary scene elements
@@ -45,7 +53,7 @@ auto MeshImporter::Import(std::filesystem::path const& src) -> ObserverPtr<Resou
   // Remove point and line primitives
   importer.SetPropertyInteger(AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_POINT | aiPrimitiveType_LINE);
 
-  auto const scene{importer.ReadFile(src.string(), aiProcess_JoinIdenticalVertices | aiProcess_Triangulate | aiProcess_SortByPType | aiProcess_GenUVCoords | aiProcess_GenNormals | aiProcess_CalcTangentSpace | aiProcess_RemoveComponent | aiProcess_ConvertToLeftHanded)};
+  auto const scene{importer.ReadFileFromMemory(bytes.data(), bytes.size(), aiProcess_JoinIdenticalVertices | aiProcess_Triangulate | aiProcess_SortByPType | aiProcess_GenUVCoords | aiProcess_GenNormals | aiProcess_CalcTangentSpace | aiProcess_RemoveComponent | aiProcess_ConvertToLeftHanded)};
 
   if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
     throw std::runtime_error{std::format("Failed to import model at {}: {}.", src.string(), importer.GetErrorString())};

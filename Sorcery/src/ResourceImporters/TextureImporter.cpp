@@ -2,8 +2,11 @@
 #include "../Resources/Texture2D.hpp"
 #include "../Resources/Cubemap.hpp"
 
-#include <cassert>
+#include "../FileIo.hpp"
+
 #include <stb_image.h>
+
+#include <cassert>
 
 RTTR_REGISTRATION {
   rttr::registration::enumeration<sorcery::TextureImporter::TextureType>("Texture Import Type")(
@@ -35,13 +38,19 @@ auto TextureImporter::GetSupportedFileExtensions(std::vector<std::string>& out) 
 
 
 auto TextureImporter::Import(std::filesystem::path const& src) -> ObserverPtr<Resource> {
+  std::vector<unsigned char> fileBytes;
+
+  if (!ReadFileBinary(src, fileBytes)) {
+    return nullptr;
+  }
+
   switch (mTexType) {
     case TextureType::Texture2D: {
       int width;
       int height;
       int channelCount;
 
-      if (auto const imgData{stbi_load(src.string().c_str(), &width, &height, &channelCount, 0)}) {
+      if (auto const imgData{stbi_load_from_memory(fileBytes.data(), static_cast<int>(std::ssize(fileBytes)), &width, &height, &channelCount, 0)}) {
         return new Texture2D{Image{width, height, channelCount, std::unique_ptr<std::uint8_t[]>{imgData}, mIsSrgb}, mKeepInCpuMemory, mAllowBlockCompression};
       }
 
@@ -55,7 +64,7 @@ auto TextureImporter::Import(std::filesystem::path const& src) -> ObserverPtr<Re
 
       if (std::unique_ptr<std::uint8_t, decltype([](std::uint8_t* const p) {
         stbi_image_free(p);
-      })> const data{stbi_load(src.string().c_str(), &width, &height, &channelCount, 4)}) {
+      })> const data{stbi_load_from_memory(fileBytes.data(), static_cast<int>(std::ssize(fileBytes)), &width, &height, &channelCount, 4)}) {
         std::array<Image, 6> faceImgs;
 
         // 4:3

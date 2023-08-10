@@ -30,6 +30,10 @@
 		{
 			"name": "assimp",
 			"version>=": "5.2.5"
+		},
+		{
+			"name": "fastio",
+			"version>=": "2022-11-14"
 		}
 	]
 }
