@@ -201,7 +201,7 @@ float4 main(const MeshVsOut vsOut) : SV_TARGET {
         N = gNormalMap.Sample(gSamplerAf16, vsOut.uv).rgb;
         N *= 2.0;
         N -= 1.0;
-        N = normalize(mul(N, vsOut.tbnMtx));
+        N = normalize(mul(normalize(N), vsOut.tbnMtx));
     }
 
     const float3 V = normalize(gPerCamConstants.camPos - vsOut.worldPos);
