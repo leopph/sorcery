@@ -33,6 +33,12 @@ constexpr auto CACHE_LINE_SIZE = 64;
 
 template<typename T>
 using ObserverPtr = T*;
+
+template<typename T>
+using NotNull = T;
+
+template<typename T>
+using MaybeNull = T;
 #else
 #error "Only Windows x86-64 is supported."
 #endif
