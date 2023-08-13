@@ -14,12 +14,13 @@
 
 
 namespace sorcery::mage {
-auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& resDirAbs, std::filesystem::path const& thisPathResDirRel) noexcept -> bool {
+auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& thisPathResDirRel) noexcept -> bool {
   auto ret{false};
-  auto thisPathAbs{weakly_canonical(resDirAbs / thisPathResDirRel)};
+  auto const& resDirAbs{mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath()};
+  auto thisPathAbs{thisPathResDirRel.empty() ? resDirAbs : resDirAbs / thisPathResDirRel};
   auto selectedPathAbs{resDirAbs / mSelectedPathResDirRel};
-  auto const isSelected{exists(thisPathAbs) && exists(selectedPathAbs) && equivalent(thisPathAbs, selectedPathAbs)};
-  auto const isRenaming{mRenameInfo && exists(mRenameInfo->nodePathAbs) && exists(thisPathAbs) && equivalent(mRenameInfo->nodePathAbs, thisPathAbs)};
+  auto const isSelected{thisPathAbs == selectedPathAbs};
+  auto const isRenaming{mRenameInfo && mRenameInfo->nodePathAbs == thisPathAbs};
   auto const isDirectory{is_directory(thisPathAbs)};
   auto& resDb{mApp->GetResourceDatabase()};
 
@@ -119,7 +120,7 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& resDirAbs, s
     if (isDirectory) {
       for (auto const& entry : std::filesystem::directory_iterator{thisPathAbs}) {
         if (entry.path().extension() != ResourceManager::RESOURCE_META_FILE_EXT) {
-          if (DrawFilesystemTree(resDirAbs, relative(entry.path(), resDirAbs))) {
+          if (DrawFilesystemTree(entry.path().lexically_relative(resDirAbs))) {
             // The directory_iterator does not guarantee anything when the directory tree changes, it's safer to skip the rest of the frame.
             break;
           }
@@ -241,7 +242,7 @@ auto ProjectWindow::Draw() -> void {
       }
     }
 
-    std::ignore = DrawFilesystemTree(mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath(), {});
+    std::ignore = DrawFilesystemTree({});
 
     if (mOpenContextMenu) {
       mOpenContextMenu = false;

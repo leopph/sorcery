@@ -36,7 +36,7 @@ class ProjectWindow {
   constexpr static std::string_view DIR_NODE_DRAG_DROP_TYPE_STR{"NodeDragDropTypeStr"};
 
   // Returns whether the drawn subtree was modified.
-  [[nodiscard]] auto DrawFilesystemTree(std::filesystem::path const& resDirAbs, std::filesystem::path const& thisPathResDirRel) noexcept -> bool;
+  [[nodiscard]] auto DrawFilesystemTree(std::filesystem::path const& thisPathResDirRel) noexcept -> bool;
   auto DrawContextMenu() noexcept -> void;
   auto StartRenamingSelected() noexcept -> void;
 
