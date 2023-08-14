@@ -4,7 +4,6 @@
 
 #include <memory>
 #include <memory_resource>
-#include <new>
 
 
 namespace sorcery {
@@ -13,41 +12,13 @@ class LinearMemoryResource final : public std::pmr::memory_resource {
   std::size_t mOffset;
   std::unique_ptr<char[]> mMem;
 
-
-  auto do_allocate(std::size_t const requiredByteCount, std::size_t const alignment) -> void* override {
-    auto ptr{static_cast<void*>(mMem.get() + mOffset)};
-    auto freeByteCount{mMaxByteCount - mOffset};
-
-    if (auto const alignedPtr{std::align(alignment, requiredByteCount, ptr, freeByteCount)}) {
-      mOffset = mMaxByteCount - freeByteCount + requiredByteCount;
-      return alignedPtr;
-    }
-
-    throw std::bad_alloc{};
-  }
-
-
-  auto do_deallocate([[maybe_unused]] void* const ptr, [[maybe_unused]] std::size_t const bytes,
-                     [[maybe_unused]] std::size_t const align) -> void override { }
-
-
-  [[nodiscard]] auto do_is_equal(memory_resource const& that) const noexcept -> bool override {
-    if (auto const other{dynamic_cast<LinearMemoryResource const*>(&that)}) {
-      return mMem == other->mMem;
-    }
-    return false;
-  }
+  [[nodiscard]] LEOPPHAPI auto do_allocate(std::size_t requiredByteCount, std::size_t alignment) -> void* override;
+  LEOPPHAPI auto do_deallocate(void* ptr, std::size_t bytes, std::size_t align) -> void override;
+  [[nodiscard]] LEOPPHAPI auto do_is_equal(memory_resource const& that) const noexcept -> bool override;
 
 public:
-  explicit LinearMemoryResource(std::size_t const maxByteCount) :
-    mMaxByteCount{maxByteCount},
-    mOffset{0},
-    mMem{std::make_unique_for_overwrite<char[]>(maxByteCount)} { }
-
-
-  auto Clear() noexcept -> void {
-    mOffset = 0;
-  }
+  LEOPPHAPI explicit LinearMemoryResource(std::size_t maxByteCount);
+  LEOPPHAPI auto Clear() noexcept -> void;
 };
 
 
