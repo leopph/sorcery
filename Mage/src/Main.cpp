@@ -1,21 +1,5 @@
 #include "Timing.hpp"
 #include "Application.hpp"
-
-#include <Platform.hpp>
-#include <Renderer.hpp>
-
-#include <imgui.h>
-#include <imgui_impl_win32.h>
-
-#include <ImGuizmo.h>
-#include <implot.h>
-
-#include <shellapi.h>
-
-#include <filesystem>
-#include <string>
-#include <cwchar>
-
 #include "EditorSettingsWindow.hpp"
 #include "EntityHierarchyWindow.hpp"
 #include "GameViewWindow.hpp"
@@ -28,6 +12,21 @@
 #include "ProjectWindow.hpp"
 #include "SceneViewWindow.hpp"
 #include "StartupScreen.hpp"
+#include "MemoryAllocation.hpp"
+#include "Platform.hpp"
+#include "Renderer.hpp"
+
+#include <imgui.h>
+#include <imgui_impl_win32.h>
+
+#include <ImGuizmo.h>
+#include <implot.h>
+
+#include <shellapi.h>
+
+#include <filesystem>
+#include <string>
+#include <cwchar>
 
 
 auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ HINSTANCE, _In_ wchar_t* const lpCmdLine, [[maybe_unused]] _In_ int) -> int {
@@ -156,6 +155,8 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
       sorcery::mage::ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
       sorcery::gRenderer.BlitMainRtToSwapChain();
       sorcery::gRenderer.Present();
+
+      sorcery::GetTmpMemRes().Clear();
 
       sorcery::timing::OnFrameEnd();
     }

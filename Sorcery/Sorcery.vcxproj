@@ -116,6 +116,7 @@
     <ClCompile Include="src\Compress.cpp" />
     <ClCompile Include="src\FileIo.cpp" />
     <ClCompile Include="src\GUI.cpp" />
+    <ClCompile Include="src\MemoryAllocation.cpp" />
     <ClCompile Include="src\ResourceImporters\MeshImporter.cpp" />
     <ClCompile Include="src\ResourceImporters\NativeResourceImporter.cpp" />
     <ClCompile Include="src\ResourceImporters\TextureImporter.cpp" />
@@ -150,6 +151,7 @@
     <ClInclude Include="src\FileIo.hpp" />
     <ClInclude Include="src\Graphics.hpp" />
     <ClInclude Include="src\GUI.hpp" />
+    <ClInclude Include="src\MemoryAllocation.hpp" />
     <ClInclude Include="src\ResourceImporters\NativeResourceImporter.hpp" />
     <ClInclude Include="src\Resources\NativeResource.hpp" />
     <ClInclude Include="src\Reflection.hpp" />
