@@ -14,7 +14,7 @@
 
 
 namespace sorcery::mage {
-auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& thisPathAbs, std::filesystem::path const& thisPathResDirRel) noexcept -> bool {
+auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& thisPathAbs, std::filesystem::path const& thisPathResDirRel, bool const isDirectory) noexcept -> bool {
   auto ret{false};
 
   auto& resDb{mApp->GetResourceDatabase()};
@@ -24,7 +24,6 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& thisPathAbs,
 
   auto const isSelected{thisPathAbs == selectedPathAbs};
   auto const isRenaming{mRenameInfo && mRenameInfo->nodePathAbs == thisPathAbs};
-  auto const isDirectory{is_directory(thisPathAbs)};
 
   ImGuiTreeNodeFlags treeNodeFlags{ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick};
 
@@ -45,7 +44,7 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& thisPathAbs,
 
   auto const treeNodePos{ImGui::GetCursorPos()};
 
-  if (ImGui::TreeNodeEx(std::format("{}{}", isRenaming ? "##" : "", thisPathAbs.stem().string()).c_str(), treeNodeFlags)) {
+  if (auto treeNodeLabel{thisPathAbs.stem().string()}; ImGui::TreeNodeEx((isRenaming ? treeNodeLabel.insert(0, "##") : treeNodeLabel).c_str(), treeNodeFlags)) {
     if (!thisPathResDirRel.empty() && ImGui::BeginDragDropSource()) {
       if (isDirectory) {
         auto const thisPathResDirRelStr{thisPathResDirRel.string()};
@@ -120,7 +119,7 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& thisPathAbs,
     if (isDirectory) {
       for (auto const& entry : std::filesystem::directory_iterator{thisPathAbs}) {
         if (entry.path().extension() != ResourceManager::RESOURCE_META_FILE_EXT) {
-          if (DrawFilesystemTree(entry.path(), thisPathResDirRel / entry.path().filename())) {
+          if (DrawFilesystemTree(entry.path(), thisPathResDirRel / entry.path().filename(), entry.is_directory())) {
             // The directory_iterator does not guarantee anything when the directory tree changes, it's safer to skip the rest of the frame.
             break;
           }
@@ -242,7 +241,7 @@ auto ProjectWindow::Draw() -> void {
       }
     }
 
-    std::ignore = DrawFilesystemTree(mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath(), "");
+    std::ignore = DrawFilesystemTree(mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath(), "", true);
 
     if (mOpenContextMenu) {
       mOpenContextMenu = false;
