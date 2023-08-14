@@ -24,7 +24,7 @@ RTTR_REGISTRATION {
 
 
 namespace sorcery {
-auto TextureImporter::GetSupportedFileExtensions(std::vector<std::string>& out) -> void {
+auto TextureImporter::GetSupportedFileExtensions(std::pmr::vector<std::string>& out) -> void {
   out.emplace_back(".png");
   out.emplace_back(".jpg");
   out.emplace_back(".jpeg");

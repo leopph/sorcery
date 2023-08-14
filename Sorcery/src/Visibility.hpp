@@ -5,7 +5,7 @@
 
 namespace sorcery {
 struct Visibility {
-  std::vector<int> lightIndices;
-  std::vector<int> staticMeshIndices;
+  std::pmr::vector<int> lightIndices;
+  std::pmr::vector<int> staticMeshIndices;
 };
 }

@@ -1,4 +1,6 @@
 #include "ResourceManager.hpp"
+
+#include "MemoryAllocation.hpp"
 #include "Reflection.hpp"
 #include "ResourceImporters/ResourceImporter.hpp"
 
@@ -141,8 +143,7 @@ auto ResourceManager::GetNewImporterForResourceFile(std::filesystem::path const&
     auto importerVariant{importerType.create()};
     std::unique_ptr<ResourceImporter> importer{importerVariant.get_value<ResourceImporter*>()};
 
-    static std::vector<std::string> supportedExtensions;
-    supportedExtensions.clear();
+    std::pmr::vector<std::string> supportedExtensions{&GetTmpMemRes()};
     importer->GetSupportedFileExtensions(supportedExtensions);
 
     for (auto const& ext : supportedExtensions) {

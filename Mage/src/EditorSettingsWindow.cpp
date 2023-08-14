@@ -1,5 +1,6 @@
 #include "EditorSettingsWindow.hpp"
 
+#include "MemoryAllocation.hpp"
 #include "Timing.hpp"
 #include "Renderer.hpp"
 
@@ -16,7 +17,8 @@ EditorSettingsWindow::EditorSettingsWindow(Application& app) :
 
 auto EditorSettingsWindow::Draw() -> void {
   ImGui::SetNextWindowSizeConstraints(ImVec2{200, 200}, ImVec2{std::numeric_limits<float>::max(), std::numeric_limits<float>::max()});
-  if (std::string const static windowName{std::string{TITLE} + "##Window"}; !ImGui::Begin(windowName.data(), &mIsOpen)) {
+
+  if (std::pmr::string windowName{&GetTmpMemRes()}; !ImGui::Begin(windowName.append(TITLE).append("##Window").c_str(), &mIsOpen)) {
     ImGui::End();
     return;
   }

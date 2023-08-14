@@ -32,6 +32,7 @@
 #endif
 
 #include "DirectionalShadowAtlas.hpp"
+#include "MemoryAllocation.hpp"
 #include "PunctualShadowAtlas.hpp"
 #include "RenderTarget.hpp"
 #include "ShadowCascadeBoundary.hpp"
@@ -1194,7 +1195,10 @@ auto Renderer::Impl::DrawShadowMaps(ShadowAtlas const& atlas) -> void {
 
         Frustum const shadowFrustumWS{subcell->shadowViewProjMtx};
 
-        Visibility static perLightVisibility;
+        Visibility perLightVisibility{
+          .lightIndices = std::pmr::vector<int>{&GetTmpMemRes()},
+          .staticMeshIndices = std::pmr::vector<int>{&GetTmpMemRes()}
+        };
 
         CullStaticMeshComponents(shadowFrustumWS, perLightVisibility);
 
@@ -1384,7 +1388,10 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
   auto const camViewProjMtx{camViewMtx * camProjMtx};
   Frustum const camFrustWS{camViewProjMtx};
 
-  Visibility static visibility;
+  Visibility visibility{
+    .lightIndices = std::pmr::vector<int>{&GetTmpMemRes()},
+    .staticMeshIndices = std::pmr::vector<int>{&GetTmpMemRes()}
+  };
   CullLights(camFrustWS, visibility);
 
   // Shadow pass
