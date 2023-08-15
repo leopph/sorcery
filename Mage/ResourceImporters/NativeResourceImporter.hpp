@@ -13,8 +13,8 @@ public:
   constexpr static std::string_view MATERIAL_FILE_EXT{".mtl"};
   constexpr static std::string_view SCENE_FILE_EXT{".scene"};
 
-  LEOPPHAPI auto GetSupportedFileExtensions(std::pmr::vector<std::string>& out) -> void override;
-  [[nodiscard]] LEOPPHAPI auto Import(std::filesystem::path const& src) -> ObserverPtr<Resource> override;
-  [[nodiscard]] LEOPPHAPI auto GetImportedType(std::filesystem::path const& resPathAbs) noexcept -> rttr::type override;
+  auto GetSupportedFileExtensions(std::vector<std::string>& out) -> void override;
+  [[nodiscard]] auto Import(std::filesystem::path const& src, std::vector<std::uint8_t>& bytes) -> bool override;
+  [[nodiscard]] auto GetImportedType(std::filesystem::path const& resPathAbs) noexcept -> rttr::type override;
 };
 }

@@ -26,6 +26,14 @@
     {
       "name": "implot",
       "version>=": "0.15"
+    },
+    {
+      "name": "directxtex",
+      "version>=": "2023-01-31"
+    },
+    {
+      "name": "assimp",
+      "version>=": "5.2.5"
     }
   ]
 }

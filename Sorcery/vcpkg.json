@@ -28,12 +28,12 @@
 			"version>=": "5.2.1"
 		},
 		{
-			"name": "assimp",
-			"version>=": "5.2.5"
-		},
-		{
 			"name": "fastio",
 			"version>=": "2022-11-14"
+		},
+		{
+			"name": "directxtk",
+			"version>=": "2023-06-13"
 		}
 	]
 }

@@ -3,11 +3,11 @@
 
 #include "../FileIo.hpp"
 
-#include <queue>
-
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
+
+#include <queue>
 
 RTTR_REGISTRATION {
   rttr::registration::class_<sorcery::MeshImporter>{"Mesh Importer"}
@@ -33,16 +33,16 @@ namespace {
 }
 
 
-auto MeshImporter::GetSupportedFileExtensions(std::pmr::vector<std::string>& out) -> void {
+auto MeshImporter::GetSupportedFileExtensions(std::vector<std::string>& out) -> void {
   out.emplace_back(".fbx");
   out.emplace_back(".obj");
 }
 
 
-auto MeshImporter::Import(std::filesystem::path const& src) -> ObserverPtr<Resource> {
-  std::vector<unsigned char> bytes;
+auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::uint8_t>& bytes) -> bool {
+  std::vector<unsigned char> meshBytes;
 
-  if (!ReadFileBinary(src, bytes)) {
+  if (!ReadFileBinary(src, meshBytes)) {
     return nullptr;
   }
 
@@ -53,7 +53,7 @@ auto MeshImporter::Import(std::filesystem::path const& src) -> ObserverPtr<Resou
   // Remove point and line primitives
   importer.SetPropertyInteger(AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_POINT | aiPrimitiveType_LINE);
 
-  auto const scene{importer.ReadFileFromMemory(bytes.data(), bytes.size(), aiProcess_JoinIdenticalVertices | aiProcess_Triangulate | aiProcess_SortByPType | aiProcess_GenUVCoords | aiProcess_GenNormals | aiProcess_CalcTangentSpace | aiProcess_RemoveComponent | aiProcess_ConvertToLeftHanded)};
+  auto const scene{importer.ReadFileFromMemory(meshBytes.data(), meshBytes.size(), aiProcess_JoinIdenticalVertices | aiProcess_Triangulate | aiProcess_SortByPType | aiProcess_GenUVCoords | aiProcess_GenNormals | aiProcess_CalcTangentSpace | aiProcess_RemoveComponent | aiProcess_ConvertToLeftHanded)};
 
   if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
     throw std::runtime_error{std::format("Failed to import model at {}: {}.", src.string(), importer.GetErrorString())};

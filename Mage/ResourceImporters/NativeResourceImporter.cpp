@@ -10,13 +10,13 @@ RTTR_REGISTRATION {
 
 
 namespace sorcery {
-auto NativeResourceImporter::GetSupportedFileExtensions(std::pmr::vector<std::string>& out) -> void {
+auto NativeResourceImporter::GetSupportedFileExtensions(std::vector<std::string>& out) -> void {
   out.emplace_back(MATERIAL_FILE_EXT);
   out.emplace_back(SCENE_FILE_EXT);
 }
 
 
-auto NativeResourceImporter::Import(std::filesystem::path const& src) -> ObserverPtr<Resource> {
+auto NativeResourceImporter::Import(std::filesystem::path const& src, std::vector<std::uint8_t>& bytes) -> bool {
   if (!src.has_extension()) {
     return nullptr;
   }
