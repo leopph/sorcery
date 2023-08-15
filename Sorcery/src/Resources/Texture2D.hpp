@@ -1,42 +1,30 @@
 #pragma once
 
 #include "Resource.hpp"
+#include "../Image.hpp"
+#include "../Util.hpp"
 
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <d3d11.h>
 #include <wrl/client.h>
 
-#include "../Image.hpp"
-#include "../Util.hpp"
-
 
 namespace sorcery {
 class Texture2D final : public Resource {
   RTTR_ENABLE(Resource)
-  Microsoft::WRL::ComPtr<ID3D11Texture2D> mTex{nullptr};
-  Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> mSrv{nullptr};
-  std::unique_ptr<Image> mImgData{nullptr};
+  Microsoft::WRL::ComPtr<ID3D11Texture2D> mTex;
+  Microsoft::WRL::ComPtr<ID3D11Resource> mRes;
+  Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> mSrv;
 
-  int mWidth{0};
-  int mHeight{0};
-  int mChannelCount{0};
-
-  auto UploadToGpu(bool allowBlockCompression) -> void;
+  int mWidth;
+  int mHeight;
+  int mChannelCount;
 
 public:
-  Texture2D() = default;
-  LEOPPHAPI explicit Texture2D(Image img, bool keepDataInCpuMemory = false, bool allowBlockCompression = true);
+  LEOPPHAPI Texture2D(ID3D11Texture2D& tex, ID3D11ShaderResourceView& srv) noexcept;
 
-  [[nodiscard]] LEOPPHAPI auto GetImageData() const noexcept -> ObserverPtr<Image const>;
-  LEOPPHAPI auto SetImageData(Image img) noexcept -> void;
-
-  [[nodiscard]] LEOPPHAPI auto GetSrv() const noexcept -> ObserverPtr<ID3D11ShaderResourceView>;
-
-  LEOPPHAPI auto Update(bool keepDataInCpuMemory = false, bool allowBlockCompression = true) noexcept -> void;
-
-  [[nodiscard]] LEOPPHAPI auto HasCpuMemory() const noexcept -> bool;
-  LEOPPHAPI auto ReleaseCpuMemory() -> void;
+  [[nodiscard]] LEOPPHAPI auto GetSrv() const noexcept -> NotNull<ObserverPtr<ID3D11ShaderResourceView>>;
 
   [[nodiscard]] LEOPPHAPI auto GetWidth() const noexcept -> int;
   [[nodiscard]] LEOPPHAPI auto GetHeight() const noexcept -> int;

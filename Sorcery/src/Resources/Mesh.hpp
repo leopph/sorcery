@@ -13,6 +13,7 @@
 #include <memory>
 #include <span>
 #include <string>
+#include <variant>
 #include <vector>
 
 
@@ -43,7 +44,7 @@ public:
     std::vector<Vector3> normals;
     std::vector<Vector2> uvs;
     std::vector<Vector3> tangents;
-    std::vector<std::uint32_t> indices;
+    std::variant<std::vector<std::uint16_t>, std::vector<std::uint32_t>> indices;
     std::vector<SubMeshData> subMeshes;
   };
 

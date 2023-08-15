@@ -9,58 +9,11 @@ RTTR_REGISTRATION {
 
 
 namespace sorcery {
-auto Cubemap::UploadToGpu() -> void {
-  D3D11_TEXTURE2D_DESC const texDesc{
-    .Width = clamp_cast<UINT>(mFaceData[0].GetWidth()),
-    .Height = clamp_cast<UINT>(mFaceData[0].GetHeight()),
-    .MipLevels = 1,
-    .ArraySize = 6,
-    .Format = DXGI_FORMAT_R8G8B8A8_TYPELESS,
-    .SampleDesc = {.Count = 1, .Quality = 0},
-    .Usage = D3D11_USAGE_IMMUTABLE,
-    .BindFlags = D3D11_BIND_SHADER_RESOURCE,
-    .CPUAccessFlags = 0,
-    .MiscFlags = D3D11_RESOURCE_MISC_TEXTURECUBE
-  };
-
-  std::array<D3D11_SUBRESOURCE_DATA, 6> texData;
-
-  for (int i = 0; i < 6; i++) {
-    texData[i] = D3D11_SUBRESOURCE_DATA{
-      .pSysMem = mFaceData[i].GetData().data(),
-      .SysMemPitch = static_cast<UINT>(mFaceData[i].GetWidth() * mFaceData[i].GetChannelCount()),
-      .SysMemSlicePitch = 0
-    };
-  }
-
-  if (FAILED(gRenderer.GetDevice()->CreateTexture2D(&texDesc, texData.data(), mTex.ReleaseAndGetAddressOf()))) {
-    throw std::runtime_error{"Failed to create GPU texture of Cubemap."};
-  }
-
-  D3D11_SHADER_RESOURCE_VIEW_DESC const srvDesc{
-    .Format = mFaceData[0].IsSrgb() ? DXGI_FORMAT_R8G8B8A8_UNORM_SRGB : DXGI_FORMAT_R8G8B8A8_UNORM,
-    .ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE,
-    .TextureCube = {
-      .MostDetailedMip = 0,
-      .MipLevels = 1
-    }
-  };
-
-  if (FAILED(gRenderer.GetDevice()->CreateShaderResourceView(mTex.Get(), &srvDesc, mSrv.ReleaseAndGetAddressOf()))) {
-    throw std::runtime_error{"Failed to create GPU SRV of Cubemap."};
-  }
-}
-
-
-Cubemap::Cubemap(std::span<Image, 6> faces) {
-  std::ranges::move(faces, std::begin(mTmpFaceData));
-  Update();
-}
-
-
-auto Cubemap::Update() noexcept -> void {
-  mFaceData = std::move(mTmpFaceData);
-  UploadToGpu();
+Cubemap::Cubemap(ID3D11Texture2D& tex, ID3D11ShaderResourceView& srv) noexcept :
+  mTex{&tex},
+  mSrv{&srv} {
+  mTex->AddRef();
+  mSrv->AddRef();
 }
 
 

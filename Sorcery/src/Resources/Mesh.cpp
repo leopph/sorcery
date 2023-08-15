@@ -1,7 +1,6 @@
 #include "Mesh.hpp"
 
 #include "../Renderer.hpp"
-#include "../Util.hpp"
 #include "../Serialization.hpp"
 
 #include <imgui.h>
@@ -302,7 +301,9 @@ auto Mesh::SetData(Data const& data) noexcept -> void {
   SetNormals(data.normals);
   SetUVs(data.uvs);
   SetTangents(data.tangents);
-  SetIndices(data.indices);
+  std::visit([this]<typename T>(std::vector<T> const& indices) {
+    SetIndices(indices);
+  }, data.indices);
   SetSubMeshes(data.subMeshes);
 }
 
@@ -313,7 +314,9 @@ auto Mesh::SetData(Data&& data) noexcept -> void {
   SetNormals(std::move(data.normals));
   SetUVs(std::move(data.uvs));
   SetTangents(std::move(data.tangents));
-  SetIndices(std::move(data.indices));
+  std::visit([this]<typename T>(std::vector<T>& indices) {
+    SetIndices(std::move(indices));
+  }, data.indices);
   SetSubMeshes(std::move(data.subMeshes));
 }
 
