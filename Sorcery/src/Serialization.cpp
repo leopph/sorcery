@@ -399,4 +399,41 @@ auto ReflectionDeserializeFromYaml(YAML::Node const& node, rttr::variant& v, std
 auto ReflectionDeserializeFromYaml(YAML::Node const& node, rttr::variant&& v, std::function<void(YAML::Node const&, rttr::variant&)> const& extensionFunc) -> void {
   ReflectionDeserializeFromYaml(node, v, extensionFunc);
 }
+
+
+auto SerializeToBinary(std::string_view const sv, std::vector<std::uint8_t>& bytes) noexcept -> void {
+  if constexpr (std::endian::native == std::endian::little) {
+    SerializeToBinary(std::size(bytes), bytes);
+    auto const sizeBeforeChars{std::size(bytes)};
+    bytes.resize(sizeBeforeChars + std::size(sv));
+    std::ranges::copy_n(sv.data(), std::size(sv), &bytes[sizeBeforeChars]);
+  } else {
+    // TODO
+  }
+}
+
+
+auto DeserializeFromBinary(std::span<std::uint8_t const> const bytes, std::string& str) noexcept -> bool {
+  if (std::size(bytes) < 8) {
+    return false;
+  }
+
+  if constexpr (std::endian::native == std::endian::little) {
+    std::uint64_t len;
+    if (!DeserializeFromBinary(bytes, len)) {
+      return false;
+    }
+
+    if (std::size(bytes) - 8 < len) {
+      return false;
+    }
+
+    str.resize(len);
+
+    std::memcpy(str.data(), bytes.subspan(8).data(), len);
+    return true;
+  } else {
+    return false;
+  }
+}
 }
