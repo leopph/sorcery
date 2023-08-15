@@ -117,9 +117,12 @@
     <ClCompile Include="src\FileIo.cpp" />
     <ClCompile Include="src\GUI.cpp" />
     <ClCompile Include="src\MemoryAllocation.cpp" />
+    <ClCompile Include="src\ResourceBinary.cpp" />
     <ClCompile Include="src\ResourceImporters\MeshImporter.cpp" />
     <ClCompile Include="src\ResourceImporters\NativeResourceImporter.cpp" />
     <ClCompile Include="src\ResourceImporters\TextureImporter.cpp" />
+    <ClCompile Include="src\ResourceLoaders\MeshLoader.cpp" />
+    <ClCompile Include="src\ResourceLoaders\TextureLoader.cpp" />
     <ClCompile Include="src\Resources\Cubemap.cpp" />
     <ClCompile Include="src\DirectionalShadowAtlas.cpp" />
     <ClCompile Include="src\GridLike.cpp" />
@@ -128,7 +131,6 @@
     <ClCompile Include="src\PunctualShadowAtlas.cpp" />
     <ClCompile Include="src\RenderTarget.cpp" />
     <ClCompile Include="src\Resources\Resource.cpp" />
-    <ClCompile Include="src\ResourceImporters\ResourceImporter.cpp" />
     <ClCompile Include="src\ResourceManager.cpp" />
     <ClCompile Include="src\SceneObject.cpp" />
     <ClCompile Include="src\Serialization.cpp" />
@@ -153,12 +155,12 @@
     <ClInclude Include="src\GUI.hpp" />
     <ClInclude Include="src\MemoryAllocation.hpp" />
     <ClInclude Include="src\ResourceImporters\NativeResourceImporter.hpp" />
+    <ClInclude Include="src\ResourceBinary.hpp" />
+    <ClInclude Include="src\ResourceLoaders\MeshLoader.hpp" />
+    <ClInclude Include="src\ResourceLoaders\TextureLoader.hpp" />
     <ClInclude Include="src\Resources\NativeResource.hpp" />
     <ClInclude Include="src\Reflection.hpp" />
-    <ClInclude Include="src\ResourceImporters\MeshImporter.hpp" />
-    <ClInclude Include="src\ResourceImporters\TextureImporter.hpp" />
     <ClInclude Include="src\Resources\Resource.hpp" />
-    <ClInclude Include="src\ResourceImporters\ResourceImporter.hpp" />
     <ClInclude Include="src\ResourceManager.hpp" />
     <ClInclude Include="src\ShadowCascadeBoundary.hpp" />
     <ClInclude Include="src\Camera.hpp" />
