@@ -401,19 +401,19 @@ auto ReflectionDeserializeFromYaml(YAML::Node const& node, rttr::variant&& v, st
 }
 
 
-auto SerializeToBinary(std::string_view const sv, std::vector<std::uint8_t>& bytes) noexcept -> void {
+auto SerializeToBinary(std::string_view const sv, std::vector<std::byte>& bytes) noexcept -> void {
   if constexpr (std::endian::native == std::endian::little) {
     SerializeToBinary(std::size(bytes), bytes);
     auto const sizeBeforeChars{std::size(bytes)};
     bytes.resize(sizeBeforeChars + std::size(sv));
-    std::ranges::copy_n(sv.data(), std::size(sv), &bytes[sizeBeforeChars]);
+    std::memcpy(&bytes[sizeBeforeChars], sv.data(), std::size(sv));
   } else {
     // TODO
   }
 }
 
 
-auto DeserializeFromBinary(std::span<std::uint8_t const> const bytes, std::string& str) noexcept -> bool {
+auto w(std::span<std::byte const> bytes, std::string& str) noexcept -> bool {
   if (std::size(bytes) < 8) {
     return false;
   }

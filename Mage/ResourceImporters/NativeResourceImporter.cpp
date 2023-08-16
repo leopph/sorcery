@@ -16,7 +16,7 @@ auto NativeResourceImporter::GetSupportedFileExtensions(std::vector<std::string>
 }
 
 
-auto NativeResourceImporter::Import(std::filesystem::path const& src, std::vector<std::uint8_t>& bytes) -> bool {
+auto NativeResourceImporter::Import(std::filesystem::path const& src, std::vector<std::byte>& bytes) -> bool {
   if (!src.has_extension()) {
     return nullptr;
   }

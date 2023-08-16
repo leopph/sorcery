@@ -19,7 +19,7 @@ auto MeshLoader::Load(std::filesystem::path const& pathAbs) -> MaybeNull<Observe
       return nullptr;
     }
 
-    std::span<std::uint8_t const> curBytes{bytes};
+    auto curBytes{as_bytes(std::span{bytes})};
     std::uint64_t vertexCount;
 
     if (!DeserializeFromBinary(curBytes, vertexCount)) {
@@ -80,13 +80,13 @@ auto MeshLoader::Load(std::filesystem::path const& pathAbs) -> MaybeNull<Observe
     meshData.subMeshes.resize(submeshCount);
 
     for (auto i{0ull}; i < submeshCount; i++) {
-      if (!DeserializeFromBinary(curBytes, meshData.subMeshes[i].firstIndex)) {
+      if (!DeserializeFromBinary(curBytes, meshData.subMeshes[i].baseVertex)) {
         return nullptr;
       }
 
       curBytes = curBytes.subspan(sizeof(int));
 
-      if (!DeserializeFromBinary(curBytes, meshData.subMeshes[i].baseVertex)) {
+      if (!DeserializeFromBinary(curBytes, meshData.subMeshes[i].firstIndex)) {
         return nullptr;
       }
 

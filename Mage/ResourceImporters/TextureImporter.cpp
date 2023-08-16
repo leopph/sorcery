@@ -34,7 +34,7 @@ auto TextureImporter::GetSupportedFileExtensions(std::vector<std::string>& out) 
 }
 
 
-auto TextureImporter::Import(std::filesystem::path const& src, std::vector<std::uint8_t>& bytes) -> bool {
+auto TextureImporter::Import(std::filesystem::path const& src, std::vector<std::byte>& bytes) -> bool {
   std::vector<unsigned char> fileBytes;
 
   if (!ReadFileBinary(src, fileBytes)) {
@@ -115,7 +115,8 @@ auto TextureImporter::Import(std::filesystem::path const& src, std::vector<std::
       return false;
     }
 
-    std::ranges::copy_n(static_cast<std::uint8_t const*>(blob.GetBufferPointer()), blob.GetBufferSize(), std::back_inserter(bytes));
+    bytes.reserve(std::size(bytes) + blob.GetBufferSize());
+    std::ranges::copy(std::span{static_cast<std::byte const*>(blob.GetBufferPointer()), blob.GetBufferSize()}, std::back_inserter(bytes));
     return true;
   }
 
@@ -161,7 +162,8 @@ auto TextureImporter::Import(std::filesystem::path const& src, std::vector<std::
           return false;
         }
 
-        std::ranges::copy_n(static_cast<std::uint8_t const*>(blob.GetBufferPointer()), blob.GetBufferSize(), std::back_inserter(bytes));
+        bytes.reserve(std::size(bytes) + blob.GetBufferSize());
+        std::ranges::copy(std::span{static_cast<std::byte const*>(blob.GetBufferPointer()), blob.GetBufferSize()}, std::back_inserter(bytes));
         return true;
       }
     }

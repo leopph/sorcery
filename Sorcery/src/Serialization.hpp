@@ -59,17 +59,13 @@ LEOPPHAPI auto ReflectionDeserializeFromYaml(YAML::Node const& node, Object& obj
 LEOPPHAPI auto ReflectionDeserializeFromYaml(YAML::Node const& node, rttr::variant& v, std::function<void(YAML::Node const&, rttr::variant&)> const& extensionFunc = {}) -> void;
 LEOPPHAPI auto ReflectionDeserializeFromYaml(YAML::Node const& node, rttr::variant&& v, std::function<void(YAML::Node const&, rttr::variant&)> const& extensionFunc = {}) -> void;
 
-template<typename T> requires std::is_integral_v<T> || (std::is_floating_point_v<T> && std::numeric_limits<T>::is_iec559())
-auto SerializeToBinary(T val, std::vector<std::uint8_t>& bytes) noexcept -> void;
-template<typename T> requires std::is_enum_v<T>
-auto SerializeToBinary(T val, std::vector<std::uint8_t>& bytes) noexcept -> void;
-LEOPPHAPI auto SerializeToBinary(std::string_view sv, std::vector<std::uint8_t>& bytes) noexcept -> void;
+template<typename T> requires std::is_integral_v<T> || (std::is_floating_point_v<T> && std::numeric_limits<T>::is_iec559()) || std::is_enum_v<T>
+auto SerializeToBinary(T val, std::vector<std::byte>& bytes) noexcept -> void;
+LEOPPHAPI auto SerializeToBinary(std::string_view sv, std::vector<std::byte>& bytes) noexcept -> void;
 
-template<typename T> requires std::is_integral_v<T> || (std::is_floating_point_v<T> && std::numeric_limits<T>::is_iec559())
-[[nodiscard]] auto DeserializeFromBinary(std::span<std::uint8_t const> bytes, T& val) noexcept -> bool;
-template<typename T> requires std::is_enum_v<T>
-[[nodiscard]] auto DeserializeFromBinary(std::span<std::uint8_t const> bytes, T& val) noexcept -> bool;
-[[nodiscard]] LEOPPHAPI auto DeserializeFromBinary(std::span<std::uint8_t const> bytes, std::string& str) noexcept -> bool;
+template<typename T> requires std::is_integral_v<T> || (std::is_floating_point_v<T> && std::numeric_limits<T>::is_iec559()) || std::is_enum_v<T>
+[[nodiscard]] auto DeserializeFromBinary(std::span<std::byte const> bytes, T& val) noexcept -> bool;
+[[nodiscard]] LEOPPHAPI auto DeserializeFromBinary(std::span<std::byte const> bytes, std::string& str) noexcept -> bool;
 }
 
 
@@ -164,8 +160,8 @@ auto ReflectionDeserializeFromYaml(YAML::Node const& node, T& obj, std::function
 }
 
 
-template<typename T> requires std::is_integral_v<T> || (std::is_floating_point_v<T> && std::numeric_limits<T>::is_iec559())
-auto SerializeToBinary(T const val, std::vector<std::uint8_t>& bytes) noexcept -> void {
+template<typename T> requires std::is_integral_v<T> || (std::is_floating_point_v<T> && std::numeric_limits<T>::is_iec559()) || std::is_enum_v<T>
+auto SerializeToBinary(T const val, std::vector<std::byte>& bytes) noexcept -> void {
   if constexpr (sizeof(T) == 1 || std::endian::native == std::endian::little) {
     std::ranges::copy_n(reinterpret_cast<std::uint8_t const*>(&val), sizeof(val), std::back_inserter(bytes));
   } else {
@@ -174,14 +170,8 @@ auto SerializeToBinary(T const val, std::vector<std::uint8_t>& bytes) noexcept -
 }
 
 
-template<typename T> requires std::is_enum_v<T>
-auto SerializeToBinary(T const val, std::vector<std::uint8_t>& bytes) noexcept -> void {
-  SerializeToBinary(static_cast<std::underlying_type_t<T>>(val), bytes);
-}
-
-
-template<typename T> requires std::is_integral_v<T> || (std::is_floating_point_v<T> && std::numeric_limits<T>::is_iec559())
-auto DeserializeFromBinary(std::span<std::uint8_t const> const bytes, T& val) noexcept -> bool {
+template<typename T> requires std::is_integral_v<T> || (std::is_floating_point_v<T> && std::numeric_limits<T>::is_iec559()) || std::is_enum_v<T>
+auto DeserializeFromBinary(std::span<std::byte const> bytes, T& val) noexcept -> bool {
   if (sizeof(T) > std::size(bytes)) {
     return false;
   }
@@ -194,11 +184,5 @@ auto DeserializeFromBinary(std::span<std::uint8_t const> const bytes, T& val) no
   }
 
   return true;
-}
-
-
-template<typename T> requires std::is_enum_v<T>
-auto DeserializeFromBinary(std::span<std::uint8_t const> bytes, T& val) noexcept -> bool {
-  return DeserializeFromBinary(bytes, static_cast<std::underlying_type_t<T>&>(val));
 }
 }

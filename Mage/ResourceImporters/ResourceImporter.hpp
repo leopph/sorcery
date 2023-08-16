@@ -4,6 +4,7 @@
 #include "../Reflection.hpp"
 #include "../Resources/Resource.hpp"
 
+#include <bit>
 #include <cstdint>
 #include <filesystem>
 #include <string>
@@ -16,7 +17,7 @@ class ResourceImporter {
 
 public:
   virtual auto GetSupportedFileExtensions(std::vector<std::string>& out) -> void = 0;
-  [[nodiscard]] virtual auto Import(std::filesystem::path const& src, std::vector<std::uint8_t>& bytes) -> bool = 0;
+  [[nodiscard]] virtual auto Import(std::filesystem::path const& src, std::vector<std::byte>& bytes) -> bool = 0;
   [[nodiscard]] virtual auto GetImportedType(std::filesystem::path const& resPathAbs) noexcept -> rttr::type = 0;
 
   ResourceImporter() = default;
