@@ -1,9 +1,10 @@
 #include "ResourceDB.hpp"
 
-#include "NativeResourceImporter.hpp"
+#include "MemoryAllocation.hpp"
 #include "Reflection.hpp"
 #include "ResourceManager.hpp"
 #include "Util.hpp"
+#include "ResourceImporters/NativeResourceImporter.hpp"
 
 #include <fstream>
 #include <ranges>
@@ -20,7 +21,7 @@ auto ResourceDB::InternalImportResource(std::filesystem::path const& resPathResD
   metaNode["importer"] = importerNode;
 
   auto const resPathAbs{mResDirAbs / resPathResDirRel};
-  auto const metaPathAbs{ResourceManager::GetMetaPath(resPathAbs)};
+  auto const metaPathAbs{GetMetaPath(resPathAbs)};
 
   std::ofstream outMetaStream{metaPathAbs, std::ios::out | std::ios::trunc};
   YAML::Emitter metaEmitter{outMetaStream};
@@ -40,7 +41,7 @@ auto ResourceDB::Refresh() -> void {
   std::map<std::filesystem::path, Guid> newAbsPathToGuid;
 
   for (auto const& entry : std::filesystem::recursive_directory_iterator{mResDirAbs}) {
-    if (ResourceManager::IsMetaFile(entry.path())) {
+    if (IsMetaFile(entry.path())) {
       if (auto const resPathAbs{std::filesystem::path{entry.path()}.replace_extension()}; exists(resPathAbs)) {
         // If we find a resource-meta file pair, we take note of them
 
@@ -53,9 +54,9 @@ auto ResourceDB::Refresh() -> void {
         // If it's an orphaned meta file, we remove it
         remove(entry.path());
       }
-    } else if (!exists(ResourceManager::GetMetaPath(entry.path()))) {
+    } else if (!exists(GetMetaPath(entry.path()))) {
       // If we find a file that is not a meta file, we attempt to import it as a resource
-      if (auto const importer{ResourceManager::GetNewImporterForResourceFile(entry.path())}) {
+      if (auto const importer{GetNewImporterForResourceFile(entry.path())}) {
         InternalImportResource(entry.path().lexically_relative(GetResourceDirectoryAbsolutePath()), newGuidToAbsPath, newAbsPathToGuid, *importer, Guid::Generate());
       }
     }
@@ -134,7 +135,7 @@ auto ResourceDB::CreateResource(NativeResource& res, std::filesystem::path const
   metaNode["guid"] = res.GetGuid();
   metaNode["importer"] = importerNode;
 
-  std::ofstream outMetaStream{ResourceManager::GetMetaPath(targetPathAbs)};
+  std::ofstream outMetaStream{GetMetaPath(targetPathAbs)};
   YAML::Emitter metaEmitter{outMetaStream};
   metaEmitter << metaNode;
 
@@ -164,14 +165,14 @@ auto ResourceDB::ImportResource(std::filesystem::path const& resPathResDirRel, O
 
   if (!importer) {
     // If we weren't passed an importer instance, we use a new default one.
-    ownedImporter = ResourceManager::GetNewImporterForResourceFile(resPathResDirRel);
+    ownedImporter = GetNewImporterForResourceFile(resPathResDirRel);
     importer = ownedImporter.get();
   }
 
   auto guid{Guid::Invalid()};
 
   // If a meta file already exists for the resource, we attempt to reimport it and keep its Guid.
-  if (ResourceManager::LoadMeta(GetResourceDirectoryAbsolutePath() / resPathResDirRel, std::addressof(guid), nullptr) && gResourceManager.IsLoaded(guid)) {
+  if (LoadMeta(GetResourceDirectoryAbsolutePath() / resPathResDirRel, std::addressof(guid), nullptr) && gResourceManager.IsLoaded(guid)) {
     if (*mSelectedObjectPtr == gResourceManager.GetOrLoad(guid)) {
       *mSelectedObjectPtr = nullptr;
     }
@@ -197,9 +198,9 @@ auto ResourceDB::MoveResource(Guid const& guid, std::filesystem::path const& tar
   }
 
   auto const srcPathAbs{it->second};
-  auto const srcMetaPathAbs{ResourceManager::GetMetaPath(srcPathAbs)};
+  auto const srcMetaPathAbs{GetMetaPath(srcPathAbs)};
   auto const dstPathAbs{mResDirAbs / targetPathResDirRel};
-  auto const dstMetaPathAbs{ResourceManager::GetMetaPath(dstPathAbs)};
+  auto const dstMetaPathAbs{GetMetaPath(dstPathAbs)};
 
   if (!exists(srcPathAbs) || !exists(srcMetaPathAbs) || exists(dstPathAbs) || exists(dstMetaPathAbs)) {
     return false;
@@ -231,7 +232,7 @@ auto ResourceDB::MoveDirectory(std::filesystem::path const& srcPathResDirRel, st
 auto ResourceDB::DeleteResource(Guid const& guid) -> void {
   if (auto const it{mGuidToAbsPath.find(guid)}; it != std::end(mGuidToAbsPath)) {
     std::filesystem::remove(it->second);
-    std::filesystem::remove(ResourceManager::GetMetaPath(it->second));
+    std::filesystem::remove(GetMetaPath(it->second));
     gResourceManager.Unload(guid);
     mAbsPathToGuid.erase(it->second);
     mGuidToAbsPath.erase(it);
@@ -289,5 +290,62 @@ auto ResourceDB::GuidToPath(Guid const& guid) -> std::filesystem::path {
 
 auto ResourceDB::GenerateUniqueResourceDirectoryRelativePath(std::filesystem::path const& targetPathResDirRel) const -> std::filesystem::path {
   return GenerateUniquePath(mResDirAbs / targetPathResDirRel);
+}
+
+
+auto ResourceDB::GetMetaPath(std::filesystem::path const& path) -> std::filesystem::path {
+  return std::filesystem::path{path} += RESOURCE_META_FILE_EXT;
+}
+
+
+auto ResourceDB::IsMetaFile(std::filesystem::path const& path) -> bool {
+  return path.extension() == RESOURCE_META_FILE_EXT;
+}
+
+
+auto ResourceDB::LoadMeta(std::filesystem::path const& resPathAbs, ObserverPtr<Guid> const guid, ObserverPtr<std::unique_ptr<ResourceImporter>> const importer) noexcept -> bool {
+  auto const metaPathAbs{GetMetaPath(resPathAbs)};
+
+  if (!exists(metaPathAbs)) {
+    return false;
+  }
+
+  auto const metaNode{YAML::LoadFile(metaPathAbs.string())};
+
+  if (guid) {
+    *guid = Guid::Parse(metaNode["guid"].as<std::string>());
+  }
+
+  if (importer) {
+    auto const importerType{rttr::type::get_by_name(metaNode["importer"]["type"].as<std::string>())};
+    assert(importerType.is_valid());
+
+    auto importerVariant{importerType.create()};
+    assert(importerVariant.is_valid());
+
+    importer->reset(importerVariant.get_value<ResourceImporter*>());
+    ReflectionDeserializeFromYaml(metaNode["importer"]["properties"], **importer);
+  }
+
+  return true;
+}
+
+
+auto ResourceDB::GetNewImporterForResourceFile(std::filesystem::path const& path) -> std::unique_ptr<ResourceImporter> {
+  for (auto const& importerType : rttr::type::get<ResourceImporter>().get_derived_classes()) {
+    auto importerVariant{importerType.create()};
+    std::unique_ptr<ResourceImporter> importer{importerVariant.get_value<ResourceImporter*>()};
+
+    std::pmr::vector<std::string> supportedExtensions{&GetTmpMemRes()};
+    importer->GetSupportedFileExtensions(supportedExtensions);
+
+    for (auto const& ext : supportedExtensions) {
+      if (ext == path.extension()) {
+        return importer;
+      }
+    }
+  }
+
+  return {};
 }
 }

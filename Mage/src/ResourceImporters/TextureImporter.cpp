@@ -24,7 +24,7 @@ RTTR_REGISTRATION {
 
 
 namespace sorcery {
-auto TextureImporter::GetSupportedFileExtensions(std::vector<std::string>& out) -> void {
+auto TextureImporter::GetSupportedFileExtensions(std::pmr::vector<std::string>& out) -> void {
   out.emplace_back(DDS_FILE_EXT);
   out.emplace_back(HDR_FILE_EXT);
   out.emplace_back(TGA_FILE_EXT);

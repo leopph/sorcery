@@ -2,7 +2,7 @@
 
 #include "ProjectSettingsWindow.hpp"
 #include "EditorSettingsWindow.hpp"
-#include "NativeResourceImporter.hpp"
+#include "ResourceImporters/NativeResourceImporter.hpp"
 #include "ResourceManager.hpp"
 
 #include <nfd.h>

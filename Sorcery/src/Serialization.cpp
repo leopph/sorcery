@@ -413,7 +413,7 @@ auto SerializeToBinary(std::string_view const sv, std::vector<std::byte>& bytes)
 }
 
 
-auto w(std::span<std::byte const> bytes, std::string& str) noexcept -> bool {
+auto DeserializeFromBinary(std::span<std::byte const> bytes, std::string& str) noexcept -> bool {
   if (std::size(bytes) < 8) {
     return false;
   }

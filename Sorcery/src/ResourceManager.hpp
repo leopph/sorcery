@@ -2,11 +2,12 @@
 
 #include "Core.hpp"
 #include "Serialization.hpp"
-#include "ResourceImporters/ResourceImporter.hpp"
 #include "Resources/Resource.hpp"
 
+#include <cstddef>
 #include <concepts>
 #include <filesystem>
+#include <string_view>
 #include <vector>
 
 
@@ -23,10 +24,14 @@ class ResourceManager {
   std::set<ObserverPtr<Resource>, ResourceGuidLess> mResources;
   std::map<Guid, std::filesystem::path> mGuidPathMappings;
 
-  [[nodiscard]] LEOPPHAPI auto InternalLoadResource(std::filesystem::path const& resPathAbs) -> ObserverPtr<Resource>;
+  [[nodiscard]] LEOPPHAPI auto InternalLoadResource(Guid const& guid, std::filesystem::path const& resPathAbs) -> ObserverPtr<Resource>;
+  [[nodiscard]] static auto LoadTexture(std::span<std::byte const> bytes) noexcept -> MaybeNull<ObserverPtr<Resource>>;
+  [[nodiscard]] static auto LoadMesh(std::span<std::byte const> bytes) -> MaybeNull<ObserverPtr<Resource>>;
 
 public:
-  constexpr static std::string_view RESOURCE_META_FILE_EXT{".mojo"};
+  constexpr static std::string_view EXTERNAL_RESOURCE_EXT{".bin"};
+  constexpr static std::string_view SCENE_RESOURCE_EXT{".scene"};
+  constexpr static std::string_view MATERIAL_RESOURCE_EXT{".mtl"};
 
   template<std::derived_from<Resource> ResType = Resource>
   auto GetOrLoad(Guid const& guid) -> ObserverPtr<ResType>;
@@ -43,14 +48,6 @@ public:
   template<std::derived_from<Resource> T>
   auto GetGuidsForResourcesOfType(std::vector<Guid>& out) const noexcept -> void;
   auto LEOPPHAPI GetGuidsForResourcesOfType(rttr::type const& type, std::vector<Guid>& out) const noexcept -> void;
-
-  [[nodiscard]] LEOPPHAPI static auto GetMetaPath(std::filesystem::path const& path) -> std::filesystem::path;
-  [[nodiscard]] LEOPPHAPI static auto IsMetaFile(std::filesystem::path const& path) -> bool;
-  // If the meta file successfully loads, guid and importer will be set to the read values.
-  // Nullptrs can be passed to skip loading certain pieces of information.
-  // The arguments won't be changed if the meta file failes to load.
-  [[nodiscard]] LEOPPHAPI static auto LoadMeta(std::filesystem::path const& resPathAbs, ObserverPtr<Guid> guid, ObserverPtr<std::unique_ptr<ResourceImporter>> importer) noexcept -> bool;
-  [[nodiscard]] LEOPPHAPI static auto GetNewImporterForResourceFile(std::filesystem::path const& path) -> std::unique_ptr<ResourceImporter>;
 };
 
 
@@ -70,7 +67,7 @@ auto ResourceManager::GetOrLoad(Guid const& guid) -> ObserverPtr<ResType> {
   }
 
   if (auto const it{mGuidPathMappings.find(guid)}; it != std::end(mGuidPathMappings)) {
-    if (auto const res{InternalLoadResource(it->second)}) {
+    if (auto const res{InternalLoadResource(guid, it->second)}) {
       if constexpr (!std::is_same_v<ResType, Resource>) {
         if (rttr::rttr_cast<ObserverPtr<ResType>>(res)) {
           return static_cast<ObserverPtr<ResType>>(res);

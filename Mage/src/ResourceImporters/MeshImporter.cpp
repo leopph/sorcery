@@ -35,7 +35,7 @@ namespace {
 }
 
 
-auto MeshImporter::GetSupportedFileExtensions(std::vector<std::string>& out) -> void {
+auto MeshImporter::GetSupportedFileExtensions(std::pmr::vector<std::string>& out) -> void {
   out.emplace_back(".fbx");
   out.emplace_back(".obj");
 }

@@ -126,34 +126,13 @@
     <ClCompile Include="src\GUI.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\stb_image.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\stb_dxt.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\FileIo.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\ResourceImporters\MeshImporter.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\ResourceImporters\NativeResourceImporter.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\ResourceImporters\TextureImporter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\MemoryAllocation.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ResourceBinary.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\ResourceLoaders\TextureLoader.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\ResourceLoaders\MeshLoader.cpp">
+    <ClCompile Include="src\ExternalResource.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -223,9 +202,6 @@
     </ClInclude>
     <ClInclude Include="src\LightComponents.hpp">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Serialization.hpp">
-      <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Resources\Texture2D.hpp">
       <Filter>Header Files</Filter>
@@ -299,19 +275,13 @@
     <ClInclude Include="src\FileIo.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ResourceLoaders\TextureLoader.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\ResourceBinary.hpp">
+    <ClInclude Include="src\ExternalResource.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\MemoryAllocation.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ResourceImporters\NativeResourceImporter.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\ResourceLoaders\MeshLoader.hpp">
+    <ClInclude Include="src\Serialization.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

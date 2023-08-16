@@ -17,12 +17,6 @@ class Image {
   bool mIsSrgb{true};
 
 public:
-  struct BlockCompressedData {
-    std::unique_ptr<std::uint8_t[]> bytes;
-    int rowByteCount;
-  };
-
-
   Image() noexcept = default;
   LEOPPHAPI Image(int width, int height, int channelCount, std::unique_ptr<std::uint8_t[]> bytes, bool isSrgb = true) noexcept;
   LEOPPHAPI Image(Image const& other);
@@ -43,10 +37,6 @@ public:
   [[nodiscard]] LEOPPHAPI auto ExtractChannel(int channelIdx) -> Image;
   // Appends a new channel to the image with the specified constant value.
   LEOPPHAPI auto AppendChannel(std::uint8_t value) noexcept -> void;
-
-  // Returns a block of memory containing a block compressed version of the image data.
-  // If the conditions do not allow for block compression, an empty optional is returned.
-  [[nodiscard]] LEOPPHAPI auto CreateBlockCompressedData() const noexcept -> std::optional<BlockCompressedData>;
 
   // Returns whether any data is held, that is if width, height or channels is 0, or bytes is nullptr.
   [[nodiscard]] LEOPPHAPI auto IsEmpty() const noexcept -> bool;

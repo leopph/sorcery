@@ -92,10 +92,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="ResourceImporters\MeshImporter.cpp" />
-    <ClCompile Include="ResourceImporters\NativeResourceImporter.cpp" />
-    <ClCompile Include="ResourceImporters\ResourceImporter.cpp" />
-    <ClCompile Include="ResourceImporters\TextureImporter.cpp" />
+    <ClCompile Include="src\ResourceImporters\MeshImporter.cpp" />
+    <ClCompile Include="src\ResourceImporters\NativeResourceImporter.cpp" />
+    <ClCompile Include="src\ResourceImporters\ResourceImporter.cpp" />
+    <ClCompile Include="src\ResourceImporters\TextureImporter.cpp" />
     <ClCompile Include="src\EditorCamera.cpp" />
     <ClCompile Include="src\Application.cpp" />
     <ClCompile Include="src\EditorSettingsWindow.cpp" />
@@ -118,10 +118,10 @@
     <None Include="vcpkg.json" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ResourceImporters\MeshImporter.hpp" />
-    <ClInclude Include="ResourceImporters\NativeResourceImporter.hpp" />
-    <ClInclude Include="ResourceImporters\ResourceImporter.hpp" />
-    <ClInclude Include="ResourceImporters\TextureImporter.hpp" />
+    <ClInclude Include="src\ResourceImporters\MeshImporter.hpp" />
+    <ClInclude Include="src\ResourceImporters\NativeResourceImporter.hpp" />
+    <ClInclude Include="src\ResourceImporters\ResourceImporter.hpp" />
+    <ClInclude Include="src\ResourceImporters\TextureImporter.hpp" />
     <ClInclude Include="src\EditorCamera.hpp" />
     <ClInclude Include="src\Application.hpp" />
     <ClInclude Include="src\EditorSettingsWindow.hpp" />

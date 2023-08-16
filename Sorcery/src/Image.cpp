@@ -1,9 +1,6 @@
 #include "Image.hpp"
 
 #include <algorithm>
-#include <stb_dxt.h>
-
-#include <array>
 #include <utility>
 
 
@@ -131,90 +128,6 @@ auto Image::AppendChannel(std::uint8_t const value) noexcept -> void {
 
   mData = std::move(newData);
   mChannelCount += 1;
-}
-
-
-auto Image::CreateBlockCompressedData() const noexcept -> std::optional<BlockCompressedData> {
-  if (IsEmpty() || mWidth % 4 != 0 || mHeight % 4 != 0) {
-    return std::nullopt;
-  }
-
-  auto const extractBlock{
-    []<std::size_t ChannelCount>(Image const& img, int const rowIdx, int const colIdx, std::array<std::uint8_t, 16 * ChannelCount>& blockData) {
-      for (std::size_t k{0}; k < 4; k++) {
-        std::ranges::copy_n(&img.mData[(rowIdx * img.mWidth + colIdx) * ChannelCount], 4 * ChannelCount, &blockData[k * 4 * ChannelCount]);
-      }
-    }
-  };
-
-  if (mChannelCount == 1) {
-    BlockCompressedData ret{
-      .bytes = std::make_unique_for_overwrite<std::uint8_t[]>(static_cast<std::size_t>(mWidth) * mHeight / 2),
-      .rowByteCount = mWidth * 2
-    };
-
-    auto dstBlock{ret.bytes.get()};
-
-    for (auto i{0}; i < mHeight; i += 4) {
-      for (auto j{0}; j < mWidth; j += 4) {
-        std::array<std::uint8_t, 16> blockData;
-        extractBlock.operator()<1>(*this, i, j, blockData);
-        stb_compress_bc4_block(dstBlock, blockData.data());
-        dstBlock += 8;
-      }
-    }
-
-    return ret;
-  }
-
-  if (mChannelCount == 2) {
-    // TODO
-  }
-
-  if (mChannelCount == 3) {
-    BlockCompressedData ret{
-      .bytes = std::make_unique_for_overwrite<std::uint8_t[]>(static_cast<std::size_t>(mWidth) * mHeight / 2),
-      .rowByteCount = mWidth * 2
-    };
-
-    auto dstBlock{ret.bytes.get()};
-
-    Image alphaExtended{*this};
-    alphaExtended.AppendChannel(255);
-
-    for (int i{0}; i < mHeight; i += 4) {
-      for (int j{0}; j < mWidth; j += 4) {
-        std::array<std::uint8_t, 64> blockData;
-        extractBlock.operator()<4>(alphaExtended, i, j, blockData);
-        stb_compress_dxt_block(dstBlock, blockData.data(), 0, STB_DXT_HIGHQUAL);
-        dstBlock += 8;
-      }
-    }
-
-    return ret;
-  }
-
-  if (mChannelCount == 4) {
-    BlockCompressedData ret{
-      .bytes = std::make_unique_for_overwrite<std::uint8_t[]>(static_cast<std::size_t>(mWidth) * mHeight),
-      .rowByteCount = mWidth * 4
-    };
-
-    auto dstBlock{ret.bytes.get()};
-
-    for (int i{0}; i < mHeight; i += 4) {
-      for (int j{0}; j < mWidth; j += 4) {
-        std::array<std::uint8_t, 64> blockData;
-        extractBlock.operator()<4>(*this, i, j, blockData);
-        stb_compress_dxt_block(dstBlock, blockData.data(), 10, STB_DXT_HIGHQUAL);
-        dstBlock += 16;
-      }
-    }
-
-    return ret;
-  }
-
-  return std::nullopt;
 }
 
 

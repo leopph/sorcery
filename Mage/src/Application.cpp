@@ -2,7 +2,7 @@
 
 #include "Platform.hpp"
 #include "GUI.hpp"
-#include "NativeResourceImporter.hpp"
+#include "ResourceImporters/NativeResourceImporter.hpp"
 
 #include <nfd.h>
 

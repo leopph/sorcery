@@ -66,16 +66,16 @@
     <ClCompile Include="src\ResourceDB.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ResourceImporters\MeshImporter.cpp">
+    <ClCompile Include="src\ResourceImporters\MeshImporter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ResourceImporters\NativeResourceImporter.cpp">
+    <ClCompile Include="src\ResourceImporters\NativeResourceImporter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ResourceImporters\ResourceImporter.cpp">
+    <ClCompile Include="src\ResourceImporters\ResourceImporter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ResourceImporters\TextureImporter.cpp">
+    <ClCompile Include="src\ResourceImporters\TextureImporter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -134,16 +134,16 @@
     <ClInclude Include="src\ReflectionDisplayProperties.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ResourceImporters\MeshImporter.hpp">
+    <ClInclude Include="src\ResourceImporters\MeshImporter.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ResourceImporters\NativeResourceImporter.hpp">
+    <ClInclude Include="src\ResourceImporters\NativeResourceImporter.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ResourceImporters\ResourceImporter.hpp">
+    <ClInclude Include="src\ResourceImporters\ResourceImporter.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ResourceImporters\TextureImporter.hpp">
+    <ClInclude Include="src\ResourceImporters\TextureImporter.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

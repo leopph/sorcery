@@ -163,7 +163,7 @@ auto ReflectionDeserializeFromYaml(YAML::Node const& node, T& obj, std::function
 template<typename T> requires std::is_integral_v<T> || (std::is_floating_point_v<T> && std::numeric_limits<T>::is_iec559()) || std::is_enum_v<T>
 auto SerializeToBinary(T const val, std::vector<std::byte>& bytes) noexcept -> void {
   if constexpr (sizeof(T) == 1 || std::endian::native == std::endian::little) {
-    std::ranges::copy_n(reinterpret_cast<std::uint8_t const*>(&val), sizeof(val), std::back_inserter(bytes));
+    std::ranges::copy_n(reinterpret_cast<std::byte const*>(&val), sizeof(val), std::back_inserter(bytes));
   } else {
     // TODO
   }
@@ -177,7 +177,7 @@ auto DeserializeFromBinary(std::span<std::byte const> bytes, T& val) noexcept ->
   }
 
   if constexpr (sizeof(T) == 1 || std::endian::native == std::endian::little) {
-    std::ranges::copy_n(std::begin(bytes), sizeof(val), reinterpret_cast<std::uint8_t*>(&val));
+    std::ranges::copy_n(std::begin(bytes), sizeof(val), reinterpret_cast<std::byte*>(&val));
   } else {
     // TODO
     return false;

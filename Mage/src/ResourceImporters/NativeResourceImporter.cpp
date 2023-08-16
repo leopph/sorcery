@@ -10,7 +10,7 @@ RTTR_REGISTRATION {
 
 
 namespace sorcery {
-auto NativeResourceImporter::GetSupportedFileExtensions(std::vector<std::string>& out) -> void {
+auto NativeResourceImporter::GetSupportedFileExtensions(std::pmr::vector<std::string>& out) -> void {
   out.emplace_back(MATERIAL_FILE_EXT);
   out.emplace_back(SCENE_FILE_EXT);
 }
@@ -18,13 +18,13 @@ auto NativeResourceImporter::GetSupportedFileExtensions(std::vector<std::string>
 
 auto NativeResourceImporter::Import(std::filesystem::path const& src, std::vector<std::byte>& bytes) -> bool {
   if (!src.has_extension()) {
-    return nullptr;
+    return false; // TODO
   }
 
   auto const yamlNode{YAML::LoadFile(src.string())};
 
   if (!yamlNode.IsDefined()) {
-    return nullptr;
+    return false; // TODO
   }
 
   ObserverPtr<NativeResource> nativeRes{nullptr};
@@ -39,7 +39,7 @@ auto NativeResourceImporter::Import(std::filesystem::path const& src, std::vecto
     nativeRes->Deserialize(yamlNode);
   }
 
-  return nativeRes;
+  return true; // TODO
 }
 
 

@@ -6,7 +6,6 @@
 
 #include <filesystem>
 #include <map>
-#include <memory>
 
 
 namespace sorcery::mage {
@@ -16,7 +15,10 @@ class ResourceDB {
   std::map<std::filesystem::path, Guid> mAbsPathToGuid;
   ObserverPtr<ObserverPtr<Object>> mSelectedObjectPtr;
 
+public:
+  constexpr static std::string_view RESOURCE_META_FILE_EXT{".mojo"};
 
+private:
   constexpr static std::string_view RESOURCE_DIR_PROJ_REL{"Resources"};
 
   // Uses the passed mappings to store the results and does not update the ResourceManager's mappings.
@@ -46,5 +48,13 @@ public:
   [[nodiscard]] auto GuidToPath(Guid const& guid) -> std::filesystem::path;
 
   [[nodiscard]] auto GenerateUniqueResourceDirectoryRelativePath(std::filesystem::path const& targetPathResDirRel) const -> std::filesystem::path;
+
+  [[nodiscard]] static auto GetMetaPath(std::filesystem::path const& path) -> std::filesystem::path;
+  [[nodiscard]] static auto IsMetaFile(std::filesystem::path const& path) -> bool;
+  // If the meta file successfully loads, guid and importer will be set to the read values.
+  // Nullptrs can be passed to skip loading certain pieces of information.
+  // The arguments won't be changed if the meta file failes to load.
+  [[nodiscard]] static auto LoadMeta(std::filesystem::path const& resPathAbs, ObserverPtr<Guid> guid, ObserverPtr<std::unique_ptr<ResourceImporter>> importer) noexcept -> bool;
+  [[nodiscard]] static auto GetNewImporterForResourceFile(std::filesystem::path const& path) -> std::unique_ptr<ResourceImporter>;
 };
 }

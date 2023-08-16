@@ -118,7 +118,7 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& thisPathAbs,
 
     if (isDirectory) {
       for (auto const& entry : std::filesystem::directory_iterator{thisPathAbs}) {
-        if (entry.path().extension() != ResourceManager::RESOURCE_META_FILE_EXT) {
+        if (entry.path().extension() != ResourceDB::RESOURCE_META_FILE_EXT) {
           if (DrawFilesystemTree(entry.path(), thisPathResDirRel / entry.path().filename(), entry.is_directory())) {
             // The directory_iterator does not guarantee anything when the directory tree changes, it's safer to skip the rest of the frame.
             break;
@@ -174,7 +174,7 @@ auto ProjectWindow::DrawContextMenu() noexcept -> void {
 
         for (std::size_t i{0}; i < NFD_PathSet_GetCount(&pathSet); i++) {
           std::filesystem::path const srcPathAbs{NFD_PathSet_GetPath(&pathSet, i)};
-          if (auto importer{ResourceManager::GetNewImporterForResourceFile(srcPathAbs)}) {
+          if (auto importer{ResourceDB::GetNewImporterForResourceFile(srcPathAbs)}) {
             mFilesToImport.emplace_back(std::move(importer), srcPathAbs, GenerateUniquePath(workingDirAbs / srcPathAbs.filename()));
             mOpenImportModal = true;
           }
@@ -187,7 +187,7 @@ auto ProjectWindow::DrawContextMenu() noexcept -> void {
     ImGui::Separator();
 
     if (ImGui::MenuItem("Import Settings", nullptr, nullptr, !is_directory(selectedPathAbs))) {
-      if (std::unique_ptr<ResourceImporter> importer; ResourceManager::LoadMeta(selectedPathAbs, nullptr, std::addressof(importer))) {
+      if (std::unique_ptr<ResourceImporter> importer; ResourceDB::LoadMeta(selectedPathAbs, nullptr, std::addressof(importer))) {
         mFilesToImport.emplace_back(std::move(importer), selectedPathAbs, selectedPathAbs);
         mOpenImportModal = true;
       }
