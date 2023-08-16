@@ -19,6 +19,7 @@ public:
   virtual auto GetSupportedFileExtensions(std::pmr::vector<std::string>& out) -> void = 0;
   [[nodiscard]] virtual auto Import(std::filesystem::path const& src, std::vector<std::byte>& bytes) -> bool = 0;
   [[nodiscard]] virtual auto GetImportedType(std::filesystem::path const& resPathAbs) noexcept -> rttr::type = 0;
+  [[nodiscard]] virtual auto IsNativeImporter() const noexcept -> bool;
 
   ResourceImporter() = default;
   ResourceImporter(ResourceImporter const& other) = default;

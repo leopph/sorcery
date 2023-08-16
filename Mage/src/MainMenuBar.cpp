@@ -2,7 +2,6 @@
 
 #include "ProjectSettingsWindow.hpp"
 #include "EditorSettingsWindow.hpp"
-#include "ResourceImporters/NativeResourceImporter.hpp"
 #include "ResourceManager.hpp"
 
 #include <nfd.h>
@@ -33,7 +32,7 @@ auto MainMenuBar::Draw() -> void {
       }
 
       if (ImGui::MenuItem("Open Scene")) {
-        if (nfdchar_t* dstPathAbs{nullptr}; NFD_OpenDialog(NativeResourceImporter::SCENE_FILE_EXT.substr(1).data(), mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath().string().c_str(), &dstPathAbs) == NFD_OKAY) {
+        if (nfdchar_t* dstPathAbs{nullptr}; NFD_OpenDialog(ResourceManager::SCENE_RESOURCE_EXT.substr(1).data(), mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath().string().c_str(), &dstPathAbs) == NFD_OKAY) {
           if (auto const dstPathResDirRel{relative(dstPathAbs, mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath())}; !dstPathResDirRel.empty()) {
             auto const scene{gResourceManager.GetOrLoad<Scene>(mApp->GetResourceDatabase().PathToGuid(dstPathResDirRel))};
             assert(scene);

@@ -2,7 +2,7 @@
 
 #include "Platform.hpp"
 #include "GUI.hpp"
-#include "ResourceImporters/NativeResourceImporter.hpp"
+#include "ResourceManager.hpp"
 
 #include <nfd.h>
 
@@ -87,8 +87,8 @@ auto Application::SaveCurrentSceneToFile() -> void {
   if (mResourceDB.IsSavedResource(*mScene)) {
     mResourceDB.SaveResource(*mScene);
   } else {
-    if (nfdchar_t* dst; NFD_SaveDialog(NativeResourceImporter::SCENE_FILE_EXT.substr(1).data(), mResourceDB.GetResourceDirectoryAbsolutePath().string().c_str(), &dst) == NFD_OKAY) {
-      if (auto const dstResDirRel{relative(std::filesystem::path{dst}, mResourceDB.GetResourceDirectoryAbsolutePath()) += NativeResourceImporter::SCENE_FILE_EXT}; !dstResDirRel.empty()) {
+    if (nfdchar_t* dst; NFD_SaveDialog(ResourceManager::SCENE_RESOURCE_EXT.substr(1).data(), mResourceDB.GetResourceDirectoryAbsolutePath().string().c_str(), &dst) == NFD_OKAY) {
+      if (auto const dstResDirRel{relative(std::filesystem::path{dst}, mResourceDB.GetResourceDirectoryAbsolutePath()) += ResourceManager::SCENE_RESOURCE_EXT}; !dstResDirRel.empty()) {
         mResourceDB.CreateResource(*mScene, dstResDirRel);
       }
       std::free(dst);

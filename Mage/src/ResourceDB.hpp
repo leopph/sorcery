@@ -11,8 +11,10 @@
 namespace sorcery::mage {
 class ResourceDB {
   std::filesystem::path mResDirAbs;
-  std::map<Guid, std::filesystem::path> mGuidToAbsPath;
-  std::map<std::filesystem::path, Guid> mAbsPathToGuid;
+  std::filesystem::path mCacheDirAbs;
+  std::map<Guid, std::filesystem::path> mGuidToSrcAbsPath; // Maps resource Guids to the source file of the resource
+  std::map<Guid, std::filesystem::path> mGuidToResAbsPath; // Maps resource Guids to the loadable file of the resource
+  std::map<std::filesystem::path, Guid> mSrcAbsPathToGuid; // Maps resource source files to the guid of the resource
   ObserverPtr<ObserverPtr<Object>> mSelectedObjectPtr;
 
 public:
@@ -20,11 +22,12 @@ public:
 
 private:
   constexpr static std::string_view RESOURCE_DIR_PROJ_REL{"Resources"};
+  constexpr static std::string_view CACHE_DIR_PROJ_REL{"Cache"};
 
   // Uses the passed mappings to store the results and does not update the ResourceManager's mappings.
   // Writes the passed importer into the target meta file.
   // Assigns the passed Guid to the resource.
-  auto InternalImportResource(std::filesystem::path const& resPathResDirRel, std::map<Guid, std::filesystem::path>& guidToAbsPath, std::map<std::filesystem::path, Guid>& absPathToGuid, ResourceImporter& importer, Guid const& guid) const -> void;
+  [[nodiscard]] auto InternalImportResource(std::filesystem::path const& resPathResDirRel, std::map<Guid, std::filesystem::path>& guidToSrcAbsPath, std::map<Guid, std::filesystem::path>& guidToResAbsPath, std::map<std::filesystem::path, Guid>& srcAbsPathToGuid, ResourceImporter& importer, Guid const& guid) const -> bool;
 
 public:
   explicit ResourceDB(ObserverPtr<Object>& selectedObjectPtr);

@@ -11,47 +11,31 @@ RTTR_REGISTRATION {
 
 namespace sorcery {
 auto NativeResourceImporter::GetSupportedFileExtensions(std::pmr::vector<std::string>& out) -> void {
-  out.emplace_back(MATERIAL_FILE_EXT);
-  out.emplace_back(SCENE_FILE_EXT);
+  out.emplace_back(ResourceManager::MATERIAL_RESOURCE_EXT);
+  out.emplace_back(ResourceManager::SCENE_RESOURCE_EXT);
 }
 
 
 auto NativeResourceImporter::Import(std::filesystem::path const& src, std::vector<std::byte>& bytes) -> bool {
-  if (!src.has_extension()) {
-    return false; // TODO
-  }
-
-  auto const yamlNode{YAML::LoadFile(src.string())};
-
-  if (!yamlNode.IsDefined()) {
-    return false; // TODO
-  }
-
-  ObserverPtr<NativeResource> nativeRes{nullptr};
-
-  if (src.extension() == MATERIAL_FILE_EXT) {
-    nativeRes = new Material{};
-  } else if (src.extension() == SCENE_FILE_EXT) {
-    nativeRes = new Scene{};
-  }
-
-  if (nativeRes) {
-    nativeRes->Deserialize(yamlNode);
-  }
-
-  return true; // TODO
+  auto const ext{src.extension()};
+  return ext == ResourceManager::MATERIAL_RESOURCE_EXT || ext == ResourceManager::SCENE_RESOURCE_EXT;
 }
 
 
 auto NativeResourceImporter::GetImportedType(std::filesystem::path const& resPathAbs) noexcept -> rttr::type {
-  if (resPathAbs.extension() == MATERIAL_FILE_EXT) {
+  if (resPathAbs.extension() == ResourceManager::MATERIAL_RESOURCE_EXT) {
     return rttr::type::get<Material>();
   }
 
-  if (resPathAbs.extension() == SCENE_FILE_EXT) {
+  if (resPathAbs.extension() == ResourceManager::SCENE_RESOURCE_EXT) {
     return rttr::type::get<Scene>();
   }
 
   return rttr::type::get_by_name("");
+}
+
+
+bool NativeResourceImporter::IsNativeImporter() const noexcept {
+  return true;
 }
 }
