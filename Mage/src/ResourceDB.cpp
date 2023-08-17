@@ -68,13 +68,20 @@ auto ResourceDB::Refresh() -> void {
       if (auto const resPathAbs{std::filesystem::path{entry.path()}.replace_extension()}; exists(resPathAbs)) {
         // If we find a resource-meta file pair, we take note of them
 
-        auto const metaNode{YAML::LoadFile(entry.path().string())};
-        auto const guid{metaNode["guid"].as<Guid>()};
+        Guid guid;
+        std::unique_ptr<ResourceImporter> importer;
+        LoadMeta(resPathAbs, &guid, &importer);
 
         newGuidToSrcAbsPath.emplace(guid, resPathAbs);
         newSrcAbsPathToGuid.emplace(resPathAbs, guid);
 
-        if (auto const cacheFilePathAbs{mCacheDirAbs / static_cast<std::string>(guid) += ResourceManager::EXTERNAL_RESOURCE_EXT}; exists(cacheFilePathAbs)) {
+        if (!importer->IsNativeImporter()) {
+          auto const cacheFilePathAbs{mCacheDirAbs / static_cast<std::string>(guid) += ResourceManager::EXTERNAL_RESOURCE_EXT};
+
+          if (!exists(cacheFilePathAbs) || last_write_time(resPathAbs) > last_write_time(cacheFilePathAbs)) {
+            InternalImportResource(resPathAbs.lexically_relative(GetResourceDirectoryAbsolutePath()), newGuidToSrcAbsPath, newGuidToResAbsPath, newSrcAbsPathToGuid, *importer, guid);
+          }
+
           newGuidToResAbsPath.emplace(guid, cacheFilePathAbs);
         } else {
           newGuidToResAbsPath.emplace(guid, resPathAbs);
