@@ -6,6 +6,8 @@
 #include "Util.hpp"
 #include "ResourceImporters/NativeResourceImporter.hpp"
 
+#include "ExternalResource.hpp"
+
 #include <fstream>
 #include <ranges>
 
@@ -31,15 +33,18 @@ auto ResourceDB::InternalImportResource(std::filesystem::path const& resPathResD
   srcAbsPathToGuid.insert_or_assign(resPathAbs, guid);
 
   std::vector<std::byte> resBytes;
+  ExternalResourceCategory categ;
 
-  if (!importer.Import(resPathAbs, resBytes)) {
+  if (!importer.Import(resPathAbs, resBytes, categ)) {
     return false;
   }
 
   if (!importer.IsNativeImporter()) {
+    std::vector<std::byte> fileBytes;
+    PackExternalResource(categ, resBytes, fileBytes);
     auto const resCacheFilePathAbs{mCacheDirAbs / static_cast<std::string>(guid) += ResourceManager::EXTERNAL_RESOURCE_EXT};
     std::ofstream outCache{resCacheFilePathAbs, std::ios::binary | std::ios::out};
-    outCache.write(reinterpret_cast<char*>(resBytes.data()), std::ssize(resBytes));
+    outCache.write(reinterpret_cast<char*>(fileBytes.data()), std::ssize(fileBytes));
     guidToResAbsPath.insert_or_assign(guid, resCacheFilePathAbs);
   } else {
     guidToResAbsPath.insert_or_assign(guid, resPathAbs);
@@ -68,6 +73,12 @@ auto ResourceDB::Refresh() -> void {
 
         newGuidToSrcAbsPath.emplace(guid, resPathAbs);
         newSrcAbsPathToGuid.emplace(resPathAbs, guid);
+
+        if (auto const cacheFilePathAbs{mCacheDirAbs / static_cast<std::string>(guid) += ResourceManager::EXTERNAL_RESOURCE_EXT}; exists(cacheFilePathAbs)) {
+          newGuidToResAbsPath.emplace(guid, cacheFilePathAbs);
+        } else {
+          newGuidToResAbsPath.emplace(guid, resPathAbs);
+        }
       } else {
         // If it's an orphaned meta file, we remove it
         remove(entry.path());
