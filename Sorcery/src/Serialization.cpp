@@ -46,7 +46,7 @@ auto convert<sorcery::Guid>::decode(Node const& node, sorcery::Guid& guid) -> bo
 
 
 namespace sorcery {
-auto ReflectionSerializeToYaml(Object const& obj, std::function<YAML::Node(rttr::variant const&)> const& extensionFunc) -> YAML::Node {
+auto ReflectionSerializeToYaml(Object const& obj, std::function<YAML::Node(rttr::variant const&)> const& extensionFunc) noexcept -> YAML::Node {
   YAML::Node ret;
   for (auto const& prop : rttr::type::get(obj).get_properties()) {
     ret[prop.get_name().to_string()] = ReflectionSerializeToYaml(prop.get_value(obj), extensionFunc);
@@ -55,7 +55,7 @@ auto ReflectionSerializeToYaml(Object const& obj, std::function<YAML::Node(rttr:
 }
 
 
-auto ReflectionSerializeToYaml(rttr::variant const& v, std::function<YAML::Node(rttr::variant const&)> const& extensionFunc) -> YAML::Node {
+auto ReflectionSerializeToYaml(rttr::variant const& v, std::function<YAML::Node(rttr::variant const&)> const& extensionFunc) noexcept -> YAML::Node {
   if (v.get_type() == rttr::type::get<bool>()) {
     return YAML::Node{v.get_value<bool>()};
   }
@@ -184,7 +184,7 @@ auto ReflectionSerializeToYaml(rttr::variant const& v, std::function<YAML::Node(
 }
 
 
-auto ReflectionDeserializeFromYaml(YAML::Node const& node, Object& obj, std::function<void(YAML::Node const&, rttr::variant&)> const& extensionFunc) -> void {
+auto ReflectionDeserializeFromYaml(YAML::Node const& node, Object& obj, std::function<void(YAML::Node const&, rttr::variant&)> const& extensionFunc) noexcept -> void {
   for (auto const& prop : rttr::type::get(obj).get_properties()) {
     auto value{prop.get_value(obj)};
     assert(value.is_valid());
@@ -196,7 +196,7 @@ auto ReflectionDeserializeFromYaml(YAML::Node const& node, Object& obj, std::fun
 }
 
 
-auto ReflectionDeserializeFromYaml(YAML::Node const& node, rttr::variant& v, std::function<void(YAML::Node const&, rttr::variant&)> const& extensionFunc) -> void {
+auto ReflectionDeserializeFromYaml(YAML::Node const& node, rttr::variant& v, std::function<void(YAML::Node const&, rttr::variant&)> const& extensionFunc) noexcept -> void {
   if (!node.IsDefined() || node.IsNull() || !v.get_type().is_valid()) {
     return;
   }
@@ -398,7 +398,7 @@ auto ReflectionDeserializeFromYaml(YAML::Node const& node, rttr::variant& v, std
 }
 
 
-auto ReflectionDeserializeFromYaml(YAML::Node const& node, rttr::variant&& v, std::function<void(YAML::Node const&, rttr::variant&)> const& extensionFunc) -> void {
+auto ReflectionDeserializeFromYaml(YAML::Node const& node, rttr::variant&& v, std::function<void(YAML::Node const&, rttr::variant&)> const& extensionFunc) noexcept -> void {
   ReflectionDeserializeFromYaml(node, v, extensionFunc);
 }
 
