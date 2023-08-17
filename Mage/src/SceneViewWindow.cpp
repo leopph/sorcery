@@ -98,7 +98,7 @@ auto SceneViewWindow::Draw(Application& context) -> void {
 
     static bool showGrid{false};
 
-    if (GetKeyDown(Key::G)) {
+    if (ImGui::IsWindowFocused() && GetKeyDown(Key::G)) {
       showGrid = !showGrid;
     }
 
