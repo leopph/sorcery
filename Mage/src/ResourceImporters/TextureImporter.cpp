@@ -34,7 +34,7 @@ auto TextureImporter::GetSupportedFileExtensions(std::pmr::vector<std::string>& 
 }
 
 
-auto TextureImporter::Import(std::filesystem::path const& src, std::vector<std::byte>& bytes) -> bool {
+auto TextureImporter::Import(std::filesystem::path const& src, std::vector<std::byte>& bytes, ExternalResourceCategory& categ) -> bool {
   std::vector<unsigned char> fileBytes;
 
   if (!ReadFileBinary(src, fileBytes)) {
@@ -117,6 +117,7 @@ auto TextureImporter::Import(std::filesystem::path const& src, std::vector<std::
 
     bytes.reserve(std::size(bytes) + blob.GetBufferSize());
     std::ranges::copy(std::span{static_cast<std::byte const*>(blob.GetBufferPointer()), blob.GetBufferSize()}, std::back_inserter(bytes));
+    categ = ExternalResourceCategory::Texture;
     return true;
   }
 
@@ -164,6 +165,7 @@ auto TextureImporter::Import(std::filesystem::path const& src, std::vector<std::
 
         bytes.reserve(std::size(bytes) + blob.GetBufferSize());
         std::ranges::copy(std::span{static_cast<std::byte const*>(blob.GetBufferPointer()), blob.GetBufferSize()}, std::back_inserter(bytes));
+        categ = ExternalResourceCategory::Texture;
         return true;
       }
     }

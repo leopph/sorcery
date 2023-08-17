@@ -16,7 +16,7 @@ auto NativeResourceImporter::GetSupportedFileExtensions(std::pmr::vector<std::st
 }
 
 
-auto NativeResourceImporter::Import(std::filesystem::path const& src, std::vector<std::byte>& bytes) -> bool {
+auto NativeResourceImporter::Import(std::filesystem::path const& src, std::vector<std::byte>& bytes, ExternalResourceCategory& categ) -> bool {
   auto const ext{src.extension()};
   return ext == ResourceManager::MATERIAL_RESOURCE_EXT || ext == ResourceManager::SCENE_RESOURCE_EXT;
 }

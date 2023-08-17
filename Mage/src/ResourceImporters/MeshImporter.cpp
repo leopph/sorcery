@@ -41,7 +41,7 @@ auto MeshImporter::GetSupportedFileExtensions(std::pmr::vector<std::string>& out
 }
 
 
-auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byte>& bytes) -> bool {
+auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byte>& bytes, ExternalResourceCategory& categ) -> bool {
   std::vector<unsigned char> meshBytes;
 
   if (!ReadFileBinary(src, meshBytes)) {
@@ -240,6 +240,7 @@ auto MeshImporter::Import(std::filesystem::path const& src, std::vector<std::byt
     SerializeToBinary(mtlSlotName, bytes);
   }
 
+  categ = ExternalResourceCategory::Mesh;
   return true;
 }
 

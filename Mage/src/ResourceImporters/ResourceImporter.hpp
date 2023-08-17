@@ -2,10 +2,9 @@
 
 #include "../Core.hpp"
 #include "../Reflection.hpp"
-#include "../Resources/Resource.hpp"
+#include "../ExternalResource.hpp"
 
-#include <bit>
-#include <cstdint>
+#include <cstddef>
 #include <filesystem>
 #include <string>
 #include <vector>
@@ -17,7 +16,7 @@ class ResourceImporter {
 
 public:
   virtual auto GetSupportedFileExtensions(std::pmr::vector<std::string>& out) -> void = 0;
-  [[nodiscard]] virtual auto Import(std::filesystem::path const& src, std::vector<std::byte>& bytes) -> bool = 0;
+  [[nodiscard]] virtual auto Import(std::filesystem::path const& src, std::vector<std::byte>& bytes, ExternalResourceCategory& categ) -> bool = 0;
   [[nodiscard]] virtual auto GetImportedType(std::filesystem::path const& resPathAbs) noexcept -> rttr::type = 0;
   [[nodiscard]] virtual auto IsNativeImporter() const noexcept -> bool;
 
