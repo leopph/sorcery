@@ -53,10 +53,12 @@ auto ResourceManager::InternalLoadResource(Guid const& guid, std::filesystem::pa
     switch (resCat) {
       case ExternalResourceCategory::Texture: {
         res = LoadTexture(resBytes);
+        break;
       }
 
       case ExternalResourceCategory::Mesh: {
         res = LoadMesh(resBytes);
+        break;
       }
     }
   } else if (resPathAbs.extension() == SCENE_RESOURCE_EXT) { } else if (resPathAbs.extension() == MATERIAL_RESOURCE_EXT) { }
@@ -191,7 +193,7 @@ auto ResourceManager::LoadMesh(std::span<std::byte const> const bytes) -> MaybeN
         return nullptr;
       }
 
-      curBytes = curBytes.subspan(meshData.subMeshes[i].mtlSlotName.size());
+      curBytes = curBytes.subspan(meshData.subMeshes[i].mtlSlotName.size() + 8);
     }
 
     return new Mesh{std::move(meshData)};
