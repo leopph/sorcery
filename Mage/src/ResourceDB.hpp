@@ -31,6 +31,11 @@ private:
   [[nodiscard]] auto InternalImportResource(std::filesystem::path const& resPathResDirRel, std::map<Guid, std::filesystem::path>& guidToSrcAbsPath, std::map<Guid, std::filesystem::path>& guidToResAbsPath, std::map<std::filesystem::path, Guid>& srcAbsPathToGuid, ResourceImporter& importer, Guid const& guid) const -> bool;
   [[nodiscard]] auto CreateMappings() const noexcept -> std::map<Guid, ResourceManager::ResourceDescription>;
 
+  [[nodiscard]] auto GetExternalResourceBinaryPathAbs(Guid const& guid) const noexcept -> std::filesystem::path;
+
+  // Assembles and writes an external resource binary file to the path returned by GetExternalResourceBinaryPathAbs(guid)
+  [[nodiscard]] auto WriteExternalResourceBinary(Guid const& guid, ExternalResourceCategory categ, std::span<std::byte const> resBytes) const noexcept -> bool;
+
 public:
   explicit ResourceDB(ObserverPtr<Object>& selectedObjectPtr);
 
@@ -56,10 +61,13 @@ public:
 
   [[nodiscard]] static auto GetMetaPath(std::filesystem::path const& path) -> std::filesystem::path;
   [[nodiscard]] static auto IsMetaFile(std::filesystem::path const& path) -> bool;
+
   // If the meta file successfully loads, guid and importer will be set to the read values.
   // Nullptrs can be passed to skip loading certain pieces of information.
   // The arguments won't be changed if the meta file failes to load.
   [[nodiscard]] static auto LoadMeta(std::filesystem::path const& resPathAbs, ObserverPtr<Guid> guid, ObserverPtr<std::unique_ptr<ResourceImporter>> importer) noexcept -> bool;
+  [[nodiscard]] static auto WriteMeta(std::filesystem::path const& resPathAbs, Guid const& guid, ResourceImporter const& importer) noexcept -> bool;
+
   [[nodiscard]] static auto GetNewImporterForResourceFile(std::filesystem::path const& path) -> std::unique_ptr<ResourceImporter>;
 };
 }

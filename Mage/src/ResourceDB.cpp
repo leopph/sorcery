@@ -14,20 +14,11 @@
 
 namespace sorcery::mage {
 auto ResourceDB::InternalImportResource(std::filesystem::path const& resPathResDirRel, std::map<Guid, std::filesystem::path>& guidToSrcAbsPath, std::map<Guid, std::filesystem::path>& guidToResAbsPath, std::map<std::filesystem::path, Guid>& srcAbsPathToGuid, ResourceImporter& importer, Guid const& guid) const -> bool {
-  YAML::Node importerNode;
-  importerNode["type"] = rttr::type::get(importer).get_name().data();
-  importerNode["properties"] = ReflectionSerializeToYaml(importer);
-
-  YAML::Node metaNode;
-  metaNode["guid"] = guid;
-  metaNode["importer"] = importerNode;
-
   auto const resPathAbs{mResDirAbs / resPathResDirRel};
-  auto const metaPathAbs{GetMetaPath(resPathAbs)};
 
-  std::ofstream outMetaStream{metaPathAbs, std::ios::out | std::ios::trunc};
-  YAML::Emitter metaEmitter{outMetaStream};
-  metaEmitter << metaNode;
+  if (!WriteMeta(resPathAbs, guid, importer)) {
+    return false;
+  }
 
   guidToSrcAbsPath.insert_or_assign(guid, resPathAbs);
   srcAbsPathToGuid.insert_or_assign(resPathAbs, guid);
@@ -40,16 +31,15 @@ auto ResourceDB::InternalImportResource(std::filesystem::path const& resPathResD
   }
 
   if (!importer.IsNativeImporter()) {
-    std::vector<std::byte> fileBytes;
-    PackExternalResource(categ, resBytes, fileBytes);
-    auto const resCacheFilePathAbs{mCacheDirAbs / static_cast<std::string>(guid) += ResourceManager::EXTERNAL_RESOURCE_EXT};
-    std::ofstream outCache{resCacheFilePathAbs, std::ios::binary | std::ios::out};
-    outCache.write(reinterpret_cast<char*>(fileBytes.data()), std::ssize(fileBytes));
-    guidToResAbsPath.insert_or_assign(guid, resCacheFilePathAbs);
-  } else {
-    guidToResAbsPath.insert_or_assign(guid, resPathAbs);
+    if (!WriteExternalResourceBinary(guid, categ, resBytes)) {
+      return false;
+    }
+
+    guidToResAbsPath.insert_or_assign(guid, GetExternalResourceBinaryPathAbs(guid));
+    return true;
   }
 
+  guidToResAbsPath.insert_or_assign(guid, resPathAbs);
   return true;
 }
 
@@ -63,6 +53,34 @@ auto ResourceDB::CreateMappings() const noexcept -> std::map<Guid, ResourceManag
 }
 
 
+auto ResourceDB::GetExternalResourceBinaryPathAbs(Guid const& guid) const noexcept -> std::filesystem::path {
+  return mCacheDirAbs / static_cast<std::string>(guid) += ResourceManager::EXTERNAL_RESOURCE_EXT;
+}
+
+
+auto ResourceDB::WriteExternalResourceBinary(Guid const& guid, ExternalResourceCategory const categ, std::span<std::byte const> const resBytes) const noexcept -> bool {
+  if (!guid.IsValid()) {
+    return false;
+  }
+
+  std::vector<std::byte> fileBytes;
+  PackExternalResource(categ, resBytes, fileBytes);
+
+  if (!exists(mCacheDirAbs)) {
+    create_directory(mCacheDirAbs);
+  }
+
+  std::ofstream outStream{GetExternalResourceBinaryPathAbs(guid), std::ios::binary | std::ios::out | std::ios::trunc};
+
+  if (!outStream.is_open()) {
+    return false;
+  }
+
+  outStream.write(reinterpret_cast<char*>(fileBytes.data()), std::ssize(fileBytes));
+  return true;
+}
+
+
 ResourceDB::ResourceDB(ObserverPtr<Object>& selectedObjectPtr) :
   mSelectedObjectPtr{std::addressof(selectedObjectPtr)} {}
 
@@ -72,38 +90,77 @@ auto ResourceDB::Refresh() -> void {
   std::map<Guid, std::filesystem::path> newGuidToResAbsPath;
   std::map<std::filesystem::path, Guid> newSrcAbsPathToGuid;
 
-  for (auto const& entry : std::filesystem::recursive_directory_iterator{mResDirAbs}) {
+  for (auto& entry : std::filesystem::recursive_directory_iterator{mResDirAbs}) {
+    if (!entry.exists() || entry.is_directory()) {
+      continue;
+    }
+
     if (IsMetaFile(entry.path())) {
-      if (auto const resPathAbs{std::filesystem::path{entry.path()}.replace_extension()}; exists(resPathAbs)) {
-        // If we find a resource-meta file pair, we take note of them
+      auto const resPathAbs{std::filesystem::path{entry.path()}.replace_extension()};
 
-        Guid guid;
-        std::unique_ptr<ResourceImporter> importer;
-        LoadMeta(resPathAbs, &guid, &importer);
-
-        newGuidToSrcAbsPath.emplace(guid, resPathAbs);
-        newSrcAbsPathToGuid.emplace(resPathAbs, guid);
-
-        if (!importer->IsNativeImporter()) {
-          auto const cacheFilePathAbs{mCacheDirAbs / static_cast<std::string>(guid) += ResourceManager::EXTERNAL_RESOURCE_EXT};
-
-          if (!exists(cacheFilePathAbs) || last_write_time(resPathAbs) > last_write_time(cacheFilePathAbs)) {
-            InternalImportResource(resPathAbs.lexically_relative(GetResourceDirectoryAbsolutePath()), newGuidToSrcAbsPath, newGuidToResAbsPath, newSrcAbsPathToGuid, *importer, guid);
-          }
-
-          newGuidToResAbsPath.emplace(guid, cacheFilePathAbs);
-        } else {
-          newGuidToResAbsPath.emplace(guid, resPathAbs);
-        }
-      } else {
-        // If it's an orphaned meta file, we remove it
+      // If it's an orphaned meta file, we remove it
+      if (!exists(resPathAbs)) {
         remove(entry.path());
+        continue;
       }
-    } else if (!exists(GetMetaPath(entry.path()))) {
-      // If we find a file that is not a meta file, we attempt to import it as a resource
+
+      Guid guid;
+      std::unique_ptr<ResourceImporter> importer;
+
+      // If we couldn't read the meta file (e.g. it's corrupted) we attempt to create a new one
+      if (!LoadMeta(resPathAbs, &guid, &importer)) {
+        importer = GetNewImporterForResourceFile(entry.path());
+        guid = Guid::Generate();
+
+        // If we couldn't find an importer or we for some reason couldn't write the new meta, we just remove the files
+        if (!importer || WriteMeta(resPathAbs, guid, *importer)) {
+          remove(resPathAbs);
+          remove(entry.path());
+          continue;
+        }
+      }
+
+      // If its an external resource, we check for the processed binary
+      if (!importer->IsNativeImporter()) {
+        auto const cacheFilePathAbs{GetExternalResourceBinaryPathAbs(guid)};
+
+        // If it's out of date we attempt to recreate it
+        if (!exists(cacheFilePathAbs) || last_write_time(resPathAbs) > last_write_time(cacheFilePathAbs) || last_write_time(entry.path()) > last_write_time(cacheFilePathAbs)) {
+          // If we fail, we just remove the the files
+          if (!InternalImportResource(resPathAbs.lexically_relative(mResDirAbs), newGuidToSrcAbsPath, newGuidToResAbsPath, newSrcAbsPathToGuid, *importer, guid)) {
+            remove(resPathAbs);
+            remove(entry.path());
+            continue;
+          }
+        }
+
+        // In case the resource is external, the processed binary is the path to load
+        newGuidToResAbsPath.emplace(guid, cacheFilePathAbs);
+      } else {
+        // If the resource is native, the source is the path to load
+        newGuidToResAbsPath.emplace(guid, resPathAbs);
+      }
+
+      newGuidToSrcAbsPath.emplace(guid, resPathAbs);
+      newSrcAbsPathToGuid.emplace(resPathAbs, guid);
+
+      continue;
+    }
+
+    // If we find a file that is not a meta file, we attempt to import it as a resource
+    if (auto const metaPathAbs{GetMetaPath(entry.path())}; !exists(metaPathAbs)) {
       if (auto const importer{GetNewImporterForResourceFile(entry.path())}) {
-        InternalImportResource(entry.path().lexically_relative(GetResourceDirectoryAbsolutePath()), newGuidToSrcAbsPath, newGuidToResAbsPath, newSrcAbsPathToGuid, *importer, Guid::Generate());
+        if (auto const guid{Guid::Generate()}; InternalImportResource(entry.path().lexically_relative(mResDirAbs), newGuidToSrcAbsPath, newGuidToResAbsPath, newSrcAbsPathToGuid, *importer, guid)) {
+          newGuidToSrcAbsPath.emplace(guid, entry.path());
+          newSrcAbsPathToGuid.emplace(entry.path(), guid);
+          newGuidToResAbsPath.emplace(guid, importer->IsNativeImporter() ? entry.path() : GetExternalResourceBinaryPathAbs(guid));
+          continue;
+        }
       }
+
+      // If we couldn't import, we just remove the files
+      remove(entry.path());
+      remove(metaPathAbs);
     }
   }
 
@@ -122,7 +179,7 @@ auto ResourceDB::Refresh() -> void {
     if (*mSelectedObjectPtr && *mSelectedObjectPtr == gResourceManager.GetOrLoad(guid)) {
       *mSelectedObjectPtr = nullptr;
     }
-    DeleteResource(guid);
+    DeleteResource(guid); // TODO this deletes existing resources that had their GUIDs regenerated during the refresh
   }
 
   // We rename loaded resources that have been moved in the file system
@@ -179,17 +236,7 @@ auto ResourceDB::CreateResource(NativeResource& res, std::filesystem::path const
   YAML::Emitter resEmitter{outResStream};
   resEmitter << resNode;
 
-  YAML::Node importerNode;
-  importerNode["type"] = rttr::type::get<NativeResourceImporter>().get_name().to_string();
-  importerNode["properties"] = ReflectionSerializeToYaml(NativeResourceImporter{});
-
-  YAML::Node metaNode;
-  metaNode["guid"] = res.GetGuid();
-  metaNode["importer"] = importerNode;
-
-  std::ofstream outMetaStream{GetMetaPath(targetPathAbs)};
-  YAML::Emitter metaEmitter{outMetaStream};
-  metaEmitter << metaNode;
+  WriteMeta(targetPathAbs, res.GetGuid(), NativeResourceImporter{});
 
   res.SetName(targetPathResDirRel.stem().string());
 
@@ -367,21 +414,101 @@ auto ResourceDB::LoadMeta(std::filesystem::path const& resPathAbs, ObserverPtr<G
 
   auto const metaNode{YAML::LoadFile(metaPathAbs.string())};
 
+  if (!metaNode) {
+    return false;
+  }
+
   if (guid) {
-    *guid = Guid::Parse(metaNode["guid"].as<std::string>());
+    auto const guidNode{metaNode["guid"]};
+
+    if (!guidNode) {
+      return false;
+    }
+
+    auto const parsedGuid{Guid::Parse(guidNode.as<std::string>(""))};
+
+    if (!parsedGuid.IsValid()) {
+      return false;
+    }
+
+    *guid = parsedGuid;
   }
 
   if (importer) {
-    auto const importerType{rttr::type::get_by_name(metaNode["importer"]["type"].as<std::string>())};
-    assert(importerType.is_valid());
+    auto const importerNode{metaNode["importer"]};
+
+    if (!importerNode) {
+      return false;
+    }
+
+    auto const importerTypeNode{importerNode["type"]};
+
+    if (!importerTypeNode) {
+      return false;
+    }
+
+    auto const importerType{rttr::type::get_by_name(importerTypeNode.as<std::string>(""))};
+
+    if (!importerType.is_valid()) {
+      return false;
+    }
 
     auto importerVariant{importerType.create()};
-    assert(importerVariant.is_valid());
 
-    importer->reset(importerVariant.get_value<ResourceImporter*>());
-    ReflectionDeserializeFromYaml(metaNode["importer"]["properties"], **importer);
+    if (!importerVariant.is_valid()) {
+      return false;
+    }
+
+    auto conversionSuccess{false};
+    auto const importerPtr{importerVariant.convert<ResourceImporter*>(&conversionSuccess)};
+
+    if (!conversionSuccess) {
+      return false;
+    }
+
+    auto const importerPropsNode{importerNode["properties"]};
+
+    if (!importerPropsNode) {
+      return false;
+    }
+
+    ReflectionDeserializeFromYaml(importerPropsNode, *importerPtr);
+    importer->reset(importerPtr);
   }
 
+  return true;
+}
+
+
+auto ResourceDB::WriteMeta(std::filesystem::path const& resPathAbs, Guid const& guid, ResourceImporter const& importer) noexcept -> bool {
+  if (!guid.IsValid()) {
+    return false;
+  }
+
+  auto const importerType{rttr::type::get(importer)};
+
+  if (!importerType.is_valid()) {
+    return false;
+  }
+
+  YAML::Node importerNode;
+  importerNode["type"] = importerType.get_name().to_string();
+  importerNode["properties"] = ReflectionSerializeToYaml(importer);
+
+  YAML::Node metaNode;
+  metaNode["guid"] = guid;
+  metaNode["importer"] = importerNode;
+
+  auto const metaPathAbs{GetMetaPath(resPathAbs)};
+
+  std::ofstream outStream{metaPathAbs, std::ios::out | std::ios::trunc};
+
+  if (!outStream.is_open()) {
+    return false;
+  }
+
+  YAML::Emitter metaEmitter{outStream};
+  metaEmitter << metaNode;
   return true;
 }
 
