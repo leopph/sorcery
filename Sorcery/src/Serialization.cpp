@@ -129,7 +129,8 @@ auto ReflectionSerializeToYaml(rttr::variant const& v, std::function<YAML::Node(
   }
 
   if (v.get_type().is_pointer() && v.get_type().get_raw_type().is_derived_from(rttr::type::get<Resource>())) {
-    return YAML::Node{v.get_value<ObserverPtr<Resource>>()->GetGuid()};
+    auto const res{v.get_value<ObserverPtr<Resource>>()};
+    return YAML::Node{res ? res->GetGuid() : Guid::Invalid()};
   }
 
   if (v.is_sequential_container()) {
