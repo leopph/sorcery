@@ -4,6 +4,7 @@
 #include "ExternalResource.hpp"
 #include "FileIo.hpp"
 #include "Renderer.hpp"
+#include "Resources/Scene.hpp"
 
 #include <directxtk/DDSTextureLoader.h>
 #include <wrl/client.h>
@@ -61,7 +62,15 @@ auto ResourceManager::InternalLoadResource(Guid const& guid, std::filesystem::pa
         break;
       }
     }
-  } else if (resPathAbs.extension() == SCENE_RESOURCE_EXT) { } else if (resPathAbs.extension() == MATERIAL_RESOURCE_EXT) { }
+  } else if (resPathAbs.extension() == SCENE_RESOURCE_EXT) {
+    auto const scene{new Scene{}};
+    scene->Deserialize(YAML::LoadFile(resPathAbs.string()));
+    res = scene;
+  } else if (resPathAbs.extension() == MATERIAL_RESOURCE_EXT) {
+    auto const mtl{new Material{}};
+    mtl->Deserialize(YAML::LoadFile(resPathAbs.string()));
+    res = mtl;
+  }
 
   if (res) {
     res->SetGuid(guid);
