@@ -54,6 +54,15 @@ auto ResourceDB::InternalImportResource(std::filesystem::path const& resPathResD
 }
 
 
+auto ResourceDB::CreateMappings() const noexcept -> std::map<Guid, ResourceManager::ResourceDescription> {
+  std::map<Guid, ResourceManager::ResourceDescription> mappings;
+  std::ranges::transform(mGuidToResAbsPath, std::inserter(mappings, std::end(mappings)), [this](std::pair<Guid const, std::filesystem::path> const& pair) {
+    return std::pair{pair.first, ResourceManager::ResourceDescription{pair.second, mGuidToSrcAbsPath.at(pair.first).stem().string()}};
+  });
+  return mappings;
+}
+
+
 ResourceDB::ResourceDB(ObserverPtr<Object>& selectedObjectPtr) :
   mSelectedObjectPtr{std::addressof(selectedObjectPtr)} {}
 
@@ -126,7 +135,8 @@ auto ResourceDB::Refresh() -> void {
   mGuidToSrcAbsPath = std::move(newGuidToSrcAbsPath);
   mGuidToResAbsPath = std::move(newGuidToResAbsPath);
   mSrcAbsPathToGuid = std::move(newSrcAbsPathToGuid);
-  gResourceManager.UpdateGuidPathMappings(mGuidToResAbsPath);
+
+  gResourceManager.UpdateMappings(CreateMappings());
 }
 
 
@@ -187,7 +197,7 @@ auto ResourceDB::CreateResource(NativeResource& res, std::filesystem::path const
   mSrcAbsPathToGuid.insert_or_assign(targetPathAbs, res.GetGuid());
 
   gResourceManager.Add(std::addressof(res));
-  gResourceManager.UpdateGuidPathMappings(mGuidToSrcAbsPath);
+  gResourceManager.UpdateMappings(CreateMappings());
 }
 
 
@@ -228,7 +238,7 @@ auto ResourceDB::ImportResource(std::filesystem::path const& resPathResDirRel, O
   }
 
   InternalImportResource(resPathResDirRel, mGuidToSrcAbsPath, mGuidToResAbsPath, mSrcAbsPathToGuid, *importer, guid);
-  gResourceManager.UpdateGuidPathMappings(mGuidToSrcAbsPath);
+  gResourceManager.UpdateMappings(CreateMappings());
 }
 
 
@@ -282,7 +292,7 @@ auto ResourceDB::DeleteResource(Guid const& guid) -> void {
   }
 
   mGuidToResAbsPath.erase(guid);
-  gResourceManager.UpdateGuidPathMappings(mGuidToSrcAbsPath);
+  gResourceManager.UpdateMappings(CreateMappings());
 }
 
 

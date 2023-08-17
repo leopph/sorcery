@@ -3,6 +3,7 @@
 #include "Guid.hpp"
 #include "NativeResource.hpp"
 #include "ResourceImporters/ResourceImporter.hpp"
+#include "ResourceManager.hpp"
 
 #include <filesystem>
 #include <map>
@@ -28,6 +29,7 @@ private:
   // Writes the passed importer into the target meta file.
   // Assigns the passed Guid to the resource.
   [[nodiscard]] auto InternalImportResource(std::filesystem::path const& resPathResDirRel, std::map<Guid, std::filesystem::path>& guidToSrcAbsPath, std::map<Guid, std::filesystem::path>& guidToResAbsPath, std::map<std::filesystem::path, Guid>& srcAbsPathToGuid, ResourceImporter& importer, Guid const& guid) const -> bool;
+  [[nodiscard]] auto CreateMappings() const noexcept -> std::map<Guid, ResourceManager::ResourceDescription>;
 
 public:
   explicit ResourceDB(ObserverPtr<Object>& selectedObjectPtr);

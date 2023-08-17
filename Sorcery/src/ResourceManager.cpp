@@ -34,13 +34,13 @@ auto ResourceManager::ResourceGuidLess::operator()(Guid const& lhs, ObserverPtr<
 }
 
 
-auto ResourceManager::InternalLoadResource(Guid const& guid, std::filesystem::path const& resPathAbs) -> ObserverPtr<Resource> {
+auto ResourceManager::InternalLoadResource(Guid const& guid, ResourceManager::ResourceDescription const& desc) -> ObserverPtr<Resource> {
   ObserverPtr<Resource> res{nullptr};
 
-  if (resPathAbs.extension() == EXTERNAL_RESOURCE_EXT) {
+  if (desc.pathAbs.extension() == EXTERNAL_RESOURCE_EXT) {
     std::vector<std::uint8_t> fileBytes;
 
-    if (!ReadFileBinary(resPathAbs, fileBytes)) {
+    if (!ReadFileBinary(desc.pathAbs, fileBytes)) {
       return nullptr;
     }
 
@@ -62,19 +62,19 @@ auto ResourceManager::InternalLoadResource(Guid const& guid, std::filesystem::pa
         break;
       }
     }
-  } else if (resPathAbs.extension() == SCENE_RESOURCE_EXT) {
+  } else if (desc.pathAbs.extension() == SCENE_RESOURCE_EXT) {
     auto const scene{new Scene{}};
-    scene->Deserialize(YAML::LoadFile(resPathAbs.string()));
+    scene->Deserialize(YAML::LoadFile(desc.pathAbs.string()));
     res = scene;
-  } else if (resPathAbs.extension() == MATERIAL_RESOURCE_EXT) {
+  } else if (desc.pathAbs.extension() == MATERIAL_RESOURCE_EXT) {
     auto const mtl{new Material{}};
-    mtl->Deserialize(YAML::LoadFile(resPathAbs.string()));
+    mtl->Deserialize(YAML::LoadFile(desc.pathAbs.string()));
     res = mtl;
   }
 
   if (res) {
     res->SetGuid(guid);
-    res->SetName(resPathAbs.stem().string());
+    res->SetName(desc.name);
 
     auto const [it, inserted]{mResources.emplace(res)};
     assert(inserted);
@@ -223,13 +223,13 @@ auto ResourceManager::IsLoaded(Guid const& guid) const -> bool {
 }
 
 
-auto ResourceManager::UpdateGuidPathMappings(std::map<Guid, std::filesystem::path> mappings) -> void {
-  mGuidPathMappings = std::move(mappings);
+auto ResourceManager::UpdateMappings(std::map<Guid, ResourceManager::ResourceDescription> mappings) -> void {
+  mMappings = std::move(mappings);
 }
 
 
 auto ResourceManager::GetGuidsForResourcesOfType(rttr::type const& type, std::vector<Guid>& out) const noexcept -> void {
-  /*for (auto const& resPathAbs : mGuidPathMappings | std::views::values) {
+  /*for (auto const& resPathAbs : mMappings | std::views::values) {
     Guid loadedGuid;
     std::unique_ptr<ResourceImporter> importer;
 

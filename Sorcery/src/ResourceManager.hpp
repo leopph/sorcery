@@ -20,11 +20,17 @@ class ResourceManager {
     [[nodiscard]] LEOPPHAPI auto operator()(Guid const& lhs, ObserverPtr<Resource> rhs) const noexcept -> bool;
   };
 
+public:
+  struct ResourceDescription {
+    std::filesystem::path pathAbs;
+    std::string name;
+  };
 
+private:
   std::set<ObserverPtr<Resource>, ResourceGuidLess> mResources;
-  std::map<Guid, std::filesystem::path> mGuidPathMappings;
+  std::map<Guid, ResourceDescription> mMappings;
 
-  [[nodiscard]] LEOPPHAPI auto InternalLoadResource(Guid const& guid, std::filesystem::path const& resPathAbs) -> ObserverPtr<Resource>;
+  [[nodiscard]] LEOPPHAPI auto InternalLoadResource(Guid const& guid, ResourceDescription const& desc) -> ObserverPtr<Resource>;
   [[nodiscard]] static auto LoadTexture(std::span<std::byte const> bytes) noexcept -> MaybeNull<ObserverPtr<Resource>>;
   [[nodiscard]] static auto LoadMesh(std::span<std::byte const> bytes) -> MaybeNull<ObserverPtr<Resource>>;
 
@@ -43,7 +49,7 @@ public:
   template<std::derived_from<Resource> ResType>
   auto Add(ObserverPtr<ResType> resource) -> void;
 
-  LEOPPHAPI auto UpdateGuidPathMappings(std::map<Guid, std::filesystem::path> mappings) -> void;
+  LEOPPHAPI auto UpdateMappings(std::map<Guid, ResourceDescription> mappings) -> void;
 
   template<std::derived_from<Resource> T>
   auto GetGuidsForResourcesOfType(std::vector<Guid>& out) const noexcept -> void;
@@ -66,7 +72,7 @@ auto ResourceManager::GetOrLoad(Guid const& guid) -> ObserverPtr<ResType> {
     }
   }
 
-  if (auto const it{mGuidPathMappings.find(guid)}; it != std::end(mGuidPathMappings)) {
+  if (auto const it{mMappings.find(guid)}; it != std::end(mMappings)) {
     if (auto const res{InternalLoadResource(guid, it->second)}) {
       if constexpr (!std::is_same_v<ResType, Resource>) {
         if (rttr::rttr_cast<ObserverPtr<ResType>>(res)) {
