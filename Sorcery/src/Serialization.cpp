@@ -329,7 +329,7 @@ auto ReflectionDeserializeFromYaml(YAML::Node const& node, rttr::variant& v, std
 
   if (v.get_type().is_pointer() && v.get_type().get_raw_type().is_derived_from(rttr::type::get<Resource>())) {
     try {
-      if (auto const res{gResourceManager.GetOrLoad(node.as<Guid>())}) {
+      if (auto const res{gResourceManager.GetOrLoad(node.as<Guid>())}; res && v.can_convert(rttr::type::get(res))) {
         auto const type{v.get_type()};
         v = res;
         [[maybe_unused]] auto const success{v.convert(type)};
