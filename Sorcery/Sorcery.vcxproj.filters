@@ -260,6 +260,12 @@
     <ClInclude Include="src\ResourceManager.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\PoolAllocator.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Pool.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="src\Resources\Resource.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>

@@ -143,6 +143,8 @@
     <ClCompile Include="src\RigidBodyComponent.cpp" />
     <ClCompile Include="src\SwapChain.cpp" />
     <ClCompile Include="src\Util.cpp" />
+    <ClInclude Include="src\Pool.hpp" />
+    <ClInclude Include="src\PoolAllocator.hpp" />
     <ClInclude Include="src\FileIo.hpp" />
     <ClInclude Include="src\Graphics.hpp" />
     <ClInclude Include="src\GUI.hpp" />
