@@ -19,7 +19,8 @@ RTTR_REGISTRATION {
     .property("Texture Type", &sorcery::TextureImporter::mTexType)
     .property("Keep in CPU Memory", &sorcery::TextureImporter::mKeepInCpuMemory)
     .property("Allow Block Compression", &sorcery::TextureImporter::mAllowBlockCompression)
-    .property("Color Texture (sRGB)", &sorcery::TextureImporter::mIsSrgb);
+    .property("Color Texture (sRGB)", &sorcery::TextureImporter::mIsSrgb)
+    .property("Generate Mipmaps", &sorcery::TextureImporter::mGenerateMips);
 }
 
 
