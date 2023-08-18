@@ -162,22 +162,14 @@ auto ResourceDB::Refresh() -> void {
     }
   }
 
-  // We delete resources that are no longer present in the current file system directory.
-  // Because DeleteResource modifies mGuidToSrcAbsPath, we collect the to be deleted resources first and delete them in separate loop
-
-  std::vector<Guid> resourcesToDelete;
-
+  // We unload resources that are no longer present in the current file system directory.
   for (auto const& guid : mGuidToSrcAbsPath | std::views::keys) {
-    if (!newGuidToSrcAbsPath.contains(guid)) {
-      resourcesToDelete.emplace_back(guid);
+    if (!newGuidToSrcAbsPath.contains(guid) && gResourceManager.IsLoaded(guid)) {
+      if (*mSelectedObjectPtr == gResourceManager.GetOrLoad(guid)) {
+        *mSelectedObjectPtr = nullptr;
+      }
+      gResourceManager.Unload(guid);
     }
-  }
-
-  for (auto const& guid : resourcesToDelete) {
-    if (*mSelectedObjectPtr && *mSelectedObjectPtr == gResourceManager.GetOrLoad(guid)) {
-      *mSelectedObjectPtr = nullptr;
-    }
-    DeleteResource(guid); // TODO this deletes existing resources that had their GUIDs regenerated during the refresh
   }
 
   // We rename loaded resources that have been moved in the file system
