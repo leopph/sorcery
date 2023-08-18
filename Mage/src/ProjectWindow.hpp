@@ -37,7 +37,7 @@ class ProjectWindow {
 
   // Returns whether the drawn subtree was modified.
   [[nodiscard]] auto DrawFilesystemTree(std::filesystem::path const& thisPathAbs, std::filesystem::path const& thisPathResDirRel, bool isDirectory) noexcept -> bool;
-  auto DrawContextMenu() noexcept -> void;
+  auto DrawContextMenu() -> void;
   auto StartRenamingSelected() noexcept -> void;
 
 public:

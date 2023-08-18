@@ -134,7 +134,7 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& thisPathAbs,
 }
 
 
-auto ProjectWindow::DrawContextMenu() noexcept -> void {
+auto ProjectWindow::DrawContextMenu() -> void {
   if (ImGui::BeginPopup(CONTEXT_MENU_ID.data())) {
     auto const selectedPathAbs{weakly_canonical(mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath() / mSelectedPathResDirRel)};
     auto const workingDirAbs{is_directory(selectedPathAbs) ? selectedPathAbs : selectedPathAbs.parent_path()};
@@ -177,6 +177,9 @@ auto ProjectWindow::DrawContextMenu() noexcept -> void {
           if (auto importer{ResourceDB::GetNewImporterForResourceFile(srcPathAbs)}) {
             mFilesToImport.emplace_back(std::move(importer), srcPathAbs, GenerateUniquePath(workingDirAbs / srcPathAbs.filename()));
             mOpenImportModal = true;
+          } else {
+            ImGui::EndPopup();
+            throw std::runtime_error{std::format("Couldn't find importer for file type {}.", srcPathAbs.stem().string())};
           }
         }
 
@@ -248,7 +251,12 @@ auto ProjectWindow::Draw() -> void {
       ImGui::OpenPopup(CONTEXT_MENU_ID.data());
     }
 
-    DrawContextMenu();
+    try {
+      DrawContextMenu();
+    } catch ([[maybe_unused]] std::runtime_error const& ex) {
+      ImGui::End();
+      throw;
+    }
 
     auto constexpr importModalId{"Import Settings"};
 
@@ -277,7 +285,14 @@ auto ProjectWindow::Draw() -> void {
           if (exists(srcPathAbs) && !exists(dstPathAbs)) {
             copy_file(srcPathAbs, dstPathAbs);
           }
-          mApp->GetResourceDatabase().ImportResource(dstPathAbs.lexically_relative(mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath()), importer.get());
+
+          if (!mApp->GetResourceDatabase().ImportResource(dstPathAbs.lexically_relative(mApp->GetResourceDatabase().GetResourceDirectoryAbsolutePath()), importer.get())) {
+            remove(dstPathAbs);
+            ImGui::CloseCurrentPopup();
+            ImGui::EndPopup();
+            ImGui::End();
+            throw std::runtime_error{std::format("Failed to import {}.", dstPathAbs.string())};
+          }
         }
         mFilesToImport.clear();
         ImGui::CloseCurrentPopup();
