@@ -27,6 +27,8 @@
 #include <filesystem>
 #include <string>
 #include <cwchar>
+#include <stdexcept>
+#include <exception>
 
 
 auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ HINSTANCE, _In_ wchar_t* const lpCmdLine, [[maybe_unused]] _In_ int) -> int {
@@ -99,58 +101,60 @@ auto WINAPI wWinMain([[maybe_unused]] _In_ HINSTANCE, [[maybe_unused]] _In_opt_ 
 
     while (!sorcery::gWindow.IsQuitSignaled()) {
       sorcery::gWindow.ProcessEvents();
-
       sorcery::mage::ImGui_ImplDX11_NewFrame();
       ImGui_ImplWin32_NewFrame();
       ImGui::NewFrame();
       ImGuizmo::BeginFrame();
 
-      if (app.GetProjectDirectoryAbsolute().empty()) {
-        DrawStartupScreen(app);
-      } else {
-        int static targetFrameRate{sorcery::timing::GetTargetFrameRate()};
-
-        if (runGame) {
-          if (GetKeyDown(sorcery::Key::Escape)) {
-            runGame = false;
-            sorcery::gWindow.SetEventHook(sorcery::mage::EditorImGuiEventHook);
-            sorcery::gWindow.UnlockCursor();
-            sorcery::gWindow.SetCursorHiding(false);
-            sorcery::timing::SetTargetFrameRate(targetFrameRate);
-            app.GetScene().Load();
-            app.SetSelectedObject(nullptr);
-          }
-
-          sorcery::gPhysicsManager.Update();
+      try {
+        if (app.GetProjectDirectoryAbsolute().empty()) {
+          DrawStartupScreen(app);
         } else {
-          if (GetKeyDown(sorcery::Key::F5)) {
-            runGame = true;
-            sorcery::gWindow.SetEventHook({});
-            sorcery::timing::SetTargetFrameRate(-1);
-            app.GetScene().Save();
-            targetFrameRate = sorcery::timing::GetTargetFrameRate();
+          int static targetFrameRate{sorcery::timing::GetTargetFrameRate()};
+
+          if (runGame) {
+            if (GetKeyDown(sorcery::Key::Escape)) {
+              runGame = false;
+              sorcery::gWindow.SetEventHook(sorcery::mage::EditorImGuiEventHook);
+              sorcery::gWindow.UnlockCursor();
+              sorcery::gWindow.SetCursorHiding(false);
+              sorcery::timing::SetTargetFrameRate(targetFrameRate);
+              app.GetScene().Load();
+              app.SetSelectedObject(nullptr);
+            }
+
+            sorcery::gPhysicsManager.Update();
+          } else {
+            if (GetKeyDown(sorcery::Key::F5)) {
+              runGame = true;
+              sorcery::gWindow.SetEventHook({});
+              sorcery::timing::SetTargetFrameRate(-1);
+              app.GetScene().Save();
+              targetFrameRate = sorcery::timing::GetTargetFrameRate();
+            }
           }
+
+          ImGui::DockSpaceOverViewport();
+
+          if (app.IsEditorBusy()) {
+            DrawLoadingScreen(app);
+          }
+
+          entityHierarchyWindow->Draw();
+          gameViewWindow->Draw(runGame);
+          sceneViewWindow->Draw(app);
+
+          mainMenuBar->Draw();
+          editorSettingsWindow->Draw();
+          propertiesWindow->Draw();
+          projectWindow->Draw();
+          sorcery::mage::DrawPerformanceCounterWindow();
         }
-
-        ImGui::DockSpaceOverViewport();
-
-        if (app.IsEditorBusy()) {
-          DrawLoadingScreen(app);
-        }
-
-        entityHierarchyWindow->Draw();
-        gameViewWindow->Draw(runGame);
-        sceneViewWindow->Draw(app);
-
-        mainMenuBar->Draw();
-        editorSettingsWindow->Draw();
-        propertiesWindow->Draw();
-        projectWindow->Draw();
-        sorcery::mage::DrawPerformanceCounterWindow();
+      } catch (std::runtime_error const& err) {
+        sorcery::DisplayError(err.what());
       }
 
       ImGui::Render();
-
       sorcery::gRenderer.BindAndClearMainRt();
       sorcery::mage::ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
       sorcery::gRenderer.BlitMainRtToSwapChain();
