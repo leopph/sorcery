@@ -179,7 +179,7 @@ auto ProjectWindow::DrawContextMenu() -> void {
             mOpenImportModal = true;
           } else {
             ImGui::EndPopup();
-            throw std::runtime_error{std::format("Couldn't find importer for file type {}.", srcPathAbs.stem().string())};
+            throw std::runtime_error{std::format("Couldn't find importer for file type {}.", srcPathAbs.extension().string())};
           }
         }
 

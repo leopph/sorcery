@@ -1,7 +1,7 @@
 #include "MeshImporter.hpp"
 #include "../Resources/Mesh.hpp"
 #include "../FileIo.hpp"
-#include <Serialization.hpp>
+#include "Serialization.hpp"
 
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <limits>
 #include <queue>
+#include <ranges>
 
 RTTR_REGISTRATION {
   rttr::registration::class_<sorcery::MeshImporter>{"Mesh Importer"}
@@ -36,8 +37,14 @@ namespace {
 
 
 auto MeshImporter::GetSupportedFileExtensions(std::pmr::vector<std::string>& out) -> void {
-  out.emplace_back(".fbx");
-  out.emplace_back(".obj");
+  std::string extensions;
+  Assimp::Importer const importer;
+  importer.GetExtensionList(extensions);
+
+  // Assimp extension list format is "*.3ds;*.obj;*.dae"
+  for (auto const ext : std::views::split(extensions, std::string_view{";"})) {
+    out.emplace_back(std::string_view{std::begin(ext), std::end(ext)}.substr(1));
+  }
 }
 
 
