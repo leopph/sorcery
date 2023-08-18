@@ -213,6 +213,8 @@ auto ResourceDB::ChangeProjectDir(std::filesystem::path const& projDirAbs) -> vo
   }
 
   mGuidToSrcAbsPath.clear();
+  mGuidToResAbsPath.clear();
+  mGuidToType.clear();
   mSrcAbsPathToGuid.clear();
 
   Refresh();
@@ -224,26 +226,31 @@ auto ResourceDB::GetResourceDirectoryAbsolutePath() -> std::filesystem::path con
 }
 
 
-auto ResourceDB::CreateResource(NativeResource& res, std::filesystem::path const& targetPathResDirRel) -> void {
+auto ResourceDB::CreateResource(NativeResource& res, std::filesystem::path const& targetPathResDirRel) -> bool {
   if (!res.GetGuid().IsValid()) {
     res.SetGuid(Guid::Generate());
   }
 
   auto const resNode{res.Serialize()};
-  auto const targetPathAbs{mResDirAbs / targetPathResDirRel};
-  std::ofstream outResStream{targetPathAbs};
+  auto const resPathAbs{mResDirAbs / targetPathResDirRel};
+  std::ofstream outResStream{resPathAbs};
   YAML::Emitter resEmitter{outResStream};
   resEmitter << resNode;
 
-  WriteMeta(targetPathAbs, res.GetGuid(), NativeResourceImporter{});
+  if (!WriteMeta(resPathAbs, res.GetGuid(), NativeResourceImporter{})) {
+    return false;
+  }
 
   res.SetName(targetPathResDirRel.stem().string());
 
-  mGuidToSrcAbsPath.insert_or_assign(res.GetGuid(), targetPathAbs);
-  mSrcAbsPathToGuid.insert_or_assign(targetPathAbs, res.GetGuid());
+  mGuidToSrcAbsPath.insert_or_assign(res.GetGuid(), resPathAbs);
+  mGuidToType.insert_or_assign(res.GetGuid(), rttr::type::get(res));
+  mGuidToResAbsPath.insert_or_assign(res.GetGuid(), resPathAbs);
+  mSrcAbsPathToGuid.insert_or_assign(resPathAbs, res.GetGuid());
 
   gResourceManager.Add(std::addressof(res));
   gResourceManager.UpdateMappings(CreateMappings());
+  return true;
 }
 
 
@@ -256,7 +263,7 @@ auto ResourceDB::SaveResource(NativeResource const& res) -> void {
 }
 
 
-auto ResourceDB::ImportResource(std::filesystem::path const& resPathResDirRel, ObserverPtr<ResourceImporter> importer) -> void {
+auto ResourceDB::ImportResource(std::filesystem::path const& resPathResDirRel, ObserverPtr<ResourceImporter> importer) -> bool {
   // Temporary to keep a potentially freshly created importer alive in this stack frame.
   // Use the observer ptr, do not access this directly.
   std::unique_ptr<ResourceImporter> ownedImporter;
@@ -265,6 +272,10 @@ auto ResourceDB::ImportResource(std::filesystem::path const& resPathResDirRel, O
     // If we weren't passed an importer instance, we use a new default one.
     ownedImporter = GetNewImporterForResourceFile(resPathResDirRel);
     importer = ownedImporter.get();
+
+    if (!importer) {
+      return false;
+    }
   }
 
   auto guid{Guid::Invalid()};
@@ -283,8 +294,12 @@ auto ResourceDB::ImportResource(std::filesystem::path const& resPathResDirRel, O
     guid = Guid::Generate();
   }
 
-  InternalImportResource(resPathResDirRel, mGuidToSrcAbsPath, mGuidToResAbsPath, mSrcAbsPathToGuid, mGuidToType, *importer, guid);
+  if (!InternalImportResource(resPathResDirRel, mGuidToSrcAbsPath, mGuidToResAbsPath, mSrcAbsPathToGuid, mGuidToType, *importer, guid)) {
+    return false;
+  }
+
   gResourceManager.UpdateMappings(CreateMappings());
+  return true;
 }
 
 
@@ -338,6 +353,7 @@ auto ResourceDB::DeleteResource(Guid const& guid) -> void {
   }
 
   mGuidToResAbsPath.erase(guid);
+  mGuidToType.erase(guid);
   gResourceManager.UpdateMappings(CreateMappings());
 }
 

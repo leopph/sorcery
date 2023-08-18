@@ -44,9 +44,9 @@ public:
   auto ChangeProjectDir(std::filesystem::path const& projDirAbs) -> void;
   [[nodiscard]] auto GetResourceDirectoryAbsolutePath() -> std::filesystem::path const&;
 
-  auto CreateResource(NativeResource& res, std::filesystem::path const& targetPathResDirRel) -> void;
+  auto CreateResource(NativeResource& res, std::filesystem::path const& targetPathResDirRel) -> bool;
   auto SaveResource(NativeResource const& res) -> void;
-  auto ImportResource(std::filesystem::path const& resPathResDirRel, ObserverPtr<ResourceImporter> importer = nullptr) -> void;
+  [[nodiscard]] auto ImportResource(std::filesystem::path const& resPathResDirRel, ObserverPtr<ResourceImporter> importer = nullptr) -> bool;
   // Returns whether the move was successful.
   [[nodiscard]] auto MoveResource(Guid const& guid, std::filesystem::path const& targetPathResDirRel) -> bool;
   // Returns whether the move was successful.
