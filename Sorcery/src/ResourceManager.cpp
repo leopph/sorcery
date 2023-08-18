@@ -34,7 +34,7 @@ auto ResourceManager::ResourceGuidLess::operator()(Guid const& lhs, ObserverPtr<
 }
 
 
-auto ResourceManager::InternalLoadResource(Guid const& guid, ResourceManager::ResourceDescription const& desc) -> ObserverPtr<Resource> {
+auto ResourceManager::InternalLoadResource(Guid const& guid, ResourceDescription const& desc) -> ObserverPtr<Resource> {
   ObserverPtr<Resource> res{nullptr};
 
   if (desc.pathAbs.extension() == EXTERNAL_RESOURCE_EXT) {
@@ -223,18 +223,15 @@ auto ResourceManager::IsLoaded(Guid const& guid) const -> bool {
 }
 
 
-auto ResourceManager::UpdateMappings(std::map<Guid, ResourceManager::ResourceDescription> mappings) -> void {
+auto ResourceManager::UpdateMappings(std::map<Guid, ResourceDescription> mappings) -> void {
   mMappings = std::move(mappings);
 }
 
 
 auto ResourceManager::GetGuidsForResourcesOfType(rttr::type const& type, std::vector<Guid>& out) const noexcept -> void {
-  /*for (auto const& resPathAbs : mMappings | std::views::values) {
-    Guid loadedGuid;
-    std::unique_ptr<ResourceImporter> importer;
-
-    if (LoadMeta(resPathAbs, std::addressof(loadedGuid), std::addressof(importer)) && importer->GetImportedType(resPathAbs).is_derived_from(type)) {
-      out.emplace_back(loadedGuid);
+  for (auto const& [guid, desc] : mMappings) {
+    if (desc.type.is_derived_from(type)) {
+      out.emplace_back(guid);
     }
   }
 
@@ -251,6 +248,6 @@ auto ResourceManager::GetGuidsForResourcesOfType(rttr::type const& type, std::ve
     if (!contains && rttr::type::get(*res).is_derived_from(type)) {
       out.emplace_back(res->GetGuid());
     }
-  } TODO*/
+  }
 }
 }

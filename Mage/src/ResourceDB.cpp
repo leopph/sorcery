@@ -13,15 +13,12 @@
 
 
 namespace sorcery::mage {
-auto ResourceDB::InternalImportResource(std::filesystem::path const& resPathResDirRel, std::map<Guid, std::filesystem::path>& guidToSrcAbsPath, std::map<Guid, std::filesystem::path>& guidToResAbsPath, std::map<std::filesystem::path, Guid>& srcAbsPathToGuid, ResourceImporter& importer, Guid const& guid) const -> bool {
+auto ResourceDB::InternalImportResource(std::filesystem::path const& resPathResDirRel, std::map<Guid, std::filesystem::path>& guidToSrcAbsPath, std::map<Guid, std::filesystem::path>& guidToResAbsPath, std::map<std::filesystem::path, Guid>& srcAbsPathToGuid, std::map<Guid, rttr::type>& guidToType, ResourceImporter& importer, Guid const& guid) const -> bool {
   auto const resPathAbs{mResDirAbs / resPathResDirRel};
 
   if (!WriteMeta(resPathAbs, guid, importer)) {
     return false;
   }
-
-  guidToSrcAbsPath.insert_or_assign(guid, resPathAbs);
-  srcAbsPathToGuid.insert_or_assign(resPathAbs, guid);
 
   std::vector<std::byte> resBytes;
   ExternalResourceCategory categ;
@@ -34,12 +31,14 @@ auto ResourceDB::InternalImportResource(std::filesystem::path const& resPathResD
     if (!WriteExternalResourceBinary(guid, categ, resBytes)) {
       return false;
     }
-
     guidToResAbsPath.insert_or_assign(guid, GetExternalResourceBinaryPathAbs(guid));
-    return true;
+  } else {
+    guidToResAbsPath.insert_or_assign(guid, resPathAbs);
   }
 
-  guidToResAbsPath.insert_or_assign(guid, resPathAbs);
+  guidToSrcAbsPath.insert_or_assign(guid, resPathAbs);
+  guidToType.insert_or_assign(guid, importer.GetImportedType(resPathAbs));
+  srcAbsPathToGuid.insert_or_assign(resPathAbs, guid);
   return true;
 }
 
@@ -47,7 +46,7 @@ auto ResourceDB::InternalImportResource(std::filesystem::path const& resPathResD
 auto ResourceDB::CreateMappings() const noexcept -> std::map<Guid, ResourceManager::ResourceDescription> {
   std::map<Guid, ResourceManager::ResourceDescription> mappings;
   std::ranges::transform(mGuidToResAbsPath, std::inserter(mappings, std::end(mappings)), [this](std::pair<Guid const, std::filesystem::path> const& pair) {
-    return std::pair{pair.first, ResourceManager::ResourceDescription{pair.second, mGuidToSrcAbsPath.at(pair.first).stem().string()}};
+    return std::pair{pair.first, ResourceManager::ResourceDescription{pair.second, mGuidToSrcAbsPath.at(pair.first).stem().string(), mGuidToType.at(pair.first)}};
   });
   return mappings;
 }
@@ -86,6 +85,7 @@ ResourceDB::ResourceDB(ObserverPtr<Object>& selectedObjectPtr) :
 
 
 auto ResourceDB::Refresh() -> void {
+  std::map<Guid, rttr::type> newGuidToType;
   std::map<Guid, std::filesystem::path> newGuidToSrcAbsPath;
   std::map<Guid, std::filesystem::path> newGuidToResAbsPath;
   std::map<std::filesystem::path, Guid> newSrcAbsPathToGuid;
@@ -127,7 +127,7 @@ auto ResourceDB::Refresh() -> void {
         // If it's out of date we attempt to recreate it
         if (!exists(cacheFilePathAbs) || last_write_time(resPathAbs) > last_write_time(cacheFilePathAbs) || last_write_time(entry.path()) > last_write_time(cacheFilePathAbs)) {
           // If we fail, we just remove the the files
-          if (!InternalImportResource(resPathAbs.lexically_relative(mResDirAbs), newGuidToSrcAbsPath, newGuidToResAbsPath, newSrcAbsPathToGuid, *importer, guid)) {
+          if (!InternalImportResource(resPathAbs.lexically_relative(mResDirAbs), newGuidToSrcAbsPath, newGuidToResAbsPath, newSrcAbsPathToGuid, newGuidToType, *importer, guid)) {
             remove(resPathAbs);
             remove(entry.path());
             continue;
@@ -142,6 +142,7 @@ auto ResourceDB::Refresh() -> void {
       }
 
       newGuidToSrcAbsPath.emplace(guid, resPathAbs);
+      newGuidToType.emplace(guid, importer->GetImportedType(resPathAbs));
       newSrcAbsPathToGuid.emplace(resPathAbs, guid);
 
       continue;
@@ -150,10 +151,7 @@ auto ResourceDB::Refresh() -> void {
     // If we find a file that is not a meta file, we attempt to import it as a resource
     if (auto const metaPathAbs{GetMetaPath(entry.path())}; !exists(metaPathAbs)) {
       if (auto const importer{GetNewImporterForResourceFile(entry.path())}) {
-        if (auto const guid{Guid::Generate()}; InternalImportResource(entry.path().lexically_relative(mResDirAbs), newGuidToSrcAbsPath, newGuidToResAbsPath, newSrcAbsPathToGuid, *importer, guid)) {
-          newGuidToSrcAbsPath.emplace(guid, entry.path());
-          newSrcAbsPathToGuid.emplace(entry.path(), guid);
-          newGuidToResAbsPath.emplace(guid, importer->IsNativeImporter() ? entry.path() : GetExternalResourceBinaryPathAbs(guid));
+        if (auto const guid{Guid::Generate()}; InternalImportResource(entry.path().lexically_relative(mResDirAbs), newGuidToSrcAbsPath, newGuidToResAbsPath, newSrcAbsPathToGuid, newGuidToType, *importer, guid)) {
           continue;
         }
       }
@@ -191,6 +189,7 @@ auto ResourceDB::Refresh() -> void {
 
   mGuidToSrcAbsPath = std::move(newGuidToSrcAbsPath);
   mGuidToResAbsPath = std::move(newGuidToResAbsPath);
+  mGuidToType = std::move(newGuidToType);
   mSrcAbsPathToGuid = std::move(newSrcAbsPathToGuid);
 
   gResourceManager.UpdateMappings(CreateMappings());
@@ -284,7 +283,7 @@ auto ResourceDB::ImportResource(std::filesystem::path const& resPathResDirRel, O
     guid = Guid::Generate();
   }
 
-  InternalImportResource(resPathResDirRel, mGuidToSrcAbsPath, mGuidToResAbsPath, mSrcAbsPathToGuid, *importer, guid);
+  InternalImportResource(resPathResDirRel, mGuidToSrcAbsPath, mGuidToResAbsPath, mSrcAbsPathToGuid, mGuidToType, *importer, guid);
   gResourceManager.UpdateMappings(CreateMappings());
 }
 

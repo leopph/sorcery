@@ -24,6 +24,7 @@ public:
   struct ResourceDescription {
     std::filesystem::path pathAbs;
     std::string name;
+    rttr::type type;
   };
 
 private:
