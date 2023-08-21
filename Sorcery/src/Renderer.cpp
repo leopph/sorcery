@@ -837,9 +837,9 @@ auto Renderer::Impl::CreateSamplerStates() -> void {
 
   D3D11_SAMPLER_DESC constexpr af16Desc{
     .Filter = D3D11_FILTER_ANISOTROPIC,
-    .AddressU = D3D11_TEXTURE_ADDRESS_CLAMP,
-    .AddressV = D3D11_TEXTURE_ADDRESS_CLAMP,
-    .AddressW = D3D11_TEXTURE_ADDRESS_CLAMP,
+    .AddressU = D3D11_TEXTURE_ADDRESS_WRAP,
+    .AddressV = D3D11_TEXTURE_ADDRESS_WRAP,
+    .AddressW = D3D11_TEXTURE_ADDRESS_WRAP,
     .MipLODBias = 0,
     .MaxAnisotropy = 16,
     .ComparisonFunc = D3D11_COMPARISON_NEVER,
@@ -854,9 +854,9 @@ auto Renderer::Impl::CreateSamplerStates() -> void {
 
   D3D11_SAMPLER_DESC constexpr af8Desc{
     .Filter = D3D11_FILTER_ANISOTROPIC,
-    .AddressU = D3D11_TEXTURE_ADDRESS_CLAMP,
-    .AddressV = D3D11_TEXTURE_ADDRESS_CLAMP,
-    .AddressW = D3D11_TEXTURE_ADDRESS_CLAMP,
+    .AddressU = D3D11_TEXTURE_ADDRESS_WRAP,
+    .AddressV = D3D11_TEXTURE_ADDRESS_WRAP,
+    .AddressW = D3D11_TEXTURE_ADDRESS_WRAP,
     .MipLODBias = 0,
     .MaxAnisotropy = 8,
     .ComparisonFunc = D3D11_COMPARISON_NEVER,
@@ -871,9 +871,9 @@ auto Renderer::Impl::CreateSamplerStates() -> void {
 
   D3D11_SAMPLER_DESC constexpr af4Desc{
     .Filter = D3D11_FILTER_ANISOTROPIC,
-    .AddressU = D3D11_TEXTURE_ADDRESS_CLAMP,
-    .AddressV = D3D11_TEXTURE_ADDRESS_CLAMP,
-    .AddressW = D3D11_TEXTURE_ADDRESS_CLAMP,
+    .AddressU = D3D11_TEXTURE_ADDRESS_WRAP,
+    .AddressV = D3D11_TEXTURE_ADDRESS_WRAP,
+    .AddressW = D3D11_TEXTURE_ADDRESS_WRAP,
     .MipLODBias = 0,
     .MaxAnisotropy = 4,
     .ComparisonFunc = D3D11_COMPARISON_NEVER,
@@ -888,9 +888,9 @@ auto Renderer::Impl::CreateSamplerStates() -> void {
 
   D3D11_SAMPLER_DESC constexpr trilinearDesc{
     .Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR,
-    .AddressU = D3D11_TEXTURE_ADDRESS_CLAMP,
-    .AddressV = D3D11_TEXTURE_ADDRESS_CLAMP,
-    .AddressW = D3D11_TEXTURE_ADDRESS_CLAMP,
+    .AddressU = D3D11_TEXTURE_ADDRESS_WRAP,
+    .AddressV = D3D11_TEXTURE_ADDRESS_WRAP,
+    .AddressW = D3D11_TEXTURE_ADDRESS_WRAP,
     .MipLODBias = 0,
     .MaxAnisotropy = 1,
     .ComparisonFunc = D3D11_COMPARISON_NEVER,
@@ -905,9 +905,9 @@ auto Renderer::Impl::CreateSamplerStates() -> void {
 
   D3D11_SAMPLER_DESC constexpr bilinearDesc{
     .Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT,
-    .AddressU = D3D11_TEXTURE_ADDRESS_CLAMP,
-    .AddressV = D3D11_TEXTURE_ADDRESS_CLAMP,
-    .AddressW = D3D11_TEXTURE_ADDRESS_CLAMP,
+    .AddressU = D3D11_TEXTURE_ADDRESS_WRAP,
+    .AddressV = D3D11_TEXTURE_ADDRESS_WRAP,
+    .AddressW = D3D11_TEXTURE_ADDRESS_WRAP,
     .MipLODBias = 0,
     .MaxAnisotropy = 1,
     .ComparisonFunc = D3D11_COMPARISON_NEVER,
@@ -922,9 +922,9 @@ auto Renderer::Impl::CreateSamplerStates() -> void {
 
   D3D11_SAMPLER_DESC constexpr pointDesc{
     .Filter = D3D11_FILTER_MIN_MAG_MIP_POINT,
-    .AddressU = D3D11_TEXTURE_ADDRESS_CLAMP,
-    .AddressV = D3D11_TEXTURE_ADDRESS_CLAMP,
-    .AddressW = D3D11_TEXTURE_ADDRESS_CLAMP,
+    .AddressU = D3D11_TEXTURE_ADDRESS_WRAP,
+    .AddressV = D3D11_TEXTURE_ADDRESS_WRAP,
+    .AddressW = D3D11_TEXTURE_ADDRESS_WRAP,
     .MipLODBias = 0,
     .MaxAnisotropy = 1,
     .ComparisonFunc = D3D11_COMPARISON_NEVER,
