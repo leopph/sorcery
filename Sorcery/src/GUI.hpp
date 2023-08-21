@@ -89,6 +89,10 @@ auto ObjectPicker<T>::Draw(ObserverPtr<T>& targetObj, bool const allowNull) noex
   auto ret{false};
 
   if (ImGui::BeginPopup(mPopupId.c_str())) {
+    if (ImGui::IsWindowAppearing()) {
+      ImGui::SetKeyboardFocusHere();
+    }
+
     if (ImGui::InputText(mInputTextLabel.c_str(), &mFilter)) {
       QueryObjects(allowNull);
     }
