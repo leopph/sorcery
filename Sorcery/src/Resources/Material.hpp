@@ -18,16 +18,27 @@
 namespace sorcery {
 class Material final : public NativeResource {
   RTTR_ENABLE(NativeResource)
+
+public:
+  enum class BlendMode : int {
+    Opaque    = BLEND_MODE_OPAQUE,
+    AlphaClip = BLEND_MODE_ALPHA_CLIP
+  };
+
+private:
   ShaderMaterial mShaderMtl{
     .albedo = Vector3{1, 1, 1},
     .metallic = 0.0f,
     .roughness = 0.5f,
     .ao = 1.0f,
+    .alphaThreshold = 1.0f,
     .sampleAlbedo = FALSE,
     .sampleMetallic = FALSE,
     .sampleRoughness = FALSE,
     .sampleAo = FALSE,
-    .sampleNormal = FALSE
+    .sampleNormal = FALSE,
+    .sampleOpacityMap = FALSE,
+    .blendMode = BLEND_MODE_OPAQUE
   };
 
   Microsoft::WRL::ComPtr<ID3D11Buffer> mCB;
@@ -37,6 +48,7 @@ class Material final : public NativeResource {
   ObserverPtr<Texture2D> mRoughnessMap{nullptr};
   ObserverPtr<Texture2D> mAoMap{nullptr};
   ObserverPtr<Texture2D> mNormalMap{nullptr};
+  ObserverPtr<Texture2D> mOpacityMask{nullptr};
 
   auto UpdateGPUData() const noexcept -> void;
   auto CreateCB() -> void;
@@ -73,6 +85,15 @@ public:
 
   [[nodiscard]] LEOPPHAPI auto GetNormalMap() const noexcept -> ObserverPtr<Texture2D>;
   LEOPPHAPI auto SetNormalMap(ObserverPtr<Texture2D> tex) noexcept -> void;
+
+  [[nodiscard]] LEOPPHAPI auto GetBlendMode() const noexcept -> BlendMode;
+  LEOPPHAPI auto SetBlendMode(BlendMode blendMode) noexcept -> void;
+
+  [[nodiscard]] LEOPPHAPI auto GetAlphaThreshold() const noexcept -> float;
+  LEOPPHAPI auto SetAlphaThreshold(float threshold) noexcept -> void;
+
+  [[nodiscard]] LEOPPHAPI auto GetOpacityMask() const noexcept -> ObserverPtr<Texture2D>;
+  LEOPPHAPI auto SetOpacityMask(ObserverPtr<Texture2D> opacityMask) noexcept -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetBuffer() const noexcept -> ObserverPtr<ID3D11Buffer>;
 

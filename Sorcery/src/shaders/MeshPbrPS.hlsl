@@ -10,6 +10,7 @@ TEXTURE2D(gMetallicMap, float, RES_SLOT_METALLIC_MAP);
 TEXTURE2D(gRoughnessMap, float, RES_SLOT_ROUGHNESS_MAP);
 TEXTURE2D(gAoMap, float, RES_SLOT_AO_MAP);
 TEXTURE2D(gNormalMap, float3, RES_SLOT_NORMAL_MAP);
+TEXTURE2D(gOpacityMask, float, RES_SLOT_OPACITY_MASK);
 TEXTURE2D(gPunctualShadowAtlas, float, RES_SLOT_PUNCTUAL_SHADOW_ATLAS);
 TEXTURE2D(gDirShadowAtlas, float, RES_SLOT_DIR_SHADOW_ATLAS);
 
@@ -171,6 +172,10 @@ inline float3 CalculatePointLight(const float3 N, const float3 V, const float3 a
 
 
 float4 main(const MeshVsOut vsOut) : SV_TARGET {
+    if (material.blendMode == BLEND_MODE_ALPHA_CLIP && material.sampleOpacityMap && gOpacityMask.Sample(gSamplerAf16, vsOut.uv) < material.alphaThreshold) {
+      discard;
+    }
+
     float3 albedo = material.albedo;
 
     if (material.sampleAlbedo) {

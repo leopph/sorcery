@@ -1025,9 +1025,7 @@ auto Renderer::Impl::DrawMeshes(std::span<int const> const meshComponentIndices,
           auto const albedoSrv{
             [mtl] {
               auto const albedoMap{mtl->GetAlbedoMap()};
-              return albedoMap
-                       ? albedoMap->GetSrv()
-                       : nullptr;
+              return albedoMap ? albedoMap->GetSrv() : nullptr;
             }()
           };
           mImmediateContext->PSSetShaderResources(RES_SLOT_ALBEDO_MAP, 1, &albedoSrv);
@@ -1035,9 +1033,7 @@ auto Renderer::Impl::DrawMeshes(std::span<int const> const meshComponentIndices,
           auto const metallicSrv{
             [mtl] {
               auto const metallicMap{mtl->GetMetallicMap()};
-              return metallicMap
-                       ? metallicMap->GetSrv()
-                       : nullptr;
+              return metallicMap ? metallicMap->GetSrv() : nullptr;
             }()
           };
           mImmediateContext->PSSetShaderResources(RES_SLOT_METALLIC_MAP, 1, &metallicSrv);
@@ -1045,9 +1041,7 @@ auto Renderer::Impl::DrawMeshes(std::span<int const> const meshComponentIndices,
           auto const roughnessSrv{
             [mtl] {
               auto const roughnessMap{mtl->GetRoughnessMap()};
-              return roughnessMap
-                       ? roughnessMap->GetSrv()
-                       : nullptr;
+              return roughnessMap ? roughnessMap->GetSrv() : nullptr;
             }()
           };
           mImmediateContext->PSSetShaderResources(RES_SLOT_ROUGHNESS_MAP, 1, &roughnessSrv);
@@ -1055,9 +1049,7 @@ auto Renderer::Impl::DrawMeshes(std::span<int const> const meshComponentIndices,
           auto const aoSrv{
             [mtl] {
               auto const aoMap{mtl->GetAoMap()};
-              return aoMap
-                       ? aoMap->GetSrv()
-                       : nullptr;
+              return aoMap ? aoMap->GetSrv() : nullptr;
             }()
           };
           mImmediateContext->PSSetShaderResources(RES_SLOT_AO_MAP, 1, &aoSrv);
@@ -1065,12 +1057,18 @@ auto Renderer::Impl::DrawMeshes(std::span<int const> const meshComponentIndices,
           auto const normalSrv{
             [&mtl] {
               auto const normalMap{mtl->GetNormalMap()};
-              return normalMap
-                       ? normalMap->GetSrv()
-                       : nullptr;
+              return normalMap ? normalMap->GetSrv() : nullptr;
             }()
           };
           mImmediateContext->PSSetShaderResources(RES_SLOT_NORMAL_MAP, 1, &normalSrv);
+
+          auto const opacitySrv{
+            [&mtl] {
+              auto const opacityMask{mtl->GetOpacityMask()};
+              return opacityMask ? opacityMask->GetSrv() : nullptr;
+            }()
+          };
+          mImmediateContext->PSSetShaderResources(RES_SLOT_OPACITY_MASK, 1, &opacitySrv);
         }
 
         mImmediateContext->DrawIndexed(indexCount, firstIndex, baseVertex);

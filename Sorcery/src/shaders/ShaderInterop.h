@@ -47,9 +47,10 @@ typedef bool BOOL;
 #define RES_SLOT_ROUGHNESS_MAP 2
 #define RES_SLOT_AO_MAP 3
 #define RES_SLOT_NORMAL_MAP 4
-#define RES_SLOT_PUNCTUAL_SHADOW_ATLAS 5
-#define RES_SLOT_DIR_SHADOW_ATLAS 6
-#define RES_SLOT_LIGHTS 7
+#define RES_SLOT_OPACITY_MASK 5
+#define RES_SLOT_PUNCTUAL_SHADOW_ATLAS 6
+#define RES_SLOT_DIR_SHADOW_ATLAS 7
+#define RES_SLOT_LIGHTS 8
 #define RES_SLOT_POST_PROCESS_SRC 0
 #define RES_SLOT_SKYBOX_CUBEMAP 0
 #define RES_SLOT_LINE_GIZMO_VERTEX 1
@@ -66,6 +67,9 @@ typedef bool BOOL;
 
 #define MAX_CASCADE_COUNT 4
 #define MAX_PER_LIGHT_SHADOW_MAP_COUNT 6
+
+#define BLEND_MODE_OPAQUE 0
+#define BLEND_MODE_ALPHA_CLIP 1
 
 
 struct ShaderLight {
@@ -101,13 +105,17 @@ struct ShaderMaterial {
 
   float roughness;
   float ao;
+  float alphaThreshold;
   BOOL sampleAlbedo;
-  BOOL sampleMetallic;
 
+  BOOL sampleMetallic;
   BOOL sampleRoughness;
   BOOL sampleAo;
   BOOL sampleNormal;
-  float pad;
+
+  BOOL sampleOpacityMap;
+  int blendMode;
+  float2 pad;
 };
 
 

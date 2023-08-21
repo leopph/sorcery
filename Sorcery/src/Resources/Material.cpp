@@ -176,6 +176,39 @@ auto Material::SetNormalMap(ObserverPtr<Texture2D> const tex) noexcept -> void {
 }
 
 
+auto Material::GetBlendMode() const noexcept -> BlendMode {
+  return static_cast<BlendMode>(mShaderMtl.blendMode);
+}
+
+
+auto Material::SetBlendMode(BlendMode blendMode) noexcept -> void {
+  mShaderMtl.blendMode = static_cast<int>(blendMode);
+}
+
+
+auto Material::GetAlphaThreshold() const noexcept -> float {
+  return mShaderMtl.alphaThreshold;
+}
+
+
+auto Material::SetAlphaThreshold(float const threshold) noexcept -> void {
+  mShaderMtl.alphaThreshold = threshold;
+  UpdateGPUData();
+}
+
+
+auto Material::GetOpacityMask() const noexcept -> ObserverPtr<Texture2D> {
+  return mOpacityMask;
+}
+
+
+auto Material::SetOpacityMask(ObserverPtr<Texture2D> const opacityMask) noexcept -> void {
+  mOpacityMask = opacityMask;
+  mShaderMtl.sampleOpacityMap = mOpacityMask != nullptr;
+  UpdateGPUData();
+}
+
+
 auto Material::GetBuffer() const noexcept -> ObserverPtr<ID3D11Buffer> {
   return mCB.Get();
 }
@@ -265,34 +298,34 @@ auto Material::OnDrawProperties(bool& changed) -> void {
     ImGui::Text("Albedo Color");
     ImGui::TableNextColumn();
 
-    if (Vector3 albedoColor{GetAlbedoVector()}; ImGui::ColorEdit3("###matAlbedoColor", albedoColor.GetData())) {
+    if (Vector3 albedoColor{GetAlbedoVector()}; ImGui::ColorEdit3("##matAlbedoColor", albedoColor.GetData())) {
       SetAlbedoVector(albedoColor);
       changed = true;
     }
 
     ImGui::TableNextColumn();
-    ImGui::Text("Metallic");
+    ImGui::Text("%s", "Metallic");
     ImGui::TableNextColumn();
 
-    if (f32 metallic{GetMetallic()}; ImGui::SliderFloat("###matMetallic", &metallic, 0.0f, 1.0f)) {
+    if (f32 metallic{GetMetallic()}; ImGui::SliderFloat("##matMetallic", &metallic, 0.0f, 1.0f)) {
       SetMetallic(metallic);
       changed = true;
     }
 
     ImGui::TableNextColumn();
-    ImGui::Text("Roughness");
+    ImGui::Text("%s", "Roughness");
     ImGui::TableNextColumn();
 
-    if (f32 roughness{GetRoughness()}; ImGui::SliderFloat("###matRoughness", &roughness, 0.0f, 1.0f)) {
+    if (f32 roughness{GetRoughness()}; ImGui::SliderFloat("##matRoughness", &roughness, 0.0f, 1.0f)) {
       SetRoughness(roughness);
       changed = true;
     }
 
     ImGui::TableNextColumn();
-    ImGui::Text("Ambient Occlusion");
+    ImGui::Text("%s", "Ambient Occlusion");
     ImGui::TableNextColumn();
 
-    if (f32 ao{GetAo()}; ImGui::SliderFloat("###matAo", &ao, 0.0f, 1.0f)) {
+    if (f32 ao{GetAo()}; ImGui::SliderFloat("##matAo", &ao, 0.0f, 1.0f)) {
       SetAo(ao);
       changed = true;
     }
@@ -340,6 +373,35 @@ auto Material::OnDrawProperties(bool& changed) -> void {
     if (auto normalMap{GetNormalMap()}; normalMapPicker.Draw(normalMap)) {
       SetNormalMap(normalMap);
       changed = true;
+    }
+
+    ImGui::TableNextColumn();
+    ImGui::Text("%s", "Blend Mode");
+    ImGui::TableNextColumn();
+    if (char const* blendModeNames[]{"Opaque", "Alpha Clipping"}; ImGui::BeginCombo("##blendMode", blendModeNames[static_cast<int>(GetBlendMode())])) {
+      for (int i = 0; i < 2; i++) {
+        if (ImGui::Selectable(blendModeNames[i], i == static_cast<int>(GetBlendMode()))) {
+          SetBlendMode(static_cast<BlendMode>(i));
+        }
+      }
+      ImGui::EndCombo();
+    }
+
+    if (GetBlendMode() == BlendMode::AlphaClip) {
+      ImGui::TableNextColumn();
+      ImGui::Text("%s", "Alpha Threshold");
+      ImGui::TableNextColumn();
+      if (auto thresh{GetAlphaThreshold()}; ImGui::SliderFloat("##AlphaThresh", &thresh, 0, 1)) {
+        SetAlphaThreshold(thresh);
+      }
+
+      ImGui::TableNextColumn();
+      ImGui::Text("%s", "Opacity Mask");
+      ImGui::TableNextColumn();
+      static ObjectPicker<Texture2D> opacityMaskPicker;
+      if (auto opacityMask{GetOpacityMask()}; opacityMaskPicker.Draw(opacityMask)) {
+        SetOpacityMask(opacityMask);
+      }
     }
 
     ImGui::EndTable();
