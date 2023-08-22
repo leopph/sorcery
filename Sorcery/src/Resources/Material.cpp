@@ -223,29 +223,22 @@ auto Material::Serialize() const noexcept -> YAML::Node {
   ret["ao"] = GetAo();
 
   auto const albedoMap{GetAlbedoMap()};
-  ret["albedoMap"] = albedoMap
-                       ? albedoMap->GetGuid()
-                       : Guid::Invalid();
+  ret["albedoMap"] = albedoMap ? albedoMap->GetGuid() : Guid::Invalid();
 
   auto const metallicMap{GetMetallicMap()};
-  ret["metallicMap"] = metallicMap
-                         ? metallicMap->GetGuid()
-                         : Guid::Invalid();
+  ret["metallicMap"] = metallicMap ? metallicMap->GetGuid() : Guid::Invalid();
 
   auto const roughnessMap{GetRoughnessMap()};
-  ret["roughnessMap"] = roughnessMap
-                          ? roughnessMap->GetGuid()
-                          : Guid::Invalid();
+  ret["roughnessMap"] = roughnessMap ? roughnessMap->GetGuid() : Guid::Invalid();
 
   auto const aoMap{GetAoMap()};
-  ret["aoMap"] = aoMap
-                   ? aoMap->GetGuid()
-                   : Guid::Invalid();
+  ret["aoMap"] = aoMap ? aoMap->GetGuid() : Guid::Invalid();
 
   auto const normalMap{GetNormalMap()};
-  ret["normalMap"] = normalMap
-                       ? normalMap->GetGuid()
-                       : Guid::Invalid();
+  ret["normalMap"] = normalMap ? normalMap->GetGuid() : Guid::Invalid();
+
+  auto const opacityMask{GetOpacityMask()};
+  ret["opacityMask"] = opacityMask ? opacityMask->GetGuid() : Guid::Invalid();
 
   return ret;
 }
@@ -257,30 +250,29 @@ auto Material::Deserialize(YAML::Node const& yamlNode) noexcept -> void {
   SetRoughness(yamlNode["roughness"].as<float>(GetRoughness()));
   SetAo(yamlNode["ao"].as<float>(GetAo()));
 
-  auto const albedoMapGuid{yamlNode["albedoMap"].as<Guid>()};
-  SetAlbedoMap(albedoMapGuid.IsValid()
-                 ? gResourceManager.GetOrLoad<Texture2D>(albedoMapGuid)
-                 : GetAlbedoMap());
+  if (auto const guid{yamlNode["albedoMap"].as<Guid>(Guid::Invalid())}; guid.IsValid()) {
+    SetAlbedoMap(gResourceManager.GetOrLoad<Texture2D>(guid));
+  }
 
-  auto const metallicMapGuid{yamlNode["metallicMap"].as<Guid>()};
-  SetMetallicMap(metallicMapGuid.IsValid()
-                   ? gResourceManager.GetOrLoad<Texture2D>(metallicMapGuid)
-                   : GetMetallicMap());
+  if (auto const guid{yamlNode["metallicMap"].as<Guid>(Guid::Invalid())}; guid.IsValid()) {
+    SetMetallicMap(gResourceManager.GetOrLoad<Texture2D>(guid));
+  }
 
-  auto const roughnessMapGuid{yamlNode["roughnessMap"].as<Guid>()};
-  SetRoughnessMap(roughnessMapGuid.IsValid()
-                    ? gResourceManager.GetOrLoad<Texture2D>(roughnessMapGuid)
-                    : GetRoughnessMap());
+  if (auto const guid{yamlNode["roughnessMap"].as<Guid>(Guid::Invalid())}; guid.IsValid()) {
+    SetRoughnessMap(gResourceManager.GetOrLoad<Texture2D>(guid));
+  }
 
-  auto const aoMapGuid{yamlNode["aoMap"].as<Guid>()};
-  SetAoMap(aoMapGuid.IsValid()
-             ? gResourceManager.GetOrLoad<Texture2D>(aoMapGuid)
-             : GetAoMap());
+  if (auto const guid{yamlNode["aoMap"].as<Guid>(Guid::Invalid())}; guid.IsValid()) {
+    SetAoMap(gResourceManager.GetOrLoad<Texture2D>(guid));
+  }
 
-  auto const normalMapGuid{yamlNode["normalMap"].as<Guid>()};
-  SetNormalMap(normalMapGuid.IsValid()
-                 ? gResourceManager.GetOrLoad<Texture2D>(normalMapGuid)
-                 : GetNormalMap());
+  if (auto const guid{yamlNode["normalMap"].as<Guid>(Guid::Invalid())}; guid.IsValid()) {
+    SetNormalMap(gResourceManager.GetOrLoad<Texture2D>(guid));
+  }
+
+  if (auto const guid{yamlNode["opacityMask"].as<Guid>(Guid::Invalid())}; guid.IsValid()) {
+    SetOpacityMask(gResourceManager.GetOrLoad<Texture2D>(guid));
+  }
 }
 
 
