@@ -18,6 +18,7 @@
 #include "shaders/generated/ScreenVSBinDebug.h"
 #include "shaders/generated/SkyboxPSBinDebug.h"
 #include "shaders/generated/SkyboxVSBinDebug.h"
+#include "shaders/generated/DepthPrePassPSBinDebug.h"
 
 #else
 #include "shaders/generated/MeshPbrPSBin.h"
@@ -29,6 +30,7 @@
 #include "shaders/generated/ScreenVSBin.h"
 #include "shaders/generated/GizmoPSBin.h"
 #include "shaders/generated/LineGizmoVSBin.h"
+#include "shaders/generated/DepthPrePassPSBin.h"
 #endif
 
 #include "DirectionalShadowAtlas.hpp"
@@ -173,6 +175,7 @@ class Renderer::Impl {
   ComPtr<ID3D11PixelShader> mPostProcessPs;
   ComPtr<ID3D11PixelShader> mSkyboxPs;
   ComPtr<ID3D11PixelShader> mGizmoPs;
+  ComPtr<ID3D11PixelShader> mDepthPrePassPs;
 
   ComPtr<ID3D11VertexShader> mMeshVs;
   ComPtr<ID3D11VertexShader> mSkyboxVs;
@@ -188,7 +191,6 @@ class Renderer::Impl {
   ComPtr<ID3D11Buffer> mDepthOnlyCb;
 
   ComPtr<ID3D11InputLayout> mAllAttribsIl;
-  ComPtr<ID3D11InputLayout> mPos3OnlyIl;
 
   ComPtr<ID3D11SamplerState> mCmpPcfGreaterEqualSs;
   ComPtr<ID3D11SamplerState> mCmpPcfLessEqualSs;
@@ -277,7 +279,7 @@ class Renderer::Impl {
   auto CreateDefaultAssets() -> void;
 
   auto DrawShadowMaps(ShadowAtlas const& atlas) -> void;
-  auto DrawMeshes(std::span<int const> meshComponentIndices, bool useMaterials) noexcept -> void;
+  auto DrawMeshes(std::span<int const> meshComponentIndices) noexcept -> void;
   auto DrawSkybox(Matrix4 const& camViewMtx, Matrix4 const& camProjMtx) const noexcept -> void;
   auto PostProcess(ID3D11ShaderResourceView* src, ID3D11RenderTargetView* dst) noexcept -> void;
 
@@ -493,10 +495,6 @@ auto Renderer::Impl::CreateInputLayouts() -> void {
   if (FAILED(mDevice->CreateInputLayout(inputDescs, ARRAYSIZE(inputDescs), gMeshVSBin, ARRAYSIZE(gMeshVSBin), mAllAttribsIl.GetAddressOf()))) {
     throw std::runtime_error{"Failed to create all-attributes input layout."};
   }
-
-  if (FAILED(mDevice->CreateInputLayout(&inputDescs[0], 1, gDepthOnlyVSBin, ARRAYSIZE(gDepthOnlyVSBin), mPos3OnlyIl.GetAddressOf()))) {
-    throw std::runtime_error{"Failed to create pos3d-only input layout."};
-  }
 }
 
 
@@ -535,6 +533,10 @@ auto Renderer::Impl::CreateShaders() -> void {
 
   if (FAILED(mDevice->CreatePixelShader(gGizmoPSBin, ARRAYSIZE(gGizmoPSBin), nullptr, mGizmoPs.GetAddressOf()))) {
     throw std::runtime_error{"Failed to create gizmo pixel shader."};
+  }
+
+  if (FAILED(mDevice->CreatePixelShader(gDepthPrePassPSBin, ARRAYSIZE(gDepthPrePassPSBin), nullptr, mDepthPrePassPs.GetAddressOf()))) {
+    throw std::runtime_error{"Failed to create depth prepass pixel shader."};
   }
 }
 
@@ -987,7 +989,7 @@ auto Renderer::Impl::CreateDefaultAssets() -> void {
 }
 
 
-auto Renderer::Impl::DrawMeshes(std::span<int const> const meshComponentIndices, bool const useMaterials) noexcept -> void {
+auto Renderer::Impl::DrawMeshes(std::span<int const> const meshComponentIndices) noexcept -> void {
   mImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
   mImmediateContext->VSSetConstantBuffers(CB_SLOT_PER_DRAW, 1, mPerDrawCb.GetAddressOf());
@@ -1017,7 +1019,7 @@ auto Renderer::Impl::DrawMeshes(std::span<int const> const meshComponentIndices,
       for (std::size_t i{0}; i < std::size(subMeshes); i++) {
         auto const& [baseVertex, firstIndex, indexCount, mtlSlotName]{subMeshes[i]};
 
-        if (auto const mtl{materials[i]}; mtl && useMaterials) {
+        if (auto const mtl{materials[i]}) {
           auto const mtlBuffer{mtl->GetBuffer()};
           mImmediateContext->VSSetConstantBuffers(CB_SLOT_PER_MATERIAL, 1, &mtlBuffer);
           mImmediateContext->PSSetConstantBuffers(CB_SLOT_PER_MATERIAL, 1, &mtlBuffer);
@@ -1131,7 +1133,7 @@ auto Renderer::Impl::DrawSkybox(Matrix4 const& camViewMtx, Matrix4 const& camPro
   UINT constexpr offset{0};
   mImmediateContext->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
   mImmediateContext->IASetIndexBuffer(mCubeMesh->GetIndexBuffer().Get(), mCubeMesh->GetIndexFormat(), 0);
-  mImmediateContext->IASetInputLayout(mPos3OnlyIl.Get());
+  mImmediateContext->IASetInputLayout(mAllAttribsIl.Get());
   mImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
   mImmediateContext->VSSetShader(mSkyboxVs.Get(), nullptr, 0);
@@ -1200,9 +1202,9 @@ auto Renderer::Impl::DrawShadowMaps(ShadowAtlas const& atlas) -> void {
 
         CullStaticMeshComponents(shadowFrustumWS, perLightVisibility);
 
-        mImmediateContext->IASetInputLayout(mPos3OnlyIl.Get());
+        mImmediateContext->IASetInputLayout(mAllAttribsIl.Get());
 
-        DrawMeshes(perLightVisibility.staticMeshIndices, false);
+        DrawMeshes(perLightVisibility.staticMeshIndices);
       }
     }
   }
@@ -1417,10 +1419,12 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
   mImmediateContext->VSSetShader(mDepthOnlyVs.Get(), nullptr, 0);
   mImmediateContext->VSSetConstantBuffers(CB_SLOT_DEPTH_ONLY_PASS, 1, mDepthOnlyCb.GetAddressOf());
 
+  mImmediateContext->PSSetShader(mDepthPrePassPs.Get(), nullptr, 0);
+
   mImmediateContext->RSSetViewports(1, &viewport);
   mImmediateContext->RSSetState(nullptr);
 
-  mImmediateContext->IASetInputLayout(mPos3OnlyIl.Get());
+  mImmediateContext->IASetInputLayout(mAllAttribsIl.Get());
 
   mImmediateContext->ClearDepthStencilView(hdrRt.GetDsv(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 
@@ -1431,7 +1435,7 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
   static_cast<DepthOnlyCB*>(mappedCb.pData)->gDepthOnlyViewProjMtx = camViewProjMtx;
   mImmediateContext->Unmap(mDepthOnlyCb.Get(), 0);
 
-  DrawMeshes(visibility.staticMeshIndices, false);
+  DrawMeshes(visibility.staticMeshIndices);
 
   // Full forward lighting pass
   mImmediateContext->VSSetShader(mMeshVs.Get(), nullptr, 0);
@@ -1495,7 +1499,7 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
 
   mImmediateContext->IASetInputLayout(mAllAttribsIl.Get());
 
-  DrawMeshes(visibility.staticMeshIndices, true);
+  DrawMeshes(visibility.staticMeshIndices);
   DrawSkybox(camViewMtx, camProjMtx);
 
   mImmediateContext->RSSetViewports(1, &viewport);
