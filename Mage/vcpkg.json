@@ -1,6 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
-  "builtin-baseline": "50a4aa2be9c05e16d34c98369a8e1dd01796c3f0",
+  "builtin-baseline": "9edb1b8e590cc086563301d735cae4b6e732d2d2",
   "dependencies": [
     {
       "name": "yaml-cpp",
