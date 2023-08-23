@@ -221,6 +221,8 @@ auto Material::Serialize() const noexcept -> YAML::Node {
   ret["metallic"] = GetMetallic();
   ret["roughness"] = GetRoughness();
   ret["ao"] = GetAo();
+  ret["blendMode"] = static_cast<int>(GetBlendMode());
+  ret["alphaThresh"] = GetAlphaThreshold();
 
   auto const albedoMap{GetAlbedoMap()};
   ret["albedoMap"] = albedoMap ? albedoMap->GetGuid() : Guid::Invalid();
@@ -249,6 +251,8 @@ auto Material::Deserialize(YAML::Node const& yamlNode) noexcept -> void {
   SetMetallic(yamlNode["metallic"].as<float>(GetMetallic()));
   SetRoughness(yamlNode["roughness"].as<float>(GetRoughness()));
   SetAo(yamlNode["ao"].as<float>(GetAo()));
+  SetBlendMode(static_cast<BlendMode>(yamlNode["blendMode"].as<int>(static_cast<int>(GetBlendMode()))));
+  SetAlphaThreshold(yamlNode["alphaThresh"].as<float>(GetAlphaThreshold()));
 
   if (auto const guid{yamlNode["albedoMap"].as<Guid>(Guid::Invalid())}; guid.IsValid()) {
     SetAlbedoMap(gResourceManager.GetOrLoad<Texture2D>(guid));
@@ -374,6 +378,7 @@ auto Material::OnDrawProperties(bool& changed) -> void {
       for (int i = 0; i < 2; i++) {
         if (ImGui::Selectable(blendModeNames[i], i == static_cast<int>(GetBlendMode()))) {
           SetBlendMode(static_cast<BlendMode>(i));
+          changed = true;
         }
       }
       ImGui::EndCombo();
@@ -385,6 +390,7 @@ auto Material::OnDrawProperties(bool& changed) -> void {
       ImGui::TableNextColumn();
       if (auto thresh{GetAlphaThreshold()}; ImGui::SliderFloat("##AlphaThresh", &thresh, 0, 1)) {
         SetAlphaThreshold(thresh);
+        changed = true;
       }
 
       ImGui::TableNextColumn();
@@ -393,6 +399,7 @@ auto Material::OnDrawProperties(bool& changed) -> void {
       static ObjectPicker<Texture2D> opacityMaskPicker;
       if (auto opacityMask{GetOpacityMask()}; opacityMaskPicker.Draw(opacityMask)) {
         SetOpacityMask(opacityMask);
+        changed = true;
       }
     }
 
