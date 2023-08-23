@@ -14,12 +14,14 @@
 
 
 namespace sorcery::mage {
-auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& thisPathAbs, std::filesystem::path const& thisPathResDirRel, bool const isDirectory) noexcept -> bool {
+auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& nodePathAbs, std::filesystem::path const& nodePathResDirRel, bool const isDirectory) noexcept -> bool {
   auto ret{false};
 
   auto& resDb{mApp->GetResourceDatabase()};
   auto const& resDirAbs{resDb.GetResourceDirectoryAbsolutePath()};
 
+  auto thisPathResDirRel{nodePathResDirRel};
+  auto thisPathAbs{nodePathAbs};
   auto selectedPathAbs{mSelectedPathResDirRel.empty() ? resDirAbs : resDirAbs / mSelectedPathResDirRel};
 
   auto const isSelected{thisPathAbs == selectedPathAbs};
@@ -45,6 +47,36 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& thisPathAbs,
   auto const treeNodePos{ImGui::GetCursorPos()};
   auto treeNodeLabel{thisPathAbs.stem().string()};
   auto const nodeIsOpen{ImGui::TreeNodeEx((isRenaming ? treeNodeLabel.insert(0, "##") : treeNodeLabel).c_str(), treeNodeFlags)};
+
+  if (isRenaming) {
+    ImGui::SetKeyboardFocusHere();
+    ImGui::SetCursorPos(treeNodePos);
+
+    if (ImGui::InputText("##Rename", &mRenameInfo->newName, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll)) {
+      auto const newPathAbs{mRenameInfo->nodePathAbs.parent_path() / mRenameInfo->newName += mRenameInfo->nodePathAbs.extension()};
+      auto const newPathResDirRel{newPathAbs.lexically_relative(resDirAbs)};
+
+      if (isDirectory
+            ? resDb.MoveDirectory(mRenameInfo->nodePathAbs.lexically_relative(resDirAbs), newPathResDirRel)
+            : resDb.MoveResource(resDb.PathToGuid(thisPathResDirRel), newPathResDirRel)) {
+        thisPathAbs = newPathAbs;
+        thisPathResDirRel = thisPathAbs.lexically_relative(resDirAbs);
+        mSelectedPathResDirRel = thisPathResDirRel;
+        selectedPathAbs = resDirAbs / mSelectedPathResDirRel;
+        ret = true;
+      }
+
+      mRenameInfo.reset();
+    }
+
+    if ((!ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) || ImGui::IsKeyPressed(ImGuiKey_Escape)) {
+      mRenameInfo.reset();
+    }
+  } else if ((ImGui::IsItemHovered() && ImGui::GetMouseClickedCount(ImGuiMouseButton_Left) == 3) || (isSelected && ImGui::IsKeyPressed(ImGuiKey_F2, false))) {
+    mSelectedPathResDirRel = thisPathResDirRel;
+    selectedPathAbs = resDirAbs / mSelectedPathResDirRel;
+    StartRenamingSelected();
+  }
 
   if (!thisPathResDirRel.empty() && ImGui::BeginDragDropSource()) {
     if (isDirectory) {
@@ -87,34 +119,6 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& thisPathAbs,
 
   if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
     mOpenContextMenu = true;
-  }
-
-  if (isRenaming) {
-    ImGui::SetKeyboardFocusHere();
-    ImGui::SetCursorPos(treeNodePos);
-
-    if (ImGui::InputText("##Rename", &mRenameInfo->newName, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll)) {
-      auto const newPathAbs{mRenameInfo->nodePathAbs.parent_path() / mRenameInfo->newName += mRenameInfo->nodePathAbs.extension()};
-      auto const newPathResDirRel{newPathAbs.lexically_relative(resDirAbs)};
-
-      if (isDirectory
-            ? resDb.MoveDirectory(mRenameInfo->nodePathAbs.lexically_relative(resDirAbs), newPathResDirRel)
-            : resDb.MoveResource(resDb.PathToGuid(thisPathResDirRel), newPathResDirRel)) {
-        mSelectedPathResDirRel = newPathAbs.lexically_relative(resDirAbs);
-        selectedPathAbs = resDirAbs / mSelectedPathResDirRel;
-        ret = true;
-      }
-
-      mRenameInfo.reset();
-    }
-
-    if ((!ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) || ImGui::IsKeyPressed(ImGuiKey_Escape)) {
-      mRenameInfo.reset();
-    }
-  } else if ((ImGui::IsItemHovered() && ImGui::GetMouseClickedCount(ImGuiMouseButton_Left) == 3) || (isSelected && ImGui::IsKeyPressed(ImGuiKey_F2, false))) {
-    mSelectedPathResDirRel = thisPathResDirRel;
-    selectedPathAbs = resDirAbs / mSelectedPathResDirRel;
-    StartRenamingSelected();
   }
 
   if (nodeIsOpen) {
