@@ -43,79 +43,81 @@ auto ProjectWindow::DrawFilesystemTree(std::filesystem::path const& thisPathAbs,
   }
 
   auto const treeNodePos{ImGui::GetCursorPos()};
+  auto treeNodeLabel{thisPathAbs.stem().string()};
+  auto const nodeIsOpen{ImGui::TreeNodeEx((isRenaming ? treeNodeLabel.insert(0, "##") : treeNodeLabel).c_str(), treeNodeFlags)};
 
-  if (auto treeNodeLabel{thisPathAbs.stem().string()}; ImGui::TreeNodeEx((isRenaming ? treeNodeLabel.insert(0, "##") : treeNodeLabel).c_str(), treeNodeFlags)) {
-    if (!thisPathResDirRel.empty() && ImGui::BeginDragDropSource()) {
-      if (isDirectory) {
-        auto const thisPathResDirRelStr{thisPathResDirRel.string()};
-        ImGui::SetDragDropPayload(DIR_NODE_DRAG_DROP_TYPE_STR.data(), thisPathResDirRelStr.c_str(), thisPathResDirRelStr.size() + 1);
-      } else {
-        auto const res{gResourceManager.GetOrLoad(resDb.PathToGuid(thisPathResDirRel))};
-        ImGui::SetDragDropPayload(ObjectDragDropData::TYPE_STR.data(), &res, sizeof(decltype(res)));
+  if (!thisPathResDirRel.empty() && ImGui::BeginDragDropSource()) {
+    if (isDirectory) {
+      auto const thisPathResDirRelStr{thisPathResDirRel.string()};
+      ImGui::SetDragDropPayload(DIR_NODE_DRAG_DROP_TYPE_STR.data(), thisPathResDirRelStr.c_str(), thisPathResDirRelStr.size() + 1);
+    } else {
+      auto const res{gResourceManager.GetOrLoad(resDb.PathToGuid(thisPathResDirRel))};
+      ImGui::SetDragDropPayload(ObjectDragDropData::TYPE_STR.data(), &res, sizeof(decltype(res)));
+    }
+    ImGui::EndDragDropSource();
+  }
+
+  if (isDirectory && ImGui::BeginDragDropTarget()) {
+    if (auto const payload{ImGui::AcceptDragDropPayload(DIR_NODE_DRAG_DROP_TYPE_STR.data())}) {
+      std::string payloadPathResDirRelStr(static_cast<std::size_t>(payload->DataSize), '\0');
+      std::memcpy(payloadPathResDirRelStr.data(), payload->Data, payload->DataSize);
+      std::filesystem::path const payloadPathResDirRel{payloadPathResDirRelStr};
+
+      if (resDb.MoveDirectory(payloadPathResDirRel, thisPathResDirRel / payloadPathResDirRel.filename())) {
+        ret = true;
       }
-      ImGui::EndDragDropSource();
     }
 
-    if (isDirectory && ImGui::BeginDragDropTarget()) {
-      if (auto const payload{ImGui::AcceptDragDropPayload(DIR_NODE_DRAG_DROP_TYPE_STR.data())}) {
-        std::string payloadPathResDirRelStr(static_cast<std::size_t>(payload->DataSize), '\0');
-        std::memcpy(payloadPathResDirRelStr.data(), payload->Data, payload->DataSize);
-        std::filesystem::path const payloadPathResDirRel{payloadPathResDirRelStr};
-
-        if (resDb.MoveDirectory(payloadPathResDirRel, thisPathResDirRel / payloadPathResDirRel.filename())) {
+    if (auto const payload{ImGui::AcceptDragDropPayload(ObjectDragDropData::TYPE_STR.data())}) {
+      if (auto const objectDragDropData{static_cast<ObserverPtr<ObjectDragDropData>>(payload->Data)}; objectDragDropData && objectDragDropData->ptr && rttr::type::get(*objectDragDropData->ptr).is_derived_from(rttr::type::get<Resource>())) {
+        if (auto const res{static_cast<ObserverPtr<Resource>>(objectDragDropData->ptr)}; resDb.MoveResource(res->GetGuid(), thisPathResDirRel / resDb.GuidToPath(res->GetGuid()).filename())) {
           ret = true;
         }
       }
+    }
 
-      if (auto const payload{ImGui::AcceptDragDropPayload(ObjectDragDropData::TYPE_STR.data())}) {
-        if (auto const objectDragDropData{static_cast<ObserverPtr<ObjectDragDropData>>(payload->Data)}; objectDragDropData && objectDragDropData->ptr && rttr::type::get(*objectDragDropData->ptr).is_derived_from(rttr::type::get<Resource>())) {
-          if (auto const res{static_cast<ObserverPtr<Resource>>(objectDragDropData->ptr)}; resDb.MoveResource(res->GetGuid(), thisPathResDirRel / resDb.GuidToPath(res->GetGuid()).filename())) {
-            ret = true;
-          }
-        }
+    ImGui::EndDragDropTarget();
+  }
+
+  if ((ImGui::IsItemHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Left)) || ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
+    mSelectedPathResDirRel = thisPathResDirRel;
+    selectedPathAbs = resDirAbs / mSelectedPathResDirRel;
+    mApp->SetSelectedObject(gResourceManager.GetOrLoad(resDb.PathToGuid(thisPathResDirRel)));
+  }
+
+  if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
+    mOpenContextMenu = true;
+  }
+
+  if (isRenaming) {
+    ImGui::SetKeyboardFocusHere();
+    ImGui::SetCursorPos(treeNodePos);
+
+    if (ImGui::InputText("##Rename", &mRenameInfo->newName, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll)) {
+      auto const newPathAbs{mRenameInfo->nodePathAbs.parent_path() / mRenameInfo->newName += mRenameInfo->nodePathAbs.extension()};
+      auto const newPathResDirRel{newPathAbs.lexically_relative(resDirAbs)};
+
+      if (isDirectory
+            ? resDb.MoveDirectory(mRenameInfo->nodePathAbs.lexically_relative(resDirAbs), newPathResDirRel)
+            : resDb.MoveResource(resDb.PathToGuid(thisPathResDirRel), newPathResDirRel)) {
+        mSelectedPathResDirRel = newPathAbs.lexically_relative(resDirAbs);
+        selectedPathAbs = resDirAbs / mSelectedPathResDirRel;
+        ret = true;
       }
 
-      ImGui::EndDragDropTarget();
+      mRenameInfo.reset();
     }
 
-    if ((ImGui::IsItemHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Left)) || ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
-      mSelectedPathResDirRel = thisPathResDirRel;
-      selectedPathAbs = resDirAbs / mSelectedPathResDirRel;
-      mApp->SetSelectedObject(gResourceManager.GetOrLoad(resDb.PathToGuid(thisPathResDirRel)));
+    if ((!ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) || ImGui::IsKeyPressed(ImGuiKey_Escape)) {
+      mRenameInfo.reset();
     }
+  } else if ((ImGui::IsItemHovered() && ImGui::GetMouseClickedCount(ImGuiMouseButton_Left) == 3) || (isSelected && ImGui::IsKeyPressed(ImGuiKey_F2, false))) {
+    mSelectedPathResDirRel = thisPathResDirRel;
+    selectedPathAbs = resDirAbs / mSelectedPathResDirRel;
+    StartRenamingSelected();
+  }
 
-    if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
-      mOpenContextMenu = true;
-    }
-
-    if (isRenaming) {
-      ImGui::SetKeyboardFocusHere();
-      ImGui::SetCursorPos(treeNodePos);
-
-      if (ImGui::InputText("##Rename", &mRenameInfo->newName, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll)) {
-        auto const newPathAbs{mRenameInfo->nodePathAbs.parent_path() / mRenameInfo->newName += mRenameInfo->nodePathAbs.extension()};
-        auto const newPathResDirRel{newPathAbs.lexically_relative(resDirAbs)};
-
-        if (isDirectory
-              ? resDb.MoveDirectory(mRenameInfo->nodePathAbs.lexically_relative(resDirAbs), newPathResDirRel)
-              : resDb.MoveResource(resDb.PathToGuid(thisPathResDirRel), newPathResDirRel)) {
-          mSelectedPathResDirRel = newPathAbs.lexically_relative(resDirAbs);
-          selectedPathAbs = resDirAbs / mSelectedPathResDirRel;
-          ret = true;
-        }
-
-        mRenameInfo.reset();
-      }
-
-      if ((!ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) || ImGui::IsKeyPressed(ImGuiKey_Escape)) {
-        mRenameInfo.reset();
-      }
-    } else if ((ImGui::IsItemHovered() && ImGui::GetMouseClickedCount(ImGuiMouseButton_Left) == 3) || (isSelected && ImGui::IsKeyPressed(ImGuiKey_F2, false))) {
-      mSelectedPathResDirRel = thisPathResDirRel;
-      selectedPathAbs = resDirAbs / mSelectedPathResDirRel;
-      StartRenamingSelected();
-    }
-
+  if (nodeIsOpen) {
     if (isDirectory) {
       for (auto const& entry : std::filesystem::directory_iterator{thisPathAbs}) {
         if (entry.path().extension() != ResourceDB::RESOURCE_META_FILE_EXT) {
