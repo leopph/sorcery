@@ -311,6 +311,6 @@
     <FxCompile Include="src\shaders\ScreenVS.hlsl" />
     <FxCompile Include="src\shaders\LineGizmoVS.hlsl" />
     <FxCompile Include="src\shaders\GizmoPS.hlsl" />
-    <FxCompile Include="src\shaders\DepthPrePassPS.hlsl" />
+    <FxCompile Include="src\shaders\DepthOnlyPS.hlsl" />
   </ItemGroup>
 </Project>

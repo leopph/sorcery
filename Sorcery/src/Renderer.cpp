@@ -10,27 +10,27 @@
 
 #ifndef NDEBUG
 #include "shaders/generated/DepthOnlyVSBinDebug.h"
+#include "shaders/generated/DepthOnlyPSBinDebug.h"
 #include "shaders/generated/GizmoPSBinDebug.h"
 #include "shaders/generated/LineGizmoVSBinDebug.h"
-#include "shaders/generated/MeshPbrPSBinDebug.h"
 #include "shaders/generated/MeshVSBinDebug.h"
+#include "shaders/generated/MeshPbrPSBinDebug.h"
 #include "shaders/generated/PostProcessPSBinDebug.h"
 #include "shaders/generated/ScreenVSBinDebug.h"
-#include "shaders/generated/SkyboxPSBinDebug.h"
 #include "shaders/generated/SkyboxVSBinDebug.h"
-#include "shaders/generated/DepthPrePassPSBinDebug.h"
+#include "shaders/generated/SkyboxPSBinDebug.h"
 
 #else
-#include "shaders/generated/MeshPbrPSBin.h"
-#include "shaders/generated/MeshVSBin.h"
-#include "shaders/generated/PostProcessPSBin.h"
-#include "shaders/generated/SkyboxPSBin.h"
-#include "shaders/generated/SkyboxVSBin.h"
 #include "shaders/generated/DepthOnlyVSBin.h"
-#include "shaders/generated/ScreenVSBin.h"
+#include "shaders/generated/DepthOnlyPSBin.h"
 #include "shaders/generated/GizmoPSBin.h"
 #include "shaders/generated/LineGizmoVSBin.h"
-#include "shaders/generated/DepthPrePassPSBin.h"
+#include "shaders/generated/MeshVSBin.h"
+#include "shaders/generated/MeshPbrPSBin.h"
+#include "shaders/generated/PostProcessPSBin.h"
+#include "shaders/generated/ScreenVSBin.h"
+#include "shaders/generated/SkyboxVSBin.h"
+#include "shaders/generated/SkyboxPSBin.h"
 #endif
 
 #include "DirectionalShadowAtlas.hpp"
@@ -175,7 +175,7 @@ class Renderer::Impl {
   ComPtr<ID3D11PixelShader> mPostProcessPs;
   ComPtr<ID3D11PixelShader> mSkyboxPs;
   ComPtr<ID3D11PixelShader> mGizmoPs;
-  ComPtr<ID3D11PixelShader> mDepthPrePassPs;
+  ComPtr<ID3D11PixelShader> mDepthOnlyPs;
 
   ComPtr<ID3D11VertexShader> mMeshVs;
   ComPtr<ID3D11VertexShader> mSkyboxVs;
@@ -459,7 +459,7 @@ auto Renderer::Impl::CreateInputLayouts() -> void {
       .SemanticIndex = 0,
       .Format = DXGI_FORMAT_R32G32B32_FLOAT,
       .InputSlot = 0,
-      .AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT,
+      .AlignedByteOffset = 0,
       .InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA,
       .InstanceDataStepRate = 0
     },
@@ -468,7 +468,7 @@ auto Renderer::Impl::CreateInputLayouts() -> void {
       .SemanticIndex = 0,
       .Format = DXGI_FORMAT_R32G32B32_FLOAT,
       .InputSlot = 1,
-      .AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT,
+      .AlignedByteOffset = 0,
       .InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA,
       .InstanceDataStepRate = 0
     },
@@ -477,7 +477,7 @@ auto Renderer::Impl::CreateInputLayouts() -> void {
       .SemanticIndex = 0,
       .Format = DXGI_FORMAT_R32G32_FLOAT,
       .InputSlot = 2,
-      .AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT,
+      .AlignedByteOffset = 0,
       .InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA,
       .InstanceDataStepRate = 0
     },
@@ -486,7 +486,7 @@ auto Renderer::Impl::CreateInputLayouts() -> void {
       .SemanticIndex = 0,
       .Format = DXGI_FORMAT_R32G32B32_FLOAT,
       .InputSlot = 3,
-      .AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT,
+      .AlignedByteOffset = 0,
       .InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA,
       .InstanceDataStepRate = 0
     }
@@ -503,41 +503,71 @@ auto Renderer::Impl::CreateShaders() -> void {
     throw std::runtime_error{"Failed to create mesh vertex shader."};
   }
 
+  char constexpr meshVsName[]{"Mesh Vertex Shader"};
+  mMeshVs->SetPrivateData(WKPDID_D3DDebugObjectName, ARRAYSIZE(meshVsName), meshVsName);
+
   if (FAILED(mDevice->CreatePixelShader(gMeshPbrPSBin, ARRAYSIZE(gMeshPbrPSBin), nullptr, mMeshPbrPs.GetAddressOf()))) {
     throw std::runtime_error{"Failed to create mesh pbr pixel shader."};
   }
+
+  char constexpr meshPbrPsName[]{"Mesh PBR Pixel Shader"};
+  mMeshPbrPs->SetPrivateData(WKPDID_D3DDebugObjectName, ARRAYSIZE(meshPbrPsName), meshPbrPsName);
 
   if (FAILED(mDevice->CreatePixelShader(gPostProcessPSBin, ARRAYSIZE(gPostProcessPSBin), nullptr, mPostProcessPs.GetAddressOf()))) {
     throw std::runtime_error{"Failed to create textured post process pixel shader."};
   }
 
+  char constexpr postProcessPsName[]{"Postprocess Pixel Shader"};
+  mPostProcessPs->SetPrivateData(WKPDID_D3DDebugObjectName, ARRAYSIZE(postProcessPsName), postProcessPsName);
+
   if (FAILED(mDevice->CreateVertexShader(gSkyboxVSBin, ARRAYSIZE(gSkyboxVSBin), nullptr, mSkyboxVs.ReleaseAndGetAddressOf()))) {
     throw std::runtime_error{"Failed to create skybox vertex shader."};
   }
+
+  char constexpr skyboxVsName[]{"Skybox Vertex Shader"};
+  mSkyboxVs->SetPrivateData(WKPDID_D3DDebugObjectName, ARRAYSIZE(skyboxVsName), skyboxVsName);
 
   if (FAILED(mDevice->CreatePixelShader(gSkyboxPSBin, ARRAYSIZE(gSkyboxPSBin), nullptr, mSkyboxPs.ReleaseAndGetAddressOf()))) {
     throw std::runtime_error{"Failed to create skybox pixel shader."};
   }
 
+  char constexpr skyboxPsName[]{"Skybox Pixel Shader"};
+  mSkyboxPs->SetPrivateData(WKPDID_D3DDebugObjectName, ARRAYSIZE(skyboxPsName), skyboxPsName);
+
   if (FAILED(mDevice->CreateVertexShader(gDepthOnlyVSBin, ARRAYSIZE(gDepthOnlyVSBin), nullptr, mDepthOnlyVs.GetAddressOf()))) {
     throw std::runtime_error{"Failed to create depth-only vertex shader."};
   }
+
+  char constexpr depthOnlyVsName[]{"Depth-Only Vertex Shader"};
+  mDepthOnlyVs->SetPrivateData(WKPDID_D3DDebugObjectName, ARRAYSIZE(depthOnlyVsName), depthOnlyVsName);
+
+  if (FAILED(mDevice->CreatePixelShader(gDepthOnlyPSBin, ARRAYSIZE(gDepthOnlyPSBin), nullptr, mDepthOnlyPs.GetAddressOf()))) {
+    throw std::runtime_error{"Failed to create depth-only pixel shader."};
+  }
+
+  char constexpr depthOnlyPsName[]{"Depth-Only Pixel Shader"};
+  mDepthOnlyPs->SetPrivateData(WKPDID_D3DDebugObjectName, ARRAYSIZE(depthOnlyPsName), depthOnlyPsName);
 
   if (FAILED(mDevice->CreateVertexShader(gScreenVSBin, ARRAYSIZE(gScreenVSBin), nullptr, mScreenVs.GetAddressOf()))) {
     throw std::runtime_error{"Failed to create screen vertex shader."};
   }
 
+  char constexpr screenVsName[]{"Screen Vertex Shader"};
+  mScreenVs->SetPrivateData(WKPDID_D3DDebugObjectName, ARRAYSIZE(screenVsName), screenVsName);
+
   if (FAILED(mDevice->CreateVertexShader(gLineGizmoVSBin, ARRAYSIZE(gLineGizmoVSBin), nullptr, mLineGizmoVs.GetAddressOf()))) {
     throw std::runtime_error{"Failed to create line gizmo vertex shader."};
   }
+
+  char constexpr lineGizmoVsName[]{"Line Gizmo Vertex Shader"};
+  mLineGizmoVs->SetPrivateData(WKPDID_D3DDebugObjectName, ARRAYSIZE(lineGizmoVsName), lineGizmoVsName);
 
   if (FAILED(mDevice->CreatePixelShader(gGizmoPSBin, ARRAYSIZE(gGizmoPSBin), nullptr, mGizmoPs.GetAddressOf()))) {
     throw std::runtime_error{"Failed to create gizmo pixel shader."};
   }
 
-  if (FAILED(mDevice->CreatePixelShader(gDepthPrePassPSBin, ARRAYSIZE(gDepthPrePassPSBin), nullptr, mDepthPrePassPs.GetAddressOf()))) {
-    throw std::runtime_error{"Failed to create depth prepass pixel shader."};
-  }
+  char constexpr gizmoPsName[]{"Gizmo Pixel Shader"};
+  mGizmoPs->SetPrivateData(WKPDID_D3DDebugObjectName, ARRAYSIZE(gizmoPsName), gizmoPsName);
 }
 
 
@@ -1158,12 +1188,18 @@ auto Renderer::Impl::DrawSkybox(Matrix4 const& camViewMtx, Matrix4 const& camPro
 
 auto Renderer::Impl::DrawShadowMaps(ShadowAtlas const& atlas) -> void {
   mImmediateContext->OMSetRenderTargets(0, nullptr, atlas.GetDsv());
-  mImmediateContext->ClearDepthStencilView(atlas.GetDsv(), D3D11_CLEAR_DEPTH, Graphics::GetDepthClearValueForReversedDepth(), 0);
-  mImmediateContext->VSSetShader(mDepthOnlyVs.Get(), nullptr, 0);
-  mImmediateContext->PSSetShader(nullptr, nullptr, 0);
-  mImmediateContext->VSSetConstantBuffers(CB_SLOT_DEPTH_ONLY_PASS, 1, mDepthOnlyCb.GetAddressOf());
   mImmediateContext->OMSetDepthStencilState(GetShadowDrawDssForReversedDepth().Get(), 0);
+
+  mImmediateContext->VSSetShader(mDepthOnlyVs.Get(), nullptr, 0);
+  mImmediateContext->VSSetConstantBuffers(CB_SLOT_DEPTH_ONLY_PASS, 1, mDepthOnlyCb.GetAddressOf());
+
+  mImmediateContext->PSSetShader(mDepthOnlyPs.Get(), nullptr, 0);
+
+  mImmediateContext->ClearDepthStencilView(atlas.GetDsv(), D3D11_CLEAR_DEPTH, Graphics::GetDepthClearValueForReversedDepth(), 0);
+
   mImmediateContext->RSSetState(mShadowPassRs.Get());
+
+  mImmediateContext->IASetInputLayout(mAllAttribsIl.Get());
 
   auto const cellSizeNorm{atlas.GetNormalizedElementSize()};
 
@@ -1201,9 +1237,6 @@ auto Renderer::Impl::DrawShadowMaps(ShadowAtlas const& atlas) -> void {
         };
 
         CullStaticMeshComponents(shadowFrustumWS, perLightVisibility);
-
-        mImmediateContext->IASetInputLayout(mAllAttribsIl.Get());
-
         DrawMeshes(perLightVisibility.staticMeshIndices);
       }
     }
@@ -1322,16 +1355,8 @@ auto Renderer::Impl::ShutDown() -> void {
 
 
 auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt) -> void {
-  auto const rtWidth{
-    rt
-      ? rt->GetDesc().width
-      : gWindow.GetCurrentClientAreaSize().width
-  };
-  auto const rtHeight{
-    rt
-      ? rt->GetDesc().height
-      : gWindow.GetCurrentClientAreaSize().height
-  };
+  auto const rtWidth{rt ? rt->GetDesc().width : gWindow.GetCurrentClientAreaSize().width};
+  auto const rtHeight{rt ? rt->GetDesc().height : gWindow.GetCurrentClientAreaSize().height};
   auto const rtAspect{static_cast<float>(rtWidth) / static_cast<float>(rtHeight)};
 
   RenderTarget::Desc const hdrRtDesc{
@@ -1401,6 +1426,7 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
   ID3D11ShaderResourceView* const nullSrv{nullptr};
   mImmediateContext->PSSetShaderResources(RES_SLOT_PUNCTUAL_SHADOW_ATLAS, 1, &nullSrv);
   mImmediateContext->PSSetShaderResources(RES_SLOT_DIR_SHADOW_ATLAS, 1, &nullSrv);
+  mImmediateContext->PSSetShader(nullptr, nullptr, 0);
   mImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
   mDirectionalShadowAtlas->Update(mLights, visibility, cam, shadowCascadeBoundaries, rtAspect, mCascadeCount, mUseStableShadowCascadeProjection);
@@ -1419,7 +1445,7 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
   mImmediateContext->VSSetShader(mDepthOnlyVs.Get(), nullptr, 0);
   mImmediateContext->VSSetConstantBuffers(CB_SLOT_DEPTH_ONLY_PASS, 1, mDepthOnlyCb.GetAddressOf());
 
-  mImmediateContext->PSSetShader(mDepthPrePassPs.Get(), nullptr, 0);
+  mImmediateContext->PSSetShader(mDepthOnlyPs.Get(), nullptr, 0);
 
   mImmediateContext->RSSetViewports(1, &viewport);
   mImmediateContext->RSSetState(nullptr);
@@ -1438,7 +1464,6 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
   DrawMeshes(visibility.staticMeshIndices);
 
   // Full forward lighting pass
-  mImmediateContext->VSSetShader(mMeshVs.Get(), nullptr, 0);
 
   D3D11_MAPPED_SUBRESOURCE mappedPerCamCB;
   if (FAILED(mImmediateContext->Map(mPerCamCb.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedPerCamCB))) {

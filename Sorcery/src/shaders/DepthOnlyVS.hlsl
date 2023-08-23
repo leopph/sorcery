@@ -1,13 +1,19 @@
 #include "ShaderInterop.h"
 
-struct DepthOnlyVSOut {
-  float4 posCS : SV_Position;
+struct VsIn {
+  float3 posOS : POSITION;
+  float3 normal : NORMAL;
   float2 uv : TEXCOORD;
 };
 
-DepthOnlyVSOut main(const float3 pos : POSITION, const float2 uv : TEXCOORD) {
-  DepthOnlyVSOut ret;
-  ret.posCS = mul(mul(float4(pos, 1), gPerDrawConstants.modelMtx), gDepthOnlyViewProjMtx);
-  ret.uv = uv;
+struct VsOut {
+  float4 posCS : SV_POSITION;
+  float2 uv : TEXCOORD;
+};
+
+VsOut main(const VsIn vsIn) {
+  VsOut ret;
+  ret.posCS = mul(mul(float4(vsIn.posOS, 1), gPerDrawConstants.modelMtx), gDepthOnlyViewProjMtx);
+  ret.uv = vsIn.uv;
   return ret;
 }
