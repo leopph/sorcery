@@ -672,7 +672,7 @@ auto Renderer::Impl::CreateRasterizerStates() -> void {
 
   D3D11_RASTERIZER_DESC constexpr shadowPassRasterizerDesc{
     .FillMode = D3D11_FILL_SOLID,
-    .CullMode = D3D11_CULL_FRONT,
+    .CullMode = D3D11_CULL_BACK,
     .FrontCounterClockwise = FALSE,
     .DepthBias = 0,
     .DepthBiasClamp = 0,
