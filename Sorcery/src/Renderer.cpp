@@ -1365,6 +1365,7 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
     .colorFormat = DXGI_FORMAT_R16G16B16A16_FLOAT,
     .depthBufferBitCount = 32,
     .stencilBufferBitCount = 0,
+    .sampleCount = 8,
     .debugName = "Camera HDR RenderTarget"
   };
 
@@ -1527,10 +1528,13 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
   DrawMeshes(visibility.staticMeshIndices);
   DrawSkybox(camViewMtx, camProjMtx);
 
+  auto resolveHdrRtDesc{hdrRtDesc};
+  resolveHdrRtDesc.sampleCount = 1;
+  auto const& resolveHdrRt{GetTemporaryRenderTarget(resolveHdrRtDesc)};
+  mImmediateContext->ResolveSubresource(resolveHdrRt.GetColorTexture(), 0, hdrRt.GetColorTexture(), 0, *hdrRtDesc.colorFormat);
+
   mImmediateContext->RSSetViewports(1, &viewport);
-  PostProcess(hdrRt.GetColorSrv(), rt
-                                     ? rt->GetRtv()
-                                     : mSwapChain->GetRtv());
+  PostProcess(resolveHdrRt.GetColorSrv(), rt ? rt->GetRtv() : mSwapChain->GetRtv());
 }
 
 
