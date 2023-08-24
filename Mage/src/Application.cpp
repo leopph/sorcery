@@ -72,6 +72,8 @@ auto Application::GetScene() const noexcept -> Scene& {
 
 
 auto Application::OpenScene(Scene& scene) -> void {
+  mSelectedObject = nullptr;
+
   if (std::addressof(scene) != mScene) {
     scene.Load();
     assert(mScene);
