@@ -7,13 +7,13 @@
 
 
 namespace sorcery::mage {
-std::string_view const PROJECT_SETTINGS_WINDOW_TITLE{ "Project Settings" };
+std::string_view const PROJECT_SETTINGS_WINDOW_TITLE{"Project Settings"};
 
 
 auto DrawProjectSettingsWindow(bool& isOpen) -> void {
   //ImGui::SetNextWindowSizeConstraints(ImVec2{ 300, 300 }, ImVec2{ -1, -1 });
 
-  if (!ImGui::Begin((std::string{ PROJECT_SETTINGS_WINDOW_TITLE } + "##Window").data(), &isOpen)) {
+  if (!ImGui::Begin((std::string{PROJECT_SETTINGS_WINDOW_TITLE} + "##Window").data(), &isOpen)) {
     ImGui::End();
     return;
   }
@@ -23,7 +23,7 @@ auto DrawProjectSettingsWindow(bool& isOpen) -> void {
     return;
   }
 
-  static int selectedSubMenu{ 0 };
+  static int selectedSubMenu{0};
 
   ImGui::TableNextColumn();
   if (ImGui::BeginChild("ProjectSettingsLeftChild")) {
@@ -37,7 +37,7 @@ auto DrawProjectSettingsWindow(bool& isOpen) -> void {
       ImGui::Text("Shadow Distance");
       ImGui::SameLine();
 
-      float shadowDistance{ gRenderer.GetShadowDistance() };
+      float shadowDistance{gRenderer.GetShadowDistance()};
       if (ImGui::InputFloat("##shadowDistanceInput", &shadowDistance, 0, 0, "%.3f", ImGuiInputTextFlags_EnterReturnsTrue)) {
         gRenderer.SetShadowDistance(shadowDistance);
       }
@@ -57,7 +57,7 @@ auto DrawProjectSettingsWindow(bool& isOpen) -> void {
           return ret;
         }()
       };
-      int currentShadowFilteringModeIdx{ static_cast<int>(gRenderer.GetShadowFilteringMode()) };
+      int currentShadowFilteringModeIdx{static_cast<int>(gRenderer.GetShadowFilteringMode())};
       if (ImGui::Combo("##ShadowFilteringModeCombo", &currentShadowFilteringModeIdx, shadowFilteringModeNames.data(), static_cast<int>(std::ssize(shadowFilteringModeNames)))) {
         gRenderer.SetShadowFilteringMode(static_cast<ShadowFilteringMode>(currentShadowFilteringModeIdx));
       }
@@ -65,35 +65,27 @@ auto DrawProjectSettingsWindow(bool& isOpen) -> void {
       ImGui::Text("Visualize Shadow Cascades");
       ImGui::SameLine();
 
-      bool visualizeShadowCascades{ gRenderer.IsVisualizingShadowCascades() };
+      bool visualizeShadowCascades{gRenderer.IsVisualizingShadowCascades()};
       if (ImGui::Checkbox("##VisualizeShadowCascadesCheckbox", &visualizeShadowCascades)) {
         gRenderer.VisualizeShadowCascades(visualizeShadowCascades);
-      }
-
-      ImGui::Text("Stable Shadow Cascade Projection");
-      ImGui::SameLine();
-
-      bool isUsingStableShadowCascadeProjection{ gRenderer.IsUsingStableShadowCascadeProjection() };
-      if (ImGui::Checkbox("##StableShadowCascadeProjectionCheckbox", &isUsingStableShadowCascadeProjection)) {
-        gRenderer.UseStableShadowCascadeProjection(isUsingStableShadowCascadeProjection);
       }
 
       ImGui::Text("Shadow Cascade Count");
       ImGui::SameLine();
 
-      int cascadeCount{ gRenderer.GetShadowCascadeCount() };
+      int cascadeCount{gRenderer.GetShadowCascadeCount()};
       if (ImGui::SliderInt("##cascadeCountInput", &cascadeCount, 1, gRenderer.GetMaxShadowCascadeCount(), "%d", ImGuiSliderFlags_NoInput)) {
         gRenderer.SetShadowCascadeCount(cascadeCount);
       }
 
-      auto const cascadeSplits{ gRenderer.GetNormalizedShadowCascadeSplits() };
-      auto const splitCount{ std::ssize(cascadeSplits) };
+      auto const cascadeSplits{gRenderer.GetNormalizedShadowCascadeSplits()};
+      auto const splitCount{std::ssize(cascadeSplits)};
 
       for (int i = 0; i < splitCount; i++) {
         ImGui::Text("Split %d (percent)", i + 1);
         ImGui::SameLine();
 
-        float cascadeSplit{ cascadeSplits[i] * 100.0f };
+        float cascadeSplit{cascadeSplits[i] * 100.0f};
 
         if (ImGui::SliderFloat(std::format("##cascadeSplit {} input", i).data(), &cascadeSplit, 0, 100, "%.3f", ImGuiSliderFlags_NoInput)) {
           gRenderer.SetNormalizedShadowCascadeSplit(i, cascadeSplit / 100.0f);

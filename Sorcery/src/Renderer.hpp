@@ -92,8 +92,6 @@ public:
   LEOPPHAPI auto SetShadowDistance(float shadowDistance) noexcept -> void;
   [[nodiscard]] LEOPPHAPI auto IsVisualizingShadowCascades() noexcept -> bool;
   LEOPPHAPI auto VisualizeShadowCascades(bool visualize) noexcept -> void;
-  [[nodiscard]] LEOPPHAPI auto IsUsingStableShadowCascadeProjection() noexcept -> bool;
-  LEOPPHAPI auto UseStableShadowCascadeProjection(bool useStableProj) noexcept -> void;
 
   [[nodiscard]] LEOPPHAPI auto GetShadowFilteringMode() noexcept -> ShadowFilteringMode;
   LEOPPHAPI auto SetShadowFilteringMode(ShadowFilteringMode filteringMode) noexcept -> void;

@@ -242,7 +242,7 @@ class Renderer::Impl {
   int mCascadeCount{4};
   float mShadowDistance{100};
   bool mVisualizeShadowCascades{false};
-  bool mUseStableShadowCascadeProjection{false};
+  ShadowFilteringMode mShadowFilteringMode{ShadowFilteringMode::None};
   ShadowFilteringMode mShadowFilteringMode{ShadowFilteringMode::PCFTent5x5};
 
 
@@ -342,9 +342,6 @@ public:
 
   auto IsVisualizingShadowCascades() noexcept -> bool;
   auto VisualizeShadowCascades(bool visualize) noexcept -> void;
-
-  auto IsUsingStableShadowCascadeProjection() noexcept -> bool;
-  auto UseStableShadowCascadeProjection(bool useStableProj) noexcept -> void;
 
   auto GetShadowFilteringMode() noexcept -> ShadowFilteringMode;
   auto SetShadowFilteringMode(ShadowFilteringMode filteringMode) noexcept -> void;
@@ -1430,7 +1427,7 @@ auto Renderer::Impl::DrawCamera(Camera const& cam, RenderTarget const* const rt)
   mImmediateContext->PSSetShader(nullptr, nullptr, 0);
   mImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-  mDirectionalShadowAtlas->Update(mLights, visibility, cam, shadowCascadeBoundaries, rtAspect, mCascadeCount, mUseStableShadowCascadeProjection);
+  mDirectionalShadowAtlas->Update(mLights, visibility, cam, shadowCascadeBoundaries, rtAspect, mCascadeCount);
   DrawShadowMaps(*mDirectionalShadowAtlas);
 
   mPunctualShadowAtlas->Update(mLights, visibility, cam, camViewProjMtx, mShadowDistance);
@@ -1788,16 +1785,6 @@ auto Renderer::Impl::VisualizeShadowCascades(bool const visualize) noexcept -> v
 }
 
 
-auto Renderer::Impl::IsUsingStableShadowCascadeProjection() noexcept -> bool {
-  return mUseStableShadowCascadeProjection;
-}
-
-
-auto Renderer::Impl::UseStableShadowCascadeProjection(bool const useStableProj) noexcept -> void {
-  mUseStableShadowCascadeProjection = useStableProj;
-}
-
-
 auto Renderer::Impl::GetShadowFilteringMode() noexcept -> ShadowFilteringMode {
   return mShadowFilteringMode;
 }
@@ -1882,8 +1869,6 @@ auto Renderer::GetShadowDistance() noexcept -> float { return mImpl->GetShadowDi
 auto Renderer::SetShadowDistance(float const shadowDistance) noexcept -> void { mImpl->SetShadowDistance(shadowDistance); }
 auto Renderer::IsVisualizingShadowCascades() noexcept -> bool { return mImpl->IsVisualizingShadowCascades(); }
 auto Renderer::VisualizeShadowCascades(bool visualize) noexcept -> void { mImpl->VisualizeShadowCascades(visualize); }
-auto Renderer::IsUsingStableShadowCascadeProjection() noexcept -> bool { return mImpl->IsUsingStableShadowCascadeProjection(); }
-auto Renderer::UseStableShadowCascadeProjection(bool const useStableProj) noexcept -> void { mImpl->UseStableShadowCascadeProjection(useStableProj); }
 auto Renderer::GetShadowFilteringMode() noexcept -> ShadowFilteringMode { return mImpl->GetShadowFilteringMode(); }
 auto Renderer::SetShadowFilteringMode(ShadowFilteringMode filteringMode) noexcept -> void { mImpl->SetShadowFilteringMode(filteringMode); }
 auto Renderer::GetInFlightFrameCount() noexcept -> int { return mImpl->GetInFlightFrameCount(); }

@@ -1,10 +1,12 @@
 #include "DirectionalShadowAtlas.hpp"
 
 #include "Bounds.hpp"
+#include "Entity.hpp"
 #include "Graphics.hpp"
 #include "MemoryAllocation.hpp"
 
 #include <array>
+#include <format>
 
 
 namespace sorcery {
@@ -13,7 +15,7 @@ DirectionalShadowAtlas::DirectionalShadowAtlas(ID3D11Device* const device, int c
   mCell{1} {}
 
 
-auto DirectionalShadowAtlas::Update(std::span<LightComponent const* const> const allLights, Visibility const& visibility, Camera const& cam, ShadowCascadeBoundaries const& shadowCascadeBoundaries, float const aspectRatio, int const cascadeCount, bool const useStableCascadeProjection) -> void {
+auto DirectionalShadowAtlas::Update(std::span<LightComponent const* const> const allLights, Visibility const& visibility, Camera const& cam, ShadowCascadeBoundaries const& shadowCascadeBoundaries, float const aspectRatio, int const cascadeCount) -> void {
   std::pmr::vector<int> candidateLightIdxIndices{&GetTmpMemRes()};
 
   for (int i = 0; i < std::ssize(visibility.lightIndices); i++) {
@@ -37,6 +39,17 @@ auto DirectionalShadowAtlas::Update(std::span<LightComponent const* const> const
   float const camNear{cam.GetNearClipPlane()};
   float const camFar{cam.GetFarClipPlane()};
 
+  enum FrustumVertex : int {
+    FrustumVertex_NearTopRight    = 0,
+    FrustumVertex_NearTopLeft     = 1,
+    FrustumVertex_NearBottomLeft  = 2,
+    FrustumVertex_NearBottomRight = 3,
+    FrustumVertex_FarTopRight     = 4,
+    FrustumVertex_FarTopLeft      = 5,
+    FrustumVertex_FarBottomLeft   = 6,
+    FrustumVertex_FarBottomRight  = 7,
+  };
+
   // Order of vertices is CCW from top right, near first
   auto const frustumVertsWS{
     [&cam, aspectRatio, camNear, camFar] {
@@ -53,28 +66,28 @@ auto DirectionalShadowAtlas::Update(std::span<LightComponent const* const> const
           float const farExtentX{camFar * tanHalfFov};
           float const farExtentY{farExtentX / aspectRatio};
 
-          ret[0] = nearWorldForward + cam.GetRightAxis() * nearExtentX + cam.GetUpAxis() * nearExtentY;
-          ret[1] = nearWorldForward - cam.GetRightAxis() * nearExtentX + cam.GetUpAxis() * nearExtentY;
-          ret[2] = nearWorldForward - cam.GetRightAxis() * nearExtentX - cam.GetUpAxis() * nearExtentY;
-          ret[3] = nearWorldForward + cam.GetRightAxis() * nearExtentX - cam.GetUpAxis() * nearExtentY;
-          ret[4] = farWorldForward + cam.GetRightAxis() * farExtentX + cam.GetUpAxis() * farExtentY;
-          ret[5] = farWorldForward - cam.GetRightAxis() * farExtentX + cam.GetUpAxis() * farExtentY;
-          ret[6] = farWorldForward - cam.GetRightAxis() * farExtentX - cam.GetUpAxis() * farExtentY;
-          ret[7] = farWorldForward + cam.GetRightAxis() * farExtentX - cam.GetUpAxis() * farExtentY;
+          ret[FrustumVertex_NearTopRight] = nearWorldForward + cam.GetRightAxis() * nearExtentX + cam.GetUpAxis() * nearExtentY;
+          ret[FrustumVertex_NearTopLeft] = nearWorldForward - cam.GetRightAxis() * nearExtentX + cam.GetUpAxis() * nearExtentY;
+          ret[FrustumVertex_NearBottomLeft] = nearWorldForward - cam.GetRightAxis() * nearExtentX - cam.GetUpAxis() * nearExtentY;
+          ret[FrustumVertex_NearBottomRight] = nearWorldForward + cam.GetRightAxis() * nearExtentX - cam.GetUpAxis() * nearExtentY;
+          ret[FrustumVertex_FarTopRight] = farWorldForward + cam.GetRightAxis() * farExtentX + cam.GetUpAxis() * farExtentY;
+          ret[FrustumVertex_FarTopLeft] = farWorldForward - cam.GetRightAxis() * farExtentX + cam.GetUpAxis() * farExtentY;
+          ret[FrustumVertex_FarBottomLeft] = farWorldForward - cam.GetRightAxis() * farExtentX - cam.GetUpAxis() * farExtentY;
+          ret[FrustumVertex_FarBottomRight] = farWorldForward + cam.GetRightAxis() * farExtentX - cam.GetUpAxis() * farExtentY;
           break;
         }
         case Camera::Type::Orthographic: {
           float const extentX{cam.GetHorizontalOrthographicSize() / 2.0f};
           float const extentY{extentX / aspectRatio};
 
-          ret[0] = nearWorldForward + cam.GetRightAxis() * extentX + cam.GetUpAxis() * extentY;
-          ret[1] = nearWorldForward - cam.GetRightAxis() * extentX + cam.GetUpAxis() * extentY;
-          ret[2] = nearWorldForward - cam.GetRightAxis() * extentX - cam.GetUpAxis() * extentY;
-          ret[3] = nearWorldForward + cam.GetRightAxis() * extentX - cam.GetUpAxis() * extentY;
-          ret[4] = farWorldForward + cam.GetRightAxis() * extentX + cam.GetUpAxis() * extentY;
-          ret[5] = farWorldForward - cam.GetRightAxis() * extentX + cam.GetUpAxis() * extentY;
-          ret[6] = farWorldForward - cam.GetRightAxis() * extentX - cam.GetUpAxis() * extentY;
-          ret[7] = farWorldForward + cam.GetRightAxis() * extentX - cam.GetUpAxis() * extentY;
+          ret[FrustumVertex_NearTopRight] = nearWorldForward + cam.GetRightAxis() * extentX + cam.GetUpAxis() * extentY;
+          ret[FrustumVertex_NearTopLeft] = nearWorldForward - cam.GetRightAxis() * extentX + cam.GetUpAxis() * extentY;
+          ret[FrustumVertex_NearBottomLeft] = nearWorldForward - cam.GetRightAxis() * extentX - cam.GetUpAxis() * extentY;
+          ret[FrustumVertex_NearBottomRight] = nearWorldForward + cam.GetRightAxis() * extentX - cam.GetUpAxis() * extentY;
+          ret[FrustumVertex_FarTopRight] = farWorldForward + cam.GetRightAxis() * extentX + cam.GetUpAxis() * extentY;
+          ret[FrustumVertex_FarTopLeft] = farWorldForward - cam.GetRightAxis() * extentX + cam.GetUpAxis() * extentY;
+          ret[FrustumVertex_FarBottomLeft] = farWorldForward - cam.GetRightAxis() * extentX - cam.GetUpAxis() * extentY;
+          ret[FrustumVertex_FarBottomRight] = farWorldForward + cam.GetRightAxis() * extentX - cam.GetUpAxis() * extentY;
           break;
         }
       }
@@ -112,76 +125,40 @@ auto DirectionalShadowAtlas::Update(std::span<LightComponent const* const> const
         }()
       };
 
-      auto const calculateTightViewProj{
-        [&cascadeVertsWS, &light] {
-          Matrix4 const shadowViewMtx{Matrix4::LookToLH(Vector3::Zero(), light.GetDirection(), Vector3::Up())};
 
-          // cascade vertices in shadow space
-          auto const cascadeVertsSP{
-            [&cascadeVertsWS, &shadowViewMtx] {
-              std::array<Vector3, 8> ret;
+      Vector3 cascadeCenterWS{Vector3::Zero()};
 
-              for (int j = 0; j < 8; j++) {
-                ret[j] = Vector3{Vector4{cascadeVertsWS[j], 1} * shadowViewMtx};
-              }
+      for (Vector3 const& cascadeVertWS : cascadeVertsWS) {
+        cascadeCenterWS += cascadeVertWS;
+      }
 
-              return ret;
-            }()
-          };
+      cascadeCenterWS /= 8.0f;
 
-          auto const [aabbMin, aabbMax]{AABB::FromVertices(cascadeVertsSP)};
-          auto shadowNearClipPlane{aabbMin[2] - light.GetShadowExtension()};
-          auto shadowFarClipPlane{aabbMax[2]};
-          Graphics::AdjustClipPlanesForReversedDepth(shadowNearClipPlane, shadowFarClipPlane);
-          Matrix4 const shadowProjMtx{Matrix4::OrthographicAsymZLH(aabbMin[0], aabbMax[0], aabbMax[1], aabbMin[1], shadowNearClipPlane, shadowFarClipPlane)};
+      float sphereRadius{0.0f};
 
-          return shadowViewMtx * shadowProjMtx;
-        }
-      };
+      for (Vector3 const& cascadeVertWS : cascadeVertsWS) {
+        sphereRadius = std::max(sphereRadius, Distance(cascadeCenterWS, cascadeVertWS));
+      }
 
-      auto const calculateStableViewProj{
-        [&cascadeVertsWS, &light, this] {
-          Vector3 cascadeCenterWS{Vector3::Zero()};
+      auto const shadowMapSize{GetSize() / GetSubdivisionSize()};
+      auto const worldUnitsPerTexel{sphereRadius * 2.0f / static_cast<float>(shadowMapSize)};
 
-          for (Vector3 const& cascadeVertWS : cascadeVertsWS) {
-            cascadeCenterWS += cascadeVertWS;
-          }
+      //sphereRadius = std::round(sphereRadius / worldUnitsPerTexel) * worldUnitsPerTexel;
 
-          cascadeCenterWS /= 8.0f;
+      Matrix4 const shadowViewMtx{Matrix4::LookToLH(Vector3::Zero(), light.GetDirection(), Vector3::Up())};
+      cascadeCenterWS = Vector3{Vector4{cascadeCenterWS, 1} * shadowViewMtx};
+      cascadeCenterWS /= worldUnitsPerTexel;
+      cascadeCenterWS[0] = std::floor(cascadeCenterWS[0]);
+      cascadeCenterWS[1] = std::floor(cascadeCenterWS[1]);
+      cascadeCenterWS *= worldUnitsPerTexel;
+      cascadeCenterWS = Vector3{Vector4{cascadeCenterWS, 1} * shadowViewMtx.Inverse()};
 
-          float sphereRadius{0.0f};
+      auto shadowNearClipPlane{-sphereRadius - light.GetShadowExtension()};
+      auto shadowFarClipPlane{sphereRadius};
+      Graphics::AdjustClipPlanesForReversedDepth(shadowNearClipPlane, shadowFarClipPlane);
+      Matrix4 const shadowProjMtx{Matrix4::OrthographicAsymZLH(-sphereRadius, sphereRadius, sphereRadius, -sphereRadius, shadowNearClipPlane, shadowFarClipPlane)};
 
-          for (Vector3 const& cascadeVertWS : cascadeVertsWS) {
-            sphereRadius = std::max(sphereRadius, Distance(cascadeCenterWS, cascadeVertWS));
-          }
-
-          float const shadowMapSize{static_cast<float>(static_cast<int>(GetSize() / GetSubdivisionSize()))};
-          float const texelsPerUnit{shadowMapSize / (sphereRadius * 2.0f)};
-
-          Matrix4 const lookAtMtx{Matrix4::LookToLH(Vector3::Zero(), light.GetDirection(), Vector3::Up())};
-          Matrix4 const scaleMtx{Matrix4::Scale(Vector3{texelsPerUnit})};
-          Matrix4 const baseViewMtx{scaleMtx * lookAtMtx};
-          Matrix4 const baseViewInvMtx{baseViewMtx.Inverse()};
-
-          Vector3 correctedCascadeCenter{Vector4{cascadeCenterWS, 1} * baseViewMtx};
-
-          for (int j = 0; j < 2; j++) {
-            correctedCascadeCenter[j] = std::floor(correctedCascadeCenter[j]);
-          }
-
-          correctedCascadeCenter = Vector3{Vector4{correctedCascadeCenter, 1} * baseViewInvMtx};
-
-          Matrix4 const shadowViewMtx{Matrix4::LookToLH(correctedCascadeCenter, light.GetDirection(), Vector3::Up())};
-          auto shadowNearClipPlane{-sphereRadius - light.GetShadowExtension()};
-          auto shadowFarClipPlane{sphereRadius};
-          Graphics::AdjustClipPlanesForReversedDepth(shadowNearClipPlane, shadowFarClipPlane);
-          Matrix4 const shadowProjMtx{Matrix4::OrthographicAsymZLH(-sphereRadius, sphereRadius, sphereRadius, -sphereRadius, shadowNearClipPlane, shadowFarClipPlane)};
-
-          return shadowViewMtx * shadowProjMtx;
-        }
-      };
-
-      auto const shadowViewProjMtx{useStableCascadeProjection ? calculateStableViewProj() : calculateTightViewProj()};
+      auto const shadowViewProjMtx{Matrix4::LookToLH(cascadeCenterWS, light.GetDirection(), Vector3::Up()) * shadowProjMtx};
 
       mCell.GetSubcell(i * mCell.GetSubdivisionSize() + cascadeIdx).emplace(shadowViewProjMtx, lightIdxIdx, cascadeIdx);
     }
