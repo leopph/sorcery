@@ -23,51 +23,42 @@ auto SettingsWindow::Draw() -> void {
     return;
   }
 
-  ImGui::Text("%s", "Frame Rate Limit");
-  ImGui::SameLine();
+  ImGui::SeparatorText("Appearance");
+
+  if (auto darkMode{mApp->IsGuiDarkMode()}; ImGui::Checkbox("Dark Mode", &darkMode)) {
+    mApp->SetGuiDarkMode(darkMode);
+  }
+
+  ImGui::SeparatorText("Performance");
 
   bool isFrameRateLimited{timing::GetTargetFrameRate() != -1};
-  if (ImGui::Checkbox("##FrameRateLimitCheckbox", &isFrameRateLimited)) {
-    timing::SetTargetFrameRate(isFrameRateLimited
-                                 ? DEFAULT_TARGET_FRAME_RATE
-                                 : -1);
+
+  if (ImGui::Checkbox("Frame Rate Limit", &isFrameRateLimited)) {
+    timing::SetTargetFrameRate(isFrameRateLimited ? DEFAULT_TARGET_FRAME_RATE : -1);
   }
 
   if (isFrameRateLimited) {
-    ImGui::Text("%s", "Target Frame Rate");
-    ImGui::SameLine();
-
-    int targetFrameRate{timing::GetTargetFrameRate()};
-    if (ImGui::DragInt("##TargetFrameRateWidget", &targetFrameRate, 1, 30, std::numeric_limits<int>::max(), "%d", ImGuiSliderFlags_AlwaysClamp)) {
+    if (int targetFrameRate{timing::GetTargetFrameRate()}; ImGui::DragInt("Target Frame Rate", &targetFrameRate, 1, 30, std::numeric_limits<int>::max(), "%d", ImGuiSliderFlags_AlwaysClamp)) {
       timing::SetTargetFrameRate(targetFrameRate);
     }
   }
 
-  ImGui::Text("%s", "Dark Mode");
-  ImGui::SameLine();
-
-  if (auto darkMode{mApp->IsGuiDarkMode()}; ImGui::Checkbox("##DarkModeCheckbox", &darkMode)) {
-    mApp->SetGuiDarkMode(darkMode);
-  }
-
-  ImGui::Text("%s", "In-Flight Frame Count");
-  ImGui::SameLine();
-
-  int inFlightFrameCount{gRenderer.GetInFlightFrameCount()};
-  if (ImGui::SliderInt("##InFlightFrameCountSlider", &inFlightFrameCount, Renderer::MIN_IN_FLIGHT_FRAME_COUNT, Renderer::MAX_IN_FLIGHT_FRAME_COUNT, "%d", ImGuiSliderFlags_AlwaysClamp)) {
+  if (int inFlightFrameCount{gRenderer.GetInFlightFrameCount()}; ImGui::SliderInt("In-Flight Frame Count", &inFlightFrameCount, Renderer::MIN_IN_FLIGHT_FRAME_COUNT, Renderer::MAX_IN_FLIGHT_FRAME_COUNT, "%d", ImGuiSliderFlags_AlwaysClamp)) {
     gRenderer.SetInFlightFrameCount(inFlightFrameCount);
   }
 
-  ImGui::Text("Shadow Distance");
-  ImGui::SameLine();
+  ImGui::SeparatorText("Debugging");
 
-  float shadowDistance{gRenderer.GetShadowDistance()};
-  if (ImGui::InputFloat("##shadowDistanceInput", &shadowDistance, 0, 0, "%.3f", ImGuiInputTextFlags_EnterReturnsTrue)) {
-    gRenderer.SetShadowDistance(shadowDistance);
+  if (bool visualizeShadowCascades{gRenderer.IsVisualizingShadowCascades()}; ImGui::Checkbox("Visualize Shadow Cascades", &visualizeShadowCascades)) {
+    gRenderer.VisualizeShadowCascades(visualizeShadowCascades);
   }
 
-  ImGui::Text("Shadow Filtering Mode");
-  ImGui::SameLine();
+  ImGui::SeparatorText("Graphics");
+
+  float shadowDistance{gRenderer.GetShadowDistance()};
+  if (ImGui::DragFloat("Shadow Distance", &shadowDistance, 1, 0, std::numeric_limits<float>::max(), "%.0f", ImGuiSliderFlags_AlwaysClamp)) {
+    gRenderer.SetShadowDistance(shadowDistance);
+  }
 
   auto constexpr shadowFilteringModeNames{
     [] {
@@ -77,28 +68,16 @@ auto SettingsWindow::Draw() -> void {
       ret[static_cast<int>(ShadowFilteringMode::PCF3x3)] = "PCF 3x3 (4 taps)";
       ret[static_cast<int>(ShadowFilteringMode::PCFTent3x3)] = "PCF Tent 3x3 (4 taps)";
       ret[static_cast<int>(ShadowFilteringMode::PCFTent5x5)] = "PCF Tent 5x5 (9 taps)";
-      ret[static_cast<int>(ShadowFilteringMode::PCSS)] = "PCSS";
+      ret[static_cast<int>(ShadowFilteringMode::PCSS)] = "PCSS (Not yet implemented)";
       return ret;
     }()
   };
-  int currentShadowFilteringModeIdx{static_cast<int>(gRenderer.GetShadowFilteringMode())};
-  if (ImGui::Combo("##ShadowFilteringModeCombo", &currentShadowFilteringModeIdx, shadowFilteringModeNames.data(), static_cast<int>(std::ssize(shadowFilteringModeNames)))) {
+
+  if (int currentShadowFilteringModeIdx{static_cast<int>(gRenderer.GetShadowFilteringMode())}; ImGui::Combo("Shadow Filtering Mode", &currentShadowFilteringModeIdx, shadowFilteringModeNames.data(), static_cast<int>(std::ssize(shadowFilteringModeNames)))) {
     gRenderer.SetShadowFilteringMode(static_cast<ShadowFilteringMode>(currentShadowFilteringModeIdx));
   }
 
-  ImGui::Text("Visualize Shadow Cascades");
-  ImGui::SameLine();
-
-  bool visualizeShadowCascades{gRenderer.IsVisualizingShadowCascades()};
-  if (ImGui::Checkbox("##VisualizeShadowCascadesCheckbox", &visualizeShadowCascades)) {
-    gRenderer.VisualizeShadowCascades(visualizeShadowCascades);
-  }
-
-  ImGui::Text("Shadow Cascade Count");
-  ImGui::SameLine();
-
-  int cascadeCount{gRenderer.GetShadowCascadeCount()};
-  if (ImGui::SliderInt("##cascadeCountInput", &cascadeCount, 1, gRenderer.GetMaxShadowCascadeCount(), "%d", ImGuiSliderFlags_NoInput)) {
+  if (int cascadeCount{gRenderer.GetShadowCascadeCount()}; ImGui::SliderInt("Shadow Cascade Count", &cascadeCount, 1, gRenderer.GetMaxShadowCascadeCount(), "%d", ImGuiSliderFlags_NoInput)) {
     gRenderer.SetShadowCascadeCount(cascadeCount);
   }
 
@@ -106,12 +85,7 @@ auto SettingsWindow::Draw() -> void {
   auto const splitCount{std::ssize(cascadeSplits)};
 
   for (int i = 0; i < splitCount; i++) {
-    ImGui::Text("Split %d (percent)", i + 1);
-    ImGui::SameLine();
-
-    float cascadeSplit{cascadeSplits[i] * 100.0f};
-
-    if (ImGui::SliderFloat(std::format("##cascadeSplit {} input", i).data(), &cascadeSplit, 0, 100, "%.3f", ImGuiSliderFlags_NoInput)) {
+    if (float cascadeSplit{cascadeSplits[i] * 100.0f}; ImGui::SliderFloat(std::format("Split %d (percent)", i + 1).data(), &cascadeSplit, 0, 100, "%.3f", ImGuiSliderFlags_NoInput)) {
       gRenderer.SetNormalizedShadowCascadeSplit(i, cascadeSplit / 100.0f);
     }
   }

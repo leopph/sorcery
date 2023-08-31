@@ -200,7 +200,7 @@ auto Application::SetGuiDarkMode(bool const darkMode) noexcept -> void {
   style.ChildBorderSize = 0;
   style.FrameBorderSize = 0;
   style.PopupBorderSize = 0;
-  style.SeparatorTextBorderSize = 0;
+  style.SeparatorTextBorderSize = 2;
   style.TabBorderSize = 0;
   style.WindowBorderSize = 0;
   style.ChildRounding = 4;
